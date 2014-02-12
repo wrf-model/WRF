@@ -27,9 +27,16 @@ subroutine da_transform_vptox_adj(grid, vp, be, ep)
    !  [4] Add flow-dependent increments in model space (grid%xa):
    !---------------------------------------------------------------------------
       
+!  if (be % ne > 0 .and. alphacv_method == alphacv_method_xa) then
+!     call da_add_flow_dependence_xa_adj(be % ne, ep, grid%xa, vp)
+!  end if
    if (be % ne > 0 .and. alphacv_method == alphacv_method_xa) then
-      call da_add_flow_dependence_xa_adj(be % ne, ep, grid%xa, vp)
-   end if
+      if ( anal_type_hybrid_dual_res ) then
+         call da_add_flow_dependence_xa_adj_dual_res(be % ne, ep, grid, vp)
+      else
+         call da_add_flow_dependence_xa_adj(be % ne, ep, grid%xa, vp)
+      endif
+   endif
 
    !--------------------------------------------------------------------------
    ! [3] Transform to model variable space:
@@ -125,6 +132,7 @@ subroutine da_transform_vptox_adj(grid, vp, be, ep)
       ! Pseudo RH --> Water vapor mixing ratio:
       !$OMP PARALLEL DO &
       !$OMP PRIVATE ( ij )
+
       do ij = 1 , grid%num_tiles
          do k = kts,kte
             do j = grid%j_start(ij),grid%j_end(ij)

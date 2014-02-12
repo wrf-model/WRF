@@ -6,7 +6,7 @@ module da_control
 
    use module_driver_constants, only : max_domains, max_eta, max_moves, max_bogus, &
                                        max_outer_iterations, max_instruments, max_plevs, &
-                                       max_ocean
+                                       max_ocean, num_ob_indexes
 
    implicit none
 
@@ -99,6 +99,7 @@ module da_control
 
    integer, parameter ::  missing       = -888888
    real   , parameter ::  missing_r     = -888888.0
+   real   , parameter ::  xmiss         = -88.0
    real   , parameter ::  Max_StHeight_Diff = 100.0
 
    integer, parameter :: cv_options_hum_specific_humidity = 1
@@ -127,6 +128,7 @@ module da_control
    logical :: anal_type_verify=.false.
    logical :: anal_type_randomcv=.false.
    logical :: anal_type_qcobs=.false.
+   logical :: anal_type_hybrid_dual_res=.false.
 
    integer,parameter :: monitor_on  = 1
    integer,parameter :: monitor_off = 0
@@ -453,7 +455,6 @@ module da_control
 
    integer, parameter            :: maxsensor = 30
 
-   integer, parameter :: num_ob_indexes = 28
    integer, parameter :: npres_print = 12
 
 
@@ -605,6 +606,33 @@ module da_control
    integer :: ips,ipe,jps,jpe,kps,kpe
    integer :: itsy,itey,jtsy,jtey,ktsy,ktey
    integer :: itsx,itex,jtsx,jtex,ktsx,ktex
+
+   integer :: ide_ens,jde_ens,kde_ens
+
+   integer :: its_int,ite_int,jts_int,jte_int,kts_int,kte_int
+   integer :: ids_int,ide_int,jds_int,jde_int,kds_int,kde_int
+   integer :: ims_int,ime_int,jms_int,jme_int,kms_int,kme_int
+   integer :: ips_int,ipe_int,jps_int,jpe_int,kps_int,kpe_int
+
+   character (len=filename_len) :: input_file_ens = 'fg_ens'
+
+
+   TYPE dual_res_type
+         real :: x
+         real :: y
+         integer :: i
+         integer :: j
+         real    :: dx
+         real    :: dy
+         real    :: dxm
+         real    :: dym
+         integer :: xx
+         integer :: yy
+   END TYPE dual_res_type
+
+   TYPE(dual_res_type), allocatable :: ob_locs(:)
+   integer :: total_here
+   
 
    integer :: num_qcstat_conv(2,num_ob_indexes,num_ob_vars,npres_print+1)
    character*4, parameter :: ob_vars(num_ob_vars) = (/'U   ','V   ','T   ',&

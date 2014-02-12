@@ -321,13 +321,11 @@ print*,__FILE__,jte,' xa2_v.xa2_v for row= ',jte+1,sum(xa2_v(its:ite, jte+1, kts
       !       Rescale input to adjoint routine :
       !----------------------------------------------------------------------
 
-      if (iv%info(sound)%nlocal > 0) then
-         call da_check_xtoy_adjoint_sound     (iv, y, partial_lhs, pertile_lhs)
-         call da_check_xtoy_adjoint_sonde_sfc (iv, y, partial_lhs, pertile_lhs)
-      end if
+      if (iv%info(sound)%nlocal > 0) call da_check_xtoy_adjoint_sound(iv, y, partial_lhs, pertile_lhs)
+      if (iv%info(sonde_sfc)%nlocal > 0) call da_check_xtoy_adjoint_sonde_sfc (iv, y, partial_lhs, pertile_lhs)
       if (iv%info(mtgirs)%nlocal   > 0) call da_check_xtoy_adjoint_mtgirs   (iv, y, partial_lhs, pertile_lhs)
       if (iv%info(tamdar)%nlocal   > 0) call da_check_xtoy_adjoint_tamdar   (iv, y, partial_lhs, pertile_lhs)
-      if (iv%info(tamdar)%nlocal   > 0) call da_check_xtoy_adjoint_tamdar_sfc(iv, y, partial_lhs, pertile_lhs)
+      if (iv%info(tamdar_sfc)%nlocal   > 0) call da_check_xtoy_adjoint_tamdar_sfc(iv, y, partial_lhs, pertile_lhs)
       if (iv%info(synop)%nlocal    > 0) call da_check_xtoy_adjoint_synop    (iv, y, partial_lhs, pertile_lhs)
       if (iv%info(geoamv)%nlocal   > 0) call da_check_xtoy_adjoint_geoamv   (iv, y, partial_lhs, pertile_lhs)
       if (iv%info(polaramv)%nlocal > 0) call da_check_xtoy_adjoint_polaramv (iv, y, partial_lhs, pertile_lhs)

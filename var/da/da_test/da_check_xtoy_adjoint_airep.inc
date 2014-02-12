@@ -20,7 +20,8 @@ subroutine da_check_xtoy_adjoint_airep(iv, y, adjtest_lhs, pertile_lhs)
             adjtest_lhs = adjtest_lhs + &
                (y%airep(n)%u(k) / typical_u_rms)**2 + &
                (y%airep(n)%v(k) / typical_v_rms)**2 + &
-               (y%airep(n)%t(k) / typical_t_rms)**2 
+               (y%airep(n)%t(k) / typical_t_rms)**2 + & 
+               (y%airep(n)%q(k) / typical_q_rms)**2 
          end if
       end do
 
@@ -28,11 +29,13 @@ subroutine da_check_xtoy_adjoint_airep(iv, y, adjtest_lhs, pertile_lhs)
          pertile_lhs = pertile_lhs + &
             (y%airep(n)%u(k) / typical_u_rms)**2 + &
             (y%airep(n)%v(k) / typical_v_rms)**2 + &
-            (y%airep(n)%t(k) / typical_t_rms)**2
+            (y%airep(n)%t(k) / typical_t_rms)**2 + &
+            (y%airep(n)%q(k) / typical_q_rms)**2
 
         y%airep(n)%u(k) = y%airep(n)%u(k) / typical_u_rms ** 2
         y%airep(n)%v(k) = y%airep(n)%v(k) / typical_v_rms ** 2
         y%airep(n)%t(k) = y%airep(n)%t(k) / typical_t_rms ** 2
+        y%airep(n)%q(k) = y%airep(n)%q(k) / typical_q_rms ** 2
       end do
    end do
    

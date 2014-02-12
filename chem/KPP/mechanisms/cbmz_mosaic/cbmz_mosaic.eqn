@@ -27,7 +27,7 @@
  {022:002} O1D+H2O = 2 OH				: 2.2D-10 ;
  {023:003} O3P+M{+O2} = O3                              : .21*ARR3MS(6.0D-34,2.3_dp,TEMP,C_M) ;
  {024:004} O3P + O3 =0.42M {2O2} 			: ARR3(8.0D-12, 2060._dp, TEMP) ;
- {025:005} O3P + NO2 = NO				: ARR3(6.5D-12, 120._dp, TEMP) ;
+ {025:005} O3P + NO2 = NO				: ARR3(6.5D-12, -120._dp, TEMP) ;
  {026:006} O3P + NO2 = NO3  				: TROEMS(9.0D-32, -2.0_dp, 2.2D-11, 0.0_dp, TEMP, C_M) ;
  {027:007} O3P + NO = NO2  				: TROEMS(9.0D-32, -1.5_dp, 3.0D-11, 0.0_dp, TEMP, C_M) ;
  {028:008} O3 + NO = NO2				: ARR3(2.0D-12, 1400._dp, TEMP) ;
@@ -68,9 +68,9 @@
  {063:043} AONE + OH = ANO2                             : TEMP**2 * ARR3(5.3D-18, 230._dp, TEMP) ;
  {064:044} MGLY + OH = XO2 + C2O3                       : 1.7D-11 ;
  {065:045} MGLY + NO3 = HNO3 + C2O3 + CO                : ARR3(1.4D-12, 1900._dp, TEMP) ;
- {066:046} ETH + O3 = HCHO + .22 HO2 + .12 OH +
+ {066:046} C2H4 + O3 = HCHO + .22 HO2 + .12 OH +
           .24 CO {+ .24CO2} + .52 HCOOH                 : ARR3(1.2D-14, 2630._dp, TEMP) ;
- {067:047} ETH + OH = XO2 + 1.56 HCHO + HO2 + .22 ALD2  : TROEMS(1.0D-28, -0.8_dp, 8.8D-12, 0.0_dp, TEMP, C_M) ;
+ {067:047} C2H4 + OH = XO2 + 1.56 HCHO + HO2 + .22 ALD2  : TROEMS(1.0D-28, -0.8_dp, 8.8D-12, 0.0_dp, TEMP, C_M) ;
  {068:048} OLET + O3 = .57 HCHO + .47 ALD2 +
            .33 OH + .26 HO2 {+ .08H2}+
            .07 CH3O2 + .06 ETHP +

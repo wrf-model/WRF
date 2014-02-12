@@ -31,6 +31,9 @@ if ( "$arg" == '-a' || "$arg" == '-aa' ) then
     /bin/cp Registry/Registry Registry/Registry.backup
     /bin/rm -f Registry/Registry
     /bin/rm -f Registry/io_boilerplate_temporary.inc
+    if ( -f Registry/Registry.rconfig ) then
+      /bin/rm -f Registry/Registry.rconfig
+    endif
   endif
   /bin/rm -fr ./netcdf_links
   /bin/rm -fr tools/code_dbase
@@ -44,7 +47,7 @@ if ( "$arg" == '-a' || "$arg" == '-aa' ) then
     /bin/rm -f configure.wrf
   endif
   if ( "$arg" != '-aa' ) then
-    ( cd run ; /bin/rm -f gm* out* fort* ideal* *.exe ; \
+    ( cd run ; /bin/rm -f gm* out* fort* ideal* *.exe input_sounding ; \
 	  /bin/cp -f namelist.input namelist.input.backup ; \
 	  /bin/rm -f namelist.input ) >& /dev/null
     ( cd test/exp_real ; /bin/rm -f gm* out* fort* real* )
@@ -56,6 +59,9 @@ if ( "$arg" == '-a' || "$arg" == '-aa' ) then
 	  */CLM_*DATA */RRTMG_LW_DATA */RRTMG_SW_DATA \
 	  */ozone.formatted */ozone_lat.formatted */ozone_plev.formatted \
 	  */aerosol.formatted */aerosol_lat.formatted */aerosol_plev.formatted */aerosol_lon.formatted \
+	  */kernels.asc_s_0_03_0_9 */bulkradii.asc_s_0_03_0_9 */bulkdens.asc_s_0_03_0_9 \
+	  */constants.asc \
+	  */masses.asc */kernels_z.asc */capacity.asc */termvels.asc */coeff_p.asc */coeff_q.asc \
 	  */gribmap.txt */tr??t?? */co2_trans */namelist.output ) >& /dev/null
   else if ( "$arg" == '-aa' ) then
     /bin/rm -f configure.wrf.backup

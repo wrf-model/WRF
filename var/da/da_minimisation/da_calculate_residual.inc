@@ -23,18 +23,21 @@ subroutine da_calculate_residual(iv, y, re)
    ! [1.0] (O-A) = (O-B) - H x~:
    !-------------------------------------------------------------------------
 
-   if (iv%info(sound)%nlocal > 0) then
+   if (iv%info(sound)%nlocal > 0) &
       call da_residual_sound(iv, y, re, np_missing, np_bad_data, np_obs_used, np_available)
+
+   if (iv%info(sonde_sfc)%nlocal > 0) &
       call da_residual_sonde_sfc(iv, y, re, np_missing, np_bad_data, np_obs_used, np_available)
-   end if
 
    if (iv%info(mtgirs)%nlocal > 0) & 
       call da_residual_mtgirs(iv, y, re, np_missing, np_bad_data, np_obs_used, np_available)
 
-   if (iv%info(tamdar)%nlocal > 0) then 
+   if (iv%info(tamdar)%nlocal > 0)  &   
       call da_residual_tamdar(iv, y, re, np_missing, np_bad_data, np_obs_used, np_available)
+
+   if (iv%info(tamdar_sfc)%nlocal > 0)  &   
       call da_residual_tamdar_sfc(iv, y, re, np_missing, np_bad_data, np_obs_used, np_available)
-   end if
+
    if (iv%info(synop)%nlocal > 0) &
       call da_residual_synop(iv, y, re, np_missing, np_bad_data, np_obs_used, np_available)
 

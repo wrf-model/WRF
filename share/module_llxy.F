@@ -227,6 +227,7 @@ MODULE module_llxy
       IMPLICIT NONE
       TYPE(proj_info), INTENT(INOUT)  :: proj
   
+      proj%code     = -999
       proj%lat1     = -999.9
       proj%lon1     = -999.9
       proj%lat0     = -999.9

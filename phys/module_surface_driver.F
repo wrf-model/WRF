@@ -28,7 +28,9 @@ CONTAINS
      &          ,th10,th2,thz0,th_phy,tmn,tshltr,tsk,tslb             &
      &          ,tyr,tyra,tdly,tlag,lagday,nyear,nday,tmn_update,yr   &
      &          ,t_phy,u10,udrunoff,ust,uz0,u_frame,u_phy,v10,vegfra  &
+     &          ,uoce,voce                                            &
      &          ,vz0,v_frame,v_phy,warm_rain,wspd,xice,xland,z,znt    &
+     &          ,max_edom,cplmask                                     &
 #if (HWRF==1)
      &          ,mznt                                                 &
 #endif
@@ -40,7 +42,7 @@ CONTAINS
      &          ,xicem,isice,iswater,ct,tke_pbl                       &
 #endif
      &          ,albbck,embck,lh,sh2o,shdmax,shdmin,z0                &
-     &          ,flqc,flhc,psfc,sst,sstsk,dtw,sst_update,sst_skin     &
+     &          ,flqc,flhc,psfc,sst,sst_input,sstsk,dtw,sst_update,sst_skin     &
      &          ,scm_force_skintemp,scm_force_flux,t2,emiss           &
      &          ,sf_sfclay_physics,sf_surface_physics,ra_lw_physics   & 
      &          ,mosaic_lu,mosaic_soil                                &
@@ -62,12 +64,22 @@ CONTAINS
      &          ,shgxy    ,shcxy     ,shbxy     ,evgxy     ,evbxy     ,ghvxy        &
      &          ,ghbxy    ,irgxy     ,ircxy     ,irbxy     ,trxy      ,evcxy        &
      &          ,chleafxy ,chucxy    ,chv2xy    ,chb2xy    ,chstarxy                &                      
+           ! Noah-MP ground water
+     &          ,smcwtdxy ,rechxy   ,deeprechxy,fdepthxy,areaxy   ,rivercondxy, riverbedxy &
+     &          ,eqzwt    ,pexpxy   ,qrfxy    ,qspringxy,qslatxy  ,qrfsxy   ,qspringsxy &
+     &          ,smoiseq  ,wtddt    ,stepwtd                                            &
            ! Noah UA changes
      &          ,ua_phys,flx4,fvb,fbur,fgsn                                  &
 #if (EM_CORE==1)
      &          ,ch,tsq,qsq,cov,Sh3d,el_pbl,bl_mynn_cloudpdf          & ! MYNN
      &          ,fgdp,dfgdp,vdfg,grav_settling                        & ! Katata - fog dep
 #endif
+     &          ,lakedepth2d,  savedtke12d,  snowdp2d,   h2osno2d       & !lake
+     &          ,snl2d,        t_grnd2d,     t_lake3d,   lake_icefrac3d & !lake
+     &          ,z_lake3d,     dz_lake3d,    t_soisno3d, h2osoi_ice3d   & !lake
+     &          ,h2osoi_liq3d, h2osoi_vol3d, z3d,        dz3d           & !lake
+     &          ,zi3d,         watsat3d,     csol3d,     tkmg3d         & !lake
+     &          ,tkdry3d,      tksatu3d,     LakeModel,  lakeminalt     & !lake
             !  cyl ocean variable
                 ,OM_TMP,OM_S,OM_U,OM_V,OM_DEPTH,OM_ML,OM_LON          &
      &          ,OM_LAT,okms,okme,rdx,rdy,msfu,msfv,msft              &
@@ -169,6 +181,7 @@ CONTAINS
 !------------------------------------------------------------------------------
      &          , ids,ide,jds,jde,kds,kde                             &
      &          , ims,ime,jms,jme,kms,kme                             &
+     &          , ips,ipe,jps,jpe,kps,kpe                             &
      &          , i_start,i_end,j_start,j_end,kts,kte,num_tiles       &
              !  Optional moisture tracers
      &           ,qv_curr, qc_curr, qr_curr                           &
@@ -226,6 +239,20 @@ CONTAINS
      &          ,dl_u_bep                                             &                          
      &          ,tsk_save                                             & !for fractional seaice
      &          ,cldfra                                               & !ssib
+     &          ,sf_surface_mosaic,mosaic_cat,mosaic_cat_index                                    & !danli mosaic
+     &          ,landusef2,TSK_mosaic,QSFC_mosaic,TSLB_mosaic,SMOIS_mosaic,SH2O_mosaic            & !danli mosaic
+     &          ,CANWAT_mosaic,SNOW_mosaic,SNOWH_mosaic,SNOWC_mosaic                              & !danli mosaic
+     &          ,ALBEDO_mosaic,ALBBCK_mosaic, EMISS_mosaic, EMBCK_mosaic, ZNT_mosaic, Z0_mosaic   & !danli mosaic
+     &          ,HFX_mosaic,QFX_mosaic, LH_mosaic, GRDFLX_mosaic,SNOTIME_mosaic                   & !danli mosaic
+     &          ,TR_URB2D_mosaic,TB_URB2D_mosaic                      &  !danli mosaic 
+     &          ,TG_URB2D_mosaic,TC_URB2D_mosaic                      &  !danli mosaic 
+     &          ,QC_URB2D_mosaic,UC_URB2D_mosaic                      &  !danli mosaic                  
+     &          ,TRL_URB3D_mosaic,TBL_URB3D_mosaic                    &  !danli mosaic 
+     &          ,TGL_URB3D_mosaic                                     &  !danli mosaic 
+     &          ,SH_URB2D_mosaic,LH_URB2D_mosaic                      &  !danli mosaic 
+     &          ,G_URB2D_mosaic,RN_URB2D_mosaic                       &  !danli mosaic 
+     &          ,TS_URB2D_mosaic                                      &  !danli mosaic 
+     &          ,TS_RUL2D_mosaic                                      &  !danli mosaic     
      &                                                             )
               
 #if ( ! NMM_CORE == 1 )
@@ -274,8 +301,9 @@ CONTAINS
    USE module_sf_myjsfc
    USE module_sf_qnsesfc
    USE module_sf_gfs
-   USE module_sf_noahdrv, only : lsm
+   USE module_sf_noahdrv                           ! danli mosaic, the " ,only : lsm " needs to be deleted 
    USE module_sf_noahmpdrv, only : noahmplsm
+   USE module_sf_noahmp_groundwater
    USE module_sf_noah_seaice_drv
 #ifdef WRF_USE_CLM
    USE module_sf_clm
@@ -306,6 +334,8 @@ CONTAINS
    USE module_sf_sfcdiags_ruclsm
    USE module_sf_sstskin
    USE module_sf_tmnupdate
+   USE module_sf_lake
+   USE module_cpl, ONLY : coupler_on, cpl_rcv
 !
 !  This driver calls subroutines for the surface parameterizations.
 !
@@ -376,6 +406,8 @@ CONTAINS
 !-- TLAG          mean surface temperature of previous 140 days (K)
 !-- TDLY          accumulated daily mean surface temperature of the current day (K)
 !-- XLAND         land mask (1 for land, 2 for water)
+!-- MAX_EDOM      number of external model domains
+!-- CPLMASK       coupling mask (0 for data read in wrflowinput, 1 data received from the coupler)
 !-- ZNT           thermal time-varying roughness length (m)
 !-- MZNT          momentum time-varying roughness length (m)
 !-- Z0            background roughness length (m)
@@ -405,6 +437,8 @@ CONTAINS
 !-- tratx         ratio of t over th2 (Added for obs-nudging)
 !-- u10           diagnostic 10-m u component from surface layer
 !-- v10           diagnostic 10-m v component from surface layer
+!-- UOCE          sea surface zonal currents (m s-1)
+!-- VOCE          sea surface meridional currents (m s-1)
 !-- th2           diagnostic 2-m theta from surface layer and lsm
 !-- t2            diagnostic 2-m temperature from surface layer and lsm
 !-- q2            diagnostic 2-m mixing ratio from surface layer and lsm
@@ -429,6 +463,7 @@ CONTAINS
 !-- DT            time step (second)
 !-- PSFC          pressure at the surface (Pa)
 !-- SST           sea-surface temperature (K)
+!-- SST_INPUT     sea-surface temperature read in wrflowinput (K) (= SST if no coupling)
 !-- SSTSK         skin sea-surface temperature (K)
 !-- DTW           warm layer temp diff (K)
 !-- TSLB
@@ -468,6 +503,12 @@ CONTAINS
 !-- jme           end index for j in memory
 !-- kms           start index for k in memory
 !-- kme           end index for k in memory
+!-- ips           start index for i in patch
+!-- ipe           end index for i in patch
+!-- jps           start index for j in patch
+!-- jpe           end index for j in patch
+!-- kps           start index for k in patch
+!-- kpe           end index for k in patch
 !-- its           start index for i in tile
 !-- ite           end index for i in tile
 !-- jts           start index for j in tile
@@ -481,6 +522,7 @@ CONTAINS
    INTEGER, INTENT(IN) ::                                             &
      &           ids,ide,jds,jde,kds,kde                              &
      &          ,ims,ime,jms,jme,kms,kme                              &
+     &          ,ips,ipe,jps,jpe,kps,kpe                              &
      &          ,kts,kte,num_tiles
 
    INTEGER, INTENT(IN)::   FRACTIONAL_SEAICE
@@ -497,6 +539,8 @@ CONTAINS
 
    INTEGER, INTENT(IN)::   NLCAT, mosaic_lu, mosaic_soil
    INTEGER, INTENT(IN)::   NSCAT
+   INTEGER,  INTENT(IN )  :: LakeModel
+   REAL,     INTENT(IN)   :: lakeminalt
 
    INTEGER, INTENT(IN)::   history_interval
 
@@ -547,6 +591,7 @@ CONTAINS
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   RAINCV
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   SST
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT ),OPTIONAL ::   SSTSK
+   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN    ),OPTIONAL ::   SST_INPUT
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT ),OPTIONAL ::   DTW
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   TMN
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT ),OPTIONAL ::   TYR
@@ -561,6 +606,8 @@ CONTAINS
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   ICEDEPTH
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   SNOWSI
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   XLAND
+   INTEGER,                                          INTENT(IN   ) ::   MAX_EDOM
+   REAL, DIMENSION( ims:ime , 1:max_edom, jms:jme ), INTENT(IN   ), OPTIONAL ::   CPLMASK
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   XICEM
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   MAVAIL
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   SNOALB
@@ -702,6 +749,8 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   TSHLTR
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   U10
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   V10
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   UOCE
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   VOCE
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   PSFC
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT)::   ACSNOM
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT)::   SFCEVP
@@ -753,6 +802,12 @@ CONTAINS
         aparxy, psnxy, savxy, sagxy
    REAL, OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(INOUT) ::  rssunxy, rsshaxy, bgapxy,wgapxy, &
         tgvxy ,tgbxy, chvxy, chbxy,SHGXY,SHCXY,SHBXY,EVGXY,EVBXY,GHVXY,GHBXY,IRGXY,IRCXY,IRBXY,TRXY,EVCXY,CHLEAFXY,CHUCXY,CHV2XY,CHB2XY,chstarxy                         
+
+   REAL, OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(INOUT) ::  smcwtdxy   ,rechxy   ,deeprechxy,  fdepthxy, areaxy,  &
+       rivercondxy,riverbedxy,eqzwt,pexpxy,qrfxy,qspringxy,qslatxy,qrfsxy,qspringsxy                         
+   REAL, OPTIONAL, DIMENSION( ims:ime , 1:num_soil_layers, jms:jme ), INTENT(INOUT)::  smoiseq
+   REAL, OPTIONAL, INTENT(IN) :: wtddt
+   INTEGER, OPTIONAL, INTENT(IN )  :: stepwtd
 
 ! Noah UA changes
    LOGICAL, INTENT(IN) :: ua_phys
@@ -1075,6 +1130,36 @@ CONTAINS
      REAL,  DIMENSION( ims:ime, jms:jme )  :: TH2_URB2D   !urban local var
      REAL,  DIMENSION( ims:ime, jms:jme )  :: Q2_URB2D    !urban local var
      REAL,  DIMENSION( ims:ime, jms:jme )  :: UST_URB2D  !urban local var
+     
+!-------------------------------------------------
+! Noah-mosaic related variables are added to declaration  (danli)
+!-------------------------------------------------
+  
+  INTEGER, INTENT(IN) :: sf_surface_mosaic
+  INTEGER, INTENT(IN) :: mosaic_cat
+  INTEGER, DIMENSION( ims:ime, NLCAT, jms:jme ), INTENT(INOUT), OPTIONAL :: mosaic_cat_index
+  REAL,    DIMENSION( ims:ime, NLCAT, jms:jme ), INTENT(INOUT), OPTIONAL :: landusef2
+
+  REAL, DIMENSION( ims:ime, 1:mosaic_cat, jms:jme ) , OPTIONAL, INTENT(INOUT)::   &
+        TSK_mosaic, QSFC_mosaic, CANWAT_mosaic, SNOW_mosaic,SNOWH_mosaic, SNOWC_mosaic
+  REAL, DIMENSION( ims:ime, 1:mosaic_cat, jms:jme ) , OPTIONAL, INTENT(INOUT)::   &
+        ALBEDO_mosaic,ALBBCK_mosaic, EMISS_mosaic, EMBCK_mosaic, ZNT_mosaic, Z0_mosaic,   &
+        HFX_mosaic,QFX_mosaic, LH_mosaic, GRDFLX_mosaic,SNOTIME_mosaic    
+  REAL, DIMENSION( ims:ime, 1:num_soil_layers*mosaic_cat, jms:jme ), OPTIONAL, INTENT(INOUT)::   &
+        TSLB_mosaic,SMOIS_mosaic,SH2O_mosaic
+
+   REAL, DIMENSION( ims:ime, 1:mosaic_cat, jms:jme ) , OPTIONAL, INTENT(INOUT)::  &
+         TR_URB2D_mosaic, TB_URB2D_mosaic, TG_URB2D_mosaic, TC_URB2D_mosaic,QC_URB2D_mosaic, UC_URB2D_mosaic, &
+         SH_URB2D_mosaic,LH_URB2D_mosaic,G_URB2D_mosaic,RN_URB2D_mosaic,TS_URB2D_mosaic, TS_RUL2D_mosaic  
+                  
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_soil_layers*mosaic_cat, jms:jme ), INTENT(INOUT) :: TRL_URB3D_mosaic
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_soil_layers*mosaic_cat, jms:jme ), INTENT(INOUT) :: TBL_URB3D_mosaic
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_soil_layers*mosaic_cat, jms:jme ), INTENT(INOUT) :: TGL_URB3D_mosaic
+     
+!-------------------------------------------------
+! End of Noah-mosaic related variables 
+!-------------------------------------------------     
+     
 !--------fds (06/2010)---------------------------------------------
      REAL,  DIMENSION( ims:ime, kms:kme, jms:jme ),               &
             OPTIONAL, INTENT(IN) ::                                 CLDFRA
@@ -1102,6 +1187,33 @@ CONTAINS
      REAL, DIMENSION( ims:ime, jms:jme ) :: UST_SEA
      REAL, DIMENSION( ims:ime, jms:jme ) :: QZ0_SEA
      REAL, DIMENSION( ims:ime, jms:jme ) :: TSK_LOCAL
+    ! lake varibles ,inout(14)
+    real,    dimension(ims:ime,jms:jme ),intent(inout)                      :: savedtke12d
+    real,    dimension(ims:ime,jms:jme ),intent(inout)                      :: snowdp2d,       &
+                                                                               h2osno2d,       &
+                                                                               snl2d,          &
+                                                                               t_grnd2d
+ 
+    real,    dimension( ims:ime,1:nlevlake, jms:jme ),INTENT(inout)          :: t_lake3d,       &
+                                                                               lake_icefrac3d
+    real,    dimension( ims:ime,-nlevsnow+1:nlevsoil, jms:jme ),INTENT(inout) :: t_soisno3d,     &
+                                                                               h2osoi_ice3d,   &
+                                                                               h2osoi_liq3d,   &
+                                                                               h2osoi_vol3d,   &
+                                                                               z3d,            &
+                                                                               dz3d
+    real,    dimension( ims:ime,-nlevsnow+0:nlevsoil, jms:jme ),INTENT(inout) :: zi3d
+    ! in(8)
+    real,    dimension( ims:ime,1:nlevlake, jms:jme ),INTENT(in)             :: z_lake3d,       &
+                                                                               dz_lake3d
+    real,    dimension( ims:ime,1:nlevsoil, jms:jme ),INTENT(in)             :: watsat3d,       &
+                                                                               csol3d,         &
+                                                                               tkmg3d,         &
+                                                                               tkdry3d,        &
+                                                                               tksatu3d
+    real,    dimension(ims:ime,jms:jme ),intent(in)                         :: lakedepth2d
+!    logical, dimension(ims:ime,jms:jme ),intent(in)                         :: lake 
+ 
 !
    REAL   :: xice_threshold
 
@@ -1125,8 +1237,12 @@ CONTAINS
 !
 !
 !------------------------------------------------------------------
+! Initialize local variables
+  q_ref2m = 0.0
+!------------------------------------------------------------------
 !
 ! stop run if using ssib and fractional seaice=0  (fds 12/2010)
+
   if(sf_surface_physics .eq. SSIBSCHEME .and. fractional_seaice .eq. 0) then
     WRITE( message,* ) 'Please activate fractional seaice option when using SSiB model'
     CALL wrf_error_fatal ( message )
@@ -1152,6 +1268,28 @@ CONTAINS
       call wrf_error_fatal("Field SNOWSI not found in input.  Field SNOWSI is required if SEAICE_SNOWDEPTH_OPT=1")
   endif
 
+  IF ( coupler_on .and. present(cplmask) .and. present(sst_input) ) THEN
+     
+     CALL cpl_rcv( id, 'SST',            &
+        &              ids, ide, jds, jde, kds, kde, &
+        &              ims, ime, jms, jme, kms, kme, &
+        &              ips, ipe, jps, jpe, kps, kpe, &
+        &              max_edom, cplmask, SST, SST_INPUT )
+     
+     CALL cpl_rcv( id, 'UOCE',            &
+        &              ids, ide, jds, jde, kds, kde, &
+        &              ims, ime, jms, jme, kms, kme, &
+        &              ips, ipe, jps, jpe, kps, kpe, &
+        &              max_edom, cplmask, UOCE )
+     
+     CALL cpl_rcv( id, 'VOCE',            &
+        &              ids, ide, jds, jde, kds, kde, &
+        &              ims, ime, jms, jme, kms, kme, &
+        &              ips, ipe, jps, jpe, kps, kpe, &
+        &              max_edom, cplmask, VOCE )
+     
+  END IF
+  
 !$OMP PARALLEL DO &
 !$OMP PRIVATE (ij, i, j, k)
   DO ij = 1,num_tiles
@@ -1503,6 +1641,9 @@ CONTAINS
             v_phytmp(i,k,j)=v_phy(i,k,j)+v_frame
             u_phytmp(i,k,j)=u_phy(i,k,j)+u_frame
           ENDDO
+! remove surface currents for atmospheric low-level winds
+          u_phytmp(i,kts,j)=u_phytmp(i,kts,j)-uoce(i,j)
+          v_phytmp(i,kts,j)=v_phytmp(i,kts,j)-voce(i,j)
        ENDDO
        ENDDO
      ENDDO
@@ -2197,7 +2338,99 @@ CONTAINS
 #endif
 
          CALL wrf_debug(100,'in NOAH DRV')
-         CALL lsm(dz8w,qv_curr,p8w,t_phy,tsk,                 &
+                
+         IF (sf_surface_mosaic == 1) THEN
+          
+           IF ( PRESENT( TSK_mosaic ) .AND. PRESENT( HFX_mosaic ) ) THEN
+             CALL lsm_mosaic(dz8w,qv_curr,p8w,t_phy,tsk,                 &
+                hfx,qfx,lh,grdflx,qgh,gsw,swdown,glw,smstav,smstot,    &
+                sfcrunoff,udrunoff,ivgtyp,isltyp,isurban,isice,vegfra,        &
+                albedo,albbck,znt,z0, tmn,xland,xice,emiss, embck,    &
+                snowc,qsfc,rainbl,                              &
+                mminlu,                                         &
+                num_soil_layers,dtbl,dzs,itimestep,             &
+                smois,tslb,snow,canwat,                         &
+                chs, chs2, cqs2, cpm,rcp,SR,chklowq,lai,qz0,    &
+                myj,frpcpn,                                     &
+		sh2o,snowh,                                     & !h
+                u_phy,v_phy,                                    & !I
+                snoalb,shdmin,shdmax,                           & !i
+                snotime,                                        & !o
+                acsnom,acsnow,                                  & !o
+                snopcx,                                         & !o
+                potevp,                                         & !o
+                smcrel,                                         & !o
+                xice_threshold,                                 &
+                rdlai2d,usemonalb,                              &
+                br,                                             & !?
+                NOAHRES,                                        &
+                NLCAT,landusef,landusef2,                       & ! danli mosaic
+                sf_surface_mosaic,mosaic_cat,mosaic_cat_index,  & ! danli mosaic 
+                TSK_mosaic,QSFC_mosaic,                         & ! danli mosaic 
+                TSLB_mosaic,SMOIS_mosaic,SH2O_mosaic,           & ! danli mosaic 
+                CANWAT_mosaic,SNOW_mosaic,                      & ! danli mosaic
+                SNOWH_mosaic,SNOWC_mosaic,                      & ! danli mosaic 
+                ALBEDO_mosaic,ALBBCK_mosaic,                    & ! danli mosaic
+                EMISS_mosaic, EMBCK_mosaic,                     & ! danli mosaic
+                ZNT_mosaic, Z0_mosaic,                          & ! danli mosaic 
+                HFX_mosaic,QFX_mosaic,                          & ! danli mosaic
+                LH_mosaic, GRDFLX_mosaic, SNOTIME_mosaic,       & ! danli mosaic          
+                ua_phys,flx4,fvb,fbur,fgsn,                     &
+                ids,ide, jds,jde, kds,kde,                      &
+                ims,ime, jms,jme, kms,kme,                      &
+                i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte,    &
+                sf_urban_physics                                &
+!Optional urban
+                ,cmr_sfcdif,chr_sfcdif,cmc_sfcdif,chc_sfcdif    &
+                ,tr_urb2d,tb_urb2d,tg_urb2d,tc_urb2d,qc_urb2d,  & !H urban
+                uc_urb2d,                                       & !H urban
+                xxxr_urb2d,xxxb_urb2d,xxxg_urb2d,xxxc_urb2d,    & !H urban
+                trl_urb3d,tbl_urb3d,tgl_urb3d,                  & !H urban
+                sh_urb2d,lh_urb2d,g_urb2d,rn_urb2d,ts_urb2d,    & !H urban
+                TR_URB2D_mosaic,TB_URB2D_mosaic,                & !H urban  danli mosaic
+                TG_URB2D_mosaic,TC_URB2D_mosaic,                & !H urban  danli mosaic
+                QC_URB2D_mosaic,UC_URB2D_mosaic,                & !H urban  danli mosaic                  
+                TRL_URB3D_mosaic,TBL_URB3D_mosaic,              & !H urban  danli mosaic
+                TGL_URB3D_mosaic,                               & !H urban  danli mosaic
+                SH_URB2D_mosaic,LH_URB2D_mosaic,                & !H urban  danli mosaic
+                G_URB2D_mosaic,RN_URB2D_mosaic,                 & !H urban  danli mosaic
+                TS_URB2D_mosaic,                                & !H urban  danli mosaic
+                TS_RUL2D_mosaic,                                & !H urban  danli mosaic                
+                psim_urb2d,psih_urb2d,u10_urb2d,v10_urb2d,      & !O urban
+                GZ1OZ0_urb2d, AKMS_URB2D,                       & !O urban
+                th2_urb2d,q2_urb2d,ust_urb2d,                   & !O urban
+                declin,coszen,hrang,                            & !I solar
+                xlat_urb2d,                                     & !I urban
+                num_roof_layers, num_wall_layers,               & !I urban
+                num_road_layers, DZR, DZB, DZG,                 & !I urban
+                FRC_URB2D, UTYPE_URB2D,                         & !I urban
+                num_urban_layers,                               & !I multi-layer urban
+                num_urban_hi,                                   & !I multi-layer urban
+                trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,        & !H multi-layer urban
+                tlev_urb3d,qlev_urb3d,                          & !H multi-layer urban
+                tw1lev_urb3d,tw2lev_urb3d,                      & !H multi-layer urban
+                tglev_urb3d,tflev_urb3d,                        & !H multi-layer urban
+                sf_ac_urb3d,lf_ac_urb3d,cm_ac_urb3d,            & !H multi-layer urban
+                sfvent_urb3d,lfvent_urb3d,                      & !H multi-layer urban
+                sfwin1_urb3d,sfwin2_urb3d,                      & !H multi-layer urban
+                sfw1_urb3d,sfw2_urb3d,sfr_urb3d,sfg_urb3d,      & !H multi-layer urban
+                lp_urb2d,hi_urb2d,lb_urb2d,hgt_urb2d,           & !H multi-layer urban
+                mh_urb2d,stdh_urb2D,lf_urb2d,                   & !SLUCM
+                th_phy,rho,p_phy,ust,                           & !I multi-layer urban
+                gmt,julday,xlong,xlat,                          & !I multi-layer urban
+                a_u_bep,a_v_bep,a_t_bep,a_q_bep,                & !O multi-layer urban
+                a_e_bep,b_u_bep,b_v_bep,                        & !O multi-layer urban
+                b_t_bep,b_q_bep,b_e_bep,dlg_bep,                & !O multi-layer urban
+                dl_u_bep,sf_bep,vl_bep                          & !O multi-layer urban
+                ,sfcheadrt,INFXSRT, soldrain)
+
+           ELSE
+               CALL wrf_error_fatal('Lack arguments to call lsm_mosaic')
+           ENDIF
+
+	  ELSEIF (sf_surface_mosaic == 0) THEN
+	                  
+               CALL lsm(dz8w,qv_curr,p8w,t_phy,tsk,                 &
                 hfx,qfx,lh,grdflx,qgh,gsw,swdown,glw,smstav,smstot,    &
                 sfcrunoff,udrunoff,ivgtyp,isltyp,isurban,isice,vegfra,        &
                 albedo,albbck,znt,z0, tmn,xland,xice,emiss, embck,    &
@@ -2258,6 +2491,8 @@ CONTAINS
                 b_t_bep,b_q_bep,b_e_bep,dlg_bep,                & !O multi-layer urban
                 dl_u_bep,sf_bep,vl_bep                          & !O multi-layer urban
                 ,sfcheadrt,INFXSRT, soldrain)
+
+         ENDIF
 
          call seaice_noah( SEAICE_ALBEDO_OPT, SEAICE_ALBEDO_DEFAULT, SEAICE_THICKNESS_OPT, &
               &            SEAICE_THICKNESS_DEFAULT, SEAICE_SNOWDEPTH_OPT,             &
@@ -2399,6 +2634,25 @@ CONTAINS
 !          PRESENT(g_urb2d)   .AND. PRESENT(rn_urb2d) .AND.           &
 !          PRESENT(ts_urb2d)                          .AND.           &
 !          PRESENT(frc_urb2d) .AND. PRESENT(utype_urb2d)   .AND.      &
+#if (EM_CORE==1)
+           PRESENT(smcwtdxy)       .AND.                              &
+           PRESENT(rechxy)         .AND.                              &   
+           PRESENT(deeprechxy)     .AND.                              &
+           PRESENT(fdepthxy)       .AND.                              &
+           PRESENT(areaxy)         .AND.                              &   
+           PRESENT(rivercondxy)    .AND.                              &
+           PRESENT(riverbedxy)     .AND.                              & 
+           PRESENT(eqzwt)          .AND.                              &    
+           PRESENT(pexpxy)         .AND.                              &   
+           PRESENT(qrfxy)          .AND.                              &    
+           PRESENT(qspringxy)      .AND.                              &
+           PRESENT(qslatxy)        .AND.                              &  
+           PRESENT(qrfsxy)         .AND.                              &   
+           PRESENT(qspringsxy)     .AND.                              & 
+           PRESENT(smoiseq)        .AND.                              &  
+           PRESENT(wtddt)          .AND.                              &    
+           PRESENT(stepwtd)        .AND.                              &
+#endif
                                                       .TRUE. ) THEN
 !------------------------------------------------------------------
          IF( PRESENT(sr) ) THEN
@@ -2441,6 +2695,10 @@ CONTAINS
             ENDIF
          ENDIF
 
+!added for WRF_HYDRO
+#ifdef WRF_HYDRO
+         if(HYDRO_dt .ge. 0) HYDRO_dt = dtbl
+#endif
          CALL wrf_debug(100,'in NOAHMP DRV')
          CALL noahmplsm(ITIMESTEP,       YR, JULIAN_IN,   COSZEN, XLAT_URB2D, &
 	           DZ8W,     DTBL,      DZS,     NUM_SOIL_LAYERS,         DX, &
@@ -2460,6 +2718,7 @@ CONTAINS
 		QSNOWXY, WSLAKEXY,    ZWTXY,     WAXY,      WTXY,     TSNOXY, &
 		ZSNSOXY,  SNICEXY,  SNLIQXY, LFMASSXY,  RTMASSXY,   STMASSXY, &
 		 WOODXY, STBLCPXY, FASTCPXY,      LAI,    XSAIXY,    TAUSSXY, &
+	        SMOISEQ, SMCWTDXY,DEEPRECHXY,  RECHXY,                        & ! IN/OUT Noah MP only
 	         T2MVXY,   T2MBXY,   Q2MVXY,   Q2MBXY,                        &
                  TRADXY,    NEEXY,    GPPXY,    NPPXY,    FVEGXY,    RUNSFXY, &
 	        RUNSBXY,   ECANXY,   EDIRXY,  ETRANXY,     FSAXY,     FIRAXY, &
@@ -2468,9 +2727,29 @@ CONTAINS
 		  SHGXY,    SHCXY,    SHBXY,    EVGXY,     EVBXY,      GHVXY, &
 		  GHBXY,    IRGXY,    IRCXY,    IRBXY,      TRXY,      EVCXY, &
 	       CHLEAFXY,   CHUCXY,   CHV2XY,   CHB2XY,                        &                          
+#ifdef WRF_HYDRO
+                 sfcheadrt,INFXSRT,soldrain,                          &    !O
+#endif
                 ids,ide, jds,jde, kds,kde,                      &
                 ims,ime, jms,jme, kms,kme,                      &
                 i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte )
+
+  if(iopt_run.eq.5.and.mod(itimestep,STEPWTD).eq.0)then
+           CALL wrf_debug( 100, 'calling WTABLE' )
+
+!gmm update wtable from lateral flow and shed water to rivers
+
+           CALL WTABLE_mmf_noahmp(num_soil_layers,xland,xice, xice_threshold, isice,        &
+                                  isltyp,smoiseq,dzs,wtddt,                                 &
+                                  fdepthxy,areaxy,ht,isurban,ivgtyp,                         &
+                                  rivercondxy,riverbedxy,eqzwt,pexpxy,                      &
+                                  smois,sh2o,smcwtdxy,zwtxy,qrfxy,deeprechxy,qspringxy,     &
+                                  qslatxy,qrfsxy,qspringsxy,rechxy,                        &
+                                  ids,ide, jds,jde, kds,kde,                             &
+                                  ims,ime, jms,jme, kms,kme,                             &
+                                  i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte )
+
+  endif
 
          call seaice_noah( SEAICE_ALBEDO_OPT, SEAICE_ALBEDO_DEFAULT, SEAICE_THICKNESS_OPT, &
               &            SEAICE_THICKNESS_DEFAULT, SEAICE_SNOWDEPTH_OPT,             &
@@ -2902,7 +3181,7 @@ CONTAINS
                 sfcrunoff,udrunoff,ivgtyp,isltyp,vegfra,        &
                 albedo,znt,z0, tmn,xland,xice, emiss,           &
                 snowc,qsfc,rainbl,maxpatch,                     &
-                num_soil_layers,dtbl,dzs,itimestep,             &
+                num_soil_layers,dtbl,xtime, dt,dzs,             &
                 smois,tslb,snow,canwat,                         &
                 chs,chs2,sh2o,snowh,                            &
                 u_phy,v_phy,                                    &
@@ -3309,6 +3588,36 @@ CONTAINS
      !$OMP END PARALLEL DO
    ENDIF
 #endif
+! adding a lake model -- 07/02/2010
+   IF ( LakeModel == 1 ) THEN
+ 
+      CALL wrf_debug( 100, 'Call LakeModel' )
+ 
+      DO ij = 1 , num_tiles
+ 
+         CALL Lake(  t_phy        ,p8w            ,dz8w         ,qv_curr         ,&  !i
+                     u_phy        ,v_phy          , glw         ,emiss           ,&
+                     rainbl       ,dtbl           ,swdown       ,albedo          ,&
+                     xlat_urb2d   ,z_lake3d       ,dz_lake3d    ,lakedepth2d     ,&
+                     watsat3d     ,csol3d         ,tkmg3d       ,tkdry3d         ,&
+                     tksatu3d     ,ivgtyp         ,ht           ,xland           ,&
+                     lakeminalt                                                  ,&
+                     ids          ,ide            ,jds          ,jde             ,&
+                     kds          ,kde            ,ims          ,ime             ,&
+                     jms          ,jme            ,kms          ,kme             ,&
+                     i_start(ij)  ,i_end(ij)      ,j_start(ij)  ,j_end(ij)       ,&
+                     kts          ,kte                                           ,&
+                     h2osno2d     ,snowdp2d       ,snl2d        ,z3d             ,&  !h
+                     dz3d         ,zi3d           ,h2osoi_vol3d ,h2osoi_liq3d    ,&
+                     h2osoi_ice3d ,t_grnd2d       ,t_soisno3d   ,t_lake3d        ,&
+                     savedtke12d  ,lake_icefrac3d                                ,&
+                     hfx          ,lh             ,grdflx       ,tsk             ,&  !o
+                     qfx          ,t2             ,th2          ,q2 )
+ 
+ 
+      ENDDO
+ 
+   ENDIF
 
 ! Reset RAINBL in mm (Accumulation between PBL calls)
 

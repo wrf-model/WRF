@@ -161,6 +161,13 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
       call da_error(__FILE__,__LINE__,message(1:1))
    end if
 
+   if ( use_gpsrefobs ) then
+      if ( ob_format_gpsro == ob_format_bufr .and.  &
+           ob_format       == ob_format_ascii ) then
+         call da_message((/'ob_format=2 while ob_format_gpsro=1, will be reading GPSRO data from gpsro.bufr'/))
+      end if
+   end if
+
    !---------------------------------------------------------------------------      
    ! [1.0] Setup and read in fields from first guess:
    !----------------------------------------------------------------------------     
@@ -173,9 +180,13 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
 
    iv%info(:)%nlocal = 0
    iv%info(:)%ntotal = 0
+   iv%info(:)%thin_nlocal = 0
+   iv%info(:)%thin_ntotal = 0
    do i=1,num_ob_indexes
       iv%info(i)%plocal(:) = 0
       iv%info(i)%ptotal(:) = 0
+      iv%info(i)%thin_plocal(:) = 0
+      iv%info(i)%thin_ptotal(:) = 0
    end do
    iv%num_inst  = 0 
 
@@ -194,7 +205,11 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
    if (use_obsgts) then
       ! Conventional obs can be in BUFR or ascii format
       if (ob_format == ob_format_bufr) then
-         call da_message((/'Using BUFR format observation input'/))
+         call da_message((/'Using PREPBUFR format observation input'/))
+         thin_conv = .true.
+         write(unit=message(1), fmt='(a,a)') '!!! thin_conv is forced to be true for PREPBUFR data', &
+            ' to keep only one ob closest to the analysis time at a fix location by thinning !!!'
+         call da_message(message(1:1))
          call da_setup_obs_structures_bufr (grid, ob, iv)
       else if (ob_format == ob_format_ascii) then
          call da_message((/'Using ASCII format observation input'/))
@@ -232,9 +247,18 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
          else
             ob_name = obs_names(j)
          endif
-         write(unit=stdout, fmt='(6x,a,i10,a,i8,a)') &
+         if(iv%info(j)%ptotal(i) - iv%info(j)%ptotal(i-1) > 0) then          
+         if( thin_conv) then
+         write(unit=stdout, fmt='(2x,2(a,i6),a,i5,a)') &
+            ob_name, iv%info(j)%ptotal(i) - iv%info(j)%ptotal(i-1), ' global, ', &
+                     iv%info(j)%thin_ptotal(i) - iv%info(j)%thin_ptotal(i-1), ' global (post-thinning), ', &
+            iv%info(j)%thin_plocal(i) - iv%info(j)%thin_plocal(i-1), ' local (post-thinning)'
+         else
+         write(unit=stdout, fmt='(6x,a,i6,a,i5,a)') &
             ob_name, iv%info(j)%ptotal(i) - iv%info(j)%ptotal(i-1), ' global,', &
             iv%info(j)%plocal(i) - iv%info(j)%plocal(i-1), ' local'
+         end if ! thin_conv
+         end if
       end do
    end do
    write(unit=stdout, fmt='(a)') ' '

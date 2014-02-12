@@ -38,20 +38,30 @@ SUBROUTINE microphysics_driver(                                          &
 #endif
 !======================                                   
                       ,qv_curr,qc_curr,qr_curr,qi_curr,qs_curr,qg_curr   &
+                      ,qic_curr,qip_curr,qid_curr &
+                      ,qnic_curr,qnip_curr,qnid_curr &
                       ,qndrop_curr,qni_curr,qh_curr,qnh_curr             &
                       ,qzr_curr,qzi_curr,qzs_curr,qzg_curr,qzh_curr      &
                       ,qns_curr,qnr_curr,qng_curr,qnn_curr,qnc_curr      &
+                      ,qnwfa_curr,qnifa_curr                             & ! for water/ice-friendly aerosols
+                      ,f_qnwfa,f_qnifa                                   & ! for water/ice-friendly aerosols
                       ,qvolg_curr                                        &
+                      ,effr_curr,ice_effr_curr,tot_effr_curr             &
+                       ,qic_effr_curr,qip_effr_curr,qid_effr_curr        &             
                       ,f_qv,f_qc,f_qr,f_qi,f_qs,f_qg,f_qndrop,f_qni      &
                       ,f_qns,f_qnr,f_qng,f_qnc,f_qnn,f_qh,f_qnh          &
                       ,            f_qzr,f_qzi,f_qzs,f_qzg,f_qzh         &
                       ,f_qvolg                                           &
+                      ,f_qic,f_qip,f_qid &
+                      ,f_qnic,f_qnip,f_qnid &
+                      ,f_effr,f_ice_effr,f_tot_effr                      &
+                      ,f_qic_effr,f_qip_effr,f_qid_effr                  &                 
                       ,qrcuten, qscuten, qicuten, mu                     &
                       ,qt_curr,f_qt                                      &
                       ,mp_restart_state,tbpvs_state,tbpvs0_state         & ! for etampnew or etampold
                       ,hail,ice2                                         & ! for mp_gsfcgce
 !                     ,ccntype                                           & ! for mp_milbrandt2mom
-                      ,w ,z                                              &
+                      ,u,v,w,z                                          &   
                       ,rainnc,    rainncv                                &
                       ,snownc,    snowncv                                &
                       ,hailnc,    hailncv                                &
@@ -60,6 +70,7 @@ SUBROUTINE microphysics_driver(                                          &
                       ,rainprod, evapprod                                &
                       ,qv_b4mp, qc_b4mp, qi_b4mp, qs_b4mp                &
 #endif
+                      ,qnwfa2d                                           & ! for water/ice-friendly aerosols
                       ,refl_10cm                                         & ! HM, 9/22/09, add for refl
 ! YLIN
 ! Added the RI_CURR array to the call
@@ -67,21 +78,32 @@ SUBROUTINE microphysics_driver(                                          &
                       ,diagflag,   do_radar_ref                          &
                       ,re_cloud, re_ice, re_snow                         & ! G. Thompson
                       ,has_reqc, has_reqi, has_reqs                      & ! G. Thompson
+                      ,scalar,num_scalar                                   &
+                      ,kext_ql,kext_qs,kext_qg            &
+                      ,kext_qh,kext_qa                         &
+                      ,kext_qic,kext_qid,kext_qip         &
+                      ,kext_ft_qic,kext_ft_qid,kext_ft_qip         &
+                      ,kext_ft_qs,kext_ft_qg            &
+                      ,height,tempc &
+                      ,TH_OLD                                            &
+                      ,QV_OLD                                            &
+                      ,xlat,xlong,ivgtyp                                  &
+
                                                    )
 ! Framework
 #if(NMM_CORE==1)
    USE module_state_description, ONLY :                                  &
                      KESSLERSCHEME, LINSCHEME, SBU_YLINSCHEME, WSM3SCHEME, WSM5SCHEME    &
-                    ,WSM6SCHEME, ETAMPNEW, ETAMPOLD, etamp_HWRF,THOMPSON, MORR_TWO_MOMENT     &
+                    ,WSM6SCHEME, ETAMPNEW, ETAMPOLD, etamp_HWRF,THOMPSON, THOMPSONAERO, MORR_TWO_MOMENT     &
                     ,GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME &
                     ,MILBRANDT2MOM !,MILBRANDT3MOM 
 #else
    USE module_state_description, ONLY :                                  &
                      KESSLERSCHEME, LINSCHEME, SBU_YLINSCHEME, WSM3SCHEME, WSM5SCHEME    &
-                    ,WSM6SCHEME, ETAMPNEW, ETAMPOLD, THOMPSON, MORR_TWO_MOMENT     &
+                    ,WSM6SCHEME, ETAMPNEW, ETAMPOLD, THOMPSON, THOMPSONAERO, FAST_KHAIN_LYNN, MORR_TWO_MOMENT     &
                     ,GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME, NSSL_2MOM, NSSL_2MOMCCN  &
                     ,NSSL_1MOM,NSSL_1MOMLFO & ! ,NSSL_3MOM       &
-                    ,MILBRANDT2MOM , CAMMGMPSCHEME  !,MILBRANDT3MOM
+                    ,MILBRANDT2MOM , CAMMGMPSCHEME,FULL_KHAIN_LYNN  !,MILBRANDT3MOM
 #endif
 
 ! Model Layer
@@ -89,7 +111,8 @@ SUBROUTINE microphysics_driver(                                          &
    USE module_wrf_error
    USE module_configure, only: grid_config_rec_type
 #ifdef WRF_CHEM   
-   USE module_state_description, only: num_chem                 ! For CAMMGMP scheme Prognostic aerosols
+!mchen   USE module_state_description, only: num_scalar               ! For CAMMGMP scheme Prognostic aerosols
+   USE module_state_description, only: num_chem               ! mchen 
    USE modal_aero_data, only:  ntot_amode_cam_mam => ntot_amode ! For CAMMGMP scheme Prognostic aerosols
 #endif
 
@@ -104,6 +127,8 @@ SUBROUTINE microphysics_driver(                                          &
    USE module_mp_etanew
    USE module_mp_etaold
    USE module_mp_thompson
+   USE module_mp_full_sbm
+   USE module_mp_fast_sbm
    USE module_mp_gsfcgce
    USE module_mp_morr_two_moment
    USE module_mp_wdm5
@@ -287,7 +312,7 @@ SUBROUTINE microphysics_driver(                                          &
    INTEGER, OPTIONAL, INTENT(IN   )    :: hail, ice2 !, ccntype
 !
    INTEGER,      INTENT(IN   )    ::       ids,ide, jds,jde, kds,kde
-   INTEGER,      INTENT(IN   )    ::       ims,ime, jms,jme, kms,kme
+   INTEGER,      INTENT(IN   )    ::       ims,ime, jms,jme, kms,kme,num_scalar
    INTEGER, OPTIONAL, INTENT(IN   )    ::       ips,ipe, jps,jpe, kps,kpe
    INTEGER,      INTENT(IN   )    ::                         kts,kte
    INTEGER,      INTENT(IN   )    ::     itimestep,num_tiles,spec_zone
@@ -308,6 +333,11 @@ SUBROUTINE microphysics_driver(                                          &
                                                                  p8w, &
                                                               pi_phy, &
                                                                    p
+    REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),INTENT(INOUT), OPTIONAL :: th_old,qv_old
+    REAL,DIMENSION(ims:ime,kms:kme,jms:jme,num_scalar),INTENT(INOUT), OPTIONAL   :: scalar
+    INTEGER, DIMENSION( ims:ime , jms:jme ), INTENT(IN), OPTIONAL::   IVGTYP
+    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN), OPTIONAL    :: XLAT, XLONG
+
 !=================
 !Data for CAMMGMP scheme
    REAL,INTENT(IN), OPTIONAL ::accum_mode,aitken_mode,coarse_mode  
@@ -409,16 +439,29 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 
    LOGICAL,  OPTIONAL,   INTENT(IN   )    :: channel_switch
    REAL, OPTIONAL,  INTENT(INOUT   ) :: naer  ! aerosol number concentration (/kg)
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) , OPTIONAL :: qnwfa2d      ! Added by G. Thompson
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          OPTIONAL,                                                &
          INTENT(INOUT ) ::                                        &
-                  w, z, t8w                                       &
+                  u,v,w, z, t8w                                       &
                  ,cldfra, cldfra_old, exch_h                      &
                  ,qv_curr,qc_curr,qr_curr,qi_curr,qs_curr,qg_curr &
                  ,qt_curr,qndrop_curr,qni_curr,qh_curr,qnh_curr   &
                  ,qns_curr,qnr_curr,qng_curr,qnn_curr,qnc_curr    &
+                 ,qic_curr,qip_curr,qid_curr &
+                 ,qnic_curr,qnip_curr,qnid_curr &
                  ,qzr_curr,qzi_curr,qzs_curr,qzg_curr,qzh_curr    &
+                 ,effr_curr,ice_effr_curr,tot_effr_curr           &
+                 ,qic_effr_curr,qip_effr_curr,qid_effr_curr           &
+                  ,kext_ql,kext_qs,kext_qg          &
+                 ,kext_qh,kext_qa                       &
+                 ,kext_qic,kext_qip,kext_qid,tempc,height      &
+                 ,kext_ft_qic,kext_ft_qip,kext_ft_qid &
+                 ,kext_ft_qs,kext_ft_qg                           &
+                 ,qnwfa_curr,qnifa_curr                           & ! Added by G. Thompson
                  ,qvolg_curr
+
+
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          OPTIONAL,                                                &
@@ -467,7 +510,13 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 
    LOGICAL, OPTIONAL :: f_qv,f_qc,f_qr,f_qi,f_qs,f_qg,f_qndrop,f_qni,f_qt    &
                        ,f_qns,f_qnr,f_qng,f_qnn,f_qnc,f_qh,f_qnh,f_qzr       &
-                       ,f_qzi,f_qzs,f_qzg,f_qzh,f_qvolg
+                      ,f_effr,f_ice_effr,f_tot_effr &
+                       ,f_qic_effr,f_qip_effr,f_qid_effr &
+                      ,f_qic,f_qip,f_qid &
+                      ,f_qnic,f_qnip,f_qnid                                  &
+                       ,f_qzi,f_qzs,f_qzg,f_qzh,f_qvolg                      &
+                       ,f_qnwfa, f_qnifa                         ! Added by G. Thompson
+
 
    LOGICAL, OPTIONAL, INTENT(IN) :: diagflag
    INTEGER, OPTIONAL, INTENT(IN) :: do_radar_ref
@@ -608,12 +657,78 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
              ENDIF
 
 !
+        CASE (THOMPSONAERO)
+             CALL wrf_debug ( 100 , 'microphysics_driver: calling thompson' )
+             IF ( PRESENT( QV_CURR ) .AND. PRESENT ( QC_CURR )   .AND.  &
+                  PRESENT( QR_CURR ) .AND. PRESENT ( QI_CURR )   .AND.  &
+                  PRESENT( QS_CURR ) .AND. PRESENT ( QG_CURR )   .AND.  &
+                  PRESENT( QNR_CURR) .AND. PRESENT ( QNI_CURR)   .AND.  &
+                  PRESENT( QNC_CURR) .AND. PRESENT ( QNWFA_CURR) .AND.  &
+                  PRESENT( QNIFA_CURR).AND.PRESENT ( QNWFA2D)    .AND.  &
+                  PRESENT( SNOWNC)   .AND. PRESENT ( SNOWNCV)    .AND.  &
+                  PRESENT( GRAUPELNC).AND. PRESENT ( GRAUPELNCV) .AND.  &
+                  PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV ) ) THEN
+#ifdef WRF_CHEM
+                 qv_b4mp(its:ite,kts:kte,jts:jte) = qv_curr(its:ite,kts:kte,jts:jte)
+                 qc_b4mp(its:ite,kts:kte,jts:jte) = qc_curr(its:ite,kts:kte,jts:jte)
+                 qi_b4mp(its:ite,kts:kte,jts:jte) = qi_curr(its:ite,kts:kte,jts:jte)
+                 qs_b4mp(its:ite,kts:kte,jts:jte) = qs_curr(its:ite,kts:kte,jts:jte)
+#endif
+             CALL mp_gt_driver(                          &
+                     QV=qv_curr,                         &
+                     QC=qc_curr,                         &
+                     QR=qr_curr,                         &
+                     QI=qi_curr,                         &
+                     QS=qs_curr,                         &
+                     QG=qg_curr,                         &
+                     NI=qni_curr,                        &
+                     NR=qnr_curr,                        &
+                     NC=qnc_curr,                        &
+                     NWFA=qnwfa_curr,                    &
+                     NIFA=qnifa_curr,                    &
+                     NWFA2D=qnwfa2d,                     &
+                     TH=th,                              &
+                     PII=pi_phy,                         &
+                     P=p,                                &
+                     W=w,                                &
+                     DZ=dz8w,                            &
+                     DT_IN=dt,                           &
+                     ITIMESTEP=itimestep,                &
+                     RAINNC=RAINNC,                      &
+                     RAINNCV=RAINNCV,                    &
+                     SNOWNC=SNOWNC,                      &
+                     SNOWNCV=SNOWNCV,                    &
+                     GRAUPELNC=GRAUPELNC,                &
+                     GRAUPELNCV=GRAUPELNCV,              &
+                     SR=SR,                              &
+#ifdef WRF_CHEM
+                     RAINPROD=rainprod,                  &
+                     EVAPPROD=evapprod,                  &
+#endif
+                     REFL_10CM=refl_10cm,                &
+                     diagflag=diagflag,                  &
+                     do_radar_ref=do_radar_ref,          &
+                     re_cloud=re_cloud,                  &
+                     re_ice=re_ice,                      &
+                     re_snow=re_snow,                    &
+                     has_reqc=has_reqc,                  & ! G. Thompson
+                     has_reqi=has_reqi,                  & ! G. Thompson
+                     has_reqs=has_reqs,                  & ! G. Thompson
+                 IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde, &
+                 IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme, &
+                 ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte)
+             ELSE
+                CALL wrf_error_fatal ( 'arguments not present for calling thompson_et_al' )
+             ENDIF
+!
         CASE (THOMPSON)
              CALL wrf_debug ( 100 , 'microphysics_driver: calling thompson' )
              IF ( PRESENT( QV_CURR ) .AND. PRESENT ( QC_CURR ) .AND.  &
                   PRESENT( QR_CURR ) .AND. PRESENT ( QI_CURR ) .AND.  &
                   PRESENT( QS_CURR ) .AND. PRESENT ( QG_CURR ) .AND.  &
                   PRESENT( QNR_CURR) .AND. PRESENT ( QNI_CURR) .AND.  &
+!                  PRESENT( SNOWNC) .AND. PRESENT ( SNOWNCV) .AND.        &
+!                  PRESENT( GRAUPELNC) .AND. PRESENT ( GRAUPELNCV) .AND.  &
                   PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV ) ) THEN
 #ifdef WRF_CHEM
                  qv_b4mp(its:ite,kts:kte,jts:jte) = qv_curr(its:ite,kts:kte,jts:jte)
@@ -633,6 +748,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                      TH=th,                              &
                      PII=pi_phy,                         &
                      P=p,                                &
+                     W=w,                                &
                      DZ=dz8w,                            &
                      DT_IN=dt,                           &
                      ITIMESTEP=itimestep,                &
@@ -662,6 +778,97 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling thompson_et_al' )
              ENDIF
+#if (EM_CORE==1)
+       CASE (FAST_KHAIN_LYNN)
+             CALL wrf_debug ( 100 , 'microphysics_driver: calling sbm' )
+               CALL fast_sbm(W=w,U=u,V=v,TH_OLD=th_old          &
+                 ,CHEM_new=scalar,N_CHEM=num_scalar                     &
+                 ,ITIMESTEP=itimestep,DT=dt,DX=dx,DY=dy             &
+                 ,DZ8W=dz8w,RHO_PHY=rho,P_PHY=p,PI_PHY=pi_phy,TH_PHY=th &
+                 ,xland=xland                                       &
+                 ,ivgtyp=ivgtyp                                      &
+                 ,xlat=xlat                                        &
+                 ,xlong=xlong                                        &
+                 ,QV=qv_curr                                        &
+                 ,QC=qc_curr                                        &
+                 ,QR=qr_curr                                        &
+                 ,QI=qi_curr                                        &
+                 ,QS=qs_curr                                        &
+                 ,QG=qg_curr                                        &
+                 ,QV_OLD=qv_old                                     &
+                 ,QNC=qnc_curr                                      &
+                 ,QNR=qnr_curr                                      &
+                 ,QNS=qns_curr                                      &
+                 ,QNG=qng_curr                                      &
+                 ,QNA=qnn_curr                                      &
+                 ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
+                 ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
+                 ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
+                 ,REFL_10CM=refl_10cm                 &  ! added for radar reflectivity
+                 ,diagflag=diagflag                   &  ! added for radar reflectivity
+                 ,do_radar_ref=do_radar_ref           &  ! added for radar reflectivity
+                 ,RAINNC=rainnc)
+
+!
+       CASE (FULL_KHAIN_LYNN)
+             CALL wrf_debug ( 100 , 'microphysics_driver: calling sbm' )
+               CALL sbm(W=w,U=u,V=v,TH_OLD=th_old          &
+                 ,CHEM_new=scalar,N_CHEM=num_scalar                     &
+                 ,ITIMESTEP=itimestep,DT=dt,DX=dx,DY=dy             &
+                 ,DZ8W=dz8w,RHO_PHY=rho,P_PHY=p,PI_PHY=pi_phy,TH_PHY=th &
+                 ,xland=xland                                       &
+                 ,ivgtyp=ivgtyp                                      &
+                 ,xlat=xlat                                        &
+                 ,xlong=xlong                                        &
+                 ,QV=qv_curr                                        &
+                 ,QC=qc_curr                                        &
+                 ,QR=qr_curr                                        &
+                 ,QIP=qip_curr                                        &
+                 ,QIC=qic_curr                                        &
+                 ,QID=qid_curr                                        &
+                 ,QS=qs_curr                                        &
+                 ,QG=qg_curr                                        &
+                 ,QH=qh_curr                                        &
+                 ,QV_OLD=qv_old                                     &
+                 ,QNC=qnc_curr                                      &
+                 ,QNR=qnr_curr                                      &
+                 ,QNIP=qnip_curr                                      &
+                 ,QNIC=qnic_curr                                      &
+                 ,QNID=qnid_curr                                      &
+                 ,QNS=qns_curr                                      &
+                 ,QNG=qng_curr                                      &
+                 ,QNH=qng_curr                                      &
+                 ,QNA=qnn_curr                                      &
+                 ,EFFR=effr_curr                                  &
+                 ,ICE_EFFR=ice_effr_curr                                  &
+                 ,TOT_EFFR=tot_effr_curr                                  &
+                 ,QIC_EFFR=qic_effr_curr                                  &
+                 ,QIP_EFFR=qip_effr_curr                                  &
+                 ,QID_EFFR=qid_effr_curr                                  &
+                 ,height=height                                        &
+                 ,tempc=tempc                                         &
+                 ,kext_ql=kext_ql                                       &
+                 ,kext_qs=kext_qs                                       &
+                 ,kext_qg=kext_qg                                       &
+                 ,kext_qh=kext_qh                                       &
+                 ,kext_qa=kext_qa                                       &
+                 ,kext_qic=kext_qic                                       &
+                 ,kext_qip=kext_qip                                       &
+                 ,kext_qid=kext_qid                                       &
+                 ,kext_ft_qic=kext_ft_qic                                       &
+                 ,kext_ft_qip=kext_ft_qip                                       &
+                 ,kext_ft_qid=kext_ft_qid                                       &
+                 ,kext_ft_qs=kext_ft_qs                                       &
+                 ,kext_ft_qg=kext_ft_qg                                       &
+                 ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
+                 ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
+                 ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
+                 ,REFL_10CM=refl_10cm                 &  ! added for radar reflectivity
+                 ,diagflag=diagflag                   &  ! added for radar reflectivity
+                 ,do_radar_ref=do_radar_ref           &  ! added for radar reflectivity
+                 ,RAINNC=rainnc)
+#endif
+
 !
 
     CASE (MORR_TWO_MOMENT)

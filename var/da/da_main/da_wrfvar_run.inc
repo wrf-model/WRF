@@ -8,7 +8,7 @@ subroutine da_wrfvar_run()
 
    if (trace_use) call da_trace_entry("da_wrfvar_run")
 
-   call da_wrfvar_interface (head_grid, config_flags)
+   call da_wrfvar_interface (input_grid, config_flags)
 
    if (trace_use) call da_trace_exit("da_wrfvar_run")
 

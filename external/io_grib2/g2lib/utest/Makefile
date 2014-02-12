@@ -53,7 +53,7 @@ CPPFLAGS =
 DEP_LIBS = -lio_grib2 -L../.. -lio_grib_share -L../../../io_grib_share -lpng -ljasper
 
 FC = ifort -FR
-CPP = /lib/cpp -traditional -C -P
+CPP = /lib/cpp -traditional -P
 LDD = ifort
 MAIN_OBJS =  \
 	test_g2lib.o

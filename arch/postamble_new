@@ -66,9 +66,10 @@ CPPFLAGS        =    $(ARCHFLAGS) $(ENVCOMPDEFS) -I$(LIBINCLUDE) $(TRADFLAG) CON
 NETCDFPATH      =    CONFIGURE_NETCDF_PATH
 PNETCDFPATH     =    CONFIGURE_PNETCDF_PATH
 
-bundled:  io_only fftpack CONFIGURE_ATMOCN
+bundled:  io_only CONFIGURE_ATMOCN
 external: io_only CONFIGURE_COMMS_EXTERNAL $(ESMF_TARGET)
-io_only:  esmf_time CONFIGURE_WRFIO_NF CONFIGURE_WRFIO_PNF CONFIGURE_WRFIO_GRIB2 wrf_ioapi_includes wrfio_grib_share wrfio_grib1 wrfio_int
+io_only:  esmf_time CONFIGURE_WRFIO_NF CONFIGURE_WRFIO_PNF CONFIGURE_WRFIO_GRIB2 \
+	  wrf_ioapi_includes wrfio_grib_share wrfio_grib1 wrfio_int fftpack
 
 
 ######################
@@ -175,7 +176,7 @@ wrfio_esmf :
 .F.o:
 	$(RM) $@
 	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.F  > $*.bb
-	$(SED_FTN) $*.bb | $(CPP) > $*.f90
+	$(SED_FTN) $*.bb | $(CPP) $(TRADFLAG) > $*.f90
 	$(RM) $*.b $*.bb
 	@ if echo $(ARCHFLAGS) | $(FGREP) 'DVAR4D'; then \
           echo COMPILING $*.F for 4DVAR ; \

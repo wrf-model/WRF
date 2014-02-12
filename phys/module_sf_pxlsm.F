@@ -315,6 +315,8 @@ CONTAINS
          LAND_USE_TYPE = 'MODIS'
       ELSE IF (NLCAT == 24) THEN
          LAND_USE_TYPE = 'USGS'
+      ELSE IF (NLCAT == 28) THEN
+         LAND_USE_TYPE = 'USGS'
       ELSE
          call wrf_error_fatal("Error: Unknown Land Use Category")
       END IF 

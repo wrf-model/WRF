@@ -62,10 +62,96 @@
 
       DO i = 2, model_config_rec % max_dom
          IF ( model_config_rec % sf_surface_physics(i)     .NE. &
-              model_config_rec % sf_surface_physics(i-1) ) THEN
+              model_config_rec % sf_surface_physics(1) ) THEN
             wrf_err_message = '--- ERROR: sf_surface_physics must be equal for all domains '
             CALL wrf_message ( wrf_err_message )
             wrf_err_message = '--- Fix sf_surface_physics in namelist.input '
+            CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
+         END IF
+      ENDDO
+
+
+!-----------------------------------------------------------------------
+! Check that all values of sf_sfclay_physics are the same for all domains
+!-----------------------------------------------------------------------
+
+      DO i = 2, model_config_rec % max_dom
+         IF ( model_config_rec % sf_sfclay_physics(i)     .NE. &
+              model_config_rec % sf_sfclay_physics(1) ) THEN
+            wrf_err_message = '--- ERROR: sf_sfclay_physics must be equal for all domains '
+            CALL wrf_message ( wrf_err_message )
+            wrf_err_message = '--- Fix sf_sfclay_physics in namelist.input '
+            CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
+         END IF
+      ENDDO
+
+
+!-----------------------------------------------------------------------
+! Check that all values of mp_physics are the same for all domains
+!-----------------------------------------------------------------------
+
+      DO i = 2, model_config_rec % max_dom
+         IF ( model_config_rec % mp_physics(i)     .NE. &
+              model_config_rec % mp_physics(1) ) THEN
+            wrf_err_message = '--- ERROR: mp_physics must be equal for all domains '
+            CALL wrf_message ( wrf_err_message )
+            wrf_err_message = '--- Fix mp_physics in namelist.input '
+            CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
+         END IF
+      ENDDO
+
+
+!-----------------------------------------------------------------------
+! Check that all values of ra_physics are the same for all domains
+!-----------------------------------------------------------------------
+
+      DO i = 2, model_config_rec % max_dom
+         IF ( model_config_rec % ra_lw_physics(i)     .NE. &
+              model_config_rec % ra_lw_physics(1) ) THEN
+            wrf_err_message = '--- ERROR: ra_lw_physics must be equal for all domains '
+            CALL wrf_message ( wrf_err_message )
+            wrf_err_message = '--- Fix ra_lw_physics in namelist.input '
+            CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
+         END IF
+      ENDDO
+
+      DO i = 2, model_config_rec % max_dom
+         IF ( model_config_rec % ra_sw_physics(i)     .NE. &
+              model_config_rec % ra_sw_physics(1) ) THEN
+            wrf_err_message = '--- ERROR: ra_sw_physics must be equal for all domains '
+            CALL wrf_message ( wrf_err_message )
+            wrf_err_message = '--- Fix ra_sw_physics in namelist.input '
+            CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
+         END IF
+      ENDDO
+
+
+!-----------------------------------------------------------------------
+! Check that all values of bl_pbl_physics are the same for all domains
+!-----------------------------------------------------------------------
+
+      DO i = 2, model_config_rec % max_dom
+         IF ( ( model_config_rec % bl_pbl_physics(i) .NE. model_config_rec % bl_pbl_physics(1) ) .AND. &
+              ( model_config_rec % bl_pbl_physics(i) .NE. 0                                    ) ) THEN
+            wrf_err_message = '--- ERROR: bl_pbl_physics must be equal for all domains (or = zero)'
+            CALL wrf_message ( wrf_err_message )
+            wrf_err_message = '--- Fix bl_pbl_physics in namelist.input '
+            CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
+         END IF
+      ENDDO
+
+
+!-----------------------------------------------------------------------
+! Check that all values of cu_physics are the same for all domains
+! Note that a zero option is OK.
+!-----------------------------------------------------------------------
+
+      DO i = 2, model_config_rec % max_dom
+         IF ( ( model_config_rec % cu_physics(i) .NE. model_config_rec % cu_physics(1) ) .AND. &
+              ( model_config_rec % cu_physics(i) .NE. 0                                ) ) THEN
+            wrf_err_message = '--- ERROR: cu_physics must be equal for all domains (or = zero)'
+            CALL wrf_message ( wrf_err_message )
+            wrf_err_message = '--- Fix cu_physics in namelist.input '
             CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
          END IF
       ENDDO
@@ -341,7 +427,7 @@
       END IF
 
 !-----------------------------------------------------------------------
-!  shcu_physics = 3 (grimsshcuscheme) only works with YSU PBL.
+!  gwd_opt = 1 only works with YSU PBL.
 !-----------------------------------------------------------------------
 
       oops = 0
@@ -353,7 +439,7 @@
          END IF
       ENDDO      ! Loop over domains
       IF ( oops .GT. 0 ) THEN
-         wrf_err_message = 'bl_pbl_physics /= 1, implies shcu_physics cannot be 3, resetting'
+         wrf_err_message = 'bl_pbl_physics /= 1, implies gwd_opt cannot be 1, resetting'
          CALL wrf_message ( wrf_err_message )
       END IF
 
@@ -547,6 +633,18 @@
       ENDDO      ! Loop over domains
 
 !-----------------------------------------------------------------------
+!  Do not allow digital filtering to be run with TEMF.
+!-----------------------------------------------------------------------
+
+      DO i = 1, model_config_rec % max_dom
+         IF ( ( model_config_rec%bl_pbl_physics(i) .EQ. TEMFPBLSCHEME ) .AND. &
+              (model_config_rec%dfi_opt .NE. DFI_NODFI) )  THEN
+            wrf_err_message = '--- ERROR: DFI not available for bl_pbl_physics=10 '
+            CALL wrf_error_fatal ( TRIM(wrf_err_message) )
+         END IF
+      ENDDO      ! Loop over domains
+
+!-----------------------------------------------------------------------
 !  The CLM scheme may not even be compiled, so make sure it is not allowed
 !  to be run if the code is not available.
 !-----------------------------------------------------------------------
@@ -595,6 +693,24 @@
 
       IMPLICIT NONE
 
+!-----------------------------------------------------------------------
+! Set the namelist mosaic_cat_soil parameter for the Noah-mosaic  scheme if sf_surface_mosaic == 1.  
+!-----------------------------------------------------------------------
+      INTEGER :: numsoiltemp , nummosaictemp
+
+      IF ( model_config_rec % sf_surface_mosaic .EQ. 1 ) THEN
+      
+      numsoiltemp = model_config_rec % num_soil_layers
+      nummosaictemp = model_config_rec % mosaic_cat
+      
+         model_config_rec % mosaic_cat_soil = numsoiltemp * nummosaictemp
+
+         wrf_err_message = '--- NOTE: Noah-mosaic is in use, setting:  ' // &
+                           'mosaic_cat_soil = mosaic_cat * num_soil_layers'
+         CALL wrf_message ( wrf_err_message )
+
+      END IF     
+      
 !-----------------------------------------------------------------------
 ! Set the namelist parameters for the CAM radiation scheme if either 
 ! ra_lw_physics = CAMLWSCHEME or ra_sw_physics = CAMSWSCHEME.  

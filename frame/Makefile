@@ -30,7 +30,9 @@ MODULES =       module_driver_constants.o  \
                 module_dm.o                \
                 module_quilt_outbuf_ops.o  \
                 module_io_quilt.o          \
-		module_intermediate_nmm.o
+		module_intermediate_nmm.o  \
+		module_cpl.o               \
+		module_cpl_oasis3.o
 ALOBJS =\
                 module_alloc_space_0.o       \
                 module_alloc_space_1.o       \

@@ -12,7 +12,9 @@ include registry.les
 include registry.cam
 include registry.clm
 include registry.ssib
+include registry.lake
 include registry.diags
+include registry.sbm
 include registry.bdy_perturb
 
 # added to output 5 for ESMF
@@ -23,6 +25,7 @@ state   real   landmask            ij    misc          1     -     i0125rh05d=(i
 # Simple SST interpolation from the CG
 #state    real   SST              ij    misc        1         -     i01245rh05d=(interp_mask_field:lu_index,iswater)f=(p2c)   "SST"              "SEA SURFACE TEMPERATURE" "K"
 state    real   SST              ij     misc        1         -     i01245rh05d=(interp_mask_field:lu_index,iswater)   "SST"              "SEA SURFACE TEMPERATURE" "K"
+state    real   SST_INPUT        ij     misc        1         -     rh   "SST_INPUT"              "SEA SURFACE TEMPERATURE FROM WRFLOWINPUT FILE" "K"
 
 
 # Registry entries that are exclusive to Registry.EM

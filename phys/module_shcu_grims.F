@@ -10,43 +10,43 @@ module module_shcu_grims
    integer,parameter :: nxma = 151,nyma = 121
    integer,parameter :: nxsvp = 7501
 !
-   real,parameter :: t0c = 2.7315e+2
-   real,parameter :: psat = 6.1078e+2
-   real,parameter :: rd = 2.8705e+2
-   real,parameter :: rv = 4.6150e+2
-   real,parameter :: cp = 1.0046e+3
-   real,parameter :: hvap = 2.5000e+6
-   real,parameter :: cvap = 1.8460e+3
-   real,parameter :: cliq = 4.1855e+3
-   real,parameter :: cice = 2.1060E+3
-   real,parameter :: hsub = 2.8340E+6
-   real,parameter :: terrm = 1.e-4
+   real,parameter    :: t0c = 2.7315e+2
+   real,parameter    :: psat = 6.1078e+2
+   real,parameter    :: rd = 2.8705e+2
+   real,parameter    :: rv = 4.6150e+2
+   real,parameter    :: cp = 1.0046e+3
+   real,parameter    :: hvap = 2.5000e+6
+   real,parameter    :: cvap = 1.8460e+3
+   real,parameter    :: cliq = 4.1855e+3
+   real,parameter    :: cice = 2.1060E+3
+   real,parameter    :: hsub = 2.8340E+6
+   real,parameter    :: terrm = 1.e-4
 !
-   real,parameter :: rocp=rd/cp
-   real,parameter :: cpor=cp/rd
-   real,parameter :: eps=rd/rv
-   real,parameter :: ttp=t0c+0.01
-   real,parameter :: psatk=psat*1.e-3
-   real,parameter :: psatb=psatk*1.e-2
-   real,parameter :: dldt=cvap-cliq,xa=-dldt/rv,xb=xa+hvap/(rv*ttp)
-   real,parameter :: dldti=cvap-cice,xai=-dldti/rv,xbi=xai+hsub/(rv*ttp)
+   real,parameter    :: rocp=rd/cp
+   real,parameter    :: cpor=cp/rd
+   real,parameter    :: eps=rd/rv
+   real,parameter    :: ttp=t0c+0.01
+   real,parameter    :: psatk=psat*1.e-3
+   real,parameter    :: psatb=psatk*1.e-2
+   real,parameter    :: dldt=cvap-cliq,xa=-dldt/rv,xb=xa+hvap/(rv*ttp)
+   real,parameter    :: dldti=cvap-cice,xai=-dldti/rv,xbi=xai+hsub/(rv*ttp)
 !
-   real,save :: c1xma,c2xma,c1yma,c2yma,c1xpvs,c2xpvs
-   real,save :: c1xtdp,c2xtdp,c1xthe,c2xthe,c1ythe,c2ythe
-   real,save :: tbtdp(nxtdp)
-   real,save :: tbthe(nxthe,nythe)
-   real,save :: tbtma(nxma,nyma), tbqma(nxma,nyma)
-   real,save :: tbpvs(nxsvp)
+   real,save         :: c1xma,c2xma,c1yma,c2yma,c1xpvs,c2xpvs
+   real,save         :: c1xtdp,c2xtdp,c1xthe,c2xthe,c1ythe,c2ythe
+   real,save         :: tbtdp(nxtdp)
+   real,save         :: tbthe(nxthe,nythe)
+   real,save         :: tbtma(nxma,nyma), tbqma(nxma,nyma)
+   real,save         :: tbpvs(nxsvp)
 contains
 !
 !-------------------------------------------------------------------------------
-   subroutine grims(qv3d,t3d,p3di,p3d,pi3d,z3di, &
-                    wstar,hpbl,delta, &
-                    rthshten,rqvshten, &
-                    dt,g,xlv,rd,rv,rcp,p1000mb, &
-                    kpbl2d,znu,raincv, &
-                    ids,ide, jds,jde, kds,kde, &
-                    ims,ime, jms,jme, kms,kme, &
+   subroutine grims(qv3d,t3d,p3di,p3d,pi3d,z3di,                               &
+                    wstar,hpbl,delta,                                          &
+                    rthshten,rqvshten,                                         &
+                    dt,g,xlv,rd,rv,rcp,p1000mb,                                &
+                    kpbl2d,znu,raincv,                                         &
+                    ids,ide, jds,jde, kds,kde,                                 &
+                    ims,ime, jms,jme, kms,kme,                                 &
                     its,ite, jts,jte, kts,kte)
 !-------------------------------------------------------------------------------
    implicit none
@@ -54,98 +54,98 @@ contains
 !
 ! input argument
 !
-!-- qv3d 3d specific humidity (kgkg-1)
-!-- t3d 3d temperature (k)
-!-- p3di 3d pressure (pa) at interface level
-!-- p3d 3d pressure (pa)
-!-- pi3d 3d exner function (dimensionless)
-!-- z3di 3d z at interface level (m)
-!-- wstar convective velocity scale (ms-1) from pbl
-!-- hpbl pbl height (m)
-!-- delta entrainment layer depth (m)
-!-- rthshten computed theta tendency due to shallow convection scheme
-!-- rqvshten computed q_v tendency due to shallow convection scheme
-!-- dt time step (s)
-!-- g acceleration due to gravity (m/s^2)
-!-- xlv latent heat of vaporization (j/kg)
-!-- rd gas constant for dry air (j/kg/k)
-!-- rv gas constant for water vapor (j/kg/k)
-!-- kpbl2d k-index for pbl top
-!-- raincv time-step precipitation from cumulus convection scheme
-!-- znu eta values (sigma values)
-!-- ids start index for i in domain
-!-- ide end index for i in domain
-!-- jds start index for j in domain
-!-- jde end index for j in domain
-!-- kds start index for k in domain
-!-- kde end index for k in domain
-!-- ims start index for i in memory
-!-- ime end index for i in memory
-!-- jms start index for j in memory
-!-- jme end index for j in memory
-!-- kms start index for k in memory
-!-- kme end index for k in memory
-!-- its start index for i in tile
-!-- ite end index for i in tile
-!-- jts start index for j in tile
-!-- jte end index for j in tile
-!-- kts start index for k in tile
-!-- kte end index for k in tile
+!-- qv3d        3d specific humidity (kgkg-1)
+!-- t3d         3d temperature (k)
+!-- p3di        3d pressure (pa) at interface level
+!-- p3d         3d pressure (pa)
+!-- pi3d        3d exner function (dimensionless)
+!-- z3di        3d z at interface level (m)
+!-- wstar       convective velocity scale (ms-1) from pbl
+!-- hpbl        pbl height (m)
+!-- delta       entrainment layer depth (m)
+!-- rthshten    computed theta tendency due to shallow convection scheme
+!-- rqvshten    computed q_v tendency due to shallow convection scheme
+!-- dt          time step (s)
+!-- g           acceleration due to gravity (m/s^2)
+!-- xlv         latent heat of vaporization (j/kg)
+!-- rd          gas constant for dry air (j/kg/k)
+!-- rv          gas constant for water vapor (j/kg/k)
+!-- kpbl2d      k-index for pbl top
+!-- raincv      time-step precipitation from cumulus convection scheme
+!-- znu         eta values (sigma values)
+!-- ids         start index for i in domain
+!-- ide         end index for i in domain
+!-- jds         start index for j in domain
+!-- jde         end index for j in domain
+!-- kds         start index for k in domain
+!-- kde         end index for k in domain
+!-- ims         start index for i in memory
+!-- ime         end index for i in memory
+!-- jms         start index for j in memory
+!-- jme         end index for j in memory
+!-- kms         start index for k in memory
+!-- kme         end index for k in memory
+!-- its         start index for i in tile
+!-- ite         end index for i in tile
+!-- jts         start index for j in tile
+!-- jte         end index for j in tile
+!-- kts         start index for k in tile
+!-- kte         end index for k in tile
 !
 ! output argument
-!-- rthshten computed theta tendency due to shallow convection scheme
-!-- rqvshten computed q_v tendency due to shallow convection scheme
+!-- rthshten    computed theta tendency due to shallow convection scheme
+!-- rqvshten    computed q_v tendency due to shallow convection scheme
 !-------------------------------------------------------------------------------
 !
-! local
+! local 
 !
-!-- icps cps index, =1 for deep convection
-!-- pi2di 2d exner function at interface level (dimensionless)
-!-- delp2di 2d pressuer depth (pa) between interface levels
-!-- zl 2d z (m)
-!-- t1 2d temperature (k) will be changed by shallow convection
-!-- q1 2d specific humidity (kgkg-1) will be changed by shallow convection
-!-- levshc maximum k-level for shallow convection
+!-- icps        cps index, =1 for deep convection
+!-- pi2di       2d exner function at interface level (dimensionless)
+!-- delp2di     2d pressuer depth (pa) between interface levels
+!-- zl          2d z (m)
+!-- t1          2d temperature (k) will be changed by shallow convection
+!-- q1          2d specific humidity (kgkg-1) will be changed by shallow convection
+!-- levshc      maximum k-level for shallow convection
 !
-   integer, intent(in ) :: ids,ide, jds,jde, kds,kde, &
-                                     ims,ime, jms,jme, kms,kme, &
+   integer,  intent(in   )   ::      ids,ide, jds,jde, kds,kde,                &
+                                     ims,ime, jms,jme, kms,kme,                &
                                      its,ite, jts,jte, kts,kte
 !
-   real, intent(in ) :: dt,g,xlv,rd,rv,rcp,p1000mb
+   real,     intent(in   )   ::      dt,g,xlv,rd,rv,rcp,p1000mb
 !
-   integer, dimension( ims:ime, jms:jme ) , &
-             intent(in ) :: kpbl2d
+   integer,  dimension( ims:ime, jms:jme )                                   , &
+             intent(in   )   ::                                        kpbl2d
 !
-   real, dimension( ims:ime, kms:kme, jms:jme ) , &
-             intent(in ) :: qv3d, &
+   real,     dimension( ims:ime, kms:kme, jms:jme )                          , &
+             intent(in   )   ::                                          qv3d, &
                                                                           t3d, &
                                                                          p3di, &
                                                                           p3d, &
                                                                          pi3d, &
                                                                          z3di
 !
-   real, dimension( ims:ime, jms:jme ) , &
-             intent(in ) :: hpbl, &
+   real,     dimension( ims:ime, jms:jme )                                   , &
+             intent(in   )   ::                                          hpbl, &
                                                                         wstar, &
                                                                         delta, &
                                                                        raincv
 !
-   real, dimension( kms:kme ) , &
-             intent(in ) :: znu
+   real,     dimension( kms:kme )                                            , &
+             intent(in   )   ::                                           znu
 !
-   real, dimension( ims:ime, kms:kme, jms:jme ) , &
-             optional , &
-             intent(inout) :: rthshten, &
+   real,     dimension( ims:ime, kms:kme, jms:jme )                          , &
+             optional                                                        , &
+             intent(inout)   ::                                      rthshten, &
                                                                      rqvshten
 !
-! local variables
+!  local variables
 !
-   integer :: i,j,k,levshc
-   real :: sigshc,rdelt
+   integer         ::  i,j,k,levshc
+   real            ::  sigshc,rdelt
 !
-   integer, dimension( its:ite ) :: icps
-   real, dimension( its:ite, kts:kte+1 ) :: pi2di
-   real, dimension( its:ite, kts:kte ) :: delp2di, &
+   integer,  dimension( its:ite )            ::                          icps
+   real,     dimension( its:ite, kts:kte+1 ) ::                         pi2di
+   real,     dimension( its:ite, kts:kte )   ::                       delp2di, &
                                                                            zl, &
                                                                            t1, &
                                                                            q1
@@ -188,15 +188,15 @@ contains
        if(raincv(i,j) .gt. 1.e-30) icps(i)=1
      enddo
 !
-     call grims2d(q=q1(its,kts),t=t1(its,kts),prsi=p3di(ims,kms,j), &
-              prsik=pi2di(its,kts),delprsi=delp2di(its,kts), &
-              prsl=p3d(ims,kms,j),prslk=pi3d(ims,kms,j),zl=zl(its,kts), &
-              wstar=wstar(ims,j),hpbl=hpbl(ims,j),delta=delta(ims,j), &
-              dt=dt,cp=cp,g=g,xlv=xlv,rd=rd,rv=rv, &
-              icps=icps(its),kpbl=kpbl2d(ims,j),levshc=levshc, &
-              ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde, &
-              ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme, &
-              its=its,ite=ite, jts=jts,jte=jte, kts=kts,kte=kte )
+     call grims2d(q=q1(its,kts),t=t1(its,kts),prsi=p3di(ims,kms,j),            &
+              prsik=pi2di(its,kts),delprsi=delp2di(its,kts),                   &
+              prsl=p3d(ims,kms,j),prslk=pi3d(ims,kms,j),zl=zl(its,kts),        &
+              wstar=wstar(ims,j),hpbl=hpbl(ims,j),delta=delta(ims,j),          &
+              dt=dt,cp=cp,g=g,xlv=xlv,rd=rd,rv=rv,                             &
+              icps=icps(its),kpbl=kpbl2d(ims,j),levshc=levshc,                 &
+              ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde,               &
+              ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme,               &
+              its=its,ite=ite, jts=jts,jte=jte, kts=kts,kte=kte   )
 !
      if(present(rthshten).and.present(rqvshten)) then
        do k = kts,kte
@@ -213,16 +213,17 @@ contains
 !-------------------------------------------------------------------------------
 !
 !-------------------------------------------------------------------------------
-   subroutine grims2d(q,t,prsi,prsik,delprsi,prsl,prslk,zl, &
-                       wstar,hpbl,delta, &
-                       dt,cp,g,xlv,rd,rv, &
-                       icps,kpbl,levshc, &
-                       ids,ide, jds,jde, kds,kde, &
-                       ims,ime, jms,jme, kms,kme, &
+   subroutine grims2d(q,t,prsi,prsik,delprsi,prsl,prslk,zl,                    &
+                       wstar,hpbl,delta,                                       &
+                       dt,cp,g,xlv,rd,rv,                                      &
+                       icps,kpbl,levshc,                                       &
+                       ids,ide, jds,jde, kds,kde,                              &
+                       ims,ime, jms,jme, kms,kme,                              &
                        its,ite, jts,jte, kts,kte)
 !-------------------------------------------------------------------------------
    implicit none
 !-------------------------------------------------------------------------------
+!
 !
 !   this scheme applies an eddy-diffusion approach within the shallow convective 
 !   layer defined by the moist static energy profile and is coupled to the 
@@ -230,109 +231,109 @@ contains
 !   shallow convection scheme since it was developed/evaluated in grims.
 !
 !   coded by song-you hong (yonsei university; ysu) and
-!   implemented by jihyeon jang, junhong lee (ysu), and wei wang (ncar)
-!       winter 2012
+!   implemented into wrf by jihyeon jang, hyeyum hailey shin, junhong lee (ysu), 
+!       and wei wang (ncar) winter 2012
 !
 ! references:
 !   hong et al. (2013, manuscript in preparation)
 !   hong et al. (2013, asia-pacific j. atmos. sci.) the global/regional 
-!       integrated model system (grims)        
+!       integrated model system (grims) 
 !
 !-------------------------------------------------------------------------------
 !
-   integer, intent(in ) :: levshc, &
-                                  ids,ide, jds,jde, kds,kde, &
-                                  ims,ime, jms,jme, kms,kme, &
+   integer,  intent(in   ) ::     levshc,                                      &
+                                  ids,ide, jds,jde, kds,kde,                   &
+                                  ims,ime, jms,jme, kms,kme,                   &
                                   its,ite, jts,jte, kts,kte
 !
-   real, intent(in ) :: dt,cp,g,xlv,rd,rv
+   real,     intent(in   ) ::     dt,cp,g,xlv,rd,rv
 !
-   integer, dimension( ims:ime ) , &
-             intent(in ) :: kpbl
+   integer,  dimension( ims:ime )                                            , &
+             intent(in   ) ::                                            kpbl
 !
-   real, dimension( ims:ime, kms:kme ) , &
-             intent(in ) :: prsi
+   real,     dimension( ims:ime, kms:kme )                                   , &
+             intent(in   ) ::                                            prsi
 !
-   real, dimension( its:ite, kts:kte+1 ) , &
-             intent(in ) :: prsik
+   real,     dimension( its:ite, kts:kte+1 )                                 , &
+             intent(in   ) ::                                           prsik 
 !
-   real, dimension( its:ite, kts:kte ) , &
-             intent(in ) :: delprsi, &
+   real,     dimension( its:ite, kts:kte )                                   , &
+             intent(in   ) ::                                         delprsi, &
                                                                            zl
 !
-   real, dimension( ims:ime, kms:kme ) , &
-             intent(in ) :: prsl, &
+   real,     dimension( ims:ime, kms:kme )                                   , &
+             intent(in   ) ::                                            prsl, &
                                                                         prslk
 !
-   integer, dimension( its:ite ) , &
-             intent(in ) :: icps
+   integer,     dimension( its:ite )                                         , &
+             intent(in   ) ::                                            icps
 !
-   real, dimension( its:ite, kts:kte ) , &
-             intent(inout) :: q, &
+   real,     dimension( its:ite, kts:kte )                                   , &
+             intent(inout) ::                                               q, &
                                                                             t
 !
-   real, dimension( ims:ime ) , &
-             intent(in ) :: hpbl, &
+   real,     dimension( ims:ime )                                            , &
+             intent(in   ) ::                                            hpbl, &
                                                                         wstar, &
                                                                         delta
 !
-! profile shape parameter
+!  profile shape parameter
 !
-   real,parameter :: pfac = 3.
+   real,parameter    ::  pfac = 3.
 !
-! maximum and minimum diffusivity
+!  maximum and minimum diffusivity 
 !
-   real,parameter :: xkzmax = 50., xkzmin = 0.001
+   real,parameter    ::  xkzmax = 50., xkzmin = 0.001
 !
-! maxium distance of a parcel to lcl (m)
+!  maxium distance of a parcel to lcl (m)
 !
-   real,parameter :: zdiffcr1 = 1000., zdiffcr2 = 1000.
+   real,parameter    ::  zdiffcr1 = 1000., zdiffcr2 = 1000.
 !
-! bounds of parcel origin
+!  bounds of parcel origin
 !
-   integer,parameter :: kliftl=2,kliftu=2
+   integer,parameter    ::  kliftl=2,kliftu=2
 !
-! scale factor for wstar
+!  scale factor for wstar
 !
-   real,parameter :: wsfac = 1.47
+   real,parameter       ::  wsfac = 1.47
 !
-! local variables and arrays
+!  local variables and arrays
 !
-   logical :: lshc(its:ite),flg(ite-its+1)
-   integer :: i,ik,ik1,iku,k,k1,k2,kt,n2
-   integer :: index2(ite-its+1)
-   integer :: klcl(ite-its+1),kbot(ite-its+1)
-   integer :: ktop(ite-its+1)
-   integer :: lmin(ite-its+1)
-   integer :: kb(ite-its+1),kbcon(ite-its+1)
-   real :: eps,epsm1
-   real :: eldq,xkzh,cpdt,rtdls
-   real :: dmse,dtodsu,dtodsl,dsig,dsdz1,dsdz2
-   real :: q2((ite-its+1)*kte)
-   real :: t2((ite-its+1)*kte)
-   real :: al((ite-its+1)*(kte-1))
-   real :: ad((ite-its+1)*kte)
-   real :: au((ite-its+1)*(kte-1))
-   real :: delprsi2((ite-its+1)*kte)
-   real :: prsi2((ite-its+1)*kte),prsik2((ite-its+1)*kte)
-   real :: prsl2((ite-its+1)*kte),prslk2((ite-its+1)*kte)
-   real :: qeso2((ite-its+1)*kte),rh2(ite-its+1)
-   real :: depth(ite-its+1),zdiff1(ite-its+1),zdiff2(ite-its+1)
-   real :: hmin(ite-its+1),hmax(ite-its+1)
-   real :: z(1:(ite-its+1),kts:kte)
-   real :: heo(1:(ite-its+1),kts:kte)
-   real :: heso(1:(ite-its+1),kts:kte)
-   real :: pik,height,xkzfac
+   logical              ::  lshc(its:ite),flg(ite-its+1)
+   integer              ::  i,ik,ik1,iku,k,k1,k2,kt,n2
+   integer              ::  index2(ite-its+1)
+   integer              ::  klcl(ite-its+1),kbot(ite-its+1)
+   integer              ::  ktop(ite-its+1)
+   integer              ::  lmin(ite-its+1)
+   integer              ::  kb(ite-its+1),kbcon(ite-its+1)
+   real                 ::  eps,epsm1
+   real                 ::  eldq,xkzh,cpdt,rtdls
+   real                 ::  dmse,dtodsu,dtodsl,dsig,dsdz1,dsdz2
+   real                 ::  q2((ite-its+1)*kte)
+   real                 ::  t2((ite-its+1)*kte)
+   real                 ::  al((ite-its+1)*(kte-1))
+   real                 ::  ad((ite-its+1)*kte)
+   real                 ::  au((ite-its+1)*(kte-1))
+   real                 ::  delprsi2((ite-its+1)*kte)
+   real                 ::  prsi2((ite-its+1)*kte),prsik2((ite-its+1)*kte)
+   real                 ::  prsl2((ite-its+1)*kte),prslk2((ite-its+1)*kte)
+   real                 ::  qeso2((ite-its+1)*kte),rh2(ite-its+1)
+   real                 ::  depth(ite-its+1),zdiff1(ite-its+1),zdiff2(ite-its+1)
+   real                 ::  hmin(ite-its+1),hmax(ite-its+1)
+   real                 ::  z(1:(ite-its+1),kts:kte)
+   real                 ::  heo(1:(ite-its+1),kts:kte)
+   real                 ::  heso(1:(ite-its+1),kts:kte)
+   real                 ::  pik,height,xkzfac
 !-------------------------------------------------------------------------------
 !
-   eps = rd/rv
+   eps   = rd/rv
    epsm1 = eps-1
 !
    do i = its,ite
      lshc(i)=.false.
    enddo
 !
-! check for moist static instability to trigger convection
+!  check for moist static instability to trigger convection
 !
    do k = kts,levshc-1
      do i = its,ite
@@ -349,7 +350,7 @@ contains
      if(wstar(i).lt.0.001) lshc(i)=.false.
    enddo
 !
-! reset i-dimension for active clouds
+!  reset i-dimension for active clouds
 !
    n2 = 0
    do i = its,ite
@@ -361,13 +362,13 @@ contains
 !
    if(n2.eq.0) return
 !
-! prepare the variables
+!  prepare the variables 
 !
    do k = kts,levshc
      do i = 1,n2
        if(lshc(index2(i))) then
          ik = (k-1)*n2+i
-         pik = prsl(index2(i),k)
+         pik = prsl(index2(i),k) 
          q2(ik) = q(index2(i),k)
          t2(ik) = t(index2(i),k)
          delprsi2(ik) = delprsi(index2(i),k)
@@ -376,10 +377,10 @@ contains
          prsik2(ik)= prsik(index2(i),k)
          prslk2(ik)= prslk(index2(i),k)
          z(i,k) = zl(index2(i),k)
-         qeso2(ik) = fpvs_pa(t2(ik))
+         qeso2(ik) = fpvs_pa(t2(ik)) 
          qeso2(ik) = eps * qeso2(ik) / (pik + epsm1 * qeso2(ik))
          qeso2(ik) = max(qeso2(ik),1.E-8)
-         heo(i,k) = g * z(i,k) + cp* t2(ik) + xlv * q2(ik)
+         heo(i,k)  = g * z(i,k) + cp* t2(ik) + xlv * q2(ik)
          heso(i,k) = g * z(i,k) + cp* t2(ik) + xlv * qeso2(ik)
        endif
      enddo
@@ -431,13 +432,13 @@ contains
      endif
    enddo
 !
-! compute moist adiabat and determine cloud top
+!  compute moist adiabat and determine cloud top
 !
-   call phys_moist_adiabat_pa(n2,levshc-1,kliftl,kliftu, &
-                           prsl2,prsik2,prslk2,t2,q2, &
-                           klcl,kbot,ktop,al,au,rd,rv, &
-                            ids,ide, jds,jde, kds,kde, &
-                            ims,ime, jms,jme, kms,kme, &
+   call phys_moist_adiabat_pa(n2,levshc-1,kliftl,kliftu,                       &
+                           prsl2,prsik2,prslk2,t2,q2,                          &
+                           klcl,kbot,ktop,al,au,rd,rv,                         &
+                            ids,ide, jds,jde, kds,kde,                         &
+                            ims,ime, jms,jme, kms,kme,                         &
                             its,ite, jts,jte, kts,kte)
 !
    do i = 1,n2
@@ -448,7 +449,7 @@ contains
      endif
    enddo
 !
-! revise the cloud top below minimum moist static energy
+!  revise the cloud top below minimum moist static energy
 !
    do i = 1,n2
      if(lshc(index2(i))) then
@@ -482,7 +483,7 @@ contains
      endif
    enddo
 !
-! compute diffusion properties
+!  compute diffusion properties
 !
    do i = 1,n2
      if(lshc(index2(i))) then
@@ -507,7 +508,7 @@ contains
    kt = k2-k1+1
    if(kt.lt.2) return
 !
-! set eddy viscosity coefficient xkzh at sigma interfaces
+!  set eddy viscosity coefficient xkzh at sigma interfaces
 !
    do i = 1,n2
      ik = (k1-1)*n2+i
@@ -535,8 +536,6 @@ contains
        if(k.ge.kbot(i).and.k.lt.ktop(i)) then
          height = z(i,k)-z(i,kbot(i))
          xkzfac = rh2(i)*wsfac*wstar(index2(i))*delta(index2(i))
-!        xkzh = min(max(xkzfac*(1.-height/depth(i))**pfac,xkzmin),xkzmax)
-! Hong, 20130703
          xkzh = min(max(xkzfac*(1.-(height+hpbl(index2(i)))                    &
                 /(depth(i)+hpbl(index2(i))))**pfac,xkzmin),xkzmax)
        else
@@ -553,13 +552,13 @@ contains
      enddo
    enddo
 !
-! solve tri-diagonal matrix
+!  solve tri-diagonal matrix
 !
    ik1 = (k1-1)*n2+1
-   call scv_tri_diagonal_grims(n2,n2,kt,al(ik1),ad(ik1),au(ik1), &
+   call scv_tri_diagonal_grims(n2,n2,kt,al(ik1),ad(ik1),au(ik1),               &
                                 q2(ik1),t2(ik1),au(ik1),q2(ik1),t2(ik1))
 !
-! feedback to large-scale variables
+!  feedback to large-scale variables  
 !
    do k = k1,k2
      do i = 1,n2
@@ -579,182 +578,182 @@ contains
    subroutine scv_tri_diagonal_grims(lons2,l,n,cl,cm,cu,r1,r2,au,a1,a2)
 !-------------------------------------------------------------------------------
 !
-! subprogram: scv_tri_diagonal
-!
-! abstract: this routine solves multiple tridiagonal matrix problems
-! with 2 right-hand-side and solution vectors for every matrix.
-! the solutions are found by eliminating off-diagonal coefficients,
-! marching first foreward then backward along the matrix diagonal.
-! the computations are vectorized around the number of matrices.
-! no checks are made for zeroes on the diagonal or singularity.
-!
-! program history log:
-! 1991-05-07 iredell
-! 2009-03-01 jung-eun kim fortran 90 and modules
-!
-! usage: call scv_tri_diagonal(l,n,cl,cm,cu,r1,r2,au,a1,a2)
-!
-! input argument list:
-! l - integer number of tridiagonal matrices
-! n - integer order of the matrices
-! cl - real (l,2:n) lower diagonal matrix elements
-! cm - real (l,n) main diagonal matrix elements
-! cu - real (l,n-1) upper diagonal matrix elements
-! (may be equivalent to au if no longer needed)
-! r1 - real (l,n) 1st right-hand-side vector elements
-! (may be equivalent to a1 if no longer needed)
-! r2 - real (l,n) 2nd right-hand-side vector elements
-! (may be equivalent to a2 if no longer needed)
-!
-! output argument list:
-! au - real (l,n-1) work array
-! a1 - real (l,n) 1st solution vector elements
-! a2 - real (l,n) 2nd solution vector elements
-!
-! remarks: this routine can be easily modified to solve a different
-! number of right-hand-sides and solutions per matrix besides 2.
-!
+! subprogram:  scv_tri_diagonal    
+!                                                                               
+! abstract: this routine solves multiple tridiagonal matrix problems            
+!   with 2 right-hand-side and solution vectors for every matrix.               
+!   the solutions are found by eliminating off-diagonal coefficients,           
+!   marching first foreward then backward along the matrix diagonal.            
+!   the computations are vectorized around the number of matrices.              
+!   no checks are made for zeroes on the diagonal or singularity.               
+!                                                                               
+! program history log:                                                          
+!   1991-05-07  iredell                                                           
+!   2009-03-01  jung-eun kim         fortran 90 and modules
+!                                                                               
+! usage:    call scv_tri_diagonal(l,n,cl,cm,cu,r1,r2,au,a1,a2)      
+!                                                                               
+!   input argument list:                                                        
+!     l        - integer number of tridiagonal matrices                         
+!     n        - integer order of the matrices                                  
+!     cl       - real (l,2:n) lower diagonal matrix elements                    
+!     cm       - real (l,n) main diagonal matrix elements                       
+!     cu       - real (l,n-1) upper diagonal matrix elements                    
+!                (may be equivalent to au if no longer needed)                  
+!     r1       - real (l,n) 1st right-hand-side vector elements                 
+!                (may be equivalent to a1 if no longer needed)                  
+!     r2       - real (l,n) 2nd right-hand-side vector elements                 
+!                (may be equivalent to a2 if no longer needed)                  
+!                                                                               
+!   output argument list:                                                       
+!     au       - real (l,n-1) work array                                        
+!     a1       - real (l,n) 1st solution vector elements                        
+!     a2       - real (l,n) 2nd solution vector elements                        
+!                                                                               
+! remarks: this routine can be easily modified to solve a different             
+!   number of right-hand-sides and solutions per matrix besides 2.              
+!                                                                               
 !-------------------------------------------------------------------------------
    implicit none
-   integer :: lons2,l,n,i,k
-   real :: fk
-   real :: cl(l,2:n),cm(l,n),cu(l,n-1),r1(l,n),r2(l,n), &
+   integer              ::  lons2,l,n,i,k
+   real                 ::  fk
+   real                 ::  cl(l,2:n),cm(l,n),cu(l,n-1),r1(l,n),r2(l,n),       &
                             au(l,n-1),a1(l,n),a2(l,n)
 !-------------------------------------------------------------------------------
    do i = 1,lons2
-     fk = 1./cm(i,1)
-     au(i,1)= fk*cu(i,1)
-     a1(i,1)= fk*r1(i,1)
-     a2(i,1)= fk*r2(i,1)
-   enddo
+     fk = 1./cm(i,1)                                                           
+     au(i,1)= fk*cu(i,1)                                                      
+     a1(i,1)= fk*r1(i,1)                                                      
+     a2(i,1)= fk*r2(i,1)                                                      
+   enddo                                                                     
 !
-   do k = 2,n-1
+   do k = 2,n-1                                                                
      do i = 1,lons2
-       fk = 1./(cm(i,k)-cl(i,k)*au(i,k-1))
-       au(i,k) = fk*cu(i,k)
-       a1(i,k) = fk*(r1(i,k)-cl(i,k)*a1(i,k-1))
-       a2(i,k) = fk*(r2(i,k)-cl(i,k)*a2(i,k-1))
-     enddo
-   enddo
+       fk = 1./(cm(i,k)-cl(i,k)*au(i,k-1))                                     
+       au(i,k) = fk*cu(i,k)                                                    
+       a1(i,k) = fk*(r1(i,k)-cl(i,k)*a1(i,k-1))                                
+       a2(i,k) = fk*(r2(i,k)-cl(i,k)*a2(i,k-1))                                
+     enddo                                                                   
+   enddo                                                                     
 !
    do i = 1,lons2
-     fk = 1./(cm(i,n)-cl(i,n)*au(i,n-1))
-     a1(i,n) = fk*(r1(i,n)-cl(i,n)*a1(i,n-1))
-     a2(i,n) = fk*(r2(i,n)-cl(i,n)*a2(i,n-1))
-   enddo
-   do k = n-1,1,-1
+     fk = 1./(cm(i,n)-cl(i,n)*au(i,n-1))                                       
+     a1(i,n) = fk*(r1(i,n)-cl(i,n)*a1(i,n-1))                                  
+     a2(i,n) = fk*(r2(i,n)-cl(i,n)*a2(i,n-1))                                  
+   enddo                                                                     
+   do k = n-1,1,-1                                                             
      do i = 1,lons2
-       a1(i,k) = a1(i,k)-au(i,k)*a1(i,k+1)
-       a2(i,k) = a2(i,k)-au(i,k)*a2(i,k+1)
-     enddo
-   enddo
+       a1(i,k) = a1(i,k)-au(i,k)*a1(i,k+1)                                     
+       a2(i,k) = a2(i,k)-au(i,k)*a2(i,k+1)                                     
+     enddo                                                                   
+   enddo                                                                     
 !
-   return
+   return                                                                    
    end subroutine scv_tri_diagonal_grims
 !-------------------------------------------------------------------------------
 !
 !-------------------------------------------------------------------------------
-   subroutine phys_moist_adiabat_pa(ilev,klev,k1,k2, &
-                                 prsl,prsik,prslk,tenv,qenv, &
-                                 klcl,kbot,ktop,tcld,qcld,rd,rv, &
-                                      ids,ide, jds,jde, kds,kde, &
-                                      ims,ime, jms,jme, kms,kme, &
+   subroutine phys_moist_adiabat_pa(ilev,klev,k1,k2,                           &
+                                 prsl,prsik,prslk,tenv,qenv,                   &
+                                 klcl,kbot,ktop,tcld,qcld,rd,rv,               &
+                                      ids,ide, jds,jde, kds,kde,               &
+                                      ims,ime, jms,jme, kms,kme,               &
                                       its,ite, jts,jte, kts,kte)
 !-------------------------------------------------------------------------------
 !
 ! subprogram: phys_moist_adiabat_pa
 !
-! abstract:
+! abstract: 
 ! - compute moist adiabatic cloud soundings
 ! - atmospheric columns of temperature and specific humidity
-! are examined by this routine for conditional instability.
-! the test parcel is chosen from the layer between layers k1 and k2
-! that has the warmest potential wet-bulb temperature.
-! excess cloud temperatures and specific humidities are returned
-! where the lifted parcel is found to be buoyant.
-! fast inlinable functions are invoked to compute
-! dewpoint and lifting condensation level temperatures,
-! equivalent potential temperature at the lcl, and
-! temperature and specific humidity of the ascending parcel.
+!   are examined by this routine for conditional instability.
+!   the test parcel is chosen from the layer between layers k1 and k2
+!   that has the warmest potential wet-bulb temperature.
+!   excess cloud temperatures and specific humidities are returned
+!   where the lifted parcel is found to be buoyant.
+!   fast inlinable functions are invoked to compute
+!   dewpoint and lifting condensation level temperatures,
+!   equivalent potential temperature at the lcl, and
+!   temperature and specific humidity of the ascending parcel.
 !
 ! program history log:
-! 1983-11-01 phillips
-! 1991-05-07 iredell arguments changed, code tidied
-! 2000-01-01 song-you hong physcis options
-! 2009-10-01 jung-eun kim f90 format with standard physics modules
-! 2010-07-01 myung-seo koo dimension allocatable with namelist input
+!   1983-11-01  phillips
+!   1991-05-07  iredell                arguments changed, code tidied
+!   2000-01-01  song-you hong          physcis options
+!   2009-10-01  jung-eun kim           f90 format with standard physics modules
+!   2010-07-01  myung-seo koo          dimension allocatable with namelist input
 !
-! usage: call phys_moist_adiabat_pa(ilev,klev,k1,k2, &
-! prsl,prslk,prsik,tenv,qenv, &
-! klcl,kbot,ktop,tcld,qcld,rd,rv, &
-! ids,ide, jds,jde, kds,kde, &
-! ims,ime, jms,jme, kms,kme, &
-! its,ite, jts,jte, kts,kte)
+! usage:  call phys_moist_adiabat_pa(ilev,klev,k1,k2,                          &
+!                                 prsl,prslk,prsik,tenv,qenv,                  &
+!                                 klcl,kbot,ktop,tcld,qcld,rd,rv,              &
+!                                      ids,ide, jds,jde, kds,kde,              &
+!                                      ims,ime, jms,jme, kms,kme,              &
+!                                      its,ite, jts,jte, kts,kte)
 !
-! input argument list:
-! ilev - integer number of atmospheric columns
-! klev - integer number of sigma levels in a column
-! k1 - integer lowest level from which a parcel can originate
-! k2 - integer highest level from which a parcel can originate
-! prsl - real (ilev,klev) pressure values
-! prslk,prsik - real (ilev,klev) pressure values to the kappa
-! tenv - real (ilev,klev) environment temperatures
-! qenv - real (ilev,klev) environment specific humidities
+!   input argument list:
+!     ilev         - integer number of atmospheric columns
+!     klev         - integer number of sigma levels in a column
+!     k1           - integer lowest level from which a parcel can originate
+!     k2           - integer highest level from which a parcel can originate
+!     prsl         - real (ilev,klev) pressure values
+!     prslk,prsik  - real (ilev,klev) pressure values to the kappa
+!     tenv         - real (ilev,klev) environment temperatures
+!     qenv         - real (ilev,klev) environment specific humidities
 !
-! output argument list:
-! klcl - integer (ilev) level just above lcl (klev+1 if no lcl)
-! kbot - integer (ilev) level just above cloud bottom
-! ktop - integer (ilev) level just below cloud top
-! - note that kbot(i) gt ktop(i) if no cloud.
-! tcld - real (ilev,klev) of excess cloud temperatures.
-! (parcel t minus environ t, or 0. where no cloud)
-! qcld - real (ilev,klev) of excess cloud specific humidities.
-! (parcel q minus environ q, or 0. where no cloud)
+!   output argument list:
+!     klcl     - integer (ilev) level just above lcl (klev+1 if no lcl)
+!     kbot     - integer (ilev) level just above cloud bottom
+!     ktop     - integer (ilev) level just below cloud top
+!              - note that kbot(i) gt ktop(i) if no cloud.
+!     tcld     - real (ilev,klev) of excess cloud temperatures.
+!                (parcel t minus environ t, or 0. where no cloud)
+!     qcld     - real (ilev,klev) of excess cloud specific humidities.
+!                (parcel q minus environ q, or 0. where no cloud)
 !
 ! subprograms called:
-! ftdp - function to compute dewpoint temperature
-! ftlcl - function to compute lcl temperature
-! fthe - function to compute equivalent potential temperature
-! ftma - function to compute parcel temperature and humidity
+!     ftdp     - function to compute dewpoint temperature
+!     ftlcl    - function to compute lcl temperature
+!     fthe     - function to compute equivalent potential temperature
+!     ftma     - function to compute parcel temperature and humidity
 !
 ! remarks: all functions are inlined by fpp.
-! nonstandard automatic arrays are used.
+!          nonstandard automatic arrays are used.
 !
 !-------------------------------------------------------------------------------
    implicit none
 !
-   integer,parameter :: nx=151,ny=121
-   integer :: ilev,klev,k1,k2
-   real :: prsl(ilev,klev),prslk(ilev,klev),prsik(ilev,klev)
-   real :: tenv(ilev,klev),qenv(ilev,klev)
-   integer :: klcl(ilev),kbot(ilev),ktop(ilev)
-   real :: tcld(ilev,klev),qcld(ilev,klev)
-   real :: rd,rv
-   integer :: ids,ide, jds,jde, kds,kde, &
-                            ims,ime, jms,jme, kms,kme, &
+   integer,parameter    ::  nx=151,ny=121
+   integer              ::  ilev,klev,k1,k2
+   real                 ::  prsl(ilev,klev),prslk(ilev,klev),prsik(ilev,klev)
+   real                 ::  tenv(ilev,klev),qenv(ilev,klev)
+   integer              ::  klcl(ilev),kbot(ilev),ktop(ilev)
+   real                 ::  tcld(ilev,klev),qcld(ilev,klev)
+   real                 ::  rd,rv
+   integer              ::  ids,ide, jds,jde, kds,kde,                         &
+                            ims,ime, jms,jme, kms,kme,                         &
                             its,ite, jts,jte, kts,kte
 !
-! local arrays
+!  local arrays
 !
-   real :: slkma(ilev)
-   real :: thema(ilev)
-   real :: pv,tdpd
-   real :: slklcl,thelcl,tlcl
-   real :: xj,yj
-   real :: ftx1,ftx2,ftma1,qx1,qx2,qma,tma,tvcld,tvenv
-   real :: eps,epsm1,ftv
-   integer :: i,k,jx,jy
+   real                 ::  slkma(ilev)
+   real                 ::  thema(ilev)
+   real                 ::  pv,tdpd
+   real                 ::  slklcl,thelcl,tlcl
+   real                 ::  xj,yj
+   real                 ::  ftx1,ftx2,ftma1,qx1,qx2,qma,tma,tvcld,tvenv
+   real                 ::  eps,epsm1,ftv
+   integer              ::  i,k,jx,jy
 !-------------------------------------------------------------------------------
 !
-! compute parameters
-!
+!  compute parameters
+!   
    eps=rd/rv
    epsm1=rd/rv-1.
    ftv=rv/rd-1.
 !
-! determine warmest potential wet-bulb temperature between k1 and k2.
-! compute its lifting condensation level.
-!
+!  determine warmest potential wet-bulb temperature between k1 and k2.
+!  compute its lifting condensation level.
+!  
    do i = 1,ilev
      slkma(i)=0.
      thema(i)=0.
@@ -779,9 +778,9 @@ contains
      enddo
    enddo
 !
-! set cloud temperatures and humidities wherever the parcel lifted up
-! the moist adiabat is buoyant with respect to the environment.
-!
+!  set cloud temperatures and humidities wherever the parcel lifted up
+!  the moist adiabat is buoyant with respect to the environment.
+!  
    do i = 1,ilev
      klcl(i)=klev+1
      kbot(i)=klev+1
@@ -800,7 +799,7 @@ contains
        if(prslk(i,k)/prsik(i,1).le.slkma(i)) then
          klcl(i)=min(klcl(i),k)
 !
-! insert ftma tma=ftma(thema(i),prslk(i,k),qma)
+! insert ftma   tma=ftma(thema(i),prslk(i,k),qma)
 !
          xj=min(max(c1xma+c2xma*thema(i),1.),float(nx))
          yj=min(max(c1yma+c2yma*prslk(i,k),1.),float(ny))
@@ -835,12 +834,12 @@ contains
 !-------------------------------------------------------------------------------
    implicit none
 !-------------------------------------------------------------------------------
-   real :: ftdp
+   real             :: ftdp
 !
-   integer :: jx
-   real :: xj
-   real :: xmax,xmin,xinc
-   real :: pv
+   integer          :: jx
+   real             :: xj
+   real             :: xmax,xmin,xinc
+   real             :: pv
 !
    xmin= 0.001
    xmax=10.001
@@ -861,11 +860,11 @@ contains
 !-------------------------------------------------------------------------------
    implicit none
 !-------------------------------------------------------------------------------
-   real :: ftlcl
+   real             :: ftlcl
 !
-   real,parameter :: clcl1=0.954442e+0, clcl2=0.967772e-3, &
+   real,parameter   :: clcl1=0.954442e+0, clcl2=0.967772e-3,           &
                        clcl3=-0.710321e-3,clcl4=-0.270742e-5
-   real :: t,tdpd
+   real             ::  t,tdpd
 !
    ftlcl=t-tdpd*(clcl1+clcl2*t+tdpd*(clcl3+clcl4*t))
 !
@@ -878,13 +877,13 @@ contains
 !-------------------------------------------------------------------------------
    implicit none
 !-------------------------------------------------------------------------------
-   real :: fthe
+   real             :: fthe
 !
-   integer :: jx,jy
-   real :: xmin,xmax,xinc,ymin,ymax,yinc
-   real :: xj,yj
-   real :: ftx1,ftx2
-   real :: t,pk
+   integer          :: jx,jy
+   real             :: xmin,xmax,xinc,ymin,ymax,yinc
+   real             :: xj,yj
+   real             :: ftx1,ftx2
+   real             :: t,pk
 !
    xmin=ttp-90.
    xmax=ttp+30.
@@ -918,12 +917,12 @@ contains
 !-------------------------------------------------------------------------------
    implicit none
 !-------------------------------------------------------------------------------
-   real :: fpvs_pa
+   real                 :: fpvs_pa
 !
-   integer :: jx
-   real :: xmax,xmin,xinc
-   real :: xj
-   real :: t
+   integer              :: jx
+   real                 :: xmax,xmin,xinc
+   real                 :: xj
+   real                 :: t
 !
    xmin=180.0
    xmax=330.0
@@ -938,19 +937,19 @@ contains
 !-------------------------------------------------------------------------------
 !
 !-------------------------------------------------------------------------------
-   subroutine grimsinit(rthshten,rqvshten, &
-                        restart, &
-                        ids,ide, jds,jde, kds,kde, &
-                        ims,ime, jms,jme, kms,kme, &
-                        its,ite, jts,jte, kts,kte )
+   subroutine grimsinit(rthshten,rqvshten,                                     &
+                        restart,                                               &
+                        ids,ide, jds,jde, kds,kde,                             &
+                        ims,ime, jms,jme, kms,kme,                             &
+                        its,ite, jts,jte, kts,kte                  )
 !-------------------------------------------------------------------------------
    implicit none
 !-------------------------------------------------------------------------------
-   logical , intent(in) :: restart
-   integer , intent(in) :: ids, ide, jds, jde, kds, kde, &
-                                      ims, ime, jms, jme, kms, kme, &
+   logical , intent(in)           ::  restart
+   integer , intent(in)           ::  ids, ide, jds, jde, kds, kde,            &
+                                      ims, ime, jms, jme, kms, kme,            &
                                       its, ite, jts, jte, kts, kte
-   real, dimension( ims:ime , kms:kme , jms:jme ) , intent(out) :: &
+   real,     dimension( ims:ime , kms:kme , jms:jme ) , intent(out) ::         &
                                                                      rthshten, &
                                                                      rqvshten
    integer :: i, j, k, itf, jtf, ktf
@@ -982,8 +981,8 @@ contains
 !-------------------------------------------------------------------------------
    implicit none
 !-------------------------------------------------------------------------------
-   integer :: jx
-   real :: xmax,xmin,xinc,pv,x,t
+   integer          :: jx
+   real             :: xmax,xmin,xinc,pv,x,t
 !
    xmin= 0.001
    xmax=10.001
@@ -1007,9 +1006,9 @@ contains
 !-------------------------------------------------------------------------------
    implicit none
 !-------------------------------------------------------------------------------
-   integer :: jx,jy
-   real :: xmin,xmax,xinc,ymin,ymax,yinc
-   real :: x,y,t,pk
+   integer          :: jx,jy
+   real             :: xmin,xmax,xinc,ymin,ymax,yinc
+   real             :: x,y,t,pk
 !
    xmin=ttp-90.
    xmax=ttp+30.
@@ -1041,9 +1040,9 @@ contains
 !-------------------------------------------------------------------------------
    implicit none
 !-------------------------------------------------------------------------------
-   integer :: jx,jy
-   real :: xmin,xmax,xinc,ymin,ymax,yinc
-   real :: y,pk,t,x,the,q
+   integer          :: jx,jy
+   real             :: xmin,xmax,xinc,ymin,ymax,yinc
+   real             :: y,pk,t,x,the,q
 !
    xmin=200.
    xmax=500.
@@ -1078,9 +1077,9 @@ contains
 !-------------------------------------------------------------------------------
    implicit none
 !-------------------------------------------------------------------------------
-   integer :: jx
-   real :: xmin,xmax,xinc
-   real :: t,x
+   integer          :: jx
+   real             :: xmin,xmax,xinc
+   real             :: t,x
 !
    xmin=180.0
    xmax=330.0
@@ -1102,10 +1101,10 @@ contains
 !-------------------------------------------------------------------------------
    implicit none
 !-------------------------------------------------------------------------------
-   real :: ftdpxg
+   real             :: ftdpxg
 !
-   real :: tg,pv
-   real :: t,tr,pvt,el,dpvt,terr
+   real             :: tg,pv
+   real             :: t,tr,pvt,el,dpvt,terr
 !
    t=tg
    tr=ttp/t
@@ -1134,10 +1133,10 @@ contains
 !-------------------------------------------------------------------------------
    implicit none
 !-------------------------------------------------------------------------------
-   real :: fthex
+   real             :: fthex
 !
-   real :: t,pk,p
-   real :: tr, pv, pd, el, expo
+   real             :: t,pk,p
+   real             :: tr, pv, pd, el, expo
 !
    p=pk**cpor
    tr=ttp/t
@@ -1161,8 +1160,8 @@ contains
 !-------------------------------------------------------------------------------
    implicit none
 !-------------------------------------------------------------------------------
-   real :: ftmaxg
-   real :: tg,the,pk,t,p,tr,pv,pd,el,expo,thet,dthet,terr,qma
+   real             :: ftmaxg
+   real             :: tg,the,pk,t,p,tr,pv,pd,el,expo,thet,dthet,terr,qma
 !
    t=tg
    p=pk**cpor
@@ -1192,7 +1191,7 @@ contains
    pv=psatb*(tr**xa)*exp(xb*(1.-tr))
    pd=p-pv
    qma=eps*pv/(pd+eps*pv)
-!
+!  
    return
    end function
 !-------------------------------------------------------------------------------
@@ -1202,10 +1201,10 @@ contains
 !-------------------------------------------------------------------------------
    implicit none
 !-------------------------------------------------------------------------------
-   real :: fpvsx
+   real             :: fpvsx
 !
-   real :: t
-   real :: tr
+   real             :: t
+   real             :: tr
 !
    tr=ttp/t
    if(t.ge.ttp) then

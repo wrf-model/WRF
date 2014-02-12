@@ -471,7 +471,7 @@ contains
    ! NOTE: u10 and v10 are already on H points
    do j=max(jps,jds+1),min(jpe,jde-2)
       a=mod(j,2)
-      do i=max(ips,ids+1),min(ipe,jde-2)
+      do i=max(ips,ids+1),min(ipe,ide-2)
          grid%m10wind(i,j)=sqrt(grid%u10(i,j)*grid%u10(i,j) + grid%v10(i,j)*grid%v10(i,j))
          dvdx1 = 0.5*(grid%v10(i-a+1,j+1)-grid%v10(i-a,j+1) + &
                      grid%v10(i-a+1,j-1)-grid%v10(i-a,j-1)) / (2*grid%dx_nmm(i,j))

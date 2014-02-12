@@ -13,7 +13,8 @@ module_dm.o: module_machine.o module_state_description.o module_wrf_error.o \
 		module_driver_constants.o \
 		module_timing.o \
 		module_comm_nesting_dm.o \
-		module_configure.o module_comm_dm.o
+		module_configure.o module_comm_dm.o \
+                module_cpl.o
 
 module_timing.o: hires_timer.o clog.o
 
@@ -62,18 +63,21 @@ module_alloc_space_7.o : module_domain_type.o module_configure.o
 module_alloc_space_8.o : module_domain_type.o module_configure.o
 module_alloc_space_9.o : module_domain_type.o module_configure.o
 
-module_streams.o : module_state_description.o 
+module_streams.o : \
+		module_state_description.o 
 
 module_driver_constants.o: \
 		module_state_description.o \
                 module_wrf_error.o
 
-module_integrate.o: module_domain.o \
+module_integrate.o: \
+		module_domain.o \
 		module_timing.o \
 		module_driver_constants.o \
 		module_state_description.o \
 		module_nesting.o \
 		module_configure.o \
+		module_cpl.o \
 		$(ESMF_MOD_DEPENDENCE)
 
 module_intermediate_nmm.o: \
@@ -84,29 +88,34 @@ module_intermediate_nmm.o: \
 		module_comm_dm.o \
                 module_timing.o
 
-module_io.o : md_calls.inc \
+module_io.o :	md_calls.inc \
                 module_dm.o \
 		module_state_description.o \
 		module_configure.o  \
                 module_streams.o \
 		module_driver_constants.o 
 
-module_io_quilt.o: module_state_description.o \
+module_io_quilt.o: \
+		module_state_description.o \
                 module_dm.o \
                 module_configure.o \
 		module_internal_header_util.o \
 		module_quilt_outbuf_ops.o \
-		module_wrf_error.o
+		module_wrf_error.o  \
+                module_cpl.o 
 
-module_machine.o: module_driver_constants.o
+module_machine.o: \
+		module_driver_constants.o
 
-module_nesting.o: module_machine.o \
+module_nesting.o: \
+		module_machine.o \
 		module_driver_constants.o \
 		module_configure.o \
 		$(ESMF_MOD_DEPENDENCE) \
 		module_domain.o 
 
-module_quilt_outbuf_ops.o: module_state_description.o module_timing.o
+module_quilt_outbuf_ops.o: \
+		module_state_description.o module_timing.o
 
 module_tiles.o: module_domain.o \
 		module_driver_constants.o \
@@ -125,6 +134,18 @@ module_wrf_error.o: \
 
 wrf_debug.o: \
 		module_wrf_error.o
+
+module_sm.o:	module_wrf_error.o
+
+module_cpl.o: \
+		../share/module_model_constants.o \
+		module_driver_constants.o \
+		module_domain.o \
+		module_configure.o \
+		module_cpl_oasis3.o
+
+module_cpl_oasis3.o: module_driver_constants.o \
+                     module_domain.o
 
 # End of DEPENDENCIES for frame
 
@@ -420,12 +441,15 @@ module_sf_noahmpdrv.o: module_sf_noahmplsm.o \
 			module_sf_noahlsm_glacial_only.o \
 			module_sf_noahmp_glacier.o \
 			module_sf_myjsfc.o \
+			module_sf_noahmp_groundwater.o \
 			../share/module_model_constants.o
 
 module_sf_noahlsm_glacial_only.o: module_sf_noahlsm.o module_sf_noahmplsm.o
 
 module_sf_noahmplsm.o:	../share/module_model_constants.o \
 			module_sf_myjsfc.o
+
+module_sf_noahmp_groundwater.o:
 
 module_sf_bep.o: ../share/module_model_constants.o module_sf_urban.o
 
@@ -480,6 +504,7 @@ module_physics_init.o : \
                 module_sf_bep_bem.o             \
 		module_sf_ruclsm.o		\
 		module_sf_pxlsm.o		\
+		module_sf_lake.o		\
 		module_bl_ysu.o		        \
 		module_bl_mrf.o			\
 		module_bl_gfs.o			\
@@ -529,6 +554,7 @@ module_physics_init.o : \
 		module_cam_constituents.o       \
 		module_cam_mp_modal_aero_initialize_data_phys.o \
 		module_cam_support.o \
+		module_wind_turbdragforce.o \
 		module_wind_fitch.o		\
 		../frame/module_state_description.o \
 		../frame/module_configure.o \
@@ -598,6 +624,7 @@ module_pbl_driver.o:  \
 		module_wind_fitch.o \
 		module_bl_temf.o \
 		module_bl_mfshconvpbl.o \
+		module_wind_turbdragforce.o \
 		../frame/module_state_description.o \
 		../frame/module_configure.o \
 		../share/module_model_constants.o 
@@ -619,6 +646,7 @@ module_radiation_driver.o: \
 		module_ra_hs.o \
 		module_ra_goddard.o \
                 module_ra_flg.o \
+                module_ra_aerosol.o \
 		../frame/module_driver_constants.o \
 		../frame/module_state_description.o \
 		../frame/module_dm.o \
@@ -638,6 +666,7 @@ module_surface_driver.o: \
 		module_sf_pxsfclay.o		\
 		module_sf_gfs.o  		\
 		module_sf_noah_seaice_drv.o	\
+                module_sf_noahmp_groundwater.o  \
 		module_sf_noahdrv.o		\
 		module_sf_clm.o			\
                 module_sf_ssib.o                \
@@ -649,6 +678,7 @@ module_surface_driver.o: \
 		module_sf_sfcdiags.o		\
 		module_sf_sfcdiags_ruclsm.o     \
 		module_sf_sstskin.o		\
+                module_sf_lake.o                \
 		module_sf_tmnupdate.o		\
 		module_sf_temfsfclay.o		\
 		module_sf_idealscmsfclay.o	\
@@ -657,6 +687,7 @@ module_surface_driver.o: \
 		module_sf_ocean_driver.o	\
 		../frame/module_state_description.o \
 		../frame/module_configure.o \
+		../frame/module_cpl.o \
 		../share/module_model_constants.o  
 
 module_sf_ocean_driver.o : \
@@ -664,9 +695,38 @@ module_sf_ocean_driver.o : \
 		module_sf_3dpwp.o \
 		../frame/module_state_description.o 
 
-module_diagnostics.o: ../frame/module_dm.o \
+module_diagnostics_driver.o: \
+		module_lightning_driver.o 		\
+		module_diag_misc.o 			\
+		module_diag_cl.o			\
+		module_diag_pld.o 			\
+		module_diag_afwa.o 			\
+		../frame/module_state_description.o 	\
+		../frame/module_domain.o 		\
+		../frame/module_configure.o 		\
+		../frame/module_driver_constants.o 	\
 		../share/module_model_constants.o
 
+module_diag_misc.o: \
+		../frame/module_dm.o
+
+module_diag_cl.o: \
+		../frame/module_dm.o 			\
+		../frame/module_configure.o
+
+module_diag_pld.o: \
+		../share/module_model_constants.o
+
+module_diag_afwa.o: \
+		../frame/module_domain.o 		\
+		../frame/module_dm.o 			\
+		../frame/module_state_description.o 	\
+		../frame/module_configure.o 		\
+		../share/module_model_constants.o
+
+module_diag_refl.o: \
+		../frame/module_dm.o			\
+		../share/module_model_constants.o
 
 module_mixactivate.o: \
 		module_radiation_driver.o
@@ -683,6 +743,10 @@ module_fddaobs_driver.o: \
 		../share/module_bc.o  \
 		../share/module_model_constants.o  \
 		module_fddaobs_rtfdda.o
+
+module_sf_lake.o : \
+             ../share/module_model_constants.o
+ 
 
 module_fr_fire_driver.o: \
 		../share/module_model_constants.o  \
@@ -761,6 +825,9 @@ module_ltng_cpmpr92z.o :
 module_ltng_crmpr92.o :
 
 module_ltng_iccg.o :
+
+module_ra_aerosol.o :\
+	../frame/module_wrf_error.o
 
 # End of DEPENDENCIES for phys
 
@@ -1132,6 +1199,7 @@ module_wrf_top.o: ../frame/module_machine.o \
                   ../frame/module_timing.o \
                   ../frame/module_wrf_error.o \
                   ../frame/module_state_description.o \
+                  ../frame/module_cpl.o \
                   $(ESMF_MOD_DEPENDENCE)
 
 # End of DEPENDENCIES for main

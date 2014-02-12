@@ -153,6 +153,24 @@ subroutine da_check_max_iv_airep(iv, it, num_qcstat_conv)
         end if
         end if
 
+        failed=.false.
+        if( iv%airep(n)%q(k)%qc >= obs_qc_pointer ) then
+        if( iv%airep(n)%t(k)%qc == fails_error_max ) then
+           failed=.true.
+           iv%airep(n)%q(k)%qc  = fails_error_max
+           iv%airep(n)%q(k)%inv = 0.0
+        else
+           call da_max_error_qc (it,iv%info(airep), n, iv%airep(n)%q(k), max_error_q ,failed)
+        endif
+        if( iv%info(airep)%proc_domain(k,n) ) then
+           num_qcstat_conv(1,airep,4,ipr) = num_qcstat_conv(1,airep,4,ipr) + 1
+           if(failed) then
+           num_qcstat_conv(2,airep,4,ipr) = num_qcstat_conv(2,airep,4,ipr) + 1
+           write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
+           'airep',ob_vars(4),iv%info(airep)%lat(k,n),iv%info(airep)%lon(k,n),0.01*iv%airep(n)%p(k)
+           end if
+        end if
+        end if
       end do
    end do
    

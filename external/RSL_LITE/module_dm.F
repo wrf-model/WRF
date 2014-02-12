@@ -4,6 +4,10 @@ MODULE module_dm
    USE module_wrf_error
    USE module_driver_constants
 !   USE module_comm_dm
+#if ( DA_CORE != 1 )
+   USE module_cpl, ONLY : coupler_on, cpl_init
+#endif
+
    IMPLICIT NONE
 
 #if ( NMM_CORE == 1 ) || defined( WRF_CHEM ) 
@@ -19,6 +23,12 @@ MODULE module_dm
    INTEGER local_communicator, local_communicator_periodic, local_iocommunicator
    INTEGER local_communicator_x, local_communicator_y ! subcommunicators for rows and cols of mesh
    LOGICAL :: dm_debug_flag = .FALSE.
+
+#if (DA_CORE == 1)
+   integer :: c_ipsy, c_ipey, c_kpsy, c_kpey, c_kpsx, c_kpex, c_ipex, c_ipsx, c_jpex, c_jpsx, c_jpey, c_jpsy 
+   integer :: c_imsy, c_imey, c_kmsy, c_kmey, c_kmsx, c_kmex, c_imex, c_imsx, c_jmex, c_jmsx, c_jmey, c_jmsy 
+   integer :: k 
+#endif
 
    INTERFACE wrf_dm_maxval
 #if ( defined(PROMOTE_FLOAT) || ( RWORDSIZE == DWORDSIZE ) )
@@ -270,6 +280,10 @@ CONTAINS
       INTEGER               :: idim_cd, jdim_cd, ierr
       INTEGER               :: max_dom
 
+#if (DA_CORE == 1)
+      INTEGER               :: e_we, e_sn 
+#endif
+
       TYPE(domain), POINTER :: intermediate_grid
       TYPE(domain), POINTER  :: nest_grid
       CHARACTER*256   :: mess
@@ -463,6 +477,15 @@ CONTAINS
          c_ids = i_parent_start-shw ; c_ide = c_ids + idim_cd - 1
          c_jds = j_parent_start-shw ; c_jde = c_jds + jdim_cd - 1
 
+#if (DA_CORE == 1)
+          call nl_get_e_we( id -1, e_we )
+          call nl_get_e_sn( id -1, e_sn )
+
+         if ( c_ids .le. 0   ) c_ids = 1
+         if ( c_ide .gt. e_we) c_ide = e_we
+         if ( c_jds .le. 0   ) c_jds = 1
+         if ( c_jde .gt. e_sn) c_jde = e_sn
+#endif
          ! we want the intermediate domain to be decomposed the
          ! the same as the underlying nest. So try this:
 
@@ -510,13 +533,99 @@ CONTAINS
             c_jps = 0
          ENDIF
 
+#if (DA_CORE == 1)
+         IF (c_ipe .EQ. -1 .or. c_jpe .EQ. -1) THEN
+            c_ipe = -1
+            c_ips = 0
+            c_jpe = -1
+            c_jps = 0
+         ENDIF
+
+
+          c_kpsx = -1
+          nj = ( c_jds - j_parent_start ) * parent_grid_ratio + 1 + 1 ;
+          ierr = 0
+          DO k = c_kds, c_kde
+             CALL task_for_point ( k, nj, kds, kde, jds, jde, ntasks_x, ntasks_y, Px, Py, &
+                                   1, 1, ierr )
+             IF ( Px .EQ. mytask_x ) THEN
+                c_kpex = k
+                IF ( c_kpsx .EQ. -1 ) c_kpsx = k
+             ENDIF
+          ENDDO
+          IF ( ierr .NE. 0 ) THEN
+             CALL tfp_message(__FILE__,__LINE__)
+          ENDIF
+          IF (c_kpsx .EQ. -1 ) THEN
+             c_kpex = -1
+             c_kpsx = 0
+          ENDIF
+
+          c_jpsx = -1
+          k = c_kds ;
+          ierr = 0
+          DO j = c_jds, c_jde
+             nj = ( j - j_parent_start ) * parent_grid_ratio + 1 + 1 ;
+             CALL task_for_point ( k, nj, kds, kde, jds, jde, ntasks_x, ntasks_y, Px, Py, &
+                                   1, 1, ierr )
+             IF ( Py .EQ. mytask_y ) THEN
+                c_jpex = j
+                IF ( c_jpsx .EQ. -1 ) c_jpsx = j
+             ENDIF
+          ENDDO
+          IF ( ierr .NE. 0 ) THEN
+             CALL tfp_message(__FILE__,__LINE__)
+          ENDIF
+          IF (c_jpsx .EQ. -1 ) THEN
+             c_jpex = -1
+             c_jpsx = 0
+          ENDIF
+
+          IF (c_ipex .EQ. -1 .or. c_jpex .EQ. -1) THEN
+             c_ipex = -1
+             c_ipsx = 0
+             c_jpex = -1
+             c_jpsx = 0
+          ENDIF
+
+          c_kpsy = c_kpsx   ! same as above
+          c_kpey = c_kpex   ! same as above
+
+          c_ipsy = -1
+          k = c_kds ;
+          ierr = 0
+          DO i = c_ids, c_ide
+             ni = ( i - i_parent_start ) * parent_grid_ratio + 1 + 1 ;
+             CALL task_for_point ( ni, k, ids, ide, kds, kde, ntasks_y, ntasks_x, Py, Px, &
+                                   1, 1, ierr ) ! x and y for proc mesh reversed
+             IF ( Py .EQ. mytask_y ) THEN
+                c_ipey = i
+                IF ( c_ipsy .EQ. -1 ) c_ipsy = i
+             ENDIF
+          ENDDO
+          IF ( ierr .NE. 0 ) THEN
+             CALL tfp_message(__FILE__,__LINE__)
+          ENDIF
+          IF (c_ipsy .EQ. -1 ) THEN
+             c_ipey = -1
+             c_ipsy = 0
+          ENDIF
+#endif
+
+
          IF ( c_ips <= c_ipe ) THEN
 ! extend the patch dimensions out shw along edges of domain
            IF ( mytask_x .EQ. 0 ) THEN
              c_ips = c_ips - shw
+#if (DA_CORE == 1)
+             c_ipsy = c_ipsy - shw  
+#endif
            ENDIF
            IF ( mytask_x .EQ. ntasks_x-1 ) THEN
              c_ipe = c_ipe + shw
+#if (DA_CORE == 1)
+             c_ipey = c_ipey + shw  
+#endif
            ENDIF
            c_ims = max( c_ips - max(shw,thisdomain_max_halo_width), c_ids - bdx ) - 1
            c_ime = min( c_ipe + max(shw,thisdomain_max_halo_width), c_ide + bdx ) + 1
@@ -531,9 +640,15 @@ CONTAINS
 ! extend the patch dimensions out shw along edges of domain
            IF ( mytask_y .EQ. 0 ) THEN
               c_jps = c_jps - shw
+#if (DA_CORE == 1)
+              c_jpsx = c_jpsx - shw  
+#endif
            ENDIF
            IF ( mytask_y .EQ. ntasks_y-1 ) THEN
               c_jpe = c_jpe + shw
+#if (DA_CORE == 1)
+              c_jpex = c_jpex + shw  
+#endif
            ENDIF
            c_jms = max( c_jps - max(shw,thisdomain_max_halo_width), c_jds - bdx ) - 1
            c_jme = min( c_jpe + max(shw,thisdomain_max_halo_width), c_jde + bdx ) + 1
@@ -546,6 +661,79 @@ CONTAINS
          c_kpe = c_kde
          c_kms = 1
          c_kme = c_kde
+
+! Default initializations
+         c_sm1x = 1 ; c_em1x = 1 ; c_sm2x = 1 ; c_em2x = 1 ; c_sm3x = 1 ; c_em3x = 1
+         c_sm1y = 1 ; c_em1y = 1 ; c_sm2y = 1 ; c_em2y = 1 ; c_sm3y = 1 ; c_em3y = 1
+
+#if (DA_CORE == 1)
+         c_kmsx = c_kpsx 
+         c_kmex = c_kpex 
+         c_kmsy = c_kpsy 
+         c_kmey = c_kpey 
+
+         IF ( c_kpsx .EQ. 0 .AND. c_kpex .EQ. -1 ) THEN  
+            c_kmsx = 0
+            c_kmex = 0
+         ENDIF
+         IF ( c_kpsy .EQ. 0 .AND. c_kpey .EQ. -1 ) THEN
+            c_kmsy = 0
+            c_kmey = 0
+         ENDIF
+         c_imsx = c_ids
+         c_imex = c_ide
+         c_ipsx = c_imsx
+         c_ipex = c_imex
+
+         IF ( c_ipsy .EQ. 0 .AND. c_ipey .EQ. -1 ) THEN
+            c_imsy = 0
+            c_imey = 0
+         ELSE
+            c_imsy = c_ipsy
+            c_imey = c_ipey
+         ENDIF
+
+         c_jmsx = c_jpsx
+         c_jmex = c_jpex
+         c_jmsy = c_jds
+         c_jmey = c_jde
+
+         IF ( c_jpsx .EQ. 0 .AND. c_jpex .EQ. -1 ) THEN
+            c_jmsx = 0
+            c_jmex = 0
+         ELSE
+            c_jpsy = c_jmsy
+            c_jpey = c_jmey
+         ENDIF
+
+         c_sm1x = c_imsx
+         c_em1x = c_imex
+         c_sm2x = c_jmsx
+         c_em2x = c_jmex
+         c_sm3x = c_kmsx
+         c_em3x = c_kmex
+
+         c_sm1y = c_imsy
+         c_em1y = c_imey
+         c_sm2y = c_jmsy
+         c_em2y = c_jmey
+         c_sm3y = c_kmsy
+         c_em3y = c_kmey
+
+         c_sp1x = c_ipsx
+         c_ep1x = c_ipex
+         c_sp2x = c_jpsx
+         c_ep2x = c_jpex
+         c_sp3x = c_kpsx
+         c_ep3x = c_kpex
+
+         c_sp1y = c_ipsy
+         c_ep1y = c_ipey
+         c_sp2y = c_jpsy
+         c_ep2y = c_jpey
+         c_sp3y = c_kpsy
+         c_ep3y = c_kpey
+#endif
 
          WRITE(wrf_err_message,*)'*************************************'
          CALL wrf_message( TRIM(wrf_err_message) )
@@ -647,9 +835,6 @@ CONTAINS
          intermediate_grid%njds = jds
          intermediate_grid%njde = jde
 
-         c_sm1x = 1 ; c_em1x = 1 ; c_sm2x = 1 ; c_em2x = 1 ; c_sm3x = 1 ; c_em3x = 1
-         c_sm1y = 1 ; c_em1y = 1 ; c_sm2y = 1 ; c_em2y = 1 ; c_sm3y = 1 ; c_em3y = 1
-
          intermediate_grid%sm31x                           = c_sm1x
          intermediate_grid%em31x                           = c_em1x
          intermediate_grid%sm32x                           = c_sm2x
@@ -662,6 +847,21 @@ CONTAINS
          intermediate_grid%em32y                           = c_em2y
          intermediate_grid%sm33y                           = c_sm3y
          intermediate_grid%em33y                           = c_em3y
+
+#if (DA_CORE == 1)
+         intermediate_grid%sp31x                           = c_sp1x
+         intermediate_grid%ep31x                           = c_ep1x
+         intermediate_grid%sp32x                           = c_sp2x
+         intermediate_grid%ep32x                           = c_ep2x
+         intermediate_grid%sp33x                           = c_sp3x
+         intermediate_grid%ep33x                           = c_ep3x
+         intermediate_grid%sp31y                           = c_sp1y
+         intermediate_grid%ep31y                           = c_ep1y
+         intermediate_grid%sp32y                           = c_sp2y
+         intermediate_grid%ep32y                           = c_ep2y
+         intermediate_grid%sp33y                           = c_sp3y
+         intermediate_grid%ep33y                           = c_ep3y
+#endif
 
 #if ( defined(SGIALTIX) && (! defined(MOVE_NESTS) ) ) || ( defined(FUJITSU_FX10) && (! defined(MOVE_NESTS) ) )
          ! allocate space for the intermediate domain
@@ -1438,10 +1638,19 @@ CONTAINS
         IF ( thread_support_provided .lt. thread_support_requested ) THEN
            CALL WRF_ERROR_FATAL( "failed to initialize MPI thread support")
         ENDIF
-#  else
-        CALL mpi_init ( ierr )
-#  endif
         mpi_comm_here = MPI_COMM_WORLD
+#  else
+#if ( DA_CORE != 1 )
+        IF ( coupler_on ) THEN
+           CALL cpl_init( mpi_comm_here )
+        ELSE
+#endif
+           CALL mpi_init ( ierr )
+           mpi_comm_here = MPI_COMM_WORLD
+#if ( DA_CORE != 1 )
+        ENDIF
+#endif
+#  endif
 #ifdef HWRF
         CALL atm_cmp_start( mpi_comm_here )   ! atmospheric side of HWRF coupler will split MPI_COMM_WORLD and return communicator as argument
 #endif
@@ -1546,6 +1755,7 @@ CONTAINS
     REAL QRK_BUFFER(NIOBF)    ! Buffer for holding Q or RKO
     REAL SFP_BUFFER(NIOBF)    ! Buffer for holding Surface pressure
     REAL PBL_BUFFER(NIOBF)    ! Buffer for holding (real) KPBL index
+    REAL QATOB_BUFFER(NIOBF)  ! Buffer for holding QV at the ob location
     INTEGER N_BUFFER(NIOBF)
     REAL FULL_BUFFER(NIOBF)
     INTEGER IFULL_BUFFER(NIOBF)
@@ -1653,6 +1863,7 @@ CONTAINS
        QRK_BUFFER(NLOCAL_CRS) = ERRF(4,N)     ! MOISTURE
        PBL_BUFFER(NLOCAL_CRS) = ERRF(5,N)     ! KPBL
        SFP_BUFFER(NLOCAL_CRS) = ERRF(6,N)     ! SURFACE PRESSURE
+       QATOB_BUFFER(NLOCAL_CRS) = ERRF(10,N)     ! Model Mixing ratio itself (NOT ERROR)
        N_BUFFER(NLOCAL_CRS) = N
      ENDIF
    ENDDO
@@ -1695,6 +1906,15 @@ CONTAINS
    DO N = 1, NSTA
      ERRF(6,IFULL_BUFFER(N)) = FULL_BUFFER(N)
    ENDDO
+
+! Water vapor mixing ratio at the mass points (NOT THE ERROR)
+   CALL MPI_ALLGATHERV( QATOB_BUFFER, NLOCAL_CRS, MPI_REAL,     &
+                        FULL_BUFFER, ICOUNT, IDISPLACEMENT,   &
+                        MPI_REAL, MPI_COMM_COMP, IERR)
+   DO N = 1, NSTA
+     ERRF(10,IFULL_BUFFER(N)) = FULL_BUFFER(N)
+   ENDDO
+
 #endif
    END SUBROUTINE get_full_obs_vector
 
@@ -2067,11 +2287,24 @@ SUBROUTINE write_68( grid, v , s , &
 END
 
    SUBROUTINE wrf_abort
+
+#if ( DA_CORE != 1 )
+      USE module_cpl, ONLY : coupler_on, cpl_abort
+#endif
+
       IMPLICIT NONE
 #ifndef STUBMPI
       INCLUDE 'mpif.h'
       INTEGER ierr
-      CALL mpi_abort(MPI_COMM_WORLD,1,ierr)
+#if ( DA_CORE != 1 )
+      IF ( coupler_on ) THEN
+         CALL cpl_abort( 'wrf_abort', 'look for abort message in rsl* files' )
+      ELSE
+#endif
+         CALL mpi_abort(MPI_COMM_WORLD,1,ierr)
+#if ( DA_CORE != 1 )
+      END IF
+#endif
 #else
       STOP
 #endif

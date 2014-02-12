@@ -34,14 +34,16 @@ module da_test
       inv_typ_vp4_sumsq,typical_rho_rms,balance_geo,balance_cyc,balance_type, &
       balance_geocyc, var4d, num_fgat_time,cv_options_hum_specific_humidity, &
       cv_options_hum_relative_humidity, ids, ide, jds, jde, kds, kde, &
-      sound, mtgirs, synop, profiler, gpsref, gpspw, polaramv, geoamv, ships, metar, &
-      satem, radar, ssmi_rv, ssmi_tb, ssmt1, ssmt2, airsr, pilot, airep, tamdar,rain, &
+      sound, sonde_sfc, mtgirs, synop, profiler, gpsref, gpspw, polaramv, geoamv, ships, metar, &
+      satem, radar, ssmi_rv, ssmi_tb, ssmt1, ssmt2, airsr, pilot, airep, tamdar, tamdar_sfc, rain, &
       bogus, buoy, qscat, pseudo, radiance, use_radarobs, use_ssmiretrievalobs,use_rainobs, &
       use_gpsrefobs, use_ssmt1obs, use_ssmitbobs, use_ssmt2obs, use_gpspwobs,&
       use_gpsztdobs, Use_Radar_rf, use_rad, crtm_cloud, cloud_cv_options, &
       ids,ide,jds,jde,kds,kde, ims,ime,jms,jme,kms,kme, fgat_rain_flags, &
       its,ite,jts,jte,kts,kte, ips,ipe,jps,jpe,kps,kpe, cv_options, cv_size, &
-      cloud_cv_options, cp, gas_constant, test_dm_exact, cv_size_domain
+      cloud_cv_options, cp, gas_constant, test_dm_exact, cv_size_domain, &
+      its_int, ite_int, jts_int, jte_int, kts_int, kte_int, &
+      ims_int, ime_int, jms_int, jme_int, kms_int, kme_int
 
    use da_define_structures, only : da_zero_x,da_zero_vp_type,da_allocate_y, &
       da_deallocate_y,be_type, xbx_type, iv_type, y_type, j_type, da_initialize_cv

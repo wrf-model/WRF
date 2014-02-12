@@ -387,12 +387,13 @@ subroutine da_search_obs (ob_type_string, unit_in, num_obs, nth, iv, found_flag)
            abs(iv%info(airep)%lon(1,nth) - lon ) < MIN_ERR ) then
 
         do k = 1, levels
-          read(unit_in,'(2E22.13,3(E22.13,i8,3E22.13))')&
+          read(unit_in,'(2E22.13,4(E22.13,i8,3E22.13))')&
                iv % airep(nth) % h(k), &
                iv % airep(nth) % p(k), &             ! Obs pressure
                iv%airep(nth)%u(k), &! O-B u
                iv%airep(nth)%v(k), &! O-B v
-               iv%airep(nth)%t(k)
+               iv%airep(nth)%t(k), &! 
+               iv%airep(nth)%q(k)
         enddo
 
         !found_flag = .true.

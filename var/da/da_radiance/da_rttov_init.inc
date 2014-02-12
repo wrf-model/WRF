@@ -52,6 +52,7 @@ subroutine da_rttov_init(iv,ob,nsensor,nchan)
 
    allocate (coefs(nsensor))
    allocate (opts(nsensor))
+   allocate (opts_rt_ir(nsensor))      
    allocate (sensor(3,nsensor))
    allocate (coefs_channels(mxchn,nsensor))
 
@@ -78,7 +79,7 @@ subroutine da_rttov_init(iv,ob,nsensor,nchan)
    ! 2.0 read and initialize coefficients
    !     rttov_read_coefs and rttov_init_coefs are called for each instrument
    !-----------------------------------------------------------
- 
+
    file_path    = 'rttov_coeffs/'
    file_suffix  = '.dat'
    coef_prefix  = 'rtcoef_'
@@ -90,18 +91,18 @@ subroutine da_rttov_init(iv,ob,nsensor,nchan)
 
    do n = 1, nsensor
 
-      opts(n)%switchrad  = .true.   ! brightness temperature radiance%bt is the input perturbation
-      opts(n)%addrefrac  = .false.  ! refraction in path calc
-      opts(n)%addinterp  = .false.  ! interpolation of input profile
-      opts(n)%addsolar   = .false.  ! reflected solar
-      opts(n)%addclouds  = .false.  ! cloud effect
-      opts(n)%addaerosl  = .false.  ! aerosol effect
-      opts(n)%ozone_data = .false.
-      opts(n)%co2_data   = .false.
-      opts(n)%n2o_data   = .false.
-      opts(n)%ch4_data   = .false.
-      opts(n)%co_data    = .false.
-      opts(n)%clw_data   = .false.
+      opts(n) % rt_all % switchrad  = .true.   ! brightness temperature radiance%bt is the input perturbation
+      opts(n) % rt_all % addrefrac  = .false.  ! refraction in path calc
+      opts(n) % interpolation % addinterp  = .false.  ! interpolation of input profile
+      opts(n) % rt_mw % clw_data = .false.
+      opts_rt_ir(n) % addsolar   = .false.  ! reflected solar
+      opts_rt_ir(n) % addclouds  = .false.  ! cloud effect
+      opts_rt_ir(n) % addaerosl  = .false.  ! aerosol effect
+      opts_rt_ir(n) % ozone_data = .false.
+      opts_rt_ir(n) % co2_data   = .false.
+      opts_rt_ir(n) % n2o_data   = .false.
+      opts_rt_ir(n) % ch4_data   = .false.
+      opts_rt_ir(n) % co_data    = .false.
 
       ! construct the full path name to the coef file
       coef_filename = trim(file_path)//trim(coef_prefix)//trim(iv%instid(n)%rttovid_string_coef)//trim(file_suffix)
@@ -126,11 +127,6 @@ subroutine da_rttov_init(iv,ob,nsensor,nchan)
          call da_error(__FILE__,__LINE__,(/"rttov_read_coefs fatal error"/))
       end if
 
-      call rttov_init_coefs (errorstatus, opts(n), coefs(n))
-      if ( errorstatus /= errorstatus_success ) then
-         call da_error(__FILE__,__LINE__,(/"rttov_init_coefs fatal error"/))
-      end if
-
       iv%instid(n)%nlevels = coefs(n)%coef%nlevels
 
    end do
@@ -139,5 +135,5 @@ subroutine da_rttov_init(iv,ob,nsensor,nchan)
    deallocate (coefs_channels)
 
    if (trace_use) call da_trace_exit("da_rttov_init")
- 
+
 end subroutine da_rttov_init

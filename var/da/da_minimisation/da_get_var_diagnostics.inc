@@ -12,7 +12,7 @@ subroutine da_get_var_diagnostics( iv, j)
    integer                      :: num_stats_tot
    integer                      :: i,k
    real                         :: jo_radiance
-   real                         :: temp(77)
+   real                         :: temp(78)
 
    if (trace_use) call da_trace_entry("da_get_var_diagnostics")
 
@@ -55,6 +55,7 @@ subroutine da_get_var_diagnostics( iv, j)
    temp(31) = j % jo % airep_u         
    temp(32) = j % jo % airep_v         
    temp(33) = j % jo % airep_t         
+   temp(78) = j % jo % airep_q
    temp(34) = j % jo % pilot_u         
    temp(35) = j % jo % pilot_v         
    temp(36) = j % jo % bogus_u         
@@ -135,6 +136,7 @@ subroutine da_get_var_diagnostics( iv, j)
    j % jo % airep_u         = temp(31) 
    j % jo % airep_v         = temp(32) 
    j % jo % airep_t         = temp(33) 
+   j % jo % airep_q         = temp(78) 
    j % jo % pilot_u         = temp(34) 
    j % jo % pilot_v         = temp(35) 
    j % jo % bogus_u         = temp(36) 
@@ -307,7 +309,10 @@ subroutine da_get_var_diagnostics( iv, j)
                                j % jo % sound_v, iv % sound_ef_v, &
                                j % jo % sound_t, iv % sound_ef_t, &
                                j % jo % sound_q, iv % sound_ef_q, 0.0, 1.0 
-         write(unit=jo_unit,fmt='(a30,2i8,10f15.5)')'    sonde obs, Jo(actual)  = ', &
+      end if
+
+      if (iv%info(sonde_sfc)%ntotal > 0) then
+         write(unit=jo_unit,fmt='(a30,2i8,10f15.5)')'sonde sfc obs, Jo(actual)  = ', &
                                iv%info(sonde_sfc)%ntotal, iv%nstats(sonde_sfc), &
                                j % jo % sonde_sfc_u, iv % synop_ef_u, &
                                j % jo % sonde_sfc_v, iv % synop_ef_v, &
@@ -332,8 +337,11 @@ subroutine da_get_var_diagnostics( iv, j)
                                j % jo % tamdar_v, iv % tamdar_ef_v, &
                                j % jo % tamdar_t, iv % tamdar_ef_t, &
                                j % jo % tamdar_q, iv % tamdar_ef_q, 0.0, 1.0
+      end if
+
+      if (iv%info(tamdar_sfc)%ntotal > 0) then
          write(unit=jo_unit,fmt='(a30,2i8,10f15.5)')'tamdar sfc obs,Jo(actual)  = ', &
-                               iv%info(tamdar)%ntotal, iv%nstats(tamdar), &
+                               iv%info(tamdar_sfc)%ntotal, iv%nstats(tamdar_sfc), &
                                j % jo % tamdar_sfc_u, iv % tamdar_sfc_ef_u, &
                                j % jo % tamdar_sfc_v, iv % tamdar_sfc_ef_v, &
                                j % jo % tamdar_sfc_t, iv % tamdar_sfc_ef_t, &
@@ -347,7 +355,8 @@ subroutine da_get_var_diagnostics( iv, j)
                                j % jo % airep_u, iv % airep_ef_u, &
                                j % jo % airep_v, iv % airep_ef_v, &
                                j % jo % airep_t, iv % airep_ef_t, &
-                               0.0, 1.0, 0.0, 1.0
+                               j % jo % airep_q, iv % airep_ef_q, &
+                               0.0, 1.0
       end if
 
       if (iv%info(bogus)%ntotal > 0) then

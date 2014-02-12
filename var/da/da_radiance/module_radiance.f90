@@ -17,11 +17,13 @@ module module_radiance
             sensor_id_hi
    use rttov_types, only :  &
          rttov_options,     &
+         rttov_opts_rt_ir,  &
          rttov_coefs,       &
          profile_type,      &
          transmission_type, &
          radiance_type,     &
-         rttov_chanprof
+         rttov_chanprof,    &
+         rttov_emissivity
    use parkind1, only : jpim, jprb
 #endif
 
@@ -36,13 +38,14 @@ module module_radiance
       crtm_atmosphere_create, crtm_surface_create, &
       crtm_atmosphere_destroy, crtm_surface_destroy, &
       crtm_forward,crtm_init,crtm_k_matrix, &
-      crtm_tangent_linear, grass_soil, h2o_id,hail_cloud,ice_cloud,new_snow, &
+      crtm_tangent_linear, h2o_id,hail_cloud,ice_cloud, &
       o3_id, water_cloud, crtm_rtsolution_type, crtm_channelinfo_type, &
       crtm_atmosphere_type, crtm_surface_type, crtm_geometry_type, &
       crtm_surface_zero, crtm_atmosphere_zero, crtm_destroy, &
       climatology_model_name, &
       crtm_options_type, crtm_options_create, crtm_options_destroy, &
-      crtm_rtsolution_create, crtm_rtsolution_destroy, crtm_rtsolution_associated
+      crtm_rtsolution_create, crtm_rtsolution_destroy, crtm_rtsolution_associated, &
+      crtm_irlandcoeff_classification
    USE CRTM_Atmosphere_Define, only: crtm_atmosphere_associated, &
       MASS_MIXING_RATIO_UNITS, VOLUME_MIXING_RATIO_UNITS
    USE CRTM_Surface_Define, only: crtm_surface_associated
@@ -109,6 +112,7 @@ module module_radiance
 #ifdef RTTOV
    type (rttov_coefs), allocatable   :: coefs(:)     ! coefficients structure
    type (rttov_options), allocatable :: opts(:)      ! options structure
+   type (rttov_opts_rt_ir), allocatable :: opts_rt_ir(:) ! options structure
 #endif
 
    type satinfo_type

@@ -26,12 +26,12 @@ subroutine da_jo_and_grady_tamdar_sfc( iv, re, jo, jo_grad_y)
    jo % tamdar_sfc_q = 0.0
 
    if (test_dm_exact) then
-      if (iv%info(tamdar)%ntotal == 0) return
+      if (iv%info(tamdar_sfc)%ntotal == 0) return
    else
-      if (iv%info(tamdar)%nlocal < 1) return
+      if (iv%info(tamdar_sfc)%nlocal < 1) return
    end if
 
-   do n=1, iv%info(tamdar)%nlocal
+   do n=1, iv%info(tamdar_sfc)%nlocal
       jo_grad_y%tamdar_sfc(n)%u = -re%tamdar_sfc(n)%u / (iv%tamdar_sfc(n)%u%error * iv%tamdar_sfc(n)%u%error)
       jo_grad_y%tamdar_sfc(n)%v = -re%tamdar_sfc(n)%v / (iv%tamdar_sfc(n)%v%error * iv%tamdar_sfc(n)%v%error)
       jo_grad_y%tamdar_sfc(n)%t = -re%tamdar_sfc(n)%t / (iv%tamdar_sfc(n)%t%error * iv%tamdar_sfc(n)%t%error)

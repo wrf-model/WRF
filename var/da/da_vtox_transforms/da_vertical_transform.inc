@@ -118,8 +118,13 @@ subroutine da_vertical_transform(grid, string, be, vertical_wgt, vv, vp)
 #endif
       if ( be % ne > 0 .and. be % alpha % mz > 0 ) then
          do n = 1, be % ne
-            call da_transform_vvtovp (grid, be % alpha % evec, be % alpha % val, vertical_wgt, &
-                                       vv % alpha(:,:,:,n), vp % alpha(:,:,:,n), be % alpha % mz, kte)
+            if ( anal_type_hybrid_dual_res ) then
+               call da_transform_vvtovp_dual_res (grid%intermediate_grid, be % alpha % evec, be % alpha % val, vertical_wgt, &
+                                       vv % alpha(:,:,:,n), vp % alpha(:,:,:,n), be % alpha % mz, kte_int)
+            else
+               call da_transform_vvtovp (grid, be % alpha % evec, be % alpha % val, vertical_wgt, &
+                                       vv % alpha(:,:,:,n), vp % alpha(:,:,:,n), be % alpha % mz, kte_int)
+            endif
          end do
 
 !        Calculate alpha standard deviation diagnostic:
@@ -218,9 +223,13 @@ subroutine da_vertical_transform(grid, string, be, vertical_wgt, vv, vp)
 #endif
       if ( be % ne > 0 .and. be % alpha % mz > 0 ) then
          do n = 1, be % ne
+!           call da_transform_vptovv (be % alpha % evec, be % alpha % val, vertical_wgt, &
+!                                     vp % alpha(:,:,:,n), vv % alpha(:,:,:,n), be % alpha % mz, kds,kde, &
+!                                     ims,ime, jms,jme, kms,kme, its,ite, jts,jte, kts,kte)
             call da_transform_vptovv (be % alpha % evec, be % alpha % val, vertical_wgt, &
-                                      vp % alpha(:,:,:,n), vv % alpha(:,:,:,n), be % alpha % mz, kds,kde, &
-                                      ims,ime, jms,jme, kms,kme, its,ite, jts,jte, kts,kte)
+                                      vp % alpha(:,:,:,n), vv % alpha(:,:,:,n), be % alpha % mz, kds_int,kde_int, &
+                                      ims_int,ime_int, jms_int,jme_int, kms_int,kme_int, its_int,ite_int, &
+                                      jts_int,jte_int, kts_int,kte_int)
          end do
       end if
 
@@ -302,8 +311,13 @@ subroutine da_vertical_transform(grid, string, be, vertical_wgt, vv, vp)
 #endif
       if ( be % ne > 0 .and. be % alpha % mz > 0 ) then
          do n = 1, be % ne
-            call da_transform_vvtovp_adj (grid, be % alpha % evec, be % alpha % val, vertical_wgt, &
-                                           vp % alpha(:,:,:,n), vv % alpha(:,:,:,n), be % alpha % mz, kte)
+            if ( anal_type_hybrid_dual_res ) then
+               call da_transform_vvtovp_adj_dual_res (grid%intermediate_grid, be % alpha % evec, be % alpha % val, vertical_wgt, &
+                                           vp % alpha(:,:,:,n), vv % alpha(:,:,:,n), be % alpha % mz, kte_int)
+            else
+               call da_transform_vvtovp_adj (grid, be % alpha % evec, be % alpha % val, vertical_wgt, &
+                                           vp % alpha(:,:,:,n), vv % alpha(:,:,:,n), be % alpha % mz, kte_int)
+            endif
          end do
       end if
 

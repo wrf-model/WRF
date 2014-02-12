@@ -14,7 +14,9 @@
      &           )
 !-----------------------------------------------------------------------
         use module_timing
-      USE MODULE_DOMAIN,                ONLY : DOMAIN, GET_IJK_FROM_GRID
+      USE MODULE_DOMAIN,                ONLY : DOMAIN, GET_IJK_FROM_GRID &
+                                              ,domain_clock_get,is_alarm_tstep_nphs
+
       USE MODULE_CONFIGURE,             ONLY : GRID_CONFIG_REC_TYPE
       USE MODULE_MODEL_CONSTANTS
       USE MODULE_STATE_DESCRIPTION
@@ -47,6 +49,7 @@
 #ifdef WRF_CHEM
       USE MODULE_INPUT_CHEM_DATA,       ONLY: GET_LAST_GAS
 #endif
+      USE MODULE_DIAG_REFL
 
 
 !-----------------------------------------------------------------------
@@ -95,8 +98,15 @@
       INTEGER :: I,ICLTEND,IDF,IRTN,J,JC,JDF,K,KDF,LB,N_MOIST &
      &          ,NTSD_current,L
 #ifdef HWRF
+#ifdef HRD_MULTIPLE_STORMS
+!XUEJIN's doing
+      INTEGER, PARAMETER                    :: max_simulation_domains=11 !The max number of domains in the HWRF simulation. Currently hard-coded to 5 storms. This should eventually be replaced with CONFIG_FLAGS%MAX_DOM.
+      INTEGER                               :: kid1
+      INTEGER,SAVE,DIMENSION(max_simulation_domains)       :: NTSD_restart1
+#else
 !zhang's doing
       INTEGER,SAVE :: NTSD_restart1,NTSD_restart2,NTSD_restart3
+#endif
 #endif
       integer :: ierr,nrand,idt
       INTEGER,SAVE :: NTSD_restart
@@ -141,6 +151,10 @@
 #else
      &,            adjppt_tim
 #endif
+
+! Flag for producing diagnostic fields (e.g., radar reflectivity) 
+      LOGICAL                        :: diag_flag
+
 #ifdef NMM_FIND_LOAD_IMBALANCE
       real,save :: loadimbal_tim,previmbal_tim
 #endif
@@ -233,10 +247,17 @@
       IF(NTSD_current==0)THEN
         IF(GRID%RESTART.AND.GRID%TSTART>0.)THEN
 #ifdef HWRF
+#ifdef HRD_MULTIPLE_STORMS
+!XUEJIN's doing
+          do kid1=1,max_simulation_domains
+          if( grid%id .eq. kid1 ) NTSD_restart1(kid1)=INT(grid%TSTART*3600./GRID%DT+0.5)
+          end do
+#else
 !zhang's doing: temporarily hardwired for two domains
           if( grid%id .eq. 1 ) NTSD_restart1=INT(grid%TSTART*3600./GRID%DT+0.5)
           if( grid%id .eq. 2 ) NTSD_restart2=INT(grid%TSTART*3600./GRID%DT+0.5)
           if( grid%id .eq. 3 ) NTSD_restart3=INT(grid%TSTART*3600./GRID%DT+0.5)
+#endif
 #endif
           IHRST=grid%nstart_hour
           NTSD_restart=grid%ntsd
@@ -244,24 +265,45 @@
           IHRST=GRID%GMT
           grid%nstart_hour=IHRST
 #ifdef HWRF
+#ifdef HRD_MULTIPLE_STORMS
+!XUEJIN's doing
+          NTSD_restart1=0
+#else
 !zhang's doing
           NTSD_restart1=0
           NTSD_restart2=0
           NTSD_restart3=0
+#endif
 #else
           NTSD_restart=0
 #endif
         ENDIF
       ENDIF
 #ifdef HWRF
+#ifdef HRD_MULTIPLE_STORMS
+!XUEJIN's doing
+      do kid1=1,max_simulation_domains
+      if( grid%id .eq. kid1 ) grid%ntsd=NTSD_restart1(kid1)+NTSD_current
+      end do
+#else
 !zhang's doing
       if( grid%id .eq. 1 ) grid%ntsd=NTSD_restart1+NTSD_current
       if( grid%id .eq. 2 ) grid%ntsd=NTSD_restart2+NTSD_current
       if( grid%id .eq. 3 ) grid%ntsd=NTSD_restart3+NTSD_current
+#endif
 #else
       grid%ntsd=NTSD_restart+NTSD_current
 #endif
       LAST_TIME=domain_last_time_step(GRID)
+!-----------------------------------------------------------------------------
+!
+! Set diagnostic flag value at history output time
+!-----------------------------------------------------------------------------
+    diag_flag = .false.
+    if ( Is_alarm_tstep_nphs(grid%domain_clock, grid%alarms(HISTORY_ALARM), grid%nphs) ) then
+       diag_flag = .true.
+    endif
+
 !
 !-----------------------------------------------------------------------
 !
@@ -763,6 +805,10 @@
 !-----------------------------------------------------------------------
 !-----------------------------------------------------------------------
 #ifdef HWRF
+#ifdef HRD_MULTIPLE_STORMS
+      write(message,*)' No Ocean Coupling Run'
+      call wrf_message(trim(message))
+#else
 ! Coupling insertion:->
       call ATM_TSTEP_INIT(NTSD_current,grid%NPHS,GRID%ID,grid%NPHS*grid%dt, &
       ids,idf,jds,jdf,its,ite,jts,jte,ims,ime,jms,jme,           &
@@ -772,6 +818,7 @@
                        grid%guessdtc,grid%dtc)
 !<-:coupling insertion
 !
+#endif
 #endif
 !-----------------------------------------------------------------------
 !***  PRESSURE TENDENCY, SIGMA DOT, VERTICAL PART OF OMEGA-ALPHA
@@ -1554,6 +1601,16 @@
      &                ,RTHRATEN                                        &  
      &                ,grid%re_cloud,grid%re_ice,grid%re_snow          &  ! G. Thompson
      &                ,grid%has_reqc,grid%has_reqi,grid%has_reqs       &  ! G. Thompson
+     &                ,grid%SWUPT,grid%SWUPTC,grid%SWDNT,grid%SWDNTC   &
+     &                ,grid%SWUPB,grid%SWUPBC,grid%SWDNB,grid%SWDNBC   &
+     &                ,grid%LWUPT,grid%LWUPTC,grid%LWDNT,grid%LWDNTC   &
+     &                ,grid%LWUPB,grid%LWUPBC,grid%LWDNB,grid%LWDNBC   &
+     &                ,grid%ACSWUPT,grid%ACSWUPTC,grid%ACSWDNT,grid%ACSWDNTC   &
+     &                ,grid%ACSWUPB,grid%ACSWUPBC,grid%ACSWDNB,grid%ACSWDNBC   &
+     &                ,grid%ACLWUPT,grid%ACLWUPTC,grid%ACLWDNT,grid%ACLWDNTC   &
+     &                ,grid%ACLWUPB,grid%ACLWUPBC,grid%ACLWDNB,grid%ACLWDNBC   &
+     &                 ,grid%swvisdir ,grid%swvisdif &  !ssib
+     &                 ,grid%swnirdir ,grid%swnirdif &  !ssib
 #ifdef WRF_CHEM
      &                ,PM2_5_DRY, PM2_5_WATER, PM2_5_DRY_EC            &
      &                ,TAUAER1, TAUAER2, TAUAER3, TAUAER4              & 
@@ -1603,6 +1660,10 @@
 !-------------------------------------------------------------------------------------
 !*** GET SSTs FROM DMITRY's COUPLER ON TO THE PARENT AND NESTED GRID
 !-------------------------------------------------------------------------------------
+#ifdef HRD_MULTIPLE_STORMS
+      write(message,*)' No Ocean Coupling Run'
+      call wrf_message(trim(message))
+#else
 ! Coupling insertion:->
         CALL ATM_GETSST(grid%sst,grid%sm)
 !<-:Coupling insertion
@@ -1611,6 +1672,7 @@
         sst_tim=sst_tim+timef()-btimx
       ENDIF
 
+#endif
 #endif
 !----------------------------------------------------------------------
 !***  TURBULENT PROCESSES 
@@ -1646,7 +1708,7 @@
      &            ,grid%sfcexc,grid%acsnow,grid%acsnom,grid%snopcx,grid%sice,grid%tg,grid%soiltb          &
      &            ,grid%albsi,grid%icedepth,grid%snowsi                                                   &
      &            ,grid%albase,grid%mxsnal,grid%albedo,grid%sh2o,grid%si,grid%epsr,grid%embck             &
-     &            ,grid%u10,grid%v10,grid%th10,grid%q10,grid%tshltr,grid%qshltr,grid%pshltr               &
+     &            ,grid%u10,grid%v10,grid%uoce,grid%voce,grid%th10,grid%q10,grid%tshltr,grid%qshltr,grid%pshltr               &
      &            ,grid%t2,grid%qsg,grid%qvg,grid%qcg,grid%soilt1,grid%tsnav,grid%smfr3d,grid%keepfr3dflag     &
 #if (NMM_CORE==1)
      &            ,grid%twbs,grid%qwbs,grid%taux,grid%tauy,grid%sfcshx,grid%sfclhx,grid%sfcevp,RTHRATEN                      &
@@ -1675,6 +1737,7 @@
      &            ,GRID%SFCHEADRT,GRID%INFXSRT,GRID%SOLDRAIN           &  !Hydrology, no-op right now
      &            ,IDS,IDF,JDS,JDF,KDS,KDE                             &
      &            ,IMS,IME,JMS,JME,KMS,KME                             &
+     &            ,IPS,IPE,JPS,JPE,KPS,KPE                             &
      &            ,ITS,ITE,JTS,JTE,KTS,KTE)
 !
 !                     ***  NOTE  ***
@@ -1703,6 +1766,10 @@
 !
 !
 
+#ifdef HRD_MULTIPLE_STORMS
+      write(message,*)' No Ocean Coupling Run'
+      call wrf_message(trim(message))
+#else
 ! Coupling insertion:->
       call ATM_DOFLUXES(grid%twbs,grid%qwbs,grid%rlwin,grid%rswin,grid%radot,grid%rswout, &
       grid%taux,grid%tauy,grid%pint(:,:,1),grid%prec,grid%u10,grid%v10)
@@ -1714,6 +1781,7 @@
         flux_tim=flux_tim+timef()-btimx
       ENDIF
 
+#endif
 #endif
 !
 #ifdef NMM_FIND_LOAD_IMBALANCE
@@ -1959,6 +2027,7 @@
      &               ,GRID,CONFIG_FLAGS                                &
      &               ,grid%re_cloud,grid%re_ice,grid%re_snow           &  ! G. Thompson
      &               ,grid%has_reqc,grid%has_reqi,grid%has_reqs        &  ! G. Thompson
+     &               ,diag_flag                                        &  
      &               ,IDS,IDF,JDS,JDF,KDS,KDE                          &
      &               ,IMS,IME,JMS,JME,KMS,KME                          &
      &               ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -2304,6 +2373,19 @@
       ENDDO
       ENDDO
       ENDDO
+! calculate some model diagnostics.
+
+   CALL wrf_debug ( 200 , ' call diagnostic_driver' )
+
+   CALL diagnostic_output_calc_refl(                                   &
+      &              DIAGFLAG=diag_flag                                &
+      &             ,REFD_MAX=grid%refd_max                            &
+      &             ,refl_10cm=grid%refl_10cm                          &
+      &             ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
+      &             ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
+      &             ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
+      &                                                          )
+
 !
 !----------------------------------------------------------------------
 !
@@ -2454,6 +2536,10 @@
 !
 !
 !
+#ifdef HRD_MULTIPLE_STORMS
+      write(message,*)' No Ocean Coupling Run'
+      call wrf_message(trim(message))
+#else
 ! Coupling insertion:->
       call ATM_SENDFLUXES
 !<-:Coupling insertion
@@ -2462,6 +2548,7 @@
 !
 !  IF(grid%id==2)WRITE(0,*)'AFTER ATM_SENDFLUX grid%qwbs grid%twbs AT 10 10 ',grid%ntsd,grid%qwbs(10,10),grid%twbs(10,10)
 !
+#endif
 #endif
 
 !--------------------------------------------------------------------------------------------------------------

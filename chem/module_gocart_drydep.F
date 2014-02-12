@@ -7,6 +7,9 @@ CONTAINS
                t_phy,moist,p8w,t8w,rmol,aer_res,               &
                p_phy,chem,rho_phy,dz8w,ddvel,xland,hfx,        &
                ivgtyp,tsk,vegfra,pbl,ust,znt,xlat,xlong,       &
+               dustdrydep_1,dustdrydep_2,dustdrydep_3,         &
+               dustdrydep_4,dustdrydep_5,                      &
+               depvelocity,                                    &                     
                ids,ide, jds,jde, kds,kde,                      &
                ims,ime, jms,jme, kms,kme,                      &
                its,ite, jts,jte, kts,kte                       )
@@ -48,6 +51,9 @@ CONTAINS
                                          rmol,xland,znt,hfx
    REAL, DIMENSION( its:ite, jts:jte ),                         &
          INTENT(IN)         ::                       aer_res
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) ::        &
+                dustdrydep_1, dustdrydep_2, dustdrydep_3,       &
+                dustdrydep_4, dustdrydep_5, depvelocity                 
 
 !! .. Local Scalars ..
       INTEGER :: iland, iprt, iseason, jce, jcs,  &
@@ -109,6 +115,15 @@ CONTAINS
       enddo
       ddvel(i,j,p_sulf) = real( dvel(1,1),kind=4 )
       ddvel(i,j,p_msa)  = real( dvel(1,1),kind=4 )
+      
+      depvelocity(i,j) = ddvel(i,j,p_dust_5)
+! drydep [ug/m2/s] = dvel [m/s] * chem [ug/kg] * airden [kg/m3]
+      dustdrydep_1(i,j)=-dvel(1,1)*chem(i,1,j,p_dust_1)*airden(1,1)
+      dustdrydep_2(i,j)=-dvel(1,1)*chem(i,1,j,p_dust_2)*airden(1,1)
+      dustdrydep_3(i,j)=-dvel(1,1)*chem(i,1,j,p_dust_3)*airden(1,1)
+      dustdrydep_4(i,j)=-dvel(1,1)*chem(i,1,j,p_dust_4)*airden(1,1)
+      dustdrydep_5(i,j)=-dvel(1,1)*chem(i,1,j,p_dust_5)*airden(1,1)   
+      
     enddo
   enddo
 

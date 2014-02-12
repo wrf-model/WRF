@@ -38,7 +38,9 @@
     REAL    gmt, cen_lat, cen_lon, bdyfrq , truelat1 , truelat2 , moad_cen_lat , stand_lon
     INTEGER km_opt, diff_opt, damp_opt,  &
             mp_physics, ra_lw_physics, ra_sw_physics, sf_sfclay_physics, &
-            sf_surface_physics, bl_pbl_physics, cu_physics, hypsometric_opt,swint_opt
+            sf_surface_physics, bl_pbl_physics, cu_physics, hypsometric_opt
+    INTEGER swint_opt, aer_type,aer_aod550_opt,aer_angexp_opt,aer_ssa_opt,aer_asy_opt, aer_opt
+    REAL    aer_aod550_val,aer_angexp_val,aer_ssa_val,aer_asy_val
     REAL    khdif, kvdif, swrad_scat, dampcoef,radt,bldt,cudt
     REAL    dt, adapt_dt_start, adapt_dt_min, adapt_dt_max
     INTEGER sf_urban_physics, w_damping, smooth_option, feedback, surface_input_source, sst_update
@@ -133,7 +135,17 @@
     call nl_get_radt               ( grid%id,  radt               )
     call nl_get_bldt               ( grid%id,  bldt               )
     call nl_get_cudt               ( grid%id,  cudt               )
+    call nl_get_aer_opt            ( grid%id,  aer_opt            )
     call nl_get_swint_opt          ( grid%id,  swint_opt          )
+    call nl_get_aer_type           ( grid%id,  aer_type           )
+    call nl_get_aer_aod550_opt     ( grid%id,  aer_aod550_opt     )
+    call nl_get_aer_angexp_opt     ( grid%id,  aer_angexp_opt     )
+    call nl_get_aer_ssa_opt        ( grid%id,  aer_ssa_opt        )
+    call nl_get_aer_asy_opt        ( grid%id,  aer_asy_opt        )
+    call nl_get_aer_aod550_val     ( grid%id,  aer_aod550_val     )
+    call nl_get_aer_angexp_val     ( grid%id,  aer_angexp_val     )
+    call nl_get_aer_ssa_opt        ( grid%id,  aer_ssa_val        )
+    call nl_get_aer_asy_opt        ( grid%id,  aer_asy_val        )
 #if (EM_CORE == 1)
     dt = grid%dt
     adapt_dt_min = grid%min_time_step
@@ -546,7 +558,17 @@ endif
       call wrf_put_dom_ti_real    ( fid, 'RADT', radt, 1 , ierr)
       call wrf_put_dom_ti_real    ( fid, 'BLDT', bldt, 1 , ierr)
       call wrf_put_dom_ti_real    ( fid, 'CUDT', cudt, 1 , ierr)
-      call wrf_put_dom_ti_integer ( fid, 'SWINT_OPT', swint_opt, 1, ierr)
+      call wrf_put_dom_ti_integer ( fid, 'AER_OPT'        , aer_opt        , 1 , ierr)
+      call wrf_put_dom_ti_integer ( fid, 'SWINT_OPT'      , swint_opt      , 1 , ierr)
+      call wrf_put_dom_ti_integer ( fid, 'AER_TYPE'       , aer_type       , 1 , ierr )
+      call wrf_put_dom_ti_integer ( fid, 'AER_AOD550_OPT' , aer_aod550_opt , 1 , ierr )
+      call wrf_put_dom_ti_integer ( fid, 'AER_ANGEXP_OPT' , aer_angexp_opt , 1 , ierr )
+      call wrf_put_dom_ti_integer ( fid, 'AER_SSA_OPT'    , aer_ssa_opt    , 1 , ierr )
+      call wrf_put_dom_ti_integer ( fid, 'AER_ASY_OPT'    , aer_asy_opt    , 1 , ierr )
+      call wrf_put_dom_ti_real    ( fid, 'AER_AOD550_VAL' , aer_aod550_val , 1 , ierr )
+      call wrf_put_dom_ti_real    ( fid, 'AER_ANGEXP_VAL' , aer_angexp_val , 1 , ierr )
+      call wrf_put_dom_ti_real    ( fid, 'AER_SSA_VAL'    , aer_ssa_val    , 1 , ierr )
+      call wrf_put_dom_ti_real    ( fid, 'AER_ASY_VAL'    , aer_asy_val    , 1 , ierr )
 
 #if (EM_CORE == 1)
       CALL wrf_put_dom_ti_integer ( fid, 'MOIST_ADV_OPT', moist_adv_opt , 1 , ierr )
@@ -605,6 +627,9 @@ endif
       CALL wrf_put_dom_ti_integer   ( fid, 'SF_OCEAN_PHYSICS',     config_flags%sf_ocean_physics     , 1 , ierr ) 
       CALL wrf_put_dom_ti_integer   ( fid, 'ISFTCFLX',    config_flags%isftcflx    , 1 , ierr ) 
       CALL wrf_put_dom_ti_integer   ( fid, 'ISHALLOW',    config_flags%ishallow    , 1 , ierr ) 
+      CALL wrf_put_dom_ti_integer   ( fid, 'ISFFLX',      config_flags%isfflx      , 1 , ierr ) 
+      CALL wrf_put_dom_ti_integer   ( fid, 'ICLOUD',      config_flags%icloud      , 1 , ierr ) 
+      CALL wrf_put_dom_ti_integer   ( fid, 'ICLOUD_CU',   config_flags%icloud_cu   , 1 , ierr ) 
 
 #endif
       IF ( sf_surface_physics == 4 ) THEN

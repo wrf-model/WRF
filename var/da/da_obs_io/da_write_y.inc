@@ -263,7 +263,8 @@ subroutine da_write_y (iv, y)
                   call da_check_missing(iv%airep(n)%u(k)%qc, y%airep(n)%u(k), f1)
                   call da_check_missing(iv%airep(n)%v(k)%qc, y%airep(n)%v(k), f2)
                   call da_check_missing(iv%airep(n)%t(k)%qc, y%airep(n)%t(k), f3)
-                  write(ounit,'(2i8,7e15.7)')num_obs, k, f1, f2, f3, dum,dum, &
+                  call da_check_missing(iv%airep(n)%q(k)%qc, y%airep(n)%q(k), f4)
+                  write(ounit,'(2i8,7e15.7)')num_obs, k, f1, f2, f3, f4, dum, &
                      dum,dum
                end do
             end if
@@ -638,15 +639,19 @@ subroutine da_write_y (iv, y)
             end if
          end do
       end if
+   end if
+
+! Now tamdar_sfc
+   if (iv%info(tamdar_sfc)%nlocal > 0) then
       num_obs = 0
-      do n = 1, iv%info(tamdar)%nlocal
-         if (iv%info(tamdar)%proc_domain(1,n)) num_obs = num_obs + 1
+      do n = 1, iv%info(tamdar_sfc)%nlocal
+         if (iv%info(tamdar_sfc)%proc_domain(1,n)) num_obs = num_obs + 1
       end do
       if (num_obs > 0) then
          write(ounit,'(a20,i8)')'sonde_sfc', num_obs
          num_obs = 0
-         do n = 1, iv%info(tamdar)%nlocal
-            if (iv%info(tamdar)%proc_domain(1,n)) then
+         do n = 1, iv%info(tamdar_sfc)%nlocal
+            if (iv%info(tamdar_sfc)%proc_domain(1,n)) then
                num_obs = num_obs + 1
                write(ounit,'(i8)')  1
                call da_check_missing(iv%tamdar_sfc(n)%u%qc, y%tamdar_sfc(n)%u, f1)

@@ -1,7 +1,7 @@
 !WRF:DRIVER_LAYER:CONSTANTS
 !
 !  This MODULE contains all of the constants used in the model.  These
-!  are separated by uage within the code.
+!  are separated by usage within the code.
 
 MODULE module_driver_constants
 
@@ -69,11 +69,24 @@ MODULE module_driver_constants
 
    INTEGER , PARAMETER :: max_instruments =   30
 
+   !  The maximum number of obs indexes (for conventional DA obs) 
+
+   INTEGER , PARAMETER :: num_ob_indexes  =   28
+
+
    !  The maximum number of bogus storms
 
    INTEGER , PARAMETER :: max_bogus =  5
 
-   !  2. Following related to driver leve data structures for DM_PARALLEL communications
+   !  The maximum number of fields that can be sent or received in coupled mode
+
+   INTEGER , PARAMETER :: max_cplfld = 20
+
+   !  The maximum number of domains used by the external model with which wrf is communicating in coupled mode
+
+   INTEGER , PARAMETER :: max_extdomains = 5
+
+   !  2. Following related to driver level data structures for DM_PARALLEL communications
 
 #ifdef DM_PARALLEL
    INTEGER , PARAMETER :: max_comms       =   1024
@@ -84,7 +97,7 @@ MODULE module_driver_constants
    !  3. Following is information related to the file I/O.
 
    !  These are the bounds of the available FORTRAN logical unit numbers for the file I/O.
-   !  Only logical unti numbers within these bounds will be chosen for I/O unit numbers.
+   !  Only logical unit numbers within these bounds will be chosen for I/O unit numbers.
 
    INTEGER , PARAMETER :: min_file_unit = 10
    INTEGER , PARAMETER :: max_file_unit = 99

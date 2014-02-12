@@ -2422,7 +2422,7 @@ SUBROUTINE READ_OBSERR_DIR (iunit, filein, keyword, endword, fmt_err, err)
                 READ (line4, fmt_err) (err (i) % airep % dir , i =  5,  1,-1), &
                                        xxxx,yyyy
 
-         CASE ('TAMDARS')  ! Airep
+         CASE ('TAMDARS')  ! Tamdar
 
                 WRITE (UNIT = 0, FMT = '(1X,2A)',ADVANCE='no') &
                        TRIM (sensor (line1)),','

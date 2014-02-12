@@ -230,7 +230,7 @@ CONTAINS
       REAL,  DIMENSION( ims:ime , jms:jme ) :: dat
       TYPE( grid_config_rec_type ) config_flags
 
-      INTEGER  :: i, j, istag, jstag, itime
+      INTEGER  :: i, j, istag, jstag, itime, istart, iend
 
       LOGICAL  :: debug, open_bc_copy
 
@@ -431,15 +431,30 @@ CONTAINS
 
 !  same procedure in y
 
+!  Set the starting and ending loop indexes in the 'i' direction, so that
+!  halo cells on the edge of the domain are also updated.  Begin with a default 
+!  start and end index for inner tiles, and then modify if the tile is on the
+!  edge of the domain.  
+
+        istart = MAX(ids, its-1)
+        iend = MIN(ite+1, ide+istag)
+        IF ( its .eq. ids) THEN
+          istart = ims
+        END IF
+        IF ( ite .eq. ide) THEN
+          iend = ime
+        END IF
+
       periodicity_y:  IF( ( config_flags%periodic_y ) ) THEN
         IF ( ( jds == jps ) .and. ( jde == jpe ) )  THEN    ! test of both north and south on processor
 
           IF( jts == jds ) then
 
             DO j = 0, -(bdyzone-1), -1
-            DO i = MAX(ids,its-1), MIN(ite+1,ide+istag)
-              dat(i,jds+j-1) = dat(i,jde+j-1)
-            ENDDO
+              !DO i = MAX(ids,its-1), MIN(ite+1,ide+istag)
+              DO i = istart, iend
+                dat(i,jds+j-1) = dat(i,jde+j-1)
+              ENDDO
             ENDDO
 
           END IF
@@ -447,9 +462,10 @@ CONTAINS
           IF( jte == jde ) then
 
             DO j = -jstag, bdyzone
-            DO i = MAX(ids,its-1), MIN(ite+1,ide+istag)
-              dat(i,jde+j+jstag) = dat(i,jds+j+jstag)
-            ENDDO
+              !DO i = MAX(ids,its-1), MIN(ite+1,ide+istag)
+              DO i = istart, iend
+                dat(i,jde+j+jstag) = dat(i,jds+j+jstag)
+              ENDDO
             ENDDO
 
           END IF
@@ -464,9 +480,10 @@ CONTAINS
           IF ( (variable /= 'v') .and. (variable /= 'y') ) THEN
 
             DO j = 1, bdyzone
-            DO i = MAX(ids,its-1), MIN(ite+1,ide+istag)
-              dat(i,jds-j) = dat(i,jds+j-1) 
-            ENDDO
+              !DO i = MAX(ids,its-1), MIN(ite+1,ide+istag)
+              DO i = istart, iend
+                dat(i,jds-j) = dat(i,jds+j-1) 
+              ENDDO
             ENDDO
 
           ELSE
@@ -474,17 +491,19 @@ CONTAINS
             IF (variable == 'v') THEN
 
               DO j = 1, bdyzone
-              DO i = MAX(ids,its-1), MIN(ite+1,ide+istag)
-                dat(i,jds-j) = - dat(i,jds+j) 
-              ENDDO              
+                !DO i = MAX(ids,its-1), MIN(ite+1,ide+istag)
+                DO i = istart, iend
+                  dat(i,jds-j) = - dat(i,jds+j) 
+                ENDDO              
               ENDDO
 
             ELSE
 
               DO j = 1, bdyzone
-              DO i = MAX(ids,its-1), MIN(ite+1,ide+istag)
-                dat(i,jds-j) = dat(i,jds+j) 
-              ENDDO              
+                !DO i = MAX(ids,its-1), MIN(ite+1,ide+istag)
+                DO i = istart, iend
+                  dat(i,jds-j) = dat(i,jds+j) 
+                ENDDO              
               ENDDO
 
             END IF
@@ -501,9 +520,10 @@ CONTAINS
           IF ( (variable /= 'v') .and. (variable /= 'y') ) THEN
 
             DO j = 1, bdyzone
-            DO i = MAX(ids,its-1), MIN(ite+1,ide+istag)
-              dat(i,jde+j-1) = dat(i,jde-j) 
-            ENDDO                               
+              !DO i = MAX(ids,its-1), MIN(ite+1,ide+istag)
+              DO i = istart, iend
+                dat(i,jde+j-1) = dat(i,jde-j) 
+              ENDDO                               
             ENDDO
 
           ELSE
@@ -511,17 +531,19 @@ CONTAINS
             IF (variable == 'v' ) THEN
 
               DO j = 1, bdyzone
-              DO i = MAX(ids,its-1), MIN(ite+1,ide+istag)
-                dat(i,jde+j) = - dat(i,jde-j)    ! bugfix: changed jds on rhs to jde , JM 20020410
-              ENDDO                               
+                !DO i = MAX(ids,its-1), MIN(ite+1,ide+istag)
+                DO i = istart, iend
+                  dat(i,jde+j) = - dat(i,jde-j)    ! bugfix: changed jds on rhs to jde , JM 20020410
+                ENDDO                               
               ENDDO
 
             ELSE
 
               DO j = 1, bdyzone
-              DO i = MAX(ids,its-1), MIN(ite+1,ide+istag)
-                dat(i,jde+j) = dat(i,jde-j)
-              ENDDO                               
+                !DO i = MAX(ids,its-1), MIN(ite+1,ide+istag)
+                DO i = istart, iend
+                  dat(i,jde+j) = dat(i,jde-j)
+                ENDDO                               
               ENDDO
 
             END IF
@@ -538,7 +560,8 @@ CONTAINS
                        config_flags%nested            ) .and.  &
                          ( jts == jds) .and. open_bc_copy )  THEN
 
-            DO i = MAX(ids,its-1), MIN(ite+1,ide+istag)
+            !DO i = MAX(ids,its-1), MIN(ite+1,ide+istag)
+            DO i = istart, iend
               dat(i,jds-1) = dat(i,jds) 
               dat(i,jds-2) = dat(i,jds) 
               dat(i,jds-3) = dat(i,jds) 
@@ -556,7 +579,8 @@ CONTAINS
 
           IF  (variable /= 'v' .and. variable /= 'y' ) THEN
 
-            DO i = MAX(ids,its-1), MIN(ite+1,ide+istag)
+            !DO i = MAX(ids,its-1), MIN(ite+1,ide+istag)
+            DO i = istart, iend
               dat(i,jde  ) = dat(i,jde-1) 
               dat(i,jde+1) = dat(i,jde-1) 
               dat(i,jde+2) = dat(i,jde-1) 
@@ -564,7 +588,8 @@ CONTAINS
 
           ELSE
 
-            DO i = MAX(ids,its-1), MIN(ite+1,ide+istag)
+            !DO i = MAX(ids,its-1), MIN(ite+1,ide+istag)
+            DO i = istart, iend
               dat(i,jde+1) = dat(i,jde) 
               dat(i,jde+2) = dat(i,jde) 
               dat(i,jde+3) = dat(i,jde) 

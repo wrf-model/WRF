@@ -5,7 +5,8 @@ OBJS    = $(OBJSL)
 CODE    = ext_ncd_get_dom_ti.code ext_ncd_get_var_td.code ext_ncd_get_var_ti.code ext_ncd_put_dom_ti.code ext_ncd_put_var_td.code ext_ncd_put_var_ti.code transpose.code 
 FFLAGS  =  $(FCFLAGS) -I$(NETCDFPATH)/include -I../ioapi_share
 LIBS    = $(LIB_LOCAL) -L$(NETCDFPATH)/lib -lnetcdf
-CPP1    = $(CPP) -C -P $(TRADFLAG)
+LIBFFS  = $(LIB_LOCAL) -L$(NETCDFPATH)/lib -lnetcdff -lnetcdf
+CPP1    = $(CPP) -P $(TRADFLAG)
 M4      = m4 -Uinclude -Uindex -Ulen
 AR      = ar
 
@@ -49,8 +50,8 @@ diffwrf:                diffwrf.F90
 	$(FC) -c $(FFLAGS) diffwrf.f
 	@if [ \( -f ../../frame/wrf_debug.o \) -a \( -f ../../frame/module_wrf_error.o \) -a \( -f $(ESMF_MOD_DEPENDENCE) \) -a \( -f ../../frame/clog.o \) ] ; then \
 	  echo "diffwrf io_netcdf is being built now. " ; \
-          if [ \( -f $(NETCDFPATH)/lib/libnetcdff.a \) ] ; then \
-            $(FC) $(FFLAGS) $(LDFLAGS) -o diffwrf diffwrf.o $(OBJSL) ../../frame/wrf_debug.o ../../frame/module_wrf_error.o ../../frame/clog.o $(ESMF_IO_LIB_EXT) $(LIBS) -L$(NETCDFPATH)/lib -lnetcdff ;\
+          if [ \( -f $(NETCDFPATH)/lib/libnetcdff.a -o -f $(NETCDFPATH)/lib/libnetcdff.so \) ] ; then \
+            $(FC) $(FFLAGS) $(LDFLAGS) -o diffwrf diffwrf.o $(OBJSL) ../../frame/wrf_debug.o ../../frame/module_wrf_error.o ../../frame/clog.o $(ESMF_IO_LIB_EXT) $(LIBFFS) ;\
           else \
             $(FC) $(FFLAGS) $(LDFLAGS) -o diffwrf diffwrf.o $(OBJSL) ../../frame/wrf_debug.o ../../frame/module_wrf_error.o ../../frame/clog.o $(ESMF_IO_LIB_EXT) $(LIBS) ;\
           fi ; \

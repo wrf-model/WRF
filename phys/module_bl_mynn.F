@@ -1680,7 +1680,7 @@ CONTAINS
           dqw = 0.5*(qw(k+1) + qw(k)) - 0.5*(qw(k) + qw(MAX(k-1,kts)))
           sgm(k) = SQRT( MAX( (alp(k)**2 * MAX(el(k)**2,1.) * &
                              b2 * MAX(Sh(k),0.03))/4. * &
-                      (dqw/dzk - bet(k)*(dth/dzk ))**2 , 1.0d-10) )
+                      (dqw/dzk - bet(k)*(dth/dzk ))**2 , 1.0e-10) )
        ENDIF
     END DO
 !
@@ -1735,6 +1735,7 @@ CONTAINS
        &u,v,th,qv,qc,p,exner,&
        &thl,sqv,sqc,sqw,&
        &ust,flt,flq,wspd,qcg,&
+       &uoce,voce,&
        &tsq,qsq,cov,&
        &tcd,qcd,&
        &dfm,dfh,dfq,&
@@ -1758,7 +1759,7 @@ CONTAINS
          &dfm,dfh,dfq,dz,tsq,qsq,cov,tcd,qcd
     REAL, DIMENSION(kts:kte), INTENT(inout) :: thl,sqw,sqv,sqc
     REAL, DIMENSION(kts:kte), INTENT(out) :: du,dv,dth,dqv,dqc
-    REAL, INTENT(IN) :: delt,ust,flt,flq,wspd,qcg
+    REAL, INTENT(IN) :: delt,ust,flt,flq,wspd,uoce,voce,qcg
 
 !    REAL, INTENT(IN) :: delt,ust,flt,flq,qcg,&
 !         &gradu_top,gradv_top,gradth_top,gradqv_top
@@ -1792,7 +1793,7 @@ CONTAINS
     a(1)=0.
     b(1)=1.+dtz(k)*(dfm(k+1)+ust**2/wspd)
     c(1)=-dtz(k)*dfm(k+1)
-    d(1)=u(k)
+    d(1)=u(k)+dtz(k)*uoce*ust**2/wspd
 
 !!    a(1)=0.
 !!    b(1)=1.+dtz(k)*dfm(k+1)
@@ -1843,7 +1844,7 @@ CONTAINS
     a(1)=0.
     b(1)=1.+dtz(k)*(dfm(k+1)+ust**2/wspd)
     c(1)=-dtz(k)*dfm(k+1)
-    d(1)=v(k)
+    d(1)=v(k)+dtz(k)*voce*ust**2/wspd
 
 !!    a(1)=0.
 !!    b(1)=1.+dtz(k)*dfm(k+1)
@@ -2221,6 +2222,7 @@ CONTAINS
        &p,exner,rho,&
        &xland,ts,qsfc,qcg,ps,&
        &ust,ch,hfx,qfx,rmol,wspd,&
+       &uoce,voce,&
        &vdfg,&                          !Katata-added for fog dep
        &Qke,&
        &qke_adv,bl_mynn_tkeadvect,&     !ACF for QKE advection
@@ -2264,9 +2266,9 @@ CONTAINS
     REAL, DIMENSION(IMS:IME,KMS:KME,JMS:JME), INTENT(in) :: dz,&
          &u,v,th,qv,qc,p,exner,rho 
     REAL, DIMENSION(IMS:IME,JMS:JME), INTENT(in) :: xland,ust,&
-!         &ch,rmol,ts,qsfc,qcg,ps,hfx,qfx, wspd
+!         &ch,rmol,ts,qsfc,qcg,ps,hfx,qfx, wspd,uoce,voce
 !Katata-added for extra in-output
-         &ch,rmol,ts,qsfc,qcg,ps,hfx,qfx, wspd, vdfg
+         &ch,rmol,ts,qsfc,qcg,ps,hfx,qfx, wspd,uoce,voce, vdfg
 !Katata-end
 
     REAL, DIMENSION(IMS:IME,KMS:KME,JMS:JME), INTENT(inout) :: &
@@ -2520,6 +2522,7 @@ CONTAINS
                &u1, v1, th1, qv1, qc1,&
                &p1, ex1, thl, sqv, sqc, sqw,&
                &ust(i,j),flt,flq,wspd(i,j),qcg(i,j),&
+               &uoce(i,j),voce(i,j),&
                &tsq1, qsq1, cov1,&
                &tcd, qcd, &
                &dfm, dfh, dfq,&

@@ -1631,6 +1631,8 @@ SUBROUTINE calculate_phy_tend (config_flags,mu,muu,muv,pi3d,           &
                      RQISHTEN,RQSSHTEN,RQGSHTEN,                       &
                      RUNDGDTEN,RVNDGDTEN,RTHNDGDTEN,RQVNDGDTEN,        &
                      RMUNDGDTEN,                                       &
+                     scalar, scalar_tend, num_scalar,                  &
+                     tracer, tracer_tend, num_tracer,                  &
                      ids,ide, jds,jde, kds,kde,                        &
                      ims,ime, jms,jme, kms,kme,                        &
                      its,ite, jts,jte, kts,kte                         )
@@ -1639,6 +1641,7 @@ SUBROUTINE calculate_phy_tend (config_flags,mu,muu,muv,pi3d,           &
 
       TYPE(grid_config_rec_type), INTENT(IN)     ::      config_flags
 
+      INTEGER,  INTENT(IN   )   ::          num_scalar, num_tracer
       INTEGER,  INTENT(IN   )   ::          ids,ide, jds,jde, kds,kde, &
                                             ims,ime, jms,jme, kms,kme, &
                                             its,ite, jts,jte, kts,kte
@@ -1699,7 +1702,14 @@ SUBROUTINE calculate_phy_tend (config_flags,mu,muu,muv,pi3d,           &
       REAL,     DIMENSION( ims:ime, jms:jme )               , &
                 INTENT(INOUT)   ::                           RMUNDGDTEN
 
-      INTEGER :: i,k,j
+! 4d arrays
+
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_tracer),INTENT(INOUT)   :: tracer
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_tracer),INTENT(INOUT)   :: tracer_tend
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_scalar),INTENT(INOUT)   :: scalar
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_scalar),INTENT(INOUT)   :: scalar_tend
+
+      INTEGER :: i,k,j, im
       INTEGER :: itf,ktf,jtf,itsu,jtsv
 
 !-----------------------------------------------------------------------
@@ -1955,6 +1965,29 @@ SUBROUTINE calculate_phy_tend (config_flags,mu,muu,muv,pi3d,           &
 
     ENDIF
 
+! 4d couple scalar tendencies that have only uncoupled physics tendencies at this point
+
+   DO im = PARAM_FIRST_SCALAR,num_scalar
+         DO J=jts,jtf
+         DO K=kts,ktf
+         DO I=its,itf
+            scalar_tend(I,K,J,im)=mu(I,J)*scalar_tend(I,K,J,im)
+         ENDDO
+         ENDDO
+         ENDDO
+   ENDDO
+
+   DO im = PARAM_FIRST_SCALAR,num_tracer
+         DO J=jts,jtf
+         DO K=kts,ktf
+         DO I=its,itf
+            tracer_tend(I,K,J,im)=mu(I,J)*tracer_tend(I,K,J,im)
+         ENDDO
+         ENDDO
+         ENDDO
+   ENDDO
+
+
 END SUBROUTINE calculate_phy_tend
 
 !-----------------------------------------------------------------------
@@ -2116,8 +2149,19 @@ do tjk = 1,config_flags%num_traj
     eta_new = 0.0
     keta=0
     keta_temp=0
-    if (traj_lat(tjk) .ne. -9999.0) then                                                         
-      call latlon_to_ij (proj, traj_lat(tjk),traj_long(tjk),traj_i(tjk),traj_j(tjk))
+    if (traj_i(tjk) .ne. -9999.0) then                                                         
+      if ( ( proj%code .EQ. PROJ_LC           ) .OR. &
+           ( proj%code .EQ. PROJ_PS           ) .OR. &
+           ( proj%code .EQ. PROJ_PS_WGS84     ) .OR. &
+           ( proj%code .EQ. PROJ_ALBERS_NAD83 ) .OR. &
+           ( proj%code .EQ. PROJ_MERC         ) .OR. &
+           ( proj%code .EQ. PROJ_LATLON       ) .OR. &
+           ( proj%code .EQ. PROJ_CYL          ) .OR. &
+           ( proj%code .EQ. PROJ_CASSINI      ) .OR. &
+           ( proj%code .EQ. PROJ_GAUSS        ) .OR. &
+           ( proj%code .EQ. PROJ_ROTLL        ) ) THEN
+         call latlon_to_ij (proj, traj_lat(tjk),traj_long(tjk),traj_i(tjk),traj_j(tjk))
+      end if
       i_traj=floor(traj_i(tjk)) ! find the lower_left_bottom corner for trajectory 
       j_traj=floor(traj_j(tjk)) ! 
       k_traj=floor(traj_k(tjk)) ! 
@@ -2265,7 +2309,18 @@ do tjk = 1,config_flags%num_traj
             traj_k(tjk) = traj_k(tjk)-0.5
         endif
 !! convert i,j,k into lon, lat 
-        call ij_to_latlon (proj, traj_i(tjk), traj_j(tjk),traj_lat(tjk),traj_long(tjk))
+      if ( ( proj%code .EQ. PROJ_LC           ) .OR. &
+           ( proj%code .EQ. PROJ_PS           ) .OR. &
+           ( proj%code .EQ. PROJ_PS_WGS84     ) .OR. &
+           ( proj%code .EQ. PROJ_ALBERS_NAD83 ) .OR. &
+           ( proj%code .EQ. PROJ_MERC         ) .OR. &
+           ( proj%code .EQ. PROJ_LATLON       ) .OR. &
+           ( proj%code .EQ. PROJ_CYL          ) .OR. &
+           ( proj%code .EQ. PROJ_CASSINI      ) .OR. &
+           ( proj%code .EQ. PROJ_GAUSS        ) .OR. &
+           ( proj%code .EQ. PROJ_ROTLL        ) ) THEN
+         call ij_to_latlon (proj, traj_i(tjk), traj_j(tjk),traj_lat(tjk),traj_long(tjk))
+      end if
      else
         traj_i(tjk) = -9999.0
         traj_j(tjk) = -9999.0

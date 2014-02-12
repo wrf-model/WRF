@@ -1,6 +1,6 @@
 module module_HYDRO_drv
 #ifdef MPP_LAND 
-   use module_HYDRO_io, only:  mpp_output_rt, mpp_output_chrt, mpp_output_lakes
+   use module_HYDRO_io, only:  mpp_output_rt, mpp_output_chrt, mpp_output_lakes, mpp_output_chrtgrd
    USE module_mpp_land
 #else
    use module_HYDRO_io, only:  output_rt, output_chrt, output_lakes
@@ -104,7 +104,6 @@ module module_HYDRO_drv
      call mpp_land_bcast_int1(outflag)
 #endif
 
-
      call HYDRO_rst_out(did) 
 
      if (outflag .lt. 0) return
@@ -193,6 +192,16 @@ module module_HYDRO_drv
                RT_DOMAIN(did)%QLINK,nlst_rt(did)%DT,Kt, &
                RT_DOMAIN(did)%STRMFRXSTPTS,nlst_rt(did)%order_to_write)
 
+#ifdef MPP_LAND
+              call mpp_output_chrtgrd(nlst_rt(did)%igrid, nlst_rt(did)%split_output_count, &
+                  RT_DOMAIN(did)%ixrt,RT_DOMAIN(did)%jxrt, RT_DOMAIN(did)%NLINKS,   &
+                  RT_DOMAIN(did)%CH_NETRT, RT_DOMAIN(did)%CH_NETLNK, RT_DOMAIN(did)%ORDER, &
+                  nlst_rt(did)%startdate, nlst_rt(did)%olddate, &
+                  RT_DOMAIN(did)%qlink, nlst_rt(did)%dt, nlst_rt(did)%geo_finegrid_flnm,   &
+                  RT_DOMAIN(did)%mpp_nlinks,RT_DOMAIN(did)%nlinks_index,                   &
+                  RT_DOMAIN(did)%g_ixrt,RT_DOMAIN(did)%g_jxrt )
+#endif
+
                if (RT_DOMAIN(did)%NLAKES.gt.0)  &
 #ifdef MPP_LAND
                 call mpp_output_lakes( RT_DOMAIN(did)%lake_index, &
@@ -209,7 +218,7 @@ module module_HYDRO_drv
                    RT_DOMAIN(did)%RESHT,nlst_rt(did)%DT,Kt)
            endif
 #ifdef HYDRO_D
-           write(6,*) "end calling otuput functions"
+           write(6,*) "end calling output functions"
 #endif
 
         endif  ! end of routing switch
@@ -814,7 +823,7 @@ module module_HYDRO_drv
 #ifdef MPP_LAND
     call  MPP_LAND_INIT()
 #endif
- 
+
 
 ! read the namelist
 ! the lsm namelist will be read by rtland sequentially again.
@@ -858,11 +867,15 @@ module module_HYDRO_drv
    else  
 !  coupled with WRF, LIS
          numprocs = node_info(1,1)
+
          call wrf_LAND_set_INIT(node_info,numprocs,nlst_rt(did)%AGGFACTRT)
+
 
          rt_domain(did)%ix = local_nx
          rt_domain(did)%jx = local_ny
    endif
+
+     
 
       rt_domain(did)%g_IXRT=global_rt_nx
       rt_domain(did)%g_JXRT=global_rt_ny
@@ -890,6 +903,8 @@ module module_HYDRO_drv
 
 
        call getChanDim(did)
+
+
 #ifdef HYDRO_D
        write(6,*) "finish getChanDim "
 #endif
@@ -908,9 +923,14 @@ module module_HYDRO_drv
 ! decompose the land parameter/data 
 
 
-      ix0= rt_domain(did)%ix
-      jx0= rt_domain(did)%jx
-      call lsm_input(did,ix0=ix0,jx0=jx0,vegtyp0=vegtyp,soltyp0=soltyp)
+!      ix0= rt_domain(did)%ix
+!      jx0= rt_domain(did)%jx
+      if(present(vegtyp)) then
+           call lsm_input(did,ix0=ix0,jx0=jx0,vegtyp0=vegtyp,soltyp0=soltyp)
+      else
+           call lsm_input(did,ix0=ix0,jx0=jx0)
+      endif
+
 
 #ifdef HYDRO_D
        write(6,*) "finish decomposion"
@@ -998,6 +1018,7 @@ module module_HYDRO_drv
          soltyp = 0
          call get2d_lsm_soltyp(soltyp,RT_DOMAIN(did)%ix,RT_DOMAIN(did)%jx,trim(nlst_rt(did)%geo_static_flnm))
 
+
          call get2d_lsm_real("HGT",RT_DOMAIN(did)%TERRAIN,RT_DOMAIN(did)%ix,RT_DOMAIN(did)%jx,trim(nlst_rt(did)%geo_static_flnm))
 
          call get2d_lsm_real("XLAT",RT_DOMAIN(did)%lat_lsm,RT_DOMAIN(did)%ix,RT_DOMAIN(did)%jx,trim(nlst_rt(did)%geo_static_flnm))
@@ -1006,12 +1027,14 @@ module module_HYDRO_drv
 
 
 
-            if(nlst_rt(did)%sys_cpl .eq. 2) then
+            if(nlst_rt(did)%sys_cpl .eq. 2 ) then
               ! coupling with WRF
-                where(soltyp0 == 14) VEGTYP0 = 16
-                where(VEGTYP0 == 16 ) soltyp0 = 14
-                soltyp = soltyp0
-                RT_DOMAIN(did)%VEGTYP = VEGTYP0
+                if(present(soltyp0) ) then
+                   where(soltyp0 == 14) VEGTYP0 = 16
+                   where(VEGTYP0 == 16 ) soltyp0 = 14
+                   soltyp = soltyp0
+                   RT_DOMAIN(did)%VEGTYP = VEGTYP0
+                endif
             endif
 
          where(soltyp == 14) RT_DOMAIN(did)%VEGTYP = 16
@@ -1026,6 +1049,8 @@ module module_HYDRO_drv
      
 
        RT_DOMAIN(did)%zsoil(1:nlst_rt(did)%nsoil) = nlst_rt(did)%zsoil8(1:nlst_rt(did)%nsoil)
+
+       RT_DOMAIN(did)%sldpth(1) = abs( RT_DOMAIN(did)%zsoil(1) )
        do i = 2, nlst_rt(did)%nsoil
           RT_DOMAIN(did)%sldpth(i) = RT_DOMAIN(did)%zsoil(i-1)-RT_DOMAIN(did)%zsoil(i)
        enddo
@@ -1083,30 +1108,45 @@ module module_HYDRO_drv
 
 
 end module module_HYDRO_drv
-      subroutine land_finish()
-#ifdef HYDRO_D
-#ifdef MPP_LAND
-         call mpp_land_finish()
-#else
-         stop
-#endif
-#endif
-     return
-     end  subroutine land_finish
 
 ! stop the job due to the fatal error.
       subroutine HYDRO_stop()
         integer :: ierr
 #ifdef HYDRO_D
       write(6,*) "The job is stoped due to the fatal error."
+#endif
 #ifdef MPP_LAND
+#ifndef HYDRO_D
+      print*, "---"
+      print*, "ERROR! Program stopped. Recompile with environment variable HYDRO_D set to 1 for enhanced debug information."
+      print*, ""
+#endif
          call mpp_land_abort()
          call MPI_finalize(ierr)
 #else
          stop "Fatal Error"
 #endif
 
-#endif
      return
      end  subroutine HYDRO_stop  
+
+! stop the job due to the fatal error.
+      subroutine HYDRO_finish()
+#ifdef MPP_LAND
+        USE module_mpp_land
+#endif
+        integer :: ierr
+
+        print*, "The model finished successfully......."
+#ifdef MPP_LAND
+!         call mpp_land_abort()
+         call mpp_land_sync()
+         call MPI_finalize(ierr)
+         stop 
+#else
+         stop 
+#endif
+
+     return
+     end  subroutine HYDRO_finish
 

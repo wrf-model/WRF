@@ -1,4 +1,4 @@
-subroutine da_setup_be_regional(xb, be)
+subroutine da_setup_be_regional(xb, be, grid)
 
    !---------------------------------------------------------------------------
    ! Purpose: Define and allocate components of background errors
@@ -13,6 +13,7 @@ subroutine da_setup_be_regional(xb, be)
 
    type (xb_type), intent(in)    :: xb                    ! First guess structure.
    type (be_type), intent(inout) :: be                    ! Back. errors structure.
+   type (domain),  intent(in)    :: grid
 
    logical                do_normalize1      ! Test do_normalize.
    integer             :: i, j, k, m         ! Loop counters.
@@ -920,10 +921,10 @@ subroutine da_setup_be_regional(xb, be)
       deallocate ( rfls3_be )
       deallocate ( rfls4_be )
 #ifdef CLOUD_CV
-      deallocate (rfls6_be(1:nk))
-      deallocate (rfls7_be(1:nk))
-      deallocate (rfls8_be(1:nk))
-      deallocate (rfls9_be(1:nk))
+      deallocate (rfls6_be)
+      deallocate (rfls7_be)
+      deallocate (rfls8_be)
+      deallocate (rfls9_be)
 #endif
    ! 3.3.4 Assign the Regression coefficients for model BE:
  
@@ -1485,6 +1486,14 @@ subroutine da_setup_be_regional(xb, be)
 !     Alpha eigenvalues and eigenvectors:
       allocate (be % alpha % val(1:jy,1:mz)) ! Not using jy dimension but here for consistency.
       allocate (be % alpha % evec(1:nj,1:nk,1:mz))
+
+      if ( anal_type_hybrid_dual_res ) then
+         deallocate(be % alpha % val, be % alpha % evec)
+         allocate (be % alpha % val(jds_int:jde_int,1:mz))
+         allocate (be % alpha % evec(jds_int:jde_int,1:nk,1:mz))
+      endif
+
+
       do m = 1, mz
          be % alpha % val(:,m) = sigma_alpha * alpha_val(m)
          do k = 1, nk
@@ -1497,7 +1506,14 @@ subroutine da_setup_be_regional(xb, be)
       allocate (be % alpha % rf_alpha(1:mz))
       allocate (alpha_rf_scale_factor(1:mz))
 
-      alpha_rf_lengthscale(1:mz) = 1000.0 * alpha_corr_scale / xb % ds ! Convert km to grid spacings.
+
+      if ( anal_type_hybrid_dual_res ) then
+         alpha_rf_lengthscale(1:mz) = 1000.0 * alpha_corr_scale / (grid%intermediate_grid % dx )
+         print *,' CSS xb%ds, grid % intermediate_grid % dx  = ',xb%ds, grid%intermediate_grid%dx
+      else
+         alpha_rf_lengthscale(1:mz) = 1000.0 * alpha_corr_scale / xb % ds ! Convert km to grid spacings.
+      endif
+
 
       call da_calculate_rf_factors( alpha_rf_lengthscale(:), be % alpha % rf_alpha(:), &
                                     alpha_rf_scale_factor(:) )

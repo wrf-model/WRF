@@ -24,6 +24,8 @@ MODULE module_wrf_top
    USE module_dm, ONLY : wrf_dm_initialize
 #endif
 
+   USE module_cpl, ONLY : coupler_on, cpl_finalize, cpl_defdomain
+
    IMPLICIT NONE
 
    REAL    :: time
@@ -392,6 +394,7 @@ CONTAINS
    END IF
 #endif
 
+   IF (coupler_on) CALL cpl_defdomain( head_grid ) 
 
    END SUBROUTINE wrf_init
 
@@ -451,8 +454,12 @@ CONTAINS
    ! for DM parallel runs).  
    IF ( .NOT. PRESENT( no_shutdown ) ) THEN
      ! Finalize time manager
-     CALL WRFU_Finalize
-     CALL wrf_shutdown
+      IF (coupler_on) THEN 
+         CALL cpl_finalize() 
+      ELSE
+         CALL WRFU_Finalize
+         CALL wrf_shutdown
+      ENDIF
    ENDIF
 
    END SUBROUTINE wrf_finalize

@@ -8,12 +8,12 @@ module da_vtox_transforms
    use module_dm, only : wrf_dm_sum_real,wrf_dm_sum_reals
 #ifdef DM_PARALLEL
    use module_dm, only : local_communicator, mytask, ntasks, ntasks_x, & 
-      ntasks_y, data_order_xy, data_order_xyz
+      ntasks_y, data_order_xy, data_order_xyz, data_order_xzy, get_dm_max_halo_width
    use module_comm_dm, only : halo_psichi_uv_adj_sub,halo_ssmi_xa_sub,halo_sfc_xa_sub, &
       halo_radar_xa_w_sub, halo_xa_sub, halo_psichi_uv_sub, &
       halo_psichi_uv_sub, halo_xa_sub
 #endif
-   use module_domain, only : xb_type, xpose_type, ep_type, vp_type, x_type, domain
+   use module_domain, only : xb_type, xpose_type, ep_type, vp_type, x_type, domain, get_ijk_from_grid
 
 #ifdef A2C
    use da_control, only : trace_use, var4d, cos_xls, cos_xle, sin_xle, sin_xls, pi, global, &
@@ -40,6 +40,14 @@ module da_vtox_transforms
       len_scaling5, len_scaling6, len_scaling7, len_scaling8, len_scaling9
 #endif
 
+   use da_control, only : anal_type_hybrid_dual_res, myproc, num_procs,dual_res_upscale_opt
+   use da_control, only : its_int,ite_int,jts_int,jte_int,kts_int,kte_int,shw, &
+                          ims_int,ime_int,jms_int,jme_int,kms_int,kme_int, &
+                          ids_int,ide_int,jds_int,jde_int,kds_int,kde_int, &
+                          ips_int,ipe_int,jps_int,jpe_int,kps_int,kpe_int
+   use da_control, only : dual_res_type, ob_locs, total_here
+
+
    use da_define_structures, only : be_type, xbx_type,da_zero_vp_type,da_zero_x
    use da_dynamics, only : da_psichi_to_uv,da_psichi_to_uv_adj
    use da_physics, only : da_uvprho_to_w_lin,da_uvprho_to_w_adj, &
@@ -50,8 +58,10 @@ module da_vtox_transforms
       da_transform_xtogpsref_adj, da_transform_xtowtq_adj, &
       da_transform_xtoztd_lin, da_transform_xtoztd_adj
    use da_par_util, only : da_vv_to_cv, da_cv_to_vv
+
    use da_recursive_filter, only : da_transform_through_rf, &
-      da_transform_through_rf_adj, da_apply_rf, da_apply_rf_adj
+      da_transform_through_rf_adj, da_apply_rf, da_apply_rf_adj, &
+      da_transform_through_rf_dual_res, da_transform_through_rf_adj_dual_res
    use da_reporting, only : da_error, message, da_warning, da_message
    use da_spectral, only : da_vtovv_spectral,da_vtovv_spectral_adj
    use da_ssmi, only : da_transform_xtoseasfcwind_lin,da_transform_xtotb_adj, &
@@ -69,7 +79,9 @@ module da_vtox_transforms
 #include "da_add_flow_dependence_vp.inc"
 #include "da_add_flow_dependence_vp_adj.inc"
 #include "da_add_flow_dependence_xa.inc"
+#include "da_add_flow_dependence_xa_dual_res.inc"
 #include "da_add_flow_dependence_xa_adj.inc"
+#include "da_add_flow_dependence_xa_adj_dual_res.inc"
 #include "da_check_eof_decomposition.inc"
 #include "da_transform_vtovv.inc"
 #include "da_transform_vtovv_adj.inc"
@@ -95,5 +107,8 @@ module da_vtox_transforms
 #include "da_transform_bal_adj.inc"
 #include "da_apply_be.inc"
 #include "da_apply_be_adj.inc"
+
+#include "da_transform_vvtovp_dual_res.inc"
+#include "da_transform_vvtovp_adj_dual_res.inc"
 
 end module da_vtox_transforms

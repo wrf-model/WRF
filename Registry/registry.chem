@@ -163,6 +163,31 @@ state    real  e_so4j_num      i+jf     emis_ant     1         Z      i5      "E
 state    real  e_so4i_num      i+jf     emis_ant     1         Z      i5      "E_SO4I_NUM"          "I-MODE SO4 NUMBER"       "particle/m2/s"
 state    real  e_num_a3        i+jf     emis_ant     1         Z      i5      "E_NUM_A3"            "COARSE MODE NUMBER"      "particle/m2/s"
 
+# soiltexturef is texture category fraction for each grid cell
+state    real  ust_t         ij       misc         1         -      i012rh "UST_T"               "Threshold Friction Velocity"          "m s-1"
+state    real  rough_cor     ij       misc         1         -      rh      "Rough_cor"     "roughness elements correction"        ""
+state    real  smois_cor     ij       misc         1         -      rh      "Smois_cor"     "soil moisture correction"             ""
+state    real  dustload_1    ij       misc         1         -      rh      "dustload_1"     "dust loading for size 1"        "ug/m2"
+state    real  dustload_2    ij       misc         1         -      rh      "dustload_2"     "dust loading for size 2"        "ug/m2"
+state    real  dustload_3    ij       misc         1         -      rh      "dustload_3"     "dust loading for size 3"        "ug/m2"
+state    real  dustload_4    ij       misc         1         -      rh      "dustload_4"     "dust loading for size 4"        "ug/m2"
+state    real  dustload_5    ij       misc         1         -      rh      "dustload_5"     "total dust loading"             "ug/m2"
+state    real  depvelocity   ij       misc         1         -      rh      "drydepvel"    "dust dry deposition velocity "         "m/s"
+state    real  setvel_1      ij       misc         1         -      rh      "setvel_1"     "dust gravitational settling velocity for size 1"    "m/s"
+state    real  setvel_2      ij       misc         1         -      rh      "setvel_2"     "dust gravitational settling velocity for size 2"    "m/s"
+state    real  setvel_3      ij       misc         1         -      rh      "setvel_3"     "dust gravitational settling velocity for size 3"    "m/s"
+state    real  setvel_4      ij       misc         1         -      rh      "setvel_4"     "dust gravitational settling velocity for size 4"    "m/s"
+state    real  setvel_5      ij       misc         1         -      rh      "setvel_5"     "effective gravitational settling velocity for total"    "m/s"
+state    real  dustgraset_1  ij       misc         1         -      rh      "graset_1"     "dust gravitational settling  for size 1"        "ug/m2/s"
+state    real  dustgraset_2  ij       misc         1         -      rh      "graset_2"     "dust gravitational settling  for size 2"        "ug/m2/s"
+state    real  dustgraset_3  ij       misc         1         -      rh      "graset_3"     "dust gravitational settling  for size 3"        "ug/m2/s"
+state    real  dustgraset_4  ij       misc         1         -      rh      "graset_4"     "dust gravitational settling  for size 4"        "ug/m2/s"
+state    real  dustgraset_5  ij       misc         1         -      rh      "graset_5"     "dust gravitational settling  for size 5"        "ug/m2/s"
+state    real  dustdrydep_1   ij      misc        1         -      rh      "drydep_1"     "dust dry deposition for size 1"        "ug/m2/s"
+state    real  dustdrydep_2   ij      misc        1         -      rh      "drydep_2"     "dust dry deposition for size 2"        "ug/m2/s"
+state    real  dustdrydep_3   ij      misc        1         -      rh      "drydep_3"     "dust dry deposition for size 3"        "ug/m2/s"
+state    real  dustdrydep_4   ij      misc        1         -      rh      "drydep_4"     "dust dry deposition for size 4"        "ug/m2/s"
+state    real  dustdrydep_5   ij      misc        1         -      rh      "drydep_5"     "dust dry deposition for size 5"        "ug/m2/s"
 
 #SAPRCNOV additional emissions, automatically created using diff_mechEmiss_wrfRegistry.m script (pablo-saide@uiowa.edu)
 state   real    e_c2h2          i+jf    emis_ant        1       Z       i5      "E_C2H2"        "C2H2 emissions"        "mol km^-2 hr^-1"
@@ -2750,6 +2775,7 @@ rconfig   integer     aer_aerodynres_opt  namelist,chem          max_domains    
 rconfig   integer     emiss_opt           namelist,chem          max_domains    4       rh    "emiss_opt"           ""      ""
 rconfig   integer     emiss_opt_vol       namelist,chem          max_domains    0       rh    "emiss_opt_vol"       ""      ""
 rconfig   integer     dust_opt            namelist,chem          1              0       rh    "dust_opt"            ""      ""
+rconfig   integer     dust_schme          namelist,chem          1              2       rh    "dust_schme"       ""      ""
 rconfig   integer     dmsemis_opt         namelist,chem          1              0       rh    "dmsemis_opt"         ""      ""
 rconfig   integer     seas_opt            namelist,chem          1              0       rh    "seas_opt"            ""      ""
 rconfig   integer     bio_emiss_opt       namelist,chem          max_domains    0       rh    "bio_emiss_opt"       ""      ""
@@ -2982,6 +3008,10 @@ package   opt_out      opt_pars_out==1             -          ext_coef:extcof3,e
 # dust and sea salt packages
 package   dustgocart    dust_opt==1                  -              emis_dust:edust1,edust2,edust3,edust4,edust5 
 package   dustgocartafwa   dust_opt==3               -              emis_dust:edust1,edust2,edust3,edust4,edust5
+package   dustuoc       dust_opt==4                  -              emis_dust:edust1,edust2,edust3,edust4,edust5
+package   shao_2001     dust_schme==1                -              emis_dust:edust1,edust2,edust3,edust4,edust5
+package   shao_2004     dust_schme==2                -              emis_dust:edust1,edust2,edust3,edust4,edust5
+package   shao_2011     dust_schme==3                -              emis_dust:edust1,edust2,edust3,edust4,edust5
 package   seasgocart    seas_opt==1                  -              emis_seas:eseas1,eseas2,eseas3,eseas4
 package   dmsgocart    dmsemis_opt==1                  -              -
 package   volume_approx    aer_op_opt==1                -             -

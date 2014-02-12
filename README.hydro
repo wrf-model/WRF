@@ -71,7 +71,7 @@ The basic steps to do so are as follows:
 
 1) Edit "hydro/configure", and add "exit(0);" to the second line so that "configure" will not be executed.
 2) Edit "hydro/macros" to set desired compiling options. 
-3) Under hydro/WRF_cpl directory:
+3) Under hydro/CPL/WRF_cpl directory:
 "make -f Makefile.cpl clean"
 "make -f Makefile.cpl "
 

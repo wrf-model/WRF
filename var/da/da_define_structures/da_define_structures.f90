@@ -33,7 +33,7 @@ module da_define_structures
    !--------------------------------------------------------------------------
 
    type xbx_type
-      character (len=4):: mminlu
+      character (len=256) :: mminlu
 
       integer          :: fft_pad_i          ! Padding to get 2**p 3**q 5**r. (p>=1)
       integer          :: fft_pad_j          ! Padding to get 2**p 3**q 5**r.
@@ -154,8 +154,12 @@ module da_define_structures
       integer                             :: max_lev
       integer                             :: nlocal
       integer                             :: ntotal
+      integer                             :: thin_nlocal
+      integer                             :: thin_ntotal
       integer                             :: plocal(0:max_fgat_time)
       integer                             :: ptotal(0:max_fgat_time)
+      integer                             :: thin_plocal(0:max_fgat_time)
+      integer                             :: thin_ptotal(0:max_fgat_time)
       integer                             :: n1
       integer                             :: n2
       character (len = 40) , allocatable  :: name(:)       ! Station name
@@ -293,6 +297,7 @@ module da_define_structures
       type (field_type)     , pointer :: u        (:) ! u-wind.
       type (field_type)     , pointer :: v        (:) ! v-wind.
       type (field_type)     , pointer :: t        (:) ! temperature.
+      type (field_type)     , pointer :: q        (:) ! specific humidity.
    end type airep_type
 
    type pilot_type
@@ -590,7 +595,7 @@ module da_define_structures
       real    :: mtgirs_ef_u, mtgirs_ef_v, mtgirs_ef_t, mtgirs_ef_q
       real    :: tamdar_ef_u, tamdar_ef_v, tamdar_ef_t, tamdar_ef_q
       real    :: tamdar_sfc_ef_u, tamdar_sfc_ef_v, tamdar_sfc_ef_t, tamdar_sfc_ef_p, tamdar_sfc_ef_q
-      real    :: airep_ef_u, airep_ef_v, airep_ef_t
+      real    :: airep_ef_u, airep_ef_v, airep_ef_t, airep_ef_q
       real    :: pilot_ef_u, pilot_ef_v
       real    :: ssmir_ef_speed, ssmir_ef_tpw
       real    :: satem_ef_thickness, ssmt1_ef_t, ssmt2_ef_rh
@@ -737,6 +742,7 @@ module da_define_structures
       real, pointer :: u(:)                     ! u-wind.
       real, pointer :: v(:)                     ! v-wind.
       real, pointer :: t(:)                     ! temperature.
+      real, pointer :: q(:)                     ! specific humidity.
    end type residual_airep_type
 
    type residual_pilot_type
@@ -882,7 +888,7 @@ module da_define_structures
       real                :: tamdar_u, tamdar_v, tamdar_t, tamdar_q
       real                :: tamdar_sfc_u, tamdar_sfc_v, tamdar_sfc_t, &
                              tamdar_sfc_p, tamdar_sfc_q
-      real                :: airep_u, airep_v, airep_t
+      real                :: airep_u, airep_v, airep_t, airep_q
       real                :: pilot_u, pilot_v
       real                :: ssmir_speed, ssmir_tpw
       real                :: ssmi_tb19v, ssmi_tb19h, ssmi_tb22v, ssmi_tb37v, &

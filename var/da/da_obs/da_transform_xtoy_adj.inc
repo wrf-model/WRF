@@ -21,13 +21,11 @@ subroutine da_transform_xtoy_adj(cv_size, cv, grid, iv, jo_grad_y, jo_grad_x)
    ! [1.0] observation operator y = H(x):
    !--------------------------------------------------------------------------
   
-   if (iv%info(sound)%nlocal > 0) then
-      call da_transform_xtoy_sound_adj     (grid, iv, jo_grad_y, jo_grad_x) 
-      call da_transform_xtoy_sonde_sfc_adj (grid, iv, jo_grad_y, jo_grad_x) 
-   end if
+   if (iv%info(sound)%nlocal    > 0) call da_transform_xtoy_sound_adj    (grid, iv, jo_grad_y, jo_grad_x)
+   if (iv%info(sonde_sfc)%nlocal  > 0) call da_transform_xtoy_sonde_sfc_adj(grid, iv, jo_grad_y, jo_grad_x)
    if (iv%info(mtgirs)%nlocal   > 0) call da_transform_xtoy_mtgirs_adj   (grid, iv, jo_grad_y, jo_grad_x)
    if (iv%info(tamdar)%nlocal   > 0) call da_transform_xtoy_tamdar_adj   (grid, iv, jo_grad_y, jo_grad_x)
-   if (iv%info(tamdar)%nlocal   > 0) call da_transform_xtoy_tamdar_sfc_adj(grid, iv, jo_grad_y, jo_grad_x)
+   if (iv%info(tamdar_sfc)%nlocal > 0) call da_transform_xtoy_tamdar_sfc_adj(grid, iv, jo_grad_y, jo_grad_x)
    if (iv%info(synop)%nlocal    > 0) call da_transform_xtoy_synop_adj    (grid, iv, jo_grad_y, jo_grad_x)
    if (iv%info(geoamv)%nlocal   > 0) call da_transform_xtoy_geoamv_adj   (grid, iv, jo_grad_y, jo_grad_x)
    if (iv%info(polaramv)%nlocal > 0) call da_transform_xtoy_polaramv_adj (grid, iv, jo_grad_y, jo_grad_x)   

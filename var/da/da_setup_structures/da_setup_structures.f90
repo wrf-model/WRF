@@ -18,7 +18,7 @@ module da_setup_structures
       use_radar_rf, num_ob_indexes,kts, kte, time_window_max, time_window_min, &
       max_fgat_time, num_fgat_time, dt_cloud_model, &
       use_ssmiretrievalobs,use_radarobs,use_ssmitbobs,use_qscatobs, num_procs, use_rainobs, &
-      num_pseudo, missing, ob_format, ob_format_bufr,ob_format_ascii, ob_format_madis, &
+      num_pseudo, missing, ob_format, ob_format_bufr,ob_format_ascii, ob_format_madis, ob_format_gpsro, &
       use_airepobs, use_tamdarobs, test_dm_exact, use_amsuaobs, use_amsubobs, &
       use_airsobs, use_bogusobs, sfc_assi_options, use_eos_amsuaobs, &
       use_filtered_rad, use_gpsrefobs, use_hirs2obs, &
@@ -41,8 +41,8 @@ module da_setup_structures
       filename_len, use_ssmisobs, gravity, t_triple, use_hirs4obs, use_mhsobs, &
       use_mwtsobs, use_mwhsobs, use_atmsobs,    &
       vert_corr_2, alphacv_method_xa, vert_evalue_global, &
-      vert_evalue_local, obs_names, num_ob_indexes, &
-      sound, mtgirs,tamdar, synop, profiler, gpsref, gpspw, polaramv, geoamv, ships, metar, &
+      vert_evalue_local, obs_names, thin_conv, &
+      sound, sonde_sfc, mtgirs, tamdar, tamdar_sfc, synop, profiler, gpsref, gpspw, polaramv, geoamv, ships, metar, &
       satem, radar, ssmi_rv, ssmi_tb, ssmt1, ssmt2, airsr, pilot, airep, rain, &
       bogus, buoy, qscat, radiance, pseudo, trace_use_dull, kts,kte, &
       use_simulated_rad, use_pseudo_rad, pseudo_rad_platid, pseudo_rad_satid, &
@@ -59,10 +59,10 @@ module da_setup_structures
       psi_chi_factor, psi_t_factor, psi_ps_factor, psi_rh_factor, &
       chi_u_t_factor, chi_u_ps_factor,chi_u_rh_factor, t_u_rh_factor, ps_u_rh_factor, &
       interpolate_stats, be_eta, thin_rainobs, fgat_rain_flags, use_iasiobs, &
-      use_seviriobs 
+      use_seviriobs,jds_int,jde_int,anal_type_hybrid_dual_res 
 
    use da_obs, only : da_fill_obs_structures, da_store_obs_grid_info, da_store_obs_grid_info_bufr, &
-                      da_fill_obs_structures_rain
+                      da_fill_obs_structures_rain,da_set_obs_missing,da_set_3d_obs_missing
    use da_obs_io, only : da_read_obs_bufr,da_read_obs_radar, &
       da_scan_obs_radar,da_scan_obs_ascii,da_read_obs_ascii, &
       da_read_obs_bufrgpsro, da_scan_obs_rain, da_read_obs_rain
@@ -72,7 +72,7 @@ module da_setup_structures
 #if defined(RTTOV) || defined(CRTM)
    use da_radiance, only : da_setup_radiance_structures
 #endif
-   use da_reporting, only : da_error,message, da_warning, da_message
+   use da_reporting, only : da_error, message, da_warning, da_message
    use da_recursive_filter, only : da_calculate_rf_factors
    use da_spectral, only : da_initialize_h,da_calc_power_spectrum
    use da_ssmi, only : da_read_obs_ssmi,da_scan_obs_ssmi
@@ -90,9 +90,6 @@ module da_setup_structures
 #ifdef DM_PARALLEL
 !  use mpi, only : mpi_min, mpi_max
    use da_par_util, only : true_mpi_real
-#endif
-#ifdef BUFR
-   use da_control, only : thin_conv
 #endif
 
    implicit none

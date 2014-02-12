@@ -12,7 +12,7 @@ module da_obs
       use_soundobs,use_mtgirsobs,use_satemobs, use_profilerobs, use_pilotobs, &
       use_qscatobs,use_metarobs, use_polaramvobs, use_geoamvobs, &
       use_bogusobs,use_buoyobs, use_airsretobs, use_tamdarobs, trace_use, num_procs, &
-      missing_r, missing, use_airepobs,use_gpspwobs,use_gpsztdobs,use_gpsrefobs, &
+      xmiss, missing_r, missing, use_airepobs,use_gpspwobs,use_gpsztdobs,use_gpsrefobs, &
       use_ssmt1obs,filtered_obs_unit,fmt_each,fmt_info,fmt_srfc, ide, jde, &
       pseudo_x, fg_format, fg_format_kma_global, fg_format_wrf_arw_regional,fg_format_wrf_nmm_regional, &
       missing_data, pseudo_var, pseudo_val,stdout, num_pseudo, pseudo_y, pseudo_z, &
@@ -21,7 +21,7 @@ module da_obs
       ob_format,ob_format_ascii,filename_len, trace_use_dull, &
       sound, mtgirs, synop, profiler, gpsref, gpspw, polaramv, geoamv, ships, metar, &
       satem, radar, ssmi_rv, ssmi_tb, ssmt1, ssmt2, airsr, pilot, airep, sonde_sfc,rain, &
-      bogus, buoy, qscat, tamdar, pseudo, num_ob_indexes, its,ite,jds,jts,jte,ids, &
+      bogus, buoy, qscat, tamdar, tamdar_sfc, pseudo, num_ob_indexes, its,ite,jds,jts,jte,ids, &
       write_mod_filtered_obs   !cys_add
    ! use_crtm_kmatrix,use_crtm_kmatrix_fast
 #ifdef CRTM
@@ -42,7 +42,7 @@ module da_obs
    use da_qscat,     only : da_transform_xtoy_qscat,da_transform_xtoy_qscat_adj
    use da_radar,     only : da_transform_xtoy_radar,da_transform_xtoy_radar_adj
    use da_rain,      only : da_transform_xtoy_rain,da_transform_xtoy_rain_adj
-   use da_reporting, only : da_error, message, da_warning
+   use da_reporting, only : da_error, message, da_warning, da_message
 #ifdef RTTOV
    use da_rttov,     only : da_transform_xtoy_rttov,da_transform_xtoy_rttov_adj
 #endif
@@ -82,5 +82,6 @@ contains
 #include "da_count_filtered_obs.inc"
 #include "da_obs_sensitivity.inc"
 #include "da_set_obs_missing.inc"
+#include "da_set_3d_obs_missing.inc"
 
 end module da_obs

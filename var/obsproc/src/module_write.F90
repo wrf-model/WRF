@@ -601,7 +601,7 @@ SUBROUTINE output_gts_31 (max_number_of_obs, obs, number_of_obs, windex,&
                 nssmt1s + nssmt2s + namdars + &
                 ntovss  + nqscats + nprofls + &
                 nbuoyss + nothers + ngpsztd + &
-                ngpsref + ngpseph + nboguss + nairss,", "
+                ngpsref + ngpseph + nboguss + nairss + ntamdar,", "
 
 ! 1.3.5 MISSING VALUE FLAG 
 !       ------------------

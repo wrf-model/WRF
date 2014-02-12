@@ -1602,7 +1602,7 @@ END subroutine cup_up_tracer
       ! Calculate wet deposition with re-evaporation (based on wet scavenging in cup_up_tracer);
       ! assume no gas takeup by rain during fall for now
       
-      do i=its,ite
+      do i=its,itf
         
         IF(ierr(I).eq.0)then
             
@@ -1641,12 +1641,12 @@ END subroutine cup_up_tracer
       
       ! In downdraft, do only transport of tracers
       
-      do i=its,ite
+      do i=its,itf
         
         IF(ierr(I).eq.0)then
           
           do nv=1,num_chem
-            tr_dd(i,jmin(i),nv)=tre_cup(i,jmin(i),nv) ! Tracer amount in downdraft
+            tr_dd(i,jmin(i):ktf,nv)=tre_cup(i,jmin(i):ktf,nv) ! Tracer amount in downdraft
           enddo
           
           do ki=jmin(i)-1,1,-1
@@ -1665,7 +1665,7 @@ END subroutine cup_up_tracer
       
       ! Add evaporation from rain water:
       
-      do i=its,ite
+      do i=its,itf
         IF(ierr(I).eq.0)then
           do nv=1,num_chem
             do k=kts,ktf

@@ -190,8 +190,19 @@ SUBROUTINE LEVELPOOL(ln,qi0,qi1,qo1,ql,dt,H,ar,we,wc,wl,oe,oc,oa)
        !if(z1 .eq. z2) then
        ! Sf = ((z1-(z2-0.01))+(h1-h2))/dx  !-- compute the friction slope
        !else
-         Sf = ((z1-z2)+(h1-h2))/dx  !-- compute the friction slope
+!         Sf = ((z1-z2)+(h1-h2))/dx  !-- compute the friction slope
        !endif
+
+!modifieed by Wei Yu for false geography data
+         if(abs(z1-z2) .gt. 1.0E4) then
+#ifdef HYDRO_D
+             print*, "Warning: huge slope rest to 0 for channel grid.", z1,z2
+#endif
+             Sf = ((h1-h2))/dx  !-- compute the friction slope
+         else
+             Sf = ((z1-z2)+(h1-h2))/dx  !-- compute the friction slope
+         endif
+!end  modfication
 
         sgn = SGNf(Sf)             !-- establish sign
 
@@ -434,7 +445,7 @@ SUBROUTINE LEVELPOOL(ln,qi0,qi1,qo1,ql,dt,H,ar,we,wc,wl,oe,oc,oa)
         INTEGER, INTENT(IN), DIMENSION(NLINKS)    :: ORDER, TYPEL !--link
         INTEGER, INTENT(IN), DIMENSION(NLINKS)    :: TO_NODE, FROM_NODE
         INTEGER, INTENT(IN), DIMENSION(NLINKS)    :: CHANXI, CHANYJ
-        REAL,    INTENT(IN), DIMENSION(NLINKS)    :: ZELEV  !--elevatio of nodes
+        REAL,    INTENT(IN), DIMENSION(NLINKS)    :: ZELEV  !--elevation of nodes
         REAL, INTENT(INOUT), DIMENSION(NLINKS)    :: CVOL
         REAL, INTENT(IN), DIMENSION(NLINKS)       :: MUSK, MUSX
         REAL, INTENT(IN), DIMENSION(NLINKS)       :: CHANLEN
@@ -707,6 +718,12 @@ crnt:    DO                      !-- loop on the courant condition
                 HLINKTMP(FROM_NODE(i)),HLINKTMP(TO_NODE(i)), &
                 CHANLEN(i), MannN(i), Bw(i), ChSSlp(i))
 
+#ifdef HYDRO_D
+            if(qlink(i,1)  .ge. 1.0E6) then
+               print*, "Warning: big Qlink",QLINK(i,1),i,TO_NODE(i),from_node(i)
+            endif
+#endif
+
             else !--  we are just computing critical depth for outflow points
                QLINK(i,1) =0.
             endif
@@ -754,6 +771,12 @@ crnt:    DO                      !-- loop on the courant condition
  
            if( TYPEL(i).eq.0 .and. CVOLTMP(i) .ge. 0.001 .and.(CVOLTMP(i)-QSUM(i)*DTCT)/CVOLTMP(i) .le. -0.01 ) then  
             flag = -99
+#ifdef HYDRO_D
+            write(6,*) "Unstatble at node ",i
+            write(6,*) "TYPEL, CVOLTMP, QSUM, QSUM*DTCT",TYPEL(i), CVOLTMP(i), QSUM(i), QSUM(i)*DTCT
+            write(6,*) "qsubrt, qstrmvolrt,qlink",QSUBRT(CHANXI(i),CHANYJ(i)),QSTRMVOLRT(CHANXI(i),CHANYJ(i)),qlink(i,1),qlink(i,2)
+#endif
+            
             goto 999  
             endif 
           enddo 
@@ -774,6 +797,7 @@ crnt:    DO                      !-- loop on the courant condition
              else
 #ifdef HYDRO_D
               write(6,*) "Error ..... with small DTCT",DTCT
+              call hydro_stop()
 #endif
               DTCT = 0.1
               HLINKTMP = HLINK                          !-- set head and volume to start values of timestep

@@ -363,6 +363,12 @@
          CALL WRF_ERROR_FATAL(wrf_err_message)
       END IF
 
+    ! For non-nested NMM, initialize the west and south bounds:
+    if(grid%parent_id==0 .and. allowed_to_read) then
+      grid%wbd0 = -(ide-2)*grid%dx
+      grid%sbd0 = -((jde-1)/2)*grid%dy
+    endif
+
 !!!!!!tlb
 !!!! For now, set NPES to 1
       NPES=1
@@ -1954,6 +1960,9 @@
 ! includes these as dummy arguments or declares them.  Access them from 
 ! GRID.  JM 20050819
 #ifndef WRF_NMM_NEST
+    ! NOTE: we always get here for all NMM configurations because the
+    !       #if condition is wrong.  Leaving this as is, just in case
+    !       there was a good reason for it.
       grid%moved = .FALSE.
 #endif
 

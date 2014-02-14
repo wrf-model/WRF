@@ -165,6 +165,10 @@ state integer randstate4     ij     dyn_nmm     1      -    r  "randstate4" "ran
 state real    random         ij     dyn_nmm     1      -    rh "random" "random number in [0,1) used by SAS"
 rconfig   integer random_seed             namelist,physics     max_domains    0       irh    "random_seed"  "random number generator seed"
 
+# Projection south and west bounds for Post:
+rconfig  real wbd0    derived   max_domains    0       - "wbd0"                  "western boundary of the domain in rotated coordinates"
+rconfig  real sbd0    derived   max_domains    0       - "sbd0"                  "southern boundary of the domain in rotated coordinates"
+
 #
 # module_MASKS
 #

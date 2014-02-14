@@ -400,6 +400,11 @@ endif
     END IF
 #endif
 
+#if (NMM_CORE == 1)
+    CALL wrf_put_dom_ti_real ( fid , 'WBD0' , grid%wbd0 , 1 , ierr )
+    CALL wrf_put_dom_ti_real ( fid , 'SBD0' , grid%sbd0 , 1 , ierr )
+#endif
+
 #if (EM_CORE == 1)
 !added the following for tc bogusing
     if( ((config_flags%insert_bogus_storm) .or. (config_flags%remove_storm)) .and. &

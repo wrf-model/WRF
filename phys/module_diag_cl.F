@@ -179,7 +179,7 @@ CONTAINS
    REAL                                      :: value
    INTEGER, INTENT(IN)                       :: clwrfH
    CHARACTER (LEN=1024)                      :: message
-   REAL, SAVE                                :: nsteps
+   INTEGER, SAVE                             :: nsteps
    LOGICAL                                   :: is_restart
 
 !-----------------------------------------------------------------
@@ -304,15 +304,15 @@ CONTAINS
           skintempclmax(i,j)=skintemp(i,j)
           skintempclmean(i,j)=skintemp(i,j)
           skintempclstd(i,j)=skintemp(i,j)*skintemp(i,j)
-!          nsteps=0.
+          nsteps=0
         ENDDO
       ENDDO
   ENDDO
-    nsteps=clwrfH*60./dt
+!    nsteps=clwrfH*60./dt
   ELSE
     xtimep = xtime + dt/60.   ! value at end of timestep for time info
-!    nsteps=nsteps+1.
-    nsteps=clwrfH*60./dt
+    nsteps=nsteps+1
+!   nsteps=clwrfH*60./dt
 !      DO j = j_start(ij), j_end(ij)
 !        DO i = i_start(ij), i_end(ij)
 !     DO j = jps, jpe

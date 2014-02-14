@@ -177,6 +177,7 @@ module_initialize_scm_xy.o : \
 
 module_initialize_real.o :  \
 		nest_init_utils.o	\
+		module_polarfft.o \
 		../share/module_llxy.o	\
 		../frame/module_domain.o \
 		../frame/module_configure.o  \
@@ -243,6 +244,7 @@ solve_em.o:     module_small_step_em.o \
                 module_first_rk_step_part2.o \
                 module_after_all_rk_steps.o  \
                 module_avgflx_em.o              \
+		module_polarfft.o \
 		../frame/module_domain.o \
 		../frame/module_configure.o  \
 		../frame/module_driver_constants.o \

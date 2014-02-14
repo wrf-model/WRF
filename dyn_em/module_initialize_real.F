@@ -18,6 +18,7 @@ MODULE module_initialize_real
    USE module_soil_pre
    USE module_date_time
    USE module_llxy
+   USE module_polarfft
 #ifdef DM_PARALLEL
    USE module_dm
    USE module_comm_dm, ONLY : &
@@ -117,6 +118,8 @@ CONTAINS
       REAL , DIMENSION(max_eta) :: eta_levels
       REAL :: max_dz
 
+      REAL :: dclat
+
 !      INTEGER , PARAMETER :: nl_max = 1000
 !      REAL , DIMENSION(nl_max) :: grid%dn
 
@@ -151,6 +154,7 @@ integer::oops1,oops2
         REAL , DIMENSION(100) :: lqmi
 
       REAL :: t_start , t_end
+      REAL , ALLOCATABLE , DIMENSION(:,:) :: clat_glob
 
       !  Dimension information stored in grid data structure.
 
@@ -553,6 +557,65 @@ integer::oops1,oops2
          END IF
 
          IF ( config_flags%map_proj .EQ. PROJ_CASSINI ) THEN
+#if 1
+            dclat = 90./REAL(jde-jds) !(0.5 * 180/ny)
+            DO j = jts, MIN(jte,jde-1)
+              DO k = kts, kte
+                 DO i = its, MIN(ite,ide-1)
+                    grid%t_2(i,k,j) = 1.
+                 END DO
+              END DO
+              DO i = its, MIN(ite,ide-1)
+                 grid%t_2(i,1,j) = grid%ht(i,j)
+                 grid%sr(i,j) = grid%ht(i,j)
+              END DO
+            END DO
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
+! WARNING:  this might present scaling issues on very large numbers of processors
+     ALLOCATE( clat_glob(ids:ide,jds:jde) )
+
+     CALL wrf_patch_to_global_real ( grid%clat, clat_glob, grid%domdesc, 'xy', 'xy', &
+                                     ids, ide, jds, jde, 1, 1, &
+                                     ims, ime, jms, jme, 1, 1, &
+                                     its, ite, jts, jte, 1, 1 )
+
+     CALL wrf_dm_bcast_real ( clat_glob , (ide-ids+1)*(jde-jds+1) )
+
+     grid%clat_xxx(ipsx:ipex,jpsx:jpex) = clat_glob(ipsx:ipex,jpsx:jpex)
+
+     DEALLOCATE( clat_glob )
+#endif
+
+         CALL pxft ( grid=grid                                              &
+               ,lineno=__LINE__                                             &
+               ,flag_uv            = 0                                      &
+               ,flag_rurv          = 0                                      &
+               ,flag_wph           = 0                                      &
+               ,flag_ww            = 0                                      &
+               ,flag_t             = 1                                      &
+               ,flag_mu            = 0                                      &
+               ,flag_mut           = 0                                      &
+               ,flag_moist         = 0                                      &
+               ,flag_chem          = 0                                      &
+               ,flag_tracer        = 0                                      &
+               ,flag_scalar        = 0                                      &
+               ,positive_definite  = .FALSE.                                &
+               ,moist=moist,chem=chem,tracer=tracer,scalar=scalar           &
+               ,fft_filter_lat = config_flags%fft_filter_lat                &
+               ,dclat = dclat                                               &
+               ,ids=ids,ide=ide,jds=jds,jde=jde,kds=kds,kde=kde             &
+               ,ims=ims,ime=ime,jms=jms,jme=jme,kms=kms,kme=kme             &
+               ,ips=ips,ipe=ipe,jps=jps,jpe=jpe,kps=kps,kpe=kpe             &
+               ,imsx=imsx,imex=imex,jmsx=jmsx,jmex=jmex,kmsx=kmsx,kmex=kmex &
+               ,ipsx=ipsx,ipex=ipex,jpsx=jmsx,jpex=jpex,kpsx=kpsx,kpex=kpex )
+            DO j = jts, MIN(jte,jde-1)
+              DO i = its, MIN(ite,ide-1)
+                 grid%ht(i,j) = grid%t_2(i,1,j)
+                 grid%sr(i,j) = grid%sr(i,j) - grid%ht(i,j)
+              END DO
+            END DO
+
+#else
 #if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
 
             !  We stick the topo and map fac in an unused 3d array. The map scale
@@ -621,6 +684,7 @@ integer::oops1,oops2
                                ids, ide, jds, jde, 1,1,           &
                                ims, ime, jms, jme, 1,1,           &
                                its, ite, jts, jte, 1,1 )
+#endif
 #endif
          END IF
 

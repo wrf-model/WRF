@@ -90,6 +90,11 @@
 
    ! Calculate the num_fgat_time based on time_window_min, time_window_max
     if ( var4d ) then
+       if (time_step == 0) then
+          write(unit=message(1),fmt='(A)') &
+          'For 4DVAR, in the &domains namelist, "time_step" must be set to a non-zero value'
+          call da_error(__FILE__,__LINE__,message(1:1))
+       endif
        read(unit=time_window_min,fmt='(i4,5(a1,i2))') min_yyyy,s,min_mm,s,min_dd,s,min_hh,s,min_mn,s,min_ss
        read(unit=time_window_max,fmt='(i4,5(a1,i2))') max_yyyy,s,max_mm,s,max_dd,s,max_hh,s,max_mn,s,max_ss
        call da_get_julian_time(min_yyyy,min_mm,min_dd,min_hh,min_mn,time_min)

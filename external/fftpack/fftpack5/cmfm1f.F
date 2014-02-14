@@ -1,54 +1,105 @@
-!CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-!                                                                       
-!   FFTPACK 5.0                                                         
-!                                                                       
-!   Authors:  Paul N. Swarztrauber and Richard A. Valent                
-!                                                                       
-!   $Id: cmfm1f.f,v 1.2 2004/06/15 21:08:32 rodney Exp $                
-!                                                                       
-!CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-                                                                        
-      SUBROUTINE CMFM1F (LOT,JUMP,N,INC,C,CH,WA,FNF,FAC) 
-      COMPLEX       C(*) 
-      REAL       CH(*),     WA(*),      FAC(*) 
-!                                                                       
-! FFTPACK 5.0 auxiliary routine                                         
-!                                                                       
-      NF = FNF 
-      NA = 0 
-      L1 = 1 
-      IW = 1 
-      DO 125 K1=1,NF 
-         IP = FAC(K1) 
-         L2 = IP*L1 
-         IDO = N/L2 
-         LID = L1*IDO 
-         NBR = 1+NA+2*MIN(IP-2,4) 
-         GO TO (52,62,53,63,54,64,55,65,56,66),NBR 
-   52    CALL CMF2KF (LOT,IDO,L1,NA,C,JUMP,INC,CH,1,LOT,WA(IW)) 
-         GO TO 120 
-   62    CALL CMF2KF (LOT,IDO,L1,NA,CH,1,LOT,C,JUMP,INC,WA(IW)) 
-         GO TO 120 
-   53    CALL CMF3KF (LOT,IDO,L1,NA,C,JUMP,INC,CH,1,LOT,WA(IW)) 
-         GO TO 120 
-   63    CALL CMF3KF (LOT,IDO,L1,NA,CH,1,LOT,C,JUMP,INC,WA(IW)) 
-         GO TO 120 
-   54    CALL CMF4KF (LOT,IDO,L1,NA,C,JUMP,INC,CH,1,LOT,WA(IW)) 
-         GO TO 120 
-   64    CALL CMF4KF (LOT,IDO,L1,NA,CH,1,LOT,C,JUMP,INC,WA(IW)) 
-         GO TO 120 
-   55    CALL CMF5KF (LOT,IDO,L1,NA,C,JUMP,INC,CH,1,LOT,WA(IW)) 
-         GO TO 120 
-   65    CALL CMF5KF (LOT,IDO,L1,NA,CH,1,LOT,C,JUMP,INC,WA(IW)) 
-         GO TO 120 
-   56    CALL CMFGKF (LOT,IDO,IP,L1,LID,NA,C,C,JUMP,INC,CH,CH,          &
-     &     1,LOT,WA(IW))                                                
-         GO TO 120 
-   66    CALL CMFGKF (LOT,IDO,IP,L1,LID,NA,CH,CH,1,LOT,C,C,             &
-     &     JUMP,INC,WA(IW))                                             
-  120    L1 = L2 
-         IW = IW+(IP-1)*(IDO+IDO) 
-         IF(IP .LE. 5) NA = 1-NA 
-  125 END DO 
-      RETURN 
-      END                                           
+subroutine cmfm1f ( lot, jump, n, inc, c, ch, wa, fnf, fac )
+
+!*****************************************************************************80
+!
+!! CMFM1F is an FFTPACK5 auxiliary routine.
+!
+!  License:
+!
+!    Licensed under the GNU General Public License (GPL).
+!    Copyright (C) 1995-2004, Scientific Computing Division,
+!    University Corporation for Atmospheric Research
+!
+!  Modified:
+!
+!    27 March 2009
+!
+!  Author:
+!
+!    Paul Swarztrauber
+!    Richard Valent
+!
+!  Reference:
+!
+!    Paul Swarztrauber,
+!    Vectorizing the Fast Fourier Transforms,
+!    in Parallel Computations,
+!    edited by G. Rodrigue,
+!    Academic Press, 1982.
+!
+!    Paul Swarztrauber,
+!    Fast Fourier Transform Algorithms for Vector Computers,
+!    Parallel Computing, pages 45-63, 1984.
+!
+!  Parameters:
+!
+  implicit none
+
+  complex ( kind = 4 ) c(*)
+  real ( kind = 4 ) ch(*)
+  real ( kind = 4 ) fac(*)
+  real ( kind = 4 ) fnf
+  integer ( kind = 4 ) ido
+  integer ( kind = 4 ) inc
+  integer ( kind = 4 ) ip
+  integer ( kind = 4 ) iw
+  integer ( kind = 4 ) jump
+  integer ( kind = 4 ) k1
+  integer ( kind = 4 ) l1
+  integer ( kind = 4 ) l2
+  integer ( kind = 4 ) lid
+  integer ( kind = 4 ) lot
+  integer ( kind = 4 ) n
+  integer ( kind = 4 ) na
+  integer ( kind = 4 ) nbr
+  integer ( kind = 4 ) nf
+  real ( kind = 4 ) wa(*)
+
+  nf = int ( fnf )
+  na = 0
+  l1 = 1
+  iw = 1
+
+  do k1 = 1, nf
+
+    ip = int ( fac(k1) )
+    l2 = ip * l1
+    ido = n / l2
+    lid = l1 * ido
+    nbr = 1 + na + 2 * min ( ip - 2, 4 )
+
+    if ( nbr == 1 ) then
+      call cmf2kf ( lot, ido, l1, na, c, jump, inc, ch, 1, lot, wa(iw) )
+    else if ( nbr == 2 ) then
+      call cmf2kf ( lot, ido, l1, na, ch, 1, lot, c, jump, inc, wa(iw) )
+    else if ( nbr == 3 ) then
+      call cmf3kf ( lot, ido, l1, na, c, jump, inc, ch, 1, lot, wa(iw) )
+    else if ( nbr == 4 ) then
+      call cmf3kf ( lot, ido, l1, na, ch, 1, lot, c, jump, inc, wa(iw) )
+    else if ( nbr == 5 ) then
+      call cmf4kf ( lot, ido, l1, na, c, jump, inc, ch, 1, lot, wa(iw) )
+    else if ( nbr == 6 ) then
+      call cmf4kf ( lot, ido, l1, na, ch, 1, lot, c, jump, inc, wa(iw) )
+    else if ( nbr == 7 ) then
+      call cmf5kf ( lot, ido, l1, na, c, jump, inc, ch, 1, lot, wa(iw) )
+    else if ( nbr == 8 ) then
+      call cmf5kf ( lot, ido, l1, na, ch, 1, lot, c, jump, inc, wa(iw) )
+    else if ( nbr == 9 ) then
+      call cmfgkf ( lot, ido, ip, l1, lid, na, c, c, jump, inc, ch, ch, &
+        1, lot, wa(iw) )
+    else if ( nbr == 10 ) then
+      call cmfgkf ( lot, ido, ip, l1, lid, na, ch, ch, 1, lot, c, c, &
+        jump, inc, wa(iw) )
+    end if
+
+    l1 = l2
+    iw = iw + ( ip - 1 ) * ( ido + ido )
+
+    if ( ip <= 5 ) then
+      na = 1 - na
+    end if
+
+  end do
+
+  return
+end

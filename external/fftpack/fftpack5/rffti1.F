@@ -1,70 +1,156 @@
-!CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-!                                                                       
-!   FFTPACK 5.0                                                         
-!                                                                       
-!   Authors:  Paul N. Swarztrauber and Richard A. Valent                
-!                                                                       
-!   $Id: rffti1.f,v 1.2 2004/06/15 21:29:20 rodney Exp $                
-!                                                                       
-!CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-                                                                        
-      SUBROUTINE RFFTI1 (N,WA,FAC) 
-      REAL       WA(N)      ,FAC(15) 
-      INTEGER    NTRYH(4) 
-      DOUBLE PRECISION TPI,ARGH,ARGLD,ARG 
-      DATA NTRYH(1),NTRYH(2),NTRYH(3),NTRYH(4)/4,2,3,5/ 
-!                                                                       
-      NL = N 
-      NF = 0 
-      J = 0 
-  101 J = J+1 
-      IF (J-4) 102,102,103 
-  102 NTRY = NTRYH(J) 
-      GO TO 104 
-  103 NTRY = NTRY+2 
-  104 NQ = NL/NTRY 
-      NR = NL-NTRY*NQ 
-      IF (NR) 101,105,101 
-  105 NF = NF+1 
-      FAC(NF+2) = NTRY 
-      NL = NQ 
-      IF (NTRY .NE. 2) GO TO 107 
-      IF (NF .EQ. 1) GO TO 107 
-      DO 106 I=2,NF 
-         IB = NF-I+2 
-         FAC(IB+2) = FAC(IB+1) 
-  106 END DO 
-      FAC(3) = 2 
-  107 IF (NL .NE. 1) GO TO 104 
-      FAC(1) = N 
-      FAC(2) = NF 
-      TPI = 8.D0*DATAN(1.D0) 
-      ARGH = TPI/FLOAT(N) 
-      IS = 0 
-      NFM1 = NF-1 
-      L1 = 1 
-      IF (NFM1 .EQ. 0) RETURN 
-      DO 110 K1=1,NFM1 
-         IP = FAC(K1+2) 
-         LD = 0 
-         L2 = L1*IP 
-         IDO = N/L2 
-         IPM = IP-1 
-         DO 109 J=1,IPM 
-            LD = LD+L1 
-            I = IS 
-            ARGLD = FLOAT(LD)*ARGH 
-            FI = 0. 
-            DO 108 II=3,IDO,2 
-               I = I+2 
-               FI = FI+1. 
-               ARG = FI*ARGLD 
-               WA(I-1) = DCOS(ARG) 
-               WA(I) = DSIN(ARG) 
-  108       CONTINUE 
-            IS = IS+IDO 
-  109    CONTINUE 
-         L1 = L2 
-  110 END DO 
-      RETURN 
-      END                                           
+subroutine rffti1 ( n, wa, fac )
+
+!*****************************************************************************80
+!
+!! RFFTI1 is an FFTPACK5 auxiliary routine.
+!
+!  License:
+!
+!    Licensed under the GNU General Public License (GPL).
+!    Copyright (C) 1995-2004, Scientific Computing Division,
+!    University Corporation for Atmospheric Research
+!
+!  Modified:
+!
+!    27 March 2009
+!
+!  Author:
+!
+!    Paul Swarztrauber
+!    Richard Valent
+!
+!  Reference:
+!
+!    Paul Swarztrauber,
+!    Vectorizing the Fast Fourier Transforms,
+!    in Parallel Computations,
+!    edited by G. Rodrigue,
+!    Academic Press, 1982.
+!
+!    Paul Swarztrauber,
+!    Fast Fourier Transform Algorithms for Vector Computers,
+!    Parallel Computing, pages 45-63, 1984.
+!
+!  Parameters:
+!
+!    Input, integer ( kind = 4 ) N, the number for which factorization
+!    and other information is needed.
+!
+!    Output, real ( kind = 4 ) WA(N), trigonometric information.
+!
+!    Output, real ( kind = 4 ) FAC(15), factorization information.
+!    FAC(1) is N, FAC(2) is NF, the number of factors, and FAC(3:NF+2) are the
+!    factors.
+!
+  implicit none
+
+  integer ( kind = 4 ) n
+
+  real ( kind = 8 ) arg
+  real ( kind = 8 ) argh
+  real ( kind = 8 ) argld
+  real ( kind = 4 ) fac(15)
+  real ( kind = 4 ) fi
+  integer ( kind = 4 ) i
+  integer ( kind = 4 ) ib
+  integer ( kind = 4 ) ido
+  integer ( kind = 4 ) ii
+  integer ( kind = 4 ) ip
+  integer ( kind = 4 ) ipm
+  integer ( kind = 4 ) is
+  integer ( kind = 4 ) j
+  integer ( kind = 4 ) k1
+  integer ( kind = 4 ) l1
+  integer ( kind = 4 ) l2
+  integer ( kind = 4 ) ld
+  integer ( kind = 4 ) nf
+  integer ( kind = 4 ) nfm1
+  integer ( kind = 4 ) nl
+  integer ( kind = 4 ) nq
+  integer ( kind = 4 ) nr
+  integer ( kind = 4 ) ntry
+  real ( kind = 8 ) tpi
+  real ( kind = 4 ) wa(n)
+
+  nl = n
+  nf = 0
+  j = 0
+
+  do while ( 1 < nl )
+
+    j = j + 1
+
+    if ( j == 1 ) then
+      ntry = 4
+    else if ( j == 2 ) then
+      ntry = 2
+    else if ( j == 3 ) then
+      ntry = 3
+    else if ( j == 4 ) then
+      ntry = 5
+    else
+      ntry = ntry + 2
+    end if
+
+    do
+
+      nq = nl / ntry
+      nr = nl - ntry * nq
+
+      if ( nr /= 0 ) then
+        exit
+      end if
+
+      nf = nf + 1
+      fac(nf+2) = real ( ntry, kind = 4 )
+      nl = nq
+!
+!  If 2 is a factor, make sure it appears first in the list of factors.
+!
+      if ( ntry == 2 ) then
+        if ( nf /= 1 ) then
+          do i = 2, nf
+            ib = nf - i + 2
+            fac(ib+2) = fac(ib+1)
+          end do
+          fac(3) = 2.0E+00
+        end if
+      end if
+
+    end do
+
+  end do
+
+  fac(1) = real ( n, kind = 4 )
+  fac(2) = real ( nf, kind = 4 )
+  tpi = 8.0D+00 * atan ( 1.0D+00 )
+  argh = tpi / real ( n, kind = 4 )
+  is = 0
+  nfm1 = nf-1
+  l1 = 1
+
+  do k1 = 1, nfm1
+    ip = int ( fac(k1+2) )
+    ld = 0
+    l2 = l1 * ip
+    ido = n / l2
+    ipm = ip - 1
+    do j = 1, ipm
+      ld = ld + l1
+      i = is
+      argld = real ( ld, kind = 4 ) * argh
+      fi = 0.0E+00
+      do ii = 3, ido, 2
+        i = i + 2
+        fi = fi + 1.0E+00
+        arg = fi * argld
+        wa(i-1) = real ( cos ( arg ), kind = 4 )
+        wa(i) = real ( sin ( arg ), kind = 4 )
+      end do
+      is = is + ido
+    end do
+    l1 = l2
+  end do
+
+  return
+end

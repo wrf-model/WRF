@@ -1,238 +1,351 @@
-!CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-!                                                                       
-!   FFTPACK 5.0                                                         
-!                                                                       
-!   Authors:  Paul N. Swarztrauber and Richard A. Valent                
-!                                                                       
-!   $Id: mradbg.f,v 1.2 2004/06/15 21:29:20 rodney Exp $                
-!                                                                       
-!CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-                                                                        
-      SUBROUTINE MRADBG (M,IDO,IP,L1,IDL1,CC,C1,C2,IM1,IN1,             &
-     &          CH,CH2,IM2,IN2,WA)                                      
-      REAL      CH(IN2,IDO,L1,IP)    ,CC(IN1,IDO,IP,L1) ,               &
-     &          C1(IN1,IDO,L1,IP)    ,C2(IN1,IDL1,IP),                  &
-     &          CH2(IN2,IDL1,IP)     ,WA(IDO)                           
-!                                                                       
-      M1D = (M-1)*IM1+1 
-      M2S = 1-IM2 
-      TPI=2.*4.*ATAN(1.0) 
-      ARG = TPI/FLOAT(IP) 
-      DCP = COS(ARG) 
-      DSP = SIN(ARG) 
-      IDP2 = IDO+2 
-      NBD = (IDO-1)/2 
-      IPP2 = IP+2 
-      IPPH = (IP+1)/2 
-      IF (IDO .LT. L1) GO TO 103 
-      DO 102 K=1,L1 
-         DO 101 I=1,IDO 
-            M2 = M2S 
-            DO 1001 M1=1,M1D,IM1 
-            M2 = M2+IM2 
-            CH(M2,I,K,1) = CC(M1,I,1,K) 
- 1001       CONTINUE 
-  101    CONTINUE 
-  102 END DO 
-      GO TO 106 
-  103 DO 105 I=1,IDO 
-         DO 104 K=1,L1 
-            M2 = M2S 
-            DO 1004 M1=1,M1D,IM1 
-            M2 = M2+IM2 
-            CH(M2,I,K,1) = CC(M1,I,1,K) 
- 1004       CONTINUE 
-  104    CONTINUE 
-  105 END DO 
-  106 DO 108 J=2,IPPH 
-         JC = IPP2-J 
-         J2 = J+J 
-         DO 107 K=1,L1 
-            M2 = M2S 
-            DO 1007 M1=1,M1D,IM1 
-            M2 = M2+IM2 
-            CH(M2,1,K,J) = CC(M1,IDO,J2-2,K)+CC(M1,IDO,J2-2,K) 
-            CH(M2,1,K,JC) = CC(M1,1,J2-1,K)+CC(M1,1,J2-1,K) 
- 1007       CONTINUE 
-  107    CONTINUE 
-  108 END DO 
-      IF (IDO .EQ. 1) GO TO 116 
-      IF (NBD .LT. L1) GO TO 112 
-      DO 111 J=2,IPPH 
-         JC = IPP2-J 
-         DO 110 K=1,L1 
-            DO 109 I=3,IDO,2 
-               IC = IDP2-I 
-               M2 = M2S 
-               DO 1009 M1=1,M1D,IM1 
-               M2 = M2+IM2 
-               CH(M2,I-1,K,J) = CC(M1,I-1,2*J-1,K)+CC(M1,IC-1,2*J-2,K) 
-               CH(M2,I-1,K,JC) = CC(M1,I-1,2*J-1,K)-CC(M1,IC-1,2*J-2,K) 
-               CH(M2,I,K,J) = CC(M1,I,2*J-1,K)-CC(M1,IC,2*J-2,K) 
-               CH(M2,I,K,JC) = CC(M1,I,2*J-1,K)+CC(M1,IC,2*J-2,K) 
- 1009          CONTINUE 
-  109       CONTINUE 
-  110    CONTINUE 
-  111 END DO 
-      GO TO 116 
-  112 DO 115 J=2,IPPH 
-         JC = IPP2-J 
-         DO 114 I=3,IDO,2 
-            IC = IDP2-I 
-            DO 113 K=1,L1 
-               M2 = M2S 
-               DO 1013 M1=1,M1D,IM1 
-               M2 = M2+IM2 
-               CH(M2,I-1,K,J) = CC(M1,I-1,2*J-1,K)+CC(M1,IC-1,2*J-2,K) 
-               CH(M2,I-1,K,JC) = CC(M1,I-1,2*J-1,K)-CC(M1,IC-1,2*J-2,K) 
-               CH(M2,I,K,J) = CC(M1,I,2*J-1,K)-CC(M1,IC,2*J-2,K) 
-               CH(M2,I,K,JC) = CC(M1,I,2*J-1,K)+CC(M1,IC,2*J-2,K) 
- 1013          CONTINUE 
-  113       CONTINUE 
-  114    CONTINUE 
-  115 END DO 
-  116 AR1 = 1. 
-      AI1 = 0. 
-      DO 120 L=2,IPPH 
-         LC = IPP2-L 
-         AR1H = DCP*AR1-DSP*AI1 
-         AI1 = DCP*AI1+DSP*AR1 
-         AR1 = AR1H 
-         DO 117 IK=1,IDL1 
-            M2 = M2S 
-            DO 1017 M1=1,M1D,IM1 
-            M2 = M2+IM2 
-            C2(M1,IK,L) = CH2(M2,IK,1)+AR1*CH2(M2,IK,2) 
-            C2(M1,IK,LC) = AI1*CH2(M2,IK,IP) 
- 1017       CONTINUE 
-  117    CONTINUE 
-         DC2 = AR1 
-         DS2 = AI1 
-         AR2 = AR1 
-         AI2 = AI1 
-         DO 119 J=3,IPPH 
-            JC = IPP2-J 
-            AR2H = DC2*AR2-DS2*AI2 
-            AI2 = DC2*AI2+DS2*AR2 
-            AR2 = AR2H 
-            DO 118 IK=1,IDL1 
-               M2 = M2S 
-               DO 1018 M1=1,M1D,IM1 
-               M2 = M2+IM2 
-               C2(M1,IK,L) = C2(M1,IK,L)+AR2*CH2(M2,IK,J) 
-               C2(M1,IK,LC) = C2(M1,IK,LC)+AI2*CH2(M2,IK,JC) 
- 1018          CONTINUE 
-  118       CONTINUE 
-  119    CONTINUE 
-  120 END DO 
-      DO 122 J=2,IPPH 
-         DO 121 IK=1,IDL1 
-            M2 = M2S 
-            DO 1021 M1=1,M1D,IM1 
-            M2 = M2+IM2 
-            CH2(M2,IK,1) = CH2(M2,IK,1)+CH2(M2,IK,J) 
- 1021       CONTINUE 
-  121    CONTINUE 
-  122 END DO 
-      DO 124 J=2,IPPH 
-         JC = IPP2-J 
-         DO 123 K=1,L1 
-            M2 = M2S 
-            DO 1023 M1=1,M1D,IM1 
-            M2 = M2+IM2 
-            CH(M2,1,K,J) = C1(M1,1,K,J)-C1(M1,1,K,JC) 
-            CH(M2,1,K,JC) = C1(M1,1,K,J)+C1(M1,1,K,JC) 
- 1023       CONTINUE 
-  123    CONTINUE 
-  124 END DO 
-      IF (IDO .EQ. 1) GO TO 132 
-      IF (NBD .LT. L1) GO TO 128 
-      DO 127 J=2,IPPH 
-         JC = IPP2-J 
-         DO 126 K=1,L1 
-            DO 125 I=3,IDO,2 
-               M2 = M2S 
-               DO 1025 M1=1,M1D,IM1 
-               M2 = M2+IM2 
-               CH(M2,I-1,K,J) = C1(M1,I-1,K,J)-C1(M1,I,K,JC) 
-               CH(M2,I-1,K,JC) = C1(M1,I-1,K,J)+C1(M1,I,K,JC) 
-               CH(M2,I,K,J) = C1(M1,I,K,J)+C1(M1,I-1,K,JC) 
-               CH(M2,I,K,JC) = C1(M1,I,K,J)-C1(M1,I-1,K,JC) 
- 1025          CONTINUE 
-  125       CONTINUE 
-  126    CONTINUE 
-  127 END DO 
-      GO TO 132 
-  128 DO 131 J=2,IPPH 
-         JC = IPP2-J 
-         DO 130 I=3,IDO,2 
-            DO 129 K=1,L1 
-               M2 = M2S 
-               DO 1029 M1=1,M1D,IM1 
-               M2 = M2+IM2 
-               CH(M2,I-1,K,J) = C1(M1,I-1,K,J)-C1(M1,I,K,JC) 
-               CH(M2,I-1,K,JC) = C1(M1,I-1,K,J)+C1(M1,I,K,JC) 
-               CH(M2,I,K,J) = C1(M1,I,K,J)+C1(M1,I-1,K,JC) 
-               CH(M2,I,K,JC) = C1(M1,I,K,J)-C1(M1,I-1,K,JC) 
- 1029          CONTINUE 
-  129       CONTINUE 
-  130    CONTINUE 
-  131 END DO 
-  132 CONTINUE 
-      IF (IDO .EQ. 1) RETURN 
-      DO 133 IK=1,IDL1 
-         M2 = M2S 
-         DO 1033 M1=1,M1D,IM1 
-         M2 = M2+IM2 
-         C2(M1,IK,1) = CH2(M2,IK,1) 
- 1033    CONTINUE 
-  133 END DO 
-      DO 135 J=2,IP 
-         DO 134 K=1,L1 
-            M2 = M2S 
-            DO 1034 M1=1,M1D,IM1 
-            M2 = M2+IM2 
-            C1(M1,1,K,J) = CH(M2,1,K,J) 
- 1034       CONTINUE 
-  134    CONTINUE 
-  135 END DO 
-      IF (NBD .GT. L1) GO TO 139 
-      IS = -IDO 
-      DO 138 J=2,IP 
-         IS = IS+IDO 
-         IDIJ = IS 
-         DO 137 I=3,IDO,2 
-            IDIJ = IDIJ+2 
-            DO 136 K=1,L1 
-               M2 = M2S 
-               DO 1036 M1=1,M1D,IM1 
-               M2 = M2+IM2 
-               C1(M1,I-1,K,J) = WA(IDIJ-1)*CH(M2,I-1,K,J)-WA(IDIJ)*     &
-     &          CH(M2,I,K,J)                                            
-               C1(M1,I,K,J) = WA(IDIJ-1)*CH(M2,I,K,J)+WA(IDIJ)*         &
-     &          CH(M2,I-1,K,J)                                          
- 1036          CONTINUE 
-  136       CONTINUE 
-  137    CONTINUE 
-  138 END DO 
-      GO TO 143 
-  139 IS = -IDO 
-      DO 142 J=2,IP 
-         IS = IS+IDO 
-         DO 141 K=1,L1 
-            IDIJ = IS 
-            DO 140 I=3,IDO,2 
-               IDIJ = IDIJ+2 
-               M2 = M2S 
-               DO 1040 M1=1,M1D,IM1 
-               M2 = M2+IM2 
-               C1(M1,I-1,K,J) = WA(IDIJ-1)*CH(M2,I-1,K,J)-WA(IDIJ)*     &
-     &          CH(M2,I,K,J)                                            
-               C1(M1,I,K,J) = WA(IDIJ-1)*CH(M2,I,K,J)+WA(IDIJ)*         &
-     &          CH(M2,I-1,K,J)                                          
- 1040          CONTINUE 
-  140       CONTINUE 
-  141    CONTINUE 
-  142 END DO 
-  143 RETURN 
-      END                                           
+subroutine mradbg ( m, ido, ip, l1, idl1, cc, c1, c2, im1, in1, &
+  ch, ch2, im2, in2, wa )
+
+!*****************************************************************************80
+!
+!! MRADBG is an FFTPACK5 auxiliary routine.
+!
+!  License:
+!
+!    Licensed under the GNU General Public License (GPL).
+!    Copyright (C) 1995-2004, Scientific Computing Division,
+!    University Corporation for Atmospheric Research
+!
+!  Modified:
+!
+!    27 March 2009
+!
+!  Author:
+!
+!    Paul Swarztrauber
+!    Richard Valent
+!
+!  Reference:
+!
+!    Paul Swarztrauber,
+!    Vectorizing the Fast Fourier Transforms,
+!    in Parallel Computations,
+!    edited by G. Rodrigue,
+!    Academic Press, 1982.
+!
+!    Paul Swarztrauber,
+!    Fast Fourier Transform Algorithms for Vector Computers,
+!    Parallel Computing, pages 45-63, 1984.
+!
+!  Parameters:
+!
+  implicit none
+
+  integer ( kind = 4 ) idl1
+  integer ( kind = 4 ) ido
+  integer ( kind = 4 ) in1
+  integer ( kind = 4 ) in2
+  integer ( kind = 4 ) ip
+  integer ( kind = 4 ) l1
+
+  real ( kind = 4 ) ai1
+  real ( kind = 4 ) ai2
+  real ( kind = 4 ) ar1
+  real ( kind = 4 ) ar1h
+  real ( kind = 4 ) ar2
+  real ( kind = 4 ) ar2h
+  real ( kind = 4 ) arg
+  real ( kind = 4 ) c1(in1,ido,l1,ip)
+  real ( kind = 4 ) c2(in1,idl1,ip)
+  real ( kind = 4 ) cc(in1,ido,ip,l1)
+  real ( kind = 4 ) ch(in2,ido,l1,ip)
+  real ( kind = 4 ) ch2(in2,idl1,ip)
+  real ( kind = 4 ) dc2
+  real ( kind = 4 ) dcp
+  real ( kind = 4 ) ds2
+  real ( kind = 4 ) dsp
+  integer ( kind = 4 ) i
+  integer ( kind = 4 ) ic
+  integer ( kind = 4 ) idij
+  integer ( kind = 4 ) idp2
+  integer ( kind = 4 ) ik
+  integer ( kind = 4 ) im1
+  integer ( kind = 4 ) im2
+  integer ( kind = 4 ) ipp2
+  integer ( kind = 4 ) ipph
+  integer ( kind = 4 ) is
+  integer ( kind = 4 ) j
+  integer ( kind = 4 ) j2
+  integer ( kind = 4 ) jc
+  integer ( kind = 4 ) k
+  integer ( kind = 4 ) l
+  integer ( kind = 4 ) lc
+  integer ( kind = 4 ) m
+  integer ( kind = 4 ) m1
+  integer ( kind = 4 ) m1d
+  integer ( kind = 4 ) m2
+  integer ( kind = 4 ) m2s
+  integer ( kind = 4 ) nbd
+  real ( kind = 4 ) tpi
+  real ( kind = 4 ) wa(ido)
+
+  m1d = ( m - 1 ) * im1 + 1
+  m2s = 1 - im2
+  tpi = 2.0E+00 * 4.0E+00 * atan ( 1.0E+00 )
+  arg = tpi / real ( ip, kind = 4 )
+  dcp = cos ( arg )
+  dsp = sin ( arg )
+  idp2 = ido + 2
+  nbd = ( ido - 1 ) / 2
+  ipp2 = ip + 2
+  ipph = ( ip + 1 ) / 2
+
+  if ( ido < l1 ) then
+
+    do i = 1, ido
+      do k = 1, l1
+        m2 = m2s
+        do m1 = 1, m1d, im1
+          m2 = m2 + im2
+          ch(m2,i,k,1) = cc(m1,i,1,k)
+        end do
+      end do
+    end do
+
+  else
+
+    do k = 1, l1
+      do i = 1, ido
+        m2 = m2s
+        do m1 = 1, m1d, im1
+          m2 = m2 + im2
+          ch(m2,i,k,1) = cc(m1,i,1,k)
+        end do
+      end do
+    end do
+
+  end if
+
+  do j = 2, ipph
+    jc = ipp2 - j
+    j2 = j + j
+    do k = 1, l1
+      m2 = m2s
+      do m1 = 1, m1d, im1
+        m2 = m2 + im2
+        ch(m2,1,k,j) = cc(m1,ido,j2-2,k) + cc(m1,ido,j2-2,k)
+        ch(m2,1,k,jc) = cc(m1,1,j2-1,k) + cc(m1,1,j2-1,k)
+      end do
+    end do
+  end do
+
+  if ( ido == 1 ) then
+
+  else if ( nbd < l1 ) then
+
+    do j = 2, ipph
+      jc = ipp2 - j
+      do i = 3, ido, 2
+        ic = idp2 - i
+        do k = 1, l1
+          m2 = m2s
+          do m1 = 1, m1d, im1
+            m2 = m2 + im2
+            ch(m2,i-1,k,j)  = cc(m1,i-1,2*j-1,k) + cc(m1,ic-1,2*j-2,k)
+            ch(m2,i-1,k,jc) = cc(m1,i-1,2*j-1,k) - cc(m1,ic-1,2*j-2,k)
+            ch(m2,i,k,j)    = cc(m1,i,2*j-1,k)   - cc(m1,ic,2*j-2,k)
+            ch(m2,i,k,jc)   = cc(m1,i,2*j-1,k)   + cc(m1,ic,2*j-2,k)
+          end do
+        end do
+      end do
+    end do
+
+  else
+
+    do j = 2, ipph
+      jc = ipp2 - j
+      do k = 1, l1
+        do i = 3, ido, 2
+          ic = idp2 - i
+          m2 = m2s
+          do m1 = 1, m1d, im1
+            m2 = m2 + im2
+            ch(m2,i-1,k,j)  = cc(m1,i-1,2*j-1,k) + cc(m1,ic-1,2*j-2,k)
+            ch(m2,i-1,k,jc) = cc(m1,i-1,2*j-1,k) - cc(m1,ic-1,2*j-2,k)
+            ch(m2,i,k,j)    = cc(m1,i,2*j-1,k)   - cc(m1,ic,2*j-2,k)
+            ch(m2,i,k,jc)   = cc(m1,i,2*j-1,k)   + cc(m1,ic,2*j-2,k)
+          end do
+        end do
+      end do
+    end do
+
+  end if
+
+  ar1 = 1.0E+00
+  ai1 = 0.0E+00
+
+  do l = 2, ipph
+
+    lc = ipp2 - l
+    ar1h = dcp * ar1 - dsp * ai1
+    ai1 =  dcp * ai1 + dsp * ar1
+    ar1 = ar1h
+
+    do ik = 1, idl1
+      m2 = m2s
+      do m1 = 1, m1d, im1
+        m2 = m2 + im2
+        c2(m1,ik,l)  = ch2(m2,ik,1) + ar1 * ch2(m2,ik,2)
+        c2(m1,ik,lc) =                ai1 * ch2(m2,ik,ip)
+      end do
+    end do
+
+    dc2 = ar1
+    ds2 = ai1
+    ar2 = ar1
+    ai2 = ai1
+
+    do j = 3, ipph
+      jc = ipp2 - j
+      ar2h = dc2 * ar2 - ds2 * ai2
+      ai2  = dc2 * ai2 + ds2 * ar2
+      ar2 = ar2h
+      do ik = 1, idl1
+        m2 = m2s
+        do m1 = 1, m1d, im1
+          m2 = m2 + im2
+          c2(m1,ik,l)  = c2(m1,ik,l)  + ar2 * ch2(m2,ik,j)
+          c2(m1,ik,lc) = c2(m1,ik,lc) + ai2 * ch2(m2,ik,jc)
+        end do
+      end do
+    end do
+
+  end do
+
+  do j = 2, ipph
+    do ik = 1, idl1
+      m2 = m2s
+      do m1 = 1, m1d, im1
+        m2 = m2 + im2
+        ch2(m2,ik,1) = ch2(m2,ik,1) + ch2(m2,ik,j)
+      end do
+    end do
+  end do
+
+  do j = 2, ipph
+    jc = ipp2 - j
+    do k = 1, l1
+      m2 = m2s
+      do m1 = 1, m1d, im1
+        m2 = m2 + im2
+        ch(m2,1,k,j)  = c1(m1,1,k,j) - c1(m1,1,k,jc)
+        ch(m2,1,k,jc) = c1(m1,1,k,j) + c1(m1,1,k,jc)
+      end do
+    end do
+  end do
+
+  if ( ido == 1 ) then
+
+  else if ( nbd < l1 ) then
+
+    do j = 2, ipph
+      jc = ipp2 - j
+      do i = 3, ido, 2
+        do k = 1, l1
+          m2 = m2s
+          do m1 = 1, m1d, im1
+            m2 = m2 + im2
+            ch(m2,i-1,k,j)  = c1(m1,i-1,k,j) - c1(m1,i,k,jc)
+            ch(m2,i-1,k,jc) = c1(m1,i-1,k,j) + c1(m1,i,k,jc)
+            ch(m2,i,k,j)    = c1(m1,i,k,j)   + c1(m1,i-1,k,jc)
+            ch(m2,i,k,jc)   = c1(m1,i,k,j)   - c1(m1,i-1,k,jc)
+          end do
+        end do
+      end do
+    end do
+
+  else
+
+    do j = 2, ipph
+      jc = ipp2 - j
+      do k = 1, l1
+        do i = 3, ido, 2
+          m2 = m2s
+          do m1 = 1, m1d, im1
+            m2 = m2 + im2
+            ch(m2,i-1,k,j)  = c1(m1,i-1,k,j) - c1(m1,i,k,jc)
+            ch(m2,i-1,k,jc) = c1(m1,i-1,k,j) + c1(m1,i,k,jc)
+            ch(m2,i,k,j)    = c1(m1,i,k,j)   + c1(m1,i-1,k,jc)
+            ch(m2,i,k,jc)   = c1(m1,i,k,j)   - c1(m1,i-1,k,jc)
+          end do
+        end do
+      end do
+    end do
+
+  end if
+
+  if ( ido == 1 ) then
+    return
+  end if
+
+  do ik = 1, idl1
+    m2 = m2s
+    do m1 = 1, m1d, im1
+      m2 = m2 + im2
+      c2(m1,ik,1) = ch2(m2,ik,1)
+    end do
+  end do
+
+  do j = 2, ip
+    do k = 1, l1
+      m2 = m2s
+      do m1 = 1, m1d, im1
+        m2 = m2 + im2
+        c1(m1,1,k,j) = ch(m2,1,k,j)
+      end do
+    end do
+  end do
+
+  if ( l1 < nbd ) then
+
+    is = -ido
+
+    do j = 2, ip
+      is = is + ido
+      do k = 1, l1
+        idij = is
+        do i = 3, ido, 2
+          idij = idij + 2
+          m2 = m2s
+          do m1 = 1, m1d, im1
+            m2 = m2 + im2
+            c1(m1,i-1,k,j) = wa(idij-1) * ch(m2,i-1,k,j) &
+                           - wa(idij)   * ch(m2,i,k,j)
+            c1(m1,i,k,j) =   wa(idij-1) * ch(m2,i,k,j) &
+                           + wa(idij)   * ch(m2,i-1,k,j)
+          end do
+        end do
+      end do
+    end do
+
+  else
+
+    is = -ido
+
+    do j = 2, ip
+      is = is + ido
+      idij = is
+      do i = 3, ido, 2
+        idij = idij + 2
+        do k = 1, l1
+          m2 = m2s
+          do m1 = 1, m1d, im1
+            m2 = m2 + im2
+            c1(m1,i-1,k,j) = wa(idij-1) * ch(m2,i-1,k,j) &
+                           - wa(idij)   * ch(m2,i,k,j)
+            c1(m1,i,k,j) =   wa(idij-1) * ch(m2,i,k,j) &
+                           + wa(idij)   * ch(m2,i-1,k,j)
+          end do
+        end do
+      end do
+    end do
+
+  end if
+
+  return
+end

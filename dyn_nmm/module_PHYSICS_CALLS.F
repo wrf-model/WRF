@@ -198,8 +198,7 @@
 !***  LOCAL VARIABLES
 !***
 !-----------------------------------------------------------------------
-      INTEGER :: I,ICLOUD,IENDX,II,ISTAT,J,JDAY,JMONTH,K,KMNTH,N,NRAD
-      INTEGER :: ICLOUD_CU
+      INTEGER :: I,IENDX,II,ISTAT,J,JDAY,JMONTH,K,KMNTH,N,NRAD
 !
       INTEGER,DIMENSION(3) :: IDAT
       INTEGER,DIMENSION(12) :: MONTH=(/31,28,31,30,31,30,31,31          &
@@ -312,9 +311,6 @@
 !
       ENDDO
       ENDDO
-!
-      ICLOUD=999
-      ICLOUD_CU=999
 !
       GMT=REAL(IHRST)
 !
@@ -438,8 +434,8 @@
      &                 ,LW_PHYSICS=CONFIG_FLAGS%RA_LW_PHYSICS           &
      &                 ,SW_PHYSICS=CONFIG_FLAGS%RA_SW_PHYSICS           &
      &                 ,RADT=RADT,RA_CALL_OFFSET=GRID%RA_CALL_OFFSET    &
-     &                 ,STEPRA=NRAD,ICLOUD=ICLOUD                       &
-     &                 ,ICLOUD_CU=ICLOUD_CU                             &
+     &                 ,STEPRA=NRAD,ICLOUD=config_flags%ICLOUD          &
+     &                 ,ICLOUD_CU=config_flags%ICLOUD_CU                &
      &                 ,WARM_RAIN=WARM_RAIN                             &
      &                 ,SWDOWNC=TOTSWDNC,CLDFRA=CLFR                    &
      &                 ,SWUPT=SWUPT                                     &

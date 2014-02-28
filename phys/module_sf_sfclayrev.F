@@ -24,7 +24,7 @@ CONTAINS
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte,                    &
-                     ustm,ck,cka,cd,cda,isftcflx,iz0tlnd           )
+                     ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,scm_force_flux           )
 !-------------------------------------------------------------------
       IMPLICIT NONE
 !-------------------------------------------------------------------
@@ -182,6 +182,7 @@ CONTAINS
                 INTENT(OUT)     ::              ck,cka,cd,cda,ustm
 
       INTEGER,  OPTIONAL,  INTENT(IN )   ::     ISFTCFLX, IZ0TLND
+      INTEGER,  OPTIONAL,  INTENT(IN )   ::     SCM_FORCE_FLUX
 ! LOCAL VARS
 
       REAL,     DIMENSION( its:ite ) ::                       U1D, &
@@ -227,7 +228,7 @@ CONTAINS
                 ims,ime, jms,jme, kms,kme,                         &
                 its,ite, jts,jte, kts,kte                          &
 #if ( EM_CORE == 1 )
-                ,isftcflx,iz0tlnd,                                 &
+                ,isftcflx,iz0tlnd,scm_force_flux,                               &
                 USTM(ims,j),CK(ims,j),CKA(ims,j),                  &
                 CD(ims,j),CDA(ims,j)                               &
 #endif
@@ -251,7 +252,7 @@ CONTAINS
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte,                    &
-                     isftcflx, iz0tlnd,                            &
+                     isftcflx, iz0tlnd,scm_force_flux,                            &
                      ustm,ck,cka,cd,cda                            )
 !-------------------------------------------------------------------
       IMPLICIT NONE
@@ -326,6 +327,7 @@ CONTAINS
                 INTENT(OUT)     ::              ck,cka,cd,cda,ustm
 
       INTEGER,  OPTIONAL,  INTENT(IN )   ::     ISFTCFLX, IZ0TLND
+      INTEGER,  OPTIONAL,  INTENT(IN )   ::     SCM_FORCE_FLUX
 
 ! LOCAL VARS
 
@@ -874,11 +876,14 @@ CONTAINS
   335 CONTINUE                                                                   
                                                                                   
 !-----COMPUTE THE SURFACE SENSIBLE AND LATENT HEAT FLUXES:                       
-                                                                                 
+      IF ( PRESENT(SCM_FORCE_FLUX) ) THEN
+         IF (SCM_FORCE_FLUX.EQ.1) GOTO 350
+      ENDIF
       DO i=its,ite
         QFX(i)=0.                                                              
         HFX(i)=0.                                                              
       ENDDO
+  350 CONTINUE                                                                   
 
       IF (ISFFLX.EQ.0) GOTO 410                                                
                                                                                  
@@ -927,6 +932,10 @@ CONTAINS
 !                                                                                
 !     IF(IDRY.EQ.1)GOTO 390                                                
 !                                                                                
+     IF ( PRESENT(SCM_FORCE_FLUX) ) THEN
+        IF (SCM_FORCE_FLUX.EQ.1) GOTO 405
+     ENDIF
+
       DO 370 I=its,ite
         QFX(I)=FLQC(I)*(QSFC(I)-QX(I))                                     
         QFX(I)=AMAX1(QFX(I),0.)                                            
@@ -950,6 +959,8 @@ CONTAINS
           HFX(I)=AMAX1(HFX(I),-250.)                                       
         ENDIF                                                                  
   400 CONTINUE                                                                 
+
+  405 CONTINUE                                                                 
          
       DO I=its,ite
          IF((XLAND(I)-1.5).GE.0)THEN

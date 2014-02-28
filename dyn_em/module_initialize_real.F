@@ -172,6 +172,19 @@ integer::oops1,oops2
 
       CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
 
+      !   Lake Mask assignment (mchen)
+      CALL nl_get_iswater ( grid%id , grid%iswater )
+      CALL nl_get_islake  ( grid%id , grid%islake )
+      DO j = jts, MIN(jde-1,jte)
+         DO i = its, MIN(ide-1,ite)
+            IF ( grid%lu_index(i,j) .NE. grid%islake ) THEN
+               grid%lakemask(i,j) = 0
+            ELSE
+               grid%lakemask(i,j) = 1
+            END IF
+         END DO
+      END DO
+
       !  Send out a quick message about the time steps based on the map scale factors.
 
       IF ( ( internal_time_loop .EQ. 1 ) .AND. ( grid%id .EQ. 1 ) .AND. &
@@ -1638,7 +1651,9 @@ integer::oops1,oops2
       CALL nl_get_iswater ( grid%id , grid%iswater )
       CALL nl_get_islake  ( grid%id , grid%islake )
 
+
       IF ( grid%islake < 0 ) THEN
+         grid%lakeflag=0
          CALL wrf_debug ( 0 , 'Old data, no inland lake information')
 
             DO j=jts,MIN(jde-1,jte)
@@ -1659,6 +1674,7 @@ integer::oops1,oops2
                END DO
             END DO
       ELSE
+         grid%lakeflag=1
          IF ( we_have_tavgsfc ) THEN
 
             CALL wrf_debug ( 0 , 'Using inland lakes with average surface temperature')
@@ -1947,6 +1963,7 @@ integer::oops1,oops2
 
          !  Make all the veg/soil parms the same so as not to confuse the developer.
 
+
          DO j = jts , MIN(jde-1,jte)
             DO i = its , MIN(ide-1,ite)
                IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
@@ -2012,6 +2029,7 @@ integer::oops1,oops2
 
       !  Adjustments for the seaice field PRIOR to the grid%tslb computations.  This is
       !  is for the 5-layer scheme.
+
 
       num_veg_cat      = SIZE ( grid%landusef , DIM=2 )
       num_soil_top_cat = SIZE ( grid%soilctop , DIM=2 )

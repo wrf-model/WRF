@@ -828,6 +828,7 @@ endif
                       grid%zi3d,         grid%watsat3d,     grid%csol3d,     grid%tkmg3d,         & !lake
                       grid%tkdry3d,      grid%tksatu3d,     grid%lake2d,                            & !lake
                       config_flags%domain_lakedepth,        config_flags%lakeminalt, grid%lake_depth,     & !lake
+                      grid%lakemask,        grid%lakeflag,                                        & !lake
                       config_flags%sf_surface_mosaic, config_flags%mosaic_cat, config_flags%num_land_cat, & ! Noah tiling
                       config_flags%maxpatch,           &   ! start of CLM variables
               grid%numc,grid%nump,grid%snl,grid%snowdp,&   !

@@ -641,7 +641,8 @@ contains
          km(i,kt) = TKE(i,kt)**1.5 * ftau(i,kt)**2. / (Ceps * sqrt(TKE(i,kt)*te_temfx(i,kt)) / leps(i,kt))
          kh(i,kt) = 2. * leps(i,kt) * fth(i,kt)**2. * TKE(i,kt) / sqrt(te_temfx(i,kt)) / Cphi
          if ( is_convective) then
-            if (kt <= h0idx(i)) then
+            ! WA 2/20/14 trap rare "equality" of h0 and zt (only when h0 = hmax)
+            if (kt <= h0idx(i) .AND. h0(i)-zt(i,kt) > 1e-15) then
                lconv(i,kt) = 1. / (1. / (karman*zt(i,kt)) + Cc / (karman * (h0(i) - zt(i,kt))))
             else
                lconv(i,kt) = 0.
@@ -992,15 +993,21 @@ contains
       end do
 
       ! Surface momentum fluxes
-      ust(i) = sqrt(ftau(i,1)/ftau0) * sqrt(u_temf(i,2)**2. + v_temf(i,2)**2.) * leps(i,1) / log(zm(i,2)/znt(i)) / zt(i,1)
+      ! WA TEST 11/7/13 use w* as a component of the mean wind inside the
+      ! u* calculation instead of in the velocity scale below (Felix)
+      ! ust(i) = sqrt(ftau(i,1)/ftau0) * sqrt(u_temf(i,2)**2. + v_temf(i,2)**2.) * leps(i,1) / log(zm(i,2)/znt(i)) / zt(i,1)
+      ust(i) = sqrt(ftau(i,1)/ftau0) * sqrt(u_temf(i,2)**2. + v_temf(i,2)**2. + (0.5*wstr(i))**2.) * leps(i,1) / log(zm(i,2)/znt(i)) / zt(i,1)
+
       ang(i) = atan2(v_temf(i,2),u_temf(i,2))
       uw_temfx(i,1) = -cos(ang(i)) * ust(i)**2.
       vw_temfx(i,1) = -sin(ang(i)) * ust(i)**2.
 
       ! Calculate mixed scaling velocity (Moeng & Sullivan 1994 JAS p.1021)
       ! Replaces ust everywhere
+      ! WA TEST 11/7/13 back to wm = u* but with "whole" wind in u* above
+      wm(i) = ust(i)
       ! WA 7/23/10 reduce velocity scale to fix excessive fluxes
-      wm(i) = 0.5 * (1./5. * (wstr(i)**3. + 5. * ust(i)**3.)) ** (1./3.) 
+      ! wm(i) = 0.5 * (1./5. * (wstr(i)**3. + 5. * ust(i)**3.)) ** (1./3.) 
 
       ! Specified flux versions (flux is modified by land surface)
       ! WA 5/31/13 use whole surface flux to improve heat conservation

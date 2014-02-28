@@ -248,10 +248,12 @@ state  real   VLAT        ij     dyn_nmm     1      -      irh
 
 state integer hifreq_lun   -     dyn_nmm     0      -      -
 
-
-#
+# Projection south and west bounds for Post:
 rconfig  real wbd0    derived   max_domains    0       - "wbd0"                  "western boundary of the domain in rotated coordinates"
 rconfig  real sbd0    derived   max_domains    0       - "sbd0"                  "southern boundary of the domain in rotated coordinates"
+state    real wbd0var    -       dyn_nmm     0      -      h "wbd0var"     "western boundary of the domain in rotated coordinates"
+state    real sbd0var    -       dyn_nmm     0      -      h "sbd0var"     "southern boundary of the domain in rotated coordinates"
+
 #for HWRF: 
 rconfig   logical analysis               namelist,time_control    max_domains        .false.      irh   "analysis flag"     "analysis control for the nested domain"
 rconfig   logical write_analysis         namelist,time_control    max_domains        .true.       irh   "analysis output flag"  "if analysis=F and write_analysis=T then analysis file is written"

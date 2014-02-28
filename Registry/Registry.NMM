@@ -168,6 +168,8 @@ rconfig   integer random_seed             namelist,physics     max_domains    0 
 # Projection south and west bounds for Post:
 rconfig  real wbd0    derived   max_domains    0       - "wbd0"                  "western boundary of the domain in rotated coordinates"
 rconfig  real sbd0    derived   max_domains    0       - "sbd0"                  "southern boundary of the domain in rotated coordinates"
+state    real wbd0var    -       dyn_nmm     0      -      h "wbd0var"     "western boundary of the domain in rotated coordinates"
+state    real sbd0var    -       dyn_nmm     0      -      h "sbd0var"     "southern boundary of the domain in rotated coordinates"
 
 #
 # module_MASKS

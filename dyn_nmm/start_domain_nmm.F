@@ -172,6 +172,7 @@
 !!!   REAL :: BLDT,CWML,EXNSFC,G_INV,PLYR,PSFC,ROG,SFCZ,THSIJ,TL
       REAL :: CWML,EXNSFC,G_INV,PLYR,PSURF,ROG,SFCZ,THSIJ,TL,ZOQING
       REAL :: TEND
+      REAL :: TEMPDX, TEMPDY
 #ifdef HWRF
 !zhang's doing 
       REAL :: TSTART
@@ -317,6 +318,53 @@
         grid%nomove_freq_hr=config_flags%nomove_freq
 #endif
 
+      ! Recalculate grid bounds, regardless of reason for
+      ! start_domain_nmm call, or version of NMM:
+      has_parent: if(grid%id /= 1) then ! NOTE REQUIREMENT: MOAD IS GRID 1!!
+         ! Nest gets dx & dy from parent and grid ratio.
+3302     format('Grid ',I0,' calculating west/south bounds relative to parent grid ',I0)
+         write(message,3302) grid%id, grid%parents(1)%ptr%id
+         call wrf_debug(2,message)
+         tempdx=grid%parents(1)%ptr%dx/grid%parent_grid_ratio
+         tempdy=grid%parents(1)%ptr%dy/grid%parent_grid_ratio
+         grid%wbd0var = grid%parents(1)%ptr%wbd0var + (grid%i_parent_start-1)*2.*grid%parents(1)%ptr%dx + mod(grid%j_parent_start+1,2)*grid%parents(1)%ptr%dx
+         grid%sbd0var = grid%parents(1)%ptr%sbd0var + (grid%j_parent_start-1)*grid%parents(1)%ptr%dy
+3303     format('Parent wbd0=',F0.3,' sbd0=',F0.3,' i_parent_start=',I0,' j_parent_start=',I0)
+         write(message,3303) grid%parents(1)%ptr%wbd0var, &
+              grid%parents(1)%ptr%sbd0var, grid%i_parent_start,grid%j_parent_start
+         call wrf_debug(2,message)
+      else
+         ! MOAD gets dx & dy from namelist.
+3305     format('Grid ',I0,' calculating west/south bounds as MOAD')
+         write(message,3305) grid%id
+         call wrf_debug(2,message)
+         call nl_get_dx(grid%id,tempdx)
+         call nl_get_dy(grid%id,tempdy)
+         grid%wbd0var = -(IDE-2)*tempdx
+         grid%sbd0var = -((JDE-1)/2)*tempdy
+#if ! ( NMM_NEST == 1 )
+         ! When NMM is compiled without nesting support, we need to
+         ! update the bound metadata here:
+         grid%wbd0 = grid%wbd0var
+         grid%sbd0 = grid%sbd0var
+#endif
+      endif has_parent
+      if(tempdx<1e-5 .or. tempdy<1e-5) then
+         ! Should never reach here unless someone adds a bug to NMM.
+         ! The meaning of grid%dx varies during nest initialization
+         ! (sometimes it is MOAD dx, sometimes nest dx), so this check
+         ! is here just in case someone screws up the code later on.
+         write(message,1045) tempdx,tempdy
+         call wrf_message('WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING ')
+         call wrf_message('Warning: dx or dy are invalid after parent calculation or namelist check.')
+         call wrf_message(message)
+         call wrf_message('WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING ')
+1045     format('Must be >1e-5.  dx=',F0.7,' dy=',F0.7,'.  Grid bounds will be wrong.')
+      endif
+      write(message,3011) grid%id,tempdx,tempdy,grid%wbd0var,grid%sbd0var
+      call wrf_debug(2,message)
+3011  format('Grid ',I0,': dx=',F0.3,' dy=',F0.3,' wbd0=',F0.3,' sbd0=',F0.3)
+
 #if 1
       IF(IME>NMM_MAX_DIM )THEN
         WRITE(wrf_err_message,*)                                       &
@@ -362,12 +410,6 @@
          WRITE(wrf_err_message,*)' restart_interval is not integer multiplier of interval_seconds'
          CALL WRF_ERROR_FATAL(wrf_err_message)
       END IF
-
-    ! For non-nested NMM, initialize the west and south bounds:
-    if(grid%parent_id==0 .and. allowed_to_read) then
-      grid%wbd0 = -(ide-2)*grid%dx
-      grid%sbd0 = -((jde-1)/2)*grid%dy
-    endif
 
 !!!!!!tlb
 !!!! For now, set NPES to 1

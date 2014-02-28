@@ -2333,6 +2333,7 @@ nsteps = 0
         RR_DR3=N0r0*RRATE(MDR3)         ! RR for mean drop diameter of .32 mm
         RR_DR4=N0r0*RRATE(MDR4)         ! RR for mean drop diameter of .45 mm
         RR_DR5=N0r0*RRATE(MDR5)         ! RR for mean drop diameter of .675 mm
+        RR_DRmax=N0r0*RRATE(MDRmax)     ! RR for mean drop diameter of .45 mm
 !
         RQR_DRmin=N0r0*MASSR(MDRmin)    ! Rain content for mean drop diameter of .05 mm
 

@@ -991,7 +991,7 @@ CONTAINS
 ! Call to cloud fraction routine based on Randall 1994 (Hong Pan 1998)
 
         CALL wrf_debug (1, 'CALL cldfra2')
-        CALL cal_cldfra2(CLDFRA,qv,qc,qi,qs,               &
+        CALL cal_cldfra1(CLDFRA,qv,qc,qi,qs,               &
                    F_QV,F_QC,F_QI,F_QS,t,p,                &
                    F_ICE_PHY,F_RAIN_PHY,                   &
                    ids,ide, jds,jde, kds,kde,              &
@@ -1041,7 +1041,7 @@ CONTAINS
 
      IF ( PRESENT ( CLDFRA ) .AND.                           &
           PRESENT(F_QC) .AND. PRESENT ( F_QI ) ) THEN
-       CALL cal_cldfra(CLDFRA,qc,qi,F_QC,F_QI,               &
+       CALL cal_cldfra2(CLDFRA,qc,qi,F_QC,F_QI,              &
                        ids,ide, jds,jde, kds,kde,            &
                        ims,ime, jms,jme, kms,kme,            &
                        its,ite, jts,jte, kts,kte             )
@@ -2332,9 +2332,9 @@ CONTAINS
 
 !---------------------------------------------------------------------
 !BOP
-! !IROUTINE: cal_cldfra - Compute cloud fraction
+! !IROUTINE: cal_cldfra2 - Compute cloud fraction
 ! !INTERFACE:
-   SUBROUTINE cal_cldfra(CLDFRA,QC,QI,F_QC,F_QI,                     &
+   SUBROUTINE cal_cldfra2(CLDFRA,QC,QI,F_QC,F_QI,                    &
           ids,ide, jds,jde, kds,kde,                                 &
           ims,ime, jms,jme, kms,kme,                                 &
           its,ite, jts,jte, kts,kte                                  )
@@ -2408,10 +2408,10 @@ CONTAINS
         ENDDO
      ENDIF
 
-   END SUBROUTINE cal_cldfra
+   END SUBROUTINE cal_cldfra2
 
 !BOP
-! !IROUTINE: cal_cldfra2 - Compute cloud fraction
+! !IROUTINE: cal_cldfra1 - Compute cloud fraction
 ! !INTERFACE:
 ! cal_cldfra_xr - Compute cloud fraction.
 ! Code adapted from that in module_ra_gfdleta.F in WRF_v2.0.3 by James Done
@@ -2420,7 +2420,7 @@ CONTAINS
 !!     (see Hong et al., 1998)
 !!     (modified by Ferrier, Feb '02)
 !
-   SUBROUTINE cal_cldfra2(CLDFRA, QV, QC, QI, QS,                     &
+   SUBROUTINE cal_cldfra1(CLDFRA, QV, QC, QI, QS,                     &
                          F_QV, F_QC, F_QI, F_QS, t_phy, p_phy,       &
                          F_ICE_PHY,F_RAIN_PHY,                       &
           ids,ide, jds,jde, kds,kde,                                 &
@@ -2612,7 +2612,7 @@ CONTAINS
     ENDDO          !--- End DO k
     ENDDO          !--- End DO j
 
-   END SUBROUTINE cal_cldfra2
+   END SUBROUTINE cal_cldfra1
 
 
    SUBROUTINE toposhad_init(ht_shad,ht_loc,shadowmask,nested,iter,   &

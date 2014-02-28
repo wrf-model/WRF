@@ -94,8 +94,8 @@ subroutine da_allocate_background_errors  (jy, kz, l, e, be_eval_loc, &
          be_sub % evec_g(1:kz,1:mz) = e(1:kz,1:mz)
       else if (vert_corr == vert_corr_1) then
          if (print_detail_be) then
-           write(unit=stdout,fmt='(A)') &
-              'Change be std dev to variance in NMC code'
+           write(unit=message(1),fmt='(A)') 'Change BE std dev to variance in NMC code'
+           call da_message(message(1:1))
          end if
          if (vert_evalue == vert_evalue_global) then
             ! use global eigenvalues:

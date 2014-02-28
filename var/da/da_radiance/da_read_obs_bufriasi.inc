@@ -205,7 +205,6 @@ subroutine da_read_obs_bufriasi (obstype,iv,infile)
 !    Read IASI FOV information
          call ufbint(lnbufr,linele,5,1,iret,'FOVN SLNM QGFQ MJFC SELV')				
          if ( linele(3) /= zero) then
-!	   print*, 'problem with profile (QGFQ)'	   
 	         cycle read_loop  
 	     end if
          if ( bad_line == nint(linele(2))) then

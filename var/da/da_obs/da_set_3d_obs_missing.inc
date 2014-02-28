@@ -66,8 +66,8 @@ subroutine da_set_3d_obs_missing (iv, n)
          end if
       end do
    case default
-      write(6,*)' wrong obs_index= ',n,' in da_set_3d_obs_missing'
-      stop    
+      write(unit=message(1),fmt='(A,I4)') 'Wrong obs_index= ',n
+      call da_error(__FILE__,__LINE__,message(1:1))
    end select
 
    if (trace_use) call da_trace_exit("da_set_3d_obs_missing")

@@ -16,7 +16,7 @@ module da_gen_be
    use da_control, only : stdout,vertical_ip, t0,es_beta,es_alpha, &
       es_gamma,kappa,rd_over_rv,rd_over_rv1,t_kelvin, gravity, &
       filename_len,vertical_ip_0, trace_use, trace_use_dull, cv_options, use_rf, do_normalize
-   use da_reporting, only : da_error, message
+   use da_reporting, only : da_error, da_warning, da_message, message
    use da_tools_serial, only : da_get_unit, da_free_unit, da_array_print
    use da_lapack, only : dsyev
    use da_wavelet, only: lf,namw,nb,nij,ws,wsd

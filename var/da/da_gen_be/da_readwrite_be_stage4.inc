@@ -72,7 +72,10 @@ subroutine da_readwrite_be_stage4(outunit, nk, uh_method, n_smth_sl, variable)
 
    else if (trim(uh_method) == 'scale') then
 
-      if( .not.use_rf )call da_error(__FILE__,__LINE__,(/"{uh_method,use_rf}={''scale'',.false.} error"/))
+      if( .not.use_rf ) then
+         call da_error(__FILE__,__LINE__,(/"{uh_method,use_rf}={''scale'',.false.} error"/))
+      end if
+
       filename = trim(variable)//'/'//'sl_print.'//trim(variable)
       open (iunit, file = filename)
 
@@ -115,7 +118,10 @@ subroutine da_readwrite_be_stage4(outunit, nk, uh_method, n_smth_sl, variable)
             do while( .not.ex )		! loop thus only because gen_be_stage4_regional uses stride:
                write(filename,'("gen_be_stage4_regional.",i0)')stride
                inquire(exist=ex,file=trim(filename))
-               if( .not.ex )print'(a,": ",a" does not exist.")',__FILE__,trim(filename)
+               if( .not.ex ) then
+                  write(unit=message(1),fmt='(a,a)') trim(filename),' does not exist.'
+                  call da_warning(__FILE__,__LINE__,message(1:1))
+               end if
                stride=stride+1
             enddo
             filename = trim(filename)//"/dir."//trim(variable)//trim(ck)//"/mom"

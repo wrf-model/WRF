@@ -53,7 +53,7 @@ module da_wrfvar_top
       da_kmat_mul
    use da_obs, only : da_transform_xtoy_adj 
    use da_obs_io, only : da_write_filtered_obs, da_write_obs, da_final_write_obs , &
-                         da_write_obs_etkf, da_write_modified_filtered_obs  !cys_change
+                         da_write_obs_etkf, da_write_modified_filtered_obs
    use da_par_util, only : da_system,da_copy_tile_dims,da_copy_dims
    use da_physics, only : da_uvprho_to_w_lin
 #if defined (CRTM) || defined (RTTOV)

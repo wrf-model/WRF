@@ -49,7 +49,7 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
    type (multi_level_type)      :: platform
    logical                      :: outside
    logical                      :: outside_all
-   logical                      :: uvq_direct               ![cys_add]
+   logical                      :: uvq_direct
    integer                      :: surface_level
    real                         :: height_error, u_comp, v_comp, sp, dir
    integer                      :: nlocal(num_ob_indexes)
@@ -139,7 +139,6 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
    ! skip line
    ! ----------
 
-   ![cys_change]
    ! read (iunit, fmt = '(a)') fmt_name
    read (iunit, fmt = '(a)') info_string
    if (info_string(1:21) == 'MODIFIED FILTERED OBS') then
@@ -244,7 +243,6 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
             platform%each(i)%td%inv, platform%each(i)%td%qc, platform%each(i)%td%error, &
             platform%each(i)%rh%inv, platform%each(i)%rh%qc, platform%each(i)%rh%error
 
-! cys_add
          if (uvq_direct) then
             platform%each (i)%u = platform%each (i)%speed
             if (platform%each(i)%rh%inv .gt. missing_r)  &
@@ -252,7 +250,6 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
             if (platform%each(i)%rh%error .gt. 0.0)  &
                platform%each(i)%rh%error=platform%each(i)%rh%error / 1e3  !convert back to kg/kg
          end if
-! cys_add
 
          if (print_detail_obs) then
             write(unit=stdout, fmt = '(a, i6)') 'i=', i
@@ -278,7 +275,7 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
          ! To convert the wind speed and direction to 
          !      the model wind components: u, v
 
-         if (.not. uvq_direct) then   !cys_add
+         if (.not. uvq_direct) then
          if (platform%each (i)%speed%qc /= missing_data .and. &
              platform%each (i)%v%qc /= missing_data) then
              if (.not. var_wind) then
@@ -304,7 +301,7 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
             platform%each (i)%u%qc    = missing_data
             platform%each (i)%v%qc    = missing_data
          end if
-         end if   !cys_add
+         end if
       end do
 
       ! Check if outside of the time range:
@@ -400,7 +397,7 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
 
       levs = nlevels
 
-      if (fm /= 86) call da_obs_proc_station(platform,fm,uvq_direct)  !cys_change
+      if (fm /= 86) call da_obs_proc_station(platform,fm,uvq_direct)
 
       ! Loop over duplicating obs for global
       ndup = 1

@@ -33,19 +33,22 @@ subroutine da_random_seed
 
    if (put_rand_seed) then            ! Manually set random seed.
       if (seed_size /= 2) then
-         write(unit=stdout,fmt='(a)') &
+         write(unit=message(1),fmt='(a)') &
             ' Warning: only setting first two values of seed_array'
+         call da_warning(__FILE__,__LINE__,message(1:1))
       end if
      
       seed_array(1) = seed_array1
       seed_array(2) = seed_array2 * seed_array1 + myproc*10000000
-      write(unit=stdout,fmt='(a,i16)')' Setting seed_array(1) = ', seed_array(1)
-      write(unit=stdout,fmt='(a,i16)')' Setting seed_array(2) = ', seed_array(2)
+      write(unit=message(1),fmt='(a,i16)')' Setting seed_array(1) = ', seed_array(1)
+      write(unit=message(2),fmt='(a,i16)')' Setting seed_array(2) = ', seed_array(2)
+      call da_message(message(1:2))
       call random_seed(put=seed_array(1:seed_size)) ! Set random seed.
    else                                 ! Random seed set "randomly"
       call random_seed
       call random_seed(get=seed_array(1:seed_size))
-      write(unit=stdout,fmt='(a,10i16)') 'Random number seed array = ', seed_array
+      write(unit=message(1),fmt='(a,10i16)') 'Random number seed array = ', seed_array
+      call da_message(message(1:1))
    end if
    
    deallocate(seed_array)

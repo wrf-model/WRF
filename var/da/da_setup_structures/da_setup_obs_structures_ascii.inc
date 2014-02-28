@@ -16,7 +16,7 @@ subroutine da_setup_obs_structures_ascii( ob, iv, grid )
    character(len=filename_len)  :: filename
    integer                      :: n, i, j, k
    logical                      :: outside, thin_3d
-   logical                      :: uvq_direct=.false.  !cys_add
+   logical                      :: uvq_direct=.false.
    integer  :: istart,iend,jstart,jend
    real     :: rlonlat(4)
 
@@ -182,7 +182,7 @@ subroutine da_setup_obs_structures_ascii( ob, iv, grid )
          write(filename(1:10), fmt='(a, i2.2, a)') 'ob', n,'.ascii'
 
          ! Read gts observation file
-         call da_read_obs_ascii (iv, filename, uvq_direct, grid)  !cys_change
+         call da_read_obs_ascii (iv, filename, uvq_direct, grid)
 
          if (use_ssmiretrievalobs .or. use_ssmitbobs) then
             ! read ssmi observation file
@@ -202,7 +202,7 @@ subroutine da_setup_obs_structures_ascii( ob, iv, grid )
    else
       iv%time = 1
 
-      call da_read_obs_ascii(iv, 'ob.ascii', uvq_direct, grid)  !cys_change
+      call da_read_obs_ascii(iv, 'ob.ascii', uvq_direct, grid)
       do i=1,num_ob_indexes
       end do
 
@@ -283,8 +283,6 @@ subroutine da_setup_obs_structures_ascii( ob, iv, grid )
    ! [3.0] Calculate innovation vector (O-B) and create (smaller) ob structure:
    !--------------------------------------------------------------------------
 
-   ! cys_change
-   ! call da_fill_obs_structures(iv, ob)
    if (uvq_direct) then
      call da_fill_obs_structures(iv, ob, uvq_direct)
    else

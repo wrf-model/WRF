@@ -44,15 +44,15 @@ Note, this is not a namelist.input file. Find what interests you, and cut and pa
 &noah_mp
  dveg                               = 4,
  opt_crs                            = 1,
- opt_btr                            = 1,
+ opt_btr                            = 2,
  opt_sfc                            = 1,
  opt_run                            = 1,
  opt_frz                            = 1,
  opt_inf                            = 1,
- opt_rad                            = 1,
+ opt_rad                            = 3,
  opt_alb                            = 2,
  opt_snf                            = 1,
- opt_tbot                           = 2,
+ opt_tbot                           = 1,
  opt_stc                            = 1,
  /
 
@@ -232,8 +232,8 @@ Note, this is not a namelist.input file. Find what interests you, and cut and pa
  guv                                 = 0.0003,     0.0003,     0.0003,
  gt                                  = 0.0003,     0.0003,     0.0003,
  gph                                 = 0.0003,     0.0003,     0.0003,
- xwavenum                            = 3
- ywavenum                            = 3
+ xwavenum                            = 3,
+ ywavenum                            = 3,
  if_ramping                          = 1,
  dtramp_min                          = 60.0,
  io_form_gfdda                       = 2,

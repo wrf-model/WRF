@@ -1021,10 +1021,12 @@ integer::oops1,oops2
                                        ims , ime , jms , jme , kms , kme , &
                                        its , ite , jts , jte , kts , kte )
 
+         IF ( config_flags%rdlai2d ) THEN
          CALL monthly_interp_to_date ( grid%lai12m , current_date , grid%lai , &
                                        ids , ide , jds , jde , kds , kde , &
                                        ims , ime , jms , jme , kms , kme , &
                                        its , ite , jts , jte , kts , kte )
+         ENDIF
 
          !  Get the min/max of each i,j for the monthly green-ness fraction.
 
@@ -2953,6 +2955,29 @@ endif
 !  Set flag to denote that we are saving original values of HT, MUB, and
 !  PHB for 2-way nesting and cycling.
 
+      grid%save_topo_from_real=1
+
+      !  Template for initializing tracer arrays. 
+      !  Right now, a small plane in the middle of the domain at lowest model level is
+      !  defined.
+
+      IF (config_flags%tracer_opt .eq. 2) THEN
+          DO j = (jde + jds)/2 - 4, (jde + jds)/2 + 4, 1
+            DO i = (ide + ids)/2 - 4, (ide + ids)/2 + 4, 1
+               tracer(i, 1, j, im) = 1.
+               IF ( its .LE. i .and. ite .GE. i .and. jts .LE. j .and. jte .GE. j ) THEN
+                 tracer(i, 1, j, P_tr17_1) = 1.
+                 tracer(i, 1, j, P_tr17_2) = 1.
+                 tracer(i, 1, j, P_tr17_3) = 1.
+                 tracer(i, 1, j, P_tr17_4) = 1.
+!                tracer(i, 1, j, P_tr17_5) = 1.
+!                tracer(i, 1, j, P_tr17_6) = 1.
+!                tracer(i, 1, j, P_tr17_7) = 1.
+!                tracer(i, 1, j, P_tr17_8) = 1.
+               END IF
+            END DO
+          END DO
+      END IF
 
       !  Template for initializing trajectories.  The i, j, and k starting locations
       !  are specified.  Right now, a small plane in the middle of the domain is 
@@ -3044,12 +3069,8 @@ endif
          END IF
 
       END IF
-	 
-
-      grid%save_topo_from_real=1
 
       ips = its ; ipe = ite ; jps = jts ; jpe = jte ; kps = kts ; kpe = kte
-
 
 !+---+-----------------------------------------------------------------+
       !  Added by Greg Thompson.  Pre-set snow depth by latitude, elevation, and day-of-year.

@@ -161,9 +161,7 @@ MODULES = \
 	module_fddagd_driver.o  \
         module_fddaobs_rtfdda.o \
 	module_fddaobs_driver.o \
-	module_wind_turbdragforce.o \
-	module_wind_generic.o \
-	module_wind_fitch.o  \
+	module_wind_fitch.o \
         module_sf_lake.o \
 	module_diagnostics_driver.o
 

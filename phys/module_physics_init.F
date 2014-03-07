@@ -209,13 +209,11 @@ CONTAINS
 !-----------------------------------------------------------------
    USE module_domain
    USE module_wrf_error
-   USE module_wind_generic
-   USE module_wind_fitch
    use module_sf_lake, only : nlevsoil,nlevsnow,nlevlake
 #ifdef WRF_CHEM
    USE module_cam_support,         ONLY : cam_mam_aerosols
 #endif
-   USE module_wind_turbdragforce
+   USE module_wind_fitch
    IMPLICIT NONE
 !-----------------------------------------------------------------
    TYPE (grid_config_rec_type)              :: config_flags
@@ -753,13 +751,6 @@ integer myproc
 !-- temporary fix by ww
    landuse_ISICE = isice
 
-! Added for Wind Turbine parameterization code -- This will only read in an optional 
-! configuration file with information that will be used by inividual turbine init routines 
-! as each domain is initialized.
-  IF ( id .EQ. 1 ) THEN
-    CALL init_module_wind_generic
-    CALL init_module_wind_fitch
-  ENDIF
 !
 
   IF(.not.restart)THEN
@@ -970,7 +961,7 @@ integer myproc
 ! .... paj ... initialize wind farm ...
 !
   IF ( config_flags%windfarm_opt .EQ. 1 ) THEN
-    CALL init_module_wind_turbdragforce(id,config_flags,xlong,xlat,windfarm_initialized,ims,ime,jms,jme,its,ite,jts,jte,ids,ide,jds,jde)
+    CALL init_module_wind_fitch(id,config_flags,xlong,xlat,windfarm_initialized,ims,ime,jms,jme,its,ite,jts,jte,ids,ide,jds,jde)
   ENDIF
 
 

@@ -1979,6 +1979,7 @@ rconfig   integer     sf_sfclay_physics   namelist,physics	max_domains    0     
 rconfig   integer     sf_surface_physics  namelist,physics	max_domains    0       rh       "sf_surface_physics"            ""      ""
 rconfig   integer     bl_pbl_physics      namelist,physics	max_domains    0       rh       "bl_pbl_physics"                ""      ""
 rconfig   integer     windfarm_opt        namelist,physics      max_domains    0       rh       "windfarm_opt"                ""      ""
+rconfig   integer     windfarm_ij         namelist,physics      1              0       rh       "windfarm_ij"                ""      ""
 rconfig   integer     bl_mynn_tkebudget   namelist,physics      max_domains    0       rh       "bl_mynn_tkebudget"             ""      ""
 rconfig   logical     bl_mynn_tkeadvect   namelist,physics      max_domains    .false.  rh      "bl_mynn_tkeadvect"             ""      ""
 rconfig   integer     bl_mynn_cloudpdf    namelist,physics      1              0       irh       "bl_mynn_cloudpdf"              ""      ""
@@ -2665,7 +2666,7 @@ package   wrfhydro       wrf_hydro==1                -            state:SOLDRAIN
 
 #WRF Windfarm
 package   no_windfarm    windfarm_opt==0             -            -
-package   turbdragforce  windfarm_opt==1             -            state:power
+package   fitchscheme    windfarm_opt==1             -            state:power
 
 #---------------------------------------------------------------------------------------------------------------------------------------
 ## communications                                               

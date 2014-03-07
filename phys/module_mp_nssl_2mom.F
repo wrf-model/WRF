@@ -1,5 +1,7 @@
 
+
 !WRF:MODEL_LAYER:PHYSICS
+
 
 
 !---------------------------------------------------------------------
@@ -11,7 +13,7 @@
 ! This module provides a 2-moment bulk microphysics scheme originally 
 ! developed by Conrad Ziegler (Zeigler, 1985, JAS) and modified/upgraded in 
 ! in Mansell, Zeigler, and Bruning (2010, JAS).  Two-moment adaptive sedimentation 
-! follows Mansell (2010, JAS), using parameter infall = 4. 
+! follows Mansell (2010, JAS), using parameter infall = 4.
 !
 ! Added info on graupel density and soaking is in Mansell and Ziegler (2013, JAS)
 !
@@ -3292,6 +3294,7 @@ END SUBROUTINE nssl_2mom_driver
       nzend = nz
       kzbeg = 1
       nzbeg = 1
+
       jy = 1
       
       IF ( ipconc <= 1 .or. isedonly == 2 ) GOTO 2200
@@ -3301,7 +3304,6 @@ END SUBROUTINE nssl_2mom_driver
 !
 
       ssfilt(:,:,:) = 0.0
-
 
       do kz = 1,nz
         do ix = 1,nx
@@ -4341,6 +4343,7 @@ END SUBROUTINE nssl_2mom_driver
       ENDDO
 
       IF ( lhl .gt. 1 ) THEN
+      
       
       if ( an(ix,jy,kz,lhl) .lt. frac*qxmin(lhl) .or. zerocx(lhl) ) then
 
@@ -8108,9 +8111,9 @@ END SUBROUTINE nssl_2mom_driver
 !  Graupel
 !
       if (ndebug .gt. 0 ) write(0,*) 'ICEZVD_GS: conc 22ii'
+      chacw(:) = 0.0
       if ( ipconc .ge. 1 .or. ipelec .ge. 1 ) then
       do mgs = 1,ngscnt
-      chacw(mgs) = 0.0
 
       IF ( ipconc .ge. 5 ) THEN
        IF ( qhacw(mgs) .gt. 0.0 .and. xmas(mgs,lc) .gt. 0.0 ) THEN
@@ -8148,9 +8151,9 @@ END SUBROUTINE nssl_2mom_driver
       end if
 !
       if (ndebug .gt. 0 ) write(0,*) 'ICEZVD_GS: conc 22kk'
+      chaci(:) = 0.0
       if ( ipconc .ge. 1 .or. ipelec .ge. 1 ) then
       do mgs = 1,ngscnt
-      chaci(mgs) = 0.0
       IF ( ehi(mgs) .gt. 0.0 ) THEN
        IF ( ipconc .ge. 5 ) THEN
 
@@ -8178,9 +8181,9 @@ END SUBROUTINE nssl_2mom_driver
 !
 !
       if (ndebug .gt. 0 ) write(0,*) 'ICEZVD_GS: conc 22nn'
+      chacs(:) = 0.0
       if ( ipconc .ge. 1 .or. ipelec .ge. 1 ) then
       do mgs = 1,ngscnt
-      chacs(mgs) = 0.0
       IF ( ehs(mgs) .gt. 0 ) THEN
        IF ( ipconc .ge. 5 ) THEN
 
@@ -8211,9 +8214,9 @@ END SUBROUTINE nssl_2mom_driver
 !  Hail
 !
       if (ndebug .gt. 0 ) write(0,*) 'ICEZVD_GS: conc 22ii'
+      chlacw(:) = 0.0
       if ( ipconc .ge. 1 .or. ipelec .ge. 1 ) then
       do mgs = 1,ngscnt
-      chlacw(mgs) = 0.0
 
       IF ( lhl .gt. 1 .and. ipconc .ge. 5 ) THEN
        IF ( qhlacw(mgs) .gt. 0.0 .and. xmas(mgs,lc) .gt. 0.0 ) THEN
@@ -8251,9 +8254,9 @@ END SUBROUTINE nssl_2mom_driver
       end if
 !
       if (ndebug .gt. 0 ) write(0,*) 'ICEZVD_GS: conc 22kk'
+      chlaci(:) = 0.0
       if ( ipconc .ge. 1 .or. ipelec .ge. 1 ) then
       do mgs = 1,ngscnt
-      chlaci(mgs) = 0.0
       IF ( lhl .gt. 1 .and. ehli(mgs) .gt. 0.0 ) THEN
        IF ( ipconc .ge. 5 ) THEN
 
@@ -8281,9 +8284,9 @@ END SUBROUTINE nssl_2mom_driver
 !
 !
       if (ndebug .gt. 0 ) write(0,*) 'ICEZVD_GS: conc 22jj'
+      chlacs(:) = 0.0
       if ( ipconc .ge. 1 .or. ipelec .ge. 1 ) then
       do mgs = 1,ngscnt
-      chlacs(mgs) = 0.0
       IF ( lhl .gt. 1 .and. ehls(mgs) .gt. 0 ) THEN
        IF ( ipconc .ge. 5 ) THEN
 
@@ -10430,7 +10433,7 @@ END SUBROUTINE nssl_2mom_driver
       IF ( (itype1 .ge. 1 .or. itype2 .ge. 1 )   &
      &              .and. qx(mgs,lc) .gt. qxmin(lc)) THEN
       if ( temg(mgs) .ge. 265.15 .and. temg(mgs) .le. 271.15 ) then
-       IF ( ipconc .ge. 0 ) THEN
+       IF ( ipconc .ge. 2 ) THEN
         IF ( xv(mgs,lc) .gt. 0.0     &
      &     .and.  ltest &
 !     .and. itype2 .ge. 2    &

@@ -1089,6 +1089,7 @@ end if
              else
                    waxy       (I,J) = 0.
                    wtxy       (I,J) = 0.
+                   areaxy     (I,J) = (DX * DY) / ( MSFTX(I,J) * MSFTY(I,J) )
              endif
 
              lfmassxy   (I,J) = 50.         !
@@ -1099,7 +1100,6 @@ end if
              fastcpxy   (I,J) = 1000.0      !
              xsaixy     (I,J) = 0.1         !
 
-             areaxy     (I,J) = (DX * DY) / ( MSFTX(I,J) * MSFTY(I,J) )
           enddo
        enddo
 
@@ -1118,7 +1118,8 @@ end if
 
        !initialize arrays for groundwater dynamics iopt_run=5
 
-       IF ( PRESENT(smoiseq)     .AND. &
+       if(iopt_run.eq.5) then
+          IF ( PRESENT(smoiseq)     .AND. &
             PRESENT(smcwtdxy)    .AND. &
             PRESENT(rechxy)      .AND. &
             PRESENT(deeprechxy)  .AND. &
@@ -1140,8 +1141,6 @@ end if
             PRESENT(rivercondxy) .AND. &
             PRESENT(pexpxy)            ) THEN
 
-          if(iopt_run.eq.5) then
-
              STEPWTD = nint(WTDDT*60./DT)
              STEPWTD = max(STEPWTD,1)
 
@@ -1153,11 +1152,10 @@ end if
       &       ims,ime, jms,jme, kms,kme,                    &
       &       its,ite, jts,jte, kts,kte                     )
 
-          endif
-
-       ELSE
-          CALL wrf_error_fatal ('Not enough fields to use groundwater option in Noah-MP')
-       END IF
+          ELSE
+             CALL wrf_error_fatal ('Not enough fields to use groundwater option in Noah-MP')
+          END IF
+       endif
 
     ENDIF
   END SUBROUTINE NOAHMP_INIT

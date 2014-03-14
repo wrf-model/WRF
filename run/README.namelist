@@ -1,4 +1,5 @@
 Description of namelist variables
+
 ---------------------------------
  
 For WRF-NMM users, please see Chapter 5 of the WRF-NMM User's Guide for 
@@ -423,6 +424,9 @@ Namelist variables for controlling the adaptive time step option:
                                        nssl_rho_qh  = 500.  ! graupel density
                                        nssl_rho_qhl = 900.  ! hail density
                                        nssl_rho_qs  = 100.  ! snow density
+                                     = 30, HUJI (Hebrew University of Jerusalem, Israel) spectral bin microphysics,
+                                           fast version
+                                     = 32, HUJI spectral bin microphysics, full version
                                      = 95, Ferrier (old Eta) microphysics, operational NAM (WRF NMM) version
 
  For non-zero mp_physics options, to keep Qv .GE. 0, and to set the other moisture

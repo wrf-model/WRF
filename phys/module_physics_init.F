@@ -2681,10 +2681,12 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
         ENDIF
 #ifdef WRF_USE_CLM
         IF(PRESENT(numc))THEN
-        ! added by Jiming Jin 10/14/2012
+        ! added by Jiming Jin 10/14/2012 ; modified to use MODIS data 3/6/2014
         if((config_flags%num_land_cat .ne. 24) .AND. &
-           (config_flags%num_land_cat .ne. 28)) CALL wrf_error_fatal &
-            ( 'module_physics_init: USGS must be used with CLM option')
+           (config_flags%num_land_cat .ne. 28) .AND. &
+           (config_flags%num_land_cat .ne. 21) .AND. &
+           (config_flags%num_land_cat .ne. 20)) CALL wrf_error_fatal &
+            ('module_physics_init: USGS or MODIS must be used with CLM option')
 
             CALL CLMINIT(VEGFRA,SNOW,SNOWC,SNOWH,CANWAT,SMSTAV,    &
                      SMSTOT, SFCRUNOFF,UDRUNOFF,ACSNOW,            &
@@ -2760,7 +2762,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                            z_lake3d,       dz_lake3d,       t_soisno3d,      h2osoi_ice3d,   &
                            h2osoi_liq3d,   h2osoi_vol3d,    z3d,             dz3d,           &
                            zi3d,           watsat3d,        csol3d,          tkmg3d,         &
-                           config_flags%ISWATER,  xice,     xice_threshold,  xland,              &
+                           config_flags%ISWATER,  xice,     xice_threshold,  xland,  tsk,    &
 #if (EM_CORE == 1)
                            lakemask,  lakeflag,                                                  &
 #endif

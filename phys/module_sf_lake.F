@@ -61,6 +61,7 @@ MODULE module_sf_lake
     
     real(r8), public, parameter :: spval = 1.e36  !special value for missing data (ocean)
 
+    real, parameter  ::     depth_c = 50.          ! below the level t_lake3d will be 277.0  !mchen
 
     
    ! These are tunable constants
@@ -4876,7 +4877,7 @@ end subroutine LakeDebug
                     z_lake3d,       dz_lake3d,       t_soisno3d,      h2osoi_ice3d,   &
                     h2osoi_liq3d,   h2osoi_vol3d,    z3d,             dz3d,           &
                     zi3d,           watsat3d,        csol3d,          tkmg3d,         &
-                    iswater,        xice,            xice_threshold,  xland,          &
+                    iswater,        xice,            xice_threshold,  xland,   tsk,   &
 #if (EM_CORE == 1)
                     lakemask,       lakeflag,                                         &
 #endif
@@ -4894,6 +4895,7 @@ end subroutine LakeDebug
   INTEGER , INTENT (IN) :: iswater
   REAL,     INTENT(IN)  :: xice_threshold
   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   XICE
+  REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN)::      TSK
   REAL, DIMENSION( ims:ime, jms:jme )  ,INTENT(INOUT)  :: XLAND
 
 #if (EM_CORE == 1)
@@ -5060,9 +5062,9 @@ end subroutine LakeDebug
 
      if ( lake(i,j) ) then
 
-	t_soisno3d(i,:,j)      = 277.0
-        t_lake3d(i,:,j)        = 277.0
-        t_grnd2d(i,j)          = 277.0
+!	t_soisno3d(i,:,j)      = tsk(i,j)
+!        t_lake3d(i,:,j)        = tsk(i,j)
+!        t_grnd2d(i,j)          = tsk(i,j)
 
         z3d(i,:,j)             = 0.0
         dz3d(i,:,j)            = 0.0
@@ -5241,6 +5243,20 @@ end subroutine LakeDebug
             dz_lake3d(i,2:nlevlake,j) = dzlak(2:nlevlake)*depthratio2d(i,j)
             z_lake3d(i,2:nlevlake,j) = zlak(2:nlevlake)*depthratio2d(i,j) + dz_lake3d(i,1,j)*(1._r8 - depthratio2d(i,j))
          end if
+! initial t_lake3d here
+	t_soisno3d(i,1,j)      = tsk(i,j)
+        t_lake3d(i,1,j)        = tsk(i,j)
+        t_grnd2d(i,j)          = 277.0
+        do k = 2, nlevlake
+        if(z_lake3d(i,k,j).le.depth_c) then 
+         t_soisno3d(i,k,j)=tsk(i,j)+(277.0-tsk(i,j))/depth_c*z_lake3d(i,k,j)
+         t_lake3d(i,k,j)=tsk(i,j)+(277.0-tsk(i,j))/depth_c*z_lake3d(i,k,j)
+        else
+	t_soisno3d(i,k,j)      = 277.0
+        t_lake3d(i,k,j)        = 277.0
+        end if 
+        enddo
+!end initial t_lake3d here
          z3d(i,1:nlevsoil,j) = zsoi(1:nlevsoil)
          zi3d(i,0:nlevsoil,j) = zisoi(0:nlevsoil)
          dz3d(i,1:nlevsoil,j) = dzsoi(1:nlevsoil)

@@ -4144,7 +4144,7 @@ END SUBROUTINE nssl_2mom_driver
       ELSEIF ( irenuc == 2 ) THEN !} { 
       ! simple Twomey scheme
        CN(mgs) =   CCNE*Max(0.0,wvel(mgs))**cnexp ! *Min(1.0,1./dtp) ! 0.3465
-       CN(mgs) = Max( 0.0, CN(mgs) - ccna(mgs) )
+!!       CN(mgs) = Max( 0.0, CN(mgs) - ccna(mgs) )
        CN(mgs) = Min(cn(mgs), ccnc(mgs))
        
        cx(mgs,lc) = cx(mgs,lc) + cn(mgs)
@@ -13559,7 +13559,7 @@ END SUBROUTINE nssl_2mom_driver
         IF ( ipconc .ge. 4 ) THEN
          if ( mixedphase .and. qsvtmod ) then
          else
-          vtxbar(mgs,ls,1) = 5.72462*rhovt(mgs)*(xv(mgs,ls))**(1./12.)
+           vtxbar(mgs,ls,1) = 5.72462*rhovt(mgs)*(xv(mgs,ls))**(1./12.)
           IF(sssflg == 1) THEN
             vtxbar(mgs,ls,2) = 4.04091*rhovt(mgs)*(xv(mgs,ls))**(1./12.)
           ELSE

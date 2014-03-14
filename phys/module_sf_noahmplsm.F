@@ -565,7 +565,11 @@ contains
                    BGAP    , WGAP    , CHV     , CHB     , EMISSI  ,           & ! OUT :
 		   SHG     , SHC     , SHB     , EVG     , EVB     , GHV     , & ! OUT :
 		   GHB     , IRG     , IRC     , IRB     , TR      , EVC     , & ! OUT :
-		   CHLEAF  , CHUC    , CHV2    , CHB2    , FPICE    )            ! OUT :
+		   CHLEAF  , CHUC    , CHV2    , CHB2    , FPICE               &
+#ifdef WRF_HYDRO
+                   ,SFCHEADRT                                                  & ! IN/OUT :
+#endif
+                   )
 
 ! --------------------------------------------------------------------------------------------------
 ! Initial code: Guo-Yue Niu, Oct. 2007

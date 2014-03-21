@@ -224,7 +224,17 @@ subroutine da_read_obs_radar (iv, filename, grid)
          endif
 
          call da_llxy (platform%info, platform%loc, outside, outside_all)
-         if( outside_all ) cycle reports
+         if( outside_all ) then
+            if (print_detail_radar) then
+               write(unit=stdout, fmt='(a)') '*** Report is outside of domain:'
+               write(unit=stdout, fmt=fmt_info) &
+                     platform%info%platform,    &
+                     platform%info%lat,   &
+                     platform%info%lon,   &
+                     platform%stn%name
+            end if
+            cycle reports
+         end if
 
         read (analysis_date,'(i4,4(1x,i2))') &
                                     iyear, imonth, iday, ihour, imin
@@ -269,6 +279,29 @@ subroutine da_read_obs_radar (iv, filename, grid)
              if (outside) cycle reports
                    nlocal = nlocal + 1
                    ilocal = ilocal + 1
+
+               iv%info(radar)%levels(ilocal)    = nlevels
+               iv%info(radar)%name(ilocal)      = platform%info%name
+               iv%info(radar)%platform(ilocal)  = platform%info%platform
+               iv%info(radar)%id(ilocal)        = platform%info%id
+               iv%info(radar)%date_char(ilocal) = platform%info%date_char
+               iv%info(radar)%lat(:,ilocal)     = platform%info%lat
+               iv%info(radar)%lon(:,ilocal)     = platform%info%lon
+               iv%info(radar)%elv(ilocal)       = platform%info%elv
+               iv%info(radar)%pstar(ilocal)     = platform%info%pstar
+               iv%info(radar)%slp(ilocal)           = platform%loc%slp
+               iv%info(radar)%pw(ilocal)            = platform%loc%pw
+               iv%info(radar)%x(:,ilocal)           = platform%loc%x
+               iv%info(radar)%y(:,ilocal)           = platform%loc%y
+               iv%info(radar)%i(:,ilocal)           = platform%loc%i
+               iv%info(radar)%j(:,ilocal)           = platform%loc%j
+               iv%info(radar)%dx(:,ilocal)          = platform%loc%dx
+               iv%info(radar)%dxm(:,ilocal)         = platform%loc%dxm
+               iv%info(radar)%dy(:,ilocal)          = platform%loc%dy
+               iv%info(radar)%dym(:,ilocal)         = platform%loc%dym
+               iv%info(radar)%proc_domain(:,ilocal) = platform%loc%proc_domain
+               iv%info(radar)%obs_global_index(ilocal) = ntotal
+
               if( nlocal == ilocal) then
                allocate (iv % radar (ilocal) % model_p  (1:iv%info(radar)%max_lev))
                allocate (iv % radar (ilocal) % model_rho(1:iv%info(radar)%max_lev))

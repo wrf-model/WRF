@@ -284,7 +284,6 @@ MODULE module_sf_lake
        !   endif
 
 #if (EM_CORE==1)
-  !      if (lakemask(i,j).eq.1.or.(lakeflag.eq.0.and.(ivgtyp(i,j)==iswater.and.ht(i,j)>= lakeminalt))) THEN
         if (lakemask(i,j).eq.1) THEN
 #else
         if (ivgtyp(i,j)==iswater.and.ht(i,j)>= lakeminalt ) THEN
@@ -341,7 +340,6 @@ MODULE module_sf_lake
             enddo
             
           enddo
-      !      print*, 'mchen line 342',i,' ', j,' ', snl
             CALL LakeMain(forc_t,forc_pbot,forc_psrf,forc_hgt,forc_hgt_q,   & !I  
                           forc_hgt_t,forc_hgt_u,forc_q, forc_u,         &
                           forc_v,forc_lwrad,prec, sabg,lat,             &
@@ -4881,6 +4879,7 @@ end subroutine LakeDebug
 #if (EM_CORE == 1)
                     lakemask,       lakeflag,                                         &
 #endif
+                    lake_depth_flag, use_lakedepth,                                   &
                     tkdry3d,        tksatu3d,        lake,            its, ite, jts, jte, &
                     ims,ime, jms,jme)
 
@@ -4902,6 +4901,8 @@ end subroutine LakeDebug
   REAL, DIMENSION( ims:ime , jms:jme ) ::   LAKEMASK
   INTEGER , INTENT (IN) :: lakeflag
 #endif
+  INTEGER , INTENT (INOUT) :: lake_depth_flag
+  INTEGER , INTENT (IN) ::   use_lakedepth
 
   LOGICAL , INTENT(IN)      ::     restart
   INTEGER,  INTENT(IN   )   ::     ims,ime, jms,jme
@@ -5074,7 +5075,13 @@ end subroutine LakeDebug
         lake_icefrac3d(i,:,j)  = 0.0
         h2osoi_vol3d(i,:,j)    = 0.0
         snl2d(i,j)             = 0.0
-        if (present(lake_depth) ) then
+          if ( use_lakedepth.eq.1 .and.lake_depth_flag.eq.0 ) then !mchen
+          call wrf_error_fatal ( 'STOP: You need lake-depth information. Rerun WPS or set use_lakedepth = 0')
+          end if
+          if ( use_lakedepth.eq.0 .and.lake_depth_flag.eq.1 ) then !mchen
+          lake_depth_flag = 0 
+          end if
+        if ( lake_depth_flag.eq.1 ) then
 
           if (lake_depth(i,j) > 0.0) then 
             lakedepth2d(i,j)   = lake_depth(i,j)
@@ -5087,7 +5094,6 @@ end subroutine LakeDebug
           endif
 
         else
-
           if ( domainlakedepth  > 0.0 ) then
              lakedepth2d(i,j)   = domainlakedepth
           else 

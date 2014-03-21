@@ -184,6 +184,11 @@ integer::oops1,oops2
             END IF
          END DO
       END DO
+      grid%lake_depth_flag=FLAG_LAKE_DEPTH
+      IF(FLAG_LAKE_DEPTH.EQ.0.AND.grid%sf_lake_physics.EQ.1) THEN
+      CALL wrf_message ( " Warning: Please rerun WPS to get lake_depth information for lake model" )
+      END IF
+
 
       !  Send out a quick message about the time steps based on the map scale factors.
 

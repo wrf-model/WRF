@@ -131,8 +131,9 @@ CONTAINS
                          tkdry3d,      tksatu3d,     lake2d,     domainlakedepth,& !lake
                          lakeminalt,   lake_depth,                               & !lake
 #if ( EM_CORE == 1 )
-                         lakemask,   lakeflag,                               & !lake
+                         lakemask,   lakeflag,                                   & !lake
 #endif
+                         lake_depth_flag, use_lakedepth,                         & !lake
                          sf_surface_mosaic, mosaic_cat, NLCAT,               & ! Noah tiling
 !CLM variables
                          maxpatch,                                           &
@@ -573,6 +574,8 @@ CONTAINS
   REAL,              dimension(ims:ime,jms:jme )      ::  lakemask
   INTEGER, INTENT(IN)      ::  lakeflag
 #endif
+  INTEGER, INTENT(INOUT)      ::   lake_depth_flag
+  INTEGER, INTENT(IN)      ::   use_lakedepth
  
 
 !CLM
@@ -685,7 +688,7 @@ integer myproc
    sf_urban_physics=config_flags%sf_urban_physics
    usemonalb=config_flags%usemonalb
    rdmaxalb=config_flags%rdmaxalb
-   LakeModel = config_flags%LakeModel
+   LakeModel = config_flags%sf_lake_physics
    mfshconv=config_flags%mfshconv
    IF(PRESENT(SMOISEQ)) THEN
       iopt_run=config_flags%opt_run
@@ -1030,8 +1033,9 @@ integer myproc
                 tkdry3d,      tksatu3d,     LakeModel,  lake2d,           & !lake
                 domainlakedepth,            lakeminalt, lake_depth,       & !lake
 #if (EM_CORE == 1)
-                lakemask, lakeflag,       & !lake
+                lakemask, lakeflag,                                    & !lake
 #endif
+                lake_depth_flag, use_lakedepth,                        & !lake
                 te_temf,cf3d_temf,wm_temf,                      & ! WA
                 DZR, DZB, DZG,                                  & !Optional urban
                 TR_URB2D,TB_URB2D,TG_URB2D,TC_URB2D,QC_URB2D,   & !Optional urban
@@ -1897,8 +1901,9 @@ integer myproc
                 tkdry3d,      tksatu3d,     LakeModel,  lake2d,           & !lake
                 domainlakedepth,            lakeminalt, lake_depth,       & !lake
 #if (EM_CORE == 1)
-                lakemask, lakeflag,                                       & !lake
+                lakemask, lakeflag,                                      & !lake
 #endif
+                lake_depth_flag, use_lakedepth,                          & !lake
                 te_temf,cf3d_temf,wm_temf,                      & ! WA
 !                num_roof_layers,num_wall_layers,num_road_layers,& !Optional urban
                 DZR, DZB, DZG,                                  & !Optional urban
@@ -2278,6 +2283,8 @@ integer myproc
   REAL,              dimension(ims:ime,jms:jme ),intent(inout)      ::  lakemask
   INTEGER, INTENT(IN)      ::  lakeflag
 #endif
+  INTEGER, INTENT(IN)      ::   use_lakedepth
+  INTEGER, INTENT(INOUT)      ::   lake_depth_flag
 !  REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN)                         ::  HT
 
    REAL,  DIMENSION( ims:ime , jms:jme ) , OPTIONAL, INTENT(INOUT) ::    &
@@ -2764,8 +2771,9 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                            zi3d,           watsat3d,        csol3d,          tkmg3d,         &
                            config_flags%ISWATER,  xice,     xice_threshold,  xland,  tsk,    &
 #if (EM_CORE == 1)
-                           lakemask,  lakeflag,                                                  &
+                           lakemask,  lakeflag,                                              &
 #endif
+                           lake_depth_flag, use_lakedepth,              &
                            tkdry3d,        tksatu3d,        lake2d,          its, ite, jts, jte, &
                            ims,ime, jms,jme)
      ENDIF

@@ -804,10 +804,10 @@ Namelist variables for controlling the adaptive time step option:
 
 Namelist variables for lake module: 
 
- domain_lakedepth(max_dom)                    = 200,     ; lake depth   
- lakemodel(max_dom)                           = 1,       ; lake model on/off 
- lakeminalt(max_dom)                          = 50,      ; minimum elevation of lake   
-
+ domain_lakedepth(max_dom)                    = 50,      ; default lake depth (If there is no lake_depth information in the input data, then lake depth is assumed to be 50m)  
+ sf_lake_physics(max_dom)                     = 1,       ; lake model on/off 
+ lakeminalt(max_dom)                          = 50,      ; minimum elevation of lakes (i.e. If the elevation of a water body is higher than 50m, it is regarded as a lake)   
+                                                           If the landuse type includes 'lake' (i.e. Modis_lake and USGS_LAKE), this variable is of no effects. 
  lightning_option (max_dom)                     ; Lightning parameterization option to allow flash rate prediction without chemistry
                                      = 0        ; off
                                      = 1        ; PR92 based on maximum w, redistributes flashes within dBZ > 20 (for convection resolved runs; must also use 

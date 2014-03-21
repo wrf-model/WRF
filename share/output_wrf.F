@@ -38,7 +38,7 @@
     REAL    gmt, cen_lat, cen_lon, bdyfrq , truelat1 , truelat2 , moad_cen_lat , stand_lon
     INTEGER km_opt, diff_opt, damp_opt,  &
             mp_physics, ra_lw_physics, ra_sw_physics, sf_sfclay_physics, &
-            sf_surface_physics, bl_pbl_physics, cu_physics, hypsometric_opt
+            sf_surface_physics, bl_pbl_physics, cu_physics, hypsometric_opt, sf_lake_physics
     INTEGER swint_opt, aer_type,aer_aod550_opt,aer_angexp_opt,aer_ssa_opt,aer_asy_opt, aer_opt
     REAL    aer_aod550_val,aer_angexp_val,aer_ssa_val,aer_asy_val
     REAL    khdif, kvdif, swrad_scat, dampcoef,radt,bldt,cudt
@@ -146,6 +146,7 @@
     call nl_get_aer_angexp_val     ( grid%id,  aer_angexp_val     )
     call nl_get_aer_ssa_opt        ( grid%id,  aer_ssa_val        )
     call nl_get_aer_asy_opt        ( grid%id,  aer_asy_val        )
+    call nl_get_sf_lake_physics    ( grid%id,  sf_lake_physics    )
 #if (EM_CORE == 1)
     dt = grid%dt
     adapt_dt_min = grid%min_time_step
@@ -525,6 +526,8 @@ endif
     CALL wrf_put_dom_ti_integer ( fid , 'BL_PBL_PHYSICS' ,  ibuf , 1 , ierr )
     ibuf(1) = cu_physics
     CALL wrf_put_dom_ti_integer ( fid , 'CU_PHYSICS' ,  ibuf , 1 , ierr )
+    ibuf(1) = sf_lake_physics
+    CALL wrf_put_dom_ti_integer ( fid , 'SF_LAKE_PHYSICS' ,  ibuf , 1 , ierr )
 
     ! added netcdf-specific metadata:
     IF ( ( use_package( io_form ) == IO_NETCDF ) .OR. &

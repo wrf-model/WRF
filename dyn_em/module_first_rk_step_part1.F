@@ -509,10 +509,9 @@ BENCH_START(surf_driver_tim)
      &        ,zi3d=grid%zi3d,                  watsat3d=grid%watsat3d              &   
      &        ,csol3d=grid%csol3d,              tkmg3d=grid%tkmg3d                  & !lake     
      &        ,tkdry3d=grid%tkdry3d,            tksatu3d=grid%tksatu3d              &   
-     &        ,LakeModel=grid%LakeModel,        lakeminalt=grid%lakeminalt          & !lake  
+     &        ,LakeModel=grid%sf_lake_physics,        lakeminalt=grid%lakeminalt          & !lake  
 #if ( EM_CORE == 1)
- !    &        ,LakeMask=grid%LakeMask,        lakeflag=grid%lakeflag          & !lake  
-     &        ,LakeMask=grid%LakeMask          
+     &        ,LakeMask=grid%LakeMask                                          & ! lake
 #endif
 ! CLM Varaibles
      &        ,NUMC=grid%numc,NUMP=grid%nump,SABV=grid%sabv,SABG=grid%sabg,LWUP=grid%lwup,SNL=grid%snl, &

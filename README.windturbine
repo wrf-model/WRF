@@ -1,7 +1,10 @@
 README for wind turbine drag parameterization schemes, added 20101220.  JM
        The code was modified to introduce the power curve and the thrust
-       coefficient using tables. The parameterization is activated on the
-       physics part of the namelist. 20120211. PAJ.
+       coefficient using tables. The parameterization is activated in the
+       physics part of the namelist. 
+ NOTE: For V3.6 (April 2014) the namelist options and idealized set-up
+       have been changed. Further description below and in README.namelist.
+       The scheme is now activated with windfarm_opt = 1 in the physics namelist.
 
 
 *Specific note for the Fitch scheme.*

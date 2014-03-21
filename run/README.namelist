@@ -838,18 +838,8 @@ Namelist variables for lake module:
 
 Options for wind turbine drag parameterization:
 
- td_turbgridid                      = -1        ; which grid id has turbines in it
- td_hubheight                       = 100.      ; hub height (m)
- td_diameter                        = 60.       ; turbine diameter (m)
- td_stdthrcoef                      = .158      ; standing thrust coefficient
- td_cutinspeed                      = 4.        ; cut-in speed (m/s)
- td_cutoutspeed                     = 27.       ; cut-out speed (m/s)
- td_power                           = 2.        ; turbine power (MW)
- td_turbpercell                     = 1.        ; number of turbines per cell
- td_ewfx                            = 0         ; extent of wind farm in x-cells
- td_ewfy                            = 0         ; extent of wind farm in y-cells
- td_pwfx                            = 1         ; southwest corner of wind farm in x-cells
- td_pwfy                            = 1         ; southwest corner of wind farm in y-cells
+ windfarm_opt                       = 0         ; 1 = Simulates the effects of wind turbines in the atmospheric evolution
+ windfarm_ij                        = 0         ; 1 = The cordinates of the turbines are defined in terms of grid points
 
 Options for stochastic kinetic-energy backscatter scheme:
 

@@ -755,10 +755,11 @@ subroutine da_setup_be_regional(xb, be, grid)
     read (be_unit, IOSTAT=k) variable
          if (print_detail_be)&
           write(unit=stdout,fmt='(2a)')' Reading lengthscale for: ',trim(adjustl(variable))
-         if( k/=0 ) &
+         if( k/=0 ) then
             write(unit=message(1),fmt='(A,I0,A,I0,A,A)') 'Error ',k,' reading namv(', &
                 i,')=',namv(i)
             call da_warning(__FILE__,__LINE__,message(1:1))
+         end if
    select case( trim(adjustl(variable)) )
    case ('psi')
      read(be_unit) rfls1_be

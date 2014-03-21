@@ -51,7 +51,6 @@ subroutine da_read_obs_bufrseviri (obstype,iv,infile)
 
   logical            :: clrsky,allsky,allchnmiss
   real               :: rclrsky
-  integer            :: ndata,nodata !nread,ndata,nodata
   integer :: kidsat 
   integer(i_kind)    :: idate5(6)
   integer (i_kind), allocatable :: ptotal(:), nread(:) 
@@ -121,10 +120,6 @@ subroutine da_read_obs_bufrseviri (obstype,iv,infile)
   real(r_kind),parameter:: tbmax  = 550._r_kind
   real(r_kind),parameter:: earth_radius = 6371000._r_kind
 
-  nread=0
-  ndata=0
-  nodata=0
-
   ilath=8                      ! the position of latitude in the header
   ilonh=9                      ! the position of longitude in the header
   ilzah=10                     ! satellite zenith angle
@@ -137,7 +132,6 @@ subroutine da_read_obs_bufrseviri (obstype,iv,infile)
   !  0.0  Initialize variables
   !-----------------------------------
   platform_id  = 3   ! metereosat
-  satellite_id = 9   ! 8-10 
   sensor_id = 21 !seviri
   disterrmax=zero
   ntest=0
@@ -265,8 +259,8 @@ subroutine da_read_obs_bufrseviri (obstype,iv,infile)
    sensorindex=1  
    write(unit=date,fmt='( i10)') idate
    read(unit=date,fmt='(i4,3i2)') iy,im,idd,ihh
-   write(unit=stdout,fmt=*) &
-      'Bufr file date is ',iy,im,idd,ihh,infile
+   write(unit=stdout,fmt='(a,4i4,2x,a)') &
+      'Bufr file date is ',iy,im,idd,ihh,trim(infile)
 
    ! 2.0 Loop to read bufr file and assign information to a sequential structure
    !-------------------------------------------------------------------------
@@ -296,6 +290,13 @@ subroutine da_read_obs_bufrseviri (obstype,iv,infile)
         if ( ( kidsat > 57) .or. ( kidsat < 55) ) then 
            write(unit=message(1),fmt='(A,I6)') 'Unknown platform: ', kidsat
            call da_warning(__FILE__,__LINE__,message(1:1))
+        end if
+        if ( kidsat == 55 ) then
+            satellite_id = 8
+        else if ( kidsat == 56 ) then
+            satellite_id = 9
+        else if ( kidsat == 57 ) then
+            satellite_id = 10
         end if
 
         if (clrsky) then     ! asr bufr has no sza
@@ -564,8 +565,8 @@ deallocate(data_all) ! Deallocate data arrays
       call da_warning(__FILE__,__LINE__,message(1:1))
    endif
 
-   write(unit=stdout,fmt='(a)') 'num_seviri_file, num_seviri_global, num_seviri_local, num_seviri_used, num_seviri_thinned'
-   write(stdout,*) num_seviri_file, num_seviri_global, num_seviri_local, num_seviri_used, num_seviri_thinned
+   write(unit=stdout,fmt='(a)') '   num_seviri_file num_seviri_global  num_seviri_local   num_seviri_used num_seviri_thinned'
+   write(stdout,'(5(8x,i10))') num_seviri_file, num_seviri_global, num_seviri_local, num_seviri_used, num_seviri_thinned
 
   
 

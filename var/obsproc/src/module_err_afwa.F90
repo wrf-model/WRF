@@ -1833,10 +1833,10 @@ SUBROUTINE READ_OBSERR_HEIGHT (iunit, filein, keyword, endword, fmt_err, err)
 
       WRITE (UNIT = iunit, FMT = '(20X,A)') TRIM (keyword)
 
-      WRITE (UNIT = iunit, FMT = '(1X,16A)') ' level',&
+      WRITE (UNIT = iunit, FMT = '(18A)')   ' level ',&
     ' synop ','  ship ','  buoy ',' metar ',' pilot ',' profl ',&
-    ' sound ',' satem ',' satob ',' airep ',' tamdar ',&
-    ' ssmt1 ',' ssmt2 ','  tovs ','  ssmi ',' airsret',&
+    ' sound ',' satem ',' satob ',' airep ','tamdar ',&
+    ' ssmt1 ',' ssmt2 ','  tovs ','  ssmi ',' airsr ',&
     ' other '
 
       DO i = 15, 1, -1
@@ -2161,13 +2161,13 @@ SUBROUTINE READ_OBSERR_WIND (iunit, filein, keyword, endword, fmt_err, err)
 
       WRITE (UNIT = iunit, FMT = '(20X,A)') TRIM (keyword)
 
-      WRITE (UNIT = iunit, FMT = '(1X,16A)') ' level',&
+      WRITE (UNIT = iunit, FMT = '(18A)')   ' level ',&
     ' synop ','  ship ','  buoy ',' metar ',' pilot ',' profl ',&
-    ' sound ',' satem ',' satob ',' airep ',' tamdar ',&
-    ' ssmt1 ',' ssmt2 ','  ssmi ','  tovs ',' other '
+    ' sound ',' satem ',' satob ',' airep ','tamdar ',&
+    ' ssmt1 ',' ssmt2 ','  ssmi ','  tovs ',' airsr ',' other '
 
       DO i = 26, 1, -1
-         WRITE (UNIT = iunit, FMT = '(F6.0,16(2X,F5.1))') &
+         WRITE (UNIT = iunit, FMT = '(F6.0,17(2X,F5.1))') &
                 err (i) % level / 100., &
                 err (i) % synop % wind, &
                 err (i) % ships % wind, &
@@ -2184,6 +2184,7 @@ SUBROUTINE READ_OBSERR_WIND (iunit, filein, keyword, endword, fmt_err, err)
                 err (i) % ssmt2 % wind, &
                 err (i) % ssmi  % wind, &
                 err (i) % tovs  % wind, &
+                -99.9, &
                 err (i) % other % wind
 
 
@@ -2484,13 +2485,13 @@ SUBROUTINE READ_OBSERR_DIR (iunit, filein, keyword, endword, fmt_err, err)
 
       WRITE (UNIT = iunit, FMT = '(20X,A)') TRIM (keyword)
 
-      WRITE (UNIT = iunit, FMT = '(1X,16A)') ' level',&
+      WRITE (UNIT = iunit, FMT = '(18A)')  ' level ',&
     ' synop ','  ship ','  buoy ',' metar ',' pilot ',' profl ',&
-    ' sound ',' satem ',' satob ',' airep ',' tamdar ',&
-    ' ssmt1 ',' ssmt2 ','  ssmi ','  tovs ',' other '
+    ' sound ',' satem ',' satob ',' airep ','tamdar ',&
+    ' ssmt1 ',' ssmt2 ','  ssmi ','  tovs ',' airsr ',' other '
 
       DO i = 26, 1, -1
-         WRITE (UNIT = iunit, FMT = '(F6.0,16(2X,F5.1))') &
+         WRITE (UNIT = iunit, FMT = '(F6.0,17(2X,F5.1))') &
                 err (i) % level / 100., &
                 err (i) % synop % dir , &
                 err (i) % ships % dir , &
@@ -2507,6 +2508,7 @@ SUBROUTINE READ_OBSERR_DIR (iunit, filein, keyword, endword, fmt_err, err)
                 err (i) % ssmt2 % dir , &
                 err (i) % ssmi  % dir , &
                 err (i) % tovs  % dir , &
+                -99.9, &
                 err (i) % other % dir 
 
 
@@ -2786,10 +2788,10 @@ SUBROUTINE READ_OBSERR_TEMP (iunit, filein, keyword, endword, fmt_err, err)
 
       WRITE (UNIT = iunit, FMT = '(20X,A)') TRIM (keyword)
 
-      WRITE (UNIT = iunit, FMT = '(1X,16A)') ' level',&
+      WRITE (UNIT = iunit, FMT = '(18A)')   ' level ',&
     ' synop ','  ship ','  buoy ',' metar ',' pilot ',' profl ',&
-    ' sound ',' satem ',' satob ',' airep ',' tamdar ',&
-    ' ssmt1 ',' ssmt2 ','  tovs ','  ssmi ',' airsret', &
+    ' sound ',' satem ',' satob ',' airep ','tamdar ',&
+    ' ssmt1 ',' ssmt2 ','  tovs ','  ssmi ',' airsr ', &
     ' other '
 
 
@@ -3074,10 +3076,10 @@ SUBROUTINE READ_OBSERR_RH (iunit, filein, keyword, endword, fmt_err, err)
 
       WRITE (UNIT = iunit, FMT = '(20X,A)') TRIM (keyword)
 
-      WRITE (UNIT = iunit, FMT = '(1X,16A)') ' level',&
+      WRITE (UNIT = iunit, FMT = '(18A)')   ' level ',&
     ' synop ','  ship ','  buoy ',' metar ',' pilot ',' profl ',&
-    ' sound ',' satem ',' satob ',' airep ',' tamdar ',&
-    ' ssmt1 ',' ssmt2 ','  tovs ','  ssmi ',' airsret',&
+    ' sound ',' satem ',' satob ',' airep ','tamdar ',&
+    ' ssmt1 ',' ssmt2 ','  tovs ','  ssmi ',' airsr ',&
     ' other '
 
       DO i = 15, 1, -1
@@ -3362,10 +3364,10 @@ SUBROUTINE READ_OBSERR_PRES (iunit, filein, keyword, endword, fmt_err, err)
 
       WRITE (UNIT = iunit, FMT = '(20X,A)') TRIM (keyword)
 
-      WRITE (UNIT = iunit, FMT = '(1X,16A)') ' level',&
+      WRITE (UNIT = iunit, FMT = '(18A)')   ' level ',&
     ' synop ','  ship ','  buoy ',' metar ',' pilot ',' profl ',&
-    ' sound ',' satem ',' satob ',' airep ',' tamdar ',&
-    ' ssmt1 ',' ssmt2 ','  tovs ','  ssmi ', 'airsret', &
+    ' sound ',' satem ',' satob ',' airep ','tamdar ',&
+    ' ssmt1 ',' ssmt2 ','  tovs ','  ssmi ',' airsr ', &
     ' other '
 
       DO i = 15, 1, -1

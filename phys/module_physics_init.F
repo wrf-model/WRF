@@ -714,7 +714,8 @@ integer myproc
    has_reqs = 0
    if (config_flags%ra_lw_physics .eq. RRTMG_LWSCHEME .and. &
        config_flags%ra_sw_physics .eq. RRTMG_SWSCHEME .and. &
-       config_flags%mp_physics    .eq. THOMPSON) then
+        (config_flags%mp_physics  .eq. THOMPSON .or.        &
+         config_flags%mp_physics  .eq. THOMPSONAERO) ) then
       has_reqc = 1
       has_reqi = 1
       has_reqs = 1
@@ -3464,6 +3465,8 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                           NWFA2D=qnwfa2d,                               &
                           NWFA=scalar(ims,kms,jms,P_QNWFA),             &
                           NIFA=scalar(ims,kms,jms,P_QNIFA),             &
+                          DX=DX, DY=DY,                                 &
+                          is_start=start_of_simulation,                 &
                           IDS=ids, IDE=ide, JDS=jds, JDE=jde, KDS=kds, KDE=kde,   &
                           IMS=ims, IME=ime, JMS=jms, JME=jme, KMS=kms, KME=kme,   &
                           ITS=its, ITE=ite, JTS=jts, JTE=jte, KTS=kts, KTE=kte)

@@ -1041,7 +1041,7 @@ The following are for observation nudging:
  rk_ord                              = 3,	; time-integration scheme option:
                                                   2 = Runge-Kutta 2nd order
                                                   3 = Runge-Kutta 3rd order
- diff_opt                            = 0,	; turbulence and mixing option:
+ diff_opt(max_dom)                   = 0,	; turbulence and mixing option:
                                                   0 = no turbulence or explicit
                                                       spatial numerical filters (km_opt IS IGNORED).
                                                   1 = evaluates 2nd order
@@ -1053,7 +1053,7 @@ The following are for observation nudging:
                                                       physical space (stress form) (x,y,z).
                                                       turbulence parameterization is chosen
                                                       by specifying km_opt.
- km_opt                              = 1,	; eddy coefficient option
+ km_opt(max_dom)                     = 1,	; eddy coefficient option
                                                   1 = constant (use khdif kvdif)
                                                   2 = 1.5 order TKE closure (3D)
                                                   3 = Smagorinsky first order closure (3D)

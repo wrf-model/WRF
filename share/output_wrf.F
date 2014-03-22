@@ -529,10 +529,10 @@ endif
     CALL wrf_put_dom_ti_integer ( fid , 'BL_PBL_PHYSICS' ,  ibuf , 1 , ierr )
     ibuf(1) = cu_physics
     CALL wrf_put_dom_ti_integer ( fid , 'CU_PHYSICS' ,  ibuf , 1 , ierr )
-+#if ( DA_CORE != 1)
+#if ( DA_CORE != 1)
     ibuf(1) = sf_lake_physics
     CALL wrf_put_dom_ti_integer ( fid , 'SF_LAKE_PHYSICS' ,  ibuf , 1 , ierr )
-+#endif
+#endif
 
     ! added netcdf-specific metadata:
     IF ( ( use_package( io_form ) == IO_NETCDF ) .OR. &

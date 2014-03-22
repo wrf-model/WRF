@@ -67,11 +67,31 @@ Note, this is not a namelist.input file. Find what interests you, and cut and pa
 ** Using stochastic backscatter scheme
 
 &physics
- stoch_force_opt                     = 1,      1,      1,
- stoch_vertstruc_opt                 = 0,      0,      0,
- tot_backscat_t                      = 1.0E-6, 1.0E-6, 1.0E-6
- tot_backscat_psi                    = 1.0E-5, 1.0E-5, 1.0E-5
+ stoch_force_opt                     = 1,        1,        1,
+ stoch_vertstruc_opt                 = 0,        0,        0,
+ tot_backscat_psi                    = 1.E-05,   1.E-05,   1.E-05,
+ tot_backscat_t                      = 1.E-06,   1.E-06,   1.E-06,
  nens                                = 1,
+ ztau_psi                            = 10800.0,
+ ztau_t                              = 10800.0,
+ rexponent_psi                       =-1.83,
+ rexponent_t                         =-1.83,
+ zsigma2_eps                         = 0.0833,
+ zsigma2_eta                         = 0.0833,
+ kminforc                            = 1,
+ kminforc                            = 1,
+ kminforct                           = 1,
+ lminforct                           = 1,
+ kmaxforc                            = 1000000,
+ lmaxforc                            = 1000000,
+ kmaxforct                           = 1000000,
+ lmaxforct                           = 1000000,
+ gridpointvariance                   = 0.125,    0.125,    0.125
+ sppt_thresh_fact                    = 2.0,      2.0,      2.0,
+ l_sppt                              = 150000.0, 150000.0, 150000.0,
+ tau_sppt                            = 21600.0,  21600.0,  21600.0,
+
+
 
 &bdy_control
  perturb_bdy                         = 0,

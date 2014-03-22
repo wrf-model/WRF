@@ -4,8 +4,8 @@
 state    real   VERTSTRUCC         ikj dyn_em  1  -  rhd  "VERTSTRUCC    "  "vertical structure for stoch. forcing " ""
 state    real   VERTSTRUCS         ikj dyn_em  1  -  rhd  "VERTSTRUCS    "  "vertical structure for stoch. forcing " ""
 
-state real ru_tendf_stoch     ikj dyn_em 1 X rhdf=(p2c) "ru_tendf_stoch" "stochastic forcing, U " "m/s"
-state real rv_tendf_stoch     ikj dyn_em 1 Y rhdf=(p2c) "rv_tendf_stoch" "stochastic forcing, V " "m/s"
+state real ru_tendf_stoch     ikj dyn_em 1 X rhdf=(p2c) "ru_tendf_stoch" "stochastic forcing, U " "m/s^2"
+state real rv_tendf_stoch     ikj dyn_em 1 Y rhdf=(p2c) "rv_tendf_stoch" "stochastic forcing, V " "m/s^2"
 state real rt_tendf_stoch     ikj dyn_em 1 - rhdf=(p2c) "rt_tendf_stoch" "stochastic forcing, T " "K/s"
 
 # 2d arrays
@@ -15,6 +15,10 @@ state    real  SPTFORCC       ij  misc    1  -   r    "SPTFORCC"      "real  spe
 state    real  SPTFORCS       ij  misc    1  -   r    "SPTFORCS"      "imag. spect. coeff. of stoch. temperature perturb." "" ""
 state    real  SPSTREAM_AMP   ij  misc    1  -   r    "SPSTREAM_AMP"  "amplitude of stoch. streamfunction perturb." "" ""
 state    real  SPT_AMP        ij  misc    1  -   r    "SPT_AMP"       "amplitude of stoch. temperature perturb." "" ""
+
+# 1d arrays
+state    real  VERTAMPT        k   misc    1  -   rh    "VERTAMPT"       "vert. amplitude of stoch. temperature perturb." "" ""
+state    real  VERTAMPUV       k  misc    1  -   rh    "VERTAMPUV"       "vert. amplitude of stoch. u,v perturb." "" ""
 
 # 1d arrays for FFT transpose
 state    real   RU_REAL          ikj    dyn_em       1        XYZ
@@ -48,16 +52,45 @@ state integer   SEED1            -      misc        1         -     rh        "S
 state integer   SEED2            -      misc        1         -     rh        "SEED2"                "RANDOM SEED NUMBER 2"  ""
 state logical   did_stoch        -      misc        1         -     r         "DID_STOCH"            "Logical to tell us that we already did the initialization for dom 1"  ""
 
-# Namelist parameters
-rconfig   integer     stoch_force_opt     namelist,physics	max_domains    0   -     "stochastic forcing option: 0=none, 1=backscatter"
-rconfig   integer     stoch_vertstruc_opt namelist,physics	max_domains    0   -     "vertical structure for stochastic forcing: 0=constant, 1=random phase"
+# Namelist parameters general 
+rconfig   integer     stoch_force_opt     namelist,physics	max_domains    0   -     "stochastic forcing option: 0=none, 1=SKEBS, 2=SPPT"
+rconfig   integer     stoch_vertstruc_opt namelist,physics	max_domains    0   -     "vertical structure for stochastic forcing: 0=constant, 1=random phase, 2=user determined"
 rconfig   integer     nens                namelist,physics      1              1   -     "random number seed for ensemble members "    ""   ""
-rconfig   real        tot_backscat_psi    namelist,physics      max_domains    1.0E-05   - "total backscattered dissipation rate for streamfunction m2 s-3"   ""
-rconfig   real        tot_backscat_t      namelist,physics      max_domains    1.0E-06   - "total backscattered dissipation rate for temperature"    "m2 s-3" ""
 
-rconfig   real        stoch_force_global_opt       derived      1              0      h    "stoch_force_global_opt" "global (across domains) stochastic forcing option"  ""
+# Namelist parameters SKEBS
+rconfig   real        tot_backscat_psi namelist,physics      max_domains    1.0E-05   - "total backscattered diss. for streamfunction m2 s-3"   ""
+rconfig   real        tot_backscat_t   namelist,physics      max_domains    1.0E-06   - "total backscattered diss. rate for pot. temperature"    "m2 s-3" ""
+rconfig   real        ztau_psi         namelist,physics      1              10800.0   - "decorr. time of noise for psi perturb."
+rconfig   real        ztau_t           namelist,physics      1              10800.0   - "decorr. time of noise for theta perturb."    "s" ""
+rconfig   real        rexponent_psi    namelist,physics      1             -1.83      - "spectral slope of forcing for psi"    "" ""
+rconfig   real        rexponent_t      namelist,physics      1             -1.83      - "spectral slope of forcing for theta "    "" ""
+rconfig   real        zsigma2_eps      namelist,physics      1              0.0833    - "variance of noise for psi perturb."    "" ""
+rconfig   real        zsigma2_eta      namelist,physics      1              0.0833    - "variance of noise for theta perturb."    "" ""
+rconfig   integer     kminforc         namelist,physics      1              1         - "min. forcing wavenumber in lon. for psi perturb."    "" ""
+rconfig   integer     lminforc         namelist,physics      1              1         - "min. forcing wavenumber in lat. for psi perturb."    "" ""
+rconfig   integer     kminforct        namelist,physics      1              1         - "min. forcing wavenumber in lon. for theta perturb."    "" ""
+rconfig   integer     lminforct        namelist,physics      1              1         - "min. forcing wavenumber in lat. for theta perturb."    "" ""
+rconfig   integer     kmaxforc         namelist,physics      1              1000000   - "max. forcing wavenumber in lon. for psi perturb.""    "" ""
+rconfig   integer     lmaxforc         namelist,physics      1              1000000   - "max. forcing wavenumber in lat. for psi perturb."    "" ""
+rconfig   integer     kmaxforct        namelist,physics      1              1000000   - "max. forcing wavenumber in lon. for theta perturb."    "" ""
+rconfig   integer     lmaxforct        namelist,physics      1              1000000   - "max. forcing wavenumber in lat. for theta perturb."    "" ""
+rconfig   integer     kmaxforch        derived               1               0        - "sneak variable to make it work"    "" ""
+rconfig   integer     lmaxforch        derived               1               0        - "sneak variable to make it work"    "" ""
+rconfig   integer     kmaxforcth       derived               1               0        - "sneak variable to make it work"    "" ""
+rconfig   integer     lmaxforcth       derived               1               0        - "sneak variable to make it work"    "" ""
 
+# Namelist parameters SPPT
+rconfig   real        gridpointvariance namelist,physics      max_domains   0.25     - "gridpoint variance"
+rconfig   real        sppt_thresh_fact  namelist,physics      max_domains   2.0      - "threshold for SPPT perturbations in std dev of gridpointvariance
+rconfig   real        l_sppt            namelist,physics      max_domains   15000.0  - "Length scale in meters" 
+rconfig   real        tau_sppt          namelist,physics      max_domains   21600.0  - "Decorrelation time scale in s"
+
+rconfig   integer     stoch_force_global_opt       derived      1              0      h    "stoch_force_global_opt" "global (across domains) stochastic forcing option"  ""
 
 # Package declarations
-package   no_stoch_force      stoch_force_global_opt==0                  -             -
-package   stoch_backscatter   stoch_force_global_opt==1                  -             state:ru_tendf_stoch,rv_tendf_stoch,rt_tendf_stoch,SPSTREAMFORCC,SPSTREAMFORCS,SPTFORCC,SPTFORCS,SPSTREAM_AMP,SPT_AMP,VERTSTRUCC,VERTSTRUCS,RU_IMAG,RU_REAL_xxx,RU_REAL_yyy,RU_IMAG_xxx,RU_IMAG_yyy,RV_IMAG,RV_REAL_xxx,RV_REAL_yyy,RV_IMAG_xxx,RV_IMAG_yyy,RT_IMAG,RT_REAL_xxx,RT_REAL_yyy,RT_IMAG_xxx,RT_IMAG_yyy,RU_REAL,RV_REAL,RT_REAL
+package   no_stoch_force      stoch_force_opt==0                  -             -
+
+package   stoch_backscatter   stoch_force_opt==1                  -             state:ru_tendf_stoch,rv_tendf_stoch,rt_tendf_stoch,SPSTREAMFORCC,SPSTREAMFORCS,SPTFORCC,SPTFORCS,SPSTREAM_AMP,SPT_AMP,VERTSTRUCC,VERTSTRUCS,RU_IMAG,RU_REAL_xxx,RU_REAL_yyy,RU_IMAG_xxx,RU_IMAG_yyy,RV_IMAG,RV_REAL_xxx,RV_REAL_yyy,RV_IMAG_xxx,RV_IMAG_yyy,RT_IMAG,RT_REAL_xxx,RT_REAL_yyy,RT_IMAG_xxx,RT_IMAG_yyy,RU_REAL,RV_REAL,RT_REAL,VERTAMPT,VERTAMPUV
+
+package   perturb_tendf  stoch_force_opt==2                       -             state:ru_tendf_stoch,rv_tendf_stoch,rt_tendf_stoch,SPSTREAMFORCC,SPSTREAMFORCS,SPTFORCC,SPTFORCS,SPSTREAM_AMP,SPT_AMP,VERTSTRUCC,VERTSTRUCS,RU_IMAG,RU_REAL_xxx,RU_REAL_yyy,RU_IMAG_xxx,RU_IMAG_yyy,RV_IMAG,RV_REAL_xxx,RV_REAL_yyy,RV_IMAG_xxx,RV_IMAG_yyy,RT_IMAG,RT_REAL_xxx,RT_REAL_yyy,RT_IMAG_xxx,RT_IMAG_yyy,RU_REAL,RV_REAL,RT_REAL,VERTAMPT,VERTAMPUV
+

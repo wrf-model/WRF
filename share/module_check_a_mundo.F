@@ -44,6 +44,7 @@
       LOGICAL :: exists
       LOGICAL , EXTERNAL :: wrf_dm_on_monitor
       INTEGER :: i, oops
+      LOGICAL :: km_opt_already_done , diff_opt_already_done
 
 !-----------------------------------------------------------------------
 ! Set up the WRF Hydro namelist option to allow dynamic allocation of
@@ -53,6 +54,51 @@
    model_config_rec % wrf_hydro = 1
 #else
    model_config_rec % wrf_hydro = 0
+#endif
+
+
+#if (EM_CORE == 1)
+!-----------------------------------------------------------------------
+! Check that all values of diff_opt and km_opt are filled in.  A flag
+! value of "-1" from the nml file means that this column (domain) is not
+! filled as a max_doamins variable.  Since we changed these two variables 
+! from being single entries to max_domain entries, we need to do special 
+! checking.  If there are missing values (if we find any -1 entries), we 
+! fill those columns with the value from the entry from column (domain) #1.
+!-----------------------------------------------------------------------
+
+      km_opt_already_done = .FALSE.
+      diff_opt_already_done = .FALSE.
+      DO i = 2, model_config_rec % max_dom
+         IF ( model_config_rec % km_opt(i) .EQ. -1 ) THEN
+            model_config_rec % km_opt(i) = model_config_rec % km_opt(1)
+            IF ( .NOT. km_opt_already_done ) THEN
+               CALL wrf_message ( "Setting blank km_opt entries to domain #1 values.")
+               CALL wrf_message ( " --> The km_opt entry in the namelist.input is now max_domains." )
+            END IF
+            km_opt_already_done = .TRUE.
+         END IF
+         IF ( model_config_rec % diff_opt(i) .EQ. -1 ) THEN
+            model_config_rec % diff_opt(i) = model_config_rec % diff_opt(1)
+            IF ( .NOT. diff_opt_already_done ) THEN
+               CALL wrf_message ( "Setting blank diff_opt entries to domain #1 values.")
+               CALL wrf_message ( " --> The diff_opt entry in the namelist.input is now max_domains." )
+            END IF
+            diff_opt_already_done = .TRUE.
+         END IF
+      ENDDO
+
+
+!-----------------------------------------------------------------------
+! Check that km_opt and diff_opt are not -1.  If the first column is set
+! to -1, that means this entry is NOT in the namelist file at all.
+!-----------------------------------------------------------------------
+
+      IF ( ( model_config_rec %   km_opt(1) .EQ. -1 ) .OR. &
+           ( model_config_rec % diff_opt(1) .EQ. -1 ) ) THEN
+            wrf_err_message = 'Both km_opt and diff_opt need to be set in the namelist.input file.'
+         CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
+      END IF
 #endif
 
 
@@ -228,14 +274,14 @@
 
 #if (EM_CORE == 1)
 !-----------------------------------------------------------------------
-! Check that if stochastic perturbations are turned on in any domain, 
+! Check that if any stochastic perturbation scheme is turned on in any domain, 
 ! if so, set grid%stoch_force_global_opt=1 
 !-----------------------------------------------------------------------
 
    model_config_rec % stoch_force_global_opt=0  !also set in registry.stoch
  ! check if stochastic perturbations are turned on in any domain
    DO i = 1, model_config_rec % max_dom
-         IF ( model_config_rec % stoch_force_opt(i) .EQ. 1)  then 
+         IF ( model_config_rec % stoch_force_opt(i) .NE. 0)  then 
            model_config_rec % stoch_force_global_opt=1 
          endif
    ENDDO 

@@ -1,10 +1,9 @@
 module module_stoch
 !***********************************************************************
 !
-! Purpose: Stochastic kinetic-energy backscatter scheme (SKEB)
+! Purpose: Stochastic Perturbation Schemes
 ! Author : Judith Berner, NCAR  (berner@ucar.edu)
-! Date   : Dec 2010
-! Version: 1.0
+! Date   : Apr 2014
 !
 !***********************************************************************
 !
@@ -41,12 +40,12 @@ module module_stoch
 !************** DECLARE FIELDS AND VARIABLES FOR STOCHASTIC BACKSCATTER
 !     ------------------------------------------------------------------
       implicit none
-      public :: SETUP_STOCH, UPDATE_STOCH,do_fftback_along_x,do_fftback_along_y,&
-                SP2GP_prep
+      public :: SETUP_STOCH_SKEBS, SETUP_STOCH_SPPT, UPDATE_STOCH,& 
+                          do_fftback_along_x,do_fftback_along_y, SP2GP_prep
 
       INTEGER :: LMINFORC, LMAXFORC, KMINFORC, KMAXFORC, & 
       &          LMINFORCT, LMAXFORCT, KMINFORCT, KMAXFORCT
-      REAL    :: ALPH, TOT_BACKSCAT_PSI, TOT_BACKSCAT_T,  REXPONENT
+      REAL    :: ALPH, ALPH_PSI, ALPH_T, TOT_BACKSCAT_PSI, TOT_BACKSCAT_T,  REXPONENT_PSI,REXPONENT_T
 
 !     ----------Fields for spectral transform -----------
 
@@ -56,7 +55,8 @@ module module_stoch
 
 !     --------- Others -------------------------------------------------
       REAL, PARAMETER:: RPI= 3.141592653589793 !4.0*atan(1.0) 
-      REAL, PARAMETER:: CP= 1006 ! specific heat of dry air in J/(Kg*K)= m^2/(K* s^2)
+      REAL, PARAMETER:: CP= 1006.0 ! specific heat of dry air in J/(Kg*K)= m^2/(K* s^2)
+      REAL, PARAMETER:: T0= 300.0 ! Reference temperature in K 
 
       save
 
@@ -69,32 +69,44 @@ contains
 !!******** INITIALIZE STOCHASTIC KINETIC ENERGY BACKSCATTER (SKEB) *****
 !     ------------------------------------------------------------------
 
-      subroutine SETUP_STOCH( &
+      subroutine SETUP_STOCH_SKEBS( &
                        VERTSTRUCC,VERTSTRUCS,                        & 
                        SPT_AMP,SPSTREAM_AMP,                         & 
+                       VERTAMPT,VERTAMPUV,                           &
                        stoch_vertstruc_opt,                          &
-                       itime_step,DX,DY,NENS,                        &
+                       ISEED1,ISEED2,itime_step,DX,DY,               &
                        TOT_BACKSCAT_PSI,TOT_BACKSCAT_T,              &
+                       ZTAU_PSI,ZTAU_T,REXPONENT_PSI,REXPONENT_T,               &    
+                       KMINFORC,KMAXFORCH,LMINFORC,LMAXFORCH,          & 
+                       KMINFORCT,KMAXFORCTH,LMINFORCT,LMAXFORCTH,      & 
+                       KMAXFORC,LMAXFORC,KMAXFORCT,LMAXFORCT, &
+                       ZSIGMA2_EPSH,ZSIGMA2_ETAH,                      & 
                        ids, ide, jds, jde, kds, kde,                 &
                        ims, ime, jms, jme, kms, kme,                 &
                        its, ite, jts, jte, kts, kte                  )
 
-      USE module_configure
       IMPLICIT NONE
-      TYPE (grid_config_rec_type)                       :: config_flags
-      INTEGER :: IER,IK,IL,I,J
+      INTEGER :: IER,IK,IL,iseed1,iseed2,I,J
       INTEGER :: itime_step,stoch_vertstruc_opt
       INTEGER :: KMAX,LMAX,LENSAV,ILEV
       INTEGER , INTENT(IN)     ::  ids, ide, jds, jde, kds, kde,   &
                                    ims, ime, jms, jme, kms, kme,   &
                                    its, ite, jts, jte, kts, kte
+      INTEGER :: KMINFORC,LMINFORC,KMINFORCT,LMINFORCT 
+      INTEGER :: KMAXFORC,LMAXFORC,KMAXFORCT,LMAXFORCT 
+      INTEGER :: KMAXFORCH,LMAXFORCH,KMAXFORCTH,LMAXFORCTH
+      REAL    :: ZSIGMA2_EPSH,ZSIGMA2_ETAH 
       REAL    :: DX,DY,RY,RX,RATIO_BACKSCAT,TOT_BACKSCAT_PSI,TOT_BACKSCAT_T
-      REAL    :: ZGAMMAN,ZTAU,ZCONSTF0,ZCONSTF0T,ZSIGMA2_EPS, RHOKLMAX,ZREF,RHOKL,EPS
+      REAL    :: ZGAMMAN,ZGAMMAT,ZTAU_PSI,ZTAU_T,ZCONSTF0,ZCONSTF0T,ZSIGMA2_EPS,ZSIGMA2_ETA,RHOKLMAX,ZREF,RHOKL,EPS
+      REAL    :: REXPONENT_PSI,REXPONENT_T
+      REAL    :: ZNORM1,ZNORM2
       REAL, DIMENSION (ims:ime,kms:kme,jms:jme) :: VERTSTRUCC,VERTSTRUCS
       REAL, DIMENSION (ims:ime,jms:jme)         :: SPSTREAM_AMP,SPT_AMP
       REAL, DIMENSION (ids:ide,jds:jde)         :: ZCHI,ZCHIT
-      INTEGER :: how_many, nens
+      REAL, DIMENSION (kms:kme          )       :: VERTAMPT,VERTAMPUV
       LOGICAL :: is_print = .true.
+      INTEGER , ALLOCATABLE , DIMENSION(:) :: iseed
+      INTEGER :: how_many
 
       LOGICAL , EXTERNAL      :: wrf_dm_on_monitor
 
@@ -103,7 +115,7 @@ contains
       KMAX=(jde-jds)+1 !NLAT
       LMAX=(ide-ids)+1 !NLON
       RY=  KMAX*DY
-      RX=  LMAX*DY
+      RX=  LMAX*DX
       LENSAV= 4*(KMAX+LMAX)+INT(LOG(REAL(KMAX))) + INT(LOG(REAL(LMAX))) + 8
 
 !     --------- ALLOCATE FIELDS FOR FFTPACK----------------------------
@@ -129,44 +141,30 @@ contains
                       its, ite, jts, jte, kts, kte                 )
 
 !     ---------- INITIAIZE STOCHASTIC KINETIC ENERGY BACKSCATTER PARAMETERS-----------
-      REXPONENT=-1.83 !produces 2(p+1) kinetic energy spectra % p=-11/6=1.83 => k=-5/3 
-!      TOT_BACKSCAT_PSI = 2.0 
-!      TOT_BACKSCAT_T = 4.8E-04 ! 2.E-06/240 
-      KMINFORC=0      
-      KMAXFORC=min0(40,KMAX/2)
-      LMINFORC=KMINFORC 
-      LMAXFORC=KMAXFORC
-      KMINFORCT=0       
-      KMAXFORCT=KMAXFORC
-      LMINFORCT=KMINFORCT 
-      LMAXFORCT=KMAXFORCT
-      ZTAU    =  2.E04/12. 
-      ALPH   =  float(itime_step)/ZTAU ! approximation of 1.-exp(-itime_step/ZTAU)
-      ZSIGMA2_EPS=1./(12.0*ALPH)
+!      REXPONENT_PSI=-1.83 !produces 2(p+1) kinetic energy spectra % p=-11/6=1.83 => k=-5/3 
+!      REXPONENT_T=-1.83 !
+     KMAXFORC =min0(((ide-ids)+1)/2,((jde-jds)+1 )/2)-5
+     LMAXFORC =KMAXFORC
+     KMAXFORCT=min0(((ide-ids)+1)/2,((jde-jds)+1 )/2)-5
+     LMAXFORCT=KMAXFORCT
+     if (KMAXFORC > KMAXFORCH) then
+        KMAXFORC=KMAXFORCH
+     endif
+     if (LMAXFORC > LMAXFORCH) then
+        LMAXFORC=LMAXFORCH
+     endif
+     if (KMAXFORCT > KMAXFORCTH) then
+        KMAXFORCT=KMAXFORCTH
+     endif
+     if (LMAXFORCT > LMAXFORCTH) then
+        LMAXFORCT=LMAXFORCTH
+     endif
 
-!     Sanity checks for forcing wavenumber range
-      IF (LMAXFORC>LMAX/2) then
-        LMAXFORC=min0(40,LMAX/2)-1
-        KMAXFORC=LMAXFORC
-      ENDIF
-      IF (LMAXFORCT>LMAX/2) then
-        LMAXFORCT=min0(40,LMAX/2)-1
-        KMAXFORCT=LMAXFORCT
-      ENDIF
-      IF ((LMINFORC>LMAXFORC).or.(KMINFORC>KMAXFORC)) then
-        WRITE(*,'('' LMINFORC>LMAXFORC IN SETUP_STOCH.F90'')')
-        STOP
-      ENDIF
-      IF ((KMAXFORC>KMAX/2).or.(LMAXFORC>LMAX/2)) then
-        WRITE(*,'('' KMAXFORC>KMAX/2 IN SETUP_STOCH.F90'')')
-        print*,KMAXFORC,KMAX/2
-        STOP
-      ENDIF
-      IF ((KMINFORC.ne.LMINFORC).or.(KMAXFORC.ne.LMAXFORC)) then
-        WRITE(*,'('' Forcing is non-homogenious in latitude and longitude'')')
-        WRITE(*,'('' If this is what you want, comment *stop* IN SETUP_STOCH.F90'')')
-        STOP
-      ENDIF
+
+      ALPH_PSI   =  float(itime_step)/ZTAU_PSI ! approximation of 1.-exp(-itime_step/ZTAU_PSI)
+      ALPH_T   =  float(itime_step)/ZTAU_PSI ! approximation of 1.-exp(-itime_step/ZTAU_T)
+      ZSIGMA2_EPS=1./(12.0*ALPH_PSI)
+      ZSIGMA2_ETA=1./(12.0*ALPH_T)
 
 !     Output of stochastic settings 
       if (is_print) then
@@ -175,18 +173,24 @@ contains
       WRITE(*,'('' >> Initializing stochastic kinetic-energy backscatter scheme << '')')
       WRITE(*,'('' Total backscattered energy, TOT_BACKSCAT_PSI '',E12.5)') TOT_BACKSCAT_PSI
       WRITE(*,'('' Total backscattered temperature, TOT_BACKSCAT_T '',E12.5)') TOT_BACKSCAT_T
-      WRITE(*,'('' Exponent for energy spectra, REXPONENT ='',E12.5)') REXPONENT
+      WRITE(*,'('' Exponent for energy spectra, REXPONENT_PSI ='',E12.5)') REXPONENT_PSI
+      WRITE(*,'('' Exponent for temperature spectra, REXPONENT_T ='',E12.5)') REXPONENT_T
       WRITE(*,'('' Minimal wavenumber of streamfunction forcing, LMINFORC ='',I10)') LMINFORC
       WRITE(*,'('' Maximal wavenumber of streamfunction forcing, LMAXFORC ='',I10)') LMAXFORC
       WRITE(*,'('' Minimal wavenumber of streamfunction forcing, KMINFORC ='',I10)') KMINFORC
       WRITE(*,'('' Maximal wavenumber of streamfunction forcing, KMAXFORC ='',I10)') KMAXFORC
       WRITE(*,'('' Minimal wavenumber of temperature forcing, LMINFORCT ='',I10)') LMINFORCT
       WRITE(*,'('' Maximal wavenumber of temperature forcing, LMAXFORCT ='',I10)') LMAXFORCT
+      WRITE(*,'('' Minimal wavenumber of temperature forcing, KMINFORCT ='',I10)') KMINFORCT
+      WRITE(*,'('' Maximal wavenumber of temperature forcing, KMAXFORCT ='',I10)') KMAXFORCT
       WRITE(*,'('' stoch_vertstruc_opt                             '',I10)') stoch_vertstruc_opt
       WRITE(*,'('' Time step: itime_step='',I10)') itime_step 
-      WRITE(*,'('' Decorrelation time of noise, ZTAU ='',E12.5)') ZTAU
+      WRITE(*,'('' Decorrelation time of noise, ZTAU_PSI ='',E12.5)') ZTAU_PSI
+      WRITE(*,'('' Decorrelation time of noise, ZTAU_T ='',E12.5)') ZTAU_T
       WRITE(*,'('' Variance of noise, ZSIGMA2_EPS  ='',E12.5)') ZSIGMA2_EPS
-      WRITE(*,'('' Autoregressive parameter 1-ALPH ='',E12.5)') 1.-ALPH
+      WRITE(*,'('' Variance of noise, ZSIGMA2_ETA  ='',E12.5)') ZSIGMA2_ETA
+      WRITE(*,'('' Autoregressive parameter 1-ALPH_PSI ='',E12.5)') 1.-ALPH_PSI
+      WRITE(*,'('' Autoregressive parameter 1-ALPH_T ='',E12.5)') 1.-ALPH_T
       WRITE(*,'('' =============================================='')')
       endif 
 
@@ -196,72 +200,54 @@ contains
 
 !     First the constants:
       ZCHI    =  0.0
-      ! Fill lower left quadrant of ZCHI. For this range the indeces IK,IL 
-      do IK=KMINFORC,KMAXFORC
-      do IL=LMINFORC,LMAXFORC
-      if ((sqrt(float(IK*IK+IL*IL))).le.(KMAXFORC)) then
-        if ((IK>0).or.(IL>0)) then 
-          ZCHI(IL+1,IK+1)=((IK/RY*IK/RY)+(IL/RX*IL/RX))**(REXPONENT/2.)
-        endif
-      endif
-      enddo
-      enddo
       ZGAMMAN  =  0.0
-      DO IK=KMINFORC,KMAXFORC
-      DO IL=LMINFORC,LMAXFORC
-      if (sqrt(float(IK*IK+IL*IL)).le.KMAXFORC) then
-        if ((IK>0).or.(IL>0)) then 
-          ZGAMMAN= ZGAMMAN + ((IK/RY*IK/RY)+(IL/RX*IL/RX))**(REXPONENT+1)
-        endif
-      endif
-      ENDDO
-      ENDDO
-      ZGAMMAN=4.0*ZGAMMAN !account for all quadrants, although only one is Filled
-
-!     A value TOT_BACKSCAT_PSI=xx m^2/S^3 means that in each gridbox and on average,
-!     a dissipation rate of D=TOT_BACKSCAT_PSI m^2/s^3 is backscattered onto the resolved streamfunction
-!     The resulting units for ZCONSTF0 are  sqrt(m^2/(s^3*s)) = m^2/s^2, which is the unit of dpsi/dt
-!     Note, that the unit of IK has the unit m here.
-      ZCONSTF0=SQRT(ALPH*TOT_BACKSCAT_PSI/(float(itime_step)*ZSIGMA2_EPS*ZGAMMAN))/(2*RPI)
+      ! Fill lower left quadrant of ZCHI. For this range the indeces IK,IL 
+       DO IK=jds-1,jde   ! These are now wavenumbers
+       DO IL=ids-1,ide  
+       if (((sqrt((IK/RY*IK/RY)+(IL/RX*IL/RX)).lt.((KMAXFORC+0.5)/RX)).and.(sqrt((IK/RY*IK/RY)+(IL/RX*IL/RX)).ge.((KMINFORC-0.5)/RX))) .or. & 
+           ((sqrt((IK/RY*IK/RY)+(IL/RX*IL/RX)).lt.((LMAXFORC+0.5)/RX)).and.(sqrt((IK/RY*IK/RY)+(IL/RX*IL/RX)).ge.((LMINFORC-0.5)/RX))))then 
+         if ((IK>0).or.(IL>0)) then 
+           ZCHI(IL+1,IK+1)=((IK/RY*IK/RY)+(IL/RX*IL/RX))**(REXPONENT_PSI/2.)
+           ZGAMMAN= ZGAMMAN + ((IK/RY*IK/RY)+(IL/RX*IL/RX))**(REXPONENT_PSI+1)
+         endif
+       endif
+       enddo
+       enddo
+       ZGAMMAN=4.0*ZGAMMAN !account for all quadrants, although only one is Filled
+       ZCONSTF0=SQRT(ALPH_PSI*TOT_BACKSCAT_PSI/(float(itime_step)*ZSIGMA2_EPS*ZGAMMAN))/(2*RPI)
 
       ZCHIT    =  0.0
+      ZGAMMAT  =  0.0
       ! Fill lower left quadrant of ZCHI. For this range the indeces IK,IL 
-      do IK=KMINFORCT,KMAXFORCT
-      do IL=LMINFORCT,LMAXFORCT
-      if ((sqrt(float(IK*IK+IL*IL))).le.(KMAXFORCT)) then
-        if ((IK>0).or.(IL>0)) then 
-          ZCHIT(IL+1,IK+1)=((IK/RY*IK/RY)+(IL/RX*IL/RX))**(REXPONENT/2.)
-        endif
-      endif
-      enddo
-      enddo
-      ZGAMMAN  =  0.0
-      DO IK=KMINFORCT,KMAXFORCT
-      DO IL=LMINFORCT,LMAXFORCT
-      if (sqrt(float(IK*IK+IL*IL)).le.KMAXFORC) then
-        if ((IK>0).or.(IL>0)) then 
-          ZGAMMAN= ZGAMMAN + ((IK/RY*IK/RY)+(IL/RX*IL/RX))**(REXPONENT+1)
-        endif
-      endif
-      ENDDO
-      ENDDO
-      ZGAMMAN=4.0*ZGAMMAN !account for all quadrants, although only one is Filled
+       DO IK=jds-1,jde   ! These are now wavenumbers
+       DO IL=ids-1,ide  
+       if (((sqrt((IK/RY*IK/RY)+(IL/RX*IL/RX)).lt.((KMAXFORCT+0.5)/RX)).and.(sqrt((IK/RY*IK/RY)+(IL/RX*IL/RX)).ge.((KMINFORCT-0.5)/RX))) .or. & 
+           ((sqrt((IK/RY*IK/RY)+(IL/RX*IL/RX)).lt.((LMAXFORCT+0.5)/RX)).and.(sqrt((IK/RY*IK/RY)+(IL/RX*IL/RX)).ge.((LMINFORCT-0.5)/RX))))then 
+         if ((IK>0).or.(IL>0)) then 
+           ZCHIT(IL+1,IK+1)=((IK/RY*IK/RY)+(IL/RX*IL/RX))**(REXPONENT_T/2.)
+           ZGAMMAT= ZGAMMAT + ((IK/RY*IK/RY)+(IL/RX*IL/RX))**(REXPONENT_T)
+         endif
+       endif
+       enddo
+       enddo
+       ZGAMMAT=4.0*ZGAMMAT !account for all quadrants, although only one is Filled
+
 
 !     A value TOT_BACKSCAT_T= xx m^2/S^3  means that in each gridbox and on average,
 !     a dissipation rate of D=TOT_BACKSCAT_T m^2/s^3 is backscattered onto the resolved temperture pattern
 !     The resulting units for ZCONSTF0T are m^2/s^3* (K* s^2)/m^2 = K/s , which is the unit of dT/dt
-      ZCONSTF0T=TOT_BACKSCAT_T /cp* SQRT(ALPH/(ZSIGMA2_EPS*ZGAMMAN))/(2*RPI)
 
+      ZCONSTF0T=SQRT(T0*ALPH_T*TOT_BACKSCAT_T/(float(itime_step)*cp*ZSIGMA2_ETA*ZGAMMAT))
+ 
 !     Now the wavenumber-dependent amplitudes
 !     Note: There are symmetries and anti-symmetries to ensure real-valued back transforms
 !     Fill lower left quadrant of matrix of noise amplitudes for wavenumbers K=0,KMAX/2
       SPSTREAM_AMP=0.0
       SPT_AMP=0.0
-      SPT_AMP=0.0
       DO IK=jts,jte
       DO IL=its,ite
       if ((IL .le. (LMAX/2+1)) .and. (IK .le. (KMAX/2+1)) ) then
-        SPSTREAM_AMP(IL,IK) = ZCONSTF0 *ZCHI(IL,IK)
+        SPSTREAM_AMP(IL,IK) = ZCONSTF0 *ZCHI(IL,IK) 
         SPT_AMP(IL,IK)      = ZCONSTF0T*ZCHIT(IL,IK)
       endif
       ENDDO
@@ -281,7 +267,8 @@ contains
 !     Lower right quadrant
       DO IK=jts,jte
       DO IL=its,ite
-      if ((IK .gt. (KMAX/2+1)) .and. (IL.le.LMAX/2) ) then
+      !if ((IK .gt. (KMAX/2+1)) .and. (IL.le.(LMAX/2)) ) then
+      if ((IK .gt. (KMAX/2+1)) .and. (IL.le.(LMAX/2+1)) ) then
         SPSTREAM_AMP(IL,IK) = ZCONSTF0 *ZCHI(IL,KMAX-IK+2)
         SPT_AMP(IL,IK)      = ZCONSTF0T*ZCHIT(IL,KMAX-IK+2)
       endif
@@ -291,7 +278,8 @@ contains
 !     Upper right quadrant
       DO IK=jts,jte
       DO IL=its,ite
-      if ((IK .gt. (KMAX/2+1)) .and. (IL.gt.LMAX/2) ) then
+      !if ((IK .gt. (KMAX/2+1)) .and. (IL.gt.(LMAX/2)) ) then
+       if ((IK .gt. (KMAX/2+1)) .and. (IL.gt.(LMAX/2+1)) ) then
         SPSTREAM_AMP(IL,IK) = ZCONSTF0 *ZCHI(LMAX-IL+2,KMAX-IK+2)
         SPT_AMP(IL,IK)      = ZCONSTF0T*ZCHIT(LMAX-IL+2,KMAX-IK+2)
       endif
@@ -301,7 +289,7 @@ contains
 
 
 !     Array for vertical structure if desired
-      IF (stoch_vertstruc_opt>0) then
+      IF (stoch_vertstruc_opt==1) then
         VERTSTRUCC=0.0
         VERTSTRUCS=0.0
         RHOKLMAX= sqrt(KMAX**2/DY**2 + LMAX**2/DX**2)
@@ -323,24 +311,271 @@ contains
             ENDDO
           ENDDO
         ENDDO
-      END IF
+      ELSEIF (stoch_vertstruc_opt==2) then
+        VERTAMPT=1.0 ! Define vertical amplitude here.
+        VERTAMPUV=1.0 ! Define vertical amplitude here.
+      ENDIF
              
-!     Allocate field for seed and set seed for random number generator 
+!      Set seed for random number generator 
 
        CALL random_seed(size=how_many)
-       IF ( ALLOCATED(ISEED)      ) DEALLOCATE(ISEED)
-       ALLOCATE (ISEED(how_many))
-       iseed=0
+      IF ( ALLOCATED(iseed)) DEALLOCATE(iseed)
+       ALLOCATE(iseed(how_many))
        IF ( wrf_dm_on_monitor() ) THEN
-          iseed(1) = 7654321 
-          iseed(2) = 2*(nens*811)+1
-          call random_seed(put=iseed)   ! set random seed on monitor.
+          iseed=0
+          iseed(1) = iseed1
+          iseed(2) = iseed2
+          call random_seed(put=iseed(1:how_many))   ! set random seed on monitor.
+          call random_seed(get=iseed(1:how_many))
        END IF
 #ifdef DM_PARALLEL
-       CALL wrf_dm_bcast_integer ( iseed , how_many )  
+       CALL wrf_dm_bcast_integer ( iseed , how_many )
+       CALL random_seed(put=iseed(1:how_many))   ! set random seed on each proc
 #endif
 
-       END subroutine SETUP_STOCH
+       END subroutine SETUP_STOCH_SKEBS
+
+!     ------------------------------------------------------------------
+!!******** INITIALIZE STOCHASTICALLY PERTURBED PHYSICAL TENDENCY (SPPT) scheme  *****
+!     ------------------------------------------------------------------
+
+      subroutine SETUP_STOCH_SPPT( &
+                       VERTSTRUCC,VERTSTRUCS,                        & 
+                       SPT_AMP,                                      & 
+                       SPTFORCC,SPTFORCS,                            & 
+                       VERTAMPT,VERTAMPUV,                           &
+                       stoch_vertstruc_opt,                          &
+                       ISEED1,ISEED2,itime_step,DX,DY,               &
+                       gridpointvariance, l_sppt, tau_sppt,          &
+                       KMINFORCT,KMAXFORCTH,LMINFORCT,LMAXFORCTH,    & 
+                       KMAXFORCT,LMAXFORCT,                          &
+                       ids, ide, jds, jde, kds, kde,                 &
+                       ims, ime, jms, jme, kms, kme,                 &
+                       its, ite, jts, jte, kts, kte                  )
+
+
+      IMPLICIT NONE
+      INTEGER :: IER,IK,IL,iseed1,iseed2,I,J
+      INTEGER :: itime_step,stoch_vertstruc_opt
+      INTEGER :: KMAX,LMAX,LENSAV,ILEV
+      INTEGER , INTENT(IN)     ::  ids, ide, jds, jde, kds, kde,   &
+                                   ims, ime, jms, jme, kms, kme,   &
+                                   its, ite, jts, jte, kts, kte
+      REAL    :: DX,DY,RY,RX,RATIO_BACKSCAT,TOT_BACKSCAT_PSI,TOT_BACKSCAT_T
+      REAL    :: ZGAMMAN,ZCONSTF0,ZCONSTF0T,ZSIGMA2_EPS, RHOKLMAX,ZREF,RHOKL,EPS
+      REAL    :: z,phi,gridpointvariance,kappat,tau_sppt,l_sppt,sum
+      INTEGER :: KMINFORCT,LMINFORCT,KMAXFORCT,LMAXFORCT,KMAXFORCTH,LMAXFORCTH
+      REAL, DIMENSION (kms:kme          )       :: VERTAMPT,VERTAMPUV
+      REAL, DIMENSION (ims:ime,kms:kme,jms:jme) :: VERTSTRUCC,VERTSTRUCS
+      REAL, DIMENSION (ims:ime,jms:jme)         :: SPSTREAM_AMP,SPT_AMP
+      REAL, DIMENSION (ids:ide,jds:jde)         :: ZCHI,ZCHIT
+      REAL, DIMENSION (ims:ime,jms:jme)         :: SPTFORCS,SPTFORCC
+      REAL, DIMENSION (ims:ime,jms:jme) ::   var_sigma1
+      LOGICAL :: is_print = .true.
+      INTEGER , ALLOCATABLE , DIMENSION(:) :: iseed
+      INTEGER :: how_many
+
+      LOGICAL , EXTERNAL      :: wrf_dm_on_monitor
+
+    
+!     --------- SETUP PARAMETERS ---------------------------------------
+      KMAX=(jde-jds)+1 !NLAT
+      LMAX=(ide-ids)+1 !NLON
+      RY=  KMAX*DY
+      RX=  LMAX*DY
+      LENSAV= 4*(KMAX+LMAX)+INT(LOG(REAL(KMAX))) + INT(LOG(REAL(LMAX))) + 8
+
+!     --------- ALLOCATE FIELDS FOR FFTPACK----------------------------
+!     --------- ALLOCATE FIELDS FOR FFTPACK----------------------------
+      IF ( ALLOCATED(WSAVE1)      ) DEALLOCATE(WSAVE1)
+      IF ( ALLOCATED(WSAVE2)      ) DEALLOCATE(WSAVE2)
+      ALLOCATE(WSAVE1(LENSAV),WSAVE2(LENSAV))
+
+      IF ( ALLOCATED(WAVENUMBER_K)) DEALLOCATE(WAVENUMBER_K)
+      IF ( ALLOCATED(WAVENUMBER_L)) DEALLOCATE(WAVENUMBER_L)
+      ALLOCATE (wavenumber_k(jds:jde),wavenumber_l(ids:ide))
+
+!     -------- INITIALIZE FFTPACK ROUTINES -----------------------------
+      call CFFT1I (LMAX, WSAVE1, LENSAV, IER)
+      if(ier.ne. 0) write(*,95) ier
+
+      call CFFT1I (KMAX, WSAVE2, LENSAV, IER)
+      if(ier.ne. 0) write(*,95) ier
+
+      95 format('error in cFFT2I=  'i5)
+
+      call findindex( wavenumber_k, wavenumber_l,             &
+                      ids, ide, jds, jde, kds, kde,                &
+                      ims, ime, jms, jme, kms, kme,                &
+                      its, ite, jts, jte, kts, kte                 )
+
+!     ---------- INITIALIZE STOCHASTICALLY PERTURBED PHYSICAL TENDENCY PARAMETERS-----------
+
+      kappat= L_sppt**2 ! L^2= kappa*T,  where L is a length scale in m; set to for L=100km 
+      phi = exp (-float(itime_step)/tau_sppt)
+      alph = 1.-phi
+
+     KMAXFORCT=min0(((ide-ids)+1)/2,((jde-jds)+1 )/2)-5
+     LMAXFORCT=KMAXFORCT
+     if (KMAXFORCT > KMAXFORCTH) then
+        KMAXFORCT=KMAXFORCTH
+     endif
+     if (LMAXFORCT > LMAXFORCTH) then
+        LMAXFORCT=LMAXFORCTH
+     endif
+
+!     Output of stochastic settings
+      if (is_print) then
+      WRITE(*,'(''                                               '')')
+      WRITE(*,'('' =============================================='')')
+      WRITE(*,'('' >> Initializing stochastically perturbed physical tendencies (SPPT) scheme << '')')
+      WRITE(*,'('' Minimal wavenumber of temperature forcing, KMINFORCT ='',I10)') KMINFORCT
+      WRITE(*,'('' Maximal wavenumber of temperature forcing, KMAXFORCT ='',I10)') KMAXFORCT
+      WRITE(*,'('' stoch_vertstruc_opt                             '',I10)') stoch_vertstruc_opt
+      WRITE(*,'('' Time step: itime_step='',I10)') itime_step
+      WRITE(*,'('' Decorrelation time of noise, tau_sppt ='',E12.5)') TAU_sppt
+      WRITE(*,'('' Autoregressive parameter phi ='',E12.5)') phi
+      WRITE(*,'('' Length Scale l_sppt'',E12.5)') l_sppt
+      WRITE(*,'('' Variance in gridpoint space'',E12.5)') gridpointvariance
+      WRITE(*,'('' =============================================='')')
+      endif
+
+! Modify ZGAMMAN,ZCONSTF0,ZCHIT for SPPT:  
+!  Constants for spherical harmonics (Palmer et al. 2009)
+!  ZCONSTF0T= F_0= (var(r)*(1-phi^2)/( 2* sum_n=1^N (2n+1) exp(−κTn(n+1)))^(1./2.)
+!  ZCHIT(IL,IK) = sigma_n/F_0= exp(−κTn(n+1)/2)
+
+! Constants for double period boundary domain
+! gridpointvariance=1.0
+! ZCONSTF0T=F0= sqrt((gridpointvariance*(1 − phi**2))/ZGAMMAN)
+! ZCHIT(IL,IK) =ZCONSTF0T * exp(  -2*RPI**2*kappat*((IK/RY*IK/RY)+(IL/RX*IL/RX)) )
+
+! Use existing code and inteprete in the following manner:
+! SPT_AMP(IL,IK)  (set in line 287)  is sigma_kl in eq. 14 of Palmer et al 2009
+! (1-alph)                           is phi      in eq. 14 of Palmer et al 2009
+! for propagator see line 416 : 
+! SPTFORCC(IL,IK)       = (1.-ALPH)*SPTFORCC(IL,IK)      + SPT_AMP(IL,IK)     *(ZRANDNOSC2(IL,IK))
+
+     ZCHIT    =  0.0
+     ZGAMMAN  =  0.0
+      ! Fill lower left quadrant of ZCHI. For this range the indeces IK,IL
+      DO IK=jds-1,jde   ! These are now wavenumbers
+      DO IL=ids-1,ide
+      if (((sqrt((IK/RY*IK/RY)+(IL/RX*IL/RX)).lt.((KMAXFORCT+0.5)/RX)).and.(sqrt((IK/RY*IK/RY)+(IL/RX*IL/RX)).ge.((KMINFORCT-0.5)/RX))) .or. &
+          ((sqrt((IK/RY*IK/RY)+(IL/RX*IL/RX)).lt.((LMAXFORCT+0.5)/RX)).and.(sqrt((IK/RY*IK/RY)+(IL/RX*IL/RX)).ge.((LMINFORCT-0.5)/RX))))then
+        if ((IK>0).or.(IL>0)) then
+          ZCHIT(IL+1,IK+1)=exp(  -2*RPI**2*kappat*((IK/RY*IK/RY)+(IL/RX*IL/RX)) ) !SPPT
+          ZGAMMAN= ZGAMMAN + exp(  -4*RPI**2*kappat*((IK/RY*IK/RY)+(IL/RX*IL/RX)) ) !SPPT
+        endif
+      endif
+      enddo
+      enddo
+      ZGAMMAN=4.0*ZGAMMAN !account for all quadrants, although only one is Filled
+      ZCONSTF0T= sqrt(gridpointvariance*(1.-phi**2)/(2.*ZGAMMAN))
+
+
+!     Now the wavenumber-dependent amplitudes
+!     Note: There are symmetries and anti-symmetries to ensure real-valued back transforms
+!     Fill lower left quadrant of matrix of noise amplitudes for wavenumbers K=0,KMAX/2
+      SPT_AMP=0.0
+      DO IK=jts,jte
+      DO IL=its,ite
+      if ((IL .le. (LMAX/2+1)) .and. (IK .le. (KMAX/2+1)) ) then
+        SPT_AMP(IL,IK)      = ZCONSTF0T*ZCHIT(IL,IK)
+      endif
+      ENDDO
+      ENDDO
+
+      ! Fill other quadrants:
+      ! Upper left quadrant
+      DO IK=jts,jte
+      DO IL=its,ite
+      if ( (IL .gt. (LMAX/2+1)) .and. (IK .le. (KMAX/2+1)) ) then
+        SPT_AMP(IL,IK)      =  ZCONSTF0T*ZCHIT(LMAX-IL+2,IK)
+      endif
+      ENDDO
+      ENDDO
+
+!     Lower right quadrant
+      DO IK=jts,jte
+      DO IL=its,ite
+      if ((IK .gt. (KMAX/2+1)) .and. (IL.le.LMAX/2) ) then
+        SPT_AMP(IL,IK)      = ZCONSTF0T*ZCHIT(IL,KMAX-IK+2)
+      endif
+      ENDDO
+      ENDDO
+
+!     Upper right quadrant
+      DO IK=jts,jte
+      DO IL=its,ite
+      if ((IK .gt. (KMAX/2+1)) .and. (IL.gt.LMAX/2) ) then
+        SPT_AMP(IL,IK)      = ZCONSTF0T*ZCHIT(LMAX-IL+2,KMAX-IK+2)
+      endif
+      ENDDO
+      ENDDO
+
+      IF (stoch_vertstruc_opt>0) then
+      VERTSTRUCC=0.0
+      VERTSTRUCS=0.0
+      RHOKLMAX= sqrt(KMAX**2/DY**2 + LMAX**2/DX**2)
+      ZREF=32.0
+      DO ILEV=kds,kde
+        DO IK=jts,jte
+          DO IL=its,ite
+          if (IL.le.(LMAX/2)) then
+            RHOKL   = sqrt((IK+1)**2/DY**2 + (IL+1)**2/DX**2)
+            EPS     = ((RHOKLMAX - RHOKL)/ RHOKLMAX)  * (ILEV/ZREF) * RPI
+            VERTSTRUCC(IL,ILEV,IK) =  cos ( eps* (IL+1) )
+            VERTSTRUCS(IL,ILEV,IK) =  sin ( eps* (IL+1) )
+            VERTSTRUCC (LMAX-IL+1,ILEV,IK) =   cos ( eps* (IL+1) )
+            VERTSTRUCS (LMAX-IL+1,ILEV,IK) = - sin ( eps* (IL+1) )
+          endif
+          ENDDO
+        ENDDO
+      ENDDO
+      ENDIF
+
+      IF (stoch_vertstruc_opt>1) then
+      ! Taper off below 1300m, 1300m is at about 900hPa (correct?), for 40 levels this pressure is close to level 12  
+      ! => taper off for levels lower than level 14: tanh(ilev/xnorm)
+      ! Also taper off top: tanh(kde-ilev)
+      ! CAREFUL: HARDWIRED TO 40 LEVELS!!!
+        VERTAMPT=0.0
+        VERTAMPUV=0.0
+        DO ILEV=1,kde-3
+           VERTAMPT(ILEV+3)=tanh(float(kde-ilev-3))+tanh(float(ilev)/2.5)-1.0
+        ENDDO
+      ENDIF
+
+!      Set seed for random number generator 
+
+       CALL random_seed(size=how_many)
+      IF ( ALLOCATED(iseed)) DEALLOCATE(iseed)
+       ALLOCATE(iseed(how_many))
+       IF ( wrf_dm_on_monitor() ) THEN
+          iseed=0
+          iseed(1) = iseed1
+          iseed(2) = iseed2
+          call random_seed(put=iseed(1:how_many))   ! set random seed on monitor.
+          call random_seed(get=iseed(1:how_many))
+       END IF
+#ifdef DM_PARALLEL
+       CALL wrf_dm_bcast_integer ( iseed , how_many )
+       CALL random_seed(put=iseed(1:how_many))   ! set random seed on each proc
+#endif
+
+! Initialization of SPTFORCC 
+       DO IK=jts,jte
+         DO IL=its,ite
+           call gauss_noise(z)
+           SPTFORCC(IL,IK) = (1.-phi**2)**(0.5)*SPT_AMP(IL,IK)*z
+           call gauss_noise(z)
+           SPTFORCS(IL,IK) = (1.-phi**2)**(0.5)*SPT_AMP(IL,IK)*z
+         ENDDO
+       ENDDO
+
+
+       END subroutine SETUP_STOCH_SPPT
 
 !     ------------------------------------------------------------------
 !!************** UPDATE STOCHASTIC PATTERN IN WAVENUMBER SPACE**********
@@ -349,7 +584,6 @@ contains
       subroutine UPDATE_STOCH(                                         & 
                        SPSTREAMFORCS,SPSTREAMFORCC,SPTFORCS,SPTFORCC,  &
                        SPT_AMP,SPSTREAM_AMP,                           &
-                       itime,ij,                                       & 
                        ids, ide, jds, jde, kds, kde,                   &
                        ims, ime, jms, jme, kms, kme,                   &
                        its, ite, jts, jte, kts, kte                    )
@@ -362,50 +596,45 @@ contains
                                                 ims, ime, jms, jme, kms, kme,   &
                                                 its, ite, jts, jte, kts, kte
     
-      REAL :: Z, thresh 
-      INTEGER ::IL, IK,LMAX,KMAX,i,itime,ij,llmax,kkmax,how_many
+      REAL :: Z
+      REAL, PARAMETER :: thresh = 3.0 
+      INTEGER ::IL, IK,LMAX,KMAX
       LOGICAL :: LGAUSS
 
       KMAX=(jde-jds)+1 !NLAT
       LMAX=(ide-ids)+1 !NATX
 
-
 !     Pick the distribution of the noise
 !     Random noise uses global indexes to ensure necessary symmetries and anti-symmetries
 !     of random forcing when run on multiple processors
-
-      CALL random_seed(size=how_many)
-      call random_seed(put=iseed)
-
-      LGAUSS=.false.
-      thresh=3.0  ! Set threshold to ensure stability
+      LGAUSS=.true.
       IF (LGAUSS) then
-        DO IK=jds,int(jde/2.0)+2
+        DO IK=jds,jde
           DO IL=ids,ide
-            do 
-              call gauss_noise(z)
-              if (abs(z).le.thresh) exit
-            enddo
-            ZRANDNOSS1(IL,IK)=z
-            do 
-              call gauss_noise(z)
-              if (abs(z).le.thresh) exit
-            enddo
-            ZRANDNOSC1(IL,IK)=z
-            do 
-              call gauss_noise(z)
-              if (abs(z).le.thresh) exit
-            enddo
-            ZRANDNOSS2(IL,IK)=z
-            do 
-              call gauss_noise(z)
-              if (abs(z).le.thresh) exit
-            enddo
-            ZRANDNOSC2(IL,IK)=z
+           do
+            call gauss_noise(z)
+            if (abs(z)<thresh) exit
+           ENDDO
+           ZRANDNOSS1(IL,IK)=z
+           do
+            call gauss_noise(z)
+            if (abs(z)<thresh) exit
+           ENDDO
+           ZRANDNOSC1(IL,IK)=z
+           do
+            call gauss_noise(z)
+            if (abs(z)<thresh) exit
+           ENDDO
+           ZRANDNOSS2(IL,IK)=z
+           do
+            call gauss_noise(z)
+            if (abs(z)<thresh) exit
+           ENDDO
+           ZRANDNOSC2(IL,IK)=z
           ENDDO
         ENDDO
       ELSE
-        DO IK=jds,int(jde/2.0)+2
+        DO IK=jds,jde
           DO IL=ids,ide
             CALL RANDOM_NUMBER(z)
             ZRANDNOSS1(IL,IK)=z-0.5
@@ -418,47 +647,58 @@ contains
           ENDDO
         ENDDO
       ENDIF
-      call random_seed(get=iseed)
 
 !     Note: There are symmetries and anti-symmetries to ensure real-valued back transforms
+! for symmetric part: left and right half axis symmetric
+
       DO IK=jts,jte
-      if (IK.le.(KMAX/2)) then
+      if ((IK.le.(KMAX/2+1)) .and. (IK>1)) then ! Upper half
         DO IL=its,ite
-          SPSTREAMFORCC(IL,IK)  = (1.-ALPH)*SPSTREAMFORCC(IL,IK) + SPSTREAM_AMP(IL,IK)*(ZRANDNOSC1(IL,IK))
-          SPSTREAMFORCS(IL,IK)  = (1.-ALPH)*SPSTREAMFORCS(IL,IK) + SPSTREAM_AMP(IL,IK)*(ZRANDNOSS1(IL,IK))
-          SPTFORCC(IL,IK)       = (1.-ALPH)*SPTFORCC(IL,IK)      + SPT_AMP(IL,IK)     *(ZRANDNOSC2(IL,IK))
-          SPTFORCS(IL,IK)       = (1.-ALPH)*SPTFORCS(IL,IK)      + SPT_AMP(IL,IK)     *(ZRANDNOSS2(IL,IK))
+          SPSTREAMFORCC(IL,IK)  = (1.-ALPH_PSI)*SPSTREAMFORCC(IL,IK) + SPSTREAM_AMP(IL,IK)* ZRANDNOSC1(IL,IK)
+          SPSTREAMFORCS(IL,IK)  = (1.-ALPH_PSI)*SPSTREAMFORCS(IL,IK) + SPSTREAM_AMP(IL,IK)* ZRANDNOSS1(IL,IK) 
+          SPTFORCC(IL,IK)       = (1.-ALPH_T)*SPTFORCC(IL,IK)      + SPT_AMP(IL,IK)     * ZRANDNOSC2(IL,IK)  
+          SPTFORCS(IL,IK)       = (1.-ALPH_T)*SPTFORCS(IL,IK)      + SPT_AMP(IL,IK)     * ZRANDNOSS2(IL,IK)  
+        ENDDO
+      ELSEIF (IK==1) then
+        DO IL=its,ite
+        if ((IL.le.(LMAX/2+1))) then
+          SPSTREAMFORCC(IL,IK)  = (1.-ALPH_PSI)*SPSTREAMFORCC(IL,IK) + SPSTREAM_AMP(IL,IK)* ZRANDNOSC1(IL,IK)
+          SPSTREAMFORCS(IL,IK)  = (1.-ALPH_PSI)*SPSTREAMFORCS(IL,IK) + SPSTREAM_AMP(IL,IK)* ZRANDNOSS1(IL,IK) 
+          SPTFORCC(IL,IK)       = (1.-ALPH_T)*SPTFORCC(IL,IK)      + SPT_AMP(IL,IK)     * ZRANDNOSC2(IL,IK)  
+          SPTFORCS(IL,IK)       = (1.-ALPH_T)*SPTFORCS(IL,IK)      + SPT_AMP(IL,IK)     * ZRANDNOSS2(IL,IK)  
+        elseif ((IL.gt.(LMAX/2+1))) then
+          SPSTREAMFORCC(IL,IK)  = (1.-ALPH_PSI)*SPSTREAMFORCC(IL,IK) + SPSTREAM_AMP(IL,IK)* ZRANDNOSC1(LMAX-IL+2,IK)
+          SPSTREAMFORCS(IL,IK)  = (1.-ALPH_PSI)*SPSTREAMFORCS(IL,IK) - SPSTREAM_AMP(IL,IK)* ZRANDNOSS1(LMAX-IL+2,IK) 
+          SPTFORCC(IL,IK)       = (1.-ALPH_T)*SPTFORCC(IL,IK)      + SPT_AMP(IL,IK)     * ZRANDNOSC2(LMAX-IL+2,IK)  
+          SPTFORCS(IL,IK)       = (1.-ALPH_T)*SPTFORCS(IL,IK)      - SPT_AMP(IL,IK)     * ZRANDNOSS2(LMAX-IL+2,IK)  
+        endif
+        ENDDO
+      ENDIF
+      ENDDO
+
+      DO IK=jts,jte
+      if (IK.gt.(KMAX/2+1)) then ! Lower half
+        DO IL=its,ite
+          if (IL.le.(LMAX/2+1).and.(IL.gt.1)) then !lower left 
+           SPSTREAMFORCC(IL,IK) = (1.-ALPH_PSI)* SPSTREAMFORCC(IL,IK) + SPSTREAM_AMP(IL,IK) * ZRANDNOSC1(LMAX-IL+2,KMAX-IK+2)
+           SPSTREAMFORCS(IL,IK) = (1.-ALPH_PSI)* SPSTREAMFORCS(IL,IK) - SPSTREAM_AMP(IL,IK) * ZRANDNOSS1(LMAX-IL+2,KMAX-IK+2)
+           SPTFORCC(IL,IK)      = (1.-ALPH_T)* SPTFORCC(IL,IK)      + SPT_AMP(IL,IK)      * ZRANDNOSC2(LMAX-IL+2,KMAX-IK+2)
+           SPTFORCS(IL,IK)      = (1.-ALPH_T)* SPTFORCS(IL,IK)      - SPT_AMP(IL,IK)      * ZRANDNOSS2(LMAX-IL+2,KMAX-IK+2)
+          elseif (IL.eq.1) then !don't exceed index
+           SPSTREAMFORCC(IL,IK) = (1.-ALPH_PSI)* SPSTREAMFORCC(IL,IK) + SPSTREAM_AMP(IL,IK) * ZRANDNOSC1(        1,KMAX-IK+2)
+           SPSTREAMFORCS(IL,IK) = (1.-ALPH_PSI)* SPSTREAMFORCS(IL,IK) - SPSTREAM_AMP(IL,IK) * ZRANDNOSS1(        1,KMAX-IK+2)
+           SPTFORCC(IL,IK)      = (1.-ALPH_T)* SPTFORCC(IL,IK)      + SPT_AMP(IL,IK)      * ZRANDNOSC2(        1,KMAX-IK+2)
+           SPTFORCS(IL,IK)      = (1.-ALPH_T)* SPTFORCS(IL,IK)      - SPT_AMP(IL,IK)      * ZRANDNOSS2(        1,KMAX-IK+2)
+          elseif (IL.gt.(LMAX/2+1)) then !lower right
+           SPSTREAMFORCC(IL,IK) = (1.-ALPH_PSI)* SPSTREAMFORCC(IL,IK) + SPSTREAM_AMP(IL,IK) * ZRANDNOSC1(LMAX-IL+2,KMAX-IK+2)
+           SPSTREAMFORCS(IL,IK) = (1.-ALPH_PSI)* SPSTREAMFORCS(IL,IK) - SPSTREAM_AMP(IL,IK) * ZRANDNOSS1(LMAX-IL+2,KMAX-IK+2)
+           SPTFORCC(IL,IK)      = (1.-ALPH_T)* SPTFORCC(IL,IK)      + SPT_AMP(IL,IK)      * ZRANDNOSC2(LMAX-IL+2,KMAX-IK+2)
+           SPTFORCS(IL,IK)      = (1.-ALPH_T)* SPTFORCS(IL,IK)      - SPT_AMP(IL,IK)      * ZRANDNOSS2(LMAX-IL+2,KMAX-IK+2)
+          endif
         ENDDO
       endif
       ENDDO
 
-
-      DO IK=jts,jte
-      if (IK.ge.(KMAX/2+1))then
-        DO IL=its,ite
-        if (IL>1) then
-          SPSTREAMFORCC(IL,IK)=   (1.-ALPH)*      SPSTREAMFORCC(IL,IK) + &
-                                                  SPSTREAM_AMP(IL,IK) * ZRANDNOSC1(LMAX-IL+2,KMAX-IK+2)
-          SPSTREAMFORCS(IL,IK)= -((1.-ALPH)*(-1.0*SPSTREAMFORCS(IL,IK))+ & 
-                                                  SPSTREAM_AMP(IL,IK) * ZRANDNOSS1(LMAX-IL+2,KMAX-IK+2))
-          SPTFORCC(IL,IK)=   (1.-ALPH)*      SPTFORCC(IL,IK) + &
-                                                  SPT_AMP(IL,IK) * ZRANDNOSC2(LMAX-IL+2,KMAX-IK+2)
-          SPTFORCS(IL,IK)= -((1.-ALPH)*(-1.0*SPTFORCS(IL,IK))+ & 
-                                                  SPT_AMP(IL,IK) * ZRANDNOSS2(LMAX-IL+2,KMAX-IK+2))
-        else
-          SPSTREAMFORCC(1,IK) =   (1.-ALPH) *     SPSTREAMFORCC(1,IK)  + & 
-                                                  SPSTREAM_AMP(1,IK)  * ZRANDNOSC1(1,KMAX-IK+2)
-          SPSTREAMFORCS(1,IK) = -((1.-ALPH)*(-1.0*SPSTREAMFORCS(1,IK))+ & 
-                                                  SPSTREAM_AMP(1,IK)  * ZRANDNOSS1(1,KMAX-IK+2))
-          SPTFORCC(1,IK) =   (1.-ALPH) *     SPTFORCC(1,IK)  + & 
-                                                  SPT_AMP(1,IK)  * ZRANDNOSC2(1,KMAX-IK+2)
-          SPTFORCS(1,IK) = -((1.-ALPH)*(-1.0*SPTFORCS(1,IK))+ & 
-                                                  SPT_AMP(1,IK)  * ZRANDNOSS2(1,KMAX-IK+2))
-         endif
-       ENDDO
-     endif
-     ENDDO
-     
 
      END subroutine UPDATE_STOCH
 !     ------------------------------------------------------------------
@@ -570,11 +810,87 @@ contains
 
        END SUBROUTINE UPDATE_STOCH_TEN
 !     ------------------------------------------------------------------
+!!************** PERTURB PHYSICS TENDENCIES (except T) FOR SPPT *******************
+!     ------------------------------------------------------------------
+      subroutine perturb_physics_tend(gridpointvariance, & 
+                       sppt_thresh_fact,rstoch,                 & 
+                       ru_tendf,rv_tendf,t_tendf,moist_tend,            &
+                       ids, ide, jds, jde, kds, kde,                    &
+                       ims, ime, jms, jme, kms, kme,                    &
+                       its, ite, jts, jte, kts, kte                )
+
+!      This subroutine add stochastic perturbations of the form 
+!
+!                  rx_tendf(i,k,j)      = rx_tendf(i,k,j)*(1.0 + rstoch(i,k,j))
+!
+!       to the tendencies of  U, V, and Q. 
+!       Since the temperature perturbations do not include the micro-physics
+!       tendencies at this point, the stochastic tendency perturbations to 
+!       temperature are added in subroutine rk_addtend_dry of module module_em.F
+
+       IMPLICIT NONE
+       INTEGER , INTENT(IN)        ::  ids, ide, jds, jde, kds, kde,   &
+                                       ims, ime, jms, jme, kms, kme,   &
+                                       its, ite, jts, jte, kts, kte
+
+       REAL , DIMENSION(ims:ime , kms:kme, jms:jme),INTENT(INOUT) ::   &
+                                        ru_tendf, rv_tendf, t_tendf,moist_tend,   & 
+                                        rstoch
+       REAL :: gridpointvariance ,thresh,sppt_thresh_fact
+
+       INTEGER :: I,J,K
+
+! Here the random process at each gridpoint is capped if it exceeds a value thresh 
+
+       thresh=sppt_thresh_fact*sqrt(gridpointvariance)
+       DO j = jts,jte
+         DO k = kts,kte-1
+           DO i = its,ite 
+            if (rstoch(i,k,j).lt.-thresh) then
+                rstoch(i,k,j)=-thresh
+            endif
+            if (rstoch(i,k,j).gt.thresh) then
+                rstoch(i,k,j)=thresh
+            endif
+           ENDDO
+         ENDDO
+       ENDDO
+
+! Perturb the tendencies of u,v,q,t.
+       DO j = jts,MIN(jde-1,jte)
+         DO k = kts,kte-1
+           DO i = its,ite 
+              ru_tendf(i,k,j)      = ru_tendf(i,k,j)*(1.0 + rstoch(i,k,j))
+           ENDDO
+         ENDDO
+       ENDDO
+
+       DO j = jts,jte
+         DO k = kts,kte-1
+            DO i = its,MIN(ide-1,ite)
+              rv_tendf(i,k,j)      = rv_tendf(i,k,j)*(1.0 + rstoch(i,k,j))
+           ENDDO
+         ENDDO
+       ENDDO
+
+       DO j = jts,MIN(jde-1,jte)
+         DO k = kts,kte-1
+           DO i = its,MIN(ide-1,ite)
+              moist_tend(i,k,j)    = moist_tend(i,k,j)*(1.0 + rstoch(i,k,j))
+              t_tendf   (i,k,j)    =    t_tendf(i,k,j)*(1.0 + rstoch(i,k,j))
+           ENDDO
+         ENDDO
+       ENDDO
+
+      end subroutine perturb_physics_tend
+
+!     ------------------------------------------------------------------
 !!************** TRANSFORM FROM SPHERICAL HARMONICS TO GRIDPOILT SPACE**
 !     ------------------------------------------------------------------
        subroutine SP2GP_prep(                                               & 
                        SPSTREAMFORCS,SPSTREAMFORCC,SPTFORCS,SPTFORCC,  &             
                        VERTSTRUCC,VERTSTRUCS,                          &
+                       VERTAMPT,VERTAMPUV,                       &
                        RU_REAL,RV_REAL,RT_REAL,                        & 
                        RU_IMAG,RV_IMAG,RT_IMAG,                        & 
                        dx,dy,stoch_vertstruc_opt,                      & 
@@ -589,6 +905,7 @@ contains
       REAL, DIMENSION    (ims:ime , jms:jme)          :: SPSTREAMFORCS,SPSTREAMFORCC,SPTFORCS,SPTFORCC
       REAL, DIMENSION    (ims:ime , kms:kme, jms:jme) :: RU_REAL,RV_REAL,RT_REAL,RU_IMAG,RV_IMAG,RT_IMAG, & 
                                                          VERTSTRUCC,VERTSTRUCS
+      REAL, DIMENSION (kms:kme          )       :: VERTAMPT,VERTAMPUV
       INTEGER :: IK,IL,ILEV,NLAT,NLON,stoch_vertstruc_opt
       REAL    :: dx,dy,RY,RX
 
@@ -627,6 +944,30 @@ contains
           rv_imag(IL,ILEV,IK)  = 2*RPI/RX* wavenumber_l(IL) *&
                              (+SPSTREAMFORCC(IL,IK)*VERTSTRUCC(IL,ILEV,IK) - SPSTREAMFORCS(IL,IK)*VERTSTRUCS(IL,ILEV,IK))
       
+        ENDDO
+        ENDDO
+
+
+       elseif (stoch_vertstruc_opt==3) then
+
+        DO IL=its,ite
+        DO IK=jts,jte
+          rt_real(IL,ILEV,IK)  = SPTFORCC(IL,IK)*VERTSTRUCC(IL,ILEV,IK)      - SPTFORCS(IL,IK)*VERTSTRUCS(IL,ILEV,IK)
+          rt_real(IL,ILEV,IK)  = rt_real(IL,ILEV,IK)  * VERTAMPT(ILEV)
+          rt_imag(IL,ILEV,IK)  = SPTFORCC(IL,IK)*VERTSTRUCS(IL,ILEV,IK)      + SPTFORCS(IL,IK)*VERTSTRUCC(IL,ILEV,IK)
+          rt_imag(IL,ILEV,IK)  = rt_imag(IL,ILEV,IK)  * VERTAMPT(ILEV)
+          ru_real(IL,ILEV,IK)  = 2*RPI/RY*  wavenumber_k(IK) *&
+                            (+SPSTREAMFORCC(IL,IK)*VERTSTRUCS(IL,ILEV,IK) + SPSTREAMFORCS(IL,IK)*VERTSTRUCC(IL,ILEV,IK))
+          ru_real(IL,ILEV,IK)  = ru_real(IL,ILEV,IK)  * VERTAMPUV(ILEV)
+          ru_imag(IL,ILEV,IK)  = 2*RPI/RY*  wavenumber_k(IK) *&
+                            (-SPSTREAMFORCC(IL,IK)*VERTSTRUCC(IL,ILEV,IK) + SPSTREAMFORCS(IL,IK)*VERTSTRUCS(IL,ILEV,IK))
+          ru_imag(IL,ILEV,IK)  = ru_imag(IL,ILEV,IK)  * VERTAMPUV(ILEV)
+          rv_real(IL,ILEV,IK)  = 2*RPI/RX* wavenumber_l(IL) *&
+                             (-SPSTREAMFORCC(IL,IK)*VERTSTRUCS(IL,ILEV,IK) - SPSTREAMFORCS(IL,IK)*VERTSTRUCC(IL,ILEV,IK))
+          rv_real(IL,ILEV,IK)  = rv_real(IL,ILEV,IK)  * VERTAMPUV(ILEV)
+          rv_imag(IL,ILEV,IK)  = 2*RPI/RX* wavenumber_l(IL) *&
+                             (+SPSTREAMFORCC(IL,IK)*VERTSTRUCC(IL,ILEV,IK) - SPSTREAMFORCS(IL,IK)*VERTSTRUCS(IL,ILEV,IK))
+          rv_imag(IL,ILEV,IK)  = rv_imag(IL,ILEV,IK)  * VERTAMPUV(ILEV)
         ENDDO
         ENDDO
 
@@ -893,4 +1234,32 @@ contains
 
      end subroutine gauss_noise
 !     ------------------------------------------------------------------
-      end module module_stoch
+     SUBROUTINE rand_seed (config_flags, seed1, seed2,nens )
+      USE module_configure
+      IMPLICIT NONE
+!
+!  Structure that contains run-time configuration (namelist) data for domain
+      TYPE (grid_config_rec_type)                       :: config_flags
+!
+! Arguments
+     INTEGER, INTENT(OUT) :: seed1, seed2
+     INTEGER, INTENT(IN ) :: nens
+
+! Local
+      integer            :: date_time(8)
+      integer*8          :: yyyy,mmdd,newtime
+      integer*8          :: ihr,isc,idiv
+      character (len=10) :: real_clock(3), time
+!
+      LOGICAL :: is_print = .false.
+!
+        newtime = config_flags%start_year * ( config_flags%start_month*100+config_flags%start_day) + config_flags%start_hour
+
+        idiv=2;
+        seed1 = newtime+nens*1000000
+        seed2 = mod(newtime+nens*1000000,idiv)
+        if(is_print) print *,'Rand_seed (newtime/idiv):',newtime,idiv,nens
+
+        end SUBROUTINE rand_seed
+
+        end module module_stoch

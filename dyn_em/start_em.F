@@ -26,7 +26,7 @@
    USE module_physics_init
    USE module_lightning_driver, ONLY : lightning_init
    USE module_fr_fire_driver_wrf, ONLY : fire_driver_em_init
-   USE module_stoch, ONLY : SETUP_STOCH, update_stoch
+   USE module_stoch, ONLY : SETUP_STOCH_SPPT,SETUP_STOCH_SKEBS,rand_seed, update_stoch
 #ifdef WRF_CHEM
    USE module_aerosols_sorgam, ONLY: sum_pm_sorgam
    USE module_gocart_aerosols, ONLY: sum_pm_gocart
@@ -182,29 +182,74 @@
        first_trip_for_this_domain = .TRUE.
    ENDIF
 
-!   --- SETUP AND INITIALIZE STOCHASTIC KINETIC ENERGY BACKSCATTER SCHEME ---
+!   --- SETUP AND INITIALIZE STOCHASTIC PERTURBATION SCHEMES ---
 
    IF ( first_trip_for_this_domain ) THEN
      grid%did_stoch = .FALSE.
    END IF
 
    IF ( ( grid%id == 1 ) .AND. &
-        ( NINT(grid%stoch_force_global_opt) == 1 ) .AND. &
+        ( grid%stoch_force_global_opt == 1 ) .AND. &
         ( .NOT. grid%did_stoch ) ) THEN
 
      grid%did_stoch = .TRUE.
+     IF ( wrf_dm_on_monitor () ) THEN
+       CALL rand_seed ( config_flags, grid%SEED1, grid%SEED2, grid%NENS )
+     ENDIF
+#ifdef DM_PARALLEL
+     CALL wrf_dm_bcast_bytes ( grid%SEED1, IWORDSIZE )
+     CALL wrf_dm_bcast_bytes ( grid%SEED2, IWORDSIZE )
+#endif
 
-     call SETUP_STOCH(grid%VERTSTRUCC,grid%VERTSTRUCS,                   &
+     IF (grid%stoch_force_opt==1) then
+     grid%SPTFORCC=0.0
+     grid%SPTFORCS=0.0
+     call SETUP_STOCH_SKEBS(grid%VERTSTRUCC,grid%VERTSTRUCS,                   &
                       grid%SPT_AMP,grid%SPSTREAM_AMP,                    &
-                      grid%stoch_vertstruc_opt,                          & 
-                      grid%time_step,grid%DX,grid%DY,grid%NENS,          &
+                      grid%VERTAMPT,grid%VERTAMPUV,                      &
+                      grid%stoch_vertstruc_opt,                          &
+                      grid%SEED1,grid%SEED2,grid%time_step,              &
+                      grid%DX,grid%DY,                                   &
                       grid%TOT_BACKSCAT_PSI,grid%TOT_BACKSCAT_T,         &
+                      grid%ZTAU_PSI,grid%ZTAU_T,grid%REXPONENT_PSI,grid%REXPONENT_T,               &
+                      grid%KMINFORC,grid%KMAXFORC,grid%LMINFORC,grid%LMAXFORC,     &
+                      grid%KMINFORCT,grid%KMAXFORCT,grid%LMINFORCT,grid%LMAXFORCT, &
+                      grid%KMAXFORCH,grid%LMAXFORCH,grid%KMAXFORCTH,grid%LMAXFORCTH, &
+                      grid%ZSIGMA2_EPS,grid%ZSIGMA2_ETA,                          &
                       ids, ide, jds, jde, kds, kde,                      &
                       ims, ime, jms, jme, kms, kme,                      &
                       its, ite, jts, jte, kts, kte                       )
-    
+     END IF
+     IF (grid%stoch_force_opt==2) then
+
+        call SETUP_STOCH_SPPT(grid%VERTSTRUCC,grid%VERTSTRUCS,            &
+                       grid%SPT_AMP,                                      &
+                       grid%SPTFORCC,grid%SPTFORCS,                       &
+                       grid%VERTAMPT,grid%VERTAMPUV,                      &
+                       grid%stoch_vertstruc_opt,                          &
+                       grid%SEED1,grid%SEED2,grid%time_step,              &
+                       grid%DX,grid%DY,                                   &
+                       grid%gridpointvariance,grid%l_sppt,grid%tau_sppt,  &
+                       grid%KMINFORCT,grid%KMAXFORCT,grid%LMINFORCT,grid%LMAXFORCT, &
+                       grid%KMAXFORCTH,grid%LMAXFORCTH, &
+                       ids, ide, jds, jde, kds, kde,                      &
+                       ims, ime, jms, jme, kms, kme,                      &
+                       its, ite, jts, jte, kts, kte                       )
+     ENDIF 
+     do i=1,600
+     CALL UPDATE_STOCH(grid%SPSTREAMFORCS,grid%SPSTREAMFORCC,           &
+                      grid%SPTFORCS,grid%SPTFORCC,                        &
+                      grid%SPT_AMP,grid%SPSTREAM_AMP,                     &
+                      ids, ide, jds, jde, kds, kde,                       &
+                      ims, ime, jms, jme, kms, kme,                       &
+                      its, ite, jts, jte, kts, kte                       )
+     enddo
+
+
     END IF
-!   --- END SETUP STOCHASTIC KINETIC ENERGY BACKSCATTER SCHEME ----------
+!   --- END SETUP STOCHASTIC PERTURBATION SCHEMES ----------
+
+
 
 ! wig: Add a combined exponential+linear weight on the mother boundaries
 !      following code changes by Ruby Leung. For the nested grid, there

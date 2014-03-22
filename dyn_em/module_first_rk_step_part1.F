@@ -261,7 +261,6 @@ BENCH_START(rad_driver_tim)
      &        ,GMT=grid%gmt            ,GSW=grid%gsw            ,HBOT=grid%hbot      &
      &        ,HTOP=grid%htop          ,HBOTR=grid%hbotr        ,HTOPR=grid%htopr    &
      &        ,ICLOUD=config_flags%icloud                                            &
-     &        ,ICLOUD_CU=config_flags%icloud_cu                                      &
      &        ,ITIMESTEP=grid%itimestep,JULDAY=grid%julday      , JULIAN=grid%julian &
      &        ,JULYR=grid%julyr        ,LW_PHYSICS=config_flags%ra_lw_physics        &
      &        ,NCFRCV=grid%ncfrcv      ,NCFRST=grid%ncfrst      ,NPHS=1              &
@@ -363,8 +362,8 @@ BENCH_START(rad_driver_tim)
      &        ,AEROSOLC_2=grid%aerosolc_2, M_HYBI0=grid%m_hybi                      &
      &        ,ABSTOT=grid%abstot, ABSNXT=grid%absnxt, EMSTOT=grid%emstot                &
      &        ,RADTACTTIME=grid%radtacttime                                         &  
-     &        ,CU_RAD_FEEDBACK=config_flags%cu_rad_feedback                &
-     &        ,QC_ADJUST=grid%GD_CLOUD_B , QI_ADJUST=grid%GD_CLOUD2_B         &
+     &        ,ICLOUD_CU=config_flags%ICLOUD_CU                            &
+     &        ,QC_CU=grid%QC_CU , QI_CU=grid%QI_CU                         &
 #ifdef WRF_CHEM
      &        ,AER_RA_FEEDBACK=config_flags%aer_ra_feedback                &
      &        ,PM2_5_DRY=grid%pm2_5_dry, PM2_5_WATER=grid%pm2_5_water               &
@@ -960,7 +959,7 @@ BENCH_START(cu_driver_tim)
      &             ,RAINC=grid%rainc   ,RAINCV=grid%raincv   ,PRATEC=grid%pratec       &
      &             ,NCA=grid%nca                                                       &
      &             ,CLDFRA_DP=grid%cldfra_dp  ,CLDFRA_SH=grid%cldfra_sh                & ! ckay for subgrid cloud
-     &             ,gd_cloud_b=grid%gd_cloud_b ,gd_cloud2_b=grid%gd_cloud2_b           &
+     &             ,QC_CU=grid%QC_CU ,QI_CU=grid%QI_CU                                 &
      &             ,HTOP=grid%cutop     ,HBOT=grid%cubot       ,KPBL=grid%kpbl         &
      &             ,Z=grid%z ,Z_AT_W=grid%z_at_w ,MAVAIL=grid%mavail ,PBLH=grid%pblh   &
      &             ,DZ8W=dz8w     ,P8W=grid%p_hyd_w, PSFC=grid%psfc, TSK=grid%tsk      &
@@ -1062,9 +1061,9 @@ BENCH_END(cu_driver_tim)
       !$OMP PRIVATE ( ij )
       DO ij = 1 , grid%num_tiles
            call convtrans_prep(grid%gd_cloud,grid%gd_cloud2,grid%gd_cloud_a,&
-     &          grid%gd_cloud_b,grid%raincv,grid%raincv_a,grid%raincv_b,     &
+     &          grid%QC_CU,grid%raincv,grid%raincv_a,grid%raincv_b,     &
      &          grid%gd_cldfr,moist,p_QV,p_QC,p_qi,T_PHY,P_PHY,num_moist,    &
-     &          grid%gd_cloud2_a,grid%gd_cloud2_b,grid%convtrans_avglen_m,&
+     &          grid%gd_cloud2_a,grid%QI_CU,grid%convtrans_avglen_m,&
      &          adapt_step_flag,curr_secs,                &
      &          grid%itimestep,grid%dt,                                      &
      &          config_flags%cu_physics,                                     &

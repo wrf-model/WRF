@@ -18,7 +18,7 @@ CONTAINS
                      ,cudtacttime                                     & 
                      ,rainc,raincv,pratec,nca                         &
                      ,cldfra_dp,cldfra_sh                             & !ckay for subgrid cloud
-                     ,gd_cloud_b,gd_cloud2_b                          &
+                     ,QC_CU,QI_CU                                     &
                      ,z,z_at_w,dz8w,mavail,pblh,p8w,psfc,tsk          &
                      ,tke_pbl, ust                                    &
                      ,forcet,forceq,w0avg,stepcu,gsw                  &
@@ -441,8 +441,8 @@ CONTAINS
                   dp3d, du3d, ed3d, eu3d, md3d, mu3d
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
-         OPTIONAL, INTENT(INOUT) ::                              &
-                  GD_CLOUD_B,GD_CLOUD2_B
+                  INTENT(INOUT) ::                               &
+                  QC_CU,QI_CU
                   
    REAL, DIMENSION( ims:ime , jms:jme , 1:ensdim ),              &
           OPTIONAL,                                              &
@@ -730,7 +730,7 @@ CONTAINS
                ,F_QI=f_qi,F_QS=f_qs                             &
                ,CLDFRA_DP_KF=cldfra_dp                          & ! ckay for sub-grid cloud
                ,CLDFRA_SH_KF=cldfra_sh                          &
-               ,QC_KF=gd_cloud_b,QI_KF=gd_cloud2_b              &
+               ,QC_KF=QC_CU,QI_KF=QI_CU                         &
                                                                 )
 
      CASE (GDSCHEME)

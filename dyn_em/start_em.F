@@ -780,7 +780,7 @@ endif
                       grid%raincv_a,grid%raincv_b,                                    &
                       grid%gd_cloud, grid%gd_cloud2,                                  & ! Optional
                       grid%gd_cloud_a, grid%gd_cloud2_a,                              & ! Optional
-                      grid%gd_cloud_b, grid%gd_cloud2_b,                              & ! Optional
+                      grid%QC_CU, grid%QI_CU,                                         & ! Optional
                       ozmixm,grid%pin,                             &     ! Optional
                       grid%aerodm,grid%pina,                       &     ! Optional
                       grid%m_ps_1,grid%m_ps_2,grid%m_hybi,aerosolc_1,aerosolc_2,&  ! Optional

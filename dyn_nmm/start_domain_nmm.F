@@ -2363,7 +2363,7 @@
                grid%ttday,grid%tcosz,grid%julday,grid%gmt,                         &
                GD_CLOUD,GD_CLOUD2,raincv_a,raincv_b,           &
                GD_CLOUD_a,GD_CLOUD2_a,            &
-               GD_CLOUD_B,GD_CLOUD2_B,            &
+               QC_CU,QI_CU,                       &
                TAUAER1,TAUAER2,TAUAER3,TAUAER4,                      &
                GAER1,GAER2,GAER3,GAER4,                              &
                WAER1,WAER2,WAER3,WAER4,                              &

@@ -76,7 +76,7 @@ CONTAINS
                          raincv_a,raincv_b,                      &
                          gd_cloud,gd_cloud2,                     &    ! Optional
                          gd_cloud_a,gd_cloud2_a,                 &    ! Optional
-                         gd_cloud_b,gd_cloud2_b,                 &    ! Optional
+                         QC_CU,QI_CU,                            &    ! Optional
                          ozmixm,pin,                             &    ! Optional
                          aerodm,pina,                            &    ! Optional
                          m_ps_1,m_ps_2,m_hybi,aerosolc_1,aerosolc_2,& ! Optional
@@ -388,7 +388,7 @@ CONTAINS
           INTENT(INOUT   ) ::                                        &
                                gd_cloud, gd_cloud2,                  &
                                gd_cloud_a, gd_cloud2_a,              &
-                               gd_cloud_b, gd_cloud2_b
+                               QC_CU, QI_CU
 
    REAL,  DIMENSION( ims:ime ,  jms:jme )         ,         &
           INTENT(INOUT   ) ::                                        &
@@ -852,8 +852,8 @@ integer myproc
              gd_cloud2(i,k,j) = 0.
              gd_cloud_a(i,k,j) = 0.
              gd_cloud2_a(i,k,j) = 0.
-             gd_cloud_b(i,k,j) = 0.
-             gd_cloud2_b(i,k,j) = 0.
+             QC_CU(i,k,j) = 0.
+             QI_CU(i,k,j) = 0.
           end do
        end do
     end do
@@ -865,6 +865,19 @@ integer myproc
            raincv_b(i,j)=0.
       end do
     end do
+
+!..Determine which cu_rad_feedback option to use 
+
+   config_flags%icloud_cu = 0
+   IF ( config_flags%cu_rad_feedback ) THEN  
+      IF ( config_flags%cu_physics == kfetascheme ) THEN
+         config_flags%icloud_cu = 2
+      ELSE IF ( config_flags%cu_physics == gfscheme .OR. &
+                config_flags%cu_physics == g3scheme .OR. &
+                config_flags%cu_physics == gdscheme ) THEN
+         config_flags%icloud_cu = 1
+      END IF
+   END IF
 
 !..Fill initial starting values of radiative effective radii for
 !.. cloud water (2.51 microns), cloud ice (5.01 microns), and

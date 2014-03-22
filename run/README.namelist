@@ -688,13 +688,13 @@ Namelist variables for controlling the adaptive time step option:
  icloud                              = 1,	; cloud effect to the optical depth in radiation
                                                   (only works for ra_sw_physics = 1,4 and ra_lw_physics = 1,4)
                                                   Since 3.6, this also controls the cloud fraction options
-                                                  1 = with cloud effect, and use cloud fraction option 2
+                                                  1 = with cloud effect, and use cloud fraction option 1
+                                                      (Xu-Randall method) 
                                                   0 = without cloud effect
-                                                  2 = with cloud effect, and use cloud fraction option 1
- icloud_cu                                	; sub-grid cloud effect to the optical depth in radiation
-                                                  currently it works only for KF scheme
-                                                  0 = no sub-grid cloudl effect
-                                                  1 = consider sub-grid cloud effect
+                                                  2 = with cloud effect, and use cloud fraction option 2
+ cu_rad_feedback (max_dom)           = .false.  ; sub-grid cloud effect to the optical depth in radiation
+                                                  currently it works only for GF, G3, GD and KF scheme
+                                                  One also needs to set cu_diag = 1 for GF, G3 and GD schemes
  swrad_scat                          = 1.       ; scattering tuning parameter (default 1. is 1.e-5 m2/kg)
                                                   (works for ra_sw_physics = 1 option only)
  surface_input_source                = 1,	; where landuse and soil category data come from:

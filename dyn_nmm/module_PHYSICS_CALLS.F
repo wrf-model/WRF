@@ -386,8 +386,8 @@
      &                 ,J_START=GRID%J_START,J_END=GRID%J_END           &
      &                 ,KTS=KTS,KTE=KTE,NUM_TILES=GRID%NUM_TILES        &
      &                 ,ITIMESTEP=NTSD,DT=DT                            &
-     &                 ,CU_RAD_FEEDBACK=config_flags%cu_rad_feedback    &
-     &                 ,QC_ADJUST=GD_CLOUD,QI_ADJUST=GD_CLOUD2          &
+     &                 ,ICLOUD_CU=config_flags%ICLOUD_CU                &
+     &                 ,QC_CU=GRID%QC_CU,QI_CU=GRID%QI_CU               &
 ! WRF-Solar variables
                        ,swint_opt=config_flags%swint_opt                &   
      &       ,SWDDIR=grid%swddir,SWDDNI=grid%swddni,SWDDIF=grid%swddif     & ! jararias
@@ -435,7 +435,6 @@
      &                 ,SW_PHYSICS=CONFIG_FLAGS%RA_SW_PHYSICS           &
      &                 ,RADT=RADT,RA_CALL_OFFSET=GRID%RA_CALL_OFFSET    &
      &                 ,STEPRA=NRAD,ICLOUD=config_flags%ICLOUD          &
-     &                 ,ICLOUD_CU=config_flags%ICLOUD_CU                &
      &                 ,WARM_RAIN=WARM_RAIN                             &
      &                 ,SWDOWNC=TOTSWDNC,CLDFRA=CLFR                    &
      &                 ,SWUPT=SWUPT                                     &
@@ -2337,7 +2336,7 @@
       REAL,DIMENSION(:,:,:,:),ALLOCATABLE :: MOIST_TRANS
 !
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME) :: CLDFRA_DP, CLDFRA_SH
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME) :: GD_CLOUD_B, GD_CLOUD2_B
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME) :: QC_CU, QI_CU
 !
       LOGICAL :: RESTART,WARM_RAIN,ETAMP_Regional
       LOGICAL,DIMENSION(IMS:IME,JMS:JME) :: CU_ACT_FLAG
@@ -2657,7 +2656,7 @@
      &                 ,ITIMESTEP=NTSD,DT=DT,DX=GPS                     &
      &                 ,RAINC=RAINC,RAINCV=RAINCV,NCA=NCA               &
      &                 ,CLDFRA_DP=CLDFRA_DP,CLDFRA_SH=CLDFRA_SH         &
-     &                 ,GD_CLOUD_B=GD_CLOUD_B, GD_CLOUD2_B=GD_CLOUD2_B  &
+     &                 ,QC_CU=QC_CU, QI_CU=QI_CU                        &
      &                 ,DZ8W=DZ,P8W=P8W,FORCET=TTEN,FORCEQ=QTEN         &
      &                 ,CLDEFI=CLDEFI,LOWLYR=LOWLYR,XLAND=XLAND         &
      &                 ,CU_ACT_FLAG=CU_ACT_FLAG,WARM_RAIN=WARM_RAIN     &

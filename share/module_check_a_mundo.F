@@ -562,11 +562,15 @@
       DO i = 1, model_config_rec % max_dom
          IF ( ( model_config_rec%cu_rad_feedback(i) .EQV. .TRUE. )  .OR. &
               ( model_config_rec%cu_rad_feedback(i) .EQV. .true. ) ) THEN
-            wrf_err_message = '--- WARNING: Turning on cu_rad_feedback also requires setting cu_diag== 1'
-            CALL wrf_message ( wrf_err_message )
-            model_config_rec%cu_diag(i) = 1
-         ELSE
-            model_config_rec%cu_diag(i) = 0
+            IF ( ( model_config_rec%cu_physics(1) .EQ. GFSCHEME     ) .OR. &
+                 ( model_config_rec%cu_physics(1) .EQ. G3SCHEME     ) .OR. &
+                 ( model_config_rec%cu_physics(1) .EQ. GDSCHEME     ) ) THEN
+               wrf_err_message = '--- WARNING: Turning on cu_rad_feedback also requires setting cu_diag== 1'
+               CALL wrf_message ( wrf_err_message )
+               model_config_rec%cu_diag(i) = 1
+            ELSE
+               model_config_rec%cu_diag(i) = 0
+            END IF
          END IF
       END DO
 

@@ -172,9 +172,11 @@ integer::oops1,oops2
 
       CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
 
-      !   Lake Mask assignment (mchen)
+      !   Lake Mask and depth assignment
+
       CALL nl_get_iswater ( grid%id , grid%iswater )
       CALL nl_get_islake  ( grid%id , grid%islake )
+
       DO j = jts, MIN(jde-1,jte)
          DO i = its, MIN(ide-1,ite)
             IF ( grid%lu_index(i,j) .NE. grid%islake ) THEN
@@ -184,11 +186,26 @@ integer::oops1,oops2
             END IF
          END DO
       END DO
-      grid%lake_depth_flag=FLAG_LAKE_DEPTH
-      IF(FLAG_LAKE_DEPTH.EQ.0.AND.grid%sf_lake_physics.EQ.1) THEN
-      CALL wrf_message ( " Warning: Please rerun WPS to get lake_depth information for lake model" )
-      END IF
 
+      IF ( grid%sf_lake_physics .EQ. 1 ) THEN
+         grid%lake_depth_flag = flag_lake_depth
+         IF ( flag_lake_depth .EQ. 0 ) THEN
+            CALL wrf_message ( " Warning: Please rerun WPS to get lake_depth information for lake model" )
+
+         !  Set lake depth over the ocean to be -2 m, and set the lake depth over land to be -1 m.
+
+         ELSE
+            DO j = jts, MIN(jde-1,jte)
+               DO i = its, MIN(ide-1,ite)
+                  IF      ( ( grid%lu_index(i,j) .NE. grid%islake ) .AND. ( grid%lu_index(i,j) .NE. grid%iswater ) ) THEN
+                     grid%lake_depth = -1
+                  ELSE IF   ( grid%lu_index(i,j) .NE. grid%islake ) THEN
+                     grid%lake_depth = -2
+                  END IF
+               END DO
+            END DO
+         END IF
+      END IF
 
       !  Send out a quick message about the time steps based on the map scale factors.
 

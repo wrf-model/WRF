@@ -1461,6 +1461,8 @@ endif
                          grid%tauaerlw5,grid%tauaerlw6,grid%tauaerlw7,grid%tauaerlw8,           &
                          grid%tauaerlw9,grid%tauaerlw10,grid%tauaerlw11,grid%tauaerlw12,        &
                          grid%tauaerlw13,grid%tauaerlw14,grid%tauaerlw15,grid%tauaerlw16,       &
+                         grid%dgnum4d, grid%dgnumwet4d, grid%dgnum_a1, grid%dgnum_a2,           & 
+                         grid%dgnum_a3, grid%dgnumwet_a1, grid%dgnumwet_a2, grid%dgnumwet_a3,   &
                          grid%pm2_5_dry,grid%pm2_5_water,grid%pm2_5_dry_ec,                &
                          grid%last_chem_time_year,grid%last_chem_time_month,               &
                          grid%last_chem_time_day,grid%last_chem_time_hour,                 &

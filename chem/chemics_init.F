@@ -15,6 +15,8 @@
                tauaerlw5,tauaerlw6,tauaerlw7,tauaerlw8,              &
                tauaerlw9,tauaerlw10,tauaerlw11,tauaerlw12,           &
                tauaerlw13,tauaerlw14,tauaerlw15,tauaerlw16,          &
+               dgnum4d, dgnumwet4d, dgnum_a1, dgnum_a2, dgnum_a3,    & 
+               dgnumwet_a1, dgnumwet_a2, dgnumwet_a3,                & 
                pm2_5_dry,pm2_5_water,pm2_5_dry_ec,                   &
                last_chem_time_year, last_chem_time_month,            &
                last_chem_time_day, last_chem_time_hour,              &
@@ -85,6 +87,15 @@
                                tauaerlw13,tauaerlw14,tauaerlw15,tauaerlw16,  &
                                gaer1,gaer2,gaer3,gaer4,              &
                                waer1,waer2,waer3,waer4
+!-- Arrays needed to output dgnum when restarting
+   REAL, DIMENSION( ims:ime , kms:kme , jms:jme, 3 ) ,              &
+          INTENT(INOUT ) ::                                         &
+                               dgnum4d, dgnumwet4d
+   REAL, DIMENSION( ims:ime , kms:kme , jms:jme ) ,                 &
+          INTENT(INOUT ) ::                                         &
+                               dgnum_a1, dgnum_a2, dgnum_a3,        &
+                               dgnumwet_a1, dgnumwet_a2, dgnumwet_a3
+!-- end dgnum restart arrays
 
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme , 1:4 )   ,         &
           INTENT(INOUT   ) ::                                        &
@@ -360,6 +371,24 @@ call wrf_message("**************************************************************
       ENDIF
     ENDIF
 !--
+    
+!-- Load dgnum arrays when restart is active
+IF ( config_flags%restart ) THEN
+       do j=jts,jte
+          do k=kts,kte
+             do i=its,ite
+                dgnum4d(i, k, j, 1) = dgnum_a1(i, k, j)
+                dgnum4d(i, k, j, 2) = dgnum_a2(i, k, j)
+                dgnum4d(i, k, j, 3) = dgnum_a3(i, k, j)
+                
+                dgnumwet4d(i, k, j, 1) = dgnumwet_a1(i, k, j)
+                dgnumwet4d(i, k, j, 2) = dgnumwet_a2(i, k, j)
+                dgnumwet4d(i, k, j, 3) = dgnumwet_a3(i, k, j)
+             end do
+          end do
+       end do
+ENDIF
+!-- end load dgnum arrays
 
     if( .NOT. config_flags%restart ) then
        do j=jts,jte
@@ -1007,7 +1036,7 @@ ENDIF ghg_block
                ims,ime, jms,jme, kms,kme,                            &
                its,ite, jts,jte, kts,kte                             )
        endif
-       if(config_flags%wetscav_onoff == 1 .and. .NOT. config_flags%restart ) then
+       if(config_flags%wetscav_onoff == 1  ) then 
           if(config_flags%mp_physics == CAMMGMPSCHEME ) then
              call wetscav_cam_mam_driver_init(ids,ide, jds,jde, kds,kde, &
                   ims,ime, jms,jme, kms,kme,                             &

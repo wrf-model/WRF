@@ -1224,7 +1224,7 @@ SUBROUTINE ext_pnc_open_for_write_begin(FileName,Comm,IOComm,SysDepInfo,DataHand
   character (7)                     :: Buffer
   integer                           :: VDimIDs(2)
   integer                           :: info, ierr   ! added for Blue Gene (see NF_CREAT below)
-  character*128                     :: idstr,ntasks_x_str,loccomm_str
+  character*1024                    :: newFileName
   integer                           :: gridid
   integer local_communicator_x, ntasks_x
 
@@ -1249,7 +1249,14 @@ SUBROUTINE ext_pnc_open_for_write_begin(FileName,Comm,IOComm,SysDepInfo,DataHand
   CALL mpi_info_set(info,"romio_ds_write","disable", ierr) ; write(0,*)'mpi_info_set write returns ',ierr
   CALL mpi_info_set(info,"romio_ds_read","disable", ierr) ; write(0,*)'mpi_info_set read returns ',ierr
 # endif
-  stat = NFMPI_CREATE(Comm, FileName, IOR(NF_CLOBBER, NF_64BIT_OFFSET), info, DH%NCID)
+
+  write(newFileName, fmt="(2a)") FileName, ".nc"
+  do i = 1, len_trim(newFileName)
+     if(newFileName(i:i) == '-') newFileName(i:i) = '_'
+     if(newFileName(i:i) == ':') newFileName(i:i) = '_'
+  enddo
+  stat = NFMPI_CREATE(Comm, newFileName, IOR(NF_CLOBBER, NF_64BIT_OFFSET), info, DH%NCID)
+! stat = NFMPI_CREATE(Comm, newFileName, NF_64BIT_OFFSET, info, DH%NCID)
   call mpi_info_free( info, ierr)
 #else
 !!!!!!!!!!!!!!!

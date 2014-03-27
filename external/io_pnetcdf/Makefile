@@ -11,14 +11,14 @@ FCBASEOPTS_NO_G = -ip -fp-model precise -w -ftz -align all -fno-alias $(FORMAT_F
 FCBASEOPTS      = $(FCBASEOPTS_NO_G) $(FCDEBUG)
 FCFLAGS         = $(FCOPTIM) $(FCBASEOPTS)
 
-PNETCDFPATH     = /glade/p/work/huangwei/lib/pnetcdf/1.3.1
+NETCDFPATH     = /glade/p/work/huangwei/lib/pnetcdf/1.3.1
 TRADFLAG        = -traditional
 CPP             = /lib/cpp -P
 AR              = ar
 ARFLAGS         = ru
 M4              = m4
 RANLIB          = ranlib
-DM_FC           = mpfort
+DM_FC           = mpiifort
 FC              = $(DM_FC)
 FFLAGS		= $(FCDEBUG) $(FCBASEOPTS)
 
@@ -31,8 +31,8 @@ CODE    = ext_pnc_get_dom_ti.code \
 	  ext_pnc_put_var_td.code \
 	  ext_pnc_put_var_ti.code \
 	  transpose.code 
-FFLAGS  = $(FCFLAGS) -I$(PNETCDFPATH)/include -I../ioapi_share
-LIBS    = -L$(PNETCDFPATH)/lib -lpnetcdf
+FFLAGS  = $(FCFLAGS) -I$(NETCDFPATH)/include -I../ioapi_share
+LIBS    = -L$(NETCDFPATH)/lib -lpnetcdf
 CPP1    = $(CPP) -P $(TRADFLAG)
 M4      = m4 -Uinclude -Uindex -Ulen
 AR      = ar
@@ -47,15 +47,15 @@ libwrfio_pnf.a:		$(OBJS) $(CODE)
 			$(RANLIB) libwrfio_pnf.a
 
 wrf_io.o:               wrf_io.F90 $(CODE)
-			$(CPP1) -I$(PNETCDFPATH)/include -I../ioapi_share wrf_io.F90 | $(M4) - > wrf_io.f
+			$(CPP1) -I$(NETCDFPATH)/include -I../ioapi_share wrf_io.F90 | $(M4) - > wrf_io.f
 			$(FC) $(FFLAGS) -c wrf_io.f
 
 module_wrfsi_static.o:  module_wrfsi_static.F90
-			$(CPP1) -I$(PNETCDFPATH)/include -I../ioapi_share module_wrfsi_static.F90 > module_wrfsi_static.f
+			$(CPP1) -I$(NETCDFPATH)/include -I../ioapi_share module_wrfsi_static.F90 > module_wrfsi_static.f
 			$(FC) $(FFLAGS) -c module_wrfsi_static.f
 
 field_routines.o:	field_routines.F90 wrf_io.o
-			$(CPP1) -I$(PNETCDFPATH)/include -I../ioapi_share field_routines.F90 > field_routines.f
+			$(CPP1) -I$(NETCDFPATH)/include -I../ioapi_share field_routines.F90 > field_routines.f
 			$(FC) $(FFLAGS) -c field_routines.f
 
 superclean:

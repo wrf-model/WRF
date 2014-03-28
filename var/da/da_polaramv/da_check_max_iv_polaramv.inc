@@ -26,10 +26,10 @@ subroutine da_check_max_iv_polaramv(iv,it,num_qcstat_conv)
       do k = 1, iv%info(polaramv)%levels(n)
         call da_get_print_lvl(iv%polaramv(n)%p(k),ipr)
          if(.not. qc_rej_both)then
-             if(var_wind)then
+             if(wind_sd_polaramv)then
                failed=.false.
                if( iv%polaramv(n)%u(k)%qc >= obs_qc_pointer ) then
-                   call da_max_error_qc (it,iv%info(polaramv), n, iv%polaramv(n)%u(k), max_error_sp,failed)
+                   call da_max_error_qc (it,iv%info(polaramv), n, iv%polaramv(n)%u(k), max_error_spd,failed)
                    if( iv%info(polaramv)%proc_domain(k,n) ) then
                        num_qcstat_conv(1,polaramv,1,ipr) = num_qcstat_conv(1,polaramv,1,ipr) + 1
                        if(failed) then
@@ -82,8 +82,8 @@ subroutine da_check_max_iv_polaramv(iv,it,num_qcstat_conv)
                  end if
              end if
 
-             if(var_wind)then
-                if(iv%polaramv(n)%u(k)%qc == fails_error_max .or. abs(iv%polaramv(n)%u(k)%inv) >= max_omb_sp) then
+             if(wind_sd_polaramv)then
+                if(iv%polaramv(n)%u(k)%qc == fails_error_max .or. abs(iv%polaramv(n)%u(k)%inv) >= max_omb_spd) then
                    iv%polaramv(n)%u(k)%qc = fails_error_max
                    iv%polaramv(n)%u(k)%inv = 0.0
                 endif
@@ -100,12 +100,12 @@ subroutine da_check_max_iv_polaramv(iv,it,num_qcstat_conv)
          failed2=.false.
 
          if( iv%polaramv(n)%v(k)%qc >= obs_qc_pointer .or. iv%polaramv(n)%u(k)%qc >= obs_qc_pointer )  then
-             if(.not. var_wind)then
+             if(wind_sd_polaramv)then
+                call da_max_error_qc (it,iv%info(polaramv), n, iv%polaramv(n)%u(k), max_error_spd,failed1)
+                call da_max_error_qc (it,iv%info(polaramv), n, iv%polaramv(n)%v(k), max_error_dir,failed2)
+             else
                 call da_max_error_qc (it,iv%info(polaramv), n, iv%polaramv(n)%u(k), max_error_uv,failed1)
                 call da_max_error_qc (it,iv%info(polaramv), n, iv%polaramv(n)%v(k), max_error_uv,failed2)
-             else
-                call da_max_error_qc (it,iv%info(polaramv), n, iv%polaramv(n)%u(k), max_error_sp,failed1)
-                call da_max_error_qc (it,iv%info(polaramv), n, iv%polaramv(n)%v(k), max_error_dir,failed2)
              endif
 
              if( iv%info(polaramv)%proc_domain(k,n) ) then
@@ -123,21 +123,21 @@ subroutine da_check_max_iv_polaramv(iv,it,num_qcstat_conv)
              end if
           end if
 
-	  if(.not. var_wind)then
+	  if(wind_sd_polaramv)then
+             if(iv%polaramv(n)%u(k)%qc == fails_error_max .or. iv%polaramv(n)%v(k)%qc == fails_error_max .or. &
+                abs(iv%polaramv(n)%v(k)%inv) >= max_omb_dir .or. abs(iv%polaramv(n)%u(k)%inv) >= max_omb_spd )then
+                iv%polaramv(n)%u(k)%qc = fails_error_max
+                iv%polaramv(n)%v(k)%qc = fails_error_max
+                iv%polaramv(n)%u(k)%inv = 0.0
+                iv%polaramv(n)%v(k)%inv = 0.0
+             endif
+          else
              if(iv%polaramv(n)%u(k)%qc == fails_error_max .or. iv%polaramv(n)%v(k)%qc == fails_error_max ) then
                 iv%polaramv(n)%u(k)%qc = fails_error_max
                 iv%polaramv(n)%v(k)%qc = fails_error_max
                 iv%polaramv(n)%u(k)%inv = 0.0
                 iv%polaramv(n)%v(k)%inv = 0.0
               endif
-          else
-             if(iv%polaramv(n)%u(k)%qc == fails_error_max .or. iv%polaramv(n)%v(k)%qc == fails_error_max .or. &
-                abs(iv%polaramv(n)%v(k)%inv) >= max_omb_dir .or. abs(iv%polaramv(n)%u(k)%inv) >= max_omb_sp )then
-                iv%polaramv(n)%u(k)%qc = fails_error_max
-                iv%polaramv(n)%v(k)%qc = fails_error_max
-                iv%polaramv(n)%u(k)%inv = 0.0
-                iv%polaramv(n)%v(k)%inv = 0.0
-             endif
           endif
        endif
       end do

@@ -1009,6 +1009,22 @@ time_window_min, time_window_max, map_projection , missing_flag)
              obs(obs_num)%surface%meas%pressure%qc   = 0
          END IF
 
+         ! FENG GAO 03/07/2014
+         ! QuikSCAT nominal mission ended on November 23, 2009
+         ! NOW FM-281 denote qscat only for research and
+         ! ASCAT 10-m ocean surface wind for research and application
+
+         IF ((obs (obs_num)%info%platform(1:6) .EQ. 'FM-281' ) .and. &
+             (ASSOCIATED (obs (obs_num)%surface ) ) ) THEN
+             if (obs(obs_num)%info%elevation .LT. 0.0) then
+                 obs(obs_num)%surface%meas%height%data = 10.0
+             else
+                 obs(obs_num)%surface%meas%height%data = &
+                 obs(obs_num)%info%elevation
+             end if
+             obs(obs_num)%surface%meas%height%qc = 0
+          END IF
+
          ! YRG 04/04/2009
          ! For SYNOP, if surface%meas%pressure%data = 101301.000 
          ! (101301.000 is a fake value in NCAR archived LITTLE_R file)

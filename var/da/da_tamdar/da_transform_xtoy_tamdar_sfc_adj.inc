@@ -40,18 +40,17 @@ subroutine da_transform_xtoy_tamdar_sfc_adj(grid, iv, jo_grad_y, jo_grad_x)
 
       ! [1.2] Interpolate horizontally:
       do n=iv%info(tamdar_sfc)%n1,iv%info(tamdar_sfc)%n2
-         model_t(1,n)  = jo_grad_y%tamdar_sfc(n)%t
-         model_q(1,n)  = jo_grad_y%tamdar_sfc(n)%q
-         model_psfc(n) = jo_grad_y%tamdar_sfc(n)%p
-
-         if(var_wind)then
-                call da_uv_wind_adj(jo_grad_y%tamdar_sfc(n)%u, &
-                                    jo_grad_y%tamdar_sfc(n)%v, model_u(1,n), model_v(1,n), ub(1,n), vb(1,n))
+         if(wind_sd_tamdar)then
+            call da_uv_to_sd_adj(jo_grad_y%tamdar_sfc(n)%u, &
+                                 jo_grad_y%tamdar_sfc(n)%v, model_u(1,n), model_v(1,n), ub(1,n), vb(1,n))
          else
             model_u(1,n)  = jo_grad_y%tamdar_sfc(n)%u
             model_v(1,n)  = jo_grad_y%tamdar_sfc(n)%v
          end if
-       end do
+         model_t(1,n)  = jo_grad_y%tamdar_sfc(n)%t
+         model_q(1,n)  = jo_grad_y%tamdar_sfc(n)%q
+         model_psfc(n) = jo_grad_y%tamdar_sfc(n)%p
+      end do
 
 #ifdef A2C
       call da_interp_lin_3d_adj (jo_grad_x%u, iv%info(tamdar_sfc), model_u,'u')

@@ -138,16 +138,8 @@ subroutine da_get_innov_vector_mtgirs (it, num_qcstat_conv, grid, ob, iv)
          !-------------------------------------------------------------------
          ! [3.0] Interpolation:
          !-------------------------------------------------------------------
-         if (.not. var_wind) then
-              if (ob%mtgirs(n)%u(k) > missing_r .AND. iv%mtgirs(n)%u(k)%qc >= obs_qc_pointer) then
-                  iv%mtgirs(n)%u(k)%inv = ob%mtgirs(n)%u(k) - model_u(k,n)
-              end if
-
-              if (ob%mtgirs(n)%v(k) > missing_r .AND. iv%mtgirs(n)%v(k)%qc >= obs_qc_pointer) then
-                  iv%mtgirs(n)%v(k)%inv = ob%mtgirs(n)%v(k) - model_v(k,n)
-              end if
-         else
-             call da_ffdduv2 (speed,direction,model_u(k,n), model_v(k,n), iv%info(mtgirs)%lon(k,n), convert_uv2fd)
+         if (wind_sd_mtgirs) then
+             call da_ffdduv_model (speed,direction,model_u(k,n), model_v(k,n), convert_uv2fd)
 
               if (ob%mtgirs(n)%u(k) > missing_r .AND. iv%mtgirs(n)%u(k)%qc >= obs_qc_pointer) then
                   iv%mtgirs(n)%u(k)%inv = ob%mtgirs(n)%u(k) - speed
@@ -158,7 +150,14 @@ subroutine da_get_innov_vector_mtgirs (it, num_qcstat_conv, grid, ob, iv)
                   if (iv%mtgirs(n)%v(k)%inv > 180.0 ) iv%mtgirs(n)%v(k)%inv = iv%mtgirs(n)%v(k)%inv - 360.0
                   if (iv%mtgirs(n)%v(k)%inv < -180.0 ) iv%mtgirs(n)%v(k)%inv = iv%mtgirs (n)%v(k)%inv + 360.0
               end if
+         else
+              if (ob%mtgirs(n)%u(k) > missing_r .AND. iv%mtgirs(n)%u(k)%qc >= obs_qc_pointer) then
+                  iv%mtgirs(n)%u(k)%inv = ob%mtgirs(n)%u(k) - model_u(k,n)
+              end if
 
+              if (ob%mtgirs(n)%v(k) > missing_r .AND. iv%mtgirs(n)%v(k)%qc >= obs_qc_pointer) then
+                  iv%mtgirs(n)%v(k)%inv = ob%mtgirs(n)%v(k) - model_v(k,n)
+              end if
           end if
 
 

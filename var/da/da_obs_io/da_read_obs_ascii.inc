@@ -30,6 +30,9 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
    !
    !      02/21/2013 - Syed RH Rizvi
    !      Updated with observation-thinning option
+   !
+   !      03/07/2014 - Feng Gao
+   !      Updated wind_sd option for wind obs. types
    !---------------------------------------------------------------------------
 
    implicit none
@@ -51,7 +54,7 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
    logical                      :: outside_all
    logical                      :: uvq_direct
    integer                      :: surface_level
-   real                         :: height_error, u_comp, v_comp, sp, dir
+   real                         :: height_error, u_comp, v_comp
    integer                      :: nlocal(num_ob_indexes)
    integer                      :: ilocal(num_ob_indexes)
    integer                      :: ntotal(num_ob_indexes)
@@ -278,21 +281,14 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
          if (.not. uvq_direct) then
          if (platform%each (i)%speed%qc /= missing_data .and. &
              platform%each (i)%v%qc /= missing_data) then
-             if (.not. var_wind) then
-                 call da_ffdduv (platform%each (i)%speed%inv, platform%each (i)%v%inv,     &
-                                 U_comp, V_comp, platform%info%lon, convert_fd2uv)
-                 platform%each (i)%u = platform%each (i)%speed
-                 platform%each (i)%v = platform%each (i)%speed
-                 platform%each (i)%u%inv = U_comp
-                 platform%each (i)%v%inv = V_comp
-             else
-                 call da_ffdduv (platform%each (i)%speed%inv, platform%each (i)%v%inv,     &
-                                 U_comp, V_comp, platform%info%lon, convert_fd2uv)
-                 call da_ffdduv2 (sp, dir, U_comp, V_comp, platform%info%lon, convert_uv2fd)
-                 platform%each (i)%u = platform%each (i)%speed
-                 platform%each (i)%u%inv = sp
-                 platform%each (i)%v%inv = dir
-             end if
+
+             call da_ffdduv (platform%each (i)%speed%inv, platform%each (i)%v%inv,     &
+                             U_comp, V_comp, platform%info%lon, convert_fd2uv)
+             platform%each (i)%u = platform%each (i)%speed
+             platform%each (i)%v = platform%each (i)%v
+             platform%each (i)%u%inv = U_comp
+             platform%each (i)%v%inv = V_comp
+            
          else
             platform%each (i)%u%inv   = missing_r
             platform%each (i)%v%inv   = missing_r
@@ -430,6 +426,22 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
       obs_index = fm_index(fm)
       iv%info(obs_index)%max_lev = max(iv%info(obs_index)%max_lev, nlevels)
 
+      IF ( wind_sd ) THEN
+         wind_sd_buoy   = .true.
+         wind_sd_synop  = .true.
+         wind_sd_ships  = .true.
+         wind_sd_metar  = .true.
+         wind_sd_sound  = .true.
+         wind_sd_pilot  = .true.
+         wind_sd_airep  = .true.
+         wind_sd_qscat  = .true.
+         wind_sd_tamdar = .true.
+         wind_sd_geoamv = .true.
+         wind_sd_mtgirs = .true.
+       wind_sd_polaramv = .true.
+       wind_sd_profiler = .true.
+      END IF
+
       dup_loop: do n = 1, ndup
          select case(fm)
 
@@ -440,11 +452,13 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
             if ( thin_conv ) then
                crit = tdiff
                call map2grids_conv(synop,dlat_earth,dlon_earth,crit,nlocal(synop),itx,1,itt,ilocal(synop),iuse)
-                if ( .not. iuse ) cycle reports
-             else
-                nlocal(synop) = nlocal(synop) + 1
-                ilocal(synop) = ilocal(synop) + 1
-             end if
+               if ( .not. iuse ) cycle reports
+            else
+               nlocal(synop) = nlocal(synop) + 1
+               ilocal(synop) = ilocal(synop) + 1
+            end if
+
+            if (.not. wind_sd_synop) platform%each(1)%v%error = platform%each(1)%u%error
 
             iv%synop(ilocal(synop))%h = platform%each(1)%height
             iv%synop(ilocal(synop))%u = platform%each(1)%u
@@ -452,6 +466,11 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
             iv%synop(ilocal(synop))%t = platform%each(1)%t
             iv%synop(ilocal(synop))%q = platform%each(1)%q
             iv%synop(ilocal(synop))%p = platform%each(1)%p
+
+            if (wind_sd_synop .and. &
+                platform%each(1)%u%qc /= missing_data .and. platform%each(1)%v%qc /= missing_data ) &
+                call da_ffdduv_model (iv%synop(ilocal(synop))%u%inv, iv%synop(ilocal(synop))%v%inv, &
+                                      platform%each(1)%u%inv, platform%each(1)%v%inv, convert_uv2fd)
 
          case (13, 17) ;                  ! ships 
             if (.not. use_shipsobs .or. ntotal(ships) == max_ships_input  ) cycle reports
@@ -466,12 +485,19 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
                 ilocal(ships) = ilocal(ships) + 1
              end if
 
+            if (.not. wind_sd_ships) platform%each(1)%v%error = platform%each(1)%u%error
+
             iv%ships(ilocal(ships))%h = platform%each(1)%height
             iv%ships(ilocal(ships))%u = platform%each(1)%u
             iv%ships(ilocal(ships))%v = platform%each(1)%v
             iv%ships(ilocal(ships))%t = platform%each(1)%t
             iv%ships(ilocal(ships))%p = platform%each(1)%p
             iv%ships(ilocal(ships))%q = platform%each(1)%q
+
+            if (wind_sd_ships .and. &
+                platform%each(1)%u%qc /= missing_data .and. platform%each(1)%v%qc /= missing_data ) & 
+                call da_ffdduv_model (iv%ships(ilocal(ships))%u%inv, iv%ships(ilocal(ships))%v%inv, &
+                                      platform%each(1)%u%inv, platform%each(1)%v%inv, convert_uv2fd)
 
          case (15:16) ;
             if (.not. use_metarobs .or. ntotal(metar) == max_metar_input  ) cycle reports
@@ -485,6 +511,8 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
                 nlocal(metar) = nlocal(metar) + 1
                 ilocal(metar) = ilocal(metar) + 1
              end if
+ 
+            if (.not. wind_sd_metar) platform%each(1)%v%error = platform%each(1)%u%error
 
             iv%metar(ilocal(metar))%h = platform%each(1)%height
             iv%metar(ilocal(metar))%u = platform%each(1)%u
@@ -492,6 +520,11 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
             iv%metar(ilocal(metar))%t = platform%each(1)%t
             iv%metar(ilocal(metar))%p = platform%each(1)%p
             iv%metar(ilocal(metar))%q = platform%each(1)%q
+
+            if (wind_sd_metar .and. &
+                platform%each(1)%u%qc /= missing_data .and. platform%each(1)%v%qc /= missing_data ) & 
+                call da_ffdduv_model (iv%metar(ilocal(metar))%u%inv, iv%metar(ilocal(metar))%v%inv, &
+                                      platform%each(1)%u%inv, platform%each(1)%v%inv, convert_uv2fd)
 
          case (32:34) ;
             if (.not. use_pilotobs .or. ntotal(pilot) == max_pilot_input  ) cycle reports
@@ -513,10 +546,21 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
                allocate (iv%pilot(ilocal(pilot))%v(1:iv%info(pilot)%max_lev))
             end if
             do i = 1, nlevels
+
+               if (.not. wind_sd_pilot) platform%each(i)%v%error = platform%each(i)%u%error
+
                iv%pilot(ilocal(pilot))%h(i) = platform%each(i)%height
                iv%pilot(ilocal(pilot))%p(i) = platform%each(i)%p%inv
                iv%pilot(ilocal(pilot))%u(i) = platform%each(i)%u
                iv%pilot(ilocal(pilot))%v(i) = platform%each(i)%v
+
+               if ( .not. wind_sd_pilot ) platform%each(i)%v%error = platform%each(i)%u%error
+
+               if (wind_sd_pilot .and. &
+                   platform%each(i)%u%qc /= missing_data .and. platform%each(i)%v%qc /= missing_data ) then
+                   call da_ffdduv_model (iv%pilot(ilocal(pilot))%u(i)%inv,iv%pilot(ilocal(pilot))%v(i)%inv, &
+                                         platform%each(i)%u%inv, platform%each(i)%v%inv, convert_uv2fd)
+               end if
             end do
 
          case (35:38) ;
@@ -526,6 +570,7 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
             if (outside) cycle reports
 
 ! determine if level corresponds to surface
+
             is_surface=.false.
             levs = nlevels
             surface_level = 0
@@ -564,6 +609,8 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
                   if (abs(platform%info%elv - platform%each(i)%height) < 0.1) then
                      surface_level = i
 
+                     if (.not. wind_sd_sound) platform%each(i)%v%error = platform%each(i)%u%error
+
                      ! Save surface pressure.
                      iv%sonde_sfc(ilocal(sonde_sfc))%h = platform%each(i)%height
                      iv%sonde_sfc(ilocal(sonde_sfc))%u = platform%each(i)%u
@@ -572,6 +619,10 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
                      iv%sonde_sfc(ilocal(sonde_sfc))%q = platform%each(i)%q
                      iv%sonde_sfc(ilocal(sonde_sfc))%p = platform%each(i)%p
 
+                     if (wind_sd_sound .and. &
+                         platform%each(i)%u%qc /= missing_data .and. platform%each(i)%v%qc /= missing_data ) & 
+                         call da_ffdduv_model (iv%sonde_sfc(ilocal(sonde_sfc))%u%inv,iv%sonde_sfc(ilocal(sonde_sfc))%v%inv, &
+                                               platform%each(i)%u%inv, platform%each(i)%v%inv, convert_uv2fd)
                      exit
                   end if
                end if
@@ -610,14 +661,23 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
 
                   j=j+1
 
+                  if (.not. wind_sd_sound) platform%each(i)%v%error = platform%each(i)%u%error
+
                   iv%sound(ilocal(sound))%h(j) = platform%each(i)%height
                   iv%sound(ilocal(sound))%p(j) = platform%each(i)%p%inv
                   iv%sound(ilocal(sound))%u(j) = platform%each(i)%u
                   iv%sound(ilocal(sound))%v(j) = platform%each(i)%v
                   iv%sound(ilocal(sound))%t(j) = platform%each(i)%t
                   iv%sound(ilocal(sound))%q(j) = platform%each(i)%q
+
+                  if (wind_sd_sound .and. &
+                      platform%each(i)%u%qc /= missing_data .and. platform%each(i)%v%qc /= missing_data ) &
+                      call da_ffdduv_model (iv%sound(ilocal(sound))%u(j)%inv,iv%sound(ilocal(sound))%v(j)%inv, &
+                                            platform%each(i)%u%inv, platform%each(i)%v%inv, convert_uv2fd)
                end do
+
            end if
+
 
          case (101) ;
             if (.not. use_tamdarobs .or. ntotal(tamdar) == max_tamdar_input  ) cycle reports
@@ -650,12 +710,19 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
                 ilocal(tamdar_sfc) = ilocal(tamdar_sfc) + 1
              end if
 
+            if (.not. wind_sd_tamdar) platform%each(surface_level)%v%error = platform%each(surface_level)%u%error
+
             iv%tamdar_sfc(ilocal(tamdar_sfc))%h = platform%each(surface_level)%height
             iv%tamdar_sfc(ilocal(tamdar_sfc))%u = platform%each(surface_level)%u
             iv%tamdar_sfc(ilocal(tamdar_sfc))%v = platform%each(surface_level)%v
             iv%tamdar_sfc(ilocal(tamdar_sfc))%t = platform%each(surface_level)%t
             iv%tamdar_sfc(ilocal(tamdar_sfc))%q = platform%each(surface_level)%q
             iv%tamdar_sfc(ilocal(tamdar_sfc))%p = platform%each(surface_level)%p
+
+            if (wind_sd_tamdar .and. &
+                platform%each(surface_level)%u%qc /= missing_data .and. platform%each(surface_level)%v%qc /= missing_data ) &
+                call da_ffdduv_model (iv%tamdar_sfc(ilocal(tamdar_sfc))%u%inv,iv%tamdar_sfc(ilocal(tamdar_sfc))%v%inv, &
+                                      platform%each(surface_level)%u%inv, platform%each(surface_level)%v%inv, convert_uv2fd)
 
            else ! not is_surface
 
@@ -664,22 +731,30 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
             if( .not. thin_conv) then
                    nlocal(tamdar) = nlocal(tamdar) + 1
                    ilocal(tamdar) = ilocal(tamdar) + 1
-              if( nlocal(tamdar) == ilocal(tamdar)) then
-              allocate (iv%tamdar(ilocal(tamdar))%h        (1:iv%info(tamdar)%max_lev))
-              allocate (iv%tamdar(ilocal(tamdar))%p        (1:iv%info(tamdar)%max_lev))
-              allocate (iv%tamdar(ilocal(tamdar))%u        (1:iv%info(tamdar)%max_lev))
-              allocate (iv%tamdar(ilocal(tamdar))%v        (1:iv%info(tamdar)%max_lev))
-              allocate (iv%tamdar(ilocal(tamdar))%t        (1:iv%info(tamdar)%max_lev))
-              allocate (iv%tamdar(ilocal(tamdar))%q        (1:iv%info(tamdar)%max_lev))
+                if( nlocal(tamdar) == ilocal(tamdar)) then
+                allocate (iv%tamdar(ilocal(tamdar))%h (1:iv%info(tamdar)%max_lev))
+                allocate (iv%tamdar(ilocal(tamdar))%p (1:iv%info(tamdar)%max_lev))
+                allocate (iv%tamdar(ilocal(tamdar))%u (1:iv%info(tamdar)%max_lev))
+                allocate (iv%tamdar(ilocal(tamdar))%v (1:iv%info(tamdar)%max_lev))
+                allocate (iv%tamdar(ilocal(tamdar))%t (1:iv%info(tamdar)%max_lev))
+                allocate (iv%tamdar(ilocal(tamdar))%q (1:iv%info(tamdar)%max_lev))
              end if
 
              do i = 1, nlevels
+
+                if (.not. wind_sd_tamdar) platform%each(i)%v%error = platform%each(i)%u%error
+
                 iv%tamdar(ilocal(tamdar))%h(i) = platform%each(i)%height
                 iv%tamdar(ilocal(tamdar))%p(i) = platform%each(i)%p%inv
                 iv%tamdar(ilocal(tamdar))%u(i) = platform%each(i)%u
                 iv%tamdar(ilocal(tamdar))%v(i) = platform%each(i)%v
                 iv%tamdar(ilocal(tamdar))%t(i) = platform%each(i)%t
                 iv%tamdar(ilocal(tamdar))%q(i) = platform%each(i)%q
+
+                if (wind_sd_tamdar .and. &
+                    platform%each(i)%u%qc /= missing_data .and. platform%each(i)%v%qc /= missing_data ) &
+                    call da_ffdduv_model (iv%tamdar(ilocal(tamdar))%u(i)%inv,iv%tamdar(ilocal(tamdar))%v(i)%inv, &
+                                          platform%each(i)%u%inv, platform%each(i)%v%inv, convert_uv2fd)
              end do
 
             else ! if thin_conv==true
@@ -746,12 +821,20 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
                end if
 
                do i = 1, 1
+
+                  if (.not. wind_sd_tamdar) platform%each(k)%v%error = platform%each(k)%u%error
+
                   iv%tamdar(ilocal(tamdar))%h(i) = platform%each(k)%height
                   iv%tamdar(ilocal(tamdar))%p(i) = platform%each(k)%p%inv
                   iv%tamdar(ilocal(tamdar))%u(i) = platform%each(k)%u
                   iv%tamdar(ilocal(tamdar))%v(i) = platform%each(k)%v
                   iv%tamdar(ilocal(tamdar))%t(i) = platform%each(k)%t
                   iv%tamdar(ilocal(tamdar))%q(i) = platform%each(k)%q
+
+                  if (wind_sd_tamdar .and. &
+                      platform%each(k)%u%qc /= missing_data .and. platform%each(k)%v%qc /= missing_data ) &
+                      call da_ffdduv_model (iv%tamdar(ilocal(tamdar))%u(i)%inv,iv%tamdar(ilocal(tamdar))%v(i)%inv, &
+                                            platform%each(k)%u%inv, platform%each(k)%v%inv, convert_uv2fd)
                end do
               end do ! loop over k levels
 
@@ -776,18 +859,20 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
             if (nlevels > 0) then
 
                if( nlocal(mtgirs) == ilocal(mtgirs)) then
-                allocate (iv%mtgirs(ilocal(mtgirs))%h (1:iv%info(mtgirs)%max_lev))
-                allocate (iv%mtgirs(ilocal(mtgirs))%p (1:iv%info(mtgirs)%max_lev))
-                allocate (iv%mtgirs(ilocal(mtgirs))%u (1:iv%info(mtgirs)%max_lev))
-                allocate (iv%mtgirs(ilocal(mtgirs))%v (1:iv%info(mtgirs)%max_lev))
-                allocate (iv%mtgirs(ilocal(mtgirs))%t (1:iv%info(mtgirs)%max_lev))
-                allocate (iv%mtgirs(ilocal(mtgirs))%q (1:iv%info(mtgirs)%max_lev))
-              end if
+                  allocate (iv%mtgirs(ilocal(mtgirs))%h (1:iv%info(mtgirs)%max_lev))
+                  allocate (iv%mtgirs(ilocal(mtgirs))%p (1:iv%info(mtgirs)%max_lev))
+                  allocate (iv%mtgirs(ilocal(mtgirs))%u (1:iv%info(mtgirs)%max_lev))
+                  allocate (iv%mtgirs(ilocal(mtgirs))%v (1:iv%info(mtgirs)%max_lev))
+                  allocate (iv%mtgirs(ilocal(mtgirs))%t (1:iv%info(mtgirs)%max_lev))
+                  allocate (iv%mtgirs(ilocal(mtgirs))%q (1:iv%info(mtgirs)%max_lev))
+               end if
 
                j = 0
                do i = 1, nlevels
 
                   j=j+1
+
+                  if (.not. wind_sd_mtgirs) platform%each(i)%v%error = platform%each(i)%u%error
 
                   iv%mtgirs(ilocal(mtgirs))%h(j) = platform%each(i)%height
                   iv%mtgirs(ilocal(mtgirs))%p(j) = platform%each(i)%p%inv
@@ -795,13 +880,18 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
                   iv%mtgirs(ilocal(mtgirs))%v(j) = platform%each(i)%v
                   iv%mtgirs(ilocal(mtgirs))%t(j) = platform%each(i)%t
                   iv%mtgirs(ilocal(mtgirs))%q(j) = platform%each(i)%q
-                 if(iv%mtgirs(ilocal(mtgirs))%q(j)%inv.ne.missing_r)then
-                 iv%mtgirs(ilocal(mtgirs))%q(j)%inv = iv%mtgirs(ilocal(mtgirs))%q(j)%inv/1000.0
-                 endif
-                 if(iv%mtgirs(ilocal(mtgirs))%q(j)%error.ne.missing_r)then
-                 iv%mtgirs(ilocal(mtgirs))%q(j)%error = iv%mtgirs(ilocal(mtgirs))%q(j)%error/1000.0/100.0
-                 endif
 
+                  if(iv%mtgirs(ilocal(mtgirs))%q(j)%inv.ne.missing_r)then
+                     iv%mtgirs(ilocal(mtgirs))%q(j)%inv = iv%mtgirs(ilocal(mtgirs))%q(j)%inv/1000.0
+                  endif
+                  if(iv%mtgirs(ilocal(mtgirs))%q(j)%error.ne.missing_r)then
+                     iv%mtgirs(ilocal(mtgirs))%q(j)%error = iv%mtgirs(ilocal(mtgirs))%q(j)%error/1000.0/100.0
+                  endif
+
+                  if (wind_sd_mtgirs .and. &
+                      platform%each(i)%u%qc /= missing_data .and. platform%each(i)%v%qc /= missing_data ) &
+                      call da_ffdduv_model (iv%mtgirs(ilocal(mtgirs))%u(j)%inv,iv%mtgirs(ilocal(mtgirs))%v(j)%inv, &
+                                            platform%each(i)%u%inv, platform%each(i)%v%inv, convert_uv2fd)
                end do
             end if
 
@@ -869,6 +959,7 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
                            platform%loc%pw%error ** 2)
 !                           platform%loc%pw%error ** 2) / gravity
 
+
             ! Geostationary ot Polar orbitting Satellite AMVs:
          case (88)    ;
             if (index(platform%info%name, 'MODIS') > 0 .or. &
@@ -876,7 +967,7 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
                if (.not.use_polaramvobs .or. ntotal(polaramv) == max_polaramv_input) cycle reports
                if (n==1) ntotal(polaramv) = ntotal(polaramv) + 1
                if (outside) cycle reports
-               if (n==1) ntotal(polaramv) = ntotal(polaramv) + 1
+               if (n==1) ntotal(Polaramv) = ntotal(polaramv) + 1
                 if ( thin_conv ) then
                   crit = tdiff
                   call map2grids_conv(polaramv,dlat_earth,dlon_earth,crit,nlocal(polaramv),itx,1,itt,ilocal(polaramv),iuse)
@@ -893,9 +984,17 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
                end if
 
                do i = 1, nlevels
+
+                  if (.not. wind_sd_polaramv) platform%each(i)%v%error = platform%each(i)%u%error
+
                   iv%polaramv(ilocal(polaramv))%p(i) = platform%each(i)%p%inv
                   iv%polaramv(ilocal(polaramv))%u(i) = platform%each(i)%u
                   iv%polaramv(ilocal(polaramv))%v(i) = platform%each(i)%v
+
+                  if (wind_sd_polaramv .and. &
+                      platform%each(i)%u%qc /= missing_data .and. platform%each(i)%v%qc /= missing_data ) &
+                      call da_ffdduv_model (iv%polaramv(ilocal(polaramv))%u(i)%inv,iv%polaramv(ilocal(polaramv))%v(i)%inv, &
+                                            platform%each(i)%u%inv, platform%each(i)%v%inv, convert_uv2fd)
                end do
                obs_index = polaramv ! geoamv is the fm_index value for 88
             else
@@ -918,9 +1017,17 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
                end if
 
                do i = 1, nlevels
+
+                  if (.not. wind_sd_geoamv) platform%each(i)%v%error = platform%each(i)%u%error
+
                   iv%geoamv(ilocal(geoamv))%p(i) = platform%each(i)%p%inv
                   iv%geoamv(ilocal(geoamv))%u(i) = platform%each(i)%u
                   iv%geoamv(ilocal(geoamv))%v(i) = platform%each(i)%v
+
+                  if (wind_sd_geoamv .and. &
+                      platform%each(i)%u%qc /= missing_data .and. platform%each(i)%v%qc /= missing_data ) &
+                      call da_ffdduv_model (iv%geoamv(ilocal(geoamv))%u(i)%inv,iv%geoamv(ilocal(geoamv))%v(i)%inv, &
+                                            platform%each(i)%u%inv, platform%each(i)%v%inv, convert_uv2fd)
                end do
 
             end if
@@ -944,12 +1051,20 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
              end if
 
              do i = 1, nlevels
+
+                if (.not. wind_sd_airep) platform%each(i)%v%error = platform%each(i)%u%error
+
                 iv%airep(ilocal(airep))%h(i) = platform%each(i)%height
                 iv%airep(ilocal(airep))%p(i) = platform%each(i)%p%inv
                 iv%airep(ilocal(airep))%u(i) = platform%each(i)%u
                 iv%airep(ilocal(airep))%v(i) = platform%each(i)%v
                 iv%airep(ilocal(airep))%t(i) = platform%each(i)%t
                 iv%airep(ilocal(airep))%q(i) = platform%each(i)%q
+
+                if (wind_sd_airep .and. &
+                    platform%each(i)%u%qc /= missing_data .and. platform%each(i)%v%qc /= missing_data ) &
+                    call da_ffdduv_model (iv%airep(ilocal(airep))%u(i)%inv,iv%airep(ilocal(airep))%v(i)%inv, &
+                                          platform%each(i)%u%inv, platform%each(i)%v%inv, convert_uv2fd)
              end do
 
             else ! if thin_conv==true
@@ -1016,12 +1131,21 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
                end if
 
                do i = 1, 1
+
+                  if (.not. wind_sd_airep) platform%each(k)%v%error = platform%each(k)%u%error
+
                   iv%airep(ilocal(airep))%h(i) = platform%each(k)%height
                   iv%airep(ilocal(airep))%p(i) = platform%each(k)%p%inv
                   iv%airep(ilocal(airep))%u(i) = platform%each(k)%u
                   iv%airep(ilocal(airep))%v(i) = platform%each(k)%v
                   iv%airep(ilocal(airep))%t(i) = platform%each(k)%t
                   iv%airep(ilocal(airep))%q(i) = platform%each(k)%q
+
+                  if (wind_sd_airep .and. &
+                      platform%each(k)%u%qc /= missing_data .and. platform%each(k)%v%qc /= missing_data ) &
+                      call da_ffdduv_model (iv%airep(ilocal(airep))%u(i)%inv,iv%airep(ilocal(airep))%v(i)%inv, &
+                                            platform%each(k)%u%inv, platform%each(k)%v%inv, convert_uv2fd)
+
                end do
               end do ! loop over k levels
 
@@ -1142,6 +1266,7 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
                iv%ssmt2(ilocal(ssmt2))% p(i) = platform%each(i)%p%inv
                iv%ssmt2(ilocal(ssmt2))%rh(i) = platform%each(i)%rh
             end do
+
          case (281)    ;
             if(.not.use_qscatobs  .or. ntotal(qscat) == max_qscat_input ) cycle reports
             if (n==1) ntotal(qscat) = ntotal(qscat) + 1
@@ -1156,9 +1281,18 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
                 end if
 
 !            if (nlocal(qscat) == ilocal(qscat)) then
+
+                if (.not. wind_sd_qscat) platform%each(1)%v%error = platform%each(1)%u%error
+
                 iv%qscat(ilocal(qscat))%h = platform%each(1)%height
                 iv%qscat(ilocal(qscat))%u = platform%each(1)%u
                 iv%qscat(ilocal(qscat))%v = platform%each(1)%v
+
+                if (wind_sd_qscat .and. &
+                    platform%each(1)%u%qc /= missing_data .and. platform%each(1)%v%qc /= missing_data ) &
+                    call da_ffdduv_model (iv%qscat(ilocal(qscat))%u%inv,iv%qscat(ilocal(qscat))%v%inv, &
+                                          platform%each(1)%u%inv, platform%each(1)%v%inv, convert_uv2fd)
+
 !            end if
 
             ! Impose minimum observation error = 1.0m/s for Quikscat data:
@@ -1186,10 +1320,18 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
             end if
 
             do i = 1, nlevels
+
+               if (.not. wind_sd_profiler) platform%each(i)%v%error = platform%each(i)%u%error
+
                iv%profiler(ilocal(profiler))%h(i) = platform%each(i)%height
                iv%profiler(ilocal(profiler))%p(i) = platform%each(i)%p%inv
                iv%profiler(ilocal(profiler))%u(i) = platform%each(i)%u
                iv%profiler(ilocal(profiler))%v(i) = platform%each(i)%v
+
+               if (wind_sd_profiler .and. &
+                   platform%each(i)%u%qc /= missing_data .and. platform%each(i)%v%qc /= missing_data ) &
+                   call da_ffdduv_model (iv%profiler(ilocal(profiler))%u(i)%inv,iv%profiler(ilocal(profiler))%v(i)%inv, &
+                                         platform%each(i)%u%inv, platform%each(i)%v%inv, convert_uv2fd)
             end do
 
          case (135) ; ! Bogus
@@ -1222,6 +1364,7 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
             end if
 
             do i = 1, nlevels
+               if (.not. wind_sd) platform%each(i)%v%error = platform%each(i)%u%error
                iv%bogus(ilocal(bogus))%h(i) = platform%each(i)%height
                iv%bogus(ilocal(bogus))%p(i) = platform%each(i)%p%inv
                iv%bogus(ilocal(bogus))%u(i) = platform%each(i)%u
@@ -1260,12 +1403,19 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
                    ilocal(buoy) = ilocal(buoy)  + 1
                 end if
 
+            if (.not. wind_sd_buoy) platform%each(1)%v%error = platform%each(1)%u%error
+
             iv%buoy(ilocal(buoy))%h = platform%each(1)%height
             iv%buoy(ilocal(buoy))%u = platform%each(1)%u
             iv%buoy(ilocal(buoy))%v = platform%each(1)%v
             iv%buoy(ilocal(buoy))%t = platform%each(1)%t
             iv%buoy(ilocal(buoy))%p = platform%each(1)%p
             iv%buoy(ilocal(buoy))%q = platform%each(1)%q
+
+            if (wind_sd_buoy .and. &
+                platform%each(1)%u%qc /= missing_data .and. platform%each(1)%v%qc /= missing_data ) &
+                call da_ffdduv_model (iv%buoy(ilocal(buoy))%u%inv,iv%buoy(ilocal(buoy))%v%inv, &
+                                      platform%each(1)%u%inv, platform%each(1)%v%inv, convert_uv2fd)
 
 
          case (133)    ;         ! AIRS retrievals  

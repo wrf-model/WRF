@@ -36,21 +36,17 @@ subroutine da_transform_xtoy_sound_adj(grid, iv, jo_grad_y, jo_grad_x)
    call da_interp_lin_3d (grid%xb%v, iv%info(sound), vb)
 
    do n=iv%info(sound)%n1,iv%info(sound)%n2
+       do k = 1, iv%info(sound)%levels(n)
+         if(wind_sd_sound) then
+            call da_uv_to_sd_adj(jo_grad_y%sound(n)%u(k), &
+                                 jo_grad_y%sound(n)%v(k), u(k,n), v(k,n), ub(k,n), vb(k,n))
+         else
+            u(k,n) = jo_grad_y%sound(n)%u(k)
+            v(k,n) = jo_grad_y%sound(n)%v(k)
+         end if
+      end do
       t(1:size(jo_grad_y%sound(n)%t),n) = jo_grad_y%sound(n)%t(:)
       q(1:size(jo_grad_y%sound(n)%q),n) = jo_grad_y%sound(n)%q(:)
-
-       do k = 1, iv%info(sound)%levels(n)
-
-         if(.not. var_wind) then
-             u(k,n) = jo_grad_y%sound(n)%u(k)
-             v(k,n) = jo_grad_y%sound(n)%v(k)
-           else
-             call da_uv_wind_adj(jo_grad_y%sound(n)%u(k), &
-                                    jo_grad_y%sound(n)%v(k), u(k,n), v(k,n), ub(k,n), vb(k,n))
-          end if
-
-      end do
-
    end do
 
 #ifdef A2C

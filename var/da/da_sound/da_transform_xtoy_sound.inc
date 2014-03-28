@@ -47,20 +47,16 @@ subroutine da_transform_xtoy_sound (grid, iv, y)
 
 
    do n=iv%info(sound)%n1,iv%info(sound)%n2
-      y%sound(n)%t(:) = t(1:size(y%sound(n)%t),n)
-      y%sound(n)%q(:) = q(1:size(y%sound(n)%q),n)
-
       do k = 1, iv%info(sound)%levels(n)
-
-         if(.not. var_wind) then
+         if(wind_sd_sound) then
+            call da_uv_to_sd_lin(y%sound(n)%u(k),y%sound(n)%v(k),u(k,n),v(k,n),ub(k,n),vb(k,n))
+         else
             y%sound(n)%u(k) = u(k,n)
             y%sound(n)%v(k) = v(k,n)
-         else
-            call da_uv_wind_tgl(y%sound(n)%u(k),y%sound(n)%v(k),u(k,n),v(k,n),ub(k,n),vb(k,n))
          end if
-
       end do
-
+      y%sound(n)%t(:) = t(1:size(y%sound(n)%t),n)
+      y%sound(n)%q(:) = q(1:size(y%sound(n)%q),n)
    end do
 
    deallocate (u)

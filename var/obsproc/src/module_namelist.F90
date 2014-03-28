@@ -4,6 +4,7 @@ MODULE MODULE_NAMELIST
 !
 ! D. GILL,         April 1998
 ! F. VANDENBERGHE, March 2001
+! FENG GAO,        March 2014 Added options for wind_sd
 !-----------------------------------------------------------------------------!
 
    USE MODULE_DATE
@@ -67,7 +68,12 @@ MODULE MODULE_NAMELIST
                       write_satob, write_airep, write_gpspw, write_gpsztd,&
                       write_gpsref,write_gpseph,write_ssmt1, write_ssmt2, &
                       write_ssmi , write_tovs , write_qscat, write_profl, &
-                      write_bogus, write_airs ,  write_tamdar 
+                      write_bogus, write_airs , write_tamdar 
+
+   LOGICAL         :: wind_sd,      wind_sd_synop, wind_sd_ships, wind_sd_metar,&
+                      wind_sd_buoy, wind_sd_sound, wind_sd_qscat, wind_sd_pilot,&
+                      wind_sd_airep,wind_sd_geoamv,wind_sd_tamdar,wind_sd_profiler
+
 
 #ifdef BKG
    INTEGER                   :: time_earlier, time_later
@@ -117,6 +123,10 @@ MODULE MODULE_NAMELIST
                       write_ssmi , write_tovs , write_qscat, write_profl, &
                       write_bogus, write_airs , write_tamdar 
    
+   NAMELIST /RECORD10/wind_sd,      wind_sd_synop, wind_sd_ships, wind_sd_metar, &
+                      wind_sd_buoy, wind_sd_sound, wind_sd_qscat, wind_sd_pilot, &
+                      wind_sd_airep,wind_sd_geoamv,wind_sd_tamdar,wind_sd_profiler
+
    CONTAINS
 
    SUBROUTINE GET_NAMELIST  (nml_filename, iunit)
@@ -199,6 +209,20 @@ MODULE MODULE_NAMELIST
    write_bogus = .true.
    write_airs  = .true.
    write_tamdar= .true.
+
+   wind_sd        = .false.
+   wind_sd_buoy   = .false.
+   wind_sd_synop  = .false.
+   wind_sd_ships  = .false.
+   wind_sd_metar  = .false.
+   wind_sd_sound  = .false.
+   wind_sd_pilot  = .false.
+   wind_sd_airep  = .false.
+   wind_sd_qscat  = .false.
+   wind_sd_tamdar = .false.
+   wind_sd_geoamv = .false.
+ wind_sd_profiler = .false.
+
 
    READ  ( UNIT = iunit , NML = record1 , IOSTAT = nml_read_errors(1) )
    WRITE ( UNIT = 0 ,     NML = record1 )
@@ -310,6 +334,13 @@ MODULE MODULE_NAMELIST
      STOP
    endif
    CLOSE (10)
+
+   READ  ( UNIT = iunit , NML = record10 , IOSTAT = nml_read_errors(10) )
+   WRITE ( UNIT = 0 ,     NML = record10 )
+   IF    ( nml_read_errors(10) .NE. 0 ) THEN
+           WRITE ( UNIT = 0 , FMT = '(A)' ) ' Error reading NAMELIST record 10'
+           WRITE ( UNIT = 0 , FMT = '(A)' ) ' Using default values for wind_sd'
+   ENDIF
 
    !  Process read error
 

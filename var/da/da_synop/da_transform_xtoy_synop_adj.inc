@@ -38,14 +38,13 @@ subroutine da_transform_xtoy_synop_adj(grid, iv, jo_grad_y, jo_grad_x)
 
       ! [1.2] Interpolate horizontally:
       do n=iv%info(synop)%n1,iv%info(synop)%n2
-         if(var_wind)then
-                call da_uv_wind_adj(jo_grad_y%synop(n)%u, &
-                                    jo_grad_y%synop(n)%v, model_u(1,n), model_v(1,n), ub(1,n), vb(1,n))
+         if(wind_sd_synop)then
+            call da_uv_to_sd_adj(jo_grad_y%synop(n)%u, &
+                                 jo_grad_y%synop(n)%v, model_u(1,n), model_v(1,n), ub(1,n), vb(1,n))
          else
             model_u(1,n)  = jo_grad_y%synop(n)%u
             model_v(1,n)  = jo_grad_y%synop(n)%v
          end if
-
          model_t(1,n)  = jo_grad_y%synop(n)%t
          model_q(1,n)  = jo_grad_y%synop(n)%q
          model_psfc(n) = jo_grad_y%synop(n)%p

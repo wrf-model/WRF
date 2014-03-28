@@ -552,8 +552,9 @@ deallocate(data_all) ! Deallocate data arrays
       call da_warning(__FILE__,__LINE__,message(1:1))
    endif
 
-   write(unit=stdout,fmt='(a)') '   num_iasi_file num_iasi_global  num_iasi_local   num_iasi_used num_iasi_thinned'
-   write(stdout,'5(6x,i10)') num_iasi_file, num_iasi_global, num_iasi_local, num_iasi_used, num_iasi_thinned
+   write(unit=message(1),fmt='(a)') '   num_iasi_file num_iasi_global  num_iasi_local   num_iasi_used num_iasi_thinned'
+   write(unit=message(2),fmt='(5(6x,i10))') num_iasi_file, num_iasi_global, num_iasi_local, num_iasi_used, num_iasi_thinned
+   call da_message(message(1:2))
 
    !  5.0 allocate innovation radiance structure
    !----------------------------------------------------------------  

@@ -119,8 +119,8 @@
                               ims, ime, jms, jme, kms, kme,    &
                               ips, ipe, jps, jpe, kps, kpe    )
 
-    call nl_get_diff_opt           ( 1, diff_opt                  )
-    call nl_get_km_opt             ( 1, km_opt                    )
+    call nl_get_diff_opt           ( grid%id , diff_opt           )
+    call nl_get_km_opt             ( grid%id,  km_opt             )
     call nl_get_damp_opt           ( 1, damp_opt                  )
     call nl_get_dampcoef           ( grid%id,  dampcoef           )
     call nl_get_khdif              ( grid%id,  khdif              )

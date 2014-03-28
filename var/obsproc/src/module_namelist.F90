@@ -69,6 +69,7 @@ MODULE MODULE_NAMELIST
                       write_gpsref,write_gpseph,write_ssmt1, write_ssmt2, &
                       write_ssmi , write_tovs , write_qscat, write_profl, &
                       write_bogus, write_airs , write_tamdar 
+   logical :: gts_from_ncar_archive
 
    LOGICAL         :: wind_sd,      wind_sd_synop, wind_sd_ships, wind_sd_metar,&
                       wind_sd_buoy, wind_sd_sound, wind_sd_qscat, wind_sd_pilot,&
@@ -82,7 +83,7 @@ MODULE MODULE_NAMELIST
                       first_guess_file, fg_format
    NAMELIST /RECORD2/ time_earlier, time_later, time_analysis
 #else
-   NAMELIST /RECORD1/ obs_gts_filename, obs_err_filename, fg_format
+   NAMELIST /RECORD1/ obs_gts_filename, obs_err_filename, fg_format, gts_from_ncar_archive
    NAMELIST /RECORD2/ time_window_min,time_analysis,time_window_max
 
 #endif
@@ -178,6 +179,8 @@ MODULE MODULE_NAMELIST
    fg_format         = 'MM5'
    obs_err_filename  = 'obserr.txt'
    use_for           = '3DVAR'
+
+   gts_from_ncar_archive = .false.
 
 ! . Initialize the new defined namelist variables (YRG 05/10/2007):
    base_pres  = missing_r

@@ -107,7 +107,7 @@ MODULE module_sf_lake
                      xlat_urb2d   ,z_lake3d       ,dz_lake3d    ,lakedepth2d     ,&
                      watsat3d     ,csol3d         ,tkmg3d       ,tkdry3d         ,&
                      tksatu3d     ,ivgtyp         ,ht           ,xland           ,& 
-                     iswater, xice, xice_threshold, lakeminalt                                                  ,&
+                     iswater, xice, xice_threshold, lake_min_elev                ,&
                      ids          ,ide            ,jds          ,jde             ,&
                      kds          ,kde            ,ims          ,ime             ,&
                      jms          ,jme            ,kms          ,kme             ,&
@@ -168,7 +168,7 @@ MODULE module_sf_lake
     REAL,           DIMENSION( ims:ime,1:nlevsoil,jms:jme ),INTENT(IN)  :: tksatu3d
     REAL,           DIMENSION( ims:ime, jms:jme )         ,INTENT(IN)  :: lakedepth2d    
     REAL,           DIMENSION( ims:ime, jms:jme )         ,INTENT(IN)  :: ht
-    REAL                                                  ,INTENT(IN)  :: lakeminalt
+    REAL                                                  ,INTENT(IN)  :: lake_min_elev
 
 !out:
     REAL,           DIMENSION( ims:ime, jms:jme )         ,INTENT(OUT) :: HFX
@@ -286,7 +286,7 @@ MODULE module_sf_lake
 #if (EM_CORE==1)
         if (lakemask(i,j).eq.1) THEN
 #else
-        if (ivgtyp(i,j)==iswater.and.ht(i,j)>= lakeminalt ) THEN
+        if (ivgtyp(i,j)==iswater.and.ht(i,j)>= lake_min_elev ) THEN
 #endif
     
            do c = 1,column
@@ -4869,7 +4869,7 @@ subroutine LakeDebug( str )
 end subroutine LakeDebug
 
  SUBROUTINE lakeini(IVGTYP,         ISLTYP,          HT,              SNOW,           & !i
-                    lakeminalt,     restart,         domainlakedepth, lake_depth,     &
+                    lake_min_elev,     restart,        lakedepth_default, lake_depth,     &
                     lakedepth2d,    savedtke12d,     snowdp2d,        h2osno2d,       & !o
                     snl2d,          t_grnd2d,        t_lake3d,        lake_icefrac3d, &
                     z_lake3d,       dz_lake3d,       t_soisno3d,      h2osoi_ice3d,   &
@@ -4911,7 +4911,7 @@ end subroutine LakeDebug
                                                               ISLTYP
   REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN)       :: HT
   REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(INOUT)    :: SNOW
-  real,    intent(in)                                      :: domainlakedepth,lakeminalt
+  real,    intent(in)                                      :: lakedepth_default,lake_min_elev
 
   real,    dimension(ims:ime,jms:jme ),intent(out)                        :: lakedepth2d,    &
                                                                              savedtke12d
@@ -5003,7 +5003,7 @@ end subroutine LakeDebug
          do j=jts,jte
 #if (EM_CORE==1)
          IF (lakeflag.eq.0) THEN    
-            if(ht(i,j)>=lakeminalt) then 
+            if(ht(i,j)>=lake_min_elev) then 
               if ( xice(i,j).gt.xice_threshold) then   !mchen
                    ivgtyp(i,j) = iswater
                    xland(i,j) = 2. 
@@ -5012,7 +5012,7 @@ end subroutine LakeDebug
                endif
             endif
 
-            if(ivgtyp(i,j)==iswater.and.ht(i,j)>=lakeminalt) then 
+            if(ivgtyp(i,j)==iswater.and.ht(i,j)>=lake_min_elev) then 
                 lake(i,j)  = .true.
                 lakemask(i,j) = 1
                 numb_lak   = numb_lak + 1
@@ -5035,7 +5035,7 @@ end subroutine LakeDebug
              endif
          ENDIF   ! end if lakeflag=0
 #else
-            if(ht(i,j)>=lakeminalt) then 
+            if(ht(i,j)>=lake_min_elev) then 
               if ( xice(i,j).gt.xice_threshold) then   !mchen
                    ivgtyp(i,j) = iswater
                    xland(i,j) = 2. 
@@ -5043,7 +5043,7 @@ end subroutine LakeDebug
                    xice(i,j)=0.0
                endif
             endif
-            if(ivgtyp(i,j)==iswater.and.ht(i,j)>=lakeminalt) then 
+            if(ivgtyp(i,j)==iswater.and.ht(i,j)>=lake_min_elev) then 
                 lake(i,j)  = .true.
                 numb_lak   = numb_lak + 1
             else 
@@ -5086,16 +5086,16 @@ end subroutine LakeDebug
           if (lake_depth(i,j) > 0.0) then 
             lakedepth2d(i,j)   = lake_depth(i,j)
           else
-            if ( domainlakedepth  > 0.0 ) then
-               lakedepth2d(i,j)   = domainlakedepth
+            if ( lakedepth_default  > 0.0 ) then
+               lakedepth2d(i,j)   = lakedepth_default
             else 
                lakedepth2d(i,j)   = spval
             endif
           endif
 
         else
-          if ( domainlakedepth  > 0.0 ) then
-             lakedepth2d(i,j)   = domainlakedepth
+          if ( lakedepth_default  > 0.0 ) then
+             lakedepth2d(i,j)   = lakedepth_default
           else 
              lakedepth2d(i,j)   = spval
           endif

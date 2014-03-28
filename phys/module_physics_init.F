@@ -128,8 +128,8 @@ CONTAINS
                          z_lake3d,     dz_lake3d,    t_soisno3d, h2osoi_ice3d,   & !lake
                          h2osoi_liq3d, h2osoi_vol3d, z3d,        dz3d,           & !lake
                          zi3d,         watsat3d,     csol3d,     tkmg3d,         & !lake
-                         tkdry3d,      tksatu3d,     lake2d,     domainlakedepth,& !lake
-                         lakeminalt,   lake_depth,                               & !lake
+                         tkdry3d,      tksatu3d,     lake2d,     lakedepth_default, & !lake
+                         lake_min_elev,   lake_depth,                               & !lake
 #if ( EM_CORE == 1 )
                          lakemask,   lakeflag,                                   & !lake
 #endif
@@ -569,7 +569,7 @@ CONTAINS
   LOGICAL, DIMENSION( ims:ime, jms:jme ),intent(out)                      :: lake2d
 !  REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN)                      ::  HT
   REAL, OPTIONAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN)    ::  lake_depth
-  real, intent(in)      ::      domainlakedepth, lakeminalt
+  real, intent(in)      ::      lakedepth_default, lake_min_elev
 #if ( EM_CORE == 1 )
   REAL,              dimension(ims:ime,jms:jme )      ::  lakemask
   INTEGER, INTENT(IN)      ::  lakeflag
@@ -1045,7 +1045,7 @@ integer myproc
                 h2osoi_liq3d, h2osoi_vol3d, z3d,        dz3d,           & !lake
                 zi3d,         watsat3d,     csol3d,     tkmg3d,         & !lake
                 tkdry3d,      tksatu3d,     LakeModel,  lake2d,           & !lake
-                domainlakedepth,            lakeminalt, lake_depth,       & !lake
+                lakedepth_default,            lake_min_elev, lake_depth,       & !lake
 #if (EM_CORE == 1)
                 lakemask, lakeflag,                                    & !lake
 #endif
@@ -1913,7 +1913,7 @@ integer myproc
                 h2osoi_liq3d, h2osoi_vol3d, z3d,        dz3d,           & !lake
                 zi3d,         watsat3d,     csol3d,     tkmg3d,         & !lake
                 tkdry3d,      tksatu3d,     LakeModel,  lake2d,           & !lake
-                domainlakedepth,            lakeminalt, lake_depth,       & !lake
+                lakedepth_default,            lake_min_elev, lake_depth,       & !lake
 #if (EM_CORE == 1)
                 lakemask, lakeflag,                                      & !lake
 #endif
@@ -2063,7 +2063,7 @@ integer myproc
 
 !   INTEGER , INTENT(IN)        ::     LakeModel
    INTEGER         ::     LakeModel
-   real, intent(in)            ::      domainlakedepth,lakeminalt
+   real, intent(in)            ::      lakedepth_default,lake_min_elev
    REAL ,    INTENT(IN)        ::     DT, BLDT
    REAL ,    INTENT(IN)        ::     DX, DY
 #if (EM_CORE == 1)
@@ -2777,7 +2777,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
      IF ( LakeModel == 1 ) THEN
  
              call  lakeini(IVGTYP,         ISLTYP,          HT,              SNOW,           & !i
-                           lakeminalt,     restart,         domainlakedepth, lake_depth,     &
+                           lake_min_elev,     restart,         lakedepth_default, lake_depth,     &
                            lakedepth2d,    savedtke12d,     snowdp2d,        h2osno2d,       & !o
                            snl2d,          t_grnd2d,        t_lake3d,        lake_icefrac3d, &
                            z_lake3d,       dz_lake3d,       t_soisno3d,      h2osoi_ice3d,   &

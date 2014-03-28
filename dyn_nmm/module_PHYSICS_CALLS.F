@@ -1506,7 +1506,7 @@
      &        ,z_lake3d=grid%z_lake3d, dz_lake3d=grid%dz_lake3d, t_soisno3d=grid%t_soisno3d, h2osoi_ice3d=grid%h2osoi_ice3d  &
      &        ,h2osoi_liq3d=grid%h2osoi_liq3d, h2osoi_vol3d=grid%h2osoi_vol3d, z3d=grid%z3d, dz3d=grid%dz3d                  &
      &        ,zi3d=grid%zi3d, watsat3d=grid%watsat3d, csol3d=grid%csol3d, tkmg3d=grid%tkmg3d                                &
-     &        ,tkdry3d=grid%tkdry3d,tksatu3d=grid%tksatu3d, LakeModel=grid%sf_lake_physics,  lakeminalt=grid%lakeminalt            &
+     &        ,tkdry3d=grid%tkdry3d,tksatu3d=grid%tksatu3d, LakeModel=grid%sf_lake_physics,  lake_min_elev=grid%lake_min_elev  &
 ! end lake module
      &        ,maxpatch=1,inest=1,history_interval=config_flags%history_interval  & !clm
 

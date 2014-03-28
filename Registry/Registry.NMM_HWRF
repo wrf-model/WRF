@@ -1473,6 +1473,8 @@ rconfig   real    nomove_freq             namelist,physics      max_domains  -1.
 rconfig   integer num_snso_layers         namelist,physics      1             7       irh    "num_snso_layers"               ""      ""
 rconfig   integer num_snow_layers         namelist,physics   1             3       irh    "num_snow_layers"               ""      ""
 rconfig   logical use_aero_icbc           namelist,physics      1             .false. rh     "use_aero_icbc"  "Use GOCART climo 3D aerosols IC/BC data in Thompson-MP-Aero"  "logical flag"
+rconfig   integer sf_lake_physics         namelist,physics      max_domains   0       h     "LakeModel"         "activate lake model  0=no, 1=yes"   ""
+
 
 # Dynamics
 # dynamics option (see package definitions, below)

@@ -2618,6 +2618,7 @@ rconfig  real       iccg_prescribed_num      namelist,physics   max_domains    0
 rconfig  real       iccg_prescribed_den      namelist,physics   max_domains    1.0     -   "iccg_prescribed_dem"       "Denominator of user-specified prescribed IC:CG"    ""
 rconfig  integer    cellcount_method         namelist,physics   max_domains    0       -   "cellcount_method"          "0=auto, 1=tile, 2=domain"                   ""
 rconfig  real       cldtop_adjustment        namelist,physics   max_domains    0.      -   "cldtop_adjustment"         "Adjustment to cloud top for ltng param"     "km"
+rconfig   integer sf_lake_physics         namelist,physics      max_domains   0       h     "LakeModel"         "activate lake model  0=no, 1=yes"   ""
 
 state    real  iccg_in_num    ij      misc        1         -      i{16}r     "iccg_in_num"      "IC:CG input numerator"      ""
 state    real  iccg_in_den    ij      misc        1         -      i{16}r     "iccg_in_den"      "IC:CG input denominator"    ""

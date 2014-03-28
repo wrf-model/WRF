@@ -29,7 +29,6 @@ state   integer  LAKE_DEPTH_FLAG   -              misc         1        -     i0
 
 # Lake namelist options
 
-rconfig   integer sf_lake_physics         namelist,physics      max_domains   0       h     "LakeModel"         "activate lake model  0=no, 1=yes"   ""
 rconfig   real    lakedepth_default        namelist,physics      max_domains  50       rh    "lakedepth_default"  "default lake depth"      "m"   
 rconfig   real    lake_min_elev           namelist,physics      max_domains   5       rh     "lake_min_elev"        ""      ""   
 rconfig   integer  use_lakedepth          namelist,physics      max_domains   1       rh     "use_lakedepth"     ""      ""   

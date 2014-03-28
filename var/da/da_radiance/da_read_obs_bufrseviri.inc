@@ -131,7 +131,6 @@ subroutine da_read_obs_bufrseviri (obstype,iv,infile)
 
   !  0.0  Initialize variables
   !-----------------------------------
-  platform_id  = 3   ! metereosat
   sensor_id = 21 !seviri
   disterrmax=zero
   ntest=0
@@ -286,17 +285,20 @@ subroutine da_read_obs_bufrseviri (obstype,iv,infile)
          call ufbint(lnbufr,hdr,nhdr,1,iret,hdrsevi)				
 
         kidsat = nint(hdr(1))
-    ! kidsat 55 means satid= m08, 56 means satid= m09, 57 means satid= m10
+        ! SAID 55 is meteosat-8  or msg-1
+        ! SAID 56 is meteosat-9  or msg-2
+        ! SAID 57 is meteosat-10 or msg-3
         if ( ( kidsat > 57) .or. ( kidsat < 55) ) then 
            write(unit=message(1),fmt='(A,I6)') 'Unknown platform: ', kidsat
            call da_warning(__FILE__,__LINE__,message(1:1))
         end if
+        platform_id  = 12  ! MSG - Meteosat Second Generation
         if ( kidsat == 55 ) then
-            satellite_id = 8
+            satellite_id = 1
         else if ( kidsat == 56 ) then
-            satellite_id = 9
+            satellite_id = 2
         else if ( kidsat == 57 ) then
-            satellite_id = 10
+            satellite_id = 3
         end if
 
         if (clrsky) then     ! asr bufr has no sza

@@ -7,7 +7,7 @@ subroutine da_ad_model ()
 
    implicit none
 
-   integer :: time_step, alarmid
+   integer :: time_step, alarmid, gwd_opt
 
    if (trace_use_dull) call da_trace_entry("da_ad_model")
 
@@ -27,6 +27,7 @@ subroutine da_ad_model ()
    call nl_set_auxinput7_interval_s ( head_grid%id, var4d_bin )
    call nl_set_io_form_auxinput7 ( head_grid%id, 2 )
    call nl_set_frames_per_auxinput7 ( head_grid%id, 1 )
+   call nl_get_gwd_opt ( head_grid%id, gwd_opt )
 
    ! Set all perturbation to ZERO
 
@@ -36,6 +37,7 @@ subroutine da_ad_model ()
    head_grid%a_rainncv = 0.0
    head_grid%a_rainc  = 0.0
    head_grid%a_raincv = 0.0
+   head_grid%a_pratec = 0.0
 
 ! I&O variables
    head_grid%a_scalar = 0.0
@@ -84,6 +86,8 @@ subroutine da_ad_model ()
    head_grid%a_t_save = 0.0
    head_grid%a_rthften = 0.0
    head_grid%a_rqvften = 0.0
+   head_grid%a_rthcuten = 0.0
+   head_grid%a_rqvcuten = 0.0
    head_grid%a_muts = 0.0
    head_grid%a_mudf = 0.0
    head_grid%a_ru_m = 0.0
@@ -94,6 +98,13 @@ subroutine da_ad_model ()
    head_grid%a_ustm=0.0
    head_grid%a_hfx=0.0
    head_grid%a_qfx=0.0
+
+   IF ( gwd_opt .EQ. 1 ) THEN
+      head_grid%a_dtaux3d = 0.0
+      head_grid%a_dtauy3d = 0.0
+      head_grid%a_dusfcg = 0.0
+      head_grid%a_dvsfcg = 0.0
+   ENDIF
 
    head_grid%a_u_1 = 0.0
    head_grid%a_v_1 = 0.0
@@ -152,6 +163,7 @@ subroutine da_ad_model ()
    head_grid%g_rainncv = 0.0
    head_grid%g_rainc  = 0.0
    head_grid%g_raincv = 0.0
+   head_grid%g_pratec = 0.0
 
    ! Set the physics options to what they are in TL and AD
    if ( original_mp_physics .gt. 0 ) &

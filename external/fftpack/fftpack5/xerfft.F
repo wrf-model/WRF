@@ -56,7 +56,11 @@ subroutine xerfft ( srname, info )
   character ( len = * ) srname
   character ( len = 256 ) err_mesg
 
+#if ( VAR4D != 1)
   call wrf_message ( 'XERFFT - Fatal error!' )
+#else
+  call da_wrf_message ( 'XERFFT - Fatal error!' )
+#endif
 
   if ( 1 <= info ) then
     write ( err_mesg , '(a,a,a,i3,a)') '  On entry to ', trim ( srname ), &
@@ -78,6 +82,10 @@ subroutine xerfft ( srname, info )
       ' parameter LDIM is less than 2*(L/2+1).'
   end if
 
+#if ( VAR4D != 1)
   call wrf_error_fatal ( err_mesg )
+#else
+  call da_wrf_error_fatal ( err_mesg )
+#endif
 
 end

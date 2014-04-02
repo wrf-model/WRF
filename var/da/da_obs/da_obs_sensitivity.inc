@@ -288,14 +288,17 @@ subroutine da_obs_sensitivity(ktr, iv)
 	          iv%airep(n)%u(k)%sens = ktr%airep(n)%u(k) / (iv%airep(n)%u(k)%error **2)
 	          iv%airep(n)%v(k)%sens = ktr%airep(n)%v(k) / (iv%airep(n)%v(k)%error **2)
 	          iv%airep(n)%t(k)%sens = ktr%airep(n)%t(k) / (iv%airep(n)%t(k)%error **2)
+	          iv%airep(n)%q(k)%sens = ktr%airep(n)%q(k) / (iv%airep(n)%q(k)%error **2)
 	       
 	          iv%airep(n)%u(k)%inv  = iv%airep(n)%u(k)%inv * iv%airep(n)%u(k)%sens
 	          iv%airep(n)%v(k)%inv  = iv%airep(n)%v(k)%inv * iv%airep(n)%v(k)%sens
 	          iv%airep(n)%t(k)%inv  = iv%airep(n)%t(k)%inv * iv%airep(n)%t(k)%sens
+	          iv%airep(n)%q(k)%inv  = iv%airep(n)%q(k)%inv * iv%airep(n)%q(k)%sens
 	       
 	          ktd(airep,u) = ktd(airep,u) + iv%airep(n)%u(k)%inv
                   ktd(airep,v) = ktd(airep,v) + iv%airep(n)%v(k)%inv 
 	          ktd(airep,t) = ktd(airep,t) + iv%airep(n)%t(k)%inv 
+	          ktd(airep,q) = ktd(airep,q) + iv%airep(n)%q(k)%inv 
 	       end do
 	    end do
 	 end if   

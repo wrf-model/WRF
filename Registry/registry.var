@@ -348,7 +348,7 @@ rconfig   integer   rtminit_satid           namelist,wrfvar14  max_instruments -
 rconfig   integer   rtminit_sensor          namelist,wrfvar14  max_instruments -1.0     - "rtminit_sensor"          ""  ""  
 rconfig   integer   rad_monitoring          namelist,wrfvar14  max_instruments 0        - "rad_monitoring"          ""  ""
 rconfig   real      thinning_mesh           namelist,wrfvar14  max_instruments 60.0     - "thinning_mesh"           ""  ""
-rconfig   logical   thinning                namelist,wrfvar14  1  .false.  - "thinning "               ""  ""
+rconfig   logical   thinning                namelist,wrfvar14  1  .true.   - "thinning "               ""  ""
 rconfig   logical   read_biascoef           namelist,wrfvar14  1  .false.  - "read_biascoef"           ""  ""   
 rconfig   logical   biascorr                namelist,wrfvar14  1  .false.  - "biascorr"                ""  ""   
 rconfig   logical   biasprep                namelist,wrfvar14  1  .false.  - "biasprep"                ""  ""   

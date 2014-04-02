@@ -198,9 +198,9 @@ integer::oops1,oops2
             DO j = jts, MIN(jde-1,jte)
                DO i = its, MIN(ide-1,ite)
                   IF      ( ( grid%lu_index(i,j) .NE. grid%islake ) .AND. ( grid%lu_index(i,j) .NE. grid%iswater ) ) THEN
-                     grid%lake_depth = -1
+                     grid%lake_depth(i,j) = -1
                   ELSE IF   ( grid%lu_index(i,j) .NE. grid%islake ) THEN
-                     grid%lake_depth = -2
+                     grid%lake_depth(i,j) = -2
                   END IF
                END DO
             END DO

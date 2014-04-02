@@ -20,6 +20,7 @@ rconfig   logical check_moist           namelist,perturbation          1      .t
 rconfig   logical check_tracer          namelist,perturbation          1      .true. -    "AD/TL check TRACER"        ""      ""
 rconfig   logical check_TL              namelist,perturbation          1      .true. -    "TL check"                  ""      ""
 rconfig   logical check_AD              namelist,perturbation          1      .true. -    "AD check"                  ""      ""
+rconfig   logical var4d_run             namelist,perturbation          1      .false.  -   "true: exlcude the P calculation in start_em"   ""  ""
 rconfig   real    nl_pert               namelist,perturbation          1         0.1 -    "nl_pert"    "nonlinear perturbation for TL check"      ""
 rconfig   integer max_numer             namelist,perturbation          1           1 -    "max_numer"    ""      ""
 rconfig   integer max_denom             namelist,perturbation          1           1 -    "max_denom"    ""      ""

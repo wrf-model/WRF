@@ -702,23 +702,29 @@
     DO k=kte-1,kts,-1
     DO i=min(ite,ide-1),its,-1
         grid%a_p(i,k,j) = grid%a_p(i,k,j) + grid%a_p_hyd(i,k,j)
-        qvf = 1. + rvovrd*grid%moist(i,k,j,P_QV)
-        temp2 = p1000mb*(grid%alb(i,k,j)+grid%al(i,k,j))
-        temp1 = t0 + grid%t_1(i,k,j)
-        temp0 = temp1*qvf/temp2
-        IF (r_d*temp0 .LE. 0.0 .AND. (cpovcv .EQ. 0.0 .OR. cpovcv .NE. &
-             INT(cpovcv))) THEN
-          temp0b = 0.0
-        ELSE
-          temp0b = r_d*cpovcv*(r_d*temp0)**(cpovcv-1)*p1000mb*grid%a_p(i,k,j)/temp2
+        IF ( .NOT. config_flags%var4d_run ) THEN
+           qvf = 1. + rvovrd*grid%moist(i,k,j,P_QV)
+           temp2 = p1000mb*(grid%alb(i,k,j)+grid%al(i,k,j))
+           temp1 = t0 + grid%t_1(i,k,j)
+           temp0 = temp1*qvf/temp2
+           IF (r_d*temp0 .LE. 0.0 .AND. (cpovcv .EQ. 0.0 .OR. cpovcv .NE. &
+                INT(cpovcv))) THEN
+             temp0b = 0.0
+           ELSE
+             temp0b = r_d*cpovcv*(r_d*temp0)**(cpovcv-1)*p1000mb*grid%a_p(i,k,j)/temp2
+           END IF
+           grid%a_t_1(i,k,j) = grid%a_t_1(i,k,j) + qvf*temp0b
+           a_qvf = temp1*temp0b
+           grid%a_p(i,k,j) = 0.0
+           grid%a_moist(i,k,j,P_QV) = grid%a_moist(i,k,j,P_QV) + rvovrd*a_qvf
         END IF
-        grid%a_al(i,k,j) = grid%a_al(i,k,j) + grid%a_alt(i,k,j) - temp0*p1000mb*temp0b
+        IF ( .NOT. config_flags%var4d_run ) THEN
+           grid%a_al(i,k,j) = grid%a_al(i,k,j) + grid%a_alt(i,k,j) - temp0*p1000mb*temp0b
+        ELSE
+           grid%a_al(i,k,j) = grid%a_al(i,k,j) + grid%a_alt(i,k,j)
+        END IF
         grid%a_alt(i,k,j) = 0.0
         grid%a_p_hyd(i,k,j) = 0.0
-        grid%a_t_1(i,k,j) = grid%a_t_1(i,k,j) + qvf*temp0b
-        a_qvf = temp1*temp0b
-        grid%a_p(i,k,j) = 0.0
-        grid%a_moist(i,k,j,P_QV) = grid%a_moist(i,k,j,P_QV) + rvovrd*a_qvf
     ENDDO
     ENDDO
     ENDDO

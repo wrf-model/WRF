@@ -295,23 +295,25 @@
     DO j=jts,min(jte,jde-1)
     DO k=kts,kte-1
     DO i=its,min(ite,ide-1)
-       g_qvf = rvovrd*g_moist(i,k,j,P_QV)
        qvf = 1.+rvovrd*moist(i,k,j,P_QV)
-
-       g_pwx1 = (r_d*(grid%g_t_1(i,k,j)*qvf+(t0+grid%t_1(i,k,j))*g_qvf)*p1000mb*&
-          (grid%al(i,k,j)+grid%alb(i,k,j))-r_d*(t0+grid%t_1(i,k,j))*qvf*p1000mb*&
-          grid%g_al(i,k,j))/(p1000mb*(grid%al(i,k,j)+grid%alb(i,k,j)))**2
        pwx1 = r_d*(t0+grid%t_1(i,k,j))*qvf/(p1000mb*(grid%al(i,k,j)+grid%alb(i,k,j)))
-       IF (pwx1 .GT. 0.0 .OR. (pwx1 .LT. 0.0 .AND. cpovcv .EQ. INT(&
-            cpovcv))) THEN
-         g_pwr1 = cpovcv*pwx1**(cpovcv-1)*g_pwx1
-       ELSE IF (pwx1 .EQ. 0.0 .AND. cpovcv .EQ. 1.0) THEN
-         g_pwr1 = g_pwx1
-       ELSE
-         g_pwr1 = 0.0
-       END IF
        pwr1 = pwx1**cpovcv
-       grid%g_p(i, k, j) = p1000mb*g_pwr1
+       IF ( .NOT. config_flags%var4d_run) THEN
+          g_qvf = rvovrd*g_moist(i,k,j,P_QV)
+
+          g_pwx1 = (r_d*(grid%g_t_1(i,k,j)*qvf+(t0+grid%t_1(i,k,j))*g_qvf)*p1000mb*&
+             (grid%al(i,k,j)+grid%alb(i,k,j))-r_d*(t0+grid%t_1(i,k,j))*qvf*p1000mb*&
+             grid%g_al(i,k,j))/(p1000mb*(grid%al(i,k,j)+grid%alb(i,k,j)))**2
+          IF (pwx1 .GT. 0.0 .OR. (pwx1 .LT. 0.0 .AND. cpovcv .EQ. INT(&
+               cpovcv))) THEN
+            g_pwr1 = cpovcv*pwx1**(cpovcv-1)*g_pwx1
+          ELSE IF (pwx1 .EQ. 0.0 .AND. cpovcv .EQ. 1.0) THEN
+            g_pwr1 = g_pwx1
+          ELSE
+            g_pwr1 = 0.0
+          END IF
+          grid%g_p(i, k, j) = p1000mb*g_pwr1
+       END IF
        grid%p(i,k,j)=p1000mb*pwr1 - grid%pb(i,k,j)
 
        grid%g_p_hyd(i,k,j) = grid%g_p(i,k,j)

@@ -626,6 +626,7 @@
             call da_model_lbc_off
          endif
 
+         call nl_set_var4d_run (head_grid%id, .true.)
          call da_nl_model(it)
 !      elseif (var4d .and. multi_inc == 2 ) then
 #else

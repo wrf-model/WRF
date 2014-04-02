@@ -184,6 +184,7 @@ subroutine da_ad_model ()
    if ( model_config_rec%var4d_detail_out ) gradient_out = .true.
 
    ! WRF model time-stepping.  Calls integrate().
+   call nl_set_var4d_run (head_grid%id, .true.)
    call wrf_run_ad
 	
    ! restore the physics options to the originals

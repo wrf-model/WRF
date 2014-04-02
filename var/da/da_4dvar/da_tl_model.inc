@@ -128,6 +128,7 @@ subroutine da_tl_model ()
    !call nl_set_isfflx (head_grid%id, 0)
 
    ! WRF model time-stepping.  Calls integrate().
+   call nl_set_var4d_run (head_grid%id, .true.)
    call wrf_run_tl
 	
    ! restore the physics options to the originals

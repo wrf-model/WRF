@@ -838,7 +838,7 @@ state   real    -              ikjft   chem        1         -     -    -
 
 state    real   SMOIS            ilj     -          1         Z     rh       "SMOIS"                "SOIL MOISTURE" ""
 state    real   TSLB             ilj     -          1         Z     r       "TSLB" "SOIL TEMPERATURE" ""
-state    real   lake_depth            ij     misc        1         -     rhd=(interp_mask_water_field:lu_index,iswater)   "lake_depth"              "lake depth" "m"
+state    real   lake_depth       ij     misc        1         -     rd=(interp_mask_water_field:lu_index,iswater)   "lake_depth"              "lake depth" "m"
 
 
 # MYJ PBL variables
@@ -1371,7 +1371,7 @@ rconfig   integer movemin                 namelist,physics      max_domains   0 
 rconfig   integer num_snso_layers         namelist,physics      1             7       irh    "num_snso_layers"               ""      ""
 rconfig   integer num_snow_layers         namelist,physics   1             3       irh    "num_snow_layers"               ""      ""
 rconfig   logical use_aero_icbc           namelist,physics      1             .false. rh     "use_aero_icbc"  "Use GOCART climo 3D aerosols IC/BC data in Thompson-MP-Aero"  "logical flag"
-rconfig   integer sf_lake_physics         namelist,physics      max_domains   0       h     "LakeModel"         "activate lake model  0=no, 1=yes"   ""
+rconfig   integer sf_lake_physics         namelist,physics      max_domains   0       h     "sf_lake_physics"         "activate lake model  0=no, 1=yes"   ""
 
 
 # Dynamics

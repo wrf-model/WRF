@@ -1,7 +1,7 @@
 # Lake variables
 
 state    logical lake2d           ij              misc        1         -      -       "lake2d"         "T/F: whether grid is lake"
-state    real    lakedepth2d      ij              misc        1         -     irh      "lakedepth2d"    "lake depth"       "m"  
+state    real    lakedepth2d      ij              misc        1         -      rh      "lakedepth2d"    "lake depth"       "m"  
 state    real    savedtke12d      ij              misc        1         -     irh      "savedtke12d"    "top level eddy conductivity from previous timestep"       "W/m.K"
 state    real    snowdp2d         ij              misc        1         -     irh      "snowdp2d"       "snow depth"       "m"  
 state    real    h2osno2d         ij              misc        1         -     irh      "h2osno2d"       "snow water"       "mm" 

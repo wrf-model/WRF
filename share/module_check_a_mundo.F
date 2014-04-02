@@ -721,6 +721,22 @@
       END IF
 #endif
 
+!-----------------------------------------------------------------------
+!  grav_settling = 1 must be turned off for mp_physics=28.
+!-----------------------------------------------------------------------
+      oops = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec%mp_physics(i) .EQ. THOMPSONAERO ) THEN
+            IF ( model_config_rec%grav_settling(i) .NE. FOGSETTLING0 ) THEN
+                model_config_rec%grav_settling(i) = 0
+                oops = oops + 1
+            END IF
+         END IF
+      ENDDO      ! Loop over domains
+      IF ( oops .GT. 0 ) THEN
+         wrf_err_message = 'mp_physics == 28, already has gravitational fog settling; resetting grav_settling to 0'
+         CALL wrf_message ( wrf_err_message )
+      END IF
  
 !-----------------------------------------------------------------------
 !  Remapping namelist variables for gridded and surface fdda to aux streams 9 and 10.

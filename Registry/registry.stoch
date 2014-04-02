@@ -70,7 +70,7 @@ rconfig   integer     kminforc         namelist,physics      1              1   
 rconfig   integer     lminforc         namelist,physics      1              1         - "min. forcing wavenumber in lat. for psi perturb."    "" ""
 rconfig   integer     kminforct        namelist,physics      1              1         - "min. forcing wavenumber in lon. for theta perturb."    "" ""
 rconfig   integer     lminforct        namelist,physics      1              1         - "min. forcing wavenumber in lat. for theta perturb."    "" ""
-rconfig   integer     kmaxforc         namelist,physics      1              1000000   - "max. forcing wavenumber in lon. for psi perturb.""    "" ""
+rconfig   integer     kmaxforc         namelist,physics      1              1000000   - "max. forcing wavenumber in lon. for psi perturb."     "" ""
 rconfig   integer     lmaxforc         namelist,physics      1              1000000   - "max. forcing wavenumber in lat. for psi perturb."    "" ""
 rconfig   integer     kmaxforct        namelist,physics      1              1000000   - "max. forcing wavenumber in lon. for theta perturb."    "" ""
 rconfig   integer     lmaxforct        namelist,physics      1              1000000   - "max. forcing wavenumber in lat. for theta perturb."    "" ""
@@ -81,7 +81,7 @@ rconfig   integer     lmaxforcth       derived               1               0  
 
 # Namelist parameters SPPT
 rconfig   real        gridpointvariance namelist,physics      max_domains   0.25     - "gridpoint variance"
-rconfig   real        sppt_thresh_fact  namelist,physics      max_domains   2.0      - "threshold for SPPT perturbations in std dev of gridpointvariance
+rconfig   real        sppt_thresh_fact  namelist,physics      max_domains   2.0      - "threshold for SPPT perturbations in std dev of gridpointvariance"
 rconfig   real        l_sppt            namelist,physics      max_domains   15000.0  - "Length scale in meters" 
 rconfig   real        tau_sppt          namelist,physics      max_domains   21600.0  - "Decorrelation time scale in s"
 

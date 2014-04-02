@@ -808,6 +808,10 @@ Namelist variables for lake module:
                                                   is assumed to be 50m)  
  lake_min_elev(max_dom)              = 5,       ; minimum elevation of lakes. May be used to determine whether a water point is a lake in the absence of lake
                                                   category. If the landuse type includes 'lake' (i.e. Modis_lake and USGS_LAKE), this variable is of no effects. 
+ use_lakedepth                       = 1,       ; option to use lake depth data. Lake depth data is available from 3.6 geogrid program. If one didn't process
+                                                  the lake depth data, but this switch is set to 1, the program will stop and tell one to go back to geogrid
+                                                  program. 
+                                                  = 0, do not use lake depth data.
  lightning_option (max_dom)                     ; Lightning parameterization option to allow flash rate prediction without chemistry
                                      = 0        ; off
                                      = 1        ; PR92 based on maximum w, redistributes flashes within dBZ > 20 (for convection resolved runs; must also use 

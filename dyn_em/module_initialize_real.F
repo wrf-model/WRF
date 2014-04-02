@@ -4311,7 +4311,7 @@ end subroutine fillitup
             !  the isobaric original field has the surface from 2-m T and RH, and 10-m U and V).
 
             IF ( lowest_lev_from_sfc ) THEN
-               fnew(i,1,j) = forig(i,ko_above_sfc(i)-1,j)
+               fnew(i,1,j) = forig(i,1,j)
             END IF
 
          END DO

@@ -625,12 +625,35 @@ CONTAINS
 ! convert optical properties at 300,400,600, and 999 to conform to the band wavelengths
 ! these are: 200,235,270,287.5,302.5,305,362.5,550,1920,1745,6135; why the emphasis on the UV?
 ! taual - use angstrom exponent
-        if(tauaer300(i,k+1,j).gt.thresh .and. tauaer999(i,k+1,j).gt.thresh) then
-           ang=log(tauaer300(i,k+1,j)/tauaer999(i,k+1,j))/log(999./300.)
-!       write(6,*)i,k,ang,tauaer300(i,k+1,j),tauaer999(i,k+1,j)
-           taual(i,kte-k,ib)=tauaer400(i,k+1,j)*(0.4/midbands(ib))**ang ! notice reserved variable
-!       write(6,10001)i,k,ang,tauaer300(i,k+1,j),tauaer999(i,k+1,j),midbands(ib),taual(i,k,ib)
-!10001      format(i3,i3,5f12.6)
+        if(tauaer300(i,k+1,j).gt.thresh .and. tauaer999(i,k+1,j).gt.thresh .and. &
+           tauaer400(i,k+1,j).gt.thresh .and. tauaer600(i,k+1,j).gt.thresh) then
+! avoid negative ang that makes taual explode and crashes wrf
+           if(tauaer300(i,k+1,j).gt.tauaer999(i,k+1,j)) then 
+            ang=log(tauaer300(i,k+1,j)/tauaer999(i,k+1,j))/log(999./300.)
+ !       write(6,*)i,k,ang,tauaer300(i,k+1,j),tauaer999(i,k+1,j)
+            taual(i,kte-k,ib)=tauaer400(i,k+1,j)*(0.4/midbands(ib))**ang ! notice reserved variable
+ !       write(6,10001)i,k,ang,tauaer300(i,k+1,j),tauaer999(i,k+1,j),midbands(ib),taual(i,k,ib)
+ !10001      format(i3,i3,5f12.6)
+! use ang exponent for closer wavelenghts
+           else 
+            if(midbands(ib) .lt. 0.5) then
+             ang=log(tauaer300(i,k+1,j)/tauaer400(i,k+1,j))/log(400./300.)
+             taual(i,kte-k,ib)=tauaer400(i,k+1,j)*(0.4/midbands(ib))**ang ! notice reserved variable
+            else
+             ang=log(tauaer600(i,k+1,j)/tauaer999(i,k+1,j))/log(999./600.)
+             taual(i,kte-k,ib)=tauaer600(i,k+1,j)*(0.6/midbands(ib))**ang ! notice reserved variable   
+            endif
+           endif
+
+           ! diagnostic message
+           if(taual(i,kte-k,ib) .gt. 5.0) then
+            write(msg,'("WARNING: Large local optical depth of ",f8.2," at point i,j,k,ib=",4i5)') taual(i,kte-k,ib),i,j,k,ib
+            call wrf_debug(100, msg)
+            write(msg,'("Diagnostics: ang, tauaer300, tauaer400,tauaer600, tauaer999")')
+            call wrf_debug(100, msg)
+            write(msg,'(5E14.2)') ang,tauaer300(i,k+1,j),tauaer400(i,k+1,j),tauaer600(i,k+1,j),tauaer999(i,k+1,j)
+            call wrf_debug(100, msg)
+           endif
 
 ! ssa - linear interpolation; extrapolation
            slope=(waer600(i,k+1,j)-waer400(i,k+1,j))/.2

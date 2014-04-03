@@ -280,6 +280,10 @@ subroutine da_read_obs_radar (iv, filename, grid)
                    nlocal = nlocal + 1
                    ilocal = ilocal + 1
 
+               iv % radar (ilocal) % stn_loc % lon = platform % stn % lon
+               iv % radar (ilocal) % stn_loc % lat = platform % stn % lat
+               iv % radar (ilocal) % stn_loc % elv = platform % stn % elv
+
                iv%info(radar)%levels(ilocal)    = nlevels
                iv%info(radar)%name(ilocal)      = platform%info%name
                iv%info(radar)%platform(ilocal)  = platform%info%platform

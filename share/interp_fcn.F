@@ -1299,10 +1299,10 @@ print *,'column of cg pres = ',cprs
 
      ioff  = 0 ; joff  = 0
      IF ( xstag ) THEN 
-       ioff = (nri-1)/2
+       ioff = MAX((nri-1)/2,1)
      ENDIF
      IF ( ystag ) THEN
-       joff = (nrj-1)/2
+       joff = MAX((nrj-1)/2,1)
      ENDIF
 
      ! Iterate over the ND tile and compute the values

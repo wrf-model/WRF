@@ -424,6 +424,11 @@ Namelist variables for controlling the adaptive time step option:
                                        nssl_rho_qh  = 500.  ! graupel density
                                        nssl_rho_qhl = 900.  ! hail density
                                        nssl_rho_qs  = 100.  ! snow density
+                                     = 28, aerosol-aware Thompson scheme with water- and ice-friendly aerosol climatology 
+                                           (new for V3.6)
+                                       This option has two climatogical aerosol input options:
+                                       use_aero_icbc = .F. : use constant values
+                                       use_aero_icbc = .T. : use input from WPS
                                      = 30, HUJI (Hebrew University of Jerusalem, Israel) spectral bin microphysics,
                                            fast version
                                      = 32, HUJI spectral bin microphysics, full version
@@ -549,14 +554,14 @@ Namelist variables for controlling the adaptive time step option:
 
  sf_sfclay_physics (max_dom)         surface-layer option (old bl_sfclay_physics option)
                                      = 0, no surface-layer
-                                     = 1, MM5 Monin-Obukhov scheme
+                                     = 1, Revised MM5 Monin-Obukhov scheme (Jimenez, renamed in v3.6)
                                      = 2, Monin-Obukhov (Janjic) scheme
                                      = 3, NCEP Global Forecast System scheme (NMM only)
                                      = 4, QNSE surface layer
                                      = 5, MYNN surface layer
                                      = 7, Pleim-Xiu surface layer (ARW only)
                                      = 10, TEMF surface layer (ARW only)
-                                     = 11, Revised MM5 scheme (Jimenez)
+                                     = 91, Old MM5 scheme (previously option 1)
 
  sf_surface_physics (max_dom)        land-surface option (old bl_surface_physics option)
                                      = 0, no surface temp prediction
@@ -843,7 +848,10 @@ Namelist variables for lake module:
 Options for wind turbine drag parameterization:
 
  windfarm_opt                       = 0         ; 1 = Simulates the effects of wind turbines in the atmospheric evolution
- windfarm_ij                        = 0         ; 1 = The cordinates of the turbines are defined in terms of grid points
+ windfarm_ij                        = 0         ; whether to use lat-lon or i-j coordinate as wind turbine locations    
+                                                ; 0 = The cordinates of the turbines are defined in terms of lat-lon
+                                                ; 1 = The cordinates of the turbines are defined in terms of grid points
+
 
 Options for stochastic kinetic-energy backscatter scheme:
 

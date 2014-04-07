@@ -2167,7 +2167,7 @@ CONTAINS
       DO im=PARAM_FIRST_SCALAR,NUM_SCALAR
 ! need to avoid mixing scalars associated with precipitating species (e.g. Nr)
         IF((IS_SCALAR .AND. im.NE.P_QNS .AND. im.NE.P_QNR .AND. im.NE.P_QNG &
-          .AND. im.NE.P_QNH .AND. im.NE.P_QT .AND. im.NE.P_QVOLG) &
+          .AND. im.NE.P_QNH .AND. im.NE.P_QT .AND. im.NE.P_QVOLG .AND. im.NE.P_QKE_ADV) &
           .OR. (.not. IS_SCALAR)) THEN
         do j=jts,jte
         do i=its,ite

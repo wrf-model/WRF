@@ -58,6 +58,7 @@
     REAL    guv_sfc, gt_sfc, gq_sfc, rinblw
     INTEGER moist_adv_opt, scalar_adv_opt, tke_adv_opt
     INTEGER save_topo_orig
+    INTEGER scalar_pblmix, tracer_pblmix, grav_settling
 #endif
     CHARACTER (len=19) simulation_start_date
     CHARACTER (len=len_current_date) current_date_save
@@ -177,6 +178,9 @@
     CALL nl_get_grid_sfdda  ( grid%id , grid_sfdda )
     CALL nl_get_auxinput9_end_h( grid%id , sgfdda_end_h )
     CALL nl_get_auxinput9_interval_m ( grid%id , sgfdda_interval_m )
+    CALL nl_get_scalar_pblmix  ( grid%id , scalar_pblmix )
+    CALL nl_get_tracer_pblmix  ( grid%id , tracer_pblmix )
+    CALL nl_get_grav_settling  ( grid%id , grav_settling )
 
     IF ( grid_fdda == 1 ) THEN
     CALL nl_get_fgdt       ( grid%id , fgdt )
@@ -639,6 +643,9 @@ endif
       CALL wrf_put_dom_ti_integer   ( fid, 'ISFFLX',      config_flags%isfflx      , 1 , ierr ) 
       CALL wrf_put_dom_ti_integer   ( fid, 'ICLOUD',      config_flags%icloud      , 1 , ierr ) 
       CALL wrf_put_dom_ti_integer   ( fid, 'ICLOUD_CU',   config_flags%icloud_cu   , 1 , ierr ) 
+      CALL wrf_put_dom_ti_integer   ( fid, 'TRACER_PBLMIX', tracer_pblmix , 1 , ierr )
+      CALL wrf_put_dom_ti_integer   ( fid, 'SCALAR_PBLMIX', scalar_pblmix , 1 , ierr )
+      CALL wrf_put_dom_ti_integer   ( fid, 'GRAV_SETTLING', grav_settling , 1 , ierr )
 
 #endif
 

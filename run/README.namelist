@@ -64,6 +64,7 @@ information on NMM specific settings (http://www.dtcenter.org/wrf-nmm/users)
                                      = 5,       ; GRIB1 format
                                      = 10,      ; GRIB2 format
                                      = 11,      ; pnetCDF format
+ ncd_nofill                          = .true.,  ; only a single write, not the write/read/write sequence, new in 3.6
  frames_per_emissfile                = 12,      ; number of times in each chemistry emission file.
  io_style_emiss                      = 1,       ; style to use for the chemistry emission files.
                                                 ; 0 = Do not read emissions from files.
@@ -619,10 +620,10 @@ Namelist variables for controlling the adaptive time step option:
                                      = 1, turn on topographic surface wind correction from Jimenez 
                                        (YSU PBL only, and require extra input from geogrid)
                                      = 2, turn on topographic surface wind correction from Mass (YSU PBL only)
- bl_mynn_tkebudget                   = 0, default off; = 1 adds MYNN tke budget terms to output
- bl_mynn_tkeadvect                   = .false., default off; = .true. do MYNN tke advection
- scalar_pblmix                       = 1 ; mix scalar fields consistent with PBL option (exch_h)
- tracer_pblmix                       = 1 ; mix tracer fields consistent with PBL option (exch_h)
+ bl_mynn_tkebudget (max_dom)         = 0, default off; = 1 adds MYNN tke budget terms to output
+ bl_mynn_tkeadvect (max_dom)         = .false., default off; = .true. do MYNN tke advection
+ scalar_pblmix (max_dom)             = 1 ; mix scalar fields consistent with PBL option (exch_h)
+ tracer_pblmix (max_dom)             = 1 ; mix tracer fields consistent with PBL option (exch_h)
  sf_surface_mosaic                   option to mosaic landuse categories for Noah LSM            
                                      = 0 ; default; use dominant category only
                                      = 1 ; use mosaic landuse categories
@@ -1239,3 +1240,17 @@ The following are for observation nudging:
                                                   packages.
  /
 
+AFWA diagnostics:
+&afwa
+afwa_diag_opt (max_dom)              = 0,       ; AFWA Diagnostic option, 1: on
+afwa_ptype_opt (max_dom)             = 0,       ; Precip type option, 1: on
+afwa_vil_opt (max_dom)               = 0,       ; Vert Int Liquid option, 1: on
+afwa_radar_opt (max_dom)             = 0,       ; Radar option, 1: on
+afwa_severe_opt (max_dom)            = 0,       ; Severe Wx option, 1: on
+afwa_icing_opt (max_dom)             = 0,       ; Icing option, 1: on
+afwa_vis_opt (max_dom)               = 0,       ; Visibility option, 1: on
+afwa_cloud_opt (max_dom)             = 0,       ; Cloud option, 1: on
+afwa_ptype_ccn_tmp                   = 264.15,  ; CCN temperature for precipitation type calculation
+afwa_ptype_tot_melt                  = 50,      ; Total melting energy for precipitation type calculation
+afwa_ccn_conc                        = 1.0E8,   ; CCN concentration
+afwa_hail_opt                        = 0,       ; Hail/Graupel switch, 1:hail, 0:graupel

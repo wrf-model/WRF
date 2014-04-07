@@ -443,6 +443,7 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
       END IF
 
       dup_loop: do n = 1, ndup
+         is_surface=.false.
          select case(fm)
 
          case (12) ;
@@ -571,7 +572,6 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
 
 ! determine if level corresponds to surface
 
-            is_surface=.false.
             levs = nlevels
             surface_level = 0
             do i = 1, nlevels
@@ -683,7 +683,6 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
             if (.not. use_tamdarobs .or. ntotal(tamdar) == max_tamdar_input  ) cycle reports
 
 ! determine if level corresponds to surface
-            is_surface=.false.
             levs = nlevels
             surface_level = 0
             do i = 1, nlevels
@@ -1454,7 +1453,7 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
             call da_warning(__FILE__,__LINE__,message(1:3))
             cycle
          end select
-         if( is_surface .or. (levs > 0 .and. .not. thin_conv) .or. &
+         if( is_surface .or. (obs_index == gpspw) .or. (levs > 0 .and. .not. thin_conv) .or. &
             (levs > 0 .and. (thin_conv .and. (obs_index /=  airep .and. obs_index /= tamdar))) ) then
             iv%info(obs_index)%name(ilocal(obs_index))      = platform%info%name
             iv%info(obs_index)%platform(ilocal(obs_index))  = platform%info%platform

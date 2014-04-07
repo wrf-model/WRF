@@ -739,6 +739,24 @@
       END IF
  
 !-----------------------------------------------------------------------
+!  scalar_pblmix = 1 should be turned on for mp_physics=28.
+!-----------------------------------------------------------------------
+      oops = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec%mp_physics(i) .EQ. THOMPSONAERO ) THEN
+            IF ( model_config_rec%use_aero_icbc .AND. model_config_rec%scalar_pblmix(i) .NE. 1 ) THEN
+                model_config_rec%scalar_pblmix(i) = 1
+                oops = oops + 1
+            END IF
+         END IF
+      ENDDO      ! Loop over domains
+      IF ( oops .GT. 0 ) THEN
+         wrf_err_message = 'For mp_physics == 28 and use_aero_icbc is true, recommending to turn on scalar_pblmix; ', &
+                           'resetting scalar_pblmix = 1'
+         CALL wrf_message ( wrf_err_message )
+      END IF
+
+!-----------------------------------------------------------------------
 !  Remapping namelist variables for gridded and surface fdda to aux streams 9 and 10.
 !  Relocated here so that the remappings are after checking the namelist for inconsistencies.
 !-----------------------------------------------------------------------

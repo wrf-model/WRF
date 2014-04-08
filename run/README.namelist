@@ -527,10 +527,6 @@ Namelist variables for controlling the adaptive time step option:
  alevsiz                             = 12 for Tegen aerosol input levels, set automatically
  no_src_types                        = 6 for Tegen aerosols: organic and black carbon, sea salt, sulfalte, dust,
                                        and stratospheric aerosol (volcanic ashes - currently 0), set automatically
- swint_opt                           Interpolation of short-wave radiation based on the updated solar zenith angle 
-                                       between SW call
-                                     = 0, no interpolation
-                                     = 1, use interpolation
 
  The following aerosol options allow RRTMG and new Goddard radiation schemes to see it, but the aerosols are
      constant during the model integration.
@@ -739,6 +735,7 @@ Namelist variables for controlling the adaptive time step option:
                                                 ; and Noah scheme, set to land point, permanent ice, set temps
                                                 ; from 2 m to surface, and set smois and sh2o. The default value has changed
                                                 ; from 271 to 100 K in v3.5.1 to avoid mixed-up use with fractional seaice input
+                                                ; Used by land model option 1,2,3,4 and 8
  sst_update                          = 0        ; time-varying sea-surface temp (0=no, 1=yes). If selected real 
                                                 ; puts SST, XICE, ALBEDO and VEGFRA in wrflowinp_d01 file, and wrf updates 
                                                 ; these from it at same interval as boundary file. Also requires
@@ -850,8 +847,8 @@ Options for wind turbine drag parameterization:
 
  windfarm_opt                       = 0         ; 1 = Simulates the effects of wind turbines in the atmospheric evolution
  windfarm_ij                        = 0         ; whether to use lat-lon or i-j coordinate as wind turbine locations    
-                                                ; 0 = The cordinates of the turbines are defined in terms of lat-lon
-                                                ; 1 = The cordinates of the turbines are defined in terms of grid points
+                                                ; 0 = The coordinate of the turbines are defined in terms of lat-lon
+                                                ; 1 = The coordinate of the turbines are defined in terms of grid points
 
 
 Options for stochastic kinetic-energy backscatter scheme:

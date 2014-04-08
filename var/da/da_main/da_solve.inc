@@ -767,7 +767,7 @@
       ! [8.7.1] Write Ascii radar OMB and OMA file
 
       if (use_radarobs) then
-         call da_write_oa_radar_ascii (ob,iv,re)
+         call da_write_oa_radar_ascii (ob,iv,re,it)
       end if
 
       ! [8.3] Interpolate x_g to low resolution grid

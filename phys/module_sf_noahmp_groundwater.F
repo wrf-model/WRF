@@ -224,7 +224,8 @@ END  SUBROUTINE WTABLE_mmf_noahmp
   DATA KLATFACTOR /2.,3.,4.,10.,10.,12.,14.,20.,24.,28.,40.,48.,2.,0.,10.,0.,20.,2.,2./
 
   REAL,    PARAMETER :: PI = 3.14159265 
-  REAL,    PARAMETER :: FANGLE = SQRT(TAN(PI/8.))/(2.*SQRT(2.))
+! REAL,    PARAMETER :: FANGLE = SQRT(TAN(PI/8.))/(2.*SQRT(2.))
+  REAL,    PARAMETER :: FANGLE = 0.45508986056   ! f95 does not permit real intrinsics in init expressions
 
 itsh=max(its-1,ids)
 iteh=min(ite+1,ide-1)

@@ -751,8 +751,9 @@
          END IF
       ENDDO      ! Loop over domains
       IF ( oops .GT. 0 ) THEN
-         wrf_err_message = 'For mp_physics == 28 and use_aero_icbc is true, recommending to turn on scalar_pblmix; ', &
-                           'resetting scalar_pblmix = 1'
+         wrf_err_message = 'For mp_physics == 28 and use_aero_icbc is true, recommend to turn on scalar_pblmix'
+         CALL wrf_message ( wrf_err_message )
+         wrf_err_message = 'resetting scalar_pblmix = 1'
          CALL wrf_message ( wrf_err_message )
       END IF
 

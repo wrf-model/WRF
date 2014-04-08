@@ -2122,7 +2122,7 @@ CONTAINS
 ! (at the lowest level the surface fluxes should go in these terms)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !-----------------------------------------------------------------------
-      USE module_state_description, ONLY: P_QNS, P_QNR, P_QNG, P_QT, P_QNH, P_QVOLG
+      USE module_state_description, ONLY: P_QNS, P_QNR, P_QNG, P_QT, P_QNH, P_QVOLG, P_QKE_ADV
 
       IMPLICIT NONE
 !

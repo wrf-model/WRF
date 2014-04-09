@@ -191,12 +191,12 @@ state    real  dvmrcwdt_sv13d  ikj{nspecmam} misc   1         -      r        "D
 
 # MAM chemistry interactions with cloud microphysics requires dgnum to be saved in restart files for each mode.
 # 4D DGNUM4D is not saved correctly, so use these as a workaround.
-state    real  dgnum_a1        ikj       misc       1         -      rh       "DG_NUM_A1"              "Accum. mode mean diameter"      ""
-state    real  dgnum_a2        ikj       misc       1         -      rh       "DG_NUM_A2"              "Aitken mode mean diameter"      ""
-state    real  dgnum_a3        ikj       misc       1         -      rh       "DG_NUM_A3"              "Coarse mode mean diameter"      ""
-state    real  dgnumwet_a1     ikj       misc       1         -      rh       "DG_NUMWET_A1"           "Accum. mode mean diameter"      ""
-state    real  dgnumwet_a2     ikj       misc       1         -      rh       "DG_NUMWET_A2"           "Aitken mode mean diameter"      ""
-state    real  dgnumwet_a3     ikj       misc       1         -      rh       "DG_NUMWET_A3"           "Coarse mode mean diameter"      ""
+state    real  dgnum_a1        ikj       misc       1         -      r        "DG_NUM_A1"              "Accum. mode mean diameter"      ""
+state    real  dgnum_a2        ikj       misc       1         -      r        "DG_NUM_A2"              "Aitken mode mean diameter"      ""
+state    real  dgnum_a3        ikj       misc       1         -      r        "DG_NUM_A3"              "Coarse mode mean diameter"      ""
+state    real  dgnumwet_a1     ikj       misc       1         -      r        "DG_NUMWET_A1"           "Accum. mode mean diameter"      ""
+state    real  dgnumwet_a2     ikj       misc       1         -      r        "DG_NUMWET_A2"           "Aitken mode mean diameter"      ""
+state    real  dgnumwet_a3     ikj       misc       1         -      r        "DG_NUMWET_A3"           "Coarse mode mean diameter"      ""
 
 #CAM5's wet scavenging output variables
 state    real  FRACIS3D        ikj{nspecmam} misc   1         -      r        "FRACIS3D"               "fraction of transported species that are insoluble"    ""

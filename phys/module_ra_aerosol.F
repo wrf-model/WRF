@@ -78,8 +78,9 @@ subroutine calc_aerosol_goddard_sw(ht,dz8w,p,t3d,qv3d,aer_type,                 
 
     ! mid-band wavelength / 550. nm
     real :: lower_wvl(N_BANDS),upper_wvl(N_BANDS)
-    data (lower_wvl(i),i=1,N_BANDS) /0.175,0.225,0.245,0.280,0.295,0.310,0.325,0.400,0.700,1.220,2.270/
-    data (upper_wvl(i),i=1,N_BANDS) /0.225,0.245,0.280,0.295,0.310,0.325,0.400,0.700,1.220,2.270,10.00/
+    integer :: kk
+    data (lower_wvl(kk),kk=1,N_BANDS) /0.175,0.225,0.245,0.280,0.295,0.310,0.325,0.400,0.700,1.220,2.270/
+    data (upper_wvl(kk),kk=1,N_BANDS) /0.225,0.245,0.280,0.295,0.310,0.325,0.400,0.700,1.220,2.270,10.00/
 
     ! I/O variables
     integer, intent(in) :: ims,ime,jms,jme,kms,kme, &

@@ -2195,19 +2195,20 @@ integer::oops1,oops2
                              ( grid%tslb(i,1,j) .lt. 400 ) .and. ( grid%smois(i,1,j) .lt. 0.005 ) ) then
                            print *,'Noah -> Noah: bad soil moisture at i,j = ',i,j,grid%smois(i,:,j)
                            iicount = iicount + 1
-!                          grid%smois(i,:,j) = 0.005
+
+                           grid%smois(i,:,j) = 0.005
 !+---+-----------------------------------------------------------------+
 !  Some bad values of soil moisture are possible (huge negative and positive), but they
 !  appear to occur only along coastlines, so instead of overwriting with small moisture
 !  values, use relatively large moisture val.  Orig code checked for large negative but
 !  not positive values, mods here reset either.  G. Thompson (28 Feb 2008).
 
-                           grid%smois(i,:,j) = 0.499
-                        ELSEIF ( (grid%landmask(i,j).gt.0.5) .and. (grid%tslb(i,1,j) .gt. 170 ) .and. &
-                             ( grid%tslb(i,1,j) .lt. 400 ) .and. (grid%smois(i,1,j) .gt. 1.005 ) ) then
-                           print *,'Noah -> Noah: bad soil moisture at i,j = ',i,j,grid%smois(i,:,j)
-                           iicount = iicount + 1
-                           grid%smois(i,:,j) = 0.499
+!                          grid%smois(i,:,j) = 0.499
+!                       ELSEIF ( (grid%landmask(i,j).gt.0.5) .and. (grid%tslb(i,1,j) .gt. 170 ) .and. &
+!                            ( grid%tslb(i,1,j) .lt. 400 ) .and. (grid%smois(i,1,j) .gt. 1.005 ) ) then
+!                          print *,'Noah -> Noah: bad soil moisture at i,j = ',i,j,grid%smois(i,:,j)
+!                          iicount = iicount + 1
+!                          grid%smois(i,:,j) = 0.499
 !+---+-----------------------------------------------------------------+
                         END IF
                      END DO
@@ -2252,18 +2253,18 @@ integer::oops1,oops2
                !  Fudge soil moisture higher where canopy water is non-zero.
                !  G. Thompson (12 Jun 2008)
 
-               DO j = jts, MIN(jte,jde-1)
-                 DO i = its, MIN(ite,ide-1)
-                    IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
-                    if (grid%canwat(i,j) .GT. 1.01 .AND. grid%landmask(i,j) .GT. 0.5 ) THEN
-                       print *,'  CANWAT: moisten soil a bit more at i,j =',i,j,grid%canwat(i,j)
-                       grid%smois(i,1,j) = grid%smois(i,1,j) + (grid%canwat(i,j)**0.33333)*0.04
-                       grid%smois(i,1,j) = MIN(0.499, grid%smois(i,1,j))
-                       grid%smois(i,2,j) = grid%smois(i,2,j) + (grid%canwat(i,j)**0.33333)*0.01
-                       grid%smois(i,2,j) = MIN(0.499, grid%smois(i,2,j))
-                    end if
-                 END DO
-               END DO
+!              DO j = jts, MIN(jte,jde-1)
+!                DO i = its, MIN(ite,ide-1)
+!                   IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+!                   if (grid%canwat(i,j) .GT. 1.01 .AND. grid%landmask(i,j) .GT. 0.5 ) THEN
+!                      print *,'  CANWAT: moisten soil a bit more at i,j =',i,j,grid%canwat(i,j)
+!                      grid%smois(i,1,j) = grid%smois(i,1,j) + (grid%canwat(i,j)**0.33333)*0.04
+!                      grid%smois(i,1,j) = MIN(0.499, grid%smois(i,1,j))
+!                      grid%smois(i,2,j) = grid%smois(i,2,j) + (grid%canwat(i,j)**0.33333)*0.01
+!                      grid%smois(i,2,j) = MIN(0.499, grid%smois(i,2,j))
+!                   end if
+!                END DO
+!              END DO
 !+---+-----------------------------------------------------------------+
 
 

@@ -209,6 +209,7 @@ Namelist variables specifically for the WPS input for real:
  lagrange_order                      = 1        ; vertical interpolation order
                                                 ; 1 = linear
                                                 ; 2 = quadratic
+                                                ; 9 = cubic spline
  zap_close_levels                    = 500      ; ignore isobaric level above surface if delta p (Pa) < zap_close_levels
  lowest_lev_from_sfc                 = .false.  ; place the surface value into the lowest eta location
                                                 ; T = use surface value as lowest eta (u,v,t,q)
@@ -746,6 +747,7 @@ Namelist variables for controlling the adaptive time step option:
                                                 ; (must be used for NMM and recommended for sst_update=1)
  rdmaxalb                            = .true.   ; use snow albedo from geogrid; false means using values from table
  rdlai2d                             = .false.  ; use LAI from input; false means using values from table
+                                                  if sst_update=1, LAI will also be in wrflowinp file
  bucket_mm                           = -1.      ; bucket reset value for water accumulations (value in mm, -1.=inactive)
  bucket_J                            = -1.      ; bucket reset value for energy accumulations (value in J, -1.=inactive)
  tmn_update                          = 0        ; update deep soil temperature (1, yes; 0, no)
@@ -863,6 +865,26 @@ Options for stochastic kinetic-energy backscatter scheme:
                                                   change the run. When running an ensemble, this can be
                                                   ensemble member number, so that each ensemble member gets a
                                                   different random number stream, hence a different perturbed run.
+ ztau_psi                           = 10800.0   ; decorr. time of noise for psi perturb
+ ztau_t                             = 10800.0   ; decorr. time of noise for theta perturb
+ rexponent_psi                      = -1.83     ; spectral slope of forcing for psi
+ rexponent_t                        = -1.83     ; spectral slope of forcing for theta
+ zsigma2_eps                        = 0.0833    ; variance of noise for psi perturb
+ zsigma2_eta                        = 0.0833    ; variance of noise for theta perturb
+ kminforc                           = 1         ; min. forcing wavenumber in lon. for psi perturb
+ lminforc                           = 1         ; min. forcing wavenumber in lat. for psi perturb
+ kminforct                          = 1         ; min. forcing wavenumber in lon. for theta perturb
+ lminforct                          = 1         ; min. forcing wavenumber in lat. for theta perturb
+ kmaxforc                           = 1000000   ; max. forcing wavenumber in lon. for psi perturb
+ lmaxforc                           = 1000000   ; max. forcing wavenumber in lat. for psi perturb
+ kmaxforct                          = 1000000   ; max. forcing wavenumber in lon. for theta perturb
+ lmaxforct                          = 1000000   ; max. forcing wavenumber in lat. for theta perturb
+
+Namelist parameters SPPT
+ gridpointvariance (max_dom)        = 0.25      ; gridpoint variance
+ sppt_thresh_fact (max_dom)         = 2.0       ; threshold for SPPT perturbations in std dev of gridpointvariance
+ l_sppt (max_dom)                   = 15000.0   ; Length scale in meters
+ stoch_force_global_opt (max_dom)   = 21600.0   ; Decorrelation time scale in seconds
 
 Options for use with the Noah-MP Land Surface Model:
 

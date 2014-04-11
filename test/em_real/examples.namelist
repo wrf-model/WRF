@@ -59,9 +59,9 @@ Note, this is not a namelist.input file. Find what interests you, and cut and pa
 
 ** Using lake model
 &physics
- lakemodel                           = 1,      1,     1,
- domain_lakedepth                    = 200,      1.9,   1.9,
- lakeminalt                          = 50,      1,     -10,
+ sf_lake_physics                     = 1,      1,     1,
+ lakedepth_default                   = 50.,    50.,   50.,
+ lake_min_elev                       = 5.,     5.,    5.,
 
  
 ** Using stochastic backscatter scheme

@@ -80,7 +80,8 @@ CONTAINS
   REAL, DIMENSION(       0:NSOIL)  :: ZSOIL !depth of soil layer-bottom [m]
   REAL,  DIMENSION(      1:NSOIL)  :: SMCEQ  !equilibrium soil water  content [m3/m3]
   REAL,  DIMENSION(      1:NSOIL)  :: SMC,SH2O
-  REAL                                        :: DELTAT,RCOND,TOTWATER,SMCMAX, PSISAT, BEXP, SMCWLT ,DKSAT,PSI,WFLUXDEEP,WCNDDEEP,DDZ,SMCWTDMID &
+  REAL                                        :: DELTAT,RCOND,TOTWATER,SMCMAX, PSISAT, BEXP, SMCWLT ,DKSAT,PSI &
+                                                ,WFLUXDEEP,WCNDDEEP,DDZ,SMCWTDMID &
                                                 ,WPLUS,WMINUS
   REAL,      DIMENSION( ims:ime, jms:jme )    :: QLAT
   INTEGER,   DIMENSION( ims:ime, jms:jme )    :: LANDMASK !-1 for water (ice or no ice) and glacial areas, 1 for land where the LSM does its soil moisture calculations.

@@ -12266,7 +12266,8 @@ CONTAINS
                      snow_mass_factor = (130.0/resnow1d(ncol,k))*(130.0/resnow1d(ncol,k))
                      resnow1d(ncol,k)   = 130.0
                      IF ( wrf_dm_on_monitor() ) THEN
-                       WRITE(message,*)'RRTMG:  reducing snow mass (cloud path) to ', nint(snow_mass_factor*100.), ' percent of full value'
+                       WRITE(message,*)'RRTMG:  reducing snow mass (cloud path) to ', &
+                                       nint(snow_mass_factor*100.), ' percent of full value'
                        call wrf_debug(150, message)
                      ENDIF
                  endif

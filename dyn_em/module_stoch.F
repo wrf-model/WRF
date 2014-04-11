@@ -204,8 +204,10 @@ contains
       ! Fill lower left quadrant of ZCHI. For this range the indeces IK,IL 
        DO IK=jds-1,jde   ! These are now wavenumbers
        DO IL=ids-1,ide  
-       if (((sqrt((IK/RY*IK/RY)+(IL/RX*IL/RX)).lt.((KMAXFORC+0.5)/RX)).and.(sqrt((IK/RY*IK/RY)+(IL/RX*IL/RX)).ge.((KMINFORC-0.5)/RX))) .or. & 
-           ((sqrt((IK/RY*IK/RY)+(IL/RX*IL/RX)).lt.((LMAXFORC+0.5)/RX)).and.(sqrt((IK/RY*IK/RY)+(IL/RX*IL/RX)).ge.((LMINFORC-0.5)/RX))))then 
+       if (((sqrt((IK/RY*IK/RY)+(IL/RX*IL/RX)).lt.((KMAXFORC+0.5)/RX)).and.&
+            (sqrt((IK/RY*IK/RY)+(IL/RX*IL/RX)).ge.((KMINFORC-0.5)/RX))) .or. & 
+           ((sqrt((IK/RY*IK/RY)+(IL/RX*IL/RX)).lt.((LMAXFORC+0.5)/RX)).and.&
+            (sqrt((IK/RY*IK/RY)+(IL/RX*IL/RX)).ge.((LMINFORC-0.5)/RX))))then 
          if ((IK>0).or.(IL>0)) then 
            ZCHI(IL+1,IK+1)=((IK/RY*IK/RY)+(IL/RX*IL/RX))**(REXPONENT_PSI/2.)
            ZGAMMAN= ZGAMMAN + ((IK/RY*IK/RY)+(IL/RX*IL/RX))**(REXPONENT_PSI+1)
@@ -221,8 +223,10 @@ contains
       ! Fill lower left quadrant of ZCHI. For this range the indeces IK,IL 
        DO IK=jds-1,jde   ! These are now wavenumbers
        DO IL=ids-1,ide  
-       if (((sqrt((IK/RY*IK/RY)+(IL/RX*IL/RX)).lt.((KMAXFORCT+0.5)/RX)).and.(sqrt((IK/RY*IK/RY)+(IL/RX*IL/RX)).ge.((KMINFORCT-0.5)/RX))) .or. & 
-           ((sqrt((IK/RY*IK/RY)+(IL/RX*IL/RX)).lt.((LMAXFORCT+0.5)/RX)).and.(sqrt((IK/RY*IK/RY)+(IL/RX*IL/RX)).ge.((LMINFORCT-0.5)/RX))))then 
+       if (((sqrt((IK/RY*IK/RY)+(IL/RX*IL/RX)).lt.((KMAXFORCT+0.5)/RX)).and.&
+            (sqrt((IK/RY*IK/RY)+(IL/RX*IL/RX)).ge.((KMINFORCT-0.5)/RX))) .or. & 
+           ((sqrt((IK/RY*IK/RY)+(IL/RX*IL/RX)).lt.((LMAXFORCT+0.5)/RX)).and.&
+            (sqrt((IK/RY*IK/RY)+(IL/RX*IL/RX)).ge.((LMINFORCT-0.5)/RX))))then 
          if ((IK>0).or.(IL>0)) then 
            ZCHIT(IL+1,IK+1)=((IK/RY*IK/RY)+(IL/RX*IL/RX))**(REXPONENT_T/2.)
            ZGAMMAT= ZGAMMAT + ((IK/RY*IK/RY)+(IL/RX*IL/RX))**(REXPONENT_T)
@@ -461,8 +465,10 @@ contains
       ! Fill lower left quadrant of ZCHI. For this range the indeces IK,IL
       DO IK=jds-1,jde   ! These are now wavenumbers
       DO IL=ids-1,ide
-      if (((sqrt((IK/RY*IK/RY)+(IL/RX*IL/RX)).lt.((KMAXFORCT+0.5)/RX)).and.(sqrt((IK/RY*IK/RY)+(IL/RX*IL/RX)).ge.((KMINFORCT-0.5)/RX))) .or. &
-          ((sqrt((IK/RY*IK/RY)+(IL/RX*IL/RX)).lt.((LMAXFORCT+0.5)/RX)).and.(sqrt((IK/RY*IK/RY)+(IL/RX*IL/RX)).ge.((LMINFORCT-0.5)/RX))))then
+      if (((sqrt((IK/RY*IK/RY)+(IL/RX*IL/RX)).lt.((KMAXFORCT+0.5)/RX)).and.&
+           (sqrt((IK/RY*IK/RY)+(IL/RX*IL/RX)).ge.((KMINFORCT-0.5)/RX))) .or. &
+          ((sqrt((IK/RY*IK/RY)+(IL/RX*IL/RX)).lt.((LMAXFORCT+0.5)/RX)).and.&
+           (sqrt((IK/RY*IK/RY)+(IL/RX*IL/RX)).ge.((LMINFORCT-0.5)/RX))))then
         if ((IK>0).or.(IL>0)) then
           ZCHIT(IL+1,IK+1)=exp(  -2*RPI**2*kappat*((IK/RY*IK/RY)+(IL/RX*IL/RX)) ) !SPPT
           ZGAMMAN= ZGAMMAN + exp(  -4*RPI**2*kappat*((IK/RY*IK/RY)+(IL/RX*IL/RX)) ) !SPPT

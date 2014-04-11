@@ -1,5 +1,21 @@
 MODULE module_sf_lake
 
+! The lake scheme was retrieved from the Community Land Model version 4.5 
+! (Oleson et al. 2013) with some modifications by Gu et al. (2013). It is a 
+! one-dimensional mass and energy balance scheme with 20-25 model layers, 
+! including up to 5 snow layers on the lake ice, 10 water layers, and 10 soil 
+! layers on the lake bottom. The lake scheme is used with actual lake points and 
+! lake depth derived from the WPS, and it also can be used with user defined 
+! lake points and lake depth in WRF (lake_min_elev and lakedepth_default). 
+! The lake scheme is independent of a land surface scheme and therefore 
+! can be used with any land surface scheme embedded in WRF. The lake scheme 
+! developments and evaluations were included in Subin et al. (2012) and Gu et al. (2013) 
+!
+!   Subin et al. 2012: Improved lake model for climate simulations, J. Adv. Model. 
+!   Earth Syst., 4, M02001. DOI:10.1029/2011MS000072; 
+!   Gu et al. 2013: Calibration and validation of lake surface temperature simulations 
+!   with the coupled WRF-Lake model. Climatic Change, 1-13, 10.1007/s10584-013-0978-y. 
+
  USE module_wrf_error
  USE module_model_constants, ONLY : rcp
 

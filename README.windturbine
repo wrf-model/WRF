@@ -30,7 +30,7 @@ If you do not have access to these data an idealized wind turbine is provided in
 release (./run/wind-turbine-1.tbl). It is strongly recomended to use the data from the manufacturer.
 The parameterization works with the MYNN PBL and modifies the QKE field representing 2xTKE
 to include the TKE produced by wind turbines. QKE can be advected as a part
-of the scalar 4D tracer array in WRF.
+of the scalar 4D tracer array in WRF using the bl_mynn_tkeadvect switch for each domain (default =.false.)
 
 It is not recommended to run the parameterization at resolutions higher than 5 rotor diameters -
 at this resolution rotation of the rotor blades should be included (not represented in the current

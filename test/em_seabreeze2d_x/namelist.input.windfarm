@@ -55,10 +55,11 @@
  ra_lw_physics                       = 1,
  ra_sw_physics                       = 1,
  radt                                = 5,
- sf_sfclay_physics                   = 1,
+ sf_sfclay_physics                   = 5,
  sf_surface_physics                  = 1,
- bl_pbl_physics                      = 1,
+ bl_pbl_physics                      = 5,
  bldt                                = 0,
+ bl_mynn_tkeadvect                   = .true.,
  tracer_pblmix                       = 1
  cu_physics                          = 0,
  cudt                                = 0,

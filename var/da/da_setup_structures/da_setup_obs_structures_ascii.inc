@@ -26,7 +26,7 @@ subroutine da_setup_obs_structures_ascii( ob, iv, grid )
    !------------------------------
    call init_constants_derived
    thin_3d=.false.
-   if ( thin_conv ) then
+   if ( thin_conv_ascii ) then
       rlat_min =  r999
       rlat_max = -r999
       rlon_min =  r999
@@ -262,7 +262,7 @@ subroutine da_setup_obs_structures_ascii( ob, iv, grid )
    !--------------------------------------------------------------------------
    ! [2.5] Set all thinned obs missing  
    !--------------------------------------------------------------------------
-    if ( thin_conv ) then
+    if ( thin_conv_ascii ) then
      do i = 1, num_ob_indexes
 
         if ( iv%info(i)%ntotal > 0 ) then
@@ -277,7 +277,7 @@ subroutine da_setup_obs_structures_ascii( ob, iv, grid )
             end if
         end if
      end do
-    end if ! thin_conv
+    end if ! thin_conv_ascii
   
    !--------------------------------------------------------------------------
    ! [3.0] Calculate innovation vector (O-B) and create (smaller) ob structure:
@@ -293,7 +293,7 @@ subroutine da_setup_obs_structures_ascii( ob, iv, grid )
 
    iv%time = 1
 
-   if ( thin_conv ) then
+   if ( thin_conv_ascii ) then
       do n = 1, num_ob_indexes
          if( n==radar .or. n == airep .or. n==tamdar ) then
          thin_3d=.true.

@@ -1,4 +1,4 @@
-WRFPLUS Model Version 3.5 (April 18, 2013)
+WRFPLUS Model Version 3.6 (April 18, 2014)
 http://www.mmm.ucar.edu/wrf/users/wrfda/download/wrfplus.html
 
 ------------------------
@@ -28,4 +28,4 @@ This is the main directory for the WRFPLUS Version 3 source code release.
 ======================================
 
 For information on how to compile/run, view the User's Guide:
-http://www.mmm.ucar.edu/wrf/users/wrfda/Docs/user_guide_V3.5/users_guide_chap6.htm
+http://www.mmm.ucar.edu/wrf/users/wrfda/Docs/user_guide_V3.6/WRFDA_Users_Guide.html

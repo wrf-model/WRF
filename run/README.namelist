@@ -149,6 +149,11 @@ Additional settings when running WRFVAR:
  inputout_end_s                      = 0        ; the above shows that the input-formatted data are output
                                                   starting from hour 3 to hour 12 in 180 min interval.
 
+For automatic moving nests: requires special input data, and environment variable TERRAIN_AND_LANDUSE set at compile time
+                                     (This option will overwrite input_from_file for nest domains)
+ input_from_hires (max_dom)          = .true., 
+ rsmas_data_path                     = "path-to-terrain-and-landuse-dataset"
+
  &domains
  time_step                           = 60,	; time step for integration in integer seconds
                                                   recommend 6*dx (in km) for typical real-data cases
@@ -880,12 +885,6 @@ Options for stochastic kinetic-energy backscatter scheme:
  kmaxforct                          = 1000000   ; max. forcing wavenumber in lon. for theta perturb
  lmaxforct                          = 1000000   ; max. forcing wavenumber in lat. for theta perturb
 
-Namelist parameters SPPT
- gridpointvariance (max_dom)        = 0.25      ; gridpoint variance
- sppt_thresh_fact (max_dom)         = 2.0       ; threshold for SPPT perturbations in std dev of gridpointvariance
- l_sppt (max_dom)                   = 15000.0   ; Length scale in meters
- stoch_force_global_opt (max_dom)   = 21600.0   ; Decorrelation time scale in seconds
-
 Options for use with the Noah-MP Land Surface Model:
 
 &noah_mp
@@ -1044,6 +1043,8 @@ The following are for observation nudging:
  obs_sfcfact                         = 1.0      ; Scale factor applied to time window for surface obs
  obs_sfcfacr                         = 1.0      ; Scale factor applied to horiz radius of influence for surface obs
  obs_dpsmx                           = 7.5      ; Max pressure change (cb) allowed within horiz radius of influence
+
+ obs_scl_neg_qv_innov                = 0        ; 1 = prevent to nudge toward negative QV 
  /
 
  &scm

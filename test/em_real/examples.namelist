@@ -64,9 +64,9 @@ Note, this is not a namelist.input file. Find what interests you, and cut and pa
  lake_min_elev                       = 5.,     5.,    5.,
 
  
-** Using stochastic backscatter scheme
+** Using stochastic backscatter scheme (new namelist record since v3.6)
 
-&physics
+&stoch
  stoch_force_opt                     = 1,        1,        1,
  stoch_vertstruc_opt                 = 0,        0,        0,
  tot_backscat_psi                    = 1.E-05,   1.E-05,   1.E-05,
@@ -86,15 +86,8 @@ Note, this is not a namelist.input file. Find what interests you, and cut and pa
  lmaxforc                            = 1000000,
  kmaxforct                           = 1000000,
  lmaxforct                           = 1000000,
- gridpointvariance                   = 0.125,    0.125,    0.125
- sppt_thresh_fact                    = 2.0,      2.0,      2.0,
- l_sppt                              = 150000.0, 150000.0, 150000.0,
- tau_sppt                            = 21600.0,  21600.0,  21600.0,
-
-
-
-&bdy_control
  perturb_bdy                         = 0,
+
 
 ** Using DFI options (note this is a separate namelist record):
 
@@ -424,9 +417,6 @@ Price, J. F., T. B. Sanford, and G. Z. Forristal, 1994: Forced stage response to
  traj_opt                            = 1,
 
 
-
-
-
 ** Using aerosol option aer_opt = 2:
 
 &physics
@@ -442,9 +432,6 @@ Price, J. F., T. B. Sanford, and G. Z. Forristal, 1994: Forced stage response to
  aer_asy_val        = 0.90,
 
 
-
-
-
 ** Using Jimenez wind-farm scheme
 
 In the &physics namelist record, set the MAX_DOM value:
@@ -455,3 +442,4 @@ specifics of the wind turbine type: wind-turbine-1.tbl
 
 The location of wind turbines are specified as lat lon, and 
 the turbine type: windturbines.txt
+

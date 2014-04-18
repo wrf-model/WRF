@@ -25,7 +25,7 @@ This is the main directory for the WRFDA Version 3 source code release.
 V3.6 Release Notes :
 -------------------
 
-Version 3.6 was released on April 15, 2014.
+Version 3.6 was released on April 18, 2014.
 
   For more information on WRFDA, visit the WRFDA Users home page
   http://www.mmm.ucar.edu/wrf/users/wrfda/index.html
@@ -49,7 +49,7 @@ Version 3.6 was released on April 15, 2014.
         -BUFR Version 10.2.3
         -RTTOV interface is now for RTTOV Version 11.1
     -Bug fixes and performance improvements
-    -WRFPLUS has been upgraded to V3.5 and it is consistent with the released WRF version 3.5.
+    -WRFPLUS has been upgraded to V3.6.
 
 ======================================
 V3.5.1 Release Notes :

@@ -286,6 +286,10 @@
                RACM_ESRLSORG_AQCHEM_KPP,CBMZSORG,CBMZSORG_AQ)
              isorg=1
              CALL wrf_debug(15,'SORGAM aerosols initialization ')
+! 20130128 acd_ck_bugfix start
+         CASE (MOZART_MOSAIC_4BIN_VBS0_KPP)
+             CALL wrf_debug(15,'MOZART_MOSAIC_4BIN_VBS0_KPP aerosols initialization ')
+! 20130128 acd_ck_bugfix end
          CASE DEFAULT
              CALL wrf_debug(15,'no aerosols initialization yet')
              CALL wrf_message('no aerosols initialization yet')
@@ -802,7 +806,10 @@ col_dens_allocated : &
         endif col_dens_allocated
 
 !++alma 2012-12-01 modis landuse from sw
-        if( id == 1 ) then
+!       if( id == 1 ) then
+! 20130807 acd_mbela_bugfix start
+        if( id == 1 .and. .not. allocated(luse2usgs) ) then
+! 20130807 acd_mbela_bugfix end
           !allocate( luse2usgs(config_flags%num_land_cat),stat=astat )
           print*,"num_land_cat: ", num_land_cat
           allocate( luse2usgs(num_land_cat),stat=astat )

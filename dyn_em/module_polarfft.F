@@ -136,6 +136,7 @@ integer myproc, i, j, k
    ! Local
    LOGICAL piggyback_mu, piggyback_mut
    INTEGER ij, k_end
+
 #ifdef DM_PARALLEL
 #else
    INTEGER itrace
@@ -191,34 +192,42 @@ call wrf_get_myproc(myproc)
      ENDIF
 #if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
 # include "XPOSE_POLAR_FILTER_V_z2x.inc"
+
      CALL polar_filter_3d( grid%v_xxx, grid%clat_xxx, .false.,     &
                                 fft_filter_lat, dclat,                 &
                                 ids, ide, jds, jde, kds, kde-1,         &
                                 imsx, imex, jmsx, jmex, kmsx, kmex,     &
                                 ipsx, ipex, jpsx, jpex, kpsx, MIN(kde-1,kpex ) )
+
 # include "XPOSE_POLAR_FILTER_V_x2z.inc"
 # include "XPOSE_POLAR_FILTER_U_z2x.inc"
      k_end = MIN(kde-1,kpex)
      IF ( piggyback_mu ) k_end = MIN(kde,kpex)
+
      CALL polar_filter_3d( grid%u_xxx, grid%clat_xxx, piggyback_mu,     &
                                 fft_filter_lat, 0.,                &
                                 ids, ide, jds, jde, kds, kde,       &
                                 imsx, imex, jmsx, jmex, kmsx, kmex, &
                                 ipsx, ipex, jpsx, jpex, kpsx, k_end )
+
 # include "XPOSE_POLAR_FILTER_U_x2z.inc"
 #else
+
      CALL polar_filter_3d( grid%v_2, grid%clat, .false.,     &
                                 fft_filter_lat, dclat,             &
                                 ids, ide, jds, jde, kds, kde,       &
                                 ims, ime, jms, jme, kms, kme,       &
                                 ips, ipe, jps, jpe, kps, MIN(kde-1,kpe) )
+
      k_end = MIN(kde-1,kpe)
      IF ( piggyback_mu ) k_end = MIN(kde,kpe)
+
      CALL polar_filter_3d( grid%u_2, grid%clat, piggyback_mu,     &
                                 fft_filter_lat, 0.,                &
                                 ids, ide, jds, jde, kds, kde-1,     &
                                 ims, ime, jms, jme, kms, kme,       &
                                 ips, ipe, jps, jpe, kps, k_end )
+
 #endif
 
      IF ( piggyback_mu ) THEN
@@ -237,20 +246,24 @@ call wrf_get_myproc(myproc)
 # include "XPOSE_POLAR_FILTER_T_z2x.inc"
      k_end = MIN(kde-1,kpex)
      IF ( piggyback_mu ) k_end = MIN(kde,kpex)
+
      CALL polar_filter_3d( grid%t_xxx, grid%clat_xxx,piggyback_mu,     &
                                 fft_filter_lat, 0.,                &
                                 ids, ide, jds, jde, kds, kde-1,     &
                                 imsx, imex, jmsx, jmex, kmsx, kmex, &
                                 ipsx, ipex, jpsx, jpex, kpsx, k_end )
+
 # include "XPOSE_POLAR_FILTER_T_x2z.inc"
 #else
      k_end = MIN(kde-1,kpe)
      IF ( piggyback_mu ) k_end = MIN(kde,kpe)
+
      CALL polar_filter_3d( grid%t_2, grid%clat, piggyback_mu,     &
                                 fft_filter_lat, 0.,                &
                                 ids, ide, jds, jde, kds, kde-1,     &
                                 ims, ime, jms, jme, kms, kme,       &
                                 ips, ipe, jps, jpe, kps, k_end )
+
 #endif
      IF ( piggyback_mu ) THEN
        grid%mu_2(ips:ipe,jps:jpe) = grid%t_2(ips:ipe,kde,jps:jpe)
@@ -269,20 +282,25 @@ call wrf_get_myproc(myproc)
                                  ids, ide, jds, jde, kds, kde,       &
                                  imsx, imex, jmsx, jmex, kmsx, kmex, &
                                  ipsx, ipex, jpsx, jpex, kpsx, kpex )
+
 # include "XPOSE_POLAR_FILTER_W_x2z.inc"
 # include "XPOSE_POLAR_FILTER_PH_z2x.inc"
+
       CALL polar_filter_3d( grid%ph_xxx, grid%clat_xxx, .false.,     &
                                  fft_filter_lat, 0.,                &
                                  ids, ide, jds, jde, kds, kde,       &
                                  imsx, imex, jmsx, jmex, kmsx, kmex, &
                                  ipsx, ipex, jpsx, jpex, kpsx, kpex )
+
 # include "XPOSE_POLAR_FILTER_PH_x2z.inc"
 #else
+
       CALL polar_filter_3d( grid%w_2, grid%clat,  .false.,     &
                                  fft_filter_lat, 0.,                &
                                  ids, ide, jds, jde, kds, kde,       &
                                  ims, ime, jms, jme, kms, kme, &
                                  ips, ipe, jps, jpe, kps, kpe )
+
       CALL polar_filter_3d( grid%ph_2, grid%clat, .false.,     &
                                  fft_filter_lat, 0.,                &
                                  ids, ide, jds, jde, kds, kde,       &
@@ -302,6 +320,7 @@ call wrf_get_myproc(myproc)
                                  ids, ide, jds, jde, kds, kde,       &
                                  imsx, imex, jmsx, jmex, kmsx, kmex, &
                                  ipsx, ipex, jpsx, jpex, kpsx, kpex )
+
 # include "XPOSE_POLAR_FILTER_WW_x2z.inc"
 #else
       CALL polar_filter_3d( grid%ww_m, grid%clat, .false.,     &
@@ -325,10 +344,12 @@ call wrf_get_myproc(myproc)
                                 ids, ide, jds, jde, kds, kde,       &
                                 imsx, imex, jmsx, jmex, kmsx, kmex, &
                                 ipsx, ipex, jpsx, jpex, kpsx, MIN(kpex,kde-1) )
+
 # include "XPOSE_POLAR_FILTER_RV_x2z.inc"
 # include "XPOSE_POLAR_FILTER_RU_z2x.inc"
      k_end = MIN(kde-1,kpex)
      IF ( piggyback_mut ) k_end = MIN(kde,kpex)
+
      CALL polar_filter_3d( grid%ru_xxx, grid%clat_xxx, piggyback_mut,     &
                                 fft_filter_lat, 0.,                &
                                 ids, ide, jds, jde, kds, kde,       &
@@ -336,13 +357,16 @@ call wrf_get_myproc(myproc)
                                 ipsx, ipex, jpsx, jpex, kpsx, k_end )
 #include "XPOSE_POLAR_FILTER_RU_x2z.inc"
 #else
+
      CALL polar_filter_3d( grid%rv_m, grid%clat, .false.,     &
                                 fft_filter_lat, dclat,             &
                                 ids, ide, jds, jde, kds, kde,       &
                                 ims, ime, jms, jme, kms, kme, &
                                 ips, ipe, jps, jpe, kps, MIN(kde-1,kpe) )
+
      k_end = MIN(kde-1,kpe)
      IF ( piggyback_mut ) k_end = MIN(kde,kpe)
+
      CALL polar_filter_3d( grid%ru_m, grid%clat, piggyback_mut,     &
                                 fft_filter_lat, 0.,                &
                                 ids, ide, jds, jde, kds, kde-1,       &
@@ -401,17 +425,20 @@ call wrf_get_myproc(myproc)
 #endif
    ENDIF
 
-! tracer
+!!!!!!!!!!!!!!!!!!!!!!!
+! TRACER
    IF ( flag_tracer .GE. PARAM_FIRST_SCALAR ) THEN
      itrace = flag_tracer
 #if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
 # include "XPOSE_POLAR_FILTER_TRACER_z2x.inc"
+
      CALL polar_filter_3d( grid%fourd_xxx, grid%clat_xxx, .false. ,     &
                            fft_filter_lat, 0.,                &
                            ids, ide, jds, jde, kds, kde,       &
                            imsx, imex, jmsx, jmex, kmsx, kmex, &
                            ipsx, ipex, jpsx, jpex, kpsx, MIN(kpex,kde-1), &
                            positive_definite = positive_definite )
+
 # include "XPOSE_POLAR_FILTER_TRACER_x2z.inc"
 #else
      CALL polar_filter_3d( tracer(ims,kms,jms,itrace), grid%clat, .false. ,     &
@@ -483,6 +510,8 @@ SUBROUTINE polar_filter_3d( f, xlat, piggyback, fft_filter_lat, dvlat, &
   INTEGER :: k, nboxw, nbox2, istart, iend, overlap
   INTEGER, DIMENSION(6) :: wavenumber = (/ 1, 3, 7, 10, 13, 16 /)
 
+  INTEGER :: fftflag
+
   ! Variables will stay in domain form since this routine is meaningless
   ! unless tile extent is the same as domain extent in E/W direction, i.e.,
   ! the processor has access to all grid points in E/W direction.
@@ -494,6 +523,8 @@ SUBROUTINE polar_filter_3d( f, xlat, piggyback, fft_filter_lat, dvlat, &
      CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
   END IF
 
+  fftflag= 1  ! call double-precision fft
+! fftflag= 0  ! call single-precision fft
 
   nx = ide-ids ! "U" stagger variables will be repeated by periodic BCs
   ny = kte-kts+1 ! we can filter extra level for variables that are non-Z-staggered
@@ -506,15 +537,21 @@ SUBROUTINE polar_filter_3d( f, xlat, piggyback, fft_filter_lat, dvlat, &
 
      ! determine whether or not to filter the data
 
-     lat = xlat(ids,j)-dvlat
+     if(xlat(ids,j).gt.0.) then
+        lat = xlat(ids,j)-dvlat
+     else
+        lat = xlat(ids,j)+dvlat
+     endif
+
      IF (abs(lat) >= fft_filter_lat) THEN
+
         DO k=kts,kte
         DO i=ids,ide-1
            sheet(i-ids+1,k-kts+1) = f(i,k,j)
         END DO
         END DO
 
-        CALL polar_filter_fft_2d_ncar(nx,ny,sheet,lat,fft_filter_lat,piggyback)
+        call polar_filter_fft_2d_ncar(nx,ny,sheet,lat,fft_filter_lat,piggyback,fftflag)
 
         DO k=kts,kte
            DO i=ids,ide-1
@@ -522,6 +559,7 @@ SUBROUTINE polar_filter_3d( f, xlat, piggyback, fft_filter_lat, dvlat, &
            END DO
            ! setting up ims-ime with x periodicity:
            ! enforce periodicity as in set_physical_bc3d
+
            DO i=1,ids-ims
               f(ids-i,k,j)=f(ide-i,k,j)
            END DO
@@ -529,6 +567,7 @@ SUBROUTINE polar_filter_3d( f, xlat, piggyback, fft_filter_lat, dvlat, &
               f(ide+i-1,k,j)=f(ids+i-1,k,j)
            END DO
         END DO
+
      END IF
   END DO ! outer j (latitude) loop
 
@@ -536,7 +575,7 @@ END SUBROUTINE polar_filter_3d
 
 !------------------------------------------------------------------------------
 
-SUBROUTINE polar_filter_fft_2d_ncar(nx,ny,fin,lat,filter_latitude,piggyback)
+SUBROUTINE polar_filter_fft_2d_ncar(nx,ny,fin,lat,filter_latitude,piggyback,fftflag)
   IMPLICIT NONE
   INTEGER , INTENT(IN) :: nx, ny
   REAL , DIMENSION(nx,ny), INTENT(INOUT) :: fin
@@ -544,13 +583,19 @@ SUBROUTINE polar_filter_fft_2d_ncar(nx,ny,fin,lat,filter_latitude,piggyback)
   LOGICAL, INTENT(IN) :: piggyback
 
   REAL :: pi, rcosref, freq, c, cf
+
+  INTEGER :: k, fftflag
+  REAL, DIMENSION(NX,NY) :: work
+  REAL, DIMENSION(NX+15) :: wsave
+  REAL(KIND=8), DIMENSION(NX,NY) :: fin8, work8 
+  REAL(KIND=8), DIMENSION(NX+15) :: wsave8
+
   INTEGER :: i, j
   REAL, dimension(nx,ny) :: fp
 
   INTEGER :: lensave, ier, nh, n1
   INTEGER :: lot, jump, n, inc, lenr, lensav, lenwrk
-  REAL, DIMENSION(nx+15) :: wsave
-  REAL, DIMENSION(nx,ny) :: work
+
   REAL, PARAMETER :: alpha = 0.0
   REAL :: factor_k
 
@@ -575,7 +620,12 @@ SUBROUTINE polar_filter_fft_2d_ncar(nx,ny,fin,lat,filter_latitude,piggyback)
 !  initialize coefficients, place in wsave 
 !   (should place this in init and save wsave at program start)
 
-  call rfftmi(n,wsave,lensav,ier)
+  if(fftflag.eq.0) then
+     call rfftmi(n,wsave,lensav,ier)
+  else
+     call dfft1i(n,wsave8,lensav,ier)
+  endif
+
   IF(ier /= 0) THEN
     write(a_message,*) ' error in rfftmi ',ier
     CALL wrf_message ( a_message ) 
@@ -583,7 +633,15 @@ SUBROUTINE polar_filter_fft_2d_ncar(nx,ny,fin,lat,filter_latitude,piggyback)
 
 !  do the forward transform
 
-  call rfftmf( lot, jump, n, inc, fin, lenr, wsave, lensav, work, lenwrk, ier )
+  if(fftflag.eq.0) then
+     call rfftmf(lot, jump, n, inc, fin, lenr, wsave, lensav, work, lenwrk, ier)
+  else 
+     fin8 = fin
+     do k=1,ny 
+        call dfft1f(n, inc, fin8(1,k), lenr, wsave8, lensav, work8, lenwrk, ier)
+     enddo 
+  endif
+
   IF(ier /= 0) THEN
     write(a_message,*) ' error in rfftmf ',ier
     CALL wrf_message ( a_message ) 
@@ -602,6 +660,7 @@ SUBROUTINE polar_filter_fft_2d_ncar(nx,ny,fin,lat,filter_latitude,piggyback)
   DO i=2,nh+1
     freq=REAL(i-1)/REAL(n)
     c = (rcosref*COS(lat*pi/180.)/SIN(freq*pi))**2
+
 !    c = MAX(0.,MIN(1.,c))
     do j=1,ntop
       factor_k = (1.-alpha)+alpha*min(1.,float(ntop - j)/10.)
@@ -632,15 +691,31 @@ SUBROUTINE polar_filter_fft_2d_ncar(nx,ny,fin,lat,filter_latitude,piggyback)
     endif
   END IF
 
-  DO j=1,ny
-    DO i=1,nx
-      fin(i,j) = fp(i,j)*fin(i,j)
-    ENDDO
-  ENDDO
+  if(fftflag.eq.0) then
+     do j=1,ny
+       do i=1,nx
+          fin(i,j) = fp(i,j)*fin(i,j)
+       enddo
+     enddo
+  else
+     do j=1,ny
+       do i=1,nx
+          fin8(i,j) = fp(i,j)*fin8(i,j)
+       enddo
+     enddo
+  endif
 
 !  do the backward transform
 
-  call rfftmb( lot, jump, n, inc, fin, lenr, wsave, lensav, work, lenwrk, ier )
+  if(fftflag.eq.0) then
+     call rfftmb(lot, jump, n, inc, fin, lenr, wsave, lensav, work, lenwrk, ier)
+  else
+     do k=1,ny 
+        call dfft1b(n, inc, fin8(1,k), lenr, wsave8, lensav, work8, lenwrk, ier)
+     enddo
+     fin= fin8     
+  endif
+
   IF(ier /= 0) THEN
     write(a_message,*) ' error in rfftmb ',ier
     CALL wrf_message ( a_message ) 

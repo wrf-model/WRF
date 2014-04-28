@@ -30,9 +30,11 @@ MODULE module_bl_mynn
 
   USE module_model_constants, only: &
        &karman, g, p1000mb, &
-       &cp, r_d, rcp, xlv, &
+       &cp, r_d, rcp, xlv, xlf,&
        &svp1, svp2, svp3, svpt0, ep_1, ep_2
 
+  USE module_state_description, only: param_first_scalar, &
+       &p_qc, p_qr, p_qi, p_qs, p_qg, p_qnc, p_qni
 !-------------------------------------------------------------------
   IMPLICIT NONE
 !-------------------------------------------------------------------
@@ -41,8 +43,8 @@ MODULE module_bl_mynn
   REAL, PARAMETER :: cphm_st=5.0, cphm_unst=16.0, &
                      cphh_st=5.0, cphh_unst=16.0
 
-  REAL, PARAMETER :: xlvcp=xlv/cp, ev=xlv, rd=r_d, rk=cp/rd, &
-       &svp11=svp1*1.e3, p608=ep_1, ep_3=1.-ep_2
+  REAL, PARAMETER :: xlvcp=xlv/cp, xlscp=(xlv+xlf)/cp, ev=xlv, rd=r_d, &
+       &rk=cp/rd, svp11=svp1*1.e3, p608=ep_1, ep_3=1.-ep_2
 
   REAL, PARAMETER :: tref=300.0    ! reference temperature (K)
   REAL, PARAMETER :: tv0=p608*tref, tv1=(1.+p608)*tref, gtr=g/tref
@@ -51,7 +53,7 @@ MODULE module_bl_mynn
   REAL, PARAMETER :: &
        &vk  = karman, &
        &pr  =  0.74, &
-       &g1  =  0.235, &
+       &g1  =  0.229, &  ! NN2009 = 0.235
        &b1  = 24.0, &
        &b2  = 15.0, &    ! CKmod     NN2009
        &c2  =  0.729, &  ! 0.729, & !0.75, &
@@ -80,8 +82,8 @@ MODULE module_bl_mynn
 !           &alp5=0.40, Sqfac=3.0
 ! Modified for Rapid Refresh/HRRR (and for CKmod=1.):
   REAL, PARAMETER :: qmin=0.0, zmax=1.0, cns=2.1, &
-            &alp1=0.23, alp2=0.60, alp3=3.0, alp4=10.0, &
-            &alp5=0.40, Sqfac=2.0
+            &alp1=0.23, alp2=0.65, alp3=3.0, alp4=20.0, &
+            &alp5=1.0, Sqfac=2.0
 
 ! Constants for gravitational settling
 !  REAL, PARAMETER :: gno=1.e6/(1.e8)**(2./3.), gpw=5./3., qcgmin=1.e-8
@@ -106,6 +108,9 @@ MODULE module_bl_mynn
   !Use BouLac mixing length in free atmosphere (1:yes, 0:no)
   !This helps remove excessively large mixing in unstable layers aloft.
   REAL, PARAMETER :: BLmod=1.
+
+  !Mix couds (water & ice): (0: no, 1: yes)                                                                
+  REAL, PARAMETER :: Cloudmix=0.
 !JOE-end
 
   INTEGER :: mynn_level
@@ -558,7 +563,7 @@ CONTAINS
     !SURFACE LAYER LENGTH SCALE MODS TO REDUCE IMPACT IN UPPER BOUNDARY LAYER
     REAL, PARAMETER :: ZSLH = 100. ! Max height correlated to surface conditions (m)
     REAL, PARAMETER :: CSL = 2.    ! CSL = constant of proportionality to L O(1)
-    REAL :: z_m, alp4b
+    REAL :: z_m
 
 !Joe-end
 
@@ -606,7 +611,7 @@ CONTAINS
 !
      k = kts+1
      zwk = zw(k)
-     DO WHILE (zwk .LE. MIN((zi2+h1), 3000.)) !JOE: 20130523 reduce too high diffusivity over mts 
+     DO WHILE (zwk .LE. MIN((zi2+h1), 4000.)) !JOE: 20130523 reduce too high diffusivity over mts 
        dzk = 0.5*( dz(k)+dz(k-1) )
        qdz = MAX( qkw(k)-qmin, 0.03 )*dzk
              elt = elt +qdz*zwk
@@ -657,11 +662,7 @@ CONTAINS
        !      els = vk*z_m/(1.0+cns*MIN( zwk*rmo, zmax )) + vk*(zwk - z_m)
        !   ENDIF
        ELSE
-          !orig: els =  vk*zwk*( 1.0 - alp4* zwk*rmo )**0.2
-          !start blending to original alp4 [~O(z)] above 500 m
-          wt=.5*TANH((zwk - 1000.)/500.) + .5
-          alp4b =alp4*(1.-wt) + 100.*wt
-          els =  vk*zwk*( 1.0 - alp4b* zwk*rmo )**0.2
+          els =  vk*zwk*( 1.0 - alp4* zwk*rmo )**0.2
        END IF
 !
 !   ** HARMONC AVERGING OF MIXING LENGTH SCALES: 
@@ -1004,8 +1005,8 @@ CONTAINS
           PRINT*," PBLH=",zi," u=",u(k)," v=",v(k)
        ENDIF
 !JOE-Apply Helfand & Labraga stability check for all Ric
-!    when CKmod == 1.
-        IF (CKmod .eq. 1) THEN
+!    when CKmod == 1. Suggested by Kitamura. Not applied below.
+       IF (CKmod .eq. 1) THEN
           HLmod = q2sq -1.
        ELSE
           HLmod = q3sq
@@ -1014,7 +1015,7 @@ CONTAINS
        IF ( q3sq .LT. q2sq ) THEN
 !       IF ( HLmod .LT. q2sq ) THEN
 !JOE-END
-          qdiv = SQRT( q3sq/q2sq )   !HH89: (1-alfa)
+          qdiv = SQRT( q3sq/q2sq )   !HL89: (1-alfa)
           sm(k) = sm(k) * qdiv
           sh(k) = sh(k) * qdiv
 !
@@ -1052,7 +1053,7 @@ CONTAINS
 !JOE-end
        END IF
 !
-!      HL88 , lev2.5 criteria from eqs. 3.17, 3.19, & 3.20                                                                                                                                                           
+!      HL88 , lev2.5 criteria from eqs. 3.17, 3.19, & 3.20
        IF (sh(k)<0.0 .OR. sm(k)<0.0 .OR. &
            sh(k) > 0.76*b2 .or. (sm(k)**2*gm(k) .gt. .44**2)) THEN
           PRINT*,"MYM_TURBULENCE2.5: k=",k," sh=",sh(k)
@@ -1732,20 +1733,23 @@ CONTAINS
        &levflag,grav_settling,&
        &delt,&
        &dz,&
-       &u,v,th,qv,qc,p,exner,&
-       &thl,sqv,sqc,sqw,&
-       &ust,flt,flq,wspd,qcg,&
+       &u,v,th,qv,qc,qi,qni,& !qnc,&
+       &p,exner,&
+       &thl,sqv,sqc,sqi,sqw,&
+       &ust,flt,flq,flqv,flqc,wspd,qcg,&
        &uoce,voce,&
        &tsq,qsq,cov,&
        &tcd,qcd,&
        &dfm,dfh,dfq,&
-       &Du,Dv,Dth,Dqv,Dqc&
+       &Du,Dv,Dth,Dqv,Dqc,Dqi,Dqni&!,Dqnc&
        &,vdfg1&               !Katata/JOE-fogdes
+       &,FLAG_QI,FLAG_QNI,FLAG_QC,FLAG_QNC &
        &)
 
 !-------------------------------------------------------------------
     INTEGER, INTENT(in) :: kts,kte
     INTEGER, INTENT(in) :: grav_settling,levflag
+    LOGICAL, INTENT(IN) :: FLAG_QI,FLAG_QNI,FLAG_QC,FLAG_QNC
 
 !! grav_settling = 1 or 2 for gravitational settling of droplets
 !! grav_settling = 0 otherwise
@@ -1755,18 +1759,19 @@ CONTAINS
 ! flt - surface flux of thl
 ! flq - surface flux of qw
 
-    REAL, DIMENSION(kts:kte), INTENT(in) :: u,v,th,qv,qc,p,exner,&
-         &dfm,dfh,dfq,dz,tsq,qsq,cov,tcd,qcd
-    REAL, DIMENSION(kts:kte), INTENT(inout) :: thl,sqw,sqv,sqc
-    REAL, DIMENSION(kts:kte), INTENT(out) :: du,dv,dth,dqv,dqc
-    REAL, INTENT(IN) :: delt,ust,flt,flq,wspd,uoce,voce,qcg
+    REAL, DIMENSION(kts:kte), INTENT(in) :: u,v,th,qv,qc,qi,qni,&!qnc,&
+         &p,exner,dfm,dfh,dfq,dz,tsq,qsq,cov,tcd,qcd
+    REAL, DIMENSION(kts:kte), INTENT(inout) :: thl,sqw,sqv,sqc,sqi
+    REAL, DIMENSION(kts:kte), INTENT(inout) :: du,dv,dth,dqv,dqc,dqi,&
+         &dqni!,dqnc
+    REAL, INTENT(IN) :: delt,ust,flt,flq,flqv,flqc,wspd,uoce,voce,qcg
 
 !    REAL, INTENT(IN) :: delt,ust,flt,flq,qcg,&
 !         &gradu_top,gradv_top,gradth_top,gradqv_top
 
 !local vars
 
-    REAL, DIMENSION(kts:kte) :: dtz,vt,vq
+    REAL, DIMENSION(kts:kte) :: dtz,vt,vq,qni2!,qnc2
 
     REAL, DIMENSION(1:kte-kts+1) :: a,b,c,d
 
@@ -1793,6 +1798,7 @@ CONTAINS
     a(1)=0.
     b(1)=1.+dtz(k)*(dfm(k+1)+ust**2/wspd)
     c(1)=-dtz(k)*dfm(k+1)
+!    d(1)=u(k)
     d(1)=u(k)+dtz(k)*uoce*ust**2/wspd
 
 !!    a(1)=0.
@@ -1844,6 +1850,7 @@ CONTAINS
     a(1)=0.
     b(1)=1.+dtz(k)*(dfm(k+1)+ust**2/wspd)
     c(1)=-dtz(k)*dfm(k+1)
+!    d(1)=v(k)
     d(1)=v(k)+dtz(k)*voce*ust**2/wspd
 
 !!    a(1)=0.
@@ -1889,6 +1896,7 @@ CONTAINS
 
 !!============================================
 !! thl 
+!! NOTE: currently, gravitational settling is removed
 !!============================================
     k=kts
 
@@ -1897,9 +1905,9 @@ CONTAINS
     c(1)=-dtz(k)*dfh(k+1)
     
 !Katata - added
-    grav_settling2 = MIN(REAL(grav_settling),1.)
+!    grav_settling2 = MIN(REAL(grav_settling),1.)
 !Katata - end
-
+!
 ! if qcg not used then assume constant flux in the surface layer
 !JOE-remove original code
 !    IF (qcg < qcgmin) THEN
@@ -1912,26 +1920,24 @@ CONTAINS
 !       gfluxm=grav_settling2*gno*(qcg/(1.+qcg))**gpw
 !    ENDIF
 !and replace with vdfg1 is computed in module_sf_fogdes.F.
-    IF (sqc(k) > qcgmin) THEN
-       !gfluxm=grav_settling2*gno*sqc(k)**gpw
-       gfluxm=grav_settling2*sqc(k)*vdfg1
-    ELSE
-       gfluxm=0.
-    ENDIF
+!    IF (sqc(k) > qcgmin) THEN
+!       !gfluxm=grav_settling2*gno*sqc(k)**gpw
+!       gfluxm=grav_settling2*sqc(k)*vdfg1
+!    ELSE
+!       gfluxm=0.
+!    ENDIF
 !JOE-end
+!
+!    IF (.5*(sqc(k+1)+sqc(k)) > qcgmin) THEN
+!       gfluxp=grav_settling2*gno*(.5*(sqc(k+1)+sqc(k)))**gpw
+!    ELSE
+!       gfluxp=0.
+!    ENDIF
 
-    IF (.5*(sqc(k+1)+sqc(k)) > qcgmin) THEN
-       gfluxp=grav_settling2*gno*(.5*(sqc(k+1)+sqc(k)))**gpw
-    ELSE
-       gfluxp=0.
-    ENDIF
+    rhs= tcd(k) !-xlvcp/exner(k)*&
+!         ((gfluxp - gfluxm)/dz(k))
 
-    rhs=-xlvcp/exner(k)&
-         &*( &
-         (gfluxp - gfluxm)/dz(k)&
-          & ) + tcd(k)
-
-    d(1)=thl(k)+dtz(k)*flt+rhs*delt
+    d(1)=thl(k) + dtz(k)*flt + rhs*delt
     
     DO k=kts+1,kte-1
        kk=k-kts+1
@@ -1939,23 +1945,22 @@ CONTAINS
        b(kk)=1.+dtz(k)*(dfh(k)+dfh(k+1)) 
        c(kk)=-dtz(k)*dfh(k+1)
 
-       IF (.5*(sqc(k+1)+sqc(k)) > qcgmin) THEN
-          gfluxp=grav_settling2*gno*(.5*(sqc(k+1)+sqc(k)))**gpw
-       ELSE
-          gfluxp=0.
-       ENDIF
-       
-       IF (.5*(sqc(k-1)+sqc(k)) > qcgmin) THEN
-          gfluxm=grav_settling2*gno*(.5*(sqc(k-1)+sqc(k)))**gpw
-       ELSE
-          gfluxm=0.
-       ENDIF
+!       IF (.5*(sqc(k+1)+sqc(k)) > qcgmin) THEN
+!          gfluxp=grav_settling2*gno*(.5*(sqc(k+1)+sqc(k)))**gpw
+!       ELSE
+!          gfluxp=0.
+!       ENDIF
+!       
+!       IF (.5*(sqc(k-1)+sqc(k)) > qcgmin) THEN
+!          gfluxm=grav_settling2*gno*(.5*(sqc(k-1)+sqc(k)))**gpw
+!       ELSE
+!          gfluxm=0.
+!       ENDIF
 
-       rhs=-xlvcp/exner(k)&
-            &*( &
-            &(gfluxp - gfluxm)/dz(k)&
-            & ) + tcd(k)
-       d(kk)=thl(k)+rhs*delt
+       rhs= tcd(k) !-xlvcp/exner(k)*&
+!            &((gfluxp - gfluxm)/dz(k))
+
+       d(kk)=thl(k) + rhs*delt
     ENDDO
 
 !! no flux at the top
@@ -1988,15 +1993,16 @@ CONTAINS
     ENDDO
 
 !!============================================
-!! total water (sqw = sqc + sqv)
+!! NO LONGER MIX total water (sqw = sqc + sqv)
+!! NOTE: no total water tendency is output
 !!============================================
-
-    k=kts
-  
-    a(1)=0.
-    b(1)=1.+dtz(k)*dfh(k+1)
-    c(1)=-dtz(k)*dfh(k+1)
-    
+!
+!    k=kts
+!  
+!    a(1)=0.
+!    b(1)=1.+dtz(k)*dfh(k+1)
+!    c(1)=-dtz(k)*dfh(k+1)
+!    
 !JOE: replace orig code with fogdep
 !    IF (qcg < qcgmin) THEN
 !       IF (sqc(k) > qcgmin) THEN
@@ -2008,51 +2014,46 @@ CONTAINS
 !       gfluxm=grav_settling2*gno*(qcg/(1.+qcg))**gpw
 !    ENDIF
 !and replace with fogdes code + remove use of qcg:
-    IF (sqc(k) > qcgmin) THEN
-       !gfluxm=grav_settling2*gno*(.5*(sqc(k)+sqc(k)))**gpw
-       gfluxm=grav_settling2*sqc(k)*vdfg1
-    ELSE
-       gfluxm=0.
-    ENDIF
+!    IF (sqc(k) > qcgmin) THEN
+!       !gfluxm=grav_settling2*gno*(.5*(sqc(k)+sqc(k)))**gpw
+!       gfluxm=grav_settling2*sqc(k)*vdfg1
+!    ELSE
+!       gfluxm=0.
+!    ENDIF
 !JOE-end
-    
-    IF (.5*(sqc(k+1)+sqc(k)) > qcgmin) THEN
-       gfluxp=grav_settling2*gno*(.5*(sqc(k+1)+sqc(k)))**gpw
-    ELSE
-       gfluxp=0.
-    ENDIF
-
-    rhs=&
-         &( &
-         &(gfluxp - gfluxm)/dz(k)& 
-        & ) + qcd(k)
-
-    d(1)=sqw(k)+dtz(k)*flq+rhs*delt
-    
-    DO k=kts+1,kte-1
-       kk=k-kts+1
-       a(kk)=-dtz(k)*dfh(k)
-       b(kk)=1.+dtz(k)*(dfh(k)+dfh(k+1)) 
-       c(kk)=-dtz(k)*dfh(k+1)
-
-       IF (.5*(sqc(k+1)+sqc(k)) > qcgmin) THEN
-          gfluxp=grav_settling2*gno*(.5*(sqc(k+1)+sqc(k)))**gpw
-       ELSE
-          gfluxp=0.
-       ENDIF
-
-       IF (.5*(sqc(k-1)+sqc(k)) > qcgmin) THEN
-          gfluxm=grav_settling2*gno*(.5*(sqc(k-1)+sqc(k)))**gpw
-       ELSE
-          gfluxm=0.
-       ENDIF
-
-       rhs=&
-            &( &
-            &(gfluxp - gfluxm)/dz(k)&
-            & ) + qcd(k)
-       d(kk)=sqw(k) + rhs*delt
-    ENDDO
+!    
+!    IF (.5*(sqc(k+1)+sqc(k)) > qcgmin) THEN
+!       gfluxp=grav_settling2*gno*(.5*(sqc(k+1)+sqc(k)))**gpw
+!    ELSE
+!       gfluxp=0.
+!    ENDIF
+!
+!    rhs= qcd(k) !+ (gfluxp - gfluxm)/dz(k)& 
+!
+!    d(1)=sqw(k) + dtz(k)*flq + rhs*delt
+!    
+!    DO k=kts+1,kte-1
+!       kk=k-kts+1
+!       a(kk)=-dtz(k)*dfh(k)
+!       b(kk)=1.+dtz(k)*(dfh(k)+dfh(k+1)) 
+!       c(kk)=-dtz(k)*dfh(k+1)
+!
+!       IF (.5*(sqc(k+1)+sqc(k)) > qcgmin) THEN
+!          gfluxp=grav_settling2*gno*(.5*(sqc(k+1)+sqc(k)))**gpw
+!       ELSE
+!          gfluxp=0.
+!       ENDIF
+!
+!       IF (.5*(sqc(k-1)+sqc(k)) > qcgmin) THEN
+!          gfluxm=grav_settling2*gno*(.5*(sqc(k-1)+sqc(k)))**gpw
+!       ELSE
+!          gfluxm=0.
+!       ENDIF
+!
+!       rhs= qcd(k) !+ (gfluxp - gfluxm)/dz(k)&
+!
+!       d(kk)=sqw(k) + rhs*delt
+!    ENDDO
 
 
 !! no flux at the top
@@ -2072,76 +2073,245 @@ CONTAINS
 
 !! prescribed value
 
+!    a(nz)=0.
+!    b(nz)=1.
+!    c(nz)=0.
+!    d(nz)=sqw(kte)
+!
+!    CALL tridiag(nz,a,b,c,d)
+!
+!    DO k=kts,kte
+!       sqw(k)=d(k-kts+1)
+!    ENDDO
+
+!!============================================
+!! cloud water ( sqc )
+!!============================================
+IF (Cloudmix > 0.5 .AND. FLAG_QC) THEN
+
+    k=kts
+
+    a(1)=0.
+    b(1)=1.+dtz(k)*dfh(k+1)
+    c(1)=-dtz(k)*dfh(k+1)
+
+    rhs   =  qcd(k)
+    d(1)=sqc(k) + dtz(k)*flqc + rhs*delt
+
+    DO k=kts+1,kte-1
+       kk=k-kts+1
+       a(kk)=-dtz(k)*dfh(k)
+       b(kk)=1.+dtz(k)*(dfh(k)+dfh(k+1))
+       c(kk)=-dtz(k)*dfh(k+1)
+
+       rhs = qcd(k)
+       d(kk)=sqc(k) + rhs*delt
+    ENDDO
+
+!! prescribed value                                                                                     
     a(nz)=0.
     b(nz)=1.
     c(nz)=0.
-    d(nz)=sqw(kte)
+    d(nz)=sqc(kte)
 
     CALL tridiag(nz,a,b,c,d)
 
     DO k=kts,kte
-       sqw(k)=d(k-kts+1)
+       sqc(k)=d(k-kts+1)
     ENDDO
 
+ENDIF
+
 !!============================================
-!! cloud water (sqc) - gravitational settling only
+!! cloud water number concentration ( qnc )
 !!============================================
+!IF (Cloudmix > 0.5 .AND. FLAG_QNC) THEN
+!
+!    k=kts
+!
+!    a(1)=0.
+!    b(1)=1.+dtz(k)*dfh(k+1)
+!    c(1)=-dtz(k)*dfh(k+1)
+!
+!    rhs =qcd(k)
+!    d(1)=qnc(k) !+ dtz(k)*flqc + rhs*delt
+!
+!    DO k=kts+1,kte-1
+!       kk=k-kts+1
+!       a(kk)=-dtz(k)*dfh(k)
+!       b(kk)=1.+dtz(k)*(dfh(k)+dfh(k+1))
+!       c(kk)=-dtz(k)*dfh(k+1)
+!
+!       rhs = qcd(k)
+!       d(kk)=qnc(k) + rhs*delt
+!    ENDDO
+!
+!! prescribed value
+!    a(nz)=0.
+!    b(nz)=1.
+!    c(nz)=0.
+!    d(nz)=qnc(kte)
+!
+!    CALL tridiag(nz,a,b,c,d)
+!
+!    DO k=kts,kte
+!       qnc2(k)=d(k-kts+1)
+!    ENDDO
+!
+!ELSE
+!    qnc2=qnc
+!ENDIF
+
+!!============================================
+!! MIX WATER VAPOR ONLY ( sqv )                                                                         
+!!============================================                                                          
 
     k=kts
 
-!JOE: replace with fogdes code + remove use of qcg:
-    IF (sqc(k) > qcgmin) THEN
-       !gfluxm=grav_settling2*gno*(.5*(sqc(k)+sqc(k)))**gpw
-       gfluxm=grav_settling2*sqc(k)*vdfg1
-    ELSE
-       gfluxm=0.
-    ENDIF
-!JOE-end
-
-    IF (.5*(sqc(k+1)+sqc(k)) > qcgmin) THEN
-       gfluxp=grav_settling2*gno*(.5*(sqc(k+1)+sqc(k)))**gpw
-    ELSE
-       gfluxp=0.
-    ENDIF
-
-    dqc(k)=(gfluxp - gfluxm)/dz(k)*delt
+    a(1)=0.
+    b(1)=1.+dtz(k)*dfh(k+1)
+    c(1)=-dtz(k)*dfh(k+1)
+    d(1)=sqv(k) + dtz(k)*flqv + qcd(k)*delt
 
     DO k=kts+1,kte-1
-
-       IF (.5*(sqc(k+1)+sqc(k)) > qcgmin) THEN
-          gfluxp=grav_settling2*gno*(.5*(sqc(k+1)+sqc(k)))**gpw
-       ELSE
-          gfluxp=0.
-       ENDIF
-
-       IF (.5*(sqc(k-1)+sqc(k)) > qcgmin) THEN
-          gfluxm=grav_settling2*gno*(.5*(sqc(k-1)+sqc(k)))**gpw
-       ELSE
-          gfluxm=0.
-       ENDIF
-
-       dqc(k)=(gfluxp - gfluxm)/dz(k)*delt
-
+       kk=k-kts+1
+       a(kk)=-dtz(k)*dfh(k)
+       b(kk)=1.+dtz(k)*(dfh(k)+dfh(k+1))
+       c(kk)=-dtz(k)*dfh(k+1)
+       d(kk)=sqv(k) + qcd(k)*delt
     ENDDO
 
-    dqc(kte)=0.
+!! no flux at the top                                                                                   
+!    a(nz)=-1.                                                                                          
+!    b(nz)=1.                                                                                           
+!    c(nz)=0.                                                                                           
+!    d(nz)=0.                                                                                           
+
+!! specified gradient at the top                                                                        
+!assume gradqw_top=gradqv_top                                                                           
+!    a(nz)=-1.                                                                                          
+!    b(nz)=1.                                                                                           
+!    c(nz)=0.                                                                                           
+!    d(nz)=gradqv_top*dztop                                                                             
+
+!! prescribed value                                                                                     
+    a(nz)=0.
+    b(nz)=1.
+    c(nz)=0.
+    d(nz)=sqv(kte)
+
+    CALL tridiag(nz,a,b,c,d)
 
     DO k=kts,kte
-       sqc(k)=sqc(k) + dqc(k)
+       sqv(k)=d(k-kts+1)
     ENDDO
+
+!!============================================
+!! MIX CLOUD ICE ( sqi )                      
+!!============================================
+IF (Cloudmix > 0.5 .AND. FLAG_QI) THEN
+
+    k=kts
+
+    a(1)=0.
+    b(1)=1.+dtz(k)*dfh(k+1)
+    c(1)=-dtz(k)*dfh(k+1)
+    d(1)=sqi(k) + qcd(k)*delt !should we have qcd for ice???
+
+    DO k=kts+1,kte-1
+       kk=k-kts+1
+       a(kk)=-dtz(k)*dfh(k)
+       b(kk)=1.+dtz(k)*(dfh(k)+dfh(k+1))
+       c(kk)=-dtz(k)*dfh(k+1)
+       d(kk)=sqi(k) + qcd(k)*delt
+    ENDDO
+
+!! no flux at the top
+!    a(nz)=-1.       
+!    b(nz)=1.        
+!    c(nz)=0.        
+!    d(nz)=0.        
+
+!! specified gradient at the top
+!assume gradqw_top=gradqv_top
+!    a(nz)=-1.                                                                                          
+!    b(nz)=1.                                                                                           
+!    c(nz)=0.                                                                                           
+!    d(nz)=gradqv_top*dztop                                                                             
+
+!! prescribed value                                                                                     
+    a(nz)=0.
+    b(nz)=1.
+    c(nz)=0.
+    d(nz)=sqi(kte)
+
+    CALL tridiag(nz,a,b,c,d)
+
+    DO k=kts,kte
+       sqi(k)=d(k-kts+1)
+    ENDDO
+
+ENDIF
+
+!!============================================
+!! ice water number concentration (qni)       
+!!============================================
+IF (Cloudmix > 0.5 .AND. FLAG_QNI) THEN
+
+    k=kts
+
+    a(1)=0.
+    b(1)=1.+dtz(k)*dfh(k+1)
+    c(1)=-dtz(k)*dfh(k+1)
+
+    rhs = qcd(k)               
+
+    d(1)=qni(k) !+ dtz(k)*flqc + rhs*delt
+
+    DO k=kts+1,kte-1
+       kk=k-kts+1
+       a(kk)=-dtz(k)*dfh(k)
+       b(kk)=1.+dtz(k)*(dfh(k)+dfh(k+1))
+       c(kk)=-dtz(k)*dfh(k+1)
+
+       rhs = qcd(k)
+       d(kk)=qni(k) + rhs*delt
+
+    ENDDO
+
+!! prescribed value
+    a(nz)=0.
+    b(nz)=1.
+    c(nz)=0.
+    d(nz)=qni(kte)
+
+    CALL tridiag(nz,a,b,c,d)
+
+    DO k=kts,kte
+       qni2(k)=d(k-kts+1)
+    ENDDO
+ELSE
+    qni2=qni
+ENDIF
 
 !!============================================
 !! convert to mixing ratios for wrf
 !!============================================
+!!NOTE: added number conc tendencies for double moment schemes
 
     DO k=kts,kte
        !sqw(k)=d(k-kts+1)
-       sqv(k)=sqw(k)-sqc(k)
        Dqv(k)=(sqv(k)/(1.-sqv(k))-qv(k))/delt
-       !qc tendency is now computed in module_bl_fogdes.F
-       !Dqc(k)=(sqc(k)/(1.-sqc(k))-qc(k))/delt
-       Dqc(k)=0.
-       Dth(k)=(thl(k)+xlvcp/exner(k)*sqc(k)-th(k))/delt
+       !qc settling tendency is now computed in module_bl_fogdes.F, so
+       !sqc should only be changed by turbulent mixing.
+       Dqc(k)=(sqc(k)/(1.-sqc(k))-qc(k))/delt
+       Dqi(k)=(sqi(k)/(1.-sqi(k))-qi(k))/delt
+ !      Dqnc(k)=(qnc2(k)-qnc(k))/delt
+       Dqni(k)=(qni2(k)-qni(k))/delt
+       Dth(k)=(thl(k) + xlvcp/exner(k)*sqc(k) &
+         &            + xlscp/exner(k)*sqi(k) &
+         &            - th(k))/delt
+       !Dth(k)=(thl(k)+xlvcp/exner(k)*sqc(k)-th(k))/delt
     ENDDO
 
   END SUBROUTINE mynn_tendencies
@@ -2218,24 +2388,27 @@ CONTAINS
        &grav_settling,&
        &delt,&
        &dz,&
-       &u,v,th,qv,qc,&
+       &u,v,th,qv,qc,qi,qni,&! qnc&       !JOE: ice & num conc mixing
        &p,exner,rho,&
        &xland,ts,qsfc,qcg,ps,&
        &ust,ch,hfx,qfx,rmol,wspd,&
-       &uoce,voce,&
+       &uoce,voce,&                     !ocean current
        &vdfg,&                          !Katata-added for fog dep
-       &Qke,&
+       &Qke,tke_pbl,&                   !JOE: add TKE for coupling
        &qke_adv,bl_mynn_tkeadvect,&     !ACF for QKE advection
        &Tsq,Qsq,Cov,&
        &Du,Dv,Dth,&
-       &Dqv,Dqc,&
+       &Dqv,Dqc,Dqi,Dqni,& !Dqnc,&         !JOE: ice & nim conc mixing
 !       &K_m,K_h,K_q&
        &K_h,k_m,&
-       &Pblh&
+       &Pblh,kpbl&                      !JOE-added kpbl for coupling
        &,el_pbl&
        &,dqke,qWT,qSHEAR,qBUOY,qDISS    & !JOE-TKE BUDGET
+       &,wstar,delta                    & !JOE-added for grims
        &,bl_mynn_tkebudget              & !JOE-TKE BUDGET
        &,bl_mynn_cloudpdf,Sh3D          & !JOE-cloudPDF testing
+       ! optional arguments
+       &,FLAG_QI,FLAG_QNI,FLAG_QC,FLAG_QNC &
        &,IDS,IDE,JDS,JDE,KDS,KDE        &
        &,IMS,IME,JMS,JME,KMS,KME        &
        &,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -2248,6 +2421,8 @@ CONTAINS
     INTEGER, INTENT(in) :: bl_mynn_tkebudget
     INTEGER, INTENT(in) :: bl_mynn_cloudpdf
     LOGICAL, INTENT(IN) :: bl_mynn_tkeadvect
+
+    LOGICAL, INTENT(IN) :: FLAG_QI,FLAG_QNI,FLAG_QC,FLAG_QNC
     
     INTEGER,INTENT(IN) :: &
          & IDS,IDE,JDS,JDE,KDS,KDE &
@@ -2264,7 +2439,9 @@ CONTAINS
     
     REAL, INTENT(in) :: delt
     REAL, DIMENSION(IMS:IME,KMS:KME,JMS:JME), INTENT(in) :: dz,&
-         &u,v,th,qv,qc,p,exner,rho 
+         &u,v,th,qv,qc,p,exner,rho
+    REAL, DIMENSION(IMS:IME,KMS:KME,JMS:JME), OPTIONAL, INTENT(in)::&
+         &qi,qni! ,qnc
     REAL, DIMENSION(IMS:IME,JMS:JME), INTENT(in) :: xland,ust,&
 !         &ch,rmol,ts,qsfc,qcg,ps,hfx,qfx, wspd,uoce,voce
 !Katata-added for extra in-output
@@ -2273,18 +2450,19 @@ CONTAINS
 
     REAL, DIMENSION(IMS:IME,KMS:KME,JMS:JME), INTENT(inout) :: &
          &Qke,Tsq,Qsq,Cov, &
-!ACF for QKE advection
-         &qke_adv
-!ACF-end
+         &tke_pbl, & !JOE-added for coupling (TKE_PBL = QKE/2)
+         &qke_adv    !ACF for QKE advection
 
-    REAL, DIMENSION(IMS:IME,KMS:KME,JMS:JME), INTENT(out) :: &
-         &Du,Dv,Dth,Dqv,Dqc
+    REAL, DIMENSION(IMS:IME,KMS:KME,JMS:JME), INTENT(inout) :: &
+         &Du,Dv,Dth,Dqv,Dqc,Dqi,Dqni!,Dqnc
 
     REAL, DIMENSION(IMS:IME,KMS:KME,JMS:JME), INTENT(out) :: &
          &K_h,K_m
 
     REAL, DIMENSION(IMS:IME,JMS:JME), INTENT(inout) :: &
-         &Pblh
+         &Pblh,wstar,delta  !JOE-added for GRIMS
+    INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: & 
+         &KPBL
     
     REAL, DIMENSION(IMS:IME,KMS:KME,JMS:JME), INTENT(inout) :: &
          &el_pbl
@@ -2301,17 +2479,22 @@ CONTAINS
 !local vars
     INTEGER :: ITF,JTF,KTF, IMD,JMD
     INTEGER :: i,j,k
-    REAL, DIMENSION(KTS:KTE) :: thl,sqv,sqc,sqw,&
+    REAL, DIMENSION(KTS:KTE) :: thl,sqv,sqc,sqi,sqw,&
          &El, Dfm, Dfh, Dfq, Tcd, Qcd, Pdk, Pdt, Pdq, Pdc, Vt, Vq
 
     REAL, DIMENSION(KTS:KTE) :: thetav,sh,u1,v1,p1,ex1,dz1,th1,qke1, &
-           & tsq1,qsq1,cov1,qv1,qc1,du1,dv1,dth1,dqv1,dqc1, &
-           & k_m1,k_h1,k_q1
+           & tsq1,qsq1,cov1,qv1,qi1,qc1,du1,dv1,dth1,dqv1,dqc1,dqi1, &
+           & k_m1,k_h1,k_q1,qni1,dqni1!,qnc1,dqnc1
 
     REAL, DIMENSION(KTS:KTE+1) :: zw
     
-    REAL :: cpm,sqcg,flt,flq,pmz,phh,exnerg,zet
-    
+      REAL :: cpm,sqcg,flt,flq,flqv,flqc,pmz,phh,exnerg,zet,& 
+              &afk,abk
+!JOE-add GRIMS parameters & variables
+   real,parameter    ::  d1 = 0.02, d2 = 0.05, d3 = 0.001
+   real,parameter    ::  h1 = 0.33333335, h2 = 0.6666667
+   REAL :: govrth, sflux, bfx0, wstar3, wm2, wm3, delb
+!JOE-end GRIMS
     INTEGER, SAVE :: levflag
 
 !***  Begin debugging
@@ -2339,12 +2522,20 @@ CONTAINS
                 dz1(k)=dz(i,k,j)
                 u1(k) = u(i,k,j)
                 v1(k) = v(i,k,j)
+                th1(k)=th(i,k,j)
                 sqc(k)=qc(i,k,j)/(1.+qc(i,k,j))
                 sqv(k)=qv(i,k,j)/(1.+qv(i,k,j))
-                sqw(k)=sqv(k)+sqc(k)
-                th1(k)=th(i,k,j)
                 thetav(k)=th(i,k,j)*(1.+0.61*sqv(k))
-                thl(k)=th(i,k,j)-xlvcp/exner(i,k,j)*sqc(k)
+                IF (PRESENT(qi) .AND. FLAG_QI ) THEN
+                   sqi(k)=qi(i,k,j)/(1.+qi(i,k,j))
+                   sqw(k)=sqv(k)+sqc(k)+sqi(k)
+                   thl(k)=th(i,k,j)- xlvcp/exner(i,k,j)*sqc(k) &
+                       &           - xlscp/exner(i,k,j)*sqi(k)
+                ELSE
+                   sqi(k)=0.0
+                   sqw(k)=sqv(k)+sqc(k)
+                   thl(k)=th(i,k,j)-xlvcp/exner(i,k,j)*sqc(k)
+                ENDIF
 
                 IF (k==kts) THEN
                    zw(k)=0.
@@ -2376,7 +2567,7 @@ CONTAINS
              zw(kte+1)=zw(kte)+dz(i,kte,j)
              
              CALL GET_PBLH(KTS,KTE,PBLH(i,j),thetav,&
-               &  Qke1,zw,dz1,xland(i,j))
+               &  Qke1,zw,dz1,xland(i,j),KPBL(i,j))
 
              CALL mym_initialize ( kts,kte,&
                   &dz1, zw, u1, v1, thl, sqv,&
@@ -2437,8 +2628,31 @@ CONTAINS
              qc1(k)= qc(i,k,j)
              sqv(k)= qv(i,k,j)/(1.+qv(i,k,j))
              sqc(k)= qc(i,k,j)/(1.+qc(i,k,j))
-             sqw(k)= sqv(k)+sqc(k)
-             thl(k)= th(i,k,j)-xlvcp/exner(i,k,j)*sqc(k)
+             IF(PRESENT(qi) .AND. FLAG_QI)THEN
+                qi1(k)= qi(i,k,j)
+                sqi(k)= qi(i,k,j)/(1.+qi(i,k,j))
+                sqw(k)= sqv(k)+sqc(k)+sqi(k)
+                thl(k)= th(i,k,j) - xlvcp/exner(i,k,j)*sqc(k) &
+                     &            - xlscp/exner(i,k,j)*sqi(k)
+                !print*,"MYNN: Flag_qi=",FLAG_QI,qi(i,k,j)
+             ELSE
+                qi1(k)=0.0
+                sqi(k)=0.0
+                sqw(k)= sqv(k)+sqc(k)
+                thl(k)= th(i,k,j)-xlvcp/exner(i,k,j)*sqc(k)
+             ENDIF
+             IF (PRESENT(qni) .AND. FLAG_QNI ) THEN
+                qni1(k)=qni(i,k,j)
+                !print*,"MYNN: Flag_qni=",FLAG_QNI,qni(i,k,j)
+             ELSE
+                qni1(k)=0.0
+             ENDIF
+             !IF (PRESENT(qnc) .AND. FLAG_QNC ) THEN
+             !   qnc1(k)=qnc(i,k,j)
+             !   !print*,"MYNN: Flag_qnc=",FLAG_QNC,qnc(i,k,j)
+             !ELSE
+             !   qnc1(k)=0.0
+             !ENDIF
              thetav(k)=th(i,k,j)*(1.+0.608*sqv(k))
              p1(k) = p(i,k,j)
              ex1(k)= exner(i,k,j)
@@ -2459,7 +2673,7 @@ CONTAINS
           zw(kte+1)=zw(kte)+dz(i,kte,j)          
           
           CALL GET_PBLH(KTS,KTE,PBLH(i,j),thetav,&
-          & Qke1,zw,dz1,xland(i,j))
+          & Qke1,zw,dz1,xland(i,j),KPBL(i,j))
           
           sqcg= 0.0   !JOE, it was: qcg(i,j)/(1.+qcg(i,j))
           cpm=cp*(1.+0.84*qv(i,kts,j))
@@ -2478,6 +2692,8 @@ CONTAINS
             & +xlvcp*vdfg(i,j)*(sqc(kts)/exner(i,kts,j)- sqcg/exnerg)
           flq = qfx(i,j)/  rho(i,kts,j)       &
             & -vdfg(i,j)*(sqc(kts) - sqcg )
+          flqv = qfx(i,j)/rho(i,kts,j)
+          flqc = -vdfg(i,j)*(sqc(kts) - sqcg )
 
           zet = 0.5*dz(i,kts,j)*rmol(i,j)
           if ( zet >= 0.0 ) then
@@ -2487,7 +2703,19 @@ CONTAINS
             pmz = 1.0/    (1.0-cphm_unst*zet)**0.25 - zet
             phh = 1.0/SQRT(1.0-cphh_unst*zet)
           end if
-!!!!!
+
+!!!!! estimate wstar & delta for GRIMS shallow-cu
+          govrth = g/th1(kts)
+          sflux = hfx(i,j)/rho(i,kts,j)/cpm + &
+                  qfx(i,j)/rho(i,kts,j)*ep_1*th1(kts)
+          bfx0 = max(sflux,0.)
+          wstar3     = (govrth*bfx0*pblh(i,j))
+          wstar(i,j) = wstar3**h1
+          wm3        = wstar3 + 5.*ust(i,j)**3.
+          wm2        = wm3**h2
+          delb       = govrth*d3*pblh(i,j)
+          delta(i,j) = min(d1*pblh(i,j) + d2*wm2/delb, 100.)
+!!!!! end GRIMS
 
           CALL  mym_condensation ( kts,kte,&
                &dz1,thl,sqw,p1,ex1, &
@@ -2502,7 +2730,7 @@ CONTAINS
                &rmol(i,j), flt, flq, &
                &PBLH(i,j),th1,&                  !JOE-BouLac mod
                &Sh,&                             !JOE-cloudPDF mod
-               &el,&
+               &el,&  
                &Dfm,Dfh,Dfq, &
                &Tcd,Qcd,Pdk, &
                &Pdt,Pdq,Pdc &
@@ -2519,16 +2747,20 @@ CONTAINS
           CALL mynn_tendencies(kts,kte,&
                &levflag,grav_settling,&
                &delt, dz1,&
-               &u1, v1, th1, qv1, qc1,&
-               &p1, ex1, thl, sqv, sqc, sqw,&
-               &ust(i,j),flt,flq,wspd(i,j),qcg(i,j),&
+               &u1, v1, th1, qv1, qc1, qi1, qni1,&! qnc1,&
+               &p1, ex1, thl, sqv, sqc, sqi, sqw,&
+               &ust(i,j),flt,flq,flqv,flqc,wspd(i,j),qcg(i,j),&
                &uoce(i,j),voce(i,j),&
                &tsq1, qsq1, cov1,&
                &tcd, qcd, &
                &dfm, dfh, dfq,&
-               &Du1, Dv1, Dth1, Dqv1, Dqc1&
+               &Du1, Dv1, Dth1, Dqv1, Dqc1, Dqi1, Dqni1& !, Dqnc1&
                &,vdfg(i,j)&                 !JOE/Katata- fog deposition
+               &,FLAG_QI,FLAG_QNI,FLAG_QC,FLAG_QNC &
                &)
+
+                !print*,"MYNN: qi_ten, qni_ten=",Dqi1(4),Dqni1(4)
+                !print*,"MYNN: qc_ten, qnc_ten=",Dqc1(4),Dqnc1(4)
 
           CALL retrieve_exchange_coeffs(kts,kte,&
                &dfm, dfh, dfq, dz1,&
@@ -2544,6 +2776,9 @@ CONTAINS
              dth(i,k,j)=dth1(k)
              dqv(i,k,j)=dqv1(k)
              dqc(i,k,j)=dqc1(k)
+             IF (PRESENT(qi) .AND. FLAG_QI) dqi(i,k,j)=dqi1(k)
+             !IF (PRESENT(qnc) .AND. FLAG_QNC) dqnc(i,k,j)=dqnc1(k)
+             IF (PRESENT(qni) .AND. FLAG_QNI) dqni(i,k,j)=dqni1(k)
              el_pbl(i,k,j)=el(k)
              qke(i,k,j)=qke1(k)
              tsq(i,k,j)=tsq1(k)
@@ -2573,6 +2808,15 @@ CONTAINS
 !             ENDIF
              !***  End debugging
           ENDDO
+!JOE-add tke_pbl for coupling w/shallow-cu schemes (TKE_PBL = QKE/2.)
+!    TKE_PBL is defined on interfaces, while QKE is at middle of layer.
+          tke_pbl(i,kts,j) = 0.5*MAX(qke(i,kts,j),1.0e-10)
+          DO k = kts+1,kte
+             afk = dz1(k)/( dz1(k)+dz1(k-1) )
+             abk = 1.0 -afk
+             tke_pbl(i,k,j) = 0.5*MAX(qke(i,k,j)*abk+qke(i,k-1,j)*afk,1.0e-3)
+          ENDDO
+!JOE-end tke_pbl
 !JOE-end addition
 
 !***  Begin debugging
@@ -2600,9 +2844,10 @@ CONTAINS
 
 ! ==================================================================
   SUBROUTINE mynn_bl_init_driver(&
-       &Du,Dv,Dth,&
-       &Dqv,Dqc&
-       &,RESTART,ALLOWED_TO_READ,LEVEL&
+       &Du,Dv,Dth,Dqv,Dqc,Dqi                       &
+       !&,Dqnc,Dqni                                  &
+       &,QKE,TKE_PBL,EXCH_H                         &
+       &,RESTART,ALLOWED_TO_READ,LEVEL              &
        &,IDS,IDE,JDS,JDE,KDS,KDE                    &
        &,IMS,IME,JMS,JME,KMS,KME                    &
        &,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -2616,8 +2861,9 @@ CONTAINS
          &                ITS,ITE,JTS,JTE,KTS,KTE
     
     
-    REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(OUT) :: &
-         &Du,Dv,Dth,Dqv,Dqc
+    REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(INOUT) :: &
+         &Du,Dv,Dth,Dqv,Dqc,Dqi, & !Dqnc,Dqni,
+         &QKE,TKE_PBL,EXCH_H
 
     INTEGER :: I,J,K,ITF,JTF,KTF
     
@@ -2633,7 +2879,13 @@ CONTAINS
                 Dv(i,k,j)=0.
                 Dth(i,k,j)=0.
                 Dqv(i,k,j)=0.
-                Dqc(i,k,j)=0.
+                if( p_qc >= param_first_scalar ) Dqc(i,k,j)=0.
+                if( p_qi >= param_first_scalar ) Dqi(i,k,j)=0.
+                !if( p_qnc >= param_first_scalar ) Dqnc(i,k,j)=0.
+                !if( p_qni >= param_first_scalar ) Dqni(i,k,j)=0.
+                QKE(i,k,j)=0.
+                TKE_PBL(i,k,j)=0.
+                EXCH_H(i,k,j)=0.
              ENDDO
           ENDDO
        ENDDO
@@ -2645,7 +2897,7 @@ CONTAINS
 
 ! ==================================================================
 
-  SUBROUTINE GET_PBLH(KTS,KTE,zi,thetav1D,qke1D,zw1D,dz1D,landsea)
+  SUBROUTINE GET_PBLH(KTS,KTE,zi,thetav1D,qke1D,zw1D,dz1D,landsea,kzi)
 
     !---------------------------------------------------------------
     !             NOTES ON THE PBLH FORMULATION
@@ -2674,7 +2926,12 @@ CONTAINS
     REAL :: delt_thv   !delta theta-v; dependent on land/sea point
     REAL, PARAMETER :: sbl_lim  = 200. !typical scale of stable BL (m).
     REAL, PARAMETER :: sbl_damp = 400. !transition length for blending (m).
-    INTEGER :: I,J,K,kthv,ktke
+    INTEGER :: I,J,K,kthv,ktke,kzi,kzi2
+
+    !ADD KPBL (kzi) for coupling to some Cu schemes, initialize at k=2                                  
+    !kzi2 is the TKE-based part of the hybrid KPBL                                                      
+    kzi = 1
+    kzi2= 1
 
     !FIND MAX TKE AND MIN THETAV IN THE LOWEST 500 M
     k = kts+1
@@ -2706,13 +2963,14 @@ CONTAINS
         delt_thv = 0.75
     ELSE         
         ! LAND     
-        delt_thv = 1.5  
+        delt_thv = 1.25
     ENDIF
 
     zi=0.
     k = kthv+1
     DO WHILE (zi .EQ. 0.) 
        IF (thetav1D(k) .GE. (minthv + delt_thv))THEN
+          kzi = MAX(k-1,1)
           zi = zw1D(k) - dz1D(k-1)* &
              & MIN((thetav1D(k)-(minthv + delt_thv))/ &
              & MAX(thetav1D(k)-thetav1D(k-1),1E-6),1.0)
@@ -2734,6 +2992,7 @@ CONTAINS
        qtke  =MAX(Qke1D(k)/2.,0.)      ! maximum TKE
        qtkem1=MAX(Qke1D(k-1)/2.,0.)
        IF (qtke .LE. TKEeps) THEN
+           kzi2 = MAX(k-1,1)
            PBLH_TKE = zw1D(k) - dz1D(k-1)* &
              & MIN((TKEeps-qtke)/MAX(qtkem1-qtke, 1E-6), 1.0)
            !IN CASE OF NEAR ZERO TKE, SET PBLH = LOWEST LEVEL.
@@ -2749,11 +3008,15 @@ CONTAINS
     !so an artificial limit is imposed to not let PBLH_TKE exceed 4km.
     !This has no impact on 98-99% of the domain, but is the simplest patch
     !that adequately addresses these extremely large PBLHs.
-    PBLH_TKE = MIN(PBLH_TKE,4000.)
+    !PBLH_TKE = MIN(PBLH_TKE,4000.)
+    PBLH_TKE = MIN(PBLH_TKE,zi+500.)
 
     !BLEND THE TWO PBLH TYPES HERE: 
     wt=.5*TANH((zi - sbl_lim)/sbl_damp) + .5
     zi=PBLH_TKE*(1.-wt) + zi*wt
+
+    !ADD KPBL (kzi) for coupling to some Cu schemes
+     kzi = INT(kzi2*(1.-wt) + kzi*wt)
 
   END SUBROUTINE GET_PBLH
   

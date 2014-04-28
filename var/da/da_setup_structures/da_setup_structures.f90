@@ -41,7 +41,7 @@ module da_setup_structures
       filename_len, use_ssmisobs, gravity, t_triple, use_hirs4obs, use_mhsobs, &
       use_mwtsobs, use_mwhsobs, use_atmsobs,    &
       vert_corr_2, alphacv_method_xa, vert_evalue_global, &
-      vert_evalue_local, obs_names, thin_conv, &
+      vert_evalue_local, obs_names, thin_conv, thin_conv_ascii, &
       sound, sonde_sfc, mtgirs, tamdar, tamdar_sfc, synop, profiler, gpsref, gpspw, polaramv, geoamv, ships, metar, &
       satem, radar, ssmi_rv, ssmi_tb, ssmt1, ssmt2, airsr, pilot, airep, rain, &
       bogus, buoy, qscat, radiance, pseudo, trace_use_dull, kts,kte, &
@@ -61,7 +61,7 @@ module da_setup_structures
       interpolate_stats, be_eta, thin_rainobs, fgat_rain_flags, use_iasiobs, &
       use_seviriobs,jds_int,jde_int,anal_type_hybrid_dual_res 
 
-   use da_obs, only : da_fill_obs_structures, da_store_obs_grid_info, da_store_obs_grid_info_bufr, &
+   use da_obs, only : da_fill_obs_structures, da_store_obs_grid_info, da_store_obs_grid_info_rad, &
                       da_fill_obs_structures_rain,da_set_obs_missing,da_set_3d_obs_missing
    use da_obs_io, only : da_read_obs_bufr,da_read_obs_radar, &
       da_scan_obs_radar,da_scan_obs_ascii,da_read_obs_ascii, &

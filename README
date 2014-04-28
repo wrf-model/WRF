@@ -1,4 +1,4 @@
-WRF Model Version 3.5.1 (Sept 23, 2013)
+WRF Model Version 3.6 (April 18, 2014)
 http://wrf-model.org/users/users.php
 
 ------------------------
@@ -25,6 +25,15 @@ infringement actions.
 
 ======================================
 This is the main directory for the WRF Version 3 source code release.
+======================================
+
+V3.6 Release Notes (4/18/14) (rev 7412):
+-------------------
+
+- For more information on WRF V3.6 release, visit WRF User's home pages
+  http://www.mmm.ucar.edu/wrf/users/, and
+  http://www.dtcenter.org/wrf-nmm/users/, and read the online User's Guide.
+
 ======================================
 
 V3.5.1 Release Notes (9/23/13) (rev 6868):
@@ -191,6 +200,10 @@ WRF update history:
 - V3.2.1: August 18, 2010
 - V3.3: April 6, 2011
 - V3.3.1: Sept 16, 2011
+- V3.4: April 6, 2012
+- V3.4.1: Aug 16, 2012
+- V3.5: April 18, 2013
+- V3.5.1: Sept 23, 2013
 
 ======================================
 
@@ -306,13 +319,14 @@ What is in WRF V3?
 - Physics options:
   * microphysics (Kessler/ WRF Single Moment 3, 5 and 6 classes / Lin et al./ Mibrandt 2-moment /
     Eta Ferrier / Thompson / Goddard / 2-moment Morrison / WRF Double Moment 5 and 6 classes /
-    SBU-Lin 5-classes / NSSL 2-moment and 1-moment / CAM 5.1 )
+    SBU-Lin 5-classes / NSSL 2-moment and 1-moment / CAM 5.1 ) / Thompson aerosol-aware /
+    HUJI full and fast SBM
   * cumulus parameterization (Kain-Fritsch with shallow convection / 
     Betts-Miller-Janjic / Grell-Devenyi ensemble / Grell 3D (with shallow convection option) /
     Grell-Freitas ensemble /
     Tiedtke (with shallow conv and momentum transport) / NSAS (with shallow conv and momentum transport) /
     SAS (with shallow conv for ARW) / Zhang-McFarlane (with momentum transport) )
-  * UW shallow convection
+  * UW shallow convection / GRIMS shallow convection
   * planetary boundary layer (Yosei University / Mellor-Yamada-Janjic / ACM2 / QNSE-EDMF / MYNN / 
     BouLac / UW / TEMF / Grenier-Bretherton-McCaa )
   * slab soil model (5-layer thermal diffusion / Noah land-surface model (4 levels) /
@@ -331,9 +345,10 @@ What is in WRF V3?
   * Options for modifying SST, sea ice, vegetation fraction, albedo, and deep soil temp
     for long simulations
   * fractional sea ice option for polar regions; modified snow/ice physics
-  * single-column ocean mixed layer model
-  * 3D Price-Weller-Pinkel (PWP) ocean model
+  * single-column ocean mixed layer model / 3D Price-Weller-Pinkel (PWP) ocean model
   * drag and enthalpy flux formulation for hurricane applications
+  * CLM lake model
+  * windfarm drag
 
 - Nudging:
   * three-dimensional and surface analysis nudging 

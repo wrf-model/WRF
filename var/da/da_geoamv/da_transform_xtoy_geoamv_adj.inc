@@ -31,12 +31,12 @@ subroutine da_transform_xtoy_geoamv_adj (grid, iv, jo_grad_y, jo_grad_x)
 
    do n=iv%info(geoamv)%n1,iv%info(geoamv)%n2
       do k = 1, iv%info(geoamv)%levels(n)
-          if(.not. var_wind) then
+          if(wind_sd_geoamv) then
+             call da_uv_to_sd_adj(jo_grad_y%geoamv(n)%u(k), &
+                                  jo_grad_y%geoamv(n)%v(k), u(k,n), v(k,n), ub(k,n), vb(k,n))
+          else
              u(k,n) = jo_grad_y%geoamv(n)%u(k)
              v(k,n) = jo_grad_y%geoamv(n)%v(k)
-          else
-             call da_uv_wind_adj(jo_grad_y%geoamv(n)%u(k), &
-                                 jo_grad_y%geoamv(n)%v(k), u(k,n), v(k,n), ub(k,n), vb(k,n))
           end if
       end do
    end do

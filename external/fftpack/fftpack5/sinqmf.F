@@ -1,61 +1,173 @@
-!CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-!                                                                       
-!   FFTPACK 5.0                                                         
-!                                                                       
-!   Authors:  Paul N. Swarztrauber and Richard A. Valent                
-!                                                                       
-!   $Id: sinqmf.f,v 1.2 2004/06/15 21:29:20 rodney Exp $                
-!                                                                       
-!CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-                                                                        
-      SUBROUTINE SINQMF (LOT, JUMP, N, INC, X, LENX, WSAVE, LENSAV,     &
-     &                   WORK, LENWRK, IER)                             
-      INTEGER    LOT, JUMP, N, INC, LENX, LENSAV, LENWRK, IER 
-      REAL       X(INC,*), WSAVE(LENSAV), WORK(LENWRK) 
-      LOGICAL    XERCON 
-!                                                                       
-      IER = 0 
-!                                                                       
-      IF (LENX .LT. (LOT-1)*JUMP + INC*(N-1) + 1) THEN 
-        IER = 1 
-        CALL XERFFT ('SINQMF', 6) 
-        GO TO 300 
-      ELSEIF (LENSAV .LT. 2*N + INT(LOG(REAL(N))) +4) THEN 
-        IER = 2 
-        CALL XERFFT ('SINQMF', 8) 
-        GO TO 300 
-      ELSEIF (LENWRK .LT. LOT*N) THEN 
-        IER = 3 
-        CALL XERFFT ('SINQMF', 10) 
-        GO TO 300 
-      ELSEIF (.NOT. XERCON(INC,JUMP,N,LOT)) THEN 
-        IER = 4 
-        CALL XERFFT ('SINQMF', -1) 
-        GO TO 300 
-      ENDIF 
-!                                                                       
-      IF (N .EQ. 1) RETURN 
-      NS2 = N/2 
-      LJ = (LOT-1)*JUMP+1 
-      DO 101 K=1,NS2 
-         KC = N-K 
-         DO 201 M=1,LJ,JUMP 
-         XHOLD = X(M,K) 
-         X(M,K) = X(M,KC+1) 
-         X(M,KC+1) = XHOLD 
-  201    CONTINUE 
-  101 END DO 
-      CALL COSQMF (LOT,JUMP,N,INC,X,LENX,WSAVE,LENSAV,WORK,LENWRK,IER1) 
-      IF (IER1 .NE. 0) THEN 
-        IER = 20 
-        CALL XERFFT ('SINQMF',-5) 
-        GO TO 300 
-      ENDIF 
-      DO 102 K=2,N,2 
-         DO 202 M=1,LJ,JUMP 
-         X(M,K) = -X(M,K) 
-  202    CONTINUE 
-  102 END DO 
-  300 CONTINUE 
-      RETURN 
-      END                                           
+subroutine sinqmf ( lot, jump, n, inc, x, lenx, wsave, lensav, &
+  work, lenwrk, ier )
+
+!*****************************************************************************80
+!
+!! SINQMF: real single precision forward sine quarter wave, multiple vectors.
+!
+!  Discussion:
+!
+!    SINQMF computes the one-dimensional Fourier transform of multiple
+!    sequences within a real array, where each sequence is a sine series
+!    with odd wave numbers.  This transform is referred to as the forward
+!    transform or Fourier synthesis, transforming the sequences from
+!    spectral to physical space.
+!
+!    This transform is normalized since a call to SINQMF followed
+!    by a call to SINQMB (or vice-versa) reproduces the original
+!    array within roundoff error.
+!
+!  License:
+!
+!    Licensed under the GNU General Public License (GPL).
+!    Copyright (C) 1995-2004, Scientific Computing Division,
+!    University Corporation for Atmospheric Research
+!
+!  Modified:
+!
+!    03 April 2005
+!
+!  Author:
+!
+!    Paul Swarztrauber
+!    Richard Valent
+!
+!  Reference:
+!
+!    Paul Swarztrauber,
+!    Vectorizing the Fast Fourier Transforms,
+!    in Parallel Computations,
+!    edited by G. Rodrigue,
+!    Academic Press, 1982.
+!
+!    Paul Swarztrauber,
+!    Fast Fourier Transform Algorithms for Vector Computers,
+!    Parallel Computing, pages 45-63, 1984.
+!
+!  Parameters:
+!
+!    Input, integer ( kind = 4 ) LOT, the number of sequences to be transformed
+!    within array R.
+!
+!    Input, integer ( kind = 4 ) JUMP, the increment between the locations,
+!    in array R, of the first elements of two consecutive sequences to
+!    be transformed.
+!
+!    Input, integer ( kind = 4 ) N, the length of each sequence to be
+!    transformed.  The transform is most efficient when N is a product of
+!    small primes.
+!
+!    Input, integer ( kind = 4 ) INC, the increment between the locations,
+!    in array R, of two consecutive elements within the same sequence.
+!
+!    Input/output, real ( kind = 4 ) R(LENR), containing LOT sequences, each
+!    having length N.  R can have any number of dimensions, but the total
+!    number of locations must be at least LENR.  On input, R contains the data
+!    to be transformed, and on output the transformed data.
+!
+!    Input, integer ( kind = 4 ) LENR, the dimension of the R array.
+!    LENR must be at least (LOT-1)*JUMP + INC*(N-1)+ 1.
+!
+!    Input, real ( kind = 4 ) WSAVE(LENSAV).  WSAVE's contents must be
+!    initialized with a call to SINQMI before the first call to routine SINQMF
+!    or SINQMB for a given transform length N.  WSAVE's contents may be re-used
+!    for subsequent calls to SINQMF and SINQMB with the same N.
+!
+!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.
+!    LENSAV must be at least 2*N + INT(LOG(REAL(N))) + 4.
+!
+!    Workspace, real ( kind = 4 ) WORK(LENWRK).
+!
+!    Input, integer ( kind = 4 ) LENWRK, the dimension of the WORK array.
+!    LENWRK must be at least LOT*N.
+!
+!    Output, integer ( kind = 4 ) IER, error flag.
+!    0, successful exit;
+!    1, input parameter LENR not big enough;
+!    2, input parameter LENSAV not big enough;
+!    3, input parameter LENWRK not big enough;
+!    4, input parameters INC,JUMP,N,LOT are not consistent;
+!    20, input error returned by lower level routine.
+!
+  implicit none
+
+  integer ( kind = 4 ) inc
+  integer ( kind = 4 ) lensav
+  integer ( kind = 4 ) lenwrk
+
+  integer ( kind = 4 ) ier
+  integer ( kind = 4 ) ier1
+  integer ( kind = 4 ) jump
+  integer ( kind = 4 ) k
+  integer ( kind = 4 ) kc
+  integer ( kind = 4 ) lenx
+  integer ( kind = 4 ) lj
+  integer ( kind = 4 ) lot
+  integer ( kind = 4 ) m
+  integer ( kind = 4 ) n
+  integer ( kind = 4 ) ns2
+  real ( kind = 4 ) work(lenwrk)
+  real ( kind = 4 ) wsave(lensav)
+  real ( kind = 4 ) x(inc,*)
+  logical              xercon
+  real ( kind = 4 ) xhold
+
+  ier = 0
+
+  if ( lenx < ( lot - 1 ) * jump + inc * ( n - 1 ) + 1 ) then
+    ier = 1
+    call xerfft ( 'sinqmf', 6 )
+    return
+  end if
+
+  if ( lensav < 2 * n + int ( log ( real ( n, kind = 4 ) ) ) + 4 ) then
+    ier = 2
+    call xerfft ( 'sinqmf', 8 )
+    return
+  end if
+
+  if ( lenwrk < lot * n ) then
+    ier = 3
+    call xerfft ( 'sinqmf', 10 )
+    return
+  end if
+
+  if ( .not. xercon ( inc, jump, n, lot ) ) then
+    ier = 4
+    call xerfft ( 'sinqmf', -1 )
+    return
+  end if
+
+  if ( n == 1 ) then
+    return
+  end if
+
+  ns2 = n / 2
+  lj = ( lot - 1 ) * jump + 1
+
+  do k = 1, ns2
+     kc = n - k
+     do m = 1, lj, jump
+       xhold = x(m,k)
+       x(m,k) = x(m,kc+1)
+       x(m,kc+1) = xhold
+     end do
+  end do
+
+  call cosqmf ( lot, jump, n, inc, x, lenx, wsave, lensav, work, &
+    lenwrk, ier1 )
+
+  if ( ier1 /= 0 ) then
+    ier = 20
+    call xerfft ( 'sinqmf', -5 )
+    return
+  end if
+
+  do k = 2, n, 2
+     do m = 1, lj, jump
+       x(m,k) = -x(m,k)
+     end do
+  end do
+
+  return
+end

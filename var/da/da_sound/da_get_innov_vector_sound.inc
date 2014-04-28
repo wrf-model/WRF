@@ -139,16 +139,8 @@ subroutine da_get_innov_vector_sound (it,num_qcstat_conv, grid, ob, iv)
          ! [3.0] Interpolation:
          !-------------------------------------------------------------------
 
-          if (.not. var_wind) then
-             if (ob%sound(n)%u(k) > missing_r .AND. iv%sound(n)%u(k)%qc >= obs_qc_pointer) then
-                 iv%sound(n)%u(k)%inv = ob%sound(n)%u(k) - model_u(k,n)
-             end if
-
-             if (ob%sound(n)%v(k) > missing_r .AND. iv%sound(n)%v(k)%qc >= obs_qc_pointer) then
-                 iv%sound(n)%v(k)%inv = ob%sound(n)%v(k) - model_v(k,n)
-             end if
-           else
-              call da_ffdduv2 (speed,direction,model_u(k,n), model_v(k,n), iv%info(sound)%lon(k,n), convert_uv2fd)
+          if (wind_sd_sound) then
+              call da_ffdduv_model (speed,direction,model_u(k,n), model_v(k,n), convert_uv2fd)
 
               if (ob%sound(n)%u(k) > missing_r .AND. iv%sound(n)%u(k)%qc >= obs_qc_pointer) then
                   iv%sound(n)%u(k)%inv = ob%sound(n)%u(k) - speed
@@ -159,7 +151,14 @@ subroutine da_get_innov_vector_sound (it,num_qcstat_conv, grid, ob, iv)
                   if (iv%sound(n)%v(k)%inv > 180.0 ) iv%sound(n)%v(k)%inv = iv%sound(n)%v(k)%inv - 360.0
                   if (iv%sound(n)%v(k)%inv < -180.0 ) iv%sound(n)%v(k)%inv = iv%sound(n)%v(k)%inv + 360.0
               end if
+           else
+             if (ob%sound(n)%u(k) > missing_r .AND. iv%sound(n)%u(k)%qc >= obs_qc_pointer) then
+                 iv%sound(n)%u(k)%inv = ob%sound(n)%u(k) - model_u(k,n)
+             end if
 
+             if (ob%sound(n)%v(k) > missing_r .AND. iv%sound(n)%v(k)%qc >= obs_qc_pointer) then
+                 iv%sound(n)%v(k)%inv = ob%sound(n)%v(k) - model_v(k,n)
+             end if
           end if
 
          if (ob%sound(n)%t(k) > missing_r .AND. iv%sound(n)%t(k)%qc >= obs_qc_pointer) then

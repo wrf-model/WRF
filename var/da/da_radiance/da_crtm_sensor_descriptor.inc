@@ -29,6 +29,10 @@ subroutine da_crtm_sensor_descriptor(nsensor,sensor_descriptor)
         if (satellite_id == 2) crtm_sat='fy3b'
      else if (trim(crtm_platform_name(platform_id)) == 'npp') then
         if (satellite_id == 0) crtm_sat='npp'
+     else if (trim(crtm_platform_name(platform_id)) == 'msg') then
+        if (satellite_id == 1) crtm_sat='m08'
+        if (satellite_id == 2) crtm_sat='m09'
+        if (satellite_id == 3) crtm_sat='m10'
      else
         write(crtm_sat, '(a,i2.2)')  &
              trim( crtm_platform_name(platform_id) ),satellite_id

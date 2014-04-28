@@ -179,20 +179,8 @@ subroutine da_get_innov_vector_tamdar_sfc( it, num_qcstat_conv, grid, ob, iv)
       ! [3.0] Fast interpolation:
       !-----------------------------------------------------------------------
 
-       if(.not. var_wind)then
-          if (ob % tamdar_sfc(n) % u > missing_r .AND. iv % tamdar_sfc(n) % u % qc >= obs_qc_pointer) then
-              iv % tamdar_sfc(n) % u % inv = iv%tamdar_sfc(n)%u%inv - model_u(1,n)
-          else
-              iv % tamdar_sfc(n) % u % inv = 0.0
-          end if
-
-          if (ob % tamdar_sfc(n) % v > missing_r .AND. iv % tamdar_sfc(n) % v % qc >= obs_qc_pointer) then
-              iv % tamdar_sfc(n) % v % inv = iv%tamdar_sfc(n)%v%inv - model_v(1,n)
-          else
-              iv % tamdar_sfc(n) % v % inv = 0.0
-          end if
-       else
-         call da_ffdduv2 (speed,direction,model_u(1,n), model_v(1,n), iv%info(tamdar_sfc)%lon(1,n), convert_uv2fd)
+       if(wind_sd_tamdar)then
+         call da_ffdduv_model (speed,direction,model_u(1,n), model_v(1,n), convert_uv2fd)
 
          if (ob%tamdar_sfc(n)%u > missing_r .AND. iv%tamdar_sfc(n)%u%qc >= obs_qc_pointer) then
              iv%tamdar_sfc(n)%u%inv = iv%tamdar_sfc(n)%u%inv - speed
@@ -207,6 +195,18 @@ subroutine da_get_innov_vector_tamdar_sfc( it, num_qcstat_conv, grid, ob, iv)
          else
              iv % tamdar_sfc(n) % v % inv = 0.0
          end if
+       else
+          if (ob % tamdar_sfc(n) % u > missing_r .AND. iv % tamdar_sfc(n) % u % qc >= obs_qc_pointer) then
+              iv % tamdar_sfc(n) % u % inv = iv%tamdar_sfc(n)%u%inv - model_u(1,n)
+          else
+              iv % tamdar_sfc(n) % u % inv = 0.0
+          end if
+
+          if (ob % tamdar_sfc(n) % v > missing_r .AND. iv % tamdar_sfc(n) % v % qc >= obs_qc_pointer) then
+              iv % tamdar_sfc(n) % v % inv = iv%tamdar_sfc(n)%v%inv - model_v(1,n)
+          else
+              iv % tamdar_sfc(n) % v % inv = 0.0
+          end if
        end if
 
 

@@ -335,7 +335,7 @@ subroutine da_write_obs(it,ob, iv, re)
                   num_obs, k, iv%info(pilot)%id(n), &  ! Station
                   iv%info(pilot)%lat(1,n), &       ! Latitude
                   iv%info(pilot)%lon(1,n), &       ! Longitude
-                  iv%pilot(n)%p(k),        &       ! Obs Pressure
+                  iv%pilot(n)%h(k),        &       ! Obs Height
                   ob%pilot(n)%u(k),        &
                   iv%pilot(n)%u(k)%inv, iv%pilot(n)%u(k)%qc, iv%pilot(n)%u(k)%error, & 
                   re%pilot(n)%u(k),        &
@@ -538,7 +538,7 @@ subroutine da_write_obs(it,ob, iv, re)
                   num_obs, k, iv%info(profiler)%id(n), &  ! Station
                   iv%info(profiler)%lat(1,n), &       ! Latitude
                   iv%info(profiler)%lon(1,n), &       ! Longitude
-                  iv%profiler(n)%p(k),        &       ! Obs Pressure
+                  iv%profiler(n)%h(k),        &       ! Obs Height 
                   ob%profiler(n)%u(k),        &
                   iv%profiler(n)%u(k)%inv, iv%profiler(n)%u(k)%qc, iv%profiler(n)%u(k)%error, &
                   re%profiler(n)%u(k),        &

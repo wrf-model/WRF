@@ -319,7 +319,7 @@ subroutine da_count_filtered_obs (ptop, map, ds, phic, xlonc, truelat1, truelat2
 
    ! write end of header record
 
-   if (write_mod_filtered_obs) then    !cys_change
+   if (write_mod_filtered_obs) then
       write (unit = filtered_obs_unit, fmt = '(A)') &
          "MODIFIED FILTERED OBS #--------------------------------------------------------#"
    else

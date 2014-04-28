@@ -18,7 +18,7 @@ CONTAINS
                      ,cudtacttime                                     & 
                      ,rainc,raincv,pratec,nca                         &
                      ,cldfra_dp,cldfra_sh                             & !ckay for subgrid cloud
-                     ,gd_cloud_b,gd_cloud2_b                          &
+                     ,QC_CU,QI_CU                                     &
                      ,z,z_at_w,dz8w,mavail,pblh,p8w,psfc,tsk          &
                      ,tke_pbl, ust                                    &
                      ,forcet,forceq,w0avg,stepcu,gsw                  &
@@ -77,6 +77,7 @@ CONTAINS
                      ,CFU1,CFD1,DFU1,EFU1,DFD1,EFD1,f_flux            &
                  ! Optional trigger function activation variable
                      ,kfeta_trigger                                   &
+                     ,nsas_dx_factor                                  &
 #if ( WRF_DFI_RADAR == 1 )
                  ! Optional CAP suppress option      --- 3.2 CLEANUP TODO -- THESE SHOULD BE OPTIONAL, NOT #IF/#ENDIF
                      ,do_capsuppress                                  &
@@ -234,6 +235,7 @@ CONTAINS
 !-- CU_ACT_FLAG
 !-- W0AVG         average vertical velocity, (for KF scheme) (m/s)
 !-- kfeta_trigger namelist for KF trigger (=1, default; =2, moisture-advection-dependent trigger)
+!-- nsas_dx_factor namelist for NSAS deep scheme to have some dependency on grid sizes
 !-- rho           density (kg/m^3)
 !-- CLDEFI        precipitation efficiency (for BMJ scheme) (dimensionless)
 !-- STEPCU        # of fundamental timesteps between convection calls
@@ -368,6 +370,7 @@ CONTAINS
           INTENT(INOUT) :: CU_ACT_FLAG
 
    INTEGER, INTENT(IN   ), OPTIONAL        ::   kfeta_trigger
+   INTEGER, INTENT(IN   ), OPTIONAL        ::   nsas_dx_factor
 
    REAL,  INTENT(IN   ) :: DT, DX
    INTEGER,      INTENT(IN   ),OPTIONAL    ::                             &
@@ -438,8 +441,8 @@ CONTAINS
                   dp3d, du3d, ed3d, eu3d, md3d, mu3d
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
-         OPTIONAL, INTENT(INOUT) ::                              &
-                  GD_CLOUD_B,GD_CLOUD2_B
+                  INTENT(INOUT) ::                               &
+                  QC_CU,QI_CU
                   
    REAL, DIMENSION( ims:ime , jms:jme , 1:ensdim ),              &
           OPTIONAL,                                              &
@@ -483,7 +486,7 @@ CONTAINS
 
 ! LOCAL  VAR
 
-   INTEGER :: i,j,k,its,ite,jts,jte,ij,trigger_kf
+   INTEGER :: i,j,k,its,ite,jts,jte,ij,trigger_kf,dx_factor_nsas
    logical :: l_flux
    LOGICAL :: decided , run_param , doing_adapt_dt
 
@@ -524,6 +527,12 @@ CONTAINS
       trigger_kf = 1
    else
       trigger_kf = kfeta_trigger
+   endif
+
+   if (.not. PRESENT(nsas_dx_factor)) then
+      dx_factor_nsas = 0
+   else
+      dx_factor_nsas = nsas_dx_factor
    endif
 
    IF (cu_physics .eq. 0) return
@@ -721,7 +730,7 @@ CONTAINS
                ,F_QI=f_qi,F_QS=f_qs                             &
                ,CLDFRA_DP_KF=cldfra_dp                          & ! ckay for sub-grid cloud
                ,CLDFRA_SH_KF=cldfra_sh                          &
-               ,QC_KF=gd_cloud_b,QI_KF=gd_cloud2_b              &
+               ,QC_KF=QC_CU,QI_KF=QI_CU                         &
                                                                 )
 
      CASE (GDSCHEME)
@@ -1065,7 +1074,7 @@ CONTAINS
         IF ( PRESENT ( QFX ) .AND. PRESENT( HFX ) ) THEN
           CALL wrf_debug(100,'in nsas_cps')
           CALL CU_NSAS(                                         &
-                DT=dt,P3DI=p8w,P3D=p,PI3D=pi,                   &
+                DT=dt,DX=dx,P3DI=p8w,P3D=p,PI3D=pi,             &
                 QC3D=QC_CURR,QI3D=QI_CURR,RHO3D=rho,            &
                 ITIMESTEP=itimestep,STEPCU=STEPCU,              &
                 HBOT=HBOT,HTOP=HTOP,                            &
@@ -1078,6 +1087,7 @@ CONTAINS
                 XLAND=XLAND,DZ8W=dz8w,W=w,U3D=u,V3D=v,          &
                 HPBL=pblh,HFX=hfx,QFX=qfx,                      & 
                 MP_PHYSICS=mp_physics,                          & 
+                DX_FACTOR_NSAS=dx_factor_nsas,                  & 
                 pgcon=pgcon,                                    &
                 P_QC=p_qc,P_QI=p_qi,                            &
                 P_FIRST_SCALAR=param_first_scalar               &

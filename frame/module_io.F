@@ -230,11 +230,14 @@ SUBROUTINE wrf_open_for_write_begin( FileName , Comm_compute, Comm_io, SysDepInf
   CHARACTER*128     :: mess
   CHARACTER*1028    :: tstr, t1
   INTEGER i,j
+  LOGICAL ncd_nofill
 
   WRITE(mess,*) 'module_io.F: in wrf_open_for_write_begin, FileName = ',TRIM(FileName)
   CALL wrf_debug( DEBUG_LVL, mess )
 
   CALL get_value_from_pairs ( "DATASET" , SysDepInfo , DataSet )
+
+  CALL nl_get_ncd_nofill( 1 , ncd_nofill )
 
   io_form = io_form_for_dataset( DataSet )
 
@@ -251,8 +254,13 @@ SUBROUTINE wrf_open_for_write_begin( FileName , Comm_compute, Comm_io, SysDepInf
           ELSE
             LocFilename = FileName
           ENDIF
-          CALL ext_ncd_open_for_write_begin ( LocFileName , Comm_compute, Comm_io, SysDepInfo, &
-                                              Hndl , Status )
+          IF ( ncd_nofill ) THEN
+            CALL ext_ncd_open_for_write_begin ( LocFileName , Comm_compute, Comm_io, SysDepInfo // ",NOFILL=.TRUE.", &
+                                                Hndl , Status )
+          ELSE
+            CALL ext_ncd_open_for_write_begin ( LocFileName , Comm_compute, Comm_io, SysDepInfo, &
+                                                Hndl , Status )
+          ENDIF
         ENDIF
         IF ( .NOT. multi_files(io_form) ) THEN
           CALL wrf_dm_bcast_bytes( Hndl, IWORDSIZE )
@@ -381,8 +389,13 @@ SUBROUTINE wrf_open_for_write_begin( FileName , Comm_compute, Comm_io, SysDepInf
     END SELECT
   ELSE IF ( use_output_servers() ) THEN
     IF ( io_form .GT. 0 ) THEN
-      CALL wrf_quilt_open_for_write_begin ( FileName , Comm_compute, Comm_io, SysDepInfo, &
-                                            Hndl , io_form, Status )
+      IF ( ncd_nofill ) THEN
+        CALL wrf_quilt_open_for_write_begin ( FileName , Comm_compute, Comm_io, TRIM(SysDepInfo) // ",NOFILL=.TRUE.", &
+                                              Hndl , io_form, Status )
+      ELSE
+        CALL wrf_quilt_open_for_write_begin ( FileName , Comm_compute, Comm_io, SysDepInfo, &
+                                              Hndl , io_form, Status )
+      ENDIF
     ENDIF
   ELSE
     Status = 0

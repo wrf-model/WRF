@@ -658,6 +658,10 @@ if test -n "$NETCDF" ; then
     echo "Error : Not found $NETCDF/include/netcdf.inc"
     echo "        Please check this installation of NetCDF and re-run this configure script"
     echo
+    if test -n "$NETCDF4" ; then
+        echo "If on the NCAR Supercomputers, cp 'configure.nc4' to 'configure' and re-run script"
+        echo
+    fi
     exit -1
   fi
   grep nf_format_64bit $NETCDF/include/netcdf.inc > /dev/null

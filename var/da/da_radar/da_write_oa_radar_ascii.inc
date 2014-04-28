@@ -1,4 +1,4 @@
-subroutine da_write_oa_radar_ascii ( ob, iv, re )
+subroutine da_write_oa_radar_ascii ( ob, iv, re, it )
 
    !---------------------------------------------------------------------------
    ! Purpose: write out OMB and OMA vector structure for radar data.
@@ -9,6 +9,7 @@ subroutine da_write_oa_radar_ascii ( ob, iv, re )
    type (y_type),     intent(in)  :: ob       ! Observation structure.
    type (iv_type),    intent(in)  :: iv       ! O-B structure.
    type (y_type),     intent(in)  :: re       ! O-A structure.
+   integer,           intent(in)  :: it       ! external iteration counter
 
    integer                        :: n , num_obs       ! Loop counter.
    integer                        :: i, k     ! Index dimension.
@@ -18,7 +19,7 @@ subroutine da_write_oa_radar_ascii ( ob, iv, re )
    character(len=filename_len)  :: filename , file 
    integer            :: ndomain
    character(len=filename_len), allocatable     ::filename1(:) 
-   INTEGER :: it, m, kk, l 
+   INTEGER :: m, kk, l 
    REAL :: rv_obs, rv_inv, rv_error , rf_obs, rf_inv, rf_error, rf_inc, rv_inc 
    INTEGER :: rv_qc, rf_qc, levels, num, error 
    REAL :: lat,lon,press, zk 
@@ -30,9 +31,9 @@ subroutine da_write_oa_radar_ascii ( ob, iv, re )
     call da_message(message(1:1))
 
 #ifdef DM_PARALLEL
-      write(unit=filename, fmt='(a,i4.4)') 'radar_omb_oma.', myproc
+   write(unit=filename, fmt='(a,i2.2,a,i4.4)') 'radar_omb_oma_',it,'.', myproc
 #else
-      write(unit=filename, fmt='(a)') 'radar_omb_oma.000'
+   write(unit=filename, fmt='(a,i2.2,a)') 'radar_omb_oma_',it,'.0000'
 #endif
 
    call da_get_unit(oma_radar_unit)
@@ -87,10 +88,10 @@ subroutine da_write_oa_radar_ascii ( ob, iv, re )
   call da_get_unit(omb_radar_unit)
   allocate (filename1(0:num_procs-1)) 
       do k = 0,num_procs-1
-        write(unit=filename1(k),fmt ='(a,i4.4)')'radar_omb_oma.',k 
+         write(unit=filename1(k),fmt ='(a,i2.2,a,i4.4)')'radar_omb_oma_',it,'.',k
       end do
    call da_get_unit(omb_radar_iter_unit)
-   write(unit=file,fmt ='(a,i2.2)')'radar_omb_oma_',1
+   write(unit=file,fmt ='(a,i2.2)')'radar_omb_oma_',it
    open(omb_radar_iter_unit,file=trim(file),form='formatted', status='replace', iostat=ios)
      if (ios /= 0) call da_error(__FILE__,__LINE__, &
          (/"Cannot open file "//file/))
@@ -115,8 +116,9 @@ subroutine da_write_oa_radar_ascii ( ob, iv, re )
 
       read(omb_radar_unit, '(20x,i8)', iostat=error)num_obs
       IF(error /= 0)THEN
-      PRINT*, "Error reading for process " , k, "will cycle"
-      cycle
+         write(unit=message(1),fmt='(A,A)') 'Nothing to read from ',filename1(k)
+         call da_message(message(1:1))
+         cycle
       ENDIF   
          if (num_obs > 0) then
            do  n = 1, num_obs    

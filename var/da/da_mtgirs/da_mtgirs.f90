@@ -7,8 +7,10 @@ module da_mtgirs
       max_stheight_diff,test_dm_exact, anal_type_verify, &
       kms,kme,kts,kte, &
       trace_use_dull, mtgirs, position_lev_dependant, max_ext_its, qcstat_conv_unit, ob_vars, &
-      convert_fd2uv, convert_uv2fd, max_error_sp, max_error_dir, var_wind, max_omb_sp, max_omb_dir, pi, qc_rej_both
-   use da_grid_definitions, only : da_ffdduv, da_ffdduv2, da_cal_sd, da_uv_wind_adj, da_uv_wind_tgl
+      convert_fd2uv, convert_uv2fd, max_error_spd, max_error_dir, max_omb_spd, max_omb_dir, pi, qc_rej_both,&
+      wind_sd_mtgirs, wind_stats_sd 
+   use da_grid_definitions, only : da_ffdduv,da_ffdduv_model, da_ffdduv_diagnose
+   use da_physics, only : da_uv_to_sd_lin, da_uv_to_sd_adj
    use da_define_structures, only : maxmin_type, iv_type, y_type, jo_type, &
       bad_data_type, x_type, number_type, bad_data_type
    use module_domain, only : domain

@@ -28,10 +28,10 @@ subroutine da_check_max_iv_profiler(iv, it, num_qcstat_conv)
        call da_get_print_lvl(iv%profiler(n)%p(k),ipr)
 
         if(.not. qc_rej_both)then
-             if(var_wind)then
+             if(wind_sd_profiler)then
                failed=.false.
                if( iv%profiler(n)%u(k)%qc >= obs_qc_pointer ) then
-                   call da_max_error_qc (it,iv%info(profiler), n, iv%profiler(n)%u(k), max_error_sp,failed)
+                   call da_max_error_qc (it,iv%info(profiler), n, iv%profiler(n)%u(k), max_error_spd,failed)
                    if( iv%info(profiler)%proc_domain(k,n) ) then
                        num_qcstat_conv(1,profiler,1,ipr) = num_qcstat_conv(1,profiler,1,ipr) + 1
                        if(failed) then
@@ -84,8 +84,8 @@ subroutine da_check_max_iv_profiler(iv, it, num_qcstat_conv)
              end if
           end if
 
-             if(var_wind)then
-                if(iv%profiler(n)%u(k)%qc == fails_error_max .or.  abs(iv%profiler(n)%u(k)%inv) >= max_omb_sp) then
+             if(wind_sd_profiler)then
+                if(iv%profiler(n)%u(k)%qc == fails_error_max .or.  abs(iv%profiler(n)%u(k)%inv) >= max_omb_spd) then
                    iv%profiler(n)%u(k)%qc = fails_error_max
                    iv%profiler(n)%u(k)%inv = 0.0
                 endif
@@ -100,12 +100,12 @@ subroutine da_check_max_iv_profiler(iv, it, num_qcstat_conv)
              failed2=.false.
 
              if( iv%profiler(n)%v(k)%qc >= obs_qc_pointer .or. iv%profiler(n)%u(k)%qc >= obs_qc_pointer )  then
-                 if(.not. var_wind)then
+                 if(wind_sd_profiler)then
+                    call da_max_error_qc (it,iv%info(profiler), n, iv%profiler(n)%u(k), max_error_spd,failed1)
+                    call da_max_error_qc (it,iv%info(profiler), n, iv%profiler(n)%v(k), max_error_dir,failed2)
+                 else
                     call da_max_error_qc (it,iv%info(profiler), n, iv%profiler(n)%u(k), max_error_uv,failed1)
                     call da_max_error_qc (it,iv%info(profiler), n, iv%profiler(n)%v(k), max_error_uv,failed2)
-                 else
-                    call da_max_error_qc (it,iv%info(profiler), n, iv%profiler(n)%u(k), max_error_sp,failed1)
-                    call da_max_error_qc (it,iv%info(profiler), n, iv%profiler(n)%v(k), max_error_dir,failed2)
                  endif
              endif
 
@@ -123,16 +123,16 @@ subroutine da_check_max_iv_profiler(iv, it, num_qcstat_conv)
                  endif
              endif
 
-             if(.not. var_wind)then
-                if(iv%profiler(n)%u(k)%qc == fails_error_max .or. iv%profiler(n)%v(k)%qc == fails_error_max ) then
+             if(wind_sd_profiler)then
+                if(iv%profiler(n)%u(k)%qc == fails_error_max .or. iv%profiler(n)%v(k)%qc == fails_error_max .or. &
+                   abs(iv%profiler(n)%v(k)%inv) >= max_omb_dir .or. abs(iv%profiler(n)%u(k)%inv) >= max_omb_spd )then
                    iv%profiler(n)%u(k)%qc = fails_error_max
                    iv%profiler(n)%v(k)%qc = fails_error_max
                    iv%profiler(n)%u(k)%inv = 0.0
                    iv%profiler(n)%v(k)%inv = 0.0
                 endif
              else
-                if(iv%profiler(n)%u(k)%qc == fails_error_max .or. iv%profiler(n)%v(k)%qc == fails_error_max .or. &
-                   abs(iv%profiler(n)%v(k)%inv) >= max_omb_dir .or. abs(iv%profiler(n)%u(k)%inv) >= max_omb_sp )then
+                if(iv%profiler(n)%u(k)%qc == fails_error_max .or. iv%profiler(n)%v(k)%qc == fails_error_max ) then
                    iv%profiler(n)%u(k)%qc = fails_error_max
                    iv%profiler(n)%v(k)%qc = fails_error_max
                    iv%profiler(n)%u(k)%inv = 0.0

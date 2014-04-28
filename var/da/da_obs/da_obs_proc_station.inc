@@ -36,7 +36,7 @@ subroutine da_obs_proc_station(obs,fm,uvq_direct)
          obs%each(i)%rh%qc  = missing
       end if
      
-     if(.not. (present(uvq_direct) .and. uvq_direct) .and. fm.ne.161) then  !cys_change
+     if(.not. (present(uvq_direct) .and. uvq_direct) .and. fm.ne.161) then
       po   = obs % each(i) % p  % inv
       to   = obs % each(i) % t  % inv
       rho  = obs % each(i) % rh  % inv
@@ -64,7 +64,6 @@ subroutine da_obs_proc_station(obs,fm,uvq_direct)
          obs % each(i) % q  % inv = obs % each(i) % rh  % inv
          obs % each(i) % q  % qc = obs % each(i) % rh % qc
          obs % each(i) % q  % error = obs % each(i) % rh % error
-!    print*,obs % each(i) % q  % inv,obs % each(i) % q  % qc,obs % each(i) % q  % error
     end if
    end do
    if (trace_use_dull) call da_trace_exit("da_obs_proc_station")

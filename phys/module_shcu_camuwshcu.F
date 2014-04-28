@@ -6,7 +6,12 @@
   use cam_history,    only: outfld, addfld, phys_decomp
 #else
   use module_cam_support, only: outfld, addfld, phys_decomp
+#if ( NMM_CORE == 1 )
   use module_state_description, only: CAMUWPBLSCHEME, MYJPBLSCHEME
+#else
+  use module_state_description, only: CAMUWPBLSCHEME, MYJPBLSCHEME, &
+      MYNNPBLSCHEME2, MYNNPBLSCHEME3
+#endif
 #endif
   use error_function, only: erfc
 #ifndef WRF_PORT
@@ -182,10 +187,14 @@ end subroutine uwshcu_readnl
 ! i.e. tke & tke_pbl.
 !
   select case(bl_pbl_physics)
+#if ( NMM_CORE == 1 )
   case (CAMUWPBLSCHEME, MYJPBLSCHEME)
+#else
+  case (CAMUWPBLSCHEME, MYJPBLSCHEME, MYNNPBLSCHEME2, MYNNPBLSCHEME3)
+#endif
      !These are acceptable PBL schemes.
   case default
-     call wrf_error_fatal("The CAMUWSHCU scheme requires either CAMUWPBLSCHEME or MYJPBLSCHEME.")
+     call wrf_error_fatal("The CAMUWSHCU scheme requires CAMUWPBLSCHEME, MYJPBLSCHEME or MYNN.")
   end select
 !
 ! Initialize module_cam_support variables...

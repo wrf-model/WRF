@@ -44,20 +44,16 @@ subroutine da_transform_xtoy_tamdar (grid, iv, y)
    call da_interp_lin_3d (grid%xb%v, iv%info(tamdar), vb)
 
    do n=iv%info(tamdar)%n1,iv%info(tamdar)%n2
-
-      y%tamdar(n)%t(:) = t(1:size(y%tamdar(n)%t),n)
-      y%tamdar(n)%q(:) = q(1:size(y%tamdar(n)%q),n)
-
       do k = 1, iv%info(tamdar)%levels(n)
-
-         if(.not. var_wind) then
+         if(wind_sd_tamdar) then
+            call da_uv_to_sd_lin(y%tamdar(n)%u(k),y%tamdar(n)%v(k),u(k,n),v(k,n),ub(k,n),vb(k,n))
+         else
             y%tamdar(n)%u(k) = u(k,n)
             y%tamdar(n)%v(k) = v(k,n)
-         else
-            call da_uv_wind_tgl(y%tamdar(n)%u(k),y%tamdar(n)%v(k),u(k,n),v(k,n),ub(k,n),vb(k,n))
          end if
-
       end do
+      y%tamdar(n)%t(:) = t(1:size(y%tamdar(n)%t),n)
+      y%tamdar(n)%q(:) = q(1:size(y%tamdar(n)%q),n)
    end do
 
    deallocate (u)

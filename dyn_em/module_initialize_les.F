@@ -627,9 +627,10 @@ CONTAINS
      temp(3) = thtmp * (ptmp/p1000mb)**rcp
 
 !    For LES-CBL, add 5 degrees to the surface temperature!
+!      - Removed in 3.6
 !
-!    grid%tsk(I,J)=grid%cf1*temp(1)+grid%cf2*temp(2)+grid%cf3*temp(3)
-     grid%tsk(I,J)=grid%cf1*temp(1)+grid%cf2*temp(2)+grid%cf3*temp(3)+5.
+     grid%tsk(I,J)=grid%cf1*temp(1)+grid%cf2*temp(2)+grid%cf3*temp(3)
+!    grid%tsk(I,J)=grid%cf1*temp(1)+grid%cf2*temp(2)+grid%cf3*temp(3)+5.
      grid%tmn(I,J)=grid%tsk(I,J)-0.5
   ENDDO
   ENDDO

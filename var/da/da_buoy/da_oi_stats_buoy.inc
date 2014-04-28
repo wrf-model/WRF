@@ -8,12 +8,12 @@ subroutine da_oi_stats_buoy (stats_unit, iv, ob)
 
    integer,        intent (in) :: stats_unit    ! Output unit for stats.
    type (iv_type), intent (in) :: iv            ! OI
-   type(y_type),   intent (in) :: ob       ! Observation structure.
+   type(y_type),   intent (in) :: ob            ! Observation structure.
 
    type (stats_buoy_type) :: stats      
    integer                :: nu, nv, nt, np, nq
    integer                :: n
-   real                   :: u_inv, v_inv, sp_inv, dir_inv
+   real                   :: u_inv, v_inv, u_obs, v_obs
 
    if (trace_use_dull) call da_trace_entry("da_oi_stats_buoy")
 
@@ -39,14 +39,19 @@ subroutine da_oi_stats_buoy (stats_unit, iv, ob)
 
    do n=1, iv%info(buoy)%nlocal
       if (iv%info(buoy)%proc_domain(1,n)) then
-         u_inv = iv%buoy(n)%u%inv
-         v_inv = iv%buoy(n)%v%inv
-         if(var_wind) then
-            sp_inv = iv%buoy(n)%u%inv
-            dir_inv = iv%buoy(n)%v%inv
-            call da_cal_sd (ob%buoy(n)%u, ob%buoy(n)%v, &
-                            u_inv, v_inv, sp_inv, dir_inv)
-         end if
+
+          u_inv = iv%buoy(n)%u%inv
+          v_inv = iv%buoy(n)%v%inv
+          u_obs = ob%buoy(n)%u
+          v_obs = ob%buoy(n)%v
+
+          if (.not. wind_sd_buoy .and. wind_stats_sd) &
+             call da_ffdduv_diagnose(u_obs, u_inv, u_obs, v_obs, v_inv, v_obs, &
+                                     iv%buoy(n)%u%qc, iv%buoy(n)%v%qc, convert_uv2fd)
+          if (wind_sd_buoy .and. .not. wind_stats_sd) &
+             call da_ffdduv_diagnose(u_obs, u_inv, u_obs, v_obs, v_inv, v_obs, &
+                                     iv%buoy(n)%u%qc, iv%buoy(n)%v%qc, convert_fd2uv)
+
          call da_stats_calculate(iv%info(buoy)%obs_global_index(n), &
             0, iv%buoy(n)%u%qc, &
             u_inv, nu, &

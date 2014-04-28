@@ -323,22 +323,21 @@ CONTAINS
       kh(i) = max(kh(i),conduc_temf)
 
       ! Surface fluxes
-      ust(i) = sqrt(ftau(i)/ftau0) * sqrt(u1d(i)**2. + v1d(i)**2.) * leps(i) / log(zm(i)/znt(i)) / zt(i)
+      ! WA TEST 11/7/13 use w* as a component of the mean wind inside the
+      ! u* calculation instead of in the velocity scale below (Felix)
+      ! ust(i) = sqrt(ftau(i)/ftau0) * sqrt(u1d(i)**2. + v1d(i)**2.) * leps(i) / log(zm(i)/znt(i)) / zt(i)
+      ust(i) = sqrt(ftau(i)/ftau0) * sqrt(u1d(i)**2. + v1d(i)**2. + (0.5*wstr(i))**2.) * leps(i) / log(zm(i)/znt(i)) / zt(i)
       ang(i) = atan2(v1d(i),u1d(i))
 
+      ! WA TEST 11/7/13 back to wm = u* but with "whole" wind in u* above
+      wm(i) = ust(i)
       ! Calculate mixed scaling velocity (Moeng & Sullivan 1994 JAS p.1021)
-      ! Replaces ust everywhere (WA need to reconsider?)
-      ! WA wm is too large, makes surface flux too big and cools sfc too much
-      ! wm(i) = (1./5. * (wstr(i)**3. + 5. * ust(i)**3.)) ** (1./3.) 
-      ! WA TEST (R2,R11) 7/23/10 reduce velocity scale to fix excessive fluxes
-      wm(i) = 0.5 * (1./5. * (wstr(i)**3. + 5. * ust(i)**3.)) ** (1./3.) 
-      ! WA TEST 2/14/11 limit contribution of w*
-      ! wm(i) = 0.5 * (1./5. * (min(0.8,wstr(i))**3. + 5. * ust(i)**3.)) ** (1./3.) 
+      ! wm(i) = 0.5 * (1./5. * (wstr(i)**3. + 5. * ust(i)**3.)) ** (1./3.) 
+
       ! WA TEST 2/22/11 average with previous value to reduce instability
       wm(i) = (wm(i) + wm_temfx(i)) / 2.0
-      wm_temfx(i) = wm(i)
-      ! WA TEST (R3-R10) 7/23/10 wm = u*
-      ! wm(i) = ust(i)
+      ! WA TEST 11/26/13 set min value
+      wm_temfx(i) = max(wm(i),1e-2)
 
       ! Populate surface exchange coefficient variables to go back out
       ! for next time step of surface scheme

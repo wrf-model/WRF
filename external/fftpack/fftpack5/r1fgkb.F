@@ -1,177 +1,275 @@
-!CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-!                                                                       
-!   FFTPACK 5.0                                                         
-!                                                                       
-!   Authors:  Paul N. Swarztrauber and Richard A. Valent                
-!                                                                       
-!   $Id: r1fgkb.f,v 1.2 2004/06/15 21:29:20 rodney Exp $                
-!                                                                       
-!CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-                                                                        
-      SUBROUTINE R1FGKB (IDO,IP,L1,IDL1,CC,C1,C2,IN1,                   &
-     &          CH,CH2,IN2,WA)                                          
-      REAL      CH(IN2,IDO,L1,IP)    ,CC(IN1,IDO,IP,L1) ,               &
-     &          C1(IN1,IDO,L1,IP)    ,C2(IN1,IDL1,IP),                  &
-     &          CH2(IN2,IDL1,IP)     ,WA(IDO)                           
-!                                                                       
-      TPI=2.*4.*ATAN(1.0) 
-      ARG = TPI/FLOAT(IP) 
-      DCP = COS(ARG) 
-      DSP = SIN(ARG) 
-      IDP2 = IDO+2 
-      NBD = (IDO-1)/2 
-      IPP2 = IP+2 
-      IPPH = (IP+1)/2 
-      IF (IDO .LT. L1) GO TO 103 
-      DO 102 K=1,L1 
-         DO 101 I=1,IDO 
-            CH(1,I,K,1) = CC(1,I,1,K) 
-  101    CONTINUE 
-  102 END DO 
-      GO TO 106 
-  103 DO 105 I=1,IDO 
-         DO 104 K=1,L1 
-            CH(1,I,K,1) = CC(1,I,1,K) 
-  104    CONTINUE 
-  105 END DO 
-  106 DO 108 J=2,IPPH 
-         JC = IPP2-J 
-         J2 = J+J 
-         DO 107 K=1,L1 
-            CH(1,1,K,J) = CC(1,IDO,J2-2,K)+CC(1,IDO,J2-2,K) 
-            CH(1,1,K,JC) = CC(1,1,J2-1,K)+CC(1,1,J2-1,K) 
- 1007       CONTINUE 
-  107    CONTINUE 
-  108 END DO 
-      IF (IDO .EQ. 1) GO TO 116 
-      IF (NBD .LT. L1) GO TO 112 
-      DO 111 J=2,IPPH 
-         JC = IPP2-J 
-         DO 110 K=1,L1 
-            DO 109 I=3,IDO,2 
-               IC = IDP2-I 
-               CH(1,I-1,K,J) = CC(1,I-1,2*J-1,K)+CC(1,IC-1,2*J-2,K) 
-               CH(1,I-1,K,JC) = CC(1,I-1,2*J-1,K)-CC(1,IC-1,2*J-2,K) 
-               CH(1,I,K,J) = CC(1,I,2*J-1,K)-CC(1,IC,2*J-2,K) 
-               CH(1,I,K,JC) = CC(1,I,2*J-1,K)+CC(1,IC,2*J-2,K) 
-  109       CONTINUE 
-  110    CONTINUE 
-  111 END DO 
-      GO TO 116 
-  112 DO 115 J=2,IPPH 
-         JC = IPP2-J 
-         DO 114 I=3,IDO,2 
-            IC = IDP2-I 
-            DO 113 K=1,L1 
-               CH(1,I-1,K,J) = CC(1,I-1,2*J-1,K)+CC(1,IC-1,2*J-2,K) 
-               CH(1,I-1,K,JC) = CC(1,I-1,2*J-1,K)-CC(1,IC-1,2*J-2,K) 
-               CH(1,I,K,J) = CC(1,I,2*J-1,K)-CC(1,IC,2*J-2,K) 
-               CH(1,I,K,JC) = CC(1,I,2*J-1,K)+CC(1,IC,2*J-2,K) 
-  113       CONTINUE 
-  114    CONTINUE 
-  115 END DO 
-  116 AR1 = 1. 
-      AI1 = 0. 
-      DO 120 L=2,IPPH 
-         LC = IPP2-L 
-         AR1H = DCP*AR1-DSP*AI1 
-         AI1 = DCP*AI1+DSP*AR1 
-         AR1 = AR1H 
-         DO 117 IK=1,IDL1 
-            C2(1,IK,L) = CH2(1,IK,1)+AR1*CH2(1,IK,2) 
-            C2(1,IK,LC) = AI1*CH2(1,IK,IP) 
-  117    CONTINUE 
-         DC2 = AR1 
-         DS2 = AI1 
-         AR2 = AR1 
-         AI2 = AI1 
-         DO 119 J=3,IPPH 
-            JC = IPP2-J 
-            AR2H = DC2*AR2-DS2*AI2 
-            AI2 = DC2*AI2+DS2*AR2 
-            AR2 = AR2H 
-            DO 118 IK=1,IDL1 
-               C2(1,IK,L) = C2(1,IK,L)+AR2*CH2(1,IK,J) 
-               C2(1,IK,LC) = C2(1,IK,LC)+AI2*CH2(1,IK,JC) 
-  118       CONTINUE 
-  119    CONTINUE 
-  120 END DO 
-      DO 122 J=2,IPPH 
-         DO 121 IK=1,IDL1 
-            CH2(1,IK,1) = CH2(1,IK,1)+CH2(1,IK,J) 
-  121    CONTINUE 
-  122 END DO 
-      DO 124 J=2,IPPH 
-         JC = IPP2-J 
-         DO 123 K=1,L1 
-            CH(1,1,K,J) = C1(1,1,K,J)-C1(1,1,K,JC) 
-            CH(1,1,K,JC) = C1(1,1,K,J)+C1(1,1,K,JC) 
-  123    CONTINUE 
-  124 END DO 
-      IF (IDO .EQ. 1) GO TO 132 
-      IF (NBD .LT. L1) GO TO 128 
-      DO 127 J=2,IPPH 
-         JC = IPP2-J 
-         DO 126 K=1,L1 
-            DO 125 I=3,IDO,2 
-               CH(1,I-1,K,J) = C1(1,I-1,K,J)-C1(1,I,K,JC) 
-               CH(1,I-1,K,JC) = C1(1,I-1,K,J)+C1(1,I,K,JC) 
-               CH(1,I,K,J) = C1(1,I,K,J)+C1(1,I-1,K,JC) 
-               CH(1,I,K,JC) = C1(1,I,K,J)-C1(1,I-1,K,JC) 
-  125       CONTINUE 
-  126    CONTINUE 
-  127 END DO 
-      GO TO 132 
-  128 DO 131 J=2,IPPH 
-         JC = IPP2-J 
-         DO 130 I=3,IDO,2 
-            DO 129 K=1,L1 
-               CH(1,I-1,K,J) = C1(1,I-1,K,J)-C1(1,I,K,JC) 
-               CH(1,I-1,K,JC) = C1(1,I-1,K,J)+C1(1,I,K,JC) 
-               CH(1,I,K,J) = C1(1,I,K,J)+C1(1,I-1,K,JC) 
-               CH(1,I,K,JC) = C1(1,I,K,J)-C1(1,I-1,K,JC) 
-  129       CONTINUE 
-  130    CONTINUE 
-  131 END DO 
-  132 CONTINUE 
-      IF (IDO .EQ. 1) RETURN 
-      DO 133 IK=1,IDL1 
-         C2(1,IK,1) = CH2(1,IK,1) 
-  133 END DO 
-      DO 135 J=2,IP 
-         DO 134 K=1,L1 
-            C1(1,1,K,J) = CH(1,1,K,J) 
-  134    CONTINUE 
-  135 END DO 
-      IF (NBD .GT. L1) GO TO 139 
-      IS = -IDO 
-      DO 138 J=2,IP 
-         IS = IS+IDO 
-         IDIJ = IS 
-         DO 137 I=3,IDO,2 
-            IDIJ = IDIJ+2 
-            DO 136 K=1,L1 
-               C1(1,I-1,K,J) = WA(IDIJ-1)*CH(1,I-1,K,J)-WA(IDIJ)*       &
-     &          CH(1,I,K,J)                                             
-               C1(1,I,K,J) = WA(IDIJ-1)*CH(1,I,K,J)+WA(IDIJ)*           &
-     &          CH(1,I-1,K,J)                                           
-  136       CONTINUE 
-  137    CONTINUE 
-  138 END DO 
-      GO TO 143 
-  139 IS = -IDO 
-      DO 142 J=2,IP 
-         IS = IS+IDO 
-         DO 141 K=1,L1 
-            IDIJ = IS 
-            DO 140 I=3,IDO,2 
-               IDIJ = IDIJ+2 
-               C1(1,I-1,K,J) = WA(IDIJ-1)*CH(1,I-1,K,J)-WA(IDIJ)*       &
-     &          CH(1,I,K,J)                                             
-               C1(1,I,K,J) = WA(IDIJ-1)*CH(1,I,K,J)+WA(IDIJ)*           &
-     &          CH(1,I-1,K,J)                                           
-  140       CONTINUE 
-  141    CONTINUE 
-  142 END DO 
-  143 RETURN 
-      END                                           
+subroutine r1fgkb ( ido, ip, l1, idl1, cc, c1, c2, in1, ch, ch2, in2, wa )
+
+!*****************************************************************************80
+!
+!! R1FGKB is an FFTPACK5 auxiliary routine.
+!
+!  License:
+!
+!    Licensed under the GNU General Public License (GPL).
+!    Copyright (C) 1995-2004, Scientific Computing Division,
+!    University Corporation for Atmospheric Research
+!
+!  Modified:
+!
+!    27 March 2009
+!
+!  Author:
+!
+!    Paul Swarztrauber
+!    Richard Valent
+!
+!  Reference:
+!
+!    Paul Swarztrauber,
+!    Vectorizing the Fast Fourier Transforms,
+!    in Parallel Computations,
+!    edited by G. Rodrigue,
+!    Academic Press, 1982.
+!
+!    Paul Swarztrauber,
+!    Fast Fourier Transform Algorithms for Vector Computers,
+!    Parallel Computing, pages 45-63, 1984.
+!
+!  Parameters:
+!
+  implicit none
+
+  integer ( kind = 4 ) idl1
+  integer ( kind = 4 ) ido
+  integer ( kind = 4 ) in1
+  integer ( kind = 4 ) in2
+  integer ( kind = 4 ) ip
+  integer ( kind = 4 ) l1
+
+  real ( kind = 4 ) ai1
+  real ( kind = 4 ) ai2
+  real ( kind = 4 ) ar1
+  real ( kind = 4 ) ar1h
+  real ( kind = 4 ) ar2
+  real ( kind = 4 ) ar2h
+  real ( kind = 4 ) arg
+  real ( kind = 4 ) c1(in1,ido,l1,ip)
+  real ( kind = 4 ) c2(in1,idl1,ip)
+  real ( kind = 4 ) cc(in1,ido,ip,l1)
+  real ( kind = 4 ) ch(in2,ido,l1,ip)
+  real ( kind = 4 ) ch2(in2,idl1,ip)
+  real ( kind = 4 ) dc2
+  real ( kind = 4 ) dcp
+  real ( kind = 4 ) ds2
+  real ( kind = 4 ) dsp
+  integer ( kind = 4 ) i
+  integer ( kind = 4 ) ic
+  integer ( kind = 4 ) idij
+  integer ( kind = 4 ) idp2
+  integer ( kind = 4 ) ik
+  integer ( kind = 4 ) ipp2
+  integer ( kind = 4 ) ipph
+  integer ( kind = 4 ) is
+  integer ( kind = 4 ) j
+  integer ( kind = 4 ) j2
+  integer ( kind = 4 ) jc
+  integer ( kind = 4 ) k
+  integer ( kind = 4 ) l
+  integer ( kind = 4 ) lc
+  integer ( kind = 4 ) nbd
+  real ( kind = 4 ) tpi
+  real ( kind = 4 ) wa(ido)
+
+  tpi = 2.0E+00 * 4.0E+00 * atan ( 1.0E+00 )
+  arg = tpi / real ( ip, kind = 4 )
+  dcp = cos ( arg )
+  dsp = sin ( arg )
+  idp2 = ido + 2
+  nbd = ( ido - 1 ) / 2
+  ipp2 = ip + 2
+  ipph = ( ip + 1 ) / 2
+
+  if ( ido < l1 ) then
+    do i = 1, ido
+      do k = 1, l1
+        ch(1,i,k,1) = cc(1,i,1,k)
+      end do
+    end do
+  else
+    do k = 1, l1
+      do i = 1, ido
+        ch(1,i,k,1) = cc(1,i,1,k)
+      end do
+    end do
+  end if
+
+  do j = 2, ipph
+    jc = ipp2 - j
+    j2 = j + j
+    do k = 1, l1
+      ch(1,1,k,j) = cc(1,ido,j2-2,k)+cc(1,ido,j2-2,k)
+      ch(1,1,k,jc) = cc(1,1,j2-1,k)+cc(1,1,j2-1,k)
+    end do
+  end do
+
+  if ( ido == 1 ) then
+
+  else if ( nbd < l1 ) then
+
+    do j = 2, ipph
+      jc = ipp2 - j
+      do i = 3, ido, 2
+        ic = idp2 - i
+        do k = 1, l1
+          ch(1,i-1,k,j) = cc(1,i-1,2*j-1,k)+cc(1,ic-1,2*j-2,k)
+          ch(1,i-1,k,jc) = cc(1,i-1,2*j-1,k)-cc(1,ic-1,2*j-2,k)
+          ch(1,i,k,j) = cc(1,i,2*j-1,k)-cc(1,ic,2*j-2,k)
+          ch(1,i,k,jc) = cc(1,i,2*j-1,k)+cc(1,ic,2*j-2,k)
+        end do
+      end do
+    end do
+
+  else
+
+    do j = 2, ipph
+      jc = ipp2 - j
+      do k = 1, l1
+        do i = 3, ido, 2
+          ic = idp2 - i
+          ch(1,i-1,k,j) = cc(1,i-1,2*j-1,k)+cc(1,ic-1,2*j-2,k)
+          ch(1,i-1,k,jc) = cc(1,i-1,2*j-1,k)-cc(1,ic-1,2*j-2,k)
+          ch(1,i,k,j) = cc(1,i,2*j-1,k)-cc(1,ic,2*j-2,k)
+          ch(1,i,k,jc) = cc(1,i,2*j-1,k)+cc(1,ic,2*j-2,k)
+        end do
+      end do
+    end do
+
+  end if
+
+  ar1 = 1.0E+00
+  ai1 = 0.0E+00
+
+  do l = 2, ipph
+
+    lc = ipp2 - l
+    ar1h = dcp * ar1 - dsp * ai1
+    ai1 = dcp * ai1 + dsp * ar1
+    ar1 = ar1h
+
+    do ik = 1, idl1
+      c2(1,ik,l) = ch2(1,ik,1)+ar1*ch2(1,ik,2)
+      c2(1,ik,lc) = ai1*ch2(1,ik,ip)
+    end do
+
+    dc2 = ar1
+    ds2 = ai1
+    ar2 = ar1
+    ai2 = ai1
+
+    do j = 3, ipph
+
+      jc = ipp2 - j
+      ar2h = dc2*ar2-ds2*ai2
+      ai2 = dc2*ai2+ds2*ar2
+      ar2 = ar2h
+
+      do ik = 1, idl1
+        c2(1,ik,l) = c2(1,ik,l)+ar2*ch2(1,ik,j)
+        c2(1,ik,lc) = c2(1,ik,lc)+ai2*ch2(1,ik,jc)
+      end do
+
+    end do
+
+  end do
+
+  do j = 2, ipph
+    do ik = 1, idl1
+      ch2(1,ik,1) = ch2(1,ik,1)+ch2(1,ik,j)
+    end do
+  end do
+
+  do j = 2, ipph
+    jc = ipp2 - j
+    do k = 1, l1
+      ch(1,1,k,j) = c1(1,1,k,j)-c1(1,1,k,jc)
+      ch(1,1,k,jc) = c1(1,1,k,j)+c1(1,1,k,jc)
+    end do
+  end do
+
+  if ( ido == 1 ) then
+
+  else if ( nbd < l1 ) then
+
+    do j = 2, ipph
+      jc = ipp2 - j
+      do i = 3, ido, 2
+        do k = 1, l1
+          ch(1,i-1,k,j)  = c1(1,i-1,k,j) - c1(1,i,k,jc)
+          ch(1,i-1,k,jc) = c1(1,i-1,k,j) + c1(1,i,k,jc)
+          ch(1,i,k,j)    = c1(1,i,k,j)   + c1(1,i-1,k,jc)
+          ch(1,i,k,jc)   = c1(1,i,k,j)   - c1(1,i-1,k,jc)
+        end do
+      end do
+    end do
+
+  else
+
+    do j = 2, ipph
+      jc = ipp2 - j
+      do k = 1, l1
+        do i = 3, ido, 2
+          ch(1,i-1,k,j) = c1(1,i-1,k,j)-c1(1,i,k,jc)
+          ch(1,i-1,k,jc) = c1(1,i-1,k,j)+c1(1,i,k,jc)
+          ch(1,i,k,j) = c1(1,i,k,j)+c1(1,i-1,k,jc)
+          ch(1,i,k,jc) = c1(1,i,k,j)-c1(1,i-1,k,jc)
+        end do
+      end do
+    end do
+
+  end if
+
+  if ( ido == 1 ) then
+    return
+  end if
+
+  do ik = 1, idl1
+    c2(1,ik,1) = ch2(1,ik,1)
+  end do
+
+  do j = 2, ip
+    do k = 1, l1
+      c1(1,1,k,j) = ch(1,1,k,j)
+    end do
+  end do
+
+  if ( l1 < nbd ) then
+
+    is = -ido
+    do j = 2, ip
+       is = is + ido
+       do k = 1, l1
+         idij = is
+         do i = 3, ido, 2
+           idij = idij + 2
+           c1(1,i-1,k,j) = wa(idij-1)*ch(1,i-1,k,j)-wa(idij)* ch(1,i,k,j)
+           c1(1,i,k,j) = wa(idij-1)*ch(1,i,k,j)+wa(idij)* ch(1,i-1,k,j)
+         end do
+       end do
+    end do
+
+  else
+
+    is = -ido
+
+    do j = 2, ip
+      is = is + ido
+      idij = is
+      do i = 3, ido, 2
+        idij = idij + 2
+        do k = 1, l1
+           c1(1,i-1,k,j) = wa(idij-1) * ch(1,i-1,k,j) - wa(idij) * ch(1,i,k,j)
+           c1(1,i,k,j)   = wa(idij-1) * ch(1,i,k,j)   + wa(idij) * ch(1,i-1,k,j)
+        end do
+      end do
+    end do
+
+  end if
+
+  return
+end

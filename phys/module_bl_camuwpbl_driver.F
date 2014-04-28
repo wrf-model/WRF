@@ -953,7 +953,9 @@ CONTAINS
     
     select case ( eddy_scheme )
     case ( 'diag_TKE' ) 
-       if( masterproc ) write(iulog,*) 'vertical_diffusion_init: eddy_diffusivity scheme: UW Moist Turbulence Scheme by Bretherton and Park'
+       if( masterproc ) write(iulog,*) 'vertical_diffusion_init: eddy_diffusivity scheme'
+       call wrf_debug(1,iulog)
+       if( masterproc ) write(iulog,*) 'UW Moist Turbulence Scheme by Bretherton and Park'
        call wrf_debug(1,iulog)
        !! Check compatibility of eddy and shallow scheme
        if( shallow_scheme .ne. 'UW' ) then

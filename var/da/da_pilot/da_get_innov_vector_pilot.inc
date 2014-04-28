@@ -98,16 +98,8 @@ subroutine da_get_innov_vector_pilot( it,num_qcstat_conv, grid, ob, iv)
          !------------------------------------------------------------------------
 
 
-          if (.not. var_wind) then
-             if (ob%pilot(n)%u(k) > missing_r .AND. iv%pilot(n)%u(k)%qc >= obs_qc_pointer) then
-                 iv%pilot(n)%u(k)%inv = ob%pilot(n)%u(k) - model_u(k,n)
-             end if
-
-             if (ob%pilot(n)%v(k) > missing_r .AND. iv%pilot(n)%v(k)%qc >= obs_qc_pointer) then
-                 iv%pilot(n)%v(k)%inv = ob%pilot(n)%v(k) - model_v(k,n)
-             end if
-           else
-              call da_ffdduv2 (speed,direction,model_u(k,n), model_v(k,n), iv%info(pilot)%lon(k,n), convert_uv2fd)
+          if (wind_sd_pilot) then
+              call da_ffdduv_model (speed,direction,model_u(k,n), model_v(k,n), convert_uv2fd)
 
               if (ob%pilot(n)%u(k) > missing_r .AND. iv%pilot(n)%u(k)%qc >= obs_qc_pointer) then
                   iv%pilot(n)%u(k)%inv = ob%pilot(n)%u(k) - speed
@@ -118,7 +110,14 @@ subroutine da_get_innov_vector_pilot( it,num_qcstat_conv, grid, ob, iv)
                   if (iv%pilot(n)%v(k)%inv > 180.0 ) iv%pilot(n)%v(k)%inv = iv%pilot(n)%v(k)%inv - 360.0
                   if (iv%pilot(n)%v(k)%inv < -180.0 ) iv%pilot(n)%v(k)%inv = iv%pilot(n)%v(k)%inv + 360.0
               end if
+          else
+             if (ob%pilot(n)%u(k) > missing_r .AND. iv%pilot(n)%u(k)%qc >= obs_qc_pointer) then
+                 iv%pilot(n)%u(k)%inv = ob%pilot(n)%u(k) - model_u(k,n)
+             end if
 
+             if (ob%pilot(n)%v(k) > missing_r .AND. iv%pilot(n)%v(k)%qc >= obs_qc_pointer) then
+                 iv%pilot(n)%v(k)%inv = ob%pilot(n)%v(k) - model_v(k,n)
+             end if
           end if
 
       end do

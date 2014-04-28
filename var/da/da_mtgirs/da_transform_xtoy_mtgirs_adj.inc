@@ -34,15 +34,14 @@ subroutine da_transform_xtoy_mtgirs_adj(grid, iv, jo_grad_y, jo_grad_x)
    call da_interp_lin_3d (grid%xb%v, iv%info(mtgirs), vb)
 
    do n=iv%info(mtgirs)%n1,iv%info(mtgirs)%n2
-       do k = 1, iv%info(mtgirs)%levels(n)
-         if(.not. var_wind) then
-             u(k,n) = jo_grad_y%mtgirs(n)%u(k)
-             v(k,n) = jo_grad_y%mtgirs(n)%v(k)
-           else
-             call da_uv_wind_adj(jo_grad_y%mtgirs(n)%u(k), &
+      do k = 1, iv%info(mtgirs)%levels(n)
+         if(wind_sd_mtgirs) then
+            call da_uv_to_sd_adj(jo_grad_y%mtgirs(n)%u(k), &
                                  jo_grad_y%mtgirs(n)%v(k), u(k,n), v(k,n), ub(k,n), vb(k,n))
-          end if
-
+         else
+            u(k,n) = jo_grad_y%mtgirs(n)%u(k)
+            v(k,n) = jo_grad_y%mtgirs(n)%v(k)
+         end if
       end do
       t(1:size(jo_grad_y%mtgirs(n)%t),n) = jo_grad_y%mtgirs(n)%t(:)
       q(1:size(jo_grad_y%mtgirs(n)%q),n) = jo_grad_y%mtgirs(n)%q(:)

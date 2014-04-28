@@ -275,7 +275,6 @@ subroutine da_get_innov_vector_gpsref(it, num_qcstat_conv, grid, ob, iv)
       do k=1,iv%info(gpsref)%levels(n)
          if (model_ref(k,n) > 0.0) top_level=k
       end do
-!     print*,'top_level=',top_level
       allocate(dndz_obs(top_level))
       allocate(dndz_mod(top_level))
       allocate(dndz2_obs(top_level))
@@ -310,7 +309,6 @@ subroutine da_get_innov_vector_gpsref(it, num_qcstat_conv, grid, ob, iv)
                if (iv%gpsref(n)%ref(k)%qc /= missing_data) then
                if ((dndz_obs(k) < -50.) .or. (dndz_mod(k) < -50.)) then
                iv%gpsref(n)%ref(k)%qc = qc_step1
-!               print*,'QC_STEP1:',n,k,iv%gpsref(n)%h(k)/1000.,dndz_obs(k),dndz_mod(k)
                end if
 ! hmn 20111206 
                end if
@@ -340,7 +338,6 @@ subroutine da_get_innov_vector_gpsref(it, num_qcstat_conv, grid, ob, iv)
                if (iv%gpsref(n)%ref(k)%qc /= missing_data) then
                if ((abs(dndz2_obs(k)) > 100.) .or. (abs(dndz2_mod(k)) > 100.)) then
                iv%gpsref(n)%ref(k)%qc = qc_step2
-!               print*,'QC_STEP2:',n,k,iv%gpsref(n)%h(k)/1000.,dndz2_obs(k),dndz2_mod(k)
                end if
                end if
 
@@ -566,6 +563,7 @@ subroutine da_get_innov_vector_gpsref(it, num_qcstat_conv, grid, ob, iv)
              if ( iv%gpsref(na)%ref(1)%qc == qc_below) then
                 do nb = iv%info(gpsref)%n1, iv%info(gpsref)%n2
                    if ( iv%info(gpsref)%id(nb) == iv%info(gpsref)%id(na) .and. &
+                        iv%info(gpsref)%name(nb) == iv%info(gpsref)%name(na) .and. &
 ! hmn 20111206
 !                        iv%gpsref(nb)%ref(1)%qc >= obs_qc_pointer .and.        &
                         iv%gpsref(n)%ref(1)%qc /= missing_data .and.            &

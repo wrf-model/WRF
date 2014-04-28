@@ -34,7 +34,7 @@ subroutine da_scan_obs_radar (iv, filename, grid)
 
    if (trace_use) call da_trace_entry("da_scan_obs_radar")
    thin_3d=.false. 
-   if( thin_conv) thin_3d=.true.
+   if( thin_conv_ascii) thin_3d=.true.
    ! 1. open file
    ! ============
 
@@ -83,7 +83,7 @@ subroutine da_scan_obs_radar (iv, filename, grid)
 
    do n = 1, total_radar
 
-   if ( thin_conv ) call cleangrids_conv(radar)
+   if ( thin_conv_ascii ) call cleangrids_conv(radar)
       ! 3.1 skip one blank line
 
       read (unit=iunit, fmt = '(A)', iostat = iost)
@@ -207,7 +207,7 @@ subroutine da_scan_obs_radar (iv, filename, grid)
 
             case (128)
                if (.not.use_radarobs .or. iv%info(radar)%ntotal == max_radar_input) cycle reports
-               if ( .not. thin_conv ) then
+               if ( .not. thin_conv_ascii ) then
                   if (ndup==1) iv%info(radar)%ntotal = iv%info(radar)%ntotal + 1
                   if (outside) cycle reports
                   iv%info(radar)%nlocal = iv%info(radar)%nlocal + 1
@@ -233,7 +233,7 @@ subroutine da_scan_obs_radar (iv, filename, grid)
                      call map2grids_conv(radar,dlat_earth,dlon_earth,crit,iv%info(radar)%nlocal,itx,1,itt,iout,iuse,zk,thin_3d)
                      if ( .not. iuse ) cycle   
                   end do 
-               end if ! if thin_conv
+               end if ! if thin_conv_ascii
 
             case default;
                write(unit=stdout, fmt='(a)') 'Warning: unsaved obs found:'
@@ -245,7 +245,7 @@ subroutine da_scan_obs_radar (iv, filename, grid)
                   'platform % info % levels=', platform % info % levels
             end select
 
-            if( .not. thin_conv) then
+            if( .not. thin_conv_ascii) then
                iv%info(radar)%max_lev = max(iv%info(radar)%max_lev, platform%info%levels)
             else
                iv%info(radar)%max_lev = 1

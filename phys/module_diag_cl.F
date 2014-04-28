@@ -16,9 +16,6 @@ CONTAINS
                       ims,ime, jms,jme, kms,kme,                      &
                       ips,ipe, jps,jpe, kps,kpe,                      & ! patch  dims
                       i_start,i_end,j_start,j_end,kts,kte,num_tiles   &
-                     ,dpsdt,dmudt                                     &
-                     ,p8w,pk1m,mu_2,mu_2m                             &
-                     ,u,v                                             &
                      ,is_restart                                      & ! CLWRF
                      ,clwrfH,t2,q2,u10,v10, skintemp                  & ! CLWRF
                      ,t2clmin,t2clmax,tt2clmin,tt2clmax               & ! CLWRF
@@ -33,12 +30,8 @@ CONTAINS
                      ,skintempclmin,skintempclmax                     & ! CLWRF
                      ,tskintempclmin,tskintempclmax                   & ! CLWRF
                      ,skintempclmean,skintempclstd                    & ! CLWRF
-                     ,raincv,rainncv,rainc,rainnc                     &
-                     ,i_rainc,i_rainnc                                &
-                     ,hfx,sfcevp,lh                                   &
-                     ,dt,xtime,curr_secs2,sbw                                    &
-                     ,diag_print                                      &
-                     ,bucket_mm, bucket_J                             &
+                     ,raincv,rainncv                                  &
+                     ,dt,xtime,curr_secs2                             &
                                                                       )
 !----------------------------------------------------------------------
 
@@ -52,19 +45,9 @@ CONTAINS
 !-- DT            time step (second)
 !-- XTIME         forecast time
 !-- curr_secs2    current time in seconds since simulation restart
-!-- SBW           specified boundary width - used later
 !
-!-- P8W           3D pressure array at full eta levels
-!-- MU            dry column hydrostatic pressure
-!-- RAINC         cumulus scheme precipitation since hour 0
 !-- RAINCV        cumulus scheme precipitation in one time step (mm)
-!-- RAINNC        explicit scheme precipitation since hour 0
 !-- RAINNCV       explicit scheme precipitation in one time step (mm)
-!-- HFX           surface sensible heat flux
-!-- LH            surface latent heat flux
-!-- SFCEVP        total surface evaporation
-!-- U             u component of wind - to be used later to compute k.e.
-!-- V             v component of wind - to be used later to compute k.e.
 !
 !-- ids           start index for i in domain
 !-- ide           end index for i in domain
@@ -114,28 +97,11 @@ CONTAINS
    INTEGER, DIMENSION(num_tiles), INTENT(IN)       :: i_start,   &
                                       i_end,j_start,j_end
 
-   INTEGER,      INTENT(IN   )                     :: diag_print
-   REAL,      INTENT(IN   )                        :: bucket_mm, &
-                                      bucket_J
+   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN) ::           & 
+                                      RAINNCV, RAINCV, SKINTEMP 
 
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
-                                       INTENT(IN ) :: u,v,p8w    
-
-   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN) :: MU_2,     & 
-                                      RAINNCV, RAINCV, HFX,      &
-                                      SFCEVP, LH, SKINTEMP 
-
-   REAL, DIMENSION( ims:ime , jms:jme ),                         &
-                                     INTENT(INOUT) :: DPSDT,     &
-                                     DMUDT, RAINNC, RAINC,       &
-                                     MU_2M, PK1M
- 
    REAL,  INTENT(IN   )                            :: DT, XTIME
    REAL,  INTENT(IN   )                            :: curr_secs2
-   INTEGER,  INTENT(IN   )                         :: SBW
-   INTEGER, DIMENSION( ims:ime , jms:jme ),                      & 
-                                     INTENT(INOUT) :: I_RAINC,   &
-                                     I_RAINNC
 
 ! LOCAL  VAR
 
@@ -143,12 +109,6 @@ CONTAINS
    INTEGER                                   :: idp,jdp,irc,jrc,irnc,jrnc,isnh,jsnh
    INTEGER                                   :: prfreq
 
-   REAL                                      :: dpsdt_sum, dmudt_sum, dardt_sum,  & 
-                          drcdt_sum, drndt_sum
-   REAL                                      :: hfx_sum, lh_sum, sfcevp_sum,      &
-                          rainc_sum, rainnc_sum, raint_sum
-   REAL                                      :: dmumax, raincmax, rainncmax,      &
-                          snowhmax
    REAL                                      :: xtimep
    LOGICAL, EXTERNAL                         :: wrf_dm_on_monitor
    CHARACTER*256                             :: outstring
@@ -179,7 +139,7 @@ CONTAINS
    REAL                                      :: value
    INTEGER, INTENT(IN)                       :: clwrfH
    CHARACTER (LEN=1024)                      :: message
-   REAL, SAVE                                :: nsteps
+   INTEGER, SAVE                             :: nsteps
    LOGICAL                                   :: is_restart
 
 !-----------------------------------------------------------------
@@ -304,15 +264,15 @@ CONTAINS
           skintempclmax(i,j)=skintemp(i,j)
           skintempclmean(i,j)=skintemp(i,j)
           skintempclstd(i,j)=skintemp(i,j)*skintemp(i,j)
-!          nsteps=0.
+          nsteps=0
         ENDDO
       ENDDO
   ENDDO
-    nsteps=clwrfH*60./dt
+!    nsteps=clwrfH*60./dt
   ELSE
     xtimep = xtime + dt/60.   ! value at end of timestep for time info
-!    nsteps=nsteps+1.
-    nsteps=clwrfH*60./dt
+    nsteps=nsteps+1
+!   nsteps=clwrfH*60./dt
 !      DO j = j_start(ij), j_end(ij)
 !        DO i = i_start(ij), i_end(ij)
 !     DO j = jps, jpe

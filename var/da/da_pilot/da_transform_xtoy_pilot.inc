@@ -39,11 +39,11 @@ subroutine da_transform_xtoy_pilot (grid, iv, y)
    do n=iv%info(pilot)%n1,iv%info(pilot)%n2
       do k = 1, iv%info(pilot)%levels(n)
 
-         if(.not. var_wind) then
+         if(wind_sd_pilot) then
+            call da_uv_to_sd_lin(y%pilot(n)%u(k),y%pilot(n)%v(k),model_u(k,n),model_v(k,n),ub(k,n),vb(k,n))
+         else
             y%pilot(n)%u(k) = model_u(k,n)
             y%pilot(n)%v(k) = model_v(k,n)
-         else
-            call da_uv_wind_tgl(y%pilot(n)%u(k),y%pilot(n)%v(k),model_u(k,n),model_v(k,n),ub(k,n),vb(k,n))
          end if
 
       end do

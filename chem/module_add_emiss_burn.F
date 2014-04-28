@@ -364,6 +364,24 @@ CONTAINS
               enddo
             enddo
           enddo
+! 20130822 acd_rkumar_bb start
+! Adding simple SOA scheme emissions from biomass burning.
+! WARNING: do not provide e_co_bb in wrfchemi* files if you use
+! the online plume rise - you would be double counting emissions!
+! -- Dear Steven, could you please include this note in the user guide
+! -- when you adopt these changes? Thanks. Rajesh and Christoph
+          IF (chem_opt .EQ. MOZART_MOSAIC_4BIN_VBS0_KPP) THEN
+            do j=jts,jte
+              do k=kts,kte
+                do i=its,ite
+                  conv_rho = (r_q*4.828e-4*dtstep)/(rho_phy(i,k,j)*dz8w(i,k,j)*60.)
+                  chem(i,k,j,p_vocbb) = chem(i,k,j,p_vocbb) + ebu(i,k,j,p_ebu_co)*conv_rho*0.04*28./250.
+                enddo
+              enddo
+            enddo
+          ENDIF
+! 20130822 acd_rkumar_bb end
+
           if( biomass_burn_opt == BIOMASSB_MOZC ) then
             do j=jts,jte
               do k=kts,kte

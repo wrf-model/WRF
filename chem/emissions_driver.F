@@ -906,21 +906,24 @@ CONTAINS
 
        end if ! emiss_inpt_opt /= 3
 
-    IF(config_flags%emiss_opt == 10 ) then
-       do j=jts,jte
-          do i=its,ite
-             do k=kts,min(config_flags%kemit,kte-ksub)
-                conv = 4.828e-4/rho_phy(i,k,j)*dtstep/(dz8w(i,k,j)*60.)
-
-                chem(i,k,j,p_voca)  = chem(i,k,j,p_voca)                       &
-                     +emis_ant(i,k,j,p_e_co_a)*conv*0.08*28./250.
-                chem(i,k,j,p_vocbb)  = chem(i,k,j,p_vocbb)                       &
-                     +emis_ant(i,k,j,p_e_co_bb)*conv*0.08*28./250.
-
-             end do
-          end do
-       end do
-     endif
+! 20130725 acd_ck_bugfix start
+! > double counting - already added in add_anthropogenics (module_emissions_anthropogenic.F)
+!    IF(config_flags%emiss_opt == 10 ) then
+!       do j=jts,jte
+!          do i=its,ite
+!             do k=kts,min(config_flags%kemit,kte-ksub)
+!                conv = 4.828e-4/rho_phy(i,k,j)*dtstep/(dz8w(i,k,j)*60.)
+!
+!                chem(i,k,j,p_voca)  = chem(i,k,j,p_voca)                       &
+!                     +emis_ant(i,k,j,p_e_co_a)*conv*0.08*28./250.
+!                chem(i,k,j,p_vocbb)  = chem(i,k,j,p_vocbb)                       &
+!                     +emis_ant(i,k,j,p_e_co_bb)*conv*0.08*28./250.
+!
+!             end do
+!          end do
+!       end do
+!     endif
+! 20130725 acd_ck_bugfix end
 
 !For SAPRC99 need to define SAPRC99_addemiss_anthro and SAPRC99_addemiss_bio
 !so did not add saprcnov packages here

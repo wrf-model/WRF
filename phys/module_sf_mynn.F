@@ -448,6 +448,7 @@ CONTAINS
                  ZA, &    !Height of lowest 1/2 sigma level(m)
               THV1D, &    !Theta-v at lowest 1/2 sigma (K)
                TH1D, &    !Theta at lowest 1/2 sigma (K)
+               TC1D, &    !T at lowest 1/2 sigma (Celsius)
                TV1D, &    !Tv at lowest 1/2 sigma (K)
                QVSH, &    !qv at lowest 1/2 sigma (spec humidity)
         PSIH2,PSIM2, &    !M-O stability functions at z=2 m
@@ -485,7 +486,8 @@ CONTAINS
          ! PL cmb
          PL=P1D(I)/1000.                                                   
          THCON=(100./PL)**ROVCP                                                 
-         TH1D(I)=T1D(I)*THCON                   !(K)    
+         TH1D(I)=T1D(I)*THCON                   !(Theta, K)
+         TC1D(I)=T1D(I)-273.15                  !(T, Celsius)    
 
          ! CONVERT TO VIRTUAL TEMPERATURE
          QVSH(I)=QV1D(I)/(1.+QV1D(I))        !CONVERT TO SPEC HUM (kg/kg)
@@ -597,8 +599,9 @@ CONTAINS
          !--------------------------------------------------------
          BR(I)=GOVRTH(I)*ZA(I)*DTHVDZ/(WSPD(I)*WSPD(I))
          !SET LIMITS ACCORDING TO Li et al. (2010) Boundary-Layer Meteorol (p.158)
-         BR(I)=MAX(BR(I),-2.0)
-         BR(I)=MIN(BR(I),1.0)
+         !JOE: defying limits: BR(I)=MAX(BR(I),-2.0)
+         BR(I)=MAX(BR(I),-20.0)
+         BR(I)=MIN(BR(I),2.0)
          BRi(I)=BR(I)  !new variable for output - BR is not a "state" variable.
                
          ! IF PREVIOUSLY UNSTABLE, DO NOT LET INTO REGIMES 1 AND 2 (STABLE)
@@ -627,8 +630,10 @@ CONTAINS
    ITER = 1
    DO WHILE (ITER .LE. ITMAX)
 
-      !COMPUTE KINEMATIC VISCOSITY
-      VISC=(1.32+0.009*(T1D(I)-273.15))*1.E-5
+      !COMPUTE KINEMATIC VISCOSITY (m2/s) Andreas (1989) CRREL Rep. 89-11
+      !valid between -173 and 277 degrees C.
+      VISC=1.326e-5*(1. + 6.542e-3*TC1D(I) + 8.301e-6*TC1D(I)*TC1D(I) &
+                        - 4.84e-9*TC1D(I)*TC1D(I)*TC1D(I))
 
       IF((XLAND(I)-1.5).GE.0)THEN
           !--------------------------------------
@@ -1384,8 +1389,9 @@ END SUBROUTINE SFCLAY1D_mynn
        IF (Ren .le. 2.) then
 
           Zt = (5.5e-5)*(Ren**(-0.60))
+          Zq = Zt
           !FOR SMOOTH SEAS, USE GARRATT
-          Zq = 0.2*visc/MAX(ustar,0.1)
+          !Zq = 0.2*visc/MAX(ustar,0.1)
           !Zq = 0.3*visc/MAX(ustar,0.1)
 
        ELSE

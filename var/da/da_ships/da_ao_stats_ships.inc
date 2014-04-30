@@ -9,12 +9,12 @@ subroutine da_ao_stats_ships (stats_unit, iv, re, ob)
    integer,        intent (in)    :: stats_unit    ! Output unit for stats.
    type (iv_type), intent (inout) :: iv            ! iv
    type  (y_type), intent (in)    :: re            ! A - O
-   type(y_type),   intent (in) :: ob       ! Observation structure.
+   type(y_type),   intent (in)    :: ob            ! Observation structure.
 
    type (stats_ships_type) :: stats
    integer                 :: nu, nv, nt, np, nq
    integer                 :: n
-   real                    :: u_inv, v_inv, sp_inv, dir_inv
+   real                    :: u_inc, v_inc, u_obs, v_obs
 
    if (trace_use_dull) call da_trace_entry("da_ao_stats_ships")
 
@@ -40,20 +40,25 @@ subroutine da_ao_stats_ships (stats_unit, iv, re, ob)
 
    do n=1, iv%info(ships)%nlocal
       if (iv%info(ships)%proc_domain(1,n)) then
-         u_inv = re%ships(n)%u
-         v_inv = re%ships(n)%v
-         if(var_wind) then
-            sp_inv = re%ships(n)%u
-            dir_inv = re%ships(n)%v
-            call da_cal_sd (ob%ships(n)%u, ob%ships(n)%v, &
-                            u_inv, v_inv, sp_inv, dir_inv)
-         end if
+
+         u_inc = re%ships(n)%u
+         v_inc = re%ships(n)%v
+         u_obs = ob%ships(n)%u
+         v_obs = ob%ships(n)%v
+
+         if (.not. wind_sd_ships .and. wind_stats_sd) &
+            call da_ffdduv_diagnose(u_obs, u_obs, u_inc, v_obs, v_obs, v_inc, &
+                                    iv%ships(n)%u%qc, iv%ships(n)%v%qc, convert_uv2fd)
+         if (wind_sd_ships .and. .not. wind_stats_sd) &
+            call da_ffdduv_diagnose(u_obs, u_obs, u_inc, v_obs, v_obs, v_inc, &
+                                    iv%ships(n)%u%qc, iv%ships(n)%v%qc, convert_fd2uv)
+
          call da_stats_calculate (n, 0, iv%ships(n)%u%qc, & 
-            u_inv, nu, & 
+            u_inc, nu, & 
             stats%minimum%u, stats%maximum%u, &
             stats%average%u, stats%rms_err%u)
          call da_stats_calculate (n, 0, iv%ships(n)%v%qc, & 
-            v_inv, nv, & 
+            v_inc, nv, & 
             stats%minimum%v, stats%maximum%v, &
             stats%average%v, stats%rms_err%v)
          call da_stats_calculate (n, 0, iv%ships(n)%t%qc, & 

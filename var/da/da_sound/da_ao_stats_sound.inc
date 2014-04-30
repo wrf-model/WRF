@@ -9,12 +9,12 @@ subroutine da_ao_stats_sound (stats_unit, iv, re, ob)
    integer,        intent (in)    :: stats_unit    ! Output unit for stats.
    type (iv_type), intent (inout) :: iv            ! iv
    type (y_type),  intent (in)    :: re            ! A - O
-   type(y_type),   intent (in) :: ob       ! Observation structure.
+   type(y_type),   intent (in)    :: ob            ! Observation structure.
 
    type (stats_sound_type) :: stats
    integer                 :: nu, nv, nt, nq
    integer                 :: n, k
-   real                    :: u_inv, v_inv, sp_inv, dir_inv
+   real                    :: u_inc, v_inc, u_obs, v_obs
 
    if (trace_use_dull) call da_trace_entry("da_ao_stats_sound")
 
@@ -37,21 +37,26 @@ subroutine da_ao_stats_sound (stats_unit, iv, re, ob)
 
    do n=1, iv%info(sound)%nlocal
       do k=1, iv%info(sound)%levels(n)
-         u_inv = re%sound(n)%u(k)
-         v_inv = re%sound(n)%v(k)
-         if(var_wind) then
-            sp_inv = re%sound(n)%u(k)
-            dir_inv = re%sound(n)%v(k)
-            call da_cal_sd (ob%sound(n)%u(k), ob%sound(n)%v(k), &
-                            u_inv, v_inv, sp_inv, dir_inv)
-         end if
+
+            u_inc = re%sound(n)%u(k)
+            v_inc = re%sound(n)%v(k)
+            u_obs = ob%sound(n)%u(k)
+            v_obs = ob%sound(n)%v(k)
+
+            if (.not. wind_sd_sound .and. wind_stats_sd) &
+               call da_ffdduv_diagnose(u_obs, u_obs, u_inc, v_obs, v_obs, v_inc, &
+                                       iv%sound(n)%u(k)%qc, iv%sound(n)%v(k)%qc, convert_uv2fd)
+            if (wind_sd_sound .and. .not. wind_stats_sd) &
+               call da_ffdduv_diagnose(u_obs, u_obs, u_inc, v_obs, v_obs, v_inc, &
+                                       iv%sound(n)%u(k)%qc, iv%sound(n)%v(k)%qc, convert_fd2uv)
+
          if (iv%info(sound)%proc_domain(1,n)) then
             call da_stats_calculate (n, k, iv%sound(n)%u(k)%qc, & 
-               u_inv, nu, &
+               u_inc, nu, &
                stats%minimum%u, stats%maximum%u, &
                stats%average%u, stats%rms_err%u)
             call da_stats_calculate (n, k, iv%sound(n)%v(k)%qc, & 
-               v_inv, nv, &
+               v_inc, nv, &
                stats%minimum%v, stats%maximum%v, &
                stats%average%v, stats%rms_err%v)
             call da_stats_calculate (n, k, iv%sound(n)%t(k)%qc, & 

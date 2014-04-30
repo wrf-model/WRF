@@ -92,6 +92,7 @@ module wrf_data
 ! to .FALSE. when the first field is read or written.  
     logical                               :: first_operation
     logical                               :: R4OnOutput
+    logical                               :: nofill
     logical                               :: use_netcdf_classic
   end type wrf_data_handle
   type(wrf_data_handle),target            :: WrfDataHandles(WrfDataHandleMax)
@@ -203,6 +204,7 @@ subroutine allocHandle(DataHandle,DH,Comm,Status)
   DH%Write     =.false.
   DH%first_operation  = .TRUE.
   DH%R4OnOutput = .false.
+  DH%nofill = .false.
   Status = WRF_NO_ERR
 end subroutine allocHandle
 
@@ -1388,6 +1390,10 @@ SUBROUTINE ext_ncd_open_for_write_begin(FileName,Comm,IOComm,SysDepInfo,DataHand
   if (index(SysDepInfo,'REAL_OUTPUT_SIZE=4') /= 0) then
      DH%R4OnOutput = .true.
   end if
+!toggle on nofill mode
+  if (index(SysDepInfo,'NOFILL=.TRUE.') /= 0) then
+     DH%nofill = .true.
+  end if
 
   return
 end subroutine ext_ncd_open_for_write_begin
@@ -1423,6 +1429,7 @@ SUBROUTINE ext_ncd_open_for_write_commit(DataHandle, Status)
   type(wrf_data_handle),pointer     :: DH
   integer                           :: i
   integer                           :: stat
+  integer                           :: oldmode  ! for nf_set_fill, not used
 
   if(WrfIOnotInitialized) then
     Status = WRF_IO_NOT_INITIALIZED 
@@ -1435,6 +1442,16 @@ SUBROUTINE ext_ncd_open_for_write_commit(DataHandle, Status)
     write(msg,*) 'Warning Status = ',Status,' in ext_ncd_open_for_write_commit ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , TRIM(msg)) 
     return
+  endif
+  if ( DH%nofill ) then
+    Status = NF_SET_FILL(DH%NCID,NF_NOFILL, oldmode )
+    if(Status /= WRF_NO_ERR) then
+      write(msg,*) 'Warning Status = ',Status,' from NF_SET_FILL ',__FILE__,', line', __LINE__
+      call wrf_debug ( WARN , TRIM(msg)) 
+      return
+    endif
+    write(msg,*) 'Information: NOFILL being set for writing to ',TRIM(DH%FileName)
+    call wrf_debug ( WARN , TRIM(msg)) 
   endif
   stat = NF_ENDDEF(DH%NCID)
   call netcdf_err(stat,Status)

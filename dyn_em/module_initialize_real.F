@@ -18,6 +18,7 @@ MODULE module_initialize_real
    USE module_soil_pre
    USE module_date_time
    USE module_llxy
+   USE module_polarfft
 #ifdef DM_PARALLEL
    USE module_dm
    USE module_comm_dm, ONLY : &
@@ -117,6 +118,8 @@ CONTAINS
       REAL , DIMENSION(max_eta) :: eta_levels
       REAL :: max_dz
 
+      REAL :: dclat
+
 !      INTEGER , PARAMETER :: nl_max = 1000
 !      REAL , DIMENSION(nl_max) :: grid%dn
 
@@ -151,6 +154,7 @@ integer::oops1,oops2
         REAL , DIMENSION(100) :: lqmi
 
       REAL :: t_start , t_end
+      REAL , ALLOCATABLE , DIMENSION(:,:) :: clat_glob
 
       !  Dimension information stored in grid data structure.
 
@@ -167,6 +171,41 @@ integer::oops1,oops2
 
 
       CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
+
+      !   Lake Mask and depth assignment
+
+      CALL nl_get_iswater ( grid%id , grid%iswater )
+      CALL nl_get_islake  ( grid%id , grid%islake )
+
+      DO j = jts, MIN(jde-1,jte)
+         DO i = its, MIN(ide-1,ite)
+            IF ( grid%lu_index(i,j) .NE. grid%islake ) THEN
+               grid%lakemask(i,j) = 0
+            ELSE
+               grid%lakemask(i,j) = 1
+            END IF
+         END DO
+      END DO
+
+      IF ( grid%sf_lake_physics .EQ. 1 ) THEN
+         grid%lake_depth_flag = flag_lake_depth
+         IF ( flag_lake_depth .EQ. 0 ) THEN
+            CALL wrf_message ( " Warning: Please rerun WPS to get lake_depth information for lake model" )
+
+         !  Set lake depth over the ocean to be -2 m, and set the lake depth over land to be -1 m.
+
+         ELSE
+            DO j = jts, MIN(jde-1,jte)
+               DO i = its, MIN(ide-1,ite)
+                  IF      ( ( grid%lu_index(i,j) .NE. grid%islake ) .AND. ( grid%lu_index(i,j) .NE. grid%iswater ) ) THEN
+                     grid%lake_depth(i,j) = -1
+                  ELSE IF   ( grid%lu_index(i,j) .NE. grid%islake ) THEN
+                     grid%lake_depth(i,j) = -2
+                  END IF
+               END DO
+            END DO
+         END IF
+      END IF
 
       !  Send out a quick message about the time steps based on the map scale factors.
 
@@ -553,6 +592,65 @@ integer::oops1,oops2
          END IF
 
          IF ( config_flags%map_proj .EQ. PROJ_CASSINI ) THEN
+#if 1
+            dclat = 90./REAL(jde-jds) !(0.5 * 180/ny)
+            DO j = jts, MIN(jte,jde-1)
+              DO k = kts, kte
+                 DO i = its, MIN(ite,ide-1)
+                    grid%t_2(i,k,j) = 1.
+                 END DO
+              END DO
+              DO i = its, MIN(ite,ide-1)
+                 grid%t_2(i,1,j) = grid%ht(i,j)
+                 grid%sr(i,j) = grid%ht(i,j)
+              END DO
+            END DO
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
+! WARNING:  this might present scaling issues on very large numbers of processors
+     ALLOCATE( clat_glob(ids:ide,jds:jde) )
+
+     CALL wrf_patch_to_global_real ( grid%clat, clat_glob, grid%domdesc, 'xy', 'xy', &
+                                     ids, ide, jds, jde, 1, 1, &
+                                     ims, ime, jms, jme, 1, 1, &
+                                     its, ite, jts, jte, 1, 1 )
+
+     CALL wrf_dm_bcast_real ( clat_glob , (ide-ids+1)*(jde-jds+1) )
+
+     grid%clat_xxx(ipsx:ipex,jpsx:jpex) = clat_glob(ipsx:ipex,jpsx:jpex)
+
+     DEALLOCATE( clat_glob )
+#endif
+
+         CALL pxft ( grid=grid                                              &
+               ,lineno=__LINE__                                             &
+               ,flag_uv            = 0                                      &
+               ,flag_rurv          = 0                                      &
+               ,flag_wph           = 0                                      &
+               ,flag_ww            = 0                                      &
+               ,flag_t             = 1                                      &
+               ,flag_mu            = 0                                      &
+               ,flag_mut           = 0                                      &
+               ,flag_moist         = 0                                      &
+               ,flag_chem          = 0                                      &
+               ,flag_tracer        = 0                                      &
+               ,flag_scalar        = 0                                      &
+               ,positive_definite  = .FALSE.                                &
+               ,moist=moist,chem=chem,tracer=tracer,scalar=scalar           &
+               ,fft_filter_lat = config_flags%fft_filter_lat                &
+               ,dclat = dclat                                               &
+               ,ids=ids,ide=ide,jds=jds,jde=jde,kds=kds,kde=kde             &
+               ,ims=ims,ime=ime,jms=jms,jme=jme,kms=kms,kme=kme             &
+               ,ips=ips,ipe=ipe,jps=jps,jpe=jpe,kps=kps,kpe=kpe             &
+               ,imsx=imsx,imex=imex,jmsx=jmsx,jmex=jmex,kmsx=kmsx,kmex=kmex &
+               ,ipsx=ipsx,ipex=ipex,jpsx=jmsx,jpex=jpex,kpsx=kpsx,kpex=kpex )
+            DO j = jts, MIN(jte,jde-1)
+              DO i = its, MIN(ite,ide-1)
+                 grid%ht(i,j) = grid%t_2(i,1,j)
+                 grid%sr(i,j) = grid%sr(i,j) - grid%ht(i,j)
+              END DO
+            END DO
+
+#else
 #if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
 
             !  We stick the topo and map fac in an unused 3d array. The map scale
@@ -621,6 +719,7 @@ integer::oops1,oops2
                                ids, ide, jds, jde, 1,1,           &
                                ims, ime, jms, jme, 1,1,           &
                                its, ite, jts, jte, 1,1 )
+#endif
 #endif
          END IF
 
@@ -943,6 +1042,13 @@ integer::oops1,oops2
                                        ids , ide , jds , jde , kds , kde , &
                                        ims , ime , jms , jme , kms , kme , &
                                        its , ite , jts , jte , kts , kte )
+
+         IF ( config_flags%rdlai2d ) THEN
+         CALL monthly_interp_to_date ( grid%lai12m , current_date , grid%lai , &
+                                       ids , ide , jds , jde , kds , kde , &
+                                       ims , ime , jms , jme , kms , kme , &
+                                       its , ite , jts , jte , kts , kte )
+         ENDIF
 
          !  Get the min/max of each i,j for the monthly green-ness fraction.
 
@@ -1569,7 +1675,9 @@ integer::oops1,oops2
       CALL nl_get_iswater ( grid%id , grid%iswater )
       CALL nl_get_islake  ( grid%id , grid%islake )
 
+
       IF ( grid%islake < 0 ) THEN
+         grid%lakeflag=0
          CALL wrf_debug ( 0 , 'Old data, no inland lake information')
 
             DO j=jts,MIN(jde-1,jte)
@@ -1590,6 +1698,7 @@ integer::oops1,oops2
                END DO
             END DO
       ELSE
+         grid%lakeflag=1
          IF ( we_have_tavgsfc ) THEN
 
             CALL wrf_debug ( 0 , 'Using inland lakes with average surface temperature')
@@ -1878,6 +1987,7 @@ integer::oops1,oops2
 
          !  Make all the veg/soil parms the same so as not to confuse the developer.
 
+
          DO j = jts , MIN(jde-1,jte)
             DO i = its , MIN(ide-1,ite)
                IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
@@ -1943,6 +2053,7 @@ integer::oops1,oops2
 
       !  Adjustments for the seaice field PRIOR to the grid%tslb computations.  This is
       !  is for the 5-layer scheme.
+
 
       num_veg_cat      = SIZE ( grid%landusef , DIM=2 )
       num_soil_top_cat = SIZE ( grid%soilctop , DIM=2 )
@@ -2084,19 +2195,20 @@ integer::oops1,oops2
                              ( grid%tslb(i,1,j) .lt. 400 ) .and. ( grid%smois(i,1,j) .lt. 0.005 ) ) then
                            print *,'Noah -> Noah: bad soil moisture at i,j = ',i,j,grid%smois(i,:,j)
                            iicount = iicount + 1
-!                          grid%smois(i,:,j) = 0.005
+
+                           grid%smois(i,:,j) = 0.005
 !+---+-----------------------------------------------------------------+
 !  Some bad values of soil moisture are possible (huge negative and positive), but they
 !  appear to occur only along coastlines, so instead of overwriting with small moisture
 !  values, use relatively large moisture val.  Orig code checked for large negative but
 !  not positive values, mods here reset either.  G. Thompson (28 Feb 2008).
 
-                           grid%smois(i,:,j) = 0.499
-                        ELSEIF ( (grid%landmask(i,j).gt.0.5) .and. (grid%tslb(i,1,j) .gt. 170 ) .and. &
-                             ( grid%tslb(i,1,j) .lt. 400 ) .and. (grid%smois(i,1,j) .gt. 1.005 ) ) then
-                           print *,'Noah -> Noah: bad soil moisture at i,j = ',i,j,grid%smois(i,:,j)
-                           iicount = iicount + 1
-                           grid%smois(i,:,j) = 0.499
+!                          grid%smois(i,:,j) = 0.499
+!                       ELSEIF ( (grid%landmask(i,j).gt.0.5) .and. (grid%tslb(i,1,j) .gt. 170 ) .and. &
+!                            ( grid%tslb(i,1,j) .lt. 400 ) .and. (grid%smois(i,1,j) .gt. 1.005 ) ) then
+!                          print *,'Noah -> Noah: bad soil moisture at i,j = ',i,j,grid%smois(i,:,j)
+!                          iicount = iicount + 1
+!                          grid%smois(i,:,j) = 0.499
 !+---+-----------------------------------------------------------------+
                         END IF
                      END DO
@@ -2141,18 +2253,18 @@ integer::oops1,oops2
                !  Fudge soil moisture higher where canopy water is non-zero.
                !  G. Thompson (12 Jun 2008)
 
-               DO j = jts, MIN(jte,jde-1)
-                 DO i = its, MIN(ite,ide-1)
-                    IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
-                    if (grid%canwat(i,j) .GT. 1.01 .AND. grid%landmask(i,j) .GT. 0.5 ) THEN
-                       print *,'  CANWAT: moisten soil a bit more at i,j =',i,j,grid%canwat(i,j)
-                       grid%smois(i,1,j) = grid%smois(i,1,j) + (grid%canwat(i,j)**0.33333)*0.04
-                       grid%smois(i,1,j) = MIN(0.499, grid%smois(i,1,j))
-                       grid%smois(i,2,j) = grid%smois(i,2,j) + (grid%canwat(i,j)**0.33333)*0.01
-                       grid%smois(i,2,j) = MIN(0.499, grid%smois(i,2,j))
-                    end if
-                 END DO
-               END DO
+!              DO j = jts, MIN(jte,jde-1)
+!                DO i = its, MIN(ite,ide-1)
+!                   IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+!                   if (grid%canwat(i,j) .GT. 1.01 .AND. grid%landmask(i,j) .GT. 0.5 ) THEN
+!                      print *,'  CANWAT: moisten soil a bit more at i,j =',i,j,grid%canwat(i,j)
+!                      grid%smois(i,1,j) = grid%smois(i,1,j) + (grid%canwat(i,j)**0.33333)*0.04
+!                      grid%smois(i,1,j) = MIN(0.499, grid%smois(i,1,j))
+!                      grid%smois(i,2,j) = grid%smois(i,2,j) + (grid%canwat(i,j)**0.33333)*0.01
+!                      grid%smois(i,2,j) = MIN(0.499, grid%smois(i,2,j))
+!                   end if
+!                END DO
+!              END DO
 !+---+-----------------------------------------------------------------+
 
 
@@ -2866,6 +2978,29 @@ endif
 !  Set flag to denote that we are saving original values of HT, MUB, and
 !  PHB for 2-way nesting and cycling.
 
+      grid%save_topo_from_real=1
+
+      !  Template for initializing tracer arrays. 
+      !  Right now, a small plane in the middle of the domain at lowest model level is
+      !  defined.
+
+      IF (config_flags%tracer_opt .eq. 2) THEN
+          DO j = (jde + jds)/2 - 4, (jde + jds)/2 + 4, 1
+            DO i = (ide + ids)/2 - 4, (ide + ids)/2 + 4, 1
+               tracer(i, 1, j, im) = 1.
+               IF ( its .LE. i .and. ite .GE. i .and. jts .LE. j .and. jte .GE. j ) THEN
+                 tracer(i, 1, j, P_tr17_1) = 1.
+                 tracer(i, 1, j, P_tr17_2) = 1.
+                 tracer(i, 1, j, P_tr17_3) = 1.
+                 tracer(i, 1, j, P_tr17_4) = 1.
+!                tracer(i, 1, j, P_tr17_5) = 1.
+!                tracer(i, 1, j, P_tr17_6) = 1.
+!                tracer(i, 1, j, P_tr17_7) = 1.
+!                tracer(i, 1, j, P_tr17_8) = 1.
+               END IF
+            END DO
+          END DO
+      END IF
 
       !  Template for initializing trajectories.  The i, j, and k starting locations
       !  are specified.  Right now, a small plane in the middle of the domain is 
@@ -2957,12 +3092,8 @@ endif
          END IF
 
       END IF
-	 
-
-      grid%save_topo_from_real=1
 
       ips = its ; ipe = ite ; jps = jts ; jpe = jte ; kps = kts ; kpe = kte
-
 
 !+---+-----------------------------------------------------------------+
       !  Added by Greg Thompson.  Pre-set snow depth by latitude, elevation, and day-of-year.
@@ -4181,7 +4312,7 @@ end subroutine fillitup
             !  the isobaric original field has the surface from 2-m T and RH, and 10-m U and V).
 
             IF ( lowest_lev_from_sfc ) THEN
-               fnew(i,1,j) = forig(i,ko_above_sfc(i)-1,j)
+               fnew(i,1,j) = forig(i,1,j)
             END IF
 
          END DO

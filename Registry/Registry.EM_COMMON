@@ -101,6 +101,7 @@ state    real   sct_dom_gc     ij       dyn_em      1        -     i1  "SCT_DOM"
 state    real   scb_dom_gc     ij       dyn_em      1        -     i1  "SCB_DOM"  "Dominant soil (bottom) category from GEOGRID"  "cat"
 state    real   greenfrac      imj      dyn_em      1        Z     i1  "GREENFRAC" "monthly greenness fraction" "0 - 1 fraction"
 state    real   albedo12m      imj      dyn_em      1        Z     i1  "ALBEDO12M" "background albedo" "0 - 1 fraction"
+state    real   lai12m         imj      dyn_em      1        Z     i1  "LAI12M" "monthly LAI" "m2/m2"
 state    real   pd_gc          igj      dyn_em      1        Z     -   "PD"    "dry pressure"        "Pa"
 state    real   pdrho_gc       igj      dyn_em      1        Z     -   "PDRHO"    "dry pressure for UM data for the variables U and V"   "Pa"
 state    real   psfc_gc        ij       dyn_em      1        -      -  "PSFC_GC"     "surface pressure"            "Pa"
@@ -718,7 +719,7 @@ state  integer  IFNDSNOWSI       -      misc        1         -     ir        "F
 state  integer  IFNDICEDEPTH     -      misc        1         -     ir        "FNDICEDEPTH" "ICEDEPTH_LOGICAL"
 # SKIN SST
 state    real   SSTSK            ij     misc        1         -     rhd=(interp_mask_field:lu_index,iswater)   "SSTSK"              "SKIN SEA SURFACE TEMPERATURE" "K"
-state    real   lake_depth            ij     misc        1         -     rhd=(interp_mask_water_field:lu_index,iswater)   "lake_depth"              "lake depth" "m"
+state    real   lake_depth            ij     misc        1    -     i012rd=(interp_mask_water_field:lu_index,iswater)   "lake_depth"              "lake depth" "m"
 state    real   DTW              ij     misc        1         -     r   "DTW"              "WARM LAYER TEMP DIFF" "C"
 # Ocean surface currents
 state    real   UOCE            ij     misc        1         -     i0124rd=(interp_mask_water_field:lu_index,iswater)  "UOCE"  "SEA SURFACE ZONAL CURRENTS" "m s-1"
@@ -823,7 +824,7 @@ state    real   ALSWNIRDIF        ij    misc        1         Z      r        "A
 # Additional for P-X PBL and LSM
 state    real   RA               ij     misc        1         -      r        "RA"           "AERODYNAMIC RESISTANCE"   "s m-1"
 state    real   RS               ij     misc        1         -      r        "RS"           "SURFACE RESISTANCE"       "s m-1"
-state    real   LAI              ij     misc        1         -      i0124rh       "LAI"          "Leaf area index"          "area/area"
+state    real   LAI              ij     misc        1         -      i0124rh  "LAI"          "LEAF AREA INDEX"          "m-2/m-2"
 state    real   VEGF_PX          ij     misc        1         -      r        "VEGF_PX"      "Vegetation Fraction for PX LSM"    "area/area"
 state    real   T2OBS            ij     misc        1         -      r        "T2OBS"        "2-m temperature from analysis "          "K"
 state    real   Q2OBS            ij     misc        1         -      r        "Q2OBS"        "2-m mixing ratio from analysis "         "kg/kg"
@@ -838,8 +839,8 @@ i1      real   GZ1OZ0         ij     misc        1         -     -         "GZ1O
 i1      real   BR             ij     misc        1         -     -         "BR"                  "Bulk Richardson"                       ""
 
 # ysupbl variables for grims shallow convection
-state   real   WSTAR_YSU     ij     misc        1         -     -        "WSTAR_YSU"          "mixed-layer velocity scale from ysupbl" "m/s"
-state   real   DELTA_YSU      ij      misc        1         -     -        "DELTA_YSU"           "entrainment layer depth from ysupbl"    "m"
+state   real   WSTAR_YSU      ij     misc        1         -     -        "WSTAR_YSU"           "mixed-layer velocity scale from ysupbl" "m/s"
+state   real   DELTA_YSU      ij     misc        1         -     -        "DELTA_YSU"           "entrainment layer depth from ysupbl"    "m"
 
 # MYJ PBL variables; GBM PBL: EXCH_H, EXCH_M
 state    real   EXCH_H          ikj     misc        1         Z     r         "EXCH_H"               "SCALAR EXCHANGE COEFFICIENTS "
@@ -1193,8 +1194,8 @@ state    real  RAINCV_A           ij      misc        1         -      r      "R
 state    real  RAINCV_B           ij      misc        1         -      r      "RAINCV_B"             "taveragd TIME-STEP CUMULUS PRECIPITATION"                         "mm"
 state    real  GD_CLOUD_A        ikj      misc        1         -      r      "GD_CLOUD_A"           "taveragd CLOUD WATER MIXING RAIO IN GD CLOUD"         "kg kg-1"
 state    real  GD_CLOUD2_A       ikj      misc        1         -      r      "GD_CLOUD2_A"          "taveragd cloud ice mix ratio in GD"         "kg kg-1"
-state    real  GD_CLOUD_B        ikj      misc        1         -      r      "GD_CLOUD_B"           "taveragd CLOUD WATER MIXING RAIO IN GD CLOUD"         "kg kg-1"
-state    real  GD_CLOUD2_B       ikj      misc        1         -      r      "GD_CLOUD2_B"          "taveragd cloud ice mix ratio in GD"         "kg kg-1"
+state    real  QC_CU             ikj      misc        1         -      r      "QC_CU"                "CLOUD WATER MIXING RATIO FROM A CU SCHEME"         "kg kg-1"
+state    real  QI_CU             ikj      misc        1         -      r      "QI_CU"                "CLOUD ICE MIXUNG RATIO FROM A CU SCHEME"         "kg kg-1"
 state integer  STEPAVE_COUNT     -        misc        1         -      r      "STEPAVE_COUNT"        "time steps contained in averages for convective transport" ""
 
 #
@@ -1977,7 +1978,6 @@ rconfig   real    naer                    namelist,physics      max_domains    1
 rconfig   integer     sf_sfclay_physics   namelist,physics	max_domains    0       rh       "sf_sfclay_physics"             ""      ""
 rconfig   integer     sf_surface_physics  namelist,physics	max_domains    0       rh       "sf_surface_physics"            ""      ""
 rconfig   integer     bl_pbl_physics      namelist,physics	max_domains    0       rh       "bl_pbl_physics"                ""      ""
-rconfig   integer     windfarm_opt        namelist,physics      max_domains    0       rh       "windfarm_opt"                ""      ""
 rconfig   integer     bl_mynn_tkebudget   namelist,physics      max_domains    0       rh       "bl_mynn_tkebudget"             ""      ""
 rconfig   logical     bl_mynn_tkeadvect   namelist,physics      max_domains    .false.  rh      "bl_mynn_tkeadvect"             ""      ""
 rconfig   integer     bl_mynn_cloudpdf    namelist,physics      1              0       irh       "bl_mynn_cloudpdf"              ""      ""
@@ -1986,14 +1986,14 @@ rconfig   integer     sf_urban_physics    namelist,physics      max_domains    0
 rconfig   real    BLDT                    namelist,physics      max_domains    0       h    "BLDT"          ""      ""
 rconfig   integer cu_physics              namelist,physics      max_domains    0       rh   "cu_physics"    ""      ""
 rconfig   integer shcu_physics            namelist,physics      max_domains    0       rh   "shcu_physics"  ""      ""
-rconfig   integer     cu_diag             namelist,physics      max_domains    0       rh       "cu_diag"            " additional t-averaged stuff for cuphys"      ""
-rconfig   integer     kfeta_trigger       namelist,physics	1              1       rh       "KFETA Trigger function"    ""    ""
+rconfig   integer cu_diag                 namelist,physics      max_domains    0       rh   "cu_diag"       "additional t-averaged stuff for cuphys"      ""
+rconfig   integer kfeta_trigger           namelist,physics	1              1       rh   "KFETA Trigger function"    ""    ""
+rconfig   integer nsas_dx_factor          namelist,physics	1              1       rh   "NSAS DX-dependent option"    ""    ""
 rconfig   real    CUDT                    namelist,physics	max_domains    0       h    "CUDT"          ""      ""
 rconfig   real    GSMDT                   namelist,physics	max_domains    0       h    "GSMDT"          ""      ""
 rconfig   integer ISFFLX                  namelist,physics 	1             1       irh    "ISFFLX"                        ""      ""
 rconfig   integer IFSNOW                  namelist,physics	1             1       irh    "IFSNOW"                        ""      ""
 rconfig   integer ICLOUD                  namelist,physics	1             1       irh    "ICLOUD"                        ""      ""
-rconfig   integer ICLOUD_CU               namelist,physics	max_domains   0       irh    "ICLOUD_CU"                     ""      ""
 rconfig   real    swrad_scat              namelist,physics	1             1       irh    "SWRAD_SCAT" "SCATTERING FACTOR IN SWRAD"      ""
 rconfig   integer surface_input_source    namelist,physics	1             1       irh    "surface_input_source"          "1=static (fractional), 2=time dependent (dominant), 3=dominant cateogry from metgrid"      ""
 rconfig   integer num_soil_layers         namelist,physics	1             5       irh    "num_soil_layers"               ""      ""
@@ -2024,7 +2024,7 @@ rconfig   integer mp_zero_out             namelist,physics	1             0      
 rconfig   real mp_zero_out_thresh         namelist,physics	1          1.e-8      -      "mp_zero_out_thresh"  "minimum threshold for non-Qv moist fields, below are set to zero"  "kg/kg"
 rconfig   real    seaice_threshold        namelist,physics	1            100       h    "seaice_threshold"  "tsk below which which water points are set to sea ice for slab scheme"   "K"
 rconfig   integer sst_update              namelist,physics	1            0         h    "sst_update"  "update sst from wrflowinp file  0=no, 1=yes"   ""
- 
+
 rconfig   integer sst_skin                namelist,physics      1            0         h    "sst_skin" "calculate sst skin temperature 0=no, 1=yes"   ""
 rconfig   integer tmn_update              namelist,physics      1            0         h    "tmn_update" "update tmn from calculation  0=no, 1=yes"   ""
 rconfig   logical usemonalb               namelist,physics      1            .false.   h    "usemonalb"   "use 2d field vs table values  false=table, True=2d"   ""
@@ -2053,7 +2053,8 @@ rconfig   real    aer_aod550_val          namelist,physics      max_domains   0.
 rconfig   real    aer_angexp_val          namelist,physics      max_domains   1.3     irh    "aer_angexp_val" "fixed value for aerosol Angstrom exponent. Valid when aer_angexp_opt=1" ""
 rconfig   real    aer_ssa_val             namelist,physics      max_domains   0.85    irh    "aer_ssa_val"    "fixed value for aerosol single-scattering albedo. Valid when aer_ssa_opt=1" ""
 rconfig   real    aer_asy_val             namelist,physics      max_domains   0.90    irh    "aer_asy_val"    "fixed value for aerosol asymmetry parameter. Valid when aer_asy_opt=1" ""
-rconfig   logical cu_rad_feedback         namelist,physics      max_domains   .false.  -     "feedback cumulus to radiation"  ""
+rconfig   logical cu_rad_feedback         namelist,physics      max_domains   .false. irh    "feedback of cumulus cloud to radiation"  ""
+rconfig   integer ICLOUD_CU               derived               1             0        -     "ICLOUD_CU"                     ""      ""
 rconfig   integer pxlsm_smois_init        namelist,physics      max_domains   1       irh    "PXLSM_SMOIS_INIT"    "Soil moisture initialization option 0-From analysis 1-From MAVAIL"   ""
 rconfig   integer omlcall                 namelist,physics      1            0         h     "omlcall"     "temporary holder to allow checking for new name: oml_opt"
 rconfig   integer sf_ocean_physics        namelist,physics      1            0         h     "sf_ocean_physics"     "activate ocean model  0=no, 1=1d mixed layer, 2=3D PWP" ""
@@ -2253,11 +2254,13 @@ rconfig   integer dyn_opt                 namelist,dynamics	1             2
 rconfig   integer rk_ord                  namelist,dynamics	1             3       irh   "rk_order"               ""      ""
 rconfig   integer w_damping               namelist,dynamics	1             0       irh    "w_damping"             ""      ""
 # diff_opt 1=old diffusion, 2=new
-rconfig   integer diff_opt                namelist,dynamics	1             1       irh    "diff_opt"              ""      ""
+rconfig   integer diff_opt                namelist,dynamics	max_domains   -1      irh    "diff_opt"              ""      ""
+# diff_opt_dfi is needed for backwards integration in dfi
+rconfig   integer diff_opt_dfi            namelist,dynamics	max_domains   0       irh    "diff_opt_dfi"          ""      ""
 # km_opt   1=old coefs, 2=tke, 3=Smagorinksy
-rconfig   integer km_opt                  namelist,dynamics	1             1       irh    "km_opt"                ""      ""
+rconfig   integer km_opt                  namelist,dynamics	max_domains   -1      irh    "km_opt"                ""      ""
 # km_opt_dfi is needed for backward integration in dfi
-rconfig   integer km_opt_dfi              namelist,dynamics	1             1       irh    "km_opt_dfi"                ""      ""
+rconfig   integer km_opt_dfi              namelist,dynamics	max_domains   1       irh    "km_opt_dfi"            ""      ""
 rconfig   integer damp_opt                namelist,dynamics	1             0       irh    "damp_opt"              ""      ""
 rconfig   integer rad_nudge               namelist,dynamics	1             0       irh    "rad_nudge"             ""      ""
 rconfig   integer gwd_opt                 namelist,dynamics     1             0       irh    "gwd_opt"              ""      ""
@@ -2380,25 +2383,9 @@ rconfig   integer mp_physics_dfi          derived                  max_domains  
 # Single dummy declaration to define a nodyn dyn option
 state integer nodyn_dummy - dyn_nodyn -  -  -  "" "" ""      
 
-# Turbine drag (td) physics
-# Turbine positions and characteristics for real-data cases are specified in a file 
-# whose name is given in the windturbines_spec variable.  If the setting is "ideal",
-# the td_ variables specify idealized wind farm geometries and turbine characteristics.
-# If the setting is "none" then wind turbine drag physics is turned off.
-rconfig character windturbines_spec namelist,physics 1 "none" - - "" "none, ideal, or a file name"
-rconfig integer td_turbgridid  namelist,physics 1 -1     - - ""  "which grid id has turbines in it"
-rconfig  real   td_hubheight   namelist,physics 1 100.   - - ""  "hub height (m)"
-rconfig  real   td_diameter    namelist,physics 1 60.    - - ""  "turbine diameter (m)"
-rconfig  real   td_stdthrcoef  namelist,physics 1 .158   - - ""  "standing thrust coefficient"
-rconfig  real   td_cutinspeed  namelist,physics 1 4.     - - ""  "cut-in speed (m/s)"
-rconfig  real   td_cutoutspeed namelist,physics 1 27.    - - ""  "cut-out speed (m/s)"
-rconfig  real   td_power       namelist,physics 1 2.     - - ""  "turbine power (MW)"
-rconfig  real   td_turbpercell namelist,physics 1 1.     - - ""  "number of turbines per cell"
-rconfig integer td_ewfx        namelist,physics 1 0      - - ""  "extent of wind farm in x-cells"
-rconfig integer td_ewfy        namelist,physics 1 0      - - ""  "extent of wind farm in y-cells"
-rconfig integer td_pwfx        namelist,physics 1 1      - - ""  "southwest corner of wind farm in x-cells"
-rconfig integer td_pwfy        namelist,physics 1 1      - - ""  "southwest corner of wind farm in y-cells"
-
+# Turbine drag physics.
+rconfig   integer     windfarm_opt        namelist,physics      max_domains    0       rh       "windfarm_opt"                ""      ""
+rconfig   integer     windfarm_ij         namelist,physics      1              0       rh       "windfarm_ij"                ""      ""
 #
 #---------------------------------------------------------------------------------------------------------------------------------------
 # Package Declarations
@@ -2421,7 +2408,7 @@ package   thompson      mp_physics==8                -             moist:qv,qc,q
 package   thompsonaero  mp_physics==28               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr,qnc,qnwfa,qnifa;state:re_cloud,re_ice,re_snow
 package   milbrandt2mom mp_physics==9                -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnc,qnr,qni,qns,qng,qnh
 package   morr_two_moment  mp_physics==10            -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qns,qnr,qng
-package   cammgmpscheme mp_physics==11               -             moist:qv,qc,qi,qr,qs;scalar:qnc,qni,qnr,qns;state:rh_old_mp,lcd_old_mp,cldfra_old_mp,cldfra_mp,cldfra_mp_all,cldfra_conv,cldfrai,cldfral,turbtype3d,smaw3d,wsedl3d,icwmrdp3d,dp3d,shfrc3d,dlf,dlf2,tke_pbl
+package   cammgmpscheme mp_physics==11               -             moist:qv,qc,qi,qr,qs;scalar:qnc,qni,qnr,qns;state:rh_old_mp,lcd_old_mp,cldfra_old_mp,cldfra_mp,cldfra_mp_all,cldfra_conv,cldfrai,cldfral,turbtype3d,smaw3d,wsedl3d,icwmrdp3d,dp3d,shfrc3d,dlf,dlf2,tke_pbl,lradius,iradius
 #package   milbrandt3mom mp_physics==12               -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnc,qnr,qni,qns,qng,qnh,qzr,qzi,qzs,qzg,qzh
 package   sbu_ylinscheme    mp_physics==13           -             moist:qv,qc,qr,qi,qs;state:rimi
 package   wdm5scheme    mp_physics==14               -             moist:qv,qc,qr,qi,qs;scalar:qnn,qnc,qnr
@@ -2475,14 +2462,14 @@ package   goddardswscheme  ra_sw_physics==5          -             state:tswdn,t
 package   flgswscheme   ra_sw_physics==7             -             -
 package   gfdlswscheme  ra_sw_physics==99            -             -
 
-package   sfclayscheme   sf_sfclay_physics==1        -             -
+package   sfclayscheme   sf_sfclay_physics==91       -             -
 package   myjsfcscheme   sf_sfclay_physics==2        -             state:tke_pbl
 package   gfssfcscheme   sf_sfclay_physics==3        -             -
 package   qnsesfcscheme  sf_sfclay_physics==4        -             -
 package   mynnsfcscheme  sf_sfclay_physics==5        -             state:sh3d,tsq,qsq,cov
 package   pxsfcscheme    sf_sfclay_physics==7        -             -
 package   temfsfcscheme  sf_sfclay_physics==10       -             state:wm_temf
-package   sfclayrevscheme sf_sfclay_physics==11      -             -
+package   sfclayrevscheme sf_sfclay_physics==1       -             -
 package   idealscmsfcscheme  sf_sfclay_physics==89   -             -
 
 package   noahucmscheme  sf_urban_physics==1         -             state:trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,sfw1_urb3d,sfw2_urb3d,sfr_urb3d,sfg_urb3d,a_u_bep,a_v_bep,a_t_bep,a_q_bep,a_e_bep,b_u_bep,b_v_bep,b_t_bep,b_q_bep,b_e_bep,dlg_bep,dl_u_bep,sf_bep,vl_bep,mh_urb2d,stdh_urb2d,lf_urb2d,lp_urb2d,hgt_urb2d,lb_urb2d
@@ -2504,8 +2491,8 @@ package   myjpblscheme   bl_pbl_physics==2           -             state:tke_pbl
 package   gfsscheme      bl_pbl_physics==3           -             -
 package   qnsepblscheme  bl_pbl_physics==4           -             state:tke_pbl,el_pbl,massflux_EDKF,entr_EDKF,detr_EDKF,thl_up,thv_up,rv_up,rt_up,rc_up,u_up,v_up,frac_up,rc_mf
 package   qnsepbl09scheme  bl_pbl_physics==94        -             state:tke_pbl,el_pbl
-package   mynnpblscheme2 bl_pbl_physics==5           -             scalar:qke_adv;state:qke,sh3d,tsq,qsq,cov,el_pbl
-package   mynnpblscheme3 bl_pbl_physics==6           -             scalar:qke_adv;state:qke,sh3d,tsq,qsq,cov,el_pbl
+package   mynnpblscheme2 bl_pbl_physics==5           -             scalar:qke_adv;state:qke,tke_pbl,sh3d,tsq,qsq,cov,el_pbl
+package   mynnpblscheme3 bl_pbl_physics==6           -             scalar:qke_adv;state:qke,tke_pbl,sh3d,tsq,qsq,cov,el_pbl
 package   mynn_tkebudget bl_mynn_tkebudget==1        -             state:qSHEAR,qBUOY,qDISS,qWT,dqke
 package   acmpblscheme   bl_pbl_physics==7           -             -
 package   boulacscheme   bl_pbl_physics==8           -             state:el_pbl,tke_pbl,wu_tur,wv_tur,wt_tur,wq_tur
@@ -2530,8 +2517,6 @@ package   kfscheme       cu_physics==99              -             -
 package   g3shcuscheme   shcu_physics==1             -             -
 package   camuwshcuscheme shcu_physics==2            -             state:shfrc3d,dlf,dlf2,cmfmc,cmfmc2,qtflx_cu,slflx_cu,uflx_cu,vflx_cu,qtten_cu,slten_cu,uten_cu,vten_cu,qvten_cu,qlten_cu,qiten_cu,cbmf_cu,ufrcinvbase_cu,ufrclcl_cu,winvbase_cu,wlcl_cu,plcl_cu,pinv_cu,plfc_cu,pbup_cu,ppen_cu,qtsrc_cu,thlsrc_cu,thvlsrc_cu,emkfbup_cu,cin_cu,cinlcl_cu,cbmflimit_cu,tkeavg_cu,zinv_cu,rcwp_cu,rlwp_cu,riwp_cu,tophgt_cu,wu_cu,ufrc_cu,qtu_cu,thlu_cu,thvu_cu,uu_cu,vu_cu,qtu_emf_cu,thlu_emf_cu,uu_emf_cu,vu_emf_cu,umf_cu,uemf_cu,qcu_cu,qlu_cu,qiu_cu,cufrc_cu,fer_cu,fdr_cu,dwten_cu,diten_cu,qrten_cu,qsten_cu,flxrain_cu,flxsnow_cu,ntraprd_cu,ntsnprd_cu,excessu_cu,excessu0_cu,xc_cu,aquad_cu,bquad_cu,cquad_cu,bogbot_cu,bogtop_cu,exit_uwcu_cu,exit_conden_cu,exit_klclmkx_cu,exit_klfcmkx_cu,exit_ufrc_cu,exit_wtw_cu,exit_drycore_cu,exit_wu_cu,exit_cufliter_cu,exit_kinv1_cu,exit_rei_cu,limit_shcu_cu,limit_negcon_cu,limit_ufrc_cu,limit_ppen_cu,limit_emf_cu,limit_cinlcl_cu,limit_cin_cu,limit_cbmf_cu,limit_rei_cu,ind_delcin_cu,evapcsh,cmfsl,cmflq,cldfrash,cush,icwmrsh,snowsh,rprdsh,rliq2,rliq
 package   grimsshcuscheme shcu_physics==3            -             -
-
-#package   icloud_cu_2    icloud_cu==2                -             state:gd_cloud_b,gd_cloud2_b,cldfra_dp,cldfra_sh
 
 package   fogsettling0   grav_settling==0            -             state:vdfg
 package   fogsettling1   grav_settling==1            -             state:vdfg,fgdp,dfgdp
@@ -2633,6 +2618,7 @@ rconfig  real       iccg_prescribed_num      namelist,physics   max_domains    0
 rconfig  real       iccg_prescribed_den      namelist,physics   max_domains    1.0     -   "iccg_prescribed_dem"       "Denominator of user-specified prescribed IC:CG"    ""
 rconfig  integer    cellcount_method         namelist,physics   max_domains    0       -   "cellcount_method"          "0=auto, 1=tile, 2=domain"                   ""
 rconfig  real       cldtop_adjustment        namelist,physics   max_domains    0.      -   "cldtop_adjustment"         "Adjustment to cloud top for ltng param"     "km"
+rconfig  integer    sf_lake_physics          namelist,physics   max_domains    0       -   "sf_lake_physics"           "activate lake model  0=no, 1=yes"   ""
 
 state    real  iccg_in_num    ij      misc        1         -      i{16}r     "iccg_in_num"      "IC:CG input numerator"      ""
 state    real  iccg_in_den    ij      misc        1         -      i{16}r     "iccg_in_den"      "IC:CG input denominator"    ""
@@ -2663,7 +2649,7 @@ package   wrfhydro       wrf_hydro==1                -            state:SOLDRAIN
 
 #WRF Windfarm
 package   no_windfarm    windfarm_opt==0             -            -
-package   turbdragforce  windfarm_opt==1             -            state:power
+package   fitchscheme    windfarm_opt==1             -            state:power
 
 #---------------------------------------------------------------------------------------------------------------------------------------
 ## communications                                               

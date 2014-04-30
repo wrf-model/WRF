@@ -141,7 +141,6 @@ subroutine da_check_buddy_sound(iv, dx, it)
 !                  j, n, k, iv%sound(n)%p(k)
 !      enddo
 !   enddo
-!   stop
    !---------------------------------------------------------------------------
    ! [3.0] Buddy check for each of the pressure-bins::
    !---------------------------------------------------------------------------

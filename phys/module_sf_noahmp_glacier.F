@@ -299,15 +299,21 @@ contains
                          DZSNSO ,SH2O   ,SICE   ,PONDING,ZSNSO  ,         & !inout
                          RUNSRF ,RUNSUB ,QSNOW  ,PONDING1       ,PONDING2,QSNBOT,FPICE)  !out
 
-     IF(MAXVAL(SICE) < 0.0001) &
+     IF(MAXVAL(SICE) < 0.0001) THEN
        WRITE(message,*) "GLACIER HAS MELTED AT:",ILOC,JLOC," ARE YOU SURE THIS SHOULD BE A GLACIER POINT?"
-     CALL wrf_debug(10,TRIM(message))
-
+       CALL wrf_debug(10,TRIM(message))
+     END IF
+     
 ! water and energy balance check
 
      CALL ERROR_GLACIER (ILOC   ,JLOC   ,SWDOWN ,FSA    ,FSR    ,FIRA   , &
                          FSH    ,FGEV   ,SSOIL  ,SAG    ,PRCP   ,EDIR   , &
 		         RUNSRF ,RUNSUB ,SNEQV  ,DT     ,BEG_WB )
+
+    IF(SNOWH <= 1.E-6 .OR. SNEQV <= 1.E-3) THEN
+     SNOWH = 0.0
+     SNEQV = 0.0
+    END IF
 
     IF(SWDOWN.NE.0.) THEN
       ALBEDO = FSR / SWDOWN
@@ -351,7 +357,8 @@ contains
 
        PAIR   = SFCPRS                   ! atm bottom level pressure (pa)
        THAIR  = SFCTMP * (SFCPRS/PAIR)**(RAIR/CPAIR) 
-       QAIR   = Q2 / (1.0+Q2)           ! mixing ratio to specific humidity [kg/kg]
+!       QAIR   = Q2 / (1.0+Q2)           ! mixing ratio to specific humidity [kg/kg]
+       QAIR   = Q2                       ! In WRF, driver converts to specific humidity
 
        EAIR   = QAIR*SFCPRS / (0.622+0.378*QAIR)
        RHOAIR = (SFCPRS-0.378*EAIR) / (RAIR*SFCTMP)
@@ -501,11 +508,7 @@ contains
 
 ! set psychrometric constant
 
-     IF (SFCTMP .GT. TFRZ) THEN
-        LATHEA = HVAP
-     ELSE
-        LATHEA = HSUB
-     END IF
+     LATHEA = HSUB
      GAMMA = CPAIR*SFCPRS/(0.622*LATHEA)
 
 ! Surface temperatures of the ground and energy fluxes
@@ -811,7 +814,7 @@ contains
    ELSE IF (SNEQV.GT.800.) THEN
           TAUSS = 0.
    ELSE
-          TAUSS = 0.
+!          TAUSS = 0.
           DELA0 = 1.E-6*DT
           ARG   = 5.E3*(1./TFRZ-1./TG)
           AGE1  = EXP(ARG)
@@ -1244,8 +1247,8 @@ contains
     MOZOLD = MOZ
   
     IF(ZLVL <= ZPD) THEN
-       write(*,*) 'critical problem: ZLVL <= ZPD; model stops'
-       call wrf_error_fatal("STOP in Noah-MP")
+       write(*,*) 'critical glacier problem: ZLVL <= ZPD; model stops', zlvl, zpd
+       call wrf_error_fatal("STOP in Noah-MP glacier")
     ENDIF
 
     TMPCM = LOG((ZLVL-ZPD) / Z0M)
@@ -2012,7 +2015,7 @@ contains
 ! Hedstrom NR and JW Pomeroy (1998), Hydrol. Processes, 12, 1611-1625
 ! fresh snow density
 
-     BDFALL = MAX(120.,67.92+51.25*EXP((SFCTMP-TFRZ)/2.59))
+     BDFALL = MIN(120.,67.92+51.25*EXP((SFCTMP-TFRZ)/2.59))
 
      QRAIN   = PRCP * (1.-FPICE)
      QSNOW   = PRCP * FPICE
@@ -2069,7 +2072,7 @@ contains
     REPLACE = REPLACE * 1000.0 / DT     ! convert to [mm/s]
     
     SICE = MIN(1.0,SICE_SAVE)
-    SH2O = 1.0 - SICE_SAVE
+    SH2O = 1.0 - SICE
 !print *, 'replace', replace
     
     ! use RUNSUB as a water balancer, SNOFLOW is snow that disappears, REPLACE is
@@ -2772,7 +2775,7 @@ contains
 !for the case when SNEQV becomes '0' after 'COMBINE'
 
    IF(SNEQV == 0.) THEN
-      SH2O(1) =  SH2O(1) + (QSNFRO-QSNSUB)*DT/(DZSNSO(1)*1000.)
+      SICE(1) =  SICE(1) + (QSNFRO-QSNSUB)*DT/(DZSNSO(1)*1000.)
    END IF
 
 ! for shallow snow without a layer
@@ -2789,6 +2792,7 @@ contains
       IF(SNEQV < 0.) THEN
          SICE(1) = SICE(1) + SNEQV/(DZSNSO(1)*1000.)
          SNEQV   = 0.
+         SNOWH   = 0.
       END IF
       IF(SICE(1) < 0.) THEN
          SH2O(1) = SH2O(1) + SICE(1)
@@ -2796,8 +2800,10 @@ contains
       END IF
    END IF
 
-   IF(SNOWH <= 1.E-8) SNOWH = 0.0
-   IF(SNEQV <= 1.E-6) SNEQV = 0.0
+   IF(SNOWH <= 1.E-8 .OR. SNEQV <= 1.E-6) THEN
+     SNOWH = 0.0
+     SNEQV = 0.0
+   END IF
 
 ! for deep snow
 

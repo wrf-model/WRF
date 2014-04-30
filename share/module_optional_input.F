@@ -25,6 +25,8 @@ MODULE module_optional_input
 
    INTEGER :: flag_ptheta
 
+   INTEGER :: flag_lake_depth
+
    INTEGER :: flag_excluded_middle
 
    INTEGER                  :: num_soil_levels_input
@@ -192,6 +194,10 @@ CONTAINS
                                  config_flags%seaice_albedo_opt , &
                                  config_flags%seaice_snowdepth_opt , &
                                  config_flags%seaice_thickness_opt , &
+                                 ids, ide, jds, jde, kds, kde, &
+                                 ims, ime, jms, jme, kms, kme, &
+                                 its, ite, jts, jte, kts, kte  )
+      CALL optional_lake       ( grid , fid , &
                                  ids, ide, jds, jde, kds, kde, &
                                  ims, ime, jms, jme, kms, kme, &
                                  its, ite, jts, jte, kts, kte  )
@@ -448,6 +454,41 @@ USE module_io_domain
       END IF
     
    END SUBROUTINE optional_sst
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+   SUBROUTINE optional_lake ( grid , fid , &
+                             ids, ide, jds, jde, kds, kde, &
+                             ims, ime, jms, jme, kms, kme, &
+                             its, ite, jts, jte, kts, kte  )
+
+      USE module_io_wrf
+      USE module_domain	, ONLY : domain
+USE module_configure , ONLY : grid_config_rec_type
+USE module_io_domain
+
+      IMPLICIT NONE 
+
+      TYPE ( domain ) :: grid
+      INTEGER , INTENT(IN) :: fid
+
+      INTEGER :: ids, ide, jds, jde, kds, kde, &
+                 ims, ime, jms, jme, kms, kme, &
+                 its, ite, jts, jte, kts, kte
+
+      INTEGER :: itmp , icnt , ierr
+
+      flag_name = '                                                                                '
+
+      flag_lake_depth      = 0 
+
+      flag_name(1:10) = 'LAKE_DEPTH'
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_lake_depth      = itmp
+      END IF
+    
+   END SUBROUTINE optional_lake
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 

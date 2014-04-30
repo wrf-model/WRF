@@ -131,7 +131,8 @@ esmf_time :
 
 fftpack :
 	( cd $(WRF_SRC_ROOT_DIR)/external/fftpack/fftpack5 ; \
-          make $(J) FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" )
+          make $(J) FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" AR="$(AR)" \
+          ARFLAGS="$(ARFLAGS)" CPP="$(CPP)" CPPFLAGS="$(CPPFLAGS)" RM="$(RM)" )
 
 atm_ocn :
 	( cd $(WRF_SRC_ROOT_DIR)/external/atm_ocn ; \

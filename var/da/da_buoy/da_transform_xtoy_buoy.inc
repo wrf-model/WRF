@@ -52,8 +52,8 @@ subroutine da_transform_xtoy_buoy (grid, iv, y)
       call da_interp_lin_3d (grid%xb%v, iv%info(buoy), vb)
 
       do n=iv%info(buoy)%n1,iv%info(buoy)%n2
-         if(var_wind)then
-            call da_uv_wind_tgl(y%buoy(n)%u,y%buoy(n)%v,model_u(1,n),model_v(1,n),ub(1,n),vb(1,n))
+         if(wind_sd_buoy)then
+            call da_uv_to_sd_lin(y%buoy(n)%u,y%buoy(n)%v,model_u(1,n),model_v(1,n),ub(1,n),vb(1,n))
          else
             y%buoy(n)%u = model_u(1,n)
             y%buoy(n)%v = model_v(1,n)

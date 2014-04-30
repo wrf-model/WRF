@@ -31,13 +31,13 @@ subroutine da_transform_xtoy_profiler_adj(grid, iv, jo_grad_y, jo_grad_x)
    do n=iv%info(profiler)%n1,iv%info(profiler)%n2
        do k = 1, iv%info(profiler)%levels(n)
 
-         if(.not. var_wind) then
-             model_u(k,n) = jo_grad_y%profiler(n)%u(k)
-             model_v(k,n) = jo_grad_y%profiler(n)%v(k)
-           else
-             call da_uv_wind_adj(jo_grad_y%profiler(n)%u(k), &
-                                    jo_grad_y%profiler(n)%v(k), model_u(k,n), model_v(k,n), ub(k,n), vb(k,n))
-          end if
+         if(wind_sd_profiler) then
+            call da_uv_to_sd_adj(jo_grad_y%profiler(n)%u(k), &
+                                 jo_grad_y%profiler(n)%v(k), model_u(k,n), model_v(k,n), ub(k,n), vb(k,n))
+         else
+            model_u(k,n) = jo_grad_y%profiler(n)%u(k)
+            model_v(k,n) = jo_grad_y%profiler(n)%v(k)
+         end if
 
       end do
    end do

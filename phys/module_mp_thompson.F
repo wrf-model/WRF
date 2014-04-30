@@ -36,7 +36,7 @@
 !.. Remaining values should probably be left alone.
 !..
 !..Author: Greg Thompson, NCAR-RAL, gthompsn@ucar.edu, 303-497-2805
-!..Last modified: 15 Oct 2013   Aerosol additions to v3.5.1 code 9/2013
+!..Last modified: 19 Mar 2014   Aerosol additions to v3.5.1 code 9/2013
 !+---+-----------------------------------------------------------------+
 !wrft:model_layer:physics
 !+---+-----------------------------------------------------------------+
@@ -390,7 +390,8 @@
 
       CONTAINS
 
-      SUBROUTINE thompson_init(hgt, nwfa2d, nwfa, nifa,                 &
+      SUBROUTINE thompson_init(hgt, nwfa2d, nwfa, nifa, dx, dy,         &
+                          is_start,                                     &
                           ids, ide, jds, jde, kds, kde,                 &
                           ims, ime, jms, jme, kms, kme,                 &
                           its, ite, jts, jte, kts, kte)
@@ -406,6 +407,8 @@
 
       REAL, DIMENSION(ims:ime,kms:kme,jms:jme), OPTIONAL, INTENT(INOUT) :: nwfa, nifa
       REAL, DIMENSION(ims:ime,jms:jme), OPTIONAL, INTENT(INOUT) :: nwfa2d
+      REAL, OPTIONAL, INTENT(IN) :: DX, DY
+      LOGICAL, OPTIONAL, INTENT(IN) :: is_start
 
       INTEGER:: i, j, k, l, m, n
       REAL:: h_01, niIN3, niCCN3
@@ -501,16 +504,29 @@
 !.. of existing and lesser emissions where not already lots of aerosols
 !.. for first-order simplistic approach.  Later, proper connection to
 !.. emission inventory would be better, but, for now, scale like this:
-!.. where: Nwfa=50 per cc, emit 0.01 aerosols per cc per second;
-!..        Nwfa=500 per cc, emit 0.1 aerosols per cc per second;
-!..        Nwfa=5000 per cc, emit 1 aerosols per cc per second;
+!.. where: Nwfa=50 per cc, emit 0.875E4 aerosols per kg per second
+!..        Nwfa=500 per cc, emit 0.875E5 aerosols per kg per second
+!..        Nwfa=5000 per cc, emit 0.875E6 aerosols per kg per second
+!.. for a grid with 20km spacing and scale accordingly for other spacings.
 
-      do j = jts, min(jde-1,jte)
-      do i = its, min(ide-1,ite)
-         nwfa2d(i,j) = 10.0**(LOG10(nwfa(i,kts,j)*1.E-6)-3.69897)
-         nwfa2d(i,j) = nwfa2d(i,j)*1.E6
-      enddo
-      enddo
+      if (is_start) then
+         if (SQRT(DX*DY)/20000.0 .ge. 1.0) then
+            h_01 = 0.875
+         else
+            h_01 = (0.875 + 0.125*((20000.-SQRT(DX*DY))/16000.)) * SQRT(DX*DY)/20000.
+         endif
+         write(mp_debug,*) '   aerosol surface flux emission scale factor is: ', h_01
+         CALL wrf_debug(100, mp_debug)
+         do j = jts, min(jde-1,jte)
+         do i = its, min(ide-1,ite)
+            nwfa2d(i,j) = 10.0**(LOG10(nwfa(i,kts,j)*1.E-6)-3.69897)
+            nwfa2d(i,j) = nwfa2d(i,j)*h_01 * 1.E6
+         enddo
+         enddo
+      else
+         write(mp_debug,*) '   sample (lower-left) aerosol surface flux emission rate: ', nwfa2d(1,1)
+         CALL wrf_debug(100, mp_debug)
+      endif
 
       endif
 
@@ -1169,7 +1185,7 @@
 
 !..Reset lowest model level to initial state aerosols (fake sfc source).
 !.. Changed 13 May 2013 to fake emissions in which nwfa2d is aerosol
-!.. number tendency (number per cubic centimeter per second).
+!.. number tendency (number per kg per second).
          if (is_aerosol_aware) then
 !-GT        nwfa1d(kts) = nwfa1
             nwfa1d(kts) = nwfa1d(kts) + nwfa2d(i,j)*dt_in
@@ -1292,14 +1308,14 @@
          IF (has_reqc.ne.0 .and. has_reqi.ne.0 .and. has_reqs.ne.0) THEN
           do k = kts, kte
              re_qc1d(k) = 2.51E-6
-             re_qi1d(k) = 5.01E-6
+             re_qi1d(k) = 10.01E-6
              re_qs1d(k) = 25.E-6
           enddo
           call calc_effectRad (t1d, p1d, qv1d, qc1d, nc1d, qi1d, ni1d, qs1d,  &
                       re_qc1d, re_qi1d, re_qs1d, kts, kte)
           do k = kts, kte
              re_cloud(i,k,j) = MAX(2.51E-6, MIN(re_qc1d(k), 50.E-6))
-             re_ice(i,k,j)   = MAX(5.01E-6, MIN(re_qi1d(k), 125.E-6))
+             re_ice(i,k,j)   = MAX(10.01E-6, MIN(re_qi1d(k), 125.E-6))
              re_snow(i,k,j)  = MAX(25.E-6, MIN(re_qs1d(k), 999.E-6))
           enddo
          ENDIF
@@ -1570,8 +1586,8 @@
          qv(k) = MAX(1.E-10, qv1d(k))
          pres(k) = p1d(k)
          rho(k) = 0.622*pres(k)/(R*temp(k)*(qv(k)+0.622))
-         nwfa(k) = MAX(11.1E6, MIN(88888.E6, nwfa1d(k)*rho(k)))
-         nifa(k) = MAX(naIN1*0.01, MIN(99999.E6, nifa1d(k)*rho(k)))
+         nwfa(k) = MAX(11.1E6, MIN(9999.E6, nwfa1d(k)*rho(k)))
+         nifa(k) = MAX(naIN1*0.01, MIN(9999.E6, nifa1d(k)*rho(k)))
 
          if (qc1d(k) .gt. R1) then
             no_micro = .false.
@@ -2564,12 +2580,16 @@
          lfus2 = lsub - lvap(k)
 
 !..Aerosol number tendency
-         nwfaten(k) = nwfaten(k) - (pna_rca(k) + pna_sca(k) &
-                      + pna_gca(k) + pni_iha(k)) * orho
-         nifaten(k) = nifaten(k) - (pnd_rcd(k) + pnd_scd(k) &
-                      + pnd_gcd(k)) * orho
-         if (dustyIce) then
-            nifaten(k) = nifaten(k) - pni_inu(k)*orho
+         if (is_aerosol_aware) then
+            nwfaten(k) = nwfaten(k) - (pna_rca(k) + pna_sca(k)          &
+                       + pna_gca(k) + pni_iha(k)) * orho
+            nifaten(k) = nifaten(k) - (pnd_rcd(k) + pnd_scd(k)          &
+                       + pnd_gcd(k)) * orho
+            if (dustyIce) then
+               nifaten(k) = nifaten(k) - pni_inu(k)*orho
+            else
+               nifaten(k) = 0.
+            endif
          endif
 
 !..Water vapor tendency
@@ -2914,7 +2934,7 @@
              dfcd = qvs(k)*lvt2(k)* EXP(lvt2(k)*clap) + 1.
              clap = clap - fcd/dfcd
           enddo
-          xrc = rc(k) + clap
+          xrc = rc(k) + clap*rho(k)
           xnc = 0.
           if (xrc.gt. R1) then
            prw_vcd(k) = clap*odt
@@ -3266,6 +3286,8 @@
 !.. cloud ice has proper differential sedimentation.
 !.. New in v3.0+ is computing separate for rain, ice, snow, and
 !.. graupel species thus making code faster with credit to J. Schmidt.
+!.. Bug fix, 2013Nov01 to tendencies using rho(k+1) correction thanks to
+!.. Eric Skyllingstad.
 !+---+-----------------------------------------------------------------+
 
       nstep = NINT(1./onstep(1))
@@ -3284,9 +3306,9 @@
          do k = ksed1(1), kts, -1
             odzq = 1./dzq(k)
             orho = 1./rho(k)
-            qrten(k) = qrten(k) + (sed_r(k+1)-sed_r(k)) &
+            qrten(k) = qrten(k) + (sed_r(k+1)-sed_r(k))                 &
                                                *odzq*onstep(1)*orho
-            nrten(k) = nrten(k) + (sed_n(k+1)-sed_n(k)) &
+            nrten(k) = nrten(k) + (sed_n(k+1)-sed_n(k))                 &
                                                *odzq*onstep(1)*orho
             rr(k) = MAX(R1, rr(k) + (sed_r(k+1)-sed_r(k)) &
                                            *odzq*DT*onstep(1))
@@ -3331,9 +3353,9 @@
          do k = ksed1(2), kts, -1
             odzq = 1./dzq(k)
             orho = 1./rho(k)
-            qiten(k) = qiten(k) + (sed_i(k+1)-sed_i(k)) &
+            qiten(k) = qiten(k) + (sed_i(k+1)-sed_i(k))                 &
                                                *odzq*onstep(2)*orho
-            niten(k) = niten(k) + (sed_n(k+1)-sed_n(k)) &
+            niten(k) = niten(k) + (sed_n(k+1)-sed_n(k))                 &
                                                *odzq*onstep(2)*orho
             ri(k) = MAX(R1, ri(k) + (sed_i(k+1)-sed_i(k)) &
                                            *odzq*DT*onstep(2))
@@ -3360,7 +3382,7 @@
          do k = ksed1(3), kts, -1
             odzq = 1./dzq(k)
             orho = 1./rho(k)
-            qsten(k) = qsten(k) + (sed_s(k+1)-sed_s(k)) &
+            qsten(k) = qsten(k) + (sed_s(k+1)-sed_s(k))                 &
                                                *odzq*onstep(3)*orho
             rs(k) = MAX(R1, rs(k) + (sed_s(k+1)-sed_s(k)) &
                                            *odzq*DT*onstep(3))
@@ -3385,7 +3407,7 @@
          do k = ksed1(4), kts, -1
             odzq = 1./dzq(k)
             orho = 1./rho(k)
-            qgten(k) = qgten(k) + (sed_g(k+1)-sed_g(k)) &
+            qgten(k) = qgten(k) + (sed_g(k+1)-sed_g(k))                 &
                                                *odzq*onstep(4)*orho
             rg(k) = MAX(R1, rg(k) + (sed_g(k+1)-sed_g(k)) &
                                            *odzq*DT*onstep(4))
@@ -3431,9 +3453,9 @@
          qv1d(k) = MAX(1.E-10, qv1d(k) + qvten(k)*DT)
          qc1d(k) = qc1d(k) + qcten(k)*DT
          nc1d(k) = MAX(2./rho(k), nc1d(k) + ncten(k)*DT)
-         nwfa1d(k) = MAX(11.1E6/rho(k), MIN(88888.E6/rho(k),            &
+         nwfa1d(k) = MAX(11.1E6/rho(k), MIN(9999.E6/rho(k),             &
                        (nwfa1d(k)+nwfaten(k)*DT)))
-         nifa1d(k) = MAX(naIN1*0.01, MIN(99999.E6/rho(k),               &
+         nifa1d(k) = MAX(naIN1*0.01, MIN(9999.E6/rho(k),                &
                        (nifa1d(k)+nifaten(k)*DT)))
 
          if (qc1d(k) .le. R1) then
@@ -4731,7 +4753,7 @@
       do k = kts, kte
          if (ri(k).le.R1 .or. ni(k).le.R2) CYCLE
          lami = (am_i*cig(2)*oig1*ni(k)/ri(k))**obmi
-         re_qi1d(k) = MAX(5.01E-6, MIN(SNGL(0.5D0 * DBLE(3.+mu_i)/lami), 125.E-6))
+         re_qi1d(k) = MAX(10.01E-6, MIN(SNGL(0.5D0 * DBLE(3.+mu_i)/lami), 125.E-6))
       enddo
       endif
 

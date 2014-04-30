@@ -44,37 +44,50 @@ Note, this is not a namelist.input file. Find what interests you, and cut and pa
 &noah_mp
  dveg                               = 4,
  opt_crs                            = 1,
- opt_btr                            = 1,
+ opt_btr                            = 2,
  opt_sfc                            = 1,
  opt_run                            = 1,
  opt_frz                            = 1,
  opt_inf                            = 1,
- opt_rad                            = 1,
+ opt_rad                            = 3,
  opt_alb                            = 2,
  opt_snf                            = 1,
- opt_tbot                           = 2,
+ opt_tbot                           = 1,
  opt_stc                            = 1,
  /
 
 
 ** Using lake model
 &physics
- lakemodel                           = 1,      1,     1,
- domain_lakedepth                    = 200,      1.9,   1.9,
- lakeminalt                          = 50,      1,     -10,
+ sf_lake_physics                     = 1,      1,     1,
+ lakedepth_default                   = 50.,    50.,   50.,
+ lake_min_elev                       = 5.,     5.,    5.,
 
  
-** Using stochastic backscatter scheme
+** Using stochastic backscatter scheme (new namelist record since v3.6)
 
-&physics
- stoch_force_opt                     = 1,      1,      1,
- stoch_vertstruc_opt                 = 0,      0,      0,
- tot_backscat_t                      = 1.0E-6, 1.0E-6, 1.0E-6
- tot_backscat_psi                    = 1.0E-5, 1.0E-5, 1.0E-5
+&stoch
+ stoch_force_opt                     = 1,        1,        1,
+ stoch_vertstruc_opt                 = 0,        0,        0,
+ tot_backscat_psi                    = 1.E-05,   1.E-05,   1.E-05,
+ tot_backscat_t                      = 1.E-06,   1.E-06,   1.E-06,
  nens                                = 1,
-
-&bdy_control
+ ztau_psi                            = 10800.0,
+ ztau_t                              = 10800.0,
+ rexponent_psi                       =-1.83,
+ rexponent_t                         =-1.83,
+ zsigma2_eps                         = 0.0833,
+ zsigma2_eta                         = 0.0833,
+ kminforc                            = 1,
+ kminforc                            = 1,
+ kminforct                           = 1,
+ lminforct                           = 1,
+ kmaxforc                            = 1000000,
+ lmaxforc                            = 1000000,
+ kmaxforct                           = 1000000,
+ lmaxforct                           = 1000000,
  perturb_bdy                         = 0,
+
 
 ** Using DFI options (note this is a separate namelist record):
 
@@ -232,8 +245,8 @@ Note, this is not a namelist.input file. Find what interests you, and cut and pa
  guv                                 = 0.0003,     0.0003,     0.0003,
  gt                                  = 0.0003,     0.0003,     0.0003,
  gph                                 = 0.0003,     0.0003,     0.0003,
- xwavenum                            = 3
- ywavenum                            = 3
+ xwavenum                            = 3,
+ ywavenum                            = 3,
  if_ramping                          = 1,
  dtramp_min                          = 60.0,
  io_form_gfdda                       = 2,
@@ -404,9 +417,6 @@ Price, J. F., T. B. Sanford, and G. Z. Forristal, 1994: Forced stage response to
  traj_opt                            = 1,
 
 
-
-
-
 ** Using aerosol option aer_opt = 2:
 
 &physics
@@ -422,9 +432,6 @@ Price, J. F., T. B. Sanford, and G. Z. Forristal, 1994: Forced stage response to
  aer_asy_val        = 0.90,
 
 
-
-
-
 ** Using Jimenez wind-farm scheme
 
 In the &physics namelist record, set the MAX_DOM value:
@@ -435,3 +442,4 @@ specifics of the wind turbine type: wind-turbine-1.tbl
 
 The location of wind turbines are specified as lat lon, and 
 the turbine type: windturbines.txt
+

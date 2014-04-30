@@ -140,8 +140,13 @@ CONTAINS
              chem(i,k,j,p_oc1) = chem(i,k,j,p_oc1) + conv_rho_aer*emis_ant(i,k,j,p_e_oc)
              chem(i,k,j,p_bc1) = chem(i,k,j,p_bc1) + conv_rho_aer*emis_ant(i,k,j,p_e_bc)
            elseif( config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP ) then
-             chem(i,k,j,p_voca)  = chem(i,k,j,p_voca) + conv_rho*emis_ant(i,k,j,p_e_voca)
-             chem(i,k,j,p_vocbb) = chem(i,k,j,p_vocbb) + conv_rho*emis_ant(i,k,j,p_e_vocbb)
+! 20130730 acd_ck_bugfix start
+! emissions should be CO_A and CO_BB with yields instead of VOC_A and VOC_BB
+!             chem(i,k,j,p_voca)  = chem(i,k,j,p_voca) + conv_rho*emis_ant(i,k,j,p_e_voca)
+!             chem(i,k,j,p_vocbb) = chem(i,k,j,p_vocbb) + conv_rho*emis_ant(i,k,j,p_e_vocbb)
+             chem(i,k,j,p_voca)  = chem(i,k,j,p_voca) + conv_rho_aer*emis_ant(i,k,j,p_e_co_a)*0.04*28./250.
+             chem(i,k,j,p_vocbb) = chem(i,k,j,p_vocbb) + conv_rho_aer*emis_ant(i,k,j,p_e_co_bb)*0.04*28./250.
+! 20130730 acd_ck_bugfix end
            endif
         else if( config_flags%chem_opt == CRIMECH_KPP &
           .or. config_flags%chem_opt == CRI_MOSAIC_8BIN_AQ_KPP &
@@ -206,6 +211,15 @@ CONTAINS
                          +emis_ant(i,k,j,p_e_xyl)*conv_rho
         chem(i,k,j,p_ket)  =  chem(i,k,j,p_ket)                        &     
                          +emis_ant(i,k,j,p_e_ket)*conv_rho
+        if( config_flags%chem_opt == GOCARTRACM_KPP       &
+          .or. config_flags%chem_opt == GOCARTRADM2       &
+          .or. config_flags%chem_opt == GOCARTRADM2_KPP) then  
+          conv_rho_aer = alt(i,k,j)*dtstep/dz8w(i,k,j)
+          chem(i,k,j,p_p10) = chem(i,k,j,p_p10) + conv_rho_aer*emis_ant(i,k,j,p_e_pm_10)
+          chem(i,k,j,p_p25) = chem(i,k,j,p_p25) + conv_rho_aer*emis_ant(i,k,j,p_e_pm_25)
+          chem(i,k,j,p_oc1) = chem(i,k,j,p_oc1) + conv_rho_aer*emis_ant(i,k,j,p_e_oc)
+          chem(i,k,j,p_bc1) = chem(i,k,j,p_bc1) + conv_rho_aer*emis_ant(i,k,j,p_e_bc)
+        endif
        endif
       END DO                                                          
  100  continue
@@ -278,34 +292,34 @@ CONTAINS
       do 100 i=its,ite  
         conv_rho=dtstep/(dz8w(i,kts,j)*60.)
         chem(i,kts,j,p_iso)=chem(i,kts,j,p_iso)+ &
-                  e_bio(i,j,liso)*conv_rho
+                  e_bio(i,j,p_iso-1)*conv_rho
         chem(i,kts,j,p_oli)=chem(i,kts,j,p_oli)+ &
-                  e_bio(i,j,loli)*conv_rho
+                  e_bio(i,j,p_oli-1)*conv_rho
         chem(i,kts,j,p_xyl)=chem(i,kts,j,p_xyl)+ &
-                  e_bio(i,j,lxyl)*conv_rho
+                  e_bio(i,j,p_xyl-1)*conv_rho
         chem(i,kts,j,p_olt)=chem(i,kts,j,p_olt)+ &
-                  e_bio(i,j,lolt)*conv_rho
+                  e_bio(i,j,p_olt-1)*conv_rho
         chem(i,kts,j,p_ket)=chem(i,kts,j,p_ket)+ &
-                  e_bio(i,j,lket)*conv_rho
+                  e_bio(i,j,p_ket-1)*conv_rho
         chem(i,kts,j,p_ald)=chem(i,kts,j,p_ald)+ &
-                  e_bio(i,j,lald)*conv_rho
+                  e_bio(i,j,p_ald-1)*conv_rho
         chem(i,kts,j,p_hcho)=chem(i,kts,j,p_hcho)+ &
-                  e_bio(i,j,lhcho)*conv_rho
+                  e_bio(i,j,p_hcho-1)*conv_rho
         chem(i,kts,j,p_eth)=chem(i,kts,j,p_eth)+ &
-                  e_bio(i,j,leth)*conv_rho
+                  e_bio(i,j,p_eth-1)*conv_rho
         chem(i,kts,j,p_ora2)=chem(i,kts,j,p_ora2)+ &
-                  e_bio(i,j,lora2)*conv_rho
+                  e_bio(i,j,p_ora2-1)*conv_rho
         chem(i,kts,j,p_co)=chem(i,kts,j,p_co)+ &
-                  e_bio(i,j,lco)*conv_rho
+                  e_bio(i,j,p_co-1)*conv_rho
         chem(i,kts,j,p_no)=chem(i,kts,j,p_no)+ &
-                  e_bio(i,j,lno)*conv_rho
+                  e_bio(i,j,p_no-1)*conv_rho
 !
 ! RADM only
 !
         if(p_hc3.gt.1) chem(i,kts,j,p_hc3)=chem(i,kts,j,p_hc3)+ &
-                  e_bio(i,j,lhc3)*conv_rho
+                  e_bio(i,j,p_hc3-1)*conv_rho
         if(p_ol2.gt.1)chem(i,kts,j,p_ol2)=chem(i,kts,j,p_ol2)+ &
-                  e_bio(i,j,lol2)*conv_rho
+                  e_bio(i,j,p_ol2-1)*conv_rho
 ! CRIMECH only
         if(p_c5h8.gt.1)chem(i,kts,j,p_c5h8)=chem(i,kts,j,p_c5h8)+ &
                   e_bio(i,j,liso)*conv_rho
@@ -313,15 +327,19 @@ CONTAINS
                   e_bio(i,j,lxyl)*conv_rho
         if(p_c3h8.gt.1)chem(i,kts,j,p_c3h8)=chem(i,kts,j,p_c3h8)+ &
                   e_bio(i,j,lhc3)*conv_rho
+        if(p_ket.gt.1)chem(i,kts,j,p_ket)=chem(i,kts,j,p_ket)+ &
+                  e_bio(i,j,lket)*conv_rho
         if(p_ch3cho.gt.1)chem(i,kts,j,p_ch3cho)=chem(i,kts,j,p_ch3cho)+ &
                   e_bio(i,j,lald)*conv_rho
         if(p_apinene.gt.1)chem(i,kts,j,p_apinene)=chem(i,kts,j,p_apinene)+ &
                   0.667*e_bio(i,j,loli)*conv_rho
+!       if(p_bpinene.gt.1)chem(i,kts,j,p_bpinene)=chem(i,kts,j,p_bpinene)+ &
+!                 0.333*e_bio(i,j,loli)*conv_rho
         if(p_bpinene.gt.1)chem(i,kts,j,p_bpinene)=chem(i,kts,j,p_bpinene)+ &
                   0.333*e_bio(i,j,loli)*conv_rho + e_bio(i,j,lolt)*conv_rho
-		if(p_hcooh.gt.1)chem(i,kts,j,p_hcooh)=chem(i,kts,j,p_hcooh)+ &
+        if(p_hcooh.gt.1)chem(i,kts,j,p_hcooh)=chem(i,kts,j,p_hcooh)+ &
                   e_bio(i,j,lora1)*conv_rho
-		if(p_ch3co2h.gt.1)chem(i,kts,j,p_ch3co2h)=chem(i,kts,j,p_ch3co2h)+ &
+        if(p_ch3co2h.gt.1)chem(i,kts,j,p_ch3co2h)=chem(i,kts,j,p_ch3co2h)+ &
                   e_bio(i,j,lora2)*conv_rho
 
 !BSINGH -  Added for CBMZ
@@ -380,8 +398,8 @@ CONTAINS
 !                  e_bio(i,j,p_xyl-1)*conv_rho
 !        if(p_c3h8.gt.1)chem(i,kts,j,p_c3h8)=chem(i,kts,j,p_c3h8)+ &
 !                  e_bio(i,j,p_hc3-1)*conv_rho
-!!        if(p_ket.gt.1)chem(i,kts,j,p_ket)=chem(i,kts,j,p_ket)+ &
-!!                  e_bio(i,j,p_ket-1)*conv_rho
+!        if(p_ket.gt.1)chem(i,kts,j,p_ket)=chem(i,kts,j,p_ket)+ &
+!                  e_bio(i,j,p_ket-1)*conv_rho
 !        if(p_ch3cho.gt.1)chem(i,kts,j,p_ch3cho)=chem(i,kts,j,p_ch3cho)+ &
 !                  e_bio(i,j,p_ald-1)*conv_rho
 !        if(p_c2h6.gt.1)chem(i,kts,j,p_c2h6)=chem(i,kts,j,p_c2h6)+ &

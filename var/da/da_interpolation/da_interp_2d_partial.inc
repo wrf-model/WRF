@@ -26,8 +26,8 @@ subroutine da_interp_2d_partial(fm2d, info, k, n1, n2, fo2d, mask2d)
       if (.not. present(mask2d)) call da_error(__FILE__,__LINE__,(/"da_interp_2d_partial: no mask given for masked interpolation"/))
       call da_interp_msk_avg_2d_partial(fm2d, info, k, n1, n2, fo2d, mask2d)
    case default;
-      write(stdout,*) 'Da_interp_2d_partial failure: interpolation option not supported: ', interp_option
-      STOP  
+      write(unit=message(1),fmt='(a,i4)') 'Interpolation option not supported: ', interp_option
+      call da_warning(__FILE__,__LINE__,message(1:1))
    end select   
       
    if (trace_use_frequent) call da_trace_exit("da_interp_2d_partial")

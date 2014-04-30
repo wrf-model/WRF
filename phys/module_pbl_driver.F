@@ -98,7 +98,7 @@ CONTAINS
 ! variables required for camuwpbl scheme (optional)               
                ,qnc_curr,f_qnc,qni_curr,f_qni,rqniblten              &
                ,IS_CAMMGMP_USED                                      &
-! for grims shallow convection with ysupbl
+! for grims shallow convection with ysupbl/MYNN
                , wstar,delta                                         &
 ! for pbl mixing of scalars and tracers
      &        ,scalar,scalar_tend,num_scalar                         &
@@ -114,17 +114,16 @@ CONTAINS
                    YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME,ACMPBLSCHEME,&
                    QNSEPBLSCHEME,MYNNPBLSCHEME2,MYNNPBLSCHEME3,BOULACSCHEME,&
                    CAMUWPBLSCHEME,BEPSCHEME,BEP_BEMSCHEME,MYJSFCSCHEME, &
-                   TURBDRAGFORCE,                                      &
+                   FITCHSCHEME,                                      &
                    TEMFPBLSCHEME,QNSEPBL09SCHEME,GBMPBLSCHEME,  &
                    CAMMGMPSCHEME,p_qi,p_qni,p_qnc,param_first_scalar  !CAMMGMPSCHEME, p_qni,p_qnc is used for camuwpbl scheme
-   USE module_wind_generic, ONLY : windspec
 #else
    USE module_state_description, ONLY :                            &
                    YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME,ACMPBLSCHEME &
                    , QNSEPBLSCHEME, p_qi,param_first_scalar &
                    , TEMFPBLSCHEME, GFS2011SCHEME,QNSEPBL09SCHEME         &
                    , CAMUWPBLSCHEME                                       &
-                   , TURBDRAGFORCE                                       &
+                   , FITCHSCHEME                                       &
                    , GBMPBLSCHEME, MYJSFCSCHEME
 #endif
 
@@ -151,7 +150,6 @@ CONTAINS
    USE module_bl_mynn
    USE module_bl_fogdes
    USE module_wind_fitch
-   USE module_wind_turbdragforce
 #endif
 
    !  This driver calls subroutines for the PBL parameterizations.
@@ -1510,6 +1508,9 @@ CONTAINS
 
            IF ( PRESENT( qv_curr )  .AND. PRESENT( qc_curr )  .AND. &
                 PRESENT( rqvblten ) .AND. PRESENT( rqcblten ) .AND. &
+                PRESENT( qi_curr ) .AND. PRESENT( rqiblten ) .AND.  &
+                PRESENT( rqniblten ) .AND. & !PRESENT( rqncblten ) .AND. &
+                PRESENT( qni_curr ) .AND. & !PRESENT( qnc_curr ) .AND. &
                 PRESENT(qke) .AND. PRESENT(tsq) .AND.               &
                 PRESENT(qsq) .AND. PRESENT(cov) .AND.               &
                 PRESENT(rmol) .AND.                                 &
@@ -1535,79 +1536,50 @@ CONTAINS
                    &delt=dtbl,&
                    &dz=dz8w,&
                    &u=u_phy,v=v_phy,th=th_phy,qv=qv_curr,qc=qc_curr,&
+                   &qi=qi_curr,qni=qni_curr,& !qnc=qnc_curr,&
                    &p=p_phy,exner=pi_phy,rho=rho,&
                    &xland=xland,ts=tsk,qsfc=qsfc,qcg=qcg,ps=psfc,&
                    &ust=ust,ch=ch,hfx=hfx,qfx=qfx,rmol=rmol,wspd=wspd,&
-                   &uoce=uoce,voce=voce,&
-                   &vdfg=vdfg,&           !Katata -added 
-                   &Qke=qke,Sh3d=Sh3d,&
+                   &uoce=uoce,voce=voce,&           !Ocean currents
+                   &vdfg=vdfg,&                     !Katata -added 
+                   &Qke=qke,TKE_PBL=tke_pbl,&       !JOE-for CAMUW shcu
+                   &Sh3d=Sh3d,&
 !ACF for QKE advection
                    &qke_adv=qke_adv,bl_mynn_tkeadvect=bl_mynn_tkeadvect,&
 !ACF-end
                    &Tsq=tsq,Qsq=qsq,Cov=cov,&
                    &Du=rublten,Dv=rvblten,Dth=rthblten,&
-                   &Dqv=rqvblten,Dqc=rqcblten,&
+                   &Dqv=rqvblten,Dqc=rqcblten,Dqi=rqiblten,&
+                   !&Dqnc=rqncblten,&
+                   &Dqni=rqniblten,&
                    &k_h=exch_h,k_m=exch_m,&
-                   &pblh=pblh&
+                   &pblh=pblh,KPBL=KPBL&
                    &,el_pbl=el_pbl                                       &
                    &,dqke=dqke                                           &
                    &,qWT=qWT,qSHEAR=qSHEAR,qBUOY=qBUOY,qDISS=qDISS       &
+! for grims shallow convection                                            
+                   &,WSTAR=wstar,DELTA=delta                             &
                    &,bl_mynn_tkebudget=bl_mynn_tkebudget                 &
                    &,bl_mynn_cloudpdf=bl_mynn_cloudpdf                   &
+                   &,FLAG_QI=flag_qi,FLAG_QNI=flag_qni                   &
+                   &,FLAG_QC=flag_qc,FLAG_QNC=flag_qnc                   &
                    ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
                    ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
                    ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
                    )
-
-               IF (windspec.GT.0) THEN
-
-                  IF (PRESENT(id) .AND.                                  &
-                     PRESENT(phb) .AND.                                  &
-                     PRESENT(xlat_u).AND.PRESENT(xlong_u) .AND.          &
-                     PRESENT(xlat_v).AND.PRESENT(xlong_v) ) THEN
-
-                     CALL wrf_debug(100,'in phys/module_wind_fitch.F')
-                     CALL turbine_drag(                                  &
-                     & ID=id                                             &
-                     &,PHB=phb,u=u_phy,v=v_phy                           &
-                     &,XLAT_U=xlat_u,XLONG_U=xlong_u                     &
-                     &,XLAT_V=xlat_v,XLONG_V=xlong_v                     &
-                     &,DX=dx,DZ=dz8w,DT=dt                               &
-                     &,QKE=qke                                           &
-!ACF for QKE advection
-                     &,qke_adv=qke_adv,bl_mynn_tkeadvect=bl_mynn_tkeadvect  &
-!ACF-end
-                     &,DU=rublten,DV=rvblten                             &
-                     &,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde   &
-                     &,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme   &
-                     &,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte   &
-                     &)
-                  ELSE
-                     WRITE ( message , FMT = '(A,6(L1,1X))' )           &
-                     'present: '//                                      &
-                     'ID, '//                                           &
-                     'phb, '//                                          &
-                     'xlat_u, '//                                       &
-                     'xlong_u, '//                                      &
-                     'xlat_v, '//                                       &
-                     'xlong_v = ' ,                                     &
-                      PRESENT( id ) ,                                   &
-                      PRESENT( phb ) ,                                  &
-                      PRESENT( xlat_u  ) ,                              &
-                      PRESENT( xlong_u ) ,                              &
-                      PRESENT( xlat_v  ) ,                              &
-                      PRESENT( xlong_v )
-                     CALL wrf_debug(0,message)
-                     CALL wrf_error_fatal('Lack arguments to call turbine_drag')
-                  ENDIF
-               ENDIF
            ELSE
-               WRITE ( message , FMT = '(A,16(L1,1X))' )            &
+               WRITE ( message , FMT = '(A,20(L1,1X))' )            &
                  'present: '//                                      &
                  'qv_curr, '//                                      &
                  'qc_curr, '//                                      &
+                 'qi_curr, '//                                      &
+!                 'qnc_curr, '//                                     &
+                 'qni_curr, '//                                     &
                  'rqvblten, '//                                     &
                  'rqcblten, '//                                     &
+                 'rqiblten, '//                                     &
+!                 'rqncblten, '//                                    &
+                 'rqniblten, '//                                    &
                  'qke, '//                                          &
                  'tsq, '//                                          &
                  'qsq, '//                                          &
@@ -1622,8 +1594,14 @@ CONTAINS
                  'vdfg = ' ,                                        &
                   PRESENT( qv_curr ) ,                              &
                   PRESENT( qc_curr ) ,                              &
+                  PRESENT( qi_curr ) ,                              &
+!                  PRESENT( qnc_curr ) ,                             &
+                  PRESENT( qni_curr ) ,                             &
                   PRESENT( rqvblten ) ,                             &
                   PRESENT( rqcblten ) ,                             &
+                  PRESENT( rqiblten ) ,                             &
+!                  PRESENT( rqncblten ) ,                            &
+                  PRESENT( rqniblten ) ,                            &
                   PRESENT( qke      ) ,                             &
                   PRESENT( tsq      ) ,                             &
                   PRESENT( qsq      ) ,                             &
@@ -1765,12 +1743,12 @@ CONTAINS
 !
     windfarm_select: SELECT CASE(windfarm_opt)
 
-      CASE (turbdragforce)
+      CASE (fitchscheme)
 
                   IF (PRESENT(id) .AND.                                  &
                      PRESENT(z_at_w) ) THEN
 !
-                     CALL wrf_debug(100,'in phys/module_wind_turbdragforce.F')
+                     CALL wrf_debug(100,'in phys/module_wind_fitch.F')
                      CALL dragforce(                                  &
                      & ID=id                                             &
                      &,Z_AT_W=z_at_w,u=u_phy,v=v_phy                     &
@@ -2117,6 +2095,7 @@ CONTAINS
 
         
       END SUBROUTINE diff3d
+#if (EM_CORE==1)
 ! ===6=8===============================================================72
           SUBROUTINE diff4d(DT,DZ,SCALAR,IS_SCALAR,RHO              &
               ,EXCH_H,EXCH_M  &  
@@ -2144,7 +2123,9 @@ CONTAINS
 ! (at the lowest level the surface fluxes should go in these terms)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !-----------------------------------------------------------------------
-      USE module_state_description, ONLY: P_QNS, P_QNR, P_QNG, P_QT, P_QNH, P_QVOLG
+      USE module_state_description, ONLY: &
+                  P_QNS, P_QNR, P_QNG, P_QT, P_QNH, P_QVOLG, P_QKE_ADV
+
 
       IMPLICIT NONE
 !
@@ -2189,7 +2170,7 @@ CONTAINS
       DO im=PARAM_FIRST_SCALAR,NUM_SCALAR
 ! need to avoid mixing scalars associated with precipitating species (e.g. Nr)
         IF((IS_SCALAR .AND. im.NE.P_QNS .AND. im.NE.P_QNR .AND. im.NE.P_QNG &
-          .AND. im.NE.P_QNH .AND. im.NE.P_QT .AND. im.NE.P_QVOLG) &
+          .AND. im.NE.P_QNH .AND. im.NE.P_QT .AND. im.NE.P_QVOLG .AND. im.NE.P_QKE_ADV) &
           .OR. (.not. IS_SCALAR)) THEN
         do j=jts,jte
         do i=its,ite
@@ -2246,6 +2227,7 @@ CONTAINS
         
       END SUBROUTINE diff4d
 ! ===6=8===============================================================72
+#endif
 
        subroutine diff(kms,kme,kts,kte,dt,co,da,daz,cd,aa,bb,sf,vl,dz,fc)
 

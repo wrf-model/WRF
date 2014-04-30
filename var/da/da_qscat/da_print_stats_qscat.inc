@@ -27,10 +27,10 @@ subroutine da_print_stats_qscat(stats_unit, nu, nv, qscat)
         ' Minimum(n,k): ', qscat%minimum%u, qscat%minimum%v, &
         ' Maximum(n,k): ', qscat%maximum%u, qscat%maximum%v
    
-   write(unit=stats_unit, fmt='((a,2(f12.4)))') &
+   write(unit=stats_unit, fmt='((a,2(f12.4,10x)))') &
         ' Average     : ', qscat%average%u/real(nu), qscat%average%v/real(nv), &
         '    RMSE     : ', sqrt(qscat%rms_err%u/real(nu)), &
-                      sqrt(qscat%rms_err%v/real(nv))
+                           sqrt(qscat%rms_err%v/real(nv))
 
    if (trace_use_dull) call da_trace_exit("da_print_stats_qscat")
    

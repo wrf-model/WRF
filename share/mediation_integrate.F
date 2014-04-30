@@ -1767,6 +1767,9 @@ SUBROUTINE med_latbound_in ( grid , config_flags )
    Type (WRFU_Time )                      :: startTime, stopTime, currentTime
    Type (WRFU_TimeInterval )              :: stepTime
 integer myproc,i,j,k
+#ifdef _MULTI_BDY_FILES_
+   CHARACTER(LEN=80)                      :: timestr
+#endif
 
 #include <wrf_io_flags.h>
 
@@ -1802,8 +1805,14 @@ integer myproc,i,j,k
        CALL WRFU_AlarmRingerOff( grid%alarms( BOUNDARY_ALARM ), rc=rc )
        IF ( wrf_dm_on_monitor() ) CALL start_timing
 
+#ifdef _MULTI_BDY_FILES_
+       ! Possibility to have a <date> as part of the bdy_inname.
+       CALL domain_clock_get( grid, current_timestr=timestr )
+       CALL construct_filename2a ( bdyname , config_flags%bdy_inname , grid%id , 2 , timestr )
+#else
 ! typically a <date> wouldn't be part of the bdy_inname, so just pass a dummy
-       CALL construct_filename2a ( bdyname , config_flags%bdy_inname , grid%id , 2 , 'dummydate' )
+       CALL construct_filename2a ( bdyname , config_flags%bdy_inname , grid%id , 2 , " " )
+#endif
 
        CALL wrf_inquire_opened(grid%lbc_fid , TRIM(bdyname) , open_status , ierr ) 
        IF ( open_status .EQ. WRF_FILE_OPENED_FOR_READ ) THEN
@@ -1812,17 +1821,21 @@ integer myproc,i,j,k
          lbc_opened = .FALSE.
        ENDIF
        CALL wrf_dm_bcast_bytes ( lbc_opened , LWORDSIZE )
-       CALL construct_filename2a ( bdyname , grid%bdy_inname , grid%id , 2 , " " )
        IF ( .NOT. lbc_opened ) THEN
-         WRITE(message,*)'Opening: ',TRIM(bdyname)
-         CALL wrf_debug(100,TRIM(message))
-         CALL open_r_dataset ( grid%lbc_fid, TRIM(bdyname) , grid , config_flags , "DATASET=BOUNDARY", ierr )
+#ifdef _MULTI_BDY_FILES_
+         CALL construct_filename2a ( bdyname , config_flags%bdy_inname , grid%id , 2 , timestr )
+#else
+         CALL construct_filename2a ( bdyname , config_flags%bdy_inname , grid%id , 2 , " " )
+#endif
+          WRITE(message,*)'Opening: ',TRIM(bdyname)
+          CALL wrf_debug(100,TRIM(message))
+          CALL open_r_dataset ( grid%lbc_fid, TRIM(bdyname) , grid , config_flags , "DATASET=BOUNDARY", ierr )
           IF ( ierr .NE. 0 ) THEN
             WRITE( message, * ) 'med_latbound_in: error opening ',TRIM(bdyname), ' for reading. IERR = ',ierr
             CALL WRF_ERROR_FATAL( message )
           ENDIF
        ELSE
-         CALL wrf_debug( 100 , bdyname // 'already opened' )
+         CALL wrf_debug( 100 , bdyname // ' is already opened' )
        ENDIF
        CALL wrf_debug( 100 , 'med_latbound_in: calling input_boundary ' )
        CALL input_boundary ( grid%lbc_fid, grid , config_flags , ierr )
@@ -1839,6 +1852,10 @@ integer myproc,i,j,k
          CALL wrf_debug( 100 , 'med_latbound_in: calling input_boundary ' )
          CALL input_boundary ( grid%lbc_fid, grid , config_flags , ierr )
        ENDDO
+#ifdef _MULTI_BDY_FILES_
+       ! Close the bdy file so that next time around, we'll open it again.
+       CALL close_dataset ( grid%lbc_fid , config_flags , "DATASET=BOUNDARY" )
+#endif
        CALL WRFU_AlarmSet( grid%alarms( BOUNDARY_ALARM ), RingTime=grid%next_bdy_time, rc=rc )
 
        IF ( ierr .NE. 0 .and. ierr .NE. WRF_WARN_NETCDF ) THEN

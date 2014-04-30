@@ -565,9 +565,9 @@ contains
                    BGAP    , WGAP    , CHV     , CHB     , EMISSI  ,           & ! OUT :
 		   SHG     , SHC     , SHB     , EVG     , EVB     , GHV     , & ! OUT :
 		   GHB     , IRG     , IRC     , IRB     , TR      , EVC     , & ! OUT :
- 		   CHLEAF  , CHUC    , CHV2    , CHB2    , FPICE               & ! OUT :
+		   CHLEAF  , CHUC    , CHV2    , CHB2    , FPICE               &
 #ifdef WRF_HYDRO
-                  ,SFCHEADRT                                                   & ! IN/OUT :
+                   ,SFCHEADRT                                                  & ! IN/OUT :
 #endif
                    )
 
@@ -956,6 +956,11 @@ contains
        Q2B = QSFC
     END IF
 
+    IF(SNOWH <= 1.E-6 .OR. SNEQV <= 1.E-3) THEN
+     SNOWH = 0.0
+     SNEQV = 0.0
+    END IF
+
     IF(SWDOWN.NE.0.) THEN
       ALBEDO = FSR / SWDOWN
     ELSE
@@ -1102,8 +1107,8 @@ contains
      DB = MIN( MAX(SNOWH - HVB(VEGTYP),0.), HVT(VEGTYP)-HVB(VEGTYP) )
      FB = DB / MAX(1.E-06,HVT(VEGTYP)-HVB(VEGTYP))
 
-     IF(HVT(VEGTYP)> 0. .AND. HVT(VEGTYP) <= 0.5) THEN
-       SNOWHC = HVT(VEGTYP)*EXP(-SNOWH/0.1)
+     IF(HVT(VEGTYP)> 0. .AND. HVT(VEGTYP) <= 1.0) THEN  !MB: change to 1.0 and 0.2 to reflect
+       SNOWHC = HVT(VEGTYP)*EXP(-SNOWH/0.2)             !      changes to HVT in MPTABLE
        FB     = MIN(SNOWH,SNOWHC)/SNOWHC
      ENDIF
 
@@ -7481,6 +7486,7 @@ contains
       IF(SNEQV < 0.) THEN
          SICE(1) = SICE(1) + SNEQV/(DZSNSO(1)*1000.)
          SNEQV   = 0.
+         SNOWH   = 0.
       END IF
       IF(SICE(1) < 0.) THEN
          SH2O(1) = SH2O(1) + SICE(1)
@@ -7488,8 +7494,10 @@ contains
       END IF
    END IF
 
-   IF(SNOWH <= 1.E-8) SNOWH = 0.0
-   IF(SNEQV <= 1.E-6) SNEQV = 0.0
+   IF(SNOWH <= 1.E-8 .OR. SNEQV <= 1.E-6) THEN
+     SNOWH = 0.0
+     SNEQV = 0.0
+   END IF
 
 ! for deep snow
 

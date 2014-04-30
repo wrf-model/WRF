@@ -554,8 +554,7 @@ module_physics_init.o : \
 		module_cam_constituents.o       \
 		module_cam_mp_modal_aero_initialize_data_phys.o \
 		module_cam_support.o \
-		module_wind_turbdragforce.o \
-		module_wind_fitch.o		\
+		module_wind_fitch.o \
 		../frame/module_state_description.o \
 		../frame/module_configure.o \
 		../frame/module_wrf_error.o \
@@ -621,10 +620,9 @@ module_pbl_driver.o:  \
 		module_bl_mynn.o \
 		module_bl_fogdes.o \
 		module_bl_gwdo.o \
-		module_wind_fitch.o \
 		module_bl_temf.o \
 		module_bl_mfshconvpbl.o \
-		module_wind_turbdragforce.o \
+		module_wind_fitch.o \
 		../frame/module_state_description.o \
 		../frame/module_configure.o \
 		../share/module_model_constants.o 
@@ -792,9 +790,6 @@ module_fdda_spnudging.o :\
 
 module_sf_bep.o :\
 		module_sf_urban.o
-
-module_wind_fitch.o :\
-		module_wind_generic.o
 
 module_mp_wsm5.o :\
 		module_mp_wsm5_accel.F \

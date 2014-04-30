@@ -40,11 +40,11 @@ subroutine da_transform_xtoy_geoamv (grid, iv, y)
 
    do n=iv%info(geoamv)%n1,iv%info(geoamv)%n2
       do k = 1, iv%info(geoamv)%levels(n)
-         if(.not. var_wind) then
+         if(wind_sd_geoamv) then
+            call da_uv_to_sd_lin(y%geoamv(n)%u(k),y%geoamv(n)%v(k),u(k,n),v(k,n),ub(k,n),vb(k,n))
+         else
             y%geoamv(n)%u(k) = u(k,n)
             y%geoamv(n)%v(k) = v(k,n)
-         else
-            call da_uv_wind_tgl(y%geoamv(n)%u(k),y%geoamv(n)%v(k),u(k,n),v(k,n),ub(k,n),vb(k,n))
          end if
        end do
    end do

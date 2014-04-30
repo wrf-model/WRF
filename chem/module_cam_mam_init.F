@@ -152,9 +152,11 @@ contains
     endif
 
     !Balwinder.Singh@pnnl.gov: Sanity check for cam_mam_nspec variable in namelist
-    if((config_flags%chem_opt == CBMZ_CAM_MAM3_NOAQ .OR. config_flags%chem_opt == CBMZ_CAM_MAM3_AQ) .AND.  config_flags%cam_mam_nspec .NE. 74)then
-       call wrf_error_fatal( 'CAM_MAM_INIT - For MODAL_AERO_3MODE (chem_opt - 503 CAM_MAM3 package), cam_mam_nspec in namelist should be set to 74' )
+    !BSINGH (01/23/2014):Please make sure cam_mam_nspec is equal to pcnst in phys/module_physics_init.F and registry.chem
+    if((config_flags%chem_opt == CBMZ_CAM_MAM3_NOAQ .OR. config_flags%chem_opt == CBMZ_CAM_MAM3_AQ) .AND.  config_flags%cam_mam_nspec .NE. 85)then
+       call wrf_error_fatal( 'CAM_MAM_INIT - For MODAL_AERO_3MODE (chem_opt - 503 CAM_MAM3 package), cam_mam_nspec in namelist should be set to 85' )
     elseif((config_flags%chem_opt == CBMZ_CAM_MAM7_NOAQ .OR. config_flags%chem_opt == CBMZ_CAM_MAM7_AQ) .AND.  config_flags%cam_mam_nspec .NE. 90)then
+       !BSINGH (01/23/2014): DMS species are NOT included in MAM7 package.
        call wrf_error_fatal('CAM_MAM_INIT - For MODAL_AERO_7MODE (chem_opt - 504 CAM_MAM7 package), cam_mam_nspec in namelist should be set to 90')
     endif
     

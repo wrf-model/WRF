@@ -101,6 +101,7 @@ CONTAINS
     real*8 :: rmax,vmax,frac,angle
     real, dimension(:), allocatable :: rref,zref,th0,qv0,thv0,prs0,pi0,rh0
     real, dimension(:,:), allocatable :: vref,piref,pref,thref,thvref,qvref
+    real :: pi_in,dz
 
 !  stuff from original initialization that has been dropped from the Registry 
    REAL    :: vnu, xnu, xnus, dinit0, cbh, p0_temp, t0_temp, zd, zt
@@ -549,9 +550,13 @@ CONTAINS
       rref(i) = config_flags%dx*(float(i-1)+0.5)
     enddo
 
-    print *,'  zref:'
+    print *,'  zref,dz:'
     do k=0,kref+1
-      print *,k,zref(k)
+      if( k.ge.2 .and. k.le.kref )then
+        print *,k,zref(k),zref(k)-zref(k-1)
+      else
+        print *,k,zref(k)
+      endif
     enddo
 
     print *,'  vref:'
@@ -667,12 +672,20 @@ CONTAINS
             i1 = i2-1
             frac = (      rr-rref(i1))   &
                   /(rref(i2)-rref(i1))
-            do k=1,kte
-              px = p0*( ( pi0(k)+piref(i1,k)+(piref(i2,k)-piref(i1,k))*frac )**(cp/r_d) )
-              qx = qvref(i1,k)+(qvref(i2,k)-qvref(i1,k))*frac
-              qv(k) = qx
+            do k=1,nl_in
+              pi_in    = pi0(k)+piref(i1,k)+(piref(i2,k)-piref(i1,k))*frac
+              qv(k)    =        qvref(i1,k)+(qvref(i2,k)-qvref(i1,k))*frac
               theta(k) = th0(k)+thref(i1,k)+(thref(i2,k)-thref(i1,k))*frac
-              pd_in(k) = px/(1.0+((r_v/r_d)*qx))
+              p_in(k) = p1000mb*(pi_in**(cp/r_d))
+              qvf = 1. + rvovrd*qv(k)
+              rho(k) = 1./((r_d/p1000mb)*theta(k)*qvf*((p_in(k)/p1000mb)**cvpm))
+            enddo
+
+            pd_in(nl_in) = p_in(nl_in)
+
+            do k=nl_in-1,1,-1
+              dz = zk(k+1)-zk(k)
+              pd_in(k) = pd_in(k+1) + 0.5*dz*(rho(k)+rho(k+1))*g
             enddo
 
 !  At this point grid%p_top is already set. find the DRY mass in the column 

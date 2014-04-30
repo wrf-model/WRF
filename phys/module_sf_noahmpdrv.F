@@ -559,7 +559,7 @@ CONTAINS
                                PRCP,    LWDN,    TBOT,    Z_ML, FICEOLD,   ZSOIL, & ! IN : Forcing
                               QSNOW,  SNEQVO,  ALBOLD,      CM,      CH,   ISNOW, & ! IN/OUT :
                                 SWE,     SMC,   ZSNSO,  SNDPTH,   SNICE,   SNLIQ, & ! IN/OUT :
-                                TGB,     STC,   SMH2O,   TAUSS,  QSFC1D,          & ! IN/OUT :
+                                 TG,     STC,   SMH2O,   TAUSS,  QSFC1D,          & ! IN/OUT :
                                 FSA,     FSR,    FIRA,     FSH,    FGEV,   SSOIL, & ! OUT : 
                                TRAD,   ESOIL,   RUNSF,   RUNSB,     SAG,    SALB, & ! OUT :
                               QSNBOT,PONDING,PONDING1,PONDING2,    T2MB,    Q2MB, & ! OUT :
@@ -567,7 +567,7 @@ CONTAINS
 
        FSNO   = 1.0       
        TV     = undefined_value     ! Output from standard Noah-MP undefined for glacier points
-       TG     = TGB 
+       TGB    = TG 
        CANICE = undefined_value 
        CANLIQ = undefined_value 
        EAH    = undefined_value 
@@ -974,6 +974,19 @@ end if
        itf=min0(ite,ide-1)
        jtf=min0(jte,jde-1)
 
+       !
+       ! initialize physical snow height SNOWH
+       !
+       IF(.NOT.FNDSNOWH)THEN
+          ! If no SNOWH do the following
+          CALL wrf_message( 'SNOW HEIGHT NOT FOUND - VALUE DEFINED IN LSMINIT' )
+          DO J = jts,jtf
+             DO I = its,itf
+                SNOWH(I,J)=SNOW(I,J)*0.005               ! SNOW in mm and SNOWH in m
+             ENDDO
+          ENDDO
+       ENDIF
+
        errflag = 0
        DO j = jts,jtf
           DO i = its,itf
@@ -1009,6 +1022,7 @@ end if
               END DO
 	        !TMN(I,J) = MIN(TMN(I,J),263.15)         ! set deep temp to at most -10C
 		SNOW(I,J) = MAX(SNOW(I,J), 10.0)        ! set SWE to at least 10mm
+                SNOWH(I,J)=SNOW(I,J)*0.01               ! SNOW in mm and SNOWH in m
 	    ELSE
 	      
               BX = BB(ISLTYP(I,J))
@@ -1039,32 +1053,24 @@ end if
 !  ENDIF
 
 
-       !
-       ! initialize physical snow height SNOWH
-       !
-       IF(.NOT.FNDSNOWH)THEN
-          ! If no SNOWH do the following
-          CALL wrf_message( 'SNOW HEIGHT NOT FOUND - VALUE DEFINED IN LSMINIT' )
-          DO J = jts,jtf
-             DO I = its,itf
-                SNOWH(I,J)=SNOW(I,J)*0.005               ! SNOW in mm and SNOWH in m
-             ENDDO
-          ENDDO
-       ENDIF
-
        DO J = jts,jtf
           DO I = its,itf
              tvxy       (I,J) = TSK(I,J)
+	       if(snow(i,j) > 0.0 .and. tsk(i,j) > 273.15) tvxy(I,J) = 273.15
              tgxy       (I,J) = TSK(I,J)
+	       if(snow(i,j) > 0.0 .and. tsk(i,j) > 273.15) tgxy(I,J) = 273.15
              CANWAT     (I,J) = 0.0
              canliqxy   (I,J) = CANWAT(I,J)
              canicexy   (I,J) = 0.
              eahxy      (I,J) = 2000. 
              tahxy      (I,J) = TSK(I,J)
+	       if(snow(i,j) > 0.0 .and. tsk(i,j) > 273.15) tahxy(I,J) = 273.15
 !             tahxy      (I,J) = 287.
 !jref:start
              t2mvxy     (I,J) = TSK(I,J)
+	       if(snow(i,j) > 0.0 .and. tsk(i,j) > 273.15) t2mvxy(I,J) = 273.15
              t2mbxy     (I,J) = TSK(I,J)
+	       if(snow(i,j) > 0.0 .and. tsk(i,j) > 273.15) t2mbxy(I,J) = 273.15
              chstarxy     (I,J) = 0.1
 !jref:end
 
@@ -1135,7 +1141,6 @@ end if
             PRESENT(rivercondxy) .AND. &
             PRESENT(pexpxy)            ) THEN
 
-
              STEPWTD = nint(WTDDT*60./DT)
              STEPWTD = max(STEPWTD,1)
 
@@ -1146,7 +1151,6 @@ end if
       &       ids,ide, jds,jde, kds,kde,                    &
       &       ims,ime, jms,jme, kms,kme,                    &
       &       its,ite, jts,jte, kts,kte                     )
-
 
           ELSE
              CALL wrf_error_fatal ('Not enough fields to use groundwater option in Noah-MP')

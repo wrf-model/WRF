@@ -1,4 +1,5 @@
 Description of namelist variables
+
 ---------------------------------
  
 For WRF-NMM users, please see Chapter 5 of the WRF-NMM User's Guide for 
@@ -63,6 +64,7 @@ information on NMM specific settings (http://www.dtcenter.org/wrf-nmm/users)
                                      = 5,       ; GRIB1 format
                                      = 10,      ; GRIB2 format
                                      = 11,      ; pnetCDF format
+ ncd_nofill                          = .true.,  ; only a single write, not the write/read/write sequence, new in 3.6
  frames_per_emissfile                = 12,      ; number of times in each chemistry emission file.
  io_style_emiss                      = 1,       ; style to use for the chemistry emission files.
                                                 ; 0 = Do not read emissions from files.
@@ -147,6 +149,11 @@ Additional settings when running WRFVAR:
  inputout_end_s                      = 0        ; the above shows that the input-formatted data are output
                                                   starting from hour 3 to hour 12 in 180 min interval.
 
+For automatic moving nests: requires special input data, and environment variable TERRAIN_AND_LANDUSE set at compile time
+                                     (This option will overwrite input_from_file for nest domains)
+ input_from_hires (max_dom)          = .true., 
+ rsmas_data_path                     = "path-to-terrain-and-landuse-dataset"
+
  &domains
  time_step                           = 60,	; time step for integration in integer seconds
                                                   recommend 6*dx (in km) for typical real-data cases
@@ -207,6 +214,7 @@ Namelist variables specifically for the WPS input for real:
  lagrange_order                      = 1        ; vertical interpolation order
                                                 ; 1 = linear
                                                 ; 2 = quadratic
+                                                ; 9 = cubic spline
  zap_close_levels                    = 500      ; ignore isobaric level above surface if delta p (Pa) < zap_close_levels
  lowest_lev_from_sfc                 = .false.  ; place the surface value into the lowest eta location
                                                 ; T = use surface value as lowest eta (u,v,t,q)
@@ -423,6 +431,14 @@ Namelist variables for controlling the adaptive time step option:
                                        nssl_rho_qh  = 500.  ! graupel density
                                        nssl_rho_qhl = 900.  ! hail density
                                        nssl_rho_qs  = 100.  ! snow density
+                                     = 28, aerosol-aware Thompson scheme with water- and ice-friendly aerosol climatology 
+                                           (new for V3.6)
+                                       This option has two climatogical aerosol input options:
+                                       use_aero_icbc = .F. : use constant values
+                                       use_aero_icbc = .T. : use input from WPS
+                                     = 30, HUJI (Hebrew University of Jerusalem, Israel) spectral bin microphysics,
+                                           fast version
+                                     = 32, HUJI spectral bin microphysics, full version
                                      = 95, Ferrier (old Eta) microphysics, operational NAM (WRF NMM) version
 
  For non-zero mp_physics options, to keep Qv .GE. 0, and to set the other moisture
@@ -517,10 +533,6 @@ Namelist variables for controlling the adaptive time step option:
  alevsiz                             = 12 for Tegen aerosol input levels, set automatically
  no_src_types                        = 6 for Tegen aerosols: organic and black carbon, sea salt, sulfalte, dust,
                                        and stratospheric aerosol (volcanic ashes - currently 0), set automatically
- swint_opt                           Interpolation of short-wave radiation based on the updated solar zenith angle 
-                                       between SW call
-                                     = 0, no interpolation
-                                     = 1, use interpolation
 
  The following aerosol options allow RRTMG and new Goddard radiation schemes to see it, but the aerosols are
      constant during the model integration.
@@ -545,14 +557,14 @@ Namelist variables for controlling the adaptive time step option:
 
  sf_sfclay_physics (max_dom)         surface-layer option (old bl_sfclay_physics option)
                                      = 0, no surface-layer
-                                     = 1, MM5 Monin-Obukhov scheme
+                                     = 1, Revised MM5 Monin-Obukhov scheme (Jimenez, renamed in v3.6)
                                      = 2, Monin-Obukhov (Janjic) scheme
                                      = 3, NCEP Global Forecast System scheme (NMM only)
                                      = 4, QNSE surface layer
                                      = 5, MYNN surface layer
                                      = 7, Pleim-Xiu surface layer (ARW only)
                                      = 10, TEMF surface layer (ARW only)
-                                     = 11, Revised MM5 scheme (Jimenez)
+                                     = 91, Old MM5 scheme (previously option 1)
 
  sf_surface_physics (max_dom)        land-surface option (old bl_surface_physics option)
                                      = 0, no surface temp prediction
@@ -610,10 +622,10 @@ Namelist variables for controlling the adaptive time step option:
                                      = 1, turn on topographic surface wind correction from Jimenez 
                                        (YSU PBL only, and require extra input from geogrid)
                                      = 2, turn on topographic surface wind correction from Mass (YSU PBL only)
- bl_mynn_tkebudget                   = 0, default off; = 1 adds MYNN tke budget terms to output
- bl_mynn_tkeadvect                   = .false., default off; = .true. do MYNN tke advection
- scalar_pblmix                       = 1 ; mix scalar fields consistent with PBL option (exch_h)
- tracer_pblmix                       = 1 ; mix tracer fields consistent with PBL option (exch_h)
+ bl_mynn_tkebudget (max_dom)         = 0, default off; = 1 adds MYNN tke budget terms to output
+ bl_mynn_tkeadvect (max_dom)         = .false., default off; = .true. do MYNN tke advection
+ scalar_pblmix (max_dom)             = 1 ; mix scalar fields consistent with PBL option (exch_h)
+ tracer_pblmix (max_dom)             = 1 ; mix tracer fields consistent with PBL option (exch_h)
  sf_surface_mosaic                   option to mosaic landuse categories for Noah LSM            
                                      = 0 ; default; use dominant category only
                                      = 1 ; use mosaic landuse categories
@@ -684,13 +696,13 @@ Namelist variables for controlling the adaptive time step option:
  icloud                              = 1,	; cloud effect to the optical depth in radiation
                                                   (only works for ra_sw_physics = 1,4 and ra_lw_physics = 1,4)
                                                   Since 3.6, this also controls the cloud fraction options
-                                                  1 = with cloud effect, and use cloud fraction option 2
+                                                  1 = with cloud effect, and use cloud fraction option 1
+                                                      (Xu-Randall method) 
                                                   0 = without cloud effect
-                                                  2 = with cloud effect, and use cloud fraction option 1
- icloud_cu                                	; sub-grid cloud effect to the optical depth in radiation
-                                                  currently it works only for KF scheme
-                                                  0 = no sub-grid cloudl effect
-                                                  1 = consider sub-grid cloud effect
+                                                  2 = with cloud effect, and use cloud fraction option 2
+ cu_rad_feedback (max_dom)           = .false.  ; sub-grid cloud effect to the optical depth in radiation
+                                                  currently it works only for GF, G3, GD and KF scheme
+                                                  One also needs to set cu_diag = 1 for GF, G3 and GD schemes
  swrad_scat                          = 1.       ; scattering tuning parameter (default 1. is 1.e-5 m2/kg)
                                                   (works for ra_sw_physics = 1 option only)
  surface_input_source                = 1,	; where landuse and soil category data come from:
@@ -729,6 +741,7 @@ Namelist variables for controlling the adaptive time step option:
                                                 ; and Noah scheme, set to land point, permanent ice, set temps
                                                 ; from 2 m to surface, and set smois and sh2o. The default value has changed
                                                 ; from 271 to 100 K in v3.5.1 to avoid mixed-up use with fractional seaice input
+                                                ; Used by land model option 1,2,3,4 and 8
  sst_update                          = 0        ; time-varying sea-surface temp (0=no, 1=yes). If selected real 
                                                 ; puts SST, XICE, ALBEDO and VEGFRA in wrflowinp_d01 file, and wrf updates 
                                                 ; these from it at same interval as boundary file. Also requires
@@ -739,6 +752,7 @@ Namelist variables for controlling the adaptive time step option:
                                                 ; (must be used for NMM and recommended for sst_update=1)
  rdmaxalb                            = .true.   ; use snow albedo from geogrid; false means using values from table
  rdlai2d                             = .false.  ; use LAI from input; false means using values from table
+                                                  if sst_update=1, LAI will also be in wrflowinp file
  bucket_mm                           = -1.      ; bucket reset value for water accumulations (value in mm, -1.=inactive)
  bucket_J                            = -1.      ; bucket reset value for energy accumulations (value in J, -1.=inactive)
  tmn_update                          = 0        ; update deep soil temperature (1, yes; 0, no)
@@ -797,13 +811,17 @@ Namelist variables for controlling the adaptive time step option:
  do_radar_ref			     = 0, 	; 1 = allows radar reflectivity to be computed using mp-scheme-specific
  						  parameters.  Currently works for mp_physics = 2,4,6,7,8,10,14,16
 				
-
 Namelist variables for lake module: 
 
- domain_lakedepth(max_dom)                    = 200,     ; lake depth   
- lakemodel(max_dom)                           = 1,       ; lake model on/off 
- lakeminalt(max_dom)                          = 50,      ; minimum elevation of lake   
-
+ sf_lake_physics(max_dom)            = 1,       ; lake model on/off 
+ lakedepth_default(max_dom)          = 50,      ; default lake depth (If there is no lake_depth information in the input data, then lake depth 
+                                                  is assumed to be 50m)  
+ lake_min_elev(max_dom)              = 5,       ; minimum elevation of lakes. May be used to determine whether a water point is a lake in the absence of lake
+                                                  category. If the landuse type includes 'lake' (i.e. Modis_lake and USGS_LAKE), this variable is of no effects. 
+ use_lakedepth                       = 1,       ; option to use lake depth data. Lake depth data is available from 3.6 geogrid program. If one didn't process
+                                                  the lake depth data, but this switch is set to 1, the program will stop and tell one to go back to geogrid
+                                                  program. 
+                                                  = 0, do not use lake depth data.
  lightning_option (max_dom)                     ; Lightning parameterization option to allow flash rate prediction without chemistry
                                      = 0        ; off
                                      = 1        ; PR92 based on maximum w, redistributes flashes within dBZ > 20 (for convection resolved runs; must also use 
@@ -834,18 +852,11 @@ Namelist variables for lake module:
 
 Options for wind turbine drag parameterization:
 
- td_turbgridid                      = -1        ; which grid id has turbines in it
- td_hubheight                       = 100.      ; hub height (m)
- td_diameter                        = 60.       ; turbine diameter (m)
- td_stdthrcoef                      = .158      ; standing thrust coefficient
- td_cutinspeed                      = 4.        ; cut-in speed (m/s)
- td_cutoutspeed                     = 27.       ; cut-out speed (m/s)
- td_power                           = 2.        ; turbine power (MW)
- td_turbpercell                     = 1.        ; number of turbines per cell
- td_ewfx                            = 0         ; extent of wind farm in x-cells
- td_ewfy                            = 0         ; extent of wind farm in y-cells
- td_pwfx                            = 1         ; southwest corner of wind farm in x-cells
- td_pwfy                            = 1         ; southwest corner of wind farm in y-cells
+ windfarm_opt                       = 0         ; 1 = Simulates the effects of wind turbines in the atmospheric evolution
+ windfarm_ij                        = 0         ; whether to use lat-lon or i-j coordinate as wind turbine locations    
+                                                ; 0 = The coordinate of the turbines are defined in terms of lat-lon
+                                                ; 1 = The coordinate of the turbines are defined in terms of grid points
+
 
 Options for stochastic kinetic-energy backscatter scheme:
 
@@ -859,6 +870,20 @@ Options for stochastic kinetic-energy backscatter scheme:
                                                   change the run. When running an ensemble, this can be
                                                   ensemble member number, so that each ensemble member gets a
                                                   different random number stream, hence a different perturbed run.
+ ztau_psi                           = 10800.0   ; decorr. time of noise for psi perturb
+ ztau_t                             = 10800.0   ; decorr. time of noise for theta perturb
+ rexponent_psi                      = -1.83     ; spectral slope of forcing for psi
+ rexponent_t                        = -1.83     ; spectral slope of forcing for theta
+ zsigma2_eps                        = 0.0833    ; variance of noise for psi perturb
+ zsigma2_eta                        = 0.0833    ; variance of noise for theta perturb
+ kminforc                           = 1         ; min. forcing wavenumber in lon. for psi perturb
+ lminforc                           = 1         ; min. forcing wavenumber in lat. for psi perturb
+ kminforct                          = 1         ; min. forcing wavenumber in lon. for theta perturb
+ lminforct                          = 1         ; min. forcing wavenumber in lat. for theta perturb
+ kmaxforc                           = 1000000   ; max. forcing wavenumber in lon. for psi perturb
+ lmaxforc                           = 1000000   ; max. forcing wavenumber in lat. for psi perturb
+ kmaxforct                          = 1000000   ; max. forcing wavenumber in lon. for theta perturb
+ lmaxforct                          = 1000000   ; max. forcing wavenumber in lat. for theta perturb
 
 Options for use with the Noah-MP Land Surface Model:
 
@@ -1018,6 +1043,8 @@ The following are for observation nudging:
  obs_sfcfact                         = 1.0      ; Scale factor applied to time window for surface obs
  obs_sfcfacr                         = 1.0      ; Scale factor applied to horiz radius of influence for surface obs
  obs_dpsmx                           = 7.5      ; Max pressure change (cb) allowed within horiz radius of influence
+
+ obs_scl_neg_qv_innov                = 0        ; 1 = prevent to nudge toward negative QV 
  /
 
  &scm
@@ -1047,7 +1074,7 @@ The following are for observation nudging:
  rk_ord                              = 3,	; time-integration scheme option:
                                                   2 = Runge-Kutta 2nd order
                                                   3 = Runge-Kutta 3rd order
- diff_opt                            = 0,	; turbulence and mixing option:
+ diff_opt(max_dom)                   = 0,	; turbulence and mixing option:
                                                   0 = no turbulence or explicit
                                                       spatial numerical filters (km_opt IS IGNORED).
                                                   1 = evaluates 2nd order
@@ -1059,7 +1086,7 @@ The following are for observation nudging:
                                                       physical space (stress form) (x,y,z).
                                                       turbulence parameterization is chosen
                                                       by specifying km_opt.
- km_opt                              = 1,	; eddy coefficient option
+ km_opt(max_dom)                     = 1,	; eddy coefficient option
                                                   1 = constant (use khdif kvdif)
                                                   2 = 1.5 order TKE closure (3D)
                                                   3 = Smagorinsky first order closure (3D)
@@ -1233,3 +1260,17 @@ The following are for observation nudging:
                                                   packages.
  /
 
+AFWA diagnostics:
+&afwa
+afwa_diag_opt (max_dom)              = 0,       ; AFWA Diagnostic option, 1: on
+afwa_ptype_opt (max_dom)             = 0,       ; Precip type option, 1: on
+afwa_vil_opt (max_dom)               = 0,       ; Vert Int Liquid option, 1: on
+afwa_radar_opt (max_dom)             = 0,       ; Radar option, 1: on
+afwa_severe_opt (max_dom)            = 0,       ; Severe Wx option, 1: on
+afwa_icing_opt (max_dom)             = 0,       ; Icing option, 1: on
+afwa_vis_opt (max_dom)               = 0,       ; Visibility option, 1: on
+afwa_cloud_opt (max_dom)             = 0,       ; Cloud option, 1: on
+afwa_ptype_ccn_tmp                   = 264.15,  ; CCN temperature for precipitation type calculation
+afwa_ptype_tot_melt                  = 50,      ; Total melting energy for precipitation type calculation
+afwa_ccn_conc                        = 1.0E8,   ; CCN concentration
+afwa_hail_opt                        = 0,       ; Hail/Graupel switch, 1:hail, 0:graupel

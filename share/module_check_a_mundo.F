@@ -44,6 +44,7 @@
       LOGICAL :: exists
       LOGICAL , EXTERNAL :: wrf_dm_on_monitor
       INTEGER :: i, oops
+      LOGICAL :: km_opt_already_done , diff_opt_already_done
 
 !-----------------------------------------------------------------------
 ! Set up the WRF Hydro namelist option to allow dynamic allocation of
@@ -53,6 +54,51 @@
    model_config_rec % wrf_hydro = 1
 #else
    model_config_rec % wrf_hydro = 0
+#endif
+
+
+#if (EM_CORE == 1)
+!-----------------------------------------------------------------------
+! Check that all values of diff_opt and km_opt are filled in.  A flag
+! value of "-1" from the nml file means that this column (domain) is not
+! filled as a max_doamins variable.  Since we changed these two variables 
+! from being single entries to max_domain entries, we need to do special 
+! checking.  If there are missing values (if we find any -1 entries), we 
+! fill those columns with the value from the entry from column (domain) #1.
+!-----------------------------------------------------------------------
+
+      km_opt_already_done = .FALSE.
+      diff_opt_already_done = .FALSE.
+      DO i = 2, model_config_rec % max_dom
+         IF ( model_config_rec % km_opt(i) .EQ. -1 ) THEN
+            model_config_rec % km_opt(i) = model_config_rec % km_opt(1)
+            IF ( .NOT. km_opt_already_done ) THEN
+               CALL wrf_message ( "Setting blank km_opt entries to domain #1 values.")
+               CALL wrf_message ( " --> The km_opt entry in the namelist.input is now max_domains." )
+            END IF
+            km_opt_already_done = .TRUE.
+         END IF
+         IF ( model_config_rec % diff_opt(i) .EQ. -1 ) THEN
+            model_config_rec % diff_opt(i) = model_config_rec % diff_opt(1)
+            IF ( .NOT. diff_opt_already_done ) THEN
+               CALL wrf_message ( "Setting blank diff_opt entries to domain #1 values.")
+               CALL wrf_message ( " --> The diff_opt entry in the namelist.input is now max_domains." )
+            END IF
+            diff_opt_already_done = .TRUE.
+         END IF
+      ENDDO
+
+
+!-----------------------------------------------------------------------
+! Check that km_opt and diff_opt are not -1.  If the first column is set
+! to -1, that means this entry is NOT in the namelist file at all.
+!-----------------------------------------------------------------------
+
+      IF ( ( model_config_rec %   km_opt(1) .EQ. -1 ) .OR. &
+           ( model_config_rec % diff_opt(1) .EQ. -1 ) ) THEN
+            wrf_err_message = 'Both km_opt and diff_opt need to be set in the namelist.input file.'
+         CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
+      END IF
 #endif
 
 
@@ -228,14 +274,14 @@
 
 #if (EM_CORE == 1)
 !-----------------------------------------------------------------------
-! Check that if stochastic perturbations are turned on in any domain, 
+! Check that if any stochastic perturbation scheme is turned on in any domain, 
 ! if so, set grid%stoch_force_global_opt=1 
 !-----------------------------------------------------------------------
 
    model_config_rec % stoch_force_global_opt=0  !also set in registry.stoch
  ! check if stochastic perturbations are turned on in any domain
    DO i = 1, model_config_rec % max_dom
-         IF ( model_config_rec % stoch_force_opt(i) .EQ. 1)  then 
+         IF ( model_config_rec % stoch_force_opt(i) .NE. 0)  then 
            model_config_rec % stoch_force_global_opt=1 
          endif
    ENDDO 
@@ -410,19 +456,24 @@
       END IF
 
 !-----------------------------------------------------------------------
-!  shcu_physics = 3 (grimsshcuscheme) only works with YSU PBL.     
+!  shcu_physics = 3 (grimsshcuscheme) only works with YSU & MYNN PBL.
 !-----------------------------------------------------------------------
 
       oops = 0
       DO i = 1, model_config_rec % max_dom
-         IF ( ( model_config_rec%bl_pbl_physics(i) .NE. YSUSCHEME ) .AND. &
-              ( model_config_rec%shcu_physics(i) .EQ. GRIMSSHCUSCHEME ) ) THEN
-            model_config_rec%shcu_physics(i) = 0
-            oops = oops + 1
+         IF ( model_config_rec%shcu_physics(i) .EQ. GRIMSSHCUSCHEME ) THEN
+            IF ( (model_config_rec%bl_pbl_physics(i) .EQ. YSUSCHEME) .OR. &
+                 (model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME2) .OR. &
+                 (model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME3) ) THEN
+               !NO PROBLEM
+            ELSE
+               model_config_rec%shcu_physics(i) = 0
+               oops = oops + 1
+            END IF
          END IF
       ENDDO      ! Loop over domains
       IF ( oops .GT. 0 ) THEN
-         wrf_err_message = 'bl_pbl_physics /= 1, implies shcu_physics cannot be 3, resetting'
+         wrf_err_message = 'bl_pbl_physics /= 1,5,6 implies shcu_physics cannot be 3, resetting'
          CALL wrf_message ( wrf_err_message )
       END IF
 
@@ -557,11 +608,15 @@
       DO i = 1, model_config_rec % max_dom
          IF ( ( model_config_rec%cu_rad_feedback(i) .EQV. .TRUE. )  .OR. &
               ( model_config_rec%cu_rad_feedback(i) .EQV. .true. ) ) THEN
-            wrf_err_message = '--- WARNING: Turning on cu_rad_feedback also requires setting cu_diag== 1'
-            CALL wrf_message ( wrf_err_message )
-            model_config_rec%cu_diag(i) = 1
-         ELSE
-            model_config_rec%cu_diag(i) = 0
+            IF ( ( model_config_rec%cu_physics(1) .EQ. GFSCHEME     ) .OR. &
+                 ( model_config_rec%cu_physics(1) .EQ. G3SCHEME     ) .OR. &
+                 ( model_config_rec%cu_physics(1) .EQ. GDSCHEME     ) ) THEN
+               wrf_err_message = '--- WARNING: Turning on cu_rad_feedback also requires setting cu_diag== 1'
+               CALL wrf_message ( wrf_err_message )
+               model_config_rec%cu_diag(i) = 1
+            ELSE
+               model_config_rec%cu_diag(i) = 0
+            END IF
          END IF
       END DO
 
@@ -666,7 +721,42 @@
       END IF
 #endif
 
+!-----------------------------------------------------------------------
+!  grav_settling = 1 must be turned off for mp_physics=28.
+!-----------------------------------------------------------------------
+      oops = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec%mp_physics(i) .EQ. THOMPSONAERO ) THEN
+            IF ( model_config_rec%grav_settling(i) .NE. FOGSETTLING0 ) THEN
+                model_config_rec%grav_settling(i) = 0
+                oops = oops + 1
+            END IF
+         END IF
+      ENDDO      ! Loop over domains
+      IF ( oops .GT. 0 ) THEN
+         wrf_err_message = 'mp_physics == 28, already has gravitational fog settling; resetting grav_settling to 0'
+         CALL wrf_message ( wrf_err_message )
+      END IF
  
+!-----------------------------------------------------------------------
+!  scalar_pblmix = 1 should be turned on for mp_physics=28.
+!-----------------------------------------------------------------------
+      oops = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec%mp_physics(i) .EQ. THOMPSONAERO ) THEN
+            IF ( model_config_rec%use_aero_icbc .AND. model_config_rec%scalar_pblmix(i) .NE. 1 ) THEN
+                model_config_rec%scalar_pblmix(i) = 1
+                oops = oops + 1
+            END IF
+         END IF
+      ENDDO      ! Loop over domains
+      IF ( oops .GT. 0 ) THEN
+         wrf_err_message = 'For mp_physics == 28 and use_aero_icbc is true, recommend to turn on scalar_pblmix'
+         CALL wrf_message ( wrf_err_message )
+         wrf_err_message = 'resetting scalar_pblmix = 1'
+         CALL wrf_message ( wrf_err_message )
+      END IF
+
 !-----------------------------------------------------------------------
 !  Remapping namelist variables for gridded and surface fdda to aux streams 9 and 10.
 !  Relocated here so that the remappings are after checking the namelist for inconsistencies.

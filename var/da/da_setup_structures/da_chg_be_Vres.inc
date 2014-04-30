@@ -46,15 +46,11 @@ SUBROUTINE da_chg_be_Vres(kz, nk, eta_h, eta_be,&
    if (NO_INTERP) then
       do k = 1, nk
         if (abs(eta_h(k)-eta_be(k)) > 1.0e-6) then
-!          print '("k=",i3," eta_h, eta_be:",2f10.6," NO_INTERP=",L)',&
-!                           k, eta_h(k), eta_be(k), NO_INTERP
           NO_INTERP = .FALSE.
           exit
         endif
        enddo
    endif
-
-!   print*, " NO_INTERP=", NO_INTERP
 
    if(NO_INTERP )then
 ! Regression coefficients:
@@ -132,11 +128,8 @@ SUBROUTINE da_chg_be_Vres(kz, nk, eta_h, eta_be,&
      endif
  endif
 
-!  print *,k,rsig(k),m,rsigo(m),rsigo(m1),coef1(k)
-
    end do
 
-!
   do k=1,kz
     m=lsig(k)
     m1=m+1

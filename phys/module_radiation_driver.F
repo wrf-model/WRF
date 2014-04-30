@@ -14,7 +14,6 @@ CONTAINS
               ,GMT    ,GSW    ,HBOT    &
               ,HTOP   ,HBOTR  ,HTOPR   &
               ,ICLOUD                  &
-              ,icloud_cu               &
               ,ITIMESTEP,JULDAY, JULIAN &
               ,JULYR  ,LW_PHYSICS       &
               ,NCFRCV ,NCFRST ,NPHS     &
@@ -57,6 +56,9 @@ CONTAINS
               , TSWDN, TSWUP                        & ! goddard schemes
               , SSWDN, SSWUP                        & ! goddard schemes
               , CLDFRA,CLDFRA_MP_ALL                &
+#if (EM_CORE == 1)
+              , lradius,iradius                     &
+#endif
               , cldfra_dp, cldfra_sh                & ! ckay for sub-grid cloud fraction
               , re_cloud, re_ice, re_snow           & ! G. Thompson
               , has_reqc, has_reqi, has_reqs        & ! G. Thompson
@@ -93,9 +95,9 @@ CONTAINS
               ,M_PS_1, M_PS_2, AEROSOLC_1     &
               ,AEROSOLC_2, M_HYBI0            &
               ,ABSTOT, ABSNXT, EMSTOT         &
-              ,CU_RAD_FEEDBACK                &
+              ,ICLOUD_CU                      &
               ,AER_RA_FEEDBACK                &
-              ,QC_ADJUST , QI_ADJUST          &
+              ,QC_CU , QI_CU                  &
               ,PM2_5_DRY, PM2_5_WATER         &
               ,PM2_5_DRY_EC                   &
               ,TAUAER300, TAUAER400 & ! jcb
@@ -355,7 +357,7 @@ CONTAINS
    INTEGER, DIMENSION(num_tiles), INTENT(IN) ::                       &
                 i_start,i_end,j_start,j_end
 
-   INTEGER,      INTENT(IN   )    ::   STEPRA,ICLOUD,ra_call_offset,ICLOUD_CU
+   INTEGER,      INTENT(IN   )    ::   STEPRA,ICLOUD,ra_call_offset
    INTEGER,      INTENT(IN   )    ::   alevsiz, no_src_types
    INTEGER,      INTENT(IN   )    ::   levsiz, n_ozmixm
    INTEGER,      INTENT(IN   )    ::   paerlev, n_aerosolc, cam_abs_dim1, cam_abs_dim2
@@ -417,7 +419,7 @@ CONTAINS
                                  waer300,waer400,waer600,waer999
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), OPTIONAL ,       &
-         INTENT(IN ) ::          qc_adjust, qi_adjust
+         INTENT(IN ) ::          qc_cu, qi_cu
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), OPTIONAL ,       &
          INTENT(IN ) ::  tauaerlw1,tauaerlw2,tauaerlw3,tauaerlw4, & ! czhao 
@@ -425,7 +427,7 @@ CONTAINS
                          tauaerlw9,tauaerlw10,tauaerlw11,tauaerlw12, & ! czhao 
                          tauaerlw13,tauaerlw14,tauaerlw15,tauaerlw16
 
-   LOGICAL, INTENT(IN) :: cu_rad_feedback
+   INTEGER, INTENT(IN) :: icloud_cu
 
    INTEGER, INTENT(IN   ), OPTIONAL  ::   aer_ra_feedback
 
@@ -592,7 +594,15 @@ CONTAINS
          INTENT(IN   ) ::                                            &
                                                           F_ICE_PHY, &
                                                          F_RAIN_PHY, &
-                                                         CLDFRA_MP_ALL
+                                                      CLDFRA_MP_ALL
+
+#if (EM_CORE == 1)
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                     &
+         OPTIONAL,                                                   &
+         INTENT(IN   ) ::                                            &
+                                                            LRADIUS, &
+                                                            IRADIUS
+#endif
 
    REAL, DIMENSION( ims:ime, jms:jme ),                           &
          OPTIONAL,                                                &
@@ -913,22 +923,22 @@ CONTAINS
 
 ! temporarily modify hydrometeors (currently only done for GD scheme and WRF-Chem)
 !
-       IF ( PRESENT( qc ) .AND. PRESENT( qc_adjust ) .AND. cu_rad_feedback ) THEN
+       IF ( PRESENT( qc ) .AND. PRESENT( qc_cu ) .AND. icloud_cu .EQ. 1 ) THEN
           DO j=jts,jte
           DO k=kts,kte
           DO i=its,ite
             qc_save(i,k,j) = qc(i,k,j)
-            qc(i,k,j) = qc(i,k,j) + qc_adjust(i,k,j)
+            qc(i,k,j) = qc(i,k,j) + qc_cu(i,k,j)
           ENDDO
           ENDDO
           ENDDO
        ENDIF
-       IF ( PRESENT( qi ) .AND. PRESENT( qi_adjust ) .AND. cu_rad_feedback ) THEN
+       IF ( PRESENT( qi ) .AND. PRESENT( qi_cu ) .AND. icloud_cu .EQ. 1 ) THEN
           DO j=jts,jte
           DO k=kts,kte
           DO i=its,ite
             qi_save(i,k,j) = qi(i,k,j)
-            qi(i,k,j) = qi(i,k,j) + qi_adjust(i,k,j)
+            qi(i,k,j) = qi(i,k,j) + qi_cu(i,k,j)
           ENDDO
           ENDDO
           ENDDO
@@ -980,7 +990,7 @@ CONTAINS
 ! Call to cloud fraction routine based on Randall 1994 (Hong Pan 1998)
 
         CALL wrf_debug (1, 'CALL cldfra2')
-        CALL cal_cldfra2(CLDFRA,qv,qc,qi,qs,               &
+        CALL cal_cldfra1(CLDFRA,qv,qc,qi,qs,               &
                    F_QV,F_QC,F_QI,F_QS,t,p,                &
                    F_ICE_PHY,F_RAIN_PHY,                   &
                    ids,ide, jds,jde, kds,kde,              &
@@ -988,20 +998,20 @@ CONTAINS
                    its,ite, jts,jte, kts,kte               )
 
         IF ( PRESENT ( CLDFRA_DP ) ) THEN
+! this is for Kain-Fritsch scheme
           IF ( icloud_cu .EQ. 2 ) THEN
              CALL wrf_debug (1, 'use kf cldfra')
              DO j = jts,jte
              DO k = kts,kte
              DO i = its,ite
-                cldfra_cu(i,k,j)=cldfra_dp(i,k,j)+cldfra_sh(i,k,j)  ! Cu cloud fraction
+                cldfra_cu(i,k,j)=cldfra_dp(i,k,j)+cldfra_sh(i,k,j) ! Cu cloud fraction
                 CLDFRA(i,k,j)=(1.-cldfra_cu(i,k,j))*CLDFRA(i,k,j)  ! Update resolved cloud fraction for Cu punch-through
                 CLDFRA(i,k,j)=CLDFRA(i,k,j)+cldfra_cu(i,k,j)       ! New total cloud fraction
                 CLDFRA(i,k,j)=AMIN1(1.0,CLDFRA(i,k,j))
-!wrf-team
                 qc_save(i,k,j)=qc(i,k,j)
-                qc(i,k,j) = qc(i,k,j)+qc_adjust(i,k,j)*cldfra_cu(i,k,j)
+                qc(i,k,j) = qc(i,k,j)+qc_cu(i,k,j)*cldfra_cu(i,k,j)
                 qi_save(i,k,j)=qi(i,k,j)
-                qi(i,k,j) = qi(i,k,j)+qi_adjust(i,k,j)*cldfra_cu(i,k,j)
+                qi(i,k,j) = qi(i,k,j)+qi_cu(i,k,j)*cldfra_cu(i,k,j)
              ENDDO
              ENDDO
              ENDDO
@@ -1030,7 +1040,7 @@ CONTAINS
 
      IF ( PRESENT ( CLDFRA ) .AND.                           &
           PRESENT(F_QC) .AND. PRESENT ( F_QI ) ) THEN
-       CALL cal_cldfra(CLDFRA,qc,qi,F_QC,F_QI,               &
+       CALL cal_cldfra2(CLDFRA,qc,qi,F_QC,F_QI,              &
                        ids,ide, jds,jde, kds,kde,            &
                        ims,ime, jms,jme, kms,kme,            &
                        its,ite, jts,jte, kts,kte             )
@@ -1273,6 +1283,11 @@ CONTAINS
                   P8W=p8w,P3D=p,PI3D=pi,DZ8W=dz8w,TSK=tsk,T3D=t,    &
                   T8W=t8w,RHO3D=rho,R=R_d,G=G,                      &
                   ICLOUD=icloud,WARM_RAIN=warm_rain,CLDFRA3D=CLDFRA,&
+#if (EM_CORE == 1)
+                  LRADIUS=lradius, IRADIUS=iradius,                 &
+#endif
+                  IS_CAMMGMP_USED=is_cammgmp_used,                  &
+
 !ckay
 !                 CLDFRA_KF3D=cldfra_KF,QC_KF3D=qc_KF,QI_KF3D=qi_KF,&
                   F_ICE_PHY=F_ICE_PHY,F_RAIN_PHY=F_RAIN_PHY,        &
@@ -1612,7 +1627,12 @@ CONTAINS
                      COSZR=COSZR,JULDAY=JULDAY,SOLCON=SOLCON,          &
                      ALBEDO=ALBEDO,t3d=t,t8w=t8w,TSK=TSK,              &
                      p3d=p,p8w=p8w,pi3d=pi,rho3d=rho,                  &
-                     dz8w=dz8w,CLDFRA3D=CLDFRA,R=R_D,G=G,              &
+                     dz8w=dz8w,CLDFRA3D=CLDFRA,                        &
+#if (EM_CORE == 1)
+                     LRADIUS=lradius, IRADIUS=iradius,                 &
+#endif
+                     IS_CAMMGMP_USED=is_cammgmp_used,                  &
+                     R=R_D,G=G,              &
 !ckay
 !                    CLDFRA_KF3D=cldfra_KF,QC_KF3D=qc_KF,QI_KF3D=qi_KF,&
                      ICLOUD=icloud,WARM_RAIN=warm_rain,                &
@@ -1789,7 +1809,7 @@ CONTAINS
                  kt=swdown(i,j)/max(ioh,1e-3) ! clearness index
                  ! Optical air mass: Rigollier et al. (2000) doi: 10.1016/S0038-092X(99)00055-9
                  airmass=exp(-ht(i,j)/8434.5)/(coszen(i,j)+ &
-                        0.50572*((1.5707963267948966-acos(coszen(i,j)))*57.295779513082323+6.07995)**-1.6364)
+                        0.50572*(asin(coszen(i,j))*57.295779513082323+6.07995)**(-1.6364))
                  ! kt correction for air-mass at large sza: Perez et al. (1990) doi: 10.1016/0038-092X(90)90036-C
                  kt=kt/(0.1+1.031*exp(-1.4/(0.9+(9.4/max(airmass,1e-3)))))
                  ! Diffuse fraction: Ruiz-Arias et al. (2010) (Eq 33) doi: 10.1016/j.enconman.2009.11.024
@@ -1802,8 +1822,8 @@ CONTAINS
         end do
      end if
 
-       IF ( PRESENT( qc  ) .AND. PRESENT( qc_adjust ) ) THEN 
-           IF ( cu_rad_feedback .OR. icloud_cu .EQ. 2 ) THEN
+       IF ( PRESENT( qc  ) .AND. PRESENT( qc_cu ) ) THEN 
+           IF ( icloud_cu .NE. 0 ) THEN
            DO j=jts,jte
            DO k=kts,kte
            DO i=its,ite
@@ -1813,8 +1833,8 @@ CONTAINS
            ENDDO
            ENDIF
         ENDIF
-        IF ( PRESENT( qi  ) .AND. PRESENT( qi_adjust ) ) THEN
-           IF ( cu_rad_feedback .OR. icloud_cu .EQ. 2 ) THEN
+        IF ( PRESENT( qi  ) .AND. PRESENT( qi_cu ) ) THEN
+           IF ( icloud_cu .NE. 0 ) THEN
            DO j=jts,jte
            DO k=kts,kte
            DO i=its,ite
@@ -2311,9 +2331,9 @@ CONTAINS
 
 !---------------------------------------------------------------------
 !BOP
-! !IROUTINE: cal_cldfra - Compute cloud fraction
+! !IROUTINE: cal_cldfra2 - Compute cloud fraction
 ! !INTERFACE:
-   SUBROUTINE cal_cldfra(CLDFRA,QC,QI,F_QC,F_QI,                     &
+   SUBROUTINE cal_cldfra2(CLDFRA,QC,QI,F_QC,F_QI,                    &
           ids,ide, jds,jde, kds,kde,                                 &
           ims,ime, jms,jme, kms,kme,                                 &
           its,ite, jts,jte, kts,kte                                  )
@@ -2387,10 +2407,10 @@ CONTAINS
         ENDDO
      ENDIF
 
-   END SUBROUTINE cal_cldfra
+   END SUBROUTINE cal_cldfra2
 
 !BOP
-! !IROUTINE: cal_cldfra2 - Compute cloud fraction
+! !IROUTINE: cal_cldfra1 - Compute cloud fraction
 ! !INTERFACE:
 ! cal_cldfra_xr - Compute cloud fraction.
 ! Code adapted from that in module_ra_gfdleta.F in WRF_v2.0.3 by James Done
@@ -2399,7 +2419,7 @@ CONTAINS
 !!     (see Hong et al., 1998)
 !!     (modified by Ferrier, Feb '02)
 !
-   SUBROUTINE cal_cldfra2(CLDFRA, QV, QC, QI, QS,                     &
+   SUBROUTINE cal_cldfra1(CLDFRA, QV, QC, QI, QS,                     &
                          F_QV, F_QC, F_QI, F_QS, t_phy, p_phy,       &
                          F_ICE_PHY,F_RAIN_PHY,                       &
           ids,ide, jds,jde, kds,kde,                                 &
@@ -2591,7 +2611,7 @@ CONTAINS
     ENDDO          !--- End DO k
     ENDDO          !--- End DO j
 
-   END SUBROUTINE cal_cldfra2
+   END SUBROUTINE cal_cldfra1
 
 
    SUBROUTINE toposhad_init(ht_shad,ht_loc,shadowmask,nested,iter,   &

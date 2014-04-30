@@ -1,4 +1,13 @@
 README for wind turbine drag parameterization schemes, added 20101220.  JM
+       The code was modified to introduce the power curve and the thrust
+       coefficient using tables. The parameterization is activated in the
+       physics part of the namelist. 
+ NOTE: For V3.6 (April 2014) the namelist options and idealized set-up
+       have been changed. Further description below and in README.namelist.
+       The scheme is now activated with windfarm_opt = 1 in the physics namelist.
+
+
+*Specific note for the Fitch scheme.*
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! NOTICE
@@ -10,104 +19,97 @@ README for wind turbine drag parameterization schemes, added 20101220.  JM
 !! Anna C. Fitch, National Center for Atmospheric Research (formerly University of Bergen)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-Represents kinetic energy extracted by wind turbines and turbulence
-(TKE) they produce at model levels within the rotor area. The thrust and
-power coefficient curves included to calculate the momentum sink and source of TKE are 
-generic and an approximation to a real turbine. These coefficients should be
-obtained from the turbine manufacturer for the turbines of interest and incorporated
-into the code in subroutine dragcof (we could not include real curves since they
-are proprietary).
+The Fitch scheme is based on Blahak et al. (2010) of Wetter Jetzt GbR.
+It differs in that the kinetic energy (KE) extracted is based on the
+thrust coefficient of the turbine (representing the total fraction of KE extracted
+from the atmosphere due to the turbine), rather than the power coefficient plus an
+estimated loss factor.  In addition the TKE generated is a function of wind speed.
+The thrust coefficients and the power curve should be obtained from the turbine manufacturer
+for the turbines of interest and incorporated into a table as described below.
+If you do not have access to these data an idealized wind turbine is provided in this
+release (./run/wind-turbine-1.tbl). It is strongly recomended to use the data from the manufacturer.
+The parameterization works with the MYNN PBL and modifies the QKE field representing 2xTKE
+to include the TKE produced by wind turbines. QKE can be advected as a part
+of the scalar 4D tracer array in WRF using the bl_mynn_tkeadvect switch for each domain (default =.false.)
+
+It is not recommended to run the parameterization at resolutions higher than 5 rotor diameters -
+at this resolution rotation of the rotor blades should be included (not represented in the current
+model).  See 1st reference below and Wu and Porte-Agel (2011) and Porte-Agel et al. (2011).
+
+The specific implementation comes from Anna Fitch, Alok Gupta, and Idar Barstad at Uni Bergen,
+Norway.  It was added to this release of WRF by Jimy Dudhia, Joe Olson
+(NOAA), Julie Lundquist (U. Colorado/NREL), and John Michalakes (NREL).
+Further development comes from Pedro A. Jimenez (CIEMAT/NCAR) who introduced the capability
+of introducing the manufacturer information via user specified tables as well as other functionalities.
 
 References:
 Fitch, A. C. et al. 2012: Local and Mesoscale Impacts of Wind Farms as Parameterized in a
-Mesoscale NWP Model. Monthly Weather Review, doi:http://dx.doi.org/10.1175/MWR-D-11-00352.1
+  Mesoscale NWP Model. Monthly Weather Review, doi:http://dx.doi.org/10.1175/MWR-D-11-00352.1
 Fitch, A. C. et al. 2013: Mesoscale Influences of Wind Farms Throughout a Diurnal Cycle.
-Monthly Weather Review, doi:http://dx.doi.org/10.1175/MWR-D-12-00185.1
+  Monthly Weather Review, doi:http://dx.doi.org/10.1175/MWR-D-12-00185.1
 Fitch, A. C. et al. 2013: Parameterization of Wind Farms in Climate Models.
-Journal of Climate, doi:http://dx.doi.org/10.1175/JCLI-D-12-00376.1
+  Journal of Climate, doi:http://dx.doi.org/10.1175/JCLI-D-12-00376.1
+Jimenez, P.A., J. Navarro, A.M. Palomares and J. Dudhia:  Mesoscale modeling of offshore
+  wind turbines wakes at the wind farm resolving scale: a composite-based analysis with
+  the WRF model over Horns Rev. Wind Energy, (In Press.). DOI: 10.1002/we.1708
 
 *Compiling the code.* no different from normal
 
-*Running the code.*  There are new variables added to the phys block of
-the namelist.input file.  The string valued variable windturbines_spec
-controls the overall operation of the scheme.  If it's set to "none"
-(quotes included) the wind turbine scheme is off.  If it's set to
-"ideal",  the turbine drag scheme is in idealized mode and other namelist
-variables in the block control the geometry and characteristics of the
-wind farm.  If it's set to the name of a file in the run directory --
-for example, "windspec.in" -- then the scheme is on and the location and
-characteristics of each turbine is set individually from the contents of
-that file.  Which scheme is active will be controlled by another variable
-TBD (not yet implemented, since there's only one scheme right now).
+*Running the code*  To activate the parameterization the user needs
+to set the domain dependent variable windfarm_opt to 1 in the physics part of the
+namelist. WRF is expected to find a file called "windturbines.txt". Each line of
+the file specifies one turbine. The entries of a line are separated by spaces.
+The entries are listed in order on the line and specify the following,
+by position on the line:
 
-*Idealized configuration.* If windturbines_spec is set to "ideal", the
-geometry and characteristics of the farm are controlled by the following
-additional variables in the phys block of the namelist.input file:
+     1. True latitude of the wind turbine in degrees   [real]
+     2. True longitude of the wind turbine in degrees  [real]
+     3. Turbine type [integer]
 
- name        type     sample description
-                      value
- turbgridid  integer   1     id of the WRF domain containing the farm
- hubheight   real     100.   height in meters of all turbine hubs in farm
- diameter    real     100.   diameter in meters of all turbine rotors in farm
- stdthrcoef  real     0.158  standing thrust coefficient of all turbines in farm
- cutinspeed  real     3.5    cut in speed (m/s) of all turbines in farm
- cutoutspeed real     30.    cut out speed (m/s) of all turbines in farm
- power       real     5.0    nominal power (MW) of all turbines in farm
- turbpercell real     1.0    number of turbines per grid cell
- ewfx        integer  10     x-extent of rectangular wind farm in grid cells
- ewfy        integer  10     y-extent of rectangular wind farm in grid cells
- pwfx        integer  45     x-coordinate of grid cell in sw corner of farm
- pwfy        integer  45     y-coordinate of grid cell in sw corner of farm
-
-
-*Real-world configuration.*  The location and characteristics of each
-turbine is specified individually in the file named by the variable
-windturbines_spec.  Each line of the file specifies one turbine.
-The entries of a line are separated by spaces.  The entries are listed
-in order on the line and specify the following, by position on the line:
-
-     1. The WRF grid id into which the turbine is placed [integer]
-     2. True latitude of the wind turbine in degrees   [real]
-     3. True longitude of the wind turbine in degrees  [real]
-     4. Height in meters of the turbine hub [real]
-     5. Diameter in meters of the rotor     [real]
-     6. Standing thrust coefficient         [real]
-     7. Nominal power of turbine (MW)       [real]
-     8. Cutin speed (m/s) [real]
-     9. Cutout speed (m/s) [real]
+For example:
+ 55.574051 6.883480 1
+ 55.569066 6.884697 1 
+ 30.000000 -77.000000 1
 
 The location of each turbine is specified using the lat and lon elements
-for the turbine's entry in the windspec file.  That is, the i,j index
-in the grid is computed from the true latitude (entry 2) and the true
-longitude (entry 3).  The coordinate in the j dimension is computed by
-checking true latitude against the LAT_V field in the wrfinput initial
-conditions file.  The i dimension is computed by checking the true
-longitude against LONG_U field in the wrfinput file.
+for the turbine's entry in the windturbines.txt file. That is, the i, j index
+in the grid is computed from the true latitude (entry 1) and the true
+longitude (entry 2). The type of turbine (entry 3) points to the file that
+ contains the turbine specifications. If the turbine type is set to 1, WRF is expecting
+to find the file wind-turbine-1.tbl. The first line of the table is an integer,
+ N, indicating the number of pairs entries for the power curve and the
+thrust coefficient; the second line contains 4 real values specifying the
+ characteristics of the turbine:
+
+1.- Height in meters of the turbine hub [real]
+2.- Diameter in meters of the rotor [real]
+3.- Standing thrust coefficient [real]
+4.- Nominal power of turbine (MW) [real]
+
+ and the following N lines contain 3 real values with the
+ wind speed, thrust coefficient and power production (kW).
+
+ For example:
+
+23
+80. 85. 0.1 2.0
+3.    0.7     80.      |
+4.    0.75   150.      |
+.....                  |
+                       |  23 lines
+.....                  |
+25.   0.05   2000.0    |
 
 *Pseudo-real configuration.*  This mode is only for testing the real-world
-specification mechanism.  The contents of the windspec.in file in the
-em_seabreeze2d_x directory contains a specification that is identical
-to the ideal specification shown above.  However, instead of true
-latitude and true longitude, elements 2 and 3 of each entry specify
-the i,j grid coordinates of the turbine.  The code knows to treat
-these as grid coordinates instead of latitude and longitude because
-for idealized WRF cases, the LAT and LONG fields in wrfinput files are
-set to all zero.  When the model reads a wrfinput file for an idealized
-case, it checks to see if the lat and lon fields of the case have data
-in them or if they are just zeros.  If they do not have data in them
-(just have zeros) fields 2 and 3 of the windspec file are treated as i,j
-coordinates are used.  A sample windspec file for a pseudo-real run is
-in test/em_seabreeze2d_x/windspec.in).
+specification mechanism. This option allows to define the position of the
+turbines using the i and j coordinates on the grid instead of the latitude
+and longitude. To activate this option the user needs to set the variable
+windfarm_ij to 1 in the physics part of the namelist. WRF is expecting to
+find a file "windturbines-ij.txt". Each line of the file is associated with
+a turbine and each line has three columns corresponding to the I (entry 1), J
+ (entry 2) and kind of turbine (entry 3).
 
-*Specific note for the Fitch scheme.*  The Fitch scheme is based on
-Blahak et al, 2010, of Wetter Jetzt GbR.  It differs in that the kinetic
-energy (KE) extracted is based on the thrust coefficient of the turbine (representing
-the total fraction of KE extracted from the atmosphere due to the turbine), rather
-than the power coefficient plus an estimated loss factor.  In addition the TKE
-generated is a function of wind speed.  The specific implementation
-comes from Anna Fitch, Alok Gupta, and Idar Barstad at Uni Bergen,
-Norway.  It was added to this release of WRF by Jimy Dudhia, Joe Olson
-(NOAA), Julie Lundquist (U. Colorado/NREL), and John Michalakes (NREL).
-It works with the MYNN PBL and modifies the QKE field representing 2xTKE
-to include the TKE produced by wind turbines. QKE is advected as a part
-of the scalar 4D tracer array in WRF.
+For example:
+10   10   1
+10   10   1
+10   11   1

@@ -166,14 +166,16 @@ state  real limit_rei_cu   ij misc      1    -   h6    "LIMIT_REI_CU"  "limit_re
 state  real ind_delcin_cu  ij misc      1    -   h6    "IND_DELCIN_CU" "ind_delcin_cu"                                                  ""
 
 #CAMMGMP
-state    real  rh_old_mp       ikj      misc        1         -      r        "RH_OLD_MP"             "previous time level RH for CAMMGMP microphysics"                          ""
-state    real  lcd_old_mp      ikj      misc        1         -      r        "LCD_OLD_MP"            "previous time level liquid cldfra for CAMMGMP microphysics"                    ""
-state    real  CLDFRA_OLD_MP   ikj      misc        1         -      r        "CLDFRA_OLD_MP"         "previous time level cldfra for CAMMGMP microphysics"                          ""
-state    real  CLDFRA_MP       ikj      misc        1         -      rh       "CLDFRA_MP"             "current time level cldfra for CAMMGMP microphysics"                          ""
-state    real  CLDFRA_MP_ALL   ikj      misc        1         -      rh       "CLDFRA_MP_ALL"         "current time level cldfra for CAMMGMP microphysics"                          ""
-state    real  CLDFRA_CONV     ikj      misc        1         -      rh       "CLDFRA_CONV"           "current time level cldfra for CAMMGMP microphysics"                          ""
-state    real  CLDFRAI         ikj      misc        1         -      rh       "CLDFRAI"               "current time level cldfrai for CAMMGMP microphysics"                          ""
-state    real  CLDFRAL         ikj      misc        1         -      rh       "CLDFRAL"               "current time level cldfral for CAMMGMP microphysics"                          ""
+state    real  rh_old_mp       ikj      misc        1         -      r        "RH_OLD_MP"             "previous time level RH for CAMMGMP microphysics"                         ""
+state    real  lcd_old_mp      ikj      misc        1         -      r        "LCD_OLD_MP"            "previous time level liquid cldfra for CAMMGMP microphysics"              ""
+state    real  CLDFRA_OLD_MP   ikj      misc        1         -      r        "CLDFRA_OLD_MP"         "previous time level cldfra for CAMMGMP microphysics"                     ""
+state    real  CLDFRA_MP       ikj      misc        1         -      rh       "CLDFRA_MP"             "current time level cldfra for CAMMGMP microphysics"                      ""
+state    real  CLDFRA_MP_ALL   ikj      misc        1         -      rh       "CLDFRA_MP_ALL"         "current time level cldfra for CAMMGMP microphysics"                      ""
+state    real  IRADIUS         ikj      misc        1         -      rh       "IRADIUS"               "effective radius of ice condensate"                                      ""
+state    real  LRADIUS         ikj      misc        1         -      rh       "LRADIUS"               "effective radius of liquid condensate"                                   ""
+state    real  CLDFRA_CONV     ikj      misc        1         -      rh       "CLDFRA_CONV"           "current time level cldfra for CAMMGMP microphysics"                      ""
+state    real  CLDFRAI         ikj      misc        1         -      rh       "CLDFRAI"               "current time level cldfrai for CAMMGMP microphysics"                     ""
+state    real  CLDFRAL         ikj      misc        1         -      rh       "CLDFRAL"               "current time level cldfral for CAMMGMP microphysics"                     ""
 state    logical is_CAMMGMP_used -      misc        -         -      r        "is_CAMMGMP_used"       ""
 
 ifdef BUILD_CHEM=1
@@ -186,6 +188,15 @@ state    real  NEVAPR3D        ikj        misc      1         -      r        "N
 state    real  RATE1ORD_CW2PR_ST3D ikj    misc      1         -      r        "RATE1ORD_CW2PR_ST3D"    "1st order rate for direct conversion of strat. cloud water to precip" "1/s"
 state    real  dvmrdt_sv13d    ikj{nspecmam} misc   1         -      r        "DVMRDT_SV13D"           "Volume mixing ration tendency for interstitial aerosols" ""
 state    real  dvmrcwdt_sv13d  ikj{nspecmam} misc   1         -      r        "DVMCWRDT_SV13D"         "Volume mixing ration tendency for cloud borne aerosols" ""
+
+# MAM chemistry interactions with cloud microphysics requires dgnum to be saved in restart files for each mode.
+# 4D DGNUM4D is not saved correctly, so use these as a workaround.
+state    real  dgnum_a1        ikj       misc       1         -      r        "DG_NUM_A1"              "Accum. mode mean diameter"      ""
+state    real  dgnum_a2        ikj       misc       1         -      r        "DG_NUM_A2"              "Aitken mode mean diameter"      ""
+state    real  dgnum_a3        ikj       misc       1         -      r        "DG_NUM_A3"              "Coarse mode mean diameter"      ""
+state    real  dgnumwet_a1     ikj       misc       1         -      r        "DG_NUMWET_A1"           "Accum. mode mean diameter"      ""
+state    real  dgnumwet_a2     ikj       misc       1         -      r        "DG_NUMWET_A2"           "Aitken mode mean diameter"      ""
+state    real  dgnumwet_a3     ikj       misc       1         -      r        "DG_NUMWET_A3"           "Coarse mode mean diameter"      ""
 
 #CAM5's wet scavenging output variables
 state    real  FRACIS3D        ikj{nspecmam} misc   1         -      r        "FRACIS3D"               "fraction of transported species that are insoluble"    ""

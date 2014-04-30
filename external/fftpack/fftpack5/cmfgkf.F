@@ -1,172 +1,267 @@
-!CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-!                                                                       
-!   FFTPACK 5.0                                                         
-!                                                                       
-!   Authors:  Paul N. Swarztrauber and Richard A. Valent                
-!                                                                       
-!   $Id: cmfgkf.f,v 1.2 2004/06/15 21:08:32 rodney Exp $                
-!                                                                       
-!CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-                                                                        
-      SUBROUTINE CMFGKF (LOT,IDO,IP,L1,LID,NA,CC,CC1,IM1,IN1,           &
-     &                                      CH,CH1,IM2,IN2,WA)          
-      REAL       CH(2,IN2,L1,IDO,IP) ,CC(2,IN1,L1,IP,IDO),              &
-     &                CC1(2,IN1,LID,IP)    ,CH1(2,IN2,LID,IP)  ,        &
-     &                WA(IDO,IP-1,2)                                    
-!                                                                       
-! FFTPACK 5.0 auxiliary routine                                         
-!                                                                       
-      M1D = (LOT-1)*IM1+1 
-      M2S = 1-IM2 
-      IPP2 = IP+2 
-      IPPH = (IP+1)/2 
-      DO 110 KI=1,LID 
-         M2 = M2S 
-         DO 110 M1=1,M1D,IM1 
-         M2 = M2+IM2 
-         CH1(1,M2,KI,1) = CC1(1,M1,KI,1) 
-         CH1(2,M2,KI,1) = CC1(2,M1,KI,1) 
-  110 CONTINUE 
-      DO 111 J=2,IPPH 
-         JC = IPP2-J 
-         DO 112 KI=1,LID 
-         M2 = M2S 
-         DO 112 M1=1,M1D,IM1 
-         M2 = M2+IM2 
-            CH1(1,M2,KI,J) =  CC1(1,M1,KI,J)+CC1(1,M1,KI,JC) 
-            CH1(1,M2,KI,JC) = CC1(1,M1,KI,J)-CC1(1,M1,KI,JC) 
-            CH1(2,M2,KI,J) =  CC1(2,M1,KI,J)+CC1(2,M1,KI,JC) 
-            CH1(2,M2,KI,JC) = CC1(2,M1,KI,J)-CC1(2,M1,KI,JC) 
-  112    CONTINUE 
-  111 END DO 
-      DO 118 J=2,IPPH 
-         DO 117 KI=1,LID 
-         M2 = M2S 
-         DO 117 M1=1,M1D,IM1 
-         M2 = M2+IM2 
-            CC1(1,M1,KI,1) = CC1(1,M1,KI,1)+CH1(1,M2,KI,J) 
-            CC1(2,M1,KI,1) = CC1(2,M1,KI,1)+CH1(2,M2,KI,J) 
-  117    CONTINUE 
-  118 END DO 
-      DO 116 L=2,IPPH 
-         LC = IPP2-L 
-         DO 113 KI=1,LID 
-         M2 = M2S 
-         DO 113 M1=1,M1D,IM1 
-         M2 = M2+IM2 
-            CC1(1,M1,KI,L) = CH1(1,M2,KI,1)+WA(1,L-1,1)*CH1(1,M2,KI,2) 
-            CC1(1,M1,KI,LC) = -WA(1,L-1,2)*CH1(1,M2,KI,IP) 
-            CC1(2,M1,KI,L) = CH1(2,M2,KI,1)+WA(1,L-1,1)*CH1(2,M2,KI,2) 
-            CC1(2,M1,KI,LC) = -WA(1,L-1,2)*CH1(2,M2,KI,IP) 
-  113    CONTINUE 
-         DO 115 J=3,IPPH 
-            JC = IPP2-J 
-            IDLJ = MOD((L-1)*(J-1),IP) 
-            WAR = WA(1,IDLJ,1) 
-            WAI = -WA(1,IDLJ,2) 
-            DO 114 KI=1,LID 
-               M2 = M2S 
-               DO 114 M1=1,M1D,IM1 
-               M2 = M2+IM2 
-               CC1(1,M1,KI,L) = CC1(1,M1,KI,L)+WAR*CH1(1,M2,KI,J) 
-               CC1(1,M1,KI,LC) = CC1(1,M1,KI,LC)+WAI*CH1(1,M2,KI,JC) 
-               CC1(2,M1,KI,L) = CC1(2,M1,KI,L)+WAR*CH1(2,M2,KI,J) 
-               CC1(2,M1,KI,LC) = CC1(2,M1,KI,LC)+WAI*CH1(2,M2,KI,JC) 
-  114       CONTINUE 
-  115    CONTINUE 
-  116 END DO 
-      IF (IDO .GT. 1) GO TO 136 
-      SN = 1./REAL(IP*L1) 
-      IF (NA .EQ. 1) GO TO 146 
-      DO 149 KI=1,LID 
-         M2 = M2S 
-         DO 149 M1=1,M1D,IM1 
-         M2 = M2+IM2 
-         CC1(1,M1,KI,1) = SN*CC1(1,M1,KI,1) 
-         CC1(2,M1,KI,1) = SN*CC1(2,M1,KI,1) 
-  149 CONTINUE 
-      DO 120 J=2,IPPH 
-         JC = IPP2-J 
-         DO 119 KI=1,LID 
-         DO 119 M1=1,M1D,IM1 
-            CHOLD1 = SN*(CC1(1,M1,KI,J)-CC1(2,M1,KI,JC)) 
-            CHOLD2 = SN*(CC1(1,M1,KI,J)+CC1(2,M1,KI,JC)) 
-            CC1(1,M1,KI,J) = CHOLD1 
-            CC1(2,M1,KI,JC) = SN*(CC1(2,M1,KI,J)-CC1(1,M1,KI,JC)) 
-            CC1(2,M1,KI,J) = SN*(CC1(2,M1,KI,J)+CC1(1,M1,KI,JC)) 
-            CC1(1,M1,KI,JC) = CHOLD2 
-  119    CONTINUE 
-  120 END DO 
-      RETURN 
-  146 DO 147 KI=1,LID 
-         M2 = M2S 
-         DO 147 M1=1,M1D,IM1 
-         M2 = M2+IM2 
-         CH1(1,M2,KI,1) = SN*CC1(1,M1,KI,1) 
-         CH1(2,M2,KI,1) = SN*CC1(2,M1,KI,1) 
-  147 CONTINUE 
-      DO 145 J=2,IPPH 
-         JC = IPP2-J 
-         DO 144 KI=1,LID 
-         M2 = M2S 
-         DO 144 M1=1,M1D,IM1 
-         M2 = M2+IM2 
-            CH1(1,M2,KI,J) = SN*(CC1(1,M1,KI,J)-CC1(2,M1,KI,JC)) 
-            CH1(2,M2,KI,J) = SN*(CC1(2,M1,KI,J)+CC1(1,M1,KI,JC)) 
-            CH1(1,M2,KI,JC) = SN*(CC1(1,M1,KI,J)+CC1(2,M1,KI,JC)) 
-            CH1(2,M2,KI,JC) = SN*(CC1(2,M1,KI,J)-CC1(1,M1,KI,JC)) 
-  144    CONTINUE 
-  145 END DO 
-      RETURN 
-  136 DO 137 KI=1,LID 
-         M2 = M2S 
-         DO 137 M1=1,M1D,IM1 
-         M2 = M2+IM2 
-         CH1(1,M2,KI,1) = CC1(1,M1,KI,1) 
-         CH1(2,M2,KI,1) = CC1(2,M1,KI,1) 
-  137 CONTINUE 
-      DO 135 J=2,IPPH 
-         JC = IPP2-J 
-         DO 134 KI=1,LID 
-         M2 = M2S 
-         DO 134 M1=1,M1D,IM1 
-         M2 = M2+IM2 
-            CH1(1,M2,KI,J) = CC1(1,M1,KI,J)-CC1(2,M1,KI,JC) 
-            CH1(2,M2,KI,J) = CC1(2,M1,KI,J)+CC1(1,M1,KI,JC) 
-            CH1(1,M2,KI,JC) = CC1(1,M1,KI,J)+CC1(2,M1,KI,JC) 
-            CH1(2,M2,KI,JC) = CC1(2,M1,KI,J)-CC1(1,M1,KI,JC) 
-  134    CONTINUE 
-  135 END DO 
-      DO 131 I=1,IDO 
-         DO 130 K=1,L1 
-         M2 = M2S 
-         DO 130 M1=1,M1D,IM1 
-         M2 = M2+IM2 
-            CC(1,M1,K,1,I) = CH(1,M2,K,I,1) 
-            CC(2,M1,K,1,I) = CH(2,M2,K,I,1) 
-  130    CONTINUE 
-  131 END DO 
-      DO 123 J=2,IP 
-         DO 122 K=1,L1 
-         M2 = M2S 
-         DO 122 M1=1,M1D,IM1 
-         M2 = M2+IM2 
-            CC(1,M1,K,J,1) = CH(1,M2,K,1,J) 
-            CC(2,M1,K,J,1) = CH(2,M2,K,1,J) 
-  122    CONTINUE 
-  123 END DO 
-      DO 126 J=2,IP 
-         DO 125 I=2,IDO 
-            DO 124 K=1,L1 
-               M2 = M2S 
-               DO 124 M1=1,M1D,IM1 
-               M2 = M2+IM2 
-               CC(1,M1,K,J,I) = WA(I,J-1,1)*CH(1,M2,K,I,J)              &
-     &                      +WA(I,J-1,2)*CH(2,M2,K,I,J)                 
-               CC(2,M1,K,J,I) = WA(I,J-1,1)*CH(2,M2,K,I,J)              &
-     &                      -WA(I,J-1,2)*CH(1,M2,K,I,J)                 
-  124       CONTINUE 
-  125    CONTINUE 
-  126 END DO 
-      RETURN 
-      END                                           
+subroutine cmfgkf ( lot, ido, ip, l1, lid, na, cc, cc1, im1, in1, &
+  ch, ch1, im2, in2, wa )
+
+!*****************************************************************************80
+!
+!! CMFGKF is an FFTPACK5 auxiliary routine.
+!
+!  License:
+!
+!    Licensed under the GNU General Public License (GPL).
+!    Copyright (C) 1995-2004, Scientific Computing Division,
+!    University Corporation for Atmospheric Research
+!
+!  Modified:
+!
+!    27 March 2009
+!
+!  Author:
+!
+!    Paul Swarztrauber
+!    Richard Valent
+!
+!  Reference:
+!
+!    Paul Swarztrauber,
+!    Vectorizing the Fast Fourier Transforms,
+!    in Parallel Computations,
+!    edited by G. Rodrigue,
+!    Academic Press, 1982.
+!
+!    Paul Swarztrauber,
+!    Fast Fourier Transform Algorithms for Vector Computers,
+!    Parallel Computing, pages 45-63, 1984.
+!
+!  Parameters:
+!
+  implicit none
+
+  integer ( kind = 4 ) ido
+  integer ( kind = 4 ) in1
+  integer ( kind = 4 ) in2
+  integer ( kind = 4 ) ip
+  integer ( kind = 4 ) l1
+  integer ( kind = 4 ) lid
+
+  real ( kind = 4 ) cc(2,in1,l1,ip,ido)
+  real ( kind = 4 ) cc1(2,in1,lid,ip)
+  real ( kind = 4 ) ch(2,in2,l1,ido,ip)
+  real ( kind = 4 ) ch1(2,in2,lid,ip)
+  real ( kind = 4 ) chold1
+  real ( kind = 4 ) chold2
+  integer ( kind = 4 ) i
+  integer ( kind = 4 ) idlj
+  integer ( kind = 4 ) im1
+  integer ( kind = 4 ) im2
+  integer ( kind = 4 ) ipp2
+  integer ( kind = 4 ) ipph
+  integer ( kind = 4 ) j
+  integer ( kind = 4 ) jc
+  integer ( kind = 4 ) k
+  integer ( kind = 4 ) ki
+  integer ( kind = 4 ) l
+  integer ( kind = 4 ) lc
+  integer ( kind = 4 ) lot
+  integer ( kind = 4 ) m1
+  integer ( kind = 4 ) m1d
+  integer ( kind = 4 ) m2
+  integer ( kind = 4 ) m2s
+  integer ( kind = 4 ) na
+  real ( kind = 4 ) sn
+  real ( kind = 4 ) wa(ido,ip-1,2)
+  real ( kind = 4 ) wai
+  real ( kind = 4 ) war
+
+  m1d = ( lot - 1 ) * im1 + 1
+  m2s = 1 - im2
+  ipp2 = ip + 2
+  ipph = ( ip + 1 ) / 2
+
+  do ki = 1, lid
+    m2 = m2s
+    do m1 = 1, m1d, im1
+      m2 = m2 + im2
+      ch1(1,m2,ki,1) = cc1(1,m1,ki,1)
+      ch1(2,m2,ki,1) = cc1(2,m1,ki,1)
+    end do
+  end do
+
+  do j = 2, ipph
+    jc = ipp2 - j
+    do ki = 1, lid
+      m2 = m2s
+      do m1 = 1, m1d, im1
+        m2 = m2 + im2
+        ch1(1,m2,ki,j) =  cc1(1,m1,ki,j) + cc1(1,m1,ki,jc)
+        ch1(1,m2,ki,jc) = cc1(1,m1,ki,j) - cc1(1,m1,ki,jc)
+        ch1(2,m2,ki,j) =  cc1(2,m1,ki,j) + cc1(2,m1,ki,jc)
+        ch1(2,m2,ki,jc) = cc1(2,m1,ki,j) - cc1(2,m1,ki,jc)
+      end do
+    end do
+  end do
+
+  do j = 2, ipph
+    do ki = 1, lid
+      m2 = m2s
+      do m1 = 1, m1d, im1
+        m2 = m2 + im2
+        cc1(1,m1,ki,1) = cc1(1,m1,ki,1) + ch1(1,m2,ki,j)
+        cc1(2,m1,ki,1) = cc1(2,m1,ki,1) + ch1(2,m2,ki,j)
+      end do
+    end do
+  end do
+
+  do l = 2, ipph
+
+    lc = ipp2 - l
+
+    do ki = 1, lid
+      m2 = m2s
+      do m1 = 1, m1d, im1
+        m2 = m2 + im2
+        cc1(1,m1,ki,l)  = ch1(1,m2,ki,1) + wa(1,l-1,1) * ch1(1,m2,ki,2)
+        cc1(1,m1,ki,lc) =                - wa(1,l-1,2) * ch1(1,m2,ki,ip)
+        cc1(2,m1,ki,l)  = ch1(2,m2,ki,1) + wa(1,l-1,1) * ch1(2,m2,ki,2)
+        cc1(2,m1,ki,lc) =                - wa(1,l-1,2) * ch1(2,m2,ki,ip)
+      end do
+    end do
+
+    do j = 3, ipph
+      jc = ipp2 - j
+      idlj = mod ( ( l - 1 ) * ( j - 1 ), ip )
+      war = wa(1,idlj,1)
+      wai = -wa(1,idlj,2)
+      do ki = 1, lid
+        m2 = m2s
+        do m1 = 1, m1d, im1
+          m2 = m2 + im2
+          cc1(1,m1,ki,l)  = cc1(1,m1,ki,l)  + war * ch1(1,m2,ki,j)
+          cc1(1,m1,ki,lc) = cc1(1,m1,ki,lc) + wai * ch1(1,m2,ki,jc)
+          cc1(2,m1,ki,l)  = cc1(2,m1,ki,l)  + war * ch1(2,m2,ki,j)
+          cc1(2,m1,ki,lc) = cc1(2,m1,ki,lc) + wai * ch1(2,m2,ki,jc)
+        end do
+      end do
+    end do
+
+  end do
+
+  if ( 1 < ido ) then
+
+    do ki = 1, lid
+      m2 = m2s
+      do m1 = 1, m1d, im1
+        m2 = m2 + im2
+        ch1(1,m2,ki,1) = cc1(1,m1,ki,1)
+        ch1(2,m2,ki,1) = cc1(2,m1,ki,1)
+      end do
+    end do
+
+    do j = 2, ipph
+      jc = ipp2 - j
+      do ki = 1, lid
+        m2 = m2s
+        do m1 = 1, m1d, im1
+          m2 = m2 + im2
+          ch1(1,m2,ki,j)  = cc1(1,m1,ki,j) - cc1(2,m1,ki,jc)
+          ch1(2,m2,ki,j)  = cc1(2,m1,ki,j) + cc1(1,m1,ki,jc)
+          ch1(1,m2,ki,jc) = cc1(1,m1,ki,j) + cc1(2,m1,ki,jc)
+          ch1(2,m2,ki,jc) = cc1(2,m1,ki,j) - cc1(1,m1,ki,jc)
+        end do
+      end do
+    end do
+
+    do i = 1, ido
+      do k = 1, l1
+        m2 = m2s
+        do m1 = 1, m1d, im1
+          m2 = m2 + im2
+          cc(1,m1,k,1,i) = ch(1,m2,k,i,1)
+          cc(2,m1,k,1,i) = ch(2,m2,k,i,1)
+        end do
+      end do
+    end do
+
+    do j = 2, ip
+      do k = 1, l1
+        m2 = m2s
+        do m1 = 1, m1d, im1
+          m2 = m2 + im2
+          cc(1,m1,k,j,1) = ch(1,m2,k,1,j)
+          cc(2,m1,k,j,1) = ch(2,m2,k,1,j)
+        end do
+      end do
+    end do
+
+    do j = 2, ip
+      do i = 2, ido
+        do k = 1, l1
+          m2 = m2s
+          do m1 = 1, m1d, im1
+            m2 = m2 + im2
+            cc(1,m1,k,j,i) = wa(i,j-1,1) * ch(1,m2,k,i,j) &
+                           + wa(i,j-1,2) * ch(2,m2,k,i,j)
+            cc(2,m1,k,j,i) = wa(i,j-1,1) * ch(2,m2,k,i,j) &
+                           - wa(i,j-1,2) * ch(1,m2,k,i,j)
+          end do
+        end do
+      end do
+    end do
+
+  else if ( na == 1 ) then
+
+    sn = 1.0E+00 / real ( ip * l1, kind = 4 )
+
+    do ki = 1, lid
+      m2 = m2s
+      do m1 = 1, m1d, im1
+        m2 = m2 + im2
+        ch1(1,m2,ki,1) = sn * cc1(1,m1,ki,1)
+        ch1(2,m2,ki,1) = sn * cc1(2,m1,ki,1)
+      end do
+    end do
+
+    do j = 2, ipph
+      jc = ipp2 - j
+      do ki = 1, lid
+        m2 = m2s
+        do m1 = 1, m1d, im1
+          m2 = m2 + im2
+          ch1(1,m2,ki,j)  = sn * ( cc1(1,m1,ki,j) - cc1(2,m1,ki,jc) )
+          ch1(2,m2,ki,j)  = sn * ( cc1(2,m1,ki,j) + cc1(1,m1,ki,jc) )
+          ch1(1,m2,ki,jc) = sn * ( cc1(1,m1,ki,j) + cc1(2,m1,ki,jc) )
+          ch1(2,m2,ki,jc) = sn * ( cc1(2,m1,ki,j) - cc1(1,m1,ki,jc) )
+        end do
+      end do
+    end do
+
+  else
+
+    sn = 1.0E+00 / real ( ip * l1, kind = 4 )
+
+    do ki = 1, lid
+      m2 = m2s
+      do m1 = 1, m1d, im1
+        m2 = m2 + im2
+        cc1(1,m1,ki,1) = sn * cc1(1,m1,ki,1)
+        cc1(2,m1,ki,1) = sn * cc1(2,m1,ki,1)
+      end do
+    end do
+
+    do j = 2, ipph
+      jc = ipp2 - j
+      do ki = 1, lid
+        do m1 = 1, m1d, im1
+          chold1 = sn * ( cc1(1,m1,ki,j) - cc1(2,m1,ki,jc) )
+          chold2 = sn * ( cc1(1,m1,ki,j) + cc1(2,m1,ki,jc) )
+          cc1(1,m1,ki,j) = chold1
+          cc1(2,m1,ki,jc) = sn * ( cc1(2,m1,ki,j) - cc1(1,m1,ki,jc) )
+          cc1(2,m1,ki,j)  = sn * ( cc1(2,m1,ki,j) + cc1(1,m1,ki,jc) )
+          cc1(1,m1,ki,jc) = chold2
+        end do
+      end do
+    end do
+
+  end if
+
+  return
+end

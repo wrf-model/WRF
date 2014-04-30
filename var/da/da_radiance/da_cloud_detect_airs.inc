@@ -263,11 +263,5 @@ REAL :: ZHOOK_HANDLE
 #endif
     end if  	    
     
-! print*,'ACD_CTP',iv%instid(isensor)%info%lon(1,n), iv%instid(isensor)%info%lat(1,n),&
-!                  iv%instid(isensor)%clwp(n), cldtoplevel, SUM(px(1:ndim-1)), &
-!		  zf/zf_clr, nit, IMODE
-! print*,'ACD_CLR_CLD',zf_clr,zf,px     
-! print*,'ACD: RADOVC',rad_ovc
-! print*,'ACD_RADOBS_RADCLR_RADCLD',rad_obs,rad_clr,rad_cld
  
 end subroutine da_cloud_detect_airs

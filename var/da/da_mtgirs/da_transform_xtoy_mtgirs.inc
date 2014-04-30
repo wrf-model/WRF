@@ -46,11 +46,11 @@ subroutine da_transform_xtoy_mtgirs (grid, iv, y)
 
    do n=iv%info(mtgirs)%n1,iv%info(mtgirs)%n2
       do k = 1, iv%info(mtgirs)%levels(n)
-         if(.not. var_wind) then
+         if(wind_sd_mtgirs) then
+            call da_uv_to_sd_lin(y%mtgirs(n)%u(k),y%mtgirs(n)%v(k),u(k,n),v(k,n),ub(k,n),vb(k,n))
+         else
             y%mtgirs(n)%u(k) = u(k,n)
             y%mtgirs(n)%v(k) = v(k,n)
-         else
-            call da_uv_wind_tgl(y%mtgirs(n)%u(k),y%mtgirs(n)%v(k),u(k,n),v(k,n),ub(k,n),vb(k,n))
          end if
       end do
       y%mtgirs(n)%t(:) = t(1:size(y%mtgirs(n)%t),n)

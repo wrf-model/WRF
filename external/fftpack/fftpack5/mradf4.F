@@ -1,90 +1,150 @@
-!CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-!                                                                       
-!   FFTPACK 5.0                                                         
-!                                                                       
-!   Authors:  Paul N. Swarztrauber and Richard A. Valent                
-!                                                                       
-!   $Id: mradf4.f,v 1.2 2004/06/15 21:29:20 rodney Exp $                
-!                                                                       
-!CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-                                                                        
-      SUBROUTINE MRADF4 (M,IDO,L1,CC,IM1,IN1,CH,IM2,IN2,WA1,WA2,WA3) 
-      REAL       CC(IN1,IDO,L1,4)   ,CH(IN2,IDO,4,L1)     ,             &
-     &           WA1(IDO)           ,WA2(IDO)     ,WA3(IDO)             
-!                                                                       
-      HSQT2=SQRT(2.)/2. 
-      M1D = (M-1)*IM1+1 
-      M2S = 1-IM2 
-      DO 101 K=1,L1 
-         M2 = M2S 
-         DO 1001 M1=1,M1D,IM1 
-         M2 = M2+IM2 
-         CH(M2,1,1,K) = (CC(M1,1,K,2)+CC(M1,1,K,4))                     &
-     &      +(CC(M1,1,K,1)+CC(M1,1,K,3))                                
-         CH(M2,IDO,4,K) = (CC(M1,1,K,1)+CC(M1,1,K,3))                   &
-     &      -(CC(M1,1,K,2)+CC(M1,1,K,4))                                
-         CH(M2,IDO,2,K) = CC(M1,1,K,1)-CC(M1,1,K,3) 
-         CH(M2,1,3,K) = CC(M1,1,K,4)-CC(M1,1,K,2) 
- 1001    CONTINUE 
-  101 END DO 
-      IF (IDO-2) 107,105,102 
-  102 IDP2 = IDO+2 
-      DO 104 K=1,L1 
-         DO 103 I=3,IDO,2 
-            IC = IDP2-I 
-            M2 = M2S 
-            DO 1003 M1=1,M1D,IM1 
-            M2 = M2+IM2 
-            CH(M2,I-1,1,K) = ((WA1(I-2)*CC(M1,I-1,K,2)+WA1(I-1)*        &
-     &       CC(M1,I,K,2))+(WA3(I-2)*CC(M1,I-1,K,4)+WA3(I-1)*           &
-     &       CC(M1,I,K,4)))+(CC(M1,I-1,K,1)+(WA2(I-2)*CC(M1,I-1,K,3)+   &
-     &       WA2(I-1)*CC(M1,I,K,3)))                                    
-            CH(M2,IC-1,4,K) = (CC(M1,I-1,K,1)+(WA2(I-2)*CC(M1,I-1,K,3)+ &
-     &       WA2(I-1)*CC(M1,I,K,3)))-((WA1(I-2)*CC(M1,I-1,K,2)+         &
-     &       WA1(I-1)*CC(M1,I,K,2))+(WA3(I-2)*CC(M1,I-1,K,4)+           &
-     &       WA3(I-1)*CC(M1,I,K,4)))                                    
-            CH(M2,I,1,K) = ((WA1(I-2)*CC(M1,I,K,2)-WA1(I-1)*            &
-     &       CC(M1,I-1,K,2))+(WA3(I-2)*CC(M1,I,K,4)-WA3(I-1)*           &
-     &       CC(M1,I-1,K,4)))+(CC(M1,I,K,1)+(WA2(I-2)*CC(M1,I,K,3)-     &
-     &       WA2(I-1)*CC(M1,I-1,K,3)))                                  
-            CH(M2,IC,4,K) = ((WA1(I-2)*CC(M1,I,K,2)-WA1(I-1)*           &
-     &       CC(M1,I-1,K,2))+(WA3(I-2)*CC(M1,I,K,4)-WA3(I-1)*           &
-     &       CC(M1,I-1,K,4)))-(CC(M1,I,K,1)+(WA2(I-2)*CC(M1,I,K,3)-     &
-     &       WA2(I-1)*CC(M1,I-1,K,3)))                                  
-            CH(M2,I-1,3,K) = ((WA1(I-2)*CC(M1,I,K,2)-WA1(I-1)*          &
-     &       CC(M1,I-1,K,2))-(WA3(I-2)*CC(M1,I,K,4)-WA3(I-1)*           &
-     &       CC(M1,I-1,K,4)))+(CC(M1,I-1,K,1)-(WA2(I-2)*CC(M1,I-1,K,3)+ &
-     &       WA2(I-1)*CC(M1,I,K,3)))                                    
-            CH(M2,IC-1,2,K) = (CC(M1,I-1,K,1)-(WA2(I-2)*CC(M1,I-1,K,3)+ &
-     &       WA2(I-1)*CC(M1,I,K,3)))-((WA1(I-2)*CC(M1,I,K,2)-WA1(I-1)*  &
-     &       CC(M1,I-1,K,2))-(WA3(I-2)*CC(M1,I,K,4)-WA3(I-1)*           &
-     &       CC(M1,I-1,K,4)))                                           
-            CH(M2,I,3,K) = ((WA3(I-2)*CC(M1,I-1,K,4)+WA3(I-1)*          &
-     &       CC(M1,I,K,4))-(WA1(I-2)*CC(M1,I-1,K,2)+WA1(I-1)*           &
-     &       CC(M1,I,K,2)))+(CC(M1,I,K,1)-(WA2(I-2)*CC(M1,I,K,3)-       &
-     &       WA2(I-1)*CC(M1,I-1,K,3)))                                  
-            CH(M2,IC,2,K) = ((WA3(I-2)*CC(M1,I-1,K,4)+WA3(I-1)*         &
-     &       CC(M1,I,K,4))-(WA1(I-2)*CC(M1,I-1,K,2)+WA1(I-1)*           &
-     &       CC(M1,I,K,2)))-(CC(M1,I,K,1)-(WA2(I-2)*CC(M1,I,K,3)-       &
-     &       WA2(I-1)*CC(M1,I-1,K,3)))                                  
- 1003       CONTINUE 
-  103    CONTINUE 
-  104 END DO 
-      IF (MOD(IDO,2) .EQ. 1) RETURN 
-  105 CONTINUE 
-      DO 106 K=1,L1 
-         M2 = M2S 
-         DO 1006 M1=1,M1D,IM1 
-            M2 = M2+IM2 
-            CH(M2,IDO,1,K) = (HSQT2*(CC(M1,IDO,K,2)-CC(M1,IDO,K,4)))+   &
-     &       CC(M1,IDO,K,1)                                             
-            CH(M2,IDO,3,K) = CC(M1,IDO,K,1)-(HSQT2*(CC(M1,IDO,K,2)-     &
-     &       CC(M1,IDO,K,4)))                                           
-            CH(M2,1,2,K) = (-HSQT2*(CC(M1,IDO,K,2)+CC(M1,IDO,K,4)))-    &
-     &       CC(M1,IDO,K,3)                                             
-            CH(M2,1,4,K) = (-HSQT2*(CC(M1,IDO,K,2)+CC(M1,IDO,K,4)))+    &
-     &       CC(M1,IDO,K,3)                                             
- 1006    CONTINUE 
-  106 END DO 
-  107 RETURN 
-      END                                           
+subroutine mradf4 ( m, ido, l1, cc, im1, in1, ch, im2, in2, wa1, wa2, wa3 )
+
+!*****************************************************************************80
+!
+!! MRADF4 is an FFTPACK5 auxiliary routine.
+!
+!  License:
+!
+!    Licensed under the GNU General Public License (GPL).
+!    Copyright (C) 1995-2004, Scientific Computing Division,
+!    University Corporation for Atmospheric Research
+!
+!  Modified:
+!
+!    27 March 2009
+!
+!  Author:
+!
+!    Paul Swarztrauber
+!    Richard Valent
+!
+!  Reference:
+!
+!    Paul Swarztrauber,
+!    Vectorizing the Fast Fourier Transforms,
+!    in Parallel Computations,
+!    edited by G. Rodrigue,
+!    Academic Press, 1982.
+!
+!    Paul Swarztrauber,
+!    Fast Fourier Transform Algorithms for Vector Computers,
+!    Parallel Computing, pages 45-63, 1984.
+!
+!  Parameters:
+!
+  implicit none
+
+  integer ( kind = 4 ) ido
+  integer ( kind = 4 ) in1
+  integer ( kind = 4 ) in2
+  integer ( kind = 4 ) l1
+
+  real ( kind = 4 ) cc(in1,ido,l1,4)
+  real ( kind = 4 ) ch(in2,ido,4,l1)
+  real ( kind = 4 ) hsqt2
+  integer ( kind = 4 ) i
+  integer ( kind = 4 ) ic
+  integer ( kind = 4 ) idp2
+  integer ( kind = 4 ) im1
+  integer ( kind = 4 ) im2
+  integer ( kind = 4 ) k
+  integer ( kind = 4 ) m
+  integer ( kind = 4 ) m1
+  integer ( kind = 4 ) m1d
+  integer ( kind = 4 ) m2
+  integer ( kind = 4 ) m2s
+  real ( kind = 4 ) wa1(ido)
+  real ( kind = 4 ) wa2(ido)
+  real ( kind = 4 ) wa3(ido)
+
+  hsqt2 = sqrt ( 2.0E+00 ) / 2.0E+00
+  m1d = ( m - 1 ) * im1 + 1
+  m2s = 1 - im2
+
+  do k = 1, l1
+    m2 = m2s
+    do m1 = 1, m1d, im1
+      m2 = m2 + im2
+      ch(m2,1,1,k) =   ( cc(m1,1,k,2) + cc(m1,1,k,4) ) &
+                     + ( cc(m1,1,k,1) + cc(m1,1,k,3) )
+      ch(m2,ido,4,k) = ( cc(m1,1,k,1) + cc(m1,1,k,3) ) &
+                      -( cc(m1,1,k,2) + cc(m1,1,k,4) )
+      ch(m2,ido,2,k) =   cc(m1,1,k,1) - cc(m1,1,k,3)
+      ch(m2,1,3,k) =     cc(m1,1,k,4) - cc(m1,1,k,2)
+    end do
+  end do
+
+  if ( ido < 2 ) then
+    return
+  end if
+
+  if ( 2 < ido ) then
+
+    idp2 = ido + 2
+
+    do k = 1, l1
+      do i = 3, ido, 2
+        ic = idp2 - i
+        m2 = m2s
+        do m1 = 1, m1d, im1
+          m2 = m2 + im2
+          ch(m2,i-1,1,k) = ((wa1(i-2)*cc(m1,i-1,k,2) + wa1(i-1)* &
+            cc(m1,i,k,2))+(wa3(i-2)*cc(m1,i-1,k,4) + wa3(i-1)* &
+            cc(m1,i,k,4)))+(cc(m1,i-1,k,1)+(wa2(i-2)*cc(m1,i-1,k,3)+ &
+            wa2(i-1)*cc(m1,i,k,3)))
+          ch(m2,ic-1,4,k) = (cc(m1,i-1,k,1)+(wa2(i-2)*cc(m1,i-1,k,3)+ &
+            wa2(i-1)*cc(m1,i,k,3)))-((wa1(i-2)*cc(m1,i-1,k,2)+ &
+            wa1(i-1)*cc(m1,i,k,2))+(wa3(i-2)*cc(m1,i-1,k,4)+ &
+            wa3(i-1)*cc(m1,i,k,4)))
+          ch(m2,i,1,k) = ((wa1(i-2)*cc(m1,i,k,2)-wa1(i-1)* &
+            cc(m1,i-1,k,2))+(wa3(i-2)*cc(m1,i,k,4)-wa3(i-1)* &
+            cc(m1,i-1,k,4)))+(cc(m1,i,k,1)+(wa2(i-2)*cc(m1,i,k,3)- &
+            wa2(i-1)*cc(m1,i-1,k,3)))
+          ch(m2,ic,4,k) = ((wa1(i-2)*cc(m1,i,k,2)-wa1(i-1)* &
+            cc(m1,i-1,k,2))+(wa3(i-2)*cc(m1,i,k,4)-wa3(i-1)* &
+            cc(m1,i-1,k,4)))-(cc(m1,i,k,1)+(wa2(i-2)*cc(m1,i,k,3)- &
+            wa2(i-1)*cc(m1,i-1,k,3)))
+          ch(m2,i-1,3,k) = ((wa1(i-2)*cc(m1,i,k,2)-wa1(i-1)* &
+            cc(m1,i-1,k,2))-(wa3(i-2)*cc(m1,i,k,4)-wa3(i-1)* &
+            cc(m1,i-1,k,4)))+(cc(m1,i-1,k,1)-(wa2(i-2)*cc(m1,i-1,k,3)+ &
+            wa2(i-1)*cc(m1,i,k,3)))
+          ch(m2,ic-1,2,k) = (cc(m1,i-1,k,1)-(wa2(i-2)*cc(m1,i-1,k,3)+ &
+            wa2(i-1)*cc(m1,i,k,3)))-((wa1(i-2)*cc(m1,i,k,2)-wa1(i-1)* &
+            cc(m1,i-1,k,2))-(wa3(i-2)*cc(m1,i,k,4)-wa3(i-1)* &
+            cc(m1,i-1,k,4)))
+          ch(m2,i,3,k) = ((wa3(i-2)*cc(m1,i-1,k,4) + wa3(i-1)* &
+            cc(m1,i,k,4))-(wa1(i-2)*cc(m1,i-1,k,2) + wa1(i-1)* &
+            cc(m1,i,k,2)))+(cc(m1,i,k,1)-(wa2(i-2)*cc(m1,i,k,3)- &
+            wa2(i-1)*cc(m1,i-1,k,3)))
+          ch(m2,ic,2,k) = ((wa3(i-2)*cc(m1,i-1,k,4) + wa3(i-1)* &
+            cc(m1,i,k,4))-(wa1(i-2)*cc(m1,i-1,k,2) + wa1(i-1)* &
+            cc(m1,i,k,2)))-(cc(m1,i,k,1)-(wa2(i-2)*cc(m1,i,k,3)- &
+            wa2(i-1)*cc(m1,i-1,k,3)))
+        end do
+      end do
+    end do
+
+    if ( mod ( ido, 2 ) == 1 ) then
+      return
+    end if
+
+  end if
+
+  do k = 1, l1
+    m2 = m2s
+    do m1 = 1, m1d, im1
+      m2 = m2 + im2
+      ch(m2,ido,1,k) = cc(m1,ido,k,1) &
+        + (  hsqt2 * ( cc(m1,ido,k,2) - cc(m1,ido,k,4) ) )
+      ch(m2,ido,3,k) = cc(m1,ido,k,1) &
+        - (  hsqt2 * ( cc(m1,ido,k,2) - cc(m1,ido,k,4) ) )
+      ch(m2,1,2,k) =  -cc(m1,ido,k,3) &
+        + ( -hsqt2 * ( cc(m1,ido,k,2) + cc(m1,ido,k,4) ) )
+      ch(m2,1,4,k) =   cc(m1,ido,k,3) &
+        + ( -hsqt2 * ( cc(m1,ido,k,2) + cc(m1,ido,k,4) ) )
+    end do
+  end do
+
+  return
+end

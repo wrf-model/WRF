@@ -54,16 +54,16 @@ subroutine da_transform_xtoy_metar (grid, iv, y)
 
       do n=iv%info(metar)%n1,iv%info(metar)%n2
 
-         y%metar(n)%t = model_t(1,n)
-         y%metar(n)%q = model_q(1,n)
-         y%metar(n)%p = model_p(n)
-
-         if (var_wind) then
-            call da_uv_wind_tgl(y%metar(n)%u,y%metar(n)%v,model_u(1,n),model_v(1,n),ub(1,n),vb(1,n))
+         if (wind_sd_metar) then
+            call da_uv_to_sd_lin(y%metar(n)%u,y%metar(n)%v,model_u(1,n),model_v(1,n),ub(1,n),vb(1,n))
          else
             y%metar(n)%u = model_u(1,n)
             y%metar(n)%v = model_v(1,n)
          end if
+
+         y%metar(n)%t = model_t(1,n)
+         y%metar(n)%q = model_q(1,n)
+         y%metar(n)%p = model_p(n)
 
       end do
 

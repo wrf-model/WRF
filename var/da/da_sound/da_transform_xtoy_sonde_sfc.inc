@@ -52,20 +52,16 @@ subroutine da_transform_xtoy_sonde_sfc (grid, iv, y)
       call da_interp_lin_3d (grid%xb%v, iv%info(sonde_sfc), vb)
 
       do n=iv%info(sound)%n1,iv%info(sound)%n2
-
-         y%sonde_sfc(n)%t = model_t(1,n)
-         y%sonde_sfc(n)%q = model_q(1,n)
-         y%sonde_sfc(n)%p = model_psfc(n)
-
-         if(var_wind)then
-                call da_uv_wind_tgl(y%sonde_sfc(n)%u,y%sonde_sfc(n)%v,model_u(1,n),model_v(1,n),ub(1,n),vb(1,n))
+         if(wind_sd_sound)then
+            call da_uv_to_sd_lin(y%sonde_sfc(n)%u,y%sonde_sfc(n)%v,model_u(1,n),model_v(1,n),ub(1,n),vb(1,n))
          else
             y%sonde_sfc(n)%u = model_u(1,n)
             y%sonde_sfc(n)%v = model_v(1,n)
          end if
-
+         y%sonde_sfc(n)%t = model_t(1,n)
+         y%sonde_sfc(n)%q = model_q(1,n)
+         y%sonde_sfc(n)%p = model_psfc(n)
       end do
-
 
       deallocate (model_u)
       deallocate (model_v)

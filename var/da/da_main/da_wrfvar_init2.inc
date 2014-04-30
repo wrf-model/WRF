@@ -63,7 +63,8 @@ subroutine da_wrfvar_init2
    if ( anal_type_hybrid_dual_res ) then
       call nl_set_shw( 1 , 0 )
       call nl_set_shw( 2 , 0 )
-      print *,' CSS Resetting shw for dual-res hybrid to shw = ',shw
+      write(unit=message(1),fmt='(A,I0)') "Resetting shw for dual-res hybrid to shw = ",shw
+      call da_message(message(1:1))
    endif
 
 
@@ -131,7 +132,8 @@ subroutine da_wrfvar_init2
    if ( anal_type_hybrid_dual_res ) then
       inquire(file=input_file_ens, exist=isfile)
       if ( .not. isfile ) then
-         print *,'File ',input_file_ens,' is missing.  Stop.'
+         write(unit=message(1),fmt='(a)') 'File ',input_file_ens,' is missing.'
+         call da_error(__FILE__,__LINE__,message(1:1))
       endif
       call da_med_initialdata_input (head_grid, config_flags, 'fg_ens')
       parent_grid => head_grid

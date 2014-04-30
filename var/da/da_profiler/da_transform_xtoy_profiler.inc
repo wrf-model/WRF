@@ -40,15 +40,14 @@ subroutine da_transform_xtoy_profiler (grid, iv, y)
    do n=iv%info(profiler)%n1,iv%info(profiler)%n2
       do k = 1, iv%info(profiler)%levels(n)
 
-         if(.not. var_wind) then
+         if(wind_sd_profiler) then
+            call da_uv_to_sd_lin(y%profiler(n)%u(k),y%profiler(n)%v(k),model_u(k,n),model_v(k,n),ub(k,n),vb(k,n))
+         else
             y%profiler(n)%u(k) = model_u(k,n)
             y%profiler(n)%v(k) = model_v(k,n)
-         else
-            call da_uv_wind_tgl(y%profiler(n)%u(k),y%profiler(n)%v(k),model_u(k,n),model_v(k,n),ub(k,n),vb(k,n))
          end if
 
       end do
-
    end do
 
    deallocate (model_u)

@@ -47,11 +47,11 @@ subroutine da_transform_xtoy_airep (grid, iv, y)
 
    do n=iv%info(airep)%n1,iv%info(airep)%n2
       do k = 1, iv%info(airep)%levels(n)
-         if(.not. var_wind) then
+         if(wind_sd_airep) then
+             call da_uv_to_sd_lin(y%airep(n)%u(k),y%airep(n)%v(k),u(k,n),v(k,n),ub(k,n),vb(k,n))
+         else
              y%airep(n)%u(k) = u(k,n)
              y%airep(n)%v(k) = v(k,n)
-         else
-             call da_uv_wind_tgl(y%airep(n)%u(k),y%airep(n)%v(k),u(k,n),v(k,n),ub(k,n),vb(k,n))
          endif
          y%airep(n)%t(:) = t(1:size(y%airep(n)%t),n)
          y%airep(n)%q(:) = q(1:size(y%airep(n)%q),n)

@@ -39,7 +39,7 @@ subroutine da_read_obs_radar (iv, filename, grid)
    if (trace_use) call da_trace_entry("da_read_obs_radar")
 
    thin_3d=.false.
-   if( thin_conv) thin_3d=.true.
+   if( thin_conv_ascii) thin_3d=.true.
    ntotal = iv%info(radar)%ptotal(iv%time-1)
    nlocal = iv%info(radar)%plocal(iv%time-1)
    ilocal = nlocal 
@@ -92,7 +92,7 @@ subroutine da_read_obs_radar (iv, filename, grid)
 
    do nn = 1, total_radar
  
-   if ( thin_conv ) call cleangrids_conv(radar)
+   if ( thin_conv_ascii ) call cleangrids_conv(radar)
       ! 3.1 skip one blank line
 
       read (unit=iunit, fmt = '(A)', iostat = iost)
@@ -224,7 +224,17 @@ subroutine da_read_obs_radar (iv, filename, grid)
          endif
 
          call da_llxy (platform%info, platform%loc, outside, outside_all)
-         if( outside_all ) cycle reports
+         if( outside_all ) then
+            if (print_detail_radar) then
+               write(unit=stdout, fmt='(a)') '*** Report is outside of domain:'
+               write(unit=stdout, fmt=fmt_info) &
+                     platform%info%platform,    &
+                     platform%info%lat,   &
+                     platform%info%lon,   &
+                     platform%stn%name
+            end if
+            cycle reports
+         end if
 
         read (analysis_date,'(i4,4(1x,i2))') &
                                     iyear, imonth, iday, ihour, imin
@@ -239,7 +249,7 @@ subroutine da_read_obs_radar (iv, filename, grid)
 
          nlevels = platform%info%levels
 
-            if( .not. thin_conv) then
+            if( .not. thin_conv_ascii) then
             iv%info(radar)%max_lev = max(iv%info(radar)%max_lev, platform%info%levels)
             else
             iv%info(radar)%max_lev = 1
@@ -264,11 +274,38 @@ subroutine da_read_obs_radar (iv, filename, grid)
             case (128)
              if (.not.use_radarobs .or. ntotal == max_radar_input) cycle reports
 
-            if( .not. thin_conv) then
+            if( .not. thin_conv_ascii) then
              if (ndup==1 ) ntotal = ntotal + 1
              if (outside) cycle reports
                    nlocal = nlocal + 1
                    ilocal = ilocal + 1
+
+               iv % radar (ilocal) % stn_loc % lon = platform % stn % lon
+               iv % radar (ilocal) % stn_loc % lat = platform % stn % lat
+               iv % radar (ilocal) % stn_loc % elv = platform % stn % elv
+
+               iv%info(radar)%levels(ilocal)    = nlevels
+               iv%info(radar)%name(ilocal)      = platform%info%name
+               iv%info(radar)%platform(ilocal)  = platform%info%platform
+               iv%info(radar)%id(ilocal)        = platform%info%id
+               iv%info(radar)%date_char(ilocal) = platform%info%date_char
+               iv%info(radar)%lat(:,ilocal)     = platform%info%lat
+               iv%info(radar)%lon(:,ilocal)     = platform%info%lon
+               iv%info(radar)%elv(ilocal)       = platform%info%elv
+               iv%info(radar)%pstar(ilocal)     = platform%info%pstar
+               iv%info(radar)%slp(ilocal)           = platform%loc%slp
+               iv%info(radar)%pw(ilocal)            = platform%loc%pw
+               iv%info(radar)%x(:,ilocal)           = platform%loc%x
+               iv%info(radar)%y(:,ilocal)           = platform%loc%y
+               iv%info(radar)%i(:,ilocal)           = platform%loc%i
+               iv%info(radar)%j(:,ilocal)           = platform%loc%j
+               iv%info(radar)%dx(:,ilocal)          = platform%loc%dx
+               iv%info(radar)%dxm(:,ilocal)         = platform%loc%dxm
+               iv%info(radar)%dy(:,ilocal)          = platform%loc%dy
+               iv%info(radar)%dym(:,ilocal)         = platform%loc%dym
+               iv%info(radar)%proc_domain(:,ilocal) = platform%loc%proc_domain
+               iv%info(radar)%obs_global_index(ilocal) = ntotal
+
               if( nlocal == ilocal) then
                allocate (iv % radar (ilocal) % model_p  (1:iv%info(radar)%max_lev))
                allocate (iv % radar (ilocal) % model_rho(1:iv%info(radar)%max_lev))
@@ -287,7 +324,7 @@ subroutine da_read_obs_radar (iv, filename, grid)
                   iv % radar (ilocal) % rf(i)        = platform % each(i) % rf
                end do
 
-            else ! if thin_conv==true
+            else ! if thin_conv_ascii==true
               thin_3d=.true.
               i1   = platform%loc%i
               j1   = platform%loc%j
@@ -352,7 +389,7 @@ subroutine da_read_obs_radar (iv, filename, grid)
      
               end do ! loop over k levels
 
-            end if ! if over thin_conv
+            end if ! if over thin_conv_ascii
 
             case default;
                write(unit=message(1), fmt='(a)') 'Unsaved obs found:'
@@ -374,7 +411,7 @@ subroutine da_read_obs_radar (iv, filename, grid)
          end do        !  loop over duplicate
       end do reports
    ! thinning check
-   if ( thin_conv ) then
+   if ( thin_conv_ascii ) then
       n = radar
           allocate ( in(thinning_grid_conv(n)%itxmax) )
           allocate (out(thinning_grid_conv(n)%itxmax) )
@@ -411,7 +448,7 @@ subroutine da_read_obs_radar (iv, filename, grid)
             end do
          deallocate( in  )
          deallocate( out )
-   end if  ! thin_conv
+   end if  ! thin_conv_ascii
 
                 radar_nlocal = nlocal             
 

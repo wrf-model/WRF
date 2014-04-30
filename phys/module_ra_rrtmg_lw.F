@@ -11411,6 +11411,8 @@ CONTAINS
                        p8w, p3d, pi3d,                            &
                        dz8w, tsk, t3d, t8w, rho3d, r, g,          &
                        icloud, warm_rain, cldfra3d,               &
+                       lradius,iradius,                           & 
+                       is_cammgmp_used,                           & 
                        f_ice_phy, f_rain_phy,                     &
                        xland, xice, snow,                         &
                        qv3d, qc3d, qr3d,                          &
@@ -11442,6 +11444,7 @@ CONTAINS
    IMPLICIT NONE
 !------------------------------------------------------------------
    LOGICAL, INTENT(IN )      ::        warm_rain
+   LOGICAL, INTENT(IN )      ::   is_CAMMGMP_used ! Added for CAM5 RRTMG<->CAMMGMP
 !
    INTEGER, INTENT(IN )      ::        ids,ide, jds,jde, kds,kde, &
                                        ims,ime, jms,jme, kms,kme, &
@@ -11488,6 +11491,9 @@ CONTAINS
          OPTIONAL                                               , &
          INTENT(IN   ) ::                                         &
                                                         CLDFRA3D, &
+                                                         LRADIUS, &
+                                                         IRADIUS, &
+
                                                             QV3D, &
                                                             QC3D, &
                                                             QR3D, &
@@ -12260,7 +12266,8 @@ CONTAINS
                      snow_mass_factor = (130.0/resnow1d(ncol,k))*(130.0/resnow1d(ncol,k))
                      resnow1d(ncol,k)   = 130.0
                      IF ( wrf_dm_on_monitor() ) THEN
-                       WRITE(message,*)'RRTMG:  reducing snow mass (cloud path) to ', nint(snow_mass_factor*100.), ' percent of full value'
+                       WRITE(message,*)'RRTMG:  reducing snow mass (cloud path) to ', &
+                                       nint(snow_mass_factor*100.), ' percent of full value'
                        call wrf_debug(150, message)
                      ENDIF
                  endif
@@ -12336,6 +12343,24 @@ CONTAINS
                   reice(ncol,k) = min(140.0,reice(ncol,k))
                end do
             endif
+!if CAMMGMP is used, use output from CAMMGMP
+            if(is_CAMMGMP_used) then
+               do k = kts, kte
+                  if ( qi1d(k) .gt. 1.e-20 .or. qs1d(k) .gt. 1.e-20) then
+                     reice(ncol,k) = iradius(i,k,j)
+                  else
+                     reice(ncol,k) = 25.
+                  end if
+                  reice(ncol,k) = max(5., min(140.0,reice(ncol,k)))
+                  if ( qc1d(k) .gt. 1.e-20) then
+                     reliq(ncol,k) = lradius(i,k,j)
+                  else
+                     reliq(ncol,k) = 10.
+                  end if
+                  reliq(ncol,k) = max(2.5, min(60.0,reliq(ncol,k)))
+               enddo
+            endif
+
 
 ! Set cloud physical property arrays
             do k = kts, kte

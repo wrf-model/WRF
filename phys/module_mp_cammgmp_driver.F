@@ -96,7 +96,7 @@ contains
   
   subroutine CAMMGMP(itimestep, dt, p8w, p_hyd   &
        , t_phy, pi_phy, z_at_w, qfx              &
-       , tke_pbl, turbtype3d, smaw3d           &
+       , tke_pbl, turbtype3d, smaw3d             &
        , dlf3d, dlf2_3d, rliq2d, z_sea_level     &
        , kvh3d, ht, alt, accum_mode              &
        , aitken_mode, coarse_mode, icwmrsh3d     &
@@ -109,12 +109,13 @@ contains
        , ims, ime,  jms, jme,  kms, kme          &
        , its, ite,  jts, jte,  kts, kte          &
        !Output variables from CAMMGMP
-       , th, cldfra_old_mp, cldfra_mp,cldfra_mp_all,cldfrai    &
-       , cldfral, cldfra_conv,wsedl3d, rainnc                &
+       , th, cldfra_old_mp, cldfra_mp            &
+       ,cldfra_mp_all, lradius, iradius, cldfrai &
+       , cldfral, cldfra_conv,wsedl3d, rainnc    &
        , rainncv, snownc, snowncv,sr             &
        , qv_curr, qc_curr, qi_curr,qs_curr       &
        , qr_curr, nc3d, ni3d,ns3d,nr3d,qndrop    &
-       , rh_old_mp,lcd_old_mp                     & !PMA- added for macrophysics
+       , rh_old_mp,lcd_old_mp                    & !PMA- added for macrophysics
 #ifdef WRF_CHEM                     
        , chem                                    &
        , qme3d,prain3d,nevapr3d                  &
@@ -229,6 +230,8 @@ contains
     real, dimension( ims:ime, kms:kme, jms:jme ), intent(inout) :: cldfra_mp      !New Cloud fraction 
     real, dimension( ims:ime, kms:kme, jms:jme ), intent(inout) :: cldfra_conv    !New Cloud fraction 
     real, dimension( ims:ime, kms:kme, jms:jme ), intent(inout) :: cldfra_mp_all  !New Cloud fraction 
+    real, dimension( ims:ime, kms:kme, jms:jme ), intent(inout) :: lradius
+    real, dimension( ims:ime, kms:kme, jms:jme ), intent(inout) :: iradius
     real, dimension( ims:ime, kms:kme, jms:jme ), intent(inout) :: cldfrai
     real, dimension( ims:ime, kms:kme, jms:jme ), intent(inout) :: cldfral
 #ifdef WRF_CHEM
@@ -595,6 +598,11 @@ contains
     
     !Time step is stored in the (r8) format in dtime
     dtime = dt
+
+    
+    !default values for radius 
+    lradius(:,:,:) = 10._r8
+    iradius(:,:,:) = 25._r8
   
     !Flag for first time step
     is_first_step  = .false.
@@ -1255,8 +1263,8 @@ contains
           
           !! Averaging for new output fields
           
-          efcout(:,:)      = 0._r8
-          efiout(:,:)      = 0._r8
+          efcout(:,:)      = 10._r8 
+          efiout(:,:)      = 25._r8 
           ncout(:,:)       = 0._r8
           niout(:,:)       = 0._r8	
           freql(:,:)       = 0._r8
@@ -1343,6 +1351,8 @@ contains
              qvs(1,kflip)     = max(1.e-30_r8,epsqs*esl(1,kflip)/(state_pmid(1,kflip)-(1._r8-epsqs)*esl(1,kflip)))
              rh_old_mp(iw,kw,jw)     = max(0._r8,state_q(1,kflip,1) / qvs(1,kflip))
              lcd_old_mp(iw,kw,jw)    = alst(1,kflip)
+             lradius(iw,kw,jw)    = efcout(1,kflip)
+             iradius(iw,kw,jw)    = efiout(1,kflip)
              
 #ifdef WRF_CHEM
              if(chem_opt .NE. 0 .and. config_flags%CAM_MP_MAM_cpled ) then

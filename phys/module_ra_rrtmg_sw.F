@@ -9780,7 +9780,8 @@ CONTAINS
                        coszr, julday, solcon,                     &
                        albedo, t3d, t8w, tsk,                     &
                        p3d, p8w, pi3d, rho3d,                     &
-                       dz8w, cldfra3d, r, g,                      &
+                       dz8w, cldfra3d, lradius, iradius,          & 
+                       is_cammgmp_used, r, g,                     &
                        re_cloud,re_ice,re_snow,                   &
                        has_reqc,has_reqi,has_reqs,                &
                        icloud, warm_rain,                         &
@@ -9815,6 +9816,7 @@ CONTAINS
    IMPLICIT NONE
 !------------------------------------------------------------------
    LOGICAL, INTENT(IN )      ::        warm_rain
+   LOGICAL, INTENT(IN )      ::   is_CAMMGMP_used ! Added for CAM5 RRTMG<->CAMMGMP
 !
    INTEGER, INTENT(IN )      ::        ids,ide, jds,jde, kds,kde, &
                                        ims,ime, jms,jme, kms,kme, &
@@ -9894,6 +9896,8 @@ CONTAINS
          OPTIONAL                                               , &
          INTENT(IN   ) ::                                         &
                                                         CLDFRA3D, &
+                                                         LRADIUS, &
+                                                         IRADIUS, &
                                                             QV3D, &
                                                             QC3D, &
                                                             QR3D, &
@@ -10672,6 +10676,25 @@ CONTAINS
                   reice(ncol,k) = reice(ncol,k) * 1.0315
                   reice(ncol,k) = min(140.0,reice(ncol,k))
                end do
+            endif
+            
+!if CAMMGMP is used, use output from CAMMGMP            
+!PMA
+            if(is_CAMMGMP_used) then
+               do k = kts, kte
+                  if ( qi1d(k) .gt. 1.e-20 .or. qs1d(k) .gt. 1.e-20) then
+                     reice(ncol,k) = iradius(i,k,j)
+                  else
+                     reice(ncol,k) = 25.
+                  end if
+                  reice(ncol,k) = max(5., min(140.0,reice(ncol,k)))
+                  if ( qc1d(k) .gt. 1.e-20) then
+                     reliq(ncol,k) = lradius(i,k,j)
+                  else
+                     reliq(ncol,k) = 10.
+                  end if
+                  reliq(ncol,k) = max(2.5, min(60.0,reliq(ncol,k)))
+               enddo
             endif
 
 ! Set cloud physical property arrays

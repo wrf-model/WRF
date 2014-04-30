@@ -31,9 +31,9 @@ subroutine da_transform_xtoy_qscat_adj(grid, iv, jo_grad_y, jo_grad_x)
    call da_interp_lin_3d (grid%xb%v, iv%info(qscat), vb)
 
    do n=iv%info(qscat)%n1,iv%info(qscat)%n2
-      if (var_wind) then
-          call da_uv_wind_adj(jo_grad_y%qscat(n)%u, &
-                              jo_grad_y%qscat(n)%v, u(1,n), v(1,n), ub(1,n), vb(1,n))
+      if (wind_sd_qscat) then
+          call da_uv_to_sd_adj(jo_grad_y%qscat(n)%u, &
+                               jo_grad_y%qscat(n)%v, u(1,n), v(1,n), ub(1,n), vb(1,n))
       else
           u(1,n) = jo_grad_y%qscat(n)%u
           v(1,n) = jo_grad_y%qscat(n)%v

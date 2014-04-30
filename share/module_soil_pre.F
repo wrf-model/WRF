@@ -218,6 +218,7 @@ CONTAINS
       ELSEIF ( FRACTIONAL_SEAICE == 1 ) THEN
          xice_threshold = 0.02
       ENDIF
+
       num_seaice_changes = 0
       fix_seaice : SELECT CASE ( scheme )
 
@@ -355,10 +356,10 @@ CONTAINS
 
 !tgs - compute blended sea ice/water skin temperature
                    if(flag_sst.eq.1) then
-                     tsk(i,j) = xice(i,j)*(min(seaice_threshold,tsk(i,j)))  &
+                     tsk(i,j) = xice(i,j)*(min(271.4,tsk(i,j)))  &
                                 +(1-xice(i,j))*sst(i,j)
                    else
-                     tsk(i,j) = xice(i,j)*(min(seaice_threshold,tsk(i,j)))  &
+                     tsk(i,j) = xice(i,j)*(min(271.4,tsk(i,j)))  &
                                 +(1-xice(i,j))*tsk(i,j)
                    endif
                      tsk_old(i,j) = tsk(i,j)
@@ -1166,12 +1167,10 @@ cycle
 
      IF ( num_soil_layers .EQ. 6) THEN
       zs  = (/ 0.00 , 0.05 , 0.20 , 0.40 , 1.60 , 3.00 /)
-!      dzs = (/ 0.00 , 0.125, 0.175 , 0.70 , 1.30 , 1.40 /)
      ELSEIF ( num_soil_layers .EQ. 9) THEN
       zs  = (/ 0.00 , 0.01 , 0.04 , 0.10 , 0.30, 0.60, 1.00 , 1.60, 3.00 /)
 !test3 in ppt      zs  = (/ 0.00 , 0.005 , 0.02 , 0.10 , 0.30, 0.60, 1.00 , 1.60, 3.00 /)
 !      zs  = (/ 0.00 , 0.05 , 0.20 , 0.40 , 0.60, 1.00, 1.60 , 2.20, 3.00 /)
-!      dzs = (/ 0.00 , 0.125, 0.175 , 0.70 , 1.30 , 1.40 /)
      ENDIF
 
       IF ( num_soil_layers .EQ. 4 .OR. num_soil_layers .EQ. 5 ) THEN

@@ -25,13 +25,21 @@ subroutine da_obs_sensitivity(ktr, iv)
    integer, parameter                :: q     = 5
    integer, parameter                :: rv    = 6
    integer, parameter                :: mx    = 7
+   character(len=6), parameter       :: var_names(nbvar) = (/ 'U     ', &
+                                                              'V     ', &
+                                                              'T     ', &
+                                                              'P     ', &
+                                                              'Q     ', &
+                                                              'GPSREF', &
+                                                              'SATEM ' /)
 
+   integer                           :: imsg
    integer                           :: i, j, k, n, inst
    integer                           :: npred, ipred
-   real                              :: ktd(26,nbvar)
+   real                              :: ktd(num_ob_indexes,nbvar)
    real                              :: ktdrad(iv%num_inst)
    real                              :: ktbrad(iv%num_inst,npredmax) 
-   real                              :: ktd_global(26,nbvar)
+   real                              :: ktd_global(num_ob_indexes,nbvar)
    real                              :: ktdrad_global(iv%num_inst)
    real                              :: ktbrad_global(iv%num_inst, npredmax) 
 
@@ -288,14 +296,17 @@ subroutine da_obs_sensitivity(ktr, iv)
 	          iv%airep(n)%u(k)%sens = ktr%airep(n)%u(k) / (iv%airep(n)%u(k)%error **2)
 	          iv%airep(n)%v(k)%sens = ktr%airep(n)%v(k) / (iv%airep(n)%v(k)%error **2)
 	          iv%airep(n)%t(k)%sens = ktr%airep(n)%t(k) / (iv%airep(n)%t(k)%error **2)
+	          iv%airep(n)%q(k)%sens = ktr%airep(n)%q(k) / (iv%airep(n)%q(k)%error **2)
 	       
 	          iv%airep(n)%u(k)%inv  = iv%airep(n)%u(k)%inv * iv%airep(n)%u(k)%sens
 	          iv%airep(n)%v(k)%inv  = iv%airep(n)%v(k)%inv * iv%airep(n)%v(k)%sens
 	          iv%airep(n)%t(k)%inv  = iv%airep(n)%t(k)%inv * iv%airep(n)%t(k)%sens
+	          iv%airep(n)%q(k)%inv  = iv%airep(n)%q(k)%inv * iv%airep(n)%q(k)%sens
 	       
 	          ktd(airep,u) = ktd(airep,u) + iv%airep(n)%u(k)%inv
                   ktd(airep,v) = ktd(airep,v) + iv%airep(n)%v(k)%inv 
 	          ktd(airep,t) = ktd(airep,t) + iv%airep(n)%t(k)%inv 
+	          ktd(airep,q) = ktd(airep,q) + iv%airep(n)%q(k)%inv 
 	       end do
 	    end do
 	 end if   
@@ -421,6 +432,26 @@ subroutine da_obs_sensitivity(ktr, iv)
             end do
          end if
 
+         if (iv%info(tamdar_sfc)%nlocal > 0) then
+            do n=1, iv%info(tamdar_sfc)%nlocal
+               if (.not. iv%info(tamdar_sfc)%proc_domain(1,n)) cycle
+               iv%tamdar_sfc(n)%u%sens = ktr%tamdar_sfc(n)%u / (iv%tamdar_sfc(n)%u%error **2)
+               iv%tamdar_sfc(n)%v%sens = ktr%tamdar_sfc(n)%v / (iv%tamdar_sfc(n)%v%error **2)
+               iv%tamdar_sfc(n)%t%sens = ktr%tamdar_sfc(n)%t / (iv%tamdar_sfc(n)%t%error **2)
+               iv%tamdar_sfc(n)%q%sens = ktr%tamdar_sfc(n)%q / (iv%tamdar_sfc(n)%q%error **2)
+
+               iv%tamdar_sfc(n)%u%inv  = iv%tamdar_sfc(n)%u%inv * iv%tamdar_sfc(n)%u%sens
+               iv%tamdar_sfc(n)%v%inv  = iv%tamdar_sfc(n)%v%inv * iv%tamdar_sfc(n)%v%sens
+               iv%tamdar_sfc(n)%t%inv  = iv%tamdar_sfc(n)%t%inv * iv%tamdar_sfc(n)%t%sens
+               iv%tamdar_sfc(n)%q%inv  = iv%tamdar_sfc(n)%q%inv * iv%tamdar_sfc(n)%q%sens
+
+               ktd(tamdar,u) = ktd(tamdar,u) + iv%tamdar_sfc(n)%u%inv
+               ktd(tamdar,v) = ktd(tamdar,v) + iv%tamdar_sfc(n)%v%inv
+               ktd(tamdar,t) = ktd(tamdar,t) + iv%tamdar_sfc(n)%t%inv
+               ktd(tamdar,q) = ktd(tamdar,q) + iv%tamdar_sfc(n)%q%inv
+            end do
+         end if
+
 	       
          if (iv%num_inst > 0) then
             do inst = 1, iv%num_inst                                       ! loop for sensor
@@ -435,6 +466,7 @@ subroutine da_obs_sensitivity(ktr, iv)
 		     
 	             ktdrad(inst) = ktdrad(inst) + iv%instid(inst)%tb_inv(k,n)
 		     
+                    if ( use_varbc ) then
                    ! Impact of Bias Predictors 
 		     npred = iv%instid(inst)%varbc(k)%npred
 	             do i = 1, npred
@@ -444,6 +476,7 @@ subroutine da_obs_sensitivity(ktr, iv)
 					     iv%instid(inst)%varbc_info%pred(ipred,n) * &
 					     iv%instid(inst)%tb_inv(k,n)
 		     end do
+                    end if
 		     
                   end do                                                   ! loop for channel
 	       end do                                                      ! loop for pixel
@@ -458,28 +491,52 @@ subroutine da_obs_sensitivity(ktr, iv)
          if ( iv%num_inst > 0 ) &
 	    call wrf_dm_sum_reals(ktdrad, ktdrad_global)
 
-         if ( iv%num_inst > 0 ) then
+         if ( iv%num_inst > 0 .and. use_varbc ) then
 	    do i = 1, npredmax 
                call wrf_dm_sum_reals(ktbrad(:,i), ktbrad_global(:,i))
 	    end do
          endif
          
-         write(stdout,'(A)') 'Impact of Conventional Observations: U, V, T, P, Q, GPS, SATEM'
-         write(stdout,'(100e15.5)') SUM(ktd_global,dim=1)
-         write(stdout,'(26(A10,2x))') 'Sound', 'Synop', 'Pilot', 'Satem', 'GeoAMV', 'PolarAMV', 'AIREP',&
-                              'GPSZTD', 'GPSRF', 'METAR', 'Ships', 'SSMI_RV', 'SSMI_TB', &
-                              'SSMT1', 'SSMT2', 'QSCAT', 'Profiler', 'Buoy', &
-                              'Bogus', 'Pseudo', 'Radar', 'Radiance', 'AIRSR', 'Sonde_sfc', 'MTGIRS', 'TAMDAR'
-         write(stdout,'(100e15.5)') SUM(ktd_global,dim=2)
+         write(unit=message(1),fmt='(A)') 'Impact of Conventional Observations for each variable type: '
+         do i = 1, nbvar
+            write(unit=message(1+i),fmt='(3x,a,2x,e15.5)') var_names(i), SUM(ktd_global(:,i))
+         end do
+         call da_message(message(1:nbvar+1))
+         imsg = 1
+         write(unit=message(imsg),fmt='(A)') 'Impact of Conventional Observations for each observation type: '
+         do i = 1, num_ob_indexes
+            if ( (i == ssmi_tb) .or. (i == ssmt1) .or. (i == ssmt2) .or. &
+                 (i == radar ) .or. (i == radiance) .or. (i == airsr) .or. &
+                 (i == sonde_sfc) .or. (i == tamdar_sfc) .or. (i == rain) ) cycle
+            imsg = imsg + 1
+            write(unit=message(imsg),fmt='(3x,a,e15.5)') obs_names(i), SUM(ktd_global(i,:))
+         end do
+         call da_message(message(1:imsg))
 
          if ( iv%num_inst > 0 ) then
-         write(stdout,'(A)') 'Impact of Satellite Radiances for each instrument: '
-         write(stdout,'(100e15.5)') ktdrad_global
-         write(stdout,'(A)') 'Impact of Satellite Bias Correction for each predictor: '
-         write(stdout,'(100e15.5)') SUM(ktbrad_global,dim=1)
-         write(stdout,'(A)') 'Impact of Satellite Bias Correction for each instrument:'
-         write(stdout,'(100e15.5)') SUM(ktbrad_global,dim=2)
-!        write(stdout,*) 'ADJOINT_TEST1:', SUM(ktd_global)+SUM(ktdrad_global)
+            imsg = 1
+            write(unit=message(imsg),fmt='(A)') 'Impact of Satellite Radiances for each instrument: '
+            do i = 1, iv%num_inst
+               imsg = imsg + 1
+               write(unit=message(imsg),fmt='(3x,a,e15.5)') iv%instid(i)%rttovid_string, ktdrad_global(i)
+            end do
+            call da_message(message(1:imsg))
+            if ( use_varbc ) then
+               imsg = 1
+               write(unit=message(imsg),fmt='(A)') 'Impact of Satellite Bias Correction for each predictor: '
+               do i = 1, npredmax
+                  imsg = imsg + 1
+                  write(unit=message(imsg),fmt='(3x,e15.5)') SUM(ktbrad_global(:,i))
+               end do
+               call da_message(message(1:imsg))
+               imsg = 1
+               write(unit=message(imsg),fmt='(A)') 'Impact of Satellite Bias Correction for each instrument:'
+               do i = 1, iv%num_inst
+                  imsg = imsg + 1
+                  write(unit=message(imsg),fmt='(3x,a,e15.5)') iv%instid(i)%rttovid_string, SUM(ktbrad_global(i,:))
+               end do
+               call da_message(message(1:imsg))
+            end if
          endif
 
          ! output the impact for ploting
@@ -503,6 +560,7 @@ subroutine da_obs_sensitivity(ktr, iv)
          endif
 
          close(iunit)
+         call da_free_unit(iunit)
 
    if (trace_use) call da_trace_exit("da_obs_sensitivity")
 

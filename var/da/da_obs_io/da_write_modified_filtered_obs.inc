@@ -65,8 +65,8 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
    integer            :: ounit, nz, mnz
    character(len=filename_len)       :: filename
 
-   character(len=120) :: fmt_each_inv = &       !cys_add
-      '(3(f12.3,i4,f7.2),11x,3(f12.3,i4,f7.2),11x,1(f12.3,i4,f7.2),4f17.7)'   !cys_add
+   character(len=120) :: fmt_each_inv = &
+      '(3(f12.3,i4,f7.2),11x,3(f12.3,i4,f7.2),11x,1(f12.3,i4,f7.2),4f17.7)'
 
    if (trace_use) call da_trace_entry("da_write_modified_filtered_obs")
 
@@ -117,7 +117,6 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
       do n = 1, iv%info(synop)%nlocal
          if (.not.iv%info(synop)%proc_domain(1,n)) cycle
          ! Guo .. not write out the data below the lowest model level:
-!cys     if (iv%info(synop)%zk(1,n) == missing_r) cycle
 
          nlevels = iv%info(synop)%levels(n)
          if (iv%info(synop)%levels(n) > 1) then
@@ -162,8 +161,8 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
             dir       = missing_r
             dir_qc    = missing_data
             speed_err = xmiss
-            uu        = missing_r			!cys_add
-            vv        = missing_r			!cys_add
+            uu        = missing_r
+            vv        = missing_r
          end if
 
          ! get RH from Q & T    
@@ -174,19 +173,19 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
             call da_tp_to_qs(ob%synop(n)%t, ob%synop(n)%p, es, qs)
             rh = (ob%synop(n)%q/qs) * 100.
             rh_qc = iv%synop(n)%q%qc
-            q = ob%synop(n)%q * 1e3    !g/kg		!cys_add
-            q_qc = iv%synop(n)%q%qc			!cys_add
-            q_err = max(0.01, iv%synop(n)%q%error * 1e3) !g/kg			!cys_add
+            q = ob%synop(n)%q * 1e3    !g/kg
+            q_qc = iv%synop(n)%q%qc
+            q_err = max(0.01, iv%synop(n)%q%error * 1e3) !g/kg
          else
             rh    = missing_r
             rh_qc = missing_data
-            q     = missing_r				!cys_add
-            q_qc  = missing_data			!cys_add
-            q_err = xmiss				!cys_add
+            q     = missing_r
+            q_qc  = missing_data
+            q_err = xmiss
          end if
 
          if (rh_qc < 0) rh_qc = missing_data
-         if ( q_qc < 0)  q_qc = missing_data		!cys_add
+         if ( q_qc < 0)  q_qc = missing_data
 
          p    = ob%synop(n)%p
          p_qc = iv%synop(n)%p%qc
@@ -199,21 +198,13 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
 
          t    =  ob%synop(n)%t
          t_qc =  iv%synop(n)%t%qc
-         t_err =  iv%synop(n)%t%error			!cys_add
+         t_err =  iv%synop(n)%t%error
          if (iv%synop(n)%t%qc <= fails_error_max) then
             t_qc = missing_data
             t   = missing_r
-            t_err = xmiss				!cys_add
+            t_err = xmiss
          end if
 
-!cys     write(ounit, fmt = trim (fmt_each))                   &
-!cys        p,  p_qc,  p_err,                                  &
-!cys        speed,speed_qc,        speed_err  ,                &
-!cys        dir  , dir_qc,         dir_err  ,                  &
-!cys        iv%info(synop)%elv(n), zero, elv_error,             &
-!cys        t, t_qc, iv%synop(n)%t%error,                      &
-!cys        td, td_qc, td_error,                               &
-!cys        rh, rh_qc,  rh_error                
          write(ounit, fmt = trim (fmt_each_inv))       &
             p,  p_qc,   p_err,                         &
             uu, speed_qc, speed_err ,                  &
@@ -240,7 +231,6 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
       do n = 1, iv%info(metar)%nlocal
          if (.not. iv%info(metar)%proc_domain(1,n)) cycle
          ! Do not write out the data below the lowest model level:
-!cys     if (iv%info(metar)%zk(1,n) == missing_r) cycle
 
          nlevels = iv%info(metar)%levels(n)
          if (iv%info(metar)%levels(n)> 1) then
@@ -286,8 +276,8 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
             dir       = missing_r
             dir_qc    = missing_data
             speed_err = xmiss
-            uu        = missing_r			!cys_add
-            vv        = missing_r			!cys_add
+            uu        = missing_r
+            vv        = missing_r
          end if
 
          ! get RH from Q & T    
@@ -298,18 +288,18 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
             call da_tp_to_qs(ob%metar(n)%t, ob%metar(n)%p, es, qs)
             rh = (ob%metar(n)%q/qs) * 100.
             rh_qc = iv%metar(n)%q%qc
-            q = ob%metar(n)%q * 1e3    !g/kg		!cys_add
-            q_qc = iv%metar(n)%q%qc			!cys_add
-            q_err = max(0.01, iv%metar(n)%q%error * 1e3) !g/kg			!cys_add
+            q = ob%metar(n)%q * 1e3    !g/kg
+            q_qc = iv%metar(n)%q%qc
+            q_err = max(0.01, iv%metar(n)%q%error * 1e3) !g/kg
          else
             rh    = missing_r
             rh_qc = missing_data
-            q     = missing_r				!cys_add
-            q_qc  = missing_data			!cys_add
-            q_err = xmiss				!cys_add
+            q     = missing_r
+            q_qc  = missing_data
+            q_err = xmiss
          end if
          if (rh_qc < 0) rh_qc = missing_data
-         if ( q_qc < 0)  q_qc = missing_data		!cys_add
+         if ( q_qc < 0)  q_qc = missing_data
 
          p    = ob%metar(n)%p
          p_qc = iv%metar(n)%p%qc
@@ -321,21 +311,13 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
          end if
          t    =  ob%metar(n)%t
          t_qc =  iv%metar(n)%t%qc
-         t_err =  iv%metar(n)%t%error			!cys_add
+         t_err =  iv%metar(n)%t%error
          if (iv%metar(n)%t%qc <= fails_error_max) then
             t_qc = missing_data
             t   = missing_r
-            t_err = xmiss				!cys_add
+            t_err = xmiss
          end if
 
-!cys     write(ounit, fmt = trim (fmt_each))                   &
-!cys        p,  p_qc,  p_err,                                  &
-!cys        speed,speed_qc,        speed_err  ,                &
-!cys        dir  , dir_qc,         dir_err  ,                  &
-!cys        iv%info(metar)%elv(n), zero, elv_error,             &
-!cys        t, t_qc, iv%metar(n)%t%error,                      &
-!cys        td, td_qc, td_error,                               &
-!cys        rh, rh_qc,  rh_error                
          write(ounit, fmt = trim (fmt_each_inv))       &
             p,  p_qc,   p_err,                         &
             uu, speed_qc, speed_err ,                  &
@@ -361,7 +343,6 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
 
       do n = 1, iv%info(ships)%nlocal
          if (.not. iv%info(ships)%proc_domain(1,n)) cycle
-!cys     if (iv%info(ships)%zk(1,n) == missing_r) cycle
                
          nlevels = iv%info(ships)%levels(n)
          if (iv%info(ships)%levels(n) > 1) then
@@ -406,8 +387,8 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
             dir       = missing_r
             dir_qc    = missing_data
             speed_err = xmiss
-            uu        = missing_r			!cys_add
-            vv        = missing_r			!cys_add
+            uu        = missing_r
+            vv        = missing_r
          end if
 
          ! get RH from Q & T    
@@ -418,18 +399,18 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
             call da_tp_to_qs(ob%ships(n)%t, ob%ships(n)%p, es, qs)
             rh = (ob%ships(n)%q/qs) * 100.
             rh_qc = iv%ships(n)%q%qc
-            q = ob%ships(n)%q * 1e3    !g/kg		!cys_add
-            q_qc = iv%ships(n)%q%qc			!cys_add
-            q_err = max(0.01, iv%ships(n)%q%error * 1e3) !g/kg			!cys_add
+            q = ob%ships(n)%q * 1e3    !g/kg
+            q_qc = iv%ships(n)%q%qc
+            q_err = max(0.01, iv%ships(n)%q%error * 1e3) !g/kg
          else
             rh    = missing_r
             rh_qc = missing_data
-            q     = missing_r				!cys_add
-            q_qc  = missing_data			!cys_add
-            q_err = xmiss				!cys_add
+            q     = missing_r
+            q_qc  = missing_data
+            q_err = xmiss
          end if
          if (rh_qc < 0) rh_qc = missing_data
-         if ( q_qc < 0)  q_qc = missing_data		!cys_add
+         if ( q_qc < 0)  q_qc = missing_data
 
          p     = ob%ships(n)%p
          p_qc  = iv%ships(n)%p%qc
@@ -440,21 +421,13 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
          end if
          t    =  ob%ships(n)%t
          t_qc =  iv%ships(n)%t%qc
-         t_err =  iv%ships(n)%t%error			!cys_add
+         t_err =  iv%ships(n)%t%error
          if (iv%ships(n)%t%qc <= fails_error_max) then
             t_qc = missing_data
             t   = missing_r
-            t_err = xmiss				!cys_add
+            t_err = xmiss
          end if
 
-!cys     write(ounit, fmt = trim (fmt_each))                   &
-!cys        p,  p_qc,  p_err,                                  &
-!cys        speed,speed_qc,        speed_err  ,                &
-!cys        dir  , dir_qc,         dir_err  ,                  &
-!cys        iv%info(ships)%elv(n), zero, elv_error,             &
-!cys        t, t_qc, iv%ships(n)%t%error,                      &
-!cys        td, td_qc, td_error,                               &
-!cys        rh, rh_qc,  rh_error                
          write(ounit, fmt = trim (fmt_each_inv))       &
             p,  p_qc,   p_err,                         &
             uu, speed_qc, speed_err ,                  &
@@ -480,7 +453,6 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
 
       do n = 1, iv%info(buoy)%nlocal
          if (.not. iv%info(buoy)%proc_domain(1,n)) cycle
-!cys     if (iv%info(buoy)%zk(1,n) == missing_r) cycle
                 
          nlevels = iv%info(buoy)%levels(n)
          if (iv%info(buoy)%levels(n) > 1) then
@@ -526,8 +498,8 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
             dir       = missing_r
             dir_qc    = missing_data
             speed_err = xmiss
-            uu        = missing_r			!cys_add
-            vv        = missing_r			!cys_add
+            uu        = missing_r
+            vv        = missing_r
          end if
 
          ! get RH from Q & T    
@@ -538,18 +510,18 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
             call da_tp_to_qs(ob%buoy (n)%t, ob%buoy (n)%p, es, qs)
             rh = (ob%buoy (n)%q/qs) * 100.
             rh_qc = iv%buoy (n)%q%qc
-            q = ob%buoy (n)%q * 1e3    !g/kg		!cys_add
-            q_qc = iv%buoy (n)%q%qc			!cys_add
-            q_err = max(0.01, iv%buoy (n)%q%error * 1e3) !g/kg			!cys_add
+            q = ob%buoy (n)%q * 1e3    !g/kg
+            q_qc = iv%buoy (n)%q%qc
+            q_err = max(0.01, iv%buoy (n)%q%error * 1e3) !g/kg
          else
             rh    = missing_r
            rh_qc = missing_data
-            q     = missing_r				!cys_add
-            q_qc  = missing_data			!cys_add
-            q_err = xmiss				!cys_add
+            q     = missing_r
+            q_qc  = missing_data
+            q_err = xmiss
          end if
          if (rh_qc < 0) rh_qc = missing_data
-         if ( q_qc < 0)  q_qc = missing_data		!cys_add
+         if ( q_qc < 0)  q_qc = missing_data
 
          p     = ob%buoy (n)%p
          p_qc  = iv%buoy (n)%p%qc
@@ -561,21 +533,13 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
          end if
          t    =  ob%buoy (n)%t
          t_qc =  iv%buoy (n)%t%qc
-         t_err =  iv%buoy (n)%t%error			!cys_add
+         t_err =  iv%buoy (n)%t%error
          if (iv%buoy (n)%t%qc <= fails_error_max) then
             t_qc = missing_data
             t   = missing_r
-            t_err = xmiss				!cys_add
+            t_err = xmiss
          end if
 
-!cys     write(ounit, fmt = trim (fmt_each))                   &
-!cys        p,  p_qc,   p_err,                                 &
-!cys        speed,speed_qc,        speed_err  ,                &
-!cys        dir  , dir_qc,         dir_err  ,                  &
-!cys        iv%info(buoy)%elv(n), zero, elv_error,             &
-!cys        t, t_qc, iv%buoy (n)%t%error,                      &
-!cys        td, td_qc, td_error,                               &
-!cys        rh, rh_qc,  rh_error                
          write(ounit, fmt = trim (fmt_each_inv))       &
             p,  p_qc,   p_err,                         &
             uu, speed_qc, speed_err ,                  &
@@ -631,18 +595,10 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
                dir       = missing_r
                dir_qc    = missing_data
                speed_err = xmiss
-               uu        = missing_r			!cys_add
-               vv        = missing_r			!cys_add
+               uu        = missing_r
+               vv        = missing_r
             end if
 
-!cys        write(ounit, fmt = trim (fmt_each))         &
-!cys           iv%geoamv(n)%p(k), speed_qc, slp_error,  &
-!cys           speed, speed_qc, speed_err,              &
-!cys           dir  , dir_qc,             dir_error,    &
-!cys           missing_r, standard_atmosphere, xmiss,   &
-!cys           missing_r, zero_t_td, xmiss,             & 
-!cys           missing_r, zero_t_td, xmiss,             & 
-!cys           missing_r, zero_t_td, xmiss   
             write(ounit, fmt = trim (fmt_each_inv))       &
                iv%geoamv(n)%p(k), speed_qc, slp_error,  &
                uu, speed_qc, speed_err,                 &
@@ -701,18 +657,10 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
                dir       = missing_r
                dir_qc    = missing_data
                speed_err = xmiss
-               uu        = missing_r			!cys_add
-               vv        = missing_r			!cys_add
+               uu        = missing_r
+               vv        = missing_r
             end if
 
-!cys        write (ounit, fmt = trim (fmt_each))           &
-!cys           iv%polaramv(n)%p(k), speed_qc, slp_error,  &
-!cys           speed, speed_qc, speed_err,                &
-!cys           dir  , dir_qc,             dir_error,      &
-!cys           missing_r, standard_atmosphere, xmiss,     &
-!cys           missing_r, zero_t_td, xmiss,               & 
-!cys           missing_r, zero_t_td, xmiss,               & 
-!cys           missing_r, zero_t_td, xmiss   
             write(ounit, fmt = trim (fmt_each_inv))       &
                iv%polaramv(n)%p(k), speed_qc, slp_error,  &
                uu, speed_qc, speed_err,                 &
@@ -770,15 +718,6 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
                (/"Mismatch for Sound surface and upper air report"/))
          end if
          nz = 0
-!cys     if (iv%info(sonde_sfc)%zk(1,n) == missing_r) then
-!cys        nz = nz + 1
-!cys     end if
-
-!cys     do k = 1, iv%info(sound)%levels(n)
-!cys        if (iv%info(sound)%zk(k,n) == missing_r) then
-!cys           nz = nz + 1
-!cys        end if
-!cys     end do
 
          if (nz > 0) then
             mnz = mnz + 1
@@ -811,9 +750,6 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
          j  = 0
 
          ! Not below the first model level
-!cys     if (iv%info(sonde_sfc)%zk(1,n) == missing_r) then
-!cys        nz = nz + 1
-!cys     else
             j = j + 1
             ! First write surface level information
  
@@ -833,8 +769,8 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
                dir       = missing_r
                dir_qc    = missing_data
                speed_err = xmiss
-               uu        = missing_r			!cys_add
-               vv        = missing_r			!cys_add
+               uu        = missing_r
+               vv        = missing_r
             end if
 
             ! get RH from Q & T    
@@ -845,18 +781,18 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
                call da_tp_to_qs(ob%sonde_sfc(n)%t, ob%sonde_sfc(n)%p, es, qs)
                rh = (ob%sonde_sfc(n)%q/qs) * 100.
                rh_qc = iv%sonde_sfc(n)%q%qc
-               q = ob%sonde_sfc(n)%q * 1e3    !g/kg	!cys_add
-               q_qc = iv%sonde_sfc(n)%q%qc		!cys_add
-               q_err = max(0.01, iv%sonde_sfc(n)%q%error * 1e3) !g/kg	!cys_add
+               q = ob%sonde_sfc(n)%q * 1e3    !g/kg
+               q_qc = iv%sonde_sfc(n)%q%qc
+               q_err = max(0.01, iv%sonde_sfc(n)%q%error * 1e3) !g/kg
              else
                 rh    = missing_r
                 rh_qc = missing_data
-                q     = missing_r			!cys_add
-                q_qc  = missing_data			!cys_add
-                q_err = xmiss				!cys_add
+                q     = missing_r
+                q_qc  = missing_data
+                q_err = xmiss
              end if
             if (rh_qc < 0) rh_qc = missing_data
-            if ( q_qc < 0)  q_qc = missing_data		!cys_add
+            if ( q_qc < 0)  q_qc = missing_data
 
             p     = ob%sonde_sfc(n)%p
             p_qc  = iv%sonde_sfc(n)%p%qc
@@ -873,17 +809,9 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
             if (iv%sonde_sfc(n)%t%qc <= fails_error_max) then
                t_qc  = missing_data
                t     = missing_r
-               t_err = xmiss				!cys_add
+               t_err = xmiss
             end if
 
-!cys        write(ounit, fmt = trim (fmt_each))           &
-!cys           p,  p_qc,   p_err,                         &
-!cys           speed,speed_qc, speed_err ,                &
-!cys           dir  , dir_qc,  dir_err ,                  &
-!cys           iv%sonde_sfc(n)%h, zero, elv_error,        &
-!cys           t, t_qc, t_err,                            &
-!cys           td, td_qc, td_error,                       &
-!cys           rh, rh_qc,  rh_error
             write(ounit, fmt = trim (fmt_each_inv))       &
                p,  p_qc,   p_err,                         &
                uu, speed_qc, speed_err ,                  &
@@ -894,13 +822,9 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
                q, q_qc, q_err,                            &
                iv%sonde_sfc(n)%u%inv, iv%sonde_sfc(n)%v%inv, &
                iv%sonde_sfc(n)%t%inv, iv%sonde_sfc(n)%q%inv*1e3            ! q%inv in g/kg
-!cys     end if
                 
          do k = 1, iv%info(sound)%levels(n)
 
-!cys        if (iv%info(sound)%zk(k,n) == missing_r) then
-!cys            nz = nz + 1
-!cys        else
                j  = j + 1
 
                ! get speed and direction
@@ -918,8 +842,8 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
                   dir       = missing_r
                   dir_qc    = missing_data
                   speed_err = xmiss
-                  uu        = missing_r			!cys_add
-                  vv        = missing_r			!cys_add
+                  uu        = missing_r
+                  vv        = missing_r
                end if
 
                ! get RH from Q & T    
@@ -930,18 +854,18 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
                   call da_tp_to_qs(ob%sound(n)%t(k), iv%sound(n)%p(k), es, qs)
                   rh = (ob%sound(n)%q(k)/qs) * 100.
                   rh_qc = iv%sound(n)%q(k)%qc
-                  q = ob%sound(n)%q(k) * 1e3    !g/kg		!cys_add
-                  q_qc = iv%sound(n)%q(k)%qc			!cys_add
-                  q_err = max(0.01, iv%sound(n)%q(k)%error * 1e3) !g/kg	!cys_add
+                  q = ob%sound(n)%q(k) * 1e3    !g/kg
+                  q_qc = iv%sound(n)%q(k)%qc
+                  q_err = max(0.01, iv%sound(n)%q(k)%error * 1e3) !g/kg
                else
                   rh    = missing_r
                   rh_qc = missing_data
-                  q     = missing_r				!cys_add
-                  q_qc  = missing_data				!cys_add
-                  q_err = xmiss					!cys_add
+                  q     = missing_r
+                  q_qc  = missing_data
+                  q_err = xmiss
                end if
                if (rh_qc < 0) rh_qc = missing_data
-               if ( q_qc < 0)  q_qc = missing_data		!cys_add
+               if ( q_qc < 0)  q_qc = missing_data
 
                t    =  ob%sound(n)%t(k)
                t_qc =  iv%sound(n)%t(k)%qc
@@ -951,14 +875,6 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
                   t   = missing_r
                end if
 
-!cys           write(ounit, fmt = trim (fmt_each))           &
-!cys              iv%sound(n)%p(k), zero,    pr_error,       &
-!cys              speed, speed_qc, speed_err ,               &
-!cys              dir  , dir_qc,  dir_err ,                  &
-!cys              iv%sound(n)%h(k), zero, elv_error,         &
-!cys              t,  t_qc, t_err,                           &
-!cys              td, td_qc, td_error,                       &
-!cys              rh, rh_qc,  rh_error                
                write(ounit, fmt = trim (fmt_each_inv))       &
                   iv%sound(n)%p(k), zero,    pr_error,       &
                   uu, speed_qc, speed_err ,                  &
@@ -969,7 +885,6 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
                   q, q_qc, q_err,                            &
                   iv%sound(n)%u(k)%inv, iv%sound(n)%v(k)%inv, &
                   iv%sound(n)%t(k)%inv, iv%sound(n)%q(k)%inv*1e3   !q%inv g/kg
-!cys        end if
          end do
       end do 
    end if
@@ -1019,8 +934,8 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
                dir       = missing_r
                dir_qc    = missing_data
                speed_err = xmiss
-               uu        = missing_r			!cys_add
-               vv        = missing_r			!cys_add
+               uu        = missing_r
+               vv        = missing_r
             end if
 
           ! get RH from Q & T
@@ -1031,18 +946,18 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
                 call da_tp_to_qs(ob%airep(n)%t(k), iv%airep(n)%p(k), es, qs)
                 rh = (ob%airep(n)%q(k)/qs) * 100.
                 rh_qc = iv%airep(n)%q(k)%qc
-                q = ob%airep(n)%q(k) * 1e3    !g/kg           !cys_add
-                q_qc = iv%airep(n)%q(k)%qc                    !cys_add
-                q_err = max(0.01, iv%airep(n)%q(k)%error * 1e3) !g/kg !cys_add
+                q = ob%airep(n)%q(k) * 1e3    !g/kg
+                q_qc = iv%airep(n)%q(k)%qc
+                q_err = max(0.01, iv%airep(n)%q(k)%error * 1e3) !g/kg
             else
                 rh    = missing_r
                 rh_qc = missing_data
-                q     = missing_r                             !cys_add
-                q_qc  = missing_data                          !cys_add
-                q_err = xmiss                                 !cys_add
+                q     = missing_r
+                q_qc  = missing_data
+                q_err = xmiss
             end if
             if (rh_qc < 0) rh_qc = missing_data
-            if ( q_qc < 0)  q_qc = missing_data              !cys_add
+            if ( q_qc < 0)  q_qc = missing_data
 
             t    =  ob%airep(n)%t(k)
             t_qc =  iv%airep(n)%t(k)%qc
@@ -1050,17 +965,9 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
             if (iv%airep(n)%t(k)%qc <= fails_error_max) then
                t_qc = missing_data
                t   = missing_r
-               t_err = xmiss				!cys_add
+               t_err = xmiss
             end if
 
-!cys        write(ounit, fmt = trim (fmt_each))       &
-!cys           iv%airep(n)%p(k),zero , pr_error,      &
-!cys           speed, speed_qc, speed_err,            &
-!cys           dir  , dir_qc, dir_error,              &
-!cys           missing_r, standard_atmosphere, xmiss, &
-!cys           t,  t_qc,   t_err,                     &
-!cys           missing_r, missing_data, xmiss,        & 
-!cys           missing_r, missing_data, xmiss
             write(ounit, fmt = trim (fmt_each_inv))       &
                iv%airep(n)%p(k),zero , pr_error,          &
                uu, speed_qc, speed_err ,                  &
@@ -1121,18 +1028,10 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
                dir       = missing_r
                dir_qc    = missing_data
                speed_err = xmiss
-               uu        = missing_r			!cys_add
-               vv        = missing_r			!cys_add
+               uu        = missing_r
+               vv        = missing_r
             end if
 
-!cys        write(ounit, fmt = trim (fmt_each))       &
-!cys           iv%pilot(n)%p(k),zero, pr_error,       &
-!cys           speed, speed_qc, speed_err,            &
-!cys           dir  , dir_qc, dir_error,              &
-!cys           missing_r, standard_atmosphere, xmiss, &
-!cys           missing_r, missing_data, xmiss,        &
-!cys           missing_r, missing_data, xmiss,        &
-!cys           missing_r, missing_data, xmiss
             write(ounit, fmt = trim (fmt_each_inv))       &
                iv%pilot(n)%p(k), zero, pr_error,  &
                uu, speed_qc, speed_err,                 &
@@ -1183,14 +1082,6 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
             if (iv%satem(n)%thickness(k)%qc < obs_qc_pointer) &
                thick_qc = missing_data
 
-!cys        write(ounit, fmt = trim (fmt_each))               &
-!cys           iv%satem(n)%p(k),zero, slp_error,                 &
-!cys           missing_r, missing_data, xmiss,                   &
-!cys           missing_r, missing_data, xmiss,                   &
-!cys           missing_r, standard_atmosphere, xmiss,            &
-!cys           thick, thick_qc, thick_error,                     &
-!cys           missing_r, missing_data, xmiss,                   &
-!cys           missing_r, missing_data, xmiss
             write(ounit, fmt = trim (fmt_each_inv))       &
                iv%satem(n)%p(k),zero, slp_error,                 &
                missing_r, missing_data, xmiss,                   &
@@ -1249,18 +1140,10 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
             speed_error = xmiss
             speed_qc = missing_data
             dir_qc   = missing_data
-            uu        = missing_r			!cys_add
-            vv        = missing_r			!cys_add
+            uu        = missing_r
+            vv        = missing_r
          end if
 
-!cys     write(ounit, fmt = trim (fmt_each))          &
-!cys        iv%qscat(n)%h,iv%qscat(n)%u%qc,slp_error, &  
-!cys        speed,speed_qc,        speed_error,       &
-!cys        dir  ,dir_qc          ,dir_error,         &
-!cys        iv%info(qscat)%elv(n), zero, elv_error,    &
-!cys        missing_r, missing_data, xmiss,           & 
-!cys        missing_r, missing_data, xmiss,           & 
-!cys        missing_r, missing_data, xmiss
          write(ounit, fmt = trim (fmt_each_inv))       &
             iv%qscat(n)%h,iv%qscat(n)%u%qc,slp_error, &  
             uu, speed_qc, speed_error,               &
@@ -1318,18 +1201,10 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
                speed_error = 1.1
                speed_qc = missing_data
                dir_qc   = missing_data
-               uu        = missing_r			!cys_add
-               vv        = missing_r			!cys_add
+               uu        = missing_r
+               vv        = missing_r
            end if
 
-!cys       write(ounit, fmt = trim (fmt_each))          &
-!cys          iv%profiler(n)%p(k),zero,pr_error,        &
-!cys          speed,speed_qc              ,speed_error, &
-!cys          dir  ,dir_qc                ,dir_error,   &
-!cys          iv%info(profiler)%elv(n), zero, elv_error, &
-!cys          missing_r, missing_data, xmiss,           & 
-!cys          missing_r, missing_data, xmiss,           & 
-!cys          missing_r, missing_data, xmiss
            write(ounit, fmt = trim (fmt_each_inv))       &
               iv%profiler(n)%p(k),zero,pr_error,        &
               uu, speed_qc, speed_error,               &
@@ -1371,14 +1246,6 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
             iv%info(ssmt1)%pw(n)%error
 
          do k = 1, iv%info(ssmt1)%levels(n)
-!cys        write(ounit, fmt = trim (fmt_each))                            &
-!cys           iv%ssmt1(n)%p(k),zero,  slp_error,                          &
-!cys           missing_r, missing, missing_r,                              &
-!cys           missing_r, missing, missing_r,                              &
-!cys           height,          height_qc,height_error,                    &
-!cys           ob%ssmt1(n)%t(k),iv%ssmt1(n)%t(k)%qc,iv%ssmt1(n)%t(k)%error,&
-!cys           td, td_qc, td_error,                                        &   
-!cys           missing_r, missing, missing_r                                 
             write(ounit, fmt = trim (fmt_each_inv))       &
                iv%ssmt1(n)%p(k),zero,  slp_error,                          &
                missing_r, missing, missing_r,                              &
@@ -1421,14 +1288,6 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
             iv%info(ssmt2)%pw(n)%error
 
          do k = 1, iv%info(ssmt2)%levels(n)
-!cys        write(ounit, fmt = trim (fmt_each))                  &
-!cys        iv%ssmt2(n)%p(k),zero,  slp_error,                &
-!cys        missing_r, missing, missing_r,                    &
-!cys        missing_r, missing, missing_r,                    &
-!cys        height,          height_qc,height_error,          &
-!cys        missing_r, missing, missing_r,                    &
-!cys        td, td_qc, td_error,                              &   
-!cys        ob%ssmt2(n)%rh(k),iv%ssmt2(n)%rh(k)%qc,rh_error                 
             write(ounit, fmt = trim (fmt_each_inv))       &
             iv%ssmt2(n)%p(k),zero,  slp_error,                &
             missing_r, missing, missing_r,                    &
@@ -1507,17 +1366,17 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
                call da_tp_to_qs(ob%gpsref(n)%t(k), ob%gpsref(n)%p(k), es, qs)
                rh = (ob%gpsref(n)%q(k)/qs) * 100.
                rh_qc = iv%gpsref(n)%q(k)%qc
-               q = ob%gpsref(n)%q(k) * 1e3    !g/kg		!cys_add
-               q_qc = iv%gpsref(n)%q(k)%qc			!cys_add
-               q_err = max(0.01, iv%gpsref(n)%q(k)%error * 1e3) !g/kg	!cys_add
+               q = ob%gpsref(n)%q(k) * 1e3    !g/kg
+               q_qc = iv%gpsref(n)%q(k)%qc
+               q_err = max(0.01, iv%gpsref(n)%q(k)%error * 1e3) !g/kg
             else
                rh    = missing_r
                rh_qc = missing_data
-               q     = missing_r			!cys_add
-               q_qc  = missing_data			!cys_add
-               q_err = xmiss				!cys_add
+               q     = missing_r
+               q_qc  = missing_data
+               q_err = xmiss
             end if
-            if ( q_qc < 0)  q_qc = missing_data		!cys_add
+            if ( q_qc < 0)  q_qc = missing_data
 
             p    = ob%gpsref(n)%p(k)
             p_qc = iv%gpsref(n)%p(k)%qc 
@@ -1532,7 +1391,7 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
             if (iv%gpsref(n)%t(k)%qc <= fails_error_max) then
                t    = missing_r     
                t_qc = missing_data  
-               t_err =  xmiss          			!cys_add
+               t_err =  xmiss
             end if
 
             ref = ob%gpsref(n)%ref(k)
@@ -1543,14 +1402,6 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
                ref_qc = missing_data  
             end if
 
-!cys        write(ounit, fmt = trim (fmt_each))             &
-!cys           p,  p_qc, slp_error,                         &
-!cys           missing_r, missing_data, xmiss,              &
-!cys           missing_r, missing_data, xmiss,              &
-!cys           iv%gpsref(n)%h(k), zero, height_error,       &
-!cys           t, t_qc,  t_err,                             &   
-!cys           ref, ref_qc,  ref_err,                       &   
-!cys           rh, rh_qc, iv%gpsref(n)%q(k)%error
 
 !
 !  For GPSREF, convert the geopotential height to geometric height, then write
@@ -1610,18 +1461,18 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
                call da_tp_to_qs(ob%airsr(n)%t(k), iv%airsr(n)%p(k), es, qs)
                rh = (ob%airsr(n)%q(k)/qs) * 100.
                rh_qc = iv%airsr(n)%q(k)%qc
-               q = ob%airsr(n)%q(k) * 1e3    !g/kg		!cys_add
-               q_qc = iv%airsr(n)%q(k)%qc			!cys_add
-               q_err = max(0.01, iv%airsr(n)%q(k)%error * 1e3)  !g/kg			!cys_add
+               q = ob%airsr(n)%q(k) * 1e3    !g/kg
+               q_qc = iv%airsr(n)%q(k)%qc
+               q_err = max(0.01, iv%airsr(n)%q(k)%error * 1e3)  !g/kg
             else
                rh    = missing_r
                rh_qc = missing_data
-               q     = missing_r				!cys_add
-               q_qc  = missing_data				!cys_add
-               q_err = xmiss					!cys_add
+               q     = missing_r
+               q_qc  = missing_data
+               q_err = xmiss
             end if
             if (rh_qc < 0) rh_qc = missing_data
-            if ( q_qc < 0)  q_qc = missing_data			!cys_add
+            if ( q_qc < 0)  q_qc = missing_data
 
             t     = ob%airsr(n)%t(k)
             t_qc  = iv%airsr(n)%t(k)%qc
@@ -1632,14 +1483,6 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
                t_err = xmiss
             end if
 
-!cys        write(ounit, fmt = trim (fmt_each))      &
-!cys           iv%airsr(n)%p(k), zero,    pr_error,     &
-!cys           missing_r, missing_data, xmiss,          &
-!cys           missing_r, missing_data, xmiss,          &
-!cys           iv%airsr(n)%h(k), zero, elv_error,       &
-!cys           t,  t_qc, t_err,                         &
-!cys           td, td_qc, td_error,                     &
-!cys           rh, rh_qc,  rh_error                
             write(ounit, fmt = trim (fmt_each_inv))     &
                iv%airsr(n)%p(k), zero,    pr_error,     &
                missing_r, missing_data, xmiss,          &
@@ -1698,8 +1541,8 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
                dir       = missing_r
                dir_qc    = missing_data
                speed_err = xmiss
-               uu        = missing_r			!cys_add
-               vv        = missing_r			!cys_add
+               uu        = missing_r
+               vv        = missing_r
             end if
 
 !q from kg/kg to g/kg, for error is to 10e-2g/kg
@@ -1707,26 +1550,18 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
                   rh = ob%mtgirs(n)%q(k) * 1000.
                   rh_qc = iv%mtgirs(n)%q(k)%qc
                   rh_error=iv%mtgirs(n)%q(k)%error * 1000.*100.
-                  q = ob%airsr(n)%q(k) * 1e3    !g/kg		!cys_add
-                  q_qc = iv%airsr(n)%q(k)%qc			!cys_add
-                  q_err = max(0.01, iv%airsr(n)%q(k)%error * 1e3)  !g/kg !cys_add
+                  q = ob%airsr(n)%q(k) * 1e3    !g/kg
+                  q_qc = iv%airsr(n)%q(k)%qc
+                  q_err = max(0.01, iv%airsr(n)%q(k)%error * 1e3)  !g/kg
                else
                   rh    = missing_r
                   rh_qc = missing_data
                   rh_error=xmiss
-                  q     = missing_r				!cys_add
-                  q_qc  = missing_data				!cys_add
-                  q_err = xmiss					!cys_add
+                  q     = missing_r
+                  q_qc  = missing_data
+                  q_err = xmiss
                end if
 
-!cys        write(ounit, fmt = trim (fmt_each))       &
-!cys           iv%mtgirs(n)%p(k),zero , pr_error,      &
-!cys           speed, speed_qc, speed_err,            &
-!cys           dir  , dir_qc, dir_error,              &
-!cys           iv%mtgirs(n)%h(k), zero, elv_error,         &
-!cys               t,  t_qc, t_err,                           &
-!cys           missing_r, missing_data, xmiss,        &
-!cys              rh, rh_qc,  rh_error
             write(ounit, fmt = trim (fmt_each_inv))       &
                iv%mtgirs(n)%p(k), zero,    pr_error,       &
                uu, speed_qc, speed_err ,                  &
@@ -1786,8 +1621,8 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
                dir       = missing_r
                dir_qc    = missing_data
                speed_err = xmiss
-               uu        = missing_r                    !cys_add
-               vv        = missing_r                    !cys_add
+               uu        = missing_r
+               vv        = missing_r
             end if
 
             t    =  ob%tamdar(n)%t(k)
@@ -1796,7 +1631,7 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
             if (iv%tamdar(n)%t(k)%qc <= fails_error_max) then
                t_qc = missing_data
                t   = missing_r
-               t_err = xmiss                            !cys_add
+               t_err = xmiss
             end if
               ! get RH from Q & T
                if (iv%tamdar(n)%q(k)%qc >= obs_qc_pointer .and.  &
@@ -1806,18 +1641,18 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
                   call da_tp_to_qs(ob%tamdar(n)%t(k), iv%tamdar(n)%p(k), es, qs)
                   rh = (ob%tamdar(n)%q(k)/qs) * 100.
                   rh_qc = iv%tamdar(n)%q(k)%qc
-                  q = ob%tamdar(n)%q(k) * 1e3    !g/kg           !cys_add
-                  q_qc = iv%tamdar(n)%q(k)%qc                    !cys_add
-                  q_err = max(0.01, iv%tamdar(n)%q(k)%error * 1e3) !g/kg !cys_add
+                  q = ob%tamdar(n)%q(k) * 1e3    !g/kg
+                  q_qc = iv%tamdar(n)%q(k)%qc
+                  q_err = max(0.01, iv%tamdar(n)%q(k)%error * 1e3) !g/kg
                else
                   rh    = missing_r
                   rh_qc = missing_data
-                  q     = missing_r                             !cys_add
-                  q_qc  = missing_data                          !cys_add
-                  q_err = xmiss                                 !cys_add
+                  q     = missing_r
+                  q_qc  = missing_data
+                  q_err = xmiss
                end if
                if (rh_qc < 0) rh_qc = missing_data
-               if ( q_qc < 0)  q_qc = missing_data              !cys_add
+               if ( q_qc < 0)  q_qc = missing_data
 
                write(ounit, fmt = trim (fmt_each_inv))       &
                   iv%tamdar(n)%p(k), zero,    pr_error,       &
@@ -1846,7 +1681,6 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
       do n = 1, iv%info(tamdar_sfc)%nlocal
          if (.not.iv%info(tamdar_sfc)%proc_domain(1,n)) cycle
          ! Guo .. not write out the data below the lowest model level:
-!cys     if (iv%info(tamdar_sfc)%zk(1,n) == missing_r) cycle
 
          nlevels = iv%info(tamdar_sfc)%levels(n)
          if (iv%info(tamdar_sfc)%levels(n) > 1) then
@@ -1891,8 +1725,8 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
             dir       = missing_r
             dir_qc    = missing_data
             speed_err = xmiss
-            uu        = missing_r                       !cys_add
-            vv        = missing_r                       !cys_add
+            uu        = missing_r
+            vv        = missing_r
          end if
 
          ! get RH from Q & T
@@ -1903,19 +1737,19 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
             call da_tp_to_qs(ob%tamdar_sfc(n)%t, ob%tamdar_sfc(n)%p, es, qs)
             rh = (ob%tamdar_sfc(n)%q/qs) * 100.
             rh_qc = iv%tamdar_sfc(n)%q%qc
-            q = ob%tamdar_sfc(n)%q * 1e3    !g/kg            !cys_add
-            q_qc = iv%tamdar_sfc(n)%q%qc                     !cys_add
-            q_err = max(0.01, iv%tamdar_sfc(n)%q%error * 1e3) !g/kg                  !cys_add
+            q = ob%tamdar_sfc(n)%q * 1e3    !g/kg
+            q_qc = iv%tamdar_sfc(n)%q%qc
+            q_err = max(0.01, iv%tamdar_sfc(n)%q%error * 1e3) !g/kg
          else
             rh    = missing_r
             rh_qc = missing_data
-            q     = missing_r                           !cys_add
-            q_qc  = missing_data                        !cys_add
-            q_err = xmiss                               !cys_add
+            q     = missing_r
+            q_qc  = missing_data
+            q_err = xmiss
          end if
 
          if (rh_qc < 0) rh_qc = missing_data
-         if ( q_qc < 0)  q_qc = missing_data            !cys_add
+         if ( q_qc < 0)  q_qc = missing_data
 
          p    = ob%tamdar_sfc(n)%p
          p_qc = iv%tamdar_sfc(n)%p%qc
@@ -1928,11 +1762,11 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
 
          t    =  ob%tamdar_sfc(n)%t
          t_qc =  iv%tamdar_sfc(n)%t%qc
-         t_err =  iv%tamdar_sfc(n)%t%error                   !cys_add
+         t_err =  iv%tamdar_sfc(n)%t%error
          if (iv%tamdar_sfc(n)%t%qc <= fails_error_max) then
             t_qc = missing_data
             t   = missing_r
-            t_err = xmiss                               !cys_add
+            t_err = xmiss
          end if
 
          write(ounit, fmt = trim (fmt_each_inv))       &

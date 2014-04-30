@@ -70,12 +70,10 @@ subroutine da_setup_be_ncep_gfs( grid, be )
    write (6,*)
 
    if (cv_options /= 3) then
-      write(unit=*, fmt='(a, i2)') &
-           'cv_options:', cv_options
-
-      call wrf_shutdown
-
-      stop "Stopped for Wrong CV_OPTION."
+      write(unit=message(1),fmt='(A)') 'Something has gone horribly wrong here'
+      write(unit=message(2),fmt='(A,I4)') &
+          'This subroutine is for cv_options = 3, yet cv_options = ', cv_options
+      call da_error(__FILE__,__LINE__,message(1:2))
    endif
 
 !!!!!!!!! cv_options=3
@@ -127,19 +125,21 @@ subroutine da_setup_be_ncep_gfs( grid, be )
    read(be_unit, iostat= ier) nsig,nlath
 
    if (ier /= 0) then
-      write(unit=*, fmt='(a, i2, a, i3)') &
+      write(unit=message(1), fmt='(A,I4,A,I4)') &
            'cv_options:', cv_options,' Reading error in unit=',be_unit
-      call wrf_shutdown
-      stop "Stopped, Please check if CV3 BE file provided correctly."
+      write(unit=message(2), fmt='(A)') 'There is likely a problem with your be.dat file'
+      call da_error(__FILE__,__LINE__,message(1:2))
    endif
 
-   print*,'number of vertical level for stats =', nsig
-   print*,'number of latitude           nlath =', nlath
+   write(unit=message(1),fmt='(A,I10)') 'Number of vertical level for stats = ', nsig
+   write(unit=message(2),fmt='(A,I10)') 'Number of latitude           nlath = ', nlath
+   call da_message(message(1:2))
 
    kz =  kde- kds+1
 
    if(nsig.ne.kz)then
-     print*,'number of vertical level for WRFVar=', kz
+      write(unit=message(1),fmt='(A,I6)') 'Number of vertical level for WRFVar=', kz
+      call da_message(message(1:1))
    end if
 
 ! 1, Allocate the arrays 
@@ -207,10 +207,10 @@ subroutine da_setup_be_ncep_gfs( grid, be )
 
    read(be_unit, iostat=ier) clat_avn,(sigma_avn(k),k=1,nsig)
    if (ier /= 0) then
-      write(unit=*, fmt='(a, i2, a, i3)') &
+      write(unit=message(1), fmt='(A,I4,A,I4)') &
            'cv_options:', cv_options,' Reading error in unit=',be_unit
-      call wrf_shutdown
-      stop "Stopped, Please check if CV3 BE file provided correctly."
+      write(unit=message(2), fmt='(A)') 'There is likely a problem with your be.dat file'
+      call da_error(__FILE__,__LINE__,message(1:2))
    endif
 
 !   3.2 Variances:

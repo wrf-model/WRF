@@ -54,7 +54,7 @@ CONTAINS
                    SFCRUNOFF,UDRUNOFF,SFCEXC,                    &
                    SFCEVP,GRDFLX,ACSNOW,SNOM,                    &
                    SMFR3D,KEEPFR3DFLAG,                          &
-                   myj,shdmin,shdmax,                            &
+                   myj,shdmin,shdmax,rdlai2d,                    &
                    ids,ide, jds,jde, kds,kde,                    &
                    ims,ime, jms,jme, kms,kme,                    &
                    its,ite, jts,jte, kts,kte                     )
@@ -163,12 +163,12 @@ CONTAINS
                                                           EMISS, &
                                                            XICE, &
                                                           XLAND, &
-                                                         ALBBCK, &
                                                          VEGFRA, &
                                                            TBOT
 
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   SHDMAX
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   SHDMIN
+   LOGICAL, intent(in) :: rdlai2d
 
    REAL,       DIMENSION( 1:nsl), INTENT(IN   )      ::      ZS
 
@@ -180,6 +180,7 @@ CONTAINS
                                                          CANWAT, & ! new
                                                          SNOALB, &
                                                             ALB, &
+                                                         ALBBCK, &
                                                             LAI, &
                                                          MAVAIL, & 
                                                          SFCEXC, &
@@ -573,7 +574,7 @@ CONTAINS
 !--- initializing soil and surface properties
      CALL SOILVEGIN  ( mosaic_lu, mosaic_soil,soilfrac,nscat,shdmin(i,j),shdmax(i,j),&
                        NLCAT,ILAND,ISOIL,iswater,MYJ,IFOREST,lufrac,VEGFRA(I,J),     &
-                       EMISSL(I,J),PC(I,J),ZNT(I,J),LAI(I,J),                        &
+                       EMISSL(I,J),PC(I,J),ZNT(I,J),LAI(I,J),RDLAI2D,                &
                        QWRTZ,RHOCS,BCLH,DQM,KSAT,PSIS,QMIN,REF,WILT,i,j )
     IF ( wrf_at_debug_level(LSMRUC_DBG_LVL) ) THEN
       if(ktau.eq.1 .and.(i.eq.358.and.j.eq.260)) &
@@ -685,7 +686,8 @@ CONTAINS
             ILAND = isice
             ISOIL = 16
             ZNT(I,J) = 0.011
-            snoalb(i,j) = 0.75
+            snoalb(i,j) = 0.8
+            albbck(i,j) = 0.7
             dqm = 1.
             ref = 1.
             qmin = 0.
@@ -1059,6 +1061,7 @@ CONTAINS
     ENDIF
 
         NEWSN=0.
+        snowfracnewsn=0.
         RAINF = 0.
         RSM=0.
         INFILTR=0.
@@ -1076,6 +1079,7 @@ CONTAINS
 
         GSWnew=GSW
         ALBice=ALB_SNOW_FREE
+        ALBsn=alb_snow
 !--- sea ice properties
 !--- N.N Zubov "Arctic Ice"
 !--- no salinity dependence because we consider the ice pack
@@ -1184,7 +1188,7 @@ CONTAINS
          SNHEI_CRIT_newsn=0.0005*1.e3/rhosn
 !         SNOWFRAC=MIN(1.,SNHEI/SNHEI_CRIT)
          SNOWFRAC=MIN(1.,SNHEI/(2.*SNHEI_CRIT))
-         SNOWFRACnewsn=MIN(1.,SNHEI/SNHEI_CRIT_newsn)
+         if(newsn > 0. ) SNOWFRACnewsn=MIN(1.,SNHEI/SNHEI_CRIT_newsn)
 !---        EMISS = 0.98 for snow
         if(newsn > 0. .and. SNOWFRACnewsn > 0.99) then
          EMISS = 0.98
@@ -2435,7 +2439,8 @@ CONTAINS
 !--- the top soil layer. SNTH is computed using snwe=0.016 m, and
 !--- equals 4 cm for snow density 400 kg/m^3.
 
-           DELTSN=0.0301*1.e3/rhosn
+! increase thinkness of top snow layer from 3 cm SWE to 5 cm SWE
+           DELTSN=0.05*1.e3/rhosn
            snth=0.01601*1.e3/rhosn
 
 ! when the snow depth is marginally higher than DELTSN,
@@ -2634,7 +2639,7 @@ CONTAINS
 !  check if all snow can evaporate during DT
          BETA=1.
          EPDT = EPOT * RAS *DELT*UMVEG
-         IF(SNWEPR.LE.EPDT) THEN 
+         IF(EPDT.gt.0. .and. SNWEPR.LE.EPDT) THEN 
             BETA=SNWEPR/max(1.e-8,EPDT)
             SNWE=0.
             SNHEI=0.
@@ -2825,9 +2830,13 @@ print *, 'TSO before calling SNOWTEMP: ', tso
 !-- actual moisture flux from RUC LSM
         EETA = (EDIR1 + EC1 + ETT1)*1.E3
        ENDIF
+      if(snhei.gt.0.)then
+        s=snflx
+      else
         s=THDIF(1)*CAP(1)*dzstop*(tso(1)-tso(2))
+      endif
         HFX=HFT
-        FLTOT=RNET-HFT-QFX-S
+        FLTOT=RNET-HFT-QFX-S-SNOH
 
  222     CONTINUE
 
@@ -2998,7 +3007,8 @@ print *, 'TSO before calling SNOWTEMP: ', tso
 !--- the top sea ice layer. SNTH is computed using snwe=0.016 m, and
 !--- equals 4 cm for snow density 400 kg/m^3.
 
-           DELTSN=0.0301*1.e3/rhosn
+! increase thickness of top snow layer from 3 cm SWE to 5 cm SWE
+           DELTSN=0.05*1.e3/rhosn
            snth=0.01601*1.e3/rhosn
 
 ! when the snow depth is marginlly higher than DELTSN,
@@ -3157,6 +3167,10 @@ print *, 'TSO before calling SNOWTEMP: ', tso
          rhtso(nzs1)=(FT+X2*rhtso(NZS-2))/denom
          tsnav=0.5*(soilt+tso(1))                                    &
                      -273.15
+         cotso(nzs)=cotso(NZS1)
+         rhtso(nzs)=rhtso(nzs1)
+         cotsn=cotso(NZS)
+         rhtsn=rhtso(NZS)
        ENDIF
 
 !************************************************************************
@@ -3368,9 +3382,21 @@ print *, 'TSO before calling SNOWTEMP: ', tso
                     (SMELT+BETA*EPOT*RAS)*DELT                        &
                                          ) )
 
+!--- If there is no snow melting then just evaporation
+!--- or condensation cxhanges SNWE
+      ELSE
+               EPOT=-QKMS*(QVATM-QSG)
+               SNWE = AMAX1(0.,(SNWEPR-                               &
+                    BETA*EPOT*RAS*DELT))
+
+      ENDIF
+
+      if(nmelt.eq.1) goto 212  ! second iteration
+ 220  continue
 !--- If all snow melts, then 13% of snow melt we kept in the
 !--- snow pack should be added back to snow melt and infiltrate
 !--- into soil.
+       if(rsm.gt.0.) then
         if(snwe.le.rsm) then
            smelt=smelt+rsm/delt
            snwe=0.
@@ -3381,29 +3407,14 @@ print *, 'TSO before calling SNOWTEMP: ', tso
 !*** remains in the pack and changes its density.
 !*** Eq. 9 (with my correction) in Koren et al. (1999)
 
-          if(snwe.gt.0.) then
          xsn=(rhosn*(snwe-rsm)+917.*rsm)/                            &
              snwe
          rhosn=MIN(XSN,400.)
 
         RHOCSN=2090.* RHOSN
         thdifsn = 0.265/RHOCSN
-          endif
-
         endif
-
-!--- If there is no snow melting then just evaporation
-!--- or condensation cxhanges SNWE
-      ELSE
-               EPOT=-QKMS*(QVATM-QSG)
-               SNWE = AMAX1(0.,(SNWEPR-                               &
-                    BETA*EPOT*RAS*DELT))
-
-      ENDIF
-!*** Correct snow density on effect of snow melt, melted
-!*** from the top of the snow. 13% of melted water
-!*** remains in the pack and changes its density.
-!*** Eq. 9 (with my correction) in Koren et al. (1999)
+      endif
 
         SNHEI=SNWE *1.E3 / RHOSN
 
@@ -3414,8 +3425,6 @@ print *, 'TSO before calling SNOWTEMP: ', tso
 ! 4 Nov 07                    +VEGFRAC*cst
         snheiprint=snweprint*1.E3 / RHOSN
 
-      if(nmelt.eq.1) goto 212
- 220  continue
 
     IF ( wrf_at_debug_level(LSMRUC_DBG_LVL) ) THEN
 print *, 'snweprint : ',snweprint
@@ -3483,10 +3492,14 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
           sublim = EETA
         ENDIF
 
+      if(snhei.gt.0.) then
+        s=D9SN*(SOILT-TSOB)
+      else
         s=THDIFICE(1)*CAPICE(1)*dzstop*(tso(1)-tso(2))
+      endif
 !        s=D9SN*(SOILT-TSOB)
         HFX=HFT
-        FLTOT=RNET-HFT-QFX-S
+        FLTOT=RNET-HFT-QFX-S-SNOH
 !------------------------------------------------------------------------
 !------------------------------------------------------------------------
    END SUBROUTINE SNOWSEAICE
@@ -4094,6 +4107,11 @@ print *, 'SNOWTEMP: SNHEI,SNTH,SOILT1: ',SNHEI,SNTH,SOILT1,soilt
          rhtso(nzs1)=(FT+X2*rhtso(NZS-2))/denom
          tsnav=0.5*(soilt+tso(1))                                    &
                      -273.15
+         cotso(NZS)=cotso(nzs1)
+         rhtso(NZS)=rhtso(nzs1)
+         cotsn=cotso(NZS)
+         rhtsn=rhtso(NZS)
+
        ENDIF
 
 !************************************************************************
@@ -4276,10 +4294,10 @@ print *, 'SNOWTEMP: SNHEI,SNTH,SOILT1: ',SNHEI,SNTH,SOILT1,soilt
           enddo
 
         EDIR1 = Q1*UMVEG * BETA
-        EC1 = Q1 * WETCAN *VEGFRAC
+        EC1 = Q1 * WETCAN
         CMC2MS=CST/DELT
-       if(EC1.gt.CMC2MS) cst=0.
-        EC1=MIN(CMC2MS,EC1)
+       if(EC1.gt.CMC2MS*RAS) cst=0.
+        EC1=MIN(CMC2MS*RAS,EC1)
         EETA = (EDIR1 + EC1 + ETT1)*1.E3
 ! to convert from kg m-2 s-1 to m s-1: 1/rho water=1.e-3************ 
         QFX= - XLVM * EETA
@@ -4335,26 +4353,6 @@ print *, 'SNOWTEMP: SNHEI,SNTH,SOILT1: ',SNHEI,SNTH,SOILT1,soilt
                     (SMELT+BETA*EPOT*RAS)*DELT                        &
 !                    (SMELT+BETA*EPOT*RAS*UMVEG)*DELT                 &
                                          ) )
-
-       if(snwe.le.rsm) then
-           smelt=smelt+rsm/delt
-           snwe=0.
-           rsm=0.
-       else
-!*** Correct snow density on effect of snow melt, melted
-!*** from the top of the snow. 13% of melted water
-!*** remains in the pack and changes its density.
-!*** Eq. 9 (with my correction) in Koren et al. (1999)
-          if(snwe.gt.0.) then
-          xsn=(rhosn*(snwe-rsm)+917.*rsm)/                            &
-              snwe
-          rhosn=MIN(XSN,400.)
-
-          RHOCSN=2090.* RHOSN
-          thdifsn = 0.265/RHOCSN
-          endif  
-        endif  
-
 !--- If there is no snow melting then just evaporation
 !--- or condensation cxhanges SNWE
       ELSE
@@ -4364,17 +4362,32 @@ print *, 'SNOWTEMP: SNHEI,SNTH,SOILT1: ',SNHEI,SNTH,SOILT1,soilt
 !                    BETA*EPOT*RAS*UMVEG*DELT))
 
       ENDIF
+!18apr08 - if snow melt occurred then go into iteration for energy budget 
+!         solution 
+     if(nmelt.eq.1) goto 212  ! second interation
+ 220  continue
+
+      if(rsm.gt.0.) then
+       if(snwe.le.rsm) then
+           smelt=smelt+rsm/delt
+           snwe=0.
+           rsm=0.
+       else
 !*** Correct snow density on effect of snow melt, melted
 !*** from the top of the snow. 13% of melted water
 !*** remains in the pack and changes its density.
 !*** Eq. 9 (with my correction) in Koren et al. (1999)
+          xsn=(rhosn*(snwe-rsm)+917.*rsm)/                            &
+              snwe
+          rhosn=MIN(XSN,400.)
+
+          RHOCSN=2090.* RHOSN
+          thdifsn = 0.265/RHOCSN
+        endif  
+       endif
 
         SNHEI=SNWE *1.E3 / RHOSN
 
-!18apr08 - if snow melt occurred then go into iteration for energy budget 
-!         solution 
-     if(nmelt.eq.1) goto 212
- 220  continue
 !--  Snow melt from the top is done. But if ground surface temperature
 !--  is above freezing snow can melt from the bottom. The following
 !--  piece of code will check if bottom melting is possible.
@@ -5131,8 +5144,8 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
      SUBROUTINE SOILVEGIN  ( mosaic_lu,mosaic_soil,soilfrac,nscat,   &
                      shdmin, shdmax,                                 &
                      NLCAT,IVGTYP,ISLTYP,iswater,MYJ,                &
-                     IFOREST,lufrac,vegfrac,EMISS,PC,ZNT,LAI,QWRTZ,  &
-                     RHOCS,BCLH,DQM,KSAT,PSIS,QMIN,REF,WILT,I,J      )
+                     IFOREST,lufrac,vegfrac,EMISS,PC,ZNT,LAI,RDLAI2D,&
+                     QWRTZ,RHOCS,BCLH,DQM,KSAT,PSIS,QMIN,REF,WILT,I,J)
 
 !************************************************************************
 !  Set-up soil and vegetation Parameters in the case when
@@ -5379,6 +5392,7 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
             INTENT (INOUT   )         ::                  emiss, &
                                                             lai, &
                                                             znt
+  LOGICAL, intent(in) :: rdlai2d
 !--- soil properties
    REAL                                                        , &
             INTENT(  OUT)    ::                           RHOCS, &
@@ -5466,7 +5480,7 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
         ZNT   = 0.
         ZNT1  = 0.
         PC    = 0.
-        LAI   = 0.
+        if(.not.rdlai2d) LAI = 0.
         AREA  = 0.
 !-- mosaic approach to landuse in the grid box
 ! Use  Mason (1988) Eq.(15) to compute effective ZNT;
@@ -5480,7 +5494,7 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
         ZNT   = ZNT  + lufrac(k)/ALOG(LB/ZNTtoday(K))**2.
 ! ZNT1 - weighted average in the grid box, not used, computed for comparison
         ZNT1  = ZNT1 + lufrac(k)*ZNTtoday(K)
-        LAI   = LAI  + LAItoday(K)*lufrac(k)
+        if(.not.rdlai2d) LAI = LAI  + LAItoday(K)*lufrac(k)
         PC    = PC   + PCTBL(K)*lufrac(k)
       enddo
 
@@ -5499,7 +5513,7 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
         EMISS = EMISS/AREA
         ZNT1   = ZNT1/AREA
         ZNT = LB/EXP(SQRT(1./ZNT))
-        LAI   = LAI/AREA
+        if(.not.rdlai2d) LAI = LAI/AREA
         PC    = PC /AREA
 
     IF ( wrf_at_debug_level(LSMRUC_DBG_LVL) ) THEN
@@ -5513,7 +5527,7 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
         EMISS = LEMITBL(IVGTYP)
         ZNT   = ZNTtoday(IVGTYP)
         PC    = PCTBL(IVGTYP)
-        LAI   = LAItoday(IVGTYP)
+        if(.not.rdlai2d) LAI = LAItoday(IVGTYP)
      endif
 
 ! parameters from SOILPARM.TBL

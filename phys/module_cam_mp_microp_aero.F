@@ -1512,11 +1512,11 @@ subroutine nucleati(wbar, tair, relhum, cldn, qc, nfice, rhoair, &
 !    You may use, copy, modify this code for any purpose and 
 !    without fee. You may distribute this ORIGINAL package.
 
-      function derf(x)
+      real(r8) function derf(x)
       implicit real (a - h, o - z)
 ! pjj/cray function type
 !     real(r8) a,b,x
-      real(r8) a,b,x,derf
+      real(r8) a,b,x
       dimension a(0 : 64), b(0 : 64)
       integer i,k
       data (a(i), i = 0, 12) / & 

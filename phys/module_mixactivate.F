@@ -231,7 +231,7 @@ subroutine mixactivate(  msectional,            &
 !     doesn't distinguish between warm, cold clouds
 
   USE module_model_constants, only: g, rhowater, xlv, cp, rvovrd, r_d, r_v, mwdry, ep_2
-  USE module_radiation_driver, only: cal_cldfra
+  USE module_radiation_driver, only: cal_cldfra2
 
   implicit none
 
@@ -464,7 +464,7 @@ subroutine mixactivate(  msectional,            &
   enddo
 
   IF( PRESENT(F_QC) .AND. PRESENT ( F_QI ) ) THEN
-     CALL cal_cldfra(CLDFRA,qc,qi,f_qc,f_qi,      &
+     CALL cal_cldfra2(CLDFRA,qc,qi,f_qc,f_qi,     &
           ids,ide, jds,jde, kds,kde,              &
           ims,ime, jms,jme, kms,kme,              &
           its,ite, jts,jte, kts,kte               )

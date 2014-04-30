@@ -1,114 +1,186 @@
-!CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-!                                                                       
-!   FFTPACK 5.0                                                         
-!                                                                       
-!   Authors:  Paul N. Swarztrauber and Richard A. Valent                
-!                                                                       
-!   $Id: cmf4kf.f,v 1.2 2004/06/15 21:08:32 rodney Exp $                
-!                                                                       
-!CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-                                                                        
-      SUBROUTINE CMF4KF (LOT,IDO,L1,NA,CC,IM1,IN1,CH,IM2,IN2,WA) 
-      REAL CC(2,IN1,L1,IDO,4),CH(2,IN2,L1,4,IDO),WA(IDO,3,2) 
-!                                                                       
-! FFTPACK 5.0 auxiliary routine                                         
-!                                                                       
-      M1D = (LOT-1)*IM1+1 
-      M2S = 1-IM2 
-      IF (IDO .GT. 1) GO TO 102 
-      SN = 1./REAL(4*L1) 
-      IF (NA .EQ. 1) GO TO 106 
-      DO 101 K=1,L1 
-         DO 101 M1=1,M1D,IM1 
-         TI1 = CC(2,M1,K,1,1)-CC(2,M1,K,1,3) 
-         TI2 = CC(2,M1,K,1,1)+CC(2,M1,K,1,3) 
-         TR4 = CC(2,M1,K,1,2)-CC(2,M1,K,1,4) 
-         TI3 = CC(2,M1,K,1,2)+CC(2,M1,K,1,4) 
-         TR1 = CC(1,M1,K,1,1)-CC(1,M1,K,1,3) 
-         TR2 = CC(1,M1,K,1,1)+CC(1,M1,K,1,3) 
-         TI4 = CC(1,M1,K,1,4)-CC(1,M1,K,1,2) 
-         TR3 = CC(1,M1,K,1,2)+CC(1,M1,K,1,4) 
-         CC(1,M1,K,1,1) = SN*(TR2+TR3) 
-         CC(1,M1,K,1,3) = SN*(TR2-TR3) 
-         CC(2,M1,K,1,1) = SN*(TI2+TI3) 
-         CC(2,M1,K,1,3) = SN*(TI2-TI3) 
-         CC(1,M1,K,1,2) = SN*(TR1+TR4) 
-         CC(1,M1,K,1,4) = SN*(TR1-TR4) 
-         CC(2,M1,K,1,2) = SN*(TI1+TI4) 
-         CC(2,M1,K,1,4) = SN*(TI1-TI4) 
-  101 CONTINUE 
-      RETURN 
-  106 DO 107 K=1,L1 
-         M2 = M2S 
-         DO 107 M1=1,M1D,IM1 
-         M2 = M2+IM2 
-         TI1 = CC(2,M1,K,1,1)-CC(2,M1,K,1,3) 
-         TI2 = CC(2,M1,K,1,1)+CC(2,M1,K,1,3) 
-         TR4 = CC(2,M1,K,1,2)-CC(2,M1,K,1,4) 
-         TI3 = CC(2,M1,K,1,2)+CC(2,M1,K,1,4) 
-         TR1 = CC(1,M1,K,1,1)-CC(1,M1,K,1,3) 
-         TR2 = CC(1,M1,K,1,1)+CC(1,M1,K,1,3) 
-         TI4 = CC(1,M1,K,1,4)-CC(1,M1,K,1,2) 
-         TR3 = CC(1,M1,K,1,2)+CC(1,M1,K,1,4) 
-         CH(1,M2,K,1,1) = SN*(TR2+TR3) 
-         CH(1,M2,K,3,1) = SN*(TR2-TR3) 
-         CH(2,M2,K,1,1) = SN*(TI2+TI3) 
-         CH(2,M2,K,3,1) = SN*(TI2-TI3) 
-         CH(1,M2,K,2,1) = SN*(TR1+TR4) 
-         CH(1,M2,K,4,1) = SN*(TR1-TR4) 
-         CH(2,M2,K,2,1) = SN*(TI1+TI4) 
-         CH(2,M2,K,4,1) = SN*(TI1-TI4) 
-  107 CONTINUE 
-      RETURN 
-  102 DO 103 K=1,L1 
-         M2 = M2S 
-         DO 103 M1=1,M1D,IM1 
-         M2 = M2+IM2 
-         TI1 = CC(2,M1,K,1,1)-CC(2,M1,K,1,3) 
-         TI2 = CC(2,M1,K,1,1)+CC(2,M1,K,1,3) 
-         TR4 = CC(2,M1,K,1,2)-CC(2,M1,K,1,4) 
-         TI3 = CC(2,M1,K,1,2)+CC(2,M1,K,1,4) 
-         TR1 = CC(1,M1,K,1,1)-CC(1,M1,K,1,3) 
-         TR2 = CC(1,M1,K,1,1)+CC(1,M1,K,1,3) 
-         TI4 = CC(1,M1,K,1,4)-CC(1,M1,K,1,2) 
-         TR3 = CC(1,M1,K,1,2)+CC(1,M1,K,1,4) 
-         CH(1,M2,K,1,1) = TR2+TR3 
-         CH(1,M2,K,3,1) = TR2-TR3 
-         CH(2,M2,K,1,1) = TI2+TI3 
-         CH(2,M2,K,3,1) = TI2-TI3 
-         CH(1,M2,K,2,1) = TR1+TR4 
-         CH(1,M2,K,4,1) = TR1-TR4 
-         CH(2,M2,K,2,1) = TI1+TI4 
-         CH(2,M2,K,4,1) = TI1-TI4 
-  103 CONTINUE 
-      DO 105 I=2,IDO 
-         DO 104 K=1,L1 
-         M2 = M2S 
-         DO 104 M1=1,M1D,IM1 
-         M2 = M2+IM2 
-            TI1 = CC(2,M1,K,I,1)-CC(2,M1,K,I,3) 
-            TI2 = CC(2,M1,K,I,1)+CC(2,M1,K,I,3) 
-            TI3 = CC(2,M1,K,I,2)+CC(2,M1,K,I,4) 
-            TR4 = CC(2,M1,K,I,2)-CC(2,M1,K,I,4) 
-            TR1 = CC(1,M1,K,I,1)-CC(1,M1,K,I,3) 
-            TR2 = CC(1,M1,K,I,1)+CC(1,M1,K,I,3) 
-            TI4 = CC(1,M1,K,I,4)-CC(1,M1,K,I,2) 
-            TR3 = CC(1,M1,K,I,2)+CC(1,M1,K,I,4) 
-            CH(1,M2,K,1,I) = TR2+TR3 
-            CR3 = TR2-TR3 
-            CH(2,M2,K,1,I) = TI2+TI3 
-            CI3 = TI2-TI3 
-            CR2 = TR1+TR4 
-            CR4 = TR1-TR4 
-            CI2 = TI1+TI4 
-            CI4 = TI1-TI4 
-            CH(1,M2,K,2,I) = WA(I,1,1)*CR2+WA(I,1,2)*CI2 
-            CH(2,M2,K,2,I) = WA(I,1,1)*CI2-WA(I,1,2)*CR2 
-            CH(1,M2,K,3,I) = WA(I,2,1)*CR3+WA(I,2,2)*CI3 
-            CH(2,M2,K,3,I) = WA(I,2,1)*CI3-WA(I,2,2)*CR3 
-            CH(1,M2,K,4,I) = WA(I,3,1)*CR4+WA(I,3,2)*CI4 
-            CH(2,M2,K,4,I) = WA(I,3,1)*CI4-WA(I,3,2)*CR4 
-  104    CONTINUE 
-  105 END DO 
-      RETURN 
-      END                                           
+subroutine cmf4kf ( lot, ido, l1, na, cc, im1, in1, ch, im2, in2, wa )
+
+!*****************************************************************************80
+!
+!! CMF4KF is an FFTPACK5 auxiliary routine.
+!
+!  License:
+!
+!    Licensed under the GNU General Public License (GPL).
+!    Copyright (C) 1995-2004, Scientific Computing Division,
+!    University Corporation for Atmospheric Research
+!
+!  Modified:
+!
+!    27 March 2009
+!
+!  Author:
+!
+!    Paul Swarztrauber
+!    Richard Valent
+!
+!  Reference:
+!
+!    Paul Swarztrauber,
+!    Vectorizing the Fast Fourier Transforms,
+!    in Parallel Computations,
+!    edited by G. Rodrigue,
+!    Academic Press, 1982.
+!
+!    Paul Swarztrauber,
+!    Fast Fourier Transform Algorithms for Vector Computers,
+!    Parallel Computing, pages 45-63, 1984.
+!
+!  Parameters:
+!
+  implicit none
+
+  integer ( kind = 4 ) ido
+  integer ( kind = 4 ) in1
+  integer ( kind = 4 ) in2
+  integer ( kind = 4 ) l1
+
+  real ( kind = 4 ) cc(2,in1,l1,ido,4)
+  real ( kind = 4 ) ch(2,in2,l1,4,ido)
+  real ( kind = 4 ) ci2
+  real ( kind = 4 ) ci3
+  real ( kind = 4 ) ci4
+  real ( kind = 4 ) cr2
+  real ( kind = 4 ) cr3
+  real ( kind = 4 ) cr4
+  integer ( kind = 4 ) i
+  integer ( kind = 4 ) im1
+  integer ( kind = 4 ) im2
+  integer ( kind = 4 ) k
+  integer ( kind = 4 ) lot
+  integer ( kind = 4 ) m1
+  integer ( kind = 4 ) m1d
+  integer ( kind = 4 ) m2
+  integer ( kind = 4 ) m2s
+  integer ( kind = 4 ) na
+  real ( kind = 4 ) sn
+  real ( kind = 4 ) ti1
+  real ( kind = 4 ) ti2
+  real ( kind = 4 ) ti3
+  real ( kind = 4 ) ti4
+  real ( kind = 4 ) tr1
+  real ( kind = 4 ) tr2
+  real ( kind = 4 ) tr3
+  real ( kind = 4 ) tr4
+  real ( kind = 4 ) wa(ido,3,2)
+
+  m1d = ( lot - 1 ) * im1 + 1
+  m2s = 1 - im2
+
+  if ( 1 < ido ) then
+
+    do k = 1, l1
+      m2 = m2s
+      do m1 = 1, m1d, im1
+        m2 = m2 + im2
+        ti1 = cc(2,m1,k,1,1)-cc(2,m1,k,1,3)
+        ti2 = cc(2,m1,k,1,1)+cc(2,m1,k,1,3)
+        tr4 = cc(2,m1,k,1,2)-cc(2,m1,k,1,4)
+        ti3 = cc(2,m1,k,1,2)+cc(2,m1,k,1,4)
+        tr1 = cc(1,m1,k,1,1)-cc(1,m1,k,1,3)
+        tr2 = cc(1,m1,k,1,1)+cc(1,m1,k,1,3)
+        ti4 = cc(1,m1,k,1,4)-cc(1,m1,k,1,2)
+        tr3 = cc(1,m1,k,1,2)+cc(1,m1,k,1,4)
+        ch(1,m2,k,1,1) = tr2+tr3
+        ch(1,m2,k,3,1) = tr2-tr3
+        ch(2,m2,k,1,1) = ti2+ti3
+        ch(2,m2,k,3,1) = ti2-ti3
+        ch(1,m2,k,2,1) = tr1+tr4
+        ch(1,m2,k,4,1) = tr1-tr4
+        ch(2,m2,k,2,1) = ti1+ti4
+        ch(2,m2,k,4,1) = ti1-ti4
+      end do
+    end do
+
+    do i = 2, ido
+      do k = 1, l1
+        m2 = m2s
+        do m1 = 1, m1d, im1
+          m2 = m2 + im2
+          ti1 = cc(2,m1,k,i,1)-cc(2,m1,k,i,3)
+          ti2 = cc(2,m1,k,i,1)+cc(2,m1,k,i,3)
+          ti3 = cc(2,m1,k,i,2)+cc(2,m1,k,i,4)
+          tr4 = cc(2,m1,k,i,2)-cc(2,m1,k,i,4)
+          tr1 = cc(1,m1,k,i,1)-cc(1,m1,k,i,3)
+          tr2 = cc(1,m1,k,i,1)+cc(1,m1,k,i,3)
+          ti4 = cc(1,m1,k,i,4)-cc(1,m1,k,i,2)
+          tr3 = cc(1,m1,k,i,2)+cc(1,m1,k,i,4)
+          ch(1,m2,k,1,i) = tr2+tr3
+          cr3 = tr2-tr3
+          ch(2,m2,k,1,i) = ti2+ti3
+          ci3 = ti2-ti3
+          cr2 = tr1+tr4
+          cr4 = tr1-tr4
+          ci2 = ti1+ti4
+          ci4 = ti1-ti4
+          ch(1,m2,k,2,i) = wa(i,1,1)*cr2+wa(i,1,2)*ci2
+          ch(2,m2,k,2,i) = wa(i,1,1)*ci2-wa(i,1,2)*cr2
+          ch(1,m2,k,3,i) = wa(i,2,1)*cr3+wa(i,2,2)*ci3
+          ch(2,m2,k,3,i) = wa(i,2,1)*ci3-wa(i,2,2)*cr3
+          ch(1,m2,k,4,i) = wa(i,3,1)*cr4+wa(i,3,2)*ci4
+          ch(2,m2,k,4,i) = wa(i,3,1)*ci4-wa(i,3,2)*cr4
+        end do
+      end do
+    end do
+
+  else if ( na == 1 ) then
+
+    sn = 1.0E+00 / real ( 4 * l1, kind = 4 )
+
+    do k = 1, l1
+      m2 = m2s
+      do m1 = 1, m1d, im1
+        m2 = m2 + im2
+        ti1 = cc(2,m1,k,1,1)-cc(2,m1,k,1,3)
+        ti2 = cc(2,m1,k,1,1)+cc(2,m1,k,1,3)
+        tr4 = cc(2,m1,k,1,2)-cc(2,m1,k,1,4)
+        ti3 = cc(2,m1,k,1,2)+cc(2,m1,k,1,4)
+        tr1 = cc(1,m1,k,1,1)-cc(1,m1,k,1,3)
+        tr2 = cc(1,m1,k,1,1)+cc(1,m1,k,1,3)
+        ti4 = cc(1,m1,k,1,4)-cc(1,m1,k,1,2)
+        tr3 = cc(1,m1,k,1,2)+cc(1,m1,k,1,4)
+        ch(1,m2,k,1,1) = sn*(tr2+tr3)
+        ch(1,m2,k,3,1) = sn*(tr2-tr3)
+        ch(2,m2,k,1,1) = sn*(ti2+ti3)
+        ch(2,m2,k,3,1) = sn*(ti2-ti3)
+        ch(1,m2,k,2,1) = sn*(tr1+tr4)
+        ch(1,m2,k,4,1) = sn*(tr1-tr4)
+        ch(2,m2,k,2,1) = sn*(ti1+ti4)
+        ch(2,m2,k,4,1) = sn*(ti1-ti4)
+      end do
+    end do
+
+  else
+
+    sn = 1.0E+00 / real ( 4 * l1, kind = 4 )
+
+    do k = 1, l1
+      do m1 = 1, m1d, im1
+        ti1 = cc(2,m1,k,1,1)-cc(2,m1,k,1,3)
+        ti2 = cc(2,m1,k,1,1)+cc(2,m1,k,1,3)
+        tr4 = cc(2,m1,k,1,2)-cc(2,m1,k,1,4)
+        ti3 = cc(2,m1,k,1,2)+cc(2,m1,k,1,4)
+        tr1 = cc(1,m1,k,1,1)-cc(1,m1,k,1,3)
+        tr2 = cc(1,m1,k,1,1)+cc(1,m1,k,1,3)
+        ti4 = cc(1,m1,k,1,4)-cc(1,m1,k,1,2)
+        tr3 = cc(1,m1,k,1,2)+cc(1,m1,k,1,4)
+        cc(1,m1,k,1,1) = sn*(tr2+tr3)
+        cc(1,m1,k,1,3) = sn*(tr2-tr3)
+        cc(2,m1,k,1,1) = sn*(ti2+ti3)
+        cc(2,m1,k,1,3) = sn*(ti2-ti3)
+        cc(1,m1,k,1,2) = sn*(tr1+tr4)
+        cc(1,m1,k,1,4) = sn*(tr1-tr4)
+        cc(2,m1,k,1,2) = sn*(ti1+ti4)
+        cc(2,m1,k,1,4) = sn*(ti1-ti4)
+      end do
+    end do
+
+  end if
+
+  return
+end

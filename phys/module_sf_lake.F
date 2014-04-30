@@ -1,5 +1,21 @@
 MODULE module_sf_lake
 
+! The lake scheme was retrieved from the Community Land Model version 4.5 
+! (Oleson et al. 2013) with some modifications by Gu et al. (2013). It is a 
+! one-dimensional mass and energy balance scheme with 20-25 model layers, 
+! including up to 5 snow layers on the lake ice, 10 water layers, and 10 soil 
+! layers on the lake bottom. The lake scheme is used with actual lake points and 
+! lake depth derived from the WPS, and it also can be used with user defined 
+! lake points and lake depth in WRF (lake_min_elev and lakedepth_default). 
+! The lake scheme is independent of a land surface scheme and therefore 
+! can be used with any land surface scheme embedded in WRF. The lake scheme 
+! developments and evaluations were included in Subin et al. (2012) and Gu et al. (2013) 
+!
+!   Subin et al. 2012: Improved lake model for climate simulations, J. Adv. Model. 
+!   Earth Syst., 4, M02001. DOI:10.1029/2011MS000072; 
+!   Gu et al. 2013: Calibration and validation of lake surface temperature simulations 
+!   with the coupled WRF-Lake model. Climatic Change, 1-13, 10.1007/s10584-013-0978-y. 
+
  USE module_wrf_error
  USE module_model_constants, ONLY : rcp
 
@@ -61,6 +77,7 @@ MODULE module_sf_lake
     
     real(r8), public, parameter :: spval = 1.e36  !special value for missing data (ocean)
 
+    real, parameter  ::     depth_c = 50.          ! below the level t_lake3d will be 277.0  !mchen
 
     
    ! These are tunable constants
@@ -106,7 +123,7 @@ MODULE module_sf_lake
                      xlat_urb2d   ,z_lake3d       ,dz_lake3d    ,lakedepth2d     ,&
                      watsat3d     ,csol3d         ,tkmg3d       ,tkdry3d         ,&
                      tksatu3d     ,ivgtyp         ,ht           ,xland           ,& 
-                     lakeminalt                                                  ,&
+                     iswater, xice, xice_threshold, lake_min_elev                ,&
                      ids          ,ide            ,jds          ,jde             ,&
                      kds          ,kde            ,ims          ,ime             ,&
                      jms          ,jme            ,kms          ,kme             ,&
@@ -115,7 +132,11 @@ MODULE module_sf_lake
                      h2osno2d     ,snowdp2d       ,snl2d        ,z3d             ,&  !h
                      dz3d         ,zi3d           ,h2osoi_vol3d ,h2osoi_liq3d    ,&
                      h2osoi_ice3d ,t_grnd2d       ,t_soisno3d   ,t_lake3d        ,&
-                     savedtke12d  ,lake_icefrac3d                                ,&
+                     savedtke12d  ,lake_icefrac3d                                ,& 
+#if (EM_CORE==1)
+             !        lakemask     ,lakeflag                                      ,&
+                     lakemask                                          ,&
+#endif
                      hfx          ,lh             ,grdflx       ,tsk             ,&  !o
                      qfx          ,t2             ,th2          ,q2 )
 
@@ -130,6 +151,13 @@ MODULE module_sf_lake
     INTEGER,  INTENT(IN   )   ::     ids,ide, jds,jde, kds,kde,  &
                                      ims,ime, jms,jme, kms,kme,  &
                                      its,ite, jts,jte, kts,kte
+    INTEGER , INTENT (IN) :: iswater
+    REAL,     INTENT(IN)  :: xice_threshold
+    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   XICE
+#if (EM_CORE==1)
+    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   LAKEMASK
+ !   INTEGER, INTENT(IN)::   LAKEFLAG
+#endif
     
     REAL,           DIMENSION( ims:ime, kms:kme, jms:jme ),INTENT(IN)  :: t_phy  
     REAL,           DIMENSION( ims:ime, kms:kme, jms:jme ),INTENT(IN)  :: p8w    
@@ -144,7 +172,7 @@ MODULE module_sf_lake
     REAL,           DIMENSION( ims:ime, jms:jme )         ,INTENT(INOUT)  :: albedo
     REAL,           DIMENSION( ims:ime, jms:jme )         ,INTENT(IN)  :: XLAND
     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme )         ,INTENT(IN)  :: XLAT_URB2D
-    INTEGER,        DIMENSION( ims:ime, jms:jme )         ,INTENT(IN)  :: IVGTYP
+    INTEGER,        DIMENSION( ims:ime, jms:jme )         ,INTENT(INOUT)  :: IVGTYP
     REAL,                                                  INTENT(IN)  :: dtbl
     
     REAL,           DIMENSION( ims:ime,1:nlevlake,jms:jme ),INTENT(IN)  :: z_lake3d
@@ -156,7 +184,7 @@ MODULE module_sf_lake
     REAL,           DIMENSION( ims:ime,1:nlevsoil,jms:jme ),INTENT(IN)  :: tksatu3d
     REAL,           DIMENSION( ims:ime, jms:jme )         ,INTENT(IN)  :: lakedepth2d    
     REAL,           DIMENSION( ims:ime, jms:jme )         ,INTENT(IN)  :: ht
-    REAL                                                  ,INTENT(IN)  :: lakeminalt
+    REAL                                                  ,INTENT(IN)  :: lake_min_elev
 
 !out:
     REAL,           DIMENSION( ims:ime, jms:jme )         ,INTENT(OUT) :: HFX
@@ -263,8 +291,19 @@ MODULE module_sf_lake
            SOLDN   = SWDOWN(I,J)                        ! SOLDN is total incoming solar
            SOLNET  = SOLDN*(1.-ALBEDO(I,J))             ! use mid-day albedo to determine net downward solar
                                                         ! (no solar zenith angle correction) 
-        IF (XLAND(I,J).GT.1.5) THEN    
-        if (ivgtyp(i,j)==16.0.and.ht(i,j)>= lakeminalt ) THEN
+!        IF (XLAND(I,J).GT.1.5) THEN    
+
+       !  if ( xice(i,j).gt.xice_threshold) then
+       !   ivgtyp(i,j) = iswater
+       !   xland(i,j) = 2.
+       !   lake_icefrac3d(i,1,j) = xice(i,j)
+       !   endif
+
+#if (EM_CORE==1)
+        if (lakemask(i,j).eq.1) THEN
+#else
+        if (ivgtyp(i,j)==iswater.and.ht(i,j)>= lake_min_elev ) THEN
+#endif
     
            do c = 1,column
      
@@ -375,7 +414,7 @@ MODULE module_sf_lake
          enddo
 
         endif
-        ENDIF    ! if xland = 2
+!        ENDIF    ! if xland = 2
         ENDDO
         ENDDO
 
@@ -4846,13 +4885,19 @@ subroutine LakeDebug( str )
 end subroutine LakeDebug
 
  SUBROUTINE lakeini(IVGTYP,         ISLTYP,          HT,              SNOW,           & !i
-                    lakeminalt,     restart,         domainlakedepth, lake_depth,     &
+                    lake_min_elev,     restart,        lakedepth_default, lake_depth,     &
                     lakedepth2d,    savedtke12d,     snowdp2d,        h2osno2d,       & !o
                     snl2d,          t_grnd2d,        t_lake3d,        lake_icefrac3d, &
                     z_lake3d,       dz_lake3d,       t_soisno3d,      h2osoi_ice3d,   &
                     h2osoi_liq3d,   h2osoi_vol3d,    z3d,             dz3d,           &
                     zi3d,           watsat3d,        csol3d,          tkmg3d,         &
-                    tkdry3d,        tksatu3d,        lake,            ims,ime, jms,jme)
+                    iswater,        xice,            xice_threshold,  xland,   tsk,   &
+#if (EM_CORE == 1)
+                    lakemask,       lakeflag,                                         &
+#endif
+                    lake_depth_flag, use_lakedepth,                                   &
+                    tkdry3d,        tksatu3d,        lake,            its, ite, jts, jte, &
+                    ims,ime, jms,jme)
 
 !==============================================================================
 ! This subroutine was first edited by Hongping Gu for coupling
@@ -4862,13 +4907,27 @@ end subroutine LakeDebug
   USE module_wrf_error
   implicit none
 
+  INTEGER , INTENT (IN) :: iswater
+  REAL,     INTENT(IN)  :: xice_threshold
+  REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   XICE
+  REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN)::      TSK
+  REAL, DIMENSION( ims:ime, jms:jme )  ,INTENT(INOUT)  :: XLAND
+
+#if (EM_CORE == 1)
+  REAL, DIMENSION( ims:ime , jms:jme ) ::   LAKEMASK
+  INTEGER , INTENT (IN) :: lakeflag
+#endif
+  INTEGER , INTENT (INOUT) :: lake_depth_flag
+  INTEGER , INTENT (IN) ::   use_lakedepth
+
   LOGICAL , INTENT(IN)      ::     restart
   INTEGER,  INTENT(IN   )   ::     ims,ime, jms,jme
-  INTEGER, DIMENSION( ims:ime, jms:jme ), INTENT(IN)       :: IVGTYP,       &
+  INTEGER,  INTENT(IN   )   ::     its,ite, jts,jte
+  INTEGER, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT)       :: IVGTYP,       &
                                                               ISLTYP
   REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN)       :: HT
   REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(INOUT)    :: SNOW
-  real,    intent(in)                                      :: domainlakedepth,lakeminalt
+  real,    intent(in)                                      :: lakedepth_default,lake_min_elev
 
   real,    dimension(ims:ime,jms:jme ),intent(out)                        :: lakedepth2d,    &
                                                                              savedtke12d
@@ -4924,16 +4983,16 @@ end subroutine LakeDebug
 
   IF ( RESTART ) RETURN 
 
-  DO j = jms,jme
-  DO i = ims,ime
+  DO j = jts,jte
+  DO i = its,ite
         snowdp2d(i,j)         = snow(i,j)*0.005               ! SNOW in kg/m^2 and snowdp in m
 	h2osno2d(i,j)         = snow(i,j) ! mm 
   ENDDO
   ENDDO
 
 ! initialize all the grid with default value 
-  DO j = jms,jme
-  DO i = ims,ime
+  DO j = jts,jte
+  DO i = its,ite
 
     lakedepth2d(i,j)             = defval
     snl2d(i,j)                   = defval
@@ -4956,15 +5015,58 @@ end subroutine LakeDebug
 
 ! judge whether the grid is lake grid
    numb_lak = 0
+       do i=its,ite
+         do j=jts,jte
+#if (EM_CORE==1)
+         IF (lakeflag.eq.0) THEN    
+            if(ht(i,j)>=lake_min_elev) then 
+              if ( xice(i,j).gt.xice_threshold) then   !mchen
+                   ivgtyp(i,j) = iswater
+                   xland(i,j) = 2. 
+                   lake_icefrac3d(i,1,j) = xice(i,j)
+                   xice(i,j)=0.0
+               endif
+            endif
 
-       do i=ims,ime
-         do j=jms,jme
-            if(ivgtyp(i,j)==16.and.ht(i,j)>=lakeminalt) then 
+            if(ivgtyp(i,j)==iswater.and.ht(i,j)>=lake_min_elev) then 
+                lake(i,j)  = .true.
+                lakemask(i,j) = 1
+                numb_lak   = numb_lak + 1
+            else 
+                lake(i,j)  = .false.
+                lakemask(i,j) = 0
+            end if
+          ELSE
+            if(lakemask(i,j).eq.1) then 
+                lake(i,j)  = .true.
+                numb_lak   = numb_lak + 1
+                if ( xice(i,j).gt.xice_threshold) then   !mchen
+                   ivgtyp(i,j) = iswater
+                   xland(i,j) = 2. 
+                   lake_icefrac3d(i,1,j) = xice(i,j)
+                   xice(i,j)=0.0
+                endif
+             else  
+                lake(i,j)  = .false.
+             endif
+         ENDIF   ! end if lakeflag=0
+#else
+            if(ht(i,j)>=lake_min_elev) then 
+              if ( xice(i,j).gt.xice_threshold) then   !mchen
+                   ivgtyp(i,j) = iswater
+                   xland(i,j) = 2. 
+                   lake_icefrac3d(i,1,j) = xice(i,j)
+                   xice(i,j)=0.0
+               endif
+            endif
+            if(ivgtyp(i,j)==iswater.and.ht(i,j)>=lake_min_elev) then 
                 lake(i,j)  = .true.
                 numb_lak   = numb_lak + 1
             else 
                 lake(i,j)  = .false.
             end if
+
+#endif
         end do
        end do
     write(message,*) "the total number of lake grid is :", numb_lak
@@ -4972,14 +5074,14 @@ end subroutine LakeDebug
 !    CALL LakeDebug(msg)
 ! initialize lake grid 
 
-  DO j = jms,jme
-  DO i = ims,ime
+  DO j = jts,jte
+  DO i = its,ite
 
      if ( lake(i,j) ) then
 
-	t_soisno3d(i,:,j)      = 277.0
-        t_lake3d(i,:,j)        = 277.0
-        t_grnd2d(i,j)          = 277.0
+!	t_soisno3d(i,:,j)      = tsk(i,j)
+!        t_lake3d(i,:,j)        = tsk(i,j)
+!        t_grnd2d(i,j)          = tsk(i,j)
 
         z3d(i,:,j)             = 0.0
         dz3d(i,:,j)            = 0.0
@@ -4989,22 +5091,27 @@ end subroutine LakeDebug
         lake_icefrac3d(i,:,j)  = 0.0
         h2osoi_vol3d(i,:,j)    = 0.0
         snl2d(i,j)             = 0.0
-        if (present(lake_depth) ) then
+          if ( use_lakedepth.eq.1 .and.lake_depth_flag.eq.0 ) then !mchen
+          call wrf_error_fatal ( 'STOP: You need lake-depth information. Rerun WPS or set use_lakedepth = 0')
+          end if
+          if ( use_lakedepth.eq.0 .and.lake_depth_flag.eq.1 ) then !mchen
+          lake_depth_flag = 0 
+          end if
+        if ( lake_depth_flag.eq.1 ) then
 
           if (lake_depth(i,j) > 0.0) then 
             lakedepth2d(i,j)   = lake_depth(i,j)
           else
-            if ( domainlakedepth  > 0.0 ) then
-               lakedepth2d(i,j)   = domainlakedepth
+            if ( lakedepth_default  > 0.0 ) then
+               lakedepth2d(i,j)   = lakedepth_default
             else 
                lakedepth2d(i,j)   = spval
             endif
           endif
 
         else
-
-          if ( domainlakedepth  > 0.0 ) then
-             lakedepth2d(i,j)   = domainlakedepth
+          if ( lakedepth_default  > 0.0 ) then
+             lakedepth2d(i,j)   = lakedepth_default
           else 
              lakedepth2d(i,j)   = spval
           endif
@@ -5112,8 +5219,8 @@ end subroutine LakeDebug
 
 !!!!!!!!!!!!!!!!!!begin to initialize lake variables!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  DO j = jms,jme
-  DO i = ims,ime
+  DO j = jts,jte
+  DO i = its,ite
       
      if ( lake(i,j) ) then
 
@@ -5158,6 +5265,20 @@ end subroutine LakeDebug
             dz_lake3d(i,2:nlevlake,j) = dzlak(2:nlevlake)*depthratio2d(i,j)
             z_lake3d(i,2:nlevlake,j) = zlak(2:nlevlake)*depthratio2d(i,j) + dz_lake3d(i,1,j)*(1._r8 - depthratio2d(i,j))
          end if
+! initial t_lake3d here
+	t_soisno3d(i,1,j)      = tsk(i,j)
+        t_lake3d(i,1,j)        = tsk(i,j)
+        t_grnd2d(i,j)          = 277.0
+        do k = 2, nlevlake
+        if(z_lake3d(i,k,j).le.depth_c) then 
+         t_soisno3d(i,k,j)=tsk(i,j)+(277.0-tsk(i,j))/depth_c*z_lake3d(i,k,j)
+         t_lake3d(i,k,j)=tsk(i,j)+(277.0-tsk(i,j))/depth_c*z_lake3d(i,k,j)
+        else
+	t_soisno3d(i,k,j)      = 277.0
+        t_lake3d(i,k,j)        = 277.0
+        end if 
+        enddo
+!end initial t_lake3d here
          z3d(i,1:nlevsoil,j) = zsoi(1:nlevsoil)
          zi3d(i,0:nlevsoil,j) = zisoi(0:nlevsoil)
          dz3d(i,1:nlevsoil,j) = dzsoi(1:nlevsoil)

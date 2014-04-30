@@ -8,12 +8,12 @@ subroutine da_oi_stats_sound (stats_unit, iv, ob)
 
    integer,        intent (in)      :: stats_unit    ! Output unit for stats.
    type (iv_type), intent (in)      :: iv            ! OI
-   type(y_type),   intent (in) :: ob       ! Observation structure.
+   type(y_type),   intent (in)      :: ob            ! Observation structure.
 
    type (stats_sound_type)          :: stats
    integer                          :: nu, nv, nt, nq
    integer                          :: n, k
-   real                             :: u_inv, v_inv, sp_inv, dir_inv
+   real                             :: u_inv, v_inv, u_obs, v_obs
 
    if (trace_use_dull) call da_trace_entry("da_oi_stats_sound")
 
@@ -37,14 +37,19 @@ subroutine da_oi_stats_sound (stats_unit, iv, ob)
       do k=1, iv%info(sound)%levels(n)
 !         if (iv%info(sound)%proc_domain(k,n)) then
          if (iv%info(sound)%proc_domain(1,n)) then
+
             u_inv = iv%sound(n)%u(k)%inv
             v_inv = iv%sound(n)%v(k)%inv
-            if(var_wind) then
-               sp_inv = iv%sound(n)%u(k)%inv
-               dir_inv = iv%sound(n)%v(k)%inv
-               call da_cal_sd (ob%sound(n)%u(k), ob%sound(n)%v(k), &
-                               u_inv, v_inv, sp_inv, dir_inv)
-            end if
+            u_obs = ob%sound(n)%u(k)
+            v_obs = ob%sound(n)%v(k)
+
+            if (.not. wind_sd_sound .and. wind_stats_sd) &
+               call da_ffdduv_diagnose(u_obs, u_inv, u_obs, v_obs, v_inv, v_obs, &
+                                       iv%sound(n)%u(k)%qc, iv%sound(n)%v(k)%qc, convert_uv2fd)
+            if (wind_sd_sound .and. .not. wind_stats_sd) &
+               call da_ffdduv_diagnose(u_obs, u_inv, u_obs, v_obs, v_inv, v_obs, &
+                                       iv%sound(n)%u(k)%qc, iv%sound(n)%v(k)%qc, convert_fd2uv)
+
             call da_stats_calculate(iv%info(sound)%obs_global_index(n), &
                k, iv%sound(n)%u(k)%qc, u_inv, nu, &
                stats%minimum%u, stats%maximum%u, stats%average%u, stats%rms_err%u)

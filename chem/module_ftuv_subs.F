@@ -1513,9 +1513,10 @@ WAVE_LENGTH_LOOP : &
       end do
       tt = tlev(1)/281._dp
       do m = 1,tuv_jmax
-         if( m /= 2 .or. m /= 11 ) then
-            adjin = 1._dp
-         else if( m == 2 ) then
+         adjin = 1._dp
+!acd_sw_bugfix 20131205
+         if( m == 2 ) then
+!acd_sw_bugfix 20131205
 !----------------------------------------------------------------------
 ! ... temperature modification
 ! t0.9 (1.05) t0.95(1.025) t1.0(1.0) t1.15(1.02) t1.1(1.04)
@@ -1619,9 +1620,12 @@ WAVE_LENGTH_LOOP : &
 !     cz(1:nz-1) = (o3(2:nz)) * 1.e5 * (z(2:nz) - z(1:nz-1))
 
       o3den(1:nz) = o3(1:nz)*airlev(1:nz)
-      cz(1:nz-1) = 0.5_dp*(o3den(2:nz) + o3den(1:nz-1))*km2cm*(z(2:nz) - z(1:nz-1))
+      cz(1:nz-1)  = 0.5_dp*(o3den(2:nz) + o3den(1:nz-1))*km2cm*(z(2:nz) - z(1:nz-1))
+!acd_sw_bugfix 20131205
+      cz(nz-1)    = cz(nz-1) + o3top
+!acd_sw_bugfix 20131205
 
-      to3(nz) = o3top
+      to3(nz)  = o3top
       do k = nz-1,1,-1
          to3(k) = to3(k+1) + cz(k)
       end do
@@ -1631,8 +1635,10 @@ WAVE_LENGTH_LOOP : &
 !-----------------------------------------------------------------------------
       if( o3toms > 0.0_dp ) then
         scale = o3toms/(to3(1)/2.687e16_dp)
-        cz(1:nz-1) = cz(1:nz-1)*scale
-        to3(1:nz)  = to3(1:nz)*scale
+!acd_sw_bugfix 20131205
+        cz(1:nz)  = cz(1:nz)*scale
+!acd_sw_bugfix 20131205
+        to3(1:nz) = to3(1:nz)*scale
       endif
 !-----------------------------------------------------------------------------
 ! ... calculate ozone optical depth for each layer, with temperature

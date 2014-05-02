@@ -211,10 +211,10 @@ subroutine da_qc_iasi (it, i, nchan, ob, iv)
 	       end do   
 #endif
             else if (rtm_option == rtm_option_crtm) then
-#ifdef CRTM_MODIF
   	       kte_surf   = kte
    	       kts_100hPa = MAXLOC(iv%instid(i)%pm(kts:kte,n), &
 	                    MASK = iv%instid(i)%pm(kts:kte,n) < 100.0)
+#ifdef CRTM_MODIF
        	       do k = 1, nchan
 	          CALL CRTM_Planck_Radiance(i,k,ob%instid(i)%tb(k,n) - bias_global(k), &
 		                                iv%instid(i)%rad_obs(k,n))

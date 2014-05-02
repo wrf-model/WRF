@@ -78,10 +78,10 @@ error_handler.o : error_handler.F90
 fm_decoder.o : fm_decoder.F90 
 module_complete.o : module_complete.F90 platform_interface.inc missing.inc module_per_type.o module_func.o module_type.o 
 module_date.o : module_date.F90 
-module_decoded.o : module_decoded.F90 platform_interface.inc missing.inc module_obs_merge.o module_icao.o module_per_type.o module_date.o module_inside.o module_func.o module_type.o 
+module_decoded.o : module_decoded.F90 platform_interface.inc missing.inc module_obs_merge.o module_icao.o module_per_type.o module_date.o module_namelist.o module_inside.o module_func.o module_type.o 
 module_diagnostics.o : module_diagnostics.F90 constants.inc missing.inc module_intp.o module_map.o module_mm5.o module_func.o module_type.o 
 module_duplicate.o : module_duplicate.F90 platform_interface.inc module_per_type.o module_obs_merge.o module_date.o module_func.o module_type.o 
-module_err_afwa.o : module_err_afwa.F90 constants.inc missing.inc platform_interface.inc module_intp.o module_err_ncep.o module_func.o module_type.o module_namelist.o 
+module_err_afwa.o : module_err_afwa.F90 constants.inc missing.inc platform_interface.inc module_namelist.o module_intp.o module_err_ncep.o module_func.o module_type.o 
 module_err_ncep.o : module_err_ncep.F90 constants.inc missing.inc module_intp.o module_func.o module_type.o 
 module_func.o : module_func.F90 module_date.o module_type.o 
 module_gpspw.o : module_gpspw.F90 module_gpspw_gst.o module_gpspw_caa.o 

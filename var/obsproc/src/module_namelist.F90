@@ -347,7 +347,7 @@ MODULE MODULE_NAMELIST
 
    !  Process read error
 
-   error_number = SUM ( nml_read_errors )
+   error_number = SUM ( nml_read_errors(1:9) ) ! Only check errors in records 1-9, record 10 is optional
 
    IF (error_number .NE. 0 ) THEN
         error_message  = ' Error reading namelist file: '

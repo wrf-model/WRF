@@ -147,7 +147,6 @@ time_window_min, time_window_max, map_projection , missing_flag)
    CHARACTER ( LEN =  80)               :: filename
    CHARACTER ( LEN = 160)               :: error_message
    CHARACTER ( LEN =  14)               :: newstring
-   LOGICAL                              :: fatal
    INTEGER                              :: nlevels, num_unknown, m_miss, n101301 
    TYPE ( measurement ) , POINTER       :: current
 !-----------------------------------------------------------------------------!
@@ -226,35 +225,22 @@ time_window_min, time_window_max, map_projection , missing_flag)
    read_obs : DO while ( io_error == 0 ) 
       !  This is an array that we are filling.  Are we beyond that limit yet?
 
-      IF ((obs_num .GT. total_number_of_obs) .AND.  &
-          (fatal_if_exceed_max_obs)) THEN
+      IF (obs_num .GT. total_number_of_obs) THEN
 
             error_message(1:60)  = &
            'Too many obs for the NAMELIST value of max_number_of_obs = '
 
             WRITE (error_message(61:67),'(I7)')  total_number_of_obs
 
-            fatal = .TRUE.
+            CALL error_handler (proc_name, error_message (1:60), &
+                 error_message(61:67),fatal_if_exceed_max_obs)
+            
+            ! If fatal, code will stop above, otherwise the following lines exit
+            ! do loop and close file read
 
-            CALL error_handler (proc_name, &
-                 error_message (1:60), error_message (61:),fatal)
-
-      ELSE IF ((obs_num .GT. total_number_of_obs) .AND. &
-               (.NOT. fatal_if_exceed_max_obs))    THEN
-
-                error_message(1:60)  = &
-               'Too many obs for the NAMELIST value of max_number_of_obs = '
-
-                WRITE (error_message(61:67),'(I7)')  total_number_of_obs
-
-                fatal = .FALSE.
-
-                CALL error_handler (proc_name, &
-                error_message (1:60), error_message (61:),fatal)
-
-                CLOSE ( file_num ) 
-                IF (print_gts_read) CLOSE ( iunit ) 
-                EXIT read_obs
+            CLOSE ( file_num ) 
+            IF (print_gts_read) CLOSE ( iunit ) 
+            EXIT read_obs
 
       END IF
 

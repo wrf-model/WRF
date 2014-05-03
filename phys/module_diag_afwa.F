@@ -156,7 +156,7 @@ CONTAINS
       ENDDO
     ENDDO
 
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
     ! Surface dust concentration array (ug m-3)
     ! ----------------------------------------- 
     DO i=ims, ime

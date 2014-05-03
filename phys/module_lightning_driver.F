@@ -40,7 +40,7 @@
                             ! IC and CG flash rates and accumulated flash count
                              ,ic_flashcount, ic_flashrate              &
                              ,cg_flashcount, cg_flashrate              &
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
                              ,lnox_opt,lnox_passive                    &
                             ! LNOx tracers (chemistry only)
                              ,lnox_total, lnox_ic, lnox_cg             &
@@ -68,7 +68,7 @@
                  INTENT(OUT) :: ic_flashcount, ic_flashrate, &
                                 cg_flashcount, cg_flashrate
 
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
  INTEGER, INTENT(IN)         :: lnox_opt
  LOGICAL, INTENT(IN)         :: lnox_passive
  REAL, OPTIONAL, DIMENSION( ims:ime,kms:kme,jms:jme ), &
@@ -155,7 +155,7 @@
    CALL wrf_debug( 100, message )
  ENDIF
 
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
 
  CALL wrf_debug( 100, ' lightning_init: initializing and validating WRF-Chem only arrays and settings')
 

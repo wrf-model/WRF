@@ -211,7 +211,7 @@ CONTAINS
    USE module_domain
    USE module_wrf_error
    use module_sf_lake, only : nlevsoil,nlevsnow,nlevlake
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
    USE module_cam_support,         ONLY : cam_mam_aerosols
 #endif
    USE module_wind_fitch
@@ -946,7 +946,7 @@ integer myproc
    if(config_flags%mp_physics == CAMMGMPSCHEME) is_CAMMGMP_used = .TRUE.
 # endif
 
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
    !BSINGH:02/01/2013 - For WRF_CHEM simulations, initialize cam_mam_aerosols variable
    cam_mam_aerosols = .FALSE.
    if(config_flags%chem_opt == CBMZ_CAM_MAM3_NOAQ .OR. config_flags%chem_opt == CBMZ_CAM_MAM3_AQ &
@@ -960,7 +960,7 @@ integer myproc
 # if (EM_CORE == 1)
         .OR. config_flags%mp_physics == CAMMGMPSCHEME                                                           &
 # endif
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
         !For WRF_CHEM simulations, first five constituents are added in CAM_INIT and rest are added in the MODULE_CAM_MAM_INIT in chem/
         .OR. config_flags%chem_opt       == CBMZ_CAM_MAM3_NOAQ .OR. config_flags%chem_opt   == CBMZ_CAM_MAM3_AQ &
         .OR. config_flags%chem_opt       == CBMZ_CAM_MAM7_NOAQ .OR. config_flags%chem_opt   == CBMZ_CAM_MAM7_AQ &
@@ -3885,7 +3885,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
      !pcnst for microphysics (pcnst_mp is different from pcnst ONLY if CAM MAM package amd CAMMGMP schemes are decoupled)
      pcnst_mp = pcnst
 
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
      !If CAM MAM package is selected
      !BSINGH (01/23/2014):Please make sure pcnst is equal to cam_mam_nspec in chem/module_cam_mam_init.F and registry.chem
      IF(config_flags%chem_opt == CBMZ_CAM_MAM3_NOAQ .OR. config_flags%chem_opt==CBMZ_CAM_MAM3_AQ) then
@@ -3947,7 +3947,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
         !For prescribed aerosols
 #if ( EM_CORE == 1 )
         IF(config_flags%mp_physics .EQ. CAMMGMPSCHEME &
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
              .AND.  config_flags%chem_opt .EQ. 0    &
 #endif
              )THEN
@@ -3975,7 +3975,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
      
 #if ( EM_CORE == 1 )
      IF(config_flags%mp_physics == CAMMGMPSCHEME)THEN
-#ifndef WRF_CHEM
+#if ( WRF_CHEM != 1 )
         !Aerosols must be initialized after adding the constituents otherwise the code may crash in WRF-Chem simulations     
         CALL modal_aero_initialize_phys
 #else

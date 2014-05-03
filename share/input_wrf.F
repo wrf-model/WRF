@@ -535,7 +535,7 @@
 
     CALL wrf_get_dom_ti_char ( fid , 'MMINLU', mminlu , ierr )
     IF ( ierr .NE. 0 ) THEN
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
       IF ( config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP ) then
         WRITE(wrf_err_message,*)'MMINLU error on input - will set mminlu to MODIFIED_IGBP_MODIS_NOAH in share/input_wrf.F'
         mminlu = "MODIFIED_IGBP_MODIS_NOAH"
@@ -621,7 +621,7 @@
     END IF
 
 #if 0
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
     !  Dust erosion static data.
 
     CALL wrf_get_dom_ti_integer ( fid, 'EROSION_DIM', itmp, 1, icnt, ierr )
@@ -878,7 +878,7 @@
                auxinput3_only, auxinput4_only, auxinput5_only,  &
                auxinput6_only, auxinput7_only, auxinput8_only,  &
                auxinput9_only, auxinput10_only )
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
            IF( (config_flags%io_style_emissions .eq. 1) .and.                                &
               ((switch.eq.auxinput5_only) .or. (switch.eq.auxinput6_only) .or. &
                (switch.eq.auxinput7_only) .or. (switch.eq.auxinput8_only)) ) then
@@ -904,7 +904,7 @@
                 GOTO 3003
             ENDIF
 #endif
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
             ENDIF
 #endif
         CASE DEFAULT

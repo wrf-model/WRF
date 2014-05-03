@@ -1299,7 +1299,7 @@ CONTAINS
                   F_QI=F_QI,F_QS=F_QS,F_QG=F_QG,                    &
                   RE_CLOUD=re_cloud,RE_ICE=re_ice,RE_SNOW=re_snow,  & ! G. Thompson
                   has_reqc=has_reqc,has_reqi=has_reqi,has_reqs=has_reqs, & ! G. Thompson
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
                   TAUAERLW1=tauaerlw1,TAUAERLW2=tauaerlw2,          & ! jcb
                   TAUAERLW3=tauaerlw3,TAUAERLW4=tauaerlw4,          & ! jcb
                   TAUAERLW5=tauaerlw5,TAUAERLW6=tauaerlw6,          & ! jcb
@@ -1452,7 +1452,7 @@ CONTAINS
              CALL SWRAD(                                               &
                      DT=dt,RTHRATEN=rthraten,GSW=gsw                   &
                     ,XLAT=xlat,XLONG=xlong,ALBEDO=albedo               &
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
                     ,PM2_5_DRY=pm2_5_dry,PM2_5_WATER=pm2_5_water       &
                     ,PM2_5_DRY_EC=pm2_5_dry_ec                         &
 #endif
@@ -1488,7 +1488,7 @@ CONTAINS
                     ,RADFRQ=radt,DEGRAD=degrad                         &
                     ,TAUCLDI=taucldi,TAUCLDC=taucldc                   &
                     ,WARM_RAIN=warm_rain                               &
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
                     ,TAUAER300=tauaer300,TAUAER400=tauaer400           & ! jcb
                     ,TAUAER600=tauaer600,TAUAER999=tauaer999           & ! jcb
                     ,GAER300=gaer300,GAER400=gaer400                   & ! jcb
@@ -1651,7 +1651,7 @@ CONTAINS
                      F_QI=f_qi,F_QS=f_qs,F_QG=f_qg,                    &
                      RE_CLOUD=re_cloud,RE_ICE=re_ice,RE_SNOW=re_snow,  & ! G. Thompson
                      has_reqc=has_reqc,has_reqi=has_reqi,has_reqs=has_reqs, & ! G. Thompson
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
                      TAUAER300=tauaer300,TAUAER400=tauaer400,          & ! jcb
                      TAUAER600=tauaer600,TAUAER999=tauaer999,          & ! jcb
                      GAER300=gaer300,GAER400=gaer400,                  & ! jcb

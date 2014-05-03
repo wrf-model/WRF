@@ -481,7 +481,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
 
    CALL domain_alarm_create( grid, INPUTOUT_ALARM, interval, begin_time, end_time )
 
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
 ! AUXINPUT5_ INTERVAL
 ! auxinput5_interval is left there (and means minutes) for consistency, but
 ! auxinput5_interval_m will take precedence if specified
@@ -540,7 +540,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
 !TBH:  Should be OK to remove the "#else" section and the code it contains 
 !TBH:  because later code overwrites grid%alarms( AUXINPUT5_ALARM )...  
 !TBH:  In fact, by setting namelist values for auxinput5 correctly, it ought 
-!TBH:  to be possible to get rid of all "#ifdef WRF_CHEM" bits in this file...  
+!TBH:  to be possible to get rid of all "#if ( WRF_CHEM == 1 )" bits in this file...  
    CALL WRFU_AlarmEnable( grid%alarms( AUXINPUT5_ALARM ), rc=rc )
    CALL WRFU_AlarmRingerOn( grid%alarms( AUXINPUT5_ALARM ), rc=rc )
 ! TBH:  NOTE:  Proper setting of namelist variables for auxinput5 ought to 

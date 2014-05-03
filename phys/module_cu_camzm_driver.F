@@ -21,7 +21,7 @@ MODULE module_cu_camzm_driver
 
 
   USE module_cam_support, only: pcnst =>pcnst_runtime, pcols, pver, pverp
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
   USE module_cam_support, only: cam_mam_aerosols
 #endif
   USE shr_kind_mod,    only: r8 => shr_kind_r8
@@ -32,7 +32,7 @@ MODULE module_cu_camzm_driver
   PRIVATE                  !Default to private
   PUBLIC :: &              !Public entities
        camzm_driver  , &
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
        zm_conv_tend_2, &
 #endif
        zm_conv_init
@@ -238,7 +238,7 @@ SUBROUTINE camzm_driver(                                      &
 
 !BSINGH - 02/18/2013: FRACIS is used for qv,qc and qi for WRF_CHEM simulation but for
 ! WRF simulations it is used for qnc and qni also
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
  REAL(r8), DIMENSION(pcols, kte, 3) ::  &
 #else
  REAL(r8), DIMENSION(pcols, kte, 5) ::  &
@@ -670,7 +670,7 @@ SUBROUTINE camzm_driver(                                      &
         l_qt(2:3) = .true.      !do mix cloud water and ice
         cloudtnd = 0._r8
         fracis(1,:,1:3) = 1._r8 !all cloud liquid & ice 
-#ifndef WRF_CHEM
+#if ( WRF_CHEM != 1 )
         !BSINGH:02/01/2013: For WRF Physics ONLY runs, the liq # and ice # should
         !also be transpoted. Please note that liq # and ice # are transported in the 
         !zm_conv_tend_2 call for WRF_CHEM simulations (ONLY works for MAM aerosols)
@@ -1023,7 +1023,7 @@ END SUBROUTINE get_tpert
 
 !=========================================================================================
 
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
 subroutine zm_conv_tend_2(itimestep, dt, p8w, fracis3d, dp3d, du3d, ed3d, eu3d, md3d, mu3d, &
      dsubcld2d, ideep2d, jt2d, maxg2d, lengath2d, moist, scalar, chem,                      &
      ids,ide, jds,jde, kds,kde, &

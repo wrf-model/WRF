@@ -365,7 +365,7 @@ CONTAINS
 
 !--------------------------------------------------------------------------------
 
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
    IF ( aer_ra_feedback == 1) then
    IF ( .NOT. &
       ( PRESENT(tauaer300) .AND. &
@@ -610,7 +610,7 @@ CONTAINS
       end do
       end do
 
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
    IF ( AER_RA_FEEDBACK == 1) then
 !wig end
       do ib = 1, 11

@@ -27,7 +27,7 @@
    USE module_lightning_driver, ONLY : lightning_init
    USE module_fr_fire_driver_wrf, ONLY : fire_driver_em_init
    USE module_stoch, ONLY : SETUP_STOCH_SPPT,SETUP_STOCH_SKEBS,rand_seed, update_stoch
-#ifdef WRF_CHEM
+#if (WRF_CHEM == 1)
    USE module_aerosols_sorgam, ONLY: sum_pm_sorgam
    USE module_gocart_aerosols, ONLY: sum_pm_gocart
    USE module_mosaic_driver, ONLY: sum_pm_mosaic
@@ -70,7 +70,8 @@
    INTEGER     :: i_m
 
    REAL        :: p00, t00, a, tiso, p_surf, pd_surf, temp, tiso_tmp
-#ifdef WRF_CHEM
+   REAL        :: p_strat, a_strat
+#if (WRF_CHEM == 1)
    REAL        RGASUNIV ! universal gas constant [ J/mol-K ]
    PARAMETER ( RGASUNIV = 8.314510 )
       REAL,DIMENSION(grid%sm31:grid%em31,grid%sm32:grid%em32,grid%sm33:grid%em33) :: &
@@ -85,7 +86,7 @@
    LOGICAL :: first_trip_for_this_domain, start_of_simulation, fill_w_flag
    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
 
-#ifndef WRF_CHEM
+#if (WRF_CHEM != 1)
       REAL,ALLOCATABLE,DIMENSION(:,:,:) :: cldfra_old
 #endif
 
@@ -106,6 +107,12 @@
 !  
 ! Define variables local (topo_wind local vars)
    REAL    :: alpha, vfac
+   INTEGER :: j_save
+
+   !  For a global domain
+
+   INTEGER :: alloc_status
+   CHARACTER (LEN=256) :: alloc_err_message
 
 !..Need to fill special height var for setting up initial condition.  G. Thompson
    REAL, ALLOCATABLE, DIMENSION(:,:,:) :: z_at_q
@@ -122,7 +129,7 @@
    kts = kps ; kte = kpe     ! note that tile is entire patch
    its = ips ; ite = ipe     ! note that tile is entire patch
    jts = jps ; jte = jpe    ! note that tile is entire patch
-#ifndef WRF_CHEM
+#if (WRF_CHEM != 1)
          ALLOCATE(CLDFRA_OLD(IMS:IME,KMS:KME,JMS:JME),STAT=I)  ; CLDFRA_OLD = 0.
 #endif
    ALLOCATE(z_at_q(IMS:IME,KMS:KME,JMS:JME),STAT=I)  ; z_at_q = 0.
@@ -144,7 +151,14 @@
 
 #ifdef DM_PARALLEL
 ! WARNING:  this might present scaling issues on very large numbers of processors
-     ALLOCATE( clat_glob(ids:ide,jds:jde) )
+     alloc_err_message = ' '
+     alloc_err_message(1:12) = 'NO PROBLEMOS'
+     ALLOCATE( clat_glob(ids:ide,jds:jde), STAT=alloc_status, ERRMSG=alloc_err_message )
+
+     IF ( alloc_status .NE. 0 ) THEN
+        CALL wrf_message ( TRIM(alloc_err_message) )
+        CALL wrf_error_fatal ( 'Error allocating entire domain size of 2d array CLAT for global domain' )
+     END IF
 
      CALL wrf_patch_to_global_real ( grid%clat, clat_glob, grid%domdesc, 'xy', 'xy', &
                                      ids, ide, jds, jde, 1, 1, &
@@ -154,6 +168,24 @@
      CALL wrf_dm_bcast_real ( clat_glob , (ide-ids+1)*(jde-jds+1) )
 
      grid%clat_xxx(ipsx:ipex,jpsx:jpex) = clat_glob(ipsx:ipex,jpsx:jpex)
+
+     find_j_index_of_fft_filter : DO j = jds , jde-1
+        IF ( ABS(clat_glob(ids,j)) .LE. config_flags%fft_filter_lat ) THEN
+           j_save = j
+           EXIT find_j_index_of_fft_filter
+        END IF
+     END DO find_j_index_of_fft_filter
+
+     CALL wrf_patch_to_global_real ( grid%msft, clat_glob, grid%domdesc, 'xy', 'xy', &
+                                     ids, ide, jds, jde, 1, 1, &
+                                     ims, ime, jms, jme, 1, 1, &
+                                     its, ite, jts, jte, 1, 1 )
+
+     CALL wrf_dm_bcast_real ( clat_glob , (ide-ids+1)*(jde-jds+1) )
+
+     grid%mf_fft = clat_glob(ids,j_save)
+
+     grid%mf_xxx(ipsx:ipex,jpsx:jpex) = clat_glob(ipsx:ipex,jpsx:jpex)
 
      DEALLOCATE( clat_glob )
 #endif
@@ -413,10 +445,12 @@
    END IF
 
    IF ( config_flags%use_baseparam_fr_nml ) then
-      CALL nl_get_base_pres  ( 1 , p00 )
-      CALL nl_get_base_temp  ( 1 , t00 )
-      CALL nl_get_base_lapse ( 1 , a   )
-      CALL nl_get_iso_temp   ( 1 , tiso )
+      CALL nl_get_base_pres        ( 1 , p00     )
+      CALL nl_get_base_temp        ( 1 , t00     )
+      CALL nl_get_base_lapse       ( 1 , a       )
+      CALL nl_get_iso_temp         ( 1 , tiso    )
+      CALL nl_get_base_lapse_strat ( 1 , a_strat )
+      CALL nl_get_base_pres_strat  ( 1 , p_strat )
       IF ( ( t00 .LT. 100. .or. p00 .LT. 10000.) .AND. ( .NOT. grid%this_is_an_ideal_run ) ) THEN
          WRITE(wrf_err_message,*) 'start_em: BAD BASE STATE for T00 or P00 in namelist.input file'
          CALL wrf_error_fatal(TRIM(wrf_err_message))
@@ -425,10 +459,12 @@
    ELSE
    ! get these constants from model data
 
-      t00  = grid%t00
-      p00  = grid%p00
-      a    = grid%tlp
-      tiso = grid%tiso
+      t00     = grid%t00
+      p00     = grid%p00
+      a       = grid%tlp
+      tiso    = grid%tiso
+      a_strat = grid%tlp_strat
+      p_strat = grid%p_strat
       IF ( ( t00 .LT. 100. .or. p00 .LT. 10000.) .AND. ( .NOT. grid%this_is_an_ideal_run ) ) THEN
          WRITE(wrf_err_message,*)&
          'start_em: did not find base state parameters in wrfinput. Add use_baseparam_fr_nml = .t. in &dynamics and rerun'
@@ -462,13 +498,19 @@
 
             !  Base state pressure is a function of eta level and terrain, only, plus
             !  the hand full of constants: p00 (sea level pressure, Pa), t00 (sea level
-            !  temperature, K), and A (temperature difference, from 1000 mb to 300 mb, K).
+            !  temperature, K), A (temperature difference, from 1000 mb to 300 mb, K),
+            !  tiso (isothermal temperature at tropopause/lower stratosphere), 
+            !  p_strat (pressure at top of isothermal layer), A_strat (lapse rate in 
+            !  stratosphere above isothermal layer)
 
             p_surf = p00 * EXP ( -t00/a + ( (t00/a)**2 - 2.*g*grid%ht(i,j)/a/r_d ) **0.5 )
 
             DO k = 1, kte-1
                grid%pb(i,k,j) = grid%znu(k)*(p_surf - grid%p_top) + grid%p_top
                temp = MAX ( tiso, t00 + A*LOG(grid%pb(i,k,j)/p00) )
+               IF ( grid%pb(i,k,j) .LT. p_strat ) THEN
+                  temp = tiso + A_strat * LOG ( grid%pb(i,k,j)/p_strat )
+               ENDIF
                grid%t_init(i,k,j) = temp*(p00/grid%pb(i,k,j))**(r_d/cp) - t0
 !              grid%t_init(i,k,j) = (t00 + A*LOG(grid%pb(i,k,j)/p00))*(p00/grid%pb(i,k,j))**(r_d/cp) - t0
                grid%alb(i,k,j) = (r_d/p1000mb)*(grid%t_init(i,k,j)+t0)*(grid%pb(i,k,j)/p1000mb)**cvpm
@@ -560,6 +602,9 @@
           IF ( grid%imask_nostag(i,j) .EQ. 1 ) THEN
             grid%pb(i,k,j) = grid%znu(k)*grid%mub(i,j)+grid%p_top
             temp = MAX ( tiso, t00 + A*LOG(grid%pb(i,k,j)/p00) )
+            IF ( grid%pb(i,k,j) .LT. p_strat ) THEN
+               temp = tiso + A_strat * LOG ( grid%pb(i,k,j)/p_strat )
+            ENDIF
             grid%t_init(i,k,j) = temp*(p00/grid%pb(i,k,j))**(r_d/cp) - t0
             grid%alb(i,k,j) = (r_d/p1000mb)*(grid%t_init(i,k,j)+t0)*(grid%pb(i,k,j)/p1000mb)**cvpm
           ENDIF
@@ -788,10 +833,9 @@ endif
                       grid%mass_flux,                              &
                       grid%rthften, grid%rqvften,                       &
                       grid%cldfra,                                      &
-#ifdef WRF_CHEM
+#if (WRF_CHEM == 1)
                       grid%cldfra_old,                                  &
-#endif
-#ifndef WRF_CHEM
+#else
                       cldfra_old,                                  &
 #endif
                       grid%glw,grid%gsw,grid%emiss,grid%embck,            &
@@ -1009,7 +1053,7 @@ endif
                     ! IC and CG flash rates and accumulated flash count
                         ,ic_flashcount=grid%ic_flashcount, ic_flashrate=grid%ic_flashrate        &
                         ,cg_flashcount=grid%cg_flashcount, cg_flashrate=grid%cg_flashrate        &
-#ifdef WRF_CHEM
+#if (WRF_CHEM == 1)
                         ,lnox_opt=config_flags%lnox_opt           &
                         ,lnox_passive=config_flags%lnox_passive   &
                         ,lnox_total=tracer(:,:,:,p_lnox_total)    &
@@ -1417,7 +1461,7 @@ endif
    ENDIF
 
 
-#ifdef WRF_CHEM
+#if (WRF_CHEM == 1)
         if(config_flags%tracer_opt > 0 )then
            call initialize_tracer (tracer,config_flags%chem_in_opt, &
                                config_flags%tracer_opt,num_tracer,  &
@@ -1599,7 +1643,7 @@ endif
                          its , ite , jts , jte , &
                          its , ite , jts , jte   )
 
-#ifndef WRF_CHEM
+#if (WRF_CHEM != 1)
       DEALLOCATE(CLDFRA_OLD)
 #endif
 #ifdef DM_PARALLEL

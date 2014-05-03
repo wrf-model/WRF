@@ -1096,11 +1096,14 @@ state   real    v_frame        -       misc         1         -     ir        "v
 # resolve this how?  Have the real program throw a switch to tell the code to get it
 # from the metadata?  Otherwise it's a field?
 state logical just_read_auxinput4  -      misc         -         -     r    "we_just_read_sst"           "1=AUXINPUT4 ALARM RINGING, 0=NO AUXINPUT4 ALARM"  "-"
+state   real    mf_fft         -       misc         -         -      r        "mf_fft"                "Mass point map factor at equatorward FFT filter location"  ""
 state   real    p_top          -       misc         -         -     irh       "p_top"                 "PRESSURE TOP OF THE MODEL"  "Pa"
 state   real    t00            -       misc         -         -     i02rh     "t00"                   "BASE STATE TEMPERATURE   "  "K"
 state   real    p00            -       misc         -         -     i02rh     "p00"                   "BASE STATE PRESURE"         "Pa"
 state   real    tlp            -       misc         -         -     i02rh     "tlp"                   "BASE STATE LAPSE RATE    "  ""
 state   real    tiso           -       misc         -         -     i02rh     "tiso"                  "TEMP AT WHICH THE BASE T TURNS CONST"  "K"
+state   real    tlp_strat      -       misc         -         -     i02rh     "tlp_strat"             "BASE STATE LAPSE RATE (DT/D(LN(P)) IN STRATOSPHERE"  "K"
+state   real    p_strat        -       misc         -         -     i02rh     "p_strat"               "BASE STATE PRESSURE AT BOTTOM OF STRATOSPHERE" "Pa"
 state   real    max_msftx      -       misc         -         -      rh       "max_mstfx"             "Max map factor in domain"  ""
 state   real    max_msfty      -       misc         -         -      rh       "max_mstfy"             "Max map factor in domain"  ""
 
@@ -2302,7 +2305,9 @@ rconfig   logical mix_full_fields         namelist,dynamics     max_domains  .fa
 rconfig   real    base_pres               namelist,dynamics	1          100000.     h    "base_pres"  "Base state pressure - do not change (10^5 Pa), real only"      "Pa"
 rconfig   real    base_temp               namelist,dynamics	1             290.     h    "base_temp"  "Base state sea level temperature, real only"      "K"
 rconfig   real    base_lapse              namelist,dynamics	1              50.     h    "base_lapse" "Base state temperature difference between base pres and 1/e of atm depth - do not change, real only"      "K"
-rconfig   real    iso_temp                namelist,dynamics     1             200.     h    "iso_temp"   "Isothermal temperature in stratosphere, real only"      "K"
+rconfig   real    iso_temp                namelist,dynamics     1             200.00   h    "iso_temp"   "Isothermal temperature in stratosphere, real only"      "K"
+rconfig   real    base_pres_strat         namelist,dynamics     1            5500.     h    "base_pres_strat" "Base state pressure (Pa) at bottom of the stratosphere" "Pa"
+rconfig   real    base_lapse_strat        namelist,dynamics     1               0.     h    "base_lapse_strat", "Base state lapse rate ( dT / d(lnP) ) in stratosphere" "K"
 rconfig   logical use_baseparam_fr_nml    namelist,dynamics     1            .false.  irh   "use_baseparam_fr_nml"    ""   ""
 rconfig   real    fft_filter_lat          namelist,dynamics     1              91.     h    "fft_filter_lat"   ""   "grid latitude to start polar filter"
 rconfig   logical rotated_pole            namelist,dynamics     1            .false.  irh   "rotated_pole"    ""   ""

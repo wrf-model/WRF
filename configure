@@ -328,7 +328,7 @@ if [ -n "$NETCDF4" ] ; then
       NETCDF=`echo $NETCDF | sed 's/\/$//'`
     fi
     buff="`ls -l $NETCDF | sed 's/  */ /g'`"
-    while [ "`echo $buff | grep '\->'`" != ""  ]
+    while [ "`echo $buff | grep lib`" = "" -a "`echo $buff | grep '\->'`" != ""  ]
     do
       buff="`echo $buff | sed -e 's/->//' -e 's/  */ /g'`"
       n=`echo $buff | wc -w`

@@ -216,6 +216,7 @@ call wrf_message("**************************************************************
         numgas_mam = numgas
         CALL wrf_debug(15,'calling CBMZ_CAM_MAM7_NOAQ chemistry from chem_driver')
         call wrf_message("WARNING: CBMZ_CAM_MAM7_NOAQ  chemistry option is highly experimental and not recommended for use.")
+        call wrf_message("WARNING: In CBMZ_CAM_MAM7_NOAQ  chemistry option, DMS is not implemented yet.")
         call wrf_error_fatal("ERROR: It is recommended that you contact phil.rasch at pnnl.gov for information regarding this option")
      CASE (CBMZ_CAM_MAM7_AQ)
         numgas_mam = numgas
@@ -620,8 +621,13 @@ end if
         endif 
 
         CASE (MOZART_MOSAIC_4BIN_VBS0_KPP)
+! 20130708 acd_alma_bugfix start
+        grid%vbs_nbin=0
+! 20130708 acd_alma_bugfix end
         if(config_flags%chem_in_opt == 0 )then
-                   grid%vbs_nbin=0
+! 20130708 acd_alma_bugfix start
+!                   grid%vbs_nbin=0
+! 20130708 acd_alma_bugfix end
           do j=jts,jte
              do k=kts,kte
                 do i=its,ite

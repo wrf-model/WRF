@@ -1163,7 +1163,7 @@ CONTAINS
 !--------fds (06/2010)---------------------------------------------
      REAL,  DIMENSION( ims:ime, kms:kme, jms:jme ),               &
             OPTIONAL, INTENT(IN) ::                                 CLDFRA
-     REAL             ::                            DAY, CLOUDFRAC
+     REAL   :: DAY, CLOUDFRAC, UV10
 !------------------------------------------------------------------
 !
      REAL, DIMENSION( ims:ime, jms:jme ) :: HFX_SEA
@@ -3445,7 +3445,7 @@ CONTAINS
                       ssib_sdn(i,j), ssib_sup(i,j), ssib_ldn(i,j), ssib_lup(i,j),  &
                       ssib_wat(i,j),                                               &
                                      ssib_z00(i,j), ssib_veg(i,j),                 &
-                      day, cloudfrac, q2(i,j), t2(i,j), albedo(i,j),               &
+                      day, cloudfrac, q2(i,j), t2(i,j), albedo(i,j), uv10,         &
                       ra_sw_physics,xice_threshold                                 &
                                                                                    )
          ELSE  !land points only (including land ice)
@@ -3476,7 +3476,7 @@ CONTAINS
                      cto3(i,j), fio3(i,j),    flo3(i,j),   bio3(i,j), blo3(i,j),  ho3(i,j),  &
                      dzo4(i,j),  wo4(i,j),   tssn4(i,j), tssno4(i,j), bwo4(i,j), bto4(i,j),  &
                      cto4(i,j), fio4(i,j),    flo4(i,j),   bio4(i,j), blo4(i,j),  ho4(i,j),  &
-                     day, cloudfrac, q2(i,j), t2(i,j), albedo(i,j),               &
+                     day, cloudfrac, q2(i,j), t2(i,j), albedo(i,j), uv10,          &
                      ra_sw_physics, mminlu                                        &
                                                                                   )
          ENDIF
@@ -3495,8 +3495,8 @@ CONTAINS
          ELSE
            snowh(i,j) = snowdepth(i,j)
          ENDIF
-!mchen         U10(i,j) = 0.0
-!mchen         V10(i,j) = 0.0
+         U10(i,j) = UV10*u_phytmp(i,1,j)/SQRT(u_phytmp(i,1,j)**2+v_phytmp(i,1,j)**2)
+         V10(i,j) = UV10*v_phytmp(i,1,j)/SQRT(u_phytmp(i,1,j)**2+v_phytmp(i,1,j)**2)
 !        Overwrite WSPD to remove convective velocity (wspd=wspd1 in YSU)
          WSPD(I,J)=sqrt( u_phytmp(i,1,j)*u_phytmp(i,1,j) +      &
                          v_phytmp(i,1,j)*v_phytmp(i,1,j) ) + 1.e-9
@@ -5209,6 +5209,8 @@ ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
                                                 T2_HOLD,          & !ssib
                                                 Q2_HOLD,          & !ssib
                                                 TSK_HOLD,         & !ssib
+                                                U10_HOLD,         & !ssib
+                                                V10_HOLD,         & !ssib
                                                 CD_SEA,           &
                                                 CDA_SEA,          &
                                                 CK_SEA,           &
@@ -5290,6 +5292,8 @@ ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
      T2_HOLD = T2
      Q2_HOLD = Q2
      TSK_HOLD = TSK
+     U10_HOLD = U10 !fds (01/2014)
+     V10_HOLD = V10 !fds (01/2014)
      
 ! INTENT(OUT) from SFCLAY.  Input shouldn't matter, but we'll want to
 ! keep things around for weighting after the second call to SFCLAY.
@@ -5339,6 +5343,8 @@ ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
               ZNT(I,J) = ZNT_HOLD(I,J)
               UST(I,J) = UST_HOLD(I,J)
 !             TSK(I,J) = TSK_HOLD(I,J)
+              U10(I,J) = U10_HOLD(I,J) !fds (01/2014)
+              V10(I,J) = V10_HOLD(I,J) !fds (01/2014)
            ENDIF
         ENDDO
      ENDDO

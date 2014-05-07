@@ -535,9 +535,19 @@
 
     CALL wrf_get_dom_ti_char ( fid , 'MMINLU', mminlu , ierr )
     IF ( ierr .NE. 0 ) THEN
-       WRITE(wrf_err_message,*)'MMINLU error on input'
-       CALL wrf_debug ( 0 , wrf_err_message )
-       mminlu = " "
+#ifdef WRF_CHEM
+      IF ( config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP ) then
+        WRITE(wrf_err_message,*)'MMINLU error on input - will set mminlu to MODIFIED_IGBP_MODIS_NOAH in share/input_wrf.F'
+        mminlu = "MODIFIED_IGBP_MODIS_NOAH"
+      ELSE
+        WRITE(wrf_err_message,*)'MMINLU error on input'
+        mminlu = " "
+      ENDIF
+#else
+      WRITE(wrf_err_message,*)'MMINLU error on input'
+      mminlu = " "
+#endif
+      CALL wrf_debug ( 0 , wrf_err_message )
     ELSE IF ( ( ( mminlu(1:1) .GE. "A" ) .AND. ( mminlu(1:1) .LE. "Z" ) ) .OR. &
               ( ( mminlu(1:1) .GE. "a" ) .AND. ( mminlu(1:1) .LE. "z" ) ) .OR. &
               ( ( mminlu(1:1) .GE. "0" ) .AND. ( mminlu(1:1) .LE. "9" ) ) ) THEN
@@ -558,21 +568,25 @@
     ! in the traditional USGS dataset
 
     IF ( switch .EQ. input_only ) THEN
-    call wrf_get_dom_ti_integer(fid, "NUM_LAND_CAT", num_land_cat_compare, 1, icnt, ierr)
-    if ( (ierr .NE. 0) .OR. ( num_land_cat_compare .LT. 1 ) .OR. ( num_land_cat_compare .GT. 1000 ) ) then
-       call wrf_debug( 1 , "Must be old WPS data, assuming 24 levels for NUM_LAND_CAT")
-       num_land_cat_compare = 24
-!      call wrf_error_fatal("Error trying to find global attribute 'NUM_LAND_CAT'")
-    endif
-    if ( config_flags%num_land_cat /= num_land_cat_compare ) then
-       call wrf_message("----------------- ERROR -------------------")
-       WRITE(wrf_err_message,'("namelist    : NUM_LAND_CAT = ",I10)') config_flags%num_land_cat
-       call wrf_message(wrf_err_message)
-       WRITE(wrf_err_message,'("input files : NUM_LAND_CAT = ",I10, " (from geogrid selections).")') num_land_cat_compare
-       call wrf_message(wrf_err_message)
-       call wrf_error_fatal("Mismatch between namelist and wrf input files for dimension NUM_LAND_CAT")
-    endif
-    end if
+      call wrf_get_dom_ti_integer(fid, "NUM_LAND_CAT", num_land_cat_compare, 1, icnt, ierr)
+      if ( (ierr .NE. 0) .OR. ( num_land_cat_compare .LT. 1 ) .OR. ( num_land_cat_compare .GT. 1000 ) ) then
+        IF (mminlu == 'MODIFIED_IGBP_MODIS_NOAH') THEN
+          call wrf_debug( 1 , "Must be old WPS data, assuming 20 levels for NUM_LAND_CAT")
+          num_land_cat_compare = 20
+        ELSE
+          call wrf_debug( 1 , "Must be old WPS data, assuming 24 levels for NUM_LAND_CAT")
+          num_land_cat_compare = 24
+        END IF
+      endif
+      if ( config_flags%num_land_cat /= num_land_cat_compare ) then
+        call wrf_message("----------------- ERROR -------------------")
+        WRITE(wrf_err_message,'("namelist    : NUM_LAND_CAT = ",I10)') config_flags%num_land_cat
+        call wrf_message(wrf_err_message)
+        WRITE(wrf_err_message,'("input files : NUM_LAND_CAT = ",I10, " (from geogrid selections).")') num_land_cat_compare
+        call wrf_message(wrf_err_message)
+        call wrf_error_fatal("Mismatch between namelist and wrf input files for dimension NUM_LAND_CAT")
+      endif
+    ENDIF
 
     ! Test here to check that config_flags%num_metgrid_soil_levels in namelist
     ! is equal to what is in the global attributes of the met_em files.  Note that
@@ -659,6 +673,8 @@
     IF ( ierr .NE. 0 ) THEN
          IF (mminlu == 'UMD') THEN
               config_flags%iswater = 14
+         ELSE IF (mminlu == 'MODIFIED_IGBP_MODIS_NOAH') THEN
+              config_flags%iswater = 17
          ELSE
               config_flags%iswater = 16
          ENDIF
@@ -681,6 +697,8 @@
     IF ( ierr .NE.  0 ) THEN
          IF (mminlu == 'UMD') THEN
               config_flags%isice = 14
+         ELSE IF (mminlu == 'MODIFIED_IGBP_MODIS_NOAH') THEN
+              config_flags%isice = 15
          ELSE
               config_flags%isice = 24
          ENDIF
@@ -693,6 +711,8 @@
     CALL wrf_debug ( 300 , wrf_err_message )
     IF ( ierr .NE. 0 ) THEN
          IF (mminlu == 'UMD') THEN
+              config_flags%isurban = 13
+         ELSE IF (mminlu == 'MODIFIED_IGBP_MODIS_NOAH') THEN
               config_flags%isurban = 13
          ELSE
               config_flags%isurban = 1

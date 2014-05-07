@@ -944,6 +944,11 @@ integer::oops1,oops2
                                        ims , ime , jms , jme , kms , kme , &
                                        its , ite , jts , jte , kts , kte )
 
+         CALL monthly_interp_to_date ( grid%lai12m , current_date , grid%lai , &
+                                       ids , ide , jds , jde , kds , kde , &
+                                       ims , ime , jms , jme , kms , kme , &
+                                       its , ite , jts , jte , kts , kte )
+
          !  Get the min/max of each i,j for the monthly green-ness fraction.
 
          CALL monthly_min_max ( grid%greenfrac , grid%shdmin , grid%shdmax , &

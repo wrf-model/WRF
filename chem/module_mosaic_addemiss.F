@@ -1869,6 +1869,16 @@ END MODULE module_mosaic_addemiss
         itype = 1
         iphase = ai_phase
 
+! 20130603 acd_ck_emiss start
+        ! added option for 4bin WRF
+        IF (nsize_aer(itype) == 4) THEN
+          sz(1) = sz(1) + sz(2)
+          sz(2) = sz(3) + sz(4)
+          sz(3) = sz(5) + sz(6)
+          sz(4) = sz(7) + sz(8)
+        ENDIF
+! 20130603 acd_ck_emiss end
+
   conver=1.e-9
   converi=1.e9
 !
@@ -1936,6 +1946,13 @@ END MODULE module_mosaic_addemiss
 ! mass1part is mass of a single particle in ug, density of dust ~2.5 g cm-3
                if (n <= 5) densdust=2.5
                if (n > 5 ) densdust=2.65
+! 20130603 acd_ck_emiss start
+               ! added option for 4bin WRF
+               if (nsize_aer(itype) == 4) then
+                 if (n <= 2) densdust=2.5
+                 if (n > 2 ) densdust=2.65
+               endif
+! 20130603 acd_ck_emiss end
                mass1part=0.523598*(dcen_sect(n,itype)**3)*densdust*1.0e06
                l = numptr_aer(n,itype,iphase)
                if (l >= p1st) chem(i,k,j,l) = chem(i,k,j,l) +   &

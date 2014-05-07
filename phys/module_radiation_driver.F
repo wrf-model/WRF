@@ -57,6 +57,9 @@ CONTAINS
               , TSWDN, TSWUP                        & ! goddard schemes
               , SSWDN, SSWUP                        & ! goddard schemes
               , CLDFRA,CLDFRA_MP_ALL                &
+#if (EM_CORE == 1)
+              , lradius,iradius                     &
+#endif
               , cldfra_dp, cldfra_sh                & ! ckay for sub-grid cloud fraction
               , re_cloud, re_ice, re_snow           & ! G. Thompson
               , has_reqc, has_reqi, has_reqs        & ! G. Thompson
@@ -592,7 +595,15 @@ CONTAINS
          INTENT(IN   ) ::                                            &
                                                           F_ICE_PHY, &
                                                          F_RAIN_PHY, &
-                                                         CLDFRA_MP_ALL
+                                                      CLDFRA_MP_ALL
+
+#if (EM_CORE == 1)
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                     &
+         OPTIONAL,                                                   &
+         INTENT(IN   ) ::                                            &
+                                                            LRADIUS, &
+                                                            IRADIUS
+#endif
 
    REAL, DIMENSION( ims:ime, jms:jme ),                           &
          OPTIONAL,                                                &
@@ -1273,6 +1284,11 @@ CONTAINS
                   P8W=p8w,P3D=p,PI3D=pi,DZ8W=dz8w,TSK=tsk,T3D=t,    &
                   T8W=t8w,RHO3D=rho,R=R_d,G=G,                      &
                   ICLOUD=icloud,WARM_RAIN=warm_rain,CLDFRA3D=CLDFRA,&
+#if (EM_CORE == 1)
+                  LRADIUS=lradius, IRADIUS=iradius,                 &
+#endif
+                  IS_CAMMGMP_USED=is_cammgmp_used,                  &
+
 !ckay
 !                 CLDFRA_KF3D=cldfra_KF,QC_KF3D=qc_KF,QI_KF3D=qi_KF,&
                   F_ICE_PHY=F_ICE_PHY,F_RAIN_PHY=F_RAIN_PHY,        &
@@ -1612,7 +1628,12 @@ CONTAINS
                      COSZR=COSZR,JULDAY=JULDAY,SOLCON=SOLCON,          &
                      ALBEDO=ALBEDO,t3d=t,t8w=t8w,TSK=TSK,              &
                      p3d=p,p8w=p8w,pi3d=pi,rho3d=rho,                  &
-                     dz8w=dz8w,CLDFRA3D=CLDFRA,R=R_D,G=G,              &
+                     dz8w=dz8w,CLDFRA3D=CLDFRA,                        &
+#if (EM_CORE == 1)
+                     LRADIUS=lradius, IRADIUS=iradius,                 &
+#endif
+                     IS_CAMMGMP_USED=is_cammgmp_used,                  &
+                     R=R_D,G=G,              &
 !ckay
 !                    CLDFRA_KF3D=cldfra_KF,QC_KF3D=qc_KF,QI_KF3D=qi_KF,&
                      ICLOUD=icloud,WARM_RAIN=warm_rain,                &

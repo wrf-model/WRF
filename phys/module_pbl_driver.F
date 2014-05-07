@@ -98,7 +98,7 @@ CONTAINS
 ! variables required for camuwpbl scheme (optional)               
                ,qnc_curr,f_qnc,qni_curr,f_qni,rqniblten              &
                ,IS_CAMMGMP_USED                                      &
-! for grims shallow convection with ysupbl
+! for grims shallow convection with ysupbl/MYNN
                , wstar,delta                                         &
 ! for pbl mixing of scalars and tracers
      &        ,scalar,scalar_tend,num_scalar                         &
@@ -1525,6 +1525,9 @@ CONTAINS
 
            IF ( PRESENT( qv_curr )  .AND. PRESENT( qc_curr )  .AND. &
                 PRESENT( rqvblten ) .AND. PRESENT( rqcblten ) .AND. &
+                PRESENT( qi_curr ) .AND. PRESENT( rqiblten ) .AND.  &
+                PRESENT( rqniblten ) .AND. & !PRESENT( rqncblten ) .AND. &
+                PRESENT( qni_curr ) .AND. & !PRESENT( qnc_curr ) .AND. &
                 PRESENT(qke) .AND. PRESENT(tsq) .AND.               &
                 PRESENT(qsq) .AND. PRESENT(cov) .AND.               &
                 PRESENT(rmol) .AND.                                 &
@@ -1550,25 +1553,33 @@ CONTAINS
                    &delt=dtbl,&
                    &dz=dz8w,&
                    &u=u_phy,v=v_phy,th=th_phy,qv=qv_curr,qc=qc_curr,&
+                   &qi=qi_curr,qni=qni_curr,& !qnc=qnc_curr,&
                    &p=p_phy,exner=pi_phy,rho=rho,&
                    &xland=xland,ts=tsk,qsfc=qsfc,qcg=qcg,ps=psfc,&
                    &ust=ust,ch=ch,hfx=hfx,qfx=qfx,rmol=rmol,wspd=wspd,&
-                   &uoce=uoce,voce=voce,&
-                   &vdfg=vdfg,&           !Katata -added 
-                   &Qke=qke,Sh3d=Sh3d,&
+                   &uoce=uoce,voce=voce,&           !Ocean currents
+                   &vdfg=vdfg,&                     !Katata -added 
+                   &Qke=qke,TKE_PBL=tke_pbl,&       !JOE-for CAMUW shcu
+                   &Sh3d=Sh3d,&
 !ACF for QKE advection
                    &qke_adv=qke_adv,bl_mynn_tkeadvect=bl_mynn_tkeadvect,&
 !ACF-end
                    &Tsq=tsq,Qsq=qsq,Cov=cov,&
                    &Du=rublten,Dv=rvblten,Dth=rthblten,&
-                   &Dqv=rqvblten,Dqc=rqcblten,&
+                   &Dqv=rqvblten,Dqc=rqcblten,Dqi=rqiblten,&
+                   !&Dqnc=rqncblten,&
+                   &Dqni=rqniblten,&
                    &k_h=exch_h,k_m=exch_m,&
-                   &pblh=pblh&
+                   &pblh=pblh,KPBL=KPBL&
                    &,el_pbl=el_pbl                                       &
                    &,dqke=dqke                                           &
                    &,qWT=qWT,qSHEAR=qSHEAR,qBUOY=qBUOY,qDISS=qDISS       &
+! for grims shallow convection                                            
+                   &,WSTAR=wstar,DELTA=delta                             &
                    &,bl_mynn_tkebudget=bl_mynn_tkebudget                 &
                    &,bl_mynn_cloudpdf=bl_mynn_cloudpdf                   &
+                   &,FLAG_QI=flag_qi,FLAG_QNI=flag_qni                   &
+                   &,FLAG_QC=flag_qc,FLAG_QNC=flag_qnc                   &
                    ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
                    ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
                    ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
@@ -1617,12 +1628,18 @@ CONTAINS
                   ENDIF
                ENDIF
            ELSE
-               WRITE ( message , FMT = '(A,16(L1,1X))' )            &
+               WRITE ( message , FMT = '(A,20(L1,1X))' )            &
                  'present: '//                                      &
                  'qv_curr, '//                                      &
                  'qc_curr, '//                                      &
+                 'qi_curr, '//                                      &
+!                 'qnc_curr, '//                                     &
+                 'qni_curr, '//                                     &
                  'rqvblten, '//                                     &
                  'rqcblten, '//                                     &
+                 'rqiblten, '//                                     &
+!                 'rqncblten, '//                                    &
+                 'rqniblten, '//                                    &
                  'qke, '//                                          &
                  'tsq, '//                                          &
                  'qsq, '//                                          &
@@ -1637,8 +1654,14 @@ CONTAINS
                  'vdfg = ' ,                                        &
                   PRESENT( qv_curr ) ,                              &
                   PRESENT( qc_curr ) ,                              &
+                  PRESENT( qi_curr ) ,                              &
+!                  PRESENT( qnc_curr ) ,                             &
+                  PRESENT( qni_curr ) ,                             &
                   PRESENT( rqvblten ) ,                             &
                   PRESENT( rqcblten ) ,                             &
+                  PRESENT( rqiblten ) ,                             &
+!                  PRESENT( rqncblten ) ,                            &
+                  PRESENT( rqniblten ) ,                            &
                   PRESENT( qke      ) ,                             &
                   PRESENT( tsq      ) ,                             &
                   PRESENT( qsq      ) ,                             &

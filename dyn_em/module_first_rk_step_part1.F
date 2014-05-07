@@ -324,6 +324,7 @@ BENCH_START(rad_driver_tim)
      &        , SSWDN=grid%sswdn, SSWUP=grid%sswup                        & ! goddard schemes
 !JJS 20101020 ^^^^^
      &        , CLDFRA=grid%cldfra, CLDFRA_MP_ALL=grid%cldfra_mp_all      &
+     &        , LRADIUS=grid%LRADIUS,IRADIUS=grid%IRADIUS                 & !BSINGH(01/22/2014)
      &        , CLDFRA_DP=grid%cldfra_dp                                  & ! ckay for subgrid cloud
      &        , CLDFRA_SH=grid%cldfra_sh                                  &
      &        , re_cloud=grid%re_cloud, re_ice=grid%re_ice, re_snow=grid%re_snow & ! G. Thompson
@@ -1020,6 +1021,7 @@ BENCH_START(cu_driver_tim)
      &             ,BL_PBL_PHYSICS=config_flags%bl_pbl_physics            &
      &             ,SF_SFCLAY_PHYSICS=config_flags%sf_sfclay_physics      &
      &             ,KFETA_TRIGGER=config_flags%kfeta_trigger              &
+     &             ,NSAS_DX_FACTOR=config_flags%nsas_dx_factor            &
                  ! Dimension arguments
      &             ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde     &
      &             ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme     &

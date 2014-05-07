@@ -589,7 +589,7 @@ USE module_mp_radar
               DERIVT_Y=(T_OLD(I,K,J+1)-T_OLD(I,K,J-1))/(2.*DYHUCM)
              END IF
              DTFREEZ_XYZ(I,K,J)=DT*(VX*DERIVT_Y+ &
-     &            UX*DERIVT_X+100.*w_stag*DERIVT_Z)
+     &            UX*DERIVT_X+w_stag*DERIVT_Z)
           ELSE
              DTFREEZ_XYZ(I,K,J)=0.
           ENDIF
@@ -658,7 +658,7 @@ USE module_mp_radar
              VX=V(I,K,J)*100.
             END IF  
             DSUPICE_XYZ(I,K,J)=(UX*DERIVS_X+VX*DERIVS_Y+ &
-      &                        100.*w_stag*DERIVS_Z)*DTCOND
+      &                        w_stag*DERIVS_Z)*DTCOND
           ELSE
             DSUPICE_XYZ(I,K,J)=0.0
           END IF
@@ -4246,7 +4246,7 @@ USE module_mp_radar
 ! calculation DEL_CCNCONC
 
 !       DEL_CCNCONC=CCNCONC_BFNUCL-CCNCONC_AFNUCL
-        CALL ACTIVATE(IMIN,IMAX,AKOE,BKOE,RCCN,RACTMAX,NKR)
+        CALL ACTIVATE(IMIN,IMAX,AKOE,BKOE,RCCN,RACT,RACTMAX,NKR)
 
 
 
@@ -4466,7 +4466,7 @@ USE module_mp_radar
   42    CONTINUE
         RETURN
         END  SUBROUTINE CCNLOOP
-       SUBROUTINE ACTIVATE(IMIN,IMAX,AKOE,BKOE,RCCN,RACTMAX,NKR)
+       SUBROUTINE ACTIVATE(IMIN,IMAX,AKOE,BKOE,RCCN,RACT, RACTMAX,NKR)
        IMPLICIT NONE
 
        INTEGER IMIN,IMAX,NKR

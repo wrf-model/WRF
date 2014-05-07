@@ -54,7 +54,7 @@ CONTAINS
                    SFCRUNOFF,UDRUNOFF,SFCEXC,                    &
                    SFCEVP,GRDFLX,ACSNOW,SNOM,                    &
                    SMFR3D,KEEPFR3DFLAG,                          &
-                   myj,shdmin,shdmax,                            &
+                   myj,shdmin,shdmax,rdlai2d,                    &
                    ids,ide, jds,jde, kds,kde,                    &
                    ims,ime, jms,jme, kms,kme,                    &
                    its,ite, jts,jte, kts,kte                     )
@@ -169,6 +169,7 @@ CONTAINS
 
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   SHDMAX
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   SHDMIN
+   LOGICAL, intent(in) :: rdlai2d
 
    REAL,       DIMENSION( 1:nsl), INTENT(IN   )      ::      ZS
 
@@ -573,7 +574,7 @@ CONTAINS
 !--- initializing soil and surface properties
      CALL SOILVEGIN  ( mosaic_lu, mosaic_soil,soilfrac,nscat,shdmin(i,j),shdmax(i,j),&
                        NLCAT,ILAND,ISOIL,iswater,MYJ,IFOREST,lufrac,VEGFRA(I,J),     &
-                       EMISSL(I,J),PC(I,J),ZNT(I,J),LAI(I,J),                        &
+                       EMISSL(I,J),PC(I,J),ZNT(I,J),LAI(I,J),RDLAI2D,                &
                        QWRTZ,RHOCS,BCLH,DQM,KSAT,PSIS,QMIN,REF,WILT,i,j )
     IF ( wrf_at_debug_level(LSMRUC_DBG_LVL) ) THEN
       if(ktau.eq.1 .and.(i.eq.358.and.j.eq.260)) &
@@ -1247,6 +1248,7 @@ CONTAINS
 !--- for new value of albedo
          gswnew=gswnew*(1.-alb)
 
+        XINET = EMISS*(GLW-UPFLUX)
 ! Recompute RNET with current GSWnew
         RNET    = GSWnew + XINET
 
@@ -2435,7 +2437,8 @@ CONTAINS
 !--- the top soil layer. SNTH is computed using snwe=0.016 m, and
 !--- equals 4 cm for snow density 400 kg/m^3.
 
-           DELTSN=0.0301*1.e3/rhosn
+! increase thinkness of top snow layer from 3 cm SWE to 5 cm SWE
+           DELTSN=0.05*1.e3/rhosn
            snth=0.01601*1.e3/rhosn
 
 ! when the snow depth is marginally higher than DELTSN,
@@ -2998,7 +3001,8 @@ print *, 'TSO before calling SNOWTEMP: ', tso
 !--- the top sea ice layer. SNTH is computed using snwe=0.016 m, and
 !--- equals 4 cm for snow density 400 kg/m^3.
 
-           DELTSN=0.0301*1.e3/rhosn
+! increase thickness of top snow layer from 3 cm SWE to 5 cm SWE
+           DELTSN=0.05*1.e3/rhosn
            snth=0.01601*1.e3/rhosn
 
 ! when the snow depth is marginlly higher than DELTSN,
@@ -4276,10 +4280,10 @@ print *, 'SNOWTEMP: SNHEI,SNTH,SOILT1: ',SNHEI,SNTH,SOILT1,soilt
           enddo
 
         EDIR1 = Q1*UMVEG * BETA
-        EC1 = Q1 * WETCAN *VEGFRAC
+        EC1 = Q1 * WETCAN
         CMC2MS=CST/DELT
-       if(EC1.gt.CMC2MS) cst=0.
-        EC1=MIN(CMC2MS,EC1)
+       if(EC1.gt.CMC2MS*RAS) cst=0.
+        EC1=MIN(CMC2MS*RAS,EC1)
         EETA = (EDIR1 + EC1 + ETT1)*1.E3
 ! to convert from kg m-2 s-1 to m s-1: 1/rho water=1.e-3************ 
         QFX= - XLVM * EETA
@@ -5131,8 +5135,8 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
      SUBROUTINE SOILVEGIN  ( mosaic_lu,mosaic_soil,soilfrac,nscat,   &
                      shdmin, shdmax,                                 &
                      NLCAT,IVGTYP,ISLTYP,iswater,MYJ,                &
-                     IFOREST,lufrac,vegfrac,EMISS,PC,ZNT,LAI,QWRTZ,  &
-                     RHOCS,BCLH,DQM,KSAT,PSIS,QMIN,REF,WILT,I,J      )
+                     IFOREST,lufrac,vegfrac,EMISS,PC,ZNT,LAI,RDLAI2D,&
+                     QWRTZ,RHOCS,BCLH,DQM,KSAT,PSIS,QMIN,REF,WILT,I,J)
 
 !************************************************************************
 !  Set-up soil and vegetation Parameters in the case when
@@ -5379,6 +5383,7 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
             INTENT (INOUT   )         ::                  emiss, &
                                                             lai, &
                                                             znt
+  LOGICAL, intent(in) :: rdlai2d
 !--- soil properties
    REAL                                                        , &
             INTENT(  OUT)    ::                           RHOCS, &
@@ -5466,7 +5471,7 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
         ZNT   = 0.
         ZNT1  = 0.
         PC    = 0.
-        LAI   = 0.
+        if(.not.rdlai2d) LAI = 0.
         AREA  = 0.
 !-- mosaic approach to landuse in the grid box
 ! Use  Mason (1988) Eq.(15) to compute effective ZNT;
@@ -5480,7 +5485,7 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
         ZNT   = ZNT  + lufrac(k)/ALOG(LB/ZNTtoday(K))**2.
 ! ZNT1 - weighted average in the grid box, not used, computed for comparison
         ZNT1  = ZNT1 + lufrac(k)*ZNTtoday(K)
-        LAI   = LAI  + LAItoday(K)*lufrac(k)
+        if(.not.rdlai2d) LAI = LAI  + LAItoday(K)*lufrac(k)
         PC    = PC   + PCTBL(K)*lufrac(k)
       enddo
 
@@ -5499,7 +5504,7 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
         EMISS = EMISS/AREA
         ZNT1   = ZNT1/AREA
         ZNT = LB/EXP(SQRT(1./ZNT))
-        LAI   = LAI/AREA
+        if(.not.rdlai2d) LAI = LAI/AREA
         PC    = PC /AREA
 
     IF ( wrf_at_debug_level(LSMRUC_DBG_LVL) ) THEN
@@ -5513,7 +5518,7 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
         EMISS = LEMITBL(IVGTYP)
         ZNT   = ZNTtoday(IVGTYP)
         PC    = PCTBL(IVGTYP)
-        LAI   = LAItoday(IVGTYP)
+        if(.not.rdlai2d) LAI = LAItoday(IVGTYP)
      endif
 
 ! parameters from SOILPARM.TBL

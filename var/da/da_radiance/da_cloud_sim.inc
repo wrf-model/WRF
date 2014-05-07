@@ -68,8 +68,6 @@ double precision        :: zx(KDIM), zgx(KDIM, KDIM), zx_eof(KDIM)
 
  ! Softmax (= multiple-logistic) variable transform
  !beta = 100.0
- !if (ANY(beta*zx_eof>30.0)) print*, '777777'
- !if (ANY(beta*zx_eof>30.0)) RETURN
   
  !zx = exp(beta*zx_eof) / SUM(exp(beta*zx_eof))
  !do ilev = 1, kdim

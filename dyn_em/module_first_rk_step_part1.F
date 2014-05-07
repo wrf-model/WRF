@@ -510,6 +510,10 @@ BENCH_START(surf_driver_tim)
      &        ,csol3d=grid%csol3d,              tkmg3d=grid%tkmg3d                  & !lake     
      &        ,tkdry3d=grid%tkdry3d,            tksatu3d=grid%tksatu3d              &   
      &        ,LakeModel=grid%LakeModel,        lakeminalt=grid%lakeminalt          & !lake  
+#if ( EM_CORE == 1)
+ !    &        ,LakeMask=grid%LakeMask,        lakeflag=grid%lakeflag          & !lake  
+     &        ,LakeMask=grid%LakeMask          
+#endif
 ! CLM Varaibles
      &        ,NUMC=grid%numc,NUMP=grid%nump,SABV=grid%sabv,SABG=grid%sabg,LWUP=grid%lwup,SNL=grid%snl, &
      &         HISTORY_INTERVAL=config_flags%history_interval ,        &!ylu add hist inverval for accumulation T max/min

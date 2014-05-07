@@ -292,14 +292,10 @@ subroutine da_read_obs_bufrseviri (obstype,iv,infile)
          call ufbint(lnbufr,hdr,nhdr,1,iret,hdrsevi)				
 
         kidsat = nint(hdr(1))
-        if (kidsat == 55) then
-        !   print*,"satid= m08"
-        elseif  (kidsat == 56) then
-        !   print*,"satid= m09"
-        elseif  (kidsat == 57) then
-        !   print*,"satid= m10"
-        else
-           print*,"unknown satid= ",kidsat
+    ! kidsat 55 means satid= m08, 56 means satid= m09, 57 means satid= m10
+        if ( ( kidsat > 57) .or. ( kidsat < 55) ) then 
+           write(unit=message(1),fmt='(A,I6)') 'Unknown platform: ', kidsat
+           call da_warning(__FILE__,__LINE__,message(1:1))
         end if
 
         if (clrsky) then     ! asr bufr has no sza
@@ -310,7 +306,6 @@ subroutine da_read_obs_bufrseviri (obstype,iv,infile)
         call ufbint(lnbufr,datasev1,1,ncld,iret,'NCLDMNT')
 
         if(iret /= 1) cycle read_loop
-        ! print*,"head information",datasev1
         do n=1,ncld
            if(datasev1(1,n)>= 0.0 .and. datasev1(1,n) <= 100.0 ) then
               rclrsky=datasev1(1,n)

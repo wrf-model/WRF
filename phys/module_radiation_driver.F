@@ -991,7 +991,7 @@ CONTAINS
 ! Call to cloud fraction routine based on Randall 1994 (Hong Pan 1998)
 
         CALL wrf_debug (1, 'CALL cldfra2')
-        CALL cal_cldfra2(CLDFRA,qv,qc,qi,qs,               &
+        CALL cal_cldfra1(CLDFRA,qv,qc,qi,qs,               &
                    F_QV,F_QC,F_QI,F_QS,t,p,                &
                    F_ICE_PHY,F_RAIN_PHY,                   &
                    ids,ide, jds,jde, kds,kde,              &
@@ -1041,7 +1041,7 @@ CONTAINS
 
      IF ( PRESENT ( CLDFRA ) .AND.                           &
           PRESENT(F_QC) .AND. PRESENT ( F_QI ) ) THEN
-       CALL cal_cldfra(CLDFRA,qc,qi,F_QC,F_QI,               &
+       CALL cal_cldfra2(CLDFRA,qc,qi,F_QC,F_QI,              &
                        ids,ide, jds,jde, kds,kde,            &
                        ims,ime, jms,jme, kms,kme,            &
                        its,ite, jts,jte, kts,kte             )
@@ -1810,7 +1810,7 @@ CONTAINS
                  kt=swdown(i,j)/max(ioh,1e-3) ! clearness index
                  ! Optical air mass: Rigollier et al. (2000) doi: 10.1016/S0038-092X(99)00055-9
                  airmass=exp(-ht(i,j)/8434.5)/(coszen(i,j)+ &
-                        0.50572*((1.5707963267948966-acos(coszen(i,j)))*57.295779513082323+6.07995)**-1.6364)
+                        0.50572*(asin(coszen(i,j))*57.295779513082323+6.07995)**(-1.6364))
                  ! kt correction for air-mass at large sza: Perez et al. (1990) doi: 10.1016/0038-092X(90)90036-C
                  kt=kt/(0.1+1.031*exp(-1.4/(0.9+(9.4/max(airmass,1e-3)))))
                  ! Diffuse fraction: Ruiz-Arias et al. (2010) (Eq 33) doi: 10.1016/j.enconman.2009.11.024
@@ -2332,9 +2332,9 @@ CONTAINS
 
 !---------------------------------------------------------------------
 !BOP
-! !IROUTINE: cal_cldfra - Compute cloud fraction
+! !IROUTINE: cal_cldfra2 - Compute cloud fraction
 ! !INTERFACE:
-   SUBROUTINE cal_cldfra(CLDFRA,QC,QI,F_QC,F_QI,                     &
+   SUBROUTINE cal_cldfra2(CLDFRA,QC,QI,F_QC,F_QI,                    &
           ids,ide, jds,jde, kds,kde,                                 &
           ims,ime, jms,jme, kms,kme,                                 &
           its,ite, jts,jte, kts,kte                                  )
@@ -2408,10 +2408,10 @@ CONTAINS
         ENDDO
      ENDIF
 
-   END SUBROUTINE cal_cldfra
+   END SUBROUTINE cal_cldfra2
 
 !BOP
-! !IROUTINE: cal_cldfra2 - Compute cloud fraction
+! !IROUTINE: cal_cldfra1 - Compute cloud fraction
 ! !INTERFACE:
 ! cal_cldfra_xr - Compute cloud fraction.
 ! Code adapted from that in module_ra_gfdleta.F in WRF_v2.0.3 by James Done
@@ -2420,7 +2420,7 @@ CONTAINS
 !!     (see Hong et al., 1998)
 !!     (modified by Ferrier, Feb '02)
 !
-   SUBROUTINE cal_cldfra2(CLDFRA, QV, QC, QI, QS,                     &
+   SUBROUTINE cal_cldfra1(CLDFRA, QV, QC, QI, QS,                     &
                          F_QV, F_QC, F_QI, F_QS, t_phy, p_phy,       &
                          F_ICE_PHY,F_RAIN_PHY,                       &
           ids,ide, jds,jde, kds,kde,                                 &
@@ -2612,7 +2612,7 @@ CONTAINS
     ENDDO          !--- End DO k
     ENDDO          !--- End DO j
 
-   END SUBROUTINE cal_cldfra2
+   END SUBROUTINE cal_cldfra1
 
 
    SUBROUTINE toposhad_init(ht_shad,ht_loc,shadowmask,nested,iter,   &

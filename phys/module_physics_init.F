@@ -130,6 +130,9 @@ CONTAINS
                          zi3d,         watsat3d,     csol3d,     tkmg3d,         & !lake
                          tkdry3d,      tksatu3d,     lake2d,     domainlakedepth,& !lake
                          lakeminalt,   lake_depth,                               & !lake
+#if ( EM_CORE == 1 )
+                         lakemask,   lakeflag,                               & !lake
+#endif
                          sf_surface_mosaic, mosaic_cat, NLCAT,               & ! Noah tiling
 !CLM variables
                          maxpatch,                                           &
@@ -206,13 +209,11 @@ CONTAINS
 !-----------------------------------------------------------------
    USE module_domain
    USE module_wrf_error
-   USE module_wind_generic
-   USE module_wind_fitch
    use module_sf_lake, only : nlevsoil,nlevsnow,nlevlake
 #ifdef WRF_CHEM
    USE module_cam_support,         ONLY : cam_mam_aerosols
 #endif
-   USE module_wind_turbdragforce
+   USE module_wind_fitch
    IMPLICIT NONE
 !-----------------------------------------------------------------
    TYPE (grid_config_rec_type)              :: config_flags
@@ -568,6 +569,10 @@ CONTAINS
 !  REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN)                      ::  HT
   REAL, OPTIONAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN)    ::  lake_depth
   real, intent(in)      ::      domainlakedepth, lakeminalt
+#if ( EM_CORE == 1 )
+  REAL,              dimension(ims:ime,jms:jme )      ::  lakemask
+  INTEGER, INTENT(IN)      ::  lakeflag
+#endif
  
 
 !CLM
@@ -746,13 +751,6 @@ integer myproc
 !-- temporary fix by ww
    landuse_ISICE = isice
 
-! Added for Wind Turbine parameterization code -- This will only read in an optional 
-! configuration file with information that will be used by inividual turbine init routines 
-! as each domain is initialized.
-  IF ( id .EQ. 1 ) THEN
-    CALL init_module_wind_generic
-    CALL init_module_wind_fitch
-  ENDIF
 !
 
   IF(.not.restart)THEN
@@ -963,7 +961,7 @@ integer myproc
 ! .... paj ... initialize wind farm ...
 !
   IF ( config_flags%windfarm_opt .EQ. 1 ) THEN
-    CALL init_module_wind_turbdragforce(id,config_flags,xlong,xlat,windfarm_initialized,ims,ime,jms,jme,its,ite,jts,jte,ids,ide,jds,jde)
+    CALL init_module_wind_fitch(id,config_flags,xlong,xlat,windfarm_initialized,ims,ime,jms,jme,its,ite,jts,jte,ids,ide,jds,jde)
   ENDIF
 
 
@@ -1031,6 +1029,9 @@ integer myproc
                 zi3d,         watsat3d,     csol3d,     tkmg3d,         & !lake
                 tkdry3d,      tksatu3d,     LakeModel,  lake2d,           & !lake
                 domainlakedepth,            lakeminalt, lake_depth,       & !lake
+#if (EM_CORE == 1)
+                lakemask, lakeflag,       & !lake
+#endif
                 te_temf,cf3d_temf,wm_temf,                      & ! WA
                 DZR, DZB, DZG,                                  & !Optional urban
                 TR_URB2D,TB_URB2D,TG_URB2D,TC_URB2D,QC_URB2D,   & !Optional urban
@@ -1895,6 +1896,9 @@ integer myproc
                 zi3d,         watsat3d,     csol3d,     tkmg3d,         & !lake
                 tkdry3d,      tksatu3d,     LakeModel,  lake2d,           & !lake
                 domainlakedepth,            lakeminalt, lake_depth,       & !lake
+#if (EM_CORE == 1)
+                lakemask, lakeflag,                                       & !lake
+#endif
                 te_temf,cf3d_temf,wm_temf,                      & ! WA
 !                num_roof_layers,num_wall_layers,num_road_layers,& !Optional urban
                 DZR, DZB, DZG,                                  & !Optional urban
@@ -2271,6 +2275,10 @@ integer myproc
  
   logical,    dimension(ims:ime,jms:jme ),intent(out)                        :: lake2d
   REAL, OPTIONAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN)    ::  lake_depth
+#if ( EM_CORE == 1 )
+  REAL,              dimension(ims:ime,jms:jme ),intent(inout)      ::  lakemask
+  INTEGER, INTENT(IN)      ::  lakeflag
+#endif
 !  REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN)                         ::  HT
 
    REAL,  DIMENSION( ims:ime , jms:jme ) , OPTIONAL, INTENT(INOUT) ::    &
@@ -2343,6 +2351,7 @@ integer myproc
   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_soil_layers*mosaic_cat, jms:jme ), INTENT(INOUT) :: TBL_URB3D_mosaic
   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_soil_layers*mosaic_cat, jms:jme ), INTENT(INOUT) :: TGL_URB3D_mosaic  
    
+  REAL :: xice_threshold   ! lake input
    
   LOGICAL :: IPRINT
   
@@ -2355,6 +2364,12 @@ integer myproc
    INTEGER :: mynn_closure_level
 #endif
 
+  if ( config_flags%fractional_seaice == 0 ) then
+     xice_threshold = 0.5
+  else if ( config_flags%fractional_seaice == 1 ) then
+     xice_threshold = 0.02
+  endif
+ 
 !-- calculate pbl time step
 
    STEPBL = nint(BLDT*60./DT)
@@ -2746,7 +2761,12 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                            z_lake3d,       dz_lake3d,       t_soisno3d,      h2osoi_ice3d,   &
                            h2osoi_liq3d,   h2osoi_vol3d,    z3d,             dz3d,           &
                            zi3d,           watsat3d,        csol3d,          tkmg3d,         &
-                           tkdry3d,        tksatu3d,        lake2d,            ims,ime, jms,jme)
+                           config_flags%ISWATER,  xice,     xice_threshold,  xland,              &
+#if (EM_CORE == 1)
+                           lakemask,  lakeflag,                                                  &
+#endif
+                           tkdry3d,        tksatu3d,        lake2d,          its, ite, jts, jte, &
+                           ims,ime, jms,jme)
      ENDIF
  
 !-- initialize pbl scheme

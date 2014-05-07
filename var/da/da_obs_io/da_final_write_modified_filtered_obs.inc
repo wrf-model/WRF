@@ -11,8 +11,8 @@ subroutine da_final_write_modified_filtered_obs
    real                       :: height_error
    character(len=filename_len) :: filename
 
-   character(len=120) :: fmt_each_inv = &       !cys_add
-      '(3(f12.3,i4,f7.2),11x,3(f12.3,i4,f7.2),11x,1(f12.3,i4,f7.2),4f17.7)'   !cys_add
+   character(len=120) :: fmt_each_inv = &
+      '(3(f12.3,i4,f7.2),11x,3(f12.3,i4,f7.2),11x,1(f12.3,i4,f7.2),4f17.7)'
    real                       :: uinv, vinv, tinv, qinv
 
    if (trace_use) call da_trace_entry("da_final_write_modified_filtered_obs")

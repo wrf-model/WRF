@@ -1979,6 +1979,7 @@ rconfig   integer     sf_sfclay_physics   namelist,physics	max_domains    0     
 rconfig   integer     sf_surface_physics  namelist,physics	max_domains    0       rh       "sf_surface_physics"            ""      ""
 rconfig   integer     bl_pbl_physics      namelist,physics	max_domains    0       rh       "bl_pbl_physics"                ""      ""
 rconfig   integer     windfarm_opt        namelist,physics      max_domains    0       rh       "windfarm_opt"                ""      ""
+rconfig   integer     windfarm_ij         namelist,physics      1              0       rh       "windfarm_ij"                ""      ""
 rconfig   integer     bl_mynn_tkebudget   namelist,physics      max_domains    0       rh       "bl_mynn_tkebudget"             ""      ""
 rconfig   logical     bl_mynn_tkeadvect   namelist,physics      max_domains    .false.  rh      "bl_mynn_tkeadvect"             ""      ""
 rconfig   integer     bl_mynn_cloudpdf    namelist,physics      1              0       irh       "bl_mynn_cloudpdf"              ""      ""
@@ -2026,7 +2027,7 @@ rconfig   integer mp_zero_out             namelist,physics	1             0      
 rconfig   real mp_zero_out_thresh         namelist,physics	1          1.e-8      -      "mp_zero_out_thresh"  "minimum threshold for non-Qv moist fields, below are set to zero"  "kg/kg"
 rconfig   real    seaice_threshold        namelist,physics	1            100       h    "seaice_threshold"  "tsk below which which water points are set to sea ice for slab scheme"   "K"
 rconfig   integer sst_update              namelist,physics	1            0         h    "sst_update"  "update sst from wrflowinp file  0=no, 1=yes"   ""
- 
+
 rconfig   integer sst_skin                namelist,physics      1            0         h    "sst_skin" "calculate sst skin temperature 0=no, 1=yes"   ""
 rconfig   integer tmn_update              namelist,physics      1            0         h    "tmn_update" "update tmn from calculation  0=no, 1=yes"   ""
 rconfig   logical usemonalb               namelist,physics      1            .false.   h    "usemonalb"   "use 2d field vs table values  false=table, True=2d"   ""
@@ -2423,7 +2424,7 @@ package   thompson      mp_physics==8                -             moist:qv,qc,q
 package   thompsonaero  mp_physics==28               -             moist:qv,qc,qr,qi,qs,qg;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg;scalar:qni,qnr,qnc,qnwfa,qnifa;state:re_cloud,re_ice,re_snow
 package   milbrandt2mom mp_physics==9                -             moist:qv,qc,qr,qi,qs,qg,qh;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg,g_qh;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg,a_qh;scalar:qnc,qnr,qni,qns,qng,qnh;a_scalar:a_qnc,a_qnr,a_qni,a_qns,a_qng,a_qnh;g_scalar:g_qnc,g_qnr,g_qni,g_qns,g_qng,g_qnh
 package   morr_two_moment  mp_physics==10            -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qns,qnr,qng;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg;a_scalar:a_qni,a_qns,a_qnr,a_qng;g_scalar:g_qni,g_qns,g_qnr,g_qng
-package   cammgmpscheme mp_physics==11               -             moist:qv,qc,qi,qr,qs;scalar:qnc,qni,qnr,qns;state:rh_old_mp,lcd_old_mp,cldfra_old_mp,cldfra_mp,cldfra_mp_all,cldfra_conv,cldfrai,cldfral,turbtype3d,smaw3d,wsedl3d,icwmrdp3d,dp3d,shfrc3d,dlf,dlf2,tke_pbl
+package   cammgmpscheme mp_physics==11               -             moist:qv,qc,qi,qr,qs;scalar:qnc,qni,qnr,qns;state:rh_old_mp,lcd_old_mp,cldfra_old_mp,cldfra_mp,cldfra_mp_all,cldfra_conv,cldfrai,cldfral,turbtype3d,smaw3d,wsedl3d,icwmrdp3d,dp3d,shfrc3d,dlf,dlf2,tke_pbl,lradius,iradius
 #package   milbrandt3mom mp_physics==12               -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnc,qnr,qni,qns,qng,qnh,qzr,qzi,qzs,qzg,qzh
 package   sbu_ylinscheme    mp_physics==13           -             moist:qv,qc,qr,qi,qs;state:rimi;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs;
 package   wdm5scheme    mp_physics==14               -             moist:qv,qc,qr,qi,qs;scalar:qnn,qnc,qnr;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs;a_scalar:a_qnn,a_qnc,a_qnr;g_scalar:g_qnn,g_qnc,g_qnr;
@@ -2476,14 +2477,14 @@ package   goddardswscheme  ra_sw_physics==5          -             state:tswdn,t
 package   flgswscheme   ra_sw_physics==7             -             -
 package   gfdlswscheme  ra_sw_physics==99            -             -
 
-package   sfclayscheme   sf_sfclay_physics==1        -             -
+package   sfclayscheme   sf_sfclay_physics==91       -             -
 package   myjsfcscheme   sf_sfclay_physics==2        -             state:tke_pbl
 package   gfssfcscheme   sf_sfclay_physics==3        -             -
 package   qnsesfcscheme  sf_sfclay_physics==4        -             -
 package   mynnsfcscheme  sf_sfclay_physics==5        -             state:sh3d,tsq,qsq,cov
 package   pxsfcscheme    sf_sfclay_physics==7        -             -
 package   temfsfcscheme  sf_sfclay_physics==10       -             state:wm_temf
-package   sfclayrevscheme sf_sfclay_physics==11      -             -
+package   sfclayrevscheme sf_sfclay_physics==1       -             -
 package   idealscmsfcscheme  sf_sfclay_physics==89   -             -
 
 package   noahucmscheme  sf_urban_physics==1         -             state:trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,sfw1_urb3d,sfw2_urb3d,sfr_urb3d,sfg_urb3d,a_u_bep,a_v_bep,a_t_bep,a_q_bep,a_e_bep,b_u_bep,b_v_bep,b_t_bep,b_q_bep,b_e_bep,dlg_bep,dl_u_bep,sf_bep,vl_bep,mh_urb2d,stdh_urb2d,lf_urb2d,lp_urb2d,hgt_urb2d,lb_urb2d
@@ -2664,7 +2665,7 @@ package   wrfhydro       wrf_hydro==1                -            state:SOLDRAIN
 
 #WRF Windfarm
 package   no_windfarm    windfarm_opt==0             -            -
-package   turbdragforce  windfarm_opt==1             -            state:power
+package   fitchscheme    windfarm_opt==1             -            state:power
 
 #---------------------------------------------------------------------------------------------------------------------------------------
 ## communications                                               

@@ -412,7 +412,8 @@ bufrfile:  do ibufr=1,numbufr
            landsea_mask = 0
          else
            landsea_mask = rad%isurf_type
-           print*,'Warning, Unknown surface type!'
+           write(unit=message(1),fmt='(A,I6)') 'Unknown surface type: ', landsea_mask
+           call da_warning(__FILE__,__LINE__,message(1:1))
          endif
          ! rmask=one                          ! land
          ! if (nint(bfr1bhdr(bufr_landsea_mask))==1) rmask=0.0_r_kind   ! reverse the land/sea mask in bufr

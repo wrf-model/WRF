@@ -141,3 +141,6 @@ endif
 rconfig character iofields_filename       namelist,time_control   max_domains  "NONE_SPECIFIED"
 rconfig logical   ignore_iofields_warning namelist,time_control   1            .true.
 
+# for controlling whether NetCDF writes using the FILL or NOFILL option
+rconfig logical   ncd_nofill      namelist,time_control 1      .false.
+

@@ -115,8 +115,9 @@ subroutine da_write_oa_radar_ascii ( ob, iv, re )
 
       read(omb_radar_unit, '(20x,i8)', iostat=error)num_obs
       IF(error /= 0)THEN
-      PRINT*, "Error reading for process " , k, "will cycle"
-      cycle
+         write(unit=message(1),fmt='(A,A)') 'Nothing to read from ',filename1(k)
+         call da_message(message(1:1))
+         cycle
       ENDIF   
          if (num_obs > 0) then
            do  n = 1, num_obs    

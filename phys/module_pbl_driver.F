@@ -114,17 +114,17 @@ CONTAINS
                    YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME,ACMPBLSCHEME,&
                    QNSEPBLSCHEME,MYNNPBLSCHEME2,MYNNPBLSCHEME3,BOULACSCHEME,&
                    CAMUWPBLSCHEME,BEPSCHEME,BEP_BEMSCHEME,MYJSFCSCHEME, &
-                   SURFDRAGSCHEME, TEMFPBLSCHEME,QNSEPBL09SCHEME,GBMPBLSCHEME,  &
-                   TURBDRAGFORCE,                                      &
+                   SURFDRAGSCHEME, &
+                   FITCHSCHEME,                          &
+                   TEMFPBLSCHEME,QNSEPBL09SCHEME,GBMPBLSCHEME,  &
                    CAMMGMPSCHEME,p_qi,p_qni,p_qnc,param_first_scalar  !CAMMGMPSCHEME, p_qni,p_qnc is used for camuwpbl scheme
-   USE module_wind_generic, ONLY : windspec
 #else
    USE module_state_description, ONLY :                            &
                    YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME,ACMPBLSCHEME &
                    , QNSEPBLSCHEME, p_qi,param_first_scalar &
                    , TEMFPBLSCHEME, GFS2011SCHEME,QNSEPBL09SCHEME         &
                    , CAMUWPBLSCHEME                                       &
-                   , TURBDRAGFORCE                                       &
+                   , FITCHSCHEME                                       &
                    , GBMPBLSCHEME, MYJSFCSCHEME
 #endif
 
@@ -152,7 +152,6 @@ CONTAINS
    USE module_bl_mynn
    USE module_bl_fogdes
    USE module_wind_fitch
-   USE module_wind_turbdragforce
 #endif
 
    !  This driver calls subroutines for the PBL parameterizations.
@@ -1584,49 +1583,6 @@ CONTAINS
                    ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
                    ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
                    )
-
-               IF (windspec.GT.0) THEN
-
-                  IF (PRESENT(id) .AND.                                  &
-                     PRESENT(phb) .AND.                                  &
-                     PRESENT(xlat_u).AND.PRESENT(xlong_u) .AND.          &
-                     PRESENT(xlat_v).AND.PRESENT(xlong_v) ) THEN
-
-                     CALL wrf_debug(100,'in phys/module_wind_fitch.F')
-                     CALL turbine_drag(                                  &
-                     & ID=id                                             &
-                     &,PHB=phb,u=u_phy,v=v_phy                           &
-                     &,XLAT_U=xlat_u,XLONG_U=xlong_u                     &
-                     &,XLAT_V=xlat_v,XLONG_V=xlong_v                     &
-                     &,DX=dx,DZ=dz8w,DT=dt                               &
-                     &,QKE=qke                                           &
-!ACF for QKE advection
-                     &,qke_adv=qke_adv,bl_mynn_tkeadvect=bl_mynn_tkeadvect  &
-!ACF-end
-                     &,DU=rublten,DV=rvblten                             &
-                     &,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde   &
-                     &,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme   &
-                     &,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte   &
-                     &)
-                  ELSE
-                     WRITE ( message , FMT = '(A,6(L1,1X))' )           &
-                     'present: '//                                      &
-                     'ID, '//                                           &
-                     'phb, '//                                          &
-                     'xlat_u, '//                                       &
-                     'xlong_u, '//                                      &
-                     'xlat_v, '//                                       &
-                     'xlong_v = ' ,                                     &
-                      PRESENT( id ) ,                                   &
-                      PRESENT( phb ) ,                                  &
-                      PRESENT( xlat_u  ) ,                              &
-                      PRESENT( xlong_u ) ,                              &
-                      PRESENT( xlat_v  ) ,                              &
-                      PRESENT( xlong_v )
-                     CALL wrf_debug(0,message)
-                     CALL wrf_error_fatal('Lack arguments to call turbine_drag')
-                  ENDIF
-               ENDIF
            ELSE
                WRITE ( message , FMT = '(A,20(L1,1X))' )            &
                  'present: '//                                      &
@@ -1803,12 +1759,12 @@ CONTAINS
 !
     windfarm_select: SELECT CASE(windfarm_opt)
 
-      CASE (turbdragforce)
+      CASE (fitchscheme)
 
                   IF (PRESENT(id) .AND.                                  &
                      PRESENT(z_at_w) ) THEN
 !
-                     CALL wrf_debug(100,'in phys/module_wind_turbdragforce.F')
+                     CALL wrf_debug(100,'in phys/module_wind_fitch.F')
                      CALL dragforce(                                  &
                      & ID=id                                             &
                      &,Z_AT_W=z_at_w,u=u_phy,v=v_phy                     &

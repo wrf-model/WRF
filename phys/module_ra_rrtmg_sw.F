@@ -9780,7 +9780,7 @@ CONTAINS
                        coszr, julday, solcon,                     &
                        albedo, t3d, t8w, tsk,                     &
                        p3d, p8w, pi3d, rho3d,                     &
-                       dz8w, cldfra3d, lradius, iradius,          & !BSINGH (01/22/2014)
+                       dz8w, cldfra3d, lradius, iradius,          & 
                        is_cammgmp_used, r, g,                     &
                        re_cloud,re_ice,re_snow,                   &
                        has_reqc,has_reqi,has_reqs,                &
@@ -9816,7 +9816,7 @@ CONTAINS
    IMPLICIT NONE
 !------------------------------------------------------------------
    LOGICAL, INTENT(IN )      ::        warm_rain
-   LOGICAL, INTENT(IN )      ::   is_CAMMGMP_used !BSINGH:01/22/2014: Added for CAM5 RRTMG<->CAMMGMP
+   LOGICAL, INTENT(IN )      ::   is_CAMMGMP_used ! Added for CAM5 RRTMG<->CAMMGMP
 !
    INTEGER, INTENT(IN )      ::        ids,ide, jds,jde, kds,kde, &
                                        ims,ime, jms,jme, kms,kme, &
@@ -10678,7 +10678,7 @@ CONTAINS
                end do
             endif
             
-!BSINGH(01/22/2014): if CAMMGMP is used, use output from CAMMGMP            
+!if CAMMGMP is used, use output from CAMMGMP            
 !PMA
             if(is_CAMMGMP_used) then
                do k = kts, kte
@@ -10696,8 +10696,6 @@ CONTAINS
                   reliq(ncol,k) = max(2.5, min(60.0,reliq(ncol,k)))
                enddo
             endif
-!BSINGH (01/22/2014):ENDS
-
 
 ! Set cloud physical property arrays
             do k = kts, kte

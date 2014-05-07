@@ -90,6 +90,11 @@
 
    ! Calculate the num_fgat_time based on time_window_min, time_window_max
     if ( var4d ) then
+       if (time_step == 0) then
+          write(unit=message(1),fmt='(A)') &
+          'For 4DVAR, in the &domains namelist, "time_step" must be set to a non-zero value'
+          call da_error(__FILE__,__LINE__,message(1:1))
+       endif
        read(unit=time_window_min,fmt='(i4,5(a1,i2))') min_yyyy,s,min_mm,s,min_dd,s,min_hh,s,min_mn,s,min_ss
        read(unit=time_window_max,fmt='(i4,5(a1,i2))') max_yyyy,s,max_mm,s,max_dd,s,max_hh,s,max_mn,s,max_ss
        call da_get_julian_time(min_yyyy,min_mm,min_dd,min_hh,min_mn,time_min)
@@ -178,10 +183,6 @@
       jde_ens = jde
       kde_ens = kde
 
-      write(*,*) ' '
-      print *,'CSS ide_ens, jde_ens, kde_ens = ',ide_ens,jde_ens,kde_ens
-      write(*,*) ' '
-
       !---------------------------------------
       ! Get "intermediate" grid sizes and tiles
       !---------------------------------------
@@ -208,15 +209,6 @@
       jps_int = jps ; jpe_int = jpe
       kps_int = kps ; kpe_int = kpe
 
-      print *,'CSS ids_int, ide_int  = ',ids_int, ide_int
-      print *,'CSS jds_int, jde_int  = ',jds_int, jde_int
-      print *,'CSS kds_int, kde_int  = ',kds_int, kde_int
-      print *,'CSS its_int, ite_int  = ',its_int, ite_int
-      print *,'CSS jts_int, jte_int  = ',jts_int, jte_int
-      print *,'CSS kts_int, kte_int  = ',kts_int, kte_int
-      print *,'CSS ims_int, ime_int  = ',ims_int, ime_int
-      print *,'CSS jms_int, jme_int  = ',jms_int, jme_int
-      print *,'CSS kms_int, kme_int  = ',kms_int, kme_int
 
       grid%imask_xstag = 1   ; grid%imask_ystag = 1
       grid%imask_nostag = 1  ; grid%imask_xystag = 1
@@ -231,8 +223,6 @@
       !----------------------------------------------------------
       call allocate_intermediate_grid(grid%intermediate_grid)
 
-      print *, 'CSS ensemble grid dx = ',ensemble_grid%dx
-      print *,'CSS intermediate_grid dx = ',grid%intermediate_grid%dx
 
       !---------------------------------------
       ! Get map projection information for the ensemble
@@ -335,7 +325,6 @@
               ob_locs(kk)%dym = dym
               ob_locs(kk)%xx = xx
               ob_locs(kk)%yy = yy
-           !  write(*,*)' CSS lat, lon, i, j, dx, dxm, dy, dym = ',lat, lon, ii, jj, dx, dxm, dy, dym
           else
              jjj = jjj + 1
           endif
@@ -344,7 +333,6 @@
      enddo
 
       total_here = kk ! from da_control
-      print *,'CSS total_here, total_missing = ',total_here,jjj
 
    endif 
 
@@ -765,7 +753,7 @@
       ! Write "clean" QCed observations if requested:
       if (anal_type_qcobs) then
          ! if (it == 1) then
-          if (write_mod_filtered_obs) then    !cys_change
+          if (write_mod_filtered_obs) then
             call da_write_modified_filtered_obs (grid, ob, iv, &
                coarse_ix, coarse_jy, start_x, start_y)
           else

@@ -106,7 +106,7 @@ MODULE module_sf_lake
                      xlat_urb2d   ,z_lake3d       ,dz_lake3d    ,lakedepth2d     ,&
                      watsat3d     ,csol3d         ,tkmg3d       ,tkdry3d         ,&
                      tksatu3d     ,ivgtyp         ,ht           ,xland           ,& 
-                     lakeminalt                                                  ,&
+                     iswater, xice, xice_threshold, lakeminalt                                                  ,&
                      ids          ,ide            ,jds          ,jde             ,&
                      kds          ,kde            ,ims          ,ime             ,&
                      jms          ,jme            ,kms          ,kme             ,&
@@ -115,7 +115,11 @@ MODULE module_sf_lake
                      h2osno2d     ,snowdp2d       ,snl2d        ,z3d             ,&  !h
                      dz3d         ,zi3d           ,h2osoi_vol3d ,h2osoi_liq3d    ,&
                      h2osoi_ice3d ,t_grnd2d       ,t_soisno3d   ,t_lake3d        ,&
-                     savedtke12d  ,lake_icefrac3d                                ,&
+                     savedtke12d  ,lake_icefrac3d                                ,& 
+#if (EM_CORE==1)
+             !        lakemask     ,lakeflag                                      ,&
+                     lakemask                                          ,&
+#endif
                      hfx          ,lh             ,grdflx       ,tsk             ,&  !o
                      qfx          ,t2             ,th2          ,q2 )
 
@@ -130,6 +134,13 @@ MODULE module_sf_lake
     INTEGER,  INTENT(IN   )   ::     ids,ide, jds,jde, kds,kde,  &
                                      ims,ime, jms,jme, kms,kme,  &
                                      its,ite, jts,jte, kts,kte
+    INTEGER , INTENT (IN) :: iswater
+    REAL,     INTENT(IN)  :: xice_threshold
+    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   XICE
+#if (EM_CORE==1)
+    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   LAKEMASK
+ !   INTEGER, INTENT(IN)::   LAKEFLAG
+#endif
     
     REAL,           DIMENSION( ims:ime, kms:kme, jms:jme ),INTENT(IN)  :: t_phy  
     REAL,           DIMENSION( ims:ime, kms:kme, jms:jme ),INTENT(IN)  :: p8w    
@@ -144,7 +155,7 @@ MODULE module_sf_lake
     REAL,           DIMENSION( ims:ime, jms:jme )         ,INTENT(INOUT)  :: albedo
     REAL,           DIMENSION( ims:ime, jms:jme )         ,INTENT(IN)  :: XLAND
     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme )         ,INTENT(IN)  :: XLAT_URB2D
-    INTEGER,        DIMENSION( ims:ime, jms:jme )         ,INTENT(IN)  :: IVGTYP
+    INTEGER,        DIMENSION( ims:ime, jms:jme )         ,INTENT(INOUT)  :: IVGTYP
     REAL,                                                  INTENT(IN)  :: dtbl
     
     REAL,           DIMENSION( ims:ime,1:nlevlake,jms:jme ),INTENT(IN)  :: z_lake3d
@@ -263,8 +274,20 @@ MODULE module_sf_lake
            SOLDN   = SWDOWN(I,J)                        ! SOLDN is total incoming solar
            SOLNET  = SOLDN*(1.-ALBEDO(I,J))             ! use mid-day albedo to determine net downward solar
                                                         ! (no solar zenith angle correction) 
-        IF (XLAND(I,J).GT.1.5) THEN    
-        if (ivgtyp(i,j)==16.0.and.ht(i,j)>= lakeminalt ) THEN
+!        IF (XLAND(I,J).GT.1.5) THEN    
+
+       !  if ( xice(i,j).gt.xice_threshold) then
+       !   ivgtyp(i,j) = iswater
+       !   xland(i,j) = 2.
+       !   lake_icefrac3d(i,1,j) = xice(i,j)
+       !   endif
+
+#if (EM_CORE==1)
+  !      if (lakemask(i,j).eq.1.or.(lakeflag.eq.0.and.(ivgtyp(i,j)==iswater.and.ht(i,j)>= lakeminalt))) THEN
+        if (lakemask(i,j).eq.1) THEN
+#else
+        if (ivgtyp(i,j)==iswater.and.ht(i,j)>= lakeminalt ) THEN
+#endif
     
            do c = 1,column
      
@@ -317,6 +340,7 @@ MODULE module_sf_lake
             enddo
             
           enddo
+      !      print*, 'mchen line 342',i,' ', j,' ', snl
             CALL LakeMain(forc_t,forc_pbot,forc_psrf,forc_hgt,forc_hgt_q,   & !I  
                           forc_hgt_t,forc_hgt_u,forc_q, forc_u,         &
                           forc_v,forc_lwrad,prec, sabg,lat,             &
@@ -375,7 +399,7 @@ MODULE module_sf_lake
          enddo
 
         endif
-        ENDIF    ! if xland = 2
+!        ENDIF    ! if xland = 2
         ENDDO
         ENDDO
 
@@ -4852,7 +4876,12 @@ end subroutine LakeDebug
                     z_lake3d,       dz_lake3d,       t_soisno3d,      h2osoi_ice3d,   &
                     h2osoi_liq3d,   h2osoi_vol3d,    z3d,             dz3d,           &
                     zi3d,           watsat3d,        csol3d,          tkmg3d,         &
-                    tkdry3d,        tksatu3d,        lake,            ims,ime, jms,jme)
+                    iswater,        xice,            xice_threshold,  xland,          &
+#if (EM_CORE == 1)
+                    lakemask,       lakeflag,                                         &
+#endif
+                    tkdry3d,        tksatu3d,        lake,            its, ite, jts, jte, &
+                    ims,ime, jms,jme)
 
 !==============================================================================
 ! This subroutine was first edited by Hongping Gu for coupling
@@ -4862,9 +4891,20 @@ end subroutine LakeDebug
   USE module_wrf_error
   implicit none
 
+  INTEGER , INTENT (IN) :: iswater
+  REAL,     INTENT(IN)  :: xice_threshold
+  REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   XICE
+  REAL, DIMENSION( ims:ime, jms:jme )  ,INTENT(INOUT)  :: XLAND
+
+#if (EM_CORE == 1)
+  REAL, DIMENSION( ims:ime , jms:jme ) ::   LAKEMASK
+  INTEGER , INTENT (IN) :: lakeflag
+#endif
+
   LOGICAL , INTENT(IN)      ::     restart
   INTEGER,  INTENT(IN   )   ::     ims,ime, jms,jme
-  INTEGER, DIMENSION( ims:ime, jms:jme ), INTENT(IN)       :: IVGTYP,       &
+  INTEGER,  INTENT(IN   )   ::     its,ite, jts,jte
+  INTEGER, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT)       :: IVGTYP,       &
                                                               ISLTYP
   REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN)       :: HT
   REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(INOUT)    :: SNOW
@@ -4924,16 +4964,16 @@ end subroutine LakeDebug
 
   IF ( RESTART ) RETURN 
 
-  DO j = jms,jme
-  DO i = ims,ime
+  DO j = jts,jte
+  DO i = its,ite
         snowdp2d(i,j)         = snow(i,j)*0.005               ! SNOW in kg/m^2 and snowdp in m
 	h2osno2d(i,j)         = snow(i,j) ! mm 
   ENDDO
   ENDDO
 
 ! initialize all the grid with default value 
-  DO j = jms,jme
-  DO i = ims,ime
+  DO j = jts,jte
+  DO i = its,ite
 
     lakedepth2d(i,j)             = defval
     snl2d(i,j)                   = defval
@@ -4956,15 +4996,58 @@ end subroutine LakeDebug
 
 ! judge whether the grid is lake grid
    numb_lak = 0
+       do i=its,ite
+         do j=jts,jte
+#if (EM_CORE==1)
+         IF (lakeflag.eq.0) THEN    
+            if(ht(i,j)>=lakeminalt) then 
+              if ( xice(i,j).gt.xice_threshold) then   !mchen
+                   ivgtyp(i,j) = iswater
+                   xland(i,j) = 2. 
+                   lake_icefrac3d(i,1,j) = xice(i,j)
+                   xice(i,j)=0.0
+               endif
+            endif
 
-       do i=ims,ime
-         do j=jms,jme
-            if(ivgtyp(i,j)==16.and.ht(i,j)>=lakeminalt) then 
+            if(ivgtyp(i,j)==iswater.and.ht(i,j)>=lakeminalt) then 
+                lake(i,j)  = .true.
+                lakemask(i,j) = 1
+                numb_lak   = numb_lak + 1
+            else 
+                lake(i,j)  = .false.
+                lakemask(i,j) = 0
+            end if
+          ELSE
+            if(lakemask(i,j).eq.1) then 
+                lake(i,j)  = .true.
+                numb_lak   = numb_lak + 1
+                if ( xice(i,j).gt.xice_threshold) then   !mchen
+                   ivgtyp(i,j) = iswater
+                   xland(i,j) = 2. 
+                   lake_icefrac3d(i,1,j) = xice(i,j)
+                   xice(i,j)=0.0
+                endif
+             else  
+                lake(i,j)  = .false.
+             endif
+         ENDIF   ! end if lakeflag=0
+#else
+            if(ht(i,j)>=lakeminalt) then 
+              if ( xice(i,j).gt.xice_threshold) then   !mchen
+                   ivgtyp(i,j) = iswater
+                   xland(i,j) = 2. 
+                   lake_icefrac3d(i,1,j) = xice(i,j)
+                   xice(i,j)=0.0
+               endif
+            endif
+            if(ivgtyp(i,j)==iswater.and.ht(i,j)>=lakeminalt) then 
                 lake(i,j)  = .true.
                 numb_lak   = numb_lak + 1
             else 
                 lake(i,j)  = .false.
             end if
+
+#endif
         end do
        end do
     write(message,*) "the total number of lake grid is :", numb_lak
@@ -4972,8 +5055,8 @@ end subroutine LakeDebug
 !    CALL LakeDebug(msg)
 ! initialize lake grid 
 
-  DO j = jms,jme
-  DO i = ims,ime
+  DO j = jts,jte
+  DO i = its,ite
 
      if ( lake(i,j) ) then
 
@@ -5112,8 +5195,8 @@ end subroutine LakeDebug
 
 !!!!!!!!!!!!!!!!!!begin to initialize lake variables!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  DO j = jms,jme
-  DO i = ims,ime
+  DO j = jts,jte
+  DO i = its,ite
       
      if ( lake(i,j) ) then
 

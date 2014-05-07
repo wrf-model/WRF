@@ -137,14 +137,6 @@ call wrf_message("**************************************************************
 
     numgas = get_last_gas(config_flags%chem_opt)
  
-#if ( NMM_CORE == 1 )
-call wrf_message("*********************************************************************")
-call wrf_message("* WARNING: THE USE OF THE NMM WITH CHEMISTRY IS                     *")
-call wrf_message("*          CONSIDERED BETA CODE THAT IS STILL IN DEVELOPMENT.       *")
-call wrf_message("*          PLEASE REPORT ANY BUGS TO wrfchemhelp.gsd@noaa.gov       *")
-call wrf_message("*********************************************************************")
-#endif
-
    chem_select: SELECT CASE(config_flags%chem_opt)
      CASE (GOCART_SIMPLE)
        CALL wrf_debug(15,'calling only gocart aerosols driver from chem_driver')
@@ -870,7 +862,6 @@ ENDIF ghg_block
      CASE (DUST)
        if(config_flags%phot_opt .NE. 0 )then
          call wrf_error_fatal("Dust only simple initialization, phot_opt  MUST BE ZERO")
-!        config_flags%phot_opt  = 0
        endif
        CALL wrf_debug(15,'call dust aerosols initialization')
         ch_dust(:,:)=0.8D-9
@@ -890,7 +881,6 @@ ENDIF ghg_block
      CASE (GOCART_SIMPLE)
        if(config_flags%phot_opt .NE. 0 )then
          call wrf_error_fatal("GOCART simple initialization, phot_opt  MUST BE ZERO")
-!        config_flags%phot_opt  = 0
        endif
        CALL wrf_debug(15,'call GOCART chem/aerosols initialization')
         ch_dust(:,:)=0.8D-9

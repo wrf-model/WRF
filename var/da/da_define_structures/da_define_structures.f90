@@ -23,7 +23,7 @@ module da_define_structures
    use da_tracing, only : da_trace_entry, da_trace_exit
    use da_tools_serial, only : da_array_print
 
-   use da_reporting, only : da_error, message
+   use da_reporting, only : da_error, da_warning, da_message, message
    use da_wavelet, only : nij,ws
 
    implicit none

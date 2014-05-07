@@ -81,10 +81,11 @@ subroutine da_setup_be_nmm_regional(xb, be)
    if( cv_options == 5 .or. cv_options == 6) then
    write (unit=message(1),fmt='(A,i3)') &
       'Set up background errors for regional application for cv_option= ',cv_options
-
+      call da_message(message(1:1))
    else 
-      call wrf_shutdown
-      stop "Stopped, due to wrong choice of cv_option. Expects 5 or 6"
+      write(unit=message(1),fmt='(A,I4)') &
+          'This subroutine is for cv_options = 5 or 6; you have selected cv_options = ', cv_options
+      call da_error(__FILE__,__LINE__,message(1:1))
    end if
 
    ix = xb % mix
@@ -100,10 +101,8 @@ subroutine da_setup_be_nmm_regional(xb, be)
    rewind (be_unit)
    read (be_unit, iostat=ier) ni, nj, nk
    if (ier /= 0) then
-      write(unit=*, fmt='(a, i2, a, i3)') &
-           'cv_options:', cv_options,' Reading error in unit=',be_unit
-      call wrf_shutdown
-      stop "Stopped, Please check if proper BE file s provided"
+      write(unit=message(1),fmt='(A,I4,A,I4)') 'cv_options:', cv_options,' Reading error in unit=',be_unit
+      call da_error(__FILE__,__LINE__,message(1:1))
    else
       if ( nk /= kz ) then
          call da_error(__FILE__,__LINE__,  &
@@ -536,7 +535,8 @@ subroutine da_setup_be_nmm_regional(xb, be)
 
    if (max_ext_its > 1) then
 
-       print '(/5x,">>> Save the variances and scale-lengths in outer-loop",i2/)', it
+       write(unit=message(1),fmt='(A,I4)') '>>> Save the variances and scale-lengths in outer-loop', it
+       call da_message(message(1:1))
        write(be_rf_unit)  kz, jy, ix, be % v1 % mz, be % v2 % mz, be% v3 % mz, &
                                      be % v4 % mz, be % v5 % mz, xb % ds
        write(be_rf_unit) be % v1 % val, be % v2 % val, be% v3 % val, &

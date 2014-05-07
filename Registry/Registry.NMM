@@ -165,6 +165,12 @@ state integer randstate4     ij     dyn_nmm     1      -    r  "randstate4" "ran
 state real    random         ij     dyn_nmm     1      -    rh "random" "random number in [0,1) used by SAS"
 rconfig   integer random_seed             namelist,physics     max_domains    0       irh    "random_seed"  "random number generator seed"
 
+# Projection south and west bounds for Post:
+rconfig  real wbd0    derived   max_domains    0       - "wbd0"                  "western boundary of the domain in rotated coordinates"
+rconfig  real sbd0    derived   max_domains    0       - "sbd0"                  "southern boundary of the domain in rotated coordinates"
+state    real wbd0var    -       dyn_nmm     0      -      h "wbd0var"     "western boundary of the domain in rotated coordinates"
+state    real sbd0var    -       dyn_nmm     0      -      h "sbd0var"     "southern boundary of the domain in rotated coordinates"
+
 #
 # module_MASKS
 #
@@ -1192,6 +1198,7 @@ rconfig   integer     sf_sfclay_physics   namelist,physics	max_domains    0     
 rconfig   integer     sf_surface_physics  namelist,physics	max_domains    0       rh       "sf_surface_physics"            ""      ""
 rconfig   integer     bl_pbl_physics      namelist,physics	max_domains    0       rh       "bl_pbl_physics"                ""      ""
 rconfig   integer     windfarm_opt        namelist,physics      max_domains    0       rh       "windfarm_opt"                ""      ""
+rconfig   integer     windfarm_ij         namelist,physics      1              0       rh       "windfarm_ij"                ""      ""
 rconfig   integer     mfshconv            namelist,physics      max_domains    1        rh       "mfshconv"         "To activate mass flux scheme with qnse, 1=true; 0=false"      ""
 rconfig   integer     sf_urban_physics    namelist,physics      max_domains    0       rh       "sf_urban_physics"     ""       ""
 rconfig   real    BLDT                    namelist,physics	max_domains    0       h    "BLDT"          ""      ""
@@ -1471,14 +1478,14 @@ package   flgswscheme   ra_sw_physics==7             -             -
 package   gfdlswscheme  ra_sw_physics==99            -             -
 package   hwrfswscheme  ra_sw_physics==98
 
-package   sfclayscheme   sf_sfclay_physics==1        -             -
+package   sfclayscheme   sf_sfclay_physics==91       -             -
 package   myjsfcscheme   sf_sfclay_physics==2        -             -
 package   gfssfcscheme   sf_sfclay_physics==3        -             -
 package   gfdlsfcscheme  sf_sfclay_physics==88       -             -
 package   qnsesfcscheme  sf_sfclay_physics==4        -             -
 package   pxsfcscheme    sf_sfclay_physics==7        -             -
 package   temfsfcscheme  sf_sfclay_physics==10       -             -
-package   sfclayrevscheme sf_sfclay_physics==11        -             -
+package   sfclayrevscheme sf_sfclay_physics==1       -             -
 package   idealscmsfcscheme  sf_sfclay_physics==89   -             -
 package   slabscheme     sf_surface_physics==1       -             -
 package   lsmscheme      sf_surface_physics==2       -             state:flx4,fvb,fbur,fgsn
@@ -1503,7 +1510,7 @@ package   camuwpblscheme bl_pbl_physics==9           -             -
 package   mrfscheme      bl_pbl_physics==99          -             -
 package   temfpblscheme  bl_pbl_physics==10          -             -
 package   gbmpblscheme   bl_pbl_physics==12          -             -
-package   turbdragforce  windfarm_opt==1             -             -
+package   fitchscheme    windfarm_opt==1             -             -
 
 package   kfetascheme    cu_physics==1               -             -
 package   bmjscheme      cu_physics==2               -             -

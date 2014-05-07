@@ -1,4 +1,4 @@
-subroutine da_max_error_qc_radar (it, info, n,field, max_error, ix, ixf, iunit, var, failed, print)
+subroutine da_max_error_qc_radar (it, info, n,field, max_error, ix, ixf, iunit, var, failed, print_details)
 
    !-----------------------------------------------------------------------
    ! Purpose: TBD
@@ -15,7 +15,7 @@ subroutine da_max_error_qc_radar (it, info, n,field, max_error, ix, ixf, iunit, 
    integer          ,   intent(in)    :: iunit
    character (len=*),   intent(in)    :: var
    logical          ,   intent(out)   :: failed
-   logical          ,   intent(in)    :: print
+   logical          ,   intent(in)    :: print_details
 
    real                               :: err, err_max
    integer                            :: qc_flag
@@ -37,7 +37,7 @@ subroutine da_max_error_qc_radar (it, info, n,field, max_error, ix, ixf, iunit, 
       ixf = ixf + 1
       failed = .true.
 
-      if (print .and. failed) then
+      if (print_details .and. failed) then
          if (err_max .LE. 0.0) then
             write (iunit , fmt = '(A,3(F12.1,1X),A,A,A,A,A,3f10.2)')   &
                "Err_max < 0 ==> ",err,err_max,max_error, " for ", var, &

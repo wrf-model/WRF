@@ -141,7 +141,6 @@ subroutine da_check_buddy_synop(iv, ob, dx, it)
 !                  j, n, ob%synop(n)%p
 !      enddo
 !   enddo
-!   stop
    !---------------------------------------------------------------------------
    ! [3.0] Buddy check for each of the pressure-bins::
    !---------------------------------------------------------------------------

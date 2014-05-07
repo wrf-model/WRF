@@ -211,6 +211,15 @@ CONTAINS
                          +emis_ant(i,k,j,p_e_xyl)*conv_rho
         chem(i,k,j,p_ket)  =  chem(i,k,j,p_ket)                        &     
                          +emis_ant(i,k,j,p_e_ket)*conv_rho
+        if( config_flags%chem_opt == GOCARTRACM_KPP       &
+          .or. config_flags%chem_opt == GOCARTRADM2       &
+          .or. config_flags%chem_opt == GOCARTRADM2_KPP) then  
+          conv_rho_aer = alt(i,k,j)*dtstep/dz8w(i,k,j)
+          chem(i,k,j,p_p10) = chem(i,k,j,p_p10) + conv_rho_aer*emis_ant(i,k,j,p_e_pm_10)
+          chem(i,k,j,p_p25) = chem(i,k,j,p_p25) + conv_rho_aer*emis_ant(i,k,j,p_e_pm_25)
+          chem(i,k,j,p_oc1) = chem(i,k,j,p_oc1) + conv_rho_aer*emis_ant(i,k,j,p_e_oc)
+          chem(i,k,j,p_bc1) = chem(i,k,j,p_bc1) + conv_rho_aer*emis_ant(i,k,j,p_e_bc)
+        endif
        endif
       END DO                                                          
  100  continue

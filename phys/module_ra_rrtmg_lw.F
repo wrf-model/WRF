@@ -11411,8 +11411,8 @@ CONTAINS
                        p8w, p3d, pi3d,                            &
                        dz8w, tsk, t3d, t8w, rho3d, r, g,          &
                        icloud, warm_rain, cldfra3d,               &
-                       lradius,iradius,                           & !BSINGH (01/22/2014)
-                       is_cammgmp_used,                           & !BSINGH (01/22/2014)
+                       lradius,iradius,                           & 
+                       is_cammgmp_used,                           & 
                        f_ice_phy, f_rain_phy,                     &
                        xland, xice, snow,                         &
                        qv3d, qc3d, qr3d,                          &
@@ -11444,7 +11444,7 @@ CONTAINS
    IMPLICIT NONE
 !------------------------------------------------------------------
    LOGICAL, INTENT(IN )      ::        warm_rain
-   LOGICAL, INTENT(IN )      ::   is_CAMMGMP_used !BSINGH:01/22/2014: Added for CAM5 RRTMG<->CAMMGMP
+   LOGICAL, INTENT(IN )      ::   is_CAMMGMP_used ! Added for CAM5 RRTMG<->CAMMGMP
 !
    INTEGER, INTENT(IN )      ::        ids,ide, jds,jde, kds,kde, &
                                        ims,ime, jms,jme, kms,kme, &
@@ -12342,8 +12342,7 @@ CONTAINS
                   reice(ncol,k) = min(140.0,reice(ncol,k))
                end do
             endif
-!BSINGH(01/22/2014): if CAMMGMP is used, use output from CAMMGMP
-!PMA
+!if CAMMGMP is used, use output from CAMMGMP
             if(is_CAMMGMP_used) then
                do k = kts, kte
                   if ( qi1d(k) .gt. 1.e-20 .or. qs1d(k) .gt. 1.e-20) then
@@ -12360,7 +12359,6 @@ CONTAINS
                   reliq(ncol,k) = max(2.5, min(60.0,reliq(ncol,k)))
                enddo
             endif
-!BSINGH (01/22/2014):ENDS
 
 
 ! Set cloud physical property arrays

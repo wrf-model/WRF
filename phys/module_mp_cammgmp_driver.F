@@ -600,7 +600,7 @@ contains
     dtime = dt
 
     
-    !PMA - default values for radius [BSINGH (01/22/2014)]
+    !default values for radius 
     lradius(:,:,:) = 10._r8
     iradius(:,:,:) = 25._r8
   
@@ -1263,8 +1263,8 @@ contains
           
           !! Averaging for new output fields
           
-          efcout(:,:)      = 10._r8 !BSINGH(01/21/2014): changed from 0 to 10 [PMA change]
-          efiout(:,:)      = 25._r8 !BSINGH(01/21/2014): changed from 0 to 25 [PMA change]
+          efcout(:,:)      = 10._r8 
+          efiout(:,:)      = 25._r8 
           ncout(:,:)       = 0._r8
           niout(:,:)       = 0._r8	
           freql(:,:)       = 0._r8
@@ -1351,8 +1351,8 @@ contains
              qvs(1,kflip)     = max(1.e-30_r8,epsqs*esl(1,kflip)/(state_pmid(1,kflip)-(1._r8-epsqs)*esl(1,kflip)))
              rh_old_mp(iw,kw,jw)     = max(0._r8,state_q(1,kflip,1) / qvs(1,kflip))
              lcd_old_mp(iw,kw,jw)    = alst(1,kflip)
-             lradius(iw,kw,jw)    = efcout(1,kflip) !BSINGH(01/21/2014)
-             iradius(iw,kw,jw)    = efiout(1,kflip) !BSINGH(01/21/2014)
+             lradius(iw,kw,jw)    = efcout(1,kflip)
+             iradius(iw,kw,jw)    = efiout(1,kflip)
              
 #ifdef WRF_CHEM
              if(chem_opt .NE. 0 .and. config_flags%CAM_MP_MAM_cpled ) then

@@ -3762,8 +3762,8 @@ CONTAINS
          if (bedo.gt.1.) then
             sibsu =  0.
             bedo = .1
- print*,'albebo incorrect',ix,jx,bedo,sibsu,swdown, &
-            radn(1,1),radn(1,2),radn(2,1),radn(2,2)
+! print*,'albebo incorrect',ix,jx,bedo,sibsu,swdown, &
+!           radn(1,1),radn(1,2),radn(2,1),radn(2,2)
          endif
       else
          sibsu = 0.0

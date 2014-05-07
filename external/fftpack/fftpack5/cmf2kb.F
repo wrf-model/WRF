@@ -1,51 +1,113 @@
-!CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-!                                                                       
-!   FFTPACK 5.0                                                         
-!                                                                       
-!   Authors:  Paul N. Swarztrauber and Richard A. Valent                
-!                                                                       
-!   $Id: cmf2kb.f,v 1.2 2004/06/15 21:08:32 rodney Exp $                
-!                                                                       
-!CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-                                                                        
-      SUBROUTINE CMF2KB (LOT,IDO,L1,NA,CC,IM1,IN1,CH,IM2,IN2,WA) 
-      REAL  CC(2,IN1,L1,IDO,2),CH(2,IN2,L1,2,IDO),WA(IDO,1,2) 
-!                                                                       
-      M1D = (LOT-1)*IM1+1 
-      M2S = 1-IM2 
-      IF (IDO.GT.1 .OR. NA.EQ.1) GO TO 102 
-      DO 101 K=1,L1 
-         DO 101 M1=1,M1D,IM1 
-         CHOLD1 = CC(1,M1,K,1,1)+CC(1,M1,K,1,2) 
-         CC(1,M1,K,1,2) = CC(1,M1,K,1,1)-CC(1,M1,K,1,2) 
-         CC(1,M1,K,1,1) = CHOLD1 
-         CHOLD2 = CC(2,M1,K,1,1)+CC(2,M1,K,1,2) 
-         CC(2,M1,K,1,2) = CC(2,M1,K,1,1)-CC(2,M1,K,1,2) 
-         CC(2,M1,K,1,1) = CHOLD2 
-  101 CONTINUE 
-      RETURN 
-  102 DO 103 K=1,L1 
-         M2 = M2S 
-         DO 103 M1=1,M1D,IM1 
-         M2 = M2+IM2 
-         CH(1,M2,K,1,1) = CC(1,M1,K,1,1)+CC(1,M1,K,1,2) 
-         CH(1,M2,K,2,1) = CC(1,M1,K,1,1)-CC(1,M1,K,1,2) 
-         CH(2,M2,K,1,1) = CC(2,M1,K,1,1)+CC(2,M1,K,1,2) 
-         CH(2,M2,K,2,1) = CC(2,M1,K,1,1)-CC(2,M1,K,1,2) 
-  103 CONTINUE 
-      IF(IDO .EQ. 1) RETURN 
-      DO 105 I=2,IDO 
-         DO 104 K=1,L1 
-         M2 = M2S 
-         DO 104 M1=1,M1D,IM1 
-         M2 = M2+IM2 
-            CH(1,M2,K,1,I) = CC(1,M1,K,I,1)+CC(1,M1,K,I,2) 
-            TR2 = CC(1,M1,K,I,1)-CC(1,M1,K,I,2) 
-            CH(2,M2,K,1,I) = CC(2,M1,K,I,1)+CC(2,M1,K,I,2) 
-            TI2 = CC(2,M1,K,I,1)-CC(2,M1,K,I,2) 
-            CH(2,M2,K,2,I) = WA(I,1,1)*TI2+WA(I,1,2)*TR2 
-            CH(1,M2,K,2,I) = WA(I,1,1)*TR2-WA(I,1,2)*TI2 
-  104    CONTINUE 
-  105 END DO 
-      RETURN 
-      END                                           
+subroutine cmf2kb ( lot, ido, l1, na, cc, im1, in1, ch, im2, in2, wa )
+
+!*****************************************************************************80
+!
+!! CMF2KB is an FFTPACK5 auxiliary routine.
+!
+!  License:
+!
+!    Licensed under the GNU General Public License (GPL).
+!    Copyright (C) 1995-2004, Scientific Computing Division,
+!    University Corporation for Atmospheric Research
+!
+!  Modified:
+!
+!    27 March 2009
+!
+!  Author:
+!
+!    Paul Swarztrauber
+!    Richard Valent
+!
+!  Reference:
+!
+!    Paul Swarztrauber,
+!    Vectorizing the Fast Fourier Transforms,
+!    in Parallel Computations,
+!    edited by G. Rodrigue,
+!    Academic Press, 1982.
+!
+!    Paul Swarztrauber,
+!    Fast Fourier Transform Algorithms for Vector Computers,
+!    Parallel Computing, pages 45-63, 1984.
+!
+!  Parameters:
+!
+  implicit none
+
+  integer ( kind = 4 ) ido
+  integer ( kind = 4 ) in1
+  integer ( kind = 4 ) in2
+  integer ( kind = 4 ) l1
+
+  real ( kind = 4 ) cc(2,in1,l1,ido,2)
+  real ( kind = 4 ) ch(2,in2,l1,2,ido)
+  real ( kind = 4 ) chold1
+  real ( kind = 4 ) chold2
+  integer ( kind = 4 ) i
+  integer ( kind = 4 ) im1
+  integer ( kind = 4 ) im2
+  integer ( kind = 4 ) k
+  integer ( kind = 4 ) lot
+  integer ( kind = 4 ) m1
+  integer ( kind = 4 ) m1d
+  integer ( kind = 4 ) m2
+  integer ( kind = 4 ) m2s
+  integer ( kind = 4 ) na
+  real ( kind = 4 ) ti2
+  real ( kind = 4 ) tr2
+  real ( kind = 4 ) wa(ido,1,2)
+
+  m1d = ( lot - 1 ) * im1 + 1
+  m2s = 1 - im2
+
+  if ( 1 < ido .or. na == 1 ) then
+
+    do k = 1, l1
+      m2 = m2s
+      do m1 = 1, m1d, im1
+        m2 = m2 + im2
+        ch(1,m2,k,1,1) = cc(1,m1,k,1,1) + cc(1,m1,k,1,2)
+        ch(1,m2,k,2,1) = cc(1,m1,k,1,1) - cc(1,m1,k,1,2)
+        ch(2,m2,k,1,1) = cc(2,m1,k,1,1) + cc(2,m1,k,1,2)
+        ch(2,m2,k,2,1) = cc(2,m1,k,1,1) - cc(2,m1,k,1,2)
+      end do
+    end do
+
+    do i = 2, ido
+      do k = 1, l1
+        m2 = m2s
+        do m1 = 1, m1d, im1
+          m2 = m2 + im2
+          ch(1,m2,k,1,i) = cc(1,m1,k,i,1)+cc(1,m1,k,i,2)
+          tr2 = cc(1,m1,k,i,1)-cc(1,m1,k,i,2)
+          ch(2,m2,k,1,i) = cc(2,m1,k,i,1)+cc(2,m1,k,i,2)
+          ti2 = cc(2,m1,k,i,1)-cc(2,m1,k,i,2)
+
+          ch(2,m2,k,2,i) = wa(i,1,1) * ti2 + wa(i,1,2) * tr2
+          ch(1,m2,k,2,i) = wa(i,1,1) * tr2 - wa(i,1,2) * ti2
+
+        end do
+      end do
+    end do
+
+  else
+
+    do k = 1, l1
+      do m1 = 1, m1d, im1
+
+        chold1         = cc(1,m1,k,1,1) + cc(1,m1,k,1,2)
+        cc(1,m1,k,1,2) = cc(1,m1,k,1,1) - cc(1,m1,k,1,2)
+        cc(1,m1,k,1,1) = chold1
+
+        chold2         = cc(2,m1,k,1,1) + cc(2,m1,k,1,2)
+        cc(2,m1,k,1,2) = cc(2,m1,k,1,1) - cc(2,m1,k,1,2)
+        cc(2,m1,k,1,1) = chold2
+
+      end do
+    end do
+
+  end if
+
+  return
+end

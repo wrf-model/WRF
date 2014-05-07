@@ -6,7 +6,7 @@ module da_interpolation
    use da_define_structures, only : infa_type
    use da_tools, only : da_togrid
    use da_tracing, only : da_trace_entry, da_trace_exit
-   use da_reporting, only: da_error
+   use da_reporting, only: da_error, da_warning, message
 
    implicit none
 

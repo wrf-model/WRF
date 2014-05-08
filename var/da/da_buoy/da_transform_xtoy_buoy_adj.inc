@@ -40,9 +40,9 @@ subroutine da_transform_xtoy_buoy_adj(grid, iv, jo_grad_y, jo_grad_x)
 
       ! [1.2] Interpolate horizontally:
       do n=iv%info(buoy)%n1,iv%info(buoy)%n2
-         if(var_wind)then
-            call da_uv_wind_adj(jo_grad_y%buoy(n)%u, &
-                                jo_grad_y%buoy(n)%v, model_u(1,n), model_v(1,n), ub(1,n), vb(1,n))
+         if(wind_sd_buoy)then
+            call da_uv_to_sd_adj(jo_grad_y%buoy(n)%u, &
+                                 jo_grad_y%buoy(n)%v, model_u(1,n), model_v(1,n), ub(1,n), vb(1,n))
          else
             model_u(1,n)  = jo_grad_y%buoy(n)%u
             model_v(1,n)  = jo_grad_y%buoy(n)%v

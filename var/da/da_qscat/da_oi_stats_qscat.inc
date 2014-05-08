@@ -8,12 +8,12 @@ subroutine da_oi_stats_qscat (stats_unit, iv, ob)
 
    integer,        intent (in) :: stats_unit    ! Output unit for stats.
    type (iv_type), intent (in) :: iv            ! OI
-   type(y_type),   intent (in) :: ob       ! Observation structure.
+   type(y_type),   intent (in) :: ob            ! Observation structure.
 
    type (stats_qscat_type) :: stats
    integer                 :: nu, nv
    integer                 :: n
-   real                    :: u_inv, v_inv, sp_inv, dir_inv
+   real                    :: u_inv, v_inv, u_obs, v_obs
 
    if (trace_use_dull) call da_trace_entry("da_oi_stats_qscat")
 
@@ -29,14 +29,19 @@ subroutine da_oi_stats_qscat (stats_unit, iv, ob)
 
    do n=1, iv%info(qscat)%nlocal
       if (iv%info(qscat)%proc_domain(1,n)) then
-         u_inv = iv%qscat(n)%u%inv
-         v_inv = iv%qscat(n)%v%inv
-         if(var_wind) then
-            sp_inv = iv%qscat(n)%u%inv
-            dir_inv = iv%qscat(n)%v%inv
-            call da_cal_sd (ob%qscat(n)%u, ob%qscat(n)%v, &
-                            u_inv, v_inv, sp_inv, dir_inv)
-         end if
+
+        u_inv = iv%qscat(n)%u%inv
+        v_inv = iv%qscat(n)%v%inv
+        u_obs = ob%qscat(n)%u
+        v_obs = ob%qscat(n)%v
+
+        if (.not. wind_sd_qscat .and. wind_stats_sd) &
+           call da_ffdduv_diagnose(u_obs, u_inv, u_obs, v_obs, v_inv, v_obs, &
+                                   iv%qscat(n)%u%qc, iv%qscat(n)%v%qc, convert_uv2fd)
+        if (wind_sd_qscat .and. .not. wind_stats_sd) &
+           call da_ffdduv_diagnose(u_obs, u_inv, u_obs, v_obs, v_inv, v_obs, &
+                                   iv%qscat(n)%u%qc, iv%qscat(n)%v%qc, convert_fd2uv)
+
          call da_stats_calculate(n, 0, iv%qscat(n)%u%qc, u_inv, nu, &
             stats%minimum%u, stats%maximum%u, stats%average%u, stats%rms_err%u)
          call da_stats_calculate(n, 0, iv%qscat(n)%v%qc, v_inv, nv, &

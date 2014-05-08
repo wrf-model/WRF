@@ -80,7 +80,8 @@ CONTAINS
   REAL, DIMENSION(       0:NSOIL)  :: ZSOIL !depth of soil layer-bottom [m]
   REAL,  DIMENSION(      1:NSOIL)  :: SMCEQ  !equilibrium soil water  content [m3/m3]
   REAL,  DIMENSION(      1:NSOIL)  :: SMC,SH2O
-  REAL                                        :: DELTAT,RCOND,TOTWATER,SMCMAX, PSISAT, BEXP, SMCWLT ,DKSAT,PSI,WFLUXDEEP,WCNDDEEP,DDZ,SMCWTDMID &
+  REAL                                        :: DELTAT,RCOND,TOTWATER,SMCMAX, PSISAT, BEXP, SMCWLT ,DKSAT,PSI &
+                                                ,WFLUXDEEP,WCNDDEEP,DDZ,SMCWTDMID &
                                                 ,WPLUS,WMINUS
   REAL,      DIMENSION( ims:ime, jms:jme )    :: QLAT
   INTEGER,   DIMENSION( ims:ime, jms:jme )    :: LANDMASK !-1 for water (ice or no ice) and glacial areas, 1 for land where the LSM does its soil moisture calculations.
@@ -224,7 +225,8 @@ END  SUBROUTINE WTABLE_mmf_noahmp
   DATA KLATFACTOR /2.,3.,4.,10.,10.,12.,14.,20.,24.,28.,40.,48.,2.,0.,10.,0.,20.,2.,2./
 
   REAL,    PARAMETER :: PI = 3.14159265 
-  REAL,    PARAMETER :: FANGLE = SQRT(TAN(PI/8.))/(2.*SQRT(2.))
+! REAL,    PARAMETER :: FANGLE = SQRT(TAN(PI/8.))/(2.*SQRT(2.))
+  REAL,    PARAMETER :: FANGLE = 0.45508986056   ! f95 does not permit real intrinsics in init expressions
 
 itsh=max(its-1,ids)
 iteh=min(ite+1,ide-1)

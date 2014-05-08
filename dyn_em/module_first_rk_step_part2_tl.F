@@ -157,7 +157,6 @@ CONTAINS
           CALL UPDATE_STOCH(grid%SPSTREAMFORCS,grid%SPSTREAMFORCC,           &
                          grid%SPTFORCS,grid%SPTFORCC,                        &
                          grid%SPT_AMP,grid%SPSTREAM_AMP,                     &
-                         grid%itimestep,ij,                                  & 
                          ids, ide, jds, jde, kds, kde,                       &
                          ims, ime, jms, jme, kms, kme,                       &
                          grid%i_start(ij), grid%i_end(ij), grid%j_start(ij), &
@@ -167,6 +166,7 @@ CONTAINS
                          grid%SPSTREAMFORCS,grid%SPSTREAMFORCC,              &
                          grid%SPTFORCS,grid%SPTFORCC,                        &
                          grid%VERTSTRUCC,grid%VERTSTRUCS,                    &
+                         grid%VERTAMPT,grid%VERTAMPUV,                      &
                          grid%RU_REAL,grid%RV_REAL,grid%RT_REAL,            &
                          grid%RU_IMAG,grid%RV_IMAG,grid%RT_IMAG,            &
                          grid%DX,grid%DY,grid%stoch_vertstruc_opt,           &

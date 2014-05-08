@@ -98,6 +98,9 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
       use_airsretobs       = .false.
       use_rainobs          = .false.
       use_iasiobs          = .false.	  
+      use_radarobs         = .false.
+      use_radar_rv         = .false.
+      use_radar_rf         = .false.
    end if
     
    if (use_pseudo_rad .or. num_pseudo > 0) then
@@ -142,6 +145,9 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
       use_airsretobs       = .false.
       use_rainobs          = .false.
       use_iasiobs          = .false.	  
+      use_radarobs         = .false.
+      use_radar_rv         = .false.
+      use_radar_rf         = .false.
       ob_format = ob_format_ascii
    end if
 
@@ -206,10 +212,6 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
       ! Conventional obs can be in BUFR or ascii format
       if (ob_format == ob_format_bufr) then
          call da_message((/'Using PREPBUFR format observation input'/))
-         thin_conv = .true.
-         write(unit=message(1), fmt='(a,a)') '!!! thin_conv is forced to be true for PREPBUFR data', &
-            ' to keep only one ob closest to the analysis time at a fix location by thinning !!!'
-         call da_message(message(1:1))
          call da_setup_obs_structures_bufr (grid, ob, iv)
       else if (ob_format == ob_format_ascii) then
          call da_message((/'Using ASCII format observation input'/))
@@ -248,16 +250,17 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
             ob_name = obs_names(j)
          endif
          if(iv%info(j)%ptotal(i) - iv%info(j)%ptotal(i-1) > 0) then          
-         if( thin_conv) then
-         write(unit=stdout, fmt='(2x,2(a,i6),a,i5,a)') &
-            ob_name, iv%info(j)%ptotal(i) - iv%info(j)%ptotal(i-1), ' global, ', &
-                     iv%info(j)%thin_ptotal(i) - iv%info(j)%thin_ptotal(i-1), ' global (post-thinning), ', &
-            iv%info(j)%thin_plocal(i) - iv%info(j)%thin_plocal(i-1), ' local (post-thinning)'
+         if ( thin_conv_ascii .and. ob_format == ob_format_ascii ) then
+            if ( j == radiance ) cycle !temporary fix to not print incorrect counts for radiance
+            write(unit=stdout, fmt='(2x,2(a,i10),a,i8,a)') &
+               ob_name, iv%info(j)%ptotal(i) - iv%info(j)%ptotal(i-1), ' global, ', &
+               iv%info(j)%thin_ptotal(i) - iv%info(j)%thin_ptotal(i-1), ' global (post-thinning), ', &
+               iv%info(j)%thin_plocal(i) - iv%info(j)%thin_plocal(i-1), ' local (post-thinning)'
          else
-         write(unit=stdout, fmt='(6x,a,i6,a,i5,a)') &
-            ob_name, iv%info(j)%ptotal(i) - iv%info(j)%ptotal(i-1), ' global,', &
-            iv%info(j)%plocal(i) - iv%info(j)%plocal(i-1), ' local'
-         end if ! thin_conv
+            write(unit=stdout, fmt='(6x,a,i10,a,i8,a)') &
+               ob_name, iv%info(j)%ptotal(i) - iv%info(j)%ptotal(i-1), ' global,', &
+               iv%info(j)%plocal(i) - iv%info(j)%plocal(i-1), ' local'
+         end if ! thin_conv_ascii
          end if
       end do
    end do

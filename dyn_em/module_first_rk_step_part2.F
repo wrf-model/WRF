@@ -58,7 +58,7 @@ CONTAINS
 
     USE module_sfs_driver !JDM
     USE module_stoch, ONLY : update_stoch_ten, update_stoch , calculate_stoch_ten,  & 
-                             do_fftback_along_x,do_fftback_along_y,sp2gp_prep
+                             do_fftback_along_x,do_fftback_along_y,sp2gp_prep,perturb_physics_tend
 
 
     IMPLICIT NONE
@@ -158,7 +158,6 @@ CONTAINS
           CALL UPDATE_STOCH(grid%SPSTREAMFORCS,grid%SPSTREAMFORCC,           &
                          grid%SPTFORCS,grid%SPTFORCC,                        &
                          grid%SPT_AMP,grid%SPSTREAM_AMP,                     &
-                         grid%itimestep,ij,                                  & 
                          ids, ide, jds, jde, kds, kde,                       &
                          ims, ime, jms, jme, kms, kme,                       &
                          grid%i_start(ij), grid%i_end(ij), grid%j_start(ij), &
@@ -168,6 +167,7 @@ CONTAINS
                          grid%SPSTREAMFORCS,grid%SPSTREAMFORCC,              &
                          grid%SPTFORCS,grid%SPTFORCC,                        &
                          grid%VERTSTRUCC,grid%VERTSTRUCS,                    &
+                         grid%VERTAMPT,grid%VERTAMPUV,                      &
                          grid%RU_REAL,grid%RV_REAL,grid%RT_REAL,            & 
                          grid%RU_IMAG,grid%RV_IMAG,grid%RT_IMAG,            & 
                          grid%DX,grid%DY,grid%stoch_vertstruc_opt,           & 
@@ -706,6 +706,28 @@ BENCH_START(update_phy_ten_tim)
        END DO
        !$OMP END PARALLEL DO
 BENCH_END(update_phy_ten_tim)
+
+ IF (grid%stoch_force_opt== 2) then
+ !CASE (PERTURB_TENDF)
+        !$OMP PARALLEL DO   &
+        !$OMP PRIVATE ( ij )
+
+! JB comment:  P_QV is in moist_tend(ims,kms,jms,2)
+        DO ij = 1 , grid%num_tiles
+                 call perturb_physics_tend(grid%gridpointvariance,&
+                        grid%sppt_thresh_fact, grid%rt_tendf_stoch, &
+                        ru_tendf,rv_tendf,t_tendf,moist_tend(ims,kms,jms,2),        &
+                        ids, ide, jds, jde, kds, kde,                &
+                        ims, ime, jms, jme, kms, kme,                &
+                        grid%i_start(ij), grid%i_end(ij),             &
+                        grid%j_start(ij), grid%j_end(ij),             &
+                        k_start, k_end )
+        END DO
+        !$OMP END PARALLEL DO
+  ENDIF
+BENCH_END(update_phy_ten_stoch)
+
+
 
 #ifdef PLANET
        ! do rayleigh (and zonal-average newtonian) damping during

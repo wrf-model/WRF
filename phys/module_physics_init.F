@@ -76,7 +76,7 @@ CONTAINS
                          raincv_a,raincv_b,                      &
                          gd_cloud,gd_cloud2,                     &    ! Optional
                          gd_cloud_a,gd_cloud2_a,                 &    ! Optional
-                         gd_cloud_b,gd_cloud2_b,                 &    ! Optional
+                         QC_CU,QI_CU,                            &    ! Optional
                          ozmixm,pin,                             &    ! Optional
                          aerodm,pina,                            &    ! Optional
                          m_ps_1,m_ps_2,m_hybi,aerosolc_1,aerosolc_2,& ! Optional
@@ -128,11 +128,12 @@ CONTAINS
                          z_lake3d,     dz_lake3d,    t_soisno3d, h2osoi_ice3d,   & !lake
                          h2osoi_liq3d, h2osoi_vol3d, z3d,        dz3d,           & !lake
                          zi3d,         watsat3d,     csol3d,     tkmg3d,         & !lake
-                         tkdry3d,      tksatu3d,     lake2d,     domainlakedepth,& !lake
-                         lakeminalt,   lake_depth,                               & !lake
+                         tkdry3d,      tksatu3d,     lake2d,     lakedepth_default, & !lake
+                         lake_min_elev,   lake_depth,                               & !lake
 #if ( EM_CORE == 1 )
-                         lakemask,   lakeflag,                               & !lake
+                         lakemask,   lakeflag,                                   & !lake
 #endif
+                         lake_depth_flag, use_lakedepth,                         & !lake
                          sf_surface_mosaic, mosaic_cat, NLCAT,               & ! Noah tiling
 !CLM variables
                          maxpatch,                                           &
@@ -210,7 +211,7 @@ CONTAINS
    USE module_domain
    USE module_wrf_error
    use module_sf_lake, only : nlevsoil,nlevsnow,nlevlake
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
    USE module_cam_support,         ONLY : cam_mam_aerosols
 #endif
    USE module_wind_fitch
@@ -387,7 +388,7 @@ CONTAINS
           INTENT(INOUT   ) ::                                        &
                                gd_cloud, gd_cloud2,                  &
                                gd_cloud_a, gd_cloud2_a,              &
-                               gd_cloud_b, gd_cloud2_b
+                               QC_CU, QI_CU
 
    REAL,  DIMENSION( ims:ime ,  jms:jme )         ,         &
           INTENT(INOUT   ) ::                                        &
@@ -568,11 +569,13 @@ CONTAINS
   LOGICAL, DIMENSION( ims:ime, jms:jme ),intent(out)                      :: lake2d
 !  REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN)                      ::  HT
   REAL, OPTIONAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN)    ::  lake_depth
-  real, intent(in)      ::      domainlakedepth, lakeminalt
+  real, intent(in)      ::      lakedepth_default, lake_min_elev
 #if ( EM_CORE == 1 )
   REAL,              dimension(ims:ime,jms:jme )      ::  lakemask
   INTEGER, INTENT(IN)      ::  lakeflag
 #endif
+  INTEGER, INTENT(INOUT)      ::   lake_depth_flag
+  INTEGER, INTENT(IN)      ::   use_lakedepth
  
 
 !CLM
@@ -685,7 +688,7 @@ integer myproc
    sf_urban_physics=config_flags%sf_urban_physics
    usemonalb=config_flags%usemonalb
    rdmaxalb=config_flags%rdmaxalb
-   LakeModel = config_flags%LakeModel
+   LakeModel = config_flags%sf_lake_physics
    mfshconv=config_flags%mfshconv
    IF(PRESENT(SMOISEQ)) THEN
       iopt_run=config_flags%opt_run
@@ -711,7 +714,8 @@ integer myproc
    has_reqs = 0
    if (config_flags%ra_lw_physics .eq. RRTMG_LWSCHEME .and. &
        config_flags%ra_sw_physics .eq. RRTMG_SWSCHEME .and. &
-       config_flags%mp_physics    .eq. THOMPSON) then
+        (config_flags%mp_physics  .eq. THOMPSON .or.        &
+         config_flags%mp_physics  .eq. THOMPSONAERO) ) then
       has_reqc = 1
       has_reqi = 1
       has_reqs = 1
@@ -849,8 +853,8 @@ integer myproc
              gd_cloud2(i,k,j) = 0.
              gd_cloud_a(i,k,j) = 0.
              gd_cloud2_a(i,k,j) = 0.
-             gd_cloud_b(i,k,j) = 0.
-             gd_cloud2_b(i,k,j) = 0.
+             QC_CU(i,k,j) = 0.
+             QI_CU(i,k,j) = 0.
           end do
        end do
     end do
@@ -862,6 +866,19 @@ integer myproc
            raincv_b(i,j)=0.
       end do
     end do
+
+!..Determine which cu_rad_feedback option to use 
+
+   config_flags%icloud_cu = 0
+   IF ( config_flags%cu_rad_feedback ) THEN  
+      IF ( config_flags%cu_physics == kfetascheme ) THEN
+         config_flags%icloud_cu = 2
+      ELSE IF ( config_flags%cu_physics == gfscheme .OR. &
+                config_flags%cu_physics == g3scheme .OR. &
+                config_flags%cu_physics == gdscheme ) THEN
+         config_flags%icloud_cu = 1
+      END IF
+   END IF
 
 !..Fill initial starting values of radiative effective radii for
 !.. cloud water (2.51 microns), cloud ice (5.01 microns), and
@@ -929,7 +946,7 @@ integer myproc
    if(config_flags%mp_physics == CAMMGMPSCHEME) is_CAMMGMP_used = .TRUE.
 # endif
 
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
    !BSINGH:02/01/2013 - For WRF_CHEM simulations, initialize cam_mam_aerosols variable
    cam_mam_aerosols = .FALSE.
    if(config_flags%chem_opt == CBMZ_CAM_MAM3_NOAQ .OR. config_flags%chem_opt == CBMZ_CAM_MAM3_AQ &
@@ -943,7 +960,7 @@ integer myproc
 # if (EM_CORE == 1)
         .OR. config_flags%mp_physics == CAMMGMPSCHEME                                                           &
 # endif
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
         !For WRF_CHEM simulations, first five constituents are added in CAM_INIT and rest are added in the MODULE_CAM_MAM_INIT in chem/
         .OR. config_flags%chem_opt       == CBMZ_CAM_MAM3_NOAQ .OR. config_flags%chem_opt   == CBMZ_CAM_MAM3_AQ &
         .OR. config_flags%chem_opt       == CBMZ_CAM_MAM7_NOAQ .OR. config_flags%chem_opt   == CBMZ_CAM_MAM7_AQ &
@@ -1028,10 +1045,11 @@ integer myproc
                 h2osoi_liq3d, h2osoi_vol3d, z3d,        dz3d,           & !lake
                 zi3d,         watsat3d,     csol3d,     tkmg3d,         & !lake
                 tkdry3d,      tksatu3d,     LakeModel,  lake2d,           & !lake
-                domainlakedepth,            lakeminalt, lake_depth,       & !lake
+                lakedepth_default,            lake_min_elev, lake_depth,       & !lake
 #if (EM_CORE == 1)
-                lakemask, lakeflag,       & !lake
+                lakemask, lakeflag,                                    & !lake
 #endif
+                lake_depth_flag, use_lakedepth,                        & !lake
                 te_temf,cf3d_temf,wm_temf,                      & ! WA
                 DZR, DZB, DZG,                                  & !Optional urban
                 TR_URB2D,TB_URB2D,TG_URB2D,TC_URB2D,QC_URB2D,   & !Optional urban
@@ -1895,10 +1913,11 @@ integer myproc
                 h2osoi_liq3d, h2osoi_vol3d, z3d,        dz3d,           & !lake
                 zi3d,         watsat3d,     csol3d,     tkmg3d,         & !lake
                 tkdry3d,      tksatu3d,     LakeModel,  lake2d,           & !lake
-                domainlakedepth,            lakeminalt, lake_depth,       & !lake
+                lakedepth_default,            lake_min_elev, lake_depth,       & !lake
 #if (EM_CORE == 1)
-                lakemask, lakeflag,                                       & !lake
+                lakemask, lakeflag,                                      & !lake
 #endif
+                lake_depth_flag, use_lakedepth,                          & !lake
                 te_temf,cf3d_temf,wm_temf,                      & ! WA
 !                num_roof_layers,num_wall_layers,num_road_layers,& !Optional urban
                 DZR, DZB, DZG,                                  & !Optional urban
@@ -2045,7 +2064,7 @@ integer myproc
 
 !   INTEGER , INTENT(IN)        ::     LakeModel
    INTEGER         ::     LakeModel
-   real, intent(in)            ::      domainlakedepth,lakeminalt
+   real, intent(in)            ::      lakedepth_default,lake_min_elev
    REAL ,    INTENT(IN)        ::     DT, BLDT
    REAL ,    INTENT(IN)        ::     DX, DY
 #if (EM_CORE == 1)
@@ -2279,6 +2298,8 @@ integer myproc
   REAL,              dimension(ims:ime,jms:jme ),intent(inout)      ::  lakemask
   INTEGER, INTENT(IN)      ::  lakeflag
 #endif
+  INTEGER, INTENT(IN)      ::   use_lakedepth
+  INTEGER, INTENT(INOUT)      ::   lake_depth_flag
 !  REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN)                         ::  HT
 
    REAL,  DIMENSION( ims:ime , jms:jme ) , OPTIONAL, INTENT(INOUT) ::    &
@@ -2682,10 +2703,12 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
         ENDIF
 #ifdef WRF_USE_CLM
         IF(PRESENT(numc))THEN
-        ! added by Jiming Jin 10/14/2012
+        ! added by Jiming Jin 10/14/2012 ; modified to use MODIS data 3/6/2014
         if((config_flags%num_land_cat .ne. 24) .AND. &
-           (config_flags%num_land_cat .ne. 28)) CALL wrf_error_fatal &
-            ( 'module_physics_init: USGS must be used with CLM option')
+           (config_flags%num_land_cat .ne. 28) .AND. &
+           (config_flags%num_land_cat .ne. 21) .AND. &
+           (config_flags%num_land_cat .ne. 20)) CALL wrf_error_fatal &
+            ('module_physics_init: USGS or MODIS must be used with CLM option')
 
             CALL CLMINIT(VEGFRA,SNOW,SNOWC,SNOWH,CANWAT,SMSTAV,    &
                      SMSTOT, SFCRUNOFF,UDRUNOFF,ACSNOW,            &
@@ -2755,16 +2778,17 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
      IF ( LakeModel == 1 ) THEN
  
              call  lakeini(IVGTYP,         ISLTYP,          HT,              SNOW,           & !i
-                           lakeminalt,     restart,         domainlakedepth, lake_depth,     &
+                           lake_min_elev,     restart,         lakedepth_default, lake_depth,     &
                            lakedepth2d,    savedtke12d,     snowdp2d,        h2osno2d,       & !o
                            snl2d,          t_grnd2d,        t_lake3d,        lake_icefrac3d, &
                            z_lake3d,       dz_lake3d,       t_soisno3d,      h2osoi_ice3d,   &
                            h2osoi_liq3d,   h2osoi_vol3d,    z3d,             dz3d,           &
                            zi3d,           watsat3d,        csol3d,          tkmg3d,         &
-                           config_flags%ISWATER,  xice,     xice_threshold,  xland,              &
+                           config_flags%ISWATER,  xice,     xice_threshold,  xland,  tsk,    &
 #if (EM_CORE == 1)
-                           lakemask,  lakeflag,                                                  &
+                           lakemask,  lakeflag,                                              &
 #endif
+                           lake_depth_flag, use_lakedepth,              &
                            tkdry3d,        tksatu3d,        lake2d,          its, ite, jts, jte, &
                            ims,ime, jms,jme)
      ENDIF
@@ -3461,6 +3485,8 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                           NWFA2D=qnwfa2d,                               &
                           NWFA=scalar(ims,kms,jms,P_QNWFA),             &
                           NIFA=scalar(ims,kms,jms,P_QNIFA),             &
+                          DX=DX, DY=DY,                                 &
+                          is_start=start_of_simulation,                 &
                           IDS=ids, IDE=ide, JDS=jds, JDE=jde, KDS=kds, KDE=kde,   &
                           IMS=ims, IME=ime, JMS=jms, JME=jme, KMS=kms, KME=kme,   &
                           ITS=its, ITE=ite, JTS=jts, JTE=jte, KTS=kts, KTE=kte)
@@ -3879,7 +3905,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
      !pcnst for microphysics (pcnst_mp is different from pcnst ONLY if CAM MAM package amd CAMMGMP schemes are decoupled)
      pcnst_mp = pcnst
 
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
      !If CAM MAM package is selected
      !BSINGH (01/23/2014):Please make sure pcnst is equal to cam_mam_nspec in chem/module_cam_mam_init.F and registry.chem
      IF(config_flags%chem_opt == CBMZ_CAM_MAM3_NOAQ .OR. config_flags%chem_opt==CBMZ_CAM_MAM3_AQ) then
@@ -3941,7 +3967,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
         !For prescribed aerosols
 #if ( EM_CORE == 1 )
         IF(config_flags%mp_physics .EQ. CAMMGMPSCHEME &
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
              .AND.  config_flags%chem_opt .EQ. 0    &
 #endif
              )THEN
@@ -3969,7 +3995,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
      
 #if ( EM_CORE == 1 )
      IF(config_flags%mp_physics == CAMMGMPSCHEME)THEN
-#ifndef WRF_CHEM
+#if ( WRF_CHEM != 1 )
         !Aerosols must be initialized after adding the constituents otherwise the code may crash in WRF-Chem simulations     
         CALL modal_aero_initialize_phys
 #else

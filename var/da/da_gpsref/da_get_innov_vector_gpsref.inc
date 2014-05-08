@@ -563,6 +563,7 @@ subroutine da_get_innov_vector_gpsref(it, num_qcstat_conv, grid, ob, iv)
              if ( iv%gpsref(na)%ref(1)%qc == qc_below) then
                 do nb = iv%info(gpsref)%n1, iv%info(gpsref)%n2
                    if ( iv%info(gpsref)%id(nb) == iv%info(gpsref)%id(na) .and. &
+                        iv%info(gpsref)%name(nb) == iv%info(gpsref)%name(na) .and. &
 ! hmn 20111206
 !                        iv%gpsref(nb)%ref(1)%qc >= obs_qc_pointer .and.        &
                         iv%gpsref(nb)%ref(1)%qc /= missing_data .and.            &

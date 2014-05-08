@@ -9,8 +9,10 @@ module da_sound
       max_stheight_diff,test_dm_exact, anal_type_verify, &
       kms,kme,kts,kte,sfc_assi_options_1,sfc_assi_options_2, num_procs, comm, &
       trace_use_dull, sound, sonde_sfc, position_lev_dependant, max_ext_its,qcstat_conv_unit,ob_vars, &
-      convert_fd2uv, convert_uv2fd, max_error_sp, max_error_dir, var_wind, max_omb_sp, max_omb_dir, pi, qc_rej_both
-   use da_grid_definitions, only : da_ffdduv, da_ffdduv2, da_cal_sd, da_uv_wind_adj, da_uv_wind_tgl
+      convert_fd2uv,convert_uv2fd,max_error_spd,max_error_dir,max_omb_spd,max_omb_dir,pi,qc_rej_both, &
+      wind_sd_sound, wind_stats_sd
+   use da_grid_definitions, only : da_ffdduv,da_ffdduv_model, da_ffdduv_diagnose
+
 #ifdef DM_PARALLEL
 !  use mpi, only : mpi_integer, mpi_real8, mpi_max
 #endif
@@ -27,7 +29,7 @@ module da_sound
       da_deallocate_global_sonde_sfc
    use da_par_util1, only : da_proc_sum_int 
    use da_physics, only : da_sfc_pre, da_transform_xtopsfc, &
-      da_transform_xtopsfc_adj
+      da_transform_xtopsfc_adj, da_uv_to_sd_lin, da_uv_to_sd_adj
    use da_tracing, only : da_trace_entry, da_trace_exit
 
    ! The "stats_sound_type" is ONLY used locally in da_sound:

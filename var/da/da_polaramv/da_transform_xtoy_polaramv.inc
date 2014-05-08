@@ -38,11 +38,11 @@ subroutine da_transform_xtoy_polaramv (grid, iv, y)
    do n=iv%info(polaramv)%n1,iv%info(polaramv)%n2
       do k = 1, iv%info(polaramv)%levels(n)
 
-         if(.not. var_wind) then
+         if(wind_sd_polaramv) then
+            call da_uv_to_sd_lin(y%polaramv(n)%u(k),y%polaramv(n)%v(k),u(k,n),v(k,n),ub(k,n),vb(k,n))
+         else
             y%polaramv(n)%u(k) = u(k,n)
             y%polaramv(n)%v(k) = v(k,n)
-         else
-            call da_uv_wind_tgl(y%polaramv(n)%u(k),y%polaramv(n)%v(k),u(k,n),v(k,n),ub(k,n),vb(k,n))
          end if
 
       end do

@@ -1660,13 +1660,16 @@ CONTAINS
           DO k = kts, ktf
             DO i = max(its,b_limit+ibs), min(itf,ibe-b_limit)
             IF (variable == 't') THEN
-            field_tend(i,k,j) = field_tend(i,k,j) + field_tend_perturb(i,k,j) * (mu_2(i,j)+mub(i,j)) 
+              field_tend(i,k,j) = field_tend(i,k,j) + &
+                                  field_tend_perturb(i,k,j) * (mu_2(i,j)+mub(i,j)) 
             ENDIF
             IF (variable == 'u') THEN
-            field_tend(i,k,j) = field_tend(i,k,j) + field_tend_perturb(i,k,j) * 0.5*(mu_2(i,j)+mu_2(i-1,j) + mub(i,j)+mub(i-1,j)) / msf(i,j)
+              field_tend(i,k,j) = field_tend(i,k,j) + &
+                                  field_tend_perturb(i,k,j) * 0.5*(mu_2(i,j)+mu_2(i-1,j) + mub(i,j)+mub(i-1,j)) / msf(i,j)
             ENDIF
             IF (variable == 'v') THEN
-            field_tend(i,k,j) = field_tend(i,k,j) + field_tend_perturb(i,k,j) * 0.5*(mu_2(i,j)+mu_2(i,j-1) + mub(i,j)+mub(i,j-1)) / msf(i,j)
+              field_tend(i,k,j) = field_tend(i,k,j) + &
+                                  field_tend_perturb(i,k,j) * 0.5*(mu_2(i,j)+mu_2(i,j-1) + mub(i,j)+mub(i,j-1)) / msf(i,j)
             ENDIF
             ENDDO
           ENDDO
@@ -1683,13 +1686,16 @@ CONTAINS
           DO k = kts, ktf 
             DO i = max(its,b_limit+ibs), min(itf,ibe-b_limit)
             IF (variable == 't') THEN
-            field_tend(i,k,j) = field_tend(i,k,j) + field_tend_perturb(i,k,j) * (mu_2(i,j)+mub(i,j))
+              field_tend(i,k,j) = field_tend(i,k,j) + &
+                                  field_tend_perturb(i,k,j) * (mu_2(i,j)+mub(i,j))
             ENDIF
             IF (variable == 'u') THEN
-            field_tend(i,k,j) = field_tend(i,k,j) + field_tend_perturb(i,k,j) * 0.5*(mu_2(i,j)+mu_2(i-1,j) + mub(i,j)+mub(i-1,j)) / msf(i,j)
+              field_tend(i,k,j) = field_tend(i,k,j) + &
+                                  field_tend_perturb(i,k,j) * 0.5*(mu_2(i,j)+mu_2(i-1,j) + mub(i,j)+mub(i-1,j)) / msf(i,j)
             ENDIF
             IF (variable == 'v') THEN
-            field_tend(i,k,j) = field_tend(i,k,j) + field_tend_perturb(i,k,j) * 0.5*(mu_2(i,j)+mu_2(i,j-1) + mub(i,j)+mub(i,j-1)) / msf(i,j)
+              field_tend(i,k,j) = field_tend(i,k,j) + &
+                                  field_tend_perturb(i,k,j) * 0.5*(mu_2(i,j)+mu_2(i,j-1) + mub(i,j)+mub(i,j-1)) / msf(i,j)
             ENDIF
 	    ENDDO
           ENDDO
@@ -1704,13 +1710,16 @@ CONTAINS
           DO k = kts, ktf
             DO j = max(jts,b_dist+jbs+1), min(jtf,jbe-b_dist-1)
             IF (variable == 't') THEN
-            field_tend(i,k,j) = field_tend(i,k,j) + field_tend_perturb(i,k,j) * (mu_2(i,j)+mub(i,j))
+              field_tend(i,k,j) = field_tend(i,k,j) + &
+                                  field_tend_perturb(i,k,j) * (mu_2(i,j)+mub(i,j))
             ENDIF
             IF (variable == 'u') THEN
-            field_tend(i,k,j) = field_tend(i,k,j) + field_tend_perturb(i,k,j) * 0.5*(mu_2(i,j)+mu_2(i-1,j) + mub(i,j)+mub(i-1,j)) / msf(i,j)
+              field_tend(i,k,j) = field_tend(i,k,j) + &
+                                  field_tend_perturb(i,k,j) * 0.5*(mu_2(i,j)+mu_2(i-1,j) + mub(i,j)+mub(i-1,j)) / msf(i,j)
             ENDIF
             IF (variable == 'v') THEN
-            field_tend(i,k,j) = field_tend(i,k,j) + field_tend_perturb(i,k,j) * 0.5*(mu_2(i,j)+mu_2(i,j-1) + mub(i,j)+mub(i,j-1)) / msf(i,j)
+              field_tend(i,k,j) = field_tend(i,k,j) + &
+                                  field_tend_perturb(i,k,j) * 0.5*(mu_2(i,j)+mu_2(i,j-1) + mub(i,j)+mub(i,j-1)) / msf(i,j)
             ENDIF
             ENDDO
           ENDDO
@@ -1724,13 +1733,16 @@ CONTAINS
           DO k = kts, ktf
             DO j = max(jts,b_dist+jbs+1), min(jtf,jbe-b_dist-1)
             IF (variable == 't') THEN
-            field_tend(i,k,j) = field_tend(i,k,j) + field_tend_perturb(i,k,j) * (mu_2(i,j)+mub(i,j))
+              field_tend(i,k,j) = field_tend(i,k,j) + &
+                                  field_tend_perturb(i,k,j) * (mu_2(i,j)+mub(i,j))
             ENDIF
             IF (variable == 'u') THEN
-            field_tend(i,k,j) = field_tend(i,k,j) + field_tend_perturb(i,k,j) * 0.5*(mu_2(i,j)+mu_2(i-1,j) + mub(i,j)+mub(i-1,j)) / msf(i,j)
+              field_tend(i,k,j) = field_tend(i,k,j) + &
+                                  field_tend_perturb(i,k,j) * 0.5*(mu_2(i,j)+mu_2(i-1,j) + mub(i,j)+mub(i-1,j)) / msf(i,j)
             ENDIF
             IF (variable == 'v') THEN
-            field_tend(i,k,j) = field_tend(i,k,j) + field_tend_perturb(i,k,j) * 0.5*(mu_2(i,j)+mu_2(i,j-1) + mub(i,j)+mub(i,j-1)) / msf(i,j)
+              field_tend(i,k,j) = field_tend(i,k,j) + &
+                                  field_tend_perturb(i,k,j) * 0.5*(mu_2(i,j)+mu_2(i,j-1) + mub(i,j)+mub(i,j-1)) / msf(i,j)
             ENDIF
             ENDDO
           ENDDO

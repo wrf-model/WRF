@@ -14,7 +14,6 @@ CONTAINS
               ,GMT    ,GSW    ,HBOT    &
               ,HTOP   ,HBOTR  ,HTOPR   &
               ,ICLOUD                  &
-              ,icloud_cu               &
               ,ITIMESTEP,JULDAY, JULIAN &
               ,JULYR  ,LW_PHYSICS       &
               ,NCFRCV ,NCFRST ,NPHS     &
@@ -96,9 +95,9 @@ CONTAINS
               ,M_PS_1, M_PS_2, AEROSOLC_1     &
               ,AEROSOLC_2, M_HYBI0            &
               ,ABSTOT, ABSNXT, EMSTOT         &
-              ,CU_RAD_FEEDBACK                &
+              ,ICLOUD_CU                      &
               ,AER_RA_FEEDBACK                &
-              ,QC_ADJUST , QI_ADJUST          &
+              ,QC_CU , QI_CU                  &
               ,PM2_5_DRY, PM2_5_WATER         &
               ,PM2_5_DRY_EC                   &
               ,TAUAER300, TAUAER400 & ! jcb
@@ -358,7 +357,7 @@ CONTAINS
    INTEGER, DIMENSION(num_tiles), INTENT(IN) ::                       &
                 i_start,i_end,j_start,j_end
 
-   INTEGER,      INTENT(IN   )    ::   STEPRA,ICLOUD,ra_call_offset,ICLOUD_CU
+   INTEGER,      INTENT(IN   )    ::   STEPRA,ICLOUD,ra_call_offset
    INTEGER,      INTENT(IN   )    ::   alevsiz, no_src_types
    INTEGER,      INTENT(IN   )    ::   levsiz, n_ozmixm
    INTEGER,      INTENT(IN   )    ::   paerlev, n_aerosolc, cam_abs_dim1, cam_abs_dim2
@@ -420,7 +419,7 @@ CONTAINS
                                  waer300,waer400,waer600,waer999
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), OPTIONAL ,       &
-         INTENT(IN ) ::          qc_adjust, qi_adjust
+         INTENT(IN ) ::          qc_cu, qi_cu
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), OPTIONAL ,       &
          INTENT(IN ) ::  tauaerlw1,tauaerlw2,tauaerlw3,tauaerlw4, & ! czhao 
@@ -428,7 +427,7 @@ CONTAINS
                          tauaerlw9,tauaerlw10,tauaerlw11,tauaerlw12, & ! czhao 
                          tauaerlw13,tauaerlw14,tauaerlw15,tauaerlw16
 
-   LOGICAL, INTENT(IN) :: cu_rad_feedback
+   INTEGER, INTENT(IN) :: icloud_cu
 
    INTEGER, INTENT(IN   ), OPTIONAL  ::   aer_ra_feedback
 
@@ -924,22 +923,22 @@ CONTAINS
 
 ! temporarily modify hydrometeors (currently only done for GD scheme and WRF-Chem)
 !
-       IF ( PRESENT( qc ) .AND. PRESENT( qc_adjust ) .AND. cu_rad_feedback ) THEN
+       IF ( PRESENT( qc ) .AND. PRESENT( qc_cu ) .AND. icloud_cu .EQ. 1 ) THEN
           DO j=jts,jte
           DO k=kts,kte
           DO i=its,ite
             qc_save(i,k,j) = qc(i,k,j)
-            qc(i,k,j) = qc(i,k,j) + qc_adjust(i,k,j)
+            qc(i,k,j) = qc(i,k,j) + qc_cu(i,k,j)
           ENDDO
           ENDDO
           ENDDO
        ENDIF
-       IF ( PRESENT( qi ) .AND. PRESENT( qi_adjust ) .AND. cu_rad_feedback ) THEN
+       IF ( PRESENT( qi ) .AND. PRESENT( qi_cu ) .AND. icloud_cu .EQ. 1 ) THEN
           DO j=jts,jte
           DO k=kts,kte
           DO i=its,ite
             qi_save(i,k,j) = qi(i,k,j)
-            qi(i,k,j) = qi(i,k,j) + qi_adjust(i,k,j)
+            qi(i,k,j) = qi(i,k,j) + qi_cu(i,k,j)
           ENDDO
           ENDDO
           ENDDO
@@ -999,20 +998,20 @@ CONTAINS
                    its,ite, jts,jte, kts,kte               )
 
         IF ( PRESENT ( CLDFRA_DP ) ) THEN
+! this is for Kain-Fritsch scheme
           IF ( icloud_cu .EQ. 2 ) THEN
              CALL wrf_debug (1, 'use kf cldfra')
              DO j = jts,jte
              DO k = kts,kte
              DO i = its,ite
-                cldfra_cu(i,k,j)=cldfra_dp(i,k,j)+cldfra_sh(i,k,j)  ! Cu cloud fraction
+                cldfra_cu(i,k,j)=cldfra_dp(i,k,j)+cldfra_sh(i,k,j) ! Cu cloud fraction
                 CLDFRA(i,k,j)=(1.-cldfra_cu(i,k,j))*CLDFRA(i,k,j)  ! Update resolved cloud fraction for Cu punch-through
                 CLDFRA(i,k,j)=CLDFRA(i,k,j)+cldfra_cu(i,k,j)       ! New total cloud fraction
                 CLDFRA(i,k,j)=AMIN1(1.0,CLDFRA(i,k,j))
-!wrf-team
                 qc_save(i,k,j)=qc(i,k,j)
-                qc(i,k,j) = qc(i,k,j)+qc_adjust(i,k,j)*cldfra_cu(i,k,j)
+                qc(i,k,j) = qc(i,k,j)+qc_cu(i,k,j)*cldfra_cu(i,k,j)
                 qi_save(i,k,j)=qi(i,k,j)
-                qi(i,k,j) = qi(i,k,j)+qi_adjust(i,k,j)*cldfra_cu(i,k,j)
+                qi(i,k,j) = qi(i,k,j)+qi_cu(i,k,j)*cldfra_cu(i,k,j)
              ENDDO
              ENDDO
              ENDDO
@@ -1300,7 +1299,7 @@ CONTAINS
                   F_QI=F_QI,F_QS=F_QS,F_QG=F_QG,                    &
                   RE_CLOUD=re_cloud,RE_ICE=re_ice,RE_SNOW=re_snow,  & ! G. Thompson
                   has_reqc=has_reqc,has_reqi=has_reqi,has_reqs=has_reqs, & ! G. Thompson
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
                   TAUAERLW1=tauaerlw1,TAUAERLW2=tauaerlw2,          & ! jcb
                   TAUAERLW3=tauaerlw3,TAUAERLW4=tauaerlw4,          & ! jcb
                   TAUAERLW5=tauaerlw5,TAUAERLW6=tauaerlw6,          & ! jcb
@@ -1453,7 +1452,7 @@ CONTAINS
              CALL SWRAD(                                               &
                      DT=dt,RTHRATEN=rthraten,GSW=gsw                   &
                     ,XLAT=xlat,XLONG=xlong,ALBEDO=albedo               &
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
                     ,PM2_5_DRY=pm2_5_dry,PM2_5_WATER=pm2_5_water       &
                     ,PM2_5_DRY_EC=pm2_5_dry_ec                         &
 #endif
@@ -1489,7 +1488,7 @@ CONTAINS
                     ,RADFRQ=radt,DEGRAD=degrad                         &
                     ,TAUCLDI=taucldi,TAUCLDC=taucldc                   &
                     ,WARM_RAIN=warm_rain                               &
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
                     ,TAUAER300=tauaer300,TAUAER400=tauaer400           & ! jcb
                     ,TAUAER600=tauaer600,TAUAER999=tauaer999           & ! jcb
                     ,GAER300=gaer300,GAER400=gaer400                   & ! jcb
@@ -1652,7 +1651,7 @@ CONTAINS
                      F_QI=f_qi,F_QS=f_qs,F_QG=f_qg,                    &
                      RE_CLOUD=re_cloud,RE_ICE=re_ice,RE_SNOW=re_snow,  & ! G. Thompson
                      has_reqc=has_reqc,has_reqi=has_reqi,has_reqs=has_reqs, & ! G. Thompson
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
                      TAUAER300=tauaer300,TAUAER400=tauaer400,          & ! jcb
                      TAUAER600=tauaer600,TAUAER999=tauaer999,          & ! jcb
                      GAER300=gaer300,GAER400=gaer400,                  & ! jcb
@@ -1823,8 +1822,8 @@ CONTAINS
         end do
      end if
 
-       IF ( PRESENT( qc  ) .AND. PRESENT( qc_adjust ) ) THEN 
-           IF ( cu_rad_feedback .OR. icloud_cu .EQ. 2 ) THEN
+       IF ( PRESENT( qc  ) .AND. PRESENT( qc_cu ) ) THEN 
+           IF ( icloud_cu .NE. 0 ) THEN
            DO j=jts,jte
            DO k=kts,kte
            DO i=its,ite
@@ -1834,8 +1833,8 @@ CONTAINS
            ENDDO
            ENDIF
         ENDIF
-        IF ( PRESENT( qi  ) .AND. PRESENT( qi_adjust ) ) THEN
-           IF ( cu_rad_feedback .OR. icloud_cu .EQ. 2 ) THEN
+        IF ( PRESENT( qi  ) .AND. PRESENT( qi_cu ) ) THEN
+           IF ( icloud_cu .NE. 0 ) THEN
            DO j=jts,jte
            DO k=kts,kte
            DO i=its,ite

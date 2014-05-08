@@ -78,7 +78,7 @@ SUBROUTINE solve_em_ad ( grid , config_flags  &
    USE a_module_microphysics_zero_out
    USE module_fddaobs_driver
 !  USE module_diagnostics
-#ifdef WRF_CHEM
+#if (WRF_CHEM==1)
    USE module_input_chem_data
    USE module_input_tracer
    USE module_chem_utilities
@@ -150,7 +150,7 @@ SUBROUTINE solve_em_ad ( grid , config_flags  &
    ! Flag for producing diagnostic fields (e.g., radar reflectivity)
    LOGICAL                        :: diag_flag
       
-#ifdef WRF_CHEM
+#if (WRF_CHEM==1)
    ! Index cross-referencing array for tendency accumulation
    INTEGER, DIMENSION( num_chem ) :: adv_ct_indices
 #endif
@@ -1226,7 +1226,7 @@ BENCH_END(advance_uv_tim)
                ,flag_chem          = 0                                      &
                ,flag_tracer        = 0                                      &
                ,flag_scalar        = 0                                      &
-               ,positive_definite  = .FALSE.                                &
+               ,actual_distance_average  = .FALSE.                          &
                ,moist=moist,chem=chem,tracer=tracer,scalar=scalar           &
                ,fft_filter_lat = config_flags%fft_filter_lat                &
                ,dclat = dclat                                               &
@@ -1346,7 +1346,7 @@ BENCH_END(advance_mu_t_tim)
                 ,flag_chem          = 0                                      &
                 ,flag_tracer        = 0                                      &
                 ,flag_scalar        = 0                                      &
-                ,positive_definite  = .FALSE.                                &
+                ,actual_distance_average  = .FALSE.                          &
                 ,moist=moist,chem=chem,tracer=tracer,scalar=scalar           &
                 ,fft_filter_lat = config_flags%fft_filter_lat                &
                 ,dclat = dclat                                               &
@@ -1483,7 +1483,7 @@ BENCH_END(advance_w_tim)
                 ,flag_chem          = 0                                      &
                 ,flag_tracer        = 0                                      &
                 ,flag_scalar        = 0                                      &
-                ,positive_definite  = .FALSE.                                &
+                ,actual_distance_average  = .FALSE.                          &
                 ,moist=moist,chem=chem,tracer=tracer,scalar=scalar           &
                 ,fft_filter_lat = config_flags%fft_filter_lat                &
                 ,dclat = dclat                                               &
@@ -1808,7 +1808,7 @@ BENCH_END(small_step_finish_tim)
                   ,flag_chem          = 0                                      &
                   ,flag_tracer        = 0                                      &
                   ,flag_scalar        = 0                                      &
-                  ,positive_definite  = .FALSE.                                &
+                  ,actual_distance_average  = .FALSE.                          &
                   ,moist=moist,chem=chem,tracer=tracer,scalar=scalar           &
                   ,fft_filter_lat = config_flags%fft_filter_lat                &
                   ,dclat = dclat                                               &
@@ -2468,7 +2468,7 @@ BENCH_START(tke_adv_tim)
        ENDIF TKE_advance
 BENCH_END(tke_adv_tim)
 
-#ifdef WRF_CHEM
+#if (WRF_CHEM==1)
 !  next the chemical species
 BENCH_START(chem_adv_tim)
        chem_scalar_advance: IF (num_3d_c >= PARAM_FIRST_SCALAR)  THEN
@@ -2719,7 +2719,7 @@ BENCH_START(tracer_adv_tim)
                                   kts=k_start    , kte=k_end                              )
 
            IF( config_flags%specified  ) THEN
-#ifdef WRF_CHEM
+#if (WRF_CHEM==1)
 
              CALL flow_dep_bdy_tracer( tracer(ims,kms,jms,ic),                             &
                                      tracer_bxs(jms,kms,1,ic), tracer_btxs(jms,kms,1,ic),  &
@@ -2964,7 +2964,7 @@ BENCH_END(calc_p_rho_tim)
                     ,flag_chem          = 0                                      &
                     ,flag_scalar        = 0                                      &
                     ,flag_tracer        = 0                                      &
-                    ,positive_definite=.FALSE.                                   &
+                    ,actual_distance_average  = .FALSE.                          &
                     ,moist=moist,chem=chem,tracer=tracer,scalar=scalar           &
                     ,fft_filter_lat = config_flags%fft_filter_lat                &
                     ,dclat = dclat                                               &
@@ -3006,7 +3006,7 @@ BENCH_END(calc_p_rho_tim)
                     ,flag_chem          = im                                     &
                     ,flag_tracer        = 0                                      &
                     ,flag_scalar        = 0                                      &
-                    ,positive_definite=.FALSE.                                   &
+                    ,actual_distance_average  = .FALSE.                          &
                     ,moist=moist,chem=chem,tracer=tracer,scalar=scalar           &
                     ,fft_filter_lat = config_flags%fft_filter_lat                &
                     ,dclat = dclat                                               &
@@ -3047,7 +3047,7 @@ BENCH_END(calc_p_rho_tim)
                     ,flag_chem          = 0                                      &
                     ,flag_tracer        = im                                      &
                     ,flag_scalar        = 0                                      &
-                    ,positive_definite=.FALSE.                                   &
+                    ,actual_distance_average  = .FALSE.                          &
                     ,moist=moist,chem=chem,tracer=tracer,scalar=scalar           &
                     ,fft_filter_lat = config_flags%fft_filter_lat                &
                     ,dclat = dclat                                               &
@@ -3089,7 +3089,7 @@ BENCH_END(calc_p_rho_tim)
                   ,flag_chem          = 0                                      &
                   ,flag_tracer        = 0                                      &
                   ,flag_scalar        = im                                     &
-                  ,positive_definite=.FALSE.                                   &
+                  ,actual_distance_average  = .FALSE.                          &
                   ,moist=moist,chem=chem,tracer=tracer,scalar=scalar           &
                   ,fft_filter_lat = config_flags%fft_filter_lat                &
                   ,dclat = dclat                                               &
@@ -3612,7 +3612,7 @@ BENCH_START(micro_driver_tim)
       &        ,T8W=t8w                                                   &
       &        ,CLDFRA=grid%cldfra, EXCH_H=grid%exch_h &
       &        ,NSOURCE=grid%qndropsource                                 &
-#ifdef WRF_CHEM
+#if (WRF_CHEM==1)
       &        ,QLSINK=grid%qlsink,CLDFRA_OLD=grid%cldfra_old             &
       &        ,PRECR=grid%precr, PRECI=grid%preci, PRECS=grid%precs, PRECG=grid%precg &
       &        ,CHEM_OPT=config_flags%chem_opt, PROGN=config_flags%progn  &
@@ -3679,7 +3679,7 @@ BENCH_START(micro_driver_tim)
       &        , QIP_CURR=moist(ims,kms,jms,P_QIP), F_QIP=F_QIP               &
       &        , QID_CURR=moist(ims,kms,jms,P_QID), F_QID=F_QID               &
       &        , QNDROP_CURR=scalar(ims,kms,jms,P_QNDROP), F_QNDROP=F_QNDROP &
-#ifdef WRF_CHEM
+#if (WRF_CHEM==1)
       &        , RAINPROD=grid%rainprod, EVAPPROD=grid%evapprod           &
       &        , QV_B4MP=grid%qv_b4mp,QC_B4MP=grid%qc_b4mp                &
       &        , QI_B4MP=grid%qi_b4mp, QS_B4MP=grid%qs_b4mp               &
@@ -3878,7 +3878,7 @@ BENCH_START(moist_phys_end_tim)
                   ,flag_chem          = 0                                      &
                   ,flag_tracer        = 0                                      &
                   ,flag_scalar        = 0                                      &
-                  ,positive_definite=.FALSE.                                   &
+                  ,actual_distance_average  = .FALSE.                          &
                   ,moist=moist,chem=chem,tracer=tracer,scalar=scalar           &
                   ,fft_filter_lat = config_flags%fft_filter_lat                &
                   ,dclat = dclat                                               &
@@ -3991,7 +3991,7 @@ BENCH_END(moist_phys_end_tim)
                   ,flag_chem          = im                                     &
                   ,flag_tracer        = 0                                      &
                   ,flag_scalar        = 0                                      &
-                  ,positive_definite=.FALSE.                                   &
+                  ,actual_distance_average  = .FALSE.                          &
                   ,moist=moist,chem=chem,tracer=tracer,scalar=scalar           &
                   ,fft_filter_lat = config_flags%fft_filter_lat                &
                   ,dclat = dclat                                               &
@@ -4033,7 +4033,7 @@ BENCH_END(moist_phys_end_tim)
                   ,flag_chem          = 0                                      &
                   ,flag_tracer        = im                                    &
                   ,flag_scalar        = 0                                      &
-                  ,positive_definite=.FALSE.                                   &
+                  ,actual_distance_average  = .FALSE.                          &
                   ,moist=moist,chem=chem,tracer=tracer,scalar=scalar           &
                   ,fft_filter_lat = config_flags%fft_filter_lat                &
                   ,dclat = dclat                                               &
@@ -4076,7 +4076,7 @@ BENCH_END(moist_phys_end_tim)
                   ,flag_chem          = 0                                      &
                   ,flag_tracer        = 0                                      &
                   ,flag_scalar        = im                                     &
-                  ,positive_definite=.FALSE.                                   &
+                  ,actual_distance_average  = .FALSE.                          &
                   ,moist=moist,chem=chem,tracer=tracer,scalar=scalar           &
                   ,fft_filter_lat = config_flags%fft_filter_lat                &
                   ,dclat = dclat                                               &
@@ -4741,7 +4741,7 @@ BENCH_START(adj_micro_driver_tim)
       &        ,T8W=t8w                                                   &
       &        ,CLDFRA=grid%cldfra, EXCH_H=grid%exch_h &
       &        ,NSOURCE=grid%qndropsource                                 &
-#ifdef WRF_CHEM
+#if (WRF_CHEM==1)
       &        ,QLSINK=grid%qlsink,CLDFRA_OLD=grid%cldfra_old             &
       &        ,PRECR=grid%precr, PRECI=grid%preci, PRECS=grid%precs, PRECG=grid%precg &
       &        ,CHEM_OPT=config_flags%chem_opt, PROGN=config_flags%progn  &
@@ -4778,7 +4778,7 @@ BENCH_START(adj_micro_driver_tim)
       &        , QG_CURR=moist(ims,kms,jms,P_QG), F_QG=F_QG               &
       &        , QH_CURR=moist(ims,kms,jms,P_QH), F_QH=F_QH               & ! for milbrandt2mom
       &        , QNDROP_CURR=scalar(ims,kms,jms,P_QNDROP), F_QNDROP=F_QNDROP &
-#ifdef WRF_CHEM
+#if (WRF_CHEM==1)
       &        , RAINPROD=grid%rainprod, EVAPPROD=grid%evapprod           &
       &        , QV_B4MP=grid%qv_b4mp,QC_B4MP=grid%qc_b4mp                &
       &        , QI_B4MP=grid%qi_b4mp, QS_B4MP=grid%qs_b4mp               &

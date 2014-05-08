@@ -399,6 +399,7 @@ module clm_varpar
 #endif
  integer, parameter :: max_pft_per_lu    = max(numpft+1, numcft, maxpatch_urb)
   integer, parameter :: max_pft_per_col   = max(numpft+1, numcft, maxpatch_urb)
+  integer  :: num_landcover_types 
 
 
 !Are these constants used?  I don't see max_col_per_lunit referenced anywhere.
@@ -417,7 +418,11 @@ module clm_varpar
 !  integer, parameter :: max_lunit_per_gcell = 5            !(soil,urban,lake,wetland,glacier)
 
 contains
-	subroutine clm_varpar_mod
+	subroutine clm_varpar_mod(nlcat)
+          integer,intent(in)  :: nlcat 
+
+          num_landcover_types = nlcat ! land use type
+
 	end subroutine clm_varpar_mod
 !------------------------------------------------------------------------------
 end module clm_varpar
@@ -433,7 +438,8 @@ module clm_varcon
 ! !USES:
   use shr_kind_mod, only: r8 => shr_kind_r8
   use clm_varpar, only : numcol,numrad,nlevlak,&
-                         maxpatch_pft,numpft,nlevgrnd
+                         maxpatch_pft,numpft,nlevgrnd,&
+                         num_landcover_types
 !
 ! !PUBLIC TYPES:
   implicit none
@@ -791,7 +797,7 @@ module clm_varcon
   !------------------------------------------------------------------
 
 
-  integer,parameter :: num_landcover_types  = 24  !24 (USGS)
+!!!!!  integer,parameter :: num_landcover_types   !24 (USGS); 20 (MODIS)
 
 
   ! saturated soil albedos for 8 color classes: 1=vis, 2=nir
@@ -837,8 +843,10 @@ module clm_varcon
     real(r8) :: sand(19)                           ! percent sand
     real(r8) :: clay(19)                           ! percent clay
     integer  :: soic(19)
-    integer  :: plant(24,maxpatch_pft)
-    real(r8) :: cover(24,maxpatch_pft)
+
+    integer, allocatable :: plant(:,:)
+    real(r8),allocatable :: cover(:,:)
+
 
     data(sand(i), i=1,19)/92.,80.,66.,20.,5.,43.,60.,&
       10.,32.,51., 6.,22.,39.7,0.,100.,54.,17.,100.,92./
@@ -870,46 +878,6 @@ module clm_varcon
 ! (18) lava
 ! (19) white-sand
 !----------------------------------------------------------------------------
-  data (plant(i,1),i=1,24) / 0,  15,  15,  15,  15,  15, &
-                            14,   9,   9,  14,   7,   3, &
-                             4,   1,   1,   0,   0,   4, &
-                            11,  11,   2,  11,  11,   0/
-  data (cover(i,1),i=1,24) /100.,  85.,  85.,  85.,  50.,  40., &
-                             60.,  80.,  50.,  70.,  75.,  50., &
-                             95.,  75.,  37., 100., 100.,  80., &
-                             10.,  30.,  13.,  20.,  10., 100./
-
-  data (plant(i,2),i=1,24) / 0,   0,   0,   0,  14,   3, &
-                            13,   0,  14,   6,   0,   0, &
-                             0,   0,   7,   0,   0,   0, &
-                             0,  12,   3,  12,  12,   0/
-  data (cover(i,2),i=1,24) /  0.,  15.,  15.,  15.,  35.,  30., &
-                             20.,  20.,  30.,  30.,  25.,  50., &
-                              5.,  25.,  37.,   0.,   0.,  20., &
-                             90.,  30.,  13.,  20.,  10.,   0./
-
-  data (plant(i,3),i=1,24) / 0,   0,   0,   0,   0,   0, &
-                             0,   0,   0,   0,   0,   0, &
-                             0,   0,   0,   0,   0,   0, &
-                             0,   0,  10,   0,   0,   0/
-
-  data (cover(i,3),i=1,24) /  0.,   0.,   0.,   0.,  15.,  30., &
-                             20.,   0.,  20.,   0.,   0.,   0., &
-                              0.,   0.,  26.,   0.,   0.,   0., &
-                              0.,  40.,  24.,  60.,  80.,   0./
-
-  data (plant(i,4),i=1,24) / 0,   0,   0,   0,   0,   0, &
-                             0,   0,   0,   0,   0,   0, &
-                             0,   0,   0,   0,   0,   0, &
-                             0,   0,   0,   0,   0,   0/
-
-  data (cover(i,4),i=1,24) / 0.,   0.,   0.,   0.,   0.,   0., &
-                             0.,   0.,   0.,   0.,   0.,   0., &
-                             0.,   0.,   0.,   0.,   0.,   0., &
-                             0.,   0.,  50.,   0.,   0.,   0./
-
-!-----------------------------------------------------------------------
-
 !USGS vegetation 24 categories
 !
 !Urban and Built-Up Land            1
@@ -936,6 +904,28 @@ module clm_varcon
 !Mixed Tundra                      22
 !Bare Ground Tundra                23
 !Snow or Ice                       24
+!-----------------------------------------------------------------------
+! MODIS vegetation 20 categories
+!'Evergreen Needleleaf Forest'       1 
+!'Evergreen Broadleaf Forest'        2
+!'Deciduous Needleleaf Forest'       3
+!'Deciduous Broadleaf Forest'        4
+!'Mixed Forests'                     5
+!'Closed Shrublands'                 6
+!'Open Shrublands'                   7
+!'Woody Savannas'                    8
+!'Savannas'                          9
+!'Grasslands'                        10
+!'Permanent wetlands'                11
+!'Croplands'                         12
+!'Urban and Built-Up'                13
+!'cropland/natural vegetation mosaic'14
+!'Snow and Ice'                      15
+!'Barren or Sparsely Vegetated'      16
+!'Water'                             17
+!'Wooded Tundra'                     18
+!'Mixed Tundra'                      19
+!'Barren Tundra'                     20
 !-----------------------------------------------------------------------
     real(r8):: lai(numpft,12),sai(numpft,12)
 
@@ -1118,6 +1108,80 @@ data (pftname(i),i=1,16)/'needleleaf_evergreen_temperate_tree',&
 contains
 
  subroutine var_par
+
+    allocate  (plant(num_landcover_types,maxpatch_pft))
+    allocate  (cover(num_landcover_types,maxpatch_pft))
+
+  if(num_landcover_types== 24.or. num_landcover_types==28) then ! USGS
+      plant(:,1) = (/ 0,  15,  15,  15,  15,  15, &
+                            14,   9,   9,  14,   7,   3, &
+                             4,   1,   1,   0,   0,   4, &
+                            11,  11,   2,  11,  11,   0/)
+
+      cover(:,1) = (/100.,  85.,  85.,  85.,  50.,  40., &
+                             60.,  80.,  50.,  70.,  75.,  50., &
+                             95.,  75.,  37., 100., 100.,  80., &
+                             10.,  30.,  13.,  20.,  10., 100./)
+
+      plant(:,2) = (/ 0,   0,   0,   0,  14,   3, &
+                            13,   0,  14,   6,   0,   0, &
+                             0,   0,   7,   0,   0,   0, &
+                             0,  12,   3,  12,  12,   0/)
+
+      cover(:,2) = (/0.,  15.,  15.,  15.,  35.,  30., &
+                             20.,  20.,  30.,  30.,  25.,  50., &
+                              5.,  25.,  37.,   0.,   0.,  20., &
+                             90.,  30.,  13.,  20.,  10.,   0./)
+
+      plant(:,3) = (/ 0,   0,   0,   0,   0,   0, &
+                             0,   0,   0,   0,   0,   0, &
+                             0,   0,   0,   0,   0,   0, &
+                             0,   0,  10,   0,   0,   0/)
+
+      cover(:,3) = (/0.,   0.,   0.,   0.,  15.,  30., &
+                             20.,   0.,  20.,   0.,   0.,   0., &
+                              0.,   0.,  26.,   0.,   0.,   0., &
+                              0.,  40.,  24.,  60.,  80.,   0./)
+
+      plant(:,4) = (/ 0,   0,   0,   0,   0,   0, &
+                             0,   0,   0,   0,   0,   0, &
+                             0,   0,   0,   0,   0,   0, &
+                             0,   0,   0,   0,   0,   0/)
+
+      cover(:,4) = (/ 0.,   0.,   0.,   0.,   0.,   0., &
+                             0.,   0.,   0.,   0.,   0.,   0., &
+                             0.,   0.,   0.,   0.,   0.,   0., &
+                             0.,   0.,  50.,   0.,   0.,   0./)
+
+  else if (num_landcover_types== 20.or. num_landcover_types==21) then !MODIS
+        plant(:,1) = (/1, 4,  3, 7,  1, 9,  9, 9, 14, 14, &
+                       0, 15, 0, 15, 0, 11, 0, 2, 11, 11/)
+
+        cover(:,1) = (/75., 95.,50.,  75., 37., 80., 50., 80., 70.,60.,&
+                       100.,85.,100., 50., 100.,10., 100.,13., 20.,10./)
+
+        plant(:,2) = (/0, 0, 0, 0, 7, 0, 14, 0, 6, 13, &
+                       0, 0, 0, 14,0, 0, 0,  3, 12,12/)
+
+        cover(:,2) = (/25., 5., 50.,25.,37.,20.,30.,20.,30.,20.,&
+                       0.,  15.,0., 35.,0., 90.,0., 13.,20.,10./)
+
+        plant(:,3) = (/0, 0, 0, 0, 0, 0, 0, 0, 0, 0, &
+                       0, 0, 0, 0, 0, 0, 0,10, 0, 0/)
+
+        cover(:,3) = (/0.,0.,0., 0., 26.,0., 20., 0., 0., 20.,&
+                       0.,0.,0., 15.,0., 0., 0., 24., 60.,80./)
+
+        plant(:,4) = (/0, 0, 0, 0, 0, 0, 0, 0, 0, 0, &
+                       0, 0, 0, 0, 0, 0, 0, 0, 0, 0/)
+
+        cover(:,4) = (/0.,0.,0.,0.,0.,0.,0.,0., 0.,0.,&
+                       0.,0.,0.,0.,0.,0.,0.,50.,0.,0./)
+  else
+        write(6,*)'CLM works only for USGS (24) and MODIS(20) land use types,&
+                 but the current number of land use types is ',num_landcover_types
+        call endrun()
+  end if 
  end subroutine var_par
 
 end module clm_varcon
@@ -3761,7 +3825,7 @@ CONTAINS
                    ,ids,ide, jds,jde, kds,kde                    &
                    ,ims,ime, jms,jme, kms,kme                    &
                    ,its,ite, jts,jte, kts,kte                    &
-                   ,inest, sf_urban_physics,                               &
+                   ,inest, sf_urban_physics,nlcat,               &
 !Optional urban
                 CMR_SFCDIF,CHR_SFCDIF,CMC_SFCDIF,CHC_SFCDIF,   &
                 tr_urb2d,tb_urb2d,tg_urb2d,tc_urb2d,qc_urb2d,  & !H urban
@@ -3862,6 +3926,7 @@ CONTAINS
                                                          sh2o,  & ! new soil liquid
                                                          tslb     ! TSLB     STEMP
 
+   integer,intent(in)  :: nlcat
   real,intent(in) :: dt,dx
   real,intent(in) :: xtime, dtwrf   !fchen
   real(r8) :: dtt
@@ -4225,7 +4290,7 @@ CONTAINS
  real, dimension(4) :: lf_urb
  
 ! ----------------------------------------------------------------------
-   call clm_varpar_mod
+   call clm_varpar_mod(nlcat)
 
    call CLMDebug('Now in clmdrv')
 
@@ -23641,7 +23706,7 @@ contains
     use clm_varpar                      !parameters
     !use clm_varsur                      !surface data  !BSINGH:02/04/2013: Commented out this use statement as it is repeated below
     use pftvarcon, only : noveg, crop  !vegetation type (PFT) 
-    use clm_varcon,only : sand,clay,soic,plant,cover,num_landcover_types
+    use clm_varcon,only : sand,clay,soic,plant,cover
     use clm_varsur      , only :gti, wtxy,vegxy,soic2d,sand3d,clay3d,organic3d,efisop2d &
                                  ,pctgla,pctlak,pctwet,pcturb     !surface data 
     use decompMod , only: get_proc_bounds
@@ -24077,7 +24142,8 @@ contains
     deallocate(pctcft_lunit)
     deallocate(pctpft_lunit)
     deallocate(pctpft)
-
+    deallocate(plant)
+    deallocate(cover)
 
   end subroutine surfrd
 
@@ -57642,8 +57708,6 @@ contains
 
 
     call CLMDebug('Now in Initialize. Next call varsur_alloc.')
-
-        call get_proc_bounds(begc,endc)
 
 !-----------------------------------------------------------------------
            longxy(1) = xlon

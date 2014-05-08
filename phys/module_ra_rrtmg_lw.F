@@ -11760,7 +11760,7 @@ CONTAINS
 		  266.13,263.96,261.54,258.93,256.15,253.23,      &
 		  249.89,246.67,243.48,240.25,236.66,233.86/	
 !------------------------------------------------------------------
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
       IF ( aer_ra_feedback == 1) then
       IF ( .NOT. &
       ( PRESENT(tauaerlw1) .AND. &
@@ -12266,7 +12266,8 @@ CONTAINS
                      snow_mass_factor = (130.0/resnow1d(ncol,k))*(130.0/resnow1d(ncol,k))
                      resnow1d(ncol,k)   = 130.0
                      IF ( wrf_dm_on_monitor() ) THEN
-                       WRITE(message,*)'RRTMG:  reducing snow mass (cloud path) to ', nint(snow_mass_factor*100.), ' percent of full value'
+                       WRITE(message,*)'RRTMG:  reducing snow mass (cloud path) to ', &
+                                       nint(snow_mass_factor*100.), ' percent of full value'
                        call wrf_debug(150, message)
                      ENDIF
                  endif
@@ -12452,7 +12453,7 @@ CONTAINS
       end do
       end do
 
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
    IF ( AER_RA_FEEDBACK == 1) then
 !     do nb = 1, nbndlw 
       do k = kts,kte      !wig

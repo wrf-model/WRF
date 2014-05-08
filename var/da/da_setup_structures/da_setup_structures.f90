@@ -41,7 +41,7 @@ module da_setup_structures
       filename_len, use_ssmisobs, gravity, t_triple, use_hirs4obs, use_mhsobs, &
       use_mwtsobs, use_mwhsobs, use_atmsobs,    &
       vert_corr_2, alphacv_method_xa, vert_evalue_global, &
-      vert_evalue_local, obs_names, thin_conv, &
+      vert_evalue_local, obs_names, thin_conv, thin_conv_ascii, &
       sound, sonde_sfc, mtgirs, tamdar, tamdar_sfc, synop, profiler, gpsref, gpspw, polaramv, geoamv, ships, metar, &
       satem, radar, ssmi_rv, ssmi_tb, ssmt1, ssmt2, airsr, pilot, airep, rain, &
       bogus, buoy, qscat, radiance, pseudo, trace_use_dull, kts,kte, &

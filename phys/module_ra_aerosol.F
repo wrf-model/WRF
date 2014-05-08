@@ -49,12 +49,12 @@ contains
 !    aer_aod550_opt = [1,2] : 
 !        1 = input constant value for AOD at 550 nm from namelist. 
 !            In this case, the value is read from aer_aod550_val; 
-!        2 = input value from auxiliary input 5. It is a time-varying 2D grid in netcdf wrf-compatible 
+!        2 = input value from auxiliary input 15. It is a time-varying 2D grid in netcdf wrf-compatible 
 !            format. The default operation is aer_aod550_opt=1 and aer_aod550_val=0.12
 !    aer_angexp_opt = [1,2,3] : 
 !        1 = input constant value for Angstrom exponent from namelist. In this case, the value is read 
 !            from aer_angexp_val; 
-!        2 = input value from auxiliary input 5, as in aer_aod550_opt; 
+!        2 = input value from auxiliary input 15, as in aer_aod550_opt; 
 !        3 = Angstrom exponent value estimated from the aerosol type defined in aer_type, and modulated 
 !            with the RH in WRF. Default operation is aer_angexp_opt = 1, and aer_angexp_val=1.3.
 !    aer_ssa_opt and aer_asy_opt are similar to aer_angexp_opt.
@@ -78,8 +78,9 @@ subroutine calc_aerosol_goddard_sw(ht,dz8w,p,t3d,qv3d,aer_type,                 
 
     ! mid-band wavelength / 550. nm
     real :: lower_wvl(N_BANDS),upper_wvl(N_BANDS)
-    data (lower_wvl(i),i=1,N_BANDS) /0.175,0.225,0.245,0.280,0.295,0.310,0.325,0.400,0.700,1.220,2.270/
-    data (upper_wvl(i),i=1,N_BANDS) /0.225,0.245,0.280,0.295,0.310,0.325,0.400,0.700,1.220,2.270,10.00/
+    integer :: kk
+    data (lower_wvl(kk),kk=1,N_BANDS) /0.175,0.225,0.245,0.280,0.295,0.310,0.325,0.400,0.700,1.220,2.270/
+    data (upper_wvl(kk),kk=1,N_BANDS) /0.225,0.245,0.280,0.295,0.310,0.325,0.400,0.700,1.220,2.270,10.00/
 
     ! I/O variables
     integer, intent(in) :: ims,ime,jms,jme,kms,kme, &

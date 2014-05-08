@@ -103,19 +103,9 @@ subroutine da_get_innov_vector_polaramv( it, num_qcstat_conv, grid, ob, iv)
 
    do n=iv%info(polaramv)%n1,iv%info(polaramv)%n2
       do k = 1, iv%info(polaramv)%levels(n)
-         iv % polaramv(n) % u(k) % inv = 0.0
-         iv % polaramv(n) % v(k) % inv = 0.0
 
-          if (.not. var_wind) then
-             if (ob%polaramv(n)%u(k) > missing_r .AND. iv%polaramv(n)%u(k)%qc >= obs_qc_pointer) then
-                 iv%polaramv(n)%u(k)%inv = ob%polaramv(n)%u(k) - model_u(k,n)
-             end if
-
-             if (ob%polaramv(n)%v(k) > missing_r .AND. iv%polaramv(n)%v(k)%qc >= obs_qc_pointer) then
-                 iv%polaramv(n)%v(k)%inv = ob%polaramv(n)%v(k) - model_v(k,n)
-             end if
-           else
-              call da_ffdduv2 (speed,direction,model_u(k,n), model_v(k,n), iv%info(polaramv)%lon(k,n), convert_uv2fd)
+          if (wind_sd_polaramv) then
+              call da_ffdduv_model (speed,direction,model_u(k,n), model_v(k,n), convert_uv2fd)
 
               if (ob%polaramv(n)%u(k) > missing_r .AND. iv%polaramv(n)%u(k)%qc >= obs_qc_pointer) then
                   iv%polaramv(n)%u(k)%inv = ob%polaramv(n)%u(k) - speed
@@ -126,9 +116,16 @@ subroutine da_get_innov_vector_polaramv( it, num_qcstat_conv, grid, ob, iv)
                   if (iv%polaramv(n)%v(k)%inv > 180.0 ) iv%polaramv(n)%v(k)%inv = iv%polaramv(n)%v(k)%inv - 360.0
                   if (iv%polaramv(n)%v(k)%inv < -180.0 ) iv%polaramv(n)%v(k)%inv = iv%polaramv(n)%v(k)%inv + 360.0
               end if
+          else
 
+             if (ob%polaramv(n)%u(k) > missing_r .AND. iv%polaramv(n)%u(k)%qc >= obs_qc_pointer) then
+                 iv%polaramv(n)%u(k)%inv = ob%polaramv(n)%u(k) - model_u(k,n)
+             end if
+
+             if (ob%polaramv(n)%v(k) > missing_r .AND. iv%polaramv(n)%v(k)%qc >= obs_qc_pointer) then
+                 iv%polaramv(n)%v(k)%inv = ob%polaramv(n)%v(k) - model_v(k,n)
+             end if
           end if
-
 
       end do
    end do

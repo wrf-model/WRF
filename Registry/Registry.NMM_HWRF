@@ -472,8 +472,8 @@ state  real  GD_CLOUD      ikj  misc     1   -      r       "GD_CLOUD" "CLOUD WA
 state  real  GD_CLOUD2     ikj  misc     1   -      r       "GD_CLOUD2" "TEST for GD CLOUD"         "kg kg-1"
 state  real  GD_CLOUD_A    ikj  misc     1   -      r      "GD_CLOUD_A"   "taveragd CLOUD WATER MIXING RAIO IN GD CLOUD"         "kg kg-1"
 state  real  GD_CLOUD2_A   ikj  misc     1   -      r      "GD_CLOUD2_A"  "taveragd cloud ice mix ratio in GD"         "kg kg-1"
-state  real  GD_CLOUD_B    ikj  misc     1   -      r       "GD_CLOUD_B"   "taveragd CLOUD WATER MIXING RAIO IN GD CLOUD"         "kg kg-1"
-state  real  GD_CLOUD2_B   ikj  misc     1   -      r       "GD_CLOUD2_B"  "taveragd cloud ice mix ratio in GD"         "kg kg-1"
+state  real  QC_CU         ikj  misc     1   -      r      "QC_CU"        "CLOUD WATER MIXING RATIO FROM A CU SCHEME"  "kg kg-1"
+state  real  QI_CU         ikj  misc     1   -      r      "QI_CU"        "CLOUD ICE MIXUNG RATIO FROM A CU SCHEME"    "kg kg-1"
 state    real  GD_CLDFR         ikj      misc        1         -      r     "GD_CLDFR"              "GD CLOUD Fraction"         " ? "
 # upward and downward clearsky and total diagnostic fluxes for radiation (RRTMG)
 state    real  ACSWUPT          ij      misc        1         -      rhdu     "ACSWUPT"               "ACCUMULATED UPWELLING SHORTWAVE FLUX AT TOP"          "J m-2"
@@ -908,7 +908,7 @@ state   real    -              ikjft   chem        1         -     -    -
 
 state    real   SMOIS            ilj     -          1         Z     rh       "SMOIS"                "SOIL MOISTURE" ""
 state    real   TSLB             ilj     -          1         Z     r       "TSLB" "SOIL TEMPERATURE" ""
-state    real   lake_depth            ij     misc        1         -     rhd=(interp_mask_water_field:lu_index,iswater)   "lake_depth"              "lake depth" "m"
+state    real   lake_depth       ij     misc        1         -     rd=(interp_mask_water_field:lu_index,iswater)   "lake_depth"              "lake depth" "m"
 
 
 # MYJ PBL variables
@@ -1375,7 +1375,6 @@ rconfig   real    GSMDT                   namelist,physics	max_domains    0     
 rconfig   integer ISFFLX                  namelist,physics 	1             1       irh    "ISFFLX"                        ""      ""
 rconfig   integer IFSNOW                  namelist,physics	1             1       irh    "IFSNOW"                        ""      ""
 rconfig   integer ICLOUD                  namelist,physics	1             1       irh    "ICLOUD"                        ""      ""
-rconfig   integer ICLOUD_CU               namelist,physics      max_domains   0       irh    "ICLOUD_CU"                     ""      ""
 rconfig   real    swrad_scat              namelist,physics      1             1       irh    "SWRAD_SCAT" "SCATTERING FACTOR IN SWRAD"      ""
 rconfig   integer surface_input_source    namelist,physics	1             1       irh    "surface_input_source"          "1=static (fractional), 2=time dependent (dominant), 3=hybrid (not yet implemented)"      ""
 rconfig   integer num_soil_layers         namelist,physics	1             5       irh    "num_soil_layers"               ""      ""
@@ -1466,13 +1465,16 @@ rconfig   integer no_src_types            namelist,physics      1             1 
 rconfig   integer alevsiz                 namelist,physics      1             1       -      "alevsiz" "Number of aerosoal optical depth data levels from EC (12)"  ""
 rconfig   integer o3input                 namelist,physics      1             0       -      "o3input"      "ozone input option for radiation"      ""
 rconfig   integer aer_opt                 namelist,physics      1             0       -      "aer_opt"      "aerosol input option for radiation"      ""
-rconfig   logical cu_rad_feedback         namelist,physics      max_domains   .false.  -     "feedback cumulus to radiation"  ""
+rconfig   logical cu_rad_feedback         namelist,physics      max_domains  .false.  -      "feedback of cumulus cloud to radiation"
+rconfig   integer ICLOUD_CU               derived               1             0        -     "ICLOUD_CU"                     ""      ""
 rconfig   real h_diff                     namelist,physics      max_domains  0.1      irh    "nmm input 9"
 rconfig   integer movemin                 namelist,physics      max_domains  10       irh    "movemin" "nest movement timestep (multiples of nphs)"
 rconfig   real    nomove_freq             namelist,physics      max_domains  -1.0     irh    "nomove_freq" "nest will not move at analysis time or multiples of this hour (if positive)"
 rconfig   integer num_snso_layers         namelist,physics      1             7       irh    "num_snso_layers"               ""      ""
 rconfig   integer num_snow_layers         namelist,physics   1             3       irh    "num_snow_layers"               ""      ""
 rconfig   logical use_aero_icbc           namelist,physics      1             .false. rh     "use_aero_icbc"  "Use GOCART climo 3D aerosols IC/BC data in Thompson-MP-Aero"  "logical flag"
+rconfig   integer sf_lake_physics         namelist,physics      max_domains   0       h     "sf_lake_physics"         "activate lake model  0=no, 1=yes"   ""
+
 
 # Dynamics
 # dynamics option (see package definitions, below)
@@ -1480,9 +1482,9 @@ rconfig   integer dyn_opt                 namelist,dynamics	1             -
 rconfig   integer rk_ord                  namelist,dynamics	1             3       irh   "rk_order"               ""      ""
 rconfig   integer w_damping               namelist,dynamics	1             0       irh    "w_damping"             ""      ""
 # diff_opt 1=old diffusion, 2=new
-rconfig   integer diff_opt                namelist,dynamics	1             1       irh    "diff_opt"              ""      ""
+rconfig   integer diff_opt                namelist,dynamics	max_domains   -1      irh    "diff_opt"              ""      ""
 # km_opt   1=old coefs, 2=tke, 3=Smagorinksy
-rconfig   integer km_opt                  namelist,dynamics	1             1       irh    "km_opt"                ""      ""
+rconfig   integer km_opt                  namelist,dynamics	max_domains   -1      irh    "km_opt"                ""      ""
 rconfig   integer damp_opt                namelist,dynamics	1             1       irh    "damp_opt"              ""      ""
 rconfig   real    zdamp                   namelist,dynamics	max_domains    5000.   h    "zdamp"         ""      ""
 rconfig   real    base_pres               namelist,dynamics     1          100000.     h    "base_pres"  "Base state pressure - do not change (10^5 Pa), real only"      "Pa"
@@ -1586,24 +1588,6 @@ rconfig   integer mp_physics_dfi          derived                  max_domains  
 # Single dummy declaration to define a nodyn dyn option
 state integer nodyn_dummy - dyn_nodyn -  -  -  "" "" ""
 
-# Turbine drag (td) physics
-# Turbine positions and characteristics for real-data cases are specified in a file
-# whose name is given in the windturbines_spec variable.  If the setting is "ideal",
-# the td_ variables specify idealized wind farm geometries and turbine characteristics.
-# If the setting is "none" then wind turbine drag physics is turned off.
-rconfig character windturbines_spec namelist,physics 1 "none" - - "" "none, ideal, or a file name"
-rconfig integer td_turbgridid  namelist,physics 1 -1     - - ""  "which grid id has turbines in it"
-rconfig  real   td_hubheight   namelist,physics 1 100.   - - ""  "hub height (m)"
-rconfig  real   td_diameter    namelist,physics 1 60.    - - ""  "turbine diameter (m)"
-rconfig  real   td_stdthrcoef  namelist,physics 1 .158   - - ""  "standing thrust coefficient"
-rconfig  real   td_cutinspeed  namelist,physics 1 4.     - - ""  "cut-in speed (m/s)"
-rconfig  real   td_cutoutspeed namelist,physics 1 27.    - - ""  "cut-out speed (m/s)"
-rconfig  real   td_power       namelist,physics 1 2.     - - ""  "turbine power (MW)"
-rconfig  real   td_turbpercell namelist,physics 1 1.     - - ""  "number of turbines per cell"
-rconfig integer td_ewfx        namelist,physics 1 0      - - ""  "extent of wind farm in x-cells"
-rconfig integer td_ewfy        namelist,physics 1 0      - - ""  "extent of wind farm in y-cells"
-rconfig integer td_pwfx        namelist,physics 1 1      - - ""  "southwest corner of wind farm in x-cells"
-rconfig integer td_pwfy        namelist,physics 1 1      - - ""  "southwest corner of wind farm in y-cells"
 rconfig   integer maxpatch                namelist,physics      1            10       irh    "maxpatch"                      ""      ""
 
 #key      package       associated                package          associated 4d scalars
@@ -1726,7 +1710,7 @@ package   osasscheme     cu_physics==4               -             state:randsta
 package   g3scheme       cu_physics==5               -             -
 package   gfscheme       cu_physics==3               -             -
 package   camzmscheme    cu_physics==7               -             -
-package   g3tave         cu_diag==1                  -             state:GD_CLOUD,GD_CLOUD2,GD_CLDFR,GD_CLOUD_A,GD_CLOUD_B,GD_CLOUD2_A,GD_CLOUD2_B,kbcon_deep,ktop_deep,k22_deep
+package   g3tave         cu_diag==1                  -             state:GD_CLOUD,GD_CLOUD2,GD_CLDFR,GD_CLOUD_A,GD_CLOUD2_A,kbcon_deep,ktop_deep,k22_deep
 package   tiedtkescheme  cu_physics==6               -             -
 package   nsasscheme     cu_physics==14              -             -
 package   kfscheme       cu_physics==99              -             -

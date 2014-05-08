@@ -9,12 +9,12 @@ subroutine da_ao_stats_buoy (stats_unit, iv, re, ob)
    integer,        intent(in)    :: stats_unit    ! Output unit for stats.
    type (iv_type), intent(inout) :: iv            ! iv
    type (y_type),  intent(in)    :: re            ! A - O
-   type(y_type),   intent (in) :: ob       ! Observation structure.
+   type(y_type),   intent (in)   :: ob            ! Observation structure.
 
    type (stats_buoy_type) :: stats
    integer                :: nu, nv, nt, np, nq
    integer                :: n
-   real                   :: u_inv, v_inv, sp_inv, dir_inv
+   real                   :: u_inc, v_inc, u_obs, v_obs
    
    if (trace_use_dull) call da_trace_entry("da_ao_stats_buoy")    
 
@@ -40,20 +40,25 @@ subroutine da_ao_stats_buoy (stats_unit, iv, re, ob)
 
    do n=1, iv%info(buoy)%nlocal
       if (iv%info(buoy)%proc_domain(1,n)) then
-         u_inv = re%buoy(n)%u
-         v_inv = re%buoy(n)%v
-         if(var_wind) then
-            sp_inv = re%buoy(n)%u
-            dir_inv = re%buoy(n)%v
-            call da_cal_sd (ob%buoy(n)%u, ob%buoy(n)%v, &
-                            u_inv, v_inv, sp_inv, dir_inv)
-         end if
+
+          u_inc = re%buoy(n)%u
+          v_inc = re%buoy(n)%v
+          u_obs = ob%buoy(n)%u
+          v_obs = ob%buoy(n)%v
+
+          if (.not. wind_sd_buoy .and. wind_stats_sd) &
+             call da_ffdduv_diagnose(u_obs, u_obs, u_inc, v_obs, v_obs, v_inc, &
+                                     iv%buoy(n)%u%qc, iv%buoy(n)%v%qc, convert_uv2fd)
+          if (wind_sd_buoy .and. .not. wind_stats_sd) &
+             call da_ffdduv_diagnose(u_obs, u_obs, u_inc, v_obs, v_obs, v_inc, &
+                                     iv%buoy(n)%u%qc, iv%buoy(n)%v%qc, convert_fd2uv)
+
          call da_stats_calculate (n, 0, iv%buoy(n)%u%qc, & 
-            u_inv, nu, & 
+            u_inc, nu, & 
             stats%minimum%u, stats%maximum%u, &
             stats%average%u, stats%rms_err%u)
          call da_stats_calculate (n, 0, iv%buoy(n)%v%qc, & 
-            v_inv, nv, & 
+            v_inc, nv, & 
             stats%minimum%v, stats%maximum%v, &
             stats%average%v, stats%rms_err%v)
          call da_stats_calculate (n, 0, iv%buoy(n)%t%qc, & 

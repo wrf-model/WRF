@@ -38,9 +38,9 @@ subroutine da_transform_xtoy_ships_adj(grid, iv, jo_grad_y, jo_grad_x)
 
       ! [1.2] Interpolate horizontally:
       do n=iv%info(ships)%n1,iv%info(ships)%n2
-         if(var_wind)then
-                call da_uv_wind_adj(jo_grad_y%ships(n)%u, &
-                                    jo_grad_y%ships(n)%v, model_u(1,n), model_v(1,n), ub(1,n), vb(1,n))
+         if(wind_sd_ships)then
+            call da_uv_to_sd_adj(jo_grad_y%ships(n)%u, &
+                                 jo_grad_y%ships(n)%v, model_u(1,n), model_v(1,n), ub(1,n), vb(1,n))
          else
             model_u(1,n)  = jo_grad_y%ships(n)%u
             model_v(1,n)  = jo_grad_y%ships(n)%v

@@ -329,7 +329,7 @@ if [ -n "$NETCDF4" ] ; then
       NETCDF=`echo $NETCDF | sed 's/\/$//'`
     fi
     buff="`ls -l $NETCDF | sed 's/  */ /g'`"
-    while [ "`echo $buff | grep '\->'`" != ""  ]
+    while [ "`echo $buff | grep lib`" = "" -a "`echo $buff | grep '\->'`" != ""  ]
     do
       buff="`echo $buff | sed -e 's/->//' -e 's/  */ /g'`"
       n=`echo $buff | wc -w`
@@ -667,6 +667,10 @@ if test -n "$NETCDF" ; then
     echo "Error : Not found $NETCDF/include/netcdf.inc"
     echo "        Please check this installation of NetCDF and re-run this configure script"
     echo
+    if test -n "$NETCDF4" ; then
+        echo "If on the NCAR Supercomputers, cp 'configure.nc4' to 'configure' and re-run script"
+        echo
+    fi
     exit -1
   fi
   grep nf_format_64bit $NETCDF/include/netcdf.inc > /dev/null

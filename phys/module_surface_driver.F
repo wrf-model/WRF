@@ -79,7 +79,7 @@ CONTAINS
      &          ,z_lake3d,     dz_lake3d,    t_soisno3d, h2osoi_ice3d   & !lake
      &          ,h2osoi_liq3d, h2osoi_vol3d, z3d,        dz3d           & !lake
      &          ,zi3d,         watsat3d,     csol3d,     tkmg3d         & !lake
-     &          ,tkdry3d,      tksatu3d,     LakeModel,  lakeminalt     & !lake
+     &          ,tkdry3d,      tksatu3d,     LakeModel,  lake_min_elev     & !lake
 #if (EM_CORE==1)
  !    &          ,lakemask,  lakeflag                                  & !lake
      &          ,lakemask                                  & !lake
@@ -544,7 +544,7 @@ CONTAINS
    INTEGER, INTENT(IN)::   NLCAT, mosaic_lu, mosaic_soil
    INTEGER, INTENT(IN)::   NSCAT
    INTEGER,  INTENT(IN )  :: LakeModel
-   REAL,     INTENT(IN)   :: lakeminalt
+   REAL,     INTENT(IN)   :: lake_min_elev
 
    INTEGER, INTENT(IN)::   history_interval
 
@@ -1368,7 +1368,7 @@ CONTAINS
           endif 
 #else
           if ( lakemodel==1) then
-            if(ht(i,j)>=lakeminalt) then
+            if(ht(i,j)>=lake_min_elev) then
               if ( xice(i,j).gt.xice_threshold) then   !mchen
                    xice(i,j)=0.0
                endif
@@ -1453,7 +1453,7 @@ CONTAINS
 !           ENDIF
 !          ENDIF
 !       else
-!         if(XLAND(i,j) .GT. 1.5.and.ht(i,j).lt.lakeminalt) then
+!         if(XLAND(i,j) .GT. 1.5.and.ht(i,j).lt.lake_min_elev) then
 !           IF ( SST(i,j) .LT. 350. .and. SST(i,j) .GT. 250.) THEN
 !            TSK(i,j)   =SST(i,j)
 !            TSLB(i,1,j)=SST(i,j)
@@ -1467,7 +1467,7 @@ CONTAINS
            ENDIF
           ENDIF
 #else
-       IF(XLAND(i,j) .GT. 1.5.and.ht(i,j).lt.lakeminalt) then
+       IF(XLAND(i,j) .GT. 1.5.and.ht(i,j).lt.lake_min_elev) then
            IF ( SST(i,j) .LT. 350. .and. SST(i,j) .GT. 250.) THEN
             TSK(i,j)   =SST(i,j)
             TSLB(i,1,j)=SST(i,j)
@@ -3256,7 +3256,7 @@ CONTAINS
                 ids,ide, jds,jde, kds,kde,                      &
                 ims,ime, jms,jme, kms,kme,                      &
                 i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte, &
-                inest,sf_urban_physics                          &
+                inest,sf_urban_physics, nlcat                   &
 !Optional urban
                ,cmr_sfcdif,chr_sfcdif,cmc_sfcdif,chc_sfcdif    &
                ,tr_urb2d,tb_urb2d,tg_urb2d,tc_urb2d,qc_urb2d,  & !H urban
@@ -3666,7 +3666,7 @@ CONTAINS
                      xlat_urb2d   ,z_lake3d       ,dz_lake3d    ,lakedepth2d     ,&
                      watsat3d     ,csol3d         ,tkmg3d       ,tkdry3d         ,&
                      tksatu3d     ,ivgtyp         ,ht           ,xland           ,&
-                     iswater      ,xice           ,xice_threshold, lakeminalt    ,&
+                     iswater      ,xice           ,xice_threshold, lake_min_elev    ,&
                      ids          ,ide            ,jds          ,jde             ,&
                      kds          ,kde            ,ims          ,ime             ,&
                      jms          ,jme            ,kms          ,kme             ,&

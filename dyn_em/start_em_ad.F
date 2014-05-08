@@ -56,7 +56,7 @@
    INTEGER     :: i_m
 
    REAL        :: p00, t00, a, tiso, p_surf, pd_surf, temp, tiso_tmp
-
+   EAL        :: p_strat, a_strat
    REAL :: qvf1, qvf2, qvf, a_qvf
    REAL :: pfu, pfd, phm, a_pfu, a_pfd, a_phm
    REAL :: MPDT
@@ -64,7 +64,7 @@
    LOGICAL :: first_trip_for_this_domain, start_of_simulation, fill_w_flag
    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
 
-#ifndef WRF_CHEM
+#if (WRF_CHEM!=1)
       REAL,ALLOCATABLE,DIMENSION(:,:,:) :: cldfra_old
 #endif
 
@@ -96,7 +96,7 @@
    kts = kps ; kte = kpe     ! note that tile is entire patch
    its = ips ; ite = ipe     ! note that tile is entire patch
    jts = jps ; jte = jpe    ! note that tile is entire patch
-#ifndef WRF_CHEM
+#if (WRF_CHEM!=1)
          ALLOCATE(CLDFRA_OLD(IMS:IME,KMS:KME,JMS:JME),STAT=I)  ; CLDFRA_OLD = 0.
 #endif
    CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
@@ -117,6 +117,8 @@
       CALL nl_get_base_temp  ( 1 , t00 )
       CALL nl_get_base_lapse ( 1 , a   )
       CALL nl_get_iso_temp   ( 1 , tiso )
+      CALL nl_get_base_lapse_strat ( 1 , a_strat )
+      CALL nl_get_base_pres_strat  ( 1 , p_strat )
       IF ( ( t00 .LT. 100. .or. p00 .LT. 10000.) .AND. ( .NOT. grid%this_is_an_ideal_run ) ) THEN
          WRITE(wrf_err_message,*) 'start_em: BAD BASE STATE for T00 or P00 in namelist.input file'
          CALL wrf_error_fatal(TRIM(wrf_err_message))
@@ -129,6 +131,8 @@
       p00  = grid%p00
       a    = grid%tlp
       tiso = grid%tiso
+      a_strat = grid%tlp_strat
+      p_strat = grid%p_strat
       IF ( ( t00 .LT. 100. .or. p00 .LT. 10000.) .AND. ( .NOT. grid%this_is_an_ideal_run ) ) THEN
          WRITE(wrf_err_message,*)&
          'start_em: did not find base state parameters in wrfinput. Add use_baseparam_fr_nml = .t. in &dynamics and rerun'
@@ -162,13 +166,19 @@
 
             !  Base state pressure is a function of eta level and terrain, only, plus
             !  the hand full of constants: p00 (sea level pressure, Pa), t00 (sea level
-            !  temperature, K), and A (temperature difference, from 1000 mb to 300 mb, K).
+            !  temperature, K), A (temperature difference, from 1000 mb to 300 mb, K),
+            !  tiso (isothermal temperature at tropopause/lower stratosphere), 
+            !  p_strat (pressure at top of isothermal layer), A_strat (lapse rate in 
+            !  stratosphere above isothermal layer)
 
             p_surf = p00 * EXP ( -t00/a + ( (t00/a)**2 - 2.*g*grid%ht(i,j)/a/r_d ) **0.5 )
 
             DO k = 1, kte-1
                grid%pb(i,k,j) = grid%znu(k)*(p_surf - grid%p_top) + grid%p_top
                temp = MAX ( tiso, t00 + A*LOG(grid%pb(i,k,j)/p00) )
+               IF ( grid%pb(i,k,j) .LT. p_strat ) THEN
+                  temp = tiso + A_strat * LOG ( grid%pb(i,k,j)/p_strat )
+               ENDIF
                grid%t_init(i,k,j) = temp*(p00/grid%pb(i,k,j))**(r_d/cp) - t0
 !              grid%t_init(i,k,j) = (t00 + A*LOG(grid%pb(i,k,j)/p00))*(p00/grid%pb(i,k,j))**(r_d/cp) - t0
                grid%alb(i,k,j) = (r_d/p1000mb)*(grid%t_init(i,k,j)+t0)*(grid%pb(i,k,j)/p1000mb)**cvpm
@@ -527,7 +537,7 @@
                       grid%mass_flux,                              &
                       grid%rthften, grid%rqvften,                       &
                       grid%cldfra,                                      &
-#ifndef WRF_CHEM
+#if (WRF_CHEM!=1)
                       cldfra_old,                                  &
 #endif
                       grid%glw,grid%gsw,grid%emiss,grid%embck,            &
@@ -561,7 +571,7 @@
                       grid%raincv_a,grid%raincv_b,                                    &
                       grid%gd_cloud, grid%gd_cloud2,                                  & ! Optional
                       grid%gd_cloud_a, grid%gd_cloud2_a,                              & ! Optional
-                      grid%gd_cloud_b, grid%gd_cloud2_b,                              & ! Optional
+                      grid%QC_CU, grid%QI_CU,                                         & ! Optional
                       ozmixm,grid%pin,                             &     ! Optional
                       grid%m_ps_1,grid%m_ps_2,grid%m_hybi,aerosolc_1,aerosolc_2,&  ! Optional
                       grid%rundgdten,grid%rvndgdten,grid%rthndgdten,         &     ! Optional
@@ -808,7 +818,7 @@
    ENDIF
 
 
-#ifndef WRF_CHEM
+#if (WRF_CHEM!=1)
       DEALLOCATE(CLDFRA_OLD)
 #endif
 

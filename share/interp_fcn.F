@@ -393,32 +393,44 @@
 
               IF      ( ( .NOT. xstag ) .AND. ( .NOT. ystag ) ) THEN
                  cprs(:) =   cpb(ci  ,:,cj  )
-                 cfld_ll = v_interp_col ( cfld(ci  ,:,cj  ) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci  , cj  , cfld_max_p(ci  ,cj  ) , cmax_p(ci  ,cj  ) , cfld_min_p(ci  ,cj  ) , cmin_p(ci  ,cj  ) )
+                 cfld_ll = v_interp_col ( cfld(ci  ,:,cj  ) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci  , cj  , &
+                                          cfld_max_p(ci  ,cj  ) , cmax_p(ci  ,cj  ) , cfld_min_p(ci  ,cj  ) , cmin_p(ci  ,cj  ) )
                  cprs(:) =   cpb(ci+1,:,cj  )
-                 cfld_lr = v_interp_col ( cfld(ci+1,:,cj  ) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci+1, cj  , cfld_max_p(ci+1,cj  ) , cmax_p(ci+1,cj  ) , cfld_min_p(ci+1,cj  ) , cmin_p(ci+1,cj  ) )
+                 cfld_lr = v_interp_col ( cfld(ci+1,:,cj  ) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci+1, cj  , &
+                                          cfld_max_p(ci+1,cj  ) , cmax_p(ci+1,cj  ) , cfld_min_p(ci+1,cj  ) , cmin_p(ci+1,cj  ) )
                  cprs(:) =   cpb(ci  ,:,cj+1)
-                 cfld_ul = v_interp_col ( cfld(ci  ,:,cj+1) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci  , cj+1, cfld_max_p(ci  ,cj+1) , cmax_p(ci  ,cj+1) , cfld_min_p(ci  ,cj+1) , cmin_p(ci  ,cj+1) )
+                 cfld_ul = v_interp_col ( cfld(ci  ,:,cj+1) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci  , cj+1, &
+                                          cfld_max_p(ci  ,cj+1) , cmax_p(ci  ,cj+1) , cfld_min_p(ci  ,cj+1) , cmin_p(ci  ,cj+1) )
                  cprs(:) =   cpb(ci+1,:,cj+1)
-                 cfld_ur = v_interp_col ( cfld(ci+1,:,cj+1) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci+1, cj+1, cfld_max_p(ci+1,cj+1) , cmax_p(ci+1,cj+1) , cfld_min_p(ci+1,cj+1) , cmin_p(ci+1,cj+1) )
+                 cfld_ur = v_interp_col ( cfld(ci+1,:,cj+1) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci+1, cj+1, &
+                                          cfld_max_p(ci+1,cj+1) , cmax_p(ci+1,cj+1) , cfld_min_p(ci+1,cj+1) , cmin_p(ci+1,cj+1) )
 
               ELSE IF ( xstag ) THEN
                  cprs(:) = ( cpb(ci  ,:,cj  ) + cpb(ci-1,:,cj  ) )*0.5 
-                 cfld_ll = v_interp_col ( cfld(ci  ,:,cj  ) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci  , cj  , cfld_max_p(ci  ,cj  ) , cmax_p(ci  ,cj  ) , cfld_min_p(ci  ,cj  ) , cmin_p(ci  ,cj  ) )
+                 cfld_ll = v_interp_col ( cfld(ci  ,:,cj  ) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci  , cj  , &
+                                          cfld_max_p(ci  ,cj  ) , cmax_p(ci  ,cj  ) , cfld_min_p(ci  ,cj  ) , cmin_p(ci  ,cj  ) )
                  cprs(:) = ( cpb(ci+1,:,cj  ) + cpb(ci  ,:,cj  ) )*0.5
-                 cfld_lr = v_interp_col ( cfld(ci+1,:,cj  ) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci+1, cj  , cfld_max_p(ci+1,cj  ) , cmax_p(ci+1,cj  ) , cfld_min_p(ci+1,cj  ) , cmin_p(ci+1,cj  ) )
+                 cfld_lr = v_interp_col ( cfld(ci+1,:,cj  ) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci+1, cj  , &
+                                          cfld_max_p(ci+1,cj  ) , cmax_p(ci+1,cj  ) , cfld_min_p(ci+1,cj  ) , cmin_p(ci+1,cj  ) )
                  cprs(:) = ( cpb(ci  ,:,cj+1) + cpb(ci-1,:,cj+1) )*0.5
-                 cfld_ul = v_interp_col ( cfld(ci  ,:,cj+1) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci  , cj+1, cfld_max_p(ci  ,cj+1) , cmax_p(ci  ,cj+1) , cfld_min_p(ci  ,cj+1) , cmin_p(ci  ,cj+1) )
+                 cfld_ul = v_interp_col ( cfld(ci  ,:,cj+1) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci  , cj+1, &
+                                          cfld_max_p(ci  ,cj+1) , cmax_p(ci  ,cj+1) , cfld_min_p(ci  ,cj+1) , cmin_p(ci  ,cj+1) )
                  cprs(:) = ( cpb(ci+1,:,cj+1) + cpb(ci  ,:,cj+1) )*0.5
-                 cfld_ur = v_interp_col ( cfld(ci+1,:,cj+1) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci+1, cj+1, cfld_max_p(ci+1,cj+1) , cmax_p(ci+1,cj+1) , cfld_min_p(ci+1,cj+1) , cmin_p(ci+1,cj+1) )
+                 cfld_ur = v_interp_col ( cfld(ci+1,:,cj+1) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci+1, cj+1, &
+                                          cfld_max_p(ci+1,cj+1) , cmax_p(ci+1,cj+1) , cfld_min_p(ci+1,cj+1) , cmin_p(ci+1,cj+1) )
               ELSE IF ( ystag ) THEN
                  cprs(:) = ( cpb(ci  ,:,cj  ) + cpb(ci  ,:,cj-1) )*0.5
-                 cfld_ll = v_interp_col ( cfld(ci  ,:,cj  ) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci  , cj  , cfld_max_p(ci  ,cj  ) , cmax_p(ci  ,cj  ) , cfld_min_p(ci  ,cj  ) , cmin_p(ci  ,cj  ) )
+                 cfld_ll = v_interp_col ( cfld(ci  ,:,cj  ) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci  , cj  , &
+                                          cfld_max_p(ci  ,cj  ) , cmax_p(ci  ,cj  ) , cfld_min_p(ci  ,cj  ) , cmin_p(ci  ,cj  ) )
                  cprs(:) = ( cpb(ci+1,:,cj  ) + cpb(ci+1,:,cj-1) )*0.5
-                 cfld_lr = v_interp_col ( cfld(ci+1,:,cj  ) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci+1, cj  , cfld_max_p(ci+1,cj  ) , cmax_p(ci+1,cj  ) , cfld_min_p(ci+1,cj  ) , cmin_p(ci+1,cj  ) )
+                 cfld_lr = v_interp_col ( cfld(ci+1,:,cj  ) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci+1, cj  , &
+                                          cfld_max_p(ci+1,cj  ) , cmax_p(ci+1,cj  ) , cfld_min_p(ci+1,cj  ) , cmin_p(ci+1,cj  ) )
                  cprs(:) = ( cpb(ci  ,:,cj+1) + cpb(ci  ,:,cj  ) )*0.5
-                 cfld_ul = v_interp_col ( cfld(ci  ,:,cj+1) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci  , cj+1, cfld_max_p(ci  ,cj+1) , cmax_p(ci  ,cj+1) , cfld_min_p(ci  ,cj+1) , cmin_p(ci  ,cj+1) )
+                 cfld_ul = v_interp_col ( cfld(ci  ,:,cj+1) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci  , cj+1, &
+                                          cfld_max_p(ci  ,cj+1) , cmax_p(ci  ,cj+1) , cfld_min_p(ci  ,cj+1) , cmin_p(ci  ,cj+1) )
                  cprs(:) = ( cpb(ci+1,:,cj+1) + cpb(ci+1,:,cj  ) )*0.5
-                 cfld_ur = v_interp_col ( cfld(ci+1,:,cj+1) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci+1, cj+1, cfld_max_p(ci+1,cj+1) , cmax_p(ci+1,cj+1) , cfld_min_p(ci+1,cj+1) , cmin_p(ci+1,cj+1) )
+                 cfld_ur = v_interp_col ( cfld(ci+1,:,cj+1) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci+1, cj+1, &
+                                          cfld_max_p(ci+1,cj+1) , cmax_p(ci+1,cj+1) , cfld_min_p(ci+1,cj+1) , cmin_p(ci+1,cj+1) )
               END IF
 
               !  Bilinear interpolation in horizontal with vertically corrected CG field values.
@@ -444,7 +456,8 @@
 
 !==================================
 
-   FUNCTION v_interp_col ( cfld_orig , cprs_orig , ckms , ckme , ckte , nprs, ni, nj, nk, ci, cj, cfld_max_p , cmax_p , cfld_min_p , cmin_p ) RESULT ( cfld_interp )
+   FUNCTION v_interp_col ( cfld_orig , cprs_orig , ckms , ckme , ckte , nprs, ni, nj, nk, ci, cj, &
+                           cfld_max_p , cmax_p , cfld_min_p , cmin_p ) RESULT ( cfld_interp )
 
       IMPLICIT NONE
 
@@ -1299,10 +1312,10 @@ print *,'column of cg pres = ',cprs
 
      ioff  = 0 ; joff  = 0
      IF ( xstag ) THEN 
-       ioff = (nri-1)/2
+       ioff = MAX((nri-1)/2,1)
      ENDIF
      IF ( ystag ) THEN
-       joff = (nrj-1)/2
+       joff = MAX((nrj-1)/2,1)
      ENDIF
 
      ! Iterate over the ND tile and compute the values

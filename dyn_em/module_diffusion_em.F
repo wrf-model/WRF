@@ -6083,15 +6083,15 @@ END SUBROUTINE phy_bc
     REAL  &
     :: zl, zu, uh_smth
 
-    REAL, DIMENSION( its-2:ite+2, jts-2:jte+2 )  :: mm
+    REAL, DIMENSION( its-3:ite+2, jts-3:jte+2 )  :: mm
 
-    REAL, DIMENSION( its-2:ite+2, kts:kte, jts-2:jte+2 )  &
+    REAL, DIMENSION( its-3:ite+2, kts:kte, jts-3:jte+2 )  &
     :: tmp1, hat, hatavg
 
-    REAL, DIMENSION( its-2:ite+2, kts:kte, jts-2:jte+2 )  &
+    REAL, DIMENSION( its-3:ite+2, kts:kte, jts-3:jte+2 )  &
     :: wavg, rvort
 
-    LOGICAL, DIMENSION( its-2:ite+2, jts-2:jte+2 )  &
+    LOGICAL, DIMENSION( its-3:ite+2, jts-3:jte+2 )  &
     :: use_column
 
 ! End declarations.

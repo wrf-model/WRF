@@ -558,8 +558,6 @@ CONTAINS
               gd_cloud2(i, k, j) = 0.
               gd_cloud_a(i, k, j) = 0.
               gd_cloud2_a(i, k, j) = 0.
-              gd_cloud_b(i, k, j) = 0.
-              gd_cloud2_b(i, k, j) = 0.
             END DO
           END DO
         END DO

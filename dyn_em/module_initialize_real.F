@@ -105,7 +105,7 @@ CONTAINS
       REAL    :: p_surf, p_level
       REAL    :: cof1, cof2
       REAL    :: qvf , qvf1 , qvf2 , qtot, pd_surf
-      REAL    :: p00 , t00 , a , tiso
+      REAL    :: p00 , t00 , a , tiso, p_strat, a_strat
       REAL    :: hold_znw , ptemp
       REAL    :: vap_pres_mb , sat_vap_pres_mb
       LOGICAL :: were_bad
@@ -172,9 +172,11 @@ integer::oops1,oops2
 
       CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
 
-      !   Lake Mask assignment (mchen)
+      !   Lake Mask and depth assignment
+
       CALL nl_get_iswater ( grid%id , grid%iswater )
       CALL nl_get_islake  ( grid%id , grid%islake )
+
       DO j = jts, MIN(jde-1,jte)
          DO i = its, MIN(ide-1,ite)
             IF ( grid%lu_index(i,j) .NE. grid%islake ) THEN
@@ -184,6 +186,26 @@ integer::oops1,oops2
             END IF
          END DO
       END DO
+
+      IF ( grid%sf_lake_physics .EQ. 1 ) THEN
+         grid%lake_depth_flag = flag_lake_depth
+         IF ( flag_lake_depth .EQ. 0 ) THEN
+            CALL wrf_message ( " Warning: Please rerun WPS to get lake_depth information for lake model" )
+
+         !  Set lake depth over the ocean to be -2 m, and set the lake depth over land to be -1 m.
+
+         ELSE
+            DO j = jts, MIN(jde-1,jte)
+               DO i = its, MIN(ide-1,ite)
+                  IF      ( ( grid%lu_index(i,j) .NE. grid%islake ) .AND. ( grid%lu_index(i,j) .NE. grid%iswater ) ) THEN
+                     grid%lake_depth(i,j) = -1
+                  ELSE IF   ( grid%lu_index(i,j) .NE. grid%islake ) THEN
+                     grid%lake_depth(i,j) = -2
+                  END IF
+               END DO
+            END DO
+         END IF
+      END IF
 
       !  Send out a quick message about the time steps based on the map scale factors.
 
@@ -221,7 +243,7 @@ integer::oops1,oops2
       !  necessary constants:  p00 (sea level pressure, Pa), t00 (sea level temperature, K),
       !  and A (temperature difference, from 1000 mb to 300 mb, K).
    
-      CALL const_module_initialize ( p00 , t00 , a , tiso ) 
+      CALL const_module_initialize ( p00 , t00 , a , tiso , p_strat , a_strat ) 
 
       !  Save these constants to write out in model output file
 
@@ -229,6 +251,8 @@ integer::oops1,oops2
       grid%p00  = p00
       grid%tlp  = a
       grid%tiso = tiso
+      grid%p_strat = p_strat
+      grid%tlp_strat = a_strat
 
       !  Are there any hold-ups to us bypassing the middle of the domain?  These
       !  holdups would be situations where we need data in the middle of the domain.
@@ -612,7 +636,7 @@ integer::oops1,oops2
                ,flag_chem          = 0                                      &
                ,flag_tracer        = 0                                      &
                ,flag_scalar        = 0                                      &
-               ,positive_definite  = .FALSE.                                &
+               ,actual_distance_average  = .FALSE.                          &
                ,moist=moist,chem=chem,tracer=tracer,scalar=scalar           &
                ,fft_filter_lat = config_flags%fft_filter_lat                &
                ,dclat = dclat                                               &
@@ -621,6 +645,7 @@ integer::oops1,oops2
                ,ips=ips,ipe=ipe,jps=jps,jpe=jpe,kps=kps,kpe=kpe             &
                ,imsx=imsx,imex=imex,jmsx=jmsx,jmex=jmex,kmsx=kmsx,kmex=kmex &
                ,ipsx=ipsx,ipex=ipex,jpsx=jmsx,jpex=jpex,kpsx=kpsx,kpex=kpex )
+
             DO j = jts, MIN(jte,jde-1)
               DO i = its, MIN(ite,ide-1)
                  grid%ht(i,j) = grid%t_2(i,1,j)
@@ -636,7 +661,6 @@ integer::oops1,oops2
             !  (part of the transpose process - we only do 3d arrays) to determine
             !  "how many" values are used to compute the mean.  We want a number
             !  that is consistent with the original grid resolution.
-
 
             DO j = jts, MIN(jte,jde-1)
               DO k = kts, kte
@@ -668,7 +692,7 @@ integer::oops1,oops2
             !  distance on each computational latitude loop.
 
             CALL filter_topo ( grid%ht_xxx , grid%clat_xxx , grid%mf_xxx , &
-                               grid%fft_filter_lat , &
+                               grid%fft_filter_lat , grid%mf_fft , &
                                ids, ide, jds, jde, 1 , 1 , &
                                imsx, imex, jmsx, jmex, 1, 1, &
                                ipsx, ipex, jpsx, jpex, 1, 1 )
@@ -693,7 +717,7 @@ integer::oops1,oops2
             END DO
 #else
             CALL filter_topo ( grid%ht , grid%clat , grid%msftx , &
-                               grid%fft_filter_lat , &
+                               grid%fft_filter_lat , grid%mf_fft , &
                                ids, ide, jds, jde, 1,1,           &
                                ims, ime, jms, jme, 1,1,           &
                                its, ite, jts, jte, 1,1 )
@@ -1240,7 +1264,8 @@ integer::oops1,oops2
 
             CALL compute_eta ( grid%znw , &
                                eta_levels , max_eta , max_dz , &
-                               grid%p_top , g , p00 , cvpm , a , r_d , cp , t00 , p1000mb , t0 , tiso , &
+                               grid%p_top , g , p00 , cvpm , a , r_d , cp , &
+                               t00 , p1000mb , t0 , tiso , p_strat , a_strat , &
                                ids , ide , jds , jde , kds , kde , &
                                ims , ime , jms , jme , kms , kme , &
                                its , ite , jts , jte , kts , kte )
@@ -2173,19 +2198,20 @@ integer::oops1,oops2
                              ( grid%tslb(i,1,j) .lt. 400 ) .and. ( grid%smois(i,1,j) .lt. 0.005 ) ) then
                            print *,'Noah -> Noah: bad soil moisture at i,j = ',i,j,grid%smois(i,:,j)
                            iicount = iicount + 1
-!                          grid%smois(i,:,j) = 0.005
+
+                           grid%smois(i,:,j) = 0.005
 !+---+-----------------------------------------------------------------+
 !  Some bad values of soil moisture are possible (huge negative and positive), but they
 !  appear to occur only along coastlines, so instead of overwriting with small moisture
 !  values, use relatively large moisture val.  Orig code checked for large negative but
 !  not positive values, mods here reset either.  G. Thompson (28 Feb 2008).
 
-                           grid%smois(i,:,j) = 0.499
-                        ELSEIF ( (grid%landmask(i,j).gt.0.5) .and. (grid%tslb(i,1,j) .gt. 170 ) .and. &
-                             ( grid%tslb(i,1,j) .lt. 400 ) .and. (grid%smois(i,1,j) .gt. 1.005 ) ) then
-                           print *,'Noah -> Noah: bad soil moisture at i,j = ',i,j,grid%smois(i,:,j)
-                           iicount = iicount + 1
-                           grid%smois(i,:,j) = 0.499
+!                          grid%smois(i,:,j) = 0.499
+!                       ELSEIF ( (grid%landmask(i,j).gt.0.5) .and. (grid%tslb(i,1,j) .gt. 170 ) .and. &
+!                            ( grid%tslb(i,1,j) .lt. 400 ) .and. (grid%smois(i,1,j) .gt. 1.005 ) ) then
+!                          print *,'Noah -> Noah: bad soil moisture at i,j = ',i,j,grid%smois(i,:,j)
+!                          iicount = iicount + 1
+!                          grid%smois(i,:,j) = 0.499
 !+---+-----------------------------------------------------------------+
                         END IF
                      END DO
@@ -2230,18 +2256,18 @@ integer::oops1,oops2
                !  Fudge soil moisture higher where canopy water is non-zero.
                !  G. Thompson (12 Jun 2008)
 
-               DO j = jts, MIN(jte,jde-1)
-                 DO i = its, MIN(ite,ide-1)
-                    IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
-                    if (grid%canwat(i,j) .GT. 1.01 .AND. grid%landmask(i,j) .GT. 0.5 ) THEN
-                       print *,'  CANWAT: moisten soil a bit more at i,j =',i,j,grid%canwat(i,j)
-                       grid%smois(i,1,j) = grid%smois(i,1,j) + (grid%canwat(i,j)**0.33333)*0.04
-                       grid%smois(i,1,j) = MIN(0.499, grid%smois(i,1,j))
-                       grid%smois(i,2,j) = grid%smois(i,2,j) + (grid%canwat(i,j)**0.33333)*0.01
-                       grid%smois(i,2,j) = MIN(0.499, grid%smois(i,2,j))
-                    end if
-                 END DO
-               END DO
+!              DO j = jts, MIN(jte,jde-1)
+!                DO i = its, MIN(ite,ide-1)
+!                   IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+!                   if (grid%canwat(i,j) .GT. 1.01 .AND. grid%landmask(i,j) .GT. 0.5 ) THEN
+!                      print *,'  CANWAT: moisten soil a bit more at i,j =',i,j,grid%canwat(i,j)
+!                      grid%smois(i,1,j) = grid%smois(i,1,j) + (grid%canwat(i,j)**0.33333)*0.04
+!                      grid%smois(i,1,j) = MIN(0.499, grid%smois(i,1,j))
+!                      grid%smois(i,2,j) = grid%smois(i,2,j) + (grid%canwat(i,j)**0.33333)*0.01
+!                      grid%smois(i,2,j) = MIN(0.499, grid%smois(i,2,j))
+!                   end if
+!                END DO
+!              END DO
 !+---+-----------------------------------------------------------------+
 
 
@@ -2590,6 +2616,9 @@ endif
                grid%php(i,k,j) = grid%znw(k)*(p_surf - grid%p_top) + grid%p_top ! temporary, full lev base pressure
                grid%pb(i,k,j) = grid%znu(k)*(p_surf - grid%p_top) + grid%p_top
                temp = MAX ( tiso, t00 + A*LOG(grid%pb(i,k,j)/p00) )
+               IF ( grid%pb(i,k,j) .LT. p_strat ) THEN
+                   temp = tiso + A_strat * LOG ( grid%pb(i,k,j)/p_strat )
+               ENDIF
 !              temp =             t00 + A*LOG(grid%pb(i,k,j)/p00)
                grid%t_init(i,k,j) = temp*(p00/grid%pb(i,k,j))**(r_d/cp) - t0
                grid%alb(i,k,j) = (r_d/p1000mb)*(grid%t_init(i,k,j)+t0)*(grid%pb(i,k,j)/p1000mb)**cvpm
@@ -3104,15 +3133,17 @@ endif
 
 !---------------------------------------------------------------------
 
-   SUBROUTINE const_module_initialize ( p00 , t00 , a , tiso ) 
+   SUBROUTINE const_module_initialize ( p00 , t00 , a , tiso , p_strat , a_strat ) 
       USE module_configure
       IMPLICIT NONE
       !  For the real-data-cases only.
-      REAL , INTENT(OUT) :: p00 , t00 , a , tiso
-      CALL nl_get_base_pres  ( 1 , p00 )
-      CALL nl_get_base_temp  ( 1 , t00 )
-      CALL nl_get_base_lapse ( 1 , a   )
-      CALL nl_get_iso_temp   ( 1 , tiso )
+      REAL , INTENT(OUT) :: p00 , t00 , a , tiso , p_strat , a_strat
+      CALL nl_get_base_pres        ( 1 , p00     )
+      CALL nl_get_base_temp        ( 1 , t00     )
+      CALL nl_get_base_lapse       ( 1 , a       )
+      CALL nl_get_iso_temp         ( 1 , tiso    )
+      CALL nl_get_base_pres_strat  ( 1 , p_strat )
+      CALL nl_get_base_lapse_strat ( 1 , a_strat )
    END SUBROUTINE const_module_initialize
 
 !-------------------------------------------------------------------
@@ -3148,7 +3179,7 @@ endif
 
       REAL :: p_surf ,  pd_surf, p_surf_int , pb_int , ht_hold
       REAL :: qvf , qvf1 , qvf2
-      REAL :: p00 , t00 , a , tiso
+      REAL :: p00 , t00 , a , tiso , p_strat , a_strat
       REAL , DIMENSION(:,:,:) , ALLOCATABLE :: t_init_int
 
       !  Local domain indices and counters.
@@ -3233,14 +3264,16 @@ endif
       IF ( config_flags%use_baseparam_fr_nml ) then
       ! get these from namelist
          CALL wrf_message('ndown: using namelist constants')
-         CALL const_module_initialize ( p00 , t00 , a , tiso ) 
+         CALL const_module_initialize ( p00 , t00 , a , tiso , p_strat , a_strat ) 
       ELSE
       ! get these constants from model data
          CALL wrf_debug(99,'ndown: using base-state profile constants from input file')
-         t00  = grid%t00
-         p00  = grid%p00
-         a    = grid%tlp
-         tiso = grid%tiso
+         t00     = grid%t00
+         p00     = grid%p00
+         a       = grid%tlp
+         tiso    = grid%tiso
+         p_strat = grid%p_strat
+         a_strat = grid%tlp_strat
 
          IF (t00 .LT. 100. .or. p00 .LT. 10000.) THEN
             WRITE(wrf_err_message,*)&
@@ -3270,10 +3303,16 @@ endif
                grid%pb(i,k,j) = grid%znu(k)*(p_surf     - grid%p_top) + grid%p_top
                pb_int    = grid%znu(k)*(p_surf_int - grid%p_top) + grid%p_top
                temp = MAX ( tiso, t00 + A*LOG(grid%pb(i,k,j)/p00) )
+               IF ( grid%pb(i,k,j) .LT. p_strat ) THEN
+                  temp = tiso + A_strat * LOG ( grid%pb(i,k,j)/p_strat )
+               ENDIF
 !              temp =             t00 + A*LOG(pb/p00)
                grid%t_init(i,k,j) = temp*(p00/grid%pb(i,k,j))**(r_d/cp) - t0
 !              grid%t_init(i,k,j)    = (t00 + A*LOG(grid%pb(i,k,j)/p00))*(p00/grid%pb(i,k,j))**(r_d/cp) - t0
                temp_int = MAX ( tiso, t00 + A*LOG(pb_int   /p00) )
+               IF ( pb_int .LT. p_strat ) THEN
+                  temp_int = tiso + A_strat * LOG ( pb_int/p_strat )
+               ENDIF
                t_init_int(i,k,j)= temp_int*(p00/pb_int   )**(r_d/cp) - t0
 !              t_init_int(i,k,j)= (t00 + A*LOG(pb_int   /p00))*(p00/pb_int   )**(r_d/cp) - t0
                grid%alb(i,k,j) = (r_d/p1000mb)*(grid%t_init(i,k,j)+t0)*(grid%pb(i,k,j)/p1000mb)**cvpm
@@ -4289,7 +4328,7 @@ end subroutine fillitup
             !  the isobaric original field has the surface from 2-m T and RH, and 10-m U and V).
 
             IF ( lowest_lev_from_sfc ) THEN
-               fnew(i,1,j) = forig(i,ko_above_sfc(i)-1,j)
+               fnew(i,1,j) = forig(i,1,j)
             END IF
 
          END DO
@@ -5861,9 +5900,57 @@ print *,'p sfc = ',psfc(i,j)
 
 !---------------------------------------------------------------------
 
+#if 0
+program foo
+
+integer , parameter :: max_eta = 1000
+
+INTEGER :: ids , ide , jds , jde , kds , kde , &
+           ims , ime , jms , jme , kms , kme , &
+           its , ite , jts , jte , kts , kte
+
+real :: max_dz = 1000
+real :: p_top = 100
+real :: g = 9.81
+real :: p00 = 100000
+real :: cvpm = -0.714285731
+real :: a = 50
+real :: r_d = 287
+real :: cp = 1004.5
+real :: t00 = 290
+real :: p1000mb = 100000
+real :: t0 = 300
+real :: tiso = 216.649994
+real :: p_strat = 5500
+real :: a_strat = -12
+
+real , dimension(max_eta) :: znw , eta_levels
+
+eta_levels = -1
+
+kds=1
+kms=1
+kts=1
+kde=70
+kme=70
+kte=70
+
+
+call compute_eta ( znw , &
+                   eta_levels , max_eta , max_dz , &
+                   p_top , g , p00 , cvpm , a , r_d , cp , &
+                   t00 , p1000mb , t0 , tiso , p_strat , a_strat , &
+                   ids , ide , jds , jde , kds , kde , &
+                   ims , ime , jms , jme , kms , kme , &
+                   its , ite , jts , jte , kts , kte )
+
+end program foo
+#endif
+
    SUBROUTINE compute_eta ( znw , &
                            eta_levels , max_eta , max_dz , &
-                           p_top , g , p00 , cvpm , a , r_d , cp , t00 , p1000mb , t0 , tiso , &
+                           p_top , g , p00 , cvpm , a , r_d , cp , &
+                           t00 , p1000mb , t0 , tiso , p_strat , a_strat , &
                            ids , ide , jds , jde , kds , kde , &
                            ims , ime , jms , jme , kms , kme , &
                            its , ite , jts , jte , kts , kte )
@@ -5879,21 +5966,25 @@ print *,'p sfc = ',psfc(i,j)
                                      its , ite , jts , jte , kts , kte
       REAL , INTENT(IN)           :: max_dz
       REAL , INTENT(IN)           :: p_top , g , p00 , cvpm , a , r_d , cp , t00 , p1000mb , t0 , tiso
+      REAL , INTENT(IN)           :: p_strat , a_strat
       INTEGER , INTENT(IN)        :: max_eta
-      REAL , DIMENSION (max_eta) , INTENT(IN)  :: eta_levels
+      REAL , DIMENSION (max_eta)  :: eta_levels
 
       REAL , DIMENSION (kts:kte) , INTENT(OUT) :: znw
 
       !  Local vars
 
-      INTEGER :: k
-      REAL :: mub , t_init , p_surf , pb, ztop, ztop_pbl , dz , temp
-      REAL , DIMENSION(kts:kte) :: dnw
+      INTEGER :: k , kk
+      REAL(KIND=8) :: mub , t_init , p_surf , pb, ztop, ztop_pbl , dz , temp
+      REAL(KIND=8) , DIMENSION(kts:kte) :: dnw
 
-      INTEGER , PARAMETER :: prac_levels = 17
+      INTEGER , PARAMETER :: prac_levels = 59
       INTEGER :: loop , loop1
-      REAL , DIMENSION(prac_levels) :: znw_prac , znu_prac , dnw_prac
-      REAL , DIMENSION(kts:kte) :: alb , phb
+      REAL(KIND=8) , DIMENSION(prac_levels) :: znw_prac , znu_prac , dnw_prac
+      REAL(KIND=8) , DIMENSION(MAX(prac_levels,kde)) :: alb , phb
+      REAL(KIND=8) :: alb_max, t_init_max, pb_max, phb_max
+
+      CHARACTER(LEN=256) :: message
 
       !  Gee, do the eta levels come in from the namelist?
 
@@ -5941,18 +6032,28 @@ print *,'p sfc = ',psfc(i,j)
 
          p_surf = p00
 
-         znw_prac = (/ 1.000 , 0.993 , 0.983 , 0.970 , 0.954 , 0.934 , 0.909 , &
-                       0.88 , 0.8 , 0.7 , 0.6 , 0.5 , 0.4 , 0.3 , 0.2 , 0.1 , 0.0 /)
+         znw_prac = (/ 1.0000_8 , 0.9930_8 , 0.9830_8 , 0.9700_8 , 0.9540_8 , 0.9340_8 , 0.9090_8 , 0.8800_8 , &
+                       0.8500_8 , 0.8000_8 , 0.7500_8 , 0.7000_8 , 0.6500_8 , 0.6000_8 , 0.5500_8 , 0.5000_8 , &
+                       0.4500_8 , 0.4000_8 , 0.3500_8 , 0.3000_8 , 0.2500_8 , 0.2000_8 , 0.1500_8 , 0.1000_8 , &
+                       0.0800_8 , 0.0600_8 , 0.0400_8 , 0.0200_8 , &
+                       0.0150_8 , 0.0100_8 , 0.0090_8 , 0.0080_8 , 0.0070_8 , 0.0060_8 , 0.0050_8 , 0.0040_8 , &
+                       0.0035_8 , 0.0030_8 , &
+                       0.0028_8 , 0.0026_8 , 0.0024_8 , 0.0022_8 , 0.0020_8 , & 
+                       0.0018_8 , 0.0016_8 , 0.0014_8 , 0.0012_8 , 0.0010_8 , &
+                       0.0009_8 , 0.0008_8 , 0.0007_8 , 0.0006_8 , 0.0005_8 , 0.0004_8 , 0.0003_8 , &
+                       0.0002_8 , 0.0001_8 , 0.00005_8, 0.0000_8 /)
 
          DO k = 1 , prac_levels - 1
-            znu_prac(k) = ( znw_prac(k) + znw_prac(k+1) ) * 0.5
+            znu_prac(k) = ( znw_prac(k) + znw_prac(k+1) ) * 0.5_8
             dnw_prac(k) = znw_prac(k+1) - znw_prac(k)
          END DO
 
          DO k = 1, prac_levels-1
             pb = znu_prac(k)*(p_surf - p_top) + p_top
             temp = MAX ( tiso, t00 + A*LOG(pb/p00) )
-!           temp =             t00 + A*LOG(pb/p00)
+            IF ( pb .LT. p_strat ) THEN
+                temp = tiso + A_strat*LOG(pb/p_strat)
+            END IF
             t_init = temp*(p00/pb)**(r_d/cp) - t0
             alb(k) = (r_d/p1000mb)*(t_init+t0)*(pb/p1000mb)**cvpm
          END DO
@@ -5963,7 +6064,7 @@ print *,'p sfc = ',psfc(i,j)
 
          !  Integrate base geopotential, starting at terrain elevation.
 
-         phb(1) = 0.
+         phb(1) = 0._8
          DO k  = 2,prac_levels
                phb(k) = phb(k-1) - dnw_prac(k-1)*mub*alb(k-1)
          END DO
@@ -5975,10 +6076,20 @@ print *,'p sfc = ',psfc(i,j)
          ztop_pbl = phb(8          ) / g
          dz = ( ztop - ztop_pbl ) / REAL ( kde - 8 )
 
+         IF ( dz .GE. max_dz ) THEN
+            WRITE (message,FMT='("With a requested ",F7.1," Pa model top, the model lid will be about ",F7.1," m.")') p_top, ztop
+            CALL wrf_message ( message )
+            WRITE (message,FMT='("With ",I3," levels above the PBL, the level thickness will be about ",F6.1," m.")') kde-8, dz
+            CALL wrf_message ( message )
+            WRITE (message,FMT='("Thicknesses greater than ",F7.1," m are not recommended.")') max_dz 
+            CALL wrf_message ( message )
+            CALL wrf_error_fatal ( 'Add more levels to namelist.input for e_vert' )
+         END IF
+
          !  Standard levels near the surface so no one gets in trouble.
 
          DO k = 1 , 8
-            znw(k) = znw_prac(k)
+            eta_levels(k) = znw_prac(k)
          END DO
 
          !  Using d phb(k)/ d eta(k) = -mub * alb(k), eqn 2.9
@@ -5986,12 +6097,45 @@ print *,'p sfc = ',psfc(i,j)
          !  use twice the thickness.
 
          DO k = 8, kte-1-2
-            pb = znw(k) * (p_surf - p_top) + p_top
+
+            find_prac : DO kk = 1 , prac_levels
+               IF (znw_prac(kk) .LT. eta_levels(k) ) THEN
+                  EXIT find_prac
+               END IF
+            end do find_prac
+
+            pb = 0.5*(eta_levels(k)+znw_prac(kk)) * (p_surf - p_top) + p_top
+
             temp = MAX ( tiso, t00 + A*LOG(pb/p00) )
+            IF ( pb .LT. p_strat ) THEN
+               temp = tiso + A_strat * LOG ( pb/p_strat )
+            END IF
 !           temp =             t00 + A*LOG(pb/p00)
             t_init = temp*(p00/pb)**(r_d/cp) - t0
             alb(k) = (r_d/p1000mb)*(t_init+t0)*(pb/p1000mb)**cvpm
-            znw(k+1) = znw(k) - dz*g / ( mub*alb(k) )
+            eta_levels(k+1) = eta_levels(k) - dz*g / ( mub*alb(k) )
+            pb = 0.5*(eta_levels(k)+eta_levels(k+1)) * (p_surf - p_top) + p_top
+
+            temp = MAX ( tiso, t00 + A*LOG(pb/p00) )
+            IF ( pb .LT. p_strat ) THEN
+               temp = tiso + A_strat * LOG ( pb/p_strat )
+            END IF
+!           temp =             t00 + A*LOG(pb/p00)
+            t_init = temp*(p00/pb)**(r_d/cp) - t0
+            alb(k) = (r_d/p1000mb)*(t_init+t0)*(pb/p1000mb)**cvpm
+            eta_levels(k+1) = eta_levels(k) - dz*g / ( mub*alb(k) )
+            pb = 0.5*(eta_levels(k)+eta_levels(k+1)) * (p_surf - p_top) + p_top
+
+            phb(k+1) = phb(k) - (eta_levels(k+1)-eta_levels(k)) * mub*alb(k)
+         END DO
+
+         alb_max = alb(kte-1-2)
+         t_init_max = t_init
+         pb_max = pb
+         phb_max = phb(kte-1)
+
+         DO k = 1 , kte-1-2
+            znw(k) = eta_levels(k)
          END DO
          znw(kte-2) = 0.000
 
@@ -6003,14 +6147,20 @@ print *,'p sfc = ',psfc(i,j)
 
          DO loop1 = 1 , 5
             DO loop = 1 , 10
-               DO k = 8, kte-1-2
+               DO k = 8, kte-1-2-1
                   pb = (znw(k)+znw(k+1))*0.5 * (p_surf - p_top) + p_top
                   temp = MAX ( tiso, t00 + A*LOG(pb/p00) )
-!                 temp =             t00 + A*LOG(pb/p00)
+                  IF ( pb .LT. p_strat ) THEN
+                     temp = tiso + A_strat * LOG ( pb/p_strat )
+                  END IF
                   t_init = temp*(p00/pb)**(r_d/cp) - t0
                   alb(k) = (r_d/p1000mb)*(t_init+t0)*(pb/p1000mb)**cvpm
                   znw(k+1) = znw(k) - dz*g / ( mub*alb(k) )
                END DO
+               pb = pb_max
+               t_init = t_init_max
+               alb(kte-1-2) = alb_max
+               znw(kte-2) = znw(kte-1-2) - dz*g / ( mub*alb(kte-1-2) )
                IF ( ( loop1 .EQ. 5 ) .AND. ( loop .EQ. 10 ) ) THEN
                   print *,'Converged znw(kte) should be about 0.0 = ',znw(kte-2)
                END IF
@@ -6022,14 +6172,16 @@ print *,'p sfc = ',psfc(i,j)
             DO k = 1, kde-1-2
                pb = (znw(k)+znw(k+1))*0.5 * (p_surf - p_top) + p_top
                temp = MAX ( tiso, t00 + A*LOG(pb/p00) )
-!              temp =             t00 + A*LOG(pb/p00)
+               IF ( pb .LT. p_strat ) THEN
+                  temp = tiso + A_strat * LOG ( pb/p_strat )
+               END IF
                t_init = temp*(p00/pb)**(r_d/cp) - t0
                alb(k) = (r_d/p1000mb)*(t_init+t0)*(pb/p1000mb)**cvpm
             END DO
 
             phb(1) = 0.
             DO k  = 2,kde-2
-                  phb(k) = phb(k-1) - (znw(k)-znw(k-1)) * mub*alb(k-1)
+               phb(k) = phb(k-1) - (znw(k)-znw(k-1)) * mub*alb(k-1)
             END DO
 
             !  Reset the model top and the dz, and iterate.
@@ -6074,6 +6226,9 @@ print *,'namelist p_top (Pa) = ',p_top
          DO k = 8, kte-1
             pb = (znw(k)+znw(k+1))*0.5 * (p_surf - p_top) + p_top
             temp = MAX ( tiso, t00 + A*LOG(pb/p00) )
+            IF ( pb .LT. p_strat ) THEN
+               temp = tiso + A_strat * LOG ( pb/p_strat )
+            END IF
             t_init = temp*(p00/pb)**(r_d/cp) - t0
             alb(k) = (r_d/p1000mb)*(t_init+t0)*(pb/p1000mb)**cvpm
             phb(k) = phb(k-1) - (znw(k)-znw(k-1)) * mub*alb(k-1)
@@ -6081,9 +6236,9 @@ print *,'namelist p_top (Pa) = ',p_top
          phb(kte) = phb(kte-1) - (znw(kte)-znw(kte-1)) * mub*alb(kte-1)
 
 k=1
-print *,k,'  z (m)            = ',phb(1)/g
+WRITE (*,FMT='("Full level index = ",I4,"     Height = ",F7.1," m")') k,phb(1)/g
 do k = 2 ,kte
-print *,k,'  z (m) and dz (m) = ',phb(k)/g,(phb(k)-phb(k-1))/g
+WRITE (*,FMT='("Full level index = ",I4,"     Height = ",F7.1," m      Thickness = ",F6.1," m")') k,phb(k)/g,(phb(k)-phb(k-1))/g
 end do
 
       END IF
@@ -6679,9 +6834,11 @@ end do
       END DO
 
    END SUBROUTINE sfcprs3
+
 !---------------------------------------------------------------------
 
-   SUBROUTINE filter_topo ( ht_in , xlat , msftx , fft_filter_lat , &
+   SUBROUTINE filter_topo ( ht_in , xlat , msftx , &
+                            fft_filter_lat , mf_fft , &
                             ids , ide , jds , jde , kds , kde , &
                             ims , ime , jms , jme , kms , kme , &
                             its , ite , jts , jte , kts , kte )
@@ -6692,7 +6849,140 @@ end do
                                ims , ime , jms , jme , kms , kme , &
                                its , ite , jts , jte , kts , kte
 
-      REAL , INTENT(IN) :: fft_filter_lat
+      REAL , INTENT(IN) :: fft_filter_lat , mf_fft
+      REAL , DIMENSION(ims:ime,jms:jme) , INTENT(INOUT) :: ht_in
+      REAL , DIMENSION(ims:ime,jms:jme) , INTENT(IN) :: xlat , msftx
+
+
+      !  Local vars
+
+      INTEGER :: i , j , j_lat_pos , j_lat_neg , k
+      INTEGER :: i_kicker , ik , i1, i2, i3, i4
+      INTEGER :: i_left , i_right , ii
+      REAL :: length_scale , sum
+      REAL , DIMENSION(its:ite,jts:jte) :: ht_out
+
+      !  The filtering is a simple average on a latitude loop.  Possibly a LONG list of
+      !  numbers.  We assume that ALL of the 2d arrays have been transposed so that
+      !  each patch has the entire domain size of the i-dim local.
+
+      IF ( ( its .NE. ids ) .OR. ( ite .NE. ide ) ) THEN
+         CALL wrf_error_fatal ( 'filtering assumes all values on X' )
+      END IF
+
+      !  Starting at the south pole, we find where the
+      !  grid distance is big enough, then go back a point.  Continuing to the
+      !  north pole, we find the first small grid distance.  These are the
+      !  computational latitude loops and the associated computational poles.
+
+      j_lat_neg = 0
+      j_lat_pos = jde + 1
+      loop_neg : DO j = jts , MIN(jde-1,jte)
+         IF ( xlat(its,j) .LT. 0.0 ) THEN
+            IF ( ABS(xlat(its,j)) .LT. fft_filter_lat ) THEN
+               j_lat_neg = j - 1
+               EXIT loop_neg
+            END IF
+         END IF
+      END DO loop_neg
+
+      loop_pos : DO j = jts , MIN(jde-1,jte)
+         IF ( xlat(its,j) .GT. 0.0 ) THEN
+            IF ( xlat(its,j) .GE. fft_filter_lat ) THEN
+               j_lat_pos = j
+               EXIT loop_pos
+            END IF
+         END IF
+      END DO loop_pos
+
+      !  Set output values to initial input topo values for whole patch.
+
+      DO j = jts , MIN(jde-1,jte)
+         DO i = its , MIN(ide-1,ite)
+            ht_out(i,j) = ht_in(i,j)
+         END DO
+      END DO
+
+      !  Filter the topo at the negative lats.
+
+      DO j = MIN(j_lat_neg,jte) , jts , -1
+         i_kicker = MIN( MAX ( NINT(msftx(its,j)/2) , 1 ) , (ide - ids) / 2 )
+!        i_kicker = MIN( MAX ( NINT(msftx(its,j)/mf_fft/2) , 1 ) , (ide - ids) / 2 )
+!        print *,'SOUTH j = ' , j, ', kicker = ',i_kicker
+         DO i = its , MIN(ide-1,ite)
+            sum = 0.
+            DO ik = 1 , i_kicker
+               ii = i-ik
+               IF ( ii .GE. ids ) THEN
+                  i_left = ii
+               ELSE
+                  i_left = ( ii - ids ) + (ide-1)+1
+               END IF
+               ii = i+ik
+               IF ( ii .LE. ide-1 ) THEN
+                  i_right = ii
+               ELSE
+                  i_right = ( ii - (ide-1) ) + its-1
+               END IF
+               sum = sum + ht_in(i_left,j) + ht_in(i_right,j)
+            END DO
+            ht_out(i,j) = ( ht_in(i,j) + sum ) / REAL ( 2 * i_kicker + 1 )
+         END DO
+      END DO
+
+      !  Filter the topo at the positive lats.
+
+      DO j = MAX(j_lat_pos,jts) , MIN(jde-1,jte)
+         i_kicker = MIN( MAX ( NINT(msftx(its,j)/2) , 1 ) , (ide - ids) / 2 )
+!        i_kicker = MIN( MAX ( NINT(msftx(its,j)/mf_fft/2) , 1 ) , (ide - ids) / 2 )
+!        print *,'NORTH j = ' , j, ', kicker = ',i_kicker
+         DO i = its , MIN(ide-1,ite)
+            sum = 0.
+            DO ik = 1 , i_kicker
+               ii = i-ik
+               IF ( ii .GE. ids ) THEN
+                  i_left = ii
+               ELSE
+                  i_left = ( ii - ids ) + (ide-1)+1
+               END IF
+               ii = i+ik
+               IF ( ii .LE. ide-1 ) THEN
+                  i_right = ii
+               ELSE
+                  i_right = ( ii - (ide-1) ) + its-1
+               END IF
+               sum = sum + ht_in(i_left,j) + ht_in(i_right,j)
+            END DO
+            ht_out(i,j) = ( ht_in(i,j) + sum ) / REAL ( 2 * i_kicker + 1 )
+         END DO
+      END DO
+
+      !  Set output values to initial input topo values for whole patch.
+
+      DO j = jts , MIN(jde-1,jte)
+         DO i = its , MIN(ide-1,ite)
+            ht_in(i,j) = ht_out(i,j)
+         END DO
+      END DO
+
+   END SUBROUTINE filter_topo
+
+!---------------------------------------------------------------------
+!---------------------------------------------------------------------
+
+   SUBROUTINE filter_topo_old ( ht_in , xlat , msftx , fft_filter_lat , &
+                            dummy , & 
+                            ids , ide , jds , jde , kds , kde , &
+                            ims , ime , jms , jme , kms , kme , &
+                            its , ite , jts , jte , kts , kte )
+
+      IMPLICIT NONE
+
+      INTEGER , INTENT(IN) ::  ids , ide , jds , jde , kds , kde , &
+                               ims , ime , jms , jme , kms , kme , &
+                               its , ite , jts , jte , kts , kte
+
+      REAL , INTENT(IN) :: fft_filter_lat , dummy
       REAL , DIMENSION(ims:ime,jms:jme) , INTENT(INOUT) :: ht_in
       REAL , DIMENSION(ims:ime,jms:jme) , INTENT(IN) :: xlat , msftx
 
@@ -6849,7 +7139,7 @@ end do
          END DO
       END DO
 
-   END SUBROUTINE filter_topo
+   END SUBROUTINE filter_topo_old
 
 !---------------------------------------------------------------------
 

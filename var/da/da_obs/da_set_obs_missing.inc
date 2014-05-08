@@ -84,6 +84,7 @@ subroutine da_set_obs_missing (iv, n)
             iv%airep(i)%u(:) = field_type(missing_r, missing_data, xmiss, missing_r, missing_r)
             iv%airep(i)%v(:) = field_type(missing_r, missing_data, xmiss, missing_r, missing_r)
             iv%airep(i)%t(:) = field_type(missing_r, missing_data, xmiss, missing_r, missing_r)
+            iv%airep(i)%q(:) = field_type(missing_r, missing_data, xmiss, missing_r, missing_r)
          end if
       end do
    case(gpspw)

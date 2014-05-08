@@ -97,11 +97,6 @@
 !
       USE MODULE_EXT_INTERNAL
 !
-#ifdef WRF_CHEM
-   USE MODULE_AEROSOLS_SORGAM, ONLY: SUM_PM_SORGAM
-   USE MODULE_GOCART_AEROSOLS, ONLY: SUM_PM_GOCART
-   USE MODULE_MOSAIC_DRIVER, ONLY: SUM_PM_MOSAIC
-#endif
 
 !
 !----------------------------------------------------------------------
@@ -119,10 +114,6 @@
 !
       TYPE(GRID_CONFIG_REC_TYPE) :: CONFIG_FLAGS
 !
-#ifdef WRF_CHEM
-   REAL        RGASUNIV ! universal gas constant [ J/mol-K ]
-   PARAMETER ( RGASUNIV = 8.314510 )
-#endif
 !
 !***
 !***  LOCAL DATA
@@ -218,9 +209,7 @@
       REAL,ALLOCATABLE,DIMENSION(:,:,:) :: T_TRANS,PINT_TRANS
       REAL,ALLOCATABLE,DIMENSION(:,:,:) :: CLDFRA_TRANS
       REAL,DIMENSION(:,:,:,:),ALLOCATABLE :: SCALAR_TRANS
-#ifndef WRF_CHEM
       REAL,ALLOCATABLE,DIMENSION(:,:,:) :: CLDFRA_OLD
-#endif
 !..Need to fill special height var for setting up initial condition.  G. Thompson
       REAL,ALLOCATABLE,DIMENSION(:,:,:) :: z_at_q
 
@@ -1847,9 +1836,7 @@
       ALLOCATE(RRI(IMS:IME,KMS:KME,JMS:JME),STAT=I)         ;  RRI = 0.
       ALLOCATE(CLDFRA_TRANS(IMS:IME,KMS:KME,JMS:JME),STAT=I); CLDFRA_TRANS = 0.
       ALLOCATE(SCALAR_TRANS(IMS:IME,KMS:KME,JMS:JME,NUM_SCALAR),STAT=I)
-#ifndef WRF_CHEM      
       ALLOCATE(CLDFRA_OLD(IMS:IME,KMS:KME,JMS:JME),STAT=I)  ; CLDFRA_OLD = 0.
-#endif
       ALLOCATE(Z_AT_Q(IMS:IME,KMS:KME,JMS:JME),STAT=I)      ; z_at_q = 0.
 #if 0
       ALLOCATE(w0avg(IMS:IME,KMS:KME,JMS:JME),STAT=I)       ; w0avg = 0.
@@ -2090,7 +2077,8 @@
      &                h2osoi_liq3d=grid%h2osoi_liq3d, h2osoi_vol3d=grid%h2osoi_vol3d, z3d=grid%z3d, dz3d=grid%dz3d,                                 & !lake
      &                zi3d=grid%zi3d, watsat3d=grid%watsat3d, csol3d=grid%csol3d, tkmg3d=grid%tkmg3d,                                               & !lake
      &                tkdry3d=grid%tkdry3d, tksatu3d=grid%tksatu3d, lake2d=grid%lake2d,                                                             & !lake
-     &                domainlakedepth=config_flags%domain_lakedepth, lakeminalt=config_flags%lakeminalt, lake_depth=grid%lake_depth,               & !lake
+     &                lakedepth_default=config_flags%lakedepth_default, lake_min_elev=config_flags%lake_min_elev, lake_depth=grid%lake_depth,               & !lake
+     &                lake_depth_flag=grid%LAKE_DEPTH_FLAG, use_lakedepth=grid%use_lakedepth,                                                      & !lake
      &                sf_surface_mosaic=config_flags%sf_surface_mosaic, mosaic_cat=config_flags%mosaic_cat, nlcat=1,     & ! Noah tiling
      &                MAXPATCH=1 & ! CLM
      &                )
@@ -2325,101 +2313,7 @@
         ENDDO
         ENDDO
       ENDIF
-!following will need mods Sep06
 !
-#ifdef WRF_CHEM
-      DO J=JTS,JTE
-        JJ=MIN(JDE-1,J)
-        DO K=KTS,KTE-1
-          KK=MIN(KDE-1,K)
-          DO I=ITS,ITE
-            II=MIN(IDE-1,I)
-            CONVFAC(I,K,J) = grid%pint(II,JJ,KK)/RGASUNIV/grid%t(II,JJ,KK)
-          ENDDO
-        ENDDO
-      ENDDO
-      
-      DO J=JMS,JME
-        DO K=KMS,KME
-          DO I=IMS,IME
-            PINT_TRANS(I,K,J)=grid%pint(I,J,K)
-            T_TRANS(I,K,J)=grid%t(I,J,K)
-          ENDDO
-        ENDDO
-      ENDDO 
-      DO J=JMS,JME
-          DO I=IMS,IME
-           grid%xlat(i,j)=grid%glat(I,J)/DEGRAD
-           grid%xlong(I,J)=grid%glon(I,J)/DEGRAD
-
-          ENDDO
-        ENDDO
-!!!    write(0,*)'now do chem_init'
-       CALL CHEM_INIT (GRID%ID,CHEM,EMIS_ANT,scalar,GRID%DT,GRID%BIOEMDT,GRID%PHOTDT,GRID%CHEMDT, &
-               STEPBIOE,STEPPHOT,STEPCHEM,STEPFIREPL,GRID%PLUMERISEFIRE_FRQ,      &
-               ZINT,grid%xlat,grid%xlong,G,AERWRF,CONFIG_FLAGS,grid,       &
-               RRI,T_TRANS,PINT_TRANS,CONVFAC,                 &
-               grid%ttday,grid%tcosz,grid%julday,grid%gmt,                         &
-               GD_CLOUD,GD_CLOUD2,raincv_a,raincv_b,           &
-               GD_CLOUD_a,GD_CLOUD2_a,            &
-               GD_CLOUD_B,GD_CLOUD2_B,            &
-               TAUAER1,TAUAER2,TAUAER3,TAUAER4,                      &
-               GAER1,GAER2,GAER3,GAER4,                              &
-               WAER1,WAER2,WAER3,WAER4,                              &
-               l2AER,l3AER,l4AER,l5AER,l6aer,l7aer,                 &
-               PM2_5_DRY,PM2_5_WATER,PM2_5_DRY_EC,                  &
-               grid%last_chem_time_year,grid%last_chem_time_month,               &
-               grid%last_chem_time_day,grid%last_chem_time_hour,                 &
-               grid%last_chem_time_minute,grid%last_chem_time_second,            &
-               GRID%CHEM_IN_OPT,  &
-               GRID%KEMIT,                                           &
-               IDS , IDE , JDS , JDE , KDS , KDE ,                   &
-               IMS , IME , JMS , JME , KMS , KME ,                   &
-               ITS , ITE , JTS , JTE , KTS , KTE                     )
-
-!     
-! calculate initial pm
-!     
-        SELECT CASE (CONFIG_FLAGS%CHEM_OPT)
-        case (GOCART_SIMPLE,GOCARTRACM_KPP,GOCARTRADM2,GOCARTRADM2_KPP)
-           call sum_pm_gocart (                                             &
-                RRI, CHEM, PM2_5_DRY, PM2_5_DRY_EC,  PM10,                  &
-                IDS,IDE, JDS,JDE, KDS,KDE,                                  &
-                IMS,IME, JMS,JME, KMS,KME,                                  &
-                ITS,ITE, JTS,JTE, KTS,KTE-1                                 )
-        CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_AQCHEM,RADM2SORG_KPP,RACMSORG_AQ,RACMSORG_AQCHEM_KPP, &
-              RACM_ESRLSORG_AQCHEM_KPP,RACMSORG_KPP)
-!!!       write(0,*)'sum pm '
-           CALL SUM_PM_SORGAM (                                             &
-                RRI, CHEM, H2OAJ, H2OAI,                              &
-                PM2_5_DRY, PM2_5_WATER, PM2_5_DRY_EC, PM10,                 &
-                IDS,IDE, JDS,JDE, KDS,KDE,                                  &
-                IMS,IME, JMS,JME, KMS,KME,                                  &
-                ITS,ITE, JTS,JTE, KTS,KTE-1                                 )
-             
-        CASE (CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, &
-             CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ, &
-        	 CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP)
-           CALL SUM_PM_MOSAIC (                                             &
-                RRI, CHEM,                                            &
-                PM2_5_DRY, PM2_5_WATER, PM2_5_DRY_EC, PM10,                 &
-                IDS,IDE, JDS,JDE, KDS,KDE,                                  &
-                IMS,IME, JMS,JME, KMS,KME,                                  &
-                ITS,ITE, JTS,JTE, KTS,KTE-1                                 )
-             
-        CASE DEFAULT
-           DO J=JTS,MIN(JTE,JDE-1)
-              DO K=KTS,MIN(KTE,KDE-1)
-                 DO I=ITS,MIN(ITE,IDE-1)
-                    PM2_5_DRY(I,K,J)    = 0.
-                    PM2_5_WATER(I,K,J)  = 0.
-                    PM2_5_DRY_EC(I,K,J) = 0.
-                    PM10(I,K,J)         = 0.
-                 ENDDO
-              ENDDO
-           ENDDO
-        END SELECT
-#endif
       DEALLOCATE(SFULL)
       DEALLOCATE(SMID)
       DEALLOCATE(DZS)
@@ -2470,9 +2364,7 @@
       DEALLOCATE(PINT_TRANS)
       DEALLOCATE(T_TRANS)
       DEALLOCATE(CLDFRA_TRANS)
-#ifndef WRF_CHEM
       DEALLOCATE(CLDFRA_OLD)
-#endif
       DEALLOCATE(Z_AT_Q)
 #if 0
       DEALLOCATE(w0avg)

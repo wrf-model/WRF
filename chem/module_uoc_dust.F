@@ -11,6 +11,9 @@ MODULE uoc_dust
   USE module_data_gocart_dust
   USE qf03
   USE module_soilpsd
+  USE module_sf_noahlsm, ONLY:DRYSMC
+  USE module_sf_noahmplsm, ONLY: DRYSMC_nmp => DRYSMC
+  USE module_sf_ruclsm,  ONLY:DRYSMC_ruc => DRYSMC
   
   CONTAINS
   subroutine uoc_dust_driver(ktau,dt,config_flags,                         &
@@ -82,6 +85,9 @@ MODULE uoc_dust
   integer domsoilc
   integer cc
   character*1 :: tmp
+  real, dimension(12) :: thr      
+  data thr/0.001, 0.003, 0.037, 0.061, 0.072, 0.049, 0.084, 0.110, 0.095, 0.126, 0.141, 0.156/
+! Shao's air-dry soil moisture [m3/m3] in WRF order
 
 !***************************************************************************
 ! initialization
@@ -153,7 +159,7 @@ MODULE uoc_dust
   do i=its,ite
 
 ! do dust over dust source area only
-    if (erod(i,j,3).gt.0.02) then    !use fraction of erodible surface area as dust source indicator    
+    if (sum(erod(i,j,:)).gt.0.) then    !use fraction of erodible surface area as dust source indicator    
         tc(1)=chem(i,kts,j,p_dust_1)*conver   ![kg/kg-dryair]
         tc(2)=chem(i,kts,j,p_dust_2)*conver
         tc(3)=chem(i,kts,j,p_dust_3)*conver
@@ -184,12 +190,24 @@ MODULE uoc_dust
 
 !          domsoilc = texture(i,j)
          domsoilc = isltyp(i,j)
+         if (  config_flags%sf_surface_physics .eq. 3   ) then
+             DRYSMC = DRYSMC_ruc    ! RUC
+         elseif (  config_flags%sf_surface_physics .eq. 4   ) then
+             DRYSMC = DRYSMC_nmp    ! Noah MP                     
+         elseif ( config_flags%sf_surface_physics .eq. 1 .or. & 
+         &        config_flags%sf_surface_physics .eq. 5 .or. & 
+         &        config_flags%sf_surface_physics .eq. 7 .or. & 
+         &        config_flags%sf_surface_physics .eq. 8 .or. & 
+         &        config_flags%sf_surface_physics .eq. 0) then 
+             DRYSMC(1:12) = thr             
+             CALL wrf_message('UoC dust: DRYSMC reset for dust emission')
+         endif                 
 !------------------------------------------------------------------------
 
          call qf03_driver( nmx, idst, g, airden, dt, &
                   ust_grid, gwet, cf, ust_min, imod, dz_lowest, &
                   soilc, tot_soilc, domsoilc, &
-                  tc, bems, rough_cor_in, smois_cor_in, & 
+                  tc, bems, rough_cor_in, smois_cor_in, DRYSMC(1:12),    &
                   d0, dd, psd_m, dpsd_m, ppsd_m, psd_f, dpsd_f, ppsd_f, imax, stype)
 
         chem(i,kts,j,p_dust_1)=tc(1)*converi   ![ug/kg-dryair]

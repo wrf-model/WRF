@@ -113,13 +113,14 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
 
 
 ! Other work variables
-  integer(i_kind)  :: nreal, nobs(0:num_fgat_time), ityp,ityp2
+  integer(i_kind)  :: nreal
   integer(i_kind)  :: k, iobsout
   integer(i_kind),dimension(19)::icount
   real(r_kind)     :: rlat, rlon, dx, dy, dx1, dy1, sstx, dlon, dlat
   real(r_kind)     :: sza, timedif, pred, crit1
   integer(i_kind)  :: klat1, klon1, klatp1, klonp1
   integer(i_kind)  :: ifov,size
+  integer(i_kind)  :: num_eos_file, num_eos_global, num_eos_local, num_eos_kept, num_eos_thinned
   integer(i_kind)  :: inst,platform_id,satellite_id,sensor_id
   logical          :: iflag,outside,outside_all
   integer(i_kind)  :: i, l, n, error, airs_table_unit
@@ -128,7 +129,8 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
   real(kind=8)     :: tocc(1,1)
   integer          ::num_bufr(7),numbufr,ibufr
   character(20)    ::filename
-  
+  integer(i_kind), allocatable :: ptotal(:)
+
 ! Set standard parameters
   real(r_kind)     :: POinT001 =   0.001_r_kind
   real(r_kind)     :: POinT01  =   0.01_r_kind
@@ -159,7 +161,8 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
   platform_id  = 9   ! eos series
   satellite_id = 2   ! eos-2
   nreal  = maxinfo
-  nobs(:)  = 0
+  allocate(ptotal(0:num_fgat_time))
+  ptotal(0:num_fgat_time) = 0
   airs=      obstype == 'airs     '
   eos_amsua= obstype == 'eos_amsua'
   hsb=       obstype == 'hsb      '
@@ -203,6 +206,11 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
           .or. satellite_id /= rtminit_satid(inst) &
           .or. sensor_id /= rtminit_sensor(inst)  ) return
 
+  num_eos_file    = 0  ! number of obs in file
+  num_eos_global  = 0  ! number of obs within whole domain
+  num_eos_local   = 0  ! number of obs within tile
+  num_eos_kept    = 0  ! number of obs kept for innovation computation
+  num_eos_thinned = 0  ! number of obs rejected by thinning
   size = 0     !
   iobs = 0     ! for thinning, argument is inout
 
@@ -292,9 +300,9 @@ bufrfile:  do ibufr=1,numbufr
 
   write(unit=date,fmt='( i10)') idate
   read(unit=date,fmt='(i4,3i2)') iy,im,idd,ihh
-  write(unit=stdout,fmt=*) &
-      'Bufr file date is ',iy,im,idd,ihh,infile
-  
+  write(unit=stdout,fmt='(a,4i4,2x,a)') &
+      'Bufr file date is ',iy,im,idd,ihh,trim(infile)
+
 !   3.0 Loop over observations
 !----------------------------
      if ( ibufr == 1 ) then
@@ -315,7 +323,9 @@ bufrfile:  do ibufr=1,numbufr
         if( iret /= 0 ) exit loop_obspoints     ! end of file
         cycle loop_obspoints
      end if
-  
+
+     num_eos_file = num_eos_file + 1
+
 !   3.2 Read AQUASPOT (SPITSEQN)
 !------------------------
      call ufbseq(lnbufr,aquaspot_list_array,N_AQUASPOT_LIST,1,iret,'SPITSEQN')
@@ -395,7 +405,8 @@ bufrfile:  do ibufr=1,numbufr
         info%lat  = airsspot%clath
         info%lon  = airsspot%clonh 
         call da_llxy (info, loc, outside, outside_all )
-        if (outside) cycle loop_obspoints
+
+        if ( outside_all ) cycle loop_obspoints
 	
 !  4.1  Check obs time
 !-------------------------------------
@@ -437,29 +448,19 @@ bufrfile:  do ibufr=1,numbufr
                 obs_time  < time_slots(ifgat) ) exit
        end do
 
+       num_eos_global = num_eos_global + 1
+       ptotal(ifgat) = ptotal(ifgat) + 1
+
+       if (outside) cycle loop_obspoints
+
+       num_eos_local = num_eos_local + 1
+
        write(unit=info%date_char, &
          fmt='(i4.4,a,i2.2,a,i2.2,a,i2.2,a,i2.2,a,i2.2)')  &
          idate5(1), '-', idate5(2), '-', idate5(3), '_', idate5(4), &
          ':', idate5(5), ':', idate5(6)
 
        info%elv = 0.0  !aquaspot%selv
-
-!  4.1 Make Thinning
-!  Map obs to thinning grid
-!-------------------------------------------------------------------
-       if (thinning) then
-          dlat_earth = info%lat
-          dlon_earth = info%lon
-          if (dlon_earth<zero) dlon_earth = dlon_earth+r360
-          if (dlon_earth>=r360) dlon_earth = dlon_earth-r360
-          dlat_earth = dlat_earth*deg2rad
-          dlon_earth = dlon_earth*deg2rad           
-          crit = 1.0 ! 0.01_r_kind+terrain + timedif !+ 10.0_r_kind*float(iskip)
-	  if (airs_warmest_fov) &
-	     crit = 1E10 * exp(-(airschan(129)%tmbrst-220.0)/2)   ! warmest bt for window channel (10.36 micron)
-          call map2grids(inst,ifgat,dlat_earth,dlon_earth,crit,iobs,itx,1,itt,iout,luse)
-          if (.not. luse) cycle loop_obspoints
-       end if
 
 !  4.2  Check observational info
 !-------------------------------------------------------
@@ -486,6 +487,26 @@ bufrfile:  do ibufr=1,numbufr
 !     airdata(9) = ZERO                          ! surface height
 !     airdata(10)= POinT001                      ! land sea mask
 
+!  4.1 Make Thinning
+!  Map obs to thinning grid
+!-------------------------------------------------------------------
+       if (thinning) then
+          dlat_earth = info%lat
+          dlon_earth = info%lon
+          if (dlon_earth<zero) dlon_earth = dlon_earth+r360
+          if (dlon_earth>=r360) dlon_earth = dlon_earth-r360
+          dlat_earth = dlat_earth*deg2rad
+          dlon_earth = dlon_earth*deg2rad
+          crit = 1.0 ! 0.01_r_kind+terrain + timedif !+ 10.0_r_kind*float(iskip)
+          if (airs_warmest_fov) &
+             crit = 1E10 * exp(-(airschan(129)%tmbrst-220.0)/2)   ! warmest bt for window channel (10.36 micron)
+          call map2grids(inst,ifgat,dlat_earth,dlon_earth,crit,iobs,itx,1,itt,iout,luse)
+          if (.not. luse) then
+             num_eos_thinned = num_eos_thinned + 1
+             cycle loop_obspoints
+          end if
+       end if
+
 
 !   4.3 Retrieve Tb
 !-----------------------
@@ -505,10 +526,11 @@ bufrfile:  do ibufr=1,numbufr
           'Error in reading ', channame, ' bufr data:', &
           ' all tb data is missing'
         call da_warning(__FILE__,__LINE__,message(1:1))
+        num_eos_local = num_eos_local - 1
         cycle loop_obspoints
      end if
 
-     nobs(ifgat) = nobs(ifgat) + 1
+     num_eos_kept = num_eos_kept + 1
 
 !  4.0   assign information to sequential radiance structure
 !--------------------------------------------------------------------------
@@ -543,7 +565,7 @@ bufrfile:  do ibufr=1,numbufr
 
 end do bufrfile
 
-   if (thinning) then
+   if (thinning .and. num_eos_global > 0) then
 
 #ifdef DM_PARALLEL
          
@@ -616,6 +638,8 @@ end do bufrfile
                endif
                deallocate ( current % tb_inv )
                deallocate ( current )
+               num_eos_thinned = num_eos_thinned + 1
+               num_eos_kept = num_eos_kept - 1
                size = size - 1
                continue
             endif
@@ -641,14 +665,17 @@ end do bufrfile
    iv%total_rad_channel = iv%total_rad_channel + size*nchan
 
    iv%info(radiance)%nlocal = iv%info(radiance)%nlocal + size
-   iv%info(radiance)%ntotal = iv%info(radiance)%ntotal + size
+   iv%info(radiance)%ntotal = iv%info(radiance)%ntotal + num_eos_global
    iv%instid(inst)%info%nlocal = size
    
    do ifgat = 1, num_fgat_time
-      nobs(ifgat) = nobs(ifgat) + nobs(ifgat-1) 
-      iv%info(radiance)%ptotal(ifgat) = iv%info(radiance)%ptotal(ifgat) + nobs(ifgat) 
+      ptotal(ifgat) = ptotal(ifgat) + ptotal(ifgat-1)
+      iv%info(radiance)%ptotal(ifgat) = iv%info(radiance)%ptotal(ifgat) + ptotal(ifgat)
    end do
    
+   write(unit=stdout,fmt='(a)') '   num_eos_file num_eos_global  num_eos_local   num_eos_kept num_eos_thinned'
+   write(unit=stdout,fmt='(5(5x,i10))') num_eos_file,num_eos_global, num_eos_local,num_eos_kept,num_eos_thinned
+
 !  5.0 allocate innovation radiance structure
 !----------------------------------------------------------------
 !  do i = 1, iv%num_inst
@@ -683,6 +710,9 @@ end do bufrfile
    deallocate ( current )
 
  end do
+
+ deallocate (p)
+ deallocate (ptotal)
 
 1000 continue
    call closbf(lnbufr)

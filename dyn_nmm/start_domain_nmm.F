@@ -64,6 +64,7 @@
 !
 #ifdef HWRF
       USE MODULE_STATS_FOR_MOVE, only: vorttrak_init
+      USE MODULE_SWATH, only: init_swath
 #endif
       USE MODULE_TIMING
 #ifdef HWRF
@@ -102,6 +103,7 @@
    USE MODULE_GOCART_AEROSOLS, ONLY: SUM_PM_GOCART
    USE MODULE_MOSAIC_DRIVER, ONLY: SUM_PM_MOSAIC
 #endif
+   USE module_tornado_genesis, only: init_tornado_genesis
 
 !
 !----------------------------------------------------------------------
@@ -171,7 +173,7 @@
 !
 !!!   REAL :: BLDT,CWML,EXNSFC,G_INV,PLYR,PSFC,ROG,SFCZ,THSIJ,TL
       REAL :: CWML,EXNSFC,G_INV,PLYR,PSURF,ROG,SFCZ,THSIJ,TL,ZOQING
-      REAL :: TEND
+      REAL :: TEND, TEMPDX,TEMPDY
       REAL :: TEMPDX, TEMPDY
 #ifdef HWRF
 !zhang's doing 
@@ -364,7 +366,6 @@
       write(message,3011) grid%id,tempdx,tempdy,grid%wbd0var,grid%sbd0var
       call wrf_debug(2,message)
 3011  format('Grid ',I0,': dx=',F0.3,' dy=',F0.3,' wbd0=',F0.3,' sbd0=',F0.3)
-
 #if 1
       IF(IME>NMM_MAX_DIM )THEN
         WRITE(wrf_err_message,*)                                       &
@@ -648,7 +649,10 @@
 #ifdef HWRF
       if(allowed_to_read .and. config_flags%high_freq) then
         if(grid%id==config_flags%high_dom) then
+           ! Open HTCF LUN:
            call HIFREQ_OPEN(grid,config_flags)
+           ! Open per-nest-move ATCF LUN:
+           call HIFREQ_OPEN(grid,config_flags,atcf=.true.)
         elseif(config_flags%high_dom==-99) then
           nestless=.true.
            CALL nl_get_max_dom( 1, max_dom )
@@ -664,7 +668,10 @@
               endif
            enddo nestdo
            if(nestless) then
-              call HIFREQ_OPEN(grid,config_flags)
+              ! Open HTCF LUN:
+               call HIFREQ_OPEN(grid,config_flags)
+              ! Open per-nest-move ATCF LUN:
+              call HIFREQ_OPEN(grid,config_flags,atcf=.true.)
            endif
         else
            write(message,'("Domain ",I0," does not have hifreq out.")') grid%id
@@ -674,6 +681,13 @@
       endif
 ! end of high-freq output
 #endif
+
+! Begin Sam Trahan's doing for Tornado Genesis (SPC) products
+      if(anal .or. (allowed_to_read .and. .not. restrt)) then
+         call init_tornado_genesis(grid,config_flags)
+      endif
+! End Sam Trahan's doing for Tornado Genesis (SPC) products
+
 #ifdef HWRF
 ! Begin Sam Trahan's doing for vortex tracker initialization
     IF ( program_name(1:8) .NE. "REAL_NMM" ) THEN
@@ -682,7 +696,12 @@
                             IDS,IDE,JDS,JDE,KDS,KDE, &
                             IMS,IME,JMS,JME,KMS,KME, &
                             ITS,ITE,JTS,JTE,KTS,KTE)
-      ENDIF
+         call init_swath(grid, config_flags, &
+              (allowed_to_read .and. .not. restrt) )
+    ENDIF
+    IF(ANAL .or. allowed_to_read) THEN
+       grid%update_interest=.true.
+    ENDIF
 ! End Sam Trahan's doing for vortex tracker initialization
 #endif
 #ifdef HWRF

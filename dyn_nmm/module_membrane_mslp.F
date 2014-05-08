@@ -18,8 +18,9 @@ module module_membrane_mslp
        62500., 65000., 67500., 70000., 72500., 75000., 77500., 80000., &
        82500., 85000., 87500., 90000., 92500., 95000., 97500.,100000./)
 
-  ! index within post_stdpres of the 850mbar and 700mbar levels, respectively:
-  integer, parameter :: k850 = 27, k700=21
+  ! index within post_stdpres of the 850mbar, 700mbar and 500mbar
+  ! levels, respectively:
+  integer, parameter :: k850 = 27, k700=21, k500=13
 
   ! Pressure "interface" levels, used only for interpolation.  These
   ! are half-way between pressure levels (post_stdpres) in pressure
@@ -264,7 +265,9 @@ contains
        IMS,IME,JMS,JME,KMS,KME, &
        IPS,IPE,JPS,JPE,KPS,KPE)
     USE MODULE_DOMAIN, ONLY : domain
-
+#ifdef DM_PARALLEL
+    use module_dm, only: wrf_dm_maxval_integer
+#endif
     implicit none
 
     type(domain), intent(inout) :: grid
@@ -283,14 +286,17 @@ contains
     integer :: i,j,ks,a,kd,k
     real :: weight, TL,QL,PL, tempT, RHL, TVRL, TVRBLO, TBLO,QBLO
 
-    integer,target, dimension(ips:ipe,jps:jpe) :: ks850,ks700
+    integer,target, dimension(ips:ipe,jps:jpe) :: ks850,ks700,ks500
+    real, target,dimension(ips:ipe,jps:jpe) :: dummy1,dummy2
     integer, pointer, dimension(:,:) :: ksX
-
-    real, pointer, dimension(:,:) :: preswind,presrv
+    integer :: nanfound
+    real, pointer, dimension(:,:) :: preswind,presrv,presu,presv
 
     real :: Pmass(ips:ipe,jps:jpe,kds:kde)
     real :: numsum,densum,modelP1,modelP2,pdiff,presQ,presT,ZL,QSAT, U1, V1, U2, V2, dudy1,dvdx1, dudy2,dvdx2
-
+    character*255 :: message
+    logical :: wantuv
+    
     ! ks: k in source (model level) array
     ! kd: k in destination (pressure level) array
     ground_level=0
@@ -301,6 +307,7 @@ contains
 
     ks850=0
     ks700=0
+    ks500=0
 
     ! Interpolate geopotential height to post_stdpres pressure levels
     ! and create a temporary array with non-hydrostatic pressure
@@ -337,6 +344,8 @@ contains
                       ks850(i,j)=ks
                    elseif(kd==k700) then
                       ks700(i,j)=ks
+                   elseif(kd==k500) then
+                      ks500(i,j)=ks
                    endif
 
 103                format('interp ks=',I0,' kd=',I0,' presT(i=',I0,',j=',I0,',kd)=',F0.3, &
@@ -387,22 +396,51 @@ contains
       end do iTQ2
    end do
 
-   ifwind: if(size(grid%p700rv)>1) then
+1234 format('grid ',I0,': size(',A,') = ',I0)
+   write(message,1234) grid%id,'grid%p700rv',size(grid%p700rv)
+   call wrf_message(trim(message))
+   write(message,1234) grid%id,'grid%p700u',size(grid%p700u)
+   call wrf_message(trim(message))
+
+   wantuv=(grid%vortex_tracker == 7) ! do I need to calc. presu & presv?
+
+   ifwind: if(size(grid%p700rv)>1 .or. size(grid%p700u)>1) then
     ! Interpolate wind to H points on pressure levels, calculating
     ! horizontal wind vector magnitude and vertical component of
-    ! vorticity.  Interpolate only to 700 and 850 mbar.
-    windloop: do k=1,2
-       if(k==1) then
+    ! vorticity.  Interpolate only to 700 and 850 mbar, except for U &
+    ! V which are also interpolated to 500mbar.
+    nullify(presu)
+    nullify(presv)
+    windloop: do k=0,2
+       if(k==0) then
+          ! Only need wind components at 500 mbar
+          kd=k500
+          ksX=>ks500
+          preswind=>dummy1
+          presrv=>dummy2
+          if(wantuv) then
+             presu=>grid%p500u
+             presv=>grid%p500v
+          endif
+       elseif(k==1) then
           ksX=>ks700
           preswind=>grid%p700wind
           presrv=>grid%p700rv
           kd=k700
+          if(wantuv) then
+             presu=>grid%p700u
+             presv=>grid%p700v
+          endif
        elseif(k==2) then
           ksX=>ks850
           kd=k850
           preswind=>grid%p850wind
           presrv=>grid%p850rv 
-      endif
+          if(wantuv) then
+             presu=>grid%p850u
+             presv=>grid%p850v
+          endif
+       endif
 
       ! No wind on boundaries:
       if(jps<=jds) then
@@ -410,24 +448,48 @@ contains
             preswind(i,jds)=0
             presrv(i,jds)=0
          enddo
+         if(wantuv) then
+            do i=ips,min(ide-1,ipe)
+               presu(i,jds)=0
+               presv(i,jds)=0
+            enddo
+         endif
       endif
       if(jpe>=jde-1) then
          do i=ips,min(ide-1,ipe)
             preswind(i,jde-1)=0
             presrv(i,jde-1)=0
          enddo
+         if(wantuv) then
+            do i=ips,min(ide-1,ipe)
+               presu(i,jde-1)=0
+               presv(i,jde-1)=0
+            enddo
+         endif
       endif
       if(ips<=ids) then
          do j=jps,min(jde-1,jpe)
             preswind(ids,j)=0
             presrv(ids,j)=0
          enddo
+         if(wantuv) then
+            do j=jps,min(jde-1,jpe)
+               presu(ids,j)=0
+               presv(ids,j)=0
+            enddo
+         endif
       endif
       if(ipe>=ide-1) then
          do j=jps,min(jde-1,jpe)
             preswind(ide-1,j)=0
             presrv(ide-1,j)=0
          enddo
+         if(wantuv) then
+            do j=jps,min(jde-1,jpe)
+               presu(ide-1,j)=0
+               presv(ide-1,j)=0
+            enddo
+         endif
       endif
 
       ! Interpolate winds:
@@ -448,7 +510,11 @@ contains
                dudy1 = (grid%u(i,j+1,ks)-grid%u(i,j-1,ks))/(2.*grid%dy_nmm)
                dvdx2 = (grid%v(i+1-a,j,ks-1)-grid%v(i-a,j,ks-1))/(2.*grid%dx_nmm(i,j))
                dudy2 = (grid%u(i,j+1,ks-1)-grid%u(i,j-1,ks-1))/(2.*grid%dy_nmm)
-               
+
+               if(wantuv) then
+                  presu(i,j)=weight*u2+(1.-weight)*u1
+                  presv(i,j)=weight*v2+(1.-weight)*v1
+               endif
                preswind(i,j)=weight*sqrt(u2*u2+v2*v2) + (1.-weight)*sqrt(u1*u1+v1*v1)
                presrv(i,j)=(dvdx2-dudy2)*weight + (dvdx1-dudy1)*(1.-weight)
             elseif(post_stdpres(kd)>=Pmass(i,j,kds)) then
@@ -462,6 +528,10 @@ contains
 
                preswind(i,j)=sqrt(u1*u1 + v1*v1)
                presrv(i,j)=dvdx1-dudy1
+               if(wantuv) then
+                  presu(i,j)=u1
+                  presv(i,j)=v1
+               endif
             endif
          end do
       end do
@@ -469,6 +539,7 @@ contains
 
    ! Calculate 10m wind magnitude and vorticity
    ! NOTE: u10 and v10 are already on H points
+   nanfound=0
    do j=max(jps,jds+1),min(jpe,jde-2)
       a=mod(j,2)
       do i=max(ips,ids+1),min(ipe,ide-2)
@@ -478,8 +549,27 @@ contains
          dudy1 = 0.5*(grid%u10(i-a,j+1)-grid%u10(i-a,j-1) + &
                      grid%u10(i-a+1,j+1)-grid%u10(i-a+1,j-1)) / (2*grid%dy_nmm)
          grid%m10rv(i,j) = dvdx1 - dudy1
+         if(grid%m10rv(i,j) == grid%m10rv(i,j)) then
+            call wrf_debug(1000,'FIXME: REMOVE THIS CHECK')
+         else
+3088        format('NaN m10rv at i=',I0,' j=',I0,': a=',I0,' dx=',F0.3,' dy=',F0.3)
+            write(message,3088) i,j,a,grid%dx_nmm(i,j),grid%dy_nmm
+            call wrf_message2(trim(message))
+3089        format('NaN m10rv at i=',I0,' j=',I0,': dvdx1=',F0.5,' dudy=',F0.5)
+            write(message,3089) i,j,dvdx1,dudy1
+            call wrf_message2(trim(message))
+            nanfound=1
+         endif
       enddo
    enddo
+#ifdef DM_PARALLEL
+   call wrf_dm_maxval_integer(nanfound,i,j)
+#endif
+   if(nanfound/=0) then
+      call wrf_error_fatal('ERROR: NaN m10rv seen; aborting.')
+   endif
+  elseif(grid%id==3) then
+     call wrf_error_fatal('ERROR: NOT INTERPOLATING WIND')
   endif ifwind
 
     do j=jps,min(jde-1,jpe)

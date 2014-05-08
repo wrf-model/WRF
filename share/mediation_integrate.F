@@ -1591,6 +1591,20 @@ SUBROUTINE med_hist_out ( grid , stream, config_flags )
      CALL wrf_error_fatal( message )
    ENDIF
 
+#ifdef HWRF
+       ! HWRF special: auxhist2 and auxhist3 are duplicates of
+       ! history (0), so there is no point in outputting more than one of
+       ! them at the same time.  Prefer 0 over 2, and 2 over 3:
+      if ( (stream==HISTORY_ALARM .or. stream==AUXHIST2_ALARM) .and. &
+           WRFU_AlarmIsRinging( grid%alarms(AUXHIST3_ALARM) ) ) then
+         CALL WRFU_AlarmRingerOff(grid%alarms(AUXHIST3_ALARM))
+      endif
+      if ( stream==HISTORY_ALARM .and. &
+           WRFU_AlarmIsRinging( grid%alarms(AUXHIST2_ALARM) ) ) then
+         CALL WRFU_AlarmRingerOff(grid%alarms(AUXHIST2_ALARM))
+      endif
+#endif
+
    SELECT CASE( stream )
      CASE ( HISTORY_ALARM )
        CALL open_hist_w( grid, config_flags, stream, HISTORY_ALARM, &
@@ -1623,6 +1637,11 @@ SUBROUTINE med_hist_out ( grid , stream, config_flags )
      WRITE ( message , FMT = '("Writing ",A30," for domain ",I8)' )TRIM(fname),grid%id
      CALL end_timing ( TRIM(message) )
    END IF
+
+#if (NMM_CORE == 1)
+   ! Reset tornado genesis fields after output:
+   call nmm_request_tg_reset(grid,config_flags,stream)
+#endif
 
    RETURN
 END SUBROUTINE med_hist_out
@@ -2021,7 +2040,6 @@ SUBROUTINE open_hist_w ( grid , config_flags, stream, alarm_id, &
    USE module_configure	, ONLY : grid_config_rec_type
 !   USE module_bc_time_utilities
    USE module_utility
-
    IMPLICIT NONE
   ! Arguments
    TYPE(domain)                                :: grid
@@ -2057,7 +2075,7 @@ SUBROUTINE open_hist_w ( grid , config_flags, stream, alarm_id, &
    ENDIF
    CALL construct_filename2a ( fname , hist_outname, &
                                grid%id , 2 , timestr )
-   IF ( stream-first_history .EQ. history_only ) THEN
+   IF ( stream .EQ. history_only ) THEN
      WRITE(n2,'("DATASET=HISTORY")')
    ELSE IF ( stream-first_history .GE. 10 ) THEN
      WRITE(n2,'("DATASET=AUXHIST",I2)')stream-first_history
@@ -2083,6 +2101,7 @@ SUBROUTINE open_hist_w ( grid , config_flags, stream, alarm_id, &
        TRIM ( fname ), ierr
      CALL wrf_message( message )
    ENDIF
+
    RETURN
 END SUBROUTINE open_hist_w
 

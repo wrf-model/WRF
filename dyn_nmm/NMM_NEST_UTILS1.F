@@ -80,9 +80,13 @@ SUBROUTINE med_nest_egrid_configure ( parent , nest )
     if (parent%parent_id == 0 ) then        ! Dusan's doing
        parent%wbd0 = -(IDE-2)*parent%dx     ! WBD0: in degrees;factor 2 takes care of dummy last column
        parent%sbd0 = -((JDE-1)/2)*parent%dy ! SBD0: in degrees; note that JDE-1 should be odd  
+       parent%wbd0var = parent%wbd0
+       parent%sbd0var = parent%sbd0
     end if
     nest%wbd0   = parent%wbd0 + (nest%i_parent_start-1)*2.*parent%dx + mod(nest%j_parent_start+1,2)*parent%dx
     nest%sbd0   = parent%sbd0 + (nest%j_parent_start-1)*parent%dy
+    nest%wbd0var = nest%wbd0
+    nest%sbd0var = nest%sbd0
     nest%dx     = parent%dx/nest%parent_grid_ratio
     nest%dy     = parent%dy/nest%parent_grid_ratio
 

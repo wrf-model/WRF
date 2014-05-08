@@ -2,6 +2,9 @@
 !WRF:MEDIATION_LAYER:NESTING
 !
 SUBROUTINE med_force_domain ( parent_grid , nested_grid )
+#ifdef NMM_FIND_LOAD_IMBALANCE
+   USE module_timing, only: now_time
+#endif
    USE module_domain
    USE module_configure
    USE module_intermediate_nmm
@@ -9,6 +12,11 @@ SUBROUTINE med_force_domain ( parent_grid , nested_grid )
    TYPE(domain), POINTER :: parent_grid , nested_grid
    TYPE(domain), POINTER :: grid
    INTEGER nlev, msize
+#ifdef NMM_FIND_LOAD_IMBALANCE
+   REAL(kind=8), save :: total_time(40)=0
+   REAL(kind=8) :: this_time
+   character*255 :: message
+#endif
 #if !defined(MAC_KLUDGE)
    TYPE (grid_config_rec_type)            :: config_flags
 #endif
@@ -131,11 +139,13 @@ SUBROUTINE med_force_domain ( parent_grid , nested_grid )
 ! ----------------------------------------------------------
 ! End of Interface blocks
 ! ----------------------------------------------------------
-
 ! ----------------------------------------------------------
 ! ----------------------------------------------------------
 ! Executable code
 ! ----------------------------------------------------------
+#ifdef NMM_FIND_LOAD_IMBALANCE
+this_time=now_time()
+#endif
 ! ----------------------------------------------------------
 !    Forcing calls for EM CORE.
 ! ----------------------------------------------------------
@@ -333,6 +343,13 @@ SUBROUTINE med_force_domain ( parent_grid , nested_grid )
 ! ------------------------------------------------------
 !    End of Forcing calls for COAMPS.
 ! ------------------------------------------------------
+#ifdef NMM_FIND_LOAD_IMBALANCE
+   this_time=now_time()-this_time
+   total_time(parent_grid%id)=total_time(parent_grid%id)+this_time
+30 format('med_force_domain for grid ',I0,' to grid ',I0,': ',F12.6,'s; running total: ',F12.6,'s')
+   write(message,30) parent_grid%id,nested_grid%id,this_time,total_time(parent_grid%id)
+   call wrf_debug(1,message)
+#endif
    RETURN
 END SUBROUTINE med_force_domain
 

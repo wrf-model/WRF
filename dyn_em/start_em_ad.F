@@ -56,7 +56,7 @@
    INTEGER     :: i_m
 
    REAL        :: p00, t00, a, tiso, p_surf, pd_surf, temp, tiso_tmp
-   EAL        :: p_strat, a_strat
+   REAL        :: p_strat, a_strat
    REAL :: qvf1, qvf2, qvf, a_qvf
    REAL :: pfu, pfd, phm, a_pfu, a_pfd, a_phm
    REAL :: MPDT

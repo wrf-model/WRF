@@ -649,6 +649,7 @@ CONTAINS
    LOGICAL :: usemonalb
    LOGICAL :: rdmaxalb
    INTEGER :: mfshconv
+   INTEGER :: icloud_cu
    INTEGER :: iopt_run
 
    INTEGER :: i, j, k, itf, jtf, ktf, n
@@ -869,16 +870,17 @@ integer myproc
 
 !..Determine which cu_rad_feedback option to use 
 
-   config_flags%icloud_cu = 0
+   icloud_cu = 0
    IF ( config_flags%cu_rad_feedback ) THEN  
       IF ( config_flags%cu_physics == kfetascheme ) THEN
-         config_flags%icloud_cu = 2
+         icloud_cu = 2
       ELSE IF ( config_flags%cu_physics == gfscheme .OR. &
                 config_flags%cu_physics == g3scheme .OR. &
                 config_flags%cu_physics == gdscheme ) THEN
-         config_flags%icloud_cu = 1
+         icloud_cu = 1
       END IF
    END IF
+   CALL nl_set_icloud_cu ( id , icloud_cu )
 
 !..Fill initial starting values of radiative effective radii for
 !.. cloud water (2.51 microns), cloud ice (5.01 microns), and

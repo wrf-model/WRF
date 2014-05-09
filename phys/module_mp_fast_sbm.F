@@ -7610,9 +7610,9 @@ USE module_mp_radar
 !          if(alwc.lt.alcr_g) then
 ! water-graupel
 ! TEST
-            call coll_xyy (g1,g4,cwlg,xl_mg,xg_mg, &
+            call coll_xyy (g1,g4,cwlh,xl_mg,xg_mg, &
      &               chucm,ima,prdkrn1,nkr,0)
-            call coll_xyx (g4,g1,cwgl,xg_mg,xl_mg, &
+            call coll_xyx (g4,g1,cwhl,xg_mg,xl_mg, &
      &          chucm,ima,prdkrn1,nkr,1)
 ! TEST
 !          else

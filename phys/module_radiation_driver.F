@@ -1879,8 +1879,8 @@ CONTAINS
       jte = j_end(ij)
       call interp_sw_radiation(ims,ime,jms,jme,its,ite,jts,jte,  &
                                coszen_ref,coszen_loc,swddir_ref, &
-                               bb,Bx,swdown_ref,gg,Gx,           &
-                               swdown,swddir,swddni,swddif       )
+                               bb,Bx,swdown_ref,gg,Gx,albedo,    &
+                               swdown,swddir,swddni,swddif,gsw   )
     enddo
     !$OMP END PARALLEL DO
  end if
@@ -2289,16 +2289,18 @@ CONTAINS
 
    subroutine interp_sw_radiation(ims,ime,jms,jme,its,ite,jts,jte,  &
                                   coszen_ref,coszen_loc,swddir_ref, &
-                                  bb,Bx,swdown_ref,gg,Gx,           &
-                                  swdown,swddir,swddni,swddif       )
+                                  bb,Bx,swdown_ref,gg,Gx,albedo,    &
+                                  swdown,swddir,swddni,swddif,gsw   )
       ! Author: jararias 2013/11
       implicit None
       integer, intent(in) :: ims,ime,jms,jme,its,ite,jts,jte
       real, dimension(ims:ime,jms:jme), intent(in) :: coszen_ref,coszen_loc, &
                                                       swddir_ref,Bx,bb,      &
-                                                      swdown_ref,Gx,gg       
+                                                      swdown_ref,Gx,gg,      &
+                                                      albedo
+
       real, dimension(ims:ime,jms:jme), intent(inout) :: swddir,swdown, &
-                                                         swddif,swddni    
+                                                         swddif,swddni, gsw
 
       integer :: i,j
       real, parameter :: coszen_min=1e-4
@@ -2319,11 +2321,13 @@ CONTAINS
                end if
                swddif(i,j) =swdown(i,j)-swddir(i,j)
                swddni(i,j) =swddir(i,j)/coszen_loc(i,j)
+               gsw(i,j)    =swdown(i,j)*(1.-albedo(i,j))
             else
                swddir(i,j) =0.
                swdown(i,j) =0.
                swddif(i,j) =0.
                swddni(i,j) =0.
+               gsw(i,j)    =0.
             end if
          end do
       end do

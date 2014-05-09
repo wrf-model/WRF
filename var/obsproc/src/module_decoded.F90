@@ -2265,7 +2265,7 @@ end Subroutine Aircraft_pressure
 function psfc_from_QNH(alt, elev) result(psfc)
    real,  intent(in) :: alt  ! altimeter setting/QNH
    real,  intent(in) :: elev ! elevation
-   real, intent(out) :: psfc
+   real              :: psfc
    psfc = (alt**0.190284-(((1013.25**0.190284)*0.0065/288.15)*elev))**5.2553026
 end function psfc_from_QNH
 

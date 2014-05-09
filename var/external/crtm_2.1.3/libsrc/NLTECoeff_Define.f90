@@ -101,7 +101,7 @@ MODULE NLTECoeff_Define
     INTEGER(Long) :: n_NLTE_Channels  = 0  ! n4 dimension
     INTEGER(Long) :: n_Channels       = 0  ! n5 dimension
     ! ..."Internal" dimension
-    INTEGER(Long) :: n_Layers = N_LAYERS
+!What is this line for???    INTEGER(Long) :: n_Layers = N_LAYERS
     ! Sensor info
     CHARACTER(SL)              :: Sensor_Id        = ''
     INTEGER(Long)              :: WMO_Satellite_ID = INVALID_WMO_SATELLITE_ID

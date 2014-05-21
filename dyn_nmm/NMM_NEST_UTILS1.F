@@ -2771,7 +2771,7 @@ SUBROUTINE NEST_TERRAIN ( nest, config_flags )
 
  integer, parameter :: IO_BIN=1, IO_NET=2
 
- integer :: io_form_input
+ integer :: io_form_auxinput1
  integer :: itsok,iteok,jtsok,jteok
 
  CHARACTER(LEN=512) :: message
@@ -2781,12 +2781,12 @@ SUBROUTINE NEST_TERRAIN ( nest, config_flags )
 
  call START_TIMING()
 
- write(message,*)"in NEST_TERRAIN config_flags%io_form_input = ", config_flags%io_form_input
+ write(message,*)"in NEST_TERRAIN config_flags%io_form_auxinput1 = ", config_flags%io_form_auxinput1
  CALL wrf_debug(2,trim(message))
  write(message,*)"in NEST_TERRAIN config_flags%auxinput1_inname = ", config_flags%auxinput1_inname
  CALL wrf_debug(2,trim(message))
 
- io_form_input = config_flags%io_form_input
+ io_form_auxinput1 = config_flags%io_form_auxinput1
  if (config_flags%auxinput1_inname(1:7) == "met_nmm") then
     input_type = 2
  else
@@ -2909,7 +2909,7 @@ CONTAINS
     avc_nest = 0.0
     lnd_nest = 0.0
     
-    tr=>terrain_for(level,input_type,io_form_input)
+    tr=>terrain_for(level,input_type,io_form_auxinput1)
 
     ! select subdomain from big fine grid
     i_add = mod(j_start+1,2) 

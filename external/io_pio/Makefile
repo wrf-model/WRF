@@ -1,6 +1,6 @@
 #makefile to build a wrf_io with PIO
 
-FCOPTIM         = -O3
+FCOPTIM         = -O0
 FCNOOPT         = -O0 -fno-inline -fno-ip
 FCDEBUG         = # -g $(FCNOOPT) -traceback # -fpe0 -check all -ftrapuv -unroll0 -u
 FORMAT_FIXED    = -FI
@@ -19,7 +19,7 @@ AR              = ar
 ARFLAGS         = ru
 M4              = m4
 RANLIB          = ranlib
-DM_FC           = mpfort
+DM_FC           = mpiifort
 FC              = $(DM_FC)
 
 OBJS    = wrf_data_pio.o wrf_io.o field_routines.o module_wrfsi_static.o

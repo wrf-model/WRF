@@ -43,21 +43,21 @@ module wrf_data_pio
     integer                               :: TimeIndex
     integer                               :: CurrentTime  !Only used for read
     integer                               :: NumberTimes  !Only used for read
-    character (DateStrLen), pointer       :: Times(:)
+    character (DateStrLen), dimension(MaxTimes) :: Times
     integer                               :: TimesVarID
-    integer               , pointer       :: DimLengths(:)
-    integer               , pointer       :: DimIDs(:)
-    character (31)        , pointer       :: DimNames(:)
+    integer               , dimension(MaxDims) :: DimLengths
+    integer               , dimension(MaxDims) :: DimIDs
+    character (31)        , dimension(MaxDims) :: DimNames
     integer                               :: DimUnlimID
     character (9)                         :: DimUnlimName
     integer       , dimension(NVarDims)   :: DimID
     integer       , dimension(NVarDims)   :: Dimension
-    integer               , pointer       :: MDVarIDs(:)
-    integer               , pointer       :: MDVarDimLens(:)
-    character (80)        , pointer       :: MDVarNames(:)
-    integer               , pointer       :: VarIDs(:)
-    integer               , pointer       :: VarDimLens(:,:)
-    character (VarNameLen), pointer       :: VarNames(:)
+    integer               , dimension(MaxVars) :: MDVarIDs
+    integer               , dimension(MaxVars) :: MDVarDimLens
+    character (80)        , dimension(MaxVars) :: MDVarNames
+    integer               , dimension(MaxVars) :: VarIDs
+    integer               , dimension(NVarDims-1, MaxVars) :: VarDimLens
+    character (VarNameLen), dimension(MaxVars) :: VarNames
     integer                               :: CurrentVariable  !Only used for read
     integer                               :: NumVars
 ! first_operation is set to .TRUE. when a new handle is allocated 
@@ -69,14 +69,21 @@ module wrf_data_pio
     logical                               :: Collective
 
 !--PIO specific
-   type (Var_desc_t)       :: v3d_handle, v2d_handle, v1d_handle, vtime
-   type (File_desc_t)      :: file_handle
-                            ! file handle for normal PIO variables
    type (IOsystem_desc_t), pointer :: iosystem
                             ! PIO type handle to hold PIO-specific information
                             ! about a file IO decomposition
+   type (File_desc_t)      :: file_handle
+                            ! file handle for normal PIO variables
+
+   type (Var_desc_t)       :: v3d_handle, v2d_handle, v1d_handle, vtime
    type (io_desc_t)        :: iodesc_3d, iodesc_2d
                             ! PIO-specific error code variable
+
+   type (Var_desc_t), dimension(MaxVars) :: descMDVar
+   type (Var_desc_t), dimension(MaxVars) :: descVar
+   logical, dimension(MaxVars) :: validMDVarDesc
+   logical, dimension(MaxVars) :: validVarDesc
+
    integer(i4)             :: iostat
                             ! used in the uncompressed PIO for defining
                             ! dimensions used in a *cdf file

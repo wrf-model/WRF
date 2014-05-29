@@ -23,13 +23,6 @@ DM_FC           = mpfort
 FC              = $(DM_FC)
 
 OBJS    = wrf_data_pio.o wrf_io.o field_routines.o module_wrfsi_static.o
-CODE    = ext_pio_get_dom_ti.code \
-	  ext_pio_get_var_td.code \
-	  ext_pio_get_var_ti.code \
-	  ext_pio_put_dom_ti.code \
-	  ext_pio_put_var_td.code \
-	  ext_pio_put_var_ti.code \
-	  transpose.code 
 
 FFLAGS  = $(FCFLAGS) -I. -I$(PIO_PATH)/include -I../ioapi_share
 LIBS    = -L$(PIO_PATH)/lib -lpio
@@ -37,7 +30,7 @@ CPP1    = $(CPP) -P $(TRADFLAG)
 M4      = m4 -Uinclude -Uindex -Ulen
 AR      = ar
 
-.SUFFIXES:      .F90 .f .o .code
+.SUFFIXES:      .F90 .f .o
 
 all : libwrfio_pio.a 
 
@@ -61,6 +54,8 @@ module_wrfsi_static.o:  module_wrfsi_static.F90
 field_routines.o:	field_routines.F90 wrf_io.o
 			$(CPP1) -I. -I$(PIO_PATH)/include -I../ioapi_share field_routines.F90 > field_routines.f
 			$(FC) $(FFLAGS) -c field_routines.f
+
+clean:	superclean
 
 superclean:
 			/bin/rm -f *.f *.o \

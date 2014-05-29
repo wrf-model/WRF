@@ -1,38 +1,3 @@
-!*------------------------------------------------------------------------------
-!*  Standard Disclaimer
-!*
-!*  Forecast Systems Laboratory
-!*  NOAA/OAR/ERL/FSL
-!*  325 Broadway
-!*  Boulder, CO     80303
-!*
-!*  AVIATION DIVISION
-!*  ADVANCED COMPUTING BRANCH
-!*  SMS/NNT Version: 2.0.0 
-!*
-!*  This software and its documentation are in the public domain and
-!*  are furnished "as is".  The United States government, its 
-!*  instrumentalities, officers, employees, and agents make no 
-!*  warranty, express or implied, as to the usefulness of the software 
-!*  and documentation for any purpose.  They assume no 
-!*  responsibility (1) for the use of the software and documentation; 
-!*  or (2) to provide technical support to users.
-!* 
-!*  Permission to use, copy, modify, and distribute this software is
-!*  hereby granted, provided that this disclaimer notice appears in 
-!*  all copies.  All modifications to this software must be clearly
-!*  documented, and are solely the responsibility of the agent making
-!*  the modification.  If significant modifications or enhancements
-!*  are made to this software, the SMS Development team
-!*  (sms-info@fsl.noaa.gov) should be notified.
-!*
-!*----------------------------------------------------------------------------
-!*
-!*  WRF NetCDF I/O
-!   Author:  Jacques Middlecoff jacquesm@fsl.noaa.gov
-!*  Date:    October 6, 2000
-!*
-!*----------------------------------------------------------------------------
 subroutine ext_pio_RealFieldIO(Coll,IO,NCID,VarID,VStart,VCount,Data,Status)
   use pio
   use pio_kinds
@@ -42,7 +7,7 @@ subroutine ext_pio_RealFieldIO(Coll,IO,NCID,VarID,VStart,VCount,Data,Status)
   include 'wrf_status_codes.h'
   logical                     ,intent(in)    :: Coll
   character (*)               ,intent(in)    :: IO
-  integer                     ,intent(in)    :: NCID
+  type (file_desc_t)          ,intent(in)    :: NCID
   integer                     ,intent(in)    :: VarID
   integer ,dimension(NVarDims),intent(in)    :: VStart
   integer ,dimension(NVarDims),intent(in)    :: VCount
@@ -56,15 +21,14 @@ subroutine ext_pio_RealFieldIO(Coll,IO,NCID,VarID,VStart,VCount,Data,Status)
 
   if(IO == 'write') then
     if(Coll)then
-      stat = NFMPI_PUT_VARA_REAL_ALL(NCID,VarID,VStart_mpi,VCount_mpi,Data)
+      stat = pio_put_var(NCID, DH%TimesVarID, DateStr)
     else
-      stat = NFMPI_PUT_VARA_REAL(NCID,VarID,VStart_mpi,VCount_mpi,Data)
+      stat = pio_put_var(NCID,VarID,VStart_mpi,VCount_mpi,Data)
     end if
   else
     if(Coll)then
-      stat = NFMPI_GET_VARA_REAL_ALL(NCID,VarID,VStart_mpi,VCount_mpi,Data)
-   else
-      stat = NFMPI_GET_VARA_REAL(NCID,VarID,VStart_mpi,VCount_mpi,Data)
+:w: Command not found.
+      stat = pio_get_var(NCID,VarID,VStart_mpi,VCount_mpi,Data)
    end if
   endif
   call netcdf_err(stat,Status)
@@ -84,7 +48,7 @@ subroutine ext_pio_DoubleFieldIO(Coll,IO,NCID,VarID,VStart,VCount,Data,Status)
   include 'wrf_status_codes.h'
   logical                     ,intent(in)    :: Coll
   character (*)               ,intent(in)    :: IO
-  integer                     ,intent(in)    :: NCID
+  type (file_desc_t)          ,intent(in)    :: NCID
   integer                     ,intent(in)    :: VarID
   integer ,dimension(NVarDims),intent(in)    :: VStart
   integer ,dimension(NVarDims),intent(in)    :: VCount
@@ -98,15 +62,15 @@ subroutine ext_pio_DoubleFieldIO(Coll,IO,NCID,VarID,VStart,VCount,Data,Status)
 
   if(IO == 'write') then
     if(Coll)then
-      stat = NFMPI_PUT_VARA_DOUBLE_ALL(NCID,VarID,VStart_mpi,VCount_mpi,Data)
+      stat = pio_put_var(NCID,VarID,VStart_mpi,VCount_mpi,Data)
    else
-      stat = NFMPI_PUT_VARA_DOUBLE(NCID,VarID,VStart_mpi,VCount_mpi,Data)
+      stat = pio_put_var(NCID,VarID,VStart_mpi,VCount_mpi,Data)
    endif
   else
     if(Coll)then
-      stat = NFMPI_GET_VARA_DOUBLE_ALL(NCID,VarID,VStart_mpi,VCount_mpi,Data)
+      stat = pio_get_var(NCID,VarID,VStart_mpi,VCount_mpi,Data)
    else
-      stat = NFMPI_GET_VARA_DOUBLE(NCID,VarID,VStart_mpi,VCount_mpi,Data)
+      stat = pio_get_var(NCID,VarID,VStart_mpi,VCount_mpi,Data)
    endif
   endif
   call netcdf_err(stat,Status)
@@ -126,7 +90,7 @@ subroutine ext_pio_IntFieldIO(Coll,IO,NCID,VarID,VStart,VCount,Data,Status)
   include 'wrf_status_codes.h'
   logical                     ,intent(in)    :: Coll
   character (*)               ,intent(in)    :: IO
-  integer                     ,intent(in)    :: NCID
+  type (file_desc_t)          ,intent(in)    :: NCID
   integer                     ,intent(in)    :: VarID
   integer ,dimension(NVarDims),intent(in)    :: VStart
   integer ,dimension(NVarDims),intent(in)    :: VCount
@@ -140,15 +104,15 @@ subroutine ext_pio_IntFieldIO(Coll,IO,NCID,VarID,VStart,VCount,Data,Status)
 
   if(IO == 'write') then
     if(Coll)then
-      stat = NFMPI_PUT_VARA_INT_ALL(NCID,VarID,VStart_mpi,VCount_mpi,Data)
+      stat = pio_put_var(NCID,VarID,VStart_mpi,VCount_mpi,Data)
     else
-      stat = NFMPI_PUT_VARA_INT(NCID,VarID,VStart_mpi,VCount_mpi,Data)
+      stat = pio_put_var(NCID,VarID,VStart_mpi,VCount_mpi,Data)
     endif
   else
     if(Coll)then
-      stat = NFMPI_GET_VARA_INT_ALL(NCID,VarID,VStart_mpi,VCount_mpi,Data)
+      stat = pio_get_var(NCID,VarID,VStart_mpi,VCount_mpi,Data)
    else
-      stat = NFMPI_GET_VARA_INT(NCID,VarID,VStart_mpi,VCount_mpi,Data)
+      stat = pio_get_var(NCID,VarID,VStart_mpi,VCount_mpi,Data)
    end if
   endif
   call netcdf_err(stat,Status)
@@ -168,7 +132,7 @@ subroutine ext_pio_LogicalFieldIO(Coll,IO,NCID,VarID,VStart,VCount,Data,Status)
   include 'wrf_status_codes.h'
   logical                                         ,intent(in)    :: Coll
   character (*)                                   ,intent(in)    :: IO
-  integer                                         ,intent(in)    :: NCID
+  type (file_desc_t)                              ,intent(in)    :: NCID
   integer                                         ,intent(in)    :: VarID
   integer,dimension(NVarDims)                     ,intent(in)    :: VStart
   integer,dimension(NVarDims)                     ,intent(in)    :: VCount
@@ -202,15 +166,15 @@ subroutine ext_pio_LogicalFieldIO(Coll,IO,NCID,VarID,VStart,VCount,Data,Status)
       enddo
     enddo
     if(Coll)then
-      stat = NFMPI_PUT_VARA_INT_ALL(NCID,VarID,VStart_mpi,VCount_mpi,Buffer)
+      stat = pio_put_var(NCID,VarID,VStart_mpi,VCount_mpi,Buffer)
    else
-      stat = NFMPI_PUT_VARA_INT(NCID,VarID,VStart_mpi,VCount_mpi,Buffer)
+      stat = pio_put_var(NCID,VarID,VStart_mpi,VCount_mpi,Buffer)
    end if
   else
     if(Coll)then
-      stat = NFMPI_GET_VARA_INT_ALL(NCID,VarID,VStart_mpi,VCount_mpi,Buffer)
+      stat = pio_get_var(NCID,VarID,VStart_mpi,VCount_mpi,Buffer)
     else
-      stat = NFMPI_GET_VARA_INT(NCID,VarID,VStart_mpi,VCount_mpi,Buffer)
+      stat = pio_get_var(NCID,VarID,VStart_mpi,VCount_mpi,Buffer)
     end if
     Data = Buffer == 1
   endif

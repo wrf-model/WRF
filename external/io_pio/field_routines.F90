@@ -7,28 +7,25 @@ subroutine ext_pio_RealFieldIO(Coll,IO,NCID,VarID,VStart,VCount,Data,Status)
   include 'wrf_status_codes.h'
   logical                     ,intent(in)    :: Coll
   character (*)               ,intent(in)    :: IO
-  type (file_desc_t)          ,intent(in)    :: NCID
+  type (file_desc_t)          ,intent(inout) :: NCID
   integer                     ,intent(in)    :: VarID
   integer ,dimension(NVarDims),intent(in)    :: VStart
   integer ,dimension(NVarDims),intent(in)    :: VCount
-  real, dimension(*)          ,intent(inout) :: Data
+  real, dimension(:)          ,intent(inout) :: Data
   integer                     ,intent(out)   :: Status
   integer                                    :: stat
-!local
-  integer(KIND=MPI_OFFSET_KIND), dimension(NVarDims)    :: VStart_mpi, VCount_mpi
-  VStart_mpi = VStart
-  VCount_mpi = VCount
 
   if(IO == 'write') then
     if(Coll)then
-      stat = pio_put_var(NCID, DH%TimesVarID, DateStr)
+      stat = pio_put_var(NCID,VarID,Data)
     else
-      stat = pio_put_var(NCID,VarID,VStart_mpi,VCount_mpi,Data)
+      stat = pio_put_var(NCID,VarID,VStart,VCount,Data)
     end if
   else
     if(Coll)then
-:w: Command not found.
-      stat = pio_get_var(NCID,VarID,VStart_mpi,VCount_mpi,Data)
+      stat = pio_get_var(NCID,VarID,Data)
+    else
+      stat = pio_get_var(NCID,VarID,VStart,VCount,Data)
    end if
   endif
   call netcdf_err(stat,Status)
@@ -48,29 +45,25 @@ subroutine ext_pio_DoubleFieldIO(Coll,IO,NCID,VarID,VStart,VCount,Data,Status)
   include 'wrf_status_codes.h'
   logical                     ,intent(in)    :: Coll
   character (*)               ,intent(in)    :: IO
-  type (file_desc_t)          ,intent(in)    :: NCID
+  type (file_desc_t)          ,intent(inout) :: NCID
   integer                     ,intent(in)    :: VarID
   integer ,dimension(NVarDims),intent(in)    :: VStart
   integer ,dimension(NVarDims),intent(in)    :: VCount
-  real*8                      ,intent(inout) :: Data
+  real*8  ,dimension(:)       ,intent(inout) :: Data
   integer                     ,intent(out)   :: Status
   integer                                    :: stat
-!local
-  integer(KIND=MPI_OFFSET_KIND), dimension(NVarDims)    :: VStart_mpi, VCount_mpi
-  VStart_mpi = VStart
-  VCount_mpi = VCount
 
   if(IO == 'write') then
     if(Coll)then
-      stat = pio_put_var(NCID,VarID,VStart_mpi,VCount_mpi,Data)
+      stat = pio_put_var(NCID,VarID,VStart,VCount,Data)
    else
-      stat = pio_put_var(NCID,VarID,VStart_mpi,VCount_mpi,Data)
+      stat = pio_put_var(NCID,VarID,VStart,VCount,Data)
    endif
   else
     if(Coll)then
-      stat = pio_get_var(NCID,VarID,VStart_mpi,VCount_mpi,Data)
+      stat = pio_get_var(NCID,VarID,VStart,VCount,Data)
    else
-      stat = pio_get_var(NCID,VarID,VStart_mpi,VCount_mpi,Data)
+      stat = pio_get_var(NCID,VarID,VStart,VCount,Data)
    endif
   endif
   call netcdf_err(stat,Status)
@@ -90,29 +83,25 @@ subroutine ext_pio_IntFieldIO(Coll,IO,NCID,VarID,VStart,VCount,Data,Status)
   include 'wrf_status_codes.h'
   logical                     ,intent(in)    :: Coll
   character (*)               ,intent(in)    :: IO
-  type (file_desc_t)          ,intent(in)    :: NCID
+  type (file_desc_t)          ,intent(inout) :: NCID
   integer                     ,intent(in)    :: VarID
   integer ,dimension(NVarDims),intent(in)    :: VStart
   integer ,dimension(NVarDims),intent(in)    :: VCount
-  integer                     ,intent(inout) :: Data
+  integer ,dimension(:)       ,intent(inout) :: Data
   integer                     ,intent(out)   :: Status
   integer                                    :: stat
-!local
-  integer(KIND=MPI_OFFSET_KIND), dimension(NVarDims)    :: VStart_mpi, VCount_mpi
-  VStart_mpi = VStart
-  VCount_mpi = VCount
 
   if(IO == 'write') then
     if(Coll)then
-      stat = pio_put_var(NCID,VarID,VStart_mpi,VCount_mpi,Data)
+      stat = pio_put_var(NCID,VarID,VStart,VCount,Data)
     else
-      stat = pio_put_var(NCID,VarID,VStart_mpi,VCount_mpi,Data)
+      stat = pio_put_var(NCID,VarID,VStart,VCount,Data)
     endif
   else
     if(Coll)then
-      stat = pio_get_var(NCID,VarID,VStart_mpi,VCount_mpi,Data)
+      stat = pio_get_var(NCID,VarID,VStart,VCount,Data)
    else
-      stat = pio_get_var(NCID,VarID,VStart_mpi,VCount_mpi,Data)
+      stat = pio_get_var(NCID,VarID,VStart,VCount,Data)
    end if
   endif
   call netcdf_err(stat,Status)
@@ -132,7 +121,7 @@ subroutine ext_pio_LogicalFieldIO(Coll,IO,NCID,VarID,VStart,VCount,Data,Status)
   include 'wrf_status_codes.h'
   logical                                         ,intent(in)    :: Coll
   character (*)                                   ,intent(in)    :: IO
-  type (file_desc_t)                              ,intent(in)    :: NCID
+  type (file_desc_t)                              ,intent(inout) :: NCID
   integer                                         ,intent(in)    :: VarID
   integer,dimension(NVarDims)                     ,intent(in)    :: VStart
   integer,dimension(NVarDims)                     ,intent(in)    :: VCount
@@ -141,10 +130,6 @@ subroutine ext_pio_LogicalFieldIO(Coll,IO,NCID,VarID,VStart,VCount,Data,Status)
   integer,dimension(:,:,:),allocatable                           :: Buffer
   integer                                                        :: stat
   integer                                                        :: i,j,k
-!local
-  integer(KIND=MPI_OFFSET_KIND), dimension(NVarDims)    :: VStart_mpi, VCount_mpi
-  VStart_mpi = VStart
-  VCount_mpi = VCount
 
   allocate(Buffer(VCount(1),VCount(2),VCount(3)), STAT=stat)
   if(stat/= 0) then
@@ -166,15 +151,15 @@ subroutine ext_pio_LogicalFieldIO(Coll,IO,NCID,VarID,VStart,VCount,Data,Status)
       enddo
     enddo
     if(Coll)then
-      stat = pio_put_var(NCID,VarID,VStart_mpi,VCount_mpi,Buffer)
+      stat = pio_put_var(NCID,VarID,VStart,VCount,Buffer)
    else
-      stat = pio_put_var(NCID,VarID,VStart_mpi,VCount_mpi,Buffer)
+      stat = pio_put_var(NCID,VarID,VStart,VCount,Buffer)
    end if
   else
     if(Coll)then
-      stat = pio_get_var(NCID,VarID,VStart_mpi,VCount_mpi,Buffer)
+      stat = pio_get_var(NCID,VarID,VStart,VCount,Buffer)
     else
-      stat = pio_get_var(NCID,VarID,VStart_mpi,VCount_mpi,Buffer)
+      stat = pio_get_var(NCID,VarID,VStart,VCount,Buffer)
     end if
     Data = Buffer == 1
   endif

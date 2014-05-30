@@ -69,36 +69,42 @@ module wrf_data_pio
     logical                               :: Collective
 
 !--PIO specific
-   type (IOsystem_desc_t), pointer :: iosystem
-                            ! PIO type handle to hold PIO-specific information
-                            ! about a file IO decomposition
-   type (File_desc_t)      :: file_handle
-                            ! file handle for normal PIO variables
+   type (IOsystem_desc_t)  :: iosystem    ! PIO type handle to hold PIO-specific information
+                                          ! about a file IO decomposition
+   type (File_desc_t)      :: file_handle ! file handle for normal PIO variables
 
    type (Var_desc_t)       :: v3d_handle, v2d_handle, v1d_handle, vtime
+   type (Var_desc_t)       :: vdesc3d_m, vdesc3d_u, vdesc3d_v, vdesc3d_w
+   type (Var_desc_t)       :: vdesc2d_m, vdesc2d_u, vdesc2d_v, vdesc2d_char
+   type (Var_desc_t)       :: vdesc1d
+
    type (io_desc_t)        :: iodesc_3d, iodesc_2d
-                            ! PIO-specific error code variable
+   type (io_desc_t)        :: iodesc3d_m, iodesc3d_u, iodesc3d_v, iodesc3d_w
+   type (io_desc_t)        :: iodesc2d_m, iodesc2d_u, iodesc2d_v, iodesc2d_char
+   type (io_desc_t)        :: iodesc1d
 
    type (Var_desc_t), dimension(MaxVars) :: descMDVar
    type (Var_desc_t), dimension(MaxVars) :: descVar
-   logical, dimension(MaxVars) :: validMDVarDesc
-   logical, dimension(MaxVars) :: validVarDesc
+   type (io_desc_t),  dimension(MaxVars) :: ioMDVar
+   type (io_desc_t),  dimension(MaxVars) :: ioVar
+   logical, dimension(MaxVars)           :: validMDVarDesc
+   logical, dimension(MaxVars)           :: validVarDesc
 
-   integer(i4)             :: iostat
-                            ! used in the uncompressed PIO for defining
-                            ! dimensions used in a *cdf file
+   integer(i4)             :: iostat       ! PIO-specific error code variable
+                                           ! used in the uncompressed PIO for defining
+                                           ! dimensions used in a *cdf file
    integer(i4)             :: dim_ids_3d(3), dim_ids_2d(2), dim_ids_1d(1)
-                            ! used to tell PIO how many IO procs you want to
-                            ! use,
-                            ! functions as the max # of IO procs wanted when
-                            ! using compression, less may be used
+                                           ! used to tell PIO how many IO procs you want to
+                                           ! use,
+                                           ! functions as the max # of IO procs wanted when
+                                           ! using compression, less may be used
    integer(i4)             :: myrank, nprocs
    integer(i4)             :: pioprocs, piostart, piostride, pioshift
-                            ! the 3D grid size used to write VDC data
+                                           ! the 3D grid size used to write VDC data
    integer(i4)             :: dims_3d(3), dims_2d(2), dims_1d(1)
-                            ! counter
+                                           ! counter
    integer(kind=PIO_Offset),allocatable :: compdof_3d(:), compdof_2d(:)
-                            !slice of computational data to the global grid
+                                           !slice of computational data to the global grid
   end type wrf_data_handle
 
   type(wrf_data_handle),target            :: WrfDataHandles(WrfDataHandleMax)

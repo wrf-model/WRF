@@ -268,6 +268,8 @@ SUBROUTINE construct_filename4( result , basename , fld1 , len1 , date_char , io
      ext = '.nc '
   ELSE IF ( use_package(io_form) .EQ. IO_PNETCDF ) THEN
     ext = '.nc '
+  ELSE IF ( use_package(io_form) .EQ. IO_PIO ) THEN
+    ext = '.nc '
   ELSE IF ( use_package(io_form) .EQ. IO_GRIB1 ) THEN
      ext = '.gb '
   ELSE
@@ -299,6 +301,8 @@ SUBROUTINE construct_filename4a( result , basename , fld1 , len1 , date_char , i
   ELSE IF ( use_package(io_form) .EQ. IO_NETCDF ) THEN
      ext = '.nc '
   ELSE IF ( use_package(io_form) .EQ. IO_PNETCDF ) THEN
+    ext = '.nc '
+  ELSE IF ( use_package(io_form) .EQ. IO_PIO ) THEN
     ext = '.nc '
   ELSE IF ( use_package(io_form) .EQ. IO_GRIB1 ) THEN
      ext = '.gb '

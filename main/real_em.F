@@ -416,8 +416,10 @@ real::t1,t2,t3,t4
       CALL nl_get_io_form_auxinput1( 1, io_form_auxinput1 )
 
       SELECT CASE ( use_package(io_form_auxinput1) )
-#ifdef NETCDF
-      CASE ( IO_NETCDF   )
+#if defined(NETCDF) || defined(PNETCDF) || defined(PIO)
+      CASE ( IO_NETCDF )
+      CASE ( IO_PNETCDF )
+      CASE ( IO_PIO )
 
 
       IF ( config_flags%auxinput1_inname(1:8) .NE. 'wrf_real' ) THEN

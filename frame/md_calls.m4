@@ -44,8 +44,13 @@ LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
 LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
 INTEGER                     :: locCount
+INTEGER                     :: io_form
 
-INTEGER io_form , Hndl
+#ifdef PIO
+type (File_desc_t)          :: Hndl
+#else
+INTEGER                     :: Hndl
+#endif
 
 CALL wrf_debug( DEBUG_LVL, "module_io.F (md_calls.m4) : in wrf_$1_$2_$6_$3$4_$5 " )
 
@@ -55,7 +60,11 @@ ifelse($3,logical,`locCount = Count')
 
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
+#ifdef PIO
+IF ( Hndl%fh .GT. -1 ) THEN
+#else
 IF ( Hndl .GT. -1 ) THEN
+#endif
   IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
@@ -95,6 +104,19 @@ ifelse($3,real,
                               ifelse($4,char,,`locCount, ifelse($1,get,`Outcount,')') Status )
 #  endif',
 `        CALL ext_pnc_$1_$2_$6_$3$4 ( Hndl, Element, ifelse($6,td,`DateStr,') ifelse($2,var,`Varname,') Data, &
+                              ifelse($4,char,,`locCount, ifelse($1,get,`Outcount,')') Status )' )
+#endif
+#ifdef PIO
+      CASE ( IO_PIO )
+ifelse($3,real,
+`#  if ( RWORDSIZE == DWORDSIZE )
+        CALL ext_pio_$1_$2_$6_double$4 ( Hndl, Element, ifelse($6,td,`DateStr,') ifelse($2,var,`Varname,') Data, &
+                              ifelse($4,char,,`locCount, ifelse($1,get,`Outcount,')') Status )
+#  else
+        CALL ext_pio_$1_$2_$6_real$4 ( Hndl, Element, ifelse($6,td,`DateStr,') ifelse($2,var,`Varname,') Data, &
+                              ifelse($4,char,,`locCount, ifelse($1,get,`Outcount,')') Status )
+#  endif',
+`        CALL ext_pio_$1_$2_$6_$3$4 ( Hndl, Element, ifelse($6,td,`DateStr,') ifelse($2,var,`Varname,') Data, &
                               ifelse($4,char,,`locCount, ifelse($1,get,`Outcount,')') Status )' )
 #endif
 #ifdef PHDF5

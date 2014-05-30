@@ -2,6 +2,10 @@
 !  ---principal wrf input routine (called from routines in module_io_domain )
 
   SUBROUTINE input_wrf ( fid , grid , config_flags , switch , ierr )
+#ifdef PIO
+    use pio
+    use pio_kinds
+#endif
     USE module_domain
     USE module_state_description
     USE module_configure
@@ -10,6 +14,7 @@
     USE module_date_time
     USE module_bc_time_utilities
     USE module_utility
+
     IMPLICIT NONE
 #include <wrf_io_flags.h>
 #include <wrf_status_codes.h>
@@ -107,7 +112,7 @@
 !
 !</DESCRIPTION>
 
-    WRITE(wrf_err_message,*)'input_wrf: begin, fid = ',fid
+    WRITE(wrf_err_message,*)'input_wrf: begin'
     CALL wrf_debug( 300 , wrf_err_message )
 
     CALL modify_io_masks ( grid%id )   ! this adjusts the I/O masks according to the users run-time specs, if any
@@ -126,7 +131,7 @@
       CALL wrf_error_fatal( wrf_err_message )
     ENDIF
 
-    WRITE(wrf_err_message,*)'input_wrf: fid,filestate = ',fid,filestate
+    WRITE(wrf_err_message,*)'input_wrf: filestate = ',filestate
     CALL wrf_debug( 300 , wrf_err_message )
 
     dryrun        = ( filestate .EQ. WRF_FILE_OPENED_NOT_COMMITTED )
@@ -288,11 +293,11 @@
         CALL nl_set_simulation_start_minute ( 1 , simulation_start_minute )
         CALL nl_set_simulation_start_second ( 1 , simulation_start_second )
         IF ( switch .EQ. input_only  ) THEN
-          WRITE(wrf_err_message,*)fid,' input_wrf, input_only:  SIMULATION_START_DATE = ', &
+          WRITE(wrf_err_message,*) ' input_wrf, input_only:  SIMULATION_START_DATE = ', &
                                   simulation_start_date(1:19)
           CALL wrf_debug ( 300 , TRIM(wrf_err_message ) )
         ELSE IF ( switch .EQ. restart_only  ) THEN
-          WRITE(wrf_err_message,*)fid,' input_wrf, restart_only:  SIMULATION_START_DATE = ', &
+          WRITE(wrf_err_message,*) ' input_wrf, restart_only:  SIMULATION_START_DATE = ', &
                                   simulation_start_date(1:19)
           CALL wrf_debug ( 300 , TRIM(wrf_err_message ) )
         ENDIF

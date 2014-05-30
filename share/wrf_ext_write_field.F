@@ -20,6 +20,10 @@
     USE module_wrf_error
     USE module_state_description
     USE module_timing
+#ifdef PIO
+    use pio_kinds
+#endif
+
     IMPLICIT NONE
 
     INTEGER, INTENT(IN)       :: idx4, idx5, idx6, idx7
@@ -126,9 +130,14 @@
 
     integer                       ,intent(inout)   :: Status
     LOGICAL for_out, horiz_stagger
-    INTEGER Hndl, io_form
+    INTEGER io_form
     LOGICAL, EXTERNAL :: has_char
     INTEGER, EXTERNAL :: use_package
+#ifdef PIO
+    type (File_desc_t) Hndl
+#else
+    INTEGER Hndl
+#endif
 
     IF ( wrf_at_debug_level( 500 ) ) THEN
       call start_timing
@@ -189,6 +198,7 @@
     CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 
     IF ( ( dryrun .AND. ( use_package(io_form) .EQ. IO_NETCDF .OR. &
+                          use_package(io_form) .EQ. IO_PIO    .OR. &
                           use_package(io_form) .EQ. IO_PNETCDF ) ) .OR. &
                         ( use_package(io_form) .EQ. IO_PHDF5  )   ) THEN
 

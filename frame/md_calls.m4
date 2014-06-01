@@ -45,12 +45,7 @@ INTEGER, EXTERNAL           :: use_package
 LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
 INTEGER                     :: locCount
 INTEGER                     :: io_form
-
-#ifdef PIO
-type (File_desc_t)          :: Hndl
-#else
 INTEGER                     :: Hndl
-#endif
 
 CALL wrf_debug( DEBUG_LVL, "module_io.F (md_calls.m4) : in wrf_$1_$2_$6_$3$4_$5 " )
 
@@ -60,11 +55,7 @@ ifelse($3,logical,`locCount = Count')
 
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
-#ifdef PIO
-IF ( Hndl%fh .GT. -1 ) THEN
-#else
 IF ( Hndl .GT. -1 ) THEN
-#endif
   IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF

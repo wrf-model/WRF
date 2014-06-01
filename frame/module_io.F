@@ -28,18 +28,9 @@ MODULE module_io
 
   USE module_configure
 
-#ifdef PIO
-  use pio
-  use pio_kinds
-#endif
-
   LOGICAL :: is_inited = .FALSE.
   INTEGER, PARAMETER, PRIVATE :: MAX_WRF_IO_HANDLE = 1000
-#ifdef PIO
-  type (File_desc_t) :: wrf_io_handles(MAX_WRF_IO_HANDLE)
-#else
   INTEGER :: wrf_io_handles(MAX_WRF_IO_HANDLE)
-#endif
   INTEGER :: how_opened(MAX_WRF_IO_HANDLE) 
   LOGICAL :: for_output(MAX_WRF_IO_HANDLE), first_operation(MAX_WRF_IO_HANDLE)
   INTEGER :: filtno = 0
@@ -216,7 +207,7 @@ END SUBROUTINE wrf_ioexit
 
 !--- open_for_write_begin
 
-SUBROUTINE wrf_open_for_write_begin( FileName , Comm_compute, Comm_io, SysDepInfo, &
+SUBROUTINE wrf_open_for_write_begin( FileName , grid, SysDepInfo, &
                                      DataHandle , Status )
 !<DESCRIPTION>
 !<PRE>
@@ -225,43 +216,42 @@ SUBROUTINE wrf_open_for_write_begin( FileName , Comm_compute, Comm_io, SysDepInf
 !</PRE>
 !</DESCRIPTION>
   USE module_state_description
+  USE module_domain
 #ifdef DM_PARALLEL
   USE module_dm, ONLY :  ntasks_x, mytask_x, local_communicator_x
 #endif
   IMPLICIT NONE
 #include "wrf_io_flags.h"
   CHARACTER*(*) :: FileName
-  INTEGER ,       INTENT(IN)  :: Comm_compute , Comm_io
+  type(domain)                :: grid
   CHARACTER*(*), INTENT(INOUT):: SysDepInfo
   INTEGER ,       INTENT(OUT) :: DataHandle
   INTEGER ,       INTENT(OUT) :: Status
  !Local 
   CHARACTER*128               :: DataSet
   INTEGER                     :: io_form
-#ifdef PIO
-  type (File_desc_t)          :: Hndl
-#else
   INTEGER                     :: Hndl
-#endif
   INTEGER, EXTERNAL           :: use_package
   LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
   CHARACTER*128     :: LocFilename   ! for appending the process ID if necessary
   INTEGER           :: myproc
   CHARACTER*128     :: mess
   CHARACTER*1028    :: tstr, t1
-  INTEGER i,j
+  INTEGER           :: i,j
+  INTEGER           :: Comm_compute , Comm_io
 
   WRITE(mess,*) 'module_io.F: in wrf_open_for_write_begin, FileName = ',TRIM(FileName)
   CALL wrf_debug( DEBUG_LVL, mess )
+
+  Comm_compute = grid%communicator
+  Comm_io = grid%iocommunicator
 
   CALL get_value_from_pairs ( "DATASET" , SysDepInfo , DataSet )
 
   io_form = io_form_for_dataset( DataSet )
 
   Status = 0
-#ifndef PIO
   Hndl = -1
-#endif
   IF ( multi_files( io_form ) .OR. .NOT. use_output_servers() ) THEN
     SELECT CASE ( use_package(io_form) )
 #ifdef NETCDF
@@ -315,8 +305,7 @@ SUBROUTINE wrf_open_for_write_begin( FileName , Comm_compute, Comm_io, SysDepInf
           ENDIF
         ENDDO
         tstr = t1
-        CALL ext_pio_open_for_write_begin( FileName, Comm_compute, Comm_io, tstr, &
-                                            Hndl, Status)
+        CALL ext_pio_open_for_write_begin( FileName, grid, tstr, Hndl, Status)
 #endif
 #ifdef XXX
       CASE ( IO_XXX   )
@@ -446,11 +435,7 @@ SUBROUTINE wrf_open_for_write_commit( DataHandle , Status )
  
   CHARACTER (128)             :: DataSet
   INTEGER                     :: io_form
-#ifdef PIO
-  type (File_desc_t)          :: Hndl
-#else
   INTEGER                     :: Hndl
-#endif
   LOGICAL                     :: for_out
   INTEGER, EXTERNAL           :: use_package
   LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
@@ -461,11 +446,7 @@ SUBROUTINE wrf_open_for_write_commit( DataHandle , Status )
   Status = 0
   CALL get_handle ( Hndl, io_form , for_out, DataHandle )
   CALL set_first_operation( DataHandle )
-#ifdef PIO
-  IF ( Hndl%fh .GT. -1 ) THEN
-#else
   IF ( Hndl .GT. -1 ) THEN
-#endif
     IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
       SELECT CASE ( use_package(io_form) )
 #ifdef NETCDF
@@ -547,7 +528,7 @@ END SUBROUTINE wrf_open_for_write_commit
 
 !--- open_for_read_begin
 
-SUBROUTINE wrf_open_for_read_begin( FileName , Comm_compute, Comm_io, SysDepInfo, &
+SUBROUTINE wrf_open_for_read_begin( FileName , grid, SysDepInfo, &
                                      DataHandle , Status )
 !<DESCRIPTION>
 !<PRE>
@@ -556,21 +537,18 @@ SUBROUTINE wrf_open_for_read_begin( FileName , Comm_compute, Comm_io, SysDepInfo
 !</PRE>
 !</DESCRIPTION>
   USE module_state_description
+  USE module_domain
   IMPLICIT NONE
 #include "wrf_io_flags.h"
   CHARACTER*(*) :: FileName
-  INTEGER ,       INTENT(IN)  :: Comm_compute , Comm_io
+  TYPE (domain) :: grid
   CHARACTER*(*) :: SysDepInfo
   INTEGER ,       INTENT(OUT) :: DataHandle
   INTEGER ,       INTENT(OUT) :: Status
   
   CHARACTER*128               :: DataSet
   INTEGER                     :: io_form
-#ifdef PIO
-  type (File_desc_t)          :: Hndl
-#else
   INTEGER                     :: Hndl
-#endif
   LOGICAL                     :: also_for_out
   INTEGER, EXTERNAL           :: use_package
   LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
@@ -579,19 +557,19 @@ SUBROUTINE wrf_open_for_read_begin( FileName , Comm_compute, Comm_io, SysDepInfo
   INTEGER     myproc
   CHARACTER*128     :: mess, fhand
   CHARACTER*1028    :: tstr
+  INTEGER           :: Comm_compute , Comm_io
 
   CALL wrf_debug( DEBUG_LVL, 'module_io.F: in wrf_open_for_read_begin' )
+
+  Comm_compute = grid%communicator
+  Comm_io = grid%iocommunicator
 
   CALL get_value_from_pairs ( "DATASET" , SysDepInfo , DataSet )
 
   io_form = io_form_for_dataset( DataSet )
 
   Status = 0
-#ifdef PIO
-  Hndl%fh = -1
-#else
   Hndl = -1
-#endif
   also_for_out = .FALSE.
 !  IF ( .NOT. use_output_servers() ) THEN
     SELECT CASE ( use_package(io_form) )
@@ -724,11 +702,7 @@ SUBROUTINE wrf_open_for_read_commit( DataHandle , Status )
  
   CHARACTER (128)             :: DataSet
   INTEGER                     :: io_form
-#ifdef PIO
-  type (File_desc_t)          :: Hndl
-#else
   INTEGER                     :: Hndl
-#endif
   LOGICAL                     :: for_out
   INTEGER, EXTERNAL           :: use_package
   LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
@@ -739,11 +713,7 @@ SUBROUTINE wrf_open_for_read_commit( DataHandle , Status )
   Status = 0
   CALL get_handle ( Hndl, io_form , for_out, DataHandle )
   CALL set_first_operation( DataHandle )
-#ifdef PIO
-  IF ( Hndl%fh .GT. -1 ) THEN
-#else
   IF ( Hndl .GT. -1 ) THEN
-#endif
     IF ( .NOT. (for_out .AND. use_output_servers()) ) THEN
       SELECT CASE ( use_package(io_form) )
 #ifdef NETCDF
@@ -809,7 +779,7 @@ END SUBROUTINE wrf_open_for_read_commit
 
 !--- open_for_read 
 
-SUBROUTINE wrf_open_for_read ( FileName , Comm_compute, Comm_io, SysDepInfo, &
+SUBROUTINE wrf_open_for_read ( FileName , grid, SysDepInfo, &
                                DataHandle , Status )
 !<DESCRIPTION>
 !<PRE>
@@ -817,34 +787,31 @@ SUBROUTINE wrf_open_for_read ( FileName , Comm_compute, Comm_io, SysDepInfo, &
 !</PRE>
 !</DESCRIPTION>
   USE module_state_description
+  USE module_domain
   IMPLICIT NONE
   CHARACTER*(*) :: FileName
-  INTEGER ,       INTENT(IN)  :: Comm_compute , Comm_io
+  TYPE (domain) :: grid
   CHARACTER*(*) :: SysDepInfo
   INTEGER ,       INTENT(OUT) :: DataHandle
   INTEGER ,       INTENT(OUT) :: Status
 
   CHARACTER (128)             :: DataSet, LocFileName
   INTEGER                     :: io_form, myproc
-#ifdef PIO
-  type (File_desc_t)          :: Hndl
-#else
   INTEGER                     :: Hndl
-#endif
   INTEGER, EXTERNAL           :: use_package
   LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+  INTEGER                     :: Comm_compute, Comm_io
 
   CALL wrf_debug( DEBUG_LVL, 'module_io.F: in wrf_open_for_read' )
+
+  Comm_compute = grid%communicator
+  Comm_io = grid%iocommunicator
 
   CALL get_value_from_pairs ( "DATASET" , SysDepInfo , DataSet )
 
   io_form = io_form_for_dataset( DataSet )
 
-#ifdef PIO
-  Hndl%fh = -1
-#else
   Hndl = -1
-#endif
   Status = 0
   SELECT CASE ( use_package(io_form) )
 #ifdef NETCDF
@@ -872,8 +839,7 @@ SUBROUTINE wrf_open_for_read ( FileName , Comm_compute, Comm_io, SysDepInfo, &
 #endif
 #ifdef PIO
     CASE ( IO_PIO )
-      CALL ext_pio_open_for_read ( FileName , Comm_compute, Comm_io, SysDepInfo, &
-                               Hndl , Status )
+      CALL ext_pio_open_for_read ( FileName , grid, SysDepInfo, Hndl , Status )
 #endif
 #ifdef PHDF5
     CASE ( IO_PHDF5  )
@@ -989,22 +955,13 @@ SUBROUTINE wrf_inquire_opened ( DataHandle, FileName , FileStatus, Status )
 #include "wrf_status_codes.h"
 
   INTEGER io_form
-
-#ifdef PIO
-  type (File_desc_t) :: Hndl
-#else
   INTEGER            :: Hndl
-#endif
 
   CALL wrf_debug( DEBUG_LVL, 'module_io.F: in wrf_inquire_opened' )
 
   Status = 0
   CALL get_handle ( Hndl, io_form , for_out, DataHandle )
-#ifdef PIO
-  IF ( Hndl%fh .GT. -1 ) THEN
-#else
   IF ( Hndl .GT. -1 ) THEN
-#endif
     IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
       SELECT CASE ( use_package(io_form) )
 #ifdef NETCDF
@@ -1093,22 +1050,21 @@ SUBROUTINE wrf_inquire_filename ( DataHandle, FileName , FileStatus, Status )
 
   INTEGER                     :: io_form
   INTEGER                     :: str_length , str_count
-
-#ifdef PIO
-  type (File_desc_t)          :: Hndl
-#else
   INTEGER                     :: Hndl
-#endif
 
-  CALL wrf_debug( DEBUG_LVL, 'module_io.F: in wrf_inquire_filename' )
+  CALL wrf_debug( 300, 'module_io.F: in wrf_inquire_filename' )
+
+  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+  write(unit=0, fmt='(a,a)') 'FileName = ', trim(FileName)
+  write(unit=0, fmt='(a,i6)') 'DataHandle = ', DataHandle
 
   Status = 0
   CALL get_handle ( Hndl, io_form , for_out, DataHandle )
-#ifdef PIO
-  IF ( Hndl%fh .GT. -1 ) THEN
-#else
+
+  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+  write(unit=0, fmt='(a,i6)') 'Hndl = ', Hndl
+
   IF ( Hndl .GT. -1 ) THEN
-#endif
     IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
       SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
@@ -1196,21 +1152,13 @@ SUBROUTINE wrf_iosync ( DataHandle, Status )
   LOGICAL                     :: for_out
 
   INTEGER                     :: io_form
-#ifdef PIO
-  type (File_desc_t)          :: Hndl
-#else
   INTEGER                     :: Hndl
-#endif
 
   CALL wrf_debug( DEBUG_LVL, 'module_io.F: in wrf_iosync' )
 
   Status = 0
   CALL get_handle ( Hndl, io_form , for_out, DataHandle )
-#ifdef PIO
-  IF ( Hndl%fh .GT. -1 ) THEN
-#else
   IF ( Hndl .GT. -1 ) THEN
-#endif
     IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
       SELECT CASE ( use_package(io_form) )
 #ifdef NETCDF
@@ -1277,23 +1225,14 @@ SUBROUTINE wrf_ioclose ( DataHandle, Status )
   LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
   INTEGER                     :: io_form
   LOGICAL                     :: for_out
-
-#ifdef PIO
-  type (File_desc_t)          :: Hndl
-#else
   INTEGER                     :: Hndl
-#endif
 
   CALL wrf_debug( DEBUG_LVL, 'module_io.F: in wrf_ioclose' )
 
   Status = 0
   CALL get_handle ( Hndl, io_form , for_out, DataHandle )
   CALL free_handle( DataHandle )
-#ifdef PIO
-  IF ( Hndl%fh .GT. -1 ) THEN
-#else
   IF ( Hndl .GT. -1 ) THEN
-#endif
     IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
       SELECT CASE ( use_package(io_form) )
 #ifdef NETCDF
@@ -1382,22 +1321,13 @@ SUBROUTINE wrf_get_next_time ( DataHandle, DateStr, Status )
   LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
   INTEGER                     :: io_form, len_of_str
   LOGICAL                     :: for_out
-
-#ifdef PIO
-  type (File_desc_t)          :: Hndl
-#else
   INTEGER                     :: Hndl
-#endif
 
   CALL wrf_debug( DEBUG_LVL, 'module_io.F: in wrf_get_next_time' )
 
   Status = 0
   CALL get_handle ( Hndl, io_form , for_out, DataHandle )
-#ifdef PIO
-  IF ( Hndl%fh .GT. -1 ) THEN
-#else
   IF ( Hndl .GT. -1 ) THEN
-#endif
     IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
       SELECT CASE ( use_package(io_form) )
 #ifdef NETCDF
@@ -1518,22 +1448,13 @@ SUBROUTINE wrf_get_previous_time ( DataHandle, DateStr, Status )
   LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
   INTEGER                     :: io_form, len_of_str
   LOGICAL                     :: for_out
-
-#ifdef PIO
-  type (File_desc_t)          :: Hndl
-#else
   INTEGER                     :: Hndl
-#endif
 
   CALL wrf_debug( DEBUG_LVL, 'module_io.F: in wrf_get_previous_time' )
 
   Status = 0
   CALL get_handle ( Hndl, io_form , for_out, DataHandle )
-#ifdef PIO
-  IF ( Hndl%fh .GT. -1 ) THEN
-#else
   IF ( Hndl .GT. -1 ) THEN
-#endif
     IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
       SELECT CASE ( use_package(io_form) )
 #ifdef NETCDF
@@ -1627,22 +1548,13 @@ SUBROUTINE wrf_set_time ( DataHandle, DateStr, Status )
   LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
   INTEGER                     :: io_form
   LOGICAL                     :: for_out
-
-#ifdef PIO
-  type (File_desc_t)          :: Hndl
-#else
   INTEGER                     :: Hndl
-#endif
 
   CALL wrf_debug( DEBUG_LVL, 'module_io.F: in wrf_set_time' )
 
   Status = 0
   CALL get_handle ( Hndl, io_form , for_out, DataHandle )
-#ifdef PIO
-  IF ( Hndl%fh .GT. -1 ) THEN
-#else
   IF ( Hndl .GT. -1 ) THEN
-#endif
     IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
       SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
@@ -1724,22 +1636,13 @@ SUBROUTINE wrf_get_next_var ( DataHandle, VarName, Status )
   LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
   INTEGER                     :: io_form
   LOGICAL                     :: for_out
-
-#ifdef PIO
-  type (File_desc_t)          :: Hndl
-#else
   INTEGER                     :: Hndl
-#endif
 
   CALL wrf_debug( DEBUG_LVL, 'module_io.F: in wrf_get_next_var' )
 
   Status = 0
   CALL get_handle ( Hndl, io_form , for_out, DataHandle )
-#ifdef PIO
-  IF ( Hndl%fh .GT. -1 ) THEN
-#else
   IF ( Hndl .GT. -1 ) THEN
-#endif
     IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
       SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
@@ -1814,22 +1717,13 @@ SUBROUTINE wrf_get_var_info ( DataHandle , VarName , NDim , MemoryOrder , Stagge
   LOGICAL                     :: for_out
   INTEGER, EXTERNAL           :: use_package
   LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
-
-#ifdef PIO
-  type (File_desc_t)          :: Hndl
-#else
   INTEGER                     :: Hndl
-#endif
 
   CALL wrf_debug( DEBUG_LVL, 'module_io.F: in wrf_get_var_info' )
 
   Status = 0
   CALL get_handle ( Hndl, io_form , for_out, DataHandle )
-#ifdef PIO
-  IF ( Hndl%fh .GT. -1 ) THEN
-#else
   IF ( Hndl .GT. -1 ) THEN
-#endif
     IF (( multi_files(io_form) .OR.  wrf_dm_on_monitor() ) .AND. .NOT. (for_out .AND. use_output_servers()) ) THEN
       SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
@@ -1921,11 +1815,7 @@ SUBROUTINE init_io_handles()
   INTEGER i
   IF ( .NOT. is_inited ) THEN
     DO i = 1, MAX_WRF_IO_HANDLE
-#ifdef PIO
-      wrf_io_handles(i)%fh = -999319
-#else
       wrf_io_handles(i) = -999319
-#endif
     ENDDO
     is_inited = .TRUE.
   ENDIF
@@ -1943,11 +1833,7 @@ SUBROUTINE add_new_handle( Hndl, Hopened, for_out, DataHandle )
 !</PRE>
 !</DESCRIPTION>
   IMPLICIT NONE
-#ifdef PIO
-  type (File_desc_t), intent(in) :: Hndl
-#else
   INTEGER, INTENT(IN)     :: Hndl
-#endif
   INTEGER, INTENT(IN)     :: Hopened
   LOGICAL, INTENT(IN)     :: for_out
   INTEGER, INTENT(OUT)    :: DataHandle
@@ -1983,11 +1869,7 @@ SUBROUTINE add_new_handle( Hndl, Hopened, for_out, DataHandle )
   ENDIF
   DataHandle = -1
   DO i = 1, MAX_WRF_IO_HANDLE
-#ifdef PIO
-    IF ( wrf_io_handles(i)%fh .EQ. -999319 ) THEN
-#else
     IF ( wrf_io_handles(i) .EQ. -999319 ) THEN
-#endif
       DataHandle = i 
       wrf_io_handles(i) = Hndl
       how_opened(i)     = Hopened
@@ -2014,11 +1896,7 @@ SUBROUTINE get_handle ( Hndl, Hopened, for_out, DataHandle )
 !</PRE>
 !</DESCRIPTION>
   IMPLICIT NONE
-#ifdef PIO
-  type (File_desc_t), intent(out) :: Hndl
-#else
   INTEGER, INTENT(OUT)     :: Hndl
-#endif
   INTEGER, INTENT(OUT)     :: Hopened
   LOGICAL, INTENT(OUT)     :: for_out
   INTEGER, INTENT(IN)    :: DataHandle
@@ -2032,11 +1910,7 @@ SUBROUTINE get_handle ( Hndl, Hopened, for_out, DataHandle )
     Hopened = how_opened(DataHandle)
     for_out = for_output(DataHandle)
   ELSE
-#ifdef PIO
-    Hndl%fh = -1
-#else
     Hndl = -1
-#endif
   ENDIF
   RETURN
 END SUBROUTINE get_handle
@@ -2108,11 +1982,7 @@ SUBROUTINE free_handle ( DataHandle )
     CALL wrf_error_fatal( 'free_handle: not initialized' )
   ENDIF
   IF ( DataHandle .GE. 1 .AND. DataHandle .LE. MAX_WRF_IO_HANDLE ) THEN
-#ifdef PIO
-    wrf_io_handles(DataHandle)%fh = -999319
-#else
     wrf_io_handles(DataHandle) = -999319
-#endif
   ENDIF
   RETURN
 END SUBROUTINE free_handle
@@ -2293,22 +2163,14 @@ SUBROUTINE wrf_read_field1 ( DataHandle , DateStr , VarName , Field , FieldType 
   EXTERNAL ext_gr2_read_field
 #endif
 
-#ifdef PIO
-  type (File_desc_t)          :: Hndl
-#else
   INTEGER                     :: Hndl
-#endif
 
   CALL wrf_debug( DEBUG_LVL, 'module_io.F: in wrf_read_field' )
 
   Status = 0
   CALL get_handle ( Hndl, io_form , for_out, DataHandle )
   CALL reset_first_operation( DataHandle )
-#ifdef PIO
-  IF ( Hndl%fh .GT. -1 ) THEN
-#else
   IF ( Hndl .GT. -1 ) THEN
-#endif
     IF ( .NOT. io_form .GT. 0 ) THEN
       Status = 0 
     ELSE IF ( .NOT. use_input_servers() ) THEN
@@ -2563,22 +2425,14 @@ SUBROUTINE wrf_write_field1 ( DataHandle , DateStr , VarName , Field , FieldType
   EXTERNAL ext_gr2_write_field
 #endif
 
-#ifdef PIO
-  type (File_desc_t)          :: Hndl
-#else
   INTEGER                     :: Hndl
-#endif
 
   CALL wrf_debug( DEBUG_LVL, 'module_io.F: in wrf_write_field' )
 
   Status = 0
   CALL get_handle ( Hndl, io_form , for_out, DataHandle )
   CALL reset_first_operation ( DataHandle )
-#ifdef PIO
-  IF ( Hndl%fh .GT. -1 ) THEN
-#else
   IF ( Hndl .GT. -1 ) THEN
-#endif
     IF ( multi_files( io_form ) .OR. .NOT. use_output_servers() ) THEN
       SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF

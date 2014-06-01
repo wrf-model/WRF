@@ -22,9 +22,9 @@ RANLIB          = ranlib
 DM_FC           = mpiifort
 FC              = $(DM_FC)
 
-OBJS    = wrf_data_pio.o wrf_io.o field_routines.o module_wrfsi_static.o
+OBJS    = wrf_data_pio.o pio_routines.o wrf_io.o field_routines.o module_wrfsi_static.o
 
-FFLAGS  = $(FCFLAGS) -I. -I$(PIO_PATH)/include -I../ioapi_share
+FFLAGS  = $(FCFLAGS) -I. -I$(PIO_PATH)/include -I../ioapi_share -I../../frame -I../esmf_time_f90
 LIBS    = -L$(PIO_PATH)/lib -lpio
 CPP1    = $(CPP) -P $(TRADFLAG)
 M4      = m4 -Uinclude -Uindex -Ulen
@@ -40,11 +40,15 @@ libwrfio_pio.a:		$(OBJS) $(CODE)
 			$(RANLIB) libwrfio_pio.a
 
 wrf_data_pio.o:         wrf_data_pio.F90 $(CODE)
-			$(CPP1) -I. -I$(PIO_PATH)/include -I../ioapi_share wrf_data_pio.F90 | $(M4) - > wrf_data_pio.f
+			$(CPP1) -I. -I$(PIO_PATH)/include -I../ioapi_share wrf_data_pio.F90 > wrf_data_pio.f
 			$(FC) $(FFLAGS) -c wrf_data_pio.f
 
-wrf_io.o:               wrf_io.F90 $(CODE) wrf_data_pio.o
-			$(CPP1) -I. -I$(PIO_PATH)/include -I../ioapi_share wrf_io.F90 | $(M4) - > wrf_io.f
+pio_routines.o:		pio_routines.F90 $(CODE) wrf_data_pio.o
+			$(CPP1) -I. -I$(PIO_PATH)/include -I../ioapi_share pio_routines.F90 > pio_routines.f
+			$(FC) $(FFLAGS) -c pio_routines.f
+
+wrf_io.o:               wrf_io.F90 $(CODE) wrf_data_pio.o pio_routines.o
+			$(CPP1) -I. -I$(PIO_PATH)/include -I../ioapi_share wrf_io.F90 > wrf_io.f
 			$(FC) $(FFLAGS) -c wrf_io.f
 
 module_wrfsi_static.o:  module_wrfsi_static.F90

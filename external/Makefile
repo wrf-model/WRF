@@ -3,6 +3,7 @@
 superclean :
 	( cd esmf_time_f90 ;  make superclean )
 	( cd io_pnetcdf ;  make superclean )
+	( cd io_pio ;  make superclean )
 	( cd io_int ; make superclean )
 	( cd io_netcdf ;  make superclean )
 	( cd io_mcel ;  make superclean )

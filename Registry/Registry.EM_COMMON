@@ -1800,6 +1800,14 @@ rconfig   logical cycling                 namelist,time_control         1       
 rconfig   integer output_diagnostics      namelist,time_control         1              0
 rconfig   integer nwp_diagnostics         namelist,time_control         1              0
 
+pioprocs, piostart, piostride, pioshift
+# PIO namelist
+rconfig   logical usepio                 namelist,pio_control   1       0     rh   "pioprocs"                  ""      "" 
+rconfig   integer pioprocs               namelist,pio_control   1       0     rh   "pioprocs"                  ""      "" 
+rconfig   integer piostart               namelist,pio_control   1       1     rh   "piostart"                  ""      "" 
+rconfig   integer piostride              namelist,pio_control   1       1     rh   "piostride"                 ""      "" 
+rconfig   integer pioshift               namelist,pio_control   1       1     rh   "pioshift"                  ""      "" 
+
 # DFI namelist
 rconfig   integer dfi_opt                namelist,dfi_control   1       0     rh   "dfi_opt"                  ""      ""
 rconfig   integer dfi_savehydmeteors     namelist,dfi_control   1       0     rh   "dfi_radar"                "DFI radar switch"      ""

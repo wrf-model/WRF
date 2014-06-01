@@ -1,8 +1,4 @@
 SUBROUTINE wrf_bdyin ( fid , grid , config_flags , switch , ierr )
-#ifdef PIO
-    use pio
-    use pio_kinds
-#endif
     USE module_domain
     USE module_state_description
     USE module_configure

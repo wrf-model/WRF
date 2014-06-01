@@ -2,10 +2,6 @@
 !  ---principal wrf input routine (called from routines in module_io_domain )
 
   SUBROUTINE input_wrf ( fid , grid , config_flags , switch , ierr )
-#ifdef PIO
-    use pio
-    use pio_kinds
-#endif
     USE module_domain
     USE module_state_description
     USE module_configure
@@ -115,6 +111,9 @@
     WRITE(wrf_err_message,*)'input_wrf: begin'
     CALL wrf_debug( 300 , wrf_err_message )
 
+    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+    write(unit=0, fmt='(a,i6)') 'grid%id = ', grid%id
+
     CALL modify_io_masks ( grid%id )   ! this adjusts the I/O masks according to the users run-time specs, if any
 
     ierr = 0
@@ -130,6 +129,10 @@
       WRITE(wrf_err_message,*)'module_io_wrf: input_wrf: wrf_inquire_filename Status = ',ierr
       CALL wrf_error_fatal( wrf_err_message )
     ENDIF
+
+    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+    write(unit=0, fmt='(a,a)') 'fname = ', trim(fname)
+    write(unit=0, fmt='(a,i6)') 'fid = ', fid
 
     WRITE(wrf_err_message,*)'input_wrf: filestate = ',filestate
     CALL wrf_debug( 300 , wrf_err_message )
@@ -151,6 +154,11 @@
 
         CALL wrf_get_dom_ti_char ( fid , 'TITLE' , input_name , ierr )
         grid%this_is_an_ideal_run = INDEX(TRIM(input_name) , 'IDEAL' ) .NE. 0
+
+        write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+        write(unit=0, fmt='(a,a)') 'input_name = ', trim(input_name)
+        write(unit=0, fmt='(a,i6)') 'ierr = ', ierr
+
         IF ( grid%this_is_an_ideal_run ) THEN
           grid%hypsometric_opt = 1
           config_flags%hypsometric_opt = 1
@@ -272,6 +280,10 @@
 
       CALL wrf_get_dom_ti_char ( fid , 'SIMULATION_START_DATE' , simulation_start_date , ierr )
       CALL nl_get_reset_simulation_start ( 1, reset_simulation_start )
+
+      write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+      write(unit=0, fmt='(a,i6)') 'ierr = ', ierr
+
       IF ( ( ierr .EQ. 0 ) .AND. ( .NOT. reset_simulation_start ) ) THEN
         ! Overwrite simulation start date with metadata.
 #ifdef PLANET
@@ -286,12 +298,14 @@
                simulation_start_day,    simulation_start_hour,                      &
                simulation_start_minute, simulation_start_second
 #endif
+        write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
         CALL nl_set_simulation_start_year   ( 1 , simulation_start_year   )
         CALL nl_set_simulation_start_month  ( 1 , simulation_start_month  )
         CALL nl_set_simulation_start_day    ( 1 , simulation_start_day    )
         CALL nl_set_simulation_start_hour   ( 1 , simulation_start_hour   )
         CALL nl_set_simulation_start_minute ( 1 , simulation_start_minute )
         CALL nl_set_simulation_start_second ( 1 , simulation_start_second )
+        write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
         IF ( switch .EQ. input_only  ) THEN
           WRITE(wrf_err_message,*) ' input_wrf, input_only:  SIMULATION_START_DATE = ', &
                                   simulation_start_date(1:19)
@@ -350,6 +364,8 @@
     !  Test to make sure that the input data is the right size.  Do this for input from real/ideal into
     !  WRF, and from the standard initialization into real.
 
+    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+
     IF ( ( switch .EQ.     input_only  ) .OR. &
          ( switch .EQ. auxinput1_only ) ) THEN
        ierr = 0
@@ -402,6 +418,8 @@
 #endif
     END IF
 
+    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+
 #if (EM_CORE == 1)
     IF ( ( switch .EQ. input_only ) .OR. ( switch .EQ. auxinput2_only ) .OR. ( switch .EQ. auxinput1_only ) ) THEN
        ierr = 0
@@ -442,6 +460,8 @@
        END IF
     END IF
 #endif
+
+    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
 
     ! do the check later (see check_if_dryrun below)
 
@@ -572,6 +592,8 @@
     ! The default is set to 24 somewhere, from the number of categories
     ! in the traditional USGS dataset
 
+    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+
     IF ( switch .EQ. input_only ) THEN
       call wrf_get_dom_ti_integer(fid, "NUM_LAND_CAT", num_land_cat_compare, 1, icnt, ierr)
       if ( (ierr .NE. 0) .OR. ( num_land_cat_compare .LT. 1 ) .OR. ( num_land_cat_compare .GT. 1000 ) ) then
@@ -624,6 +646,8 @@
           END IF
        END IF
     END IF
+
+    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
 
 #if 0
 #ifdef WRF_CHEM
@@ -755,6 +779,8 @@
     ENDIF
 #endif
 
+    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+
 #if (EM_CORE == 1)
 
 !KLUDGE - is there a more elegant way to determine "old si" input
@@ -823,6 +849,8 @@
        ENDIF
 
 #endif
+
+    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
 
 #if (DA_CORE == 1)
     ! Test here to check that config_flags%hypsometric_opt in namelist
@@ -937,6 +965,8 @@
         ENDIF
 #endif
     ENDIF
+
+    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
 
 #if ( ( EM_CORE == 1 ) && ( DA_CORE != 1 ) )
     !  Vertical interpolation space is required if specified by user.
@@ -1497,6 +1527,8 @@
       ENDIF
     ENDIF
 
+    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+
 #if (DA_CORE != 1)
     CALL wrf_tsin( grid , ierr )
 #if (EM_CORE == 1)
@@ -1508,6 +1540,8 @@
 
     WRITE(wrf_err_message,*)'input_wrf: end, fid = ',fid
     CALL wrf_debug( 300 , wrf_err_message )
+
+    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
 
     RETURN
   END SUBROUTINE input_wrf

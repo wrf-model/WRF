@@ -20,9 +20,6 @@
     USE module_wrf_error
     USE module_state_description
     USE module_timing
-#ifdef PIO
-    use pio_kinds
-#endif
 
     IMPLICIT NONE
 
@@ -133,11 +130,7 @@
     INTEGER io_form
     LOGICAL, EXTERNAL :: has_char
     INTEGER, EXTERNAL :: use_package
-#ifdef PIO
-    type (File_desc_t) Hndl
-#else
     INTEGER Hndl
-#endif
 
     IF ( wrf_at_debug_level( 500 ) ) THEN
       call start_timing

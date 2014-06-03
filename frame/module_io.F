@@ -1054,10 +1054,6 @@ SUBROUTINE wrf_inquire_filename ( DataHandle, FileName , FileStatus, Status )
 
   CALL wrf_debug( 300, 'module_io.F: in wrf_inquire_filename' )
 
-  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-  write(unit=0, fmt='(a,a)') 'FileName = ', trim(FileName)
-  write(unit=0, fmt='(a,i6)') 'DataHandle = ', DataHandle
-
   Status = 0
   CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 

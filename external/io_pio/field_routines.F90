@@ -2,7 +2,7 @@ subroutine ext_pio_RealFieldIO(Coll,IO,NCID,VarID,VStart,VCount,Data,Status)
   use pio
   use pio_kinds
   use wrf_data_pio
-  use ext_pio_support_routines
+  use pio_routines
   implicit none
   include 'wrf_status_codes.h'
   logical                     ,intent(in)    :: Coll
@@ -40,7 +40,7 @@ subroutine ext_pio_DoubleFieldIO(Coll,IO,NCID,VarID,VStart,VCount,Data,Status)
   use pio
   use pio_kinds
   use wrf_data_pio
-  use ext_pio_support_routines
+  use pio_routines
   implicit none
   include 'wrf_status_codes.h'
   logical                     ,intent(in)    :: Coll
@@ -78,7 +78,7 @@ subroutine ext_pio_IntFieldIO(Coll,IO,NCID,VarID,VStart,VCount,Data,Status)
   use pio
   use pio_kinds
   use wrf_data_pio
-  use ext_pio_support_routines
+  use pio_routines
   implicit none
   include 'wrf_status_codes.h'
   logical                     ,intent(in)    :: Coll
@@ -116,7 +116,7 @@ subroutine ext_pio_LogicalFieldIO(Coll,IO,NCID,VarID,VStart,VCount,Data,Status)
   use pio
   use pio_kinds
   use wrf_data_pio
-  use ext_pio_support_routines
+  use pio_routines
   implicit none
   include 'wrf_status_codes.h'
   logical                                         ,intent(in)    :: Coll

@@ -1,3 +1,7 @@
+!INTERFACE ext_pio_get_dom_ti_integer
+!  MODULE PROCEDURE ext_pio_get_dom_ti_integer_array, ext_pio_get_dom_ti_integer_scalar
+!END INTERFACE
+
 subroutine ext_pio_open_for_read(DatasetName, grid, SysDepInfo, DataHandle, Status)
   use wrf_data_pio
   use pio_routines
@@ -96,8 +100,9 @@ subroutine ext_pio_open_for_read_begin( FileName, grid, SysDepInfo, DataHandle, 
   endif
 
   write(unit=0, fmt='(2a,2x,a,i6)') 'file:', __FILE__, 'line:', __LINE__
-
   call initialize_pio(grid, DH)
+  write(unit=0, fmt='(2a,2x,a,i6)') 'file:', __FILE__, 'line:', __LINE__
+  call define_pio_iodesc(grid, DH)
 
   write(unit=0, fmt='(2a,2x,a,i6)') 'file:', __FILE__, 'line:', __LINE__
   stat = pio_openfile(DH%iosystem, DH%file_handle, pio_iotype_pnetcdf, FileName)
@@ -116,6 +121,9 @@ subroutine ext_pio_open_for_read_begin( FileName, grid, SysDepInfo, DataHandle, 
      call wrf_debug ( WARN , TRIM(msg))
      return
   endif
+
+  write(unit=0, fmt='(3a,i6)') 'file: ',__FILE__,', line: ', __LINE__
+  write(unit=0, fmt='(2a)') 'DH%TimesName = ', DH%TimesName
 
   stat = pio_inquire_variable(DH%file_handle, DH%vtime, DH%TimesName, XType, StoredDim, DimIDs, NAtts)
   call netcdf_err(stat,Status)
@@ -144,6 +152,10 @@ subroutine ext_pio_open_for_read_begin( FileName, grid, SysDepInfo, DataHandle, 
     return
   endif
 
+  write(unit=0, fmt='(3a,i6)') 'file: ',__FILE__,', line: ', __LINE__
+  write(unit=0, fmt='(a, i6)') 'DimIDs(1) = ', DimIDs(1), &
+                               'VLen(1) =', VLen(1)
+
   stat = pio_inq_dimlen(DH%file_handle, DimIDs(2), VLen(2))
   call netcdf_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
@@ -158,9 +170,13 @@ subroutine ext_pio_open_for_read_begin( FileName, grid, SysDepInfo, DataHandle, 
     return
   endif
 
+  write(unit=0, fmt='(3a,i6)') 'file: ',__FILE__,', line: ', __LINE__
+  write(unit=0, fmt='(a, i6)') 'DimIDs(2) = ', DimIDs(2), &
+                               'VLen(2) =', VLen(2)
+
   VStart(1) = 1
   VStart(2) = 1
-  stat = pio_get_var(DH%file_handle, DH%vtime, DH%Times)
+  stat = pio_get_var(DH%file_handle, DH%vtime, DH%Times(1:VLen(2)))
   call netcdf_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
     write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__
@@ -168,15 +184,24 @@ subroutine ext_pio_open_for_read_begin( FileName, grid, SysDepInfo, DataHandle, 
     return
   endif
 
+  write(unit=0, fmt='(3a,i6)') 'file: ',__FILE__,', line: ', __LINE__
+  write(unit=0, fmt='(2a)') 'DH%TimesName = ', DH%TimesName
+  write(unit=0, fmt='(2a)') 'DH%Times = ', DH%Times(1:VLen(2))
+
   stat = pio_inquire(DH%file_handle, ndims, TotalNumVars, NAtts, unlimitedDimID)
- !stat = pio_inquire(DH%file_handle, nDimensions=ndims, nVariables=TotalNumVars, &
- !                   nAttributes=NAtts, unlimitedDimID=unlimitedDimID)
   call netcdf_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
     write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
+
+  write(unit=0, fmt='(3a,i6)') 'file: ',__FILE__,', line: ', __LINE__
+  write(unit=0, fmt='(a, i6)') 'ndims = ', ndims, &
+                               'TotalNumVars = ', TotalNumVars, &
+                               'NAtts = ', NAtts, &
+                               'unlimitedDimID = ', unlimitedDimID
+
   NumVars = 0
   do i=1,TotalNumVars
     stat = pio_inq_varname(DH%file_handle,i,Name)
@@ -229,6 +254,8 @@ subroutine ext_pio_open_for_update( FileName, grid, SysDepInfo, DataHandle, Stat
   integer                                :: ndims, unlimitedDimID
   character(PIO_MAX_NAME)                :: Name
 
+  write(unit=0, fmt='(3a,i6)') 'file: ',__FILE__,', line: ', __LINE__
+
   if(WrfIOnotInitialized) then
     Status = WRF_IO_NOT_INITIALIZED 
     write(msg,*) 'ext_pio_ioinit was not called ',__FILE__,', line', __LINE__
@@ -241,6 +268,11 @@ subroutine ext_pio_open_for_update( FileName, grid, SysDepInfo, DataHandle, Stat
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
+
+  write(unit=0, fmt='(2a,2x,a,i6)') 'file:', __FILE__, 'line:', __LINE__
+  call initialize_pio(grid, DH)
+  call define_pio_iodesc(grid, DH)
+
   stat = pio_openfile(DH%iosystem, DH%file_handle, pio_iotype_pnetcdf, FileName)
   call netcdf_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
@@ -376,6 +408,10 @@ SUBROUTINE ext_pio_open_for_write_begin(FileName,grid,SysDepInfo,DataHandle,Stat
   endif
   DH%TimeIndex = 0
   DH%Times     = ZeroDate
+
+  write(unit=0, fmt='(2a,2x,a,i6)') 'file:', __FILE__, 'line:', __LINE__
+  call initialize_pio(grid, DH)
+  call define_pio_iodesc(grid, DH)
 
   call mpi_info_create( info, ierr )
   stat = pio_CreateFile(DH%iosystem, DH%file_handle, &
@@ -582,8 +618,6 @@ subroutine ext_pio_iosync( DataHandle, Status)
   return
 end subroutine ext_pio_iosync
 
-
-
 subroutine ext_pio_redef( DataHandle, Status)
   use wrf_data_pio
   use pio_routines
@@ -694,7 +728,6 @@ subroutine ext_pio_ioinit(SysDepInfo, Status)
   return
 end subroutine ext_pio_ioinit
 
-
 subroutine ext_pio_inquiry (Inquiry, Result, Status)
   use wrf_data_pio
   implicit none
@@ -719,9 +752,6 @@ subroutine ext_pio_inquiry (Inquiry, Result, Status)
   Status=WRF_NO_ERR
   return
 end subroutine ext_pio_inquiry
-
-
-
 
 subroutine ext_pio_ioexit(Status)
   use wrf_data_pio
@@ -756,9 +786,9 @@ subroutine ext_pio_get_dom_ti_real(DataHandle,Element,Data,Count,OutCount,Status
   include 'wrf_status_codes.h'
   integer               ,intent(in)     :: DataHandle
   character*(*)         ,intent(in)     :: Element
-  real,intent(out) :: Data(:)
-  integer,intent(in) :: Count
-  integer,intent(out) :: OutCOunt
+  real,                  intent(out)    :: Data(:)
+  integer,               intent(in)     :: Count
+  integer,               intent(out)    :: OutCOunt
   integer               ,intent(out)    :: Status
   type(wrf_data_handle) ,pointer        :: DH
   integer                               :: XType
@@ -772,8 +802,12 @@ subroutine ext_pio_get_dom_ti_real(DataHandle,Element,Data,Count,OutCount,Status
     call wrf_debug ( WARN , msg) 
     return
   endif
+
 ! Do nothing unless it is time to read time-independent domain metadata.  
-IF ( ncd_ok_to_get_dom_ti( DataHandle ) ) THEN
+  IF(.not. ncd_ok_to_get_dom_ti( DataHandle ) ) THEN
+     return
+  ENDIF
+
   if(DH%FileStatus == WRF_FILE_NOT_OPENED) then
     Status = WRF_WARN_FILE_NOT_OPENED   
     write(msg,*) 'Warning FILE NOT OPENED in ',__FILE__,', line', __LINE__
@@ -788,26 +822,20 @@ IF ( ncd_ok_to_get_dom_ti( DataHandle ) ) THEN
     call wrf_debug ( WARN , msg)
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_READ) then
     stat = pio_inq_att(DH%file_handle, PIO_GLOBAL, Element, XType, Len)
+    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+    write(unit=0, fmt='(2a)') 'Element: ', trim(Element)
+    write(unit=0, fmt='(a,i6)') 'XType: ', XType, 'PIO_REAL: ', PIO_REAL
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
       write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__,' Element ',trim(Element)
       call wrf_debug ( WARN , msg)
       return
     endif
-    if ( PIO_REAL == PIO_DOUBLE ) then
-      if( .NOT. ( XType==PIO_REAL .OR. XType==PIO_DOUBLE) ) then
-        Status = WRF_WARN_TYPE_MISMATCH   
-        write(msg,*) 'Warning TYPE MISMATCH in ',__FILE__,', line', __LINE__,' Element ', trim(Element)
-        call wrf_debug ( WARN , msg)
-        return
-      endif
-    else
-      if( XType/=PIO_REAL) then
-        Status = WRF_WARN_TYPE_MISMATCH  
-        write(msg,*) 'Warning TYPE MISMATCH in ',__FILE__,', line', __LINE__,' Element ', trim(Element)
-        call wrf_debug ( WARN , msg)
-        return
-      endif
+    if( XType/=PIO_REAL) then
+      Status = WRF_WARN_TYPE_MISMATCH  
+      write(msg,*) 'Warning TYPE MISMATCH in ',__FILE__,', line', __LINE__,' Element ', trim(Element)
+      call wrf_debug ( WARN , msg)
+      return
     endif
     if(Len<=0) then
       Status = WRF_WARN_LENGTH_LESS_THAN_1  
@@ -849,11 +877,11 @@ IF ( ncd_ok_to_get_dom_ti( DataHandle ) ) THEN
     write(msg,*) 'Fatal error BAD FILE STATUS in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( FATAL , msg)
   endif
-ENDIF
+  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
   return
 end subroutine ext_pio_get_dom_ti_real
 
-subroutine ext_pio_get_dom_ti_integer(DataHandle,Element,Data,Count,OutCount,Status)
+subroutine ext_pio_get_dom_ti_integer_array(DataHandle,Element,Data,Count,OutCount,Status)
   use pio_kinds
   use pio
   use wrf_data_pio
@@ -864,9 +892,9 @@ subroutine ext_pio_get_dom_ti_integer(DataHandle,Element,Data,Count,OutCount,Sta
   include 'wrf_status_codes.h'
   integer               ,intent(in)     :: DataHandle
   character*(*)         ,intent(in)     :: Element
-  integer,intent(out) :: Data(:)
-  integer,intent(in) :: Count
-  integer,intent(out) :: OutCOunt
+  integer,               intent(out)    :: Data(:)
+  integer,               intent(in)     :: Count
+  integer,               intent(out)    :: OutCOunt
   integer               ,intent(out)    :: Status
   type(wrf_data_handle) ,pointer        :: DH
   integer                               :: XType
@@ -874,48 +902,54 @@ subroutine ext_pio_get_dom_ti_integer(DataHandle,Element,Data,Count,OutCount,Sta
   integer                               :: stat
   integer,allocatable :: Buffer(:)
 
+  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+
   call GetDH(DataHandle,DH,Status)
   if(Status /= WRF_NO_ERR) then
     write(msg,*) 'Warning Status = ',Status,' in ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , msg) 
     return
   endif
+
 ! Do nothing unless it is time to read time-independent domain metadata.  
-IF ( ncd_ok_to_get_dom_ti( DataHandle ) ) THEN
+  IF(.not. ncd_ok_to_get_dom_ti( DataHandle ) ) THEN
+     return
+  ENDIF
+
+  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
   if(DH%FileStatus == WRF_FILE_NOT_OPENED) then
+    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
     Status = WRF_WARN_FILE_NOT_OPENED   
     write(msg,*) 'Warning FILE NOT OPENED in ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , msg)
   elseif(DH%FileStatus == WRF_FILE_OPENED_NOT_COMMITTED) then
+    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
     Status = WRF_WARN_DRYRUN_READ   
     write(msg,*) 'Warning DRYRUN READ in ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , msg)
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_WRITE) then
+    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
     Status = WRF_WARN_READ_WONLY_FILE   
     write(msg,*) 'Warning READ WRITE ONLY FILE in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( WARN , msg)
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_READ) then
+    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
     stat = pio_inq_att(DH%file_handle, PIO_GLOBAL, Element, XType, Len)
+    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+    write(unit=0, fmt='(2a)') 'Element: ', trim(Element)
+    write(unit=0, fmt='(a,i6)') 'XType: ', XType, 'PIO_INT: ', PIO_INT
+    write(unit=0, fmt='(a,i6)') 'Len: ', Len, 'Count: ', Count
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
       write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__,' Element ',trim(Element)
       call wrf_debug ( WARN , msg)
       return
     endif
-    if ( PIO_INT == PIO_DOUBLE .OR. PIO_INT == PIO_REAL ) then
-      if( .NOT. ( XType==PIO_REAL .OR. XType==PIO_DOUBLE) ) then
-        Status = WRF_WARN_TYPE_MISMATCH   
-        write(msg,*) 'Warning TYPE MISMATCH in ',__FILE__,', line', __LINE__,' Element ', trim(Element)
-        call wrf_debug ( WARN , msg)
-        return
-      endif
-    else
-      if( XType/=PIO_INT) then
-        Status = WRF_WARN_TYPE_MISMATCH  
-        write(msg,*) 'Warning TYPE MISMATCH in ',__FILE__,', line', __LINE__,' Element ', trim(Element)
-        call wrf_debug ( WARN , msg)
-        return
-      endif
+    if( XType/=PIO_INT) then
+      Status = WRF_WARN_TYPE_MISMATCH  
+      write(msg,*) 'Warning TYPE MISMATCH in ',__FILE__,', line', __LINE__,' Element ', trim(Element)
+      call wrf_debug ( WARN , msg)
+      return
     endif
     if(Len<=0) then
       Status = WRF_WARN_LENGTH_LESS_THAN_1  
@@ -931,20 +965,29 @@ IF ( ncd_ok_to_get_dom_ti( DataHandle ) ) THEN
       return
     endif
     stat = pio_get_att (DH%file_handle,PIO_GLOBAL,Element,Buffer)
+    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
       write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__,' Element ',Element
       call wrf_debug ( WARN , msg)
       return
     endif
+    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+    write(unit=0, fmt='(a,i6)') 'Len: ', Len, 'Count: ', Count
+    write(unit=0, fmt='(a,i6)') 'Buffer(1) = ', Buffer(1)
     Data(1:min(Len,Count)) = Buffer(1:min(Len,Count))
+    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+    write(unit=0, fmt='(a,i6)') 'Data(1) = ', Data(1)
     deallocate(Buffer, STAT=stat)
     if(stat/= WRF_NO_ERR) then
+      write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
       Status = WRF_ERR_FATAL_DEALLOCATION_ERR 
       write(msg,*) 'Fatal DEALLOCATION ERROR in ',__FILE__,', line', __LINE__
       call wrf_debug ( FATAL , msg)
       return
     endif
+    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
     if(Len > Count) then
       OutCount = Count
       Status = WRF_WARN_MORE_DATA_IN_FILE  
@@ -952,12 +995,139 @@ IF ( ncd_ok_to_get_dom_ti( DataHandle ) ) THEN
       OutCount = Len
       Status = WRF_NO_ERR
     endif
+    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
   else
+    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
     Status = WRF_ERR_FATAL_BAD_FILE_STATUS  
     write(msg,*)  'Fatal error BAD FILE STATUS in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( FATAL , msg)
   endif
-ENDIF
+  write(unit=0, fmt='(3a,i6)') 'end ext_pio_get_dom_ti_integer, in file: ', __FILE__, ', line: ', __LINE__
+  return
+end subroutine ext_pio_get_dom_ti_integer_array
+
+subroutine ext_pio_get_dom_ti_integer(DataHandle,Element,Data,Count,OutCount,Status)
+  use pio_kinds
+  use pio
+  use wrf_data_pio
+  use pio_routines
+
+  implicit none
+
+  include 'wrf_status_codes.h'
+  integer               ,intent(in)     :: DataHandle
+  character*(*)         ,intent(in)     :: Element
+  integer,               intent(out)    :: Data
+  integer,               intent(in)     :: Count
+  integer,               intent(out)    :: OutCOunt
+  integer               ,intent(out)    :: Status
+  type(wrf_data_handle) ,pointer        :: DH
+  integer                               :: XType
+  integer                               :: Len
+  integer                               :: stat
+  integer,allocatable :: Buffer(:)
+
+  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+
+  call GetDH(DataHandle,DH,Status)
+  if(Status /= WRF_NO_ERR) then
+    write(msg,*) 'Warning Status = ',Status,' in ',__FILE__,', line', __LINE__
+    call wrf_debug ( WARN , msg) 
+    return
+  endif
+
+! Do nothing unless it is time to read time-independent domain metadata.  
+  IF(.not. ncd_ok_to_get_dom_ti( DataHandle ) ) THEN
+     return
+  ENDIF
+
+  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+  if(DH%FileStatus == WRF_FILE_NOT_OPENED) then
+    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+    Status = WRF_WARN_FILE_NOT_OPENED   
+    write(msg,*) 'Warning FILE NOT OPENED in ',__FILE__,', line', __LINE__
+    call wrf_debug ( WARN , msg)
+  elseif(DH%FileStatus == WRF_FILE_OPENED_NOT_COMMITTED) then
+    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+    Status = WRF_WARN_DRYRUN_READ   
+    write(msg,*) 'Warning DRYRUN READ in ',__FILE__,', line', __LINE__
+    call wrf_debug ( WARN , msg)
+  elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_WRITE) then
+    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+    Status = WRF_WARN_READ_WONLY_FILE   
+    write(msg,*) 'Warning READ WRITE ONLY FILE in ',__FILE__,', line', __LINE__ 
+    call wrf_debug ( WARN , msg)
+  elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_READ) then
+    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+    stat = pio_inq_att(DH%file_handle, PIO_GLOBAL, Element, XType, Len)
+    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+    write(unit=0, fmt='(2a)') 'Element: ', trim(Element)
+    write(unit=0, fmt='(a,i6)') 'XType: ', XType, 'PIO_INT: ', PIO_INT
+    write(unit=0, fmt='(a,i6)') 'Len: ', Len, 'Count: ', Count
+    call netcdf_err(stat,Status)
+    if(Status /= WRF_NO_ERR) then
+      write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__,' Element ',trim(Element)
+      call wrf_debug ( WARN , msg)
+      return
+    endif
+    if( XType/=PIO_INT) then
+      Status = WRF_WARN_TYPE_MISMATCH  
+      write(msg,*) 'Warning TYPE MISMATCH in ',__FILE__,', line', __LINE__,' Element ', trim(Element)
+      call wrf_debug ( WARN , msg)
+      return
+    endif
+    if(Len<=0) then
+      Status = WRF_WARN_LENGTH_LESS_THAN_1  
+      write(msg,*) 'Warning LENGTH < 1 in ',__FILE__,', line', __LINE__,' Element ', trim(Element)
+      call wrf_debug ( WARN , msg)
+      return
+    endif
+    allocate(Buffer(Len), STAT=stat)
+    if(stat/= 0) then
+      Status = WRF_ERR_FATAL_ALLOCATION_ERROR  
+      write(msg,*) 'Fatal ALLOCATION ERROR in ',__FILE__,', line', __LINE__
+      call wrf_debug ( FATAL , msg)
+      return
+    endif
+    stat = pio_get_att (DH%file_handle,PIO_GLOBAL,Element,Buffer)
+    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+    call netcdf_err(stat,Status)
+    if(Status /= WRF_NO_ERR) then
+      write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__,' Element ',Element
+      call wrf_debug ( WARN , msg)
+      return
+    endif
+    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+    write(unit=0, fmt='(a,i6)') 'Len: ', Len, 'Count: ', Count
+    write(unit=0, fmt='(a,i6)') 'Buffer(1) = ', Buffer(1)
+    Data = Buffer(1)
+    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+    write(unit=0, fmt='(a,i6)') 'Data = ', Data
+    deallocate(Buffer, STAT=stat)
+    if(stat/= WRF_NO_ERR) then
+      write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+      Status = WRF_ERR_FATAL_DEALLOCATION_ERR 
+      write(msg,*) 'Fatal DEALLOCATION ERROR in ',__FILE__,', line', __LINE__
+      call wrf_debug ( FATAL , msg)
+      return
+    endif
+    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+    if(Len > Count) then
+      OutCount = Count
+      Status = WRF_WARN_MORE_DATA_IN_FILE  
+    else
+      OutCount = Len
+      Status = WRF_NO_ERR
+    endif
+    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+  else
+    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+    Status = WRF_ERR_FATAL_BAD_FILE_STATUS  
+    write(msg,*)  'Fatal error BAD FILE STATUS in ',__FILE__,', line', __LINE__ 
+    call wrf_debug ( FATAL , msg)
+  endif
+  write(unit=0, fmt='(3a,i6)') 'end ext_pio_get_dom_ti_integer, in file: ', __FILE__, ', line: ', __LINE__
   return
 end subroutine ext_pio_get_dom_ti_integer
 
@@ -982,6 +1152,8 @@ subroutine ext_pio_get_dom_ti_double(DataHandle,Element,Data,Count,OutCount,Stat
   integer                               :: stat
   real*8,allocatable :: Buffer(:)
 
+  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+
   call GetDH(DataHandle,DH,Status)
   if(Status /= WRF_NO_ERR) then
     write(msg,*) 'Warning Status = ',Status,' in ',__FILE__,', line', __LINE__
@@ -990,6 +1162,7 @@ subroutine ext_pio_get_dom_ti_double(DataHandle,Element,Data,Count,OutCount,Stat
   endif
 ! Do nothing unless it is time to read time-independent domain metadata.  
 IF ( ncd_ok_to_get_dom_ti( DataHandle ) ) THEN
+  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
   if(DH%FileStatus == WRF_FILE_NOT_OPENED) then
     Status = WRF_WARN_FILE_NOT_OPENED   
     write(msg,*) 'Warning FILE NOT OPENED in ',__FILE__,', line', __LINE__
@@ -1010,20 +1183,11 @@ IF ( ncd_ok_to_get_dom_ti( DataHandle ) ) THEN
       call wrf_debug ( WARN , msg)
       return
     endif
-    if ( PIO_DOUBLE == PIO_DOUBLE .OR. PIO_DOUBLE == PIO_REAL ) then
-      if( .NOT. ( XType==PIO_REAL .OR. XType==PIO_DOUBLE) ) then
-        Status = WRF_WARN_TYPE_MISMATCH   
-        write(msg,*) 'Warning TYPE MISMATCH in ',__FILE__,', line', __LINE__,' Element ', trim(Element)
-        call wrf_debug ( WARN , msg)
-        return
-      endif
-    else
-      if( XType/=PIO_DOUBLE) then
-        Status = WRF_WARN_TYPE_MISMATCH  
-        write(msg,*) 'Warning TYPE MISMATCH in ',__FILE__,', line', __LINE__,' Element ', trim(Element)
-        call wrf_debug ( WARN , msg)
-        return
-      endif
+    if( .NOT. ( XType==PIO_REAL .OR. XType==PIO_DOUBLE) ) then
+      Status = WRF_WARN_TYPE_MISMATCH   
+      write(msg,*) 'Warning TYPE MISMATCH in ',__FILE__,', line', __LINE__,' Element ', trim(Element)
+      call wrf_debug ( WARN , msg)
+      return
     endif
     if(Len<=0) then
       Status = WRF_WARN_LENGTH_LESS_THAN_1  
@@ -1066,6 +1230,7 @@ IF ( ncd_ok_to_get_dom_ti( DataHandle ) ) THEN
     call wrf_debug ( FATAL , msg)
   endif
 ENDIF
+  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
   return
 end subroutine ext_pio_get_dom_ti_double
 
@@ -4848,10 +5013,10 @@ subroutine ext_pio_inquire_filename( Datahandle, FileName,  FileStatus, Status )
   FileName = DH%FileName
   FileStatus = DH%FileStatus
   Status = WRF_NO_ERR
-  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-  write(unit=0, fmt='(a,i6)') 'FileStatus = ', FileStatus
-  write(unit=0, fmt='(2a)') 'FileName = ', FileName
-  write(unit=0, fmt='(a,i6)') 'Status = ', Status
+ !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+ !write(unit=0, fmt='(a,i6)') 'FileStatus = ', FileStatus
+ !write(unit=0, fmt='(2a)') 'FileName = ', FileName
+ !write(unit=0, fmt='(a,i6)') 'Status = ', Status
   return
 end subroutine ext_pio_inquire_filename
 

@@ -13,11 +13,11 @@ module pio_routines
   use pio_kinds
   use pio
 
+  use module_domain
+
   use wrf_data_pio
 
   implicit none
-
-! include 'wrf_status_codes.h'
 
   include 'mpif.h'
 
@@ -81,6 +81,8 @@ subroutine deallocHandle(DataHandle, Status)
       DH => WrfDataHandles(DataHandle)
       DH%Free      =.TRUE.
     endif
+
+    deallocate(DH%iosystem)
   ENDIF
   Status = WRF_NO_ERR
 end subroutine deallocHandle
@@ -945,8 +947,6 @@ LOGICAL FUNCTION ncd_is_first_operation( DataHandle )
 END FUNCTION ncd_is_first_operation
 
 subroutine initialize_pio(grid, DH)
-   use module_domain
-
    implicit none
 
    type(domain)                   :: grid
@@ -956,9 +956,15 @@ subroutine initialize_pio(grid, DH)
    integer(i4) :: communicator, pioprocs, piostart, piostride, pioshift
 
    communicator = grid%communicator
+   allocate(DH%iosystem)
+
+  !call pio_setdebuglevel(1)
 
    call mpi_comm_size(communicator, nprocs, ierr)
    call mpi_comm_rank(communicator, myrank, ierr)
+  !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+  !write(unit=0, fmt='(a,i6)') 'nprocs = ', nprocs, &
+  !                            'myrank = ', myrank
 
    if(grid%pioprocs > nprocs) then
       write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
@@ -1024,10 +1030,12 @@ subroutine initialize_pio(grid, DH)
       piostart = grid%piostart
    endif
 
-   call get_ijk_from_grid(grid,                         &
-                          ids, ide, jds, jde, kds, kde, &
-                          ims, ime, jms, jme, kms, kme, &
-                          its, ite, jts, jte, kts, kte)
+   write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+   write(unit=0, fmt='(2(a,i6))') 'nprocs = ', nprocs, ', myrank = ', myrank
+   write(unit=0, fmt='(4(a,i6))') 'pioprocs = ', pioprocs, &
+                                ', piostride = ', piostride, &
+                                ', piostart = ', piostart, &
+                                ', pioshift = ', pioshift
 
   !call PIO_init to initiate iosystem
   !call PIO_init(my_rank, MPI_COMM_WORLD, 4, 0, 4, PIO_rearr_box, iosystem, 1)
@@ -1035,62 +1043,346 @@ subroutine initialize_pio(grid, DH)
                  piostart, piostride, &
                  PIO_rearr_box, DH%iosystem, pioshift)
 
-  DH%nprocs = nprocs
-  DH%myrank = myrank
+   DH%nprocs = nprocs
+   DH%myrank = myrank
 
-  DH%piostart = piostart
-  DH%pioshift = pioshift
-  DH%pioprocs = pioprocs
-  DH%piostride = piostride
+   DH%piostart = piostart
+   DH%pioshift = pioshift
+   DH%pioprocs = pioprocs
+   DH%piostride = piostride
+
+   call get_ijk_from_grid(grid,                         &
+                          ids, ide, jds, jde, kds, kde, &
+                          ims, ime, jms, jme, kms, kme, &
+                          its, ite, jts, jte, kts, kte)
+
+   write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+   write(unit=0, fmt='(3(a,i6))') 'ids = ', ids, ', jds = ', jds, ', kds = ', kds
+   write(unit=0, fmt='(3(a,i6))') 'ide = ', ide, ', jde = ', jde, ', kde = ', kde
+   write(unit=0, fmt='(3(a,i6))') 'ims = ', ims, ', jms = ', jms, ', kms = ', kms
+   write(unit=0, fmt='(3(a,i6))') 'ime = ', ime, ', jme = ', jme, ', kme = ', kme
+   write(unit=0, fmt='(3(a,i6))') 'its = ', its, ', jts = ', jts, ', kts = ', kts
+   write(unit=0, fmt='(3(a,i6))') 'ite = ', ite, ', jte = ', jte, ', kte = ', kte
 
 end subroutine initialize_pio
 
-subroutine define_pio_iodesc(myrank, comm, &
-                             iosystem, iodesc, iostat)
+subroutine define_pio_iodesc(grid, DH)
    implicit none
 
-   integer,               intent(in)    :: myrank, comm
-   type (IOsystem_desc_t)               :: iosystem
-   type (io_desc_t),      intent(out)   :: iodesc
-   integer(i4),           intent(out)   :: iostat
+   type(domain)                   :: grid
+   type(wrf_data_handle), pointer :: DH
+
+   integer(i4) :: communicator, myrank
+   integer(i4) :: iostat
 
    integer(kind=PIO_Offset), &
            dimension((ime - ims + 1) * (jme - jms + 1) * (kme - kms + 1)) &
-           :: compdof_index
-   integer :: dims(3)
+           :: compdof_3d
+   integer(kind=PIO_Offset), &
+           dimension((ime - ims + 1) * (jme - jms + 1)) &
+           :: compdof_2d
+   integer :: dims3d(3), dims2d(2), dims1d(1)
+   integer :: dims3t(3), dims2t(2), dims1t(1)
    integer :: i, j, k, npos
 
-   dims(1) = ide
-   dims(2) = jde
-   dims(3) = kde
+   communicator = grid%communicator
+   myrank = DH%myrank
 
    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+   write(unit=0, fmt='(3(a,i6))') 'ids = ', ids, ', jds = ', jds, ', kds = ', kds
    write(unit=0, fmt='(3(a,i6))') 'ide = ', ide, ', jde = ', jde, ', kde = ', kde
+   write(unit=0, fmt='(3(a,i6))') 'ims = ', ims, ', jms = ', jms, ', kms = ', kms
    write(unit=0, fmt='(3(a,i6))') 'ime = ', ime, ', jme = ', jme, ', kme = ', kme
+   write(unit=0, fmt='(3(a,i6))') 'its = ', its, ', jts = ', jts, ', kts = ', kts
    write(unit=0, fmt='(3(a,i6))') 'ite = ', ite, ', jte = ', jte, ', kte = ', kte
 
-  !compdof_index =  -1
+!--For MASS variables
+   dims3d(1) = ide - 1
+   dims3d(2) = jde - 1
+   dims3d(3) = kde - 1
+
+   dims3t(1) = ite
+   dims3t(2) = jte
+   dims3t(3) = kte
+
+   if(dims3t(1) > dims3d(1)) dims3t(1) = dims3d(1)
+   if(dims3t(2) > dims3d(2)) dims3t(2) = dims3d(2)
+   if(dims3t(3) > dims3d(3)) dims3t(3) = dims3d(3)
+
+   dims2d(1) = dims3d(1)
+   dims2d(2) = dims3d(2)
+   dims2t(1) = dims3t(1)
+   dims2t(2) = dims3t(2)
+
+   dims1d(1) = dims3d(3)
+   dims1t(1) = dims3t(3)
+
+   write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+   write(unit=0, fmt='(a, 6i6)') 'dims3d = ', dims3d
+   write(unit=0, fmt='(a, 6i6)') 'dims2d = ', dims2d
+   write(unit=0, fmt='(a, 6i6)') 'dims1d = ', dims1d
+   write(unit=0, fmt='(a, 6i6)') 'dims3t = ', dims3t
+   write(unit=0, fmt='(a, 6i6)') 'dims2t = ', dims2t
+   write(unit=0, fmt='(a, 6i6)') 'dims1t = ', dims1t
+
+  !compdof_3d =  -1
+  !compdof_2d =  -1
 
    do j = jms, jme
-   do k = kms, kme
-   do i = ims, ime
-      npos = i + (ime - ims + 1) * (k-1 + (kme - kms + 1) * (j-1))
-      compdof_index(npos) = -1;
-   enddo
-   enddo
+      do i = ims, ime
+         npos = (i - ims + 1) + (ime - ims + 1) * (j - jms)
+         compdof_2d(npos) = 0
+      end do
+
+      do k = kms, kme
+      do i = ims, ime
+         npos = (i - ims + 1) + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (j - jms))
+         compdof_3d(npos) = 0
+      enddo
+      enddo
    enddo
 
-   do j = jts, jte
-   do k = kts, kte
-   do i = its, ite
-      npos = i + (ime - ims + 1) * (k-1 + (kme - kms + 1) * (j-1))
-      compdof_index(npos) = i + (jde - jds + 1) * (j-1 + (ide - ids + 1) * (k-1))
-   enddo
-   enddo
+  !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+  !write(unit=0, fmt='(a,i6)') 'npos = ', npos, &
+  !                            '(ime - ims + 1) * (jme - jms + 1) * (kme - kms + 1) = ', &
+  !                             (ime - ims + 1) * (jme - jms + 1) * (kme - kms + 1)
+
+   do j = jts, dims3t(2)
+      do i = its, dims3t(1)
+         npos = i - ims + 1 + (ime - ims + 1) * (j - jms)
+         compdof_2d(npos) = i + dims3d(1) * (j - 1)
+      end do
+
+      do k = kts, dims3t(3)
+      do i = its, dims3t(1)
+         npos = i - ims + 1 + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (j - jms))
+         compdof_3d(npos) = i + dims3d(1) * (k - 1 + dims3d(3) * (j - 1))
+      enddo
+      enddo
    enddo
 
 !--call init_decomp in order to setup the IO decomposition with PIO
-   call PIO_initdecomp(iosystem, PIO_real, dims, compdof_index, iodesc)
+   call PIO_initdecomp(DH%iosystem, PIO_int,    dims3d, compdof_3d, DH%iodesc3d_m_int)
+   call PIO_initdecomp(DH%iosystem, PIO_real,   dims3d, compdof_3d, DH%iodesc3d_m_real)
+   call PIO_initdecomp(DH%iosystem, PIO_double, dims3d, compdof_3d, DH%iodesc3d_m_double)
+
+   call PIO_initdecomp(DH%iosystem, PIO_int,    dims2d, compdof_2d, DH%iodesc2d_m_int)
+   call PIO_initdecomp(DH%iosystem, PIO_real,   dims2d, compdof_2d, DH%iodesc2d_m_real)
+   call PIO_initdecomp(DH%iosystem, PIO_double, dims2d, compdof_2d, DH%iodesc2d_m_double)
+
+   write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+!--For X-STAG variables
+   dims3d(1) = ide
+   dims3d(2) = jde - 1
+   dims3d(3) = kde - 1
+
+   dims3t(1) = ite
+   dims3t(2) = jte
+   dims3t(3) = kte
+
+   if(dims3t(1) > dims3d(1)) dims3t(1) = dims3d(1)
+   if(dims3t(2) > dims3d(2)) dims3t(2) = dims3d(2)
+   if(dims3t(3) > dims3d(3)) dims3t(3) = dims3d(3)
+
+   dims2d(1) = dims3d(1)
+   dims2d(2) = dims3d(2)
+   dims2t(1) = dims3t(1)
+   dims2t(2) = dims3t(2)
+
+   dims1d(1) = dims3d(3)
+   dims1t(1) = dims3t(3)
+
+   write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+   write(unit=0, fmt='(a, 6i6)') 'dims3d = ', dims3d
+   write(unit=0, fmt='(a, 6i6)') 'dims2d = ', dims2d
+   write(unit=0, fmt='(a, 6i6)') 'dims1d = ', dims1d
+   write(unit=0, fmt='(a, 6i6)') 'dims3t = ', dims3t
+   write(unit=0, fmt='(a, 6i6)') 'dims2t = ', dims2t
+   write(unit=0, fmt='(a, 6i6)') 'dims1t = ', dims1t
+
+  !compdof_3d =  -1
+  !compdof_2d =  -1
+
+   do j = jms, jme
+      do i = ims, ime
+         npos = (i - ims + 1) + (ime - ims + 1) * (j - jms)
+         compdof_2d(npos) = 0
+      end do
+
+      do k = kms, kme
+      do i = ims, ime
+         npos = (i - ims + 1) + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (j - jms))
+         compdof_3d(npos) = 0
+      enddo
+      enddo
+   enddo
+
+   write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+   write(unit=0, fmt='(a,i6)') 'npos = ', npos, &
+                               '(ime - ims + 1) * (jme - jms + 1) = ', (ime - ims + 1) * (jme - jms + 1), &
+                               '(ime - ims + 1) * (jme - jms + 1) * (kme - kms + 1) = ', &
+                                (ime - ims + 1) * (jme - jms + 1) * (kme - kms + 1)
+
+   do j = jts, dims3t(2)
+      do i = its, dims3t(1)
+         npos = i - ims + 1 + (ime - ims + 1) * (j - jms)
+         compdof_2d(npos) = i + dims3d(1) * (j - 1)
+      end do
+
+      do k = kts, dims3t(3)
+      do i = its, dims3t(1)
+         npos = i - ims + 1 + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (j - jms))
+         compdof_3d(npos) = i + dims3d(1) * (k - 1 + dims3d(3) * (j - 1))
+      enddo
+      enddo
+   enddo
+
+!--call init_decomp in order to setup the IO decomposition with PIO
+   call PIO_initdecomp(DH%iosystem, PIO_double, dims3d, compdof_3d, DH%iodesc3d_u_double)
+   call PIO_initdecomp(DH%iosystem, PIO_real,   dims3d, compdof_3d, DH%iodesc3d_u_real)
+   call PIO_initdecomp(DH%iosystem, PIO_int,    dims3d, compdof_3d, DH%iodesc3d_u_int)
+
+   call PIO_initdecomp(DH%iosystem, PIO_double, dims2d, compdof_2d, DH%iodesc2d_u_double)
+   call PIO_initdecomp(DH%iosystem, PIO_real,   dims2d, compdof_2d, DH%iodesc2d_u_real)
+   call PIO_initdecomp(DH%iosystem, PIO_int,    dims2d, compdof_2d, DH%iodesc2d_u_int)
+
+!--For Y-STAG variables
+   dims3d(1) = ide - 1
+   dims3d(2) = jde
+   dims3d(3) = kde - 1
+
+   dims3t(1) = ite
+   dims3t(2) = jte
+   dims3t(3) = kte
+
+   if(dims3t(1) > dims3d(1)) dims3t(1) = dims3d(1)
+   if(dims3t(2) > dims3d(2)) dims3t(2) = dims3d(2)
+   if(dims3t(3) > dims3d(3)) dims3t(3) = dims3d(3)
+
+   dims2d(1) = dims3d(1)
+   dims2d(2) = dims3d(2)
+   dims2t(1) = dims3t(1)
+   dims2t(2) = dims3t(2)
+
+   dims1d(1) = dims3d(3)
+   dims1t(1) = dims3t(3)
+
+   write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+   write(unit=0, fmt='(a, 6i6)') 'dims3d = ', dims3d
+   write(unit=0, fmt='(a, 6i6)') 'dims2d = ', dims2d
+   write(unit=0, fmt='(a, 6i6)') 'dims1d = ', dims1d
+   write(unit=0, fmt='(a, 6i6)') 'dims3t = ', dims3t
+   write(unit=0, fmt='(a, 6i6)') 'dims2t = ', dims2t
+   write(unit=0, fmt='(a, 6i6)') 'dims1t = ', dims1t
+
+  !compdof_3d =  -1
+  !compdof_2d =  -1
+
+   do j = jms, jme
+      do i = ims, ime
+         npos = (i - ims + 1) + (ime - ims + 1) * (j - jms)
+         compdof_2d(npos) = 0
+      end do
+
+      do k = kms, kme
+      do i = ims, ime
+         npos = (i - ims + 1) + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (j - jms))
+         compdof_3d(npos) = 0
+      enddo
+      enddo
+   enddo
+
+   write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+   write(unit=0, fmt='(a,i6)') 'npos = ', npos, &
+                               '(ime - ims + 1) * (jme - jms + 1) = ', (ime - ims + 1) * (jme - jms + 1), &
+                               '(ime - ims + 1) * (jme - jms + 1) * (kme - kms + 1) = ', &
+                                (ime - ims + 1) * (jme - jms + 1) * (kme - kms + 1)
+
+   do j = jts, dims3t(2)
+      do i = its, dims3t(1)
+         npos = i - ims + 1 + (ime - ims + 1) * (j - jms)
+         compdof_2d(npos) = i + dims3d(1) * (j - 1)
+      end do
+
+      do k = kts, dims3t(3)
+      do i = its, dims3t(1)
+         npos = i - ims + 1 + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (j - jms))
+         compdof_3d(npos) = i + dims3d(1) * (k - 1 + dims3d(3) * (j - 1))
+      enddo
+      enddo
+   enddo
+
+!--call init_decomp in order to setup the IO decomposition with PIO
+   call PIO_initdecomp(DH%iosystem, PIO_double, dims3d, compdof_3d, DH%iodesc3d_v_double)
+   call PIO_initdecomp(DH%iosystem, PIO_real,   dims3d, compdof_3d, DH%iodesc3d_v_real)
+   call PIO_initdecomp(DH%iosystem, PIO_int,    dims3d, compdof_3d, DH%iodesc3d_v_int)
+
+   call PIO_initdecomp(DH%iosystem, PIO_double, dims2d, compdof_2d, DH%iodesc2d_v_double)
+   call PIO_initdecomp(DH%iosystem, PIO_real,   dims2d, compdof_2d, DH%iodesc2d_v_real)
+   call PIO_initdecomp(DH%iosystem, PIO_int,    dims2d, compdof_2d, DH%iodesc2d_v_int)
+
+!--For Z-STAG variables
+   dims3d(1) = ide - 1
+   dims3d(2) = jde - 1
+   dims3d(3) = kde
+
+   dims3t(1) = ite
+   dims3t(2) = jte
+   dims3t(3) = kte
+
+   if(dims3t(1) > dims3d(1)) dims3t(1) = dims3d(1)
+   if(dims3t(2) > dims3d(2)) dims3t(2) = dims3d(2)
+   if(dims3t(3) > dims3d(3)) dims3t(3) = dims3d(3)
+
+   dims2d(1) = dims3d(1)
+   dims2d(2) = dims3d(2)
+   dims2t(1) = dims3t(1)
+   dims2t(2) = dims3t(2)
+
+   dims1d(1) = dims3d(3)
+   dims1t(1) = dims3t(3)
+
+   write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+   write(unit=0, fmt='(a, 6i6)') 'dims3d = ', dims3d
+   write(unit=0, fmt='(a, 6i6)') 'dims2d = ', dims2d
+   write(unit=0, fmt='(a, 6i6)') 'dims1d = ', dims1d
+   write(unit=0, fmt='(a, 6i6)') 'dims3t = ', dims3t
+   write(unit=0, fmt='(a, 6i6)') 'dims2t = ', dims2t
+   write(unit=0, fmt='(a, 6i6)') 'dims1t = ', dims1t
+
+  !compdof_3d =  -1
+
+   do j = jms, jme
+      do k = kms, kme
+      do i = ims, ime
+         npos = (i - ims + 1) + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (j - jms))
+         compdof_3d(npos) = 0
+      enddo
+      enddo
+   enddo
+
+   write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+   write(unit=0, fmt='(a,i6)') 'npos = ', npos, &
+                               '(ime - ims + 1) * (jme - jms + 1) * (kme - kms + 1) = ', &
+                                (ime - ims + 1) * (jme - jms + 1) * (kme - kms + 1)
+
+   do j = jts, dims3t(2)
+      do k = kts, dims3t(3)
+      do i = its, dims3t(1)
+         npos = i - ims + 1 + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (j - jms))
+         compdof_3d(npos) = i + dims3d(1) * (k - 1 + dims3d(3) * (j - 1))
+      enddo
+      enddo
+   enddo
+
+!--call init_decomp in order to setup the IO decomposition with PIO
+   call PIO_initdecomp(DH%iosystem, PIO_double, dims3d, compdof_3d, DH%iodesc3d_w_double)
+   call PIO_initdecomp(DH%iosystem, PIO_real,   dims3d, compdof_3d, DH%iodesc3d_w_real)
+   call PIO_initdecomp(DH%iosystem, PIO_int,    dims3d, compdof_3d, DH%iodesc3d_w_int)
+
+   write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+   write(unit=0, fmt='(a)') 'finished: define_pio_iodesc'
+
 end subroutine define_pio_iodesc
 
 end module pio_routines

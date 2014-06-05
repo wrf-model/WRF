@@ -649,6 +649,8 @@ BENCH_END(set_phys_bc_tim)
 !<pre>
 !</DESCRIPTION>
 
+       CALL PUSHREAL8ARRAY ( grid%rthcuten, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL PUSHREAL8ARRAY ( grid%rqvcuten, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
        CALL first_rk_step_part1 (    grid, config_flags         &
                              , moist , moist_tend               &
                              , chem  , chem_tend                &
@@ -3832,6 +3834,8 @@ BENCH_START(moist_phys_end_tim)
                       its, ite, jts, jte,                               &
                       k_start    , k_end                                )
 
+       CALL PUSHREAL8ARRAY ( grid%t_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL PUSHREAL8ARRAY ( grid%h_diabatic, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
        CALL moist_physics_finish_em( grid%t_2, grid%t_1, t0, grid%muts, th_phy,       &
                                       grid%h_diabatic, dtm, config_flags,    &
 #if ( WRF_DFI_RADAR == 1 )
@@ -4616,6 +4620,8 @@ BENCH_START(adj_moist_phys_end_tim)
        jts = max(grid%j_start(ij),jds+sz)
        jte = min(grid%j_end(ij),jde-1-sz)
 
+       CALL POPREAL8ARRAY ( grid%h_diabatic, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL POPREAL8ARRAY ( grid%t_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
        CALL a_moist_physics_finish_em( grid%t_2, grid%a_t_2, grid%t_1,      &
                                       t0, grid%muts,                        &
                                       th_phy, a_th_phy,                     &
@@ -6897,6 +6903,8 @@ BENCH_END(adj_rk_tend_tim)
               , k_start , k_end                  &
              )
 
+       CALL POPREAL8ARRAY ( grid%rqvcuten, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL POPREAL8ARRAY ( grid%rthcuten, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
        CALL a_first_rk_step_part1 (    grid, config_flags         &
                              , moist , a_moist, moist_tend, a_moist_tend  &
                              , chem  , chem_tend                &

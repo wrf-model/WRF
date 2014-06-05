@@ -178,6 +178,9 @@ use module_scalar_tables
 #     include "HALO_EM_PHYS_A.inc"
 #endif
 
+      CALL PUSHREAL8ARRAY ( grid%rthcuten, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+      CALL PUSHREAL8ARRAY ( grid%rqvcuten, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+
       !$OMP PARALLEL DO   &
       !$OMP PRIVATE ( ij )
       DO ij = 1 , grid%num_tiles
@@ -442,6 +445,8 @@ BENCH_START(a_pbl_driver_tim)
 
 BENCH_END(a_pbl_driver_tim)
 
+      CALL POPREAL8ARRAY ( grid%rqvcuten, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+      CALL POPREAL8ARRAY ( grid%rthcuten, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
       !$OMP PARALLEL DO   &
       !$OMP PRIVATE ( ij )
       DO ij = 1 , grid%num_tiles

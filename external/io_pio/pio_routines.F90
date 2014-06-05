@@ -62,9 +62,10 @@ subroutine allocHandle(DataHandle,DH,Comm,Status)
   DH%Write     =.false.
   DH%first_operation  = .TRUE.
   DH%Collective = .TRUE.
+  DH%CurrentVariable = 0
   Status = WRF_NO_ERR
-  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-  write(unit=0, fmt='(a,i6)') 'Status = ', Status
+ !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+ !write(unit=0, fmt='(a,i6)') 'Status = ', Status
 end subroutine allocHandle
 
 subroutine deallocHandle(DataHandle, Status)
@@ -188,8 +189,6 @@ subroutine GetTimeIndex(IO,DataHandle,DateStr,TimeIndex,Status)
     VStart(2) = TimeIndex
     VCount(1) = DateStrLen
     VCount(2) = 1
-   !stat = pio_put_var(DH%file_handle, DH%TimesVarID, VStart, VCount, DateStr)
-   !stat = pio_put_var(DH%file_handle, DH%vtime, DateStr)
     stat = pio_put_var(DH%file_handle, DH%TimesVarID, DateStr)
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
@@ -456,8 +455,154 @@ subroutine netcdf_err(err,Status)
   return
 end subroutine netcdf_err
 
-subroutine FieldIO(IO,DataHandle,DateStr,Starts,Length,MemoryOrder &
-                     ,FieldType,NCID,VarID,XField,Status)
+subroutine find_iodesc(DH,MemoryOrder,Stagger,FieldTYpe,whole)
+  implicit none
+  type(wrf_data_handle), pointer   :: DH
+  character*(*),     intent(in)    :: MemoryOrder
+  character*(*),     intent(in)    :: Stagger
+  integer,           intent(in)    :: FieldType
+  logical,           intent(out)   :: whole
+  character*3                      :: MemOrd
+  character*1                      :: Stag
+  integer           ,parameter     :: MaxUpperCase=IACHAR('Z')
+
+  whole = .false.
+
+  call LowerCase(MemoryOrder,MemOrd)
+  call LowerCase(Stagger,Stag)
+
+  select case (MemOrd)
+    case ('xs','xe','ys','ye','z','c')
+      whole = .true.
+    case ('ysz','yez')
+      write(msg,*) 'PIO DOES NOT support memord: <', MemOrd, '>, in ',__FILE__,', line', __LINE__
+      call wrf_debug ( WARN , TRIM(msg))
+      return
+    case ('xzy', 'xsy', 'xez')
+      select case (FieldType)
+        case (WRF_REAL)
+          select case (Stag)
+            case ('x')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_u_real
+            case ('y')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_v_real
+            case ('z')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_w_real
+            case default
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_m_real
+          end select
+        case (WRF_DOUBLE)
+          select case (Stag)
+            case ('x')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_u_double
+            case ('y')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_v_double
+            case ('z')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_w_double
+            case default
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_m_double
+          end select
+        case (WRF_INTEGER)
+          select case (Stag)
+            case ('x')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_u_int
+            case ('y')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_v_int
+            case ('z')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_w_int
+            case default
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_m_int
+          end select
+        case (WRF_LOGICAL)
+          select case (Stag)
+            case ('x')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_u_int
+            case ('y')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_v_int
+            case ('z')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_w_int
+            case default
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_m_int
+          end select
+        case default
+          write(msg,*) 'Warning DATA TYPE NOT FOUND in ',__FILE__,', line', __LINE__
+          call wrf_debug ( WARN , TRIM(msg))
+          whole = .true.
+          return
+      end select
+    case ('xy')
+      select case (FieldType)
+        case (WRF_REAL)
+          select case (Stag)
+            case ('x')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc2d_u_real
+            case ('y')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc2d_v_real
+            case default
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc2d_m_real
+                 write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+                 write(unit=0, fmt='(a,i6)') 'DH%CurrentVariable = ', DH%CurrentVariable
+                 write(unit=0, fmt='(a)') 'Select DH%iodesc2d_m_real'
+          end select
+        case (WRF_DOUBLE)
+          select case (Stag)
+            case ('x')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc2d_u_double
+            case ('y')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc2d_v_double
+            case default
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc2d_m_double
+                 write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+                 write(unit=0, fmt='(a,i6)') 'DH%CurrentVariable = ', DH%CurrentVariable
+                 write(unit=0, fmt='(a)') 'Select DH%iodesc2d_m_double'
+          end select
+        case (WRF_INTEGER)
+          select case (Stag)
+            case ('x')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc2d_u_int
+            case ('y')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc2d_v_int
+            case default
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc2d_m_int
+          end select
+        case (WRF_LOGICAL)
+          select case (Stag)
+            case ('x')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc2d_u_int
+            case ('y')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc2d_v_int
+            case default
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc2d_m_int
+          end select
+        case default
+          write(msg,*) 'Warning DATA TYPE NOT FOUND in ',__FILE__,', line', __LINE__
+          call wrf_debug ( WARN , TRIM(msg))
+          whole = .true.
+          return
+      end select
+    case default
+      whole = .true.
+#if 0
+      select case (FieldType)
+        case (WRF_REAL)
+             DH%ioVar(DH%CurrentVariable) = DH%iodesc1d_real
+        case (WRF_DOUBLE)
+             DH%ioVar(DH%CurrentVariable) = DH%iodesc1d_double 
+        case (WRF_INTEGER)
+             DH%ioVar(DH%CurrentVariable) = DH%iodesc1d_int
+        case (WRF_LOGICAL)
+             DH%ioVar(DH%CurrentVariable) = DH%iodesc1d_int
+        case default
+             write(msg,*) 'Warning DATA TYPE NOT FOUND in ',__FILE__,', line', __LINE__
+             call wrf_debug ( WARN , TRIM(msg))
+             return
+      end select
+#endif
+  end select
+end subroutine find_iodesc
+
+subroutine FieldIO(IO,DataHandle,DateStr,Starts,Length,MemoryOrder, &
+                   Stagger,FieldType,Field,Status)
   implicit none
   include 'wrf_status_codes.h'
   character (*)              ,intent(in)    :: IO
@@ -466,16 +611,23 @@ subroutine FieldIO(IO,DataHandle,DateStr,Starts,Length,MemoryOrder &
   integer,dimension(NVarDims),intent(in)    :: Starts
   integer,dimension(NVarDims),intent(in)    :: Length
   character*(*)              ,intent(in)    :: MemoryOrder
+  character*(*)              ,intent(in)    :: Stagger
   integer                    ,intent(in)    :: FieldType
-  integer                    ,intent(in)    :: NCID
-  integer                    ,intent(in)    :: VarID
-  integer,dimension(*)       ,intent(inout) :: XField
+  integer,dimension(*)       ,intent(inout) :: Field
   integer                    ,intent(out)   :: Status
   integer                                   :: TimeIndex
+  logical                                   :: whole
   integer                                   :: NDim
+  integer                                   :: n
   integer,dimension(NVarDims)               :: VStart
   integer,dimension(NVarDims)               :: VCount
+  type(wrf_data_handle)      ,pointer       :: DH
 
+  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+  write(unit=0, fmt='(3a)') 'MemoryOrder: <', trim(MemoryOrder), '>'
+  write(unit=0, fmt='(3a)') 'Stagger: <', trim(Stagger), '>'
+
+  DH => WrfDataHandles(DataHandle)
   call GetTimeIndex(IO,DataHandle,DateStr,TimeIndex,Status)
   if(Status /= WRF_NO_ERR) then
     write(msg,*) 'Warning in ',__FILE__,', line', __LINE__
@@ -485,393 +637,50 @@ subroutine FieldIO(IO,DataHandle,DateStr,Starts,Length,MemoryOrder &
     return
   endif
   call GetDim(MemoryOrder,NDim,Status)
-VStart(:) = 1
-VCount(:) = 1
-!jm for parallel netcef  VStart(1:NDim) = 1
+  VStart(:) = 1
+  VCount(:) = 1
   VStart(1:NDim) = Starts(1:NDim)
   VCount(1:NDim) = Length(1:NDim)
   VStart(NDim+1) = TimeIndex
   VCount(NDim+1) = 1
+
+  do n = 1, NDim + 1
+     write(unit=0, fmt='(2(a,i2,a,i4))') &
+          'VStart(', n, ')=', VStart(n), ', VCount(', n, ')=', VCount(n)
+  end do
+     
+  call find_iodesc(DH,MemoryOrder,Stagger,FieldTYpe,whole)
+
+  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+  write(unit=0, fmt='(a,i6)') 'DH%CurrentVariable = ', DH%CurrentVariable
+
+  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+  write(unit=0, fmt='(a, i8)') 'FieldType: ', FieldType, 'WRF_REAL: ', WRF_REAL
+  write(unit=0, fmt='(a, l8)') 'whole: ', whole
+
   select case (FieldType)
     case (WRF_REAL)
-      call ext_pio_RealFieldIO    (WrfDataHandles(DataHandle)%Collective, &
-                                   IO,NCID,VarID,VStart,VCount,XField,Status)
+      write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+      call ext_pio_RealFieldIO(whole,IO,DH,Field,Status)
     case (WRF_DOUBLE)
-      call ext_pio_DoubleFieldIO  (WrfDataHandles(DataHandle)%Collective, &
-                                   IO,NCID,VarID,VStart,VCount,XField,Status)
+      call ext_pio_DoubleFieldIO(whole,IO,DH,Field,Status)
     case (WRF_INTEGER)
-      call ext_pio_IntFieldIO     (WrfDataHandles(DataHandle)%Collective, &
-                                   IO,NCID,VarID,VStart,VCount,XField,Status)
+      call ext_pio_IntFieldIO(whole,IO,DH,Field,Status)
     case (WRF_LOGICAL)
-      call ext_pio_LogicalFieldIO (WrfDataHandles(DataHandle)%Collective, &
-                                   IO,NCID,VarID,VStart,VCount,XField,Status)
-      if(Status /= WRF_NO_ERR) return
+      call ext_pio_LogicalFieldIO(whole,IO,DH,VStart,VCount,Field,Status)
     case default
-!for wrf_complex, double_complex
       Status = WRF_WARN_DATA_TYPE_NOT_FOUND
       write(msg,*) 'Warning DATA TYPE NOT FOUND in ',__FILE__,', line', __LINE__
       call wrf_debug ( WARN , TRIM(msg))
       return
   end select
+
+  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+  write(unit=0, fmt='(3a)') 'MemoryOrder: <', trim(MemoryOrder), '>'
+  write(unit=0, fmt='(3a)') 'Stagger: <', trim(Stagger), '>'
   return
 end subroutine FieldIO
 
-subroutine Transpose(IO,MemoryOrder,di, Field,l1,l2,m1,m2,n1,n2 &
-                                      ,XField,x1,x2,y1,y2,z1,z2 &
-                                             ,i1,i2,j1,j2,k1,k2 )
-  implicit none
-  include 'wrf_status_codes.h'
-  character*(*)     ,intent(in)    :: IO
-  character*(*)     ,intent(in)    :: MemoryOrder
-  integer           ,intent(in)    :: l1,l2,m1,m2,n1,n2
-  integer           ,intent(in)    :: di
-  integer           ,intent(in)    :: x1,x2,y1,y2,z1,z2
-  integer           ,intent(in)    :: i1,i2,j1,j2,k1,k2
-  integer           ,intent(inout) ::  Field(di,l1:l2,m1:m2,n1:n2)
-!jm 010827  integer           ,intent(inout) :: XField(di,x1:x2,y1:y2,z1:z2)
-  integer           ,intent(inout) :: XField(di,(i2-i1+1)*(j2-j1+1)*(k2-k1+1))
-  character*3                      :: MemOrd
-  character*3                      :: MemO
-  integer           ,parameter     :: MaxUpperCase=IACHAR('Z')
-  integer                          :: i,j,k,ix,jx,kx
-
-  call LowerCase(MemoryOrder,MemOrd)
-  select case (MemOrd)
-
-!#define XDEX(A,B,C) A-A ## 1+1+(A ## 2-A ## 1+1)*((B-B ## 1)+(C-C ## 1)*(B ## 2-B ## 1+1))
-! 
-
-    case ('xzy')
-  ix=0
-  jx=0
-  kx=0
-  call reorder(MemoryOrder,MemO)
-  if(IACHAR(MemO(1:1)) > MaxUpperCase) ix=i2+i1
-  if(IACHAR(MemO(2:2)) > MaxUpperCase) jx=j2+j1
-  if(IACHAR(MemO(3:3)) > MaxUpperCase) kx=k2+k1
-
-! pjj/cray
-  if(IO == 'write') then
-!dir$ concurrent
-!$OMP PARALLEL DO SCHEDULE(RUNTIME) PRIVATE(i,j,k)
-     do k=k1,k2
-        do j=j1,j2
-!dir$ prefervector
-!dir$ concurrent
-!cdir select(vector)
-           do i=i1,i2
-              XField(1:di,(i-i1+1+(i2-i1+1)*((k-k1)+(j-j1)*(k2-k1+1)))) = Field(1:di,abs(ix-i),abs(jx-j),abs(kx-k))
-           enddo
-        enddo
-     enddo
-!$OMP END PARALLEL DO
-  else
-!dir$ concurrent
-!$OMP PARALLEL DO SCHEDULE(RUNTIME) PRIVATE(i,j,k)
-     do k=k1,k2
-        do j=j1,j2
-!dir$ prefervector
-!dir$ concurrent
-!cdir select(vector)
-           do i=i1,i2
-              Field(1:di,abs(ix-i),abs(jx-j),abs(kx-k)) = XField(1:di,(i-i1+1+(i2-i1+1)*((k-k1)+(j-j1)*(k2-k1+1))))
-           enddo
-        enddo
-     enddo
-!$OMP END PARALLEL DO
-  endif
-
-  return
-    case ('xyz','xsz','xez','ysz','yez','xy','xs','xe','ys','ye','z','c','0')
-  ix=0
-  jx=0
-  kx=0
-  call reorder(MemoryOrder,MemO)
-  if(IACHAR(MemO(1:1)) > MaxUpperCase) ix=i2+i1
-  if(IACHAR(MemO(2:2)) > MaxUpperCase) jx=j2+j1
-  if(IACHAR(MemO(3:3)) > MaxUpperCase) kx=k2+k1
-
-! pjj/cray
-  if(IO == 'write') then
-!dir$ concurrent
-!$OMP PARALLEL DO SCHEDULE(RUNTIME) PRIVATE(i,j,k)
-     do k=k1,k2
-        do j=j1,j2
-!dir$ prefervector
-!dir$ concurrent
-!cdir select(vector)
-           do i=i1,i2
-              XField(1:di,(i-i1+1+(i2-i1+1)*((j-j1)+(k-k1)*(j2-j1+1)))) = Field(1:di,abs(ix-i),abs(jx-j),abs(kx-k))
-           enddo
-        enddo
-     enddo
-!$OMP END PARALLEL DO
-  else
-!dir$ concurrent
-!$OMP PARALLEL DO SCHEDULE(RUNTIME) PRIVATE(i,j,k)
-     do k=k1,k2
-        do j=j1,j2
-!dir$ prefervector
-!dir$ concurrent
-!cdir select(vector)
-           do i=i1,i2
-              Field(1:di,abs(ix-i),abs(jx-j),abs(kx-k)) = XField(1:di,(i-i1+1+(i2-i1+1)*((j-j1)+(k-k1)*(j2-j1+1))))
-           enddo
-        enddo
-     enddo
-!$OMP END PARALLEL DO
-  endif
-
-  return
-    case ('yxz')
-  ix=0
-  jx=0
-  kx=0
-  call reorder(MemoryOrder,MemO)
-  if(IACHAR(MemO(1:1)) > MaxUpperCase) ix=i2+i1
-  if(IACHAR(MemO(2:2)) > MaxUpperCase) jx=j2+j1
-  if(IACHAR(MemO(3:3)) > MaxUpperCase) kx=k2+k1
-
-! pjj/cray
-  if(IO == 'write') then
-!dir$ concurrent
-!$OMP PARALLEL DO SCHEDULE(RUNTIME) PRIVATE(i,j,k)
-     do k=k1,k2
-        do j=j1,j2
-!dir$ prefervector
-!dir$ concurrent
-!cdir select(vector)
-           do i=i1,i2
-              XField(1:di,(j-j1+1+(j2-j1+1)*((i-i1)+(k-k1)*(i2-i1+1)))) = Field(1:di,abs(ix-i),abs(jx-j),abs(kx-k))
-           enddo
-        enddo
-     enddo
-!$OMP END PARALLEL DO
-  else
-!dir$ concurrent
-!$OMP PARALLEL DO SCHEDULE(RUNTIME) PRIVATE(i,j,k)
-     do k=k1,k2
-        do j=j1,j2
-!dir$ prefervector
-!dir$ concurrent
-!cdir select(vector)
-           do i=i1,i2
-              Field(1:di,abs(ix-i),abs(jx-j),abs(kx-k)) = XField(1:di,(j-j1+1+(j2-j1+1)*((i-i1)+(k-k1)*(i2-i1+1))))
-           enddo
-        enddo
-     enddo
-!$OMP END PARALLEL DO
-  endif
-
-  return
-    case ('zxy')
-  ix=0
-  jx=0
-  kx=0
-  call reorder(MemoryOrder,MemO)
-  if(IACHAR(MemO(1:1)) > MaxUpperCase) ix=i2+i1
-  if(IACHAR(MemO(2:2)) > MaxUpperCase) jx=j2+j1
-  if(IACHAR(MemO(3:3)) > MaxUpperCase) kx=k2+k1
-
-! pjj/cray
-  if(IO == 'write') then
-!dir$ concurrent
-!$OMP PARALLEL DO SCHEDULE(RUNTIME) PRIVATE(i,j,k)
-     do k=k1,k2
-        do j=j1,j2
-!dir$ prefervector
-!dir$ concurrent
-!cdir select(vector)
-           do i=i1,i2
-              XField(1:di,(k-k1+1+(k2-k1+1)*((i-i1)+(j-j1)*(i2-i1+1)))) = Field(1:di,abs(ix-i),abs(jx-j),abs(kx-k))
-           enddo
-        enddo
-     enddo
-!$OMP END PARALLEL DO
-  else
-!dir$ concurrent
-!$OMP PARALLEL DO SCHEDULE(RUNTIME) PRIVATE(i,j,k)
-     do k=k1,k2
-        do j=j1,j2
-!dir$ prefervector
-!dir$ concurrent
-!cdir select(vector)
-           do i=i1,i2
-              Field(1:di,abs(ix-i),abs(jx-j),abs(kx-k)) = XField(1:di,(k-k1+1+(k2-k1+1)*((i-i1)+(j-j1)*(i2-i1+1))))
-           enddo
-        enddo
-     enddo
-!$OMP END PARALLEL DO
-  endif
-
-  return
-    case ('yzx')
-  ix=0
-  jx=0
-  kx=0
-  call reorder(MemoryOrder,MemO)
-  if(IACHAR(MemO(1:1)) > MaxUpperCase) ix=i2+i1
-  if(IACHAR(MemO(2:2)) > MaxUpperCase) jx=j2+j1
-  if(IACHAR(MemO(3:3)) > MaxUpperCase) kx=k2+k1
-
-! pjj/cray
-  if(IO == 'write') then
-!dir$ concurrent
-!$OMP PARALLEL DO SCHEDULE(RUNTIME) PRIVATE(i,j,k)
-     do k=k1,k2
-        do j=j1,j2
-!dir$ prefervector
-!dir$ concurrent
-!cdir select(vector)
-           do i=i1,i2
-              XField(1:di,(j-j1+1+(j2-j1+1)*((k-k1)+(i-i1)*(k2-k1+1)))) = Field(1:di,abs(ix-i),abs(jx-j),abs(kx-k))
-           enddo
-        enddo
-     enddo
-!$OMP END PARALLEL DO
-  else
-!dir$ concurrent
-!$OMP PARALLEL DO SCHEDULE(RUNTIME) PRIVATE(i,j,k)
-     do k=k1,k2
-        do j=j1,j2
-!dir$ prefervector
-!dir$ concurrent
-!cdir select(vector)
-           do i=i1,i2
-              Field(1:di,abs(ix-i),abs(jx-j),abs(kx-k)) = XField(1:di,(j-j1+1+(j2-j1+1)*((k-k1)+(i-i1)*(k2-k1+1))))
-           enddo
-        enddo
-     enddo
-!$OMP END PARALLEL DO
-  endif
-
-  return
-    case ('zyx')
-  ix=0
-  jx=0
-  kx=0
-  call reorder(MemoryOrder,MemO)
-  if(IACHAR(MemO(1:1)) > MaxUpperCase) ix=i2+i1
-  if(IACHAR(MemO(2:2)) > MaxUpperCase) jx=j2+j1
-  if(IACHAR(MemO(3:3)) > MaxUpperCase) kx=k2+k1
-
-! pjj/cray
-  if(IO == 'write') then
-!dir$ concurrent
-!$OMP PARALLEL DO SCHEDULE(RUNTIME) PRIVATE(i,j,k)
-     do k=k1,k2
-        do j=j1,j2
-!dir$ prefervector
-!dir$ concurrent
-!cdir select(vector)
-           do i=i1,i2
-              XField(1:di,(k-k1+1+(k2-k1+1)*((j-j1)+(i-i1)*(j2-j1+1)))) = Field(1:di,abs(ix-i),abs(jx-j),abs(kx-k))
-           enddo
-        enddo
-     enddo
-!$OMP END PARALLEL DO
-  else
-!dir$ concurrent
-!$OMP PARALLEL DO SCHEDULE(RUNTIME) PRIVATE(i,j,k)
-     do k=k1,k2
-        do j=j1,j2
-!dir$ prefervector
-!dir$ concurrent
-!cdir select(vector)
-           do i=i1,i2
-              Field(1:di,abs(ix-i),abs(jx-j),abs(kx-k)) = XField(1:di,(k-k1+1+(k2-k1+1)*((j-j1)+(i-i1)*(j2-j1+1))))
-           enddo
-        enddo
-     enddo
-!$OMP END PARALLEL DO
-  endif
-
-  return
-    case ('yx')
-  ix=0
-  jx=0
-  kx=0
-  call reorder(MemoryOrder,MemO)
-  if(IACHAR(MemO(1:1)) > MaxUpperCase) ix=i2+i1
-  if(IACHAR(MemO(2:2)) > MaxUpperCase) jx=j2+j1
-  if(IACHAR(MemO(3:3)) > MaxUpperCase) kx=k2+k1
-
-! pjj/cray
-  if(IO == 'write') then
-!dir$ concurrent
-!$OMP PARALLEL DO SCHEDULE(RUNTIME) PRIVATE(i,j,k)
-     do k=k1,k2
-        do j=j1,j2
-!dir$ prefervector
-!dir$ concurrent
-!cdir select(vector)
-           do i=i1,i2
-              XField(1:di,(j-j1+1+(j2-j1+1)*((i-i1)+(k-k1)*(i2-i1+1)))) = Field(1:di,abs(ix-i),abs(jx-j),abs(kx-k))
-           enddo
-        enddo
-     enddo
-!$OMP END PARALLEL DO
-  else
-!dir$ concurrent
-!$OMP PARALLEL DO SCHEDULE(RUNTIME) PRIVATE(i,j,k)
-     do k=k1,k2
-        do j=j1,j2
-!dir$ prefervector
-!dir$ concurrent
-!cdir select(vector)
-           do i=i1,i2
-              Field(1:di,abs(ix-i),abs(jx-j),abs(kx-k)) = XField(1:di,(j-j1+1+(j2-j1+1)*((i-i1)+(k-k1)*(i2-i1+1))))
-           enddo
-        enddo
-     enddo
-!$OMP END PARALLEL DO
-  endif
-
-  return
-  end select
-  return
-end subroutine Transpose
-
-subroutine reorder (MemoryOrder,MemO)
-  implicit none
-  include 'wrf_status_codes.h'
-  character*(*)     ,intent(in)    :: MemoryOrder
-  character*3       ,intent(out)   :: MemO
-  character*3                      :: MemOrd
-  integer                          :: N,i,i1,i2,i3
-
-  MemO = MemoryOrder
-  N = len_trim(MemoryOrder)
-  if(N == 1) return
-  call lowercase(MemoryOrder,MemOrd)
-! never invert the boundary codes
-  select case ( MemOrd )
-     case ( 'xsz','xez','ysz','yez' )
-       return
-     case default
-       continue
-  end select
-  i1 = 1
-  i3 = 1
-  do i=2,N
-    if(ichar(MemOrd(i:i)) < ichar(MemOrd(i1:i1))) I1 = i
-    if(ichar(MemOrd(i:i)) > ichar(MemOrd(i3:i3))) I3 = i
-  enddo
-  if(N == 2) then
-    i2=i3
-  else
-    i2 = 6-i1-i3
-  endif
-  MemO(1:1) = MemoryOrder(i1:i1)
-  MemO(2:2) = MemoryOrder(i2:i2)
-  if(N == 3) MemO(3:3) = MemoryOrder(i3:i3)
-  if(MemOrd(i1:i1) == 's' .or. MemOrd(i1:i1) == 'e') then
-    MemO(1:N-1) = MemO(2:N)
-    MemO(N:N  ) = MemoryOrder(i1:i1)
-  endif
-  return
-end subroutine reorder
-  
 ! Returns .TRUE. iff it is OK to write time-independent domain metadata to the 
 ! file referenced by DataHandle.  If DataHandle is invalid, .FALSE. is 
 ! returned.  
@@ -962,6 +771,8 @@ subroutine initialize_pio(grid, DH)
 
    call mpi_comm_size(communicator, nprocs, ierr)
    call mpi_comm_rank(communicator, myrank, ierr)
+  !call mpi_comm_size(MPI_COMM_WORLD, nprocs, ierr)
+  !call mpi_comm_rank(MPI_COMM_WORLD, myrank, ierr)
   !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
   !write(unit=0, fmt='(a,i6)') 'nprocs = ', nprocs, &
   !                            'myrank = ', myrank
@@ -1039,6 +850,8 @@ subroutine initialize_pio(grid, DH)
 
   !call PIO_init to initiate iosystem
   !call PIO_init(my_rank, MPI_COMM_WORLD, 4, 0, 4, PIO_rearr_box, iosystem, 1)
+  !call PIO_init(myrank, MPI_COMM_WORLD, pioprocs, &
+  
    call PIO_init(myrank, communicator, pioprocs, &
                  piostart, piostride, &
                  PIO_rearr_box, DH%iosystem, pioshift)
@@ -1056,13 +869,13 @@ subroutine initialize_pio(grid, DH)
                           ims, ime, jms, jme, kms, kme, &
                           its, ite, jts, jte, kts, kte)
 
-   write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-   write(unit=0, fmt='(3(a,i6))') 'ids = ', ids, ', jds = ', jds, ', kds = ', kds
-   write(unit=0, fmt='(3(a,i6))') 'ide = ', ide, ', jde = ', jde, ', kde = ', kde
-   write(unit=0, fmt='(3(a,i6))') 'ims = ', ims, ', jms = ', jms, ', kms = ', kms
-   write(unit=0, fmt='(3(a,i6))') 'ime = ', ime, ', jme = ', jme, ', kme = ', kme
-   write(unit=0, fmt='(3(a,i6))') 'its = ', its, ', jts = ', jts, ', kts = ', kts
-   write(unit=0, fmt='(3(a,i6))') 'ite = ', ite, ', jte = ', jte, ', kte = ', kte
+  !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+  !write(unit=0, fmt='(3(a,i6))') 'ids = ', ids, ', jds = ', jds, ', kds = ', kds
+  !write(unit=0, fmt='(3(a,i6))') 'ide = ', ide, ', jde = ', jde, ', kde = ', kde
+  !write(unit=0, fmt='(3(a,i6))') 'ims = ', ims, ', jms = ', jms, ', kms = ', kms
+  !write(unit=0, fmt='(3(a,i6))') 'ime = ', ime, ', jme = ', jme, ', kme = ', kme
+  !write(unit=0, fmt='(3(a,i6))') 'its = ', its, ', jts = ', jts, ', kts = ', kts
+  !write(unit=0, fmt='(3(a,i6))') 'ite = ', ite, ', jte = ', jte, ', kte = ', kte
 
 end subroutine initialize_pio
 
@@ -1078,62 +891,56 @@ subroutine define_pio_iodesc(grid, DH)
    integer(kind=PIO_Offset), &
            dimension((ime - ims + 1) * (jme - jms + 1) * (kme - kms + 1)) &
            :: compdof_3d
-   integer(kind=PIO_Offset), &
-           dimension((ime - ims + 1) * (jme - jms + 1)) &
-           :: compdof_2d
-   integer :: dims3d(3), dims2d(2), dims1d(1)
-   integer :: dims3t(3), dims2t(2), dims1t(1)
+   integer(kind=PIO_Offset), allocatable, dimension(:) :: compdof_2d
+   integer :: dims3d(4), dims2d(3), dims1d(2), dims0d(1)
+   integer :: lite, ljte, lkte
    integer :: i, j, k, npos
 
    communicator = grid%communicator
    myrank = DH%myrank
 
-   write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-   write(unit=0, fmt='(3(a,i6))') 'ids = ', ids, ', jds = ', jds, ', kds = ', kds
-   write(unit=0, fmt='(3(a,i6))') 'ide = ', ide, ', jde = ', jde, ', kde = ', kde
-   write(unit=0, fmt='(3(a,i6))') 'ims = ', ims, ', jms = ', jms, ', kms = ', kms
-   write(unit=0, fmt='(3(a,i6))') 'ime = ', ime, ', jme = ', jme, ', kme = ', kme
-   write(unit=0, fmt='(3(a,i6))') 'its = ', its, ', jts = ', jts, ', kts = ', kts
-   write(unit=0, fmt='(3(a,i6))') 'ite = ', ite, ', jte = ', jte, ', kte = ', kte
+  !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+  !write(unit=0, fmt='(3(a,i6))') 'ids = ', ids, ', jds = ', jds, ', kds = ', kds
+  !write(unit=0, fmt='(3(a,i6))') 'ide = ', ide, ', jde = ', jde, ', kde = ', kde
+  !write(unit=0, fmt='(3(a,i6))') 'ims = ', ims, ', jms = ', jms, ', kms = ', kms
+  !write(unit=0, fmt='(3(a,i6))') 'ime = ', ime, ', jme = ', jme, ', kme = ', kme
+  !write(unit=0, fmt='(3(a,i6))') 'its = ', its, ', jts = ', jts, ', kts = ', kts
+  !write(unit=0, fmt='(3(a,i6))') 'ite = ', ite, ', jte = ', jte, ', kte = ', kte
 
 !--For MASS variables
    dims3d(1) = ide - 1
    dims3d(2) = jde - 1
    dims3d(3) = kde - 1
+   dims3d(4) = 1
 
-   dims3t(1) = ite
-   dims3t(2) = jte
-   dims3t(3) = kte
+   lite = ite
+   ljte = jte
+   lkte = kte
 
-   if(dims3t(1) > dims3d(1)) dims3t(1) = dims3d(1)
-   if(dims3t(2) > dims3d(2)) dims3t(2) = dims3d(2)
-   if(dims3t(3) > dims3d(3)) dims3t(3) = dims3d(3)
+   if(lite > dims3d(1)) lite = dims3d(1)
+   if(ljte > dims3d(2)) ljte = dims3d(2)
+   if(lkte > dims3d(3)) lkte = dims3d(3)
 
    dims2d(1) = dims3d(1)
    dims2d(2) = dims3d(2)
-   dims2t(1) = dims3t(1)
-   dims2t(2) = dims3t(2)
+   dims2d(3) = dims3d(4)
 
    dims1d(1) = dims3d(3)
-   dims1t(1) = dims3t(3)
+   dims1d(2) = dims3d(4)
 
-   write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-   write(unit=0, fmt='(a, 6i6)') 'dims3d = ', dims3d
-   write(unit=0, fmt='(a, 6i6)') 'dims2d = ', dims2d
-   write(unit=0, fmt='(a, 6i6)') 'dims1d = ', dims1d
-   write(unit=0, fmt='(a, 6i6)') 'dims3t = ', dims3t
-   write(unit=0, fmt='(a, 6i6)') 'dims2t = ', dims2t
-   write(unit=0, fmt='(a, 6i6)') 'dims1t = ', dims1t
+   dims0d(1) = dims3d(4)
+
+  !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+  !write(unit=0, fmt='(a, 6i6)') 'dims3d = ', dims3d
+  !write(unit=0, fmt='(a, 6i6)') 'dims2d = ', dims2d
+  !write(unit=0, fmt='(a, 6i6)') 'dims1d = ', dims1d
+
+   allocate(compdof_2d((lite-its+1)*(ljte-jts+1)), stat=iostat)
 
   !compdof_3d =  -1
   !compdof_2d =  -1
 
    do j = jms, jme
-      do i = ims, ime
-         npos = (i - ims + 1) + (ime - ims + 1) * (j - jms)
-         compdof_2d(npos) = 0
-      end do
-
       do k = kms, kme
       do i = ims, ime
          npos = (i - ims + 1) + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (j - jms))
@@ -1147,14 +954,18 @@ subroutine define_pio_iodesc(grid, DH)
   !                            '(ime - ims + 1) * (jme - jms + 1) * (kme - kms + 1) = ', &
   !                             (ime - ims + 1) * (jme - jms + 1) * (kme - kms + 1)
 
-   do j = jts, dims3t(2)
-      do i = its, dims3t(1)
-         npos = i - ims + 1 + (ime - ims + 1) * (j - jms)
-         compdof_2d(npos) = i + dims3d(1) * (j - 1)
+   npos = 0
+   do j = jts, ljte
+      do i = its, lite
+        !npos = i - its + 1+ (lite - its + 1) * (j - jts)
+         npos = npos + 1
+         compdof_2d(npos) = i + dims2d(1) * (j - 1)
       end do
+   enddo
 
-      do k = kts, dims3t(3)
-      do i = its, dims3t(1)
+   do j = jts, ljte
+      do k = kts, lkte
+      do i = its, lite
          npos = i - ims + 1 + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (j - jms))
          compdof_3d(npos) = i + dims3d(1) * (k - 1 + dims3d(3) * (j - 1))
       enddo
@@ -1170,45 +981,36 @@ subroutine define_pio_iodesc(grid, DH)
    call PIO_initdecomp(DH%iosystem, PIO_real,   dims2d, compdof_2d, DH%iodesc2d_m_real)
    call PIO_initdecomp(DH%iosystem, PIO_double, dims2d, compdof_2d, DH%iodesc2d_m_double)
 
-   write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
 !--For X-STAG variables
    dims3d(1) = ide
    dims3d(2) = jde - 1
    dims3d(3) = kde - 1
 
-   dims3t(1) = ite
-   dims3t(2) = jte
-   dims3t(3) = kte
+   lite = ite
+   ljte = jte
+   lkte = kte
 
-   if(dims3t(1) > dims3d(1)) dims3t(1) = dims3d(1)
-   if(dims3t(2) > dims3d(2)) dims3t(2) = dims3d(2)
-   if(dims3t(3) > dims3d(3)) dims3t(3) = dims3d(3)
+   if(lite > dims3d(1)) lite = dims3d(1)
+   if(ljte > dims3d(2)) ljte = dims3d(2)
+   if(lkte > dims3d(3)) lkte = dims3d(3)
 
    dims2d(1) = dims3d(1)
    dims2d(2) = dims3d(2)
-   dims2t(1) = dims3t(1)
-   dims2t(2) = dims3t(2)
 
    dims1d(1) = dims3d(3)
-   dims1t(1) = dims3t(3)
 
-   write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-   write(unit=0, fmt='(a, 6i6)') 'dims3d = ', dims3d
-   write(unit=0, fmt='(a, 6i6)') 'dims2d = ', dims2d
-   write(unit=0, fmt='(a, 6i6)') 'dims1d = ', dims1d
-   write(unit=0, fmt='(a, 6i6)') 'dims3t = ', dims3t
-   write(unit=0, fmt='(a, 6i6)') 'dims2t = ', dims2t
-   write(unit=0, fmt='(a, 6i6)') 'dims1t = ', dims1t
+  !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+  !write(unit=0, fmt='(a, 6i6)') 'dims3d = ', dims3d
+  !write(unit=0, fmt='(a, 6i6)') 'dims2d = ', dims2d
+  !write(unit=0, fmt='(a, 6i6)') 'dims1d = ', dims1d
+
+   deallocate(compdof_2d)
+   allocate(compdof_2d((lite-its+1)*(ljte-jts+1)), stat=iostat)
 
   !compdof_3d =  -1
   !compdof_2d =  -1
 
    do j = jms, jme
-      do i = ims, ime
-         npos = (i - ims + 1) + (ime - ims + 1) * (j - jms)
-         compdof_2d(npos) = 0
-      end do
-
       do k = kms, kme
       do i = ims, ime
          npos = (i - ims + 1) + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (j - jms))
@@ -1217,20 +1019,23 @@ subroutine define_pio_iodesc(grid, DH)
       enddo
    enddo
 
-   write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-   write(unit=0, fmt='(a,i6)') 'npos = ', npos, &
-                               '(ime - ims + 1) * (jme - jms + 1) = ', (ime - ims + 1) * (jme - jms + 1), &
-                               '(ime - ims + 1) * (jme - jms + 1) * (kme - kms + 1) = ', &
-                                (ime - ims + 1) * (jme - jms + 1) * (kme - kms + 1)
+  !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+  !write(unit=0, fmt='(a,i6)') 'npos = ', npos, &
+  !                            '(ime - ims + 1) * (jme - jms + 1) * (kme - kms + 1) = ', &
+  !                             (ime - ims + 1) * (jme - jms + 1) * (kme - kms + 1)
 
-   do j = jts, dims3t(2)
-      do i = its, dims3t(1)
-         npos = i - ims + 1 + (ime - ims + 1) * (j - jms)
-         compdof_2d(npos) = i + dims3d(1) * (j - 1)
+   npos = 0
+   do j = jts, ljte
+      do i = its, lite
+        !npos = i - its + 1+ (lite - its + 1) * (j - jts)
+         npos = npos + 1
+         compdof_2d(npos) = i + dims2d(1) * (j - 1)
       end do
+   enddo
 
-      do k = kts, dims3t(3)
-      do i = its, dims3t(1)
+   do j = jts, ljte
+      do k = kts, lkte
+      do i = its, lite
          npos = i - ims + 1 + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (j - jms))
          compdof_3d(npos) = i + dims3d(1) * (k - 1 + dims3d(3) * (j - 1))
       enddo
@@ -1251,39 +1056,31 @@ subroutine define_pio_iodesc(grid, DH)
    dims3d(2) = jde
    dims3d(3) = kde - 1
 
-   dims3t(1) = ite
-   dims3t(2) = jte
-   dims3t(3) = kte
+   lite = ite
+   ljte = jte
+   lkte = kte
 
-   if(dims3t(1) > dims3d(1)) dims3t(1) = dims3d(1)
-   if(dims3t(2) > dims3d(2)) dims3t(2) = dims3d(2)
-   if(dims3t(3) > dims3d(3)) dims3t(3) = dims3d(3)
+   if(lite > dims3d(1)) lite = dims3d(1)
+   if(ljte > dims3d(2)) ljte = dims3d(2)
+   if(lkte > dims3d(3)) lkte = dims3d(3)
 
    dims2d(1) = dims3d(1)
    dims2d(2) = dims3d(2)
-   dims2t(1) = dims3t(1)
-   dims2t(2) = dims3t(2)
 
    dims1d(1) = dims3d(3)
-   dims1t(1) = dims3t(3)
 
-   write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-   write(unit=0, fmt='(a, 6i6)') 'dims3d = ', dims3d
-   write(unit=0, fmt='(a, 6i6)') 'dims2d = ', dims2d
-   write(unit=0, fmt='(a, 6i6)') 'dims1d = ', dims1d
-   write(unit=0, fmt='(a, 6i6)') 'dims3t = ', dims3t
-   write(unit=0, fmt='(a, 6i6)') 'dims2t = ', dims2t
-   write(unit=0, fmt='(a, 6i6)') 'dims1t = ', dims1t
+  !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+  !write(unit=0, fmt='(a, 6i6)') 'dims3d = ', dims3d
+  !write(unit=0, fmt='(a, 6i6)') 'dims2d = ', dims2d
+  !write(unit=0, fmt='(a, 6i6)') 'dims1d = ', dims1d
+
+   deallocate(compdof_2d)
+   allocate(compdof_2d((lite-its+1)*(ljte-jts+1)), stat=iostat)
 
   !compdof_3d =  -1
   !compdof_2d =  -1
 
    do j = jms, jme
-      do i = ims, ime
-         npos = (i - ims + 1) + (ime - ims + 1) * (j - jms)
-         compdof_2d(npos) = 0
-      end do
-
       do k = kms, kme
       do i = ims, ime
          npos = (i - ims + 1) + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (j - jms))
@@ -1292,20 +1089,28 @@ subroutine define_pio_iodesc(grid, DH)
       enddo
    enddo
 
-   write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-   write(unit=0, fmt='(a,i6)') 'npos = ', npos, &
-                               '(ime - ims + 1) * (jme - jms + 1) = ', (ime - ims + 1) * (jme - jms + 1), &
-                               '(ime - ims + 1) * (jme - jms + 1) * (kme - kms + 1) = ', &
-                                (ime - ims + 1) * (jme - jms + 1) * (kme - kms + 1)
+  !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+  !write(unit=0, fmt='(a,i6)') 'npos = ', npos, &
+  !                            '(ime - ims + 1) * (jme - jms + 1) * (kme - kms + 1) = ', &
+  !                             (ime - ims + 1) * (jme - jms + 1) * (kme - kms + 1)
 
-   do j = jts, dims3t(2)
-      do i = its, dims3t(1)
-         npos = i - ims + 1 + (ime - ims + 1) * (j - jms)
-         compdof_2d(npos) = i + dims3d(1) * (j - 1)
+   npos = 0
+   do j = jts, ljte
+      do i = its, lite
+        !npos = i - its + 1+ (lite - its + 1) * (j - jts)
+         npos = npos + 1
+         compdof_2d(npos) = i + dims2d(1) * (j - 1)
       end do
 
-      do k = kts, dims3t(3)
-      do i = its, dims3t(1)
+     !do i = its, dims3t(1)
+     !   npos = i - ims + 1 + (ime - ims + 1) * (j - jms)
+     !   compdof_2d(npos) = i + dims3d(1) * (j - 1)
+     !end do
+   enddo
+
+   do j = jts, ljte
+      do k = kts, lkte
+      do i = its, lite
          npos = i - ims + 1 + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (j - jms))
          compdof_3d(npos) = i + dims3d(1) * (k - 1 + dims3d(3) * (j - 1))
       enddo
@@ -1321,34 +1126,30 @@ subroutine define_pio_iodesc(grid, DH)
    call PIO_initdecomp(DH%iosystem, PIO_real,   dims2d, compdof_2d, DH%iodesc2d_v_real)
    call PIO_initdecomp(DH%iosystem, PIO_int,    dims2d, compdof_2d, DH%iodesc2d_v_int)
 
+   deallocate(compdof_2d)
+
 !--For Z-STAG variables
    dims3d(1) = ide - 1
    dims3d(2) = jde - 1
    dims3d(3) = kde
 
-   dims3t(1) = ite
-   dims3t(2) = jte
-   dims3t(3) = kte
-
-   if(dims3t(1) > dims3d(1)) dims3t(1) = dims3d(1)
-   if(dims3t(2) > dims3d(2)) dims3t(2) = dims3d(2)
-   if(dims3t(3) > dims3d(3)) dims3t(3) = dims3d(3)
-
    dims2d(1) = dims3d(1)
    dims2d(2) = dims3d(2)
-   dims2t(1) = dims3t(1)
-   dims2t(2) = dims3t(2)
 
    dims1d(1) = dims3d(3)
-   dims1t(1) = dims3t(3)
 
-   write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-   write(unit=0, fmt='(a, 6i6)') 'dims3d = ', dims3d
-   write(unit=0, fmt='(a, 6i6)') 'dims2d = ', dims2d
-   write(unit=0, fmt='(a, 6i6)') 'dims1d = ', dims1d
-   write(unit=0, fmt='(a, 6i6)') 'dims3t = ', dims3t
-   write(unit=0, fmt='(a, 6i6)') 'dims2t = ', dims2t
-   write(unit=0, fmt='(a, 6i6)') 'dims1t = ', dims1t
+   lite = ite
+   ljte = jte
+   lkte = kte
+
+   if(lite > dims3d(1)) lite = dims3d(1)
+   if(ljte > dims3d(2)) ljte = dims3d(2)
+   if(lkte > dims3d(3)) lkte = dims3d(3)
+
+  !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+  !write(unit=0, fmt='(a, 6i6)') 'dims3d = ', dims3d
+  !write(unit=0, fmt='(a, 6i6)') 'dims2d = ', dims2d
+  !write(unit=0, fmt='(a, 6i6)') 'dims1d = ', dims1d
 
   !compdof_3d =  -1
 
@@ -1361,14 +1162,14 @@ subroutine define_pio_iodesc(grid, DH)
       enddo
    enddo
 
-   write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-   write(unit=0, fmt='(a,i6)') 'npos = ', npos, &
-                               '(ime - ims + 1) * (jme - jms + 1) * (kme - kms + 1) = ', &
-                                (ime - ims + 1) * (jme - jms + 1) * (kme - kms + 1)
+  !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+  !write(unit=0, fmt='(a,i6)') 'npos = ', npos, &
+  !                            '(ime - ims + 1) * (jme - jms + 1) * (kme - kms + 1) = ', &
+  !                             (ime - ims + 1) * (jme - jms + 1) * (kme - kms + 1)
 
-   do j = jts, dims3t(2)
-      do k = kts, dims3t(3)
-      do i = its, dims3t(1)
+   do j = jts, ljte
+      do k = kts, lkte
+      do i = its, lite
          npos = i - ims + 1 + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (j - jms))
          compdof_3d(npos) = i + dims3d(1) * (k - 1 + dims3d(3) * (j - 1))
       enddo
@@ -1380,10 +1181,50 @@ subroutine define_pio_iodesc(grid, DH)
    call PIO_initdecomp(DH%iosystem, PIO_real,   dims3d, compdof_3d, DH%iodesc3d_w_real)
    call PIO_initdecomp(DH%iosystem, PIO_int,    dims3d, compdof_3d, DH%iodesc3d_w_int)
 
-   write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-   write(unit=0, fmt='(a)') 'finished: define_pio_iodesc'
+  !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+  !write(unit=0, fmt='(a)') 'finished: define_pio_iodesc'
 
 end subroutine define_pio_iodesc
+
+subroutine reorder (MemoryOrder,MemO)
+  implicit none
+  include 'wrf_status_codes.h'
+  character*(*)     ,intent(in)    :: MemoryOrder
+  character*3       ,intent(out)   :: MemO
+  character*3                      :: MemOrd
+  integer                          :: N,i,i1,i2,i3
+
+  MemO = MemoryOrder
+  N = len_trim(MemoryOrder)
+  if(N == 1) return
+  call lowercase(MemoryOrder,MemOrd)
+! never invert the boundary codes
+  select case ( MemOrd )
+     case ( 'xsz','xez','ysz','yez' )
+       return
+     case default
+       continue
+  end select
+  i1 = 1
+  i3 = 1
+  do i=2,N
+    if(ichar(MemOrd(i:i)) < ichar(MemOrd(i1:i1))) I1 = i
+    if(ichar(MemOrd(i:i)) > ichar(MemOrd(i3:i3))) I3 = i
+  enddo
+  if(N == 2) then
+    i2=i3
+  else
+    i2 = 6-i1-i3
+  endif
+  MemO(1:1) = MemoryOrder(i1:i1)
+  MemO(2:2) = MemoryOrder(i2:i2)
+  if(N == 3) MemO(3:3) = MemoryOrder(i3:i3)
+  if(MemOrd(i1:i1) == 's' .or. MemOrd(i1:i1) == 'e') then
+    MemO(1:N-1) = MemO(2:N)
+    MemO(N:N  ) = MemoryOrder(i1:i1)
+  endif
+  return
+end subroutine reorder
 
 end module pio_routines
 

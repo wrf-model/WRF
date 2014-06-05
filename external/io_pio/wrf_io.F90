@@ -913,9 +913,6 @@ subroutine ext_pio_get_dom_ti_real_sca(DataHandle,Element,Data,Count,OutCount,St
     call wrf_debug ( WARN , msg)
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_READ) then
     stat = pio_inq_att(DH%file_handle, PIO_GLOBAL, Element, XType, Len)
-    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-    write(unit=0, fmt='(2a)') 'Element: ', trim(Element)
-    write(unit=0, fmt='(a,i6)') 'XType: ', XType, 'PIO_REAL: ', PIO_REAL
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
       write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__,' Element ',trim(Element)
@@ -968,7 +965,6 @@ subroutine ext_pio_get_dom_ti_real_sca(DataHandle,Element,Data,Count,OutCount,St
     write(msg,*) 'Fatal error BAD FILE STATUS in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( FATAL , msg)
   endif
-  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
   return
 end subroutine ext_pio_get_dom_ti_real_sca
 
@@ -8060,29 +8056,22 @@ subroutine ext_pio_read_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
   integer ,dimension(NVarDims)                 :: StoredStart
   integer ,dimension(NVarDims)                 :: StoredLen
   integer                                      :: NVar
-  integer                                      :: j
-  integer                                      :: i1,i2,j1,j2,k1,k2
-  integer                                      :: x1,x2,y1,y2,z1,z2
-  integer                                      :: l1,l2,m1,m2,n1,n2
   character (VarNameLen)                       :: Name
   integer                                      :: XType
   integer                                      :: StoredDim
   integer                                      :: NAtts
   integer(KIND=PIO_OFFSET)                     :: Len
   integer                                      :: stat
-  integer                                      :: di
+  integer                                      :: n, fldsize
   integer                                      :: FType
   character (len=2)                            :: readinStagger
 
+  MemoryOrder = trim(adjustl(MemoryOrdIn))
+
   write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-  write(unit=0, fmt='(a,i6)') 'DataHandle: ', DataHandle
   write(unit=0, fmt='(a,i6)') 'DomainDesc: ', DomainDesc
   write(unit=0, fmt='(2a)') 'DateStr: ', trim(DateStr)
-  write(unit=0, fmt='(2a)') 'Var: ', trim(Var)
- !write(unit=0, fmt='(2a)') 'Stagger: ', trim(Stagger)
   write(unit=0, fmt='(2a)') 'MemoryOrdIn: ', trim(MemoryOrdIn)
-  MemoryOrder = trim(adjustl(MemoryOrdIn))
-  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
   write(unit=0, fmt='(2a)') 'MemoryOrder: ', trim(MemoryOrder)
   call GetDim(MemoryOrder,NDim,Status)
   if(Status /= WRF_NO_ERR) then
@@ -8234,20 +8223,20 @@ subroutine ext_pio_read_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
       call wrf_debug ( FATAL , msg)
       return
     endif
-    do j=1,NDim
-      stat = pio_inq_dimlen(DH%file_handle,VDimIDs(j),StoredLen(j))
+    do n=1,NDim
+      stat = pio_inq_dimlen(DH%file_handle,VDimIDs(n),StoredLen(n))
       call netcdf_err(stat,Status)
       if(Status /= WRF_NO_ERR) then
         write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__ 
         call wrf_debug ( WARN , TRIM(msg))
         return
       endif
-      if(Length(j) > StoredLen(j)) then
+      if(Length(n) > StoredLen(n)) then
         Status = WRF_WARN_READ_PAST_EOF
-        write(msg,*) 'Warning READ PAST EOF in ext_pio_read_field of ',TRIM(Var),Length(j),'>',StoredLen(j)
+        write(msg,*) 'Warning READ PAST EOF in ext_pio_read_field of ',TRIM(Var),Length(n),'>',StoredLen(n)
         call wrf_debug ( WARN , TRIM(msg))
         return
-      elseif(Length(j) <= 0) then
+      elseif(Length(n) <= 0) then
         Status = WRF_WARN_ZERO_LENGTH_READ
         write(msg,*) 'Warning ZERO LENGTH READ in ',__FILE__,', line', __LINE__
         call wrf_debug ( WARN , TRIM(msg))
@@ -8255,17 +8244,38 @@ subroutine ext_pio_read_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
       endif
     enddo
 
-    StoredStart = 1
-    call GetIndices(NDim,MemoryStart,MemoryEnd,l1,l2,m1,m2,n1,n2)
-    call GetIndices(NDim,StoredStart,Length,x1,x2,y1,y2,z1,z2)
-    call GetIndices(NDim,PatchStart,PatchEnd,i1,i2,j1,j2,k1,k2)
-    
     StoredStart(1:NDim) = PatchStart(1:NDim)
+
+    do n = 1, NDim
+       write(unit=0, fmt='(2(a,i2,a,i4))') &
+            'StoredStart(', n, ')=', StoredStart(n), ', Length(', n, ')=', Length(n)
+    end do
+
     call ExtOrder(MemoryOrder,StoredStart,Status)
+
+    do n = 1, NDim
+       write(unit=0, fmt='(a,i2,a,i4)') &
+            'StoredStart(', n, ')=', StoredStart(n)
+    end do
+
+    fldsize = 1
+    do n = 1, NDim
+       write(unit=0, fmt='(2(a,i2,a,i4))') &
+            'MemoryStart(', n, ')=', MemoryStart(n), ', MemoryEnd(', n, ')=', MemoryEnd(n)
+       VStart(n) = MemoryStart(n)
+       VCount(n) = MemoryEnd(n) - MemoryStart(n) + 1
+       write(unit=0, fmt='(2(a,i2,a,i4))') &
+            'VStart(', n, ')=', VStart(n), ', VCount(', n, ')=', VCount(n)
+    end do
+   
+    if(1 == Ndim) then
+       if(VCount(1) > Length(1)) VCount(1) = Length(1)
+    end if
 
     write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
     write(unit=0, fmt='(3a)') 'readinStagger: <', readinStagger, '>'
-    call FieldIO('read',DataHandle,DateStr,StoredStart,Length,MemoryOrder, &
+   !call FieldIO('read',DataHandle,DateStr,StoredStart,Length,MemoryOrder, &
+    call FieldIO('read',DataHandle,DateStr,VStart,VCount,MemoryOrder, &
                   readinStagger,FieldType,Field,Status)
     if(stat /= 0) then
       Status = WRF_ERR_FATAL_DEALLOCATION_ERR

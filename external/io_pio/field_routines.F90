@@ -1,4 +1,4 @@
-subroutine ext_pio_RealFieldIO(whole,IO,DH,Data,Status)
+subroutine ext_pio_RealFieldIO(whole,IO,DH,Data,fldsize,Status)
   use pio
   use pio_kinds
   use wrf_data_pio
@@ -8,7 +8,8 @@ subroutine ext_pio_RealFieldIO(whole,IO,DH,Data,Status)
   logical                     ,intent(in)    :: whole
   character (*)               ,intent(in)    :: IO
   type(wrf_data_handle)                      :: DH
-  real, dimension(:)          ,intent(inout) :: Data
+  integer                     ,intent(in)    :: fldsize
+  real, dimension(1:fldsize)  ,intent(inout) :: Data
   integer                     ,intent(out)   :: Status
   logical                                    :: found
   integer                                    :: stat
@@ -32,25 +33,14 @@ subroutine ext_pio_RealFieldIO(whole,IO,DH,Data,Status)
     end if
     write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
   else
-    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-    write(unit=0, fmt='(a,i6)') 'DH%CurrentVariable = ', DH%CurrentVariable
-    write(unit=0, fmt='(a,i6)') 'DH%CurrentVariable = ', DH%CurrentVariable
-    write(unit=0, fmt='(a,i6)') 'DH%CurrentVariable = ', DH%CurrentVariable
-
     if(whole)then
-      write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
       write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
       stat = pio_get_var(DH%file_handle,DH%descVar(DH%CurrentVariable),Data)
     else
       write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-      write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
       call pio_read_darray(DH%file_handle, DH%descVar(DH%CurrentVariable), &
                            DH%ioVar(DH%CurrentVariable), Data, stat)
     end if
-    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
   endif
   call netcdf_err(stat,Status)
   if(Status /= WRF_NO_ERR) then

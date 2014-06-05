@@ -618,6 +618,7 @@ subroutine FieldIO(IO,DataHandle,DateStr,Starts,Length,MemoryOrder, &
   integer                                   :: TimeIndex
   logical                                   :: whole
   integer                                   :: NDim
+  integer                                   :: fldsize
   integer                                   :: n
   integer,dimension(NVarDims)               :: VStart
   integer,dimension(NVarDims)               :: VCount
@@ -644,24 +645,24 @@ subroutine FieldIO(IO,DataHandle,DateStr,Starts,Length,MemoryOrder, &
   VStart(NDim+1) = TimeIndex
   VCount(NDim+1) = 1
 
+  fldsize = 1
   do n = 1, NDim + 1
      write(unit=0, fmt='(2(a,i2,a,i4))') &
           'VStart(', n, ')=', VStart(n), ', VCount(', n, ')=', VCount(n)
+     fldsize = fldsize * VCount(n)
   end do
      
   call find_iodesc(DH,MemoryOrder,Stagger,FieldTYpe,whole)
 
   write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
   write(unit=0, fmt='(a,i6)') 'DH%CurrentVariable = ', DH%CurrentVariable
-
-  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+  write(unit=0, fmt='(a,i6)') 'fldsize =', fldsize
   write(unit=0, fmt='(a, i8)') 'FieldType: ', FieldType, 'WRF_REAL: ', WRF_REAL
   write(unit=0, fmt='(a, l8)') 'whole: ', whole
 
   select case (FieldType)
     case (WRF_REAL)
-      write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-      call ext_pio_RealFieldIO(whole,IO,DH,Field,Status)
+      call ext_pio_RealFieldIO(whole,IO,DH,Field,fldsize,Status)
     case (WRF_DOUBLE)
       call ext_pio_DoubleFieldIO(whole,IO,DH,Field,Status)
     case (WRF_INTEGER)
@@ -675,9 +676,6 @@ subroutine FieldIO(IO,DataHandle,DateStr,Starts,Length,MemoryOrder, &
       return
   end select
 
-  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-  write(unit=0, fmt='(3a)') 'MemoryOrder: <', trim(MemoryOrder), '>'
-  write(unit=0, fmt='(3a)') 'Stagger: <', trim(Stagger), '>'
   return
 end subroutine FieldIO
 
@@ -891,21 +889,15 @@ subroutine define_pio_iodesc(grid, DH)
    integer(kind=PIO_Offset), &
            dimension((ime - ims + 1) * (jme - jms + 1) * (kme - kms + 1)) &
            :: compdof_3d
-   integer(kind=PIO_Offset), allocatable, dimension(:) :: compdof_2d
+   integer(kind=PIO_Offset), &
+           dimension((ime - ims + 1) * (jme - jms + 1)) &
+           :: compdof_2d
    integer :: dims3d(4), dims2d(3), dims1d(2), dims0d(1)
    integer :: lite, ljte, lkte
    integer :: i, j, k, npos
 
    communicator = grid%communicator
    myrank = DH%myrank
-
-  !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-  !write(unit=0, fmt='(3(a,i6))') 'ids = ', ids, ', jds = ', jds, ', kds = ', kds
-  !write(unit=0, fmt='(3(a,i6))') 'ide = ', ide, ', jde = ', jde, ', kde = ', kde
-  !write(unit=0, fmt='(3(a,i6))') 'ims = ', ims, ', jms = ', jms, ', kms = ', kms
-  !write(unit=0, fmt='(3(a,i6))') 'ime = ', ime, ', jme = ', jme, ', kme = ', kme
-  !write(unit=0, fmt='(3(a,i6))') 'its = ', its, ', jts = ', jts, ', kts = ', kts
-  !write(unit=0, fmt='(3(a,i6))') 'ite = ', ite, ', jte = ', jte, ', kte = ', kte
 
 !--For MASS variables
    dims3d(1) = ide - 1
@@ -935,12 +927,15 @@ subroutine define_pio_iodesc(grid, DH)
   !write(unit=0, fmt='(a, 6i6)') 'dims2d = ', dims2d
   !write(unit=0, fmt='(a, 6i6)') 'dims1d = ', dims1d
 
-   allocate(compdof_2d((lite-its+1)*(ljte-jts+1)), stat=iostat)
-
-  !compdof_3d =  -1
-  !compdof_2d =  -1
+  !compdof_3d =  0
+  !compdof_2d =  0
 
    do j = jms, jme
+      do i = ims, ime
+         npos = (i - ims + 1) + (ime - ims + 1) * (j - jms)
+         compdof_2d(npos) = 0
+      enddo
+
       do k = kms, kme
       do i = ims, ime
          npos = (i - ims + 1) + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (j - jms))
@@ -949,24 +944,15 @@ subroutine define_pio_iodesc(grid, DH)
       enddo
    enddo
 
-  !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-  !write(unit=0, fmt='(a,i6)') 'npos = ', npos, &
-  !                            '(ime - ims + 1) * (jme - jms + 1) * (kme - kms + 1) = ', &
-  !                             (ime - ims + 1) * (jme - jms + 1) * (kme - kms + 1)
-
-   npos = 0
    do j = jts, ljte
       do i = its, lite
-        !npos = i - its + 1+ (lite - its + 1) * (j - jts)
-         npos = npos + 1
+         npos = (i - ims + 1) + (ime - ims + 1) * (j - jms)
          compdof_2d(npos) = i + dims2d(1) * (j - 1)
       end do
-   enddo
 
-   do j = jts, ljte
       do k = kts, lkte
       do i = its, lite
-         npos = i - ims + 1 + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (j - jms))
+         npos = (i - ims + 1) + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (j - jms))
          compdof_3d(npos) = i + dims3d(1) * (k - 1 + dims3d(3) * (j - 1))
       enddo
       enddo
@@ -1004,13 +990,15 @@ subroutine define_pio_iodesc(grid, DH)
   !write(unit=0, fmt='(a, 6i6)') 'dims2d = ', dims2d
   !write(unit=0, fmt='(a, 6i6)') 'dims1d = ', dims1d
 
-   deallocate(compdof_2d)
-   allocate(compdof_2d((lite-its+1)*(ljte-jts+1)), stat=iostat)
-
-  !compdof_3d =  -1
-  !compdof_2d =  -1
+  !compdof_3d =  0
+  !compdof_2d =  0
 
    do j = jms, jme
+      do i = ims, ime
+         npos = (i - ims + 1) + (ime - ims + 1) * (j - jms)
+         compdof_2d(npos) = 0
+      enddo
+
       do k = kms, kme
       do i = ims, ime
          npos = (i - ims + 1) + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (j - jms))
@@ -1019,24 +1007,15 @@ subroutine define_pio_iodesc(grid, DH)
       enddo
    enddo
 
-  !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-  !write(unit=0, fmt='(a,i6)') 'npos = ', npos, &
-  !                            '(ime - ims + 1) * (jme - jms + 1) * (kme - kms + 1) = ', &
-  !                             (ime - ims + 1) * (jme - jms + 1) * (kme - kms + 1)
-
-   npos = 0
    do j = jts, ljte
       do i = its, lite
-        !npos = i - its + 1+ (lite - its + 1) * (j - jts)
-         npos = npos + 1
+         npos = (i - ims + 1) + (ime - ims + 1) * (j - jms)
          compdof_2d(npos) = i + dims2d(1) * (j - 1)
       end do
-   enddo
 
-   do j = jts, ljte
       do k = kts, lkte
       do i = its, lite
-         npos = i - ims + 1 + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (j - jms))
+         npos = (i - ims + 1) + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (j - jms))
          compdof_3d(npos) = i + dims3d(1) * (k - 1 + dims3d(3) * (j - 1))
       enddo
       enddo
@@ -1074,13 +1053,15 @@ subroutine define_pio_iodesc(grid, DH)
   !write(unit=0, fmt='(a, 6i6)') 'dims2d = ', dims2d
   !write(unit=0, fmt='(a, 6i6)') 'dims1d = ', dims1d
 
-   deallocate(compdof_2d)
-   allocate(compdof_2d((lite-its+1)*(ljte-jts+1)), stat=iostat)
-
-  !compdof_3d =  -1
-  !compdof_2d =  -1
+  !compdof_3d =  0
+  !compdof_2d =  0
 
    do j = jms, jme
+      do i = ims, ime
+         npos = (i - ims + 1) + (ime - ims + 1) * (j - jms)
+         compdof_2d(npos) = 0
+      enddo
+
       do k = kms, kme
       do i = ims, ime
          npos = (i - ims + 1) + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (j - jms))
@@ -1094,28 +1075,20 @@ subroutine define_pio_iodesc(grid, DH)
   !                            '(ime - ims + 1) * (jme - jms + 1) * (kme - kms + 1) = ', &
   !                             (ime - ims + 1) * (jme - jms + 1) * (kme - kms + 1)
 
-   npos = 0
    do j = jts, ljte
       do i = its, lite
-        !npos = i - its + 1+ (lite - its + 1) * (j - jts)
-         npos = npos + 1
+         npos = (i - ims + 1) + (ime - ims + 1) * (j - jms)
          compdof_2d(npos) = i + dims2d(1) * (j - 1)
       end do
 
-     !do i = its, dims3t(1)
-     !   npos = i - ims + 1 + (ime - ims + 1) * (j - jms)
-     !   compdof_2d(npos) = i + dims3d(1) * (j - 1)
-     !end do
-   enddo
-
-   do j = jts, ljte
       do k = kts, lkte
       do i = its, lite
-         npos = i - ims + 1 + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (j - jms))
+         npos = (i - ims + 1) + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (j - jms))
          compdof_3d(npos) = i + dims3d(1) * (k - 1 + dims3d(3) * (j - 1))
       enddo
       enddo
    enddo
+
 
 !--call init_decomp in order to setup the IO decomposition with PIO
    call PIO_initdecomp(DH%iosystem, PIO_double, dims3d, compdof_3d, DH%iodesc3d_v_double)
@@ -1125,8 +1098,6 @@ subroutine define_pio_iodesc(grid, DH)
    call PIO_initdecomp(DH%iosystem, PIO_double, dims2d, compdof_2d, DH%iodesc2d_v_double)
    call PIO_initdecomp(DH%iosystem, PIO_real,   dims2d, compdof_2d, DH%iodesc2d_v_real)
    call PIO_initdecomp(DH%iosystem, PIO_int,    dims2d, compdof_2d, DH%iodesc2d_v_int)
-
-   deallocate(compdof_2d)
 
 !--For Z-STAG variables
    dims3d(1) = ide - 1
@@ -1151,7 +1122,7 @@ subroutine define_pio_iodesc(grid, DH)
   !write(unit=0, fmt='(a, 6i6)') 'dims2d = ', dims2d
   !write(unit=0, fmt='(a, 6i6)') 'dims1d = ', dims1d
 
-  !compdof_3d =  -1
+  !compdof_3d =  0
 
    do j = jms, jme
       do k = kms, kme
@@ -1168,13 +1139,14 @@ subroutine define_pio_iodesc(grid, DH)
   !                             (ime - ims + 1) * (jme - jms + 1) * (kme - kms + 1)
 
    do j = jts, ljte
-      do k = kts, lkte
-      do i = its, lite
-         npos = i - ims + 1 + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (j - jms))
-         compdof_3d(npos) = i + dims3d(1) * (k - 1 + dims3d(3) * (j - 1))
-      enddo
-      enddo
+   do k = kts, lkte
+   do i = its, lite
+      npos = (i - ims + 1) + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (j - jms))
+      compdof_3d(npos) = i + dims3d(1) * (k - 1 + dims3d(3) * (j - 1))
    enddo
+   enddo
+   enddo
+
 
 !--call init_decomp in order to setup the IO decomposition with PIO
    call PIO_initdecomp(DH%iosystem, PIO_double, dims3d, compdof_3d, DH%iodesc3d_w_double)

@@ -43,8 +43,7 @@ subroutine allocHandle(DataHandle,DH,Comm,Status)
       DH => WrfDataHandles(i)
       DataHandle = i
       do n = 1, MaxVars
-         DH%validVarDesc(n) = .false.
-         DH%validMDVarDesc(n) = .false.
+         DH%vartype(n) = NOT_LAND_SOIL_VAR
       end do
       exit
     endif
@@ -474,11 +473,11 @@ subroutine find_iodesc(DH,MemoryOrder,Stagger,FieldTYpe,whole)
   select case (MemOrd)
     case ('xs','xe','ys','ye','z','c')
       whole = .true.
-    case ('ysz','yez')
+    case ('ysz','yez','xsz', 'xez')
       write(msg,*) 'PIO DOES NOT support memord: <', MemOrd, '>, in ',__FILE__,', line', __LINE__
       call wrf_debug ( WARN , TRIM(msg))
       return
-    case ('xzy', 'xsy', 'xez')
+    case ('xzy')
       select case (FieldType)
         case (WRF_REAL)
           select case (Stag)
@@ -487,7 +486,29 @@ subroutine find_iodesc(DH,MemoryOrder,Stagger,FieldTYpe,whole)
             case ('y')
                  DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_v_real
             case ('z')
-                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_w_real
+                 if(LAND_CAT_VAR == DH%vartype(DH%CurrentVariable)) then
+                    DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_land_real
+                   !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+                   !write(unit=0, fmt='(a,i6)') 'DH%CurrentVariable = ', DH%CurrentVariable
+                   !write(unit=0, fmt='(a)') 'Select DH%iodesc3d_land_real'
+                 else if(SOIL_CAT_VAR == DH%vartype(DH%CurrentVariable)) then
+                    DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_soil_real
+                   !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+                   !write(unit=0, fmt='(a,i6)') 'DH%CurrentVariable = ', DH%CurrentVariable
+                   !write(unit=0, fmt='(a)') 'Select DH%iodesc3d_soil_real'
+                 else if(SOIL_LAYERS_VAR == DH%vartype(DH%CurrentVariable)) then
+                    DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_soil_layers_real
+                    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+                    write(unit=0, fmt='(a,i6)') 'DH%CurrentVariable = ', DH%CurrentVariable
+                    write(unit=0, fmt='(a)') 'Select DH%iodesc3d_soil_layers_real'
+                 else if(MDL_CPL_VAR == DH%vartype(DH%CurrentVariable)) then
+                    DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_mdl_cpl_real
+                    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+                    write(unit=0, fmt='(a,i6)') 'DH%CurrentVariable = ', DH%CurrentVariable
+                    write(unit=0, fmt='(a)') 'Select DH%iodesc3d_mdl_cpl_real'
+                 else
+                    DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_w_real
+                 endif
             case default
                  DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_m_real
           end select
@@ -498,7 +519,17 @@ subroutine find_iodesc(DH,MemoryOrder,Stagger,FieldTYpe,whole)
             case ('y')
                  DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_v_double
             case ('z')
-                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_w_double
+                 if(LAND_CAT_VAR == DH%vartype(DH%CurrentVariable)) then
+                    DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_land_double
+                 else if(SOIL_CAT_VAR == DH%vartype(DH%CurrentVariable)) then
+                    DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_soil_double
+                 else if(SOIL_LAYERS_VAR == DH%vartype(DH%CurrentVariable)) then
+                    DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_soil_layers_double
+                 else if(MDL_CPL_VAR == DH%vartype(DH%CurrentVariable)) then
+                    DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_mdl_cpl_double
+                 else
+                    DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_w_double
+                 endif
             case default
                  DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_m_double
           end select
@@ -509,7 +540,17 @@ subroutine find_iodesc(DH,MemoryOrder,Stagger,FieldTYpe,whole)
             case ('y')
                  DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_v_int
             case ('z')
-                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_w_int
+                 if(LAND_CAT_VAR == DH%vartype(DH%CurrentVariable)) then
+                    DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_land_int
+                 else if(SOIL_CAT_VAR == DH%vartype(DH%CurrentVariable)) then
+                    DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_soil_int
+                 else if(SOIL_LAYERS_VAR == DH%vartype(DH%CurrentVariable)) then
+                    DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_soil_layers_int
+                 else if(MDL_CPL_VAR == DH%vartype(DH%CurrentVariable)) then
+                    DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_mdl_cpl_int
+                 else
+                    DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_w_int
+                 endif
             case default
                  DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_m_int
           end select
@@ -520,7 +561,17 @@ subroutine find_iodesc(DH,MemoryOrder,Stagger,FieldTYpe,whole)
             case ('y')
                  DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_v_int
             case ('z')
-                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_w_int
+                 if(LAND_CAT_VAR == DH%vartype(DH%CurrentVariable)) then
+                    DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_land_int
+                 else if(SOIL_CAT_VAR == DH%vartype(DH%CurrentVariable)) then
+                    DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_soil_int
+                 else if(SOIL_LAYERS_VAR == DH%vartype(DH%CurrentVariable)) then
+                    DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_soil_layers_int
+                 else if(MDL_CPL_VAR == DH%vartype(DH%CurrentVariable)) then
+                    DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_mdl_cpl_int
+                 else
+                    DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_w_int
+                 endif
             case default
                  DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_m_int
           end select
@@ -540,9 +591,9 @@ subroutine find_iodesc(DH,MemoryOrder,Stagger,FieldTYpe,whole)
                  DH%ioVar(DH%CurrentVariable) = DH%iodesc2d_v_real
             case default
                  DH%ioVar(DH%CurrentVariable) = DH%iodesc2d_m_real
-                 write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-                 write(unit=0, fmt='(a,i6)') 'DH%CurrentVariable = ', DH%CurrentVariable
-                 write(unit=0, fmt='(a)') 'Select DH%iodesc2d_m_real'
+                !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+                !write(unit=0, fmt='(a,i6)') 'DH%CurrentVariable = ', DH%CurrentVariable
+                !write(unit=0, fmt='(a)') 'Select DH%iodesc2d_m_real'
           end select
         case (WRF_DOUBLE)
           select case (Stag)
@@ -564,6 +615,9 @@ subroutine find_iodesc(DH,MemoryOrder,Stagger,FieldTYpe,whole)
                  DH%ioVar(DH%CurrentVariable) = DH%iodesc2d_v_int
             case default
                  DH%ioVar(DH%CurrentVariable) = DH%iodesc2d_m_int
+                 write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+                 write(unit=0, fmt='(a,i6)') 'DH%CurrentVariable = ', DH%CurrentVariable
+                 write(unit=0, fmt='(a)') 'Select DH%iodesc2d_m_int'
           end select
         case (WRF_LOGICAL)
           select case (Stag)
@@ -891,9 +945,23 @@ subroutine define_pio_iodesc(grid, DH)
            dimension((ime - ims + 1) * (jme - jms + 1) * (kme - kms + 1)) &
            :: compdof_3d
    integer(kind=PIO_Offset), &
+           dimension((ime - ims + 1) * (jme - jms + 1) * grid%num_land_cat) &
+           :: compdof_3d_land
+   integer(kind=PIO_Offset), &
+           dimension((ime - ims + 1) * (jme - jms + 1) * grid%num_soil_cat) &
+           :: compdof_3d_soil
+   integer(kind=PIO_Offset), &
+           dimension((ime - ims + 1) * (jme - jms + 1) * grid%num_soil_layers) &
+           :: compdof_3d_soil_layers
+   integer(kind=PIO_Offset), &
+           dimension((ime - ims + 1) * (jme - jms + 1) * grid%num_ext_model_couple_dom) &
+           :: compdof_3d_mdl_cpl
+   integer(kind=PIO_Offset), &
            dimension((ime - ims + 1) * (jme - jms + 1)) &
            :: compdof_2d
    integer :: dims3d(4), dims2d(3), dims1d(2), dims0d(1)
+   integer :: dims3d_land(4), dims3d_soil(4), dims3d_soil_layers(4)
+   integer :: dims3d_mdl_cpl(4)
    integer :: lite, ljte, lkte
    integer :: i, j, k, npos
 
@@ -914,6 +982,26 @@ subroutine define_pio_iodesc(grid, DH)
    if(ljte > dims3d(2)) ljte = dims3d(2)
    if(lkte > dims3d(3)) lkte = dims3d(3)
 
+   dims3d_land(1) = dims3d(1)
+   dims3d_land(2) = dims3d(2)
+   dims3d_land(3) = grid%num_land_cat
+   dims3d_land(4) = dims3d(4)
+
+   dims3d_soil(1) = dims3d(1)
+   dims3d_soil(2) = dims3d(2)
+   dims3d_soil(3) = grid%num_soil_cat
+   dims3d_soil(4) = dims3d(4)
+
+   dims3d_soil_layers(1) = dims3d(1)
+   dims3d_soil_layers(2) = dims3d(2)
+   dims3d_soil_layers(3) = grid%num_soil_layers
+   dims3d_soil_layers(4) = dims3d(4)
+
+   dims3d_mdl_cpl(1) = dims3d(1)
+   dims3d_mdl_cpl(2) = dims3d(2)
+   dims3d_mdl_cpl(3) = grid%num_ext_model_couple_dom
+   dims3d_mdl_cpl(4) = dims3d(4)
+
    dims2d(1) = dims3d(1)
    dims2d(2) = dims3d(2)
    dims2d(3) = dims3d(4)
@@ -923,13 +1011,16 @@ subroutine define_pio_iodesc(grid, DH)
 
    dims0d(1) = dims3d(4)
 
-  !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-  !write(unit=0, fmt='(a, 6i6)') 'dims3d = ', dims3d
-  !write(unit=0, fmt='(a, 6i6)') 'dims2d = ', dims2d
-  !write(unit=0, fmt='(a, 6i6)') 'dims1d = ', dims1d
-
-  !compdof_3d =  0
-  !compdof_2d =  0
+   write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+   write(unit=0, fmt='(a, 6i6)') 'dims1d = ', dims1d
+   write(unit=0, fmt='(a, 6i6)') 'dims2d = ', dims2d
+   write(unit=0, fmt='(a, 6i6)') 'dims3d = ', dims3d
+   write(unit=0, fmt='(a, 6i6)') 'dims3d_land = ', dims3d_land
+   write(unit=0, fmt='(a, 6i6)') 'dims3d_soil = ', dims3d_soil
+   write(unit=0, fmt='(a, 6i6)') 'grid%num_land_cat = ', grid%num_land_cat
+   write(unit=0, fmt='(a, 6i6)') 'grid%num_soil_cat = ', grid%num_soil_cat
+   write(unit=0, fmt='(a, 6i6)') 'grid%num_soil_layers = ', grid%num_soil_layers
+   write(unit=0, fmt='(a, 6i6)') 'grid%num_ext_model_couple_dom = ', grid%num_ext_model_couple_dom
 
    do j = jms, jme
       do i = ims, ime
@@ -941,6 +1032,34 @@ subroutine define_pio_iodesc(grid, DH)
       do i = ims, ime
          npos = (i - ims + 1) + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (j - jms))
          compdof_3d(npos) = 0
+      enddo
+      enddo
+
+      do k = 1, dims3d_land(3)
+      do i = ims, ime
+         npos = (i - ims + 1) + (ime - ims + 1) * (k - 1 + dims3d_land(3) * (j - jms))
+         compdof_3d_land(npos) = 0
+      enddo
+      enddo
+
+      do k = 1, dims3d_soil(3)
+      do i = ims, ime
+         npos = (i - ims + 1) + (ime - ims + 1) * (k - 1 + dims3d_soil(3) * (j - jms))
+         compdof_3d_soil(npos) = 0
+      enddo
+      enddo
+
+      do k = 1, dims3d_soil_layers(3)
+      do i = ims, ime
+         npos = (i - ims + 1) + (ime - ims + 1) * (k - 1 + dims3d_soil_layers(3) * (j - jms))
+         compdof_3d_soil_layers(npos) = 0
+      enddo
+      enddo
+
+      do k = 1, dims3d_mdl_cpl(3)
+      do i = ims, ime
+         npos = (i - ims + 1) + (ime - ims + 1) * (k - 1 + dims3d_mdl_cpl(3) * (j - jms))
+         compdof_3d_mdl_cpl(npos) = 0
       enddo
       enddo
    enddo
@@ -957,12 +1076,58 @@ subroutine define_pio_iodesc(grid, DH)
          compdof_3d(npos) = i + dims3d(1) * (k - 1 + dims3d(3) * (j - 1))
       enddo
       enddo
+
+      do k = 1, dims3d_land(3)
+      do i = its, lite
+         npos = (i - ims + 1) + (ime - ims + 1) * (k - 1 + dims3d_land(3) * (j - jms))
+         compdof_3d_land(npos) = i + dims3d_land(1) * (k - 1 + dims3d_land(3) * (j - 1))
+      enddo
+      enddo
+
+      do k = 1, dims3d_soil(3)
+      do i = its, lite
+         npos = (i - ims + 1) + (ime - ims + 1) * (k - 1 + dims3d_soil(3) * (j - jms))
+         compdof_3d_soil(npos) = i + dims3d_soil(1) * (k - 1 + dims3d_soil(3) * (j - 1))
+      enddo
+      enddo
+
+      do k = 1, dims3d_soil_layers(3)
+      do i = its, lite
+         npos = (i - ims + 1) + (ime - ims + 1) * (k - 1 + dims3d_soil_layers(3) * (j - jms))
+         compdof_3d_soil_layers(npos) = i + dims3d_soil_layers(1) * (k - 1 + dims3d_soil_layers(3) * (j - 1))
+      enddo
+      enddo
+
+      do k = 1, dims3d_mdl_cpl(3)
+      do i = its, lite
+         npos = (i - ims + 1) + (ime - ims + 1) * (k - 1 + dims3d_mdl_cpl(3) * (j - jms))
+         compdof_3d_mdl_cpl(npos) = i + dims3d_mdl_cpl(1) * (k - 1 + dims3d_mdl_cpl(3) * (j - 1))
+      enddo
+      enddo
    enddo
 
 !--call init_decomp in order to setup the IO decomposition with PIO
+   call pio_setdebuglevel(1)
+
    call PIO_initdecomp(DH%iosystem, PIO_int,    dims3d, compdof_3d, DH%iodesc3d_m_int)
    call PIO_initdecomp(DH%iosystem, PIO_real,   dims3d, compdof_3d, DH%iodesc3d_m_real)
    call PIO_initdecomp(DH%iosystem, PIO_double, dims3d, compdof_3d, DH%iodesc3d_m_double)
+
+   call PIO_initdecomp(DH%iosystem, PIO_int,    dims3d_land, compdof_3d_land, DH%iodesc3d_land_int)
+   call PIO_initdecomp(DH%iosystem, PIO_real,   dims3d_land, compdof_3d_land, DH%iodesc3d_land_real)
+   call PIO_initdecomp(DH%iosystem, PIO_double, dims3d_land, compdof_3d_land, DH%iodesc3d_land_double)
+
+   call PIO_initdecomp(DH%iosystem, PIO_int,    dims3d_soil, compdof_3d_soil, DH%iodesc3d_soil_int)
+   call PIO_initdecomp(DH%iosystem, PIO_real,   dims3d_soil, compdof_3d_soil, DH%iodesc3d_soil_real)
+   call PIO_initdecomp(DH%iosystem, PIO_double, dims3d_soil, compdof_3d_soil, DH%iodesc3d_soil_double)
+
+   call PIO_initdecomp(DH%iosystem, PIO_int,    dims3d_soil_layers, compdof_3d_soil_layers, DH%iodesc3d_soil_layers_int)
+   call PIO_initdecomp(DH%iosystem, PIO_real,   dims3d_soil_layers, compdof_3d_soil_layers, DH%iodesc3d_soil_layers_real)
+   call PIO_initdecomp(DH%iosystem, PIO_double, dims3d_soil_layers, compdof_3d_soil_layers, DH%iodesc3d_soil_layers_double)
+
+   call PIO_initdecomp(DH%iosystem, PIO_int,    dims3d_mdl_cpl, compdof_3d_mdl_cpl, DH%iodesc3d_mdl_cpl_int)
+   call PIO_initdecomp(DH%iosystem, PIO_real,   dims3d_mdl_cpl, compdof_3d_mdl_cpl, DH%iodesc3d_mdl_cpl_real)
+   call PIO_initdecomp(DH%iosystem, PIO_double, dims3d_mdl_cpl, compdof_3d_mdl_cpl, DH%iodesc3d_mdl_cpl_double)
 
    call PIO_initdecomp(DH%iosystem, PIO_int,    dims2d, compdof_2d, DH%iodesc2d_m_int)
    call PIO_initdecomp(DH%iosystem, PIO_real,   dims2d, compdof_2d, DH%iodesc2d_m_real)

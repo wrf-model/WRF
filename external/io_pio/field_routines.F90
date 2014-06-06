@@ -14,7 +14,7 @@ subroutine ext_pio_RealFieldIO(whole,IO,DH,fldsize,Data,Status)
   logical                                    :: found
   integer                                    :: stat
 
-  call pio_setdebuglevel(1)
+ !call pio_setdebuglevel(1)
 
   if(IO == 'write') then
     if(whole)then
@@ -94,28 +94,28 @@ subroutine ext_pio_IntFieldIO(whole,IO,DH,fldsize,Data,Status)
   integer                                    :: stat
   integer                                    :: Buffer(10)
 
-  call pio_setdebuglevel(1)
+ !call pio_setdebuglevel(1)
 
-  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+ !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
  !write(unit=0, fmt='(a,i6)') 'DH%CurrentVariable = ', DH%CurrentVariable
-  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-  write(unit=0, fmt='(3a)') 'IO: <', IO, '>'
-  write(unit=0, fmt='(a, l8)') 'whole: ', whole
+ !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+ !write(unit=0, fmt='(3a)') 'IO: <', IO, '>'
+ !write(unit=0, fmt='(a, l8)') 'whole: ', whole
 
   if(IO == 'write') then
     write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
     if(whole)then
-      write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+     !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
       stat = pio_put_var(DH%file_handle,DH%descVar(DH%CurrentVariable),Data)
     else
-      write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+     !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
       call pio_write_darray(DH%file_handle, DH%descVar(DH%CurrentVariable), &
                             DH%ioVar(DH%CurrentVariable), Data, stat)
     end if
-    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+   !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
   else
     if(whole)then
-      write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+     !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
       if(1 == fldsize) then
        !stat = pio_get_var(DH%file_handle,DH%descVar(DH%CurrentVariable),Buffer)
         stat = pio_get_var(DH%file_handle,DH%VarIDs(DH%CurrentVariable),Buffer)
@@ -123,20 +123,20 @@ subroutine ext_pio_IntFieldIO(whole,IO,DH,fldsize,Data,Status)
       else
         stat = pio_get_var(DH%file_handle,DH%descVar(DH%CurrentVariable),Data)
       endif
-      write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+     !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
     else
-      write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+     !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
       call pio_read_darray(DH%file_handle, DH%descVar(DH%CurrentVariable), &
                            DH%ioVar(DH%CurrentVariable), Data, stat)
     end if
-    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+   !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
   endif
   call netcdf_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
     write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , msg)
   endif
-  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+ !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
   return
 end subroutine ext_pio_IntFieldIO
 

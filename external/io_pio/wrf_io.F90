@@ -215,6 +215,25 @@ subroutine ext_pio_open_for_read_begin( FileName, grid, SysDepInfo, DataHandle, 
   DH%CurrentTime     = 0
   DH%TimesVarID      = VarID
   DH%TimeIndex       = 0
+
+  write(unit=0, fmt='(3a,i6)') 'file: ',__FILE__,', line: ', __LINE__
+  do i = 1, ndims
+    DH%DimIDs(i) = i
+    stat = pio_inq_dimname(DH%file_handle,i,DH%DimNames(i))
+    if(Status /= WRF_NO_ERR) then
+      write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__
+      call wrf_debug ( WARN , TRIM(msg))
+      return
+    endif
+
+    if(unlimitedDimID == i) then
+       DH%DimUnlimID = unlimitedDimID
+       DH%DimUnlimName = DH%DimNames(i)
+    endif
+    
+    write(unit=0, fmt='(a,i2,3a)') 'DH%DimNames(',i,'): <', DH%DimNames(i), '>'
+  enddo
+  DH%NumDims = ndims
   return
 end subroutine ext_pio_open_for_read_begin
 
@@ -257,8 +276,8 @@ subroutine ext_pio_open_for_update( FileName, grid, SysDepInfo, DataHandle, Stat
     return
   endif
 
-  call initialize_pio(grid, DH)
-  call define_pio_iodesc(grid, DH)
+ !call initialize_pio(grid, DH)
+ !call define_pio_iodesc(grid, DH)
 
   stat = pio_openfile(DH%iosystem, DH%file_handle, pio_iotype_pnetcdf, FileName)
   call netcdf_err(stat,Status)
@@ -440,7 +459,6 @@ SUBROUTINE ext_pio_open_for_write_begin(FileName,grid,SysDepInfo,DataHandle,Stat
   endif
   VDimIDs(1) = DH%DimIDs(1)
   VDimIDs(2) = DH%DimUnlimID
- !stat = pio_def_var(DH%file_handle,DH%TimesName,PIO_CHAR,VDimIDs,DH%TimesVarID)
   stat = pio_def_var(DH%file_handle,DH%TimesName,PIO_CHAR,DH%vtime)
   call netcdf_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
@@ -7785,6 +7803,13 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
+
+  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+  write(unit=0, fmt='(a,i6)') 'DataHandle: ', DataHandle
+  write(unit=0, fmt='(2a)') 'DateStr: ', trim(DateStr)
+  write(unit=0, fmt='(2a)') 'MemoryOrdIn: ', trim(MemoryOrdIn)
+  write(unit=0, fmt='(2a)') 'MemoryOrder: ', trim(MemoryOrder)
+
   call DateCheck(DateStr,Status)
   if(Status /= WRF_NO_ERR) then
     write(msg,*) 'Warning DATE STRING ERROR |',DateStr,'| in ',__FILE__,', line', __LINE__ 
@@ -8051,8 +8076,9 @@ subroutine ext_pio_read_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
   integer                                      :: NAtts
   integer(KIND=PIO_OFFSET)                     :: Len
   integer                                      :: stat
-  integer                                      :: n, fldsize
+  integer                                      :: i, j, n, fldsize
   integer                                      :: FType
+  integer, dimension(:,:,:), allocatable       :: tmp2dint
   character (len=2)                            :: readinStagger
 
   MemoryOrder = trim(adjustl(MemoryOrdIn))
@@ -8230,11 +8256,6 @@ subroutine ext_pio_read_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
 
     StoredStart(1:NDim) = PatchStart(1:NDim)
 
-    do n = 1, NDim
-       write(unit=0, fmt='(2(a,i2,a,i4))') &
-            'StoredStart(', n, ')=', StoredStart(n), ', Length(', n, ')=', Length(n)
-    end do
-
     call ExtOrder(MemoryOrder,StoredStart,Status)
 
     do n = 1, NDim
@@ -8242,6 +8263,7 @@ subroutine ext_pio_read_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
             'StoredStart(', n, ')=', StoredStart(n)
     end do
 
+    DH%vartype(DH%CurrentVariable) = NOT_LAND_SOIL_VAR
     fldsize = 1
     do n = 1, NDim
        write(unit=0, fmt='(2(a,i2,a,i4))') &
@@ -8251,6 +8273,36 @@ subroutine ext_pio_read_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
        write(unit=0, fmt='(2(a,i2,a,i4))') &
             'VStart(', n, ')=', VStart(n), ', VCount(', n, ')=', VCount(n)
        fldsize = fldsize * VCount(n)
+
+       if("land_cat_stag" == DH%DimNames(VDimIDs(n))) then
+          DH%vartype(DH%CurrentVariable) = LAND_CAT_VAR
+          write(unit=0, fmt='(a,i2,a,i4,6x,a,i3)') &
+               'DH%vartype(', DH%CurrentVariable, ')=', DH%vartype(DH%CurrentVariable), &
+               'LAND_CAT_VAR=', LAND_CAT_VAR
+          write(unit=0, fmt='(a,i2,a,i4,6x,a,i3)') &
+               'VCount(', n, ')=', VCount(n), ', grid%num_land_cat=', grid%num_land_cat
+       else if("soil_cat_stag" == DH%DimNames(VDimIDs(n))) then
+          DH%vartype(DH%CurrentVariable) = SOIL_CAT_VAR
+          write(unit=0, fmt='(a,i2,a,i4,6x,a,i3)') &
+               'DH%vartype(', DH%CurrentVariable, ')=', DH%vartype(DH%CurrentVariable), &
+               'SOIL_CAT_VAR=', SOIL_CAT_VAR
+          write(unit=0, fmt='(a,i2,a,i4,6x,a,i3)') &
+               'VCount(', n, ')=', VCount(n), ', grid%num_soil_cat=', grid%num_soil_cat
+       else if("soil_layers_stag" == DH%DimNames(VDimIDs(n))) then
+          DH%vartype(DH%CurrentVariable) = SOIL_LAYERS_VAR
+          write(unit=0, fmt='(a,i2,a,i4,6x,a,i3)') &
+               'DH%vartype(', DH%CurrentVariable, ')=', DH%vartype(DH%CurrentVariable), &
+               'SOIL_LAYERS_VAR=', SOIL_LAYERS_VAR
+          write(unit=0, fmt='(a,i2,a,i4,6x,a,i3)') &
+               'VCount(', n, ')=', VCount(n), ', grid%num_soil_layers=', grid%num_soil_layers
+       else if("num_ext_model_couple_dom_stag" == DH%DimNames(VDimIDs(n))) then
+          DH%vartype(DH%CurrentVariable) = MDL_CPL_VAR
+          write(unit=0, fmt='(a,i2,a,i4,6x,a,i3)') &
+               'DH%vartype(', DH%CurrentVariable, ')=', DH%vartype(DH%CurrentVariable), &
+               'MDL_CPL_VAR=', MDL_CPL_VAR
+          write(unit=0, fmt='(a,i2,a,i4,6x,a,i3)') &
+               'VCount(', n, ')=', VCount(n), ', grid%num_ext_model_couple_dom=', grid%num_ext_model_couple_dom
+       endif
     end do
    
     if(1 == Ndim) then
@@ -8259,9 +8311,27 @@ subroutine ext_pio_read_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
 
    !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
    !write(unit=0, fmt='(3a)') 'readinStagger: <', readinStagger, '>'
-    if((WRF_INTEGER == FieldType) .and. (1 == fldsize)) then
-      Status = pio_get_var(DH%file_handle,DH%descVar(DH%CurrentVariable),VCount(1:1))
-      Field(1) = VCount(1)
+    if(WRF_INTEGER == FieldType) then
+      if(1 == fldsize) then
+         Status = pio_get_var(DH%file_handle,DH%descVar(DH%CurrentVariable),VCount(1:1))
+         Field(1) = VCount(1)
+      else if(2 == Ndim) then
+         allocate(tmp2dint(VCount(1),VCount(2),1), stat=Status)
+         call pio_read_darray(DH%file_handle, DH%descVar(DH%CurrentVariable), &
+                              DH%iodesc2d_m_int, tmp2dint, Status)
+!                             DH%ioVar(DH%CurrentVariable), tmp2dint, Status)
+         n = 0
+         do j=1,VCount(2)
+         do i=1,VCount(1)
+            n=n+1
+            Field(n) = tmp2dint(i,j,1)
+         enddo
+         enddo
+         deallocate(tmp2dint)
+      else
+        call FieldIO('read',DataHandle,DateStr,VStart,VCount,MemoryOrder, &
+                      readinStagger,FieldType,Field,Status)
+      endif
     else
       call FieldIO('read',DataHandle,DateStr,VStart,VCount,MemoryOrder, &
                     readinStagger,FieldType,Field,Status)

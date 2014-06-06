@@ -24,6 +24,11 @@ module wrf_data_pio
   integer                , parameter      :: NO_DIM           = 0
   integer                , parameter      :: NVarDims         = 4
   integer                , parameter      :: NMDVarDims       = 2
+  integer                , parameter      :: NOT_LAND_SOIL_VAR= 0
+  integer                , parameter      :: LAND_CAT_VAR     = 1
+  integer                , parameter      :: SOIL_CAT_VAR     = 2
+  integer                , parameter      :: SOIL_LAYERS_VAR  = 3
+  integer                , parameter      :: MDL_CPL_VAR      = 4
   character (8)          , parameter      :: NO_NAME          = 'NULL'
   character (DateStrLen) , parameter      :: ZeroDate = '0000-00-00-00:00:00'
 
@@ -59,6 +64,7 @@ module wrf_data_pio
     integer               , dimension(NVarDims-1, MaxVars) :: VarDimLens
     character (VarNameLen), dimension(MaxVars) :: VarNames
     integer                               :: CurrentVariable  !Only used for read
+    integer                               :: NumDims
     integer                               :: NumVars
 ! first_operation is set to .TRUE. when a new handle is allocated 
 ! or when open-for-write or open-for-read are committed.  It is set 
@@ -86,12 +92,19 @@ module wrf_data_pio
    type (io_desc_t)        :: iodesc2d_m_int, iodesc2d_u_int, iodesc2d_v_int, iodesc2d_char_int
    type (io_desc_t)        :: iodesc1d_int
 
+   type (io_desc_t)        :: iodesc3d_land_double, iodesc3d_soil_double, iodesc3d_soil_layers_double
+   type (io_desc_t)        :: iodesc3d_land_real,   iodesc3d_soil_real, iodesc3d_soil_layers_real
+   type (io_desc_t)        :: iodesc3d_land_int,    iodesc3d_soil_int, iodesc3d_soil_layers_int
+
+   type (io_desc_t)        :: iodesc3d_mdl_cpl_double
+   type (io_desc_t)        :: iodesc3d_mdl_cpl_real
+   type (io_desc_t)        :: iodesc3d_mdl_cpl_int
+
    type (Var_desc_t), dimension(MaxVars) :: descMDVar
    type (Var_desc_t), dimension(MaxVars) :: descVar
    type (io_desc_t),  dimension(MaxVars) :: ioMDVar
    type (io_desc_t),  dimension(MaxVars) :: ioVar
-   logical, dimension(MaxVars)           :: validMDVarDesc
-   logical, dimension(MaxVars)           :: validVarDesc
+   logical, dimension(MaxVars)           :: vartype
 
    integer(i4)             :: iostat       ! PIO-specific io status
    integer(i4)             :: myrank, nprocs

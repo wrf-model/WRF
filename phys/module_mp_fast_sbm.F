@@ -776,6 +776,15 @@ USE module_mp_radar
      &      T_NEW(I,K,J),DT,rhocgs(I,K,J), &
      &      COL,AFREEZMY,BFREEZMY,BFREEZMAX, &
      &      KRFREEZ,ICEMAX,NKR)
+          DO KR=1,NKR
+            DO ICE=1,ICEMAX
+             FF3R(KR)=FF2IN(KR,ICE)+FF3R(KR)
+             FF2IN(KR,ICE)=0
+             FF2R(KR,ICE)=0
+             FF4R(KR)=FF5R(KR)+FF4R(KR)
+             FF5R(KR)=0
+            ENDDO
+          END DO
          IF (ORIGINAL_MELT)THEN
          CALL ORIG_MELT  &
      &    (FF1R,XL,FF2R,XI,FF3R,XS,FF4R,XG,FF5R,XH, &

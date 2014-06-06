@@ -5224,7 +5224,6 @@ subroutine ext_pio_get_var_td_real_arr(DataHandle,Element,DateStr,Var,Data,Count
     write(msg,*) 'Warning READ WONLY FILE in ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , msg)
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_READ) then
-   !stat = NFMPI_INQ_VARID(file_handle,Name,VarID)
     stat = pio_inq_varid(DH%file_handle,Name,VarID)
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
@@ -5378,7 +5377,6 @@ subroutine ext_pio_get_var_td_real_sca(DataHandle,Element,DateStr,Var,Data,Count
     write(msg,*) 'Warning READ WONLY FILE in ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , msg)
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_READ) then
-   !stat = NFMPI_INQ_VARID(file_handle,Name,VarID)
     stat = pio_inq_varid(DH%file_handle,Name,VarID)
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
@@ -5746,7 +5744,6 @@ subroutine ext_pio_get_var_td_double_arr(DataHandle,Element,DateStr,Var,Data,Cou
     write(msg,*) 'Warning READ WONLY FILE in ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , msg)
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_READ) then
-   !stat = NFMPI_INQ_VARID(file_handle,Name,VarID)
     stat = pio_inq_varid(DH%file_handle,Name,VarID)
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
@@ -5900,7 +5897,6 @@ subroutine ext_pio_get_var_td_double_sca(DataHandle,Element,DateStr,Var,Data,Cou
     write(msg,*) 'Warning READ WONLY FILE in ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , msg)
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_READ) then
-   !stat = NFMPI_INQ_VARID(file_handle,Name,VarID)
     stat = pio_inq_varid(DH%file_handle,Name,VarID)
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
@@ -6268,7 +6264,6 @@ subroutine ext_pio_get_var_td_integer_arr(DataHandle,Element,DateStr,Var,Data,Co
     write(msg,*) 'Warning READ WONLY FILE in ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , msg)
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_READ) then
-   !stat = NFMPI_INQ_VARID(file_handle,Name,VarID)
     stat = pio_inq_varid(DH%file_handle,Name,VarID)
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
@@ -6422,7 +6417,6 @@ subroutine ext_pio_get_var_td_integer_sca(DataHandle,Element,DateStr,Var,Data,Co
     write(msg,*) 'Warning READ WONLY FILE in ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , msg)
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_READ) then
-   !stat = NFMPI_INQ_VARID(file_handle,Name,VarID)
     stat = pio_inq_varid(DH%file_handle,Name,VarID)
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
@@ -6790,7 +6784,6 @@ subroutine ext_pio_get_var_td_logical_arr(DataHandle,Element,DateStr,Var,Data,Co
     write(msg,*) 'Warning READ WONLY FILE in ',__FILE__,' ','LOGICAL',', line', __LINE__
     call wrf_debug ( WARN , msg)
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_READ) then
-   !stat = NFMPI_INQ_VARID(file_handle,Name,VarID)
     stat = pio_inq_varid(DH%file_handle,Name,VarID)
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
@@ -6798,7 +6791,6 @@ subroutine ext_pio_get_var_td_logical_arr(DataHandle,Element,DateStr,Var,Data,Co
       call wrf_debug ( WARN , msg)
       return
     endif
-   !stat = NFMPI_INQ_VAR(file_handle,VarID,FName,XType,NDims,DimIDs,NAtts)
     stat = pio_inquire_variable(DH%file_handle,VarID,FName,XType,NDims,DimIDs,NAtts)
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
@@ -6944,7 +6936,6 @@ subroutine ext_pio_get_var_td_logical_sca(DataHandle,Element,DateStr,Var,Data,Co
     write(msg,*) 'Warning READ WONLY FILE in ',__FILE__,' ','LOGICAL',', line', __LINE__
     call wrf_debug ( WARN , msg)
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_READ) then
-   !stat = NFMPI_INQ_VARID(file_handle,Name,VarID)
     stat = pio_inq_varid(DH%file_handle,Name,VarID)
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
@@ -7279,7 +7270,6 @@ subroutine ext_pio_get_var_td_char_arr(DataHandle,Element,DateStr,Var,Data,Statu
     write(msg,*) 'Warning READ WONLY FILE in ',__FILE__,' ','CHAR',', line', __LINE__
     call wrf_debug ( WARN , msg)
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_READ) then
-   !stat = NFMPI_INQ_VARID(file_handle,Name,VarID)
     stat = pio_inq_varid(DH%file_handle,Name,VarID)
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
@@ -7418,7 +7408,6 @@ subroutine ext_pio_get_var_td_char_sca(DataHandle,Element,DateStr,Var,Data,Statu
     write(msg,*) 'Warning READ WONLY FILE in ',__FILE__,' ','CHAR',', line', __LINE__
     call wrf_debug ( WARN , msg)
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_READ) then
-   !stat = NFMPI_INQ_VARID(file_handle,Name,VarID)
     stat = pio_inq_varid(DH%file_handle,Name,VarID)
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
@@ -8068,11 +8057,11 @@ subroutine ext_pio_read_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
 
   MemoryOrder = trim(adjustl(MemoryOrdIn))
 
-  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-  write(unit=0, fmt='(a,i6)') 'DomainDesc: ', DomainDesc
-  write(unit=0, fmt='(2a)') 'DateStr: ', trim(DateStr)
-  write(unit=0, fmt='(2a)') 'MemoryOrdIn: ', trim(MemoryOrdIn)
-  write(unit=0, fmt='(2a)') 'MemoryOrder: ', trim(MemoryOrder)
+ !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+ !write(unit=0, fmt='(a,i6)') 'DomainDesc: ', DomainDesc
+ !write(unit=0, fmt='(2a)') 'DateStr: ', trim(DateStr)
+ !write(unit=0, fmt='(2a)') 'MemoryOrdIn: ', trim(MemoryOrdIn)
+ !write(unit=0, fmt='(2a)') 'MemoryOrder: ', trim(MemoryOrder)
   call GetDim(MemoryOrder,NDim,Status)
   if(Status /= WRF_NO_ERR) then
     write(msg,*) 'Warning BAD MEMORY ORDER |',TRIM(MemoryOrder),'| for |', &
@@ -8087,7 +8076,6 @@ subroutine ext_pio_read_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
-  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
   call GetDH(DataHandle,DH,Status)
   if(Status /= WRF_NO_ERR) then
     write(msg,*) 'Warning Status = ',Status,' in ext_pio_read_field ',__FILE__,', line', __LINE__
@@ -8119,6 +8107,7 @@ subroutine ext_pio_read_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
 
     call ExtOrder(MemoryOrder,Length,Status)
 
+    stat = pio_inq_varid(DH%file_handle,VarName,DH%VarIDs(DH%CurrentVariable))
     stat = pio_inq_varid(DH%file_handle,VarName,DH%descVar(DH%CurrentVariable))
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
@@ -8134,7 +8123,6 @@ subroutine ext_pio_read_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
       call wrf_debug ( WARN , TRIM(msg))
       return
     endif
-   !stat = pio_get_att(DH%file_handle,VarID,'FieldType',FType)
     stat = pio_get_att(DH%file_handle,DH%descVar(DH%CurrentVariable),'FieldType',FType)
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
@@ -8151,10 +8139,6 @@ subroutine ext_pio_read_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
       call wrf_debug ( WARN , msg)
       return
     endif
-
-    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-    write(unit=0, fmt='(a,i6)') 'FType = ', FType
-    write(unit=0, fmt='(3a)') 'readinStagger = <', readinStagger, '>'
 
 !---allow coercion between double and single prec real
     if( (FieldType == WRF_REAL .OR. FieldType == WRF_DOUBLE) ) then
@@ -8266,17 +8250,22 @@ subroutine ext_pio_read_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
        VCount(n) = MemoryEnd(n) - MemoryStart(n) + 1
        write(unit=0, fmt='(2(a,i2,a,i4))') &
             'VStart(', n, ')=', VStart(n), ', VCount(', n, ')=', VCount(n)
+       fldsize = fldsize * VCount(n)
     end do
    
     if(1 == Ndim) then
        if(VCount(1) > Length(1)) VCount(1) = Length(1)
     end if
 
-    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-    write(unit=0, fmt='(3a)') 'readinStagger: <', readinStagger, '>'
-   !call FieldIO('read',DataHandle,DateStr,StoredStart,Length,MemoryOrder, &
-    call FieldIO('read',DataHandle,DateStr,VStart,VCount,MemoryOrder, &
-                  readinStagger,FieldType,Field,Status)
+   !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+   !write(unit=0, fmt='(3a)') 'readinStagger: <', readinStagger, '>'
+    if((WRF_INTEGER == FieldType) .and. (1 == fldsize)) then
+      Status = pio_get_var(DH%file_handle,DH%descVar(DH%CurrentVariable),VCount(1:1))
+      Field(1) = VCount(1)
+    else
+      call FieldIO('read',DataHandle,DateStr,VStart,VCount,MemoryOrder, &
+                    readinStagger,FieldType,Field,Status)
+    endif
     if(stat /= 0) then
       Status = WRF_ERR_FATAL_DEALLOCATION_ERR
       write(msg,*) 'Fatal DEALLOCATION ERROR in ',__FILE__,', line', __LINE__

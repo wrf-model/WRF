@@ -658,17 +658,18 @@ subroutine FieldIO(IO,DataHandle,DateStr,Starts,Length,MemoryOrder, &
   write(unit=0, fmt='(a,i6)') 'DH%CurrentVariable = ', DH%CurrentVariable
   write(unit=0, fmt='(a,i6)') 'fldsize =', fldsize
   write(unit=0, fmt='(a, i8)') 'FieldType: ', FieldType, 'WRF_REAL: ', WRF_REAL
+  write(unit=0, fmt='(a, i8)') 'WRF_INTEGER: ', WRF_INTEGER, 'WRF_DOUBLE: ', WRF_DOUBLE
   write(unit=0, fmt='(a, l8)') 'whole: ', whole
 
   select case (FieldType)
     case (WRF_REAL)
-      call ext_pio_RealFieldIO(whole,IO,DH,Field,fldsize,Status)
+      call ext_pio_RealFieldIO(whole,IO,DH,fldsize,Field,Status)
     case (WRF_DOUBLE)
-      call ext_pio_DoubleFieldIO(whole,IO,DH,Field,Status)
+      call ext_pio_DoubleFieldIO(whole,IO,DH,fldsize,Field,Status)
     case (WRF_INTEGER)
-      call ext_pio_IntFieldIO(whole,IO,DH,Field,Status)
+      call ext_pio_IntFieldIO(whole,IO,DH,fldsize,Field,Status)
     case (WRF_LOGICAL)
-      call ext_pio_LogicalFieldIO(whole,IO,DH,VStart,VCount,Field,Status)
+      call ext_pio_LogicalFieldIO(whole,IO,DH,fldsize,Field,Status)
     case default
       Status = WRF_WARN_DATA_TYPE_NOT_FOUND
       write(msg,*) 'Warning DATA TYPE NOT FOUND in ',__FILE__,', line', __LINE__

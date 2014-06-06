@@ -2031,8 +2031,8 @@ END MODULE module_io
 !</PRE>
 !</DESCRIPTION>
 SUBROUTINE wrf_read_field ( DataHandle , DateStr , VarName , Field , FieldType ,         &
-                            Comm       , IOComm  ,                                       &
-                            DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
+                            grid ,                                                       &
+                            DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,    &
                             DomainStart , DomainEnd ,                                    &
                             MemoryStart , MemoryEnd ,                                    &
                             PatchStart , PatchEnd ,                                      &
@@ -2046,14 +2046,14 @@ SUBROUTINE wrf_read_field ( DataHandle , DateStr , VarName , Field , FieldType ,
 !</DESCRIPTION>
   USE module_state_description
   USE module_configure
+  USE module_domain
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)    :: DataHandle
   CHARACTER*(*) :: DateStr
   CHARACTER*(*) :: VarName
   LOGICAL ,       INTENT(INOUT) :: Field(*)
   INTEGER                       ,INTENT(IN)    :: FieldType
-  INTEGER                       ,INTENT(INOUT) :: Comm
-  INTEGER                       ,INTENT(INOUT) :: IOComm
+  TYPE(domain)                                 :: grid
   INTEGER                       ,INTENT(IN)    :: DomainDesc
   LOGICAL, DIMENSION(4)                        :: bdy_mask
   CHARACTER*(*)                 ,INTENT(IN)    :: MemoryOrder
@@ -2070,9 +2070,9 @@ SUBROUTINE wrf_read_field ( DataHandle , DateStr , VarName , Field , FieldType ,
   IF ( FieldType .EQ. WRF_LOGICAL ) THEN
     ALLOCATE(ICAST((MemoryEnd(1)-MemoryStart(1)+1)*(MemoryEnd(2)-MemoryStart(2)+1)*(MemoryEnd(3)-MemoryStart(3)+1)))
 
-    CALL wrf_read_field1 ( DataHandle , DateStr , VarName , ICAST , WRF_INTEGER ,         &
-                           Comm       , IOComm  ,                                       &
-                           DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
+    CALL wrf_read_field1 ( DataHandle , DateStr , VarName , ICAST , WRF_INTEGER ,       &
+                           grid ,                                                       &
+                           DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,    &
                            DomainStart , DomainEnd ,                                    &
                            MemoryStart , MemoryEnd ,                                    &
                            PatchStart , PatchEnd ,                                      &
@@ -2081,8 +2081,8 @@ SUBROUTINE wrf_read_field ( DataHandle , DateStr , VarName , Field , FieldType ,
     DEALLOCATE(ICAST)
   ELSE
     CALL wrf_read_field1 ( DataHandle , DateStr , VarName , Field , FieldType ,         &
-                           Comm       , IOComm  ,                                       &
-                           DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
+                           grid ,                                                       &
+                           DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,    &
                            DomainStart , DomainEnd ,                                    &
                            MemoryStart , MemoryEnd ,                                    &
                            PatchStart , PatchEnd ,                                      &
@@ -2096,9 +2096,9 @@ SUBROUTINE wrf_read_field ( DataHandle , DateStr , VarName , Field , FieldType ,
   ENDIF
 END SUBROUTINE wrf_read_field
 
-SUBROUTINE wrf_read_field1 ( DataHandle , DateStr , VarName , Field , FieldType ,         &
-                            Comm       , IOComm  ,                                       &
-                            DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
+SUBROUTINE wrf_read_field1 ( DataHandle , DateStr , VarName , Field , FieldType ,        &
+                            grid ,                                                       &
+                            DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,    &
                             DomainStart , DomainEnd ,                                    &
                             MemoryStart , MemoryEnd ,                                    &
                             PatchStart , PatchEnd ,                                      &
@@ -2112,14 +2112,14 @@ SUBROUTINE wrf_read_field1 ( DataHandle , DateStr , VarName , Field , FieldType 
   USE module_state_description
   USE module_configure
   USE module_io
+  USE module_domain
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)    :: DataHandle 
   CHARACTER*(*) :: DateStr
   CHARACTER*(*) :: VarName
   INTEGER ,       INTENT(INOUT) :: Field(*)
   INTEGER                       ,INTENT(IN)    :: FieldType
-  INTEGER                       ,INTENT(INOUT) :: Comm 
-  INTEGER                       ,INTENT(INOUT) :: IOComm 
+  TYPE(domain)                                 :: grid
   INTEGER                       ,INTENT(IN)    :: DomainDesc
   LOGICAL, DIMENSION(4)                        :: bdy_mask
   CHARACTER*(*)                 ,INTENT(IN)    :: MemoryOrder
@@ -2136,6 +2136,12 @@ SUBROUTINE wrf_read_field1 ( DataHandle , DateStr , VarName , Field , FieldType 
   LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers, use_input_servers
 #ifdef NETCDF
   EXTERNAL     ext_ncd_read_field
+#endif
+#ifdef PNETCDF
+  EXTERNAL     ext_pnc_read_field
+#endif
+#ifdef PIO
+  EXTERNAL     ext_pio_read_field
 #endif
 #ifdef MCELIO
   EXTERNAL     ext_mcel_read_field
@@ -2160,6 +2166,11 @@ SUBROUTINE wrf_read_field1 ( DataHandle , DateStr , VarName , Field , FieldType 
 #endif
 
   INTEGER                     :: Hndl
+  INTEGER                     :: Comm 
+  INTEGER                     :: IOComm 
+
+  Comm = grid%communicator
+  IOComm = grid%iocommunicator
 
   CALL wrf_debug( DEBUG_LVL, 'module_io.F: in wrf_read_field' )
 
@@ -2205,13 +2216,12 @@ SUBROUTINE wrf_read_field1 ( DataHandle , DateStr , VarName , Field , FieldType 
 #endif
 #ifdef PIO
         CASE ( IO_PIO)
-          CALL ext_pio_read_field   (                   &
-                                     Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
-                                     DomainDesc , MemoryOrder , Stagger , DimNames ,              &
-                                     DomainStart , DomainEnd ,                                    &
-                                     MemoryStart , MemoryEnd ,                                    &
-                                     PatchStart , PatchEnd ,                                      &
-                                     Status )
+          CALL ext_pio_read_field(Hndl , DateStr , VarName , Field , FieldType , grid , &
+                                  DomainDesc , MemoryOrder , Stagger , DimNames ,       &
+                                  DomainStart , DomainEnd ,                             &
+                                  MemoryStart , MemoryEnd ,                             &
+                                  PatchStart , PatchEnd ,                               &
+                                  Status)
 #endif
 #ifdef MCELIO
         CASE ( IO_MCEL   )

@@ -818,7 +818,10 @@ subroutine initialize_pio(grid, DH)
    integer(i4) :: communicator, pioprocs, piostart, piostride, pioshift
 
    communicator = grid%communicator
-   allocate(DH%iosystem)
+
+   if(.not. associated(DH%iosystem)) then
+      allocate(DH%iosystem)
+   end if
 
   !call pio_setdebuglevel(1)
 
@@ -1107,7 +1110,7 @@ subroutine define_pio_iodesc(grid, DH)
    enddo
 
 !--call init_decomp in order to setup the IO decomposition with PIO
-   call pio_setdebuglevel(1)
+  !call pio_setdebuglevel(1)
 
    call PIO_initdecomp(DH%iosystem, PIO_int,    dims3d, compdof_3d, DH%iodesc3d_m_int)
    call PIO_initdecomp(DH%iosystem, PIO_real,   dims3d, compdof_3d, DH%iodesc3d_m_real)
@@ -1151,10 +1154,10 @@ subroutine define_pio_iodesc(grid, DH)
 
    dims1d(1) = dims3d(3)
 
-  !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-  !write(unit=0, fmt='(a, 6i6)') 'dims3d = ', dims3d
-  !write(unit=0, fmt='(a, 6i6)') 'dims2d = ', dims2d
-  !write(unit=0, fmt='(a, 6i6)') 'dims1d = ', dims1d
+   write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+   write(unit=0, fmt='(a, 6i6)') 'dims3d = ', dims3d
+   write(unit=0, fmt='(a, 6i6)') 'dims2d = ', dims2d
+   write(unit=0, fmt='(a, 6i6)') 'dims1d = ', dims1d
 
   !compdof_3d =  0
   !compdof_2d =  0
@@ -1236,10 +1239,10 @@ subroutine define_pio_iodesc(grid, DH)
       enddo
    enddo
 
-  !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-  !write(unit=0, fmt='(a,i6)') 'npos = ', npos, &
-  !                            '(ime - ims + 1) * (jme - jms + 1) * (kme - kms + 1) = ', &
-  !                             (ime - ims + 1) * (jme - jms + 1) * (kme - kms + 1)
+   write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+   write(unit=0, fmt='(a,i6)') 'npos = ', npos, &
+                               '(ime - ims + 1) * (jme - jms + 1) * (kme - kms + 1) = ', &
+                                (ime - ims + 1) * (jme - jms + 1) * (kme - kms + 1)
 
    do j = jts, ljte
       do i = its, lite
@@ -1299,10 +1302,10 @@ subroutine define_pio_iodesc(grid, DH)
       enddo
    enddo
 
-  !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-  !write(unit=0, fmt='(a,i6)') 'npos = ', npos, &
-  !                            '(ime - ims + 1) * (jme - jms + 1) * (kme - kms + 1) = ', &
-  !                             (ime - ims + 1) * (jme - jms + 1) * (kme - kms + 1)
+   write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+   write(unit=0, fmt='(a,i6)') 'npos = ', npos, &
+                               '(ime - ims + 1) * (jme - jms + 1) * (kme - kms + 1) = ', &
+                                (ime - ims + 1) * (jme - jms + 1) * (kme - kms + 1)
 
    do j = jts, ljte
    do k = kts, lkte
@@ -1319,8 +1322,8 @@ subroutine define_pio_iodesc(grid, DH)
    call PIO_initdecomp(DH%iosystem, PIO_real,   dims3d, compdof_3d, DH%iodesc3d_w_real)
    call PIO_initdecomp(DH%iosystem, PIO_int,    dims3d, compdof_3d, DH%iodesc3d_w_int)
 
-  !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-  !write(unit=0, fmt='(a)') 'finished: define_pio_iodesc'
+   write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+   write(unit=0, fmt='(a)') 'finished: define_pio_iodesc'
 
 end subroutine define_pio_iodesc
 

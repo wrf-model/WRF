@@ -4,7 +4,7 @@
                                 ,idx4, idx5, idx6, idx7           &
                                 ,nx4 , nx5 , nx6                  &
                                 ,TypeSizeInBytes                  &
-                                ,FieldType,Comm,IOComm            &
+                                ,FieldType,grid                   &
                                 ,DomainDesc                       &
                                 ,bdy_mask                         &
                                 ,dryrun                           &
@@ -20,6 +20,7 @@
     USE module_wrf_error
     USE module_state_description
     USE module_timing
+    USE module_domain
 
     IMPLICIT NONE
 
@@ -31,8 +32,7 @@
     CHARACTER*(*)         ,INTENT(IN   )         :: Var
     INTEGER               ,INTENT(IN   )         :: Field(*)
     INTEGER               ,INTENT(IN   )         :: FieldType
-    INTEGER               ,INTENT(IN   )         :: Comm
-    INTEGER               ,INTENT(IN   )         :: IOComm
+    TYPE(domain)                                 :: grid
     INTEGER               ,INTENT(IN   )         :: DomainDesc
     LOGICAL               ,INTENT(IN   )         :: dryrun
     CHARACTER*(*)         ,INTENT(IN   )         :: MemoryOrder
@@ -65,7 +65,7 @@
                                       +(idx5-1)*nx4*(me3-ms3+1)*(me2-ms2+1)*(me1-ms1+1)             &
                                       +(idx6-1)*nx5*nx4*(me3-ms3+1)*(me2-ms2+1)*(me1-ms1+1)         &
                                       +(idx7-1)*nx6*nx5*nx4*(me3-ms3+1)*(me2-ms2+1)*(me1-ms1+1)))   &
-                                ,FieldType,Comm,IOComm            &
+                                ,FieldType,grid                   &
                                 ,DomainDesc                       &
                                 ,bdy_mask                         &
                                 ,dryrun                           &
@@ -81,7 +81,7 @@
   END SUBROUTINE wrf_ext_write_field_arr
 
 
-  SUBROUTINE wrf_ext_write_field(DataHandle,DateStr,Var,Field,FieldType,Comm,IOComm, &
+  SUBROUTINE wrf_ext_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
                                  DomainDesc,                      &
                                  bdy_mask   ,                     &
                                  dryrun        ,                  &
@@ -97,6 +97,8 @@
     USE module_wrf_error
     USE module_state_description
     USE module_timing
+    USE module_domain
+
     IMPLICIT NONE
 
     INTEGER               ,INTENT(IN   )         :: DataHandle
@@ -104,8 +106,7 @@
     CHARACTER*(*)         ,INTENT(IN   )         :: Var
     INTEGER               ,INTENT(IN   )         :: Field(*)
     INTEGER               ,INTENT(IN   )         :: FieldType
-    INTEGER               ,INTENT(IN   )         :: Comm
-    INTEGER               ,INTENT(IN   )         :: IOComm
+    TYPE(domain)                                 :: grid
     INTEGER               ,INTENT(IN   )         :: DomainDesc
     LOGICAL               ,INTENT(IN   )         :: dryrun
     CHARACTER*(*)         ,INTENT(IN   )         :: MemoryOrder
@@ -173,8 +174,7 @@
                       ,Var                        &  ! Data Name
                       ,Field                      &  ! Field
                       ,FieldType                  &  ! FieldType
-                      ,Comm                       &  ! Comm
-                      ,IOComm                     &  ! IOComm
+                      ,grid                       &  ! grid
                       ,DomainDesc                 &  ! DomainDesc
                       ,bdy_mask                   &  ! bdy_mask
                       ,MemoryOrder                &  ! MemoryOrder

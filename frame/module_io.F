@@ -240,8 +240,10 @@ SUBROUTINE wrf_open_for_write_begin( FileName , grid, SysDepInfo, &
   INTEGER           :: i,j
   INTEGER           :: Comm_compute , Comm_io
 
+  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+
   WRITE(mess,*) 'module_io.F: in wrf_open_for_write_begin, FileName = ',TRIM(FileName)
-  CALL wrf_debug( DEBUG_LVL, mess )
+  CALL wrf_debug( 100, mess )
 
   Comm_compute = grid%communicator
   Comm_io = grid%iocommunicator
@@ -294,6 +296,7 @@ SUBROUTINE wrf_open_for_write_begin( FileName , grid, SysDepInfo, &
 #endif
 #ifdef PIO
       CASE ( IO_PIO )
+        write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
         WRITE(tstr,"(A,',NTASKS_X=',i10,',MYTASK_X=',i10,',LOCAL_COMMUNICATOR_X=',i10)") &
               TRIM(SysDepInfo),ntasks_x,mytask_x,local_communicator_x
         j=1
@@ -2305,7 +2308,7 @@ SUBROUTINE wrf_read_field1 ( DataHandle , DateStr , VarName , Field , FieldType 
 END SUBROUTINE wrf_read_field1
 
 SUBROUTINE wrf_write_field ( DataHandle , DateStr , VarName , Field , FieldType ,         &
-                             Comm       , IOComm  ,                                       &
+                             grid ,                                                       &
                              DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
                              DomainStart , DomainEnd ,                                    &
                              MemoryStart , MemoryEnd ,                                    &
@@ -2320,14 +2323,14 @@ SUBROUTINE wrf_write_field ( DataHandle , DateStr , VarName , Field , FieldType 
 !</DESCRIPTION>
   USE module_state_description
   USE module_configure
+  USE module_domain
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)    :: DataHandle
   CHARACTER*(*) :: DateStr
   CHARACTER*(*) :: VarName
   LOGICAL ,       INTENT(IN)    :: Field(*)
   INTEGER                       ,INTENT(IN)    :: FieldType
-  INTEGER                       ,INTENT(INOUT) :: Comm
-  INTEGER                       ,INTENT(INOUT) :: IOComm
+  TYPE(domain)                                 :: grid
   INTEGER                       ,INTENT(IN)    :: DomainDesc
   LOGICAL, DIMENSION(4)         ,INTENT(IN)    :: bdy_mask
   CHARACTER*(*)                 ,INTENT(IN)    :: MemoryOrder
@@ -2347,7 +2350,7 @@ SUBROUTINE wrf_write_field ( DataHandle , DateStr , VarName , Field , FieldType 
         ICAST = 1
       END WHERE
     CALL wrf_write_field1 ( DataHandle , DateStr , VarName , ICAST , WRF_INTEGER ,         &
-                            Comm       , IOComm  ,                                       &
+                            grid ,                                                       &
                             DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
                             DomainStart , DomainEnd ,                                    &
                             MemoryStart , MemoryEnd ,                                    &
@@ -2356,7 +2359,7 @@ SUBROUTINE wrf_write_field ( DataHandle , DateStr , VarName , Field , FieldType 
       DEALLOCATE(ICAST)
   ELSE
     CALL wrf_write_field1 ( DataHandle , DateStr , VarName , Field , FieldType ,         &
-                            Comm       , IOComm  ,                                       &
+                            grid ,                                                       &
                             DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
                             DomainStart , DomainEnd ,                                    &
                             MemoryStart , MemoryEnd ,                                    &
@@ -2366,7 +2369,7 @@ SUBROUTINE wrf_write_field ( DataHandle , DateStr , VarName , Field , FieldType 
 END SUBROUTINE wrf_write_field
 
 SUBROUTINE wrf_write_field1 ( DataHandle , DateStr , VarName , Field , FieldType ,         &
-                             Comm       , IOComm  ,                                       &
+                             grid ,                                                        &
                              DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &
                              DomainStart , DomainEnd ,                                    &
                              MemoryStart , MemoryEnd ,                                    &
@@ -2381,6 +2384,7 @@ SUBROUTINE wrf_write_field1 ( DataHandle , DateStr , VarName , Field , FieldType
 
   USE module_state_description
   USE module_configure
+  USE module_domain
   USE module_io
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)    :: DataHandle 
@@ -2388,8 +2392,7 @@ SUBROUTINE wrf_write_field1 ( DataHandle , DateStr , VarName , Field , FieldType
   CHARACTER*(*) :: VarName
   INTEGER ,       INTENT(IN)    :: Field(*)
   INTEGER                       ,INTENT(IN)    :: FieldType
-  INTEGER                       ,INTENT(INOUT) :: Comm
-  INTEGER                       ,INTENT(INOUT) :: IOComm
+  TYPE(domain)                                 :: grid
   INTEGER                       ,INTENT(IN)    :: DomainDesc
   LOGICAL, DIMENSION(4)         ,INTENT(IN)    :: bdy_mask
   CHARACTER*(*)                 ,INTENT(IN)    :: MemoryOrder
@@ -2408,6 +2411,12 @@ SUBROUTINE wrf_write_field1 ( DataHandle , DateStr , VarName , Field , FieldType
   LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
 #ifdef NETCDF
   EXTERNAL     ext_ncd_write_field
+#endif
+#ifdef PNETCDF
+  EXTERNAL     ext_pnc_write_field
+#endif
+#ifdef PIO
+  EXTERNAL     ext_pio_write_field
 #endif
 #ifdef MCELIO
   EXTERNAL     ext_mcel_write_field
@@ -2432,6 +2441,11 @@ SUBROUTINE wrf_write_field1 ( DataHandle , DateStr , VarName , Field , FieldType
 #endif
 
   INTEGER                     :: Hndl
+  INTEGER                     :: Comm 
+  INTEGER                     :: IOComm 
+
+  Comm = grid%communicator
+  IOComm = grid%iocommunicator
 
   CALL wrf_debug( DEBUG_LVL, 'module_io.F: in wrf_write_field' )
 
@@ -2516,13 +2530,11 @@ SUBROUTINE wrf_write_field1 ( DataHandle , DateStr , VarName , Field , FieldType
              starts(1:3) = PatchStart(1:3) ; ends(1:3) = PatchStart(1:3)-1
           ENDIF
 
-               CALL ext_pio_write_field(                  &
-                                       Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &
-                                       DomainDesc , MemoryOrder , Stagger , DimNames ,              &
-                                       DomainStart , DomainEnd ,                                    &
-                                       MemoryStart , MemoryEnd ,                                    &
-                                       starts , ends ,                                      &
-                                       Status )
+          CALL ext_pio_write_field( Hndl , DateStr , VarName , Field , FieldType , grid , &
+                                    DomainDesc , MemoryOrder , Stagger , DimNames ,       &
+                                    DomainStart , DomainEnd ,                             &
+                                    MemoryStart , MemoryEnd ,                             &
+                                    starts , ends , Status )
 #endif
 #ifdef XXX
         CASE ( IO_XXX )

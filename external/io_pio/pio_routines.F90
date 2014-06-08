@@ -678,7 +678,7 @@ subroutine FieldIO(IO,DataHandle,DateStr,Starts,Length,MemoryOrder, &
   integer,dimension(NVarDims)               :: VCount
   type(wrf_data_handle)      ,pointer       :: DH
 
-  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+  write(unit=0, fmt='(/3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
   write(unit=0, fmt='(3a)') 'MemoryOrder: <', trim(MemoryOrder), '>'
   write(unit=0, fmt='(3a)') 'Stagger: <', trim(Stagger), '>'
 
@@ -691,6 +691,7 @@ subroutine FieldIO(IO,DataHandle,DateStr,Starts,Length,MemoryOrder, &
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
+  write(unit=0, fmt='(/3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
   call GetDim(MemoryOrder,NDim,Status)
   VStart(:) = 1
   VCount(:) = 1
@@ -699,6 +700,7 @@ subroutine FieldIO(IO,DataHandle,DateStr,Starts,Length,MemoryOrder, &
   VStart(NDim+1) = TimeIndex
   VCount(NDim+1) = 1
 
+  write(unit=0, fmt='(/3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
   fldsize = 1
   do n = 1, NDim + 1
      write(unit=0, fmt='(2(a,i2,a,i4))') &
@@ -714,6 +716,8 @@ subroutine FieldIO(IO,DataHandle,DateStr,Starts,Length,MemoryOrder, &
   write(unit=0, fmt='(a, i8)') 'FieldType: ', FieldType, 'WRF_REAL: ', WRF_REAL
   write(unit=0, fmt='(a, i8)') 'WRF_INTEGER: ', WRF_INTEGER, 'WRF_DOUBLE: ', WRF_DOUBLE
   write(unit=0, fmt='(a, l8)') 'whole: ', whole
+
+  call mpi_barrier()
 
   select case (FieldType)
     case (WRF_REAL)
@@ -823,7 +827,9 @@ subroutine initialize_pio(grid, DH)
       allocate(DH%iosystem)
    end if
 
-  !call pio_setdebuglevel(1)
+   DH%Write = 0
+
+   call pio_setdebuglevel(1)
 
    call mpi_comm_size(communicator, nprocs, ierr)
    call mpi_comm_rank(communicator, myrank, ierr)

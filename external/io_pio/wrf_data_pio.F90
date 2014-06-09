@@ -40,7 +40,6 @@ module wrf_data_pio
   type :: wrf_data_handle
     character (255)                       :: FileName
     integer                               :: FileStatus
-    integer                               :: Comm
     integer                               :: NCID
     logical                               :: Free
     logical                               :: Write
@@ -55,24 +54,20 @@ module wrf_data_pio
     character (31)        , dimension(MaxDims) :: DimNames
     integer                               :: DimUnlimID
     character (9)                         :: DimUnlimName
-    integer       , dimension(NVarDims)   :: DimID
-    integer       , dimension(NVarDims)   :: Dimension
+   !integer       , dimension(NVarDims)   :: DimID
     integer               , dimension(MaxVars) :: MDVarIDs
     integer               , dimension(MaxVars) :: MDVarDimLens
     character (80)        , dimension(MaxVars) :: MDVarNames
     integer               , dimension(MaxVars) :: VarIDs
     integer               , dimension(NVarDims-1, MaxVars) :: VarDimLens
     character (VarNameLen), dimension(MaxVars) :: VarNames
-    integer                               :: CurrentVariable  !Only used for read
+    integer                               :: CurrentVariable
     integer                               :: NumDims
     integer                               :: NumVars
 ! first_operation is set to .TRUE. when a new handle is allocated 
 ! or when open-for-write or open-for-read are committed.  It is set 
 ! to .FALSE. when the first field is read or written.  
     logical                               :: first_operation
-! Whether pnetcdf file is in collective (.true.) or independent mode
-! Collective mode is the default.
-    logical                               :: Collective
 
 !--PIO specific
    type (IOsystem_desc_t), pointer :: iosystem    ! PIO type handle to hold PIO-specific information
@@ -81,16 +76,16 @@ module wrf_data_pio
 
    type (Var_desc_t)       :: vtime
 
-   type (io_desc_t)        :: iodesc_3d, iodesc_2d
+  !type (io_desc_t)        :: iodesc_3d, iodesc_2d
    type (io_desc_t)        :: iodesc3d_m_double, iodesc3d_u_double, iodesc3d_v_double, iodesc3d_w_double
    type (io_desc_t)        :: iodesc2d_m_double, iodesc2d_u_double, iodesc2d_v_double, iodesc2d_char_double
-   type (io_desc_t)        :: iodesc1d_double
+  !type (io_desc_t)        :: iodesc1d_double
    type (io_desc_t)        :: iodesc3d_m_real, iodesc3d_u_real, iodesc3d_v_real, iodesc3d_w_real
    type (io_desc_t)        :: iodesc2d_m_real, iodesc2d_u_real, iodesc2d_v_real, iodesc2d_char_real
-   type (io_desc_t)        :: iodesc1d_real
+  !type (io_desc_t)        :: iodesc1d_real
    type (io_desc_t)        :: iodesc3d_m_int, iodesc3d_u_int, iodesc3d_v_int, iodesc3d_w_int
    type (io_desc_t)        :: iodesc2d_m_int, iodesc2d_u_int, iodesc2d_v_int, iodesc2d_char_int
-   type (io_desc_t)        :: iodesc1d_int
+  !type (io_desc_t)        :: iodesc1d_int
 
    type (io_desc_t)        :: iodesc3d_land_double, iodesc3d_soil_double, iodesc3d_soil_layers_double
    type (io_desc_t)        :: iodesc3d_land_real,   iodesc3d_soil_real, iodesc3d_soil_layers_real
@@ -102,7 +97,7 @@ module wrf_data_pio
 
    type (Var_desc_t), dimension(MaxVars) :: descMDVar
    type (Var_desc_t), dimension(MaxVars) :: descVar
-   type (io_desc_t),  dimension(MaxVars) :: ioMDVar
+  !type (io_desc_t),  dimension(MaxVars) :: ioMDVar
    type (io_desc_t),  dimension(MaxVars) :: ioVar
    logical, dimension(MaxVars)           :: vartype
 

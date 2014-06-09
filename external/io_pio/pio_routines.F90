@@ -28,12 +28,11 @@ module pio_routines
 
 CONTAINS
 
-subroutine allocHandle(DataHandle,DH,Comm,Status)
+subroutine allocHandle(DataHandle,DH,Status)
   implicit none
   include 'wrf_status_codes.h'
   integer              ,intent(out) :: DataHandle
   type(wrf_data_handle),pointer     :: DH
-  integer              ,intent(IN)  :: Comm
   integer              ,intent(out) :: Status
   integer                           :: i, n
   integer                           :: stat
@@ -57,10 +56,8 @@ subroutine allocHandle(DataHandle,DH,Comm,Status)
     endif
   enddo
   DH%Free      =.false.
-  DH%Comm      = Comm
   DH%Write     =.false.
   DH%first_operation  = .TRUE.
-  DH%Collective = .TRUE.
   DH%CurrentVariable = 0
   Status = WRF_NO_ERR
  !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
@@ -157,6 +154,27 @@ subroutine GetTimeIndex(IO,DataHandle,DateStr,TimeIndex,Status)
   integer(KIND=PIO_OFFSET)              :: VCount(2)
   integer                               :: stat
   integer                               :: i
+  character, dimension(DateStrLen, 1)   :: tmpdatestr
+
+  write(unit=0, fmt='(/3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+  write(unit=0, fmt='(3a)') 'IO: <', trim(IO), '>'
+  write(unit=0, fmt='(a,i3)') 'DataHandle = ', DataHandle
+  write(unit=0, fmt='(3a)') 'DateStr: <', trim(DateStr), '>'
+
+  if(len(Datestr) == DateStrLen) then
+    tmpdatestr(:,1) = DateStr
+  else
+    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+    write(unit=0, fmt='(3a)') 'IO: <', trim(IO), '>'
+    write(unit=0, fmt='(a,i3)') 'DataHandle = ', DataHandle
+    write(unit=0, fmt='(3a)') 'DateStr: <', trim(DateStr), '>'
+    write(unit=0, fmt='(a,i6,a,i6)') 'DateStrLen = ', DateStrLen, &
+                                     ' did not equal len(DateStr): ', len(DateStr)
+    Status =  WRF_WARN_DATESTR_ERROR
+    write(msg,*) 'Warning DATE STRING ERROR in ',__FILE__,', line', __LINE__ 
+    call wrf_debug ( WARN , TRIM(msg))
+    return
+  end if
 
   DH => WrfDataHandles(DataHandle)
   call DateCheck(DateStr,Status)
@@ -167,6 +185,8 @@ subroutine GetTimeIndex(IO,DataHandle,DateStr,TimeIndex,Status)
     return
   endif
   if(IO == 'write') then
+    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+
     TimeIndex = DH%TimeIndex
     if(TimeIndex <= 0) then
       TimeIndex = 1
@@ -188,7 +208,9 @@ subroutine GetTimeIndex(IO,DataHandle,DateStr,TimeIndex,Status)
     VStart(2) = TimeIndex
     VCount(1) = DateStrLen
     VCount(2) = 1
-    stat = pio_put_var(DH%file_handle, DH%TimesVarID, DateStr)
+    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+   !stat = pio_put_var(DH%file_handle, DH%TimesVarID, tmpdatestr)
+    stat = pio_put_var(DH%file_handle, DH%vtime, tmpdatestr)
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
       write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__ 
@@ -196,6 +218,7 @@ subroutine GetTimeIndex(IO,DataHandle,DateStr,TimeIndex,Status)
       return
     endif
   else
+    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
     do i=1,MaxTimes
       if(DH%Times(i)==DateStr) then
         Status = WRF_NO_ERR
@@ -210,6 +233,8 @@ subroutine GetTimeIndex(IO,DataHandle,DateStr,TimeIndex,Status)
       endif
     enddo
   endif
+  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+  write(unit=0, fmt='(a)') 'finished GetTimeIndex'
   return
 end subroutine GetTimeIndex
 
@@ -591,9 +616,9 @@ subroutine find_iodesc(DH,MemoryOrder,Stagger,FieldTYpe,whole)
                  DH%ioVar(DH%CurrentVariable) = DH%iodesc2d_v_real
             case default
                  DH%ioVar(DH%CurrentVariable) = DH%iodesc2d_m_real
-                !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-                !write(unit=0, fmt='(a,i6)') 'DH%CurrentVariable = ', DH%CurrentVariable
-                !write(unit=0, fmt='(a)') 'Select DH%iodesc2d_m_real'
+                 write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+                 write(unit=0, fmt='(a,i6)') 'DH%CurrentVariable = ', DH%CurrentVariable
+                 write(unit=0, fmt='(a)') 'Select DH%iodesc2d_m_real'
           end select
         case (WRF_DOUBLE)
           select case (Stag)
@@ -683,7 +708,9 @@ subroutine FieldIO(IO,DataHandle,DateStr,Starts,Length,MemoryOrder, &
   write(unit=0, fmt='(3a)') 'Stagger: <', trim(Stagger), '>'
 
   DH => WrfDataHandles(DataHandle)
+  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
   call GetTimeIndex(IO,DataHandle,DateStr,TimeIndex,Status)
+  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
   if(Status /= WRF_NO_ERR) then
     write(msg,*) 'Warning in ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , TRIM(msg))
@@ -691,7 +718,7 @@ subroutine FieldIO(IO,DataHandle,DateStr,Starts,Length,MemoryOrder, &
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
-  write(unit=0, fmt='(/3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
   call GetDim(MemoryOrder,NDim,Status)
   VStart(:) = 1
   VCount(:) = 1
@@ -700,7 +727,7 @@ subroutine FieldIO(IO,DataHandle,DateStr,Starts,Length,MemoryOrder, &
   VStart(NDim+1) = TimeIndex
   VCount(NDim+1) = 1
 
-  write(unit=0, fmt='(/3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
   fldsize = 1
   do n = 1, NDim + 1
      write(unit=0, fmt='(2(a,i2,a,i4))') &
@@ -716,8 +743,6 @@ subroutine FieldIO(IO,DataHandle,DateStr,Starts,Length,MemoryOrder, &
   write(unit=0, fmt='(a, i8)') 'FieldType: ', FieldType, 'WRF_REAL: ', WRF_REAL
   write(unit=0, fmt='(a, i8)') 'WRF_INTEGER: ', WRF_INTEGER, 'WRF_DOUBLE: ', WRF_DOUBLE
   write(unit=0, fmt='(a, l8)') 'whole: ', whole
-
-  call mpi_barrier()
 
   select case (FieldType)
     case (WRF_REAL)

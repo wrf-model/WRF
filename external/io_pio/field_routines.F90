@@ -14,15 +14,20 @@ subroutine ext_pio_RealFieldIO(whole,IO,DH,fldsize,Data,Status)
   logical                                    :: found
   integer                                    :: stat
 
+  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
  !call pio_setdebuglevel(1)
 
   if(IO == 'write') then
+    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
     if(whole)then
+      write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
       stat = pio_put_var(DH%file_handle,DH%descVar(DH%CurrentVariable),Data)
     else
+      write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
       call pio_write_darray(DH%file_handle, DH%descVar(DH%CurrentVariable), &
                             DH%ioVar(DH%CurrentVariable), Data, stat)
     end if
+    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
   else
     if(whole)then
       stat = pio_get_var(DH%file_handle,DH%descVar(DH%CurrentVariable),Data)

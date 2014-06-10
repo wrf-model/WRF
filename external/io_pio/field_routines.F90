@@ -13,15 +13,40 @@ subroutine ext_pio_RealFieldIO(whole,IO,DH,fldsize,Data,Status)
   integer                     ,intent(out)   :: Status
   logical                                    :: found
   integer                                    :: stat
+  integer                                    :: n, ndims, datasize
+  integer, dimension(:), allocatable         :: dimids
+  integer, dimension(:), allocatable         :: dimsizes
 
   write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
- !call pio_setdebuglevel(1)
 
   if(IO == 'write') then
+    call pio_setdebuglevel(1)
     write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
     if(whole)then
+      stat = pio_inq_varndims(DH%file_handle,DH%descVar(DH%CurrentVariable),ndims)
+      allocate(dimids(ndims), stat=stat)
+      allocate(dimsizes(ndims), stat=stat)
+      stat = pio_inq_vardimid(DH%file_handle,DH%descVar(DH%CurrentVariable),dimids)
+      datasize = 1
+      do n = 1, ndims - 1
+         stat = pio_inq_dimlen(DH%file_handle,dimids(n),dimsizes(n))
+         datasize = datasize*dimsizes(n)
+         write(unit=0, fmt='(a,i2,a,i6)') 'dimids(', n, ')=', dimids(n)
+         write(unit=0, fmt='(a,i2,a,i6)') 'dimsizes(', n, ')=', dimsizes(n)
+      end do
       write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-      stat = pio_put_var(DH%file_handle,DH%descVar(DH%CurrentVariable),Data)
+      write(unit=0, fmt='(a,i6)') 'fldsize = ', fldsize
+      write(unit=0, fmt='(a,i6)') 'datasize = ', datasize
+      if(fldsize < datasize) then
+          write(unit=0, fmt='(a)') 'fldsize is too small'
+          stat = pio_put_var(DH%file_handle,DH%descVar(DH%CurrentVariable),Data)
+      else if(fldsize > datasize) then
+          write(unit=0, fmt='(a)') 'fldsize is too big.'
+          stat = pio_put_var(DH%file_handle,DH%descVar(DH%CurrentVariable),Data(1:datasize))
+      end if
+
+      deallocate(dimids)
+      deallocate(dimsizes)
     else
       write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
       call pio_write_darray(DH%file_handle, DH%descVar(DH%CurrentVariable), &

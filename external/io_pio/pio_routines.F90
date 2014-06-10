@@ -194,7 +194,7 @@ subroutine GetTimeIndex(IO,DataHandle,DateStr,TimeIndex,Status)
       Status = WRF_NO_ERR
       return
     else
-      TimeIndex = TimeIndex +1
+      TimeIndex = TimeIndex + 1
       if(TimeIndex > MaxTimes) then
         Status = WRF_WARN_TIME_EOF
         write(msg,*) 'Warning TIME EOF in ',__FILE__,', line', __LINE__ 
@@ -209,7 +209,7 @@ subroutine GetTimeIndex(IO,DataHandle,DateStr,TimeIndex,Status)
     VCount(1) = DateStrLen
     VCount(2) = 1
     write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-   !stat = pio_put_var(DH%file_handle, DH%TimesVarID, tmpdatestr)
+   !call pio_setframe(DH%vtime, TimeIndex)
     stat = pio_put_var(DH%file_handle, DH%vtime, tmpdatestr)
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
@@ -217,6 +217,7 @@ subroutine GetTimeIndex(IO,DataHandle,DateStr,TimeIndex,Status)
       call wrf_debug ( WARN , TRIM(msg))
       return
     endif
+   !call pio_advanceframe(DH%vtime)
   else
     write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
     do i=1,MaxTimes
@@ -734,15 +735,18 @@ subroutine FieldIO(IO,DataHandle,DateStr,Starts,Length,MemoryOrder, &
           'VStart(', n, ')=', VStart(n), ', VCount(', n, ')=', VCount(n)
      fldsize = fldsize * VCount(n)
   end do
-     
+
   call find_iodesc(DH,MemoryOrder,Stagger,FieldTYpe,whole)
 
   write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
   write(unit=0, fmt='(a,i6)') 'DH%CurrentVariable = ', DH%CurrentVariable
   write(unit=0, fmt='(a,i6)') 'fldsize =', fldsize
   write(unit=0, fmt='(a, i8)') 'FieldType: ', FieldType, 'WRF_REAL: ', WRF_REAL
-  write(unit=0, fmt='(a, i8)') 'WRF_INTEGER: ', WRF_INTEGER, 'WRF_DOUBLE: ', WRF_DOUBLE
+  write(unit=0, fmt='(a, i8)') 'WRF_DOUBLE: ', WRF_DOUBLE
+  write(unit=0, fmt='(a, i8)') 'WRF_INTEGER: ', WRF_INTEGER
   write(unit=0, fmt='(a, l8)') 'whole: ', whole
+
+ !call pio_setframe(DH%descVar(DH%CurrentVariable), TimeIndex)
 
   select case (FieldType)
     case (WRF_REAL)

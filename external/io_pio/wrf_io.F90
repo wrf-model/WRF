@@ -449,6 +449,7 @@ SUBROUTINE ext_pio_open_for_write_begin(FileName,grid,SysDepInfo,DataHandle,Stat
   DH%FileStatus  = WRF_FILE_OPENED_NOT_COMMITTED
   DH%FileName    = newFileName
   stat = pio_def_dim(DH%file_handle, DH%DimUnlimName, PIO_UNLIMITED, DH%DimUnlimID)
+ !stat = pio_def_dim(DH%file_handle, DH%DimUnlimName, 1, DH%DimUnlimID)
   call netcdf_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
     write(msg,*) 'NetCDF error in ext_pio_open_for_write_begin ',__FILE__,', line', __LINE__
@@ -478,7 +479,7 @@ SUBROUTINE ext_pio_open_for_write_begin(FileName,grid,SysDepInfo,DataHandle,Stat
   write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
   VDimIDs(1) = DH%DimIDs(1)
   VDimIDs(2) = DH%DimUnlimID
-  stat = pio_def_var(DH%file_handle,DH%TimesName,PIO_CHAR,DH%vtime)
+  stat = pio_def_var(DH%file_handle,DH%TimesName,PIO_CHAR,VDimIDs,DH%vtime)
   call netcdf_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
     write(msg,*) 'NetCDF error in ext_pio_open_for_write_begin ',__FILE__,', line', __LINE__
@@ -7917,6 +7918,7 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
           if(DH%DimLengths(i) == Length_global(j)) then
             write(unit=0, fmt='(a,i2,a,i6)') 'DH%DimLengths(', i, ')=', DH%DimLengths(i)
             VDimIDs(j) = DH%DimIDs(i)
+            write(unit=0, fmt='(a,i2,a,i6)') 'VDimIDs(', j, ') = ', VDimIDs(j)
             exit
           elseif(DH%DimLengths(i) == NO_DIM) then
             write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
@@ -7931,6 +7933,7 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
               return
             endif
             VDimIDs(j) = DH%DimIDs(i)
+            write(unit=0, fmt='(a,i2,a,i6)') 'VDimIDs(', j, ') = ', VDimIDs(j)
             exit
           elseif(i == MaxDims) then
             Status = WRF_WARN_TOO_MANY_DIMS
@@ -7945,6 +7948,7 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
           if (DH%DimNames(i) == RODimNames(j)) then
             if (DH%DimLengths(i) == Length_global(j)) then
               VDimIDs(j) = DH%DimIDs(i)
+              write(unit=0, fmt='(a,i2,a,i6)') 'VDimIDs(', j, ') = ', VDimIDs(j)
               NotFound = .false.
               exit
             else
@@ -7961,7 +7965,6 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
             if (DH%DimLengths(i) == NO_DIM) then
               DH%DimNames(i) = RODimNames(j)
               DH%DimLengths(i) = Length_global(j)
-              write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
               write(unit=0, fmt='(a,i2,2a)') 'DH%DimNames(', i, ')=', trim(DH%DimNames(i))
               write(unit=0, fmt='(a,i2,a,i6)') 'DH%DimLengths(', i, ')=', DH%DimLengths(i)
               write(unit=0, fmt='(a,i2,a,i6)') 'DH%DimIDs(', i, ')=', DH%DimIDs(i)
@@ -7972,8 +7975,9 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
                 call wrf_debug ( WARN , TRIM(msg))
                 return
               endif
-              write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
               VDimIDs(j) = DH%DimIDs(i)
+              write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+              write(unit=0, fmt='(a,i2,a,i6)') 'VDimIDs(', j, ') = ', VDimIDs(j)
               exit
             elseif(i == MaxDims) then
               Status = WRF_WARN_TOO_MANY_DIMS
@@ -7986,10 +7990,10 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
       endif
       DH%VarDimLens(j,DH%NumVars) = Length_global(j)
       write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-      write(unit=0, fmt='(a,i2,a,i6)') 'VDimIDs(', j, ') = ', VDimIDs(j)
     enddo
 
     write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+    write(unit=0, fmt='(a,i6)') 'DH%DimUnlimID=', DH%DimUnlimID
     VDimIDs(NDim+1) = DH%DimUnlimID
     select case (FieldType)
       case (WRF_REAL)
@@ -8063,6 +8067,22 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
       endif
     enddo
 
+    DH%vartype(DH%CurrentVariable) = NOT_LAND_SOIL_VAR
+    fldsize = 1
+
+    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+    write(unit=0, fmt='(a,i6)') 'DH%CurrentVariable = ', DH%CurrentVariable
+
+   !stat = pio_inq_varndims(DH%file_handle,DH%descVar(DH%CurrentVariable),NDim)
+   !stat = pio_inq_vardimid(DH%file_handle,DH%descVar(DH%CurrentVariable),)
+   !do j = 1, NDim
+   !   stat = pio_inq_dimlen(DH%file_handle,dimids(n),dimsizes(n))
+   !   datasize = datasize*dimsizes(n)
+   !   write(unit=0, fmt='(a,i2,a,i6)') 'dimids(', n, ')=', dimids(n)
+   !   write(unit=0, fmt='(a,i2,a,i6)') 'dimsizes(', n, ')=', dimsizes(n)
+   !end do
+
+
     do j=1,NDim
       if(Length_global(j) /= DH%VarDimLens(j,DH%CurrentVariable) .AND. DH%FileStatus /= WRF_FILE_OPENED_FOR_UPDATE ) then
         Status = WRF_WARN_WRTLEN_NE_DRRUNLEN
@@ -8086,18 +8106,7 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
     StoredStart(1:NDim) = PatchStart(1:NDim)
     call ExtOrder(MemoryOrder,StoredStart,Status)
 
-    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-    write(unit=0, fmt='(a,i6)') 'DH%CurrentVariable = ', DH%CurrentVariable
-
-    DH%vartype(DH%CurrentVariable) = NOT_LAND_SOIL_VAR
-    fldsize = 1
-
     do n = 1, NDim
-       write(unit=0, fmt='(a,i2,a,i4)') &
-            'StoredStart(', n, ')=', StoredStart(n)
-       write(unit=0, fmt='(a,i2,a,i4)') &
-            'Length_global(', n, ')=', Length_global(n)
-
       VDimIDs(n) = 0
       do i=1,MaxDims
          if(DH%DimLengths(i) == Length_global(n)) then
@@ -8108,6 +8117,15 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
           end if
        end do
 
+       write(unit=0, fmt='(a,i2,a,i4)') &
+            'StoredStart(', n, ')=', StoredStart(n)
+       write(unit=0, fmt='(a,i2,a,i4)') &
+            'VDimIDs(', n, ')=', VDimIDs(n)
+       write(unit=0, fmt='(a,i2,a,i4)') &
+            'Length_global(', n, ')=', Length_global(n)
+       write(unit=0, fmt='(a,i2,2a)') &
+            'DimNames(', n, ')=', DimNames(n)
+
        write(unit=0, fmt='(2(a,i2,a,i4))') &
             'MemoryStart(', n, ')=', MemoryStart(n), ', MemoryEnd(', n, ')=', MemoryEnd(n)
        VStart(n) = MemoryStart(n)
@@ -8116,28 +8134,28 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
             'VStart(', n, ')=', VStart(n), ', VCount(', n, ')=', VCount(n)
        fldsize = fldsize * VCount(n)
 
-       if("land_cat_stag" == DH%DimNames(VDimIDs(n))) then
+       if("land_cat_stag" == DimNames(n)) then
           DH%vartype(DH%CurrentVariable) = LAND_CAT_VAR
           write(unit=0, fmt='(a,i2,a,i4,6x,a,i3)') &
                'DH%vartype(', DH%CurrentVariable, ')=', DH%vartype(DH%CurrentVariable), &
                'LAND_CAT_VAR=', LAND_CAT_VAR
           write(unit=0, fmt='(a,i2,a,i4,6x,a,i3)') &
                'VCount(', n, ')=', VCount(n), ', grid%num_land_cat=', grid%num_land_cat
-       else if("soil_cat_stag" == DH%DimNames(VDimIDs(n))) then
+       else if("soil_cat_stag" == DimNames(n)) then
           DH%vartype(DH%CurrentVariable) = SOIL_CAT_VAR
           write(unit=0, fmt='(a,i2,a,i4,6x,a,i3)') &
                'DH%vartype(', DH%CurrentVariable, ')=', DH%vartype(DH%CurrentVariable), &
                'SOIL_CAT_VAR=', SOIL_CAT_VAR
           write(unit=0, fmt='(a,i2,a,i4,6x,a,i3)') &
                'VCount(', n, ')=', VCount(n), ', grid%num_soil_cat=', grid%num_soil_cat
-       else if("soil_layers_stag" == DH%DimNames(VDimIDs(n))) then
+       else if("soil_layers_stag" == DimNames(n)) then
           DH%vartype(DH%CurrentVariable) = SOIL_LAYERS_VAR
           write(unit=0, fmt='(a,i2,a,i4,6x,a,i3)') &
                'DH%vartype(', DH%CurrentVariable, ')=', DH%vartype(DH%CurrentVariable), &
                'SOIL_LAYERS_VAR=', SOIL_LAYERS_VAR
           write(unit=0, fmt='(a,i2,a,i4,6x,a,i3)') &
                'VCount(', n, ')=', VCount(n), ', grid%num_soil_layers=', grid%num_soil_layers
-       else if("num_ext_model_couple_dom_stag" == DH%DimNames(VDimIDs(n))) then
+       else if("num_ext_model_couple_dom_stag" == DimNames(n)) then
           DH%vartype(DH%CurrentVariable) = MDL_CPL_VAR
           write(unit=0, fmt='(a,i2,a,i4,6x,a,i3)') &
                'DH%vartype(', DH%CurrentVariable, ')=', DH%vartype(DH%CurrentVariable), &
@@ -8149,12 +8167,6 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
 
     write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
    
-    if(1 == Ndim) then
-       if(VCount(1) > Length(1)) VCount(1) = Length(1)
-       write(unit=0, fmt='(a,i4,a,i4)') &
-            'VStart(1)=', VStart(1), ', VCount(1)=', VCount(1)
-    end if
-
     if(WRF_INTEGER == FieldType) then
       if(1 == fldsize) then
          tmp0dint(1,1) = Field(1)
@@ -8177,6 +8189,12 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
                       Stagger,FieldType,Field,Status)
       endif
     else
+       if(1 == NDim) then
+          if(VCount(1) > Length(1)) VCount(1) = Length(1)
+          write(unit=0, fmt='(a,i4,a,i4)') &
+               'VStart(1)=', VStart(1), ', VCount(1)=', VCount(1)
+       end if
+
        call FieldIO('write',DataHandle,DateStr,VStart,VCount,MemoryOrder, &
                      Stagger,FieldType,Field,Status)
     end if
@@ -8186,6 +8204,8 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
       call wrf_debug ( WARN , TRIM(msg))
       return
     endif
+
+   !call PIO_advanceframe(DH%descVar(DH%CurrentVariable))
   else
     Status = WRF_ERR_FATAL_BAD_FILE_STATUS
     write(msg,*) 'Fatal error BAD FILE STATUS in ',__FILE__,', line', __LINE__ 

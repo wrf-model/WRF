@@ -995,13 +995,27 @@ subroutine define_pio_iodesc(grid, DH)
            dimension((ime - ims + 1) * (jme - jms + 1) * grid%num_ext_model_couple_dom) &
            :: compdof_3d_mdl_cpl
    integer(kind=PIO_Offset), &
+           dimension((jme - jms + 1) * (kme - kms + 1) * grid%spec_bdy_width ) &
+           :: compdof_3d_xsz, compdof_3d_xez
+   integer(kind=PIO_Offset), &
+           dimension((ime - ims + 1) * (kme - kms + 1) * grid%spec_bdy_width ) &
+           :: compdof_3d_ysz, compdof_3d_yez
+   integer(kind=PIO_Offset), &
+           dimension((jme - jms + 1) * grid%spec_bdy_width ) &
+           :: compdof_2d_xs, compdof_2d_xe
+   integer(kind=PIO_Offset), &
+           dimension((ime - ims + 1) * grid%spec_bdy_width ) &
+           :: compdof_2d_ys, compdof_2d_ye
+   integer(kind=PIO_Offset), &
            dimension((ime - ims + 1) * (jme - jms + 1)) &
            :: compdof_2d
    integer :: dims3d(4), dims2d(3), dims1d(2), dims0d(1)
+   integer :: dims3d_xb(4), dims2d_xb(3)
+   integer :: dims3d_yb(4), dims2d_yb(3)
    integer :: dims3d_land(4), dims3d_soil(4), dims3d_soil_layers(4)
    integer :: dims3d_mdl_cpl(4)
    integer :: lite, ljte, lkte
-   integer :: i, j, k, npos
+   integer :: i, j, k, n, npos
 
    communicator = grid%communicator
    myrank = DH%myrank
@@ -1049,6 +1063,24 @@ subroutine define_pio_iodesc(grid, DH)
 
    dims0d(1) = dims3d(4)
 
+   dims3d_xb(1) = dims3d(2)
+   dims3d_xb(2) = dims3d(3)
+   dims3d_xb(3) = grid%spec_bdy_width
+   dims3d_xb(4) = 1
+
+   dims3d_yb(1) = dims3d(1)
+   dims3d_yb(2) = dims3d(3)
+   dims3d_yb(3) = grid%spec_bdy_width
+   dims3d_yb(4) = 1
+
+   dims2d_xb(1) = dims2d(2)
+   dims2d_xb(2) = grid%spec_bdy_width
+   dims2d_xb(2) = 1
+
+   dims2d_yb(1) = dims2d(1)
+   dims2d_yb(2) = grid%spec_bdy_width
+   dims2d_yb(3) = 1
+
    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
    write(unit=0, fmt='(a, 6i6)') 'dims1d = ', dims1d
    write(unit=0, fmt='(a, 6i6)') 'dims2d = ', dims2d
@@ -1059,6 +1091,7 @@ subroutine define_pio_iodesc(grid, DH)
    write(unit=0, fmt='(a, 6i6)') 'grid%num_soil_cat = ', grid%num_soil_cat
    write(unit=0, fmt='(a, 6i6)') 'grid%num_soil_layers = ', grid%num_soil_layers
    write(unit=0, fmt='(a, 6i6)') 'grid%num_ext_model_couple_dom = ', grid%num_ext_model_couple_dom
+   write(unit=0, fmt='(a, 6i6)') 'grid%spec_bdy_width = ', grid%spec_bdy_width
 
    do j = jms, jme
       do i = ims, ime
@@ -1098,6 +1131,36 @@ subroutine define_pio_iodesc(grid, DH)
       do i = ims, ime
          npos = (i - ims + 1) + (ime - ims + 1) * (k - 1 + dims3d_mdl_cpl(3) * (j - jms))
          compdof_3d_mdl_cpl(npos) = 0
+      enddo
+      enddo
+   enddo
+
+   do n = 1, grid%spec_bdy_width
+      do i = ims, ime
+         npos = i - ims + 1 + (ime - ims + 1) * (n - 1)
+         compdof_2d_ys(npos) = 0
+         compdof_2d_ye(npos) = 0
+      enddo
+
+      do j = jms, jme
+         npos = j - jms + 1 + (jme - jms + 1) * (n - 1)
+         compdof_2d_xs(npos) = 0
+         compdof_2d_xe(npos) = 0
+      enddo
+
+      do k = kms, kme
+      do i = ims, ime
+         npos = i - ims + 1 + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (n - 1))
+         compdof_3d_ysz(npos) = 0
+         compdof_3d_yez(npos) = 0
+      enddo
+      enddo
+
+      do k = kms, kme
+      do j = jms, jme
+         npos = j - jms + 1 + (jme - jms + 1) * (k - kms + (kme - kms + 1) * (n - 1))
+         compdof_3d_xsz(npos) = 0
+         compdof_3d_xez(npos) = 0
       enddo
       enddo
    enddo
@@ -1144,6 +1207,84 @@ subroutine define_pio_iodesc(grid, DH)
       enddo
    enddo
 
+   if(1 == its) then
+      do n = 1, grid%spec_bdy_width
+      do j = jts, ljte
+         npos = j - jms + 1 + (jme - jms + 1) * (n - 1)
+         compdof_2d_xs(npos) = j + dims2d(2) * (n - 1)
+      enddo
+      enddo
+   endif
+
+   if(1 == jts) then
+      do n = 1, grid%spec_bdy_width
+      do i = its, lite
+         npos = i - ims + 1 + (ime - ims + 1) * (n - 1)
+         compdof_2d_ys(npos) = i + dims2d(1) * (n - 1)
+      enddo
+      enddo
+   endif
+
+   if(dim2d(1) == lite) then
+      do n = 1, grid%spec_bdy_width
+      do j = jts, ljte
+         npos = j - jms + 1 + (jme - jms + 1) * (n - 1)
+         compdof_2d_xe(npos) = j + dims2d(2) * (n - 1)
+      enddo
+      enddo
+   endif
+
+   if(dim2d(2) == ljte) then
+      do n = 1, grid%spec_bdy_width
+      do i = its, lite
+         npos = i - ims + 1 + (ime - ims + 1) * (n - 1)
+         compdof_2d_ye(npos) = i + dims2d(1) * (n - 1)
+      enddo
+      enddo
+   endif
+
+   if(1 == its) then
+      do n = 1, grid%spec_bdy_width
+      do k = kts, kte
+      do j = jts, ljte
+         npos = j - jms + 1 + (jme - jms + 1) * (k - kms + (kme - kms + 1) * (n - 1))
+         compdof_3d_xsz(npos) = j + dims3d(2) * (k - 1 + dims3d(3) * (n - 1))
+      enddo
+      enddo
+      enddo
+   endif
+
+   if(1 == jts) then
+      do n = 1, grid%spec_bdy_width
+      do k = kts, kte
+      do i = its, lite
+         npos = i - ims + 1 + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (n - 1))
+         compdof_3d_ysz(npos) = i + dims3d(1) * (k - 1 + dims3d(3) * (n - 1))
+      enddo
+      enddo
+   endif
+
+   if(dim2d(1) == lite) then
+      do n = 1, grid%spec_bdy_width
+      do k = kts, kte
+      do j = jts, ljte
+         npos = j - jms + 1 + (jme - jms + 1) * (k - kms + (kme - kms + 1) * (n - 1))
+         compdof_3d_xez(npos) = j + dims3d(2) * (k - 1 + dims3d(3) * (n - 1))
+      enddo
+      enddo
+      enddo
+   endif
+
+   if(dim2d(2) == ljte) then
+      do n = 1, grid%spec_bdy_width
+      do k = kts, kte
+      do i = its, lite
+         npos = i - ims + 1 + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (n - 1))
+         compdof_3d_yez(npos) = i + dims3d(1) * (k - 1 + dims3d(3) * (n - 1))
+      enddo
+      enddo
+   endif
+
 !--call init_decomp in order to setup the IO decomposition with PIO
   !call pio_setdebuglevel(1)
 
@@ -1171,6 +1312,38 @@ subroutine define_pio_iodesc(grid, DH)
    call PIO_initdecomp(DH%iosystem, PIO_real,   dims2d, compdof_2d, DH%iodesc2d_m_real)
    call PIO_initdecomp(DH%iosystem, PIO_double, dims2d, compdof_2d, DH%iodesc2d_m_double)
 
+   call PIO_initdecomp(DH%iosystem, PIO_int,    dims3d_xb, compdof_3d_xsz, DH%iodesc3d_xsz_m_int)
+   call PIO_initdecomp(DH%iosystem, PIO_real,   dims3d_xb, compdof_3d_xsz, DH%iodesc3d_xsz_m_real)
+   call PIO_initdecomp(DH%iosystem, PIO_double, dims3d_xb, compdof_3d_xsz, DH%iodesc3d_xsz_m_double)
+
+   call PIO_initdecomp(DH%iosystem, PIO_int,    dims3d_xb, compdof_3d_xez, DH%iodesc3d_xez_m_int)
+   call PIO_initdecomp(DH%iosystem, PIO_real,   dims3d_xb, compdof_3d_xez, DH%iodesc3d_xez_m_real)
+   call PIO_initdecomp(DH%iosystem, PIO_double, dims3d_xb, compdof_3d_xez, DH%iodesc3d_xez_m_double)
+
+   call PIO_initdecomp(DH%iosystem, PIO_int,    dims3d_yb, compdof_3d_ysz, DH%iodesc3d_ysz_m_int)
+   call PIO_initdecomp(DH%iosystem, PIO_real,   dims3d_yb, compdof_3d_ysz, DH%iodesc3d_ysz_m_real)
+   call PIO_initdecomp(DH%iosystem, PIO_double, dims3d_yb, compdof_3d_ysz, DH%iodesc3d_ysz_m_double)
+
+   call PIO_initdecomp(DH%iosystem, PIO_int,    dims3d_yb, compdof_3d_yez, DH%iodesc3d_yez_m_int)
+   call PIO_initdecomp(DH%iosystem, PIO_real,   dims3d_yb, compdof_3d_yez, DH%iodesc3d_yez_m_real)
+   call PIO_initdecomp(DH%iosystem, PIO_double, dims3d_yb, compdof_3d_yez, DH%iodesc3d_yez_m_double)
+
+   call PIO_initdecomp(DH%iosystem, PIO_int,    dims2d_xb, compdof_2d_xs, DH%iodesc2d_xs_m_int)
+   call PIO_initdecomp(DH%iosystem, PIO_real,   dims2d_xb, compdof_2d_xs, DH%iodesc2d_xs_m_real)
+   call PIO_initdecomp(DH%iosystem, PIO_double, dims2d_xb, compdof_2d_xs, DH%iodesc2d_xs_m_double)
+
+   call PIO_initdecomp(DH%iosystem, PIO_int,    dims2d_xb, compdof_2d_xe, DH%iodesc2d_xe_m_int)
+   call PIO_initdecomp(DH%iosystem, PIO_real,   dims2d_xb, compdof_2d_xe, DH%iodesc2d_xe_m_real)
+   call PIO_initdecomp(DH%iosystem, PIO_double, dims2d_xb, compdof_2d_xe, DH%iodesc2d_xe_m_double)
+
+   call PIO_initdecomp(DH%iosystem, PIO_int,    dims2d_yb, compdof_2d_ys, DH%iodesc2d_ys_m_int)
+   call PIO_initdecomp(DH%iosystem, PIO_real,   dims2d_yb, compdof_2d_ys, DH%iodesc2d_ys_m_real)
+   call PIO_initdecomp(DH%iosystem, PIO_double, dims2d_yb, compdof_2d_ys, DH%iodesc2d_ys_m_double)
+
+   call PIO_initdecomp(DH%iosystem, PIO_int,    dims2d_yb, compdof_2d_ye, DH%iodesc2d_ye_m_int)
+   call PIO_initdecomp(DH%iosystem, PIO_real,   dims2d_yb, compdof_2d_ye, DH%iodesc2d_ye_m_real)
+   call PIO_initdecomp(DH%iosystem, PIO_double, dims2d_yb, compdof_2d_ye, DH%iodesc2d_ye_m_double)
+
 !--For X-STAG variables
    dims3d(1) = ide
    dims3d(2) = jde - 1
@@ -1188,6 +1361,16 @@ subroutine define_pio_iodesc(grid, DH)
    dims2d(2) = dims3d(2)
 
    dims1d(1) = dims3d(3)
+
+   dims3d_xb(1) = dims3d(2)
+   dims3d_xb(2) = dims3d(3)
+   dims3d_xb(3) = grid%spec_bdy_width
+   dims3d_xb(4) = 1
+
+   dims3d_yb(1) = dims3d(1)
+   dims3d_yb(2) = dims3d(3)
+   dims3d_yb(3) = grid%spec_bdy_width
+   dims3d_yb(4) = 1
 
    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
    write(unit=0, fmt='(a, 6i6)') 'dims3d = ', dims3d
@@ -1225,6 +1408,48 @@ subroutine define_pio_iodesc(grid, DH)
       enddo
    enddo
 
+   if(1 == its) then
+      do n = 1, grid%spec_bdy_width
+      do k = kts, kte
+      do j = jts, ljte
+         npos = j - jms + 1 + (jme - jms + 1) * (k - kms + (kme - kms + 1) * (n - 1))
+         compdof_3d_xsz(npos) = j + dims3d(2) * (k - 1 + dims3d(3) * (n - 1))
+      enddo
+      enddo
+      enddo
+   endif
+
+   if(1 == jts) then
+      do n = 1, grid%spec_bdy_width
+      do k = kts, kte
+      do i = its, lite
+         npos = i - ims + 1 + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (n - 1))
+         compdof_3d_ysz(npos) = i + dims3d(1) * (k - 1 + dims3d(3) * (n - 1))
+      enddo
+      enddo
+   endif
+
+   if(dim3d(1) == lite) then
+      do n = 1, grid%spec_bdy_width
+      do k = kts, kte
+      do j = jts, ljte
+         npos = j - jms + 1 + (jme - jms + 1) * (k - kms + (kme - kms + 1) * (n - 1))
+         compdof_3d_xez(npos) = j + dims3d(2) * (k - 1 + dims3d(3) * (n - 1))
+      enddo
+      enddo
+      enddo
+   endif
+
+   if(dim3d(2) == ljte) then
+      do n = 1, grid%spec_bdy_width
+      do k = kts, kte
+      do i = its, lite
+         npos = i - ims + 1 + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (n - 1))
+         compdof_3d_yez(npos) = i + dims3d(1) * (k - 1 + dims3d(3) * (n - 1))
+      enddo
+      enddo
+   endif
+
 !--call init_decomp in order to setup the IO decomposition with PIO
    call PIO_initdecomp(DH%iosystem, PIO_double, dims3d, compdof_3d, DH%iodesc3d_u_double)
    call PIO_initdecomp(DH%iosystem, PIO_real,   dims3d, compdof_3d, DH%iodesc3d_u_real)
@@ -1233,6 +1458,22 @@ subroutine define_pio_iodesc(grid, DH)
    call PIO_initdecomp(DH%iosystem, PIO_double, dims2d, compdof_2d, DH%iodesc2d_u_double)
    call PIO_initdecomp(DH%iosystem, PIO_real,   dims2d, compdof_2d, DH%iodesc2d_u_real)
    call PIO_initdecomp(DH%iosystem, PIO_int,    dims2d, compdof_2d, DH%iodesc2d_u_int)
+
+   call PIO_initdecomp(DH%iosystem, PIO_int,    dims3d_xb, compdof_3d_xsz, DH%iodesc3d_xsz_u_int)
+   call PIO_initdecomp(DH%iosystem, PIO_real,   dims3d_xb, compdof_3d_xsz, DH%iodesc3d_xsz_u_real)
+   call PIO_initdecomp(DH%iosystem, PIO_double, dims3d_xb, compdof_3d_xsz, DH%iodesc3d_xsz_u_double)
+
+   call PIO_initdecomp(DH%iosystem, PIO_int,    dims3d_xb, compdof_3d_xez, DH%iodesc3d_xez_u_int)
+   call PIO_initdecomp(DH%iosystem, PIO_real,   dims3d_xb, compdof_3d_xez, DH%iodesc3d_xez_u_real)
+   call PIO_initdecomp(DH%iosystem, PIO_double, dims3d_xb, compdof_3d_xez, DH%iodesc3d_xez_u_double)
+
+   call PIO_initdecomp(DH%iosystem, PIO_int,    dims3d_yb, compdof_3d_ysz, DH%iodesc3d_ysz_u_int)
+   call PIO_initdecomp(DH%iosystem, PIO_real,   dims3d_yb, compdof_3d_ysz, DH%iodesc3d_ysz_u_real)
+   call PIO_initdecomp(DH%iosystem, PIO_double, dims3d_yb, compdof_3d_ysz, DH%iodesc3d_ysz_u_double)
+
+   call PIO_initdecomp(DH%iosystem, PIO_int,    dims3d_yb, compdof_3d_yez, DH%iodesc3d_yez_u_int)
+   call PIO_initdecomp(DH%iosystem, PIO_real,   dims3d_yb, compdof_3d_yez, DH%iodesc3d_yez_u_real)
+   call PIO_initdecomp(DH%iosystem, PIO_double, dims3d_yb, compdof_3d_yez, DH%iodesc3d_yez_u_double)
 
 !--For Y-STAG variables
    dims3d(1) = ide - 1
@@ -1251,6 +1492,16 @@ subroutine define_pio_iodesc(grid, DH)
    dims2d(2) = dims3d(2)
 
    dims1d(1) = dims3d(3)
+
+   dims3d_xb(1) = dims3d(2)
+   dims3d_xb(2) = dims3d(3)
+   dims3d_xb(3) = grid%spec_bdy_width
+   dims3d_xb(4) = 1
+
+   dims3d_yb(1) = dims3d(1)
+   dims3d_yb(2) = dims3d(3)
+   dims3d_yb(3) = grid%spec_bdy_width
+   dims3d_yb(4) = 1
 
   !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
   !write(unit=0, fmt='(a, 6i6)') 'dims3d = ', dims3d
@@ -1293,6 +1544,47 @@ subroutine define_pio_iodesc(grid, DH)
       enddo
    enddo
 
+   if(1 == its) then
+      do n = 1, grid%spec_bdy_width
+      do k = kts, kte
+      do j = jts, ljte
+         npos = j - jms + 1 + (jme - jms + 1) * (k - kms + (kme - kms + 1) * (n - 1))
+         compdof_3d_xsz(npos) = j + dims3d(2) * (k - 1 + dims3d(3) * (n - 1))
+      enddo
+      enddo
+      enddo
+   endif
+
+   if(1 == jts) then
+      do n = 1, grid%spec_bdy_width
+      do k = kts, kte
+      do i = its, lite
+         npos = i - ims + 1 + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (n - 1))
+         compdof_3d_ysz(npos) = i + dims3d(1) * (k - 1 + dims3d(3) * (n - 1))
+      enddo
+      enddo
+   endif
+
+   if(dim3d(1) == lite) then
+      do n = 1, grid%spec_bdy_width
+      do k = kts, kte
+      do j = jts, ljte
+         npos = j - jms + 1 + (jme - jms + 1) * (k - kms + (kme - kms + 1) * (n - 1))
+         compdof_3d_xez(npos) = j + dims3d(2) * (k - 1 + dims3d(3) * (n - 1))
+      enddo
+      enddo
+      enddo
+   endif
+
+   if(dim3d(2) == ljte) then
+      do n = 1, grid%spec_bdy_width
+      do k = kts, kte
+      do i = its, lite
+         npos = i - ims + 1 + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (n - 1))
+         compdof_3d_yez(npos) = i + dims3d(1) * (k - 1 + dims3d(3) * (n - 1))
+      enddo
+      enddo
+   endif
 
 !--call init_decomp in order to setup the IO decomposition with PIO
    call PIO_initdecomp(DH%iosystem, PIO_double, dims3d, compdof_3d, DH%iodesc3d_v_double)
@@ -1303,6 +1595,22 @@ subroutine define_pio_iodesc(grid, DH)
    call PIO_initdecomp(DH%iosystem, PIO_real,   dims2d, compdof_2d, DH%iodesc2d_v_real)
    call PIO_initdecomp(DH%iosystem, PIO_int,    dims2d, compdof_2d, DH%iodesc2d_v_int)
 
+   call PIO_initdecomp(DH%iosystem, PIO_int,    dims3d_xb, compdof_3d_xsz, DH%iodesc3d_xsz_v_int)
+   call PIO_initdecomp(DH%iosystem, PIO_real,   dims3d_xb, compdof_3d_xsz, DH%iodesc3d_xsz_v_real)
+   call PIO_initdecomp(DH%iosystem, PIO_double, dims3d_xb, compdof_3d_xsz, DH%iodesc3d_xsz_v_double)
+
+   call PIO_initdecomp(DH%iosystem, PIO_int,    dims3d_xb, compdof_3d_xez, DH%iodesc3d_xez_v_int)
+   call PIO_initdecomp(DH%iosystem, PIO_real,   dims3d_xb, compdof_3d_xez, DH%iodesc3d_xez_v_real)
+   call PIO_initdecomp(DH%iosystem, PIO_double, dims3d_xb, compdof_3d_xez, DH%iodesc3d_xez_v_double)
+
+   call PIO_initdecomp(DH%iosystem, PIO_int,    dims3d_yb, compdof_3d_ysz, DH%iodesc3d_ysz_v_int)
+   call PIO_initdecomp(DH%iosystem, PIO_real,   dims3d_yb, compdof_3d_ysz, DH%iodesc3d_ysz_v_real)
+   call PIO_initdecomp(DH%iosystem, PIO_double, dims3d_yb, compdof_3d_ysz, DH%iodesc3d_ysz_v_double)
+
+   call PIO_initdecomp(DH%iosystem, PIO_int,    dims3d_yb, compdof_3d_yez, DH%iodesc3d_yez_v_int)
+   call PIO_initdecomp(DH%iosystem, PIO_real,   dims3d_yb, compdof_3d_yez, DH%iodesc3d_yez_v_real)
+   call PIO_initdecomp(DH%iosystem, PIO_double, dims3d_yb, compdof_3d_yez, DH%iodesc3d_yez_v_double)
+
 !--For Z-STAG variables
    dims3d(1) = ide - 1
    dims3d(2) = jde - 1
@@ -1312,6 +1620,16 @@ subroutine define_pio_iodesc(grid, DH)
    dims2d(2) = dims3d(2)
 
    dims1d(1) = dims3d(3)
+
+   dims3d_xb(1) = dims3d(2)
+   dims3d_xb(2) = dims3d(3)
+   dims3d_xb(3) = grid%spec_bdy_width
+   dims3d_xb(4) = 1
+
+   dims3d_yb(1) = dims3d(1)
+   dims3d_yb(2) = dims3d(3)
+   dims3d_yb(3) = grid%spec_bdy_width
+   dims3d_yb(4) = 1
 
    lite = ite
    ljte = jte
@@ -1351,11 +1669,68 @@ subroutine define_pio_iodesc(grid, DH)
    enddo
    enddo
 
+   if(1 == its) then
+      do n = 1, grid%spec_bdy_width
+      do k = kts, kte
+      do j = jts, ljte
+         npos = j - jms + 1 + (jme - jms + 1) * (k - kms + (kme - kms + 1) * (n - 1))
+         compdof_3d_xsz(npos) = j + dims3d(2) * (k - 1 + dims3d(3) * (n - 1))
+      enddo
+      enddo
+      enddo
+   endif
+
+   if(1 == jts) then
+      do n = 1, grid%spec_bdy_width
+      do k = kts, kte
+      do i = its, lite
+         npos = i - ims + 1 + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (n - 1))
+         compdof_3d_ysz(npos) = i + dims3d(1) * (k - 1 + dims3d(3) * (n - 1))
+      enddo
+      enddo
+   endif
+
+   if(dim3d(1) == lite) then
+      do n = 1, grid%spec_bdy_width
+      do k = kts, kte
+      do j = jts, ljte
+         npos = j - jms + 1 + (jme - jms + 1) * (k - kms + (kme - kms + 1) * (n - 1))
+         compdof_3d_xez(npos) = j + dims3d(2) * (k - 1 + dims3d(3) * (n - 1))
+      enddo
+      enddo
+      enddo
+   endif
+
+   if(dim3d(2) == ljte) then
+      do n = 1, grid%spec_bdy_width
+      do k = kts, kte
+      do i = its, lite
+         npos = i - ims + 1 + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (n - 1))
+         compdof_3d_yez(npos) = i + dims3d(1) * (k - 1 + dims3d(3) * (n - 1))
+      enddo
+      enddo
+   endif
 
 !--call init_decomp in order to setup the IO decomposition with PIO
    call PIO_initdecomp(DH%iosystem, PIO_double, dims3d, compdof_3d, DH%iodesc3d_w_double)
    call PIO_initdecomp(DH%iosystem, PIO_real,   dims3d, compdof_3d, DH%iodesc3d_w_real)
    call PIO_initdecomp(DH%iosystem, PIO_int,    dims3d, compdof_3d, DH%iodesc3d_w_int)
+
+   call PIO_initdecomp(DH%iosystem, PIO_int,    dims3d_xb, compdof_3d_xsz, DH%iodesc3d_xsz_w_int)
+   call PIO_initdecomp(DH%iosystem, PIO_real,   dims3d_xb, compdof_3d_xsz, DH%iodesc3d_xsz_w_real)
+   call PIO_initdecomp(DH%iosystem, PIO_double, dims3d_xb, compdof_3d_xsz, DH%iodesc3d_xsz_w_double)
+
+   call PIO_initdecomp(DH%iosystem, PIO_int,    dims3d_xb, compdof_3d_xez, DH%iodesc3d_xez_w_int)
+   call PIO_initdecomp(DH%iosystem, PIO_real,   dims3d_xb, compdof_3d_xez, DH%iodesc3d_xez_w_real)
+   call PIO_initdecomp(DH%iosystem, PIO_double, dims3d_xb, compdof_3d_xez, DH%iodesc3d_xez_w_double)
+
+   call PIO_initdecomp(DH%iosystem, PIO_int,    dims3d_yb, compdof_3d_ysz, DH%iodesc3d_ysz_w_int)
+   call PIO_initdecomp(DH%iosystem, PIO_real,   dims3d_yb, compdof_3d_ysz, DH%iodesc3d_ysz_w_real)
+   call PIO_initdecomp(DH%iosystem, PIO_double, dims3d_yb, compdof_3d_ysz, DH%iodesc3d_ysz_w_double)
+
+   call PIO_initdecomp(DH%iosystem, PIO_int,    dims3d_yb, compdof_3d_yez, DH%iodesc3d_yez_w_int)
+   call PIO_initdecomp(DH%iosystem, PIO_real,   dims3d_yb, compdof_3d_yez, DH%iodesc3d_yez_w_real)
+   call PIO_initdecomp(DH%iosystem, PIO_double, dims3d_yb, compdof_3d_yez, DH%iodesc3d_yez_w_double)
 
    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
    write(unit=0, fmt='(a)') 'finished: define_pio_iodesc'

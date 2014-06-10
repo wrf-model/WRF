@@ -76,7 +76,6 @@ module wrf_data_pio
 
    type (Var_desc_t)       :: vtime
 
-  !type (io_desc_t)        :: iodesc_3d, iodesc_2d
    type (io_desc_t)        :: iodesc3d_m_double, iodesc3d_u_double, iodesc3d_v_double, iodesc3d_w_double
    type (io_desc_t)        :: iodesc2d_m_double, iodesc2d_u_double, iodesc2d_v_double, iodesc2d_char_double
   !type (io_desc_t)        :: iodesc1d_double
@@ -94,6 +93,31 @@ module wrf_data_pio
    type (io_desc_t)        :: iodesc3d_mdl_cpl_double
    type (io_desc_t)        :: iodesc3d_mdl_cpl_real
    type (io_desc_t)        :: iodesc3d_mdl_cpl_int
+
+   type (io_desc_t)        :: iodesc3d_xsz_u_real, iodesc3d_xsz_u_double, iodesc3d_xsz_u_int
+   type (io_desc_t)        :: iodesc3d_xsz_v_real, iodesc3d_xsz_v_double, iodesc3d_xsz_v_int
+   type (io_desc_t)        :: iodesc3d_xsz_w_real, iodesc3d_xsz_w_double, iodesc3d_xsz_w_int
+   type (io_desc_t)        :: iodesc3d_xsz_m_real, iodesc3d_xsz_m_double, iodesc3d_xsz_m_int
+
+   type (io_desc_t)        :: iodesc3d_xez_u_real, iodesc3d_xez_u_double, iodesc3d_xez_u_int
+   type (io_desc_t)        :: iodesc3d_xez_v_real, iodesc3d_xez_v_double, iodesc3d_xez_v_int
+   type (io_desc_t)        :: iodesc3d_xez_w_real, iodesc3d_xez_w_double, iodesc3d_xez_w_int
+   type (io_desc_t)        :: iodesc3d_xez_m_real, iodesc3d_xez_m_double, iodesc3d_xez_m_int
+
+   type (io_desc_t)        :: iodesc3d_ysz_u_real, iodesc3d_ysz_u_double, iodesc3d_ysz_u_int
+   type (io_desc_t)        :: iodesc3d_ysz_v_real, iodesc3d_ysz_v_double, iodesc3d_ysz_v_int
+   type (io_desc_t)        :: iodesc3d_ysz_w_real, iodesc3d_ysz_w_double, iodesc3d_ysz_w_int
+   type (io_desc_t)        :: iodesc3d_ysz_m_real, iodesc3d_ysz_m_double, iodesc3d_ysz_m_int
+
+   type (io_desc_t)        :: iodesc3d_yez_u_real, iodesc3d_yez_u_double, iodesc3d_yez_u_int
+   type (io_desc_t)        :: iodesc3d_yez_v_real, iodesc3d_yez_v_double, iodesc3d_yez_v_int
+   type (io_desc_t)        :: iodesc3d_yez_w_real, iodesc3d_yez_w_double, iodesc3d_yez_w_int
+   type (io_desc_t)        :: iodesc3d_yez_m_real, iodesc3d_yez_m_double, iodesc3d_yez_m_int
+
+   type (io_desc_t)        :: iodesc2d_xs_m_real, iodesc2d_xs_m_double, iodesc2d_xs_m_int
+   type (io_desc_t)        :: iodesc2d_xe_m_real, iodesc2d_xe_m_double, iodesc2d_xe_m_int
+   type (io_desc_t)        :: iodesc2d_ys_m_real, iodesc2d_ys_m_double, iodesc2d_ys_m_int
+   type (io_desc_t)        :: iodesc2d_ye_m_real, iodesc2d_ye_m_double, iodesc2d_ye_m_int
 
    type (Var_desc_t), dimension(MaxVars) :: descMDVar
    type (Var_desc_t), dimension(MaxVars) :: descVar

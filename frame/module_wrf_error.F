@@ -103,7 +103,7 @@ CONTAINS
 #else
     stderr_logging=0
 #endif
-
+500 format(A)
     ! Open namelist.input using the same unit used by module_io_wrf 
     ! since we know nobody will screw up that unit:
     OPEN(unit=27, file="namelist.input", form="formatted", status="old")
@@ -134,15 +134,15 @@ CONTAINS
     endif
 #else
     if(buffer_size>=min_allowed_buffer_size) then
-       write(0,*) 'Forcing disabling of buffering due to compile-time configuration.'
-       write(6,*) 'Forcing disabling of buffering due to compile-time configuration.'
+       write(0,500) 'Forcing disabling of buffering due to compile-time configuration.'
+       write(6,500) 'Forcing disabling of buffering due to compile-time configuration.'
     endif
 #endif
 
     stderrlog=stderr_logging
     if(buffered/=0 .and. stderrlog/=0) then
-       write(0,*) 'Disabling stderr logging since buffering is enabled.'
-       write(6,*) 'Disabling stderr logging since buffering is enabled.'
+       write(0,500) 'Disabling stderr logging since buffering is enabled.'
+       write(6,500) 'Disabling stderr logging since buffering is enabled.'
 #      ifdef _WIN32
           FLUSH(0)
 #      endif
@@ -216,12 +216,13 @@ SUBROUTINE wrf_message( str )
   else
 !$OMP MASTER
      if(stderrlog/=0) then
-        write(0,*) trim(str)
+300     format(A)
+        write(0,300) trim(str)
 # ifdef _WIN32
   FLUSH(0)
 # endif
      endif
-     print *,trim(str)
+     print 300,trim(str)
 !$OMP END MASTER
   endif
 
@@ -244,7 +245,8 @@ SUBROUTINE wrf_message2( str )
   IMPLICIT NONE
   CHARACTER*(*) str
 !$OMP MASTER
-  write(0,*) str
+400 format(A)
+  write(0,400) str
 # ifdef _WIN32
   FLUSH(0)
 # endif

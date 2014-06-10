@@ -42,7 +42,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -56,7 +56,7 @@ ifelse($3,logical,`locCount = Count')
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -229,7 +229,7 @@ ifelse($3,real,
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_$1_$2_$6_$3$4 ( Hndl, Element, ifelse($6,td,`DateStr,') ifelse($2,var,`Varname,') Data, &
                           ifelse($4,char,,`locCount, ifelse($1,get,`Outcount,')') Status )
   ELSE

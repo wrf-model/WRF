@@ -2897,6 +2897,21 @@ SUBROUTINE disable_quilting
   RETURN
 END SUBROUTINE disable_quilting
 
+LOGICAL FUNCTION  use_output_servers_for(ioform)
+!<DESCRIPTION>
+! Returns .TRUE. if I/O quilt servers are in-use for write operations
+! AND the output servers can handle the given I/O form.  If the I/O
+! form is 0, then the io form is not considered and the result is the
+! same as calling use_output_servers.
+! This routine is called only by client (compute) tasks.  
+!</DESCRIPTION>
+  USE module_wrf_quilt
+  integer, intent(in) :: ioform
+  use_output_servers_for = quilting_enabled
+  use_output_servers_for = ( use_output_servers_for .and. ioform<100 )
+  RETURN
+END FUNCTION use_output_servers_for
+
 LOGICAL FUNCTION  use_output_servers()
 !<DESCRIPTION>
 ! Returns .TRUE. if I/O quilt servers are in-use for write operations.

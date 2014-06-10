@@ -41,6 +41,9 @@ dimspec    q       -     constant=2600                     c     # a little crud
 dimspec    r       -     constant=2000                     c     # a little crude right now
 dimspec    z       -     constant=(-3:3)                   c
 dimspec    n       -     constant=(0:6)                    c
+ifdef HWRF=1
+dimspec    otrak   -     namelist=num_old_fixes            c     old_fixes
+endif
 endif
 
 dimspec    snly    2     namelist=num_snow_layers          z     snow_layers

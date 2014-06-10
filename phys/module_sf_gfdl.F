@@ -810,6 +810,11 @@ CONTAINS
 !
        cor1 = .120
        cor2 = 720.
+! KWON : remove the artificial increase of 10m wind speed over 60kts
+!        which comes from GFDL hurricane model
+!        cor1 = 0.
+!        cor2 = 0.
+!
        yz=           -0.0001344
        y1=            3.015e-05 
        y2=            1.517e-06 

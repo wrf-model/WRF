@@ -239,7 +239,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -253,7 +253,7 @@ locCount = Count
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -399,7 +399,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_get_dom_ti_real ( Hndl, Element,   Data, &
                           locCount, Outcount, Status )
   ELSE
@@ -442,7 +442,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -456,7 +456,7 @@ locCount = Count
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -602,7 +602,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_get_dom_ti_real ( Hndl, Element,   Data, &
                           locCount, Outcount, Status )
   ELSE
@@ -647,7 +647,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -661,7 +661,7 @@ locCount = Count
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -807,7 +807,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_put_dom_ti_real ( Hndl, Element,   Data, &
                           locCount,  Status )
   ELSE
@@ -850,7 +850,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -864,7 +864,7 @@ locCount = Count
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -1010,7 +1010,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_put_dom_ti_real ( Hndl, Element,   Data, &
                           locCount,  Status )
   ELSE
@@ -1055,7 +1055,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -1069,7 +1069,7 @@ CALL wrf_debug( DEBUG_LVL, "module_io.F (md_calls.m4) : in wrf_get_dom_ti_double
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -1170,7 +1170,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_get_dom_ti_double ( Hndl, Element,   Data, &
                           locCount, Outcount, Status )
   ELSE
@@ -1213,7 +1213,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -1227,7 +1227,7 @@ CALL wrf_debug( DEBUG_LVL, "module_io.F (md_calls.m4) : in wrf_get_dom_ti_double
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -1328,7 +1328,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_get_dom_ti_double ( Hndl, Element,   Data, &
                           locCount, Outcount, Status )
   ELSE
@@ -1373,7 +1373,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -1387,7 +1387,7 @@ CALL wrf_debug( DEBUG_LVL, "module_io.F (md_calls.m4) : in wrf_put_dom_ti_double
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -1488,7 +1488,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_put_dom_ti_double ( Hndl, Element,   Data, &
                           locCount,  Status )
   ELSE
@@ -1531,7 +1531,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -1545,7 +1545,7 @@ CALL wrf_debug( DEBUG_LVL, "module_io.F (md_calls.m4) : in wrf_put_dom_ti_double
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -1646,7 +1646,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_put_dom_ti_double ( Hndl, Element,   Data, &
                           locCount,  Status )
   ELSE
@@ -1691,7 +1691,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -1705,7 +1705,7 @@ locCount = Count
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -1806,7 +1806,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_get_dom_ti_integer ( Hndl, Element,   Data, &
                           locCount, Outcount, Status )
   ELSE
@@ -1849,7 +1849,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -1863,7 +1863,7 @@ locCount = Count
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -1964,7 +1964,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_get_dom_ti_integer ( Hndl, Element,   Data, &
                           locCount, Outcount, Status )
   ELSE
@@ -2009,7 +2009,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -2023,7 +2023,7 @@ locCount = Count
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -2124,7 +2124,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_put_dom_ti_integer ( Hndl, Element,   Data, &
                           locCount,  Status )
   ELSE
@@ -2167,7 +2167,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -2181,7 +2181,7 @@ locCount = Count
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -2282,7 +2282,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_put_dom_ti_integer ( Hndl, Element,   Data, &
                           locCount,  Status )
   ELSE
@@ -2327,7 +2327,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -2341,7 +2341,7 @@ locCount = Count
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -2442,7 +2442,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_get_dom_ti_logical ( Hndl, Element,   Data, &
                           locCount, Outcount, Status )
   ELSE
@@ -2485,7 +2485,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -2499,7 +2499,7 @@ locCount = Count
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -2600,7 +2600,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_get_dom_ti_logical ( Hndl, Element,   Data, &
                           locCount, Outcount, Status )
   ELSE
@@ -2645,7 +2645,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -2659,7 +2659,7 @@ locCount = Count
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -2760,7 +2760,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_put_dom_ti_logical ( Hndl, Element,   Data, &
                           locCount,  Status )
   ELSE
@@ -2803,7 +2803,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -2817,7 +2817,7 @@ locCount = Count
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -2918,7 +2918,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_put_dom_ti_logical ( Hndl, Element,   Data, &
                           locCount,  Status )
   ELSE
@@ -2963,7 +2963,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -2977,7 +2977,7 @@ CALL wrf_debug( DEBUG_LVL, "module_io.F (md_calls.m4) : in wrf_get_dom_ti_char_a
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -3078,7 +3078,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_get_dom_ti_char ( Hndl, Element,   Data, &
                            Status )
   ELSE
@@ -3123,7 +3123,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -3137,7 +3137,7 @@ CALL wrf_debug( DEBUG_LVL, "module_io.F (md_calls.m4) : in wrf_put_dom_ti_char_a
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -3238,7 +3238,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_put_dom_ti_char ( Hndl, Element,   Data, &
                            Status )
   ELSE
@@ -3284,7 +3284,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -3298,7 +3298,7 @@ locCount = Count
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -3444,7 +3444,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_get_dom_td_real ( Hndl, Element, DateStr,  Data, &
                           locCount, Outcount, Status )
   ELSE
@@ -3487,7 +3487,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -3501,7 +3501,7 @@ locCount = Count
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -3647,7 +3647,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_get_dom_td_real ( Hndl, Element, DateStr,  Data, &
                           locCount, Outcount, Status )
   ELSE
@@ -3692,7 +3692,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -3706,7 +3706,7 @@ locCount = Count
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -3852,7 +3852,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_put_dom_td_real ( Hndl, Element, DateStr,  Data, &
                           locCount,  Status )
   ELSE
@@ -3895,7 +3895,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -3909,7 +3909,7 @@ locCount = Count
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -4055,7 +4055,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_put_dom_td_real ( Hndl, Element, DateStr,  Data, &
                           locCount,  Status )
   ELSE
@@ -4100,7 +4100,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -4114,7 +4114,7 @@ CALL wrf_debug( DEBUG_LVL, "module_io.F (md_calls.m4) : in wrf_get_dom_td_double
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -4215,7 +4215,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_get_dom_td_double ( Hndl, Element, DateStr,  Data, &
                           locCount, Outcount, Status )
   ELSE
@@ -4258,7 +4258,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -4272,7 +4272,7 @@ CALL wrf_debug( DEBUG_LVL, "module_io.F (md_calls.m4) : in wrf_get_dom_td_double
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -4373,7 +4373,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_get_dom_td_double ( Hndl, Element, DateStr,  Data, &
                           locCount, Outcount, Status )
   ELSE
@@ -4418,7 +4418,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -4432,7 +4432,7 @@ CALL wrf_debug( DEBUG_LVL, "module_io.F (md_calls.m4) : in wrf_put_dom_td_double
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -4533,7 +4533,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_put_dom_td_double ( Hndl, Element, DateStr,  Data, &
                           locCount,  Status )
   ELSE
@@ -4576,7 +4576,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -4590,7 +4590,7 @@ CALL wrf_debug( DEBUG_LVL, "module_io.F (md_calls.m4) : in wrf_put_dom_td_double
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -4691,7 +4691,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_put_dom_td_double ( Hndl, Element, DateStr,  Data, &
                           locCount,  Status )
   ELSE
@@ -4736,7 +4736,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -4750,7 +4750,7 @@ locCount = Count
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -4851,7 +4851,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_get_dom_td_integer ( Hndl, Element, DateStr,  Data, &
                           locCount, Outcount, Status )
   ELSE
@@ -4894,7 +4894,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -4908,7 +4908,7 @@ locCount = Count
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -5009,7 +5009,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_get_dom_td_integer ( Hndl, Element, DateStr,  Data, &
                           locCount, Outcount, Status )
   ELSE
@@ -5054,7 +5054,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -5068,7 +5068,7 @@ locCount = Count
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -5169,7 +5169,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_put_dom_td_integer ( Hndl, Element, DateStr,  Data, &
                           locCount,  Status )
   ELSE
@@ -5212,7 +5212,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -5226,7 +5226,7 @@ locCount = Count
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -5327,7 +5327,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_put_dom_td_integer ( Hndl, Element, DateStr,  Data, &
                           locCount,  Status )
   ELSE
@@ -5372,7 +5372,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -5386,7 +5386,7 @@ locCount = Count
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -5487,7 +5487,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_get_dom_td_logical ( Hndl, Element, DateStr,  Data, &
                           locCount, Outcount, Status )
   ELSE
@@ -5530,7 +5530,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -5544,7 +5544,7 @@ locCount = Count
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -5645,7 +5645,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_get_dom_td_logical ( Hndl, Element, DateStr,  Data, &
                           locCount, Outcount, Status )
   ELSE
@@ -5690,7 +5690,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -5704,7 +5704,7 @@ locCount = Count
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -5805,7 +5805,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_put_dom_td_logical ( Hndl, Element, DateStr,  Data, &
                           locCount,  Status )
   ELSE
@@ -5848,7 +5848,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -5862,7 +5862,7 @@ locCount = Count
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -5963,7 +5963,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_put_dom_td_logical ( Hndl, Element, DateStr,  Data, &
                           locCount,  Status )
   ELSE
@@ -6008,7 +6008,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -6022,7 +6022,7 @@ CALL wrf_debug( DEBUG_LVL, "module_io.F (md_calls.m4) : in wrf_get_dom_td_char_a
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -6123,7 +6123,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_get_dom_td_char ( Hndl, Element, DateStr,  Data, &
                            Status )
   ELSE
@@ -6168,7 +6168,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -6182,7 +6182,7 @@ CALL wrf_debug( DEBUG_LVL, "module_io.F (md_calls.m4) : in wrf_put_dom_td_char_a
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -6283,7 +6283,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_put_dom_td_char ( Hndl, Element, DateStr,  Data, &
                            Status )
   ELSE
@@ -6329,7 +6329,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -6343,7 +6343,7 @@ locCount = Count
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -6489,7 +6489,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_get_var_ti_real ( Hndl, Element,  Varname, Data, &
                           locCount, Outcount, Status )
   ELSE
@@ -6532,7 +6532,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -6546,7 +6546,7 @@ locCount = Count
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -6692,7 +6692,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_get_var_ti_real ( Hndl, Element,  Varname, Data, &
                           locCount, Outcount, Status )
   ELSE
@@ -6737,7 +6737,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -6751,7 +6751,7 @@ locCount = Count
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -6897,7 +6897,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_put_var_ti_real ( Hndl, Element,  Varname, Data, &
                           locCount,  Status )
   ELSE
@@ -6940,7 +6940,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -6954,7 +6954,7 @@ locCount = Count
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -7100,7 +7100,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_put_var_ti_real ( Hndl, Element,  Varname, Data, &
                           locCount,  Status )
   ELSE
@@ -7145,7 +7145,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -7159,7 +7159,7 @@ CALL wrf_debug( DEBUG_LVL, "module_io.F (md_calls.m4) : in wrf_get_var_ti_double
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -7260,7 +7260,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_get_var_ti_double ( Hndl, Element,  Varname, Data, &
                           locCount, Outcount, Status )
   ELSE
@@ -7303,7 +7303,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -7317,7 +7317,7 @@ CALL wrf_debug( DEBUG_LVL, "module_io.F (md_calls.m4) : in wrf_get_var_ti_double
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -7418,7 +7418,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_get_var_ti_double ( Hndl, Element,  Varname, Data, &
                           locCount, Outcount, Status )
   ELSE
@@ -7463,7 +7463,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -7477,7 +7477,7 @@ CALL wrf_debug( DEBUG_LVL, "module_io.F (md_calls.m4) : in wrf_put_var_ti_double
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -7578,7 +7578,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_put_var_ti_double ( Hndl, Element,  Varname, Data, &
                           locCount,  Status )
   ELSE
@@ -7621,7 +7621,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -7635,7 +7635,7 @@ CALL wrf_debug( DEBUG_LVL, "module_io.F (md_calls.m4) : in wrf_put_var_ti_double
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -7736,7 +7736,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_put_var_ti_double ( Hndl, Element,  Varname, Data, &
                           locCount,  Status )
   ELSE
@@ -7781,7 +7781,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -7795,7 +7795,7 @@ locCount = Count
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -7896,7 +7896,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_get_var_ti_integer ( Hndl, Element,  Varname, Data, &
                           locCount, Outcount, Status )
   ELSE
@@ -7939,7 +7939,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -7953,7 +7953,7 @@ locCount = Count
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -8054,7 +8054,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_get_var_ti_integer ( Hndl, Element,  Varname, Data, &
                           locCount, Outcount, Status )
   ELSE
@@ -8099,7 +8099,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -8113,7 +8113,7 @@ locCount = Count
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -8214,7 +8214,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_put_var_ti_integer ( Hndl, Element,  Varname, Data, &
                           locCount,  Status )
   ELSE
@@ -8257,7 +8257,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -8271,7 +8271,7 @@ locCount = Count
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -8372,7 +8372,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_put_var_ti_integer ( Hndl, Element,  Varname, Data, &
                           locCount,  Status )
   ELSE
@@ -8417,7 +8417,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -8431,7 +8431,7 @@ locCount = Count
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -8532,7 +8532,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_get_var_ti_logical ( Hndl, Element,  Varname, Data, &
                           locCount, Outcount, Status )
   ELSE
@@ -8575,7 +8575,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -8589,7 +8589,7 @@ locCount = Count
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -8690,7 +8690,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_get_var_ti_logical ( Hndl, Element,  Varname, Data, &
                           locCount, Outcount, Status )
   ELSE
@@ -8735,7 +8735,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -8749,7 +8749,7 @@ locCount = Count
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -8850,7 +8850,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_put_var_ti_logical ( Hndl, Element,  Varname, Data, &
                           locCount,  Status )
   ELSE
@@ -8893,7 +8893,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -8907,7 +8907,7 @@ locCount = Count
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -9008,7 +9008,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_put_var_ti_logical ( Hndl, Element,  Varname, Data, &
                           locCount,  Status )
   ELSE
@@ -9053,7 +9053,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -9067,7 +9067,7 @@ CALL wrf_debug( DEBUG_LVL, "module_io.F (md_calls.m4) : in wrf_get_var_ti_char_a
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -9168,7 +9168,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_get_var_ti_char ( Hndl, Element,  Varname, Data, &
                            Status )
   ELSE
@@ -9213,7 +9213,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -9227,7 +9227,7 @@ CALL wrf_debug( DEBUG_LVL, "module_io.F (md_calls.m4) : in wrf_put_var_ti_char_a
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -9328,7 +9328,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_put_var_ti_char ( Hndl, Element,  Varname, Data, &
                            Status )
   ELSE
@@ -9374,7 +9374,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -9388,7 +9388,7 @@ locCount = Count
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -9534,7 +9534,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_get_var_td_real ( Hndl, Element, DateStr, Varname, Data, &
                           locCount, Outcount, Status )
   ELSE
@@ -9577,7 +9577,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -9591,7 +9591,7 @@ locCount = Count
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -9737,7 +9737,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_get_var_td_real ( Hndl, Element, DateStr, Varname, Data, &
                           locCount, Outcount, Status )
   ELSE
@@ -9782,7 +9782,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -9796,7 +9796,7 @@ locCount = Count
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -9942,7 +9942,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_put_var_td_real ( Hndl, Element, DateStr, Varname, Data, &
                           locCount,  Status )
   ELSE
@@ -9985,7 +9985,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -9999,7 +9999,7 @@ locCount = Count
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -10145,7 +10145,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_put_var_td_real ( Hndl, Element, DateStr, Varname, Data, &
                           locCount,  Status )
   ELSE
@@ -10190,7 +10190,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -10204,7 +10204,7 @@ CALL wrf_debug( DEBUG_LVL, "module_io.F (md_calls.m4) : in wrf_get_var_td_double
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -10305,7 +10305,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_get_var_td_double ( Hndl, Element, DateStr, Varname, Data, &
                           locCount, Outcount, Status )
   ELSE
@@ -10348,7 +10348,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -10362,7 +10362,7 @@ CALL wrf_debug( DEBUG_LVL, "module_io.F (md_calls.m4) : in wrf_get_var_td_double
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -10463,7 +10463,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_get_var_td_double ( Hndl, Element, DateStr, Varname, Data, &
                           locCount, Outcount, Status )
   ELSE
@@ -10508,7 +10508,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -10522,7 +10522,7 @@ CALL wrf_debug( DEBUG_LVL, "module_io.F (md_calls.m4) : in wrf_put_var_td_double
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -10623,7 +10623,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_put_var_td_double ( Hndl, Element, DateStr, Varname, Data, &
                           locCount,  Status )
   ELSE
@@ -10666,7 +10666,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -10680,7 +10680,7 @@ CALL wrf_debug( DEBUG_LVL, "module_io.F (md_calls.m4) : in wrf_put_var_td_double
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -10781,7 +10781,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_put_var_td_double ( Hndl, Element, DateStr, Varname, Data, &
                           locCount,  Status )
   ELSE
@@ -10826,7 +10826,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -10840,7 +10840,7 @@ locCount = Count
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -10941,7 +10941,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_get_var_td_integer ( Hndl, Element, DateStr, Varname, Data, &
                           locCount, Outcount, Status )
   ELSE
@@ -10984,7 +10984,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -10998,7 +10998,7 @@ locCount = Count
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -11099,7 +11099,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_get_var_td_integer ( Hndl, Element, DateStr, Varname, Data, &
                           locCount, Outcount, Status )
   ELSE
@@ -11144,7 +11144,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -11158,7 +11158,7 @@ locCount = Count
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -11259,7 +11259,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_put_var_td_integer ( Hndl, Element, DateStr, Varname, Data, &
                           locCount,  Status )
   ELSE
@@ -11302,7 +11302,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -11316,7 +11316,7 @@ locCount = Count
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -11417,7 +11417,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_put_var_td_integer ( Hndl, Element, DateStr, Varname, Data, &
                           locCount,  Status )
   ELSE
@@ -11462,7 +11462,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -11476,7 +11476,7 @@ locCount = Count
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -11577,7 +11577,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_get_var_td_logical ( Hndl, Element, DateStr, Varname, Data, &
                           locCount, Outcount, Status )
   ELSE
@@ -11620,7 +11620,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -11634,7 +11634,7 @@ locCount = Count
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -11735,7 +11735,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_get_var_td_logical ( Hndl, Element, DateStr, Varname, Data, &
                           locCount, Outcount, Status )
   ELSE
@@ -11780,7 +11780,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -11794,7 +11794,7 @@ locCount = Count
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -11895,7 +11895,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_put_var_td_logical ( Hndl, Element, DateStr, Varname, Data, &
                           locCount,  Status )
   ELSE
@@ -11938,7 +11938,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -11952,7 +11952,7 @@ locCount = Count
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -12053,7 +12053,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_put_var_td_logical ( Hndl, Element, DateStr, Varname, Data, &
                           locCount,  Status )
   ELSE
@@ -12098,7 +12098,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -12112,7 +12112,7 @@ CALL wrf_debug( DEBUG_LVL, "module_io.F (md_calls.m4) : in wrf_get_var_td_char_a
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -12213,7 +12213,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_get_var_td_char ( Hndl, Element, DateStr, Varname, Data, &
                            Status )
   ELSE
@@ -12258,7 +12258,7 @@ INTEGER ,       INTENT(OUT) :: Status
 INTEGER                     :: len_of_str
 LOGICAL                     :: for_out
 INTEGER, EXTERNAL           :: use_package
-LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
+LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers_for
 INTEGER                     :: locCount
 
 INTEGER io_form , Hndl
@@ -12272,7 +12272,7 @@ CALL wrf_debug( DEBUG_LVL, "module_io.F (md_calls.m4) : in wrf_put_var_td_char_a
 Status = 0
 CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 IF ( Hndl .GT. -1 ) THEN
-  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
+  IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers_for(io_form)) ) THEN
     SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -12373,7 +12373,7 @@ IF ( Hndl .GT. -1 ) THEN
 #endif
       CASE DEFAULT
     END SELECT
-  ELSE IF ( for_out .AND. use_output_servers() ) THEN
+  ELSE IF ( for_out .AND. use_output_servers_for(io_form) ) THEN
     CALL wrf_quilt_put_var_td_char ( Hndl, Element, DateStr, Varname, Data, &
                            Status )
   ELSE

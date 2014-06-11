@@ -91,8 +91,6 @@
     CHARACTER*80 alarmname, timestring, debuggal
     INTEGER seconds, seconds2, iring
 
-    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-
     WRITE(wrf_err_message,*)'output_wrf: begin, fid = ',fid
     CALL wrf_debug( 300 , wrf_err_message )
 
@@ -269,8 +267,6 @@
     WRITE ( wrf_err_message , * ) 'output_wrf: begin, current_date=',current_date
     CALL wrf_debug ( 300 , wrf_err_message )
 
-    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-
     WRITE( message , * ) "OUTPUT FROM " , TRIM(program_name)
     CALL wrf_put_dom_ti_char ( fid , 'TITLE' , TRIM(message) , ierr )
     ! added grib-specific metadata:  Todd Hutchinson 8/21/2005
@@ -378,8 +374,6 @@ endif
        ENDDO
     ENDIF
 
-    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-
     ibuf(1) = config_flags%e_we - config_flags%s_we + 1
     CALL wrf_put_dom_ti_integer ( fid , 'WEST-EAST_GRID_DIMENSION' ,  ibuf , 1 , ierr )
 
@@ -393,8 +387,6 @@ endif
        ibuf(1) = config_flags%e_vert - config_flags%s_vert + 1
        CALL wrf_put_dom_ti_integer ( fid , 'BOTTOM-TOP_GRID_DIMENSION' , ibuf , 1 , ierr )
     END IF
-
-    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
 
 #if (EM_CORE == 1)
     IF (grid%map_proj == 6) THEN
@@ -495,8 +487,6 @@ endif
     END IF
 #endif
 
-    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-
 ! added this metadatum for H. Chuan, NCEP, 030417, JM
 #if (NMM_CORE == 1)
           CALL wrf_put_dom_ti_char ( fid , 'GRIDTYPE',  'E' , ierr )
@@ -570,8 +560,6 @@ endif
          CALL wrf_put_dom_ti_real    ( fid, 'ADAPT_DT_MIN'   , adapt_dt_min  , 1 , ierr)
       END IF
 #endif
-
-      write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
 
       call wrf_put_dom_ti_real    ( fid, 'RADT', radt, 1 , ierr)
       call wrf_put_dom_ti_real    ( fid, 'BLDT', bldt, 1 , ierr)
@@ -674,8 +662,6 @@ endif
 ! added these fields for use by reassembly programs , 010831, JM
 ! modified these fields so "patch" == "domain" when multi-file output
 ! formats are not used.  051018, TBH
-
-    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
 
     ibuf(1) = MAX(ips,ids)
     IF ( .NOT. multi_files ( io_form ) ) ibuf(1) = ids
@@ -786,8 +772,6 @@ endif
        CALL wrf_put_dom_ti_char ( fid , 'MAP_PROJ_CHAR' ,  "NMM Rotated Lat Lon"     , ierr )
     END IF
 
-    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-
     IF(MMINLU(1:4) == 'USGS') THEN
       MMINLU='USGS'
     ENDIF
@@ -851,8 +835,6 @@ endif
        grid%save_topo_from_real=0
     ENDIF
 #endif
-
-    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
 
     IF ( (first_input   .LE. switch .AND. switch .LE. last_input) .OR. &
          (first_history .LE. switch .AND. switch .LE. last_history ) .OR. &

@@ -240,8 +240,6 @@ SUBROUTINE wrf_open_for_write_begin( FileName , grid, SysDepInfo, &
   INTEGER           :: i,j
   INTEGER           :: Comm_compute , Comm_io
 
-  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-
   WRITE(mess,*) 'module_io.F: in wrf_open_for_write_begin, FileName = ',TRIM(FileName)
   CALL wrf_debug( 100, mess )
 
@@ -296,7 +294,6 @@ SUBROUTINE wrf_open_for_write_begin( FileName , grid, SysDepInfo, &
 #endif
 #ifdef PIO
       CASE ( IO_PIO )
-        write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
         WRITE(tstr,"(A,',NTASKS_X=',i10,',MYTASK_X=',i10,',LOCAL_COMMUNICATOR_X=',i10)") &
               TRIM(SysDepInfo),ntasks_x,mytask_x,local_communicator_x
         j=1
@@ -1059,9 +1056,6 @@ SUBROUTINE wrf_inquire_filename ( DataHandle, FileName , FileStatus, Status )
 
   Status = 0
   CALL get_handle ( Hndl, io_form , for_out, DataHandle )
-
-  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-  write(unit=0, fmt='(a,i6)') 'Hndl = ', Hndl
 
   IF ( Hndl .GT. -1 ) THEN
     IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN

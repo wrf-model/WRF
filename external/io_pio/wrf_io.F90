@@ -112,8 +112,8 @@ subroutine ext_pio_open_for_read_begin( FileName, grid, SysDepInfo, DataHandle, 
      return
   endif
 
-  write(unit=0, fmt='(3a,i6)') 'file: ',__FILE__,', line: ', __LINE__
-  write(unit=0, fmt='(2a)') 'DH%TimesName = ', DH%TimesName
+ !write(unit=0, fmt='(3a,i6)') 'file: ',__FILE__,', line: ', __LINE__
+ !write(unit=0, fmt='(2a)') 'DH%TimesName = ', DH%TimesName
 
   stat = pio_inquire_variable(DH%file_handle, DH%vtime, DH%TimesName, XType, StoredDim, DimIDs, NAtts)
   call netcdf_err(stat,Status)
@@ -2853,7 +2853,10 @@ subroutine ext_pio_put_var_td_real_arr(DataHandle,Element,DateStr,Var,Data,Count
     DH%MDVarDimLens(NVar) = Count
     VDims(1) = DH%DimIDs(i)
     VDims(2) = DH%DimUnlimID
-    stat = pio_def_var(DH%file_handle,Name,PIO_REAL,DH%descMDVar(NVar))
+    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+    write(unit=0, fmt='(3a,i6)') 'Define Var <', trim(Var), '> as NVvar:', NVAR
+   !stat = pio_def_var(DH%file_handle,Name,PIO_REAL,DH%descMDVar(NVar))
+    stat = pio_def_var(DH%file_handle,Name,PIO_REAL,DH%descVar(NVar))
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
       write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__,' Element ',Element
@@ -3010,7 +3013,10 @@ subroutine ext_pio_put_var_td_real_sca(DataHandle,Element,DateStr,Var,Data,Count
     DH%MDVarDimLens(NVar) = Count
     VDims(1) = DH%DimIDs(i)
     VDims(2) = DH%DimUnlimID
-    stat = pio_def_var(DH%file_handle,Name,PIO_REAL,DH%descMDVar(NVar))
+    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+    write(unit=0, fmt='(3a,i6)') 'Define Var <', trim(Var), '> as NVvar:', NVAR
+   !stat = pio_def_var(DH%file_handle,Name,PIO_REAL,DH%descMDVar(NVar))
+    stat = pio_def_var(DH%file_handle,Name,PIO_REAL,DH%descVar(NVar))
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
       write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__,' Element ',Element
@@ -3305,7 +3311,10 @@ subroutine ext_pio_put_var_td_double_arr(DataHandle,Element,DateStr,Var,Data,Cou
     DH%MDVarDimLens(NVar) = Count
     VDims(1) = DH%DimIDs(i)
     VDims(2) = DH%DimUnlimID
-    stat = pio_def_var(DH%file_handle,Name,PIO_DOUBLE,DH%descMDVar(NVar))
+    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+    write(unit=0, fmt='(3a,i6)') 'Define Var <', trim(Var), '> as NVvar:', NVAR
+   !stat = pio_def_var(DH%file_handle,Name,PIO_DOUBLE,DH%descMDVar(NVar))
+    stat = pio_def_var(DH%file_handle,Name,PIO_DOUBLE,DH%descVar(NVar))
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
       write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__,' Element ',Element
@@ -3460,7 +3469,10 @@ subroutine ext_pio_put_var_td_double_sca(DataHandle,Element,DateStr,Var,Data,Cou
     DH%MDVarDimLens(NVar) = Count
     VDims(1) = DH%DimIDs(i)
     VDims(2) = DH%DimUnlimID
-    stat = pio_def_var(DH%file_handle,Name,PIO_DOUBLE,DH%descMDVar(NVar))
+    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+    write(unit=0, fmt='(3a,i6)') 'Define Var <', trim(Var), '> as NVvar:', NVAR
+   !stat = pio_def_var(DH%file_handle,Name,PIO_DOUBLE,DH%descMDVar(NVar))
+    stat = pio_def_var(DH%file_handle,Name,PIO_DOUBLE,DH%descVar(NVar))
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
       write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__,' Element ',Element
@@ -3753,7 +3765,10 @@ subroutine ext_pio_put_var_td_integer_arr(DataHandle,Element,DateStr,Var,Data,Co
     DH%MDVarDimLens(NVar) = Count
     VDims(1) = DH%DimIDs(i)
     VDims(2) = DH%DimUnlimID
-    stat = pio_def_var(DH%file_handle,Name,PIO_INT,DH%descMDVar(NVar))
+    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+    write(unit=0, fmt='(3a,i6)') 'Define Var <', trim(Var), '> as NVvar:', NVAR
+   !stat = pio_def_var(DH%file_handle,Name,PIO_INT,DH%descMDVar(NVar))
+    stat = pio_def_var(DH%file_handle,Name,PIO_INT,DH%descVar(NVar))
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
       write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__,' Element ',Element
@@ -3908,7 +3923,10 @@ subroutine ext_pio_put_var_td_integer_sca(DataHandle,Element,DateStr,Var,Data,Co
     DH%MDVarDimLens(NVar) = Count
     VDims(1) = DH%DimIDs(i)
     VDims(2) = DH%DimUnlimID
-    stat = pio_def_var(DH%file_handle,Name,PIO_INT,DH%descMDVar(NVar))
+    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+    write(unit=0, fmt='(3a,i6)') 'Define Var <', trim(Var), '> as NVvar:', NVAR
+   !stat = pio_def_var(DH%file_handle,Name,PIO_INT,DH%descMDVar(NVar))
+    stat = pio_def_var(DH%file_handle,Name,PIO_INT,DH%descVar(NVar))
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
       write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__,' Element ',Element
@@ -4236,7 +4254,10 @@ subroutine ext_pio_put_var_td_logical_arr(DataHandle,Element,DateStr,Var,Data,Co
     DH%MDVarDimLens(NVar) = Count
     VDims(1) = DH%DimIDs(i)
     VDims(2) = DH%DimUnlimID
-    stat = pio_def_var(DH%file_handle,Name,PIO_INT,DH%descMDVar(NVar))
+    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+    write(unit=0, fmt='(3a,i6)') 'Define Var <', trim(Var), '> as NVvar:', NVAR
+   !stat = pio_def_var(DH%file_handle,Name,PIO_INT,DH%descMDVar(NVar))
+    stat = pio_def_var(DH%file_handle,Name,PIO_INT,DH%descVar(NVar))
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
       write(msg,*) 'NetCDF error in ',__FILE__,' ','LOGICAL',', line', __LINE__,' Element ',Element
@@ -4412,7 +4433,10 @@ subroutine ext_pio_put_var_td_logical_sca(DataHandle,Element,DateStr,Var,Data,Co
     DH%MDVarDimLens(NVar) = Count
     VDims(1) = DH%DimIDs(i)
     VDims(2) = DH%DimUnlimID
-    stat = pio_def_var(DH%file_handle,Name,PIO_INT,DH%descMDVar(NVar))
+    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+    write(unit=0, fmt='(3a,i6)') 'Define Var <', trim(Var), '> as NVvar:', NVAR
+   !stat = pio_def_var(DH%file_handle,Name,PIO_INT,DH%descMDVar(NVar))
+    stat = pio_def_var(DH%file_handle,Name,PIO_INT,DH%descVar(NVar))
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
       write(msg,*) 'NetCDF error in ',__FILE__,' ','LOGICAL',', line', __LINE__,' Element ',Element
@@ -4737,7 +4761,10 @@ subroutine ext_pio_put_var_td_char_arr(DataHandle,Element,DateStr,Var,Data,Statu
     DH%MDVarDimLens(NVar) = len(Data)
     VDims(1) = DH%DimIDs(i)
     VDims(2) = DH%DimUnlimID
-    stat = pio_def_var(DH%file_handle,Name,PIO_CHAR,DH%descMDVar(NVar))
+    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+    write(unit=0, fmt='(3a,i6)') 'Define Var <', trim(Var), '> as NVvar:', NVAR
+   !stat = pio_def_var(DH%file_handle,Name,PIO_CHAR,DH%descMDVar(NVar))
+    stat = pio_def_var(DH%file_handle,Name,PIO_CHAR,DH%descVar(NVar))
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
       write(msg,*) 'NetCDF error in ',__FILE__,' ','CHAR',', line', __LINE__,' Element ',Element
@@ -4892,7 +4919,10 @@ subroutine ext_pio_put_var_td_char_sca(DataHandle,Element,DateStr,Var,Data,Statu
     DH%MDVarDimLens(NVar) = len(Data)
     VDims(1) = DH%DimIDs(i)
     VDims(2) = DH%DimUnlimID
-    stat = pio_def_var(DH%file_handle,Name,PIO_CHAR,DH%descMDVar(NVar))
+    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+    write(unit=0, fmt='(3a,i6)') 'Define Var <', trim(Var), '> as NVvar:', NVAR
+   !stat = pio_def_var(DH%file_handle,Name,PIO_CHAR,DH%descMDVar(NVar))
+    stat = pio_def_var(DH%file_handle,Name,PIO_CHAR,DH%descVar(NVar))
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
       write(msg,*) 'NetCDF error in ',__FILE__,' ','CHAR',', line', __LINE__,' Element ',Element
@@ -7340,9 +7370,9 @@ subroutine ext_pio_get_var_td_char_arr(DataHandle,Element,DateStr,Var,Data,Statu
     VStart(2) = TimeIndex
     VCount(1) = Len1
     VCount(2) = 1
-    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-    write(unit=0, fmt='(a,i4)') 'TimeIndex = ', TimeIndex
-    write(unit=0, fmt='(a,i4)') 'Len1 = ', Len1
+   !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+   !write(unit=0, fmt='(a,i4)') 'TimeIndex = ', TimeIndex
+   !write(unit=0, fmt='(a,i4)') 'Len1 = ', Len1
     if(Len1 > len(Data)) then
       Status = WRF_WARN_CHARSTR_GT_LENDATA  
       write(msg,*) 'Warning LEN CHAR STRING > LEN DATA in ',__FILE__,' ','CHAR',', line', __LINE__

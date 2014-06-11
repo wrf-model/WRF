@@ -1204,12 +1204,12 @@ subroutine initialize_pio(grid, DH)
       piostart = grid%piostart
    endif
 
-   write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-   write(unit=0, fmt='(2(a,i6))') 'nprocs = ', nprocs, ', myrank = ', myrank
-   write(unit=0, fmt='(4(a,i6))') 'pioprocs = ', pioprocs, &
-                                ', piostride = ', piostride, &
-                                ', piostart = ', piostart, &
-                                ', pioshift = ', pioshift
+  !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+  !write(unit=0, fmt='(2(a,i6))') 'nprocs = ', nprocs, ', myrank = ', myrank
+  !write(unit=0, fmt='(4(a,i6))') 'pioprocs = ', pioprocs, &
+  !                             ', piostride = ', piostride, &
+  !                             ', piostart = ', piostart, &
+  !                             ', pioshift = ', pioshift
 
   !call PIO_init to initiate iosystem
   !call PIO_init(my_rank, MPI_COMM_WORLD, 4, 0, 4, PIO_rearr_box, iosystem, 1)
@@ -1454,28 +1454,32 @@ subroutine define_pio_iodesc(grid, DH)
       do k = 1, dims3d_land(3)
       do i = its, lite
          npos = (i - ims + 1) + (ime - ims + 1) * (k - 1 + dims3d_land(3) * (j - jms))
-         compdof_3d_land(npos) = i + dims3d_land(1) * (k - 1 + dims3d_land(3) * (j - 1))
+        !compdof_3d_land(npos) = i + dims3d_land(1) * (k - 1 + dims3d_land(3) * (j - 1))
+         compdof_3d_land(npos) = i + dims3d_land(1) * (j - 1 + dims3d_land(2) * (k - 1))
       enddo
       enddo
 
       do k = 1, dims3d_soil(3)
       do i = its, lite
          npos = (i - ims + 1) + (ime - ims + 1) * (k - 1 + dims3d_soil(3) * (j - jms))
-         compdof_3d_soil(npos) = i + dims3d_soil(1) * (k - 1 + dims3d_soil(3) * (j - 1))
+        !compdof_3d_soil(npos) = i + dims3d_soil(1) * (k - 1 + dims3d_soil(3) * (j - 1))
+         compdof_3d_soil(npos) = i + dims3d_soil(1) * (j - 1 + dims3d_soil(2) * (k - 1))
       enddo
       enddo
 
       do k = 1, dims3d_soil_layers(3)
       do i = its, lite
          npos = (i - ims + 1) + (ime - ims + 1) * (k - 1 + dims3d_soil_layers(3) * (j - jms))
-         compdof_3d_soil_layers(npos) = i + dims3d_soil_layers(1) * (k - 1 + dims3d_soil_layers(3) * (j - 1))
+        !compdof_3d_soil_layers(npos) = i + dims3d_soil_layers(1) * (k - 1 + dims3d_soil_layers(3) * (j - 1))
+         compdof_3d_soil_layers(npos) = i + dims3d_soil_layers(1) * (j - 1 + dims3d_soil_layers(2) * (k - 1))
       enddo
       enddo
 
       do k = 1, dims3d_mdl_cpl(3)
       do i = its, lite
          npos = (i - ims + 1) + (ime - ims + 1) * (k - 1 + dims3d_mdl_cpl(3) * (j - jms))
-         compdof_3d_mdl_cpl(npos) = i + dims3d_mdl_cpl(1) * (k - 1 + dims3d_mdl_cpl(3) * (j - 1))
+        !compdof_3d_mdl_cpl(npos) = i + dims3d_mdl_cpl(1) * (k - 1 + dims3d_mdl_cpl(3) * (j - 1))
+         compdof_3d_mdl_cpl(npos) = i + dims3d_mdl_cpl(1) * (j - 1 + dims3d_mdl_cpl(2) * (k - 1))
       enddo
       enddo
    enddo

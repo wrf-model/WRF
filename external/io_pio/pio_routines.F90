@@ -152,6 +152,7 @@ subroutine GetTimeIndex(IO,DataHandle,DateStr,TimeIndex,Status)
   type(wrf_data_handle) ,pointer        :: DH
   integer(KIND=PIO_OFFSET)              :: VStart(2)
   integer(KIND=PIO_OFFSET)              :: VCount(2)
+  integer(KIND=PIO_OFFSET)              :: pioidx
   integer                               :: stat
   integer                               :: i
   character, dimension(DateStrLen, 1)   :: tmpdatestr
@@ -185,7 +186,7 @@ subroutine GetTimeIndex(IO,DataHandle,DateStr,TimeIndex,Status)
     return
   endif
   if(IO == 'write') then
-    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+   !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
 
     TimeIndex = DH%TimeIndex
     if(TimeIndex <= 0) then
@@ -208,8 +209,9 @@ subroutine GetTimeIndex(IO,DataHandle,DateStr,TimeIndex,Status)
     VStart(2) = TimeIndex
     VCount(1) = DateStrLen
     VCount(2) = 1
-    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-   !call pio_setframe(DH%vtime, TimeIndex)
+   !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+    pioidx = TimeIndex
+    call pio_setframe(DH%vtime, pioidx)
     stat = pio_put_var(DH%file_handle, DH%vtime, tmpdatestr)
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
@@ -219,7 +221,7 @@ subroutine GetTimeIndex(IO,DataHandle,DateStr,TimeIndex,Status)
     endif
    !call pio_advanceframe(DH%vtime)
   else
-    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+   !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
     do i=1,MaxTimes
       if(DH%Times(i)==DateStr) then
         Status = WRF_NO_ERR
@@ -234,8 +236,8 @@ subroutine GetTimeIndex(IO,DataHandle,DateStr,TimeIndex,Status)
       endif
     enddo
   endif
-  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-  write(unit=0, fmt='(a)') 'finished GetTimeIndex'
+ !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+ !write(unit=0, fmt='(a)') 'finished GetTimeIndex'
   return
 end subroutine GetTimeIndex
 
@@ -497,12 +499,6 @@ subroutine find_iodesc(DH,MemoryOrder,Stagger,FieldTYpe,whole)
   call LowerCase(Stagger,Stag)
 
   select case (MemOrd)
-    case ('xs','xe','ys','ye','z','c')
-      whole = .true.
-    case ('ysz','yez','xsz', 'xez')
-      write(msg,*) 'PIO DOES NOT support memord: <', MemOrd, '>, in ',__FILE__,', line', __LINE__
-      call wrf_debug ( WARN , TRIM(msg))
-      return
     case ('xzy')
       select case (FieldType)
         case (WRF_REAL)
@@ -524,14 +520,14 @@ subroutine find_iodesc(DH,MemoryOrder,Stagger,FieldTYpe,whole)
                    !write(unit=0, fmt='(a)') 'Select DH%iodesc3d_soil_real'
                  else if(SOIL_LAYERS_VAR == DH%vartype(DH%CurrentVariable)) then
                     DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_soil_layers_real
-                    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-                    write(unit=0, fmt='(a,i6)') 'DH%CurrentVariable = ', DH%CurrentVariable
-                    write(unit=0, fmt='(a)') 'Select DH%iodesc3d_soil_layers_real'
+                   !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+                   !write(unit=0, fmt='(a,i6)') 'DH%CurrentVariable = ', DH%CurrentVariable
+                   !write(unit=0, fmt='(a)') 'Select DH%iodesc3d_soil_layers_real'
                  else if(MDL_CPL_VAR == DH%vartype(DH%CurrentVariable)) then
                     DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_mdl_cpl_real
-                    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-                    write(unit=0, fmt='(a,i6)') 'DH%CurrentVariable = ', DH%CurrentVariable
-                    write(unit=0, fmt='(a)') 'Select DH%iodesc3d_mdl_cpl_real'
+                   !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+                   !write(unit=0, fmt='(a,i6)') 'DH%CurrentVariable = ', DH%CurrentVariable
+                   !write(unit=0, fmt='(a)') 'Select DH%iodesc3d_mdl_cpl_real'
                  else
                     DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_w_real
                  endif
@@ -617,9 +613,9 @@ subroutine find_iodesc(DH,MemoryOrder,Stagger,FieldTYpe,whole)
                  DH%ioVar(DH%CurrentVariable) = DH%iodesc2d_v_real
             case default
                  DH%ioVar(DH%CurrentVariable) = DH%iodesc2d_m_real
-                 write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-                 write(unit=0, fmt='(a,i6)') 'DH%CurrentVariable = ', DH%CurrentVariable
-                 write(unit=0, fmt='(a)') 'Select DH%iodesc2d_m_real'
+                !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+                !write(unit=0, fmt='(a,i6)') 'DH%CurrentVariable = ', DH%CurrentVariable
+                !write(unit=0, fmt='(a)') 'Select DH%iodesc2d_m_real'
           end select
         case (WRF_DOUBLE)
           select case (Stag)
@@ -629,9 +625,9 @@ subroutine find_iodesc(DH,MemoryOrder,Stagger,FieldTYpe,whole)
                  DH%ioVar(DH%CurrentVariable) = DH%iodesc2d_v_double
             case default
                  DH%ioVar(DH%CurrentVariable) = DH%iodesc2d_m_double
-                 write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-                 write(unit=0, fmt='(a,i6)') 'DH%CurrentVariable = ', DH%CurrentVariable
-                 write(unit=0, fmt='(a)') 'Select DH%iodesc2d_m_double'
+                !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+                !write(unit=0, fmt='(a,i6)') 'DH%CurrentVariable = ', DH%CurrentVariable
+                !write(unit=0, fmt='(a)') 'Select DH%iodesc2d_m_double'
           end select
         case (WRF_INTEGER)
           select case (Stag)
@@ -641,9 +637,9 @@ subroutine find_iodesc(DH,MemoryOrder,Stagger,FieldTYpe,whole)
                  DH%ioVar(DH%CurrentVariable) = DH%iodesc2d_v_int
             case default
                  DH%ioVar(DH%CurrentVariable) = DH%iodesc2d_m_int
-                 write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-                 write(unit=0, fmt='(a,i6)') 'DH%CurrentVariable = ', DH%CurrentVariable
-                 write(unit=0, fmt='(a)') 'Select DH%iodesc2d_m_int'
+                !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+                !write(unit=0, fmt='(a,i6)') 'DH%CurrentVariable = ', DH%CurrentVariable
+                !write(unit=0, fmt='(a)') 'Select DH%iodesc2d_m_int'
           end select
         case (WRF_LOGICAL)
           select case (Stag)
@@ -660,6 +656,280 @@ subroutine find_iodesc(DH,MemoryOrder,Stagger,FieldTYpe,whole)
           whole = .true.
           return
       end select
+    case ('xsz')
+      select case (FieldType)
+        case (WRF_REAL)
+          select case (Stag)
+            case ('x')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_xsz_u_real
+            case ('y')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_xsz_v_real
+            case ('z')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_xsz_w_real
+            case default
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_xsz_m_real
+          end select
+        case (WRF_DOUBLE)
+          select case (Stag)
+            case ('x')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_xsz_u_double
+            case ('y')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_xsz_v_double
+            case ('z')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_xsz_w_double
+            case default
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_xsz_m_double
+          end select
+        case (WRF_INTEGER)
+          select case (Stag)
+            case ('x')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_xsz_u_int
+            case ('y')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_xsz_v_int
+            case ('z')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_xsz_w_int
+            case default
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_xsz_m_int
+          end select
+        case (WRF_LOGICAL)
+          select case (Stag)
+            case ('x')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_xsz_u_int
+            case ('y')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_xsz_v_int
+            case ('z')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_xsz_w_int
+            case default
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_xsz_m_int
+          end select
+        case default
+          write(msg,*) 'Warning DATA TYPE NOT FOUND in ',__FILE__,', line', __LINE__
+          call wrf_debug ( WARN , TRIM(msg))
+          whole = .true.
+          return
+      end select
+    case ('xez')
+      select case (FieldType)
+        case (WRF_REAL)
+          select case (Stag)
+            case ('x')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_xez_u_real
+            case ('y')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_xez_v_real
+            case ('z')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_xez_w_real
+            case default
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_xez_m_real
+          end select
+        case (WRF_DOUBLE)
+          select case (Stag)
+            case ('x')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_xez_u_double
+            case ('y')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_xez_v_double
+            case ('z')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_xez_w_double
+            case default
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_xez_m_double
+          end select
+        case (WRF_INTEGER)
+          select case (Stag)
+            case ('x')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_xez_u_int
+            case ('y')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_xez_v_int
+            case ('z')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_xez_w_int
+            case default
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_xez_m_int
+          end select
+        case (WRF_LOGICAL)
+          select case (Stag)
+            case ('x')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_xez_u_int
+            case ('y')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_xez_v_int
+            case ('z')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_xez_w_int
+            case default
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_xez_m_int
+          end select
+        case default
+          write(msg,*) 'Warning DATA TYPE NOT FOUND in ',__FILE__,', line', __LINE__
+          call wrf_debug ( WARN , TRIM(msg))
+          whole = .true.
+          return
+      end select
+    case ('ysz')
+      select case (FieldType)
+        case (WRF_REAL)
+          select case (Stag)
+            case ('x')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_ysz_u_real
+            case ('y')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_ysz_v_real
+            case ('z')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_ysz_w_real
+            case default
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_ysz_m_real
+          end select
+        case (WRF_DOUBLE)
+          select case (Stag)
+            case ('x')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_ysz_u_double
+            case ('y')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_ysz_v_double
+            case ('z')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_ysz_w_double
+            case default
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_ysz_m_double
+          end select
+        case (WRF_INTEGER)
+          select case (Stag)
+            case ('x')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_ysz_u_int
+            case ('y')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_ysz_v_int
+            case ('z')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_ysz_w_int
+            case default
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_ysz_m_int
+          end select
+        case (WRF_LOGICAL)
+          select case (Stag)
+            case ('x')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_ysz_u_int
+            case ('y')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_ysz_v_int
+            case ('z')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_ysz_w_int
+            case default
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_ysz_m_int
+          end select
+        case default
+          write(msg,*) 'Warning DATA TYPE NOT FOUND in ',__FILE__,', line', __LINE__
+          call wrf_debug ( WARN , TRIM(msg))
+          whole = .true.
+          return
+      end select
+    case ('yez')
+      select case (FieldType)
+        case (WRF_REAL)
+          select case (Stag)
+            case ('x')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_yez_u_real
+            case ('y')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_yez_v_real
+            case ('z')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_yez_w_real
+            case default
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_yez_m_real
+          end select
+        case (WRF_DOUBLE)
+          select case (Stag)
+            case ('x')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_yez_u_double
+            case ('y')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_yez_v_double
+            case ('z')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_yez_w_double
+            case default
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_yez_m_double
+          end select
+        case (WRF_INTEGER)
+          select case (Stag)
+            case ('x')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_yez_u_int
+            case ('y')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_yez_v_int
+            case ('z')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_yez_w_int
+            case default
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_yez_m_int
+          end select
+        case (WRF_LOGICAL)
+          select case (Stag)
+            case ('x')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_yez_u_int
+            case ('y')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_yez_v_int
+            case ('z')
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_yez_w_int
+            case default
+                 DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_yez_m_int
+          end select
+        case default
+          write(msg,*) 'Warning DATA TYPE NOT FOUND in ',__FILE__,', line', __LINE__
+          call wrf_debug ( WARN , TRIM(msg))
+          whole = .true.
+          return
+      end select
+    case ('xs')
+      select case (FieldType)
+        case (WRF_REAL)
+             DH%ioVar(DH%CurrentVariable) = DH%iodesc2d_xs_m_real
+        case (WRF_DOUBLE)
+             DH%ioVar(DH%CurrentVariable) = DH%iodesc2d_xs_m_double
+        case (WRF_INTEGER)
+             DH%ioVar(DH%CurrentVariable) = DH%iodesc2d_xs_m_int
+        case (WRF_LOGICAL)
+             DH%ioVar(DH%CurrentVariable) = DH%iodesc2d_xs_m_int
+        case default
+          write(msg,*) 'Warning DATA TYPE NOT FOUND in ',__FILE__,', line', __LINE__
+          call wrf_debug ( WARN , TRIM(msg))
+          whole = .true.
+          return
+      end select
+    case ('xe')
+      select case (FieldType)
+        case (WRF_REAL)
+             DH%ioVar(DH%CurrentVariable) = DH%iodesc2d_xe_m_real
+        case (WRF_DOUBLE)
+             DH%ioVar(DH%CurrentVariable) = DH%iodesc2d_xe_m_double
+        case (WRF_INTEGER)
+             DH%ioVar(DH%CurrentVariable) = DH%iodesc2d_xe_m_int
+        case (WRF_LOGICAL)
+             DH%ioVar(DH%CurrentVariable) = DH%iodesc2d_xe_m_int
+        case default
+          write(msg,*) 'Warning DATA TYPE NOT FOUND in ',__FILE__,', line', __LINE__
+          call wrf_debug ( WARN , TRIM(msg))
+          whole = .true.
+          return
+      end select
+    case ('ys')
+      select case (FieldType)
+        case (WRF_REAL)
+             DH%ioVar(DH%CurrentVariable) = DH%iodesc2d_ys_m_real
+        case (WRF_DOUBLE)
+             DH%ioVar(DH%CurrentVariable) = DH%iodesc2d_ys_m_double
+        case (WRF_INTEGER)
+             DH%ioVar(DH%CurrentVariable) = DH%iodesc2d_ys_m_int
+        case (WRF_LOGICAL)
+             DH%ioVar(DH%CurrentVariable) = DH%iodesc2d_ys_m_int
+        case default
+          write(msg,*) 'Warning DATA TYPE NOT FOUND in ',__FILE__,', line', __LINE__
+          call wrf_debug ( WARN , TRIM(msg))
+          whole = .true.
+          return
+      end select
+    case ('ye')
+      select case (FieldType)
+        case (WRF_REAL)
+             DH%ioVar(DH%CurrentVariable) = DH%iodesc2d_ye_m_real
+        case (WRF_DOUBLE)
+             DH%ioVar(DH%CurrentVariable) = DH%iodesc2d_ye_m_double
+        case (WRF_INTEGER)
+             DH%ioVar(DH%CurrentVariable) = DH%iodesc2d_ye_m_int
+        case (WRF_LOGICAL)
+             DH%ioVar(DH%CurrentVariable) = DH%iodesc2d_ye_m_int
+        case default
+          write(msg,*) 'Warning DATA TYPE NOT FOUND in ',__FILE__,', line', __LINE__
+          call wrf_debug ( WARN , TRIM(msg))
+          whole = .true.
+          return
+      end select
+   !case ('z','c')
+   !  whole = .true.
     case default
       whole = .true.
 #if 0
@@ -703,15 +973,16 @@ subroutine FieldIO(IO,DataHandle,DateStr,Starts,Length,MemoryOrder, &
   integer,dimension(NVarDims)               :: VStart
   integer,dimension(NVarDims)               :: VCount
   type(wrf_data_handle)      ,pointer       :: DH
+  integer(KIND=PIO_OFFSET)                  :: pioidx
 
   write(unit=0, fmt='(/3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
   write(unit=0, fmt='(3a)') 'MemoryOrder: <', trim(MemoryOrder), '>'
   write(unit=0, fmt='(3a)') 'Stagger: <', trim(Stagger), '>'
 
   DH => WrfDataHandles(DataHandle)
-  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+ !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
   call GetTimeIndex(IO,DataHandle,DateStr,TimeIndex,Status)
-  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+ !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
   if(Status /= WRF_NO_ERR) then
     write(msg,*) 'Warning in ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , TRIM(msg))
@@ -719,7 +990,7 @@ subroutine FieldIO(IO,DataHandle,DateStr,Starts,Length,MemoryOrder, &
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
-  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+ !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
   call GetDim(MemoryOrder,NDim,Status)
   VStart(:) = 1
   VCount(:) = 1
@@ -728,11 +999,11 @@ subroutine FieldIO(IO,DataHandle,DateStr,Starts,Length,MemoryOrder, &
   VStart(NDim+1) = TimeIndex
   VCount(NDim+1) = 1
 
-  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+ !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
   fldsize = 1
   do n = 1, NDim + 1
-     write(unit=0, fmt='(2(a,i2,a,i4))') &
-          'VStart(', n, ')=', VStart(n), ', VCount(', n, ')=', VCount(n)
+    !write(unit=0, fmt='(2(a,i2,a,i4))') &
+    !     'VStart(', n, ')=', VStart(n), ', VCount(', n, ')=', VCount(n)
      fldsize = fldsize * VCount(n)
   end do
 
@@ -746,7 +1017,8 @@ subroutine FieldIO(IO,DataHandle,DateStr,Starts,Length,MemoryOrder, &
   write(unit=0, fmt='(a, i8)') 'WRF_INTEGER: ', WRF_INTEGER
   write(unit=0, fmt='(a, l8)') 'whole: ', whole
 
- !call pio_setframe(DH%descVar(DH%CurrentVariable), TimeIndex)
+  pioidx = TimeIndex
+  call pio_setframe(DH%descVar(DH%CurrentVariable), pioidx)
 
   select case (FieldType)
     case (WRF_REAL)
@@ -858,7 +1130,7 @@ subroutine initialize_pio(grid, DH)
 
    DH%Write = 0
 
-   call pio_setdebuglevel(1)
+  !call pio_setdebuglevel(1)
 
    call mpi_comm_size(communicator, nprocs, ierr)
    call mpi_comm_rank(communicator, myrank, ierr)
@@ -869,9 +1141,9 @@ subroutine initialize_pio(grid, DH)
   !                            'myrank = ', myrank
 
    if(grid%pioprocs > nprocs) then
-      write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-      write(unit=0, fmt='(a,i6)') 'nprocs = ', nprocs, &
-                                  'grid%pioprocs = ', grid%pioprocs
+     !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+     !write(unit=0, fmt='(a,i6)') 'nprocs = ', nprocs, &
+     !                            'grid%pioprocs = ', grid%pioprocs
      !Force pioprocs to be nprocs.
       pioprocs = nprocs
    else if(grid%pioprocs < 1) then
@@ -898,8 +1170,8 @@ subroutine initialize_pio(grid, DH)
 
    if(grid%pioshift < 0) then
      !pioshift can from 0, but can not less than 0, usually, we 
-      write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-      write(unit=0, fmt='(a,i6)') 'User provided a pioshift of: ', grid%pioshift
+     !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+     !write(unit=0, fmt='(a,i6)') 'User provided a pioshift of: ', grid%pioshift
       if(grid%piostride > 1) then
          pioshift = 1
       else
@@ -1075,23 +1347,23 @@ subroutine define_pio_iodesc(grid, DH)
 
    dims2d_xb(1) = dims2d(2)
    dims2d_xb(2) = grid%spec_bdy_width
-   dims2d_xb(2) = 1
+   dims2d_xb(3) = 1
 
    dims2d_yb(1) = dims2d(1)
    dims2d_yb(2) = grid%spec_bdy_width
    dims2d_yb(3) = 1
 
-   write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-   write(unit=0, fmt='(a, 6i6)') 'dims1d = ', dims1d
-   write(unit=0, fmt='(a, 6i6)') 'dims2d = ', dims2d
-   write(unit=0, fmt='(a, 6i6)') 'dims3d = ', dims3d
-   write(unit=0, fmt='(a, 6i6)') 'dims3d_land = ', dims3d_land
-   write(unit=0, fmt='(a, 6i6)') 'dims3d_soil = ', dims3d_soil
-   write(unit=0, fmt='(a, 6i6)') 'grid%num_land_cat = ', grid%num_land_cat
-   write(unit=0, fmt='(a, 6i6)') 'grid%num_soil_cat = ', grid%num_soil_cat
-   write(unit=0, fmt='(a, 6i6)') 'grid%num_soil_layers = ', grid%num_soil_layers
-   write(unit=0, fmt='(a, 6i6)') 'grid%num_ext_model_couple_dom = ', grid%num_ext_model_couple_dom
-   write(unit=0, fmt='(a, 6i6)') 'grid%spec_bdy_width = ', grid%spec_bdy_width
+  !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+  !write(unit=0, fmt='(a, 6i6)') 'dims1d = ', dims1d
+  !write(unit=0, fmt='(a, 6i6)') 'dims2d = ', dims2d
+  !write(unit=0, fmt='(a, 6i6)') 'dims3d = ', dims3d
+  !write(unit=0, fmt='(a, 6i6)') 'dims3d_land = ', dims3d_land
+  !write(unit=0, fmt='(a, 6i6)') 'dims3d_soil = ', dims3d_soil
+  !write(unit=0, fmt='(a, 6i6)') 'grid%num_land_cat = ', grid%num_land_cat
+  !write(unit=0, fmt='(a, 6i6)') 'grid%num_soil_cat = ', grid%num_soil_cat
+  !write(unit=0, fmt='(a, 6i6)') 'grid%num_soil_layers = ', grid%num_soil_layers
+  !write(unit=0, fmt='(a, 6i6)') 'grid%num_ext_model_couple_dom = ', grid%num_ext_model_couple_dom
+  !write(unit=0, fmt='(a, 6i6)') 'grid%spec_bdy_width = ', grid%spec_bdy_width
 
    do j = jms, jme
       do i = ims, ime
@@ -1211,7 +1483,7 @@ subroutine define_pio_iodesc(grid, DH)
       do n = 1, grid%spec_bdy_width
       do j = jts, ljte
          npos = j - jms + 1 + (jme - jms + 1) * (n - 1)
-         compdof_2d_xs(npos) = j + dims2d(2) * (n - 1)
+         compdof_2d_xs(npos) = j + dims2d_xb(1) * (n - 1)
       enddo
       enddo
    endif
@@ -1220,35 +1492,35 @@ subroutine define_pio_iodesc(grid, DH)
       do n = 1, grid%spec_bdy_width
       do i = its, lite
          npos = i - ims + 1 + (ime - ims + 1) * (n - 1)
-         compdof_2d_ys(npos) = i + dims2d(1) * (n - 1)
+         compdof_2d_ys(npos) = i + dims2d_yb(1) * (n - 1)
       enddo
       enddo
    endif
 
-   if(dim2d(1) == lite) then
+   if(dims2d(1) == lite) then
       do n = 1, grid%spec_bdy_width
       do j = jts, ljte
          npos = j - jms + 1 + (jme - jms + 1) * (n - 1)
-         compdof_2d_xe(npos) = j + dims2d(2) * (n - 1)
+         compdof_2d_xe(npos) = j + dims2d_xb(1) * (n - 1)
       enddo
       enddo
    endif
 
-   if(dim2d(2) == ljte) then
+   if(dims2d(2) == ljte) then
       do n = 1, grid%spec_bdy_width
       do i = its, lite
          npos = i - ims + 1 + (ime - ims + 1) * (n - 1)
-         compdof_2d_ye(npos) = i + dims2d(1) * (n - 1)
+         compdof_2d_ye(npos) = i + dims2d_yb(1) * (n - 1)
       enddo
       enddo
    endif
 
    if(1 == its) then
       do n = 1, grid%spec_bdy_width
-      do k = kts, kte
+      do k = kts, lkte
       do j = jts, ljte
          npos = j - jms + 1 + (jme - jms + 1) * (k - kms + (kme - kms + 1) * (n - 1))
-         compdof_3d_xsz(npos) = j + dims3d(2) * (k - 1 + dims3d(3) * (n - 1))
+         compdof_3d_xsz(npos) = j + dims3d_xb(1) * (k - kts + dims3d_xb(2) * (n - 1))
       enddo
       enddo
       enddo
@@ -1256,31 +1528,33 @@ subroutine define_pio_iodesc(grid, DH)
 
    if(1 == jts) then
       do n = 1, grid%spec_bdy_width
-      do k = kts, kte
+      do k = kts, lkte
       do i = its, lite
          npos = i - ims + 1 + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (n - 1))
-         compdof_3d_ysz(npos) = i + dims3d(1) * (k - 1 + dims3d(3) * (n - 1))
+         compdof_3d_ysz(npos) = i + dims3d_yb(1) * (k - kts + dims3d_yb(2) * (n - 1))
+      enddo
       enddo
       enddo
    endif
 
-   if(dim2d(1) == lite) then
+   if(dims2d(1) == lite) then
       do n = 1, grid%spec_bdy_width
-      do k = kts, kte
+      do k = kts, lkte
       do j = jts, ljte
          npos = j - jms + 1 + (jme - jms + 1) * (k - kms + (kme - kms + 1) * (n - 1))
-         compdof_3d_xez(npos) = j + dims3d(2) * (k - 1 + dims3d(3) * (n - 1))
+         compdof_3d_xez(npos) = j + dims3d_xb(1) * (k - kts + dims3d_xb(2) * (n - 1))
       enddo
       enddo
       enddo
    endif
 
-   if(dim2d(2) == ljte) then
+   if(dims2d(2) == ljte) then
       do n = 1, grid%spec_bdy_width
-      do k = kts, kte
+      do k = kts, lkte
       do i = its, lite
          npos = i - ims + 1 + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (n - 1))
-         compdof_3d_yez(npos) = i + dims3d(1) * (k - 1 + dims3d(3) * (n - 1))
+         compdof_3d_yez(npos) = i + dims3d_yb(1) * (k - kts + dims3d_yb(2) * (n - 1))
+      enddo
       enddo
       enddo
    endif
@@ -1312,6 +1586,7 @@ subroutine define_pio_iodesc(grid, DH)
    call PIO_initdecomp(DH%iosystem, PIO_real,   dims2d, compdof_2d, DH%iodesc2d_m_real)
    call PIO_initdecomp(DH%iosystem, PIO_double, dims2d, compdof_2d, DH%iodesc2d_m_double)
 
+  !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
    call PIO_initdecomp(DH%iosystem, PIO_int,    dims3d_xb, compdof_3d_xsz, DH%iodesc3d_xsz_m_int)
    call PIO_initdecomp(DH%iosystem, PIO_real,   dims3d_xb, compdof_3d_xsz, DH%iodesc3d_xsz_m_real)
    call PIO_initdecomp(DH%iosystem, PIO_double, dims3d_xb, compdof_3d_xsz, DH%iodesc3d_xsz_m_double)
@@ -1372,10 +1647,10 @@ subroutine define_pio_iodesc(grid, DH)
    dims3d_yb(3) = grid%spec_bdy_width
    dims3d_yb(4) = 1
 
-   write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-   write(unit=0, fmt='(a, 6i6)') 'dims3d = ', dims3d
-   write(unit=0, fmt='(a, 6i6)') 'dims2d = ', dims2d
-   write(unit=0, fmt='(a, 6i6)') 'dims1d = ', dims1d
+  !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+  !write(unit=0, fmt='(a, 6i6)') 'dims3d = ', dims3d
+  !write(unit=0, fmt='(a, 6i6)') 'dims2d = ', dims2d
+  !write(unit=0, fmt='(a, 6i6)') 'dims1d = ', dims1d
 
   !compdof_3d =  0
   !compdof_2d =  0
@@ -1390,6 +1665,24 @@ subroutine define_pio_iodesc(grid, DH)
       do i = ims, ime
          npos = (i - ims + 1) + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (j - jms))
          compdof_3d(npos) = 0
+      enddo
+      enddo
+   enddo
+
+   do n = 1, grid%spec_bdy_width
+      do k = kms, kme
+      do i = ims, ime
+         npos = i - ims + 1 + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (n - 1))
+         compdof_3d_ysz(npos) = 0
+         compdof_3d_yez(npos) = 0
+      enddo
+      enddo
+
+      do k = kms, kme
+      do j = jms, jme
+         npos = j - jms + 1 + (jme - jms + 1) * (k - kms + (kme - kms + 1) * (n - 1))
+         compdof_3d_xsz(npos) = 0
+         compdof_3d_xez(npos) = 0
       enddo
       enddo
    enddo
@@ -1410,10 +1703,10 @@ subroutine define_pio_iodesc(grid, DH)
 
    if(1 == its) then
       do n = 1, grid%spec_bdy_width
-      do k = kts, kte
+      do k = kts, lkte
       do j = jts, ljte
          npos = j - jms + 1 + (jme - jms + 1) * (k - kms + (kme - kms + 1) * (n - 1))
-         compdof_3d_xsz(npos) = j + dims3d(2) * (k - 1 + dims3d(3) * (n - 1))
+         compdof_3d_xsz(npos) = j + dims3d_xb(1) * (k - kts + dims3d_xb(2) * (n - 1))
       enddo
       enddo
       enddo
@@ -1421,31 +1714,33 @@ subroutine define_pio_iodesc(grid, DH)
 
    if(1 == jts) then
       do n = 1, grid%spec_bdy_width
-      do k = kts, kte
+      do k = kts, lkte
       do i = its, lite
          npos = i - ims + 1 + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (n - 1))
-         compdof_3d_ysz(npos) = i + dims3d(1) * (k - 1 + dims3d(3) * (n - 1))
+         compdof_3d_ysz(npos) = i + dims3d_yb(1) * (k - kts + dims3d_yb(2) * (n - 1))
+      enddo
       enddo
       enddo
    endif
 
-   if(dim3d(1) == lite) then
+   if(dims3d(1) == lite) then
       do n = 1, grid%spec_bdy_width
-      do k = kts, kte
+      do k = kts, lkte
       do j = jts, ljte
          npos = j - jms + 1 + (jme - jms + 1) * (k - kms + (kme - kms + 1) * (n - 1))
-         compdof_3d_xez(npos) = j + dims3d(2) * (k - 1 + dims3d(3) * (n - 1))
+         compdof_3d_xez(npos) = j + dims3d_xb(1) * (k - kts + dims3d_xb(2) * (n - 1))
       enddo
       enddo
       enddo
    endif
 
-   if(dim3d(2) == ljte) then
+   if(dims3d(2) == ljte) then
       do n = 1, grid%spec_bdy_width
-      do k = kts, kte
+      do k = kts, lkte
       do i = its, lite
          npos = i - ims + 1 + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (n - 1))
-         compdof_3d_yez(npos) = i + dims3d(1) * (k - 1 + dims3d(3) * (n - 1))
+         compdof_3d_yez(npos) = i + dims3d_yb(1) * (k - kts + dims3d_yb(2) * (n - 1))
+      enddo
       enddo
       enddo
    endif
@@ -1525,10 +1820,28 @@ subroutine define_pio_iodesc(grid, DH)
       enddo
    enddo
 
-   write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-   write(unit=0, fmt='(a,i6)') 'npos = ', npos, &
-                               '(ime - ims + 1) * (jme - jms + 1) * (kme - kms + 1) = ', &
-                                (ime - ims + 1) * (jme - jms + 1) * (kme - kms + 1)
+   do n = 1, grid%spec_bdy_width
+      do k = kms, kme
+      do i = ims, ime
+         npos = i - ims + 1 + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (n - 1))
+         compdof_3d_ysz(npos) = 0
+         compdof_3d_yez(npos) = 0
+      enddo
+      enddo
+
+      do k = kms, kme
+      do j = jms, jme
+         npos = j - jms + 1 + (jme - jms + 1) * (k - kms + (kme - kms + 1) * (n - 1))
+         compdof_3d_xsz(npos) = 0
+         compdof_3d_xez(npos) = 0
+      enddo
+      enddo
+   enddo
+
+  !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+  !write(unit=0, fmt='(a,i6)') 'npos = ', npos, &
+  !                            '(ime - ims + 1) * (jme - jms + 1) * (kme - kms + 1) = ', &
+  !                             (ime - ims + 1) * (jme - jms + 1) * (kme - kms + 1)
 
    do j = jts, ljte
       do i = its, lite
@@ -1546,10 +1859,10 @@ subroutine define_pio_iodesc(grid, DH)
 
    if(1 == its) then
       do n = 1, grid%spec_bdy_width
-      do k = kts, kte
+      do k = kts, lkte
       do j = jts, ljte
          npos = j - jms + 1 + (jme - jms + 1) * (k - kms + (kme - kms + 1) * (n - 1))
-         compdof_3d_xsz(npos) = j + dims3d(2) * (k - 1 + dims3d(3) * (n - 1))
+         compdof_3d_xsz(npos) = j + dims3d_xb(1) * (k - kts + dims3d_xb(2) * (n - 1))
       enddo
       enddo
       enddo
@@ -1557,31 +1870,33 @@ subroutine define_pio_iodesc(grid, DH)
 
    if(1 == jts) then
       do n = 1, grid%spec_bdy_width
-      do k = kts, kte
+      do k = kts, lkte
       do i = its, lite
          npos = i - ims + 1 + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (n - 1))
-         compdof_3d_ysz(npos) = i + dims3d(1) * (k - 1 + dims3d(3) * (n - 1))
+         compdof_3d_ysz(npos) = i + dims3d_yb(1) * (k - kts + dims3d_yb(2) * (n - 1))
+      enddo
       enddo
       enddo
    endif
 
-   if(dim3d(1) == lite) then
+   if(dims3d(1) == lite) then
       do n = 1, grid%spec_bdy_width
-      do k = kts, kte
+      do k = kts, lkte
       do j = jts, ljte
          npos = j - jms + 1 + (jme - jms + 1) * (k - kms + (kme - kms + 1) * (n - 1))
-         compdof_3d_xez(npos) = j + dims3d(2) * (k - 1 + dims3d(3) * (n - 1))
+         compdof_3d_xez(npos) = j + dims3d_xb(1) * (k - kts + dims3d_xb(2) * (n - 1))
       enddo
       enddo
       enddo
    endif
 
-   if(dim3d(2) == ljte) then
+   if(dims3d(2) == ljte) then
       do n = 1, grid%spec_bdy_width
-      do k = kts, kte
+      do k = kts, lkte
       do i = its, lite
          npos = i - ims + 1 + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (n - 1))
-         compdof_3d_yez(npos) = i + dims3d(1) * (k - 1 + dims3d(3) * (n - 1))
+         compdof_3d_yez(npos) = i + dims3d_yb(1) * (k - kts + dims3d_yb(2) * (n - 1))
+      enddo
       enddo
       enddo
    endif
@@ -1655,10 +1970,28 @@ subroutine define_pio_iodesc(grid, DH)
       enddo
    enddo
 
-   write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-   write(unit=0, fmt='(a,i6)') 'npos = ', npos, &
-                               '(ime - ims + 1) * (jme - jms + 1) * (kme - kms + 1) = ', &
-                                (ime - ims + 1) * (jme - jms + 1) * (kme - kms + 1)
+   do n = 1, grid%spec_bdy_width
+      do k = kms, kme
+      do i = ims, ime
+         npos = i - ims + 1 + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (n - 1))
+         compdof_3d_ysz(npos) = 0
+         compdof_3d_yez(npos) = 0
+      enddo
+      enddo
+
+      do k = kms, kme
+      do j = jms, jme
+         npos = j - jms + 1 + (jme - jms + 1) * (k - kms + (kme - kms + 1) * (n - 1))
+         compdof_3d_xsz(npos) = 0
+         compdof_3d_xez(npos) = 0
+      enddo
+      enddo
+   enddo
+
+  !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+  !write(unit=0, fmt='(a,i6)') 'npos = ', npos, &
+  !                            '(ime - ims + 1) * (jme - jms + 1) * (kme - kms + 1) = ', &
+  !                             (ime - ims + 1) * (jme - jms + 1) * (kme - kms + 1)
 
    do j = jts, ljte
    do k = kts, lkte
@@ -1671,10 +2004,10 @@ subroutine define_pio_iodesc(grid, DH)
 
    if(1 == its) then
       do n = 1, grid%spec_bdy_width
-      do k = kts, kte
+      do k = kts, lkte
       do j = jts, ljte
          npos = j - jms + 1 + (jme - jms + 1) * (k - kms + (kme - kms + 1) * (n - 1))
-         compdof_3d_xsz(npos) = j + dims3d(2) * (k - 1 + dims3d(3) * (n - 1))
+         compdof_3d_xsz(npos) = j + dims3d_xb(1) * (k - kts + dims3d_xb(2) * (n - 1))
       enddo
       enddo
       enddo
@@ -1682,31 +2015,33 @@ subroutine define_pio_iodesc(grid, DH)
 
    if(1 == jts) then
       do n = 1, grid%spec_bdy_width
-      do k = kts, kte
+      do k = kts, lkte
       do i = its, lite
          npos = i - ims + 1 + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (n - 1))
-         compdof_3d_ysz(npos) = i + dims3d(1) * (k - 1 + dims3d(3) * (n - 1))
+         compdof_3d_ysz(npos) = i + dims3d_yb(1) * (k - kts + dims3d_yb(2) * (n - 1))
+      enddo
       enddo
       enddo
    endif
 
-   if(dim3d(1) == lite) then
+   if(dims3d(1) == lite) then
       do n = 1, grid%spec_bdy_width
-      do k = kts, kte
+      do k = kts, lkte
       do j = jts, ljte
          npos = j - jms + 1 + (jme - jms + 1) * (k - kms + (kme - kms + 1) * (n - 1))
-         compdof_3d_xez(npos) = j + dims3d(2) * (k - 1 + dims3d(3) * (n - 1))
+         compdof_3d_xez(npos) = j + dims3d_xb(1) * (k - kts + dims3d_xb(2) * (n - 1))
       enddo
       enddo
       enddo
    endif
 
-   if(dim3d(2) == ljte) then
+   if(dims3d(2) == ljte) then
       do n = 1, grid%spec_bdy_width
-      do k = kts, kte
+      do k = kts, lkte
       do i = its, lite
          npos = i - ims + 1 + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (n - 1))
-         compdof_3d_yez(npos) = i + dims3d(1) * (k - 1 + dims3d(3) * (n - 1))
+         compdof_3d_yez(npos) = i + dims3d_yb(1) * (k - kts + dims3d_yb(2) * (n - 1))
+      enddo
       enddo
       enddo
    endif
@@ -1732,8 +2067,8 @@ subroutine define_pio_iodesc(grid, DH)
    call PIO_initdecomp(DH%iosystem, PIO_real,   dims3d_yb, compdof_3d_yez, DH%iodesc3d_yez_w_real)
    call PIO_initdecomp(DH%iosystem, PIO_double, dims3d_yb, compdof_3d_yez, DH%iodesc3d_yez_w_double)
 
-   write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-   write(unit=0, fmt='(a)') 'finished: define_pio_iodesc'
+  !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+  !write(unit=0, fmt='(a)') 'finished: define_pio_iodesc'
 
 end subroutine define_pio_iodesc
 

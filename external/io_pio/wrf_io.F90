@@ -186,11 +186,11 @@ subroutine ext_pio_open_for_read_begin( FileName, grid, SysDepInfo, DataHandle, 
     return
   endif
 
-  write(unit=0, fmt='(3a,i6)') 'file: ',__FILE__,', line: ', __LINE__
-  write(unit=0, fmt='(a, i6)') 'ndims = ', ndims, &
-                               'TotalNumVars = ', TotalNumVars, &
-                               'NAtts = ', NAtts, &
-                               'unlimitedDimID = ', unlimitedDimID
+ !write(unit=0, fmt='(3a,i6)') 'file: ',__FILE__,', line: ', __LINE__
+ !write(unit=0, fmt='(a, i6)') 'ndims = ', ndims, &
+ !                             'TotalNumVars = ', TotalNumVars, &
+ !                             'NAtts = ', NAtts, &
+ !                             'unlimitedDimID = ', unlimitedDimID
 
   NumVars = 0
   do i=1,TotalNumVars
@@ -214,7 +214,7 @@ subroutine ext_pio_open_for_read_begin( FileName, grid, SysDepInfo, DataHandle, 
   DH%CurrentTime     = 0
   DH%TimeIndex       = 0
 
-  write(unit=0, fmt='(3a,i6)') 'file: ',__FILE__,', line: ', __LINE__
+ !write(unit=0, fmt='(3a,i6)') 'file: ',__FILE__,', line: ', __LINE__
   do i = 1, ndims
     DH%DimIDs(i) = i
     stat = pio_inq_dimname(DH%file_handle,i,DH%DimNames(i))
@@ -229,7 +229,7 @@ subroutine ext_pio_open_for_read_begin( FileName, grid, SysDepInfo, DataHandle, 
        DH%DimUnlimName = DH%DimNames(i)
     endif
     
-    write(unit=0, fmt='(a,i2,3a)') 'DH%DimNames(',i,'): <', DH%DimNames(i), '>'
+   !write(unit=0, fmt='(a,i2,3a)') 'DH%DimNames(',i,'): <', DH%DimNames(i), '>'
   enddo
   DH%NumDims = ndims
   return
@@ -422,18 +422,18 @@ SUBROUTINE ext_pio_open_for_write_begin(FileName,grid,SysDepInfo,DataHandle,Stat
   call initialize_pio(grid, DH)
   call define_pio_iodesc(grid, DH)
 
-  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+ !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
 
  !call mpi_info_create( info, ierr )
   stat = pio_CreateFile(DH%iosystem, DH%file_handle, &
                         pio_iotype_pnetcdf, newFileName, PIO_64BIT_OFFSET)
  !call mpi_info_free( info, ierr)
-  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-  write(unit=0, fmt='(2(a,i6))') 'stat = ', stat, ', WRF_NO_ERR = ', WRF_NO_ERR
+ !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+ !write(unit=0, fmt='(2(a,i6))') 'stat = ', stat, ', WRF_NO_ERR = ', WRF_NO_ERR
 
   call netcdf_err(stat,Status)
-  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-  write(unit=0, fmt='(2(a,i6))') 'Status = ', Status, ', WRF_NO_ERR = ', WRF_NO_ERR
+ !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+ !write(unit=0, fmt='(2(a,i6))') 'Status = ', Status, ', WRF_NO_ERR = ', WRF_NO_ERR
 
   if(Status /= WRF_NO_ERR) then
     write(msg,*) 'NetCDF error in ext_pio_open_for_write_begin ',__FILE__,', line', __LINE__
@@ -441,7 +441,7 @@ SUBROUTINE ext_pio_open_for_write_begin(FileName,grid,SysDepInfo,DataHandle,Stat
     return
   endif
 
-  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+ !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
 
  !JPE added for performance
  !stat = nf90_set_fill(DH%file_handle, NF90_NOFILL, i)
@@ -457,7 +457,7 @@ SUBROUTINE ext_pio_open_for_write_begin(FileName,grid,SysDepInfo,DataHandle,Stat
     return
   endif
 
-  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+ !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
   DH%VarNames  (1:MaxVars) = NO_NAME
   DH%MDVarNames(1:MaxVars) = NO_NAME
   do i=1,MaxDims
@@ -466,7 +466,7 @@ SUBROUTINE ext_pio_open_for_write_begin(FileName,grid,SysDepInfo,DataHandle,Stat
     DH%DimLengths(i) = NO_DIM
   enddo
 
-  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+ !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
   DH%DimNames(1) = 'DateStrLen'
   stat = pio_def_dim(DH%file_handle, DH%DimNames(1), DateStrLen, DH%DimIDs(1))
   call netcdf_err(stat,Status)
@@ -476,7 +476,7 @@ SUBROUTINE ext_pio_open_for_write_begin(FileName,grid,SysDepInfo,DataHandle,Stat
     return
   endif
 
-  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+ !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
   VDimIDs(1) = DH%DimIDs(1)
   VDimIDs(2) = DH%DimUnlimID
   stat = pio_def_var(DH%file_handle,DH%TimesName,PIO_CHAR,VDimIDs,DH%vtime)
@@ -488,8 +488,8 @@ SUBROUTINE ext_pio_open_for_write_begin(FileName,grid,SysDepInfo,DataHandle,Stat
   endif
   DH%DimLengths(1) = DateStrLen
 
-  write(unit=0, fmt='(a,i6)') 'finished ext_pio_open_for_write_begin'
-  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+ !write(unit=0, fmt='(a,i6)') 'finished ext_pio_open_for_write_begin'
+ !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
 
   return
 end subroutine ext_pio_open_for_write_begin
@@ -510,8 +510,8 @@ subroutine ext_pio_open_for_write (DatasetName, grid, &
   integer       , intent(out) :: Status
   Status=WRF_WARN_NOOP
   DataHandle = 0    ! dummy setting to quiet warning message
-  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-  write(unit=0, fmt='(a)') 'Call ext_pio_open_for_write'
+ !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+ !write(unit=0, fmt='(a)') 'Call ext_pio_open_for_write'
   return
 end subroutine ext_pio_open_for_write
 
@@ -526,7 +526,7 @@ SUBROUTINE ext_pio_open_for_write_commit(DataHandle, Status)
   integer                           :: i
   integer                           :: stat
 
-  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+ !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
 
   if(WrfIOnotInitialized) then
     Status = WRF_IO_NOT_INITIALIZED 
@@ -551,8 +551,8 @@ SUBROUTINE ext_pio_open_for_write_commit(DataHandle, Status)
   DH%FileStatus  = WRF_FILE_OPENED_FOR_WRITE
   DH%first_operation  = .TRUE.
 
-  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-  write(unit=0, fmt='(a)') 'finished ext_pio_open_for_write_commit'
+ !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+ !write(unit=0, fmt='(a)') 'finished ext_pio_open_for_write_commit'
   return
 end subroutine ext_pio_open_for_write_commit
 
@@ -757,9 +757,9 @@ subroutine ext_pio_get_dom_ti_real_arr(DataHandle,Element,Data,Count,OutCount,St
     call wrf_debug ( WARN , msg)
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_READ) then
     stat = pio_inq_att(DH%file_handle, PIO_GLOBAL, Element, XType, Len)
-    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-    write(unit=0, fmt='(2a)') 'Element: ', trim(Element)
-    write(unit=0, fmt='(a,i6)') 'XType: ', XType, 'PIO_REAL: ', PIO_REAL
+   !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+   !write(unit=0, fmt='(2a)') 'Element: ', trim(Element)
+   !write(unit=0, fmt='(a,i6)') 'XType: ', XType, 'PIO_REAL: ', PIO_REAL
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
       write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__,' Element ',trim(Element)
@@ -812,7 +812,7 @@ subroutine ext_pio_get_dom_ti_real_arr(DataHandle,Element,Data,Count,OutCount,St
     write(msg,*) 'Fatal error BAD FILE STATUS in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( FATAL , msg)
   endif
-  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+ !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
   return
 end subroutine ext_pio_get_dom_ti_real_arr
 
@@ -939,7 +939,7 @@ subroutine ext_pio_get_dom_ti_integer_arr(DataHandle,Element,Data,Count,OutCount
   integer                               :: stat
   integer,               allocatable    :: Buffer(:)
 
-  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+ !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
 
   call GetDH(DataHandle,DH,Status)
   if(Status /= WRF_NO_ERR) then
@@ -953,29 +953,29 @@ subroutine ext_pio_get_dom_ti_integer_arr(DataHandle,Element,Data,Count,OutCount
      return
   ENDIF
 
-  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+ !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
   if(DH%FileStatus == WRF_FILE_NOT_OPENED) then
-    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+   !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
     Status = WRF_WARN_FILE_NOT_OPENED   
     write(msg,*) 'Warning FILE NOT OPENED in ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , msg)
   elseif(DH%FileStatus == WRF_FILE_OPENED_NOT_COMMITTED) then
-    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+   !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
     Status = WRF_WARN_DRYRUN_READ   
     write(msg,*) 'Warning DRYRUN READ in ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , msg)
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_WRITE) then
-    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+   !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
     Status = WRF_WARN_READ_WONLY_FILE   
     write(msg,*) 'Warning READ WRITE ONLY FILE in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( WARN , msg)
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_READ) then
-    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+   !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
     stat = pio_inq_att(DH%file_handle, PIO_GLOBAL, Element, XType, Len)
-    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-    write(unit=0, fmt='(2a)') 'Element: ', trim(Element)
-    write(unit=0, fmt='(a,i6)') 'XType: ', XType, 'PIO_INT: ', PIO_INT
-    write(unit=0, fmt='(a,i6)') 'Len: ', Len, 'Count: ', Count
+   !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+   !write(unit=0, fmt='(2a)') 'Element: ', trim(Element)
+   !write(unit=0, fmt='(a,i6)') 'XType: ', XType, 'PIO_INT: ', PIO_INT
+   !write(unit=0, fmt='(a,i6)') 'Len: ', Len, 'Count: ', Count
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
       write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__,' Element ',trim(Element)
@@ -1002,29 +1002,29 @@ subroutine ext_pio_get_dom_ti_integer_arr(DataHandle,Element,Data,Count,OutCount
       return
     endif
     stat = pio_get_att (DH%file_handle,PIO_GLOBAL,Element,Buffer)
-    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+   !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
       write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__,' Element ',Element
       call wrf_debug ( WARN , msg)
       return
     endif
-    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-    write(unit=0, fmt='(a,i6)') 'Len: ', Len, 'Count: ', Count
-    write(unit=0, fmt='(a,i6)') 'Buffer(1) = ', Buffer(1)
+   !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+   !write(unit=0, fmt='(a,i6)') 'Len: ', Len, 'Count: ', Count
+   !write(unit=0, fmt='(a,i6)') 'Buffer(1) = ', Buffer(1)
     Data(1:min(Len,Count)) = Buffer(1:min(Len,Count))
-    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-    write(unit=0, fmt='(a,i6)') 'Data(1) = ', Data(1)
+   !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+   !write(unit=0, fmt='(a,i6)') 'Data(1) = ', Data(1)
     deallocate(Buffer, STAT=stat)
     if(stat/= WRF_NO_ERR) then
-      write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+     !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
       Status = WRF_ERR_FATAL_DEALLOCATION_ERR 
       write(msg,*) 'Fatal DEALLOCATION ERROR in ',__FILE__,', line', __LINE__
       call wrf_debug ( FATAL , msg)
       return
     endif
-    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+   !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+   !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
     if(Len > Count) then
       OutCount = Count
       Status = WRF_WARN_MORE_DATA_IN_FILE  
@@ -1032,14 +1032,14 @@ subroutine ext_pio_get_dom_ti_integer_arr(DataHandle,Element,Data,Count,OutCount
       OutCount = Len
       Status = WRF_NO_ERR
     endif
-    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+   !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
   else
-    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+   !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
     Status = WRF_ERR_FATAL_BAD_FILE_STATUS  
     write(msg,*)  'Fatal error BAD FILE STATUS in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( FATAL , msg)
   endif
-  write(unit=0, fmt='(3a,i6)') 'end ext_pio_get_dom_ti_integer, in file: ', __FILE__, ', line: ', __LINE__
+ !write(unit=0, fmt='(3a,i6)') 'end ext_pio_get_dom_ti_integer, in file: ', __FILE__, ', line: ', __LINE__
   return
 end subroutine ext_pio_get_dom_ti_integer_arr
 
@@ -1738,15 +1738,15 @@ subroutine ext_pio_put_dom_ti_real_arr(DataHandle,Element,Data,Count,Status)
   integer                               :: i
   real, dimension(1:Count)              :: tmparr
 
-  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-  write(unit=0, fmt='(a,i6)') 'DataHandle = ', DataHandle
-  write(unit=0, fmt='(a,i6)') 'Count = ', Count
-  write(unit=0, fmt='(3a)') 'Element=<', Element, '>'
+ !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+ !write(unit=0, fmt='(a,i6)') 'DataHandle = ', DataHandle
+ !write(unit=0, fmt='(a,i6)') 'Count = ', Count
+ !write(unit=0, fmt='(3a)') 'Element=<', Element, '>'
  !write(unit=0, fmt='(a,f12.6)') 'Data(1) = ', Data(1)
-  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+ !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
 
   tmparr(1:Count) = Data(1:Count)
-  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+ !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
 
   call GetDH(DataHandle,DH,Status)
   if(Status /= WRF_NO_ERR) then
@@ -1754,13 +1754,13 @@ subroutine ext_pio_put_dom_ti_real_arr(DataHandle,Element,Data,Count,Status)
     call wrf_debug ( WARN , msg)
     return
   endif
-  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+ !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
 
 ! Do nothing unless it is time to write time-independent domain metadata.  
   IF(.not. ncd_ok_to_put_dom_ti( DataHandle ) ) THEN
      return
   ENDIF
-  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+ !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
 
   if(DH%FileStatus == WRF_FILE_NOT_OPENED) then
     Status = WRF_WARN_FILE_NOT_OPENED  
@@ -1771,7 +1771,7 @@ subroutine ext_pio_put_dom_ti_real_arr(DataHandle,Element,Data,Count,Status)
     write(msg,*) 'Warning WRITE READ ONLY FILE in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( WARN , msg)
   elseif(DH%FileStatus == WRF_FILE_OPENED_NOT_COMMITTED) then
-    write(unit=0, fmt='(3a,i6)') 'File: ',__FILE__,', line', __LINE__
+   !write(unit=0, fmt='(3a,i6)') 'File: ',__FILE__,', line', __LINE__
 
    !stat = pio_put_att(DH%file_handle,PIO_GLOBAL,Element,tmparr)
     if(1 == Count) then
@@ -1794,7 +1794,7 @@ subroutine ext_pio_put_dom_ti_real_arr(DataHandle,Element,Data,Count,Status)
       call wrf_debug ( WARN , msg)
       return
     endif
-    write(unit=0, fmt='(3a,i6)') 'File: ',__FILE__,', line', __LINE__
+   !write(unit=0, fmt='(3a,i6)') 'File: ',__FILE__,', line', __LINE__
 
     if(1 == Count) then
        stat = pio_put_att(DH%file_handle,PIO_GLOBAL,Element,tmparr(1))
@@ -1820,8 +1820,8 @@ subroutine ext_pio_put_dom_ti_real_arr(DataHandle,Element,Data,Count,Status)
     write(msg,*) 'Fatal error BAD FILE STATUS in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( FATAL , msg)
   endif
-  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-  write(unit=0, fmt='(a)') 'finished ext_pio_put_dom_ti_real_arr'
+ !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+ !write(unit=0, fmt='(a)') 'finished ext_pio_put_dom_ti_real_arr'
   return
 end subroutine ext_pio_put_dom_ti_real_arr
 
@@ -1927,11 +1927,11 @@ subroutine ext_pio_put_dom_ti_integer_arr(DataHandle,Element,Data,Count,Status)
   endif
 
   tmparr(1:Count) = Data(1:Count)
-  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-  write(unit=0, fmt='(a,i6)') 'DataHandle = ', DataHandle
-  write(unit=0, fmt='(a,i6)') 'Count = ', Count
-  write(unit=0, fmt='(a,i6)') 'Data(1) = ', Data(1)
-  write(unit=0, fmt='(3a)') 'Element=<', Element, '>'
+ !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+ !write(unit=0, fmt='(a,i6)') 'DataHandle = ', DataHandle
+ !write(unit=0, fmt='(a,i6)') 'Count = ', Count
+ !write(unit=0, fmt='(a,i6)') 'Data(1) = ', Data(1)
+ !write(unit=0, fmt='(3a)') 'Element=<', Element, '>'
 
 !-Do nothing unless it is time to write time-independent domain metadata.  
   IF(.not. ncd_ok_to_put_dom_ti( DataHandle ) ) THEN
@@ -1988,8 +1988,8 @@ subroutine ext_pio_put_dom_ti_integer_arr(DataHandle,Element,Data,Count,Status)
     write(msg,*) 'Fatal error BAD FILE STATUS in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( FATAL , msg)
   endif
-  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-  write(unit=0, fmt='(a)') 'finished ext_pio_put_dom_ti_integer_arr'
+ !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+ !write(unit=0, fmt='(a)') 'finished ext_pio_put_dom_ti_integer_arr'
   return
 end subroutine ext_pio_put_dom_ti_integer_arr
 
@@ -4497,9 +4497,9 @@ subroutine ext_pio_put_var_ti_char_arr(DataHandle,Element,Var,Data,Status)
   integer                               :: NVar
   character*1                           :: null
 
-  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-  write(unit=0, fmt='(2a)') 'Element = ', Element
-  write(unit=0, fmt='(2a)') 'Var = ', Var
+ !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+ !write(unit=0, fmt='(2a)') 'Element = ', Element
+ !write(unit=0, fmt='(2a)') 'Var = ', Var
  !write(unit=0, fmt='(2a)') 'Data = ', Data
 
   null=char(0)
@@ -4545,8 +4545,8 @@ subroutine ext_pio_put_var_ti_char_arr(DataHandle,Element,Var,Data,Status)
    !  return
    !endif
 
-    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-    write(unit=0, fmt='(a,i6)') 'NVar = ', NVar
+   !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+   !write(unit=0, fmt='(a,i6)') 'NVar = ', NVar
 
     if(len_trim(Data).le.0) then
       stat = pio_put_att(DH%file_handle,DH%descVar(NVar),trim(VarName),null)
@@ -4566,8 +4566,8 @@ subroutine ext_pio_put_var_ti_char_arr(DataHandle,Element,Var,Data,Status)
     return
   endif
 
-  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-  write(unit=0, fmt='(a)') 'finished ext_pio_put_var_ti_char_arr'
+ !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+ !write(unit=0, fmt='(a)') 'finished ext_pio_put_var_ti_char_arr'
   return
 end subroutine ext_pio_put_var_ti_char_arr
 
@@ -7248,10 +7248,10 @@ subroutine ext_pio_get_var_td_char_arr(DataHandle,Element,DateStr,Var,Data,Statu
   integer,               parameter      :: Count = 1
   character(DateStrLen)                 :: Buffer(1)
 
-  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-  write(unit=0, fmt='(3a)') 'Element = <', trim(Element), '>'
-  write(unit=0, fmt='(3a)') 'DateStr = <', trim(DateStr), '>'
-  write(unit=0, fmt='(3a)') 'Var = <', trim(Var), '>'
+ !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+ !write(unit=0, fmt='(3a)') 'Element = <', trim(Element), '>'
+ !write(unit=0, fmt='(3a)') 'DateStr = <', trim(DateStr), '>'
+ !write(unit=0, fmt='(3a)') 'Var = <', trim(Var), '>'
 
   if(Count <= 0) then
     Status = WRF_WARN_ZERO_LENGTH_GET  
@@ -7291,8 +7291,8 @@ subroutine ext_pio_get_var_td_char_arr(DataHandle,Element,DateStr,Var,Data,Statu
     write(msg,*) 'Warning READ WONLY FILE in ',__FILE__,' ','CHAR',', line', __LINE__
     call wrf_debug ( WARN , msg)
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_READ) then
-    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-    write(unit=0, fmt='(3a)') 'Name: <', trim(Name), '>'
+   !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+   !write(unit=0, fmt='(3a)') 'Name: <', trim(Name), '>'
     stat = pio_inq_varid(DH%file_handle,Name,VarID)
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
@@ -7301,10 +7301,10 @@ subroutine ext_pio_get_var_td_char_arr(DataHandle,Element,DateStr,Var,Data,Statu
       return
     endif
     stat = pio_inquire_variable(DH%file_handle,VarID,FName,XType,NDims,DimIDs,NAtts)
-    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-    write(unit=0, fmt='(3a)') 'FName: <', trim(FName), '>'
-    write(unit=0, fmt='(a,i4)') 'NDims = ', NDims
-    write(unit=0, fmt='(a,i4)') 'VarID = ', VarID
+   !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+   !write(unit=0, fmt='(3a)') 'FName: <', trim(FName), '>'
+   !write(unit=0, fmt='(a,i4)') 'NDims = ', NDims
+   !write(unit=0, fmt='(a,i4)') 'VarID = ', VarID
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
       write(msg,*) 'NetCDF error in ',__FILE__,' ','CHAR',', line', __LINE__,' Element ',Element
@@ -7359,14 +7359,14 @@ subroutine ext_pio_get_var_td_char_arr(DataHandle,Element,DateStr,Var,Data,Statu
       return
     endif
     Data = Buffer(1)
-    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-    write(unit=0, fmt='(3a)') 'Buffer: <', Buffer(1), '>'
+   !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+   !write(unit=0, fmt='(3a)') 'Buffer: <', Buffer(1), '>'
   else
     Status = WRF_ERR_FATAL_BAD_FILE_STATUS  
     write(msg,*) 'Fatal error BAD FILE STATUS in ',__FILE__,' ','CHAR',', line', __LINE__ 
   endif
-  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-  write(unit=0, fmt='(a)') 'finished ext_pio_get_var_td_char_arr'
+ !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+ !write(unit=0, fmt='(a)') 'finished ext_pio_get_var_td_char_arr'
   return
 end subroutine ext_pio_get_var_td_char_arr
 
@@ -7817,13 +7817,13 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
     return
   endif
 
-  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-  write(unit=0, fmt='(a,i6)') 'DataHandle: ', DataHandle
-  write(unit=0, fmt='(2a)') 'DateStr: ', trim(DateStr)
-  write(unit=0, fmt='(2a)') 'Var name: ', trim(Var)
-  write(unit=0, fmt='(2a)') 'MemoryOrdIn: ', trim(MemoryOrdIn)
-  write(unit=0, fmt='(2a)') 'MemoryOrder: ', trim(MemoryOrder)
-  call pio_setdebuglevel(1)
+ !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+ !write(unit=0, fmt='(a,i6)') 'DataHandle: ', DataHandle
+ !write(unit=0, fmt='(2a)') 'DateStr: ', trim(DateStr)
+ !write(unit=0, fmt='(2a)') 'Var name: ', trim(Var)
+ !write(unit=0, fmt='(2a)') 'MemoryOrdIn: ', trim(MemoryOrdIn)
+ !write(unit=0, fmt='(2a)') 'MemoryOrder: ', trim(MemoryOrder)
+ !call pio_setdebuglevel(1)
 
   call DateCheck(DateStr,Status)
   if(Status /= WRF_NO_ERR) then
@@ -7842,22 +7842,22 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
   write(msg,*)'ext_pio_write_field: called for ',TRIM(Var)
   CALL wrf_debug( 100, msg )
 
-  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-  write(unit=0, fmt='(a, l6)') 'DH%Write = ', DH%Write
+ !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+ !write(unit=0, fmt='(a, l6)') 'DH%Write = ', DH%Write
 
   Length(1:NDim) = PatchEnd(1:NDim)-PatchStart(1:NDim)+1
   Length_global(1:NDim) = DomainEnd(1:NDim)-DomainStart(1:NDim)+1
 
-  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+ !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
 
   call ExtOrder(MemoryOrder,Length,Status)
   call ExtOrder(MemoryOrder,Length_global,Status)
 
-  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+ !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
 
   call ExtOrderStr(MemoryOrder,DimNames,RODimNames,Status)
 
-  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+ !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
 
   if(DH%FileStatus == WRF_FILE_NOT_OPENED) then
     Status = WRF_WARN_FILE_NOT_OPENED
@@ -7868,7 +7868,7 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
     write(msg,*) 'Warning WRITE READ ONLY FILE in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( WARN , TRIM(msg))
   elseif(DH%FileStatus == WRF_FILE_OPENED_NOT_COMMITTED) then
-    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+   !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
 
     do NVar=1,MaxVars
       if(DH%VarNames(NVar) == VarName ) then
@@ -7880,8 +7880,8 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
         DH%VarNames(NVar) = VarName
         DH%NumVars        = NVar
         DH%CurrentVariable= NVar
-        write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-        write(unit=0, fmt='(a,i6)') 'DH%CurrentVariable = ', DH%CurrentVariable
+       !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+       !write(unit=0, fmt='(a,i6)') 'DH%CurrentVariable = ', DH%CurrentVariable
         exit
       elseif(NVar == MaxVars) then
         Status = WRF_WARN_TOO_MANY_VARIABLES
@@ -7891,10 +7891,10 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
       endif
     enddo
 
-    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-    write(unit=0, fmt='(a,l6)') 'DH%Write = ', DH%Write
-    write(unit=0, fmt='(a,i6)') 'NDim = ', NDim
-    write(unit=0, fmt='(a,i6)') 'DH%NumVars = ', DH%NumVars
+   !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+   !write(unit=0, fmt='(a,l6)') 'DH%Write = ', DH%Write
+   !write(unit=0, fmt='(a,i6)') 'NDim = ', NDim
+   !write(unit=0, fmt='(a,i6)') 'DH%NumVars = ', DH%NumVars
 
     if(DH%Write)then
       DH%Write = .false.
@@ -7907,22 +7907,22 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
       endif
     endif
 
-    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-    write(unit=0, fmt='(a,l6)') 'DH%Write = ', DH%Write
+   !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+   !write(unit=0, fmt='(a,l6)') 'DH%Write = ', DH%Write
 
     do j = 1,NDim
       VDimIDs(j) = 0
-      write(unit=0, fmt='(a,i2,a,i6)') 'Length_global(', j, ')=', Length_global(j)
+     !write(unit=0, fmt='(a,i2,a,i6)') 'Length_global(', j, ')=', Length_global(j)
       if(RODimNames(j) == NullName .or. RODimNames(j) == '') then
         do i=1,MaxDims
           if(DH%DimLengths(i) == Length_global(j)) then
-            write(unit=0, fmt='(a,i2,a,i6)') 'DH%DimLengths(', i, ')=', DH%DimLengths(i)
+           !write(unit=0, fmt='(a,i2,a,i6)') 'DH%DimLengths(', i, ')=', DH%DimLengths(i)
             VDimIDs(j) = DH%DimIDs(i)
-            write(unit=0, fmt='(a,i2,a,i6)') 'VDimIDs(', j, ') = ', VDimIDs(j)
+           !write(unit=0, fmt='(a,i2,a,i6)') 'VDimIDs(', j, ') = ', VDimIDs(j)
             exit
           elseif(DH%DimLengths(i) == NO_DIM) then
-            write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-            write(unit=0, fmt='(a,i2,2a)') 'DH%DimNames(', i, ')=', trim(DH%DimNames(i))
+           !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+           !write(unit=0, fmt='(a,i2,2a)') 'DH%DimNames(', i, ')=', trim(DH%DimNames(i))
             DH%DimLengths(i) = Length_global(j)
            !stat = pio_redef(DH%file_handle)
             stat = pio_def_dim(DH%file_handle, DH%DimNames(i), DH%DimLengths(i), DH%DimIDs(i))
@@ -7933,7 +7933,7 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
               return
             endif
             VDimIDs(j) = DH%DimIDs(i)
-            write(unit=0, fmt='(a,i2,a,i6)') 'VDimIDs(', j, ') = ', VDimIDs(j)
+           !write(unit=0, fmt='(a,i2,a,i6)') 'VDimIDs(', j, ') = ', VDimIDs(j)
             exit
           elseif(i == MaxDims) then
             Status = WRF_WARN_TOO_MANY_DIMS
@@ -7948,7 +7948,7 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
           if (DH%DimNames(i) == RODimNames(j)) then
             if (DH%DimLengths(i) == Length_global(j)) then
               VDimIDs(j) = DH%DimIDs(i)
-              write(unit=0, fmt='(a,i2,a,i6)') 'VDimIDs(', j, ') = ', VDimIDs(j)
+             !write(unit=0, fmt='(a,i2,a,i6)') 'VDimIDs(', j, ') = ', VDimIDs(j)
               NotFound = .false.
               exit
             else
@@ -7965,9 +7965,9 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
             if (DH%DimLengths(i) == NO_DIM) then
               DH%DimNames(i) = RODimNames(j)
               DH%DimLengths(i) = Length_global(j)
-              write(unit=0, fmt='(a,i2,2a)') 'DH%DimNames(', i, ')=', trim(DH%DimNames(i))
-              write(unit=0, fmt='(a,i2,a,i6)') 'DH%DimLengths(', i, ')=', DH%DimLengths(i)
-              write(unit=0, fmt='(a,i2,a,i6)') 'DH%DimIDs(', i, ')=', DH%DimIDs(i)
+             !write(unit=0, fmt='(a,i2,2a)') 'DH%DimNames(', i, ')=', trim(DH%DimNames(i))
+             !write(unit=0, fmt='(a,i2,a,i6)') 'DH%DimLengths(', i, ')=', DH%DimLengths(i)
+             !write(unit=0, fmt='(a,i2,a,i6)') 'DH%DimIDs(', i, ')=', DH%DimIDs(i)
               stat = pio_def_dim(DH%file_handle, DH%DimNames(i), DH%DimLengths(i), DH%DimIDs(i))
               call netcdf_err(stat,Status)
               if(Status /= WRF_NO_ERR) then
@@ -7976,8 +7976,8 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
                 return
               endif
               VDimIDs(j) = DH%DimIDs(i)
-              write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-              write(unit=0, fmt='(a,i2,a,i6)') 'VDimIDs(', j, ') = ', VDimIDs(j)
+             !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+             !write(unit=0, fmt='(a,i2,a,i6)') 'VDimIDs(', j, ') = ', VDimIDs(j)
               exit
             elseif(i == MaxDims) then
               Status = WRF_WARN_TOO_MANY_DIMS
@@ -7989,11 +7989,11 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
         endif
       endif
       DH%VarDimLens(j,DH%NumVars) = Length_global(j)
-      write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+     !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
     enddo
 
-    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-    write(unit=0, fmt='(a,i6)') 'DH%DimUnlimID=', DH%DimUnlimID
+   !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+   !write(unit=0, fmt='(a,i6)') 'DH%DimUnlimID=', DH%DimUnlimID
     VDimIDs(NDim+1) = DH%DimUnlimID
     select case (FieldType)
       case (WRF_REAL)
@@ -8011,10 +8011,10 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
         return
     end select
 
-    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-    write(unit=0, fmt='(a,i6)') 'DH%NumVars = ', DH%NumVars
-    write(unit=0, fmt='(2a)') 'VarName = ', VarName
-    write(unit=0, fmt='(a,i6)') 'XType = ', XType
+   !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+   !write(unit=0, fmt='(a,i6)') 'DH%NumVars = ', DH%NumVars
+   !write(unit=0, fmt='(2a)') 'VarName = ', VarName
+   !write(unit=0, fmt='(a,i6)') 'XType = ', XType
 
     stat = pio_def_var(DH%file_handle,VarName,XType,VDimIDs(1:NDim+1),DH%descVar(DH%NumVars))
     call netcdf_err(stat,Status)
@@ -8024,7 +8024,7 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
       return
     endif
 
-    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+   !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
     stat = pio_put_att(DH%file_handle,DH%descVar(DH%NumVars),'FieldType',FieldType)
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
@@ -8053,7 +8053,7 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
       endif
     endif
 
-    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+   !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
 
     do NVar=1,DH%NumVars
       if(DH%VarNames(NVar) == VarName) then
@@ -8070,16 +8070,16 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
     DH%vartype(DH%CurrentVariable) = NOT_LAND_SOIL_VAR
     fldsize = 1
 
-    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-    write(unit=0, fmt='(a,i6)') 'DH%CurrentVariable = ', DH%CurrentVariable
+   !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+   !write(unit=0, fmt='(a,i6)') 'DH%CurrentVariable = ', DH%CurrentVariable
 
    !stat = pio_inq_varndims(DH%file_handle,DH%descVar(DH%CurrentVariable),NDim)
    !stat = pio_inq_vardimid(DH%file_handle,DH%descVar(DH%CurrentVariable),)
    !do j = 1, NDim
    !   stat = pio_inq_dimlen(DH%file_handle,dimids(n),dimsizes(n))
    !   datasize = datasize*dimsizes(n)
-   !   write(unit=0, fmt='(a,i2,a,i6)') 'dimids(', n, ')=', dimids(n)
-   !   write(unit=0, fmt='(a,i2,a,i6)') 'dimsizes(', n, ')=', dimsizes(n)
+   !  !write(unit=0, fmt='(a,i2,a,i6)') 'dimids(', n, ')=', dimids(n)
+   !  !write(unit=0, fmt='(a,i2,a,i6)') 'dimsizes(', n, ')=', dimsizes(n)
    !end do
 
 
@@ -8101,7 +8101,7 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
       endif
     enddo
 
-    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+   !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
     StoredStart = 1
     StoredStart(1:NDim) = PatchStart(1:NDim)
     call ExtOrder(MemoryOrder,StoredStart,Status)
@@ -8111,61 +8111,61 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
       do i=1,MaxDims
          if(DH%DimLengths(i) == Length_global(n)) then
             VDimIDs(n) = DH%DimIDs(i)
-            write(unit=0, fmt='(a,i2,a,i6)') 'DH%DimLengths(', i, ')=', DH%DimLengths(i)
-            write(unit=0, fmt='(a,i2,a,i6)') 'VDimIDs(', n, ')=', VDimIDs(n)
+           !write(unit=0, fmt='(a,i2,a,i6)') 'DH%DimLengths(', i, ')=', DH%DimLengths(i)
+           !write(unit=0, fmt='(a,i2,a,i6)') 'VDimIDs(', n, ')=', VDimIDs(n)
             exit
           end if
        end do
 
-       write(unit=0, fmt='(a,i2,a,i4)') &
-            'StoredStart(', n, ')=', StoredStart(n)
-       write(unit=0, fmt='(a,i2,a,i4)') &
-            'VDimIDs(', n, ')=', VDimIDs(n)
-       write(unit=0, fmt='(a,i2,a,i4)') &
-            'Length_global(', n, ')=', Length_global(n)
-       write(unit=0, fmt='(a,i2,2a)') &
-            'DimNames(', n, ')=', DimNames(n)
+      !write(unit=0, fmt='(a,i2,a,i4)') &
+      !     'StoredStart(', n, ')=', StoredStart(n)
+      !write(unit=0, fmt='(a,i2,a,i4)') &
+      !     'VDimIDs(', n, ')=', VDimIDs(n)
+      !write(unit=0, fmt='(a,i2,a,i4)') &
+      !     'Length_global(', n, ')=', Length_global(n)
+      !write(unit=0, fmt='(a,i2,2a)') &
+      !     'DimNames(', n, ')=', DimNames(n)
 
-       write(unit=0, fmt='(2(a,i2,a,i4))') &
-            'MemoryStart(', n, ')=', MemoryStart(n), ', MemoryEnd(', n, ')=', MemoryEnd(n)
+      !write(unit=0, fmt='(2(a,i2,a,i4))') &
+      !     'MemoryStart(', n, ')=', MemoryStart(n), ', MemoryEnd(', n, ')=', MemoryEnd(n)
        VStart(n) = MemoryStart(n)
        VCount(n) = MemoryEnd(n) - MemoryStart(n) + 1
-       write(unit=0, fmt='(2(a,i2,a,i4))') &
-            'VStart(', n, ')=', VStart(n), ', VCount(', n, ')=', VCount(n)
+      !write(unit=0, fmt='(2(a,i2,a,i4))') &
+      !     'VStart(', n, ')=', VStart(n), ', VCount(', n, ')=', VCount(n)
        fldsize = fldsize * VCount(n)
 
        if("land_cat_stag" == DimNames(n)) then
           DH%vartype(DH%CurrentVariable) = LAND_CAT_VAR
-          write(unit=0, fmt='(a,i2,a,i4,6x,a,i3)') &
-               'DH%vartype(', DH%CurrentVariable, ')=', DH%vartype(DH%CurrentVariable), &
-               'LAND_CAT_VAR=', LAND_CAT_VAR
-          write(unit=0, fmt='(a,i2,a,i4,6x,a,i3)') &
-               'VCount(', n, ')=', VCount(n), ', grid%num_land_cat=', grid%num_land_cat
+         !write(unit=0, fmt='(a,i2,a,i4,6x,a,i3)') &
+         !     'DH%vartype(', DH%CurrentVariable, ')=', DH%vartype(DH%CurrentVariable), &
+         !     'LAND_CAT_VAR=', LAND_CAT_VAR
+         !write(unit=0, fmt='(a,i2,a,i4,6x,a,i3)') &
+         !     'VCount(', n, ')=', VCount(n), ', grid%num_land_cat=', grid%num_land_cat
        else if("soil_cat_stag" == DimNames(n)) then
           DH%vartype(DH%CurrentVariable) = SOIL_CAT_VAR
-          write(unit=0, fmt='(a,i2,a,i4,6x,a,i3)') &
-               'DH%vartype(', DH%CurrentVariable, ')=', DH%vartype(DH%CurrentVariable), &
-               'SOIL_CAT_VAR=', SOIL_CAT_VAR
-          write(unit=0, fmt='(a,i2,a,i4,6x,a,i3)') &
-               'VCount(', n, ')=', VCount(n), ', grid%num_soil_cat=', grid%num_soil_cat
+         !write(unit=0, fmt='(a,i2,a,i4,6x,a,i3)') &
+         !     'DH%vartype(', DH%CurrentVariable, ')=', DH%vartype(DH%CurrentVariable), &
+         !     'SOIL_CAT_VAR=', SOIL_CAT_VAR
+         !write(unit=0, fmt='(a,i2,a,i4,6x,a,i3)') &
+         !     'VCount(', n, ')=', VCount(n), ', grid%num_soil_cat=', grid%num_soil_cat
        else if("soil_layers_stag" == DimNames(n)) then
           DH%vartype(DH%CurrentVariable) = SOIL_LAYERS_VAR
-          write(unit=0, fmt='(a,i2,a,i4,6x,a,i3)') &
-               'DH%vartype(', DH%CurrentVariable, ')=', DH%vartype(DH%CurrentVariable), &
-               'SOIL_LAYERS_VAR=', SOIL_LAYERS_VAR
-          write(unit=0, fmt='(a,i2,a,i4,6x,a,i3)') &
-               'VCount(', n, ')=', VCount(n), ', grid%num_soil_layers=', grid%num_soil_layers
+         !write(unit=0, fmt='(a,i2,a,i4,6x,a,i3)') &
+         !     'DH%vartype(', DH%CurrentVariable, ')=', DH%vartype(DH%CurrentVariable), &
+         !     'SOIL_LAYERS_VAR=', SOIL_LAYERS_VAR
+         !write(unit=0, fmt='(a,i2,a,i4,6x,a,i3)') &
+         !     'VCount(', n, ')=', VCount(n), ', grid%num_soil_layers=', grid%num_soil_layers
        else if("num_ext_model_couple_dom_stag" == DimNames(n)) then
           DH%vartype(DH%CurrentVariable) = MDL_CPL_VAR
-          write(unit=0, fmt='(a,i2,a,i4,6x,a,i3)') &
-               'DH%vartype(', DH%CurrentVariable, ')=', DH%vartype(DH%CurrentVariable), &
-               'MDL_CPL_VAR=', MDL_CPL_VAR
-          write(unit=0, fmt='(a,i2,a,i4,6x,a,i3)') &
-               'VCount(', n, ')=', VCount(n), ', grid%num_ext_model_couple_dom=', grid%num_ext_model_couple_dom
+         !write(unit=0, fmt='(a,i2,a,i4,6x,a,i3)') &
+         !     'DH%vartype(', DH%CurrentVariable, ')=', DH%vartype(DH%CurrentVariable), &
+         !     'MDL_CPL_VAR=', MDL_CPL_VAR
+         !write(unit=0, fmt='(a,i2,a,i4,6x,a,i3)') &
+         !     'VCount(', n, ')=', VCount(n), ', grid%num_ext_model_couple_dom=', grid%num_ext_model_couple_dom
        endif
     end do
 
-    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+   !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
    
     if(WRF_INTEGER == FieldType) then
       if(1 == fldsize) then
@@ -8191,14 +8191,13 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
     else
        if(1 == NDim) then
           if(VCount(1) > Length(1)) VCount(1) = Length(1)
-          write(unit=0, fmt='(a,i4,a,i4)') &
-               'VStart(1)=', VStart(1), ', VCount(1)=', VCount(1)
+         !write(unit=0, fmt='(a,i4,a,i4)') &
+         !     'VStart(1)=', VStart(1), ', VCount(1)=', VCount(1)
        end if
 
        call FieldIO('write',DataHandle,DateStr,VStart,VCount,MemoryOrder, &
                      Stagger,FieldType,Field,Status)
     end if
-    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
     if(Status /= WRF_NO_ERR) then
       write(msg,*) 'Warning Status = ',Status,' in ',__FILE__,', line', __LINE__ 
       call wrf_debug ( WARN , TRIM(msg))
@@ -8212,9 +8211,6 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
     call wrf_debug ( FATAL , TRIM(msg))
   endif
   DH%first_operation  = .FALSE.
-
-  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-  write(unit=0, fmt='(a)') 'finished ext_pio_write_field'
   return
 end subroutine ext_pio_write_field
 
@@ -8298,9 +8294,10 @@ subroutine ext_pio_read_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
   VarName = Var
   DH%CurrentVariable = DH%CurrentVariable + 1
   DH%VarNames(DH%CurrentVariable) = VarName
-  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-  write(unit=0, fmt='(a,i6)') 'DH%CurrentVariable = ', DH%CurrentVariable
-  write(unit=0, fmt='(2a)') 'Variable name: ', trim(Var)
+
+ !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+ !write(unit=0, fmt='(a,i6)') 'DH%CurrentVariable = ', DH%CurrentVariable
+ !write(unit=0, fmt='(2a)') 'Variable name: ', trim(Var)
 
   if(DH%FileStatus == WRF_FILE_NOT_OPENED) then
     Status = WRF_WARN_FILE_NOT_OPENED
@@ -8444,50 +8441,50 @@ subroutine ext_pio_read_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
 
     call ExtOrder(MemoryOrder,StoredStart,Status)
 
-    do n = 1, NDim
-       write(unit=0, fmt='(a,i2,a,i4)') &
-            'StoredStart(', n, ')=', StoredStart(n)
-    end do
+   !do n = 1, NDim
+   !  !write(unit=0, fmt='(a,i2,a,i4)') &
+   !  !     'StoredStart(', n, ')=', StoredStart(n)
+   !end do
 
     DH%vartype(DH%CurrentVariable) = NOT_LAND_SOIL_VAR
     fldsize = 1
     do n = 1, NDim
-       write(unit=0, fmt='(2(a,i2,a,i4))') &
-            'MemoryStart(', n, ')=', MemoryStart(n), ', MemoryEnd(', n, ')=', MemoryEnd(n)
+      !write(unit=0, fmt='(2(a,i2,a,i4))') &
+      !     'MemoryStart(', n, ')=', MemoryStart(n), ', MemoryEnd(', n, ')=', MemoryEnd(n)
        VStart(n) = MemoryStart(n)
        VCount(n) = MemoryEnd(n) - MemoryStart(n) + 1
-       write(unit=0, fmt='(2(a,i2,a,i4))') &
-            'VStart(', n, ')=', VStart(n), ', VCount(', n, ')=', VCount(n)
+      !write(unit=0, fmt='(2(a,i2,a,i4))') &
+      !     'VStart(', n, ')=', VStart(n), ', VCount(', n, ')=', VCount(n)
        fldsize = fldsize * VCount(n)
 
        if("land_cat_stag" == DH%DimNames(VDimIDs(n))) then
           DH%vartype(DH%CurrentVariable) = LAND_CAT_VAR
-          write(unit=0, fmt='(a,i2,a,i4,6x,a,i3)') &
-               'DH%vartype(', DH%CurrentVariable, ')=', DH%vartype(DH%CurrentVariable), &
-               'LAND_CAT_VAR=', LAND_CAT_VAR
-          write(unit=0, fmt='(a,i2,a,i4,6x,a,i3)') &
-               'VCount(', n, ')=', VCount(n), ', grid%num_land_cat=', grid%num_land_cat
+         !write(unit=0, fmt='(a,i2,a,i4,6x,a,i3)') &
+         !     'DH%vartype(', DH%CurrentVariable, ')=', DH%vartype(DH%CurrentVariable), &
+         !     'LAND_CAT_VAR=', LAND_CAT_VAR
+         !write(unit=0, fmt='(a,i2,a,i4,6x,a,i3)') &
+         !     'VCount(', n, ')=', VCount(n), ', grid%num_land_cat=', grid%num_land_cat
        else if("soil_cat_stag" == DH%DimNames(VDimIDs(n))) then
           DH%vartype(DH%CurrentVariable) = SOIL_CAT_VAR
-          write(unit=0, fmt='(a,i2,a,i4,6x,a,i3)') &
-               'DH%vartype(', DH%CurrentVariable, ')=', DH%vartype(DH%CurrentVariable), &
-               'SOIL_CAT_VAR=', SOIL_CAT_VAR
-          write(unit=0, fmt='(a,i2,a,i4,6x,a,i3)') &
-               'VCount(', n, ')=', VCount(n), ', grid%num_soil_cat=', grid%num_soil_cat
+         !write(unit=0, fmt='(a,i2,a,i4,6x,a,i3)') &
+         !     'DH%vartype(', DH%CurrentVariable, ')=', DH%vartype(DH%CurrentVariable), &
+         !     'SOIL_CAT_VAR=', SOIL_CAT_VAR
+         !write(unit=0, fmt='(a,i2,a,i4,6x,a,i3)') &
+         !     'VCount(', n, ')=', VCount(n), ', grid%num_soil_cat=', grid%num_soil_cat
        else if("soil_layers_stag" == DH%DimNames(VDimIDs(n))) then
           DH%vartype(DH%CurrentVariable) = SOIL_LAYERS_VAR
-          write(unit=0, fmt='(a,i2,a,i4,6x,a,i3)') &
-               'DH%vartype(', DH%CurrentVariable, ')=', DH%vartype(DH%CurrentVariable), &
-               'SOIL_LAYERS_VAR=', SOIL_LAYERS_VAR
-          write(unit=0, fmt='(a,i2,a,i4,6x,a,i3)') &
-               'VCount(', n, ')=', VCount(n), ', grid%num_soil_layers=', grid%num_soil_layers
+         !write(unit=0, fmt='(a,i2,a,i4,6x,a,i3)') &
+         !     'DH%vartype(', DH%CurrentVariable, ')=', DH%vartype(DH%CurrentVariable), &
+         !     'SOIL_LAYERS_VAR=', SOIL_LAYERS_VAR
+         !write(unit=0, fmt='(a,i2,a,i4,6x,a,i3)') &
+         !     'VCount(', n, ')=', VCount(n), ', grid%num_soil_layers=', grid%num_soil_layers
        else if("num_ext_model_couple_dom_stag" == DH%DimNames(VDimIDs(n))) then
           DH%vartype(DH%CurrentVariable) = MDL_CPL_VAR
-          write(unit=0, fmt='(a,i2,a,i4,6x,a,i3)') &
-               'DH%vartype(', DH%CurrentVariable, ')=', DH%vartype(DH%CurrentVariable), &
-               'MDL_CPL_VAR=', MDL_CPL_VAR
-          write(unit=0, fmt='(a,i2,a,i4,6x,a,i3)') &
-               'VCount(', n, ')=', VCount(n), ', grid%num_ext_model_couple_dom=', grid%num_ext_model_couple_dom
+         !write(unit=0, fmt='(a,i2,a,i4,6x,a,i3)') &
+         !     'DH%vartype(', DH%CurrentVariable, ')=', DH%vartype(DH%CurrentVariable), &
+         !     'MDL_CPL_VAR=', MDL_CPL_VAR
+         !write(unit=0, fmt='(a,i2,a,i4,6x,a,i3)') &
+         !     'VCount(', n, ')=', VCount(n), ', grid%num_ext_model_couple_dom=', grid%num_ext_model_couple_dom
        endif
     end do
    

@@ -79,7 +79,7 @@ subroutine deallocHandle(DataHandle, Status)
       DH%Free      =.TRUE.
     endif
 
-    deallocate(DH%iosystem)
+   !deallocate(DH%iosystem)
   ENDIF
   Status = WRF_NO_ERR
 end subroutine deallocHandle
@@ -157,10 +157,10 @@ subroutine GetTimeIndex(IO,DataHandle,DateStr,TimeIndex,Status)
   integer                               :: i
   character, dimension(DateStrLen, 1)   :: tmpdatestr
 
-  write(unit=0, fmt='(/3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-  write(unit=0, fmt='(3a)') 'IO: <', trim(IO), '>'
-  write(unit=0, fmt='(a,i3)') 'DataHandle = ', DataHandle
-  write(unit=0, fmt='(3a)') 'DateStr: <', trim(DateStr), '>'
+ !write(unit=0, fmt='(/3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+ !write(unit=0, fmt='(3a)') 'IO: <', trim(IO), '>'
+ !write(unit=0, fmt='(a,i3)') 'DataHandle = ', DataHandle
+ !write(unit=0, fmt='(3a)') 'DateStr: <', trim(DateStr), '>'
 
   if(len(Datestr) == DateStrLen) then
     tmpdatestr(:,1) = DateStr
@@ -975,9 +975,9 @@ subroutine FieldIO(IO,DataHandle,DateStr,Starts,Length,MemoryOrder, &
   type(wrf_data_handle)      ,pointer       :: DH
   integer(KIND=PIO_OFFSET)                  :: pioidx
 
-  write(unit=0, fmt='(/3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-  write(unit=0, fmt='(3a)') 'MemoryOrder: <', trim(MemoryOrder), '>'
-  write(unit=0, fmt='(3a)') 'Stagger: <', trim(Stagger), '>'
+ !write(unit=0, fmt='(/3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+ !write(unit=0, fmt='(3a)') 'MemoryOrder: <', trim(MemoryOrder), '>'
+ !write(unit=0, fmt='(3a)') 'Stagger: <', trim(Stagger), '>'
 
   DH => WrfDataHandles(DataHandle)
  !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
@@ -1009,13 +1009,13 @@ subroutine FieldIO(IO,DataHandle,DateStr,Starts,Length,MemoryOrder, &
 
   call find_iodesc(DH,MemoryOrder,Stagger,FieldTYpe,whole)
 
-  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-  write(unit=0, fmt='(a,i6)') 'DH%CurrentVariable = ', DH%CurrentVariable
-  write(unit=0, fmt='(a,i6)') 'fldsize =', fldsize
-  write(unit=0, fmt='(a, i8)') 'FieldType: ', FieldType, 'WRF_REAL: ', WRF_REAL
-  write(unit=0, fmt='(a, i8)') 'WRF_DOUBLE: ', WRF_DOUBLE
-  write(unit=0, fmt='(a, i8)') 'WRF_INTEGER: ', WRF_INTEGER
-  write(unit=0, fmt='(a, l8)') 'whole: ', whole
+ !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+ !write(unit=0, fmt='(a,i6)') 'DH%CurrentVariable = ', DH%CurrentVariable
+ !write(unit=0, fmt='(a,i6)') 'fldsize =', fldsize
+ !write(unit=0, fmt='(a, i8)') 'FieldType: ', FieldType, 'WRF_REAL: ', WRF_REAL
+ !write(unit=0, fmt='(a, i8)') 'WRF_DOUBLE: ', WRF_DOUBLE
+ !write(unit=0, fmt='(a, i8)') 'WRF_INTEGER: ', WRF_INTEGER
+ !write(unit=0, fmt='(a, l8)') 'whole: ', whole
 
   pioidx = TimeIndex
   call pio_setframe(DH%descVar(DH%CurrentVariable), pioidx)
@@ -1446,7 +1446,8 @@ subroutine define_pio_iodesc(grid, DH)
       do k = kts, lkte
       do i = its, lite
          npos = (i - ims + 1) + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (j - jms))
-         compdof_3d(npos) = i + dims3d(1) * (k - 1 + dims3d(3) * (j - 1))
+        !compdof_3d(npos) = i + dims3d(1) * (k - 1 + dims3d(3) * (j - 1))
+         compdof_3d(npos) = i + dims3d(1) * (j - 1 + dims3d(2) * (k - 1))
       enddo
       enddo
 
@@ -1696,7 +1697,8 @@ subroutine define_pio_iodesc(grid, DH)
       do k = kts, lkte
       do i = its, lite
          npos = (i - ims + 1) + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (j - jms))
-         compdof_3d(npos) = i + dims3d(1) * (k - 1 + dims3d(3) * (j - 1))
+        !compdof_3d(npos) = i + dims3d(1) * (k - 1 + dims3d(3) * (j - 1))
+         compdof_3d(npos) = i + dims3d(1) * (j - 1 + dims3d(2) * (k - 1))
       enddo
       enddo
    enddo
@@ -1852,7 +1854,8 @@ subroutine define_pio_iodesc(grid, DH)
       do k = kts, lkte
       do i = its, lite
          npos = (i - ims + 1) + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (j - jms))
-         compdof_3d(npos) = i + dims3d(1) * (k - 1 + dims3d(3) * (j - 1))
+        !compdof_3d(npos) = i + dims3d(1) * (k - 1 + dims3d(3) * (j - 1))
+         compdof_3d(npos) = i + dims3d(1) * (j - 1 + dims3d(2) * (k - 1))
       enddo
       enddo
    enddo
@@ -1997,7 +2000,8 @@ subroutine define_pio_iodesc(grid, DH)
    do k = kts, lkte
    do i = its, lite
       npos = (i - ims + 1) + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (j - jms))
-      compdof_3d(npos) = i + dims3d(1) * (k - 1 + dims3d(3) * (j - 1))
+     !compdof_3d(npos) = i + dims3d(1) * (k - 1 + dims3d(3) * (j - 1))
+      compdof_3d(npos) = i + dims3d(1) * (j - 1 + dims3d(2) * (k - 1))
    enddo
    enddo
    enddo

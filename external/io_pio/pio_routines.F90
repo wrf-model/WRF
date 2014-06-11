@@ -150,12 +150,14 @@ subroutine GetTimeIndex(IO,DataHandle,DateStr,TimeIndex,Status)
   integer               ,intent(out)    :: TimeIndex
   integer               ,intent(out)    :: Status
   type(wrf_data_handle) ,pointer        :: DH
-  integer(KIND=PIO_OFFSET)              :: VStart(2)
-  integer(KIND=PIO_OFFSET)              :: VCount(2)
-  integer(KIND=PIO_OFFSET)              :: pioidx
+ !integer(KIND=PIO_OFFSET)              :: VStart(2)
+ !integer(KIND=PIO_OFFSET)              :: VCount(2)
+  integer                               :: VStart(2)
+  integer                               :: VCount(2)
+  integer(PIO_OFFSET)                   :: pioidx
   integer                               :: stat
   integer                               :: i
-  character, dimension(DateStrLen, 1)   :: tmpdatestr
+  character(len=DateStrLen)             :: tmpdatestr(1)
 
  !write(unit=0, fmt='(/3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
  !write(unit=0, fmt='(3a)') 'IO: <', trim(IO), '>'
@@ -163,7 +165,7 @@ subroutine GetTimeIndex(IO,DataHandle,DateStr,TimeIndex,Status)
  !write(unit=0, fmt='(3a)') 'DateStr: <', trim(DateStr), '>'
 
   if(len(Datestr) == DateStrLen) then
-    tmpdatestr(:,1) = DateStr
+    tmpdatestr = DateStr
   else
     write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
     write(unit=0, fmt='(3a)') 'IO: <', trim(IO), '>'
@@ -209,10 +211,13 @@ subroutine GetTimeIndex(IO,DataHandle,DateStr,TimeIndex,Status)
     VStart(2) = TimeIndex
     VCount(1) = DateStrLen
     VCount(2) = 1
-   !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+    write(unit=0, fmt='(3a,i6)') 'DateStr: <', trim(DateStr), '>, TimeIndex =', TimeIndex
     pioidx = TimeIndex
-    call pio_setframe(DH%vtime, pioidx)
-    stat = pio_put_var(DH%file_handle, DH%vtime, tmpdatestr)
+   !call pio_setframe(DH%vtime, pioidx)
+   !stat = pio_put_var(DH%file_handle, DH%vtime, tmpdatestr)
+    stat = pio_put_var(DH%file_handle, DH%vtime, VStart, VCount, tmpdatestr)
+   ! stat = pio_put_var(DH%file_handle, DH%vtime, (/TimeIndex/), tmpdatestr)
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
       write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__ 

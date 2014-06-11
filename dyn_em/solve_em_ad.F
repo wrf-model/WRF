@@ -4777,8 +4777,8 @@ BENCH_START(adj_micro_driver_tim)
       &        , TBPVS_STATE=grid%tbpvs_state                             & ! etampnew
       &        , TBPVS0_STATE=grid%tbpvs0_state                           & ! etampnew
       &        , QV_CURR=moist(ims,kms,jms,P_QV),QV_CURRB=a_moist(ims,kms,jms,P_QV), F_QV=F_QV               &
-      &        , QC_CURR=moist(ims,kms,jms,P_QC), F_QC=F_QC               &
-      &        , QR_CURR=moist(ims,kms,jms,P_QR), F_QR=F_QR               &
+      &        , QC_CURR=moist(ims,kms,jms,P_QC),QC_CURRB=a_moist(ims,kms,jms,P_QC), F_QC=F_QC               &
+      &        , QR_CURR=moist(ims,kms,jms,P_QR),QR_CURRB=a_moist(ims,kms,jms,P_QR), F_QR=F_QR               &
       &        , QI_CURR=moist(ims,kms,jms,P_QI), F_QI=F_QI               &
       &        , QS_CURR=moist(ims,kms,jms,P_QS), F_QS=F_QS               &
       &        , QG_CURR=moist(ims,kms,jms,P_QG), F_QG=F_QG               &

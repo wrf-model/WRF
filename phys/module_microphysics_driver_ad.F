@@ -35,7 +35,7 @@ SUBROUTINE A_MICROPHYSICS_DRIVER(th, thb, rho, rhob, pi_phy, pi_phyb, p&
 &  cldfra_mp_all, cldfrai, cldfral, cldfra_conv, alt, accum_mode, &
 &  aitken_mode, coarse_mode, icwmrsh3d, icwmrdp3d, shfrc3d, cmfmc3d, &
 &  cmfmc2_3d, config_flags, fnm, fnp, rh_old_mp, lcd_old_mp, qv_curr, &
-&  qv_currb, qc_curr, qr_curr, qi_curr, qs_curr, qg_curr, qndrop_curr, &
+&  qv_currb, qc_curr, qc_currb, qr_curr, qr_currb, qi_curr, qs_curr, qg_curr, qndrop_curr, &
 &  qni_curr, qh_curr, qnh_curr, qzr_curr, qzi_curr, qzs_curr, qzg_curr, &
 &  qzh_curr, qns_curr, qnr_curr, qng_curr, qnn_curr, qnc_curr, qvolg_curr&
 &  , f_qv, f_qc, f_qr, f_qi, f_qs, f_qg, f_qndrop, f_qni, f_qns, f_qnr, &
@@ -63,6 +63,7 @@ SUBROUTINE A_MICROPHYSICS_DRIVER(th, thb, rho, rhob, pi_phy, pi_phyb, p&
 
    USE module_mp_nconvp    !  added by Zhuxiao
    USE a_module_mp_nconvp    !  added by Zhuxiao
+   USE a_module_mp_mkessler
 
 ! For checking model timestep is history time (for radar reflectivity)
    USE module_utility, ONLY: WRFU_Clock, WRFU_Alarm
@@ -312,7 +313,7 @@ SUBROUTINE A_MICROPHYSICS_DRIVER(th, thb, rho, rhob, pi_phy, pi_phyb, p&
 &  qi_curr, qs_curr, qg_curr, qt_curr, qndrop_curr, qni_curr, qh_curr, &
 &  qnh_curr, qns_curr, qnr_curr, qng_curr, qnn_curr, qnc_curr, qzr_curr, &
 &  qzi_curr, qzs_curr, qzg_curr, qzh_curr, qvolg_curr
-  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), OPTIONAL :: qv_currb
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), OPTIONAL :: qv_currb, qc_currb, qr_currb
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), OPTIONAL, INTENT(IN) :: &
 &  qrcuten, qscuten, qicuten
   REAL, DIMENSION(ims:ime, jms:jme), OPTIONAL, INTENT(IN) :: mu
@@ -415,6 +416,15 @@ SUBROUTINE A_MICROPHYSICS_DRIVER(th, thb, rho, rhob, pi_phy, pi_phyb, p&
         CALL PUSHCONTROL1B(1)
       END IF
       SELECT CASE  (mp_physics) 
+      CASE (MKESSLERSCHEME)
+           IF ( PRESENT( QV_CURR ) .AND. PRESENT( QC_CURR ) .AND.  &
+                                         PRESENT( QR_CURR ) .AND.  &
+                PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV ) .AND.  &
+                                         PRESENT( Z       ))  THEN
+             CALL PUSHCONTROL2B(3)
+           ELSE
+             CALL PUSHCONTROL2B(1)
+           END IF
       CASE (lscondscheme) 
 !    Added by Zhuxiao,  lscond (simplified Large-scale condensation scheme by Jimy )
         IF (PRESENT(qv_curr) .AND. PRESENT(rainnc) .AND. PRESENT(rainncv&
@@ -441,7 +451,7 @@ SUBROUTINE A_MICROPHYSICS_DRIVER(th, thb, rho, rhob, pi_phy, pi_phyb, p&
     DO ij=num_tiles,1,-1
       CALL POPCONTROL2B(branch)
       IF (branch .NE. 0) THEN
-        IF (branch .NE. 1) THEN
+        IF (branch .NE. 1 .and. branch .NE. 3) THEN
           CALL POPREAL8ARRAY(th, (ime-ims+1)*(kme-kms+1)*(jme-jms+1))
           CALL POPREAL8ARRAY(qv_curr, (ime-ims+1)*(kme-kms+1)*(jme-jms+1&
 &                       ))
@@ -455,7 +465,26 @@ SUBROUTINE A_MICROPHYSICS_DRIVER(th, thb, rho, rhob, pi_phy, pi_phyb, p&
 &                  , kms=kms, kme=kme, its=its, ite=ite, jts=jts, jte=jte&
 &                  , kts=kts, kte=kte)
         END IF
+        IF (branch .NE. 1 .and. branch .NE. 2) THEN
+            CALL a_mkessler(                                        &
+               T=th,TB=thb                                              &
+              ,QV=qv_curr,QVB=qv_currb                                        &
+              ,QC=qc_curr,QCB=qc_currb                                        &
+              ,QR=qr_curr,QRB=qr_currb                                        &
+              ,P=p,PB=pb                                               &
+              ,RHO=rho, RHOB=rhob, PII=pi_phy,PIIB=pi_phyb, DT_IN=dt, Z=z, XLV=xlv, CP=cp &
+              ,EP2=ep_2,SVP1=svp1,SVP2=svp2                      &
+              ,SVP3=svp3,SVPT0=svpt0,RHOWATER=rhowater           &
+              ,DZ8W=dz8w                                         &
+              ,RAINNC=rainnc,RAINNCV=rainncv                     &
+              ,RAINNCB=rainncb,RAINNCVB=rainncvb                     &
+              ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
+              ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
+              ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
+                                                                 )
+          ENDIF
       END IF
+
       CALL POPCONTROL1B(branch)
       IF (branch .EQ. 0) THEN
         CALL POPINTEGER4(jte)

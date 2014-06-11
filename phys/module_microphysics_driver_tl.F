@@ -33,7 +33,7 @@ SUBROUTINE G_MICROPHYSICS_DRIVER(th, thd, rho, rhod, pi_phy, pi_phyd, p&
 &  cldfra_mp_all, cldfrai, cldfral, cldfra_conv, alt, accum_mode, &
 &  aitken_mode, coarse_mode, icwmrsh3d, icwmrdp3d, shfrc3d, cmfmc3d, &
 &  cmfmc2_3d, config_flags, fnm, fnp, rh_old_mp, lcd_old_mp, qv_curr, &
-&  qv_currd, qc_curr, qr_curr, qi_curr, qs_curr, qg_curr, qndrop_curr, &
+&  qv_currd, qc_curr, qc_currd, qr_curr, qr_currd, qi_curr, qs_curr, qg_curr, qndrop_curr, &
 &  qni_curr, qh_curr, qnh_curr, qzr_curr, qzi_curr, qzs_curr, qzg_curr, &
 &  qzh_curr, qns_curr, qnr_curr, qng_curr, qnn_curr, qnc_curr, qvolg_curr&
 &  , f_qv, f_qc, f_qr, f_qi, f_qs, f_qg, f_qndrop, f_qni, f_qns, f_qnr, &
@@ -58,6 +58,7 @@ SUBROUTINE G_MICROPHYSICS_DRIVER(th, thd, rho, rhod, pi_phy, pi_phyd, p&
 ! *** add new modules of schemes here
 
    USE g_module_mp_nconvp    !  added by Zhuxiao
+   USE g_module_mp_mkessler
 
 ! For checking model timestep is history time (for radar reflectivity)
    USE module_utility, ONLY: WRFU_Clock, WRFU_Alarm
@@ -309,7 +310,7 @@ SUBROUTINE G_MICROPHYSICS_DRIVER(th, thd, rho, rhod, pi_phy, pi_phyd, p&
 &  qnh_curr, qns_curr, qnr_curr, qng_curr, qnn_curr, qnc_curr, qzr_curr, &
 &  qzi_curr, qzs_curr, qzg_curr, qzh_curr, qvolg_curr
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), OPTIONAL, INTENT(INOUT) ::&
-&  qv_currd
+&  qv_currd, qc_currd, qr_currd
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), OPTIONAL, INTENT(IN) :: &
 &  qrcuten, qscuten, qicuten
   REAL, DIMENSION(ims:ime, jms:jme), OPTIONAL, INTENT(IN) :: mu
@@ -395,6 +396,36 @@ SUBROUTINE G_MICROPHYSICS_DRIVER(th, thd, rho, rhod, pi_phy, pi_phyd, p&
       IF (PRESENT(precs)) precs(its:ite, kts:kte, jts:jte) = 0.
       IF (PRESENT(precg)) precg(its:ite, kts:kte, jts:jte) = 0.
       SELECT CASE  (mp_physics) 
+
+        CASE (MKESSLERSCHEME)
+             CALL wrf_debug ( 100 , 'microphysics_driver: calling g_mkessler' )
+             IF ( PRESENT( QV_CURR ) .AND. PRESENT( QC_CURR ) .AND.  &
+                                           PRESENT( QR_CURR ) .AND.  &
+                  PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV ) .AND.  &
+                                           PRESENT( Z       ))  THEN
+               CALL g_mkessler(                                        &
+                  T=th,TD=thd                                              &
+                 ,QV=qv_curr,QVD=qv_currd                                  &
+                 ,QC=qc_curr,QCD=qc_currd                                  &
+                 ,QR=qr_curr,QRD=qr_currd                                  &
+                 ,P=p,PD=pd                                               &
+                 ,RHO=rho, RHOD=rhod, PII=pi_phy,PIID=pi_phyd, DT_IN=dt, Z=z &
+                 ,XLV=xlv, CP=cp &
+                 ,EP2=ep_2,SVP1=svp1,SVP2=svp2                      &
+                 ,SVP3=svp3,SVPT0=svpt0,RHOWATER=rhowater           &
+                 ,DZ8W=dz8w                                         &
+                 ,RAINNC=rainnc,RAINNCV=rainncv                     &
+                 ,RAINNCD=rainncd,RAINNCVD=rainncvd                     &
+                 ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
+                 ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
+                 ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
+                                                                    )
+
+             ELSE
+                CALL wrf_error_fatal ( 'arguments not present for calling g_mkessler' )
+             ENDIF
+
+
       CASE (lscondscheme) 
 !    Added by Zhuxiao,  lscond (simplified Large-scale condensation scheme by Jimy )
         CALL WRF_DEBUG(100, 'microphysics_driver: calling lscond')

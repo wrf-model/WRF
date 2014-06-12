@@ -495,7 +495,8 @@ IF ( config_flags%check_TL .or. config_flags%check_AD ) THEN
    ! Force to turn off history output in this case
    CALL WRFU_AlarmRingerOff( head_grid%alarms( HISTORY_ALARM ), rc=rc )
    IF ( config_flags%check_TL ) THEN
-      IF ( config_flags%mp_physics .GT. 0 ) CALL nl_set_mp_physics (head_grid%id, 98)
+      IF ( config_flags%mp_physics .NE. 0 .and. config_flags%mp_physics .NE. 99 .and. &
+           config_flags%mp_physics .NE. 98 ) CALL nl_set_mp_physics (head_grid%id, config_flags%mp_physics_ad)
       IF ( config_flags%bl_pbl_physics .GT. 0 ) CALL nl_set_bl_pbl_physics (head_grid%id, 98)
       IF ( config_flags%cu_physics .GT. 0 ) CALL nl_set_cu_physics (head_grid%id, 98)
       CALL nl_set_ra_lw_physics (head_grid%id, 0)
@@ -669,7 +670,8 @@ IF ( config_flags%check_TL .or. config_flags%check_AD ) THEN
    CALL nl_set_io_form_auxinput6 ( head_grid%id, 2 )
    CALL nl_set_frames_per_auxinput6 ( head_grid%id, 1 )
 
-   IF ( config_flags%mp_physics .GT. 0 ) CALL nl_set_mp_physics (head_grid%id, 98)
+   IF ( config_flags%mp_physics .NE. 0 .and. config_flags%mp_physics .NE. 99 .and. &
+        config_flags%mp_physics .NE. 98 ) CALL nl_set_mp_physics (head_grid%id, config_flags%mp_physics_ad)
    IF ( config_flags%bl_pbl_physics .GT. 0 ) CALL nl_set_bl_pbl_physics (head_grid%id, 98)
    IF ( config_flags%cu_physics .GT. 0 ) CALL nl_set_cu_physics (head_grid%id, 98)
    CALL nl_set_ra_lw_physics (head_grid%id, 0)
@@ -864,7 +866,8 @@ IF ( config_flags%check_TL .or. config_flags%check_AD ) THEN
 
    ! Force to turn off history output in this case
    CALL WRFU_AlarmRingerOff( head_grid%alarms( HISTORY_ALARM ), rc=rc )
-   IF ( config_flags%mp_physics .GT. 0 ) CALL nl_set_mp_physics (head_grid%id, 98)
+   IF ( config_flags%mp_physics .NE. 0 .and. config_flags%mp_physics .NE. 99 .and. &
+        config_flags%mp_physics .NE. 98 ) CALL nl_set_mp_physics (head_grid%id, config_flags%mp_physics_ad)
    IF ( config_flags%bl_pbl_physics .GT. 0 ) CALL nl_set_bl_pbl_physics (head_grid%id, 98)
    IF ( config_flags%cu_physics .GT. 0 ) CALL nl_set_cu_physics (head_grid%id, 98)
    CALL nl_set_ra_lw_physics (head_grid%id, 0)
@@ -1442,6 +1445,11 @@ ENDIF
       head_grid%rainnc = 0.0
       head_grid%rainncv = 0.0
    ENDIF
+   IF ( model_config_rec%mp_physics(head_grid%id) .EQ. MKESSLERSCHEME ) THEN
+      head_grid%h_diabatic = 0.0
+      head_grid%rainnc = 0.0
+      head_grid%rainncv = 0.0
+   ENDIF
    IF ( model_config_rec%cu_physics(head_grid%id) .EQ. DUCUSCHEME ) THEN
       head_grid%rthcuten = 0.0
       head_grid%rqvcuten = 0.0
@@ -1565,7 +1573,8 @@ ENDIF
    CALL nl_set_io_form_auxinput6 ( head_grid%id, 2 )
    CALL nl_set_frames_per_auxinput6 ( head_grid%id, 1 )
 
-   IF ( config_flags%mp_physics .GT. 0 ) CALL nl_set_mp_physics (head_grid%id, 98)
+   IF ( config_flags%mp_physics .NE. 0 .and. config_flags%mp_physics .NE. 99 .and. &
+        config_flags%mp_physics .NE. 98 ) CALL nl_set_mp_physics (head_grid%id, config_flags%mp_physics_ad)
    IF ( config_flags%bl_pbl_physics .GT. 0 ) CALL nl_set_bl_pbl_physics (head_grid%id, 98)
    IF ( config_flags%cu_physics .GT. 0 ) CALL nl_set_cu_physics (head_grid%id, 0)
    CALL nl_set_ra_lw_physics (head_grid%id, 0)
@@ -1879,7 +1888,8 @@ ENDIF
    CALL nl_set_io_form_auxinput6 ( head_grid%id, 2 )
    CALL nl_set_frames_per_auxinput6 ( head_grid%id, 1 )
 
-   IF ( config_flags%mp_physics .GT. 0 ) CALL nl_set_mp_physics (head_grid%id, 98)
+   IF ( config_flags%mp_physics .NE. 0 .and. config_flags%mp_physics .NE. 99 .and. &
+        config_flags%mp_physics .NE. 98 ) CALL nl_set_mp_physics (head_grid%id, config_flags%mp_physics_ad)
    IF ( config_flags%bl_pbl_physics .GT. 0 ) CALL nl_set_bl_pbl_physics (head_grid%id, 98)
    IF ( config_flags%cu_physics .GT. 0 ) CALL nl_set_cu_physics (head_grid%id, 0)
    CALL nl_set_ra_lw_physics (head_grid%id, 0)
@@ -1975,6 +1985,11 @@ ENDIF
       head_grid%rqvblten = 0.0
    ENDIF
    IF ( model_config_rec%mp_physics(head_grid%id) .EQ. LSCONDSCHEME ) THEN
+      head_grid%h_diabatic = 0.0
+      head_grid%rainnc = 0.0
+      head_grid%rainncv = 0.0
+   ENDIF
+   IF ( model_config_rec%mp_physics(head_grid%id) .EQ. MKESSLERSCHEME ) THEN
       head_grid%h_diabatic = 0.0
       head_grid%rainnc = 0.0
       head_grid%rainncv = 0.0

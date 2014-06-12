@@ -452,6 +452,7 @@ SUBROUTINE A_MICROPHYSICS_DRIVER(th, thb, rho, rhob, pi_phy, pi_phyb, p&
       CALL POPCONTROL2B(branch)
       IF (branch .NE. 0) THEN
         IF (branch .NE. 1 .and. branch .NE. 3) THEN
+          CALL wrf_debug ( 100 , 'microphysics_driver_ad: calling a_lscond' )
           CALL POPREAL8ARRAY(th, (ime-ims+1)*(kme-kms+1)*(jme-jms+1))
           CALL POPREAL8ARRAY(qv_curr, (ime-ims+1)*(kme-kms+1)*(jme-jms+1&
 &                       ))
@@ -466,6 +467,7 @@ SUBROUTINE A_MICROPHYSICS_DRIVER(th, thb, rho, rhob, pi_phy, pi_phyb, p&
 &                  , kts=kts, kte=kte)
         END IF
         IF (branch .NE. 1 .and. branch .NE. 2) THEN
+            CALL wrf_debug ( 100 , 'microphysics_driver_ad: calling a_mkessler' )
             CALL a_mkessler(                                        &
                T=th,TB=thb                                              &
               ,QV=qv_curr,QVB=qv_currb                                        &

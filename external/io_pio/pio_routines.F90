@@ -60,8 +60,6 @@ subroutine allocHandle(DataHandle,DH,Status)
   DH%first_operation  = .TRUE.
   DH%CurrentVariable = 0
   Status = WRF_NO_ERR
- !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
- !write(unit=0, fmt='(a,i6)') 'Status = ', Status
 end subroutine allocHandle
 
 subroutine deallocHandle(DataHandle, Status)
@@ -150,19 +148,11 @@ subroutine GetTimeIndex(IO,DataHandle,DateStr,TimeIndex,Status)
   integer               ,intent(out)    :: TimeIndex
   integer               ,intent(out)    :: Status
   type(wrf_data_handle) ,pointer        :: DH
- !integer(KIND=PIO_OFFSET)              :: VStart(2)
- !integer(KIND=PIO_OFFSET)              :: VCount(2)
   integer                               :: VStart(2)
   integer                               :: VCount(2)
-  integer(PIO_OFFSET)                   :: pioidx
   integer                               :: stat
   integer                               :: i
   character(len=DateStrLen)             :: tmpdatestr(1)
-
- !write(unit=0, fmt='(/3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
- !write(unit=0, fmt='(3a)') 'IO: <', trim(IO), '>'
- !write(unit=0, fmt='(a,i3)') 'DataHandle = ', DataHandle
- !write(unit=0, fmt='(3a)') 'DateStr: <', trim(DateStr), '>'
 
   if(len(Datestr) == DateStrLen) then
     tmpdatestr = DateStr
@@ -188,8 +178,6 @@ subroutine GetTimeIndex(IO,DataHandle,DateStr,TimeIndex,Status)
     return
   endif
   if(IO == 'write') then
-   !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-
     TimeIndex = DH%TimeIndex
     if(TimeIndex <= 0) then
       TimeIndex = 1
@@ -211,13 +199,8 @@ subroutine GetTimeIndex(IO,DataHandle,DateStr,TimeIndex,Status)
     VStart(2) = TimeIndex
     VCount(1) = DateStrLen
     VCount(2) = 1
-    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-    write(unit=0, fmt='(3a,i6)') 'DateStr: <', trim(DateStr), '>, TimeIndex =', TimeIndex
-    pioidx = TimeIndex
-   !call pio_setframe(DH%vtime, pioidx)
-   !stat = pio_put_var(DH%file_handle, DH%vtime, tmpdatestr)
+   !write(unit=0, fmt='(3a,i6)') 'DateStr: <', trim(DateStr), '>, TimeIndex =', TimeIndex
     stat = pio_put_var(DH%file_handle, DH%vtime, VStart, VCount, tmpdatestr)
-   ! stat = pio_put_var(DH%file_handle, DH%vtime, (/TimeIndex/), tmpdatestr)
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
       write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__ 
@@ -226,7 +209,6 @@ subroutine GetTimeIndex(IO,DataHandle,DateStr,TimeIndex,Status)
     endif
    !call pio_advanceframe(DH%vtime)
   else
-   !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
     do i=1,MaxTimes
       if(DH%Times(i)==DateStr) then
         Status = WRF_NO_ERR
@@ -241,8 +223,6 @@ subroutine GetTimeIndex(IO,DataHandle,DateStr,TimeIndex,Status)
       endif
     enddo
   endif
- !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
- !write(unit=0, fmt='(a)') 'finished GetTimeIndex'
   return
 end subroutine GetTimeIndex
 
@@ -478,8 +458,6 @@ subroutine netcdf_err(err,Status)
   if(err == PIO_NOERR)then
     Status = WRF_NO_ERR
   else
-   !errmsg = NFMPI_STRERROR(err) 
-   !write(msg,*) 'NetCDF error: ',errmsg
     write(msg,*) 'NetCDF error: ', 'from PIO'
     call wrf_debug ( WARN , TRIM(msg))
     Status = WRF_WARN_NETCDF
@@ -515,24 +493,12 @@ subroutine find_iodesc(DH,MemoryOrder,Stagger,FieldTYpe,whole)
             case ('z')
                  if(LAND_CAT_VAR == DH%vartype(DH%CurrentVariable)) then
                     DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_land_real
-                   !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-                   !write(unit=0, fmt='(a,i6)') 'DH%CurrentVariable = ', DH%CurrentVariable
-                   !write(unit=0, fmt='(a)') 'Select DH%iodesc3d_land_real'
                  else if(SOIL_CAT_VAR == DH%vartype(DH%CurrentVariable)) then
                     DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_soil_real
-                   !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-                   !write(unit=0, fmt='(a,i6)') 'DH%CurrentVariable = ', DH%CurrentVariable
-                   !write(unit=0, fmt='(a)') 'Select DH%iodesc3d_soil_real'
                  else if(SOIL_LAYERS_VAR == DH%vartype(DH%CurrentVariable)) then
                     DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_soil_layers_real
-                   !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-                   !write(unit=0, fmt='(a,i6)') 'DH%CurrentVariable = ', DH%CurrentVariable
-                   !write(unit=0, fmt='(a)') 'Select DH%iodesc3d_soil_layers_real'
                  else if(MDL_CPL_VAR == DH%vartype(DH%CurrentVariable)) then
                     DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_mdl_cpl_real
-                   !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-                   !write(unit=0, fmt='(a,i6)') 'DH%CurrentVariable = ', DH%CurrentVariable
-                   !write(unit=0, fmt='(a)') 'Select DH%iodesc3d_mdl_cpl_real'
                  else
                     DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_w_real
                  endif
@@ -618,9 +584,6 @@ subroutine find_iodesc(DH,MemoryOrder,Stagger,FieldTYpe,whole)
                  DH%ioVar(DH%CurrentVariable) = DH%iodesc2d_v_real
             case default
                  DH%ioVar(DH%CurrentVariable) = DH%iodesc2d_m_real
-                !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-                !write(unit=0, fmt='(a,i6)') 'DH%CurrentVariable = ', DH%CurrentVariable
-                !write(unit=0, fmt='(a)') 'Select DH%iodesc2d_m_real'
           end select
         case (WRF_DOUBLE)
           select case (Stag)
@@ -630,9 +593,6 @@ subroutine find_iodesc(DH,MemoryOrder,Stagger,FieldTYpe,whole)
                  DH%ioVar(DH%CurrentVariable) = DH%iodesc2d_v_double
             case default
                  DH%ioVar(DH%CurrentVariable) = DH%iodesc2d_m_double
-                !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-                !write(unit=0, fmt='(a,i6)') 'DH%CurrentVariable = ', DH%CurrentVariable
-                !write(unit=0, fmt='(a)') 'Select DH%iodesc2d_m_double'
           end select
         case (WRF_INTEGER)
           select case (Stag)
@@ -642,9 +602,6 @@ subroutine find_iodesc(DH,MemoryOrder,Stagger,FieldTYpe,whole)
                  DH%ioVar(DH%CurrentVariable) = DH%iodesc2d_v_int
             case default
                  DH%ioVar(DH%CurrentVariable) = DH%iodesc2d_m_int
-                !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-                !write(unit=0, fmt='(a,i6)') 'DH%CurrentVariable = ', DH%CurrentVariable
-                !write(unit=0, fmt='(a)') 'Select DH%iodesc2d_m_int'
           end select
         case (WRF_LOGICAL)
           select case (Stag)
@@ -975,19 +932,11 @@ subroutine FieldIO(IO,DataHandle,DateStr,Starts,Length,MemoryOrder, &
   integer                                   :: NDim
   integer                                   :: fldsize
   integer                                   :: n
-  integer,dimension(NVarDims)               :: VStart
-  integer,dimension(NVarDims)               :: VCount
   type(wrf_data_handle)      ,pointer       :: DH
   integer(KIND=PIO_OFFSET)                  :: pioidx
 
- !write(unit=0, fmt='(/3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
- !write(unit=0, fmt='(3a)') 'MemoryOrder: <', trim(MemoryOrder), '>'
- !write(unit=0, fmt='(3a)') 'Stagger: <', trim(Stagger), '>'
-
   DH => WrfDataHandles(DataHandle)
- !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
   call GetTimeIndex(IO,DataHandle,DateStr,TimeIndex,Status)
- !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
   if(Status /= WRF_NO_ERR) then
     write(msg,*) 'Warning in ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , TRIM(msg))
@@ -995,35 +944,18 @@ subroutine FieldIO(IO,DataHandle,DateStr,Starts,Length,MemoryOrder, &
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
- !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
   call GetDim(MemoryOrder,NDim,Status)
-  VStart(:) = 1
-  VCount(:) = 1
-  VStart(1:NDim) = Starts(1:NDim)
-  VCount(1:NDim) = Length(1:NDim)
-  VStart(NDim+1) = TimeIndex
-  VCount(NDim+1) = 1
 
- !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
   fldsize = 1
-  do n = 1, NDim + 1
-    !write(unit=0, fmt='(2(a,i2,a,i4))') &
-    !     'VStart(', n, ')=', VStart(n), ', VCount(', n, ')=', VCount(n)
-     fldsize = fldsize * VCount(n)
+  do n = 1, NDim
+     fldsize = fldsize * Length(n)
   end do
 
   call find_iodesc(DH,MemoryOrder,Stagger,FieldTYpe,whole)
 
- !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
- !write(unit=0, fmt='(a,i6)') 'DH%CurrentVariable = ', DH%CurrentVariable
- !write(unit=0, fmt='(a,i6)') 'fldsize =', fldsize
- !write(unit=0, fmt='(a, i8)') 'FieldType: ', FieldType, 'WRF_REAL: ', WRF_REAL
- !write(unit=0, fmt='(a, i8)') 'WRF_DOUBLE: ', WRF_DOUBLE
- !write(unit=0, fmt='(a, i8)') 'WRF_INTEGER: ', WRF_INTEGER
- !write(unit=0, fmt='(a, l8)') 'whole: ', whole
-
   pioidx = TimeIndex
   call pio_setframe(DH%descVar(DH%CurrentVariable), pioidx)
+ !DH%descVar(DH%CurrentVariable)%rec = TimeIndex
 
   select case (FieldType)
     case (WRF_REAL)
@@ -1141,14 +1073,8 @@ subroutine initialize_pio(grid, DH)
    call mpi_comm_rank(communicator, myrank, ierr)
   !call mpi_comm_size(MPI_COMM_WORLD, nprocs, ierr)
   !call mpi_comm_rank(MPI_COMM_WORLD, myrank, ierr)
-  !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-  !write(unit=0, fmt='(a,i6)') 'nprocs = ', nprocs, &
-  !                            'myrank = ', myrank
 
    if(grid%pioprocs > nprocs) then
-     !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-     !write(unit=0, fmt='(a,i6)') 'nprocs = ', nprocs, &
-     !                            'grid%pioprocs = ', grid%pioprocs
      !Force pioprocs to be nprocs.
       pioprocs = nprocs
    else if(grid%pioprocs < 1) then
@@ -1175,8 +1101,6 @@ subroutine initialize_pio(grid, DH)
 
    if(grid%pioshift < 0) then
      !pioshift can from 0, but can not less than 0, usually, we 
-     !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-     !write(unit=0, fmt='(a,i6)') 'User provided a pioshift of: ', grid%pioshift
       if(grid%piostride > 1) then
          pioshift = 1
       else
@@ -1237,14 +1161,6 @@ subroutine initialize_pio(grid, DH)
                           ims, ime, jms, jme, kms, kme, &
                           its, ite, jts, jte, kts, kte)
 
-  !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-  !write(unit=0, fmt='(3(a,i6))') 'ids = ', ids, ', jds = ', jds, ', kds = ', kds
-  !write(unit=0, fmt='(3(a,i6))') 'ide = ', ide, ', jde = ', jde, ', kde = ', kde
-  !write(unit=0, fmt='(3(a,i6))') 'ims = ', ims, ', jms = ', jms, ', kms = ', kms
-  !write(unit=0, fmt='(3(a,i6))') 'ime = ', ime, ', jme = ', jme, ', kme = ', kme
-  !write(unit=0, fmt='(3(a,i6))') 'its = ', its, ', jts = ', jts, ', kts = ', kts
-  !write(unit=0, fmt='(3(a,i6))') 'ite = ', ite, ', jte = ', jte, ', kte = ', kte
-
 end subroutine initialize_pio
 
 subroutine define_pio_iodesc(grid, DH)
@@ -1286,7 +1202,7 @@ subroutine define_pio_iodesc(grid, DH)
    integer(kind=PIO_Offset), &
            dimension((ime - ims + 1) * (jme - jms + 1)) &
            :: compdof_2d
-   integer :: dims3d(4), dims2d(3), dims1d(2), dims0d(1)
+   integer :: dims3d(4), dims2d(3)
    integer :: dims3d_xb(4), dims2d_xb(3)
    integer :: dims3d_yb(4), dims2d_yb(3)
    integer :: dims3d_land(4), dims3d_soil(4), dims3d_soil_layers(4)
@@ -1333,12 +1249,7 @@ subroutine define_pio_iodesc(grid, DH)
 
    dims2d(1) = dims3d(1)
    dims2d(2) = dims3d(2)
-   dims2d(3) = dims3d(4)
-
-   dims1d(1) = dims3d(3)
-   dims1d(2) = dims3d(4)
-
-   dims0d(1) = dims3d(4)
+   dims2d(3) = 1
 
    dims3d_xb(1) = dims3d(2)
    dims3d_xb(2) = dims3d(3)
@@ -1359,7 +1270,6 @@ subroutine define_pio_iodesc(grid, DH)
    dims2d_yb(3) = 1
 
   !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-  !write(unit=0, fmt='(a, 6i6)') 'dims1d = ', dims1d
   !write(unit=0, fmt='(a, 6i6)') 'dims2d = ', dims2d
   !write(unit=0, fmt='(a, 6i6)') 'dims3d = ', dims3d
   !write(unit=0, fmt='(a, 6i6)') 'dims3d_land = ', dims3d_land
@@ -1596,7 +1506,6 @@ subroutine define_pio_iodesc(grid, DH)
    call PIO_initdecomp(DH%iosystem, PIO_real,   dims2d, compdof_2d, DH%iodesc2d_m_real)
    call PIO_initdecomp(DH%iosystem, PIO_double, dims2d, compdof_2d, DH%iodesc2d_m_double)
 
-  !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
    call PIO_initdecomp(DH%iosystem, PIO_int,    dims3d_xb, compdof_3d_xsz, DH%iodesc3d_xsz_m_int)
    call PIO_initdecomp(DH%iosystem, PIO_real,   dims3d_xb, compdof_3d_xsz, DH%iodesc3d_xsz_m_real)
    call PIO_initdecomp(DH%iosystem, PIO_double, dims3d_xb, compdof_3d_xsz, DH%iodesc3d_xsz_m_double)
@@ -1645,8 +1554,6 @@ subroutine define_pio_iodesc(grid, DH)
    dims2d(1) = dims3d(1)
    dims2d(2) = dims3d(2)
 
-   dims1d(1) = dims3d(3)
-
    dims3d_xb(1) = dims3d(2)
    dims3d_xb(2) = dims3d(3)
    dims3d_xb(3) = grid%spec_bdy_width
@@ -1656,11 +1563,6 @@ subroutine define_pio_iodesc(grid, DH)
    dims3d_yb(2) = dims3d(3)
    dims3d_yb(3) = grid%spec_bdy_width
    dims3d_yb(4) = 1
-
-  !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-  !write(unit=0, fmt='(a, 6i6)') 'dims3d = ', dims3d
-  !write(unit=0, fmt='(a, 6i6)') 'dims2d = ', dims2d
-  !write(unit=0, fmt='(a, 6i6)') 'dims1d = ', dims1d
 
   !compdof_3d =  0
   !compdof_2d =  0
@@ -1797,8 +1699,6 @@ subroutine define_pio_iodesc(grid, DH)
    dims2d(1) = dims3d(1)
    dims2d(2) = dims3d(2)
 
-   dims1d(1) = dims3d(3)
-
    dims3d_xb(1) = dims3d(2)
    dims3d_xb(2) = dims3d(3)
    dims3d_xb(3) = grid%spec_bdy_width
@@ -1808,11 +1708,6 @@ subroutine define_pio_iodesc(grid, DH)
    dims3d_yb(2) = dims3d(3)
    dims3d_yb(3) = grid%spec_bdy_width
    dims3d_yb(4) = 1
-
-  !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-  !write(unit=0, fmt='(a, 6i6)') 'dims3d = ', dims3d
-  !write(unit=0, fmt='(a, 6i6)') 'dims2d = ', dims2d
-  !write(unit=0, fmt='(a, 6i6)') 'dims1d = ', dims1d
 
   !compdof_3d =  0
   !compdof_2d =  0
@@ -1848,11 +1743,6 @@ subroutine define_pio_iodesc(grid, DH)
       enddo
       enddo
    enddo
-
-  !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-  !write(unit=0, fmt='(a,i6)') 'npos = ', npos, &
-  !                            '(ime - ims + 1) * (jme - jms + 1) * (kme - kms + 1) = ', &
-  !                             (ime - ims + 1) * (jme - jms + 1) * (kme - kms + 1)
 
    do j = jts, ljte
       do i = its, lite
@@ -1946,8 +1836,6 @@ subroutine define_pio_iodesc(grid, DH)
    dims2d(1) = dims3d(1)
    dims2d(2) = dims3d(2)
 
-   dims1d(1) = dims3d(3)
-
    dims3d_xb(1) = dims3d(2)
    dims3d_xb(2) = dims3d(3)
    dims3d_xb(3) = grid%spec_bdy_width
@@ -1965,11 +1853,6 @@ subroutine define_pio_iodesc(grid, DH)
    if(lite > dims3d(1)) lite = dims3d(1)
    if(ljte > dims3d(2)) ljte = dims3d(2)
    if(lkte > dims3d(3)) lkte = dims3d(3)
-
-  !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-  !write(unit=0, fmt='(a, 6i6)') 'dims3d = ', dims3d
-  !write(unit=0, fmt='(a, 6i6)') 'dims2d = ', dims2d
-  !write(unit=0, fmt='(a, 6i6)') 'dims1d = ', dims1d
 
   !compdof_3d =  0
 
@@ -1999,11 +1882,6 @@ subroutine define_pio_iodesc(grid, DH)
       enddo
       enddo
    enddo
-
-  !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-  !write(unit=0, fmt='(a,i6)') 'npos = ', npos, &
-  !                            '(ime - ims + 1) * (jme - jms + 1) * (kme - kms + 1) = ', &
-  !                             (ime - ims + 1) * (jme - jms + 1) * (kme - kms + 1)
 
    do j = jts, ljte
    do k = kts, lkte
@@ -2079,9 +1957,6 @@ subroutine define_pio_iodesc(grid, DH)
    call PIO_initdecomp(DH%iosystem, PIO_int,    dims3d_yb, compdof_3d_yez, DH%iodesc3d_yez_w_int)
    call PIO_initdecomp(DH%iosystem, PIO_real,   dims3d_yb, compdof_3d_yez, DH%iodesc3d_yez_w_real)
    call PIO_initdecomp(DH%iosystem, PIO_double, dims3d_yb, compdof_3d_yez, DH%iodesc3d_yez_w_double)
-
-  !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-  !write(unit=0, fmt='(a)') 'finished: define_pio_iodesc'
 
 end subroutine define_pio_iodesc
 

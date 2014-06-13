@@ -40,7 +40,6 @@ module wrf_data_pio
   type :: wrf_data_handle
     character (255)                       :: FileName
     integer                               :: FileStatus
-    integer                               :: NCID
     logical                               :: Free
     logical                               :: Write
     character (5)                         :: TimesName
@@ -48,14 +47,12 @@ module wrf_data_pio
     integer                               :: CurrentTime  !Only used for read
     integer                               :: NumberTimes  !Only used for read
     character (DateStrLen), dimension(MaxTimes) :: Times
-    integer                               :: TimesVarID
     integer               , dimension(MaxDims) :: DimLengths
     integer               , dimension(MaxDims) :: DimIDs
     character (31)        , dimension(MaxDims) :: DimNames
     integer                               :: DimUnlimID
     character (9)                         :: DimUnlimName
-   !integer       , dimension(NVarDims)   :: DimID
-    integer               , dimension(MaxVars) :: MDVarIDs
+   !integer               , dimension(MaxVars) :: MDVarIDs
     integer               , dimension(MaxVars) :: MDVarDimLens
     character (80)        , dimension(MaxVars) :: MDVarNames
     integer               , dimension(MaxVars) :: VarIDs
@@ -119,9 +116,8 @@ module wrf_data_pio
    type (io_desc_t)        :: iodesc2d_ys_m_real, iodesc2d_ys_m_double, iodesc2d_ys_m_int
    type (io_desc_t)        :: iodesc2d_ye_m_real, iodesc2d_ye_m_double, iodesc2d_ye_m_int
 
-   type (Var_desc_t), dimension(MaxVars) :: descMDVar
+  !type (Var_desc_t), dimension(MaxVars) :: descMDVar
    type (Var_desc_t), dimension(MaxVars) :: descVar
-  !type (io_desc_t),  dimension(MaxVars) :: ioMDVar
    type (io_desc_t),  dimension(MaxVars) :: ioVar
    logical, dimension(MaxVars)           :: vartype
 

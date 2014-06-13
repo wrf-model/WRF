@@ -16,9 +16,10 @@ subroutine ext_pio_RealFieldIO(whole,IO,DH,fldsize,Data,Status)
   integer                                    :: n, ndims, datasize
   integer, dimension(:), allocatable         :: dimids
   integer, dimension(:), allocatable         :: dimsizes
+  real, parameter                            :: fillvalue = 9.96921e+36
 
   if(IO == 'write') then
-    call pio_setdebuglevel(1)
+   !call pio_setdebuglevel(10)
     if(whole)then
       stat = pio_inq_varndims(DH%file_handle,DH%descVar(DH%CurrentVariable),ndims)
       allocate(dimids(ndims), stat=stat)
@@ -39,7 +40,7 @@ subroutine ext_pio_RealFieldIO(whole,IO,DH,fldsize,Data,Status)
       deallocate(dimsizes)
     else
       call pio_write_darray(DH%file_handle, DH%descVar(DH%CurrentVariable), &
-                            DH%ioVar(DH%CurrentVariable), Data, stat)
+                            DH%ioVar(DH%CurrentVariable), Data, stat, fillvalue)
     end if
   else
     if(whole)then
@@ -114,12 +115,6 @@ subroutine ext_pio_IntFieldIO(whole,IO,DH,fldsize,Data,Status)
 
  !call pio_setdebuglevel(1)
 
- !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
- !write(unit=0, fmt='(a,i6)') 'DH%CurrentVariable = ', DH%CurrentVariable
- !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
- !write(unit=0, fmt='(3a)') 'IO: <', IO, '>'
- !write(unit=0, fmt='(a, l8)') 'whole: ', whole
-
   if(IO == 'write') then
     if(whole)then
       stat = pio_put_var(DH%file_handle,DH%descVar(DH%CurrentVariable),Data)
@@ -130,8 +125,7 @@ subroutine ext_pio_IntFieldIO(whole,IO,DH,fldsize,Data,Status)
   else
     if(whole)then
       if(1 == fldsize) then
-       !stat = pio_get_var(DH%file_handle,DH%descVar(DH%CurrentVariable),Buffer)
-        stat = pio_get_var(DH%file_handle,DH%VarIDs(DH%CurrentVariable),Buffer)
+        stat = pio_get_var(DH%file_handle,DH%descVar(DH%CurrentVariable),Buffer)
         Data(1) = Buffer(1)
       else
         stat = pio_get_var(DH%file_handle,DH%descVar(DH%CurrentVariable),Data)

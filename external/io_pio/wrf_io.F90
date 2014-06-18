@@ -41,7 +41,6 @@ subroutine ext_pio_open_for_read_commit(DataHandle, Status)
     return
   endif
   DH%FileStatus      = WRF_FILE_OPENED_FOR_READ
-  DH%first_operation  = .TRUE.
   Status = WRF_NO_ERR
   return
 end subroutine ext_pio_open_for_read_commit
@@ -84,8 +83,10 @@ subroutine ext_pio_open_for_read_begin( FileName, grid, SysDepInfo, DataHandle, 
     return
   endif
 
-  call initialize_pio(grid, DH)
-  call define_pio_iodesc(grid, DH)
+  if(DH%first_operation) then
+     call initialize_pio(grid, DH)
+     call define_pio_iodesc(grid, DH)
+  end if
 
   stat = pio_openfile(DH%iosystem, DH%file_handle, pio_iotype_pnetcdf, FileName)
   call netcdf_err(stat,Status)
@@ -240,8 +241,10 @@ subroutine ext_pio_open_for_update( FileName, grid, SysDepInfo, DataHandle, Stat
     return
   endif
 
- !call initialize_pio(grid, DH)
- !call define_pio_iodesc(grid, DH)
+ !if(DH%first_operation) then
+ !   call initialize_pio(grid, DH)
+ !   call define_pio_iodesc(grid, DH)
+ !end if
 
   stat = pio_openfile(DH%iosystem, DH%file_handle, pio_iotype_pnetcdf, FileName)
   call netcdf_err(stat,Status)
@@ -386,8 +389,10 @@ SUBROUTINE ext_pio_open_for_write_begin(FileName,grid,SysDepInfo,DataHandle,Stat
   DH%TimeIndex = 0
   DH%Times     = ZeroDate
 
-  call initialize_pio(grid, DH)
-  call define_pio_iodesc(grid, DH)
+  if(DH%first_operation) then
+     call initialize_pio(grid, DH)
+     call define_pio_iodesc(grid, DH)
+  end if
 
  !call mpi_info_create( info, ierr )
   stat = pio_CreateFile(DH%iosystem, DH%file_handle, &
@@ -417,7 +422,6 @@ SUBROUTINE ext_pio_open_for_write_begin(FileName,grid,SysDepInfo,DataHandle,Stat
   endif
 
   DH%VarNames  (1:MaxVars) = NO_NAME
-  DH%MDVarNames(1:MaxVars) = NO_NAME
   do i=1,MaxDims
     write(Buffer,FMT="('DIM',i4.4)") i
     DH%DimNames  (i) = Buffer
@@ -497,8 +501,7 @@ SUBROUTINE ext_pio_open_for_write_commit(DataHandle, Status)
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
-  DH%FileStatus  = WRF_FILE_OPENED_FOR_WRITE
-  DH%first_operation  = .TRUE.
+  DH%FileStatus = WRF_FILE_OPENED_FOR_WRITE
 
   return
 end subroutine ext_pio_open_for_write_commit
@@ -2715,11 +2718,11 @@ subroutine ext_pio_put_var_td_real_arr(DataHandle,Element,DateStr,Var,Data,Count
       return
     endif
     do NVar=1,MaxVars
-      if(DH%MDVarNames(NVar) == Name) then
+      if(DH%VarNames(NVar) == Name) then
         Status = WRF_WARN_2DRYRUNS_1VARIABLE  
         return
-      elseif(DH%MDVarNames(NVar) == NO_NAME) then
-        DH%MDVarNames(NVar) = Name
+      elseif(DH%VarNames(NVar) == NO_NAME) then
+        DH%VarNames(NVar) = Name
         exit
       elseif(NVar == MaxVars) then
         Status = WRF_WARN_TOO_MANY_VARIABLES  
@@ -2748,11 +2751,11 @@ subroutine ext_pio_put_var_td_real_arr(DataHandle,Element,DateStr,Var,Data,Count
         return
       endif
     enddo
-    DH%MDVarDimLens(NVar) = Count
+    DH%VarDimLens(NVar,1) = Count
     VDims(1) = DH%DimIDs(i)
     VDims(2) = DH%DimUnlimID
     write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-    write(unit=0, fmt='(3a,i6)') 'Define Var <', trim(Var), '> as NVvar:', NVAR
+    write(unit=0, fmt='(3a,i6)') 'Define Var <', trim(Var), '> as NVar:', NVAR
    !stat = pio_def_var(DH%file_handle,Name,PIO_REAL,DH%descMDVar(NVar))
     stat = pio_def_var(DH%file_handle,Name,PIO_REAL,DH%descVar(NVar))
     call netcdf_err(stat,Status)
@@ -2763,9 +2766,9 @@ subroutine ext_pio_put_var_td_real_arr(DataHandle,Element,DateStr,Var,Data,Count
     endif
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_WRITE) then
     do NVar=1,MaxVars
-      if(DH%MDVarNames(NVar) == Name) then
+      if(DH%VarNames(NVar) == Name) then
         exit
-      elseif(DH%MDVarNames(NVar) == NO_NAME) then
+      elseif(DH%VarNames(NVar) == NO_NAME) then
         Status = WRF_WARN_MD_NF  
         write(msg,*) 'Warning METADATA NOT FOUND in ',__FILE__,', line', __LINE__
         call wrf_debug ( WARN , msg)
@@ -2777,7 +2780,7 @@ subroutine ext_pio_put_var_td_real_arr(DataHandle,Element,DateStr,Var,Data,Count
         return
       endif
     enddo
-    if(Count > DH%MDVarDimLens(NVar)) then
+    if(Count > DH%VarDimLens(NVar,1)) then
       Status = WRF_WARN_COUNT_TOO_LONG 
       write(msg,*) 'Warning COUNT TOO LONG in ',__FILE__,', line', __LINE__
       call wrf_debug ( WARN , msg)
@@ -2875,11 +2878,11 @@ subroutine ext_pio_put_var_td_real_sca(DataHandle,Element,DateStr,Var,Data,Count
       return
     endif
     do NVar=1,MaxVars
-      if(DH%MDVarNames(NVar) == Name) then
+      if(DH%VarNames(NVar) == Name) then
         Status = WRF_WARN_2DRYRUNS_1VARIABLE  
         return
-      elseif(DH%MDVarNames(NVar) == NO_NAME) then
-        DH%MDVarNames(NVar) = Name
+      elseif(DH%VarNames(NVar) == NO_NAME) then
+        DH%VarNames(NVar) = Name
         exit
       elseif(NVar == MaxVars) then
         Status = WRF_WARN_TOO_MANY_VARIABLES  
@@ -2908,7 +2911,7 @@ subroutine ext_pio_put_var_td_real_sca(DataHandle,Element,DateStr,Var,Data,Count
         return
       endif
     enddo
-    DH%MDVarDimLens(NVar) = Count
+    DH%VarDimLens(NVar,1) = Count
     VDims(1) = DH%DimIDs(i)
     VDims(2) = DH%DimUnlimID
     write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
@@ -2923,9 +2926,9 @@ subroutine ext_pio_put_var_td_real_sca(DataHandle,Element,DateStr,Var,Data,Count
     endif
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_WRITE) then
     do NVar=1,MaxVars
-      if(DH%MDVarNames(NVar) == Name) then
+      if(DH%VarNames(NVar) == Name) then
         exit
-      elseif(DH%MDVarNames(NVar) == NO_NAME) then
+      elseif(DH%VarNames(NVar) == NO_NAME) then
         Status = WRF_WARN_MD_NF  
         write(msg,*) 'Warning METADATA NOT FOUND in ',__FILE__,', line', __LINE__
         call wrf_debug ( WARN , msg)
@@ -2937,7 +2940,7 @@ subroutine ext_pio_put_var_td_real_sca(DataHandle,Element,DateStr,Var,Data,Count
         return
       endif
     enddo
-    if(Count > DH%MDVarDimLens(NVar)) then
+    if(Count > DH%VarDimLens(NVar,1)) then
       Status = WRF_WARN_COUNT_TOO_LONG 
       write(msg,*) 'Warning COUNT TOO LONG in ',__FILE__,', line', __LINE__
       call wrf_debug ( WARN , msg)
@@ -3174,11 +3177,11 @@ subroutine ext_pio_put_var_td_double_arr(DataHandle,Element,DateStr,Var,Data,Cou
       return
     endif
     do NVar=1,MaxVars
-      if(DH%MDVarNames(NVar) == Name) then
+      if(DH%VarNames(NVar) == Name) then
         Status = WRF_WARN_2DRYRUNS_1VARIABLE  
         return
-      elseif(DH%MDVarNames(NVar) == NO_NAME) then
-        DH%MDVarNames(NVar) = Name
+      elseif(DH%VarNames(NVar) == NO_NAME) then
+        DH%VarNames(NVar) = Name
         exit
       elseif(NVar == MaxVars) then
         Status = WRF_WARN_TOO_MANY_VARIABLES  
@@ -3207,7 +3210,7 @@ subroutine ext_pio_put_var_td_double_arr(DataHandle,Element,DateStr,Var,Data,Cou
         return
       endif
     enddo
-    DH%MDVarDimLens(NVar) = Count
+    DH%VarDimLens(NVar,1) = Count
     VDims(1) = DH%DimIDs(i)
     VDims(2) = DH%DimUnlimID
     write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
@@ -3222,9 +3225,9 @@ subroutine ext_pio_put_var_td_double_arr(DataHandle,Element,DateStr,Var,Data,Cou
     endif
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_WRITE) then
     do NVar=1,MaxVars
-      if(DH%MDVarNames(NVar) == Name) then
+      if(DH%VarNames(NVar) == Name) then
         exit
-      elseif(DH%MDVarNames(NVar) == NO_NAME) then
+      elseif(DH%VarNames(NVar) == NO_NAME) then
         Status = WRF_WARN_MD_NF  
         write(msg,*) 'Warning METADATA NOT FOUND in ',__FILE__,', line', __LINE__
         call wrf_debug ( WARN , msg)
@@ -3236,7 +3239,7 @@ subroutine ext_pio_put_var_td_double_arr(DataHandle,Element,DateStr,Var,Data,Cou
         return
       endif
     enddo
-    if(Count > DH%MDVarDimLens(NVar)) then
+    if(Count > DH%VarDimLens(NVar,1)) then
       Status = WRF_WARN_COUNT_TOO_LONG 
       write(msg,*) 'Warning COUNT TOO LONG in ',__FILE__,', line', __LINE__
       call wrf_debug ( WARN , msg)
@@ -3333,11 +3336,11 @@ subroutine ext_pio_put_var_td_double_sca(DataHandle,Element,DateStr,Var,Data,Cou
       return
     endif
     do NVar=1,MaxVars
-      if(DH%MDVarNames(NVar) == Name) then
+      if(DH%VarNames(NVar) == Name) then
         Status = WRF_WARN_2DRYRUNS_1VARIABLE  
         return
-      elseif(DH%MDVarNames(NVar) == NO_NAME) then
-        DH%MDVarNames(NVar) = Name
+      elseif(DH%VarNames(NVar) == NO_NAME) then
+        DH%VarNames(NVar) = Name
         exit
       elseif(NVar == MaxVars) then
         Status = WRF_WARN_TOO_MANY_VARIABLES  
@@ -3366,7 +3369,7 @@ subroutine ext_pio_put_var_td_double_sca(DataHandle,Element,DateStr,Var,Data,Cou
         return
       endif
     enddo
-    DH%MDVarDimLens(NVar) = Count
+    DH%VarDimLens(NVar,1) = Count
     VDims(1) = DH%DimIDs(i)
     VDims(2) = DH%DimUnlimID
     write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
@@ -3381,9 +3384,9 @@ subroutine ext_pio_put_var_td_double_sca(DataHandle,Element,DateStr,Var,Data,Cou
     endif
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_WRITE) then
     do NVar=1,MaxVars
-      if(DH%MDVarNames(NVar) == Name) then
+      if(DH%VarNames(NVar) == Name) then
         exit
-      elseif(DH%MDVarNames(NVar) == NO_NAME) then
+      elseif(DH%VarNames(NVar) == NO_NAME) then
         Status = WRF_WARN_MD_NF  
         write(msg,*) 'Warning METADATA NOT FOUND in ',__FILE__,', line', __LINE__
         call wrf_debug ( WARN , msg)
@@ -3395,7 +3398,7 @@ subroutine ext_pio_put_var_td_double_sca(DataHandle,Element,DateStr,Var,Data,Cou
         return
       endif
     enddo
-    if(Count > DH%MDVarDimLens(NVar)) then
+    if(Count > DH%VarDimLens(NVar,1)) then
       Status = WRF_WARN_COUNT_TOO_LONG 
       write(msg,*) 'Warning COUNT TOO LONG in ',__FILE__,', line', __LINE__
       call wrf_debug ( WARN , msg)
@@ -3630,11 +3633,11 @@ subroutine ext_pio_put_var_td_integer_arr(DataHandle,Element,DateStr,Var,Data,Co
       return
     endif
     do NVar=1,MaxVars
-      if(DH%MDVarNames(NVar) == Name) then
+      if(DH%VarNames(NVar) == Name) then
         Status = WRF_WARN_2DRYRUNS_1VARIABLE  
         return
-      elseif(DH%MDVarNames(NVar) == NO_NAME) then
-        DH%MDVarNames(NVar) = Name
+      elseif(DH%VarNames(NVar) == NO_NAME) then
+        DH%VarNames(NVar) = Name
         exit
       elseif(NVar == MaxVars) then
         Status = WRF_WARN_TOO_MANY_VARIABLES  
@@ -3663,7 +3666,7 @@ subroutine ext_pio_put_var_td_integer_arr(DataHandle,Element,DateStr,Var,Data,Co
         return
       endif
     enddo
-    DH%MDVarDimLens(NVar) = Count
+    DH%VarDimLens(NVar,1) = Count
     VDims(1) = DH%DimIDs(i)
     VDims(2) = DH%DimUnlimID
     write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
@@ -3678,9 +3681,9 @@ subroutine ext_pio_put_var_td_integer_arr(DataHandle,Element,DateStr,Var,Data,Co
     endif
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_WRITE) then
     do NVar=1,MaxVars
-      if(DH%MDVarNames(NVar) == Name) then
+      if(DH%VarNames(NVar) == Name) then
         exit
-      elseif(DH%MDVarNames(NVar) == NO_NAME) then
+      elseif(DH%VarNames(NVar) == NO_NAME) then
         Status = WRF_WARN_MD_NF  
         write(msg,*) 'Warning METADATA NOT FOUND in ',__FILE__,', line', __LINE__
         call wrf_debug ( WARN , msg)
@@ -3692,7 +3695,7 @@ subroutine ext_pio_put_var_td_integer_arr(DataHandle,Element,DateStr,Var,Data,Co
         return
       endif
     enddo
-    if(Count > DH%MDVarDimLens(NVar)) then
+    if(Count > DH%VarDimLens(NVar,1)) then
       Status = WRF_WARN_COUNT_TOO_LONG 
       write(msg,*) 'Warning COUNT TOO LONG in ',__FILE__,', line', __LINE__
       call wrf_debug ( WARN , msg)
@@ -3789,11 +3792,11 @@ subroutine ext_pio_put_var_td_integer_sca(DataHandle,Element,DateStr,Var,Data,Co
       return
     endif
     do NVar=1,MaxVars
-      if(DH%MDVarNames(NVar) == Name) then
+      if(DH%VarNames(NVar) == Name) then
         Status = WRF_WARN_2DRYRUNS_1VARIABLE  
         return
-      elseif(DH%MDVarNames(NVar) == NO_NAME) then
-        DH%MDVarNames(NVar) = Name
+      elseif(DH%VarNames(NVar) == NO_NAME) then
+        DH%VarNames(NVar) = Name
         exit
       elseif(NVar == MaxVars) then
         Status = WRF_WARN_TOO_MANY_VARIABLES  
@@ -3822,7 +3825,7 @@ subroutine ext_pio_put_var_td_integer_sca(DataHandle,Element,DateStr,Var,Data,Co
         return
       endif
     enddo
-    DH%MDVarDimLens(NVar) = Count
+    DH%VarDimLens(NVar,1) = Count
     VDims(1) = DH%DimIDs(i)
     VDims(2) = DH%DimUnlimID
     write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
@@ -3837,9 +3840,9 @@ subroutine ext_pio_put_var_td_integer_sca(DataHandle,Element,DateStr,Var,Data,Co
     endif
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_WRITE) then
     do NVar=1,MaxVars
-      if(DH%MDVarNames(NVar) == Name) then
+      if(DH%VarNames(NVar) == Name) then
         exit
-      elseif(DH%MDVarNames(NVar) == NO_NAME) then
+      elseif(DH%VarNames(NVar) == NO_NAME) then
         Status = WRF_WARN_MD_NF  
         write(msg,*) 'Warning METADATA NOT FOUND in ',__FILE__,', line', __LINE__
         call wrf_debug ( WARN , msg)
@@ -3851,7 +3854,7 @@ subroutine ext_pio_put_var_td_integer_sca(DataHandle,Element,DateStr,Var,Data,Co
         return
       endif
     enddo
-    if(Count > DH%MDVarDimLens(NVar)) then
+    if(Count > DH%VarDimLens(NVar,1)) then
       Status = WRF_WARN_COUNT_TOO_LONG 
       write(msg,*) 'Warning COUNT TOO LONG in ',__FILE__,', line', __LINE__
       call wrf_debug ( WARN , msg)
@@ -4121,11 +4124,11 @@ subroutine ext_pio_put_var_td_logical_arr(DataHandle,Element,DateStr,Var,Data,Co
       return
     endif
     do NVar=1,MaxVars
-      if(DH%MDVarNames(NVar) == Name) then
+      if(DH%VarNames(NVar) == Name) then
         Status = WRF_WARN_2DRYRUNS_1VARIABLE  
         return
-      elseif(DH%MDVarNames(NVar) == NO_NAME) then
-        DH%MDVarNames(NVar) = Name
+      elseif(DH%VarNames(NVar) == NO_NAME) then
+        DH%VarNames(NVar) = Name
         exit
       elseif(NVar == MaxVars) then
         Status = WRF_WARN_TOO_MANY_VARIABLES  
@@ -4154,7 +4157,7 @@ subroutine ext_pio_put_var_td_logical_arr(DataHandle,Element,DateStr,Var,Data,Co
         return
       endif
     enddo
-    DH%MDVarDimLens(NVar) = Count
+    DH%VarDimLens(NVar,1) = Count
     VDims(1) = DH%DimIDs(i)
     VDims(2) = DH%DimUnlimID
     write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
@@ -4169,9 +4172,9 @@ subroutine ext_pio_put_var_td_logical_arr(DataHandle,Element,DateStr,Var,Data,Co
     endif
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_WRITE) then
     do NVar=1,MaxVars
-      if(DH%MDVarNames(NVar) == Name) then
+      if(DH%VarNames(NVar) == Name) then
         exit
-      elseif(DH%MDVarNames(NVar) == NO_NAME) then
+      elseif(DH%VarNames(NVar) == NO_NAME) then
         Status = WRF_WARN_MD_NF  
         write(msg,*) 'Warning METADATA NOT FOUND in ',__FILE__,' ','LOGICAL',', line', __LINE__
         call wrf_debug ( WARN , msg)
@@ -4183,7 +4186,7 @@ subroutine ext_pio_put_var_td_logical_arr(DataHandle,Element,DateStr,Var,Data,Co
         return
       endif
     enddo
-    if(Count > DH%MDVarDimLens(NVar)) then
+    if(Count > DH%VarDimLens(NVar,1)) then
       Status = WRF_WARN_COUNT_TOO_LONG 
       write(msg,*) 'Warning COUNT TOO LONG in ',__FILE__,' ','LOGICAL',', line', __LINE__
       call wrf_debug ( WARN , msg)
@@ -4301,11 +4304,11 @@ subroutine ext_pio_put_var_td_logical_sca(DataHandle,Element,DateStr,Var,Data,Co
       return
     endif
     do NVar=1,MaxVars
-      if(DH%MDVarNames(NVar) == Name) then
+      if(DH%VarNames(NVar) == Name) then
         Status = WRF_WARN_2DRYRUNS_1VARIABLE  
         return
-      elseif(DH%MDVarNames(NVar) == NO_NAME) then
-        DH%MDVarNames(NVar) = Name
+      elseif(DH%VarNames(NVar) == NO_NAME) then
+        DH%VarNames(NVar) = Name
         exit
       elseif(NVar == MaxVars) then
         Status = WRF_WARN_TOO_MANY_VARIABLES  
@@ -4334,7 +4337,7 @@ subroutine ext_pio_put_var_td_logical_sca(DataHandle,Element,DateStr,Var,Data,Co
         return
       endif
     enddo
-    DH%MDVarDimLens(NVar) = Count
+    DH%VarDimLens(NVar,1) = Count
     VDims(1) = DH%DimIDs(i)
     VDims(2) = DH%DimUnlimID
     write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
@@ -4349,9 +4352,9 @@ subroutine ext_pio_put_var_td_logical_sca(DataHandle,Element,DateStr,Var,Data,Co
     endif
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_WRITE) then
     do NVar=1,MaxVars
-      if(DH%MDVarNames(NVar) == Name) then
+      if(DH%VarNames(NVar) == Name) then
         exit
-      elseif(DH%MDVarNames(NVar) == NO_NAME) then
+      elseif(DH%VarNames(NVar) == NO_NAME) then
         Status = WRF_WARN_MD_NF  
         write(msg,*) 'Warning METADATA NOT FOUND in ',__FILE__,' ','LOGICAL',', line', __LINE__
         call wrf_debug ( WARN , msg)
@@ -4363,7 +4366,7 @@ subroutine ext_pio_put_var_td_logical_sca(DataHandle,Element,DateStr,Var,Data,Co
         return
       endif
     enddo
-    if(Count > DH%MDVarDimLens(NVar)) then
+    if(Count > DH%VarDimLens(NVar,1)) then
       Status = WRF_WARN_COUNT_TOO_LONG 
       write(msg,*) 'Warning COUNT TOO LONG in ',__FILE__,' ','LOGICAL',', line', __LINE__
       call wrf_debug ( WARN , msg)
@@ -4586,7 +4589,23 @@ subroutine ext_pio_put_var_td_char_arr(DataHandle,Element,DateStr,Var,Data,Statu
   integer                               :: VCount(2)
   integer                               :: NVar
   integer                               :: TimeIndex
-  character(len=DateStrLen)             :: tmpdata(1)
+  character(len=4096)                   :: tmpdata(1)
+  integer                               :: length
+
+  length = len(Data)
+  if(1 > length) then
+     length = 1
+     tmpdata(1) = ""
+  else if(4096 < length) then
+     length = 4096
+     tmpdata(1) = Data(1:4096)
+  else
+     tmpdata(1) = trim(Data)
+  end if
+
+  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+  write(unit=0, fmt='(4a)') 'Var: ', trim(Var), ', Data: ', tmpdata(1)
+  write(unit=0, fmt='(4a)') 'Name: ', trim(Name), ', Element = ', trim(Element)
 
   VarName = Var
   call DateCheck(DateStr,Status)
@@ -4621,11 +4640,11 @@ subroutine ext_pio_put_var_td_char_arr(DataHandle,Element,DateStr,Var,Data,Statu
       return
     endif
     do NVar=1,MaxVars
-      if(DH%MDVarNames(NVar) == Name) then
+      if(DH%VarNames(NVar) == Name) then
         Status = WRF_WARN_2DRYRUNS_1VARIABLE  
         return
-      elseif(DH%MDVarNames(NVar) == NO_NAME) then
-        DH%MDVarNames(NVar) = Name
+      elseif(DH%VarNames(NVar) == NO_NAME) then
+        DH%VarNames(NVar) = Name
         exit
       elseif(NVar == MaxVars) then
         Status = WRF_WARN_TOO_MANY_VARIABLES  
@@ -4654,12 +4673,11 @@ subroutine ext_pio_put_var_td_char_arr(DataHandle,Element,DateStr,Var,Data,Statu
         return
       endif
     enddo
-    DH%MDVarDimLens(NVar) = len(Data)
+    DH%VarDimLens(NVar,1) = len(Data)
     VDims(1) = DH%DimIDs(i)
     VDims(2) = DH%DimUnlimID
     write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
     write(unit=0, fmt='(3a,i6)') 'Define Var <', trim(Var), '> as NVvar:', NVAR
-   !stat = pio_def_var(DH%file_handle,Name,PIO_CHAR,DH%descMDVar(NVar))
     stat = pio_def_var(DH%file_handle,Name,PIO_CHAR,DH%descVar(NVar))
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
@@ -4669,9 +4687,9 @@ subroutine ext_pio_put_var_td_char_arr(DataHandle,Element,DateStr,Var,Data,Statu
     endif
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_WRITE) then
     do NVar=1,MaxVars
-      if(DH%MDVarNames(NVar) == Name) then
+      if(DH%VarNames(NVar) == Name) then
         exit
-      elseif(DH%MDVarNames(NVar) == NO_NAME) then
+      elseif(DH%VarNames(NVar) == NO_NAME) then
         Status = WRF_WARN_MD_NF  
         write(msg,*) 'Warning METADATA NOT FOUND in ',__FILE__,' ','CHAR',', line', __LINE__
         call wrf_debug ( WARN , msg)
@@ -4683,7 +4701,7 @@ subroutine ext_pio_put_var_td_char_arr(DataHandle,Element,DateStr,Var,Data,Statu
         return
       endif
     enddo
-    if(len(Data) > DH%MDVarDimLens(NVar)) then
+    if(len(Data) > DH%VarDimLens(NVar,1)) then
       Status = WRF_WARN_COUNT_TOO_LONG 
       write(msg,*) 'Warning COUNT TOO LONG in ',__FILE__,' ','CHAR',', line', __LINE__
       call wrf_debug ( WARN , msg)
@@ -4702,10 +4720,9 @@ subroutine ext_pio_put_var_td_char_arr(DataHandle,Element,DateStr,Var,Data,Statu
     endif
     VStart(1) = 1
     VStart(2) = TimeIndex
-    VCount(1) = len(Data)
+    VCount(1) = length
     VCount(2) = 1
     tmpdata = Data
-   !stat = pio_put_var(DH%file_handle,DH%descMDVar(NVar),VStart,VCount,Data)
     stat = pio_put_var(DH%file_handle,DH%descVar(NVar),VStart,VCount,tmpdata)
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
@@ -4746,6 +4763,25 @@ subroutine ext_pio_put_var_td_char_sca(DataHandle,Element,DateStr,Var,Data,Statu
   integer                               :: NVar
   integer                               :: TimeIndex
   character(len=DateStrLen)             :: tmpdata(1)
+  integer                               :: length
+
+  length = len(Data)
+  if(1 > length) then
+     length = 1
+     tmpdata(1) = ""
+  else if(4096 < length) then
+     length = 4096
+     tmpdata(1) = Data(1:4096)
+  else
+     tmpdata(1) = trim(Data)
+  end if
+
+  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+  write(unit=0, fmt='(4a)') 'Var: ', trim(Var), ', Data: ', tmpdata(1)
+
+  write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+  write(unit=0, fmt='(4a)') 'Var: ', trim(Var), ', Data: ', tmpdata(1)
+  write(unit=0, fmt='(4a)') 'Name: ', trim(Name), ', Element = ', trim(Element)
 
   VarName = Var
   call DateCheck(DateStr,Status)
@@ -4780,11 +4816,11 @@ subroutine ext_pio_put_var_td_char_sca(DataHandle,Element,DateStr,Var,Data,Statu
       return
     endif
     do NVar=1,MaxVars
-      if(DH%MDVarNames(NVar) == Name) then
+      if(DH%VarNames(NVar) == Name) then
         Status = WRF_WARN_2DRYRUNS_1VARIABLE  
         return
-      elseif(DH%MDVarNames(NVar) == NO_NAME) then
-        DH%MDVarNames(NVar) = Name
+      elseif(DH%VarNames(NVar) == NO_NAME) then
+        DH%VarNames(NVar) = Name
         exit
       elseif(NVar == MaxVars) then
         Status = WRF_WARN_TOO_MANY_VARIABLES  
@@ -4813,12 +4849,11 @@ subroutine ext_pio_put_var_td_char_sca(DataHandle,Element,DateStr,Var,Data,Statu
         return
       endif
     enddo
-    DH%MDVarDimLens(NVar) = len(Data)
+    DH%VarDimLens(NVar,1) = len(Data)
     VDims(1) = DH%DimIDs(i)
     VDims(2) = DH%DimUnlimID
     write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
     write(unit=0, fmt='(3a,i6)') 'Define Var <', trim(Var), '> as NVvar:', NVAR
-   !stat = pio_def_var(DH%file_handle,Name,PIO_CHAR,DH%descMDVar(NVar))
     stat = pio_def_var(DH%file_handle,Name,PIO_CHAR,DH%descVar(NVar))
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
@@ -4828,9 +4863,9 @@ subroutine ext_pio_put_var_td_char_sca(DataHandle,Element,DateStr,Var,Data,Statu
     endif
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_WRITE) then
     do NVar=1,MaxVars
-      if(DH%MDVarNames(NVar) == Name) then
+      if(DH%VarNames(NVar) == Name) then
         exit
-      elseif(DH%MDVarNames(NVar) == NO_NAME) then
+      elseif(DH%VarNames(NVar) == NO_NAME) then
         Status = WRF_WARN_MD_NF  
         write(msg,*) 'Warning METADATA NOT FOUND in ',__FILE__,' ','CHAR',', line', __LINE__
         call wrf_debug ( WARN , msg)
@@ -4842,7 +4877,7 @@ subroutine ext_pio_put_var_td_char_sca(DataHandle,Element,DateStr,Var,Data,Statu
         return
       endif
     enddo
-    if(len(Data) > DH%MDVarDimLens(NVar)) then
+    if(len(Data) > DH%VarDimLens(NVar,1)) then
       Status = WRF_WARN_COUNT_TOO_LONG 
       write(msg,*) 'Warning COUNT TOO LONG in ',__FILE__,' ','CHAR',', line', __LINE__
       call wrf_debug ( WARN , msg)
@@ -7700,6 +7735,7 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
   character (VarNameLen)                       :: VarName
   character (3)                                :: MemO
   character (3)                                :: UCMemO
+  character (1)                                :: UStagger, LStagger
   integer      ,dimension(NVarDims)            :: Length_global
   integer      ,dimension(NVarDims)            :: Length
   integer      ,dimension(NVarDims)            :: VDimIDs
@@ -7862,7 +7898,6 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
       DH%VarDimLens(j,DH%NumVars) = Length_global(j)
     enddo
 
-    VDimIDs(NDim+1) = DH%DimUnlimID
     select case (FieldType)
       case (WRF_REAL)
         XType = PIO_REAL
@@ -7879,6 +7914,9 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
         return
     end select
 
+    VDimIDs(NDim+1) = DH%DimUnlimID
+    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+    write(unit=0, fmt='(3a,i6)') 'Define Var <', trim(Var), '> as NVar:', DH%NumVars
     stat = pio_def_var(DH%file_handle,VarName,XType,VDimIDs(1:NDim+1),DH%descVar(DH%NumVars))
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
@@ -7897,6 +7935,15 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
     call reorder(MemoryOrder,MemO)
     call uppercase(MemO,UCMemO)
     stat = pio_put_att(DH%file_handle,DH%descVar(DH%NumVars),'MemoryOrder',UCMemO)
+    call netcdf_err(stat,Status)
+    if(Status /= WRF_NO_ERR) then
+      write(msg,*) 'ext_pio_write_field: NetCDF error in ',__FILE__,', line', __LINE__ 
+      call wrf_debug ( WARN , TRIM(msg))
+      return
+    endif
+    LStagger(1:1) = Stagger(1:1)
+    call uppercase(LStagger,UStagger)
+    stat = pio_put_att(DH%file_handle,DH%descVar(DH%NumVars),'Stagger',UStagger)
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
       write(msg,*) 'ext_pio_write_field: NetCDF error in ',__FILE__,', line', __LINE__ 
@@ -8027,7 +8074,6 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
     write(msg,*) 'Fatal error BAD FILE STATUS in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( FATAL , TRIM(msg))
   endif
-  DH%first_operation  = .FALSE.
   return
 end subroutine ext_pio_write_field
 
@@ -8307,7 +8353,6 @@ subroutine ext_pio_read_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
     write(msg,*) 'Fatal error BAD FILE STATUS in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( FATAL , msg)
   endif
-  DH%first_operation  = .FALSE.
   return
 end subroutine ext_pio_read_field
 

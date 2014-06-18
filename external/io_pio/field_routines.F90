@@ -30,6 +30,8 @@ subroutine ext_pio_RealFieldIO(whole,IO,DH,fldsize,Data,Status)
          stat = pio_inq_dimlen(DH%file_handle,dimids(n),dimsizes(n))
          datasize = datasize*dimsizes(n)
       end do
+      write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+      write(unit=0, fmt='(a, 100f12.6)') 'Data = ', Data
       if(fldsize < datasize) then
           stat = pio_put_var(DH%file_handle,DH%descVar(DH%CurrentVariable),Data)
       else if(fldsize > datasize) then

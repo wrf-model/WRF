@@ -4518,11 +4518,11 @@ subroutine ext_pio_put_var_ti_char_arr(DataHandle,Element,Var,Data,Status)
       endif
     enddo
 
-    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-    write(unit=0, fmt='(6a)') 'Var: ', trim(Var), ', Data: ', trim(Data), ', tmpdata: ', trim(tmpdata)
-    write(unit=0, fmt='(3a,i6)') 'Element = ', trim(Element), ', NVar = ', NVar
-    write(unit=0, fmt='(2(a,i6))') 'DH%descVar(NVar)%VarID = ', DH%descVar(NVar)%VarID, &
-         ', length = ', length
+   !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+   !write(unit=0, fmt='(6a)') 'Var: ', trim(Var), ', Data: ', trim(Data), ', tmpdata: ', trim(tmpdata)
+   !write(unit=0, fmt='(3a,i6)') 'Element = ', trim(Element), ', NVar = ', NVar
+   !write(unit=0, fmt='(2(a,i6))') 'DH%descVar(NVar)%VarID = ', DH%descVar(NVar)%VarID, &
+   !     ', length = ', length
 
     if(DH%Write) then
       DH%Write = .false.
@@ -4536,16 +4536,16 @@ subroutine ext_pio_put_var_ti_char_arr(DataHandle,Element,Var,Data,Status)
     endif
 
     if(1 > length) then
-      write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-      write(unit=0, fmt='(6a)') 'Var: ', trim(Var), ', Element: ', trim(Element), ', tmpdata: ', trim(tmpdata)
-      write(unit=0, fmt='(2(a,i6))') 'DH%descVar(NVar)%VarID = ', DH%descVar(NVar)%VarID, &
-         ', length = ', length
+     !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+     !write(unit=0, fmt='(6a)') 'Var: ', trim(Var), ', Element: ', trim(Element), ', tmpdata: ', trim(tmpdata)
+     !write(unit=0, fmt='(2(a,i6))') 'DH%descVar(NVar)%VarID = ', DH%descVar(NVar)%VarID, &
+     !   ', length = ', length
       stat = pio_put_att(DH%file_handle,DH%descVar(NVar),trim(Element),null)
     else
-      write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-      write(unit=0, fmt='(6a)') 'Var: ', trim(Var), ', Element: ', trim(Element), ', tmpdata: ', trim(tmpdata)
-      write(unit=0, fmt='(2(a,i6))') 'DH%descVar(NVar)%VarID = ', DH%descVar(NVar)%VarID, &
-         ', length = ', length
+     !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+     !write(unit=0, fmt='(6a)') 'Var: ', trim(Var), ', Element: ', trim(Element), ', tmpdata: ', trim(tmpdata)
+     !write(unit=0, fmt='(2(a,i6))') 'DH%descVar(NVar)%VarID = ', DH%descVar(NVar)%VarID, &
+     !   ', length = ', length
       stat = pio_put_att(DH%file_handle,DH%descVar(NVar),trim(Element),tmpdata)
     endif
     call netcdf_err(stat,Status)
@@ -6096,7 +6096,7 @@ subroutine ext_pio_get_var_ti_integer_arr(DataHandle,Element,Var,Data,Count,OutC
         return
       endif
     enddo
-    stat = pio_inq_att(DH%file_handle,DH%VarIDs(NVar),trim(Element),XType,XLen)
+    stat = pio_inq_att(DH%file_handle,DH%descVar(NVar),trim(Element),XType,XLen)
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
       write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__,' Element ',Element
@@ -6115,7 +6115,7 @@ subroutine ext_pio_get_var_ti_integer_arr(DataHandle,Element,Var,Data,Count,OutC
       call wrf_debug ( FATAL , msg)
       return
     endif
-    stat = pio_get_att(DH%file_handle,DH%VarIDs(NVar),trim(Element), Buffer )
+    stat = pio_get_att(DH%file_handle,DH%descVar(NVar),trim(Element), Buffer )
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
       write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__,' Element ',Element
@@ -6203,7 +6203,7 @@ subroutine ext_pio_get_var_ti_integer_sca(DataHandle,Element,Var,Data,Count,OutC
         return
       endif
     enddo
-    stat = pio_inq_att(DH%file_handle,DH%VarIDs(NVar),trim(Element),XType,XLen)
+    stat = pio_inq_att(DH%file_handle,DH%descVar(NVar),trim(Element),XType,XLen)
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
       write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__,' Element ',Element
@@ -6222,7 +6222,7 @@ subroutine ext_pio_get_var_ti_integer_sca(DataHandle,Element,Var,Data,Count,OutC
       call wrf_debug ( FATAL , msg)
       return
     endif
-    stat = pio_get_att(DH%file_handle,DH%VarIDs(NVar),trim(Element), Buffer )
+    stat = pio_get_att(DH%file_handle,DH%descVar(NVar),trim(Element), Buffer )
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
       write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__,' Element ',Element
@@ -6616,7 +6616,7 @@ subroutine ext_pio_get_var_ti_logical_arr(DataHandle,Element,Var,Data,Count,OutC
         return
       endif
     enddo
-    stat = pio_inq_att(DH%file_handle,DH%VarIDs(NVar),trim(Element),XType,XLen)
+    stat = pio_inq_att(DH%file_handle,DH%descVar(NVar),trim(Element),XType,XLen)
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
       write(msg,*) 'NetCDF error in ',__FILE__,' ','LOGICAL',', line', __LINE__,' Element ',Element
@@ -6635,7 +6635,7 @@ subroutine ext_pio_get_var_ti_logical_arr(DataHandle,Element,Var,Data,Count,OutC
       call wrf_debug ( FATAL , msg)
       return
     endif
-    stat = pio_get_att(DH%file_handle,DH%VarIDs(NVar),trim(Element), Buffer )
+    stat = pio_get_att(DH%file_handle,DH%descVar(NVar),trim(Element), Buffer )
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
       write(msg,*) 'NetCDF error in ',__FILE__,' ','LOGICAL',', line', __LINE__,' Element ',Element
@@ -6723,7 +6723,7 @@ subroutine ext_pio_get_var_ti_logical_sca(DataHandle,Element,Var,Data,Count,OutC
         return
       endif
     enddo
-    stat = pio_inq_att(DH%file_handle,DH%VarIDs(NVar),trim(Element),XType,XLen)
+    stat = pio_inq_att(DH%file_handle,DH%descVar(NVar),trim(Element),XType,XLen)
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
       write(msg,*) 'NetCDF error in ',__FILE__,' ','LOGICAL',', line', __LINE__,' Element ',Element
@@ -6742,7 +6742,7 @@ subroutine ext_pio_get_var_ti_logical_sca(DataHandle,Element,Var,Data,Count,OutC
       call wrf_debug ( FATAL , msg)
       return
     endif
-    stat = pio_get_att(DH%file_handle,DH%VarIDs(NVar),trim(Element), Buffer )
+    stat = pio_get_att(DH%file_handle,DH%descVar(NVar),trim(Element), Buffer )
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
       write(msg,*) 'NetCDF error in ',__FILE__,' ','LOGICAL',', line', __LINE__,' Element ',Element
@@ -7134,7 +7134,7 @@ subroutine ext_pio_get_var_ti_char_arr(DataHandle,Element,Var,Data,Status)
         return
       endif
     enddo
-    stat = pio_inq_att(DH%file_handle,DH%VarIDs(NVar),trim(Element),XType,XLen)
+    stat = pio_inq_att(DH%file_handle,DH%descVar(NVar),trim(Element),XType,XLen)
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
       write(msg,*) 'NetCDF error in ',__FILE__,' ','CHAR',', line', __LINE__,' Element ',Element
@@ -7151,7 +7151,7 @@ subroutine ext_pio_get_var_ti_char_arr(DataHandle,Element,Var,Data,Status)
       call wrf_debug ( WARN , msg)
       return
     endif
-    stat = pio_get_att(DH%file_handle,DH%VarIDs(NVar),trim(Element), Data )
+    stat = pio_get_att(DH%file_handle,DH%descVar(NVar),trim(Element), Data )
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
       write(msg,*) 'NetCDF error in ',__FILE__,' ','CHAR',', line', __LINE__,' Element ',Element
@@ -7225,7 +7225,7 @@ subroutine ext_pio_get_var_ti_char_sca(DataHandle,Element,Var,Data,Status)
         return
       endif
     enddo
-    stat = pio_inq_att(DH%file_handle,DH%VarIDs(NVar),trim(Element),XType,XLen)
+    stat = pio_inq_att(DH%file_handle,DH%descVar(NVar),trim(Element),XType,XLen)
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
       write(msg,*) 'NetCDF error in ',__FILE__,' ','CHAR',', line', __LINE__,' Element ',Element
@@ -7242,7 +7242,7 @@ subroutine ext_pio_get_var_ti_char_sca(DataHandle,Element,Var,Data,Status)
       call wrf_debug ( WARN , msg)
       return
     endif
-    stat = pio_get_att(DH%file_handle,DH%VarIDs(NVar),trim(Element), Data )
+    stat = pio_get_att(DH%file_handle,DH%descVar(NVar),trim(Element), Data )
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
       write(msg,*) 'NetCDF error in ',__FILE__,' ','CHAR',', line', __LINE__,' Element ',Element
@@ -7821,7 +7821,6 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
   integer      ,dimension(NVarDims)            :: Length
   integer      ,dimension(NVarDims)            :: VDimIDs
   character(80),dimension(NVarDims)            :: RODimNames
-  integer      ,dimension(NVarDims)            :: StoredStart
   integer      ,dimension(NVarDims)            :: VStart
   integer      ,dimension(NVarDims)            :: VCount
   integer                                      :: stat
@@ -7862,10 +7861,10 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
   write(msg,*)'ext_pio_write_field: called for ',TRIM(Var)
   CALL wrf_debug( 100, msg )
 
-  Length(1:NDim) = PatchEnd(1:NDim)-PatchStart(1:NDim)+1
+  VCount(1:NDim) = PatchEnd(1:NDim)-PatchStart(1:NDim)+1
   Length_global(1:NDim) = DomainEnd(1:NDim)-DomainStart(1:NDim)+1
 
-  call ExtOrder(MemoryOrder,Length,Status)
+  call ExtOrder(MemoryOrder,VCount,Status)
   call ExtOrder(MemoryOrder,Length_global,Status)
 
   call ExtOrderStr(MemoryOrder,DimNames,RODimNames,Status)
@@ -7995,8 +7994,8 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
     end select
 
     VDimIDs(NDim+1) = DH%DimUnlimID
-    write(unit=0, fmt='(//3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-    write(unit=0, fmt='(3a,i6)') '1 Define Var <', trim(Var), '> as NVar:', DH%NumVars
+   !write(unit=0, fmt='(//3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+   !write(unit=0, fmt='(3a,i6)') '1 Define Var <', trim(Var), '> as NVar:', DH%NumVars
     stat = pio_def_var(DH%file_handle,VarName,XType,VDimIDs(1:NDim+1),DH%descVar(DH%NumVars))
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
@@ -8004,8 +8003,8 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
       call wrf_debug ( WARN , TRIM(msg))
       return
     endif
-    write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-    write(unit=0, fmt='(a,i6)') 'DH%descVar(DH%NumVars)%VarID = ', DH%descVar(DH%NumVars)%VarID
+   !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+   !write(unit=0, fmt='(a,i6)') 'DH%descVar(DH%NumVars)%VarID = ', DH%descVar(DH%NumVars)%VarID
 
     stat = pio_put_att(DH%file_handle,DH%descVar(DH%NumVars),'FieldType',FieldType)
     call netcdf_err(stat,Status)
@@ -8068,9 +8067,9 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
       endif
     enddo
 
-    StoredStart = 1
-    StoredStart(1:NDim) = PatchStart(1:NDim)
-    call ExtOrder(MemoryOrder,StoredStart,Status)
+    VStart = 1
+    VStart(1:NDim) = PatchStart(1:NDim)
+    call ExtOrder(MemoryOrder,VStart,Status)
 
     do n = 1, NDim
       VDimIDs(n) = 0
@@ -8081,9 +8080,8 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
           end if
        end do
 
-       VStart(n) = MemoryStart(n)
-       VCount(n) = MemoryEnd(n) - MemoryStart(n) + 1
-       fldsize = fldsize * VCount(n)
+       Length(n) = MemoryEnd(n) - MemoryStart(n) + 1
+       fldsize = fldsize * Length(n)
 
        if("land_cat_stag" == DimNames(n)) then
           DH%vartype(DH%CurrentVariable) = LAND_CAT_VAR
@@ -8096,16 +8094,19 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
        endif
     end do
 
+   !write(unit=0, fmt='(3a,i6)') 'file: ',__FILE__,', line', __LINE__
+   !write(unit=0, fmt='(a,i6,2a)') 'DH%CurrentVariable = ', DH%CurrentVariable, ', name: ', trim(VarName)
+
     if(WRF_INTEGER == FieldType) then
       if(1 == fldsize) then
          tmp0dint(1,1) = Field(1)
          stat = pio_put_var(DH%file_handle,DH%descVar(DH%CurrentVariable),tmp0dint)
          call netcdf_err(stat,Status)
       else if(2 == Ndim) then
-         allocate(tmp2dint(VCount(1),VCount(2),1), stat=Status)
+         allocate(tmp2dint(Length(1),Length(2),1), stat=Status)
          n = 0
-         do j=1,VCount(2)
-         do i=1,VCount(1)
+         do j=1,Length(2)
+         do i=1,Length(1)
             n=n+1
             tmp2dint(i,j,1) = Field(n)
          enddo
@@ -8114,15 +8115,11 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
                                DH%iodesc2d_m_int, tmp2dint, Status)
          deallocate(tmp2dint)
       else
-        call FieldIO('write',DataHandle,DateStr,VStart,VCount,MemoryOrder, &
+        call FieldIO('write',DataHandle,DateStr,VStart,VCount,Length,MemoryOrder, &
                       Stagger,FieldType,Field,Status)
       endif
     else
-       if(1 == NDim) then
-          if(VCount(1) > Length(1)) VCount(1) = Length(1)
-       end if
-
-       call FieldIO('write',DataHandle,DateStr,VStart,VCount,MemoryOrder, &
+       call FieldIO('write',DataHandle,DateStr,VStart,VCount,Length,MemoryOrder, &
                      Stagger,FieldType,Field,Status)
     end if
     if(Status /= WRF_NO_ERR) then
@@ -8130,8 +8127,6 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
       call wrf_debug ( WARN , TRIM(msg))
       return
     endif
-
-   !call PIO_advanceframe(DH%descVar(DH%CurrentVariable))
   else
     Status = WRF_ERR_FATAL_BAD_FILE_STATUS
     write(msg,*) 'Fatal error BAD FILE STATUS in ',__FILE__,', line', __LINE__ 
@@ -8172,11 +8167,12 @@ subroutine ext_pio_read_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
   integer ,dimension(NVarDims)                 :: VCount
   integer ,dimension(NVarDims)                 :: VStart
   integer ,dimension(NVarDims)                 :: Length
+#if 0
+  integer ,dimension(NVarDims)                 :: StoredLen
+#endif
   integer ,dimension(NVarDims)                 :: VDimIDs
   integer ,dimension(NVarDims)                 :: MemS
   integer ,dimension(NVarDims)                 :: MemE
-  integer ,dimension(NVarDims)                 :: StoredStart
-  integer ,dimension(NVarDims)                 :: StoredLen
   integer                                      :: NVar
   character (VarNameLen)                       :: Name
   integer                                      :: XType
@@ -8216,6 +8212,9 @@ subroutine ext_pio_read_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
   DH%CurrentVariable = DH%CurrentVariable + 1
   DH%VarNames(DH%CurrentVariable) = VarName
 
+ !write(unit=0, fmt='(3a,i6)') 'file: ',__FILE__,', line', __LINE__
+ !write(unit=0, fmt='(a,i6,2a)') 'DH%CurrentVariable = ', DH%CurrentVariable, ', name: ', trim(VarName)
+
   if(DH%FileStatus == WRF_FILE_NOT_OPENED) then
     Status = WRF_WARN_FILE_NOT_OPENED
     write(msg,*) 'Warning FILE NOT OPENED in ',__FILE__,', line', __LINE__ 
@@ -8228,12 +8227,12 @@ subroutine ext_pio_read_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
     call wrf_debug ( WARN , TRIM(msg))
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_READ .OR. DH%FileStatus == WRF_FILE_OPENED_FOR_UPDATE ) then
 
-    Length(1:NDim) = PatchEnd(1:NDim)-PatchStart(1:NDim)+1
-    StoredStart(1:NDim) = PatchStart(1:NDim)
+    VCount(1:NDim) = PatchEnd(1:NDim)-PatchStart(1:NDim)+1
+    VStart(1:NDim) = PatchStart(1:NDim)
 
-    call ExtOrder(MemoryOrder,Length,Status)
+    call ExtOrder(MemoryOrder,VCount,Status)
 
-    stat = pio_inq_varid(DH%file_handle,VarName,DH%VarIDs(DH%CurrentVariable))
+   !stat = pio_inq_varid(DH%file_handle,VarName,DH%VarIDs(DH%CurrentVariable))
     stat = pio_inq_varid(DH%file_handle,VarName,DH%descVar(DH%CurrentVariable))
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
@@ -8282,13 +8281,13 @@ subroutine ext_pio_read_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
     endif      
     select case (FieldType)
       case (WRF_REAL)
-! allow coercion between double and single prec real
+       !allow coercion between double and single prec real
         if(.NOT. (XType == PIO_REAL .OR. XType == PIO_DOUBLE) )  then
           Status = WRF_WARN_TYPE_MISMATCH
           write(msg,*) 'Warning REAL TYPE MISMATCH in ',__FILE__,', line', __LINE__
         endif
       case (WRF_DOUBLE)
-! allow coercion between double and single prec real
+       !allow coercion between double and single prec real
         if(.NOT. (XType == PIO_REAL .OR. XType == PIO_DOUBLE) )  then
           Status = WRF_WARN_TYPE_MISMATCH
           write(msg,*) 'Warning DOUBLE TYPE MISMATCH in ',__FILE__,', line', __LINE__
@@ -8322,7 +8321,7 @@ subroutine ext_pio_read_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
       endif
       IF ( dimname(1:10) == 'ext_scalar' ) THEN
         NDim = 1
-        Length(1) = 1
+        VCount(1) = 1
       ENDIF
     ENDIF
     if(StoredDim /= NDim+1) then
@@ -8333,6 +8332,7 @@ subroutine ext_pio_read_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
       call wrf_debug ( FATAL , msg)
       return
     endif
+#if 0
     do n=1,NDim
       stat = pio_inq_dimlen(DH%file_handle,VDimIDs(n),StoredLen(n))
       call netcdf_err(stat,Status)
@@ -8341,29 +8341,31 @@ subroutine ext_pio_read_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
         call wrf_debug ( WARN , TRIM(msg))
         return
       endif
-      if(Length(n) > StoredLen(n)) then
+      if(VCount(n) > StoredLen(n)) then
         Status = WRF_WARN_READ_PAST_EOF
-        write(msg,*) 'Warning READ PAST EOF in ext_pio_read_field of ',TRIM(Var),Length(n),'>',StoredLen(n)
+        write(msg,*) 'Warning READ PAST EOF in ext_pio_read_field of ',TRIM(Var),VCount(n),'>',StoredLen(n)
         call wrf_debug ( WARN , TRIM(msg))
         return
-      elseif(Length(n) <= 0) then
+      elseif(VCount(n) <= 0) then
         Status = WRF_WARN_ZERO_LENGTH_READ
         write(msg,*) 'Warning ZERO LENGTH READ in ',__FILE__,', line', __LINE__
         call wrf_debug ( WARN , TRIM(msg))
         return
       endif
     enddo
+#endif
 
-    StoredStart(1:NDim) = PatchStart(1:NDim)
+    VStart(1:NDim) = PatchStart(1:NDim)
+    VCount(1:NDim) = PatchEnd(1:NDim) - PatchStart(1:NDim) + 1
 
-    call ExtOrder(MemoryOrder,StoredStart,Status)
+    call ExtOrder(MemoryOrder,VStart,Status)
+    call ExtOrder(MemoryOrder,VCount,Status)
 
     DH%vartype(DH%CurrentVariable) = NOT_LAND_SOIL_VAR
     fldsize = 1
     do n = 1, NDim
-       VStart(n) = MemoryStart(n)
-       VCount(n) = MemoryEnd(n) - MemoryStart(n) + 1
-       fldsize = fldsize * VCount(n)
+       Length(n) = MemoryEnd(n) - MemoryStart(n) + 1
+       fldsize = fldsize * Length(n)
 
        if("land_cat_stag" == DH%DimNames(VDimIDs(n))) then
           DH%vartype(DH%CurrentVariable) = LAND_CAT_VAR
@@ -8376,33 +8378,31 @@ subroutine ext_pio_read_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
        endif
     end do
    
-    if(1 == Ndim) then
-       if(VCount(1) > Length(1)) VCount(1) = Length(1)
-    end if
-
     if(WRF_INTEGER == FieldType) then
       if(1 == fldsize) then
          Status = pio_get_var(DH%file_handle,DH%descVar(DH%CurrentVariable),VCount(1:1))
          Field(1) = VCount(1)
       else if(2 == Ndim) then
-         allocate(tmp2dint(VCount(1),VCount(2),1), stat=Status)
+         allocate(tmp2dint(Length(1),Length(2),1), stat=Status)
          call pio_read_darray(DH%file_handle, DH%descVar(DH%CurrentVariable), &
                               DH%iodesc2d_m_int, tmp2dint, Status)
 !                             DH%ioVar(DH%CurrentVariable), tmp2dint, Status)
          n = 0
-         do j=1,VCount(2)
-         do i=1,VCount(1)
+         do j=1,Length(2)
+         do i=1,Length(1)
             n=n+1
             Field(n) = tmp2dint(i,j,1)
          enddo
          enddo
          deallocate(tmp2dint)
       else
-        call FieldIO('read',DataHandle,DateStr,VStart,VCount,MemoryOrder, &
+        call FieldIO('read',DataHandle,DateStr,VStart,VCount,Length,MemoryOrder, &
                       readinStagger,FieldType,Field,Status)
       endif
     else
-      call FieldIO('read',DataHandle,DateStr,VStart,VCount,MemoryOrder, &
+     !write(unit=0, fmt='(3a,i6)') 'file: ',__FILE__,', line', __LINE__
+     !write(unit=0, fmt='(a,i6,2a)') 'DH%CurrentVariable = ', DH%CurrentVariable, ', name: ', trim(VarName)
+      call FieldIO('read',DataHandle,DateStr,VStart,VCount,Length,MemoryOrder, &
                     readinStagger,FieldType,Field,Status)
     endif
     if(stat /= 0) then

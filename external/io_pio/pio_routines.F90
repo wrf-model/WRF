@@ -913,14 +913,15 @@ subroutine find_iodesc(DH,MemoryOrder,Stagger,FieldTYpe,whole)
   end select
 end subroutine find_iodesc
 
-subroutine FieldIO(IO,DataHandle,DateStr,Starts,Length,MemoryOrder, &
+subroutine FieldIO(IO,DataHandle,DateStr,Starts,Counts,Length,MemoryOrder, &
                    Stagger,FieldType,Field,Status)
   implicit none
   include 'wrf_status_codes.h'
   character (*)              ,intent(in)    :: IO
   integer                    ,intent(in)    :: DataHandle
   character*(*)              ,intent(in)    :: DateStr
-  integer,dimension(NVarDims),intent(in)    :: Starts
+  integer,dimension(NVarDims),intent(inout) :: Starts
+  integer,dimension(NVarDims),intent(inout) :: Counts
   integer,dimension(NVarDims),intent(in)    :: Length
   character*(*)              ,intent(in)    :: MemoryOrder
   character*(*)              ,intent(in)    :: Stagger
@@ -930,7 +931,7 @@ subroutine FieldIO(IO,DataHandle,DateStr,Starts,Length,MemoryOrder, &
   integer                                   :: TimeIndex
   logical                                   :: whole
   integer                                   :: NDim
-  integer                                   :: fldsize
+  integer                                   :: fldsize, datasize
   integer                                   :: n
   type(wrf_data_handle)      ,pointer       :: DH
   integer(KIND=PIO_OFFSET)                  :: pioidx
@@ -947,9 +948,14 @@ subroutine FieldIO(IO,DataHandle,DateStr,Starts,Length,MemoryOrder, &
   call GetDim(MemoryOrder,NDim,Status)
 
   fldsize = 1
+  datasize = 1
   do n = 1, NDim
      fldsize = fldsize * Length(n)
+     datasize = datasize * Counts(n)
   end do
+
+  Starts(NDim+1) = TimeIndex
+  Counts(NDim+1) = 1
 
   call find_iodesc(DH,MemoryOrder,Stagger,FieldTYpe,whole)
 
@@ -959,13 +965,13 @@ subroutine FieldIO(IO,DataHandle,DateStr,Starts,Length,MemoryOrder, &
 
   select case (FieldType)
     case (WRF_REAL)
-      call ext_pio_RealFieldIO(whole,IO,DH,fldsize,Field,Status)
+      call ext_pio_RealFieldIO(whole,IO,DH,Starts,Counts,fldsize,datasize,Field,Status)
     case (WRF_DOUBLE)
-      call ext_pio_DoubleFieldIO(whole,IO,DH,fldsize,Field,Status)
+      call ext_pio_DoubleFieldIO(whole,IO,DH,Starts,Counts,fldsize,Field,Status)
     case (WRF_INTEGER)
-      call ext_pio_IntFieldIO(whole,IO,DH,fldsize,Field,Status)
+      call ext_pio_IntFieldIO(whole,IO,DH,Starts,Counts,fldsize,Field,Status)
     case (WRF_LOGICAL)
-      call ext_pio_LogicalFieldIO(whole,IO,DH,fldsize,Field,Status)
+      call ext_pio_LogicalFieldIO(whole,IO,DH,Starts,Counts,fldsize,Field,Status)
     case default
       Status = WRF_WARN_DATA_TYPE_NOT_FOUND
       write(msg,*) 'Warning DATA TYPE NOT FOUND in ',__FILE__,', line', __LINE__
@@ -1183,7 +1189,7 @@ subroutine define_pio_iodesc(grid, DH)
    integer :: dims3d_yb(3), dims2d_yb(2)
    integer :: dims3d_land(3), dims3d_soil(3), dims3d_soil_layers(3)
    integer :: dims3d_mdl_cpl(3)
-   integer :: lite, ljte, lkte, itsm1, jtsm1, itep1, jtep1
+   integer :: lite, ljte, lkte
    integer :: i, j, k, n, npos
 
    DH%first_operation = .false.
@@ -1202,18 +1208,6 @@ subroutine define_pio_iodesc(grid, DH)
    if(lite > dims3d(1)) lite = dims3d(1)
    if(ljte > dims3d(2)) ljte = dims3d(2)
    if(lkte > dims3d(3)) lkte = dims3d(3)
-
-   itsm1 = its - 1
-   jtsm1 = jts - 1
-
-   if(itsm1 < 1) itsm1 = 1
-   if(jtsm1 < 1) jtsm1 = 1
-
-   itep1 = ite + 1
-   jtep1 = jte + 1
-
-   if(itep1 > dims3d(1)) itep1 = dims3d(1)
-   if(jtep1 > dims3d(1)) jtep1 = dims3d(1)
 
    dims3d_land(1) = dims3d(1)
    dims3d_land(2) = dims3d(2)
@@ -1379,7 +1373,6 @@ subroutine define_pio_iodesc(grid, DH)
 
    if(1 == its) then
       do n = 1, grid%spec_bdy_width
-     !do j = jtsm1, jtep1
       do j = jts, ljte
          npos = j - jms + 1 + (jme - jms + 1) * (n - 1)
          compdof_2d_xs(npos) = j + dims2d_xb(1) * (n - 1)
@@ -1389,7 +1382,6 @@ subroutine define_pio_iodesc(grid, DH)
 
    if(1 == jts) then
       do n = 1, grid%spec_bdy_width
-     !do i = itsm1, itep1
       do i = its, lite
          npos = i - ims + 1 + (ime - ims + 1) * (n - 1)
          compdof_2d_ys(npos) = i + dims2d_yb(1) * (n - 1)
@@ -1399,7 +1391,6 @@ subroutine define_pio_iodesc(grid, DH)
 
    if(dims2d(1) == lite) then
       do n = 1, grid%spec_bdy_width
-     !do j = jtsm1, jtep1
       do j = jts, ljte
          npos = j - jms + 1 + (jme - jms + 1) * (n - 1)
          compdof_2d_xe(npos) = j + dims2d_xb(1) * (n - 1)
@@ -1409,7 +1400,6 @@ subroutine define_pio_iodesc(grid, DH)
 
    if(dims2d(2) == ljte) then
       do n = 1, grid%spec_bdy_width
-     !do i = itsm1, itep1
       do i = its, lite
          npos = i - ims + 1 + (ime - ims + 1) * (n - 1)
          compdof_2d_ye(npos) = i + dims2d_yb(1) * (n - 1)
@@ -1420,10 +1410,9 @@ subroutine define_pio_iodesc(grid, DH)
    if(1 == its) then
       do n = 1, grid%spec_bdy_width
       do k = kts, lkte
-     !do j = jtsm1, jtep1
       do j = jts, ljte
          npos = j - jms + 1 + (jme - jms + 1) * (k - kms + (kme - kms + 1) * (n - 1))
-         compdof_3d_xsz(npos) = j + dims3d_xb(1) * (k - kts + dims3d_xb(2) * (n - 1))
+         compdof_3d_xsz(npos) = j + dims3d_xb(1) * (k - 1 + dims3d_xb(2) * (n - 1))
       enddo
       enddo
       enddo
@@ -1432,10 +1421,9 @@ subroutine define_pio_iodesc(grid, DH)
    if(1 == jts) then
       do n = 1, grid%spec_bdy_width
       do k = kts, lkte
-     !do i = itsm1, itep1
       do i = its, lite
          npos = i - ims + 1 + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (n - 1))
-         compdof_3d_ysz(npos) = i + dims3d_yb(1) * (k - kts + dims3d_yb(2) * (n - 1))
+         compdof_3d_ysz(npos) = i + dims3d_yb(1) * (k - 1 + dims3d_yb(2) * (n - 1))
       enddo
       enddo
       enddo
@@ -1444,10 +1432,9 @@ subroutine define_pio_iodesc(grid, DH)
    if(dims2d(1) == lite) then
       do n = 1, grid%spec_bdy_width
       do k = kts, lkte
-     !do j = jtsm1, jtep1
       do j = jts, ljte
          npos = j - jms + 1 + (jme - jms + 1) * (k - kms + (kme - kms + 1) * (n - 1))
-         compdof_3d_xez(npos) = j + dims3d_xb(1) * (k - kts + dims3d_xb(2) * (n - 1))
+         compdof_3d_xez(npos) = j + dims3d_xb(1) * (k - 1 + dims3d_xb(2) * (n - 1))
       enddo
       enddo
       enddo
@@ -1456,10 +1443,9 @@ subroutine define_pio_iodesc(grid, DH)
    if(dims2d(2) == ljte) then
       do n = 1, grid%spec_bdy_width
       do k = kts, lkte
-     !do i = itsm1, itep1
       do i = its, lite
          npos = i - ims + 1 + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (n - 1))
-         compdof_3d_yez(npos) = i + dims3d_yb(1) * (k - kts + dims3d_yb(2) * (n - 1))
+         compdof_3d_yez(npos) = i + dims3d_yb(1) * (k - 1 + dims3d_yb(2) * (n - 1))
       enddo
       enddo
       enddo
@@ -1537,18 +1523,6 @@ subroutine define_pio_iodesc(grid, DH)
    if(ljte > dims3d(2)) ljte = dims3d(2)
    if(lkte > dims3d(3)) lkte = dims3d(3)
 
-   itsm1 = its - 1
-   jtsm1 = jts - 1
-
-   if(itsm1 < 1) itsm1 = 1
-   if(jtsm1 < 1) jtsm1 = 1
-
-   itep1 = ite + 1
-   jtep1 = jte + 1
-
-   if(itep1 > dims3d(1)) itep1 = dims3d(1)
-   if(jtep1 > dims3d(1)) jtep1 = dims3d(1)
-
    dims2d(1) = dims3d(1)
    dims2d(2) = dims3d(2)
 
@@ -1612,10 +1586,9 @@ subroutine define_pio_iodesc(grid, DH)
    if(1 == its) then
       do n = 1, grid%spec_bdy_width
       do k = kts, lkte
-     !do j = jtsm1, jtep1
       do j = jts, ljte
          npos = j - jms + 1 + (jme - jms + 1) * (k - kms + (kme - kms + 1) * (n - 1))
-         compdof_3d_xsz(npos) = j + dims3d_xb(1) * (k - kts + dims3d_xb(2) * (n - 1))
+         compdof_3d_xsz(npos) = j + dims3d_xb(1) * (k - 1 + dims3d_xb(2) * (n - 1))
       enddo
       enddo
       enddo
@@ -1624,10 +1597,9 @@ subroutine define_pio_iodesc(grid, DH)
    if(1 == jts) then
       do n = 1, grid%spec_bdy_width
       do k = kts, lkte
-     !do i = itsm1, itep1
       do i = its, lite
          npos = i - ims + 1 + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (n - 1))
-         compdof_3d_ysz(npos) = i + dims3d_yb(1) * (k - kts + dims3d_yb(2) * (n - 1))
+         compdof_3d_ysz(npos) = i + dims3d_yb(1) * (k - 1 + dims3d_yb(2) * (n - 1))
       enddo
       enddo
       enddo
@@ -1636,10 +1608,9 @@ subroutine define_pio_iodesc(grid, DH)
    if(dims3d(1) == lite) then
       do n = 1, grid%spec_bdy_width
       do k = kts, lkte
-     !do j = jtsm1, jtep1
       do j = jts, ljte
          npos = j - jms + 1 + (jme - jms + 1) * (k - kms + (kme - kms + 1) * (n - 1))
-         compdof_3d_xez(npos) = j + dims3d_xb(1) * (k - kts + dims3d_xb(2) * (n - 1))
+         compdof_3d_xez(npos) = j + dims3d_xb(1) * (k - 1 + dims3d_xb(2) * (n - 1))
       enddo
       enddo
       enddo
@@ -1648,10 +1619,9 @@ subroutine define_pio_iodesc(grid, DH)
    if(dims3d(2) == ljte) then
       do n = 1, grid%spec_bdy_width
       do k = kts, lkte
-     !do i = itsm1, itep1
       do i = its, lite
          npos = i - ims + 1 + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (n - 1))
-         compdof_3d_yez(npos) = i + dims3d_yb(1) * (k - kts + dims3d_yb(2) * (n - 1))
+         compdof_3d_yez(npos) = i + dims3d_yb(1) * (k - 1 + dims3d_yb(2) * (n - 1))
       enddo
       enddo
       enddo
@@ -1695,18 +1665,6 @@ subroutine define_pio_iodesc(grid, DH)
    if(ljte > dims3d(2)) ljte = dims3d(2)
    if(lkte > dims3d(3)) lkte = dims3d(3)
 
-   itsm1 = its - 1
-   jtsm1 = jts - 1
-
-   if(itsm1 < 1) itsm1 = 1
-   if(jtsm1 < 1) jtsm1 = 1
-
-   itep1 = ite + 1
-   jtep1 = jte + 1
-
-   if(itep1 > dims3d(1)) itep1 = dims3d(1)
-   if(jtep1 > dims3d(1)) jtep1 = dims3d(1)
-
    dims2d(1) = dims3d(1)
    dims2d(2) = dims3d(2)
 
@@ -1770,10 +1728,9 @@ subroutine define_pio_iodesc(grid, DH)
    if(1 == its) then
       do n = 1, grid%spec_bdy_width
       do k = kts, lkte
-     !do j = jtsm1, jtep1
       do j = jts, ljte
          npos = j - jms + 1 + (jme - jms + 1) * (k - kms + (kme - kms + 1) * (n - 1))
-         compdof_3d_xsz(npos) = j + dims3d_xb(1) * (k - kts + dims3d_xb(2) * (n - 1))
+         compdof_3d_xsz(npos) = j + dims3d_xb(1) * (k - 1 + dims3d_xb(2) * (n - 1))
       enddo
       enddo
       enddo
@@ -1782,10 +1739,9 @@ subroutine define_pio_iodesc(grid, DH)
    if(1 == jts) then
       do n = 1, grid%spec_bdy_width
       do k = kts, lkte
-     !do i = itsm1, itep1
       do i = its, lite
          npos = i - ims + 1 + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (n - 1))
-         compdof_3d_ysz(npos) = i + dims3d_yb(1) * (k - kts + dims3d_yb(2) * (n - 1))
+         compdof_3d_ysz(npos) = i + dims3d_yb(1) * (k - 1 + dims3d_yb(2) * (n - 1))
       enddo
       enddo
       enddo
@@ -1794,10 +1750,9 @@ subroutine define_pio_iodesc(grid, DH)
    if(dims3d(1) == lite) then
       do n = 1, grid%spec_bdy_width
       do k = kts, lkte
-     !do j = jtsm1, jtep1
       do j = jts, ljte
          npos = j - jms + 1 + (jme - jms + 1) * (k - kms + (kme - kms + 1) * (n - 1))
-         compdof_3d_xez(npos) = j + dims3d_xb(1) * (k - kts + dims3d_xb(2) * (n - 1))
+         compdof_3d_xez(npos) = j + dims3d_xb(1) * (k - 1 + dims3d_xb(2) * (n - 1))
       enddo
       enddo
       enddo
@@ -1806,10 +1761,9 @@ subroutine define_pio_iodesc(grid, DH)
    if(dims3d(2) == ljte) then
       do n = 1, grid%spec_bdy_width
       do k = kts, lkte
-     !do i = itsm1, itep1
       do i = its, lite
          npos = i - ims + 1 + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (n - 1))
-         compdof_3d_yez(npos) = i + dims3d_yb(1) * (k - kts + dims3d_yb(2) * (n - 1))
+         compdof_3d_yez(npos) = i + dims3d_yb(1) * (k - 1 + dims3d_yb(2) * (n - 1))
       enddo
       enddo
       enddo
@@ -1864,18 +1818,6 @@ subroutine define_pio_iodesc(grid, DH)
    if(ljte > dims3d(2)) ljte = dims3d(2)
    if(lkte > dims3d(3)) lkte = dims3d(3)
 
-   itsm1 = its - 1
-   jtsm1 = jts - 1
-
-   if(itsm1 < 1) itsm1 = 1
-   if(jtsm1 < 1) jtsm1 = 1
-
-   itep1 = ite + 1
-   jtep1 = jte + 1
-
-   if(itep1 > dims3d(1)) itep1 = dims3d(1)
-   if(jtep1 > dims3d(1)) jtep1 = dims3d(1)
-
   !compdof_3d =  0
 
    do j = jms, jme
@@ -1917,10 +1859,9 @@ subroutine define_pio_iodesc(grid, DH)
    if(1 == its) then
       do n = 1, grid%spec_bdy_width
       do k = kts, lkte
-     !do j = jtsm1, jtep1
       do j = jts, ljte
          npos = j - jms + 1 + (jme - jms + 1) * (k - kms + (kme - kms + 1) * (n - 1))
-         compdof_3d_xsz(npos) = j + dims3d_xb(1) * (k - kts + dims3d_xb(2) * (n - 1))
+         compdof_3d_xsz(npos) = j + dims3d_xb(1) * (k - 1 + dims3d_xb(2) * (n - 1))
       enddo
       enddo
       enddo
@@ -1929,10 +1870,9 @@ subroutine define_pio_iodesc(grid, DH)
    if(1 == jts) then
       do n = 1, grid%spec_bdy_width
       do k = kts, lkte
-     !do i = itsm1, itep1
       do i = its, lite
          npos = i - ims + 1 + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (n - 1))
-         compdof_3d_ysz(npos) = i + dims3d_yb(1) * (k - kts + dims3d_yb(2) * (n - 1))
+         compdof_3d_ysz(npos) = i + dims3d_yb(1) * (k - 1 + dims3d_yb(2) * (n - 1))
       enddo
       enddo
       enddo
@@ -1941,10 +1881,9 @@ subroutine define_pio_iodesc(grid, DH)
    if(dims3d(1) == lite) then
       do n = 1, grid%spec_bdy_width
       do k = kts, lkte
-     !do j = jtsm1, jtep1
       do j = jts, ljte
          npos = j - jms + 1 + (jme - jms + 1) * (k - kms + (kme - kms + 1) * (n - 1))
-         compdof_3d_xez(npos) = j + dims3d_xb(1) * (k - kts + dims3d_xb(2) * (n - 1))
+         compdof_3d_xez(npos) = j + dims3d_xb(1) * (k - 1 + dims3d_xb(2) * (n - 1))
       enddo
       enddo
       enddo
@@ -1953,10 +1892,9 @@ subroutine define_pio_iodesc(grid, DH)
    if(dims3d(2) == ljte) then
       do n = 1, grid%spec_bdy_width
       do k = kts, lkte
-     !do i = itsm1, itep1
       do i = its, lite
          npos = i - ims + 1 + (ime - ims + 1) * (k - kms + (kme - kms + 1) * (n - 1))
-         compdof_3d_yez(npos) = i + dims3d_yb(1) * (k - kts + dims3d_yb(2) * (n - 1))
+         compdof_3d_yez(npos) = i + dims3d_yb(1) * (k - 1 + dims3d_yb(2) * (n - 1))
       enddo
       enddo
       enddo

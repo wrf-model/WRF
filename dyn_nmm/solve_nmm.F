@@ -16,7 +16,6 @@
         use module_timing
       USE MODULE_DOMAIN,                ONLY : DOMAIN, GET_IJK_FROM_GRID &
                                               ,domain_clock_get,is_alarm_tstep_nphs
-      USE MODULE_SWATH,                 ONLY : UPDATE_INTEREST
       USE MODULE_CONFIGURE,             ONLY : GRID_CONFIG_REC_TYPE
       USE MODULE_MODEL_CONSTANTS
       USE MODULE_STATE_DESCRIPTION
@@ -29,6 +28,7 @@
       USE MODULE_COMM_DM
 #endif
 #ifdef HWRF
+      USE MODULE_SWATH,                 ONLY : UPDATE_INTEREST
       USE MODULE_HIFREQ,                ONLY: HIFREQ_WRITE, HIFREQ_OPEN
 #endif
       USE MODULE_TORNADO_GENESIS,       ONLY: CALC_TORNADO_GENESIS, RESET_TORNADO_GENESIS
@@ -152,10 +152,10 @@
      &,            radiation_tim,rdtemp_tim,turbl_tim,cltend_tim        &
      &,            cucnvc_tim,gsmdrive_tim,hdiff_tim,bocoh_tim          &
      &,            pfdht_tim,ddamp_tim,bocov_tim,uv_htov_tim,sum_tim    &
-     &,            diag_tim,adjppt_tim                                  &
 #ifdef HWRF
-     &,            sst_tim,flux_tim,tornado_tim,hifreq_tim
+     &,            sst_tim,flux_tim,hifreq_tim                          &
 #endif
+     &,            diag_tim,adjppt_tim,tornado_tim                      
 
 ! Flag for producing diagnostic fields (e.g., radar reflectivity) 
       LOGICAL                        :: diag_flag
@@ -2687,6 +2687,7 @@
         tornado_tim=tornado_tim+now_time()-btimx
      ENDIF
 
+#ifdef HWRF
      IF(mod(grid%NTSD,grid%ntornado)==0) then
       have_best: if(size(grid%best_mslp)>1) then
          have_membrane: if(size(grid%membrane_mslp)>1) then
@@ -2707,7 +2708,6 @@
       endif have_best
      ENDIF
 
-#ifdef HWRF
      IF(grid%hifreq_lun /= 0) THEN
         btimx=now_time()
         CALL HIFREQ_WRITE(grid%hifreq_lun,GRID%NTSD,GRID%DT,GRID%HLAT,GRID%HLON    &

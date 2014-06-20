@@ -1889,7 +1889,6 @@ contains
        ierr=95
     endif
   end subroutine get_lonlat
-#endif
 
   subroutine update_tracker_post_move(grid)
     ! This updates the tracker i/j fix location and square of the
@@ -1923,8 +1922,10 @@ contains
          IMS,IME,JMS,JME,KMS,KME, &
          IPS,IPE,JPS,JPE,KPS,KPE)
   end subroutine update_tracker_post_move
+#endif
 end module module_tracker
 
+#if (HWRF == 1)
 subroutine nmm_med_tracker_post_move(grid)
   ! This updates the tracker i/j fix location and square of the
   ! distance to the tracker center after a nest move.
@@ -1933,3 +1934,4 @@ subroutine nmm_med_tracker_post_move(grid)
   type(domain), intent(inout) :: grid
   call update_tracker_post_move(grid)
 end subroutine nmm_med_tracker_post_move
+#endif

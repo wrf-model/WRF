@@ -924,7 +924,8 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
     CALL nl_set_julyr (nest%id, config_flags%julyr)       
     CALL nl_set_julday ( nest%id , config_flags%julday )
 !zhang test ends
-    CALL med_analysis_out ( nest, config_flags )
+     CALL model_to_grid_config_rec ( nest%id , model_config_rec , nest_config_flags )
+    CALL med_analysis_out ( nest, nest_config_flags )
 
    ELSE
 

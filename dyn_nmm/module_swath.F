@@ -33,7 +33,7 @@ contains
   end subroutine init_swath
 
   function dx_at(grid, i,j,  ips,ipe,jps,jpe) result(dx)
-    use mpi
+    include 'mpif.h'
     type(domain), intent(inout) :: grid
     real :: dx, dx_local
     integer, intent(in) :: ips,ipe,jps,jpe, i,j

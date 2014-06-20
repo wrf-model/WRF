@@ -129,9 +129,7 @@
 !***
 !***  LOCAL DATA
 !***
-#ifdef HWRF
-  LOGICAL :: ANAL   !zhang's doing, added for analysis option
-#endif
+  LOGICAL :: ANAL   !added for analysis option
 
   integer(kind=4) :: random_seed
   INTEGER :: parent_id, nestid, max_dom,one
@@ -308,11 +306,7 @@
      &                             ,config_flags)
 !
         RESTRT=config_flags%restart
-#ifdef HWRF
-!zhang's doing added for analysis option
-        ANAL=config_flags%analysis                ! gopal's doing
-!zhang's doing ends
-#endif
+        ANAL=config_flags%analysis                
 
 #ifdef HWRF
 ! Sam's doing for hour 0 & 6 nest movement safeguards

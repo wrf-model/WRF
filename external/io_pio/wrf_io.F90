@@ -1,3 +1,7 @@
+!------------------------------------------------------------------
+!$Id$
+!------------------------------------------------------------------
+
 subroutine ext_pio_open_for_read(DatasetName, grid, SysDepInfo, DataHandle, Status)
   use wrf_data_pio
   use pio_routines
@@ -7828,9 +7832,11 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
   integer                                      :: i,j,n,fldsize
   integer                                      :: XType
   character (80)                               :: NullName
-  logical                                      :: NotFound
+  logical                                      :: NotFound, onbdy
   integer, dimension(1,1)                      :: tmp0dint
   integer, dimension(:,:,:), allocatable       :: tmp2dint
+
+  onbdy = .false.
 
  !Local, possibly adjusted, copies of MemoryStart and MemoryEnd
   MemoryOrder = trim(adjustl(MemoryOrdIn))
@@ -8115,11 +8121,11 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
                                DH%iodesc2d_m_int, tmp2dint, Status)
          deallocate(tmp2dint)
       else
-        call FieldIO('write',DataHandle,DateStr,VStart,VCount,Length,MemoryOrder, &
+        call FieldIO('write',onbdy,DataHandle,DateStr,Length_global,VStart,VCount,Length,MemoryOrder, &
                       Stagger,FieldType,Field,Status)
       endif
     else
-       call FieldIO('write',DataHandle,DateStr,VStart,VCount,Length,MemoryOrder, &
+       call FieldIO('write',onbdy,DataHandle,DateStr,Length_global,VStart,VCount,Length,MemoryOrder, &
                      Stagger,FieldType,Field,Status)
     end if
     if(Status /= WRF_NO_ERR) then
@@ -8166,6 +8172,7 @@ subroutine ext_pio_read_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
   character (VarNameLen)                       :: VarName
   integer ,dimension(NVarDims)                 :: VCount
   integer ,dimension(NVarDims)                 :: VStart
+  integer ,dimension(NVarDims)                 :: VDimen
   integer ,dimension(NVarDims)                 :: Length
 #if 0
   integer ,dimension(NVarDims)                 :: StoredLen
@@ -8182,9 +8189,11 @@ subroutine ext_pio_read_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
   integer                                      :: stat
   integer                                      :: i, j, n, fldsize
   integer                                      :: FType
+  logical                                      :: isbdy, onbdy
   integer, dimension(:,:,:), allocatable       :: tmp2dint
   character (len=2)                            :: readinStagger
 
+  onbdy = .false.
   MemoryOrder = trim(adjustl(MemoryOrdIn))
 
   call GetDim(MemoryOrder,NDim,Status)
@@ -8212,9 +8221,6 @@ subroutine ext_pio_read_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
   DH%CurrentVariable = DH%CurrentVariable + 1
   DH%VarNames(DH%CurrentVariable) = VarName
 
- !write(unit=0, fmt='(3a,i6)') 'file: ',__FILE__,', line', __LINE__
- !write(unit=0, fmt='(a,i6,2a)') 'DH%CurrentVariable = ', DH%CurrentVariable, ', name: ', trim(VarName)
-
   if(DH%FileStatus == WRF_FILE_NOT_OPENED) then
     Status = WRF_WARN_FILE_NOT_OPENED
     write(msg,*) 'Warning FILE NOT OPENED in ',__FILE__,', line', __LINE__ 
@@ -8226,13 +8232,6 @@ subroutine ext_pio_read_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
     write(msg,*) 'Warning READ WRITE ONLY FILE in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( WARN , TRIM(msg))
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_READ .OR. DH%FileStatus == WRF_FILE_OPENED_FOR_UPDATE ) then
-
-    VCount(1:NDim) = PatchEnd(1:NDim)-PatchStart(1:NDim)+1
-    VStart(1:NDim) = PatchStart(1:NDim)
-
-    call ExtOrder(MemoryOrder,VCount,Status)
-
-   !stat = pio_inq_varid(DH%file_handle,VarName,DH%VarIDs(DH%CurrentVariable))
     stat = pio_inq_varid(DH%file_handle,VarName,DH%descVar(DH%CurrentVariable))
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
@@ -8354,18 +8353,33 @@ subroutine ext_pio_read_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
       endif
     enddo
 #endif
+   !write(unit=0, fmt='(//3a,i6)') 'file: ',__FILE__,', line', __LINE__
+   !write(unit=0, fmt='(4x,a,i6,2a)') 'DH%CurrentVariable = ', DH%CurrentVariable, ', name: ', trim(VarName)
 
     VStart(1:NDim) = PatchStart(1:NDim)
     VCount(1:NDim) = PatchEnd(1:NDim) - PatchStart(1:NDim) + 1
+    VDimen(1:NDim) = DomainEnd(1:NDim) - DomainStart(1:NDim) + 1
+
+   !do n = 1, NDim
+   !   write(unit=0, fmt='(4x,8(a,i2,a,i6))') &
+   !        'DomainStart(', n, ')=', DomainStart(n), ', DomainEnd(', n, ')=', DomainEnd(n), &
+   !        ', MemoryStart(', n, ')=', MemoryStart(n), ', MemoryEnd(', n, ')=', MemoryEnd(n), &
+   !        ', PatchStart(', n, ')=', PatchStart(n), ', PatchEnd(', n, ')=', PatchEnd(n), &
+   !        ', VStart(', n, ')=', VStart(n), ', VCount(', n, ')=', VCount(n)
+   !end do
 
     call ExtOrder(MemoryOrder,VStart,Status)
     call ExtOrder(MemoryOrder,VCount,Status)
+    call ExtOrder(MemoryOrder,VDimen,Status)
 
     DH%vartype(DH%CurrentVariable) = NOT_LAND_SOIL_VAR
     fldsize = 1
     do n = 1, NDim
        Length(n) = MemoryEnd(n) - MemoryStart(n) + 1
        fldsize = fldsize * Length(n)
+
+      !write(unit=0, fmt='(4x,2(a,i2,a,i6))') &
+      !     'VStart(', n, ')=', VStart(n), ', VCount(', n, ')=', VCount(n)
 
        if("land_cat_stag" == DH%DimNames(VDimIDs(n))) then
           DH%vartype(DH%CurrentVariable) = LAND_CAT_VAR
@@ -8396,13 +8410,37 @@ subroutine ext_pio_read_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
          enddo
          deallocate(tmp2dint)
       else
-        call FieldIO('read',DataHandle,DateStr,VStart,VCount,Length,MemoryOrder, &
+        call FieldIO('read',onbdy,DataHandle,DateStr,VDimen,VStart,VCount,Length,MemoryOrder, &
                       readinStagger,FieldType,Field,Status)
       endif
     else
      !write(unit=0, fmt='(3a,i6)') 'file: ',__FILE__,', line', __LINE__
      !write(unit=0, fmt='(a,i6,2a)') 'DH%CurrentVariable = ', DH%CurrentVariable, ', name: ', trim(VarName)
-      call FieldIO('read',DataHandle,DateStr,VStart,VCount,Length,MemoryOrder, &
+
+      isbdy = is_boundary(MemoryOrder)
+      if(isbdy) then
+       !write(unit=0, fmt='(//3a,i6)') 'file: ',__FILE__,', line', __LINE__
+       !write(unit=0, fmt='(4x,a,i6,2a)') 'DH%CurrentVariable = ', DH%CurrentVariable, ', name: ', trim(VarName)
+
+        VCount(NVarDims) = MemoryEnd(1) - MemoryStart(1) + 1
+        VStart(NVarDims) = 1
+
+        if(1 == PatchStart(1)) then
+          onbdy = .true.
+          VStart(NVarDims) = PatchStart(1) - MemoryStart(1) + 1
+        end if
+
+        if(VDimen(1) == PatchEnd(1)) then
+          onbdy = .true.
+        end if
+
+       !write(unit=0, fmt='(4x,2(a,i6))') &
+       !     'VStart(1)=', VStart(1), ', VCount(1)=', VCount(1)
+       !write(unit=0, fmt='(4x,2(a,i2,a,i6))') &
+       !     'VStart(', NVarDims, ')=', VStart(NVarDims), ', VCount(', NVarDims, ')=', VCount(NVarDims)
+      endif
+
+      call FieldIO('read',onbdy,DataHandle,DateStr,VDimen,VStart,VCount,Length,MemoryOrder, &
                     readinStagger,FieldType,Field,Status)
     endif
     if(stat /= 0) then

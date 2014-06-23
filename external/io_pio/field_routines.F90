@@ -1,3 +1,7 @@
+!------------------------------------------------------------------
+!$Id$
+!------------------------------------------------------------------
+
 subroutine ext_pio_RealFieldIO(whole,IO,DH,Starts,Counts,fldsize,datasize,Data,Status)
   use pio
   use pio_kinds

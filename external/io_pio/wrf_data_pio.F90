@@ -16,19 +16,20 @@ module wrf_data_pio
   integer                , parameter      :: FATAL            = 0
   integer                , parameter      :: WARN             = 0
   integer                , parameter      :: WrfDataHandleMax = 99
-  integer                , parameter      :: MaxDims          = 2000 ! = NF_MAX_VARS
+  integer                , parameter      :: MaxDims          = 1000 ! = NF_MAX_VARS
   integer                , parameter      :: MaxVars          = 3000
   integer                , parameter      :: MaxTimes         = 10000
   integer                , parameter      :: DateStrLen       = 19
   integer                , parameter      :: VarNameLen       = 31
   integer                , parameter      :: NO_DIM           = 0
-  integer                , parameter      :: NVarDims         = 4
+  integer                , parameter      :: NVarDims         = 5
   integer                , parameter      :: NMDVarDims       = 2
   integer                , parameter      :: NOT_LAND_SOIL_VAR= 0
   integer                , parameter      :: LAND_CAT_VAR     = 1
   integer                , parameter      :: SOIL_CAT_VAR     = 2
   integer                , parameter      :: SOIL_LAYERS_VAR  = 3
   integer                , parameter      :: MDL_CPL_VAR      = 4
+  integer                , parameter      :: BDY_VAR          = 10
   character (8)          , parameter      :: NO_NAME          = 'NULL'
   character (DateStrLen) , parameter      :: ZeroDate = '0000-00-00-00:00:00'
 
@@ -52,8 +53,6 @@ module wrf_data_pio
     character (31)        , dimension(MaxDims) :: DimNames
     integer                               :: DimUnlimID
     character (9)                         :: DimUnlimName
-   !integer               , dimension(MaxVars) :: MDVarDimLens
-   !character (80)        , dimension(MaxVars) :: MDVarNames
     integer               , dimension(MaxVars) :: VarIDs
     integer               , dimension(NVarDims-1, MaxVars) :: VarDimLens
     character (VarNameLen), dimension(MaxVars) :: VarNames
@@ -118,7 +117,7 @@ module wrf_data_pio
 
    type (Var_desc_t), dimension(MaxVars) :: descVar
    type (io_desc_t),  dimension(MaxVars) :: ioVar
-   logical, dimension(MaxVars)           :: vartype
+   integer, dimension(MaxVars)           :: vartype
 
    integer(i4)             :: iostat       ! PIO-specific io status
    integer(i4)             :: myrank, nprocs

@@ -619,6 +619,7 @@ subroutine find_iodesc(DH,MemoryOrder,Stagger,FieldTYpe,whole)
           return
       end select
     case ('xsz')
+      DH%vartype(DH%CurrentVariable) = BDY_VAR
       select case (FieldType)
         case (WRF_REAL)
           select case (Stag)
@@ -671,6 +672,7 @@ subroutine find_iodesc(DH,MemoryOrder,Stagger,FieldTYpe,whole)
           return
       end select
     case ('xez')
+      DH%vartype(DH%CurrentVariable) = BDY_VAR
       select case (FieldType)
         case (WRF_REAL)
           select case (Stag)
@@ -723,6 +725,7 @@ subroutine find_iodesc(DH,MemoryOrder,Stagger,FieldTYpe,whole)
           return
       end select
     case ('ysz')
+      DH%vartype(DH%CurrentVariable) = BDY_VAR
       select case (FieldType)
         case (WRF_REAL)
           select case (Stag)
@@ -775,6 +778,7 @@ subroutine find_iodesc(DH,MemoryOrder,Stagger,FieldTYpe,whole)
           return
       end select
     case ('yez')
+      DH%vartype(DH%CurrentVariable) = BDY_VAR
       select case (FieldType)
         case (WRF_REAL)
           select case (Stag)
@@ -827,6 +831,7 @@ subroutine find_iodesc(DH,MemoryOrder,Stagger,FieldTYpe,whole)
           return
       end select
     case ('xs')
+      DH%vartype(DH%CurrentVariable) = BDY_VAR
       select case (FieldType)
         case (WRF_REAL)
              DH%ioVar(DH%CurrentVariable) = DH%iodesc2d_xs_m_real
@@ -843,6 +848,7 @@ subroutine find_iodesc(DH,MemoryOrder,Stagger,FieldTYpe,whole)
           return
       end select
     case ('xe')
+      DH%vartype(DH%CurrentVariable) = BDY_VAR
       select case (FieldType)
         case (WRF_REAL)
              DH%ioVar(DH%CurrentVariable) = DH%iodesc2d_xe_m_real
@@ -859,6 +865,7 @@ subroutine find_iodesc(DH,MemoryOrder,Stagger,FieldTYpe,whole)
           return
       end select
     case ('ys')
+      DH%vartype(DH%CurrentVariable) = BDY_VAR
       select case (FieldType)
         case (WRF_REAL)
              DH%ioVar(DH%CurrentVariable) = DH%iodesc2d_ys_m_real
@@ -875,6 +882,7 @@ subroutine find_iodesc(DH,MemoryOrder,Stagger,FieldTYpe,whole)
           return
       end select
     case ('ye')
+      DH%vartype(DH%CurrentVariable) = BDY_VAR
       select case (FieldType)
         case (WRF_REAL)
              DH%ioVar(DH%CurrentVariable) = DH%iodesc2d_ye_m_real
@@ -913,13 +921,40 @@ subroutine find_iodesc(DH,MemoryOrder,Stagger,FieldTYpe,whole)
   end select
 end subroutine find_iodesc
 
-subroutine FieldIO(IO,DataHandle,DateStr,Starts,Counts,Length,MemoryOrder, &
+logical function is_boundary(MemoryOrder)
+
+  implicit none
+
+  character*(*), intent(in) :: MemoryOrder
+
+  logical     :: isbdy
+  character*3 :: MemOrd
+
+  isbdy = .false.
+
+  call LowerCase(MemoryOrder,MemOrd)
+
+  select case (MemOrd)
+    case ('xsz', 'xez', 'ysz', 'yez')
+      isbdy = .true.
+    case ('xs', 'xe', 'ys', 'ye')
+      isbdy = .true.
+    case default
+      isbdy = .false.
+  end select
+
+  is_boundary = isbdy
+end function is_boundary
+
+subroutine FieldIO(IO,onbdy,DataHandle,DateStr,Dimens,Starts,Counts,Length,MemoryOrder, &
                    Stagger,FieldType,Field,Status)
   implicit none
   include 'wrf_status_codes.h'
   character (*)              ,intent(in)    :: IO
+  logical                    ,intent(in)    :: onbdy
   integer                    ,intent(in)    :: DataHandle
   character*(*)              ,intent(in)    :: DateStr
+  integer,dimension(NVarDims),intent(inout) :: Dimens
   integer,dimension(NVarDims),intent(inout) :: Starts
   integer,dimension(NVarDims),intent(inout) :: Counts
   integer,dimension(NVarDims),intent(in)    :: Length
@@ -929,7 +964,7 @@ subroutine FieldIO(IO,DataHandle,DateStr,Starts,Counts,Length,MemoryOrder, &
   integer,dimension(*)       ,intent(inout) :: Field
   integer                    ,intent(out)   :: Status
   integer                                   :: TimeIndex
-  logical                                   :: whole
+  logical                                   :: whole, isbdy
   integer                                   :: NDim
   integer                                   :: fldsize, datasize
   integer                                   :: n
@@ -958,6 +993,8 @@ subroutine FieldIO(IO,DataHandle,DateStr,Starts,Counts,Length,MemoryOrder, &
   Counts(NDim+1) = 1
 
   call find_iodesc(DH,MemoryOrder,Stagger,FieldTYpe,whole)
+  isbdy = is_boundary(MemoryOrder)
+ !isbdy = BDY_VAR == DH%vartype(DH%CurrentVariable)
 
   pioidx = TimeIndex
   call pio_setframe(DH%descVar(DH%CurrentVariable), pioidx)
@@ -965,9 +1002,19 @@ subroutine FieldIO(IO,DataHandle,DateStr,Starts,Counts,Length,MemoryOrder, &
 
   select case (FieldType)
     case (WRF_REAL)
-      call ext_pio_RealFieldIO(whole,IO,DH,Starts,Counts,fldsize,datasize,Field,Status)
+      if(isbdy .and. (IO == 'read')) then
+        Dimens(NDim+1) = TimeIndex
+        call read_bdy_RealFieldIO(DH,onbdy,NDim,Dimens,Starts,Counts,Field,Status)
+      else
+        call ext_pio_RealFieldIO(whole,IO,DH,Starts,Counts,fldsize,datasize,Field,Status)
+      endif
     case (WRF_DOUBLE)
-      call ext_pio_DoubleFieldIO(whole,IO,DH,Starts,Counts,fldsize,Field,Status)
+      if(isbdy .and. (IO == 'read')) then
+        Dimens(NDim+1) = TimeIndex
+        call read_bdy_DoubleFieldIO(DH,onbdy,NDim,Dimens,Starts,Counts,Field,Status)
+      else
+        call ext_pio_DoubleFieldIO(whole,IO,DH,Starts,Counts,fldsize,Field,Status)
+      endif
     case (WRF_INTEGER)
       call ext_pio_IntFieldIO(whole,IO,DH,Starts,Counts,fldsize,Field,Status)
     case (WRF_LOGICAL)

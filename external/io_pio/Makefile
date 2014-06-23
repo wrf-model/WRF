@@ -1,4 +1,5 @@
 #makefile to build a wrf_io with PIO
+#$Id$
 
 FCOPTIM         = -O0
 FCNOOPT         = -O0 -fno-inline -fno-ip
@@ -22,7 +23,7 @@ RANLIB          = ranlib
 DM_FC           = mpiifort
 FC              = $(DM_FC)
 
-OBJS    = wrf_data_pio.o pio_routines.o wrf_io.o field_routines.o module_wrfsi_static.o
+OBJS    = wrf_data_pio.o pio_routines.o wrf_io.o field_routines.o read_bdy_routines.o module_wrfsi_static.o
 
 FFLAGS  = $(FCFLAGS) -I. -I$(PIO_PATH)/include -I../ioapi_share -I../../frame -I../esmf_time_f90
 LIBS    = -L$(PIO_PATH)/lib -lpio
@@ -43,11 +44,11 @@ wrf_data_pio.o:         wrf_data_pio.F90 $(CODE)
 			$(CPP1) -I. -I$(PIO_PATH)/include -I../ioapi_share wrf_data_pio.F90 > wrf_data_pio.f
 			$(FC) $(FFLAGS) -c wrf_data_pio.f
 
-pio_routines.o:		pio_routines.F90 $(CODE) wrf_data_pio.o
+pio_routines.o:		pio_routines.F90 $(CODE) wrf_data_pio.o field_routines.o read_bdy_routines.o
 			$(CPP1) -I. -I$(PIO_PATH)/include -I../ioapi_share pio_routines.F90 > pio_routines.f
 			$(FC) $(FFLAGS) -c pio_routines.f
 
-wrf_io.o:               wrf_io.F90 $(CODE) wrf_data_pio.o pio_routines.o
+wrf_io.o:               wrf_io.F90 $(CODE) wrf_data_pio.o pio_routines.o read_bdy_routines.o field_routines.o
 			$(CPP1) -I. -I$(PIO_PATH)/include -I../ioapi_share wrf_io.F90 > wrf_io.f
 			$(FC) $(FFLAGS) -c wrf_io.f
 
@@ -55,9 +56,13 @@ module_wrfsi_static.o:  module_wrfsi_static.F90
 			$(CPP1) -I. -I$(PIO_PATH)/include -I../ioapi_share module_wrfsi_static.F90 > module_wrfsi_static.f
 			$(FC) $(FFLAGS) -c module_wrfsi_static.f
 
-field_routines.o:	field_routines.F90 wrf_io.o
+field_routines.o:	field_routines.F90 wrf_data_pio.o pio_routines.o
 			$(CPP1) -I. -I$(PIO_PATH)/include -I../ioapi_share field_routines.F90 > field_routines.f
 			$(FC) $(FFLAGS) -c field_routines.f
+
+read_bdy_routines.o:	read_bdy_routines.F90 wrf_data_pio.o pio_routines.o
+			$(CPP1) -I. -I$(PIO_PATH)/include -I../ioapi_share read_bdy_routines.F90 > read_bdy_routines.f
+			$(FC) $(FFLAGS) -c read_bdy_routines.f
 
 clean:	superclean
 

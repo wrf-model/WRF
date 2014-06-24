@@ -498,7 +498,10 @@ IF ( config_flags%check_TL .or. config_flags%check_AD ) THEN
       IF ( config_flags%mp_physics .NE. 0 .and. config_flags%mp_physics .NE. 99 .and. &
            config_flags%mp_physics .NE. 98 ) CALL nl_set_mp_physics (head_grid%id, config_flags%mp_physics_ad)
       IF ( config_flags%bl_pbl_physics .GT. 0 ) CALL nl_set_bl_pbl_physics (head_grid%id, 98)
-      IF ( config_flags%cu_physics .GT. 0 ) CALL nl_set_cu_physics (head_grid%id, 98)
+      IF ( config_flags%cu_physics .GT. 0 ) THEN
+         CALL nl_set_cu_physics (head_grid%id, 98)
+         head_grid%cudt = 0
+      ENDIF
       CALL nl_set_ra_lw_physics (head_grid%id, 0)
       CALL nl_set_ra_sw_physics (head_grid%id, 0)
       CALL nl_set_sf_sfclay_physics (head_grid%id, 0)
@@ -673,7 +676,10 @@ IF ( config_flags%check_TL .or. config_flags%check_AD ) THEN
    IF ( config_flags%mp_physics .NE. 0 .and. config_flags%mp_physics .NE. 99 .and. &
         config_flags%mp_physics .NE. 98 ) CALL nl_set_mp_physics (head_grid%id, config_flags%mp_physics_ad)
    IF ( config_flags%bl_pbl_physics .GT. 0 ) CALL nl_set_bl_pbl_physics (head_grid%id, 98)
-   IF ( config_flags%cu_physics .GT. 0 ) CALL nl_set_cu_physics (head_grid%id, 98)
+   IF ( config_flags%cu_physics .GT. 0 ) THEN
+      CALL nl_set_cu_physics (head_grid%id, 98)
+      head_grid%cudt = 0
+   ENDIF
    CALL nl_set_ra_lw_physics (head_grid%id, 0)
    CALL nl_set_ra_sw_physics (head_grid%id, 0)
    CALL nl_set_sf_sfclay_physics (head_grid%id, 0)
@@ -869,7 +875,10 @@ IF ( config_flags%check_TL .or. config_flags%check_AD ) THEN
    IF ( config_flags%mp_physics .NE. 0 .and. config_flags%mp_physics .NE. 99 .and. &
         config_flags%mp_physics .NE. 98 ) CALL nl_set_mp_physics (head_grid%id, config_flags%mp_physics_ad)
    IF ( config_flags%bl_pbl_physics .GT. 0 ) CALL nl_set_bl_pbl_physics (head_grid%id, 98)
-   IF ( config_flags%cu_physics .GT. 0 ) CALL nl_set_cu_physics (head_grid%id, 98)
+   IF ( config_flags%cu_physics .GT. 0 ) THEN
+      CALL nl_set_cu_physics (head_grid%id, 98)
+      head_grid%cudt = 0
+   ENDIF
    CALL nl_set_ra_lw_physics (head_grid%id, 0)
    CALL nl_set_ra_sw_physics (head_grid%id, 0)
    CALL nl_set_sf_sfclay_physics (head_grid%id, 0)
@@ -1576,7 +1585,10 @@ ENDIF
    IF ( config_flags%mp_physics .NE. 0 .and. config_flags%mp_physics .NE. 99 .and. &
         config_flags%mp_physics .NE. 98 ) CALL nl_set_mp_physics (head_grid%id, config_flags%mp_physics_ad)
    IF ( config_flags%bl_pbl_physics .GT. 0 ) CALL nl_set_bl_pbl_physics (head_grid%id, 98)
-   IF ( config_flags%cu_physics .GT. 0 ) CALL nl_set_cu_physics (head_grid%id, 0)
+   IF ( config_flags%cu_physics .GT. 0 ) THEN
+      CALL nl_set_cu_physics (head_grid%id, 98)
+      head_grid%cudt = 0
+   ENDIF
    CALL nl_set_ra_lw_physics (head_grid%id, 0)
    CALL nl_set_ra_sw_physics (head_grid%id, 0)
    CALL nl_set_sf_sfclay_physics (head_grid%id, 0)
@@ -1891,7 +1903,10 @@ ENDIF
    IF ( config_flags%mp_physics .NE. 0 .and. config_flags%mp_physics .NE. 99 .and. &
         config_flags%mp_physics .NE. 98 ) CALL nl_set_mp_physics (head_grid%id, config_flags%mp_physics_ad)
    IF ( config_flags%bl_pbl_physics .GT. 0 ) CALL nl_set_bl_pbl_physics (head_grid%id, 98)
-   IF ( config_flags%cu_physics .GT. 0 ) CALL nl_set_cu_physics (head_grid%id, 0)
+   IF ( config_flags%cu_physics .GT. 0 ) THEN
+      CALL nl_set_cu_physics (head_grid%id, 98)
+      head_grid%cudt = 0
+   ENDIF
    CALL nl_set_ra_lw_physics (head_grid%id, 0)
    CALL nl_set_ra_sw_physics (head_grid%id, 0)
    CALL nl_set_sf_sfclay_physics (head_grid%id, 0)

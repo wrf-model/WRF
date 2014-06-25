@@ -103,7 +103,7 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
    DO ialarm = first_auxinput, last_auxinput
      IF ( .FALSE.) THEN
        rc = 1  ! dummy statement
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
 ! - Get chemistry data
      ELSE IF( ialarm .EQ. AUXINPUT5_ALARM .AND. config_flags%chem_opt > 0 ) THEN
        IF( config_flags%emiss_inpt_opt /= 0 ) THEN
@@ -2109,7 +2109,7 @@ END SUBROUTINE open_hist_w
  
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
 
 SUBROUTINE med_read_wrf_chem_input ( grid , config_flags )
   ! Driver layer

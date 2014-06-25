@@ -430,7 +430,7 @@ CONTAINS
       INTEGER :: i , j , l , ll, dominant_index
       REAL :: dominant_value
 
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
 !      REAL :: lwthresh = .99
       REAL :: lwthresh = .50
 #else
@@ -3354,7 +3354,7 @@ CONTAINS
       INTEGER :: i , j , l , ll, dominant_index
       REAL :: dominant_value
 
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
 !      REAL :: lwthresh = .99
       REAL :: lwthresh = .50
 #else

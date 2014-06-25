@@ -36,9 +36,6 @@
      &                ,V_BTXS, V_BTXE, V_BTYS, V_BTYE                   &
      &                ,Q2_BTXS, Q2_BTXE, Q2_BTYS, Q2_BTYE               &
      &                ,PD,T,Q,Q2,PINT                                   &
-#ifdef WRF_CHEM
-     &                ,CHEM,NUMG,CONFIG_FLAGS                           &
-#endif
      &                ,SPEC_BDY_WIDTH,Z                                 &  
      &                ,IHE,IHW,IVE,IVW                                  &
      &                ,IDS,IDE,JDS,JDE,KDS,KDE                          &
@@ -96,9 +93,6 @@
 !$$$  
 !***********************************************************************
 !-----------------------------------------------------------------------
-#ifdef WRF_CHEM
-    USE MODULE_INPUT_CHEM_DATA
-#endif
 !-----------------------------------------------------------------------
 !
       IMPLICIT NONE
@@ -110,9 +104,6 @@
      &                     ,IMS,IME,JMS,JME,KMS,KME                     &
      &                     ,ITS,ITE,JTS,JTE,KTS,KTE
       INTEGER,INTENT(IN) :: SPEC_BDY_WIDTH
-#ifdef WRF_CHEM
-      INTEGER,INTENT(IN) :: NUMG
-#endif
 !
       INTEGER,DIMENSION(JMS:JME),INTENT(IN) :: IHE,IHW,IVE,IVW
 !
@@ -165,11 +156,6 @@
      &                                                         PINT,Q   &
      &                                                        ,Q2,T,Z
 !
-#ifdef WRF_CHEM
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME,NUM_CHEM)                  &
-     &                                            ,INTENT(INOUT) :: CHEM
-      TYPE(GRID_CONFIG_REC_TYPE),INTENT(IN) :: CONFIG_FLAGS
-#endif
 !
 !-----------------------------------------------------------------------
 !
@@ -189,13 +175,6 @@
 !***********************************************************************
 !-----------------------------------------------------------------------
 !
-#ifdef WRF_CHEM
-!***  DETERMINE THE INDEX OF THE LAST GAS SPECIES
-      NUMGAS=P_HO2                     
-      NUMGAS=NUMG
-!     NUMGAS = GET_LAST_GAS(CONFIG_FLAGS%CHEM_OPT)       
-!
-#endif
       IM=IDE-IDS+1
       JM=JDE-JDS+1
       IIM=IM
@@ -289,33 +268,6 @@
           ENDDO
         ENDIF ns_if
 
-        ns_activate: IF(activate) THEN
-#ifdef WRF_CHEM
-!$omp parallel do                                                       &
-!$omp& private(i,k,nv)
-          DO NV=2,NUMG
-          DO K=KTS,KTE
-            DO I=MAX(ITS-1,IDS),MIN(ITE+1,IDE)
-              CALL BDY_CHEM_VALUE (CHEM(I,K,JJ,NV),Z(I,JJ,K),NV,NUMG)
-            ENDDO
-          ENDDO
-          ENDDO
-!$omp parallel do                                                       &
-!$omp& private(i,k,nv)
-          DO NV=NUMG+1,NUM_CHEM
-          DO K=KTS,KTE
-            KK=MIN(K+1,KTE)
-            DO I=MAX(ITS-1,IDS),MIN(ITE+1,IDE)
-              PLYR=(PINT(I,JJ,K)+PINT(I,JJ,KK))*0.5
-              RRI=R_D*T(I,JJ,K)*(1.+.608*Q(I,JJ,K))/PLYR
-              CONVFAC=PLYR/RGASUNIV/T(I,JJ,K)
-              CALL BDY_CHEM_VALUE_SORGAM (CHEM(I,K,JJ,NV),Z(I,JJ,K),NV, &
-                                          CONFIG_FLAGS,RRI,CONVFAC,G)
-            ENDDO
-          ENDDO
-          ENDDO
-#endif
-        ENDIF ns_activate
       ENDDO ns_do
 !
 !-----------------------------------------------------------------------
@@ -393,33 +345,6 @@
 
        ENDIF ew_if
 
-       ew_activate: IF(activate) THEN
-!
-#ifdef WRF_CHEM
-!$omp parallel do                                                       &
-!$omp& private(nv,j,k)
-          DO K=KTS,KTE
-            KK=MIN(K+1,KTE)
-            DO J=MAX(JTS-1,JDS+3-1),MIN(JTE+1,JDE-2)
-              IF(MOD(J,2)==1)THEN
-                 DO NV=2,NUMG
-                   CALL BDY_CHEM_VALUE (CHEM(II,K,J,NV),Z(II,J,K),NV,NUMG)
-                 ENDDO
-!$omp parallel do                                                       &
-!$omp& private(nv)
-                 DO NV=NUMG+1,NUM_CHEM
-                    PLYR=(PINT(II,J,K)+PINT(II,J,KK))*0.5
-                    RRI=R_D*T(II,J,K)*(1.+P608*Q(II,J,K))/PLYR
-                    CONVFAC=PLYR/RGASUNIV/T(II,J,K)
-                    CALL BDY_CHEM_VALUE_SORGAM (CHEM(II,K,J,NV),Z(II,J,K),NV, &
-     &                                          CONFIG_FLAGS,RRI,CONVFAC,G)
-                 ENDDO
-               ENDIF
-            ENDDO
-          ENDDO
-
-#endif
-        ENDIF ew_activate
       ENDDO ew_do
 !
 !-----------------------------------------------------------------------
@@ -705,9 +630,6 @@
 !$$$  
 !***********************************************************************
 !-----------------------------------------------------------------------
-#ifdef WRF_CHEM
-    USE MODULE_INPUT_CHEM_DATA
-#endif
 !-----------------------------------------------------------------------
 !
       IMPLICIT NONE
@@ -718,9 +640,6 @@
      &                     ,ITS,ITE,JTS,JTE,KTS,KTE
       INTEGER,INTENT(IN) :: SPEC_BDY_WIDTH
       INTEGER,INTENT(IN) :: N_MOIST, N_SCALAR
-#ifdef WRF_CHEM
-      INTEGER,INTENT(IN) :: NUMG
-#endif
 !
       INTEGER,INTENT(IN) :: GRIDID
       INTEGER,INTENT(IN) :: LB,NTSD
@@ -764,13 +683,6 @@
 !***********************************************************************
 !-----------------------------------------------------------------------
 !
-#ifdef WRF_CHEM
-!***  DETERMINE THE INDEX OF THE LAST GAS SPECIES
-      NUMGAS=P_HO2                     
-      NUMGAS=NUMG
-!     NUMGAS = GET_LAST_GAS(CONFIG_FLAGS%CHEM_OPT)       
-!
-#endif
       IM=IDE-IDS+1
       JM=JDE-JDS+1
       IIM=IM

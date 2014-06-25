@@ -10144,7 +10144,7 @@ CONTAINS
     REAL :: da, eot ! jararias, 14/08/2013
 
 !------------------------------------------------------------------
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
       IF ( aer_ra_feedback == 1) then
       IF ( .NOT. &
       ( PRESENT(tauaer300) .AND. &
@@ -10792,7 +10792,7 @@ CONTAINS
          end if
       end if
 
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
    IF ( AER_RA_FEEDBACK == 1) then
       do nb = 1, nbndsw
          wavemid(nb)=0.5*(wavemin(nb)+wavemax(nb))  ! um

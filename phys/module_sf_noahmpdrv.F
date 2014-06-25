@@ -8,7 +8,7 @@ MODULE module_sf_noahmpdrv
   USE module_sf_noahmp_glacier
   USE MODULE_RA_GFDLETA, ONLY: CAL_MON_DAY
   USE module_sf_noahmp_groundwater, ONLY : LATERALFLOW
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
   USE module_data_gocart_dust
 #endif
 !-------------------------------
@@ -1001,7 +1001,7 @@ end if
           CALL wrf_error_fatal( "module_sf_noahlsm.F: lsminit: out of range value "// &
                "of ISLTYP. Is this field in the input?" )
        ENDIF
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
        !
        ! need this parameter for dust parameterization in wrf/chem
        !

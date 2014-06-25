@@ -15,7 +15,7 @@ MODULE module_sf_noahdrv
   USE module_sf_noahlsm_glacial_only, only: sflx_glacial
   USE module_sf_bep,      only: bep
   USE module_sf_bep_bem,  only: bep_bem
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
   USE module_data_gocart_dust
 #endif
 !-------------------------------
@@ -1555,7 +1555,7 @@ CONTAINS
      CALL  SOIL_VEG_GEN_PARM( MMINLU, MMINSL )
    ENDIF
 
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
 !
 ! need this parameter for dust parameterization in wrf/chem
 !

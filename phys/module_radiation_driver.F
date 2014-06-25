@@ -1299,7 +1299,7 @@ CONTAINS
                   F_QI=F_QI,F_QS=F_QS,F_QG=F_QG,                    &
                   RE_CLOUD=re_cloud,RE_ICE=re_ice,RE_SNOW=re_snow,  & ! G. Thompson
                   has_reqc=has_reqc,has_reqi=has_reqi,has_reqs=has_reqs, & ! G. Thompson
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
                   TAUAERLW1=tauaerlw1,TAUAERLW2=tauaerlw2,          & ! jcb
                   TAUAERLW3=tauaerlw3,TAUAERLW4=tauaerlw4,          & ! jcb
                   TAUAERLW5=tauaerlw5,TAUAERLW6=tauaerlw6,          & ! jcb
@@ -1452,7 +1452,7 @@ CONTAINS
              CALL SWRAD(                                               &
                      DT=dt,RTHRATEN=rthraten,GSW=gsw                   &
                     ,XLAT=xlat,XLONG=xlong,ALBEDO=albedo               &
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
                     ,PM2_5_DRY=pm2_5_dry,PM2_5_WATER=pm2_5_water       &
                     ,PM2_5_DRY_EC=pm2_5_dry_ec                         &
 #endif
@@ -1488,7 +1488,7 @@ CONTAINS
                     ,RADFRQ=radt,DEGRAD=degrad                         &
                     ,TAUCLDI=taucldi,TAUCLDC=taucldc                   &
                     ,WARM_RAIN=warm_rain                               &
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
                     ,TAUAER300=tauaer300,TAUAER400=tauaer400           & ! jcb
                     ,TAUAER600=tauaer600,TAUAER999=tauaer999           & ! jcb
                     ,GAER300=gaer300,GAER400=gaer400                   & ! jcb
@@ -1651,7 +1651,7 @@ CONTAINS
                      F_QI=f_qi,F_QS=f_qs,F_QG=f_qg,                    &
                      RE_CLOUD=re_cloud,RE_ICE=re_ice,RE_SNOW=re_snow,  & ! G. Thompson
                      has_reqc=has_reqc,has_reqi=has_reqi,has_reqs=has_reqs, & ! G. Thompson
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
                      TAUAER300=tauaer300,TAUAER400=tauaer400,          & ! jcb
                      TAUAER600=tauaer600,TAUAER999=tauaer999,          & ! jcb
                      GAER300=gaer300,GAER400=gaer400,                  & ! jcb
@@ -1879,8 +1879,8 @@ CONTAINS
       jte = j_end(ij)
       call interp_sw_radiation(ims,ime,jms,jme,its,ite,jts,jte,  &
                                coszen_ref,coszen_loc,swddir_ref, &
-                               bb,Bx,swdown_ref,gg,Gx,           &
-                               swdown,swddir,swddni,swddif       )
+                               bb,Bx,swdown_ref,gg,Gx,albedo,    &
+                               swdown,swddir,swddni,swddif,gsw   )
     enddo
     !$OMP END PARALLEL DO
  end if
@@ -2289,16 +2289,18 @@ CONTAINS
 
    subroutine interp_sw_radiation(ims,ime,jms,jme,its,ite,jts,jte,  &
                                   coszen_ref,coszen_loc,swddir_ref, &
-                                  bb,Bx,swdown_ref,gg,Gx,           &
-                                  swdown,swddir,swddni,swddif       )
+                                  bb,Bx,swdown_ref,gg,Gx,albedo,    &
+                                  swdown,swddir,swddni,swddif,gsw   )
       ! Author: jararias 2013/11
       implicit None
       integer, intent(in) :: ims,ime,jms,jme,its,ite,jts,jte
       real, dimension(ims:ime,jms:jme), intent(in) :: coszen_ref,coszen_loc, &
                                                       swddir_ref,Bx,bb,      &
-                                                      swdown_ref,Gx,gg       
+                                                      swdown_ref,Gx,gg,      &
+                                                      albedo
+
       real, dimension(ims:ime,jms:jme), intent(inout) :: swddir,swdown, &
-                                                         swddif,swddni    
+                                                         swddif,swddni, gsw
 
       integer :: i,j
       real, parameter :: coszen_min=1e-4
@@ -2319,11 +2321,13 @@ CONTAINS
                end if
                swddif(i,j) =swdown(i,j)-swddir(i,j)
                swddni(i,j) =swddir(i,j)/coszen_loc(i,j)
+               gsw(i,j)    =swdown(i,j)*(1.-albedo(i,j))
             else
                swddir(i,j) =0.
                swdown(i,j) =0.
                swddif(i,j) =0.
                swddni(i,j) =0.
+               gsw(i,j)    =0.
             end if
          end do
       end do

@@ -5620,7 +5620,7 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte                     )
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
   USE module_data_gocart_dust
 #endif
    IMPLICIT NONE
@@ -5683,7 +5683,7 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
      call RUCLSM_SOILVEGPARM( MMINLURUC, MMINSL)   
    ENDIF
 
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
 !
 ! need this parameter for dust parameterization in wrf/chem
 !

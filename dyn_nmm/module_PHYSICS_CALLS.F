@@ -61,12 +61,6 @@
      &                    ,ACLWUPB,ACLWUPBC,ACLWDNB,ACLWDNBC            &
      &                    ,SWVISDIR ,SWVISDIF                           &  !ssib
      &                    ,SWNIRDIR, SWNIRDIF &                            !ssib
-#ifdef WRF_CHEM
-     &                    ,PM2_5_DRY, PM2_5_WATER, PM2_5_DRY_EC         &
-     &                    ,TAUAER1, TAUAER2, TAUAER3, TAUAER4           &
-     &                    ,GAER1, GAER2, GAER3, GAER4                   &
-     &                    ,WAER1, WAER2, WAER3, WAER4                   &
-#endif
      &                    ,IDS,IDE,JDS,JDE,KDS,KDE                      &
      &                    ,IMS,IME,JMS,JME,KMS,KME                      &
      &                    ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -152,14 +146,6 @@
 
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME ),INTENT(IN) ::            &   !<--- Used only with physics (IKJ)
      &                              GD_CLOUD,GD_CLOUD2                  
-!
-#ifdef WRF_CHEM
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME ),INTENT(IN) ::            &   !<--- Used only with physics (IKJ)
-     &                              GAER1,GAER2,GAER3,GAER4,            &
-     &                              PM2_5_DRY,PM2_5_WATER,PM2_5_DRY_EC, &
-     &                              TAUAER1,TAUAER2,TAUAER3,TAUAER4,    &
-     &                              WAER1,WAER2,WAER3,WAER4
-#endif
 !
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT) :: CLDFRA
 
@@ -402,14 +388,6 @@
      &       ,aer_angexp_opt=config_flags%aer_angexp_opt,aer_angexp_val=config_flags%aer_angexp_val &
      &       ,aer_ssa_opt=config_flags%aer_ssa_opt,aer_ssa_val=config_flags%aer_ssa_val             &
      &       ,aer_asy_opt=config_flags%aer_asy_opt,aer_asy_val=config_flags%aer_asy_val             &
-#ifdef WRF_CHEM
-     &                 ,AER_RA_FEEDBACK=config_flags%aer_ra_feedback    &
-     &                 ,PM2_5_DRY=pm2_5_dry,PM2_5_WATER=pm2_5_water     &
-     &                 ,PM2_5_DRY_EC=pm2_5_dry_ec                       &
-     &                 ,TAUAER300=tauaer1,TAUAER400=tauaer2,TAUAER600=tauaer3,TAUAER999=tauaer4 & ! jcb
-     &                 ,GAER300=gaer1,GAER400=gaer2,GAER600=gaer3,GAER999=gaer4 & ! jcb
-     &                 ,WAER300=waer1,WAER400=waer2,WAER600=waer3,WAER999=waer4 & ! jcb
-#endif
      &                 ,RTHRATENLW=THRATENLW,RTHRATENSW=THRATENSW       &
      &                 ,RTHRATEN=RTHRATEN                               &
      &                 ,CEN_LAT=grid%cen_lat                            &
@@ -2174,9 +2152,6 @@
      &                 ,MASS_FLUX         ,XF_ENS                       &
      &                 ,PR_ENS,GSW                                      &
      &                 ,GD_CLOUD,GD_CLOUD2,KTOP_DEEP                    &
-#ifdef WRF_CHEM
-     &                 ,RAINCV                                          &
-#endif
      &                 ,PDTOP,PT,PD,RES,PINT,T,Q,CWM,TCUCN              &
      &                 ,OMGALF,U,V,W,Z,FIS,W0AVG                        &
      &                 ,PREC,ACPREC,CUPREC,CUPPT,CPRATE                 &
@@ -2302,9 +2277,6 @@
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(INOUT) :: GD_CLOUD &
      &                                                        ,GD_CLOUD2
       INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: KTOP_DEEP
-#ifdef WRF_CHEM
-      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: RAINCV
-#endif
 !
       LOGICAL,INTENT(IN) :: HYDRO,RESTRT
       LOGICAL :: IS_CAMMGMP_USED=.FALSE.
@@ -2330,9 +2302,7 @@
 !
       REAL,DIMENSION(IMS:IME,JMS:JME) :: CUBOT,CUTOP,NCA,PDSL           &
      &                                  ,RAINC,SFCZ,XLAND
-#ifndef WRF_CHEM
       REAL,DIMENSION(IMS:IME,JMS:JME) :: RAINCV
-#endif
 !
       REAL,DIMENSION(ITS:ITE,JTS:JTE) :: WMID_L
 !
@@ -3130,10 +3100,6 @@
      &                 ,DZ8W=DZ,P8W=P8W,DT=DTPHS,DX=DX,DY=DY            &
      &                 ,W=grid%W                                        &
      &                 ,MP_PHYSICS=CONFIG_FLAGS%MP_PHYSICS              &
-#ifdef WRF_CHEM
-     &                 ,CHEM_OPT=CONFIG_FLAGS%CHEM_OPT                  &
-     &                 ,PROGN=CONFIG_FLAGS%PROGN                        &
-#endif
      &                 ,SPECIFIED=CONFIG_FLAGS%SPECIFIED                &
      &                        .OR.CONFIG_FLAGS%NESTED                   &
      &                 ,SPEC_ZONE=0,WARM_RAIN=WARM_RAIN                 &

@@ -29,6 +29,10 @@ MODULE module_optional_input
 
    INTEGER :: flag_excluded_middle
 
+   INTEGER :: flag_hgtmaxw  , flag_pmaxw    , flag_tmaxw    , flag_umaxw    , flag_vmaxw     , &
+              flag_hgttrop  , flag_ptrop    , flag_ttrop    , flag_utrop    , flag_vtrop
+   INTEGER :: flag_extra_levels
+
    INTEGER                  :: num_soil_levels_input
    INTEGER                  :: num_st_levels_input , num_sm_levels_input , num_sw_levels_input
    INTEGER                  :: num_st_levels_alloc , num_sm_levels_alloc , num_sw_levels_alloc
@@ -211,6 +215,11 @@ CONTAINS
                                  ids, ide, jds, jde, kds, kde, &
                                  ims, ime, jms, jme, kms, kme, &
                                  its, ite, jts, jte, kts, kte  )
+
+      CALL optional_levels     ( grid , fid , &
+                                 ids, ide, jds, jde, kds, kde, &
+                                 ims, ime, jms, jme, kms, kme, &
+                                 its, ite, jts, jte, kts, kte  ) 
 
       flag_soil_levels = 0 
       flag_soil_layers = 0 
@@ -456,6 +465,100 @@ USE module_io_domain
    END SUBROUTINE optional_sst
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+   SUBROUTINE optional_levels ( grid , fid , &
+                                ids, ide, jds, jde, kds, kde, &
+                                ims, ime, jms, jme, kms, kme, &
+                                its, ite, jts, jte, kts, kte  )
+
+      USE module_io_wrf
+      USE module_domain	, ONLY : domain
+USE module_configure , ONLY : grid_config_rec_type
+USE module_io_domain
+
+      IMPLICIT NONE 
+
+      TYPE ( domain ) :: grid
+      INTEGER , INTENT(IN) :: fid
+
+      INTEGER :: ids, ide, jds, jde, kds, kde, &
+                 ims, ime, jms, jme, kms, kme, &
+                 its, ite, jts, jte, kts, kte
+
+      INTEGER :: itmp , icnt , ierr
+
+      flag_name = '                                                                                '
+
+      flag_hgtmaxw  = 0 
+      flag_pmaxw    = 0 
+      flag_tmaxw    = 0 
+      flag_umaxw    = 0 
+      flag_vmaxw    = 0 
+      flag_hgttrop  = 0 
+      flag_ptrop    = 0 
+      flag_ttrop    = 0 
+      flag_utrop    = 0 
+      flag_vtrop    = 0 
+      flag_extra_levels = 0
+
+      flag_name(1:8) = 'HGTMAXW '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_hgtmaxw  = itmp
+      END IF
+      flag_name(1:8) = 'PMAXW   '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_pmaxw    = itmp
+      END IF
+      flag_name(1:8) = 'TMAXW   '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_tmaxw    = itmp
+      END IF
+      flag_name(1:8) = 'UMAXW   '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_umaxw    = itmp
+      END IF
+      flag_name(1:8) = 'VMAXW   '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_vmaxw    = itmp
+      END IF
+      flag_name(1:8) = 'HGTTROP '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_hgttrop  = itmp
+      END IF
+      flag_name(1:8) = 'PTROP   '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_ptrop    = itmp
+      END IF
+      flag_name(1:8) = 'TTROP   '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_ttrop    = itmp
+      END IF
+      flag_name(1:8) = 'UTROP   '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_utrop    = itmp
+      END IF
+      flag_name(1:8) = 'VTROP   '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_vtrop    = itmp
+      END IF
+
+      flag_extra_levels = flag_hgtmaxw*flag_pmaxw*flag_tmaxw*flag_umaxw*flag_vmaxw* &
+                          flag_hgttrop*flag_ptrop*flag_ttrop*flag_utrop*flag_vtrop
+
+   END SUBROUTINE optional_levels
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 
    SUBROUTINE optional_lake ( grid , fid , &
                              ids, ide, jds, jde, kds, kde, &

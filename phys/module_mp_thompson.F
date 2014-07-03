@@ -433,7 +433,7 @@
 !..Check for existing aerosol data, both CCN and IN aerosols.  If missing
 !.. fill in just a basic vertical profile, somewhat boundary-layer following.
 
-      if (SUM(nwfa(its,:,jts)) .lt. eps) then
+      if (SUM(nwfa) .lt. eps) then
          write(mp_debug,*) ' Apparently there are no initial CCN aerosols.'
          CALL wrf_debug(100, mp_debug)
          write(mp_debug,*) '   checked column at point (i,j) = ', its,jts
@@ -462,7 +462,7 @@
          CALL wrf_debug(100, mp_debug)
       endif
 
-      if (SUM(nifa(its,:,jts)) .lt. eps) then
+      if (SUM(nifa) .lt. eps) then
          write(mp_debug,*) ' Apparently there are no initial IN aerosols.'
          CALL wrf_debug(100, mp_debug)
          write(mp_debug,*) '   checked column at point (i,j) = ', its,jts
@@ -994,7 +994,7 @@
                               RAINNC, RAINNCV, &
                               SNOWNC, SNOWNCV, &
                               GRAUPELNC, GRAUPELNCV, SR, &
-#if ( WRF_CHEM == 1 )
+#ifdef WRF_CHEM
                               rainprod, evapprod, &
 #endif
                               refl_10cm, diagflag, do_radar_ref,      &
@@ -1018,7 +1018,7 @@
       REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT):: &
                           re_cloud, re_ice, re_snow
       INTEGER, INTENT(IN):: has_reqc, has_reqi, has_reqs
-#if ( WRF_CHEM == 1 )
+#ifdef WRF_CHEM
       REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT):: &
                           rainprod, evapprod
 #endif
@@ -1039,7 +1039,7 @@
                           nr1d, nc1d, nwfa1d, nifa1d,                   &
                           t1d, p1d, w1d, dz1d, dBZ
       REAL, DIMENSION(kts:kte):: re_qc1d, re_qi1d, re_qs1d
-#if ( WRF_CHEM == 1 )
+#ifdef WRF_CHEM
       REAL, DIMENSION(kts:kte):: &
                           rainprod1d, evapprod1d
 #endif
@@ -1160,7 +1160,7 @@
          call mp_thompson(qv1d, qc1d, qi1d, qr1d, qs1d, qg1d, ni1d,     &
                       nr1d, nc1d, nwfa1d, nifa1d, t1d, p1d, w1d, dz1d,  &
                       pptrain, pptsnow, pptgraul, pptice, &
-#if ( WRF_CHEM == 1 )
+#ifdef WRF_CHEM
                       rainprod1d, evapprod1d, &
 #endif
                       kts, kte, dt, i, j)
@@ -1207,7 +1207,7 @@
             ni(i,k,j) = ni1d(k)
             nr(i,k,j) = nr1d(k)
             th(i,k,j) = t1d(k)/pii(i,k,j)
-#if ( WRF_CHEM == 1 )
+#ifdef WRF_CHEM
             rainprod(i,k,j) = rainprod1d(k)
             evapprod(i,k,j) = evapprod1d(k)
 #endif
@@ -1355,7 +1355,7 @@
       subroutine mp_thompson (qv1d, qc1d, qi1d, qr1d, qs1d, qg1d, ni1d, &
                           nr1d, nc1d, nwfa1d, nifa1d, t1d, p1d, w1d, dzq, &
                           pptrain, pptsnow, pptgraul, pptice, &
-#if ( WRF_CHEM == 1 )
+#ifdef WRF_CHEM
                           rainprod, evapprod, &
 #endif
                           kts, kte, dt, ii, jj)
@@ -1370,7 +1370,7 @@
       REAL, DIMENSION(kts:kte), INTENT(IN):: p1d, w1d, dzq
       REAL, INTENT(INOUT):: pptrain, pptsnow, pptgraul, pptice
       REAL, INTENT(IN):: dt
-#if ( WRF_CHEM == 1 )
+#ifdef WRF_CHEM
       REAL, DIMENSION(kts:kte), INTENT(INOUT):: &
                           rainprod, evapprod
 #endif
@@ -1571,7 +1571,7 @@
          pnd_scd(k) = 0.
          pnd_gcd(k) = 0.
       enddo
-#if ( WRF_CHEM == 1 )
+#ifdef WRF_CHEM
       do k = kts, kte
          rainprod(k) = 0.
          evapprod(k) = 0.
@@ -2948,7 +2948,7 @@
             pnc_wcd(k) = 0.5*(xnc-nc(k) + abs(xnc-nc(k)))*odts*orho
 
 !+---+-----------------------------------------------------------------+ !  EVAPORATION
-           elseif (clap .lt. -eps .AND. is_aerosol_aware) then
+           elseif (clap .lt. -eps .AND. ssatw(k).lt.-1.E-6 .AND. is_aerosol_aware) then
             tempc = temp(k) - 273.15
             otemp = 1./temp(k)
             rvs = rho(k)*qvs(k)
@@ -3099,7 +3099,7 @@
           rho(k) = 0.622*pres(k)/(R*temp(k)*(qv(k)+0.622))
          endif
       enddo
-#if ( WRF_CHEM == 1 )
+#ifdef WRF_CHEM
       do k = kts, kte
          evapprod(k) = prv_rev(k) - (min(zeroD0,prs_sde(k)) + &
                                      min(zeroD0,prg_gde(k)))

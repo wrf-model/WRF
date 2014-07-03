@@ -417,6 +417,38 @@ Price, J. F., T. B. Sanford, and G. Z. Forristal, 1994: Forced stage response to
  traj_opt                            = 1,
 
 
+
+** Tropopause data level of max winds data, for program real.exe only
+
+When information (mostly NCEP supplied through GFS or NAM) is available 
+in the Grib2 file, AND extracted with ungrib, the metgrid program inserts
+flag information into the data stream that is input by real.  The real
+program is able to use the available u, v, T, height fields (each may be on
+a tropopause .OR. the level of max winds) in the vertical interpolation.
+To "tune" the data, the user may select a level below which the max wind 
+inforamtion is ignored.  The default is 300 hPa.  The user may also 
+select the level that when exceeded the trop and maxw fields are ignored
+(due to the horizontal pressure difference detecting a user-defined
+discontinuity, and the metgrid horizontal interpolation across the 
+discontinuity would be suspect).  
+
+Default (all units Pa):
+ &domains
+ maxw_horiz_pres_diff                = 5000
+ trop_horiz_pres_diff                = 5000
+ maxw_above_this_level               = 30000
+
+To test the sensitivity, a user may shut off the usage of the new data 
+by making the minimum acceptable vertical level for max winds ABOVE anything 
+physically possible inside of real, and also by setting the horizontal 
+pressure difference SMALLER than anything possible.
+ &domains
+ maxw_horiz_pres_diff                = -1
+ trop_horiz_pres_diff                = -1
+ maxw_above_this_level               = 1
+
+
+
 ** Using aerosol option aer_opt = 2:
 
 &physics

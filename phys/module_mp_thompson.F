@@ -994,7 +994,7 @@
                               RAINNC, RAINNCV, &
                               SNOWNC, SNOWNCV, &
                               GRAUPELNC, GRAUPELNCV, SR, &
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
                               rainprod, evapprod, &
 #endif
                               refl_10cm, diagflag, do_radar_ref,      &
@@ -1018,7 +1018,7 @@
       REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT):: &
                           re_cloud, re_ice, re_snow
       INTEGER, INTENT(IN):: has_reqc, has_reqi, has_reqs
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
       REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT):: &
                           rainprod, evapprod
 #endif
@@ -1039,7 +1039,7 @@
                           nr1d, nc1d, nwfa1d, nifa1d,                   &
                           t1d, p1d, w1d, dz1d, dBZ
       REAL, DIMENSION(kts:kte):: re_qc1d, re_qi1d, re_qs1d
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
       REAL, DIMENSION(kts:kte):: &
                           rainprod1d, evapprod1d
 #endif
@@ -1160,7 +1160,7 @@
          call mp_thompson(qv1d, qc1d, qi1d, qr1d, qs1d, qg1d, ni1d,     &
                       nr1d, nc1d, nwfa1d, nifa1d, t1d, p1d, w1d, dz1d,  &
                       pptrain, pptsnow, pptgraul, pptice, &
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
                       rainprod1d, evapprod1d, &
 #endif
                       kts, kte, dt, i, j)
@@ -1207,7 +1207,7 @@
             ni(i,k,j) = ni1d(k)
             nr(i,k,j) = nr1d(k)
             th(i,k,j) = t1d(k)/pii(i,k,j)
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
             rainprod(i,k,j) = rainprod1d(k)
             evapprod(i,k,j) = evapprod1d(k)
 #endif
@@ -1355,7 +1355,7 @@
       subroutine mp_thompson (qv1d, qc1d, qi1d, qr1d, qs1d, qg1d, ni1d, &
                           nr1d, nc1d, nwfa1d, nifa1d, t1d, p1d, w1d, dzq, &
                           pptrain, pptsnow, pptgraul, pptice, &
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
                           rainprod, evapprod, &
 #endif
                           kts, kte, dt, ii, jj)
@@ -1370,7 +1370,7 @@
       REAL, DIMENSION(kts:kte), INTENT(IN):: p1d, w1d, dzq
       REAL, INTENT(INOUT):: pptrain, pptsnow, pptgraul, pptice
       REAL, INTENT(IN):: dt
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
       REAL, DIMENSION(kts:kte), INTENT(INOUT):: &
                           rainprod, evapprod
 #endif
@@ -1571,7 +1571,7 @@
          pnd_scd(k) = 0.
          pnd_gcd(k) = 0.
       enddo
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
       do k = kts, kte
          rainprod(k) = 0.
          evapprod(k) = 0.
@@ -3099,7 +3099,7 @@
           rho(k) = 0.622*pres(k)/(R*temp(k)*(qv(k)+0.622))
          endif
       enddo
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
       do k = kts, kte
          evapprod(k) = prv_rev(k) - (min(zeroD0,prs_sde(k)) + &
                                      min(zeroD0,prg_gde(k)))

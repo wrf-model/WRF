@@ -18,7 +18,7 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
 
    type(xbx_type)     :: xbx          ! Header & non-gridded vars.
 
-   character(len=120) :: filename
+   character(len=120) :: filename, filename1
 
    integer            :: n, ios, time_step_seconds, ierr
    character*256 :: timestr, timestr1
@@ -86,8 +86,14 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
       iv%info(:)%n2 = iv%info(:)%plocal(iv%time)
 
       if (num_fgat_time > 1) then
-         call domain_clock_get( grid, current_timestr=timestr )
-         call da_read_basicstates ( xbx, grid, config_flags, timestr ) 
+         if (var4d) then
+            call domain_clock_get( grid, current_timestr=timestr )
+            call da_read_basicstates ( xbx, grid, config_flags, timestr ) 
+         else
+            write(unit=filename1, fmt='(a,i2.2)') 'fg',n
+            write(unit=stdout,fmt='(A,A)') 'Reading first guess ',trim(filename1)
+            call da_read_basicstates ( xbx, grid, config_flags, timestr, filename1 ) 
+         endif 
       end if
 
       ! Radiosonde:

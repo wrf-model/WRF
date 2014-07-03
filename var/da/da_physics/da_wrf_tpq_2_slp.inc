@@ -51,7 +51,7 @@ subroutine da_wrf_tpq_2_slp (grid)
          PL  = grid%xb%psfc(i,j) - PCONST                                        
          klo = 0
 
-         ! FinD 2 LEVELS ON SIGMA SURFACES SURROUNDinG PL AT EACH I,J    
+         ! Find 2 levels on sigma surfaces surrounding PL at each I,J    
 
          k_loop: do k=kts, kte-1
             if ((grid%xb%p(i,j,k) >= pl) .and. (grid%xb%p(i,j,k+1) < pl)) then
@@ -61,9 +61,9 @@ subroutine da_wrf_tpq_2_slp (grid)
             end if
          end do k_loop
 
-         if (klo < 1) then                                      
+         if (klo < 1) then 
             write(unit=message(1),fmt='(A,F11.3,A)') &
-               'Cannot find pressure levelL ',PCONST,' mb above the surface'
+               'Cannot find pressure level ',PCONST,' Pa above the surface'
             write(unit=message(2),fmt='(A,F11.3,2X,A,F11.3)') &
                'PL=',PL,'  PSFC=',grid%xb%psfc(i,j)
             call da_error(__FILE__,__LINE__,message(1:2))                                               

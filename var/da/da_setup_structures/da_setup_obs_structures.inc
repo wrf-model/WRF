@@ -216,9 +216,9 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
       else if (ob_format == ob_format_ascii) then
          call da_message((/'Using ASCII format observation input'/))
          call da_setup_obs_structures_ascii (ob, iv, grid)
-      else if (ob_format == ob_format_madis) then
-         call da_message((/'Using MADIS format observation input'/))
-         call da_setup_obs_structures_madis (ob, iv) 
+      else
+         write(unit=message(1),fmt='(A,I3)') 'Invalid ob_format = ', ob_format
+         call da_error(__FILE__,__LINE__,message(1:1))
       end if
    end if
 

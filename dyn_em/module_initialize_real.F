@@ -1321,7 +1321,20 @@ integer::oops1,oops2
                END DO
             END DO
 
+#ifdef DM_PARALLEL
+         ips = its ; ipe = ite ; jps = jts ; jpe = jte ; kps = kts ; kpe = kte
+
+         !  Stencil for pressure is required for the pressure difference for the max_wind 
+         !  and trop level data.
+
+#   include "HALO_EM_VINTERP_UV_1.inc"
+#endif
+
             CALL vert_interp ( grid%ght_gc , grid%pd_gc , grid%ph0 , grid%pb , &
+                               grid%hgtmaxw , grid%hgttrop , grid%pmaxw , grid%ptrop , &
+                               flag_hgtmaxw , flag_hgttrop , &
+                               config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
+                               config_flags%maxw_above_this_level , &
                                num_metgrid_levels , 'Z' , &
                                interp_type , lagrange_order , extrap_type , &
                                lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
@@ -1359,10 +1372,23 @@ integer::oops1,oops2
          t_extrap_type = grid%t_extrap_type
          extrap_type = grid%extrap_type
 
+#ifdef DM_PARALLEL
+         ips = its ; ipe = ite ; jps = jts ; jpe = jte ; kps = kts ; kpe = kte
+
+         !  Stencil for pressure is required for the pressure difference for the max_wind 
+         !  and trop level data.
+
+#   include "HALO_EM_VINTERP_UV_1.inc"
+#endif
+
          !  Interpolate RH, diagnose Qv later when have temp and pressure.  Temporarily
          !  store this in the u_1 space, for later diagnosis into Qv and stored into moist.
 
          CALL vert_interp ( grid%rh_gc , grid%pd_gc , grid%u_1 , grid%pb , &
+                            grid%hgtmaxw , grid%hgttrop , grid%pmaxw , grid%ptrop , &
+                            0 , 0 , &
+                            config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
+                            config_flags%maxw_above_this_level , &
                             num_metgrid_levels , 'Q' , &
                             interp_type , lagrange_order , extrap_type , &
                             lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
@@ -1371,6 +1397,23 @@ integer::oops1,oops2
                             ims , ime , jms , jme , kms , kme , &
                             its , ite , jts , jte , kts , kte )
 
+         !  If this is theta being interpolated, AND we have extra levels for temperature,
+         !  convert those extra levels (trop and max wind) to potential temp.
+
+         IF ( ( config_flags%interp_theta ) .AND. ( flag_tmaxw .EQ. 1 ) ) THEN
+            CALL t_to_theta ( grid%tmaxw , grid%pmaxw , p00 , &
+                              ids , ide , jds , jde , 1 , 1 , &
+                              ims , ime , jms , jme , 1 , 1 , &
+                              its , ite , jts , jte , 1 , 1 )
+         END IF
+
+         IF ( ( config_flags%interp_theta ) .AND. ( flag_ttrop .EQ. 1 ) ) THEN
+            CALL t_to_theta ( grid%ttrop , grid%ptrop , p00 , &
+                              ids , ide , jds , jde , 1 , 1 , &
+                              ims , ime , jms , jme , 1 , 1 , &
+                              its , ite , jts , jte , 1 , 1 )
+         END IF
+
          !  Depending on the setting of interp_theta = T/F, t_gc is is either theta Xor 
          !  temperature, and that means that the t_2 field is also the associated field.
          !  It is better to interpolate temperature and potential temperature in LOG(p),
@@ -1378,6 +1421,10 @@ integer::oops1,oops2
 
          interp_type = 2
          CALL vert_interp ( grid%t_gc , grid%pd_gc , grid%t_2               , grid%pb , &
+                            grid%tmaxw , grid%ttrop , grid%pmaxw , grid%ptrop , &
+                            flag_tmaxw , flag_ttrop , &
+                            config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
+                            config_flags%maxw_above_this_level , &
                             num_metgrid_levels , 'T' , &
                             interp_type , lagrange_order , t_extrap_type , &
                             lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
@@ -1391,6 +1438,10 @@ integer::oops1,oops2
 
          interp_type = 1
          CALL vert_interp ( grid%p_gc , grid%pd_gc , grid%p               , grid%pb , &
+                            grid%pmaxw , grid%ptrop , grid%pmaxw , grid%ptrop , &
+                            flag_pmaxw , flag_ptrop , &
+                            config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
+                            config_flags%maxw_above_this_level , &
                             num_metgrid_levels , 'T' , &
                             interp_type , lagrange_order , t_extrap_type , &
                             lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
@@ -1450,6 +1501,10 @@ integer::oops1,oops2
             DO im = PARAM_FIRST_SCALAR, num_3d_m
                IF ( im .EQ. P_QR ) THEN
                   CALL vert_interp ( grid%qr_gc , grid%pd_gc , moist(:,:,:,P_QR) , grid%pb , &
+                                     grid%hgtmaxw , grid%hgttrop , grid%pmaxw , grid%ptrop , &
+                                     0 , 0 , &
+                                     config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
+                                     config_flags%maxw_above_this_level , &
                                      num_metgrid_levels , 'Q' , &
                                      interp_type , lagrange_order , extrap_type , &
                                      lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
@@ -1465,6 +1520,10 @@ integer::oops1,oops2
             DO im = PARAM_FIRST_SCALAR, num_3d_m
                IF ( im .EQ. P_QC ) THEN
                   CALL vert_interp ( grid%qc_gc , grid%pd_gc , moist(:,:,:,P_QC) , grid%pb , &
+                                     grid%hgtmaxw , grid%hgttrop , grid%pmaxw , grid%ptrop , &
+                                     0 , 0 , &
+                                     config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
+                                     config_flags%maxw_above_this_level , &
                                      num_metgrid_levels , 'Q' , &
                                      interp_type , lagrange_order , extrap_type , &
                                      lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
@@ -1480,6 +1539,10 @@ integer::oops1,oops2
             DO im = PARAM_FIRST_SCALAR, num_3d_m
                IF ( im .EQ. P_QI ) THEN
                   CALL vert_interp ( grid%qi_gc , grid%pd_gc , moist(:,:,:,P_QI) , grid%pb , &
+                                     grid%hgtmaxw , grid%hgttrop , grid%pmaxw , grid%ptrop , &
+                                     0 , 0 , &
+                                     config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
+                                     config_flags%maxw_above_this_level , &
                                      num_metgrid_levels , 'Q' , &
                                      interp_type , lagrange_order , extrap_type , &
                                      lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
@@ -1495,6 +1558,10 @@ integer::oops1,oops2
             DO im = PARAM_FIRST_SCALAR, num_3d_m
                IF ( im .EQ. P_QS ) THEN
                   CALL vert_interp ( grid%qs_gc , grid%pd_gc , moist(:,:,:,P_QS) , grid%pb , &
+                                     grid%hgtmaxw , grid%hgttrop , grid%pmaxw , grid%ptrop , &
+                                     0 , 0 , &
+                                     config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
+                                     config_flags%maxw_above_this_level , &
                                      num_metgrid_levels , 'Q' , &
                                      interp_type , lagrange_order , extrap_type , &
                                      lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
@@ -1510,6 +1577,10 @@ integer::oops1,oops2
             DO im = PARAM_FIRST_SCALAR, num_3d_m
                IF ( im .EQ. P_QG ) THEN
                   CALL vert_interp ( grid%qg_gc , grid%pd_gc , moist(:,:,:,P_QG) , grid%pb , &
+                                     grid%hgtmaxw , grid%hgttrop , grid%pmaxw , grid%ptrop , &
+                                     0 , 0 , &
+                                     config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
+                                     config_flags%maxw_above_this_level , &
                                      num_metgrid_levels , 'Q' , &
                                      interp_type , lagrange_order , extrap_type , &
                                      lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
@@ -1525,6 +1596,10 @@ integer::oops1,oops2
             DO im = PARAM_FIRST_SCALAR, num_3d_m
                IF ( im .EQ. P_QH ) THEN
                   CALL vert_interp ( grid%qh_gc , grid%pd_gc , moist(:,:,:,P_QH) , grid%pb , &
+                                     grid%hgtmaxw , grid%hgttrop , grid%pmaxw , grid%ptrop , &
+                                     0 , 0 , &
+                                     config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
+                                     config_flags%maxw_above_this_level , &
                                      num_metgrid_levels , 'Q' , &
                                      interp_type , lagrange_order , extrap_type , &
                                      lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
@@ -1540,6 +1615,10 @@ integer::oops1,oops2
             DO im = PARAM_FIRST_SCALAR, num_3d_s
                IF ( im .EQ. P_QNI ) THEN
                   CALL vert_interp ( grid%qni_gc , grid%pd_gc , scalar(:,:,:,P_QNI) , grid%pb , &
+                                     grid%hgtmaxw , grid%hgttrop , grid%pmaxw , grid%ptrop , &
+                                     0 , 0 , &
+                                     config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
+                                     config_flags%maxw_above_this_level , &
                                      num_metgrid_levels , 'Q' , &
                                      interp_type , lagrange_order , extrap_type , &
                                      lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
@@ -1555,6 +1634,10 @@ integer::oops1,oops2
             DO im = PARAM_FIRST_SCALAR, num_3d_s
                IF ( im .EQ. P_QNR ) THEN
                   CALL vert_interp ( grid%qnr_gc , grid%pd_gc , scalar(:,:,:,P_QNR) , grid%pb , &
+                                     grid%hgtmaxw , grid%hgttrop , grid%pmaxw , grid%ptrop , &
+                                     0 , 0 , &
+                                     config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
+                                     config_flags%maxw_above_this_level , &
                                      num_metgrid_levels , 'Q' , &
                                      interp_type , lagrange_order , extrap_type , &
                                      lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
@@ -1574,6 +1657,10 @@ integer::oops1,oops2
                IF ( im .EQ. P_QNWFA ) THEN
                   CALL wrf_debug ( 0 , 'Using Thompson_aerosol_aware so vertically-interpolating QNWFA monthly climo arrays to fill scalar')
                   CALL vert_interp ( grid%QNWFA_now , grid%pd_gc , scalar(:,:,:,P_QNWFA) , grid%pb , &
+                                     grid%hgtmaxw , grid%hgttrop , grid%pmaxw , grid%ptrop , &
+                                     0 , 0 , &
+                                     config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
+                                     config_flags%maxw_above_this_level , &
                                      num_metgrid_levels , 'Q' , &
                                      interp_type , lagrange_order , extrap_type , &
                                      lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
@@ -1602,6 +1689,10 @@ integer::oops1,oops2
             DO im = PARAM_FIRST_SCALAR, num_3d_s
                IF ( im .EQ. P_QNIFA ) THEN
                   CALL vert_interp ( grid%QNIFA_now , grid%pd_gc , scalar(:,:,:,P_QNIFA) , grid%pb , &
+                                     grid%hgtmaxw , grid%hgttrop , grid%pmaxw , grid%ptrop , &
+                                     0 , 0 , &
+                                     config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
+                                     config_flags%maxw_above_this_level , &
                                      num_metgrid_levels , 'Q' , &
                                      interp_type , lagrange_order , extrap_type , &
                                      lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
@@ -1646,12 +1737,19 @@ integer::oops1,oops2
          !  at both the locations for the horizontal momentum, which we get by
          !  averaging two pressure values (i and i-1 for U, j and j-1 for V).  The
          !  pressure field on input (grid%pd_gc) and the pressure of the new coordinate
-         !  (grid%pb) are both communicated with an 8 stencil.
+         !  (grid%pb) would only need an 8 point stencil.  However, the i+1 i-1 and
+         !  j+1 j-1 for the pressure difference for the max_wind and trop level data
+         !  require an 8 stencil for all of the mass point variables and a 24-point
+         !  stencil for U and V.
 
 #   include "HALO_EM_VINTERP_UV_1.inc"
 #endif
 
          CALL vert_interp ( grid%u_gc , grid%pd_gc , grid%u_2               , grid%pb , &
+                            grid%umaxw , grid%utrop , grid%pmaxw , grid%ptrop , &
+                            flag_umaxw , flag_utrop , &
+                            config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
+                            config_flags%maxw_above_this_level , &
                             num_metgrid_levels , 'U' , &
                             interp_type , lagrange_order , extrap_type , &
                             lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
@@ -1661,6 +1759,10 @@ integer::oops1,oops2
                             its , ite , jts , jte , kts , kte )
 
          CALL vert_interp ( grid%v_gc , grid%pd_gc , grid%v_2               , grid%pb , &
+                            grid%vmaxw , grid%vtrop , grid%pmaxw , grid%ptrop , &
+                            flag_vmaxw , flag_vtrop , &
+                            config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
+                            config_flags%maxw_above_this_level , &
                             num_metgrid_levels , 'V' , &
                             interp_type , lagrange_order , extrap_type , &
                             lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
@@ -3778,6 +3880,10 @@ end subroutine fillitup
 !---------------------------------------------------------------------
 
    SUBROUTINE vert_interp ( fo , po , fnew , pnu , &
+                            fo_maxw , fo_trop , po_maxw , po_trop , &
+                            flag_maxw , flag_trop , &
+                            maxw_horiz_pres_diff , trop_horiz_pres_diff , &
+                            maxw_above_this_level , &
                             generic , var_type , &
                             interp_type , lagrange_order , extrap_type , &
                             lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
@@ -3794,19 +3900,23 @@ end subroutine fillitup
       INTEGER , INTENT(IN)        :: interp_type , lagrange_order , extrap_type
       LOGICAL , INTENT(IN)        :: lowest_lev_from_sfc , use_levels_below_ground , use_surface
       REAL    , INTENT(IN)        :: zap_close_levels
+      REAL    , INTENT(IN)        :: maxw_horiz_pres_diff , trop_horiz_pres_diff , maxw_above_this_level
       INTEGER , INTENT(IN)        :: force_sfc_in_vinterp
       INTEGER , INTENT(IN)        :: ids , ide , jds , jde , kds , kde , &
                                      ims , ime , jms , jme , kms , kme , &
                                      its , ite , jts , jte , kts , kte
       INTEGER , INTENT(IN)        :: generic
+      INTEGER , INTENT(IN)        :: flag_maxw , flag_trop
 
       CHARACTER (LEN=1) :: var_type
 
       REAL , DIMENSION(ims:ime,generic,jms:jme) , INTENT(IN)     :: fo , po
+      REAL , DIMENSION(ims:ime,jms:jme)         , INTENT(IN)     :: fo_maxw , fo_trop , po_maxw , po_trop
       REAL , DIMENSION(ims:ime,kms:kme,jms:jme) , INTENT(IN)     :: pnu
       REAL , DIMENSION(ims:ime,kms:kme,jms:jme) , INTENT(OUT)    :: fnew
 
       REAL , DIMENSION(ims:ime,generic,jms:jme)                  :: forig , porig
+      REAL , DIMENSION(ims:ime,jms:jme)                          :: forig_maxw , forig_trop , porig_maxw , porig_trop
       REAL , DIMENSION(ims:ime,kms:kme,jms:jme)                  :: pnew
 
       !  Local vars
@@ -3821,8 +3931,8 @@ end subroutine fillitup
 
       LOGICAL :: any_below_ground
 
-      REAL :: p1 , p2 , pn, hold
-      REAL , DIMENSION(1:generic) :: ordered_porig , ordered_forig
+      REAL :: p1 , p2 , pn, hold , zap_close_extra_levels
+      REAL , DIMENSION(1:generic+flag_maxw+flag_trop) :: ordered_porig , ordered_forig
       REAL , DIMENSION(kts:kte) :: ordered_pnew , ordered_fnew
     
       !  Excluded middle.
@@ -3831,35 +3941,46 @@ end subroutine fillitup
       INTEGER :: i_valid , j_valid
       LOGICAL :: flip_data_required
 
+      zap_close_extra_levels = 500
+
       !  Horiontal loop bounds for different variable types.
 
       IF      ( var_type .EQ. 'U' ) THEN
          istart = its
          iend   = ite
-         jstart = jts
-         jend   = MIN(jde-1,jte)
+         jstart = MAX(jds  ,jts-1)
+         jend   = MIN(jde-1,jte+1)
          kstart = kts
          kend   = kte-1
          DO j = jstart,jend
             DO k = 1,generic
-               DO i = MAX(ids+1,its) , MIN(ide-1,ite)
+               DO i = MAX(ids+1,its-1) , MIN(ide-1,ite+1)
                   IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                   porig(i,k,j) = ( po(i,k,j) + po(i-1,k,j) ) * 0.5
                END DO
+            END DO
+            DO i = MAX(ids+1,its-1) , MIN(ide-1,ite+1)
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+                  porig_maxw(i,j) = ( po_maxw(i,j) + po_maxw(i-1,j) ) * 0.5
+                  porig_trop(i,j) = ( po_trop(i,j) + po_trop(i-1,j) ) * 0.5
             END DO
             IF ( ids .EQ. its ) THEN
                DO k = 1,generic
                   porig(its,k,j) =  po(its,k,j)
                END DO
+               porig_maxw(its,j) =  po_maxw(its,j)
+               porig_trop(its,j) =  po_trop(its,j)
             END IF
             IF ( ide .EQ. ite ) THEN
                DO k = 1,generic
                   porig(ite,k,j) =  po(ite-1,k,j)
                END DO
+               porig_maxw(ite,j) =  po_maxw(ite-1,j)
+               porig_trop(ite,j) =  po_trop(ite-1,j)
             END IF
 
             DO k = kstart,kend
-               DO i = MAX(ids+1,its) , MIN(ide-1,ite)
+               DO i = MAX(ids+1,its-1) , MIN(ide-1,ite+1)
                   IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                   pnew(i,k,j) = ( pnu(i,k,j) + pnu(i-1,k,j) ) * 0.5
                END DO
@@ -3876,32 +3997,41 @@ end subroutine fillitup
             END IF
          END DO
       ELSE IF ( var_type .EQ. 'V' ) THEN
-         istart = its
-         iend   = MIN(ide-1,ite)
+         istart = MAX(ids  ,its-1)
+         iend   = MIN(ide-1,ite+1)
          jstart = jts
          jend   = jte
          kstart = kts
          kend   = kte-1
          DO i = istart,iend
             DO k = 1,generic
-               DO j = MAX(jds+1,jts) , MIN(jde-1,jte)
+               DO j = MAX(jds+1,jts-1) , MIN(jde-1,jte+1)
                   IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                   porig(i,k,j) = ( po(i,k,j) + po(i,k,j-1) ) * 0.5
                END DO
+            END DO
+            DO j = MAX(jds+1,jts-1) , MIN(jde-1,jte+1)
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+                  porig_maxw(i,j) = ( po_maxw(i,j) + po_maxw(i,j-1) ) * 0.5
+                  porig_trop(i,j) = ( po_trop(i,j) + po_trop(i,j-1) ) * 0.5
             END DO
             IF ( jds .EQ. jts ) THEN
                DO k = 1,generic
                   porig(i,k,jts) =  po(i,k,jts)
                END DO
+               porig_maxw(i,jts) =  po_maxw(i,jts)
+               porig_trop(i,jts) =  po_trop(i,jts)
             END IF
             IF ( jde .EQ. jte ) THEN
                DO k = 1,generic
                   porig(i,k,jte) =  po(i,k,jte-1)
                END DO
+               porig_maxw(i,jte) =  po_maxw(i,jte-1)
+               porig_trop(i,jte) =  po_trop(i,jte-1)
             END IF
 
             DO k = kstart,kend
-               DO j = MAX(jds+1,jts) , MIN(jde-1,jte)
+               DO j = MAX(jds+1,jts-1) , MIN(jde-1,jte+1)
                   IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                   pnew(i,k,j) = ( pnu(i,k,j) + pnu(i,k,j-1) ) * 0.5
                END DO
@@ -3918,10 +4048,10 @@ end subroutine fillitup
             END IF
          END DO
       ELSE IF ( ( var_type .EQ. 'W' ) .OR.  ( var_type .EQ. 'Z' ) ) THEN
-         istart = its
-         iend   = MIN(ide-1,ite)
-         jstart = jts
-         jend   = MIN(jde-1,jte)
+         istart = MAX(ids  ,its-1)
+         iend   = MIN(ide-1,ite+1)
+         jstart = MAX(jds  ,jts-1)
+         jend   = MIN(jde-1,jte+1)
          kstart = kts
          kend   = kte
          DO j = jstart,jend
@@ -3930,6 +4060,11 @@ end subroutine fillitup
                   IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                   porig(i,k,j) = po(i,k,j)
                END DO
+            END DO
+            DO i = istart,iend
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+                  porig_maxw(i,j) = po_maxw(i,j)
+                  porig_trop(i,j) = po_trop(i,j)
             END DO
 
             DO k = kstart,kend
@@ -3940,10 +4075,10 @@ end subroutine fillitup
             END DO
          END DO
       ELSE IF ( ( var_type .EQ. 'T' ) .OR. ( var_type .EQ. 'Q' ) ) THEN
-         istart = its
-         iend   = MIN(ide-1,ite)
-         jstart = jts
-         jend   = MIN(jde-1,jte)
+         istart = MAX(ids  ,its-1)
+         iend   = MIN(ide-1,ite+1)
+         jstart = MAX(jds  ,jts-1)
+         jend   = MIN(jde-1,jte+1)
          kstart = kts
          kend   = kte-1
          DO j = jstart,jend
@@ -3952,6 +4087,11 @@ end subroutine fillitup
                   IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                   porig(i,k,j) = po(i,k,j)
                END DO
+            END DO
+            DO i = istart,iend
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+                  porig_maxw(i,j) = po_maxw(i,j)
+                  porig_trop(i,j) = po_trop(i,j)
             END DO
 
             DO k = kstart,kend
@@ -3962,10 +4102,10 @@ end subroutine fillitup
             END DO
          END DO
       ELSE
-         istart = its
-         iend   = MIN(ide-1,ite)
-         jstart = jts
-         jend   = MIN(jde-1,jte)
+         istart = MAX(ids  ,its-1)
+         iend   = MIN(ide-1,ite+1)
+         jstart = MAX(jds  ,jts-1)
+         jend   = MIN(jde-1,jte+1)
          kstart = kts
          kend   = kte-1
          DO j = jstart,jend
@@ -4299,6 +4439,59 @@ end subroutine fillitup
                kinterp_start = ko_above_sfc(i)-1-zap_below
                kinterp_end = kinterp_start + count - 1
 
+            END IF
+
+            !  If we have additional levels (for example, some arrays have a "level of max winds"
+            !  or a "level of the tropopause"), we insert them here.
+
+            IF ( ( flag_maxw .EQ. 1 ) .AND. ( porig_maxw(i,j) .LE. maxw_above_this_level ) .AND. &
+                 ( ( ( ABS(porig_maxw(MIN(i+1,    ide  ),j                 )-porig_maxw(MAX(i-1,ids),j           )) .LT.  2*maxw_horiz_pres_diff ) .AND. ( var_type .EQ. 'U' ) ) .OR. &
+                   ( ( ABS(porig_maxw(i                 ,MIN(j+1,    jde-1))-porig_maxw(i           ,MAX(j-1,jds))) .LT.  2*maxw_horiz_pres_diff ) .AND. ( var_type .EQ. 'U' ) ) .OR. &
+                   ( ( ABS(porig_maxw(MIN(i+1,    ide-1),j                 )-porig_maxw(MAX(i-1,ids),j           )) .LT.  2*maxw_horiz_pres_diff ) .AND. ( var_type .EQ. 'V' ) ) .OR. &
+                   ( ( ABS(porig_maxw(i                 ,MIN(j+1,    jde  ))-porig_maxw(i           ,MAX(j-1,jds))) .LT.  2*maxw_horiz_pres_diff ) .AND. ( var_type .EQ. 'V' ) ) .OR. &
+                   ( ( ABS(porig_maxw(MIN(i+1,    ide-1),j                 )-porig_maxw(MAX(i-1,ids),j           )) .LT.  2*maxw_horiz_pres_diff ) .AND. ( var_type .EQ. 'T' ) ) .OR. &
+                   ( ( ABS(porig_maxw(i                 ,MIN(j+1,    jde-1))-porig_maxw(i           ,MAX(j-1,jds))) .LT.  2*maxw_horiz_pres_diff ) .AND. ( var_type .EQ. 'T' ) ) .OR. &
+                   ( ( ABS(porig_maxw(MIN(i+1,    ide-1),j                 )-porig_maxw(MAX(i-1,ids),j           )) .LT.  2*maxw_horiz_pres_diff ) .AND. ( var_type .EQ. 'Z' ) ) .OR. &
+                   ( ( ABS(porig_maxw(i                 ,MIN(j+1,    jde-1))-porig_maxw(i           ,MAX(j-1,jds))) .LT.  2*maxw_horiz_pres_diff ) .AND. ( var_type .EQ. 'Z' ) ) ) ) THEN
+               insert_maxw : DO ko = kinterp_start , kinterp_end-1
+                  IF ( ( ( ( ordered_porig(ko)-porig_maxw(i,j) ) * ( ordered_porig(ko+1)-porig_maxw(i,j) ) ) .LT. 0 ) .AND. &
+                       ( ( ABS(ordered_porig(ko  )-porig_maxw(i,j)) .GT. zap_close_extra_levels ) .AND. &
+                         ( ABS(ordered_porig(ko+1)-porig_maxw(i,j)) .GT. zap_close_extra_levels ) ) ) THEN
+                     DO kcount = kinterp_end , ko+1 , -1
+                        ordered_porig(kcount+1) = ordered_porig(kcount)
+                        ordered_forig(kcount+1) = ordered_forig(kcount)
+                     END DO
+                     ordered_porig(ko+1) = porig_maxw(i,j)
+                     ordered_forig(ko+1) = fo_maxw(i,j)
+                     kinterp_end = kinterp_end + 1
+                     EXIT insert_maxw
+                  END IF
+               END DO insert_maxw
+            END IF
+ 
+            IF ( ( flag_trop .EQ. 1 ) .AND. &
+                 ( ( ( ABS(porig_trop(MIN(i+1,    ide  ),j                 )-porig_trop(MAX(i-1,ids),j           )) .LT.  2*trop_horiz_pres_diff ) .AND. ( var_type .EQ. 'U' ) ) .OR. &
+                   ( ( ABS(porig_trop(i                 ,MIN(j+1,    jde-1))-porig_trop(i           ,MAX(j-1,jds))) .LT.  2*trop_horiz_pres_diff ) .AND. ( var_type .EQ. 'U' ) ) .OR. &
+                   ( ( ABS(porig_trop(MIN(i+1,    ide-1),j                 )-porig_trop(MAX(i-1,ids),j           )) .LT.  2*trop_horiz_pres_diff ) .AND. ( var_type .EQ. 'V' ) ) .OR. &
+                   ( ( ABS(porig_trop(i                 ,MIN(j+1,    jde  ))-porig_trop(i           ,MAX(j-1,jds))) .LT.  2*trop_horiz_pres_diff ) .AND. ( var_type .EQ. 'V' ) ) .OR. &
+                   ( ( ABS(porig_trop(MIN(i+1,    ide-1),j                 )-porig_trop(MAX(i-1,ids),j           )) .LT.  2*trop_horiz_pres_diff ) .AND. ( var_type .EQ. 'T' ) ) .OR. &
+                   ( ( ABS(porig_trop(i                 ,MIN(j+1,    jde-1))-porig_trop(i           ,MAX(j-1,jds))) .LT.  2*trop_horiz_pres_diff ) .AND. ( var_type .EQ. 'T' ) ) .OR. &
+                   ( ( ABS(porig_trop(MIN(i+1,    ide-1),j                 )-porig_trop(MAX(i-1,ids),j           )) .LT.  2*trop_horiz_pres_diff ) .AND. ( var_type .EQ. 'Z' ) ) .OR. &
+                   ( ( ABS(porig_trop(i                 ,MIN(j+1,    jde-1))-porig_trop(i           ,MAX(j-1,jds))) .LT.  2*trop_horiz_pres_diff ) .AND. ( var_type .EQ. 'Z' ) ) ) ) THEN
+               insert_trop : DO ko = kinterp_start , kinterp_end-1
+                  IF ( ( ( ( ordered_porig(ko)-porig_trop(i,j) ) * ( ordered_porig(ko+1)-porig_trop(i,j) ) ) .LT. 0 ) .AND. &
+                       ( ( ABS(ordered_porig(ko  )-porig_trop(i,j)) .GT. zap_close_extra_levels ) .AND. &
+                         ( ABS(ordered_porig(ko+1)-porig_trop(i,j)) .GT. zap_close_extra_levels ) ) ) THEN
+                     DO kcount = kinterp_end , ko+1 , -1
+                        ordered_porig(kcount+1) = ordered_porig(kcount)
+                        ordered_forig(kcount+1) = ordered_forig(kcount)
+                     END DO
+                     ordered_porig(ko+1) = porig_trop(i,j)
+                     ordered_forig(ko+1) = fo_trop(i,j)
+                     kinterp_end = kinterp_end + 1
+                     EXIT insert_trop
+                  END IF
+               END DO insert_trop
             END IF
 
             !  The polynomials are either in pressure or LOG(pressure).

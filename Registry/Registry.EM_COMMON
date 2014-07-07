@@ -152,6 +152,16 @@ state    real   max_p          ij       dyn_em      1        -     i0d  "MAX_P" 
 state    real   t_min_p        ij       dyn_em      1        -     i0d  "T_MIN_P"   "temperature at min pressure"         "K"
 state    real   ght_min_p      ij       dyn_em      1        -     i0d  "GHT_MIN_P" "geopotential height at min pressure" "m"
 state    real   min_p          ij       dyn_em      1        -     i0d  "MIN_P"     "min pressure "                       "Pa"
+state    real   hgtmaxw        ij       dyn_em      1        -     i1  "HGTMAXW"    "Height of the max wind speed"       "m"
+state    real   hgttrop        ij       dyn_em      1        -     i1  "HGTTROP"    "Height of the tropopause"           "m"
+state    real   pmaxw          ij       dyn_em      1        -     i1  "PMAXW"      "Pressure of the max wind speed"     "Pa"
+state    real   ptrop          ij       dyn_em      1        -     i1  "PTROP"      "Pressure of the tropopause"         "Pa"
+state    real   tmaxw          ij       dyn_em      1        -     i1  "TMAXW"      "Temperature of the max wind speed"  "K"
+state    real   ttrop          ij       dyn_em      1        -     i1  "TTROP"      "Temperature of the tropopause"      "K"
+state    real   umaxw          ij       dyn_em      1        X     i1  "UMAXW"      "U-component of the max wind speed"  "m s-1"
+state    real   utrop          ij       dyn_em      1        X     i1  "UTROP"      "U-component of the tropopause wind" "m s-1"
+state    real   vmaxw          ij       dyn_em      1        Y     i1  "VMAXW"      "V-component of the max wind speed"  "m s-1"
+state    real   vtrop          ij       dyn_em      1        Y     i1  "VTROP"      "V-component of the tropopause wind" "m s-1"
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------
 #                                               
@@ -1868,6 +1878,9 @@ rconfig   logical use_surface             namelist,domains	1             .true. 
 rconfig   integer lagrange_order          namelist,domains	1              2       irh    "lagrange_order"   "1=linear, 2=quadratic vertical interpolation"      ""
 rconfig   integer force_sfc_in_vinterp    namelist,domains	1              1       irh    "force_sfc_in_vinterp"   "number of eta levels forced to use sfc in vert interp"      ""
 rconfig   real    zap_close_levels        namelist,domains	1              500     irh    "zap_close_levels"   "delta p where level is removed in vert interp"      "Pa"
+rconfig   real    maxw_horiz_pres_diff    namelist,domains	1              5000    irh    "maxw_horiz_pres_diff"   "pressure limit (Pa), when horiz diff exceeded do not use max_wind level in real"
+rconfig   real    trop_horiz_pres_diff    namelist,domains	1              5000    irh    "trop_horiz_pres_diff"   "pressure limit (Pa), when horiz diff exceeded do not use tropopause level in real"
+rconfig   real    maxw_above_this_level   namelist,domains	1              30000   irh    "maxw_above_this_level"  "pressure limit (Pa), only use the max_wind data at or above this level"
 rconfig   logical sfcp_to_sfcp            namelist,domains	1              .false. irh    "sfcp_to_sfcp"   "T/F use incoming sfc pres to compute new sfc pres"      "flag"
 rconfig   logical adjust_heights          namelist,domains	1              .false. irh    "adjust_heights"   "T/F adjust pressure level input to match 500 mb height"      "flag"
 rconfig   logical smooth_cg_topo          namelist,domains	1              .false. irh    "smooth_cg_topo"   "T/F smooth CG topo on boundarries" "flag"
@@ -2580,7 +2593,7 @@ package   dfi_nodfi     dfi_opt==0                  -             -
 package   dfi_dfl       dfi_opt==1                  -             state:dfi_u,dfi_v,dfi_w,dfi_ph,dfi_phb,dfi_ph0,dfi_php,dfi_t,dfi_p,dfi_ww,dfi_mu,dfi_tke,dfi_pb,dfi_al,dfi_alt,dfi_TSLB,dfi_SMOIS,dfi_SNOW,dfi_SNOWH,dfi_CANWAT,dfi_SMFR3D,dfi_KEEPFR3DFLAG,dfi_TSK,dfi_SOILT1,dfi_TSNAV,dfi_SNOWC,dfi_QVG,dfi_rh,dfi_tten_rad
 package   dfi_ddfi      dfi_opt==2                  -             state:dfi_u,dfi_v,dfi_w,dfi_ph,dfi_phb,dfi_ph0,dfi_php,dfi_t,dfi_p,dfi_ww,dfi_mu,dfi_tke,dfi_pb,dfi_al,dfi_alt,dfi_TSLB,dfi_SMOIS,dfi_SNOW,dfi_SNOWH,dfi_CANWAT,dfi_SMFR3D,dfi_KEEPFR3DFLAG,dfi_TSK,dfi_SOILT1,dfi_TSNAV,dfi_SNOWC,dfi_QVG,dfi_rh,dfi_tten_rad
 package   dfi_tdfi      dfi_opt==3                  -             state:dfi_u,dfi_v,dfi_w,dfi_ph,dfi_phb,dfi_ph0,dfi_php,dfi_t,dfi_p,dfi_ww,dfi_mu,dfi_tke,dfi_pb,dfi_al,dfi_alt,dfi_TSLB,dfi_SMOIS,dfi_SNOW,dfi_SNOWH,dfi_CANWAT,dfi_SMFR3D,dfi_KEEPFR3DFLAG,dfi_TSK,dfi_SOILT1,dfi_TSNAV,dfi_SNOWC,dfi_QVG,dfi_rh,dfi_tten_rad
-package   realonly       use_wps_input==1            -            state:u_gc,v_gc,t_gc,rh_gc,ght_gc,p_gc,xlat_gc,xlong_gc,ht_gc,tsk_gc,tavgsfc,tmn_gc,pslv_gc,sct_dom_gc,scb_dom_gc,greenfrac,albedo12m,pd_gc,psfc_gc,intq_gc,pdhs,sh_gc,qv_gc,qr_gc,qc_gc,qs_gc,qi_gc,qg_gc,qh_gc,qni_gc,icefrac_gc,sm000007,sm007028,sm028100,sm100255,st000007,st007028,st028100,st100255,sm000010,sm010040,sm040100,sm100200,sm010200,soilm000,soilm005,soilm020,soilm040,soilm160,soilm300,sw000010,sw010040,sw040100,sw100200,sw010200,soilw000,soilw005,soilw020,soilw040,soilw160,soilw300,st000010,st010040,st040100,st100200,st010200,soilt000,soilt005,soilt020,soilt040,soilt160,soilt300,fad0_urb2d,fad135_urb2d,fad45_urb2d,pad_urb2d,fad90_urb2d,rad_urb2d,car_urb2d,h2w_urb2d,svf_urb2d,z0s_urb2d,z0r_urb2d,z0m_urb2d,zds_urb2d,zdm_urb2d,zdr_urb2d,qnwfa_now,qnwfa_jan,qnwfa_feb,qnwfa_mar,qnwfa_apr,qnwfa_may,qnwfa_jun,qnwfa_jul,qnwfa_aug,qnwfa_sep,qnwfa_oct,qnwfa_nov,qnwfa_dec,qnifa_now,qnifa_jan,qnifa_feb,qnifa_mar,qnifa_apr,qnifa_may,qnifa_jun,qnifa_jul,qnifa_aug,qnifa_sep,qnifa_oct,qnifa_nov,qnifa_dec,qntemp,qntemp2
+package   realonly       use_wps_input==1            -            state:u_gc,v_gc,t_gc,rh_gc,ght_gc,p_gc,xlat_gc,xlong_gc,ht_gc,tsk_gc,tavgsfc,tmn_gc,pslv_gc,sct_dom_gc,scb_dom_gc,greenfrac,albedo12m,pd_gc,psfc_gc,intq_gc,pdhs,sh_gc,qv_gc,qr_gc,qc_gc,qs_gc,qi_gc,qg_gc,qh_gc,qni_gc,icefrac_gc,sm000007,sm007028,sm028100,sm100255,st000007,st007028,st028100,st100255,sm000010,sm010040,sm040100,sm100200,sm010200,soilm000,soilm005,soilm020,soilm040,soilm160,soilm300,sw000010,sw010040,sw040100,sw100200,sw010200,soilw000,soilw005,soilw020,soilw040,soilw160,soilw300,st000010,st010040,st040100,st100200,st010200,soilt000,soilt005,soilt020,soilt040,soilt160,soilt300,fad0_urb2d,fad135_urb2d,fad45_urb2d,pad_urb2d,fad90_urb2d,rad_urb2d,car_urb2d,h2w_urb2d,svf_urb2d,z0s_urb2d,z0r_urb2d,z0m_urb2d,zds_urb2d,zdm_urb2d,zdr_urb2d,qnwfa_now,qnwfa_jan,qnwfa_feb,qnwfa_mar,qnwfa_apr,qnwfa_may,qnwfa_jun,qnwfa_jul,qnwfa_aug,qnwfa_sep,qnwfa_oct,qnwfa_nov,qnwfa_dec,qnifa_now,qnifa_jan,qnifa_feb,qnifa_mar,qnifa_apr,qnifa_may,qnifa_jun,qnifa_jul,qnifa_aug,qnifa_sep,qnifa_oct,qnifa_nov,qnifa_dec,qntemp,qntemp2,hgtmaxw,pmaxw,tmaxw,umaxw,vmaxw,hgttrop,ptrop,ttrop,utrop,vtrop
 package   tconly         use_wps_input==2            -             state:u_gc,v_gc,t_gc,rh_gc,ght_gc,p_gc,xlat_gc,xlong_gc,ht_gc,tsk_gc,tavgsfc,tmn_gc,pslv_gc,sct_dom_gc,scb_dom_gc,greenfrac,albedo12m,pd_gc,psfc_gc,intq_gc,pdhs,sh_gc,qv_gc,qr_gc,qc_gc,qs_gc,qi_gc,qg_gc,qh_gc,qni_gc,icefrac_gc
 package   reg_interp    nest_interp_coord==0         -             - 
 package   flat_p_interp nest_interp_coord==1         -             state:t_max_p,ght_max_p,max_p,t_min_p,ght_min_p,min_p
@@ -2668,7 +2681,7 @@ halo      HALO_EM_INIT_3 dyn_em 48:ph0,php,t_init,mub,mu0,p,al,alt,alb
 halo      HALO_EM_INIT_4 dyn_em 48:pb,h_diabatic,msftx,msfty,msfux,msfuy,msfvx,msfvy,msfvx_inv,f,e,sina,cosa,ht,potevp,snopcx,soiltb,xlat,xlong,xlat_u,xlat_v,xlong_u,xlong_v,clat
 halo      HALO_EM_INIT_5 dyn_em 48:moist,chem,scalar,tracer
 halo      HALO_EM_INIT_6 dyn_em 48:om_tmp,om_s,om_u,om_v,om_depth,om_tini,om_sini,om_lat,om_lon,om_ml
-halo      HALO_EM_VINTERP_UV_1 dyn_em 8:pd_gc,pb
+halo      HALO_EM_VINTERP_UV_1 dyn_em 24:pd_gc,pb,pmaxw,ptrop
 halo      HALO_EM_A dyn_em  8:ru,rv,rw,ww,php,alt,al,p,muu,muv,mut
 halo      HALO_EM_PHYS_A  dyn_em 4:u_2,v_2
 halo      HALO_EM_PHYS_PBL dyn_em        4:rublten,rvblten

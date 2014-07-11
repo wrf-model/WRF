@@ -114,6 +114,10 @@ CONTAINS
                          +emis_ant(i,k,j,p_e_no2)*conv_rho
         chem(i,k,j,p_nh3)  = chem(i,k,j,p_nh3)                         &
                          +emis_ant(i,k,j,p_e_nh3)*conv_rho
+        if(p_ch4 .gt. 0 .and. p_e_ch4 .gt. 0) then 
+           chem(i,k,j,p_ch4)  = chem(i,k,j,p_ch4)                      &
+                         +emis_ant(i,k,j,p_e_ch4)*conv_rho
+        endif
         if( config_flags%chem_opt == MOZART_KPP .or. &
             config_flags%chem_opt == MOZCART_KPP .or. &
             config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP ) then

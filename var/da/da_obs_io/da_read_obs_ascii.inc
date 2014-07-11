@@ -962,7 +962,8 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
             ! Geostationary ot Polar orbitting Satellite AMVs:
          case (88)    ;
             if (index(platform%info%name, 'MODIS') > 0 .or. &
-               index(platform%info%name, 'modis') > 0)  then
+                index(platform%info%name, 'modis') > 0 .or. &
+                index(platform%info%id, 'AVHRR') > 0)  then
                if (.not.use_polaramvobs .or. ntotal(polaramv) == max_polaramv_input) cycle reports
                if (n==1) ntotal(polaramv) = ntotal(polaramv) + 1
                if (outside) cycle reports

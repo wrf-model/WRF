@@ -617,7 +617,8 @@ bufrfile:  do ibufr=1,numbufr
             obs(2,k) = obs(2,k)*1e-6
             if (obs(3,k) > -200.0 .and. obs(3,k) < 350.0) then
                if ( tpc >= 8 ) then   ! program code 008 VIRTMP
-                  obs(3,k) = obs(3,k) / (1.0 + 0.608 * obs(2,k))
+                  ! 0.61 is used in NCEP prepdata.f to convert T to Tv
+                  obs(3,k) = obs(3,k) / (1.0 + 0.61 * obs(2,k))
                end if
             end if
          end if

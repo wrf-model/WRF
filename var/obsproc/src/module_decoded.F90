@@ -1078,35 +1078,16 @@ time_window_min, time_window_max, map_projection , missing_flag)
          ! hcl-note: disagrees with the above slp to psfc procedure.
          !     if both slp and psfc are available for synop reports,
          !     psfc should be used in DA system
+         ! hcl-note2: 101301 is simply a flag, real reports do not 
+         !     have 1/100 precision. Just replace 101301 with missing value
 
          if ( gts_from_mmm_archive ) then
             IF ( (obs(obs_num)%info%platform(1:5).EQ.'FM-12') .and.  &
                  (ASSOCIATED(obs(obs_num)%surface)) ) THEN
                if ( eps_equal(obs(obs_num)%surface%meas%pressure%data, &
-                                             101301.000, 1.) .and.  &
-                    eps_equal(obs(obs_num)%ground%slp%data,            &
-                                              missing_r, 1.) ) then
-                  n101301 = n101301 + 1 
-                  !print '("num=",i6,1X,A,1X,A,1X,A,1X,2(F8.3,A),A,1X,f11.3,2(a,f13.2,i8))',&
-                  !   n101301,  &
-                  !   obs(obs_num)%location%id   (1: 5),&
-                  !   obs(obs_num)%location%name (1:20),&
-                  !   obs(obs_num)%info%platform (1: 12),&
-                  !   obs(obs_num)%location%latitude, 'N',&
-                  !   obs(obs_num)%location%longitude,'E ', &
-                  !   obs(obs_num)%valid_time%date_char,    &
-                  !   obs(obs_num)%info % elevation,        &
-                  !   "  pressure:",                        &
-                  !   obs(obs_num)%surface%meas%pressure%data, &
-                  !   obs(obs_num)%surface%meas%pressure%qc, &
-                  !   "  Psfc:",                             &
-                  !   obs(obs_num)%ground%psfc%data, &
-                  !   obs(obs_num)%ground%psfc%qc
-
-                  obs(obs_num)%surface%meas%pressure%data = &
-                     obs(obs_num)%ground%psfc%data
-                  obs(obs_num)%surface%meas%pressure%qc   = &
-                     obs(obs_num)%ground%psfc%qc
+                                             101301.000, 1.) ) then
+                  obs(obs_num)%surface%meas%pressure%data = missing_r
+                  obs(obs_num)%surface%meas%pressure%qc   = missing
                endif
             ENDIF  !end if FM-12 synop
          end if  !end if gts_from_mmm_archive

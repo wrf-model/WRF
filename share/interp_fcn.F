@@ -2206,7 +2206,7 @@ print *,'column of cg pres = ',cprs
        ENDIF
 
        IF ( enable ) THEN
-         IF ( ANY(nfld .EQ. -1) ) THEN
+         IF ( ANY(nfld .EQ. -4) ) THEN
 
            !  OK, if there were any of those lake situations, we try to search a bit broader
            !  of an area in the coarse grid.
@@ -2215,7 +2215,7 @@ print *,'column of cg pres = ',cprs
               DO nk = nkts, nkte
                  DO ni = nits, nite
 !dave               IF ( imask(ni, nj) .NE. 1 ) cycle
-                    IF ( nfld(ni,nk,nj) .EQ. -1 ) THEN
+                    IF ( nfld(ni,nk,nj) .EQ. -4 ) THEN
                        IF ( MOD ( nrj , 2 ) .EQ. 0 ) THEN
                           cj = ( nj + (nrj/2)-1 ) / nrj + jpos -1 ! first coarse position equal to or below nest point
                        ELSE

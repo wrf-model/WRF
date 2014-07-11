@@ -192,15 +192,15 @@ integer::oops1,oops2
          IF ( flag_lake_depth .EQ. 0 ) THEN
             CALL wrf_message ( " Warning: Please rerun WPS to get lake_depth information for lake model" )
 
-         !  Set lake depth over the ocean to be -2 m, and set the lake depth over land to be -1 m.
+         !  Set lake depth over the ocean to be -3 m, and set the lake depth over land to be -2 m.
 
          ELSE
             DO j = jts, MIN(jde-1,jte)
                DO i = its, MIN(ide-1,ite)
                   IF      ( ( grid%lu_index(i,j) .NE. grid%islake ) .AND. ( grid%lu_index(i,j) .NE. grid%iswater ) ) THEN
-                     grid%lake_depth(i,j) = -1
-                  ELSE IF   ( grid%lu_index(i,j) .NE. grid%islake ) THEN
                      grid%lake_depth(i,j) = -2
+                  ELSE IF   ( grid%lu_index(i,j) .NE. grid%islake ) THEN
+                     grid%lake_depth(i,j) = -3
                   END IF
                END DO
             END DO

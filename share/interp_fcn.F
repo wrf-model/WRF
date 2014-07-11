@@ -2149,7 +2149,7 @@ print *,'column of cg pres = ',cprs
                             ( NINT(clu(ci+1,cj  )) .NE. nflag ) .AND. &
                             ( NINT(clu(ci  ,cj+1)) .NE. nflag ) .AND. &
                             ( NINT(clu(ci+1,cj+1)) .NE. nflag ) ) THEN
-                     nfld(ni,nk,nj) = -1
+                     nfld(ni,nk,nj) = -4
 
                   !  If there are some land points and some water points, take an average. 
                   

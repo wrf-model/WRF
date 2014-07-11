@@ -102,12 +102,31 @@
        if ( var4d_bin < time_step ) call nl_set_var4d_bin (1, time_step)
        time_max = (time_max - time_min) * 60   ! unit is : seconds
        num_fgat_time = NINT(time_max/var4d_bin)
-       if ( NINT(time_max/var4d_bin)*var4d_bin .ne. NINT(time_max) .or. &
-          var4d_bin/time_step*time_step .ne. var4d_bin ) then
-          write(unit=message(1),fmt='(A,A,2I7)') &
-          'Please change var4d_bin in namelist and rerun==>', 'run_seconds, var4d_bin:',NINT(time_max),var4d_bin
-          call da_error(__FILE__,__LINE__,message(1:1))
+       if ( NINT(time_max/var4d_bin)*var4d_bin .ne. NINT(time_max) ) then
+          write(unit=message(1),fmt='(A)') &
+          '4DVAR assimilation window must be evenly divisible by var4d_bin!'
+          write(unit=message(2),fmt='(A,I7)') &
+          'var4d_bin       = ',var4d_bin
+          write(unit=message(3),fmt='(A,A)') &
+          'time_window_max = ',time_window_max
+          write(unit=message(4),fmt='(A,A)') &
+          'time_window_min = ',time_window_min
+          write(unit=message(5),fmt='(A,F10.4)') &
+          'time_window_max - time_window_min = ',time_max
+          write(unit=message(6),fmt='(A)')'Change var4d_bin, time_window_max, or time_window_min in namelist and rerun'
+          call da_error(__FILE__,__LINE__,message(1:6))
        endif
+       if ( var4d_bin/time_step*time_step .ne. var4d_bin ) then
+          write(unit=message(1),fmt='(A)') &
+          'var4d_bin must be evenly divisible by time_step!'
+          write(unit=message(2),fmt='(A,I7)') &
+          'var4d_bin = ',var4d_bin
+          write(unit=message(3),fmt='(A,I7)') &
+          'time_step = ',time_step
+          write(unit=message(4),fmt='(A)')'Change var4d_bin or time_step in namelist and rerun'
+          call da_error(__FILE__,__LINE__,message(1:4))
+       endif
+
        num_fgat_time = num_fgat_time + 1
        write(unit=message(1),fmt='(a,i10)') 'num_fgat_time is: ', num_fgat_time
        call da_message(message(1:1))

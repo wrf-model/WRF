@@ -263,11 +263,11 @@ subroutine calc_aerosol_goddard_sw(ht,dz8w,p,t3d,qv3d,aer_type,                 
              call wrf_error_fatal(wrf_err_message)
           end if
           if ((minval(aerssa2d) .lt. 0) .or. (maxval(aerssa2d) .gt. 1)) then
-             call wrf_error_fatal('Aerosol single-scattering albedo must be within [0,1]. &
-                  Out of bounds value(s) found in auxinput')
+             call wrf_error_fatal('Aerosol single-scattering albedo must be within [0,1]. ' // &
+                                  'Out of bounds value(s) found in auxinput')
           end if
-          write( wrf_err_message, '("aer_ssa_opt=",I1,": single-scattering albedo read &
-                 from auxinput (min=",F6.3," max=",F6.3,")")') &
+          write( wrf_err_message, '("aer_ssa_opt=",I1, &
+                                  ": single-scattering albedo read from auxinput (min=",F6.3," max=",F6.3,")")') &
                                   aer_ssa_opt,minval(aerssa2d),maxval(aerssa2d)
           call wrf_debug(100, wrf_err_message )
           do j=jts,jte
@@ -395,6 +395,8 @@ subroutine calc_aerosol_rrtmg_sw(ht,dz8w,p,t3d,qv3d,aer_type,                   
 
     ! constants
     integer, parameter :: N_BANDS=14
+    ! local index variables
+    integer :: i,j,k,nb
 
     real :: lower_wvl(N_BANDS),upper_wvl(N_BANDS)
     data (lower_wvl(i),i=1,N_BANDS) /3.077,2.500,2.150,1.942,1.626,1.299,1.242,0.7782,0.6250,0.4415,0.3448,0.2632,0.2000,3.846/
@@ -416,7 +418,6 @@ subroutine calc_aerosol_rrtmg_sw(ht,dz8w,p,t3d,qv3d,aer_type,                   
     real, dimension(ims:ime, kms:kme, jms:jme, 1:N_BANDS), intent(inout) :: tauaer, ssaaer, asyaer
 
     ! local variables
-    integer :: i,j,k,nb
     real :: angexp_val,aod_rate,x,xy,xx
     real, dimension(ims:ime, jms:jme, 1:N_BANDS) :: aod550spc
     real, dimension(ims:ime, kms:kme, jms:jme)   :: rh  ! relative humidity
@@ -560,7 +561,8 @@ subroutine calc_aerosol_rrtmg_sw(ht,dz8w,p,t3d,qv3d,aer_type,                   
              write(wrf_err_message,'("aer_ssa_val must be within [0,1]. Illegal value ",F7.4," found")') aer_ssa_val
              call wrf_error_fatal(wrf_err_message)
           end if
-          write( wrf_err_message, '("aer_ssa_opt=",I1,": single-scattering albedo fixed to value ",F6.3)') aer_ssa_opt,aer_ssa_val
+          write( wrf_err_message, '("aer_ssa_opt=",I1, &
+                                    ": single-scattering albedo fixed to value ",F6.3)') aer_ssa_opt,aer_ssa_val
           call wrf_debug(100, wrf_err_message )
           do j=jts,jte
              do i=its,ite
@@ -584,8 +586,8 @@ subroutine calc_aerosol_rrtmg_sw(ht,dz8w,p,t3d,qv3d,aer_type,                   
              call wrf_error_fatal(wrf_err_message)
           end if
           if ((minval(aerssa2d) .lt. 0) .or. (maxval(aerssa2d) .gt. 1)) then
-             call wrf_error_fatal('Aerosol single-scattering albedo must be within [0,1]. &
-                                   Out of bounds value(s) found in auxinput')
+             call wrf_error_fatal('Aerosol single-scattering albedo must be within [0,1]. ' // &
+                                  'Out of bounds value(s) found in auxinput')
           end if
           write( wrf_err_message, '("aer_ssa_opt=",I1,": single-scattering albedo from auxinput (min=",F6.3," max=",F6.3,")")') &
                                   aer_ssa_opt,minval(aerssa2d),maxval(aerssa2d)

@@ -153,6 +153,7 @@ integer::oops1,oops2
 !-- Carsel and Parrish [1988]
         REAL , DIMENSION(100) :: lqmi
 
+      REAL , DIMENSION(100) :: thickness , levels
       REAL :: t_start , t_end
       REAL , ALLOCATABLE , DIMENSION(:,:) :: clat_glob
 
@@ -759,7 +760,7 @@ integer::oops1,oops2
 
          num_metgrid_levels = grid%num_metgrid_levels
 
-         !  For UM data, swap incoming extra (theta-based) pressure with the standardly
+         !  For AFWA UM data, swap incoming extra (theta-based) pressure with the standardly
          !  named (rho-based) pressure.
 
          IF ( flag_ptheta .EQ. 1 ) THEN
@@ -773,19 +774,68 @@ integer::oops1,oops2
                   END DO
                END DO
             END DO
+         END IF
 
-            !  For UM data, the "surface" and the "first hybrid" level for the theta-level data fields are the same.  
-            !  Average the surface (k=1) and the second hybrid level (k=num_metgrid_levels-1) to get the first hybrid
-            !  layer.  We only do this for the theta-level data: pressure, temperature, specific humidity, and
-            !  geopotential height (i.e. we do not modify u, v, or the rho-based pressure).
+         !  For UM data, the "surface" and the "first hybrid" level for the theta-level data fields are the same.  
+         !  Average the surface (k=1) and the second hybrid level (k=num_metgrid_levels-1) to get the first hybrid
+         !  layer.  We only do this for the theta-level data: pressure, temperature, specific humidity, and
+         !  geopotential height (i.e. we do not modify u, v, or the rho-based pressure).
 
+         IF ( ( flag_ptheta .EQ. 1 ) .OR. ( flag_prho .EQ. 1 ) ) THEN
             DO j = jts, MIN(jte,jde-1)
                DO i = its, MIN(ite,ide-1)
                   IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                   grid%  p_gc(i,num_metgrid_levels,j) = ( grid%  p_gc(i,1,j) + grid%  p_gc(i,num_metgrid_levels-1,j) ) * 0.5
                   grid%  t_gc(i,num_metgrid_levels,j) = ( grid%  t_gc(i,1,j) + grid%  t_gc(i,num_metgrid_levels-1,j) ) * 0.5
-                  grid% sh_gc(i,num_metgrid_levels,j) = ( grid% sh_gc(i,1,j) + grid% sh_gc(i,num_metgrid_levels-1,j) ) * 0.5
                   grid%ght_gc(i,num_metgrid_levels,j) = ( grid%ght_gc(i,1,j) + grid%ght_gc(i,num_metgrid_levels-1,j) ) * 0.5
+               END DO
+            END DO
+
+            IF ( grid%sh_gc(its,1,jts) .LT. 0 ) THEN
+               DO j = jts, MIN(jte,jde-1)
+                  DO i = its, MIN(ite,ide-1)
+                     IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+                     grid% sh_gc(i,1,j) = 2. * grid% sh_gc(i,num_metgrid_levels,j) - grid% sh_gc(i,num_metgrid_levels-1,j)
+                  END DO
+               END DO
+            END IF
+            IF ( grid%cl_gc(its,1,jts) .LT. 0 ) THEN
+               DO j = jts, MIN(jte,jde-1)
+                  DO i = its, MIN(ite,ide-1)
+                     IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+                     grid% cl_gc(i,1,j) = 2. * grid% cl_gc(i,num_metgrid_levels,j) - grid% cl_gc(i,num_metgrid_levels-1,j)
+                  END DO
+               END DO
+            END IF
+            IF ( grid%cf_gc(its,1,jts) .LT. 0 ) THEN
+               DO j = jts, MIN(jte,jde-1)
+                  DO i = its, MIN(ite,ide-1)
+                     IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+                     grid% cf_gc(i,1,j) = 2. * grid% cf_gc(i,num_metgrid_levels,j) - grid% cf_gc(i,num_metgrid_levels-1,j)
+                  END DO
+               END DO
+            END IF
+         END IF
+
+         !  For UM data, the soil moisture comes in as kg / m^2. Divide by 1000 and layer thickness to get m^3 / m^3.
+
+         IF ( flag_prho .EQ. 1 ) THEN
+
+            levels(1) = 0.
+            levels(2) = ( 2. * sm_levels_input(1) )
+            DO k = 2 , num_sm_levels_input
+               levels(k+1) = ( 2. * sm_levels_input(k) ) - levels(k)
+            END DO
+            DO k = 1 , num_sm_levels_input
+               thickness(k) = ( levels(k+1) - levels(k) ) / 100.
+            END DO
+
+            DO j = jts, MIN(jte,jde-1)
+               DO k = 1 , num_sm_levels_input
+                  DO i = its, MIN(ite,ide-1)
+                     IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+                     sm_input(i,k+1,j) = MAX ( 0. , sm_input(i,k+1,j) / 1000. / thickness(k) )
+                  END DO
                END DO
             END DO
          END IF
@@ -1516,9 +1566,19 @@ integer::oops1,oops2
             END DO
          END IF
 
-         IF ( flag_qc .EQ. 1 ) THEN
+         IF ( ( flag_qc .EQ. 1 ) .OR. ( flag_speccldl .EQ. 1 ) ) THEN
             DO im = PARAM_FIRST_SCALAR, num_3d_m
                IF ( im .EQ. P_QC ) THEN
+                  IF ( flag_speccldl .EQ. 1 ) THEN
+                     DO j = jts, MIN(jte,jde-1)
+                        DO k = 1 , num_metgrid_levels
+                           DO i = its, MIN(ite,ide-1)
+                              IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+                              grid%qc_gc(i,k,j) = grid%cl_gc(i,k,j) /( 1. - grid%cl_gc(i,k,j) )
+                           END DO
+                        END DO
+                     END DO
+                  END IF
                   CALL vert_interp ( grid%qc_gc , grid%pd_gc , moist(:,:,:,P_QC) , grid%pb , &
                                      grid%hgtmaxw , grid%hgttrop , grid%pmaxw , grid%ptrop , &
                                      0 , 0 , &
@@ -1535,9 +1595,19 @@ integer::oops1,oops2
             END DO
          END IF
 
-         IF ( flag_qi .EQ. 1 ) THEN
+         IF ( ( flag_qi .EQ. 1 ) .OR. ( flag_speccldf .EQ. 1 ) ) THEN
             DO im = PARAM_FIRST_SCALAR, num_3d_m
                IF ( im .EQ. P_QI ) THEN
+                  IF ( flag_speccldf .EQ. 1 ) THEN
+                     DO j = jts, MIN(jte,jde-1)
+                        DO k = 1 , num_metgrid_levels
+                           DO i = its, MIN(ite,ide-1)
+                              IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+                              grid%qi_gc(i,k,j) = grid%cf_gc(i,k,j) /( 1. - grid%cf_gc(i,k,j) )
+                           END DO
+                        END DO
+                     END DO
+                  END IF
                   CALL vert_interp ( grid%qi_gc , grid%pd_gc , moist(:,:,:,P_QI) , grid%pb , &
                                      grid%hgtmaxw , grid%hgttrop , grid%pmaxw , grid%ptrop , &
                                      0 , 0 , &

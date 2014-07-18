@@ -136,12 +136,16 @@
         ENDDO    !-- I
       ENDDO      !-- J
       IF (.NOT.RESTRT) THEN
-!-- Convert from radians to degrees for WRF input files only
-        DO J=JTS,JTE
-          DO I=ITS,ITE
-            HANGL(I,J)=DTR*HANGL(I,J)  !-- convert to degrees (+/-90 deg)
-          ENDDO    !-- I
-        ENDDO      !-- J
+!-- Convert from radians to degrees for WRF input files only.
+!   There should have ano further conversion from rad to degree at this
+!   point since HANGL read from wrfinput_d01 already in degree even in
+!   the non restart mode... Chanh
+!
+!        DO J=JTS,JTE
+!          DO I=ITS,ITE
+!            HANGL(I,J)=DTR*HANGL(I,J)  !-- convert to degrees (+/-90 deg)
+!          ENDDO    !-- I
+!        ENDDO      !-- J
       ENDIF
 !dbg
 !dbg dumin=-1.
@@ -1761,7 +1765,7 @@ if (lprnt) print *,'Ktrial,iwklm(i),kreflm(i)=',Ktrial,iwklm(i),kreflm(I)
           DTAUY      = TAUD(I,K) * YN(I)
 ! ---  lm mb (*j*)  changes overwrite GWD
           if ( K .lt. IDXZB(I) .AND. IDXZB(I) .ne. 0 ) then
-            DBIM = DB(I,K) / (1.+DB(I,K)*DELTIM)
+            DBIM = DB(I,K) / (1.+ abs(DB(I,K))*DELTIM)
             A(J,K)  = - DBIM * V1(J,K) + A(J,K)
             B(J,K)  = - DBIM * U1(J,K) + B(J,K)
             DUsfc(J)   = DUsfc(J) - DBIM * V1(J,K) * DEL(J,K)

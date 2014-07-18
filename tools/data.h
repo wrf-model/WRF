@@ -16,7 +16,7 @@ typedef struct node_struct {
   int           stag_x ;
   int           stag_y ;
   int           stag_z ;
-  int           nmm_v_grid, mp_var ;
+  int           nmm_v_grid, mp_var, full_feedback ;
   int           subject_to_communication ;
   int           boundary_array ;
   int           boundary_array_4d ;

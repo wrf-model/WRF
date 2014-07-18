@@ -11,6 +11,8 @@ module module_interp_store
   ! AUTHOR: Samuel Trahan
   ! HISTORY:
   !   August, 2012 - initial creation
+  !   December, 2013 - added kpres, which stores the pressure-sigma
+  !       transition level
   implicit none
 
   integer, pointer, dimension(:,:) :: IIH,JJH,IIV,JJV
@@ -25,7 +27,7 @@ module module_interp_store
                                      winfo_bxs, winfo_bxe, &
                                      winfo_bys, winfo_bye
   integer, pointer, dimension(:,:) :: hnear_i, hnear_j
-
+  integer :: kpres
   real, pointer, dimension(:,:) :: parent_fis, nest_fis
 
 end module module_interp_store
@@ -37,18 +39,12 @@ subroutine store_interp_info(grid, parent_grid)
   type(domain), intent(in) :: grid, parent_grid
   
 #if (NMM_CORE == 1 && NMM_NEST == 1)
-  
+  kpres=-99999
   grid_id=grid%id
   parent_grid_id=parent_grid%id
 
-parent_fis=>parent_grid%fis
-nest_fis=>grid%fis
-  ! if(parent_grid_id==1) then
-  !    parent_fis=>parent_grid%fis
-  ! else
-  !    parent_fis=>parent_grid%hres_fis
-  ! endif
-  ! nest_fis=>grid%hres_fis
+  parent_fis=>parent_grid%fis
+  nest_fis=>grid%fis
 
   hnear_i=>grid%hnear_i
   hnear_j=>grid%hnear_j

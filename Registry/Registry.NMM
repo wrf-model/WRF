@@ -165,11 +165,15 @@ state integer randstate4     ij     dyn_nmm     1      -    r  "randstate4" "ran
 state real    random         ij     dyn_nmm     1      -    rh "random" "random number in [0,1) used by SAS"
 rconfig   integer random_seed             namelist,physics     max_domains    0       irh    "random_seed"  "random number generator seed"
 
+include registry.tornado
+
 # Projection south and west bounds for Post:
 rconfig  real wbd0    derived   max_domains    0       - "wbd0"                  "western boundary of the domain in rotated coordinates"
 rconfig  real sbd0    derived   max_domains    0       - "sbd0"                  "southern boundary of the domain in rotated coordinates"
 state    real wbd0var    -       dyn_nmm     0      -      h "wbd0var"     "western boundary of the domain in rotated coordinates"
 state    real sbd0var    -       dyn_nmm     0      -      h "sbd0var"     "southern boundary of the domain in rotated coordinates"
+rconfig   logical analysis               namelist,time_control    max_domains        .false.      irh   "analysis flag"     "analysis control for the nested domain"
+rconfig   integer    io_form_auxinput2   namelist,time_control   1  2
 
 #
 # module_MASKS
@@ -483,7 +487,7 @@ state  real   baro      ij    dyn_nmm   1    -     -        "BARO"      "externa
 state  real   dwdt      ijk   dyn_nmm   1    -     r        "DWDT"      "dwdt and 1+(dwdt)/g"              "m s-2"
 state  real   pdwdt     ijk   dyn_nmm   1    -     r   
 state  real   pint      ijk   dyn_nmm   1    Z     rh       "PINT"      "Model layer interface pressure"   "Pa"
-state  real   w         ijk   dyn_nmm   1    Z     r       "W"         "Vertical velocity"                "m s-1"
+state  real   w         ijk   dyn_nmm   1    Z     r       "W"         "Vertical velocity (non-hydrostatic component only)"                "m s-1"
 state  real   w_tot     ijk   dyn_nmm   1    Z     h       "W"         "Vertical velocity (complete)"                "m s-1"
 state  real   z         ijk   dyn_nmm   1    Z     -        "Z"         "Distance from ground"             "m"
 #

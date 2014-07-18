@@ -80,9 +80,13 @@ SUBROUTINE med_nest_egrid_configure ( parent , nest )
     if (parent%parent_id == 0 ) then        ! Dusan's doing
        parent%wbd0 = -(IDE-2)*parent%dx     ! WBD0: in degrees;factor 2 takes care of dummy last column
        parent%sbd0 = -((JDE-1)/2)*parent%dy ! SBD0: in degrees; note that JDE-1 should be odd  
+       parent%wbd0var = parent%wbd0
+       parent%sbd0var = parent%sbd0
     end if
     nest%wbd0   = parent%wbd0 + (nest%i_parent_start-1)*2.*parent%dx + mod(nest%j_parent_start+1,2)*parent%dx
     nest%sbd0   = parent%sbd0 + (nest%j_parent_start-1)*parent%dy
+    nest%wbd0var = nest%wbd0
+    nest%sbd0var = nest%sbd0
     nest%dx     = parent%dx/nest%parent_grid_ratio
     nest%dy     = parent%dy/nest%parent_grid_ratio
 
@@ -2767,7 +2771,7 @@ SUBROUTINE NEST_TERRAIN ( nest, config_flags )
 
  integer, parameter :: IO_BIN=1, IO_NET=2
 
- integer :: io_form_input
+ integer :: io_form_auxinput2
  integer :: itsok,iteok,jtsok,jteok
 
  CHARACTER(LEN=512) :: message
@@ -2777,12 +2781,15 @@ SUBROUTINE NEST_TERRAIN ( nest, config_flags )
 
  call START_TIMING()
 
- write(message,*)"in NEST_TERRAIN config_flags%io_form_input = ", config_flags%io_form_input
+ write(message,*)"in NEST_TERRAIN config_flags%io_form_auxinput2 = ", config_flags%io_form_auxinput2
  CALL wrf_debug(2,trim(message))
- write(message,*)"in NEST_TERRAIN config_flags%auxinput1_inname = ", config_flags%auxinput1_inname
+ write(message,*)"in NEST_TERRAIN config_flags%auxinput2_inname = ", config_flags%auxinput2_inname
  CALL wrf_debug(2,trim(message))
 
- io_form_input = config_flags%io_form_input
+ io_form_auxinput2 = config_flags%io_form_auxinput2
+ ! NOTE: input_type (WRFSI vs. WPS) triggers based on auxinput1
+ ! (metgrid) because that is the only way we have of differentiating
+ ! between WRFSI and WPS
  if (config_flags%auxinput1_inname(1:7) == "met_nmm") then
     input_type = 2
  else
@@ -2870,6 +2877,10 @@ SUBROUTINE NEST_TERRAIN ( nest, config_flags )
      write(message,'("Nest d",I0," nest_terrain")') nest%id
      call END_TIMING(trim(message))
 
+#ifdef IDEAL_NMM_TC
+           return ! move return after end_timing to prevent cnmax KWON
+#endif
+
 CONTAINS
 #ifdef DM_PARALLEL
   SUBROUTINE SLAVE(IDS,IDE,JDS,JDE)
@@ -2901,7 +2912,7 @@ CONTAINS
     avc_nest = 0.0
     lnd_nest = 0.0
     
-    tr=>terrain_for(level,input_type,io_form_input)
+    tr=>terrain_for(level,input_type,io_form_auxinput2)
 
     ! select subdomain from big fine grid
     i_add = mod(j_start+1,2) 

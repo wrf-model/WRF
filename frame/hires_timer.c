@@ -76,13 +76,16 @@ void init_hires_timer() {
 
 
 void hires_timer(double *d) {
+  struct timeval tv;
 #if ( USE_HIRES == 1 )
   struct timespec when;
+#endif
+  if(!initialized) init_hires_timer();
+#if ( USE_HIRES == 1 )
   if(!clock_gettime(CLOCK_REALTIME,&when)) {
     *d=(double)(when.tv_sec-start_ipart) + ( ((double)when.tv_nsec)/1e9 - start_fpart );
   } else { /* clock_gettime failed */
 #endif
-    struct timeval tv;
     if(!gettimeofday(&tv,NULL)) {
       *d=(double)(tv.tv_sec-start_ipart) + ( ((double)tv.tv_usec)/1e6 - start_fpart );
     } else {

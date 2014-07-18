@@ -1,3 +1,4 @@
+#define NEST_FULL_INFLUENCE(A,B) A=B
 MODULE module_dm
 
    USE module_machine
@@ -1291,6 +1292,22 @@ CONTAINS
       retval(1:n) = inval(1:n)
 #endif
    END SUBROUTINE wrf_dm_min_reals
+
+   FUNCTION wrf_dm_sum_real8 ( inval )
+     ! Forced eight byte real sum needed for calculating an accurate
+     ! mean motion in HWRF moduel_tracker.
+      IMPLICIT NONE
+#ifndef STUBMPI
+      INCLUDE 'mpif.h'
+      REAL*8 inval, retval, wrf_dm_sum_real8
+      INTEGER ierr
+      CALL mpi_allreduce ( inval, retval , 1, MPI_REAL8, MPI_SUM, local_communicator, ierr )
+      wrf_dm_sum_real8 = retval
+#else
+      REAL*8 wrf_dm_sum_real8,inval
+      wrf_dm_sum_real8 = inval
+#endif
+   END FUNCTION wrf_dm_sum_real8
 
    REAL FUNCTION wrf_dm_sum_real ( inval )
       IMPLICIT NONE
@@ -4697,7 +4714,10 @@ END
                             ipe_save, jpe_save, ips_save, jps_save, get_dm_max_halo_width
 #if (NMM_NEST == 1)
       USE module_comm_dm, ONLY : HALO_NMM_FORCE_DOWN1_sub, HALO_NMM_FORCE_DOWN1M_sub, &
-           HALO_NMM_FORCE_DOWN_SST_sub, HALO_NMM_INTERP_INFO_sub
+           HALO_NMM_FORCE_DOWN_SST_sub, HALO_NMM_INTERP_INFO_sub, HALO_NMM_TORNADO_sub
+#ifdef HWRF
+      use module_comm_dm, only: HALO_NMM_SWATH_sub
+#endif
 #endif
       IMPLICIT NONE
 !
@@ -4768,6 +4788,14 @@ integer myproc
       if(interp_mp .eqv. .true.) then
 #include "HALO_NMM_FORCE_DOWN1M.inc"
       endif
+      if(size(grid%tg_max_m10wind)>1) then
+#include "HALO_NMM_TORNADO.inc"
+      endif
+#ifdef HWRF
+      if(size(grid%precip_swath)>1) then
+#include "HALO_NMM_SWATH.inc"
+      endif
+#endif
 
       call store_interp_info(ngrid,grid)
       call ext_c2b_fulldom(ngrid%IIH,ngrid%JJH,ngrid%HBWGT1, &
@@ -4899,7 +4927,10 @@ grid=>cgrid
                             ipe_save, jpe_save, ips_save, jps_save, get_dm_max_halo_width
 #if ( NMM_NEST == 1 )
       USE module_comm_dm, ONLY : HALO_NMM_FORCE_DOWN1_sub, HALO_NMM_FORCE_DOWN1M_sub, &
-           HALO_NMM_INTERP_INFO_sub,HALO_NMM_FORCE_DOWN_SST_sub
+           HALO_NMM_INTERP_INFO_sub,HALO_NMM_FORCE_DOWN_SST_sub, HALO_NMM_TORNADO_sub
+#ifdef HWRF
+      use module_comm_dm, only: HALO_NMM_SWATH_sub
+#endif
 #endif
       IMPLICIT NONE
 !
@@ -4963,6 +4994,14 @@ integer myproc
 if(interp_mp .eqv. .true.) then
 #include "HALO_NMM_FORCE_DOWN1M.inc"
 endif
+if(size(grid%tg_max_m10wind)>1) then
+#include "HALO_NMM_TORNADO.inc"
+endif
+#ifdef HWRF
+if(size(grid%precip_swath)>1) then
+#include "HALO_NMM_SWATH.inc"
+endif
+#endif
 
       RETURN
     END SUBROUTINE force_intermediate_nmm

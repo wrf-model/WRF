@@ -986,7 +986,7 @@
       INTEGER :: IFNDALBSI
       INTEGER :: IFNDICEDEPTH
       INTEGER :: IFNDSNOWSI
-!
+      REAL    :: WIND
       INTEGER :: IGS,IGE,JGS,JGE, PQ_I   !BSF
       LOGICAL :: FQ_I, ETAMP_PHYSICS,ETAMP_Regional            !BSF
 
@@ -1673,6 +1673,18 @@
         ENDDO
       ENDIF
 !
+#ifdef HWRF
+      if(size(grid%windsq_swath)>1) then
+         do j=max(jts,jds),min(jte,jde-1)
+            do i=max(its,ids),min(ite,ide-1)
+               if(grid%interesting(i,j)==0) cycle
+               wind=u10(i,j)**2 + v10(i,j)**2
+               if(wind>grid%windsq_swath(i,j)) grid%windsq_swath(i,j)=wind
+            enddo
+         enddo
+      endif
+#endif
+
       IF(CONFIG_FLAGS%SF_SFCLAY_PHYSICS==1)THEN ! non-NMM package
 !$omp parallel do                                                       &
 !$omp& private(i,j)
@@ -2308,7 +2320,7 @@
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME) :: CLDFRA_DP, CLDFRA_SH
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME) :: QC_CU, QI_CU
 !
-      LOGICAL :: RESTART,WARM_RAIN,ETAMP_Regional
+      LOGICAL :: RESTART,WARM_RAIN,ETAMP_Regional, have_tg_tp, have_swath
       LOGICAL,DIMENSION(IMS:IME,JMS:JME) :: CU_ACT_FLAG
 !
       CHARACTER(LEN=255) :: message
@@ -2707,6 +2719,13 @@
 !
 !-----------------------------------------------------------------------
 !
+
+      have_tg_tp = .false.
+      have_swath = .false.
+      have_tg_tp = (size(grid%tg_total_precip)>1)
+#ifdef HWRF
+      have_swath = ( size(grid%precip_swath)>1 )
+#endif
 !$omp parallel do                                                       &
 !$omp& private(i,iendx,j,ncubot,ncutop,pcpcol)
       pcp_cloud: DO J=MYJS2,MYJE2
@@ -2722,6 +2741,15 @@
           CUPREC(I,J)=CUPREC(I,J)+PCPCOL
           CUPPT(I,J)=CUPPT(I,J)+PCPCOL
           CPRATE(I,J)=PCPCOL
+          if(have_tg_tp) then
+             grid%tg_total_precip(i,j) = grid%tg_total_precip(i,j) + PCPCOL
+          endif
+#ifdef HWRF
+          if(have_swath) then
+             if(grid%interesting(i,j)/=0) &
+                  grid%precip_swath(i,j) = grid%precip_swath(i,j) + PCPCOL
+          endif
+#endif
 !
 !***  SAVE CLOUD TOP AND BOTTOM FOR RADIATION (HTOP/HBOT) AND
 !***  FOR OUTPUT (CNVTOP/CNVBOT, HTOPS/HBOTS, HTOPD/HBOTD) ARRAYS.
@@ -2949,7 +2977,7 @@
       REAL,DIMENSION(:,:,:,:),ALLOCATABLE :: SCALAR_TRANS
 !
       LOGICAL                        :: diag_flag
-      LOGICAL :: E_BDY,F_QT,QT_PRESENT,WARM_RAIN
+      LOGICAL :: E_BDY,F_QT,QT_PRESENT,WARM_RAIN, have_tg_tp, have_swath
 !
 !-----------------------------------------------------------------------
 !***********************************************************************
@@ -3153,6 +3181,10 @@
 !***  OUT ABOVE SINCE IT IS ONLY A LOCAL ARRAY FOR NOW.
 !-----------------------------------------------------------------------
 !
+#ifdef HWRF
+      have_swath = ( size(grid%precip_swath)>1 )
+#endif
+      have_tg_tp = (size(grid%tg_total_precip)>1)
 !$omp parallel do                                                       &
 !$omp& private(i,iendx,j,pcpcol)
       DO J=MYJS2,MYJE2
@@ -3162,6 +3194,15 @@
           PCPCOL=RAINNCV(I,J)*1.E-3
           PREC(I,J)=PREC(I,J)+PCPCOL
           ACPREC(I,J)=ACPREC(I,J)+PCPCOL
+          if(have_tg_tp) then
+             grid%tg_total_precip(i,j) = grid%tg_total_precip(i,j) + PCPCOL
+          endif
+#ifdef HWRF
+          if(have_swath) then
+             if(grid%interesting(i,j)/=0) &
+                  grid%precip_swath(i,j) = grid%precip_swath(i,j) + PCPCOL
+          endif
+#endif
         ENDDO
       ENDDO
 !

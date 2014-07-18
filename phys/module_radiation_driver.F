@@ -1478,16 +1478,17 @@ CONTAINS
         CASE (GSFCSWSCHEME)
              CALL wrf_debug(100, 'CALL gsfcswrad')
              CALL GSFCSWRAD(                                           &
-                     RTHRATEN=rthraten,GSW=gsw,XLAT=xlat,XLONG=xlong   &
+                     RTHRATEN=rthraten,GSW=gsw                         & ! PAJ: xlat and xlong removed.
                     ,ALB=albedo,T3D=t,P3D=p,P8W3D=p8w,pi3D=pi          &
                     ,DZ8W=dz8w,RHO_PHY=rho                             &
                     ,CLDFRA3D=cldfra,RSWTOA=rswtoa                     &
-                    ,GMT=gmt,CP=cp,G=g                                 &
-                    ,JULDAY=julday,XTIME=xtime                         &
-                    ,DECLIN=declin,SOLCON=solcon                       &
-                    ,RADFRQ=radt,DEGRAD=degrad                         &
+                    ,CP=cp,G=g                                         & ! PAJ: GMT removed.
+                    ,JULDAY=julday                                     & ! PAJ: XTIME removed.
+                    ,SOLCON=solcon                                     & ! PAJ: declin removed
+!                    ,RADFRQ=radt,DEGRAD=degrad                         & ! PAJ: degrad and radfrq removed
                     ,TAUCLDI=taucldi,TAUCLDC=taucldc                   &
                     ,WARM_RAIN=warm_rain                               &
+
 #if ( WRF_CHEM == 1 )
                     ,TAUAER300=tauaer300,TAUAER400=tauaer400           & ! jcb
                     ,TAUAER600=tauaer600,TAUAER999=tauaer999           & ! jcb
@@ -1510,6 +1511,7 @@ CONTAINS
                     ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                     &
                     ,F_QI=f_qi,F_QS=f_qs,F_QG=f_qg                     &
                     ,F_QNDROP=f_qndrop                                 &
+                    ,COSZEN=coszen                                     &
                                                                        )
 
         CASE (goddardswscheme)

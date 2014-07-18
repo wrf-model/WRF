@@ -2121,7 +2121,7 @@ END SUBROUTINE smag2d_km
     DO j = j_start, j_end
     DO k = kts+1, ktf-1
     DO i = i_start, i_end
-      tmpdz         = 1.0 / ( rdz(i,k+1,j) + rdz(i,k,j) )
+      tmpdz         = 1.0 / rdz(i,k+1,j) + 1.0 / rdz(i,k,j) 
       dthrdn(i,k,j) = ( theta(i,k+1,j) - theta(i,k-1,j) ) / tmpdz
     END DO
     END DO
@@ -2130,7 +2130,7 @@ END SUBROUTINE smag2d_km
     k = kts
     DO j = j_start, j_end
     DO i = i_start, i_end
-      tmpdz         = 1.0 / ( rdzw(i,k+1,j) + rdzw(i,k,j) )
+      tmpdz         = 1.0 / rdzw(i,k+1,j) + 1.0 / rdzw(i,k,j) 
       thetasfc      = T8w(i,kts,j) / ( p8w(i,k,j) / p1000mb )**( R_d / Cp )
       dthrdn(i,k,j) = ( theta(i,k+1,j) - thetasfc ) / tmpdz
     END DO

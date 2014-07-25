@@ -36,14 +36,6 @@ PROGRAM convert_emissions
 #if (EM_CORE ==1)
    USE module_big_step_utilities_em
 #endif
-!#ifdef WRF_CHEM
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! for chemistry
-!   USE module_input_chem_data
-!!  USE module_input_chem_bioemiss
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!#endif
-
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    IMPLICIT NONE
 

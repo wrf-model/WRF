@@ -1058,7 +1058,7 @@
               its,ite,jts,jte,kts,kte        )
 !
 
-#ifdef WRF_KPP
+#if ( WRF_KPP == 1 )
 
          if( config_flags%chem_opt == CBMZ_MOSAIC_4BIN_VBS2_KPP .or. &
              config_flags%chem_opt == SAPRC99_MOSAIC_4BIN_VBS2_KPP ) then
@@ -1125,6 +1125,40 @@ CALL kpp_mechanism_driver (chem,                                                
          CALL wrf_debug(15,'no gocart so2-so4 conversion')
       END SELECT so2so4_selectb
 
+   ENDIF
+#else
+    if(config_flags%chem_opt == 301 ) then
+       chem(its:ite,kts:kte,jts:jte,p_sulf)=vcsulf_old(its:ite,kts:kte,jts:jte)
+       chem(its:ite,kts:kte,jts:jte,p_so2)=vcso2_old(its:ite,kts:kte,jts:jte)
+!      chem(its:ite,kts:kte,jts:jte,p_h2o2)=vch2o2_old(its:ite,kts:kte,jts:jte)
+   endif
+
+   IF(config_flags%conv_tr_aqchem == 0 ) THEN
+      so2so4_selectc: SELECT CASE(config_flags%chem_opt)
+      CASE (RADM2SORG)
+         CALL wrf_debug(15,'gocart so2-so4 conversion')
+         CALL  so2so4(0,chem,p_so2,p_sulf,p_h2o2,p_QC,T_PHY,MOIST,           &
+              grid%qc_cu, grid%gd_cldfr,                                    &
+              NUM_CHEM,NUM_MOIST,                                                &
+              ids,ide, jds,jde, kds,kde,                                         &
+              ims,ime, jms,jme, kms,kme,                                         &
+              its,ite, jts,jte, kts,kte                                          )
+      CASE DEFAULT
+         CALL wrf_debug(15,'no gocart so2-so4 conversion')
+      END SELECT so2so4_selectc
+   else IF(config_flags%conv_tr_aqchem == 1 ) THEN
+      so2so4_selectd: SELECT CASE(config_flags%chem_opt)
+      CASE (RADM2SORG)
+         CALL wrf_debug(15,'gocart so2-so4 conversion')
+         CALL  so2so4(1,chem,p_so2,p_sulf,p_h2o2,p_QC,T_PHY,MOIST,           &
+              grid%qc_cu, grid%gd_cldfr,                                    &
+              NUM_CHEM,NUM_MOIST,                                                &
+              ids,ide, jds,jde, kds,kde,                                         &
+              ims,ime, jms,jme, kms,kme,                                         &
+              its,ite, jts,jte, kts,kte                                          )
+      CASE DEFAULT
+         CALL wrf_debug(15,'no gocart so2-so4 conversion')
+      END SELECT so2so4_selectd
    ENDIF
 
 !

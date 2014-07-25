@@ -34,7 +34,7 @@
 
 MODULE module_input_tracer
 USE module_input_tracer_data
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
 USE module_state_description, only:tracer_smoke,tracer_test1,tracer_test2,param_first_scalar,p_tr17_1,p_tr17_2,p_tr17_3,p_tr17_4,p_tr17_5,p_tr17_6,p_tr17_7,p_tr17_8
 #else
 USE module_state_description, only:tracer_test1,tracer_test2,param_first_scalar,p_tr17_1,p_tr17_2,p_tr17_3,p_tr17_4,p_tr17_5,p_tr17_6,p_tr17_7,p_tr17_8
@@ -52,12 +52,12 @@ CONTAINS
       INTEGER,      INTENT(IN   )    :: ips,ipe, jps,jpe, kps,kpe
       INTEGER,      INTENT(IN   )    :: its,ite, jts,jte, kts,kte
       REAL,  DIMENSION(ims:ime,kms:kme,jms:jme,num_chem ), INTENT(INOUT) :: chem
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 ) 
       if(chem_in_opt == 1 )return
 #endif
       if     (tracer_opt == TRACER_TEST1)then
        chem(:,:,:,:)=.0
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
       else if(tracer_opt == TRACER_TEST2)then
        chem(:,:,:,:)=.0
       else if(tracer_opt == TRACER_SMOKE)then
@@ -133,7 +133,7 @@ CONTAINS
         if (tracer_opt == TRACER_TEST1 ) then
           i_bdy_method = 2
         end if   
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
         if (tracer_opt == TRACER_TEST2 ) then
           i_bdy_method = 2
         end if   
@@ -165,7 +165,7 @@ CONTAINS
                    else
                       chem(i,k,j)= tracer_bv_def
                    endif
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
                 else if (i_bdy_method .eq. 6) then
                    CALL bdy_tracer_value ( chem(i,k,j),chem_bys(i,k,1),chem_btys(i,k,1),dt,ic)
 #endif
@@ -198,7 +198,7 @@ CONTAINS
                    else
                       chem(i,k,j)= tracer_bv_def
                    endif
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
                 else if (i_bdy_method .eq. 6) then
                    CALL bdy_tracer_value ( chem(i,k,j),chem_bye(i,k,1),chem_btye(i,k,1),dt,ic)
 #endif
@@ -232,7 +232,7 @@ CONTAINS
                    else
                       chem(i,k,j)= tracer_bv_def
                    endif
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
                 else if (i_bdy_method .eq. 6) then
                    CALL bdy_tracer_value ( chem(i,k,j),chem_bxs(j,k,1),chem_btxs(j,k,1),dt,ic)   
 #endif
@@ -266,7 +266,7 @@ CONTAINS
                    else
                       chem(i,k,j)= tracer_bv_def
                    endif
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
                 else if (i_bdy_method .eq. 6) then
                    CALL bdy_tracer_value ( chem(i,k,j),chem_bxe(j,k,1),chem_btxe(j,k,1),dt,ic)
 #endif
@@ -281,7 +281,7 @@ CONTAINS
 
    END SUBROUTINE flow_dep_bdy_tracer
 #else
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
    SUBROUTINE flow_dep_bdy_tracer  (  chem, chem_b,chem_bt,dt,                    &
                                spec_bdy_width,z,                                &
                                ijds, ijde,have_bcs_chem,                        & 

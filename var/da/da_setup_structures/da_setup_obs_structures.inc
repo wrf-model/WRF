@@ -168,9 +168,15 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
    end if
 
    if ( use_gpsrefobs ) then
-      if ( ob_format_gpsro == ob_format_bufr .and.  &
-           ob_format       == ob_format_ascii ) then
-         call da_message((/'ob_format=2 while ob_format_gpsro=1, will be reading GPSRO data from gpsro.bufr'/))
+      if ( ob_format == ob_format_bufr ) then
+          ! when main conv input is from bufr, gpsro has to be from bufr too
+          ! overwrite the namelist setting
+          ob_format_gpsro = ob_format_bufr
+      else 
+         if ( ob_format == ob_format_ascii .and. &
+              ob_format_gpsro == ob_format_bufr ) then
+            call da_message((/'ob_format=2 while ob_format_gpsro=1, will be reading GPSRO data from gpsro.bufr'/))
+         end if
       end if
    end if
 

@@ -987,27 +987,24 @@ time_window_min, time_window_max, map_projection , missing_flag)
 
          IF ((obs (obs_num)%info%platform(1:12) .EQ. 'FM-15 METAR ' ) .AND. &
              (ASSOCIATED (obs (obs_num)%surface ) ) ) THEN
-            if ( calc_psfc_from_QNH ) then
-               if ( gts_from_mmm_archive ) then
-                  if ( obs(obs_num)%ground%psfc%data > 0.0 .and. &
-                       obs(obs_num)%info%elevation > 0.0 ) then
-                     QNH  = obs(obs_num)%ground%psfc%data * 0.01 ! Pa to hPa
-                     elev = obs(obs_num)%info%elevation
-                     obs(obs_num)%ground%psfc%data = psfc_from_QNH(QNH,elev) &
-                                                     * 100.0  ! hPa to Pa
-                     obs(obs_num)%ground%psfc%qc   = 0
-                     if ( associated(obs(obs_num)%surface) ) then
-                        obs(obs_num)%surface%meas%pressure%data = &
-                           obs(obs_num)%ground%psfc%data
-                        obs(obs_num)%surface%meas%pressure%qc   = &
-                           obs(obs_num)%ground%psfc%qc
-                     end if  ! associated data
-                  end if  ! valid QNH and elev
-               end if  ! gts_from_mmm_archive
-            else
-               obs(obs_num)%ground%psfc%data = missing_r
-               obs(obs_num)%ground%psfc%qc   = missing
-            end if  ! calc_psfc_from_QNH
+            obs(obs_num)%ground%psfc%data = missing_r
+            obs(obs_num)%ground%psfc%qc   = missing
+            if ( calc_psfc_from_QNH .and. gts_from_mmm_archive ) then
+               if ( obs(obs_num)%ground%psfc%data > 0.0 .and. &
+                    obs(obs_num)%info%elevation > 0.0 ) then
+                  QNH  = obs(obs_num)%ground%psfc%data * 0.01 ! Pa to hPa
+                  elev = obs(obs_num)%info%elevation
+                  obs(obs_num)%ground%psfc%data = psfc_from_QNH(QNH,elev) &
+                                                  * 100.0  ! hPa to Pa
+                  obs(obs_num)%ground%psfc%qc   = 0
+                  if ( associated(obs(obs_num)%surface) ) then
+                     obs(obs_num)%surface%meas%pressure%data = &
+                        obs(obs_num)%ground%psfc%data
+                     obs(obs_num)%surface%meas%pressure%qc   = &
+                        obs(obs_num)%ground%psfc%qc
+                  end if  ! associated data
+               end if  ! valid QNH and elev
+            end if  ! calc_psfc_from_QNH and gts_from_mmm_archive
          END IF  ! metar
 
          ! for gts_from_mmm_archive:
@@ -1023,26 +1020,26 @@ time_window_min, time_window_max, map_projection , missing_flag)
          !  analysis.  Since we are at sea level, we also set the pressure 
          !  to equal to the sea level pressure.
 
-         !hcl-note: check if this can be general for other data source
-         if ( gts_from_mmm_archive ) then
-            IF ( (obs(obs_num)%info%platform(1:10) == 'FM-13 SHIP') .or. &
-                 (obs(obs_num)%info%platform(1:10) == 'FM-18 BUOY') ) then
-               if ( ASSOCIATED(obs(obs_num)%surface) ) then
-                  if ( (obs(obs_num)%info%elevation == 0.0) ) then
-                     obs(obs_num)%surface%meas%height%data   = &
-                        obs(obs_num)%info%elevation
-                     obs(obs_num)%surface%meas%height%qc     = 0
-                     obs(obs_num)%surface%meas%pressure%data = &
-                        obs(obs_num)%ground%slp%data
-                     obs(obs_num)%surface%meas%pressure%qc   = 0
-                  else
+         IF ( (obs(obs_num)%info%platform(1:10) == 'FM-13 SHIP') .or. &
+              (obs(obs_num)%info%platform(1:10) == 'FM-18 BUOY') ) then
+            if ( ASSOCIATED(obs(obs_num)%surface) ) then
+               if ( (obs(obs_num)%info%elevation == 0.0) ) then
+                  obs(obs_num)%surface%meas%height%data   = &
+                     obs(obs_num)%info%elevation
+                  obs(obs_num)%surface%meas%height%qc     = 0
+                  obs(obs_num)%surface%meas%pressure%data = &
+                     obs(obs_num)%ground%slp%data
+                  obs(obs_num)%surface%meas%pressure%qc   = 0
+               else
+                  if ( eps_equal(obs(obs_num)%surface%meas%pressure%data, &
+                                 101301.000, 1.) ) then
                      ! replace 1013.01 with missing value
                      obs(obs_num)%surface%meas%pressure%data = missing_r
                      obs(obs_num)%surface%meas%pressure%qc   = missing
-                  end if  ! elev is 0
-               end if  ! has associated data
-            end if  ! end if ship or buoy
-         end if  ! end if gts_from_mmm_archive
+                  end if
+               end if  ! elev is 0
+            end if  ! has associated data
+         end if  ! end if ship or buoy
 
          ! FENG GAO 03/07/2014
          ! QuikSCAT nominal mission ended on November 23, 2009
@@ -1081,16 +1078,14 @@ time_window_min, time_window_max, map_projection , missing_flag)
          ! hcl-note2: 101301 is simply a flag, real reports do not 
          !     have 1/100 precision. Just replace 101301 with missing value
 
-         if ( gts_from_mmm_archive ) then
-            IF ( (obs(obs_num)%info%platform(1:5).EQ.'FM-12') .and.  &
-                 (ASSOCIATED(obs(obs_num)%surface)) ) THEN
-               if ( eps_equal(obs(obs_num)%surface%meas%pressure%data, &
-                                             101301.000, 1.) ) then
-                  obs(obs_num)%surface%meas%pressure%data = missing_r
-                  obs(obs_num)%surface%meas%pressure%qc   = missing
-               endif
-            ENDIF  !end if FM-12 synop
-         end if  !end if gts_from_mmm_archive
+         IF ( (obs(obs_num)%info%platform(1:5).EQ.'FM-12') .and.  &
+              (ASSOCIATED(obs(obs_num)%surface)) ) THEN
+            if ( eps_equal(obs(obs_num)%surface%meas%pressure%data, &
+                                          101301.000, 1.) ) then
+               obs(obs_num)%surface%meas%pressure%data = missing_r
+               obs(obs_num)%surface%meas%pressure%qc   = missing
+            endif
+         ENDIF  !end if FM-12 synop
 
          !  This may be wasted print-out, but it is comforting to see.
 

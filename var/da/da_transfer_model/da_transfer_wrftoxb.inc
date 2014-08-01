@@ -365,6 +365,9 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
                ppb  = grid%znu(k) * grid%mub(i,j) + ptop
                grid%pb(i,j,k) = ppb
                temp = MAX ( iso_temp, base_temp + base_lapse*log(ppb/base_pres) )
+               if ( grid%pb(i,j,k) < base_pres_strat ) then
+                  temp = iso_temp + base_lapse_strat*log(grid%pb(i,j,k)/base_pres_strat)
+               end if
                ttb  = temp * (base_pres/ppb)**kappa
                ! ttb  = (base_temp + base_lapse*log(ppb/base_pres)) * &
                !   (base_pres/ppb)**kappa
@@ -392,6 +395,9 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
             do k = kts, kte
                grid%pb(i,j,k) = grid%znu(k)*(p_surf - grid%p_top) + grid%p_top
                temp = MAX ( iso_temp, base_temp + base_lapse*log(grid%pb(i,j,k)/base_pres) )
+               if ( grid%pb(i,j,k) < base_pres_strat ) then
+                  temp = iso_temp + base_lapse_strat*log(grid%pb(i,j,k)/base_pres_strat)
+               end if
                grid%t_init(i,j,k) = temp*(base_pres/grid%pb(i,j,k))**(gas_constant/cp) - t0
                grid%alb(i,j,k) = (gas_constant/base_pres)*(grid%t_init(i,j,k)+t0)*(grid%pb(i,j,k)/base_pres)**cvpm
             end do

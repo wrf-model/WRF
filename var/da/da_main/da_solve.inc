@@ -71,16 +71,22 @@
            'da_solve: namelist iso_temp does not equal iso_temp from fg. Reset namelist value and rerun'
          call da_error(__FILE__,__LINE__,message(1:1))
       end if
+      call nl_get_base_pres_strat  ( 1, base_pres_strat )
+      call nl_get_base_lapse_strat ( 1, base_lapse_strat )
 
       grid%p00   = base_pres
       grid%t00   = base_temp
       grid%tlp   = base_lapse
       grid%tiso  = iso_temp
+      grid%p_strat   = base_pres_strat
+      grid%tlp_strat = base_lapse_strat
    else
       base_pres  = grid%p00
       base_temp  = grid%t00
       base_lapse = grid%tlp
       iso_temp   = grid%tiso
+      base_pres_strat  = grid%p_strat
+      base_lapse_strat = grid%tlp_strat
       if ( base_temp < 100.0 .or. base_pres < 10000.0 ) then
          write(unit=message(1),fmt='(A)') &
          'did not find base state parameters in fg. Add use_baseparam_fr_nml = .t. in &dynamics and rerun '

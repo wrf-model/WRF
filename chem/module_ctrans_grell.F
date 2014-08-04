@@ -1489,7 +1489,7 @@ END subroutine cup_env_clev_tr
 
       endif
       
-! wet scavenging option (turn off by setting
+! wet scavenging option (turn off by setting conv_tr_wetscav = 0)
 !
       if (conv_tr_wetscav == 1) then
         
@@ -1505,6 +1505,11 @@ END subroutine cup_env_clev_tr
             if (nv.eq.p_nh3)  aq_gas_ratio = 1.0
             if (nv.eq.p_hno3) aq_gas_ratio = 1.0
             if (nv.gt.numgas) aq_gas_ratio = 0.5
+
+            if (nv.eq.p_so4aj) aq_gas_ratio = 1.0
+            if (nv.eq.p_nh4aj) aq_gas_ratio = 1.0
+            if (nv.eq.p_no3aj) aq_gas_ratio = 1.0
+
             if (nv.eq.p_bc1 .or. nv.eq.p_oc1 .or. nv.eq.p_dms) aq_gas_ratio=0.
             if (nv.eq.p_sulf .or. nv.eq.p_seas_1 .or. nv.eq.p_seas_2) aq_gas_ratio=1.
             if (nv.eq.p_seas_3 .or. nv.eq.p_seas_4) aq_gas_ratio=1.

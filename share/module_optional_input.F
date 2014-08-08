@@ -32,6 +32,9 @@ MODULE module_optional_input
 
    INTEGER :: flag_excluded_middle
 
+   INTEGER :: flag_um_soil
+   INTEGER :: flag_icepct
+
    INTEGER :: flag_hgtmaxw  , flag_pmaxw    , flag_tmaxw    , flag_umaxw    , flag_vmaxw     , &
               flag_hgttrop  , flag_ptrop    , flag_ttrop    , flag_utrop    , flag_vtrop
    INTEGER :: flag_extra_levels
@@ -775,6 +778,12 @@ USE module_io_domain
       IF ( ierr .EQ. 0 ) THEN
          flag_slp      = itmp
       END IF
+
+      flag_name(1:8) = 'UM_SOIL '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
+      IF ( ierr .EQ. 0 ) THEN
+         flag_um_soil  = itmp
+      END IF
     
       grid%flag_soilhgt = flag_soilhgt
       grid%flag_slp     = flag_slp 
@@ -821,6 +830,12 @@ USE module_io_domain
       CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
       IF ( ierr .EQ. 0 ) THEN
          flag_icefrac  = itmp
+      END IF
+
+      flag_name(1:8) = 'ICEPCT  '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
+      IF ( ierr .EQ. 0 ) THEN
+         flag_icepct  = itmp
       END IF
 
       flag_name(1:8) = 'ICEDEPTH'
@@ -1087,10 +1102,25 @@ USE module_io_domain
             ! Calculate mid-point of each layer and set to st_levels_input
             ! Flip the input soil depths upside down to make k=1 closest to the sfc
             !-------------------------------------------------------------
-            st_levels_input(k) = (level_above + grid%soil_layers(its,num_st_levels_input + 1 - k,jts))/2
-            sm_levels_input(k) = (level_above + grid%soil_layers(its,num_st_levels_input + 1 - k,jts))/2
-            sw_levels_input(k) = (level_above + grid%soil_layers(its,num_st_levels_input + 1 - k,jts))/2
-            level_above = grid%soil_layers(its,num_st_levels_input + 1 - k,jts)
+            !st_levels_input(k) = (level_above + grid%soil_layers(its,num_st_levels_input + 1 - k,jts))/2
+            !sm_levels_input(k) = (level_above + grid%soil_layers(its,num_st_levels_input + 1 - k,jts))/2
+            !sw_levels_input(k) = (level_above + grid%soil_layers(its,num_st_levels_input + 1 - k,jts))/2
+            !level_above = grid%soil_layers(its,num_st_levels_input + 1 - k,jts)
+            !-------------------------------------------------------------
+            ! If UM soil input, levels are cumulative (0-10cm, 0-25cm,
+            ! etc.) so we simply take the midpoint of each level - GAC
+            !-------------------------------------------------------------
+            IF ( flag_um_soil == 1 ) THEN
+              st_levels_input(k) = (grid%soil_layers(its,num_st_levels_input + 1 - k,jts))/2
+              sm_levels_input(k) = (grid%soil_layers(its,num_st_levels_input + 1 - k,jts))/2
+              sw_levels_input(k) = (grid%soil_layers(its,num_st_levels_input + 1 - k,jts))/2
+            ELSE
+              st_levels_input(k) = (level_above + grid%soil_layers(its,num_st_levels_input + 1 - k,jts))/2
+              sm_levels_input(k) = (level_above + grid%soil_layers(its,num_st_levels_input + 1 - k,jts))/2
+              sw_levels_input(k) = (level_above + grid%soil_layers(its,num_st_levels_input + 1 - k,jts))/2
+              level_above = grid%soil_layers(its,num_st_levels_input + 1 - k,jts)
+            END IF
+
          END DO
 
          !----------------------------------------------------------------
@@ -1106,6 +1136,19 @@ USE module_io_domain
                END DO
             END DO
          END DO
+
+         !----------------------------------------------------------------
+         ! UM input is in kg/m2, convert to volumetric soil moisture here
+         !----------------------------------------------------------------
+         IF ( flag_um_soil == 1 ) THEN
+            DO j = jts, MIN(jde-1,jte)
+               DO k = 1, num_sm_levels_input
+                  DO i = its, MIN(ide-1,ite)
+                    sm_input(i,k+1,j)=100.*sm_input(i,k+1,j)/(2*sm_levels_input(k)*1000.)
+                  END DO
+               END DO
+            END DO
+         END IF
 
       END IF    ! flag_soil_layers == 1
 #endif

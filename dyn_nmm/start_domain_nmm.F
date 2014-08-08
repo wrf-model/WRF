@@ -2092,7 +2092,7 @@
      &                lakedepth_default=config_flags%lakedepth_default, lake_min_elev=config_flags%lake_min_elev, lake_depth=grid%lake_depth,               & !lake
      &                lake_depth_flag=grid%LAKE_DEPTH_FLAG, use_lakedepth=grid%use_lakedepth,                                                      & !lake
      &                sf_surface_mosaic=config_flags%sf_surface_mosaic, mosaic_cat=config_flags%mosaic_cat, nlcat=1,     & ! Noah tiling
-     &                MAXPATCH=1 & ! CLM
+     &                MAXPATCH=1,ccn_conc=config_flags%ccn_conc & ! CLM
      &                )
 
 #ifdef HWRF

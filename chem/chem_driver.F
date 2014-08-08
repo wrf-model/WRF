@@ -669,7 +669,8 @@
               config_flags,                                                                &
               grid%gmt,ijulian,rri,t_phy,moist,p8w,t8w,u_phy,v_phy,vvel,               &
               grid%e_bio,p_phy,chem,rho,dz8w,grid%ne_area,emis_ant,emis_vol,grid%tsk,      &
-              grid%erod,g,emis_seas,emis_dust,tracer, &
+              grid%erod,grid%erod_dri,grid%lai_vegmask,                                    &
+              g,emis_seas,emis_dust,tracer,                                                &
               ebu , ebu_in,grid%mean_fct_agtf,grid%mean_fct_agef,grid%mean_fct_agsv,       &
               grid%mean_fct_aggr,grid%firesize_agtf, &
               grid%firesize_agef,grid%firesize_agsv,grid%firesize_aggr,                    &
@@ -696,8 +697,10 @@
               grid%ebio_aro1, grid%ebio_aro2, grid%ebio_ccho, grid%ebio_meoh,             &    
               grid%ebio_ethene, grid%ebio_hcooh, grid%ebio_terp, grid%ebio_bald,          &    
               grid%ebio_cco_oh, grid%ebio_rco_oh,                                         &    
-              grid%clayfrac,grid%sandfrac,grid%dust_alpha,grid%dust_gamma,grid%dust_smtune,&
-              grid%snowh,grid%zs,                                                          &
+              grid%clayfrac,grid%sandfrac,grid%dust_alpha,grid%dust_gamma,grid%dust_smtune, grid%dust_ustune, &
+              grid%clayfrac_nga,grid%sandfrac_nga,                                        &
+              grid%snowh,grid%zs,grid%afwa_dustloft,                                       &
+              grid%tot_dust,grid%tot_edust,grid%vis_dust,                                  &
               grid%soilctop, grid%ust_t, grid%rough_cor, grid%smois_cor,                  &              
               grid%ebio_c5h8,grid%ebio_apinene,grid%ebio_bpinene,grid%ebio_toluene,        &
               grid%ebio_ch3cho,grid%ebio_ch3co2h,grid%ebio_tbut2ene,                      &

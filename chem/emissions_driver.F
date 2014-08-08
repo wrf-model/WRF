@@ -15,7 +15,8 @@ CONTAINS
          bioemdt,stepbioe,                                                 &
          config_flags,gmt,julday,alt,t_phy,moist,p8w,t8w,u_phy,            &
          v_phy,vvel,e_bio,p_phy,chem,rho_phy,dz8w,ne_area,emis_ant,        &
-         emis_vol,tsk,erod,g,emis_seas,emis_dust,tracer,                   &
+         emis_vol,tsk,erod,erod_dri,lai_vegmask,                           &
+         g,emis_seas,emis_dust,tracer,                                     &
          ebu, ebu_in,mean_fct_agtf,mean_fct_agef,                          &
          mean_fct_agsv,mean_fct_aggr,firesize_agtf,firesize_agef,          &
          firesize_agsv,firesize_aggr,                                      &
@@ -39,8 +40,9 @@ CONTAINS
          ebio_aro1, ebio_aro2, ebio_ccho, ebio_meoh,                       &    
          ebio_ethene, ebio_hcooh, ebio_terp, ebio_bald,                    &    
          ebio_cco_oh, ebio_rco_oh,                                         &    
-         clayfrac,sandfrac,dust_alpha,dust_gamma,dust_smtune,              &
-         snowh,zs,                                                         &
+         clayfrac,sandfrac,dust_alpha,dust_gamma,dust_smtune,dust_ustune,  &
+         clayfrac_nga,sandfrac_nga,                                        &
+         snowh,zs,afwa_dustloft,tot_dust,tot_edust,vis_dust,               &
          soil_top_cat, ust_t, rough_cor, smois_cor,                        & 
          ebio_c5h8,ebio_apinene,ebio_bpinene,ebio_toluene,                 &
          ebio_ch3cho,ebio_ch3co2h,ebio_tbut2ene,ebio_c2h5cho,              &
@@ -130,7 +132,10 @@ CONTAINS
          dms_0,tsk,erup_beg,erup_end
    REAL, DIMENSION( ims:ime, jms:jme,3),&
          INTENT(IN ) ::                                                 &
-         erod
+         erod, erod_dri
+   REAL, DIMENSION( ims:ime, jms:jme), &
+         INTENT(IN ) ::                                                    &
+         lai_vegmask
    REAL, DIMENSION( ims:ime, jms:jme,5),&
          INTENT(INOUT ) ::                                                 &
          dustin,seasin
@@ -189,12 +194,26 @@ CONTAINS
          INTENT(IN   ) ::                                                  &
                                                      clayfrac,             &
                                                      sandfrac,             &
+                                                     clayfrac_nga,         &
+                                                     sandfrac_nga,         &
                                                      snowh
    REAL, INTENT(IN   ) ::                            dust_alpha,           &
                                                      dust_gamma,           &
-                                                     dust_smtune
+                                                     dust_smtune,          &
+                                                     dust_ustune
+
   REAL, DIMENSION( config_flags%num_soil_layers ) ,                        &
       INTENT(IN   ) ::                               zs
+  REAL, DIMENSION( ims:ime , jms:jme )                   ,                 &
+         OPTIONAL,                                                         &
+         INTENT(  OUT) ::                                                  &
+                                                     tot_edust,            &
+                                                     afwa_dustloft
+   REAL, DIMENSION( ims:ime , kms:kme , jms:jme )        ,                 &
+         OPTIONAL,                                                         &
+         INTENT(  OUT) ::                                                  &
+                                                     tot_dust,             &
+                                                     vis_dust
   REAL, DIMENSION( ims:ime, config_flags%num_soil_layers, jms:jme ) ,      &
       INTENT(INOUT ) ::                             smois, tslb    
 
@@ -696,9 +715,10 @@ CONTAINS
       CASE (DUSTGOCARTAFWA)
         CALL wrf_debug(15,'AFWA modified Gocart dust emissions')
         call gocart_dust_afwa_driver(ktau,dtstep,config_flags,julday,alt,t_phy,moist,u_phy,  &
-         v_phy,chem,rho_phy,dz8w,smois,u10,v10,p8w,erod,dustin,snowh,zs,   &
-         ivgtyp,isltyp,vegfra,xland,xlat,xlong,gsw,dx,g,emis_dust,         &
-         ust,znt,clayfrac,sandfrac,dust_alpha,dust_gamma,dust_smtune,      &
+         v_phy,chem,rho_phy,dz8w,smois,u10,v10,p8w,erod,erod_dri,dustin,snowh,zs,   &
+         ivgtyp,isltyp,vegfra,lai_vegmask,xland,xlat,xlong,gsw,dx,g,emis_dust,      &
+         ust,znt,clayfrac,sandfrac,clayfrac_nga,sandfrac_nga,afwa_dustloft,         &!EDH
+         tot_dust,tot_edust,vis_dust,dust_alpha,dust_gamma,dust_smtune,dust_ustune, &
          ids,ide, jds,jde, kds,kde,                                        &
          ims,ime, jms,jme, kms,kme,                                        &
          its,ite, jts,jte, kts,kte                                         )

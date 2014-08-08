@@ -177,6 +177,7 @@ FIRE_MODULES = \
   
 DIAGNOSTIC_MODULES_EM = \
 	module_diag_afwa.o \
+	module_diag_afwa_hail.o \
 	module_diag_cl.o \
 	module_diag_misc.o \
 	module_diag_pld.o

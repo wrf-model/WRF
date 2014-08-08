@@ -1555,15 +1555,18 @@ CONTAINS
      CALL  SOIL_VEG_GEN_PARM( MMINLU, MMINSL )
    ENDIF
 
-#if ( WRF_CHEM == 1 )
-!
-! need this parameter for dust parameterization in wrf/chem
-!
-   do I=1,NSLTYPE
-      porosity(i)=maxsmc(i)
-      drypoint(i)=drysmc(i)
-   enddo
-#endif
+! GAC-->
+! 20130219 - No longer need these - see module_data_gocart_dust
+!#if ( WRF_CHEM == 1 )
+!!
+!! need this parameter for dust parameterization in wrf/chem
+!!
+!   do I=1,NSLTYPE
+!      porosity(i)=maxsmc(i)
+!      drypoint(i)=drysmc(i)
+!   enddo
+!#endif
+! <--GAC
 
    IF(.not.restart)THEN
 

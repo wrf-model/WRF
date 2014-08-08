@@ -3135,6 +3135,7 @@
      &                 ,has_reqc=has_reqc                               & ! G. Thompson
      &                 ,has_reqi=has_reqi                               & ! G. Thompson
      &                 ,has_reqs=has_reqs                               & ! G. Thompson
+     &                 ,ccn_conc=config_flags%ccn_conc                  &
                                                                         )
 
 !$omp parallel do                                                       &

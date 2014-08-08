@@ -343,6 +343,17 @@ integer::oops1,oops2
          END DO
       END IF
 
+      !  Replace traditional seaice field with optional seaice percent (AFWA source)
+
+      IF ( flag_icepct .EQ. 1 ) THEN
+         DO j=jts,MIN(jde-1,jte)
+            DO i=its,MIN(ide-1,ite)
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE
+               grid%xice(i,j) = grid%icepct(i,j)/100.
+            END DO
+         END DO
+      END IF
+
       !  Fix the snow (water equivalent depth, kg/m^2) and the snowh (physical snow
       !  depth, m) fields.
 
@@ -1101,6 +1112,15 @@ integer::oops1,oops2
                                        ims , ime , jms , jme , kms , kme , &
                                        its , ite , jts , jte , kts , kte )
          ENDIF
+
+#ifdef WRF_CHEM
+         ! Chose the appropriate LAI veg mask for this date (used in the AFWA dust model)
+
+         CALL eightday_selector ( grid%lai_veg_8day , current_date , grid%lai_vegmask , &
+                                       ids , ide , jds , jde , kds , kde , &
+                                       ims , ime , jms , jme , kms , kme , &
+                                       its , ite , jts , jte , kts , kte )
+#endif
 
          !  Get the min/max of each i,j for the monthly green-ness fraction.
 
@@ -2354,6 +2374,15 @@ integer::oops1,oops2
         0.089, 0.095, 0.10,  0.070, 0.068, 0.078, 0.0,      &
         0.004, 0.065 /)
 !       0.004, 0.065, 0.020, 0.004, 0.008 /)  !  has extra levels for playa, lava, and white sand
+
+      ! If Unified Model soil moisture input, add lqmi since UM gives us available soil moisture, not total (AFWA source)
+      IF ( flag_um_soil == 1 ) THEN
+         DO j = jts, MIN(jde-1,jte)
+            DO i = its, MIN(ide-1,ite)
+               grid%smois(i,:,j)=grid%smois(i,:,j)+lqmi(grid%isltyp(i,j))
+            END DO
+         END DO
+      END IF
 
       !  At the initial time we care about values of soil moisture and temperature, other times are
       !  ignored by the model, so we ignore them, too.
@@ -6620,6 +6649,46 @@ end do
       END DO find_month
 
    END SUBROUTINE monthly_interp_to_date
+
+!---------------------------------------------------------------------
+
+   SUBROUTINE eightday_selector ( field_in , date_str , field_out , &
+                      ids , ide , jds , jde , kds , kde , &
+                      ims , ime , jms , jme , kms , kme , &
+                      its , ite , jts , jte , kts , kte )
+
+   !  Given current date, select time-matching monthly entry from grid.
+   !  No interpolation.
+
+      IMPLICIT NONE
+
+      INTEGER , INTENT(IN)        :: ids , ide , jds , jde , kds , kde , &
+                                     ims , ime , jms , jme , kms , kme , &
+                                     its , ite , jts , jte , kts , kte
+
+      CHARACTER (LEN=24) , INTENT(IN) :: date_str
+      REAL , DIMENSION(ims:ime,46,jms:jme) , INTENT(IN)  :: field_in  !46
+      REAL , DIMENSION(ims:ime,   jms:jme) , INTENT(OUT) :: field_out
+
+      !  Local vars
+
+      INTEGER :: i , j
+      INTEGER :: julyr, julday, eightday
+      REAL :: gmt
+
+      CALL get_julgmt ( date_str , julyr , julday , gmt )
+      eightday = ((julday-1) / 8) + 1
+!      print *, 'date_str: ', date_str
+!      print *, 'julyr, julday: ', julyr, julday
+!      print *, 'eightday: ', eightday
+
+      DO j = jts , MIN ( jde-1 , jte )
+         DO i = its , MIN (ide-1 , ite )
+            field_out(i,j) =  field_in(i,eightday,j)
+         END DO
+      END DO
+
+   END SUBROUTINE eightday_selector
 
 !---------------------------------------------------------------------
 

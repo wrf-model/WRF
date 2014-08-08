@@ -233,7 +233,7 @@
      CALL wrf_dm_bcast_bytes ( grid%SEED2, IWORDSIZE )
 #endif
 
-     IF (grid%stoch_force_opt==1) then
+     IF ( (grid%stoch_force_opt==1) .or. (grid%perturb_bdy==1)) then
      grid%SPTFORCC=0.0
      grid%SPTFORCS=0.0
      call SETUP_STOCH_SKEBS(grid%VERTSTRUCC,grid%VERTSTRUCS,                   &
@@ -268,17 +268,8 @@
                        ims, ime, jms, jme, kms, kme,                      &
                        its, ite, jts, jte, kts, kte                       )
      ENDIF 
-     do i=1,600
-     CALL UPDATE_STOCH(grid%SPSTREAMFORCS,grid%SPSTREAMFORCC,           &
-                      grid%SPTFORCS,grid%SPTFORCC,                        &
-                      grid%SPT_AMP,grid%SPSTREAM_AMP,                     &
-                      ids, ide, jds, jde, kds, kde,                       &
-                      ims, ime, jms, jme, kms, kme,                       &
-                      its, ite, jts, jte, kts, kte                       )
-     enddo
 
-
-    END IF
+    END IF ! ( grid%id == 1 ) .AND. ( grid%stoch_force_global_opt == 1 ) 
 !   --- END SETUP STOCHASTIC PERTURBATION SCHEMES ----------
 
 

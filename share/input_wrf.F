@@ -567,7 +567,9 @@
     ! The default is set to 24 somewhere, from the number of categories
     ! in the traditional USGS dataset
 
-    IF ( switch .EQ. input_only ) THEN
+    IF ( ( switch .EQ. input_only )       .OR. & 
+         ( switch .EQ. auxinput1_only )   .OR. &
+         ( switch .EQ. auxinput2_only ) ) THEN
       call wrf_get_dom_ti_integer(fid, "NUM_LAND_CAT", num_land_cat_compare, 1, icnt, ierr)
       if ( (ierr .NE. 0) .OR. ( num_land_cat_compare .LT. 1 ) .OR. ( num_land_cat_compare .GT. 1000 ) ) then
         IF (mminlu == 'MODIFIED_IGBP_MODIS_NOAH') THEN
@@ -917,19 +919,42 @@
 ! iterate forward to the correct interval in the input LBC file
 !
     IF ( switch .EQ. boundary_only ) THEN
-        CALL domain_clock_get( grid, current_time=currentTime )
-        CALL wrf_get_dom_td_char ( fid , 'THISBDYTIME' ,  current_date(1:19), this_datestr , ierr )
-        CALL wrf_atotime( this_datestr(1:19), grid%this_bdy_time )
-        CALL wrf_get_dom_td_char ( fid , 'NEXTBDYTIME' ,  current_date(1:19), next_datestr , ierr )
-        CALL wrf_atotime( next_datestr(1:19), grid%next_bdy_time )
+       IF ( config_flags%restart ) THEN
+          ! get WRF time of current_date position in boundary file
+          CALL wrf_atotime( current_date(1:19), time )
+          ! jump straight to the restart time
+          CALL domain_clock_get( grid, current_time=currentTime, &
+                                     current_timestr=currtimestr )
+          write(wrf_err_message, '(4a)') "wrf restart: jumping from ", &
+                                     & trim(current_date), " to ", trim(currtimestr)
+          CALL wrf_debug( 0 , wrf_err_message )
+          DO WHILE (currentTime .ne. time)
+              CALL wrf_get_next_time(fid, current_date , ierr)
+              CALL wrf_atotime(current_date(1:19), time)
+              WRITE(wrf_err_message,*) fid,' input_wrf: wrf_get_next_time current_date: ',&
+                                      & current_date(1:19),' Status = ',ierr
+              CALL wrf_debug ( 300 , TRIM(wrf_err_message ) )
+          END DO
+          !
+          CALL wrf_get_dom_td_char ( fid , 'THISBDYTIME' ,  currtimestr(1:19), this_datestr , ierr )
+          CALL wrf_atotime( this_datestr(1:19), grid%this_bdy_time )
+          CALL wrf_get_dom_td_char ( fid , 'NEXTBDYTIME' ,  currtimestr(1:19), next_datestr , ierr )
+          CALL wrf_atotime( next_datestr(1:19), grid%next_bdy_time )
+       ELSE IF ( .NOT. config_flags%restart ) THEN
+          CALL domain_clock_get( grid, current_time=currentTime )
+          CALL wrf_get_dom_td_char ( fid , 'THISBDYTIME' ,  current_date(1:19), this_datestr , ierr )
+          CALL wrf_atotime( this_datestr(1:19), grid%this_bdy_time )
+          CALL wrf_get_dom_td_char ( fid , 'NEXTBDYTIME' ,  current_date(1:19), next_datestr , ierr )
+          CALL wrf_atotime( next_datestr(1:19), grid%next_bdy_time )
+       END IF
 #if (DA_CORE != 1)
-        IF( currentTime .GE. grid%next_bdy_time ) THEN
+       IF( currentTime .GE. grid%next_bdy_time ) THEN
           IF ( wrf_dm_on_monitor() ) THEN
              write(a_message,*) 'THIS TIME ',this_datestr(1:19),'NEXT TIME ',next_datestr(1:19)
              CALL wrf_message ( a_message ) 
           END IF
           RETURN
-        ENDIF
+       ENDIF
 #endif
     ENDIF
 

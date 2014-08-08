@@ -181,6 +181,7 @@ CONTAINS
             grid%xlat, grid%xlong, grid%xland, grid%ht,        &
             grid%t_phy, p_phy, grid%rho,                       &
             grid%u_phy, grid%v_phy, grid%w_2,                  &    
+            th_phy,     pi_phy,dz8w,                           &  
             grid%z, moist,                                     &
           ! Scheme specific prognostics
             grid%ktop_deep, grid%refl_10cm,                    &
@@ -205,7 +206,8 @@ CONTAINS
             ips, ipe, jps, jpe, kps, kpe,         &
           ! Mandatory outputs for all quantitative schemes
             grid%ic_flashcount, grid%ic_flashrate,          &
-            grid%cg_flashcount, grid%cg_flashrate           &
+            grid%cg_flashcount, grid%cg_flashrate,          &
+            grid%lpi                                        &   
       )    
       END IF LIGHTNING
 

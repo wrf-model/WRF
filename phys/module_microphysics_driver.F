@@ -88,7 +88,7 @@ SUBROUTINE microphysics_driver(                                          &
                       ,height,tempc &
                       ,TH_OLD                                            &
                       ,QV_OLD                                            &
-                      ,xlat,xlong,ivgtyp                                  &
+                      ,xlat,xlong,ivgtyp                                 &
 
                                                    )
 ! Framework

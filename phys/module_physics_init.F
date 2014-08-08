@@ -191,6 +191,7 @@ CONTAINS
                          ,massflux_EDKF, entr_EDKF, detr_EDKF  & ! Optional for qnse
                          ,thl_up, thv_up, rt_up                & ! Optional for qnse
                          ,rv_up, rc_up, u_up, v_up, frac_up    & ! Optional for qnse
+                         ,ccn_conc                             & ! RAS
                          ,QKE                                  & !for MYNN
                          ,landusef,landusef2,mosaic_cat_index                                                 & ! danli mosaic
                          ,TSK_mosaic,TSLB_mosaic,SMOIS_mosaic,SH2O_mosaic                                     & ! danli mosaic
@@ -292,6 +293,7 @@ CONTAINS
             INTENT(INOUT)    ::                         IVGTYP, &
                                                         ISLTYP
 
+   INTEGER                             ::             HAIL_OPT
 ! rad
 
 !..Added by G. Thompson to couple cloud physics variables with RRTMG radiation.
@@ -450,6 +452,8 @@ CONTAINS
              F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY
    REAL, DIMENSION(:), INTENT(INOUT)   :: mp_restart_state,tbpvs_state,tbpvs0_state
    LOGICAL,  INTENT(IN)  :: allowed_to_read, moved
+   REAL, INTENT(IN) :: ccn_conc ! RAS
+
 
 ! ocean mixed layer
    REAL,     DIMENSION( ims:ime , jms:jme ) , OPTIONAL, INTENT(INOUT) ::    &
@@ -623,6 +627,7 @@ CONTAINS
                          nssl_cnor, nssl_cnos,                   &
                          nssl_rho_qh, nssl_rho_qhl,              &
                          nssl_rho_qs
+
 
 ! WA 12/21/09
    REAL,OPTIONAL, DIMENSION( ims:ime , kms:kme , jms:jme ) , &
@@ -1180,6 +1185,7 @@ integer myproc
                          nssl_cnor, nssl_cnos,                   &
                          nssl_rho_qh, nssl_rho_qhl,              &
                          nssl_rho_qs,                            &
+                ccn_conc,                                        & ! RAS
                 z_at_q, qnwfa2d, scalar, num_sc,            &  ! G. Thompson
                 ids, ide, jds, jde, kds, kde,                   &
                 ims, ime, jms, jme, kms, kme,                   &
@@ -3335,6 +3341,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                          nssl_cnor, nssl_cnos,                   &
                          nssl_rho_qh, nssl_rho_qhl,              &
                          nssl_rho_qs,                            &
+                      ccn_conc,                                  & ! RAS
                       z_at_q, qnwfa2d, scalar, num_sc,        &  ! G. Thompson
                       ids, ide, jds, jde, kds, kde,               &
                       ims, ime, jms, jme, kms, kme,               &
@@ -3387,6 +3394,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                                   F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY
    REAL , DIMENSION(:) ,INTENT(INOUT)  :: mp_restart_state,tbpvs_state,tbpvs0_state
    LOGICAL , INTENT(IN)  :: allowed_to_read
+   REAL, INTENT(IN) :: ccn_conc ! RAS
    REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT):: qnwfa2d                       !  G. Thompson
    REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(IN):: z_at_q                   !  G. Thompson
    INTEGER, INTENT(IN) :: num_sc                                               !  G. Thompson
@@ -3474,15 +3482,16 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                           ITS=its, ITE=ite, JTS=jts, JTE=jte, KTS=kts, KTE=kte)
 
      CASE (MORR_TWO_MOMENT)
-         CALL morr_two_moment_init
+         CALL morr_two_moment_init( config_flags%hail_opt )
      CASE (MILBRANDT2MOM)
          CALL milbrandt2mom_init
 !      CASE (MILBRANDT3MOM)
 !          CALL milbrandt3mom_init
      CASE (WDM5SCHEME)
-          CALL wdm5init(rhoair0,rhowater,rhosnow,cliq,cpv,n_ccn0,allowed_to_read )
+          CALL wdm5init(rhoair0,rhowater,rhosnow,cliq,cpv,ccn_conc,allowed_to_read )
      CASE (WDM6SCHEME)
-          CALL wdm6init(rhoair0,rhowater,rhosnow,cliq,cpv,n_ccn0,allowed_to_read )
+          CALL wdm6init(rhoair0,rhowater,rhosnow,cliq,cpv,ccn_conc, &
+                        config_flags%hail_opt, allowed_to_read )
 #if (EM_CORE==1)
     CASE (FULL_KHAIN_LYNN)
      IF(start_of_simulation.or.restart)THEN

@@ -562,8 +562,17 @@ state    real  backg_oh       ikj     misc        1         -      i08r    "BACK
 state    real  backg_h2o2     ikj     misc        1         -      i08r    "BACKG_H2O2"     "Background H2O2 for Aerosol-GOcart option"     "volume mixing ratio"
 state    real  backg_no3      ikj     misc        1         -      i08r    "BACKG_NO3"      "Background NO3 for Aerosol-GOcart option"      "volume mixing ratio"
 
-state    real  clayfrac       ij      misc        1         -      i01r    "CLAYFRAC"       "Clay fraction in each grid cell (0-1)"      "none"
-state    real  sandfrac       ij      misc        1         -      i01r    "SANDFRAC"       "Sand fraction in each grid cell (0-1)"      "none"
+# AFWA GOCART Dust
+state    real  erod_dri        ij.    misc        1         -      i012rdu "EROD_DRI"            "frac. of erodible surface in each grid cell (0-1); DRI"                    "none"
+state    real  lai_vegmask     ij     misc        0         -      i012rh  "LAI_VEGMASK"         "MODIS LAI vegetation mask for this date; 0=no dust produced (vegetation)"  "none"
+state    real  clayfrac       ij      misc        1         -      i01r    "CLAYFRAC"            "Clay fraction in each grid cell (0-1)"                                     "none"
+state    real  sandfrac       ij      misc        1         -      i01r    "SANDFRAC"            "Sand fraction in each grid cell (0-1)"                                     "none"
+state    real  clayfrac_nga   ij      misc        1         -      i01r    "CLAYFRAC_NGA"        "Clay fraction in each grid cell (0-1)"                                     "none"
+state    real  sandfrac_nga   ij      misc        1         -      i01r    "SANDFRAC_NGA"        "Sand fraction in each grid cell (0-1)"                                     "none"
+state    real  afwa_dustloft  ij      misc        1         -      h02     "AFWA_DUSTLOFT"       "AFWA Diagnostic dust lofting potential (U10-U10t)"                         "m s^-1"
+state    real  tot_dust       ikj     misc        1         -      h02     "TOT_DUST"            "Total dust concentration (0.1-20 um)"                                      "ug m^-3"
+state    real  tot_edust      ij      misc        1         -      h02     "TOT_EDUST"           "Total dust emission flux (0.1-20 um)"                                      "g m^-2 s^-1"
+state    real  vis_dust       ikj     misc        1         -      h02     "VIS_DUST"            "Visibility due to dust only"                                               "m"
 
 # These 3D arrays are output from the SOA module for different purposes
 state    real  br_rto         ikj     misc        1         -      r        "BRNCH_RTO"      "branching ratio to determine NOx condition"  ""            "ug m^-3"
@@ -2812,10 +2821,21 @@ rconfig   character   wes_seasonal_inname namelist,chem          max_domains    
 
 rconfig   integer        chemdiag        namelist,chem        max_domains        0      -     "Chemical tendency diagnostics"   ""    ""
 
-# Dust tuning constant for AFWA GOCART (dust_opt=3)
-rconfig   real        dust_alpha          namelist,chem          1    1.      rh    "dust_alpha"    "dust tuning constant"    "m^-1"
-rconfig   real        dust_gamma          namelist,chem          1    1.      rh    "dust_gamma"    "erodibility exponential tuning const"    ""
-rconfig   real        dust_smtune         namelist,chem          1    1.      rh    "dust_smtune"   "soil moisture tuning constant"    ""
+# Options for AFWA GOCART Dust model (dust_opt=3)
+#
+# Tuning constants
+rconfig   real        dust_alpha          namelist,chem          1    1.      rh    "dust_alpha"    "AFWA Dust global tuning constant"    "m^-1"
+rconfig   real        dust_gamma          namelist,chem          1    1.      rh    "dust_gamma"    "AFWA Dust erodibility exponential tuning const"    ""
+rconfig   real        dust_smtune         namelist,chem          1    1.      rh    "dust_smtune"   "AFWA Dust soil moisture tuning constant"    ""
+rconfig   real        dust_ustune         namelist,chem          1    1.      rh    "dust_ustune"   "AFWA Dust friction velocity tuning constant"    ""
+# Dust source region selector
+rconfig   integer     dust_dsr            namelist,chem          1    0.      rh    "dust_dsr"      "AFWA Dust dust source region: 0 Ginoux (default), 1 DRI"    ""
+# Vegetation mask selector (to be applied to dust source region)
+rconfig   integer     dust_veg            namelist,chem          1    0.      rh    "dust_veg"      "AFWA Dust veg. mask: 0 Ginoux, 1 12mo GreenFrac, 2 8day MODIS LAI" ""
+# Soil texture selector
+rconfig   integer     dust_soils          namelist,chem          1    0.      rh    "dust_soils"    "AFWA Dust clayfrac and sandfrac: 0 WRF (default), 1 NGA"    ""
+# Soil moisture selector
+rconfig   integer     dust_smois          namelist,chem          1    0.      rh    "dust_smois"    "AFWA Dust soil moisture option: 0 gravimetric, 1 volumetric"    ""
 
 # Volcanic ash height
 rconfig   real        emiss_ash_hgt       namelist,chem          1      0.      rh    "emiss_ash_hgt"       "Volcanic ash cloud top elevation (AGL)"      ""
@@ -3015,7 +3035,7 @@ package   opt_out      opt_pars_out==1             -          ext_coef:extcof3,e
 
 # dust and sea salt packages
 package   dustgocart    dust_opt==1                  -              emis_dust:edust1,edust2,edust3,edust4,edust5 
-package   dustgocartafwa   dust_opt==3               -              emis_dust:edust1,edust2,edust3,edust4,edust5
+package   dustgocartafwa   dust_opt==3               -              emis_dust:edust1,edust2,edust3,edust4,edust5;state:afwa_dustloft,tot_dust,tot_edust,vis_dust
 package   dustuoc       dust_opt==4                  -              emis_dust:edust1,edust2,edust3,edust4,edust5
 package   shao_2001     dust_schme==1                -              emis_dust:edust1,edust2,edust3,edust4,edust5
 package   shao_2004     dust_schme==2                -              emis_dust:edust1,edust2,edust3,edust4,edust5

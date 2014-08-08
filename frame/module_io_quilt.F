@@ -1265,6 +1265,13 @@ okay_to_w = .false.
                   END SELECT
                   ENDIF
 
+! If desired, outputs a ready flag after quilting subroutine closes the data handle for history (wrfout) file.
+
+                  IF (fname(1:6) .EQ. 'wrfout' .AND. config_flags%output_ready_flag ) THEN
+                    OPEN (unit=99,file='wrfoutReady' // fname(7:30), status='unknown', access='sequential')
+                    CLOSE (99)
+                  ENDIF
+
 ! The I/O server "root" handles the "open_for_write_begin" request.
                 CASE ( int_open_for_write_begin )
 

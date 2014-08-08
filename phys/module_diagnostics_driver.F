@@ -385,6 +385,7 @@ CONTAINS
                       ,e=grid%e                                             &
                !  Namelist info
                       ,use_tot_or_hyd_p=config_flags%use_tot_or_hyd_p       &
+                      ,extrap_below_grnd=config_flags%extrap_below_grnd     &
                       ,missing=config_flags%p_lev_missing                   &
                !  The diagnostics, mostly output variables
                       ,num_press_levels=config_flags%num_press_levels       &
@@ -398,6 +399,7 @@ CONTAINS
                       ,ght_pl= grid%ght_pl                                  &
                       ,s_pl  = grid%s_pl                                    &
                       ,td_pl = grid%td_pl                                   &
+                      ,q_pl = grid%q_pl                                     &
                !  Dimension arguments
                       ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde    &
                       ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme    &
@@ -418,7 +420,7 @@ CONTAINS
 
          IF ( ( config_flags%auxhist2_interval == 0 ) ) THEN
             WRITE (diag_message , * ) &
-            "Error : No 'auxhist2_interval' has been defined in 'namelist.input'"
+            "AFWA Diagnostics Error : No 'auxhist2_interval' defined in 'namelist.input'"
             CALL wrf_error_fatal ( diag_message )
          END IF
 
@@ -433,7 +435,8 @@ CONTAINS
                          ,scalar                                              &
                          ,chem                                                &
                          ,th_phy , pi_phy , p_phy                             &
-                         ,dz8w , p8w , t8w , rho_phy                          &
+                         ,grid%u_phy , grid%v_phy                             &
+                         ,dz8w , p8w , t8w , rho_phy, grid%rho                &
                          ,ids, ide, jds, jde, kds, kde                        &
                          ,ims, ime, jms, jme, kms, kme                        &
                          ,ips, ipe, jps, jpe, kps, kpe                        &

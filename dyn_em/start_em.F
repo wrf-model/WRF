@@ -981,6 +981,7 @@ endif
                       ,grid%massflux_EDKF, grid%entr_EDKF, grid%detr_EDKF                & 
                       ,grid%thl_up,grid%thv_up,grid%rt_up                                &
                       ,grid%rv_up,grid%rc_up,grid%u_up,grid%v_up,grid%frac_up            &
+                      ,grid%ccn_conc                                          & ! RAS
                       ,grid%QKE                                               &!JOE-for mynn
                       ,grid%landusef,grid%landusef2,grid%mosaic_cat_index                            & ! danli mosaic 
                       ,grid%TSK_mosaic,grid%TSLB_mosaic,grid%SMOIS_mosaic,grid%SH2O_mosaic           & ! danli mosaic
@@ -1678,6 +1679,7 @@ DEALLOCATE(z_at_q)
                  ,e=grid%e                      &
                  !  Namelist info
                  ,use_tot_or_hyd_p=config_flags%use_tot_or_hyd_p &
+                 ,extrap_below_grnd=config_flags%extrap_below_grnd &
                  ,missing=config_flags%p_lev_missing &
                  !  The diagnostics, mostly output variables
                  ,num_press_levels=config_flags%num_press_levels &
@@ -1691,6 +1693,7 @@ DEALLOCATE(z_at_q)
                  ,ght_pl= grid%ght_pl           &
                  ,s_pl  = grid%s_pl             &  
                  ,td_pl = grid%td_pl            &
+                 ,q_pl = grid%q_pl              &
                  !  Dimension arguments
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde    &
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme    &

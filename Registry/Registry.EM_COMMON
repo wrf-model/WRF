@@ -101,6 +101,7 @@ state    real   sct_dom_gc     ij       dyn_em      1        -     i1  "SCT_DOM"
 state    real   scb_dom_gc     ij       dyn_em      1        -     i1  "SCB_DOM"  "Dominant soil (bottom) category from GEOGRID"  "cat"
 state    real   greenfrac      imj      dyn_em      1        Z     i1  "GREENFRAC" "monthly greenness fraction" "0 - 1 fraction"
 state    real   albedo12m      imj      dyn_em      1        Z     i1  "ALBEDO12M" "background albedo" "0 - 1 fraction"
+state    real   lai_veg_8day   i^j      dyn_em      1        Z     i1  "LAI_VEG_8DAY" "eight-day MODIS LAI veg; 0=no dust produced (vegetation)" "0 - 1 fraction"
 state    real   lai12m         imj      dyn_em      1        Z     i1  "LAI12M" "monthly LAI" "m2/m2"
 state    real   pd_gc          igj      dyn_em      1        Z     -   "PD"    "dry pressure"        "Pa"
 state    real   pdrho_gc       igj      dyn_em      1        Z     -   "PDRHO"    "dry pressure for UM data for the variables U and V"   "Pa"
@@ -112,6 +113,7 @@ state    real   sh_gc          igj      dyn_em      1        Z     i1  "SPECHUMD
 state    real   cl_gc          igj      dyn_em      1        Z     i1  "SPECCLDL"  "Cloud water content, liquid"    "kg kg-1"
 state    real   cf_gc          igj      dyn_em      1        Z     i1  "SPECCLDF"  "Cloud water content, frozen"    "kg kg-1"
 state    real   icefrac_gc     ij       dyn_em      1        -     i1  "ICEFRAC"  "Sea ice fraction"  "0 - 1 fraction"
+state    real   icepct         ij       dyn_em      1        -     i1  "ICEPCT"  "Sea ice percent"  "%"
 state    real   qr_gc          igj      dyn_em      1        Z     i1  "QR"    "rain water mixing ratio"   "kg kg-1"
 state    real   qc_gc          igj      dyn_em      1        Z     i1  "QC"    "cloud water mixing ratio"   "kg kg-1"
 state    real   qs_gc          igj      dyn_em      1        Z     i1  "QS"    "snow mixing ratio"   "kg kg-1"
@@ -1665,11 +1667,11 @@ state   real  pk1m             ij       misc        1         -     -         "p
 state   real  mu_2m            ij       misc        1         -     -         "mu_2m"           "mu_2 at previous step"                             "Pa"
 
 # these are NSSL WRF diagnostics
-state    real    WSPD10MAX        ij     misc        1         -      rh         "WSPD10MAX"      "WIND SPD MAX 10 M"       "m s-1"
-state    real    W_UP_MAX         ij     misc        1         -      rh         "W_UP_MAX"       "MAX Z-WIND UPDRAFT"      "m s-1"
-state    real    W_DN_MAX         ij     misc        1         -      rh         "W_DN_MAX"       "MAX Z-WIND DOWNDRAFT"    "m s-1"
-state    real    REFD_MAX         ij     misc        1         -      r          "REFD_MAX"       "MAX DERIVED RADAR REFL"  "dbZ"
-state    real    UP_HELI_MAX      ij     misc        1         -      rh         "UP_HELI_MAX"    "MAX UPDRAFT HELICITY"    "m2 s-2"
+state    real    WSPD10MAX        ij     misc        1         -      rh02       "WSPD10MAX"      "WIND SPD MAX 10 M"       "m s-1"
+state    real    W_UP_MAX         ij     misc        1         -      rh02       "W_UP_MAX"       "MAX Z-WIND UPDRAFT"      "m s-1"
+state    real    W_DN_MAX         ij     misc        1         -      rh02       "W_DN_MAX"       "MAX Z-WIND DOWNDRAFT"    "m s-1"
+state    real    REFD_MAX         ij     misc        1         -      rh02       "REFD_MAX"       "MAX DERIVED RADAR REFL"  "dbZ"
+state    real    UP_HELI_MAX      ij     misc        1         -      rh02       "UP_HELI_MAX"    "MAX UPDRAFT HELICITY"    "m2 s-2"
 state    real    W_MEAN           ij     misc        1         -      rh         "W_MEAN"         "HOURLY MEAN Z-WIND"      "m s-1"
 state    real    GRPL_MAX         ij     misc        1         -      rh         "GRPL_MAX"       "MAX COL INT GRAUPEL"     "kg m-2"
 state    real    UH               ij     misc        1         -      r          "UH"             "UPDRAFT HELICITY"        "m2 s-2"
@@ -1682,52 +1684,6 @@ state   real    max_cfl         -       misc        1         -     -       "max
 state   real  prec_acc_c       ij       misc        1         -     rh       "prec_acc_c"       "ACCUMULATED CUMULUS PRECIPITATION OVER prec_acc_dt PERIODS OF TIME"       "mm"
 state   real  prec_acc_nc      ij       misc        1         -     rh       "prec_acc_nc"      "ACCUMULATED GRID SCALE  PRECIPITATION OVER prec_acc_dt PERIODS OF TIME"   "mm"
 state   real  snow_acc_nc      ij       misc        1         -     rh       "snow_acc_nc"      "ACCUMULATED SNOW WATER EQUIVALENT OVER prec_acc_dt PERIODS OF TIME"       "mm"
-
-# GAC-->
-# These variables are for the AFWA diagnostics package. Note, in V3.5, some of these have been added
-# inside the NSSL WRF diagnostics (above), and have been commented out.  We need to merge these
-# diagnostics packages together as they are largely duplicated. GAC 20130724
-#state    real   WSPD10MAX        ij     misc        1         -      rh          "WSPD10MAX"      "WIND SPD MAX 10 M"                             "m s-1"
-#state    real   W_UP_MAX         ij     misc        1         -      rh          "W_UP_MAX"       "MAX Z-WIND UPDRAFT"                            "m s-1"
-#state    real   W_DN_MAX         ij     misc        1         -      rh          "W_DN_MAX"       "MAX Z-WIND DOWNDRAFT"                          "m s-1"
-#state    real   REFD_MAX         ij     misc        1         -      rh02       "REFD_MAX"       "MAX DERIVED RADAR REFL"                        "dbZ"
-#state    real   UP_HELI_MAX      ij     misc        1         -      rh          "UP_HELI_MAX"    "MAX UPDRAFT HELICITY"                          "m2 s-2"
-#state    real   UH               ij     misc        1         -      r          "UH"             "UPDRAFT HELICITY"                              "m2 s-2"
-state    real   TCOLI_MAX        ij     misc        1         -      rh          "TCOLI_MAX"      "MAX TOTAL COLUMN INTEGRATED ICE"               "kg m-2"
-state    real   REFD_COM         ij     misc        1         -      rh02       "REFD_COM"       "DERIVED COMPOSITE RADAR REFL"                  "dbZ"
-state    real   REFD             ij     misc        1         -      rh02       "REFD"           "DERIVED RADAR REFL"                            "dbZ"
-state    real   VIL              ij     misc        1         -      rh02       "VIL"             "VERTICALLY INTEGRATED LIQUID WATER"            "kg m-2"
-state    real   RADARVIL         ij     misc        1         -      rh02       "RADARVIL"        "VERTICALLY INTEGRATED LIQUID WATER FROM Ze"    "kg m-2"
-state    real   ECHOTOP          ij     misc        1         -      rh02       "ECHOTOP"         "ECHO TOP HEIGHT FROM Ze"                       "m"
-state    real   FZLEV            ij     misc        1         -      rh02       "FZLEV"           "FREEZING LEVEL"                                "m"
-state    real   ICINGTOP         ij     misc        1         -      rh02       "ICINGTOP"        "TOPMOST ICING LEVEL"                           "m"
-state    real   ICINGBOT         ij     misc        1         -      rh02       "ICINGBOT"        "BOTTOMMOST ICING LEVEL"                        "m"
-state    real   QICING_LG        ikj    misc        1         -      r          "QICING_LG"       "SUPERCOOLED WATER MIXING RATIO (>50 um)"       "kg kg-1"
-state    real   QICING_SM        ikj    misc        1         -      r          "QICING_SM"       "SUPERCOOLED WATER MIXING RATIO (<50 um)"       "kg kg-1"
-state    real   QICING_LG_MAX    ij     misc        1         -      rh02       "QICING_LG_MAX"   "COLUMN MAX ICING MIXING RATIO (>50 um)"        "kg kg-1"
-state    real   QICING_SM_MAX    ij     misc        1         -      rh02       "QICING_SM_MAX"   "COLUMN MAX ICING MIXING RATIO (<50 um)"        "kg kg-1"
-state    real   ICING_LG         ij     misc        1         -      rh02       "ICING_LG"        "TOTAL COLUMN INTEGRATED ICING (>50 um)"        "kg m-2"
-state    real   ICING_SM         ij     misc        1         -      rh02       "ICING_SM"        "TOTAL COLUMN INTEGRATED ICING (<50 um)"        "kg m-2"
-state    real   AFWA_PRECIP      ij     misc        1         -      r          "AFWA_PRECIP"     "AFWA Diagnostic: Precipitation bucket"         "mm"
-state    real   AFWA_RAIN        ij     misc        1         -      rh02       "AFWA_RAIN"       "AFWA Diagnostic: Rain fall"                    "mm"
-state    real   AFWA_SNOW        ij     misc        1         -      rh02       "AFWA_SNOW"       "AFWA Diagnostic: Liq Equiv Snow fall"          "mm"
-state    real   AFWA_ICE         ij     misc        1         -      rh02       "AFWA_ICE"        "AFWA Diagnostic: Ice fall"                     "mm"
-state    real   AFWA_FZRA        ij     misc        1         -      rh02       "AFWA_FZRA"       "AFWA Diagnostic: Freezing rain fall"           "mm"
-state    real   AFWA_SNOWFALL    ij     misc        1         -      rh02       "AFWA_SNOWFALL"   "AFWA Diagnostic: Snow fall"                    "mm"
-state    real   AFWA_VIS         ij     misc        1         -      rh02       "AFWA_VIS"        "AFWA Diagnostic: Visibility"                   "m"
-state    real   AFWA_VIS_DUST    ij     misc        1         -      rh02       "AFWA_VIS_DUST"   "AFWA Diagnostic: Visibility due to dust"       "m"
-state    real   AFWA_CLOUD       ij     misc        1         -      rh02       "AFWA_CLOUD"      "AFWA Diagnostic: Cloud cover fraction"         "fraction"
-state    real   AFWA_CLOUD_CEIL  ij     misc        1         -      rh02       "AFWA_CLOUD_CEIL" "AFWA Diagnostic: Cloud ceiling"                "m"
-state    real   AFWA_CAPE        ij     misc        1         -      rh02       "AFWA_CAPE"       "AFWA Diagnostic: Convective Avail Pot Energy"  "J kg-1"
-state    real   AFWA_ZLFC        ij     misc        1         -      rh02       "AFWA_ZLFC"       "AFWA Diagnostic: Level of Free Convection"     "m"
-state    real   AFWA_PLFC        ij     misc        1         -      rh02       "AFWA_PLFC"       "AFWA Diagnostic: Pressure of LFC"              "Pa"
-state    real   MIDRH_MIN        ij     misc        1         -      rh02       "MIDRH_MIN"       "Min Mid-level relative humidity"               "%"
-state    real   MIDRH_MIN_OLD    ij     misc        1         -      -          "MIDRH_MIN_OLD"   "Previous Min Mid-level relative humidity"      "%"
-state    real   AFWA_HAIL        ij     misc        1         -      rh02       "AFWA_HAIL"       "AFWA Diagnostic: Hail Diameter (Weibull)"      "mm"
-state    real   AFWA_LLWS        ij     misc        1         -      rh02       "AFWA_LLWS"       "AFWA Diagnostic: 0-2000 ft wind shear"         "m s-1"
-state    real   AFWA_TORNADO     ij     misc        1         -      rh02       "AFWA_TORNADO"    "AFWA Diagnostic: Tornado wind speed (Weibull)" "m s-1"
-# <--GAC
-
 
 # Placeholder for decoupled advective tendency diagnostics for non-chem
 state   real  -               ikjf      advh_t      1         -     -         -
@@ -1817,6 +1773,7 @@ rconfig   logical nocolons                namelist,time_control         1       
 rconfig   logical cycling                 namelist,time_control         1             .false. -    "true for cycling (using wrfout file as input data)"
 rconfig   integer output_diagnostics      namelist,time_control         1              0
 rconfig   integer nwp_diagnostics         namelist,time_control         1              0
+rconfig   logical output_ready_flag       namelist,time_control         1             .false. -    "drop a flag called wrfoutReady_d<domain>_<date> after history write" "" ""
 
 # DFI namelist
 rconfig   integer dfi_opt                namelist,dfi_control   1       0     rh   "dfi_opt"                  ""      ""
@@ -2116,21 +2073,9 @@ rconfig   integer scalar_pblmix           namelist,physics      max_domains  0  
 rconfig   integer tracer_pblmix           namelist,physics      max_domains  1         h    "mix 4d tracer variables with pbl scheme 0=no 1=yes" ""
 rconfig   logical use_aero_icbc           namelist,physics     	1              .false. rh    "use_aero_icbc"  "Use GOCART climo 3D aerosols IC/BC data in Thompson-MP-Aero"  "logical flag"
 
-# GAC-->
-# AFWA Diagnostics package namelist options
-rconfig   integer afwa_diag_opt           namelist,afwa         max_domains    0       rh    "afwa_diag_opt"            "AFWA Diagnostic option, 1: on"                                                 ""
-rconfig   integer afwa_ptype_opt          namelist,afwa         max_domains    0       rh    "afwa_ptype_opt"           "AFWA Diagnostic: Precip type option, 1: on"                                    ""
-rconfig   integer afwa_vil_opt            namelist,afwa         max_domains    0       rh    "afwa_vil_opt"             "AFWA Diagnostic: Vert Int Liquid option, 1: on"                                ""
-rconfig   integer afwa_radar_opt          namelist,afwa         max_domains    0       rh    "afwa_radar_opt"           "AFWA Diagnostic: Radar option, 1: on"                                          ""
-rconfig   integer afwa_severe_opt         namelist,afwa         max_domains    0       rh    "afwa_severe_opt"          "AFWA Diagnostic: Severe Wx option, 1: on"                                      ""
-rconfig   integer afwa_icing_opt          namelist,afwa         max_domains    0       rh    "afwa_icing_opt"           "AFWA Diagnostic: Icing option, 1: on"                                          ""
-rconfig   integer afwa_vis_opt            namelist,afwa         max_domains    0       rh    "afwa_vis_opt"             "AFWA Diagnostic: Visibility option, 1: on"                                     ""
-rconfig   integer afwa_cloud_opt          namelist,afwa         max_domains    0       rh    "afwa_cloud_opt"           "AFWA Diagnostic: Cloud option, 1: on"                                          ""
-rconfig   real    afwa_ptype_ccn_tmp      namelist,afwa         1          264.15      h     "afwa_ptype_ccn_tmp"       "AFWA Diagnostic: CCN temperature for precipitation type calculation"           "K"
-rconfig   real    afwa_ptype_tot_melt     namelist,afwa         1            50.0      h     "afwa_ptype_tot_melt"      "AFWA Diagnostic: Total melting energy for precipitation type calculation"      "J kg-1"
-rconfig   real    afwa_ccn_conc           namelist,afwa         1           1.0E8      h     "afwa_ccn_conc"            "AFWA Diagnostic: CCN concentration"                                            "# m-3"
-rconfig   integer afwa_hail_opt           namelist,afwa         1              0       rh    "afwa_hail_opt"            "AFWA Diagnostic: Hail/Graupel switch, 1:hail, 0:graupel"                       ""
-# <--GAC
+# The following two options are hooked into various microphysics schemes to allow for ensemble perturbations of CCN and hail/graupel PSDs - GAC (AFWA)
+rconfig   real    ccn_conc                namelist,physics      1           1.0E8      h     "ccn_conc"                 "CCN concentration"                                                             "# m-3"
+rconfig   integer hail_opt                namelist,physics      1              0       rh    "hail_opt"                 "Hail/Graupel switch, 1:hail, 0:graupel"                                        ""
 
 # For Noah-MP
 rconfig   integer dveg        namelist,noah_mp      1           4         h    "dveg"     "dynamic vegetation (1 -> off ; 2 -> on)"   ""
@@ -2391,6 +2336,7 @@ rconfig   integer  FLAG_SOIL_LAYERS       derived                      1        
 rconfig   integer  FLAG_SLP               derived                      1          0       -        "FLAG_SLP"              "Flag for sea level pressure in the global attributes for metgrid data"
 rconfig   integer  FLAG_SOILHGT           derived                      1          0       -        "FLAG_SOILHGT"          "Flag for soil height in the global attributes for metgrid data"
 rconfig   integer  FLAG_MF_XY             derived                      1          0       -        "FLAG_MF_XY"            "Flag for MF_XYin the global attributes for metgrid data"
+rconfig   integer  FLAG_UM_SOIL           derived                      1          0       -        "FLAG_UM_SOIL"          "Flag for soil fields from the Unified Model in the globl attributes for metgrid data"
 rconfig   real    bdyfrq                  derived                  max_domains    0       -        "bdyfrq"               "lateral boundary input frequency"      "seconds"
 rconfig   character mminlu                derived                  max_domains    " "     -        "mminlu"               "land use dataset"             ""
 rconfig   integer iswater                 derived                  max_domains    0       -        "iswater"              "land use index of water"      "index category"
@@ -2429,7 +2375,7 @@ package   etampnew      mp_physics==5                -             moist:qv,qc,q
 package   wsm6scheme    mp_physics==6                -             moist:qv,qc,qr,qi,qs,qg
 package   gsfcgcescheme mp_physics==7                -             moist:qv,qc,qr,qi,qs,qg
 package   thompson      mp_physics==8                -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr;state:re_cloud,re_ice,re_snow
-package   thompsonaero  mp_physics==28               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr,qnc,qnwfa,qnifa;state:re_cloud,re_ice,re_snow
+package   thompsonaero  mp_physics==28               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr,qnc,qnwfa,qnifa;state:re_cloud,re_ice,re_snow,qnwfa2d
 package   milbrandt2mom mp_physics==9                -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnc,qnr,qni,qns,qng,qnh
 package   morr_two_moment  mp_physics==10            -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qns,qnr,qng
 package   cammgmpscheme mp_physics==11               -             moist:qv,qc,qi,qr,qs;scalar:qnc,qni,qnr,qns;state:rh_old_mp,lcd_old_mp,cldfra_old_mp,cldfra_mp,cldfra_mp_all,cldfra_conv,cldfrai,cldfral,turbtype3d,smaw3d,wsedl3d,icwmrdp3d,dp3d,shfrc3d,dlf,dlf2,tke_pbl,lradius,iradius
@@ -2575,18 +2521,6 @@ package   wenopd_scalar  moist_adv_opt==4            -             -
 
 package   maxmin_output  output_diagnostics==1            -    state:t2min,t2max,tt2min,tt2max,t2mean,t2std,q2min,q2max,tq2min,tq2max,q2mean,q2std,skintempmin,skintempmax,tskintempmin,tskintempmax,skintempmean,skintempstd,u10max,v10max,spduv10max,tspduv10max,u10mean,v10mean,spduv10mean,u10std,v10std,spduv10std,raincvmax,rainncvmax,traincvmax,trainncvmax,raincvmean,rainncvmean,raincvstd,rainncvstd
 package   nwp_output     nwp_diagnostics==1            -       state:wspd10max,w_up_max,w_dn_max,up_heli_max,w_mean,grpl_max
-
-# GAC-->
-# Package declaration for AFWA diagnostics
-package   afwa_diag      afwa_diag_opt==1            -             -
-package   afwa_ptype     afwa_ptype_opt==1           -             state:afwa_precip,afwa_rain,afwa_snow,afwa_ice,afwa_fzra,afwa_snowfall
-package   afwa_vil       afwa_vil_opt==1             -             state:vil,radarvil
-package   afwa_radar     afwa_radar_opt==1           -             state:echotop,refd_com,refd
-package   afwa_severe    afwa_severe_opt==1          -             state:wspd10max,w_up_max,w_dn_max,tcoli_max
-package   afwa_icing     afwa_icing_opt==1           -             state:fzlev,icingtop,icingbot,qicing_lg,qicing_sm,icing_lg,icing_sm,qicing_lg_max,qicing_sm_max
-package   afwa_cloud     afwa_cloud_opt==1           -             state:afwa_cloud
-package   afwa_vis       afwa_vis_opt==1             -             state:afwa_vis,afwa_vis_dust
-# <--GAC
 
 package   dfi_setup      dfi_stage==0                -             -
 package   dfi_bck        dfi_stage==1                -             -

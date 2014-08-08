@@ -1110,6 +1110,7 @@ rconfig   logical adjust_input_times      namelist,time_control         1       
 rconfig   real    tstart                  namelist,time_control     max_domains       0.       irh   "tstart"  "forecast hour at the start of the NMM integration"
 rconfig   logical nocolons                namelist,time_control         1             .false. -    "nocolons"
 rconfig   logical cycling                 namelist,time_control         1             .false. -    "true for cycling (using wrfout file as input data)"
+rconfig   logical output_ready_flag       namelist,time_control         1             .false. -    "drop a flag called wrfoutReady_d<domain>_<date> after history write" "" ""
 
 # DFI namelist
 rconfig   integer dfi_opt                namelist,dfi_control   1       0     rh   "dfi_opt"                ""      ""
@@ -1294,6 +1295,10 @@ rconfig   integer ICLOUD_CU               derived               1             0 
 rconfig   integer num_snso_layers         namelist,physics      1             7       irh    "num_snso_layers"               ""      ""
 rconfig   integer num_snow_layers         namelist,physics   1             3       irh    "num_snow_layers"               ""      ""
 rconfig   logical use_aero_icbc           namelist,physics      1             .false. rh     "use_aero_icbc"  "Use GOCART climo 3D aerosols IC/BC data in Thompson-MP-Aero"  "logical flag"
+
+# The following two options are hooked into various microphysics schemes to allow for ensemble perturbations of CCN and hail/graupel PSDs - GAC (AFWA)
+rconfig   real    ccn_conc                namelist,physics      1           1.0E8      h     "ccn_conc"                 "CCN concentration"                                                             "# m-3"
+rconfig   integer hail_opt                namelist,physics      1              0       rh    "hail_opt"                 "Hail/Graupel switch, 1:hail, 0:graupel"                                        ""
 rconfig   integer sf_lake_physics         namelist,physics      max_domains   0       h     "sf_lake_physics"         "activate lake model  0=no, 1=yes"   ""
 # For Noah-MP
 

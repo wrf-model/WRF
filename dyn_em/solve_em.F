@@ -2620,6 +2620,7 @@ BENCH_END(tracer_adv_tim)
                CALL flow_dep_bdy_qnn  ( scalar(ims,kms,jms,is),     &
                                   grid%ru_m, grid%rv_m, config_flags,   &
                                   grid%spec_zone,                  &
+                                  grid%ccn_conc,              & ! RAS
                                   ids,ide, jds,jde, kds,kde,  & ! domain dims
                                   ims,ime, jms,jme, kms,kme,  & ! memory dims
                                   ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
@@ -3477,6 +3478,7 @@ BENCH_START(micro_driver_tim)
       &        ,kext_ft_qg=grid%kext_ft_qg         &
       &        ,height=grid%height                                         &
       &        ,tempc=grid%tempc                                         &
+      &        ,ccn_conc=grid%ccn_conc                                   & ! RAS
 
                                                                           )
 BENCH_END(micro_driver_tim)

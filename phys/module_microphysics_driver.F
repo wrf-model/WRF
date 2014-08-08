@@ -79,6 +79,7 @@ SUBROUTINE microphysics_driver(                                          &
                       ,diagflag,   do_radar_ref                          &
                       ,re_cloud, re_ice, re_snow                         & ! G. Thompson
                       ,has_reqc, has_reqi, has_reqs                      & ! G. Thompson
+                      ,ccn_conc                                          & ! RAS
                       ,scalar,num_scalar                                   &
                       ,kext_ql,kext_qs,kext_qg            &
                       ,kext_qh,kext_qa                         &
@@ -522,6 +523,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 
 
    LOGICAL, OPTIONAL, INTENT(IN) :: diagflag
+   REAL, INTENT(IN) :: ccn_conc ! RAS
    INTEGER, OPTIONAL, INTENT(IN) :: do_radar_ref
    REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) ::  & ! G. Thompson
                  re_cloud, re_ice, re_snow
@@ -612,12 +614,14 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 
 !-----------
        IF( PRESENT(chem_opt) .AND. PRESENT(progn) ) THEN
-       IF( chem_opt==0 .AND. progn==1 .AND. (mp_physics==LINSCHEME  .OR. mp_physics==MORR_TWO_MOMENT)) THEN
+       !Add pass for dust-only wrf-chem option - RAS
+       IF( (chem_opt==0 .OR. chem_opt==401) .AND. progn==1 .AND. (mp_physics==LINSCHEME  .OR. mp_physics==MORR_TWO_MOMENT)) THEN
           IF( PRESENT( QNDROP_CURR ) ) THEN
              CALL wrf_debug ( 100 , 'microphysics_driver: calling prescribe_aerosol_mixactivate' )
 ! 06-nov-2005 rce - id  & itimestep added to arg list
              call prescribe_aerosol_mixactivate (               &
                   id, itimestep, dt, naer,                      &
+                  ccn_conc, chem_opt,                           & !RAS13.1
                   rho, th, pi_phy, w, cldfra, cldfra_old,       &
                   z, dz8w, p8w, t8w, exch_h,                    &
                   qv_curr, qc_curr, qi_curr, qndrop_curr,       &
@@ -1511,7 +1515,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,NC=qnc_curr                                       &
                  ,NR=qnr_curr                                       &
                  ,DEN=rho,PII=pi_phy,P=p,DELZ=dz8w                  &
-                 ,DELT=dt,G=g,CPD=cp,CPV=cpv,CCN0=n_ccn0            &
+                 ,DELT=dt,G=g,CPD=cp,CPV=cpv,CCN0=ccn_conc          & ! RAS
                  ,RD=r_d,RV=r_v,T0C=svpt0                           &
                  ,EP1=ep_1, EP2=ep_2, QMIN=epsilon                  &
                  ,XLS=xls, XLV0=xlv, XLF0=xlf                       &
@@ -1552,7 +1556,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,NC=qnc_curr                                       &
                  ,NR=qnr_curr                                       &
                  ,DEN=rho,PII=pi_phy,P=p,DELZ=dz8w                  &
-                 ,DELT=dt,G=g,CPD=cp,CPV=cpv,CCN0=n_ccn0            &
+                 ,DELT=dt,G=g,CPD=cp,CPV=cpv,CCN0=ccn_conc          & ! RAS
                  ,RD=r_d,RV=r_v,T0C=svpt0                           &
                  ,EP1=ep_1, EP2=ep_2, QMIN=epsilon                  &
                  ,XLS=xls, XLV0=xlv, XLF0=xlf                       &

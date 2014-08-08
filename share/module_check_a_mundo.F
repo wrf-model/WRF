@@ -818,6 +818,23 @@
          CALL wrf_message ( wrf_err_message )
 
       END IF
+      
+!-----------------------------------------------------------------------
+! If a user requested to compute the radar reflectivity .OR. if this is
+! one of the schemes that ALWAYS computes the radar reflectivity, then
+! turn on the switch that says allocate the space for the refl_10cm array.
+!-----------------------------------------------------------------------
+
+      DO i = 1, model_config_rec % max_dom
+         IF ( ( model_config_rec % mp_physics(i)   .EQ. MILBRANDT2MON ) .OR. &
+              ( model_config_rec % mp_physics(i)   .EQ. NSSL_2MOM     ) .OR. &
+              ( model_config_rec % mp_physics(i)   .EQ. NSSL_2MOMCCN  ) .OR. &
+              ( model_config_rec % mp_physics(i)   .EQ. NSSL_1MOM     ) .OR. &
+              ( model_config_rec % mp_physics(i)   .EQ. NSSL_1MOMFO   ) .OR. &
+              ( model_config_rec % do_radar_ref(1) .EQ. 1             ) ) THEN
+            model_config_rec % compute_radar_ref(1) = 1
+         END IF
+      ENDDO
 
 !-----------------------------------------------------------------------
 ! Set the namelist parameters for the RRTMG radiation scheme if either

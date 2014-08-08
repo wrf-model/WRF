@@ -1274,6 +1274,7 @@ rconfig   logical     disheat             namelist,physics      max_domains  .tr
 rconfig   integer vortex_tracker          namelist,physics      max_domains    1      -      "vortex_tracker" "Vortex Tracking Algorithm" ""
 #end HWRF:
 rconfig   integer     do_radar_ref        namelist,physics      1              0       rh       "compute radar reflectivity for a number of schemes" 
+rconfig   integer     compute_radar_ref   derived               max_domains    0       -        "compute_radar_ref" "0/1 flag: "compute radar reflectivity, either do_radar_ref=1 .or. (milbrandt or NSSL schemes)"
 rconfig   integer     ra_lw_physics       namelist,physics	max_domains    0       rh       "ra_lw_physics"         ""      ""
 rconfig   integer     ra_sw_physics       namelist,physics	max_domains    0       rh       "ra_sw_physics"         ""      ""
 rconfig   real    radt                    namelist,physics	max_domains    0       h    "RADT"          ""      ""
@@ -1514,6 +1515,7 @@ package   wdm5scheme    mp_physics==14               -             moist:qv,qc,q
 package   wdm6scheme    mp_physics==16               -             moist:qv,qc,qr,qi,qs,qg;scalar:qnn,qnc,qnr
 package   etamp_hwrf    mp_physics==85               -             moist:qv,qc,qr,qi,qs;state:f_ice,f_rain,f_rimef
 package   etampold      mp_physics==95               -             moist:qv,qc,qr,qs;state:f_ice,f_rain,f_rimef
+package   radar_refl    compute_radar_ref==1         -             state:refl_10cm
 
 package   nodfimoist        mp_physics_dfi==-1       -             -
 package   passiveqv_dfi     mp_physics_dfi==0        -             dfi_moist:dfi_qv

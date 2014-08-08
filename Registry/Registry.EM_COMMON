@@ -1992,6 +1992,7 @@ rconfig   real        accum_mode          namelist,physics      1             10
 rconfig   real        aitken_mode         namelist,physics      1             300.0e6  rh       "aitken_mode"                 ""      ""
 rconfig   real        coarse_mode         namelist,physics      1             0.2e6    rh       "coarse_mode"                 ""      ""
 rconfig   integer     do_radar_ref        namelist,physics      1              0       rh       "compute radar reflectivity for a number of schemes"                 ""      ""
+rconfig   integer     compute_radar_ref   derived               max_domains    0       -        "compute_radar_ref" "0/1 flag: "compute radar reflectivity, either do_radar_ref=1 .or. (milbrandt or NSSL schemes)"
 rconfig   integer     ra_lw_physics       namelist,physics	max_domains    0       rh       "ra_lw_physics"         ""      ""
 rconfig   integer     ra_sw_physics       namelist,physics	max_domains    0       rh       "ra_sw_physics"         ""      ""
 rconfig   real    radt                    namelist,physics	max_domains    0       h    "RADT"          ""      ""
@@ -2441,6 +2442,7 @@ package   nssl_2momccn  mp_physics==18                -            moist:qv,qc,q
 package   nssl_1mom     mp_physics==19               -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qvolg
 package   nssl_1momlfo  mp_physics==21               -             moist:qv,qc,qr,qi,qs,qg
 package   etampold      mp_physics==95               -             moist:qv,qc,qr,qs;scalar:qt;state:f_ice_phy,f_rain_phy,f_rimef_phy
+package   radar_refl    compute_radar_ref==1         -             state:refl_10cm
 endif
 
 package   nodfimoist        mp_physics_dfi==-1       -             -

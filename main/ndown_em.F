@@ -368,7 +368,15 @@ real :: cf1_c,cf2_c,cf3_c,cfn_c,cfn1_c
             CALL close_dataset      ( fid , config_flags , "DATASET=INPUT" )
             file_counter = file_counter + 1
             IF ( file_counter .GT. number_of_eligible_files ) THEN
-               WRITE( wrf_err_message , FMT='(A,A,A,I8)' ) 'program ndown: opening too many files'
+               WRITE( wrf_err_message , FMT='(A)' ) 'program ndown: opening too many files'
+               CALL wrf_message ( TRIM(wrf_err_message) )
+               WRITE( wrf_err_message , FMT='(A)' ) 'Usually, this is caused by trying to run ndown past the last time available d01 model output'
+               CALL wrf_message ( TRIM(wrf_err_message) )
+               WRITE( wrf_err_message , FMT='(A)' ) 'The CG model output is used to supply lateral boundary conditions'
+               CALL wrf_message ( TRIM(wrf_err_message) )
+               WRITE( wrf_err_message , FMT='(A)' ) 'The ndown program uses the start and end times, the WRF model for d01 likely used the run times option.'
+               CALL wrf_message ( TRIM(wrf_err_message) )
+               WRITE( wrf_err_message , FMT='(A)' ) 'Check the namelist.input time_control section for inconsistencies.'
                CALL WRF_ERROR_FATAL ( wrf_err_message )
             END IF
             CALL wrf_debug      ( 100 , 'ndown_em main: calling open_r_dataset for ' // TRIM(eligible_file_name(file_counter)) )

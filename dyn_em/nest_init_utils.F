@@ -35,6 +35,8 @@ SUBROUTINE init_domain_constants_em ( parent , nest )
    nest%tlp     = parent%tlp
    nest%p00     = parent%p00
    nest%t00     = parent%t00
+   nest%tlp_strat= parent%tlp_strat
+   nest%p_strat = parent%p_strat
 !cyl: variables for trajectory /float
    nest%traj_k = parent%traj_k
    nest%traj_long = parent%traj_long

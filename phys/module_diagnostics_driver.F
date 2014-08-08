@@ -328,6 +328,7 @@ CONTAINS
                     ,RAINCV=grid%raincv    ,RAINNCV=grid%rainncv           &
                     ,DT=grid%dt                                            &
                     ,XTIME=grid%xtime,CURR_SECS2=curr_secs2                &
+                    ,NSTEPS=grid%nsteps                                    &
          ! Dimension arguments
                     ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde     &
                     ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme     &

@@ -2389,7 +2389,7 @@ package   nssl_2momccn  mp_physics==18                -            moist:qv,qc,q
 package   nssl_1mom     mp_physics==19               -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qvolg
 package   nssl_1momlfo  mp_physics==21               -             moist:qv,qc,qr,qi,qs,qg
 package   etampold      mp_physics==95               -             moist:qv,qc,qr,qs;scalar:qt;state:f_ice_phy,f_rain_phy,f_rimef_phy
-ackage   radar_refl    compute_radar_ref==1         -             state:refl_10cm,refd_mae
+package   radar_refl    compute_radar_ref==1         -             state:refl_10cm,refd_max
 endif
 
 package   nodfimoist        mp_physics_dfi==-1       -             -

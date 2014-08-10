@@ -254,7 +254,8 @@ BENCH_END(phy_prep_tim)
 BENCH_START(rad_driver_tim)
 
       CALL radiation_driver(                                                  &
-     &         ACFRCV=grid%acfrcv      ,ACFRST=grid%acfrst      ,ALBEDO=grid%albedo  &
+     &         p_top=grid%p_top & !DJW 140312 added p_top for vertical nesting
+     &        ,ACFRCV=grid%acfrcv      ,ACFRST=grid%acfrst      ,ALBEDO=grid%albedo  &
      &        ,CFRACH=grid%cfrach      ,CFRACL=grid%cfracl      ,CFRACM=grid%cfracm  &
      &        ,CUPPT=grid%cuppt        ,CZMEAN=grid%czmean      ,DT=grid%dt          &
      &        ,DZ8W=dz8w               ,EMISS=grid%emiss        ,GLW=grid%glw        &

@@ -237,9 +237,11 @@ real::t1,t2
          ok_so_far = .TRUE.
 
          DO loop = 2 , model_config_rec%max_dom
+            IF ( model_config_rec%vert_refine_method(loop) .EQ. 0 ) THEN
             IF ( model_config_rec%e_vert(loop) .NE.  model_config_rec%e_vert(1) ) THEN
                CALL  wrf_message ( 'e_vert must be the same for each domain' )
                ok_so_far = .FALSE.
+              END IF
             END IF
          END DO
          IF ( .NOT. ok_so_far ) THEN

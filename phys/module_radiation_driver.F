@@ -21,6 +21,7 @@ CONTAINS
               ,AER_OPT, aerod           &
               ,swint_opt                &
               ,P8W    ,P ,PI            &
+              ,p_top                    &
               ,RADT   ,RA_CALL_OFFSET   &
               ,RHO    ,RLWTOA           &
               ,RSWTOA ,RTHRATEN         &
@@ -632,6 +633,10 @@ CONTAINS
          OPTIONAL,                                                &
          INTENT(INOUT)  ::                       o3rad
 
+   ! vert nesting
+   REAL, OPTIONAL , INTENT(IN   ) :: p_top
+   REAL                           :: p_top_dummy
+
 ! LOCAL  VAR
 
    REAL, DIMENSION( ims:ime, jms:jme ) ::             GLAT,GLON
@@ -671,6 +676,7 @@ CONTAINS
    real, dimension(ims:ime,jms:jme) :: coszen_loc,hrang_loc
 ! jararias 2013/11
    real, dimension(:,:,:,:), allocatable :: tauaer_sw, ssaaer_sw, asyaer_sw
+
 
 #ifdef HWRF
    CHARACTER(len=265) :: wrf_err_message
@@ -1092,8 +1098,14 @@ CONTAINS
         CASE (RRTMSCHEME)
              CALL wrf_debug (100, 'CALL rrtm')
 
+             IF ( PRESENT(p_top) ) THEN
+                p_top_dummy = p_top
+             ELSE
+                p_top_dummy = -1. ! not used by NMM
+             END IF
              CALL RRTMLWRAD(                                        &
-                  RTHRATEN=RTHRATEN,GLW=GLW,OLR=RLWTOA,EMISS=EMISS  &
+                  P_TOP=p_top_dummy                                 & 
+                 ,RTHRATEN=RTHRATEN,GLW=GLW,OLR=RLWTOA,EMISS=EMISS  &
                  ,QV3D=QV                                           &
                  ,QC3D=QC                                           &
                  ,QR3D=QR                                           &

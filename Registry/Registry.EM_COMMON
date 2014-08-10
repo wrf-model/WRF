@@ -101,7 +101,6 @@ state    real   sct_dom_gc     ij       dyn_em      1        -     i1  "SCT_DOM"
 state    real   scb_dom_gc     ij       dyn_em      1        -     i1  "SCB_DOM"  "Dominant soil (bottom) category from GEOGRID"  "cat"
 state    real   greenfrac      imj      dyn_em      1        Z     i1  "GREENFRAC" "monthly greenness fraction" "0 - 1 fraction"
 state    real   albedo12m      imj      dyn_em      1        Z     i1  "ALBEDO12M" "background albedo" "0 - 1 fraction"
-state    real   lai_veg_8day   i^j      dyn_em      1        Z     i1  "LAI_VEG_8DAY" "eight-day MODIS LAI veg; 0=no dust produced (vegetation)" "0 - 1 fraction"
 state    real   lai12m         imj      dyn_em      1        Z     i1  "LAI12M" "monthly LAI" "m2/m2"
 state    real   pd_gc          igj      dyn_em      1        Z     -   "PD"    "dry pressure"        "Pa"
 state    real   pdrho_gc       igj      dyn_em      1        Z     -   "PDRHO"    "dry pressure for UM data for the variables U and V"   "Pa"
@@ -224,10 +223,11 @@ i1       real   ph_tendf       ikj     dyn_em      1         Z
 i1       real   ph_save        ikj     dyn_em      1         Z 
 
 # Potential Temperature
+#KAL added d (interpolating down to t_init) for the vertical nesting code
 state    real   t              ikjb     dyn_em      2         -     \
        i0rhusdf=(bdy_interp:dt)   "t"      "perturbation potential temperature (theta-t0)" "K"
 
-state    real   t_init         ikj     dyn_em      1         -      ir       "t_init" "initial potential temperature" "K"
+state    real   t_init         ikj     dyn_em      1         -      ird       "t_init" "initial potential temperature" "K"
 i1       real   t_tend         ikj     dyn_em      1         -  
 i1       real   t_tendf        ikj     dyn_em      1         -  
 i1       real   t_2save        ikj     dyn_em      1         -   
@@ -1829,7 +1829,8 @@ rconfig   integer num_metgrid_soil_levels namelist,domains	1             4      
 rconfig   real    p_top_requested         namelist,domains      1              5000    irh    "p_top_requested" "Pa"      ""
 rconfig   logical interp_theta            namelist,domains	1              .false. irh    "interp_theta"  "inside real, vertically interpolate theta (T) or temperature (F)"  ""
 rconfig   integer interp_type             namelist,domains	1              2       irh    "interp_type"  "1=interp in pressure, 2=interp in LOG pressure"  ""
-rconfig   integer vert_refine_fact        namelist,domains      1              1       irh    "vertical refinment factor for ndown"  ""
+rconfig   integer vert_refine_method      namelist,domains      max_domains    0       irh    "vert_refine_method"  "0=no vertical nesting, 1=integer refinement, 2=native WRF" ""
+rconfig   integer vert_refine_fact        namelist,domains      1              1       irh    "vertical refinment factor for ndown or for vertical nesting in a concurrent run"  "" ""
 rconfig   integer extrap_type             namelist,domains	1              2       irh    "extrap_type"  "1= use 2 lowest levels, 2=constant"  ""
 rconfig   integer t_extrap_type           namelist,domains	1              2       irh    "t_extrap_type"  "1=isothermal, 2=6.5 K/km, 3=adiabatic"   ""
 rconfig   integer hypsometric_opt         namelist,domains      1              2       irh    "hypsometric_opt"  "Z relates P, 1=linearly, 2=LOG-linearly"  ""
@@ -1949,7 +1950,7 @@ rconfig   real        accum_mode          namelist,physics      1             10
 rconfig   real        aitken_mode         namelist,physics      1             300.0e6  rh       "aitken_mode"                 ""      ""
 rconfig   real        coarse_mode         namelist,physics      1             0.2e6    rh       "coarse_mode"                 ""      ""
 rconfig   integer     do_radar_ref        namelist,physics      1              0       rh       "compute radar reflectivity for a number of schemes"                 ""      ""
-rconfig   integer     compute_radar_ref   derived               max_domains    0       -        "compute_radar_ref" "0/1 flag: "compute radar reflectivity, either do_radar_ref=1 .or. (milbrandt or NSSL schemes)"
+rconfig   integer     compute_radar_ref   derived               1              0       -        "compute_radar_ref" "0/1 flag: compute radar reflectivity, either do_radar_ref=1 .or. (milbrandt or NSSL schemes)"
 rconfig   integer     ra_lw_physics       namelist,physics	max_domains    0       rh       "ra_lw_physics"         ""      ""
 rconfig   integer     ra_sw_physics       namelist,physics	max_domains    0       rh       "ra_sw_physics"         ""      ""
 rconfig   real    radt                    namelist,physics	max_domains    0       h    "RADT"          ""      ""
@@ -2388,7 +2389,7 @@ package   nssl_2momccn  mp_physics==18                -            moist:qv,qc,q
 package   nssl_1mom     mp_physics==19               -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qvolg
 package   nssl_1momlfo  mp_physics==21               -             moist:qv,qc,qr,qi,qs,qg
 package   etampold      mp_physics==95               -             moist:qv,qc,qr,qs;scalar:qt;state:f_ice_phy,f_rain_phy,f_rimef_phy
-package   radar_refl    compute_radar_ref==1         -             state:refl_10cm
+ackage   radar_refl    compute_radar_ref==1         -             state:refl_10cm,refd_mae
 endif
 
 package   nodfimoist        mp_physics_dfi==-1       -             -

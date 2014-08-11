@@ -70,6 +70,7 @@ MODULES =                                 \
         module_fastj_mie.o                \
         module_input_chem_data.o          \
         module_mosaic_coag.o              \
+        module_mosaic_gly.o               \
         module_mosaic_wetscav.o           \
         module_mosaic_therm.o             \
         module_phot_mad.o                 \

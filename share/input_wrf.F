@@ -535,18 +535,8 @@
 
     CALL wrf_get_dom_ti_char ( fid , 'MMINLU', mminlu , ierr )
     IF ( ierr .NE. 0 ) THEN
-#if ( WRF_CHEM == 1 )
-      IF ( config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP ) then
-        WRITE(wrf_err_message,*)'MMINLU error on input - will set mminlu to MODIFIED_IGBP_MODIS_NOAH in share/input_wrf.F'
-        mminlu = "MODIFIED_IGBP_MODIS_NOAH"
-      ELSE
-        WRITE(wrf_err_message,*)'MMINLU error on input'
-        mminlu = " "
-      ENDIF
-#else
       WRITE(wrf_err_message,*)'MMINLU error on input'
       mminlu = " "
-#endif
       CALL wrf_debug ( 0 , wrf_err_message )
     ELSE IF ( ( ( mminlu(1:1) .GE. "A" ) .AND. ( mminlu(1:1) .LE. "Z" ) ) .OR. &
               ( ( mminlu(1:1) .GE. "a" ) .AND. ( mminlu(1:1) .LE. "z" ) ) .OR. &

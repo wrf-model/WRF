@@ -172,7 +172,7 @@
  {170:130 } ISOP+NO3=ISOPNO3               : ARR2(3.03e-12_dp, 446._dp, TEMP) ;
  {171:131 } ISOPNO3+NO=1.206 NO2+.794 HO2+.072 CH2O+.167 MACR+.039 MVK+.794 ONITR  : ARR2(2.7e-12_dp, -360._dp, TEMP) ;
  {172:132 } ISOPNO3+NO3=1.206 NO2+.072 CH2O+.167 MACR+.039 MVK+.794 ONITR+.794 HO2 : 2.4e-12_dp ;
- {173:133 } ISOPNO3+HO2=.206 NO2+.794 HO2+.008 CH2O+.167 MACR+.039 MVK+.794 ONITR  : ARR2(8.e-13_dp, -700._dp, TEMP) ;
+ {173:133 } ISOPNO3+HO2=.206 NO2+.206 OH+.206 CH2O+.167 MACR+.039 MVK+.794 ONITR : ARR2(8.e-13_dp, -700._dp, TEMP) ;
  {174:134 } CH3COCHO+OH=CH3CO3+CO{+H2O}    : ARR2(8.4e-13_dp, -830._dp, TEMP) ;
  {175:135 } CH3COCHO+NO3=HNO3+CO+CH3CO3    : ARR2(1.4e-12_dp, 1860._dp, TEMP) ;
  {176:136 } ONITR+OH=HYDRALD+HO2+.4 NO2    : 4.5e-11_dp ;
@@ -194,6 +194,6 @@
  {192:152 } DMS+OH=SO2                     : ARR2(9.6e-12_dp, 234._dp, TEMP) ;
  {193:153 } DMS+OH=.5 SO2+.5 HO2           : usr24( temp, c_m ) ;
  {194:154 } DMS+NO3=SO2+HNO3               : ARR2(1.9e-13_dp, -520._dp, TEMP) ;
- {195:155 } NH3+OH=M                       : ARR2(1.7e-12_dp, -710._dp, TEMP) ;
+ {195:155 } NH3+OH=M                       : ARR2(1.7e-12_dp, 710._dp, TEMP) ;
  {196:156 } HO2=.5 H2O2                    : usr26( rh, temp ) ;
  {197:157 } C2H5O2+C2H5O2=1.6 CH3CHO+1.2 HO2+.4 C2H5OH  : 6.8e-14_dp ;

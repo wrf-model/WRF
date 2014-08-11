@@ -1,4 +1,4 @@
-#MODEL mozart_mosaic_4bin_vbs0
+#MODEL mozart_mosaic_4bin_aq
 #LANGUAGE Fortran90
 #DOUBLE ON
 #INTEGRATOR WRF_conform/rosenbrock

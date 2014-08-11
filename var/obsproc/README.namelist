@@ -1,13 +1,9 @@
 
 ;-----------------------------------------------------------------------------
-; Readme for the namelist of the 3/4DVAR observation processor (obsproc).
-; To create the namelist.obsproc file by edit namelist.obsproc.wrfvar-tut
+; README for the namelist of the 3/4DVAR observation processor (obsproc).
+; Users can create namelist.obsproc by editing sample namelist.obsproc.wrfvar-tut
 ;
-; The meanings for the namelist records are explained below.
-;
-;                                                  Updated for V3.1 Mar. 17 2009
-
-;                                                  Yong-Run Guo June 4 2003
+; The meanings of the namelist records are explained below.
 ;
 ;-----------------------------------------------------------------------------
 
@@ -15,7 +11,9 @@
 ;obs_gts_filename: name and path of decoded observation file
 ;fg_format       : 'MM5' for MM5 application, 'WRF' for WRF application
 ;obserr.txt      : name and path of observational error file
-;first_guess_file: name and path of the first guess file
+;first_guess_file: name and path of the first guess file, for MM5 application only
+;gts_from_mmm_archive:  set to .true. if decoded observation file is from
+;                       NCAR/MMM hsi:/BRESCH/RT/DATA/ccyymm/obs.ccyymmddhh.gz
 /
 
 &record2
@@ -23,12 +21,12 @@
 ;time_analysis = '2007-01-02_00:00:00', : The analysis time as ccyy-mm-dd_hh:mn:ss
 ;time_window_max = '2007-01-02_11:00:00',: The latest time edge as ccyy-mm-dd_hh:mn:ss
 ; Only observations between 
-;       [time_window_min,time_window_max] will kept.
+;       [time_window_min,time_window_max] will be kept.
 ; 
 ; When no first guess as input file:
 ; time_window_min: Beginning of time window (included) as ccyy-mm-dd_hh:mn:ss
 ; time_window_max: End of time window (included) as ccyy-mm-dd_hh:mn:ss
-; Only observations between [time_window_min, time_window_max] will kept.
+; Only observations between [time_window_min, time_window_max] will be kept.
 /
 
 &record3
@@ -55,6 +53,10 @@
 ;                    .TRUE. thining procedure applied to SSMI data.
 ; Thining_QSCAT    : .FALSE. no thining for QSCAT data,
 ;                    .TRUE. thining procedure applied to QSCAT data.
+; calc_psfc_from_QNH: valid for gts_from_mmm_archive=.true. only.
+;                     set to .true. for calculating surface pressure from METAR
+;                     QNH value. QNH value is stored in psfc field in the 
+;                     NCAR/MMM decoded observation file.
 /
 
 &record5

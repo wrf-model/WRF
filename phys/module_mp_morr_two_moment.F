@@ -805,7 +805,7 @@ SUBROUTINE MP_MORR_TWO_MOMENT(ITIMESTEP,                       &
 ! ADD SEDIMENTATION TENDENCIES
                                   QGSTEN,QRSTEN,QISTEN,QNISTEN,QCSTEN, &
                                   nc1d, nc_tend1d, iinum, C2PREC,CSED,ISED,SSED,GSED,RSED & !wrf-chem
-#if (WRF_CHEM = 1)
+#if (WRF_CHEM == 1)
                                   ,rainprod1d, evapprod1d & !wrf-chem
 #endif
                        )
@@ -862,7 +862,7 @@ SUBROUTINE MP_MORR_TWO_MOMENT(ITIMESTEP,                       &
 !          EFFIS(I,K,J)     = MIN(EFFI(I,K,J),130.)
 !          EFFIS(I,K,J)     = MAX(EFFIS(I,K,J),13.)
 
-#if ( WRF_CHEM = 1)
+#if ( WRF_CHEM == 1)
            IF ( PRESENT( rainprod ) ) rainprod(i,k,j) = rainprod1d(k)
            IF ( PRESENT( evapprod ) ) evapprod(i,k,j) = evapprod1d(k)
 #endif
@@ -909,7 +909,7 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
                         QGSTEN,QRSTEN,QISTEN,QNISTEN,QCSTEN, &
                         nc3d,nc3dten,iinum, & ! wrf-chem
 				c2prec,CSED,ISED,SSED,GSED,RSED  &  ! hm added, wrf-chem
-#if (WRF_CHEM = 1)
+#if (WRF_CHEM == 1)
         ,rainprod, evapprod &
 #endif
                         )
@@ -1224,7 +1224,7 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 
 ! FOR WRF-CHEM
 	REAL, DIMENSION(KTS:KTE)::C2PREC,CSED,ISED,SSED,GSED,RSED
-#if (WRF_CHEM = 1)
+#if (WRF_CHEM == 1)
     REAL, DIMENSION(KTS:KTE), INTENT(INOUT) :: rainprod, evapprod
 #endif
     REAL, DIMENSION(KTS:KTE)                :: tqimelt ! melting of cloud ice (tendency)
@@ -1253,7 +1253,7 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 		GSED(K)=0.
 		RSED(K)=0.
 
-#if (WRF_CHEM = 1)
+#if (WRF_CHEM == 1)
          rainprod(K) = 0.
          evapprod(K) = 0.
          tqimelt(K)  = 0.
@@ -2025,7 +2025,7 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
       T3DTEN(K) = T3DTEN(K)+PCC(K)*XXLV(K)/CPM(K)
       QC3DTEN(K) = QC3DTEN(K)+PCC(K)
 
-#if (WRF_CHEM = 1)
+#if (WRF_CHEM == 1)
          evapprod(k) = - PRE(K) - EVPMS(K) - EVPMG(K)
          rainprod(k) = PRA(K) + PRC(K) + tqimelt(K)
 #endif
@@ -3269,7 +3269,7 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
          NG3DTEN(K) = NG3DTEN(K)+NSUBG(K)
          NR3DTEN(K) = NR3DTEN(K)+NSUBR(K)
 
-#if (WRF_CHEM = 1)
+#if (WRF_CHEM == 1)
          evapprod(k) = - PRE(K) - EPRDS(K) - EPRDG(K) 
          rainprod(k) = PRA(K) + PRC(K) + PSACWS(K) + PSACWG(K) + PGSACW(K) & 
                        + PRAI(K) + PRCI(K) + PRACI(K) + PRACIS(K) + &
@@ -3755,7 +3755,7 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
         IF (QI3D(K).GE.QSMALL.AND.T3D(K).GE.273.15) THEN
            QR3D(K) = QR3D(K)+QI3D(K)
            T3D(K) = T3D(K)-QI3D(K)*XLF(K)/CPM(K)
-#if (WRF_CHEM = 1)
+#if (WRF_CHEM == 1)
            tqimelt(K)=QI3D(K)/DT
 #endif
            QI3D(K) = 0.

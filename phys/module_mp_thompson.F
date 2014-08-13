@@ -2197,6 +2197,8 @@
             prr_rcg(k) = tcg_racg(idx_g1,idx_g,idx_r1,idx_r)
             prr_rcg(k) = MIN(DBLE(rg(k)*odts), prr_rcg(k))
             prg_rcg(k) = -prr_rcg(k)
+!..Put in explicit drop break-up due to collisions.
+            pnr_rcg(k) = -5.*tnr_gacr(idx_g1,idx_g,idx_r1,idx_r)         ! RAIN2M
            endif
           endif
          endif

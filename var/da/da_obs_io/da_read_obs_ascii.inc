@@ -211,14 +211,6 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
          platform%loc%slp%inv, platform%loc%slp%qc, platform%loc%slp%error, &
          platform%loc%pw%inv, platform%loc%pw%qc, platform%loc%pw%error
 
-      ! levels < 1 and .not.GPSPW and .not.GPSZD, go back to reports
-
-      if ((platform%info%levels < 1) .AND.   &
-         ( (index(platform%info%platform, 'GPSPW') <= 0) .and. &
-           (index(platform%info%platform, 'GPSZD') <= 0) )) then
-         cycle reports
-      end if
-
       ! read each level
       ! ---------------
 
@@ -424,7 +416,6 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
       end if
       
       obs_index = fm_index(fm)
-      iv%info(obs_index)%max_lev = max(iv%info(obs_index)%max_lev, nlevels)
 
       IF ( wind_sd ) THEN
          wind_sd_buoy   = .true.

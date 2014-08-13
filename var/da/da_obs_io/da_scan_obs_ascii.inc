@@ -146,14 +146,6 @@ subroutine da_scan_obs_ascii (iv, filename, grid)
          platform%loc%slp%inv, platform%loc%slp%qc, platform%loc%slp%error, &
          platform%loc%pw%inv, platform%loc%pw%qc, platform%loc%pw%error
 
-      ! levels < 1 and .not.GPSPW and .not.GPSZTD, go back to reports
-
-      if ((platform%info%levels < 1) .AND.            &
-         ( (index(platform%info%platform, 'GPSPW') <= 0) .and. &
-           (index(platform%info%platform, 'GPSZD') <= 0) )) then
-         cycle reports
-      end if
-
       ! read each level
 
       nlevels= platform%info%levels 

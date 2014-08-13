@@ -1181,8 +1181,8 @@ state    real  NCA              ij      misc        1         -      r        "N
 state    integer  LOWLYR        ij      misc        1         -     -         "LOWLYR"                "INDEX OF LOWEST MODEL LAYER ABOVE THE GROUND IN BMJ SCHEME"   ""      
 state    real  MASS_FLUX        ij      misc        1         -      r        "MASS_FLUX"             "DOWNDRAFT MASS FLUX FOR IN GRELL CUMULUS SCHEME"  "mb hour-1"
 # ckay
-state    real  cldfra_dp        ikj     misc        1         -      -        "CLDFRA_DP"             "DEEP CONVECTIVE CLOUD FRACTION FROM KF"  ""
-state    real  cldfra_sh        ikj     misc        1         -      -        "CLDFRA_SH"             "SHALLOW CONVECTIVE CLOUD FRACTION FROM KF"  ""
+state    real  cldfra_dp        ikj     misc        1         -      r        "CLDFRA_DP"             "DEEP CONVECTIVE CLOUD FRACTION FROM KF"  ""
+state    real  cldfra_sh        ikj     misc        1         -      r        "CLDFRA_SH"             "SHALLOW CONVECTIVE CLOUD FRACTION FROM KF"  ""
 state    real  apr_gr           ij      misc        1         -      r       "APR_GR"                "PRECIP FROM CLOSURE OLD_GRELL"   "mm hour-1"
 state    real  apr_w            ij      misc        1         -      r       "APR_W"                 "PRECIP FROM CLOSURE W"           "mm hour-1"
 state    real  apr_mc           ij      misc        1         -      r       "APR_MC"                "PRECIP FROM CLOSURE KRISH MV"    "mm hour-1"

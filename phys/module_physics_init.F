@@ -761,7 +761,19 @@ integer myproc
 !-- temporary fix by ww
    landuse_ISICE = isice
 
-!
+!..Determine which cu_rad_feedback option to use
+
+   icloud_cu = 0
+   IF ( config_flags%cu_rad_feedback ) THEN
+      IF ( config_flags%cu_physics == kfetascheme ) THEN
+         icloud_cu = 2
+      ELSE IF ( config_flags%cu_physics == gfscheme .OR. &
+                config_flags%cu_physics == g3scheme .OR. &
+                config_flags%cu_physics == gdscheme ) THEN
+         icloud_cu = 1
+      END IF
+   END IF
+   CALL nl_set_icloud_cu ( id , icloud_cu )
 
   IF(.not.restart)THEN
 !-- initialize common variables
@@ -872,20 +884,6 @@ integer myproc
            raincv_b(i,j)=0.
       end do
     end do
-
-!..Determine which cu_rad_feedback option to use 
-
-   icloud_cu = 0
-   IF ( config_flags%cu_rad_feedback ) THEN  
-      IF ( config_flags%cu_physics == kfetascheme ) THEN
-         icloud_cu = 2
-      ELSE IF ( config_flags%cu_physics == gfscheme .OR. &
-                config_flags%cu_physics == g3scheme .OR. &
-                config_flags%cu_physics == gdscheme ) THEN
-         icloud_cu = 1
-      END IF
-   END IF
-   CALL nl_set_icloud_cu ( id , icloud_cu )
 
 !..Fill initial starting values of radiative effective radii for
 !.. cloud water (2.51 microns), cloud ice (5.01 microns), and

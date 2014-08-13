@@ -1117,7 +1117,7 @@ integer::oops1,oops2
                                        its , ite , jts , jte , kts , kte )
          ENDIF
 
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
          ! Chose the appropriate LAI veg mask for this date (used in the AFWA dust model)
 
          CALL eightday_selector ( grid%lai_veg_8day , current_date , grid%lai_vegmask , &

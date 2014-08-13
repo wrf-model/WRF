@@ -11,7 +11,7 @@ MODULE module_dm
 
    IMPLICIT NONE
 
-#if ( NMM_CORE == 1 ) || defined( WRF_CHEM ) 
+#if ( NMM_CORE == 1 ) || ( WRF_CHEM == 1 ) 
    INTEGER, PARAMETER :: max_halo_width = 6
 #else
    INTEGER, PARAMETER :: max_halo_width = 6 ! 5

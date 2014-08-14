@@ -44,7 +44,7 @@ qc_rej_both               = .false  ; .true.: if either u or v (spd or dir) do n
   ob_format               = 2       ; 1: ob_format_bufr (NCEP PREPBUFR), read in data from ob.bufr
                                     ; 2: ob_format_ascii (output from obsproc), read in data from ob.ascii (default)
   ob_format_gpsro         = 2       ; 1: read in GPSRO data from gpsro.bufr
-                                    ; 1: read in GPSRO data from ob.ascii (default)
+                                    ; 2: read in GPSRO data from ob.ascii (default)
   num_fgat_time           = 1       ; 1: 3DVAR
                                     ; > 1: number of time slots for FGAT and 4DVAR
 /

@@ -7832,11 +7832,9 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
   integer                                      :: i,j,n,fldsize
   integer                                      :: XType
   character (80)                               :: NullName
-  logical                                      :: NotFound, onbdy
+  logical                                      :: NotFound
   integer, dimension(1,1)                      :: tmp0dint
   integer, dimension(:,:,:), allocatable       :: tmp2dint
-
-  onbdy = .false.
 
  !Local, possibly adjusted, copies of MemoryStart and MemoryEnd
   MemoryOrder = trim(adjustl(MemoryOrdIn))
@@ -8121,11 +8119,11 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
                                DH%iodesc2d_m_int, tmp2dint, Status)
          deallocate(tmp2dint)
       else
-        call FieldIO('write',onbdy,DataHandle,DateStr,Length_global,VStart,VCount,Length,MemoryOrder, &
+        call FieldIO('write',DataHandle,DateStr,Length_global,VStart,VCount,Length,MemoryOrder, &
                       Stagger,FieldType,Field,Status)
       endif
     else
-       call FieldIO('write',onbdy,DataHandle,DateStr,Length_global,VStart,VCount,Length,MemoryOrder, &
+       call FieldIO('write',DataHandle,DateStr,Length_global,VStart,VCount,Length,MemoryOrder, &
                      Stagger,FieldType,Field,Status)
     end if
     if(Status /= WRF_NO_ERR) then
@@ -8189,11 +8187,10 @@ subroutine ext_pio_read_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
   integer                                      :: stat
   integer                                      :: i, j, n, fldsize
   integer                                      :: FType
-  logical                                      :: isbdy, onbdy
+  logical                                      :: isbdy
   integer, dimension(:,:,:), allocatable       :: tmp2dint
   character (len=2)                            :: readinStagger
 
-  onbdy = .false.
   MemoryOrder = trim(adjustl(MemoryOrdIn))
 
   call GetDim(MemoryOrder,NDim,Status)
@@ -8410,38 +8407,22 @@ subroutine ext_pio_read_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
          enddo
          deallocate(tmp2dint)
       else
-        call FieldIO('read',onbdy,DataHandle,DateStr,VDimen,VStart,VCount,Length,MemoryOrder, &
+        call FieldIO('read',DataHandle,DateStr,VDimen,VStart,VCount,Length,MemoryOrder, &
                       readinStagger,FieldType,Field,Status)
       endif
     else
-     !write(unit=0, fmt='(3a,i6)') 'file: ',__FILE__,', line', __LINE__
-     !write(unit=0, fmt='(a,i6,2a)') 'DH%CurrentVariable = ', DH%CurrentVariable, ', name: ', trim(VarName)
-
       isbdy = is_boundary(MemoryOrder)
       if(isbdy) then
        !write(unit=0, fmt='(//3a,i6)') 'file: ',__FILE__,', line', __LINE__
        !write(unit=0, fmt='(4x,a,i6,2a)') 'DH%CurrentVariable = ', DH%CurrentVariable, ', name: ', trim(VarName)
 
-        VCount(NVarDims) = MemoryEnd(1) - MemoryStart(1) + 1
-        VStart(NVarDims) = 1
-
-        if(1 == PatchStart(1)) then
-          onbdy = .true.
-          VStart(NVarDims) = PatchStart(1) - MemoryStart(1) + 1
-        end if
-
-        if(VDimen(1) == PatchEnd(1)) then
-          onbdy = .true.
-        end if
-
-       !write(unit=0, fmt='(4x,2(a,i6))') &
-       !     'VStart(1)=', VStart(1), ', VCount(1)=', VCount(1)
-       !write(unit=0, fmt='(4x,2(a,i2,a,i6))') &
-       !     'VStart(', NVarDims, ')=', VStart(NVarDims), ', VCount(', NVarDims, ')=', VCount(NVarDims)
+        call FieldBDY('read',DataHandle,DateStr,NDim,VDimen, &
+                      MemoryStart,MemoryEnd,PatchStart,PatchEnd, &
+                      FieldType,Field,Status)
+      else
+        call FieldIO('read',DataHandle,DateStr,VDimen,VStart,VCount,Length,MemoryOrder, &
+                      readinStagger,FieldType,Field,Status)
       endif
-
-      call FieldIO('read',onbdy,DataHandle,DateStr,VDimen,VStart,VCount,Length,MemoryOrder, &
-                    readinStagger,FieldType,Field,Status)
     endif
     if(stat /= 0) then
       Status = WRF_ERR_FATAL_DEALLOCATION_ERR

@@ -946,12 +946,11 @@ logical function is_boundary(MemoryOrder)
   is_boundary = isbdy
 end function is_boundary
 
-subroutine FieldIO(IO,onbdy,DataHandle,DateStr,Dimens,Starts,Counts,Length,MemoryOrder, &
+subroutine FieldIO(IO,DataHandle,DateStr,Dimens,Starts,Counts,Length,MemoryOrder, &
                    Stagger,FieldType,Field,Status)
   implicit none
   include 'wrf_status_codes.h'
   character (*)              ,intent(in)    :: IO
-  logical                    ,intent(in)    :: onbdy
   integer                    ,intent(in)    :: DataHandle
   character*(*)              ,intent(in)    :: DateStr
   integer,dimension(NVarDims),intent(inout) :: Dimens
@@ -1004,14 +1003,14 @@ subroutine FieldIO(IO,onbdy,DataHandle,DateStr,Dimens,Starts,Counts,Length,Memor
     case (WRF_REAL)
       if(isbdy .and. (IO == 'read')) then
         Dimens(NDim+1) = TimeIndex
-        call read_bdy_RealFieldIO(DH,onbdy,NDim,Dimens,Starts,Counts,Field,Status)
+        call read_bdy_RealFieldIO(DH,NDim,Dimens,Starts,Counts,Field,Status)
       else
         call ext_pio_RealFieldIO(whole,IO,DH,Starts,Counts,fldsize,datasize,Field,Status)
       endif
     case (WRF_DOUBLE)
       if(isbdy .and. (IO == 'read')) then
         Dimens(NDim+1) = TimeIndex
-        call read_bdy_DoubleFieldIO(DH,onbdy,NDim,Dimens,Starts,Counts,Field,Status)
+        call read_bdy_DoubleFieldIO(DH,NDim,Dimens,Starts,Counts,Field,Status)
       else
         call ext_pio_DoubleFieldIO(whole,IO,DH,Starts,Counts,fldsize,Field,Status)
       endif
@@ -1028,6 +1027,54 @@ subroutine FieldIO(IO,onbdy,DataHandle,DateStr,Dimens,Starts,Counts,Length,Memor
 
   return
 end subroutine FieldIO
+
+subroutine FieldBDY(IO,DataHandle,DateStr,NDim,Domains, &
+                    MemoryStart,MemoryEnd,PatchStart,PatchEnd, &
+                    FieldType,Field,Status)
+  implicit none
+  include 'wrf_status_codes.h'
+  character (*)              ,intent(in)    :: IO
+  integer                    ,intent(in)    :: DataHandle,NDim
+  character*(*)              ,intent(in)    :: DateStr
+  integer,dimension(*)       ,intent(inout) :: Domains
+  integer,dimension(*)       ,intent(in)    :: MemoryStart, MemoryEnd
+  integer,dimension(*)       ,intent(in)    :: PatchStart,  PatchEnd
+  integer                    ,intent(in)    :: FieldType
+  integer,dimension(*)       ,intent(inout) :: Field
+  integer                    ,intent(out)   :: Status
+  integer                                   :: TimeIndex
+  type(wrf_data_handle)      ,pointer       :: DH
+  integer(KIND=PIO_OFFSET)                  :: pioidx
+
+  DH => WrfDataHandles(DataHandle)
+  call GetTimeIndex(IO,DataHandle,DateStr,TimeIndex,Status)
+  if(Status /= WRF_NO_ERR) then
+    write(msg,*) 'Warning in ',__FILE__,', line', __LINE__
+    call wrf_debug ( WARN , TRIM(msg))
+    write(msg,*) '  Bad time index for DateStr = ',DateStr
+    call wrf_debug ( WARN , TRIM(msg))
+    return
+  endif
+
+  pioidx = TimeIndex
+  call pio_setframe(DH%descVar(DH%CurrentVariable), pioidx)
+ !DH%descVar(DH%CurrentVariable)%rec = TimeIndex
+  Domains(NDim+1) = TimeIndex
+
+  select case (FieldType)
+    case (WRF_REAL)
+         call read_bdy_RealFieldIO(DH,NDim,Domains,MemoryStart,MemoryEnd,PatchStart,PatchEnd,Field,Status)
+    case (WRF_DOUBLE)
+         call read_bdy_DoubleFieldIO(DH,NDim,Domains,MemoryStart,MemoryEnd,PatchStart,PatchEnd,Field,Status)
+    case default
+         Status = WRF_WARN_DATA_TYPE_NOT_FOUND
+         write(msg,*) 'Warning DATA TYPE NOT FOUND in ',__FILE__,', line', __LINE__
+         call wrf_debug ( WARN , TRIM(msg))
+         return
+  end select
+
+  return
+end subroutine FieldBDY
 
 ! Returns .TRUE. iff it is OK to write time-independent domain metadata to the 
 ! file referenced by DataHandle.  If DataHandle is invalid, .FALSE. is 

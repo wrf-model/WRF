@@ -473,6 +473,8 @@ Namelist variables for controlling the adaptive time step option:
                                                  (only used in very extreme situation)
                                                  default value = 0
                                                  gsfcgce_hail is ignored if gsfcgce_2ice is set to 1 or 2.
+ hail_opt                            = 0       ; hail switch for WDM6 and Morrison schemes: 0 - off, 1 - on (new in 3.6.1)
+ ccn_conc                            = 1.E8    ; CCN concentration, used by WDM schemes (new in 3.6.1)
 
  no_mp_heating                       = 0       ; normal
                                      = 1       ; turn off latent heating from a microphysics scheme
@@ -1126,8 +1128,10 @@ The following are for observation nudging:
  base_pres                           = 10^5     ; real-data, em ONLY, base sea-level pres (Pa), DO NOT CHANGE
  base_lapse                          = 50.,     ; real-data, em ONLY, lapse rate (K), DO NOT CHANGE
  iso_temp                            = 200.,    ; real-data, em ONLY, reference temp in stratosphere, US Standard atmosphere 216.5 K
- base_pres_strat                     = 5500.    ; real-data, em ONLY, base state pressure (Pa) at bottom of the stratosphere, US Standard atmosphere 55 hPa
- base_lapse_strat                    = 0.       ; real-data, em ONLY, base state lapse rate ( dT / d(lnP) ) in stratosphere, approx to US Standard atmosphere -12 K
+ base_pres_strat                     = 5500.    ; real-data, em ONLY, base state pressure (Pa) at bottom of the stratosphere, 
+                                                  US Standard atmosphere 55 hPa
+ base_lapse_strat                    = 0.       ; real-data, em ONLY, base state lapse rate ( dT / d(lnP) ) in stratosphere, 
+                                                  approx to US Standard atmosphere -12 K
  use_baseparam_fr_nml                = .f.,     ; whether to use base state parameters from the namelist
  use_input_w                         = .f.,     ; whether to use vertical velocity from input file
  khdif (max_dom)                     = 0,	; horizontal diffusion constant (m^2/s)

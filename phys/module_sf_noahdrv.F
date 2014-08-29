@@ -1116,14 +1116,14 @@ CONTAINS
 !
 !
 !      Limits to avoid dividing by small number
-            if (CHS(I,J) < 1.0E-02) then
-               CHS(I,J)  = 1.0E-02
+            if (CHS(I,J) < 1.0E-04) then
+               CHS(I,J)  = 1.0E-04
             endif
-            if (CHS2(I,J) < 1.0E-02) then
-               CHS2(I,J)  = 1.0E-02
+            if (CHS2(I,J) < 1.0E-04) then
+               CHS2(I,J)  = 1.0E-04
             endif
-            if (CQS2(I,J) < 1.0E-02) then
-               CQS2(I,J)  = 1.0E-02
+            if (CQS2(I,J) < 1.0E-04) then
+               CQS2(I,J)  = 1.0E-04
             endif
 !
             CHS_URB  = CHS(I,J)

@@ -840,6 +840,7 @@ Namelist variables for lake module:
 				     		  do_radar_ref = 1, and mp_physics = 2,4,6,7,8,10,14, or 16)
                                      = 2        ; PR92 based on 20 dBZ top, redistributes flashes within dBZ > 20 (for convection resolved runs; must also use 
 				     		  do_radar_ref = 1, and mp_physics = 2,4,6,7,8,10,14, or 16)
+                                     = 3        ; Predicting the potential for lightning activity (based on Yair et al, 2010, J. Geophys. Res., 115, D04205, doi:10.1029/2008JD010868) 
                                      = 11       ; PR92 based on level of neutral buoyancy from convective parameterization (for scales
                                                   where a CPS is used, intended for use at 10 < dx < 50 km; must also use cu_physics = 5 or 93)
  lightning_dt  (max_dom)             = 0.       ; time interval (seconds) for calling lightning parameterization. Default uses model time step

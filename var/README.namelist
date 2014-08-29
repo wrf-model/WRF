@@ -32,9 +32,9 @@ Description of WRFDA namelist variables
                                     ;         diagnosed based on the increments of other fields.
                                     ;         If use_radarobs=.true., the w increments are always
                                     ;         calculated.
-wind_sd                   = .false. ; .true.: wind values which are reported as speed/direction will be assimilated as such
+  wind_sd                 = .false. ; .true.: wind values which are reported as speed/direction will be assimilated as such
                                     ; .false.: default behavior: all wind obs are converted to u/v prior to assimilation
-qc_rej_both               = .false  ; .true.: if either u or v (spd or dir) do not pass quality control, both obs are rejected
+  qc_rej_both             = .false  ; .true.: if either u or v (spd or dir) do not pass quality control, both obs are rejected
                                     ; .false.: default behavior: qc on wind obs is handled individually
 /
 &wrfvar3
@@ -43,7 +43,8 @@ qc_rej_both               = .false  ; .true.: if either u or v (spd or dir) do n
                                     ; 4: fg_format_kma_global       (untested)
   ob_format               = 2       ; 1: ob_format_bufr (NCEP PREPBUFR), read in data from ob.bufr
                                     ; 2: ob_format_ascii (output from obsproc), read in data from ob.ascii (default)
-  ob_format_gpsro         = 2       ; 1: read in GPSRO data from gpsro.bufr
+  ob_format_gpsro         = 2       ; for ob_format=2 only...when ob_format=1, GPSRO will be read from ob.bufr
+                                    ; 1: read in GPSRO data from gpsro.bufr
                                     ; 2: read in GPSRO data from ob.ascii (default)
   num_fgat_time           = 1       ; 1: 3DVAR
                                     ; > 1: number of time slots for FGAT and 4DVAR
@@ -280,8 +281,8 @@ qc_rej_both               = .false  ; .true.: if either u or v (spd or dir) do n
                                                  ; 1: monitoring mode (only calculate innovations)
   thinning_mesh (max_instruments)     = 60.0     ; real array (used dimension: rtminit_nsensor)
                                                  ; specify thinning mesh size (in KM) for different sensors.
-  thinning                            = .false.  ; .true.: perform thinning on radiance data
-  qc_rad                              = .true.   ; .true.: perform quality control. always .true.
+  thinning                            = .true.   ; .true.: perform thinning on radiance data
+  qc_rad                              = .true.   ; .true.: perform quality control. Use .false. only for testing/debugging
   write_iv_rad_ascii                  = .false.  ; .true.: output radiance Observation minus Background files, 
                                                  ;         which are in ASCII format and separated by 
                                                  ;         sensors and processors.
@@ -293,9 +294,9 @@ qc_rej_both               = .false  ; .true.: if either u or v (spd or dir) do n
                                                  ;         with empirical values or generated using variational
                                                  ;         tuning method (Desroziers and Ivanov, 2001)
   use_antcorr (max_instruments)       = .false.  ; .true.: perform Antenna Correction in CRTM
-  rtm_option                          = 1        ; what RTM (Radiative Transfer Model) to use (see User's Guide)
-                                                 ;         1: RTTOV (WRFDA needs to compile with RTTOV)
-                                                 ;         2: CRTM  (WRFDA needs to compile with CRTM)
+  rtm_option                          = 1        ; which RTM (Radiative Transfer Model) to use (see User's Guide)
+                                                 ;         1: RTTOV (WRFDA must be compiled with RTTOV)
+                                                 ;         2: CRTM  (WRFDA must be compiled with CRTM)
   only_sea_rad                        = .false.  ; .true.: assimilate radiance over water only
   use_varbc                           = .false.  ; .true.: perform Variational Bias Correction.
                                                  ;         An ASCII parameter file "VARBC.in" is required.
@@ -330,14 +331,14 @@ qc_rej_both               = .false  ; .true.: if either u or v (spd or dir) do n
 &wrfvar15   ; needs to be set together with &wrfvar19
   num_pseudo              = 0          ; set the number of pseudo ob, either 0 or 1 (single ob)
                                        ; when num_pseudo=1, all other obs will be switched off
-  pseudo_x                = 1.0        ; set the X-position (I) of the ob in unit of grid-point
-  pseudo_y                = 1.0        ; set the Y-position (J) of the ob in unit of grid-point
+  pseudo_x                = 1.0        ; set the X-position (I) of the ob in model grid-point units
+  pseudo_y                = 1.0        ; set the Y-position (J) of the ob in model grid-point units
   pseudo_z                = 1.0        ; set the Z-position (K) of the ob in vertical level index,
                                        ;     in bottom-up order.
   pseudo_val              = 1.0        ; set the innovation of the pseudo ob.  
                                        ; wind in m/s, pressure in Pa, temperature in K,
                                        ; specific humidity in kg/kg
-  pseudo_err              = 1.0        ; set the error of the pseudo ob. Unit the same as pseudo_val.
+  pseudo_err              = 1.0        ; set the error of the pseudo ob. Same units as pseudo_val.
                                        ; if pseudo_var="q", pseudo_err=0.001 is more reasonable.
 /
 &wrfvar16   ; for hybrid WRF-Var/ensemble
@@ -353,7 +354,7 @@ qc_rej_both               = .false  ; .true.: if either u or v (spd or dir) do n
   analysis_type           = "3D-VAR"   ; "3D-VAR": 3D-VAR mode (default)
                                        ; "QC-OBS": 3D-VAR mode plus extra filtered_obs output
                                        ; "VERIFY": verification mode.
-                                       ;           WRF-Var resets check_max_iv=.false. and ntmax=0
+                                       ;           WRFDA resets check_max_iv=.false. and ntmax=0
                                        ; "RANDOMCV": for creating ensemble perturbations
   adj_sens	          = .false.    ; .true.: write out gradient of Jo for adjoint sensitivity
 /
@@ -363,7 +364,7 @@ qc_rej_both               = .false  ; .true.: if either u or v (spd or dir) do n
                                                          ; However, if time difference between 
                                                          ; analysis_date and date info read in from 
                                                          ; first guess is larger than analysis_accu, 
-                                                         ; WRF-Var will issue a warning message 
+                                                         ; WRFDA will issue a warning message 
                                                          ; ("=======> Wrong xb time found???"),
                                                          ; but won't abort.
 /
@@ -392,8 +393,7 @@ qc_rej_both               = .false  ; .true.: if either u or v (spd or dir) do n
   time_window_max         = "2002-08-03_03:00:00.0000"  ; end time of assimilation time window
                                                         ; used for ob_format=1 and radiances to select
                                                         ; observations inside the defined time_window.
-                                                        ; Note: new in V3.1, this variable is also used
-                                                        ; for ob_format=2 to double-check if the obs
+                                                        ; Also used for ob_format=2 to check if the obs
                                                         ; are within the specified time window.
 /
 &perturbation   ; settings related to the 4D-Var penalty term option, which controls the

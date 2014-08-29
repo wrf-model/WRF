@@ -28,6 +28,7 @@ MODULE module_write
   USE module_map
 
   INCLUDE 'constants.inc'
+  INCLUDE '../../../inc/version_decl'
 
   REAL (kind=8), parameter             :: bufrlib_missing = 10.D10
 
@@ -562,8 +563,8 @@ SUBROUTINE output_gts_31 (max_number_of_obs, obs, number_of_obs, windex,&
 
 !      filename = 'obs_gts.'//use_for
 
-      WRITE (0,'(5A)') 'Write 3DVAR ',use_for,' GTS observations in file ',&
-                        TRIM (filename),' (wrfvar version 3.0)'
+      WRITE (0,'(7A)') 'Write ',use_for,' GTS observations in file ',&
+                        TRIM (filename),' (WRFDA ',TRIM(release_version),')'
 
 
 ! 1.2 OPEN FILE AT VERSION 3.1 FORMAT

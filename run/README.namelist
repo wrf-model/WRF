@@ -644,6 +644,8 @@ Namelist variables for controlling the adaptive time step option:
                                      = 0 ; default; use dominant category only
                                      = 1 ; use mosaic landuse categories
  mosaic_cat                          = 3 ; number of mosaic landuse categories in a grid cell
+ mosaic_lu                           = 1 ;  use mosaic landuse categories in RUC; default is 0
+ mosaic_soil                         = 1 ;  use mosaic soil categories in RUC; default is 0
 
  cu_physics (max_dom)                cumulus option
                                      = 0, no cumulus

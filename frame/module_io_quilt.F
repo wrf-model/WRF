@@ -2620,7 +2620,7 @@ okay_to_w = .false.
       CALL wrf_get_dm_communicator( mpi_comm_here )
 
       CALL MPI_Comm_rank ( mpi_comm_here, mytask, ierr ) ;
-      CALL mpi_x_comm_size ( mpi_comm_here, ntasks, ierr ) ;
+      CALL mpi_x_comm_size( mpi_comm_here, ntasks, ierr ) ;
 
       IF ( mytask .EQ. 0 ) THEN
         OPEN ( unit=27, file="namelist.input", form="formatted", status="old" )

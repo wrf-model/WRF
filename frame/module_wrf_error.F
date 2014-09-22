@@ -339,4 +339,29 @@ SUBROUTINE wrf_check_error( expected, actual, str, file_str, line )
   ENDIF
 END SUBROUTINE wrf_check_error
 
+! ------------------------------------------------------------------------------
+
+!  Some compilers do not yet support the entirety of the Fortran 2003 standard.
+!  This is a small patch to pick up the two most common events.  Most xlf 
+!  compilers have an extension fflush.  That is available here.  For other older
+!  compilers with no flush capability at all, we just stub it out completely.
+!  These CPP ifdefs are defined in the configure file.
+
+#ifdef USE_FFLUSH
+SUBROUTINE flush ( iunit )
+  IMPLICIT NONE
+  INTEGER :: iunit
+  CALL fflush ( iunit ) 
+END SUBROUTINE flush
+#endif
+
+#ifdef NO_FLUSH_SUPPORT
+SUBROUTINE flush ( iunit )
+  IMPLICIT NONE
+  INTEGER :: iunit
+  RETURN
+END SUBROUTINE flush
+#endif
+
+
 

@@ -4666,13 +4666,13 @@ end subroutine fillitup
                CALL lagrange_setup ( var_type , interp_type , &
                     ordered_porig(kinterp_start:kinterp_end) , &
                     ordered_forig(kinterp_start:kinterp_end) , &
-                    count , lagrange_order , extrap_type , &
+                    kinterp_end-kinterp_start+1 , lagrange_order , extrap_type , &
                     ordered_pnew(kstart:kend)  , ordered_fnew  , kend-kstart+1 ,i,j)
             ELSE
                CALL lagrange_setup ( var_type , interp_type , &
                 LOG(ordered_porig(kinterp_start:kinterp_end)) , &
                     ordered_forig(kinterp_start:kinterp_end) , &
-                    count , lagrange_order , extrap_type , &
+                    kinterp_end-kinterp_start+1 , lagrange_order , extrap_type , &
                 LOG(ordered_pnew(kstart:kend)) , ordered_fnew  , kend-kstart+1 ,i,j)
             END IF
 

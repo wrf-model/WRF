@@ -2712,6 +2712,27 @@ CONTAINS
 !c    &            .743,.813,.886,.947,1.138,1.377,1.896/
       real(kind=kind_phys) tf, tcr, tcrf
       parameter (tf=233.16, tcr=263.16, tcrf=1.0/(tcr-tf))
+#if HWRF==1
+      logical :: pert_sas            !zhang
+      integer :: ens_random_seed         !zhang
+      real*8 :: gasdev,ran1          !zhang
+      real :: rr, ens_sasamp         !zhang
+      logical,save :: pert_sas_local            !zhang
+      integer,save :: ens_random_seed_local         !zhang
+      real,save :: ens_sasamp_local         !zhang
+      data ens_random_seed_local/0/
+!zz      print*,'zhang in sas============='
+      if ( ens_random_seed_local .eq. 0 ) then
+      CALL nl_get_pert_sas(1,pert_sas)
+      CALL nl_get_ens_random_seed(1,ens_random_seed)
+      CALL nl_get_ens_sasamp(1,ens_sasamp)
+      ens_random_seed_local=ens_random_seed
+      pert_sas_local=pert_sas
+      ens_sasamp_local=ens_sasamp
+!zz      print*,"zhang in sas one time", pert_sas_local,ens_random_seed_local,ens_sasamp_local                                         
+      endif
+!zz      print*,"zhang in sas", pert_sas_local,ens_random_seed_local,ens_sasamp_local                                         
+#endif
 !
 !c-----------------------------------------------------------------------
 !
@@ -3038,6 +3059,14 @@ CONTAINS
           tem1= .5*(cincrmax-cincrmin)
           cincr = cincrmax - tem * tem1
           pbcdif(i) = pfld(i,kb(i)) - pfld(i,kbcon(i))
+#if HWRF==1
+! randomly perturb the convection trigger
+          if( pert_sas_local ) then
+          rr=2.0*ens_sasamp_local*ran1(ens_random_seed_local)-ens_sasamp_local
+          print*, "zhang inde sas=", rr,ens_sasamp_local,ens_random_seed_local
+          cincr=cincr+rr
+          endif
+#endif
           if(pbcdif(i).gt.cincr) then
              cnvflg(i) = .false.
           endif
@@ -5520,3 +5549,56 @@ CONTAINS
     end subroutine shalcnv
       END MODULE module_cu_sas
 
+     FUNCTION ran1(idum)
+      implicit none
+      integer idum,ia,im,iq,ir,ntab,ndiv
+      real*8 am,eps,rnmx
+      real*8 ran1
+      parameter (ia=16807,im=2147483647,am=1./im,iq=127773,ir=2836,   &
+     &           ntab=32,ndiv=1+(im-1)/ntab,eps=1.2e-7,rnmx=1.-eps)
+      integer j,k,iv(32),iy,junk
+      common /random/ junk,iv,iy
+      data iv /ntab*0/, iy /0/
+      if (idum.le.0.or.iy.eq.0) then
+         idum=max(-idum,1)
+         do j=ntab+8,1,-1
+            k=idum/iq
+            idum=ia*(idum-k*iq)-ir*k
+            if (idum.lt.0) idum=idum+im
+            if (j.le.ntab) iv(j)=idum
+         enddo
+         iy=iv(1)
+      endif
+      k=idum/iq
+      idum=ia*(idum-k*iq)-ir*k
+      if (idum.lt.0) idum=idum+im
+      j=1+iy/ndiv
+      iy=iv(j)
+      iv(j)=idum
+      ran1=min(am*iy,rnmx)
+      return
+      END FUNCTION ran1
+
+      FUNCTION gasdev(idum)
+      INTEGER idum
+      REAL*8 gasdev
+!CU    USES ran1
+      INTEGER iset
+      REAL*8 fac,gset,rsq,v1,v2,ran1
+      SAVE iset,gset
+      DATA iset/0/
+      if (iset.eq.0) then
+   1    v1=2.*ran1(idum)-1.
+        v2=2.*ran1(idum)-1.
+        rsq=v1**2+v2**2
+        if(rsq.ge.1..or.rsq.eq.0.)goto 1
+        fac=sqrt(-2.*log(rsq)/rsq)
+        gset=v1*fac
+        gasdev=v2*fac
+        iset=1
+      else
+        gasdev=gset
+        iset=0
+      endif
+      return
+      END FUNCTION gasdev

@@ -601,6 +601,27 @@ real(kind=kind_phys) RO(IM),xland1(IM)
       PARAMETER(GAMCRT=3.,GAMCRQ=0.)
       PARAMETER(RZERO=0.,RONE=1.)
       PARAMETER(IUN=84)
+#if HWRF==1
+      real*8 :: ran1           !zhang
+      integer :: ens_random_seed !zhang
+      real :: ens_pblamp,rr   !zhang
+      logical :: pert_pbl !zhang
+      logical,save :: pert_pbl_local !zhang
+      integer,save :: ens_random_seed_local !zhang
+      real,save :: ens_pblamp_local   !zhang
+      data ens_random_seed_local/0/
+!zz      print*, 'zhang in pbl==========='
+      if ( ens_random_seed_local .eq. 0 ) then
+      CALL nl_get_pert_pbl(1,pert_pbl)
+      CALL nl_get_ens_random_seed(1,ens_random_seed)
+      CALL nl_get_ens_pblamp(1,ens_pblamp)
+      pert_pbl_local=pert_pbl
+      ens_random_seed_local=ens_random_seed
+      ens_pblamp_local=ens_pblamp
+!zz      print*, "zhang in pbl= one time ", pert_pbl_local, ens_random_seed_local, ens_pblamp_local
+      endif
+!zz      print*, "zhang in pbl=",pert_pbl_local, ens_random_seed_local, ens_pblamp_local
+#endif
 !
 !
 !-----------------------------------------------------------------------
@@ -837,6 +858,14 @@ real(kind=kind_phys) RO(IM),xland1(IM)
                RBINT = (RBCR(I)-RBDN(I))/(RBUP(I)-RBDN(I))
             ENDIF
             HPBL(I) = ZL(I,K-1) + RBINT*(ZL(I,k)-ZL(I,K-1))
+#if HWRF==1
+!zhang adding PBL perturtion
+            if ( pert_pbl_local ) then
+            rr=(2.0*ens_pblamp_local*ran1(ens_random_seed_local)-ens_pblamp_local)
+            print*, "zhang inside the loop", rr, ens_pblamp_local,ens_random_seed_local 
+            HPBL(I) = HPBL(I)*(1.0+rr)
+            endif
+#endif
             IF(HPBL(I).LT.ZI(I,KPBL(I))) KPBL(I) = KPBL(I) - 1
             IF(KPBL(I).LE.1) PBLFLG(I) = .FALSE.
          ENDIF

@@ -1396,7 +1396,12 @@ rconfig   real    var_ric                 namelist,physics      1             1.
 rconfig   real    coef_ric_l              namelist,physics      1             0.16     -     "Regression coeff for Ric 0.16:origianl value over land"
 rconfig   real    coef_ric_s              namelist,physics      1             0.16     -     "Regression coeff for Ric 0.16:origianl value OVER SEA"
 rconfig   integer random_seed             namelist,physics     max_domains    0       irh    "random_seed"  "random number generator seed"
-
+#added by Zhan Zhang for perturbings for SAS and PBL
+rconfig   integer ens_random_seed         namelist,physics     max_domains   -1       irh   "ens_random_seed"  "ensemble random number generator initial seed"
+rconfig   logical pert_sas                namelist,physics      1        .false.      irh   "pert_sas"  "ensemble choice:F, no pert, T, pert SAS"
+rconfig   logical pert_pbl                namelist,physics      1        .false.      irh   "pert_pbl"  "ensemble choice:F, no pert, T, pert PBL"
+rconfig   real    ens_sasamp              namelist,physics     max_domains   50.      irh   "sas perturbation Amplitude"  "unit: hPa"
+rconfig   real    ens_pblamp              namelist,physics     max_domains   0.2      irh   "sas perturbation Amplitude"  "unit: 100*%"
 
 # Vortex Tracking (physics namelist)
 rconfig   integer vortex_tracker          namelist,physics      max_domains    1      -      "vortex_tracker" "Vortex Tracking Algorithm" ""

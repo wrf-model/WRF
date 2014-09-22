@@ -153,7 +153,12 @@
 ! WARNING:  this might present scaling issues on very large numbers of processors
      alloc_err_message = ' '
      alloc_err_message(1:12) = 'NO PROBLEMOS'
+#if 0
      ALLOCATE( clat_glob(ids:ide,jds:jde), STAT=alloc_status, ERRMSG=alloc_err_message )
+#else
+     ALLOCATE( clat_glob(ids:ide,jds:jde), STAT=alloc_status)
+     alloc_err_message = 'Allocation of space for a global field failed.' 
+#endif
 
      IF ( alloc_status .NE. 0 ) THEN
         CALL wrf_message ( TRIM(alloc_err_message) )

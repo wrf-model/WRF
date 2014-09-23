@@ -2281,8 +2281,10 @@
       ENDDO
       ENDDO
       ENDDO
+
 ! calculate some model diagnostics.
 
+   IF ( config_flags%compute_radar_ref .EQ. 1 ) THEN
    CALL wrf_debug ( 200 , ' call diagnostic_driver' )
 
    CALL diagnostic_output_calc_refl(                                   &
@@ -2293,6 +2295,7 @@
       &             ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
       &             ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
       &                                                          )
+   END IF
 
 !
 !----------------------------------------------------------------------

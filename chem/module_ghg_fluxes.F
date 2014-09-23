@@ -156,6 +156,9 @@ DATA Tmax   /8*40./
 DO j=jts,min(jte,jde-1)
 DO i=its,min(ite,ide-1)
 
+   GEE_frac= 0.
+   RESP_frac= 0.
+
    Tair= T2(i,j)-273.15
    veg_frac_loop: DO m=1,7
 
@@ -202,13 +205,15 @@ DO i=its,min(ite,ide-1)
         end if
 
         RADscale= 1./(1. + RAD(i,j)/rad0(m))
-        GEE_frac= lambda(m)*Tscale*Pscale*Wscale*RADscale* vprm_in(i,m,j,p_evi)* RAD(i,j)*vprm_in(i,m,j,p_vegfra_vprm)
-        eghg_bio(i,1,j,p_ebio_gee)= min(0.0,const*GEE_frac)
+        GEE_frac= lambda(m)*Tscale*Pscale*Wscale*RADscale* vprm_in(i,m,j,p_evi)* RAD(i,j)*vprm_in(i,m,j,p_vegfra_vprm) + GEE_frac
 
-        RESP_frac= (alpha(m)*Tair + RESP0(m))*vprm_in(i,m,j,p_vegfra_vprm)
-        eghg_bio(i,1,j,p_ebio_res)= max(0.0,const*RESP_frac)
+        RESP_frac= (alpha(m)*Tair + RESP0(m))*vprm_in(i,m,j,p_vegfra_vprm) + RESP_frac
+
 
    ENDDO veg_frac_loop
+   
+   eghg_bio(i,1,j,p_ebio_gee)= min(0.0,const*GEE_frac)
+   eghg_bio(i,1,j,p_ebio_res)= max(0.0,const*RESP_frac)
 
   ENDDO
   ENDDO

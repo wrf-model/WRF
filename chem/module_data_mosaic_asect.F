@@ -193,7 +193,8 @@
 
 	integer, parameter :: maxd_atype = 1
 	integer, parameter :: maxd_asize = 8
-	integer, parameter :: maxd_acomp = 120 ! for additional SOA species changed by Manish Shrivastava on 01/25/10
+!	integer, parameter :: maxd_acomp = 120 ! for additional SOA species changed by Manish Shrivastava on 01/25/10
+	integer, parameter :: maxd_acomp = 400 ! for additional SOA species changed by Manish Shrivastava on 01/25/10
 	integer, parameter :: maxd_aphase = 2
 
 	integer, save :: ai_phase = -999888777
@@ -304,6 +305,13 @@
         integer, save :: mastercompindx_opcg8_f_o_aer = -999888777
         integer, save :: mastercompindx_smpa_aer = -999888777
         integer, save :: mastercompindx_smpbb_aer = -999888777
+
+        integer, save :: mastercompindx_glysoa_r1_aer = -999888777
+        integer, save :: mastercompindx_glysoa_r2_aer = -999888777
+        integer, save :: mastercompindx_glysoa_oh_aer = -999888777
+        integer, save :: mastercompindx_glysoa_nh4_aer = -999888777
+        integer, save :: mastercompindx_glysoa_sfc_aer = -999888777
+
         integer, save :: mastercompindx_ant1_c_aer = -999888777
         integer, save :: mastercompindx_ant2_c_aer = -999888777
         integer, save :: mastercompindx_ant3_c_aer = -999888777
@@ -321,6 +329,16 @@
         integer, save :: mastercompindx_biog3_o_aer = -999888777
         integer, save :: mastercompindx_biog4_o_aer = -999888777
 
+        integer, save :: mastercompindx_asoaX_aer = -999888777
+        integer, save :: mastercompindx_asoa1_aer = -999888777
+        integer, save :: mastercompindx_asoa2_aer = -999888777
+        integer, save :: mastercompindx_asoa3_aer = -999888777
+        integer, save :: mastercompindx_asoa4_aer = -999888777
+        integer, save :: mastercompindx_bsoaX_aer = -999888777
+        integer, save :: mastercompindx_bsoa1_aer = -999888777
+        integer, save :: mastercompindx_bsoa2_aer = -999888777
+        integer, save :: mastercompindx_bsoa3_aer = -999888777
+        integer, save :: mastercompindx_bsoa4_aer = -999888777
 
 	real, save ::   &
           dens_aer( maxd_acomp, maxd_atype ),  &
@@ -425,6 +443,13 @@
           lptr_opcg8_f_o_aer(maxd_asize, maxd_atype, maxd_aphase), &
           lptr_smpa_aer(maxd_asize, maxd_atype, maxd_aphase),    &
           lptr_smpbb_aer(maxd_asize, maxd_atype, maxd_aphase),    &
+
+          lptr_glysoa_r1_aer(maxd_asize, maxd_atype, maxd_aphase),   &
+          lptr_glysoa_r2_aer(maxd_asize, maxd_atype, maxd_aphase),   &
+          lptr_glysoa_oh_aer(maxd_asize, maxd_atype, maxd_aphase),   &
+          lptr_glysoa_nh4_aer(maxd_asize, maxd_atype, maxd_aphase),   &
+          lptr_glysoa_sfc_aer(maxd_asize, maxd_atype, maxd_aphase),   &
+
           lptr_ant1_c_aer(maxd_asize, maxd_atype, maxd_aphase),    &
           lptr_ant2_c_aer(maxd_asize, maxd_atype, maxd_aphase),    &
           lptr_ant3_c_aer(maxd_asize, maxd_atype, maxd_aphase),    &
@@ -440,8 +465,18 @@
           lptr_biog1_o_aer(maxd_asize, maxd_atype, maxd_aphase),    &
           lptr_biog2_o_aer(maxd_asize, maxd_atype, maxd_aphase),    &
           lptr_biog3_o_aer(maxd_asize, maxd_atype, maxd_aphase),    &
-          lptr_biog4_o_aer(maxd_asize, maxd_atype, maxd_aphase)
+          lptr_biog4_o_aer(maxd_asize, maxd_atype, maxd_aphase),    &
 
+          lptr_asoaX_aer(maxd_asize, maxd_atype, maxd_aphase),    &
+          lptr_asoa1_aer(maxd_asize, maxd_atype, maxd_aphase),    &
+          lptr_asoa2_aer(maxd_asize, maxd_atype, maxd_aphase),    &
+          lptr_asoa3_aer(maxd_asize, maxd_atype, maxd_aphase),    &
+          lptr_asoa4_aer(maxd_asize, maxd_atype, maxd_aphase),    &
+          lptr_bsoaX_aer(maxd_asize, maxd_atype, maxd_aphase),    &
+          lptr_bsoa1_aer(maxd_asize, maxd_atype, maxd_aphase),    &
+          lptr_bsoa2_aer(maxd_asize, maxd_atype, maxd_aphase),    &
+          lptr_bsoa3_aer(maxd_asize, maxd_atype, maxd_aphase),    &
+          lptr_bsoa4_aer(maxd_asize, maxd_atype, maxd_aphase)
 
 
 
@@ -535,6 +570,13 @@
         real, parameter :: mw_opcg8_f_o_aer = 250.0
         real, parameter :: mw_smpa_aer = 250
         real, parameter :: mw_smpbb_aer = 250
+
+        real, parameter :: mw_glysoa_r1_aer   = 250.0
+        real, parameter :: mw_glysoa_r2_aer   = 250.0
+        real, parameter :: mw_glysoa_oh_aer   = 250.0
+        real, parameter :: mw_glysoa_nh4_aer   = 250.0
+        real, parameter :: mw_glysoa_sfc_aer   = 250.0
+
         real, parameter :: mw_ant1_c_aer = 250
         real, parameter :: mw_ant2_c_aer = 250
         real, parameter :: mw_ant3_c_aer = 250
@@ -552,6 +594,16 @@
         real, parameter :: mw_biog3_o_aer = 250.0
         real, parameter :: mw_biog4_o_aer = 250.0
 
+        real, parameter :: mw_asoaX_aer = 250.0
+        real, parameter :: mw_asoa1_aer = 250.0
+        real, parameter :: mw_asoa2_aer = 250.0
+        real, parameter :: mw_asoa3_aer = 250.0
+        real, parameter :: mw_asoa4_aer = 250.0
+        real, parameter :: mw_bsoaX_aer = 250.0
+        real, parameter :: mw_bsoa1_aer = 250.0
+        real, parameter :: mw_bsoa2_aer = 250.0
+        real, parameter :: mw_bsoa3_aer = 250.0
+        real, parameter :: mw_bsoa4_aer = 250.0
 
 
 	
@@ -637,6 +689,13 @@
         real, parameter :: dens_opcg8_f_o_aer = 1.0
         real, parameter :: dens_smpa_aer = 1.0
         real, parameter :: dens_smpbb_aer = 1.0
+
+        real, parameter :: dens_glysoa_r1_aer   = 1.0
+        real, parameter :: dens_glysoa_r2_aer   = 1.0
+        real, parameter :: dens_glysoa_oh_aer   = 1.0
+        real, parameter :: dens_glysoa_nh4_aer   = 1.0
+        real, parameter :: dens_glysoa_sfc_aer   = 1.0
+
         real, parameter :: dens_ant1_c_aer = 1.0
         real, parameter :: dens_ant2_c_aer = 1.0
         real, parameter :: dens_ant3_c_aer = 1.0
@@ -654,6 +713,17 @@
         real, parameter :: dens_biog3_o_aer = 1.0
         real, parameter :: dens_biog4_o_aer = 1.0
 
+! dens based on Murphy and Pandis, ES&T, 2009
+        real, parameter :: dens_asoaX_aer = 1.5
+        real, parameter :: dens_asoa1_aer = 1.5
+        real, parameter :: dens_asoa2_aer = 1.5
+        real, parameter :: dens_asoa3_aer = 1.5
+        real, parameter :: dens_asoa4_aer = 1.5
+        real, parameter :: dens_bsoaX_aer = 1.5
+        real, parameter :: dens_bsoa1_aer = 1.5
+        real, parameter :: dens_bsoa2_aer = 1.5
+        real, parameter :: dens_bsoa3_aer = 1.5
+        real, parameter :: dens_bsoa4_aer = 1.5
 
 
 !   water density (g/cm3)
@@ -742,6 +812,13 @@
         real, parameter :: hygro_opcg8_f_o_aer = 0.14
         real, parameter :: hygro_smpa_aer = 0.14
         real, parameter :: hygro_smpbb_aer = 0.14
+
+        real, parameter :: hygro_glysoa_r1_aer   = 0.14
+        real, parameter :: hygro_glysoa_r2_aer   = 0.14
+        real, parameter :: hygro_glysoa_oh_aer   = 0.14
+        real, parameter :: hygro_glysoa_nh4_aer   = 0.14
+        real, parameter :: hygro_glysoa_sfc_aer   = 0.14
+
         real, parameter :: hygro_ant1_c_aer = 0.14
         real, parameter :: hygro_ant2_c_aer = 0.14
         real, parameter :: hygro_ant3_c_aer = 0.14
@@ -759,6 +836,16 @@
         real, parameter :: hygro_biog3_o_aer = 0.14
         real, parameter :: hygro_biog4_o_aer = 0.14
 
+        real, parameter :: hygro_asoaX_aer = 0.14
+        real, parameter :: hygro_asoa1_aer = 0.14
+        real, parameter :: hygro_asoa2_aer = 0.14
+        real, parameter :: hygro_asoa3_aer = 0.14
+        real, parameter :: hygro_asoa4_aer = 0.14
+        real, parameter :: hygro_bsoaX_aer = 0.14
+        real, parameter :: hygro_bsoa1_aer = 0.14
+        real, parameter :: hygro_bsoa2_aer = 0.14
+        real, parameter :: hygro_bsoa3_aer = 0.14
+        real, parameter :: hygro_bsoa4_aer = 0.14
 
 
 	integer, save ::   &

@@ -180,10 +180,10 @@ call wrf_message("**************************************************************
        CALL wrf_debug(15,'calling CBMZ_MOSAIC_4BIN_VBS2_4BIN from chem_driver')
        call wrf_message("WARNING: CBMZ_MOSAIC_4BIN_VBS2_4BIN chemistry option is highly experimental and not recommended for use.")
 !jdf   call wrf_error_fatal("WARNING: CBMZ_MOSAIC_4BIN_VBS2_4BIN chemistry option is useable but does not fully pass regtesting. It is recommended that you contact Jerome.Fast@pnl.gov for information regarding this option.")
-     CASE (MOZART_MOSAIC_4BIN_VBS0_KPP )
-       CALL wrf_debug(15,'calling MOZART_MOSAIC_4BIN_VBS0_KPP from chem_driver')
-       call wrf_message("WARNING: MOZART_MOSAIC_4BIN_VBS0_KPP chemistry option is highly experimental and not recommended for use.")
- !!      call wrf_error_fatal("WARNING: MOZART_MOSAIC_4BIN_VBS0_KPP chemistry option is useable but does not fully pass regtestint.????")
+     CASE (MOZART_MOSAIC_4BIN_KPP )
+       CALL wrf_debug(15,'calling MOZART_MOSAIC_4BIN_KPP from chem_driver')
+     CASE (MOZART_MOSAIC_4BIN_AQ_KPP )
+       CALL wrf_debug(15,'calling MOZART_MOSAIC_4BIN_AQ_KPP from chem_driver')
      CASE (RADM2SORG_AQ )
        CALL wrf_debug(15,'calling RADM2/MADE/SORGAM with AQ chemistry from chem_driver')
        call wrf_message("WARNING: RADM2SORG_AQ chemistry option is experimental and not yet fully tested.")
@@ -247,7 +247,8 @@ call wrf_message("**************************************************************
 
    if( config_flags%chem_opt == MOZCART_KPP .or. &
        config_flags%chem_opt == MOZART_KPP .or. &
-       config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP ) then
+       config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
+       config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP) then
        write(message_txt,*) 'chem_init: calling mozcart_lbc_init for domain ',id
        call wrf_message( trim(message_txt) )
        call mozcart_lbc_init( chem, num_chem, id, &
@@ -256,9 +257,11 @@ call wrf_message("**************************************************************
    endif
 
    if ( config_flags%wetscav_onoff == 1 ) then
+
      if( config_flags%chem_opt /= MOZART_KPP .and. &
          config_flags%chem_opt /= MOZCART_KPP .and. &
-         config_flags%chem_opt /= MOZART_MOSAIC_4BIN_VBS0_KPP ) then
+         config_flags%chem_opt /= MOZART_MOSAIC_4BIN_KPP .and. &
+         config_flags%chem_opt /= MOZART_MOSAIC_4BIN_AQ_KPP  ) then
        if(  ( config_flags%chem_opt >= 8 .AND. config_flags%chem_opt <= 13) .OR.  &
             ( config_flags%chem_opt >= 31 .AND. config_flags%chem_opt <= 36) .OR. &
             ( config_flags%chem_opt >= 41 .AND. config_flags%chem_opt <= 43) .OR. &
@@ -272,8 +275,8 @@ call wrf_message("**************************************************************
          call wrf_error_fatal("ERROR: wet scavenging option requires mp_phys = 2 (Lin et al.) or 10 (Morrison) or 11 (CAMMGMP) to function.")
        endif
      elseif( id == 1 ) then
-       if ( config_flags%mp_physics /= 8 ) then
-         call wrf_error_fatal("ERROR: wet scavenging option for MOZART,MOZCART requires mp_phys = 8 (Thompson) to function.")
+       if ( config_flags%mp_physics /= 8 .and. config_flags%mp_physics /= 10 ) then
+         call wrf_error_fatal("ERROR: wet scavenging option for MOZART,MOZCART requires mp_phys = 8 (Thompson) or 10 (Morrison) to function.")
        else
          write(message_txt,*) 'chem_init: calling wetscav_mozcart_init for domain ',id
          call wrf_message( trim(message_txt) )
@@ -287,7 +290,8 @@ call wrf_message("**************************************************************
            ( config_flags%chem_opt >= 31 .AND. config_flags%chem_opt <= 36)   .OR. &
            ( config_flags%chem_opt >= 501 .AND. config_flags%chem_opt <= 504) .OR. &
            ( config_flags%chem_opt >= 41 .AND. config_flags%chem_opt <= 43)  .OR. &
-           ( config_flags%chem_opt >= 601 .AND. config_flags%chem_opt <= 611) ) then
+           ( config_flags%chem_opt >= 601 .AND. config_flags%chem_opt <= 611)  .OR. &
+             config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP ) then
            call wrf_debug( 15, 'Chemics_init: Cloud chemistry turned on' )
       else
         call wrf_error_fatal("ERROR: cloud chemistry option requires chem_opt = 8 through 13 or 31 to 36 or 41 to 43 to function.")
@@ -338,7 +342,9 @@ call wrf_message("**************************************************************
             (config_flags%chem_opt >= 31  .AND. config_flags%chem_opt <= 34)  .OR. &
              config_flags%chem_opt == 170 .OR.  config_flags%chem_opt == 198  .OR. &
              config_flags%chem_opt == 199 .OR.  config_flags%chem_opt == 201  .OR. &
-             config_flags%chem_opt == 601 .OR.  config_flags%chem_opt == 611 ) then
+             config_flags%chem_opt == 601 .OR.  config_flags%chem_opt == 611  .OR. &
+             config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP .OR. &
+             config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP) then
             call wrf_debug( 15, 'using N2O5 heterogeneous chemistry without Cl- pathway')
         else
             call wrf_error_fatal("ERROR: N2O5 heterogenous chemistry (without Cl- pathway) must be run with MOSAIC aerosol")
@@ -641,14 +647,12 @@ end if
           enddo
         endif 
 
-        CASE (MOZART_MOSAIC_4BIN_VBS0_KPP)
-! 20130708 acd_alma_bugfix start
+        CASE (MOZART_MOSAIC_4BIN_KPP, MOZART_MOSAIC_4BIN_AQ_KPP)
         grid%vbs_nbin=0
-! 20130708 acd_alma_bugfix end
+        if (config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP) then
+          grid%vbs_nbin=4
+        endif
         if(config_flags%chem_in_opt == 0 )then
-! 20130708 acd_alma_bugfix start
-!                   grid%vbs_nbin=0
-! 20130708 acd_alma_bugfix end
           do j=jts,jte
              do k=kts,kte
                 do i=its,ite
@@ -673,8 +677,104 @@ end if
          if (p_smpa.gt.1)       chem(i,k,j,p_smpa)=0.0
          if (p_smpbb.gt.1)       chem(i,k,j,p_smpbb)=0.0
 
-         chem(i,k,j,p_voca)=0.0
-         chem(i,k,j,p_vocbb)=0.0
+         if (p_cvasoaX.gt.1)    chem(i,k,j,p_cvasoaX)=0.0
+         if (p_cvasoa1.gt.1)    chem(i,k,j,p_cvasoa1)=0.0
+         if (p_cvasoa2.gt.1)    chem(i,k,j,p_cvasoa2)=0.0
+         if (p_cvasoa3.gt.1)    chem(i,k,j,p_cvasoa3)=0.0
+         if (p_cvasoa4.gt.1)    chem(i,k,j,p_cvasoa4)=0.0
+         if (p_cvbsoaX.gt.1)    chem(i,k,j,p_cvbsoaX)=0.0
+         if (p_cvbsoa1.gt.1)    chem(i,k,j,p_cvbsoa1)=0.0
+         if (p_cvbsoa2.gt.1)    chem(i,k,j,p_cvbsoa2)=0.0
+         if (p_cvbsoa3.gt.1)    chem(i,k,j,p_cvbsoa3)=0.0
+         if (p_cvbsoa4.gt.1)    chem(i,k,j,p_cvbsoa4)=0.0
+
+         if (p_asoaX_a01.gt.1)    chem(i,k,j,p_asoaX_a01)=0.0
+         if (p_asoa1_a01.gt.1)    chem(i,k,j,p_asoa1_a01)=0.0
+         if (p_asoa2_a01.gt.1)    chem(i,k,j,p_asoa2_a01)=0.0
+         if (p_asoa3_a01.gt.1)    chem(i,k,j,p_asoa3_a01)=0.0
+         if (p_asoa4_a01.gt.1)    chem(i,k,j,p_asoa4_a01)=0.0
+         if (p_bsoaX_a01.gt.1)    chem(i,k,j,p_bsoaX_a01)=0.0
+         if (p_bsoa1_a01.gt.1)    chem(i,k,j,p_bsoa1_a01)=0.0
+         if (p_bsoa2_a01.gt.1)    chem(i,k,j,p_bsoa2_a01)=0.0
+         if (p_bsoa3_a01.gt.1)    chem(i,k,j,p_bsoa3_a01)=0.0
+         if (p_bsoa4_a01.gt.1)    chem(i,k,j,p_bsoa4_a01)=0.0
+
+         if (p_asoaX_a02.gt.1)    chem(i,k,j,p_asoaX_a02)=0.0
+         if (p_asoa1_a02.gt.1)    chem(i,k,j,p_asoa1_a02)=0.0
+         if (p_asoa2_a02.gt.1)    chem(i,k,j,p_asoa2_a02)=0.0
+         if (p_asoa3_a02.gt.1)    chem(i,k,j,p_asoa3_a02)=0.0
+         if (p_asoa4_a02.gt.1)    chem(i,k,j,p_asoa4_a02)=0.0
+         if (p_bsoaX_a02.gt.1)    chem(i,k,j,p_bsoaX_a02)=0.0
+         if (p_bsoa1_a02.gt.1)    chem(i,k,j,p_bsoa1_a02)=0.0
+         if (p_bsoa2_a02.gt.1)    chem(i,k,j,p_bsoa2_a02)=0.0
+         if (p_bsoa3_a02.gt.1)    chem(i,k,j,p_bsoa3_a02)=0.0
+         if (p_bsoa4_a02.gt.1)    chem(i,k,j,p_bsoa4_a02)=0.0
+
+         if (p_asoaX_a03.gt.1)    chem(i,k,j,p_asoaX_a03)=0.0
+         if (p_asoa1_a03.gt.1)    chem(i,k,j,p_asoa1_a03)=0.0
+         if (p_asoa2_a03.gt.1)    chem(i,k,j,p_asoa2_a03)=0.0
+         if (p_asoa3_a03.gt.1)    chem(i,k,j,p_asoa3_a03)=0.0
+         if (p_asoa4_a03.gt.1)    chem(i,k,j,p_asoa4_a03)=0.0
+         if (p_bsoaX_a03.gt.1)    chem(i,k,j,p_bsoaX_a03)=0.0
+         if (p_bsoa1_a03.gt.1)    chem(i,k,j,p_bsoa1_a03)=0.0
+         if (p_bsoa2_a03.gt.1)    chem(i,k,j,p_bsoa2_a03)=0.0
+         if (p_bsoa3_a03.gt.1)    chem(i,k,j,p_bsoa3_a03)=0.0
+         if (p_bsoa4_a03.gt.1)    chem(i,k,j,p_bsoa4_a03)=0.0
+
+         if (p_asoaX_a04.gt.1)    chem(i,k,j,p_asoaX_a04)=0.0
+         if (p_asoa1_a04.gt.1)    chem(i,k,j,p_asoa1_a04)=0.0
+         if (p_asoa2_a04.gt.1)    chem(i,k,j,p_asoa2_a04)=0.0
+         if (p_asoa3_a04.gt.1)    chem(i,k,j,p_asoa3_a04)=0.0
+         if (p_asoa4_a04.gt.1)    chem(i,k,j,p_asoa4_a04)=0.0
+         if (p_bsoaX_a04.gt.1)    chem(i,k,j,p_bsoaX_a04)=0.0
+         if (p_bsoa1_a04.gt.1)    chem(i,k,j,p_bsoa1_a04)=0.0
+         if (p_bsoa2_a04.gt.1)    chem(i,k,j,p_bsoa2_a04)=0.0
+         if (p_bsoa3_a04.gt.1)    chem(i,k,j,p_bsoa3_a04)=0.0
+         if (p_bsoa4_a04.gt.1)    chem(i,k,j,p_bsoa4_a04)=0.0
+
+         if (p_glysoa_r1_a01.gt.1)  chem(i,k,j,p_glysoa_r1_a01)=0.0
+         if (p_glysoa_r2_a01.gt.1)  chem(i,k,j,p_glysoa_r2_a01)=0.0
+         if (p_glysoa_oh_a01.gt.1) chem(i,k,j,p_glysoa_oh_a01)=0.0
+         if (p_glysoa_nh4_a01.gt.1) chem(i,k,j,p_glysoa_nh4_a01)=0.0
+         if (p_glysoa_sfc_a01.gt.1) chem(i,k,j,p_glysoa_sfc_a01)=0.0
+
+         if (p_glysoa_r1_a02.gt.1) chem(i,k,j,p_glysoa_r1_a02)=0.0
+         if (p_glysoa_r2_a02.gt.1) chem(i,k,j,p_glysoa_r2_a02)=0.0
+         if (p_glysoa_oh_a02.gt.1) chem(i,k,j,p_glysoa_oh_a02)=0.0
+         if (p_glysoa_nh4_a02.gt.1) chem(i,k,j,p_glysoa_nh4_a02)=0.0
+         if (p_glysoa_sfc_a02.gt.1) chem(i,k,j,p_glysoa_sfc_a02)=0.0
+
+         if (p_glysoa_r1_a03.gt.1) chem(i,k,j,p_glysoa_r1_a03)=0.0
+         if (p_glysoa_r2_a03.gt.1) chem(i,k,j,p_glysoa_r2_a03)=0.0
+         if (p_glysoa_oh_a03.gt.1) chem(i,k,j,p_glysoa_oh_a03)=0.0
+         if (p_glysoa_nh4_a03.gt.1) chem(i,k,j,p_glysoa_nh4_a03)=0.0
+         if (p_glysoa_sfc_a03.gt.1) chem(i,k,j,p_glysoa_sfc_a03)=0.0
+
+         if (p_glysoa_r1_a04.gt.1) chem(i,k,j,p_glysoa_r1_a04)=0.0
+         if (p_glysoa_r2_a04.gt.1) chem(i,k,j,p_glysoa_r2_a04)=0.0
+         if (p_glysoa_oh_a04.gt.1) chem(i,k,j,p_glysoa_oh_a04)=0.0
+         if (p_glysoa_nh4_a04.gt.1) chem(i,k,j,p_glysoa_nh4_a04)=0.0
+         if (p_glysoa_sfc_a04.gt.1) chem(i,k,j,p_glysoa_sfc_a04)=0.0
+
+!         chem(i,k,j,p_voca)=0.0
+!         chem(i,k,j,p_vocbb)=0.0
+         if (p_voca.gt.1) chem(i,k,j,p_voca)=0.0
+         if (p_vocbb.gt.1) chem(i,k,j,p_vocbb)=0.0
+
+         if (p_smpa_a01.gt.1)       chem(i,k,j,p_smpa_a01)=1.e-16
+         if (p_smpa_a02.gt.1)       chem(i,k,j,p_smpa_a02)=1.e-16
+         if (p_smpa_a03.gt.1)       chem(i,k,j,p_smpa_a03)=1.e-16
+         if (p_smpa_a04.gt.1)       chem(i,k,j,p_smpa_a04)=1.e-16
+         
+         if (p_smpbb_a01.gt.1)       chem(i,k,j,p_smpbb_a01)=1.e-16
+         if (p_smpbb_a02.gt.1)       chem(i,k,j,p_smpbb_a02)=1.e-16
+         if (p_smpbb_a03.gt.1)       chem(i,k,j,p_smpbb_a03)=1.e-16
+         if (p_smpbb_a04.gt.1)       chem(i,k,j,p_smpbb_a04)=1.e-16
+
+         if (p_nh4_a01.gt.1)       chem(i,k,j,p_nh4_a01)=1.e-16
+         if (p_nh4_a02.gt.1)       chem(i,k,j,p_nh4_a02)=1.e-16
+         if (p_nh4_a03.gt.1)       chem(i,k,j,p_nh4_a03)=1.e-16
+         if (p_nh4_a04.gt.1)       chem(i,k,j,p_nh4_a04)=1.e-16
 
 
                 enddo
@@ -1047,7 +1147,9 @@ ENDIF ghg_block
        endif
      CASE (CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_KPP, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, &
            CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ, &
-           CBMZ_MOSAIC_4BIN_VBS2_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP,MOZART_MOSAIC_4BIN_VBS0_KPP,CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP )
+           CBMZ_MOSAIC_4BIN_VBS2_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP, &
+           MOZART_MOSAIC_4BIN_KPP,MOZART_MOSAIC_4BIN_AQ_KPP, &
+           CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP )
        call wrf_debug(15,'call MOSAIC aerosols initialization')
        call init_data_mosaic_asect(config_flags%n2o5_hetchem,is_aerosol)
        if(config_flags%chem_in_opt == 0 )then
@@ -1065,7 +1167,8 @@ ENDIF ghg_block
    progn_sanity_check : SELECT CASE(config_flags%chem_opt)
    CASE (RADM2SORG_AQ, RADM2SORG_AQCHEM, RACMSORG_AQ, RACMSORG_AQCHEM_KPP, RACM_ESRLSORG_AQCHEM_KPP, &
          CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, CBMZ_MOSAIC_DMS_4BIN_AQ, &
-         CBMZ_MOSAIC_DMS_8BIN_AQ,CBMZSORG_AQ,CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP)
+         CBMZ_MOSAIC_DMS_8BIN_AQ,CBMZSORG_AQ,CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP, &
+         MOZART_MOSAIC_4BIN_AQ_KPP)
       if( config_flags%progn /= 1 ) &
            call wrf_error_fatal( &
            "ERROR: When using a ..._AQ chemistry package, progn must be 1")
@@ -1762,7 +1865,7 @@ subroutine print_chem_species_index( chem_opt )
      print*,p_hysw_a04,"hysw_a04"
      print*,p_water_a04,"water_a04"
      print*,p_num_a04,"num_a04"
-  case (MOZART_MOSAIC_4BIN_VBS0_KPP )
+  case (MOZART_MOSAIC_4BIN_KPP, MOZART_MOSAIC_4BIN_AQ_KPP)
      print*,p_no3_a01,"no3_a01"
      print*,p_cl_a01,"cl_a01"
      print*,p_nh4_a01,"nh4_a01"

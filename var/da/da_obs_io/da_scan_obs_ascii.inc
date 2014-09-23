@@ -146,14 +146,6 @@ subroutine da_scan_obs_ascii (iv, filename, grid)
          platform%loc%slp%inv, platform%loc%slp%qc, platform%loc%slp%error, &
          platform%loc%pw%inv, platform%loc%pw%qc, platform%loc%pw%error
 
-      ! levels < 1 and .not.GPSPW and .not.GPSZTD, go back to reports
-
-      if ((platform%info%levels < 1) .AND.            &
-         ( (index(platform%info%platform, 'GPSPW') <= 0) .and. &
-           (index(platform%info%platform, 'GPSZD') <= 0) )) then
-         cycle reports
-      end if
-
       ! read each level
 
       nlevels= platform%info%levels 
@@ -389,7 +381,8 @@ subroutine da_scan_obs_ascii (iv, filename, grid)
          case (88)    ;
             ! Geostationary or Polar orbitting Satellite AMVs:
             if (index(platform%info%name, 'MODIS') > 0 .or. &
-                index(platform%info%name, 'modis') > 0)  then
+                index(platform%info%name, 'modis') > 0 .or. &
+                index(platform%info%id, 'AVHRR') > 0 )  then
                if (.not.use_polaramvobs .or. iv%info(polaramv)%ntotal == max_polaramv_input) cycle reports
                if (n==1) iv%info(polaramv)%ntotal = iv%info(polaramv)%ntotal + 1
                if (outside) cycle reports

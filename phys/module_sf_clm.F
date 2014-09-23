@@ -1178,8 +1178,8 @@ contains
         cover(:,4) = (/0.,0.,0.,0.,0.,0.,0.,0., 0.,0.,&
                        0.,0.,0.,0.,0.,0.,0.,50.,0.,0./)
   else
-        write(6,*)'CLM works only for USGS (24) and MODIS(20) land use types,&
-                 but the current number of land use types is ',num_landcover_types
+        write(6,*)'CLM works only for USGS (24) and MODIS(20) land use types, '
+        write(6,*)'but the current number of land use types is ',num_landcover_types
         call endrun()
   end if 
  end subroutine var_par

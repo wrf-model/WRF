@@ -48,7 +48,7 @@ CONTAINS
     USE module_force_scm
     USE module_convtrans_prep
     USE module_big_step_utilities_em, ONLY : phy_prep
-use module_scalar_tables
+!use module_scalar_tables
 #ifdef DM_PARALLEL
     USE module_dm, ONLY : local_communicator, mytask, ntasks, ntasks_x, ntasks_y, local_communicator_periodic, wrf_dm_maxval
     USE module_comm_dm, ONLY : halo_em_phys_a_sub,halo_em_fdda_sfc_sub,halo_pwp_sub,halo_em_chem_e_3_sub, &
@@ -254,7 +254,8 @@ BENCH_END(phy_prep_tim)
 BENCH_START(rad_driver_tim)
 
       CALL radiation_driver(                                                  &
-     &         ACFRCV=grid%acfrcv      ,ACFRST=grid%acfrst      ,ALBEDO=grid%albedo  &
+     &         p_top=grid%p_top & !DJW 140312 added p_top for vertical nesting
+     &        ,ACFRCV=grid%acfrcv      ,ACFRST=grid%acfrst      ,ALBEDO=grid%albedo  &
      &        ,CFRACH=grid%cfrach      ,CFRACL=grid%cfracl      ,CFRACM=grid%cfracm  &
      &        ,CUPPT=grid%cuppt        ,CZMEAN=grid%czmean      ,DT=grid%dt          &
      &        ,DZ8W=dz8w               ,EMISS=grid%emiss        ,GLW=grid%glw        &

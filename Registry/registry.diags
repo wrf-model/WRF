@@ -12,6 +12,7 @@ rconfig   integer     p_lev_diags_dfi     namelist,diags   1            0   -   
 rconfig   integer     num_press_levels    namelist,diags   1            0   -    "number of pressure levels to interpolate diagnostics to"    "index"
 rconfig   real            press_levels    namelist,diags   max_plevs    0   -    "array of pressure levels to interpolate diagnostics to"     "Pa"
 rconfig   integer     use_tot_or_hyd_p    namelist,diags   1            2   -    "1=use total pressure, 2=use hydrostatic pressure"           "flag"
+rconfig   integer     extrap_below_grnd   namelist,diags   1            1   -    "1=no extrapolation, 2=extrapolate adiabatically"            "flag"
 rconfig   real        p_lev_missing       namelist,diags   1         -999   -    "missing values below ground, no extrapolation"              "constant"
 
 #  Derived, this is interval in seconds that is from auxhist23 interval, computed in check_a_mundo
@@ -28,6 +29,7 @@ state    real   rh_pl  i{np}j   misc    1  Z   h{23}  "RH_PL"   "Pressure level 
 state    real   ght_pl i{np}j   misc    1  Z   h{23}  "GHT_PL"  "Pressure level data, Geopotential Height"   "m"
 state    real   s_pl   i{np}j   misc    1  Z   h{23}  "S_PL"    "Pressure level data, Speed"                 "m s-1"
 state    real   td_pl  i{np}j   misc    1  Z   h{23}  "TD_PL"   "Pressure level data, Dew point temperature" "K"
+state    real   q_pl   i{np}j   misc    1  Z   h{23}  "Q_PL"    "Pressure level data, Mixing ratio"          "kg/kg"
 
 #  Package declarations
 

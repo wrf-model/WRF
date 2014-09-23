@@ -1018,15 +1018,15 @@ CC_TOOLS        =      $(SCC)
 #ARCH    AIX xlf compiler with xlc #serial smpar dmpar dm+sm
 #
 DMPARALLEL      =       # 1
-OMPCPP		=	# -D_OPENMP
-OMP		=	# -qsmp=noauto
-OMPCC		=	# -qsmp=noauto
-SFC		=       xlf90_r
-SCC		=       cc_r
-SC99		=	c99_r
-CCOMP		=       cc_r
-DM_FC		=	mpxlf90_r
-DM_CC		=       mpcc_r
+OMPCPP          =       # -D_OPENMP
+OMP             =       # -qsmp=noauto
+OMPCC           =       # -qsmp=noauto
+SFC             =       xlf90_r
+SCC             =       cc_r
+SC99            =       c99_r
+CCOMP           =       cc_r
+DM_FC           =       mpxlf90_r
+DM_CC           =       mpcc_r -DMPI2_SUPPORT
 FC              =       CONFIGURE_FC
 CC              =       CONFIGURE_CC
 LD		=	$(FC)
@@ -1034,14 +1034,16 @@ RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =        -qrealsize=$(RWORDSIZE) -qintsize=4
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR -DNATIVE_MASSV -DWRF_USE_CLM
 CFLAGS_LOCAL    =       -DNOUNDERSCORE
-LDFLAGS_LOCAL   =       -lmass -lmassv
+LDFLAGS_LOCAL   =       -lmass -lmassv -bnoquiet # print diagnostic messages
 CPLUSPLUSLIB    =       -lC
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 # -qhot commented out in 3.0.1.1 release because of reported problems with 
 # model results under certain configurations. Use at your own risk.
-FCOPTIM		=       -O3 # -qhot
-FCREDUCEDOPT	=       -O2
-FCNOOPT		=       -qnoopt
+# -qstrict added in 3.6.1 release because of reported problems with 
+# model stability under certain configurations. Use at your own risk.
+FCOPTIM         =       -O3 -qstrict # -qhot
+FCREDUCEDOPT    =       -O2 # implies -qstrict
+FCNOOPT         =       -qnoopt
 FCDEBUG         =       # -g $(FCNOOPT) -qfullpath
 FORMAT_FIXED    =       -qfixed
 FORMAT_FREE     =       -qfree=f90
@@ -1054,8 +1056,57 @@ TRADFLAG        =       -traditional
 CPP             =       /lib/cpp -P
 AR              =       ar
 ARFLAGS         =       ru
-M4 		=       m4 -B 14000
-RANLIB 		=       ranlib
+M4              =       m4 -B 14000
+RANLIB          =       ranlib
+CC_TOOLS        =       cc
+
+###########################################################
+#ARCH    Linux x86_64 i486 i586 i686, xlf compiler with xlc # serial smpar dmpar dm+sm
+#
+DMPARALLEL      =        #1
+OMPCPP          =        # -D_OPENMP
+OMP             =        # -qsmp=noauto
+OMPCC           =        # -qsmp=noauto
+SFC             =       xlf90_r
+SCC             =       cc_r
+SC99            =        c99_r
+CCOMP           =       cc_r
+DM_FC           =        mpfort -compiler xlf90_r
+DM_CC           =       mpcc -DMPI2_SUPPORT
+FC              =       CONFIGURE_FC
+CC              =       CONFIGURE_CC
+LD              =        $(FC)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
+PROMOTION       =       -qrealsize=$(RWORDSIZE) -qintsize=4
+ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR -DNATIVE_MASSV -DWRF_USE_CLM
+CFLAGS_LOCAL    =       -DNOUNDERSCORE
+LDFLAGS_LOCAL   =       -lmass_64 -lmassvp7_64 -q64 -bnoquiet # linking diagnostics
+CPLUSPLUSLIB    =       -lC
+ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
+# -qhot commented out in 3.0.1.1 release because of reported problems with 
+# model results under certain configurations. Use at your own risk.
+# -qstrict added in 3.6.1 release because of reported problems with 
+# model stability under certain configurations. Use at your own risk.
+FCOPTIM         =       -q64 -O3 -qstrict # -qhot
+# if linking problems with libxlsmp occur, try -qsmp=noauto 
+FCREDUCEDOPT    =       -q64 -O2
+FCNOOPT         =       -q64 -qnoopt -qstrict # -qsmp=noauto
+FCDEBUG         =       # -g $(FCNOOPT) -qfullpath
+FORMAT_FIXED    =       -qfixed
+FORMAT_FREE     =       -qfree=f90
+FCSUFFIX        =       -qsuffix=f=f90
+BYTESWAPIO      =       
+FCBASEOPTS_NO_G =       -w -qspill=81920 -qmaxmem=-1 $(FORMAT_FREE) $(BYTESWAPIO)  #-qflttrap=zerodivide:invalid:enable -qsigtrap -C # -qinitauto=7FF7FFFF
+FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
+MODULE_SRCH_FLAG =     
+TRADFLAG        =       
+# instead of the GNU CPP, the CPP shipped with XLF should be used, 
+# which does not work with the -traditional flag
+CPP             =       $(XLF_BASE)/exe/cpp -P
+AR              =       ar
+ARFLAGS         =       ru
+M4              =       m4 -B 14000
+RANLIB          =       ranlib
 CC_TOOLS        =       cc
 
 ###########################################################

@@ -14,6 +14,7 @@ include registry.clm
 include registry.ssib
 include registry.lake
 include registry.diags
+include registry.afwa
 include registry.sbm
 include registry.bdy_perturb
 

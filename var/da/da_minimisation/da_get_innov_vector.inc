@@ -177,7 +177,7 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
 
       endif
 
-      if (n > 1) call domain_clockadvance (grid)
+      if (n > 1 .and. var4d) call domain_clockadvance (grid)
       call domain_clockprint(150, grid, 'DEBUG Adjoint Forcing:  get CurrTime from clock,')
 
    end do
@@ -195,6 +195,17 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
       deallocate (hr_rainc )
       deallocate (hr_rainnc)
    endif
+
+   ! For FGAT , we need to restore the the field of the analysis time at this point
+   ! At this point, the current time is the beginning of the time window
+   if ( num_fgat_time > 1 .and. .not. var4d) then
+      ! Set the current time to the analysis_date
+      call domain_clock_set( grid, current_timestr=trim(analysis_date(1:19)) )
+      ! set the basic states to the analysis time.
+      write(unit=filename1, fmt='(a)') 'fg'
+      write(unit=stdout,fmt='(A,A)') 'Restore to first guess :fg at ',trim(analysis_date(1:19))
+      call da_read_basicstates ( xbx, grid, config_flags, timestr, filename1)
+   end if
 
    if (num_fgat_time > 1) then
       call nl_get_time_step ( grid%id, time_step_seconds)

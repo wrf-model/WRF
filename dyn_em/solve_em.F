@@ -291,11 +291,6 @@ SUBROUTINE solve_em ( grid , config_flags  &
    endif
 
    grid%itimestep = grid%itimestep + 1
-if(grid%itimestep.eq.1)then
-call random_number(tracer)
-tracer = tracer * 10.
-tracer = tracer + 375
-endif
 
    IF( coupler_on ) CALL cpl_store_input( grid, config_flags )
 
@@ -2620,6 +2615,7 @@ BENCH_END(tracer_adv_tim)
                CALL flow_dep_bdy_qnn  ( scalar(ims,kms,jms,is),     &
                                   grid%ru_m, grid%rv_m, config_flags,   &
                                   grid%spec_zone,                  &
+                                  grid%ccn_conc,              & ! RAS
                                   ids,ide, jds,jde, kds,kde,  & ! domain dims
                                   ims,ime, jms,jme, kms,kme,  & ! memory dims
                                   ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
@@ -3152,19 +3148,19 @@ BENCH_END(bc_end_tim)
      !$OMP PRIVATE ( ij )
        DO ij = 1 , grid%num_tiles
 
-           call trajectory (grid,config_flags,  &
+           call trajectory (grid,config_flags,                                     &
                             grid%dt,grid%itimestep,grid%ru_m, grid%rv_m, grid%ww_m,&
                             grid%mut,grid%muu,grid%muv,                            &
                             grid%rdx, grid%rdy, grid%rdn, grid%rdnw,grid%rdzw,     &
                             grid%traj_i,grid%traj_j,grid%traj_k,                   &
                             grid%traj_long,grid%traj_lat,                          &
-                            grid%xlong,grid%xlat,            &
+                            grid%xlong,grid%xlat,                                  &
                             grid%msftx,grid%msfux,grid%msfvy,                      &
-                            ids, ide, jds, jde, kds, kde,    &
-                            ims, ime, jms, jme, kms, kme,    &
-                            grid%i_start(ij), grid%i_end(ij), &
-                            grid%j_start(ij), grid%j_end(ij), &
-                            k_start  , k_end )
+                            ids, ide, jds, jde, kds, kde,                          &
+                            ims, ime, jms, jme, kms, kme,                          &
+                            grid%i_start(ij), grid%i_end(ij),                      &
+                            grid%j_start(ij), grid%j_end(ij),                      &
+                            k_start  , k_end                                       )
         ENDDO
      !$OMP END PARALLEL DO
    ENDIF
@@ -3477,6 +3473,7 @@ BENCH_START(micro_driver_tim)
       &        ,kext_ft_qg=grid%kext_ft_qg         &
       &        ,height=grid%height                                         &
       &        ,tempc=grid%tempc                                         &
+      &        ,ccn_conc=grid%ccn_conc                                   & ! RAS
 
                                                                           )
 BENCH_END(micro_driver_tim)

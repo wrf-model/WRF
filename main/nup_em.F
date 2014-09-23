@@ -84,7 +84,7 @@ PROGRAM nup_em
    USE module_bc
    USE module_big_step_utilities_em
    USE module_get_file_names
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! for chemistry
    USE module_input_chem_data
@@ -487,7 +487,7 @@ SUBROUTINE nup ( nested_grid, parent_grid , in_id, out_id, newly_opened )
   parent_grid%cfn       = nested_grid%cfn 
   parent_grid%cfn1      = nested_grid%cfn1
 
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
   parent_grid%chem_opt    = nested_grid%chem_opt
   parent_grid%chem_in_opt = nested_grid%chem_in_opt
 #endif
@@ -635,7 +635,7 @@ SUBROUTINE nup ( nested_grid, parent_grid , in_id, out_id, newly_opened )
 !
 ! SEP     Put in chemistry data
 !
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
          IF( parent_grid%chem_opt .NE. 0 ) then
             IF( parent_grid%chem_in_opt .EQ. 0 ) then
              ! Read the chemistry data from a previous wrf forecast (wrfout file)

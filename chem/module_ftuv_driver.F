@@ -271,7 +271,8 @@
 !----------------------------------------------------
       if( config_flags%chem_opt == MOZART_KPP .or. &
           config_flags%chem_opt == MOZCART_KPP .or. &
-          config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP ) then
+          config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
+          config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP ) then
          p_jtop(its:ite,jts:jte) = Pa2hPa * p_phy(its:ite,kte,jts:jte)
          call p_interp( o2_exo_col, o3_exo_col, p_jtop, &
                         id, its, ite, jts, jte )
@@ -286,10 +287,8 @@
                RACM_ESRLSORG_AQCHEM_KPP,CBMZSORG,CBMZSORG_AQ)
              isorg=1
              CALL wrf_debug(15,'SORGAM aerosols initialization ')
-! 20130128 acd_ck_bugfix start
-         CASE (MOZART_MOSAIC_4BIN_VBS0_KPP)
-             CALL wrf_debug(15,'MOZART_MOSAIC_4BIN_VBS0_KPP aerosols initialization ')
-! 20130128 acd_ck_bugfix end
+         CASE (MOZART_MOSAIC_4BIN_KPP, MOZART_MOSAIC_4BIN_AQ_KPP)
+             CALL wrf_debug(15,'MOZART_MOSAIC_4BIN_KPP, MOZART_MOSAIC_4BIN_AQ_KPP aerosols initialization ')
          CASE DEFAULT
              CALL wrf_debug(15,'no aerosols initialization yet')
              CALL wrf_message('no aerosols initialization yet')
@@ -317,7 +316,8 @@
 !----------------------------------------------------
         if( config_flags%chem_opt == MOZART_KPP .or. &
             config_flags%chem_opt == MOZCART_KPP .or. &
-            config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP ) then
+            config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
+            config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP ) then
 
 !++alma 2012-12-01 modis landuse from sw
 !          if( ivgtyp(i,j) /= 16 ) then
@@ -334,7 +334,8 @@
 
         if( config_flags%chem_opt == MOZART_KPP .or. &
             config_flags%chem_opt == MOZCART_KPP .or. &
-            config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP ) then
+            config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
+            config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP ) then
            o3top = o3_exo_col(i,j)
            o2top = o2_exo_col(i,j)
         endif
@@ -563,7 +564,8 @@ level_loop : &
 
         if( config_flags%chem_opt == MOZART_KPP .or. &
             config_flags%chem_opt == MOZCART_KPP .or. &
-            config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP ) then
+            config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
+            config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP ) then
           do k = kts, kte
             ph_n2o(i,k,j)  = max( 0._dp,prate(k,pid_n2o)*m2s )
             ph_n2o5(i,k,j) = max( 0._dp,prate(k,pid_n2o5)*m2s )
@@ -596,7 +598,9 @@ level_loop : &
 !	... new initialization routine for ftuv
 !---------------------------------------------------------------------
 
-      use module_state_description, only : mozart_kpp, mozcart_kpp, mozart_mosaic_4bin_vbs0_kpp
+      use module_state_description, only : mozart_kpp, mozcart_kpp, &
+                                           mozart_mosaic_4bin_kpp,&
+                                           mozart_mosaic_4bin_aq_kpp
       use module_ftuv_subs, only         : aer_init
       use module_configure, only         : grid_config_rec_type
 
@@ -643,8 +647,9 @@ include 'netcdf.inc'
 #else
       if( config_flags%chem_opt == MOZART_KPP .or. &
           config_flags%chem_opt == MOZCART_KPP .or. &
-          config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP ) then
-         call wrf_message( 'ftuv_init: mozart,mozcart requires netcdf' )
+          config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
+          config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP ) then
+         call wrf_message( 'ftuv_init: mozart,mozcart,mozart_mosaic_* chem option requires netcdf' )
          call wrf_abort
       end if
 #endif
@@ -661,7 +666,8 @@ include 'netcdf.inc'
 is_mozart : &
       if( config_flags%chem_opt == MOZART_KPP .or. &
           config_flags%chem_opt == MOZCART_KPP .or. &
-          config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP ) then
+          config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
+          config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP ) then
 !---------------------------------------------------------------------
 !	... allocate column_density type
 !---------------------------------------------------------------------
@@ -807,9 +813,7 @@ col_dens_allocated : &
 
 !++alma 2012-12-01 modis landuse from sw
 !       if( id == 1 ) then
-! 20130807 acd_mbela_bugfix start
         if( id == 1 .and. .not. allocated(luse2usgs) ) then
-! 20130807 acd_mbela_bugfix end
           !allocate( luse2usgs(config_flags%num_land_cat),stat=astat )
           print*,"num_land_cat: ", num_land_cat
           allocate( luse2usgs(num_land_cat),stat=astat )
@@ -871,7 +875,9 @@ include 'netcdf.inc'
 
       use module_wave_data, only : nw, wl, wave_data_inti
       use module_ftuv_subs, only : nwint, wlint, schu_inti, inter_inti
-      use module_state_description, only : mozart_kpp, mozcart_kpp, mozart_mosaic_4bin_vbs0_kpp
+      use module_state_description, only : mozart_kpp, mozcart_kpp, &
+                                           mozart_mosaic_4bin_kpp,&
+                                           mozart_mosaic_4bin_aq_kpp
 
       implicit none
 
@@ -890,7 +896,8 @@ include 'netcdf.inc'
 
       if( chem_opt /= MOZART_KPP .and. &
           chem_opt /= MOZCART_KPP .and. &
-          chem_opt /= MOZART_MOSAIC_4BIN_VBS0_KPP ) then
+          chem_opt /= MOZART_MOSAIC_4BIN_KPP .and. &
+          chem_opt /= MOZART_MOSAIC_4BIN_AQ_KPP ) then
 !---------------------------------------------------------------------
 !     change unit from m to km
 !---------------------------------------------------------------------
@@ -956,7 +963,8 @@ include 'netcdf.inc'
 !---------------------------------------------------------------------
       if( chem_opt == MOZART_KPP .or. &
           chem_opt == MOZCART_KPP .or. &
-          chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP ) then
+          chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
+          chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP) then
          albedo(1:17,2) = (/ 0.0747_dp, 0.0755_dp, 0.0767_dp, 0.0783_dp, 0.0802_dp,   &
                              0.0825_dp, 0.0852_dp, 0.0882_dp, 0.0914_dp, 0.0908_dp,   &
                              0.0763_dp, 0.0725_dp, 0.0689_dp, 0.0632_dp, 0.0570_dp,   &

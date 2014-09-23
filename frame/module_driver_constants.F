@@ -46,8 +46,13 @@ MODULE module_driver_constants
    INTEGER , PARAMETER :: max_moves       =   50
 
    !  The maximum number of eta levels
+   !DJW 140701 Increased from 501 to 1001 since I can imagine using more than
+   !501 total vertical levels across multiple nested domains. Now that the
+   !code is modified to allow specification of all domains eta_levels using a
+   !array of length max_eta, this will need to be larger.  I'll also add a check
+   !in module_initialize_real to ensure we don't exceed this value.
 
-   INTEGER , PARAMETER :: max_eta         =   501
+   INTEGER , PARAMETER :: max_eta         =   1001
 
    !  The maximum number of ocean levels in the 3d U Miami ocean.
 

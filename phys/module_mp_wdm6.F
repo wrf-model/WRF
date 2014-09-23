@@ -14,7 +14,7 @@ MODULE module_mp_wdm6
 !
    REAL, PARAMETER, PRIVATE :: dtcldcr     = 120. ! maximum time step for minor loops
    REAL, PARAMETER, PRIVATE :: n0r = 8.e6         ! intercept parameter rain
-   REAL, PARAMETER, PRIVATE :: n0g = 4.e6         ! intercept parameter graupel
+!   REAL, PARAMETER, PRIVATE :: n0g = 4.e6         ! intercept parameter graupel ! RAS - now set in subroutine based on namelist option
    REAL, PARAMETER, PRIVATE :: avtr = 841.9       ! a constant for terminal velocity of rain
    REAL, PARAMETER, PRIVATE :: bvtr = 0.8         ! a constant for terminal velocity of rain
    REAL, PARAMETER, PRIVATE :: r0 = .8e-5         ! 8 microm  in contrast to 10 micro m
@@ -23,16 +23,16 @@ MODULE module_mp_wdm6
    REAL, PARAMETER, PRIVATE :: xmyu = 1.718e-5    ! the dynamic viscosity kgm-1s-1
    REAL, PARAMETER, PRIVATE :: avts = 11.72       ! a constant for terminal velocity of snow
    REAL, PARAMETER, PRIVATE :: bvts = .41         ! a constant for terminal velocity of snow 
-   REAL, PARAMETER, PRIVATE :: avtg = 330.        ! a constant for terminal velocity of graupel 
-   REAL, PARAMETER, PRIVATE :: bvtg = 0.8         ! a constant for terminal velocity of graupel
-   REAL, PARAMETER, PRIVATE :: deng = 500.        ! density of graupel
+!   REAL, PARAMETER, PRIVATE :: avtg = 330.        ! a constant for terminal velocity of graupel ! RAS - now set in subroutine based on namelist option
+!   REAL, PARAMETER, PRIVATE :: bvtg = 0.8         ! a constant for terminal velocity of graupel ! RAS - now set in subroutine based on namelist option
+!   REAL, PARAMETER, PRIVATE :: deng = 500.        ! density of graupel !RAS13.1 - now set in subroutine based on namelist option
    REAL, PARAMETER, PRIVATE :: n0smax =  1.e11    ! maximum n0s (t=-90C unlimited)
    REAL, PARAMETER, PRIVATE :: lamdacmax = 5.0e5  ! limited maximum value for slope parameter of cloud water
    REAL, PARAMETER, PRIVATE :: lamdacmin = 2.0e4  ! limited minimum value for slope parameter of cloud water
    REAL, PARAMETER, PRIVATE :: lamdarmax = 5.0e4  ! limited maximum value for slope parameter of rain
    REAL, PARAMETER, PRIVATE :: lamdarmin = 2.0e3  ! limited minimum value for slope parameter of rain
    REAL, PARAMETER, PRIVATE :: lamdasmax = 1.e5   ! limited maximum value for slope parameter of snow
-   REAL, PARAMETER, PRIVATE :: lamdagmax = 6.e4   ! limited maximum value for slope parameter of graupel
+!   REAL, PARAMETER, PRIVATE :: lamdagmax = 6.e4   ! limited maximum value for slope parameter of graupel - now set in subroutine based on namelist option
    REAL, PARAMETER, PRIVATE :: dicon = 11.9       ! constant for the cloud-ice diamter
    REAL, PARAMETER, PRIVATE :: dimax = 500.e-6    ! limited maximum value for the cloud-ice diamter
    REAL, PARAMETER, PRIVATE :: n0s = 2.e6         ! temperature dependent intercept parameter snow 
@@ -68,6 +68,7 @@ MODULE module_mp_wdm6
              bvts3,bvts4,g1pbs,g3pbs,g4pbs,g5pbso2,        &
              pvts,pacrs,precs1,precs2,pidn0s,xlv1,pacrc,   &
              bvtg1,bvtg2,bvtg3,bvtg4,g1pbg,g3pbg,g4pbg,    &
+             n0g,avtg,bvtg,deng,lamdagmax,                 & !RAS13.3 - set these in wdm6init
              g5pbgo2,pvtg,pacrg,precg1,precg2,pidn0g,      &
              rslopecmax,rslopec2max,rslopec3max,           &
              rslopermax,rslopesmax,rslopegmax,             &
@@ -1886,13 +1887,30 @@ CONTAINS
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
       END FUNCTION fpvs
 !-------------------------------------------------------------------
-  SUBROUTINE wdm6init(den0,denr,dens,cl,cpv, ccn0, allowed_to_read)
+  SUBROUTINE wdm6init(den0,denr,dens,cl,cpv, ccn0, hail_opt, allowed_to_read) ! RAS
 !-------------------------------------------------------------------
   IMPLICIT NONE
 !-------------------------------------------------------------------
 !.... constants which may not be tunable
    REAL, INTENT(IN) :: den0,denr,dens,cl,cpv,ccn0
+   INTEGER, INTENT(IN) :: hail_opt  ! RAS
    LOGICAL, INTENT(IN) :: allowed_to_read
+ 
+! RAS13.1 define graupel parameters as graupel-like or hail-like,
+!         depending on namelist option
+      IF (hail_opt .eq. 1) THEN !Hail!
+         n0g       = 4.e4
+         deng      = 700.
+         avtg      = 285.0
+         bvtg      = 0.8
+         lamdagmax = 2.e4
+      ELSE !Graupel!
+         n0g       = 4.e6
+         deng      = 500
+         avtg      = 330.0
+         bvtg      = 0.8
+         lamdagmax = 6.e4
+      ENDIF
 !
    pi = 4.*atan(1.)
    xlv1 = cl-cpv

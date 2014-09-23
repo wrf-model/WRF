@@ -153,8 +153,13 @@ integer::oops1,oops2
 !-- Carsel and Parrish [1988]
         REAL , DIMENSION(100) :: lqmi
 
+      REAL , DIMENSION(100) :: thickness , levels
       REAL :: t_start , t_end
       REAL , ALLOCATABLE , DIMENSION(:,:) :: clat_glob
+
+      !DJW 140626 added for multiple specified sets of eta_levels
+      INTEGER :: ks, ke, id
+      LOGICAL :: vnest !DJW 140722 T if using vertical nesting, otherwise F
 
       !  Dimension information stored in grid data structure.
 
@@ -192,15 +197,15 @@ integer::oops1,oops2
          IF ( flag_lake_depth .EQ. 0 ) THEN
             CALL wrf_message ( " Warning: Please rerun WPS to get lake_depth information for lake model" )
 
-         !  Set lake depth over the ocean to be -2 m, and set the lake depth over land to be -1 m.
+         !  Set lake depth over the ocean to be -3 m, and set the lake depth over land to be -2 m.
 
          ELSE
             DO j = jts, MIN(jde-1,jte)
                DO i = its, MIN(ide-1,ite)
                   IF      ( ( grid%lu_index(i,j) .NE. grid%islake ) .AND. ( grid%lu_index(i,j) .NE. grid%iswater ) ) THEN
-                     grid%lake_depth(i,j) = -1
-                  ELSE IF   ( grid%lu_index(i,j) .NE. grid%islake ) THEN
                      grid%lake_depth(i,j) = -2
+                  ELSE IF   ( grid%lu_index(i,j) .NE. grid%islake ) THEN
+                     grid%lake_depth(i,j) = -3
                   END IF
                END DO
             END DO
@@ -338,6 +343,17 @@ integer::oops1,oops2
             DO i=its,MIN(ide-1,ite)
                IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                grid%xice(i,j) = grid%icefrac_gc(i,j)
+            END DO
+         END DO
+      END IF
+
+      !  Replace traditional seaice field with optional seaice percent (AFWA source)
+
+      IF ( flag_icepct .EQ. 1 ) THEN
+         DO j=jts,MIN(jde-1,jte)
+            DO i=its,MIN(ide-1,ite)
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE
+               grid%xice(i,j) = grid%icepct(i,j)/100.
             END DO
          END DO
       END IF
@@ -759,7 +775,7 @@ integer::oops1,oops2
 
          num_metgrid_levels = grid%num_metgrid_levels
 
-         !  For UM data, swap incoming extra (theta-based) pressure with the standardly
+         !  For AFWA UM data, swap incoming extra (theta-based) pressure with the standardly
          !  named (rho-based) pressure.
 
          IF ( flag_ptheta .EQ. 1 ) THEN
@@ -773,19 +789,68 @@ integer::oops1,oops2
                   END DO
                END DO
             END DO
+         END IF
 
-            !  For UM data, the "surface" and the "first hybrid" level for the theta-level data fields are the same.  
-            !  Average the surface (k=1) and the second hybrid level (k=num_metgrid_levels-1) to get the first hybrid
-            !  layer.  We only do this for the theta-level data: pressure, temperature, specific humidity, and
-            !  geopotential height (i.e. we do not modify u, v, or the rho-based pressure).
+         !  For UM data, the "surface" and the "first hybrid" level for the theta-level data fields are the same.  
+         !  Average the surface (k=1) and the second hybrid level (k=num_metgrid_levels-1) to get the first hybrid
+         !  layer.  We only do this for the theta-level data: pressure, temperature, specific humidity, and
+         !  geopotential height (i.e. we do not modify u, v, or the rho-based pressure).
 
+         IF ( ( flag_ptheta .EQ. 1 ) .OR. ( flag_prho .EQ. 1 ) ) THEN
             DO j = jts, MIN(jte,jde-1)
                DO i = its, MIN(ite,ide-1)
                   IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                   grid%  p_gc(i,num_metgrid_levels,j) = ( grid%  p_gc(i,1,j) + grid%  p_gc(i,num_metgrid_levels-1,j) ) * 0.5
                   grid%  t_gc(i,num_metgrid_levels,j) = ( grid%  t_gc(i,1,j) + grid%  t_gc(i,num_metgrid_levels-1,j) ) * 0.5
-                  grid% sh_gc(i,num_metgrid_levels,j) = ( grid% sh_gc(i,1,j) + grid% sh_gc(i,num_metgrid_levels-1,j) ) * 0.5
                   grid%ght_gc(i,num_metgrid_levels,j) = ( grid%ght_gc(i,1,j) + grid%ght_gc(i,num_metgrid_levels-1,j) ) * 0.5
+               END DO
+            END DO
+
+            IF ( grid%sh_gc(its,1,jts) .LT. 0 ) THEN
+               DO j = jts, MIN(jte,jde-1)
+                  DO i = its, MIN(ite,ide-1)
+                     IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+                     grid% sh_gc(i,1,j) = 2. * grid% sh_gc(i,num_metgrid_levels,j) - grid% sh_gc(i,num_metgrid_levels-1,j)
+                  END DO
+               END DO
+            END IF
+            IF ( grid%cl_gc(its,1,jts) .LT. 0 ) THEN
+               DO j = jts, MIN(jte,jde-1)
+                  DO i = its, MIN(ite,ide-1)
+                     IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+                     grid% cl_gc(i,1,j) = 2. * grid% cl_gc(i,num_metgrid_levels,j) - grid% cl_gc(i,num_metgrid_levels-1,j)
+                  END DO
+               END DO
+            END IF
+            IF ( grid%cf_gc(its,1,jts) .LT. 0 ) THEN
+               DO j = jts, MIN(jte,jde-1)
+                  DO i = its, MIN(ite,ide-1)
+                     IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+                     grid% cf_gc(i,1,j) = 2. * grid% cf_gc(i,num_metgrid_levels,j) - grid% cf_gc(i,num_metgrid_levels-1,j)
+                  END DO
+               END DO
+            END IF
+         END IF
+
+         !  For UM data, the soil moisture comes in as kg / m^2. Divide by 1000 and layer thickness to get m^3 / m^3.
+
+         IF ( flag_prho .EQ. 1 ) THEN
+
+            levels(1) = 0.
+            levels(2) = ( 2. * sm_levels_input(1) )
+            DO k = 2 , num_sm_levels_input
+               levels(k+1) = ( 2. * sm_levels_input(k) ) - levels(k)
+            END DO
+            DO k = 1 , num_sm_levels_input
+               thickness(k) = ( levels(k+1) - levels(k) ) / 100.
+            END DO
+
+            DO j = jts, MIN(jte,jde-1)
+               DO k = 1 , num_sm_levels_input
+                  DO i = its, MIN(ite,ide-1)
+                     IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+                     sm_input(i,k+1,j) = MAX ( 0. , sm_input(i,k+1,j) / 1000. / thickness(k) )
+                  END DO
                END DO
             END DO
          END IF
@@ -1052,6 +1117,15 @@ integer::oops1,oops2
                                        its , ite , jts , jte , kts , kte )
          ENDIF
 
+#if ( WRF_CHEM == 1 )
+         ! Chose the appropriate LAI veg mask for this date (used in the AFWA dust model)
+
+         CALL eightday_selector ( grid%lai_veg_8day , current_date , grid%lai_vegmask , &
+                                       ids , ide , jds , jde , kds , kde , &
+                                       ims , ime , jms , jme , kms , kme , &
+                                       its , ite , jts , jte , kts , kte )
+#endif
+
          !  Get the min/max of each i,j for the monthly green-ness fraction.
 
          CALL monthly_min_max ( grid%greenfrac , grid%shdmin , grid%shdmax , &
@@ -1059,10 +1133,11 @@ integer::oops1,oops2
                                 ims , ime , jms , jme , kms , kme , &
                                 its , ite , jts , jte , kts , kte )
 
-         !  The model expects the green-ness values in percent, not fraction.
+         !  The model expects the green-ness and vegetation fraction values to be in percent, not fraction.
 
          DO j = jts, MIN(jte,jde-1)
            DO i = its, MIN(ite,ide-1)
+              IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
               grid%vegfra(i,j) = grid%vegfra(i,j) * 100.
               grid%shdmax(i,j) = grid%shdmax(i,j) * 100.
               grid%shdmin(i,j) = grid%shdmin(i,j) * 100.
@@ -1258,8 +1333,70 @@ integer::oops1,oops2
          !  Compute the eta levels if not defined already.
 
          IF ( grid%znw(1) .NE. 1.0 ) THEN
+           vnest = .FALSE.
+           DO id=1,model_config_rec%max_dom
+             IF (model_config_rec%vert_refine_method(id) .NE. 0) THEN
+               vnest = .TRUE.
+             ENDIF
+           ENDDO
+           IF (vnest) THEN
+            !DJW 140627 Added code for specifying multiple domains' eta_levels.
+            !First check to make sure that we've not specified more
+            !eta_levels than the dimensionality of eta_levels can handle! This
+            !issue will most likely cause a break sometime before we real this
+            !check, however it doesn't hurt to include it. To increase max_eta,
+            !go to frame/module_driver_constants.F.
+             write(*,'(A)') "DJW[module_initialize_real]: using vertical nesting, reading in eta_levels specified in namelist.input"
+            ks = 0
+            DO id=1,grid%id
+              ks = ks+model_config_rec%e_vert(id)
+            ENDDO
+            IF (ks .GT. max_eta) THEN
+              CALL wrf_error_fatal("too many vertical levels, increase max_eta in frame/module_driver_constants.F")
+            ENDIF
+            !Now set the eta_levels to what we specified in the namelist. We've
+            !packed all the domains' eta_levels into a 'vector' and now we need
+            !to pull only the section of the vector associated with our domain
+            !of interest, which is between indicies ks and ke.
+            IF (grid%id .EQ. 1) THEN
+              ks = 1
+              ke = model_config_rec%e_vert(1)
+            ELSE
+              id = 1
+              ks = 1
+              ke = 0
+              DO WHILE (grid%id .GT. id)
+                id = id+1
+                ks = ks+model_config_rec%e_vert(id-1)
+                ke = ks+model_config_rec%e_vert(id)
+              ENDDO
+            ENDIF
+            eta_levels(1:kde) = model_config_rec%eta_levels(ks:ke)
+            !Check the value of the first and last eta level for our domain,
+            !then check that the vector of eta levels is only decreasing
+            IF (eta_levels(1) .NE. 1.0) THEN
+              CALL wrf_error_fatal("error with specified eta_levels, first level is not 1.0")
+            ENDIF
+            IF (eta_levels(kde) .NE. 0.0) THEN
+              CALL wrf_error_fatal("error with specified eta_levels, last level is not 0.0")
+            ENDIF
+            DO k=2,kde
+              IF (eta_levels(k) .GT. eta_levels(k-1)) THEN
+                CALL wrf_error_fatal("eta_levels are not uniformly decreasing from 1.0 to 0.0")
+              ENDIF
+            ENDDO
+             !DJW print out eta_levels for debugging purposes
+             DO k=1,kde
+               write(*,'(A,I3,A,F5.3)') "DJW[module_initialize_real]: eta_levels(",k,")=",eta_levels(k)
+             ENDDO
+            !DJW 140627 End of added code for specifying eta_levels
+           ELSE !We're not using vertical nesting
+            !DJW start of original code to set eta_levels
+             write(*,'(A)') "DJW[module_initialize_real]: vertical nesting is not enabled but eta_levels are set in namelist.input"
+             eta_levels(1:kde) = model_config_rec%eta_levels(1:kde)
+            !DJW end of original code to set eta_levels
+           ENDIF
 
-            eta_levels(1:kde) = model_config_rec%eta_levels(1:kde)
             max_dz            = model_config_rec%max_dz
 
             CALL compute_eta ( grid%znw , &
@@ -1516,9 +1653,19 @@ integer::oops1,oops2
             END DO
          END IF
 
-         IF ( flag_qc .EQ. 1 ) THEN
+         IF ( ( flag_qc .EQ. 1 ) .OR. ( flag_speccldl .EQ. 1 ) ) THEN
             DO im = PARAM_FIRST_SCALAR, num_3d_m
                IF ( im .EQ. P_QC ) THEN
+                  IF ( flag_speccldl .EQ. 1 ) THEN
+                     DO j = jts, MIN(jte,jde-1)
+                        DO k = 1 , num_metgrid_levels
+                           DO i = its, MIN(ite,ide-1)
+                              IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+                              grid%qc_gc(i,k,j) = grid%cl_gc(i,k,j) /( 1. - grid%cl_gc(i,k,j) )
+                           END DO
+                        END DO
+                     END DO
+                  END IF
                   CALL vert_interp ( grid%qc_gc , grid%pd_gc , moist(:,:,:,P_QC) , grid%pb , &
                                      grid%hgtmaxw , grid%hgttrop , grid%pmaxw , grid%ptrop , &
                                      0 , 0 , &
@@ -1535,9 +1682,19 @@ integer::oops1,oops2
             END DO
          END IF
 
-         IF ( flag_qi .EQ. 1 ) THEN
+         IF ( ( flag_qi .EQ. 1 ) .OR. ( flag_speccldf .EQ. 1 ) ) THEN
             DO im = PARAM_FIRST_SCALAR, num_3d_m
                IF ( im .EQ. P_QI ) THEN
+                  IF ( flag_speccldf .EQ. 1 ) THEN
+                     DO j = jts, MIN(jte,jde-1)
+                        DO k = 1 , num_metgrid_levels
+                           DO i = its, MIN(ite,ide-1)
+                              IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+                              grid%qi_gc(i,k,j) = grid%cf_gc(i,k,j) /( 1. - grid%cf_gc(i,k,j) )
+                           END DO
+                        END DO
+                     END DO
+                  END IF
                   CALL vert_interp ( grid%qi_gc , grid%pd_gc , moist(:,:,:,P_QI) , grid%pb , &
                                      grid%hgtmaxw , grid%hgttrop , grid%pmaxw , grid%ptrop , &
                                      0 , 0 , &
@@ -2284,6 +2441,15 @@ integer::oops1,oops2
         0.004, 0.065 /)
 !       0.004, 0.065, 0.020, 0.004, 0.008 /)  !  has extra levels for playa, lava, and white sand
 
+      ! If Unified Model soil moisture input, add lqmi since UM gives us available soil moisture, not total (AFWA source)
+      IF ( flag_um_soil == 1 ) THEN
+         DO j = jts, MIN(jde-1,jte)
+            DO i = its, MIN(ide-1,ite)
+               grid%smois(i,:,j)=grid%smois(i,:,j)+lqmi(grid%isltyp(i,j))
+            END DO
+         END DO
+      END IF
+
       !  At the initial time we care about values of soil moisture and temperature, other times are
       !  ignored by the model, so we ignore them, too.
 
@@ -2336,15 +2502,15 @@ integer::oops1,oops2
                              ( grid%tslb(i,1,j) .lt. 400 ) .and. ( grid%smois(i,1,j) .lt. 0.005 ) ) then
                            print *,'RUC -> Noah: bad soil moisture at i,j = ',i,j,grid%smois(i,:,j)
                            iicount = iicount + 1
-!                          grid%smois(i,:,j) = 0.005
+                           grid%smois(i,:,j) = 0.005
 !+---+-----------------------------------------------------------------+
 !  Same comment as above.
-                           grid%smois(i,:,j) = 0.499
-                        ELSEIF ( (grid%landmask(i,j).gt.0.5) .and. (grid%tslb(i,1,j) .gt. 170 ) .and. &
-                             ( grid%tslb(i,1,j) .lt. 400 ) .and. (grid%smois(i,1,j) .gt. 1.005 ) ) then
-                           print *,'Noah -> Noah: bad soil moisture at i,j =',i,j,grid%smois(i,:,j)
-                           iicount = iicount + 1
-                           grid%smois(i,:,j) = 0.499
+!                          grid%smois(i,:,j) = 0.499
+!                       ELSEIF ( (grid%landmask(i,j).gt.0.5) .and. (grid%tslb(i,1,j) .gt. 170 ) .and. &
+!                            ( grid%tslb(i,1,j) .lt. 400 ) .and. (grid%smois(i,1,j) .gt. 1.005 ) ) then
+!                          print *,'Noah -> Noah: bad soil moisture at i,j =',i,j,grid%smois(i,:,j)
+!                          iicount = iicount + 1
+!                          grid%smois(i,:,j) = 0.499
 !+---+-----------------------------------------------------------------+
                         END IF
                      END DO
@@ -4500,13 +4666,13 @@ end subroutine fillitup
                CALL lagrange_setup ( var_type , interp_type , &
                     ordered_porig(kinterp_start:kinterp_end) , &
                     ordered_forig(kinterp_start:kinterp_end) , &
-                    count , lagrange_order , extrap_type , &
+                    kinterp_end-kinterp_start+1 , lagrange_order , extrap_type , &
                     ordered_pnew(kstart:kend)  , ordered_fnew  , kend-kstart+1 ,i,j)
             ELSE
                CALL lagrange_setup ( var_type , interp_type , &
                 LOG(ordered_porig(kinterp_start:kinterp_end)) , &
                     ordered_forig(kinterp_start:kinterp_end) , &
-                    count , lagrange_order , extrap_type , &
+                    kinterp_end-kinterp_start+1 , lagrange_order , extrap_type , &
                 LOG(ordered_pnew(kstart:kend)) , ordered_fnew  , kend-kstart+1 ,i,j)
             END IF
 
@@ -6549,6 +6715,46 @@ end do
       END DO find_month
 
    END SUBROUTINE monthly_interp_to_date
+
+!---------------------------------------------------------------------
+
+   SUBROUTINE eightday_selector ( field_in , date_str , field_out , &
+                      ids , ide , jds , jde , kds , kde , &
+                      ims , ime , jms , jme , kms , kme , &
+                      its , ite , jts , jte , kts , kte )
+
+   !  Given current date, select time-matching monthly entry from grid.
+   !  No interpolation.
+
+      IMPLICIT NONE
+
+      INTEGER , INTENT(IN)        :: ids , ide , jds , jde , kds , kde , &
+                                     ims , ime , jms , jme , kms , kme , &
+                                     its , ite , jts , jte , kts , kte
+
+      CHARACTER (LEN=24) , INTENT(IN) :: date_str
+      REAL , DIMENSION(ims:ime,46,jms:jme) , INTENT(IN)  :: field_in  !46
+      REAL , DIMENSION(ims:ime,   jms:jme) , INTENT(OUT) :: field_out
+
+      !  Local vars
+
+      INTEGER :: i , j
+      INTEGER :: julyr, julday, eightday
+      REAL :: gmt
+
+      CALL get_julgmt ( date_str , julyr , julday , gmt )
+      eightday = ((julday-1) / 8) + 1
+!      print *, 'date_str: ', date_str
+!      print *, 'julyr, julday: ', julyr, julday
+!      print *, 'eightday: ', eightday
+
+      DO j = jts , MIN ( jde-1 , jte )
+         DO i = its , MIN (ide-1 , ite )
+            field_out(i,j) =  field_in(i,eightday,j)
+         END DO
+      END DO
+
+   END SUBROUTINE eightday_selector
 
 !---------------------------------------------------------------------
 

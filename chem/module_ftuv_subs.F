@@ -1514,9 +1514,7 @@ WAVE_LENGTH_LOOP : &
       tt = tlev(1)/281._dp
       do m = 1,tuv_jmax
          adjin = 1._dp
-!acd_sw_bugfix 20131205
          if( m == 2 ) then
-!acd_sw_bugfix 20131205
 !----------------------------------------------------------------------
 ! ... temperature modification
 ! t0.9 (1.05) t0.95(1.025) t1.0(1.0) t1.15(1.02) t1.1(1.04)
@@ -1621,9 +1619,7 @@ WAVE_LENGTH_LOOP : &
 
       o3den(1:nz) = o3(1:nz)*airlev(1:nz)
       cz(1:nz-1)  = 0.5_dp*(o3den(2:nz) + o3den(1:nz-1))*km2cm*(z(2:nz) - z(1:nz-1))
-!acd_sw_bugfix 20131205
       cz(nz-1)    = cz(nz-1) + o3top
-!acd_sw_bugfix 20131205
 
       to3(nz)  = o3top
       do k = nz-1,1,-1
@@ -1635,9 +1631,7 @@ WAVE_LENGTH_LOOP : &
 !-----------------------------------------------------------------------------
       if( o3toms > 0.0_dp ) then
         scale = o3toms/(to3(1)/2.687e16_dp)
-!acd_sw_bugfix 20131205
         cz(1:nz)  = cz(1:nz)*scale
-!acd_sw_bugfix 20131205
         to3(1:nz) = to3(1:nz)*scale
       endif
 !-----------------------------------------------------------------------------
@@ -2650,7 +2644,8 @@ level_loop : &
 
       subroutine pchem( chem_opt, nz, tlev, airlev )
 
-      use module_state_description, only : MOZART_KPP, MOZCART_KPP, MOZART_MOSAIC_4BIN_VBS0_KPP
+      use module_state_description, only : MOZART_KPP, MOZCART_KPP, &
+                                           MOZART_MOSAIC_4BIN_KPP, MOZART_MOSAIC_4BIN_AQ_KPP
       use module_wave_data, only : r01, r04, r44, r08, r06, r10,  &
                                    r11, r14, r15, r17, r18,       &
                                    xs_mvk, xs_macr, xs_hyac, xs_glyald, nj
@@ -2800,7 +2795,8 @@ level_loop : &
 !-----------------------------------------------------------------------------
 is_mozart : &
       if( chem_opt == MOZART_KPP .or. chem_opt == MOZCART_KPP .or. &
-          chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP ) then
+          chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
+          chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP) then
         call xs_mvk( nz, tlev, airlev )
         call xs_macr( nz, tlev, airlev )
         call xs_hyac( nz, tlev, airlev )

@@ -153,7 +153,12 @@
 ! WARNING:  this might present scaling issues on very large numbers of processors
      alloc_err_message = ' '
      alloc_err_message(1:12) = 'NO PROBLEMOS'
+#if 0
      ALLOCATE( clat_glob(ids:ide,jds:jde), STAT=alloc_status, ERRMSG=alloc_err_message )
+#else
+     ALLOCATE( clat_glob(ids:ide,jds:jde), STAT=alloc_status)
+     alloc_err_message = 'Allocation of space for a global field failed.' 
+#endif
 
      IF ( alloc_status .NE. 0 ) THEN
         CALL wrf_message ( TRIM(alloc_err_message) )
@@ -233,7 +238,7 @@
      CALL wrf_dm_bcast_bytes ( grid%SEED2, IWORDSIZE )
 #endif
 
-     IF (grid%stoch_force_opt==1) then
+     IF ( (grid%stoch_force_opt==1) .or. (grid%perturb_bdy==1)) then
      grid%SPTFORCC=0.0
      grid%SPTFORCS=0.0
      call SETUP_STOCH_SKEBS(grid%VERTSTRUCC,grid%VERTSTRUCS,                   &
@@ -268,17 +273,8 @@
                        ims, ime, jms, jme, kms, kme,                      &
                        its, ite, jts, jte, kts, kte                       )
      ENDIF 
-     do i=1,600
-     CALL UPDATE_STOCH(grid%SPSTREAMFORCS,grid%SPSTREAMFORCC,           &
-                      grid%SPTFORCS,grid%SPTFORCC,                        &
-                      grid%SPT_AMP,grid%SPSTREAM_AMP,                     &
-                      ids, ide, jds, jde, kds, kde,                       &
-                      ims, ime, jms, jme, kms, kme,                       &
-                      its, ite, jts, jte, kts, kte                       )
-     enddo
 
-
-    END IF
+    END IF ! ( grid%id == 1 ) .AND. ( grid%stoch_force_global_opt == 1 ) 
 !   --- END SETUP STOCHASTIC PERTURBATION SCHEMES ----------
 
 
@@ -990,6 +986,7 @@ endif
                       ,grid%massflux_EDKF, grid%entr_EDKF, grid%detr_EDKF                & 
                       ,grid%thl_up,grid%thv_up,grid%rt_up                                &
                       ,grid%rv_up,grid%rc_up,grid%u_up,grid%v_up,grid%frac_up            &
+                      ,grid%ccn_conc                                          & ! RAS
                       ,grid%QKE                                               &!JOE-for mynn
                       ,grid%landusef,grid%landusef2,grid%mosaic_cat_index                            & ! danli mosaic 
                       ,grid%TSK_mosaic,grid%TSLB_mosaic,grid%SMOIS_mosaic,grid%SH2O_mosaic           & ! danli mosaic
@@ -1687,6 +1684,7 @@ DEALLOCATE(z_at_q)
                  ,e=grid%e                      &
                  !  Namelist info
                  ,use_tot_or_hyd_p=config_flags%use_tot_or_hyd_p &
+                 ,extrap_below_grnd=config_flags%extrap_below_grnd &
                  ,missing=config_flags%p_lev_missing &
                  !  The diagnostics, mostly output variables
                  ,num_press_levels=config_flags%num_press_levels &
@@ -1700,6 +1698,7 @@ DEALLOCATE(z_at_q)
                  ,ght_pl= grid%ght_pl           &
                  ,s_pl  = grid%s_pl             &  
                  ,td_pl = grid%td_pl            &
+                 ,q_pl = grid%q_pl              &
                  !  Dimension arguments
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde    &
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme    &

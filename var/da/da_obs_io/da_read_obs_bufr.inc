@@ -3,14 +3,14 @@ subroutine da_read_obs_bufr (iv)
    !---------------------------------------------------------------------------
    ! Purpose: Read BUFR observation file for input to wrfvar
    !---------------------------------------------------------------------------
-   !   METHOD: use F90 sequantial data structure to avoid read file twice
+   !   METHOD: use F90 sequential data structure to avoid read file twice
    !            so that da_scan_obs_bufr is not necessary any more.
    !            1. read prepbufr data in sequential data structure
    !            2. do gross QC check
    !            3. assign sequential data structure to innovation structure
    !                  and deallocate sequential data structure
    !
-   !  HISTORY: 2009/10/13  - F90 sequantial structure  Peng Xiu
+   !  HISTORY: 2009/10/13  - F90 sequential structure  Peng Xiu
    ! 
    !----------------------------------------------------------------------------
    
@@ -132,7 +132,7 @@ subroutine da_read_obs_bufr (iv)
 ! 1.0  Open file
 !---------------------------------------------------------------- 
 !
-!check if input file exist
+!check if input file exists
 num_bufr(:)=0
 numbufr=0
 if (num_fgat_time>1) then
@@ -182,7 +182,7 @@ bufrfile:  do ibufr=1,numbufr
 !yw end added
        
 !
-!     We want to use specific unit number to read preppbufr data, which enable us to control its endian
+!     We want to use specific unit number to read prepbufr data, which enables us to control its endianness
       iunit = 96 
 
       open(unit   = iunit, FILE   = trim(filename), &
@@ -555,7 +555,8 @@ bufrfile:  do ibufr=1,numbufr
       platform % loc % pw %qc     = missing_data
       platform % loc % pw %error  = err_pw
       pmq=nint(pmo(2,1))
-      if (pmq <= qflag .and. pmq >= 0) then
+      if ( pmq <= qflag .and. pmq >= 0 .and. &
+           pmo(1,1) < r8bfms ) then
          platform % loc % slp % inv =pmo(1,1)*100.0
          platform % loc % slp % qc  =pmq
          platform % loc % slp % error = err_p          ! hardwired
@@ -566,7 +567,8 @@ bufrfile:  do ibufr=1,numbufr
 #else
       pwe = min(err_pw, oes(7,1))
 #endif
-      if (pwq <= qflag .and. pwq >= 0) then
+      if ( pwq <= qflag .and. pwq >= 0 .and. &
+           obs(7,1) < r8bfms ) then
          platform % loc % pw % inv = obs(7,1) * 0.1    ! convert to cm
          platform % loc % pw % qc  =  pwq
          platform % loc % pw % error = pwe          ! hardwired
@@ -617,7 +619,8 @@ bufrfile:  do ibufr=1,numbufr
             obs(2,k) = obs(2,k)*1e-6
             if (obs(3,k) > -200.0 .and. obs(3,k) < 350.0) then
                if ( tpc >= 8 ) then   ! program code 008 VIRTMP
-                  obs(3,k) = obs(3,k) / (1.0 + 0.608 * obs(2,k))
+                  ! 0.61 is used in NCEP prepdata.f to convert T to Tv
+                  obs(3,k) = obs(3,k) / (1.0 + 0.61 * obs(2,k))
                end if
             end if
          end if
@@ -641,13 +644,15 @@ bufrfile:  do ibufr=1,numbufr
          poe = min(err_p, oes(1,k)*100.0) ! convert to Pa
 #endif
 
-         if (tqm <= qflag .and. tqm >= 0) then
+         if ( tqm <= qflag .and. tqm >= 0 .and. &
+              obs(3,k) < r8bfms ) then
             platform % each (k) % t % inv =obs(3,k)
             platform % each (k) % t % qc  =tqm
             platform % each (k) % t % error =toe
          end if
 
-         if (wqm <= qflag .and. wqm >= 0) then
+         if ( wqm <= qflag .and. wqm >= 0 .and. &
+             obs(5,k) < r8bfms .and. obs(6,k) < r8bfms ) then
             platform % each (k) % u % inv =obs(5,k)
             platform % each (k) % v % inv =obs(6,k)
             platform % each (k) % u % qc  =wqm
@@ -675,18 +680,20 @@ bufrfile:  do ibufr=1,numbufr
 
          if (qqm<=qflag .and. qqm>=0 .and. obs(2,k)>0.0 .and. obs(2,k)<r8bfms) then
             platform % each (k) % q % inv =obs(2,k)
-            if ( obs(1,k) >= 300.0 ) then   ! do not use mositure above 300 hPa
+            if ( obs(1,k) >= 300.0 .and. obs(1,k) < r8bfms ) then   ! do not use moisture above 300 hPa
                platform % each (k) % q % qc  =qqm
             end if
             platform % each (k) % q % error = qoe
          end if
 
-         if (zqm <= qflag .and. zqm >= 0)then
+         if ( zqm <= qflag .and. zqm >= 0 .and. &
+              obs(4,k) < r8bfms )then
             platform % each (k) % height  = obs(4,k)
             platform % each (k) % height_qc =zqm
          end if
 
-         if (pqm <= qflag .and. pqm >= 0)then
+         if ( pqm <= qflag .and. pqm >= 0 .and. &
+              obs(1,k) > 0.0 .and. obs(1,k) < r8bfms )then
             platform % each (k) % p % inv =obs(1,k)*100.0  ! convert to Pa
             platform % each (k) % p % qc  =pqm
             platform % each (k) % p % error =poe

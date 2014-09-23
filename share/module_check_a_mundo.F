@@ -756,6 +756,26 @@
          wrf_err_message = 'resetting scalar_pblmix = 1'
          CALL wrf_message ( wrf_err_message )
       END IF
+!  Check that vertical levels are defined in a logical way.
+!-----------------------------------------------------------------------
+      DO i = 1, model_config_rec % max_dom
+        IF (model_config_rec%vert_refine_method(i) .EQ. 1) THEN
+          IF (i .EQ. 1) THEN
+            wrf_err_message = '--- ERROR: vert_refine_method=1 for d01, must be 0.'
+            CALL wrf_error_fatal ( wrf_err_message )
+          ELSE
+            IF (MOD((model_config_rec%e_vert(i)-1),(model_config_rec%e_vert(i-1)-1)) .NE. 0) THEN
+              wrf_err_message = '--- ERROR: incompatible e_vert for use with int-refinement.'
+              CALL wrf_error_fatal ( wrf_err_message )
+            ENDIF
+          ENDIF
+        ELSEIF (model_config_rec%vert_refine_method(i) .EQ. 2) THEN
+          IF (i .EQ. 1) THEN
+            wrf_err_message = '--- ERROR: vert_refine_method=2 for d01, must be 0.'
+            CALL wrf_error_fatal ( wrf_err_message )
+          ENDIF
+        ENDIF
+      ENDDO
 
 !-----------------------------------------------------------------------
 !  Remapping namelist variables for gridded and surface fdda to aux streams 9 and 10.
@@ -783,10 +803,12 @@
 
       IMPLICIT NONE
 
+      INTEGER :: numsoiltemp , nummosaictemp
+      INTEGER :: i
+
 !-----------------------------------------------------------------------
 ! Set the namelist mosaic_cat_soil parameter for the Noah-mosaic  scheme if sf_surface_mosaic == 1.  
 !-----------------------------------------------------------------------
-      INTEGER :: numsoiltemp , nummosaictemp
 
       IF ( model_config_rec % sf_surface_mosaic .EQ. 1 ) THEN
       
@@ -818,6 +840,25 @@
          CALL wrf_message ( wrf_err_message )
 
       END IF
+      
+!-----------------------------------------------------------------------
+! If a user requested to compute the radar reflectivity .OR. if this is
+! one of the schemes that ALWAYS computes the radar reflectivity, then
+! turn on the switch that says allocate the space for the refl_10cm array.
+!-----------------------------------------------------------------------
+
+      DO i = 1, model_config_rec % max_dom
+         IF ( ( model_config_rec % mp_physics(i) .EQ. MILBRANDT2MOM ) .OR. &
+#if (EM_CORE == 1)
+              ( model_config_rec % mp_physics(i) .EQ. NSSL_2MOM     ) .OR. &
+              ( model_config_rec % mp_physics(i) .EQ. NSSL_2MOMCCN  ) .OR. &
+              ( model_config_rec % mp_physics(i) .EQ. NSSL_1MOM     ) .OR. &
+              ( model_config_rec % mp_physics(i) .EQ. NSSL_1MOMLFO  ) .OR. &
+#endif
+              ( model_config_rec % do_radar_ref  .EQ. 1             ) ) THEN
+            model_config_rec % compute_radar_ref = 1
+         END IF
+      ENDDO
 
 !-----------------------------------------------------------------------
 ! Set the namelist parameters for the RRTMG radiation scheme if either

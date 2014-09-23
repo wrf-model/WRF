@@ -71,16 +71,22 @@
            'da_solve: namelist iso_temp does not equal iso_temp from fg. Reset namelist value and rerun'
          call da_error(__FILE__,__LINE__,message(1:1))
       end if
+      call nl_get_base_pres_strat  ( 1, base_pres_strat )
+      call nl_get_base_lapse_strat ( 1, base_lapse_strat )
 
       grid%p00   = base_pres
       grid%t00   = base_temp
       grid%tlp   = base_lapse
       grid%tiso  = iso_temp
+      grid%p_strat   = base_pres_strat
+      grid%tlp_strat = base_lapse_strat
    else
       base_pres  = grid%p00
       base_temp  = grid%t00
       base_lapse = grid%tlp
       iso_temp   = grid%tiso
+      base_pres_strat  = grid%p_strat
+      base_lapse_strat = grid%tlp_strat
       if ( base_temp < 100.0 .or. base_pres < 10000.0 ) then
          write(unit=message(1),fmt='(A)') &
          'did not find base state parameters in fg. Add use_baseparam_fr_nml = .t. in &dynamics and rerun '
@@ -102,12 +108,31 @@
        if ( var4d_bin < time_step ) call nl_set_var4d_bin (1, time_step)
        time_max = (time_max - time_min) * 60   ! unit is : seconds
        num_fgat_time = NINT(time_max/var4d_bin)
-       if ( NINT(time_max/var4d_bin)*var4d_bin .ne. NINT(time_max) .or. &
-          var4d_bin/time_step*time_step .ne. var4d_bin ) then
-          write(unit=message(1),fmt='(A,A,2I7)') &
-          'Please change var4d_bin in namelist and rerun==>', 'run_seconds, var4d_bin:',NINT(time_max),var4d_bin
-          call da_error(__FILE__,__LINE__,message(1:1))
+       if ( NINT(time_max/var4d_bin)*var4d_bin .ne. NINT(time_max) ) then
+          write(unit=message(1),fmt='(A)') &
+          '4DVAR assimilation window must be evenly divisible by var4d_bin!'
+          write(unit=message(2),fmt='(A,I7)') &
+          'var4d_bin       = ',var4d_bin
+          write(unit=message(3),fmt='(A,A)') &
+          'time_window_max = ',time_window_max
+          write(unit=message(4),fmt='(A,A)') &
+          'time_window_min = ',time_window_min
+          write(unit=message(5),fmt='(A,F10.4)') &
+          'time_window_max - time_window_min = ',time_max
+          write(unit=message(6),fmt='(A)')'Change var4d_bin, time_window_max, or time_window_min in namelist and rerun'
+          call da_error(__FILE__,__LINE__,message(1:6))
        endif
+       if ( var4d_bin/time_step*time_step .ne. var4d_bin ) then
+          write(unit=message(1),fmt='(A)') &
+          'var4d_bin must be evenly divisible by time_step!'
+          write(unit=message(2),fmt='(A,I7)') &
+          'var4d_bin = ',var4d_bin
+          write(unit=message(3),fmt='(A,I7)') &
+          'time_step = ',time_step
+          write(unit=message(4),fmt='(A)')'Change var4d_bin or time_step in namelist and rerun'
+          call da_error(__FILE__,__LINE__,message(1:4))
+       endif
+
        num_fgat_time = num_fgat_time + 1
        write(unit=message(1),fmt='(a,i10)') 'num_fgat_time is: ', num_fgat_time
        call da_message(message(1:1))

@@ -27,7 +27,7 @@ module da_minimisation
    use da_buoy , only : da_calculate_grady_buoy, da_ao_stats_buoy, &
       da_oi_stats_buoy,da_get_innov_vector_buoy, da_residual_buoy, &
       da_jo_and_grady_buoy
-   use da_control, only : trace_use, var4d_bin, trajectory_io, &
+   use da_control, only : trace_use, var4d_bin, trajectory_io, analysis_date, &
       var4d, rootproc,jcdfi_use,jcdfi_diag,ierr,comm,num_fgat_time, &
       var4d_lbc, stdout, eps, stats_unit, test_dm_exact, global, multi_inc, &
       calculate_cg_cost_fn,anal_type_randomcv,cv_size_domain,je_factor, &

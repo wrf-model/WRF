@@ -21,6 +21,7 @@ CONTAINS
 ! 25-apr-2006 rce - dens_aer is (g/cm3), NOT (kg/m3)
       subroutine prescribe_aerosol_mixactivate (                      &
 		grid_id, ktau, dtstep, naer,                          &
+		ccn_conc, chem_opt,                                   & ! RAS
 		rho_phy, th_phy, pi_phy, w, cldfra, cldfra_old,       &
 		z, dz8w, p_at_w, t_at_w, exch_h,                      &
         qv, qc, qi, qndrop3d,                                 &
@@ -45,6 +46,8 @@ CONTAINS
 
 	real, intent(in) :: dtstep
 	real, intent(inout) :: naer ! aerosol number (/kg)
+        real, intent(in) :: ccn_conc ! CCN conc set within namelist
+        integer, optional, intent(in) :: chem_opt
 
 	real, intent(in),   &
 		dimension( ims:ime, kms:kme, jms:jme ) :: &
@@ -99,9 +102,12 @@ CONTAINS
 	  integer ptr
 	  real maer
 
-      if(naer.lt.1.)then
-	     naer=1000.e6 ! #/kg default value
-      endif
+!      if(naer.lt.1.)then
+!	     naer=1000.e6 ! #/kg default value
+!      endif
+      IF ( (naer.lt.1.) .OR. ( PRESENT(chem_opt) .AND. (chem_opt.eq.401))) THEN
+             naer = ccn_conc !CCN value set in namelist
+      ENDIF
 	  ai_phase=1
 	  cw_phase=2
 	  idrydep_onoff = 0

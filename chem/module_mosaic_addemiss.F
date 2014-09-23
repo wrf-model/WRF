@@ -34,6 +34,7 @@ CONTAINS
                !czhao  
                ktau,p8w, u_phy,v_phy,rho_phy,g,dx,erod,  &  ! GOCART DUST 
                dust_emiss_active, seasalt_emiss_active,                    &
+               dust_flux, seas_flux,                                       &
                ids,ide, jds,jde, kds,kde,                                  &
                ims,ime, jms,jme, kms,kme,                                  &
                its,ite, jts,jte, kts,kte                                   )
@@ -59,6 +60,8 @@ CONTAINS
                                   its,ite, jts,jte, kts,kte
 
    INTEGER, INTENT(IN) ::    dust_emiss_active, seasalt_emiss_active, biom_active, dust_opt
+
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT) :: dust_flux, seas_flux
 
    !czhao 
    INTEGER, INTENT(IN) :: ktau
@@ -417,6 +420,24 @@ CONTAINS
 	aem_co3 = 0.0
 	aem_msa = 0.0
 
+  chem_select_2 : SELECT CASE( config_flags%chem_opt )
+  CASE(MOZART_MOSAIC_4BIN_KPP, MOZART_MOSAIC_4BIN_AQ_KPP)
+    aem_nh4 = fr_aem_mosaic_f(n)*emis_ant(i,k,j,p_e_nh4j)   &
+            + fr_aem_mosaic_c(n)*emis_ant(i,k,j,p_e_nh4c)   &
+            + fr_aem_sorgam_i(n)*emis_ant(i,k,j,p_e_nh4i)   &
+            + fr_aem_sorgam_j(n)*emis_ant(i,k,j,p_e_nh4j)
+
+    aem_na = fr_aem_mosaic_f(n)*emis_ant(i,k,j,p_e_naj)   &
+            + fr_aem_mosaic_c(n)*emis_ant(i,k,j,p_e_nac)   &
+            + fr_aem_sorgam_i(n)*emis_ant(i,k,j,p_e_nai)   &
+            + fr_aem_sorgam_j(n)*emis_ant(i,k,j,p_e_naj)
+
+    aem_cl = fr_aem_mosaic_f(n)*emis_ant(i,k,j,p_e_clj)   &
+            + fr_aem_mosaic_c(n)*emis_ant(i,k,j,p_e_clc)   &
+            + fr_aem_sorgam_i(n)*emis_ant(i,k,j,p_e_cli)   &
+            + fr_aem_sorgam_j(n)*emis_ant(i,k,j,p_e_clj)
+   END SELECT chem_select_2
+
 ! compute number emissions
 ! first sum the mass-emissions/density
 	aem_num =   &
@@ -504,6 +525,7 @@ CONTAINS
 	if (seasalt_emiss_active > 0)   &
 	    call mosaic_seasalt_emiss(                                     &
                id, dtstep, u10, v10, alt, dz8w, xland, config_flags, chem, &
+               seas_flux,                                                  &
                ids,ide, jds,jde, kds,kde,                                  &
                ims,ime, jms,jme, kms,kme,                                  &
                its,ite, jts,jte, kts,kte, seasalt_emiss_active             )
@@ -528,6 +550,7 @@ CONTAINS
          call mosaic_dust_gocartemis (ktau,dtstep,config_flags%num_soil_layers,alt,u_phy,  &
          v_phy,chem,rho_phy,dz8w,smois,u10,v10,p8w,erod,                   &
          ivgtyp,isltyp,xland,dx,g,                                         &
+         dust_flux,                                                        &
          ids,ide, jds,jde, kds,kde,                                        &
          ims,ime, jms,jme, kms,kme,                                        &
          its,ite, jts,jte, kts,kte             ) 
@@ -544,6 +567,7 @@ CONTAINS
 !----------------------------------------------------------------------
    subroutine mosaic_seasalt_emiss(                                        &
                id, dtstep, u10, v10, alt, dz8w, xland, config_flags, chem, &
+               seas_flux,                                                  &
                ids,ide, jds,jde, kds,kde,                                  &
                ims,ime, jms,jme, kms,kme,                                  &
                its,ite, jts,jte, kts,kte, seasalt_emiss_active             )
@@ -581,6 +605,8 @@ CONTAINS
 ! dz8w = layer thickness in (m)
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,               &
           INTENT(IN   ) ::   alt, dz8w
+
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT) :: seas_flux
 
 ! local variables
 	integer i, j, k, l, l_na, l_cl, n, l_oc
@@ -660,6 +686,7 @@ CONTAINS
 	    ssemfact_mass(n,itype) = ssemfact_mass(n,itype)*1.0e6
 	end do
 
+  seas_flux(:,:) = 0.0
 
 !   loop over i,j and apply seasalt emissions
 	k = kts
@@ -685,6 +712,9 @@ CONTAINS
 		factbb = factaa * dumspd10
 	
 		if(seasalt_emiss_active == 1)then
+		
+		seas_flux(i,j) = dumspd10*SUM(ssemfact_mass(1:nsize_aer(itype),itype))
+		
 			! apportion seasalt mass emissions assumming that seasalt is pure nacl
 			fracna = mw_na_aer / (mw_na_aer + mw_cl_aer)
 			fraccl = 1.0 - fracna
@@ -1772,6 +1802,7 @@ END MODULE module_mosaic_addemiss
   subroutine mosaic_dust_gocartemis (ktau,dt,num_soil_layers,alt,u_phy,    &
          v_phy,chem,rho_phy,dz8w,smois,u10,v10,p8w,erod,                   &
          ivgtyp,isltyp,xland,dx,g,                                         &
+         dust_flux,                                                        &
          ids,ide, jds,jde, kds,kde,                                        &
          ims,ime, jms,jme, kms,kme,                                        &
          its,ite, jts,jte, kts,kte                                         )
@@ -1808,6 +1839,7 @@ END MODULE module_mosaic_addemiss
                                               u_phy,v_phy,rho_phy
 
   REAL, INTENT(IN   ) :: dt,dx,g
+  REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT) :: dust_flux
 !
 ! local variables
 !
@@ -1869,7 +1901,6 @@ END MODULE module_mosaic_addemiss
         itype = 1
         iphase = ai_phase
 
-! 20130603 acd_ck_emiss start
         ! added option for 4bin WRF
         IF (nsize_aer(itype) == 4) THEN
           sz(1) = sz(1) + sz(2)
@@ -1877,10 +1908,12 @@ END MODULE module_mosaic_addemiss
           sz(3) = sz(5) + sz(6)
           sz(4) = sz(7) + sz(8)
         ENDIF
-! 20130603 acd_ck_emiss end
 
   conver=1.e-9
   converi=1.e9
+
+  dust_flux(:,:) = 0.0
+
 !
 ! number of dust bins
   nmx=5
@@ -1922,6 +1955,9 @@ END MODULE module_mosaic_addemiss
     !sum up the dust emission from 0.1-10 um in radius 
     ! unit change from kg/timestep/cell to ug/m2/s
     totalemis=(sum(bems(1:5))/dt)*converi/dxy
+
+    dust_flux(i,j) = totalemis
+
     !totalemis=totalemis*rscale !to account for the particles larger than 10 um 
                               ! based on assumed size distribution
     jdustemis = totalemis*accfrac   ! accumulation mode
@@ -1946,13 +1982,11 @@ END MODULE module_mosaic_addemiss
 ! mass1part is mass of a single particle in ug, density of dust ~2.5 g cm-3
                if (n <= 5) densdust=2.5
                if (n > 5 ) densdust=2.65
-! 20130603 acd_ck_emiss start
                ! added option for 4bin WRF
                if (nsize_aer(itype) == 4) then
                  if (n <= 2) densdust=2.5
                  if (n > 2 ) densdust=2.65
                endif
-! 20130603 acd_ck_emiss end
                mass1part=0.523598*(dcen_sect(n,itype)**3)*densdust*1.0e06
                l = numptr_aer(n,itype,iphase)
                if (l >= p1st) chem(i,k,j,l) = chem(i,k,j,l) +   &

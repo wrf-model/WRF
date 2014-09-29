@@ -347,7 +347,7 @@ end subroutine ext_pio_open_for_update
 
 
 SUBROUTINE ext_pio_open_for_write_begin(FileName,grid,SysDepInfo,DataHandle,Status)
-  use pio_kinds
+  use pio_types
   use pio
   use wrf_data_pio
   use pio_routines
@@ -8098,9 +8098,10 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
        endif
     end do
 
-   !write(unit=0, fmt='(3a,i6)') 'file: ',__FILE__,', line', __LINE__
-   !write(unit=0, fmt='(a,i6,2a)') 'DH%CurrentVariable = ', DH%CurrentVariable, ', name: ', trim(VarName)
-
+#ifndef INTSPECIAL
+    call FieldIO('write',DataHandle,DateStr,Length_global,VStart,VCount,Length,MemoryOrder, &
+                  Stagger,FieldType,Field,Status)
+#else
     if(WRF_INTEGER == FieldType) then
       if(1 == fldsize) then
          tmp0dint(1,1) = Field(1)
@@ -8126,6 +8127,7 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
        call FieldIO('write',DataHandle,DateStr,Length_global,VStart,VCount,Length,MemoryOrder, &
                      Stagger,FieldType,Field,Status)
     end if
+#endif
     if(Status /= WRF_NO_ERR) then
       write(msg,*) 'Warning Status = ',Status,' in ',__FILE__,', line', __LINE__ 
       call wrf_debug ( WARN , TRIM(msg))
@@ -8182,6 +8184,8 @@ subroutine ext_pio_read_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
   character (VarNameLen)                       :: Name
   integer                                      :: XType
   integer                                      :: StoredDim
+  integer                                      :: VarID
+  integer                                      :: NDims
   integer                                      :: NAtts
   integer(KIND=PIO_OFFSET)                     :: Len
   integer                                      :: stat
@@ -8229,15 +8233,26 @@ subroutine ext_pio_read_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
     write(msg,*) 'Warning READ WRITE ONLY FILE in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( WARN , TRIM(msg))
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_READ .OR. DH%FileStatus == WRF_FILE_OPENED_FOR_UPDATE ) then
+    call pio_seterrorhandling(DH%file_handle, PIO_BCAST_ERROR)
     stat = pio_inq_varid(DH%file_handle,VarName,DH%descVar(DH%CurrentVariable))
+    call pio_seterrorhandling(DH%file_handle, PIO_INTERNAL_ERROR)
+    if(stat /= PIO_NOERR) then
+       DH%descVar(DH%CurrentVariable)%varID = 0
+       write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__,' Varname, ',Varname, ' not found in file.'
+       call wrf_debug ( WARN , TRIM(msg))
+       return
+    endif
+
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
       write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__,' Varname ',Varname
       call wrf_debug ( WARN , TRIM(msg))
       return
     endif
+
     stat = pio_inquire_variable(DH%file_handle,DH%descVar(DH%CurrentVariable), &
                                 Name,XType,StoredDim,VDimIDs,NAtts)
+
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
       write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__ 
@@ -8389,6 +8404,26 @@ subroutine ext_pio_read_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
        endif
     end do
    
+#ifndef INTSPECIAL
+    isbdy = is_boundary(MemoryOrder)
+    if(isbdy) then
+     !write(unit=0, fmt='(//3a,i6)') 'file: ',__FILE__,', line', __LINE__
+     !write(unit=0, fmt='(4x,a,i6,2a)') 'DH%CurrentVariable = ',
+     !DH%CurrentVariable, ', name: ', trim(VarName)
+
+      call FieldBDY('read',DataHandle,DateStr,NDim,VDimen, &
+                    MemoryStart,MemoryEnd,PatchStart,PatchEnd, &
+                    FieldType,Field,Status)
+    else
+     !if((WRF_INTEGER == FieldType) .and. (1 == fldsize)) then
+     !  Status = pio_get_var(DH%file_handle,DH%descVar(DH%CurrentVariable),VCount(1:1))
+     !  Field(1) = VCount(1)
+     !else
+        call FieldIO('read',DataHandle,DateStr,VDimen,VStart,VCount,Length,MemoryOrder, &
+                      readinStagger,FieldType,Field,Status)
+     !endif
+    endif
+#else
     if(WRF_INTEGER == FieldType) then
       if(1 == fldsize) then
          Status = pio_get_var(DH%file_handle,DH%descVar(DH%CurrentVariable),VCount(1:1))
@@ -8424,6 +8459,7 @@ subroutine ext_pio_read_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
                       readinStagger,FieldType,Field,Status)
       endif
     endif
+#endif
     if(stat /= 0) then
       Status = WRF_ERR_FATAL_DEALLOCATION_ERR
       write(msg,*) 'Fatal DEALLOCATION ERROR in ',__FILE__,', line', __LINE__

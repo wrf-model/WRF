@@ -102,7 +102,8 @@ subroutine ext_pio_IntFieldIO(whole,IO,DH,Starts,Counts,fldsize,datasize,Data,St
   integer,dimension(1:fldsize),intent(inout) :: Data
   integer                     ,intent(out)   :: Status
   integer                                    :: stat
-  integer                                    :: Buffer(10)
+  integer, parameter                         :: fillvalue = 20140822
+  integer                                    :: Buffer(1)
 
  !call pio_setdebuglevel(1)
 
@@ -112,7 +113,7 @@ subroutine ext_pio_IntFieldIO(whole,IO,DH,Starts,Counts,fldsize,datasize,Data,St
                          Starts,Counts,Data(1:datasize))
     else
       call pio_write_darray(DH%file_handle, DH%descVar(DH%CurrentVariable), &
-                            DH%ioVar(DH%CurrentVariable), Data, stat)
+                            DH%ioVar(DH%CurrentVariable), Data, stat, fillvalue)
     end if
   else
     if(whole)then

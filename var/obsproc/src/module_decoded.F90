@@ -147,7 +147,7 @@ time_window_min, time_window_max, map_projection , missing_flag)
    CHARACTER ( LEN =  80)               :: filename
    CHARACTER ( LEN = 160)               :: error_message
    CHARACTER ( LEN =  14)               :: newstring
-   INTEGER                              :: nlevels, num_unknown, m_miss, n101301 
+   INTEGER                              :: nlevels, num_unknown, m_miss
    TYPE ( measurement ) , POINTER       :: current
    real :: qnh, elev
 !-----------------------------------------------------------------------------!
@@ -176,7 +176,6 @@ time_window_min, time_window_max, map_projection , missing_flag)
    num_empty = 0
    num_outside = 0
    m_miss = 0
-   n101301 = 0
 
    !  Open file for writing diagnostics
    IF (print_gts_read) THEN

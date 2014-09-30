@@ -403,7 +403,7 @@ CONTAINS
          ENDIF
 
          IF(RDLAI2D) THEN
-          IF (SHDFAC > 0.0 .AND. LAI <= 0.0) XLAI = 0.01 
+          IF (SHDFAC > 0.0 .AND. XLAI <= 0.0) XLAI = 0.01 
          END IF
 
          IF ( SHDFAC >= SHDMAX ) THEN

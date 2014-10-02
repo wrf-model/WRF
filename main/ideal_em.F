@@ -9,13 +9,13 @@ PROGRAM ideal
 
    USE module_timing
    USE module_wrf_error
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
    USE module_input_chem_data
    USE module_input_chem_bioemiss
 #endif
 
    IMPLICIT NONE
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
   ! interface
    INTERFACE
      ! mediation-supplied
@@ -161,7 +161,7 @@ PROGRAM ideal
    CALL set_config_as_buffer( configbuf, configbuflen )
 #endif
       
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
          IF( grid%chem_opt > 0 ) then
            ! Read the chemistry data from a previous wrf forecast (wrfout file)
            IF(grid%chem_in_opt == 1 ) THEN

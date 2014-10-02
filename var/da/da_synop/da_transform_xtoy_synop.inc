@@ -49,8 +49,8 @@ subroutine da_transform_xtoy_synop (grid, iv, y)
       call da_interp_lin_2d(grid%xa%psfc, iv%info(synop), 1, model_psfc)
 
       do n=iv%info(synop)%n1,iv%info(synop)%n2
-         if(var_wind)then
-                call da_uv_wind_tgl(y%synop(n)%u,y%synop(n)%v,model_u(1,n),model_v(1,n),ub(1,n),vb(1,n))
+         if(wind_sd_synop)then
+            call da_uv_to_sd_lin(y%synop(n)%u,y%synop(n)%v,model_u(1,n),model_v(1,n),ub(1,n),vb(1,n))
          else
             y%synop(n)%u = model_u(1,n)
             y%synop(n)%v = model_v(1,n)

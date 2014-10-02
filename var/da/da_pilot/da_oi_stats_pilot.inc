@@ -8,12 +8,12 @@ subroutine da_oi_stats_pilot (stats_unit, iv, ob)
 
    integer,        intent (in) :: stats_unit    ! Output unit for stats.
    type (iv_type), intent (in) :: iv            ! OI
-   type(y_type),   intent (in) :: ob       ! Observation structure.
+   type(y_type),   intent (in) :: ob            ! Observation structure.
 
    type (stats_pilot_type) :: stats
    integer                 :: nu, nv
    integer                 :: n, k
-   real                    :: u_inv, v_inv, sp_inv, dir_inv
+   real                    :: u_inv, v_inv, u_obs, v_obs
 
    if (trace_use_dull) call da_trace_entry("da_oi_stats_pilot")
 
@@ -30,14 +30,19 @@ subroutine da_oi_stats_pilot (stats_unit, iv, ob)
    do n=1, iv%info(pilot)%nlocal
       if (iv%info(pilot)%proc_domain(1,n)) then
          do k=1, iv%info(pilot)%levels(n)
+
             u_inv = iv%pilot(n)%u(k)%inv
             v_inv = iv%pilot(n)%v(k)%inv
-            if(var_wind) then
-               sp_inv = iv%pilot(n)%u(k)%inv
-               dir_inv = iv%pilot(n)%v(k)%inv
-               call da_cal_sd (ob%pilot(n)%u(k), ob%pilot(n)%v(k), &
-                               u_inv, v_inv, sp_inv, dir_inv)
-            end if
+            u_obs = ob%pilot(n)%u(k)
+            v_obs = ob%pilot(n)%v(k)
+
+            if (.not. wind_sd_pilot .and. wind_stats_sd) &
+               call da_ffdduv_diagnose(u_obs, u_inv, u_obs, v_obs, v_inv, v_obs, &
+                                       iv%pilot(n)%u(k)%qc, iv%pilot(n)%v(k)%qc, convert_uv2fd)
+            if (wind_sd_pilot .and. .not. wind_stats_sd) &
+               call da_ffdduv_diagnose(u_obs, u_inv, u_obs, v_obs, v_inv, v_obs, &
+                                       iv%pilot(n)%u(k)%qc, iv%pilot(n)%v(k)%qc, convert_fd2uv)
+
             call da_stats_calculate(iv%info(pilot)%obs_global_index(n), &
                k, iv%pilot(n)%u(k)%qc,  &
                u_inv, nu, &

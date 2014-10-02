@@ -27,10 +27,10 @@ subroutine da_check_max_iv_sonde_sfc(iv,ob, it, num_qcstat_conv)
 
    do n=iv%info(sonde_sfc)%n1,iv%info(sonde_sfc)%n2
          if(.not. qc_rej_both)then
-            if(var_wind)then
+            if(wind_sd_sound)then
                failed=.false.
                if( iv%sonde_sfc(n)%u%qc >= obs_qc_pointer ) then
-                   call da_max_error_qc (it,iv%info(sonde_sfc), n, iv%sonde_sfc(n)%u, max_error_sp,failed)
+                   call da_max_error_qc (it,iv%info(sonde_sfc), n, iv%sonde_sfc(n)%u, max_error_spd,failed)
                    if( iv%info(sonde_sfc)%proc_domain(1,n) ) then
                        num_qcstat_conv(1,sonde_sfc,1,1) = num_qcstat_conv(1,sonde_sfc,1,1) + 1
                        if(failed) then
@@ -81,8 +81,8 @@ subroutine da_check_max_iv_sonde_sfc(iv,ob, it, num_qcstat_conv)
                   end if
               end if
 
-              if(var_wind)then
-                 if(iv%sonde_sfc(n)%u%qc == fails_error_max .or. abs(iv%sonde_sfc(n)%u%inv) >= max_omb_sp) then
+              if(wind_sd_sound)then
+                 if(iv%sonde_sfc(n)%u%qc == fails_error_max .or. abs(iv%sonde_sfc(n)%u%inv) >= max_omb_spd) then
                     iv%sonde_sfc(n)%u%qc = fails_error_max
                     iv%sonde_sfc(n)%u%inv = 0.0
                  endif
@@ -96,12 +96,12 @@ subroutine da_check_max_iv_sonde_sfc(iv,ob, it, num_qcstat_conv)
               failed2=.false.
 
               if( iv%sonde_sfc(n)%v%qc >= obs_qc_pointer .or. iv%sonde_sfc(n)%u%qc >= obs_qc_pointer )  then
-                  if(.not. var_wind)then
+                  if(wind_sd_sound)then
+                     call da_max_error_qc (it,iv%info(sonde_sfc), n, iv%sonde_sfc(n)%u, max_error_spd,failed1)
+                     call da_max_error_qc (it,iv%info(sonde_sfc), n, iv%sonde_sfc(n)%v, max_error_dir,failed2)
+                  else
                      call da_max_error_qc (it,iv%info(sonde_sfc), n, iv%sonde_sfc(n)%u, max_error_uv,failed1)
                      call da_max_error_qc (it,iv%info(sonde_sfc), n, iv%sonde_sfc(n)%v, max_error_uv,failed2)
-                  else
-                     call da_max_error_qc (it,iv%info(sonde_sfc), n, iv%sonde_sfc(n)%u, max_error_sp,failed1)
-                     call da_max_error_qc (it,iv%info(sonde_sfc), n, iv%sonde_sfc(n)%v, max_error_dir,failed2)
                   endif
               endif
 
@@ -118,16 +118,16 @@ subroutine da_check_max_iv_sonde_sfc(iv,ob, it, num_qcstat_conv)
                   endif
                endif
 
-               if(.not. var_wind)then
-                  if(iv%sonde_sfc(n)%u%qc == fails_error_max .or. iv%sonde_sfc(n)%v%qc == fails_error_max ) then
+               if(wind_sd_sound)then
+                  if(iv%sonde_sfc(n)%u%qc == fails_error_max .or. iv%sonde_sfc(n)%v%qc == fails_error_max .or. &
+                     abs(iv%sonde_sfc(n)%v%inv) >= max_omb_dir .or. abs(iv%sonde_sfc(n)%u%inv) >= max_omb_spd )then
                      iv%sonde_sfc(n)%u%qc = fails_error_max
                      iv%sonde_sfc(n)%v%qc = fails_error_max
                      iv%sonde_sfc(n)%u%inv = 0.0
                      iv%sonde_sfc(n)%v%inv = 0.0
                   endif
                else
-                  if(iv%sonde_sfc(n)%u%qc == fails_error_max .or. iv%sonde_sfc(n)%v%qc == fails_error_max .or. &
-                     abs(iv%sonde_sfc(n)%v%inv) >= max_omb_dir .or. abs(iv%sonde_sfc(n)%u%inv) >= max_omb_sp )then
+                  if(iv%sonde_sfc(n)%u%qc == fails_error_max .or. iv%sonde_sfc(n)%v%qc == fails_error_max ) then
                      iv%sonde_sfc(n)%u%qc = fails_error_max
                      iv%sonde_sfc(n)%v%qc = fails_error_max
                      iv%sonde_sfc(n)%u%inv = 0.0

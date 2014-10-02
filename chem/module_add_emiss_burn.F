@@ -328,7 +328,7 @@ CONTAINS
         enddo
         enddo
         enddo
-      CASE (MOZART_KPP,MOZCART_KPP,MOZART_MOSAIC_4BIN_VBS0_KPP )
+      CASE (MOZART_KPP,MOZCART_KPP,MOZART_MOSAIC_4BIN_KPP, MOZART_MOSAIC_4BIN_AQ_KPP )
         if( biomass_burn_opt == BIOMASSB_MOZC .or. biomass_burn_opt == BIOMASSB_MOZ ) then
           do j=jts,jte
             do k=kts,kte
@@ -364,13 +364,11 @@ CONTAINS
               enddo
             enddo
           enddo
-! 20130822 acd_rkumar_bb start
 ! Adding simple SOA scheme emissions from biomass burning.
 ! WARNING: do not provide e_co_bb in wrfchemi* files if you use
 ! the online plume rise - you would be double counting emissions!
-! -- Dear Steven, could you please include this note in the user guide
-! -- when you adopt these changes? Thanks. Rajesh and Christoph
-          IF (chem_opt .EQ. MOZART_MOSAIC_4BIN_VBS0_KPP) THEN
+          IF (chem_opt .EQ. MOZART_MOSAIC_4BIN_KPP .OR. &
+              chem_opt .EQ. MOZART_MOSAIC_4BIN_AQ_KPP) THEN
             do j=jts,jte
               do k=kts,kte
                 do i=its,ite
@@ -380,7 +378,6 @@ CONTAINS
               enddo
             enddo
           ENDIF
-! 20130822 acd_rkumar_bb end
 
           if( biomass_burn_opt == BIOMASSB_MOZC ) then
             do j=jts,jte

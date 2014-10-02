@@ -103,7 +103,7 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
    DO ialarm = first_auxinput, last_auxinput
      IF ( .FALSE.) THEN
        rc = 1  ! dummy statement
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
 ! - Get chemistry data
      ELSE IF( ialarm .EQ. AUXINPUT5_ALARM .AND. config_flags%chem_opt > 0 ) THEN
        IF( config_flags%emiss_inpt_opt /= 0 ) THEN
@@ -341,6 +341,14 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
         TYPE(domain) , POINTER                 :: parent , nest
      END SUBROUTINE med_interp_domain
 
+    !KAL
+     SUBROUTINE init_domain_vert_nesting ( parent, nest )
+    !KAL this is a driver to initialize the vertical coordinates for the nest when vertical nesting is used.
+       USE module_domain, ONLY : domain
+       IMPLICIT NONE
+       TYPE(domain), POINTER                      :: parent, nest
+     END SUBROUTINE init_domain_vert_nesting
+
      SUBROUTINE med_interp_domain_small ( parent , nest )
         USE module_domain	, ONLY : domain
         TYPE(domain) , POINTER                 :: parent , nest
@@ -425,6 +433,12 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
 
 ! initialize some other constants (and 1d arrays in z)
      CALL init_domain_constants ( parent, nest )
+          
+     if (nest%e_vert /= parent%e_vert) then
+         ! set up coordinate variables for nest with vertical grid refinement (1d variables in z are done later in med_interp_domain)
+       CALL init_domain_vert_nesting ( parent, nest )
+     endif
+
 
 ! fill in entire fine grid domain with interpolated coarse grid data
      CALL med_interp_domain( parent, nest )
@@ -924,7 +938,8 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
     CALL nl_set_julyr (nest%id, config_flags%julyr)       
     CALL nl_set_julday ( nest%id , config_flags%julday )
 !zhang test ends
-    CALL med_analysis_out ( nest, config_flags )
+     CALL model_to_grid_config_rec ( nest%id , model_config_rec , nest_config_flags )
+    CALL med_analysis_out ( nest, nest_config_flags )
 
    ELSE
 
@@ -1591,6 +1606,20 @@ SUBROUTINE med_hist_out ( grid , stream, config_flags )
      CALL wrf_error_fatal( message )
    ENDIF
 
+#ifdef HWRF
+       ! HWRF special: auxhist2 and auxhist3 are duplicates of
+       ! history (0), so there is no point in outputting more than one of
+       ! them at the same time.  Prefer 0 over 2, and 2 over 3:
+      if ( (stream==HISTORY_ALARM .or. stream==AUXHIST2_ALARM) .and. &
+           WRFU_AlarmIsRinging( grid%alarms(AUXHIST3_ALARM) ) ) then
+         CALL WRFU_AlarmRingerOff(grid%alarms(AUXHIST3_ALARM))
+      endif
+      if ( stream==HISTORY_ALARM .and. &
+           WRFU_AlarmIsRinging( grid%alarms(AUXHIST2_ALARM) ) ) then
+         CALL WRFU_AlarmRingerOff(grid%alarms(AUXHIST2_ALARM))
+      endif
+#endif
+
    SELECT CASE( stream )
      CASE ( HISTORY_ALARM )
        CALL open_hist_w( grid, config_flags, stream, HISTORY_ALARM, &
@@ -1623,6 +1652,11 @@ SUBROUTINE med_hist_out ( grid , stream, config_flags )
      WRITE ( message , FMT = '("Writing ",A30," for domain ",I8)' )TRIM(fname),grid%id
      CALL end_timing ( TRIM(message) )
    END IF
+
+#if (NMM_CORE == 1)
+   ! Reset tornado genesis fields after output:
+   call nmm_request_tg_reset(grid,config_flags,stream)
+#endif
 
    RETURN
 END SUBROUTINE med_hist_out
@@ -1767,6 +1801,9 @@ SUBROUTINE med_latbound_in ( grid , config_flags )
    Type (WRFU_Time )                      :: startTime, stopTime, currentTime
    Type (WRFU_TimeInterval )              :: stepTime
 integer myproc,i,j,k
+#ifdef _MULTI_BDY_FILES_
+   CHARACTER(LEN=80)                      :: timestr
+#endif
 
 #include <wrf_io_flags.h>
 
@@ -1802,8 +1839,14 @@ integer myproc,i,j,k
        CALL WRFU_AlarmRingerOff( grid%alarms( BOUNDARY_ALARM ), rc=rc )
        IF ( wrf_dm_on_monitor() ) CALL start_timing
 
+#ifdef _MULTI_BDY_FILES_
+       ! Possibility to have a <date> as part of the bdy_inname.
+       CALL domain_clock_get( grid, current_timestr=timestr )
+       CALL construct_filename2a ( bdyname , config_flags%bdy_inname , grid%id , 2 , timestr )
+#else
 ! typically a <date> wouldn't be part of the bdy_inname, so just pass a dummy
-       CALL construct_filename2a ( bdyname , config_flags%bdy_inname , grid%id , 2 , 'dummydate' )
+       CALL construct_filename2a ( bdyname , config_flags%bdy_inname , grid%id , 2 , " " )
+#endif
 
        CALL wrf_inquire_opened(grid%lbc_fid , TRIM(bdyname) , open_status , ierr ) 
        IF ( open_status .EQ. WRF_FILE_OPENED_FOR_READ ) THEN
@@ -1812,17 +1855,21 @@ integer myproc,i,j,k
          lbc_opened = .FALSE.
        ENDIF
        CALL wrf_dm_bcast_bytes ( lbc_opened , LWORDSIZE )
-       CALL construct_filename2a ( bdyname , grid%bdy_inname , grid%id , 2 , " " )
        IF ( .NOT. lbc_opened ) THEN
-         WRITE(message,*)'Opening: ',TRIM(bdyname)
-         CALL wrf_debug(100,TRIM(message))
-         CALL open_r_dataset ( grid%lbc_fid, TRIM(bdyname) , grid , config_flags , "DATASET=BOUNDARY", ierr )
+#ifdef _MULTI_BDY_FILES_
+         CALL construct_filename2a ( bdyname , config_flags%bdy_inname , grid%id , 2 , timestr )
+#else
+         CALL construct_filename2a ( bdyname , config_flags%bdy_inname , grid%id , 2 , " " )
+#endif
+          WRITE(message,*)'Opening: ',TRIM(bdyname)
+          CALL wrf_debug(100,TRIM(message))
+          CALL open_r_dataset ( grid%lbc_fid, TRIM(bdyname) , grid , config_flags , "DATASET=BOUNDARY", ierr )
           IF ( ierr .NE. 0 ) THEN
             WRITE( message, * ) 'med_latbound_in: error opening ',TRIM(bdyname), ' for reading. IERR = ',ierr
             CALL WRF_ERROR_FATAL( message )
           ENDIF
        ELSE
-         CALL wrf_debug( 100 , bdyname // 'already opened' )
+         CALL wrf_debug( 100 , bdyname // ' is already opened' )
        ENDIF
        CALL wrf_debug( 100 , 'med_latbound_in: calling input_boundary ' )
        CALL input_boundary ( grid%lbc_fid, grid , config_flags , ierr )
@@ -1839,6 +1886,10 @@ integer myproc,i,j,k
          CALL wrf_debug( 100 , 'med_latbound_in: calling input_boundary ' )
          CALL input_boundary ( grid%lbc_fid, grid , config_flags , ierr )
        ENDDO
+#ifdef _MULTI_BDY_FILES_
+       ! Close the bdy file so that next time around, we'll open it again.
+       CALL close_dataset ( grid%lbc_fid , config_flags , "DATASET=BOUNDARY" )
+#endif
        CALL WRFU_AlarmSet( grid%alarms( BOUNDARY_ALARM ), RingTime=grid%next_bdy_time, rc=rc )
 
        IF ( ierr .NE. 0 .and. ierr .NE. WRF_WARN_NETCDF ) THEN
@@ -2004,7 +2055,6 @@ SUBROUTINE open_hist_w ( grid , config_flags, stream, alarm_id, &
    USE module_configure	, ONLY : grid_config_rec_type
 !   USE module_bc_time_utilities
    USE module_utility
-
    IMPLICIT NONE
   ! Arguments
    TYPE(domain)                                :: grid
@@ -2066,13 +2116,14 @@ SUBROUTINE open_hist_w ( grid , config_flags, stream, alarm_id, &
        TRIM ( fname ), ierr
      CALL wrf_message( message )
    ENDIF
+
    RETURN
 END SUBROUTINE open_hist_w
 
  
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
 
 SUBROUTINE med_read_wrf_chem_input ( grid , config_flags )
   ! Driver layer

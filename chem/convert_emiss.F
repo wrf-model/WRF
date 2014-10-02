@@ -36,14 +36,6 @@ PROGRAM convert_emissions
 #if (EM_CORE ==1)
    USE module_big_step_utilities_em
 #endif
-!#ifdef WRF_CHEM
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! for chemistry
-!   USE module_input_chem_data
-!!  USE module_input_chem_bioemiss
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!#endif
-
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    IMPLICIT NONE
 
@@ -133,6 +125,7 @@ PROGRAM convert_emissions
    INTEGER :: iswaterr,itest,beg_day,beg_hour
    INTEGER :: itime = 0
    INTEGER :: inew_nei = 0
+   INTEGER :: inew_ch4 = 0      ! set to 1 if using 2011 NEI emissions
    INTEGER :: nv = 0
    INTEGER :: nv_f = 0
    INTEGER :: nv_g = 0
@@ -1877,6 +1870,17 @@ PROGRAM convert_emissions
          read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
 #endif
          grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_iso)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+     IF( inew_ch4 == 1 ) THEN
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+!        grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_ch4)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+     ENDIF
 #ifdef DM_PARALLEL
      IF (wrf_dm_on_monitor()) THEN
          read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
@@ -2375,6 +2379,17 @@ PROGRAM convert_emissions
          read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
 #endif
          grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_iso)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+     IF( inew_ch4 == 1 ) THEN
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+!        grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_ch4)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+     endif
 #ifdef DM_PARALLEL
      IF (wrf_dm_on_monitor()) THEN
          read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)

@@ -7,7 +7,7 @@ subroutine da_tl_model ()
 
    implicit none
 
-   integer :: time_step, fid, ierr, i, j, alarmid
+   integer :: time_step, fid, ierr, i, j, alarmid, gwd_opt
    character (len=80)     :: inpname 
 
    if (trace_use_dull) call da_trace_entry("da_tl_model")
@@ -31,6 +31,7 @@ subroutine da_tl_model ()
    call nl_set_auxinput6_interval_s (head_grid%id, time_step )
    call nl_set_io_form_auxinput6 ( head_grid%id, 2 )
    call nl_set_frames_per_auxinput6 ( head_grid%id, 1 )
+   call nl_get_gwd_opt ( head_grid%id, gwd_opt )
 
    ! Set all perturbation to ZERO
 
@@ -88,16 +89,27 @@ subroutine da_tl_model ()
    head_grid%g_t_save = 0.0
    head_grid%g_rthften = 0.0
    head_grid%g_rqvften = 0.0
+   head_grid%g_rthcuten = 0.0
+   head_grid%g_rqvcuten = 0.0
    head_grid%g_muts = 0.0
    head_grid%g_mudf = 0.0
    head_grid%g_ru_m = 0.0
    head_grid%g_rv_m = 0.0
    head_grid%g_ww_m = 0.0
 
+   IF ( gwd_opt .EQ. 1 ) THEN
+      head_grid%g_dtaux3d = 0.0
+      head_grid%g_dtauy3d = 0.0
+      head_grid%g_dusfcg = 0.0
+      head_grid%g_dvsfcg = 0.0
+   ENDIF
+
    head_grid%g_rainnc  = 0.0
    head_grid%g_rainncv = 0.0
    head_grid%g_rainc  = 0.0
    head_grid%g_raincv = 0.0
+   head_grid%g_pratec = 0.0
+
 
    ! Set the physics options to what they are in TL and AD
    if (original_mp_physics .gt. 0) &
@@ -107,8 +119,10 @@ subroutine da_tl_model ()
    call nl_set_sf_sfclay_physics (head_grid%id, 0)
    if (original_bl_pbl_physics .gt. 0) &
       call nl_set_bl_pbl_physics (head_grid%id, 98)
-   if (original_cu_physics .gt. 0) &
+   if (original_cu_physics .gt. 0) then
       call nl_set_cu_physics (head_grid%id, 98) 
+      head_grid%cudt = 0
+   endif
    !call nl_set_mp_zero_out (head_grid%id, 0)
    !call nl_set_sf_surface_physics (head_grid%id, 1)
    call nl_set_ifsnow (head_grid%id, 1)
@@ -116,6 +130,7 @@ subroutine da_tl_model ()
    !call nl_set_isfflx (head_grid%id, 0)
 
    ! WRF model time-stepping.  Calls integrate().
+   call nl_set_var4d_run (head_grid%id, .true.)
    call wrf_run_tl
 	
    ! restore the physics options to the originals
@@ -125,6 +140,7 @@ subroutine da_tl_model ()
    call nl_set_sf_sfclay_physics (head_grid%id, original_sf_sfclay_physics)
    call nl_set_bl_pbl_physics (head_grid%id, original_bl_pbl_physics)
    call nl_set_cu_physics (head_grid%id, original_cu_physics)
+   head_grid%cudt = original_cudt
    !call nl_set_mp_zero_out (head_grid%id, original_mp_zero_out)
    !call nl_set_sf_surface_physics (head_grid%id, original_sf_surface_physics)
    call nl_set_ifsnow (head_grid%id, original_ifsnow)

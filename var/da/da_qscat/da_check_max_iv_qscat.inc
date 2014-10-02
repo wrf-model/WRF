@@ -24,10 +24,10 @@ subroutine da_check_max_iv_qscat(iv, it, num_qcstat_conv)
 
    do n=iv%info(qscat)%n1,iv%info(qscat)%n2
       if(.not. qc_rej_both)then
-         if(var_wind)then
+         if(wind_sd_qscat)then
             failed=.false.
             if( iv%qscat(n)%u%qc >= obs_qc_pointer ) then
-                call da_max_error_qc (it,iv%info(qscat), n, iv%qscat(n)%u, max_error_sp,failed)
+                call da_max_error_qc (it,iv%info(qscat), n, iv%qscat(n)%u, max_error_spd,failed)
                 if( iv%info(qscat)%proc_domain(1,n) ) then
                     num_qcstat_conv(1,qscat,1,1) = num_qcstat_conv(1,qscat,1,1) + 1
                     if(failed) then
@@ -78,8 +78,8 @@ subroutine da_check_max_iv_qscat(iv, it, num_qcstat_conv)
              end if
           end if
 
-          if(var_wind)then
-             if(iv%qscat(n)%u%qc == fails_error_max .or. abs(iv%qscat(n)%u%inv) >= max_omb_sp) then
+          if(wind_sd_qscat)then
+             if(iv%qscat(n)%u%qc == fails_error_max .or. abs(iv%qscat(n)%u%inv) >= max_omb_spd) then
                 iv%qscat(n)%u%qc = fails_error_max
                 iv%qscat(n)%u%inv = 0.0
              endif
@@ -95,12 +95,12 @@ subroutine da_check_max_iv_qscat(iv, it, num_qcstat_conv)
           failed2=.false.
 
           if( iv%qscat(n)%v%qc >= obs_qc_pointer .or. iv%qscat(n)%u%qc >= obs_qc_pointer )  then
-              if(.not. var_wind)then
+              if(wind_sd_qscat)then
+                 call da_max_error_qc (it,iv%info(qscat), n, iv%qscat(n)%u, max_error_spd,failed1)
+                 call da_max_error_qc (it,iv%info(qscat), n, iv%qscat(n)%v, max_error_dir,failed2)
+              else
                  call da_max_error_qc (it,iv%info(qscat), n, iv%qscat(n)%u, max_error_uv,failed1)
                  call da_max_error_qc (it,iv%info(qscat), n, iv%qscat(n)%v, max_error_uv,failed2)
-              else
-                 call da_max_error_qc (it,iv%info(qscat), n, iv%qscat(n)%u, max_error_sp,failed1)
-                 call da_max_error_qc (it,iv%info(qscat), n, iv%qscat(n)%v, max_error_dir,failed2)
               endif
 
               if( iv%info(qscat)%proc_domain(1,n) ) then
@@ -118,16 +118,16 @@ subroutine da_check_max_iv_qscat(iv, it, num_qcstat_conv)
               end if
           end if
 
-	  if(.not. var_wind)then
-             if(iv%qscat(n)%u%qc == fails_error_max .or. iv%qscat(n)%v%qc == fails_error_max ) then
+	  if(wind_sd_qscat)then
+             if(iv%qscat(n)%u%qc == fails_error_max .or. iv%qscat(n)%v%qc == fails_error_max .or. &
+                abs(iv%qscat(n)%v%inv) >= max_omb_dir .or. abs(iv%qscat(n)%u%inv) >= max_omb_spd )then
                 iv%qscat(n)%u%qc = fails_error_max
                 iv%qscat(n)%v%qc = fails_error_max
                 iv%qscat(n)%u%inv = 0.0
                 iv%qscat(n)%v%inv = 0.0
-              endif
+             endif
           else
-             if(iv%qscat(n)%u%qc == fails_error_max .or. iv%qscat(n)%v%qc == fails_error_max .or. &
-                abs(iv%qscat(n)%v%inv) >= max_omb_dir*1.2 .or. abs(iv%qscat(n)%u%inv) >= max_omb_sp )then
+             if(iv%qscat(n)%u%qc == fails_error_max .or. iv%qscat(n)%v%qc == fails_error_max ) then
                 iv%qscat(n)%u%qc = fails_error_max
                 iv%qscat(n)%v%qc = fails_error_max
                 iv%qscat(n)%u%inv = 0.0

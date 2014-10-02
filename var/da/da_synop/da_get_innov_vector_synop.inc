@@ -176,21 +176,8 @@ subroutine da_get_innov_vector_synop( it,num_qcstat_conv, grid, ob, iv)
       !--------------------------------------------------------------------
       !     [3.0] Fast interpolation:
       !--------------------------------------------------------------------
-      if(.not. var_wind)then
-         if (ob % synop(n) % u > missing_r .AND. iv % synop(n) % u % qc >= obs_qc_pointer) then
-             iv % synop(n) % u % inv = iv%synop(n)%u%inv - model_u(1,n)
-         else
-             iv % synop(n) % u % inv = 0.0
-         end if
-
-         if (ob % synop(n) % v > missing_r .AND. iv % synop(n) % v % qc >= obs_qc_pointer) then
-             iv % synop(n) % v % inv = iv%synop(n)%v%inv - model_v(1,n)
-         else
-             iv % synop(n) % v % inv = 0.0
-         end if
-
-      else
-         call da_ffdduv2 (speed,direction,model_u(1,n), model_v(1,n), iv%info(synop)%lon(1,n), convert_uv2fd)
+      if(wind_sd_synop)then
+         call da_ffdduv_model (speed,direction,model_u(1,n), model_v(1,n), convert_uv2fd)
 
          if (ob%synop(n)%u > missing_r .AND. iv%synop(n)%u%qc >= obs_qc_pointer) then
              iv%synop(n)%u%inv = iv%synop(n)%u%inv - speed
@@ -202,6 +189,18 @@ subroutine da_get_innov_vector_synop( it,num_qcstat_conv, grid, ob, iv)
              iv%synop(n)%v%inv = iv%synop(n)%v%inv - direction
              if (iv%synop(n)%v%inv > 180.0 ) iv%synop(n)%v%inv = iv%synop(n)%v%inv - 360.0
              if (iv%synop(n)%v%inv < -180.0 ) iv%synop(n)%v%inv = iv%synop(n)%v%inv + 360.0
+         else
+             iv % synop(n) % v % inv = 0.0
+         end if
+      else
+         if (ob % synop(n) % u > missing_r .AND. iv % synop(n) % u % qc >= obs_qc_pointer) then
+             iv % synop(n) % u % inv = iv%synop(n)%u%inv - model_u(1,n)
+         else
+             iv % synop(n) % u % inv = 0.0
+         end if
+
+         if (ob % synop(n) % v > missing_r .AND. iv % synop(n) % v % qc >= obs_qc_pointer) then
+             iv % synop(n) % v % inv = iv%synop(n)%v%inv - model_v(1,n)
          else
              iv % synop(n) % v % inv = 0.0
          end if

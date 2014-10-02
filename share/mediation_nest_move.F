@@ -1505,7 +1505,6 @@ LOGICAL FUNCTION direction_of_move ( parent , grid , move_cd_x, move_cd_y )
 ! ORIGINAL DATE: 10/12/2009
 ! Modified: 2/28/2010
 ! PURPOSE: DEICDE THE DIRECTION OF MOVE
-
    USE module_domain
    USE module_configure
    USE module_dm
@@ -1585,7 +1584,7 @@ LOGICAL FUNCTION direction_of_move ( parent , grid , move_cd_x, move_cd_y )
    END INTERFACE
 ! executable
 ! 
-! Simplifying assumption: domains in moving nest simulations have only 
+! Simplifying assumption: moving domains in moving nest simulations have only 
 ! one parent and only one child.
 
    IF   ( grid%num_nests .GT. 1 ) THEN
@@ -1606,55 +1605,14 @@ LOGICAL FUNCTION direction_of_move ( parent , grid , move_cd_x, move_cd_y )
    IF   ( grid%num_nests .EQ. 0 ) THEN
       ! code that executes on innermost nest
 
-      !------------------- BEGIN DEAD CODE -------------------
-
-      ! SGT: disabled this code because it does nothing (it's a very
-      ! expensive and complicated no-op).
-
-      ! Unless someone knows of a good reason for it to be here,
-      ! it should be deleted.
-      if(0==1) then
-         par => grid%parents(1)%ptr
-         nst => grid
-
-100  CONTINUE
-       CALL get_ijk_from_grid (  nst ,                               &
-                                 nids, nide, njds, njde, nkds, nkde, &
-                                 nims, nime, njms, njme, nkms, nkme, &
-                                 nips, nipe, njps, njpe, nkps, nkpe  )
-       CALL get_ijk_from_grid (  par ,                               &
-                                 cids, cide, cjds, cjde, ckds, ckde, &
-                                 cims, cime, cjms, cjme, ckms, ckme, &
-                                 cips, cipe, cjps, cjpe, ckps, ckpe  )
-       CALL nl_get_parent_grid_ratio ( nst%id , pgr )
-
-     IF ( par%id .EQ. 1 ) THEN
-!        IF ( would_move_x .NE. 0 .AND. move_cd_x .NE. 0 ) THEN
-           CALL wrf_message('MOAD can not move. Cancelling nest move in X')
-!          if ( grid%num_nests .eq. 0 ) grid%vc_i = grid%vc_i + move_cd_x * pgr  ! cancel effect of move
-!          move_cd_x = 0
-!        ENDIF
-!        IF ( would_move_y .NE. 0 .AND. move_cd_y .NE. 0 ) THEN
-           CALL wrf_message('MOAD can not move. Cancelling nest move in Y')
-!          if ( grid%num_nests .eq. 0 ) grid%vc_j = grid%vc_j + move_cd_y * pgr  ! cancel effect of move
-!          move_cd_y = 0
-!        ENDIF
-     ELSE
-         nst => par
-         par => nst%parents(1)%ptr
-         GOTO 100
-     ENDIF  ! bottom of until loop
-     endif
-     !-------------------- END DEAD CODE --------------------
-
      direction_of_move = ( move_cd_x .NE. 0 ) .OR. ( move_cd_y .NE. 0 )
 
    ELSE
      ! move this domain (the parent containing the moving nest)
      ! in a direction that reestablishes the distance from 
      ! the boundary.
-     IF ( direction_of_move ) THEN
-       IF ( grid%id .EQ. 1 ) THEN
+     move_domain: IF ( direction_of_move ) THEN
+        no_nests: IF ( grid%id .EQ. 1 ) THEN
 
          CALL wrf_message( 'DANGER: Nest has moved too close to boundary of outermost domain.' )
          move_cd_x = 0
@@ -1662,6 +1620,7 @@ LOGICAL FUNCTION direction_of_move ( parent , grid , move_cd_x, move_cd_y )
          direction_of_move = .FALSE.
 
        ELSE
+
           CALL get_ijk_from_grid (  grid%nests(kid)%ptr ,               &
                nids, nide, njds, njde, nkds, nkde, &
                nims, nime, njms, njme, nkms, nkme, &
@@ -1736,8 +1695,31 @@ LOGICAL FUNCTION direction_of_move ( parent , grid , move_cd_x, move_cd_y )
                        IMS,IME,JMS,JME,KMS,KME,            &
                        ITS,ITE,JTS,JTE,KTS,KTE      )
 
-       ENDIF
-     ENDIF 
+       ENDIF no_nests
+       if(grid%vortex_tracker == 6 .or. grid%vortex_tracker == 7) then
+            ! Update storm center gridpoint location, radius from
+            ! storm center and angle to storm center:
+            call nmm_med_tracker_post_move(grid)
+       endif
+
+       if(grid%swath_mode==1) then
+          ! Will need to update area of interest after domain shift:
+          grid%update_interest=.true.
+          
+          ! Parent must also update area of interest after its nest
+          ! moves if the parent has interest_kids set:
+          if(parent%interest_kids/=0) then
+38           format('grid ',I2,' updating grid ',I2,' area of interest due to nest motion')
+             write(message,38) grid%id,parent%id
+             call wrf_debug(1,trim(message))
+             parent%update_interest=.true.
+          else
+39           format('grid ',I2,' not updating grid ',I2,' area of interest because interest_kids is 0')
+             write(message,39) grid%id,parent%id
+             call wrf_debug(1,trim(message))
+          endif
+       endif
+     ENDIF move_domain
 
    ENDIF
 

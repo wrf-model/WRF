@@ -33,19 +33,19 @@ subroutine da_initialize_cv(cv_size, cv)
             cv(i) = z
          end do
       else
-         write(stdout,'("da_initialize_cv.inc: need to inject cv into wavelet space")')
-         call wrf_abort
+         write(unit=message(1),fmt='(a)')'Need to inject CV into wavelet space'
+         call da_error(__FILE__,__LINE__,message(1:1))
       endif
 
       mean_cv = sum(cv) / real(cv_size)
       rms_cv = sqrt(sum(cv*cv) / real(cv_size))
       std_dev_cv = sqrt(rms_cv * rms_cv - mean_cv * mean_cv)
 
-      write(unit=stdout,fmt=*)
-      write(unit=stdout,fmt='(a)')' Gaussian (Normal) noise statistics:'
-      write(unit=stdout,fmt='(a,f15.5)')' Mean = ',mean_cv
-      write(unit=stdout,fmt='(a,f15.5)')' RMS = ', rms_cv
-      write(unit=stdout,fmt='(a,f15.5)')' STD DEV = ', std_dev_cv
+      write(unit=message(1),fmt='(a)')' Gaussian (Normal) noise statistics:'
+      write(unit=message(2),fmt='(a,f15.5)')' Mean = ',mean_cv
+      write(unit=message(3),fmt='(a,f15.5)')' RMS = ', rms_cv
+      write(unit=message(4),fmt='(a,f15.5)')' STD DEV = ', std_dev_cv
+      call da_message(message(1:4))
    else
       cv = 0.0
    end if

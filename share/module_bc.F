@@ -1633,7 +1633,7 @@ CONTAINS
 
       IF (variable == 'U') variable = 'u'
       IF (variable == 'V') variable = 'v'
-      IF (variable == 'M') variable = 'm'
+      IF (variable == 'T') variable = 't'
       IF (variable == 'H') variable = 'h'
 
       ibs = ids
@@ -1647,7 +1647,7 @@ CONTAINS
       IF (variable == 'u') itf = min(ite,ide)
       IF (variable == 'v') jbe = jde
       IF (variable == 'v') jtf = min(jte,jde)
-      IF (variable == 'm') ktf = kte
+      IF (variable == 't') ktf = kte
       IF (variable == 'h') ktf = kte
 
       IF (jts - jbs .lt. spec_zone) THEN
@@ -1660,13 +1660,16 @@ CONTAINS
           DO k = kts, ktf
             DO i = max(its,b_limit+ibs), min(itf,ibe-b_limit)
             IF (variable == 't') THEN
-            field_tend(i,k,j) = field_tend(i,k,j) + field_tend_perturb(i,k,j) * (mu_2(i,j)+mub(i,j)) 
+              field_tend(i,k,j) = field_tend(i,k,j) + &
+                                  field_tend_perturb(i,k,j) * (mu_2(i,j)+mub(i,j)) 
             ENDIF
             IF (variable == 'u') THEN
-            field_tend(i,k,j) = field_tend(i,k,j) + field_tend_perturb(i,k,j) * 0.5*(mu_2(i,j)+mu_2(i-1,j) + mub(i,j)+mub(i-1,j)) / msf(i,j)
+              field_tend(i,k,j) = field_tend(i,k,j) + &
+                                  field_tend_perturb(i,k,j) * 0.5*(mu_2(i,j)+mu_2(i-1,j) + mub(i,j)+mub(i-1,j)) / msf(i,j)
             ENDIF
             IF (variable == 'v') THEN
-            field_tend(i,k,j) = field_tend(i,k,j) + field_tend_perturb(i,k,j) * 0.5*(mu_2(i,j)+mu_2(i,j-1) + mub(i,j)+mub(i,j-1)) / msf(i,j)
+              field_tend(i,k,j) = field_tend(i,k,j) + &
+                                  field_tend_perturb(i,k,j) * 0.5*(mu_2(i,j)+mu_2(i,j-1) + mub(i,j)+mub(i,j-1)) / msf(i,j)
             ENDIF
             ENDDO
           ENDDO
@@ -1683,13 +1686,16 @@ CONTAINS
           DO k = kts, ktf 
             DO i = max(its,b_limit+ibs), min(itf,ibe-b_limit)
             IF (variable == 't') THEN
-            field_tend(i,k,j) = field_tend(i,k,j) + field_tend_perturb(i,k,j) * (mu_2(i,j)+mub(i,j))
+              field_tend(i,k,j) = field_tend(i,k,j) + &
+                                  field_tend_perturb(i,k,j) * (mu_2(i,j)+mub(i,j))
             ENDIF
             IF (variable == 'u') THEN
-            field_tend(i,k,j) = field_tend(i,k,j) + field_tend_perturb(i,k,j) * 0.5*(mu_2(i,j)+mu_2(i-1,j) + mub(i,j)+mub(i-1,j)) / msf(i,j)
+              field_tend(i,k,j) = field_tend(i,k,j) + &
+                                  field_tend_perturb(i,k,j) * 0.5*(mu_2(i,j)+mu_2(i-1,j) + mub(i,j)+mub(i-1,j)) / msf(i,j)
             ENDIF
             IF (variable == 'v') THEN
-            field_tend(i,k,j) = field_tend(i,k,j) + field_tend_perturb(i,k,j) * 0.5*(mu_2(i,j)+mu_2(i,j-1) + mub(i,j)+mub(i,j-1)) / msf(i,j)
+              field_tend(i,k,j) = field_tend(i,k,j) + &
+                                  field_tend_perturb(i,k,j) * 0.5*(mu_2(i,j)+mu_2(i,j-1) + mub(i,j)+mub(i,j-1)) / msf(i,j)
             ENDIF
 	    ENDDO
           ENDDO
@@ -1704,13 +1710,16 @@ CONTAINS
           DO k = kts, ktf
             DO j = max(jts,b_dist+jbs+1), min(jtf,jbe-b_dist-1)
             IF (variable == 't') THEN
-            field_tend(i,k,j) = field_tend(i,k,j) + field_tend_perturb(i,k,j) * (mu_2(i,j)+mub(i,j))
+              field_tend(i,k,j) = field_tend(i,k,j) + &
+                                  field_tend_perturb(i,k,j) * (mu_2(i,j)+mub(i,j))
             ENDIF
             IF (variable == 'u') THEN
-            field_tend(i,k,j) = field_tend(i,k,j) + field_tend_perturb(i,k,j) * 0.5*(mu_2(i,j)+mu_2(i-1,j) + mub(i,j)+mub(i-1,j)) / msf(i,j)
+              field_tend(i,k,j) = field_tend(i,k,j) + &
+                                  field_tend_perturb(i,k,j) * 0.5*(mu_2(i,j)+mu_2(i-1,j) + mub(i,j)+mub(i-1,j)) / msf(i,j)
             ENDIF
             IF (variable == 'v') THEN
-            field_tend(i,k,j) = field_tend(i,k,j) + field_tend_perturb(i,k,j) * 0.5*(mu_2(i,j)+mu_2(i,j-1) + mub(i,j)+mub(i,j-1)) / msf(i,j)
+              field_tend(i,k,j) = field_tend(i,k,j) + &
+                                  field_tend_perturb(i,k,j) * 0.5*(mu_2(i,j)+mu_2(i,j-1) + mub(i,j)+mub(i,j-1)) / msf(i,j)
             ENDIF
             ENDDO
           ENDDO
@@ -1724,13 +1733,16 @@ CONTAINS
           DO k = kts, ktf
             DO j = max(jts,b_dist+jbs+1), min(jtf,jbe-b_dist-1)
             IF (variable == 't') THEN
-            field_tend(i,k,j) = field_tend(i,k,j) + field_tend_perturb(i,k,j) * (mu_2(i,j)+mub(i,j))
+              field_tend(i,k,j) = field_tend(i,k,j) + &
+                                  field_tend_perturb(i,k,j) * (mu_2(i,j)+mub(i,j))
             ENDIF
             IF (variable == 'u') THEN
-            field_tend(i,k,j) = field_tend(i,k,j) + field_tend_perturb(i,k,j) * 0.5*(mu_2(i,j)+mu_2(i-1,j) + mub(i,j)+mub(i-1,j)) / msf(i,j)
+              field_tend(i,k,j) = field_tend(i,k,j) + &
+                                  field_tend_perturb(i,k,j) * 0.5*(mu_2(i,j)+mu_2(i-1,j) + mub(i,j)+mub(i-1,j)) / msf(i,j)
             ENDIF
             IF (variable == 'v') THEN
-            field_tend(i,k,j) = field_tend(i,k,j) + field_tend_perturb(i,k,j) * 0.5*(mu_2(i,j)+mu_2(i,j-1) + mub(i,j)+mub(i,j-1)) / msf(i,j)
+              field_tend(i,k,j) = field_tend(i,k,j) + &
+                                  field_tend_perturb(i,k,j) * 0.5*(mu_2(i,j)+mu_2(i,j-1) + mub(i,j)+mub(i,j-1)) / msf(i,j)
             ENDIF
             ENDDO
           ENDDO
@@ -2213,6 +2225,7 @@ CONTAINS
    SUBROUTINE flow_dep_bdy_qnn  (  field,          &
                                u, v, config_flags, &
                                spec_zone,                  &
+                               ccn_conc,                   & ! RAS
                                ids,ide, jds,jde, kds,kde,  & ! domain dims
                                ims,ime, jms,jme, kms,kme,  & ! memory dims
                                ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
@@ -2231,6 +2244,7 @@ CONTAINS
       INTEGER,      INTENT(IN   )    :: ips,ipe, jps,jpe, kps,kpe
       INTEGER,      INTENT(IN   )    :: its,ite, jts,jte, kts,kte
       INTEGER,      INTENT(IN   )    :: spec_zone
+      REAL,         INTENT(IN   )    :: ccn_conc ! RAS
 
 
       REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(INOUT) :: field
@@ -2266,7 +2280,7 @@ CONTAINS
               IF(v(i,k,j) .lt. 0.)THEN
                 field(i,k,j) = field(i_inner,k,jbs+spec_zone)
               ELSE
-                field(i,k,j) = n_ccn0
+                field(i,k,j) = ccn_conc ! RAS
               ENDIF
             ENDDO
           ENDDO
@@ -2286,7 +2300,7 @@ CONTAINS
               IF(v(i,k,j+1) .gt. 0.)THEN
                 field(i,k,j) = field(i_inner,k,jbe-spec_zone)
               ELSE
-                field(i,k,j) = n_ccn0
+                field(i,k,j) = ccn_conc ! RAS
               ENDIF
             ENDDO
           ENDDO
@@ -2305,7 +2319,7 @@ CONTAINS
               IF(u(i,k,j) .lt. 0.)THEN
                 field(i,k,j) = field(ibs+spec_zone,k,j_inner)
               ELSE
-                field(i,k,j) = n_ccn0
+                field(i,k,j) = ccn_conc ! RAS
               ENDIF
             ENDDO
           ENDDO
@@ -2323,7 +2337,7 @@ CONTAINS
               IF(u(i+1,k,j) .gt. 0.)THEN
                 field(i,k,j) = field(ibe-spec_zone,k,j_inner)
               ELSE
-                field(i,k,j) = n_ccn0
+                field(i,k,j) = ccn_conc ! RAS
               ENDIF
             ENDDO
           ENDDO

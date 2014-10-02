@@ -126,7 +126,7 @@ subroutine da_transfer_xatowrftl(grid, config_flags, filnam, timestr)
 
    grid%g_ph_2 = 0.0
 
-   grid%xa%p = 0.0
+!  grid%xa%p = 0.0
    grid%g_p = grid%xa%p
 
    deallocate (g_press)

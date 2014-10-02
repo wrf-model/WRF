@@ -37,8 +37,8 @@ subroutine da_transform_xtoy_qscat(grid, iv, y)
    call da_interp_lin_3d (grid%xb%v, iv%info(qscat), vb)
 
    do n=iv%info(qscat)%n1,iv%info(qscat)%n2
-      if (var_wind) then
-          call da_uv_wind_tgl(y%qscat(n)%u,y%qscat(n)%v,u(1,n),v(1,n),ub(1,n),vb(1,n))
+      if (wind_sd_qscat) then
+          call da_uv_to_sd_lin(y%qscat(n)%u,y%qscat(n)%v,u(1,n),v(1,n),ub(1,n),vb(1,n))
       else
           y%qscat(n)%u = u(1,n)
           y%qscat(n)%v = v(1,n)

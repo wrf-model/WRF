@@ -229,10 +229,10 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
 
 ! Make sure regime array is set over entire grid
 ! (ajb: Copied code from fddagd)
-    IF( config_flags%sf_sfclay_physics /= 1 &
-  .AND. config_flags%sf_sfclay_physics /= 5 &
-  .AND. config_flags%sf_sfclay_physics /= 7 &
-  .AND. config_flags%sf_sfclay_physics /= 11 ) THEN
+    IF( config_flags%sf_sfclay_physics /= sfclayscheme &
+  .AND. config_flags%sf_sfclay_physics /= mynnsfcscheme &
+  .AND. config_flags%sf_sfclay_physics /= pxsfcscheme &
+  .AND. config_flags%sf_sfclay_physics /= sfclayrevscheme ) THEN
       DO j = jts, jte
       DO i = its, ite
            IF( pblh(i,j) > z_at_w(i,2,j)-ht(i,j) ) THEN

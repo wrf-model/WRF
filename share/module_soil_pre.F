@@ -218,6 +218,7 @@ CONTAINS
       ELSEIF ( FRACTIONAL_SEAICE == 1 ) THEN
          xice_threshold = 0.02
       ENDIF
+
       num_seaice_changes = 0
       fix_seaice : SELECT CASE ( scheme )
 
@@ -355,10 +356,10 @@ CONTAINS
 
 !tgs - compute blended sea ice/water skin temperature
                    if(flag_sst.eq.1) then
-                     tsk(i,j) = xice(i,j)*(min(seaice_threshold,tsk(i,j)))  &
+                     tsk(i,j) = xice(i,j)*(min(271.4,tsk(i,j)))  &
                                 +(1-xice(i,j))*sst(i,j)
                    else
-                     tsk(i,j) = xice(i,j)*(min(seaice_threshold,tsk(i,j)))  &
+                     tsk(i,j) = xice(i,j)*(min(271.4,tsk(i,j)))  &
                                 +(1-xice(i,j))*tsk(i,j)
                    endif
                      tsk_old(i,j) = tsk(i,j)
@@ -429,7 +430,7 @@ CONTAINS
       INTEGER :: i , j , l , ll, dominant_index
       REAL :: dominant_value
 
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
 !      REAL :: lwthresh = .99
       REAL :: lwthresh = .50
 #else
@@ -3353,7 +3354,7 @@ CONTAINS
       INTEGER :: i , j , l , ll, dominant_index
       REAL :: dominant_value
 
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
 !      REAL :: lwthresh = .99
       REAL :: lwthresh = .50
 #else

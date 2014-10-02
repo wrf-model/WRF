@@ -181,6 +181,7 @@ CONTAINS
             grid%xlat, grid%xlong, grid%xland, grid%ht,        &
             grid%t_phy, p_phy, grid%rho,                       &
             grid%u_phy, grid%v_phy, grid%w_2,                  &    
+            th_phy,     pi_phy,dz8w,                           &  
             grid%z, moist,                                     &
           ! Scheme specific prognostics
             grid%ktop_deep, grid%refl_10cm,                    &
@@ -205,7 +206,8 @@ CONTAINS
             ips, ipe, jps, jpe, kps, kpe,         &
           ! Mandatory outputs for all quantitative schemes
             grid%ic_flashcount, grid%ic_flashrate,          &
-            grid%cg_flashcount, grid%cg_flashrate           &
+            grid%cg_flashcount, grid%cg_flashrate,          &
+            grid%lpi                                        &   
       )    
       END IF LIGHTNING
 
@@ -292,11 +294,7 @@ CONTAINS
          CALL wrf_debug ( 100 , '--> CALL DIAGNOSTICS PACKAGE: CLIMATE DIAGNOSTICS' )
 
          CALL clwrf_output_calc(                                           &
-                     DPSDT=grid%dpsdt   ,DMUDT=grid%dmudt                  &
-                    ,P8W=p8w   ,PK1M=grid%pk1m                             &
-                    ,MU_2=grid%mu_2  ,MU_2M=grid%mu_2m                     &
-                    ,U=grid%u_2    ,V=grid%v_2                             &
-                    ,is_restart=config_flags%restart                       &
+                     is_restart=config_flags%restart                       &
                     ,clwrfH=config_flags%auxhist3_interval                 &
                     ,T2=grid%t2, Q2=grid%q2, U10=grid%u10, V10=grid%v10    &
                     ,SKINTEMP=grid%tsk                                     &
@@ -328,15 +326,9 @@ CONTAINS
                     ,SKINTEMPCLMEAN=grid%skintempmean                      &
                     ,SKINTEMPCLSTD=grid%skintempstd                        &
                     ,RAINCV=grid%raincv    ,RAINNCV=grid%rainncv           &
-                    ,RAINC=grid%rainc    ,RAINNC=grid%rainnc               &
-                    ,I_RAINC=grid%i_rainc    ,I_RAINNC=grid%i_rainnc       &
-                    ,HFX=grid%hfx   ,SFCEVP=grid%sfcevp    ,LH=grid%lh     &
-                    ,DT=grid%dt      ,SBW=config_flags%spec_bdy_width      &
+                    ,DT=grid%dt                                            &
                     ,XTIME=grid%xtime,CURR_SECS2=curr_secs2                &
-         ! Selection flag
-                    ,DIAG_PRINT=config_flags%diag_print                    &
-                    ,BUCKET_MM=config_flags%bucket_mm                      &
-                    ,BUCKET_J =config_flags%bucket_J                       &
+                    ,NSTEPS=grid%nsteps                                    &
          ! Dimension arguments
                     ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde     &
                     ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme     &
@@ -393,6 +385,7 @@ CONTAINS
                       ,e=grid%e                                             &
                !  Namelist info
                       ,use_tot_or_hyd_p=config_flags%use_tot_or_hyd_p       &
+                      ,extrap_below_grnd=config_flags%extrap_below_grnd     &
                       ,missing=config_flags%p_lev_missing                   &
                !  The diagnostics, mostly output variables
                       ,num_press_levels=config_flags%num_press_levels       &
@@ -406,6 +399,7 @@ CONTAINS
                       ,ght_pl= grid%ght_pl                                  &
                       ,s_pl  = grid%s_pl                                    &
                       ,td_pl = grid%td_pl                                   &
+                      ,q_pl = grid%q_pl                                     &
                !  Dimension arguments
                       ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde    &
                       ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme    &
@@ -426,7 +420,7 @@ CONTAINS
 
          IF ( ( config_flags%auxhist2_interval == 0 ) ) THEN
             WRITE (diag_message , * ) &
-            "Error : No 'auxhist2_interval' has been defined in 'namelist.input'"
+            "AFWA Diagnostics Error : No 'auxhist2_interval' defined in 'namelist.input'"
             CALL wrf_error_fatal ( diag_message )
          END IF
 
@@ -441,7 +435,8 @@ CONTAINS
                          ,scalar                                              &
                          ,chem                                                &
                          ,th_phy , pi_phy , p_phy                             &
-                         ,dz8w , p8w , t8w , rho_phy                          &
+                         ,grid%u_phy , grid%v_phy                             &
+                         ,dz8w , p8w , t8w , rho_phy, grid%rho                &
                          ,ids, ide, jds, jde, kds, kde                        &
                          ,ims, ime, jms, jme, kms, kme                        &
                          ,ips, ipe, jps, jpe, kps, kpe                        &

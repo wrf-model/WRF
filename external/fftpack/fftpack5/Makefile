@@ -24,7 +24,9 @@ library: $(OBJ)
 	$(RANLIB) $(TARGET)
 
 .F.o:
-	$(FC) -c $(FFLAGS) $< 
+	$(CPP) $(CPPFLAGS) $*.F  > $*.f90
+	$(FC) -c $(FFLAGS) $*.f90
+	$(RM) -f $*.f90
 
 clean:
 	rm -f $(OBJ) $(TARGET) *.obj

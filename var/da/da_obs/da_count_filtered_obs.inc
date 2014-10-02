@@ -151,7 +151,8 @@ subroutine da_count_filtered_obs (ptop, map, ds, phic, xlonc, truelat1, truelat2
             ! Geostationary or Polar orbitting Satellite AMVs:
 
             if (index(platform%info%name, 'MODIS') > 0 .or. &
-               index(platform%info%name, 'modis') > 0)  then
+                index(platform%info%name, 'modis') > 0 .or. &
+                index(platform%info%id, 'AVHRR') > 0)  then
                if (.not.use_polaramvobs) cycle reports
                nlocal(polaramv) = nlocal(polaramv) + 1
             else
@@ -319,7 +320,7 @@ subroutine da_count_filtered_obs (ptop, map, ds, phic, xlonc, truelat1, truelat2
 
    ! write end of header record
 
-   if (write_mod_filtered_obs) then    !cys_change
+   if (write_mod_filtered_obs) then
       write (unit = filtered_obs_unit, fmt = '(A)') &
          "MODIFIED FILTERED OBS #--------------------------------------------------------#"
    else

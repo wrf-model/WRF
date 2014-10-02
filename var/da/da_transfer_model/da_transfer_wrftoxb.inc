@@ -29,7 +29,7 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
 
    real, dimension(kms:kme) :: DDT
 
-   real   :: qvf1, cvpm, cpovcv, ppb, ttb, albn, aln, height, temp
+   real   :: qvf1, cvpm, cpovcv, p_surf, pfd, pfm, phm, pfu, ppb, ttb, albn, aln, height, temp
    real, allocatable :: arrayglobal(:,:)
 
    logical:: no_ppb
@@ -320,6 +320,7 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
             grid%xb%snowh(i,j) = 0.0
          end if
       end do
+   end do
 
       ! WHY?
       ! Adapted the code from "real.init.code" by Y.-R. Guo 05/13/2004:
@@ -358,11 +359,15 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
       ! However, the originals are computed with realsize=4.
       if ( no_ppb ) then
          do k=kts,kte
+          do j=grid%j_start(ij), grid%j_end(ij)
             do i=its,ite
                ! The base specific volume (from real.init.code)
                ppb  = grid%znu(k) * grid%mub(i,j) + ptop
                grid%pb(i,j,k) = ppb
                temp = MAX ( iso_temp, base_temp + base_lapse*log(ppb/base_pres) )
+               if ( grid%pb(i,j,k) < base_pres_strat ) then
+                  temp = iso_temp + base_lapse_strat*log(grid%pb(i,j,k)/base_pres_strat)
+               end if
                ttb  = temp * (base_pres/ppb)**kappa
                ! ttb  = (base_temp + base_lapse*log(ppb/base_pres)) * &
                !   (base_pres/ppb)**kappa
@@ -381,44 +386,71 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
                ! pressure purtubation:
                grid%p(i,j,k) = grid%xb%p(i,j,k) - ppb
             end do
+           end do
          end do
       else
-         do k=kts,kte
-            do i=its,ite
-              if (grid%hypsometric_opt == 1) then
-                ppb = grid%pb(i,j,k)
-                temp = MAX ( iso_temp, base_temp + base_lapse*log(ppb/base_pres) )
-                ttb  = temp * (base_pres/ppb)**kappa
-                ! ttb  = (base_temp + base_lapse*log(ppb/base_pres)) * &
-                !   (base_pres/ppb)**kappa
-                albn = (gas_constant/base_pres) * ttb * (ppb/base_pres)**cvpm
-
-                qvf1 = 1.0 + grid%moist(i,j,k,P_QV) / rd_over_rv
-                aln  = -1.0 / (grid%mub(i,j)+grid%mu_2(i,j)) * &
-                       (albn*grid%mu_2(i,j) + grid%rdnw(k) * &
-                       (grid%ph_2(i,j,k+1) - grid%ph_2(i,j,k)))
-                grid%xb%p(i,j,k) = grid%pb(i,j,k) + grid%p(i,j,k)
-                ! total density
-                grid%xb%rho(i,j,k)= 1.0 / (albn+aln)
-              elseif (grid%hypsometric_opt == 2) then
-                grid%xb%p(i,j,k) = grid%pb(i,j,k) + grid%p(i,j,k)
-                theta = t0 + grid%t_2(i,j,k)
-                qvf1 = 1.0 + grid%moist(i,j,k,P_QV) / rd_over_rv
-                ! inverse density via the equation of state
-                alt = gas_constant*theta*qvf1/base_pres*(grid%xb%p(i,j,k)/base_pres)**cvpm         
-                ! total density
-                grid%xb%rho(i,j,k)= 1.0/alt
-              endif
+         do j=grid%j_start(ij), grid%j_end(ij)
+          do i=its,ite
+            p_surf = base_pres * EXP ( -base_temp/base_lapse + ( (base_temp/base_lapse)**2 - 2.*gravity*grid%ht(i,j)/base_lapse/gas_constant ) **0.5 )
+            do k = kts, kte
+               grid%pb(i,j,k) = grid%znu(k)*(p_surf - grid%p_top) + grid%p_top
+               temp = MAX ( iso_temp, base_temp + base_lapse*log(grid%pb(i,j,k)/base_pres) )
+               if ( grid%pb(i,j,k) < base_pres_strat ) then
+                  temp = iso_temp + base_lapse_strat*log(grid%pb(i,j,k)/base_pres_strat)
+               end if
+               grid%t_init(i,j,k) = temp*(base_pres/grid%pb(i,j,k))**(gas_constant/cp) - t0
+               grid%alb(i,j,k) = (gas_constant/base_pres)*(grid%t_init(i,j,k)+t0)*(grid%pb(i,j,k)/base_pres)**cvpm
             end do
+          end do
+         end do
+
+         if (grid%hypsometric_opt == 1) then
+           do k=kts,kte
+             do j=grid%j_start(ij), grid%j_end(ij)
+               do i=its,ite
+                grid%al(i,j,k)=-1./(grid%mub(i,j)+grid%mu_2(i,j))*(grid%alb(i,j,k)*grid%mu_2(i,j)  &
+                     +grid%rdnw(k)*(grid%ph_2(i,j,k+1)-grid%ph_2(i,j,k)))
+                ! total density
+                grid%xb%rho(i,j,k)= 1.0 / (grid%alb(i,j,k)+grid%al(i,j,k))
+              end do
+            end do
+           end do
+         elseif (grid%hypsometric_opt == 2) then
+           do k=kts,kte
+             do j=grid%j_start(ij), grid%j_end(ij)
+              do i=its,ite
+               pfu = (grid%mub(i,j)+grid%mu_2(i,j))*grid%znw(k+1)+grid%p_top
+               pfd = (grid%mub(i,j)+grid%mu_2(i,j))*grid%znw(k)  +grid%p_top
+               phm = (grid%mub(i,j)+grid%mu_2(i,j))*grid%znu(k)  +grid%p_top
+               grid%al(i,j,k) = (grid%ph_2(i,j,k+1)-grid%ph_2(i,j,k)+grid%phb(i,j,k+1)-grid%phb(i,j,k)) &
+                                 /phm/LOG(pfd/pfu)-grid%alb(i,j,k)
+               ! total density
+               grid%xb%rho(i,j,k)= 1.0 / (grid%alb(i,j,k)+grid%al(i,j,k))
+            end do
+           end do
+          end do
+         endif
+         do k=kts,kte
+           do j=grid%j_start(ij), grid%j_end(ij)
+            do i=its,ite
+              qvf1 = 1.+grid%moist(i,j,k,P_QV) / rd_over_rv
+              grid%xb%p(i,j,k)=base_pres*( (gas_constant*(t0+grid%t_2(i,j,k))*qvf1)/       &
+                         (base_pres*(grid%al(i,j,k)+grid%alb(i,j,k))) )**cpovcv  
+            end do
+           end do
          end do
       endif
 
       do k=kts,kte+1
+        do j=grid%j_start(ij), grid%j_end(ij)
          do i=its,ite
             grid%xb%hf(i,j,k) = (grid%phb(i,j,k)+grid%ph_2(i,j,k))/gravity
             grid%xb%w (i,j,k) = grid%w_2(i,j,k)
          end do
+        end do
       end do
+
+      do j=grid%j_start(ij), grid%j_end(ij)
 
       if (grid%hypsometric_opt == 2) then
         ! Compute full-level pressure
@@ -498,7 +530,9 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
 
          end do
       end do
+   end do
 
+   do j=grid%j_start(ij), grid%j_end(ij)
       do i=its,ite
          grid%xb%psac(i,j) = grid%mub(i,j)+grid%mu_2(i,j)
 ! To make the Psfc consistent with WRF (YRG, 04/06/2010):

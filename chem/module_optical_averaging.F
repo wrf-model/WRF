@@ -246,13 +246,20 @@
           its,ite, jts,jte, kts,kte                                    )
 !    call mieaer_modal()
 !
+!   CASE (CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN  , CBMZ_MOSAIC_KPP,        &
+!         CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ,                     &
+!         CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN,                   &
+!         CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ,             &
+!         CBMZ_MOSAIC_4BIN_VBS2_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP,       &
+!         MOZART_MOSAIC_4BIN_KPP,CRI_MOSAIC_8BIN_AQ_KPP,           &
+!         CRI_MOSAIC_4BIN_AQ_KPP ) 
    CASE (CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN  , CBMZ_MOSAIC_KPP,        &
          CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ,                     &
          CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN,                   &
          CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ,             &
          CBMZ_MOSAIC_4BIN_VBS2_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP,       &
-         MOZART_MOSAIC_4BIN_VBS0_KPP,CRI_MOSAIC_8BIN_AQ_KPP,           &
-         CRI_MOSAIC_4BIN_AQ_KPP ) 
+         MOZART_MOSAIC_4BIN_KPP,MOZART_MOSAIC_4BIN_AQ_KPP,   &
+         CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP ) 
      call optical_prep_sectional(nbin_o, chem, alt,                    &
           totoa_a01,totoa_a02,totoa_a03,totoa_a04,                     &
 !         refindx, radius_wet, number_bin,                             &
@@ -390,6 +397,10 @@
 !!$       endif
 !!$  888  format(i3,9e12.5)
 !
+! Initialize LW vars as not all options compute it
+       lwtauaer(:,:)=1.e-20
+       lwextaer(:,:)=1.e-20
+
        if (option_mie .eq. 1) then 
           call mieaer(id, iclm, jclm, nbin_o,                          &
 !            number_bin_col, radius_wet_col, refindx_col,              &
@@ -435,11 +446,18 @@
 !                 call peg_message( lunerr, msg )
 !jdf
          !shortwave
-         tauaersw(iclm,k,jclm,:) = swtauaer(:,k)
-         extaersw(iclm,k,jclm,:) = swextaer(:,k)
-         gaersw(iclm,k,jclm,:)   = swgaer(:,k)
-         waersw(iclm,k,jclm,:)   = swwaer(:,k)
-         bscoefsw(iclm,k,jclm,:) = swbscoef(:,k)
+!        tauaersw(iclm,k,jclm,:) = swtauaer(:,k)
+!        extaersw(iclm,k,jclm,:) = swextaer(:,k)
+!        gaersw(iclm,k,jclm,:)   = swgaer(:,k)
+!        waersw(iclm,k,jclm,:)   = swwaer(:,k)
+!        bscoefsw(iclm,k,jclm,:) = swbscoef(:,k)
+         do ns=1,nspint
+          tauaersw(iclm,k,jclm,ns) = amax1(swtauaer(ns,k),1.e-20)
+          extaersw(iclm,k,jclm,ns) = amax1(swextaer(ns,k),1.e-20)
+          gaersw(iclm,k,jclm,ns)   = amax1(amin1(swgaer(ns,k),1.0-1.e-8),1.e-20)
+          waersw(iclm,k,jclm,ns)   = amax1(amin1(swwaer(ns,k),1.0-1.e-8),1.e-20)
+          bscoefsw(iclm,k,jclm,ns) = amax1(swbscoef(ns,k),1.e-20)
+         enddo
          l2aer(iclm,k,jclm,:) = l2(:,k)
          l3aer(iclm,k,jclm,:) = l3(:,k)
          l4aer(iclm,k,jclm,:) = l4(:,k)
@@ -448,8 +466,13 @@
          l7aer(iclm,k,jclm,:) = l7(:,k)
 
          !longwave
-         tauaerlw(iclm,k,jclm,1:nlwbands) = lwtauaer(1:nlwbands,k)
-         extaerlw(iclm,k,jclm,1:nlwbands) = lwextaer(1:nlwbands,k)
+!        tauaerlw(iclm,k,jclm,1:nlwbands) = lwtauaer(1:nlwbands,k)
+!        extaerlw(iclm,k,jclm,1:nlwbands) = lwextaer(1:nlwbands,k)
+         do ns=1,nlwbands
+          tauaerlw(iclm,k,jclm,ns) = amax1(lwtauaer(ns,k),1.e-20)
+          extaerlw(iclm,k,jclm,ns) = amax1(lwextaer(ns,k),1.e-20)
+         enddo
+
        enddo
 !!$       if(id.eq.1.and.iclm.eq.84.and.jclm.eq.52) then
 !!$          write(*,889) sizeaer(1,1),sizeaer(2,1),sizeaer(3,1),sizeaer(4,1)
@@ -1942,7 +1965,7 @@
                      mass_ncl_a3*xmas_sectc(isize)
           mass_dst = mass_dst_a1*xmas_sectj(isize) + mass_dst_a3*xmas_sectc(isize)
           mass_soa = mass_soa_a2*xmas_secti(isize) + mass_soa_a1*xmas_sectj(isize)
-          mass_pom = mass_soa_a1*xmas_sectj(isize)
+          mass_pom = mass_pom_a1*xmas_sectj(isize)
           mass_bc  = mass_bc_a1*xmas_sectj(isize)
           vol_so4 = mass_so4 / dens_so4
           vol_ncl = mass_ncl / dens_ncl
@@ -2489,6 +2512,7 @@
         mass_bcj= mass_bc1j + mass_bc2j
         if( p_msa .gt. 1) mass_msaj= (1.-FRAC2Aitken)*chem(i,k,j,p_msa)*conv1sulf
 
+
 ! Aitken mode...
 ! SAM 7/18/09 - Put fraction of GOCART sulfate, organic, black carbon masses into modal Aitken mode
         mass_oini = FRAC2Aitken*chem(i,k,j,p_p25)*conv1a
@@ -2537,7 +2561,9 @@
           mass_nh4 = mass_nh4i*xmas_secti(isize) + mass_nh4j*xmas_sectj(isize)
           mass_oin = mass_oini*xmas_secti(isize) + mass_oinj*xmas_sectj(isize) + &
                      mass_soil*xmas_sectc(isize) + mass_antha*xmas_sectc(isize)
-          mass_msa = mass_msai*xmas_secti(isize) + mass_msaj*xmas_sectj(isize)
+          if( p_msa .gt. 1) then
+             mass_msa = mass_msai*xmas_secti(isize) + mass_msaj*xmas_sectj(isize)
+          endif
 ! GOCART OC mass_aero1 is hydrophobic, mass_aero2 is hydrophylic
           mass_aro1 = mass_aro1j*xmas_sectj(isize) + mass_aro1i*xmas_secti(isize)
           mass_aro2 = mass_aro2j*xmas_sectj(isize) + mass_aro2i*xmas_secti(isize)

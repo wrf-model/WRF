@@ -1665,6 +1665,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 ! INTEGER, INTENT(IN)  :: vik2(its:ite) ! Vertical infl k-level for ramp
   REAL, INTENT(IN)     :: zslab(ims:ime, kms:kme)    ! model ht above sea level (m)
   LOGICAL, INTENT(IN)  :: iprt                       ! print flag
+  REAL                 :: abs_pdiff_below, abs_pdiff_above
   REAL,   INTENT(IN)   :: qvb( ims:ime, kms:kme, jms:jme ) ! Water vapor mixing ratio (QV)
   INTEGER, INTENT(IN)  :: obs_scl_neg_qv_innov ! User choice on whether negative qv innovations should be scaled
   REAL                 :: qvb_at_cur_loc, qvb_at_ob_loc ! QV at the current model or the observation location
@@ -2406,6 +2407,10 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
                 WTIJ(i)=(RIS-RSQ)/(RIS+RSQ)      
                 WTIJ(i)=AMAX1(0.0,WTIJ(i))
 ! yliu end
+! Set the pressure difference between the current model level and
+! both the level above and below to a number larger than the maximum (BPR)
+               abs_pdiff_above = maxsnd_gap+1.0
+               abs_pdiff_below = maxsnd_gap+1.0
 
 ! this loop goes to 1503
                 do nn=2,nsndlev
@@ -2417,14 +2422,19 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
                   .and. varobs(5,n+nn-1).gt.-800000.) then
                     pobhi=varobs(5,n+nn-1)
                     nhi=n+nn-1
-                    if(pobhi.lt.pijk .and. abs(pobhi-pijk).lt.0.5*maxsnd_gap) then
-                      go to 1502        ! within maxsnd_gap/2 of obs height
+! Check if current level in the innovation is above the current
+! model level but within maxsnd_gap (BPR)
+                    abs_pdiff_above=abs(pobhi-pijk)
+                    if(pobhi.le.pijk .and. abs_pdiff_above.le.maxsnd_gap) then
+                      go to 1502        ! within maxsnd_gap of obs height
                     endif
                   endif
 
                 enddo
 
-! did not find any ob above within maxsnd_gap/2, so jump out 
+! OLD: did not find any ob above within maxsnd_gap/2, so jump out
+! NEW: did not find any ob above within maxsnd_gap, so jump out
+
                 go to 1501
  1502           continue
 
@@ -2434,19 +2444,45 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
                   .and. varobs(5,nnjc).gt.-800000.) then
                     poblo=varobs(5,nnjc)
                     nlo=nnjc
-                    if(poblo.gt.pijk .and. abs(poblo-pijk).lt.0.5*maxsnd_gap) then
-                      go to 1505        ! within maxsnd_gap/2 of obs height
+! Check if current level in the innovation is below the current
+! model level but within maxsnd_gap (BPR)
+                    abs_pdiff_below=abs(poblo-pijk)
+                    if(poblo.ge.pijk .and. abs_pdiff_below.le.maxsnd_gap) then
+                      go to 1505        ! within maxsnd_gap of obs height
                     endif
                   endif
                 enddo
 !yliu end --
 
-! did not find any ob below within maxsnd_gap/2, so jump out 
+! OLD: did not find any ob below within maxsnd_gap/2, so jump out
+! NEW: did not find any ob below within maxsnd_gap, so jump out
+
                 go to 1501
  1505           continue
+!BPR BEGIN
+! Ensure that sum of gap between model level and the closest
+! innovation level above that combined with the sum of the gap
+! between the model level and the closest innovation level below
+! that is less than or equal to the maximum allowed gap
+                if((abs_pdiff_below+abs_pdiff_above).gt.maxsnd_gap) then
+                 goto 1501
+                endif
 
 ! interpolate to model level
-                pdiffj=alog(pijk/poblo)/alog(pobhi/poblo)
+! Avoid potential division by zero (or near-zero) that may now
+! occur when the model pressure exactly matches the pressure of
+! one of the levels in the innovation profile.
+! Note that these variables are in terms of cb so we are assuming that
+! if the closest innovation level below the model level is within
+! 0.00001 hPa of the the closest innovation level above the model
+! level then those two levels are identical. (BPR)
+                IF(abs(pobhi-poblo).lt.0.000001) THEN
+                 pdiffj=0
+                ELSE
+                 !Original code just used following statement
+                 pdiffj=alog(pijk/poblo)/alog(pobhi/poblo)
+                ENDIF
+
                 reserf(k)=errf(ivar,nlo)+                               &
                             (errf(ivar,nhi)-errf(ivar,nlo))*pdiffj
 

@@ -393,32 +393,44 @@
 
               IF      ( ( .NOT. xstag ) .AND. ( .NOT. ystag ) ) THEN
                  cprs(:) =   cpb(ci  ,:,cj  )
-                 cfld_ll = v_interp_col ( cfld(ci  ,:,cj  ) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci  , cj  , cfld_max_p(ci  ,cj  ) , cmax_p(ci  ,cj  ) , cfld_min_p(ci  ,cj  ) , cmin_p(ci  ,cj  ) )
+                 cfld_ll = v_interp_col ( cfld(ci  ,:,cj  ) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci  , cj  , &
+                                          cfld_max_p(ci  ,cj  ) , cmax_p(ci  ,cj  ) , cfld_min_p(ci  ,cj  ) , cmin_p(ci  ,cj  ) )
                  cprs(:) =   cpb(ci+1,:,cj  )
-                 cfld_lr = v_interp_col ( cfld(ci+1,:,cj  ) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci+1, cj  , cfld_max_p(ci+1,cj  ) , cmax_p(ci+1,cj  ) , cfld_min_p(ci+1,cj  ) , cmin_p(ci+1,cj  ) )
+                 cfld_lr = v_interp_col ( cfld(ci+1,:,cj  ) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci+1, cj  , &
+                                          cfld_max_p(ci+1,cj  ) , cmax_p(ci+1,cj  ) , cfld_min_p(ci+1,cj  ) , cmin_p(ci+1,cj  ) )
                  cprs(:) =   cpb(ci  ,:,cj+1)
-                 cfld_ul = v_interp_col ( cfld(ci  ,:,cj+1) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci  , cj+1, cfld_max_p(ci  ,cj+1) , cmax_p(ci  ,cj+1) , cfld_min_p(ci  ,cj+1) , cmin_p(ci  ,cj+1) )
+                 cfld_ul = v_interp_col ( cfld(ci  ,:,cj+1) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci  , cj+1, &
+                                          cfld_max_p(ci  ,cj+1) , cmax_p(ci  ,cj+1) , cfld_min_p(ci  ,cj+1) , cmin_p(ci  ,cj+1) )
                  cprs(:) =   cpb(ci+1,:,cj+1)
-                 cfld_ur = v_interp_col ( cfld(ci+1,:,cj+1) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci+1, cj+1, cfld_max_p(ci+1,cj+1) , cmax_p(ci+1,cj+1) , cfld_min_p(ci+1,cj+1) , cmin_p(ci+1,cj+1) )
+                 cfld_ur = v_interp_col ( cfld(ci+1,:,cj+1) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci+1, cj+1, &
+                                          cfld_max_p(ci+1,cj+1) , cmax_p(ci+1,cj+1) , cfld_min_p(ci+1,cj+1) , cmin_p(ci+1,cj+1) )
 
               ELSE IF ( xstag ) THEN
                  cprs(:) = ( cpb(ci  ,:,cj  ) + cpb(ci-1,:,cj  ) )*0.5 
-                 cfld_ll = v_interp_col ( cfld(ci  ,:,cj  ) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci  , cj  , cfld_max_p(ci  ,cj  ) , cmax_p(ci  ,cj  ) , cfld_min_p(ci  ,cj  ) , cmin_p(ci  ,cj  ) )
+                 cfld_ll = v_interp_col ( cfld(ci  ,:,cj  ) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci  , cj  , &
+                                          cfld_max_p(ci  ,cj  ) , cmax_p(ci  ,cj  ) , cfld_min_p(ci  ,cj  ) , cmin_p(ci  ,cj  ) )
                  cprs(:) = ( cpb(ci+1,:,cj  ) + cpb(ci  ,:,cj  ) )*0.5
-                 cfld_lr = v_interp_col ( cfld(ci+1,:,cj  ) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci+1, cj  , cfld_max_p(ci+1,cj  ) , cmax_p(ci+1,cj  ) , cfld_min_p(ci+1,cj  ) , cmin_p(ci+1,cj  ) )
+                 cfld_lr = v_interp_col ( cfld(ci+1,:,cj  ) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci+1, cj  , &
+                                          cfld_max_p(ci+1,cj  ) , cmax_p(ci+1,cj  ) , cfld_min_p(ci+1,cj  ) , cmin_p(ci+1,cj  ) )
                  cprs(:) = ( cpb(ci  ,:,cj+1) + cpb(ci-1,:,cj+1) )*0.5
-                 cfld_ul = v_interp_col ( cfld(ci  ,:,cj+1) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci  , cj+1, cfld_max_p(ci  ,cj+1) , cmax_p(ci  ,cj+1) , cfld_min_p(ci  ,cj+1) , cmin_p(ci  ,cj+1) )
+                 cfld_ul = v_interp_col ( cfld(ci  ,:,cj+1) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci  , cj+1, &
+                                          cfld_max_p(ci  ,cj+1) , cmax_p(ci  ,cj+1) , cfld_min_p(ci  ,cj+1) , cmin_p(ci  ,cj+1) )
                  cprs(:) = ( cpb(ci+1,:,cj+1) + cpb(ci  ,:,cj+1) )*0.5
-                 cfld_ur = v_interp_col ( cfld(ci+1,:,cj+1) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci+1, cj+1, cfld_max_p(ci+1,cj+1) , cmax_p(ci+1,cj+1) , cfld_min_p(ci+1,cj+1) , cmin_p(ci+1,cj+1) )
+                 cfld_ur = v_interp_col ( cfld(ci+1,:,cj+1) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci+1, cj+1, &
+                                          cfld_max_p(ci+1,cj+1) , cmax_p(ci+1,cj+1) , cfld_min_p(ci+1,cj+1) , cmin_p(ci+1,cj+1) )
               ELSE IF ( ystag ) THEN
                  cprs(:) = ( cpb(ci  ,:,cj  ) + cpb(ci  ,:,cj-1) )*0.5
-                 cfld_ll = v_interp_col ( cfld(ci  ,:,cj  ) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci  , cj  , cfld_max_p(ci  ,cj  ) , cmax_p(ci  ,cj  ) , cfld_min_p(ci  ,cj  ) , cmin_p(ci  ,cj  ) )
+                 cfld_ll = v_interp_col ( cfld(ci  ,:,cj  ) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci  , cj  , &
+                                          cfld_max_p(ci  ,cj  ) , cmax_p(ci  ,cj  ) , cfld_min_p(ci  ,cj  ) , cmin_p(ci  ,cj  ) )
                  cprs(:) = ( cpb(ci+1,:,cj  ) + cpb(ci+1,:,cj-1) )*0.5
-                 cfld_lr = v_interp_col ( cfld(ci+1,:,cj  ) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci+1, cj  , cfld_max_p(ci+1,cj  ) , cmax_p(ci+1,cj  ) , cfld_min_p(ci+1,cj  ) , cmin_p(ci+1,cj  ) )
+                 cfld_lr = v_interp_col ( cfld(ci+1,:,cj  ) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci+1, cj  , &
+                                          cfld_max_p(ci+1,cj  ) , cmax_p(ci+1,cj  ) , cfld_min_p(ci+1,cj  ) , cmin_p(ci+1,cj  ) )
                  cprs(:) = ( cpb(ci  ,:,cj+1) + cpb(ci  ,:,cj  ) )*0.5
-                 cfld_ul = v_interp_col ( cfld(ci  ,:,cj+1) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci  , cj+1, cfld_max_p(ci  ,cj+1) , cmax_p(ci  ,cj+1) , cfld_min_p(ci  ,cj+1) , cmin_p(ci  ,cj+1) )
+                 cfld_ul = v_interp_col ( cfld(ci  ,:,cj+1) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci  , cj+1, &
+                                          cfld_max_p(ci  ,cj+1) , cmax_p(ci  ,cj+1) , cfld_min_p(ci  ,cj+1) , cmin_p(ci  ,cj+1) )
                  cprs(:) = ( cpb(ci+1,:,cj+1) + cpb(ci+1,:,cj  ) )*0.5
-                 cfld_ur = v_interp_col ( cfld(ci+1,:,cj+1) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci+1, cj+1, cfld_max_p(ci+1,cj+1) , cmax_p(ci+1,cj+1) , cfld_min_p(ci+1,cj+1) , cmin_p(ci+1,cj+1) )
+                 cfld_ur = v_interp_col ( cfld(ci+1,:,cj+1) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci+1, cj+1, &
+                                          cfld_max_p(ci+1,cj+1) , cmax_p(ci+1,cj+1) , cfld_min_p(ci+1,cj+1) , cmin_p(ci+1,cj+1) )
               END IF
 
               !  Bilinear interpolation in horizontal with vertically corrected CG field values.
@@ -444,7 +456,8 @@
 
 !==================================
 
-   FUNCTION v_interp_col ( cfld_orig , cprs_orig , ckms , ckme , ckte , nprs, ni, nj, nk, ci, cj, cfld_max_p , cmax_p , cfld_min_p , cmin_p ) RESULT ( cfld_interp )
+   FUNCTION v_interp_col ( cfld_orig , cprs_orig , ckms , ckme , ckte , nprs, ni, nj, nk, ci, cj, &
+                           cfld_max_p , cmax_p , cfld_min_p , cmin_p ) RESULT ( cfld_interp )
 
       IMPLICIT NONE
 
@@ -992,6 +1005,255 @@ print *,'column of cg pres = ',cprs
 
 !==================================
 
+   SUBROUTINE vert_interp_vert_nesting ( cfld,                                 &  ! CD field
+                                         ids, ide, kds, kde, jds, jde,         & 
+                                         ims, ime, kms, kme, jms, jme,         &
+                                         its, ite, kts, kte, jts, jte,         &   
+                                         pgrid_s_vert, pgrid_e_vert,           &  ! vertical dimensions of parent grid
+					 cf1_c, cf2_c, cf3_c, cfn_c, cfn1_c,   &  ! coarse grid extrapolation constants
+                                         alt_u_c, alt_u_n)
+
+!KAL vertical interpolation for u, v, and mass points (w is below in a different subroutine) for vertical nesting 
+
+   IMPLICIT NONE
+   REAL, DIMENSION ( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) :: cfld   
+   INTEGER, INTENT(IN) :: ids, ide, kds, kde, jds, jde,   &
+                          ims, ime, kms, kme, jms, jme,   &
+                          its, ite, kts, kte, jts, jte
+   INTEGER, INTENT(IN) :: pgrid_s_vert, pgrid_e_vert                ! vertical dimensions of the parent grid			  
+   REAL, INTENT(IN)    :: cf1_c, cf2_c, cf3_c, cfn_c, cfn1_c
+   REAL, DIMENSION(pgrid_s_vert:pgrid_e_vert+1), INTENT(IN) :: alt_u_c
+   REAL, DIMENSION(kde+1), INTENT(IN) :: alt_u_n
+
+   
+   !local
+   
+   INTEGER :: i,j,k
+   REAL, DIMENSION(pgrid_s_vert:pgrid_e_vert+1) :: pro_u_c           ! variable in 1D on the coarse grid
+   REAL, DIMENSION(kde+1) :: pro_u_n
+   
+   DO j = jms,jme
+   DO i = ims,ime
+   
+      ! pro_u_c is u on the 1D coarse grid 
+    
+      do k = pgrid_s_vert,pgrid_e_vert-1
+      pro_u_c(k+1) = cfld(i,k,j)
+      enddo 
+      
+      !KAL fill in the surface value and the top value using extrapolation
+
+      pro_u_c(1      ) = cf1_c*cfld(i,1,j) &
+                       + cf2_c*cfld(i,2,j) &
+                       + cf3_c*cfld(i,3,j)
+   
+      pro_u_c(pgrid_e_vert+1) = cfn_c *cfld(i,pgrid_e_vert-1,j) &
+                              + cfn1_c*cfld(i,pgrid_e_vert-2,j)  
+		       
+      call inter_wrf_copy(pro_u_c, alt_u_c, pgrid_e_vert+1, pro_u_n, alt_u_n, kde+1)
+      
+      do k = 1,kde-1
+         cfld(i,k,j) = pro_u_n(k+1)
+      enddo	
+            
+   ENDDO
+   ENDDO
+  
+   
+   END SUBROUTINE vert_interp_vert_nesting
+   
+ !==================================
+
+   SUBROUTINE vert_interp_vert_nesting_w ( cfld,                                 &  ! CD field
+                                           ids, ide, kds, kde, jds, jde,         & 
+                                           ims, ime, kms, kme, jms, jme,         &
+                                           its, ite, kts, kte, jts, jte,         &   
+                                           pgrid_s_vert, pgrid_e_vert,           &  ! vertical dimensions of parent grid
+                                           alt_w_c, alt_w_n)
+
+!KAL vertical interpolation at w points for vertical nesting
+
+   IMPLICIT NONE
+   REAL, DIMENSION ( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) :: cfld   
+   INTEGER, INTENT(IN) :: ids, ide, kds, kde, jds, jde,   &
+                          ims, ime, kms, kme, jms, jme,   &
+                          its, ite, kts, kte, jts, jte
+   INTEGER, INTENT(IN) :: pgrid_s_vert, pgrid_e_vert                ! vertical dimensions of the parent grid			  
+   REAL, DIMENSION(pgrid_s_vert:pgrid_e_vert), INTENT(IN) :: alt_w_c
+   REAL, DIMENSION(kde), INTENT(IN) :: alt_w_n
+
+   
+   !local
+   
+   INTEGER :: i,j,k
+   REAL, DIMENSION(pgrid_s_vert:pgrid_e_vert) :: pro_w_c           ! variable in 1D on the coarse grid
+   REAL, DIMENSION(kde) :: pro_w_n
+   
+   DO j = jms,jme
+   DO i = ims,ime
+   
+      ! pro_w_c is w on the 1D coarse grid 
+    
+      do k = pgrid_s_vert,pgrid_e_vert
+      pro_w_c(k) = cfld(i,k,j)
+      enddo 
+	       
+      call inter_wrf_copy(pro_w_c, alt_w_c, pgrid_e_vert, pro_w_n, alt_w_n, kde)
+      
+      do k = 1,kde
+         cfld(i,k,j) = pro_w_n(k)
+      enddo	
+            
+   ENDDO
+   ENDDO
+  
+   
+   END SUBROUTINE vert_interp_vert_nesting_w
+
+!-----------------------------------------------------------------------------------------   
+
+   SUBROUTINE vert_interp_vert_nesting_1d ( cfld,                                 &  ! CD field
+                                            ids, ide, kds, kde, jds, jde,         & 
+                                            ims, ime, kms, kme, jms, jme,         &
+                                            its, ite, kts, kte, jts, jte,         &   
+                                            pgrid_s_vert, pgrid_e_vert,           &  ! vertical dimensions of parent grid
+					    cf1_c, cf2_c, cf3_c, cfn_c, cfn1_c,   &  ! coarse grid extrapolation constants
+                                            alt_u_c, alt_u_n)
+
+!KAL vertical interpolation for u, v, and mass points (w is below in a different subroutine) for vertical nesting 
+
+   IMPLICIT NONE
+   REAL, DIMENSION (kms:kme),INTENT(INOUT) :: cfld   
+   INTEGER, INTENT(IN) :: ids, ide, kds, kde, jds, jde,   &
+                          ims, ime, kms, kme, jms, jme,   &
+                          its, ite, kts, kte, jts, jte
+   INTEGER, INTENT(IN) :: pgrid_s_vert, pgrid_e_vert                ! vertical dimensions of the parent grid			  
+   REAL, INTENT(IN)    :: cf1_c, cf2_c, cf3_c, cfn_c, cfn1_c
+   REAL, DIMENSION(pgrid_s_vert:pgrid_e_vert+1), INTENT(IN) :: alt_u_c
+   REAL, DIMENSION(kde+1), INTENT(IN) :: alt_u_n
+
+   
+   !local
+   
+   INTEGER :: i,j,k
+   REAL, DIMENSION(pgrid_s_vert:pgrid_e_vert+1) :: pro_u_c           ! variable in 1D on the coarse grid
+   REAL, DIMENSION(kde+1) :: pro_u_n
+   
+
+      ! pro_u_c is u on the 1D coarse grid 
+    
+      do k = pgrid_s_vert,pgrid_e_vert-1
+      pro_u_c(k+1) = cfld(k)
+      enddo 
+      
+      !KAL fill in the surface value and the top value using extrapolation
+
+      pro_u_c(1      ) = cf1_c*cfld(1) &
+                       + cf2_c*cfld(2) &
+                       + cf3_c*cfld(3)
+   
+      pro_u_c(pgrid_e_vert+1) = cfn_c *cfld(pgrid_e_vert-1) &
+                              + cfn1_c*cfld(pgrid_e_vert-2)  
+		       
+      call inter_wrf_copy(pro_u_c, alt_u_c, pgrid_e_vert+1, pro_u_n, alt_u_n, kde+1)
+      
+      do k = 1,kde-1
+         cfld(k) = pro_u_n(k+1)
+      enddo	
+            
+   
+   END SUBROUTINE vert_interp_vert_nesting_1d   
+   
+     
+ !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!KAL this is a direct copy of a subroutine from ndown, but a dependency on ndown will not work because it is not always compiled (for ideal cases), and most likely not compliled in the order needed.
+
+  SUBROUTINE inter_wrf_copy(pro_c,alt_c,kde_c,pro_n,alt_n,kde_n)
+  
+!KAL this routine has been added for vertical nesting  
+
+   IMPLICIT NONE
+   INTEGER , INTENT(IN) :: kde_c,kde_n
+   REAL , DIMENSION(kde_c) , INTENT(IN ) :: pro_c,alt_c
+   REAL , DIMENSION(kde_n) , INTENT(IN ) :: alt_n
+   REAL , DIMENSION(kde_n) , INTENT(OUT) :: pro_n
+
+      real ,dimension(kde_c) :: a,b,c,d
+      real :: p
+      integer :: i,j
+
+
+      call coeff_mon_wrf_copy(alt_c,pro_c,a,b,c,d,kde_c)
+
+       do i = 1,kde_n-1
+
+          do j=1,kde_c-1
+
+               if ( (alt_n(i) .ge. alt_c(j)).and.(alt_n(i) .lt. alt_c(j+1)) ) then
+                p =  alt_n(i)-alt_c(j)
+                pro_n(i) = p*( p*(a(j)*p+b(j))+c(j)) + d(j)
+                goto 20
+               endif
+           enddo
+20             continue
+       enddo
+
+       pro_n(kde_n) = pro_c(kde_c)
+
+
+   END SUBROUTINE inter_wrf_copy
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!11
+!KAL this is a direct copy of a subroutine from ndown, but a dependency on ndown will not work because it is not always compiled (for ideal cases), and most likely not compliled in the order needed.
+
+     subroutine  coeff_mon_wrf_copy(x,y,a,b,c,d,n)
+     
+!KAL this routine has been added for vertical nesting     
+
+      implicit none
+
+      integer :: n
+      real ,dimension(n) :: x,y,a,b,c,d
+      real ,dimension(n) :: h,s,p,yp
+
+       integer :: i
+
+
+      do i=1,n-1
+      h(i) = (x(i+1)-x(i))
+      s(i) = (y(i+1)-y(i)) / h(i)
+      enddo
+
+      do i=2,n-1
+      p(i) = (s(i-1)*h(i)+s(i)*h(i-1)) / (h(i-1)+h(i))
+      enddo
+
+      p(1) = s(1)
+      p(n) = s(n-1)
+
+      do i=1,n
+      yp(i) = p(i)
+      enddo
+!!!!!!!!!!!!!!!!!!!!!
+
+      do i=2,n-1
+      yp(i) = (sign(1.,s(i-1))+sign(1.,s(i)))* min( abs(s(i-1)),abs(s(i)),0.5*abs(p(i)))
+      enddo
+
+      do i = 1,n-1
+      a(i) = (yp(i)+yp(i+1)-2.*s(i))/(h(i)*h(i))
+      b(i) = (3.*s(i)-2.*yp(i)-yp(i+1))/h(i)
+      c(i) = yp(i)
+      d(i) = y(i)
+      enddo
+
+      end  subroutine  coeff_mon_wrf_copy
+      
+  !-----------------------------------------------------------------------------------------
+  
+
+!================================== 
+
    SUBROUTINE p2c ( cfld,                                 &  ! CD field
                     cids, cide, ckds, ckde, cjds, cjde,   &
                     cims, cime, ckms, ckme, cjms, cjme,   &
@@ -1299,10 +1561,10 @@ print *,'column of cg pres = ',cprs
 
      ioff  = 0 ; joff  = 0
      IF ( xstag ) THEN 
-       ioff = (nri-1)/2
+       ioff = MAX((nri-1)/2,1)
      ENDIF
      IF ( ystag ) THEN
-       joff = (nrj-1)/2
+       joff = MAX((nrj-1)/2,1)
      ENDIF
 
      ! Iterate over the ND tile and compute the values
@@ -2136,7 +2398,7 @@ print *,'column of cg pres = ',cprs
                             ( NINT(clu(ci+1,cj  )) .NE. nflag ) .AND. &
                             ( NINT(clu(ci  ,cj+1)) .NE. nflag ) .AND. &
                             ( NINT(clu(ci+1,cj+1)) .NE. nflag ) ) THEN
-                     nfld(ni,nk,nj) = -1
+                     nfld(ni,nk,nj) = -4
 
                   !  If there are some land points and some water points, take an average. 
                   
@@ -2193,7 +2455,7 @@ print *,'column of cg pres = ',cprs
        ENDIF
 
        IF ( enable ) THEN
-         IF ( ANY(nfld .EQ. -1) ) THEN
+         IF ( ANY(nfld .EQ. -4) ) THEN
 
            !  OK, if there were any of those lake situations, we try to search a bit broader
            !  of an area in the coarse grid.
@@ -2202,7 +2464,7 @@ print *,'column of cg pres = ',cprs
               DO nk = nkts, nkte
                  DO ni = nits, nite
 !dave               IF ( imask(ni, nj) .NE. 1 ) cycle
-                    IF ( nfld(ni,nk,nj) .EQ. -1 ) THEN
+                    IF ( nfld(ni,nk,nj) .EQ. -4 ) THEN
                        IF ( MOD ( nrj , 2 ) .EQ. 0 ) THEN
                           cj = ( nj + (nrj/2)-1 ) / nrj + jpos -1 ! first coarse position equal to or below nest point
                        ELSE
@@ -6022,6 +6284,56 @@ print *,'column of cg pres = ',cprs
              nits, nite, njts, njte, nkts, nkte, .true.)
      endif
    end subroutine UpCopy
+
+   subroutine UpMax          (cfld,                                 &  ! CD field
+        cids, cide, ckds, ckde, cjds, cjde,   &
+        cims, cime, ckms, ckme, cjms, cjme,   &
+        cits, cite, ckts, ckte, cjts, cjte,   &
+        nfld,                                 &  ! ND field
+        nids, nide, nkds, nkde, njds, njde,   &
+        nims, nime, nkms, nkme, njms, njme,   &
+        nits, nite, nkts, nkte, njts, njte,   &
+        shw,                                  &  ! stencil half width for interp
+        imask,                                &  ! interpolation mask
+        xstag, ystag,                         &  ! staggering of field
+        ipos, jpos,                           &  ! Position of lower left of nest in CD
+        nri, nrj)                                ! nest ratios                         
+
+     use module_interp_nmm, only: n2c_max3d, n2c_max2d
+     implicit none
+     LOGICAL,INTENT(IN) :: xstag, ystag
+     INTEGER,INTENT(IN) :: cids, cide, ckds, ckde, cjds, cjde,   &
+          cims, cime, ckms, ckme, cjms, cjme,   &
+          cits, cite, ckts, ckte, cjts, cjte,   &
+          nids, nide, nkds, nkde, njds, njde,   &
+          nims, nime, nkms, nkme, njms, njme,   &
+          nits, nite, nkts, nkte, njts, njte,   &
+          shw,ipos,jpos,nri,nrj
+
+     INTEGER,DIMENSION(nims:nime,njms:njme),          INTENT(IN)           :: IMASK
+     REAL,DIMENSION(cims:cime,cjms:cjme,ckms:ckme),   INTENT(OUT)           :: CFLD
+     REAL,DIMENSION(nims:nime,njms:njme,nkms:nkme),   INTENT(IN)          :: nfld
+
+     if(nkts==nkte) then
+        call n2c_max2d(&
+             cfld,nfld,ipos,jpos,                   &
+             cids, cide, cjds, cjde,   &
+             cims, cime, cjms, cjme,   &
+             cits, cite, cjts, cjte,   &
+             nids, nide, njds, njde,   &
+             nims, nime, njms, njme,   &
+             nits, nite, njts, njte, .true.)
+     else
+        call n2c_max3d(&
+             cfld,nfld,ipos,jpos,                   &
+             cids, cide, cjds, cjde, ckds, ckde,   &
+             cims, cime, cjms, cjme, ckms, ckme,   &
+             cits, cite, cjts, cjte, ckts, ckte,   &
+             nids, nide, njds, njde, nkds, nkde,   &
+             nims, nime, njms, njme, nkms, nkme,   &
+             nits, nite, njts, njte, nkts, nkte, .true.)
+     endif
+   end subroutine UpMax
 
    subroutine DownCopy      (cfld,                                 &  ! CD field
         cids, cide, ckds, ckde, cjds, cjde,   &

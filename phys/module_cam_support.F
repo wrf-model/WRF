@@ -88,7 +88,7 @@ MODULE module_cam_support
   !From cam_history_support.F90
   real(r8), parameter, public :: fillvalue = 1.e36_r8     ! fill value for netcdf fields
 
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
   !For module_cam_mam_gas_wetdep_driver.F
   !BSINGH - We are going to operate on only 6 gases (following MOSAIC -
   !module_mosaic_wetscav.F). MOSAIC actually operates upon 7 gases but MAM

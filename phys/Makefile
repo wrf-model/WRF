@@ -77,6 +77,7 @@ MODULES = \
 	module_mp_thompson.o \
 	module_mp_full_sbm.o \
 	module_mp_fast_sbm.o \
+	module_ltng_lpi.o \
 	module_mp_gsfcgce.o \
 	module_mp_morr_two_moment.o \
 	module_mp_milbrandt2mom.o \
@@ -161,9 +162,7 @@ MODULES = \
 	module_fddagd_driver.o  \
         module_fddaobs_rtfdda.o \
 	module_fddaobs_driver.o \
-	module_wind_turbdragforce.o \
-	module_wind_generic.o \
-	module_wind_fitch.o  \
+	module_wind_fitch.o \
         module_sf_lake.o \
 	module_diagnostics_driver.o
 
@@ -178,6 +177,7 @@ FIRE_MODULES = \
   
 DIAGNOSTIC_MODULES_EM = \
 	module_diag_afwa.o \
+	module_diag_afwa_hail.o \
 	module_diag_cl.o \
 	module_diag_misc.o \
 	module_diag_pld.o

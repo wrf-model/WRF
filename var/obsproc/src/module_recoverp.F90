@@ -104,7 +104,7 @@ CONTAINS
       WRITE (UNIT = IUNIT, FMT = '(A,/)') 'PRESSURE RECOVERED FROM HEIGHTS:'
 
       WRITE(UNIT = iunit , FMT = '(A,/,3(A,F10.2,A),/,3(A,F10.2,A),/)') &
-        "MODEL REFERENCE STATE: ", &
+        "REFERENCE STATE: ", &
         " HTOP = ", htop,"m,  ",  &
         " PTOP = ", ptop,"Pa, ", &
         " PS0  = ", ps0 ,"Pa, ", &
@@ -146,6 +146,8 @@ levels:&
                       eps_equal &
                       (obs (i) % surface % meas % height % data, 0., 1.)) then
 
+             !hcl-note: obsproc should not check for qc on input file
+             !hcl-note: qc should be assigned by obsproc
              ! When both h and p have qc = 0 and h = 0. (at sea level 
              ! because the pressure is MSLP for surface data, check 
              ! the consistency between h and p
@@ -153,7 +155,7 @@ levels:&
                       consistent = hp_consist (  &
                               obs (i) % surface % meas % height   % data, &
                               obs (i) % surface % meas % pressure % data, &
-                              .true., iunit)
+                              print_hp_recover, iunit)
                       if (.not.consistent) obs (i) % info % discard = .true.
 
              ENDIF
@@ -374,7 +376,7 @@ loop_level:&
 ! 2.1 Recover pressure
 !     ----------------
  
-      CALL pressure_recover (nlevel, pp, hh, iunit, LB, LE, do_it)
+      CALL pressure_recover (nlevel, pp, hh, iunit, LB, LE, do_it, print_hp_recover)
       
 ! 2.2 Print status
 !     ------------
@@ -445,8 +447,10 @@ back_level: &
     REAL             :: h_ref, hdiff
 !------------------------------------------------------------------------------!
       if (pin <= 0) then
-        write(unit=iunit, fmt='(A,f12.2)') "Pressure voilation: P=",pin
-        STOP 55555
+        write(unit=0, fmt='(A,f12.2)') &
+           "In function hp_consist, Pressure voilation: P=",pin
+        hout = .false.
+        return
       endif
 
       hout = .true.
@@ -471,7 +475,7 @@ back_level: &
 
  END FUNCTION hp_consist
 !------------------------------------------------------------------------------!
-subroutine pressure_recover(level, pp, hh, iunit, LB, LE, do_it)
+subroutine pressure_recover(level, pp, hh, iunit, LB, LE, do_it, print_hp_recover)
 
    IMPLICIT NONE
 
@@ -479,6 +483,7 @@ subroutine pressure_recover(level, pp, hh, iunit, LB, LE, do_it)
    TYPE (field), dimension(level), INTENT(inout) :: hh, pp
    INTEGER,                   INTENT(out)        :: LB, LE
    LOGICAL,                   INTENT(out)        :: do_it
+   LOGICAL,                   INTENT (in)        :: print_hp_recover
                      
    INTEGER               :: k, L, L1, L2, Lstart
    REAL                  :: height1, height2, &
@@ -562,7 +567,7 @@ subroutine pressure_recover(level, pp, hh, iunit, LB, LE, do_it)
       endif
 
    ! height/pressure consistency check
-      consist1 = hp_consist (height1,press1,.true.,iunit) 
+      consist1 = hp_consist (height1,press1,print_hp_recover,iunit) 
       if (.NOT.consist1) then
          WRITE(UNIT=IUNIT, FMT='(A,2F12.2)') &
             "FAILED IN H/P CONSISTENCY CHECK: H1,P1:",height1,press1
@@ -579,7 +584,7 @@ subroutine pressure_recover(level, pp, hh, iunit, LB, LE, do_it)
        height2 = hh(L2) % data
        press2  = pp(L2) % data
 
-       consist2 = hp_consist (height2,press2,.true.,iunit)
+       consist2 = hp_consist (height2,press2,print_hp_recover,iunit)
       if (.NOT.consist2) then
          WRITE(UNIT=IUNIT, FMT='(A,I4,2F12.2)') &
             "FAILED IN H/P CONSISTENCY CHECK: L2,H2,P2:",L2,height2,press2

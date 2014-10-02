@@ -71,7 +71,8 @@ SUBROUTINE da_get_innov_vector_gpsztd ( it, num_qcstat_conv, grid, ob, iv )
      allocate (ob % gpspw (1:num_pseudo))
      ob % gpspw(1) % tpw   = 0.0
 
-     print '(a,i2)','==> GPS ZTD pseudo OBS test: num_pseudo=',num_pseudo
+      write(unit=message(1),fmt='(a,i2)') '==> GPS ZTD pseudo OBS test: num_pseudo=',num_pseudo
+      call da_message(message(1:1))
      
      iv % info(gpspw) % x(:,1)  = pseudo_x
      iv % info(gpspw) % y(:,1)  = pseudo_y
@@ -113,9 +114,10 @@ SUBROUTINE da_get_innov_vector_gpsztd ( it, num_qcstat_conv, grid, ob, iv )
         endif  
      endif 
 
-     print '(a4,2f15.5)', pseudo_var, pseudo_val, pseudo_err
-     print '(3f15.5)',    pseudo_x,  pseudo_y,  pseudo_z
-     print '(a,f8.2)',   'iv%gpsztd: elv=',iv%info(gpspw)%elv(1)
+     write(unit=message(1),fmt='(a,2f15.5)') pseudo_var, pseudo_val, pseudo_err
+     write(unit=message(2),fmt='(3f15.5)')   pseudo_x,  pseudo_y,  pseudo_z
+     write(unit=message(3),fmt='(a,f8.2)')   'iv%gpsztd: elv=',iv%info(gpspw)%elv(1)
+     call da_message(message(1:3))
    end if
 
 ! ----------------------------------------------------------------------------

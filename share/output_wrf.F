@@ -38,7 +38,7 @@
     REAL    gmt, cen_lat, cen_lon, bdyfrq , truelat1 , truelat2 , moad_cen_lat , stand_lon
     INTEGER km_opt, diff_opt, damp_opt,  &
             mp_physics, ra_lw_physics, ra_sw_physics, sf_sfclay_physics, &
-            sf_surface_physics, bl_pbl_physics, cu_physics, hypsometric_opt
+            sf_surface_physics, bl_pbl_physics, cu_physics, hypsometric_opt, sf_lake_physics
     INTEGER swint_opt, aer_type,aer_aod550_opt,aer_angexp_opt,aer_ssa_opt,aer_asy_opt, aer_opt
     REAL    aer_aod550_val,aer_angexp_val,aer_ssa_val,aer_asy_val
     REAL    khdif, kvdif, swrad_scat, dampcoef,radt,bldt,cudt
@@ -58,6 +58,7 @@
     REAL    guv_sfc, gt_sfc, gq_sfc, rinblw
     INTEGER moist_adv_opt, scalar_adv_opt, tke_adv_opt
     INTEGER save_topo_orig
+    INTEGER scalar_pblmix, tracer_pblmix, grav_settling
 #endif
     CHARACTER (len=19) simulation_start_date
     CHARACTER (len=len_current_date) current_date_save
@@ -90,6 +91,8 @@
     TYPE(WRFU_TimeInterval) :: interval, tmpinterval
     CHARACTER*80 alarmname, timestring, debuggal
     INTEGER seconds, seconds2, iring
+    INTEGER :: nio_tasks_per_group
+
 
     WRITE(wrf_err_message,*)'output_wrf: begin, fid = ',fid
     CALL wrf_debug( 300 , wrf_err_message )
@@ -119,8 +122,8 @@
                               ims, ime, jms, jme, kms, kme,    &
                               ips, ipe, jps, jpe, kps, kpe    )
 
-    call nl_get_diff_opt           ( 1, diff_opt                  )
-    call nl_get_km_opt             ( 1, km_opt                    )
+    call nl_get_diff_opt           ( grid%id , diff_opt           )
+    call nl_get_km_opt             ( grid%id,  km_opt             )
     call nl_get_damp_opt           ( 1, damp_opt                  )
     call nl_get_dampcoef           ( grid%id,  dampcoef           )
     call nl_get_khdif              ( grid%id,  khdif              )
@@ -146,6 +149,8 @@
     call nl_get_aer_angexp_val     ( grid%id,  aer_angexp_val     )
     call nl_get_aer_ssa_opt        ( grid%id,  aer_ssa_val        )
     call nl_get_aer_asy_opt        ( grid%id,  aer_asy_val        )
+    call nl_get_sf_lake_physics    ( grid%id,  sf_lake_physics    )
+
 #if (EM_CORE == 1)
     dt = grid%dt
     adapt_dt_min = grid%min_time_step
@@ -175,6 +180,9 @@
     CALL nl_get_grid_sfdda  ( grid%id , grid_sfdda )
     CALL nl_get_auxinput9_end_h( grid%id , sgfdda_end_h )
     CALL nl_get_auxinput9_interval_m ( grid%id , sgfdda_interval_m )
+    CALL nl_get_scalar_pblmix  ( grid%id , scalar_pblmix )
+    CALL nl_get_tracer_pblmix  ( grid%id , tracer_pblmix )
+    CALL nl_get_grav_settling  ( grid%id , grav_settling )
 
     IF ( grid_fdda == 1 ) THEN
     CALL nl_get_fgdt       ( grid%id , fgdt )
@@ -290,7 +298,11 @@
     CALL wrf_put_dom_ti_char ( fid , 'START_DATE', TRIM(start_date) , ierr )
     IF ( switch .EQ. input_only) THEN
        CALL wrf_put_dom_ti_char ( fid , 'SIMULATION_START_DATE', TRIM(start_date) , ierr )
+#ifdef HWRF
+    ELSE
+#else
     ELSE IF ( ( switch .EQ. restart_only ) .OR. ( switch .EQ. history_only ) ) THEN
+#endif
        CALL nl_get_simulation_start_year   ( 1, simulation_start_year   )
        CALL nl_get_simulation_start_month  ( 1, simulation_start_month  )
        CALL nl_get_simulation_start_day    ( 1, simulation_start_day    )
@@ -525,6 +537,8 @@ endif
     CALL wrf_put_dom_ti_integer ( fid , 'BL_PBL_PHYSICS' ,  ibuf , 1 , ierr )
     ibuf(1) = cu_physics
     CALL wrf_put_dom_ti_integer ( fid , 'CU_PHYSICS' ,  ibuf , 1 , ierr )
+    ibuf(1) = sf_lake_physics
+    CALL wrf_put_dom_ti_integer ( fid , 'SF_LAKE_PHYSICS' ,  ibuf , 1 , ierr )
 
     ! added netcdf-specific metadata:
     IF ( ( use_package( io_form ) == IO_NETCDF ) .OR. &
@@ -636,8 +650,12 @@ endif
       CALL wrf_put_dom_ti_integer   ( fid, 'ISFFLX',      config_flags%isfflx      , 1 , ierr ) 
       CALL wrf_put_dom_ti_integer   ( fid, 'ICLOUD',      config_flags%icloud      , 1 , ierr ) 
       CALL wrf_put_dom_ti_integer   ( fid, 'ICLOUD_CU',   config_flags%icloud_cu   , 1 , ierr ) 
+      CALL wrf_put_dom_ti_integer   ( fid, 'TRACER_PBLMIX', tracer_pblmix , 1 , ierr )
+      CALL wrf_put_dom_ti_integer   ( fid, 'SCALAR_PBLMIX', scalar_pblmix , 1 , ierr )
+      CALL wrf_put_dom_ti_integer   ( fid, 'GRAV_SETTLING', grav_settling , 1 , ierr )
 
 #endif
+
       IF ( sf_surface_physics == 4 ) THEN
         CALL wrf_put_dom_ti_integer   ( fid, 'OPT_SFC',     config_flags%opt_sfc     , 1 , ierr )
         CALL wrf_put_dom_ti_integer   ( fid, 'DVEG',        config_flags%dveg        , 1 , ierr )
@@ -1355,6 +1373,28 @@ endif
        CALL wrf_debug ( 300 , 'output_wrf: calling wrf_iosync ' )
        CALL wrf_iosync ( fid , ierr )
        CALL wrf_debug ( 300 , 'output_wrf: back from wrf_iosync ' )
+
+       ! If output_ready_flag is set:
+       ! Write wrfoutReady file if finished dumping
+       ! history file, unless we're quilting, in which
+       ! case this file would get dumped before history
+       ! file was completely written.  When quilting
+       ! this file is written after the file handler
+       ! is closed in the quilt() subroutine instead of
+       ! here. (This is diagnosed by checking whether
+       ! nio_tasks_in_group is zero) GAC 20140321
+
+       IF ( switch .EQ. history_only .AND. config_flags%output_ready_flag ) THEN
+          WRITE ( wrf_err_message , FMT='(I2.2)' ) grid%id
+          CALL get_nio_tasks_in_group ( nio_tasks_per_group )
+          IF ( nio_tasks_per_group .EQ. 0 ) THEN
+             OPEN ( UNIT   = 99 , &
+                    FILE   = 'wrfoutReady_d' // wrf_err_message(1:2) // '_' // TRIM(current_date) , &
+                    STATUS = 'UNKNOWN' , &
+                    ACCESS = 'SEQUENTIAL' )
+             CLOSE (99)
+          ENDIF
+       ENDIF
     ENDIF
 
     WRITE(wrf_err_message,*)'output_wrf: end, fid = ',fid

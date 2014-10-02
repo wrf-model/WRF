@@ -169,7 +169,7 @@
       CALL nl_set_use_adaptive_time_step( grid%id, .false. )
 #endif
 
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
       ! set chemistry option to zero
       CALL nl_set_chem_opt (grid%id, 0)
       CALL nl_set_aer_ra_feedback (grid%id, 0)
@@ -185,7 +185,10 @@
       ! set diffusion to zero for backward integration
 
 #if (EM_CORE == 1)
-      CALL nl_set_km_opt( grid%id, grid%km_opt_dfi)
+      grid%km_opt_dfi = grid%km_opt
+      grid%diff_opt_dfi = grid%diff_opt
+      CALL nl_set_km_opt( grid%id, 1) 
+      CALL nl_set_diff_opt( grid%id, 0) 
       CALL nl_set_moist_adv_dfi_opt( grid%id, grid%moist_adv_dfi_opt)
       IF ( grid%moist_adv_opt == 2 ) THEN
          CALL nl_set_moist_adv_opt( grid%id, 0)
@@ -378,7 +381,7 @@
 #endif
 
 
-!#ifdef WRF_CHEM
+!#if ( WRF_CHEM == 1 )
 !      ! reset chem option to normal
 !      CALL nl_set_chem_opt( grid%id, grid%chem_opt)
 !      CALL nl_set_aer_ra_feedback (grid%id, grid%aer_ra_feedback)
@@ -386,7 +389,10 @@
 
 #if (EM_CORE == 1)
       ! reset km_opt to normal
-      CALL nl_set_km_opt( grid%id, grid%km_opt)
+      grid%km_opt = grid%km_opt_dfi
+      grid%diff_opt = grid%diff_opt_dfi
+      CALL nl_set_km_opt( grid%id, grid%km_opt_dfi)
+      CALL nl_set_diff_opt( grid%id, grid%diff_opt_dfi)
       CALL nl_set_moist_adv_opt( grid%id, grid%moist_adv_opt)
 #endif
 
@@ -471,7 +477,7 @@
 #endif
       CALL nl_set_feedback( grid%id, grid%feedback )
 
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
       ! reset chem option to normal
       CALL nl_set_chem_opt( grid%id, grid%chem_opt)
       CALL nl_set_aer_ra_feedback (grid%id, grid%aer_ra_feedback)
@@ -2823,7 +2829,7 @@ call wrf_message(mess)
       CALL nl_set_constant_bc( grid%id, head_grid%constant_bc)
 #endif
 
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
       ! set chemistry option to zero
       CALL nl_set_chem_opt (grid%id, 0)
       CALL nl_set_aer_ra_feedback (grid%id, 0)
@@ -2838,7 +2844,10 @@ call wrf_message(mess)
 
 #if (EM_CORE == 1)
       ! set diffusion to zero for backward integration
+      grid%km_opt_dfi = grid%km_opt
+      grid%diff_opt_dfi = grid%diff_opt
       CALL nl_set_km_opt( grid%id, grid%km_opt_dfi)
+      CALL nl_set_diff_opt( grid%id, grid%diff_opt_dfi)
       CALL nl_set_moist_adv_dfi_opt( grid%id, grid%moist_adv_dfi_opt)
       IF ( grid%moist_adv_opt == 2 ) THEN
          CALL nl_set_moist_adv_opt( grid%id, 0)

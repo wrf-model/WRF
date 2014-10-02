@@ -126,7 +126,7 @@ CONTAINS
           gfluxp=0.
        ENDIF
 
-       dqc(i,k,j)=(gfluxp - gfluxm)/dz8w(i,kts,j)*dtbl
+       dqc(i,k,j)=dqc(i,k,j) + (gfluxp - gfluxm)/dz8w(i,kts,j)    !*dtbl
 
        !print*,"in bl_fogdes: i,j=",i,j
        !print*,"vdfg=",vdfg(i,j)," qc=",qc_curr(i,k,j)," dtbl=",dtbl
@@ -148,11 +148,11 @@ CONTAINS
              gfluxm=0.
           ENDIF
 
-          dqc(i,k,j)=(gfluxp - gfluxm)/dz8w(i,kts,j)*dtbl
+          dqc(i,k,j)= dqc(i,k,j) + (gfluxp - gfluxm)/dz8w(i,k,j)  !*dtbl
 
        ENDDO
 
-       dqc(i,kte,j)=0.
+      ! dqc(i,kte,j)=0.
 
      ENDDO
    ENDDO

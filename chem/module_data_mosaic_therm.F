@@ -44,11 +44,19 @@
               naer, naercomp, nelectrolyte, nsalt,	&
               nsoluble, ncation, nanion
       parameter(ngas_ioa = 5)	! inorganic volatile aerosol species that have a gaseous counterpart
-      parameter(ngas_soa = 68+2+16)	! volatile soa species that have a gaseous counterpart
-      parameter(ngas_volatile = ngas_ioa + ngas_soa)
+!      parameter(ngas_soa = 68+2+16)	! volatile soa species that have a gaseous counterpart
+!      parameter(ngas_volatile = ngas_ioa + ngas_soa)
+!      parameter(ngas_het = 2)   ! gas species only involved in heterogeneous reactions ! DL - 9/9/2011
+!      parameter(naer = 11+68+2+16)	! num of chemical species per bin (inorg + oc + bc + oin + soa)
+!      parameter(naercomp = 26+68+2+16)	! num of electrolytes + oc, bc, oin, & soa
+! 10 new VBS species
+      parameter(ngas_soa = 68+2+16+10)	! volatile soa species that have a gaseous counterpart
+! OH and glyoxal at the end
+      parameter(ngas_volatile = ngas_ioa + ngas_soa + 1 + 1)
       parameter(ngas_het = 2)   ! gas species only involved in heterogeneous reactions ! DL - 9/9/2011
-      parameter(naer = 11+68+2+16)	! num of chemical species per bin (inorg + oc + bc + oin + soa)
-      parameter(naercomp = 26+68+2+16)	! num of electrolytes + oc, bc, oin, & soa
+! 5 glyoxal SOA species, 10 VBS species
+      parameter(naer = 11+68+2+16+5+10)	! num of chemical species per bin (inorg + oc + bc + oin + soa) + 5*glysoa + 10*VBS
+      parameter(naercomp = 26+68+2+16+5+10)	! num of electrolytes + oc, bc, oin, & soa + 5*glysoa + 10*VBS
       parameter(nelectrolyte = 22) ! num of electrolytes
       parameter(nsalt    = 15)	! num of soluble salts
       parameter(nsoluble = 20)	! num of soluble electrolytes
@@ -124,10 +132,11 @@
       iant4_c_g,ibiog1_c_g,ibiog2_c_g,ibiog3_c_g,ibiog4_c_g, &
       iant1_o_g,iant2_o_g,iant3_o_g, &
       iant4_o_g,ibiog1_o_g,ibiog2_o_g,ibiog3_o_g,ibiog4_o_g, &
-      ismpa_g,ismpbb_g
+      ismpa_g,ismpbb_g, &
+      iasoaX_g, iasoa1_g, iasoa2_g, iasoa3_g, iasoa4_g, &
+      ibsoaX_g, ibsoa1_g, ibsoa2_g, ibsoa3_g, ibsoa4_g, &
+      igly, iho
 
-
- 
 
 ! aerosol generic
       integer, save ::   &
@@ -155,12 +164,13 @@
       iopcg3_f_o_a,iopcg4_f_o_a,iopcg5_f_o_a,iopcg6_f_o_a,&
       iopcg7_f_o_a,iopcg8_f_o_a, &
       ismpa_a,ismpbb_a, &
+      iglysoa_r1_a, iglysoa_r2_a, iglysoa_oh_a, iglysoa_sfc_a, iglysoa_nh4_a, &
       iant1_c_a,iant2_c_a,iant3_c_a, &
       iant4_c_a,ibiog1_c_a,ibiog2_c_a,ibiog3_c_a,ibiog4_c_a, &
       iant1_o_a,iant2_o_a,iant3_o_a, &
-      iant4_o_a,ibiog1_o_a,ibiog2_o_a,ibiog3_o_a,ibiog4_o_a
-
-
+      iant4_o_a,ibiog1_o_a,ibiog2_o_a,ibiog3_o_a,ibiog4_o_a, &
+      iasoaX_a, iasoa1_a,iasoa2_a,iasoa3_a,iasoa4_a,&
+      ibsoaX_a, ibsoa1_a,ibsoa2_a,ibsoa3_a,ibsoa4_a
 
 
 ! aerosol elecctrolytes/compounds
@@ -192,12 +202,13 @@
       jopcg3_f_o,jopcg4_f_o,jopcg5_f_o,jopcg6_f_o,&
       jopcg7_f_o,jopcg8_f_o, &
       jsmpa,jsmpbb, &
+      jglysoa_r1, jglysoa_r2, jglysoa_oh, jglysoa_sfc, jglysoa_nh4, &
       jant1_c,jant2_c,jant3_c, &
       jant4_c,jbiog1_c,jbiog2_c,jbiog3_c,jbiog4_c, &
       jant1_o,jant2_o,jant3_o, &
-      jant4_o,jbiog1_o,jbiog2_o,jbiog3_o,jbiog4_o
-
-
+      jant4_o,jbiog1_o,jbiog2_o,jbiog3_o,jbiog4_o, &
+      jasoaX,jasoa1,jasoa2,jasoa3,jasoa4,&
+      jbsoaX,jbsoa1,jbsoa2,jbsoa3,jbsoa4
 
 
 ! aerosol ions
@@ -268,6 +279,9 @@
       	water_a_hyst(nbin_a_maxd),	&  ! kg(water)/m^3(air) hysteresis (at 60% rh)
       	water_a_up(nbin_a_maxd),	&  ! kg(water)/m^3(air) at 60% rh
       	ph(nbin_a_maxd),		&  ! ph
+        c_as(nbin_a_maxd),          & ! ammonium sulfate concentration (mol/kg water)
+        c_an(nbin_a_maxd),          & ! ammonium nitrate concentration (mol/kg water)
+        a_nh4(nbin_a_maxd),         & ! ammonium sulfate activity (mol/kg water)
       	aer(naer,3,nbin_a_maxd),	&  ! nmol/m^3
 	aer_sum(3,nbin_a_maxd),		&  ! nmol/m^3
       	aer_percent(naer,3,nbin_a_maxd), &  ! %
@@ -348,6 +362,11 @@
 	rtol_eqb_astem,				&  ! 0.01 to 0.03
 	ptol_mol_astem,				&  ! 0.01 to 1.0
 	nsteps_astem_avg			   !
+
+      integer, parameter :: glysoa_param_off     = 0, &
+                            glysoa_param_simple  = 1, &
+                            glysoa_param_complex = 2
+      integer, save      :: glysoa_param
 
 !----------------------------------------------------------------------
 ! mesa variables

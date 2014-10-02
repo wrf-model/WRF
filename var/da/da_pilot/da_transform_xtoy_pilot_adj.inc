@@ -31,13 +31,13 @@ subroutine da_transform_xtoy_pilot_adj(grid, iv, jo_grad_y, jo_grad_x)
    do n=iv%info(pilot)%n1,iv%info(pilot)%n2
        do k = 1, iv%info(pilot)%levels(n)
 
-         if(.not. var_wind) then
+         if(wind_sd_pilot) then
+            call da_uv_to_sd_adj(jo_grad_y%pilot(n)%u(k), &
+                                 jo_grad_y%pilot(n)%v(k), model_u(k,n), model_v(k,n), ub(k,n), vb(k,n))
+         else
              model_u(k,n) = jo_grad_y%pilot(n)%u(k)
              model_v(k,n) = jo_grad_y%pilot(n)%v(k)
-           else
-             call da_uv_wind_adj(jo_grad_y%pilot(n)%u(k), &
-                                 jo_grad_y%pilot(n)%v(k), model_u(k,n), model_v(k,n), ub(k,n), vb(k,n))
-          end if
+         end if
 
       end do
 

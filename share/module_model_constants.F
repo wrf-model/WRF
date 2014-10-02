@@ -64,7 +64,8 @@
    REAL    , PARAMETER :: rhosnow      = 100.
    REAL    , PARAMETER :: rhoair0      = 1.28
 !
-   REAL    , PARAMETER :: n_ccn0       = 1.0E8
+! Now namelist-specified parameter: ccn_conc - RAS
+!   REAL    , PARAMETER :: n_ccn0       = 1.0E8
 !
    REAL    , PARAMETER :: piconst      = 3.1415926535897932384626433
    REAL    , PARAMETER :: DEGRAD       = piconst/180.

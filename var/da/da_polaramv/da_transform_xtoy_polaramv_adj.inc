@@ -31,13 +31,13 @@ subroutine da_transform_xtoy_polaramv_adj (grid, iv, jo_grad_y, jo_grad_x)
    do n=iv%info(polaramv)%n1,iv%info(polaramv)%n2
        do k = 1, iv%info(polaramv)%levels(n)
 
-         if(.not. var_wind) then
+         if(wind_sd_polaramv) then
+            call da_uv_to_sd_adj(jo_grad_y%polaramv(n)%u(k), &
+                                 jo_grad_y%polaramv(n)%v(k), u(k,n), v(k,n), ub(k,n), vb(k,n))
+         else
              u(k,n) = jo_grad_y%polaramv(n)%u(k)
              v(k,n) = jo_grad_y%polaramv(n)%v(k)
-           else
-             call da_uv_wind_adj(jo_grad_y%polaramv(n)%u(k), &
-                                    jo_grad_y%polaramv(n)%v(k), u(k,n), v(k,n), ub(k,n), vb(k,n))
-          end if
+         end if
 
       end do
    end do

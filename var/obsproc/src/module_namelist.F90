@@ -4,6 +4,7 @@ MODULE MODULE_NAMELIST
 !
 ! D. GILL,         April 1998
 ! F. VANDENBERGHE, March 2001
+! FENG GAO,        March 2014 Added options for wind_sd
 !-----------------------------------------------------------------------------!
 
    USE MODULE_DATE
@@ -67,7 +68,14 @@ MODULE MODULE_NAMELIST
                       write_satob, write_airep, write_gpspw, write_gpsztd,&
                       write_gpsref,write_gpseph,write_ssmt1, write_ssmt2, &
                       write_ssmi , write_tovs , write_qscat, write_profl, &
-                      write_bogus, write_airs ,  write_tamdar 
+                      write_bogus, write_airs , write_tamdar 
+   logical :: gts_from_mmm_archive
+   logical :: calc_psfc_from_QNH
+
+   LOGICAL         :: wind_sd,      wind_sd_synop, wind_sd_ships, wind_sd_metar,&
+                      wind_sd_buoy, wind_sd_sound, wind_sd_qscat, wind_sd_pilot,&
+                      wind_sd_airep,wind_sd_geoamv,wind_sd_tamdar,wind_sd_profiler
+
 
 #ifdef BKG
    INTEGER                   :: time_earlier, time_later
@@ -76,14 +84,14 @@ MODULE MODULE_NAMELIST
                       first_guess_file, fg_format
    NAMELIST /RECORD2/ time_earlier, time_later, time_analysis
 #else
-   NAMELIST /RECORD1/ obs_gts_filename, obs_err_filename, fg_format
+   NAMELIST /RECORD1/ obs_gts_filename, obs_err_filename, fg_format, gts_from_mmm_archive
    NAMELIST /RECORD2/ time_window_min,time_analysis,time_window_max
 
 #endif
    NAMELIST /RECORD3/ max_number_of_obs, fatal_if_exceed_max_obs
    NAMELIST /RECORD4/ qc_test_vert_consistency, qc_test_convective_adj,  &
                       qc_test_above_lid, remove_above_lid,domain_check_h,&
-                      Thining_SATOB, Thining_SSMI, Thining_QSCAT
+                      Thining_SATOB, Thining_SSMI, Thining_QSCAT, calc_psfc_from_QNH
    NAMELIST /RECORD5/ print_gts_read, print_gpspw_read,                 &
                       print_recoverp,                                   &
                       print_duplicate_loc, print_duplicate_time,        &
@@ -117,9 +125,13 @@ MODULE MODULE_NAMELIST
                       write_ssmi , write_tovs , write_qscat, write_profl, &
                       write_bogus, write_airs , write_tamdar 
    
+   NAMELIST /RECORD10/wind_sd,      wind_sd_synop, wind_sd_ships, wind_sd_metar, &
+                      wind_sd_buoy, wind_sd_sound, wind_sd_qscat, wind_sd_pilot, &
+                      wind_sd_airep,wind_sd_geoamv,wind_sd_tamdar,wind_sd_profiler
+
    CONTAINS
 
-   SUBROUTINE GET_NAMELIST  (nml_filename, iunit)
+   SUBROUTINE GET_NAMELIST  (nml_filename)
 
    CHARACTER (LEN = *)       :: nml_filename
    INTEGER                   :: iunit 
@@ -169,6 +181,9 @@ MODULE MODULE_NAMELIST
    obs_err_filename  = 'obserr.txt'
    use_for           = '3DVAR'
 
+   gts_from_mmm_archive = .false.
+   calc_psfc_from_QNH   = .false.
+
 ! . Initialize the new defined namelist variables (YRG 05/10/2007):
    base_pres  = missing_r
    base_temp  = missing_r
@@ -199,6 +214,20 @@ MODULE MODULE_NAMELIST
    write_bogus = .true.
    write_airs  = .true.
    write_tamdar= .true.
+
+   wind_sd        = .false.
+   wind_sd_buoy   = .false.
+   wind_sd_synop  = .false.
+   wind_sd_ships  = .false.
+   wind_sd_metar  = .false.
+   wind_sd_sound  = .false.
+   wind_sd_pilot  = .false.
+   wind_sd_airep  = .false.
+   wind_sd_qscat  = .false.
+   wind_sd_tamdar = .false.
+   wind_sd_geoamv = .false.
+ wind_sd_profiler = .false.
+
 
    READ  ( UNIT = iunit , NML = record1 , IOSTAT = nml_read_errors(1) )
    WRITE ( UNIT = 0 ,     NML = record1 )
@@ -311,9 +340,16 @@ MODULE MODULE_NAMELIST
    endif
    CLOSE (10)
 
+   READ  ( UNIT = iunit , NML = record10 , IOSTAT = nml_read_errors(10) )
+   WRITE ( UNIT = 0 ,     NML = record10 )
+   IF    ( nml_read_errors(10) .NE. 0 ) THEN
+           WRITE ( UNIT = 0 , FMT = '(A)' ) ' Error reading NAMELIST record 10'
+           WRITE ( UNIT = 0 , FMT = '(A)' ) ' Using default values for wind_sd'
+   ENDIF
+
    !  Process read error
 
-   error_number = SUM ( nml_read_errors )
+   error_number = SUM ( nml_read_errors(1:9) ) ! Only check errors in records 1-9, record 10 is optional
 
    IF (error_number .NE. 0 ) THEN
         error_message  = ' Error reading namelist file: '

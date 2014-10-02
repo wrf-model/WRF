@@ -61,12 +61,6 @@
      &                    ,ACLWUPB,ACLWUPBC,ACLWDNB,ACLWDNBC            &
      &                    ,SWVISDIR ,SWVISDIF                           &  !ssib
      &                    ,SWNIRDIR, SWNIRDIF &                            !ssib
-#ifdef WRF_CHEM
-     &                    ,PM2_5_DRY, PM2_5_WATER, PM2_5_DRY_EC         &
-     &                    ,TAUAER1, TAUAER2, TAUAER3, TAUAER4           &
-     &                    ,GAER1, GAER2, GAER3, GAER4                   &
-     &                    ,WAER1, WAER2, WAER3, WAER4                   &
-#endif
      &                    ,IDS,IDE,JDS,JDE,KDS,KDE                      &
      &                    ,IMS,IME,JMS,JME,KMS,KME                      &
      &                    ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -152,14 +146,6 @@
 
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME ),INTENT(IN) ::            &   !<--- Used only with physics (IKJ)
      &                              GD_CLOUD,GD_CLOUD2                  
-!
-#ifdef WRF_CHEM
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME ),INTENT(IN) ::            &   !<--- Used only with physics (IKJ)
-     &                              GAER1,GAER2,GAER3,GAER4,            &
-     &                              PM2_5_DRY,PM2_5_WATER,PM2_5_DRY_EC, &
-     &                              TAUAER1,TAUAER2,TAUAER3,TAUAER4,    &
-     &                              WAER1,WAER2,WAER3,WAER4
-#endif
 !
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT) :: CLDFRA
 
@@ -386,8 +372,8 @@
      &                 ,J_START=GRID%J_START,J_END=GRID%J_END           &
      &                 ,KTS=KTS,KTE=KTE,NUM_TILES=GRID%NUM_TILES        &
      &                 ,ITIMESTEP=NTSD,DT=DT                            &
-     &                 ,CU_RAD_FEEDBACK=config_flags%cu_rad_feedback    &
-     &                 ,QC_ADJUST=GD_CLOUD,QI_ADJUST=GD_CLOUD2          &
+     &                 ,ICLOUD_CU=config_flags%ICLOUD_CU                &
+     &                 ,QC_CU=GRID%QC_CU,QI_CU=GRID%QI_CU               &
 ! WRF-Solar variables
                        ,swint_opt=config_flags%swint_opt                &   
      &       ,SWDDIR=grid%swddir,SWDDNI=grid%swddni,SWDDIF=grid%swddif     & ! jararias
@@ -402,14 +388,6 @@
      &       ,aer_angexp_opt=config_flags%aer_angexp_opt,aer_angexp_val=config_flags%aer_angexp_val &
      &       ,aer_ssa_opt=config_flags%aer_ssa_opt,aer_ssa_val=config_flags%aer_ssa_val             &
      &       ,aer_asy_opt=config_flags%aer_asy_opt,aer_asy_val=config_flags%aer_asy_val             &
-#ifdef WRF_CHEM
-     &                 ,AER_RA_FEEDBACK=config_flags%aer_ra_feedback    &
-     &                 ,PM2_5_DRY=pm2_5_dry,PM2_5_WATER=pm2_5_water     &
-     &                 ,PM2_5_DRY_EC=pm2_5_dry_ec                       &
-     &                 ,TAUAER300=tauaer1,TAUAER400=tauaer2,TAUAER600=tauaer3,TAUAER999=tauaer4 & ! jcb
-     &                 ,GAER300=gaer1,GAER400=gaer2,GAER600=gaer3,GAER999=gaer4 & ! jcb
-     &                 ,WAER300=waer1,WAER400=waer2,WAER600=waer3,WAER999=waer4 & ! jcb
-#endif
      &                 ,RTHRATENLW=THRATENLW,RTHRATENSW=THRATENSW       &
      &                 ,RTHRATEN=RTHRATEN                               &
      &                 ,CEN_LAT=grid%cen_lat                            &
@@ -435,7 +413,6 @@
      &                 ,SW_PHYSICS=CONFIG_FLAGS%RA_SW_PHYSICS           &
      &                 ,RADT=RADT,RA_CALL_OFFSET=GRID%RA_CALL_OFFSET    &
      &                 ,STEPRA=NRAD,ICLOUD=config_flags%ICLOUD          &
-     &                 ,ICLOUD_CU=config_flags%ICLOUD_CU                &
      &                 ,WARM_RAIN=WARM_RAIN                             &
      &                 ,SWDOWNC=TOTSWDNC,CLDFRA=CLFR                    &
      &                 ,SWUPT=SWUPT                                     &
@@ -1009,7 +986,7 @@
       INTEGER :: IFNDALBSI
       INTEGER :: IFNDICEDEPTH
       INTEGER :: IFNDSNOWSI
-!
+      REAL    :: WIND
       INTEGER :: IGS,IGE,JGS,JGE, PQ_I   !BSF
       LOGICAL :: FQ_I, ETAMP_PHYSICS,ETAMP_Regional            !BSF
 
@@ -1507,7 +1484,7 @@
      &        ,z_lake3d=grid%z_lake3d, dz_lake3d=grid%dz_lake3d, t_soisno3d=grid%t_soisno3d, h2osoi_ice3d=grid%h2osoi_ice3d  &
      &        ,h2osoi_liq3d=grid%h2osoi_liq3d, h2osoi_vol3d=grid%h2osoi_vol3d, z3d=grid%z3d, dz3d=grid%dz3d                  &
      &        ,zi3d=grid%zi3d, watsat3d=grid%watsat3d, csol3d=grid%csol3d, tkmg3d=grid%tkmg3d                                &
-     &        ,tkdry3d=grid%tkdry3d,tksatu3d=grid%tksatu3d, LakeModel=grid%LakeModel,  lakeminalt=grid%lakeminalt            &
+     &        ,tkdry3d=grid%tkdry3d,tksatu3d=grid%tksatu3d, LakeModel=grid%sf_lake_physics,  lake_min_elev=grid%lake_min_elev  &
 ! end lake module
      &        ,maxpatch=1,inest=1,history_interval=config_flags%history_interval  & !clm
 
@@ -1696,6 +1673,18 @@
         ENDDO
       ENDIF
 !
+#ifdef HWRF
+      if(size(grid%windsq_swath)>1) then
+         do j=max(jts,jds),min(jte,jde-1)
+            do i=max(its,ids),min(ite,ide-1)
+               if(grid%interesting(i,j)==0) cycle
+               wind=u10(i,j)**2 + v10(i,j)**2
+               if(wind>grid%windsq_swath(i,j)) grid%windsq_swath(i,j)=wind
+            enddo
+         enddo
+      endif
+#endif
+
       IF(CONFIG_FLAGS%SF_SFCLAY_PHYSICS==1)THEN ! non-NMM package
 !$omp parallel do                                                       &
 !$omp& private(i,j)
@@ -2163,9 +2152,6 @@
      &                 ,MASS_FLUX         ,XF_ENS                       &
      &                 ,PR_ENS,GSW                                      &
      &                 ,GD_CLOUD,GD_CLOUD2,KTOP_DEEP                    &
-#ifdef WRF_CHEM
-     &                 ,RAINCV                                          &
-#endif
      &                 ,PDTOP,PT,PD,RES,PINT,T,Q,CWM,TCUCN              &
      &                 ,OMGALF,U,V,W,Z,FIS,W0AVG                        &
      &                 ,PREC,ACPREC,CUPREC,CUPPT,CPRATE                 &
@@ -2291,9 +2277,6 @@
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(INOUT) :: GD_CLOUD &
      &                                                        ,GD_CLOUD2
       INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: KTOP_DEEP
-#ifdef WRF_CHEM
-      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: RAINCV
-#endif
 !
       LOGICAL,INTENT(IN) :: HYDRO,RESTRT
       LOGICAL :: IS_CAMMGMP_USED=.FALSE.
@@ -2319,9 +2302,7 @@
 !
       REAL,DIMENSION(IMS:IME,JMS:JME) :: CUBOT,CUTOP,NCA,PDSL           &
      &                                  ,RAINC,SFCZ,XLAND
-#ifndef WRF_CHEM
       REAL,DIMENSION(IMS:IME,JMS:JME) :: RAINCV
-#endif
 !
       REAL,DIMENSION(ITS:ITE,JTS:JTE) :: WMID_L
 !
@@ -2337,9 +2318,9 @@
       REAL,DIMENSION(:,:,:,:),ALLOCATABLE :: MOIST_TRANS
 !
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME) :: CLDFRA_DP, CLDFRA_SH
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME) :: GD_CLOUD_B, GD_CLOUD2_B
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME) :: QC_CU, QI_CU
 !
-      LOGICAL :: RESTART,WARM_RAIN,ETAMP_Regional
+      LOGICAL :: RESTART,WARM_RAIN,ETAMP_Regional, have_tg_tp, have_swath
       LOGICAL,DIMENSION(IMS:IME,JMS:JME) :: CU_ACT_FLAG
 !
       CHARACTER(LEN=255) :: message
@@ -2657,7 +2638,7 @@
      &                 ,ITIMESTEP=NTSD,DT=DT,DX=GPS                     &
      &                 ,RAINC=RAINC,RAINCV=RAINCV,NCA=NCA               &
      &                 ,CLDFRA_DP=CLDFRA_DP,CLDFRA_SH=CLDFRA_SH         &
-     &                 ,GD_CLOUD_B=GD_CLOUD_B, GD_CLOUD2_B=GD_CLOUD2_B  &
+     &                 ,QC_CU=QC_CU, QI_CU=QI_CU                        &
      &                 ,DZ8W=DZ,P8W=P8W,FORCET=TTEN,FORCEQ=QTEN         &
      &                 ,CLDEFI=CLDEFI,LOWLYR=LOWLYR,XLAND=XLAND         &
      &                 ,CU_ACT_FLAG=CU_ACT_FLAG,WARM_RAIN=WARM_RAIN     &
@@ -2738,6 +2719,13 @@
 !
 !-----------------------------------------------------------------------
 !
+
+      have_tg_tp = .false.
+      have_swath = .false.
+      have_tg_tp = (size(grid%tg_total_precip)>1)
+#ifdef HWRF
+      have_swath = ( size(grid%precip_swath)>1 )
+#endif
 !$omp parallel do                                                       &
 !$omp& private(i,iendx,j,ncubot,ncutop,pcpcol)
       pcp_cloud: DO J=MYJS2,MYJE2
@@ -2753,6 +2741,15 @@
           CUPREC(I,J)=CUPREC(I,J)+PCPCOL
           CUPPT(I,J)=CUPPT(I,J)+PCPCOL
           CPRATE(I,J)=PCPCOL
+          if(have_tg_tp) then
+             grid%tg_total_precip(i,j) = grid%tg_total_precip(i,j) + PCPCOL
+          endif
+#ifdef HWRF
+          if(have_swath) then
+             if(grid%interesting(i,j)/=0) &
+                  grid%precip_swath(i,j) = grid%precip_swath(i,j) + PCPCOL
+          endif
+#endif
 !
 !***  SAVE CLOUD TOP AND BOTTOM FOR RADIATION (HTOP/HBOT) AND
 !***  FOR OUTPUT (CNVTOP/CNVBOT, HTOPS/HBOTS, HTOPD/HBOTD) ARRAYS.
@@ -2980,7 +2977,7 @@
       REAL,DIMENSION(:,:,:,:),ALLOCATABLE :: SCALAR_TRANS
 !
       LOGICAL                        :: diag_flag
-      LOGICAL :: E_BDY,F_QT,QT_PRESENT,WARM_RAIN
+      LOGICAL :: E_BDY,F_QT,QT_PRESENT,WARM_RAIN, have_tg_tp, have_swath
 !
 !-----------------------------------------------------------------------
 !***********************************************************************
@@ -3103,10 +3100,6 @@
      &                 ,DZ8W=DZ,P8W=P8W,DT=DTPHS,DX=DX,DY=DY            &
      &                 ,W=grid%W                                        &
      &                 ,MP_PHYSICS=CONFIG_FLAGS%MP_PHYSICS              &
-#ifdef WRF_CHEM
-     &                 ,CHEM_OPT=CONFIG_FLAGS%CHEM_OPT                  &
-     &                 ,PROGN=CONFIG_FLAGS%PROGN                        &
-#endif
      &                 ,SPECIFIED=CONFIG_FLAGS%SPECIFIED                &
      &                        .OR.CONFIG_FLAGS%NESTED                   &
      &                 ,SPEC_ZONE=0,WARM_RAIN=WARM_RAIN                 &
@@ -3142,6 +3135,7 @@
      &                 ,has_reqc=has_reqc                               & ! G. Thompson
      &                 ,has_reqi=has_reqi                               & ! G. Thompson
      &                 ,has_reqs=has_reqs                               & ! G. Thompson
+     &                 ,ccn_conc=config_flags%ccn_conc                  &
                                                                         )
 
 !$omp parallel do                                                       &
@@ -3188,6 +3182,10 @@
 !***  OUT ABOVE SINCE IT IS ONLY A LOCAL ARRAY FOR NOW.
 !-----------------------------------------------------------------------
 !
+#ifdef HWRF
+      have_swath = ( size(grid%precip_swath)>1 )
+#endif
+      have_tg_tp = (size(grid%tg_total_precip)>1)
 !$omp parallel do                                                       &
 !$omp& private(i,iendx,j,pcpcol)
       DO J=MYJS2,MYJE2
@@ -3197,6 +3195,15 @@
           PCPCOL=RAINNCV(I,J)*1.E-3
           PREC(I,J)=PREC(I,J)+PCPCOL
           ACPREC(I,J)=ACPREC(I,J)+PCPCOL
+          if(have_tg_tp) then
+             grid%tg_total_precip(i,j) = grid%tg_total_precip(i,j) + PCPCOL
+          endif
+#ifdef HWRF
+          if(have_swath) then
+             if(grid%interesting(i,j)/=0) &
+                  grid%precip_swath(i,j) = grid%precip_swath(i,j) + PCPCOL
+          endif
+#endif
         ENDDO
       ENDDO
 !

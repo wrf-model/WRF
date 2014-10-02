@@ -18,10 +18,63 @@ whatsoever, whether direct, indirect, consequential or special, that
 arise out of or in connection with the access, use or performance of 
 WRFDA, including infringement actions.
 
+
 ======================================
 This is the main directory for the WRFDA Version 3 source code release.
 ======================================
 
+V3.6.1 Release Notes :
+-------------------
+
+Version 3.6.1 was released on August 14, 2014.
+
+  For more information about WRFDA, visit the WRFDA Users home page
+  http://www.mmm.ucar.edu/wrf/users/wrfda/index.html
+
+  Updated features:
+
+    - A number of issues have been fixed for this release, including:
+        - The FGAT capability has been updated to produce better results
+        - Several bugs which may cause compilation failure
+        - Bugs in SEVIRI radiance assimilation
+        - Errors when using RTTOV to assimilate radiances in 4DVAR
+        - The FGAT capability has been updated to produce better results
+        - Many other minor problems
+    - WRFPLUS has been upgraded to V3.6.1
+
+See http://www.mmm.ucar.edu/wrf/users/wrfda/updates-3.6.1.html for a full list of updates
+
+======================================
+V3.6 Release Notes :
+-------------------
+
+Version 3.6 was released on April 18, 2014.
+
+  For more information on WRFDA, visit the WRFDA Users home page
+  http://www.mmm.ucar.edu/wrf/users/wrfda/index.html
+
+  New features:
+
+    -Dual-resolution hybrid assimilation has been implemented
+    -New instruments can be assimilated:
+        -Meteosat SEVIRI
+        -Metop-B instruments
+        -AIREP humidity observations
+    -Observation thinning for conventional observations in ASCII format
+
+  Updated features:
+
+    -GPS Radio Occultation data can now be read separately from other conventional data types
+    -Wind speed/direction assimilation has been updated, and namelist options have changed. See the
+     relevant section of the User's Guide for more information.
+    -Updated libraries:
+        -CRTM Version 2.1.3
+        -BUFR Version 10.2.3
+        -RTTOV interface is now for RTTOV Version 11.1
+    -Bug fixes and performance improvements
+    -WRFPLUS has been upgraded to V3.6.
+
+======================================
 V3.5.1 Release Notes :
 -------------------
 
@@ -32,7 +85,8 @@ Version 3.5.1 is released on September 23, 2013.
 
 
   The following bugs have been fixed:
-    -BUFR libraries have been updated to allow WRFDA to read and assimilate NCEP PREPBUFR files of any endianness.
+    -BUFR libraries have been updated to allow WRFDA to read and assimilate NCEP PREPBUFR files of 
+     any endianness.
     -Compilation failure with some older Fortran95 compilers
     -A problem with Variational Bias Correction (VARBC) on some platforms
     -A problem with OBSPROC's built-in observation error file (obserr.txt) on some platforms
@@ -50,7 +104,8 @@ Version 3.5 is released on April 18. 2013.
 
   New features:
 
-    -Wind Speed/Direction Assimilation: Wind speed/direction observations can now be directly assimilated.
+    -Wind Speed/Direction Assimilation: Wind speed/direction observations can now be directly 
+     assimilated.
     -New satellite instruments can be assimilated:
         -METOP Infrared Atmospheric Sounding Interferometer (IASI)
         -NPP Advanced Technology Microwave Sounder (ATMS)
@@ -62,7 +117,8 @@ Version 3.5 is released on April 18. 2013.
         Yellowstone have been added.
     -Updated I/O for improved back-compatability with previous versions of WRF and WRFDA
     -WRFDA-3DVAR can now read two different PREPBUFR observation files at once
-    -The "ntmax" namelist variable is now a vector, and can be set to a different value for each outer loop
+    -The "ntmax" namelist variable is now a vector, and can be set to a different value for each 
+     outer loop
     -WRFPLUS has been upgraded to V3.5 and it is consistent with the released WRF version 3.5.
 
 ======================================
@@ -85,7 +141,8 @@ V3.4 Release Notes :
 
 Version 3.4 is released on April 6, 2012.
 
-- The WRFPLUS (WRF adjoint and tangent linear model) has been upgraded to V3.4 and it is consistent with the released WRF version 3.4. Added parallel WRF TL/AD based on WRF 3.4.
+- The WRFPLUS (WRF adjoint and tangent linear model) has been upgraded to V3.4 and it is consistent
+  with the released WRF version 3.4. Added parallel WRF TL/AD based on WRF 3.4.
 
 - WRFDA 4D-Var now supports compilation to run in parallel.
 
@@ -102,7 +159,8 @@ V3.3.1 Release Notes :
 
 Version 3.3.1 is released on September 27, 2011.
 
-- WRF 4D-Var has been improved on lateral boundary condition control, analysis scheme for surface observation etc.
+- WRF 4D-Var has been improved on lateral boundary condition control, analysis scheme for surface 
+  observation etc.
   
 - Lots of bug fixes.
 
@@ -240,7 +298,8 @@ WRFDA update history:
 - V3.4:     Apr  6, 2012
 - V3.4.1:   Aug 16, 2012
 - V3.5:     Apr 18, 2013
-
+- V3.5.1:   Sep 23, 2013
+- V3.6:     Apr 15, 2014
 ======================================
 
 How to compile and run?

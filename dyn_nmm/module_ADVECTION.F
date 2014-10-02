@@ -1394,6 +1394,7 @@
      &               ,N_IUP_ADH,N_IUP_ADV                               &
      &               ,IUP_H,IUP_V,IUP_ADH,IUP_ADV                       &
      &               ,IHE,IHW,IVE,IVW                                   &
+     &               ,advect_Q2                                         &
      &               ,IDS,IDE,JDS,JDE,KDS,KDE                           &
      &               ,IMS,IME,JMS,JME,KMS,KME                           &
      &               ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -1443,6 +1444,7 @@
 !
 !-----------------------------------------------------------------------
 !
+      LOGICAL, INTENT(IN) :: advect_Q2
       INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                     &
      &                     ,IMS,IME,JMS,JME,KMS,KME                     &
      &                     ,ITS,ITE,JTS,JTE,KTS,KTE
@@ -1534,10 +1536,18 @@
       DO I=MYIS_P2,MYIE_P2
         EMH (I,J)=ADDT/(08.*DX(I,J))
         DARE(I,J)=HBM3(I,J)*DX(I,J)*DY
-        E1(I,J,KTE)=MAX(Q2(I,J,KTE)*0.5,EPSQ2)
-        E2(I,J,KTE)=E1(I,J,KTE)
       ENDDO
       ENDDO
+!$omp parallel do                                                       &
+!$omp& private(i,j)
+      if(advect_Q2) then
+        DO J=MYJS_P3,MYJE_P3
+        DO I=MYIS_P2,MYIE_P2
+          E1(I,J,KTE)=MAX(Q2(I,J,KTE)*0.5,EPSQ2)
+          E2(I,J,KTE)=E1(I,J,KTE)
+        ENDDO
+        ENDDO
+      endif
 !-----------------------------------------------------------------------
 !$omp parallel do                                                       &
 !$omp& private(dza,dzb,e1x,fpq,hm,i,j,jfp,jfq,k,pp,qp,ssa,ssb,spp,sqp   &
@@ -1558,15 +1568,17 @@
         ENDDO
         ENDDO
 !
-        IF(K<KTE)THEN
-          DO J=MYJS_P3,MYJE_P3
-          DO I=MYIS_P2,MYIE_P2
-            E1X=(Q2(I,J,K+1)+Q2(I,J,K))*0.5
-            E1(I,J,K)=MAX(E1X,EPSQ2)
-            E2(I,J,K)=E1(I,J,K)
-          ENDDO
-          ENDDO
-        ENDIF
+        if(advect_Q2) then
+          IF(K<KTE)THEN
+            DO J=MYJS_P3,MYJE_P3
+            DO I=MYIS_P2,MYIE_P2
+              E1X=(Q2(I,J,K+1)+Q2(I,J,K))*0.5
+              E1(I,J,K)=MAX(E1X,EPSQ2)
+              E2(I,J,K)=E1(I,J,K)
+            ENDDO
+            ENDDO
+          ENDIF
+        endif
 !
 !-----------------------------------------------------------------------
 !
@@ -1649,12 +1661,13 @@
        &            -CWM(I-1,J,K)-CWM(I+1,J,K))*FPQ                       &
        &           +CWM(I,J,K)
 !
+         if(advect_Q2) then
           E2(I,J,K)=(E1 (IFPA(I,J,K),JFPA(I,J,K),K)-E1 (I,J,K))*PP        &
        &           +(E1 (IFQA(I,J,K),JFQA(I,J,K),K)-E1 (I,J,K))*QP        &
        &           +(E1 (I,J-2,K)+E1 (I,J+2,K)                            &
        &            -E1 (I-1,J,K)-E1 (I+1,J,K))*FPQ                       &
        &           +E1(I,J,K)
-!
+         endif
         ENDDO
         ENDDO
 !
@@ -1741,16 +1754,18 @@
      &          -W1IJ+W1(IFQF(I,J,K),JFQF(I,J,K),K))                    &
      &          *HAFQ
 !
+         if( advect_Q2) then
           D2PQE=(E2(IFPA(I,J,K),JFPA(I,J,K),K)-E2IJ                     &
      &          -E2IJ+E2(IFPF(I,J,K),JFPF(I,J,K),K))                    &
      &          *HAFP                                                   &
      &         +(E2(IFQA(I,J,K),JFQA(I,J,K),K)-E2IJ                     &
      &          -E2IJ+E2(IFQF(I,J,K),JFQF(I,J,K),K))                    &
      &          *HAFQ
+         endif
 !
           QSTIJ=Q1IJ-D2PQQ
           WSTIJ=W1IJ-D2PQW
-          ESTIJ=E2IJ-D2PQE
+          if(advect_q2) ESTIJ=E2IJ-D2PQE
 !
           Q00=Q  (I          ,J          ,K)
           QP0=Q  (IFPA(I,J,K),JFPA(I,J,K),K)
@@ -1760,16 +1775,20 @@
           WP0=CWM(IFPA(I,J,K),JFPA(I,J,K),K)
           W0Q=CWM(IFQA(I,J,K),JFQA(I,J,K),K)
 !
+         if(advect_Q2) then
           E00=E1 (I          ,J          ,K)
           EP0=E1 (IFPA(I,J,K),JFPA(I,J,K),K)
           E0Q=E1 (IFQA(I,J,K),JFQA(I,J,K),K)
+         endif
 !
           QSTIJ=MAX(QSTIJ,MIN(Q00,QP0,Q0Q))
           QSTIJ=MIN(QSTIJ,MAX(Q00,QP0,Q0Q))
           WSTIJ=MAX(WSTIJ,MIN(W00,WP0,W0Q))
           WSTIJ=MIN(WSTIJ,MAX(W00,WP0,W0Q))
+         if(advect_Q2) then
           ESTIJ=MAX(ESTIJ,MIN(E00,EP0,E0Q))
           ESTIJ=MIN(ESTIJ,MAX(E00,EP0,E0Q))
+         endif
 !
 !          DQSTIJ=QSTIJ-Q(I,J,K)
 !          DWSTIJ=WSTIJ-CWM(I,J,K)
@@ -1777,15 +1796,15 @@
 !
           dqstij=qstij-q1(i,j,k)
           dwstij=wstij-w1(i,j,k)
-          destij=estij-e2(i,j,k)
+          if(advect_Q2) destij=estij-e2(i,j,k)
 !
           DQST(I,J,K)=DQSTIJ
           DWST(I,J,K)=DWSTIJ
-          DEST(I,J,K)=DESTIJ
+          if(advect_Q2) DEST(I,J,K)=DESTIJ
 !
           DQSTIJ=DQSTIJ*DVOLP
           DWSTIJ=DWSTIJ*DVOLP
-          DESTIJ=DESTIJ*DVOLP
+          if(advect_Q2) DESTIJ=DESTIJ*DVOLP
 !
 !-----------------------------------------------------------------------
 #if defined(BIT_FOR_BIT) && defined(DM_PARALLEL) && !defined(STUBMPI)
@@ -1806,11 +1825,13 @@
             XSUMS_L(I,J,K,4)=DWSTIJ
           ENDIF
 !
-          IF(DESTIJ>0.)THEN
-            XSUMS_L(I,J,K,5)=DESTIJ
-          ELSE
-            XSUMS_L(I,J,K,6)=DESTIJ
-          ENDIF
+          if(advect_q2) then
+             IF(DESTIJ>0.)THEN
+                XSUMS_L(I,J,K,5)=DESTIJ
+             ELSE
+                XSUMS_L(I,J,K,6)=DESTIJ
+             ENDIF
+          endif
 !-----------------------------------------------------------------------
 #else
 !-----------------------------------------------------------------------
@@ -1826,11 +1847,13 @@
             XSUMS(4,K)=XSUMS(4,K)+DWSTIJ
           ENDIF
 !
-          IF(DESTIJ>0.)THEN
-            XSUMS(5,K)=XSUMS(5,K)+DESTIJ
-          ELSE
-            XSUMS(6,K)=XSUMS(6,K)+DESTIJ
-          ENDIF
+          if(advect_q2) then
+             IF(DESTIJ>0.)THEN
+                XSUMS(5,K)=XSUMS(5,K)+DESTIJ
+             ELSE
+                XSUMS(6,K)=XSUMS(6,K)+DESTIJ
+             ENDIF
+          endif
 !-----------------------------------------------------------------------
 #endif
 !-----------------------------------------------------------------------
@@ -2013,6 +2036,7 @@
 
 !-----------------------------------------------------------------------
 !
+       if(advect_Q2) then
         if(rface<1.)then
           do j=MYJS2,MYJE2
             DO I=MYIS1,MYIE1
@@ -2032,6 +2056,7 @@
             ENDDO
           enddo
         endif
+       endif
 !
 !-----------------------------------------------------------------------
 !
@@ -2048,6 +2073,7 @@
 !
 !-----------------------------------------------------------------------
 !
+    if(advect_Q2) then
 !$omp parallel do                                                       &
 !$omp& private(i,j)
       DO J=MYJS,MYJE
@@ -2071,6 +2097,7 @@
         ENDDO
         ENDDO
       ENDDO
+     endif
 !-----------------------------------------------------------------------
 !
       END SUBROUTINE HAD2

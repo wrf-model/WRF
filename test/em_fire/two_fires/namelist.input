@@ -75,8 +75,8 @@
 
  &dynamics
  rk_ord                              = 3,
- diff_opt                            = 2,
- km_opt                              = 2,
+ diff_opt                            = 2,      2,      2,
+ km_opt                              = 2,      2,      2,
  damp_opt                            = 2 ,
  zdamp                               = 800.,  5000.,  5000.,
  dampcoef                            = 0.2,    0.2,    0.2

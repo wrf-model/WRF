@@ -87,6 +87,17 @@ subroutine da_qc_seviri (it, i, nchan, ob, iv)
                   if (iv%instid(i)%info%proc_domain(1,n)) &
                   nrej_omb_std(k) = nrej_omb_std(k) + 1
                end if
+
+               ! final QC decsion
+               if (iv%instid(i)%tb_qc(k,n) == qc_bad) then
+                  iv%instid(i)%tb_error(k,n) = 500.0
+                  if (iv%instid(i)%info%proc_domain(1,n)) &
+                     nrej(k) = nrej(k) + 1
+               else
+                  if (iv%instid(i)%info%proc_domain(1,n)) &
+                     ngood(k) = ngood(k) + 1
+               end if
+
             end if   ! qc_good
          end do      ! nchan
       end do ! end loop pixel

@@ -42,7 +42,7 @@ MODULE qf03
   subroutine qf03_driver ( nmx, idst, g, rho, dt, &
                     ustar, w, cf_in, ust_min, imod, dz_lowest, &
                     soilc, tot_soilc, domsoilc,    &
-                    tc, bems, rough_cor_in, smois_cor_in, &
+                    tc, bems, rough_cor_in, smois_cor_in, wr, &
                     d0, dd, psd_m, dpsd_m, ppsd_m, psd_f, dpsd_f, ppsd_f, imax, stype)
        
        INTEGER, INTENT(IN   )                   :: nmx, imod, idst
@@ -50,8 +50,9 @@ MODULE qf03
        REAL(8), INTENT(IN   )                   :: w, cf_in
        REAL(8), INTENT(OUT  )                   :: ust_min, rough_cor_in, smois_cor_in
        REAL   , INTENT(INOUT), DIMENSION(nmx)   :: tc, bems
+       REAL   , INTENT(IN), DIMENSION(12)       :: wr       
 
-! soil class type
+!kang [2009/01/07] soil class type
        REAL, INTENT(IN   )                      :: tot_soilc       
        REAL, DIMENSION(16), INTENT(IN)          :: soilc       
        INTEGER,  INTENT(IN  )                   :: domsoilc
@@ -62,7 +63,7 @@ MODULE qf03
        real(8), dimension(imax,stype), intent(in)   :: psd_m, dpsd_m, ppsd_m
        real(8), dimension(imax,stype), intent(in)   :: psd_f, dpsd_f, ppsd_f
  
-! local variables
+!local variables
 !      particle-size distributions 
        real(8), dimension(imax)      :: psdm, dpsdm, ppsdm    ! minimally dispersed
        real(8), dimension(imax)      :: psdf, dpsdf, ppsdf    ! fully dispersed
@@ -199,7 +200,7 @@ MODULE qf03
          isl = 8
         endif
 
-         call h_c(w, isl, smois_correc)
+         call h_c(w, wr(cc), isl, smois_correc)
 !----------------------------------------------
 ! for each particle size group, estimate ustart
 !----------------------------------------------
@@ -212,6 +213,7 @@ MODULE qf03
             ust_min = dmin1(ust_min, ustart(i))
             call qwhite(ustart(i), ustar, rho, g, qwhite_out)
             q(i) = qwhite_out
+            q(i) = (1.d0-cf)*q(i)            
          enddo
          if (cc.eq.domsoilc) then
           smois_cor_in = smois_correc
@@ -283,6 +285,7 @@ MODULE qf03
               do i = idst+1, imax
                  fff(j) = fff(j) + f(i,j)
               enddo
+              fff(j) = (1-cf)*fff(j)              
               ftotal = ftotal + fff(j)
            enddo
 ! 
@@ -318,6 +321,7 @@ MODULE qf03
              do i = idst+1, imax
                 fff(j) = fff(j) + f(i,j)
              enddo
+             fff(j) = (1-cf)*fff(j)             
              ftotal = ftotal + fff(j)
           enddo
 !           
@@ -350,7 +354,7 @@ MODULE qf03
              a2 = (1.+sigma_m)
              a3 = qtotal*g/ustar**2
              fff(j) = a1*a2*a3
-! 
+             fff(j) = (1-cf)*fff(j)
              ftotal = ftotal + fff(j)
           enddo
 !           
@@ -486,15 +490,21 @@ MODULE qf03
 ! Data invented for sand, loamy sand, sandy loam, loam, clay loam, and clay
 !                        isl=1, 2, 3, 4, 8, 12
 !----------------------------------------------------------------------
-      subroutine h_c (w, isl, h)
+      subroutine h_c (w, wr, isl, h)
 
-      real(8) :: wr(12), a(12), b(12)
+      real(8) :: a(12), b(12)
       real(8), intent(in)  :: w
       real(8), intent(out) :: h
+      real, intent(in)     :: wr      
       integer, intent(in)  :: isl
       character*100 :: msg  ! error message string
+      
+! NOTE: There might be an inconsistency between soil moisture parameters used in this module and 
+! the ones used in the WRF land-surface model. For Noah, RUC, and Noah MP LSM, the inconsistency has 
+! been checked and the values provided in SOILPARM.TBL are used for consistency purpose. For all 
+! other LSM options, the parameters obtained from Shao are used and the inconsistency might still 
+! occur. This might lead to unrealistic fluxes.
 
-      data wr/0.001, 0.003, 0.037, 0.049, 0.061, 0.072, 0.084, 0.095, 0.110, 0.126, 0.141, 0.156/
       data a /21.19, 33.03, 44.87, 17.79, 20.81, 23.83, 26.84, 29.86, 27.51, 25.17, 22.82, 20.47/
       data b / 0.68,  0.71,  0.85,  0.61,  0.66,  0.71,  0.75,  0.80,  0.75,  0.70,  0.64,  0.59/
 
@@ -504,10 +514,10 @@ MODULE qf03
 !         stop
       endif
 
-      if ( w.le.wr(isl) ) then
+      if ( w.le.wr ) then
          h = 1.0
       else
-         h = sqrt( 1 + a(isl)*( w-wr(isl) )**b(isl) )
+         h = sqrt( 1 + a(isl)*( w-wr )**b(isl) )
       endif
 
       END subroutine h_c

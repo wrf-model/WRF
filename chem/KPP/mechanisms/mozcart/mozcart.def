@@ -43,7 +43,7 @@ REAL(KIND=dp) FUNCTION usr5( temp, c_m )
 
    k0 = c_m * 6.5e-34_dp * exp( 1335._dp/temp )
    k2 = exp( 2199._dp/temp )
-   k0 = k0 /(1.0_dp + k0/(2.7e-11_dp*k2))
+   k0 = k0 /(1.0_dp + k0/(2.7e-17_dp*k2))
    k2 = exp( 460._dp/temp )
 
    usr5 = k0 + 2.4e-14_dp * k2

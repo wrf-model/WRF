@@ -1728,7 +1728,9 @@ MODULE module_ra_rrtm
 CONTAINS
 
 !------------------------------------------------------------------
-   SUBROUTINE RRTMLWRAD(rthraten,glw,olr,emiss                    &
+   SUBROUTINE RRTMLWRAD(                                          &
+                        p_top                                     &
+                       ,rthraten,glw,olr,emiss                    &
                        ,p8w,p3d,pi3d                              &
                        ,dz8w,tsk,t3d,t8w,rho3d,r,g                &
                        ,icloud, warm_rain                         &
@@ -1826,7 +1828,22 @@ CONTAINS
     LOGICAL, EXTERNAL :: wrf_dm_on_monitor
     CHARACTER(LEN=256) :: message
 
+! p_top for vertical nesting
+    REAL, INTENT(IN   ) :: p_top
+
 !------------------------------------------------------------------
+
+    IF ( p_top .GT. 0 ) THEN ! flag value for NMM = -1
+!            NLAYERS is recalculated
+!            every time the radiation scheme is called. This is
+!            necessary if e_vert parent .NE. e_vert nest since
+!            NLAYERS could then be different for each domain.
+       CALL rrtminit(                               &
+                      p_top, .FALSE. ,              &
+                      ids, ide, jds, jde, kds, kde, &
+                      ims, ime, jms, jme, kms, kme, &
+                      its, ite, jts, jte, kts, kte  )
+    END IF
 
 !----- Calculate the trace gas concentrations from file.
 !ccc

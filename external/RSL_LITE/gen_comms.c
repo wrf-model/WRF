@@ -2138,6 +2138,7 @@ gen_nest_packunpack ( FILE *fp , node_t * node , int dir, int down_path )
   int d2, d3, xdex, ydex, zdex ;
   int nest_mask ;
   char * grid ; 
+  const char * feed="NEST_INFLUENCE";
   char ddim[3][2][NAMELEN] ;
   char mdim[3][2][NAMELEN] ;
   char pdim[3][2][NAMELEN] ;
@@ -2267,10 +2268,18 @@ fprintf(fp,"IF ( cd_feedback_mask%s( pig, ips_save, ipe_save , pjg, jps_save, jp
                     fprintf(fp,"IF(feedback_flag%s) THEN\n",sjl);
                   }
 #endif
-            if ( zdex >= 0 ) {
-fprintf(fp,"DO k = %s,%s\nNEST_INFLUENCE(%s%s,xv(k))\nENDDO\n", ddim[zdex][0], ddim[zdex][1], grid, vname ) ;
+
+#if ( NMM_CORE == 1)
+            if ( node->full_feedback ) {
+                feed="NEST_FULL_INFLUENCE";
             } else {
-fprintf(fp,"NEST_INFLUENCE(%s%s,xv(1))\n", grid, vname ) ;
+                feed="NEST_INFLUENCE";
+            }
+#endif
+            if ( zdex >= 0 ) {
+fprintf(fp,"DO k = %s,%s\n%s(%s%s,xv(k))\nENDDO\n", ddim[zdex][0], ddim[zdex][1], feed, grid, vname ) ;
+            } else {
+fprintf(fp,"%s(%s%s,xv(1))\n", feed, grid, vname ) ;
             }
 fprintf(fp,"ENDIF\n") ;
           }

@@ -43,17 +43,17 @@ subroutine da_transform_xtoy_metar_adj(grid, iv, jo_grad_y, jo_grad_x)
       ! [1.2] Interpolate horizontally:
       do n=iv%info(metar)%n1, iv%info(metar)%n2
 
-         model_t(1,n)  = jo_grad_y%metar(n)%t
-         model_q(1,n)  = jo_grad_y%metar(n)%q
-         model_psfc(n) = jo_grad_y%metar(n)%p
-
-         if (var_wind) then
-             call da_uv_wind_adj(jo_grad_y%metar(n)%u, &
-                                 jo_grad_y%metar(n)%v, model_u(1,n), model_v(1,n), ub(1,n), vb(1,n))
+         if (wind_sd_metar) then
+             call da_uv_to_sd_adj(jo_grad_y%metar(n)%u, &
+                                  jo_grad_y%metar(n)%v, model_u(1,n), model_v(1,n), ub(1,n), vb(1,n))
          else
             model_u(1,n)  = jo_grad_y%metar(n)%u
             model_v(1,n)  = jo_grad_y%metar(n)%v
          end if
+
+         model_t(1,n)  = jo_grad_y%metar(n)%t
+         model_q(1,n)  = jo_grad_y%metar(n)%q
+         model_psfc(n) = jo_grad_y%metar(n)%p
 
       end do
 #ifdef A2C

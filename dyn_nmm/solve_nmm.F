@@ -2467,7 +2467,6 @@
      ENDIF
 
      diag_tim=diag_tim+now_time()-btimx
-     diag_tim=diag_tim+now_time()-btimx
    endif hwrfx_mlsp
 #endif
 

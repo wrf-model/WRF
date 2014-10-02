@@ -1633,7 +1633,7 @@ CONTAINS
 
       IF (variable == 'U') variable = 'u'
       IF (variable == 'V') variable = 'v'
-      IF (variable == 'M') variable = 'm'
+      IF (variable == 'T') variable = 't'
       IF (variable == 'H') variable = 'h'
 
       ibs = ids
@@ -1647,7 +1647,7 @@ CONTAINS
       IF (variable == 'u') itf = min(ite,ide)
       IF (variable == 'v') jbe = jde
       IF (variable == 'v') jtf = min(jte,jde)
-      IF (variable == 'm') ktf = kte
+      IF (variable == 't') ktf = kte
       IF (variable == 'h') ktf = kte
 
       IF (jts - jbs .lt. spec_zone) THEN
@@ -2225,6 +2225,7 @@ CONTAINS
    SUBROUTINE flow_dep_bdy_qnn  (  field,          &
                                u, v, config_flags, &
                                spec_zone,                  &
+                               ccn_conc,                   & ! RAS
                                ids,ide, jds,jde, kds,kde,  & ! domain dims
                                ims,ime, jms,jme, kms,kme,  & ! memory dims
                                ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
@@ -2243,6 +2244,7 @@ CONTAINS
       INTEGER,      INTENT(IN   )    :: ips,ipe, jps,jpe, kps,kpe
       INTEGER,      INTENT(IN   )    :: its,ite, jts,jte, kts,kte
       INTEGER,      INTENT(IN   )    :: spec_zone
+      REAL,         INTENT(IN   )    :: ccn_conc ! RAS
 
 
       REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(INOUT) :: field
@@ -2278,7 +2280,7 @@ CONTAINS
               IF(v(i,k,j) .lt. 0.)THEN
                 field(i,k,j) = field(i_inner,k,jbs+spec_zone)
               ELSE
-                field(i,k,j) = n_ccn0
+                field(i,k,j) = ccn_conc ! RAS
               ENDIF
             ENDDO
           ENDDO
@@ -2298,7 +2300,7 @@ CONTAINS
               IF(v(i,k,j+1) .gt. 0.)THEN
                 field(i,k,j) = field(i_inner,k,jbe-spec_zone)
               ELSE
-                field(i,k,j) = n_ccn0
+                field(i,k,j) = ccn_conc ! RAS
               ENDIF
             ENDDO
           ENDDO
@@ -2317,7 +2319,7 @@ CONTAINS
               IF(u(i,k,j) .lt. 0.)THEN
                 field(i,k,j) = field(ibs+spec_zone,k,j_inner)
               ELSE
-                field(i,k,j) = n_ccn0
+                field(i,k,j) = ccn_conc ! RAS
               ENDIF
             ENDDO
           ENDDO
@@ -2335,7 +2337,7 @@ CONTAINS
               IF(u(i+1,k,j) .gt. 0.)THEN
                 field(i,k,j) = field(ibe-spec_zone,k,j_inner)
               ELSE
-                field(i,k,j) = n_ccn0
+                field(i,k,j) = ccn_conc ! RAS
               ENDIF
             ENDDO
           ENDDO

@@ -5,13 +5,11 @@ setenv START_OF_COMPILE "`date`"
 cont1:
 
 if ( !  -e configure.wrf  ) then
-   if ( $1 == "all_wrfvar" ) then
-      ./configure wrfda
-      set dontask
-   else
-      ./configure $1
-      set dontask
-   endif
+  echo ""
+  echo "You must run the 'configure' script before running the 'compile' script!"
+  echo "Exiting..."
+  echo ""
+  exit 1
 endif
 
 

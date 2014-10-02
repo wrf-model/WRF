@@ -100,7 +100,11 @@ CONTAINS
       CALL wrf_dm_bcast_integer ( number_of_eligible_files, 1 )
 
       !  Allocate space for this many files.
+      !  GAC 20140321 - Addition to prevent attempts to reallocate same variable.
+      !  This used to be a bug when running convert_emiss for nested domains
+      !  a while back, now it is probably just a paranoid check.
 
+      IF ( ALLOCATED ( eligible_file_name ) ) DEALLOCATE ( eligible_file_name )
       ALLOCATE ( eligible_file_name(number_of_eligible_files) , STAT=ierr )
 
       !  Did the allocate work OK?

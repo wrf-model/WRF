@@ -74,6 +74,76 @@ CONTAINS
    end subroutine wetscav_cbmz_mosaic
 
 
+!===========================================================================
+!===========================================================================
+   subroutine wetscav_mozart_mosaic (id,ktau,dtstep,ktauc,config_flags,      &
+               dtstepc,alt,t_phy,p8w,t8w,p_phy,chem,rho_phy,cldfra,        &
+         qlsink,precr,preci,precs,precg,qsrflx,                      &
+         gas_aqfrac, numgas_aqfrac,                                  &
+               ids,ide, jds,jde, kds,kde,                                  &
+               ims,ime, jms,jme, kms,kme,                                  &
+               its,ite, jts,jte, kts,kte                                   )
+
+!  wet removal by grid-resolved precipitation
+!  scavenging of cloud-phase aerosols and gases by collection, freezing, ...
+!  scavenging of interstitial-phase aerosols by impaction
+!  scavenging of gas-phase gases by mass transfer and reaction
+
+!----------------------------------------------------------------------
+   USE module_configure, only: grid_config_rec_type
+   USE module_state_description
+   USE module_data_mosaic_asect
+
+!----------------------------------------------------------------------
+   IMPLICIT NONE
+
+   TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
+
+   INTEGER,      INTENT(IN   )    ::                                &
+                                      ids,ide, jds,jde, kds,kde,    &
+                                      ims,ime, jms,jme, kms,kme,    &
+                                      its,ite, jts,jte, kts,kte,    &
+                                      id, ktau, ktauc, numgas_aqfrac
+   REAL, INTENT(IN   ) :: dtstep,dtstepc
+!
+! all advected chemical species
+!
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_chem ),          &
+         INTENT(INOUT ) ::                                chem
+
+! fraction of gas species in cloud water
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme, numgas_aqfrac ),     &
+         INTENT(IN ) ::                                   gas_aqfrac
+
+!
+!
+! input from meteorology
+   REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,        &
+         INTENT(IN   ) ::                                           &
+                                                        alt,        &
+                                                      t_phy,        &
+                                                      p_phy,        &
+                                                   t8w,p8w,         &
+                              qlsink,precr,preci,precs,precg, &
+                                                    rho_phy,cldfra
+   REAL, DIMENSION( ims:ime, jms:jme, num_chem ),          &
+         INTENT(OUT ) ::                                qsrflx ! column change due to scavening
+
+   call wetscav (id,ktau,dtstep,ktauc,config_flags,                      &
+        dtstepc,alt,t_phy,p8w,t8w,p_phy,chem,rho_phy,cldfra,             &
+        qlsink,precr,preci,precs,precg,qsrflx,                           &
+        gas_aqfrac, numgas_aqfrac,                                       &
+        ntype_aer, nsize_aer, ncomp_aer,                                 &
+        massptr_aer, dens_aer, numptr_aer,                               &
+        maxd_acomp, maxd_asize,maxd_atype, maxd_aphase, ai_phase, cw_phase, &
+        volumcen_sect, volumlo_sect, volumhi_sect,                       &
+        waterptr_aer, dens_water_aer,                                    &
+        scavimptblvol, scavimptblnum, nimptblgrow_mind, nimptblgrow_maxd, dlndg_nimptblgrow, &
+        ids,ide, jds,jde, kds,kde,                                       &
+        ims,ime, jms,jme, kms,kme,                                       &
+        its,ite, jts,jte, kts,kte                                        )
+
+   end subroutine wetscav_mozart_mosaic
 
 !===========================================================================
 !===========================================================================
@@ -223,6 +293,8 @@ CONTAINS
 
 
 ! scavenging of gases in cloud-water
+! only if not MOZART (--> Neu and Prather used)
+  if ( .NOT. (config_flags%chem_opt == mozart_mosaic_4bin_aq_kpp) ) then
       do 290 l = param_first_scalar, min( num_chem, numgas_aqfrac )
       if ( is_aerosol(l) ) goto 290
       do 270 j = jts,jte
@@ -238,6 +310,7 @@ CONTAINS
          end if
 270   continue
 290   continue
+  end if
 
 
 ! below-cloud scavenging
@@ -375,11 +448,14 @@ CONTAINS
               isprx, fapx, pfx, pfx_inrain,           &
               dqdt, dotend, qsrflx      )
 
+! only if not MOZART (--> Neu and Prather used)
+  if ( .NOT. (config_flags%chem_opt == mozart_mosaic_4bin_aq_kpp) ) then
       call gasrainscav (ims,ime,kms,kme,jms,jme,its,ite,kts,kte,jts,jte, num_chem,     &
                       config_flags,      &
                       dtstepc,    t_phy,      p_phy,      pdel,  chem,      &
                       isprx,      fapx,       pfx,        pfx_inrain, &
                       dqdt,       dotend,     qsrflx      )
+  end if
 
 !  update chem
 

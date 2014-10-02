@@ -228,7 +228,7 @@ CONTAINS
             abs(clat),get_lat_ns(clat),abs(clon),get_lon_ew(clon)
        if(mod(ntsd,126)==125) then
           ! bug fix for IBM: will not write unless a flush is done periodically
-          flush(lun)
+          call flush(lun)
        endif
     endif
     RETURN

@@ -87,7 +87,7 @@ state    real   t_gc           igj      dyn_em      1        Z     i1  "TT"     
 state    real   rh_gc          igj      dyn_em      1        Z     i1  "RH"    "relative humidity"   "%"
 state    real   ght_gc         igj      dyn_em      1        Z     i1  "GHT"   "geopotential height" "m"
 state    real   p_gc           igj      dyn_em      1        Z     i1  "PRES"   "pressure"            "Pa"
-state    real   prho_gc        igj      dyn_em      1        Z     i1  "PTHETA" "for UM data, from metgrid this is ptheta, but swapped to prho in real" "Pa"
+state    real   prho_gc        igj      dyn_em      1        Z     i1  "PRHO" "for UM data, pressure of U and V" "Pa"
 state    real   xlat_gc        ij       dyn_em      1        -     i1  "XLAT_M" "latitude, positive north" "degrees"
 state    real   xlong_gc       ij       dyn_em      1        -     i1  "XLONG_M" "longitude, positive east" "degrees"
 state    real   ht_gc          ij       dyn_em      1        -     i1  "HGT_M" "topography elevation" "m"
@@ -109,7 +109,10 @@ state    real   intq_gc        ij       dyn_em      1        -     -   "INTQ"  "
 state    real   pdhs           ij       dyn_em      1        -     -   "PDHS"  "hydrostatic dry surface pressure" "Pa"
 state    real   qv_gc          igj      dyn_em      1        Z     i1  "QV"     "mixing ratio"        "kg kg-1"
 state    real   sh_gc          igj      dyn_em      1        Z     i1  "SPECHUMD"  "Specific humidity"        "kg kg-1"
+state    real   cl_gc          igj      dyn_em      1        Z     i1  "SPECCLDL"  "Cloud water content, liquid"    "kg kg-1"
+state    real   cf_gc          igj      dyn_em      1        Z     i1  "SPECCLDF"  "Cloud water content, frozen"    "kg kg-1"
 state    real   icefrac_gc     ij       dyn_em      1        -     i1  "ICEFRAC"  "Sea ice fraction"  "0 - 1 fraction"
+state    real   icepct         ij       dyn_em      1        -     i1  "ICEPCT"  "Sea ice percent"  "%"
 state    real   qr_gc          igj      dyn_em      1        Z     i1  "QR"    "rain water mixing ratio"   "kg kg-1"
 state    real   qc_gc          igj      dyn_em      1        Z     i1  "QC"    "cloud water mixing ratio"   "kg kg-1"
 state    real   qs_gc          igj      dyn_em      1        Z     i1  "QS"    "snow mixing ratio"   "kg kg-1"
@@ -152,6 +155,16 @@ state    real   max_p          ij       dyn_em      1        -     i0d  "MAX_P" 
 state    real   t_min_p        ij       dyn_em      1        -     i0d  "T_MIN_P"   "temperature at min pressure"         "K"
 state    real   ght_min_p      ij       dyn_em      1        -     i0d  "GHT_MIN_P" "geopotential height at min pressure" "m"
 state    real   min_p          ij       dyn_em      1        -     i0d  "MIN_P"     "min pressure "                       "Pa"
+state    real   hgtmaxw        ij       dyn_em      1        -     i1  "HGTMAXW"    "Height of the max wind speed"       "m"
+state    real   hgttrop        ij       dyn_em      1        -     i1  "HGTTROP"    "Height of the tropopause"           "m"
+state    real   pmaxw          ij       dyn_em      1        -     i1  "PMAXW"      "Pressure of the max wind speed"     "Pa"
+state    real   ptrop          ij       dyn_em      1        -     i1  "PTROP"      "Pressure of the tropopause"         "Pa"
+state    real   tmaxw          ij       dyn_em      1        -     i1  "TMAXW"      "Temperature of the max wind speed"  "K"
+state    real   ttrop          ij       dyn_em      1        -     i1  "TTROP"      "Temperature of the tropopause"      "K"
+state    real   umaxw          ij       dyn_em      1        X     i1  "UMAXW"      "U-component of the max wind speed"  "m s-1"
+state    real   utrop          ij       dyn_em      1        X     i1  "UTROP"      "U-component of the tropopause wind" "m s-1"
+state    real   vmaxw          ij       dyn_em      1        Y     i1  "VMAXW"      "V-component of the max wind speed"  "m s-1"
+state    real   vtrop          ij       dyn_em      1        Y     i1  "VTROP"      "V-component of the tropopause wind" "m s-1"
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------
 #                                               
@@ -210,10 +223,11 @@ i1       real   ph_tendf       ikj     dyn_em      1         Z
 i1       real   ph_save        ikj     dyn_em      1         Z 
 
 # Potential Temperature
+#KAL added d (interpolating down to t_init) for the vertical nesting code
 state    real   t              ikjb     dyn_em      2         -     \
        i0rhusdf=(bdy_interp:dt)   "t"      "perturbation potential temperature (theta-t0)" "K"
 
-state    real   t_init         ikj     dyn_em      1         -      ir       "t_init" "initial potential temperature" "K"
+state    real   t_init         ikj     dyn_em      1         -      ird       "t_init" "initial potential temperature" "K"
 i1       real   t_tend         ikj     dyn_em      1         -  
 i1       real   t_tendf        ikj     dyn_em      1         -  
 i1       real   t_2save        ikj     dyn_em      1         -   
@@ -380,6 +394,8 @@ state    real   PSFC             ij     misc        1         -     i01rhdu   "P
 # with wave model, only if compiled with -DMCELIO, JM 2003/05/29
 state    real   U10              ij     misc        1         -     irh01du     "U10"                "U at 10 M"         "m s-1"
 state    real   V10              ij     misc        1         -     irh01du     "V10"                "V at 10 M"         "m s-1"
+# LPI
+state    real   LPI              ij     misc        1         -     rhdu   "LPI"                 "Lightning Potential Index"      "m^2 s-2"
 
 # these next 4 are for observational nudging
 state    real   uratx           ij      misc        1         -      r          "URATX"            "Ratio of U over U10 on mass points "         "dimensionless"
@@ -614,9 +630,9 @@ state   real   shdmin              ij    misc          1     -     i012rhd=(inte
 state   real   snoalb              ij    misc          1     -     i012rh  "SNOALB"        "ANNUAL MAX SNOW ALBEDO IN FRACTION" ""
 state   real   slopecat            ij    misc          1     -     i12     "SLOPECAT"      "SLOPE CATEGORY"  ""
 state   real   toposoil            ij    misc          1     -     i12     "SOILHGT"       "ELEVATION OF LSM DATA"  "m"
-state   real   landusef            iuj   misc          1     Z     i012r   "LANDUSEF"      "LANDUSE FRACTION BY CATEGORY"  ""
-state   real   soilctop            isj   misc          1     Z     i012r   "SOILCTOP"      "SOIL CAT FRACTION (TOP)"  ""
-state   real   soilcbot            isj   misc          1     Z     i012r   "SOILCBOT"      "SOIL CAT FRACTION (BOTTOM)"  ""
+state   real   landusef            iuj   misc          1     Z     i012rdu   "LANDUSEF"      "LANDUSE FRACTION BY CATEGORY"  ""
+state   real   soilctop            isj   misc          1     Z     i012rdu   "SOILCTOP"      "SOIL CAT FRACTION (TOP)"  ""
+state   real   soilcbot            isj   misc          1     Z     i012rdu   "SOILCBOT"      "SOIL CAT FRACTION (BOTTOM)"  ""
 state   real   soilcat             ij    misc          1     -     i12     "SOILCAT"       "SOIL CAT DOMINANT TYPE" ""
 state   real   vegcat              ij    misc          1     -     i12     "VEGCAT"        "VEGETATION CAT DOMINANT TYPE" ""
 
@@ -719,7 +735,7 @@ state  integer  IFNDSNOWSI       -      misc        1         -     ir        "F
 state  integer  IFNDICEDEPTH     -      misc        1         -     ir        "FNDICEDEPTH" "ICEDEPTH_LOGICAL"
 # SKIN SST
 state    real   SSTSK            ij     misc        1         -     rhd=(interp_mask_field:lu_index,iswater)   "SSTSK"              "SKIN SEA SURFACE TEMPERATURE" "K"
-state    real   lake_depth            ij     misc        1    -     i012rd=(interp_mask_water_field:lu_index,iswater)   "lake_depth"              "lake depth" "m"
+state    real   lake_depth            ij     misc        1    -     i012rd=(interp_mask_water_field:lu_index,islake)   "lake_depth"              "lake depth" "m"
 state    real   DTW              ij     misc        1         -     r   "DTW"              "WARM LAYER TEMP DIFF" "C"
 # Ocean surface currents
 state    real   UOCE            ij     misc        1         -     i0124rd=(interp_mask_water_field:lu_index,iswater)  "UOCE"  "SEA SURFACE ZONAL CURRENTS" "m s-1"
@@ -1096,11 +1112,14 @@ state   real    v_frame        -       misc         1         -     ir        "v
 # resolve this how?  Have the real program throw a switch to tell the code to get it
 # from the metadata?  Otherwise it's a field?
 state logical just_read_auxinput4  -      misc         -         -     r    "we_just_read_sst"           "1=AUXINPUT4 ALARM RINGING, 0=NO AUXINPUT4 ALARM"  "-"
+state   real    mf_fft         -       misc         -         -      r        "mf_fft"                "Mass point map factor at equatorward FFT filter location"  ""
 state   real    p_top          -       misc         -         -     irh       "p_top"                 "PRESSURE TOP OF THE MODEL"  "Pa"
 state   real    t00            -       misc         -         -     i02rh     "t00"                   "BASE STATE TEMPERATURE   "  "K"
 state   real    p00            -       misc         -         -     i02rh     "p00"                   "BASE STATE PRESURE"         "Pa"
 state   real    tlp            -       misc         -         -     i02rh     "tlp"                   "BASE STATE LAPSE RATE    "  ""
 state   real    tiso           -       misc         -         -     i02rh     "tiso"                  "TEMP AT WHICH THE BASE T TURNS CONST"  "K"
+state   real    tlp_strat      -       misc         -         -     i02rh     "tlp_strat"             "BASE STATE LAPSE RATE (DT/D(LN(P)) IN STRATOSPHERE"  "K"
+state   real    p_strat        -       misc         -         -     i02rh     "p_strat"               "BASE STATE PRESSURE AT BOTTOM OF STRATOSPHERE" "Pa"
 state   real    max_msftx      -       misc         -         -      rh       "max_mstfx"             "Max map factor in domain"  ""
 state   real    max_msfty      -       misc         -         -      rh       "max_mstfy"             "Max map factor in domain"  ""
 
@@ -1162,8 +1181,8 @@ state    real  NCA              ij      misc        1         -      r        "N
 state    integer  LOWLYR        ij      misc        1         -     -         "LOWLYR"                "INDEX OF LOWEST MODEL LAYER ABOVE THE GROUND IN BMJ SCHEME"   ""      
 state    real  MASS_FLUX        ij      misc        1         -      r        "MASS_FLUX"             "DOWNDRAFT MASS FLUX FOR IN GRELL CUMULUS SCHEME"  "mb hour-1"
 # ckay
-state    real  cldfra_dp        ikj     misc        1         -      -        "CLDFRA_DP"             "DEEP CONVECTIVE CLOUD FRACTION FROM KF"  ""
-state    real  cldfra_sh        ikj     misc        1         -      -        "CLDFRA_SH"             "SHALLOW CONVECTIVE CLOUD FRACTION FROM KF"  ""
+state    real  cldfra_dp        ikj     misc        1         -      r        "CLDFRA_DP"             "DEEP CONVECTIVE CLOUD FRACTION FROM KF"  ""
+state    real  cldfra_sh        ikj     misc        1         -      r        "CLDFRA_SH"             "SHALLOW CONVECTIVE CLOUD FRACTION FROM KF"  ""
 state    real  apr_gr           ij      misc        1         -      r       "APR_GR"                "PRECIP FROM CLOSURE OLD_GRELL"   "mm hour-1"
 state    real  apr_w            ij      misc        1         -      r       "APR_W"                 "PRECIP FROM CLOSURE W"           "mm hour-1"
 state    real  apr_mc           ij      misc        1         -      r       "APR_MC"                "PRECIP FROM CLOSURE KRISH MV"    "mm hour-1"
@@ -1270,6 +1289,7 @@ state    real  RAINCVMEAN       ij      misc        1         -      rh3      "R
 state    real  RAINNCVMEAN      ij      misc        1         -      rh3      "RAINNCVMEAN"            "MEAN GRID SCALE PRECIPITATION FLUX IN DIAGNOSTIC OUTPUT INTERVAL"                   "kg m-2 s-1"
 state    real  RAINCVSTD        ij      misc        1         -      rh3      "RAINCVSTD"              "STANDARD DEV. CUMULUS PRECIPITATION FLUX IN DIAGNOSTIC OUTPUT INTERVAL"             "kg m-2 s-1"
 state    real  RAINNCVSTD       ij      misc        1         -      rh3      "RAINNCVSTD"             "STANDARD DEV. GRID SCALE PRECIPITATION IN FLUX DIAGNOSTIC OUTPUT INTERVAL"          "kg m-2 s-1"
+state    integer  nsteps         -      misc        -         -       -       "NSTEPS"                 "Time Step Counter"           ""
 
 # upward and downward clearsky and total diagnostic fluxes for CAM radiation
 state    real  ACSWUPT          ij      misc        1         -      rhdu     "ACSWUPT"               "ACCUMULATED UPWELLING SHORTWAVE FLUX AT TOP"          "J m-2"
@@ -1490,7 +1510,7 @@ state    real   G_URB2D_mosaic    i{mocat}j     misc        1         -     r   
 state    real   RN_URB2D_mosaic   i{mocat}j     misc        1         -     r     "RN_URB2D_mosaic"              "NET RADIATION"                       "W m-2"
 
 state    integer   mosaic_cat_index  iuj        misc        1         Z     i012rd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "mosaic_cat_index"          "  "   ""
-state    real      landusef2         iuj        misc        1         Z     i012rd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "LANDUSEF2"      "sorted landuse fraction"  ""
+state    real      landusef2         iuj        misc        1         Z     i012rdu                                                  "LANDUSEF2"      "sorted landuse fraction"  ""
 
 # State vector for etampnew microphysics. Must be declared state because it is not read-once and is needed for restarting.
 state    real  mp_restart_state   p      misc        1         -      r       "MP_RESTART_STATE"       "STATE VECTOR FOR MICROPHYSICS RESTARTS"
@@ -1557,7 +1577,7 @@ state    real  dfi_SOILT1       ij      misc        1         -      r        "S
 state    real  TSNAV            ij      misc        1         -      r        "TSNAV"                 "AVERAGE SNOW TEMPERATURE "                    "C"
 state    real  dfi_TSNAV        ij      misc        1         -      r        "TSNAV_dfi"             "AVERAGE SNOW TEMPERATURE "                    "C"
 state    real  REGIME           ij      misc        1         -      r        "REGIME"  "FLAGS: 1=Night/Stable, 2=Mechanical Turbulent, 3=Forced Conv, 4=Free Conv" ""
-state    real  SNOWC            ij      misc        1         -     irhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)  "SNOWC"  "FLAG INDICATING SNOW COVERAGE (1 FOR SNOW COVER)"  ""
+state    real  SNOWC            ij      misc        1         -      i012rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)  "SNOWC"  "FLAG INDICATING SNOW COVERAGE (1 FOR SNOW COVER)"  ""
 state    real  dfi_SNOWC        ij      misc        1         -      r        "SNOWC_dfi"             "FLAG INDICATING SNOW COVERAGE (1 FOR SNOW COVER)"         ""
 state    real  MAVAIL           ij      misc        1         -      r        "MAVAIL"                "SURFACE MOISTURE AVAILABILITY"                ""
                                                 
@@ -1647,11 +1667,11 @@ state   real  pk1m             ij       misc        1         -     -         "p
 state   real  mu_2m            ij       misc        1         -     -         "mu_2m"           "mu_2 at previous step"                             "Pa"
 
 # these are NSSL WRF diagnostics
-state    real    WSPD10MAX        ij     misc        1         -      rh         "WSPD10MAX"      "WIND SPD MAX 10 M"       "m s-1"
-state    real    W_UP_MAX         ij     misc        1         -      rh         "W_UP_MAX"       "MAX Z-WIND UPDRAFT"      "m s-1"
-state    real    W_DN_MAX         ij     misc        1         -      rh         "W_DN_MAX"       "MAX Z-WIND DOWNDRAFT"    "m s-1"
-state    real    REFD_MAX         ij     misc        1         -      r          "REFD_MAX"       "MAX DERIVED RADAR REFL"  "dbZ"
-state    real    UP_HELI_MAX      ij     misc        1         -      rh         "UP_HELI_MAX"    "MAX UPDRAFT HELICITY"    "m2 s-2"
+state    real    WSPD10MAX        ij     misc        1         -      rh02       "WSPD10MAX"      "WIND SPD MAX 10 M"       "m s-1"
+state    real    W_UP_MAX         ij     misc        1         -      rh02       "W_UP_MAX"       "MAX Z-WIND UPDRAFT"      "m s-1"
+state    real    W_DN_MAX         ij     misc        1         -      rh02       "W_DN_MAX"       "MAX Z-WIND DOWNDRAFT"    "m s-1"
+state    real    REFD_MAX         ij     misc        1         -      rh02       "REFD_MAX"       "MAX DERIVED RADAR REFL"  "dbZ"
+state    real    UP_HELI_MAX      ij     misc        1         -      rh02       "UP_HELI_MAX"    "MAX UPDRAFT HELICITY"    "m2 s-2"
 state    real    W_MEAN           ij     misc        1         -      rh         "W_MEAN"         "HOURLY MEAN Z-WIND"      "m s-1"
 state    real    GRPL_MAX         ij     misc        1         -      rh         "GRPL_MAX"       "MAX COL INT GRAUPEL"     "kg m-2"
 state    real    UH               ij     misc        1         -      r          "UH"             "UPDRAFT HELICITY"        "m2 s-2"
@@ -1664,52 +1684,6 @@ state   real    max_cfl         -       misc        1         -     -       "max
 state   real  prec_acc_c       ij       misc        1         -     rh       "prec_acc_c"       "ACCUMULATED CUMULUS PRECIPITATION OVER prec_acc_dt PERIODS OF TIME"       "mm"
 state   real  prec_acc_nc      ij       misc        1         -     rh       "prec_acc_nc"      "ACCUMULATED GRID SCALE  PRECIPITATION OVER prec_acc_dt PERIODS OF TIME"   "mm"
 state   real  snow_acc_nc      ij       misc        1         -     rh       "snow_acc_nc"      "ACCUMULATED SNOW WATER EQUIVALENT OVER prec_acc_dt PERIODS OF TIME"       "mm"
-
-# GAC-->
-# These variables are for the AFWA diagnostics package. Note, in V3.5, some of these have been added
-# inside the NSSL WRF diagnostics (above), and have been commented out.  We need to merge these
-# diagnostics packages together as they are largely duplicated. GAC 20130724
-#state    real   WSPD10MAX        ij     misc        1         -      rh          "WSPD10MAX"      "WIND SPD MAX 10 M"                             "m s-1"
-#state    real   W_UP_MAX         ij     misc        1         -      rh          "W_UP_MAX"       "MAX Z-WIND UPDRAFT"                            "m s-1"
-#state    real   W_DN_MAX         ij     misc        1         -      rh          "W_DN_MAX"       "MAX Z-WIND DOWNDRAFT"                          "m s-1"
-#state    real   REFD_MAX         ij     misc        1         -      rh02       "REFD_MAX"       "MAX DERIVED RADAR REFL"                        "dbZ"
-#state    real   UP_HELI_MAX      ij     misc        1         -      rh          "UP_HELI_MAX"    "MAX UPDRAFT HELICITY"                          "m2 s-2"
-#state    real   UH               ij     misc        1         -      r          "UH"             "UPDRAFT HELICITY"                              "m2 s-2"
-state    real   TCOLI_MAX        ij     misc        1         -      rh          "TCOLI_MAX"      "MAX TOTAL COLUMN INTEGRATED ICE"               "kg m-2"
-state    real   REFD_COM         ij     misc        1         -      rh02       "REFD_COM"       "DERIVED COMPOSITE RADAR REFL"                  "dbZ"
-state    real   REFD             ij     misc        1         -      rh02       "REFD"           "DERIVED RADAR REFL"                            "dbZ"
-state    real   VIL              ij     misc        1         -      rh02       "VIL"             "VERTICALLY INTEGRATED LIQUID WATER"            "kg m-2"
-state    real   RADARVIL         ij     misc        1         -      rh02       "RADARVIL"        "VERTICALLY INTEGRATED LIQUID WATER FROM Ze"    "kg m-2"
-state    real   ECHOTOP          ij     misc        1         -      rh02       "ECHOTOP"         "ECHO TOP HEIGHT FROM Ze"                       "m"
-state    real   FZLEV            ij     misc        1         -      rh02       "FZLEV"           "FREEZING LEVEL"                                "m"
-state    real   ICINGTOP         ij     misc        1         -      rh02       "ICINGTOP"        "TOPMOST ICING LEVEL"                           "m"
-state    real   ICINGBOT         ij     misc        1         -      rh02       "ICINGBOT"        "BOTTOMMOST ICING LEVEL"                        "m"
-state    real   QICING_LG        ikj    misc        1         -      r          "QICING_LG"       "SUPERCOOLED WATER MIXING RATIO (>50 um)"       "kg kg-1"
-state    real   QICING_SM        ikj    misc        1         -      r          "QICING_SM"       "SUPERCOOLED WATER MIXING RATIO (<50 um)"       "kg kg-1"
-state    real   QICING_LG_MAX    ij     misc        1         -      rh02       "QICING_LG_MAX"   "COLUMN MAX ICING MIXING RATIO (>50 um)"        "kg kg-1"
-state    real   QICING_SM_MAX    ij     misc        1         -      rh02       "QICING_SM_MAX"   "COLUMN MAX ICING MIXING RATIO (<50 um)"        "kg kg-1"
-state    real   ICING_LG         ij     misc        1         -      rh02       "ICING_LG"        "TOTAL COLUMN INTEGRATED ICING (>50 um)"        "kg m-2"
-state    real   ICING_SM         ij     misc        1         -      rh02       "ICING_SM"        "TOTAL COLUMN INTEGRATED ICING (<50 um)"        "kg m-2"
-state    real   AFWA_PRECIP      ij     misc        1         -      r          "AFWA_PRECIP"     "AFWA Diagnostic: Precipitation bucket"         "mm"
-state    real   AFWA_RAIN        ij     misc        1         -      rh02       "AFWA_RAIN"       "AFWA Diagnostic: Rain fall"                    "mm"
-state    real   AFWA_SNOW        ij     misc        1         -      rh02       "AFWA_SNOW"       "AFWA Diagnostic: Liq Equiv Snow fall"          "mm"
-state    real   AFWA_ICE         ij     misc        1         -      rh02       "AFWA_ICE"        "AFWA Diagnostic: Ice fall"                     "mm"
-state    real   AFWA_FZRA        ij     misc        1         -      rh02       "AFWA_FZRA"       "AFWA Diagnostic: Freezing rain fall"           "mm"
-state    real   AFWA_SNOWFALL    ij     misc        1         -      rh02       "AFWA_SNOWFALL"   "AFWA Diagnostic: Snow fall"                    "mm"
-state    real   AFWA_VIS         ij     misc        1         -      rh02       "AFWA_VIS"        "AFWA Diagnostic: Visibility"                   "m"
-state    real   AFWA_VIS_DUST    ij     misc        1         -      rh02       "AFWA_VIS_DUST"   "AFWA Diagnostic: Visibility due to dust"       "m"
-state    real   AFWA_CLOUD       ij     misc        1         -      rh02       "AFWA_CLOUD"      "AFWA Diagnostic: Cloud cover fraction"         "fraction"
-state    real   AFWA_CLOUD_CEIL  ij     misc        1         -      rh02       "AFWA_CLOUD_CEIL" "AFWA Diagnostic: Cloud ceiling"                "m"
-state    real   AFWA_CAPE        ij     misc        1         -      rh02       "AFWA_CAPE"       "AFWA Diagnostic: Convective Avail Pot Energy"  "J kg-1"
-state    real   AFWA_ZLFC        ij     misc        1         -      rh02       "AFWA_ZLFC"       "AFWA Diagnostic: Level of Free Convection"     "m"
-state    real   AFWA_PLFC        ij     misc        1         -      rh02       "AFWA_PLFC"       "AFWA Diagnostic: Pressure of LFC"              "Pa"
-state    real   MIDRH_MIN        ij     misc        1         -      rh02       "MIDRH_MIN"       "Min Mid-level relative humidity"               "%"
-state    real   MIDRH_MIN_OLD    ij     misc        1         -      -          "MIDRH_MIN_OLD"   "Previous Min Mid-level relative humidity"      "%"
-state    real   AFWA_HAIL        ij     misc        1         -      rh02       "AFWA_HAIL"       "AFWA Diagnostic: Hail Diameter (Weibull)"      "mm"
-state    real   AFWA_LLWS        ij     misc        1         -      rh02       "AFWA_LLWS"       "AFWA Diagnostic: 0-2000 ft wind shear"         "m s-1"
-state    real   AFWA_TORNADO     ij     misc        1         -      rh02       "AFWA_TORNADO"    "AFWA Diagnostic: Tornado wind speed (Weibull)" "m s-1"
-# <--GAC
-
 
 # Placeholder for decoupled advective tendency diagnostics for non-chem
 state   real  -               ikjf      advh_t      1         -     -         -
@@ -1799,6 +1773,7 @@ rconfig   logical nocolons                namelist,time_control         1       
 rconfig   logical cycling                 namelist,time_control         1             .false. -    "true for cycling (using wrfout file as input data)"
 rconfig   integer output_diagnostics      namelist,time_control         1              0
 rconfig   integer nwp_diagnostics         namelist,time_control         1              0
+rconfig   logical output_ready_flag       namelist,time_control         1             .false. -    "drop a flag called wrfoutReady_d<domain>_<date> after history write" "" ""
 
 # DFI namelist
 rconfig   integer dfi_opt                namelist,dfi_control   1       0     rh   "dfi_opt"                  ""      ""
@@ -1854,7 +1829,8 @@ rconfig   integer num_metgrid_soil_levels namelist,domains	1             4      
 rconfig   real    p_top_requested         namelist,domains      1              5000    irh    "p_top_requested" "Pa"      ""
 rconfig   logical interp_theta            namelist,domains	1              .false. irh    "interp_theta"  "inside real, vertically interpolate theta (T) or temperature (F)"  ""
 rconfig   integer interp_type             namelist,domains	1              2       irh    "interp_type"  "1=interp in pressure, 2=interp in LOG pressure"  ""
-rconfig   integer vert_refine_fact        namelist,domains      1              1       irh    "vertical refinment factor for ndown"  ""
+rconfig   integer vert_refine_method      namelist,domains      max_domains    0       irh    "vert_refine_method"  "0=no vertical nesting, 1=integer refinement, 2=native WRF" ""
+rconfig   integer vert_refine_fact        namelist,domains      1              1       irh    "vertical refinment factor for ndown or for vertical nesting in a concurrent run"  "" ""
 rconfig   integer extrap_type             namelist,domains	1              2       irh    "extrap_type"  "1= use 2 lowest levels, 2=constant"  ""
 rconfig   integer t_extrap_type           namelist,domains	1              2       irh    "t_extrap_type"  "1=isothermal, 2=6.5 K/km, 3=adiabatic"   ""
 rconfig   integer hypsometric_opt         namelist,domains      1              2       irh    "hypsometric_opt"  "Z relates P, 1=linearly, 2=LOG-linearly"  ""
@@ -1865,6 +1841,9 @@ rconfig   logical use_surface             namelist,domains	1             .true. 
 rconfig   integer lagrange_order          namelist,domains	1              2       irh    "lagrange_order"   "1=linear, 2=quadratic vertical interpolation"      ""
 rconfig   integer force_sfc_in_vinterp    namelist,domains	1              1       irh    "force_sfc_in_vinterp"   "number of eta levels forced to use sfc in vert interp"      ""
 rconfig   real    zap_close_levels        namelist,domains	1              500     irh    "zap_close_levels"   "delta p where level is removed in vert interp"      "Pa"
+rconfig   real    maxw_horiz_pres_diff    namelist,domains	1              5000    irh    "maxw_horiz_pres_diff"   "pressure limit (Pa), when horiz diff exceeded do not use max_wind level in real"
+rconfig   real    trop_horiz_pres_diff    namelist,domains	1              5000    irh    "trop_horiz_pres_diff"   "pressure limit (Pa), when horiz diff exceeded do not use tropopause level in real"
+rconfig   real    maxw_above_this_level   namelist,domains	1              30000   irh    "maxw_above_this_level"  "pressure limit (Pa), only use the max_wind data at or above this level"
 rconfig   logical sfcp_to_sfcp            namelist,domains	1              .false. irh    "sfcp_to_sfcp"   "T/F use incoming sfc pres to compute new sfc pres"      "flag"
 rconfig   logical adjust_heights          namelist,domains	1              .false. irh    "adjust_heights"   "T/F adjust pressure level input to match 500 mb height"      "flag"
 rconfig   logical smooth_cg_topo          namelist,domains	1              .false. irh    "smooth_cg_topo"   "T/F smooth CG topo on boundarries" "flag"
@@ -1971,6 +1950,7 @@ rconfig   real        accum_mode          namelist,physics      1             10
 rconfig   real        aitken_mode         namelist,physics      1             300.0e6  rh       "aitken_mode"                 ""      ""
 rconfig   real        coarse_mode         namelist,physics      1             0.2e6    rh       "coarse_mode"                 ""      ""
 rconfig   integer     do_radar_ref        namelist,physics      1              0       rh       "compute radar reflectivity for a number of schemes"                 ""      ""
+rconfig   integer     compute_radar_ref   derived               1              0       -        "compute_radar_ref" "0/1 flag: compute radar reflectivity, either do_radar_ref=1 .or. (milbrandt or NSSL schemes)"
 rconfig   integer     ra_lw_physics       namelist,physics	max_domains    0       rh       "ra_lw_physics"         ""      ""
 rconfig   integer     ra_sw_physics       namelist,physics	max_domains    0       rh       "ra_sw_physics"         ""      ""
 rconfig   real    radt                    namelist,physics	max_domains    0       h    "RADT"          ""      ""
@@ -1988,7 +1968,7 @@ rconfig   integer cu_physics              namelist,physics      max_domains    0
 rconfig   integer shcu_physics            namelist,physics      max_domains    0       rh   "shcu_physics"  ""      ""
 rconfig   integer cu_diag                 namelist,physics      max_domains    0       rh   "cu_diag"       "additional t-averaged stuff for cuphys"      ""
 rconfig   integer kfeta_trigger           namelist,physics	1              1       rh   "KFETA Trigger function"    ""    ""
-rconfig   integer nsas_dx_factor          namelist,physics	1              1       rh   "NSAS DX-dependent option"    ""    ""
+rconfig   integer nsas_dx_factor          namelist,physics	1              0       rh   "NSAS DX-dependent option"    ""    ""
 rconfig   real    CUDT                    namelist,physics	max_domains    0       h    "CUDT"          ""      ""
 rconfig   real    GSMDT                   namelist,physics	max_domains    0       h    "GSMDT"          ""      ""
 rconfig   integer ISFFLX                  namelist,physics 	1             1       irh    "ISFFLX"                        ""      ""
@@ -2094,21 +2074,9 @@ rconfig   integer scalar_pblmix           namelist,physics      max_domains  0  
 rconfig   integer tracer_pblmix           namelist,physics      max_domains  1         h    "mix 4d tracer variables with pbl scheme 0=no 1=yes" ""
 rconfig   logical use_aero_icbc           namelist,physics     	1              .false. rh    "use_aero_icbc"  "Use GOCART climo 3D aerosols IC/BC data in Thompson-MP-Aero"  "logical flag"
 
-# GAC-->
-# AFWA Diagnostics package namelist options
-rconfig   integer afwa_diag_opt           namelist,afwa         max_domains    0       rh    "afwa_diag_opt"            "AFWA Diagnostic option, 1: on"                                                 ""
-rconfig   integer afwa_ptype_opt          namelist,afwa         max_domains    0       rh    "afwa_ptype_opt"           "AFWA Diagnostic: Precip type option, 1: on"                                    ""
-rconfig   integer afwa_vil_opt            namelist,afwa         max_domains    0       rh    "afwa_vil_opt"             "AFWA Diagnostic: Vert Int Liquid option, 1: on"                                ""
-rconfig   integer afwa_radar_opt          namelist,afwa         max_domains    0       rh    "afwa_radar_opt"           "AFWA Diagnostic: Radar option, 1: on"                                          ""
-rconfig   integer afwa_severe_opt         namelist,afwa         max_domains    0       rh    "afwa_severe_opt"          "AFWA Diagnostic: Severe Wx option, 1: on"                                      ""
-rconfig   integer afwa_icing_opt          namelist,afwa         max_domains    0       rh    "afwa_icing_opt"           "AFWA Diagnostic: Icing option, 1: on"                                          ""
-rconfig   integer afwa_vis_opt            namelist,afwa         max_domains    0       rh    "afwa_vis_opt"             "AFWA Diagnostic: Visibility option, 1: on"                                     ""
-rconfig   integer afwa_cloud_opt          namelist,afwa         max_domains    0       rh    "afwa_cloud_opt"           "AFWA Diagnostic: Cloud option, 1: on"                                          ""
-rconfig   real    afwa_ptype_ccn_tmp      namelist,afwa         1          264.15      h     "afwa_ptype_ccn_tmp"       "AFWA Diagnostic: CCN temperature for precipitation type calculation"           "K"
-rconfig   real    afwa_ptype_tot_melt     namelist,afwa         1            50.0      h     "afwa_ptype_tot_melt"      "AFWA Diagnostic: Total melting energy for precipitation type calculation"      "J kg-1"
-rconfig   real    afwa_ccn_conc           namelist,afwa         1           1.0E8      h     "afwa_ccn_conc"            "AFWA Diagnostic: CCN concentration"                                            "# m-3"
-rconfig   integer afwa_hail_opt           namelist,afwa         1              0       rh    "afwa_hail_opt"            "AFWA Diagnostic: Hail/Graupel switch, 1:hail, 0:graupel"                       ""
-# <--GAC
+# The following two options are hooked into various microphysics schemes to allow for ensemble perturbations of CCN and hail/graupel PSDs - GAC (AFWA)
+rconfig   real    ccn_conc                namelist,physics      1           1.0E8      h     "ccn_conc"                 "CCN concentration"                                                             "# m-3"
+rconfig   integer hail_opt                namelist,physics      1              0       rh    "hail_opt"                 "Hail/Graupel switch, 1:hail, 0:graupel"                                        ""
 
 # For Noah-MP
 rconfig   integer dveg        namelist,noah_mp      1           4         h    "dveg"     "dynamic vegetation (1 -> off ; 2 -> on)"   ""
@@ -2302,7 +2270,9 @@ rconfig   logical mix_full_fields         namelist,dynamics     max_domains  .fa
 rconfig   real    base_pres               namelist,dynamics	1          100000.     h    "base_pres"  "Base state pressure - do not change (10^5 Pa), real only"      "Pa"
 rconfig   real    base_temp               namelist,dynamics	1             290.     h    "base_temp"  "Base state sea level temperature, real only"      "K"
 rconfig   real    base_lapse              namelist,dynamics	1              50.     h    "base_lapse" "Base state temperature difference between base pres and 1/e of atm depth - do not change, real only"      "K"
-rconfig   real    iso_temp                namelist,dynamics     1             200.     h    "iso_temp"   "Isothermal temperature in stratosphere, real only"      "K"
+rconfig   real    iso_temp                namelist,dynamics     1             200.00   h    "iso_temp"   "Isothermal temperature in stratosphere, real only"      "K"
+rconfig   real    base_pres_strat         namelist,dynamics     1            5500.     h    "base_pres_strat" "Base state pressure (Pa) at bottom of the stratosphere" "Pa"
+rconfig   real    base_lapse_strat        namelist,dynamics     1               0.     h    "base_lapse_strat", "Base state lapse rate ( dT / d(lnP) ) in stratosphere" "K"
 rconfig   logical use_baseparam_fr_nml    namelist,dynamics     1            .false.  irh   "use_baseparam_fr_nml"    ""   ""
 rconfig   real    fft_filter_lat          namelist,dynamics     1              91.     h    "fft_filter_lat"   ""   "grid latitude to start polar filter"
 rconfig   logical rotated_pole            namelist,dynamics     1            .false.  irh   "rotated_pole"    ""   ""
@@ -2367,6 +2337,7 @@ rconfig   integer  FLAG_SOIL_LAYERS       derived                      1        
 rconfig   integer  FLAG_SLP               derived                      1          0       -        "FLAG_SLP"              "Flag for sea level pressure in the global attributes for metgrid data"
 rconfig   integer  FLAG_SOILHGT           derived                      1          0       -        "FLAG_SOILHGT"          "Flag for soil height in the global attributes for metgrid data"
 rconfig   integer  FLAG_MF_XY             derived                      1          0       -        "FLAG_MF_XY"            "Flag for MF_XYin the global attributes for metgrid data"
+rconfig   integer  FLAG_UM_SOIL           derived                      1          0       -        "FLAG_UM_SOIL"          "Flag for soil fields from the Unified Model in the globl attributes for metgrid data"
 rconfig   real    bdyfrq                  derived                  max_domains    0       -        "bdyfrq"               "lateral boundary input frequency"      "seconds"
 rconfig   character mminlu                derived                  max_domains    " "     -        "mminlu"               "land use dataset"             ""
 rconfig   integer iswater                 derived                  max_domains    0       -        "iswater"              "land use index of water"      "index category"
@@ -2405,7 +2376,7 @@ package   etampnew      mp_physics==5                -             moist:qv,qc,q
 package   wsm6scheme    mp_physics==6                -             moist:qv,qc,qr,qi,qs,qg
 package   gsfcgcescheme mp_physics==7                -             moist:qv,qc,qr,qi,qs,qg
 package   thompson      mp_physics==8                -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr;state:re_cloud,re_ice,re_snow
-package   thompsonaero  mp_physics==28               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr,qnc,qnwfa,qnifa;state:re_cloud,re_ice,re_snow
+package   thompsonaero  mp_physics==28               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr,qnc,qnwfa,qnifa;state:re_cloud,re_ice,re_snow,qnwfa2d
 package   milbrandt2mom mp_physics==9                -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnc,qnr,qni,qns,qng,qnh
 package   morr_two_moment  mp_physics==10            -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qns,qnr,qng
 package   cammgmpscheme mp_physics==11               -             moist:qv,qc,qi,qr,qs;scalar:qnc,qni,qnr,qns;state:rh_old_mp,lcd_old_mp,cldfra_old_mp,cldfra_mp,cldfra_mp_all,cldfra_conv,cldfrai,cldfral,turbtype3d,smaw3d,wsedl3d,icwmrdp3d,dp3d,shfrc3d,dlf,dlf2,tke_pbl,lradius,iradius
@@ -2418,6 +2389,7 @@ package   nssl_2momccn  mp_physics==18                -            moist:qv,qc,q
 package   nssl_1mom     mp_physics==19               -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qvolg
 package   nssl_1momlfo  mp_physics==21               -             moist:qv,qc,qr,qi,qs,qg
 package   etampold      mp_physics==95               -             moist:qv,qc,qr,qs;scalar:qt;state:f_ice_phy,f_rain_phy,f_rimef_phy
+package   radar_refl    compute_radar_ref==1         -             state:refl_10cm,refd_max
 endif
 
 package   nodfimoist        mp_physics_dfi==-1       -             -
@@ -2551,18 +2523,6 @@ package   wenopd_scalar  moist_adv_opt==4            -             -
 package   maxmin_output  output_diagnostics==1            -    state:t2min,t2max,tt2min,tt2max,t2mean,t2std,q2min,q2max,tq2min,tq2max,q2mean,q2std,skintempmin,skintempmax,tskintempmin,tskintempmax,skintempmean,skintempstd,u10max,v10max,spduv10max,tspduv10max,u10mean,v10mean,spduv10mean,u10std,v10std,spduv10std,raincvmax,rainncvmax,traincvmax,trainncvmax,raincvmean,rainncvmean,raincvstd,rainncvstd
 package   nwp_output     nwp_diagnostics==1            -       state:wspd10max,w_up_max,w_dn_max,up_heli_max,w_mean,grpl_max
 
-# GAC-->
-# Package declaration for AFWA diagnostics
-package   afwa_diag      afwa_diag_opt==1            -             -
-package   afwa_ptype     afwa_ptype_opt==1           -             state:afwa_precip,afwa_rain,afwa_snow,afwa_ice,afwa_fzra,afwa_snowfall
-package   afwa_vil       afwa_vil_opt==1             -             state:vil,radarvil
-package   afwa_radar     afwa_radar_opt==1           -             state:echotop,refd_com,refd
-package   afwa_severe    afwa_severe_opt==1          -             state:wspd10max,w_up_max,w_dn_max,tcoli_max
-package   afwa_icing     afwa_icing_opt==1           -             state:fzlev,icingtop,icingbot,qicing_lg,qicing_sm,icing_lg,icing_sm,qicing_lg_max,qicing_sm_max
-package   afwa_cloud     afwa_cloud_opt==1           -             state:afwa_cloud
-package   afwa_vis       afwa_vis_opt==1             -             state:afwa_vis,afwa_vis_dust
-# <--GAC
-
 package   dfi_setup      dfi_stage==0                -             -
 package   dfi_bck        dfi_stage==1                -             -
 package   dfi_fwd        dfi_stage==2                -             -
@@ -2575,7 +2535,7 @@ package   dfi_nodfi     dfi_opt==0                  -             -
 package   dfi_dfl       dfi_opt==1                  -             state:dfi_u,dfi_v,dfi_w,dfi_ph,dfi_phb,dfi_ph0,dfi_php,dfi_t,dfi_p,dfi_ww,dfi_mu,dfi_tke,dfi_pb,dfi_al,dfi_alt,dfi_TSLB,dfi_SMOIS,dfi_SNOW,dfi_SNOWH,dfi_CANWAT,dfi_SMFR3D,dfi_KEEPFR3DFLAG,dfi_TSK,dfi_SOILT1,dfi_TSNAV,dfi_SNOWC,dfi_QVG,dfi_rh,dfi_tten_rad
 package   dfi_ddfi      dfi_opt==2                  -             state:dfi_u,dfi_v,dfi_w,dfi_ph,dfi_phb,dfi_ph0,dfi_php,dfi_t,dfi_p,dfi_ww,dfi_mu,dfi_tke,dfi_pb,dfi_al,dfi_alt,dfi_TSLB,dfi_SMOIS,dfi_SNOW,dfi_SNOWH,dfi_CANWAT,dfi_SMFR3D,dfi_KEEPFR3DFLAG,dfi_TSK,dfi_SOILT1,dfi_TSNAV,dfi_SNOWC,dfi_QVG,dfi_rh,dfi_tten_rad
 package   dfi_tdfi      dfi_opt==3                  -             state:dfi_u,dfi_v,dfi_w,dfi_ph,dfi_phb,dfi_ph0,dfi_php,dfi_t,dfi_p,dfi_ww,dfi_mu,dfi_tke,dfi_pb,dfi_al,dfi_alt,dfi_TSLB,dfi_SMOIS,dfi_SNOW,dfi_SNOWH,dfi_CANWAT,dfi_SMFR3D,dfi_KEEPFR3DFLAG,dfi_TSK,dfi_SOILT1,dfi_TSNAV,dfi_SNOWC,dfi_QVG,dfi_rh,dfi_tten_rad
-package   realonly       use_wps_input==1            -            state:u_gc,v_gc,t_gc,rh_gc,ght_gc,p_gc,xlat_gc,xlong_gc,ht_gc,tsk_gc,tavgsfc,tmn_gc,pslv_gc,sct_dom_gc,scb_dom_gc,greenfrac,albedo12m,pd_gc,psfc_gc,intq_gc,pdhs,sh_gc,qv_gc,qr_gc,qc_gc,qs_gc,qi_gc,qg_gc,qh_gc,qni_gc,icefrac_gc,sm000007,sm007028,sm028100,sm100255,st000007,st007028,st028100,st100255,sm000010,sm010040,sm040100,sm100200,sm010200,soilm000,soilm005,soilm020,soilm040,soilm160,soilm300,sw000010,sw010040,sw040100,sw100200,sw010200,soilw000,soilw005,soilw020,soilw040,soilw160,soilw300,st000010,st010040,st040100,st100200,st010200,soilt000,soilt005,soilt020,soilt040,soilt160,soilt300,fad0_urb2d,fad135_urb2d,fad45_urb2d,pad_urb2d,fad90_urb2d,rad_urb2d,car_urb2d,h2w_urb2d,svf_urb2d,z0s_urb2d,z0r_urb2d,z0m_urb2d,zds_urb2d,zdm_urb2d,zdr_urb2d,qnwfa_now,qnwfa_jan,qnwfa_feb,qnwfa_mar,qnwfa_apr,qnwfa_may,qnwfa_jun,qnwfa_jul,qnwfa_aug,qnwfa_sep,qnwfa_oct,qnwfa_nov,qnwfa_dec,qnifa_now,qnifa_jan,qnifa_feb,qnifa_mar,qnifa_apr,qnifa_may,qnifa_jun,qnifa_jul,qnifa_aug,qnifa_sep,qnifa_oct,qnifa_nov,qnifa_dec,qntemp,qntemp2
+package   realonly       use_wps_input==1            -            state:u_gc,v_gc,t_gc,rh_gc,ght_gc,p_gc,xlat_gc,xlong_gc,ht_gc,tsk_gc,tavgsfc,tmn_gc,pslv_gc,sct_dom_gc,scb_dom_gc,greenfrac,albedo12m,pd_gc,psfc_gc,intq_gc,pdhs,sh_gc,cl_gc,cf_gc,qv_gc,qr_gc,qc_gc,qs_gc,qi_gc,qg_gc,qh_gc,qni_gc,icefrac_gc,sm000007,sm007028,sm028100,sm100255,st000007,st007028,st028100,st100255,sm000010,sm010040,sm040100,sm100200,sm010200,soilm000,soilm005,soilm020,soilm040,soilm160,soilm300,sw000010,sw010040,sw040100,sw100200,sw010200,soilw000,soilw005,soilw020,soilw040,soilw160,soilw300,st000010,st010040,st040100,st100200,st010200,soilt000,soilt005,soilt020,soilt040,soilt160,soilt300,fad0_urb2d,fad135_urb2d,fad45_urb2d,pad_urb2d,fad90_urb2d,rad_urb2d,car_urb2d,h2w_urb2d,svf_urb2d,z0s_urb2d,z0r_urb2d,z0m_urb2d,zds_urb2d,zdm_urb2d,zdr_urb2d,qnwfa_now,qnwfa_jan,qnwfa_feb,qnwfa_mar,qnwfa_apr,qnwfa_may,qnwfa_jun,qnwfa_jul,qnwfa_aug,qnwfa_sep,qnwfa_oct,qnwfa_nov,qnwfa_dec,qnifa_now,qnifa_jan,qnifa_feb,qnifa_mar,qnifa_apr,qnifa_may,qnifa_jun,qnifa_jul,qnifa_aug,qnifa_sep,qnifa_oct,qnifa_nov,qnifa_dec,qntemp,qntemp2,hgtmaxw,pmaxw,tmaxw,umaxw,vmaxw,hgttrop,ptrop,ttrop,utrop,vtrop
 package   tconly         use_wps_input==2            -             state:u_gc,v_gc,t_gc,rh_gc,ght_gc,p_gc,xlat_gc,xlong_gc,ht_gc,tsk_gc,tavgsfc,tmn_gc,pslv_gc,sct_dom_gc,scb_dom_gc,greenfrac,albedo12m,pd_gc,psfc_gc,intq_gc,pdhs,sh_gc,qv_gc,qr_gc,qc_gc,qs_gc,qi_gc,qg_gc,qh_gc,qni_gc,icefrac_gc
 package   reg_interp    nest_interp_coord==0         -             - 
 package   flat_p_interp nest_interp_coord==1         -             state:t_max_p,ght_max_p,max_p,t_min_p,ght_min_p,min_p
@@ -2627,6 +2587,7 @@ package	ltng_none           lightning_option==0            -       -
 package	ltng_crm_PR92w      lightning_option==1            -       state:ic_flashcount,ic_flashrate,cg_flashcount,cg_flashrate
 package ltng_crm_PR92z      lightning_option==2            -       state:ic_flashcount,ic_flashrate,cg_flashcount,cg_flashrate
 package	ltng_cpm_PR92z      lightning_option==11           -       state:ic_flashcount,ic_flashrate,cg_flashcount,cg_flashrate
+package	ltng_lpi            lightning_option==3           -        state:lpi
 # only need to specify these once; not for every io_form* variable
 package   io_intio    io_form_restart==1                     -             -
 package   io_netcdf   io_form_restart==2                     -             -
@@ -2663,7 +2624,7 @@ halo      HALO_EM_INIT_3 dyn_em 48:ph0,php,t_init,mub,mu0,p,al,alt,alb
 halo      HALO_EM_INIT_4 dyn_em 48:pb,h_diabatic,msftx,msfty,msfux,msfuy,msfvx,msfvy,msfvx_inv,f,e,sina,cosa,ht,potevp,snopcx,soiltb,xlat,xlong,xlat_u,xlat_v,xlong_u,xlong_v,clat
 halo      HALO_EM_INIT_5 dyn_em 48:moist,chem,scalar,tracer
 halo      HALO_EM_INIT_6 dyn_em 48:om_tmp,om_s,om_u,om_v,om_depth,om_tini,om_sini,om_lat,om_lon,om_ml
-halo      HALO_EM_VINTERP_UV_1 dyn_em 8:pd_gc,pb
+halo      HALO_EM_VINTERP_UV_1 dyn_em 24:pd_gc,pb,pmaxw,ptrop
 halo      HALO_EM_A dyn_em  8:ru,rv,rw,ww,php,alt,al,p,muu,muv,mut
 halo      HALO_EM_PHYS_A  dyn_em 4:u_2,v_2
 halo      HALO_EM_PHYS_PBL dyn_em        4:rublten,rvblten

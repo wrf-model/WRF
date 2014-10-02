@@ -201,6 +201,7 @@ main( int argc, char *argv[], char *env[] )
   gen_wrf_io( "inc" ) ;
   gen_model_data_ord( "inc" ) ;
   gen_nest_interp( "inc" ) ;
+  gen_nest_v_interp( "inc") ; /*KAL added this for vertical interpolation*/
   gen_scalar_derefs( "inc" ) ;
   gen_streams("inc") ;
 

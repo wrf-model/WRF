@@ -36,7 +36,7 @@
       PRINT *,'x,y,z = ',x,y,z
       PRINT *,'SHELL = ',TRIM(my_shell)
 
-      FLUSH (UNIT=6)
+      CALL FLUSH (UNIT=6)
 
       STOP
       END PROGRAM fortran_2003_test         

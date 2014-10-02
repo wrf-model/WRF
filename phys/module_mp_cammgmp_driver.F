@@ -36,12 +36,12 @@ module module_mp_cammgmp_driver
   use shr_kind_mod,  only: r8=>shr_kind_r8
   use physconst,     only: gravit  
   use module_cam_support,  only: pcnst =>pcnst_mp, pcols, pver, pverp
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
    use module_cam_support, only: cam_mam_aerosols
 #endif
   use constituents,  only: cnst_get_ind, cnst_name, qmin
 
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
   use module_state_description,  only: num_chem, param_first_scalar, &
          CBMZ_CAM_MAM7_NOAQ, CBMZ_CAM_MAM7_AQ, CBMZ_CAM_MAM3_NOAQ,     &
          CBMZ_CAM_MAM3_AQ
@@ -54,7 +54,7 @@ module module_mp_cammgmp_driver
   
   public :: CAMMGMP_INIT
   public :: CAMMGMP
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
   public :: physics_ptend_init ! Mimics CAM's physics ptend init. Also used in wet scavaging code in WRF_CHEM
   public :: physics_update     ! Mimics CAM's physics update. Also used in wet scavaging code in WRF_CHEM 
 #endif
@@ -102,7 +102,7 @@ contains
        , aitken_mode, coarse_mode, icwmrsh3d     &
        , icwmrdp3d, shfrc3d, cmfmc3d, cmfmc2_3d  &
        , config_flags, f_ice_phy, f_rain_phy     &
-#ifdef WRF_CHEM                     
+#if ( WRF_CHEM == 1 )                     
        , dgnum4d, dgnumwet4d                     &
 #endif
        , ids, ide,  jds, jde,  kds, kde          &
@@ -116,7 +116,7 @@ contains
        , qv_curr, qc_curr, qi_curr,qs_curr       &
        , qr_curr, nc3d, ni3d,ns3d,nr3d,qndrop    &
        , rh_old_mp,lcd_old_mp                    & !PMA- added for macrophysics
-#ifdef WRF_CHEM                     
+#if ( WRF_CHEM == 1 )                     
        , chem                                    &
        , qme3d,prain3d,nevapr3d                  &
        , rate1ord_cw2pr_st3d                     &
@@ -149,7 +149,7 @@ contains
          nspec_amode    => nspec_amode_mp
 #endif
     
-#ifdef WRF_CHEM       
+#if ( WRF_CHEM == 1 )       
     use module_data_cam_mam_asect, only: lptr_chem_to_q, lptr_chem_to_qqcw, factconv_chem_to_q
 #endif
     
@@ -202,7 +202,7 @@ contains
     real, dimension( ims:ime, kms:kme, jms:jme ), intent(in) :: icwmrsh3d      !Shallow cumulus in-cloud water mixing ratio (kg/m2)
     real, dimension( ims:ime, kms:kme, jms:jme ), intent(in) :: icwmrdp3d      !Deep Convection in-cloud water mixing ratio (kg/m2)
 
-#ifdef WRF_CHEM 
+#if ( WRF_CHEM == 1 ) 
     real, dimension( ims:ime, kms:kme, jms:jme, ntot_amode ), intent(in) :: dgnum4d, dgnumwet4d ! 4-dimensional Number mode diameters
 #endif
     !2d in-outs
@@ -234,14 +234,14 @@ contains
     real, dimension( ims:ime, kms:kme, jms:jme ), intent(inout) :: iradius
     real, dimension( ims:ime, kms:kme, jms:jme ), intent(inout) :: cldfrai
     real, dimension( ims:ime, kms:kme, jms:jme ), intent(inout) :: cldfral
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
     real, dimension( ims:ime, kms:kme, jms:jme ), intent(inout) :: qme3d          !Net condensation rate (kg/kg/s)
     real, dimension( ims:ime, kms:kme, jms:jme ), intent(inout) :: prain3d        !Rate of conversion of condensate to precipitation (kg/kg/s)
     real, dimension( ims:ime, kms:kme, jms:jme ), intent(inout) :: nevapr3d       !Evaporation rate of rain + snow (kg/kg/s)
     real, dimension( ims:ime, kms:kme, jms:jme ), intent(inout) :: rate1ord_cw2pr_st3d !1st order rate for direct conversion of strat. cloud water to precip (1/s)
 #endif
 
-#ifdef WRF_CHEM    
+#if ( WRF_CHEM == 1 )    
     !4d in-outs
     real, dimension( ims:ime, kms:kme, jms:jme, num_chem ), intent(inout) :: chem !Chem array
 #endif
@@ -259,7 +259,7 @@ contains
     logical  :: ptend_loc_ls, ptend_all_ls                !Flag for updating tendencies
     logical  :: ptend_loc_lq(pcnst),ptend_all_lq(pcnst)   !Flag for updating tendencies
     integer   :: i,k,m,n,iw,jw,kw,imode,itsm1,itile_len,ktep1,kflip,ips,kcam
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
     integer  :: p1st,l2                                   !For iterating loop of NUM_CHEM for CHEM array
 #endif
     integer   :: lchnk                                    !Chunk identifier
@@ -576,12 +576,12 @@ contains
     !*** IMPORTANT-WARNING *** :Should be in the namelist file. Hardwired currently
     conv_water_in_rad = 1
     
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
     p1st = param_first_scalar ! Obtain CHEM array's first element's index
 #endif          
     
     ! Specify diameter for each mode
-#ifndef WRF_CHEM
+#if ( WRF_CHEM != 1 )
     dgnumwet(:,:,:)              = 0.1e-6_r8      !*** IMPORTANT-WARNING *** :Constant value for the whole domain (prescribed value). The value match precribe_aerosol_mixactivate, but units change
     dgnumwet(:,:,modeptr_aitken) = 0.02e-6
     dgnumwet(:,:,modeptr_coarse) = 1.0e-6 
@@ -714,7 +714,7 @@ contains
              endif
              ! For prescribed aerosols
              qqcw(1,kflip,:)                  = 1.e-38_r8      !used in microp_aero for dropmicnuc, presently set to a constant value
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
              if(chem_opt.NE.0 .and. config_flags%CAM_MP_MAM_cpled ) then
                 !Following Do-Loop is obtained from chem/module_cam_mam_aerchem_driver.F 
                 do l = p1st, num_chem
@@ -904,7 +904,7 @@ contains
 #endif
           
 #ifdef MODAL_AERO
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
           do m = 1, ntot_amode
              lnum = numptr_amode(m)
              if( lnum > 0 ) then
@@ -938,7 +938,7 @@ contains
              aist_mic(:ncol,:pver) = aist(:ncol,:pver)
           endif
           
-#ifndef WRF_CHEM          
+#if ( WRF_CHEM != 1 )          
           !Adding 7 new fields to state1_q(# mixing ratio and mass mixing ratio
           !for 3 modes of prescribed aerosols[s04,dust(+sea salt),aitken]) array. 
           !state%q holds 5 constituents already therefore the prescribed aerosol 
@@ -1354,7 +1354,7 @@ contains
              lradius(iw,kw,jw)    = efcout(1,kflip)
              iradius(iw,kw,jw)    = efiout(1,kflip)
              
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
              if(chem_opt .NE. 0 .and. config_flags%CAM_MP_MAM_cpled ) then
                 do l = p1st, num_chem
                    l2 = lptr_chem_to_q(l)
@@ -2148,7 +2148,7 @@ contains
     call ini_microp_aero
     
 #ifdef MODAL_AERO
-#ifndef WRF_CHEM
+#if ( WRF_CHEM != 1 )
     !When WRF_CHEM is 1, activate_init is called from MODULE_CAM_MAM_INIT after initializing aerosols
     call activate_init
 #else

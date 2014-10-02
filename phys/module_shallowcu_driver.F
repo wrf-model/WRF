@@ -28,7 +28,7 @@ CONTAINS
                      ,qv_curr, qc_curr, qr_curr                       &
                      ,qi_curr, qs_curr, qg_curr                       & 
                      ,qnc_curr,qni_curr                               &
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
                      ,chem, chem_opt                                  &
 #endif
                  ! Optional output arguments for CAMZM scheme
@@ -65,7 +65,7 @@ CONTAINS
    USE module_shcu_grims
    USE module_dm
    USE module_domain, ONLY: domain
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
       USE module_state_description, ONLY: num_chem
 #endif
 
@@ -225,7 +225,7 @@ CONTAINS
                                       ims,ime, jms,jme, kms,kme, &
                                                         kts,kte, &
                                       itimestep, num_tiles
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
    INTEGER,      INTENT(IN   )    :: chem_opt
 #endif
 
@@ -240,7 +240,7 @@ CONTAINS
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_moist ),      &
          INTENT(INOUT)  ::                                       &
                                                           moist
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_chem ),       &
          INTENT(INOUT)  ::                                    &
                                                           chem
@@ -423,7 +423,7 @@ CONTAINS
            ,T_PHY=t, U_PHY=u, V_PHY=v                                    &
            ,MOIST=moist, QV=qv_curr, QC=qc_curr, QI=qi_curr              &
            ,QNC=qnc_curr, QNI=qni_curr                                   & 
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
            ,CHEM=chem, CHEM_OPT=chem_opt                                 &
 #endif
            ,PBLH_IN=pblh, TKE_PBL=tke_pbl                                &

@@ -1,4 +1,4 @@
-.SUFFIXES: .c .f .F .o
+.SUFFIXES: .c .f .for .o
 
 include make.filelist
 
@@ -17,8 +17,8 @@ library:$(OBJ)
 .f.o:
 	$(FC) -c $(FFLAGS) $< 
 
-.F.o:
-	./preproc.sh $*.F
+.for.o:
+	./preproc.sh $*.for
 	$(FC) -c $(FFLAGS) $*.f
 
 clean:

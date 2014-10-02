@@ -18,10 +18,33 @@ whatsoever, whether direct, indirect, consequential or special, that
 arise out of or in connection with the access, use or performance of 
 WRFDA, including infringement actions.
 
+
 ======================================
 This is the main directory for the WRFDA Version 3 source code release.
 ======================================
 
+V3.6.1 Release Notes :
+-------------------
+
+Version 3.6.1 was released on August 14, 2014.
+
+  For more information about WRFDA, visit the WRFDA Users home page
+  http://www.mmm.ucar.edu/wrf/users/wrfda/index.html
+
+  Updated features:
+
+    - A number of issues have been fixed for this release, including:
+        - The FGAT capability has been updated to produce better results
+        - Several bugs which may cause compilation failure
+        - Bugs in SEVIRI radiance assimilation
+        - Errors when using RTTOV to assimilate radiances in 4DVAR
+        - The FGAT capability has been updated to produce better results
+        - Many other minor problems
+    - WRFPLUS has been upgraded to V3.6.1
+
+See http://www.mmm.ucar.edu/wrf/users/wrfda/updates-3.6.1.html for a full list of updates
+
+======================================
 V3.6 Release Notes :
 -------------------
 

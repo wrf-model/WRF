@@ -1833,7 +1833,7 @@ CONTAINS
                ids,ide, jds,jde, kds,kde,                          &
                ims,ime, jms,jme, kms,kme,                          &
                i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte,    &
-               ustm,ck,cka,cd,cda,isftcflx,iz0tlnd                 )
+               ustm,ck,cka,cd,cda,isftcflx,iz0tlnd, scm_force_flux    )
 #if ( EM_CORE==1)
            DO j = j_start(ij),j_end(ij)
            DO i = i_start(ij),i_end(ij)
@@ -5137,17 +5137,17 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
                      SVP1,SVP2,SVP3,SVPT0,EP1,EP2,                 &
                      KARMAN,EOMEG,STBOLT,                          &
                      P1000,                                      &
-XICE,SST,TSK_SEA,                                                  &
-CHS2_SEA,CHS_SEA,CPM_SEA,CQS2_SEA,FLHC_SEA,FLQC_SEA,               &
-HFX_SEA,LH_SEA,QFX_SEA,QGH_SEA,QSFC_SEA,ZNT_SEA,                   &
-ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
+                     XICE,SST,TSK_SEA,                                                  &
+                     CHS2_SEA,CHS_SEA,CPM_SEA,CQS2_SEA,FLHC_SEA,FLQC_SEA,               &
+                     HFX_SEA,LH_SEA,QFX_SEA,QGH_SEA,QSFC_SEA,ZNT_SEA,                   &
+                     ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte,                    &
                      ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,          &
                      sf_surface_physics                             )
 
-     USE module_sf_sfclay
+     USE module_sf_sfclayrev
      implicit none
 
      INTEGER,  INTENT(IN )   ::        ids,ide, jds,jde, kds,kde,  &
@@ -5377,7 +5377,7 @@ ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
 
 
      ! land/frozen-water call
-     call sfclay(U3D,V3D,T3D,QV3D,P3D,dz8w,                    & ! I
+     call sfclayrev(U3D,V3D,T3D,QV3D,P3D,dz8w,                    & ! I
                  CP,G,ROVCP,R,XLV,PSFC,CHS,CHS2,CQS2,CPM,      & ! I,I,I,I,I,I,IO,IO,IO,IO,
                  ZNT,UST,PBLH,MAVAIL,ZOL,MOL,REGIME,PSIM,PSIH, &
                  FM,FH,                                        &
@@ -5460,7 +5460,7 @@ ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
      ZOL_SEA  = ZOL_HOLD
 !
      ! open-water call
-     call sfclay(U3D,V3D,T3D,QV3D,P3D,dz8w,                    & ! I
+     call sfclayrev(U3D,V3D,T3D,QV3D,P3D,dz8w,                    & ! I
                  CP,G,ROVCP,R,XLV,PSFC,                        & ! I
                  CHS_SEA,CHS2_SEA,CQS2_SEA,CPM_SEA,            & ! I/O
                  ZNT_SEA,UST_SEA,                              & ! I/O

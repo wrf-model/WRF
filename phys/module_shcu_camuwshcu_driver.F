@@ -35,7 +35,7 @@ SUBROUTINE camuwshcu_driver(                                  &
              ,p, p8w, pi_phy, z, z_at_w, dz8w                 &
              ,t_phy, u_phy, v_phy                             &
              ,moist, qv, qc, qi, qnc, qni                     &
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
              ,chem, chem_opt                                  &
 #endif
              ,pblh_in, tke_pbl, cldfra, cldfra_old            &
@@ -60,14 +60,14 @@ SUBROUTINE camuwshcu_driver(                                  &
   USE module_state_description, only: param_first_scalar, &
                                       p_qc, p_qr, p_qi, p_qs, p_qg, p_qnc, p_qni
   USE module_cam_support,       only: pcols, pver, pcnst =>pcnst_runtime
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
   USE module_cam_support,       only:  cam_mam_aerosols
 #endif
   USE constituents,             only: cnst_get_ind
   USE physconst,                only: latice,cpair, gravit, latvap
   USE uwshcu,                   only: compute_uwshcu_inv
   USE wv_saturation,            only: fqsatd
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
   use module_state_description,  only: num_chem, param_first_scalar,CBMZ_CAM_MAM3_NOAQ, &
        CBMZ_CAM_MAM3_AQ,CBMZ_CAM_MAM7_NOAQ,CBMZ_CAM_MAM7_AQ
   use module_data_cam_mam_asect, only: lptr_chem_to_q, factconv_chem_to_q
@@ -80,13 +80,13 @@ SUBROUTINE camuwshcu_driver(                                  &
                                ims,ime, jms,jme, kms,kme,  &
                                its,ite, jts,jte, kts,kte,  &
                                num_moist,itimestep
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
   INTEGER, INTENT(IN   ) ::    chem_opt
 #endif
 
   REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_moist ), INTENT(IN) :: &
                               moist    !moist tracer array
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
   REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_chem ), INTENT(INOUT) :: &
                               chem    !moist tracer array
 #endif
@@ -241,7 +241,7 @@ SUBROUTINE camuwshcu_driver(                                  &
   real(r8) :: state_s(pcols,kte)
   real(r8) :: ptend_s(pcols,kte)                   !Dummy arguments for physics_update call
 
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
   !BSINGH:02/01/2013: Sanity check for Non-MAM simulations
   if(.NOT.cam_mam_aerosols .AND. chem_opt .NE. 0) then
      write(msg,*)'CAMUWSHACU DRIVER - camuwshcu_driver is valid for only MAM aerosols ', &
@@ -339,12 +339,12 @@ SUBROUTINE camuwshcu_driver(                                  &
            call cnst_get_ind( 'NUMICE', m )
            moist8(1,kflip,m) = max(0.0,qni(i,k,j)/(1. + qv(i,k,j)))
 
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
            !Following Do-Loop is obtained from chem/module_cam_mam_aerchem_driver.F 
            do l = param_first_scalar, num_chem
               l2 = lptr_chem_to_q(l)
               if ((l2 >= 1) .and. (l2 <= pcnst)) then
-                 moist8(1,kflip,l2) = max(0.0_r8,chem(i,k,j,l)*factconv_chem_to_q(l))
+                 moist8(1,kflip,l2) = max(0.0,chem(i,k,j,l)*factconv_chem_to_q(l))
               end if
            end do ! l             
 #endif           
@@ -433,7 +433,7 @@ SUBROUTINE camuwshcu_driver(                                  &
         end do !k-loop to kte              
 !PMA<
            
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
            !BSINGH - update moist8 by physics update call
            !Update chem array and state constituents
            !populate state_s, ptend_s, ptend_ls with dummy values (zeros) for physics update call

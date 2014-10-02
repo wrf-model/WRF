@@ -411,7 +411,9 @@
 		p_nh3, p_hno3, p_hcl, p_sulf, p_h2so4, p_hcho,   &
 		p_ora1, p_so2, p_h2o2, p_o3, p_ho,   &
 		p_ho2, p_no3, p_no, p_no2, p_hono,   &
-		p_pan, p_ch3o2, p_ch3oh, p_op1
+!		p_pan, p_ch3o2, p_ch3oh, p_op1
+		p_pan, p_ch3o2, p_ch3oh, p_op1,      &
+		p_hcooh, p_ch3ooh
 
 	use module_data_cmu_bulkaqchem, only:   &
 	        meqn1max, naers, ngas,   &
@@ -568,13 +570,14 @@
 
 	gas(nga     ) = rbox(p_nh3   ) * factgas
 	gas(ngn     ) = rbox(p_hno3  ) * factgas
-	gas(ngc     ) = rbox(p_hcl   ) * factgas
+	if(p_hcl > param_first_scalar )   gas(ngc ) = rbox(p_hcl   ) * factgas
 	if(p_sulf > param_first_scalar )  gas(ng4 ) = rbox(p_sulf  ) * factgas
 	if(p_h2so4 > param_first_scalar ) gas(ng4 ) = rbox(p_h2so4 ) * factgas
 
 
 	gas(nghcho  ) = rbox(p_hcho  ) * factgas
-	gas(nghcooh ) = rbox(p_ora1  ) * factgas
+	if(p_ora1 > param_first_scalar )  gas(nghcooh ) = rbox(p_ora1  ) * factgas
+        if(p_hcooh > param_first_scalar ) gas(nghcooh ) = rbox(p_hcooh ) * factgas
 	gas(ngso2   ) = rbox(p_so2   ) * factgas
 	gas(ngh2o2  ) = rbox(p_h2o2  ) * factgas
 	gas(ngo3    ) = rbox(p_o3    ) * factgas
@@ -588,7 +591,8 @@
 	gas(ngpan   ) = rbox(p_pan   ) * factgas
 	gas(ngch3o2 ) = rbox(p_ch3o2 ) * factgas
 	gas(ngch3oh ) = rbox(p_ch3oh ) * factgas
-	gas(ngch3o2h) = rbox(p_op1   ) * factgas
+        if(p_op1 > param_first_scalar )    gas(ngch3o2h) = rbox(p_op1   ) * factgas
+        if(p_ch3ooh > param_first_scalar ) gas(ngch3o2h) = rbox(p_ch3ooh) * factgas
 
 !   compute bulk activated-aerosol mixing ratios
 	aerosol(:) = 0.0
@@ -815,13 +819,14 @@
 !
 	rbox(p_nh3   ) = gas(nga     ) / factgas
 	rbox(p_hno3  ) = gas(ngn     ) / factgas
-	rbox(p_hcl   ) = gas(ngc     ) / factgas
+	if(p_hcl .gt. param_first_scalar)   rbox(p_hcl   ) = gas(ngc     ) / factgas
 	if(p_sulf .gt. param_first_scalar)  rbox(p_sulf  ) = gas(ng4) / factgas
 	if(p_h2so4 .gt. param_first_scalar) rbox(p_h2so4 ) = gas(ng4) / factgas
 
 
 	rbox(p_hcho  ) = gas(nghcho  ) / factgas
-	rbox(p_ora1  ) = gas(nghcooh ) / factgas
+	if(p_ora1 > param_first_scalar ) rbox(p_ora1  ) = gas(nghcooh ) / factgas
+        if(p_hcooh > param_first_scalar ) rbox(p_hcooh) = gas(nghcooh ) / factgas
 	rbox(p_so2   ) = gas(ngso2   ) / factgas
 	rbox(p_h2o2  ) = gas(ngh2o2  ) / factgas
 	rbox(p_o3    ) = gas(ngo3    ) / factgas
@@ -835,7 +840,8 @@
 	rbox(p_pan   ) = gas(ngpan   ) / factgas
 	rbox(p_ch3o2 ) = gas(ngch3o2 ) / factgas
 	rbox(p_ch3oh ) = gas(ngch3oh ) / factgas
-	rbox(p_op1   ) = gas(ngch3o2h) / factgas
+	if(p_op1 > param_first_scalar )    rbox(p_op1   ) = gas(ngch3o2h) / factgas
+        if(p_ch3ooh > param_first_scalar ) rbox(p_ch3ooh) = gas(ngch3o2h) / factgas
 
 	gas_aqfrac_box(:) = 0.0
 
@@ -843,7 +849,7 @@
 		gas_aqfrac_box(p_nh3   ) = gas_aqfrac_cmu(nga     )
 	if (p_hno3  .le. numgas_aqfrac)   &
 		gas_aqfrac_box(p_hno3  ) = gas_aqfrac_cmu(ngn     )
-	if (p_hcl   .le. numgas_aqfrac)   &
+	if (p_hcl   .le. numgas_aqfrac .and. p_hcl .gt. param_first_scalar)   &
 		gas_aqfrac_box(p_hcl   ) = gas_aqfrac_cmu(ngc     )
 	if (p_sulf  .le. numgas_aqfrac .and. p_sulf .gt. param_first_scalar)   &
 		gas_aqfrac_box(p_sulf  ) = gas_aqfrac_cmu(ng4     )
@@ -852,8 +858,10 @@
 
 	if (p_hcho  .le. numgas_aqfrac)   &
 		gas_aqfrac_box(p_hcho  ) = gas_aqfrac_cmu(nghcho  )
-	if (p_ora1  .le. numgas_aqfrac)   &
+	if (p_ora1  .le. numgas_aqfrac .and. p_ora1 .gt. param_first_scalar)   &
 		gas_aqfrac_box(p_ora1  ) = gas_aqfrac_cmu(nghcooh )
+        if (p_hcooh .le. numgas_aqfrac .and. p_hcooh .gt. param_first_scalar)   &
+                gas_aqfrac_box(p_hcooh ) = gas_aqfrac_cmu(nghcooh )
 	if (p_so2   .le. numgas_aqfrac)   &
 		gas_aqfrac_box(p_so2   ) = gas_aqfrac_cmu(ngso2   )
 	if (p_h2o2  .le. numgas_aqfrac)   &
@@ -879,8 +887,10 @@
 		gas_aqfrac_box(p_ch3o2 ) = gas_aqfrac_cmu(ngch3o2 )
 	if (p_ch3oh .le. numgas_aqfrac)   &
 		gas_aqfrac_box(p_ch3oh ) = gas_aqfrac_cmu(ngch3oh )
-	if (p_op1   .le. numgas_aqfrac)   &
+	if (p_op1   .le. numgas_aqfrac .and. p_op1 .gt. param_first_scalar)   &
 		gas_aqfrac_box(p_op1   ) = gas_aqfrac_cmu(ngch3o2h)
+        if (p_ch3ooh.le. numgas_aqfrac .and. p_ch3ooh .gt. param_first_scalar)   &
+                gas_aqfrac_box(p_ch3ooh) = gas_aqfrac_cmu(ngch3o2h)
 
 	rbulk_cwaer(l_so4_aqyy,2) = aerosol(na4) / factaerso4
 	rbulk_cwaer(l_no3_aqyy,2) = aerosol(nan) / factaerno3

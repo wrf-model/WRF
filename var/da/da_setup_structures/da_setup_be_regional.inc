@@ -1020,7 +1020,7 @@ subroutine da_setup_be_regional(xb, be, grid)
       variable = be % v5 % name
       if (rootproc) then
       write(be_out_unit) variable
-      write(be_out_unit) kz, num_bins2d_out
+      write(be_out_unit) nk_2d, num_bins2d_out
       write(be_out_unit) be5_evec_glo
       write(be_out_unit) be5_eval_glo
    ! - Because num_bins2d = 1, be5_evec_loc = be5_evec_glo:

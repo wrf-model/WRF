@@ -89,6 +89,7 @@ dimspec    ]       2     namelist=kfire                    z     klevs_for_fire
 dimspec    %       2     namelist=kdvel                    z     klevs_for_dvel
 dimspec    airc    2     namelist=kemit_aircraft           z     ac_emissions_zdim
 dimspec    .       3     namelist=erosion_dim              z     dust_erosion_dimension
+dimspec    ^       2     constant=46                       z     eightday_dimension
 
 # Dimensions for the GHG options
 dimspec    ghgv    -     constant=8                        z     vprm_vgcls

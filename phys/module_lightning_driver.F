@@ -40,7 +40,7 @@
                             ! IC and CG flash rates and accumulated flash count
                              ,ic_flashcount, ic_flashrate              &
                              ,cg_flashcount, cg_flashrate              &
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
                              ,lnox_opt,lnox_passive                    &
                             ! LNOx tracers (chemistry only)
                              ,lnox_total, lnox_ic, lnox_cg             &
@@ -68,7 +68,7 @@
                  INTENT(OUT) :: ic_flashcount, ic_flashrate, &
                                 cg_flashcount, cg_flashrate
 
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
  INTEGER, INTENT(IN)         :: lnox_opt
  LOGICAL, INTENT(IN)         :: lnox_passive
  REAL, OPTIONAL, DIMENSION( ims:ime,kms:kme,jms:jme ), &
@@ -122,6 +122,12 @@
         WRITE(message, * ) ' lightning_init: CPM lightning option selected: ', lightning_option
         CALL wrf_debug ( 100 , message )
 
+#if (EM_CORE==1)
+    CASE (ltng_lpi)
+
+        WRITE(message, * ) ' lightning_init: LPIM lightning option selected: ', lightning_option
+        CALL wrf_debug ( 100 , message )
+#endif
     ! Non-existing options
     CASE DEFAULT
         CALL wrf_error_fatal ( ' lightning_init: invalid lightning_option')
@@ -155,7 +161,7 @@
    CALL wrf_debug( 100, message )
  ENDIF
 
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
 
  CALL wrf_debug( 100, ' lightning_init: initializing and validating WRF-Chem only arrays and settings')
 
@@ -191,6 +197,7 @@
                             itimestep, dt, dx, dy,                &
                             xlat, xlon, xland, ht,                &
                             t_phy, p_phy, rho, u, v, w,           &
+                            th_phy, pi_phy,dz8w,                  &  
                             z, moist,                             &
                           ! Scheme specific prognostics
                             ktop_deep,                            &
@@ -216,7 +223,8 @@
                             its, ite, jts, jte, kts, kte,         &
                           ! Mandatory outputs for all quantitative schemes
                             ic_flashcount, ic_flashrate,          &
-                            cg_flashcount, cg_flashrate           &
+                            cg_flashcount, cg_flashrate,           &
+                            lpi                                   &
                           )
 !-----------------------------------------------------------------
 ! Framework
@@ -235,6 +243,11 @@
 ! IC:CG methods
  USE module_ltng_iccg
 
+! LPI 
+#if (EM_CORE==1)
+  USE module_ltng_lpi
+#endif
+
  IMPLICIT NONE
 !-----------------------------------------------------------------
 
@@ -244,6 +257,7 @@
 
  REAL,    DIMENSION( ims:ime,          jms:jme ),           INTENT(IN   ) :: xlat, xlon, xland, ht
  REAL,    DIMENSION( ims:ime, kms:kme, jms:jme ),           INTENT(IN   ) :: t_phy, p_phy, rho
+ REAL,    DIMENSION( ims:ime, kms:kme, jms:jme ),           INTENT(IN   ) :: th_phy, pi_phy, dz8w  
  REAL,    DIMENSION( ims:ime, kms:kme, jms:jme ),           INTENT(IN   ) :: u, v, w, z
  REAL,    DIMENSION( ims:ime, kms:kme, jms:jme, num_moist), INTENT(IN   ) :: moist
 
@@ -252,6 +266,7 @@
  REAL,    DIMENSION( ims:ime, kms:kme, jms:jme ),           INTENT(IN   ) :: refl          ! reflectivity from mp_physics
  TYPE(WRFU_Time),                                           INTENT(IN   ) :: current_time  ! For use of IC:CG input
 
+ REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT), OPTIONAL :: LPI
 ! Mandatory namelist inputs
  INTEGER, INTENT(IN   )    ::       lightning_option
  REAL,    INTENT(IN   )    ::       lightning_dt, lightning_start_seconds, flashrate_factor
@@ -273,6 +288,7 @@
 ! Mandatory outputs for all quantitative schemes
  REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: ic_flashcount , cg_flashcount
  REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(  OUT) :: ic_flashrate  , cg_flashrate
+
 
 ! Local variables
  REAL, DIMENSION( ims:ime, jms:jme ) :: total_flashrate
@@ -374,8 +390,33 @@
                     total_flashrate                   &
                   )
 
+    ! LPI lightning options
+#if (EM_CORE==1)
+    CASE( ltng_lpi )
+        CALL wrf_debug ( 100, ' lightning_driver: calling Light Potential Index' )
+        IF(F_QG) THEN
+        CALL   calclpi(W=w,                              &
+                     Z=z,                              &
+                     PI_PHY=pi_phy, RHO_PHY=rho,             &
+                     TH_PHY=TH_PHY,P_PHY=p_phy,                  &
+                     DZ8w=dz8w,                          &
+                     QV=moist(ims,kms,jms,P_QV),         &   !Qv=qv_curr,                         &
+                     QC=moist(ims,kms,jms,P_QC),         &   !Qc=qc_curr,                         &
+                     QR=moist(ims,kms,jms,P_QR),         &   !QR=qr_curr,                         &
+                     QI=moist(ims,kms,jms,P_QI),         &   !QI=qi_curr,                         &
+                     QS=moist(ims,kms,jms,P_QS),         &   !qs_curr,                         &
+                     QG=moist(ims,kms,jms,P_QG),         &   !qg_curr,                         &
+                     QH=moist(ims,kms,jms,P_QH),         &   !qh_curr,                         &
+                  lpi=lpi &
+                 ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
+                 ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
+                 ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte)
+        ELSE
+        WRITE(wrf_err_message, * ) ' lightning_driver: LPI option needs Microphysics Option with Graupel '
+        CALL wrf_error_fatal ( wrf_err_message )
+        ENDIF
+#endif
 !   CASE ( another_cpm_option)
-!       CALL ...
 
     ! Invalid lightning options
     CASE DEFAULT

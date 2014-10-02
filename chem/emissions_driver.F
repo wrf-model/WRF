@@ -15,7 +15,8 @@ CONTAINS
          bioemdt,stepbioe,                                                 &
          config_flags,gmt,julday,alt,t_phy,moist,p8w,t8w,u_phy,            &
          v_phy,vvel,e_bio,p_phy,chem,rho_phy,dz8w,ne_area,emis_ant,        &
-         emis_vol,tsk,erod,g,emis_seas,emis_dust,tracer,                   &
+         emis_vol,tsk,erod,erod_dri,lai_vegmask,                           &
+         g,emis_seas,emis_dust,tracer,                                     &
          ebu, ebu_in,mean_fct_agtf,mean_fct_agef,                          &
          mean_fct_agsv,mean_fct_aggr,firesize_agtf,firesize_agef,          &
          firesize_agsv,firesize_aggr,                                      &
@@ -30,7 +31,7 @@ CONTAINS
          ebio_iso,ebio_oli,ebio_api,ebio_lim,ebio_xyl,                     &
          ebio_hc3,ebio_ete,ebio_olt,ebio_ket,ebio_ald,                     &
          ebio_hcho,ebio_eth,ebio_ora2,ebio_co,ebio_nr,ebio_no,             &
-         ebio_sesq, ebio_mbo,                                              & 
+         ebio_sesq, ebio_mbo,ebio_bpi,ebio_myrc,                           &
          ebio_c10h16,ebio_tol,ebio_bigalk,ebio_ch3oh,ebio_acet,            &
          ebio_nh3,ebio_no2,ebio_c2h5oh,ebio_ch3cooh,ebio_mek,              &
          ebio_bigene,ebio_c2h6,ebio_c2h4,ebio_c3h6,ebio_c3h8,ebio_so2,     &
@@ -39,8 +40,9 @@ CONTAINS
          ebio_aro1, ebio_aro2, ebio_ccho, ebio_meoh,                       &    
          ebio_ethene, ebio_hcooh, ebio_terp, ebio_bald,                    &    
          ebio_cco_oh, ebio_rco_oh,                                         &    
-         clayfrac,sandfrac,dust_alpha,dust_gamma,dust_smtune,              &
-         snowh,zs,                                                         &
+         clayfrac,sandfrac,dust_alpha,dust_gamma,dust_smtune,dust_ustune,  &
+         clayfrac_nga,sandfrac_nga,                                        &
+         snowh,zs,afwa_dustloft,tot_dust,tot_edust,vis_dust,               &
          soil_top_cat, ust_t, rough_cor, smois_cor,                        & 
          ebio_c5h8,ebio_apinene,ebio_bpinene,ebio_toluene,                 &
          ebio_ch3cho,ebio_ch3co2h,ebio_tbut2ene,ebio_c2h5cho,              &
@@ -67,7 +69,7 @@ CONTAINS
          vprm_in,rad_vprm,lambda_vprm,alpha_vprm,resp_vprm,               &
          xtime,tslb,wet_in,rainc,rainnc,potevp,sfcevp,lu_index,            &
          biomt_par,emit_par,ebio_co2oce,eghg_bio,                          &
-
+         dust_flux, seas_flux,                                             &
          ids,ide, jds,jde, kds,kde,                                        &
          ims,ime, jms,jme, kms,kme,                                        &
          its,ite, jts,jte, kts,kte                                         )
@@ -130,7 +132,10 @@ CONTAINS
          dms_0,tsk,erup_beg,erup_end
    REAL, DIMENSION( ims:ime, jms:jme,3),&
          INTENT(IN ) ::                                                 &
-         erod
+         erod, erod_dri
+   REAL, DIMENSION( ims:ime, jms:jme), &
+         INTENT(IN ) ::                                                    &
+         lai_vegmask
    REAL, DIMENSION( ims:ime, jms:jme,5),&
          INTENT(INOUT ) ::                                                 &
          dustin,seasin
@@ -189,12 +194,26 @@ CONTAINS
          INTENT(IN   ) ::                                                  &
                                                      clayfrac,             &
                                                      sandfrac,             &
+                                                     clayfrac_nga,         &
+                                                     sandfrac_nga,         &
                                                      snowh
    REAL, INTENT(IN   ) ::                            dust_alpha,           &
                                                      dust_gamma,           &
-                                                     dust_smtune
+                                                     dust_smtune,          &
+                                                     dust_ustune
+
   REAL, DIMENSION( config_flags%num_soil_layers ) ,                        &
       INTENT(IN   ) ::                               zs
+  REAL, DIMENSION( ims:ime , jms:jme )                   ,                 &
+         OPTIONAL,                                                         &
+         INTENT(  OUT) ::                                                  &
+                                                     tot_edust,            &
+                                                     afwa_dustloft
+   REAL, DIMENSION( ims:ime , kms:kme , jms:jme )        ,                 &
+         OPTIONAL,                                                         &
+         INTENT(  OUT) ::                                                  &
+                                                     tot_dust,             &
+                                                     vis_dust
   REAL, DIMENSION( ims:ime, config_flags%num_soil_layers, jms:jme ) ,      &
       INTENT(INOUT ) ::                             smois, tslb    
 
@@ -209,7 +228,7 @@ CONTAINS
                ebio_iso,ebio_oli,ebio_api,ebio_lim,ebio_xyl,           &
                ebio_hc3,ebio_ete,ebio_olt,ebio_ket,ebio_ald,           &
                ebio_hcho,ebio_eth,ebio_ora2,ebio_co,ebio_nr,ebio_no,   &
-               ebio_sesq,ebio_mbo,                                     & 
+               ebio_sesq,ebio_mbo,ebio_bpi,ebio_myrc,                  &
                ebio_c10h16,ebio_tol,ebio_bigalk, ebio_ch3oh,ebio_acet, &
                ebio_nh3,ebio_no2,ebio_c2h5oh,ebio_ch3cooh,ebio_mek,    &
                ebio_bigene,ebio_c2h6,ebio_c2h4,ebio_c3h6,ebio_c3h8,    &
@@ -292,6 +311,8 @@ CONTAINS
 
       REAL, DIMENSION(ims:ime, 8, jms:jme, num_vprm_in), INTENT(IN)     ::  vprm_in
       REAL, DIMENSION(ims:ime, 1,jms:jme, num_eghg_bio), INTENT(INOUT ) ::  eghg_bio
+
+      REAL, DIMENSION(ims:ime, jms:jme), INTENT(OUT)   :: dust_flux, seas_flux
 ! CO2
       REAL, DIMENSION(8) :: rad_vprm,lambda_vprm,alpha_vprm,resp_vprm
 ! CH4
@@ -696,9 +717,10 @@ CONTAINS
       CASE (DUSTGOCARTAFWA)
         CALL wrf_debug(15,'AFWA modified Gocart dust emissions')
         call gocart_dust_afwa_driver(ktau,dtstep,config_flags,julday,alt,t_phy,moist,u_phy,  &
-         v_phy,chem,rho_phy,dz8w,smois,u10,v10,p8w,erod,dustin,snowh,zs,   &
-         ivgtyp,isltyp,vegfra,xland,xlat,xlong,gsw,dx,g,emis_dust,         &
-         ust,znt,clayfrac,sandfrac,dust_alpha,dust_gamma,dust_smtune,      &
+         v_phy,chem,rho_phy,dz8w,smois,u10,v10,p8w,erod,erod_dri,dustin,snowh,zs,   &
+         ivgtyp,isltyp,vegfra,lai_vegmask,xland,xlat,xlong,gsw,dx,g,emis_dust,      &
+         ust,znt,clayfrac,sandfrac,clayfrac_nga,sandfrac_nga,afwa_dustloft,         &!EDH
+         tot_dust,tot_edust,vis_dust,dust_alpha,dust_gamma,dust_smtune,dust_ustune, &
          ids,ide, jds,jde, kds,kde,                                        &
          ims,ime, jms,jme, kms,kme,                                        &
          its,ite, jts,jte, kts,kte                                         )
@@ -839,7 +861,7 @@ CONTAINS
                ebio_c5h8,ebio_apinene,ebio_bpinene,ebio_toluene,       &
                ebio_ch3cho,ebio_ch3co2h,ebio_tbut2ene,ebio_c2h5cho,    &
                ebio_nc4h10, &
-               ebio_sesq, ebio_mbo,                                            &
+               ebio_sesq, ebio_mbo,ebio_bpi,ebio_myrc,                 &
                ebio_alk3, ebio_alk4, ebio_alk5, ebio_ole1, ebio_ole2,    &    
                ebio_aro1, ebio_aro2, ebio_ccho, ebio_meoh,               &    
                ebio_ethene, ebio_hcooh, ebio_terp, ebio_bald,            &    
@@ -863,8 +885,9 @@ CONTAINS
     gas_addemiss_select: SELECT CASE(config_flags%chem_opt)
     CASE (RADM2, RADM2_KPP, RADM2SORG, RADM2SORG_AQ, RADM2SORG_AQCHEM, RADM2SORG_KPP, &
           RACM_KPP, RACMPM_KPP, RACM_MIM_KPP, RACMSORG_AQ, RACMSORG_AQCHEM_KPP, RACM_ESRLSORG_AQCHEM_KPP, RACMSORG_KPP, &
-          RACM_SOA_VBS_KPP, RACM_ESRLSORG_KPP, MOZART_KPP, MOZCART_KPP, MOZART_MOSAIC_4BIN_VBS0_KPP, CRIMECH_KPP, &
-          CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP )
+          RACM_SOA_VBS_KPP, RACM_ESRLSORG_KPP, &
+          MOZART_KPP, MOZCART_KPP, MOZART_MOSAIC_4BIN_KPP, MOZART_MOSAIC_4BIN_AQ_KPP, &
+          CRIMECH_KPP, CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP )
        IF(config_flags%emiss_inpt_opt /= 3 ) then
        IF(config_flags%kemit .GT. kte-ksub) THEN
          k=config_flags%kemit
@@ -889,41 +912,9 @@ CONTAINS
             ids,ide, jds,jde, kds,kde,                                  &
             ims,ime, jms,jme, kms,kme,                                  &
             its,ite, jts,jte, kts,kte                                   )
-!      IF(config_flags%emiss_inpt_opt == EMISS_INPT_MOZCEM ) then
-!        do j=jts,jte  
-!          do i=its,ite  
-!             do k=kts,min(config_flags%kemit,kte-ksub)
-!               conv = alt(i,k,j)*dtstep/dz8w(i,k,j)
-!               chem(i,k,j,p_p10) = chem(i,k,j,p_p10) + emis_ant(i,k,j,p_e_pm_10)*conv
-!               chem(i,k,j,p_p25) = chem(i,k,j,p_p25) + emis_ant(i,k,j,p_e_pm_25)*conv
-!               chem(i,k,j,p_bc1) = chem(i,k,j,p_bc1) + emis_ant(i,k,j,p_e_bc)*conv
-!               chem(i,k,j,p_oc1) = chem(i,k,j,p_oc1) + emis_ant(i,k,j,p_e_oc)*conv
-!               chem(i,k,j,p_sulf) = chem(i,k,j,p_sulf) + emis_ant(i,k,j,p_e_sulf)*conv*mwdry/mw_so4_aer*1.e-3
-!            end do
-!          end do
-!        end do
-!      end if 
 
        end if ! emiss_inpt_opt /= 3
 
-! 20130725 acd_ck_bugfix start
-! > double counting - already added in add_anthropogenics (module_emissions_anthropogenic.F)
-!    IF(config_flags%emiss_opt == 10 ) then
-!       do j=jts,jte
-!          do i=its,ite
-!             do k=kts,min(config_flags%kemit,kte-ksub)
-!                conv = 4.828e-4/rho_phy(i,k,j)*dtstep/(dz8w(i,k,j)*60.)
-!
-!                chem(i,k,j,p_voca)  = chem(i,k,j,p_voca)                       &
-!                     +emis_ant(i,k,j,p_e_co_a)*conv*0.08*28./250.
-!                chem(i,k,j,p_vocbb)  = chem(i,k,j,p_vocbb)                       &
-!                     +emis_ant(i,k,j,p_e_co_bb)*conv*0.08*28./250.
-!
-!             end do
-!          end do
-!       end do
-!     endif
-! 20130725 acd_ck_bugfix end
 
 !For SAPRC99 need to define SAPRC99_addemiss_anthro and SAPRC99_addemiss_bio
 !so did not add saprcnov packages here
@@ -1544,7 +1535,8 @@ CONTAINS
           CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, &
           CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, & 
           CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ,SAPRC99_MOSAIC_4BIN_VBS2_KPP,&
-          CBMZ_MOSAIC_4BIN_VBS2_KPP,MOZART_MOSAIC_4BIN_VBS0_KPP, &
+          CBMZ_MOSAIC_4BIN_VBS2_KPP,&
+          MOZART_MOSAIC_4BIN_KPP, MOZART_MOSAIC_4BIN_AQ_KPP, &
           CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP   )
        call wrf_debug(15,'emissions_driver calling mosaic_addemiss')
        call mosaic_addemiss( id, dtstep, u10, v10, alt, dz8w, xland,     &
@@ -1555,6 +1547,7 @@ CONTAINS
             ktau,p8w,u_phy,v_phy,rho_phy,g,dx,erod,                      &
 !jdf
             dust_emiss_active, seasalt_emiss_active,                     &
+            dust_flux, seas_flux,                                        &
             ids,ide, jds,jde, kds,kde,                                   &
             ims,ime, jms,jme, kms,kme,                                   &
             its,ite, jts,jte, kts,kte                                    )

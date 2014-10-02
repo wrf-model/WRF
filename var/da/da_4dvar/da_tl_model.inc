@@ -119,8 +119,10 @@ subroutine da_tl_model ()
    call nl_set_sf_sfclay_physics (head_grid%id, 0)
    if (original_bl_pbl_physics .gt. 0) &
       call nl_set_bl_pbl_physics (head_grid%id, 98)
-   if (original_cu_physics .gt. 0) &
+   if (original_cu_physics .gt. 0) then
       call nl_set_cu_physics (head_grid%id, 98) 
+      head_grid%cudt = 0
+   endif
    !call nl_set_mp_zero_out (head_grid%id, 0)
    !call nl_set_sf_surface_physics (head_grid%id, 1)
    call nl_set_ifsnow (head_grid%id, 1)
@@ -138,6 +140,7 @@ subroutine da_tl_model ()
    call nl_set_sf_sfclay_physics (head_grid%id, original_sf_sfclay_physics)
    call nl_set_bl_pbl_physics (head_grid%id, original_bl_pbl_physics)
    call nl_set_cu_physics (head_grid%id, original_cu_physics)
+   head_grid%cudt = original_cudt
    !call nl_set_mp_zero_out (head_grid%id, original_mp_zero_out)
    !call nl_set_sf_surface_physics (head_grid%id, original_sf_surface_physics)
    call nl_set_ifsnow (head_grid%id, original_ifsnow)

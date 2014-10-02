@@ -399,12 +399,13 @@
 
 #if (EM_CORE == 1)
     IF ( ( switch .EQ. input_only ) .OR. ( switch .EQ. auxinput2_only ) .OR. ( switch .EQ. auxinput1_only ) ) THEN
-       ierr = 0
-       IF      ( ( switch .EQ. input_only ) .OR. ( switch .EQ. auxinput2_only ) ) THEN
+       ierr  = 0
+       ierr3 = 0
+       IF      ( ( ( switch .EQ. input_only ) .AND. ( grid%id .GE. 2 ) ) .OR. ( switch .EQ. auxinput2_only ) ) THEN
           CALL wrf_get_dom_ti_integer ( fid , 'I_PARENT_START' ,    itmp , 1 , icnt , ierr3 )
        ELSE IF ( ( switch .EQ. auxinput1_only ) .AND. ( grid%id .GE. 2 ) ) THEN
           CALL wrf_get_dom_ti_integer ( fid , 'i_parent_start' ,    itmp , 1 , icnt , ierr3 )
-       ELSE IF ( ( switch .EQ. auxinput1_only ) .AND. ( grid%id .EQ. 1 ) ) THEN
+       ELSE IF ( ( ( switch .EQ. auxinput1_only ) .OR. ( switch .EQ. input_only ) ) .AND. ( grid%id .EQ. 1 ) ) THEN
           itmp  = config_flags%i_parent_start
           ierr3 = 0 
        END IF
@@ -416,11 +417,11 @@
           WRITE(wrf_err_message,*)'i_parent_start from gridded input file  = ',itmp
           CALL wrf_message(wrf_err_message)
        END IF
-       IF      ( ( switch .EQ. input_only ) .OR. ( switch .EQ. auxinput2_only ) ) THEN
+       IF      ( ( ( switch .EQ. input_only ) .AND. ( grid%id .GE. 2 ) ) .OR. ( switch .EQ. auxinput2_only ) ) THEN
           CALL wrf_get_dom_ti_integer ( fid , 'J_PARENT_START' ,    itmp , 1 , icnt , ierr3 )
        ELSE IF ( ( switch .EQ. auxinput1_only ) .AND. ( grid%id .GE. 2 ) ) THEN
           CALL wrf_get_dom_ti_integer ( fid , 'j_parent_start' ,    itmp , 1 , icnt , ierr3 )
-       ELSE IF ( ( switch .EQ. auxinput1_only ) .AND. ( grid%id .EQ. 1 ) ) THEN
+       ELSE IF ( ( ( switch .EQ. auxinput1_only ) .OR. ( switch .EQ. input_only ) ) .AND. ( grid%id .EQ. 1 ) ) THEN
           itmp  = config_flags%j_parent_start
           ierr3 = 0 
        END IF
@@ -535,18 +536,8 @@
 
     CALL wrf_get_dom_ti_char ( fid , 'MMINLU', mminlu , ierr )
     IF ( ierr .NE. 0 ) THEN
-#ifdef WRF_CHEM
-      IF ( config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP ) then
-        WRITE(wrf_err_message,*)'MMINLU error on input - will set mminlu to MODIFIED_IGBP_MODIS_NOAH in share/input_wrf.F'
-        mminlu = "MODIFIED_IGBP_MODIS_NOAH"
-      ELSE
-        WRITE(wrf_err_message,*)'MMINLU error on input'
-        mminlu = " "
-      ENDIF
-#else
       WRITE(wrf_err_message,*)'MMINLU error on input'
       mminlu = " "
-#endif
       CALL wrf_debug ( 0 , wrf_err_message )
     ELSE IF ( ( ( mminlu(1:1) .GE. "A" ) .AND. ( mminlu(1:1) .LE. "Z" ) ) .OR. &
               ( ( mminlu(1:1) .GE. "a" ) .AND. ( mminlu(1:1) .LE. "z" ) ) .OR. &
@@ -567,7 +558,9 @@
     ! The default is set to 24 somewhere, from the number of categories
     ! in the traditional USGS dataset
 
-    IF ( switch .EQ. input_only ) THEN
+    IF ( ( switch .EQ. input_only )       .OR. & 
+         ( switch .EQ. auxinput1_only )   .OR. &
+         ( switch .EQ. auxinput2_only ) ) THEN
       call wrf_get_dom_ti_integer(fid, "NUM_LAND_CAT", num_land_cat_compare, 1, icnt, ierr)
       if ( (ierr .NE. 0) .OR. ( num_land_cat_compare .LT. 1 ) .OR. ( num_land_cat_compare .GT. 1000 ) ) then
         IF (mminlu == 'MODIFIED_IGBP_MODIS_NOAH') THEN
@@ -621,7 +614,7 @@
     END IF
 
 #if 0
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
     !  Dust erosion static data.
 
     CALL wrf_get_dom_ti_integer ( fid, 'EROSION_DIM', itmp, 1, icnt, ierr )
@@ -878,7 +871,7 @@
                auxinput3_only, auxinput4_only, auxinput5_only,  &
                auxinput6_only, auxinput7_only, auxinput8_only,  &
                auxinput9_only, auxinput10_only )
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
            IF( (config_flags%io_style_emissions .eq. 1) .and.                                &
               ((switch.eq.auxinput5_only) .or. (switch.eq.auxinput6_only) .or. &
                (switch.eq.auxinput7_only) .or. (switch.eq.auxinput8_only)) ) then
@@ -904,7 +897,7 @@
                 GOTO 3003
             ENDIF
 #endif
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
             ENDIF
 #endif
         CASE DEFAULT
@@ -917,19 +910,69 @@
 ! iterate forward to the correct interval in the input LBC file
 !
     IF ( switch .EQ. boundary_only ) THEN
-        CALL domain_clock_get( grid, current_time=currentTime )
-        CALL wrf_get_dom_td_char ( fid , 'THISBDYTIME' ,  current_date(1:19), this_datestr , ierr )
-        CALL wrf_atotime( this_datestr(1:19), grid%this_bdy_time )
-        CALL wrf_get_dom_td_char ( fid , 'NEXTBDYTIME' ,  current_date(1:19), next_datestr , ierr )
-        CALL wrf_atotime( next_datestr(1:19), grid%next_bdy_time )
+       IF ( config_flags%restart ) THEN
+          ! get WRF time of current_date position in boundary file
+          CALL wrf_atotime( current_date(1:19), time )
+          ! jump straight to the restart time
+          CALL domain_clock_get( grid, current_time=currentTime, &
+                                     current_timestr=currtimestr )
+          write(wrf_err_message, '(4a)') "WRF restart, LBC starts at ", &
+                                     & trim(current_date), " and restart starts at ", trim(currtimestr)
+          CALL wrf_debug( 0 , wrf_err_message )
+
+          !  While the lateral BC time is less than the restart time, advance forward to the next LBC time.
+
+          DO WHILE (time .lt. currentTime)
+              CALL wrf_get_next_time(fid, current_date , ierr)
+              CALL wrf_atotime(current_date(1:19), time)
+              WRITE(wrf_err_message,*) 'Advancing LBC file: wrf_get_next_time current_date: ',&
+                                      & current_date(1:19),' Status = ',ierr
+              IF ( ierr .EQ. 0 ) THEN
+                 CALL wrf_debug ( 0 , TRIM(wrf_err_message ) )
+              ELSE
+                 CALL wrf_error_fatal ( 'Cannot find a valid time to start the LBC during this restart' )
+              END IF
+          END DO
+
+          !  Now the LBC time either matches or is beyond the restart time.  If it matches, we are at the
+          !  right time.  If we have gone too far, then back up one time period, and we are good to go.
+
+          IF ( time .eq. currentTime ) THEN
+              CALL wrf_debug ( 0 , 'Found correct time, LBC matches the restart interval.' )
+          ELSE IF ( time .gt. currentTime ) THEN
+              CALL wrf_debug ( 0 , 'Went one LBC interval too far, backing up for restart.' )
+              CALL wrf_get_previous_time(fid, current_date , ierr)
+              IF ( ierr .EQ. 0 ) THEN
+                 CALL wrf_atotime(current_date(1:19), time)
+                 WRITE(wrf_err_message,*) 'LBC: wrf_get_prev_time current_date: ',&
+                                         & current_date(1:19),' Status = ',ierr
+                 CALL wrf_debug ( 0 , TRIM(wrf_err_message ) )
+                 CALL wrf_debug ( 0 , 'LBC is now correctly positioned for requested restart time' )
+              ELSE
+                 CALL wrf_error_fatal ( 'Problems backing up in the LBC file to find startig location for restart' )
+              END IF
+          END IF
+
+          CALL wrf_get_dom_td_char ( fid , 'THISBDYTIME' ,  current_date(1:19), this_datestr , ierr )
+          CALL wrf_atotime( this_datestr(1:19), grid%this_bdy_time )
+          CALL wrf_get_dom_td_char ( fid , 'NEXTBDYTIME' ,  current_date(1:19), next_datestr , ierr )
+          CALL wrf_atotime( next_datestr(1:19), grid%next_bdy_time )
+
+       ELSE IF ( .NOT. config_flags%restart ) THEN
+          CALL domain_clock_get( grid, current_time=currentTime )
+          CALL wrf_get_dom_td_char ( fid , 'THISBDYTIME' ,  current_date(1:19), this_datestr , ierr )
+          CALL wrf_atotime( this_datestr(1:19), grid%this_bdy_time )
+          CALL wrf_get_dom_td_char ( fid , 'NEXTBDYTIME' ,  current_date(1:19), next_datestr , ierr )
+          CALL wrf_atotime( next_datestr(1:19), grid%next_bdy_time )
+       END IF
 #if (DA_CORE != 1)
-        IF( currentTime .GE. grid%next_bdy_time ) THEN
+       IF( currentTime .GE. grid%next_bdy_time ) THEN
           IF ( wrf_dm_on_monitor() ) THEN
              write(a_message,*) 'THIS TIME ',this_datestr(1:19),'NEXT TIME ',next_datestr(1:19)
              CALL wrf_message ( a_message ) 
           END IF
           RETURN
-        ENDIF
+       ENDIF
 #endif
     ENDIF
 

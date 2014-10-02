@@ -103,8 +103,8 @@ RECURSIVE SUBROUTINE merge_sort ( obs , index , low , high, compare )
 
    break_it_down : IF ( high - low .GE. 2 ) THEN
 
-     write(1001,'("In  RECURSIVE SUBROUTINE merge_sort: high and low:",2i10)')&
-      high, low
+     !write(1001,'("In  RECURSIVE SUBROUTINE merge_sort: high and low:",2i10)')&
+     ! high, low
 
       !  Half-way point for the list that is too large to handle.
 

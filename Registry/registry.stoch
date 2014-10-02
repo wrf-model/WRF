@@ -88,9 +88,6 @@ rconfig   real        tau_sppt            namelist,stoch      max_domains     21
 rconfig   integer     stoch_force_global_opt       derived    1               0        - "stoch_force_global_opt" "global (across domains) stochastic forcing option"  ""
 
 # Package declarations
-package   no_stoch_force      stoch_force_opt==0                  -             -
+package   no_stoch_force      stoch_force_global_opt==0           -             -
 
-package   stoch_backscatter   stoch_force_opt==1                  -             state:ru_tendf_stoch,rv_tendf_stoch,rt_tendf_stoch,SPSTREAMFORCC,SPSTREAMFORCS,SPTFORCC,SPTFORCS,SPSTREAM_AMP,SPT_AMP,VERTSTRUCC,VERTSTRUCS,RU_IMAG,RU_REAL_xxx,RU_REAL_yyy,RU_IMAG_xxx,RU_IMAG_yyy,RV_IMAG,RV_REAL_xxx,RV_REAL_yyy,RV_IMAG_xxx,RV_IMAG_yyy,RT_IMAG,RT_REAL_xxx,RT_REAL_yyy,RT_IMAG_xxx,RT_IMAG_yyy,RU_REAL,RV_REAL,RT_REAL,VERTAMPT,VERTAMPUV
-
-package   perturb_tendf  stoch_force_opt==2                       -             state:ru_tendf_stoch,rv_tendf_stoch,rt_tendf_stoch,SPSTREAMFORCC,SPSTREAMFORCS,SPTFORCC,SPTFORCS,SPSTREAM_AMP,SPT_AMP,VERTSTRUCC,VERTSTRUCS,RU_IMAG,RU_REAL_xxx,RU_REAL_yyy,RU_IMAG_xxx,RU_IMAG_yyy,RV_IMAG,RV_REAL_xxx,RV_REAL_yyy,RV_IMAG_xxx,RV_IMAG_yyy,RT_IMAG,RT_REAL_xxx,RT_REAL_yyy,RT_IMAG_xxx,RT_IMAG_yyy,RU_REAL,RV_REAL,RT_REAL,VERTAMPT,VERTAMPUV
-
+package   stoch_backscatter   stoch_force_global_opt==1           -             state:ru_tendf_stoch,rv_tendf_stoch,rt_tendf_stoch,SPSTREAMFORCC,SPSTREAMFORCS,SPTFORCC,SPTFORCS,SPSTREAM_AMP,SPT_AMP,VERTSTRUCC,VERTSTRUCS,RU_IMAG,RU_REAL_xxx,RU_REAL_yyy,RU_IMAG_xxx,RU_IMAG_yyy,RV_IMAG,RV_REAL_xxx,RV_REAL_yyy,RV_IMAG_xxx,RV_IMAG_yyy,RT_IMAG,RT_REAL_xxx,RT_REAL_yyy,RT_IMAG_xxx,RT_IMAG_yyy,RU_REAL,RV_REAL,RT_REAL,VERTAMPT,VERTAMPUV

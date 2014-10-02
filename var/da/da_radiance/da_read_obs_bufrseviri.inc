@@ -438,7 +438,7 @@ subroutine da_read_obs_bufrseviri (obstype,iv,infile)
          p%loc              = loc
          p%landsea_mask     = 1
          p%scanpos          = nint(hdr(ilzah))+1.001_r_kind 
-         p%satzen           = hdr(ilzah)*deg2rad       ! satellite zenith angle (rad)
+         p%satzen           = hdr(ilzah)               ! satellite zenith angle (deg)
          p%satazi           = 0.0                      ! satellite azimuth angle (deg) 
          p%solzen           = 0.0                      ! solar zenith angle (deg)  
          p%solazi           = 0.0                      ! solar azimuth angle (deg) 

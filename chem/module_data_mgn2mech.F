@@ -56,6 +56,11 @@ MODULE module_data_mgn2mech
   REAL,    DIMENSION (n_megan2mozcart) :: mozcart_per_megan
   DATA p_of_mozcart / n_megan2mozcart*non_react /
 
+  INTEGER, PARAMETER :: n_megan2mozm = 142
+  INTEGER, DIMENSION (n_megan2mozm) :: p_of_megan2mozm, p_of_mozm
+  REAL,    DIMENSION (n_megan2mozm) :: mozm_per_megan
+  DATA p_of_mozm / n_megan2mozm*non_react /
+
   INTEGER, PARAMETER :: n_megan2saprcnov = 138
   INTEGER, DIMENSION (n_megan2saprcnov) :: p_of_megan2saprcnov, p_of_saprcnov
   REAL,    DIMENSION (n_megan2saprcnov) :: saprcnov_per_megan
@@ -234,6 +239,163 @@ CONTAINS
     p_of_megan2mozcart(142) = is_2met_s               ; p_of_mozcart(142) = p_dms      ; mozcart_per_megan(142)  =  1.  
 
   END SUBROUTINE get_megan2mozcart_table
+
+  SUBROUTINE get_megan2mozm_table
+!--------------------------------------------------------------------------
+! For MEGAN v2.04 species conversion to MOZART-MOSAIC species 
+! updated by Alma Hodzic 2013 for de-lumped mozart mechanism
+! checked by J. Orlando's
+!--------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------------------------------------
+!     Index of                                       Index of
+!     Molar ratio
+!     MEGAN species                                  MOZCART Species                             
+!-----------------------------------------------------------------------------------------------------------
+    p_of_megan2mozm(  1) = is_isoprene             ; p_of_mozm(  1) = p_isopr    ; mozm_per_megan(  1)  =  1.  
+    p_of_megan2mozm(  2) = is_myrcene              ; p_of_mozm(  2) = p_myrc     ; mozm_per_megan(  2)  =  1.  
+    p_of_megan2mozm(  3) = is_sabinene             ; p_of_mozm(  3) = p_bpin     ; mozm_per_megan(  3)  =  1.  
+    p_of_megan2mozm(  4) = is_limonene             ; p_of_mozm(  4) = p_limon    ; mozm_per_megan(  4)  =  1.  
+    p_of_megan2mozm(  5) = is_carene_3             ; p_of_mozm(  5) = p_apin     ; mozm_per_megan(  5)  =  1.  
+    p_of_megan2mozm(  6) = is_ocimene_t_b          ; p_of_mozm(  6) = p_myrc     ; mozm_per_megan(  6)  =  1.  
+    p_of_megan2mozm(  7) = is_pinene_b             ; p_of_mozm(  7) = p_bpin     ; mozm_per_megan(  7)  =  1.  
+    p_of_megan2mozm(  8) = is_pinene_a             ; p_of_mozm(  8) = p_apin     ; mozm_per_megan(  8)  =  1.  
+    p_of_megan2mozm(  9) = is_2met_styrene         ; p_of_mozm(  9) = p_limon    ; mozm_per_megan(  9)  =  1.  
+    p_of_megan2mozm( 10) = is_cymene_p             ; p_of_mozm( 10) = p_tol      ; mozm_per_megan( 10)  =  1.5 
+    p_of_megan2mozm( 11) = is_cymene_o             ; p_of_mozm( 11) = p_tol      ; mozm_per_megan( 11)  =  1.5 
+    p_of_megan2mozm( 12) = is_phellandrene_a       ; p_of_mozm( 12) = p_limon    ; mozm_per_megan( 12)  =  1.  
+    p_of_megan2mozm( 13) = is_thujene_a            ; p_of_mozm( 13) = p_apin     ; mozm_per_megan( 13)  =  1.  
+    p_of_megan2mozm( 14) = is_terpinene_a          ; p_of_mozm( 14) = p_limon    ; mozm_per_megan( 14)  =  1.  
+    p_of_megan2mozm( 15) = is_terpinene_g          ; p_of_mozm( 15) = p_limon    ; mozm_per_megan( 15)  =  1.  
+    p_of_megan2mozm( 16) = is_terpinolene          ; p_of_mozm( 16) = p_limon    ; mozm_per_megan( 16)  =  1.  
+    p_of_megan2mozm( 17) = is_phellandrene_b       ; p_of_mozm( 17) = p_limon    ; mozm_per_megan( 17)  =  1.  
+    p_of_megan2mozm( 18) = is_camphene             ; p_of_mozm( 18) = p_bpin     ; mozm_per_megan( 18)  =  1.  
+    p_of_megan2mozm( 19) = is_bornene              ; p_of_mozm( 19) = p_apin     ; mozm_per_megan( 19)  =  1.  
+    p_of_megan2mozm( 20) = is_fenchene_a           ; p_of_mozm( 20) = p_apin     ; mozm_per_megan( 20)  =  1.  
+    p_of_megan2mozm( 21) = is_ocimene_al           ; p_of_mozm( 21) = p_limon    ; mozm_per_megan( 21)  =  1.  
+    p_of_megan2mozm( 22) = is_ocimene_c_b          ; p_of_mozm( 22) = p_myrc     ; mozm_per_megan( 22)  =  1.  
+    p_of_megan2mozm( 23) = is_tricyclene           ; p_of_mozm( 23) = non_react  ; mozm_per_megan( 23)  =  1.  
+    p_of_megan2mozm( 24) = is_estragole            ; p_of_mozm( 24) = p_limon    ; mozm_per_megan( 24)  =  1.  
+    p_of_megan2mozm( 25) = is_camphor              ; p_of_mozm( 25) = p_bigalk   ; mozm_per_megan( 25)  =  2.  
+    p_of_megan2mozm( 26) = is_fenchone             ; p_of_mozm( 26) = p_bigalk   ; mozm_per_megan( 26)  =  2.  
+    p_of_megan2mozm( 27) = is_piperitone           ; p_of_mozm( 27) = p_apin     ; mozm_per_megan( 27)  =  1.  
+    p_of_megan2mozm( 28) = is_thujone_a            ; p_of_mozm( 28) = p_bigalk   ; mozm_per_megan( 28)  =  2.  
+    p_of_megan2mozm( 29) = is_thujone_b            ; p_of_mozm( 29) = p_bigalk   ; mozm_per_megan( 29)  =  2.  
+    p_of_megan2mozm( 30) = is_cineole_1_8          ; p_of_mozm( 30) = p_bigalk   ; mozm_per_megan( 30)  =  2.  
+    p_of_megan2mozm( 31) = is_borneol              ; p_of_mozm( 31) = p_bigalk   ; mozm_per_megan( 31)  =  2.  
+    p_of_megan2mozm( 32) = is_linalool             ; p_of_mozm( 32) = p_limon    ; mozm_per_megan( 32)  =  1.  
+    p_of_megan2mozm( 33) = is_terpineol_4          ; p_of_mozm( 33) = p_apin     ; mozm_per_megan( 33)  =  1.  
+    p_of_megan2mozm( 34) = is_terpineol_a          ; p_of_mozm( 34) = p_apin     ; mozm_per_megan( 34)  =  1.  
+    p_of_megan2mozm( 35) = is_linalool_oxd_c       ; p_of_mozm( 35) = p_limon    ; mozm_per_megan( 35)  =  1.
+    p_of_megan2mozm( 36) = is_linalool_oxd_t       ; p_of_mozm( 36) = p_limon    ; mozm_per_megan( 36)  =  1.
+    p_of_megan2mozm( 37) = is_ionone_b             ; p_of_mozm( 37) = p_limon    ; mozm_per_megan( 37)  =  1. 
+    p_of_megan2mozm( 38) = is_bornyl_act           ; p_of_mozm( 38) = p_bigalk   ; mozm_per_megan( 38)  =  2.7 
+    p_of_megan2mozm( 39) = is_farnescene_a         ; p_of_mozm( 39) = p_limon   ; mozm_per_megan( 39)  =  1. 
+    p_of_megan2mozm( 40) = is_caryophyllene_b      ; p_of_mozm( 40) = p_limon   ; mozm_per_megan( 40)  =  1. 
+    p_of_megan2mozm( 41) = is_acoradiene           ; p_of_mozm( 41) = p_limon   ; mozm_per_megan( 41)  =  1. 
+    p_of_megan2mozm( 42) = is_aromadendrene        ; p_of_mozm( 42) = p_bcary   ; mozm_per_megan( 42)  =  1. 
+    p_of_megan2mozm( 43) = is_bergamotene_a        ; p_of_mozm( 43) = p_bcary   ; mozm_per_megan( 43)  =  1. 
+    p_of_megan2mozm( 44) = is_bergamotene_b        ; p_of_mozm( 44) = p_bcary   ; mozm_per_megan( 44)  =  1. 
+    p_of_megan2mozm( 45) = is_bisabolene_a         ; p_of_mozm( 45) = p_bcary   ; mozm_per_megan( 45)  =  1. 
+    p_of_megan2mozm( 46) = is_bisabolene_b         ; p_of_mozm( 46) = p_bcary   ; mozm_per_megan( 46)  =  1. 
+    p_of_megan2mozm( 47) = is_bourbonene_b         ; p_of_mozm( 47) = p_bcary   ; mozm_per_megan( 47)  =  1. 
+    p_of_megan2mozm( 48) = is_cadinene_d           ; p_of_mozm( 48) = p_bcary   ; mozm_per_megan( 48)  =  1. 
+    p_of_megan2mozm( 49) = is_cadinene_g           ; p_of_mozm( 49) = p_bcary   ; mozm_per_megan( 49)  =  1. 
+    p_of_megan2mozm( 50) = is_cedrene_a            ; p_of_mozm( 50) = p_bcary   ; mozm_per_megan( 50)  =  1. 
+    p_of_megan2mozm( 51) = is_copaene_a            ; p_of_mozm( 51) = p_bcary   ; mozm_per_megan( 51)  =  1. 
+    p_of_megan2mozm( 52) = is_cubebene_a           ; p_of_mozm( 52) = p_bcary   ; mozm_per_megan( 52)  =  1. 
+    p_of_megan2mozm( 53) = is_cubebene_b           ; p_of_mozm( 53) = p_bcary   ; mozm_per_megan( 53)  =  1. 
+    p_of_megan2mozm( 54) = is_elemene_b            ; p_of_mozm( 54) = p_bcary   ; mozm_per_megan( 54)  =  1. 
+    p_of_megan2mozm( 55) = is_farnescene_b         ; p_of_mozm( 55) = p_bcary   ; mozm_per_megan( 55)  =  1. 
+    p_of_megan2mozm( 56) = is_germacrene_B         ; p_of_mozm( 56) = p_bcary   ; mozm_per_megan( 56)  =  1. 
+    p_of_megan2mozm( 57) = is_germacrene_D         ; p_of_mozm( 57) = p_bcary   ; mozm_per_megan( 57)  =  1. 
+    p_of_megan2mozm( 58) = is_gurjunene_b          ; p_of_mozm( 58) = p_bcary   ; mozm_per_megan( 58)  =  1. 
+    p_of_megan2mozm( 59) = is_humulene_a           ; p_of_mozm( 59) = p_bcary   ; mozm_per_megan( 59)  =  1. 
+    p_of_megan2mozm( 60) = is_humulene_g           ; p_of_mozm( 60) = p_bcary   ; mozm_per_megan( 60)  =  1. 
+    p_of_megan2mozm( 61) = is_isolongifolene       ; p_of_mozm( 61) = p_bcary   ; mozm_per_megan( 61)  =  1. 
+    p_of_megan2mozm( 62) = is_longifolene          ; p_of_mozm( 62) = p_bcary   ; mozm_per_megan( 62)  =  1. 
+    p_of_megan2mozm( 63) = is_longipinene          ; p_of_mozm( 63) = p_bcary   ; mozm_per_megan( 63)  =  1. 
+    p_of_megan2mozm( 64) = is_muurolene_a          ; p_of_mozm( 64) = p_bcary   ; mozm_per_megan( 64)  =  1. 
+    p_of_megan2mozm( 65) = is_muurolene_g          ; p_of_mozm( 65) = p_bcary   ; mozm_per_megan( 65)  =  1. 
+    p_of_megan2mozm( 66) = is_selinene_b           ; p_of_mozm( 66) = p_bcary   ; mozm_per_megan( 66)  =  1. 
+    p_of_megan2mozm( 67) = is_selinene_d           ; p_of_mozm( 67) = p_bcary   ; mozm_per_megan( 67)  =  1. 
+    p_of_megan2mozm( 68) = is_nerolidol_c          ; p_of_mozm( 68) = p_bcary   ; mozm_per_megan( 68)  =  1. 
+    p_of_megan2mozm( 69) = is_nerolidol_t          ; p_of_mozm( 69) = p_bcary   ; mozm_per_megan( 69)  =  1. 
+    p_of_megan2mozm( 70) = is_cedrol               ; p_of_mozm( 70) = p_bigalk   ; mozm_per_megan( 70)  =  3.  
+    p_of_megan2mozm( 71) = is_mbo_2m3e2ol          ; p_of_mozm( 71) = p_mbo    ; mozm_per_megan( 71)  =    1.
+    p_of_megan2mozm( 72) = is_methanol             ; p_of_mozm( 72) = p_ch3oh    ; mozm_per_megan( 72)  =  1.  
+    p_of_megan2mozm( 73) = is_acetone              ; p_of_mozm( 73) = p_acet     ; mozm_per_megan( 73)  =  1.  
+    p_of_megan2mozm( 74) = is_methane              ; p_of_mozm( 74) = non_react  ; mozm_per_megan( 74)  =  1.  
+    p_of_megan2mozm( 75) = is_ammonia              ; p_of_mozm( 75) = p_nh3      ; mozm_per_megan( 75)  =  1.  
+    p_of_megan2mozm( 76) = is_nitrous_oxd          ; p_of_mozm( 76) = non_react  ; mozm_per_megan( 76)  =  1.  
+    p_of_megan2mozm( 77) = is_nitric_oxd           ; p_of_mozm( 77) = p_no       ; mozm_per_megan( 77)  =  1.  
+    p_of_megan2mozm( 78) = is_acetaldehyde         ; p_of_mozm( 78) = p_ald      ; mozm_per_megan( 78)  =  1.  
+    p_of_megan2mozm( 79) = is_ethanol              ; p_of_mozm( 79) = p_c2h5oh   ; mozm_per_megan( 79)  =  1.  
+    p_of_megan2mozm( 80) = is_formic_acid          ; p_of_mozm( 80) = non_react  ; mozm_per_megan( 80)  =  1.  
+    p_of_megan2mozm( 81) = is_formaldehyde         ; p_of_mozm( 81) = p_hcho     ; mozm_per_megan( 81)  =  1.  
+    p_of_megan2mozm( 82) = is_acetic_acid          ; p_of_mozm( 82) = p_ch3cooh  ; mozm_per_megan( 82)  =  1.  
+    p_of_megan2mozm( 83) = is_mbo_3m2e1ol          ; p_of_mozm( 83) = p_mbo    ; mozm_per_megan( 83)  =  1.
+    p_of_megan2mozm( 84) = is_benzaldehyde         ; p_of_mozm( 84) = p_tol      ; mozm_per_megan( 84)  =  1.1 
+    p_of_megan2mozm( 85) = is_butanone_2           ; p_of_mozm( 85) = p_mek      ; mozm_per_megan( 85)  =  1.  
+    p_of_megan2mozm( 86) = is_decanal              ; p_of_mozm( 86) = p_bigalk   ; mozm_per_megan( 86)  =  3.  
+    p_of_megan2mozm( 87) = is_dodecene_1           ; p_of_mozm( 87) = p_bigene   ; mozm_per_megan( 87)  =  2.25
+    p_of_megan2mozm( 88) = is_geranyl_acetone      ; p_of_mozm( 88) = p_limon   ; mozm_per_megan( 88)  =  1. 
+    p_of_megan2mozm( 89) = is_heptanal             ; p_of_mozm( 89) = p_bigalk   ; mozm_per_megan( 89)  =  2.  
+    p_of_megan2mozm( 90) = is_heptane              ; p_of_mozm( 90) = p_bigalk   ; mozm_per_megan( 90)  =  2.  
+    p_of_megan2mozm( 91) = is_hexane               ; p_of_mozm( 91) = p_bigalk   ; mozm_per_megan( 91)  =  1.5 
+    p_of_megan2mozm( 92) = is_met_benzoate         ; p_of_mozm( 92) = p_tol      ; mozm_per_megan( 92)  =  1.5 
+    p_of_megan2mozm( 93) = is_met_heptenone        ; p_of_mozm( 93) = p_bigene   ; mozm_per_megan( 93)  =  1.75
+    p_of_megan2mozm( 94) = is_neryl_acetone        ; p_of_mozm( 94) = p_bigene   ; mozm_per_megan( 94)  =  2.7 
+    p_of_megan2mozm( 95) = is_nonanal              ; p_of_mozm( 95) = p_bigalk   ; mozm_per_megan( 95)  =  2.5 
+    p_of_megan2mozm( 96) = is_nonenal              ; p_of_mozm( 96) = p_bigene   ; mozm_per_megan( 96)  =  2.  
+    p_of_megan2mozm( 97) = is_octanal              ; p_of_mozm( 97) = p_bigalk   ; mozm_per_megan( 97)  =  2.3 
+    p_of_megan2mozm( 98) = is_octanol              ; p_of_mozm( 98) = p_bigalk   ; mozm_per_megan( 98)  =  2.3 
+    p_of_megan2mozm( 99) = is_octenol_1e3ol        ; p_of_mozm( 99) = p_bigene   ; mozm_per_megan( 99)  =  1.7 
+    p_of_megan2mozm(100) = is_oxopentanal          ; p_of_mozm(100) = p_mek      ; mozm_per_megan(100)  =  1.4 
+    p_of_megan2mozm(101) = is_pentane              ; p_of_mozm(101) = p_bigalk   ; mozm_per_megan(101)  =  1.25
+    p_of_megan2mozm(102) = is_phenyl_cco           ; p_of_mozm(102) = p_tol      ; mozm_per_megan(102)  =  1.3 
+    p_of_megan2mozm(103) = is_pyruvic_acid         ; p_of_mozm(103) = non_react  ; mozm_per_megan(103)  =  1.  
+    p_of_megan2mozm(104) = is_terpinyl_act_a       ; p_of_mozm(104) = p_apin   ; mozm_per_megan(104)  =  1. 
+    p_of_megan2mozm(105) = is_tetradecene_1        ; p_of_mozm(105) = p_bigene   ; mozm_per_megan(105)  =  3.5 
+    p_of_megan2mozm(106) = is_toluene              ; p_of_mozm(106) = p_tol      ; mozm_per_megan(106)  =  1.  
+    p_of_megan2mozm(107) = is_carbon_monoxide      ; p_of_mozm(107) = p_co       ; mozm_per_megan(107)  =  1.  
+    p_of_megan2mozm(108) = is_butene               ; p_of_mozm(108) = p_bigene   ; mozm_per_megan(108)  =  .8  
+    p_of_megan2mozm(109) = is_ethane               ; p_of_mozm(109) = p_c2h6     ; mozm_per_megan(109)  =  1.  
+    p_of_megan2mozm(110) = is_ethene               ; p_of_mozm(110) = p_c2h4     ; mozm_per_megan(110)  =  1.  
+    p_of_megan2mozm(111) = is_hydrogen_cyanide     ; p_of_mozm(111) = non_react  ; mozm_per_megan(111)  =  1.  
+    p_of_megan2mozm(112) = is_propane              ; p_of_mozm(112) = p_c3h8     ; mozm_per_megan(112)  =  1.  
+    p_of_megan2mozm(113) = is_propene              ; p_of_mozm(113) = p_c3h6     ; mozm_per_megan(113)  =  1.  
+    p_of_megan2mozm(114) = is_carbon_2s            ; p_of_mozm(114) = non_react  ; mozm_per_megan(114)  =  1.  
+    p_of_megan2mozm(115) = is_carbonyl_s           ; p_of_mozm(115) = non_react  ; mozm_per_megan(115)  =  1.  
+    p_of_megan2mozm(116) = is_diallyl_2s           ; p_of_mozm(116) = p_bigene   ; mozm_per_megan(116)  =  .66 
+    p_of_megan2mozm(117) = is_diallyl_2s           ; p_of_mozm(117) = p_so2      ; mozm_per_megan(117)  =  1.53
+    p_of_megan2mozm(118) = is_2met_2s              ; p_of_mozm(118) = p_c2h6     ; mozm_per_megan(118)  =  1.  
+    p_of_megan2mozm(119) = is_2met_2s              ; p_of_mozm(119) = p_so2      ; mozm_per_megan(119)  =  1.  
+    p_of_megan2mozm(120) = is_met_chloride         ; p_of_mozm(120) = non_react  ; mozm_per_megan(120)  =  1.  
+    p_of_megan2mozm(121) = is_met_bromide          ; p_of_mozm(121) = non_react  ; mozm_per_megan(121)  =  1.  
+    p_of_megan2mozm(122) = is_met_iodide           ; p_of_mozm(122) = non_react  ; mozm_per_megan(122)  =  1.  
+    p_of_megan2mozm(123) = is_hydrogen_s           ; p_of_mozm(123) = p_so2      ; mozm_per_megan(123)  =  .5  
+    p_of_megan2mozm(124) = is_met_mercaptan        ; p_of_mozm(124) = p_so2      ; mozm_per_megan(124)  =  .75 
+    p_of_megan2mozm(125) = is_met_propenyl_2s      ; p_of_mozm(125) = p_c3h6     ; mozm_per_megan(125)  =  2.8 
+    p_of_megan2mozm(126) = is_met_propenyl_2s      ; p_of_mozm(126) = p_so2      ; mozm_per_megan(126)  =  1.8 
+    p_of_megan2mozm(127) = is_pppp_2s              ; p_of_mozm(127) = p_c3h6     ; mozm_per_megan(127)  =  3.5 
+    p_of_megan2mozm(128) = is_pppp_2s              ; p_of_mozm(128) = p_so2      ; mozm_per_megan(128)  =  2.3 
+    p_of_megan2mozm(129) = is_2met_nonatriene      ; p_of_mozm(129) = p_limon   ; mozm_per_megan(129)  =  1. 
+    p_of_megan2mozm(130) = is_met_salicylate       ; p_of_mozm(130) = p_tol      ; mozm_per_megan(130)  =  1.6 
+    p_of_megan2mozm(131) = is_indole               ; p_of_mozm(131) = non_react  ; mozm_per_megan(131)  =  1.  
+    p_of_megan2mozm(132) = is_jasmone              ; p_of_mozm(132) = p_limon   ; mozm_per_megan(132)  =  1. 
+    p_of_megan2mozm(133) = is_met_jasmonate        ; p_of_mozm(133) = p_limon   ; mozm_per_megan(133)  =  1. 
+    p_of_megan2mozm(134) = is_3met_3dctt           ; p_of_mozm(134) = p_bigene   ; mozm_per_megan(134)  =  3.  
+    p_of_megan2mozm(135) = is_hexanal              ; p_of_mozm(135) = p_bigalk   ; mozm_per_megan(135)  =  1.8 
+    p_of_megan2mozm(136) = is_hexanol_1            ; p_of_mozm(136) = p_bigalk   ; mozm_per_megan(136)  =  1.8 
+    p_of_megan2mozm(137) = is_hexenal_c3           ; p_of_mozm(137) = p_bigene   ; mozm_per_megan(137)  =  1.4 
+    p_of_megan2mozm(138) = is_hexenal_t2           ; p_of_mozm(138) = p_bigene   ; mozm_per_megan(138)  =  1.4 
+    p_of_megan2mozm(139) = is_hexenol_c3           ; p_of_mozm(139) = p_bigene   ; mozm_per_megan(139)  =  1.4 
+    p_of_megan2mozm(140) = is_hexenyl_act_c3       ; p_of_mozm(140) = p_bigene   ; mozm_per_megan(140)  =  2.  
+    p_of_megan2mozm(141) = is_mbo_3m3e1ol          ; p_of_mozm(141) = p_mbo    ; mozm_per_megan(141)  =  1.
+    p_of_megan2mozm(142) = is_2met_s               ; p_of_mozm(142) = p_dms      ; mozm_per_megan(142)  =  1.  
+
+  END SUBROUTINE get_megan2mozm_table
 
   SUBROUTINE get_megan2cbmz_table
 !--------------------------------------------------------------------

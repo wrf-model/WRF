@@ -1,8 +1,16 @@
 Module module_data_gocart_dust
   INTEGER, PARAMETER :: ndust=5,ndcls=3,ndsrc=1,maxstypes=100
   INTEGER, PARAMETER :: ngsalt=9
-  real, dimension (maxstypes) :: drypoint
-  real, dimension (maxstypes) :: porosity
+! GAC-->
+! 20130219 - Drypoint no longer needed.  Use NOAA porosity for all schemes to
+! allow use of AFWA dust scheme by all LSMs, not just NOAA and RUC.
+!  real, dimension (maxstypes) :: drypoint
+!  real, dimension (maxstypes) :: porosity
+  real, dimension (19), PARAMETER :: porosity=(/0.339, 0.421, 0.434, 0.476, 0.476, 0.439, &
+                                                0.404, 0.464, 0.465, 0.406, 0.468, 0.468, &
+                                                0.439, 1.000, 0.200, 0.421, 0.468, 0.200, &
+                                                0.339/)
+! <--GAC
 
   REAL :: ch_dust(ndust,12)
   REAL,    PARAMETER :: dyn_visc = 1.5E-5

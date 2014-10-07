@@ -901,6 +901,23 @@ LOGICAL FUNCTION ncd_is_first_operation( DataHandle )
     RETURN
 END FUNCTION ncd_is_first_operation
 
+subroutine upgrade_filename(FileName)
+  implicit none
+
+  character*(*), intent(inout) :: FileName
+  character(len=256)           :: newFileName
+  integer :: i
+
+  write(newFileName, fmt="(2a)") FileName, ".nc"
+  do i = 1, len_trim(newFileName)
+     if(newFileName(i:i) == '-') newFileName(i:i) = '_'
+     if(newFileName(i:i) == ':') newFileName(i:i) = '_'
+  enddo
+
+  FileName = newFileName
+
+end subroutine upgrade_filename
+
 end module ext_ncd_support_routines
 
 subroutine TransposeToR4(IO,MemoryOrder,di, Field,l1,l2,m1,m2,n1,n2 &
@@ -1015,7 +1032,7 @@ subroutine ext_ncd_open_for_read_begin( FileName, Comm, IOComm, SysDepInfo, Data
   implicit none
   include 'wrf_status_codes.h'
   include 'netcdf.inc'
-  character*(*)         ,intent(IN)      :: FileName
+  character*(*)         ,intent(INOUT)   :: FileName
   integer               ,intent(IN)      :: Comm
   integer               ,intent(IN)      :: IOComm
   character*(*)         ,intent(in)      :: SysDepInfo
@@ -1039,6 +1056,8 @@ subroutine ext_ncd_open_for_read_begin( FileName, Comm, IOComm, SysDepInfo, Data
 #ifdef USE_NETCDF4_FEATURES
   integer                                :: open_mode
 #endif
+
+  call upgrade_filename(FileName)
 
   if(WrfIOnotInitialized) then
     Status = WRF_IO_NOT_INITIALIZED 
@@ -1153,7 +1172,7 @@ subroutine ext_ncd_open_for_update( FileName, Comm, IOComm, SysDepInfo, DataHand
   implicit none
   include 'wrf_status_codes.h'
   include 'netcdf.inc'
-  character*(*)         ,intent(IN)      :: FileName
+  character*(*)         ,intent(INOUT)   :: FileName
   integer               ,intent(IN)      :: Comm
   integer               ,intent(IN)      :: IOComm
   character*(*)         ,intent(in)      :: SysDepInfo
@@ -1177,6 +1196,8 @@ subroutine ext_ncd_open_for_update( FileName, Comm, IOComm, SysDepInfo, DataHand
 #ifdef USE_NETCDF4_FEATURES
   integer                                :: open_mode
 #endif
+
+  call upgrade_filename(FileName)
 
   if(WrfIOnotInitialized) then
     Status = WRF_IO_NOT_INITIALIZED 
@@ -1310,15 +1331,7 @@ SUBROUTINE ext_ncd_open_for_write_begin(FileName,Comm,IOComm,SysDepInfo,DataHand
                                        cache_preemption = 100
 #endif
 
-  character(len=256)                :: newFileName
-
-  write(newFileName, fmt="(2a)") FileName, ".nc"
-  do i = 1, len_trim(newFileName)
-     if(newFileName(i:i) == '-') newFileName(i:i) = '_'
-     if(newFileName(i:i) == ':') newFileName(i:i) = '_'
-  enddo
-
-  FileName = newFileName
+  call upgrade_filename(FileName)
 
   if(WrfIOnotInitialized) then
     Status = WRF_IO_NOT_INITIALIZED 
@@ -3030,10 +3043,12 @@ subroutine ext_ncd_inquire_opened( DataHandle, FileName , FileStatus, Status )
   implicit none
   include 'wrf_status_codes.h'
   integer               ,intent(in)     :: DataHandle
-  character*(*)         ,intent(in)     :: FileName
+  character*(*)         ,intent(inout)  :: FileName
   integer               ,intent(out)    :: FileStatus
   integer               ,intent(out)    :: Status
   type(wrf_data_handle) ,pointer        :: DH
+
+  call upgrade_filename(FileName)
 
   call GetDH(DataHandle,DH,Status)
   if(Status /= WRF_NO_ERR) then

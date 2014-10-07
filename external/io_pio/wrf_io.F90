@@ -49,13 +49,30 @@ subroutine ext_pio_open_for_read_commit(DataHandle, Status)
   return
 end subroutine ext_pio_open_for_read_commit
 
+subroutine upgrade_filename(FileName)
+  implicit none
+
+  character*(*), intent(inout) :: FileName
+  character(len=256)           :: newFileName
+  integer :: i
+
+  write(newFileName, fmt="(2a)") FileName, ".nc"
+  do i = 1, len_trim(newFileName)
+     if(newFileName(i:i) == '-') newFileName(i:i) = '_'
+     if(newFileName(i:i) == ':') newFileName(i:i) = '_'
+  enddo
+
+  FileName = newFileName
+
+end subroutine upgrade_filename
+
 subroutine ext_pio_open_for_read_begin( FileName, grid, SysDepInfo, DataHandle, Status)
   use wrf_data_pio
   use pio_routines
   use module_domain
   implicit none
   include 'wrf_status_codes.h'
-  character*(*)         ,intent(IN)      :: FileName
+  character*(*)         ,intent(INOUT)   :: FileName
   TYPE(domain)                           :: grid
   character*(*)         ,intent(in)      :: SysDepInfo
   integer               ,intent(out)     :: DataHandle
@@ -74,6 +91,8 @@ subroutine ext_pio_open_for_read_begin( FileName, grid, SysDepInfo, DataHandle, 
   integer                                :: ndims, unlimitedDimID
   character(PIO_MAX_NAME)                :: Name
 
+  call upgrade_filename(FileName)
+
   if(WrfIOnotInitialized) then
     Status = WRF_IO_NOT_INITIALIZED 
     write(msg,*) 'ext_pio_ioinit was not called ',__FILE__,', line', __LINE__
@@ -90,6 +109,7 @@ subroutine ext_pio_open_for_read_begin( FileName, grid, SysDepInfo, DataHandle, 
   if(DH%first_operation) then
      call initialize_pio(grid, DH)
      call define_pio_iodesc(grid, DH)
+     DH%first_operation = .false.
   end if
 
   stat = pio_openfile(DH%iosystem, DH%file_handle, pio_iotype_pnetcdf, FileName)
@@ -213,7 +233,7 @@ subroutine ext_pio_open_for_update( FileName, grid, SysDepInfo, DataHandle, Stat
   use module_domain
   implicit none
   include 'wrf_status_codes.h'
-  character*(*)         ,intent(IN)      :: FileName
+  character*(*)         ,intent(INOUT)   :: FileName
   TYPE(domain)                           :: grid
   character*(*)         ,intent(in)      :: SysDepInfo
   integer               ,intent(out)     :: DataHandle
@@ -232,6 +252,8 @@ subroutine ext_pio_open_for_update( FileName, grid, SysDepInfo, DataHandle, Stat
   integer                                :: ndims, unlimitedDimID
   character(PIO_MAX_NAME)                :: Name
 
+  call upgrade_filename(FileName)
+
   if(WrfIOnotInitialized) then
     Status = WRF_IO_NOT_INITIALIZED 
     write(msg,*) 'ext_pio_ioinit was not called ',__FILE__,', line', __LINE__
@@ -245,10 +267,11 @@ subroutine ext_pio_open_for_update( FileName, grid, SysDepInfo, DataHandle, Stat
     return
   endif
 
- !if(DH%first_operation) then
- !   call initialize_pio(grid, DH)
- !   call define_pio_iodesc(grid, DH)
- !end if
+  if(DH%first_operation) then
+     call initialize_pio(grid, DH)
+     call define_pio_iodesc(grid, DH)
+     DH%first_operation = .false.
+  end if
 
   stat = pio_openfile(DH%iosystem, DH%file_handle, pio_iotype_pnetcdf, FileName)
   call netcdf_err(stat,Status)
@@ -367,16 +390,9 @@ SUBROUTINE ext_pio_open_for_write_begin(FileName,grid,SysDepInfo,DataHandle,Stat
   integer                           :: info, ierr   ! added for Blue Gene (see PIO_CREAT below)
   character*128                     :: idstr,ntasks_x_str,loccomm_str
   integer                           :: gridid
-  character(len=256)                :: newFileName
   integer local_communicator_x, ntasks_x
 
-  write(newFileName, fmt="(2a)") FileName, ".nc"
-  do i = 1, len_trim(newFileName)
-     if(newFileName(i:i) == '-') newFileName(i:i) = '_'
-     if(newFileName(i:i) == ':') newFileName(i:i) = '_'
-  enddo
-
-  FileName = newFileName
+  call upgrade_filename(FileName)
 
   if(WrfIOnotInitialized) then
     Status = WRF_IO_NOT_INITIALIZED 
@@ -396,11 +412,12 @@ SUBROUTINE ext_pio_open_for_write_begin(FileName,grid,SysDepInfo,DataHandle,Stat
   if(DH%first_operation) then
      call initialize_pio(grid, DH)
      call define_pio_iodesc(grid, DH)
+     DH%first_operation = .false.
   end if
 
  !call mpi_info_create( info, ierr )
   stat = pio_CreateFile(DH%iosystem, DH%file_handle, &
-                        pio_iotype_pnetcdf, newFileName, PIO_64BIT_OFFSET)
+                        pio_iotype_pnetcdf, FileName, PIO_64BIT_OFFSET)
  !call mpi_info_free( info, ierr)
 
   call netcdf_err(stat,Status)
@@ -415,7 +432,7 @@ SUBROUTINE ext_pio_open_for_write_begin(FileName,grid,SysDepInfo,DataHandle,Stat
  !stat = nf90_set_fill(DH%file_handle, NF90_NOFILL, i)
 
   DH%FileStatus  = WRF_FILE_OPENED_NOT_COMMITTED
-  DH%FileName    = newFileName
+  DH%FileName    = FileName
   stat = pio_def_dim(DH%file_handle, DH%DimUnlimName, PIO_UNLIMITED, DH%DimUnlimID)
  !stat = pio_def_dim(DH%file_handle, DH%DimUnlimName, 1, DH%DimUnlimID)
   call netcdf_err(stat,Status)
@@ -7998,7 +8015,7 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
     end select
 
     VDimIDs(NDim+1) = DH%DimUnlimID
-   !write(unit=0, fmt='(//3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+   !write(unit=0, fmt='(/3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
    !write(unit=0, fmt='(3a,i6)') '1 Define Var <', trim(Var), '> as NVar:', DH%NumVars
     stat = pio_def_var(DH%file_handle,VarName,XType,VDimIDs(1:NDim+1),DH%descVar(DH%NumVars))
     call netcdf_err(stat,Status)
@@ -8233,15 +8250,15 @@ subroutine ext_pio_read_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
     write(msg,*) 'Warning READ WRITE ONLY FILE in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( WARN , TRIM(msg))
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_READ .OR. DH%FileStatus == WRF_FILE_OPENED_FOR_UPDATE ) then
-    call pio_seterrorhandling(DH%file_handle, PIO_BCAST_ERROR)
+   !call pio_seterrorhandling(DH%file_handle, PIO_BCAST_ERROR)
     stat = pio_inq_varid(DH%file_handle,VarName,DH%descVar(DH%CurrentVariable))
-    call pio_seterrorhandling(DH%file_handle, PIO_INTERNAL_ERROR)
-    if(stat /= PIO_NOERR) then
-       DH%descVar(DH%CurrentVariable)%varID = 0
-       write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__,' Varname, ',Varname, ' not found in file.'
-       call wrf_debug ( WARN , TRIM(msg))
-       return
-    endif
+   !call pio_seterrorhandling(DH%file_handle, PIO_INTERNAL_ERROR)
+   !if(stat /= PIO_NOERR) then
+   !   DH%descVar(DH%CurrentVariable)%varID = 0
+   !   write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__,' Varname, ',Varname, ' not found in file.'
+   !   call wrf_debug ( WARN , TRIM(msg))
+   !   return
+   !endif
 
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
@@ -8480,10 +8497,12 @@ subroutine ext_pio_inquire_opened( DataHandle, FileName , FileStatus, Status )
   implicit none
   include 'wrf_status_codes.h'
   integer               ,intent(in)     :: DataHandle
-  character*(*)         ,intent(in)     :: FileName
+  character*(*)         ,intent(inout)  :: FileName
   integer               ,intent(out)    :: FileStatus
   integer               ,intent(out)    :: Status
   type(wrf_data_handle) ,pointer        :: DH
+
+  call upgrade_filename(FileName)
 
   call GetDH(DataHandle,DH,Status)
   if(Status /= WRF_NO_ERR) then

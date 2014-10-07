@@ -93,6 +93,7 @@
     INTEGER seconds, seconds2, iring
     INTEGER :: nio_tasks_per_group
 
+    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
 
     WRITE(wrf_err_message,*)'output_wrf: begin, fid = ',fid
     CALL wrf_debug( 300 , wrf_err_message )
@@ -361,8 +362,18 @@
            ELSE
              write(alarmname,'("WRF_ALARM_SECS_TIL_NEXT_RING_",i2)')i
            ENDIF
-           CALL WRFU_TimeIntervalGet(interval,S=seconds)
-           CALL WRFU_TimeIntervalGet(tmpinterval,S=seconds2)
+
+#ifdef DM_PARALLEL
+           if(wrf_dm_on_monitor()) then
+#endif
+             CALL WRFU_TimeIntervalGet(interval,S=seconds)
+             CALL WRFU_TimeIntervalGet(tmpinterval,S=seconds2)
+#ifdef DM_PARALLEL
+           endif
+
+           call wrf_dm_bcast_integer(seconds, 1)
+           call wrf_dm_bcast_integer(seconds2, 1)
+#endif
            IF ( seconds .GE. 1700000000 .OR. seconds .LE. -1700000000 ) THEN   ! it is a forever value, do not change it
              CALL wrf_put_dom_ti_integer( fid, TRIM(alarmname), seconds, 1, ierr )
            ELSE

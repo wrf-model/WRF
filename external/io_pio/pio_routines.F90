@@ -499,6 +499,8 @@ subroutine find_iodesc(DH,MemoryOrder,Stagger,FieldTYpe,whole)
                     DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_soil_layers_real
                  else if(MDL_CPL_VAR == DH%vartype(DH%CurrentVariable)) then
                     DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_mdl_cpl_real
+                 else if(ENSEMBLE_VAR == DH%vartype(DH%CurrentVariable)) then
+                    DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_ensemble_real
                  else
                     DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_w_real
                  endif
@@ -520,6 +522,8 @@ subroutine find_iodesc(DH,MemoryOrder,Stagger,FieldTYpe,whole)
                     DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_soil_layers_double
                  else if(MDL_CPL_VAR == DH%vartype(DH%CurrentVariable)) then
                     DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_mdl_cpl_double
+                 else if(ENSEMBLE_VAR == DH%vartype(DH%CurrentVariable)) then
+                    DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_ensemble_double
                  else
                     DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_w_double
                  endif
@@ -541,6 +545,8 @@ subroutine find_iodesc(DH,MemoryOrder,Stagger,FieldTYpe,whole)
                     DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_soil_layers_int
                  else if(MDL_CPL_VAR == DH%vartype(DH%CurrentVariable)) then
                     DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_mdl_cpl_int
+                 else if(ENSEMBLE_VAR == DH%vartype(DH%CurrentVariable)) then
+                    DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_ensemble_int
                  else
                     DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_w_int
                  endif
@@ -562,6 +568,8 @@ subroutine find_iodesc(DH,MemoryOrder,Stagger,FieldTYpe,whole)
                     DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_soil_layers_int
                  else if(MDL_CPL_VAR == DH%vartype(DH%CurrentVariable)) then
                     DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_mdl_cpl_int
+                 else if(ENSEMBLE_VAR == DH%vartype(DH%CurrentVariable)) then
+                    DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_ensemble_int
                  else
                     DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_w_int
                  endif
@@ -1264,6 +1272,9 @@ subroutine define_pio_iodesc(grid, DH)
            dimension((ime - ims + 1) * (jme - jms + 1) * grid%num_ext_model_couple_dom) &
            :: compdof_3d_mdl_cpl
    integer(kind=PIO_Offset), &
+           dimension((ime - ims + 1) * (jme - jms + 1) * grid%ensdim) &
+           :: compdof_3d_ensemble
+   integer(kind=PIO_Offset), &
            dimension((jme - jms + 1) * (kme - kms + 1) * grid%spec_bdy_width ) &
            :: compdof_3d_xsz, compdof_3d_xez
    integer(kind=PIO_Offset), &
@@ -1283,6 +1294,7 @@ subroutine define_pio_iodesc(grid, DH)
    integer :: dims3d_yb(3), dims2d_yb(2)
    integer :: dims3d_land(3), dims3d_soil(3), dims3d_soil_layers(3)
    integer :: dims3d_mdl_cpl(3)
+   integer :: dims3d_ensemble(3)
    integer :: lite, ljte, lkte
    integer :: i, j, k, n, npos
 
@@ -1318,6 +1330,10 @@ subroutine define_pio_iodesc(grid, DH)
    dims3d_mdl_cpl(1) = dims3d(1)
    dims3d_mdl_cpl(2) = dims3d(2)
    dims3d_mdl_cpl(3) = grid%num_ext_model_couple_dom
+
+   dims3d_ensemble(1) = dims3d(1)
+   dims3d_ensemble(2) = dims3d(2)
+   dims3d_ensemble(3) = grid%ensdim
 
    dims2d(1) = dims3d(1)
    dims2d(2) = dims3d(2)
@@ -1393,6 +1409,15 @@ subroutine define_pio_iodesc(grid, DH)
       enddo
    enddo
 
+   do k = 1, dims3d_ensemble(3)
+   do j = jms, jme
+   do i = ims, ime
+      npos = (i - ims + 1) + (ime - ims + 1) * (j - 1 + (jme - jms + 1) * (k - 1))
+      compdof_3d_ensemble(npos) = 0
+   enddo
+   enddo
+   enddo
+
    do n = 1, grid%spec_bdy_width
       do i = ims, ime
          npos = i - ims + 1 + (ime - ims + 1) * (n - 1)
@@ -1463,6 +1488,15 @@ subroutine define_pio_iodesc(grid, DH)
          compdof_3d_mdl_cpl(npos) = i + dims3d_mdl_cpl(1) * (j - 1 + dims3d_mdl_cpl(2) * (k - 1))
       enddo
       enddo
+   enddo
+
+   do k = 1, dims3d_ensemble(3)
+   do j = jts, ljte
+   do i = its, lite
+      npos = (i - ims + 1) + (ime - ims + 1) * (j - 1 + (jme - jms + 1) * (k - 1))
+      compdof_3d_ensemble(npos) = i + dims3d_ensemble(1) * (j - 1 + dims3d_ensemble(2) * (k - 1))
+   enddo
+   enddo
    enddo
 
    if(1 == its) then
@@ -1567,6 +1601,10 @@ subroutine define_pio_iodesc(grid, DH)
    call PIO_initdecomp(DH%iosystem, PIO_int,    dims3d_mdl_cpl, compdof_3d_mdl_cpl, DH%iodesc3d_mdl_cpl_int)
    call PIO_initdecomp(DH%iosystem, PIO_real,   dims3d_mdl_cpl, compdof_3d_mdl_cpl, DH%iodesc3d_mdl_cpl_real)
    call PIO_initdecomp(DH%iosystem, PIO_double, dims3d_mdl_cpl, compdof_3d_mdl_cpl, DH%iodesc3d_mdl_cpl_double)
+
+   call PIO_initdecomp(DH%iosystem, PIO_int,    dims3d_ensemble, compdof_3d_ensemble, DH%iodesc3d_ensemble_int)
+   call PIO_initdecomp(DH%iosystem, PIO_real,   dims3d_ensemble, compdof_3d_ensemble, DH%iodesc3d_ensemble_real)
+   call PIO_initdecomp(DH%iosystem, PIO_double, dims3d_ensemble, compdof_3d_ensemble, DH%iodesc3d_ensemble_double)
 
 #ifndef INTSPECIAL
    call PIO_initdecomp(DH%iosystem, PIO_int,    dims2d, compdof_2d, DH%iodesc2d_m_int)

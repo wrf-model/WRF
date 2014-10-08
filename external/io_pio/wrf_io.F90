@@ -8111,6 +8111,8 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
           DH%vartype(DH%CurrentVariable) = SOIL_LAYERS_VAR
        else if("num_ext_model_couple_dom_stag" == DimNames(n)) then
           DH%vartype(DH%CurrentVariable) = MDL_CPL_VAR
+       else if("ensemble_stag" == DimNames(n)) then
+          DH%vartype(DH%CurrentVariable) = ENSEMBLE_VAR
        endif
     end do
 
@@ -8417,6 +8419,8 @@ subroutine ext_pio_read_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
           DH%vartype(DH%CurrentVariable) = SOIL_LAYERS_VAR
        else if("num_ext_model_couple_dom_stag" == DH%DimNames(VDimIDs(n))) then
           DH%vartype(DH%CurrentVariable) = MDL_CPL_VAR
+       else if("ensemble_stag" == DH%DimNames(VDimIDs(n))) then
+          DH%vartype(DH%CurrentVariable) = ENSEMBLE_VAR
        endif
     end do
    

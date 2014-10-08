@@ -53,16 +53,15 @@ subroutine upgrade_filename(FileName)
   implicit none
 
   character*(*), intent(inout) :: FileName
-  character(len=256)           :: newFileName
   integer :: i
 
-  write(newFileName, fmt="(2a)") FileName, ".nc"
-  do i = 1, len_trim(newFileName)
-     if(newFileName(i:i) == '-') newFileName(i:i) = '_'
-     if(newFileName(i:i) == ':') newFileName(i:i) = '_'
+  do i = 1, len(trim(FileName))
+     if(FileName(i:i) == '-') then
+        FileName(i:i) = '_'
+     else if(FileName(i:i) == ':') then
+        FileName(i:i) = '_'
+     endif
   enddo
-
-  FileName = newFileName
 
 end subroutine upgrade_filename
 
@@ -204,7 +203,7 @@ subroutine ext_pio_open_for_read_begin( FileName, grid, SysDepInfo, DataHandle, 
   DH%NumVars         = NumVars
   DH%NumberTimes     = VLen(2)
   DH%FileStatus      = WRF_FILE_OPENED_NOT_COMMITTED
-  DH%FileName        = FileName
+  DH%FileName        = trim(FileName)
   DH%CurrentVariable = 0
   DH%CurrentTime     = 0
   DH%TimeIndex       = 0
@@ -361,7 +360,7 @@ subroutine ext_pio_open_for_update( FileName, grid, SysDepInfo, DataHandle, Stat
   DH%NumVars         = NumVars
   DH%NumberTimes     = VLen(2)
   DH%FileStatus      = WRF_FILE_OPENED_FOR_UPDATE
-  DH%FileName        = FileName
+  DH%FileName        = trim(FileName)
   DH%CurrentVariable = 0
   DH%CurrentTime     = 0
   DH%TimeIndex       = 0
@@ -432,7 +431,7 @@ SUBROUTINE ext_pio_open_for_write_begin(FileName,grid,SysDepInfo,DataHandle,Stat
  !stat = nf90_set_fill(DH%file_handle, NF90_NOFILL, i)
 
   DH%FileStatus  = WRF_FILE_OPENED_NOT_COMMITTED
-  DH%FileName    = FileName
+  DH%FileName    = trim(FileName)
   stat = pio_def_dim(DH%file_handle, DH%DimUnlimName, PIO_UNLIMITED, DH%DimUnlimID)
  !stat = pio_def_dim(DH%file_handle, DH%DimUnlimName, 1, DH%DimUnlimID)
   call netcdf_err(stat,Status)
@@ -8503,13 +8502,14 @@ subroutine ext_pio_inquire_opened( DataHandle, FileName , FileStatus, Status )
   type(wrf_data_handle) ,pointer        :: DH
 
   call upgrade_filename(FileName)
+ !call upgrade_filename(DH%FileName)
 
   call GetDH(DataHandle,DH,Status)
   if(Status /= WRF_NO_ERR) then
     FileStatus = WRF_FILE_NOT_OPENED
     return
   endif
-  if(FileName /= DH%FileName) then
+  if(trim(FileName) /= trim(DH%FileName)) then
     FileStatus = WRF_FILE_NOT_OPENED
   else
     FileStatus = DH%FileStatus
@@ -8535,7 +8535,8 @@ subroutine ext_pio_inquire_filename( Datahandle, FileName,  FileStatus, Status )
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
-  FileName = DH%FileName
+  FileName = trim(DH%FileName)
+ !call upgrade_filename(FileName)
   FileStatus = DH%FileStatus
   Status = WRF_NO_ERR
   return

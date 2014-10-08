@@ -905,16 +905,15 @@ subroutine upgrade_filename(FileName)
   implicit none
 
   character*(*), intent(inout) :: FileName
-  character(len=256)           :: newFileName
   integer :: i
 
-  write(newFileName, fmt="(2a)") FileName, ".nc"
-  do i = 1, len_trim(newFileName)
-     if(newFileName(i:i) == '-') newFileName(i:i) = '_'
-     if(newFileName(i:i) == ':') newFileName(i:i) = '_'
+  do i = 1, len(trim(FileName))
+     if(FileName(i:i) == '-') then
+        FileName(i:i) = '_'
+     else if(FileName(i:i) == ':') then
+         FileName(i:i) = '_'
+     endif
   enddo
-
-  FileName = newFileName
 
 end subroutine upgrade_filename
 
@@ -1158,7 +1157,7 @@ subroutine ext_ncd_open_for_read_begin( FileName, Comm, IOComm, SysDepInfo, Data
   DH%NumVars         = NumVars
   DH%NumberTimes     = VLen(2)
   DH%FileStatus      = WRF_FILE_OPENED_NOT_COMMITTED
-  DH%FileName        = FileName
+  DH%FileName        = trim(FileName)
   DH%CurrentVariable = 0
   DH%CurrentTime     = 0
   DH%TimesVarID      = VarID
@@ -1297,7 +1296,7 @@ subroutine ext_ncd_open_for_update( FileName, Comm, IOComm, SysDepInfo, DataHand
   DH%NumVars         = NumVars
   DH%NumberTimes     = VLen(2)
   DH%FileStatus      = WRF_FILE_OPENED_FOR_UPDATE
-  DH%FileName        = FileName
+  DH%FileName        = trim(FileName)
   DH%CurrentVariable = 0
   DH%CurrentTime     = 0
   DH%TimesVarID      = VarID
@@ -1376,7 +1375,7 @@ SUBROUTINE ext_ncd_open_for_write_begin(FileName,Comm,IOComm,SysDepInfo,DataHand
     return
   endif
   DH%FileStatus  = WRF_FILE_OPENED_NOT_COMMITTED
-  DH%FileName    = FileName
+  DH%FileName    = trim(FileName)
   stat = NF_DEF_DIM(DH%NCID,DH%DimUnlimName,NF_UNLIMITED,DH%DimUnlimID)
   call netcdf_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
@@ -3055,7 +3054,7 @@ subroutine ext_ncd_inquire_opened( DataHandle, FileName , FileStatus, Status )
     FileStatus = WRF_FILE_NOT_OPENED
     return
   endif
-  if(FileName /= DH%FileName) then
+  if(trim(FileName) /= trim(DH%FileName)) then
     FileStatus = WRF_FILE_NOT_OPENED
   else
     FileStatus = DH%FileStatus
@@ -3081,7 +3080,7 @@ subroutine ext_ncd_inquire_filename( Datahandle, FileName,  FileStatus, Status )
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
-  FileName = DH%FileName
+  FileName = trim(DH%FileName)
   FileStatus = DH%FileStatus
   Status = WRF_NO_ERR
   return

@@ -402,6 +402,8 @@ SUBROUTINE maybe_remove_colons( FileName )
     DO i = 3, l
       IF ( FileName(i:i) .EQ. ':' ) THEN
         FileName(i:i) = '_'
+      ELSE IF ( FileName(i:i) .EQ. '-' ) THEN
+        FileName(i:i) = '_'
       ENDIF
     ENDDO
   ENDIF

@@ -1611,7 +1611,7 @@ subroutine define_pio_iodesc(grid, DH)
    call PIO_initdecomp(DH%iosystem, PIO_int,    dims3d_ensemble, compdof_3d_ensemble, DH%iodesc3d_ensemble_int)
    call PIO_initdecomp(DH%iosystem, PIO_real,   dims3d_ensemble, compdof_3d_ensemble, DH%iodesc3d_ensemble_real)
    call PIO_initdecomp(DH%iosystem, PIO_double, dims3d_ensemble, compdof_3d_ensemble, DH%iodesc3d_ensemble_double)
-   call pio_setdebuglevel(0)
+  !call pio_setdebuglevel(0)
 
 #ifndef INTSPECIAL
    call PIO_initdecomp(DH%iosystem, PIO_int,    dims2d, compdof_2d, DH%iodesc2d_m_int)

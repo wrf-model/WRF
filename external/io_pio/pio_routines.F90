@@ -1335,6 +1335,9 @@ subroutine define_pio_iodesc(grid, DH)
    dims3d_ensemble(2) = dims3d(2)
    dims3d_ensemble(3) = grid%ensdim
 
+  !write(unit=0, fmt='(3a,i6)') 'File: ', __FILE__, ', line: ', __LINE__
+  !write(unit=0, fmt='(4x,a,i6)') 'grid%ensdim = ', grid%ensdim
+
    dims2d(1) = dims3d(1)
    dims2d(2) = dims3d(2)
 
@@ -1407,15 +1410,6 @@ subroutine define_pio_iodesc(grid, DH)
          compdof_3d_mdl_cpl(npos) = 0
       enddo
       enddo
-   enddo
-
-   do k = 1, dims3d_ensemble(3)
-   do j = jms, jme
-   do i = ims, ime
-      npos = (i - ims + 1) + (ime - ims + 1) * (j - 1 + (jme - jms + 1) * (k - 1))
-      compdof_3d_ensemble(npos) = 0
-   enddo
-   enddo
    enddo
 
    do n = 1, grid%spec_bdy_width
@@ -1491,13 +1485,24 @@ subroutine define_pio_iodesc(grid, DH)
    enddo
 
    do k = 1, dims3d_ensemble(3)
-   do j = jts, ljte
-   do i = its, lite
-      npos = (i - ims + 1) + (ime - ims + 1) * (j - 1 + (jme - jms + 1) * (k - 1))
-      compdof_3d_ensemble(npos) = i + dims3d_ensemble(1) * (j - 1 + dims3d_ensemble(2) * (k - 1))
+      do j = jms, jme
+      do i = ims, ime
+         npos = (i - ims + 1) + (ime - ims + 1) * (j - jms + (jme - jms + 1) * (k - 1))
+         compdof_3d_ensemble(npos) = 0
+      enddo
+      enddo
+
+      do j = jts, ljte
+      do i = its, lite
+         npos = (i - ims + 1) + (ime - ims + 1) * (j - jms + (jme - jms + 1) * (k - 1))
+         compdof_3d_ensemble(npos) = i + dims3d_ensemble(1) * (j - 1 + dims3d_ensemble(2) * (k - 1))
+      enddo
+      enddo
    enddo
-   enddo
-   enddo
+
+  !write(unit=0, fmt='(3a,i6)') 'File: ', __FILE__, ', line: ', __LINE__
+  !write(unit=0, fmt='(4x,a,i6)') 'npos = ', npos
+  !write(unit=0, fmt='(4x,a,i16)') 'compdof_3d_ensemble(npos) = ', compdof_3d_ensemble(npos)
 
    if(1 == its) then
       do n = 1, grid%spec_bdy_width
@@ -1602,9 +1607,11 @@ subroutine define_pio_iodesc(grid, DH)
    call PIO_initdecomp(DH%iosystem, PIO_real,   dims3d_mdl_cpl, compdof_3d_mdl_cpl, DH%iodesc3d_mdl_cpl_real)
    call PIO_initdecomp(DH%iosystem, PIO_double, dims3d_mdl_cpl, compdof_3d_mdl_cpl, DH%iodesc3d_mdl_cpl_double)
 
+  !call pio_setdebuglevel(1)
    call PIO_initdecomp(DH%iosystem, PIO_int,    dims3d_ensemble, compdof_3d_ensemble, DH%iodesc3d_ensemble_int)
    call PIO_initdecomp(DH%iosystem, PIO_real,   dims3d_ensemble, compdof_3d_ensemble, DH%iodesc3d_ensemble_real)
    call PIO_initdecomp(DH%iosystem, PIO_double, dims3d_ensemble, compdof_3d_ensemble, DH%iodesc3d_ensemble_double)
+   call pio_setdebuglevel(0)
 
 #ifndef INTSPECIAL
    call PIO_initdecomp(DH%iosystem, PIO_int,    dims2d, compdof_2d, DH%iodesc2d_m_int)

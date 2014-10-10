@@ -906,6 +906,34 @@ subroutine find_iodesc(DH,MemoryOrder,Stagger,FieldTYpe,whole)
           whole = .true.
           return
       end select
+    case ('xyz')
+      select case (Stag)
+        case ('z')
+             if(ENSEMBLE_VAR == DH%vartype(DH%CurrentVariable)) then
+                select case (FieldType)
+                  case (WRF_REAL)
+                       DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_ensemble_real
+                  case (WRF_DOUBLE)
+                       DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_ensemble_double
+                  case (WRF_INTEGER)
+                       DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_ensemble_int
+                  case (WRF_LOGICAL)
+                       DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_ensemble_int
+                  case default
+                       write(msg,*) 'Warning DO NOT KNOW HOW TO HANDLE this FieldType in ',__FILE__,', line', __LINE__
+                       call wrf_debug ( WARN , TRIM(msg))
+                       DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_m_real
+                end select
+             else
+                write(msg,*) 'Warning DO NOT KNOW HOW TO HANDLE THIS VAR KIND in ',__FILE__,', line', __LINE__
+                call wrf_debug ( WARN , TRIM(msg))
+                DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_w_double
+             end if
+        case default
+             write(msg,*) 'Warning DO NOT KNOW HOW TO HANDLE THIS STAG in ',__FILE__,', line', __LINE__
+             call wrf_debug ( WARN , TRIM(msg))
+             DH%ioVar(DH%CurrentVariable) = DH%iodesc3d_m_real
+      end select
    !case ('z','c')
    !  whole = .true.
     case default
@@ -1014,6 +1042,10 @@ subroutine FieldIO(IO,DataHandle,DateStr,Dimens,Starts,Counts,Length,MemoryOrder
  !write(unit=0, fmt='(3a,l8)') 'IO = ', trim(IO), ', whole = ', whole
  !write(unit=0, fmt='(4a)') 'MemoryOrder = ', trim(MemoryOrder), ', Stagger = ', trim(Stagger)
  !write(unit=0, fmt='(a,i4,a,i3)') 'DH%vartype(', DH%CurrentVariable, ') = ', DH%vartype(DH%CurrentVariable)
+
+ !if(whole .and. (ENSEMBLE_VAR == DH%vartype(DH%CurrentVariable))) then
+ !   whole = .false.
+ !end if
 
   select case (FieldType)
     case (WRF_REAL)

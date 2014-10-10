@@ -96,7 +96,7 @@ subroutine da_map_set(proj_code,lat1,lon1,knowni,knownj,dx,stdlon,truelat1,truel
    
       case (PROJ_LATLON)
          if (print_detail_map) then
-            write(unit=stdout,fmt='(A)') 'Setting up CYLinDRICAL EQUIDISTANT LATLON map...'
+            write(unit=stdout,fmt='(A)') 'Setting up CYLINDRICAL EQUIDISTANT LATLON map...'
          end if
          ! Convert lon1 to 0->360 notation
          if (proj%lon1 < 0.0) proj%lon1 = proj%lon1 + 360.0

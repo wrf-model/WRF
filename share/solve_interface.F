@@ -42,7 +42,7 @@ SUBROUTINE solve_interface ( grid )
                )
 
 # if ( WRF_CHEM == 1 )
-   IF ( config_flags%chem_opt > 0  ) THEN
+   IF ( config_flags%chem_opt > 0 .or. config_flags%tracer_opt > 0 ) THEN
 
      CALL chem_driver  ( grid , config_flags  &
 !

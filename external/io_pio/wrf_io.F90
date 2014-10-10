@@ -8480,12 +8480,6 @@ subroutine ext_pio_read_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
       endif
     endif
 #endif
-    if(stat /= 0) then
-      Status = WRF_ERR_FATAL_DEALLOCATION_ERR
-      write(msg,*) 'Fatal DEALLOCATION ERROR in ',__FILE__,', line', __LINE__
-      call wrf_debug ( FATAL , msg)
-      return
-    endif
   else
     Status = WRF_ERR_FATAL_BAD_FILE_STATUS
     write(msg,*) 'Fatal error BAD FILE STATUS in ',__FILE__,', line', __LINE__ 

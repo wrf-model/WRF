@@ -910,6 +910,9 @@ subroutine find_iodesc(DH,MemoryOrder,Stagger,FieldTYpe,whole)
    !  whole = .true.
     case default
       whole = .true.
+      if(ENSEMBLE_VAR == DH%vartype(DH%CurrentVariable)) then
+         whole = .false.
+      end if
 #if 0
       select case (FieldType)
         case (WRF_REAL)
@@ -1007,6 +1010,11 @@ subroutine FieldIO(IO,DataHandle,DateStr,Dimens,Starts,Counts,Length,MemoryOrder
   call pio_setframe(DH%descVar(DH%CurrentVariable), pioidx)
  !DH%descVar(DH%CurrentVariable)%rec = TimeIndex
 
+ !write(unit=0, fmt='(3a,i6)') 'File: ', __FILE__, ', line: ', __LINE__
+ !write(unit=0, fmt='(3a,l8)') 'IO = ', trim(IO), ', whole = ', whole
+ !write(unit=0, fmt='(4a)') 'MemoryOrder = ', trim(MemoryOrder), ', Stagger = ', trim(Stagger)
+ !write(unit=0, fmt='(a,i4,a,i3)') 'DH%vartype(', DH%CurrentVariable, ') = ', DH%vartype(DH%CurrentVariable)
+
   select case (FieldType)
     case (WRF_REAL)
       if(isbdy .and. (IO == 'read')) then
@@ -1020,12 +1028,12 @@ subroutine FieldIO(IO,DataHandle,DateStr,Dimens,Starts,Counts,Length,MemoryOrder
         Dimens(NDim+1) = TimeIndex
         call read_bdy_DoubleFieldIO(DH,NDim,Dimens,Starts,Counts,Field,Status)
       else
-        call ext_pio_DoubleFieldIO(whole,IO,DH,Starts,Counts,fldsize,Field,Status)
+        call ext_pio_DoubleFieldIO(whole,IO,DH,Starts,Counts,fldsize,datasize,Field,Status)
       endif
     case (WRF_INTEGER)
-      call ext_pio_IntFieldIO(whole,IO,DH,Starts,Counts,fldsize,Field,Status)
+      call ext_pio_IntFieldIO(whole,IO,DH,Starts,Counts,fldsize,datasize,Field,Status)
     case (WRF_LOGICAL)
-      call ext_pio_LogicalFieldIO(whole,IO,DH,Starts,Counts,fldsize,Field,Status)
+      call ext_pio_LogicalFieldIO(whole,IO,DH,Starts,Counts,fldsize,datasize,Field,Status)
     case default
       Status = WRF_WARN_DATA_TYPE_NOT_FOUND
       write(msg,*) 'Warning DATA TYPE NOT FOUND in ',__FILE__,', line', __LINE__
@@ -1155,8 +1163,6 @@ subroutine initialize_pio(grid, DH)
 
    call mpi_comm_size(communicator, nprocs, ierr)
    call mpi_comm_rank(communicator, myrank, ierr)
-  !call mpi_comm_size(MPI_COMM_WORLD, nprocs, ierr)
-  !call mpi_comm_rank(MPI_COMM_WORLD, myrank, ierr)
 
    if(grid%pioprocs > nprocs) then
      !Force pioprocs to be nprocs.
@@ -1334,9 +1340,6 @@ subroutine define_pio_iodesc(grid, DH)
    dims3d_ensemble(1) = dims3d(1)
    dims3d_ensemble(2) = dims3d(2)
    dims3d_ensemble(3) = grid%ensdim
-
-  !write(unit=0, fmt='(3a,i6)') 'File: ', __FILE__, ', line: ', __LINE__
-  !write(unit=0, fmt='(4x,a,i6)') 'grid%ensdim = ', grid%ensdim
 
    dims2d(1) = dims3d(1)
    dims2d(2) = dims3d(2)

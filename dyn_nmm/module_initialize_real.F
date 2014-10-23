@@ -4736,10 +4736,10 @@ END SUBROUTINE EARTH_LATLON_hwrf
  REAL(KIND=KNUM)   :: DTEMP
  REAL(KIND=KNUM)  , DIMENSION(IMS:IME,JMS:JME)    :: TLATHX,TLONHX
  INTEGER, DIMENSION(IMS:IME,JMS:JME)    :: KOUTB
- REAL(KIND=KNUM)     SUM,AMAXVAL
- REAL(KIND=KNUM),    DIMENSION (4, ims:ime, jms:jme ) :: NBWGT
+ REAL     SUM,AMAXVAL
+ REAL,    DIMENSION (4, ims:ime, jms:jme ) :: NBWGT
  LOGICAL  FLIP
- REAL(KIND=KNUM), DIMENSION(IMS:IME,JMS:JME)  :: HBWGT1,HBWGT2,HBWGT3,HBWGT4
+ REAL, DIMENSION(IMS:IME,JMS:JME)  :: HBWGT1,HBWGT2,HBWGT3,HBWGT4
  INTEGER, DIMENSION(IMS:IME,JMS:JME)  :: IIH,JJH
 !-------------------------------------------------------------------------------
 
@@ -5182,7 +5182,8 @@ END SUBROUTINE EARTH_LATLON_hwrf
           ENDDO
 
 
-          IF((NBWGT(1,I,J)+NBWGT(2,I,J)+NBWGT(3,I,J)+NBWGT(4,I,J)) .NE. 1)THEN
+          IF( abs(NBWGT(1,I,J)+NBWGT(2,I,J)+NBWGT(3,I,J)+NBWGT(4,I,J)-1) > 1e-5 ) then
+            WRITE(0,*)NBWGT(1,I,J),NBWGT(2,I,J),NBWGT(3,I,J),NBWGT(4,I,J)
             WRITE(0,*)'------------------------------------------------------------------------'
             WRITE(0,*)'FATAL: SOMETHING IS WRONG WITH THE WEIGHTS IN module_initialize_real.F'
             WRITE(0,*)'------------------------------------------------------------------------'

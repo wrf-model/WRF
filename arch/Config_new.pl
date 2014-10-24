@@ -296,30 +296,37 @@ if ( $sw_wrf_core eq "4D_DA_CORE" )
 # Display the choices to the user and get selection
 until ( $validresponse ) {
   printf "------------------------------------------------------------------------\n" ;
-  printf "Please select from among the following supported platforms.\n\n" ;
+  printf "Please select from among the following supported platform/parallelism options.\n\n" ;
 
   $opt = 1 ;
   open CONFIGURE_DEFAULTS, "< ./arch/configure_new.defaults" 
       or die "Cannot open ./arch/configure_new.defaults for reading" ;
   while ( <CONFIGURE_DEFAULTS> )
   {
-    for $paropt ( @platforms )
+    if ( substr( $_, 0, 5 ) eq "#ARCH"
+        && ( index( $_, $sw_os ) >= 0 ) && ( index( $_, $sw_mach ) >= 0 ) )
     {
-      if ( substr( $_, 0, 5 ) eq "#ARCH"
-          && ( index( $_, $sw_os ) >= 0 ) && ( index( $_, $sw_mach ) >= 0 ) 
-          && ( index($_, $paropt) >= 0 ) )
-      {
-        $optstr[$opt] = substr($_,6) ;
-        $optstr[$opt] =~ s/^[ 	]*// ;
-        $optstr[$opt] =~ s/#.*$//g ;
-        chomp($optstr[$opt]) ;
-        $optstr[$opt] = $optstr[$opt]." (".$paropt.")" ;
-        if ( substr( $optstr[$opt], 0,4 ) ne "NULL" )
+      $optstr = substr($_,6) ;
+      $optstr =~ s/^[   ]*// ;
+        foreach ( @platforms )
         {
-          printf "  %2d.  %s\n",$opt,$optstr[$opt] ;
-          $opt++ ;
+          $paropt = $_ ;
+          if ( index($optstr, $paropt) >= 0 ) {
+            printf " %2d. (%s) ",$opt,$paropt ;
+            $pararray[$opt] = $paropt ;
+            $opttemp = $optstr ;
+            $opttemp =~ s/#.*$//g ;
+            chomp($opttemp) ;
+            $optarray[$opt] = $opttemp." (".$paropt.")" ;
+            $opt++ ;
+          } else {
+            $paropt =~ s/./ /g ; #printing spaces if option doesn't exist for formatting/readability
+            printf "      %s  ",$paropt ;
+          }
         }
-      }
+      $optstr =~ s/#.*$//g ;
+      chomp($optstr) ;
+      printf "  %s\n",$optstr ;
     }
   }
   close CONFIGURE_DEFAULTS ;
@@ -538,7 +545,7 @@ while ( <CONFIGURE_DEFAULTS> )
       $x =~ s/#.*$//g ;
       chomp($x) ;
       $x = $x." (".$paropt.")" ;
-      if ( $x eq $optstr[$optchoice] )
+      if ( $x eq $optarray[$optchoice] )
       {
 
         if($ENV{WRF_HYDRO} eq 1) {
@@ -553,19 +560,19 @@ while ( <CONFIGURE_DEFAULTS> )
         if ( $paropt ne 'dmpar' && $paropt ne 'dm+sm' ) { $sw_pnetcdf_path = "" ; }
         #
         until ( $validresponse ) {
-          if ( $paropt eq 'serial' || $paropt eq 'smpar' ) {
-            printf "Compile for nesting? (0=no nesting, 1=basic, 2=preset moves, 3=vortex following) [default 0]: " ;
-          } elsif ( $ENV{WRF_NMM_CORE} eq "1" ) {
-            printf "Compile for nesting? (1=basic, 2=preset moves) [default 1]: " ;
-          } else {
-            printf "Compile for nesting? (1=basic, 2=preset moves, 3=vortex following) [default 1]: " ;
-          }
           if ( $ENV{WRF_DA_CORE} eq "1" || $sw_da_core eq "-DDA_CORE=1" ) {
              $response = 1 ;
           } elsif ( $ENV{HWRF} ) {
              printf "HWRF requires moving nests";
              $response = "2\n";
           } else {
+             if ( $paropt eq 'serial' || $paropt eq 'smpar' ) {
+               printf "Compile for nesting? (0=no nesting, 1=basic, 2=preset moves, 3=vortex following) [default 0]: " ;
+             } elsif ( $ENV{WRF_NMM_CORE} eq "1" ) {
+               printf "Compile for nesting? (1=basic, 2=preset moves) [default 1]: " ;
+             } else {
+               printf "Compile for nesting? (1=basic, 2=preset moves, 3=vortex following) [default 1]: " ;
+             }
              $response = <STDIN> ;
           } 
           printf "\n" ;
@@ -718,7 +725,7 @@ while ( <ARCH_PREAMBLE> )
 close ARCH_PREAMBLE ;
 print CONFIGURE_WRF @preamble  ;
 close ARCH_PREAMBLE ;
-printf CONFIGURE_WRF "# Settings for %s\n", $optstr[$optchoice] ;
+printf CONFIGURE_WRF "# Settings for %s\n", $optarray[$optchoice] ;
 print CONFIGURE_WRF @machopts  ;
 print "$ENV{WRF_MARS}" ;
 	if ( $ENV{WRF_MARS} || $ENV{WRF_TITAN} || $ENV{WRF_VENUS} )
@@ -730,7 +737,7 @@ print "$ENV{WRF_MARS}" ;
 
 close CONFIGURE_WRF ;
 
-printf "Configuration successful. To build the model type compile . \n" ;
+printf "Configuration successful! \n" ;
 printf "------------------------------------------------------------------------\n" ;
 
 

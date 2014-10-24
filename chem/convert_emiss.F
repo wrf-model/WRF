@@ -122,7 +122,11 @@ PROGRAM convert_emissions
 
    REAL :: cen_lat, cen_lon, moad_cen_lat, truelat1, truelat2, gmt, stand_lon, dum1
    INTEGER :: map_proj, julyr, julday, iswater, isice, isurban, isoilwater
-   INTEGER :: iswaterr,itest,beg_day,beg_hour
+! Add a logical leap-year variable as we want to calculate Julian day from the volc_d01 file
+   LOGICAL :: LEAP
+! Add beg_yr, beg_mon, and beg_jul to calculate the eruption Julian day and hour from the 
+   volc_d01 data file as it can be different than the run start day and hour.
+   INTEGER :: iswaterr,itest,beg_yr,beg_mon,beg_jul,beg_day,beg_hour
    INTEGER :: itime = 0
    INTEGER :: inew_nei = 0
    INTEGER :: inew_ch4 = 0      ! set to 1 if using 2011 NEI emissions
@@ -641,10 +645,26 @@ PROGRAM convert_emissions
       CALL geth_julgmt ( config_flags%julyr , config_flags%julday , config_flags%gmt )
 !      dname = YYYYMMDDHHMMSS
 !              12345678901234
+! read in the eruption beg_yr and beg_mon from the volc_d01 data file
+       read(unit=dname2(1:4), FMT='(I4)')beg_yr
+       read(unit=dname2(5:6), FMT='(I2)')beg_mon
        read(unit=dname2(7:8), FMT='(I2)')beg_day
        read(unit=dname2(9:10), FMT='(I2)')beg_hour
-!       write(0,*)' DNAME = ',dname
-!       write(0,*)' DNAME2 = ',dname2,beg_day,beg_hour,config_flags%julday
+!
+! convert the date from the volc_d01 data file to Julian day
+	LEAP = .FALSE.
+	IF((MOD(beg_yr,4) .EQ. 0 .AND. MOD(beg_yr,100).NE.0 ).OR. MOD(beg_yr,400).EQ.0 ) THEN
+            LEAP = .TRUE.        
+          ENDIF
+        ENDIF
+	IF (LEAP) THEN
+	  K = 1
+	ELSE
+  	  K = 2
+	END IF
+	beg_jul = ((275*beg_mon)/9) - K*((beg_mon+9)/12) + beg_day - 30
+
+       write(0,*)' DNAME2 = ',dname2,beg_jul,beg_hour
 #ifdef DM_PARALLEL
         IF (wrf_dm_on_monitor()) THEN
             read(92)size_dist
@@ -791,8 +811,8 @@ PROGRAM convert_emissions
                  grid%emis_vol(i,ko,j,p_e_vash10)=size_dist(10)*vert_mass_dist(ko)*ash_mass(i,j)
                  if(config_flags%emiss_opt_vol == 2)grid%emis_vol(i,ko,j,p_e_vso2)=vert_mass_dist(ko)*so2_mass(i,j)
                enddo
-!              grid%erup_beg(i,j)=float(beg_day)*1000.+float(beg_hour)
-               grid%erup_beg(i,j)=float(grid%julday)*1000.+float(beg_hour)
+! Changes made to Julian day from the volc_d01 file
+               grid%erup_beg(i,j)=float(beg_jul)*1000.+float(beg_hour)
                grid%erup_end(i,j)=grid%erup_beg(i,j)+erup_dt(i,j)
                 write(0,*)'new mass=',sum(vert_mass_dist)*100.,x1
 !          endif

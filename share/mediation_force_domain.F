@@ -49,7 +49,7 @@ SUBROUTINE med_force_domain ( parent_grid , nested_grid )
 #        include <dummy_new_decl.inc>
       END SUBROUTINE interp_domain_em_part1
 
-      SUBROUTINE force_domain_em_part2 ( grid, nested_grid, config_flags   &
+      SUBROUTINE force_domain_em_part2 ( grid, nested_grid, parent_grid, config_flags   &
 !
 #        include "dummy_new_args.inc"
 !
@@ -58,6 +58,7 @@ SUBROUTINE med_force_domain ( parent_grid , nested_grid )
          USE module_configure
          TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
          TYPE(domain), POINTER :: nested_grid
+	 TYPE(domain), POINTER :: parent_grid   ! KAL added for vertical nesting
          TYPE (grid_config_rec_type)            :: config_flags
 #        include <dummy_new_decl.inc>
       END SUBROUTINE force_domain_em_part2
@@ -206,7 +207,7 @@ this_time=now_time()
       ! and compute the values for the nest boundaries
       ! note that this is all local (no communication)
    CALL model_to_grid_config_rec ( nested_grid%id , model_config_rec , config_flags )
-   CALL force_domain_em_part2 ( grid, nested_grid, config_flags   &
+   CALL force_domain_em_part2 ( grid, nested_grid, parent_grid, config_flags   &
 !
 #          include "actual_new_args.inc"
 !

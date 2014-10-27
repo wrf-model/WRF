@@ -699,6 +699,7 @@ module_diagnostics_driver.o: \
 		module_diag_cl.o			\
 		module_diag_pld.o 			\
 		module_diag_afwa.o 			\
+		../frame/module_comm_dm.o		\
 		../frame/module_state_description.o 	\
 		../frame/module_domain.o 		\
 		../frame/module_configure.o 		\
@@ -715,12 +716,17 @@ module_diag_cl.o: \
 module_diag_pld.o: \
 		../share/module_model_constants.o
 
+module_diag_afwa_hail.o:
+
 module_diag_afwa.o: \
 		../frame/module_domain.o 		\
 		../frame/module_dm.o 			\
 		../frame/module_state_description.o 	\
 		../frame/module_configure.o 		\
-		../share/module_model_constants.o
+		../frame/module_streams.o		\
+		../external/esmf_time_f90/module_utility.o \
+		../share/module_model_constants.o	\
+		module_diag_afwa_hail.o
 
 module_diag_refl.o: \
 		../frame/module_dm.o			\

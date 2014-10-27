@@ -28,7 +28,7 @@ all:
 	$(MAKE) comp
 	./write_decomp.exe
 	$(MAKE) integr_edit
-	integr_edit.exe $(MECH)
+	./integr_edit.exe $(MECH)
 	$(MAKE) clean 
 
 

@@ -265,8 +265,8 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
                if ( iv%instid(inst)%surftype(n) == 0 ) then
                   call da_mspps_emis(ob%instid(inst)%tb(1:nchan,n), nchan, em_mspps)
                   do k = 1, nchan
-                     if ( emissivity((n-1)*nchan+k)%emis_in  < 0.01 ) then
-                        emissivity((n-1)*nchan+k)%emis_in  = em_mspps(k)
+                     if ( emissivity((n-n1)*nchan+k)%emis_in  < 0.01 ) then
+                        emissivity((n-n1)*nchan+k)%emis_in  = em_mspps(k)
                      end if
                   end do
                end if
@@ -315,13 +315,13 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
          if ( use_rttov_kmatrix ) then
             call da_rttov_k (inst, nchan, 1, nlevels, &
                con_vars(n:n), aux_vars(n:n), &
-               temp, temp2, temp3, emissivity((n-1)*nchan+1:n*nchan))
-            iv%instid(inst)%emiss(:,n) = emissivity((n-1)*nchan+1:n*nchan)%emis_out
+               temp, temp2, temp3, emissivity((n-n1)*nchan+1:n*nchan))
+            iv%instid(inst)%emiss(:,n) = emissivity((n-n1)*nchan+1:n*nchan)%emis_out
          else
             call da_rttov_direct (inst, nchan, 1, nlevels, &
                con_vars(n:n), aux_vars(n:n), &
-               temp, temp2, temp3, emissivity((n-1)*nchan+1:n*nchan))
-            iv%instid(inst)%emiss(:,n) = emissivity((n-1)*nchan+1:n*nchan)%emis_out 
+               temp, temp2, temp3, emissivity((n-n1)*nchan+1:n*nchan))
+            iv%instid(inst)%emiss(:,n) = emissivity((n-n1)*nchan+1:n*nchan)%emis_out 
          end if
          iv%instid(inst)%tb_xb(:,n)=temp(:)
          iv%instid(inst)%rad_xb(:,n)=temp2(:)

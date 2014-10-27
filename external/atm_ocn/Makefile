@@ -16,7 +16,7 @@ library: $(OBJ)
 	$(RANLIB) $(TARGET)
 
 .F.o:
-	$(CPP) -traditional $(CPPFLAGS) -DDM_PARALLEL  $*.F  > $*.f90
+	$(CPP) $(CPPFLAGS) -DDM_PARALLEL  $*.F  > $*.f90
 	$(FC) -o $@ -c $(FFLAGS)  $*.f90 
 
 clean:

@@ -398,6 +398,7 @@ subroutine da_get_innov_vector_gpsref(it, num_qcstat_conv, grid, ob, iv)
 
 !  process refracticity data n from n1 to n2
 !
+if (.not. anal_type_verify) then
    do n=iv%info(gpsref)%n1,iv%info(gpsref)%n2
        do k=1,iv%info(gpsref)%levels(n)
          if (model_ref(k,n) > 0.0) top_level=k
@@ -461,6 +462,7 @@ subroutine da_get_innov_vector_gpsref(it, num_qcstat_conv, grid, ob, iv)
 
        end do
    end do
+end if
 
    deallocate (model_t)
 !

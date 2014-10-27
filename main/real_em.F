@@ -22,7 +22,7 @@ PROGRAM real_data
    USE module_symbols_util, ONLY: wrfu_cal_gregorian
 #endif
    USE module_check_a_mundo
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
    USE module_input_chem_data
    USE module_input_chem_bioemiss
 !  USE module_input_chem_emissopt3
@@ -31,7 +31,7 @@ PROGRAM real_data
 
    IMPLICIT NONE
 
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
   ! interface
    INTERFACE
      ! mediation-supplied 
@@ -237,9 +237,11 @@ real::t1,t2
          ok_so_far = .TRUE.
 
          DO loop = 2 , model_config_rec%max_dom
+            IF ( model_config_rec%vert_refine_method(loop) .EQ. 0 ) THEN
             IF ( model_config_rec%e_vert(loop) .NE.  model_config_rec%e_vert(1) ) THEN
                CALL  wrf_message ( 'e_vert must be the same for each domain' )
                ok_so_far = .FALSE.
+              END IF
             END IF
          END DO
          IF ( .NOT. ok_so_far ) THEN
@@ -294,7 +296,7 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
    USE module_bc_time_utilities
    USE module_initialize_real
    USE module_optional_input
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
    USE module_input_chem_data
    USE module_input_chem_bioemiss
 !  USE module_input_chem_emissopt3
@@ -496,7 +498,7 @@ real::t1,t2,t3,t4
       CALL wrf_debug( 0, wrf_err_message )
       CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
 
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
       IF ( loop == 1 ) THEN
          IF( grid%chem_opt > 0 ) then
            ! Read the chemistry data from a previous wrf forecast (wrfout file)

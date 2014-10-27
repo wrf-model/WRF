@@ -33,3 +33,8 @@ CRES              CRESOL
 TOL               TOLUENE
 TO2               TOLO2
 SULF              SO4
+! 20130116 acd_ck_aromatics start
+PHEN              PHENOL
+XYL               XYLENES
+BALD              BZALD
+! 20130116 acd_ck_aromatics end

@@ -254,9 +254,9 @@
                its,ite, jts,jte, kts,kte                                )
 
    CASE (CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_KPP, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, &
-         CBMZ_MOSAIC_8BIN_AQ, CBMZ_MOSAIC_4BIN_VBS2_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP, MOZART_MOSAIC_4BIN_VBS0_KPP,  &
-         CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ, &
-         CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP)
+         CBMZ_MOSAIC_8BIN_AQ, CBMZ_MOSAIC_4BIN_VBS2_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP, &
+         MOZART_MOSAIC_4BIN_KPP, MOZART_MOSAIC_4BIN_AQ_KPP, &
+         CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ)
        CALL wrf_debug(15,'aerosols_driver calling mosaic_aerchem_driver')
        CALL mosaic_aerchem_driver(                                      &
             id, curr_secs, ktau, dtstep, ktauc, dtstepc, config_flags,  &
@@ -335,7 +335,8 @@
 
    USE module_configure
    USE module_aerosols_sorgam, only: sum_pm_sorgam
-   USE module_mosaic_driver, only: sum_pm_mosaic,sum_pm_mosaic_vbs2,sum_pm_mosaic_vbs0,sum_vbs9,sum_vbs2,sum_vbs0
+   USE module_mosaic_driver, only: sum_pm_mosaic,sum_pm_mosaic_vbs2,sum_pm_mosaic_vbs0,sum_pm_mosaic_vbs4,&
+                                   sum_vbs9,sum_vbs2,sum_vbs0,sum_vbs4
    USE module_gocart_aerosols, only: sum_pm_gocart
    USE module_aerosols_soa_vbs, only: sum_pm_soa_vbs
 
@@ -447,7 +448,7 @@
              ims,ime, jms,jme, kms,kme,                                &
              its,ite, jts,jte, kts,kte                                  )
 
-   CASE (MOZART_MOSAIC_4BIN_VBS0_KPP)
+   CASE (MOZART_MOSAIC_4BIN_KPP)
 
        CALL wrf_debug(15,'sum_pm_driver: calling sum_pm_mosaic_vbs0')
        call sum_pm_mosaic_vbs0 (                                       &
@@ -475,6 +476,28 @@
              ims,ime, jms,jme, kms,kme,                                &
              its,ite, jts,jte, kts,kte                                  )
 
+   CASE (MOZART_MOSAIC_4BIN_AQ_KPP)
+
+       CALL wrf_debug(15,'sum_pm_driver: calling sum_pm_mosaic_vbs4')
+       call sum_pm_mosaic_vbs4 (                                       &
+            alt, chem,                                                 &
+            pm2_5_dry, pm2_5_water, pm2_5_dry_ec, pm10,                &
+            ids,ide, jds,jde, kds,kde,                                 &
+            ims,ime, jms,jme, kms,kme,                                 &
+            its,ite, jts,jte, kts,kte                                  )
+
+       CALL wrf_debug(15,'sum_pm_driver: calling sum_vbs4')
+       call sum_vbs4 (                                                 &
+             alt, chem,                                                &
+             hoa_a01,hoa_a02,hoa_a03,hoa_a04,                          &
+             soa_a01,soa_a02,soa_a03,soa_a04,                          &
+             biog_a01,biog_a02,biog_a03,biog_a04,                      &
+             totoa_a01,totoa_a02,totoa_a03,totoa_a04,                  &
+             biog_v1,biog_v2,biog_v3,biog_v4,                          &
+             ant_v1,ant_v2,ant_v3,ant_v4,                              &
+             ids,ide, jds,jde, kds,kde,                                &
+             ims,ime, jms,jme, kms,kme,                                &
+             its,ite, jts,jte, kts,kte                                  )
 
    CASE DEFAULT 
 

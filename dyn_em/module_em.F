@@ -2109,8 +2109,8 @@ subroutine trajectory (     grid,config_flags,               &
    REAL , DIMENSION( ims:ime , jms:jme  ) ,              &
                                         INTENT(IN   ) ::xlong, xlat
 
-  real, dimension(kms:kme), intent(inout) :: traj_i,traj_j,traj_k
-  real, dimension(kms:kme), intent(inout) :: traj_long,traj_lat
+  real, dimension(1:config_flags%num_traj), intent(inout) :: traj_i,traj_j,traj_k
+  real, dimension(1:config_flags%num_traj), intent(inout) :: traj_long,traj_lat
   real, dimension(ims:ime,kms:kme,jms:jme),intent(in) :: rdzw
   real, dimension(ims:ime,kms:kme,jms:jme)::u,v,w
   real, dimension(ims:ime,jms:jme),intent(in)::msft,msfu,msfv

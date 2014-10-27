@@ -63,7 +63,7 @@ subroutine da_wrfvar_init2
    if ( anal_type_hybrid_dual_res ) then
       call nl_set_shw( 1 , 0 )
       call nl_set_shw( 2 , 0 )
-      write(unit=message(1),fmt='(A,I0)') "Resetting shw for dual-res hybrid to shw = ",shw
+      write(unit=message(1),fmt='(A,2(I4))') "Resetting shw for dual-res hybrid to shw = ",shw(1),shw(2)
       call da_message(message(1:1))
    endif
 

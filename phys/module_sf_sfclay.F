@@ -845,12 +845,12 @@ CONTAINS
       DO 400 I=its,ite
         IF(XLAND(I)-1.5.GT.0.)THEN                                           
           HFX(I)=FLHC(I)*(THGB(I)-THX(I))                                
-          IF ( PRESENT(ISFTCFLX) ) THEN
-             IF ( ISFTCFLX.NE.0 ) THEN
-! AHW: add dissipative heating term
-                HFX(I)=HFX(I)+RHOX(I)*USTM(I)*USTM(I)*WSPDI(I)
-             ENDIF
-          ENDIF
+!         IF ( PRESENT(ISFTCFLX) ) THEN
+!            IF ( ISFTCFLX.NE.0 ) THEN
+! AHW: add dissipative heating term (commented out in 3.6.1)
+!               HFX(I)=HFX(I)+RHOX(I)*USTM(I)*USTM(I)*WSPDI(I)
+!            ENDIF
+!         ENDIF
         ELSEIF(XLAND(I)-1.5.LT.0.)THEN                                       
           HFX(I)=FLHC(I)*(THGB(I)-THX(I))                                
           HFX(I)=AMAX1(HFX(I),-250.)                                       

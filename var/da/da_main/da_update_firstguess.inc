@@ -107,19 +107,28 @@ subroutine da_update_firstguess(grid, out_filename)
 !-------------  get date info
 
      call ext_ncd_get_next_time(dh1, DateStr1, Status_next_time)
-     if ( DateStr1 /= start_date )then
-        ! impossible scenario
-        ! start_date is set to be equal to file date in da_med_initialdata_input.inc
-        write(unit=message(1),fmt='(a)') 'date info mismatch'
-        call da_error(__FILE__,__LINE__,message(1:1))
+     if ( var4d .or. num_fgat_time == 1 )  then ! Don't do it for FGAT
+        if ( DateStr1 /= start_date )then
+           ! impossible scenario
+           ! start_date is set to be equal to file date in da_med_initialdata_input.inc
+           write(unit=message(1),fmt='(a)') 'date info mismatch '//trim(DateStr1)//" != "//trim(start_date)
+           call da_error(__FILE__,__LINE__,message(1:1))
+        endif
      endif
 
      ! update analysis time info in global attributes
      ! needs to be done before the ext_ncd_write_field calls
-     call get_julgmt(start_date, julyr, julday, gmt)
-     CALL ext_ncd_put_dom_ti_char (dh1, 'TITLE', ' OUTPUT FROM '//trim(program_name), ierr)
-     CALL ext_ncd_put_dom_ti_char (dh1, 'START_DATE', trim(start_date), ierr)
-     CALL ext_ncd_put_dom_ti_char (dh1, 'SIMULATION_START_DATE', trim(start_date), ierr)
+     if ( var4d .or. num_fgat_time == 1 ) then  ! For 4dvar or 3dvar
+        call get_julgmt(start_date, julyr, julday, gmt)
+        CALL ext_ncd_put_dom_ti_char (dh1, 'TITLE', ' OUTPUT FROM '//trim(program_name), ierr)
+        CALL ext_ncd_put_dom_ti_char (dh1, 'START_DATE', trim(start_date), ierr)
+        CALL ext_ncd_put_dom_ti_char (dh1, 'SIMULATION_START_DATE', trim(start_date), ierr)
+     else                                  ! For FGAT
+        call get_julgmt(DateStr1//'     ', julyr, julday, gmt)
+        CALL ext_ncd_put_dom_ti_char (dh1, 'TITLE', ' OUTPUT FROM '//trim(program_name), ierr)
+        CALL ext_ncd_put_dom_ti_char (dh1, 'START_DATE', trim(DateStr1), ierr)
+        CALL ext_ncd_put_dom_ti_char (dh1, 'SIMULATION_START_DATE', trim(DateStr1), ierr)
+     endif
      CALL ext_ncd_put_dom_ti_real    (dh1, 'GMT',    gmt,    1, ierr)
      CALL ext_ncd_put_dom_ti_integer (dh1, 'JULYR',  julyr,  1, ierr)
      CALL ext_ncd_put_dom_ti_integer (dh1, 'JULDAY', julday, 1, ierr)

@@ -117,7 +117,7 @@ CONTAINS
        write(6,*) 'Namelist logging not found in namelist.input. Using registry defaults for variables in logging.'
 #endif
 #      ifdef _WIN32
-          FLUSH(0)
+          CALL FLUSH(0)
 #      endif
        close(27)
        return
@@ -144,7 +144,7 @@ CONTAINS
        write(0,500) 'Disabling stderr logging since buffering is enabled.'
        write(6,500) 'Disabling stderr logging since buffering is enabled.'
 #      ifdef _WIN32
-          FLUSH(0)
+          CALL FLUSH(0)
 #      endif
        stderrlog=0
     endif
@@ -219,7 +219,7 @@ SUBROUTINE wrf_message( str )
 300     format(A)
         write(0,300) trim(str)
 # ifdef _WIN32
-  FLUSH(0)
+  CALL FLUSH(0)
 # endif
      endif
      print 300,trim(str)
@@ -248,7 +248,7 @@ SUBROUTINE wrf_message2( str )
 400 format(A)
   write(0,400) str
 # ifdef _WIN32
-  FLUSH(0)
+  CALL FLUSH(0)
 # endif
 !$OMP END MASTER
 #ifdef ESMFIO
@@ -294,11 +294,11 @@ SUBROUTINE wrf_error_fatal3( file_str, line, str )
   endif force_stderr
 
   ! Flush all streams.
-  flush(6)
+  CALL flush(6)
 #if defined(WRF_LOG_BUFFERING)
   if(buffered/=0) call wrf_log_action(wrf_log_flush,1,' ')
 # endif
-  flush(0)
+  CALL flush(0)
 
 #ifdef ESMFIO
 ! 5.2.0r  CALL esmf_finalize(terminationflag=ESMF_ABORT)
@@ -338,5 +338,30 @@ SUBROUTINE wrf_check_error( expected, actual, str, file_str, line )
     CALL wrf_error_fatal3 ( file_str, line, str_with_rc )
   ENDIF
 END SUBROUTINE wrf_check_error
+
+! ------------------------------------------------------------------------------
+
+!  Some compilers do not yet support the entirety of the Fortran 2003 standard.
+!  This is a small patch to pick up the two most common events.  Most xlf 
+!  compilers have an extension fflush.  That is available here.  For other older
+!  compilers with no flush capability at all, we just stub it out completely.
+!  These CPP ifdefs are defined in the configure file.
+
+#ifdef USE_FFLUSH
+SUBROUTINE flush ( iunit )
+  IMPLICIT NONE
+  INTEGER :: iunit
+  CALL fflush ( iunit ) 
+END SUBROUTINE flush
+#endif
+
+#ifdef NO_FLUSH_SUPPORT
+SUBROUTINE flush ( iunit )
+  IMPLICIT NONE
+  INTEGER :: iunit
+  RETURN
+END SUBROUTINE flush
+#endif
+
 
 

@@ -12,18 +12,19 @@ MODULE module_ra_gsfcsw
 
 CONTAINS
 
-   SUBROUTINE GSFCSWRAD(rthraten,gsw,xlat,xlong                   &
+   SUBROUTINE GSFCSWRAD(rthraten,gsw                              & ! PAJ: xlat and xlong removed.
                    ,dz8w,rho_phy                                  &
                    ,alb,t3d,qv3d,qc3d,qr3d                        &
                    ,qi3d,qs3d,qg3d,qndrop3d                       &
                    ,p3d,p8w3d,pi3d,cldfra3d,rswtoa                &
-                   ,gmt,cp,g,julday,xtime,declin,solcon           &
-                   ,radfrq,degrad,taucldi,taucldc,warm_rain       &
+                   ,cp,g,julday,solcon                            & ! PAJ: declin, gmt and xtime removed.
+                   ,taucldi,taucldc,warm_rain                     & ! PAJ: radfrq and degrad removed
                    ,tauaer300,tauaer400,tauaer600,tauaer999       & ! jcb
                    ,gaer300,gaer400,gaer600,gaer999               & ! jcb
                    ,waer300,waer400,waer600,waer999               & ! jcb
                    ,aer_ra_feedback                               &
                    ,f_qv,f_qc,f_qr,f_qi,f_qs,f_qg,f_qndrop        &
+                   ,coszen                                        & ! PAJ
                    ,ids,ide, jds,jde, kds,kde                     & 
                    ,ims,ime, jms,jme, kms,kme                     &
                    ,its,ite, jts,jte, kts,kte                     ) 
@@ -39,9 +40,10 @@ CONTAINS
 
    INTEGER,    INTENT(IN  )  ::                           JULDAY  
 
-
-   REAL, INTENT(IN    )      ::        RADFRQ,DEGRAD,             &
-                                       XTIME,DECLIN,SOLCON
+   REAL, INTENT(IN    )      ::        SOLCON
+! PAJ: degrad and radfqr removed:      
+!  REAL, INTENT(IN    )      ::        RADFRQ,DEGRAD,             &
+! PAJ: declin and xtime removed.                 XTIME,DECLIN,SOLCON
 !
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          INTENT(IN    ) ::                                   P3D, &
@@ -61,15 +63,19 @@ CONTAINS
                                                          taucldc
 !
    REAL, DIMENSION( ims:ime, jms:jme ),                           &
-         INTENT(IN   )  ::                                  XLAT, &
-                                                           XLONG, &
-                                                             ALB
+         INTENT(IN   )  ::                                   ALB
+! PAJ: XLAT and XLONG no longer needed. Lines commented.
+!         INTENT(IN   )  ::                                  XLAT, &
+!                                                           XLONG, &
+!                                                             ALB
 !
    REAL, DIMENSION( ims:ime, jms:jme ),                           &
          INTENT(INOUT)  ::                                   GSW, &
                                                           RSWTOA
 !
-   REAL, INTENT(IN   )  ::                              GMT,CP,G
+! PAJ: GMT removed.
+!   REAL, INTENT(IN   )  ::                              GMT,CP,G
+   REAL, INTENT(IN   )  ::                              CP,G
 !
 
 !
@@ -96,6 +102,10 @@ CONTAINS
    LOGICAL, OPTIONAL, INTENT(IN ) ::    &
                                    F_QV,F_QC,F_QR,F_QI,F_QS,F_QG, &
                                                         F_QNDROP
+!
+! ... PAJ ...
+! 
+   REAL, DIMENSION( ims:ime, jms:jme), INTENT(IN) :: COSZEN
 
 ! LOCAL VARS
  
@@ -161,9 +171,11 @@ CONTAINS
 
 
 !
-   REAL    :: XLAT0,XLONG0
+! PAJ: The following variables are not used in the subroutime. Line commented.
+!   REAL    :: XLAT0,XLONG0
    REAL    :: fac,latrmp
-   REAL    :: xt24,tloctm,hrang,xxlat
+! PAJ: The following variables are no longer needed. Line commented.
+!   REAL    :: xt24,tloctm,hrang,xxlat
 
    real, dimension(11) :: midbands  ! jcb
    data midbands/.2,.235,.27,.2875,.3025,.305,.3625,.55,1.92,1.745,6.135/   ! jcb
@@ -365,7 +377,7 @@ CONTAINS
 
 !--------------------------------------------------------------------------------
 
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
    IF ( aer_ra_feedback == 1) then
    IF ( .NOT. &
       ( PRESENT(tauaer300) .AND. &
@@ -610,7 +622,7 @@ CONTAINS
       end do
       end do
 
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
    IF ( AER_RA_FEEDBACK == 1) then
 !wig end
       do ib = 1, 11
@@ -741,12 +753,14 @@ CONTAINS
 ! ... Solar zenith angle
 !
       do i = its,ite
-        xt24 = mod(xtime + radfrq * 0.5, 1440.)
-        tloctm = GMT + xt24 / 60. + XLONG(i,j) / 15.
-        hrang = 15. * (tloctm - 12.) * degrad
-        xxlat = XLAT(i,j) * degrad
-        cosz(i) = sin(xxlat) * sin(declin) + &
-                  cos(xxlat) * cos(declin) * cos(hrang)
+! PAJ: Use cos zenith angle from the radiation driver:
+         cosz(i)=coszen(i,j)
+!        xt24 = mod(xtime + radfrq * 0.5, 1440.)
+!        tloctm = GMT + xt24 / 60. + XLONG(i,j) / 15.
+!        hrang = 15. * (tloctm - 12.) * degrad
+!        xxlat = XLAT(i,j) * degrad
+!        cosz(i) = sin(xxlat) * sin(declin) + &
+!                  cos(xxlat) * cos(declin) * cos(hrang)
         rsuvbm(i) = ALB(i,j)
         rsuvdf(i) = ALB(i,j)
         rsirbm(i) = ALB(i,j)

@@ -127,7 +127,18 @@
         integer, save :: kbiog2_o  = -999888777
         integer, save :: kbiog3_o  = -999888777
         integer, save :: kbiog4_o  = -999888777
+        integer, save :: kasoaX = -999888777
+        integer, save :: kasoa1 = -999888777
+        integer, save :: kasoa2 = -999888777
+        integer, save :: kasoa3 = -999888777
+        integer, save :: kasoa4 = -999888777
+        integer, save :: kbsoaX = -999888777
+        integer, save :: kbsoa1 = -999888777
+        integer, save :: kbsoa2 = -999888777
+        integer, save :: kbsoa3 = -999888777
+        integer, save :: kbsoa4 = -999888777
 
+        integer, save :: kgly        = -999888777
 
 
 

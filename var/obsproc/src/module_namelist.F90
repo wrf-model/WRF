@@ -69,7 +69,8 @@ MODULE MODULE_NAMELIST
                       write_gpsref,write_gpseph,write_ssmt1, write_ssmt2, &
                       write_ssmi , write_tovs , write_qscat, write_profl, &
                       write_bogus, write_airs , write_tamdar 
-   logical :: gts_from_ncar_archive
+   logical :: gts_from_mmm_archive
+   logical :: calc_psfc_from_QNH
 
    LOGICAL         :: wind_sd,      wind_sd_synop, wind_sd_ships, wind_sd_metar,&
                       wind_sd_buoy, wind_sd_sound, wind_sd_qscat, wind_sd_pilot,&
@@ -83,14 +84,14 @@ MODULE MODULE_NAMELIST
                       first_guess_file, fg_format
    NAMELIST /RECORD2/ time_earlier, time_later, time_analysis
 #else
-   NAMELIST /RECORD1/ obs_gts_filename, obs_err_filename, fg_format, gts_from_ncar_archive
+   NAMELIST /RECORD1/ obs_gts_filename, obs_err_filename, fg_format, gts_from_mmm_archive
    NAMELIST /RECORD2/ time_window_min,time_analysis,time_window_max
 
 #endif
    NAMELIST /RECORD3/ max_number_of_obs, fatal_if_exceed_max_obs
    NAMELIST /RECORD4/ qc_test_vert_consistency, qc_test_convective_adj,  &
                       qc_test_above_lid, remove_above_lid,domain_check_h,&
-                      Thining_SATOB, Thining_SSMI, Thining_QSCAT
+                      Thining_SATOB, Thining_SSMI, Thining_QSCAT, calc_psfc_from_QNH
    NAMELIST /RECORD5/ print_gts_read, print_gpspw_read,                 &
                       print_recoverp,                                   &
                       print_duplicate_loc, print_duplicate_time,        &
@@ -130,7 +131,7 @@ MODULE MODULE_NAMELIST
 
    CONTAINS
 
-   SUBROUTINE GET_NAMELIST  (nml_filename, iunit)
+   SUBROUTINE GET_NAMELIST  (nml_filename)
 
    CHARACTER (LEN = *)       :: nml_filename
    INTEGER                   :: iunit 
@@ -180,7 +181,8 @@ MODULE MODULE_NAMELIST
    obs_err_filename  = 'obserr.txt'
    use_for           = '3DVAR'
 
-   gts_from_ncar_archive = .false.
+   gts_from_mmm_archive = .false.
+   calc_psfc_from_QNH   = .false.
 
 ! . Initialize the new defined namelist variables (YRG 05/10/2007):
    base_pres  = missing_r
@@ -347,7 +349,7 @@ MODULE MODULE_NAMELIST
 
    !  Process read error
 
-   error_number = SUM ( nml_read_errors )
+   error_number = SUM ( nml_read_errors(1:9) ) ! Only check errors in records 1-9, record 10 is optional
 
    IF (error_number .NE. 0 ) THEN
         error_message  = ' Error reading namelist file: '

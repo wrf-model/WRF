@@ -178,7 +178,7 @@ contains
     count=0
     do j=jps,min(jpe,jde-1)
        do i=ips,min(ipe,ide-1)
-          if(grid%interesting(i,j)) count=count+1
+          if(grid%interesting(i,j)/=0) count=count+1
        enddo
     enddo
 #ifdef DM_PARALLEL

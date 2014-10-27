@@ -10734,7 +10734,7 @@ MODULE module_ra_FLG
 
       subroutine water_fl ( nv,nv1,ib,pre,plwc,pde,piwc,dz,tw,ww,www )
 !c *********************************************************************
-       !c tw, ww, and www are the optical depth, single scattering albedo, &
+!c tw, ww, and www are the optical depth, single scattering albedo, &
 !c and expansion coefficients of the phase function ( 1, 2, 3, and
 !c 4) due to the Mie scattering of water clouds for a given layer. 
 !c By using the mean single scattering properties of the eight drop
@@ -10764,7 +10764,7 @@ MODULE module_ra_FLG
           www(i,3) = 0.0
           www(i,4) = 0.0
         else
-          if ( pre(i) .lt. re(1) ) then
+          if ( pre(i) .le. re(1) ) then
 ! A cloud with the effective radius smaller than 4.18 um is assumed
 ! to have an effective radius of 4.18 um with respect to the single
 ! scattering properties.  
@@ -10778,7 +10778,7 @@ MODULE module_ra_FLG
             www(i,2) = 5.0 * x2
             www(i,3) = 7.0 * x3
             www(i,4) = 9.0 * x4
-          elseif ( pre(i) .gt. re(nc) ) then
+          elseif ( pre(i) .ge. re(nc) ) then
 ! A cloud with the effective radius larger than 31.23 um is assumed
 ! to have an effective radius of 31.18 um with respect to the single
 ! scattering properties.  
@@ -10793,9 +10793,9 @@ MODULE module_ra_FLG
             www(i,3) = 7.0 * x3
             www(i,4) = 9.0 * x4
           else
-            j = 1
+            j = nc
             do while (pre(i) .lt. re(j))
-              j = j + 1
+              j = j - 1
             end do
             tw(i) = dz(i) * plwc(i) * ( bz(j,ib) / fl(j) +  &
      &             ( bz(j+1,ib) / fl(j+1) - bz(j,ib) / fl(j) ) /  &

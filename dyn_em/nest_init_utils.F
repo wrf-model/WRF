@@ -35,11 +35,14 @@ SUBROUTINE init_domain_constants_em ( parent , nest )
    nest%tlp     = parent%tlp
    nest%p00     = parent%p00
    nest%t00     = parent%t00
+   nest%tlp_strat= parent%tlp_strat
+   nest%p_strat = parent%p_strat
 !cyl: variables for trajectory /float
    nest%traj_k = parent%traj_k
    nest%traj_long = parent%traj_long
    nest%traj_lat = parent%traj_lat
    nest%this_is_an_ideal_run = parent%this_is_an_ideal_run
+   nest%lake_depth_flag = parent%lake_depth_flag
 
    CALL nl_get_mminlu ( 1, char_junk )
    CALL nl_get_iswater( 1, iswater )
@@ -112,6 +115,185 @@ SUBROUTINE init_domain_constants_em ( parent , nest )
    nest%zs        = parent%zs
 
 END SUBROUTINE init_domain_constants_em
+
+
+!---------------------------------------------------------------------------------------------------
+
+SUBROUTINE init_domain_vert_nesting ( parent, nest)
+
+!KAL this is a driver to initialize the vertical coordinates for the nest when vertical nesting is used
+   USE module_domain
+   IMPLICIT NONE
+   TYPE(domain), POINTER                      :: parent, nest
+					 
+   !local
+   REAL, DIMENSION(parent%e_vert)             :: znw_c
+
+   INTERFACE
+
+      SUBROUTINE vert_cor_vertical_nesting_integer(nest,znw_c,k_dim_c)
+         USE module_domain
+         TYPE(domain), POINTER :: nest
+         integer , intent(in) :: k_dim_c
+         real , dimension(k_dim_c), INTENT(IN) :: znw_c
+      END SUBROUTINE vert_cor_vertical_nesting_integer
+
+      SUBROUTINE vert_cor_vertical_nesting_arbitrary(nest,znw_c,kde_c)
+          USE module_domain
+          TYPE(domain), POINTER :: nest
+          INTEGER, INTENT(IN   ) :: kde_c
+          REAL, DIMENSION(kde_c), INTENT(IN   ) :: znw_c
+      END SUBROUTINE vert_cor_vertical_nesting_arbitrary
+      
+   END INTERFACE
+
+   
+   ! save the coarse grid values here
+   
+   znw_c = nest%znw(1:parent%e_vert)
+   
+   ! calculate the nest (fine) grid values here
+   ! one of these calls goes to integer refinement in the vertical direction, and one goes to arbitrary refinement.  Eventually the call to integer refinement will be obsolete. 
+   if (nest%vert_refine_method .EQ. 1) then  !if you are in this subroutine there is vertical nesting- (i.e. nest%e_vert /= parent%e_vert to enter this subroutine)
+      CALL vert_cor_vertical_nesting_integer(nest,znw_c,parent%e_vert)
+   elseif (nest%vert_refine_method .EQ. 2) then
+      CALL vert_cor_vertical_nesting_arbitrary(nest,znw_c,parent%e_vert)
+   endif
+
+END SUBROUTINE init_domain_vert_nesting
+
+!-----------------------------------------------------------------------------------------
+
+
+!this is a direct copy of a subroutine that is in ndown, but I couldn't link to the subroutine in ndown because it is compiled after this file
+!so a dependecy on ndown will not work. Additionally, ndown is not compiled for ideal cases. The variable is named parent in ndown, but it is actually operating on the nest. It has been renamed to nest here.
+      SUBROUTINE vert_cor_vertical_nesting_integer(nest,znw_c,k_dim_c)
+         USE module_domain
+   IMPLICIT NONE
+         TYPE(domain), POINTER :: nest
+         integer , intent(in) :: k_dim_c
+         real , dimension(k_dim_c), INTENT(IN) :: znw_c
+
+       integer :: kde_c , kde_n ,n_refine,ii,kkk,k
+       real :: dznw_m,cof1,cof2
+!KAL this subroutine recalculates the vertical coordinates for the nest when vertical nesting is used.  This routine is copied from ndown and allows integer refinement only.
+
+!KAL znw is eta values on full w levels
+!KAL everything else is set from znw
+!KAL dnw is delta eta on w levels
+!KAL rdn is inverse delta eta on w levels
+!KAL fnp 
+
+        kde_c = k_dim_c
+        kde_n = nest%e_vert
+!        n_refine = nest%vert_refine_fact
+        n_refine = (kde_n-1)/(kde_c-1)
+	
+         kkk = 0
+         do k = 1 , kde_c-1
+         dznw_m = znw_c(k+1) - znw_c(k)
+         do ii = 1,n_refine
+         kkk = kkk + 1
+         nest%znw(kkk) = znw_c(k) + float(ii-1)/float(n_refine)*dznw_m
+         enddo
+         enddo
+         nest%znw(kde_n) = znw_c(kde_c)
+         nest%znw(1) = znw_c(1)
+
+      DO k=1, kde_n-1
+         nest%dnw(k) = nest%znw(k+1) - nest%znw(k)
+         nest%rdnw(k) = 1./nest%dnw(k)
+         nest%znu(k) = 0.5*(nest%znw(k+1)+nest%znw(k))
+      END DO
+
+      DO k=2, kde_n-1
+         nest%dn(k) = 0.5*(nest%dnw(k)+nest%dnw(k-1))
+         nest%rdn(k) = 1./nest%dn(k)
+         nest%fnp(k) = .5* nest%dnw(k  )/nest%dn(k)
+         nest%fnm(k) = .5* nest%dnw(k-1)/nest%dn(k)
+      END DO
+
+  cof1 = (2.*nest%dn(2)+nest%dn(3))/(nest%dn(2)+nest%dn(3))*nest%dnw(1)/nest%dn(2)
+  cof2 =     nest%dn(2)        /(nest%dn(2)+nest%dn(3))*nest%dnw(1)/nest%dn(3)
+
+      nest%cf1  = nest%fnp(2) + cof1
+      nest%cf2  = nest%fnm(2) - cof1 - cof2
+      nest%cf3  = cof2
+
+      nest%cfn  = (.5*nest%dnw(kde_n-1)+nest%dn(kde_n-1))/nest%dn(kde_n-1)
+      nest%cfn1 = -.5*nest%dnw(kde_n-1)/nest%dn(kde_n-1)
+      
+      ! the variables dzs and zs are kept from the parent domain.  These are the depths and thickness of the soil layers, which are not included in vertical nesting.
+
+      END SUBROUTINE vert_cor_vertical_nesting_integer
+
+!-----------------------------------------------------------------------------------------
+
+SUBROUTINE vert_cor_vertical_nesting_arbitrary(nest,znw_c,kde_c)
+    USE module_domain
+    IMPLICIT NONE
+    TYPE(domain), POINTER :: nest
+    INTEGER, INTENT(IN   ) :: kde_c
+    REAL, DIMENSION(kde_c), INTENT(IN   ) :: znw_c
+    INTEGER :: k, kde_n, ks, id
+    REAL :: cof1, cof2
+
+    kde_n = nest%e_vert
+
+    !DJW 140627 Added code for specifying multiple domains' eta_levels
+    IF (nest%id .NE. 1) THEN
+      id = 1
+      ks = 1
+      DO WHILE (nest%id .GT. id)
+        id = id+1
+        ks = ks+model_config_rec%e_vert(id-1)
+      ENDDO
+    ENDIF
+    DO k=1,kde_n
+      nest%znw(k) = model_config_rec%eta_levels(ks+k-1)
+      write(*,'(A,I3,A,F5.3)') "DJW[nest_init_utils]: nest%znw(",k,") = ",nest%znw(k)
+    ENDDO
+    !Check the value of the first and last eta level for our domain,
+    !then check that the vector of eta levels is only decreasing
+    IF (nest%znw(1) .NE. 1.0) THEN
+      CALL wrf_error_fatal("error with specified eta_levels, first level is not 1.0")
+    ENDIF
+    IF (nest%znw(kde_n) .NE. 0.0) THEN
+      CALL wrf_error_fatal("error with specified eta_levels, last level is not 0.0")
+    ENDIF
+    DO k=2,kde_n
+      IF (nest%znw(k) .GT. nest%znw(k-1)) THEN
+        CALL wrf_error_fatal("eta_levels are not uniformly decreasing from 1.0 to 0.0")
+      ENDIF
+    ENDDO
+    !DJW 140627 End of added code for specifying eta_levels
+
+    DO k=1,kde_n-1
+      nest%dnw(k) = nest%znw(k+1)-nest%znw(k)
+      nest%rdnw(k) = 1./nest%dnw(k)
+      nest%znu(k) = 0.5*(nest%znw(k+1)+nest%znw(k))
+    ENDDO
+    nest%znu(kde_n) = 0.0
+
+    DO k=2,kde_n-1
+      nest%dn(k) = 0.5*(nest%dnw(k)+nest%dnw(k-1))
+      nest%rdn(k) = 1./nest%dn(k)
+      nest%fnp(k) = .5* nest%dnw(k  )/nest%dn(k)
+      nest%fnm(k) = .5* nest%dnw(k-1)/nest%dn(k)
+    ENDDO
+
+    cof1 = (2.*nest%dn(2)+nest%dn(3))/(nest%dn(2)+nest%dn(3))*nest%dnw(1)/nest%dn(2)
+    cof2 =     nest%dn(2)            /(nest%dn(2)+nest%dn(3))*nest%dnw(1)/nest%dn(3)
+
+    nest%cf1  = nest%fnp(2) + cof1
+    nest%cf2  = nest%fnm(2) - cof1 - cof2
+    nest%cf3  = cof2
+    nest%cfn  = (.5*nest%dnw(kde_n-1)+nest%dn(kde_n-1))/nest%dn(kde_n-1)
+    nest%cfn1 = -.5*nest%dnw(kde_n-1)/nest%dn(kde_n-1)
+
+END SUBROUTINE vert_cor_vertical_nesting_arbitrary
+
+!-----------------------------------------------------------------------------------------
 
 SUBROUTINE blend_terrain ( ter_interpolated , ter_input , &
                            ids , ide , jds , jde , kds , kde , &

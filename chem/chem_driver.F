@@ -433,10 +433,12 @@
      CASE (SAPRC99_MOSAIC_4BIN_VBS2_KPP)
        CALL wrf_debug(15,'calling saprc99_mosaic_4bin_vbs2_kpp from chem_driver')
        haveaer = .false.
-     CASE (MOZART_MOSAIC_4BIN_VBS0_KPP) 
-       CALL wrf_debug(15,'calling mozart_mosaic_4bin_vbs0_kpp from chem_driver')
+     CASE (MOZART_MOSAIC_4BIN_KPP) 
+       CALL wrf_debug(15,'calling mozart_mosaic_4bin_kpp from chem_driver')
        haveaer = .true.
-
+     CASE (MOZART_MOSAIC_4BIN_AQ_KPP)
+       CALL wrf_debug(15,'calling mozart_mosaic_4bin_aq_kpp from chem_driver')
+       haveaer = .true.
      CASE (CBMZSORG)
        CALL wrf_debug(15,'calling cbmzsorg aerosols from chem_driver')
        haveaer = .true.
@@ -605,7 +607,8 @@
 !------------------------------------------------------------------------
       if( config_flags%chem_opt == MOZART_KPP .or. &                               
           config_flags%chem_opt == MOZCART_KPP .or. &
-          config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP) then
+          config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
+          config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP) then
         if( config_flags%phot_opt == FTUV ) then
           CALL ftuv_timestep_init( grid%id, grid%julday )
         endif
@@ -669,7 +672,8 @@
               config_flags,                                                                &
               grid%gmt,ijulian,rri,t_phy,moist,p8w,t8w,u_phy,v_phy,vvel,               &
               grid%e_bio,p_phy,chem,rho,dz8w,grid%ne_area,emis_ant,emis_vol,grid%tsk,      &
-              grid%erod,g,emis_seas,emis_dust,tracer, &
+              grid%erod,grid%erod_dri,grid%lai_vegmask,                                    &
+              g,emis_seas,emis_dust,tracer,                                                &
               ebu , ebu_in,grid%mean_fct_agtf,grid%mean_fct_agef,grid%mean_fct_agsv,       &
               grid%mean_fct_aggr,grid%firesize_agtf, &
               grid%firesize_agef,grid%firesize_agsv,grid%firesize_aggr,                    &
@@ -686,7 +690,7 @@
               grid%ebio_iso,grid%ebio_oli,grid%ebio_api,grid%ebio_lim,grid%ebio_xyl,       &
               grid%ebio_hc3,grid%ebio_ete,grid%ebio_olt,grid%ebio_ket,grid%ebio_ald,       &
               grid%ebio_hcho,grid%ebio_eth,grid%ebio_ora2,grid%ebio_co,grid%ebio_nr,       &
-              grid%ebio_no,grid%ebio_sesq,grid%ebio_mbo,                                   &
+              grid%ebio_no,grid%ebio_sesq,grid%ebio_mbo,grid%ebio_bpi,grid%ebio_myrc,      &
               grid%ebio_c10h16,grid%ebio_tol,grid%ebio_bigalk,                             &
               grid%ebio_ch3oh,grid%ebio_acet,grid%ebio_nh3,grid%ebio_no2,                  &
               grid%ebio_c2h5oh,grid%ebio_ch3cooh,grid%ebio_mek,grid%ebio_bigene,           &
@@ -696,8 +700,10 @@
               grid%ebio_aro1, grid%ebio_aro2, grid%ebio_ccho, grid%ebio_meoh,             &    
               grid%ebio_ethene, grid%ebio_hcooh, grid%ebio_terp, grid%ebio_bald,          &    
               grid%ebio_cco_oh, grid%ebio_rco_oh,                                         &    
-              grid%clayfrac,grid%sandfrac,grid%dust_alpha,grid%dust_gamma,grid%dust_smtune,&
-              grid%snowh,grid%zs,                                                          &
+              grid%clayfrac,grid%sandfrac,grid%dust_alpha,grid%dust_gamma,grid%dust_smtune, grid%dust_ustune, &
+              grid%clayfrac_nga,grid%sandfrac_nga,                                        &
+              grid%snowh,grid%zs,grid%afwa_dustloft,                                       &
+              grid%tot_dust,grid%tot_edust,grid%vis_dust,                                  &
               grid%soilctop, grid%ust_t, grid%rough_cor, grid%smois_cor,                  &              
               grid%ebio_c5h8,grid%ebio_apinene,grid%ebio_bpinene,grid%ebio_toluene,        &
               grid%ebio_ch3cho,grid%ebio_ch3co2h,grid%ebio_tbut2ene,                      &
@@ -723,13 +729,14 @@
               grid%potevp,grid%SFCEVP,grid%LU_INDEX,                                       &
               grid%biomt_par,grid%emit_par,grid%ebio_co2oce,                               &
               eghg_bio,                                                                    &
-
+              grid%dust_flux, grid%seas_flux,                                              &
               ids,ide, jds,jde, kds,kde,                                                   &
               ims,ime, jms,jme, kms,kme,                                                   &
               its,ite,jts,jte,kts,kte)
               if( config_flags%chem_opt == MOZART_KPP .or. &
                   config_flags%chem_opt == MOZCART_KPP .or. &
-                  config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP ) then
+                  config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
+                  config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP) then
                  call mozcart_lbc_set( chem, num_chem, grid%id, &
                                        ims, ime, jms, jme, kms, kme,    &                  
                                        its, ite, jts, jte, kts )                           
@@ -905,7 +912,8 @@
                  
             if( config_flags%chem_opt == MOZART_KPP .or. &
                 config_flags%chem_opt == MOZCART_KPP .or. &
-                config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP ) then
+                config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
+                config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP) then
                call mozcart_lbc_set( chem, num_chem, grid%id, &
                                      ims, ime, jms, jme, kms, kme,    & 
                                      its, ite, jts, jte, kts )
@@ -962,6 +970,9 @@
              p_phy,XLV,CP,G,r_v,                                                      &
              z_at_w,grid%cu_co_ten,                                                   &
              grid%wd_no3_cu,grid%wd_so4_cu,                                 &
+             grid%wd_nh4_cu,grid%wd_oa_cu,                                            &
+             grid%wd_so2_cu, grid%wd_sulf_cu, grid%wd_hno3_cu, grid%wd_nh3_cu,        &
+             grid%wd_cvasoa_cu, grid%wd_cvbsoa_cu, grid%wd_asoa_cu, grid%wd_bsoa_cu,  &
              grid%k22_shallow,grid%kbcon_shallow,grid%ktop_shallow,grid%xmb_shallow,  &
              config_flags%ishallow,num_moist,numgas,num_chem,config_flags%chem_opt,0, &
              config_flags%conv_tr_wetscav,config_flags%conv_tr_aqchem,                &
@@ -970,7 +981,8 @@
              its,ite,jts,jte,kts,k_end)
              if( config_flags%chem_opt == MOZART_KPP .or. &
                  config_flags%chem_opt == MOZCART_KPP .or. &
-                 config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP ) then
+                 config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
+                 config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP) then
                      call mozcart_lbc_set( chem, num_chem, grid%id, &
                                  ims, ime, jms, jme, kms, kme,    &
                                  its, ite, jts, jte, kts )
@@ -990,6 +1002,9 @@
              p_phy,XLV,CP,G,r_v,                                                      &
              z_at_w, grid%cu_co_ten,                                                  &
              grid%wd_no3_cu,grid%wd_so4_cu,                                 &
+             grid%wd_nh4_cu,grid%wd_oa_cu,                                            &
+             grid%wd_so2_cu, grid%wd_sulf_cu, grid%wd_hno3_cu, grid%wd_nh3_cu,        &
+             grid%wd_cvasoa_cu, grid%wd_cvbsoa_cu, grid%wd_asoa_cu, grid%wd_bsoa_cu,  &
              grid%k22_shallow,grid%kbcon_shallow,grid%ktop_shallow,grid%xmb_shallow,  &
              config_flags%ishallow,num_moist,0,num_tracer,0,config_flags%tracer_opt,  &
              config_flags%conv_tr_wetscav,config_flags%conv_tr_aqchem,                &
@@ -1058,7 +1073,7 @@
               its,ite,jts,jte,kts,kte        )
 !
 
-#ifdef WRF_KPP
+#if ( WRF_KPP == 1 )
 
          if( config_flags%chem_opt == CBMZ_MOSAIC_4BIN_VBS2_KPP .or. &
              config_flags%chem_opt == SAPRC99_MOSAIC_4BIN_VBS2_KPP ) then
@@ -1087,7 +1102,8 @@ CALL kpp_mechanism_driver (chem,                                                
    its,ite,jts,jte,kts,kte)
           if( config_flags%chem_opt == MOZART_KPP .or. &
               config_flags%chem_opt == MOZCART_KPP .or. &
-              config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP ) then
+              config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
+              config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP) then
              call mozcart_lbc_set( chem, num_chem, grid%id, &
                                    ims, ime, jms, jme, kms, kme,    &
                                     its, ite, jts, jte, kts )
@@ -1125,6 +1141,40 @@ CALL kpp_mechanism_driver (chem,                                                
          CALL wrf_debug(15,'no gocart so2-so4 conversion')
       END SELECT so2so4_selectb
 
+   ENDIF
+#else
+    if(config_flags%chem_opt == 301 ) then
+       chem(its:ite,kts:kte,jts:jte,p_sulf)=vcsulf_old(its:ite,kts:kte,jts:jte)
+       chem(its:ite,kts:kte,jts:jte,p_so2)=vcso2_old(its:ite,kts:kte,jts:jte)
+!      chem(its:ite,kts:kte,jts:jte,p_h2o2)=vch2o2_old(its:ite,kts:kte,jts:jte)
+   endif
+
+   IF(config_flags%conv_tr_aqchem == 0 ) THEN
+      so2so4_selectc: SELECT CASE(config_flags%chem_opt)
+      CASE (RADM2SORG)
+         CALL wrf_debug(15,'gocart so2-so4 conversion')
+         CALL  so2so4(0,chem,p_so2,p_sulf,p_h2o2,p_QC,T_PHY,MOIST,           &
+              grid%qc_cu, grid%gd_cldfr,                                    &
+              NUM_CHEM,NUM_MOIST,                                                &
+              ids,ide, jds,jde, kds,kde,                                         &
+              ims,ime, jms,jme, kms,kme,                                         &
+              its,ite, jts,jte, kts,kte                                          )
+      CASE DEFAULT
+         CALL wrf_debug(15,'no gocart so2-so4 conversion')
+      END SELECT so2so4_selectc
+   else IF(config_flags%conv_tr_aqchem == 1 ) THEN
+      so2so4_selectd: SELECT CASE(config_flags%chem_opt)
+      CASE (RADM2SORG)
+         CALL wrf_debug(15,'gocart so2-so4 conversion')
+         CALL  so2so4(1,chem,p_so2,p_sulf,p_h2o2,p_QC,T_PHY,MOIST,           &
+              grid%qc_cu, grid%gd_cldfr,                                    &
+              NUM_CHEM,NUM_MOIST,                                                &
+              ids,ide, jds,jde, kds,kde,                                         &
+              ims,ime, jms,jme, kms,kme,                                         &
+              its,ite, jts,jte, kts,kte                                          )
+      CASE DEFAULT
+         CALL wrf_debug(15,'no gocart so2-so4 conversion')
+      END SELECT so2so4_selectd
    ENDIF
 
 !
@@ -1273,7 +1323,9 @@ if ( cam_mam_aerosols ) &
               grid%asulf,grid%ahno3,grid%anh3,grid%cvaro1,grid%cvaro2,                &
               grid%cvalk1,grid%cvole1,grid%cvapi1,grid%cvapi2,                        &
               grid%cvlim1,grid%cvlim2,                                                &
-              grid%wd_no3_sc,grid%wd_so4_sc,                                          &
+              grid%wd_no3_sc, grid%wd_so4_sc, grid%wd_nh4_sc,grid%wd_oa_sc,           &
+              grid%wd_so2_sc, grid%wd_sulf_sc, grid%wd_hno3_sc, grid%wd_nh3_sc,       &
+              grid%wd_cvasoa_sc, grid%wd_cvbsoa_sc, grid%wd_asoa_sc, grid%wd_bsoa_sc, &
               grid%qv_b4mp, grid%qc_b4mp, grid%qi_b4mp, grid%qs_b4mp,                 &
 !======================================================================================
 !Variables required for CAM_MAM_WETSCAV

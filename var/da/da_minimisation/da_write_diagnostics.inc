@@ -112,7 +112,7 @@ if (.not. anal_type_verify) then
    ! [4.0] Write VAR diagnostic :
    !------------------------------------------------------------------------------
 
-   call da_get_var_diagnostics ( iv, j)
+   call da_get_var_diagnostics (it, iv, j)
 
 end if
 

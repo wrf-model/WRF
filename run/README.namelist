@@ -223,6 +223,18 @@ Namelist variables specifically for the WPS input for real:
                                                 ; through this many eta levels
                                                 ; 0 = perform traditional trapping interpolation
                                                 ; n = first n eta levels directly use surface level
+ maxw_horiz_pres_diff                = 5000     ; Pressure threshold (Pa).  For using the level of max winds, when the
+                                                ; pressure differnce between neighboring values exceeds this maximum,
+                                                ; the variable is NOT inserted into the column for vertical interpolation.
+                                                ; ARW real only.
+ trop_horiz_pres_diff                = 5000     ; Pressure threshold (Pa).  For using the tropopause level, when the
+                                                ; pressure differnce between neighboring values exceeds this maximum,
+                                                ; the variable is NOT inserted into the column for vertical interpolation.
+                                                ; ARW real only.
+ maxw_above_this_level               = 30000    ; Minimum height (actually it is pressure in Pa) to allow using the 
+                                                ; level of max wind information in real.  With a value of 300 hPa, then
+                                                ; a max wind value at 500 hPa will be ignored.
+                                                ; ARW real only.
  sfcp_to_sfcp                        = .false.  ; Optional method to compute model's surface pressure when incoming
                                                 ; data only has surface pressure and terrain, but not SLP
  smooth_cg_topo	                     = .false.  ; Smooth the outer rows and columns of domain 1's topography w.r.t.
@@ -461,6 +473,8 @@ Namelist variables for controlling the adaptive time step option:
                                                  (only used in very extreme situation)
                                                  default value = 0
                                                  gsfcgce_hail is ignored if gsfcgce_2ice is set to 1 or 2.
+ hail_opt                            = 0       ; hail switch for WDM6 and Morrison schemes: 0 - off, 1 - on (new in 3.6.1)
+ ccn_conc                            = 1.E8    ; CCN concentration, used by WDM schemes (new in 3.6.1)
 
  no_mp_heating                       = 0       ; normal
                                      = 1       ; turn off latent heating from a microphysics scheme
@@ -630,6 +644,8 @@ Namelist variables for controlling the adaptive time step option:
                                      = 0 ; default; use dominant category only
                                      = 1 ; use mosaic landuse categories
  mosaic_cat                          = 3 ; number of mosaic landuse categories in a grid cell
+ mosaic_lu                           = 1 ;  use mosaic landuse categories in RUC; default is 0
+ mosaic_soil                         = 1 ;  use mosaic soil categories in RUC; default is 0
 
  cu_physics (max_dom)                cumulus option
                                      = 0, no cumulus
@@ -653,20 +669,21 @@ Namelist variables for controlling the adaptive time step option:
 
  ishallow                            = 1,   Shallow convection used with Grell 3D ensemble schemes (cu_physics = 3 or 5)
  clos_choice                         = 0,   closure choice (place holder only)
-
  cu_diag                             = 0,   additional t-averaged stuff for cu physics (cu_phys = 3, 5 and 93 only)
  convtrans_avglen_m                  = 30,  averaging time for variables used by convective transport (call cu_phys options)  and radiation routines (only cu_phys=3,5 and 93) (minutes) 
-
+ cu_rad_feedback (max_dom)           = .false.  ; sub-grid cloud effect to the optical depth in radiation
+                                                  currently it works only for GF, G3, GD and KF scheme
+                                                  One also needs to set cu_diag = 1 for GF, G3 and GD schemes
  cudt                                = 0,       ; minutes between cumulus physics calls
-
  kfeta_trigger                       KF trigger option (cu_physics=1 only):
                                      = 1, default option
                                      = 2, moisture-advection based trigger (Ma and Tan [2009]) - ARW only
                                      = 3, RH-dependent additional perturbation to option 1 (JMA)
-
  cugd_avedx                          ; number of grid boxes over which subsidence is spread.
                                      = 1, default, for large grid distances
                                      = 3, for small grid distances (DX < 5 km)
+ nsas_dx_factor                      = 0, default option
+                                     = 1, NSAS grid-distance dependent option (new in 3.6)
 
  ncnvc (max_dom)                     = FOR NMM: number of fundamental timesteps between
                                                 calls to convection; the value is set in Registry.NMM
@@ -700,9 +717,6 @@ Namelist variables for controlling the adaptive time step option:
                                                       (Xu-Randall method) 
                                                   0 = without cloud effect
                                                   2 = with cloud effect, and use cloud fraction option 2
- cu_rad_feedback (max_dom)           = .false.  ; sub-grid cloud effect to the optical depth in radiation
-                                                  currently it works only for GF, G3, GD and KF scheme
-                                                  One also needs to set cu_diag = 1 for GF, G3 and GD schemes
  swrad_scat                          = 1.       ; scattering tuning parameter (default 1. is 1.e-5 m2/kg)
                                                   (works for ra_sw_physics = 1 option only)
  surface_input_source                = 1,	; where landuse and soil category data come from:
@@ -828,6 +842,7 @@ Namelist variables for lake module:
 				     		  do_radar_ref = 1, and mp_physics = 2,4,6,7,8,10,14, or 16)
                                      = 2        ; PR92 based on 20 dBZ top, redistributes flashes within dBZ > 20 (for convection resolved runs; must also use 
 				     		  do_radar_ref = 1, and mp_physics = 2,4,6,7,8,10,14, or 16)
+                                     = 3        ; Predicting the potential for lightning activity (based on Yair et al, 2010, J. Geophys. Res., 115, D04205, doi:10.1029/2008JD010868) 
                                      = 11       ; PR92 based on level of neutral buoyancy from convective parameterization (for scales
                                                   where a CPS is used, intended for use at 10 < dx < 50 km; must also use cu_physics = 5 or 93)
  lightning_dt  (max_dom)             = 0.       ; time interval (seconds) for calling lightning parameterization. Default uses model time step
@@ -1115,7 +1130,11 @@ The following are for observation nudging:
  base_temp                           = 290.,    ; real-data, em ONLY, base sea-level temp (K)
  base_pres                           = 10^5     ; real-data, em ONLY, base sea-level pres (Pa), DO NOT CHANGE
  base_lapse                          = 50.,     ; real-data, em ONLY, lapse rate (K), DO NOT CHANGE
- iso_temp                            = 0.,      ; real-data, em ONLY, reference temp in stratosphere
+ iso_temp                            = 200.,    ; real-data, em ONLY, reference temp in stratosphere, US Standard atmosphere 216.5 K
+ base_pres_strat                     = 5500.    ; real-data, em ONLY, base state pressure (Pa) at bottom of the stratosphere, 
+                                                  US Standard atmosphere 55 hPa
+ base_lapse_strat                    = 0.       ; real-data, em ONLY, base state lapse rate ( dT / d(lnP) ) in stratosphere, 
+                                                  approx to US Standard atmosphere -12 K
  use_baseparam_fr_nml                = .f.,     ; whether to use base state parameters from the namelist
  use_input_w                         = .f.,     ; whether to use vertical velocity from input file
  khdif (max_dom)                     = 0,	; horizontal diffusion constant (m^2/s)
@@ -1270,7 +1289,9 @@ afwa_severe_opt (max_dom)            = 0,       ; Severe Wx option, 1: on
 afwa_icing_opt (max_dom)             = 0,       ; Icing option, 1: on
 afwa_vis_opt (max_dom)               = 0,       ; Visibility option, 1: on
 afwa_cloud_opt (max_dom)             = 0,       ; Cloud option, 1: on
+afwa_therm_opt (max_dom)             = 0,       ; Thermal indices option, 1: on
+afwa_turb_opt (max_dom)              = 0,       ; Turbulence option, 1: on
+afwa_buoy_opt (max_dom)              = 0,       ; Buoyancy option, 1: on
+afwa_hailcast_opt (max_dom)          = 0,       ; Hailcast option, 1: on
 afwa_ptype_ccn_tmp                   = 264.15,  ; CCN temperature for precipitation type calculation
 afwa_ptype_tot_melt                  = 50,      ; Total melting energy for precipitation type calculation
-afwa_ccn_conc                        = 1.0E8,   ; CCN concentration
-afwa_hail_opt                        = 0,       ; Hail/Graupel switch, 1:hail, 0:graupel

@@ -6,7 +6,9 @@ SUBROUTINE med_feedback_domain ( parent_grid , nested_grid )
    USE module_domain
    USE module_configure
    USE module_intermediate_nmm
+#ifdef NMM_FIND_LOAD_IMBALANCE
    USE module_dm, only: local_communicator
+#endif
    IMPLICIT NONE
    TYPE(domain), POINTER :: parent_grid , nested_grid
    TYPE(domain), POINTER :: grid

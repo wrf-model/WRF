@@ -95,8 +95,8 @@ static TsFileInfo tsfTopo;
 static TsFileInfo tsfOcean;
 static TsFileInfo tsfLU;
 
-static int   tsFileInfo_initialized = 0 ; 
-//static float last_adx = 0.0 ;
+static int tsFileInfo_initialized = 0;
+/* static float last_adx = 0.0 ; */
 
 static char tsfTopo_fn[MAXLEN];
 static char tsfLU_fn[MAXLEN];
@@ -458,7 +458,7 @@ int tsInitFileInfo (char path[])
       return(-1);
     }
 
-    //skipps header
+    /* skipps header */
     fgets(buff, MAXLEN, fp);
 
     while (fscanf(fp, "%s %s %s", type, res, fn) != EOF) {
@@ -593,8 +593,8 @@ int GET_LANDUSE (        float *adx,
      if ( tsFileInfo_initialized == -1 ) { return(1); }
   }
 
-//if ( fabs(last_adx - *adx)  > 1.0E-6 ) {
-//  last_adx = *adx;
+/* if ( fabs(last_adx - *adx)  > 1.0E-6 ) { */
+/*   last_adx = *adx; */
     if ( tsfLU.num > 0 ) {
       strcpy(tsfLU_fn, tsfLU.fn[tsfLU.num-1]);
       for ( i = 0; i < tsfLU.num; i++) {
@@ -612,7 +612,7 @@ int GET_LANDUSE (        float *adx,
 # endif
         return(1);
     }
-//}
+/* } */
 
   /* Get the land use. */
   if (tsInitTileSet(tsfLU_fn)) { return(1); }
@@ -666,8 +666,8 @@ int GET_TERRAIN (        float *adx,
 
   /* Use the data with the largest spacing less than the grid
      spacing specified in the argument list. */
-//if ( fabs(last_adx - *adx)  > 1.0E-6 ) {
-//  last_adx = *adx;
+/* if ( fabs(last_adx - *adx)  > 1.0E-6 ) { */
+/*  last_adx = *adx; */
     if ( tsfTopo.num > 0 ) {
       strcpy(tsfTopo_fn, tsfTopo.fn[tsfTopo.num-1]);
       for (i = 0; i < tsfTopo.num; i++) {
@@ -702,7 +702,7 @@ fprintf(stderr,"%d fn %s dx %f adx %f\n",i,tsfTopo.fn[i],tsfTopo.dx[i],*adx ) ;
         return(1);
     }
 #endif
-//}
+/* } */
 
   /* First get the terrain from GTOPO30. */
     if (tsInitTileSet(tsfTopo_fn)) { return(1); }

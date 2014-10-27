@@ -79,7 +79,7 @@ SUBROUTINE track_driver( grid )
 
 !-- output chemical species
 
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
          IF ( model_config_rec%chem_opt(grid%id) > 0 .and. grid%track_chem_num > 0 ) THEN
            do m= 1,grid%track_chem_num
             chem_name = TRIM(model_config_rec%track_chem_name(m))
@@ -147,7 +147,7 @@ SUBROUTINE track_driver( grid )
 
 !-- output chem
 
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
 
          IF ( model_config_rec%chem_opt(grid%id) > 0 .and. grid%track_chem_num > 0 ) THEN
            do m= 1,grid%track_chem_num
@@ -257,7 +257,7 @@ SUBROUTINE write_track( grid )
 
 #ifdef DM_PARALLEL
    REAL, ALLOCATABLE, DIMENSION(:,:)   :: track_buf2
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
    REAL, ALLOCATABLE, DIMENSION(:,:,:) :: track_buf3
 #endif
 #endif
@@ -330,7 +330,7 @@ include 'netcdf.inc'
    track_buf2(:,:) = grid%track_qvapor(:,:)
    CALL wrf_dm_min_reals(track_buf2(:,:),grid%track_qvapor(:,:),grid%track_loc_in*level)
 
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
    IF (model_config_rec%chem_opt(grid%id) > 0) THEN
 !o31d
    track_buf2(:,:) = grid%track_o31d(:,:)
@@ -366,7 +366,7 @@ include 'netcdf.inc'
 
    DEALLOCATE(track_buf2)
 
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
 
 !--put chem output in grid%track_chem(:,:,:)
 !chem
@@ -434,7 +434,7 @@ include 'netcdf.inc'
       astat = NF_DEF_DIM(ncid, 'DateStrLen' , DateStrLen   , Times_dim)
       astat = NF_DEF_DIM(ncid, 'level_stag' , level_stag   , level_stag_dim)
 
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
       IF ( model_config_rec%chem_opt(grid%id) > 0 .and. model_config_rec%phot_opt(grid%id) == 3 ) THEN
       astat = NF_DEF_DIM(ncid, 'level_zref' , level_zref   , level_zref_dim)
       astat = NF_DEF_DIM(ncid, 'num_rad'    , num_rad      , rad_dim)
@@ -451,7 +451,7 @@ include 'netcdf.inc'
 
 !--   define 1-D variables
 
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
       IF ( model_config_rec%chem_opt(grid%id) > 0 .and. model_config_rec%phot_opt(grid%id) == 3 ) THEN
 !wc
       description = 'Wavelength'
@@ -589,7 +589,7 @@ include 'netcdf.inc'
       astat = NF_PUT_ATT_TEXT(ncid,var_id,'description', len_trim(description),description)
       astat = NF_PUT_ATT_TEXT(ncid,var_id,'units',       len_trim(units),      units      )
 
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
 
       IF ( model_config_rec%chem_opt(grid%id) > 0 .and. grid%track_chem_num > 0 ) THEN
 !chem
@@ -711,7 +711,7 @@ include 'netcdf.inc'
 
 !--   write 1-D variables
 
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
       IF ( model_config_rec%chem_opt(grid%id) > 0 .and. grid%track_chem_num > 0 ) THEN
       if ( model_config_rec%phot_opt(grid%id) == 3 )then
 !wc
@@ -845,7 +845,7 @@ include 'netcdf.inc'
          astat = NF_PUT_VARA_REAL(ncid,var_id,start(1:2),count(1:2),grid%track_qvapor(m,:))
       end do
 
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
 !chem
       IF ( model_config_rec%chem_opt(grid%id) > 0 .and. grid%track_chem_num > 0 ) THEN
 

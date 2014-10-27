@@ -43,7 +43,7 @@ MODULE module_decoded
 !------------------------------------------------------------------------
 
   USE module_inside
-  use module_namelist, only: gts_from_ncar_archive
+  use module_namelist, only: gts_from_mmm_archive, calc_psfc_from_QNH
 
 !--------------------------------------------------------------------------
 !                            PARAMETERS
@@ -103,7 +103,7 @@ CONTAINS
 !-------------------------------------------------------------------------
 
 
-SUBROUTINE read_obs_gts ( file_name , file_num , obs , n_obs , &
+SUBROUTINE read_obs_gts ( file_name,  obs , n_obs , &
 total_number_of_obs , fatal_if_exceed_max_obs , print_gts_read , &
 ins , jew , &
 time_window_min, time_window_max, map_projection , missing_flag)
@@ -119,7 +119,6 @@ time_window_min, time_window_max, map_projection , missing_flag)
    IMPLICIT NONE
 
    CHARACTER ( LEN = * ) , INTENT ( IN )          :: file_name
-   INTEGER, INTENT ( IN )                         :: file_num 
    INTEGER, INTENT (INOUT)                        :: n_obs
    INTEGER, INTENT ( IN )                         :: total_number_of_obs
    LOGICAL, INTENT ( IN )                         :: fatal_if_exceed_max_obs
@@ -132,6 +131,7 @@ time_window_min, time_window_max, map_projection , missing_flag)
    INTEGER                                        :: map_projection
    REAL,    INTENT (OUT)                          :: missing_flag
 
+   INTEGER                              :: file_num
    CHARACTER ( LEN = 32 ) , PARAMETER   :: proc_name = 'read_obs_gts '
    INTEGER                              :: io_error, platform_error
    INTEGER                              :: obs_num
@@ -147,9 +147,9 @@ time_window_min, time_window_max, map_projection , missing_flag)
    CHARACTER ( LEN =  80)               :: filename
    CHARACTER ( LEN = 160)               :: error_message
    CHARACTER ( LEN =  14)               :: newstring
-   LOGICAL                              :: fatal
-   INTEGER                              :: nlevels, num_unknown, m_miss, n101301 
+   INTEGER                              :: nlevels, num_unknown, m_miss
    TYPE ( measurement ) , POINTER       :: current
+   real :: qnh, elev
 !-----------------------------------------------------------------------------!
   INCLUDE 'platform_interface.inc'
 !-----------------------------------------------------------------------------!
@@ -176,7 +176,6 @@ time_window_min, time_window_max, map_projection , missing_flag)
    num_empty = 0
    num_outside = 0
    m_miss = 0
-   n101301 = 0
 
    !  Open file for writing diagnostics
    IF (print_gts_read) THEN
@@ -197,16 +196,12 @@ time_window_min, time_window_max, map_projection , missing_flag)
 
    ENDIF
 
-   !  If there were any troubles on the previous open, let's just fail straight
-   !  away to reduce the anxiety.
    !  Open file for reading; handle any errors in open by quitting since
    !  this is probably a simple-to-fix user mistake.
 
+   file_num = 99
    OPEN ( UNIT = file_num , FILE = file_name , FORM = 'FORMATTED'  , &
           ACTION = 'READ' , IOSTAT = io_error ) 
-
-   !  If there were any troubles on the previous open, let's just fail straight
-   !  away to reduce the anxiety.
 
    IF ( io_error .NE. 0 ) THEN
       CALL error_handler (proc_name, & 
@@ -226,35 +221,22 @@ time_window_min, time_window_max, map_projection , missing_flag)
    read_obs : DO while ( io_error == 0 ) 
       !  This is an array that we are filling.  Are we beyond that limit yet?
 
-      IF ((obs_num .GT. total_number_of_obs) .AND.  &
-          (fatal_if_exceed_max_obs)) THEN
+      IF (obs_num .GT. total_number_of_obs) THEN
 
             error_message(1:60)  = &
            'Too many obs for the NAMELIST value of max_number_of_obs = '
 
             WRITE (error_message(61:67),'(I7)')  total_number_of_obs
 
-            fatal = .TRUE.
+            CALL error_handler (proc_name, error_message (1:60), &
+                 error_message(61:67),fatal_if_exceed_max_obs)
+            
+            ! If fatal, code will stop above, otherwise the following lines exit
+            ! do loop and close file read
 
-            CALL error_handler (proc_name, &
-                 error_message (1:60), error_message (61:),fatal)
-
-      ELSE IF ((obs_num .GT. total_number_of_obs) .AND. &
-               (.NOT. fatal_if_exceed_max_obs))    THEN
-
-                error_message(1:60)  = &
-               'Too many obs for the NAMELIST value of max_number_of_obs = '
-
-                WRITE (error_message(61:67),'(I7)')  total_number_of_obs
-
-                fatal = .FALSE.
-
-                CALL error_handler (proc_name, &
-                error_message (1:60), error_message (61:),fatal)
-
-                CLOSE ( file_num ) 
-                IF (print_gts_read) CLOSE ( iunit ) 
-                EXIT read_obs
+            CLOSE ( file_num ) 
+            IF (print_gts_read) CLOSE ( iunit ) 
+            EXIT read_obs
 
       END IF
 
@@ -292,8 +274,13 @@ time_window_min, time_window_max, map_projection , missing_flag)
       obs(obs_num)%ground%tb37h  %data,     obs(obs_num)%ground%tb37h%qc,      &
       obs(obs_num)%ground%tb85v  %data,     obs(obs_num)%ground%tb85v%qc,      &
       obs(obs_num)%ground%tb85h  %data,     obs(obs_num)%ground%tb85h%qc
-      
 
+      if ( io_error < 0 ) then ! end-of-file
+         write(unit=0, fmt='(A)') 'Have reached the end of observation file.'
+         close(file_num)
+         if ( print_gts_read ) close(iunit)
+         exit read_obs
+      end if
 !
 !     allow changing the obs date for testing  (GETENV used above)
 !
@@ -324,13 +311,14 @@ time_window_min, time_window_max, map_projection , missing_flag)
 
       if( index(obs(obs_num)%info%platform(1:11), 'FM-88') > 0 ) then
         obs(obs_num)%info%platform(1:11) = 'FM-88 MODIS'                             
+        !hcl-note: below might be specific to NCAR/MMM dataset
         obs(obs_num)%location%name       =  obs(obs_num)%location%id
       end if
 
      end if
 ! .............................................................................
 
-      if ( gts_from_ncar_archive ) then
+      if ( gts_from_mmm_archive ) then
          ! distinguish BUOY and SHIP (both from BBXX reports assigned FM-13 SHIP)
          ! by the name. A trick done in NCAR gts_decoder to leave a clue for
          ! subsequent data processing
@@ -345,7 +333,7 @@ time_window_min, time_window_max, map_projection , missing_flag)
 ! .............................................................................
 ! To ignore the data type without WMO code:
 
-         if (IO_error /= 0 ) then
+         if (IO_error > 0 ) then  ! error reading header info
            write(0,'("IO_ERROR=",i2,1x,i5,1x,a,2(f9.3,a),1x,a,1x,f11.3)') &
                              io_error, obs_num, obs(obs_num)%info % platform, &
                                           obs(obs_num)%location%latitude, 'N',&
@@ -353,7 +341,8 @@ time_window_min, time_window_max, map_projection , missing_flag)
                                           obs(obs_num)%valid_time%date_char,    &
                                           obs(obs_num)%info % elevation
 
-            obs(obs_num)%info % elevation = missing_r
+            !hcl obs(obs_num)%info % elevation = missing_r
+            obs(obs_num)%info % discard = .true.
          endif
 
          READ (obs(obs_num) % info % platform (4:6), '(I3)', &
@@ -379,6 +368,7 @@ time_window_min, time_window_max, map_projection , missing_flag)
 
       ! Print read results
 
+      if ( print_gts_read ) then
       WRITE (UNIT = iunit , FMT = '(A,1X,A,1X,A,1X,A,1X,2(F8.3,A),A,1X)',&
              ADVANCE='no') 'Found' ,           &
              obs(obs_num)%location%id   (1: 5),&
@@ -387,6 +377,7 @@ time_window_min, time_window_max, map_projection , missing_flag)
              obs(obs_num)%location%latitude, 'N',&
              obs(obs_num)%location%longitude,'E ', &
              obs(obs_num)%valid_time%date_char
+      end if
 !
 ! To avoid the floating error in latlon_to_ij calculation: (Guo 01/08/2005)
       IF (IPROJ > 0) THEN
@@ -592,15 +583,16 @@ time_window_min, time_window_max, map_projection , missing_flag)
 
          END IF 
 
-      ELSE IF ( io_error .LT. 0 ) THEN
+      ! this scenario should be handled right after the first read
+      !ELSE IF ( io_error .LT. 0 ) THEN
 
-         !  No errors.  This is the intended way to find the end of data mark.
+      !   !  No errors.  This is the intended way to find the end of data mark.
 
-         WRITE (UNIT = 0, FMT = '(A)') 'Have reached end of observations file. '
+      !   WRITE (UNIT = 0, FMT = '(A)') 'Have reached end of observations file. '
 
-         CLOSE ( file_num ) 
-         IF (print_gts_read) CLOSE ( iunit ) 
-         EXIT read_obs
+      !   CLOSE ( file_num ) 
+      !   IF (print_gts_read) CLOSE ( iunit ) 
+      !   EXIT read_obs
 
       ELSE IF ( io_error .EQ. 0 ) THEN 
 
@@ -617,12 +609,6 @@ time_window_min, time_window_max, map_projection , missing_flag)
            outside_domain = .FALSE.
          endif
           
-         CALL inside_window (obs(obs_num)%valid_time%date_char, &
-                              time_window_min, time_window_max, &
-                              outside_window, iunit)
-
-         outside = outside_domain .OR. outside_window
-    
          !  The previous read ("once only" data) was valid.  
          !  If any of the data is suspicious, the easiest place to clean 
          !  it up is as soon as we read it in, so we do not have to track 
@@ -665,6 +651,12 @@ time_window_min, time_window_max, map_projection , missing_flag)
                     obs(obs_num)%valid_time%date_char = '19000101000000'
          END IF
 
+         CALL inside_window (obs(obs_num)%valid_time%date_char, &
+                              time_window_min, time_window_max, &
+                              outside_window, iunit)
+
+         outside = outside_domain .OR. outside_window
+    
          !  Date at MM5 V3 format
 
          WRITE (obs(obs_num)%valid_time%date_mm5, &
@@ -954,72 +946,99 @@ time_window_min, time_window_max, map_projection , missing_flag)
 
       ! Elevation can sometimes be undefined
 
-          IF ((obs(obs_num)%info % elevation .GT. ( undefined1_r - 1. ) )  .OR. &
-          (obs(obs_num)%info % elevation .LT. ( undefined2_r + 1. ) ) ) THEN
-          obs(obs_num)%info % elevation  = missing_r
-          if (fm .eq. 13 .or. fm .eq. 18 .or. fm .eq. 19 .or.   &
-              fm .eq. 33 .or. fm .eq. 36 .and. &
-              (obs(obs_num)%location%latitude .lt. 41. .or. &
-              obs(obs_num)%location%latitude .gt. 50. .or. &
-              obs(obs_num)%location%longitude .lt. -95. .or. &
-              obs(obs_num)%location%longitude .gt. -75. ) ) then 
-  ! set elevation to 0 for ships and buoys outside of the Great Lakes.
-            obs(obs_num)%info % elevation = 0.
-!           write(0,'(I5,1X,A,1X,A,1X,A,1X,A,1X,2(F8.3,A),A,1X,f11.3)')&
-!            m_miss,'Set elev to zero (id,name,platform,lat,lon,date,elv:',  &
-!           obs(obs_num)%location%id   (1: 5),&
-!           obs(obs_num)%location%name (1:20),&
-!           obs(obs_num)%info%platform (1: 12),&
-!           obs(obs_num)%location%latitude, 'N',&
-!           obs(obs_num)%location%longitude,'E ', &
-!           obs(obs_num)%valid_time%date_char,    &
-!           obs(obs_num)%info % elevation
-          else if (fm < 39) then
-            m_miss = m_miss + 1
-            write(0,'(I5,1X,A,1X,A,1X,A,1X,A,1X,2(F8.3,A),A,1X,f11.3)')&
-             m_miss,'Missing elevation(id,name,platform,lat,lon,date,elv:',  &
-            obs(obs_num)%location%id   (1: 5),&
-            obs(obs_num)%location%name (1:20),&
-            obs(obs_num)%info%platform (1: 12),&
-            obs(obs_num)%location%latitude, 'N',&
-            obs(obs_num)%location%longitude,'E ', &
-            obs(obs_num)%valid_time%date_char,    &
-            obs(obs_num)%info % elevation
-          endif
+          IF ( (obs(obs_num)%info%elevation .GT. (undefined1_r - 1.))  .OR. &
+               (obs(obs_num)%info%elevation .LT. (undefined2_r + 1.)) ) THEN
+
+             obs(obs_num)%info % elevation  = missing_r
+
+             ! set elevation to 0.0 for marine reports, excluding Great Lakes
+             if ( fm .eq. 13 .or. fm .eq. 18 .or. fm .eq. 19 .or.   &
+                  fm .eq. 33 .or. fm .eq. 36 ) then
+                if ( obs(obs_num)%location%latitude .lt. 41. .or. &
+                     obs(obs_num)%location%latitude .gt. 50. .or. &
+                     obs(obs_num)%location%longitude .lt. -95. .or. &  ! ncep used -93
+                     obs(obs_num)%location%longitude .gt. -75. ) then
+                   obs(obs_num)%info % elevation = 0.
+                end if
+             else if (fm < 39) then
+                m_miss = m_miss + 1
+                write(0,'(I5,1X,A,1X,A,1X,A,1X,A,1X,2(F8.3,A),A,1X,f11.3)')&
+                   m_miss,'Missing elevation(id,name,platform,lat,lon,date,elv:',  &
+                   obs(obs_num)%location%id   (1: 5),&
+                   obs(obs_num)%location%name (1:20),&
+                   obs(obs_num)%info%platform (1: 12),&
+                   obs(obs_num)%location%latitude, 'N',&
+                   obs(obs_num)%location%longitude,'E ', &
+                   obs(obs_num)%valid_time%date_char,    &
+                   obs(obs_num)%info % elevation
+             endif
           END IF
 
-         END IF
+         END IF  ! not outside
 
-!  For metar reports, the surface pressure is always missing (it sometimes
-!  contains altimeter setting which should be ignored).  JFB
-   
+         ! for gts_from_mmm_archive:
+         ! METARs (FM-15) never report surface pressure. METARs usually
+         ! report altimeter setting. The decoder places the altimeter
+         ! setting into the little_r surface pressure data record.
+         ! U.S. and Canadian METARs often contain SLP and temperatures
+         ! in tenths of degree in the remarks section (RMK). These are
+         ! decoded. JFB
+
          IF ((obs (obs_num)%info%platform(1:12) .EQ. 'FM-15 METAR ' ) .AND. &
              (ASSOCIATED (obs (obs_num)%surface ) ) ) THEN
-                obs(obs_num)%ground%psfc%data = missing_r
-                obs(obs_num)%ground%psfc%qc   = missing
-         END IF
+            obs(obs_num)%ground%psfc%data = missing_r
+            obs(obs_num)%ground%psfc%qc   = missing
+            if ( calc_psfc_from_QNH .and. gts_from_mmm_archive ) then
+               if ( obs(obs_num)%ground%psfc%data > 0.0 .and. &
+                    obs(obs_num)%info%elevation > 0.0 ) then
+                  QNH  = obs(obs_num)%ground%psfc%data * 0.01 ! Pa to hPa
+                  elev = obs(obs_num)%info%elevation
+                  obs(obs_num)%ground%psfc%data = psfc_from_QNH(QNH,elev) &
+                                                  * 100.0  ! hPa to Pa
+                  obs(obs_num)%ground%psfc%qc   = 0
+                  if ( associated(obs(obs_num)%surface) ) then
+                     obs(obs_num)%surface%meas%pressure%data = &
+                        obs(obs_num)%ground%psfc%data
+                     obs(obs_num)%surface%meas%pressure%qc   = &
+                        obs(obs_num)%ground%psfc%qc
+                  end if  ! associated data
+               end if  ! valid QNH and elev
+            end if  ! calc_psfc_from_QNH and gts_from_mmm_archive
+         END IF  ! metar
+
+         ! for gts_from_mmm_archive:
+         ! For ship data (FM-13 or FM-18), the elevation is missing and
+         ! surface (or station) pressure is set to 1013.01 hPa. This
+         ! value is a flag to indicate a suface report (the elevation of
+         ! a ship or buoy does not have to be at sea level as in the case
+         ! of Lake Michigan). JFB
 
          !  If this is a ship observation, we need to define the elevation 
          !  as identical to the geopotential height, and set the height QC flag
          !  to ok.  This is the only way to get SHIP data into the surface 
          !  analysis.  Since we are at sea level, we also set the pressure 
          !  to equal to the sea level pressure.
-         !
-         ! This is necessary for NCAR archived LITTLE_R files.
-         ! All of the station pressure for SHIP (FM-13) were filled with a 
-         ! fake value of 101301 Pa with the quality flag = 0 (means good);
 
-        IF ((obs (obs_num)%info%platform(1:10) .EQ. 'FM-13 SHIP' ) .AND. &
-             obs(obs_num)%info%elevation == 0.0   .and.  &
-            (ASSOCIATED (obs (obs_num)%surface ) ) ) THEN
-!             obs(obs_num)%info%elevation             = 0.01
-             obs(obs_num)%surface%meas%height%data   = &
-             obs(obs_num)%info%elevation
-             obs(obs_num)%surface%meas%height%qc     = 0
-             obs(obs_num)%surface%meas%pressure%data = &
-             obs(obs_num)%ground%slp%data
-             obs(obs_num)%surface%meas%pressure%qc   = 0
-         END IF
+         IF ( (obs(obs_num)%info%platform(1:10) == 'FM-13 SHIP') .or. &
+              (obs(obs_num)%info%platform(1:10) == 'FM-18 BUOY') ) then
+            if ( ASSOCIATED(obs(obs_num)%surface) ) then
+               if ( (obs(obs_num)%info%elevation == 0.0) ) then
+                  obs(obs_num)%surface%meas%height%data   = &
+                     obs(obs_num)%info%elevation
+                  obs(obs_num)%surface%meas%height%qc     = 0
+                  obs(obs_num)%surface%meas%pressure%data = &
+                     obs(obs_num)%ground%slp%data
+                  obs(obs_num)%surface%meas%pressure%qc   = 0
+               else
+                  if ( eps_equal(obs(obs_num)%surface%meas%pressure%data, &
+                                 101301.000, 1.) ) then
+                     ! replace 1013.01 with missing value
+                     obs(obs_num)%surface%meas%pressure%data = missing_r
+                     obs(obs_num)%surface%meas%pressure%qc   = missing
+                  end if
+               end if  ! elev is 0
+            end if  ! has associated data
+         end if  ! end if ship or buoy
 
          ! FENG GAO 03/07/2014
          ! QuikSCAT nominal mission ended on November 23, 2009
@@ -1037,6 +1056,13 @@ time_window_min, time_window_max, map_projection , missing_flag)
              obs(obs_num)%surface%meas%height%qc = 0
           END IF
 
+         ! for gts_from_mmm_archive:
+         ! SYNOP reports (FM-12) have a flag of 1013.01 in the surface
+         ! pressure field to indicate surface data. However, the SYNOP
+         ! code does include a station pressure group. The observed
+         ! station pressure will be decoded and replace 1013.01 if it
+         ! is available.  JFB
+
          ! YRG 04/04/2009
          ! For SYNOP, if surface%meas%pressure%data = 101301.000 
          ! (101301.000 is a fake value in NCAR archived LITTLE_R file)
@@ -1045,37 +1071,20 @@ time_window_min, time_window_max, map_projection , missing_flag)
          ! see da_tools/da_obs_sfc_correction.inc),  
          ! fill in surface%meas%pressure%data with ground%psfc%data:
 
+         ! hcl-note: disagrees with the above slp to psfc procedure.
+         !     if both slp and psfc are available for synop reports,
+         !     psfc should be used in DA system
+         ! hcl-note2: 101301 is simply a flag, real reports do not 
+         !     have 1/100 precision. Just replace 101301 with missing value
+
          IF ( (obs(obs_num)%info%platform(1:5).EQ.'FM-12') .and.  &
-              (ASSOCIATED (obs (obs_num)%surface ) ) ) THEN
-
+              (ASSOCIATED(obs(obs_num)%surface)) ) THEN
             if ( eps_equal(obs(obs_num)%surface%meas%pressure%data, &
-                                             101301.000, 1.) .and.  &
-                 eps_equal(obs(obs_num)%ground%slp%data,            &
-                                              missing_r, 1.) ) then
-             n101301 = n101301 + 1 
-             print '("num=",i6,1X,A,1X,A,1X,A,1X,2(F8.3,A),A,1X,f11.3,2(a,f13.2,i8))',&
-                    n101301,  &
-            obs(obs_num)%location%id   (1: 5),&
-            obs(obs_num)%location%name (1:20),&
-            obs(obs_num)%info%platform (1: 12),&
-            obs(obs_num)%location%latitude, 'N',&
-            obs(obs_num)%location%longitude,'E ', &
-            obs(obs_num)%valid_time%date_char,    &
-            obs(obs_num)%info % elevation,        &
-            "  pressure:",                        &
-                    obs(obs_num)%surface%meas%pressure%data, &
-                    obs(obs_num)%surface%meas%pressure%qc, &
-            "  Psfc:",                             &
-                    obs(obs_num)%ground%psfc%data, &
-                    obs(obs_num)%ground%psfc%qc
-
-               obs(obs_num)%surface%meas%pressure%data = &
-               obs(obs_num)%ground%psfc%data
-               obs(obs_num)%surface%meas%pressure%qc   = &
-               obs(obs_num)%ground%psfc%qc
+                                          101301.000, 1.) ) then
+               obs(obs_num)%surface%meas%pressure%data = missing_r
+               obs(obs_num)%surface%meas%pressure%qc   = missing
             endif
-
-         ENDIF 
+         ENDIF  !end if FM-12 synop
 
          !  This may be wasted print-out, but it is comforting to see.
 
@@ -1317,7 +1326,7 @@ subroutine print_extra_obs
 !   other Any other code 'UNKNOWN'
   
    num_unknown = num_unknown + 1
-   write(299,'(2I8," ID=",a," Name=",a," Platform=",a)') &
+   write(0,'(2I8," ID=",a," Name=",a," Platform=",a)') &
                           num_unknown, obs_num, &
                           obs(obs_num)%location % id(1:15), &
                           obs(obs_num)%location % name, &
@@ -1566,12 +1575,14 @@ SUBROUTINE read_measurements (file_num, surface, location, info, bad_data, &
           CYCLE read_meas
       END IF
 
+      if ( print_gts_read ) then
       IF ((     eps_equal (current%meas%dew_point%data , missing_r , 1.)) .AND.&
           (.NOT.eps_equal (current%meas%rh       %data , missing_r , 1.))) THEN
            WRITE (iunit,'(A,F10.2,/,A,F10.2)') &
           " Td = ",current%meas%dew_point%data,&
           " Rh = ",current%meas%rh%data  
       ENDIF
+      end if
 
       !
       !  Assign the SSMI error (AFWA only)
@@ -1631,6 +1642,9 @@ SUBROUTINE read_measurements (file_num, surface, location, info, bad_data, &
         
 ! Guo 01/26/2004: Very grossly h/p consistency check in case of both p and h
 !                 are reported as good data (qc=0):
+! hcl-note: disagree with checking qc in input data
+! hcl-note: qc should be assigned by obsproc after
+! hcl-note: applying quality check (if there is any)
 !-----------------------------------------------------------------------------
 ! Do no perform gross check on height for
 !    Sounde (FM-35) & AIRS (FM-133) retrievals profile data
@@ -1665,11 +1679,13 @@ SUBROUTINE read_measurements (file_num, surface, location, info, bad_data, &
       ENDIF
       
       IF (eps_equal (current%meas%pressure%data , missing_r , 1.)) THEN
+           !hcl what is this?
            if (current%meas%height%data > (htop+100.))   CYCLE read_meas 
            current%meas%pressure%data = Ref_pres (current%meas%height%data)
            current%meas%pressure%qc   = missing
       ENDIF
       IF (eps_equal (current%meas%height%data , missing_r , 1.)) THEN
+           !hcl what is this?
            if (current%meas%pressure%data < (ptop-500.)) CYCLE read_meas 
            current%meas%height%data = Ref_height (current%meas%pressure%data)
            current%meas%height%qc   = missing
@@ -2215,10 +2231,18 @@ Subroutine Aircraft_pressure(hh, pp)
       PP%data = PP%data * 100.
       PP%qc   = 0
 
-      HH%data = missing_r
-      HH%qc   = missing
+      !hcl-note: disagree with throwing away the original flight level information
+      !hcl HH%data = missing_r
+      !hcl HH%qc   = missing
 
 end Subroutine Aircraft_pressure
+
+function psfc_from_QNH(alt, elev) result(psfc)
+   real,  intent(in) :: alt  ! altimeter setting/QNH
+   real,  intent(in) :: elev ! elevation
+   real              :: psfc
+   psfc = (alt**0.190284-(((1013.25**0.190284)*0.0065/288.15)*elev))**5.2553026
+end function psfc_from_QNH
 
 END MODULE module_decoded
 

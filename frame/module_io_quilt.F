@@ -1265,6 +1265,13 @@ okay_to_w = .false.
                   END SELECT
                   ENDIF
 
+! If desired, outputs a ready flag after quilting subroutine closes the data handle for history (wrfout) file.
+
+                  IF (fname(1:6) .EQ. 'wrfout' .AND. config_flags%output_ready_flag ) THEN
+                    OPEN (unit=99,file='wrfoutReady' // fname(7:30), status='unknown', access='sequential')
+                    CLOSE (99)
+                  ENDIF
+
 ! The I/O server "root" handles the "open_for_write_begin" request.
                 CASE ( int_open_for_write_begin )
 
@@ -2613,7 +2620,7 @@ okay_to_w = .false.
       CALL wrf_get_dm_communicator( mpi_comm_here )
 
       CALL MPI_Comm_rank ( mpi_comm_here, mytask, ierr ) ;
-      CALL mpi_x_comm_size ( mpi_comm_here, ntasks, ierr ) ;
+      CALL mpi_x_comm_size( mpi_comm_here, ntasks, ierr ) ;
 
       IF ( mytask .EQ. 0 ) THEN
         OPEN ( unit=27, file="namelist.input", form="formatted", status="old" )

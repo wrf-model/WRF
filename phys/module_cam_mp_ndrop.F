@@ -1581,7 +1581,6 @@ old_cloud_nsubmix_loop: &
             g1=zeta(m)/eta(m)
             g1sqrt=sqrt(g1)
             g1=g1sqrt*g1
-            g1=g1sqrt*g1
             g2=smc(m)/sqrt(eta(m)+3._r8*zeta(m))
             g2sqrt=sqrt(g2)
             g2=g2sqrt*g2

@@ -43,6 +43,17 @@ CONTAINS
 
       USE module_configure, ONLY : grid_config_rec_type
 
+#ifdef DM_PARALLEL
+      !  Ensure some of the fancy diagnostics variables that need to
+      !  talk to other patches can do so.
+
+      USE module_dm, ONLY : &
+                  local_communicator, mytask, ntasks, ntasks_x, ntasks_y                   &
+                 ,local_communicator_periodic, wrf_dm_maxval
+
+      USE module_comm_dm, ONLY : &
+                  halo_em_phys_w_sub
+#endif
 
       !=============================================================
       !  USE Association for the Diagnostic Packages
@@ -122,6 +133,12 @@ CONTAINS
                               imsy,imey,jmsy,jmey,kmsy,kmey,    &
                               ipsy,ipey,jpsy,jpey,kpsy,kpey
 
+#ifdef DM_PARALLEL
+      !=============================================================
+      !  Include patch communications
+      !=============================================================
+#     include "HALO_EM_PHYS_W.inc"
+#endif
 
       !=============================================================
       !  Start of executable code

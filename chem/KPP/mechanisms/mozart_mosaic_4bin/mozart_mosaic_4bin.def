@@ -1,6 +1,6 @@
 #include atoms_red
-#include ./mozart_mosaic_4bin_vbs0.spc
-#include ./mozart_mosaic_4bin_vbs0.eqn
+#include ./mozart_mosaic_4bin.spc
+#include ./mozart_mosaic_4bin.eqn
 
 
 

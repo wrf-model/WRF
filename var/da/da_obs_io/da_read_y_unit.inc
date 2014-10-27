@@ -30,7 +30,7 @@ subroutine da_read_y_unit(filename,unit_out,num,obs_type_in, nc)
    end if
 
    reports: do
-   read(unit_in,'(a20,i8)', end = 999, err = 1000) iv_type,num_obs                    
+   read(unit_in,'(a20,i8)', end = 999, err = 1000) iv_type,num_obs
    
    if_write = .false.
    if (index(iv_type,OBS_type_in(1:nc)) > 0) if_write = .true.
@@ -38,14 +38,17 @@ subroutine da_read_y_unit(filename,unit_out,num,obs_type_in, nc)
    ! If radiance data treat differently
    if ( (index(iv_type,'noaa') > 0) .or. (index(iv_type,'eos') > 0) .or.   &
         (index(iv_type,'dmsp') > 0) .or. (index(iv_type,'metop') > 0) .or. &
-        (index(iv_type,'tiros') > 0) ) then
-      do n = 1, num_obs        
+        (index(iv_type,'tiros') > 0) .or. (index(iv_type,'msg') > 0) .or. &
+        (index(iv_type,'jpss') > 0) ) then
+
+
+      do n = 1, num_obs
          if (if_write) num = num + 1
-         read(unit_in,'(2i8,e15.7)')n1, n2, fld_rad                              
-         if (if_write)write(unit_out,'(2i8,e15.7)')num,n2, fld_rad                              
+         read(unit_in,'(2i8,e15.7)')n1, n2, fld_rad
+         if (if_write)write(unit_out,'(2i8,e15.7)')num,n2, fld_rad
       end do
-   else    
-      do n = 1, num_obs        
+   else
+      do n = 1, num_obs
          if (if_write) num = num + 1
          if (index(iv_type,'bogus') > 0) then
             read(unit_in,'(i8)', err=1000)levels

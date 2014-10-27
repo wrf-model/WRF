@@ -501,6 +501,7 @@ MODULE module_sf_urban
 ! Miao, 2007/01/17, cal. ah
    if(ahoption==1) then
      tloc=mod(int(OMG/PI*180./15.+12.+0.5 ),24)
+     if(tloc.lt.0) tloc=tloc+24
      if(tloc==0) tloc=24
    endif
 

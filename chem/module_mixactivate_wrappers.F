@@ -25,6 +25,7 @@ CONTAINS
            ddvel, z, dz8w, p_at_w, t_at_w, exch_h,           &
            qv, qc, qi, qndrop3d, f_qc, f_qi, chem,           &
 	       ccn1, ccn2, ccn3, ccn4, ccn5, ccn6, nsource,      &
+	       qsrflx, &
            ids,ide, jds,jde, kds,kde,                        &
            ims,ime, jms,jme, kms,kme,                        &
            its,ite, jts,jte, kts,kte                         )
@@ -76,12 +77,14 @@ CONTAINS
 	     ccn1,ccn2,ccn3,ccn4,ccn5,ccn6  ! number conc of aerosols activated at supersat
 
 	type(grid_config_rec_type), intent(in) :: config_flags
+ real, intent(out) :: qsrflx(ims:ime, jms:jme, num_chem) ! wet deposition flux of aerosol
 ! local vars
-	real qsrflx(ims:ime, jms:jme, num_chem) ! dry deposition flux of aerosol
+!	real qsrflx(ims:ime, jms:jme, num_chem) ! wet deposition flux of aerosol
 	real sumhygro,sumvol
 	integer i,j,k,l,m,n
 	real hygro( its:ite, kts:kte, jts:jte, maxd_asize, maxd_atype ) ! bulk
 
+      qsrflx(:,:,:) = 0.0
 
 ! calculate volume-weighted bulk hygroscopicity for each type and size
       do 100 j=jts,jte

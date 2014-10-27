@@ -47,9 +47,6 @@
 #ifdef MOVE_NESTS
       USE MODULE_STATS_FOR_MOVE,        ONLY: STATS_FOR_MOVE
 #endif
-#ifdef WRF_CHEM
-      USE MODULE_INPUT_CHEM_DATA,       ONLY: GET_LAST_GAS
-#endif
       USE MODULE_DIAG_REFL
 
 
@@ -81,9 +78,6 @@
 !***  STRUCTURE THAT CONTAINS RUN-TIME CONFIGURATION (NAMELIST) DATA FOR DOMAIN
 !
       TYPE(GRID_CONFIG_REC_TYPE),INTENT(IN) :: CONFIG_FLAGS
-#ifdef WRF_CHEM
-      INTEGER :: NUMGAS
-#endif
 !
 !-----------------------------------------------------------------------
 !
@@ -188,13 +182,6 @@
 !
       REAL,SAVE :: SUMDRRW
 !
-#ifdef WRF_CHEM
-      REAL,ALLOCATABLE,SAVE,DIMENSION(:,:,:,:) ::      &  ! i,j,k,ks
-                                                  CHE  &  ! 4d i,j,k chem tracers
-                                                 ,CH1  &  ! intermediate tracer variable
-                                                 ,CHP  &  ! ch1 at previous time level
-                                                 ,TCC     ! time change of tracers
-#endif
 !-----------------------------------------------------------------------
 !
 ! LIMIT THE NUMBER OF ARGUMENTS IF COMPILED WITH -DLIMIT_ARGS BY COPYING
@@ -391,9 +378,6 @@
       ALLOCATE(RTHBLTEN(IMS:IME,KMS:KME,JMS:JME),STAT=ISTAT)
       ALLOCATE(RQVBLTEN(IMS:IME,KMS:KME,JMS:JME),STAT=ISTAT)
       ALLOCATE(RTHRATEN(IMS:IME,KMS:KME,JMS:JME),STAT=ISTAT)
-#ifdef WRF_CHEM
-  NUMGAS          = GET_LAST_GAS(CONFIG_FLAGS%CHEM_OPT)
-#endif
 !
         IF(CONFIG_FLAGS%CU_PHYSICS==GDSCHEME.OR.                        &
      &  CONFIG_FLAGS%CU_PHYSICS==TIEDTKESCHEME.OR.                      &
@@ -442,12 +426,6 @@
         write(message,*)' kts=',kts,' kte=',kte
         call wrf_message(trim(message))
 !
-#ifdef WRF_CHEM
-        ALLOCATE (CHE(IMS:IME,JMS:JME,KMS:KME,1:NUM_CHEM),STAT=ISTAT)
-        ALLOCATE (CH1(IMS:IME,JMS:JME,KMS:KME,1:NUM_CHEM),STAT=ISTAT)
-        ALLOCATE (CHP(IMS:IME,JMS:JME,KMS:KME,1:NUM_CHEM),STAT=ISTAT)
-        ALLOCATE (TCC(IMS:IME,JMS:JME,KMS:KME,1:NUM_CHEM),STAT=ISTAT)
-#endif
 !-----------------------------------------------------------------------
       endif
 !-----------------------------------------------------------------------
@@ -726,22 +704,6 @@
 !
 !-----------------------------------------------------------------------
 !
-#ifdef WRF_CHEM
-      DO KS=1,NUM_CHEM
-        DO K=KMS,KME
-          DO J=JMS,JME
-            DO I=IMS,IME
-              CHE(I,J,K,KS)=0.
-              CH1(I,J,K,KS)=0.
-              CHP(I,J,K,KS)=0.
-              TCC(I,J,K,KS)=0.
-            ENDDO
-          ENDDO
-        ENDDO
-      ENDDO
-#endif
-!
-!-----------------------------------------------------------------------
 #ifdef DM_PARALLEL
 #    include "HALO_NMM_A.inc"
 #endif
@@ -783,30 +745,6 @@
         ENDDO
 !
       ENDIF
-!
-!-----------------------------------------------------------------------
-!
-#ifdef WRF_CHEM
-      DO KS=1,NUM_CHEM
-        DO K=KMS,KME
-          DO J=JMS,JME
-            DO I=IMS,IME
-              CHP(I,J,K,KS)=SQRT(MAX(CHEM(I,K,J,KS),0.  ))
-            ENDDO
-          ENDDO
-        ENDDO
-      ENDDO
-#endif
-!
-!-----------------------------------------------------------------------
-!
-!***  Only for chemistry:
-!
-#ifdef WRF_CHEM   
-#ifdef DM_PARALLEL
-#    include "HALO_NMM_A_2.inc"
-#endif
-#endif
 !
 !-----------------------------------------------------------------------
 !***  USE THE FOLLOWING VARIABLES TO KEEP TRACK OF EXCHANGE TIMES.
@@ -1140,92 +1078,6 @@
 !
 !-----------------------------------------------------------------------
 !
-#ifdef WRF_CHEM
-!-----------------------------------------------------------------------
-!
-      idtadc_block: IF(MOD(grid%ntsd,IDTADC)==0) THEN
-!
-!-----------------------------------------------------------------------
-#ifdef NMM_FIND_LOAD_IMBALANCE
-      call blockf(loadimbal_tim,'after mono, etc.')
-#endif
-        btimx=now_time()
-#ifdef DM_PARALLEL
-#    include "HALO_NMM_I_2.inc"
-#endif
-        exch_tim=exch_tim+now_time()-btimx
-!
-#ifdef NMM_FIND_LOAD_IMBALANCE
-      call blockf(loadimbal_tim,'after halo I2')
-#endif
-        btimx=now_time()
-!
-        do KS=1,NUM_CHEM
-          DO K=KTS,KTE
-            DO J=JMS,JME
-              DO I=IMS,IME
-                CHE(I,J,K,KS)=MAX(CHEM(I,K,J,KS),0.  )
-              ENDDO
-            ENDDO
-          ENDDO
-        ENDDO
-!
-        CALL ADV2                &
-        (grid%upstrm                  &
-        ,MYPE,1,NUM_CHEM         &
-        ,IDS,IDE,JDS,JDE,KDS,KDE &
-        ,IMS,IME,JMS,JME,KMS,KME &
-        ,ITS,ITE,JTS,JTE,KTS,KTE &
-        ,grid%n_iup_h                 &
-        ,grid%n_iup_adh               &
-        ,grid%iup_h,grid%iup_adh           &
-        ,grid%ent                     &
-        ,IDTADC                  &
-        ,grid%DT,grid%pdtop           &
-        ,grid%ihe,grid%ihw,grid%ive,grid%ivw         &
-        ,grid%deta1,grid%deta2             &
-        ,grid%emt_loc                 &
-        ,grid%fad,grid%hbm2,grid%pdsl,grid%pdslo     &
-        ,grid%petdt                   &
-        ,grid%uold,grid%vold               &
-        ,CHE,CHP                 &
-        !temporary arguments
-        ,grid%fne,grid%fse,grid%few,grid%fns,CH1,TCC)
-!
-        CALL MONO &
-        (         &
-#if defined(DM_PARALLEL)
-         GRID%DOMDESC, &
-#endif
-         MYPE,grid%ntsd,grid%ntsd*GRID%DT/3600.,1,NUM_CHEM &
-        ,IDS,IDE,JDS,JDE,KDS,KDE &
-        ,IMS,IME,JMS,JME,KMS,KME &
-        ,ITS,ITE,JTS,JTE,KTS,KTE &
-        ,IDTADT                  &
-        ,grid%dy_nmm,grid%pdtop            &
-        ,SUMDRRW                 &
-        ,grid%ihe,grid%ihw                 &
-        ,grid%deta1,grid%deta2             &
-        ,grid%dx_nmm,grid%hbm2,grid%pdsl        &
-        ,CHE                     &
-        !temporary arguments
-        ,CH1,TCC)
-!
-        DO KS=1,NUM_CHEM
-          DO K=KTS,KTE
-            DO J=JMS,JME
-              DO I=IMS,IME
-                CHEM(I,K,J,KS)=CHE(I,J,K,KS)+TCC(I,J,K,KS)
-              ENDDO
-            ENDDO
-          ENDDO
-        ENDDO
-!-----------------------------------------------------------------------
-!
-      ENDIF idtadc_block
-!
-!-----------------------------------------------------------------------
-#endif
 !
 !-----------------------------------------------------------------------
 !***  PRESSURE TENDENCY, ETA/SIGMADOT, VERTICAL PART OF OMEGA-ALPHA TERM
@@ -1670,12 +1522,6 @@
      &                ,grid%ACLWUPB,grid%ACLWUPBC,grid%ACLWDNB,grid%ACLWDNBC   &
      &                 ,grid%swvisdir ,grid%swvisdif &  !ssib
      &                 ,grid%swnirdir ,grid%swnirdif &  !ssib
-#ifdef WRF_CHEM
-     &                ,PM2_5_DRY, PM2_5_WATER, PM2_5_DRY_EC            &
-     &                ,TAUAER1, TAUAER2, TAUAER3, TAUAER4              & 
-     &                ,GAER1, GAER2, GAER3, GAER4                      &
-     &                ,WAER1, WAER2, WAER3, WAER4                      &
-#endif
      &                ,IDS,IDF,JDS,JDF,KDS,KDE                         &
      &                ,IMS,IME,JMS,JME,KMS,KME                         &
      &                ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -1893,11 +1739,6 @@
         ENDIF
 #endif
 !
-#ifdef WRF_CHEM
-#ifdef DM_PARALLEL
-#    include "HALO_NMM_J_2.inc"
-#endif
-#endif
 !-----------------
         exch_tim=exch_tim+now_time()-btimx
 #ifdef NMM_FIND_LOAD_IMBALANCE
@@ -1995,9 +1836,6 @@
      &             ,grid%mass_flux,grid%xf_ens                                   &
      &             ,grid%pr_ens,grid%gsw                                         &
      &             ,grid%GD_CLOUD,grid%GD_CLOUD2,grid%ktop_deep                  &
-#ifdef WRF_CHEM
-     &             ,RAINCV                          &
-#endif
      &             ,grid%pdtop,grid%pt,grid%pd,grid%res,grid%pint,grid%t,grid%q,grid%cwm,grid%tcucn                 &
      &             ,grid%omgalf,grid%u,grid%v,grid%w,grid%z,grid%fis,grid%w0avg                           &
      &             ,grid%prec,grid%acprec,grid%cuprec,grid%cuppt,grid%cprate                    &
@@ -2220,11 +2058,6 @@
 #    include "HALO_NMM_L_3.inc"
 #endif
 !
-#ifdef WRF_CHEM
-#ifdef DM_PARALLEL
-#    include "HALO_NMM_L_2.inc"
-#endif
-#endif
 !-----------------
       exch_tim=exch_tim+now_time()-btimx
 #ifdef NMM_FIND_LOAD_IMBALANCE
@@ -2247,9 +2080,6 @@
      &          ,grid%Q_BTYS,grid%Q_BTYE,grid%U_BTXS,grid%U_BTXE,grid%U_BTYS,grid%U_BTYE,grid%V_BTXS       &
      &          ,grid%V_BTXE,grid%V_BTYS,grid%V_BTYE,grid%Q2_BTXS,grid%Q2_BTXE,grid%Q2_BTYS,grid%Q2_BTYE   &
      &          ,grid%pd,grid%t,grid%q,grid%q2,grid%pint &
-#ifdef WRF_CHEM
-     &          ,CHEM,NUMGAS,CONFIG_FLAGS                               &
-#endif
      &          ,GRID%SPEC_BDY_WIDTH,grid%z                                  &
      &          ,grid%ihe,grid%ihw,grid%ive,grid%ivw                                        &
      &          ,IDS,IDF,JDS,JDF,KDS,KDE                                &
@@ -2318,11 +2148,6 @@
       ENDIF
 #endif
 !
-#ifdef WRF_CHEM
-#ifdef DM_PARALLEL
-#    include "HALO_NMM_A_2.inc"
-#endif
-#endif
 !-----------------
       exch_tim=exch_tim+now_time()-btimx
 #ifdef NMM_FIND_LOAD_IMBALANCE
@@ -2396,11 +2221,6 @@
 #ifdef DM_PARALLEL
 #    include "HALO_NMM_A.inc"
 #endif
-#ifdef WRF_CHEM
-#ifdef DM_PARALLEL
-#    include "HALO_NMM_A_2.inc"
-#endif
-#endif
 !-----------------
         exch_tim=exch_tim+now_time()-btimx
 #ifdef NMM_FIND_LOAD_IMBALANCE
@@ -2461,8 +2281,10 @@
       ENDDO
       ENDDO
       ENDDO
+
 ! calculate some model diagnostics.
 
+   IF ( config_flags%compute_radar_ref .EQ. 1 ) THEN
    CALL wrf_debug ( 200 , ' call diagnostic_driver' )
 
    CALL diagnostic_output_calc_refl(                                   &
@@ -2473,6 +2295,7 @@
       &             ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
       &             ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
       &                                                          )
+   END IF
 
 !
 !----------------------------------------------------------------------
@@ -2600,8 +2423,6 @@
       DEALLOCATE(RTHRATEN,STAT=ISTAT)
       DEALLOCATE(RTHBLTEN,STAT=ISTAT)
       DEALLOCATE(RQVBLTEN,STAT=ISTAT)
-#ifdef WRF_CHEM
-#endif
 !
 ! FOR VORTEX FOLLOWING MOVING NEST
 !
@@ -2644,6 +2465,7 @@
                      ,IMS,IME,JMS,JME,KMS,KME      &
                      ,ITS,ITE,JTS,JTE,KTS,KTE      )
      ENDIF
+
      diag_tim=diag_tim+now_time()-btimx
    endif hwrfx_mlsp
 #endif

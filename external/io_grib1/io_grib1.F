@@ -30,6 +30,8 @@ module gr1_data_info
   integer                , parameter       :: maxFileHandles   = 30 
   integer                , parameter       :: maxLevels        = 1000
   integer                , parameter       :: maxSoilLevels    = 100
+  integer                , parameter       :: maxPressLevels   = 100
+  integer                , parameter       :: maxTurbLayers    = 100
   integer                , parameter       :: maxDomains       = 500
 
   logical ,      dimension(maxFileHandles) :: committed, opened, used
@@ -38,6 +40,9 @@ module gr1_data_info
   integer,       dimension(maxFileHandles) :: FileStatus
   REAL,          dimension(maxLevels)      :: half_eta, full_eta
   REAL,          dimension(maxSoilLevels)  :: soil_depth, soil_thickness
+  REAL,          dimension(maxPressLevels) :: press_levels
+  REAL,          dimension(maxTurbLayers)  :: turb_layer_bot
+  REAL,          dimension(maxTurbLayers)  :: turb_layer_top
   character*24                             :: StartDate = ''
   character*24                             :: InputProgramName = ''
   integer                                  :: projection
@@ -612,7 +617,7 @@ SUBROUTINE ext_gr1_write_field( DataHandle , DateStrIn , VarName , &
                    MemoryStart(2):MemoryEnd(2), &
                    MemoryStart(3):MemoryEnd(3) ) :: Field
   real    :: fcst_secs
-  logical :: soil_layers, fraction
+  logical :: soil_layers, fraction, is_press_levels,is_turb_layers
   integer :: vert_unit
   integer :: abc(2,2,2)
   integer :: def(8)
@@ -686,6 +691,8 @@ SUBROUTINE ext_gr1_write_field( DataHandle , DateStrIn , VarName , &
   xsize = 1
   ysize = 1
   OutName = VarName
+  is_press_levels = .false.
+  is_turb_layers = .false.
   soil_layers = .false.
   fraction = .false.
 
@@ -701,6 +708,12 @@ SUBROUTINE ext_gr1_write_field( DataHandle , DateStrIn , VarName , &
      if ((MemoryOrder(idx:idx) .eq. 'Z') .and. &
           (DimNames(idx) .eq. 'soil_layers_stag')) then
         soil_layers = .true.
+     else if ((MemoryOrder(idx:idx) .eq. 'Z') .and. &
+          (DimNames(idx) .eq. 'num_press_levels_stag')) then
+        is_press_levels = .true.
+     else if ((MemoryOrder(idx:idx) .eq. 'Z') .and. &
+          (DimNames(idx) .eq. 'num_turb_layers')) then
+        is_turb_layers = .true.
      else if ((OutName .eq. 'LANDUSEF') .or. (OutName .eq. 'SOILCBOT') .or. &
           (OutName .eq. 'SOILCTOP')) then
         fraction = .true.
@@ -759,7 +772,23 @@ SUBROUTINE ext_gr1_write_field( DataHandle , DateStrIn , VarName , &
      enddo
   endif
 
+  if (OutName .eq. 'P_PL') then
+     do idx = 1, zsize
+        press_levels(idx) = Field(1,idx,1,1)
+     enddo
+  endif
 
+  if (OutName .eq. 'AFWA_TLYRBOT') then
+     do idx = 1, zsize
+        turb_layer_bot(idx) = Field(1,idx,1,1)
+     enddo
+  endif
+
+  if (OutName .eq. 'AFWA_TLYRTOP') then
+     do idx = 1, zsize
+        turb_layer_top(idx) = Field(1,idx,1,1)
+     enddo
+  endif
   if ((xsize .lt. 1) .or. (ysize .lt. 1)) then
      write(msg,*) 'Cannot output field with memory order: ', &
           MemoryOrder,Varname
@@ -771,7 +800,7 @@ SUBROUTINE ext_gr1_write_field( DataHandle , DateStrIn , VarName , &
 
   do idx = 1, zsize
      call gr1_get_levels(OutName, idx, zsize, soil_layers, vert_stag, fraction, &
-          vert_unit, level1(idx), level2(idx))
+          is_press_levels, is_turb_layers, vert_unit, level1(idx), level2(idx))
   enddo
 
   ! 
@@ -1061,6 +1090,16 @@ SUBROUTINE ext_gr1_write_field( DataHandle , DateStrIn , VarName , &
            else
               accum_period = 0
            endif
+ 
+           if ((OutName .eq. 'AFWA_TOTPRECIP') .or. &
+               (OutName .eq. 'AFWA_RAIN') .or. &
+               (OutName .eq. 'AFWA_FZRA') .or. &
+               (OutName .eq. 'AFWA_SNOW') .or. &
+               (OutName .eq. 'AFWA_SNOWFALL') .or. &
+               (OutName .eq. 'RAINC') .or. &
+               (OutName .eq. 'AFWA_ICE')) then
+               accum_period = fcst_secs
+           endif
 
 #ifdef OUTPUT_FULL_PRESSURE
            !
@@ -1278,7 +1317,7 @@ SUBROUTINE ext_gr1_read_field ( DataHandle , DateStr , VarName , Field , &
   do zidx = z_start,z_end
      
      CALL gr1_get_levels(VarName,zidx,z_end-z_start,soil_layers,vert_stag, &
-          .false., vert_unit,level1,level2)
+          .false., .false., vert_unit,level1,level2)
      
      CALL GET_GRIB_INDEX_VALIDTIME_GUESS(fileinfo(DataHandle)%fileindex(:), center, &
           subcenter, parmtbl, parmid,DateStr,vert_unit,level1, &
@@ -3428,7 +3467,7 @@ END SUBROUTINE gr1_get_new_handle
 
 
 SUBROUTINE gr1_get_levels(VarName, zidx, zsize, soil_layers, vert_stag, fraction, &
-     vert_unit, level1, level2)
+     is_press_levels, is_turb_layers, vert_unit, level1, level2)
 
   use gr1_data_info
   IMPLICIT NONE
@@ -3438,6 +3477,8 @@ SUBROUTINE gr1_get_levels(VarName, zidx, zsize, soil_layers, vert_stag, fraction
   logical :: soil_layers
   logical :: vert_stag
   logical :: fraction
+  logical :: is_press_levels
+  logical :: is_turb_layers 
   integer :: vert_unit
   integer :: level1
   integer :: level2
@@ -3450,8 +3491,8 @@ SUBROUTINE gr1_get_levels(VarName, zidx, zsize, soil_layers, vert_stag, fraction
      vert_unit = 109;
      level1 = zidx
      level2 = 0
-  else if ((zsize .gt. 1) .and. (.not. soil_layers) .and. (.not. fraction)) &
-       then
+  else if ((zsize .gt. 1) .and. (.not. soil_layers) .and. (.not. fraction) &
+            .and. (.not. is_press_levels) .and. (.not. is_turb_layers)) then
      vert_unit = 119;
      if (vert_stag) then
         level1 = (10000*full_eta(zidx)+0.5)
@@ -3469,6 +3510,15 @@ SUBROUTINE gr1_get_levels(VarName, zidx, zsize, soil_layers, vert_stag, fraction
         vert_unit = 112
         level1 = 100*(soil_depth(zidx) - 0.5*soil_thickness(zidx))+0.5
         level2 = 100*(soil_depth(zidx) + 0.5*soil_thickness(zidx))+0.5
+     ! Added pressure level as vertical unit - GAC 20140402
+     else if (is_press_levels) then
+        vert_unit = 100
+        level1 = press_levels(zidx)/100.
+        level2 = 0
+     else if (is_turb_layers) then
+        vert_unit = 106
+        level1 = turb_layer_top(zidx)/100.
+        level2 = turb_layer_bot(zidx)/100.
      else if (VarName .eq. 'mu') then
         vert_unit = 200
         level1 = 0
@@ -3483,6 +3533,71 @@ SUBROUTINE gr1_get_levels(VarName, zidx, zsize, soil_layers, vert_stag, fraction
         vert_unit = 105
         level1 = 10
         level2 = 0
+     ! Until a more sophisticated way to do this becomes clear,
+     ! adding AFWA diagnostic variable vertical unit and level info
+     ! here.  GAC 20140402
+     else if ((VarName .eq. 'TCOLI_MAX') .or.                      &
+             (Varname .eq. 'GRPL_FLX_MAX') .or.                    &
+             (Varname .eq. 'VIL') .or.                             &
+             (Varname .eq. 'RADARVIL') .or.                        &
+             (Varname .eq. 'FZLEV') .or.                           &
+             (Varname .eq. 'REFD_COM') .or.                        &
+             (Varname .eq. 'ICINGTOP') .or.                        &
+             (Varname .eq. 'ICINGBOT') .or.                        &
+             (Varname .eq. 'ICING_LG') .or.                        &
+             (Varname .eq. 'ICING_SM') .or.                        &
+             (Varname .eq. 'AFWA_CLOUD') .or.                      &
+             (Varname .eq. 'AFWA_CLOUD_CEIL') .or.                 &
+             (Varname .eq. 'AFWA_HAIL') .or.                       &
+             (Varname .eq. 'AFWA_TORNADO') .or.                    &
+             (Varname .eq. 'AFWA_PWAT') .or.                       &
+             (Varname .eq. 'QICING_LG_MAX') .or.                   &
+             (Varname .eq. 'QICING_SM_MAX')) then
+        vert_unit = 200
+        level1 = 0
+        level2 = 0
+     else if (VarName .eq. 'REFD_MAX') then
+        vert_unit = 105
+        level1 = 1000
+        level2 = 0
+     else if (VarName .eq. 'WSPD10MAX') then
+        vert_unit = 105
+        level1 = 10
+        level2 = 0
+     else if (VarName .eq. 'UP_HELI_MAX') then
+        vert_unit = 106
+        level1 = 50 !5000 m
+        level2 = 20 !2000 m
+     else if (Varname .eq. 'AFWA_LLWS') then
+        vert_unit = 106
+        level1 = 20 !2000 m
+        level2 = 0  !0 m
+     else if ((Varname .eq. 'AFWA_LLTURB') .or.                   &
+              (Varname .eq. 'AFWA_LLTURBLGT') .or.                &
+              (Varname .eq. 'AFWA_LLTURBMDT') .or.                &
+              (Varname .eq. 'AFWA_LLTURBSVR')) then
+        vert_unit = 106
+        level1 = 15 !1500 m
+        level2 = 0  !0 m
+     else if ((VarName .eq. 'W_UP_MAX') .or. (VarName .eq. 'W_DN_MAX')) then
+        vert_unit = 101
+        level1 = 40  !400 mb
+        level2 = 100 !1000 mb
+     else if (VarName .eq. 'AFWA_LIDX') then
+        vert_unit = 101
+        level1 = 50  !500 mb
+        level2 = 100 !1000 mb
+     else if (VarName .eq. 'AFWA_MSLP') then
+        vert_unit = 102  ! Mean sea level
+        level1 = 0
+        level2 = 0
+     else if ((VarName .eq. 'AFWA_CAPE_MU') .or.                  &
+              (VarName .eq. 'AFWA_CIN_MU')) then
+        vert_unit = 116  ! Pressure above ground
+        !level1 = 180     ! 180 mb AGL
+        !level2 = 0
+        level1 = 0       ! 180 mb AGL
+        level2 = 180
      else 
         vert_unit = 1
         level1 = 0

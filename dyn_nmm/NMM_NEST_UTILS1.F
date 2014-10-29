@@ -419,6 +419,7 @@ SUBROUTINE EARTH_LATLON ( HLAT,HLON,VLAT,VLON,     & !Earth lat,lon at H and V p
 
 ! local
 
+
  INTEGER,PARAMETER                           :: KNUM=SELECTED_REAL_KIND(13) 
  INTEGER                                     :: I,J
  REAL(KIND=KNUM)                             :: WB,SB,DLM,DPH,TPH0,STPH0,CTPH0
@@ -426,21 +427,28 @@ SUBROUTINE EARTH_LATLON ( HLAT,HLON,VLAT,VLON,     & !Earth lat,lon at H and V p
  REAL(KIND=KNUM)                             :: STPH,CTPH,STPV,CTPV,PI_2
  REAL(KIND=KNUM)                             :: SPHH,CLMH,FACTH,SPHV,CLMV,FACTV
  REAL(KIND=KNUM), DIMENSION(IMS:IME,JMS:JME) :: GLATH,GLONH,GLATV,GLONV
+ REAL(KIND=KNUM) :: DLMD8,DPHD8,WBD8,SBD8,CLAT8,CLON8
+ REAL(KIND=KNUM) :: CPHH, CPHV
 !-------------------------------------------------------------------------
-
+ DLMD8=DLMD1
+ DPHD8=DPHD1
+ WBD8=WBD1
+ SBD8=SBD1
+ CLAT8=CENTRAL_LAT
+ CLON8=CENTRAL_LON
 !
       PI_2 = ACOS(0.)
       DTR  = PI_2/90.
-      WB   = WBD1 * DTR                 ! WB:   western boundary in radians
-      SB   = SBD1 * DTR                 ! SB:   southern boundary in radians
-      DLM  = DLMD1 * DTR                ! DLM:  dlamda in radians 
-      DPH  = DPHD1 * DTR                ! DPH:  dphi   in radians
+      WB   = WBD8 * DTR                 ! WB:   western boundary in radians
+      SB   = SBD8 * DTR                 ! SB:   southern boundary in radians
+      DLM  = DLMD8 * DTR                ! DLM:  dlamda in radians 
+      DPH  = DPHD8 * DTR                ! DPH:  dphi   in radians
       TDLM = DLM + DLM                  ! TDLM: 2.0*dlamda 
       TDPH = DPH + DPH                  ! TDPH: 2.0*DPH 
 
 !     For earth lat lon only
 
-      TPH0  = CENTRAL_LAT*DTR                ! TPH0: central lat in radians 
+      TPH0  = CLAT8*DTR                ! TPH0: central lat in radians 
       STPH0 = SIN(TPH0)
       CTPH0 = COS(TPH0)
 
@@ -455,34 +463,37 @@ SUBROUTINE EARTH_LATLON ( HLAT,HLON,VLAT,VLON,     & !Earth lat,lon at H and V p
          CTPH = COS(TPHH)
          STPV = SIN(TPHV)
          CTPV = COS(TPHV)
-
                                                               !   .H
          DO I = ITS,MIN(ITE,IDE-1)                            !  / 
            TLMH = TLMH0 + I*TDLM                              !  \.H   .U   .H 
 !                                                             !H./ ----><----
            SPHH = CTPH0 * STPH + STPH0 * CTPH * COS(TLMH)     !     DLM + DLM
+           CPHH = sqrt(1-SPHH**2)
            GLATH(I,J)=ASIN(SPHH)                              ! GLATH: Earth Lat in radians 
-           CLMH = CTPH*COS(TLMH)/(COS(GLATH(I,J))*CTPH0) &
-                - TAN(GLATH(I,J))*TAN(TPH0)
+           !CLMH = CTPH*COS(TLMH)/(COS(GLATH(I,J))*CTPH0) &
+           !     - TAN(GLATH(I,J))*TAN(TPH0)
+           CLMH = (CTPH*COS(TLMH)-SPHH*STPH0) / (CPHH*CTPH0)
            IF(CLMH .GT. 1.) CLMH = 1.0
            IF(CLMH .LT. -1.) CLMH = -1.0
            FACTH = 1.
            IF(TLMH .GT. 0.) FACTH = -1.
-           GLONH(I,J) = -CENTRAL_LON*DTR + FACTH*ACOS(CLMH)
+           GLONH(I,J) = -CLON8*DTR + FACTH*ACOS(CLMH)
 
          ENDDO                                    
 
          DO I = ITS,MIN(ITE,IDE-1)
            TLMV = TLMV0 + I*TDLM
            SPHV = CTPH0 * STPV + STPH0 * CTPV * COS(TLMV)
+           CPHV = sqrt(1-SPHV**2)
            GLATV(I,J) = ASIN(SPHV)
-           CLMV = CTPV*COS(TLMV)/(COS(GLATV(I,J))*CTPH0) &
-                - TAN(GLATV(I,J))*TAN(TPH0)
+           !CLMV = CTPV*COS(TLMV)/(COS(GLATV(I,J))*CTPH0) &
+           !     - TAN(GLATV(I,J))*TAN(TPH0)
+           CLMV = (CTPV*COS(TLMV)-SPHV*STPH0) / (CPHV*CTPH0)
            IF(CLMV .GT. 1.) CLMV = 1.
            IF(CLMV .LT. -1.) CLMV = -1.
            FACTV = 1.
            IF(TLMV .GT. 0.) FACTV = -1.
-           GLONV(I,J) = -CENTRAL_LON*DTR + FACTV*ACOS(CLMV)
+           GLONV(I,J) = -CLON8*DTR + FACTV*ACOS(CLMV)
 
          ENDDO
 

@@ -465,7 +465,7 @@ state    real   SWVISDIF          ij    misc        1         Z      r        "S
 state    real   SWNIRDIR          ij    misc        1         Z      r        "SWNIRDIR"              "SWR NIR DIR component"  ""
 state    real   SWNIRDIF          ij    misc        1         Z      r        "SWNIRDIF"              "SWR NIR DIF component"  ""
 
-state  real  refl_10cm     ikj    dyn_nmm     1    -     h       "refl_10cm"      "Radar reflectivity (lamda = 10 cm)"  "dBZ"
+state  real  refl_10cm     ikj    dyn_nmm     1    -     hd=(DownCopy)       "refl_10cm"      "Radar reflectivity (lamda = 10 cm)"  "dBZ"
 state  real  REFD_MAX      ij     misc        1    -     h       "REFD_MAX"       "MAX DERIVED RADAR REFL"  "dbZ"
 state  real  qnwfa2d       ij     misc        1    -     rhdu    "QNWFA2D"        "Surface aerosol number conc emission"  "kg-1 s-1"
 state  real  re_cloud      ikj    misc        1    -     r       "re_cloud"       "Effective radius, cloud drops"      "m"
@@ -1743,7 +1743,7 @@ halo      HALO_NMM_TURBL_B  dyn_nmm 8:dudt,dvdt
 halo HALO_NMM_MEMBRANE_RELAX dyn_nmm 8:relaxwork
 halo HALO_NMM_MEMBRANE_MASK dyn_nmm 8:relaximask
 halo HALO_NMM_TRACK dyn_nmm 120:sm,pdyn,mslp,sqws
-halo HALO_NMM_INTERP_DOWN1 dyn_nmm 24:sm,fis,t,u,v,q,q2,pd,albase,nmm_tsk,mxsnal,tg,islope,cmc,soiltb,vegfrc,sh2o,smc,stc,toposoil,xice,ivgtyp,isltyp,vegfra,sst,weasd,snowh,hlat,hlon,z0,landmask,cwm,ustar,ths,qsh,cldefi,pshltr,dwdt,acprec,thz0,qz0,uz0,vz0,htop,hbot,cuppt,rlwtt,rswtt,t_adj,f_ice,f_rain,f_rimef,pint,hres_fis
+halo HALO_NMM_INTERP_DOWN1 dyn_nmm 24:sm,fis,t,u,v,q,q2,pd,albase,nmm_tsk,mxsnal,tg,islope,cmc,soiltb,vegfrc,sh2o,smc,stc,toposoil,xice,ivgtyp,isltyp,vegfra,sst,weasd,snowh,hlat,hlon,z0,landmask,cwm,ustar,ths,qsh,cldefi,pshltr,dwdt,acprec,thz0,qz0,uz0,vz0,htop,hbot,cuppt,rlwtt,rswtt,t_adj,f_ice,f_rain,f_rimef,pint,hres_fis,refl_10cm
 halo HALO_NMM_INTERP_DOWN1M dyn_nmm 24:MOIST,SCALAR
 halo HALO_NMM_FORCE_DOWN1 dyn_nmm 24:t,u,v,q,q2,cwm,pint,pd,hres_fis,fis,tg_max_m10wind,tg_max_vwind,tg_min_vwind,tg_max_zhel_25,tg_min_zhel_25,tg_max_zhel_03,tg_min_zhel_03,tg_total_precip
 halo HALO_NMM_FORCE_DOWN1M dyn_nmm 24:MOIST,SCALAR

@@ -480,7 +480,7 @@ state    real   SWVISDIF          ij    misc        1         Z      r        "S
 state    real   SWNIRDIR          ij    misc        1         Z      r        "SWNIRDIR"              "SWR NIR DIR component"  ""
 state    real   SWNIRDIF          ij    misc        1         Z      r        "SWNIRDIF"              "SWR NIR DIF component"  ""
 
-state  real  refl_10cm     ikj    dyn_nmm     1    -     h023       "refl_10cm"      "Radar reflectivity (lamda = 10 cm)"  "dBZ"
+state  real  refl_10cm     ikj    dyn_nmm     1    -     h023d=(DownCopy)       "refl_10cm"      "Radar reflectivity (lamda = 10 cm)"  "dBZ"
 state  real  REFD_MAX      ij     misc        1    -     h023       "REFD_MAX"       "MAX DERIVED RADAR REFL"  "dbZ"
 state  real  qnwfa2d       ij     misc        1    -     rhdu    "QNWFA2D"        "Surface aerosol number conc emission"  "kg-1 s-1"
 state  real  re_cloud      ikj    misc        1    -     r       "re_cloud"       "Effective radius, cloud drops"      "m"
@@ -702,7 +702,7 @@ state integer iinfo ijkb dyn_nmm 1 Z u=(NoInterp)d=(NoInterp) "iinfo" "Nest-pare
 #<Table> <Type> <Sym>         <Dims>   <Use>   <NumTLev> <Stagger> <IO>     <DNAME>             <DESCRIP>     <UNITS>   
 #
 # Mask for moving nest interpolations
-state    integer imask_nostag         ij      misc     -
+state    integer imask_nostag         ij      misc     - - rh "IMASK_NOSTAG" "INTERPOLATION MASK"
 state    integer imask_xstag          ij      misc     X
 state    integer imask_ystag          ij      misc     Y
 state    integer imask_xystag         ij      misc     XY
@@ -1811,7 +1811,7 @@ halo      HALO_NMM_TURBL_B  dyn_nmm 8:dudt,dvdt
 # following halos added for nesting purpose  (gopal's doing):
 
 halo HALO_NMM_TRACK dyn_nmm 120:sm,pdyn,mslp,sqws
-halo HALO_NMM_INTERP_DOWN1 dyn_nmm 24:sm,fis,t,u,v,q,q2,pd,albase,nmm_tsk,mxsnal,tg,islope,cmc,soiltb,vegfrc,sh2o,smc,stc,toposoil,xice,ivgtyp,isltyp,vegfra,sst,weasd,snowh,hlat,hlon,z0,landmask,cwm,ustar,ths,qsh,cldefi,pshltr,dwdt,acprec,thz0,qz0,uz0,vz0,htop,hbot,cuppt,rlwtt,rswtt,t_adj,f_ice,f_rain,f_rimef,pint,hres_fis,pdyn_parent,pdyn_smooth
+halo HALO_NMM_INTERP_DOWN1 dyn_nmm 24:sm,fis,t,u,v,q,q2,pd,albase,nmm_tsk,mxsnal,tg,islope,cmc,soiltb,vegfrc,sh2o,smc,stc,toposoil,xice,ivgtyp,isltyp,vegfra,sst,weasd,snowh,hlat,hlon,z0,landmask,cwm,ustar,ths,qsh,cldefi,pshltr,dwdt,acprec,thz0,qz0,uz0,vz0,htop,hbot,cuppt,rlwtt,rswtt,t_adj,f_ice,f_rain,f_rimef,pint,hres_fis,pdyn_parent,pdyn_smooth,refl_10cm
 halo HALO_NMM_INTERP_DOWN1M dyn_nmm 24:MOIST,SCALAR
 halo HALO_NMM_FORCE_DOWN1 dyn_nmm 24:t,u,v,q,q2,cwm,pint,pd,hres_fis,fis,pdyn_parent,pdyn_smooth
 halo HALO_NMM_FORCE_DOWN1M dyn_nmm 24:MOIST,SCALAR

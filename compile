@@ -285,7 +285,16 @@ else
           setenv BUFR 1
        endif
        setenv RTTOV_CPP "-DRTTOV"
-       setenv RTTOV_LIB "-L${RTTOV}/lib -lrttov11.1.0_coef_io -lrttov11.1.0_emis_atlas -lrttov11.1.0_main"
+       if ( -e ${RTTOV}/lib/librttov11.1.0_main.a ) then
+          setenv RTTOV_LIB "-L${RTTOV}/lib -lrttov11.1.0_coef_io -lrttov11.1.0_emis_atlas -lrttov11.1.0_main"
+       else if ( -e ${RTTOV}/lib/librttov11.2.0_main.a ) then
+          setenv RTTOV_LIB "-L${RTTOV}/lib -lrttov11.2.0_coef_io -lrttov11.2.0_emis_atlas -lrttov11.2.0_main"
+       else
+          echo "Can not find a compatible RTTOV library! Please ensure that your RTTOV build was successful,"
+          echo "your 'RTTOV' environment variable is set correctly, and you are using a supported version of RTTOV."
+          echo "Currently supported versions are 11.1 and 11.2"
+          exit 1
+       endif
        setenv RTTOV_SRC "-I${RTTOV}/include -I${RTTOV}/mod"
     else
        setenv RTTOV_CPP " "

@@ -55,7 +55,7 @@ state real    tracker_vmax    - dyn_nmm     1      -    rh01  "tracker_vmax"    
 state logical tracker_havefix - dyn_nmm     1      -    rh01  "tracker_havefix" "True = storm fix locations are valid" ""
 state logical tracker_gave_up - dyn_nmm     1      -    rh01  "tracker_gave_up" "True = inline tracker gave up on tracking the storm" ""
 
-state real membrane_mslp ij     dyn_nmm     1      -    rh  "membrane_mslp" "Mean Sea Level Pressure using UPP Membrane MSLP method" "Pa"
+state real membrane_mslp ij     dyn_nmm     1      -    rhd=(DownCopy)  "membrane_mslp" "Mean Sea Level Pressure using UPP Membrane MSLP method" "Pa"
 state  real   relaxwork  ij     dyn_nmm     1      -    -  "relaxwork" "Temporary Tv storage array for the membrane MSLP overrelaxation loops" "K"
 state  integer relaximask ij    dyn_nmm     1      -    -  "relaximask" "Integer mask array for the membrane MSLP overrelaxation loops" "K"
 state  logical relaxmask ij     dyn_nmm     1      -    -  "relaxmask" "Mask array for the membrane MSLP overrelaxation loops" "K"

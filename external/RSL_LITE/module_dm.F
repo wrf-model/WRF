@@ -1,3 +1,10 @@
+#if NMM_CORE==1
+#define copy_fcnm UpNear
+#define copy_fcn UpCopy
+#define interp_fcn DownCopy
+#define copy_fcni UpINear
+#endif
+
 #define NEST_FULL_INFLUENCE(A,B) A=B
 MODULE module_dm
 
@@ -4538,7 +4545,7 @@ endif
       USE module_configure, ONLY : grid_config_rec_type
       USE module_dm, ONLY : ntasks, ntasks_x, ntasks_y, itrace, local_communicator, mytask, &
                             ipe_save, jpe_save, ips_save, jps_save, get_dm_max_halo_width
-      USE module_comm_dm_3, ONLY : HALO_NMM_WEIGHTS_sub
+      USE module_comm_dm, ONLY : HALO_NMM_WEIGHTS_sub
       IMPLICIT NONE
 !
       TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
@@ -4831,61 +4838,6 @@ endif
       RETURN
       END SUBROUTINE force_domain_nmm_part1
 
-!------------------------------------------------------------------
-
-   SUBROUTINE old_force_domain_nmm_part1 ( grid, intermediate_grid, config_flags    &
-!
-#include "dummy_new_args.inc"
-!
-                 )
-      USE module_state_description
-      USE module_domain, ONLY : domain, get_ijk_from_grid
-      USE module_configure, ONLY : grid_config_rec_type
-      USE module_dm, ONLY : ntasks, ntasks_x, ntasks_y, itrace, local_communicator, mytask, &
-                            ipe_save, jpe_save, ips_save, jps_save, get_dm_max_halo_width
-      USE module_timing
-!
-      TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
-      TYPE(domain), POINTER :: intermediate_grid
-#include <dummy_new_decl.inc>
-      INTEGER nlev, msize
-      INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
-      TYPE (grid_config_rec_type)            :: config_flags
-      REAL xv(2000)
-      INTEGER       ::          cids, cide, cjds, cjde, ckds, ckde,    &
-                                cims, cime, cjms, cjme, ckms, ckme,    &
-                                cips, cipe, cjps, cjpe, ckps, ckpe
-      INTEGER       ::          nids, nide, njds, njde, nkds, nkde,    &
-                                nims, nime, njms, njme, nkms, nkme,    &
-                                nips, nipe, njps, njpe, nkps, nkpe
-      LOGICAL feedback_flag, feedback_flag_v
-      LOGICAL interp_mp
-      INTEGER idim1,idim2,idim3,idim4,idim5,idim6,idim7
-
-!#define COPY_IN
-!#include <scalar_derefs.inc>
-!
-      CALL get_ijk_from_grid (  grid ,                   &
-                                cids, cide, cjds, cjde, ckds, ckde,    &
-                                cims, cime, cjms, cjme, ckms, ckme,    &
-                                cips, cipe, cjps, cjpe, ckps, ckpe    )
-
-      CALL get_ijk_from_grid (  intermediate_grid ,              &
-                                nids, nide, njds, njde, nkds, nkde,    &
-                                nims, nime, njms, njme, nkms, nkme,    &
-                                nips, nipe, njps, njpe, nkps, nkpe    )
-
-      nlev  = ckde - ckds + 1
-
-#include "nest_forcedown_pack.inc"
-
-!   WRITE(0,*)'I have completed PACKING of BCs data successfully'
-
-!#define COPY_OUT
-!#include <scalar_derefs.inc>
-      RETURN
-      END SUBROUTINE old_force_domain_nmm_part1
-
 !==============================================================================================
 
    SUBROUTINE force_domain_nmm_part2 ( grid, ngrid, config_flags    &
@@ -4899,10 +4851,10 @@ endif
       USE module_dm, ONLY : ntasks, ntasks_x, ntasks_y, itrace, local_communicator, mytask, &
                             ipe_save, jpe_save, ips_save, jps_save, get_dm_max_halo_width
 #if (NMM_NEST == 1)
-      USE module_comm_dm, ONLY : HALO_NMM_FORCE_DOWN1_sub, HALO_NMM_FORCE_DOWN1M_sub, &
-           HALO_NMM_FORCE_DOWN_SST_sub, HALO_NMM_INTERP_INFO_sub, HALO_NMM_TORNADO_sub
+      USE module_comm_nesting_dm, ONLY : halo_force_down_sub
+      use module_comm_dm, only: HALO_NMM_INTERP_INFO_sub
 #ifdef HWRF
-      use module_comm_dm, only: HALO_NMM_SWATH_sub
+      use module_comm_dm, only: HALO_NMM_FORCE_DOWN_SST_sub
 #endif
 #endif
       IMPLICIT NONE
@@ -4970,18 +4922,7 @@ integer myproc
       ENDIF
 #endif
 
-#include "HALO_NMM_FORCE_DOWN1.inc"
-      if(interp_mp .eqv. .true.) then
-#include "HALO_NMM_FORCE_DOWN1M.inc"
-      endif
-      if(size(grid%tg_max_m10wind)>1) then
-#include "HALO_NMM_TORNADO.inc"
-      endif
-#ifdef HWRF
-      if(size(grid%precip_swath)>1) then
-#include "HALO_NMM_SWATH.inc"
-      endif
-#endif
+#include "HALO_FORCE_DOWN.inc"
 
       call store_interp_info(ngrid,grid)
       call ext_c2b_fulldom(ngrid%IIH,ngrid%JJH,ngrid%HBWGT1, &
@@ -5068,7 +5009,8 @@ grid=>cgrid
       INTEGER idim1,idim2,idim3,idim4,idim5,idim6,idim7
 
       INTEGER       :: idum1, idum2
-
+      LOGICAL :: interp_mp
+      interp_mp=.true.
 
 !#ifdef DEREF_KLUDGE
 !!  see http://www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm
@@ -5112,11 +5054,7 @@ grid=>cgrid
       USE module_dm, ONLY : ntasks, ntasks_x, ntasks_y, itrace, local_communicator, mytask, &
                             ipe_save, jpe_save, ips_save, jps_save, get_dm_max_halo_width
 #if ( NMM_NEST == 1 )
-      USE module_comm_dm, ONLY : HALO_NMM_FORCE_DOWN1_sub, HALO_NMM_FORCE_DOWN1M_sub, &
-           HALO_NMM_INTERP_INFO_sub,HALO_NMM_FORCE_DOWN_SST_sub, HALO_NMM_TORNADO_sub
-#ifdef HWRF
-      use module_comm_dm, only: HALO_NMM_SWATH_sub
-#endif
+      USE module_comm_nesting_dm, ONLY : halo_force_down_sub
 #endif
       IMPLICIT NONE
 !
@@ -5176,18 +5114,7 @@ integer myproc
                                 ims, ime, jms, jme, kms, kme,    &
                                 ips, ipe, jps, jpe, kps, kpe    )
 
-#include "HALO_NMM_FORCE_DOWN1.inc"
-if(interp_mp .eqv. .true.) then
-#include "HALO_NMM_FORCE_DOWN1M.inc"
-endif
-if(size(grid%tg_max_m10wind)>1) then
-#include "HALO_NMM_TORNADO.inc"
-endif
-#ifdef HWRF
-if(size(grid%precip_swath)>1) then
-#include "HALO_NMM_SWATH.inc"
-endif
-#endif
+#include "HALO_FORCE_DOWN.inc"
 
       RETURN
     END SUBROUTINE force_intermediate_nmm

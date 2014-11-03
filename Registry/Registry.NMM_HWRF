@@ -42,6 +42,8 @@
 include registry.dimspec
 include registry.lake
 
+rconfig integer halo_debug namelist,domains 1 0 - "halo_debug" "Halo clearing setting"
+
 #############
 rconfig   integer ntracers                namelist,physics     1              4       -
 
@@ -92,7 +94,7 @@ package tracer_option_2 ntracers==4 - szj:szj1,szj2,szj3,szj4;s1z:s1z1,s1z2,s1z3
 # It is reauired that LU_INDEX appears before any variable that is
 # interpolated with a mask, as lu_index supplies that mask.
 #
-state    real  LU_INDEX         ij      misc        1         -     irhd=(interp_fcnm)u=(copy_fcnm)   "LU_INDEX"              "LAND USE CATEGORY"         ""
+state    real  LU_INDEX         ij      misc        1         -     irhd=(DownNear)u=(UpNear)   "LU_INDEX"              "LAND USE CATEGORY"         ""
 state    real  LU_MASK          ij      misc        1         -     i3h     "LU_MASK"              "0 land 1 water"         ""
 ################################################################################
 ################################################################################
@@ -206,8 +208,8 @@ state  real   VBWGT4       ij     dyn_nmm     1      -      r
 #end of HWRF: 
 
 #
-state  real   HLON        ij     dyn_nmm     1      -      h0123
-state  real   HLAT        ij     dyn_nmm     1      -      h0123
+state  real   HLON        ij     dyn_nmm     1      -      h0123d=(NoInterp)
+state  real   HLAT        ij     dyn_nmm     1      -      h0123d=(NoInterp)
 state  real   VLON        ij     dyn_nmm     1      -      irh023
 state  real   VLAT        ij     dyn_nmm     1      -      irh023
 
@@ -807,7 +809,6 @@ state   real    dfi_qi         ijkfbt   dfi_moist       1         m     r      "
 state   real    dfi_qs         ijkfbt   dfi_moist       1         m     r      "QSNOW"            "Snow mixing ratio"             "kg kg-1"
 state   real    dfi_qg         ijkfbt   dfi_moist       1         m     r      "QGRAUP"           "Graupel mixing ratio"          "kg kg-1"
 state   real    dfi_qh         ijkfbt   dfi_moist       1         m     r      "QHAIL"             "Hail mixing ratio"              "kg kg-1"
-state   real    dfi_qnh        ijkfbt   dfi_moist       1         m     r      "QNHAIL"           "Hail Number concentration"        "# kg(-1)"
 
 
 #                                               
@@ -828,25 +829,27 @@ state   real    qnifa          ikjftb  scalar      1         m     i01hru=(UpMas
 
 state   real    -              ijkftb  dfi_scalar      1         m     -   -
 state   real    dfi_qndrop     ijkftb  dfi_scalar      1         m     \
-   rusdf=(bdy_interp:dt)    "DFI_QNDROP"    "DFI Droplet number mixing ratio"        "# kg-1"
+   rusdf=(BdyCopy)    "DFI_QNDROP"    "DFI Droplet number mixing ratio"        "# kg-1"
 state   real    dfi_qni        ijkftb  dfi_scalar      1         m     \
-   rusdf=(bdy_interp:dt)    "DFI_QNICE"     "DFI Ice Number concentration" "# kg-1"
+   rusdf=(BdyCopy)    "DFI_QNICE"     "DFI Ice Number concentration" "# kg-1"
 state   real    dfi_qt         ijkftb  dfi_scalar      1         m     \
-   rusdf=(bdy_interp:dt)    "DFI_CWM"       "DFI Total condensate mixing ratio"      "kg kg-1"
+   rusdf=(BdyCopy)    "DFI_CWM"       "DFI Total condensate mixing ratio"      "kg kg-1"
 state   real    dfi_qns        ijkftb  dfi_scalar      1         m     \
-   rusdf=(bdy_interp:dt)    "DFI_QNSNOW"    "DFI Snow Number concentration"   "# kg(-1)"
+   rusdf=(BdyCopy)    "DFI_QNSNOW"    "DFI Snow Number concentration"   "# kg(-1)"
 state   real    dfi_qnr        ijkftb  dfi_scalar      1         m     \
-   rusdf=(bdy_interp:dt)    "DFI_QNRAIN"    "DFI Rain Number concentration"   "# kg(-1)"
+   rusdf=(BdyCopy)    "DFI_QNRAIN"    "DFI Rain Number concentration"   "# kg(-1)"
 state   real    dfi_qng        ijkftb  dfi_scalar      1         m     \
-   rusdf=(bdy_interp:dt)    "DFI_QNGRAUPEL" "DFI Graupel Number concentration" "# kg(-1)"
+   rusdf=(BdyCopy)    "DFI_QNGRAUPEL" "DFI Graupel Number concentration" "# kg(-1)"
+state   real    dfi_qnh        ijkfbt   dfi_scalar     1         m     \
+   rusdf=(BdyCopy)      "QNHAIL"           "Hail Number concentration"        "# kg(-1)"
 state   real    dfi_qnn        ijkftb  dfi_scalar      1         m     \
-   rusdf=(bdy_interp:dt)    "DFI_QNCC"      "DFI CNN Number concentration"   "# kg(-1)"
+   rusdf=(BdyCopy)    "DFI_QNCC"      "DFI CNN Number concentration"   "# kg(-1)"
 state   real    dfi_qnc        ijkftb  dfi_scalar      1         m     \
-   rusdf=(bdy_interp:dt)    "DFI_QNCLOUD"   "DFI Cloud Number concentration" "# kg(-1)"
+   rusdf=(BdyCopy)    "DFI_QNCLOUD"   "DFI Cloud Number concentration" "# kg(-1)"
 state   real    dfi_qnwfa      ikjftb  dfi_scalar      1         m     \
-   rusdf=(bdy_interp:dt)    "DFI_QNWFA"     "DFI water-friendly aerosol number con" "# kg(-1)"
+   rusdf=(BdyCopy)    "DFI_QNWFA"     "DFI water-friendly aerosol number con" "# kg(-1)"
 state   real    dfi_qnifa      ikjftb  dfi_scalar      1         m     \
-   rusdf=(bdy_interp:dt)    "DFI_QNIFA"     "DFI ice-friendly aerosol number con"   "# kg(-1)"
+   rusdf=(BdyCopy)    "DFI_QNIFA"     "DFI ice-friendly aerosol number con"   "# kg(-1)"
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -940,9 +943,9 @@ state    real   T2               ij     misc        1         -     ir        "T
 state    real   U10              ij     misc        1         -     irh0123d=(DownCopy)       "U10"                  "U at 10 M"         " "
 state    real   V10              ij     misc        1         -     irh0123d=(DownCopy)       "V10"                  "V at 10 M"         " "
 state    real   XICE             ij     misc        1         -     i01rd=(DownNear)      "XICE"                 "SEA ICE"         ""
-state    real   ICEDEPTH         ij     misc        1         -     i0124rhd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)   "ICEDEPTH"        "SEA ICE THICKNESS"    "m"
-state    real   ALBSI            ij     misc        1         -     i0124rhd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)   "ALBSI"        "SEA ICE ALBEDO"    " "
-state    real   SNOWSI           ij     misc        1         -     i0124rhd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)   "SNOWSI"          "SNOW DEPTH ON SEA ICE" "m"
+state    real   ICEDEPTH         ij     misc        1         -     i0124rhd=(DownNear)   "ICEDEPTH"        "SEA ICE THICKNESS"    "m"
+state    real   ALBSI            ij     misc        1         -     i0124rhd=(DownNear)   "ALBSI"        "SEA ICE ALBEDO"    " "
+state    real   SNOWSI           ij     misc        1         -     i0124rhd=(DownNear)   "SNOWSI"          "SNOW DEPTH ON SEA ICE" "m"
 state    real   LAI              ij     misc        1         -     i0124rh   "LAI"                  "Leaf area index"          "area/area"
 state    real   SMSTAV           ij     misc        1         -     irh023       "SMSTAV"               "MOISTURE VARIBILITY" ""
 state    real   SMSTOT           ij     misc        1         -     irh023     "SMSTOT"               "TOTAL SOIL MOISTURE" ""
@@ -1058,81 +1061,81 @@ state    real   fbur            ij         -        1         -      h        "F
 state    real   fgsn            ij         -        1         -      h        "FGSN"         "fraction of ground covered by snow"     ""
 
 # For Noah-MP
-state   integer isnowxy    ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "isnow"      "no. of snow layer"     "m3 m-3"
-state    real   tvxy       ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "tv"         "vegetation leaf temperature"  "K"
-state    real   tgxy       ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "tg"         "bulk ground temperature" "K"
-state    real   canicexy   ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "canice"     "intercepted ice mass"  "mm"
-state    real   canliqxy   ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "canliq"     "intercepted liquid water"  "mm"
-state    real   eahxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "eah"        "canopy air vapor pressure" "pa"
-state    real   tahxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "tah"        "canopy air temperature" "K"
-state    real   cmxy       ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "cm"         "surf. exchange coeff. for momentum"  "m/s"
-state    real   chxy       ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "ch"         "surf. exchange coeff. for heat"  "m/s"
-state    real   fwetxy     ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "fwet"       "wetted or snowed canopy fraction" "-"
-state    real   sneqvoxy   ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "sneqvo"     "snow mass at last time step"  "mm"
-state    real   alboldxy   ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "albold"     "snow albedo at last timestep"  "-"
-state    real   qsnowxy    ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "qsnowxy"    "snowfall on the ground"  "mm/s"
-state    real   wslakexy   ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "wslake"     "lake water storage"  "mm"
-state    real   zwtxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "zwt"        "water table depth" "m"
-state    real   waxy       ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "wa"         "water in the acquifer" "mm"
-state    real   wtxy       ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "wt"         "groundwater storage" "mm"
-state    real   tsnoxy    i{snly}j -       1      Z     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "tsno"       "snow temperature"  "K"
-state    real   zsnsoxy   i{snsl}j -       1      Z     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "zsnso"      "layer-bottom depth from snow surf"  "m"
-state    real   snicexy   i{snly}j -       1      Z     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "snice"      "snow layer ice"  "mm"
-state    real   snliqxy   i{snly}j -       1      Z     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "snliq"      "snow layer liquid"  "mm"
-state    real   lfmassxy   ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "lfmass"     "leaf mass" "g/m2"
-state    real   rtmassxy   ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "rtmass"     "mass of fine roots"  "g/m2"
-state    real   stmassxy   ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "stmass"     "stem mass" "g/m2"
-state    real   woodxy     ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "wood"       "mass of wood" "g/m2"
-state    real   stblcpxy   ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "stblcp"     "stable carbon pool"  "g/m2"
-state    real   fastcpxy   ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "fastcp"     "short-lived carbon" "g/m2"
-state    real   xsaixy     ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "xsai"       "stem area index" "-"
+state   integer isnowxy    ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "isnow"      "no. of snow layer"     "m3 m-3"
+state    real   tvxy       ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "tv"         "vegetation leaf temperature"  "K"
+state    real   tgxy       ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "tg"         "bulk ground temperature" "K"
+state    real   canicexy   ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "canice"     "intercepted ice mass"  "mm"
+state    real   canliqxy   ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "canliq"     "intercepted liquid water"  "mm"
+state    real   eahxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "eah"        "canopy air vapor pressure" "pa"
+state    real   tahxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "tah"        "canopy air temperature" "K"
+state    real   cmxy       ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "cm"         "surf. exchange coeff. for momentum"  "m/s"
+state    real   chxy       ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "ch"         "surf. exchange coeff. for heat"  "m/s"
+state    real   fwetxy     ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "fwet"       "wetted or snowed canopy fraction" "-"
+state    real   sneqvoxy   ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "sneqvo"     "snow mass at last time step"  "mm"
+state    real   alboldxy   ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "albold"     "snow albedo at last timestep"  "-"
+state    real   qsnowxy    ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "qsnowxy"    "snowfall on the ground"  "mm/s"
+state    real   wslakexy   ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "wslake"     "lake water storage"  "mm"
+state    real   zwtxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "zwt"        "water table depth" "m"
+state    real   waxy       ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "wa"         "water in the acquifer" "mm"
+state    real   wtxy       ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "wt"         "groundwater storage" "mm"
+state    real   tsnoxy    i{snly}j -       1      Z     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "tsno"       "snow temperature"  "K"
+state    real   zsnsoxy   i{snsl}j -       1      Z     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "zsnso"      "layer-bottom depth from snow surf"  "m"
+state    real   snicexy   i{snly}j -       1      Z     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "snice"      "snow layer ice"  "mm"
+state    real   snliqxy   i{snly}j -       1      Z     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "snliq"      "snow layer liquid"  "mm"
+state    real   lfmassxy   ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "lfmass"     "leaf mass" "g/m2"
+state    real   rtmassxy   ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "rtmass"     "mass of fine roots"  "g/m2"
+state    real   stmassxy   ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "stmass"     "stem mass" "g/m2"
+state    real   woodxy     ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "wood"       "mass of wood" "g/m2"
+state    real   stblcpxy   ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "stblcp"     "stable carbon pool"  "g/m2"
+state    real   fastcpxy   ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "fastcp"     "short-lived carbon" "g/m2"
+state    real   xsaixy     ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "xsai"       "stem area index" "-"
 state    real   taussxy    ij      -       1      -        rh                                                    "tauss"      "non-dimensional snow age"            ""
-state    real   t2mvxy     ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "t2v"        "2 meter temperature over canopy" "K"
-state    real   t2mbxy     ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "t2b"        "2 meter temperature over bare ground" "K"
-state    real   q2mvxy     ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "q2v"        "2 meter mixing ratio over canopy" "kg kg-1"
-state    real   q2mbxy     ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "q2b"        "2 meter mixing ratio over bare ground" "kg kg-1"
-state    real   tradxy     ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "trad"       "surface radiative temperature" "K"
-state    real   neexy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "nee"        "net ecosystem exchange" "g/m2/s CO2"
-state    real   gppxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "gpp"        "gross primary productivity" "g/m2/s C"
-state    real   nppxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "npp"        "net primary productivity" "g/m2/s C"
-state    real   fvegxy     ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "fveg"       "Noah-MP vegetation fraction" ""
-state    real   qinxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "qin"        "groundwater recharge" "mm/s"
-state    real   runsfxy    ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "runsf"      "surface runoff"  "mm/s"
-state    real   runsbxy    ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "runsb"      "subsurface runoff" "mm/s"
-state    real   ecanxy     ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "ecan"       "evaporation of intercepted water"  "mm/s"
-state    real   edirxy     ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "edir"       "ground surface evaporation rate"  "mm/s"
-state    real   etranxy    ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "etran"      "transpiration rate" "mm/s"
-state    real   fsaxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "fsa"        "total absorbed solar radiation" "W/m2"
-state    real   firaxy     ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "fira"       "total net longwave rad" "W/m2"
-state    real   aparxy     ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "apar"       "photosyn active energy by canopy" "W/m2"
-state    real   psnxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "psn"        "total photosynthesis"  "umol co2/m2/s"
-state    real   savxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "sav"        "solar rad absorbed by veg" "W/m2"
-state    real   sagxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "sag"        "solar rad absorbed by ground"  "W/m2"
-state    real   rssunxy    ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "rssun"      "sunlit stomatal resistance" "s/m"
-state    real   rsshaxy    ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "rssha"      "shaded stomatal resistance" "s/m"
-state    real   bgapxy     ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "bgap"      "between canopy gap" "fraction"
-state    real   wgapxy     ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "wgap"      "within canopy gap" "fraction"
-state    real   tgvxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "tgv"       "ground temp. under canopy""K"
-state    real   tgbxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "tgb"       "bare ground temperature" "K"
-state    real   chvxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "chv"       "vegetated heat exchange coefficient" "m/s"
-state    real   chbxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "chb"       "bare-ground heat exchange coefficient" "m/s"
-state    real   shgxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "shg"        "sensible heat flux: ground to canopy"  "W/m2"
-state    real   shcxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "shc"        "sensible heat flux: leaf to canopy"    "W/m2"
-state    real   shbxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "shb"        "sensible heat flux: bare grnd to atmo" "W/m2"
-state    real   evgxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "evg"        "latent heat flux: ground to canopy"    "W/m2"
-state    real   evbxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "evb"        "latent heat flux: bare grnd to atmo"   "W/m2"
-state    real   ghvxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "ghv"        "heat flux into soil: under canopy"     "W/m2"
-state    real   ghbxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "ghb"        "heat flux into soil: bare fraction"    "W/m2"
-state    real   irgxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "irg"        "net longwave at below canopy surface"  "W/m2"
-state    real   ircxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "irc"        "net longwave in canopy"                "W/m2"
-state    real   irbxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "irb"        "net longwave at bare fraction surface" "W/m2"
-state    real   trxy       ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "tr"         "transpiration"                         "W/m2"
-state    real   evcxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "evc"        "canopy evaporation"                    "W/m2"
-state    real   chleafxy   ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "chleaf"     "leaf exchange coefficient"             "m/s"
-state    real   chucxy     ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "chuc"       "under canopy exchange coefficient"     "m/s"
-state    real   chv2xy     ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "chv2"       "leaf exchange coefficient"             "m/s"
-state    real   chb2xy     ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "chb2"       "under canopy exchange coefficient"     "m/s"
-state    real   chstarxy   ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "chstar"     "dummy exchange coefficient" "m/s"
+state    real   t2mvxy     ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "t2v"        "2 meter temperature over canopy" "K"
+state    real   t2mbxy     ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "t2b"        "2 meter temperature over bare ground" "K"
+state    real   q2mvxy     ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "q2v"        "2 meter mixing ratio over canopy" "kg kg-1"
+state    real   q2mbxy     ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "q2b"        "2 meter mixing ratio over bare ground" "kg kg-1"
+state    real   tradxy     ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "trad"       "surface radiative temperature" "K"
+state    real   neexy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "nee"        "net ecosystem exchange" "g/m2/s CO2"
+state    real   gppxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "gpp"        "gross primary productivity" "g/m2/s C"
+state    real   nppxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "npp"        "net primary productivity" "g/m2/s C"
+state    real   fvegxy     ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "fveg"       "Noah-MP vegetation fraction" ""
+state    real   qinxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "qin"        "groundwater recharge" "mm/s"
+state    real   runsfxy    ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "runsf"      "surface runoff"  "mm/s"
+state    real   runsbxy    ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "runsb"      "subsurface runoff" "mm/s"
+state    real   ecanxy     ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "ecan"       "evaporation of intercepted water"  "mm/s"
+state    real   edirxy     ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "edir"       "ground surface evaporation rate"  "mm/s"
+state    real   etranxy    ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "etran"      "transpiration rate" "mm/s"
+state    real   fsaxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "fsa"        "total absorbed solar radiation" "W/m2"
+state    real   firaxy     ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "fira"       "total net longwave rad" "W/m2"
+state    real   aparxy     ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "apar"       "photosyn active energy by canopy" "W/m2"
+state    real   psnxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "psn"        "total photosynthesis"  "umol co2/m2/s"
+state    real   savxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "sav"        "solar rad absorbed by veg" "W/m2"
+state    real   sagxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "sag"        "solar rad absorbed by ground"  "W/m2"
+state    real   rssunxy    ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "rssun"      "sunlit stomatal resistance" "s/m"
+state    real   rsshaxy    ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "rssha"      "shaded stomatal resistance" "s/m"
+state    real   bgapxy     ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "bgap"      "between canopy gap" "fraction"
+state    real   wgapxy     ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "wgap"      "within canopy gap" "fraction"
+state    real   tgvxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "tgv"       "ground temp. under canopy""K"
+state    real   tgbxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "tgb"       "bare ground temperature" "K"
+state    real   chvxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "chv"       "vegetated heat exchange coefficient" "m/s"
+state    real   chbxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "chb"       "bare-ground heat exchange coefficient" "m/s"
+state    real   shgxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "shg"        "sensible heat flux: ground to canopy"  "W/m2"
+state    real   shcxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "shc"        "sensible heat flux: leaf to canopy"    "W/m2"
+state    real   shbxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "shb"        "sensible heat flux: bare grnd to atmo" "W/m2"
+state    real   evgxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "evg"        "latent heat flux: ground to canopy"    "W/m2"
+state    real   evbxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "evb"        "latent heat flux: bare grnd to atmo"   "W/m2"
+state    real   ghvxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "ghv"        "heat flux into soil: under canopy"     "W/m2"
+state    real   ghbxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "ghb"        "heat flux into soil: bare fraction"    "W/m2"
+state    real   irgxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "irg"        "net longwave at below canopy surface"  "W/m2"
+state    real   ircxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "irc"        "net longwave in canopy"                "W/m2"
+state    real   irbxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "irb"        "net longwave at bare fraction surface" "W/m2"
+state    real   trxy       ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "tr"         "transpiration"                         "W/m2"
+state    real   evcxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "evc"        "canopy evaporation"                    "W/m2"
+state    real   chleafxy   ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "chleaf"     "leaf exchange coefficient"             "m/s"
+state    real   chucxy     ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "chuc"       "under canopy exchange coefficient"     "m/s"
+state    real   chv2xy     ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "chv2"       "leaf exchange coefficient"             "m/s"
+state    real   chb2xy     ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "chb2"       "under canopy exchange coefficient"     "m/s"
+state    real   chstarxy   ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "chstar"     "dummy exchange coefficient" "m/s"
 state    real   SMOISEQ            ilj     -          1         Z     r   "SMOISEQ"    "EQ. SOIL MOISTURE"     "m3 m-3"
 state    real   smcwtdxy   ij      -       1      -     rh    "smcwtd"    "deep soil moisture "       "m3 m-3"
 state    real   rechxy     ij      -       1      -     h    "rech"    "water table recharge"       "mm"
@@ -1615,17 +1618,17 @@ package   etampold_dfi      mp_physics_dfi==95       -             dfi_moist:dfi
 # package   progndrop     progn==1                     -             scalar:qndrop;dfi_scalar:dfi_qndrop
 
 package   rrtmscheme    ra_lw_physics==1             -             -
-package   camlwscheme   ra_lw_physics==3             -             -
-package   rrtmg_lwscheme  ra_lw_physics==4           -             -
+package   camlwscheme   ra_lw_physics==3             -             state:acswupt,acswuptc,acswdnt,acswdntc,acswupb,acswupbc,acswdnb,acswdnbc,aclwupt,aclwuptc,aclwdnt,aclwdntc,aclwupb,aclwupbc,aclwdnb,aclwdnbc,swupt,swuptc,swdnt,swdntc,swupb,swupbc,swdnb,swdnbc,lwupt,lwuptc,lwdnt,lwdntc,lwupb,lwupbc,lwdnb,lwdnbc
+package   rrtmg_lwscheme  ra_lw_physics==4           -             state:aclwupt,aclwuptc,aclwdnt,aclwdntc,aclwupb,aclwupbc,aclwdnb,aclwdnbc,lwupt,lwuptc,lwdnt,lwdntc,lwupb,lwupbc,lwdnb,lwdnbc
 package   goddardlwscheme  ra_lw_physics==5          -             -
 package   flglwscheme   ra_lw_physics==7             -             -
 package   gfdllwscheme  ra_lw_physics==99            -             -
-package   hwrflwscheme  ra_lw_physics==98
+package   hwrflwscheme  ra_lw_physics==98            -             -
 
 package   swradscheme   ra_sw_physics==1             -             -
 package   gsfcswscheme  ra_sw_physics==2             -             -
-package   camswscheme   ra_sw_physics==3             -             -
-package   rrtmg_swscheme  ra_sw_physics==4           -             -
+package   camswscheme   ra_sw_physics==3             -             state:acswupt,acswuptc,acswdnt,acswdntc,acswupb,acswupbc,acswdnb,acswdnbc,aclwupt,aclwuptc,aclwdnt,aclwdntc,aclwupb,aclwupbc,aclwdnb,aclwdnbc,swupt,swuptc,swdnt,swdntc,swupb,swupbc,swdnb,swdnbc,lwupt,lwuptc,lwdnt,lwdntc,lwupb,lwupbc,lwdnb,lwdnbc
+package   rrtmg_swscheme  ra_sw_physics==4           -             state:acswupt,acswuptc,acswdnt,acswdntc,acswupb,acswupbc,acswdnb,acswdnbc,swupt,swuptc,swdnt,swdntc,swupb,swupbc,swdnb,swdnbc
 package   goddardswscheme  ra_sw_physics==5          -             -
 package   flgswscheme   ra_sw_physics==7             -             -
 package   gfdlswscheme  ra_sw_physics==99            -             -
@@ -1647,7 +1650,7 @@ package   slabscheme     sf_surface_physics==1       -             -
 package   lsmscheme      sf_surface_physics==2       -             state:flx4,fvb,fbur,fgsn
 package   ruclsmscheme   sf_surface_physics==3       -             -
 
-package   noahmpscheme   sf_surface_physics==4       -             state:isnowxy,tvxy,tgxy,canliqxy,canicexy,eahxy,tahxy,cmxy,chxy,fwetxy,sneqvoxy,alboldxy,qsnowxy,wslakexy,zwtxy,waxy,wtxy,tsnoxy,zsnsoxy,snicexy,snliqxy,lfmassxy,rtmassxy,stmassxy,woodxy,stblcpxy,fastcpxy,xsaixy,taussxy,t2mvxy,t2mbxy,q2mvxy,q2mbxy,tradxy,neexy,gppxy,nppxy,fvegxy,qinxy,runsfxy,runsbxy,ecanxy,edirxy,etranxy,fsaxy,firaxy,aparxy,psnxy,savxy,sagxy,rssunxy,rsshaxy,bgapxy,wgapxy,tgvxy,tgbxy,chvxy,chbxy,shgxy,shcxy,shbxy,evgxy,evbxy,ghvxy,ghbxy,irgxy,ircxy,irbxy,trxy,evcxy,chleafxy,chucxy,chv2xy,chb2xy,chstarxy,smoiseq,smcwtdxy,rechxy,deeprechxy
+package   noahmpscheme   sf_surface_physics==4       -             state:isnowxy,tvxy,tgxy,canliqxy,canicexy,eahxy,tahxy,cmxy,chxy,fwetxy,sneqvoxy,alboldxy,qsnowxy,wslakexy,zwtxy,waxy,wtxy,tsnoxy,zsnsoxy,snicexy,snliqxy,lfmassxy,rtmassxy,stmassxy,woodxy,stblcpxy,fastcpxy,xsaixy,taussxy,t2mvxy,t2mbxy,q2mvxy,q2mbxy,tradxy,neexy,gppxy,nppxy,fvegxy,qinxy,runsfxy,runsbxy,ecanxy,edirxy,etranxy,fsaxy,firaxy,aparxy,psnxy,savxy,sagxy,rssunxy,rsshaxy,bgapxy,wgapxy,tgvxy,tgbxy,chvxy,chbxy,shgxy,shcxy,shbxy,evgxy,evbxy,ghvxy,ghbxy,irgxy,ircxy,irbxy,trxy,evcxy,chleafxy,chucxy,chv2xy,chb2xy,chstarxy,smoiseq,smcwtdxy,rechxy,deeprechxy,lake_depth
 
 package   clmscheme      sf_surface_physics==5       -             -
 package   gfdlslab       sf_surface_physics==88      -             -
@@ -1770,7 +1773,7 @@ halo HALO_NMM_INIT_25	dyn_nmm 120:SFCEXC,SMSTAV,SMSTOT
 halo HALO_NMM_INIT_26	dyn_nmm 120:GRNFLX,PCTSNO,RLWIN
 halo HALO_NMM_INIT_27	dyn_nmm 120:RADOT,CZMEAN,SIGT4
 halo HALO_NMM_INIT_28	dyn_nmm 120:SR
-halo HALO_NMM_INIT_29	dyn_nmm 120:PREC,ACPREC,ACCLIQ
+halo HALO_NMM_INIT_29	dyn_nmm 120:PREC,ACPREC,ACCLIQ,CUPREC
 halo HALO_NMM_INIT_30	dyn_nmm 120:ACFRST,ACSNOW
 halo HALO_NMM_INIT_31	dyn_nmm 120:ACSNOM,SSROFF,BGROFF
 halo HALO_NMM_INIT_32	dyn_nmm 120:SFCSHX,SFCLHX,SUBSHX
@@ -1790,10 +1793,10 @@ halo      HALO_NMM_B  dyn_nmm 24:div
 halo      HALO_NMM_C  dyn_nmm 48:u,v                    
 halo      HALO_NMM_D  dyn_nmm 48:pd          
 halo      HALO_NMM_E  dyn_nmm 24:petdt
-halo      HALO_NMM_F  dyn_nmm 24:t,u,v
-halo      HALO_NMM_F1 dyn_nmm 80:pdslo          
-halo      HALO_NMM_G  dyn_nmm 48:u,v;24:z  
-halo      HALO_NMM_H  dyn_nmm 24:w                  
+halo      HALO_NMM_F  dyn_nmm 120:t,u,v
+halo      HALO_NMM_F1 dyn_nmm 120:pdslo,few,fne,fse,uold,vold,told,petdt,fns
+halo      HALO_NMM_G  dyn_nmm 48:u,v;24:z;48:w,hbm2,fad
+halo      HALO_NMM_H  dyn_nmm 80:w,few
 halo      HALO_NMM_I  dyn_nmm 48:q,q2,cwm,rrw
 halo      HALO_NMM_I_3  dyn_nmm 48:moist,scalar
 halo      HALO_NMM_J  dyn_nmm 8:pd,uz0,vz0,t,q,cwm                    
@@ -1804,24 +1807,22 @@ halo      HALO_NMM_L_3  dyn_nmm 8:moist,scalar
 halo      HALO_NMM_MG dyn_nmm 8:ht_gc
 halo      HALO_NMM_MG2 dyn_nmm 8:pd,psfc_out
 halo      HALO_NMM_MG3 dyn_nmm 8:p_gc
-
+halo      HALO_NMM_RAD dyn_nmm 120:GSW,RSWIN,RSWOUT
 halo      HALO_NMM_TURBL_A  dyn_nmm 8:uz0h,vz0h,hbm2
 halo      HALO_NMM_TURBL_B  dyn_nmm 8:dudt,dvdt
 
 # following halos added for nesting purpose  (gopal's doing):
 
 halo HALO_NMM_TRACK dyn_nmm 120:sm,pdyn,mslp,sqws
-halo HALO_NMM_INTERP_DOWN1 dyn_nmm 24:sm,fis,t,u,v,q,q2,pd,albase,nmm_tsk,mxsnal,tg,islope,cmc,soiltb,vegfrc,sh2o,smc,stc,toposoil,xice,ivgtyp,isltyp,vegfra,sst,weasd,snowh,hlat,hlon,z0,landmask,cwm,ustar,ths,qsh,cldefi,pshltr,dwdt,acprec,thz0,qz0,uz0,vz0,htop,hbot,cuppt,rlwtt,rswtt,t_adj,f_ice,f_rain,f_rimef,pint,hres_fis,pdyn_parent,pdyn_smooth,refl_10cm
-halo HALO_NMM_INTERP_DOWN1M dyn_nmm 24:MOIST,SCALAR
-halo HALO_NMM_FORCE_DOWN1 dyn_nmm 24:t,u,v,q,q2,cwm,pint,pd,hres_fis,fis,pdyn_parent,pdyn_smooth
-halo HALO_NMM_FORCE_DOWN1M dyn_nmm 24:MOIST,SCALAR
+halo HALO_NMM_FORCE_DOWN_SST dyn_nmm 120:sst
 halo HALO_NMM_WEIGHTS dyn_nmm 48:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,IIV,JJV,VBWGT1,VBWGT2,VBWGT3,VBWGT4,HNEAR_I,HNEAR_J
+
+#halo HALO_NMM_FORCE_DOWN1 dyn_nmm 24:t,u,v,q,q2,cwm,pint,pd,hres_fis,fis,pdyn_parent,pdyn_smooth
+#halo HALO_NMM_FORCE_DOWN1M dyn_nmm 24:MOIST,SCALAR
 
 halo      HALO_NMM_SAS_A  dyn_nmm 24:uz0h,vz0h,hbm2
 halo      HALO_NMM_SAS_B  dyn_nmm 24:ducudt,dvcudt
 halo      HALO_TRACERS dyn_nmm 48:szj,s1z,spz,tcs
-
-halo HALO_NMM_FORCE_DOWN_SST dyn_nmm 120:sst
 
 halo HALO_NMM_TERRAIN_SMOOTH   dyn_nmm      24:HRES_AVC
 
@@ -1835,4 +1836,4 @@ halo HALO_NMM_INT_UP dyn_nmm 8:pd,fis,hres_fis,sm
 
 halo HALO_NMM_MEMBRANE_RELAX dyn_nmm 8:relaxwork
 halo HALO_NMM_MEMBRANE_MASK dyn_nmm 8:relaximask
-halo HALO_NMM_MEMBRANE_INTERP dyn_nmm 8:u10,v10,u,v
+halo HALO_NMM_MEMBRANE_INTERP dyn_nmm 24:u10,v10,u,v

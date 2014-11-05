@@ -94,8 +94,8 @@ package tracer_option_2 ntracers==4 - szj:szj1,szj2,szj3,szj4;s1z:s1z1,s1z2,s1z3
 # It is reauired that LU_INDEX appears before any variable that is
 # interpolated with a mask, as lu_index supplies that mask.
 #
-state    real  LU_INDEX         ij      misc        1         -     irhd=(DownNear)u=(UpNear)   "LU_INDEX"              "LAND USE CATEGORY"         ""
-state    real  LU_MASK          ij      misc        1         -     i3h     "LU_MASK"              "0 land 1 water"         ""
+state    real  LU_INDEX         ij      misc        1         f     irhd=(DownNear)u=(UpNear)   "LU_INDEX"              "LAND USE CATEGORY"         ""
+state    real  LU_MASK          ij      misc        1         f     i3h     "LU_MASK"              "0 land 1 water"         ""
 ################################################################################
 ################################################################################
 
@@ -261,8 +261,8 @@ state  real   hbm2      ij     dyn_nmm     1      -      irh0123     "HBM2"    "
 state  real   hbm3      ij     dyn_nmm     1      -      irh     "HBM3"    "Height boundary mask; =0 outer 3 rows on H points"       ""
 state  real   vbm2      ij     dyn_nmm     1      -      irh     "VBM2"    "Velocity boundary mask; =0 outer 2 rows on V points"     ""
 state  real   vbm3      ij     dyn_nmm     1      -      irh     "VBM3"    "Velocity boundary mask; =0 outer 3 rows on V points"     ""
-state  real   sm        ij     dyn_nmm     1      -      i01rh0123d=(DownNear)  "SM"      "Sea mask; =1 for sea, =0 for land"      ""
-state  real   sice      ij     dyn_nmm     1      -      irh023d=(DownNear)     "SICE"    "Sea ice mask; =1 for sea ice, =0 for no sea ice"         ""
+state  real   sm        ij     dyn_nmm     1      f      i01rh0123d=(DownNear)  "SM"      "Sea mask; =1 for sea, =0 for land"      ""
+state  real   sice      ij     dyn_nmm     1      f      irh023d=(DownNear)     "SICE"    "Sea ice mask; =1 for sea ice, =0 for no sea ice"         ""
 #
 # module_VRBLS
 #
@@ -498,8 +498,8 @@ state    real   SWVISDIF          ij    misc        1         Z      r        "S
 state    real   SWNIRDIR          ij    misc        1         Z      r        "SWNIRDIR"              "SWR NIR DIR component"  ""
 state    real   SWNIRDIF          ij    misc        1         Z      r        "SWNIRDIF"              "SWR NIR DIF component"  ""
 
-state  real  refl_10cm     ikj    dyn_nmm     1    -     h023d=(DownMassIKJ:@ECopy,0.0)       "refl_10cm"      "Radar reflectivity (lamda = 10 cm)"  "dBZ"
-state  real  REFD_MAX      ij     misc        1    -     h023d=(DownCopy)       "REFD_MAX"       "MAX DERIVED RADAR REFL"  "dbZ"
+state  real  refl_10cm     ikj    dyn_nmm     1    -     h023d=(DownMassIKJ:@ECopy,0.0)u=(UpMassIKJ:@ECopy,0.0)       "refl_10cm"      "Radar reflectivity (lamda = 10 cm)"  "dBZ"
+state  real  REFD_MAX      ij     misc        1    -     h0123d=(DownCopy)u=(UpCopy)       "REFD_MAX"       "Composite (column maximum) radar reflectivity (lambda = 10 cm)"  "dBZ"
 state  real  qnwfa2d       ij     misc        1    -     rhdu    "QNWFA2D"        "Surface aerosol number conc emission"  "kg-1 s-1"
 state  real  re_cloud      ikj    misc        1    -     r       "re_cloud"       "Effective radius, cloud drops"      "m"
 state  real  re_ice        ikj    misc        1    -     r       "re_ice"         "Effective radius, cloud ice"        "m"
@@ -748,7 +748,7 @@ state   real   soilt020            ij    misc          1     -     i1      "SOIL
 state   real   soilt040            ij    misc          1     -     i1      "SOILT040"      "description"  "units"
 state   real   soilt160            ij    misc          1     -     i1      "SOILT160"      "description"  "units"
 state   real   soilt300            ij    misc          1     -     i1      "SOILT300"      "description"  "units"
-state   real   landmask            ij    misc          1     -     i01rhd=(DownNear)   "LANDMASK"      "description"  "units"
+state   real   landmask            ij    misc          1     f     i01rhd=(DownNear)   "LANDMASK"      "description"  "units"
 state   real   topostdv            ij    misc          1     -     i1      "TOPOSTDV"      "description"  "units"
 state   real   toposlpx            ij    misc          1     -     i1      "TOPOSLPX"      "description"  "units"
 state   real   toposlpy            ij    misc          1     -     i1      "TOPOSLPY"      "description"  "units"
@@ -940,8 +940,8 @@ state    real   SFCHEADRT        ij     misc        1         -      r          
 state    real   INFXSRT          ij     misc        1         -      r                                          "INFXSRT"          "time step infiltration excess"  "mm"
 state    real   SFCRUNOFF        ij     misc        1         -     rh       "SFROFF"               "SURFACE RUNOFF" ""
 state    real   UDRUNOFF         ij     misc        1         -     rh023       "UDROFF"               "UNDERGROUND RUNOFF" ""
-state  integer  IVGTYP           ij     misc        1         -     irh023d=(DownINear)       "IVGTYP"               "VEGETATION TYPE" ""
-state  integer  ISLTYP           ij     misc        1         -     irh023d=(DownINear)       "ISLTYP"               "SOIL TYPE"         " "
+state  integer  IVGTYP           ij     misc        1         f     irh023d=(DownINear)       "IVGTYP"               "VEGETATION TYPE" ""
+state  integer  ISLTYP           ij     misc        1         f     irh023d=(DownINear)       "ISLTYP"               "SOIL TYPE"         " "
 state    real   VEGFRA           ij     misc        1         -     i014rh023d=(DownNear)       "VEGFRA"               "VEGETATION FRACTION" ""
 state    real   SFCEVP           ij     misc        1         -     irh023     "SFCEVP"               "SURFACE EVAPORATION" ""
 state    real   GRDFLX           ij     misc        1         -     irh     "GRDFLX"               "GROUND HEAT FLUX" ""

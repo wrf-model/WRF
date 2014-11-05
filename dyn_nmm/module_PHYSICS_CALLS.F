@@ -3006,7 +3006,7 @@
       do k=kms,kme
       do j=jms,jme
       do i=ims,ime
-         w_trans(i,k,j)=grid%w(i,j,k)
+         w_trans(i,k,j)=max(grid%w(i,j,k),grid%w_tot(i,j,k))
       enddo
       enddo
       enddo

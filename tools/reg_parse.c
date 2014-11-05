@@ -305,7 +305,7 @@ reg_parse( FILE * infile )
   char inln[7000], parseline[7000] ;
   char *p, *q ;
   char *tokens[MAXTOKENS], *toktmp[MAXTOKENS] ; 
-  int i, ii ;
+  int i, ii, idim ;
   int defining_state_field, defining_rconfig_field, defining_i1_field ;
 
   parseline[0] = '\0' ;
@@ -592,24 +592,34 @@ reg_parse( FILE * infile )
                                  int found_interp=0;
                                  if(field_struct->type && field_struct->type->name
                                     && (x=='f'||x=='d'||x=='u'||x=='s')) {
-                                   if(x=='u') {
-                                     if(!strcasecmp(field_struct->type->name,"real"))
-                                       found_interp=!!strcpy(fcn_name,"UpCopy");
-                                     else if(!strcasecmp(field_struct->type->name,"integer"))
-                                       found_interp=!!strcpy(fcn_name,"UpINear");
-                                   } else if(x=='d') {
-                                     if(!strcasecmp(field_struct->type->name,"real"))
-                                       found_interp=!!strcpy(fcn_name,"DownCopy");
-                                     else if(!strcasecmp(field_struct->type->name,"integer"))
-                                       found_interp=!!strcpy(fcn_name,"DownINear");
-                                   } else if(x=='f') {
-                                     if(!strcasecmp(field_struct->type->name,"real"))
-                                       found_interp=!!strcpy(fcn_name,"BdyCopy");
-                                     else if(!strcasecmp(field_struct->type->name,"integer"))
-                                       found_interp=!!strcpy(fcn_name,"BdyINear");
-                                   } else if(x=='s') {
-                                     if(!strcasecmp(field_struct->type->name,"real"))
-                                       found_interp=!!strcpy(fcn_name,"nmm_smoother");
+                                   if(dims_ij_inner(field_struct)) {
+                                     if(x=='u') {
+                                       if(!strcasecmp(field_struct->type->name,"real"))
+                                         found_interp=!!strcpy(fcn_name,"UpCopy");
+                                       else if(!strcasecmp(field_struct->type->name,"integer"))
+                                         found_interp=!!strcpy(fcn_name,"UpINear");
+                                     } else if(x=='d') {
+                                       if(!strcasecmp(field_struct->type->name,"real"))
+                                         found_interp=!!strcpy(fcn_name,"DownCopy");
+                                       else if(!strcasecmp(field_struct->type->name,"integer"))
+                                         found_interp=!!strcpy(fcn_name,"DownINear");
+                                     } else if(x=='f') {
+                                       if(!strcasecmp(field_struct->type->name,"real"))
+                                         found_interp=!!strcpy(fcn_name,"BdyCopy");
+                                       else if(!strcasecmp(field_struct->type->name,"integer"))
+                                         found_interp=!!strcpy(fcn_name,"BdyINear");
+                                     } else if(x=='s') {
+                                       if(!strcasecmp(field_struct->type->name,"real"))
+                                         found_interp=!!strcpy(fcn_name,"nmm_smoother_ijk");
+                                     }
+                                   } else if(dims_ikj_inner(field_struct)) {
+                                     if(x=='d') {
+                                       if(!strcasecmp(field_struct->type->name,"real"))
+                                         found_interp=!!strcpy(fcn_name,"DownNearIKJ");
+                                     } else if(x=='s') {
+                                       if(!strcasecmp(field_struct->type->name,"real"))
+                                         found_interp=!!strcpy(fcn_name,"nmm_smoother_ikj");
+                                     }
                                    }
                                  }
                                  if(!found_interp) {
@@ -625,6 +635,16 @@ reg_parse( FILE * infile )
 				 if ( x == 's' ) strcpy(fcn_name,"smoother") ;
 #endif
 			       }
+                               if(dims_ikj_inner(field_struct) && !strcasestr(fcn_name,"ikj")) {
+                                 fprintf(stderr,"ERROR: %s %c %s: you must use IKJ interpolators for IKJ arrays.\n",
+                                         tokens[FIELD_SYM],x,fcn_name);
+                                 exit(1);
+                               }
+                               if(dims_ij_inner(field_struct) && strcasestr(fcn_name,"ikj")) {
+                                 fprintf(stderr,"ERROR: %s %c %s: you cannot use IKJ interpolators for IJ arrays.\n",
+                                         tokens[FIELD_SYM],x,fcn_name);
+                                 exit(1);
+                               }
 	                       if      ( x == 'f' )  { 
                                  field_struct->nest_mask |= FORCE_DOWN ; 
                                  strcpy(field_struct->force_fcn_name, fcn_name ) ;

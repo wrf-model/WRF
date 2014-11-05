@@ -149,7 +149,8 @@ int gen_debug (  char * dirname );
 void reset_mask ( unsigned int * mask , int e ) ;
 void set_mask ( unsigned int * mask , int e ) ;
 int get_mask ( unsigned int * mask , int e ) ;
-
+int dims_ikj_inner(node_t *);
+int dims_ij_inner(node_t *);
 #define PROTOS_H
 #endif
 

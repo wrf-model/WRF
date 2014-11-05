@@ -3085,7 +3085,7 @@ print *,'column of cg pres = ',cprs
 
      END SUBROUTINE force_sst_nmm
 
-   SUBROUTINE nmm_smoother ( cfld , &
+   SUBROUTINE nmm_smoother_ikj ( cfld , &
                              cids, cide, ckds, ckde, cjds, cjde,   &
                              cims, cime, ckms, ckme, cjms, cjme,   &
                              cits, cite, ckts, ckte, cjts, cjte,   &
@@ -3167,10 +3167,95 @@ print *,'column of cg pres = ',cprs
 
       ENDDO   ! do npass
 
-   END SUBROUTINE nmm_smoother
+   END SUBROUTINE nmm_smoother_ikj
 
 
-   SUBROUTINE nmm_vsmoother ( cfld , &
+   SUBROUTINE nmm_smoother_ijk ( cfld , &
+                             cids, cide, ckds, ckde, cjds, cjde,   &
+                             cims, cime, ckms, ckme, cjms, cjme,   &
+                             cits, cite, ckts, ckte, cjts, cjte,   &
+                             nids, nide, nkds, nkde, njds, njde,   &
+                             nims, nime, nkms, nkme, njms, njme,   &
+                             nits, nite, nkts, nkte, njts, njte,   &
+                             xstag, ystag,                         &
+                             ipos, jpos,                           &
+                             nri, nrj                              &
+                             )
+
+      USE module_configure
+      IMPLICIT NONE
+
+      INTEGER, INTENT(IN) :: cids, cide, ckds, ckde, cjds, cjde,   &
+                             cims, cime, ckms, ckme, cjms, cjme,   &
+                             cits, cite, ckts, ckte, cjts, cjte,   &
+                             nids, nide, nkds, nkde, njds, njde,   &
+                             nims, nime, nkms, nkme, njms, njme,   &
+                             nits, nite, nkts, nkte, njts, njte,   &
+                             nri, nrj,                             &
+                             ipos, jpos
+      REAL, DIMENSION ( cims:cime, cjms:cjme, ckms:ckme ), INTENT(INOUT) :: cfld
+      LOGICAL, INTENT(IN) :: xstag, ystag
+
+
+      ! Local
+
+      INTEGER             :: feedback
+      INTEGER, PARAMETER  :: smooth_passes = 5
+
+      REAL, DIMENSION ( cims:cime, cjms:cjme, ckms:ckme ) :: cfldnew
+      INTEGER :: ci, cj, ck
+      INTEGER :: is, npass
+      REAL    :: AVGH
+      CHARACTER (LEN=256) :: a_message
+
+      RETURN
+      !  If there is no feedback, there can be no smoothing.
+
+      CALL nl_get_feedback       ( 1, feedback  )
+      IF ( feedback == 0 ) RETURN
+
+      WRITE(a_message,*)'SIMPLE SMOOTHER IS SWITCHED ON FOR HEIGHT'
+      CALL wrf_message ( a_message )                       
+
+      DO npass = 1, smooth_passes
+
+      DO ck = ckts, ckte
+       DO cj = MAX(jpos+1,cjts),MIN(jpos+(njde-njds)/nrj-1,cjte)  ! exclude top and bottom BCs
+        if(mod(cj,2) .eq. 0)THEN
+         is=0 ! even rows for mass points (2,4,6,8)
+        else
+         is=1 ! odd rows for mass points  (1,3,5,7)
+        endif
+        DO ci = MAX(ipos+is,cits),MIN(ipos+(nide-nids)/nri-1,cite) ! excludes LBCs
+            IF(IS==0)THEN    ! (2,4,6,8)
+             AVGH = CFLD(CI,CJ+1,CK) + CFLD(CI,CJ-1,CK) + CFLD(CI+1,CJ+1,CK) + CFLD(CI+1,CJ-1,CK)
+            ELSE
+             AVGH = CFLD(CI,CJ+1,CK) + CFLD(CI,CJ-1,CK) + CFLD(CI-1,CJ+1,CK) + CFLD(CI-1,CJ-1,CK)
+            ENDIF
+            CFLDNEW(CI,CJ,CK) = (AVGH + 4*CFLD(CI,CJ,CK)) / 8.0
+        ENDDO
+       ENDDO
+      ENDDO
+
+      DO ck = ckts, ckte
+       DO cj = MAX(jpos+1,cjts),MIN(jpos+(njde-njds)/nrj-1,cjte)  ! exclude top and bottom BCs
+        if(mod(cj,2) .eq. 0)THEN
+         is=0 ! even rows for mass points (2,4,6,8)
+        else
+         is=1 ! odd rows for mass points  (1,3,5,7)
+        endif
+        DO ci = MAX(ipos+is,cits),MIN(ipos+(nide-nids)/nri-1,cite) ! excludes LBCs
+           CFLD(CI,CJ,CK) = CFLDNEW(CI,CJ,CK)
+        ENDDO
+       ENDDO
+      ENDDO
+
+      ENDDO   ! do npass
+
+   END SUBROUTINE nmm_smoother_ijk
+
+
+   SUBROUTINE nmm_vsmoother_ikj ( cfld , &
                              cids, cide, ckds, ckde, cjds, cjde,   &
                              cims, cime, ckms, ckme, cjms, cjme,   &
                              cits, cite, ckts, ckte, cjts, cjte,   &
@@ -3252,7 +3337,7 @@ print *,'column of cg pres = ',cprs
 
       ENDDO
 
-   END SUBROUTINE nmm_vsmoother
+   END SUBROUTINE nmm_vsmoother_ikj
 !======================================================================================
 !   End of gopal's doing
 !======================================================================================

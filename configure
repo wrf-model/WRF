@@ -492,8 +492,8 @@ if [ -n "$WRF_LOG_BUFFERING" ]; then
   fi
 fi
 if [ -n "$WRF_NMM_CORE" ]; then
-  export WRF_NMM_NEST=1
   if [ $WRF_NMM_CORE = 1 ]; then
+    export WRF_NMM_NEST=1
     if [ -n "$HWRF" ]; then
       if [ $HWRF = 1 ]; then
         echo building WRF with HWRF option

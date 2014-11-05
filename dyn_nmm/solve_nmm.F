@@ -285,10 +285,15 @@
 !
 ! Set diagnostic flag value at history output time
 !-----------------------------------------------------------------------------
-    diag_flag = .false.
-    if ( Is_alarm_tstep_nphs(grid%domain_clock, grid%alarms(HISTORY_ALARM), grid%nphs) ) then
-       diag_flag = .true.
-    endif
+
+      diag_flag = &
+           is_alarm_tstep_nphs(grid%domain_clock, grid%alarms(HISTORY_ALARM), grid%nphs) &
+           .or. &
+           is_alarm_tstep_nphs(grid%domain_clock, grid%alarms(AUXHIST1_ALARM), grid%nphs) &
+           .or. &
+           is_alarm_tstep_nphs(grid%domain_clock, grid%alarms(AUXHIST2_ALARM), grid%nphs) &
+           .or. &
+           is_alarm_tstep_nphs(grid%domain_clock, grid%alarms(AUXHIST3_ALARM), grid%nphs)
 
 !
 !-----------------------------------------------------------------------

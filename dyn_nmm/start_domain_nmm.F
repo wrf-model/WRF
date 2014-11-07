@@ -579,6 +579,22 @@
 #  include <HALO_NMM_INIT_39.inc>
 #endif
 !
+      if((allowed_to_read .and. .not. restrt) .or. anal) then
+         call wrf_message("Fill REFL_10CM with -35 dBZ")
+         if(size(grid%refl_10cm,1)*size(grid%refl_10cm,3)>1) then
+            do J=JPS,JPE
+               do K=KPS,KPE
+                  do I=IPS,IPE
+                     grid%refl_10cm(i,k,j)=-35.0
+                  enddo
+               enddo
+               do I=IPS,IPE
+                  grid%refd_max(i,j)=-35.0
+               enddo
+            enddo
+         endif
+      endif
+         
       DO J=MYJS_P4,MYJE_P4
         grid%iheg(J)=MOD(J+1,2)
         grid%ihwg(J)=grid%iheg(J)-1

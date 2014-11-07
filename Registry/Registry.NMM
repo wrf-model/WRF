@@ -498,8 +498,8 @@ state    real   SWVISDIF          ij    misc        1         Z      r        "S
 state    real   SWNIRDIR          ij    misc        1         Z      r        "SWNIRDIR"              "SWR NIR DIR component"  ""
 state    real   SWNIRDIF          ij    misc        1         Z      r        "SWNIRDIF"              "SWR NIR DIF component"  ""
 
-state  real  refl_10cm     ikj    dyn_nmm     1    -     h023d=(DownMassIKJ:@ECopy,0.0)u=(UpMassIKJ:@ECopy,0.0)       "refl_10cm"      "Radar reflectivity (lamda = 10 cm)"  "dBZ"
-state  real  REFD_MAX      ij     misc        1    -     h0123d=(DownCopy)u=(UpCopy)       "REFD_MAX"       "Composite (column maximum) radar reflectivity (lambda = 10 cm)"  "dBZ"
+state  real  refl_10cm     ikj    dyn_nmm     1    -     h023d=(DownMassIKJ:@ECopy,-35.0)       "refl_10cm"      "Radar reflectivity (lamda = 10 cm)"  "dBZ"
+state  real  REFD_MAX      ij     misc        1    -     h0123d=(DownCopy)       "REFD_MAX"       "Composite (column maximum) radar reflectivity (lambda = 10 cm)"  "dBZ"
 state  real  qnwfa2d       ij     misc        1    -     rhdu    "QNWFA2D"        "Surface aerosol number conc emission"  "kg-1 s-1"
 state  real  re_cloud      ikj    misc        1    -     r       "re_cloud"       "Effective radius, cloud drops"      "m"
 state  real  re_ice        ikj    misc        1    -     r       "re_ice"         "Effective radius, cloud ice"        "m"

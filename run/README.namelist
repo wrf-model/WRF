@@ -1198,7 +1198,10 @@ The following are for observation nudging:
  do_curvature (max_dom)              = .true.,	; whether to do curvature calculations (idealized) (inactive)
  do_gradp (max_dom)                  = .true.,	; whether to do horizontal pressure gradient calculations (idealized) (inactive)
  fft_filter_lat                      = 45.      ; the latitude above which the polar filter is turned on
-
+ coupled_filtering                   = .true.   ; T/F mu coupled scalar arrays are run through the polar filters
+ pos_def                             = .false.  ; T/F remove negative values of scalar arrays by setting minimum value to zero
+ swap_pole_with_next_j               = .false.  ; T/F replace the entire j=1 (jds-1) with the values from j=2 (jds-2)
+ actual_distance_average             = .false.  ; T/F average the field at each i location in the j-loop with a number of grid points based on a map-factor ratio
  gwd_opt                             = 0       ; for running without gravity wave drag
                                      = 1       ; for running the WRF-ARW with its gravity wave drag
                                      = 2       ; for running the WRF-NMM with its gravity wave drag

@@ -161,6 +161,8 @@ integer::oops1,oops2
       INTEGER :: ks, ke, id
       LOGICAL :: vnest !DJW 140722 T if using vertical nesting, otherwise F
 
+      INTEGER :: j_save
+
       !  Dimension information stored in grid data structure.
 
       CALL cpu_time(t_start)
@@ -636,8 +638,35 @@ integer::oops1,oops2
 
      grid%clat_xxx(ipsx:ipex,jpsx:jpex) = clat_glob(ipsx:ipex,jpsx:jpex)
 
+     find_j_index_of_fft_filter : DO j = jds , jde-1
+        IF ( ABS(clat_glob(ids,j)) .LE. config_flags%fft_filter_lat ) THEN
+           j_save = j
+           EXIT find_j_index_of_fft_filter
+        END IF
+     END DO find_j_index_of_fft_filter
+
+     CALL wrf_patch_to_global_real ( grid%msft, clat_glob, grid%domdesc, 'xy', 'xy', &
+                                     ids, ide, jds, jde, 1, 1, &
+                                     ims, ime, jms, jme, 1, 1, &
+                                     its, ite, jts, jte, 1, 1 )
+
+     CALL wrf_dm_bcast_real ( clat_glob , (ide-ids+1)*(jde-jds+1) )
+
+     grid%mf_fft = clat_glob(ids,j_save)
+
+     grid%mf_xxx(ipsx:ipex,jpsx:jpex) = clat_glob(ipsx:ipex,jpsx:jpex)
+
      DEALLOCATE( clat_glob )
+#else
+     find_j_index_of_fft_filter : DO j = jds , jde-1
+        IF ( ABS(grid%clat(ids,j)) .LE. config_flags%fft_filter_lat ) THEN
+           j_save = j
+           EXIT find_j_index_of_fft_filter
+        END IF
+     END DO find_j_index_of_fft_filter
+     grid%mf_fft = grid%msft(ids,j_save)
 #endif
+print *,'j_save = ',j_save,grid%clat(ids,j_save),grid%mf_fft
 
          CALL pxft ( grid=grid                                              &
                ,lineno=__LINE__                                             &
@@ -652,7 +681,9 @@ integer::oops1,oops2
                ,flag_chem          = 0                                      &
                ,flag_tracer        = 0                                      &
                ,flag_scalar        = 0                                      &
-               ,actual_distance_average  = .FALSE.                          &
+               ,actual_distance_average  = .TRUE.                           &
+               ,pos_def            = .FALSE.                                &
+               ,swap_pole_with_next_j = .FALSE.                             &
                ,moist=moist,chem=chem,tracer=tracer,scalar=scalar           &
                ,fft_filter_lat = config_flags%fft_filter_lat                &
                ,dclat = dclat                                               &
@@ -709,6 +740,7 @@ integer::oops1,oops2
 
             CALL filter_topo ( grid%ht_xxx , grid%clat_xxx , grid%mf_xxx , &
                                grid%fft_filter_lat , grid%mf_fft , &
+                               .FALSE. , .FALSE. , &
                                ids, ide, jds, jde, 1 , 1 , &
                                imsx, imex, jmsx, jmex, 1, 1, &
                                ipsx, ipex, jpsx, jpex, 1, 1 )
@@ -734,6 +766,7 @@ integer::oops1,oops2
 #else
             CALL filter_topo ( grid%ht , grid%clat , grid%msftx , &
                                grid%fft_filter_lat , grid%mf_fft , &
+                               .FALSE. , .FALSE. , &
                                ids, ide, jds, jde, 1,1,           &
                                ims, ime, jms, jme, 1,1,           &
                                its, ite, jts, jte, 1,1 )
@@ -3261,7 +3294,6 @@ endif
       IF (config_flags%tracer_opt .eq. 2) THEN
           DO j = (jde + jds)/2 - 4, (jde + jds)/2 + 4, 1
             DO i = (ide + ids)/2 - 4, (ide + ids)/2 + 4, 1
-               tracer(i, 1, j, im) = 1.
                IF ( its .LE. i .and. ite .GE. i .and. jts .LE. j .and. jte .GE. j ) THEN
                  tracer(i, 1, j, P_tr17_1) = 1.
                  tracer(i, 1, j, P_tr17_2) = 1.
@@ -7238,6 +7270,7 @@ end do
 
    SUBROUTINE filter_topo ( ht_in , xlat , msftx , &
                             fft_filter_lat , mf_fft , &
+                            pos_def , swap_pole_with_next_j , &
                             ids , ide , jds , jde , kds , kde , &
                             ims , ime , jms , jme , kms , kme , &
                             its , ite , jts , jte , kts , kte )
@@ -7251,7 +7284,7 @@ end do
       REAL , INTENT(IN) :: fft_filter_lat , mf_fft
       REAL , DIMENSION(ims:ime,jms:jme) , INTENT(INOUT) :: ht_in
       REAL , DIMENSION(ims:ime,jms:jme) , INTENT(IN) :: xlat , msftx
-
+      LOGICAL :: pos_def , swap_pole_with_next_j
 
       !  Local vars
 
@@ -7260,6 +7293,7 @@ end do
       INTEGER :: i_left , i_right , ii
       REAL :: length_scale , sum
       REAL , DIMENSION(its:ite,jts:jte) :: ht_out
+      CHARACTER (LEN=256) :: message
 
       !  The filtering is a simple average on a latitude loop.  Possibly a LONG list of
       !  numbers.  We assume that ALL of the 2d arrays have been transposed so that
@@ -7276,10 +7310,10 @@ end do
 
       j_lat_neg = 0
       j_lat_pos = jde + 1
-      loop_neg : DO j = jts , MIN(jde-1,jte)
+      loop_neg : DO j = MIN(jde-1,jte) , jts , -1
          IF ( xlat(its,j) .LT. 0.0 ) THEN
-            IF ( ABS(xlat(its,j)) .LT. fft_filter_lat ) THEN
-               j_lat_neg = j - 1
+            IF ( ABS(xlat(its,j)) .GE. fft_filter_lat ) THEN
+               j_lat_neg = j 
                EXIT loop_neg
             END IF
          END IF
@@ -7305,9 +7339,10 @@ end do
       !  Filter the topo at the negative lats.
 
       DO j = MIN(j_lat_neg,jte) , jts , -1
-         i_kicker = MIN( MAX ( NINT(msftx(its,j)/2) , 1 ) , (ide - ids) / 2 )
-!        i_kicker = MIN( MAX ( NINT(msftx(its,j)/mf_fft/2) , 1 ) , (ide - ids) / 2 )
-!        print *,'SOUTH j = ' , j, ', kicker = ',i_kicker
+!        i_kicker = MIN( MAX ( NINT(msftx(its,j)/2) , 1 ) , (ide - ids) / 2 )
+         i_kicker = MIN( MAX ( NINT(msftx(its,j)/mf_fft/2) , 1 ) , (ide - ids) / 2 )
+         WRITE (message,*) 'SOUTH j = ' , j, ', kicker = ',i_kicker,xlat(its,j),msftx(its,j)
+         CALL wrf_debug(10,TRIM(message))
          DO i = its , MIN(ide-1,ite)
             sum = 0.
             DO ik = 1 , i_kicker
@@ -7332,9 +7367,10 @@ end do
       !  Filter the topo at the positive lats.
 
       DO j = MAX(j_lat_pos,jts) , MIN(jde-1,jte)
-         i_kicker = MIN( MAX ( NINT(msftx(its,j)/2) , 1 ) , (ide - ids) / 2 )
-!        i_kicker = MIN( MAX ( NINT(msftx(its,j)/mf_fft/2) , 1 ) , (ide - ids) / 2 )
-!        print *,'NORTH j = ' , j, ', kicker = ',i_kicker
+!        i_kicker = MIN( MAX ( NINT(msftx(its,j)/2) , 1 ) , (ide - ids) / 2 )
+         i_kicker = MIN( MAX ( NINT(msftx(its,j)/mf_fft/2) , 1 ) , (ide - ids) / 2 )
+         WRITE (message,*) 'NORTH j = ' , j, ', kicker = ',i_kicker,xlat(its,j),msftx(its,j)
+         CALL wrf_debug(10,TRIM(message))
          DO i = its , MIN(ide-1,ite)
             sum = 0.
             DO ik = 1 , i_kicker

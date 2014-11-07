@@ -1564,6 +1564,7 @@
      &               ,DZ8W=DZ,Z=Z,TKE_PBL=TKE,EL_PBL=EL_MYJ,F=F       &
      &               ,EXCH_H=EXCH_H,EXCH_M=EXCH_M,AKHS=AKHS,AKMS=AKMS &
      &               ,FM=FM,FHH=FH                                    &
+     &               ,YSU_TOPDOWN_PBLMIX=CONFIG_FLAGS%YSU_TOPDOWN_PBLMIX &
      &               ,THZ0=THZ0,QZ0=QZ0,UZ0=UZ0H,VZ0=VZ0H             &
      &               ,QSFC=QS,LOWLYR=LOWLYR                           &
      &               ,PSIM=PSIM,PSIH=PSIH,GZ1OZ0=GZ1OZ0               &

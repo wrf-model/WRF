@@ -631,6 +631,7 @@ Namelist variables for controlling the adaptive time step option:
                                                 the value is set in Registry.NMM but is
                                                 overridden by namelist value; bldt will
                                                 be computed from this.
+ ysu_topdown_pblmix                  = 0,; whether to turn on top-down, radiation-driven mixing (1=yes)
  mfshconv (max_dom)                  = 1,; whether to turn on new day-time EDMF QNSE (0=no)
  topo_wind (max_dom)                 = 0, turn off, 
                                      = 1, turn on topographic surface wind correction from Jimenez 

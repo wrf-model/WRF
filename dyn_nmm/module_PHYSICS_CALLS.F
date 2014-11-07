@@ -3003,9 +3003,9 @@
         ENDDO
         ENDDO
       ENDDO
-      do k=kms,kme
-      do j=jms,jme
-      do i=ims,ime
+      do k=kts,kte
+      do j=jts,jte
+      do i=its,ite
          w_trans(i,k,j)=max(grid%w(i,j,k),grid%w_tot(i,j,k))
       enddo
       enddo

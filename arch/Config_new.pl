@@ -296,70 +296,38 @@ if ( $sw_wrf_core eq "4D_DA_CORE" )
 # Display the choices to the user and get selection
 until ( $validresponse ) {
   printf "------------------------------------------------------------------------\n" ;
-  printf "Please select from among the following $sw_os $sw_mach options:\n\n" ;
+  printf "Please select from among the following supported platform/parallelism options.\n\n" ;
 
   $opt = 1 ;
-  $optstr = "";
   open CONFIGURE_DEFAULTS, "< ./arch/configure_new.defaults" 
       or die "Cannot open ./arch/configure_new.defaults for reading" ;
-  while ( <CONFIGURE_DEFAULTS> ) {
-
-     $currline = $_;
-     chomp $currline;
-     # Look for our platform in the configuration option header. 
-     # If we're going to list it, print parallelism options
-     if ( substr( $currline, 0, 5 ) eq "#ARCH" && ( index( $currline, $sw_os ) >= 0 ) 
-         && ( index( $currline, $sw_mach ) >= 0 ) ) {
-        $optstr = substr($currline,6) ;
-
-        foreach ( @platforms ) {
-           $paropt = $_ ;
-           if ( index($optstr, $paropt) >= 0 ) {
-              printf "%3d. (%s) ",$opt,$paropt ;
-              $pararray[$opt] = $paropt ;
-              $opttemp = $optstr ;
-              $opttemp =~ s/#.*$//g ;
-              chomp($opttemp) ;
-              $optarray[$opt] = $opttemp." (".$paropt.")" ;
-              $opt++ ;
-           } else {
-              $paropt =~ s/./ /g ; #printing spaces if option doesn't exist for formatting/readability
-              printf "      %s  ",$paropt ;
-           }
+  while ( <CONFIGURE_DEFAULTS> )
+  {
+    if ( substr( $_, 0, 5 ) eq "#ARCH"
+        && ( index( $_, $sw_os ) >= 0 ) && ( index( $_, $sw_mach ) >= 0 ) )
+    {
+      $optstr = substr($_,6) ;
+      $optstr =~ s/^[   ]*// ;
+        foreach ( @platforms )
+        {
+          $paropt = $_ ;
+          if ( index($optstr, $paropt) >= 0 ) {
+            printf " %2d. (%s) ",$opt,$paropt ;
+            $pararray[$opt] = $paropt ;
+            $opttemp = $optstr ;
+            $opttemp =~ s/#.*$//g ;
+            chomp($opttemp) ;
+            $optarray[$opt] = $opttemp." (".$paropt.")" ;
+            $opt++ ;
+          } else {
+            $paropt =~ s/./ /g ; #printing spaces if option doesn't exist for formatting/readability
+            printf "      %s  ",$paropt ;
+          }
         }
-        next;
-     }
-
-     next unless ( length $optstr ) ; # Don't read option lines unless we're listing this option
-
-     if ( substr( $currline, 0, 10 ) eq "EXTRA_INFO" ) {
-        $optstr = $currline ;
-        next;
-     }
-
-     if ( substr( $currline, 0, 3 ) eq "SFC" ) {
-        $currline =~ s/^SFC\s*=\s*//g; #remove "SFC ="
-        $currline =~ s/ (\-\S*)*$//g; #remove trailing arguments and/or spaces
-        $optstr = join('',$currline,$optstr); #Prepend the fortran compiler to optstr
-        $optstr =~ s/EXTRA_INFO\s*=\s*/:  /g;
-        next;
-     }
-
-     if ( substr( $currline, 0, 3 ) eq "SCC" ) {
-        $currline =~ s/^SCC\s*=\s*//g; #remove "SCC ="
-        $currline =~ s/ (\-\S*)*$//g; #remove trailing arguments and/or spaces
-        $optstr = join('',$currline,"/",$optstr); #iAppend the C compiler to optstr
-        $optstr =~ s/:  $//g;
-        next;
-     }
-
-     if ( substr( $currline, 0, 4 ) eq "####" ) { #reached the end of this option's entry
-        chomp($optstr) ;
-        printf "  %s\n",$optstr ;
-        $optstr = "";
-        next;
-     }
-
+      $optstr =~ s/#.*$//g ;
+      chomp($optstr) ;
+      printf "  %s\n",$optstr ;
+    }
   }
   close CONFIGURE_DEFAULTS ;
 
@@ -572,9 +540,8 @@ while ( <CONFIGURE_DEFAULTS> )
           && ( index( $_, $sw_os ) >= 0 ) && ( index( $_, $sw_mach ) >= 0 ) 
           && ( index($_, $paropt) >= 0 ) )
     {
-      # We are cycling through the configure_new.defaults file again.
-      # This bit tries to match the line corresponding to the option we previously selected.
       $x=substr($_,6) ;
+      $x=~s/^[     ]*// ;
       $x =~ s/#.*$//g ;
       chomp($x) ;
       $x = $x." (".$paropt.")" ;
@@ -677,15 +644,6 @@ while ( <CONFIGURE_DEFAULTS> )
     }
   }
 }
-
-if ($latchon == 0) { # Never hurts to check that we actually found the option again.
-  unlink "configure.wrf";
-  print "\nERROR ERROR ERROR ERROR\n\n";
-  print "SOMETHING TERRIBLE HAS HAPPENED: configure.wrf not created correctly.\n";
-  print 'Check "$x" and "$optarray[$optchoice]"';
-  die   "\n\nERROR ERROR ERROR ERROR\n\n";
-}
-
 close CONFIGURE_DEFAULTS ;
 close POSTAMBLE ;
 close ARCH_NOOPT_EXCEPTIONS ;

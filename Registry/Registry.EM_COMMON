@@ -1848,6 +1848,7 @@ rconfig   logical sfcp_to_sfcp            namelist,domains	1              .false
 rconfig   logical adjust_heights          namelist,domains	1              .false. irh    "adjust_heights"   "T/F adjust pressure level input to match 500 mb height"      "flag"
 rconfig   logical smooth_cg_topo          namelist,domains	1              .false. irh    "smooth_cg_topo"   "T/F smooth CG topo on boundarries" "flag"
 rconfig   integer nest_interp_coord       namelist,domains	1              0       irh    "nest_interp_coord" "0=std horiz vi interpolation on eta, 1=attempt isobaric interpolation"
+rconfig   integer interp_method_type      namelist,domains	1              2       irh    "interp_method_type" "horiz interp for FG for nesting: 1=bilinear, 2=sint, 3=nearest neighbor is only for testing, 4=quadratic, 12=sint for infrastructure tests"
 rconfig   logical aggregate_lu            namelist,domains	1              .false. irh    "aggregate_lu"   "T/F aggregate the grass, shrubs, trees in LU"
 rconfig   logical rh2qv_wrt_liquid        namelist,domains	1              .true.  irh    "rh2qv_wrt_liquid" "T = rh=>Qv assumes RH wrt liquid water, F = allows ice"
 rconfig   integer rh2qv_method            namelist,domains	1              1       irh    "rh2qv_method" "1=old MM5 method, 2=new WMO method"

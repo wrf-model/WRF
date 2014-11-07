@@ -416,6 +416,8 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
 
    END INTERFACE
 
+   CALL interp_init
+
    CALL domain_clock_get( parent, start_time=strt_time, current_time=cur_time )
 
    IF ( .not. ( config_flags%restart .AND. strt_time .EQ. cur_time ) ) THEN

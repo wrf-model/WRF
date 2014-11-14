@@ -266,6 +266,8 @@ contains
        IPS,IPE,JPS,JPE,KPS,KPE)
     USE MODULE_DOMAIN, ONLY : domain
 #ifdef DM_PARALLEL
+    USE MODULE_DM, ONLY: ntasks_x, ntasks_y, mytask, ntasks, local_communicator
+    USE MODULE_COMM_DM, ONLY : HALO_NMM_MEMBRANE_INTERP_sub
     use module_dm, only: wrf_dm_maxval_integer
 #endif
     implicit none
@@ -297,6 +299,10 @@ contains
     character*255 :: message
     logical :: wantuv
     
+#ifdef DM_PARALLEL
+#      include "HALO_NMM_MEMBRANE_INTERP.inc"
+#endif
+
     ! ks: k in source (model level) array
     ! kd: k in destination (pressure level) array
     ground_level=0

@@ -55,10 +55,7 @@ state real    tracker_vmax    - dyn_nmm     1      -    rh01  "tracker_vmax"    
 state logical tracker_havefix - dyn_nmm     1      -    rh01  "tracker_havefix" "True = storm fix locations are valid" ""
 state logical tracker_gave_up - dyn_nmm     1      -    rh01  "tracker_gave_up" "True = inline tracker gave up on tracking the storm" ""
 
-state real membrane_mslp ij     dyn_nmm     1      -    rh  "membrane_mslp" "Mean Sea Level Pressure using UPP Membrane MSLP method" "Pa"
-state  real   relaxwork  ij     dyn_nmm     1      -    -  "relaxwork" "Temporary Tv storage array for the membrane MSLP overrelaxation loops" "K"
-state  integer relaximask ij    dyn_nmm     1      -    -  "relaximask" "Integer mask array for the membrane MSLP overrelaxation loops" "K"
-state  logical relaxmask ij     dyn_nmm     1      -    -  "relaxmask" "Mask array for the membrane MSLP overrelaxation loops" "K"
+state real membrane_mslp ij     dyn_nmm     1      -    rhd=(DownCopy)  "membrane_mslp" "Mean Sea Level Pressure using UPP Membrane MSLP method" "Pa"
 
 state  real   p850rv     ij     dyn_nmm     1      -    rh  "P850rv" "Relative vorticity at 850mbar mass points" "s^-1"
 state  real   p700rv     ij     dyn_nmm     1      -    rh  "P700rv" "Relative vorticity at 700mbar mass points" "s^-1"
@@ -100,3 +97,50 @@ package   vt_pdyn       vortex_tracker==5            -             state:pdyn_pa
 package   vt_ncep_2013  vortex_tracker==6            -             state:pdyn_parent,pdyn_smooth,p850rv,p700rv,p850wind,p700wind,p850z,p700z,m10wind,m10rv,sp850rv,sp700rv,sp850wind,sp700wind,sp850z,sp700z,sm10wind,sm10rv,smslp,tracker_fixes,distsq,tracker_distsq
 package   vt_ncep_2014  vortex_tracker==7            -             state:pdyn_parent,pdyn_smooth,p850rv,p700rv,p850wind,p700wind,p850z,p700z,m10wind,m10rv,sp850rv,sp700rv,sp850z,sp700z,sm10rv,smslp,tracker_fixes,distsq,p500u,p500v,p700u,p700v,p850u,p850v,tracker_distsq
 #---------------------------------------------------------------
+# Vortex Tracker Variables
+
+state  real   distsq    ij     dyn_nmm     1      -      rh       "DISTSQ"  "Approximate square of distance from nest center for vortex tracker #4" "m2"
+
+# Revised Centroid Method (tracker #4)
+state  real   weightout ij     dyn_nmm     1      -      rh       "WEIGHTOUT"  "Vortex center finder weight array for vortex tracker #4" ""
+state integer mslp_noisy ij    dyn_nmm     1      -      rh       "MSLP_NOISY"  "0=okay, 1=noisy MSLP, 2=outside search radius, 3=boundary (vortex tracker #4)" ""
+
+# Dynamic Pressure Method (tracker #5)
+state  real    vt5searchrad     -      dyn_nmm     1      -    rh  "vt5searchrad" "Search radius from domain center" "m"
+
+# Smoothed Dynamic Pressure (needed for #5, must be passed down by all)
+
+state  integer pdyn_parent_age  -      dyn_nmm     1      -    rh  "PDYN_PARENT_AGE" "Last update of parent pdyn_parent propagated to this nest" ""
+state  integer pdyn_smooth_age  -      dyn_nmm     1      -    rh  "PDYN_SMOOTH_AGE" "Counter of updates of pdyn_smooth" ""
+state  real   pdyn_smooth ij    dyn_nmm     1      -    rhd=(NoInterp)f=(NoInterp)u=(NoInterp)  "PDYN_SMOOTH" "Average of PDYN and PDYN_PARENT" "Pa"
+state  real   pdyn_parent ij    dyn_nmm     1      -   rhu=(NoInterp)\
+d=(DownAged2D:0,n%pdyn_parent_age,c%pdyn_smooth)\
+f=(DownAged2D:c%pdyn_smooth_age,n%pdyn_parent_age,c%pdyn_smooth)\
+                  "PDYN_PARENT" "Parent PDYN_SMOOTH for tracking grid motion" "Pa"
+
+#################################################################
+# HWRF nest movement variables
+#################################################################
+
+# Duplicate of nomove_freq for overriding nest movement at certain times
+state    real nomove_freq_hr          -       dyn_nmm  -     -    rh    "nomove_freq" "nest will not move at analysis time or multiples of this hour (if positive)"
+state     integer move_countdown          -      dyn_nmm        1         -      rh       "MOVE_COUNTDOWN"                "Timesteps left with extra CODAMP"           ""
+
+# Choice of vortex tracking method
+rconfig   integer vortex_tracker          namelist,physics      max_domains    6      h0123      "vortex_tracker" "Vortex Tracking Algorithm" ""
+
+rconfig   integer num_old_fixes           namelist,physics      1              5      h      "num_old_fixes"  "Number of old tracker fixes to store." ""
+
+# Vortex Tracking (physics namelist)
+# Only for algorithm 4:
+rconfig   real    vt4_radius              namelist,physics      max_domains  150000.  -      "vt4_radius"     "Vortex Search Radius for vortex tracker #4" "m"
+rconfig   real    vt4_weightexp           namelist,physics      max_domains  1.       -      "vt4_weightexp"  "Vortex Search Weight Exponent for vortex tracker #4" ""
+rconfig   real    vt4_pmax                namelist,physics      max_domains  -1.      -      "vt4_pmax"       "Vortex Search Max Pressure for vortex tracker #4 (<0 = actual max pressure in search radius)" "Pa"
+
+rconfig   real    vt4_noise_pmax          namelist,physics      max_domains  103000.  -      "vt4_noise_pmax" "Noise Removal: Maximum Realistic MSLP" "Pa"
+rconfig   real    vt4_noise_pmin          namelist,physics      max_domains  85000.   -      "vt4_noise_pmin" "Noise Removal: Minimum Realistic MSLP" "Pa"
+rconfig   real    vt4_noise_dpdr          namelist,physics      max_domains  0.6      -      "vt4_noise_dpdr" "Noise Removal: Maximum Realistic dMSLP/dr" "Pa/m"
+rconfig   integer vt4_noise_iter          namelist,physics      max_domains  2        -      "vt4_noise_iter" "Noise Removal: number of iterations" ""
+
+
+rconfig   real    nomove_freq             namelist,physics      max_domains  -1.0     irh    "nomove_freq" "nest will not move at analysis time or multiples of this hour (if positive)"

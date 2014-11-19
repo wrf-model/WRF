@@ -98,14 +98,14 @@ SUBROUTINE microphysics_driver(                                          &
                      KESSLERSCHEME, LINSCHEME, SBU_YLINSCHEME, WSM3SCHEME, WSM5SCHEME    &
                     ,WSM6SCHEME, ETAMPNEW, ETAMPOLD, etamp_HWRF,THOMPSON, THOMPSONAERO, MORR_TWO_MOMENT     &
                     ,GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME &
-                    ,MILBRANDT2MOM !,MILBRANDT3MOM 
+                    ,MILBRANDT2MOM, ETAMPNEW_OLD !,MILBRANDT3MOM 
 #else
    USE module_state_description, ONLY :                                  &
                      KESSLERSCHEME, LINSCHEME, SBU_YLINSCHEME, WSM3SCHEME, WSM5SCHEME    &
                     ,WSM6SCHEME, ETAMPNEW, ETAMPOLD, THOMPSON, THOMPSONAERO, FAST_KHAIN_LYNN, MORR_TWO_MOMENT     &
                     ,GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME, NSSL_2MOM, NSSL_2MOMCCN  &
                     ,NSSL_1MOM,NSSL_1MOMLFO & ! ,NSSL_3MOM       &
-                    ,MILBRANDT2MOM , CAMMGMPSCHEME,FULL_KHAIN_LYNN  !,MILBRANDT3MOM
+                    ,MILBRANDT2MOM , CAMMGMPSCHEME,FULL_KHAIN_LYNN,ETAMPNEW_OLD !,MILBRANDT3MOM
 #endif
 
 ! Model Layer
@@ -127,6 +127,7 @@ SUBROUTINE microphysics_driver(                                          &
    USE module_mp_wsm5
    USE module_mp_wsm6
    USE module_mp_etanew
+   USE module_mp_etanewhr
    USE module_mp_etaold
    USE module_mp_thompson
    USE module_mp_full_sbm
@@ -165,6 +166,10 @@ SUBROUTINE microphysics_driver(                                          &
    !   * etampnew - what's in the operational 4-km High-Resolution Window Runs
    !   * etampold - what was run in the 12-km operational NAM
    ! Milbrandt and Yau (2005)
+   !
+   ! 2014-11-19  Weiguo Wang, replaced etampnew(mp_phys=5) with F-A new microphy scheme
+   !                          for high resolution runs. mp=95 for etampnew,
+   !                          mp=105 for etampold
 
 !----------------------------------------------------------------------
    IMPLICIT NONE
@@ -1608,7 +1613,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                 CALL wrf_error_fatal ( 'arguments not present for calling etampnew' )
              ENDIF
 #endif
-        CASE (ETAMPNEW)    !-- Operational 4-km High-Resolution Window (HRW) version
+        CASE (ETAMPNEW_OLD)    !-- Operational 4-km High-Resolution Window (HRW) version
              CALL wrf_debug ( 100 , 'microphysics_driver: calling etampnew')
 
              IF ( PRESENT( qv_curr ) .AND. PRESENT( qt_curr ) .AND. &
@@ -1636,6 +1641,38 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                                                                     )
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling etampnew' )
+             ENDIF
+        CASE (ETAMPNEW)    !-- Operational Ferrier-Aligo High-Resolution Window (HRW) version 
+                           !   (2014/2 version) added by Weiguo Wang on
+                           !   2014-11-19
+             CALL wrf_debug ( 100 , 'microphysics_driver: calling etampnew')
+
+             IF ( PRESENT( qv_curr ) .AND. PRESENT( qt_curr ) .AND. &
+                  PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV ) .AND.  &
+                  PRESENT( mp_restart_state )                  .AND. &
+                  PRESENT( tbpvs_state )                      .AND. &
+                  PRESENT( tbpvs0_state )                       ) THEN
+
+             !  write(0,*)',f_qv,f_qc,f_qr,f_qi,f_qs,f_qg',f_qv,f_qc,f_qr,f_qi,f_qs,f_qg
+             !  write(0,*)'max qi=',maxval(qi_curr(its:ite,kts:kte,jts:jte))
+             !  write(0,*)'max qs=',maxval(qs_curr(its:ite,kts:kte,jts:jte))
+
+                CALL ETAMP_NEW_HR(                                      &
+                   ITIMESTEP=itimestep,DT=dt,DX=dx,DY=dy, GID=id &
+                  ,RAINNC=rainnc,RAINNCV=rainncv                     &
+                  ,DZ8W=dz8w,RHO_PHY=rho,P_PHY=p,PI_PHY=pi_phy,TH_PHY=th &
+                  ,QV=qv_curr                                        &
+                  ,QT=qt_curr                                        &
+                  ,LOWLYR=LOWLYR,SR=SR                               &
+                  ,F_ICE_PHY=F_ICE_PHY,F_RAIN_PHY=F_RAIN_PHY         &
+                  ,F_RIMEF_PHY=F_RIMEF_PHY                           &
+                  ,QC=qc_curr,QR=Qr_curr,QI=Qi_curr                  &
+                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
+                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
+                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
+                                                                     )
+             ELSE
+                CALL wrf_error_fatal ( 'arguments not present for calling etampnewhr' )
              ENDIF
 #if(EM_CORE==1)
           CASE (CAMMGMPSCHEME)

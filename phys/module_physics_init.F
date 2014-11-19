@@ -3349,6 +3349,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    USE module_mp_wsm5
    USE module_mp_wsm6
    USE module_mp_etanew
+   USE module_mp_etanewhr
    USE module_mp_etaold
 #if (NMM_CORE == 1)
    USE module_mp_HWRF
@@ -3440,7 +3441,8 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
           CALL wsm5init(rhoair0,rhowater,rhosnow,cliq,cpv, allowed_to_read )
      CASE (WSM6SCHEME)
           CALL wsm6init(rhoair0,rhowater,rhosnow,cliq,cpv, allowed_to_read )
-     CASE (ETAMPNEW)
+     !CASE (ETAMPNEW)
+     CASE (ETAMPNEW_old)
          adv_moist_cond = .false.
          CALL etanewinit (MPDT,DT,DX,DY,LOWLYR,restart,           &
                           F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,       &
@@ -3449,6 +3451,14 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                           ids, ide, jds, jde, kds, kde,           &
                           ims, ime, jms, jme, kms, kme,           &
                           its, ite, jts, jte, kts, kte            )
+     CASE (ETAMPNEW)
+          CALL etanewhr_init (MPDT,DT,DX,DY,LOWLYR,restart,         &
+                            allowed_to_read,                        &
+                            ids, ide, jds, jde, kds, kde,           &
+                            ims, ime, jms, jme, kms, kme,           &
+                            its, ite, jts, jte, kts, kte,           &
+                            F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY)
+
 #if(NMM_CORE==1)
      CASE (etamp_HWRF)
          CALL etanewinit_HWRF (MPDT,DT,DX,DY,LOWLYR,restart,           &

@@ -2234,7 +2234,7 @@
                +maxval(grid%f_rain(ips:ipe,:,jps:jpe))) .gt. EPSQ) ) THEN
             ETAMP_Regional=.FALSE.    !-- Regional NAM or HRW (Ferrier) microphysics
             if (model_config_rec%mp_physics(grid%id).EQ.ETAMPOLD .OR.          &
-     &          model_config_rec%mp_physics(grid%id).EQ.ETAMPNEW )             &
+     &          model_config_rec%mp_physics(grid%id).EQ.ETAMPNEW_OLD )             &
      &          ETAMP_Regional=.TRUE.
             CALL wrf_message(' computing grid%f_ice')
             do i_m = 2, num_moist

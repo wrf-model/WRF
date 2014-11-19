@@ -1589,7 +1589,7 @@ package   kesslerscheme mp_physics==1                -             moist:qv,qc,q
 package   linscheme     mp_physics==2                -             moist:qv,qc,qr,qi,qs,qg
 package   wsm3scheme    mp_physics==3                -             moist:qv,qc,qr
 package   wsm5scheme    mp_physics==4                -             moist:qv,qc,qr,qi,qs
-package   etampnew      mp_physics==5                -             moist:qv,qc,qr,qs;state:f_ice,f_rain,f_rimef
+package   etampnew      mp_physics==5                -             moist:qv,qc,qr,qi,qs;state:f_ice,f_rain,f_rimef
 package   wsm6scheme    mp_physics==6                -             moist:qv,qc,qr,qi,qs,qg
 package   gsfcgcescheme mp_physics==7                -             moist:qv,qc,qr,qi,qs,qg
 package   thompson      mp_physics==8                -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr;state:re_cloud,re_ice,re_snow
@@ -1600,7 +1600,8 @@ package   sbu_ylinscheme    mp_physics==13           -             moist:qv,qc,q
 package   wdm5scheme    mp_physics==14               -             moist:qv,qc,qr,qi,qs;scalar:qnn,qnc,qnr
 package   wdm6scheme    mp_physics==16               -             moist:qv,qc,qr,qi,qs,qg;scalar:qnn,qnc,qnr
 package   etamp_hwrf    mp_physics==85               -             moist:qv,qc,qr,qi,qs;state:f_ice,f_rain,f_rimef
-package   etampold      mp_physics==95               -             moist:qv,qc,qr,qs;state:f_ice,f_rain,f_rimef
+package   etampold      mp_physics==105               -             moist:qv,qc,qr,qs;state:f_ice,f_rain,f_rimef
+package   etampnew_old  mp_physics==95              -             moist:qv,qc,qr,qs;state:f_ice,f_rain,f_rimef
 package   radar_refl    compute_radar_ref==1         -             state:refl_10cm,refd_max
 
 package   nodfimoist        mp_physics_dfi==-1       -             -

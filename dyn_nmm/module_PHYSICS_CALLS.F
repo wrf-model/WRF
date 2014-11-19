@@ -1525,7 +1525,7 @@
 !-- ETAMP_Regional logical is true for regional NAM (ETAMPOLD) or HRW (ETAMPNEW) microphysics
 !
       ETAMP_Regional=.FALSE.
-      IF (CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW .OR.                        &
+      IF (CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW_OLD .OR.                        &
      &    CONFIG_FLAGS%MP_PHYSICS==ETAMPOLD) ETAMP_Regional=.TRUE.
 !
       IF(ETAMP_Regional) THEN
@@ -1903,7 +1903,8 @@
       E_BDY=(ITE>=IDE)
 !
       ETAMP_PHYSICS=ETAMP_Regional
-      IF (CONFIG_FLAGS%MP_PHYSICS==ETAMP_HWRF) ETAMP_PHYSICS=.TRUE.
+      IF (CONFIG_FLAGS%MP_PHYSICS==ETAMP_HWRF .OR.    &
+          CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW   ) ETAMP_PHYSICS=.TRUE.
 !
 !$omp parallel do                                                       &
 !$omp& private(dqdt,dtdt,i,iend,j,k,qi,qold,qr,qw,ratiomx,i_m)
@@ -1950,7 +1951,8 @@
               MOIST(I,J,K,P_QC)=QW
               MOIST(I,J,K,P_QS)=QI
               MOIST(I,J,K,P_QR)=QR
-            ELSE IF (CONFIG_FLAGS%MP_PHYSICS==ETAMP_HWRF) THEN    !-- pbl_check2
+            ELSE IF (CONFIG_FLAGS%MP_PHYSICS==ETAMP_HWRF .OR.   &
+                     CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW   ) THEN    !-- pbl_check2
               QI=MAX(0.,MOIST(I,J,K,P_QI)+RQIBLTEN(I,K,J)*DTPHS )  !-- Total ice
 !BSF              QR=MAX(0.,MOIST(I,J,K,P_QR)+RQRBLTEN(I,K,J)*DTPHS )
               QR=MAX(0.,MOIST(I,J,K,P_QR) )
@@ -3017,8 +3019,9 @@
 !   or HWRF (ETAMP_HWRF) microphysics
 !
       QT_PRESENT=.FALSE.
-      IF (CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW .OR.                        &
-     &    CONFIG_FLAGS%MP_PHYSICS==ETAMPOLD .OR.                        &
+      IF (CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW     .OR.                        &
+     &    CONFIG_FLAGS%MP_PHYSICS==ETAMPOLD     .OR.                        &
+     &    CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW_OLD .OR.                        &
      &    CONFIG_FLAGS%MP_PHYSICS==ETAMP_HWRF) QT_PRESENT=.TRUE.
 !
       micro_check1: IF(.NOT.QT_PRESENT) THEN

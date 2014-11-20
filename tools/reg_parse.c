@@ -626,8 +626,10 @@ reg_parse( FILE * infile )
                                    fprintf(stderr,"ERROR: %s %c function invalid.  You must specify the function to call in f=, d=, u= or s= when using the NMM cores.  The ARW interp functions do not correctly handle the E grid.\n",tokens[FIELD_SYM],x);
                                    exit(1);
                                  } else {
-                                   fprintf(stderr,"WARNING: %c interpolation unspecified for %s.  Using %s.\n",
+                                   /*  warning should no longer be needed 
+                                      fprintf(stderr,"WARNING: %c interpolation unspecified for %s.  Using %s.\n",
                                            x,tokens[FIELD_SYM],fcn_name);
+                                   */
                                  }
 #else
 				 if ( x == 'f' || x == 'd' ) strcpy(fcn_name,"interp_fcn") ;

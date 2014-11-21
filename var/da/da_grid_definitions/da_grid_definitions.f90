@@ -20,7 +20,6 @@ module da_grid_definitions
 #include "da_ffdduv.inc"
 #include "da_ffdduv_model.inc"
 #include "da_earth_2_model_wind.inc"
-#include "da_set_map_para.inc"
 #include "da_ffdduv_diagnose.inc"
 
 end module da_grid_definitions

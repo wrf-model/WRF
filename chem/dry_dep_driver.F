@@ -156,6 +156,7 @@ CONTAINS
 ! .. Local Scalars ..
       REAL ::  clwchem,  dvfog, dvpart,  &
         rad, rhchem, ta, ustar, vegfrac, z1,zntt
+      REAL ::  old, new, fac
 
       INTEGER :: iland, iprt, iseason, jce, jcs,  &
                  n, nr, ipr, jpr, nvr,   &
@@ -167,6 +168,9 @@ CONTAINS
 ! .. Local Arrays ..
       REAL :: p(kts:kte)
    REAL, DIMENSION( its:ite, jts:jte, num_chem ) ::   ddvel
+   REAL, DIMENSION( num_chem )                   ::   ddmassn
+
+   REAL, DIMENSION( ims:ime, jms:jme, num_chem ) ::   qsrflx ! dry deposition flux of aerosols (explicit aq.-phase cases)
 
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ) :: dryrho_phy
    REAL,  DIMENSION( kms:kme ) :: dryrho_1d
@@ -280,7 +284,8 @@ CONTAINS
           if( config_flags%diagnostic_chem == DEPVEL1 .and. &
               (config_flags%chem_opt == MOZCART_KPP .or. &
               config_flags%chem_opt == MOZART_KPP   .or. & 
-              config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP) ) then
+              config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
+              config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP ) ) then
                do j = jts,jte
                   dvel(its:ite,1,j,p_dvel_o3) = m2cm*ddvel(its:ite,j,p_o3)
                   dvel(its:ite,1,j,p_dvel_no) = m2cm*ddvel(its:ite,j,p_no)
@@ -298,9 +303,7 @@ CONTAINS
                   dvel(its:ite,1,j,p_dvel_ch3cooh) = m2cm*ddvel(its:ite,j,p_ch3cooh)
                   dvel(its:ite,1,j,p_dvel_acet) = m2cm*ddvel(its:ite,j,p_acet)
                   dvel(its:ite,1,j,p_dvel_mgly) = m2cm*ddvel(its:ite,j,p_mgly)
-! 20120820 acd_ck_bugfix start
                   dvel(its:ite,1,j,p_dvel_gly) = m2cm*ddvel(its:ite,j,p_gly)
-! 20120820 acd_ck_bugfix end
                   dvel(its:ite,1,j,p_dvel_paa) = m2cm*ddvel(its:ite,j,p_paa)
                   dvel(its:ite,1,j,p_dvel_pooh) = m2cm*ddvel(its:ite,j,p_c3h6ooh)
                   dvel(its:ite,1,j,p_dvel_mpan) = m2cm*ddvel(its:ite,j,p_mpan)
@@ -326,6 +329,22 @@ CONTAINS
                   dvel(its:ite,1,j,p_dvel_terpooh) = m2cm*ddvel(its:ite,j,p_terpooh)
                enddo
           endif
+
+          if ( config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP ) then
+               do j = jts,jte
+                   dvel(its:ite,1,j,p_dvel_cvasoaX) = 0.0
+                   dvel(its:ite,1,j,p_dvel_cvasoa1) = m2cm*ddvel(its:ite,j,p_cvasoa1)
+                   dvel(its:ite,1,j,p_dvel_cvasoa2) = m2cm*ddvel(its:ite,j,p_cvasoa2)
+                   dvel(its:ite,1,j,p_dvel_cvasoa3) = m2cm*ddvel(its:ite,j,p_cvasoa3)
+                   dvel(its:ite,1,j,p_dvel_cvasoa4) = m2cm*ddvel(its:ite,j,p_cvasoa4)
+                   dvel(its:ite,1,j,p_dvel_cvbsoaX) = 0.0
+                   dvel(its:ite,1,j,p_dvel_cvbsoa1) = m2cm*ddvel(its:ite,j,p_cvbsoa1)
+                   dvel(its:ite,1,j,p_dvel_cvbsoa2) = m2cm*ddvel(its:ite,j,p_cvbsoa2)
+                   dvel(its:ite,1,j,p_dvel_cvbsoa3) = m2cm*ddvel(its:ite,j,p_cvbsoa3)
+                   dvel(its:ite,1,j,p_dvel_cvbsoa4) = m2cm*ddvel(its:ite,j,p_cvbsoa4)
+                enddo
+           endif
+
        ELSEIF ( config_flags%chem_opt == GOCART_SIMPLE ) then
           call wesely_driver(id,ktau,dtstep,                              &
                config_flags,current_month,                                &
@@ -416,8 +435,9 @@ CONTAINS
           CASE (RACMSORG_AQ,RACMSORG_AQCHEM_KPP,RACM_ESRLSORG_AQCHEM_KPP,RACMSORG_KPP)
              aer_mech_id = 2
           CASE ( CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_KPP, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, &
-                 CBMZ_MOSAIC_8BIN_AQ,CBMZ_MOSAIC_4BIN_VBS2_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP,MOZART_MOSAIC_4BIN_VBS0_KPP,  &
+                 CBMZ_MOSAIC_8BIN_AQ,CBMZ_MOSAIC_4BIN_VBS2_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP, &
                  CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ, &
+                 MOZART_MOSAIC_4BIN_KPP, MOZART_MOSAIC_4BIN_AQ_KPP, &
                  CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP)
              aer_mech_id = 3
           CASE ( CBMZ_CAM_MAM3_NOAQ, CBMZ_CAM_MAM3_AQ, CBMZ_CAM_MAM7_NOAQ, CBMZ_CAM_MAM7_AQ )
@@ -465,7 +485,8 @@ CONTAINS
                its,ite, jts,jte, kts,kte                                )
      CASE ( CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_KPP, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, &
           CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ, &
-          CBMZ_MOSAIC_4BIN_VBS2_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP, MOZART_MOSAIC_4BIN_VBS0_KPP, &
+          CBMZ_MOSAIC_4BIN_VBS2_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP, &
+          MOZART_MOSAIC_4BIN_KPP, MOZART_MOSAIC_4BIN_AQ_KPP, &
           CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP  )
        CALL wrf_debug(15,'DOING DRY DEP VELOCITIES FOR MOSAIC AEROSOLS')
        call mosaic_drydep_driver(                                       &
@@ -565,6 +586,7 @@ CONTAINS
       do 100 j=jts,jte
       do 100 i=its,ite
       pblst=0.
+      ddmassn(:) = 0.0
 !
 !
 !-- start with vertical mixing
@@ -585,7 +607,11 @@ CONTAINS
 !!$!     if e_co > 0., the grid cell should not be over water
 !!$!     if e_co > 200, the grid cell should be over a large urban region
 !!$!
-     if (p_e_co > param_first_scalar )then
+
+! this code is wrong - doesn't work if e_co is == param_first_scalar
+! (like it happened to be the case for MOZCART)
+!     if (p_e_co > param_first_scalar )then
+     if (p_e_co >= param_first_scalar )then
        if (sf_urban_physics .eq. 0 ) then
          if (emis_ant(i,kts,j,p_e_co) .gt. 0) then
           ekmfull(kts:kts+10) = max(ekmfull(kts:kts+10),1.)
@@ -607,7 +633,8 @@ CONTAINS
      endif
 !!$! --- Mix the emissions up several layers when satellite data shows a wildfire
 !!$!     if ebu_in_e_co > 0., a wildfire exists so increase vertical mixing
-     if (p_ebu_in_co > param_first_scalar )then
+!     if (p_ebu_in_co > param_first_scalar )then
+     if (p_ebu_in_co >= param_first_scalar )then
          if (ebu_in(i,1,j,p_ebu_in_co) .gt. 0) then
           ekmfull(kts:kte/2) = max(ekmfull(kts:kte/2),2.)
          endif
@@ -632,8 +659,9 @@ CONTAINS
 
          mix_select: SELECT CASE(config_flags%chem_opt)
          CASE (RADM2SORG_AQ, RADM2SORG_AQCHEM, RACMSORG_AQ, RACMSORG_AQCHEM_KPP, RACM_ESRLSORG_AQCHEM_KPP, CBMZ_MOSAIC_4BIN_AQ, &
-              CBMZ_MOSAIC_8BIN_AQ, CBMZSORG_AQ, CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, CBMZ_MOSAIC_DMS_4BIN_AQ,  &
-              CBMZ_MOSAIC_DMS_8BIN_AQ, CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP)
+              CBMZ_MOSAIC_8BIN_AQ, CBMZSORG_AQ, CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ, &
+              MOZART_MOSAIC_4BIN_AQ_KPP, &
+              CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP)
             if(.not.is_aerosol(nv))then ! mix gases not aerosol
                call vertmx(dtstep,pblst,ekmfull,dryrho_1d, &
                            zzfull,zz,ddvel(i,j,nv),kts,kte)
@@ -649,10 +677,254 @@ CONTAINS
 
          END SELECT mix_select
 
+         ! chem is in ppmv
+         ! dry deposition is combined with vertical mixing, but column independent.
+         ! Hence, all molecules lost per column must be dry deposited.
+
+         ! old and new column totals (mol/m2 or ug/m2)
+         old = 0.0
+         new = 0.0
+
+         do k=kts,kte-1
+           fac = 1.0
+           if (nv <= numgas) then
+             ! from ppmv to mol/m2
+             ! fac     = 1e-6 * rho * 1/mw_air * dz
+             !                 kg/m3   mol/kg    m
+             fac = 1e-6 * dryrho_1d(k) * 1./(mwdry*1.e-3) * dz8w(i,k,j)
+           else
+             ! from ug/kg to ug/m2
+             ! fac     = rho * dz
+             !          kg/m3  m
+             fac = dryrho_1d(k) * dz8w(i,k,j)
+           endif
+
+           old = old + max(epsilc,chem(i,k,j,nv)) * fac
+           new = new + max(epsilc,pblst(k)) * fac
+         enddo
+
+         ! we ignore (spurious) and add new dry deposition to
+         ! existing field (accumulated deposition!)
+         ddmassn(nv) =  max( 0.0, (old - new) )
+
          do k=kts,kte-1
             chem(i,k,j,nv)=max(epsilc,pblst(k))
          enddo
       enddo
+
+      if( config_flags%diagnostic_chem == DEPVEL1 .and. &
+          (config_flags%chem_opt == MOZCART_KPP .or. &
+           config_flags%chem_opt == MOZART_KPP   .or. &
+           config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
+           config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP) ) then
+
+        dvel(i,1,j,p_ddmass_o3) = dvel(i,1,j,p_ddmass_o3) + ddmassn(p_o3)
+        dvel(i,1,j,p_ddmass_no) = dvel(i,1,j,p_ddmass_no) + ddmassn(p_no)
+        dvel(i,1,j,p_ddmass_no2) = dvel(i,1,j,p_ddmass_no2) + ddmassn(p_no2)
+        dvel(i,1,j,p_ddmass_nh3) = dvel(i,1,j,p_ddmass_nh3) + ddmassn(p_nh3)
+        dvel(i,1,j,p_ddmass_hno3) = dvel(i,1,j,p_ddmass_hno3) + ddmassn(p_hno3)
+        dvel(i,1,j,p_ddmass_hno4) = dvel(i,1,j,p_ddmass_hno4) + ddmassn(p_hno4)
+        dvel(i,1,j,p_ddmass_h2o2) = dvel(i,1,j,p_ddmass_h2o2) + ddmassn(p_h2o2)
+        dvel(i,1,j,p_ddmass_co) = dvel(i,1,j,p_ddmass_co) + ddmassn(p_co)
+        dvel(i,1,j,p_ddmass_ch3ooh) = dvel(i,1,j,p_ddmass_ch3ooh) + ddmassn(p_ch3ooh)
+        dvel(i,1,j,p_ddmass_hcho) = dvel(i,1,j,p_ddmass_hcho) + ddmassn(p_hcho)
+        dvel(i,1,j,p_ddmass_ch3oh) = dvel(i,1,j,p_ddmass_ch3oh) + ddmassn(p_ch3oh)
+        dvel(i,1,j,p_ddmass_eo2) = dvel(i,1,j,p_ddmass_eo2) + ddmassn(p_eo2)
+        dvel(i,1,j,p_ddmass_ald) = dvel(i,1,j,p_ddmass_ald) + ddmassn(p_ald)
+        dvel(i,1,j,p_ddmass_ch3cooh) = dvel(i,1,j,p_ddmass_ch3cooh) + ddmassn(p_ch3cooh)
+        dvel(i,1,j,p_ddmass_acet) = dvel(i,1,j,p_ddmass_acet) + ddmassn(p_acet)
+        dvel(i,1,j,p_ddmass_mgly) = dvel(i,1,j,p_ddmass_mgly) + ddmassn(p_mgly)
+        dvel(i,1,j,p_ddmass_gly) = dvel(i,1,j,p_ddmass_gly) + ddmassn(p_gly)
+        dvel(i,1,j,p_ddmass_paa) = dvel(i,1,j,p_ddmass_paa) + ddmassn(p_paa)
+        dvel(i,1,j,p_ddmass_pooh) = dvel(i,1,j,p_ddmass_pooh) + ddmassn(p_c3h6ooh)
+        dvel(i,1,j,p_ddmass_mpan) = dvel(i,1,j,p_ddmass_mpan) + ddmassn(p_mpan)
+        dvel(i,1,j,p_ddmass_mco3) = dvel(i,1,j,p_ddmass_mco3) + ddmassn(p_mco3)
+        dvel(i,1,j,p_ddmass_mvkooh) = dvel(i,1,j,p_ddmass_mvkooh) + ddmassn(p_mvkooh)
+        dvel(i,1,j,p_ddmass_c2h5oh) = dvel(i,1,j,p_ddmass_c2h5oh) + ddmassn(p_c2h5oh)
+        dvel(i,1,j,p_ddmass_etooh) = dvel(i,1,j,p_ddmass_etooh) + ddmassn(p_etooh)
+        dvel(i,1,j,p_ddmass_prooh) = dvel(i,1,j,p_ddmass_prooh) + ddmassn(p_prooh)
+        dvel(i,1,j,p_ddmass_acetp) = dvel(i,1,j,p_ddmass_acetp) + ddmassn(p_acetp)
+        dvel(i,1,j,p_ddmass_onit) = dvel(i,1,j,p_ddmass_onit) + ddmassn(p_onit)
+        dvel(i,1,j,p_ddmass_onitr) = dvel(i,1,j,p_ddmass_onitr) + ddmassn(p_onitr)
+        dvel(i,1,j,p_ddmass_isooh) = dvel(i,1,j,p_ddmass_isooh) + ddmassn(p_isooh)
+        dvel(i,1,j,p_ddmass_acetol) = dvel(i,1,j,p_ddmass_acetol) + ddmassn(p_acetol)
+        dvel(i,1,j,p_ddmass_glyald) = dvel(i,1,j,p_ddmass_glyald) + ddmassn(p_glyald)
+        dvel(i,1,j,p_ddmass_hydrald) = dvel(i,1,j,p_ddmass_hydrald) + ddmassn(p_hydrald)
+        dvel(i,1,j,p_ddmass_alkooh) = dvel(i,1,j,p_ddmass_alkooh) + ddmassn(p_alkooh)
+        dvel(i,1,j,p_ddmass_mekooh) = dvel(i,1,j,p_ddmass_mekooh) + ddmassn(p_mekooh)
+        dvel(i,1,j,p_ddmass_tolooh) = dvel(i,1,j,p_ddmass_tolooh) + ddmassn(p_tolooh)
+        dvel(i,1,j,p_ddmass_xooh) = dvel(i,1,j,p_ddmass_xooh) + ddmassn(p_xooh)
+        dvel(i,1,j,p_ddmass_so2) = dvel(i,1,j,p_ddmass_so2) + ddmassn(p_so2)
+        dvel(i,1,j,p_ddmass_so4) = dvel(i,1,j,p_ddmass_so4) + ddmassn(p_sulf)
+        dvel(i,1,j,p_ddmass_pan) = dvel(i,1,j,p_ddmass_pan) + ddmassn(p_pan)
+        dvel(i,1,j,p_ddmass_terpooh) = dvel(i,1,j,p_ddmass_terpooh) + ddmassn(p_terpooh)
+
+        if (config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP) then
+          dvel(i,1,j,p_ddmass_cvasoaX) = dvel(i,1,j,p_ddmass_cvasoaX) + ddmassn(p_cvasoaX)
+          dvel(i,1,j,p_ddmass_cvasoa1) = dvel(i,1,j,p_ddmass_cvasoa1) + ddmassn(p_cvasoa1)
+          dvel(i,1,j,p_ddmass_cvasoa2) = dvel(i,1,j,p_ddmass_cvasoa2) + ddmassn(p_cvasoa2)
+          dvel(i,1,j,p_ddmass_cvasoa3) = dvel(i,1,j,p_ddmass_cvasoa3) + ddmassn(p_cvasoa3)
+          dvel(i,1,j,p_ddmass_cvasoa4) = dvel(i,1,j,p_ddmass_cvasoa4) + ddmassn(p_cvasoa4)
+          dvel(i,1,j,p_ddmass_cvbsoaX) = dvel(i,1,j,p_ddmass_cvbsoaX) + ddmassn(p_cvbsoaX)
+          dvel(i,1,j,p_ddmass_cvbsoa1) = dvel(i,1,j,p_ddmass_cvbsoa1) + ddmassn(p_cvbsoa1)
+          dvel(i,1,j,p_ddmass_cvbsoa2) = dvel(i,1,j,p_ddmass_cvbsoa2) + ddmassn(p_cvbsoa2)
+          dvel(i,1,j,p_ddmass_cvbsoa3) = dvel(i,1,j,p_ddmass_cvbsoa3) + ddmassn(p_cvbsoa3)
+          dvel(i,1,j,p_ddmass_cvbsoa4) = dvel(i,1,j,p_ddmass_cvbsoa4) + ddmassn(p_cvbsoa4)
+        endif
+
+        if (config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
+            config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP) then
+
+          dvel(i,1,j,p_ddmass_so4_a01) = dvel(i,1,j,p_ddmass_so4_a01) + ddmassn(p_so4_a01)
+          dvel(i,1,j,p_ddmass_no3_a01) = dvel(i,1,j,p_ddmass_no3_a01) + ddmassn(p_no3_a01)
+          dvel(i,1,j,p_ddmass_cl_a01) = dvel(i,1,j,p_ddmass_cl_a01) + ddmassn(p_cl_a01)
+          dvel(i,1,j,p_ddmass_nh4_a01) = dvel(i,1,j,p_ddmass_nh4_a01) + ddmassn(p_nh4_a01)
+          dvel(i,1,j,p_ddmass_na_a01) = dvel(i,1,j,p_ddmass_na_a01) + ddmassn(p_na_a01)
+          dvel(i,1,j,p_ddmass_oin_a01) = dvel(i,1,j,p_ddmass_oin_a01) + ddmassn(p_oin_a01)
+          dvel(i,1,j,p_ddmass_oc_a01) = dvel(i,1,j,p_ddmass_oc_a01) + ddmassn(p_oc_a01)
+          dvel(i,1,j,p_ddmass_bc_a01) = dvel(i,1,j,p_ddmass_bc_a01) + ddmassn(p_bc_a01)
+          dvel(i,1,j,p_ddmass_so4_a02) = dvel(i,1,j,p_ddmass_so4_a02) + ddmassn(p_so4_a02)
+          dvel(i,1,j,p_ddmass_no3_a02) = dvel(i,1,j,p_ddmass_no3_a02) + ddmassn(p_no3_a02)
+          dvel(i,1,j,p_ddmass_cl_a02) = dvel(i,1,j,p_ddmass_cl_a02) + ddmassn(p_cl_a02)
+          dvel(i,1,j,p_ddmass_nh4_a02) = dvel(i,1,j,p_ddmass_nh4_a02) + ddmassn(p_nh4_a02)
+          dvel(i,1,j,p_ddmass_na_a02) = dvel(i,1,j,p_ddmass_na_a02) + ddmassn(p_na_a02)
+          dvel(i,1,j,p_ddmass_oin_a02) = dvel(i,1,j,p_ddmass_oin_a02) + ddmassn(p_oin_a02)
+          dvel(i,1,j,p_ddmass_oc_a02) = dvel(i,1,j,p_ddmass_oc_a02) + ddmassn(p_oc_a02)
+          dvel(i,1,j,p_ddmass_bc_a02) = dvel(i,1,j,p_ddmass_bc_a02) + ddmassn(p_bc_a02)
+          dvel(i,1,j,p_ddmass_so4_a03) = dvel(i,1,j,p_ddmass_so4_a03) + ddmassn(p_so4_a03)
+          dvel(i,1,j,p_ddmass_no3_a03) = dvel(i,1,j,p_ddmass_no3_a03) + ddmassn(p_no3_a03)
+          dvel(i,1,j,p_ddmass_cl_a03) = dvel(i,1,j,p_ddmass_cl_a03) + ddmassn(p_cl_a03)
+          dvel(i,1,j,p_ddmass_nh4_a03) = dvel(i,1,j,p_ddmass_nh4_a03) + ddmassn(p_nh4_a03)
+          dvel(i,1,j,p_ddmass_na_a03) = dvel(i,1,j,p_ddmass_na_a03) + ddmassn(p_na_a03)
+          dvel(i,1,j,p_ddmass_oin_a03) = dvel(i,1,j,p_ddmass_oin_a03) + ddmassn(p_oin_a03)
+          dvel(i,1,j,p_ddmass_oc_a03) = dvel(i,1,j,p_ddmass_oc_a03) + ddmassn(p_oc_a03)
+          dvel(i,1,j,p_ddmass_bc_a03) = dvel(i,1,j,p_ddmass_bc_a03) + ddmassn(p_bc_a03)
+          dvel(i,1,j,p_ddmass_so4_a04) = dvel(i,1,j,p_ddmass_so4_a04) + ddmassn(p_so4_a04)
+          dvel(i,1,j,p_ddmass_no3_a04) = dvel(i,1,j,p_ddmass_no3_a04) + ddmassn(p_no3_a04)
+          dvel(i,1,j,p_ddmass_cl_a04) = dvel(i,1,j,p_ddmass_cl_a04) + ddmassn(p_cl_a04)
+          dvel(i,1,j,p_ddmass_nh4_a04) = dvel(i,1,j,p_ddmass_nh4_a04) + ddmassn(p_nh4_a04)
+          dvel(i,1,j,p_ddmass_na_a04) = dvel(i,1,j,p_ddmass_na_a04) + ddmassn(p_na_a04)
+          dvel(i,1,j,p_ddmass_oin_a04) = dvel(i,1,j,p_ddmass_oin_a04) + ddmassn(p_oin_a04)
+          dvel(i,1,j,p_ddmass_oc_a04) = dvel(i,1,j,p_ddmass_oc_a04) + ddmassn(p_oc_a04)
+          dvel(i,1,j,p_ddmass_bc_a04) = dvel(i,1,j,p_ddmass_bc_a04) + ddmassn(p_bc_a04)
+
+          dvel(i,1,j,p_ddmass_ca_a01) = dvel(i,1,j,p_ddmass_ca_a01) + ddmassn(p_ca_a01)
+          dvel(i,1,j,p_ddmass_ca_a02) = dvel(i,1,j,p_ddmass_ca_a02) + ddmassn(p_ca_a02)
+          dvel(i,1,j,p_ddmass_ca_a03) = dvel(i,1,j,p_ddmass_ca_a03) + ddmassn(p_ca_a03)
+          dvel(i,1,j,p_ddmass_ca_a04) = dvel(i,1,j,p_ddmass_ca_a04) + ddmassn(p_ca_a04)
+
+          dvel(i,1,j,p_ddmass_co3_a01) = dvel(i,1,j,p_ddmass_co3_a01) + ddmassn(p_co3_a01)
+          dvel(i,1,j,p_ddmass_co3_a02) = dvel(i,1,j,p_ddmass_co3_a02) + ddmassn(p_co3_a02)
+          dvel(i,1,j,p_ddmass_co3_a03) = dvel(i,1,j,p_ddmass_co3_a03) + ddmassn(p_co3_a03)
+          dvel(i,1,j,p_ddmass_co3_a04) = dvel(i,1,j,p_ddmass_co3_a04) + ddmassn(p_co3_a04)
+
+          if (config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP .OR. &
+              config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP) then
+            dvel(i,1,j,p_ddmass_glysoa_a01) = dvel(i,1,j,p_ddmass_glysoa_a01) + &
+                                              ddmassn(p_glysoa_r1_a01) + &
+                                              ddmassn(p_glysoa_r2_a01) + &
+                                              ddmassn(p_glysoa_oh_a01) + &
+                                              ddmassn(p_glysoa_sfc_a01) + &
+                                              ddmassn(p_glysoa_nh4_a01)
+
+            dvel(i,1,j,p_ddmass_glysoa_a02) = dvel(i,1,j,p_ddmass_glysoa_a02) + &
+                                              ddmassn(p_glysoa_r1_a02) + &
+                                              ddmassn(p_glysoa_r2_a02) + &
+                                              ddmassn(p_glysoa_oh_a02) + &
+                                              ddmassn(p_glysoa_sfc_a02) + &
+                                              ddmassn(p_glysoa_nh4_a02)
+                                              
+            dvel(i,1,j,p_ddmass_glysoa_a03) = dvel(i,1,j,p_ddmass_glysoa_a03) + &
+                                              ddmassn(p_glysoa_r1_a03) + &
+                                              ddmassn(p_glysoa_r2_a03) + &
+                                              ddmassn(p_glysoa_oh_a03) + &
+                                              ddmassn(p_glysoa_sfc_a03) + &
+                                              ddmassn(p_glysoa_nh4_a03)
+                                              
+            dvel(i,1,j,p_ddmass_glysoa_a04) = dvel(i,1,j,p_ddmass_glysoa_a04) + &
+                                              ddmassn(p_glysoa_r1_a04) + &
+                                              ddmassn(p_glysoa_r2_a04) + &
+                                              ddmassn(p_glysoa_oh_a04) + &
+                                              ddmassn(p_glysoa_sfc_a04) + &
+                                              ddmassn(p_glysoa_nh4_a04)
+          endif
+
+          if (config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP) then
+
+            dvel(i,1,j,p_ddmass_smpa_a01) = dvel(i,1,j,p_ddmass_smpa_a01) + ddmassn(p_smpa_a01)
+            dvel(i,1,j,p_ddmass_smpbb_a01) = dvel(i,1,j,p_ddmass_smpbb_a01) + ddmassn(p_smpbb_a01)
+            dvel(i,1,j,p_ddmass_biog1_c_a01) = dvel(i,1,j,p_ddmass_biog1_c_a01) + ddmassn(p_biog1_c_a01)
+            dvel(i,1,j,p_ddmass_biog1_o_a01) = dvel(i,1,j,p_ddmass_biog1_o_a01) + ddmassn(p_biog1_o_a01)
+
+            dvel(i,1,j,p_ddmass_smpa_a02) = dvel(i,1,j,p_ddmass_smpa_a02) + ddmassn(p_smpa_a02)
+            dvel(i,1,j,p_ddmass_smpbb_a02) = dvel(i,1,j,p_ddmass_smpbb_a02) + ddmassn(p_smpbb_a02)
+            dvel(i,1,j,p_ddmass_biog1_c_a02) = dvel(i,1,j,p_ddmass_biog1_c_a02) + ddmassn(p_biog1_c_a02)
+            dvel(i,1,j,p_ddmass_biog1_o_a02) = dvel(i,1,j,p_ddmass_biog1_o_a02) + ddmassn(p_biog1_o_a02)
+
+            dvel(i,1,j,p_ddmass_smpa_a03) = dvel(i,1,j,p_ddmass_smpa_a03) + ddmassn(p_smpa_a03)
+            dvel(i,1,j,p_ddmass_smpbb_a03) = dvel(i,1,j,p_ddmass_smpbb_a03) + ddmassn(p_smpbb_a03)
+            dvel(i,1,j,p_ddmass_biog1_c_a03) = dvel(i,1,j,p_ddmass_biog1_c_a03) + ddmassn(p_biog1_c_a03)
+            dvel(i,1,j,p_ddmass_biog1_o_a03) = dvel(i,1,j,p_ddmass_biog1_o_a03) + ddmassn(p_biog1_o_a03)
+
+            dvel(i,1,j,p_ddmass_smpa_a04) = dvel(i,1,j,p_ddmass_smpa_a04) + ddmassn(p_smpa_a04)
+            dvel(i,1,j,p_ddmass_smpbb_a04) = dvel(i,1,j,p_ddmass_smpbb_a04) + ddmassn(p_smpbb_a04)
+            dvel(i,1,j,p_ddmass_biog1_c_a04) = dvel(i,1,j,p_ddmass_biog1_c_a04) + ddmassn(p_biog1_c_a04)
+            dvel(i,1,j,p_ddmass_biog1_o_a04) = dvel(i,1,j,p_ddmass_biog1_o_a04) + ddmassn(p_biog1_o_a04)
+
+          endif
+
+          if (config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP) then
+
+            dvel(i,1,j,p_ddmass_asoaX_a01) = dvel(i,1,j,p_ddmass_asoaX_a01) + ddmassn(p_asoaX_a01)
+            dvel(i,1,j,p_ddmass_asoa1_a01) = dvel(i,1,j,p_ddmass_asoa1_a01) + ddmassn(p_asoa1_a01)
+            dvel(i,1,j,p_ddmass_asoa2_a01) = dvel(i,1,j,p_ddmass_asoa2_a01) + ddmassn(p_asoa2_a01)
+            dvel(i,1,j,p_ddmass_asoa3_a01) = dvel(i,1,j,p_ddmass_asoa3_a01) + ddmassn(p_asoa3_a01)
+            dvel(i,1,j,p_ddmass_asoa4_a01) = dvel(i,1,j,p_ddmass_asoa4_a01) + ddmassn(p_asoa4_a01)
+            dvel(i,1,j,p_ddmass_bsoaX_a01) = dvel(i,1,j,p_ddmass_bsoaX_a01) + ddmassn(p_bsoaX_a01)
+            dvel(i,1,j,p_ddmass_bsoa1_a01) = dvel(i,1,j,p_ddmass_bsoa1_a01) + ddmassn(p_bsoa1_a01)
+            dvel(i,1,j,p_ddmass_bsoa2_a01) = dvel(i,1,j,p_ddmass_bsoa2_a01) + ddmassn(p_bsoa2_a01)
+            dvel(i,1,j,p_ddmass_bsoa3_a01) = dvel(i,1,j,p_ddmass_bsoa3_a01) + ddmassn(p_bsoa3_a01)
+            dvel(i,1,j,p_ddmass_bsoa4_a01) = dvel(i,1,j,p_ddmass_bsoa4_a01) + ddmassn(p_bsoa4_a01)
+
+            dvel(i,1,j,p_ddmass_asoaX_a02) = dvel(i,1,j,p_ddmass_asoaX_a02) + ddmassn(p_asoaX_a02)
+            dvel(i,1,j,p_ddmass_asoa1_a02) = dvel(i,1,j,p_ddmass_asoa1_a02) + ddmassn(p_asoa1_a02)
+            dvel(i,1,j,p_ddmass_asoa2_a02) = dvel(i,1,j,p_ddmass_asoa2_a02) + ddmassn(p_asoa2_a02)
+            dvel(i,1,j,p_ddmass_asoa3_a02) = dvel(i,1,j,p_ddmass_asoa3_a02) + ddmassn(p_asoa3_a02)
+            dvel(i,1,j,p_ddmass_asoa4_a02) = dvel(i,1,j,p_ddmass_asoa4_a02) + ddmassn(p_asoa4_a02)
+            dvel(i,1,j,p_ddmass_bsoaX_a02) = dvel(i,1,j,p_ddmass_bsoaX_a02) + ddmassn(p_bsoaX_a02)
+            dvel(i,1,j,p_ddmass_bsoa1_a02) = dvel(i,1,j,p_ddmass_bsoa1_a02) + ddmassn(p_bsoa1_a02)
+            dvel(i,1,j,p_ddmass_bsoa2_a02) = dvel(i,1,j,p_ddmass_bsoa2_a02) + ddmassn(p_bsoa2_a02)
+            dvel(i,1,j,p_ddmass_bsoa3_a02) = dvel(i,1,j,p_ddmass_bsoa3_a02) + ddmassn(p_bsoa3_a02)
+            dvel(i,1,j,p_ddmass_bsoa4_a02) = dvel(i,1,j,p_ddmass_bsoa4_a02) + ddmassn(p_bsoa4_a02)
+
+            dvel(i,1,j,p_ddmass_asoaX_a03) = dvel(i,1,j,p_ddmass_asoaX_a03) + ddmassn(p_asoaX_a03)
+            dvel(i,1,j,p_ddmass_asoa1_a03) = dvel(i,1,j,p_ddmass_asoa1_a03) + ddmassn(p_asoa1_a03)
+            dvel(i,1,j,p_ddmass_asoa2_a03) = dvel(i,1,j,p_ddmass_asoa2_a03) + ddmassn(p_asoa2_a03)
+            dvel(i,1,j,p_ddmass_asoa3_a03) = dvel(i,1,j,p_ddmass_asoa3_a03) + ddmassn(p_asoa3_a03)
+            dvel(i,1,j,p_ddmass_asoa4_a03) = dvel(i,1,j,p_ddmass_asoa4_a03) + ddmassn(p_asoa4_a03)
+            dvel(i,1,j,p_ddmass_bsoaX_a03) = dvel(i,1,j,p_ddmass_bsoaX_a03) + ddmassn(p_bsoaX_a03)
+            dvel(i,1,j,p_ddmass_bsoa1_a03) = dvel(i,1,j,p_ddmass_bsoa1_a03) + ddmassn(p_bsoa1_a03)
+            dvel(i,1,j,p_ddmass_bsoa2_a03) = dvel(i,1,j,p_ddmass_bsoa2_a03) + ddmassn(p_bsoa2_a03)
+            dvel(i,1,j,p_ddmass_bsoa3_a03) = dvel(i,1,j,p_ddmass_bsoa3_a03) + ddmassn(p_bsoa3_a03)
+            dvel(i,1,j,p_ddmass_bsoa4_a03) = dvel(i,1,j,p_ddmass_bsoa4_a03) + ddmassn(p_bsoa4_a03)
+
+            dvel(i,1,j,p_ddmass_asoaX_a04) = dvel(i,1,j,p_ddmass_asoaX_a04) + ddmassn(p_asoaX_a04)
+            dvel(i,1,j,p_ddmass_asoa1_a04) = dvel(i,1,j,p_ddmass_asoa1_a04) + ddmassn(p_asoa1_a04)
+            dvel(i,1,j,p_ddmass_asoa2_a04) = dvel(i,1,j,p_ddmass_asoa2_a04) + ddmassn(p_asoa2_a04)
+            dvel(i,1,j,p_ddmass_asoa3_a04) = dvel(i,1,j,p_ddmass_asoa3_a04) + ddmassn(p_asoa3_a04)
+            dvel(i,1,j,p_ddmass_asoa4_a04) = dvel(i,1,j,p_ddmass_asoa4_a04) + ddmassn(p_asoa4_a04)
+            dvel(i,1,j,p_ddmass_bsoaX_a04) = dvel(i,1,j,p_ddmass_bsoaX_a04) + ddmassn(p_bsoaX_a04)
+            dvel(i,1,j,p_ddmass_bsoa1_a04) = dvel(i,1,j,p_ddmass_bsoa1_a04) + ddmassn(p_bsoa1_a04)
+            dvel(i,1,j,p_ddmass_bsoa2_a04) = dvel(i,1,j,p_ddmass_bsoa2_a04) + ddmassn(p_bsoa2_a04)
+            dvel(i,1,j,p_ddmass_bsoa3_a04) = dvel(i,1,j,p_ddmass_bsoa3_a04) + ddmassn(p_bsoa3_a04)
+            dvel(i,1,j,p_ddmass_bsoa4_a04) = dvel(i,1,j,p_ddmass_bsoa4_a04) + ddmassn(p_bsoa4_a04)
+
+          endif
+
+        endif
+
+      endif
+
        tracer_select: SELECT CASE(config_flags%tracer_opt)
 !
 ! only mixing one fire(smoke) scalar array
@@ -685,6 +957,8 @@ CONTAINS
       dryrho_phy(its:ite,kts:kte,jts:jte) = 0.
    end where
 
+  qsrflx(:,:,:) = 0.0
+
    mixactivate_select: SELECT CASE(config_flags%chem_opt)
 
    CASE (RADM2SORG_AQ, RADM2SORG_AQCHEM, RACMSORG_AQ, RACMSORG_AQCHEM_KPP, RACM_ESRLSORG_AQCHEM_KPP, CBMZSORG_AQ)
@@ -700,7 +974,8 @@ CONTAINS
 		ims,ime, jms,jme, kms,kme,                        &
 		its,ite, jts,jte, kts,kte                         )
    CASE (CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ, &
-   			CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP)
+   			CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP, &
+   			MOZART_MOSAIC_4BIN_AQ_KPP)
       CALL wrf_debug(15,'call mixactivate for mosaic aerosol')
       call mosaic_mixactivate (                        &
 		id, ktau, dtstep, config_flags, idrydep_onoff,   &
@@ -709,9 +984,251 @@ CONTAINS
 		moist(ims,kms,jms,P_QV), moist(ims,kms,jms,P_QC), moist(ims,kms,jms,P_QI), &
         scalar(ims,kms,jms,P_QNDROP), f_qc, f_qi, chem,   &
         ccn1, ccn2, ccn3, ccn4, ccn5, ccn6, nsource,      &
+        qsrflx,                                           &
 		ids,ide, jds,jde, kds,kde,                        &
 		ims,ime, jms,jme, kms,kme,                        &
 		its,ite, jts,jte, kts,kte                         )
+
+      if( config_flags%diagnostic_chem == DEPVEL1 .and. &
+          config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP ) then
+
+          ! qsrflx is in kg/m2/s, recalculate to match ug/m2 for aerosols
+          qsrflx = qsrflx * 1.0e9 * dtstep
+
+          dvel(ims:ime,1,jms:jme,p_ddmass_so4_a01) = dvel(ims:ime,1,jms:jme,p_ddmass_so4_a01) + qsrflx(ims:ime,jms:jme,p_so4_a01)
+          dvel(ims:ime,1,jms:jme,p_ddmass_no3_a01) = dvel(ims:ime,1,jms:jme,p_ddmass_no3_a01) + qsrflx(ims:ime,jms:jme,p_no3_a01)
+          dvel(ims:ime,1,jms:jme,p_ddmass_cl_a01) = dvel(ims:ime,1,jms:jme,p_ddmass_cl_a01) + qsrflx(ims:ime,jms:jme,p_cl_a01)
+          dvel(ims:ime,1,jms:jme,p_ddmass_nh4_a01) = dvel(ims:ime,1,jms:jme,p_ddmass_nh4_a01) + qsrflx(ims:ime,jms:jme,p_nh4_a01)
+          dvel(ims:ime,1,jms:jme,p_ddmass_na_a01) = dvel(ims:ime,1,jms:jme,p_ddmass_na_a01) + qsrflx(ims:ime,jms:jme,p_na_a01)
+          dvel(ims:ime,1,jms:jme,p_ddmass_oin_a01) = dvel(ims:ime,1,jms:jme,p_ddmass_oin_a01) + qsrflx(ims:ime,jms:jme,p_oin_a01)
+          dvel(ims:ime,1,jms:jme,p_ddmass_oc_a01) = dvel(ims:ime,1,jms:jme,p_ddmass_oc_a01) + qsrflx(ims:ime,jms:jme,p_oc_a01)
+          dvel(ims:ime,1,jms:jme,p_ddmass_bc_a01) = dvel(ims:ime,1,jms:jme,p_ddmass_bc_a01) + qsrflx(ims:ime,jms:jme,p_bc_a01)
+          dvel(ims:ime,1,jms:jme,p_ddmass_so4_a02) = dvel(ims:ime,1,jms:jme,p_ddmass_so4_a02) + qsrflx(ims:ime,jms:jme,p_so4_a02)
+          dvel(ims:ime,1,jms:jme,p_ddmass_no3_a02) = dvel(ims:ime,1,jms:jme,p_ddmass_no3_a02) + qsrflx(ims:ime,jms:jme,p_no3_a02)
+          dvel(ims:ime,1,jms:jme,p_ddmass_cl_a02) = dvel(ims:ime,1,jms:jme,p_ddmass_cl_a02) + qsrflx(ims:ime,jms:jme,p_cl_a02)
+          dvel(ims:ime,1,jms:jme,p_ddmass_nh4_a02) = dvel(ims:ime,1,jms:jme,p_ddmass_nh4_a02) + qsrflx(ims:ime,jms:jme,p_nh4_a02)
+          dvel(ims:ime,1,jms:jme,p_ddmass_na_a02) = dvel(ims:ime,1,jms:jme,p_ddmass_na_a02) + qsrflx(ims:ime,jms:jme,p_na_a02)
+          dvel(ims:ime,1,jms:jme,p_ddmass_oin_a02) = dvel(ims:ime,1,jms:jme,p_ddmass_oin_a02) + qsrflx(ims:ime,jms:jme,p_oin_a02)
+          dvel(ims:ime,1,jms:jme,p_ddmass_oc_a02) = dvel(ims:ime,1,jms:jme,p_ddmass_oc_a02) + qsrflx(ims:ime,jms:jme,p_oc_a02)
+          dvel(ims:ime,1,jms:jme,p_ddmass_bc_a02) = dvel(ims:ime,1,jms:jme,p_ddmass_bc_a02) + qsrflx(ims:ime,jms:jme,p_bc_a02)
+          dvel(ims:ime,1,jms:jme,p_ddmass_so4_a03) = dvel(ims:ime,1,jms:jme,p_ddmass_so4_a03) + qsrflx(ims:ime,jms:jme,p_so4_a03)
+          dvel(ims:ime,1,jms:jme,p_ddmass_no3_a03) = dvel(ims:ime,1,jms:jme,p_ddmass_no3_a03) + qsrflx(ims:ime,jms:jme,p_no3_a03)
+          dvel(ims:ime,1,jms:jme,p_ddmass_cl_a03) = dvel(ims:ime,1,jms:jme,p_ddmass_cl_a03) + qsrflx(ims:ime,jms:jme,p_cl_a03)
+          dvel(ims:ime,1,jms:jme,p_ddmass_nh4_a03) = dvel(ims:ime,1,jms:jme,p_ddmass_nh4_a03) + qsrflx(ims:ime,jms:jme,p_nh4_a03)
+          dvel(ims:ime,1,jms:jme,p_ddmass_na_a03) = dvel(ims:ime,1,jms:jme,p_ddmass_na_a03) + qsrflx(ims:ime,jms:jme,p_na_a03)
+          dvel(ims:ime,1,jms:jme,p_ddmass_oin_a03) = dvel(ims:ime,1,jms:jme,p_ddmass_oin_a03) + qsrflx(ims:ime,jms:jme,p_oin_a03)
+          dvel(ims:ime,1,jms:jme,p_ddmass_oc_a03) = dvel(ims:ime,1,jms:jme,p_ddmass_oc_a03) + qsrflx(ims:ime,jms:jme,p_oc_a03)
+          dvel(ims:ime,1,jms:jme,p_ddmass_bc_a03) = dvel(ims:ime,1,jms:jme,p_ddmass_bc_a03) + qsrflx(ims:ime,jms:jme,p_bc_a03)
+          dvel(ims:ime,1,jms:jme,p_ddmass_so4_a04) = dvel(ims:ime,1,jms:jme,p_ddmass_so4_a04) + qsrflx(ims:ime,jms:jme,p_so4_a04)
+          dvel(ims:ime,1,jms:jme,p_ddmass_no3_a04) = dvel(ims:ime,1,jms:jme,p_ddmass_no3_a04) + qsrflx(ims:ime,jms:jme,p_no3_a04)
+          dvel(ims:ime,1,jms:jme,p_ddmass_cl_a04) = dvel(ims:ime,1,jms:jme,p_ddmass_cl_a04) + qsrflx(ims:ime,jms:jme,p_cl_a04)
+          dvel(ims:ime,1,jms:jme,p_ddmass_nh4_a04) = dvel(ims:ime,1,jms:jme,p_ddmass_nh4_a04) + qsrflx(ims:ime,jms:jme,p_nh4_a04)
+          dvel(ims:ime,1,jms:jme,p_ddmass_na_a04) = dvel(ims:ime,1,jms:jme,p_ddmass_na_a04) + qsrflx(ims:ime,jms:jme,p_na_a04)
+          dvel(ims:ime,1,jms:jme,p_ddmass_oin_a04) = dvel(ims:ime,1,jms:jme,p_ddmass_oin_a04) + qsrflx(ims:ime,jms:jme,p_oin_a04)
+          dvel(ims:ime,1,jms:jme,p_ddmass_oc_a04) = dvel(ims:ime,1,jms:jme,p_ddmass_oc_a04) + qsrflx(ims:ime,jms:jme,p_oc_a04)
+          dvel(ims:ime,1,jms:jme,p_ddmass_bc_a04) = dvel(ims:ime,1,jms:jme,p_ddmass_bc_a04) + qsrflx(ims:ime,jms:jme,p_bc_a04)
+
+          dvel(ims:ime,1,jms:jme,p_ddmass_ca_a01) = dvel(ims:ime,1,jms:jme,p_ddmass_ca_a01) + qsrflx(ims:ime,jms:jme,p_ca_a01)
+          dvel(ims:ime,1,jms:jme,p_ddmass_ca_a02) = dvel(ims:ime,1,jms:jme,p_ddmass_ca_a02) + qsrflx(ims:ime,jms:jme,p_ca_a02)
+          dvel(ims:ime,1,jms:jme,p_ddmass_ca_a03) = dvel(ims:ime,1,jms:jme,p_ddmass_ca_a03) + qsrflx(ims:ime,jms:jme,p_ca_a03)
+          dvel(ims:ime,1,jms:jme,p_ddmass_ca_a04) = dvel(ims:ime,1,jms:jme,p_ddmass_ca_a04) + qsrflx(ims:ime,jms:jme,p_ca_a04)
+
+          dvel(ims:ime,1,jms:jme,p_ddmass_co3_a01) = dvel(ims:ime,1,jms:jme,p_ddmass_co3_a01) + qsrflx(ims:ime,jms:jme,p_co3_a01)
+          dvel(ims:ime,1,jms:jme,p_ddmass_co3_a02) = dvel(ims:ime,1,jms:jme,p_ddmass_co3_a02) + qsrflx(ims:ime,jms:jme,p_co3_a02)
+          dvel(ims:ime,1,jms:jme,p_ddmass_co3_a03) = dvel(ims:ime,1,jms:jme,p_ddmass_co3_a03) + qsrflx(ims:ime,jms:jme,p_co3_a03)
+          dvel(ims:ime,1,jms:jme,p_ddmass_co3_a04) = dvel(ims:ime,1,jms:jme,p_ddmass_co3_a04) + qsrflx(ims:ime,jms:jme,p_co3_a04)
+
+          dvel(ims:ime,1,jms:jme,p_ddmass_glysoa_a01) = dvel(ims:ime,1,jms:jme,p_ddmass_glysoa_a01) + &
+                                            qsrflx(ims:ime,jms:jme,p_glysoa_r1_a01) + &
+                                            qsrflx(ims:ime,jms:jme,p_glysoa_r2_a01) + &
+                                            qsrflx(ims:ime,jms:jme,p_glysoa_oh_a01) + &
+                                            qsrflx(ims:ime,jms:jme,p_glysoa_sfc_a01) + &
+                                            qsrflx(ims:ime,jms:jme,p_glysoa_nh4_a01)
+
+          dvel(ims:ime,1,jms:jme,p_ddmass_glysoa_a02) = dvel(ims:ime,1,jms:jme,p_ddmass_glysoa_a02) + &
+                                            qsrflx(ims:ime,jms:jme,p_glysoa_r1_a02) + &
+                                            qsrflx(ims:ime,jms:jme,p_glysoa_r2_a02) + &
+                                            qsrflx(ims:ime,jms:jme,p_glysoa_oh_a02) + &
+                                            qsrflx(ims:ime,jms:jme,p_glysoa_sfc_a02) + &
+                                            qsrflx(ims:ime,jms:jme,p_glysoa_nh4_a02)
+
+          dvel(ims:ime,1,jms:jme,p_ddmass_glysoa_a03) = dvel(ims:ime,1,jms:jme,p_ddmass_glysoa_a03) + &
+                                            qsrflx(ims:ime,jms:jme,p_glysoa_r1_a03) + &
+                                            qsrflx(ims:ime,jms:jme,p_glysoa_r2_a03) + &
+                                            qsrflx(ims:ime,jms:jme,p_glysoa_oh_a03) + &
+                                            qsrflx(ims:ime,jms:jme,p_glysoa_sfc_a03) + &
+                                            qsrflx(ims:ime,jms:jme,p_glysoa_nh4_a03)
+
+          dvel(ims:ime,1,jms:jme,p_ddmass_glysoa_a04) = dvel(ims:ime,1,jms:jme,p_ddmass_glysoa_a04) + &
+                                            qsrflx(ims:ime,jms:jme,p_glysoa_r1_a04) + &
+                                            qsrflx(ims:ime,jms:jme,p_glysoa_r2_a04) + &
+                                            qsrflx(ims:ime,jms:jme,p_glysoa_oh_a04) + &
+                                            qsrflx(ims:ime,jms:jme,p_glysoa_sfc_a04) + &
+                                            qsrflx(ims:ime,jms:jme,p_glysoa_nh4_a04)
+
+          dvel(ims:ime,1,jms:jme,p_ddmass_asoaX_a01) = dvel(ims:ime,1,jms:jme,p_ddmass_asoaX_a01) + qsrflx(ims:ime,jms:jme,p_asoaX_a01)
+          dvel(ims:ime,1,jms:jme,p_ddmass_asoa1_a01) = dvel(ims:ime,1,jms:jme,p_ddmass_asoa1_a01) + qsrflx(ims:ime,jms:jme,p_asoa1_a01)
+          dvel(ims:ime,1,jms:jme,p_ddmass_asoa2_a01) = dvel(ims:ime,1,jms:jme,p_ddmass_asoa2_a01) + qsrflx(ims:ime,jms:jme,p_asoa2_a01)
+          dvel(ims:ime,1,jms:jme,p_ddmass_asoa3_a01) = dvel(ims:ime,1,jms:jme,p_ddmass_asoa3_a01) + qsrflx(ims:ime,jms:jme,p_asoa3_a01)
+          dvel(ims:ime,1,jms:jme,p_ddmass_asoa4_a01) = dvel(ims:ime,1,jms:jme,p_ddmass_asoa4_a01) + qsrflx(ims:ime,jms:jme,p_asoa4_a01)
+          dvel(ims:ime,1,jms:jme,p_ddmass_bsoaX_a01) = dvel(ims:ime,1,jms:jme,p_ddmass_bsoaX_a01) + qsrflx(ims:ime,jms:jme,p_bsoaX_a01)
+          dvel(ims:ime,1,jms:jme,p_ddmass_bsoa1_a01) = dvel(ims:ime,1,jms:jme,p_ddmass_bsoa1_a01) + qsrflx(ims:ime,jms:jme,p_bsoa1_a01)
+          dvel(ims:ime,1,jms:jme,p_ddmass_bsoa2_a01) = dvel(ims:ime,1,jms:jme,p_ddmass_bsoa2_a01) + qsrflx(ims:ime,jms:jme,p_bsoa2_a01)
+          dvel(ims:ime,1,jms:jme,p_ddmass_bsoa3_a01) = dvel(ims:ime,1,jms:jme,p_ddmass_bsoa3_a01) + qsrflx(ims:ime,jms:jme,p_bsoa3_a01)
+          dvel(ims:ime,1,jms:jme,p_ddmass_bsoa4_a01) = dvel(ims:ime,1,jms:jme,p_ddmass_bsoa4_a01) + qsrflx(ims:ime,jms:jme,p_bsoa4_a01)
+
+          dvel(ims:ime,1,jms:jme,p_ddmass_asoaX_a02) = dvel(ims:ime,1,jms:jme,p_ddmass_asoaX_a02) + qsrflx(ims:ime,jms:jme,p_asoaX_a02)
+          dvel(ims:ime,1,jms:jme,p_ddmass_asoa1_a02) = dvel(ims:ime,1,jms:jme,p_ddmass_asoa1_a02) + qsrflx(ims:ime,jms:jme,p_asoa1_a02)
+          dvel(ims:ime,1,jms:jme,p_ddmass_asoa2_a02) = dvel(ims:ime,1,jms:jme,p_ddmass_asoa2_a02) + qsrflx(ims:ime,jms:jme,p_asoa2_a02)
+          dvel(ims:ime,1,jms:jme,p_ddmass_asoa3_a02) = dvel(ims:ime,1,jms:jme,p_ddmass_asoa3_a02) + qsrflx(ims:ime,jms:jme,p_asoa3_a02)
+          dvel(ims:ime,1,jms:jme,p_ddmass_asoa4_a02) = dvel(ims:ime,1,jms:jme,p_ddmass_asoa4_a02) + qsrflx(ims:ime,jms:jme,p_asoa4_a02)
+          dvel(ims:ime,1,jms:jme,p_ddmass_bsoaX_a02) = dvel(ims:ime,1,jms:jme,p_ddmass_bsoaX_a02) + qsrflx(ims:ime,jms:jme,p_bsoaX_a02)
+          dvel(ims:ime,1,jms:jme,p_ddmass_bsoa1_a02) = dvel(ims:ime,1,jms:jme,p_ddmass_bsoa1_a02) + qsrflx(ims:ime,jms:jme,p_bsoa1_a02)
+          dvel(ims:ime,1,jms:jme,p_ddmass_bsoa2_a02) = dvel(ims:ime,1,jms:jme,p_ddmass_bsoa2_a02) + qsrflx(ims:ime,jms:jme,p_bsoa2_a02)
+          dvel(ims:ime,1,jms:jme,p_ddmass_bsoa3_a02) = dvel(ims:ime,1,jms:jme,p_ddmass_bsoa3_a02) + qsrflx(ims:ime,jms:jme,p_bsoa3_a02)
+          dvel(ims:ime,1,jms:jme,p_ddmass_bsoa4_a02) = dvel(ims:ime,1,jms:jme,p_ddmass_bsoa4_a02) + qsrflx(ims:ime,jms:jme,p_bsoa4_a02)
+
+          dvel(ims:ime,1,jms:jme,p_ddmass_asoaX_a03) = dvel(ims:ime,1,jms:jme,p_ddmass_asoaX_a03) + qsrflx(ims:ime,jms:jme,p_asoaX_a03)
+          dvel(ims:ime,1,jms:jme,p_ddmass_asoa1_a03) = dvel(ims:ime,1,jms:jme,p_ddmass_asoa1_a03) + qsrflx(ims:ime,jms:jme,p_asoa1_a03)
+          dvel(ims:ime,1,jms:jme,p_ddmass_asoa2_a03) = dvel(ims:ime,1,jms:jme,p_ddmass_asoa2_a03) + qsrflx(ims:ime,jms:jme,p_asoa2_a03)
+          dvel(ims:ime,1,jms:jme,p_ddmass_asoa3_a03) = dvel(ims:ime,1,jms:jme,p_ddmass_asoa3_a03) + qsrflx(ims:ime,jms:jme,p_asoa3_a03)
+          dvel(ims:ime,1,jms:jme,p_ddmass_asoa4_a03) = dvel(ims:ime,1,jms:jme,p_ddmass_asoa4_a03) + qsrflx(ims:ime,jms:jme,p_asoa4_a03)
+          dvel(ims:ime,1,jms:jme,p_ddmass_bsoaX_a03) = dvel(ims:ime,1,jms:jme,p_ddmass_bsoaX_a03) + qsrflx(ims:ime,jms:jme,p_bsoaX_a03)
+          dvel(ims:ime,1,jms:jme,p_ddmass_bsoa1_a03) = dvel(ims:ime,1,jms:jme,p_ddmass_bsoa1_a03) + qsrflx(ims:ime,jms:jme,p_bsoa1_a03)
+          dvel(ims:ime,1,jms:jme,p_ddmass_bsoa2_a03) = dvel(ims:ime,1,jms:jme,p_ddmass_bsoa2_a03) + qsrflx(ims:ime,jms:jme,p_bsoa2_a03)
+          dvel(ims:ime,1,jms:jme,p_ddmass_bsoa3_a03) = dvel(ims:ime,1,jms:jme,p_ddmass_bsoa3_a03) + qsrflx(ims:ime,jms:jme,p_bsoa3_a03)
+          dvel(ims:ime,1,jms:jme,p_ddmass_bsoa4_a03) = dvel(ims:ime,1,jms:jme,p_ddmass_bsoa4_a03) + qsrflx(ims:ime,jms:jme,p_bsoa4_a03)
+
+          dvel(ims:ime,1,jms:jme,p_ddmass_asoaX_a04) = dvel(ims:ime,1,jms:jme,p_ddmass_asoaX_a04) + qsrflx(ims:ime,jms:jme,p_asoaX_a04)
+          dvel(ims:ime,1,jms:jme,p_ddmass_asoa1_a04) = dvel(ims:ime,1,jms:jme,p_ddmass_asoa1_a04) + qsrflx(ims:ime,jms:jme,p_asoa1_a04)
+          dvel(ims:ime,1,jms:jme,p_ddmass_asoa2_a04) = dvel(ims:ime,1,jms:jme,p_ddmass_asoa2_a04) + qsrflx(ims:ime,jms:jme,p_asoa2_a04)
+          dvel(ims:ime,1,jms:jme,p_ddmass_asoa3_a04) = dvel(ims:ime,1,jms:jme,p_ddmass_asoa3_a04) + qsrflx(ims:ime,jms:jme,p_asoa3_a04)
+          dvel(ims:ime,1,jms:jme,p_ddmass_asoa4_a04) = dvel(ims:ime,1,jms:jme,p_ddmass_asoa4_a04) + qsrflx(ims:ime,jms:jme,p_asoa4_a04)
+          dvel(ims:ime,1,jms:jme,p_ddmass_bsoaX_a04) = dvel(ims:ime,1,jms:jme,p_ddmass_bsoaX_a04) + qsrflx(ims:ime,jms:jme,p_bsoaX_a04)
+          dvel(ims:ime,1,jms:jme,p_ddmass_bsoa1_a04) = dvel(ims:ime,1,jms:jme,p_ddmass_bsoa1_a04) + qsrflx(ims:ime,jms:jme,p_bsoa1_a04)
+          dvel(ims:ime,1,jms:jme,p_ddmass_bsoa2_a04) = dvel(ims:ime,1,jms:jme,p_ddmass_bsoa2_a04) + qsrflx(ims:ime,jms:jme,p_bsoa2_a04)
+          dvel(ims:ime,1,jms:jme,p_ddmass_bsoa3_a04) = dvel(ims:ime,1,jms:jme,p_ddmass_bsoa3_a04) + qsrflx(ims:ime,jms:jme,p_bsoa3_a04)
+          dvel(ims:ime,1,jms:jme,p_ddmass_bsoa4_a04) = dvel(ims:ime,1,jms:jme,p_ddmass_bsoa4_a04) + qsrflx(ims:ime,jms:jme,p_bsoa4_a04)
+
+! and the same for settling cloud droplets
+
+          dvel(ims:ime,1,jms:jme,p_ddmass_so4_cw01) = dvel(ims:ime,1,jms:jme,p_ddmass_so4_cw01) + qsrflx(ims:ime,jms:jme,p_so4_cw01)
+          dvel(ims:ime,1,jms:jme,p_ddmass_no3_cw01) = dvel(ims:ime,1,jms:jme,p_ddmass_no3_cw01) + qsrflx(ims:ime,jms:jme,p_no3_cw01)
+          dvel(ims:ime,1,jms:jme,p_ddmass_cl_cw01) = dvel(ims:ime,1,jms:jme,p_ddmass_cl_cw01) + qsrflx(ims:ime,jms:jme,p_cl_cw01)
+          dvel(ims:ime,1,jms:jme,p_ddmass_nh4_cw01) = dvel(ims:ime,1,jms:jme,p_ddmass_nh4_cw01) + qsrflx(ims:ime,jms:jme,p_nh4_cw01)
+          dvel(ims:ime,1,jms:jme,p_ddmass_na_cw01) = dvel(ims:ime,1,jms:jme,p_ddmass_na_cw01) + qsrflx(ims:ime,jms:jme,p_na_cw01)
+          dvel(ims:ime,1,jms:jme,p_ddmass_oin_cw01) = dvel(ims:ime,1,jms:jme,p_ddmass_oin_cw01) + qsrflx(ims:ime,jms:jme,p_oin_cw01)
+          dvel(ims:ime,1,jms:jme,p_ddmass_oc_cw01) = dvel(ims:ime,1,jms:jme,p_ddmass_oc_cw01) + qsrflx(ims:ime,jms:jme,p_oc_cw01)
+          dvel(ims:ime,1,jms:jme,p_ddmass_bc_cw01) = dvel(ims:ime,1,jms:jme,p_ddmass_bc_cw01) + qsrflx(ims:ime,jms:jme,p_bc_cw01)
+          dvel(ims:ime,1,jms:jme,p_ddmass_so4_cw02) = dvel(ims:ime,1,jms:jme,p_ddmass_so4_cw02) + qsrflx(ims:ime,jms:jme,p_so4_cw02)
+          dvel(ims:ime,1,jms:jme,p_ddmass_no3_cw02) = dvel(ims:ime,1,jms:jme,p_ddmass_no3_cw02) + qsrflx(ims:ime,jms:jme,p_no3_cw02)
+          dvel(ims:ime,1,jms:jme,p_ddmass_cl_cw02) = dvel(ims:ime,1,jms:jme,p_ddmass_cl_cw02) + qsrflx(ims:ime,jms:jme,p_cl_cw02)
+          dvel(ims:ime,1,jms:jme,p_ddmass_nh4_cw02) = dvel(ims:ime,1,jms:jme,p_ddmass_nh4_cw02) + qsrflx(ims:ime,jms:jme,p_nh4_cw02)
+          dvel(ims:ime,1,jms:jme,p_ddmass_na_cw02) = dvel(ims:ime,1,jms:jme,p_ddmass_na_cw02) + qsrflx(ims:ime,jms:jme,p_na_cw02)
+          dvel(ims:ime,1,jms:jme,p_ddmass_oin_cw02) = dvel(ims:ime,1,jms:jme,p_ddmass_oin_cw02) + qsrflx(ims:ime,jms:jme,p_oin_cw02)
+          dvel(ims:ime,1,jms:jme,p_ddmass_oc_cw02) = dvel(ims:ime,1,jms:jme,p_ddmass_oc_cw02) + qsrflx(ims:ime,jms:jme,p_oc_cw02)
+          dvel(ims:ime,1,jms:jme,p_ddmass_bc_cw02) = dvel(ims:ime,1,jms:jme,p_ddmass_bc_cw02) + qsrflx(ims:ime,jms:jme,p_bc_cw02)
+          dvel(ims:ime,1,jms:jme,p_ddmass_so4_cw03) = dvel(ims:ime,1,jms:jme,p_ddmass_so4_cw03) + qsrflx(ims:ime,jms:jme,p_so4_cw03)
+          dvel(ims:ime,1,jms:jme,p_ddmass_no3_cw03) = dvel(ims:ime,1,jms:jme,p_ddmass_no3_cw03) + qsrflx(ims:ime,jms:jme,p_no3_cw03)
+          dvel(ims:ime,1,jms:jme,p_ddmass_cl_cw03) = dvel(ims:ime,1,jms:jme,p_ddmass_cl_cw03) + qsrflx(ims:ime,jms:jme,p_cl_cw03)
+          dvel(ims:ime,1,jms:jme,p_ddmass_nh4_cw03) = dvel(ims:ime,1,jms:jme,p_ddmass_nh4_cw03) + qsrflx(ims:ime,jms:jme,p_nh4_cw03)
+          dvel(ims:ime,1,jms:jme,p_ddmass_na_cw03) = dvel(ims:ime,1,jms:jme,p_ddmass_na_cw03) + qsrflx(ims:ime,jms:jme,p_na_cw03)
+          dvel(ims:ime,1,jms:jme,p_ddmass_oin_cw03) = dvel(ims:ime,1,jms:jme,p_ddmass_oin_cw03) + qsrflx(ims:ime,jms:jme,p_oin_cw03)
+          dvel(ims:ime,1,jms:jme,p_ddmass_oc_cw03) = dvel(ims:ime,1,jms:jme,p_ddmass_oc_cw03) + qsrflx(ims:ime,jms:jme,p_oc_cw03)
+          dvel(ims:ime,1,jms:jme,p_ddmass_bc_cw03) = dvel(ims:ime,1,jms:jme,p_ddmass_bc_cw03) + qsrflx(ims:ime,jms:jme,p_bc_cw03)
+          dvel(ims:ime,1,jms:jme,p_ddmass_so4_cw04) = dvel(ims:ime,1,jms:jme,p_ddmass_so4_cw04) + qsrflx(ims:ime,jms:jme,p_so4_cw04)
+          dvel(ims:ime,1,jms:jme,p_ddmass_no3_cw04) = dvel(ims:ime,1,jms:jme,p_ddmass_no3_cw04) + qsrflx(ims:ime,jms:jme,p_no3_cw04)
+          dvel(ims:ime,1,jms:jme,p_ddmass_cl_cw04) = dvel(ims:ime,1,jms:jme,p_ddmass_cl_cw04) + qsrflx(ims:ime,jms:jme,p_cl_cw04)
+          dvel(ims:ime,1,jms:jme,p_ddmass_nh4_cw04) = dvel(ims:ime,1,jms:jme,p_ddmass_nh4_cw04) + qsrflx(ims:ime,jms:jme,p_nh4_cw04)
+          dvel(ims:ime,1,jms:jme,p_ddmass_na_cw04) = dvel(ims:ime,1,jms:jme,p_ddmass_na_cw04) + qsrflx(ims:ime,jms:jme,p_na_cw04)
+          dvel(ims:ime,1,jms:jme,p_ddmass_oin_cw04) = dvel(ims:ime,1,jms:jme,p_ddmass_oin_cw04) + qsrflx(ims:ime,jms:jme,p_oin_cw04)
+          dvel(ims:ime,1,jms:jme,p_ddmass_oc_cw04) = dvel(ims:ime,1,jms:jme,p_ddmass_oc_cw04) + qsrflx(ims:ime,jms:jme,p_oc_cw04)
+          dvel(ims:ime,1,jms:jme,p_ddmass_bc_cw04) = dvel(ims:ime,1,jms:jme,p_ddmass_bc_cw04) + qsrflx(ims:ime,jms:jme,p_bc_cw04)
+
+          dvel(ims:ime,1,jms:jme,p_ddmass_ca_cw01) = dvel(ims:ime,1,jms:jme,p_ddmass_ca_cw01) + qsrflx(ims:ime,jms:jme,p_ca_cw01)
+          dvel(ims:ime,1,jms:jme,p_ddmass_ca_cw02) = dvel(ims:ime,1,jms:jme,p_ddmass_ca_cw02) + qsrflx(ims:ime,jms:jme,p_ca_cw02)
+          dvel(ims:ime,1,jms:jme,p_ddmass_ca_cw03) = dvel(ims:ime,1,jms:jme,p_ddmass_ca_cw03) + qsrflx(ims:ime,jms:jme,p_ca_cw03)
+          dvel(ims:ime,1,jms:jme,p_ddmass_ca_cw04) = dvel(ims:ime,1,jms:jme,p_ddmass_ca_cw04) + qsrflx(ims:ime,jms:jme,p_ca_cw04)
+
+          dvel(ims:ime,1,jms:jme,p_ddmass_co3_cw01) = dvel(ims:ime,1,jms:jme,p_ddmass_co3_cw01) + qsrflx(ims:ime,jms:jme,p_co3_cw01)
+          dvel(ims:ime,1,jms:jme,p_ddmass_co3_cw02) = dvel(ims:ime,1,jms:jme,p_ddmass_co3_cw02) + qsrflx(ims:ime,jms:jme,p_co3_cw02)
+          dvel(ims:ime,1,jms:jme,p_ddmass_co3_cw03) = dvel(ims:ime,1,jms:jme,p_ddmass_co3_cw03) + qsrflx(ims:ime,jms:jme,p_co3_cw03)
+          dvel(ims:ime,1,jms:jme,p_ddmass_co3_cw04) = dvel(ims:ime,1,jms:jme,p_ddmass_co3_cw04) + qsrflx(ims:ime,jms:jme,p_co3_cw04)
+
+          dvel(ims:ime,1,jms:jme,p_ddmass_glysoa_cw01) = dvel(ims:ime,1,jms:jme,p_ddmass_glysoa_cw01) + &
+                                            qsrflx(ims:ime,jms:jme,p_glysoa_r1_cw01) + &
+                                            qsrflx(ims:ime,jms:jme,p_glysoa_r2_cw01) + &
+                                            qsrflx(ims:ime,jms:jme,p_glysoa_oh_cw01) + &
+                                            qsrflx(ims:ime,jms:jme,p_glysoa_sfc_cw01) + &
+                                            qsrflx(ims:ime,jms:jme,p_glysoa_nh4_cw01)
+
+          dvel(ims:ime,1,jms:jme,p_ddmass_glysoa_cw02) = dvel(ims:ime,1,jms:jme,p_ddmass_glysoa_cw02) + &
+                                            qsrflx(ims:ime,jms:jme,p_glysoa_r1_cw02) + &
+                                            qsrflx(ims:ime,jms:jme,p_glysoa_r2_cw02) + &
+                                            qsrflx(ims:ime,jms:jme,p_glysoa_oh_cw02) + &
+                                            qsrflx(ims:ime,jms:jme,p_glysoa_sfc_cw02) + &
+                                            qsrflx(ims:ime,jms:jme,p_glysoa_nh4_cw02)
+
+          dvel(ims:ime,1,jms:jme,p_ddmass_glysoa_cw03) = dvel(ims:ime,1,jms:jme,p_ddmass_glysoa_cw03) + &
+                                            qsrflx(ims:ime,jms:jme,p_glysoa_r1_cw03) + &
+                                            qsrflx(ims:ime,jms:jme,p_glysoa_r2_cw03) + &
+                                            qsrflx(ims:ime,jms:jme,p_glysoa_oh_cw03) + &
+                                            qsrflx(ims:ime,jms:jme,p_glysoa_sfc_cw03) + &
+                                            qsrflx(ims:ime,jms:jme,p_glysoa_nh4_cw03)
+
+          dvel(ims:ime,1,jms:jme,p_ddmass_glysoa_cw04) = dvel(ims:ime,1,jms:jme,p_ddmass_glysoa_cw04) + &
+                                            qsrflx(ims:ime,jms:jme,p_glysoa_r1_cw04) + &
+                                            qsrflx(ims:ime,jms:jme,p_glysoa_r2_cw04) + &
+                                            qsrflx(ims:ime,jms:jme,p_glysoa_oh_cw04) + &
+                                            qsrflx(ims:ime,jms:jme,p_glysoa_sfc_cw04) + &
+                                            qsrflx(ims:ime,jms:jme,p_glysoa_nh4_cw04)
+
+          dvel(ims:ime,1,jms:jme,p_ddmass_asoaX_cw01) = dvel(ims:ime,1,jms:jme,p_ddmass_asoaX_cw01) + qsrflx(ims:ime,jms:jme,p_asoaX_cw01)
+          dvel(ims:ime,1,jms:jme,p_ddmass_asoa1_cw01) = dvel(ims:ime,1,jms:jme,p_ddmass_asoa1_cw01) + qsrflx(ims:ime,jms:jme,p_asoa1_cw01)
+          dvel(ims:ime,1,jms:jme,p_ddmass_asoa2_cw01) = dvel(ims:ime,1,jms:jme,p_ddmass_asoa2_cw01) + qsrflx(ims:ime,jms:jme,p_asoa2_cw01)
+          dvel(ims:ime,1,jms:jme,p_ddmass_asoa3_cw01) = dvel(ims:ime,1,jms:jme,p_ddmass_asoa3_cw01) + qsrflx(ims:ime,jms:jme,p_asoa3_cw01)
+          dvel(ims:ime,1,jms:jme,p_ddmass_asoa4_cw01) = dvel(ims:ime,1,jms:jme,p_ddmass_asoa4_cw01) + qsrflx(ims:ime,jms:jme,p_asoa4_cw01)
+          dvel(ims:ime,1,jms:jme,p_ddmass_bsoaX_cw01) = dvel(ims:ime,1,jms:jme,p_ddmass_bsoaX_cw01) + qsrflx(ims:ime,jms:jme,p_bsoaX_cw01)
+          dvel(ims:ime,1,jms:jme,p_ddmass_bsoa1_cw01) = dvel(ims:ime,1,jms:jme,p_ddmass_bsoa1_cw01) + qsrflx(ims:ime,jms:jme,p_bsoa1_cw01)
+          dvel(ims:ime,1,jms:jme,p_ddmass_bsoa2_cw01) = dvel(ims:ime,1,jms:jme,p_ddmass_bsoa2_cw01) + qsrflx(ims:ime,jms:jme,p_bsoa2_cw01)
+          dvel(ims:ime,1,jms:jme,p_ddmass_bsoa3_cw01) = dvel(ims:ime,1,jms:jme,p_ddmass_bsoa3_cw01) + qsrflx(ims:ime,jms:jme,p_bsoa3_cw01)
+          dvel(ims:ime,1,jms:jme,p_ddmass_bsoa4_cw01) = dvel(ims:ime,1,jms:jme,p_ddmass_bsoa4_cw01) + qsrflx(ims:ime,jms:jme,p_bsoa4_cw01)
+
+          dvel(ims:ime,1,jms:jme,p_ddmass_asoaX_cw02) = dvel(ims:ime,1,jms:jme,p_ddmass_asoaX_cw02) + qsrflx(ims:ime,jms:jme,p_asoaX_cw02)
+          dvel(ims:ime,1,jms:jme,p_ddmass_asoa1_cw02) = dvel(ims:ime,1,jms:jme,p_ddmass_asoa1_cw02) + qsrflx(ims:ime,jms:jme,p_asoa1_cw02)
+          dvel(ims:ime,1,jms:jme,p_ddmass_asoa2_cw02) = dvel(ims:ime,1,jms:jme,p_ddmass_asoa2_cw02) + qsrflx(ims:ime,jms:jme,p_asoa2_cw02)
+          dvel(ims:ime,1,jms:jme,p_ddmass_asoa3_cw02) = dvel(ims:ime,1,jms:jme,p_ddmass_asoa3_cw02) + qsrflx(ims:ime,jms:jme,p_asoa3_cw02)
+          dvel(ims:ime,1,jms:jme,p_ddmass_asoa4_cw02) = dvel(ims:ime,1,jms:jme,p_ddmass_asoa4_cw02) + qsrflx(ims:ime,jms:jme,p_asoa4_cw02)
+          dvel(ims:ime,1,jms:jme,p_ddmass_bsoaX_cw02) = dvel(ims:ime,1,jms:jme,p_ddmass_bsoaX_cw02) + qsrflx(ims:ime,jms:jme,p_bsoaX_cw02)
+          dvel(ims:ime,1,jms:jme,p_ddmass_bsoa1_cw02) = dvel(ims:ime,1,jms:jme,p_ddmass_bsoa1_cw02) + qsrflx(ims:ime,jms:jme,p_bsoa1_cw02)
+          dvel(ims:ime,1,jms:jme,p_ddmass_bsoa2_cw02) = dvel(ims:ime,1,jms:jme,p_ddmass_bsoa2_cw02) + qsrflx(ims:ime,jms:jme,p_bsoa2_cw02)
+          dvel(ims:ime,1,jms:jme,p_ddmass_bsoa3_cw02) = dvel(ims:ime,1,jms:jme,p_ddmass_bsoa3_cw02) + qsrflx(ims:ime,jms:jme,p_bsoa3_cw02)
+          dvel(ims:ime,1,jms:jme,p_ddmass_bsoa4_cw02) = dvel(ims:ime,1,jms:jme,p_ddmass_bsoa4_cw02) + qsrflx(ims:ime,jms:jme,p_bsoa4_cw02)
+
+          dvel(ims:ime,1,jms:jme,p_ddmass_asoaX_cw03) = dvel(ims:ime,1,jms:jme,p_ddmass_asoaX_cw03) + qsrflx(ims:ime,jms:jme,p_asoaX_cw03)
+          dvel(ims:ime,1,jms:jme,p_ddmass_asoa1_cw03) = dvel(ims:ime,1,jms:jme,p_ddmass_asoa1_cw03) + qsrflx(ims:ime,jms:jme,p_asoa1_cw03)
+          dvel(ims:ime,1,jms:jme,p_ddmass_asoa2_cw03) = dvel(ims:ime,1,jms:jme,p_ddmass_asoa2_cw03) + qsrflx(ims:ime,jms:jme,p_asoa2_cw03)
+          dvel(ims:ime,1,jms:jme,p_ddmass_asoa3_cw03) = dvel(ims:ime,1,jms:jme,p_ddmass_asoa3_cw03) + qsrflx(ims:ime,jms:jme,p_asoa3_cw03)
+          dvel(ims:ime,1,jms:jme,p_ddmass_asoa4_cw03) = dvel(ims:ime,1,jms:jme,p_ddmass_asoa4_cw03) + qsrflx(ims:ime,jms:jme,p_asoa4_cw03)
+          dvel(ims:ime,1,jms:jme,p_ddmass_bsoaX_cw03) = dvel(ims:ime,1,jms:jme,p_ddmass_bsoaX_cw03) + qsrflx(ims:ime,jms:jme,p_bsoaX_cw03)
+          dvel(ims:ime,1,jms:jme,p_ddmass_bsoa1_cw03) = dvel(ims:ime,1,jms:jme,p_ddmass_bsoa1_cw03) + qsrflx(ims:ime,jms:jme,p_bsoa1_cw03)
+          dvel(ims:ime,1,jms:jme,p_ddmass_bsoa2_cw03) = dvel(ims:ime,1,jms:jme,p_ddmass_bsoa2_cw03) + qsrflx(ims:ime,jms:jme,p_bsoa2_cw03)
+          dvel(ims:ime,1,jms:jme,p_ddmass_bsoa3_cw03) = dvel(ims:ime,1,jms:jme,p_ddmass_bsoa3_cw03) + qsrflx(ims:ime,jms:jme,p_bsoa3_cw03)
+          dvel(ims:ime,1,jms:jme,p_ddmass_bsoa4_cw03) = dvel(ims:ime,1,jms:jme,p_ddmass_bsoa4_cw03) + qsrflx(ims:ime,jms:jme,p_bsoa4_cw03)
+
+          dvel(ims:ime,1,jms:jme,p_ddmass_asoaX_cw04) = dvel(ims:ime,1,jms:jme,p_ddmass_asoaX_cw04) + qsrflx(ims:ime,jms:jme,p_asoaX_cw04)
+          dvel(ims:ime,1,jms:jme,p_ddmass_asoa1_cw04) = dvel(ims:ime,1,jms:jme,p_ddmass_asoa1_cw04) + qsrflx(ims:ime,jms:jme,p_asoa1_cw04)
+          dvel(ims:ime,1,jms:jme,p_ddmass_asoa2_cw04) = dvel(ims:ime,1,jms:jme,p_ddmass_asoa2_cw04) + qsrflx(ims:ime,jms:jme,p_asoa2_cw04)
+          dvel(ims:ime,1,jms:jme,p_ddmass_asoa3_cw04) = dvel(ims:ime,1,jms:jme,p_ddmass_asoa3_cw04) + qsrflx(ims:ime,jms:jme,p_asoa3_cw04)
+          dvel(ims:ime,1,jms:jme,p_ddmass_asoa4_cw04) = dvel(ims:ime,1,jms:jme,p_ddmass_asoa4_cw04) + qsrflx(ims:ime,jms:jme,p_asoa4_cw04)
+          dvel(ims:ime,1,jms:jme,p_ddmass_bsoaX_cw04) = dvel(ims:ime,1,jms:jme,p_ddmass_bsoaX_cw04) + qsrflx(ims:ime,jms:jme,p_bsoaX_cw04)
+          dvel(ims:ime,1,jms:jme,p_ddmass_bsoa1_cw04) = dvel(ims:ime,1,jms:jme,p_ddmass_bsoa1_cw04) + qsrflx(ims:ime,jms:jme,p_bsoa1_cw04)
+          dvel(ims:ime,1,jms:jme,p_ddmass_bsoa2_cw04) = dvel(ims:ime,1,jms:jme,p_ddmass_bsoa2_cw04) + qsrflx(ims:ime,jms:jme,p_bsoa2_cw04)
+          dvel(ims:ime,1,jms:jme,p_ddmass_bsoa3_cw04) = dvel(ims:ime,1,jms:jme,p_ddmass_bsoa3_cw04) + qsrflx(ims:ime,jms:jme,p_bsoa3_cw04)
+          dvel(ims:ime,1,jms:jme,p_ddmass_bsoa4_cw04) = dvel(ims:ime,1,jms:jme,p_ddmass_bsoa4_cw04) + qsrflx(ims:ime,jms:jme,p_bsoa4_cw04)
+
+      endif
+
    CASE DEFAULT
    END SELECT mixactivate_select
    settling_select: SELECT CASE(config_flags%chem_opt)

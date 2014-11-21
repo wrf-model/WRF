@@ -91,6 +91,8 @@
     TYPE(WRFU_TimeInterval) :: interval, tmpinterval
     CHARACTER*80 alarmname, timestring, debuggal
     INTEGER seconds, seconds2, iring
+    INTEGER :: nio_tasks_per_group
+
 
     WRITE(wrf_err_message,*)'output_wrf: begin, fid = ',fid
     CALL wrf_debug( 300 , wrf_err_message )
@@ -296,7 +298,11 @@
     CALL wrf_put_dom_ti_char ( fid , 'START_DATE', TRIM(start_date) , ierr )
     IF ( switch .EQ. input_only) THEN
        CALL wrf_put_dom_ti_char ( fid , 'SIMULATION_START_DATE', TRIM(start_date) , ierr )
+#ifdef HWRF
+    ELSE
+#else
     ELSE IF ( ( switch .EQ. restart_only ) .OR. ( switch .EQ. history_only ) ) THEN
+#endif
        CALL nl_get_simulation_start_year   ( 1, simulation_start_year   )
        CALL nl_get_simulation_start_month  ( 1, simulation_start_month  )
        CALL nl_get_simulation_start_day    ( 1, simulation_start_day    )
@@ -1384,6 +1390,28 @@ endif
        CALL wrf_debug ( 300 , 'output_wrf: calling wrf_iosync ' )
        CALL wrf_iosync ( fid , ierr )
        CALL wrf_debug ( 300 , 'output_wrf: back from wrf_iosync ' )
+
+       ! If output_ready_flag is set:
+       ! Write wrfoutReady file if finished dumping
+       ! history file, unless we're quilting, in which
+       ! case this file would get dumped before history
+       ! file was completely written.  When quilting
+       ! this file is written after the file handler
+       ! is closed in the quilt() subroutine instead of
+       ! here. (This is diagnosed by checking whether
+       ! nio_tasks_in_group is zero) GAC 20140321
+
+       IF ( switch .EQ. history_only .AND. config_flags%output_ready_flag ) THEN
+          WRITE ( wrf_err_message , FMT='(I2.2)' ) grid%id
+          CALL get_nio_tasks_in_group ( nio_tasks_per_group )
+          IF ( nio_tasks_per_group .EQ. 0 ) THEN
+             OPEN ( UNIT   = 99 , &
+                    FILE   = 'wrfoutReady_d' // wrf_err_message(1:2) // '_' // TRIM(current_date) , &
+                    STATUS = 'UNKNOWN' , &
+                    ACCESS = 'SEQUENTIAL' )
+             CLOSE (99)
+          ENDIF
+       ENDIF
     ENDIF
 
     WRITE(wrf_err_message,*)'output_wrf: end, fid = ',fid

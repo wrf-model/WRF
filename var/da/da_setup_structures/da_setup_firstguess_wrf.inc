@@ -38,13 +38,16 @@ subroutine da_setup_firstguess_wrf(xbx, grid, config_flags, ens)
 
       seconds = int(da_diff_seconds(an_date, xb_date))
 
-      if (seconds > ANALYSIS_ACCU) then
-         write(unit=message(1),fmt='(A,A,A,A)') &
-            "xb_date=",xb_date," an_date=", an_date
-         write(unit=message(2),fmt='(A,I6,A,I6)') &
-            "diff=",seconds,"   ANALYSIS_ACCU=",ANALYSIS_ACCU
-         message(3)="=======> Wrong xb time found???"
-         call da_warning(__FILE__,__LINE__,message(1:3))
+      if (seconds > analysis_accu) then
+         message(1)="The time of your first guess file is different from the analysis date"
+         write(unit=message(2),fmt='(A,A)') &
+             "xb_date    = ",xb_date
+         write(unit=message(3),fmt='(A,A)') &
+             "an_date    = ",an_date
+         write(unit=message(4),fmt='(A,I10,A)') &
+            "Difference between analysis_date and first guess date is ",seconds," seconds."
+         message(5)="Correct your choice of fg file, or change analysis_date or analysis_accu in namelist.input"
+         call da_error(__FILE__,__LINE__,message(1:5))
       end if
    end if
 
@@ -75,6 +78,7 @@ subroutine da_setup_firstguess_wrf(xbx, grid, config_flags, ens)
    call nl_get_dx           (grid%id , grid%dx)
    call nl_get_cen_lat      (grid%id , grid%cen_lat)
    call nl_get_cen_lon      (grid%id , grid%cen_lon)
+   call nl_get_pole_lat     (grid%id , grid%pole_lat)
    call nl_get_moad_cen_lat (grid%id , grid%moad_cen_lat)
    call nl_get_stand_lon    (grid%id , grid%stand_lon)
 
@@ -93,13 +97,14 @@ subroutine da_setup_firstguess_wrf(xbx, grid, config_flags, ens)
            'map_proj =', grid%map_proj
 
       write(unit=stdout, fmt='(a, e16.6)') &
-           'cen_lat  =', grid%cen_lat,  &
-           'cen_lon  =', grid%cen_lon,  &
-           'truelat1 =', grid%truelat1, &
-           'truelat2 =', grid%truelat2, &
-           'start_lat =', start_lat, &
-           'start_lon =', start_lon, &
-           'dsm      =', dsm
+           'cen_lat   =', grid%cen_lat,  &
+           'cen_lon   =', grid%cen_lon,  &
+           'truelat1  =', grid%truelat1, &
+           'truelat2  =', grid%truelat2, &
+           'start_lat =', start_lat,     &
+           'start_lon =', start_lon,     &
+           'pole_lat  =', grid%pole_lat, &
+           'dsm       =', dsm
    end if
 
    ! Set map projection in WRFSI world.
@@ -107,12 +112,24 @@ subroutine da_setup_firstguess_wrf(xbx, grid, config_flags, ens)
 
    if (grid%map_proj == 0 .or. grid%map_proj == 6 ) then
       map_util_project = PROJ_LATLON
+
+      if (grid%pole_lat < 89.9) then
+         write(unit=message(1),fmt='(A,E10.6)')'POLE_LAT = ',grid%pole_lat
+         write(unit=message(2),fmt='(A)')"WRFDA does not support rotated cylindrical equidistant projection"
+         write(unit=message(3),fmt='(A)')"Choose a first guess file with a valid projection"
+         call da_error(__FILE__,__LINE__,message(1:3))
+      end if
    else if (grid%map_proj == 1) then
       map_util_project = PROJ_LC
    else if (grid%map_proj == 2) then
       map_util_project = PROJ_PS
    else if (grid%map_proj == 3) then
       map_util_project = PROJ_MERC
+   else
+      write(unit=message(1),fmt='(A,I6)')'map_proj = ',grid%map_proj
+      write(unit=message(2),fmt='(A)')"WRFDA does not support the selected map projection"
+      write(unit=message(3),fmt='(A)')"Choose a first guess file with a valid projection"
+      call da_error(__FILE__,__LINE__,message(1:3))
    end if
 
    call da_map_set(map_util_project,grid%cen_lat,grid%cen_lon,   &
@@ -164,8 +181,6 @@ subroutine da_setup_firstguess_wrf(xbx, grid, config_flags, ens)
    else if( fg_format==fg_format_wrf_arw_global) then
    delt_lat = 180.0/real(grid%e_sn - grid%s_sn)
    delt_lon = 360.0/real(grid%e_we - grid%s_we)
-   else
-   call da_set_map_para ! set up the map background parameters
    end if
 
    !--------------------------------------------------------------------------

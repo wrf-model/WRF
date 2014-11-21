@@ -3792,6 +3792,13 @@ END MODULE my_dmom_mod
          HAILNCV(its:ite,j) = (rt_pe1(:) + rt_pe2(:))*ms2mmstp
          GRPLNCV(its:ite,j) = rt_sn3(:)*ms2mmstp
 
+! test
+
+         RAINNC(its:ite,j)  = RAINNC(its:ite,j) + RAINNCV(its:ite,j)
+         SNOWNC(its:ite,j)  = SNOWNC(its:ite,j) + SNOWNCV(its:ite,j)
+         HAILNC(its:ite,j)  = HAILNC(its:ite,j) + HAILNCV(its:ite,j)
+         GRPLNC(its:ite,j)  = GRPLNC(its:ite,j) + GRPLNCV(its:ite,j)
+         SR(its:ite,j)      = (SNOWNCV(its:ite,j)+HAILNCV(its:ite,j)+GRPLNCV(its:ite,j))/(RAINNCV(its:ite,j)+1.e-12)
 
       enddo !j_loop
 

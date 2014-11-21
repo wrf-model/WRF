@@ -21,6 +21,7 @@ CONTAINS
               ,AER_OPT, aerod           &
               ,swint_opt                &
               ,P8W    ,P ,PI            &
+              ,p_top                    &
               ,RADT   ,RA_CALL_OFFSET   &
               ,RHO    ,RLWTOA           &
               ,RSWTOA ,RTHRATEN         &
@@ -632,6 +633,10 @@ CONTAINS
          OPTIONAL,                                                &
          INTENT(INOUT)  ::                       o3rad
 
+   ! vert nesting
+   REAL, OPTIONAL , INTENT(IN   ) :: p_top
+   REAL                           :: p_top_dummy
+
 ! LOCAL  VAR
 
    REAL, DIMENSION( ims:ime, jms:jme ) ::             GLAT,GLON
@@ -671,6 +676,7 @@ CONTAINS
    real, dimension(ims:ime,jms:jme) :: coszen_loc,hrang_loc
 ! jararias 2013/11
    real, dimension(:,:,:,:), allocatable :: tauaer_sw, ssaaer_sw, asyaer_sw
+
 
 #ifdef HWRF
    CHARACTER(len=265) :: wrf_err_message
@@ -989,7 +995,7 @@ CONTAINS
           PRESENT(F_QC) .AND. PRESENT ( F_QI ) ) THEN
 ! Call to cloud fraction routine based on Randall 1994 (Hong Pan 1998)
 
-        CALL wrf_debug (1, 'CALL cldfra2')
+        CALL wrf_debug (1, 'CALL cldfra1')
         CALL cal_cldfra1(CLDFRA,qv,qc,qi,qs,               &
                    F_QV,F_QC,F_QI,F_QS,t,p,                &
                    F_ICE_PHY,F_RAIN_PHY,                   &
@@ -1040,6 +1046,7 @@ CONTAINS
 
      IF ( PRESENT ( CLDFRA ) .AND.                           &
           PRESENT(F_QC) .AND. PRESENT ( F_QI ) ) THEN
+       CALL wrf_debug (1, 'CALL cldfra2')
        CALL cal_cldfra2(CLDFRA,qc,qi,F_QC,F_QI,              &
                        ids,ide, jds,jde, kds,kde,            &
                        ims,ime, jms,jme, kms,kme,            &
@@ -1091,8 +1098,14 @@ CONTAINS
         CASE (RRTMSCHEME)
              CALL wrf_debug (100, 'CALL rrtm')
 
+             IF ( PRESENT(p_top) ) THEN
+                p_top_dummy = p_top
+             ELSE
+                p_top_dummy = -1. ! not used by NMM
+             END IF
              CALL RRTMLWRAD(                                        &
-                  RTHRATEN=RTHRATEN,GLW=GLW,OLR=RLWTOA,EMISS=EMISS  &
+                  P_TOP=p_top_dummy                                 & 
+                 ,RTHRATEN=RTHRATEN,GLW=GLW,OLR=RLWTOA,EMISS=EMISS  &
                  ,QV3D=QV                                           &
                  ,QC3D=QC                                           &
                  ,QR3D=QR                                           &
@@ -1478,16 +1491,17 @@ CONTAINS
         CASE (GSFCSWSCHEME)
              CALL wrf_debug(100, 'CALL gsfcswrad')
              CALL GSFCSWRAD(                                           &
-                     RTHRATEN=rthraten,GSW=gsw,XLAT=xlat,XLONG=xlong   &
+                     RTHRATEN=rthraten,GSW=gsw                         & ! PAJ: xlat and xlong removed.
                     ,ALB=albedo,T3D=t,P3D=p,P8W3D=p8w,pi3D=pi          &
                     ,DZ8W=dz8w,RHO_PHY=rho                             &
                     ,CLDFRA3D=cldfra,RSWTOA=rswtoa                     &
-                    ,GMT=gmt,CP=cp,G=g                                 &
-                    ,JULDAY=julday,XTIME=xtime                         &
-                    ,DECLIN=declin,SOLCON=solcon                       &
-                    ,RADFRQ=radt,DEGRAD=degrad                         &
+                    ,CP=cp,G=g                                         & ! PAJ: GMT removed.
+                    ,JULDAY=julday                                     & ! PAJ: XTIME removed.
+                    ,SOLCON=solcon                                     & ! PAJ: declin removed
+!                    ,RADFRQ=radt,DEGRAD=degrad                         & ! PAJ: degrad and radfrq removed
                     ,TAUCLDI=taucldi,TAUCLDC=taucldc                   &
                     ,WARM_RAIN=warm_rain                               &
+
 #if ( WRF_CHEM == 1 )
                     ,TAUAER300=tauaer300,TAUAER400=tauaer400           & ! jcb
                     ,TAUAER600=tauaer600,TAUAER999=tauaer999           & ! jcb
@@ -1510,6 +1524,7 @@ CONTAINS
                     ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                     &
                     ,F_QI=f_qi,F_QS=f_qs,F_QG=f_qg                     &
                     ,F_QNDROP=f_qndrop                                 &
+                    ,COSZEN=coszen                                     &
                                                                        )
 
         CASE (goddardswscheme)

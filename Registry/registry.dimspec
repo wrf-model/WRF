@@ -41,6 +41,9 @@ dimspec    q       -     constant=2600                     c     # a little crud
 dimspec    r       -     constant=2000                     c     # a little crude right now
 dimspec    z       -     constant=(-3:3)                   c
 dimspec    n       -     constant=(0:6)                    c
+ifdef HWRF=1
+dimspec    otrak   -     namelist=num_old_fixes            c     old_fixes
+endif
 endif
 
 dimspec    snly    2     namelist=num_snow_layers          z     snow_layers
@@ -86,6 +89,7 @@ dimspec    ]       2     namelist=kfire                    z     klevs_for_fire
 dimspec    %       2     namelist=kdvel                    z     klevs_for_dvel
 dimspec    airc    2     namelist=kemit_aircraft           z     ac_emissions_zdim
 dimspec    .       3     namelist=erosion_dim              z     dust_erosion_dimension
+dimspec    ^       2     constant=46                       z     eightday_dimension
 
 # Dimensions for the GHG options
 dimspec    ghgv    -     constant=8                        z     vprm_vgcls

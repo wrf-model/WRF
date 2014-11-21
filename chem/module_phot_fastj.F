@@ -232,13 +232,20 @@
 ! only MOSAIC will work. The Mie routine does not know how to handle
 ! SORGAM aerosols.
     select case (config_flags%chem_opt)
+!    case ( CBMZ_MOSAIC_4BIN,    CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_KPP,  &
+!           CBMZ_MOSAIC_4BIN_VBS2_KPP, &
+!           CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, &
+!           CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, &
+!           CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ, &
+!           MOZART_MOSAIC_4BIN_KPP, CRI_MOSAIC_8BIN_AQ_KPP, &
+!           CRI_MOSAIC_4BIN_AQ_KPP )
     case ( CBMZ_MOSAIC_4BIN,    CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_KPP,  &
            CBMZ_MOSAIC_4BIN_VBS2_KPP, &
            CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, &
            CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, &
            CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ, &
-           MOZART_MOSAIC_4BIN_VBS0_KPP, CRI_MOSAIC_8BIN_AQ_KPP, &
-           CRI_MOSAIC_4BIN_AQ_KPP )
+           MOZART_MOSAIC_4BIN_KPP, MOZART_MOSAIC_4BIN_AQ_KPP, &
+           CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP )
        processingAerosols = .true.
     case default
        processingAerosols = .false.

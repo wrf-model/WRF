@@ -1001,14 +1001,17 @@ end if
           CALL wrf_error_fatal( "module_sf_noahlsm.F: lsminit: out of range value "// &
                "of ISLTYP. Is this field in the input?" )
        ENDIF
-#if ( WRF_CHEM == 1 )
-       !
-       ! need this parameter for dust parameterization in wrf/chem
-       !
-       do I=1,NSLTYPE
-          porosity(i)=maxsmc(i)
-       enddo
-#endif
+! GAC-->
+! 20130219 - No longer need this - see module_data_gocart_dust
+!#if ( WRF_CHEM == 1 )
+!       !
+!       ! need this parameter for dust parameterization in wrf/chem
+!       !
+!       do I=1,NSLTYPE
+!          porosity(i)=maxsmc(i)
+!       enddo
+!#endif
+! <--GAC
 
 ! initialize soil liquid water content SH2O
 

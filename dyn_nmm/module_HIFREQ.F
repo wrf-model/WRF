@@ -226,14 +226,14 @@ CONTAINS
             abs(clat),get_lat_ns(clat),abs(clon),get_lon_ew(clon)
        if(mod(ntsd,126)==125) then
           ! bug fix for IBM: will not write unless a flush is done periodically
-          flush(lun)
+          call flush(lun)
        endif
     endif
     RETURN
   END SUBROUTINE hifreq_write
 
 
-  SUBROUTINE hifreq_open ( grid , config_flags )
+  SUBROUTINE hifreq_open ( grid , config_flags, atcf )
     ! Driver layer
     USE module_domain	, ONLY : domain, domain_clock_get
     USE module_configure	, ONLY : grid_config_rec_type
@@ -241,6 +241,7 @@ CONTAINS
     IMPLICIT NONE
 
     LOGICAL, EXTERNAL :: wrf_dm_on_monitor
+    logical, intent(in), optional :: atcf
     ! Arguments
     TYPE(domain)                               :: grid
     TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
@@ -251,9 +252,10 @@ CONTAINS
     LOGICAL                                :: opened
     CHARACTER*80                           :: timestr
 
-    character*256 :: message
+    character*255 :: message
 
     integer, parameter :: unitbase = 93, giveup=unitbase+1000
+    logical is_atcf
 
     INTERFACE
        SUBROUTINE construct_filename2a( result , basename , fld1 , len1 , date_char )
@@ -265,8 +267,20 @@ CONTAINS
        END SUBROUTINE construct_filename2a
     END INTERFACE
 
+    if(present(atcf)) then
+       is_atcf=atcf
+       call wrf_message('hifreq open: is atcf')
+    else
+       is_atcf=.false.
+       call wrf_message('hifreq open: is not atcf')
+    endif
+
     CALL domain_clock_get( grid, current_timestr=timestr )
-    CALL construct_filename2a ( outname ,config_flags%high_freq_outname, grid%id , 2 , timestr )
+    if(is_atcf) then
+       CALL construct_filename2a ( outname ,config_flags%partial_atcf_outname, grid%id , 2 , timestr )
+    else
+       CALL construct_filename2a ( outname ,config_flags%high_freq_outname, grid%id , 2 , timestr )
+    endif
 
 #ifdef DM_PARALLEL
     if(wrf_dm_on_monitor()) then
@@ -291,10 +305,23 @@ CONTAINS
        write(message,'("HIFREQ APPEND  ",A1,A80,A1)') '"',trim(outname),'"'
        call wrf_message(message)
        open(unit=fid,file=trim(outname),position='append',form='formatted')
-       grid%hifreq_lun=fid
+
+308    format(A,' output unit is now ',I0)
+       if(is_atcf) then
+          grid%outatcf_lun=fid
+          write(message,308) 'Partial ATCF',grid%outatcf_lun
+       else
+          grid%hifreq_lun=fid
+          write(message,308) 'Partial ATCF',grid%outatcf_lun
+       endif
+       call wrf_message(message)
 #ifdef DM_PARALLEL
    else
-       grid%hifreq_lun=-99  ! must be non-zero but invalid
+      if(is_atcf) then
+         grid%outatcf_lun=-99  ! must be non-zero but invalid
+      else
+         grid%hifreq_lun=-99  ! must be non-zero but invalid
+      endif
    endif
 #endif
   END SUBROUTINE hifreq_open

@@ -12,7 +12,9 @@ public :: wetscav_mozcart
 
 save
 
-   integer, parameter :: wetscav_tab_cnt = 37
+! added OVOC washout
+!   integer, parameter :: wetscav_tab_cnt = 37
+   integer, parameter :: wetscav_tab_cnt = 37 + 10
    real, parameter :: zero = 0.
    real, parameter :: one  = 1.
    real, parameter :: four = 4.
@@ -78,9 +80,10 @@ is_allocated : &
        call wrf_error_fatal("mozcart_wetscav_init: failed to allocate wet_scav_tab")
      endif
 
-!----------------------------------------------------------------------
-!  NOTE: this table does NOT include an entry for SO4
-!----------------------------------------------------------------------
+! not true anymore, comment can be removed
+!!----------------------------------------------------------------------
+!!  NOTE: this table does NOT include an entry for SO4
+!!----------------------------------------------------------------------
      wet_scav_tab(1) = wet_scav( 'h2o2', p_h2o2, (/8.33e+04, 7379., 2.2e-12, -3730., 0., 0./), 34.0135994, .false. )
      wet_scav_tab(2) = wet_scav( 'hno3', p_hno3, (/0., 0., 2.6e+06, 8700., 0., 0./), 63.0123405, .true. )
      wet_scav_tab(3) = wet_scav( 'hcho', p_hcho, (/6.30e+03, 6425., 0., 0., 0., 0./), 30.0251999, .false. )
@@ -116,9 +119,22 @@ is_allocated : &
      wet_scav_tab(33) = wet_scav( 'xonitr', -1, (/7.51e+03, 6485., 0., 0., 0., 0./), 147.125946, .false. )
      wet_scav_tab(34) = wet_scav( 'xooh', p_xooh, (/90.5, 5607., 0., 0., 0., 0./), 134.126602, .false. )
      wet_scav_tab(35) = wet_scav( 'ch3cooh', p_ch3cooh, (/4.1e3, 6300., 0., 0., 0., 0./), 60.0503998, .false. )
-     wet_scav_tab(36) = wet_scav( 'so2', p_so2, (/8.33e+04, 7379., 2.2e-12, -3730., 0., 0./), 34.0135994, .false. )
-     wet_scav_tab(37) = wet_scav( 'h2so4', p_h2so4, (/0., 0., 2.6e+06, 8700., 0., 0./), 98.0784, .false. )
- 
+     wet_scav_tab(36) = wet_scav( 'so2', p_so2, (/1.2, 3100., 1.3e-02, 1965., 0., 0./), 63.961901, .false. )
+     wet_scav_tab(37) = wet_scav( 'sulf', p_sulf, (/1e+11, 0., 0., 0., 0., 0./), 98.078, .false. ) ! order of magnitude approx. (Gmitro and Vermeulen, 1964)
+
+     IF (config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP) THEN
+       wet_scav_tab(38) = wet_scav( 'cvasoaX', p_cvasoaX, (/0.0e+00, 0., 0., 0., 0., 0./), 150.0, .false. )
+       wet_scav_tab(39) = wet_scav( 'cvasoa1', p_cvasoa1, (/1.06E+08, 6014., 0., 0., 0., 0./), 150.0, .false. )
+       wet_scav_tab(40) = wet_scav( 'cvasoa2', p_cvasoa2, (/1.84E+07, 6014., 0., 0., 0., 0./), 150.0, .false. )
+       wet_scav_tab(41) = wet_scav( 'cvasoa3', p_cvasoa3, (/3.18E+06, 6014., 0., 0., 0., 0./), 150.0, .false. )
+       wet_scav_tab(42) = wet_scav( 'cvasoa4', p_cvasoa4, (/5.50E+05, 6014., 0., 0., 0., 0./), 150.0, .false. )
+       wet_scav_tab(43) = wet_scav( 'cvbsoaX', p_cvbsoaX, (/0.0e+00, 0., 0., 0., 0., 0./), 180.0, .false. )
+       wet_scav_tab(44) = wet_scav( 'cvbsoa1', p_cvbsoa1, (/5.25E+09, 6014., 0., 0., 0., 0./), 180.0, .false. )
+       wet_scav_tab(45) = wet_scav( 'cvbsoa2', p_cvbsoa2, (/7.00E+08, 6014., 0., 0., 0., 0./), 180.0, .false. )
+       wet_scav_tab(46) = wet_scav( 'cvbsoa3', p_cvbsoa3, (/9.33E+07, 6014., 0., 0., 0., 0./), 180.0, .false. )
+       wet_scav_tab(47) = wet_scav( 'cvbsoa4', p_cvbsoa4, (/1.24E+07, 6014., 0., 0., 0., 0./), 180.0, .false. )
+     ENDIF
+  
    hetcnt = 0
    do m = param_first_scalar,numgas
      wrf_spc_name = chem_dname_table(id,m)
@@ -183,7 +199,8 @@ is_allocated : &
                                qv_b4mp, qc_b4mp, qi_b4mp, qs_b4mp,                         &
                                gas_aqfrac, numgas_aqfrac, dz8w, dx, dy,                    &
                                qv, qc, qi, qs,                                             &
-                               hno3_col_mdel,                                              &
+!                               hno3_col_mdel,                                              &
+                               delta_mass_col,                                             &
                                ids,ide, jds,jde, kds,kde,                                  &
                                ims,ime, jms,jme, kms,kme,                                  &
                                its,ite, jts,jte, kts,kte                                   )
@@ -243,8 +260,11 @@ is_allocated : &
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,        &
          INTENT(INOUT ) ::                                cldfra
 
-   REAL,  DIMENSION( ims:ime , jms:jme )         ,                  &
-         INTENT(INOUT ) ::                                hno3_col_mdel
+!   REAL,  DIMENSION( ims:ime , jms:jme )         ,                  &
+!         INTENT(INOUT ) ::                                hno3_col_mdel
+
+   REAL,  DIMENSION( ims:ime , jms:jme, num_chem )         ,           &
+         INTENT(OUT ) ::                                delta_mass_col
 
 !----------------------------------------------------------------------
 !  local variables
@@ -306,7 +326,8 @@ has_wet_scav : &
      diff(:,:,:) = 0.
      cld_col_cnt = 0
      precip_col_cnt = 0
-     hno3_col_mdel(:,:) = 0.
+!     hno3_col_mdel(:,:) = 0.
+     delta_mass_col(:,:,:) = 0.
      max_rls       = 0.
 jloop : &
      do j = jts,jte
@@ -395,9 +416,11 @@ species_loop1 : &
              m1 = wrf2tab(m)
              pndx = wet_scav_tab(m1)%p_ndx
              is_hno3 = pndx == p_hno3
-             if( is_hno3 ) then
-               hno3_col_mdel(i,j) = sum( trc_mass(kts:ktem1,m) ) - wrk_mass(m)
-             endif
+!             if( is_hno3 ) then
+!              hno3_col_mdel(i,j) = sum( trc_mass(kts:ktem1,m) ) - wrk_mass(m)
+!            endif
+             delta_mass_col(i,j,pndx) = sum( trc_mass(kts:ktem1,m) ) - wrk_mass(m)
+
              wrk(kts:ktem1) = 1.e6*mwdry*trc_mass(kts:ktem1,m)/mol_wght(m)
              chem(i,kts:ktem1,j,pndx) = wrk(kts:ktem1)/layer_mass(kts:ktem1)
              if( is_hno3 ) then

@@ -10,7 +10,11 @@ SUBROUTINE med_interp_domain ( parent_grid , nested_grid )
    TYPE(domain), POINTER :: grid
    INTEGER nlev, msize
    TYPE (grid_config_rec_type)            :: config_flags
-
+#ifdef NMM_FIND_LOAD_IMBALANCE
+   REAL(kind=8), save :: total_time(40)=0
+   REAL(kind=8) :: this_time
+   character*255 :: message
+#endif
 ! ----------------------------------------------------------
 ! ----------------------------------------------------------
 ! Interface blocks
@@ -38,7 +42,7 @@ SUBROUTINE med_interp_domain ( parent_grid , nested_grid )
 #        include <dummy_new_decl.inc>
       END SUBROUTINE interp_domain_em_part1
 
-      SUBROUTINE interp_domain_em_part2 ( grid, nested_grid, config_flags   &
+      SUBROUTINE interp_domain_em_part2 ( grid, nested_grid, parent_grid, config_flags   &
 !
 #        include "dummy_new_args.inc"
 !
@@ -47,6 +51,7 @@ SUBROUTINE med_interp_domain ( parent_grid , nested_grid )
          USE module_configure
          TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
          TYPE(domain), POINTER :: nested_grid
+         TYPE(domain), POINTER :: parent_grid   !KAL added for vertical nesting
          TYPE (grid_config_rec_type)            :: config_flags
 #        include <dummy_new_decl.inc>
       END SUBROUTINE interp_domain_em_part2
@@ -103,6 +108,9 @@ SUBROUTINE med_interp_domain ( parent_grid , nested_grid )
 ! ----------------------------------------------------------
 ! Executable code
 ! ----------------------------------------------------------
+#ifdef NMM_FIND_LOAD_IMBALANCE
+   this_time=now_time()
+#endif
 ! ----------------------------------------------------------
 !    Interpolation calls for EM CORE.  The called 
 !    routines below are supplied by module_dm.F
@@ -134,7 +142,8 @@ SUBROUTINE med_interp_domain ( parent_grid , nested_grid )
                                 )
   grid => nested_grid%intermediate_grid
   CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
-  CALL interp_domain_em_part2 ( grid, nested_grid, config_flags   &
+  
+  CALL interp_domain_em_part2 ( grid, nested_grid, parent_grid, config_flags   &
 !
 #     include "actual_new_args.inc"
 !
@@ -214,6 +223,13 @@ SUBROUTINE med_interp_domain ( parent_grid , nested_grid )
 ! ------------------------------------------------------
 !    End of Interpolation calls for COAMPS.
 ! ------------------------------------------------------
+#ifdef NMM_FIND_LOAD_IMBALANCE
+   this_time=now_time()-this_time
+   total_time(parent_grid%id)=total_time(parent_grid%id)+this_time
+30 format('med_interp_domain for grid ',I0,' to grid ',I0,': ',F12.6,'s; running total: ',F12.6,'s')
+   write(message,30) parent_grid%id,nested_grid%id,this_time,total_time(parent_grid%id)
+   call wrf_debug(1,message)
+#endif
    RETURN
 END SUBROUTINE med_interp_domain
 

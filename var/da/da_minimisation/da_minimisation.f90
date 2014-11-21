@@ -27,7 +27,7 @@ module da_minimisation
    use da_buoy , only : da_calculate_grady_buoy, da_ao_stats_buoy, &
       da_oi_stats_buoy,da_get_innov_vector_buoy, da_residual_buoy, &
       da_jo_and_grady_buoy
-   use da_control, only : trace_use, var4d_bin, trajectory_io, &
+   use da_control, only : trace_use, var4d_bin, trajectory_io, analysis_date, &
       var4d, rootproc,jcdfi_use,jcdfi_diag,ierr,comm,num_fgat_time, &
       var4d_lbc, stdout, eps, stats_unit, test_dm_exact, global, multi_inc, &
       calculate_cg_cost_fn,anal_type_randomcv,cv_size_domain,je_factor, &
@@ -147,13 +147,14 @@ module da_minimisation
    use da_wrf_interfaces, only : wrf_dm_bcast_real, wrf_get_dm_communicator
    use module_symbols_util, only : wrfu_finalize
    use da_lapack, only : dsteqr
+   use da_wrfvar_io, only : da_med_initialdata_input
+   use da_transfer_model, only : da_transfer_wrftoxb
 #ifdef VAR4D
    use da_4dvar, only : da_tl_model, da_ad_model, model_grid, input_nl_xtraj, &
        kj_swap_reverse, upsidedown_ad_forcing, u6_2, v6_2, w6_2, t6_2, ph6_2, p6, &
       mu6_2, psfc6, moist6
    use da_transfer_model, only : da_transfer_xatowrftl_lbc, da_transfer_xatowrftl_adj_lbc, &
-      da_transfer_wrftl_lbc_t0, da_transfer_wrftl_lbc_t0_adj, da_get_2nd_firstguess, &
-      da_transfer_wrftoxb
+      da_transfer_wrftl_lbc_t0, da_transfer_wrftl_lbc_t0_adj, da_get_2nd_firstguess
    USE module_io_wrf, only : auxinput6_only
 #endif
 

@@ -137,7 +137,7 @@ fftpack :
 atm_ocn :
 	( cd $(WRF_SRC_ROOT_DIR)/external/atm_ocn ; \
           make $(J) CC="$(SCC)" CFLAGS="$(CFLAGS) " RM="$(RM)" RANLIB="$(RANLIB)" \
-          CPP="$(CPP)" \
+          CPP="$(CPP)" CPPFLAGS="$(CPPFLAGS)" \
           FC="$(DM_FC) $(PROMOTION) -I. $(FCDEBUG) $(FCBASEOPTS) $(FCSUFFIX)" TRADFLAG="-traditional" AR="$(AR)" ARFLAGS="$(ARFLAGS)" \
           FIXED="$(FORMAT_FIXED)" )
 

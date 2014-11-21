@@ -2,12 +2,13 @@ module module_tracker
   implicit none
   private
 #ifdef HWRF
-  public :: ncep_tracker_center, ncep_tracker_init
+  public :: ncep_tracker_center, ncep_tracker_init, update_tracker_post_move
 
   real, parameter :: invE=0.36787944117 ! 1/e
 
   ! Copied from tracker:
-  real,parameter :: searchrad=250.0 ! km - ignore data more than this far from domain center
+  real,parameter :: searchrad_6=250.0 ! km - ignore data more than this far from domain center
+  real,parameter :: searchrad_7=200.0 ! km - ignore data more than this far from domain center
   integer, parameter :: maxtp=11 ! number of tracker parameters
   real, parameter :: uverrmax = 225.0  ! For use in get_uv_guess
   real, parameter :: ecircum = 40030.2  ! Earth's circumference
@@ -19,7 +20,36 @@ module module_tracker
   real, parameter :: errpmax=485.0 ! max stddev of track parameters
   real, parameter :: errpgro=1.25 ! stddev multiplier
 
+  real, parameter :: max_wind_search_radius=searchrad_7 ! max radius for vmax search
+  real, parameter :: min_mlsp_search_radius=searchrad_7 ! max radius for pmin search
+
+  ! Also used:
+  real, parameter :: km2nmi = 0.539957, kn2mps=0.514444, mps2kn=1./kn2mps, pi180=0.01745329251
 contains
+
+  !----------------------------------------------------------------------------------
+  ! These two simple routines return an N, S, E or W for the
+  ! hemisphere of a latitude or longitude.  They are copied from
+  ! module_HIFREQ to avoid a relatively pointless compiler dependency.
+
+  character(1) function get_lat_ns(lat)
+    ! This could be written simply as merge('N','S',lat>=0) if WRF allowed F95
+    implicit none ; real lat
+    if(lat>=0) then
+       get_lat_ns='N'
+    else
+       get_lat_ns='S'
+    endif
+  end function get_lat_ns
+  character(1) function get_lon_ew(lon)
+    ! This could be written simply as merge('E','W',lon>=0) if WRF allowed F95
+    implicit none ; real lon
+    if(lon>=0) then
+       get_lon_ew='E'
+    else
+       get_lon_ew='W'
+    endif
+  end function get_lon_ew
 
   subroutine ncep_tracker_init(grid)
     ! Initialize tracker variables in the grid structure.
@@ -30,12 +60,25 @@ contains
     grid%track_stderr_m1=-99.9
     grid%track_stderr_m2=-99.9
     grid%track_stderr_m3=-99.9
+    grid%track_n_old=0
+    grid%track_old_lon=0
+    grid%track_old_lat=0
+    grid%track_old_ntsd=0
+
+    grid%tracker_angle=0
     grid%tracker_fixlon=-999.0
     grid%tracker_fixlat=-999.0
     grid%tracker_ifix=-99
     grid%tracker_jfix=-99
     grid%tracker_havefix=.false.
     grid%tracker_gave_up=.false.
+    grid%tracker_pmin=-99999.
+    grid%tracker_vmax=-99.
+    grid%tracker_rmw=-99.
+
+    grid%track_have_guess=.false.
+    grid%track_guess_lat=-999.0
+    grid%track_guess_lon=-999.0
   end subroutine ncep_tracker_init
 
   subroutine ncep_tracker_center(grid)
@@ -68,11 +111,15 @@ contains
        IDS,IDE,JDS,JDE,KDS,KDE, &
        IMS,IME,JMS,JME,KMS,KME, &
        IPS,IPE,JPS,JPE,KPS,KPE)
+    ! This is the main entry point to the tracker.  It is most similar
+    ! to the function "tracker" in the GFDL/NCEP vortex tracker.
+
     USE MODULE_DOMAIN, ONLY : domain,get_ijk_from_grid
 #ifdef DM_PARALLEL
     use module_dm, only: wrf_dm_sum_real
 #endif
     implicit none
+    logical, external :: wrf_dm_on_monitor
     type(domain), intent(inout) :: grid
     integer, intent(in) :: IDS,IDE,JDS,JDE,KDS,KDE
     integer, intent(in) :: IMS,IME,JMS,JME,KMS,KME
@@ -93,9 +140,13 @@ contains
     integer :: icen(maxtp), jcen(maxtp) ! center locations for each parameter
     real :: loncen(maxtp), latcen(maxtp) ! lat, lon locations in degrees
     logical :: calcparm(maxtp) ! do we have a valid center location for this parameter?
+    real :: max_wind,min_pres ! for ATCF output
     real :: rcen(maxtp) ! center value (max wind, min mslp, etc.)
-
+    character*255 :: message
     logical :: north_hemi ! true = northern hemisphere
+    logical :: have_guess ! first guess is available
+    real :: guessdist,guessdeg ! first guess distance to nearest point on grid
+    real :: latnear, lonnear ! nearest point in grid to first guess
 
     ! icen,jcen: Same meaning as clon, clat in tracker, but uses i and
     ! j indexes of the center instead of lat/lon.  Tracker comment:
@@ -124,18 +175,71 @@ contains
     loncen=9e9
     rcen=9e9
     calcparm=.false.
-    srsq=searchrad*searchrad*1e6
-
-    ! Hard coded first-guess center is domain center:
-    iguess=ide/2
-    jguess=jde/2
-    call get_lonlat(grid,iguess,jguess,longuess,latguess,ierr, &
-         ids,ide, jds,jde, kds,kde, &
-         ims,ime, jms,jme, kms,kme, &
-         ips,ipe, jps,jpe, kps,kpe)
-    if(ierr/=0) then
-       call wrf_error_fatal("ERROR: center of domain is not inside the domain")
+    if(grid%vortex_tracker==6) then
+       srsq=searchrad_6*searchrad_6*1e6
+    else
+       srsq=searchrad_7*searchrad_7*1e6
     endif
+
+    ! Get the first guess from the prior nest motion timestep:
+    have_guess=grid%track_have_guess
+    if(have_guess) then
+       ! We have a first guess center.  We have to translate it to gridpoint space.
+       longuess=grid%track_guess_lon
+       latguess=grid%track_guess_lat
+       call get_nearest_lonlat(grid,iguess,jguess,ierr,longuess,latguess, &
+            ids,ide, jds,jde, kds,kde, &
+            ims,ime, jms,jme, kms,kme, &
+            ips,ipe, jps,jpe, kps,kpe,     lonnear, latnear)
+       if(ierr==0) then
+          call calcdist(longuess,latguess, lonnear,latnear, guessdist,guessdeg)
+          if(guessdist*1e3>3*grid%dy) then
+108          format('WARNING: guess lon=',F0.3,',lat=',F0.3, &
+                  ' too far (',F0.3,'km) from nearest point lon=',F0.3,',lat=',F0.3, &
+                  '.  Will use domain center as first guess.')
+             write(message,108) grid%track_guess_lon,grid%track_guess_lat, &
+                  guessdist,lonnear,latnear
+             call wrf_message(message)
+             have_guess=.false. ! indicate that the first guess is unusable
+          else
+             latguess=latnear
+             longuess=lonnear
+          endif
+       else
+          have_guess=.false. ! indicate that the first guess is unusable.
+109       format('WARNING: guess lon=',F0.3,',lat=',F0.3, &
+                  ' does not exist in this domain.  Will use domain center as first guess.')
+          write(message,109) grid%track_guess_lon,grid%track_guess_lat
+          call wrf_message(message)
+       endif
+   endif
+
+   ! If we could not get the first guess from the prior nest motion
+   ! timestep, then use the default first guess: the domain center.
+    if(grid%vortex_tracker==6 .or. .not.have_guess) then
+       ! vt=6: hard coded first-guess center is domain center:
+       ! vt=7: first guess comes from prior timestep
+       !     Initial first guess is domain center.
+       !     Backup first guess is domain center if first guess is unusable.
+       iguess=ide/2
+       jguess=jde/2
+       if(grid%vortex_tracker==7) then
+          call wrf_message('Using domain center as first guess since no valid first guess is available.')
+       endif
+       call get_lonlat(grid,iguess,jguess,longuess,latguess,ierr, &
+            ids,ide, jds,jde, kds,kde, &
+            ims,ime, jms,jme, kms,kme, &
+            ips,ipe, jps,jpe, kps,kpe)
+       if(ierr/=0) then
+          call wrf_error_fatal("ERROR: center of domain is not inside the domain")
+       endif
+       have_guess=.true.
+    endif
+
+    if(.not.have_guess) then
+       call wrf_error_fatal("INTERNAL ERROR: No first guess is available (should never happen).")
+    endif
+
     north_hemi = latguess>0.0
 
     ! Get the mean V-to-H point-to-point distance:
@@ -193,24 +297,45 @@ contains
          IPS,IPE,JPS,JPE,KPS,KPE)
 
     ! Find wind minima.  Requires a first guess center:
-    call find_center(grid,grid%p850wind,grid%sp850wind,srsq, &
-         icen(3),jcen(3),rcen(3),calcparm(3),loncen(3),latcen(3),dxdymean,'wind', &
-         IDS,IDE,JDS,JDE,KDS,KDE, &
-         IMS,IME,JMS,JME,KMS,KME, &
-         IPS,IPE,JPS,JPE,KPS,KPE, &
-         iuvguess=iuvguess, juvguess=juvguess)
-    call find_center(grid,grid%p700wind,grid%sp700wind,srsq, &
-         icen(5),jcen(5),rcen(5),calcparm(5),loncen(5),latcen(5),dxdymean,'wind', &
-         IDS,IDE,JDS,JDE,KDS,KDE, &
-         IMS,IME,JMS,JME,KMS,KME, &
-         IPS,IPE,JPS,JPE,KPS,KPE, &
-         iuvguess=iuvguess, juvguess=juvguess)
-    call find_center(grid,grid%m10wind,grid%sm10wind,srsq, &
-         icen(10),jcen(10),rcen(10),calcparm(10),loncen(10),latcen(10),dxdymean,'wind', &
-         IDS,IDE,JDS,JDE,KDS,KDE, &
-         IMS,IME,JMS,JME,KMS,KME, &
-         IPS,IPE,JPS,JPE,KPS,KPE, &
-         iuvguess=iuvguess, juvguess=juvguess)
+    windmin: if(grid%vortex_tracker==6) then
+       call find_center(grid,grid%p850wind,grid%sp850wind,srsq, &
+            icen(3),jcen(3),rcen(3),calcparm(3),loncen(3),latcen(3),dxdymean,'wind', &
+            IDS,IDE,JDS,JDE,KDS,KDE, &
+            IMS,IME,JMS,JME,KMS,KME, &
+            IPS,IPE,JPS,JPE,KPS,KPE, &
+            iuvguess=iuvguess, juvguess=juvguess)
+       call find_center(grid,grid%p700wind,grid%sp700wind,srsq, &
+            icen(5),jcen(5),rcen(5),calcparm(5),loncen(5),latcen(5),dxdymean,'wind', &
+            IDS,IDE,JDS,JDE,KDS,KDE, &
+            IMS,IME,JMS,JME,KMS,KME, &
+            IPS,IPE,JPS,JPE,KPS,KPE, &
+            iuvguess=iuvguess, juvguess=juvguess)
+       call find_center(grid,grid%m10wind,grid%sm10wind,srsq, &
+            icen(10),jcen(10),rcen(10),calcparm(10),loncen(10),latcen(10),dxdymean,'wind', &
+            IDS,IDE,JDS,JDE,KDS,KDE, &
+            IMS,IME,JMS,JME,KMS,KME, &
+            IPS,IPE,JPS,JPE,KPS,KPE, &
+            iuvguess=iuvguess, juvguess=juvguess)
+    else
+       call get_uv_center(grid,grid%p850wind, &
+            icen(3),jcen(3),rcen(3),calcparm(3),loncen(3),latcen(3),dxdymean,'wind', &
+            IDS,IDE,JDS,JDE,KDS,KDE, &
+            IMS,IME,JMS,JME,KMS,KME, &
+            IPS,IPE,JPS,JPE,KPS,KPE, &
+            iuvguess=iuvguess, juvguess=juvguess)
+       call get_uv_center(grid,grid%p700wind, &
+            icen(5),jcen(5),rcen(5),calcparm(5),loncen(5),latcen(5),dxdymean,'wind', &
+            IDS,IDE,JDS,JDE,KDS,KDE, &
+            IMS,IME,JMS,JME,KMS,KME, &
+            IPS,IPE,JPS,JPE,KPS,KPE, &
+            iuvguess=iuvguess, juvguess=juvguess)
+       call get_uv_center(grid,grid%m10wind, &
+            icen(10),jcen(10),rcen(10),calcparm(10),loncen(10),latcen(10),dxdymean,'wind', &
+            IDS,IDE,JDS,JDE,KDS,KDE, &
+            IMS,IME,JMS,JME,KMS,KME, &
+            IPS,IPE,JPS,JPE,KPS,KPE, &
+            iuvguess=iuvguess, juvguess=juvguess)
+    endif windmin
 
     ! Get a final guess center location:
     call fixcenter(grid,icen,jcen,calcparm,loncen,latcen, &
@@ -257,18 +382,574 @@ contains
        !write(0,201) ifinal,jfinal,lonfinal,latfinal
     endif
 
-    ! Get the MSLP minimum location and determine if what we found is
-    ! still a storm:
+    call get_tracker_distsq(grid, &
+         IDS,IDE,JDS,JDE,KDS,KDE, &
+         IMS,IME,JMS,JME,KMS,KME, &
+         IPS,IPE,JPS,JPE,KPS,KPE)
 
-    !FIXME: INSERT CODE HERE
+    call get_wind_pres_intensity(grid, &
+         grid%tracker_pmin,grid%tracker_vmax,grid%tracker_rmw, &
+         max_wind_search_radius, min_mlsp_search_radius, &
+         lonfinal,latfinal, &
+         IDS,IDE,JDS,JDE,KDS,KDE, &
+         IMS,IME,JMS,JME,KMS,KME, &
+         IPS,IPE,JPS,JPE,KPS,KPE)
 
-    ! Get the wind maximum location:
+#ifdef DM_PARALLEL
+    if(wrf_dm_on_monitor()) then
+#endif
+       call output_partial_atcfunix(grid, &
+            IDS,IDE,JDS,JDE,KDS,KDE, &
+            IMS,IME,JMS,JME,KMS,KME, &
+            IPS,IPE,JPS,JPE,KPS,KPE)
+#ifdef DM_PARALLEL
+    endif
+#endif
 
-    !FIXME: INSERT CODE HERE
+!     if(grid%vortex_tracker==7) then
+!        call get_first_ges(grid,iguess,jguess,longuess,latguess, &
+!             IDS,IDE,JDS,JDE,KDS,KDE, &
+!             IMS,IME,JMS,JME,KMS,KME, &
+!             IPS,IPE,JPS,JPE,KPS,KPE)
+       
+!        call store_old_fixes(grid, &
+!             IDS,IDE,JDS,JDE,KDS,KDE, &
+!             IMS,IME,JMS,JME,KMS,KME, &
+!             IPS,IPE,JPS,JPE,KPS,KPE)
 
-    ! Get the guess location for the next time:
+!        ! Store the first guess:
+!        grid%track_have_guess=.true.
+!        grid%track_guess_lat=latguess
+!        grid%track_guess_lon=longuess
+! 3011   format('First guess: lon=',F0.3,' lat=',F0.3)
+!        write(message,3011) grid%track_guess_lon,grid%track_guess_lat
+!        call wrf_debug(1,message)
+!     endif
 
   end subroutine ntc_impl
+
+  subroutine get_first_ges(grid,  &
+         iguess,jguess,longuess,latguess, &
+         IDS,IDE,JDS,JDE,KDS,KDE, &
+         IMS,IME,JMS,JME,KMS,KME, &
+         IPS,IPE,JPS,JPE,KPS,KPE)
+    ! This replicates the functionality of the tracker get_first_ges
+    ! routine, whose purpose is to analyze the storm and guess where
+    ! it will be at the next nest motion timestep.  It does that using
+    ! two different methods, similar to the GFDL/NCEP Tracker's
+    ! methods:
+    !
+    !  1. Use the present, and past few, fix locations and extrapolate
+    !  to the next location.
+    !  
+    !  2. Calculate the mean motion and extrapolate to get the
+    !  location at the next nest motion timestep.
+    !
+    ! The average of the two results is used.
+
+#ifdef DM_PARALLEL
+    use module_dm, only: wrf_dm_maxval_real
+#endif
+    USE MODULE_DOMAIN, ONLY : domain,get_ijk_from_grid
+    use module_wrf_error, only: wrf_at_debug_level
+    implicit none
+    type(domain), intent(inout) :: grid
+    integer, intent(in) :: IDS,IDE,JDS,JDE,KDS,KDE
+    integer, intent(in) :: IMS,IME,JMS,JME,KMS,KME
+    integer, intent(in) :: IPS,IPE,JPS,JPE,KPS,KPE
+    integer, intent(out) :: iguess,jguess
+    real, intent(out) :: longuess,latguess
+
+    character*255 message
+    integer :: iold, inew, jold, jnew
+    integer :: ifix,jfix,jrot,irot,ierr, pinky,brain, n, tsum, ntsd_plus_1, i, told
+    real :: motion_grideast, motion_gridnorth, fixdx
+    real :: dxeast,dynorth, xeast, ynorth
+    real :: dxrot, dyrot, tracker_dt, xsum, ysum, ytsum, xtsum, xxsum, yysum, ttsum
+    real :: mx, my, bx, by ! x=mx*t+bx ; y=my*t+by
+    real :: xrot,yrot
+    logical :: have_motion_guess, have_line_guess
+
+    have_motion_guess=.false.
+    have_line_guess=.false.
+
+    if(grid%tracker_havefix) then
+       ifix=grid%tracker_ifix
+       jfix=grid%tracker_jfix
+
+       call mean_motion(grid, motion_grideast, motion_gridnorth, &
+            IDS,IDE,JDS,JDE,KDS,KDE, &
+            IMS,IME,JMS,JME,KMS,KME, &
+            IPS,IPE,JPS,JPE,KPS,KPE)
+
+#ifdef DM_PARALLEL
+       fixdx=0
+       if(ifix>=ips .and. ifix<=ipe .and. jfix>=jps .and. jfix<=jpe) then
+          fixdx=grid%dx_nmm(ifix,jfix)
+       endif
+       pinky=2 ; brain=308
+       call wrf_dm_maxval_real(fixdx,pinky,brain)
+#else
+       fixdx=grid%dx_nmm(ifix,jfix)
+#endif
+
+       ! Rotated east and north motion in gridpoints per second, on the combined H+V grid:
+       tracker_dt=grid%dt*grid%nphs*grid%movemin
+       dxeast = motion_grideast * tracker_dt / fixdx
+       dynorth = motion_gridnorth * tracker_dt / grid%dy_nmm
+
+       ! Combine the H & V coordinate systems and rotate 45 degrees.
+       ! This puts the H points on a rectangular grid.  Add storm motion
+       ! to the rotated coordinates and round to nearest H point
+       xeast=ifix*2
+       ynorth=jfix
+       if(mod(jfix,2)==0) xeast=xeast+1
+       jrot=nint((xeast+ynorth)/2 + (dxeast+dynorth)/2)
+       irot=nint((ynorth-xeast)/2 + ((jde-1)/2) + (dynorth-dxeast)/2)
+
+       ! Translate back to usual E grid H points
+       iguess=irot-jrot+((jde-1)/2)
+       jguess=irot+jrot-((jde-1)/2)
+       if(mod(jguess,2)==0) then
+          iguess=(iguess-1)/2
+       else
+          iguess=iguess/2
+       endif
+
+       ! This last step should not be necessary but done just in case:
+       have_motion_guess = .not.(iguess<ide/4 .or. iguess>ide*3/4 .or. jguess<jde/4 .or. jguess>jde*3/4)
+
+       !print *,'got have_motion_guess=',have_motion_guess
+    endif
+
+    if(.not.have_motion_guess) then
+       ! Could not find the storm, so give the domain center as the
+       ! next first guess location.
+       iguess=ide/2
+       jguess=jde/2
+       !print *,'cannot find storm, so using domain center for motion guess'
+    endif
+
+    if(grid%track_n_old>0) then
+       !print *,'line guess: have old'
+       n=1
+       call to_rot45_grid(grid%tracker_ifix,grid%tracker_jfix,jde,xrot,yrot)
+       xsum=xrot
+       ysum=yrot
+       tsum=grid%ntsd
+       xtsum=xsum*tsum
+       xxsum=xsum*xsum
+       yysum=ysum*ysum
+       ytsum=ysum*tsum
+       ttsum=tsum*tsum
+       
+       do i=1,grid%track_n_old
+          call get_nearest_lonlat(grid,iold,jold,ierr, &
+               grid%track_old_lon(i),grid%track_old_lat(i), &
+               ids,ide, jds,jde, kds,kde, &
+               ims,ime, jms,jme, kms,kme, &
+               ips,ipe, jps,jpe, kps,kpe)
+          if(ierr==0) then
+             !print *,'insert: i=',iold,' j=',jold,' lon=',grid%track_old_lon(i),' lat=',grid%track_old_lat(i),' t=',grid%track_old_ntsd(i)
+             call to_rot45_grid(iold,jold,jde,xrot,yrot)
+             n=n+1
+             xsum=xsum+xrot
+             ysum=ysum+yrot
+             told=grid%track_old_ntsd(i)
+             tsum=tsum+told
+             xtsum=xtsum+xrot*told
+             xxsum=xxsum+xrot*xrot
+             ytsum=ytsum+yrot*told
+             yysum=xxsum+yrot*yrot
+             ttsum=ttsum+told*told
+          endif
+       enddo
+       !print *,'line guess: n=',n
+
+       if(n>1) then
+          ntsd_plus_1 = grid%ntsd + grid%movemin*grid%nphs
+          mx=(xtsum-(xsum*tsum)/real(n))/(ttsum-(tsum*tsum)/real(n))
+          my=(ytsum-(ysum*tsum)/real(n))/(ttsum-(tsum*tsum)/real(n))
+          bx=(xsum-mx*tsum)/real(n)
+          by=(ysum-my*tsum)/real(n)
+          !print *,'mx=',mx,' my=',my,' bx=',bx,' by=',by,' t+1=',ntsd_plus_1
+          xrot=nint(mx*ntsd_plus_1+bx)
+          yrot=nint(my*ntsd_plus_1+by)
+          call from_rot45_grid(inew,jnew,jde,xrot,yrot)
+          !print *,'inew=',inew,' jnew=',jnew,' xrot=',xrot,' yrot=',yrot
+          have_line_guess=.not.(inew<ide/4 .or. inew>ide*3/4 &
+               .or. jnew<jde/4 .or. jnew>jde*3/4)
+       else
+          have_line_guess=.false.
+       endif
+    endif
+
+    print_locs: if(wrf_at_debug_level(2)) then
+       call get_lonlat(grid,iguess,jguess,longuess,latguess,ierr, &
+            ids,ide, jds,jde, kds,kde, &
+            ims,ime, jms,jme, kms,kme, &
+            ips,ipe, jps,jpe, kps,kpe)
+       if(ierr==0) then
+          if(have_motion_guess) then
+3088         format('Motion Guess: lon=',F0.3,' lat=',F0.3)
+             write(message,3088) longuess,latguess
+             call wrf_debug(2,message)
+          else
+3089         format('Motion Guess failed; use domain center: lon=',F0.3,' lat=',F0.3)
+             write(message,3089) longuess,latguess
+             call wrf_debug(2,message)
+          endif
+       else
+3090      format('Motion guess ierr=',I0)
+          write(message,3090) ierr
+          call wrf_debug(2,message)
+       endif
+       if(have_line_guess) then
+          call get_lonlat(grid,inew,jnew,longuess,latguess,ierr, &
+               ids,ide, jds,jde, kds,kde, &
+               ims,ime, jms,jme, kms,kme, &
+               ips,ipe, jps,jpe, kps,kpe)
+          if(ierr==0) then
+3091         format('Line guess: lon=',F0.3,' lat=',F0.3)
+             write(message,3091) longuess,latguess
+             call wrf_debug(2,message)
+          else
+3092         format('Line guess ierr=',I0)
+             write(message,3092) ierr
+             call wrf_debug(2,message)
+          endif
+       endif
+    endif print_locs
+
+    if(have_line_guess) then
+       if(have_motion_guess) then
+          call wrf_debug(1,'get_first_ges: have MOTION and LINE guesses')
+          iguess=(iguess+inew)/2
+          jguess=(jguess+jnew)/2
+       else
+          call wrf_debug(1,'get_first_ges: have LINE guess only')
+          iguess=inew
+          jguess=jnew
+       endif
+    elseif(have_motion_guess) then
+       call wrf_debug(1,'get_first_ges: have MOTION guess only')
+    else
+       call wrf_debug(1,'get_first_ges: have no guesses; will use domain center')
+    endif
+
+    ! Now get lats & lons:
+    call get_lonlat(grid,iguess,jguess,longuess,latguess,ierr, &
+         ids,ide, jds,jde, kds,kde, &
+         ims,ime, jms,jme, kms,kme, &
+         ips,ipe, jps,jpe, kps,kpe)
+    if(ierr/=0) then
+       ! Should never get here due to max/min check before.
+       call wrf_error_fatal("ERROR: domain is not inside the domain in get_first_ges (!?)")
+    endif
+
+38  format('First guess: i=',I0,' j=',I0,' lat=',F8.3,' lon=',F8.3)
+    write(message,38) iguess,jguess,latguess,longuess
+    call wrf_message(message)
+  end subroutine get_first_ges
+
+  subroutine store_old_fixes(grid,  &
+         IDS,IDE,JDS,JDE,KDS,KDE, &
+         IMS,IME,JMS,JME,KMS,KME, &
+         IPS,IPE,JPS,JPE,KPS,KPE)
+    ! This stores old fix locations for later use in the get_first_ges
+    ! routine's line of best fit.
+    USE MODULE_DOMAIN, ONLY : domain,get_ijk_from_grid
+    implicit none
+    type(domain), intent(inout) :: grid
+    integer, intent(in) :: IDS,IDE,JDS,JDE,KDS,KDE
+    integer, intent(in) :: IMS,IME,JMS,JME,KMS,KME
+    integer, intent(in) :: IPS,IPE,JPS,JPE,KPS,KPE
+    integer i
+    if(grid%tracker_havefix) then
+       !print *,'in store old, have fix'
+       if(grid%track_n_old>0) then
+          !print *,'in store old, shifting old'
+          do i=1,grid%num_old_fixes-1
+             grid%track_old_lon(i+1)=grid%track_old_lon(i)
+             grid%track_old_lat(i+1)=grid%track_old_lat(i)
+             grid%track_old_ntsd(i+1)=grid%track_old_ntsd(i)
+          enddo
+       endif
+       grid%track_old_lon(1)=grid%tracker_fixlon
+       grid%track_old_lat(1)=grid%tracker_fixlat
+       grid%track_old_ntsd(1)=grid%ntsd
+       grid%track_n_old=min(grid%num_old_fixes,grid%track_n_old+1)
+       !print *,'in store old, now have ',grid%track_n_old
+    endif
+  end subroutine store_old_fixes
+
+  subroutine to_rot45_grid(i,j,jde,x,y)
+    implicit none
+    integer, intent(in) :: i,j,jde
+    real, intent(inout) :: x,y
+    real :: a,b
+    a=i*2
+    b=j
+    if(mod(j,2)==0) a=a+1
+    x=(a+b)/2
+    y=(b-a)/2+((jde-1)/2)
+  end subroutine to_rot45_grid
+
+  subroutine from_rot45_grid(i,j,jde,x,y)
+    implicit none
+    integer, intent(inout) :: i,j
+    integer, intent(in) :: jde
+    real, intent(in) :: x,y
+    i=x-y+((jde-1)/2)
+    j=x+y-((jde-1)/2)
+    if(mod(j,2)==0) then
+       i=(i-1)/2
+    else
+       i=i/2
+    endif
+  end subroutine from_rot45_grid
+
+  subroutine get_nearest_lonlat(grid,iloc,jloc,ierr,lon,lat, &
+               ids,ide, jds,jde, kds,kde, &
+               ims,ime, jms,jme, kms,kme, &
+               ips,ipe, jps,jpe, kps,kpe, &
+               lonnear, latnear)
+    ! Finds the nearest point in the domain to the specified lon,lat
+    ! location.
+#ifdef DM_PARALLEL
+    use module_dm, only: wrf_dm_minloc_real
+#endif
+    USE MODULE_DOMAIN, ONLY : domain,get_ijk_from_grid
+    implicit none
+    type(domain), intent(inout) :: grid
+    integer, intent(in) :: IDS,IDE,JDS,JDE,KDS,KDE
+    integer, intent(in) :: IMS,IME,JMS,JME,KMS,KME
+    integer, intent(in) :: IPS,IPE,JPS,JPE,KPS,KPE
+    integer, intent(out) :: iloc,jloc,ierr
+    real, intent(in) :: lon,lat
+    real :: dx,dy,d,dmin, zdummy, latmin,lonmin
+    integer :: i,j,imin,jmin
+    real, intent(out), optional :: latnear, lonnear
+
+    zdummy=42
+    dmin=9e9
+    imin=-99
+    jmin=-99
+    latmin=9e9
+    lonmin=9e9
+    ierr=0
+    do j=jps,min(jde-1,jpe)
+       do i=ips,min(ide-1,ipe)
+          dy=abs(lat-grid%hlat(i,j))
+          dx=abs(mod(3600.+180.+(lon-grid%hlon(i,j)),360.)-180.)
+          d=dx*dx+dy*dy
+          if(d<dmin) then
+             dmin=d
+             imin=i
+             jmin=j
+             latmin=grid%hlat(i,j)
+             lonmin=grid%hlon(i,j)
+          endif
+       enddo
+    enddo
+
+#ifdef DM_PARALLEL
+    call wrf_dm_minloc_real(dmin,latmin,lonmin,zdummy,imin,jmin)
+#endif
+    if(imin<0 .or. jmin<0) then
+       ierr=-99
+    else
+       iloc=imin ; jloc=jmin
+    endif
+    if(present(latnear)) latnear=latmin
+    if(present(lonnear)) lonnear=lonmin
+  end subroutine get_nearest_lonlat
+
+  subroutine output_partial_atcfunix(grid, &
+         IDS,IDE,JDS,JDE,KDS,KDE, &
+         IMS,IME,JMS,JME,KMS,KME, &
+         ITS,ITE,JTS,JTE,KTS,KTE)
+    ! This outputs to a format that can be easily converted to ATCF,
+    ! using units used by ATCF.
+    USE MODULE_DOMAIN, ONLY : domain,get_ijk_from_grid
+    implicit none
+    type(domain), intent(inout) :: grid
+    integer, intent(in) :: IDS,IDE,JDS,JDE,KDS,KDE
+    integer, intent(in) :: IMS,IME,JMS,JME,KMS,KME
+    integer, intent(in) :: ITS,ITE,JTS,JTE,KTS,KTE
+    character*255 message
+313 format(F11.2,", ",                                  &
+           "W10 = ",F7.3," kn, PMIN = ",F8.3," mbar, ", &
+           "LAT = ",F6.3,A1,", LON = ",F7.3,A1,", ",    &
+           "RMW = ",F7.3," nmi")
+    write(grid%outatcf_lun,313) grid%dt*grid%ntsd,                 &
+         grid%tracker_vmax*mps2kn,grid%tracker_pmin/100.,          &
+         abs(grid%tracker_fixlat),get_lat_ns(grid%tracker_fixlat), &
+         abs(grid%tracker_fixlon),get_lon_ew(grid%tracker_fixlon), &
+         grid%tracker_rmw*km2nmi
+    ! write(message,313) grid%dt*grid%ntsd,                 &
+    !      grid%tracker_vmax*mps2kn,grid%tracker_pmin/100.,          &
+    !      abs(grid%tracker_fixlat),get_lat_ns(grid%tracker_fixlat), &
+    !      abs(grid%tracker_fixlon),get_lon_ew(grid%tracker_fixlon), &
+    !      grid%tracker_rmw*km2nmi
+    ! call wrf_message(message)
+  end subroutine output_partial_atcfunix
+
+  subroutine get_wind_pres_intensity(grid, &
+       min_mslp,max_wind,rmw, &
+       max_wind_search_radius, min_mlsp_search_radius, clon,clat, &
+       IDS,IDE,JDS,JDE,KDS,KDE, &
+       IMS,IME,JMS,JME,KMS,KME, &
+       ITS,ITE,JTS,JTE,KTS,KTE)
+    ! This determines the maximum wind, RMW and minimum mslp in the domain.
+    USE MODULE_DOMAIN, ONLY : domain,get_ijk_from_grid
+#ifdef DM_PARALLEL
+    use module_dm, only: wrf_dm_maxval_real,wrf_dm_minval_real
+#endif
+    implicit none
+    type(domain), intent(inout) :: grid
+    real, intent(out) :: min_mslp,max_wind,rmw
+    real, intent(in) :: max_wind_search_radius, min_mlsp_search_radius,clon,clat
+    integer, intent(in) :: IDS,IDE,JDS,JDE,KDS,KDE
+    integer, intent(in) :: IMS,IME,JMS,JME,KMS,KME
+    integer, intent(in) :: ITS,ITE,JTS,JTE,KTS,KTE
+
+    real :: localextreme,globalextreme, sdistsq,windsq
+    real :: globallat,globallon,degrees
+    integer :: locali,localj,globali,globalj,ierr,i,j
+
+    ! Get the MSLP minimum location and determine if what we found is
+    ! still a storm:
+    localextreme=9e9
+    locali=-1
+    localj=-1
+    sdistsq=min_mlsp_search_radius*min_mlsp_search_radius*1e6
+    do j=jts,min(jte,jde-1)
+       do i=its,min(ite,ide-1)
+          if(grid%membrane_mslp(i,j)<localextreme .and. &
+               grid%tracker_distsq(i,j)<sdistsq) then
+             localextreme=grid%membrane_mslp(i,j)
+             locali=i
+             localj=j
+          endif
+       enddo
+    enddo
+
+    globalextreme=localextreme
+    globali=locali
+    globalj=localj
+#ifdef DM_PARALLEL
+    call wrf_dm_minval_real(globalextreme,globali,globalj)
+#endif
+    min_mslp=globalextreme
+    if(globali<0 .or. globalj<0) then
+       call wrf_message("WARNING: No membrane mslp values found that were less than 9*10^9.")
+       min_mslp=-999
+    endif
+
+    ! Get the wind maximum location.  Note that we're using the square
+    ! of the wind until after the loop to avoid the sqrt() call.
+    localextreme=-9e9
+    locali=-1
+    localj=-1
+    sdistsq=max_wind_search_radius*max_wind_search_radius*1e6
+    do j=jts,min(jte,jde-1)
+       do i=its,min(ite,ide-1)
+          if(grid%tracker_distsq(i,j)<sdistsq) then
+             windsq=grid%u10(i,j)*grid%u10(i,j) + &
+                    grid%v10(i,j)*grid%v10(i,j)
+             if(windsq>localextreme) then
+                localextreme=windsq
+                locali=i
+                localj=j
+             endif
+          endif
+       enddo
+    enddo
+    if(localextreme>0) localextreme=sqrt(localextreme)
+
+    globalextreme=localextreme
+    globali=locali
+    globalj=localj
+#ifdef DM_PARALLEL
+    call wrf_dm_maxval_real(globalextreme,globali,globalj)
+#endif
+
+    call get_lonlat(grid,globali,globalj,globallon,globallat,ierr, &
+         ids,ide, jds,jde, kds,kde, &
+         ims,ime, jms,jme, kms,kme, &
+         its,ite, jts,jte, kts,kte)
+    if(ierr/=0) then
+       call wrf_message("WARNING: Unable to find location of wind maximum.")
+       rmw=-99
+    else
+       call calcdist(clon,clat,globallon,globallat,rmw,degrees)
+    end if
+
+    ! Get the guess location for the next time:
+    max_wind=globalextreme
+    if(globali<0 .or. globalj<0) then
+       call wrf_message("WARNING: No wind values found that were greater than -9*10^9.")
+       min_mslp=-999
+    endif
+
+  end subroutine get_wind_pres_intensity
+
+  subroutine mean_motion(grid,motion_grideast,motion_gridnorth, &
+       ids,ide, jds,jde, kds,kde, &
+       ims,ime, jms,jme, kms,kme, &
+       its,ite, jts,jte, kts,kte)
+    ! This calculates the mean motion of the storm by calculating the
+    ! average wind vector at 850, 700 and 500 mbars.
+
+#ifdef DM_PARALLEL
+    use module_dm, only: wrf_dm_sum_real8, wrf_dm_sum_integer
+#endif
+    use module_wrf_error
+    USE MODULE_DOMAIN, ONLY : domain, domain_clock_get
+    implicit none
+    integer, intent(in) :: &
+         ids,ide, jds,jde, kds,kde, &
+         ims,ime, jms,jme, kms,kme, &
+         its,ite, jts,jte, kts,kte
+    type(domain), intent(in) :: grid
+    real, intent(out) :: motion_grideast,motion_gridnorth
+    integer :: count,i,j,ierr
+    real :: distsq, dist
+    real*8 :: e,n
+
+    e=0 ; n=0 ; count=0 ! east sum, north sum, count
+
+    dist = min(grid%tracker_edge_dist, max(50e3, 3e3*grid%tracker_rmw))
+    distsq = dist * dist
+
+    ! print *,'motion search radius (m) = ',dist
+    ! print *,'  considered edge dist = ',grid%tracker_edge_dist
+    ! print *,'  considered 3e3*rmw = ',3e3*grid%tracker_rmw
+    ! print *,'  considered 50e3.'
+
+    do j=jts,min(jte,jde-1)
+       do i=its,min(ite,ide-1)
+          if(grid%tracker_distsq(i,j)<distsq) then
+             count = count + 3
+             e = e + (grid%p500u(i,j) + grid%p700u(i,j) + grid%p850u(i,j))
+             n = n + (grid%p500v(i,j) + grid%p700v(i,j) + grid%p850v(i,j))
+          endif
+       enddo
+    enddo
+
+#ifdef DM_PARALLEL
+    e=wrf_dm_sum_real8(e)
+    n=wrf_dm_sum_real8(n)
+    count=wrf_dm_sum_integer(count)
+#endif
+
+    motion_grideast=e/count
+    motion_gridnorth=n/count
+
+    ! print *,'e=',e,' n=',n,' count=',count
+    ! print *,'motion: east=',motion_grideast,' north=',motion_gridnorth
+  end subroutine mean_motion
 
   subroutine fixcenter(grid,icen,jcen,calcparm,loncen,latcen, &
        iguess,jguess,longuess,latguess, &
@@ -277,7 +958,8 @@ contains
        ids,ide, jds,jde, kds,kde, &
        ims,ime, jms,jme, kms,kme, &
        ips,ipe, jps,jpe, kps,kpe)
-    ! This is the same as "fixcenter" in gettrk_main
+    ! This is the same as "fixcenter" in gettrk_main.  Original comment:
+    !
     ! ABSTRACT: This subroutine loops through the different parameters
     !           for the input storm number (ist) and calculates the 
     !           center position of the storm by taking an average of
@@ -437,7 +1119,7 @@ contains
          ims,ime, jms,jme, kms,kme, &
          ips,ipe, jps,jpe, kps,kpe)
     if(ierr/=0) then
-       write(0,*) 'bad bad naughty final (1)'
+       call wrf_message('Gave up on finding the storm location due to error in get_lonlat (1).')
        goto 999
     endif
 
@@ -469,6 +1151,7 @@ contains
          calcparm(8) .or. calcparm(9) .or. calcparm(11)) then
        continue
     else
+       ! Message copied straight from tracker:
        call wrf_message('In fixcenter, STOPPING PROCESSING for this storm.  The reason is that')
        call wrf_message('none of the fix locations for parms z850, z700, zeta 850, zeta 700')
        call wrf_message('MSLP or sfc zeta were within a reasonable distance of the guess location.')
@@ -501,7 +1184,7 @@ contains
          ims,ime, jms,jme, kms,kme, &
          ips,ipe, jps,jpe, kps,kpe)
     if(ierr/=0) then
-       write(0,*) 'bad bad naughty final (2)'
+       call wrf_message('Gave up on finding the storm location due to error in get_lonlat (2).')
        goto 999
     endif
 
@@ -553,19 +1236,30 @@ contains
 
     ! We jump here if we're giving up on finding the center
 999 continue
-    grid%tracker_fixlon=-999.0
-    grid%tracker_fixlat=-999.0
-    grid%tracker_ifix=-99
-    grid%tracker_jfix=-99
+    ! Use domain center as storm location
+    grid%tracker_ifix=ide/2
+    grid%tracker_jfix=jde/2
     grid%tracker_havefix=.false.
     grid%tracker_gave_up=.true.
+    call get_lonlat(grid,ifinal,jfinal,lonfinal,latfinal,ierr, &
+         ids,ide, jds,jde, kds,kde, &
+         ims,ime, jms,jme, kms,kme, &
+         ips,ipe, jps,jpe, kps,kpe)
+    if(ierr/=0) then
+       call wrf_error_fatal('Center of domain is not in domain (!?)')
+       goto 999
+    endif
+
+    grid%tracker_fixlon=-999.0
+    grid%tracker_fixlat=-999.0
+    
   end subroutine fixcenter
 
   subroutine get_uv_guess(grid,icen,jcen,loncen,latcen,calcparm, &
        iguess,jguess,longuess,latguess,iout,jout, &
        IDS,IDE,JDS,JDE,KDS,KDE, &
        IMS,IME,JMS,JME,KMS,KME, &
-       IPS,IPE,JPS,JPE,KPS,KPE)
+       ITS,ITE,JTS,JTE,KTS,KTE)
     ! This is a rewrite of the gettrk_main.f get_uv_guess.  Original comment:
     ! ABSTRACT: The purpose of this subroutine is to get a modified 
     !           first guess lat/lon position before searching for the 
@@ -596,7 +1290,7 @@ contains
     type(domain), intent(inout) :: grid
     integer, intent(in) :: IDS,IDE,JDS,JDE,KDS,KDE
     integer, intent(in) :: IMS,IME,JMS,JME,KMS,KME
-    integer, intent(in) :: IPS,IPE,JPS,JPE,KPS,KPE
+    integer, intent(in) :: ITS,ITE,JTS,JTE,KTS,KTE
 
     integer, intent(in) :: icen(maxtp), jcen(maxtp)
     real, intent(in) :: loncen(maxtp), latcen(maxtp)
@@ -638,6 +1332,94 @@ contains
     iout=nint(real(isum)/real(ict))
     jout=nint(real(jsum)/real(ict))
   end subroutine get_uv_guess
+
+  subroutine get_uv_center(grid,orig, &
+       iout,jout,rout,calcparm,lonout,latout, &
+       dxdymean,cparm, &
+       IDS,IDE,JDS,JDE,KDS,KDE, &
+       IMS,IME,JMS,JME,KMS,KME, &
+       IPS,IPE,JPS,JPE,KPS,KPE, &
+       iuvguess,juvguess) 
+
+    use module_wrf_error
+#ifdef DM_PARALLEL
+    use module_dm, only: wrf_dm_minval_real, wrf_dm_maxval_real, wrf_dm_sum_real
+#endif
+    USE MODULE_DOMAIN, ONLY : domain,get_ijk_from_grid
+    use module_relax
+    implicit none
+
+    integer, intent(in) :: iuvguess,juvguess
+    type(domain), intent(inout) :: grid
+    character*(*), intent(in) :: cparm
+    real, intent(in) :: dxdymean
+    real, intent(inout) :: rout
+    integer, intent(inout) :: iout,jout
+    logical, intent(inout) :: calcparm
+    real, intent(inout) :: latout,lonout
+    real, intent(in) :: orig(ims:ime,jms:jme)
+
+    integer, intent(in) :: IDS,IDE,JDS,JDE,KDS,KDE
+    integer, intent(in) :: IMS,IME,JMS,JME,KMS,KME
+    integer, intent(in) :: IPS,IPE,JPS,JPE,KPS,KPE
+
+    integer :: icen,jcen, i,j, istart,istop, jstart,jstop, ierr
+    real :: rcen, srsq
+
+    ! Restrict the search area.  By default, we search everywhere except the boundary:
+    istart=max(ids+1,ips)
+    istop=min(ide-2,ipe)
+    jstart=max(jds+2,jps)
+    jstop=min(jde-3,jpe)
+
+    ! If the guess location is given, then further restrict the search area:
+    istart=max(istart,iuvguess-nint(rads_vmag/(2.*dxdymean)))
+    istop=min(istop,iuvguess+nint(rads_vmag/(2.*dxdymean)))
+    jstart=max(jstart,juvguess-nint(rads_vmag/(2.*dxdymean)))
+    jstop=min(jstop,juvguess+nint(rads_vmag/(2.*dxdymean)))
+    
+    srsq=rads_vmag*rads_vmag*1e6
+
+    icen=-99
+    jcen=-99
+    rcen=9e9
+    do j=jstart,jstop
+       do i=istart,istop
+          if(orig(i,j)<rcen .and. grid%distsq(i,j)<srsq) then
+             rcen=orig(i,j)
+             icen=i
+             jcen=j
+          endif
+       enddo
+    enddo
+
+#ifdef DM_PARALLEL
+       call wrf_dm_minval_real(rcen,icen,jcen)
+       !write(0,*) 'global',icen,jcen,rcen
+#endif
+
+    ! Return result:
+    resultif: if(icen==-99 .or. jcen==-99) then
+       ! No center found.
+       calcparm=.false.
+       !write(0,*) 'no center found'
+    else
+       iout=icen
+       jout=jcen
+       rout=rcen
+       calcparm=.true.
+       call get_lonlat(grid,iout,jout,lonout,latout,ierr, &
+            ids,ide, jds,jde, kds,kde, &
+            ims,ime, jms,jme, kms,kme, &
+            ips,ipe, jps,jpe, kps,kpe) 
+       if(ierr/=0) then
+          !write(0,*) 'bad lonlat'
+          calcparm=.false.
+          return
+       endif
+       !write(0,*) 'center found; lon=',lonout,' lat=',latout
+    endif resultif
+  end subroutine get_uv_center
 
   subroutine find_center(grid,orig,smooth,srsq, &
        iout,jout,rout,calcparm,lonout,latout, &
@@ -725,10 +1507,13 @@ contains
        itemp=nint(1.2*111./(dxdymean*sqrt(2.)))
        ismooth=min(30,max(2,itemp))
        !write(0,*) 'wind itemp=',itemp,' ismooth=',ismooth,' dxdymean=',dxdymean
-    else
+    elseif(grid%vortex_tracker==6) then
        itemp=nint(0.3*111./(dxdymean*sqrt(2.)))
        ismooth=min(15,max(1,itemp))
        !write(0,*) 'non-wind itemp=',itemp,' ismooth=',ismooth,' dxdymean=',dxdymean
+    else
+       itemp=nint(150./(dxdymean*sqrt(2.)))
+       ismooth=min(50,max(2,itemp))
     endif
 
     ! Restrict the search area.  By default, we search everywhere except the boundary:
@@ -753,16 +1538,16 @@ contains
          IDS,IDE,JDS,JDE,KDS,KDE, &
          IMS,IME,JMS,JME,KMS,KME, &
          IPS,IPE,JPS,JPE,KPS,KPE)
-
+    
     ! Copy the smoothed data back in:
     do j=jps,min(jde-1,jpe)
        do i=ips,min(ide-1,ipe)
           smooth(i,j)=grid%relaxwork(i,j)
        enddo
     enddo
-
+       
     ! Figure out whether we're finding a min or max:
-    if(trim(cparm)=='zeta') then
+    ifmin: if(trim(cparm)=='zeta') then
        if(.not.present(north_hemi)) then
           call wrf_error_fatal('When calling module_tracker find_center for zeta, you must specify the hemisphere parameter.')
        endif
@@ -777,7 +1562,7 @@ contains
 100    format('Invalid parameter cparm="',A,'" in module_tracker find_center')
        !write(message,100) trim(cparm)
        call wrf_error_fatal(message)
-    endif
+    endif ifmin
 
 3011 format('ips=',I0,' ipe=',I0,' istart=',I0,' istop=',I0)
 3012 format('jps=',I0,' jpe=',I0,' jstart=',I0,' jstop=',I0)
@@ -787,7 +1572,7 @@ contains
     ! Find the extremum:
     icen=-99
     jcen=-99
-    if(findmin) then ! Find a minimum
+    findminmax: if(findmin) then ! Find a minimum
        rcen=9e9
        do j=jstart,jstop
           do i=istart,istop
@@ -821,10 +1606,10 @@ contains
        call wrf_dm_maxval_real(rcen,icen,jcen)
        !write(0,3014) 'global',icen,jcen,rcen
 #endif
-    endif
+    endif findminmax
 
     ! Return result:
-    if(icen==-99 .or. jcen==-99) then
+    resultif: if(icen==-99 .or. jcen==-99) then
        ! No center found.
        calcparm=.false.
        !write(0,*) 'no center found'
@@ -843,8 +1628,126 @@ contains
           return
        endif
        !write(0,*) 'center found; lon=',lonout,' lat=',latout
-    endif
+    endif resultif
   end subroutine find_center
+
+  subroutine get_tracker_distsq(grid, &
+         IDS,IDE,JDS,JDE,KDS,KDE, &
+         IMS,IME,JMS,JME,KMS,KME, &
+         ITS,ITE,JTS,JTE,KTS,KTE)
+    ! This computes approximate distances in km from the tracker
+    ! center of the various points in the domain.  It uses the same
+    ! computation as used for distsq: the calculation is done in
+    ! gridpoint space, approximating the domain as flat.
+    ! Point-to-point distances come from grid%dx_nmm and grid%dy_nmm.
+    ! This routine also determines the distance from the tracker
+    ! center location to the nearest point in the domain edge.
+#ifdef DM_PARALLEL
+    use module_dm, only: wrf_dm_minval_real
+#endif
+    USE MODULE_DOMAIN, ONLY : domain,get_ijk_from_grid
+    implicit none
+    type(domain), intent(inout) :: grid
+    character*255 message
+    integer, intent(in) :: IDS,IDE,JDS,JDE,KDS,KDE
+    integer, intent(in) :: IMS,IME,JMS,JME,KMS,KME
+    integer, intent(in) :: ITS,ITE,JTS,JTE,KTS,KTE
+    integer i,j,cx,cy,ierr
+    integer wilbur,harvey ! filler variables for a function call
+    real xfar,yfar,far,xshift,max_edge_distsq,clatr,clonr
+    real ylat1,ylat2,xlon1,xlon2,mindistsq
+
+    cx=grid%tracker_ifix
+    cy=grid%tracker_jfix
+
+    call get_lonlat(grid,cx,cy,clonr,clatr,ierr, &
+         IDS,IDE,JDS,JDE,KDS,KDE, &
+         IMS,IME,JMS,JME,KMS,KME, &
+         ITS,ITE,JTS,JTE,KTS,KTE)
+    if(ierr/=0) then
+       call wrf_error_fatal('Tracker fix location is not inside domain.')
+    end if
+
+    do j=jts,min(jte,jde-1)
+       if(mod(j,2)==1) then
+          xshift=1.
+       else
+          xshift=-1.
+       endif
+       do i=its,min(ite,ide-1)
+          xfar=(i-cx)*grid%dx_nmm(i,j)*2
+          yfar=(j-cy)*grid%dy_nmm
+          if(mod(cy-j,2) /= 0) then
+             xfar=xfar + grid%dx_nmm(i,j)*xshift
+          endif
+          far = xfar*xfar + yfar*yfar
+          GRID%tracker_distsq(i,j)=far
+       enddo
+    enddo
+
+    ! Determine angle.  Note that this is mathematical angle, not
+    ! compass angle, and is in geographic lat/lon, not rotated
+    ! lat/lon.  (Geographic East=0, geographic North=pi/2.)
+    xlon1=clonr ; ylat1=clatr
+    call clean_lon_lat(xlon1,ylat1)
+    xlon1=xlon1*pi180
+    ylat1=ylat1*pi180
+    do j=jts,min(jte,jde-1)
+       do i=its,min(ite,ide-1)
+          xlon2=grid%glon(i,j)
+          ylat2=grid%glat(i,j)
+          call clean_lon_lat(xlon2,ylat2)
+          xlon2=xlon2*pi180
+          ylat2=ylat2*pi180
+          grid%tracker_angle(i,j)=atan2(xlon2-xlon1,ylat2-ylat1)
+       enddo
+    enddo
+
+    ! Determine the distance between the center location and the
+    ! domain edge.
+    mindistsq=9e19
+    if(jts==jds) then
+       mindistsq=min(mindistsq,minval(grid%tracker_distsq(its:min(ite,ide-1),jds)))
+    endif
+    if(jte==jde) then
+       mindistsq=min(mindistsq,minval(grid%tracker_distsq(its:min(ite,ide-1),jde-1)))
+    endif
+    if(its==ids) then
+       mindistsq=min(mindistsq,minval(grid%tracker_distsq(ids,jts:min(jte,jde-1))))
+    endif
+    if(ite==ide) then
+       mindistsq=min(mindistsq,minval(grid%tracker_distsq(ide-1,jts:min(jte,jde-1))))
+    endif
+#ifdef DM_PARALLEL
+    wilbur=1
+    harvey=2
+    call wrf_dm_minval_real(mindistsq,wilbur,harvey)
+#endif
+
+    grid%tracker_edge_dist=sqrt(mindistsq)
+
+17  format('Min distance from lon=',F9.3,', lat=',F9.3,' to center is ',F19.3)
+    !print *,'Min distance from edge to center is ',grid%tracker_edge_dist
+    write(message,17) clonr, clatr, grid%tracker_edge_dist
+    call wrf_message(message)
+  end subroutine get_tracker_distsq
+
+  subroutine clean_lon_lat(xlon1,ylat1)
+    real, intent(inout) :: xlon1,ylat1
+    ! This modifies a (lat,lon) pair so that the longitude fits
+    ! between [-180,180] and the latitude between [-90,90], taking
+    ! into account spherical geometry.
+    ! NOTE: inputs and outputs are in degrees
+    xlon1=(mod(xlon1+3600.+180.,360.)-180.)
+    ylat1=(mod(ylat1+3600.+180.,360.)-180.)
+    if(ylat1>90.) then
+       ylat1=180.-ylat1
+       xlon1=mod(xlon1+360.,360.)-180.
+    elseif(ylat1<-90.) then
+       ylat1=-180. - ylat1
+       xlon1=mod(xlon1+360.,360.)-180.
+    endif
+  end subroutine clean_lon_lat
 
   subroutine calcdist(rlonb,rlatb,rlonc,rlatc,xdist,degrees)
     ! Copied from gettrk_main.f
@@ -857,11 +1760,11 @@ contains
     !               x       circle distance that angle represents.
     !              / \
     !            b/   \     cos(a) = (cos b)(cos c) + (sin b)(sin c)(cos A)
-    !            /     \                                             
+    !            /     \                                             .
     !        pt./<--A-->\c     NOTE: The latitude arguments passed to the
     !        B /         \           subr are the actual lat vals, but in
     !                     \          the calculation we use 90-lat.
-    !               a      \                                      
+    !               a      \                                      .
     !                       \pt.  NOTE: You may get strange results if you:
     !                         C    (1) use positive values for SH lats AND
     !                              you try computing distances across the 
@@ -986,5 +1889,49 @@ contains
        ierr=95
     endif
   end subroutine get_lonlat
+
+  subroutine update_tracker_post_move(grid)
+    ! This updates the tracker i/j fix location and square of the
+    ! distance to the tracker center after a nest move.
+    USE MODULE_DOMAIN, ONLY : domain,get_ijk_from_grid
+    type(domain), intent(inout) :: grid
+    integer :: ierr, &
+         IDS,IDE,JDS,JDE,KDS,KDE, &
+         IMS,IME,JMS,JME,KMS,KME, &
+         IPS,IPE,JPS,JPE,KPS,KPE
+
+    ! Get the grid bounds:
+    CALL get_ijk_from_grid (  grid ,      &
+         ids, ide, jds, jde, kds, kde,    &
+         ims, ime, jms, jme, kms, kme,    &
+         ips, ipe, jps, jpe, kps, kpe    )
+
+    ! Get the i/j center location from the fix location:
+    ierr=0
+    call get_nearest_lonlat(grid,grid%tracker_ifix,grid%tracker_jfix, &
+         ierr,grid%tracker_fixlon,grid%tracker_fixlat, &
+         IDS,IDE,JDS,JDE,KDS,KDE, &
+         IMS,IME,JMS,JME,KMS,KME, &
+         IPS,IPE,JPS,JPE,KPS,KPE)
+
+    ! Get the square of the approximate distance to the tracker center
+    ! at all points:
+    if(ierr==0) &
+         call get_tracker_distsq(grid, &
+         IDS,IDE,JDS,JDE,KDS,KDE, &
+         IMS,IME,JMS,JME,KMS,KME, &
+         IPS,IPE,JPS,JPE,KPS,KPE)
+  end subroutine update_tracker_post_move
 #endif
 end module module_tracker
+
+#if (HWRF == 1)
+subroutine nmm_med_tracker_post_move(grid)
+  ! This updates the tracker i/j fix location and square of the
+  ! distance to the tracker center after a nest move.
+  use module_tracker, only: update_tracker_post_move
+  use module_domain, only : domain
+  type(domain), intent(inout) :: grid
+  call update_tracker_post_move(grid)
+end subroutine nmm_med_tracker_post_move
+#endif

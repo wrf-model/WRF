@@ -1265,6 +1265,13 @@ okay_to_w = .false.
                   END SELECT
                   ENDIF
 
+! If desired, outputs a ready flag after quilting subroutine closes the data handle for history (wrfout) file.
+
+                  IF (fname(1:6) .EQ. 'wrfout' .AND. config_flags%output_ready_flag ) THEN
+                    OPEN (unit=99,file='wrfoutReady' // fname(7:30), status='unknown', access='sequential')
+                    CLOSE (99)
+                  ENDIF
+
 ! The I/O server "root" handles the "open_for_write_begin" request.
                 CASE ( int_open_for_write_begin )
 
@@ -2613,7 +2620,7 @@ okay_to_w = .false.
       CALL wrf_get_dm_communicator( mpi_comm_here )
 
       CALL MPI_Comm_rank ( mpi_comm_here, mytask, ierr ) ;
-      CALL mpi_x_comm_size ( mpi_comm_here, ntasks, ierr ) ;
+      CALL mpi_x_comm_size( mpi_comm_here, ntasks, ierr ) ;
 
       IF ( mytask .EQ. 0 ) THEN
         OPEN ( unit=27, file="namelist.input", form="formatted", status="old" )
@@ -2896,6 +2903,21 @@ SUBROUTINE disable_quilting
   disable_quilt = .TRUE.
   RETURN
 END SUBROUTINE disable_quilting
+
+LOGICAL FUNCTION  use_output_servers_for(ioform)
+!<DESCRIPTION>
+! Returns .TRUE. if I/O quilt servers are in-use for write operations
+! AND the output servers can handle the given I/O form.  If the I/O
+! form is 0, then the io form is not considered and the result is the
+! same as calling use_output_servers.
+! This routine is called only by client (compute) tasks.  
+!</DESCRIPTION>
+  USE module_wrf_quilt
+  integer, intent(in) :: ioform
+  use_output_servers_for = quilting_enabled
+  use_output_servers_for = ( use_output_servers_for .and. ioform<100 )
+  RETURN
+END FUNCTION use_output_servers_for
 
 LOGICAL FUNCTION  use_output_servers()
 !<DESCRIPTION>

@@ -5185,8 +5185,8 @@ END SUBROUTINE sorgam_depdriver
           dd = sqrt(disc)
           xxq = -0.5*(bb+sign(1.0,bb)*dd)
 !PMA
-          aa=max(aa,1.e-20)
-          xxq=max(xxq,1.e-20)
+!         aa=max(aa,1.e-20)
+!         xxq=max(xxq,1.e-20)
 
           rr1 = xxq/aa
           rr2 = cc/xxq

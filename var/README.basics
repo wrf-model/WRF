@@ -24,7 +24,7 @@ vi namelist.input (a very basic namelist.input for running the tutorial test cas
                    are consistent with those in your WRF settings.)
   *** Please see WRFDA/var/README.namelist for namelist descriptions. ***
 
-da_wrfvar.exe >&! wrfda.log
+da_wrfvar.exe >& wrfda.log
 
 2) To run da_update_bc.exe, follow the steps below:
 

@@ -40,8 +40,8 @@ module da_transfer_model
       t_kelvin, num_fgat_time, num_pseudo, iso_temp, interval_seconds, trajectory_io, &
       ids,ide,jds,jde,kds,kde, ims,ime,jms,jme,kms,kme, num_fft_factors, &
       its,ite,jts,jte,kts,kte, ips,ipe,jps,jpe,kps,kpe, qlimit
+   use da_control, only: base_pres_strat, base_lapse_strat
    use da_define_structures, only : xbx_type, be_type
-   use da_grid_definitions, only : da_set_map_para
    use da_par_util, only : da_patch_to_global
    use da_physics, only : da_check_rh_simple,da_roughness_from_lanu, &
       da_sfc_wtq,da_tpq_to_rh,da_trh_to_td,da_wrf_tpq_2_slp,da_integrat_dz, &

@@ -233,7 +233,7 @@ MODULE MODULE_MP_MORR_TWO_MOMENT
 CONTAINS
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE MORR_TWO_MOMENT_INIT
+SUBROUTINE MORR_TWO_MOMENT_INIT(hail_opt) ! RAS
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! THIS SUBROUTINE INITIALIZES ALL PHYSICAL CONSTANTS AMND PARAMETERS 
 ! NEEDED BY THE MICROPHYSICS SCHEME.
@@ -241,6 +241,8 @@ SUBROUTINE MORR_TWO_MOMENT_INIT
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       IMPLICIT NONE
+
+      INTEGER, INTENT(IN):: hail_opt ! RAS
 
       integer n,i
 
@@ -325,7 +327,13 @@ SUBROUTINE MORR_TWO_MOMENT_INIT
 ! IHAIL = 1, DENSE PRECIPITATING ICE IS HAIL
 ! NOTE ---> RECOMMEND IHAIL = 1 FOR CONTINENTAL DEEP CONVECTION
 
-      IHAIL = 0
+      !IHAIL = 0 !changed to namelist option (hail_opt) by RAS
+      ! Check if namelist option is feasible, otherwise default to graupel - RAS
+      IF (hail_opt .eq. 1) THEN
+         IHAIL = 1
+      ELSE
+         IHAIL = 0
+      ENDIF
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -546,6 +554,7 @@ SUBROUTINE MP_MORR_TWO_MOMENT(ITIMESTEP,                       &
                ,IMS,IME, JMS,JME, KMS,KME               & ! memory dims
                ,ITS,ITE, JTS,JTE, KTS,KTE               & ! tile   dims            )
 !jdf		   ,C2PREC3D,CSED3D,ISED3D,SSED3D,GSED3D,RSED3D & ! HM ADD, WRF-CHEM
+               ,rainprod, evapprod                      &
 		   ,QLSINK,PRECR,PRECI,PRECS,PRECG &        ! HM ADD, WRF-CHEM
                                             )
  
@@ -589,6 +598,10 @@ SUBROUTINE MP_MORR_TWO_MOMENT(ITIMESTEP,                       &
 ! QLSINK - TENDENCY OF CLOUD WATER TO RAIN, SNOW, GRAUPEL (KG/KG/S)
 ! CSED,ISED,SSED,GSED,RSED - SEDIMENTATION FLUXES (KG/M^2/S) FOR CLOUD WATER, ICE, SNOW, GRAUPEL, RAIN
 ! PRECI,PRECS,PRECG,PRECR - SEDIMENTATION FLUXES (KG/M^2/S) FOR ICE, SNOW, GRAUPEL, RAIN
+
+! rainprod - total tendency of conversion of cloud water/ice and graupel to rain (kg kg-1 s-1)
+! evapprod - tendency of evaporation of rain (kg kg-1 s-1)
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 ! reflectivity currently not included!!!!
@@ -623,6 +636,7 @@ SUBROUTINE MP_MORR_TWO_MOMENT(ITIMESTEP,                       &
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), optional,INTENT(INOUT):: qndrop
 !jdf  REAL, DIMENSION(ims:ime, kms:kme, jms:jme),INTENT(INOUT):: CSED3D, &
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), optional,INTENT(INOUT):: QLSINK, &
+                          rainprod, evapprod, &
                           PRECI,PRECS,PRECG,PRECR ! HM, WRF-CHEM
 !, effcs, effis
 
@@ -676,6 +690,7 @@ SUBROUTINE MP_MORR_TWO_MOMENT(ITIMESTEP,                       &
 
 ! wrf-chem
    REAL, DIMENSION(kts:kte) :: nc1d, nc_tend1d,C2PREC,CSED,ISED,SSED,GSED,RSED    
+   REAL, DIMENSION(kts:kte) :: rainprod1d, evapprod1d
 ! HM add reflectivity      
    REAL, DIMENSION(kts:kte) :: dBZ
                           
@@ -790,6 +805,9 @@ SUBROUTINE MP_MORR_TWO_MOMENT(ITIMESTEP,                       &
 ! ADD SEDIMENTATION TENDENCIES
                                   QGSTEN,QRSTEN,QISTEN,QNISTEN,QCSTEN, &
                                   nc1d, nc_tend1d, iinum, C2PREC,CSED,ISED,SSED,GSED,RSED & !wrf-chem
+#if (WRF_CHEM == 1)
+                                  ,rainprod1d, evapprod1d & !wrf-chem
+#endif
                        )
 
    !
@@ -844,6 +862,11 @@ SUBROUTINE MP_MORR_TWO_MOMENT(ITIMESTEP,                       &
 !          EFFIS(I,K,J)     = MIN(EFFI(I,K,J),130.)
 !          EFFIS(I,K,J)     = MAX(EFFIS(I,K,J),13.)
 
+#if ( WRF_CHEM == 1)
+           IF ( PRESENT( rainprod ) ) rainprod(i,k,j) = rainprod1d(k)
+           IF ( PRESENT( evapprod ) ) evapprod(i,k,j) = evapprod1d(k)
+#endif
+
       end do
 
 ! hm modified so that m2005 precip variables correctly match wrf precip variables
@@ -886,6 +909,9 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
                         QGSTEN,QRSTEN,QISTEN,QNISTEN,QCSTEN, &
                         nc3d,nc3dten,iinum, & ! wrf-chem
 				c2prec,CSED,ISED,SSED,GSED,RSED  &  ! hm added, wrf-chem
+#if (WRF_CHEM == 1)
+        ,rainprod, evapprod &
+#endif
                         )
 
 !CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
@@ -1197,7 +1223,11 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
         INTEGER IDROP
 
 ! FOR WRF-CHEM
-	REAL, DIMENSION(KTS:KTE)::C2PREC,CSED,ISED,SSED,GSED,RSED 
+	REAL, DIMENSION(KTS:KTE)::C2PREC,CSED,ISED,SSED,GSED,RSED
+#if (WRF_CHEM == 1)
+    REAL, DIMENSION(KTS:KTE), INTENT(INOUT) :: rainprod, evapprod
+#endif
+    REAL, DIMENSION(KTS:KTE)                :: tqimelt ! melting of cloud ice (tendency)
 
 ! comment lines for wrf-chem since these are intent(in) in that case
 !       REAL, DIMENSION(KTS:KTE) ::  NC3DTEN            ! CLOUD DROPLET NUMBER CONCENTRATION (1/KG/S)
@@ -1222,6 +1252,14 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 		SSED(K)=0.
 		GSED(K)=0.
 		RSED(K)=0.
+
+#if (WRF_CHEM == 1)
+         rainprod(K) = 0.
+         evapprod(K) = 0.
+         tqimelt(K)  = 0.
+         PRC(K)      = 0.
+         PRA(K)      = 0.
+#endif
 
 ! LATENT HEAT OF VAPORATION
 
@@ -1986,6 +2024,11 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
       QV3DTEN(K) = QV3DTEN(K)-PCC(K)
       T3DTEN(K) = T3DTEN(K)+PCC(K)*XXLV(K)/CPM(K)
       QC3DTEN(K) = QC3DTEN(K)+PCC(K)
+
+#if (WRF_CHEM == 1)
+         evapprod(k) = - PRE(K) - EVPMS(K) - EVPMG(K)
+         rainprod(k) = PRA(K) + PRC(K) + tqimelt(K)
+#endif
 
 !.......................................................................
 ! ACTIVATION OF CLOUD DROPLETS
@@ -3226,6 +3269,13 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
          NG3DTEN(K) = NG3DTEN(K)+NSUBG(K)
          NR3DTEN(K) = NR3DTEN(K)+NSUBR(K)
 
+#if (WRF_CHEM == 1)
+         evapprod(k) = - PRE(K) - EPRDS(K) - EPRDG(K) 
+         rainprod(k) = PRA(K) + PRC(K) + PSACWS(K) + PSACWG(K) + PGSACW(K) & 
+                       + PRAI(K) + PRCI(K) + PRACI(K) + PRACIS(K) + &
+                       + PRDS(K) + PRDG(K)
+#endif
+
          END IF !!!!!! TEMPERATURE
 
 ! SWITCH LTRUE TO 1, SINCE HYDROMETEORS ARE PRESENT
@@ -3705,6 +3755,9 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
         IF (QI3D(K).GE.QSMALL.AND.T3D(K).GE.273.15) THEN
            QR3D(K) = QR3D(K)+QI3D(K)
            T3D(K) = T3D(K)-QI3D(K)*XLF(K)/CPM(K)
+#if (WRF_CHEM == 1)
+           tqimelt(K)=QI3D(K)/DT
+#endif
            QI3D(K) = 0.
            NR3D(K) = NR3D(K)+NI3D(K)
            NI3D(K) = 0.

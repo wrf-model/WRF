@@ -1,10 +1,13 @@
 MODULE module_optional_input
 
    INTEGER :: flag_metgrid  , flag_tavgsfc  , flag_psfc     , flag_soilhgt  , flag_mf_xy , flag_slp , &
-              flag_snow     , flag_snowh    , flag_tsk      , flag_pinterp
+              flag_snow     , flag_snowh    , flag_tsk      , flag_pinterp  , flag_prho
 
    INTEGER :: flag_qv       , flag_qc       , flag_qr       , flag_qi       , flag_qs       , &
-              flag_qg       , flag_qh       , flag_qni      , flag_qnr      , flag_qnwfa    , flag_qnifa    , flag_sh
+              flag_qg       , flag_qh       , &
+              flag_qni      , flag_qnr      , &
+              flag_qnwfa    , flag_qnifa    , &
+              flag_sh       , flag_speccldl , flag_speccldf
 
    INTEGER :: flag_soil_levels, flag_soil_layers
 
@@ -28,6 +31,13 @@ MODULE module_optional_input
    INTEGER :: flag_lake_depth
 
    INTEGER :: flag_excluded_middle
+
+   INTEGER :: flag_um_soil
+   INTEGER :: flag_icepct
+
+   INTEGER :: flag_hgtmaxw  , flag_pmaxw    , flag_tmaxw    , flag_umaxw    , flag_vmaxw     , &
+              flag_hgttrop  , flag_ptrop    , flag_ttrop    , flag_utrop    , flag_vtrop
+   INTEGER :: flag_extra_levels
 
    INTEGER                  :: num_soil_levels_input
    INTEGER                  :: num_st_levels_input , num_sm_levels_input , num_sw_levels_input
@@ -212,6 +222,11 @@ CONTAINS
                                  ims, ime, jms, jme, kms, kme, &
                                  its, ite, jts, jte, kts, kte  )
 
+      CALL optional_levels     ( grid , fid , &
+                                 ids, ide, jds, jde, kds, kde, &
+                                 ims, ime, jms, jme, kms, kme, &
+                                 its, ite, jts, jte, kts, kte  ) 
+
       flag_soil_levels = 0 
       flag_soil_layers = 0 
 
@@ -303,6 +318,8 @@ USE module_io_domain
       flag_qnwfa    = 0
       flag_qnifa    = 0
       flag_sh       = 0
+      flag_speccldl = 0
+      flag_speccldf = 0
 
       flag_name(1:8) = 'QV      '
       CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
@@ -363,6 +380,16 @@ USE module_io_domain
       CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
       IF ( ierr .EQ. 0 ) THEN
          flag_sh       = itmp
+      END IF
+      flag_name(1:8) = 'SPECCLDL'
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_speccldl = itmp
+      END IF
+      flag_name(1:8) = 'SPECCLDF'
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_speccldf = itmp
       END IF
     
    END SUBROUTINE optional_moist
@@ -456,6 +483,100 @@ USE module_io_domain
    END SUBROUTINE optional_sst
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+   SUBROUTINE optional_levels ( grid , fid , &
+                                ids, ide, jds, jde, kds, kde, &
+                                ims, ime, jms, jme, kms, kme, &
+                                its, ite, jts, jte, kts, kte  )
+
+      USE module_io_wrf
+      USE module_domain	, ONLY : domain
+USE module_configure , ONLY : grid_config_rec_type
+USE module_io_domain
+
+      IMPLICIT NONE 
+
+      TYPE ( domain ) :: grid
+      INTEGER , INTENT(IN) :: fid
+
+      INTEGER :: ids, ide, jds, jde, kds, kde, &
+                 ims, ime, jms, jme, kms, kme, &
+                 its, ite, jts, jte, kts, kte
+
+      INTEGER :: itmp , icnt , ierr
+
+      flag_name = '                                                                                '
+
+      flag_hgtmaxw  = 0 
+      flag_pmaxw    = 0 
+      flag_tmaxw    = 0 
+      flag_umaxw    = 0 
+      flag_vmaxw    = 0 
+      flag_hgttrop  = 0 
+      flag_ptrop    = 0 
+      flag_ttrop    = 0 
+      flag_utrop    = 0 
+      flag_vtrop    = 0 
+      flag_extra_levels = 0
+
+      flag_name(1:8) = 'HGTMAXW '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_hgtmaxw  = itmp
+      END IF
+      flag_name(1:8) = 'PMAXW   '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_pmaxw    = itmp
+      END IF
+      flag_name(1:8) = 'TMAXW   '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_tmaxw    = itmp
+      END IF
+      flag_name(1:8) = 'UMAXW   '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_umaxw    = itmp
+      END IF
+      flag_name(1:8) = 'VMAXW   '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_vmaxw    = itmp
+      END IF
+      flag_name(1:8) = 'HGTTROP '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_hgttrop  = itmp
+      END IF
+      flag_name(1:8) = 'PTROP   '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_ptrop    = itmp
+      END IF
+      flag_name(1:8) = 'TTROP   '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_ttrop    = itmp
+      END IF
+      flag_name(1:8) = 'UTROP   '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_utrop    = itmp
+      END IF
+      flag_name(1:8) = 'VTROP   '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_vtrop    = itmp
+      END IF
+
+      flag_extra_levels = flag_hgtmaxw*flag_pmaxw*flag_tmaxw*flag_umaxw*flag_vmaxw* &
+                          flag_hgttrop*flag_ptrop*flag_ttrop*flag_utrop*flag_vtrop
+
+   END SUBROUTINE optional_levels
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 
    SUBROUTINE optional_lake ( grid , fid , &
                              ids, ide, jds, jde, kds, kde, &
@@ -657,6 +778,12 @@ USE module_io_domain
       IF ( ierr .EQ. 0 ) THEN
          flag_slp      = itmp
       END IF
+
+      flag_name(1:8) = 'UM_SOIL '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
+      IF ( ierr .EQ. 0 ) THEN
+         flag_um_soil  = itmp
+      END IF
     
       grid%flag_soilhgt = flag_soilhgt
       grid%flag_slp     = flag_slp 
@@ -703,6 +830,12 @@ USE module_io_domain
       CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
       IF ( ierr .EQ. 0 ) THEN
          flag_icefrac  = itmp
+      END IF
+
+      flag_name(1:8) = 'ICEPCT  '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
+      IF ( ierr .EQ. 0 ) THEN
+         flag_icepct  = itmp
       END IF
 
       flag_name(1:8) = 'ICEDEPTH'
@@ -798,6 +931,16 @@ USE module_io_domain
       CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
       IF ( ierr .EQ. 0 ) THEN
          flag_ptheta = itmp
+      END IF
+
+      flag_name = '                                                                                '
+
+      flag_prho = 0 
+
+      flag_name(1:8) = 'PRHO    '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_prho = itmp
       END IF
 
    END SUBROUTINE optional_ptheta
@@ -959,10 +1102,25 @@ USE module_io_domain
             ! Calculate mid-point of each layer and set to st_levels_input
             ! Flip the input soil depths upside down to make k=1 closest to the sfc
             !-------------------------------------------------------------
-            st_levels_input(k) = (level_above + grid%soil_layers(its,num_st_levels_input + 1 - k,jts))/2
-            sm_levels_input(k) = (level_above + grid%soil_layers(its,num_st_levels_input + 1 - k,jts))/2
-            sw_levels_input(k) = (level_above + grid%soil_layers(its,num_st_levels_input + 1 - k,jts))/2
-            level_above = grid%soil_layers(its,num_st_levels_input + 1 - k,jts)
+            !st_levels_input(k) = (level_above + grid%soil_layers(its,num_st_levels_input + 1 - k,jts))/2
+            !sm_levels_input(k) = (level_above + grid%soil_layers(its,num_st_levels_input + 1 - k,jts))/2
+            !sw_levels_input(k) = (level_above + grid%soil_layers(its,num_st_levels_input + 1 - k,jts))/2
+            !level_above = grid%soil_layers(its,num_st_levels_input + 1 - k,jts)
+            !-------------------------------------------------------------
+            ! If UM soil input, levels are cumulative (0-10cm, 0-25cm,
+            ! etc.) so we simply take the midpoint of each level - GAC
+            !-------------------------------------------------------------
+            IF ( flag_um_soil == 1 ) THEN
+              st_levels_input(k) = (grid%soil_layers(its,num_st_levels_input + 1 - k,jts))/2
+              sm_levels_input(k) = (grid%soil_layers(its,num_st_levels_input + 1 - k,jts))/2
+              sw_levels_input(k) = (grid%soil_layers(its,num_st_levels_input + 1 - k,jts))/2
+            ELSE
+              st_levels_input(k) = (level_above + grid%soil_layers(its,num_st_levels_input + 1 - k,jts))/2
+              sm_levels_input(k) = (level_above + grid%soil_layers(its,num_st_levels_input + 1 - k,jts))/2
+              sw_levels_input(k) = (level_above + grid%soil_layers(its,num_st_levels_input + 1 - k,jts))/2
+              level_above = grid%soil_layers(its,num_st_levels_input + 1 - k,jts)
+            END IF
+
          END DO
 
          !----------------------------------------------------------------
@@ -978,6 +1136,19 @@ USE module_io_domain
                END DO
             END DO
          END DO
+
+         !----------------------------------------------------------------
+         ! UM input is in kg/m2, convert to volumetric soil moisture here
+         !----------------------------------------------------------------
+         IF ( flag_um_soil == 1 ) THEN
+            DO j = jts, MIN(jde-1,jte)
+               DO k = 1, num_sm_levels_input
+                  DO i = its, MIN(ide-1,ite)
+                    sm_input(i,k+1,j)=100.*sm_input(i,k+1,j)/(2*sm_levels_input(k)*1000.)
+                  END DO
+               END DO
+            END DO
+         END IF
 
       END IF    ! flag_soil_layers == 1
 #endif

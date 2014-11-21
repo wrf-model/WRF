@@ -410,6 +410,7 @@
       REAL, OPTIONAL, INTENT(IN) :: DX, DY
       LOGICAL, OPTIONAL, INTENT(IN) :: is_start
 
+
       INTEGER:: i, j, k, l, m, n
       REAL:: h_01, niIN3, niCCN3
       LOGICAL:: micro_init, has_CCN, has_IN
@@ -433,7 +434,7 @@
 !..Check for existing aerosol data, both CCN and IN aerosols.  If missing
 !.. fill in just a basic vertical profile, somewhat boundary-layer following.
 
-      if (SUM(nwfa(its,:,jts)) .lt. eps) then
+      if (SUM(nwfa) .lt. eps) then
          write(mp_debug,*) ' Apparently there are no initial CCN aerosols.'
          CALL wrf_debug(100, mp_debug)
          write(mp_debug,*) '   checked column at point (i,j) = ', its,jts
@@ -462,7 +463,7 @@
          CALL wrf_debug(100, mp_debug)
       endif
 
-      if (SUM(nifa(its,:,jts)) .lt. eps) then
+      if (SUM(nifa) .lt. eps) then
          write(mp_debug,*) ' Apparently there are no initial IN aerosols.'
          CALL wrf_debug(100, mp_debug)
          write(mp_debug,*) '   checked column at point (i,j) = ', its,jts
@@ -2196,6 +2197,8 @@
             prr_rcg(k) = tcg_racg(idx_g1,idx_g,idx_r1,idx_r)
             prr_rcg(k) = MIN(DBLE(rg(k)*odts), prr_rcg(k))
             prg_rcg(k) = -prr_rcg(k)
+!..Put in explicit drop break-up due to collisions.
+            pnr_rcg(k) = -5.*tnr_gacr(idx_g1,idx_g,idx_r1,idx_r)         ! RAIN2M
            endif
           endif
          endif
@@ -2948,7 +2951,7 @@
             pnc_wcd(k) = 0.5*(xnc-nc(k) + abs(xnc-nc(k)))*odts*orho
 
 !+---+-----------------------------------------------------------------+ !  EVAPORATION
-           elseif (clap .lt. -eps .AND. is_aerosol_aware) then
+           elseif (clap .lt. -eps .AND. ssatw(k).lt.-1.E-6 .AND. is_aerosol_aware) then
             tempc = temp(k) - 273.15
             otemp = 1./temp(k)
             rvs = rho(k)*qvs(k)

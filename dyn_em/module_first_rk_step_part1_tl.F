@@ -48,7 +48,7 @@ CONTAINS
 !   USE module_force_scm
 !   USE module_convtrans_prep
 !   USE module_big_step_utilities_em, ONLY : phy_prep
-use module_scalar_tables
+!use module_scalar_tables
 #ifdef DM_PARALLEL
     USE module_dm, ONLY : local_communicator, mytask, ntasks, ntasks_x, ntasks_y, local_communicator_periodic, wrf_dm_maxval
     USE module_comm_dm, ONLY : halo_em_phys_a_sub,halo_em_fdda_sfc_sub,halo_em_phys_a_bl_surf_sub,halo_em_phys_a_tl_sub

@@ -345,12 +345,12 @@ compare_kpp_to_species  ( char * kpp_dirname)
           make_upper_case(name1);
        if ( strcmp (name1, kpp_third_body) == 0) {
           pm1->found_match = 2;
-           strcpy( pm1->assoc_wrf_name,  "WATER VAPOR");
+           strcpy( pm1->assoc_wrf_name,  "THIRD BODY");
            p1 -> got_air = 1;
        }
        if ( strcmp (name1, kpp_h2o) == 0) {
           pm1->found_match = 2;
-          strcpy( pm1->assoc_wrf_name,  "THIRD BODY");
+          strcpy( pm1->assoc_wrf_name,  "WATER VAPOR");
           got_h2o = 1;
        }
      }

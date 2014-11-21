@@ -290,10 +290,9 @@ em_real : wrf
                ln -sf ../../run/RRTMG_SW_DATA . ;                      \
                ln -sf ../../run/CAM_ABS_DATA . ;                       \
                ln -sf ../../run/CAM_AEROPT_DATA . ;                    \
-               cp     ../../run/CAMtr_volume_mixing_ratio.RCP8.5 CAMtr_volume_mixing_ratio ;   \
                ln -sf ../../run/CAMtr_volume_mixing_ratio.RCP4.5 . ;   \
                ln -sf ../../run/CAMtr_volume_mixing_ratio.RCP6   . ;   \
-               ln -sf ../../run/CAMtr_volume_mixing_ratio.RCP8.5 . ;   \
+               ln -sf ../../run/CAMtr_volume_mixing_ratio.RCP8.5 CAMtr_volume_mixing_ratio ;   \
                ln -sf ../../run/CAMtr_volume_mixing_ratio.A1B    . ;   \
                ln -sf ../../run/CAMtr_volume_mixing_ratio.A2     . ;   \
                ln -sf ../../run/CLM_ALB_ICE_DFS_DATA . ;               \
@@ -345,10 +344,9 @@ em_real : wrf
              ln -sf ../../run/RRTMG_SW_DATA . ;                     \
              ln -sf ../../run/CAM_ABS_DATA . ;                      \
              ln -sf ../../run/CAM_AEROPT_DATA . ;                   \
-             cp     ../../run/CAMtr_volume_mixing_ratio.RCP8.5 CAMtr_volume_mixing_ratio ;   \
              ln -sf ../../run/CAMtr_volume_mixing_ratio.RCP4.5 . ;  \
              ln -sf ../../run/CAMtr_volume_mixing_ratio.RCP6   . ;  \
-             ln -sf ../../run/CAMtr_volume_mixing_ratio.RCP8.5 . ;  \
+             ln -sf ../../run/CAMtr_volume_mixing_ratio.RCP8.5 CAMtr_volume_mixing_ratio ;   \
              ln -sf ../../run/CAMtr_volume_mixing_ratio.A1B    . ;  \
              ln -sf ../../run/CAMtr_volume_mixing_ratio.A2     . ;  \
              ln -sf ../../run/CLM_ALB_ICE_DFS_DATA . ;              \
@@ -681,7 +679,15 @@ fortran_2003_ieee_test:
 fortran_2003_iso_c_test:
 	@cd tools ; /bin/rm -f fortran_2003_iso_c_test.{exe,o} ; $(SFC) -o fortran_2003_iso_c_test.exe fortran_2003_iso_c_test.F ; cd ..
 
-### 3.b.  sub-rule to build the expimental core
+# rule used by configure to test if Fortran 2003 FLUSH intrinsic subroutine support is available
+fortran_2003_flush_test:
+	@cd tools ; /bin/rm -f fortran_2003_flush_test.{exe,o} ; $(SFC) -o fortran_2003_flush_test.exe fortran_2003_flush_test.F ; cd ..
+
+# rule used by configure to test if Fortran 2003 FLUSH intrinsic subroutine is replaced by FFLUSH (thanks xlf)
+fortran_2003_fflush_test:
+	@cd tools ; /bin/rm -f fortran_2003_fflush_test.{exe,o} ; $(SFC) -o fortran_2003_fflush_test.exe fortran_2003_fflush_test.F ; cd ..
+
+### 3.b.  sub-rule to build the experimental core
 
 # uncomment the two lines after exp_core for EXP
 exp_core :

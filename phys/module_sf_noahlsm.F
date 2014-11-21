@@ -402,6 +402,10 @@ CONTAINS
               SMCDRY = 0.40
          ENDIF
 
+         IF(RDLAI2D) THEN
+          IF (SHDFAC > 0.0 .AND. XLAI <= 0.0) XLAI = 0.01 
+         END IF
+
          IF ( SHDFAC >= SHDMAX ) THEN
             EMBRD = EMISSMAX
             IF (.NOT. RDLAI2D) THEN

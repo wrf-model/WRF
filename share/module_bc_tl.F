@@ -2267,7 +2267,7 @@ END SUBROUTINE G_RELAX_BDYTEND_CORE
 ! memory dims
 ! patch  dims
 SUBROUTINE G_FLOW_DEP_BDY_QNN(field, fieldd, u, v, config_flags, &
-&  spec_zone, ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme&
+&  spec_zone, ccn_conc, ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme&
 &  , ips, ipe, jps, jpe, kps, kpe, its, ite, jts, jte, kts, kte)
   IMPLICIT NONE
   INTEGER, INTENT(IN) :: ids, ide, jds, jde, kds, kde
@@ -2275,6 +2275,7 @@ SUBROUTINE G_FLOW_DEP_BDY_QNN(field, fieldd, u, v, config_flags, &
   INTEGER, INTENT(IN) :: ips, ipe, jps, jpe, kps, kpe
   INTEGER, INTENT(IN) :: its, ite, jts, jte, kts, kte
   INTEGER, INTENT(IN) :: spec_zone
+  REAL,    INTENT(IN) :: ccn_conc ! RAS
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: field
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: fieldd
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN) :: u
@@ -2353,7 +2354,7 @@ SUBROUTINE G_FLOW_DEP_BDY_QNN(field, fieldd, u, v, config_flags, &
             field(i, k, j) = field(i_inner, k, jbs+spec_zone)
           ELSE
             fieldd(i, k, j) = 0.0
-            field(i, k, j) = n_ccn0
+            field(i, k, j) = ccn_conc
           END IF
         END DO
       END DO
@@ -2398,7 +2399,7 @@ SUBROUTINE G_FLOW_DEP_BDY_QNN(field, fieldd, u, v, config_flags, &
             field(i, k, j) = field(i_inner, k, jbe-spec_zone)
           ELSE
             fieldd(i, k, j) = 0.0
-            field(i, k, j) = n_ccn0
+            field(i, k, j) = ccn_conc
           END IF
         END DO
       END DO
@@ -2441,7 +2442,7 @@ SUBROUTINE G_FLOW_DEP_BDY_QNN(field, fieldd, u, v, config_flags, &
               field(i, k, j) = field(ibs+spec_zone, k, j_inner)
             ELSE
               fieldd(i, k, j) = 0.0
-              field(i, k, j) = n_ccn0
+              field(i, k, j) = ccn_conc
             END IF
           END DO
         END DO
@@ -2483,7 +2484,7 @@ SUBROUTINE G_FLOW_DEP_BDY_QNN(field, fieldd, u, v, config_flags, &
               field(i, k, j) = field(ibe-spec_zone, k, j_inner)
             ELSE
               fieldd(i, k, j) = 0.0
-              field(i, k, j) = n_ccn0
+              field(i, k, j) = ccn_conc
             END IF
           END DO
         END DO

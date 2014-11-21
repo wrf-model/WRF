@@ -1159,6 +1159,8 @@ BENCH_END(g_advance_uv_tim)
                ,flag_tracer        = 0                                      &
                ,flag_scalar        = 0                                      &
                ,actual_distance_average  = .FALSE.                          &
+               ,pos_def            = .FALSE.                                &
+               ,swap_pole_with_next_j = .FALSE.                             &
                ,moist=moist,chem=chem,tracer=tracer,scalar=scalar           &
                ,fft_filter_lat = config_flags%fft_filter_lat                &
                ,dclat = dclat                                               &
@@ -1274,6 +1276,8 @@ BENCH_END(g_advance_mu_t_tim)
                 ,flag_tracer        = 0                                      &
                 ,flag_scalar        = 0                                      &
                 ,actual_distance_average  = .FALSE.                          &
+                ,pos_def            = .FALSE.                                &
+                ,swap_pole_with_next_j = .FALSE.                             &
                 ,moist=moist,chem=chem,tracer=tracer,scalar=scalar           &
                 ,fft_filter_lat = config_flags%fft_filter_lat                &
                 ,dclat = dclat                                               &
@@ -1385,6 +1389,8 @@ BENCH_END(g_advance_w_tim)
                 ,flag_tracer        = 0                                      &
                 ,flag_scalar        = 0                                      &
                 ,actual_distance_average  = .FALSE.                          &
+                ,pos_def            = .FALSE.                                &
+                ,swap_pole_with_next_j = .FALSE.                             &
                 ,moist=moist,chem=chem,tracer=tracer,scalar=scalar           &
                 ,fft_filter_lat = config_flags%fft_filter_lat                &
                 ,dclat = dclat                                               &
@@ -1671,6 +1677,8 @@ BENCH_END(g_small_step_finish_tim)
                   ,flag_tracer        = 0                                      &
                   ,flag_scalar        = 0                                      &
                   ,actual_distance_average  = .FALSE.                          &
+                  ,pos_def            = .FALSE.                                &
+                  ,swap_pole_with_next_j = .FALSE.                             &
                   ,moist=moist,chem=chem,tracer=tracer,scalar=scalar           &
                   ,fft_filter_lat = config_flags%fft_filter_lat                &
                   ,dclat = dclat                                               &
@@ -2713,6 +2721,7 @@ BENCH_END(g_tracer_adv_tim)
                CALL g_flow_dep_bdy_qnn  ( scalar(ims,kms,jms,is), g_scalar(ims,kms,jms,is), &
                                   grid%ru_m, grid%rv_m, config_flags,   &
                                   grid%spec_zone,                  &
+                                  grid%ccn_conc,              & ! RAS
                                   ids,ide, jds,jde, kds,kde,  & ! domain dims
                                   ims,ime, jms,jme, kms,kme,  & ! memory dims
                                   ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
@@ -2768,13 +2777,13 @@ BENCH_END(g_calc_p_rho_tim)
          IF ( num_3d_m >= PARAM_FIRST_SCALAR ) THEN
            CALL wrf_debug ( 200 , ' call filter moist ' )
            DO im = PARAM_FIRST_SCALAR, num_3d_m
-
+             IF ( config_flags%coupled_filtering ) THEN
              CALL couple_scalars_for_filter ( FIELD=moist(ims,kms,jms,im)              &
                     ,MU=grid%mu_2 , MUB=grid%mub                                 &
                     ,ids=ids,ide=ide,jds=jds,jde=jde,kds=kds,kde=kde             &
                     ,ims=ims,ime=ime,jms=jms,jme=jme,kms=kms,kme=kme             &
                     ,ips=ips,ipe=ipe,jps=jps,jpe=jpe,kps=kps,kpe=kpe          )
-
+             END IF
              CALL pxft ( grid=grid                                               &
                     ,lineno=__LINE__                                             &
                     ,flag_uv            = 0                                      &
@@ -2788,7 +2797,9 @@ BENCH_END(g_calc_p_rho_tim)
                     ,flag_chem          = 0                                      &
                     ,flag_scalar        = 0                                      &
                     ,flag_tracer        = 0                                      &
-                    ,actual_distance_average  = .FALSE.                          &
+                    ,actual_distance_average=config_flags%actual_distance_average&
+                    ,pos_def            = config_flags%pos_def                   &
+                    ,swap_pole_with_next_j = config_flags%swap_pole_with_next_j  &
                     ,moist=moist,chem=chem,tracer=tracer,scalar=scalar           &
                     ,fft_filter_lat = config_flags%fft_filter_lat                &
                     ,dclat = dclat                                               &
@@ -2797,26 +2808,26 @@ BENCH_END(g_calc_p_rho_tim)
                     ,ips=ips,ipe=ipe,jps=jps,jpe=jpe,kps=kps,kpe=kpe             &
                     ,imsx=imsx,imex=imex,jmsx=jmsx,jmex=jmex,kmsx=kmsx,kmex=kmex &
                     ,ipsx=ipsx,ipex=ipex,jpsx=jmsx,jpex=jpex,kpsx=kpsx,kpex=kpex )
-
+             IF ( config_flags%coupled_filtering ) THEN
              CALL uncouple_scalars_for_filter ( FIELD=moist(ims,kms,jms,im)            &
                     ,MU=grid%mu_2 , MUB=grid%mub                                 &
                     ,ids=ids,ide=ide,jds=jds,jde=jde,kds=kds,kde=kde             &
                     ,ims=ims,ime=ime,jms=jms,jme=jme,kms=kms,kme=kme             &
                     ,ips=ips,ipe=ipe,jps=jps,jpe=jpe,kps=kps,kpe=kpe          )
-
+             END IF
            END DO
          END IF
 
          IF ( num_3d_c >= PARAM_FIRST_SCALAR ) THEN
            CALL wrf_debug ( 200 , ' call filter chem ' )
            DO im = PARAM_FIRST_SCALAR, num_3d_c
-
+             IF ( config_flags%coupled_filtering ) THEN
              CALL couple_scalars_for_filter ( FIELD=chem(ims,kms,jms,im)               &
                     ,MU=grid%mu_2 , MUB=grid%mub                                 &
                     ,ids=ids,ide=ide,jds=jds,jde=jde,kds=kds,kde=kde             &
                     ,ims=ims,ime=ime,jms=jms,jme=jme,kms=kms,kme=kme             &
                     ,ips=ips,ipe=ipe,jps=jps,jpe=jpe,kps=kps,kpe=kpe           )
-
+             END IF
              CALL pxft ( grid=grid                                               &
                     ,lineno=__LINE__                                             &
                     ,flag_uv            = 0                                      &
@@ -2830,7 +2841,9 @@ BENCH_END(g_calc_p_rho_tim)
                     ,flag_chem          = im                                     &
                     ,flag_tracer        = 0                                      &
                     ,flag_scalar        = 0                                      &
-                    ,actual_distance_average  = .FALSE.                          &
+                    ,actual_distance_average=config_flags%actual_distance_average&
+                    ,pos_def            = config_flags%pos_def                   &
+                    ,swap_pole_with_next_j = config_flags%swap_pole_with_next_j  &
                     ,moist=moist,chem=chem,tracer=tracer,scalar=scalar           &
                     ,fft_filter_lat = config_flags%fft_filter_lat                &
                     ,dclat = dclat                                               &
@@ -2839,24 +2852,25 @@ BENCH_END(g_calc_p_rho_tim)
                     ,ips=ips,ipe=ipe,jps=jps,jpe=jpe,kps=kps,kpe=kpe             &
                     ,imsx=imsx,imex=imex,jmsx=jmsx,jmex=jmex,kmsx=kmsx,kmex=kmex &
                     ,ipsx=ipsx,ipex=ipex,jpsx=jmsx,jpex=jpex,kpsx=kpsx,kpex=kpex )
-
+             IF ( config_flags%coupled_filtering ) THEN
              CALL uncouple_scalars_for_filter ( FIELD=chem(ims,kms,jms,im)             &
                     ,MU=grid%mu_2 , MUB=grid%mub                                 &
                     ,ids=ids,ide=ide,jds=jds,jde=jde,kds=kds,kde=kde             &
                     ,ims=ims,ime=ime,jms=jms,jme=jme,kms=kms,kme=kme             &
                     ,ips=ips,ipe=ipe,jps=jps,jpe=jpe,kps=kps,kpe=kpe          )
-
+             END IF
            END DO
          END IF
          IF ( num_tracer >= PARAM_FIRST_SCALAR ) THEN
            CALL wrf_debug ( 200 , ' call filter tracer ' )
            DO im = PARAM_FIRST_SCALAR, num_tracer
+             IF ( config_flags%coupled_filtering ) THEN
              CALL couple_scalars_for_filter ( FIELD=tracer(ims,kms,jms,im)               &
                     ,MU=grid%mu_2 , MUB=grid%mub                                 &
                     ,ids=ids,ide=ide,jds=jds,jde=jde,kds=kds,kde=kde             &
                     ,ims=ims,ime=ime,jms=jms,jme=jme,kms=kms,kme=kme             &
                     ,ips=ips,ipe=ipe,jps=jps,jpe=jpe,kps=kps,kpe=kpe           )
-
+             END IF
              CALL pxft ( grid=grid                                               &
                     ,lineno=__LINE__                                             &
                     ,flag_uv            = 0                                      &
@@ -2870,7 +2884,9 @@ BENCH_END(g_calc_p_rho_tim)
                     ,flag_chem          = 0                                      &
                     ,flag_tracer        = im                                      &
                     ,flag_scalar        = 0                                      &
-                    ,actual_distance_average  = .FALSE.                          &
+                    ,actual_distance_average=config_flags%actual_distance_average&
+                    ,pos_def            = config_flags%pos_def                   &
+                    ,swap_pole_with_next_j = config_flags%swap_pole_with_next_j  &
                     ,moist=moist,chem=chem,tracer=tracer,scalar=scalar           &
                     ,fft_filter_lat = config_flags%fft_filter_lat                &
                     ,dclat = dclat                                               &
@@ -2879,26 +2895,26 @@ BENCH_END(g_calc_p_rho_tim)
                     ,ips=ips,ipe=ipe,jps=jps,jpe=jpe,kps=kps,kpe=kpe             &
                     ,imsx=imsx,imex=imex,jmsx=jmsx,jmex=jmex,kmsx=kmsx,kmex=kmex &
                     ,ipsx=ipsx,ipex=ipex,jpsx=jmsx,jpex=jpex,kpsx=kpsx,kpex=kpex )
-
+             IF ( config_flags%coupled_filtering ) THEN
              CALL uncouple_scalars_for_filter ( FIELD=tracer(ims,kms,jms,im)             &
                     ,MU=grid%mu_2 , MUB=grid%mub                                 &
                     ,ids=ids,ide=ide,jds=jds,jde=jde,kds=kds,kde=kde             &
                     ,ims=ims,ime=ime,jms=jms,jme=jme,kms=kms,kme=kme             &
                     ,ips=ips,ipe=ipe,jps=jps,jpe=jpe,kps=kps,kpe=kpe          )
-
+             END IF
            END DO
          END IF
 
          IF ( num_3d_s >= PARAM_FIRST_SCALAR ) THEN
            CALL wrf_debug ( 200 , ' call filter scalar ' )
            DO im = PARAM_FIRST_SCALAR, num_3d_s
-
+             IF ( config_flags%coupled_filtering ) THEN
              CALL couple_scalars_for_filter ( FIELD=scalar(ims,kms,jms,im)           &
                   ,MU=grid%mu_2 , MUB=grid%mub                                 &
                   ,ids=ids,ide=ide,jds=jds,jde=jde,kds=kds,kde=kde             &
                   ,ims=ims,ime=ime,jms=jms,jme=jme,kms=kms,kme=kme             &
                   ,ips=ips,ipe=ipe,jps=jps,jpe=jpe,kps=kps,kpe=kpe          )
-
+             END IF
              CALL pxft ( grid=grid                                             &
                   ,lineno=__LINE__                                             &
                   ,flag_uv            = 0                                      &
@@ -2912,7 +2928,9 @@ BENCH_END(g_calc_p_rho_tim)
                   ,flag_chem          = 0                                      &
                   ,flag_tracer        = 0                                      &
                   ,flag_scalar        = im                                     &
-                  ,actual_distance_average  = .FALSE.                          &
+                  ,actual_distance_average=config_flags%actual_distance_average&
+                  ,pos_def            = config_flags%pos_def                   &
+                  ,swap_pole_with_next_j = config_flags%swap_pole_with_next_j  &
                   ,moist=moist,chem=chem,tracer=tracer,scalar=scalar           &
                   ,fft_filter_lat = config_flags%fft_filter_lat                &
                   ,dclat = dclat                                               &
@@ -2921,13 +2939,13 @@ BENCH_END(g_calc_p_rho_tim)
                   ,ips=ips,ipe=ipe,jps=jps,jpe=jpe,kps=kps,kpe=kpe             &
                   ,imsx=imsx,imex=imex,jmsx=jmsx,jmex=jmex,kmsx=kmsx,kmex=kmex &
                   ,ipsx=ipsx,ipex=ipex,jpsx=jmsx,jpex=jpex,kpsx=kpsx,kpex=kpex )
-
+             IF ( config_flags%coupled_filtering ) THEN
              CALL uncouple_scalars_for_filter ( FIELD=scalar(ims,kms,jms,im)   &
                   ,MU=grid%mu_2 , MUB=grid%mub                                 &
                   ,ids=ids,ide=ide,jds=jds,jde=jde,kds=kds,kde=kde             &
                   ,ims=ims,ime=ime,jms=jms,jme=jme,kms=kms,kme=kme             &
                   ,ips=ips,ipe=ipe,jps=jps,jpe=jpe,kps=kps,kpe=kpe          )
-
+             END IF
            END DO
          END IF
        END IF ! polar filter test
@@ -3592,6 +3610,7 @@ BENCH_START(g_moist_phys_end_tim)
      IF ( num_3d_m >= PARAM_FIRST_SCALAR ) THEN
        CALL wrf_debug ( 200 , ' call filter moist' )
        DO im = PARAM_FIRST_SCALAR, num_3d_m
+         IF ( config_flags%coupled_filtering ) THEN
          DO jj = jps, MIN(jpe,jde-1)
            DO kk = kps, MIN(kpe,kde-1)
              DO ii = ips, MIN(ipe,ide-1)
@@ -3599,6 +3618,7 @@ BENCH_START(g_moist_phys_end_tim)
              ENDDO
            ENDDO
          ENDDO
+         END IF
 
          CALL pxft ( grid=grid                                                 &
                   ,lineno=__LINE__                                             &
@@ -3613,7 +3633,9 @@ BENCH_START(g_moist_phys_end_tim)
                   ,flag_chem          = 0                                      &
                   ,flag_tracer        = 0                                      &
                   ,flag_scalar        = 0                                      &
-                  ,actual_distance_average  = .FALSE.                          &
+                  ,actual_distance_average=config_flags%actual_distance_average&
+                  ,pos_def            = config_flags%pos_def                   &
+                  ,swap_pole_with_next_j = config_flags%swap_pole_with_next_j  &
                   ,moist=moist,chem=chem,tracer=tracer,scalar=scalar           &
                   ,fft_filter_lat = config_flags%fft_filter_lat                &
                   ,dclat = dclat                                               &
@@ -3622,7 +3644,7 @@ BENCH_START(g_moist_phys_end_tim)
                   ,ips=ips,ipe=ipe,jps=jps,jpe=jpe,kps=kps,kpe=kpe             &
                   ,imsx=imsx,imex=imex,jmsx=jmsx,jmex=jmex,kmsx=kmsx,kmex=kmex &
                   ,ipsx=ipsx,ipex=ipex,jpsx=jmsx,jpex=jpex,kpsx=kpsx,kpex=kpex )
-
+         IF ( config_flags%coupled_filtering ) THEN
          DO jj = jps, MIN(jpe,jde-1)
            DO kk = kps, MIN(kpe,kde-1)
              DO ii = ips, MIN(ipe,ide-1)
@@ -3630,6 +3652,7 @@ BENCH_START(g_moist_phys_end_tim)
              ENDDO
            ENDDO
          ENDDO
+         ENDIF
        ENDDO
      ENDIF
    ENDIF
@@ -3699,6 +3722,7 @@ BENCH_END(g_moist_phys_end_tim)
 
      IF ( num_3d_c >= PARAM_FIRST_SCALAR ) then
        chem_filter_loop: DO im = PARAM_FIRST_SCALAR, num_3d_c
+         IF ( config_flags%coupled_filtering ) THEN
          DO jj = jps, MIN(jpe,jde-1)
            DO kk = kps, MIN(kpe,kde-1)
              DO ii = ips, MIN(ipe,ide-1)
@@ -3706,6 +3730,7 @@ BENCH_END(g_moist_phys_end_tim)
              ENDDO
            ENDDO
          ENDDO
+         END IF
 
          CALL pxft ( grid=grid                                                 &
                   ,lineno=__LINE__                                             &
@@ -3720,7 +3745,9 @@ BENCH_END(g_moist_phys_end_tim)
                   ,flag_chem          = im                                     &
                   ,flag_tracer        = 0                                      &
                   ,flag_scalar        = 0                                      &
-                  ,actual_distance_average  = .FALSE.                          &
+                  ,actual_distance_average=config_flags%actual_distance_average&
+                  ,pos_def            = config_flags%pos_def                   &
+                  ,swap_pole_with_next_j = config_flags%swap_pole_with_next_j  &
                   ,moist=moist,chem=chem,tracer=tracer,scalar=scalar           &
                   ,fft_filter_lat = config_flags%fft_filter_lat                &
                   ,dclat = dclat                                               &
@@ -3730,6 +3757,7 @@ BENCH_END(g_moist_phys_end_tim)
                   ,imsx=imsx,imex=imex,jmsx=jmsx,jmex=jmex,kmsx=kmsx,kmex=kmex &
                   ,ipsx=ipsx,ipex=ipex,jpsx=jmsx,jpex=jpex,kpsx=kpsx,kpex=kpex )
 
+         IF ( config_flags%coupled_filtering ) THEN
          DO jj = jps, MIN(jpe,jde-1)
            DO kk = kps, MIN(kpe,kde-1)
              DO ii = ips, MIN(ipe,ide-1)
@@ -3737,10 +3765,12 @@ BENCH_END(g_moist_phys_end_tim)
              ENDDO
            ENDDO
          ENDDO
+         END IF
        ENDDO chem_filter_loop
      ENDIF
      IF ( num_tracer >= PARAM_FIRST_SCALAR ) then
        tracer_filter_loop: DO im = PARAM_FIRST_SCALAR, num_tracer
+         IF ( config_flags%coupled_filtering ) THEN
          DO jj = jps, MIN(jpe,jde-1)
            DO kk = kps, MIN(kpe,kde-1)
              DO ii = ips, MIN(ipe,ide-1)
@@ -3748,6 +3778,7 @@ BENCH_END(g_moist_phys_end_tim)
              ENDDO
            ENDDO
          ENDDO
+         END IF
 
          CALL pxft ( grid=grid                                                 &
                   ,lineno=__LINE__                                             &
@@ -3762,7 +3793,9 @@ BENCH_END(g_moist_phys_end_tim)
                   ,flag_chem          = 0                                      &
                   ,flag_tracer        = im                                    &
                   ,flag_scalar        = 0                                      &
-                  ,actual_distance_average  = .FALSE.                          &
+                  ,actual_distance_average=config_flags%actual_distance_average&
+                  ,pos_def            = config_flags%pos_def                   &
+                  ,swap_pole_with_next_j = config_flags%swap_pole_with_next_j  &
                   ,moist=moist,chem=chem,tracer=tracer,scalar=scalar           &
                   ,fft_filter_lat = config_flags%fft_filter_lat                &
                   ,dclat = dclat                                               &
@@ -3772,6 +3805,7 @@ BENCH_END(g_moist_phys_end_tim)
                   ,imsx=imsx,imex=imex,jmsx=jmsx,jmex=jmex,kmsx=kmsx,kmex=kmex &
                   ,ipsx=ipsx,ipex=ipex,jpsx=jmsx,jpex=jpex,kpsx=kpsx,kpex=kpex )
 
+         IF ( config_flags%coupled_filtering ) THEN
          DO jj = jps, MIN(jpe,jde-1)
            DO kk = kps, MIN(kpe,kde-1)
              DO ii = ips, MIN(ipe,ide-1)
@@ -3779,11 +3813,13 @@ BENCH_END(g_moist_phys_end_tim)
              ENDDO
            ENDDO
          ENDDO
+         END IF
        ENDDO tracer_filter_loop
      ENDIF
 
      IF ( num_3d_s >= PARAM_FIRST_SCALAR ) then
        scalar_filter_loop: DO im = PARAM_FIRST_SCALAR, num_3d_s
+         IF ( config_flags%coupled_filtering ) THEN
          DO jj = jps, MIN(jpe,jde-1)
            DO kk = kps, MIN(kpe,kde-1)
              DO ii = ips, MIN(ipe,ide-1)
@@ -3791,6 +3827,7 @@ BENCH_END(g_moist_phys_end_tim)
              ENDDO
            ENDDO
          ENDDO
+         END IF
 
          CALL pxft ( grid=grid                                                 &
                   ,lineno=__LINE__                                             &
@@ -3805,7 +3842,9 @@ BENCH_END(g_moist_phys_end_tim)
                   ,flag_chem          = 0                                      &
                   ,flag_tracer        = 0                                      &
                   ,flag_scalar        = im                                     &
-                  ,actual_distance_average  = .FALSE.                          &
+                  ,actual_distance_average=config_flags%actual_distance_average&
+                  ,pos_def            = config_flags%pos_def                   &
+                  ,swap_pole_with_next_j = config_flags%swap_pole_with_next_j  &
                   ,moist=moist,chem=chem,tracer=tracer,scalar=scalar           &
                   ,fft_filter_lat = config_flags%fft_filter_lat                &
                   ,dclat = dclat                                               &
@@ -3815,6 +3854,7 @@ BENCH_END(g_moist_phys_end_tim)
                   ,imsx=imsx,imex=imex,jmsx=jmsx,jmex=jmex,kmsx=kmsx,kmex=kmex &
                   ,ipsx=ipsx,ipex=ipex,jpsx=jmsx,jpex=jpex,kpsx=kpsx,kpex=kpex )
 
+         IF ( config_flags%coupled_filtering ) THEN
          DO jj = jps, MIN(jpe,jde-1)
            DO kk = kps, MIN(kpe,kde-1)
              DO ii = ips, MIN(ipe,ide-1)
@@ -3822,6 +3862,7 @@ BENCH_END(g_moist_phys_end_tim)
              ENDDO
            ENDDO
          ENDDO
+         END IF
        ENDDO scalar_filter_loop
      ENDIF
    ENDIF

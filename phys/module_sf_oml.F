@@ -90,7 +90,7 @@ CONTAINS
 
 !  time step
 
-        q=(-hfx-lh+gsw+glw-stbolt*emiss*tml*tml*tml*tml)/(rhowater*cwater)
+        q=(-hfx-lh+gsw+glw*emiss-stbolt*emiss*tml*tml*tml*tml)/(rhowater*cwater)
 !       wspd=max(sqrt(uair*uair+vair*vair),0.1)
         wspd=sqrt(uair*uair+vair*vair)
         if (wspd .lt. 1.e-10 ) then

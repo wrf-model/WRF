@@ -286,7 +286,8 @@ module da_control
    ! [3.0] Variables used in MM5 part of code:
    !---------------------------------------------------------------------------
 
-   integer            :: map_projection       ! 1=LamConf/2=PolarSte/3=Mercator
+   integer            :: map_projection       !1=LamConf/2=PolarSte/3=Mercator
+                                              !0=CylEqui/6=Cassini
    real               :: ycntr
    integer            :: coarse_ix            ! coarse domain dim in i direction.
    integer            :: coarse_jy            ! coarse domain dim in y direction.

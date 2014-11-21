@@ -26,9 +26,15 @@ subroutine da_jo_and_grady_sonde_sfc( iv, re, jo, jo_grad_y)
    jo % sonde_sfc_q = 0.0
 
    if (test_dm_exact) then
-      if (iv%info(sound)%ntotal == 0) return
+      if (iv%info(sound)%ntotal == 0) then
+         if (trace_use_dull) call da_trace_exit("da_jo_and_grady_sonde_sfc")
+         return
+      end if
    else
-      if (iv%info(sound)%nlocal < 1) return
+      if (iv%info(sound)%nlocal < 1) then
+         if (trace_use_dull) call da_trace_exit("da_jo_and_grady_sonde_sfc")
+         return
+      end if
    end if
 
    do n=1, iv%info(sound)%nlocal

@@ -626,8 +626,10 @@ reg_parse( FILE * infile )
                                    fprintf(stderr,"ERROR: %s %c function invalid.  You must specify the function to call in f=, d=, u= or s= when using the NMM cores.  The ARW interp functions do not correctly handle the E grid.\n",tokens[FIELD_SYM],x);
                                    exit(1);
                                  } else {
-                                   fprintf(stderr,"WARNING: %c interpolation unspecified for %s.  Using %s.\n",
+                                   /*  warning should no longer be needed 
+                                      fprintf(stderr,"WARNING: %c interpolation unspecified for %s.  Using %s.\n",
                                            x,tokens[FIELD_SYM],fcn_name);
+                                   */
                                  }
 #else
 				 if ( x == 'f' || x == 'd' ) strcpy(fcn_name,"interp_fcn") ;
@@ -635,6 +637,7 @@ reg_parse( FILE * infile )
 				 if ( x == 's' ) strcpy(fcn_name,"smoother") ;
 #endif
 			       }
+#if NMM_CORE==1
                                if(dims_ikj_inner(field_struct) && !strcasestr(fcn_name,"ikj")) {
                                  fprintf(stderr,"ERROR: %s %c %s: you must use IKJ interpolators for IKJ arrays.\n",
                                          tokens[FIELD_SYM],x,fcn_name);
@@ -665,6 +668,7 @@ reg_parse( FILE * infile )
                                  strcpy(field_struct->interpu_fcn_name, fcn_name ) ;
                                  strcpy(field_struct->interpu_aux_fields, aux_fields ) ;
                                }
+#endif
             }
 	    prev = x ;
 	  }

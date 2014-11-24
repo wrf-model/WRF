@@ -1402,7 +1402,7 @@ rconfig   logical pert_sas                namelist,physics      1        .false.
 rconfig   logical pert_pbl                namelist,physics      1        .false.      irh   "pert_pbl"  "ensemble choice:F, no pert, T, pert PBL"
 rconfig   real    ens_sasamp              namelist,physics     max_domains   50.      irh   "sas perturbation Amplitude"  "unit: hPa"
 rconfig   real    ens_pblamp              namelist,physics     max_domains   0.2      irh   "sas perturbation Amplitude"  "unit: 100*%"
-#endif
+endif
 
 
 # nmm variables
@@ -1836,8 +1836,10 @@ halo HALO_NMM_TERRAIN_SMOOTH   dyn_nmm      24:HRES_AVC
 
 halo HALO_NMM_MSLP dyn_nmm 24:MSLP
 
+ifdef HWRF=1
 halo HALO_NMM_VT4_MSLP  dyn_nmm 8:mslp
 halo HALO_NMM_VT4_NOISE dyn_nmm 8:mslp_noisy
+endif
 
 halo HALO_NMM_INTERP_INFO dyn_nmm 8:pd,iinfo,winfo,pint
 halo HALO_NMM_INT_UP dyn_nmm 8:pd,fis,hres_fis,sm

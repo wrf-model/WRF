@@ -877,6 +877,7 @@ real(kind=kind_phys) RO(IM),xland1(IM)
 !     COMPUTE DIFFUSION COEFFICIENTS BELOW PBL
 !
 
+#if HWRF==1
 ! -------------------------------------------------------------------------------------
 ! begin RGF modifications
 ! this is version MOD05
@@ -1007,6 +1008,7 @@ real(kind=kind_phys) RO(IM),xland1(IM)
 
 ! end RGF modifications
 ! -------------------------------------------------------------------------------------
+#endif
 
 !
 !     COMPUTE DIFFUSION COEFFICIENTS OVER PBL (FREE ATMOSPHERE)

@@ -637,6 +637,7 @@ reg_parse( FILE * infile )
 				 if ( x == 's' ) strcpy(fcn_name,"smoother") ;
 #endif
 			       }
+#if NMM_CORE==1
                                if(dims_ikj_inner(field_struct) && !strcasestr(fcn_name,"ikj")) {
                                  fprintf(stderr,"ERROR: %s %c %s: you must use IKJ interpolators for IKJ arrays.\n",
                                          tokens[FIELD_SYM],x,fcn_name);
@@ -667,6 +668,7 @@ reg_parse( FILE * infile )
                                  strcpy(field_struct->interpu_fcn_name, fcn_name ) ;
                                  strcpy(field_struct->interpu_aux_fields, aux_fields ) ;
                                }
+#endif
             }
 	    prev = x ;
 	  }

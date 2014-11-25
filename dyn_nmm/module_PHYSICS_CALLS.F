@@ -1373,6 +1373,7 @@
      &          ,TH10=TH10,TH2=TH2X,T2=T2,THZ0=THZ0,TH_PHY=TH_PHY       &
      &          ,TMN=TG,TSHLTR=TSHLTR,TSK=TSFC,TSLB=STC,T_PHY=T_PHY     &
      &          ,U10=U10,UDRUNOFF=BGROFF,UST=USTAR,UZ0=UZ0H             &
+     &          ,ICOEF_SF=CONFIG_FLAGS%ICOEF_SF,LCURR_SF=CONFIG_FLAGS%LCURR_SF &
      &          ,U_FRAME=U_FRAME,U_PHY=U_PHY,V10=V10,VEGFRA=VGFRCK      &
      &          ,UOCE=UOCE,VOCE=VOCE                                    &
      &          ,VZ0=VZ0H,V_FRAME=V_FRAME,V_PHY=V_PHY                   &

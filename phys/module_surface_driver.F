@@ -27,8 +27,9 @@ CONTAINS
      &          ,smcrel                                               &
      &          ,th10,th2,thz0,th_phy,tmn,tshltr,tsk,tslb             &
      &          ,tyr,tyra,tdly,tlag,lagday,nyear,nday,tmn_update,yr   &
-     &          ,t_phy,u10,udrunoff,ust,uz0,u_frame,u_phy,v10,vegfra  &
-     &          ,uoce,voce                                            &
+     &          ,t_phy,u10,udrunoff,ust,uz0                           &
+     &          ,icoef_sf,lcurr_sf                                    &
+     &          ,u_frame,u_phy,v10,vegfra,uoce,voce                                            &
      &          ,vz0,v_frame,v_phy,warm_rain,wspd,xice,xland,z,znt    &
      &          ,max_edom,cplmask                                     &
 #if (HWRF==1)
@@ -543,6 +544,7 @@ CONTAINS
 
    INTEGER, INTENT(IN)::   NLCAT, mosaic_lu, mosaic_soil
    INTEGER, INTENT(IN)::   NSCAT
+   INTEGER, INTENT(IN)::   ICOEF_SF
    INTEGER,  INTENT(IN )  :: LakeModel
    REAL,     INTENT(IN)   :: lake_min_elev
 
@@ -573,6 +575,7 @@ CONTAINS
    CHARACTER(LEN=*), INTENT(IN ), OPTIONAL :: MMINLU
    LOGICAL, INTENT(IN )::   WARM_RAIN
    LOGICAL, INTENT(IN)::   tice2tsk_if2cold
+   LOGICAL, INTENT(IN)::   LCURR_SF
    INTEGER, INTENT(INOUT ),OPTIONAL ::   NYEAR
    REAL   , INTENT(INOUT ),OPTIONAL ::   NDAY
    INTEGER, INTENT(IN ),OPTIONAL ::   YR
@@ -2192,6 +2195,7 @@ CONTAINS
                    UST,PSIM,PSIH,                                         &  
                    XLAND,HFX,QFX,TAUX,TAUY,LH,GSW,GLW,TSK,FLHC,FLQC,  & ! gopal's doing for Ocean coupling
                    QGH,QSFC,U10,V10,                              &
+                   ICOEF_SF, LCURR_SF,                            &
                    GZ1OZ0,WSPD,BR,ISFFLX,                         &
                    EP_1,EP_2,KARMAN,GFDL_NTSFLG,SFENTH,           &
                    ids,ide, jds,jde, kds,kde,                     &

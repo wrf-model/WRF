@@ -1395,6 +1395,10 @@ endif
 
 rconfig   integer random_seed             namelist,physics     max_domains    0       irh    "random_seed"  "random number generator seed"
 
+rconfig   integer icoef_sf                namelist,physics     max_domains    0       irh012     3  "icoef     _sf"   "Option for exchange coefficients in the surface flux scheme" ""
+rconfig   logical lcurr_sf                namelist,physics     max_domains    .false. irh012     3  "lcurr     _sf"   "Option to include ocean currents in the surface flux calculations" ""
+
+
 ifdef HWRF=1
 #added by Zhan Zhang for perturbings for SAS and PBL
 rconfig   integer ens_random_seed         namelist,physics     max_domains   -1       irh   "ens_random_seed"  "ensemble random number generator initial seed"

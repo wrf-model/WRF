@@ -860,7 +860,7 @@ real(kind=kind_phys) RO(IM),xland1(IM)
                RBINT = (RBCR(I)-RBDN(I))/(RBUP(I)-RBDN(I))
             ENDIF
             HPBL(I) = ZL(I,K-1) + RBINT*(ZL(I,k)-ZL(I,K-1))
-#if HWRF==1
+#if (HWRF==1)
 !zhang adding PBL perturtion
             if ( pert_pbl_local ) then
             rr=(2.0*ens_pblamp_local*ran1(ens_random_seed_local)-ens_pblamp_local)
@@ -877,7 +877,7 @@ real(kind=kind_phys) RO(IM),xland1(IM)
 !     COMPUTE DIFFUSION COEFFICIENTS BELOW PBL
 !
 
-#if HWRF==1
+#if (HWRF==1)
 ! -------------------------------------------------------------------------------------
 ! begin RGF modifications
 ! this is version MOD05
@@ -901,6 +901,7 @@ real(kind=kind_phys) RO(IM),xland1(IM)
        ENDDO ! i
 
       endif ! ALPHA < 0
+#endif
 
 
       DO I=1,IM			! RGF SWAPPED ORDER.  TESTED - NO IMPACT
@@ -941,6 +942,7 @@ real(kind=kind_phys) RO(IM),xland1(IM)
         ENDDO ! K
 
 
+#if (HWRF==1)
 ! possible modification of first guess DKU, under certain conditions
 ! (1) this applies only to columns over water
 
@@ -1003,12 +1005,11 @@ real(kind=kind_phys) RO(IM),xland1(IM)
          endif ! KPBL(I).ge.kLOC
         endif ! alpha < 0
         endif ! xland1 = 2
-
+#endif
       ENDDO ! DO I
 
 ! end RGF modifications
 ! -------------------------------------------------------------------------------------
-#endif
 
 !
 !     COMPUTE DIFFUSION COEFFICIENTS OVER PBL (FREE ATMOSPHERE)

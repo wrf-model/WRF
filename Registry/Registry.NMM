@@ -427,6 +427,8 @@ state  real   AKMS_OUT  ij    dyn_nmm   1    -     rh023       "AKMS_OUT"  "Outp
 #
 # module_PHYS
 #
+state  real   Cd_out    ij    dyn_nmm   1    -     rh023       "Cd_OUT"  "sfc exch coeff for momentum"        "m2 s-1"
+state  real   Ch_out    ij    dyn_nmm   1    -     rh023       "Ch_OUT"  "sfc exch coeff for heat"            "m2 s-1"
 state  real   albase    ij    dyn_nmm   1    -     i01rh023d=(DownCopy) "ALBASE"    "Base albedo"            ""
 state  real   albedo    ij    dyn_nmm   1    -     irh023      "ALBEDO"    "Dynamic albedo"         ""
 state  real   cnvbot    ij    dyn_nmm   1    -     irh023      "CNVBOT"    "Lowest convec cloud bottom lyr between outputs"  ""

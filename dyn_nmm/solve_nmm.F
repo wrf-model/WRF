@@ -1709,6 +1709,7 @@
      &            ,GRID%DISHEAT,GRID%DKU3D,GRID%DKT3D                          &
      &            ,GRID%HPBL2D, GRID%EVAP2D, GRID%HEAT2D,GRID%RC2D               &  !S&P Kwon
      &            ,GRID%SFCHEADRT,GRID%INFXSRT,GRID%SOLDRAIN           &  !Hydrology, no-op right now
+     &            ,grid%Cd_out,grid%Ch_out                             &
      &            ,IDS,IDF,JDS,JDF,KDS,KDE                             &
      &            ,IMS,IME,JMS,JME,KMS,KME                             &
      &            ,IPS,IPE,JPS,JPE,KPS,KPE                             &

@@ -258,6 +258,7 @@ CONTAINS
      &          ,G_URB2D_mosaic,RN_URB2D_mosaic                       &  !danli mosaic 
      &          ,TS_URB2D_mosaic                                      &  !danli mosaic 
      &          ,TS_RUL2D_mosaic                                      &  !danli mosaic     
+     &          ,Cd_out,Ch_out                                        &  
      &                                                             )
               
 #if ( ! NMM_CORE == 1 )
@@ -1068,6 +1069,8 @@ CONTAINS
                                                              CHS, &
                                                              CPM, &
                                                             CHS2, &
+                                                          Cd_out, &
+                                                          Ch_out, &
                                                             CQS2
 ! SSIB local variables
    REAL ZDIFF
@@ -1317,6 +1320,8 @@ CONTAINS
          CHS(i,j) = 0.
          CPM(i,j) = 0.
          CHS2(i,j) = 0.
+         Cd_out(i,j) = 0.
+         Ch_out(i,j) = 0.
       ENDDO
     ENDDO
   ENDDO
@@ -2198,6 +2203,7 @@ CONTAINS
                    ICOEF_SF, LCURR_SF,                            &
                    GZ1OZ0,WSPD,BR,ISFFLX,                         &
                    EP_1,EP_2,KARMAN,GFDL_NTSFLG,SFENTH,           &
+                   Cd_out,Ch_out,                                 &
                    ids,ide, jds,jde, kds,kde,                     &
                    ims,ime, jms,jme, kms,kme,                             &
                    i_start(ij),i_end(ij),j_start(ij),j_end(ij),kts,kte    )

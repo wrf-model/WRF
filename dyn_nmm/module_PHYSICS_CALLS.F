@@ -747,6 +747,7 @@
      &                ,DISHEAT,DKU3D,DKT3D                              &
      &                ,HPBL2D, EVAP2D, HEAT2D,RC2D                      &  !Kwon S&P
      &                ,SFCHEADRT,INFXSRT,SOLDRAIN                       &  !Hydrology, no-op right now
+     &                ,Cd_out,Ch_out                                    &
      &                ,IDS,IDE,JDS,JDE,KDS,KDE                          &
      &                ,IMS,IME,JMS,JME,KMS,KME                          &
      &                ,IPS,IPE,JPS,JPE,KPS,KPE                          &
@@ -880,6 +881,8 @@
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: GRNFLX,QWBS,RADOT  &
                                                     ,SFCEXC,SMSTAV      &
                                                     ,SOILTB,TWBS
+
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: Cd_out,Ch_out
 !
 
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: taux, tauy
@@ -1488,6 +1491,7 @@
      &        ,tkdry3d=grid%tkdry3d,tksatu3d=grid%tksatu3d, LakeModel=grid%sf_lake_physics,  lake_min_elev=grid%lake_min_elev  &
 ! end lake module
      &        ,maxpatch=1,inest=1,history_interval=config_flags%history_interval  & !clm
+     &        ,Cd_out=grid%cd_out,Ch_out=grid%ch_out                              & 
 
      &                                                          )
 !

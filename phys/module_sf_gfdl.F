@@ -19,6 +19,7 @@ CONTAINS
                      ICOEF_SF, LCURR_SF,                        & 
                      GZ1OZ0,WSPD,BR,ISFFLX,                     &
                      EP1,EP2,KARMAN,NTSFLG,SFENTH,              &
+                     Cd_out,Ch_out,                             &
                      ids,ide, jds,jde, kds,kde,                 &
                      ims,ime, jms,jme, kms,kme,                 &
                      its,ite, jts,jte, kts,kte                  )
@@ -123,6 +124,8 @@ CONTAINS
                                         TSK,                            &
                                         BR,                             &
                                         CHS,                            &
+                                        Cd_out,                         &
+                                        Ch_out,                         &
                                         CHS2,                           &
                                         CPM,                            &
                                         CQS2,                           &
@@ -420,6 +423,8 @@ CONTAINS
         fh2(i)         = karman*xxfh2(i)            
         ch(i)      = karman*karman/(fm(i) * fh(i))
         cm(i)      = cdm(i)
+        Cd_out(i,j) = cm(i)
+        Ch_out(i,j) = ch(i)
         U10(i,j)=U10M(i)
         V10(i,j)=V10M(i)
         BR(i,j)=rib(i)

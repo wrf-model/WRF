@@ -68,7 +68,7 @@ MODULE module_driver_constants
 
    !  The maximum number of outer iterations (for DA minimisation)
 
-   INTEGER , PARAMETER :: max_outer_iterations = 10
+   INTEGER , PARAMETER :: max_outer_iterations = 100
 
    !  The maximum number of instruments (for radiance DA)
 

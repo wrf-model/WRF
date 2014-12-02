@@ -1915,14 +1915,14 @@ CONTAINS
 
         DO j=jts,jte
         DO i=its,ite
-           ACLWUPT(I,J) = ACLWUPT(I,J) + LWUPT(I,J)*DT
-           ACLWUPTC(I,J) = ACLWUPTC(I,J) + LWUPTC(I,J)*DT
-           ACLWDNT(I,J) = ACLWDNT(I,J) + LWDNT(I,J)*DT
-           ACLWDNTC(I,J) = ACLWDNTC(I,J) + LWDNTC(I,J)*DT
-           ACLWUPB(I,J) = ACLWUPB(I,J) + LWUPB(I,J)*DT
-           ACLWUPBC(I,J) = ACLWUPBC(I,J) + LWUPBC(I,J)*DT
-           ACLWDNB(I,J) = ACLWDNB(I,J) + LWDNB(I,J)*DT
-           ACLWDNBC(I,J) = ACLWDNBC(I,J) + LWDNBC(I,J)*DT
+           ACLWUPT(I,J) = ACLWUPT(I,J) + LWUPT(I,J)*RADT*60
+           ACLWUPTC(I,J) = ACLWUPTC(I,J) + LWUPTC(I,J)*RADT*60
+           ACLWDNT(I,J) = ACLWDNT(I,J) + LWDNT(I,J)*RADT*60
+           ACLWDNTC(I,J) = ACLWDNTC(I,J) + LWDNTC(I,J)*RADT*60
+           ACLWUPB(I,J) = ACLWUPB(I,J) + LWUPB(I,J)*RADT*60
+           ACLWUPBC(I,J) = ACLWUPBC(I,J) + LWUPBC(I,J)*RADT*60
+           ACLWDNB(I,J) = ACLWDNB(I,J) + LWDNB(I,J)*RADT*60
+           ACLWDNBC(I,J) = ACLWDNBC(I,J) + LWDNBC(I,J)*RADT*60
         ENDDO
         ENDDO
    ENDDO

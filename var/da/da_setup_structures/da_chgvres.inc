@@ -42,6 +42,7 @@ subroutine da_chgvres(nlath,nsig,kz,sigmah,sigma_avn,&
       agv_kz=agv_avn
       bv_kz=bv_avn
       wgv_kz=wgv_avn
+      if (trace_use) call da_trace_exit("da_chgvres")
       return
    end if
 

@@ -190,6 +190,7 @@ subroutine da_set_obs_missing (iv, n)
          end if
       end do
    case default
+      if (trace_use) call da_trace_exit("da_set_obs_missing")
       return
    end select
 

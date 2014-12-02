@@ -1564,6 +1564,7 @@
      &               ,DZ8W=DZ,Z=Z,TKE_PBL=TKE,EL_PBL=EL_MYJ,F=F       &
      &               ,EXCH_H=EXCH_H,EXCH_M=EXCH_M,AKHS=AKHS,AKMS=AKMS &
      &               ,FM=FM,FHH=FH                                    &
+     &               ,YSU_TOPDOWN_PBLMIX=CONFIG_FLAGS%YSU_TOPDOWN_PBLMIX &
      &               ,THZ0=THZ0,QZ0=QZ0,UZ0=UZ0H,VZ0=VZ0H             &
      &               ,QSFC=QS,LOWLYR=LOWLYR                           &
      &               ,PSIM=PSIM,PSIH=PSIH,GZ1OZ0=GZ1OZ0               &
@@ -2068,9 +2069,9 @@
 !
       REAL,INTENT(IN) :: DT
 !
-      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: HBM2,UZ0H,VZ0H
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: HBM2,UZ0H,VZ0H
 !
-      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(IN) :: DUDT,DVDT
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT) :: DUDT,DVDT
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: UZ0,VZ0
 !
@@ -2975,6 +2976,7 @@
 !
       REAL,DIMENSION(:,:,:,:),ALLOCATABLE :: MOIST_TRANS
       REAL,DIMENSION(:,:,:,:),ALLOCATABLE :: SCALAR_TRANS
+      REAL,DIMENSION(:,:,:),  ALLOCATABLE :: W_TRANS
 !
       LOGICAL                        :: diag_flag
       LOGICAL :: E_BDY,F_QT,QT_PRESENT,WARM_RAIN, have_tg_tp, have_swath
@@ -2985,6 +2987,7 @@
 !
       ALLOCATE(MOIST_TRANS(IMS:IME,KMS:KME,JMS:JME,N_MOIST),STAT=ISTAT)
       ALLOCATE(SCALAR_TRANS(IMS:IME,KMS:KME,JMS:JME,N_SCALAR),STAT=ISTAT)
+      ALLOCATE(W_TRANS(IMS:IME,KMS:KME,JMS:JME))
 !
 !-----------------------------------------------------------------------
 !***  TRANSPOSE THE MOIST ARRAY (IJK) FOR THE PHYSICS (IKJ).
@@ -3001,6 +3004,13 @@
         ENDDO
         ENDDO
       ENDDO
+      do k=kts,kte
+      do j=jts,jte
+      do i=its,ite
+         w_trans(i,k,j)=max(grid%w(i,j,k),grid%w_tot(i,j,k))
+      enddo
+      enddo
+      enddo
 !
 !-----------------------------------------------------------------------
 !
@@ -3098,7 +3108,7 @@
      &                  TH=TH_PHY,RHO=RR,PI_PHY=PI_PHY,P=P_PHY          &
      &                 ,RAINNC=RAINNC,RAINNCV=RAINNCV                   &
      &                 ,DZ8W=DZ,P8W=P8W,DT=DTPHS,DX=DX,DY=DY            &
-     &                 ,W=grid%W                                        &
+     &                 ,W=w_trans                                       &
      &                 ,MP_PHYSICS=CONFIG_FLAGS%MP_PHYSICS              &
      &                 ,SPECIFIED=CONFIG_FLAGS%SPECIFIED                &
      &                        .OR.CONFIG_FLAGS%NESTED                   &

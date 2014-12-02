@@ -54,7 +54,7 @@ contains
     if(grid%swath_mode==1) then
       ! Check swath area of interest configuration, correct errors and
       ! give meaningful error messages:
-       if(grid%interest_storms .and. vortex_tracker/=6 .and. vortex_tracker/=7) then
+       if(grid%interest_storms/=0 .and. vortex_tracker/=6 .and. vortex_tracker/=7) then
           grid%interest_storms=0
           if(vortex_tracker==2) then
              if(grid%interest_kids/=0) then

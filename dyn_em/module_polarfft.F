@@ -66,6 +66,8 @@ SUBROUTINE pxft ( grid                          &
                  ,flag_scalar                   &
                  ,fft_filter_lat, dclat         &
                  ,actual_distance_average       &
+                 ,pos_def                       &
+                 ,swap_pole_with_next_j         &
                  ,moist,chem,tracer,scalar      &
                  ,ids,ide,jds,jde,kds,kde       &
                  ,ims,ime,jms,jme,kms,kme       &
@@ -115,6 +117,8 @@ SUBROUTINE pxft ( grid                          &
 integer, intent(in) :: lineno
 integer myproc, i, j, k
    LOGICAL, INTENT(IN) :: actual_distance_average
+   LOGICAL, INTENT(IN) :: pos_def
+   LOGICAL, INTENT(IN) :: swap_pole_with_next_j
    INTEGER, INTENT(IN) :: ids,ide,jds,jde,kds,kde       &
                          ,ims,ime,jms,jme,kms,kme       &
                          ,ips,ipe,jps,jpe,kps,kpe       &
@@ -256,6 +260,7 @@ call wrf_get_myproc(myproc)
      IF ( actual_distance_average ) THEN
         CALL filter_tracer ( grid%t_xxx , grid%clat_xxx , grid%mf_xxx , &
                              grid%fft_filter_lat , grid%mf_fft , &
+                             pos_def, swap_pole_with_next_j , &
                              ids, ide, jds, jde, kds, kde , & 
                              imsx, imex, jmsx, jmex, kmsx, kmex, &
                              ipsx, ipex, jpsx, jpex, kpsx, kpex )
@@ -275,6 +280,7 @@ call wrf_get_myproc(myproc)
      IF ( actual_distance_average ) THEN
         CALL filter_tracer ( grid%t_2 , grid%clat , grid%msft , &
                              grid%fft_filter_lat , grid%mf_fft , &
+                             pos_def, swap_pole_with_next_j , &
                              ids, ide, jds, jde, kds, kde , & 
                              ims, ime, jms, jme, kms, kme, &
                              ips, ipe, jps, jpe, kps, k_end )
@@ -406,6 +412,15 @@ call wrf_get_myproc(myproc)
                            ids, ide, jds, jde, kds, kde,       &
                            imsx, imex, jmsx, jmex, kmsx, kmex, &
                            ipsx, ipex, jpsx, jpex, kpsx, MIN(kpex,kde-1) )
+
+     IF ( actual_distance_average ) THEN
+        CALL filter_tracer ( grid%fourd_xxx , grid%clat_xxx , grid%mf_xxx , &
+                             grid%fft_filter_lat , grid%mf_fft , &
+                             pos_def, swap_pole_with_next_j , &
+                             ids, ide, jds, jde, kds, kde , & 
+                             imsx, imex, jmsx, jmex, kmsx, kmex, &
+                             ipsx, ipex, jpsx, jpex, kpsx, kpex )
+     END IF
 # include "XPOSE_POLAR_FILTER_MOIST_x2z.inc"
 #else
      CALL polar_filter_3d( moist(ims,kms,jms,itrace), grid%clat, .false.,     &
@@ -413,6 +428,15 @@ call wrf_get_myproc(myproc)
                            ids, ide, jds, jde, kds, kde,       &
                            ims, ime, jms, jme, kms, kme, &
                            ips, ipe, jps, jpe, kps, MIN(kpe,kde-1) )
+
+     IF ( actual_distance_average ) THEN
+        CALL filter_tracer ( moist(ims,kms,jms,itrace) , grid%clat , grid%msft , &
+                             grid%fft_filter_lat , grid%mf_fft , &
+                             pos_def, swap_pole_with_next_j , &
+                             ids, ide, jds, jde, kds, kde , & 
+                             ims, ime, jms, jme, kms, kme, &
+                             ips, ipe, jps, jpe, kps, MIN(kpe,kde-1) )
+     END IF
 #endif
    ENDIF
 
@@ -427,6 +451,15 @@ call wrf_get_myproc(myproc)
                            ids, ide, jds, jde, kds, kde,       &
                            imsx, imex, jmsx, jmex, kmsx, kmex, &
                            ipsx, ipex, jpsx, jpex, kpsx, MIN(kpex,kde-1) )
+
+     IF ( actual_distance_average ) THEN
+        CALL filter_tracer ( grid%fourd_xxx , grid%clat_xxx , grid%mf_xxx , &
+                             grid%fft_filter_lat , grid%mf_fft , &
+                             pos_def, swap_pole_with_next_j , &
+                             ids, ide, jds, jde, kds, kde , & 
+                             imsx, imex, jmsx, jmex, kmsx, kmex, &
+                             ipsx, ipex, jpsx, jpex, kpsx, kpex )
+     END IF
 # include "XPOSE_POLAR_FILTER_CHEM_x2z.inc"
 #else
      CALL polar_filter_3d( chem(ims,kms,jms,itrace), grid%clat, .false. ,     &
@@ -434,6 +467,15 @@ call wrf_get_myproc(myproc)
                            ids, ide, jds, jde, kds, kde,       &
                            ims, ime, jms, jme, kms, kme, &
                            ips, ipe, jps, jpe, kps, MIN(kpe,kde-1) )
+
+     IF ( actual_distance_average ) THEN
+        CALL filter_tracer ( chem(ims,kms,jms,itrace) , grid%clat , grid%msft , &
+                             grid%fft_filter_lat , grid%mf_fft , &
+                             pos_def, swap_pole_with_next_j , &
+                             ids, ide, jds, jde, kds, kde , & 
+                             ims, ime, jms, jme, kms, kme, &
+                             ips, ipe, jps, jpe, kps, MIN(kpe,kde-1) )
+     END IF
 #endif
    ENDIF
 
@@ -453,6 +495,7 @@ call wrf_get_myproc(myproc)
      IF ( actual_distance_average ) THEN
         CALL filter_tracer ( grid%fourd_xxx , grid%clat_xxx , grid%mf_xxx , &
                              grid%fft_filter_lat , grid%mf_fft , &
+                             pos_def, swap_pole_with_next_j , &
                              ids, ide, jds, jde, kds, kde , & 
                              imsx, imex, jmsx, jmex, kmsx, kmex, &
                              ipsx, ipex, jpsx, jpex, kpsx, kpex )
@@ -469,6 +512,7 @@ call wrf_get_myproc(myproc)
      IF ( actual_distance_average ) THEN
         CALL filter_tracer ( tracer(ims,kms,jms,itrace) , grid%clat , grid%msft , &
                              grid%fft_filter_lat , grid%mf_fft , &
+                             pos_def, swap_pole_with_next_j , &
                              ids, ide, jds, jde, kds, kde , & 
                              ims, ime, jms, jme, kms, kme, &
                              ips, ipe, jps, jpe, kps, MIN(kpe,kde-1) )
@@ -487,6 +531,15 @@ call wrf_get_myproc(myproc)
                            ids, ide, jds, jde, kds, kde,       &
                            imsx, imex, jmsx, jmex, kmsx, kmex, &
                            ipsx, ipex, jpsx, jpex, kpsx, MIN(kpex,kde-1) )
+
+     IF ( actual_distance_average ) THEN
+        CALL filter_tracer ( grid%fourd_xxx , grid%clat_xxx , grid%mf_xxx , &
+                             grid%fft_filter_lat , grid%mf_fft , &
+                             pos_def, swap_pole_with_next_j , &
+                             ids, ide, jds, jde, kds, kde , & 
+                             imsx, imex, jmsx, jmex, kmsx, kmex, &
+                             ipsx, ipex, jpsx, jpex, kpsx, kpex )
+     END IF
 # include "XPOSE_POLAR_FILTER_SCALAR_x2z.inc"
 #else
      CALL polar_filter_3d( scalar(ims,kms,jms,itrace) , grid%clat, .false. ,     &
@@ -494,6 +547,15 @@ call wrf_get_myproc(myproc)
                            ids, ide, jds, jde, kds, kde,       &
                            ims, ime, jms, jme, kms, kme, &
                            ips, ipe, jps, jpe, kps, MIN(kpe,kde-1) )
+
+     IF ( actual_distance_average ) THEN
+        CALL filter_tracer ( scalar(ims,kms,jms,itrace) , grid%clat , grid%msft , &
+                             grid%fft_filter_lat , grid%mf_fft , &
+                             pos_def, swap_pole_with_next_j , &
+                             ids, ide, jds, jde, kds, kde , & 
+                             ims, ime, jms, jme, kms, kme, &
+                             ips, ipe, jps, jpe, kps, MIN(kpe,kde-1) )
+     END IF
 #endif
    ENDIF
 
@@ -749,6 +811,7 @@ END SUBROUTINE polar_filter_fft_2d_ncar
 
    SUBROUTINE filter_tracer ( tr3d_in , xlat , msftx , &
                               fft_filter_lat , mf_fft , &
+                              pos_def , swap_pole_with_next_j , &
                               ids , ide , jds , jde , kds , kde , &
                               ims , ime , jms , jme , kms , kme , &
                               its , ite , jts , jte , kts , kte )
@@ -762,15 +825,17 @@ END SUBROUTINE polar_filter_fft_2d_ncar
       REAL , INTENT(IN) :: fft_filter_lat , mf_fft
       REAL , DIMENSION(ims:ime,kms:kme,jms:jme) , INTENT(INOUT) :: tr3d_in
       REAL , DIMENSION(ims:ime,jms:jme) , INTENT(IN) :: xlat , msftx
+      LOGICAL , INTENT(IN) :: pos_def , swap_pole_with_next_j
 
 
       !  Local vars
 
       INTEGER :: i , j , j_lat_pos , j_lat_neg , k
       INTEGER :: i_kicker , ik , i1, i2, i3, i4
-      INTEGER :: i_left , i_right , ii
+      INTEGER :: i_left , i_right , ii , count
       REAL :: length_scale , sum
       REAL , DIMENSION(its:ite,jts:jte) :: tr_in, tr_out
+      CHARACTER (LEN=256) :: message
 
       !  The filtering is a simple average on a latitude loop.  Possibly a LONG list of
       !  numbers.  We assume that ALL of the 2d arrays have been transposed so that
@@ -787,10 +852,10 @@ END SUBROUTINE polar_filter_fft_2d_ncar
 
       j_lat_neg = 0
       j_lat_pos = jde + 1
-      loop_neg : DO j = jts , MIN(jde-1,jte)
+      loop_neg : DO j = MIN(jde-1,jte) , jts , -1
          IF ( xlat(its,j) .LT. 0.0 ) THEN
-            IF ( ABS(xlat(its,j)) .LT. fft_filter_lat ) THEN
-               j_lat_neg = j - 1
+            IF ( ABS(xlat(its,j)) .GE. fft_filter_lat ) THEN
+               j_lat_neg = j 
                EXIT loop_neg
             END IF
          END IF
@@ -818,12 +883,14 @@ END SUBROUTINE polar_filter_fft_2d_ncar
          !  Filter the fields at the negative lats.
    
          DO j = MIN(j_lat_neg,jte) , jts , -1
-            i_kicker = MIN( MAX ( NINT(msftx(its,j)/2) , 1 ) , (ide - ids) / 2 )
-!           i_kicker = MIN( MAX ( NINT(msftx(its,j)/mf_fft/2) , 1 ) , (ide - ids) / 2 )
-!           print *,'SOUTH j = ' , j, ', kicker = ',i_kicker
+!           i_kicker = MIN( MAX ( NINT(msftx(its,j)/2) , 1 ) , (ide - ids) / 2 )
+            i_kicker = MIN( MAX ( NINT(msftx(its,j)/mf_fft/2) , 1 ) , (ide - ids) / 2 )
+!           WRITE (message,FMT='(a,i4,a,i4,f6.2,1x,f6.1,f6.1)') 'DAVE SOUTH j = ' , j, ', kicker = ',i_kicker,xlat(its,j),msftx(its,j),mf_fft
+!           CALL wrf_debug ( 0 , TRIM(message) )
             DO i = its , MIN(ide-1,ite)
                sum = 0.
-               DO ik = 1 , i_kicker
+               count = 0
+               DO ik = 1 , i_kicker/2
                   ii = i-ik
                   IF ( ii .GE. ids ) THEN
                      i_left = ii
@@ -837,20 +904,23 @@ END SUBROUTINE polar_filter_fft_2d_ncar
                      i_right = ( ii - (ide-1) ) + its-1
                   END IF
                   sum = sum + tr_in(i_left,j) + tr_in(i_right,j)
+                  count = count + 1
                END DO
-               tr_out(i,j) = ( tr_in(i,j) + sum ) / REAL ( 2 * i_kicker + 1 )
+               tr_out(i,j) = ( tr_in(i,j) + sum ) / REAL ( 2 * count + 1 )
             END DO
          END DO
    
          !  Filter the fields at the positive lats.
    
          DO j = MAX(j_lat_pos,jts) , MIN(jde-1,jte)
-            i_kicker = MIN( MAX ( NINT(msftx(its,j)/2) , 1 ) , (ide - ids) / 2 )
-!           i_kicker = MIN( MAX ( NINT(msftx(its,j)/mf_fft/2) , 1 ) , (ide - ids) / 2 )
-!           print *,'NORTH j = ' , j, ', kicker = ',i_kicker
+!           i_kicker = MIN( MAX ( NINT(msftx(its,j)/2) , 1 ) , (ide - ids) / 2 )
+            i_kicker = MIN( MAX ( NINT(msftx(its,j)/mf_fft/2) , 1 ) , (ide - ids) / 2 )
+!           WRITE (message,FMT='(a,i4,a,i4,f6.2,1x,f6.1,f6.1)') 'DAVE NORTH j = ' , j, ', kicker = ',i_kicker,xlat(its,j),msftx(its,j),mf_fft
+!           CALL wrf_debug ( 0 , TRIM(message) )
             DO i = its , MIN(ide-1,ite)
+               count = 0
                sum = 0.
-               DO ik = 1 , i_kicker
+               DO ik = 1 , i_kicker/2
                   ii = i-ik
                   IF ( ii .GE. ids ) THEN
                      i_left = ii
@@ -864,8 +934,9 @@ END SUBROUTINE polar_filter_fft_2d_ncar
                      i_right = ( ii - (ide-1) ) + its-1
                   END IF
                   sum = sum + tr_in(i_left,j) + tr_in(i_right,j)
+                  count = count + 1
                END DO
-               tr_out(i,j) = ( tr_in(i,j) + sum ) / REAL ( 2 * i_kicker + 1 )
+               tr_out(i,j) = ( tr_in(i,j) + sum ) / REAL ( 2 * count + 1 )
             END DO
          END DO
    
@@ -876,6 +947,33 @@ END SUBROUTINE polar_filter_fft_2d_ncar
                tr3d_in(i,k,j) = tr_out(i,j)
             END DO
          END DO
+   
+         !  Positive definite on scalars?
+   
+         IF ( pos_def ) THEN
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  tr3d_in(i,k,j) = MAX( tr3d_in(i,k,j) , 0. )
+               END DO
+            END DO
+         END IF
+   
+         !  Remove values at j=1 and j=jde-1 locations, set them to the rows just next to them.
+   
+         IF ( swap_pole_with_next_j ) THEN
+            IF  ( jts .EQ. jds ) THEN
+               DO i = its , MIN(ide-1,ite)
+                  tr3d_in(i,k,jts) = tr3d_in(i,k,jts+1)
+               END DO
+            END IF
+   
+            IF  ( jte .EQ. jde ) THEN
+               DO i = its , MIN(ide-1,ite)
+                  tr3d_in(i,k,jte-1) = tr3d_in(i,k,jte-2)
+               END DO
+            END IF
+         END IF
+
       END DO ! k-loop
 
    END SUBROUTINE filter_tracer

@@ -176,7 +176,6 @@ state    real  e_so4i_num      i+jf     emis_ant     1         Z      i5      "E
 state    real  e_num_a3        i+jf     emis_ant     1         Z      i5      "E_NUM_A3"            "COARSE MODE NUMBER"      "particle/m2/s"
 state    real  e_dms           i+jf     emis_ant     1         Z      i5r     "E_DMS"               "EMISSIONS"               "mol km^-2 hr^-1"
 
-
 # soiltexturef is texture category fraction for each grid cell
 state    real  ust_t         ij       misc         1         -      i012rh "UST_T"               "Threshold Friction Velocity"          "m s-1"
 state    real  rough_cor     ij       misc         1         -      rh      "Rough_cor"     "roughness elements correction"        ""
@@ -248,6 +247,34 @@ state   real    ebio_ch4wet     ivjf     eghg_bio       1        Z       h      
 state   real    ebio_ch4soil    ivjf     eghg_bio       1        Z       h       "EBIO_CH4SOIL"  "CH4 soil uptake fluxes"                     "mol km^-2 hr^-1"
 state   real    ebio_ch4term    ivjf     eghg_bio       1        Z       h       "EBIO_CH4TERM"  "CH4 termite emissions"                      "mol km^-2 hr^-1"
 
+#Additional CB05 emission variables
+state    real  e_hcl          i+jf     emis_ant     1         Z      i5     "E_HCL"                "EMISSIONS HCL"                 "mol km^-2 hr^-1"
+state    real  e_aldx         i+jf     emis_ant     1         Z      i5h     "E_ALDX"               "EMISSIONS ALDX"                "mol km^-2 hr^-1"
+state    real  e_par          i+jf     emis_ant     1         Z      i5h     "E_PAR"                "EMISSIONS PAR"                 "mol km^-2 hr^-1"
+state    real  e_ole          i+jf     emis_ant     1         Z      i5h     "E_OLE"                "EMISSIONS OLE"                 "mol km^-2 hr^-1"
+state    real  e_iole         i+jf     emis_ant     1         Z      i5h     "E_IOLE"               "EMISSIONS IOLE"                "mol km^-2 hr^-1"
+state    real  e_form         i+jf     emis_ant     1         Z      i5h     "E_FORM"               "EMISSIONS FORM"                "mol km^-2 hr^-1"
+state    real  e_etha         i+jf     emis_ant     1         Z      i5h     "E_ETHA"               "EMISSIONS ETHA"                "mol km^-2 hr^-1"
+state    real  e_etoh         i+jf     emis_ant     1         Z      i5     "E_ETOH"               "EMISSIONS ETOH"                "mol km^-2 hr^-1"
+state    real  e_ald2         i+jf     emis_ant     1         Z      i5h     "E_ALD2"               "EMISSIONS ALD2"                "mol km^-2 hr^-1"
+state    real  e_meo2         i+jf     emis_ant     1         Z      i5h     "E_MEO2"               "EMISSIONS MEO2"                "mol km^-2 hr^-1"
+state    real  e_psulf        i+jf     emis_ant     1         Z      i5     "E_PSULF"              "EMISSIONS PSULF"               "mol km^-2 hr^-1"
+state    real  e_ccooh        i+jf     emis_ant     1         Z      i5     "E_CCOOH"              "EMISSIONS CCOOH"               "mol km^-2 hr^-1"
+state    real  e_iprod        i+jf     emis_ant     1         Z      i5     "E_IPROD"              "EMISSIONS IPROD"               "mol km^-2 hr^-1"
+
+state    real  e_hg2         i+jf     emis_ant     1         Z      i5     "E_HG2"               "EMISSIONS HG2"                "mol km^-2 hr^-1"
+state    real  e_hg0         i+jf     emis_ant     1         Z      i5     "E_HG0"               "EMISSIONS HG0"                "mol km^-2 hr^-1"
+state    real  e_fmcl         i+jf     emis_ant     1         Z      i5     "E_FMCL"               "EMISSIONS FMCL"                "mol km^-2 hr^-1"
+state    real  e_hgp          i+jf     emis_ant     1         Z      i5     "E_HGP"                "EMISSIONS HGP"                 "ug/m3 m/s"
+
+state    real  e_apin         i+jf     emis_ant     1         Z      i5     "E_APIN"               "EMISSIONS a-Pinene"            "mol km^-2 hr^-1"
+state    real  e_bpin         i+jf     emis_ant     1         Z      i5     "E_BPIN"               "EMISSIONS b-Pinene"            "mol km^-2 hr^-1"
+state    real  e_lim          i+jf     emis_ant     1         Z      i5     "E_LIM"                "EMISSIONS Limonene"            "mol km^-2 hr^-1"
+state    real  e_ter          i+jf     emis_ant     1         Z      i5     "E_TER"                "EMISSIONS Terpinene"           "mol km^-2 hr^-1"
+state    real  e_oci          i+jf     emis_ant     1         Z      i5     "E_OCI"                "EMISSIONS Ocimene"             "mol km^-2 hr^-1"
+state    real  e_hum          i+jf     emis_ant     1         Z      i5     "E_HUM"                "EMISSIONS Humulene"            "mol km^-2 hr^-1"
+
+
 # dust and seas emission arrays
 state   real     -          i{dust}jf      emis_dust      -        -        -         -                    "Dust Emissions"         ""
 state    real  edust1       i{dust}jf      emis_dust      1         Z      -     "EDUST1"         "DUST emissions bin1"  ""
@@ -260,6 +287,12 @@ state    real  eseas1       i{dust}jf      emis_seas      1         Z      -    
 state    real  eseas2       i{dust}jf      emis_seas      1         Z      -     "ESEAS2"         "Sea-Salt emissions bin2 "  ""
 state    real  eseas3       i{dust}jf      emis_seas      1         Z      -     "ESEAS3"         "Sea-Salt emissions bin3 "  ""
 state    real  eseas4       i{dust}jf      emis_seas      1         Z      -     "ESEAS4"         "Sea-Salt emissions bin4 "  ""
+
+# seas emission diagnositic for seas_opt==2
+state   real     -          i{dust}jf      emis_seas2      -        -        -         -                    "Sea-Salt Emissions"         ""
+state    real  eseasj       i{dust}jf      emis_seas2      1         Z      h     "ESEASJ"         "Sea-Salt emissions accu mode "  "g/m2/s"
+state    real  eseasc       i{dust}jf      emis_seas2      1         Z      h     "ESEASC"         "Sea-Salt emissions coarse mode "  "g/m2/s"
+
 #
 # volcanic ash emissions
 #
@@ -460,6 +493,12 @@ state   real     -            ikjf     asym_par     -         -      -       -  
 state   real  asympar3        ikjf     asym_par     1         Z      -     "ASYMPAR3"                "assymetry parameter for .3um"  "?"
 state   real  asympar55       ikjf     asym_par     1         Z      -     "ASYMPAR55"               "assymetry parameter for .55um"  "?"
 state   real  asympar106      ikjf     asym_par     1         Z      -     "ASYMPAR106"              "assymetry parameter for 1.06um"  "?"
+
+#for dep outputs
+state    real  ddlen          ijo     misc        1         Z      rh       "DRY_DEP_LEN"       "dry deposition velocity"           "cm/s"
+state    real  ddflx          ijo     misc        1         Z      rh       "DRY_DEP_FLUX"      "dry deposition flux"             "mol or ug m^-2"
+state    real  wdflx          ijo     misc        1         Z      rh       "WET_DEP_FLUX"      "column wet scavening flux"       "mmol or ug m^-2"
+
 #
 state    real  e_bio          ijo     misc        1         Z      r        "E_BIO"             "EMISSIONS"             "ppm m/min"
 state    real  sebio_iso      ij      misc        1         -      i06r     "sebio_iso"         "Reference biog emiss"  "mol km^-2 hr^-1"
@@ -770,6 +809,14 @@ state    real  ddmass_cvbsoa2  i%jf      dvel          1         -      rdu    "
 state    real  ddmass_cvbsoa3  i%jf      dvel          1         -      rdu    "ddmass_cvbsoa3"    "CVBSOA3 dry deposition, accumulated"  "mol/m2"
 state    real  ddmass_cvbsoa4  i%jf      dvel          1         -      rdu    "ddmass_cvbsoa4"    "CVBSOA4 dry deposition, accumulated"  "mol/m2"
 
+#CB05/VBS/SORG
+state    real  ddmass_so4aj      i%jf      dvel          1         -      rhdu    "ddmass_so4aj"    "so4aj dry deposition, accumulated"  "ug/m2"
+state    real  ddmass_so4ai      i%jf      dvel          1         -      rhdu    "ddmass_so4ai"    "so4ai dry deposition, accumulated"  "ug/m2"
+state    real  ddmass_no3aj      i%jf      dvel          1         -      rhdu    "ddmass_no3aj"    "no3aj dry deposition, accumulated"  "ug/m2"
+state    real  ddmass_no3ai      i%jf      dvel          1         -      rhdu    "ddmass_no3ai"    "no3ai dry deposition, accumulated"  "ug/m2"
+state    real  ddmass_nh4aj      i%jf      dvel          1         -      rhdu    "ddmass_nh4aj"    "nh4aj dry deposition, accumulated"  "ug/m2"
+state    real  ddmass_nh4ai      i%jf      dvel          1         -      rhdu    "ddmass_nh4ai"    "nh4ai dry deposition, accumulated"  "ug/m2"
+
 state    real  ddmass_so4_a01      i%jf      dvel          1         -      rdu    "ddmass_so4_a01"    "so4_a01 dry deposition, accumulated"  "ug/m2"
 state    real  ddmass_no3_a01      i%jf      dvel          1         -      rdu    "ddmass_no3_a01"    "no3_a01 dry deposition, accumulated"  "ug/m2"
 state    real  ddmass_cl_a01       i%jf      dvel          1         -      rdu    "ddmass_cl_a01"    "cl_a01 dry deposition, accumulated"  "ug/m2"
@@ -1021,6 +1068,12 @@ state    real  pm10           ikj     misc        1         -      h        "pm1
 state    real  uvrad          ij      misc        1         -      -        "uv_rad "               "uvb net-radiation"                   "W m^-2"
 state    real  tcosz          ij      misc        1         -      -        "TCOSZ "               "daily average cossza"                   "?"
 state    real  ttday          ij      misc        1         -      -        "TTDAY "               ""                   "?"
+
+#soa diagnostic
+state    real  tsoa           ikj     misc        1         -      rh       "TSOA"                 "soa dry mass"              "ug m^-3"
+state    real  bsoa           ikj     misc        1         -      rh       "BSOA"                 "bsoa dry mass"              "ug m^-3"
+state    real  asoa           ikj     misc        1         -      rh       "ASOA"                 "asoa dry mass"              "ug m^-3"
+
 # dms_0 is the dms concentration in the ocean (aqueous phase) and it should be in the unit of nM/L (1.e-9mol/L) 
 state    real  dms_0          ij      misc        1         -      i08rh    "DMS_0 "               "dms oceanic concentrations"           "nM/L"
 
@@ -1128,6 +1181,11 @@ state    real  ph_alkooh       ikj     misc        1         -      -        "PH
 state    real  ph_mekooh       ikj     misc        1         -      -        "PHOTR132"              "mekooh photolysis rate" "min{-1}"
 state    real  ph_tolooh       ikj     misc        1         -      -        "PHOTR133"              "tolooh photolysis rate" "min{-1}"
 state    real  ph_terpooh      ikj     misc        1         -      -        "PHOTR134"              "terpooh photolysis rate" "min{-1}"
+# cb05cl photolysis rates
+state    real  ph_cl2          ikj     misc        1         -      h        "PHOTR201"              "cl2 photolysis rate" "min{-1}"
+state    real  ph_hocl         ikj     misc        1         -      h        "PHOTR202"              "hocl photolysis rate" "min{-1}"
+state    real  ph_fmcl         ikj     misc        1         -      h        "PHOTR203"              "fmcl photolysis rate" "min{-1}"
+
 #
 # Aerosol optical properties from Mie code for rrtmg radiation
 state    real  extaerlw1         ikj     misc        1         -      r       "LWEXTAER1"          "layer extinction coef"  "1/km"
@@ -1489,6 +1547,7 @@ state   real   xo2n        ikjftb   chem        1         -   i0{12}rhusdf=(bdy_
 state   real   pna         ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "pna"           "PNA  mixing ratio"        "ppmv"
 state   real   o           ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "o"             "o    mixing ratio"        "ppmv"
 state   real   o1d_cb4     ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "o1d_cb4"       "o1d_cb4 mixing ratio"     "ppmv"
+
 #Additional MOZART gas variables inside the chem array...
 state   real   n2o         ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "n2o"           "N2O  mixing ratio"        "ppmv"
 state   real   ch3ooh      ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "ch3ooh"        "CH3OOH  mixing ratio"        "ppmv"
@@ -1895,6 +1954,64 @@ state   real    ma_rco3         ikjftb  chem    1       -       i0{12}rhusdf=(bd
 state   real    voca            ikjftb  chem    1       -       i0{12}rhusdf=(bdy_interp:dt) "voca"   "VOCA mixing ratio"    "ppmv"
 state   real    vocbb           ikjftb  chem    1       -       i0{12}rhusdf=(bdy_interp:dt) "vocbb"  "VOCBB mixing ratio"    "ppmv"
 
+#Additional CB05 gas variables inside the chem array
+
+state   real   o1d         ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "o1d"           "O1D concentration"         "ppmv"
+state   real   oh          ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "oh"            "OH concentration"          "ppmv"
+state   real   ntr         ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "ntr"           "NTR concentration"         "ppmv"
+state   real   form        ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "form"          "FORM concentration"        "ppmv"
+state   real   aldx        ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "aldx"          "ALDX concentration"        "ppmv"
+state   real   mepx        ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "mepx"          "MEPX concentration"        "ppmv"
+state   real   hco3        ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "hco3"          "HCO3 concentration"        "ppmv"
+state   real   facd        ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "facd"          "FACD concentration"        "ppmv"
+state   real   pacd        ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "pacd"          "PACD concentration"        "ppmv"
+state   real   aacd        ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "aacd"          "AACD concentration"        "ppmv"
+state   real   cxo3        ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "cxo3"          "CXO3 concentration"        "ppmv"
+state   real   panx        ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "panx"          "PANX concentration"        "ppmv"
+state   real   iole        ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "iole"          "IOLE concentration"        "ppmv"
+state   real   tolaer1     ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "tolaer1"       "TOLAER1 concentration"     "ppmv"
+state   real   tolaer2     ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "tolaer2"       "TOLAER2 concentration"     "ppmv"
+state   real   cslaer      ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "cslaer"        "CSLAER concentration"      "ppmv"
+state   real   xylaer1     ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "xylaer1"       "XYLAER1 concentration"     "ppmv"
+state   real   xylaer2     ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "xylaer2"       "XYLAER2 concentration"     "ppmv"
+state   real   isop        ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "isop"          "ISOP concentration"        "ppmv"
+state   real   ispd        ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "ispd"          "ISPD concentration"        "ppmv"
+state   real   isoaer1     ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "isoaer1"       "ISOAER1 concentration"     "ppmv"
+state   real   isoaer2     ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "isoaer2"       "ISOAER2 concentration"     "ppmv"
+state   real   sulaer      ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "sulaer"        "SULAER concentration"      "ppmv"
+state   real   etha        ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "etha"          "ETHA concentration"        "ppmv"
+state   real   terpaer     ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "terpaer"       "TERPAER concentration"     "ppmv"
+state   real   hum         ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "hum"           "HUM concentration"         "ppmv"
+state   real   humaer      ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "humaer"        "HUMAER concentration"      "ppmv"
+state   real   limaer1     ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "limaer1"       "LIMAER1 concentration"     "ppmv"
+state   real   limaer2     ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "limaer2"       "LIMAER2 concentration"     "ppmv"
+state   real   oci         ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "oci"           "OCI concentration"         "ppmv"
+state   real   ociaer1     ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "ociaer1"       "OCIAER1 concentration"     "ppmv"
+state   real   ociaer2     ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "ociaer2"       "OCIAER2 concentration"     "ppmv"
+state   real   apinaer1    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "apinaer1"      "APINAER1 concentration"    "ppmv"
+state   real   apinaer2    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "apinaer2"      "APINAER2 concentration"    "ppmv"
+state   real   apinaer3    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "apinaer3"      "APINAER3 concentration"    "ppmv"
+state   real   apinaer4    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "apinaer4"      "APINAER4 concentration"    "ppmv"
+state   real   bpinaer1    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "bpinaer1"      "BPINAER1 concentration"    "ppmv"
+state   real   bpinaer2    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "bpinaer2"      "BPINAER2 concentration"    "ppmv"
+state   real   bpinaer3    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "bpinaer3"      "BPINAER3 concentration"    "ppmv"
+state   real   bpinaer4    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "bpinaer4"      "BPINAER4 concentration"    "ppmv"
+state   real   bpinaer5    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "bpinaer5"      "BPINAER5 concentration"    "ppmv"
+state   real   ter         ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "ter"           "TER concentration"         "ppmv"
+state   real   teraer1     ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "teraer1"       "TERAER1 concentration"     "ppmv"
+state   real   teraer2     ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "teraer2"       "TERAER2 concentration"     "ppmv"
+state   real   alkh        ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "alkh"          "ALKH concentration"        "ppmv"
+state   real   alkhaer1    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "alkhaer1"      "ALKHAER1 concentration"    "ppmv"
+state   real   pah         ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "pah"           "PAH concentration"         "ppmv"
+state   real   pahaer1     ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "pahaer1"       "PAHAER1 concentration"     "ppmv"
+state   real   pahaer2     ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "pahaer2"       "PAHAER2 concentration"     "ppmv"
+state   real   hg0         ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "hg0"           "HG0 concentration"         "ppmv"
+state   real   hg2         ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "hg2"           "HG2 concentration"         "ppmv"
+state   real   fmcl        ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "fmcl"           "FMCL concentration"         "ppmv"
+state   real   cl        ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "cl"           "CL concentration"         "ppmv"
+state   real   cl2        ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "cl2"           "CL2 concentration"         "ppmv"
+state   real   hocl        ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "hocl"           "HOCL concentration"         "ppmv"
+state   real   clo        ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "clo"           "CLO concentration"         "ppmv"
 
 #Aerosol variables inside the chem array...
 # the first two are for simple advection of total pm25 and pm10 mass
@@ -1998,6 +2115,26 @@ state   real   soilcw      ikjftb   chem        1         -   i0{12}rhusdf=(bdy_
 state   real   nu0cw       ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "nu0cw"          "Aitken mode number in cloud"         "#/kg-dryair"
 state   real   ac0cw       ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "ac0cw"          "Accumulation mode number in cloud"         "#/kg-dryair"
 state   real   corncw      ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "corncw"         "Coarse mode number in cloud"        "#/kg-dryair"
+
+# new cloud phase species for MADE/SORG-VBS
+state   real   asoa1cwj    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "asoa1cwj"       "SOA Anth. org. conc. with  C* value=1    ug/m^3 Acc. mode in cloud"    "ug/kg-dryair"
+state   real   asoa1cwi    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "asoa1cwi"       "SOA Anth. org. conc. with  C* value=1    ug/m^3 Aitken mode in cloud"    "ug/kg-dryair"
+state   real   asoa2cwj    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "asoa2cwj"       "SOA Anth. org. conc. with  C* value=10   ug/m^3 Acc. mode in cloud"    "ug/kg-dryair"
+state   real   asoa2cwi    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "asoa2cwi"       "SOA Anth. org. conc. with  C* value=10   ug/m^3 Aitken mode in cloud"    "ug/kg-dryair"
+state   real   asoa3cwj    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "asoa3cwj"       "SOA Anth. org. conc. with  C* value=100  ug/m^3 Acc. mode in cloud"    "ug/kg-dryair"
+state   real   asoa3cwi    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "asoa3cwi"       "SOA Anth. org. conc. with  C* value=100  ug/m^3 Aitken mode in cloud"    "ug/kg-dryair"
+state   real   asoa4cwj    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "asoa4cwj"       "SOA Anth. org. conc. with  C* value=1000 ug/m^3 Acc. mode in cloud"    "ug/kg-dryair"
+state   real   asoa4cwi    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "asoa4cwi"       "SOA Anth. org. conc. with  C* value=1000 ug/m^3 Aitken mode in cloud"    "ug/kg-dryair"
+state   real   bsoa1cwj    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "bsoa1cwj"       "SOA Biog. org. conc. with  C* value=1    ug/m^3 Acc. mode in cloud"     "ug/kg-dryair"
+state   real   bsoa1cwi    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "bsoa1cwi"       "SOA Biog. org. conc. with  C* value=1    ug/m^3 Aitken mode in cloud"     "ug/kg-dryair"
+state   real   bsoa2cwj    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "bsoa2cwj"       "SOA Biog. org. conc. with  C* value=10   ug/m^3 Acc. mode in cloud"     "ug/kg-dryair"
+state   real   bsoa2cwi    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "bsoa2cwi"       "SOA Biog. org. conc. with  C* value=10   ug/m^3 Aitken mode in cloud"     "ug/kg-dryair"
+state   real   bsoa3cwj    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "bsoa3cwj"       "SOA Biog. org. conc. with  C* value=100  ug/m^3 Acc. mode in cloud"     "ug/kg-dryair"
+state   real   bsoa3cwi    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "bsoa3cwi"       "SOA Biog. org. conc. with  C* value=100  ug/m^3 Aitken mode in cloud"     "ug/kg-dryair"
+state   real   bsoa4cwj    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "bsoa4cwj"       "SOA Biog. org. conc. with  C* value=1000 ug/m^3 Acc. mode in cloud"     "ug/kg-dryair"
+state   real   bsoa4cwi    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "bsoa4cwi"       "SOA Biog. org. conc. with  C* value=1000 ug/m^3 Aitken mode in cloud"     "ug/kg-dryair"
+
+
 #cms++ additional species from RACM-MIM (Geiger et al., Atmos. Env., 2003)
 state   real   hace        ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)        "hace"              "HACE concentration"      "ppm"
 state   real   ishp        ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)        "ishp"              "ISHP concentration"      "ppm"
@@ -3279,6 +3416,8 @@ rconfig   logical     scale_fire_emiss    namelist,chem          max_domains    
 rconfig   integer     aer_ra_feedback     namelist,chem          max_domains    0       rh    "aer_ra_feedback"     ""      ""
 rconfig   integer     aer_op_opt          namelist,chem          max_domains    1       rh    "aer_op_opt"          ""      ""
 rconfig   integer     opt_pars_out        namelist,chem          1    0       h    "opt_pars_out"          ""      ""
+rconfig   integer     diagnostic_dep      namelist,chem          max_domains    0       rh    "diagnostic_dep"     ""      ""
+
 # aircraft emissions
 rconfig   integer    aircraft_emiss_opt           namelist,chem    max_domains  0                                     rh    "aircraft_emiss_opt"                      ""    ""
 rconfig   integer    kemit_aircraft               namelist,chem       1         1                                     irh   "kemit_aircraft"                          ""    ""
@@ -3320,7 +3459,7 @@ rconfig   real        depo_fact           namelist,chem          max_domains    
 rconfig   integer    track_chem_num       namelist,chem       1               0       -    "number of track chem requested"    ""    ""
 rconfig   character  track_chem_name      namelist,chem       max_trackchem   ""      -    "name of track chem requested"      ""    ""
 rconfig   integer    track_rad_num        namelist,chem       1               17      -    "nw-1 in module_wave_data"          ""    ""
-rconfig   integer    track_tuv_num        namelist,chem       1               30      -    "tuv_jmax in module_wave_data"      ""    ""
+rconfig   integer    track_tuv_num        namelist,chem       1               58      -    "tuv_jmax in module_wave_data"      ""    ""
 rconfig   integer    track_tuv_lev        namelist,chem       1               51      -    "nref in module_ftuv_driver"        ""    ""
 
 # control for N2O5 heterogenenous chemistry option in MOSAIC
@@ -3390,6 +3529,11 @@ package   mozcart_kpp       chem_opt==112                  -          chem:o3,o1
 # KPP mechanism from CBMZ
 package   cbmz_bb_kpp       chem_opt==120                -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,ora1,ora2,nh3,n2o5,no3,pan,eth,co,ol2,olt,oli,tol,xyl,hono,hno4,ket,mgly,onit,csl,iso,ho,ho2,ch4,hcl,ch3o2,ethp,ch3oh,c2h5oh,par,to2,cro,open,op3,c2o3,ro2,ano2,nap,xo2,xpar,isoprd,isopp,isopn,isopo2
 
+# CB05 coupled with MADE/SORGAM-AQ
+package   cb05_sorg_aq_kpp          chem_opt==131                 -          chem:no2,no,o,o3,no3,o1d,oh,ho2,n2o5,hno3,hono,pna,h2o2,xo2,xo2n,ntr,rooh,form,ald2,aldx,par,co,meo2,mepx,meoh,hco3,facd,c2o3,pan,pacd,aacd,cxo3,panx,ror,ole,eth,iole,tol,cres,to2,tolaer1,tolaer2,open,cro,cslaer,mgly,xyl,xylaer1,xylaer2,isop,ispd,isoaer1,isoaer2,so2,sulf,sulaer,etoh,etha,terp,terpaer,hum,humaer,lim,limaer1,limaer2,oci,ociaer1,ociaer2,apin,apinaer1,apinaer2,apinaer3,apinaer4,bpin,bpinaer1,bpinaer2,bpinaer3,bpinaer4,bpinaer5,ter,teraer1,teraer2,alkh,alkhaer1,pah,pahaer1,pahaer2,h2,ch4,cl,hcl,fmcl,hg0,hg2,hocl,clo,cl2,nh3,so4aj,so4ai,nh4aj,nh4ai,no3aj,no3ai,naaj,naai,claj,clai,orgaro1j,orgaro1i,orgaro2j,orgaro2i,orgalk1j,orgalk1i,orgole1j,orgole1i,orgba1j,orgba1i,orgba2j,orgba2i,orgba3j,orgba3i,orgba4j,orgba4i,orgpaj,orgpai,ecj,eci,p25j,p25i,antha,seas,soila,nu0,ac0,corn,so4cwj,so4cwi,nh4cwj,nh4cwi,no3cwj,no3cwi,nacwj,nacwi,clcwj,clcwi,orgaro1cwj,orgaro1cwi,orgaro2cwj,orgaro2cwi,orgalk1cwj,orgalk1cwi,orgole1cwj,orgole1cwi,orgba1cwj,orgba1cwi,orgba2cwj,orgba2cwi,orgba3cwj,orgba3cwi,orgba4cwj,orgba4cwi,orgpacwj,orgpacwi,eccwj,eccwi,p25cwj,p25cwi,anthcw,seascw,soilcw,nu0cw,ac0cw,corncw
+
+# CB05-MADE/SORG-VBS-AQ
+package   cb05_sorg_vbs_aq_kpp          chem_opt==132                 -          chem:no2,no,o,o3,no3,o1d,oh,ho2,n2o5,hno3,hono,pna,h2o2,xo2,xo2n,ntr,rooh,form,ald2,aldx,par,co,meo2,mepx,meoh,hco3,facd,c2o3,pan,pacd,aacd,cxo3,panx,ror,ole,eth,iole,tol,cres,to2,tolaer1,tolaer2,open,cro,cslaer,mgly,xyl,xylaer1,xylaer2,isop,ispd,isoaer1,isoaer2,so2,sulf,sulaer,etoh,etha,terp,terpaer,hum,humaer,lim,limaer1,limaer2,oci,ociaer1,ociaer2,apin,apinaer1,apinaer2,apinaer3,apinaer4,bpin,bpinaer1,bpinaer2,bpinaer3,bpinaer4,bpinaer5,ter,teraer1,teraer2,alkh,alkhaer1,pah,pahaer1,pahaer2,h2,ch4,cl,hcl,fmcl,hg0,hg2,hocl,clo,cl2,cvasoa1,cvasoa2,cvasoa3,cvasoa4,cvbsoa1,cvbsoa2,cvbsoa3,cvbsoa4,nh3,so4aj,so4ai,nh4aj,nh4ai,no3aj,no3ai,naaj,naai,claj,clai,asoa1j,asoa1i,asoa2j,asoa2i,asoa3j,asoa3i,asoa4j,asoa4i,bsoa1j,bsoa1i,bsoa2j,bsoa2i,bsoa3j,bsoa3i,bsoa4j,bsoa4i,orgpaj,orgpai,ecj,eci,p25j,p25i,antha,seas,soila,nu0,ac0,corn,so4cwj,so4cwi,nh4cwj,nh4cwi,no3cwj,no3cwi,nacwj,nacwi,clcwj,clcwi,asoa1cwj,asoa1cwi,asoa2cwj,asoa2cwi,asoa3cwj,asoa3cwi,asoa4cwj,asoa4cwi,bsoa1cwj,bsoa1cwi,bsoa2cwj,bsoa2cwi,bsoa3cwj,bsoa3cwi,bsoa4cwj,bsoa4cwi,orgpacwj,orgpacwi,eccwj,eccwi,p25cwj,p25cwi,anthcw,seascw,soilcw,nu0cw,ac0cw,corncw
 
 #cbmz_mosaic_kpp (chem_opt=170) is for mosaic runs with sorgam soa species: coded by Manish Shrivastava on 12/8/2009
 package   cbmz_mosaic_kpp chem_opt==170               -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,ora1,ora2,nh3,n2o5,no3,pan,eth,co,ol2,olt,oli,tol,xyl,hono,hno4,ket,mgly,onit,csl,iso,ho,ho2,hcl,ch3o2,ethp,ch3oh,c2h5oh,par,to2,cro,open,op3,c2o3,ro2,ano2,nap,xo2,xpar,isoprd,isopp,isopn,ch4,aro1,aro2,alk1,ole1,api1,api2,lim1,lim2,api,lim,isopo2,so4_a01,no3_a01,cl_a01,nh4_a01,na_a01,oin_a01,oc_a01,bc_a01,hysw_a01,water_a01,aro1_a01,aro2_a01,alk1_a01,ole1_a01,api1_a01,api2_a01,lim1_a01,lim2_a01,num_a01,so4_a02,no3_a02,cl_a02,nh4_a02,na_a02,oin_a02,oc_a02,bc_a02,hysw_a02,water_a02,aro1_a02,aro2_a02,alk1_a02,ole1_a02,api1_a02,api2_a02,lim1_a02,lim2_a02,num_a02,so4_a03,no3_a03,cl_a03,nh4_a03,na_a03,oin_a03,oc_a03,bc_a03,hysw_a03,water_a03,aro1_a03,aro2_a03,alk1_a03,ole1_a03,api1_a03,api2_a03,lim1_a03,lim2_a03,num_a03,so4_a04,no3_a04,cl_a04,nh4_a04,na_a04,oin_a04,oc_a04,bc_a04,hysw_a04,water_a04,aro1_a04,aro2_a04,alk1_a04,ole1_a04,api1_a04,api2_a04,lim1_a04,lim2_a04,num_a04,so4_a05,no3_a05,cl_a05,nh4_a05,na_a05,oin_a05,oc_a05,bc_a05,hysw_a05,water_a05,aro1_a05,aro2_a05,alk1_a05,ole1_a05,api1_a05,api2_a05,lim1_a05,lim2_a05,num_a05,so4_a06,no3_a06,cl_a06,nh4_a06,na_a06,oin_a06,oc_a06,bc_a06,hysw_a06,water_a06,aro1_a06,aro2_a06,alk1_a06,ole1_a06,api1_a06,api2_a06,lim1_a06,lim2_a06,num_a06,so4_a07,no3_a07,cl_a07,nh4_a07,na_a07,oin_a07,oc_a07,bc_a07,hysw_a07,water_a07,aro1_a07,aro2_a07,alk1_a07,ole1_a07,api1_a07,api2_a07,lim1_a07,lim2_a07,num_a07,so4_a08,no3_a08,cl_a08,nh4_a08,na_a08,oin_a08,oc_a08,bc_a08,hysw_a08,water_a08,aro1_a08,aro2_a08,alk1_a08,ole1_a08,api1_a08,api2_a08,lim1_a08,lim2_a08,num_a08,ca_a01,ca_a02,ca_a03,ca_a04,ca_a05,ca_a06,ca_a07,ca_a08,co3_a01,co3_a02,co3_a03,co3_a04,co3_a05,co3_a06,co3_a07,co3_a08
@@ -3464,6 +3608,11 @@ package   cammam          emiss_opt==9                   -             emis_ant:
 
 package   mozmem           emiss_opt==10                   -             emis_ant:e_co,e_no,e_no2,e_bigalk,e_bigene,e_c2h4,e_c2h5oh,e_c2h6,e_c3h6,e_c3h8,e_ch2o,e_ch3cho,e_ch3coch3,e_ch3oh,e_mek,e_so2,e_toluene,e_benzene,e_xylene,e_nh3,e_isop,e_c10h16,e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_so4i,e_so4j,e_no3i,e_no3j,e_nh4i,e_nh4j,e_nai,e_naj,e_cli,e_clj,e_co_a,e_orgi_a,e_orgj_a,e_co_bb,e_orgi_bb,e_orgj_bb,e_pm_10,e_c2h2,e_gly,e_sulf,e_macr,e_mgly,e_mvk,e_hcooh,e_hono
 package   esaprcnov       emiss_opt==13                  -             emis_ant:e_so2,e_c2h6,e_c3h8,e_c2h2,e_alk3,e_alk4,e_alk5,e_ethene,e_c3h6,e_ole1,e_ole2,e_aro1,e_aro2,e_hcho,e_ccho,e_rcho,e_acet,e_mek,e_isoprene,e_terp,e_sesq,e_co,e_no,e_no2,e_phen,e_cres,e_meoh,e_gly,e_mgly,e_bacl,e_isoprod,e_methacro,e_mvk,e_prod2,e_ch4,e_bald,e_hcooh,e_cco_oh,e_rco_oh,e_nh3,e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_so4i,e_so4j,e_no3i,e_no3j,e_orgi_a,e_orgj_a,e_orgi_bb,e_orgj_bb
+# For CB05 mechanism based on CBMZ speciation, used with emiss_inpt_opt = 102 
+package   ecb05_opt1      emiss_opt==14                   -             emis_ant:e_no2,e_xyl,e_tol,e_terp,e_so2,e_ora2,e_olt,e_oli,e_ol2,e_no,e_nh3,e_iso,e_hcl,e_hcho,e_eth,e_csl,e_co,e_ch3oh,e_c2h5oh,e_ald,e_aldx,e_hc3,e_hc5,e_hc8,e_ket,e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_so4i,e_so4j,e_no3i,e_no3j,e_so4c,e_no3c,e_orgc,e_ecc,e_pm10
+# For CB05 emissions inventory base on CB05 speciation, used with emiss_inpt_opt = 101
+package   ecb05_opt2      emiss_opt==15                   -             emis_ant:e_acet,e_par,e_alk1,e_alk2,e_alk3,e_alk4,e_alk5,e_tol,e_xyl,e_bald,e_ald2,e_ccooh,e_co,e_cres,e_eth,e_etha,e_gly,e_form,e_hcooh,e_iprod,e_isop,e_macr,e_mek,e_meoh,e_meo2,e_etoh,e_mgly,e_nh3,e_hcl,e_no,e_no2,e_iole,e_ole,e_phen,e_prod2,e_aldx,e_rcooh,e_so2,e_psulf,e_terp,e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_so4i,e_so4j,e_no3i,e_no3j,e_so4c,e_no3c,e_orgc,e_ecc,e_pm10
+
 # Anthropogenic CO2, CO and CH4 emissions:
 package   eco2            emiss_opt==16                  -             emis_ant:e_co2,e_co2tst,e_co
 package   eghg            emiss_opt==17                  -             emis_ant:e_co2,e_co2tst,e_co,e_cotst,e_ch4,e_ch4tst
@@ -3515,6 +3664,7 @@ package   shao_2001     dust_schme==1                -              emis_dust:ed
 package   shao_2004     dust_schme==2                -              emis_dust:edust1,edust2,edust3,edust4,edust5
 package   shao_2011     dust_schme==3                -              emis_dust:edust1,edust2,edust3,edust4,edust5
 package   seasgocart    seas_opt==1                  -              emis_seas:eseas1,eseas2,eseas3,eseas4
+package   seasmosaic    seas_opt==2                  -              emis_seas2:eseasj,eseasc
 package   dmsgocart    dmsemis_opt==1                  -              -
 package   volume_approx    aer_op_opt==1                -             -
 package   maxwell_approx   aer_op_opt==2                -             -

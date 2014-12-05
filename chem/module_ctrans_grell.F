@@ -7,7 +7,8 @@ USE module_dep_simple
 USE module_state_description, only:p_co,p_qv,p_so2,p_hno3,p_hno4,p_n2o5,p_nh3,p_h2o2, &
                               p_o3,p_ora1,p_op1,p_paa,p_sulf,p_so4aj,p_nh4aj,p_no3aj, &
                               p_bc1,p_bc2,p_oc1,p_oc2,p_seas_1,p_seas_2,     &
-                              p_seas_3,p_seas_4,p_dms
+                              p_seas_3,p_seas_4,p_dms,                       &
+                              p_facd,p_mepx,p_pacd
 USE module_state_description, only:p_cvasoaX,p_cvasoa1,p_cvasoa2,p_cvasoa3,p_cvasoa4,&
                               p_cvbsoaX,p_cvbsoa1,p_cvbsoa2,p_cvbsoa3,p_cvbsoa4
 
@@ -1466,7 +1467,8 @@ END subroutine cup_env_clev_tr
 ! USE module_configure
   USE module_state_description, only: RADM2SORG,RADM2SORG_AQ,RACMSORG_AQ,RACMSORG_KPP,   &
                                       RADM2SORG_KPP,RACM_ESRLSORG_KPP,RACM_SOA_VBS_KPP,  &
-                                      RADM2SORG_AQCHEM,RACMSORG_AQCHEM_KPP,RACM_ESRLSORG_AQCHEM_KPP
+                                      RADM2SORG_AQCHEM,RACMSORG_AQCHEM_KPP,RACM_ESRLSORG_AQCHEM_KPP, &
+                                      CB05_SORG_VBS_AQ_KPP
   USE module_ctrans_aqchem
   USE module_input_chem_data, only: get_last_gas
         implicit none
@@ -1671,8 +1673,9 @@ END subroutine cup_env_clev_tr
       if ((chemopt .EQ. RADM2SORG .OR. chemopt .EQ. RADM2SORG_AQ .OR. chemopt .EQ. RACMSORG_AQ .OR. & 
            chemopt .EQ. RACMSORG_KPP .OR. chemopt .EQ. RADM2SORG_KPP .OR. chemopt .EQ. RACM_ESRLSORG_KPP .OR. & 
            chemopt .EQ. RACM_SOA_VBS_KPP .OR. chemopt .EQ. RADM2SORG_AQCHEM .OR. chemopt .EQ. RACMSORG_AQCHEM_KPP .OR. &
-           chemopt .EQ. RACM_ESRLSORG_AQCHEM_KPP) &
-           .and. (conv_tr_aqchem == 1)) then
+           chemopt .EQ. RACM_ESRLSORG_AQCHEM_KPP .OR. &
+           chemopt .EQ. CB05_SORG_VBS_AQ_KPP)         &
+           .AND. conv_tr_aqchem == 1 ) then
         
         !
         ! For MADE/SORGAM derived schemes with aqueous chemistry
@@ -1712,11 +1715,17 @@ END subroutine cup_env_clev_tr
         gas(lnh3)   = tr_up(i,k,p_nh3)*1.0e-6
         gas(lh2o2)  = tr_up(i,k,p_h2o2)*1.0e-6
         gas(lo3)    = tr_up(i,k,p_o3)*1.0e-6
-        gas(lfoa)   = tr_up(i,k,p_ora1)*1.0e-6
-        gas(lmhp)   = tr_up(i,k,p_op1)*1.0e-6
-        gas(lpaa)   = tr_up(i,k,p_paa)*1.0e-6
         gas(lh2so4) = tr_up(i,k,p_sulf)*1.0e-6
-        
+        if (chemopt==CB05_SORG_VBS_AQ_KPP) then
+           gas(lfoa)   = tr_up(i,k,p_facd)*1.0e-6
+           gas(lmhp)   = tr_up(i,k,p_mepx)*1.0e-6
+           gas(lpaa)   = tr_up(i,k,p_pacd)*1.0e-6
+        else
+           gas(lfoa)   = tr_up(i,k,p_ora1)*1.0e-6
+           gas(lmhp)   = tr_up(i,k,p_op1)*1.0e-6
+           gas(lpaa)   = tr_up(i,k,p_paa)*1.0e-6
+        end if
+
         ! Aerosol mass concentrations before aqueous phase chemistry
         ! (with units conversion ug/kg -> mol/mol). Although AQCHEM
         ! accounts for much of the aerosol compounds in MADE, they are
@@ -1763,10 +1772,16 @@ END subroutine cup_env_clev_tr
         tr_up(i,k,p_nh3)  =  gas(lnh3)*1.0e6
         tr_up(i,k,p_h2o2) =  gas(lh2o2)*1.0e6
         tr_up(i,k,p_o3)   =  gas(lo3)*1.0e6
-        tr_up(i,k,p_ora1) =  gas(lfoa)*1.0e6
-        tr_up(i,k,p_op1)  =  gas(lmhp)*1.0e6
-        tr_up(i,k,p_paa)  =  gas(lpaa)*1.0e6
         tr_up(i,k,p_sulf) =  gas(lh2so4)*1.0e6
+        if (chemopt==CB05_SORG_VBS_AQ_KPP) then
+           tr_up(i,k,p_facd) =  gas(lfoa)*1.0e6
+           tr_up(i,k,p_mepx)  =  gas(lmhp)*1.0e6
+           tr_up(i,k,p_pacd)  =  gas(lpaa)*1.0e6
+        else
+           tr_up(i,k,p_ora1) =  gas(lfoa)*1.0e6
+           tr_up(i,k,p_op1)  =  gas(lmhp)*1.0e6
+           tr_up(i,k,p_paa)  =  gas(lpaa)*1.0e6
+        end if
         
         ! Aerosol mass concentrations
         ! (with units conversion mol/mol -> ug/kg)

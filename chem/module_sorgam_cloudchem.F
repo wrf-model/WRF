@@ -187,7 +187,8 @@
 	    ph_aq_box, gas_aqfrac_box,   &
 	    numgas_aqfrac, it, jt, kt, icase,   &
 	    rbox, qcldwtr,   &
-	    t_phy(it,kt,jt), p_phy(it,kt,jt), rho_phy(it,kt,jt) )
+	    t_phy(it,kt,jt), p_phy(it,kt,jt), rho_phy(it,kt,jt), &
+            config_flags)
 
 !   map back to wrf-chem 3d arrays 
 	chem(it,kt,jt,1:num_chem) = rbox(1:num_chem)
@@ -214,8 +215,10 @@
 	    photol_no2_box,   &
 	    ph_aq_box, gas_aqfrac_box,   &
 	    numgas_aqfrac, it, jt, kt, icase,   &
-	    rbox, qcw_box, temp_box, pres_box, rho_box )
+	    rbox, qcw_box, temp_box, pres_box, rho_box, &
+            config_flags )
 
+        use module_configure, only: grid_config_rec_type
 	use module_state_description, only:   &
 		num_moist, num_chem
 
@@ -223,7 +226,8 @@
 		msectional, maxd_asize, maxd_atype,   &
 		cw_phase, nsize_aer, ntype_aer, do_cloudchem_aer,   &
 		lptr_so4_aer, lptr_no3_aer, lptr_nh4_aer,   &
-		lptr_orgpa_aer, lptr_ec_aer, lptr_p25_aer
+		lptr_orgpa_aer, lptr_ec_aer, lptr_p25_aer,  &
+                lptr_cl_aer, lptr_na_aer
 
 	use module_data_cmu_bulkaqchem, only:   &
 	        meqn1max
@@ -232,6 +236,8 @@
 	implicit none
 
 !   subr arguments
+
+        type(grid_config_rec_type), intent(in) :: config_flags
 	integer, intent(in) ::   &
 		id, ktau, ktauc,   &
 		numgas_aqfrac, it, jt, kt,   &
@@ -281,8 +287,10 @@
 	lptr_yyy_cwaer(:,:,l_oin_aqyy) = lptr_p25_aer(:,:,iphase)
 	lptr_yyy_cwaer(:,:,l_bc_aqyy ) = lptr_ec_aer( :,:,iphase)
 	lptr_yyy_cwaer(:,:,l_oc_aqyy ) = lptr_orgpa_aer( :,:,iphase)
-	lptr_yyy_cwaer(:,:,l_cl_aqyy ) = -999888777
-	lptr_yyy_cwaer(:,:,l_na_aqyy ) = -999888777
+!      	lptr_yyy_cwaer(:,:,l_cl_aqyy ) = -999888777
+!     	lptr_yyy_cwaer(:,:,l_na_aqyy ) = -999888777
+        lptr_yyy_cwaer(:,:,l_cl_aqyy ) = lptr_cl_aer(:,:,iphase)
+        lptr_yyy_cwaer(:,:,l_na_aqyy ) = lptr_na_aer(:,:,iphase)
 
 !
 !
@@ -329,7 +337,8 @@
 	    co2_mixrat_in, photol_no2_in, xprescribe_ph,   &
 	    iradical_in, idecomp_hmsa_hso5,   &
 	    yaq_beg, yaq_end, ph_cmuaq_cur,   &
-	    numgas_aqfrac, id, it, jt, kt, ktau, icase_in )
+	    numgas_aqfrac, id, it, jt, kt, ktau, icase_in, &
+            config_flags)
 
 	ph_aq_box = ph_cmuaq_cur
 
@@ -387,14 +396,19 @@
 	    co2_mixrat_in, photol_no2_in, xprescribe_ph,   &
 	    iradical_in, idecomp_hmsa_hso5,   &
 	    yaq_beg, yaq_end, ph_cmuaq_cur,   &
-	    numgas_aqfrac, id, it, jt, kt, ktau, icase )
+	    numgas_aqfrac, id, it, jt, kt, ktau, icase, &
+            config_flags )
+
+        use module_configure, only: grid_config_rec_type
 
 	use module_state_description, only:   &
 		num_chem, param_first_scalar, p_qc,   &
 		p_nh3, p_hno3, p_hcl, p_sulf, p_hcho,   &
 		p_ora1, p_so2, p_h2o2, p_o3, p_ho,   &
 		p_ho2, p_no3, p_no, p_no2, p_hono,   &
-		p_pan, p_ch3o2, p_ch3oh, p_op1
+		p_pan, p_ch3o2, p_ch3oh, p_op1,      &
+                p_form, p_facd, p_oh, p_meo2, p_meoh, p_mepx, &
+                CB05_SORG_AQ_KPP
 
 	use module_data_cmu_bulkaqchem, only:   &
 	        meqn1max, naers, ngas,   &
@@ -410,12 +424,15 @@
         	maxd_asize, maxd_atype,   &
 		cw_phase, nsize_aer, ntype_aer, do_cloudchem_aer,   &
 		lptr_so4_aer, lptr_no3_aer, lptr_nh4_aer,   &
-		lptr_orgpa_aer, lptr_ec_aer, lptr_p25_aer
-
+		lptr_orgpa_aer, lptr_ec_aer, lptr_p25_aer,  &
+                lptr_cl_aer, lptr_na_aer
 
 	implicit none
 
 !   subr arguments
+
+        type(grid_config_rec_type), intent(in) :: config_flags
+
 	integer, intent(in) ::   &
 		iradical_in, idecomp_hmsa_hso5,   &
 	        numgas_aqfrac, id, it, jt, kt, ktau, icase
@@ -550,12 +567,12 @@
 	if (p_hcl   >= p1st) gas(ngc     ) = rbox(p_hcl  )*factgas
 	if (p_sulf  >= p1st) gas(ng4     ) = rbox(p_sulf )*factgas
 
-	if (p_hcho  >= p1st) gas(nghcho  ) = rbox(p_hcho )*factgas
-	if (p_ora1  >= p1st) gas(nghcooh ) = rbox(p_ora1 )*factgas
+!    	if (p_hcho  >= p1st) gas(nghcho  ) = rbox(p_hcho )*factgas
+!    	if (p_ora1  >= p1st) gas(nghcooh ) = rbox(p_ora1 )*factgas
 	if (p_so2   >= p1st) gas(ngso2   ) = rbox(p_so2  )*factgas
 	if (p_h2o2  >= p1st) gas(ngh2o2  ) = rbox(p_h2o2 )*factgas
 	if (p_o3    >= p1st) gas(ngo3    ) = rbox(p_o3   )*factgas
-	if (p_ho    >= p1st) gas(ngoh    ) = rbox(p_ho   )*factgas
+!    	if (p_ho    >= p1st) gas(ngoh    ) = rbox(p_ho   )*factgas
 	if (p_ho2   >= p1st) gas(ngho2   ) = rbox(p_ho2  )*factgas
 	if (p_no3   >= p1st) gas(ngno3   ) = rbox(p_no3  )*factgas
 
@@ -563,9 +580,29 @@
 	if (p_no2   >= p1st) gas(ngno2   ) = rbox(p_no2  )*factgas
 	if (p_hono  >= p1st) gas(nghno2  ) = rbox(p_hono )*factgas
 	if (p_pan   >= p1st) gas(ngpan   ) = rbox(p_pan  )*factgas
-	if (p_ch3o2 >= p1st) gas(ngch3o2 ) = rbox(p_ch3o2)*factgas
-	if (p_ch3oh >= p1st) gas(ngch3oh ) = rbox(p_ch3oh)*factgas
-	if (p_op1   >= p1st) gas(ngch3o2h) = rbox(p_op1  )*factgas
+!    	if (p_ch3o2 >= p1st) gas(ngch3o2 ) = rbox(p_ch3o2)*factgas
+!    	if (p_ch3oh >= p1st) gas(ngch3oh ) = rbox(p_ch3oh)*factgas
+!    	if (p_op1   >= p1st) gas(ngch3o2h) = rbox(p_op1  )*factgas
+
+        if ((config_flags%chem_opt == CB05_SORG_AQ_KPP)) then
+
+          if (p_form  >= p1st) gas(nghcho  ) = rbox(p_form )*factgas
+          if (p_facd  >= p1st) gas(nghcooh ) = rbox(p_facd )*factgas
+          if (p_oh    >= p1st) gas(ngoh    ) = rbox(p_oh   )*factgas
+          if (p_meo2  >= p1st) gas(ngch3o2 ) = rbox(p_meo2 )*factgas
+          if (p_meoh  >= p1st) gas(ngch3oh ) = rbox(p_meoh )*factgas
+          if (p_mepx  >= p1st) gas(ngch3o2h) = rbox(p_mepx )*factgas
+
+        else
+
+          if (p_hcho  >= p1st) gas(nghcho  ) = rbox(p_hcho )*factgas
+          if (p_ora1  >= p1st) gas(nghcooh ) = rbox(p_ora1 )*factgas
+          if (p_ho    >= p1st) gas(ngoh    ) = rbox(p_ho   )*factgas
+          if (p_ch3o2 >= p1st) gas(ngch3o2 ) = rbox(p_ch3o2)*factgas
+          if (p_ch3oh >= p1st) gas(ngch3oh ) = rbox(p_ch3oh)*factgas
+          if (p_op1   >= p1st) gas(ngch3o2h) = rbox(p_op1  )*factgas
+
+        endif
 
 !   compute bulk activated-aerosol mixing ratios
 	aerosol(:) = 0.0
@@ -815,16 +852,16 @@
 		gas_aqfrac_box(p_sulf  ) = gas_aqfrac_cmu(ng4     )
 	end if
 
-	if (p_hcho  >= p1st) then
-	    rbox(p_hcho ) = gas(nghcho  )/factgas
-	    if (p_hcho  <= numgas_aqfrac)   &
-		gas_aqfrac_box(p_hcho  ) = gas_aqfrac_cmu(nghcho  )
-	end if
-	if (p_ora1  >= p1st) then
-	    rbox(p_ora1 ) = gas(nghcooh )/factgas
-	    if (p_ora1  <= numgas_aqfrac)   &
-		gas_aqfrac_box(p_ora1  ) = gas_aqfrac_cmu(nghcooh )
-	end if
+!    	if (p_hcho  >= p1st) then
+!	    rbox(p_hcho ) = gas(nghcho  )/factgas
+!	    if (p_hcho  <= numgas_aqfrac)   &
+!		gas_aqfrac_box(p_hcho  ) = gas_aqfrac_cmu(nghcho  )
+!	end if
+!	if (p_ora1  >= p1st) then
+!	    rbox(p_ora1 ) = gas(nghcooh )/factgas
+!	    if (p_ora1  <= numgas_aqfrac)   &
+!		gas_aqfrac_box(p_ora1  ) = gas_aqfrac_cmu(nghcooh )
+!    	end if
 	if (p_so2   >= p1st) then
 	    rbox(p_so2  ) = gas(ngso2   )/factgas
 	    if (p_so2   <= numgas_aqfrac)   &
@@ -840,11 +877,11 @@
 	    if (p_o3    <= numgas_aqfrac)   &
 		gas_aqfrac_box(p_o3    ) = gas_aqfrac_cmu(ngo3    )
 	end if
-	if (p_ho    >= p1st) then
-	    rbox(p_ho   ) = gas(ngoh    )/factgas
-	    if (p_ho    <= numgas_aqfrac)   &
-		gas_aqfrac_box(p_ho    ) = gas_aqfrac_cmu(ngoh    )
-	end if
+!    	if (p_ho    >= p1st) then
+!	    rbox(p_ho   ) = gas(ngoh    )/factgas
+!	    if (p_ho    <= numgas_aqfrac)   &
+!		gas_aqfrac_box(p_ho    ) = gas_aqfrac_cmu(ngoh    )
+!    	end if
 	if (p_ho2   >= p1st) then
 	    rbox(p_ho2  ) = gas(ngho2   )/factgas
 	    if (p_ho2   <= numgas_aqfrac)   &
@@ -876,22 +913,88 @@
 	    if (p_pan   <= numgas_aqfrac)   &
 		gas_aqfrac_box(p_pan   ) = gas_aqfrac_cmu(ngpan   )
 	end if
-	if (p_ch3o2 >= p1st) then
-	    rbox(p_ch3o2) = gas(ngch3o2 )/factgas
-	    if (p_ch3o2 <= numgas_aqfrac)   &
-		gas_aqfrac_box(p_ch3o2 ) = gas_aqfrac_cmu(ngch3o2 )
-	end if
-	if (p_ch3oh >= p1st) then
-	    rbox(p_ch3oh) = gas(ngch3oh )/factgas
-	    if (p_ch3oh <= numgas_aqfrac)   &
-		gas_aqfrac_box(p_ch3oh ) = gas_aqfrac_cmu(ngch3oh )
-	end if
-	if (p_op1   >= p1st) then
-	    rbox(p_op1  ) = gas(ngch3o2h)/factgas
-	    if (p_op1   <= numgas_aqfrac)   &
-		gas_aqfrac_box(p_op1   ) = gas_aqfrac_cmu(ngch3o2h)
-	end if
+!    	if (p_ch3o2 >= p1st) then
+!	    rbox(p_ch3o2) = gas(ngch3o2 )/factgas
+!	    if (p_ch3o2 <= numgas_aqfrac)   &
+!		gas_aqfrac_box(p_ch3o2 ) = gas_aqfrac_cmu(ngch3o2 )
+!	end if
+!	if (p_ch3oh >= p1st) then
+!	    rbox(p_ch3oh) = gas(ngch3oh )/factgas
+!	    if (p_ch3oh <= numgas_aqfrac)   &
+!		gas_aqfrac_box(p_ch3oh ) = gas_aqfrac_cmu(ngch3oh )
+!	end if
+!	if (p_op1   >= p1st) then
+!	    rbox(p_op1  ) = gas(ngch3o2h)/factgas
+!	    if (p_op1   <= numgas_aqfrac)   &
+!		gas_aqfrac_box(p_op1   ) = gas_aqfrac_cmu(ngch3o2h)
+!	end if
 
+!    
+       if ( (config_flags%chem_opt == CB05_SORG_AQ_KPP) ) then
+
+          if (p_form  >= p1st) then
+              rbox(p_form ) = gas(nghcho  )/factgas
+              if (p_form  <= numgas_aqfrac)   &
+                  gas_aqfrac_box(p_form  ) = gas_aqfrac_cmu(nghcho  )
+          end if
+          if (p_facd  >= p1st) then
+              rbox(p_facd ) = gas(nghcooh )/factgas
+              if (p_facd  <= numgas_aqfrac)   &
+                  gas_aqfrac_box(p_facd  ) = gas_aqfrac_cmu(nghcooh )
+          end if
+          if (p_oh    >= p1st) then
+              rbox(p_oh   ) = gas(ngoh    )/factgas
+              if (p_oh    <= numgas_aqfrac)   &
+                  gas_aqfrac_box(p_oh    ) = gas_aqfrac_cmu(ngoh    )
+          end if
+          if (p_meo2  >= p1st) then
+              rbox(p_meo2 ) = gas(ngch3o2 )/factgas
+              if (p_meo2  <= numgas_aqfrac)   &
+                  gas_aqfrac_box(p_meo2  ) = gas_aqfrac_cmu(ngch3o2 )
+          end if
+          if (p_meoh  >= p1st) then
+              rbox(p_meoh ) = gas(ngch3oh )/factgas
+              if (p_meoh  <= numgas_aqfrac)   &
+                  gas_aqfrac_box(p_meoh  ) = gas_aqfrac_cmu(ngch3oh )
+          end if
+          if (p_mepx  >= p1st) then
+              rbox(p_mepx ) = gas(ngch3o2h)/factgas
+              if (p_mepx  <= numgas_aqfrac)   &
+                  gas_aqfrac_box(p_mepx  ) = gas_aqfrac_cmu(ngch3o2h)
+          end if
+       else
+          if (p_hcho  >= p1st) then
+              rbox(p_hcho ) = gas(nghcho  )/factgas
+              if (p_hcho  <= numgas_aqfrac)   &
+                  gas_aqfrac_box(p_hcho  ) = gas_aqfrac_cmu(nghcho  )
+          end if
+          if (p_ora1  >= p1st) then
+              rbox(p_ora1 ) = gas(nghcooh )/factgas
+              if (p_ora1  <= numgas_aqfrac)   &
+                  gas_aqfrac_box(p_ora1  ) = gas_aqfrac_cmu(nghcooh )
+          end if
+          if (p_ho    >= p1st) then
+              rbox(p_ho   ) = gas(ngoh    )/factgas
+              if (p_ho    <= numgas_aqfrac)   &
+                  gas_aqfrac_box(p_ho    ) = gas_aqfrac_cmu(ngoh    )
+          end if
+          if (p_ch3o2 >= p1st) then
+              rbox(p_ch3o2) = gas(ngch3o2 )/factgas
+              if (p_ch3o2 <= numgas_aqfrac)   &
+                  gas_aqfrac_box(p_ch3o2 ) = gas_aqfrac_cmu(ngch3o2 )
+          end if
+          if (p_ch3oh >= p1st) then
+              rbox(p_ch3oh) = gas(ngch3oh )/factgas
+              if (p_ch3oh <= numgas_aqfrac)   &
+                  gas_aqfrac_box(p_ch3oh ) = gas_aqfrac_cmu(ngch3oh )
+          end if
+          if (p_op1   >= p1st) then
+              rbox(p_op1  ) = gas(ngch3o2h)/factgas
+              if (p_op1   <= numgas_aqfrac)   &
+                  gas_aqfrac_box(p_op1   ) = gas_aqfrac_cmu(ngch3o2h)
+          end if
+
+       end if
 
 	rbulk_cwaer(l_so4_aqyy,2) = aerosol(na4)/factaerso4
 	rbulk_cwaer(l_no3_aqyy,2) = aerosol(nan)/factaerno3

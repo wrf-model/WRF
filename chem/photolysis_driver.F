@@ -15,6 +15,7 @@
                ph_rooh,ph_xooh,ph_isopooh,ph_alkooh,                     &
                ph_mekooh,ph_tolooh,ph_terpooh,ph_mvk,                    &
                ph_glyald,ph_hyac,                                        &
+               ph_cl2,ph_hocl,ph_fmcl,                                   &
                nref0, nw0, tuv_jmax0,                                    &
                ph_radfld, ph_adjcoe, ph_prate,                           &
                wc, zref,                                                 &
@@ -67,7 +68,8 @@
            ph_n2o5,ph_o2,ph_n2o,ph_pan,ph_mpan,ph_acetol,ph_gly,       &
            ph_bigald,ph_mek,ph_c2h5ooh,ph_c3h7ooh,ph_pooh,ph_rooh,     &
            ph_xooh,ph_isopooh,ph_alkooh,ph_mekooh,ph_tolooh,           &
-           ph_terpooh,ph_mvk,ph_glyald,ph_hyac
+           ph_terpooh,ph_mvk,ph_glyald,ph_hyac,                        &
+           ph_cl2,ph_hocl,ph_fmcl
 
    INTEGER,      INTENT(IN   ) :: nref0, nw0, tuv_jmax0 
    real, dimension( ims:ime, nref0, jms:jme, nw0 ),                    &
@@ -187,6 +189,7 @@
                               ph_pooh,ph_rooh,ph_xooh,ph_isopooh,      &
                               ph_alkooh,ph_mekooh,ph_tolooh,ph_terpooh,&
                               ph_n2o5,ph_mvk,ph_glyald,ph_hyac,        &
+                              ph_cl2,ph_hocl,ph_fmcl,                  &
                               ivgtyp,                                  &
                               ph_radfld, ph_adjcoe, ph_prate,          &
                               wc,zref,                                 &

@@ -153,7 +153,7 @@ CONTAINS
 #endif
             !  Optional urban
      &          ,slope_rad,topo_shading,shadowmask                    & !I solar
-     &          ,swnorm,slope,slp_azi                                 & !I solar
+     &          ,swnorm,slope,slp_azi,diffuse_frac                    & !I solar
      &          ,declin,solcon,coszen,hrang,xlat_urb2d                & !I solar/urban
      &          ,num_roof_layers, num_wall_layers                     & !I urban
      &          ,num_road_layers, dzr, dzb, dzg                       & !I urban
@@ -892,6 +892,7 @@ CONTAINS
    INTEGER, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(IN):: shadowmask
    REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(INOUT):: swnorm
    REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(IN):: slope,slp_azi
+   REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(IN):: diffuse_frac
 
    INTEGER, OPTIONAL, INTENT(IN )::   ISFTCFLX,IZ0TLND
    INTEGER, OPTIONAL, INTENT(IN )::   SF_OCEAN_PHYSICS
@@ -1634,7 +1635,7 @@ CONTAINS
     !$OMP PRIVATE ( ij, i, j, k )
     DO ij = 1 , num_tiles
            CALL TOPO_RAD_ADJ_DRVR (XLAT,XLONG,COSZEN,             &
-                    shadowmask,                                   &
+                    shadowmask,diffuse_frac,                      &
                     declin,                                       &
                     SWDOWN,GSW,SWNORM,GSWSAVE,solcon,hrang,       &
                     slope,slp_azi,                                &
@@ -6250,7 +6251,7 @@ HFX_SEA, LH_SEA, QFX_SEA, QGH_SEA, QSFC_SEA, TSK_SEA,  &
 !-------------------------------------------------------------------------
 
    SUBROUTINE TOPO_RAD_ADJ_DRVR (XLAT,XLONG,COSZEN,               &
-                    shadowmask,                                   &
+                    shadowmask, diffuse_frac,                     &
                     declin,                                       &
                     SWDOWN,GSW,SWNORM,GSWSAVE,solcon,hrang2d,     &
                     slope_in,slp_azi_in,                          &
@@ -6265,6 +6266,8 @@ HFX_SEA, LH_SEA, QFX_SEA, QGH_SEA, QSFC_SEA, TSK_SEA,  &
                                   ids,ide,jds,jde,kds,kde
    INTEGER, DIMENSION( ims:ime, jms:jme ),                        &
          INTENT(IN)      ::       shadowmask
+   REAL, DIMENSION( ims:ime, jms:jme ),                           &
+         INTENT(IN)      ::       diffuse_frac
    REAL, DIMENSION( ims:ime, jms:jme ),                           &
          INTENT(IN   )   ::       XLAT,XLONG
    REAL, DIMENSION( ims:ime, jms:jme ),                           &
@@ -6298,7 +6301,7 @@ HFX_SEA, LH_SEA, QFX_SEA, QGH_SEA, QSFC_SEA, TSK_SEA,  &
          XLAT1 = XLAT(i,j)
          XLONG1 = XLONG(i,j)
          CALL TOPO_RAD_ADJ (XLAT1,XLONG1,COSZEN(i,j),             &
-                    DECLIN,DEGRAD,                                &
+                    diffuse_frac(i,j),DECLIN,DEGRAD,              &
                     SWDOWN_IN,solcon,hrang2d(i,j),SWDOWN_teradj,  &
                     kts,kte,                                      &
                     slope_in(i,j),slp_azi_in(i,j),                &
@@ -6318,7 +6321,7 @@ HFX_SEA, LH_SEA, QFX_SEA, QGH_SEA, QSFC_SEA, TSK_SEA,  &
 !------------------------------------------------------------------
 !------------------------------------------------------------------
    SUBROUTINE TOPO_RAD_ADJ (XLAT1,XLONG1,COSZEN,                 &
-                    DECLIN,DEGRAD,                               &
+                    diffuse_frac_in,DECLIN,DEGRAD,               &
                     SWDOWN_IN,solcon,hrang,SWDOWN_teradj,        &
                     kts,kte,                                     &
                     slope,slp_azi,                               &
@@ -6334,6 +6337,7 @@ HFX_SEA, LH_SEA, QFX_SEA, QGH_SEA, QSFC_SEA, TSK_SEA,  &
   REAL, INTENT(IN)          :: SWDOWN_IN,solcon,hrang
   INTEGER, INTENT(IN)       :: shadow
   REAL, INTENT(IN)          :: slp_azi,slope
+  REAL, INTENT(IN)          :: diffuse_frac_in
 
   REAL, INTENT(OUT)         :: SWDOWN_teradj
 
@@ -6354,7 +6358,8 @@ HFX_SEA, LH_SEA, QFX_SEA, QGH_SEA, QSFC_SEA, TSK_SEA,  &
          IF(CSZA.LE.1.E-9) return 
         
 !  Parameterize diffuse fraction of global solar radiation as a function of the ratio between TOA radiation and surface global radiation
-              diffuse_frac = min(1.,1./(max(0.1,2.1-2.8*log(log(csza*solcon/max(SWDOWN_IN,1.e-3))))))
+!             diffuse_frac = min(1.,1./(max(0.1,2.1-2.8*log(log(csza*solcon/max(SWDOWN_IN,1.e-3))))))
+              diffuse_frac = diffuse_frac_in
         if ((slope.eq.0).or.(diffuse_frac.eq.1).or.(csza.lt.1.e-2)) then  ! no topographic effects when all radiation diffuse or sun too close to horizon
           corr_fac = 1
           goto 140

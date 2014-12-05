@@ -116,6 +116,7 @@ CONTAINS
               ,progn                                            &
               ,slope_rad,topo_shading     &
               ,shadowmask,ht,dx,dy                 &
+              ,diffuse_frac               &
               ,SWUPFLX,SWUPFLXC,SWDNFLX,SWDNFLXC                          & ! Optional
               ,LWUPFLX,LWUPFLXC,LWDNFLX,LWDNFLXC                          & ! Optional
               ,radtacttime                                                &
@@ -632,6 +633,7 @@ CONTAINS
      INTEGER, OPTIONAL, INTENT(IN) :: slope_rad,topo_shading
      REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(IN)  :: ht
      INTEGER, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(IN) :: shadowmask
+     REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(OUT) :: diffuse_frac
 
    REAL , OPTIONAL, INTENT(INOUT) ::    radtacttime ! Storing the time in s when radiation is called next
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
@@ -1843,6 +1845,19 @@ CONTAINS
            end do
         end do
      end if
+
+
+       IF ( PRESENT( diffuse_frac ) ) THEN 
+           DO j=jts,jte
+           DO i=its,ite
+             if (coszen(i,j).gt.1e-3) then
+                diffuse_frac(i,j) = swddif(i,j)/swdown(i,j)
+             else
+                diffuse_frac(i,j) = 0.
+             endif
+           ENDDO
+           ENDDO
+        ENDIF
 
        IF ( PRESENT( qc  ) .AND. PRESENT( qc_cu ) ) THEN 
            IF ( icloud_cu .NE. 0 ) THEN

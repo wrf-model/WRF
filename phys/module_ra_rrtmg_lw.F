@@ -6191,7 +6191,7 @@ contains
             fac100 = fs * fac00(lay)
             fac110 = fs * fac10(lay)
          endif
-         if (specparm .lt. 0.125_rb) then
+         if (specparm1 .lt. 0.125_rb) then
             p = fs1 - 1
             p4 = p**4
             fk0 = p4

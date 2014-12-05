@@ -115,7 +115,7 @@ subroutine da_read_obs_bufratms (obstype,iv, infile)
    real , allocatable :: in(:), out(:)
    logical :: found, head_found
 
-   call da_trace_entry("da_read_obs_bufratms")
+   if (trace_use) call da_trace_entry("da_read_obs_bufratms")
 
    ! Initialize variables
 
@@ -211,7 +211,7 @@ bufrfile:  do ibufr=1,numbufr
    if (iost /= 0) then
       call da_warning(__FILE__,__LINE__, &
          (/"Cannot open file "//infile/))
-      call da_trace_exit("da_read_obs_bufratms")
+      if (trace_use) call da_trace_exit("da_read_obs_bufratms")
       return
    end if
 
@@ -318,22 +318,20 @@ bufrfile:  do ibufr=1,numbufr
 
  end do bufrfile
 !
-         write(*,*) 'The num of observation is:',nnum-1
-!Dongpm         write(*,*) Time_save(20),Fov_save(20), Scanline_save(20),BT_InOut_save(:,20)
          nnum=nnum-1
          if(nnum <= 0) then
-          write(*,*) 'READ_ATMS: No ATMS data were read in'
-          return
+            call da_warning(__FILE__,__LINE__,(/"No ATMS data were read in"/))
+            if (trace_use) call da_trace_exit("da_read_obs_bufratms")
+            return
          endif
+         write(unit=message(1),fmt='(a,i10)') 'The number of observation is:',nnum-1
+         call da_message(message(1:1))
       call ATMS_Spatial_Average(nnum, NChanl, Fov_save(1:nnum), Time_save(1:nnum), BT_InOut_save(1:NChanl,1:nnum), &
                                 Scanline_save, Error_Status)
-!Dongpm      write(*,*) Time_save(20),Fov_save(20), Scanline_save(20),BT_InOut_save(:,20)
       if(Error_Status==1) then
          WRITE(UNIT=message(1), FMT='(A)')"Error reading ATMS data"
          call da_error(__FILE__,__LINE__,message(1:1))
       endif         
-!
-!
 
  obs: do nn=1, nnum
    if ( nn == 1 ) then
@@ -349,10 +347,6 @@ bufrfile:  do ibufr=1,numbufr
          ! rlat = bfr1bhdr(bufr_lat)
          ! rlon = bfr1bhdr(bufr_lat)
          ! if (rlon < 0.0) rlon = rlon+360.0
-!Dongpm
-!Dongpm         info%lat  =  bfr1bhdr(bufr_lat)
-
-!Dongpm         info%lon  =  bfr1bhdr(bufr_lon)
               info%lat = lat_save(nn)
               info%lon = lon_save(nn)
 
@@ -369,7 +363,6 @@ bufrfile:  do ibufr=1,numbufr
             satellite_id = 0
          end if
          ifov = Fov_save(nn) 
-!Dongpm         write(*,*),'ifov',ifov
 
          !  QC2:  limb pixel rejected (not implemented)
 
@@ -706,7 +699,7 @@ bufrfile:  do ibufr=1,numbufr
    !    p => p%next
    ! end do
 
-   call da_trace_exit("da_read_obs_bufratms")
+   if (trace_use) call da_trace_exit("da_read_obs_bufratms")
 #else
    call da_error(__FILE__,__LINE__,(/"Needs to be compiled with a BUFR library"/)) 
 #endif

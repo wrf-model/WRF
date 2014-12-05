@@ -139,7 +139,10 @@ subroutine da_get_innov_vector_gpsref(it, num_qcstat_conv, grid, ob, iv)
       write(stdout,'(3f15.5)')    pseudo_x, pseudo_y, pseudo_z
    end if
 
-   if (iv%info(gpsref)%nlocal < 1) return
+   if (iv%info(gpsref)%nlocal < 1) then
+      if (trace_use_dull) call da_trace_exit("da_get_innov_vector_gpsref")
+      return
+   end if
 
    ntotal = 0
 

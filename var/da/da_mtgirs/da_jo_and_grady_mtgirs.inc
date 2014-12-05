@@ -25,9 +25,15 @@ subroutine da_jo_and_grady_mtgirs(iv, re, jo, jo_grad_y)
    jo % mtgirs_q = 0.0
 
    if (test_dm_exact) then
-      if (iv%info(mtgirs)%ntotal == 0) return
+      if (iv%info(mtgirs)%ntotal == 0) then
+         if (trace_use_dull) call da_trace_exit("da_jo_and_grady_mtgirs")
+         return
+      end if
    else
-      if (iv%info(mtgirs)%nlocal < 1) return
+      if (iv%info(mtgirs)%nlocal < 1) then
+         if (trace_use_dull) call da_trace_exit("da_jo_and_grady_mtgirs")
+         return
+      end if
    end if
 
    do n=1, iv%info(mtgirs)%nlocal

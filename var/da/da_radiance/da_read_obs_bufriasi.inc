@@ -97,7 +97,7 @@ subroutine da_read_obs_bufriasi (obstype,iv,infile)
   real(r_kind),parameter:: tbmax  = 550._r_kind
   real(r_kind),parameter:: earth_radius = 6371000._r_kind
   
-   call da_trace_entry("da_read_obs_bufriasi")
+   if (trace_use) call da_trace_entry("da_read_obs_bufriasi")
 !  0.0  Initialize variables
 !-----------------------------------
   platform_id  = 10   ! metop series
@@ -163,7 +163,7 @@ subroutine da_read_obs_bufriasi (obstype,iv,infile)
    if (iost /= 0) then
       call da_warning(__FILE__,__LINE__, &
          (/"Cannot open file "//infile/))
-      call da_trace_exit("da_read_obs_bufrtovs")
+      if (trace_use) call da_trace_exit("da_read_obs_bufrtovs")
       return
    end if
 
@@ -598,7 +598,7 @@ deallocate(data_all) ! Deallocate data arrays
 
 !   call da_free_unit(lnbufr)
 
-   call da_trace_exit("da_read_obs_bufriasi")
+   if (trace_use) call da_trace_exit("da_read_obs_bufriasi")
 #else
    call da_error(__FILE__,__LINE__,(/"Needs to be compiled with a BUFR library"/))
 #endif  

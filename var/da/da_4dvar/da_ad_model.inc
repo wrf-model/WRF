@@ -166,8 +166,8 @@ subroutine da_ad_model ()
    head_grid%g_pratec = 0.0
 
    ! Set the physics options to what they are in TL and AD
-   if ( original_mp_physics .gt. 0 ) &
-      call nl_set_mp_physics (head_grid%id, 98) 
+   if (original_mp_physics .NE. 0 .and. original_mp_physics .NE. 98 .and. original_mp_physics .NE. 99) &
+      call nl_set_mp_physics (head_grid%id, original_mp_physics_ad) 
    call nl_set_ra_lw_physics (head_grid%id, 0)
    call nl_set_ra_sw_physics (head_grid%id, 0)
    call nl_set_sf_sfclay_physics (head_grid%id, 0)

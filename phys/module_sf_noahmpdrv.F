@@ -2,12 +2,7 @@ MODULE module_sf_noahmpdrv
 
 !-------------------------------
   USE module_sf_noahmplsm
-  USE module_sf_urban
-  USE module_sf_noahdrv, ONLY : SOIL_VEG_GEN_PARM
-  USE module_sf_noah_seaice
   USE module_sf_noahmp_glacier
-  USE MODULE_RA_GFDLETA, ONLY: CAL_MON_DAY
-  USE module_sf_noahmp_groundwater, ONLY : LATERALFLOW
 #if ( WRF_CHEM == 1 )
   USE module_data_gocart_dust
 #endif
@@ -19,7 +14,7 @@ CONTAINS
   SUBROUTINE noahmplsm(ITIMESTEP,        YR,   JULIAN,   COSZIN,   XLATIN,  & ! IN : Time/Space-related
                   DZ8W,       DT,       DZS,    NSOIL,       DX,            & ! IN : Model configuration 
 	        IVGTYP,   ISLTYP,    VEGFRA,   VEGMAX,      TMN,            & ! IN : Vegetation/Soil characteristics
-		 XLAND,     XICE,XICE_THRES,    ISICE,  ISURBAN,                      & ! IN : Vegetation/Soil characteristics
+		 XLAND,     XICE,XICE_THRES,                                & ! IN : Vegetation/Soil characteristics
                  IDVEG, IOPT_CRS,  IOPT_BTR, IOPT_RUN, IOPT_SFC, IOPT_FRZ,  & ! IN : User options
               IOPT_INF, IOPT_RAD,  IOPT_ALB, IOPT_SNF,IOPT_TBOT, IOPT_STC,  & ! IN : User options
                IZ0TLND,                                                     & ! IN : User options
@@ -50,6 +45,8 @@ CONTAINS
                ims,ime,  jms,jme,  kms,kme,                    &
                its,ite,  jts,jte,  kts,kte                     )
 !----------------------------------------------------------------
+    USE NOAHMP_PARAMETERS, ONLY: TRANSFER_MP_PARAMETERS, CO2, O2, ISICE
+!----------------------------------------------------------------
     IMPLICIT NONE
 !----------------------------------------------------------------
 
@@ -73,8 +70,6 @@ CONTAINS
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ) ::  XLAND     ! =2 ocean; =1 land/seaice
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ) ::  XICE      ! fraction of grid that is seaice
     REAL,                                            INTENT(IN   ) ::  XICE_THRES! fraction of grid determining seaice
-    INTEGER,                                         INTENT(IN   ) ::  ISICE     ! land cover category for ice
-    INTEGER,                                         INTENT(IN   ) ::  ISURBAN   ! land cover category for urban
     INTEGER,                                         INTENT(IN   ) ::  IDVEG     ! dynamic vegetation (1 -> off ; 2 -> on) with opt_crs = 1      
     INTEGER,                                         INTENT(IN   ) ::  IOPT_CRS  ! canopy stomatal resistance (1-> Ball-Berry; 2->Jarvis)
     INTEGER,                                         INTENT(IN   ) ::  IOPT_BTR  ! soil moisture factor for stomatal resistance (1-> Noah; 2-> CLM; 3-> SSiB)
@@ -362,17 +357,14 @@ CONTAINS
     INTEGER                             :: SLOPETYP
     LOGICAL                             :: IPRINT
 
-    INTEGER                             :: ISC          ! soil color index
+    INTEGER                             :: SOILCOLOR          ! soil color index
     INTEGER                             :: IST          ! surface type 1-soil; 2-lake
     INTEGER                             :: YEARLEN
 
     INTEGER, PARAMETER                  :: NSNOW = 3    ! number of snow layers fixed to 3
-    REAL, PARAMETER                     :: CO2 = 395.e-06
-    REAL, PARAMETER                     :: O2 = 0.209
     REAL, PARAMETER                     :: undefined_value = -1.E36
 
 
-! ----------------------------------------------------------------------
 ! ----------------------------------------------------------------------
 
     CALL NOAHMP_OPTIONS(IDVEG  ,IOPT_CRS  ,IOPT_BTR  ,IOPT_RUN  ,IOPT_SFC  ,IOPT_FRZ , &
@@ -426,15 +418,6 @@ CONTAINS
 
     IF (XICE(I,J) >= XICE_THRES) THEN
        ICE = 1                            ! Sea-ice point
-    ELSE IF ( IVGTYP(I,J) == ISICE ) THEN
-       ICE = -1                           ! Land-ice point
-    ELSE
-       ICE=0                              ! Neither sea ice or land ice.
-    ENDIF
-    
-    IF((XLAND(I,J)-1.5) >= 0.) CYCLE ILOOP   ! Open water case
-
-    IF ( ICE == 1) THEN
 
        SH2O  (i,1:NSOIL,j) = 1.0
        XLAIXY(i,j)         = 0.01
@@ -442,6 +425,8 @@ CONTAINS
        CYCLE ILOOP ! Skip any processing at sea-ice points
 
     ELSE
+
+       IF((XLAND(I,J)-1.5) >= 0.) CYCLE ILOOP   ! Open water case
 
 !     2D to 1D       
 
@@ -512,6 +497,18 @@ CONTAINS
        RECH                  = 0.
        DEEPRECH              = 0.
 
+       SLOPETYP     = 1                               ! set underground runoff slope term
+       IST          = 1                               ! MP surface type: 1 = land; 2 = lake
+       SOILCOLOR    = 4                               ! soil color: assuming a middle color category ?????????
+
+       IF(SOILTYP == 14 .AND. XICE(I,J) == 0.) THEN
+          IF(IPRINT) PRINT *, ' SOIL TYPE FOUND TO BE WATER AT A LAND-POINT'
+          IF(IPRINT) PRINT *, i,j,'RESET SOIL in surfce.F'
+          SOILTYP = 7
+       ENDIF
+
+       CALL TRANSFER_MP_PARAMETERS(VEGTYP,SOILTYP,SLOPETYP,SOILCOLOR)
+
 ! Initialized local
 
        FICEOLD = 0.0
@@ -523,21 +520,7 @@ CONTAINS
        QC     = undefined_value                       ! test dummy value
        PBLH   = undefined_value                       ! test dummy value ! PBL height
        DZ8W1D = DZ8W (I,1,J)                          ! thickness of atmospheric layers
-       SLOPETYP  =  1                                 ! set underground runoff slope term
-       IST    = 1                                     ! MP surface type: 1 = land; 2 = lake
-       ISC    = 4                                     ! soil color: assuming a middle color category ?????????
 
-
-       IF(SOILTYP == 14 .AND. XICE(I,J) == 0.) THEN
-          IF(IPRINT) PRINT *, ' SOIL TYPE FOUND TO BE WATER AT A LAND-POINT'
-          IF(IPRINT) PRINT *, i,j,'RESET SOIL in surfce.F'
-          SOILTYP = 7
-       ENDIF
-
-       IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == 31 .or. &
-            IVGTYP(I,J) == 32 .or. IVGTYP(I,J) == 33) THEN
-          VEGTYP = ISURBAN
-       ENDIF
        IF(VEGTYP == 25) FVEG = 0.0                  ! Set playa, lava, sand to bare
        IF(VEGTYP == 25) PLAI = 0.0 
        IF(VEGTYP == 26) FVEG = 0.0                  ! hard coded for USGS
@@ -545,16 +528,13 @@ CONTAINS
        IF(VEGTYP == 27) FVEG = 0.0
        IF(VEGTYP == 27) PLAI = 0.0
 
-       CALL REDPRM (VEGTYP,SOILTYP,SLOPETYP,ZSOIL,NSOIL,ISURBAN)
-
-    IF ( ICE == -1 ) THEN
-
-
-      CALL NOAHMP_OPTIONS_GLACIER(IDVEG  ,IOPT_CRS  ,IOPT_BTR  ,IOPT_RUN  ,IOPT_SFC  ,IOPT_FRZ , &
+       IF ( VEGTYP == ISICE ) THEN
+         ICE = -1                           ! Land-ice point
+         CALL NOAHMP_OPTIONS_GLACIER(IDVEG  ,IOPT_CRS  ,IOPT_BTR  ,IOPT_RUN  ,IOPT_SFC  ,IOPT_FRZ , &
                       IOPT_INF  ,IOPT_RAD  ,IOPT_ALB  ,IOPT_SNF  ,IOPT_TBOT, IOPT_STC )
       
-      TBOT = MIN(TBOT,263.15)                      ! set deep temp to at most -10C
-      CALL NOAHMP_GLACIER(       I,       J,    COSZ,   NSNOW,   NSOIL,      DT, & ! IN : Time/Space/Model-related
+         TBOT = MIN(TBOT,263.15)                      ! set deep temp to at most -10C
+         CALL NOAHMP_GLACIER(     I,       J,    COSZ,   NSNOW,   NSOIL,      DT, & ! IN : Time/Space/Model-related
                                T_ML,    P_ML,    U_ML,    V_ML,    Q_ML,    SWDN, & ! IN : Forcing
                                PRCP,    LWDN,    TBOT,    Z_ML, FICEOLD,   ZSOIL, & ! IN : Forcing
                               QSNOW,  SNEQVO,  ALBOLD,      CM,      CH,   ISNOW, & ! IN/OUT :
@@ -565,121 +545,73 @@ CONTAINS
                               QSNBOT,PONDING,PONDING1,PONDING2,    T2MB,    Q2MB, & ! OUT :
 			      EMISSI,  FPICE,    CHB2 )                             ! OUT :
 
-       FSNO   = 1.0       
-       TV     = undefined_value     ! Output from standard Noah-MP undefined for glacier points
-       TGB    = TG 
-       CANICE = undefined_value 
-       CANLIQ = undefined_value 
-       EAH    = undefined_value 
-       TAH    = undefined_value
-       FWET   = undefined_value 
-       WSLAKE = undefined_value 
-       ZWT    = undefined_value 
-       WA     = undefined_value 
-       WT     = undefined_value 
-       LFMASS = undefined_value 
-       RTMASS = undefined_value 
-       STMASS = undefined_value 
-       WOOD   = undefined_value 
-       STBLCP = undefined_value 
-       FASTCP = undefined_value 
-       PLAI   = undefined_value 
-       PSAI   = undefined_value 
-       T2MV   = undefined_value 
-       Q2MV   = undefined_value 
-       NEE    = undefined_value 
-       GPP    = undefined_value 
-       NPP    = undefined_value 
-       FVEGMP = 0.0 
-       ECAN   = undefined_value 
-       ETRAN  = undefined_value 
-       APAR   = undefined_value 
-       PSN    = undefined_value 
-       SAV    = undefined_value 
-       RSSUN  = undefined_value 
-       RSSHA  = undefined_value 
-       BGAP   = undefined_value 
-       WGAP   = undefined_value 
-       TGV    = undefined_value
-       CHV    = undefined_value 
-       CHB    = CH 
-       IRC    = undefined_value 
-       IRG    = undefined_value 
-       SHC    = undefined_value 
-       SHG    = undefined_value 
-       EVG    = undefined_value 
-       GHV    = undefined_value 
-       IRB    = FIRA
-       SHB    = FSH
-       EVB    = FGEV
-       GHB    = SSOIL
-       TR     = undefined_value 
-       EVC    = undefined_value 
-       CHLEAF = undefined_value 
-       CHUC   = undefined_value 
-       CHV2   = undefined_value 
-       FCEV   = undefined_value 
-       FCTR   = undefined_value        
+         FSNO   = 1.0       
+         TV     = undefined_value     ! Output from standard Noah-MP undefined for glacier points
+         TGB    = TG 
+         CANICE = undefined_value 
+         CANLIQ = undefined_value 
+         EAH    = undefined_value 
+         TAH    = undefined_value
+         FWET   = undefined_value 
+         WSLAKE = undefined_value 
+         ZWT    = undefined_value 
+         WA     = undefined_value 
+         WT     = undefined_value 
+         LFMASS = undefined_value 
+         RTMASS = undefined_value 
+         STMASS = undefined_value 
+         WOOD   = undefined_value 
+         STBLCP = undefined_value 
+         FASTCP = undefined_value 
+         PLAI   = undefined_value 
+         PSAI   = undefined_value 
+         T2MV   = undefined_value 
+         Q2MV   = undefined_value 
+         NEE    = undefined_value 
+         GPP    = undefined_value 
+         NPP    = undefined_value 
+         FVEGMP = 0.0 
+         ECAN   = undefined_value 
+         ETRAN  = undefined_value 
+         APAR   = undefined_value 
+         PSN    = undefined_value 
+         SAV    = undefined_value 
+         RSSUN  = undefined_value 
+         RSSHA  = undefined_value 
+         BGAP   = undefined_value 
+         WGAP   = undefined_value 
+         TGV    = undefined_value
+         CHV    = undefined_value 
+         CHB    = CH 
+         IRC    = undefined_value 
+         IRG    = undefined_value 
+         SHC    = undefined_value 
+         SHG    = undefined_value 
+         EVG    = undefined_value 
+         GHV    = undefined_value 
+         IRB    = FIRA
+         SHB    = FSH
+         EVB    = FGEV
+         GHB    = SSOIL
+         TR     = undefined_value 
+         EVC    = undefined_value 
+         CHLEAF = undefined_value 
+         CHUC   = undefined_value 
+         CHV2   = undefined_value 
+         FCEV   = undefined_value 
+         FCTR   = undefined_value        
        
-       QFX(I,J) = ESOIL
-       LH (I,J) = FGEV
+         QFX(I,J) = ESOIL
+         LH (I,J) = FGEV
 
 
     ELSE
-    goto 1000
-if(i==1.and.j==8) then
-    print*,I       , J       , LAT     , YEARLEN , JULIAN  , COSZ
-    print*,'DT'
-    print*,DT      , DX      , DZ8W1D  , NSOIL   , ZSOIL   , 3
-    print*,'FVEG'
-    print*,FVEG    , FVGMAX  , VEGTYP  , ISURBAN , ICE     , IST
-    print*,ISC     
-    print*,IZ0TLND 
-    print*,'T_ML'
-    print*,T_ML    , P_ML    , PSFC    , U_ML    , V_ML    , Q_ML
-    print*,'QC'
-    print*,QC      , SWDN    , LWDN    , PRCP    , TBOT    , CO2PP
-    print*,'O2PP'
-    print*,O2PP    , FOLN    , FICEOLD , PBLH    , Z_ML
-    print*,'ALBOLD'
-    print*,ALBOLD  , SNEQVO
-    print*,'STC'
-    print*,STC     , SMH2O   , SMC     , TAH     , EAH     , FWET
-    print*,'CANLIQ'
-    print*,CANLIQ  , CANICE  , TV      , TG      , QSFC1D  , QSNOW
-    print*,'ISNOW'
-    print*,ISNOW   , ZSNSO   , SNDPTH  , SWE     , SNICE   , SNLIQ
-    print*,'ZWT'
-    print*,ZWT     , WA      , WT      , WSLAKE  , LFMASS  , RTMASS
-    print*,'STMASS'
-    print*,STMASS  , WOOD    , STBLCP  , FASTCP  , PLAI    , PSAI
-    print*,'CM'
-    print*,CM      , CH      , TAUSS
-    print*,'FSA'
-    print*,FSA     , FSR     , FIRA    , FSH     , SSOIL   , FCEV
-    print*,'FGEV'
-    print*,FGEV    , FCTR    , ECAN    , ETRAN   , ESOIL   , TRAD
-    print*,'TGB'
-    print*, TGB     , TGV     , T2MV    , T2MB    
-    print*,'Q2MV'
-    print*, Q2MV    , Q2MB    , RUNSF   , RUNSB   , APAR
-    print*,'PSN'
-    print*,PSN     , SAV     , SAG     , FSNO    , NEE     , GPP
-    print*,'NPP'
-    print*,NPP     , FVEGMP  , SALB    , QSNBOT   , PONDING , PONDING1
-    print*,'PONDING2'
-    print*,PONDING2, RSSUN   , RSSHA   , BGAP    , WGAP    
-    print*,'CHV'
-    print*, CHV     , CHB     , EMISSI
-end if
-!	    stop999
-1000 continue
-
-       CALL NOAHMP_SFLX (&
+         ICE=0                              ! Neither sea ice or land ice.
+         CALL NOAHMP_SFLX (&
             I       , J       , LAT     , YEARLEN , JULIAN  , COSZ    , & ! IN : Time/Space-related
             DT      , DX      , DZ8W1D  , NSOIL   , ZSOIL   , NSNOW   , & ! IN : Model configuration 
-            FVEG    , FVGMAX  , VEGTYP  , ISURBAN , ICE     , IST     , & ! IN : Vegetation/Soil characteristics
-            ISC     , SMCEQ   ,                                         & ! IN : Vegetation/Soil characteristics
+            FVEG    , FVGMAX  , VEGTYP  , ICE     , IST     , & ! IN : Vegetation/Soil characteristics
+            SMCEQ   ,                                         & ! IN : Vegetation/Soil characteristics
             IZ0TLND ,                                                   & ! IN : User options
             T_ML    , P_ML    , PSFC    , U_ML    , V_ML    , Q_ML    , & ! IN : Forcing
             QC      , SWDN    , LWDN    , PRCP    , TBOT    , CO2PP   , & ! IN : Forcing
@@ -831,8 +763,8 @@ end if
   END SUBROUTINE noahmplsm
 !------------------------------------------------------
 
-  SUBROUTINE NOAHMP_INIT ( MMINLU, SNOW , SNOWH , CANWAT , ISLTYP ,   IVGTYP, ISURBAN, &
-       TSLB , SMOIS , SH2O , DZS , FNDSOILW , FNDSNOWH ,   ISICE,iswater  ,             &
+  SUBROUTINE NOAHMP_INIT ( MMINLU, SNOW , SNOWH , CANWAT , ISLTYP ,   IVGTYP, &
+       TSLB , SMOIS , SH2O , DZS , FNDSOILW , FNDSNOWH ,             &
        TSK, isnowxy , tvxy     ,tgxy     ,canicexy ,         TMN,     XICE,   &
        canliqxy ,eahxy    ,tahxy    ,cmxy     ,chxy     ,                     &
        fwetxy   ,sneqvoxy ,alboldxy ,qsnowxy  ,wslakexy ,zwtxy    ,waxy     , &
@@ -850,13 +782,19 @@ end if
        wtddt    ,stepwtd  ,dt       ,qrfsxy     ,qspringsxy  , qslatxy    ,  &      ! Optional groundwater
        fdepthxy ,ht     ,riverbedxy ,eqzwt     ,rivercondxy ,pexpxy            )    ! Optional groundwater
 
+  USE NOAHMP_VEG_PARAMETERS
+  USE NOAHMP_SOIL_PARAMETERS
+  USE NOAHMP_RAD_PARAMETERS
+
+  IMPLICIT NONE
+
 ! Initializing Canopy air temperature to 287 K seems dangerous to me [KWM].
 
     INTEGER, INTENT(IN   )    ::     ids,ide, jds,jde, kds,kde,  &
          &                           ims,ime, jms,jme, kms,kme,  &
          &                           its,ite, jts,jte, kts,kte
 
-    INTEGER, INTENT(IN)       ::     NSOIL, ISICE, ISWATER, ISURBAN,iopt_run
+    INTEGER, INTENT(IN)       ::     NSOIL, iopt_run
 
     LOGICAL, INTENT(IN)       ::     restart,                    &
          &                           allowed_to_read
@@ -944,7 +882,7 @@ end if
     REAL, DIMENSION(1:NSOIL)  :: ZSOIL      ! Depth of the soil layer bottom (m) from 
     !                                                   the surface (negative)
 
-    REAL                      :: BX, SMCMAX, PSISAT
+    REAL                      :: BEXP, SMCMAX, PSISAT
     REAL                      :: FK
 
     REAL, PARAMETER           :: BLIM  = 5.5
@@ -960,14 +898,8 @@ end if
     MMINSL='STAS'
 
     call read_mp_veg_parameters(trim(MMINLU))
-
-    !
-    ! initialize three Noah LSM related tables
-    !
-    IF ( allowed_to_read ) THEN
-       CALL wrf_message( 'INITIALIZE THREE Noah LSM RELATED TABLES' )
-       CALL  SOIL_VEG_GEN_PARM( MMINLU, MMINSL )
-    ENDIF
+    call read_mp_soil_parameters()
+    call read_mp_rad_parameters()
 
     IF( .NOT. restart ) THEN
 
@@ -1001,7 +933,7 @@ end if
           CALL wrf_error_fatal( "module_sf_noahlsm.F: lsminit: out of range value "// &
                "of ISLTYP. Is this field in the input?" )
        ENDIF
-! GAC-->
+! GAC-->LATERALFLOW
 ! 20130219 - No longer need this - see module_data_gocart_dust
 !#if ( WRF_CHEM == 1 )
 !       !
@@ -1017,7 +949,7 @@ end if
 
        DO J = jts , jtf
           DO I = its , itf
-	    IF(IVGTYP(I,J)==ISICE .AND. XICE(I,J) <= 0.0) THEN
+	    IF(IVGTYP(I,J)==ISICE_TABLE .AND. XICE(I,J) <= 0.0) THEN
               DO NS=1, NSOIL
 	        SMOIS(I,NS,J) = 1.0                     ! glacier starts all frozen
 	        SH2O(I,NS,J) = 0.0
@@ -1028,17 +960,18 @@ end if
                 SNOWH(I,J)=SNOW(I,J)*0.01               ! SNOW in mm and SNOWH in m
 	    ELSE
 	      
-              BX = BB(ISLTYP(I,J))
-              SMCMAX = MAXSMC(ISLTYP(I,J))
+              BEXP   =   BEXP_TABLE(ISLTYP(I,J))
+              SMCMAX = SMCMAX_TABLE(ISLTYP(I,J))
+              PSISAT = PSISAT_TABLE(ISLTYP(I,J))
+
               DO NS=1, NSOIL
 	        IF ( SMOIS(I,NS,J) > SMCMAX )  SMOIS(I,NS,J) = SMCMAX
               END DO
-              PSISAT = SATPSI(ISLTYP(I,J))
-              IF ( ( BX > 0.0 ) .AND. ( SMCMAX > 0.0 ) .AND. ( PSISAT > 0.0 ) ) THEN
+              IF ( ( BEXP > 0.0 ) .AND. ( SMCMAX > 0.0 ) .AND. ( PSISAT > 0.0 ) ) THEN
                 DO NS=1, NSOIL
                    IF ( TSLB(I,NS,J) < 273.149 ) THEN    ! Use explicit as initial soil ice
                       FK=(( (HLICE/(GRAV*(-PSISAT))) *                              &
-                           ((TSLB(I,NS,J)-T0)/TSLB(I,NS,J)) )**(-1/BX) )*SMCMAX
+                           ((TSLB(I,NS,J)-T0)/TSLB(I,NS,J)) )**(-1/BEXP) )*SMCMAX
                       FK = MAX(FK, 0.02)
                       SH2O(I,NS,J) = MIN( FK, SMOIS(I,NS,J) )
                    ELSE
@@ -1148,7 +1081,7 @@ end if
              STEPWTD = max(STEPWTD,1)
 
               CALL groundwater_init ( & 
-      &       nsoil, zsoil , dzs  ,isltyp, ivgtyp, isurban, isice ,iswater ,wtddt , &
+      &       nsoil, zsoil , dzs  ,isltyp, ivgtyp, isurban_TABLE, isice_TABLE ,iswater_TABLE ,wtddt , &
       &       fdepthxy, ht, riverbedxy, eqzwt, rivercondxy, pexpxy , areaxy, zwtxy,   &
       &       smois,sh2o, smoiseq, smcwtdxy, deeprechxy, rechxy, qslatxy, qrfsxy, qspringsxy, &
       &       ids,ide, jds,jde, kds,kde,                    &
@@ -1279,6 +1212,9 @@ end if
             &            its,ite, jts,jte, kts,kte                     )
 
 
+  USE NOAHMP_SOIL_PARAMETERS, ONLY : BEXP_TABLE,SMCMAX_TABLE,PSISAT_TABLE,SMCWLT_TABLE,DWSAT_TABLE,DKSAT_TABLE
+  USE module_sf_noahmp_groundwater, ONLY : LATERALFLOW
+
 ! ----------------------------------------------------------------------
   IMPLICIT NONE
 ! ----------------------------------------------------------------------
@@ -1305,7 +1241,7 @@ end if
                                                            QSPRINGSXY  
 ! local
     INTEGER  :: I,J,K,ITER,itf,jtf
-    REAL :: BX,SMCMAX,PSISAT,SMCWLT,DWSAT,DKSAT
+    REAL :: BEXP,SMCMAX,PSISAT,SMCWLT,DWSAT,DKSAT
     REAL :: FRLIQ,SMCEQDEEP
     REAL :: DELTAT,RCOND
     REAL :: AA,BBB,CC,DD,DX,FUNC,DFUNC,DDZ,EXPON,SMC,FLUX
@@ -1359,19 +1295,19 @@ CALL LATERALFLOW(ISLTYP,WTD,QLAT,FDEPTH,TOPO,LANDMASK,DELTAT,AREA       &
 
        DO J = jts,jtf
           DO I = its,itf
-             BX = BB(ISLTYP(I,J))
-             SMCMAX = MAXSMC(ISLTYP(I,J))
-             SMCWLT = WLTSMC (ISLTYP(I,J))
+             BEXP   =   BEXP_TABLE(ISLTYP(I,J))
+             SMCMAX = SMCMAX_TABLE(ISLTYP(I,J))
+             SMCWLT = SMCWLT_TABLE(ISLTYP(I,J))
              IF(IVGTYP(I,J)==ISURBAN)THEN
                  SMCMAX = 0.45         
                  SMCWLT = 0.40         
              ENDIF 
-             DWSAT  = SATDW (ISLTYP(I,J))
-             DKSAT  = SATDK (ISLTYP(I,J))
-             PSISAT = -SATPSI(ISLTYP(I,J))
-           IF ( ( bx > 0.0 ) .AND. ( smcmax > 0.0 ) .AND. ( -psisat > 0.0 ) ) THEN
+             DWSAT  =   DWSAT_TABLE(ISLTYP(I,J))
+             DKSAT  =   DKSAT_TABLE(ISLTYP(I,J))
+             PSISAT = -PSISAT_TABLE(ISLTYP(I,J))
+           IF ( ( BEXP > 0.0 ) .AND. ( smcmax > 0.0 ) .AND. ( -psisat > 0.0 ) ) THEN
              !initialize equilibrium soil moisture for water table diagnostic
-                    CALL EQSMOISTURE(NSOIL ,  ZSOIL , SMCMAX , SMCWLT ,DWSAT, DKSAT  ,BX  , & !in
+                    CALL EQSMOISTURE(NSOIL ,  ZSOIL , SMCMAX , SMCWLT ,DWSAT, DKSAT  ,BEXP  , & !in
                                      SMCEQ                          )  !out
 
              SMOISEQ (I,1:NSOIL,J) = SMCEQ (1:NSOIL)
@@ -1383,7 +1319,7 @@ CALL LATERALFLOW(ISLTYP,WTD,QLAT,FDEPTH,TOPO,LANDMASK,DELTAT,AREA       &
 !initialize deep soil moisture so that the flux compensates qlat+qrf
 !use Newton-Raphson method to find soil moisture
 
-                         EXPON = 2. * BX + 3.
+                         EXPON = 2. * BEXP + 3.
                          DDZ = ZSOIL(NSOIL) - WTD(I,J)
                          CC = PSISAT/DDZ
                          FLUX = (QLAT(I,J)-QRF(I,J))/DELTAT
@@ -1393,10 +1329,10 @@ CALL LATERALFLOW(ISLTYP,WTD,QLAT,FDEPTH,TOPO,LANDMASK,DELTAT,AREA       &
                          DO ITER = 1, 100
                            DD = (SMC+SMCMAX)/(2.*SMCMAX)
                            AA = -DKSAT * DD  ** EXPON
-                           BBB = CC * ( (SMCMAX/SMC)**BX - 1. ) + 1. 
+                           BBB = CC * ( (SMCMAX/SMC)**BEXP - 1. ) + 1. 
                            FUNC =  AA * BBB - FLUX
                            DFUNC = -DKSAT * (EXPON/(2.*SMCMAX)) * DD ** (EXPON - 1.) * BBB &
-                                   + AA * CC * (-BX) * SMCMAX ** BX * SMC ** (-BX-1.)
+                                   + AA * CC * (-BEXP) * SMCMAX ** BEXP * SMC ** (-BEXP-1.)
 
                            DX = FUNC/DFUNC
                            SMC = SMC - DX
@@ -1406,7 +1342,7 @@ CALL LATERALFLOW(ISLTYP,WTD,QLAT,FDEPTH,TOPO,LANDMASK,DELTAT,AREA       &
                   SMCWTDXY(I,J) = MAX(SMC,1.E-4)
 
              ELSEIF(WTD(I,J) < ZSOIL(NSOIL))THEN
-                  SMCEQDEEP = SMCMAX * ( PSISAT / ( PSISAT - DZS(NSOIL) ) ) ** (1./BX)
+                  SMCEQDEEP = SMCMAX * ( PSISAT / ( PSISAT - DZS(NSOIL) ) ) ** (1./BEXP)
 !                  SMCEQDEEP = MAX(SMCEQDEEP,SMCWLT)
                   SMCEQDEEP = MAX(SMCEQDEEP,1.E-4)
                   SMCWTDXY(I,J) = SMCMAX * ( WTD(I,J) -  (ZSOIL(NSOIL)-DZS(NSOIL))) + &

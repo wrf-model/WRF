@@ -95,7 +95,8 @@ CONTAINS
 # if (EM_CORE == 1)
                                           , CAMMGMPSCHEME             &
 # endif
-                                          ,TIEDTKESCHEME              
+                                          ,TIEDTKESCHEME              &
+                                          ,NTIEDTKESCHEME              
 
 ! *** add new modules of schemes here
 
@@ -117,6 +118,7 @@ CONTAINS
    USE module_cu_mesosas, ONLY : cu_meso_sas
    USE module_cu_camzm_driver, ONLY : camzm_driver
    USE module_cu_tiedtke, ONLY : cu_tiedtke
+   USE module_cu_ntiedtke,ONLY : cu_ntiedtke
    USE module_cu_nsas   , ONLY : cu_nsas
    USE module_wrf_error , ONLY : wrf_err_message
 
@@ -603,7 +605,7 @@ CONTAINS
    END IF
 
 #if  ( EM_CORE == 1 )
-      if(cu_physics .eq. 5 ) then
+      if(cu_physics .eq. 5 .or. cu_physics .eq. 16) then
       !$OMP PARALLEL DO   &
       !$OMP PRIVATE ( ij,i,j,k,its,ite,jts,jte )
 
@@ -1043,7 +1045,7 @@ CONTAINS
 
           CALL wrf_debug(100,'in cu_tiedtke')
           CALL CU_TIEDTKE(                                      &
-                DT=dt,ITIMESTEP=itimestep,STEPCU=STEPCU,HFX=hfx &
+                DT=dt,ITIMESTEP=itimestep,STEPCU=STEPCU         &
                ,RAINCV=RAINCV,PRATEC=tmppratec,QFX=qfx,ZNU=znu  &
                ,U3D=u,V3D=v,W=w,T3D=t,PI3D=pi,RHO3D=rho         &
                ,QV3D=QV_CURR,QC3D=QC_CURR,QI3D=QI_CURR          &
@@ -1067,6 +1069,38 @@ CONTAINS
                                                              )
         ELSE
           CALL wrf_error_fatal('Lacking arguments for CU_TIEDTKE in cumulus driver')
+        ENDIF
+
+! NEW TIEDTKE SCHEME - ZCX&YQW (U of Hawaii)
+     CASE (NTIEDTKESCHEME)
+
+        IF ( PRESENT ( QFX ) .AND. PRESENT( HFX )) THEN
+
+          CALL wrf_debug(100,'in cu_ntiedtke')
+          CALL CU_NTIEDTKE(                                      &
+                DT=dt,ITIMESTEP=itimestep,STEPCU=STEPCU,HFX=hfx  &
+               ,RAINCV=RAINCV,PRATEC=tmppratec,QFX=qfx          &
+               ,U3D=u,V3D=v,W=w,T3D=t,PI3D=pi,RHO3D=rho         &
+               ,QV3D=QV_CURR,QC3D=QC_CURR,QI3D=QI_CURR          &
+               ,DZ8W=dz8w,PCPS=p,P8W=p8w,XLAND=XLAND,DX=dx      &
+               ,CU_ACT_FLAG=CU_ACT_FLAG                         &
+               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
+               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
+               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
+              ! optionals
+#if (NMM_CORE == 1 )
+               ,QVFTEN=FORCEQ, THFTEN=FORCET                    &
+#else
+               ,QVFTEN=RQVFTEN,THFTEN=RTHFTEN                   &
+#endif
+               ,RTHCUTEN=RTHCUTEN,RQVCUTEN=RQVCUTEN             &
+               ,RQCCUTEN=RQCCUTEN,RQICUTEN=RQICUTEN             &
+               ,RUCUTEN = RUCUTEN,RVCUTEN = RVCUTEN             &
+               ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                   &
+               ,F_QI=f_qi,F_QS=f_qs                             &
+                                                             )
+        ELSE
+          CALL wrf_error_fatal('Lacking arguments for CU_NTIEDTKE in cumulus driver')
         ENDIF
 
 ! New GFS SAS SCHEME - (Yonsei Univ., South Korea)

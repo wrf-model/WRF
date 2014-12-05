@@ -1607,6 +1607,7 @@ package   gfscheme       cu_physics==3               -             -
 package   camzmscheme    cu_physics==7               -             -
 package   g3tave         cu_diag==1                  -             state:GD_CLOUD,GD_CLOUD2,GD_CLDFR,GD_CLOUD_A,GD_CLOUD2_A,kbcon_deep,ktop_deep,k22_deep
 package   tiedtkescheme  cu_physics==6               -             -
+package   ntiedtkescheme cu_physics==16              -             -
 package   nsasscheme     cu_physics==14              -             -
 package   kfscheme       cu_physics==99              -             -
 

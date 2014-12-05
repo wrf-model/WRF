@@ -3045,6 +3045,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    USE module_cu_camzm_driver, ONLY : zm_conv_init
    USE module_cu_nsas
    USE module_cu_tiedtke
+   USE module_cu_ntiedtke
 !------------------------------------------------------------------
    IMPLICIT NONE
 !------------------------------------------------------------------
@@ -3218,6 +3219,16 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
       CASE (TIEDTKESCHEME)
           CALL tiedtkeinit(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN,   &
                       RUCUTEN,RVCUTEN,                            & 
+                      restart,P_QC,P_QI,PARAM_FIRST_SCALAR,       &
+                      allowed_to_read ,                           &
+                      ids, ide, jds, jde, kds, kde,               &
+                      ims, ime, jms, jme, kms, kme,               &
+                      its, ite, jts, jte, kts, kte                )
+
+      CASE (NTIEDTKESCHEME)
+          CALL ntiedtkeinit(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN,  &
+                      RUCUTEN,RVCUTEN,                            &
+                      RTHFTEN, RQVFTEN,                           &
                       restart,P_QC,P_QI,PARAM_FIRST_SCALAR,       &
                       allowed_to_read ,                           &
                       ids, ide, jds, jde, kds, kde,               &

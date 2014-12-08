@@ -16,8 +16,8 @@
  MODULE g_module_big_step_utilities_em
 
  USE module_model_constants
- USE module_state_description, only: p_qg, p_qs, p_qi, gdscheme, tiedtkescheme, kfetascheme, g3scheme, &
- p_qv, param_first_scalar, p_qr, p_qc, DFI_FWD
+ USE module_state_description, only: p_qg, p_qs, p_qi, gdscheme, tiedtkescheme, ntiedtkescheme, &
+ kfetascheme, g3scheme, p_qv, param_first_scalar, p_qr, p_qc, DFI_FWD
  USE module_configure, ONLY : grid_config_rec_type
  USE module_wrf_error
 
@@ -5908,8 +5908,8 @@ SUBROUTINE G_PHY_PREP(config_flags, mu, mud, muu, muud, muv, muvd, u, ud&
 !  decouple advective forcing required by Grell-Devenyi scheme
   IF (((config_flags%cu_physics .EQ. gdscheme .OR. config_flags%&
 &      cu_physics .EQ. g3scheme) .OR. config_flags%cu_physics .EQ. &
-&      kfetascheme) .OR. config_flags%cu_physics .EQ. tiedtkescheme) THEN
-! Tiedtke ZCX&YQW
+&      kfetascheme) .OR. config_flags%cu_physics .EQ. tiedtkescheme .OR. &
+&      (config_flags%cu_physics == NTIEDTKESCHEME) ) THEN ! Tiedtke ZCX&YQW
     DO j=j_start,j_end
       DO i=i_start,i_end
         DO k=k_start,k_end

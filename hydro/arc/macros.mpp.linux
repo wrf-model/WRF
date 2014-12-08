@@ -5,6 +5,10 @@ else
 WRF_HYDRO =
 endif
 
+ifeq ($(WRF_HYDRO_RAPID),1)
+WRF_HYDRO = -DWRF_HYDRO -DWRF_HYDRO_RAPID
+endif
+
 ifeq ($(HYDRO_D),1)
 HYDRO_D = -DHYDRO_D $(WRF_HYDRO)
 else
@@ -20,7 +24,7 @@ endif
 RM		=	rm -f  
 RMD		=	rm -f    
 COMPILER90=	mpif90
-F90FLAGS  =     -Mfree -c -byteswapio -O2 
+F90FLAGS  =     -Mfree -c -byteswapio -O2 -Kieee 
 LDFLAGS  =      $(F90FLAGS)
 MODFLAG	=	-I./ -I ../../MPP -I ../MPP -I ../mod 
 LDFLAGS	=	

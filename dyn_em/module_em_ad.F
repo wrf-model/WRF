@@ -13,7 +13,7 @@ MODULE a_module_em
         a_horizontal_pressure_gradient, a_pg_buoy_w, a_w_damp, a_perturbation_coriolis, a_coriolis, a_curvature, a_horizontal_diffusion, a_horizontal_diffusion_3dmp, a_vertical_diffusion_u, &
         a_vertical_diffusion_v, a_vertical_diffusion, a_vertical_diffusion_3dmp, a_sixth_order_diffusion, a_rk_rayleigh_damp, a_theta_relaxation, a_vertical_diffusion_mp, a_zero_tend, a_zero_tend2d
 
-   USE module_state_description, only: param_first_scalar, p_qr, p_qv, p_qc, p_qg, p_qi, p_qs, tiedtkescheme, heldsuarez, positivedef, &
+   USE module_state_description, only: param_first_scalar, p_qr, p_qv, p_qc, p_qg, p_qi, p_qs, tiedtkescheme, ntiedtkescheme, heldsuarez, positivedef, &
         gdscheme, g3scheme, kfetascheme, monotonic, wenopd_scalar, weno_scalar, weno_mom
 
    !USE module_damping_em, only: held_suarez_damp
@@ -1791,7 +1791,8 @@ CONTAINS
 !!  END IF
 
    IF( config_flags%cu_physics == GDSCHEME  .OR.       &
-             config_flags%cu_physics == G3SCHEME ) THEN
+       config_flags%cu_physics == G3SCHEME  .OR.       &
+       config_flags%cu_physics == NTIEDTKESCHEME ) THEN
 
    CALL a_set_tend(RTHFTEN,a_RTHFTEN,t_tend,a_t_tend,msfty,ids,ide,jds,jde,kds,  &
    kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
@@ -2782,7 +2783,8 @@ END SUBROUTINE A_RK_ADDTEND_DRY
 
     IF((config_flags%cu_physics == GDSCHEME .OR. config_flags%cu_physics == G3SCHEME .OR. &
          config_flags%cu_physics == KFETASCHEME .OR. &      ! new trigger in KF
-         config_flags%cu_physics == TIEDTKESCHEME  ) &      ! Tiedtke
+         config_flags%cu_physics == TIEDTKESCHEME .OR. &    ! Tiedtke
+         config_flags%cu_physics == NTIEDTKESCHEME)    &    ! new Tiedtke
          .and. moist_step .and. ( im == P_QV) ) THEN
 
    CALL a_set_tend(RQVFTEN,a_RQVFTEN,advect_tend,a_advect_tend,msfty,ids,ide,  &

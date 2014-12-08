@@ -531,6 +531,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
    REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) ::  & ! G. Thompson
                  re_cloud, re_ice, re_snow
    INTEGER, INTENT(IN):: has_reqc, has_reqi, has_reqs
+!  REAL , DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(INOUT) :: lwp
 
 ! LOCAL  VAR
 
@@ -1796,6 +1797,25 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 #ifdef XEON_OPTIMIZED_WSM5
    ENDIF
 #endif
+
+! by ZCX
+! IF ( PRESENT (LWP) ) THEN
+!   DO ij = 1 , num_tiles
+!      its = i_start(ij)
+!      ite = i_end(ij)
+!      jts = j_start(ij)
+!      jte = j_end(ij)
+!      DO j=jts,jte
+!      DO i=its,ite
+!         lwp(i,j) = 0.0
+!         do k=kts,kte
+!           lwp(i,j)=lwp(i,j)+qc_curr(i,k,j)*rho(i,k,j)*dz8w(i,k,j)
+!         end do
+!      ENDDO
+!      ENDDO
+!   ENDDO
+! ENDIF
+! ZCX
 
    CALL wrf_debug ( 200 , 'microphysics_driver: returning from' )
 

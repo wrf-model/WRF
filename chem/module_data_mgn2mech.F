@@ -71,6 +71,16 @@ MODULE module_data_mgn2mech
   REAL,    DIMENSION (n_megan2crimech) :: crimech_per_megan
   DATA p_of_crimech / n_megan2crimech*non_react /
 
+  INTEGER, PARAMETER :: n_megan2cb05 = 173
+  INTEGER, DIMENSION (n_megan2cb05) :: p_of_megan2cb05, p_of_cb05
+  REAL,    DIMENSION (n_megan2cb05) :: cb05_per_megan
+  DATA p_of_cb05 / n_megan2cb05*non_react /
+
+  INTEGER, PARAMETER :: n_megan2cb05vbs = 173
+  INTEGER, DIMENSION (n_megan2cb05vbs) :: p_of_megan2cb05vbs, p_of_cb05vbs
+  REAL,    DIMENSION (n_megan2cb05vbs) :: cb05vbs_per_megan
+  DATA p_of_cb05vbs / n_megan2cb05vbs*non_react /
+
 !--------------------------------------------------------------------
 ! Some naming convention in denoting MEGAN species
 ! _a  = alpha     , _b  = beta      , _c  = cis       , _al = allo    ,
@@ -1271,6 +1281,365 @@ CONTAINS
     p_of_megan2saprcnov(137) = is_hexenol_c3       ; p_of_saprcnov(137) = p_ole2      ; saprcnov_per_megan(137) = 1.000
     p_of_megan2saprcnov(138) = is_hexenyl_act_c3   ; p_of_saprcnov(138) = p_ole2      ; saprcnov_per_megan(138) = 1.000
   END SUBROUTINE get_megan2saprcnov_table
+
+
+  SUBROUTINE get_megan2cb05_table
+    ! MEGAN species                                  CB05 Species                  Molar ratio
+    !
+    p_of_megan2cb05(  1) = is_isoprene             ; p_of_cb05(  1) = p_isop     ; cb05_per_megan(  1)  =  1.
+    p_of_megan2cb05(  2) = is_myrcene              ; p_of_cb05(  2) = p_oci      ; cb05_per_megan(  2)  =  1.
+    p_of_megan2cb05(  3) = is_sabinene             ; p_of_cb05(  3) = p_apin     ; cb05_per_megan(  3)  =  1.
+    p_of_megan2cb05(  4) = is_limonene             ; p_of_cb05(  4) = p_lim      ; cb05_per_megan(  4)  =  1.
+    p_of_megan2cb05(  5) = is_carene_3             ; p_of_cb05(  5) = p_bpin     ; cb05_per_megan(  5)  =  1.
+    p_of_megan2cb05(  6) = is_ocimene_t_b          ; p_of_cb05(  6) = p_oci      ; cb05_per_megan(  6)  =  1.
+    p_of_megan2cb05(  7) = is_pinene_b             ; p_of_cb05(  7) = p_bpin     ; cb05_per_megan(  7)  =  1.
+    p_of_megan2cb05(  8) = is_pinene_a             ; p_of_cb05(  8) = p_apin     ; cb05_per_megan(  8)  =  1.
+    p_of_megan2cb05(  9) = is_2met_styrene         ; p_of_cb05(  9) = p_oci      ; cb05_per_megan(  9)  =  1.
+    p_of_megan2cb05( 10) = is_cymene_p             ; p_of_cb05( 10) = p_oci      ; cb05_per_megan( 10)  =  1.
+    p_of_megan2cb05( 11) = is_cymene_o             ; p_of_cb05( 11) = p_oci      ; cb05_per_megan( 11)  =  1.
+    p_of_megan2cb05( 12) = is_phellandrene_a       ; p_of_cb05( 12) = p_oci      ; cb05_per_megan( 12)  =  1.
+    p_of_megan2cb05( 13) = is_thujene_a            ; p_of_cb05( 13) = p_oci      ; cb05_per_megan( 13)  =  1.
+    p_of_megan2cb05( 14) = is_terpinene_a          ; p_of_cb05( 14) = p_ter      ; cb05_per_megan( 14)  =  1.
+    p_of_megan2cb05( 15) = is_terpinene_g          ; p_of_cb05( 15) = p_ter      ; cb05_per_megan( 15)  =  1.
+    p_of_megan2cb05( 16) = is_terpinolene          ; p_of_cb05( 16) = p_oci      ; cb05_per_megan( 16)  =  1.
+    p_of_megan2cb05( 17) = is_phellandrene_b       ; p_of_cb05( 17) = p_oci      ; cb05_per_megan( 17)  =  1.
+    p_of_megan2cb05( 18) = is_camphene             ; p_of_cb05( 18) = p_oci      ; cb05_per_megan( 18)  =  1.
+    p_of_megan2cb05( 19) = is_bornene              ; p_of_cb05( 19) = p_oci      ; cb05_per_megan( 19)  =  1.
+    p_of_megan2cb05( 20) = is_fenchene_a           ; p_of_cb05( 20) = p_oci      ; cb05_per_megan( 20)  =  1.
+    p_of_megan2cb05( 21) = is_ocimene_al           ; p_of_cb05( 21) = p_oci      ; cb05_per_megan( 21)  =  1.
+    p_of_megan2cb05( 22) = is_ocimene_c_b          ; p_of_cb05( 22) = p_oci      ; cb05_per_megan( 22)  =  1.
+    p_of_megan2cb05( 23) = is_tricyclene           ; p_of_cb05( 23) = p_oci      ; cb05_per_megan( 23)  =  1.
+    p_of_megan2cb05( 24) = is_estragole            ; p_of_cb05( 24) = p_oci      ; cb05_per_megan( 24)  =  1.
+    p_of_megan2cb05( 25) = is_camphor              ; p_of_cb05( 25) = p_oci      ; cb05_per_megan( 25)  =  1.
+    p_of_megan2cb05( 26) = is_fenchone             ; p_of_cb05( 26) = p_oci      ; cb05_per_megan( 26)  =  1.
+    p_of_megan2cb05( 27) = is_piperitone           ; p_of_cb05( 27) = p_oci      ; cb05_per_megan( 27)  =  1.
+    p_of_megan2cb05( 28) = is_thujone_a            ; p_of_cb05( 28) = p_oci      ; cb05_per_megan( 28)  =  1.
+    p_of_megan2cb05( 29) = is_thujone_b            ; p_of_cb05( 29) = p_oci      ; cb05_per_megan( 29)  =  1.
+    p_of_megan2cb05( 30) = is_cineole_1_8          ; p_of_cb05( 30) = p_oci      ; cb05_per_megan( 30)  =  1.
+    p_of_megan2cb05( 31) = is_borneol              ; p_of_cb05( 31) = p_oci      ; cb05_per_megan( 31)  =  1.
+    p_of_megan2cb05( 32) = is_linalool             ; p_of_cb05( 32) = p_oci      ; cb05_per_megan( 32)  =  1.
+    p_of_megan2cb05( 33) = is_terpineol_4          ; p_of_cb05( 33) = p_oci      ; cb05_per_megan( 33)  =  1.
+    p_of_megan2cb05( 34) = is_terpineol_a          ; p_of_cb05( 34) = p_oci      ; cb05_per_megan( 34)  =  1.
+    p_of_megan2cb05( 35) = is_linalool_oxd_c       ; p_of_cb05( 35) = p_oci      ; cb05_per_megan( 35)  =  1.
+    p_of_megan2cb05( 36) = is_linalool_oxd_t       ; p_of_cb05( 36) = p_oci      ; cb05_per_megan( 36)  =  1.
+    p_of_megan2cb05( 37) = is_ionone_b             ; p_of_cb05( 37) = p_hum      ; cb05_per_megan( 37)  =  1.
+    p_of_megan2cb05( 38) = is_bornyl_act           ; p_of_cb05( 38) = p_oci      ; cb05_per_megan( 38)  =  1.
+    p_of_megan2cb05( 39) = is_farnescene_a         ; p_of_cb05( 39) = p_hum      ; cb05_per_megan( 39)  =  1.
+    p_of_megan2cb05( 40) = is_caryophyllene_b      ; p_of_cb05( 40) = p_hum      ; cb05_per_megan( 40)  =  1.
+    p_of_megan2cb05( 41) = is_acoradiene           ; p_of_cb05( 41) = p_hum      ; cb05_per_megan( 41)  =  1.
+    p_of_megan2cb05( 42) = is_aromadendrene        ; p_of_cb05( 42) = p_hum      ; cb05_per_megan( 42)  =  1.
+    p_of_megan2cb05( 43) = is_bergamotene_a        ; p_of_cb05( 43) = p_hum      ; cb05_per_megan( 43)  =  1.
+    p_of_megan2cb05( 44) = is_bergamotene_b        ; p_of_cb05( 44) = p_hum      ; cb05_per_megan( 44)  =  1.
+    p_of_megan2cb05( 45) = is_bisabolene_a         ; p_of_cb05( 45) = p_hum      ; cb05_per_megan( 45)  =  1.
+    p_of_megan2cb05( 46) = is_bisabolene_b         ; p_of_cb05( 46) = p_hum      ; cb05_per_megan( 46)  =  1.
+    p_of_megan2cb05( 47) = is_bourbonene_b         ; p_of_cb05( 47) = p_hum      ; cb05_per_megan( 47)  =  1.
+    p_of_megan2cb05( 48) = is_cadinene_d           ; p_of_cb05( 48) = p_hum      ; cb05_per_megan( 48)  =  1.
+    p_of_megan2cb05( 49) = is_cadinene_g           ; p_of_cb05( 49) = p_hum      ; cb05_per_megan( 49)  =  1.
+    p_of_megan2cb05( 50) = is_cedrene_a            ; p_of_cb05( 50) = p_hum      ; cb05_per_megan( 50)  =  1.
+    p_of_megan2cb05( 51) = is_copaene_a            ; p_of_cb05( 51) = p_hum      ; cb05_per_megan( 51)  =  1.
+    p_of_megan2cb05( 52) = is_cubebene_a           ; p_of_cb05( 52) = p_hum      ; cb05_per_megan( 52)  =  1.
+    p_of_megan2cb05( 53) = is_cubebene_b           ; p_of_cb05( 53) = p_hum      ; cb05_per_megan( 53)  =  1.
+    p_of_megan2cb05( 54) = is_elemene_b            ; p_of_cb05( 54) = p_hum      ; cb05_per_megan( 54)  =  1.
+    p_of_megan2cb05( 55) = is_farnescene_b         ; p_of_cb05( 55) = p_hum      ; cb05_per_megan( 55)  =  1.
+    p_of_megan2cb05( 56) = is_germacrene_B         ; p_of_cb05( 56) = p_hum      ; cb05_per_megan( 56)  =  1.
+    p_of_megan2cb05( 57) = is_germacrene_D         ; p_of_cb05( 57) = p_hum      ; cb05_per_megan( 57)  =  1.
+    p_of_megan2cb05( 58) = is_gurjunene_b          ; p_of_cb05( 58) = p_hum      ; cb05_per_megan( 58)  =  1.
+    p_of_megan2cb05( 59) = is_humulene_a           ; p_of_cb05( 59) = p_hum      ; cb05_per_megan( 59)  =  1.
+    p_of_megan2cb05( 60) = is_humulene_g           ; p_of_cb05( 60) = p_hum      ; cb05_per_megan( 60)  =  1.
+    p_of_megan2cb05( 61) = is_isolongifolene       ; p_of_cb05( 61) = p_hum      ; cb05_per_megan( 61)  =  1.
+    p_of_megan2cb05( 62) = is_longifolene          ; p_of_cb05( 62) = p_hum      ; cb05_per_megan( 62)  =  1.
+    p_of_megan2cb05( 63) = is_longipinene          ; p_of_cb05( 63) = p_hum      ; cb05_per_megan( 63)  =  1.
+    p_of_megan2cb05( 64) = is_muurolene_a          ; p_of_cb05( 64) = p_hum      ; cb05_per_megan( 64)  =  1.
+    p_of_megan2cb05( 65) = is_muurolene_g          ; p_of_cb05( 65) = p_hum      ; cb05_per_megan( 65)  =  1.
+    p_of_megan2cb05( 66) = is_selinene_b           ; p_of_cb05( 66) = p_hum      ; cb05_per_megan( 66)  =  1.
+    p_of_megan2cb05( 67) = is_selinene_d           ; p_of_cb05( 67) = p_hum      ; cb05_per_megan( 67)  =  1.
+    p_of_megan2cb05( 68) = is_nerolidol_c          ; p_of_cb05( 68) = p_hum      ; cb05_per_megan( 68)  =  1.
+    p_of_megan2cb05( 69) = is_nerolidol_t          ; p_of_cb05( 69) = p_hum      ; cb05_per_megan( 69)  =  1.
+    p_of_megan2cb05( 70) = is_cedrol               ; p_of_cb05( 70) = p_hum      ; cb05_per_megan( 70)  =  1.
+    p_of_megan2cb05( 71) = is_mbo_2m3e2ol          ; p_of_cb05( 71) = p_ole      ; cb05_per_megan( 71)  =  1.
+    p_of_megan2cb05( 72) = is_mbo_2m3e2ol          ; p_of_cb05( 72) = p_par      ; cb05_per_megan( 72)  =  3.
+    p_of_megan2cb05( 73) = is_methanol             ; p_of_cb05( 73) = p_meoh     ; cb05_per_megan( 73)  =  1.
+    p_of_megan2cb05( 74) = is_acetone              ; p_of_cb05( 74) = p_ispd     ; cb05_per_megan( 74)  =  1.
+    p_of_megan2cb05( 75) = is_methane              ; p_of_cb05( 75) = p_ch4      ; cb05_per_megan( 75)  =  1.
+    p_of_megan2cb05( 76) = is_ammonia              ; p_of_cb05( 76) = p_nh3      ; cb05_per_megan( 76)  =  1.
+    p_of_megan2cb05( 77) = is_nitrous_oxd          ; p_of_cb05( 77) = non_react  ; cb05_per_megan( 77)  =  1.
+    p_of_megan2cb05( 78) = is_nitric_oxd           ; p_of_cb05( 78) = p_no       ; cb05_per_megan( 78)  =  1.
+    p_of_megan2cb05( 79) = is_acetaldehyde         ; p_of_cb05( 79) = p_ald2     ; cb05_per_megan( 79)  =  1.
+    p_of_megan2cb05( 80) = is_ethanol              ; p_of_cb05( 80) = p_etoh     ; cb05_per_megan( 80)  =  1.
+    p_of_megan2cb05( 81) = is_formic_acid          ; p_of_cb05( 81) = p_facd     ; cb05_per_megan( 81)  =  1.
+    p_of_megan2cb05( 82) = is_formaldehyde         ; p_of_cb05( 82) = p_form     ; cb05_per_megan( 82)  =  1.
+    p_of_megan2cb05( 83) = is_acetic_acid          ; p_of_cb05( 83) = p_aacd     ; cb05_per_megan( 83)  =  1.
+    p_of_megan2cb05( 84) = is_mbo_3m2e1ol          ; p_of_cb05( 84) = p_ald2     ; cb05_per_megan( 84)  =  1.
+    p_of_megan2cb05( 85) = is_mbo_3m2e1ol          ; p_of_cb05( 85) = p_par      ; cb05_per_megan( 85)  =  3.
+    p_of_megan2cb05( 86) = is_mbo_3m3e1ol          ; p_of_cb05( 86) = p_form     ; cb05_per_megan( 86)  =  1.
+    p_of_megan2cb05( 87) = is_mbo_3m3e1ol          ; p_of_cb05( 87) = p_par      ; cb05_per_megan( 87)  =  4.
+    p_of_megan2cb05( 88) = is_benzaldehyde         ; p_of_cb05( 88) = p_tol      ; cb05_per_megan( 88)  =  1.
+    p_of_megan2cb05( 89) = is_butanone_2           ; p_of_cb05( 89) = p_ispd     ; cb05_per_megan( 89)  =  1.
+    p_of_megan2cb05( 90) = is_butanone_2           ; p_of_cb05( 90) = p_par      ; cb05_per_megan( 90)  =  2.
+    p_of_megan2cb05( 91) = is_decanal              ; p_of_cb05( 91) = p_aldx     ; cb05_per_megan( 91)  =  1.
+    p_of_megan2cb05( 92) = is_decanal              ; p_of_cb05( 92) = p_par      ; cb05_per_megan( 92)  =  8.
+    p_of_megan2cb05( 93) = is_dodecene_1           ; p_of_cb05( 93) = p_ole      ; cb05_per_megan( 93)  =  1.
+    p_of_megan2cb05( 94) = is_dodecene_1           ; p_of_cb05( 94) = p_par      ; cb05_per_megan( 94)  =  10.
+    p_of_megan2cb05( 95) = is_geranyl_acetone      ; p_of_cb05( 95) = p_hum      ; cb05_per_megan( 95)  =  1.
+    p_of_megan2cb05( 96) = is_heptanal             ; p_of_cb05( 96) = p_aldx     ; cb05_per_megan( 96)  =  1.
+    p_of_megan2cb05( 97) = is_heptanal             ; p_of_cb05( 97) = p_par      ; cb05_per_megan( 97)  =  5.
+    p_of_megan2cb05( 98) = is_heptane              ; p_of_cb05( 98) = p_par      ; cb05_per_megan( 98)  =  7.
+    p_of_megan2cb05( 99) = is_hexane               ; p_of_cb05( 99) = p_par      ; cb05_per_megan( 99)  =  6.
+    p_of_megan2cb05(100) = is_met_benzoate         ; p_of_cb05(100) = p_tol      ; cb05_per_megan(100)  =  1.
+    p_of_megan2cb05(101) = is_met_heptenone        ; p_of_cb05(101) = p_ispd     ; cb05_per_megan(101)  =  1.
+    p_of_megan2cb05(102) = is_met_heptenone        ; p_of_cb05(102) = p_par      ; cb05_per_megan(102)  =  3.
+    p_of_megan2cb05(103) = is_met_heptenone        ; p_of_cb05(103) = p_ole      ; cb05_per_megan(103)  =  1.
+    p_of_megan2cb05(104) = is_neryl_acetone        ; p_of_cb05(104) = p_ispd     ; cb05_per_megan(104)  =  1.
+    p_of_megan2cb05(105) = is_neryl_acetone        ; p_of_cb05(105) = p_par      ; cb05_per_megan(105)  =  8.
+    p_of_megan2cb05(106) = is_neryl_acetone        ; p_of_cb05(106) = p_iole     ; cb05_per_megan(106)  =  2.
+    p_of_megan2cb05(107) = is_nonanal              ; p_of_cb05(107) = p_aldx     ; cb05_per_megan(107)  =  1.
+    p_of_megan2cb05(108) = is_nonanal              ; p_of_cb05(108) = p_par      ; cb05_per_megan(108)  =  7.
+    p_of_megan2cb05(109) = is_nonenal              ; p_of_cb05(109) = p_aldx     ; cb05_per_megan(109)  =  1.
+    p_of_megan2cb05(110) = is_nonenal              ; p_of_cb05(110) = p_par      ; cb05_per_megan(110)  =  6.
+    p_of_megan2cb05(111) = is_nonenal              ; p_of_cb05(111) = p_iole     ; cb05_per_megan(111)  =  1.
+    p_of_megan2cb05(112) = is_octanal              ; p_of_cb05(112) = p_aldx     ; cb05_per_megan(112)  =  1.
+    p_of_megan2cb05(113) = is_octanal              ; p_of_cb05(113) = p_par      ; cb05_per_megan(113)  =  6.
+    p_of_megan2cb05(114) = is_octanol              ; p_of_cb05(114) = p_par      ; cb05_per_megan(114)  =  8.
+    p_of_megan2cb05(115) = is_octenol_1e3ol        ; p_of_cb05(115) = p_par      ; cb05_per_megan(115)  =  6.
+    p_of_megan2cb05(116) = is_octenol_1e3ol        ; p_of_cb05(116) = p_ole      ; cb05_per_megan(116)  =  1.
+    p_of_megan2cb05(117) = is_oxopentanal          ; p_of_cb05(117) = p_aldx     ; cb05_per_megan(117)  =  1.
+    p_of_megan2cb05(118) = is_oxopentanal          ; p_of_cb05(118) = p_par      ; cb05_per_megan(118)  =  3.
+    p_of_megan2cb05(119) = is_pentane              ; p_of_cb05(119) = p_par      ; cb05_per_megan(119)  =  5.
+    p_of_megan2cb05(120) = is_phenyl_cco           ; p_of_cb05(120) = p_aldx     ; cb05_per_megan(120)  =  1
+    p_of_megan2cb05(121) = is_phenyl_cco           ; p_of_cb05(121) = p_tol      ; cb05_per_megan(121)  =  1.
+    p_of_megan2cb05(122) = is_pyruvic_acid         ; p_of_cb05(122) = p_aacd     ; cb05_per_megan(122)  =  1.
+    p_of_megan2cb05(123) = is_pyruvic_acid         ; p_of_cb05(123) = p_ispd     ; cb05_per_megan(123)  =  1.
+    p_of_megan2cb05(124) = is_terpinyl_act_a       ; p_of_cb05(124) = p_oci      ; cb05_per_megan(124)  =  1.
+    p_of_megan2cb05(125) = is_tetradecene_1        ; p_of_cb05(125) = p_par      ; cb05_per_megan(125)  =  12.
+    p_of_megan2cb05(126) = is_tetradecene_1        ; p_of_cb05(126) = p_ole      ; cb05_per_megan(126)  =  1.
+    p_of_megan2cb05(127) = is_toluene              ; p_of_cb05(127) = p_tol      ; cb05_per_megan(127)  =  1.
+    p_of_megan2cb05(128) = is_carbon_monoxide      ; p_of_cb05(128) = p_co       ; cb05_per_megan(128)  =  1.
+    p_of_megan2cb05(129) = is_butene               ; p_of_cb05(129) = p_ole      ; cb05_per_megan(129)  =  1.
+    p_of_megan2cb05(130) = is_butene               ; p_of_cb05(130) = p_par      ; cb05_per_megan(130)  =  2.
+    p_of_megan2cb05(131) = is_ethane               ; p_of_cb05(131) = p_etha     ; cb05_per_megan(131)  =  1.
+    p_of_megan2cb05(132) = is_ethene               ; p_of_cb05(132) = p_eth      ; cb05_per_megan(132)  =  1.
+    p_of_megan2cb05(133) = is_hydrogen_cyanide     ; p_of_cb05(133) = non_react  ; cb05_per_megan(133)  =  1.
+    p_of_megan2cb05(134) = is_propane              ; p_of_cb05(134) = p_par      ; cb05_per_megan(134)  =  3.
+    p_of_megan2cb05(135) = is_propene              ; p_of_cb05(135) = p_ole      ; cb05_per_megan(135)  =  1.
+    p_of_megan2cb05(136) = is_propene              ; p_of_cb05(136) = p_par      ; cb05_per_megan(136)  =  1.
+    p_of_megan2cb05(137) = is_carbon_2s            ; p_of_cb05(137) = non_react  ; cb05_per_megan(137)  =  1.
+    p_of_megan2cb05(138) = is_carbonyl_s           ; p_of_cb05(138) = non_react  ; cb05_per_megan(138)  =  1.
+    p_of_megan2cb05(139) = is_diallyl_2s           ; p_of_cb05(139) = non_react  ; cb05_per_megan(139)  =  1.
+    p_of_megan2cb05(140) = is_diallyl_2s           ; p_of_cb05(140) = p_par      ; cb05_per_megan(140)  =  2.
+    p_of_megan2cb05(141) = is_diallyl_2s           ; p_of_cb05(141) = p_ole      ; cb05_per_megan(141)  =  2.
+    p_of_megan2cb05(142) = is_2met_2s              ; p_of_cb05(142) = non_react  ; cb05_per_megan(142)  =  1.
+    p_of_megan2cb05(143) = is_2met_s               ; p_of_cb05(143) = non_react  ; cb05_per_megan(143)  =  1.
+    p_of_megan2cb05(144) = is_met_chloride         ; p_of_cb05(144) = non_react  ; cb05_per_megan(144)  =  1.
+    p_of_megan2cb05(145) = is_met_bromide          ; p_of_cb05(145) = non_react  ; cb05_per_megan(145)  =  1.
+    p_of_megan2cb05(146) = is_met_iodide           ; p_of_cb05(146) = non_react  ; cb05_per_megan(146)  =  1.
+    p_of_megan2cb05(147) = is_hydrogen_s           ; p_of_cb05(147) = non_react  ; cb05_per_megan(147)  =  1.
+    p_of_megan2cb05(148) = is_met_mercaptan        ; p_of_cb05(148) = p_par      ; cb05_per_megan(148)  =  1.
+    p_of_megan2cb05(149) = is_met_propenyl_2s      ; p_of_cb05(149) = non_react  ; cb05_per_megan(149)  =  1.
+    p_of_megan2cb05(150) = is_met_propenyl_2s      ; p_of_cb05(150) = p_iole     ; cb05_per_megan(150)  =  1.
+    p_of_megan2cb05(151) = is_pppp_2s              ; p_of_cb05(151) = non_react  ; cb05_per_megan(151)  =  1.
+    p_of_megan2cb05(152) = is_pppp_2s              ; p_of_cb05(152) = p_par      ; cb05_per_megan(152)  =  2.
+    p_of_megan2cb05(153) = is_pppp_2s              ; p_of_cb05(153) = p_iole     ; cb05_per_megan(153)  =  1.
+    p_of_megan2cb05(154) = is_2met_nonatriene      ; p_of_cb05(154) = p_oci      ; cb05_per_megan(154)  =  1.
+    p_of_megan2cb05(155) = is_met_salicylate       ; p_of_cb05(155) = p_tol      ; cb05_per_megan(155)  =  1.
+    p_of_megan2cb05(156) = is_indole               ; p_of_cb05(156) = p_tol      ; cb05_per_megan(156)  =  1.
+    p_of_megan2cb05(157) = is_jasmone              ; p_of_cb05(157) = p_oci      ; cb05_per_megan(157)  =  1.
+    p_of_megan2cb05(158) = is_met_jasmonate        ; p_of_cb05(158) = p_hum      ; cb05_per_megan(158)  =  1.
+    p_of_megan2cb05(159) = is_3met_3dctt           ; p_of_cb05(159) = p_hum      ; cb05_per_megan(159)  =  1.
+    p_of_megan2cb05(160) = is_hexanal              ; p_of_cb05(160) = p_aldx     ; cb05_per_megan(160)  =  1.
+    p_of_megan2cb05(161) = is_hexanal              ; p_of_cb05(161) = p_par      ; cb05_per_megan(161)  =  4.
+    p_of_megan2cb05(162) = is_hexanol_1            ; p_of_cb05(162) = p_par      ; cb05_per_megan(162)  =  6.
+    p_of_megan2cb05(163) = is_hexenal_c3           ; p_of_cb05(163) = p_aldx     ; cb05_per_megan(163)  =  1.
+    p_of_megan2cb05(164) = is_hexenal_c3           ; p_of_cb05(164) = p_par      ; cb05_per_megan(164)  =  3.
+    p_of_megan2cb05(165) = is_hexenal_c3           ; p_of_cb05(165) = p_iole     ; cb05_per_megan(165)  =  1
+    p_of_megan2cb05(166) = is_hexenal_t2           ; p_of_cb05(166) = p_aldx     ; cb05_per_megan(166)  =  1.
+    p_of_megan2cb05(167) = is_hexenal_t2           ; p_of_cb05(167) = p_par      ; cb05_per_megan(167)  =  6.
+    p_of_megan2cb05(168) = is_hexenal_t2           ; p_of_cb05(168) = p_iole     ; cb05_per_megan(168)  =  1.
+    p_of_megan2cb05(169) = is_hexenol_c3           ; p_of_cb05(169) = p_par      ; cb05_per_megan(169)  =  5.
+    p_of_megan2cb05(170) = is_hexenol_c3           ; p_of_cb05(170) = p_iole     ; cb05_per_megan(170)  =  1.
+    p_of_megan2cb05(171) = is_hexenyl_act_c3       ; p_of_cb05(171) = p_ispd     ; cb05_per_megan(171)  =  1.
+    p_of_megan2cb05(172) = is_hexenyl_act_c3       ; p_of_cb05(172) = p_par      ; cb05_per_megan(172)  =  5.
+    p_of_megan2cb05(173) = is_hexenyl_act_c3       ; p_of_cb05(173) = p_iole     ; cb05_per_megan(173)  =  1.
+
+  END SUBROUTINE get_megan2cb05_table
+
+  SUBROUTINE get_megan2cb05vbs_table
+    ! MEGAN species                                  CB05 Species                  Molar ratio
+    !
+    p_of_megan2cb05vbs(  1) = is_isoprene             ; p_of_cb05vbs(  1) = p_isop     ; cb05vbs_per_megan(  1)  =  1.
+    p_of_megan2cb05vbs(  2) = is_myrcene              ; p_of_cb05vbs(  2) = p_oci      ; cb05vbs_per_megan(  2)  =  1.
+    p_of_megan2cb05vbs(  3) = is_sabinene             ; p_of_cb05vbs(  3) = p_apin     ; cb05vbs_per_megan(  3)  =  1.
+    p_of_megan2cb05vbs(  4) = is_limonene             ; p_of_cb05vbs(  4) = p_lim      ; cb05vbs_per_megan(  4)  =  1.
+    p_of_megan2cb05vbs(  5) = is_carene_3             ; p_of_cb05vbs(  5) = p_bpin     ; cb05vbs_per_megan(  5)  =  1.
+    p_of_megan2cb05vbs(  6) = is_ocimene_t_b          ; p_of_cb05vbs(  6) = p_oci      ; cb05vbs_per_megan(  6)  =  1.
+    p_of_megan2cb05vbs(  7) = is_pinene_b             ; p_of_cb05vbs(  7) = p_bpin     ; cb05vbs_per_megan(  7)  =  1.
+    p_of_megan2cb05vbs(  8) = is_pinene_a             ; p_of_cb05vbs(  8) = p_apin     ; cb05vbs_per_megan(  8)  =  1.
+    p_of_megan2cb05vbs(  9) = is_2met_styrene         ; p_of_cb05vbs(  9) = p_oci      ; cb05vbs_per_megan(  9)  =  1.
+    p_of_megan2cb05vbs( 10) = is_cymene_p             ; p_of_cb05vbs( 10) = p_oci      ; cb05vbs_per_megan( 10)  =  1.
+    p_of_megan2cb05vbs( 11) = is_cymene_o             ; p_of_cb05vbs( 11) = p_oci      ; cb05vbs_per_megan( 11)  =  1.
+    p_of_megan2cb05vbs( 12) = is_phellandrene_a       ; p_of_cb05vbs( 12) = p_oci      ; cb05vbs_per_megan( 12)  =  1.
+    p_of_megan2cb05vbs( 13) = is_thujene_a            ; p_of_cb05vbs( 13) = p_oci      ; cb05vbs_per_megan( 13)  =  1.
+    p_of_megan2cb05vbs( 14) = is_terpinene_a          ; p_of_cb05vbs( 14) = p_ter      ; cb05vbs_per_megan( 14)  =  1.
+    p_of_megan2cb05vbs( 15) = is_terpinene_g          ; p_of_cb05vbs( 15) = p_ter      ; cb05vbs_per_megan( 15)  =  1.
+    p_of_megan2cb05vbs( 16) = is_terpinolene          ; p_of_cb05vbs( 16) = p_oci      ; cb05vbs_per_megan( 16)  =  1.
+    p_of_megan2cb05vbs( 17) = is_phellandrene_b       ; p_of_cb05vbs( 17) = p_oci      ; cb05vbs_per_megan( 17)  =  1.
+    p_of_megan2cb05vbs( 18) = is_camphene             ; p_of_cb05vbs( 18) = p_oci      ; cb05vbs_per_megan( 18)  =  1.
+    p_of_megan2cb05vbs( 19) = is_bornene              ; p_of_cb05vbs( 19) = p_oci      ; cb05vbs_per_megan( 19)  =  1.
+    p_of_megan2cb05vbs( 20) = is_fenchene_a           ; p_of_cb05vbs( 20) = p_oci      ; cb05vbs_per_megan( 20)  =  1.
+    p_of_megan2cb05vbs( 21) = is_ocimene_al           ; p_of_cb05vbs( 21) = p_oci      ; cb05vbs_per_megan( 21)  =  1.
+    p_of_megan2cb05vbs( 22) = is_ocimene_c_b          ; p_of_cb05vbs( 22) = p_oci      ; cb05vbs_per_megan( 22)  =  1.
+    p_of_megan2cb05vbs( 23) = is_tricyclene           ; p_of_cb05vbs( 23) = p_oci      ; cb05vbs_per_megan( 23)  =  1.
+    p_of_megan2cb05vbs( 24) = is_estragole            ; p_of_cb05vbs( 24) = p_oci      ; cb05vbs_per_megan( 24)  =  1.
+    p_of_megan2cb05vbs( 25) = is_camphor              ; p_of_cb05vbs( 25) = p_oci      ; cb05vbs_per_megan( 25)  =  1.
+    p_of_megan2cb05vbs( 26) = is_fenchone             ; p_of_cb05vbs( 26) = p_oci      ; cb05vbs_per_megan( 26)  =  1.
+    p_of_megan2cb05vbs( 27) = is_piperitone           ; p_of_cb05vbs( 27) = p_oci      ; cb05vbs_per_megan( 27)  =  1.
+    p_of_megan2cb05vbs( 28) = is_thujone_a            ; p_of_cb05vbs( 28) = p_oci      ; cb05vbs_per_megan( 28)  =  1.
+    p_of_megan2cb05vbs( 29) = is_thujone_b            ; p_of_cb05vbs( 29) = p_oci      ; cb05vbs_per_megan( 29)  =  1.
+    p_of_megan2cb05vbs( 30) = is_cineole_1_8          ; p_of_cb05vbs( 30) = p_oci      ; cb05vbs_per_megan( 30)  =  1.
+    p_of_megan2cb05vbs( 31) = is_borneol              ; p_of_cb05vbs( 31) = p_oci      ; cb05vbs_per_megan( 31)  =  1.
+    p_of_megan2cb05vbs( 32) = is_linalool             ; p_of_cb05vbs( 32) = p_oci      ; cb05vbs_per_megan( 32)  =  1.
+    p_of_megan2cb05vbs( 33) = is_terpineol_4          ; p_of_cb05vbs( 33) = p_oci      ; cb05vbs_per_megan( 33)  =  1.
+    p_of_megan2cb05vbs( 34) = is_terpineol_a          ; p_of_cb05vbs( 34) = p_oci      ; cb05vbs_per_megan( 34)  =  1.
+    p_of_megan2cb05vbs( 35) = is_linalool_oxd_c       ; p_of_cb05vbs( 35) = p_oci      ; cb05vbs_per_megan( 35)  =  1.
+    p_of_megan2cb05vbs( 36) = is_linalool_oxd_t       ; p_of_cb05vbs( 36) = p_oci      ; cb05vbs_per_megan( 36)  =  1.
+    p_of_megan2cb05vbs( 37) = is_ionone_b             ; p_of_cb05vbs( 37) = p_hum      ; cb05vbs_per_megan( 37)  =  1.
+    p_of_megan2cb05vbs( 38) = is_bornyl_act           ; p_of_cb05vbs( 38) = p_oci      ; cb05vbs_per_megan( 38)  =  1.
+    p_of_megan2cb05vbs( 39) = is_farnescene_a         ; p_of_cb05vbs( 39) = p_hum      ; cb05vbs_per_megan( 39)  =  1.
+    p_of_megan2cb05vbs( 40) = is_caryophyllene_b      ; p_of_cb05vbs( 40) = p_hum      ; cb05vbs_per_megan( 40)  =  1.
+    p_of_megan2cb05vbs( 41) = is_acoradiene           ; p_of_cb05vbs( 41) = p_hum      ; cb05vbs_per_megan( 41)  =  1.
+    p_of_megan2cb05vbs( 42) = is_aromadendrene        ; p_of_cb05vbs( 42) = p_hum      ; cb05vbs_per_megan( 42)  =  1.
+    p_of_megan2cb05vbs( 43) = is_bergamotene_a        ; p_of_cb05vbs( 43) = p_hum      ; cb05vbs_per_megan( 43)  =  1.
+    p_of_megan2cb05vbs( 44) = is_bergamotene_b        ; p_of_cb05vbs( 44) = p_hum      ; cb05vbs_per_megan( 44)  =  1.
+    p_of_megan2cb05vbs( 45) = is_bisabolene_a         ; p_of_cb05vbs( 45) = p_hum      ; cb05vbs_per_megan( 45)  =  1.
+    p_of_megan2cb05vbs( 46) = is_bisabolene_b         ; p_of_cb05vbs( 46) = p_hum      ; cb05vbs_per_megan( 46)  =  1.
+    p_of_megan2cb05vbs( 47) = is_bourbonene_b         ; p_of_cb05vbs( 47) = p_hum      ; cb05vbs_per_megan( 47)  =  1.
+    p_of_megan2cb05vbs( 48) = is_cadinene_d           ; p_of_cb05vbs( 48) = p_hum      ; cb05vbs_per_megan( 48)  =  1.
+    p_of_megan2cb05vbs( 49) = is_cadinene_g           ; p_of_cb05vbs( 49) = p_hum      ; cb05vbs_per_megan( 49)  =  1.
+    p_of_megan2cb05vbs( 50) = is_cedrene_a            ; p_of_cb05vbs( 50) = p_hum      ; cb05vbs_per_megan( 50)  =  1.
+    p_of_megan2cb05vbs( 51) = is_copaene_a            ; p_of_cb05vbs( 51) = p_hum      ; cb05vbs_per_megan( 51)  =  1.
+    p_of_megan2cb05vbs( 52) = is_cubebene_a           ; p_of_cb05vbs( 52) = p_hum      ; cb05vbs_per_megan( 52)  =  1.
+    p_of_megan2cb05vbs( 53) = is_cubebene_b           ; p_of_cb05vbs( 53) = p_hum      ; cb05vbs_per_megan( 53)  =  1.
+    p_of_megan2cb05vbs( 54) = is_elemene_b            ; p_of_cb05vbs( 54) = p_hum      ; cb05vbs_per_megan( 54)  =  1.
+    p_of_megan2cb05vbs( 55) = is_farnescene_b         ; p_of_cb05vbs( 55) = p_hum      ; cb05vbs_per_megan( 55)  =  1.
+    p_of_megan2cb05vbs( 56) = is_germacrene_B         ; p_of_cb05vbs( 56) = p_hum      ; cb05vbs_per_megan( 56)  =  1.
+    p_of_megan2cb05vbs( 57) = is_germacrene_D         ; p_of_cb05vbs( 57) = p_hum      ; cb05vbs_per_megan( 57)  =  1.
+    p_of_megan2cb05vbs( 58) = is_gurjunene_b          ; p_of_cb05vbs( 58) = p_hum      ; cb05vbs_per_megan( 58)  =  1.
+    p_of_megan2cb05vbs( 59) = is_humulene_a           ; p_of_cb05vbs( 59) = p_hum      ; cb05vbs_per_megan( 59)  =  1.
+    p_of_megan2cb05vbs( 60) = is_humulene_g           ; p_of_cb05vbs( 60) = p_hum      ; cb05vbs_per_megan( 60)  =  1.
+    p_of_megan2cb05vbs( 61) = is_isolongifolene       ; p_of_cb05vbs( 61) = p_hum      ; cb05vbs_per_megan( 61)  =  1.
+    p_of_megan2cb05vbs( 62) = is_longifolene          ; p_of_cb05vbs( 62) = p_hum      ; cb05vbs_per_megan( 62)  =  1.
+    p_of_megan2cb05vbs( 63) = is_longipinene          ; p_of_cb05vbs( 63) = p_hum      ; cb05vbs_per_megan( 63)  =  1.
+    p_of_megan2cb05vbs( 64) = is_muurolene_a          ; p_of_cb05vbs( 64) = p_hum      ; cb05vbs_per_megan( 64)  =  1.
+    p_of_megan2cb05vbs( 65) = is_muurolene_g          ; p_of_cb05vbs( 65) = p_hum      ; cb05vbs_per_megan( 65)  =  1.
+    p_of_megan2cb05vbs( 66) = is_selinene_b           ; p_of_cb05vbs( 66) = p_hum      ; cb05vbs_per_megan( 66)  =  1.
+    p_of_megan2cb05vbs( 67) = is_selinene_d           ; p_of_cb05vbs( 67) = p_hum      ; cb05vbs_per_megan( 67)  =  1.
+    p_of_megan2cb05vbs( 68) = is_nerolidol_c          ; p_of_cb05vbs( 68) = p_hum      ; cb05vbs_per_megan( 68)  =  1.
+    p_of_megan2cb05vbs( 69) = is_nerolidol_t          ; p_of_cb05vbs( 69) = p_hum      ; cb05vbs_per_megan( 69)  =  1.
+    p_of_megan2cb05vbs( 70) = is_cedrol               ; p_of_cb05vbs( 70) = p_hum      ; cb05vbs_per_megan( 70)  =  1.
+    p_of_megan2cb05vbs( 71) = is_mbo_2m3e2ol          ; p_of_cb05vbs( 71) = p_ole      ; cb05vbs_per_megan( 71)  =  1.
+    p_of_megan2cb05vbs( 72) = is_mbo_2m3e2ol          ; p_of_cb05vbs( 72) = p_par      ; cb05vbs_per_megan( 72)  =  3.
+    p_of_megan2cb05vbs( 73) = is_methanol             ; p_of_cb05vbs( 73) = p_meoh     ; cb05vbs_per_megan( 73)  =  1.
+    p_of_megan2cb05vbs( 74) = is_acetone              ; p_of_cb05vbs( 74) = p_ispd     ; cb05vbs_per_megan( 74)  =  1.
+    p_of_megan2cb05vbs( 75) = is_methane              ; p_of_cb05vbs( 75) = p_ch4      ; cb05vbs_per_megan( 75)  =  1.
+    p_of_megan2cb05vbs( 76) = is_ammonia              ; p_of_cb05vbs( 76) = p_nh3      ; cb05vbs_per_megan( 76)  =  1.
+    p_of_megan2cb05vbs( 77) = is_nitrous_oxd          ; p_of_cb05vbs( 77) = non_react  ; cb05vbs_per_megan( 77)  =  1.
+    p_of_megan2cb05vbs( 78) = is_nitric_oxd           ; p_of_cb05vbs( 78) = p_no       ; cb05vbs_per_megan( 78)  =  1.
+    p_of_megan2cb05vbs( 79) = is_acetaldehyde         ; p_of_cb05vbs( 79) = p_ald2     ; cb05vbs_per_megan( 79)  =  1.
+    p_of_megan2cb05vbs( 80) = is_ethanol              ; p_of_cb05vbs( 80) = p_etoh     ; cb05vbs_per_megan( 80)  =  1.
+    p_of_megan2cb05vbs( 81) = is_formic_acid          ; p_of_cb05vbs( 81) = p_facd     ; cb05vbs_per_megan( 81)  =  1.
+    p_of_megan2cb05vbs( 82) = is_formaldehyde         ; p_of_cb05vbs( 82) = p_form     ; cb05vbs_per_megan( 82)  =  1.
+    p_of_megan2cb05vbs( 83) = is_acetic_acid          ; p_of_cb05vbs( 83) = p_aacd     ; cb05vbs_per_megan( 83)  =  1.
+    p_of_megan2cb05vbs( 84) = is_mbo_3m2e1ol          ; p_of_cb05vbs( 84) = p_ald2     ; cb05vbs_per_megan( 84)  =  1.
+    p_of_megan2cb05vbs( 85) = is_mbo_3m2e1ol          ; p_of_cb05vbs( 85) = p_par      ; cb05vbs_per_megan( 85)  =  3.
+    p_of_megan2cb05vbs( 86) = is_mbo_3m3e1ol          ; p_of_cb05vbs( 86) = p_form     ; cb05vbs_per_megan( 86)  =  1.
+    p_of_megan2cb05vbs( 87) = is_mbo_3m3e1ol          ; p_of_cb05vbs( 87) = p_par      ; cb05vbs_per_megan( 87)  =  4.
+    p_of_megan2cb05vbs( 88) = is_benzaldehyde         ; p_of_cb05vbs( 88) = p_tol      ; cb05vbs_per_megan( 88)  =  1.
+    p_of_megan2cb05vbs( 89) = is_butanone_2           ; p_of_cb05vbs( 89) = p_ispd     ; cb05vbs_per_megan( 89)  =  1.
+    p_of_megan2cb05vbs( 90) = is_butanone_2           ; p_of_cb05vbs( 90) = p_par      ; cb05vbs_per_megan( 90)  =  2.
+    p_of_megan2cb05vbs( 91) = is_decanal              ; p_of_cb05vbs( 91) = p_aldx     ; cb05vbs_per_megan( 91)  =  1.
+    p_of_megan2cb05vbs( 92) = is_decanal              ; p_of_cb05vbs( 92) = p_par      ; cb05vbs_per_megan( 92)  =  8.
+    p_of_megan2cb05vbs( 93) = is_dodecene_1           ; p_of_cb05vbs( 93) = p_ole      ; cb05vbs_per_megan( 93)  =  1.
+    p_of_megan2cb05vbs( 94) = is_dodecene_1           ; p_of_cb05vbs( 94) = p_par      ; cb05vbs_per_megan( 94)  =  10.
+    p_of_megan2cb05vbs( 95) = is_geranyl_acetone      ; p_of_cb05vbs( 95) = p_hum      ; cb05vbs_per_megan( 95)  =  1.
+    p_of_megan2cb05vbs( 96) = is_heptanal             ; p_of_cb05vbs( 96) = p_aldx     ; cb05vbs_per_megan( 96)  =  1.
+    p_of_megan2cb05vbs( 97) = is_heptanal             ; p_of_cb05vbs( 97) = p_par      ; cb05vbs_per_megan( 97)  =  5.
+    p_of_megan2cb05vbs( 98) = is_heptane              ; p_of_cb05vbs( 98) = p_par      ; cb05vbs_per_megan( 98)  =  7.
+    p_of_megan2cb05vbs( 99) = is_hexane               ; p_of_cb05vbs( 99) = p_par      ; cb05vbs_per_megan( 99)  =  6.
+    p_of_megan2cb05vbs(100) = is_met_benzoate         ; p_of_cb05vbs(100) = p_tol      ; cb05vbs_per_megan(100)  =  1.
+    p_of_megan2cb05vbs(101) = is_met_heptenone        ; p_of_cb05vbs(101) = p_ispd     ; cb05vbs_per_megan(101)  =  1.
+    p_of_megan2cb05vbs(102) = is_met_heptenone        ; p_of_cb05vbs(102) = p_par      ; cb05vbs_per_megan(102)  =  3.
+    p_of_megan2cb05vbs(103) = is_met_heptenone        ; p_of_cb05vbs(103) = p_ole      ; cb05vbs_per_megan(103)  =  1.
+    p_of_megan2cb05vbs(104) = is_neryl_acetone        ; p_of_cb05vbs(104) = p_ispd     ; cb05vbs_per_megan(104)  =  1.
+    p_of_megan2cb05vbs(105) = is_neryl_acetone        ; p_of_cb05vbs(105) = p_par      ; cb05vbs_per_megan(105)  =  8.
+    p_of_megan2cb05vbs(106) = is_neryl_acetone        ; p_of_cb05vbs(106) = p_iole     ; cb05vbs_per_megan(106)  =  2.
+    p_of_megan2cb05vbs(107) = is_nonanal              ; p_of_cb05vbs(107) = p_aldx     ; cb05vbs_per_megan(107)  =  1.
+    p_of_megan2cb05vbs(108) = is_nonanal              ; p_of_cb05vbs(108) = p_par      ; cb05vbs_per_megan(108)  =  7.
+    p_of_megan2cb05vbs(109) = is_nonenal              ; p_of_cb05vbs(109) = p_aldx     ; cb05vbs_per_megan(109)  =  1.
+    p_of_megan2cb05vbs(110) = is_nonenal              ; p_of_cb05vbs(110) = p_par      ; cb05vbs_per_megan(110)  =  6.
+    p_of_megan2cb05vbs(111) = is_nonenal              ; p_of_cb05vbs(111) = p_iole     ; cb05vbs_per_megan(111)  =  1.
+    p_of_megan2cb05vbs(112) = is_octanal              ; p_of_cb05vbs(112) = p_aldx     ; cb05vbs_per_megan(112)  =  1.
+    p_of_megan2cb05vbs(113) = is_octanal              ; p_of_cb05vbs(113) = p_par      ; cb05vbs_per_megan(113)  =  6.
+    p_of_megan2cb05vbs(114) = is_octanol              ; p_of_cb05vbs(114) = p_par      ; cb05vbs_per_megan(114)  =  8.
+    p_of_megan2cb05vbs(115) = is_octenol_1e3ol        ; p_of_cb05vbs(115) = p_par      ; cb05vbs_per_megan(115)  =  6.
+    p_of_megan2cb05vbs(116) = is_octenol_1e3ol        ; p_of_cb05vbs(116) = p_ole      ; cb05vbs_per_megan(116)  =  1.
+    p_of_megan2cb05vbs(117) = is_oxopentanal          ; p_of_cb05vbs(117) = p_aldx     ; cb05vbs_per_megan(117)  =  1.
+    p_of_megan2cb05vbs(118) = is_oxopentanal          ; p_of_cb05vbs(118) = p_par      ; cb05vbs_per_megan(118)  =  3.
+    p_of_megan2cb05vbs(119) = is_pentane              ; p_of_cb05vbs(119) = p_par      ; cb05vbs_per_megan(119)  =  5.
+    p_of_megan2cb05vbs(120) = is_phenyl_cco           ; p_of_cb05vbs(120) = p_aldx     ; cb05vbs_per_megan(120)  =  1
+    p_of_megan2cb05vbs(121) = is_phenyl_cco           ; p_of_cb05vbs(121) = p_tol      ; cb05vbs_per_megan(121)  =  1.
+    p_of_megan2cb05vbs(122) = is_pyruvic_acid         ; p_of_cb05vbs(122) = p_aacd     ; cb05vbs_per_megan(122)  =  1.
+    p_of_megan2cb05vbs(123) = is_pyruvic_acid         ; p_of_cb05vbs(123) = p_ispd     ; cb05vbs_per_megan(123)  =  1.
+    p_of_megan2cb05vbs(124) = is_terpinyl_act_a       ; p_of_cb05vbs(124) = p_oci      ; cb05vbs_per_megan(124)  =  1.
+    p_of_megan2cb05vbs(125) = is_tetradecene_1        ; p_of_cb05vbs(125) = p_par      ; cb05vbs_per_megan(125)  =  12.
+    p_of_megan2cb05vbs(126) = is_tetradecene_1        ; p_of_cb05vbs(126) = p_ole      ; cb05vbs_per_megan(126)  =  1.
+    p_of_megan2cb05vbs(127) = is_toluene              ; p_of_cb05vbs(127) = p_tol      ; cb05vbs_per_megan(127)  =  1.
+    p_of_megan2cb05vbs(128) = is_carbon_monoxide      ; p_of_cb05vbs(128) = p_co       ; cb05vbs_per_megan(128)  =  1.
+    p_of_megan2cb05vbs(129) = is_butene               ; p_of_cb05vbs(129) = p_ole      ; cb05vbs_per_megan(129)  =  1.
+    p_of_megan2cb05vbs(130) = is_butene               ; p_of_cb05vbs(130) = p_par      ; cb05vbs_per_megan(130)  =  2.
+    p_of_megan2cb05vbs(131) = is_ethane               ; p_of_cb05vbs(131) = p_etha     ; cb05vbs_per_megan(131)  =  1.
+    p_of_megan2cb05vbs(132) = is_ethene               ; p_of_cb05vbs(132) = p_eth      ; cb05vbs_per_megan(132)  =  1.
+    p_of_megan2cb05vbs(133) = is_hydrogen_cyanide     ; p_of_cb05vbs(133) = non_react  ; cb05vbs_per_megan(133)  =  1.
+    p_of_megan2cb05vbs(134) = is_propane              ; p_of_cb05vbs(134) = p_par      ; cb05vbs_per_megan(134)  =  3.
+    p_of_megan2cb05vbs(135) = is_propene              ; p_of_cb05vbs(135) = p_ole      ; cb05vbs_per_megan(135)  =  1.
+    p_of_megan2cb05vbs(136) = is_propene              ; p_of_cb05vbs(136) = p_par      ; cb05vbs_per_megan(136)  =  1.
+    p_of_megan2cb05vbs(137) = is_carbon_2s            ; p_of_cb05vbs(137) = non_react  ; cb05vbs_per_megan(137)  =  1.
+    p_of_megan2cb05vbs(138) = is_carbonyl_s           ; p_of_cb05vbs(138) = non_react  ; cb05vbs_per_megan(138)  =  1.
+    p_of_megan2cb05vbs(139) = is_diallyl_2s           ; p_of_cb05vbs(139) = non_react  ; cb05vbs_per_megan(139)  =  1.
+    p_of_megan2cb05vbs(140) = is_diallyl_2s           ; p_of_cb05vbs(140) = p_par      ; cb05vbs_per_megan(140)  =  2.
+    p_of_megan2cb05vbs(141) = is_diallyl_2s           ; p_of_cb05vbs(141) = p_ole      ; cb05vbs_per_megan(141)  =  2.
+    p_of_megan2cb05vbs(142) = is_2met_2s              ; p_of_cb05vbs(142) = non_react  ; cb05vbs_per_megan(142)  =  1.
+    p_of_megan2cb05vbs(143) = is_2met_s               ; p_of_cb05vbs(143) = non_react  ; cb05vbs_per_megan(143)  =  1.
+    p_of_megan2cb05vbs(144) = is_met_chloride         ; p_of_cb05vbs(144) = non_react  ; cb05vbs_per_megan(144)  =  1.
+    p_of_megan2cb05vbs(145) = is_met_bromide          ; p_of_cb05vbs(145) = non_react  ; cb05vbs_per_megan(145)  =  1.
+    p_of_megan2cb05vbs(146) = is_met_iodide           ; p_of_cb05vbs(146) = non_react  ; cb05vbs_per_megan(146)  =  1.
+    p_of_megan2cb05vbs(147) = is_hydrogen_s           ; p_of_cb05vbs(147) = non_react  ; cb05vbs_per_megan(147)  =  1.
+    p_of_megan2cb05vbs(148) = is_met_mercaptan        ; p_of_cb05vbs(148) = p_par      ; cb05vbs_per_megan(148)  =  1.
+    p_of_megan2cb05vbs(149) = is_met_propenyl_2s      ; p_of_cb05vbs(149) = non_react  ; cb05vbs_per_megan(149)  =  1.
+    p_of_megan2cb05vbs(150) = is_met_propenyl_2s      ; p_of_cb05vbs(150) = p_iole     ; cb05vbs_per_megan(150)  =  1.
+    p_of_megan2cb05vbs(151) = is_pppp_2s              ; p_of_cb05vbs(151) = non_react  ; cb05vbs_per_megan(151)  =  1.
+    p_of_megan2cb05vbs(152) = is_pppp_2s              ; p_of_cb05vbs(152) = p_par      ; cb05vbs_per_megan(152)  =  2.
+    p_of_megan2cb05vbs(153) = is_pppp_2s              ; p_of_cb05vbs(153) = p_iole     ; cb05vbs_per_megan(153)  =  1.
+    p_of_megan2cb05vbs(154) = is_2met_nonatriene      ; p_of_cb05vbs(154) = p_oci      ; cb05vbs_per_megan(154)  =  1.
+    p_of_megan2cb05vbs(155) = is_met_salicylate       ; p_of_cb05vbs(155) = p_tol      ; cb05vbs_per_megan(155)  =  1.
+    p_of_megan2cb05vbs(156) = is_indole               ; p_of_cb05vbs(156) = p_tol      ; cb05vbs_per_megan(156)  =  1.
+    p_of_megan2cb05vbs(157) = is_jasmone              ; p_of_cb05vbs(157) = p_oci      ; cb05vbs_per_megan(157)  =  1.
+    p_of_megan2cb05vbs(158) = is_met_jasmonate        ; p_of_cb05vbs(158) = p_hum      ; cb05vbs_per_megan(158)  =  1.
+    p_of_megan2cb05vbs(159) = is_3met_3dctt           ; p_of_cb05vbs(159) = p_hum      ; cb05vbs_per_megan(159)  =  1.
+    p_of_megan2cb05vbs(160) = is_hexanal              ; p_of_cb05vbs(160) = p_aldx     ; cb05vbs_per_megan(160)  =  1.
+    p_of_megan2cb05vbs(161) = is_hexanal              ; p_of_cb05vbs(161) = p_par      ; cb05vbs_per_megan(161)  =  4.
+    p_of_megan2cb05vbs(162) = is_hexanol_1            ; p_of_cb05vbs(162) = p_par      ; cb05vbs_per_megan(162)  =  6.
+    p_of_megan2cb05vbs(163) = is_hexenal_c3           ; p_of_cb05vbs(163) = p_aldx     ; cb05vbs_per_megan(163)  =  1.
+    p_of_megan2cb05vbs(164) = is_hexenal_c3           ; p_of_cb05vbs(164) = p_par      ; cb05vbs_per_megan(164)  =  3.
+    p_of_megan2cb05vbs(165) = is_hexenal_c3           ; p_of_cb05vbs(165) = p_iole     ; cb05vbs_per_megan(165)  =  1
+    p_of_megan2cb05vbs(166) = is_hexenal_t2           ; p_of_cb05vbs(166) = p_aldx     ; cb05vbs_per_megan(166)  =  1.
+    p_of_megan2cb05vbs(167) = is_hexenal_t2           ; p_of_cb05vbs(167) = p_par      ; cb05vbs_per_megan(167)  =  6.
+    p_of_megan2cb05vbs(168) = is_hexenal_t2           ; p_of_cb05vbs(168) = p_iole     ; cb05vbs_per_megan(168)  =  1.
+    p_of_megan2cb05vbs(169) = is_hexenol_c3           ; p_of_cb05vbs(169) = p_par      ; cb05vbs_per_megan(169)  =  5.
+    p_of_megan2cb05vbs(170) = is_hexenol_c3           ; p_of_cb05vbs(170) = p_iole     ; cb05vbs_per_megan(170)  =  1.
+    p_of_megan2cb05vbs(171) = is_hexenyl_act_c3       ; p_of_cb05vbs(171) = p_ispd     ; cb05vbs_per_megan(171)  =  1.
+    p_of_megan2cb05vbs(172) = is_hexenyl_act_c3       ; p_of_cb05vbs(172) = p_par      ; cb05vbs_per_megan(172)  =  5.
+    p_of_megan2cb05vbs(173) = is_hexenyl_act_c3       ; p_of_cb05vbs(173) = p_iole     ; cb05vbs_per_megan(173)  =  1.
+
+  END SUBROUTINE get_megan2cb05vbs_table
 
 !--------------------------------------------------------------------
 

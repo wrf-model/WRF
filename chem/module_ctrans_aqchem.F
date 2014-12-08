@@ -895,12 +895,18 @@ CONTAINS
 !...Kinetic oxidation rates
 !...   From Chamedies (1982)
 
-      RH2O2 = 8.0E+04 * EXP( -3650.0 * TEMP1 )
+!      RH2O2 = 8.0E+04 * EXP( -3650.0 * TEMP1 )
+!KW based on CMAQv5.0 From Jacobson  (1997)
+       RH2O2 = 7.45E+07 * EXP( -15.96E0 * ( ( 298.0E0 / TEMP )  - 1.0E0 ) )
 
 !...From Kok
 
-      RMHP = 1.75E+07 * EXP( -3801.0 * TEMP1 )
-      RPAA = 3.64E+07 * EXP( -3994.0 * TEMP1 )
+!      RMHP = 1.75E+07 * EXP( -3801.0 * TEMP1 )
+!      RPAA = 3.64E+07 * EXP( -3994.0 * TEMP1 )
+!KW based on CMAQv5.0 From Jacobson  (1997)
+
+      RMHP = 1.90E+07 * EXP( -12.75E0 * ( ( 298.0E0 / TEMP )  - 1.0E0 ) )
+      RPAA = 3.67E+07 * EXP( -13.42E0 * ( ( 298.0E0 / TEMP )  - 1.0E0 ) )
 
 !...make initializations
 
@@ -1578,7 +1584,10 @@ CONTAINS
 
 !...Calculate sulfur iv oxidation rate due to H2O2
 
-        DSIVDT( 1 ) = -RH2O2 * H2O2L * SO2L / ( 0.1 + AC )
+!KW        DSIVDT( 1 ) = -RH2O2 * H2O2L * SO2L / ( 0.1 + AC )
+!KW based on CMAQv5.0
+        DSIVDT( 1 ) = -RH2O2 * H2O2L * HSO3 * AC / ( 0.1 + 13.0 * AC )
+       
         TOTOX = PH2O20 * ONE_OVER_XL
         IF ( ( DSIVDT( 1 ) .EQ. 0.0 ) .OR. &
              ( TSIV  .LE. CONCMIN ) .OR. &
@@ -1590,11 +1599,15 @@ CONTAINS
 
 !...Calculate sulfur iv oxidation rate due to O3
 
-        IF ( BB .GE. 2.7 ) THEN
-          DSIVDT( 2 ) = -4.19E5 * ( 1.0 + 2.39E-4 / AC ) * O3L * SIV
-        ELSE
-          DSIVDT( 2 ) = -1.9E4 * SIV * O3L / SQRT( AC )
-        END IF
+!KW        IF ( BB .GE. 2.7 ) THEN
+!KW          DSIVDT( 2 ) = -4.19E5 * ( 1.0 + 2.39E-4 / AC ) * O3L * SIV
+!KW        ELSE
+!KW          DSIVDT( 2 ) = -1.9E4 * SIV * O3L / SQRT( AC )
+!KW        END IF
+!KW based on CMAQv5.0
+        DSIVDT( 2 ) = -( 2.4E4 * SO2L                                          + &
+                        3.7E5 * EXP( -18.56 * ( ( 298.0E0 / TEMP ) - 1.0E0 ) ) * HSO3 + &
+                        1.5E9 * EXP( -17.72 * ( ( 298.0E0 / TEMP ) - 1.0E0 ) ) * SO3 ) * O3L
         TOTOX = PO30 * ONE_OVER_XL
         IF ( ( DSIVDT( 2 ) .EQ. 0.0 ) .OR. &
              ( TSIV  .LE. CONCMIN ) .OR. &
@@ -1607,27 +1620,34 @@ CONTAINS
 !...Calculate sulfur iv oxidation rate due to 02 catalyzed by Mn++
 !...  and Fe+++  See Table IV Walcek & Taylor ( 1986)
 
-        IF ( BB .GE. 4.0 )  THEN  ! 4.0  < pH
+!KW        IF ( BB .GE. 4.0 )  THEN  ! 4.0  < pH
 
-          IF ( SIV .LE. 1.0E-5 ) THEN
-            DSIVDT( 3 ) = -5000.0 * MN * HSO3
-          ELSE IF ( SIV .GT. 1.0E-5 ) THEN
-            DSIVDT( 3 ) = -( 4.7 * MN * MN / AC &
-                        + 1.0E7 * FE * SIV * SIV )
-          END IF  ! end of first pass through SIV conc.
+!          IF ( SIV .LE. 1.0E-5 ) THEN
+!            DSIVDT( 3 ) = -5000.0 * MN * HSO3
+!          ELSE IF ( SIV .GT. 1.0E-5 ) THEN
+!            DSIVDT( 3 ) = -( 4.7 * MN * MN / AC &
+!                        + 1.0E7 * FE * SIV * SIV )
+!          END IF  ! end of first pass through SIV conc.
 
-        ELSE          ! pH , + 4.0
+!        ELSE          ! pH , + 4.0
 
-	  IF ( SIV .LE. 1.0E-5 ) THEN
-            DSIVDT( 3 ) = -3.0 * ( 5000.0 * MN * HSO3 &
-                        + 0.82 * FE * SIV / AC )
-          ELSE
-            DSIVDT( 3 ) = -( 4.7 * MN * MN / AC &
-                        + ( 0.82 * FE * SIV / AC ) &
-                        * ( 1.0 + 1.7E3 * MN**1.5 / ( 6.3E-6 + FE ) ) )
-          END IF ! end of second pass through SIV conc.
+!	  IF ( SIV .LE. 1.0E-5 ) THEN
+!            DSIVDT( 3 ) = -3.0 * ( 5000.0 * MN * HSO3 &
+!                        + 0.82 * FE * SIV / AC )
+!          ELSE
+!            DSIVDT( 3 ) = -( 4.7 * MN * MN / AC &
+!                        + ( 0.82 * FE * SIV / AC ) &
+!                        * ( 1.0 + 1.7E3 * MN**1.5 / ( 6.3E-6 + FE ) ) )
+!          END IF ! end of second pass through SIV conc.
 
-        END IF  ! end of pass through pH
+!KW        END IF  ! end of pass through pH
+
+!KW based on CMAQv5.0
+!...Calculate sulfur iv oxidation rate due to 02 catalyzed by Mn++ and Fe+++
+!...(Martin and Goodman, 1991) prescribled 0.01 ug/m3 for FeIII and 0.005 ug/m3 for MnII
+        DSIVDT( 3 ) = - ( 750.0E0  * MN * SIV +            &     ! GS 4May2011
+                         2600.0E0 * FE * SIV +             &    ! GS 4May2011
+                         1.0E10   * MN * FE * SIV )         ! GS 4May2011
 
         IF ( ( DSIVDT( 3 ) .EQ. 0.0 ) .OR. ( TSIV .LE. CONCMIN ) ) THEN
           DTW( 3 ) = DTRMV
@@ -1649,7 +1669,9 @@ CONTAINS
 
 !...Calculate sulfur oxidation due to PAA
 
-        DSIVDT( 5 ) = -RPAA * HSO3 * PAAL * ( AC + 1.65E-5 )
+!KW        DSIVDT( 5 ) = -RPAA * HSO3 * PAAL * ( AC + 1.65E-5 )
+!KW based on CMAQv5.0
+        DSIVDT( 5 ) = -( RPAA * AC + 7.00E2 ) * HSO3 * PAAL
         TOTOX = PPAA0 * ONE_OVER_XL
         IF ( ( DSIVDT( 5 ) .EQ. 0.0 ) .OR. &
              ( TSIV  .LE. CONCMIN ) .OR. &

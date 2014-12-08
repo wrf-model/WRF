@@ -121,7 +121,8 @@
           CBMZ_MOSAIC_4BIN_VBS2_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP, &
           MOZART_MOSAIC_4BIN_KPP , MOZART_MOSAIC_4BIN_AQ_KPP, &
           CBMZ_CAM_MAM3_NOAQ,CBMZ_CAM_MAM7_NOAQ,  CBMZ_CAM_MAM3_AQ,  &
-          CBMZ_CAM_MAM7_AQ, CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP )
+          CBMZ_CAM_MAM7_AQ, CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP, &
+          CB05_SORG_AQ_KPP, CB05_SORG_VBS_AQ_KPP )
       processingAerosols = .true.
       call wrf_debug(15,'optical driver: process aerosols true')
    case default
@@ -142,7 +143,8 @@
           GOCART_SIMPLE,       RACMSORG_KPP,       RACMSORG_AQ,      RACMSORG_AQCHEM_KPP, &
           RACM_ESRLSORG_AQCHEM_KPP, RACM_SOA_VBS_KPP,                                          &
           CBMZSORG,            CBMZSORG_AQ,        MOZCART_KPP,       &
-          CBMZ_CAM_MAM3_NOAQ,  CBMZ_CAM_MAM7_NOAQ,  CBMZ_CAM_MAM3_AQ,  CBMZ_CAM_MAM7_AQ)
+          CBMZ_CAM_MAM3_NOAQ,  CBMZ_CAM_MAM7_NOAQ,  CBMZ_CAM_MAM3_AQ,  CBMZ_CAM_MAM7_AQ, &
+          CB05_SORG_AQ_KPP, CB05_SORG_VBS_AQ_KPP )
      nbin_o = 8
    case (CBMZ_MOSAIC_4BIN,    CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_KPP,  &
          CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, &

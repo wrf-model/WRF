@@ -809,7 +809,7 @@ contains
            brup(i) = bruptmp
            definebrup=.false.
            endif
-           if (.not.stable(i)) then !overright brup brdn values
+           if (.not.stable(i)) then !overwrite brup brdn values
            brdn(i)=bruptmp
            definebrup=.true.
            pblflg(i)=.true.

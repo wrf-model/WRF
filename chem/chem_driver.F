@@ -3,6 +3,7 @@
 !                   Further developments, bugfixes and improvements  by
 !                   William Gustafson (PNNL), Marc Salzmann (GFDL), and Georg Grell
 ! 10/12/2011 - Ravan Ahmadov (NOAA) updated to include the RACM_SOA_VBS option
+! 10/08/2014 - Kai Wang and Yang Zhang (NCSU) updated to include the CB05_MADE/SORGAM and CB05_MADE/VBS options
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     subroutine chem_driver ( grid , config_flags   &
@@ -59,6 +60,7 @@
      SUBROUTINE sum_pm_driver ( config_flags,                            &
           alt, chem, h2oaj, h2oai,                                   &
           pm2_5_dry, pm2_5_water, pm2_5_dry_ec, pm10,                &
+          tsoa,asoa,bsoa,                                             &
           hoa_a01,hoa_a02,hoa_a03,hoa_a04,                          &
           bboa_a01,bboa_a02,bboa_a03,bboa_a04,                      &
           soa_a01,soa_a02,soa_a03,soa_a04,                          &
@@ -82,6 +84,7 @@
        USE module_mosaic_driver, only: sum_pm_mosaic,sum_pm_mosaic_vbs2,sum_pm_mosaic_vbs0,sum_vbs9,sum_vbs2,sum_vbs0
        USE module_gocart_aerosols, only: sum_pm_gocart
        USE module_aerosols_soa_vbs, only: sum_pm_soa_vbs
+       USE module_aerosols_sorgam_vbs, only: sum_pm_sorgam_vbs
        
        IMPLICIT NONE
        
@@ -102,6 +105,7 @@
        REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                       &
             OPTIONAL,                                                     &
             INTENT(OUT) :: pm2_5_dry,pm2_5_water,pm2_5_dry_ec,pm10,       &
+            tsoa,asoa,bsoa,                                           &
             hoa_a01,hoa_a02,hoa_a03,hoa_a04,                          &
             bboa_a01,bboa_a02,bboa_a03,bboa_a04,                      &
             soa_a01,soa_a02,soa_a03,soa_a04,                          &
@@ -491,6 +495,12 @@
        CALL wrf_debug(15,'calling mozart driver from chem_driver')
      CASE (MOZCART_KPP)
        CALL wrf_debug(15,'calling mozcart driver from chem_driver')
+     CASE (CB05_SORG_AQ_KPP)
+       CALL wrf_debug(15,'calling cb05_sorg_aq_kpp from chem_driver')
+       haveaer = .true.
+     CASE (CB05_SORG_VBS_AQ_KPP)
+       CALL wrf_debug(15,'calling cb05_sorg_vbs_aq_kpp from chem_driver')
+       haveaer = .true.
     CASE (CHEM_TRACER,CHEM_TRACE2)
        CALL wrf_debug(15,'tracer mode: only doing emissions and dry dep in chem_driver')
     CASE (CHEM_VOLC)
@@ -675,7 +685,8 @@
               grid%e_bio,p_phy,chem,rho,dz8w,grid%ne_area,emis_ant,emis_vol,grid%tsk,      &
               grid%erod,grid%erod_dri,grid%lai_vegmask,                                    &
               g,emis_seas,emis_dust,tracer,                                                &
-              ebu , ebu_in,grid%mean_fct_agtf,grid%mean_fct_agef,grid%mean_fct_agsv,       &
+              emis_seas2,      &
+              ebu, ebu_in,grid%mean_fct_agtf,grid%mean_fct_agef,grid%mean_fct_agsv,       &
               grid%mean_fct_aggr,grid%firesize_agtf, &
               grid%firesize_agef,grid%firesize_agsv,grid%firesize_aggr,                    &
               grid%u10,grid%v10,grid%ivgtyp,grid%isltyp,grid%gsw,grid%vegfra,grid%rmol,    &
@@ -825,6 +836,7 @@
               grid%ph_acetp,grid%ph_xooh,grid%ph_isooh,grid%ph_alkooh,                &
               grid%ph_mekooh,grid%ph_tolooh,grid%ph_terpooh,grid%ph_mvk,              &
               grid%ph_glyald,grid%ph_hyac,                                            &
+              grid%ph_cl2,grid%ph_hocl,grid%ph_fmcl,                                  &
               config_flags%track_tuv_lev,                                             &
               config_flags%track_rad_num,                                             &
               config_flags%track_tuv_num,                                             &
@@ -896,6 +908,7 @@
                  grid%h2oaj,grid%h2oai,grid%nu3,grid%ac3,grid%cor3,grid%asulf,        &
                  grid%ahno3,grid%anh3,grid%cvaro1,grid%cvaro2,grid%cvalk1,grid%cvole1,&
                  grid%cvapi1,grid%cvapi2,grid%cvlim1,grid%cvlim2,grid%dep_vel_o3,     &
+                 grid%ddlen,grid%ddflx, &
                  emis_ant,ebu_in,                                                     &
                  config_flags%sf_urban_physics,numgas,current_month,dvel,grid%snowh,  &
                  grid%dustdrydep_1,grid%dustdrydep_2,grid%dustdrydep_3,               &
@@ -1319,6 +1332,7 @@ if ( cam_mam_aerosols ) &
               p_phy,chem,rho,grid%cldfra,grid%cldfra2,                                &
               grid%rainprod,grid%evapprod,grid%hno3_col_mdel,                         &
               grid%qlsink,grid%precr,grid%preci,grid%precs,grid%precg,                &
+              grid%wdflx, &
               gas_aqfrac, numgas_mam,dz8w,                                            &
               grid%h2oaj,grid%h2oai,grid%nu3,grid%ac3,grid%cor3,                      &
               grid%asulf,grid%ahno3,grid%anh3,grid%cvaro1,grid%cvaro2,                &
@@ -1393,7 +1407,8 @@ end if !Chemistry time step check
       call sum_pm_driver ( config_flags,                                              &
            rri, chem, grid%h2oaj, grid%h2oai,                                         &
            grid%pm2_5_dry, grid%pm2_5_water, grid%pm2_5_dry_ec, grid%pm10,            &
-           grid% hoa_a01,grid%hoa_a02,grid%hoa_a03,grid%hoa_a04,                      &
+           grid%tsoa,grid%asoa,grid%bsoa,                                             &
+           grid%hoa_a01,grid%hoa_a02,grid%hoa_a03,grid%hoa_a04,                       &
            grid%bboa_a01,grid%bboa_a02,grid%bboa_a03,grid%bboa_a04,                   &
            grid%soa_a01,grid%soa_a02,grid%soa_a03,grid%soa_a04,                       &
            grid%bbsoa_a01,grid%bbsoa_a02,grid%bbsoa_a03,grid%bbsoa_a04,               &

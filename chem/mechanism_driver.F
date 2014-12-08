@@ -165,6 +165,32 @@
                ims,ime, jms,jme, kms,kme,                              &
                its,ite, jts,jte, kts,kte                               )
 
+     CASE (CB05_SORG_AQ_KPP)
+       chem(its:ite,kts:kte,jts:jte,p_apin) = chem(its:ite,kts:kte,jts:jte,p_terp) * 0.248
+       chem(its:ite,kts:kte,jts:jte,p_bpin) = chem(its:ite,kts:kte,jts:jte,p_terp) * 0.294
+       chem(its:ite,kts:kte,jts:jte,p_lim)  = chem(its:ite,kts:kte,jts:jte,p_terp) * 0.164
+       chem(its:ite,kts:kte,jts:jte,p_ter)  = chem(its:ite,kts:kte,jts:jte,p_terp) * 0.006
+       chem(its:ite,kts:kte,jts:jte,p_oci)  = chem(its:ite,kts:kte,jts:jte,p_terp) * 0.213
+       chem(its:ite,kts:kte,jts:jte,p_hum)  = chem(its:ite,kts:kte,jts:jte,p_terp) * 0.074
+       chem(its:ite,kts:kte,jts:jte,p_ch4) = 1.7
+       chem(its:ite,kts:kte,jts:jte,p_h2) = 0.5
+
+       vcsulf_old(its:ite,kts:kte,jts:jte) = &
+          max(chem(its:ite,kts:kte,jts:jte,p_sulf),epsilc)
+
+     CASE (CB05_SORG_VBS_AQ_KPP)
+       chem(its:ite,kts:kte,jts:jte,p_apin) = chem(its:ite,kts:kte,jts:jte,p_terp) * 0.248
+       chem(its:ite,kts:kte,jts:jte,p_bpin) = chem(its:ite,kts:kte,jts:jte,p_terp) * 0.294
+       chem(its:ite,kts:kte,jts:jte,p_lim)  = chem(its:ite,kts:kte,jts:jte,p_terp) * 0.164
+       chem(its:ite,kts:kte,jts:jte,p_ter)  = chem(its:ite,kts:kte,jts:jte,p_terp) * 0.006
+       chem(its:ite,kts:kte,jts:jte,p_oci)  = chem(its:ite,kts:kte,jts:jte,p_terp) * 0.213
+       chem(its:ite,kts:kte,jts:jte,p_hum)  = chem(its:ite,kts:kte,jts:jte,p_terp) * 0.074
+       chem(its:ite,kts:kte,jts:jte,p_ch4) = 1.7
+       chem(its:ite,kts:kte,jts:jte,p_h2) = 0.5
+
+       vcsulf_old(its:ite,kts:kte,jts:jte) = &
+          max(chem(its:ite,kts:kte,jts:jte,p_sulf),epsilc)
+
      CASE DEFAULT
                                                      
    END SELECT chem_select                              

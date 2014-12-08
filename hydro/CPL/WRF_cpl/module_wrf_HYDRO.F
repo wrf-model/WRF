@@ -20,6 +20,11 @@ module module_WRF_HYDRO
     !yw   added for check soil moisture and soiltype
     integer ::  checkSOIL_flag
 
+!
+! added to consider the adaptive time step from WRF model. 
+    real    :: dtrt0  
+    integer ::  mm0
+
 
 
 
@@ -107,14 +112,29 @@ CONTAINS
             nlst_rt(did)%startdate(1:19) = cpl_outdate(1:19)
             nlst_rt(did)%olddate(1:19) = cpl_outdate(1:19)
 
+            nlst_rt(did)%dt = HYDRO_dt
+            if(nlst_rt(did)%dtrt .lt. HYDRO_dt) then
+               nlst_rt(did)%dtrt = HYDRO_dt
+               mm0 = 1
+            else
+               mm = HYDRO_dt/nlst_rt(did)%dtrt
+               if(mm*nlst_rt(did)%dtrt .lt. HYDRO_dt) nlst_rt(did)%dtrt = HYDRO_dt/mm
+               mm0 = mm
+            endif
+
+            dtrt0 = nlst_rt(did)%dtrt  
         endif
 
-            nlst_rt(did)%dt = HYDRO_dt
-
-
-
-            mm = HYDRO_dt/nlst_rt(did)%dtrt
-            if(mm*nlst_rt(did)%dtrt .lt. HYDRO_dt) nlst_rt(did)%dtrt = HYDRO_dt/mm
+            if((mm0*nlst_rt(did)%dtrt) .ne. HYDRO_dt) then   ! WRF model time step changed.
+               if(dtrt0 .lt. HYDRO_dt) then
+                  nlst_rt(did)%dtrt = HYDRO_dt
+                  mm0 = 1
+               else
+                  mm = HYDRO_dt/dtrt0
+                  if(mm*dtrt0 .lt. HYDRO_dt) nlst_rt(did)%dtrt = HYDRO_dt/mm
+                  mm0 = mm
+               endif
+            endif
 
 #ifdef HYDRO_D 
         write(6,*) "mm, nlst_rt(did)%dt = ",mm, nlst_rt(did)%dt

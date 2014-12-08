@@ -1,7 +1,7 @@
    TYPE RT_FIELD  
    INTEGER :: IX, JX
    logical initialized
-  REAL    :: DX,GRDAREART,SUBFLORT,WATAVAILRT,QSUBDRYRT,QSUBBDRYTRT
+  REAL    :: DX,GRDAREART,SUBFLORT,WATAVAILRT,QSUBDRYRT
   REAL    :: SFHEAD1RT,INFXS1RT,QSTRMVOLTRT,QBDRYTRT,SFHEADRT,ETPND1,INFXSRTOT
   REAL    :: LAKE_INFLOTRT,accsuminfxs,diffsuminfxs,RETDEPFRAC
   REAL    :: VERTKSAT,l3temp,l4temp,l3moist,l4moist,RNOF1TOT,RNOF2TOT,RNOF3TOT
@@ -11,6 +11,7 @@
   INTEGER ::  LAKE_CT, STRM_CT
   REAL                                 :: RETDEP_CHAN  ! Channel retention depth
   INTEGER :: NLINKS  !maximum number of unique links in channel
+  INTEGER :: GNLINKS  !maximum number of unique links in channel for parallel computation
   INTEGER :: NLAKES  !number of lakes
   INTEGER :: MAXORDER !maximum stream order
   integer :: timestep_flag    ! 1 cold start run else continue run
@@ -19,23 +20,29 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !DJG   VARIABLES FOR ROUTING
   INTEGER, allocatable, DIMENSION(:,:)      :: CH_NETRT !-- keeps track of the 0-1 channel network
-  INTEGER, allocatable, DIMENSION(:,:)      :: CH_NETLNK !-- assigns a unique value to each channel gridpoint, called links
+  INTEGER, allocatable, DIMENSION(:,:)      :: CH_NETLNK, GCH_NETLNK !-- assigns a unique value to each channel gridpoint, called links
   REAL,    allocatable, DIMENSION(:,:)      :: LATVAL,LONVAL !-- lat lon
   REAL,    allocatable, DIMENSION(:,:)      :: TERRAIN
   REAL, allocatable,    DIMENSION(:)        :: CHLAT,CHLON   !  channel lat and lon
   ! INTEGER, allocatable, DIMENSION(:,:)      :: LAKE_MSKRT, BASIN_MSK,LAK_1K
   INTEGER, allocatable, DIMENSION(:,:)      :: LAKE_MSKRT, LAK_1K
   INTEGER, allocatable, DIMENSION(:,:)      :: g_LAK_1K
+  ! REAL,    allocatable, DIMENSION(:,:)      :: ELRT,SOXRT,SOYRT,OVROUGHRT,RETDEPRT, QSUBBDRYTRT
+  REAL :: QSUBBDRYTRT
   REAL,    allocatable, DIMENSION(:,:)      :: ELRT,SOXRT,SOYRT,OVROUGHRT,RETDEPRT
   REAL,    allocatable, DIMENSION(:,:,:)    :: SO8RT
   INTEGER,    allocatable, DIMENSION(:,:,:) :: SO8RT_D, SO8LD_D
   REAL,    allocatable, DIMENSION(:,:)      :: SO8LD_Vmax
   REAL   Vmax
-  REAL,    allocatable, DIMENSION(:,:)      :: SFCHEADRT,INFXSRT,LKSAT,LKSATRT
+  REAL,    allocatable, DIMENSION(:,:)      :: SFCHEADRT,INFXSRT,LKSAT,LKSATRT 
   REAL,    allocatable, DIMENSION(:,:)      :: SFCHEADSUBRT,INFXSUBRT,LKSATFAC
   REAL,    allocatable, DIMENSION(:,:)      :: QSUBRT,ZWATTABLRT,QSUBBDRYRT,SOLDEPRT
   REAL,    allocatable, DIMENSION(:,:)      :: SUB_RESID
   REAL,    allocatable, DIMENSION(:,:)      :: q_sfcflx_x,q_sfcflx_y
+  INTEGER,    allocatable, DIMENSION(:)      :: map_l2g, map_g2l
+
+! temp arrary cwatavail
+  real, allocatable, DIMENSION(:,:,:)      :: SMCREFRT 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !DJG   VARIABLES FOR GW/Baseflow
   INTEGER :: numbasns
@@ -75,6 +82,8 @@
   REAL, allocatable, DIMENSION(:)      :: QLAKEO      !lake outflow in difussion scheme
   INTEGER, allocatable, DIMENSION(:)   :: LAKENODE   !which nodes flow into which lakes
   REAL, allocatable, DIMENSION(:)      :: CVOL       ! channel volume
+  INTEGER, allocatable, DIMENSION(:,:)   :: pnode    !parent nodes : start from 2
+  integer :: maxv_p              ! array size for  second column of the pnode
 
 
   REAL, allocatable, DIMENSION(:)      :: MUSK, MUSX !muskingum params
@@ -107,11 +116,11 @@
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !DJG   VARIABLES FOR AGGREGATION/DISAGGREGATION
-  REAL,    allocatable, DIMENSION(:,:,:)   :: SMCRT,SMCMAXRT,SMCWLTRT,SH2OWGT
+  REAL,    allocatable, DIMENSION(:,:,:)   :: SMCRT,SMCMAXRT,SMCWLTRT,SH2OWGT,SICE
   REAL,    allocatable, DIMENSION(:,:)     :: INFXSAGGRT
   REAL,    allocatable, DIMENSION(:,:)     :: DHRT,QSTRMVOLRT,QBDRYRT,LAKE_INFLORT
-  !yw REAL,    allocatable, DIMENSION(:,:)     :: QSTRMVOLRT_TS,LAKE_INFLORT_TS
-!  REAL,    allocatable, DIMENSION(:,:)     :: QSTRMVOLRT_DUM,LAKE_INFLORT_DUM
+  REAL,    allocatable, DIMENSION(:,:)     :: QSTRMVOLRT_TS,LAKE_INFLORT_TS
+  REAL,    allocatable, DIMENSION(:,:)     :: QSTRMVOLRT_DUM,LAKE_INFLORT_DUM
   REAL,    allocatable, DIMENSION(:,:)       :: INFXSWGT, ywtmp
   REAL,    allocatable, DIMENSION(:)       :: SMCAGGRT,STCAGGRT,SH2OAGGRT
   REAL    :: INFXSAGG1RT,SFCHEADAGG1RT,SFCHEADAGGRT

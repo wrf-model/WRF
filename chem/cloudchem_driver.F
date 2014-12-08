@@ -35,8 +35,10 @@
         gas_pcnst_pos => gas_pcnst_modal_aero_pos
    USE module_mosaic_cloudchem,  only: mosaic_cloudchem_driver
    USE module_sorgam_cloudchem,  only: sorgam_cloudchem_driver
+   USE module_sorgam_vbs_cloudchem, only: sorgam_vbs_cloudchem_driver
    USE module_cam_mam_cloudchem, only: cam_mam_cloudchem_driver
    USE module_sorgam_aqchem, only: sorgam_aqchem_driver
+   USE module_sorgam_vbs_aqchem, only: sorgam_vbs_aqchem_driver
 
    !  This driver calls subroutines for wet scavenging.
    !
@@ -231,8 +233,22 @@
             ids,ide, jds,jde, kds,kde,                &
             ims,ime, jms,jme, kms,kme,                &
             its,ite, jts,jte, kts,kte                 )
+   CASE ( CB05_SORG_VBS_AQ_KPP )
 
-   CASE ( RADM2SORG_AQCHEM, RACMSORG_AQCHEM_KPP, RACM_ESRLSORG_AQCHEM_KPP )
+       call wrf_debug(15, &
+       'cloudchem_driver calling sorgam_vbs_aqchem_driver')
+       call sorgam_vbs_aqchem_driver(                 &
+            id, ktau, ktauc, dtstepc, config_flags,   &
+            p_phy, t_phy, rho_phy, alt, dz8w,         &
+            moist, chem,                              &
+            gas_aqfrac, numgas_aqfrac,                &
+            ids,ide, jds,jde, kds,kde,                &
+            ims,ime, jms,jme, kms,kme,                &
+            its,ite, jts,jte, kts,kte )
+
+
+   CASE ( RADM2SORG_AQCHEM, RACMSORG_AQCHEM_KPP, RACM_ESRLSORG_AQCHEM_KPP, &
+          CB05_SORG_AQ_KPP )
 
        call wrf_debug(15, &
        'cloudchem_driver calling sorgam_aqchem_driver')

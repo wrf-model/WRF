@@ -13,8 +13,8 @@ module module_sorgam_aqchem
   REAL, PARAMETER :: mwso4 = 96.00   ! Molecular mass of SO4-- (g/mol)
   REAL, PARAMETER :: mwno3 = 62.0    ! Molecular mass of NO3- (g/mol)
   REAL, PARAMETER :: mwnh4 = 18.0985 ! Molecular mass of NH4+ (g/mol)
-!  REAL, PARAMETER :: mwna  = 22.990  ! Molecular mass of NH4+ (g/mol)
-!  REAL, PARAMETER :: mwcl  = 35.453  ! Molecular mass of NH4+ (g/mol)
+  REAL, PARAMETER :: mwna  = 22.990  ! Molecular mass of NH4+ (g/mol)
+  REAL, PARAMETER :: mwcl  = 35.453  ! Molecular mass of NH4+ (g/mol)
   
   ! AQCHEM parameters
   
@@ -157,14 +157,18 @@ module module_sorgam_aqchem
       p_so4cwj, &
       p_nh4cwj, &
       p_no3cwj, &
-!      p_nacwi, &
-!      p_nacwj, &
-!      p_clcwi, &
-!      p_clcwj, &
+      p_nacwi, &
+      p_nacwj, &
+      p_clcwi, &
+      p_clcwj, &
 !      p_so4cwk, &
 !      p_no3cwk, &
       p_qv, &
-      p_qc
+      p_qc, &
+       p_facd, &
+       p_mepx, &
+       p_pacd, &
+       CB05_SORG_AQ_KPP
     
     use module_data_sorgam, only: cw_phase, nphase_aer
     
@@ -304,7 +308,8 @@ module module_sorgam_aqchem
 !        if (p_co2 .gt. 1)  then
 !          gas(lco2) = chem(it,kt,jt,p_co2)*1.0e-6
 !        else 
-          gas(lco2) = 380.0
+!              gas(lco2) = 380.0
+           gas(lco2) = 380.0e-6
 !        endif
         
         if (p_so2 .gt. 1)  gas(lso2)   = chem(it,kt,jt,p_so2)*1.0e-6
@@ -313,10 +318,17 @@ module module_sorgam_aqchem
         if (p_nh3 .gt. 1)  gas(lnh3)   = chem(it,kt,jt,p_nh3)*1.0e-6
         if (p_h2o2 .gt. 1) gas(lh2o2)  = chem(it,kt,jt,p_h2o2)*1.0e-6
         if (p_o3 .gt. 1)   gas(lo3)    = chem(it,kt,jt,p_o3)*1.0e-6
-        if (p_ora1 .gt. 1) gas(lfoa)   = chem(it,kt,jt,p_ora1)*1.0e-6
-        if (p_op1 .gt. 1)  gas(lmhp)   = chem(it,kt,jt,p_op1)*1.0e-6
-        if (p_paa .gt. 1)  gas(lpaa)   = chem(it,kt,jt,p_paa)*1.0e-6
         if (p_sulf .gt. 1) gas(lh2so4) = chem(it,kt,jt,p_sulf)*1.0e-6
+
+        if (config_flags%chem_opt==CB05_SORG_AQ_KPP) then
+         if (p_facd .gt. 1) gas(lfoa)   = chem(it,kt,jt,p_facd)*1.0e-6
+         if (p_mepx .gt. 1)  gas(lmhp)   = chem(it,kt,jt,p_mepx)*1.0e-6
+         if (p_pacd .gt. 1)  gas(lpaa)   = chem(it,kt,jt,p_pacd)*1.0e-6
+        else
+         if (p_ora1 .gt. 1) gas(lfoa)   = chem(it,kt,jt,p_ora1)*1.0e-6
+         if (p_op1 .gt. 1)  gas(lmhp)   = chem(it,kt,jt,p_op1)*1.0e-6
+         if (p_paa .gt. 1)  gas(lpaa)   = chem(it,kt,jt,p_paa)*1.0e-6
+        end if
         
         ! Aerosol mass concentrations before aqueous phase chemistry
         ! (with units conversion ug/kg -> mol/mol). Although AQCHEM
@@ -341,8 +353,8 @@ module module_sorgam_aqchem
         aerosol(lso4acc)  = chem(it,kt,jt,p_so4cwj)*1.0e-9*mwdry/mwso4 ! Accumulation mode sulfate
         aerosol(lnh4acc)  = chem(it,kt,jt,p_nh4cwj)*1.0e-9*mwdry/mwnh4 ! Accumulation mode ammonium
         aerosol(lno3acc)  = chem(it,kt,jt,p_no3cwj)*1.0e-9*mwdry/mwno3 ! Accumulation mode nitrate
-!        aerosol(lnaacc)   = chem(it,kt,jt,p_nacwj)*1.0e-9*mwdry/mwna   ! Accumulation mode Na
-!        aerosol(lclacc)   = chem(it,kt,jt,p_clcwj)*1.0e-9*mwdry/mwcl   ! Accumulation mode Cl
+        aerosol(lnaacc)   = chem(it,kt,jt,p_nacwj)*1.0e-9*mwdry/mwna   ! Accumulation mode Na
+        aerosol(lclacc)   = chem(it,kt,jt,p_clcwj)*1.0e-9*mwdry/mwcl   ! Accumulation mode Cl
         
         aerosol(lorgaacc) = 0.0                                        ! Accumulation mode anthropogenic SOA
         aerosol(lorgpacc) = 0.0                                        ! Accumulation mode primary organic aerosol
@@ -352,10 +364,14 @@ module module_sorgam_aqchem
         
 !        aerosol(lso4cor)  = chem(it,kt,jt,p_so4cwk)*1.0e-9*mwdry/mwso4 ! Coarse mode sulfate
 !        aerosol(lno3cor)  = chem(it,kt,jt,p_no3cwk)*1.0e-9*mwdry/mwno3 ! Coarse mode nitrate
-!        aerosol(lnacor)   = 0.0                                        ! Coarse mode Na
-!        aerosol(lclcor)   = 0.0                                        ! Coarse mode Cl
+        aerosol(lnacor)   = 0.0                                        ! Coarse mode Na
+        aerosol(lclcor)   = 0.0                                        ! Coarse mode Cl
         aerosol(lpricor)  = 0.0                                        ! Coarse mode primary aerosol
-        
+
+!based on CMAQ prescribed Fe/Mn
+        aerosol(LA3FE) = 0.01*alt(it,kt,jt)*1.0e-9*mwdry/55.8
+        aerosol(LB2MN) = 0.005*alt(it,kt,jt)*1.0e-9*mwdry/54.9
+
         ! Liquid phase concentrations
         
         liquid(:) = 0.0
@@ -388,19 +404,26 @@ module module_sorgam_aqchem
         if (p_nh3 .gt. 1)  chem(it,kt,jt,p_nh3)  = gas(lnh3)*1.0e6
         if (p_h2o2 .gt. 1) chem(it,kt,jt,p_h2o2) = gas(lh2o2)*1.0e6
         if (p_o3 .gt. 1)   chem(it,kt,jt,p_o3)   = gas(lo3)*1.0e6
-        if (p_ora1 .gt. 1) chem(it,kt,jt,p_ora1) = gas(lfoa)*1.0e6
-        if (p_op1 .gt. 1)  chem(it,kt,jt,p_op1)  = gas(lmhp)*1.0e6
-        if (p_paa .gt. 1)  chem(it,kt,jt,p_paa)  = gas(lpaa)*1.0e6
         if (p_sulf .gt. 1) chem(it,kt,jt,p_sulf) = gas(lh2so4)*1.0e6
-        
+
+        if (config_flags%chem_opt==CB05_SORG_AQ_KPP) then
+          if (p_facd .gt. 1) chem(it,kt,jt,p_facd) = gas(lfoa)*1.0e6
+          if (p_mepx .gt. 1)  chem(it,kt,jt,p_mepx)  = gas(lmhp)*1.0e6
+          if (p_pacd .gt. 1)  chem(it,kt,jt,p_pacd)  = gas(lpaa)*1.0e6
+        else
+          if (p_ora1 .gt. 1) chem(it,kt,jt,p_ora1) = gas(lfoa)*1.0e6
+          if (p_op1 .gt. 1)  chem(it,kt,jt,p_op1)  = gas(lmhp)*1.0e6
+          if (p_paa .gt. 1)  chem(it,kt,jt,p_paa)  = gas(lpaa)*1.0e6
+        end if
+    
         ! Aerosol mass concentrations after aqueous phase chemistry
         ! (with units conversion mol/mol -> ug/kg)
         
         chem(it,kt,jt,p_so4cwi) = aerosol(lso4akn) *1.0e9/mwdry*mwso4 ! Aitken mode sulfate
         chem(it,kt,jt,p_nh4cwi) = aerosol(lnh4akn) *1.0e9/mwdry*mwnh4 ! Aitken mode ammonium
         chem(it,kt,jt,p_no3cwi) = aerosol(lno3akn) *1.0e9/mwdry*mwno3 ! Aitken mode nitrate
-!        chem(it,kt,jt,p_nacwi)  = aerosol(lnaakn)  *1.0e9/mwdry*mwna  ! Aitken mode Na
-!        chem(it,kt,jt,p_clcwi)  = aerosol(lclakn)  *1.0e9/mwdry*mwcl  ! Aitken mode Cl
+        chem(it,kt,jt,p_nacwi)  = aerosol(lnaakn)  *1.0e9/mwdry*mwna  ! Aitken mode Na
+        chem(it,kt,jt,p_clcwi)  = aerosol(lclakn)  *1.0e9/mwdry*mwcl  ! Aitken mode Cl
         
 !        chem(it,kt,jt,........) = aerosol(lorgaakn)*1.0e9/mwdry*..... ! Aitken mode anthropogenic SOA
 !        chem(it,kt,jt,........) = aerosol(lorgpakn)*1.0e9/mwdry*..... ! Aitken mode primary organic aerosol
@@ -411,8 +434,8 @@ module module_sorgam_aqchem
         chem(it,kt,jt,p_so4cwj) = aerosol(lso4acc) *1.0e9/mwdry*mwso4 ! Accumulation mode sulfate
         chem(it,kt,jt,p_nh4cwj) = aerosol(lnh4acc) *1.0e9/mwdry*mwnh4 ! Accumulation mode ammonium
         chem(it,kt,jt,p_no3cwj) = aerosol(lno3acc) *1.0e9/mwdry*mwno3 ! Accumulation mode nitrate
-!        chem(it,kt,jt,p_nacwj)  = aerosol(lnaacc)  *1.0e9/mwdry*mwna  ! Accumulation mode Na
-!        chem(it,kt,jt,p_clcwj)  = aerosol(lclacc)  *1.0e9/mwdry*mwcl  ! Accumulation mode Cl
+        chem(it,kt,jt,p_nacwj)  = aerosol(lnaacc)  *1.0e9/mwdry*mwna  ! Accumulation mode Na
+        chem(it,kt,jt,p_clcwj)  = aerosol(lclacc)  *1.0e9/mwdry*mwcl  ! Accumulation mode Cl
         
 !        chem(it,kt,jt,........) = aerosol(lorgaacc)*1.0e9/mwdry*..... ! Accumulation mode anthropogenic SOA
 !        chem(it,kt,jt,........) = aerosol(lorgpacc)*1.0e9/mwdry*..... ! Accumulation mode primary organic aerosol
@@ -438,9 +461,16 @@ module module_sorgam_aqchem
         if (p_hno3 .gt. 1 .and. gas(lhno3) .gt. epsilc) gas_aqfrac(it,kt,jt,p_hno3) = conv_factor*liquid(lhno3l)/gas(lhno3)
         if (p_h2o2 .gt. 1 .and. gas(lh2o2) .gt. epsilc) gas_aqfrac(it,kt,jt,p_h2o2) = conv_factor*liquid(lh2o2l)/gas(lh2o2)
         if (p_o3   .gt. 1 .and. gas(lo3)   .gt. epsilc) gas_aqfrac(it,kt,jt,p_o3)   = conv_factor*liquid(lo3l)/gas(lo3)
-        if (p_ora1 .gt. 1 .and. gas(lfoa)  .gt. epsilc) gas_aqfrac(it,kt,jt,p_ora1) = conv_factor*liquid(lfoal)/gas(lfoa)
-        if (p_op1  .gt. 1 .and. gas(lmhp)  .gt. epsilc) gas_aqfrac(it,kt,jt,p_op1)  = conv_factor*liquid(lmhpl)/gas(lmhp)
-        if (p_paa  .gt. 1 .and. gas(lpaa)  .gt. epsilc) gas_aqfrac(it,kt,jt,p_paa)  = conv_factor*liquid(lpaal)/gas(lpaa)
+
+        if (config_flags%chem_opt==CB05_SORG_AQ_KPP) then
+          if (p_facd .gt. 1 .and. gas(lfoa)  .gt. epsilc) gas_aqfrac(it,kt,jt,p_facd) = conv_factor*liquid(lfoal)/gas(lfoa)
+          if (p_mepx  .gt. 1 .and. gas(lmhp)  .gt. epsilc) gas_aqfrac(it,kt,jt,p_mepx)  = conv_factor*liquid(lmhpl)/gas(lmhp)
+          if (p_pacd  .gt. 1 .and. gas(lpaa)  .gt. epsilc) gas_aqfrac(it,kt,jt,p_pacd)  = conv_factor*liquid(lpaal)/gas(lpaa)
+        else
+          if (p_ora1 .gt. 1 .and. gas(lfoa)  .gt. epsilc) gas_aqfrac(it,kt,jt,p_ora1) = conv_factor*liquid(lfoal)/gas(lfoa)
+          if (p_op1  .gt. 1 .and. gas(lmhp)  .gt. epsilc) gas_aqfrac(it,kt,jt,p_op1)  = conv_factor*liquid(lmhpl)/gas(lmhp)
+          if (p_paa  .gt. 1 .and. gas(lpaa)  .gt. epsilc) gas_aqfrac(it,kt,jt,p_paa)  = conv_factor*liquid(lpaal)/gas(lpaa)
+        end if
         
       endif
     

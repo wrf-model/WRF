@@ -97,6 +97,7 @@ subroutine da_ffdduv (F,D,U,V,YLON,ID)
 
          if (F .EQ. 0.0) then
             D = 0.0
+            if (trace_use_frequent) call da_trace_exit("da_ffdduv")
             return
          end if
 

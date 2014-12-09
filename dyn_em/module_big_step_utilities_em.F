@@ -13,7 +13,7 @@
 MODULE module_big_step_utilities_em
 
    USE module_model_constants
-   USE module_state_description, only: p_qg, p_qs, p_qi, gdscheme, tiedtkescheme, kfetascheme, g3scheme, &
+   USE module_state_description, only: p_qg, p_qs, p_qi, gdscheme, tiedtkescheme,ntiedtkescheme, kfetascheme, g3scheme, &
    gfscheme,p_qv, param_first_scalar, p_qr, p_qc, DFI_FWD
    USE module_configure, ONLY : grid_config_rec_type
    USE module_wrf_error
@@ -5140,7 +5140,8 @@ END SUBROUTINE pole_point_bc
       ( config_flags%cu_physics == GFSCHEME ) .OR.    &
       ( config_flags%cu_physics == G3SCHEME ) .OR.    &
       ( config_flags%cu_physics == KFETASCHEME ) .OR. &
-      ( config_flags%cu_physics == TIEDTKESCHEME ) ) then  ! Tiedtke ZCX&YQW
+      ( config_flags%cu_physics == TIEDTKESCHEME ) .OR. &
+      ( config_flags%cu_physics == NTIEDTKESCHEME )) then  ! Tiedtke ZCX&YQW
 
       DO J=j_start,j_end
       DO I=i_start,i_end

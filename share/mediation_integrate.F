@@ -120,7 +120,8 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
            CALL WRFU_AlarmRingerOff( grid%alarms( ialarm ), rc=rc )
          ENDIF
        ENDIF
-     ELSE IF( ialarm .EQ. AUXINPUT7_ALARM .AND. config_flags%chem_opt > 0 ) THEN
+     ELSE IF(( ialarm .EQ. AUXINPUT7_ALARM .AND. config_flags%chem_opt > 0 ) .or.  &
+             ( ialarm .EQ. AUXINPUT7_ALARM .AND. config_flags%tracer_opt > 0 ) )THEN
        IF( config_flags%biomass_burn_opt /= 0 ) THEN
          IF( WRFU_AlarmIsRinging( grid%alarms( ialarm ), rc=rc ) .OR.  &
          ((config_flags%restart) .AND. ( currTime .EQ. startTime ))) THEN
@@ -414,6 +415,8 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
      END SUBROUTINE wrf_tsin
 
    END INTERFACE
+
+   CALL interp_init
 
    CALL domain_clock_get( parent, start_time=strt_time, current_time=cur_time )
 

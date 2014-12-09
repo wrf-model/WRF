@@ -56,7 +56,7 @@ CONTAINS
               , SLWDN, SLWUP                        & ! goddard schemes
               , TSWDN, TSWUP                        & ! goddard schemes
               , SSWDN, SSWUP                        & ! goddard schemes
-              , CLDFRA,CLDFRA_MP_ALL                &
+              , CLDFRA,CLDFRA_MP_ALL,CLDT,ZNU       &
 #if (EM_CORE == 1)
               , lradius,iradius                     &
 #endif
@@ -116,6 +116,7 @@ CONTAINS
               ,progn                                            &
               ,slope_rad,topo_shading     &
               ,shadowmask,ht,dx,dy                 &
+              ,diffuse_frac               &
               ,SWUPFLX,SWUPFLXC,SWDNFLX,SWDNFLXC                          & ! Optional
               ,LWUPFLX,LWUPFLXC,LWDNFLX,LWDNFLXC                          & ! Optional
               ,radtacttime                                                &
@@ -565,6 +566,11 @@ CONTAINS
                                                TSWDN, TSWUP,     &
                                                SSWDN, SSWUP        ! for Goddard schemes
 
+! Added by ZCX for low and total cloud fraction
+   REAL, DIMENSION( kms:kme ), OPTIONAL, INTENT(IN)   :: znu      ! eta values on half (mass)levels
+   REAL, DIMENSION( ims:ime, jms:jme ),  OPTIONAL, INTENT(INOUT) ::         &
+                                                         cldt
+
 ! Optional (only used by CAM lw scheme)
 
    REAL, DIMENSION( ims:ime, kms:kme, cam_abs_dim2, jms:jme ), OPTIONAL ,&
@@ -627,6 +633,7 @@ CONTAINS
      INTEGER, OPTIONAL, INTENT(IN) :: slope_rad,topo_shading
      REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(IN)  :: ht
      INTEGER, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(IN) :: shadowmask
+     REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(OUT) :: diffuse_frac
 
    REAL , OPTIONAL, INTENT(INOUT) ::    radtacttime ! Storing the time in s when radiation is called next
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
@@ -661,6 +668,8 @@ CONTAINS
    REAL    ::    next_rad_time
    LOGICAL ::    run_param , doing_adapt_dt , decided
    LOGICAL ::    flg_lw, flg_sw
+!ZCX
+   REAL    ::    cldji,cldlji
 !ckay
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) ::    cldfra_cu
 !------------------------------------------------------------------
@@ -1837,6 +1846,19 @@ CONTAINS
         end do
      end if
 
+
+       IF ( PRESENT( diffuse_frac ) ) THEN 
+           DO j=jts,jte
+           DO i=its,ite
+             if (coszen(i,j).gt.1e-3) then
+                diffuse_frac(i,j) = swddif(i,j)/swdown(i,j)
+             else
+                diffuse_frac(i,j) = 0.
+             endif
+           ENDDO
+           ENDDO
+        ENDIF
+
        IF ( PRESENT( qc  ) .AND. PRESENT( qc_cu ) ) THEN 
            IF ( icloud_cu .NE. 0 ) THEN
            DO j=jts,jte
@@ -1962,6 +1984,36 @@ CONTAINS
 
      CASE DEFAULT
      END SELECT accumulate_sw_select
+
+! compute cloud diagnosis (random overlapping)
+! by ZCX
+ IF ( PRESENT ( CLDFRA ) .AND. PRESENT ( CLDT ) .AND.        &
+      PRESENT ( F_QC ) .AND. PRESENT ( F_QI ) ) THEN
+
+   DO ij = 1 , num_tiles
+     its = i_start(ij)
+     ite = i_end(ij)
+     jts = j_start(ij)
+     jte = j_end(ij)
+
+        DO j=jts,jte
+        DO i=its,ite
+          cldji=1.0
+          do k=kte-1,kts,-1
+            cldji=cldji*(1.0-cldfra(i,k,j))
+          enddo
+          cldt(i,j)=1.0-cldji
+!         cldlji=1.0
+!         do k=kte-1,kts,-1
+!         if(znu(k).ge.0.69) then
+!           cldlji=cldlji*(1.0-cldfra(i,k,j))
+!         endif
+!         enddo
+!         cldl(i,j)=1.0-cldlji
+        END DO
+        END DO
+    END DO
+ END IF
 
    END SUBROUTINE radiation_driver
 

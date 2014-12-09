@@ -16,31 +16,26 @@ subroutine da_xyll_latlon(x, y, proj, lat, lon)
    real                         :: deltalon
    real                         :: latinc
    real                         :: loninc
+   real                         :: lon360
 
    if (trace_use_frequent) call da_trace_entry("da_xyll_latlon")
 
-   ! Extract the latitude and longitude increments for this grid
-   ! (e.g., 2.5 deg for NCEP reanalysis) from the proj structure, where
-   ! loninc is saved in the stdlon tag and latinc is saved in truelat1
+   loninc = proj%dx*360.0/(2.0*EARTH_RADIUS_M*PI)
+   latinc = proj%dx*360.0/(2.0*EARTH_RADIUS_M*PI)
 
-   latinc = proj%truelat1
-   loninc = proj%stdlon
+   deltalon = (x - proj%knowni) * loninc
+   deltalat = (y - proj%knownj) * latinc
 
-   ! Compute deltalat and deltalon 
-
-   deltalat = (x-1.0)*latinc
-   deltalon = (y-1.0)*loninc
-   lat = proj%lat1 + deltalat
-   lon = proj%lon1 + deltalon
+   lon360 = deltalon + proj%lon1
+   lat    = deltalat + proj%lat1
 
    if ((ABS(lat) > 90.0).OR.(ABS(deltalon) > 360.0)) then
-      ! Off the earth for this grid
+      ! Off the earth for this grid; THIS SHOULD NEVER HAPPEN
       lat = -999.0
       lon = -999.0
    else
-      lon = lon + 360.0
-      lon = MOD(lon,360.0)
-      if (lon > 180.0) lon = lon -360.0
+      lon = MOD(lon360,360.0)
+      if (lon > 180.0) lon = lon - 360.0
    end if
 
    if (trace_use_frequent) call da_trace_exit("da_xyll_latlon")

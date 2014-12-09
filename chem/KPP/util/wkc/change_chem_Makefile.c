@@ -49,7 +49,7 @@ knode_t * p1, * p2, * pm1;
 
 	  /* if ( strncmp(inln, "MODULES",6) == 0){  */
 
-	  if ( strncmp(inln, "        module_data_sorgam",25) == 0){
+	  if ( strncmp(inln, "        module_data_sorgam_vbs",29) == 0){
 
               for ( p1 =   KPP_packs  ; p1 != NULL ; p1 = p1->next ) {
                p2 = p1->assoc_wrf_pack;

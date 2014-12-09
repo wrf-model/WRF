@@ -93,10 +93,10 @@
  INTEGER :: ktop,kbtm,kupper,klower
  REAL :: ic_fr, cg_fr, delta ! reconsolidated flashrates
  REAL :: reflmax, cellmax
- REAL :: term2, B
+ REAL :: term2, B, B_denom
  CHARACTER (LEN=250) :: message
  REAL, DIMENSION( kps:kpe ) :: cellcount
- REAL, DIMENSION( kps:kpe ) :: z_average, t_average, p_average, rho_average, molesofair
+ REAL, DIMENSION( kps:kpe ) :: z_average, t_average, p_average, rho_average, conv
  REAL, DIMENSION( kps:kpe ) :: fd, fd2, dz ! fd = distribution
 
  REAL, PARAMETER :: refl_threshold = 20.
@@ -134,11 +134,14 @@
 ! Average z, t, p, rho
  CALL horizontalAverage( z( ips:ipe,kps:kpe,jps:jpe ), ips, ipe, kps, kpe, jps, jpe, z_average )
  CALL horizontalAverage( t( ips:ipe,kps:kpe,jps:jpe ), ips, ipe, kps, kpe, jps, jpe, t_average )
+ CALL horizontalAverage( p( ips:ipe,kps:kpe,jps:jpe ), ips, ipe, kps, kpe, jps, jpe, p_average )
  CALL horizontalAverage( rho( ips:ipe,kps:kpe,jps:jpe ), ips, ipe, kps, kpe, jps, jpe, rho_average )
 
- molesofair(kps:kpe) = rho_average(kps:kpe) * 1E3 * dx * dy / .02897 ! # moles per km in z
-
+! molesofair(kps:kpe) = rho_average(kps:kpe) * 1E3 * dx * dy / .02897 ! # moles per km in z
 ! term2 = 30 * 8.3145E6/dx/dy/28.96/100./100.
+
+ conv(kps:kpe) = 8.314 *t_average(kps:kpe) / (dx * dy)                !  conversion term with units J/(mol-m2)
+
 
  CALL  kfind ( cellcount, t_average,            &
                ltng_temp_upper,ltng_temp_lower, cellcount_method, &
@@ -147,24 +150,30 @@
                 ktop,kbtm,kupper,klower )
 
 ! Calculates IC distribution
- IF (( ic_fr .gt. 0 ) .and. (( ktop .gt. klower ) .and. (kbtm .lt. ktop) ) )THEN
+!IF (( ic_fr .gt. 0 ) .and. (( ktop .gt. klower ) .and. (kbtm .lt. ktop) ) )THEN
+ IF (( ic_fr > 0 ) .and. (( ktop > klower ) .and. (kbtm < klower) ) )THEN
    call bellcurve(kbtm,ktop,klower,z_average, kps,kpe, fd, dz)
    if (ktop .gt. kupper) then
      call bellcurve(kbtm,ktop,kupper,z_average, kps,kpe, fd2, dz)
-     fd(kbtm:ktop) = 0.5*( fd(kbtm:ktop) + fd2(kbtm:ktop) )
+     fd(kbtm:ktop) = 0.5*( fd(kbtm:ktop) + fd2(kbtm:ktop) )         ! unitless
    endif
-!   B = N_IC/sum(f(kbtm:ktop)*p_average(kbtm:ktop))
+!   B = N_IC/sum(f(kbtm:ktop)*p_average(kbtm:ktop))             ! *** used in calculating NO
+   B_denom = DOT_PRODUCT( fd(kbtm:ktop),p_average(kbtm:ktop) )      ! N/m2
+
 
    DO k=kbtm,ktop
      if ( cellcount(k) .gt. 0. ) THEN
 !       delta = term2*B*fd(k)*t_average(k)*ic_fr/cellcount(k)/dz(k)/100.
         !*  implementation note: 1) ic_fr * N_IC/cellcount gives moles of NO in the column
         !*                       2) Multiplying by fd gives the # moles per level
-        !*                       3) Divide by moles of air gives mixing ratio
+        !*                       3) Convert to mol NO/mol air per minute
         !*                       4) Multiply by 1E6 gives ppmv
-        delta = (ic_fr * N_IC / cellcount(k)) * fd(k) / (molesofair(k)*dz(k)) * 1E6
-        WRITE(message, * ) ' LNOx_driver: k, delta, cellcount, fd = ', k, delta, cellcount(k), fd(k)
-        CALL wrf_debug ( 100, message )
+
+        delta = (ic_fr * N_IC / cellcount(k)) * fd(k) / B_denom * conv(k)/dz(k) * 1E6
+!units:      flash/sec * mol/flash /()       * m2/ N      * J/(mol-m2) / m * ppmv/(mol NO/mol air)
+!units:      flash/sec * mol/flash           * m2/ N      * N-m/(mol-m3) * ppmv/(mol NO/mol air) 
+!units:      ppmv/sec 
+
         where(refl(ips:ipe,k,jps:jpe) .gt. refl_threshold )
           lnox_ic_tend(ips:ipe,k,jps:jpe) = delta
         endwhere
@@ -175,33 +184,34 @@
 
 !-----------------------------------------------------------------
 ! Calculates CG distribution
- IF ((cg_fr .gt. 0 ) .and. (( ktop .gt. klower ) .and. (kbtm .lt. ktop) ) ) THEN
+!IF ((cg_fr .gt. 0 ) .and. (( ktop .gt. klower ) .and. (kbtm .lt. ktop) ) ) THEN
+ IF ((cg_fr > 0 ) .and. (( ktop > klower ) .and. (kbtm < klower) ) ) THEN
    call bellcurve(kps,ktop,klower,z_average, kps,kpe, fd, dz)
 !   B = N_CG/(sum(fd(kps:ktop)*p_average(kps:ktop)))
 
-!  delta = term2*B*fd(k)*t_average(k)*cg_fr/cellcount(kbtm)/dz(k)/100.
-   delta = (cg_fr * N_CG / cellcount(kbtm)) * fd(k) / (molesofair(k)*dz(k)) * 1E6
-   ! below cloud
-   !*  implementation note: previously, between kps & kbtm is practically excluded because of
-   !*                       the test for refl > 20
-   !*  implementation note: using "where" here would end up reevaluating refl(ips:ipe,kbtm,jps:jpe)
-   !*                       multiple times because of the kps,kbtm-1 loop.
-   do i=ips,ipe
-     do j=jps,jpe
-       if ( refl(i,kbtm,j) .gt. refl_threshold ) THEN
-         lnox_cg_tend(i,kps:(kbtm-1),j) = delta
-       ENDIF
-     enddo
-   enddo
+   B_denom = DOT_PRODUCT( fd(kbtm:ktop),p_average(kbtm:ktop) )      ! N/m2
 
-   ! within cloud
-   do k = kbtm,ktop
-    !delta = term2*B*fd(k)*t_average(k)*cg_fr/cellcount(k)/dz(k)/100.
-     delta = (cg_fr * N_CG / cellcount(k)) * fd(k) / (molesofair(k)*dz(k)) * 1E6
-     where( refl(ips:ipe,k,jps:jpe) .gt. refl_threshold )
-       lnox_cg_tend(ips:ipe,k,jps:jpe) = delta
-     endwhere
-   enddo
+   k = ktop
+
+   DO WHILE (k .ge. kps)
+     IF (cellcount(k) .gt. 0) THEN
+
+!      delta = (cg_fr * N_CG / cellcount(k)) * fd(k) / (molesofair(k)*dz(k)) * 1E6
+      delta = (cg_fr * N_CG / cellcount(k)) * fd(k) / B_denom * conv(k)/dz(k) * 1E6
+!units:      flash/sec * mol/flash /()       * m2/ N      * J/(mol-m2) / m * ppmv/(mol NO/mol air) 
+!units:      flash/sec * mol/flash           * m2/ N      * N-m/(mol-m3) * ppmv/(mol NO/mol air) 
+!units:      ppmv/sec 
+
+       where( refl(ips:ipe,k,jps:jpe) .gt. refl_threshold )
+          lnox_cg_tend(ips:ipe,k,jps:jpe) = delta
+       endwhere
+
+     ENDIF
+
+     k = k - 1      !07/23/14 KAC added
+
+   ENDDO
+
  ENDIF
 
  END SUBROUTINE lightning_nox_decaria
@@ -258,7 +268,7 @@
  ENDDO
 
  ! Normalize
- cuml_f_dist = sum(f(k_min:k_max) * dz(k_min:k_max))
+ cuml_f_dist = DOT_PRODUCT(dz(k_min:k_max),f(k_min:k_max))
  f(k_min:k_max) = f(k_min:k_max)*dz(k_min:k_max)/cuml_f_dist
 
  END SUBROUTINE bellcurve

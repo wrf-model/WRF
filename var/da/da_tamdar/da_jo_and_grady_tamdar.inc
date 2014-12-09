@@ -25,9 +25,15 @@ subroutine da_jo_and_grady_tamdar(iv, re, jo, jo_grad_y)
    jo % tamdar_q = 0.0
 
    if (test_dm_exact) then
-      if (iv%info(tamdar)%ntotal == 0) return
+      if (iv%info(tamdar)%ntotal == 0) then
+         if (trace_use_dull) call da_trace_exit("da_jo_and_grady_tamdar")
+         return
+      end if
    else
-      if (iv%info(tamdar)%nlocal < 1) return
+      if (iv%info(tamdar)%nlocal < 1) then
+         if (trace_use_dull) call da_trace_exit("da_jo_and_grady_tamdar")
+         return
+      end if
    end if
 
    do n=1, iv%info(tamdar)%nlocal

@@ -231,8 +231,8 @@ CONTAINS
                soilrat_in = 0.
                nitrate_in =max(epsilc,chem(i,k,j,p_hno3)*convfac*mwhno3)
                nh3_in = max(epsilc,chem(i,k,j,p_nh3)*convfac*mwnh3)
-!              hcl_in = max(epsilc,chem(i,k,j,p_hcl)*convfac*mwhcl)
-               hcl_in = 0.
+               hcl_in = max(epsilc,chem(i,k,j,p_hcl)*convfac*mwhcl)
+!                   hcl_in = 0.
                vsulf_in = max(epsilc,chem(i,k,j,p_sulf)*convfac*mwso4)
 !     if(i.eq.28.and.j.eq.25.and.k.eq.1)then
 !       print *,'vsulfin = ',vsulf_in,chem(i,k,j,p_sulf),convfac,mwso4
@@ -257,7 +257,8 @@ CONTAINS
         drog_in(POLT2) = VDROG3(i,k,j,POLT2)
         drog_in(POLT3) = VDROG3(i,k,j,POLT3)
 !rs * biogenic organics DeltaROG
-        if(p_ete.eq.1)then
+        if(p_lim.eq.1)then
+!            if(p_ete.eq.1)then
             drog_in(PAPI1) = 0.
             drog_in(PAPI2) = 0.
             drog_in(PAPI3) = 0.
@@ -268,7 +269,8 @@ CONTAINS
             condvap_in(PSOAAPI2) = 0.
             condvap_in(PSOALIM1) = 0.
             condvap_in(PSOALIM2) = 0.
-        elseif(p_ete.gt.1)then
+        elseif(p_lim.gt.1)then
+!            elseif(p_ete.gt.1)then
             drog_in(PAPI1) = VDROG3(i,k,j,PAPI1)
             drog_in(PAPI2) = VDROG3(i,k,j,PAPI2)
             drog_in(PAPI3) = VDROG3(i,k,j,PAPI3)
@@ -318,10 +320,15 @@ CONTAINS
       cblk(1,VCVARO2  ) =   max(epsilc,cvaro2(i,k,j))
       cblk(1,VCVALK1  ) =   max(epsilc,cvalk1(i,k,j))
       cblk(1,VCVOLE1  ) =   max(epsilc,cvole1(i,k,j))
-      cblk(1,VCVAPI1  ) =   0.
-      cblk(1,VCVAPI2  ) =   0.
-      cblk(1,VCVLIM1  ) =   0.
-      cblk(1,VCVLIM2  ) =   0.
+!          cblk(1,VCVAPI1  ) =   0.
+!          cblk(1,VCVAPI2  ) =   0.
+!          cblk(1,VCVLIM1  ) =   0.
+!          cblk(1,VCVLIM2  ) =   0.
+      cblk(1,VCVAPI1  ) =   max(epsilc,cvapi1(i,k,j))
+      cblk(1,VCVAPI2  ) =   max(epsilc,cvapi2(i,k,j))
+      cblk(1,VCVLIM1  ) =   max(epsilc,cvlim1(i,k,j))
+      cblk(1,VCVLIM2  ) =   max(epsilc,cvlim2(i,k,j))
+
 !
 ! Set emissions to zero 
 !
@@ -449,14 +456,19 @@ CONTAINS
       cvaro2(i,k,j) = cblk(1,VCVARO2  )
       cvalk1(i,k,j) = cblk(1,VCVALK1  )
       cvole1(i,k,j) = cblk(1,VCVOLE1  )
-      cvapi1(i,k,j) = 0.
-      cvapi2(i,k,j) = 0.
-      cvlim1(i,k,j) = 0.
-      cvlim2(i,k,j) = 0.
+!          cvapi1(i,k,j) = 0.
+!          cvapi2(i,k,j) = 0.
+!          cvlim1(i,k,j) = 0.
+!          cvlim2(i,k,j) = 0.
+      cvapi1(i,k,j) = cblk(1,VCVAPI1  )
+      cvapi2(i,k,j) = cblk(1,VCVAPI2  )
+      cvlim1(i,k,j) = cblk(1,VCVLIM1  )
+      cvlim2(i,k,j) = cblk(1,VCVLIM2  )
+
       chem(i,k,j,p_sulf)=max(epsilc,cblk(1,vsulf)/CONVFAC/MWSO4)
       chem(i,k,j,p_hno3)=max(epsilc,cblk(1,vhno3)/CONVFAC/MWHNO3)
       chem(i,k,j,p_nh3)=max(epsilc,cblk(1,vnh3)/CONVFAC/MWNH3)
-!     chem(i,k,j,p_hcl)=max(epsilc,cblk(1,vhcl)/CONVFAC/MWHCL)
+      chem(i,k,j,p_hcl)=max(epsilc,cblk(1,vhcl)/CONVFAC/MWHCL)
 !     if(i.eq.28.and.j.eq.25.and.k.eq.1)then
 !       print *,vhcl
 !       print *,'vsulfout = ',chem(i,k,j,p_sulf)
@@ -579,6 +591,7 @@ CONTAINS
                h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,cvaro1,cvaro2, &
                cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2,               &
                aer_res,vgsa,                                            &
+               numgas,ddflx, &
                numaer,                                                  &
                ids,ide, jds,jde, kds,kde,                               &
                ims,ime, jms,jme, kms,kme,                               &
@@ -587,6 +600,7 @@ CONTAINS
    USE module_configure,only:  grid_config_rec_type
    TYPE (grid_config_rec_type) , INTENT (IN) :: config_flags
    INTEGER,      INTENT(IN   )    ::                             &
+                                      numgas, &
                                       numaer,                    &
                                       ids,ide, jds,jde, kds,kde, &
                                       ims,ime, jms,jme, kms,kme, &
@@ -603,6 +617,10 @@ CONTAINS
    REAL, DIMENSION( its:ite, jts:jte, numaer ),                       &
          INTENT(INOUT ) ::                                             &
          vgsa
+        real, intent(inout),   &
+                dimension( ims:ime, jms:jme, numgas+1:num_chem ) :: &
+                ddflx
+
    REAL, DIMENSION( its:ite, jts:jte ),                       &
          INTENT(INOUT ) ::                                             &
          aer_res
@@ -654,6 +672,8 @@ CONTAINS
       REAL nitrate_in
                     ! input NH3 to CBLK  [ug/m^3]
       REAL nh3_in
+!                   ! input hcl vapor
+      REAL hcl_in
                     ! input SO4 vapor    [ug/m^3]
       REAL vsulf_in
 
@@ -681,6 +701,10 @@ CONTAINS
 ! molecular weight for NH3
       REAL mwnh3
       PARAMETER (mwnh3=17.03061)
+
+!molecular weight for HCL 
+      REAL mwhcl
+      PARAMETER (mwhcl=36.46100)
 
 !bs molecular weight for Organic Spec
 !     REAL mworg
@@ -813,7 +837,8 @@ CONTAINS
                nitrate_in =chem(i,k,j,p_hno3)*convfac*mwhno3
                nh3_in = chem(i,k,j,p_nh3)*convfac*mwnh3
                vsulf_in = chem(i,k,j,p_sulf)*convfac*mwso4   
-               
+               hcl_in = chem(i,k,j,p_hcl)*convfac*mwhcl              
+ 
 !rs. nitrate, nh3, sulf
       BLKPRS(BLKSIZE)   = 1.e3*P(K)                ! pressure in Pa
       BLKTA(BLKSIZE)   = T(K)         ! temperature in K
@@ -827,6 +852,7 @@ CONTAINS
       cblk(1,vsulf) = max(epsilc,vsulf_in)
       cblk(1,vhno3) = max(epsilc,nitrate_in)
       cblk(1,vnh3) = max(epsilc,nh3_in)
+      cblk(1,vhcl) = max(epsilc,hcl_in)
       cblk(1,VSO4AJ   ) =   max(epsilc,chem(i,k,j,p_so4aj)*convfac2)
       cblk(1,VSO4AI   ) =   max(epsilc,chem(i,k,j,p_so4ai)*convfac2)
       cblk(1,VNH4AJ   ) =   max(epsilc,chem(i,k,j,p_nh4aj)*convfac2)
@@ -878,14 +904,14 @@ CONTAINS
       cblk(1,VCVARO2  ) =   cvaro2(i,k,j)
       cblk(1,VCVALK1  ) =   cvalk1(i,k,j)
       cblk(1,VCVOLE1  ) =   cvole1(i,k,j)
-      cblk(1,VCVAPI1  ) =   0.
-      cblk(1,VCVAPI2  ) =   0.
-      cblk(1,VCVLIM1  ) =   0.
-      cblk(1,VCVLIM2  ) =   0.
-!     cblk(1,VCVAPI1  ) =   cvapi1(i,k,j)
-!     cblk(1,VCVAPI2  ) =   cvapi2(i,k,j)
-!     cblk(1,VCVLIM1  ) =   cvlim1(i,k,j)
-!     cblk(1,VCVLIM2  ) =   cvlim2(i,k,j)
+!          cblk(1,VCVAPI1  ) =   0.
+!          cblk(1,VCVAPI2  ) =   0.
+!          cblk(1,VCVLIM1  ) =   0.
+!          cblk(1,VCVLIM2  ) =   0.
+      cblk(1,VCVAPI1  ) =   cvapi1(i,k,j)
+      cblk(1,VCVAPI2  ) =   cvapi2(i,k,j)
+      cblk(1,VCVLIM1  ) =   cvlim1(i,k,j)
+      cblk(1,VCVLIM2  ) =   cvlim2(i,k,j)
 !                                                                     
 !rs.   get size distribution information                              
 !                                                                     
@@ -963,6 +989,47 @@ CONTAINS
         VGSA(i, j, VNU0     )  =  VDEP(1, VDNNUC )
         VGSA(i, j, VAC0     )  =  VDEP(1, VDNACC )
         VGSA(i, j, VCORN    )  =  VDEP(1, VDNCOR )
+        if( config_flags%diagnostic_dep == 1) then
+        ddflx(i,j,p_so4aj)=ddflx(i,j,p_so4aj)+chem(i,k,j,p_so4aj)/alt(i,k,j)*VGSA(i,j,VSO4AJ)*dtstep
+        ddflx(i,j,p_so4ai)=ddflx(i,j,p_so4ai)+chem(i,k,j,p_so4ai)/alt(i,k,j)*VGSA(i,j,VSO4AI)*dtstep
+        ddflx(i,j,p_nh4aj)=ddflx(i,j,p_nh4aj)+chem(i,k,j,p_nh4aj)/alt(i,k,j)*VGSA(i,j,VNH4AJ)*dtstep
+        ddflx(i,j,p_nh4ai)=ddflx(i,j,p_nh4ai)+chem(i,k,j,p_nh4ai)/alt(i,k,j)*VGSA(i,j,VNH4Ai)*dtstep
+        ddflx(i,j,p_no3aj)=ddflx(i,j,p_no3aj)+chem(i,k,j,p_no3aj)/alt(i,k,j)*VGSA(i,j,VNO3AJ)*dtstep
+        ddflx(i,j,p_no3ai)=ddflx(i,j,p_no3ai)+chem(i,k,j,p_no3ai)/alt(i,k,j)*VGSA(i,j,VNO3AI)*dtstep
+        ddflx(i,j,p_orgaro1j)=ddflx(i,j,p_orgaro1j)+chem(i,k,j,p_orgaro1j)/alt(i,k,j)*VGSA(i,j,VORGARO1J)*dtstep
+        ddflx(i,j,p_orgaro1i)=ddflx(i,j,p_orgaro1i)+chem(i,k,j,p_orgaro1i)/alt(i,k,j)*VGSA(i,j,VORGARO1I)*dtstep
+        ddflx(i,j,p_orgaro2j)=ddflx(i,j,p_orgaro2j)+chem(i,k,j,p_orgaro2j)/alt(i,k,j)*VGSA(i,j,VORGARO2J)*dtstep
+        ddflx(i,j,p_orgaro2i)=ddflx(i,j,p_orgaro2i)+chem(i,k,j,p_orgaro2i)/alt(i,k,j)*VGSA(i,j,VORGARO2I)*dtstep
+        ddflx(i,j,p_orgalk1j)=ddflx(i,j,p_orgalk1j)+chem(i,k,j,p_orgalk1j)/alt(i,k,j)*VGSA(i,j,VORGALK1J)*dtstep
+        ddflx(i,j,p_orgalk1i)=ddflx(i,j,p_orgalk1i)+chem(i,k,j,p_orgalk1i)/alt(i,k,j)*VGSA(i,j,VORGALK1I)*dtstep
+        ddflx(i,j,p_orgole1j)=ddflx(i,j,p_orgole1j)+chem(i,k,j,p_orgole1j)/alt(i,k,j)*VGSA(i,j,VORGOLE1J)*dtstep
+        ddflx(i,j,p_orgole1i)=ddflx(i,j,p_orgole1i)+chem(i,k,j,p_orgole1i)/alt(i,k,j)*VGSA(i,j,VORGOLE1I)*dtstep
+        ddflx(i,j,p_orgba1j)=ddflx(i,j,p_orgba1j)+chem(i,k,j,p_orgba1j)/alt(i,k,j)*VGSA(i,j,VORGBA1J)*dtstep
+        ddflx(i,j,p_orgba1i)=ddflx(i,j,p_orgba1i)+chem(i,k,j,p_orgba1i)/alt(i,k,j)*VGSA(i,j,VORGBA1I)*dtstep
+        ddflx(i,j,p_orgba2j)=ddflx(i,j,p_orgba2j)+chem(i,k,j,p_orgba2j)/alt(i,k,j)*VGSA(i,j,VORGBA2J)*dtstep
+        ddflx(i,j,p_orgba2i)=ddflx(i,j,p_orgba2i)+chem(i,k,j,p_orgba2i)/alt(i,k,j)*VGSA(i,j,VORGBA2I)*dtstep
+        ddflx(i,j,p_orgba3j)=ddflx(i,j,p_orgba3j)+chem(i,k,j,p_orgba3j)/alt(i,k,j)*VGSA(i,j,VORGBA3J)*dtstep
+        ddflx(i,j,p_orgba3i)=ddflx(i,j,p_orgba3i)+chem(i,k,j,p_orgba3i)/alt(i,k,j)*VGSA(i,j,VORGBA3I)*dtstep
+        ddflx(i,j,p_orgba4j)=ddflx(i,j,p_orgba4j)+chem(i,k,j,p_orgba4j)/alt(i,k,j)*VGSA(i,j,VORGBA4J)*dtstep
+        ddflx(i,j,p_orgba4i)=ddflx(i,j,p_orgba4i)+chem(i,k,j,p_orgba4i)/alt(i,k,j)*VGSA(i,j,VORGBA4I)*dtstep
+        ddflx(i,j,p_orgpaj)=ddflx(i,j,p_orgpaj)+chem(i,k,j,p_orgpaj)/alt(i,k,j)*VGSA(i,j,VORGPAJ)*dtstep
+        ddflx(i,j,p_orgpai)=ddflx(i,j,p_orgpai)+chem(i,k,j,p_orgpai)/alt(i,k,j)*VGSA(i,j,VORGPAI)*dtstep
+        ddflx(i,j,p_ecj)=ddflx(i,j,p_ecj)+chem(i,k,j,p_ecj)/alt(i,k,j)*VGSA(i,j,VECJ)*dtstep
+        ddflx(i,j,p_eci)=ddflx(i,j,p_eci)+chem(i,k,j,p_eci)/alt(i,k,j)*VGSA(i,j,VECI)*dtstep
+        ddflx(i,j,p_p25j)=ddflx(i,j,p_p25j)+chem(i,k,j,p_p25j)/alt(i,k,j)*VGSA(i,j,VP25AJ)*dtstep
+        ddflx(i,j,p_p25i)=ddflx(i,j,p_p25i)+chem(i,k,j,p_p25i)/alt(i,k,j)*VGSA(i,j,VP25AI)*dtstep
+        ddflx(i,j,p_naaj)=ddflx(i,j,p_naaj)+chem(i,k,j,p_naaj)/alt(i,k,j)*VGSA(i,j,VNAAJ)*dtstep
+        ddflx(i,j,p_naai)=ddflx(i,j,p_naai)+chem(i,k,j,p_naai)/alt(i,k,j)*VGSA(i,j,VNAAI)*dtstep
+        ddflx(i,j,p_claj)=ddflx(i,j,p_claj)+chem(i,k,j,p_claj)/alt(i,k,j)*VGSA(i,j,VCLAJ)*dtstep
+        ddflx(i,j,p_clai)=ddflx(i,j,p_clai)+chem(i,k,j,p_clai)/alt(i,k,j)*VGSA(i,j,VCLAI)*dtstep
+        ddflx(i,j,p_antha)=ddflx(i,j,p_antha)+chem(i,k,j,p_antha)/alt(i,k,j)*VGSA(i,j,VANTHA)*dtstep
+        ddflx(i,j,p_seas)=ddflx(i,j,p_seas)+chem(i,k,j,p_seas)/alt(i,k,j)*VGSA(i,j,VSEAS)*dtstep
+        ddflx(i,j,p_soila)=ddflx(i,j,p_soila)+chem(i,k,j,p_soila)/alt(i,k,j)*VGSA(i,j,VSOILA)*dtstep
+        ddflx(i,j,p_nu0)=ddflx(i,j,p_nu0)+chem(i,k,j,p_nu0)/alt(i,k,j)*VGSA(i,j,VNU0)*dtstep
+        ddflx(i,j,p_ac0)=ddflx(i,j,p_ac0)+chem(i,k,j,p_ac0)/alt(i,k,j)*VGSA(i,j,VAC0)*dtstep
+        ddflx(i,j,p_corn)=ddflx(i,j,p_corn)+chem(i,k,j,p_corn)/alt(i,k,j)*VGSA(i,j,VCORN)*dtstep
+        end if
+
 !     enddo         ! k-loop
  100  continue      ! i,j-loop
                                                                      
@@ -1509,8 +1576,8 @@ END SUBROUTINE sorgam_depdriver
       INTEGER unit
       PARAMETER (unit=20)
       integer igrid,jgrid,kgrid,isorop
-      isorop=0
-
+!          isorop=0
+      isorop=1
 
 
 
@@ -2914,9 +2981,16 @@ END SUBROUTINE sorgam_depdriver
                 (cblk(lcell,vno3aj) +  cblk(lcell,vno3ai))/mw_no3_aer)*1.e-6   ! nitrate
 
        
-        wi(5) = (cblk(lcell,vhcl)/(mw_cl_aer-1.) +                               &
+!       wi(5) = (cblk(lcell,vhcl)/(mw_cl_aer-1.) +                               &
+        wi(5) = (cblk(lcell,vhcl)/(mw_cl_aer+1.) +                               &
                 (cblk(lcell,vclaj)  + cblk(lcell,vclai))/mw_cl_aer)*1.e-6      ! chloride
 
+! Following added: wi should be positive
+        wi(1) = max(wi(1),0.)
+        wi(2) = max(wi(2),0.)
+        wi(3) = max(wi(3),0.)
+        wi(4) = max(wi(4),0.)
+        wi(5) = max(wi(5),0.)
 
         wt_save(1) = wi(1) ! sodium
         wt_save(2) = wi(2) ! sulfate
@@ -2928,7 +3002,7 @@ END SUBROUTINE sorgam_depdriver
          print *,wi(1),wi(2),wi(3),wi(4),wi(5)
         endif
 
-!       call isoropia(wi,rhi,tempi,cntrl,wt,gas,aerliq,aersld,scasi,other)
+       call isoropia(wi,rhi,tempi,cntrl,wt,gas,aerliq,aersld,scasi,other)
 
 
 ! *** the following is an interim procedure. Assume the i-mode has the
@@ -2937,10 +3011,20 @@ END SUBROUTINE sorgam_depdriver
 
 
 ! *** update gas / vapor phase
+        gas(1) = min(gas(1),wt_save(3))
+        gas(2) = min(gas(2),wt_save(4))
+        gas(3) = min(gas(3),wt_save(5))
 
-        cblk(lcell,vnh3)  = gas(1)*1.e6*17.
-        cblk(lcell,vhno3) = gas(2)*1.e6*63.
-        cblk(lcell,vhcl) = gas(3)*1.e6*36.
+        gas(1) = max(gas(1),0.)
+        gas(2) = max(gas(2),0.)
+        gas(3) = max(gas(3),0.)
+
+!        cblk(lcell,vnh3)  = gas(1)*1.e6*17.
+!        cblk(lcell,vhno3) = gas(2)*1.e6*63.
+!        cblk(lcell,vhcl) = gas(3)*1.e6*36.
+        cblk(lcell,vnh3)  = gas(1)*1.e6*(mw_nh4_aer-1.)
+        cblk(lcell,vhno3) = gas(2)*1.e6*(mw_no3_aer+1.)
+        cblk(lcell,vhcl) = gas(3)*1.e6*(mw_cl_aer+1.)
         if(igrid.eq.28.and.jgrid.eq.24.and.kgrid.eq.1)then
          print *,vhcl,vnh3,vhno3
          print *,cblk(lcell,vnh3),cblk(lcell,vhno3),cblk(lcell,vhcl)
@@ -2948,23 +3032,42 @@ END SUBROUTINE sorgam_depdriver
 
 ! *** get modal fraction
         fraci = cblk(lcell,vso4ai)/(cblk(lcell,vso4aj)+cblk(lcell,vso4ai))
+
+        fraci = min(fraci,1.0)
+        fraci = max(fraci,0.0)
+
         fracj = 1.0 - fraci
 
 ! *** update do i-mode
 
+!     correct mapping from (mol m-3) to (ug m-3)
+        aerliq(8) = max(aerliq(8),0.)
+
         cblk(lcell,vh2oai) = fraci*aerliq(8)*18.*1.e6
-        cblk(lcell,vnh4ai) = fraci*(wt_save(3) - gas(1))
-        cblk(lcell,vno3ai) = fraci*(wt_save(4) - gas(2))
-        cblk(lcell,vclai)  = fraci*(wt_save(5) - gas(3))
-        cblk(lcell,vnaai)  = fraci*wi(1)
+        cblk(lcell,vnh4ai) = fraci*(wt_save(3) - gas(1))*mw_nh4_aer*1.e6
+        cblk(lcell,vno3ai) = fraci*(wt_save(4) - gas(2))*mw_no3_aer*1.e6
+        cblk(lcell,vclai)  = fraci*(wt_save(5) - gas(3))*mw_cl_aer*1.e6
+        cblk(lcell,vnaai)  = fraci*wi(1)*mw_na_aer*1.e6
+
+!        cblk(lcell,vh2oai) = fraci*aerliq(8)*18.*1.e6
+!        cblk(lcell,vnh4ai) = fraci*(wt_save(3) - gas(1))
+!        cblk(lcell,vno3ai) = fraci*(wt_save(4) - gas(2))
+!        cblk(lcell,vclai)  = fraci*(wt_save(5) - gas(3))
+!        cblk(lcell,vnaai)  = fraci*wi(1)
 
 ! *** update accumulation mode:
-
+! correct mapping from (mol m-3) to (ug m-3)
         cblk(lcell,vh2oaj) = fracj*aerliq(8)*18.*1.e6
-        cblk(lcell,vnh4aj) = fracj*(wt_save(3) - gas(1))
-        cblk(lcell,vno3aj) = fracj*(wt_save(4) - gas(2))
-        cblk(lcell,vclaj)  = fracj*(wt_save(5) - gas(3))
-        cblk(lcell,vnaaj)  = fracj*wi(1)
+        cblk(lcell,vnh4aj) = fracj*(wt_save(3) - gas(1))*mw_nh4_aer*1.e6
+        cblk(lcell,vno3aj) = fracj*(wt_save(4) - gas(2))*mw_no3_aer*1.e6
+        cblk(lcell,vclaj)  = fracj*(wt_save(5) - gas(3))*mw_cl_aer*1.e6
+        cblk(lcell,vnaaj)  = fracj*wi(1)*mw_na_aer*1.e6
+
+!        cblk(lcell,vh2oaj) = fracj*aerliq(8)*18.*1.e6
+!        cblk(lcell,vnh4aj) = fracj*(wt_save(3) - gas(1))
+!        cblk(lcell,vno3aj) = fracj*(wt_save(4) - gas(2))
+!        cblk(lcell,vclaj)  = fracj*(wt_save(5) - gas(3))
+!        cblk(lcell,vnaaj)  = fracj*wi(1)
         if(igrid.eq.28.and.jgrid.eq.24.and.kgrid.eq.1)then
          print *,vh2oaj,vnh4aj,vno3aj,vclaj,vnaaj
          print *,cblk(lcell,vnh4aj),cblk(lcell,vno3aj),cblk(lcell,vclaj),aerliq(8)
@@ -3924,22 +4027,42 @@ END SUBROUTINE sorgam_depdriver
 
 ! *** Aitken-mode:
 
+! Na and Cl added to aitken mode mass conc
+
         pmassn(lcell) = max(conmin,(cblk(lcell,vso4ai)+cblk(lcell, &
-          vnh4ai)+cblk(lcell,vh2oai)+cblk(lcell,vno3ai)+cblk(lcell, &
+          vnh4ai)+cblk(lcell,vh2oai)+cblk(lcell,vno3ai)+ &
+          cblk(lcell,vnaai)+cblk(lcell,vclai)+cblk(lcell, &
           vorgaro1i)+cblk(lcell,vorgaro2i)+cblk(lcell,vorgalk1i)+cblk(lcell, &
           vorgole1i)+cblk(lcell,vorgba1i)+cblk(lcell,vorgba2i)+cblk(lcell, &
           vorgba3i)+cblk(lcell,vorgba4i)+cblk(lcell,vorgpai)+cblk(lcell, &
           vp25ai)+cblk(lcell,veci)))
 
+!        pmassn(lcell) = max(conmin,(cblk(lcell,vso4ai)+cblk(lcell, &
+!          vnh4ai)+cblk(lcell,vh2oai)+cblk(lcell,vno3ai)+cblk(lcell, &
+!          vorgaro1i)+cblk(lcell,vorgaro2i)+cblk(lcell,vorgalk1i)+cblk(lcell, &
+!          vorgole1i)+cblk(lcell,vorgba1i)+cblk(lcell,vorgba2i)+cblk(lcell, &
+!          vorgba3i)+cblk(lcell,vorgba4i)+cblk(lcell,vorgpai)+cblk(lcell, &
+!          vp25ai)+cblk(lcell,veci)))
+
 
 ! *** Accumulation-mode:
 
+! ! Na and Cl added to accum mode mass conc
+
         pmassa(lcell) = max(conmin,(cblk(lcell,vso4aj)+cblk(lcell, &
-          vnh4aj)+cblk(lcell,vh2oaj)+cblk(lcell,vno3aj)+cblk(lcell, &
+          vnh4aj)+cblk(lcell,vh2oaj)+cblk(lcell,vno3aj)+ &
+          cblk(lcell,vnaaj)+cblk(lcell,vclaj)+cblk(lcell, &
           vorgaro1j)+cblk(lcell,vorgaro2j)+cblk(lcell,vorgalk1j)+cblk(lcell, &
           vorgole1j)+cblk(lcell,vorgba1j)+cblk(lcell,vorgba2j)+cblk(lcell, &
           vorgba3j)+cblk(lcell,vorgba4j)+cblk(lcell,vorgpaj)+cblk(lcell, &
           vp25aj)+cblk(lcell,vecj)))
+
+!        pmassa(lcell) = max(conmin,(cblk(lcell,vso4aj)+cblk(lcell, &
+!          vnh4aj)+cblk(lcell,vh2oaj)+cblk(lcell,vno3aj)+cblk(lcell, &
+!          vorgaro1j)+cblk(lcell,vorgaro2j)+cblk(lcell,vorgalk1j)+cblk(lcell, &
+!          vorgole1j)+cblk(lcell,vorgba1j)+cblk(lcell,vorgba2j)+cblk(lcell, &
+!          vorgba3j)+cblk(lcell,vorgba4j)+cblk(lcell,vorgpaj)+cblk(lcell, &
+!          vp25aj)+cblk(lcell,vecj)))
 
 
 ! *** coarse mode:
@@ -4754,7 +4877,9 @@ END SUBROUTINE sorgam_depdriver
 
 ! molecular weight for Organic Specie
       REAL mworg
-      PARAMETER (mworg=16.0)
+!
+      PARAMETER (mworg=175.0)
+!      PARAMETER (mworg=16.0)
 
 ! molecular weight for Chloride      
       REAL mwcl
@@ -8187,27 +8312,31 @@ SUBROUTINE sorgam_addemiss(                                             &
                   dz8w(its:ite,kts:kte,jts:jte)
 !
 ! Increment the aerosol numbers...
-    if(emissopt  .lt. 5 )then
+ if (emissopt .ne. 5) then
 !
 ! Aitken mode first...
 
   chem(its:ite,kts:kemit,jts:jte,p_nu0) =                        &
        chem(its:ite,kts:kemit,jts:jte,p_nu0) +                   &
-       factor(its:ite,kts:kemit,jts:jte)*factnumn*(                                  &
-       anthfac*( emis_ant(its:ite,kts:kemit,jts:jte,p_e_pm25i) +            &
-       emis_ant(its:ite,kts:kemit,jts:jte,p_e_eci)  +                      &
-       emis_ant(its:ite,kts:kemit,jts:jte,p_e_naai) ) +                      &
-       orgfac*emis_ant(its:ite,kts:kemit,jts:jte,p_e_orgi) )
+       factor(its:ite,kts:kemit,jts:jte)*factnumn*(              &
+       anthfac*( emis_ant(its:ite,kts:kemit,jts:jte,p_e_pm25i) + &
+       emis_ant(its:ite,kts:kemit,jts:jte,p_e_eci)  +            &
+       emis_ant(its:ite,kts:kemit,jts:jte,p_e_naai) ) +          &
+       orgfac*emis_ant(its:ite,kts:kemit,jts:jte,p_e_orgi) +     &
+       so4fac*emis_ant(its:ite,kts:kemit,jts:jte,p_e_so4i)   +   &
+       no3fac*emis_ant(its:ite,kts:kemit,jts:jte,p_e_no3i) )
 
 ! Accumulation mode next...
   
   chem(its:ite,kts:kemit,jts:jte,p_ac0) =                        &
        chem(its:ite,kts:kemit,jts:jte,p_ac0) +                   &
-       factor(its:ite,kts:kemit,jts:jte)*factnuma*(                                  &
-       anthfac*( emis_ant(its:ite,kts:kemit,jts:jte,p_e_pm25j) +            &
-       emis_ant(its:ite,kts:kemit,jts:jte,p_e_ecj)  +                      &
-       emis_ant(its:ite,kts:kemit,jts:jte,p_e_naaj) ) +                      &
-       orgfac*emis_ant(its:ite,kts:kemit,jts:jte,p_e_orgj) )
+       factor(its:ite,kts:kemit,jts:jte)*factnuma*(              &
+       anthfac*( emis_ant(its:ite,kts:kemit,jts:jte,p_e_pm25j) + &
+       emis_ant(its:ite,kts:kemit,jts:jte,p_e_ecj)  +            &
+       emis_ant(its:ite,kts:kemit,jts:jte,p_e_naaj) ) +          &
+       orgfac*emis_ant(its:ite,kts:kemit,jts:jte,p_e_orgj) +     &
+       so4fac*emis_ant(its:ite,kts:kemit,jts:jte,p_e_so4j)   +   &
+       no3fac*emis_ant(its:ite,kts:kemit,jts:jte,p_e_no3j))
 
 ! And now the coarse mode...
 
@@ -8392,7 +8521,8 @@ SUBROUTINE sorgam_addemiss(                                             &
            ims,ime, jms,jme, kms,kme,                             &
            its,ite, jts,jte, kts,kte                              )
   end if
-  if( dust_opt == 3 ) then
+!     dust_opt changed to 5 since it conflicts with gocart/afwa
+  if( dust_opt == 5 ) then
       call sorgam_dust_gocartemis(                                &
            ktau,dtstep,num_soil_layers,alt,u_phy,                 &
            v_phy,chem,rho_phy,dz8w,smois,u10,v10,p8w,erod,        &
@@ -8977,7 +9107,7 @@ END SUBROUTINE sorgam_seasalt_emiss
          jdustcon = sum(bems(1:5))*accfrac/airmas  ! kg/kg-dryair
          jdustcon = jdustcon * converi   ! ug/kg-dryair
 
-         chem(i,k,j,p_p25)=chem(i,k,j,p_p25j) + jdustcon
+         chem(i,k,j,p_p25j)=chem(i,k,j,p_p25j) + jdustcon 
          chem(i,k,j,p_soila)=chem(i,k,j,p_soila) + cdustcon
 
 ! czhao doing dust number emission following pm10

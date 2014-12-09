@@ -1,6 +1,7 @@
 ###########################################################
 #ARCH    Linux i486 i586 i686,  NEC SX sxf90 sxcc #serial smpar dmpar dm+sm
 #
+DESCRIPTION     =       NEC SX ($SFC/$SCC)
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -Popenmp
@@ -18,7 +19,7 @@ PROMOTION       =       # -fdefault-real-8  # uncomment manually
 ARCH_LOCAL      =       -DNEC -DNONSTANDARD_SYSTEM_SUBR -DWRF_USE_CLM
 CFLAGS_LOCAL    =       -c  
 #-DNCARIBM_NOC99 -Xa -Kc99
-LDFLAGS_LOCAL   =	-Wl,-h nodefs
+LDFLAGS_LOCAL   =       -Wl,-h nodefs
 CPLUSPLUSLIB    =       
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 FCOPTIM         =       -w -Chopt -Wf'-M noflunf -M nozdiv' -Wf,-L fmtlist transform,-pvctl fullmsg loopcnt=1000000 -f4 -Wf,-P i
@@ -44,6 +45,7 @@ CC_TOOLS        =      cc
 ###########################################################
 #ARCH    Linux i486 i586 i686, gfortran compiler with gcc #serial smpar dmpar dm+sm
 #
+DESCRIPTION     =       GNU ($SFC/$SCC)
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -fopenmp
@@ -85,6 +87,7 @@ CC_TOOLS        =      $(SCC)
 ###########################################################
 #ARCH    Linux i486 i586 i686, g95 compiler with gcc #serial dmpar
 #
+DESCRIPTION     =       GNU ($SFC/$SCC)
 DMPARALLEL      =       # 1
 OMPCPP          =       # not supported
 OMP             =       # not supported
@@ -126,6 +129,7 @@ CC_TOOLS        =      $(SCC)
 ###########################################################
 #ARCH    Linux x86_64 i486 i586 i686, PGI compiler with gcc # serial smpar dmpar dm+sm
 #
+DESCRIPTION     =       PGI ($SFC/$SCC)
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -mp -Minfo=mp -Mrecursive
@@ -167,6 +171,7 @@ CC_TOOLS        =      $(SCC)
 ###########################################################
 #ARCH    Linux x86_64, PGI compiler with pgcc, SGI MPT # serial smpar dmpar dm+sm
 #
+DESCRIPTION     =       PGI ($SFC/$SCC): SGI MPT
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -mp -Minfo=mp -Mrecursive
@@ -208,6 +213,7 @@ CC_TOOLS        =      $(SCC)
 ###########################################################
 #ARCH    Linux x86_64, PGI accelerator compiler with gcc # serial smpar dmpar dm+sm
 #
+DESCRIPTION     =       PGI ($SFC/$SCC): PGI accelerator
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -mp -Minfo=mp -Mrecursive
@@ -281,6 +287,7 @@ CC_TOOLS        =      $(SCC)
 #LDFLAGS_LOCAL   =       -ip -fp-model precise -w -ftz -align all -fno-alias $(FORMAT_FREE) $(BYTESWAPIO) #-xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -align all -fno-alias -fno-common 
 #FCBASEOPTS_NO_G =       -w -ip -fp-model precise -w -ftz -align all -fno-alias $(FORMAT_FREE) $(BYTESWAPIO) #-xHost -fp-model fast=2 -no-heap-arrays -no-prec-div -no-prec-sqrt -ftz -align all -fno-alias -fno-common $(FORMAT_FREE) $(BYTESWAPIO)
 
+DESCRIPTION     =       INTEL ($SFC/$SCC)
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -openmp -fpp -auto
@@ -323,6 +330,7 @@ CC_TOOLS        =      $(SCC)
 #ARCH    Linux x86_64 i486 i586 i686, Xeon Phi (MIC architecture) ifort compiler with icc # dm+sm
 #
 
+DESCRIPTION     =       INTEL ($SFC/$SCC): Xeon Phi (MIC architecture)
 DMPARALLEL      =       1
 OMPCPP          =       -D_OPENMP
 OMP             =       -openmp -fpp -auto
@@ -367,6 +375,7 @@ CC_TOOLS        =      gcc
 #ARCH    Linux x86_64 i486 i586 i686, Xeon (SNB with AVX mods) ifort compiler with icc # serial smpar dmpar dm+sm
 #
 
+DESCRIPTION     =       INTEL ($SFC/$SCC): Xeon (SNB with AVX mods)
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -openmp -fpp -auto
@@ -437,6 +446,7 @@ CC_TOOLS        =      gcc
 #        and source bin64/mpivars.sh file from your Intel MPI installation
 #        before the build.
 
+DESCRIPTION     =       INTEL ($SFC/$SCC): SGI MPT
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -openmp -fpp -auto
@@ -483,6 +493,7 @@ CC_TOOLS        =      $(SCC)
 # configuration to run on the new WCOSS Tide and Gyre operational
 # forecasting machines.
 
+DESCRIPTION     =       INTEL ($SFC/$SCC): IBM POE
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -openmp -fpp -auto
@@ -559,6 +570,7 @@ CC_TOOLS        =      $(SCC)
 #        before the build.
 #
 
+DESCRIPTION     =       INTEL ($SFC/$SCC): ia64
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -openmp -fpp -auto
@@ -639,6 +651,7 @@ CC_TOOLS        =      $(SCC)
 #        DM_CC = $(SFC) -I$(MPI_HOME)/include
 #        LIB_LOCAL = -L$(MPI_HOME)/lib -lmpi 
 
+DESCRIPTION     =       INTEL ($SFC/$SCC): SGI Altix
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -openmp -fpp -auto
@@ -682,6 +695,7 @@ CC_TOOLS        =      $(SCC)
 ###########################################################
 #ARCH    Linux i486 i586 i686 x86_64, PathScale compiler with pathcc #serial dmpar
 #
+DESCRIPTION     =       PATHSCALE ($SFC/$SCC)
 DMPARALLEL      =       # 1
 OMPCPP          =       # not supported
 OMP             =       # not supported
@@ -721,8 +735,9 @@ RANLIB          =      ranlib
 CC_TOOLS        =      $(SCC) 
 
 ###########################################################
-#ARCH    x86_64 Linux, gfortran compiler with gcc  #serial smpar dmpar dm+sm
+#ARCH    Linux x86_64, gfortran compiler with gcc  #serial smpar dmpar dm+sm
 #
+DESCRIPTION     =       GNU ($SFC/$SCC)
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -fopenmp
@@ -764,18 +779,19 @@ CC_TOOLS        =      $(SCC)
 ###########################################################
 #ARCH    Darwin (MACOS) PGI compiler with pgcc #serial smpar dmpar dm+sm
 #
+DESCRIPTION     =       PGI ($SFC/$SCC)
 DMPARALLEL      =       # 1
-OMPCPP		=	# -D_OPENMP
-OMP		=	# -mp -Minfo=mp -Mrecursive
-OMPCC		=	# -mp
-SFC		=       pgf90
-SCC		=       pgcc
-CCOMP		=       pgcc
-DM_FC		=	mpif90
-DM_CC		=       mpicc
+OMPCPP          =       # -D_OPENMP
+OMP             =       # -mp -Minfo=mp -Mrecursive
+OMPCC           =       # -mp
+SFC             =       pgf90
+SCC             =       pgcc
+CCOMP           =       pgcc
+DM_FC           =       mpif90
+DM_CC           =       mpicc
 FC              =       CONFIGURE_FC
 CC              =       CONFIGURE_CC
-LD		=	$(FC)
+LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =       -r$(RWORDSIZE) -i4
 ARCH_LOCAL      =       -DMACOS -DNONSTANDARD_SYSTEM_SUBR -DWRF_USE_CLM
@@ -783,7 +799,7 @@ CFLAGS_LOCAL    =       -DMACOS
 LDFLAGS_LOCAL   =       
 CPLUSPLUSLIB    =       
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
-FCOPTIM		=       -O2 -fast
+FCOPTIM         =       -O2 -fast
 FCREDUCEDOPT	=       $(FCOPTIM)
 FCNOOPT		=       -O0
 FCDEBUG         =       # -g $(FCNOOPT) # -C -Ktrap=fp -traceback
@@ -798,13 +814,14 @@ TRADFLAG        =      -traditional
 CPP             =      cpp -P -xassembler-with-cpp
 AR              =      ar
 ARFLAGS         =      ru
-M4 		=      m4 -B 14000
-RANLIB 		=      ranlib
+M4              =      m4 -B 14000
+RANLIB          =      ranlib
 CC_TOOLS        =      cc
 
 ###########################################################
 #ARCH    Darwin (MACOS) intel compiler with icc #serial smpar dmpar dm+sm
 #
+DESCRIPTION     =       INTEL ($SFC/$SCC)
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -openmp -fpp -auto
@@ -848,6 +865,7 @@ CC_TOOLS        =      cc
 ###########################################################
 #ARCH    Darwin (MACOS) intel compiler with cc #serial smpar dmpar dm+sm
 #
+DESCRIPTION     =       INTEL ($SFC/$SCC)
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -openmp -fpp -auto
@@ -891,6 +909,7 @@ CC_TOOLS        =      cc
 ###########################################################
 #ARCH    Darwin (MACOS) g95 with gcc #serial dmpar
 #
+DESCRIPTION     =       GNU ($SFC/$SCC)
 DMPARALLEL      =       # 1
 OMPCPP          =       # not supported
 OMP             =       # not supported
@@ -933,6 +952,7 @@ CC_TOOLS        =      $(SCC)
 ###########################################################
 #ARCH    Darwin (MACOS) gfortran with gcc #serial smpar dmpar dm+sm
 #
+DESCRIPTION     =       GNU ($SFC/$SCC)
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -fopenmp
@@ -974,6 +994,7 @@ CC_TOOLS        =      $(SCC)
 ###########################################################
 #ARCH    Darwin (MACOS) xlf  #serial dmpar
 #
+DESCRIPTION     =       IBM ($SFC/$SCC)
 DMPARALLEL      =       # 1
 OMPCPP          =       # not supported
 OMP             =       # not supported
@@ -1017,6 +1038,7 @@ CC_TOOLS        =      $(SCC)
 ###########################################################
 #ARCH    AIX xlf compiler with xlc #serial smpar dmpar dm+sm
 #
+DESCRIPTION     =       IBM ($SFC/$SCC)
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -qsmp=noauto
@@ -1029,7 +1051,7 @@ DM_FC           =       mpxlf90_r
 DM_CC           =       mpcc_r -DMPI2_SUPPORT
 FC              =       CONFIGURE_FC
 CC              =       CONFIGURE_CC
-LD		=	$(FC)
+LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =        -qrealsize=$(RWORDSIZE) -qintsize=4
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR -DNATIVE_MASSV -DWRF_USE_CLM
@@ -1063,6 +1085,7 @@ CC_TOOLS        =       cc
 ###########################################################
 #ARCH    Linux x86_64 i486 i586 i686, xlf compiler with xlc # serial smpar dmpar dm+sm
 #
+DESCRIPTION     =       IBM ($SFC/$SCC)
 DMPARALLEL      =        #1
 OMPCPP          =        # -D_OPENMP
 OMP             =        # -qsmp=noauto
@@ -1116,6 +1139,7 @@ CC_TOOLS        =       cc
 # export MALLOC_MMAP_MAX_=0
 # export MALLOC_TRIM_THRESHOLD_=536870912
 #
+DESCRIPTION     =       PGI ($SFC/$SCC): Cray XT CLE
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -mp -Mrecursive
@@ -1173,6 +1197,7 @@ CC_TOOLS        =      $(SCC)
 #ARCH    Cray XE and XC30 CLE/Linux x86_64, Cray CCE compiler # serial dmpar smpar dm+sm
 # Use this for both XE6 systems with AMD Opteron and XC30 with Intel SB or IB
 
+DESCRIPTION     =       CRAY CCE ($SFC/$SCC): Cray XE and XC30
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -homp
@@ -1215,6 +1240,7 @@ CC_TOOLS        =      gcc
 #ARCH    Cray XC30 CLE/Linux x86_64, Xeon ifort compiler # serial dmpar smpar dm+sm
 #
 
+DESCRIPTION     =       INTEL ($SFC/$SCC): Cray XC30
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -openmp -fpp -auto
@@ -1258,6 +1284,7 @@ CC_TOOLS        =      gcc
 ###########################################################
 #ARCH    Fujitsu FX10 Linux SPARC64IXfx, mpifrtpx and mpifccpx compilers #serial smpar dmpar dm+sm
 #
+DESCRIPTION     =       FUJITSU ($SFC/$SCC): FX10 SPARC64 IXfx
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -Kopenmp
@@ -1299,21 +1326,22 @@ CC_TOOLS        =      /usr/bin/gcc -Wall
 ###########################################################
 #ARCH    Linux ppc64 BG /L blxlf compiler with blxlc # dmpar
 #
+DESCRIPTION     =       IBM ($SFC/$SCC): ppc64 Blue Gene\L
 DMPARALLEL      =       # 1
-OMPCPP		=	# not supported
-OMP		=	# not supported
-OMPCC		=	# not supported
+OMPCPP          =       # not supported
+OMP             =       # not supported
+OMPCC           =       # not supported
 BGL_SYS         =       /bgl/BlueLight/ppcfloor/bglsys
 MPI_INC         =       -I$(BGL_SYS)/include
 MPI_LIB         =       -L$(BGL_SYS)/lib -lmpich.rts -lmsglayer.rts -lrts.rts -ldevices.rts
-SFC		=       blrts_xlf90
-SCC		=       blrts_xlc
-CCOMP		=       blrts_xlc
-DM_FC		=	$(SFC)
-DM_CC		=       $(SCC)
+SFC             =       blrts_xlf90
+SCC             =       blrts_xlc
+CCOMP           =       blrts_xlc
+DM_FC           =       $(SFC)
+DM_CC           =       $(SCC)
 FC              =       CONFIGURE_FC
 CC              =       CONFIGURE_CC
-LD		=	$(FC)
+LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =        -qrealsize=$(RWORDSIZE) -qintsize=4
 # If system has even more processors, set VERY_LARGE_MAXPROC to that number
@@ -1323,7 +1351,7 @@ LIB_LOCAL       =       $(MPI_LIB)
 LDFLAGS_LOCAL   =       -Wl,--allow-multiple-definition -qstatic
 CPLUSPLUSLIB    =       
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
-FCOPTIM		=       -O2 -qarch=440
+FCOPTIM         =       -O2 -qarch=440
 FCNOOPT		=       -qnoopt
 FCDEBUG         =       # $(FCNOOPT) -qfullpath
 FORMAT_FIXED    =       -qfixed
@@ -1341,17 +1369,18 @@ CPP             =       /opt/ibmcmp/xlf/bg/10.1/exe/cpp -P
 CPP             =       /opt/ibmcmp/xlf/9.1/exe/cpp -P
 AR              =       ar
 ARFLAGS         =       ru
-M4 		=       m4 -B 14000
-RANLIB 		=       ranlib
+M4              =       m4 -B 14000
+RANLIB          =       ranlib
 CC_TOOLS        =       cc
 ###########################################################
 #ARCH    Linux ppc64 BG /P xlf compiler with xlc # smpar dmpar dm+sm
 #     developed on surveyor.alcf.anl.gov (thanks to ANL/ALCF)
 #
+DESCRIPTION     =       IBM ($SFC/$SCC): ppc64 Blue Gene\P
 DMPARALLEL      =       # 1
-OMPCPP		=	# -D_OPENMP
-OMP		=	# -qsmp=noauto
-OMPCC		=	# -qsmp=noauto
+OMPCPP          =       # -D_OPENMP
+OMP             =       # -qsmp=noauto
+OMPCC           =       # -qsmp=noauto
 # these have to be the same as DM_FC on surveyor or it fails with weird errors in time manager
 SFC             =       mpixlf90_r
 SCC             =       mpixlc_r
@@ -1370,7 +1399,7 @@ LIB_LOCAL       =
 LDFLAGS_LOCAL   =       -Wl,--allow-multiple-definition,--relax -qstatic
 CPLUSPLUSLIB    =       
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
-FCOPTIM		=       -O3 -qnoipa -qarch=auto -qcache=auto -qtune=auto
+FCOPTIM         =       -O3 -qnoipa -qarch=auto -qcache=auto -qtune=auto
 FCNOOPT		=       -qnoopt
 FCDEBUG         =       # $(FCNOOPT) -g -qfullpath
 FORMAT_FIXED    =       -qfixed
@@ -1386,25 +1415,26 @@ TRADFLAG        =       -traditional
 CPP             =       /opt/ibmcmp/xlf/bg/11.1/exe/cpp -P
 AR              =       ar
 ARFLAGS         =       ru
-M4 		=       m4 -B 14000
-RANLIB 		=       ranlib
+M4              =       m4 -B 14000
+RANLIB          =       ranlib
 CC_TOOLS        =       cc
 ###########################################################
 #ARCH    Linux ppc64 IBM Blade Server xlf compiler with xlc # dmpar
 #    provided by Luis C. Cana Cascallar for IBM JS21 blade server, May 2009
 #
+DESCRIPTION     =       IBM ($SFC/$SCC): ppc64 IBM Blade
 DMPARALLEL      =       # 1
-OMPCPP		=	# not supported
-OMP		=	# not supported
-OMPCC		=	# not supported
-SFC		=       xlf90_r -q64
-SCC		=       xlc_r -q64
-CCOMP		=       xlc_r -q64
-DM_FC		=	mpif90 -q64
-DM_CC		=       mpicc -q64 -DMPI2_SUPPORT  -DFSEEKO64_OK
+OMPCPP          =       # not supported
+OMP             =       # not supported
+OMPCC           =       # not supported
+SFC             =       xlf90_r -q64
+SCC             =       xlc_r -q64
+CCOMP           =       xlc_r -q64
+DM_FC           =       mpif90 -q64
+DM_CC           =       mpicc -q64 -DMPI2_SUPPORT  -DFSEEKO64_OK
 FC              =       CONFIGURE_FC
 CC              =       CONFIGURE_CC
-LD		=	$(FC)
+LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =        -qrealsize=$(RWORDSIZE) -qintsize=4
 # If system has even more processors, set VERY_LARGE_MAXPROC to that number
@@ -1428,13 +1458,14 @@ TRADFLAG        =       -traditional
 CPP             =       /opt/ibmcmp/xlf/11.1/exe/cpp -P
 AR              =       ar
 ARFLAGS         =       ru
-M4 		=       m4 -B 14000
-RANLIB 		=       ranlib
+M4              =       m4 -B 14000
+RANLIB          =       ranlib
 CC_TOOLS        =       xlc -q64
 
 ###########################################################
 #ARCH    Linux x86_64 i486 i586 i686, PGI compiler with pgcc # serial smpar dmpar dm+sm
 #
+DESCRIPTION     =       PGI ($SFC/$SCC)
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -mp -Minfo=mp -Mrecursive
@@ -1476,6 +1507,7 @@ CC_TOOLS        =      $(SCC)
 ###########################################################
 #ARCH    CYGWIN_NT i686, PGI compiler on Windows # serial smpar dmpar dm+sm
 #
+DESCRIPTION     =       PGI ($SFC/$SCC): Windows
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -mp -Minfo=mp
@@ -1531,6 +1563,7 @@ LIB_BUNDLED     = \
 ###########################################################
 #ARCH    Linux x86_64 i486 i586 i686, PGI compiler with gcc -f90= # serial smpar dmpar dm+sm
 #
+DESCRIPTION     =       PGI ($SFC/$SCC): -f90=pgf90
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -mp -Minfo=mp -Mrecursive
@@ -1551,8 +1584,8 @@ LDFLAGS_LOCAL   =
 CPLUSPLUSLIB    =       
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 FCOPTIM         =       -O3 #-fastsse -Mvect=noaltcode -Msmartalloc -Mprefetch=distance:8 -Mfprelaxed # -Minfo=all =Mneginfo=all
-FCREDUCEDOPT	=       $(FCOPTIM)
-FCNOOPT		=       -O0
+FCREDUCEDOPT    =       $(FCOPTIM)
+FCNOOPT         =       -O0
 FCDEBUG         =       # -g $(FCNOOPT)  # -C -Ktrap=fp -traceback
 FORMAT_FIXED    =       -Mfixed
 FORMAT_FREE     =       -Mfree
@@ -1572,18 +1605,19 @@ CC_TOOLS        =      $(SCC)
 ###########################################################
 #ARCH    Darwin (MACOS) PGI compiler with pgcc -f90= #serial smpar dmpar dm+sm
 #
+DESCRIPTION     =       PGI ($SFC/$SCC): -f90=pgf90
 DMPARALLEL      =       # 1
-OMPCPP		=	# -D_OPENMP
-OMP		=	# -mp -Minfo=mp -Mrecursive
-OMPCC		=	# -mp
-SFC		=       pgf90
-SCC		=       pgcc
-CCOMP		=       pgcc
-DM_FC		=	mpif90 -f90=pgf90
-DM_CC		=       mpicc -cc=pgcc
+OMPCPP          =       # -D_OPENMP
+OMP             =       # -mp -Minfo=mp -Mrecursive
+OMPCC           =       # -mp
+SFC             =       pgf90
+SCC             =       pgcc
+CCOMP           =       pgcc
+DM_FC           =       mpif90 -f90=pgf90
+DM_CC           =       mpicc -cc=pgcc
 FC              =       CONFIGURE_FC
 CC              =       CONFIGURE_CC
-LD		=	$(FC)
+LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =       -r$(RWORDSIZE) -i4
 ARCH_LOCAL      =       -DMACOS -DNONSTANDARD_SYSTEM_SUBR -DWRF_USE_CLM
@@ -1606,13 +1640,14 @@ TRADFLAG        =      -traditional
 CPP             =      cpp -P -xassembler-with-cpp
 AR              =      ar
 ARFLAGS         =      ru
-M4 		=      m4 -B 14000
-RANLIB 		=      ranlib
+M4              =      m4 -B 14000
+RANLIB          =      ranlib
 CC_TOOLS        =      cc
 
 ###########################################################
 #ARCH    Linux x86_64 i486 i586 i686, PGI compiler with pgcc -f90= # serial smpar dmpar dm+sm
 #
+DESCRIPTION     =       PGI ($SFC/$SCC): -f90=pgf90
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -mp -Minfo=mp -Mrecursive

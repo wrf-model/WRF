@@ -19,9 +19,9 @@
    real*8, allocatable 		    :: eignvec(:,:), eignval(:)
    real                             :: hessian_local, bgerr_local, pred_i, pred_j
    
-   if (trace_use) call da_trace_entry("da_varbc_precond")
-   
    if ( iv%num_inst < 1 ) RETURN
+
+   if (trace_use) call da_trace_entry("da_varbc_precond")
    
    write(unit=stdout,fmt='(A)') 'VARBC: Estimate Hessian for preconditioning'
 

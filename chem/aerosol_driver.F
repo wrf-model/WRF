@@ -4,6 +4,7 @@
 !                   William Gustafson (PNNL),Rainer Schmitz (University of Chile)  and Georg Grell
 !
 ! 10/12/2011 - Ravan Ahmadov (NOAA) updated to include the RACM_SOA_VBS option
+! 10/08/2014 - Kai Wang and Yang Zhang (NCSU) updated to include the CB05_MADE/SORGAM and CB05_MADE/VBS options
 !
       SUBROUTINE aerosols_driver (id,curr_secs,ktau,dtstep,ktauc,          &
                config_flags,dtstepc,dx,                                    &
@@ -29,6 +30,7 @@
    USE module_data_sorgam
    USE module_mosaic_driver, only:  mosaic_aerchem_driver
    USE module_aerosols_soa_vbs, only: soa_vbs_driver
+   USE module_aerosols_sorgam_vbs, only: sorgam_vbs_driver
    USE module_data_soa_vbs, only: ldrog_vbs
    USE module_cam_mam_aerchem_driver, only:  cam_mam_aerchem_driver
    USE modal_aero_data, only:  ntot_amode_cam_mam => ntot_amode
@@ -210,7 +212,8 @@
          ids,ide, jds,jde, kds,kde,                                        &
          ims,ime, jms,jme, kms,kme,                                        &
          its,ite, jts,jte, kts,kte                                         )
-   CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_AQCHEM,RADM2SORG_KPP,CBMZSORG,CBMZSORG_AQ)
+   CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_AQCHEM,RADM2SORG_KPP,CBMZSORG,CBMZSORG_AQ, &
+          CB05_SORG_AQ_KPP) 
        CALL wrf_debug(15,'aerosols_driver calling sorgam_driver')
        do ii=its,ite
           do kk=kts,kte
@@ -230,6 +233,25 @@
                ids,ide, jds,jde, kds,kde,                               &
                ims,ime, jms,jme, kms,kme,                               &
                its,ite, jts,jte, kts,kte                                )
+   CASE (CB05_SORG_VBS_AQ_KPP)
+       CALL wrf_debug(15,'aerosols_driver calling sorgam_vbs_driver')
+       do ii=its,ite
+          do kk=kts,kte
+             do jj=jts,jte
+                if(chem(ii,kk,jj,p_nu0).lt.1.e07)then
+                   chem(ii,kk,jj,p_nu0)=1.e7
+                endif
+             enddo
+          enddo
+       enddo
+       call sorgam_vbs_driver (id,ktauc,dtstepc,t_phy,moist,aerwrf,p8w,t8w, &
+            alt,p_phy,chem,rho_phy,dz8w,rh,z,z_at_w,                 &
+            h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,               &
+            vcsulf_old,vdrog3_vbs,                                   &
+            config_flags%kemit,brch_ratio,                           &
+            ids,ide, jds,jde, kds,kde,                               &
+            ims,ime, jms,jme, kms,kme,                               &
+            its,ite, jts,jte, kts,kte                                )
 
    CASE (RACMSORG_AQ,RACMSORG_AQCHEM_KPP,RACM_ESRLSORG_AQCHEM_KPP,RACMSORG_KPP,RACM_ESRLSORG_KPP)
 ! ???? are separate cases needed here for radm2sorg and racmsorg packages ????
@@ -313,8 +335,9 @@
 !
 
    SUBROUTINE sum_pm_driver ( config_flags,                            &
-            alt, chem, h2oaj, h2oai,                                   &
-            pm2_5_dry, pm2_5_water, pm2_5_dry_ec, pm10,                &
+             alt, chem, h2oaj, h2oai,                                  &
+             pm2_5_dry, pm2_5_water, pm2_5_dry_ec, pm10,               &
+             tsoa,asoa,bsoa,                                           &
              hoa_a01,hoa_a02,hoa_a03,hoa_a04,                          &
              bboa_a01,bboa_a02,bboa_a03,bboa_a04,                      &
              soa_a01,soa_a02,soa_a03,soa_a04,                          &
@@ -339,6 +362,7 @@
                                    sum_vbs9,sum_vbs2,sum_vbs0,sum_vbs4
    USE module_gocart_aerosols, only: sum_pm_gocart
    USE module_aerosols_soa_vbs, only: sum_pm_soa_vbs
+   USE module_aerosols_sorgam_vbs, only: sum_pm_sorgam_vbs
 
    IMPLICIT NONE
 
@@ -359,6 +383,7 @@
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                       &
          OPTIONAL,                                                     &
          INTENT(OUT) :: pm2_5_dry,pm2_5_water,pm2_5_dry_ec,pm10,       &
+             tsoa,asoa,bsoa,                                           &
              hoa_a01,hoa_a02,hoa_a03,hoa_a04,                          &
              bboa_a01,bboa_a02,bboa_a03,bboa_a04,                      &
              soa_a01,soa_a02,soa_a03,soa_a04,                          &
@@ -389,13 +414,21 @@
             ids,ide, jds,jde, kds,kde,                                 &
             ims,ime, jms,jme, kms,kme,                                 &
             its,ite, jts,jte, kts,kte                                  )
-
    CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_AQCHEM,RACMSORG_AQ,RACMSORG_AQCHEM_KPP,RACM_ESRLSORG_AQCHEM_KPP,RADM2SORG_KPP, &
-         RACMSORG_KPP,RACM_ESRLSORG_KPP,CBMZSORG,CBMZSORG_AQ)
+         RACMSORG_KPP,RACM_ESRLSORG_KPP,CBMZSORG,CBMZSORG_AQ,CB05_SORG_AQ_KPP)
        CALL wrf_debug(15,'sum_pm_driver: calling sum_pm_sorgam')
        CALL sum_pm_sorgam (                                            &
             alt, chem, h2oaj, h2oai,                                   &
             pm2_5_dry, pm2_5_water, pm2_5_dry_ec, pm10,                &
+            config_flags%dust_opt,ids,ide, jds,jde, kds,kde,           &
+            ims,ime, jms,jme, kms,kme,                                 &
+            its,ite, jts,jte, kts,kte                                  )
+      CASE (CB05_SORG_VBS_AQ_KPP)
+       CALL wrf_debug(15,'sum_pm_driver: calling sum_pm_sorgam_vbs')
+       CALL sum_pm_sorgam_vbs (                                        &
+            alt, chem, h2oaj, h2oai,                                   &
+            pm2_5_dry, pm2_5_water, pm2_5_dry_ec, pm10,                &
+            tsoa,asoa,bsoa,                                            &
             config_flags%dust_opt,ids,ide, jds,jde, kds,kde,           &
             ims,ime, jms,jme, kms,kme,                                 &
             its,ite, jts,jte, kts,kte                                  )

@@ -9,9 +9,9 @@
 !-----------------------------------------------------------------------------
 !     data for inter2, inter3 and interi
 !-----------------------------------------------------------------------------
-      integer, private :: nintervals
-      integer, private, allocatable :: xi(:), xcnt(:)
-      real(dp), private, allocatable :: xfrac(:,:)
+      integer, private, save :: nintervals
+      integer, private, allocatable, save :: xi(:), xcnt(:)
+      real(dp), private, allocatable, save :: xfrac(:,:)
 
       real(dp), private, parameter :: km2cm = 1.e5_dp
 
@@ -32,11 +32,11 @@
       real(dp), private, parameter :: t_del = 5._dp/(tdim_real-1._dp)!BSINGH(PNNL)-redefined t_del and t_fac
       real(dp), private, parameter :: t_fac = (tdim_real-1._dp)/5._dp
 
-      integer, private  :: ii, jj
-      real(dp), private :: d_table(0:tdim,ngast-1)
-      real(dp), private :: x_table(0:tdim,ngast-1)
-      real(dp), private :: o2_table(tdim)
-      real(dp), private, dimension(12,ngast-1) :: a_schu, b_schu
+      integer, private :: ii, jj
+      real(dp), private, save :: d_table(0:tdim,ngast-1)
+      real(dp), private, save :: x_table(0:tdim,ngast-1)
+      real(dp), private, save :: o2_table(tdim)
+      real(dp), private, dimension(12,ngast-1), save :: a_schu, b_schu
 !-----------------------------------------------------------------------------
 ! a_schu(16,12) coefficients for rj(m) (table 1 in kockarts 1994)
 ! b_schu(16,12) rj(o2)(table 2 in kockarts 1994)
@@ -147,10 +147,10 @@
 !-----------------------------------------------------------------------------
       integer, public,  parameter :: nwint = 105
 
-      real(dp), public  :: wlint(nwint)
-      real(dp), private :: xso2int(nwint)
-      real(dp), private :: wlla(nla)
-      real(dp), private :: wlgast(ngast)
+      real(dp), public, save  :: wlint(nwint)
+      real(dp), private, save :: xso2int(nwint)
+      real(dp), private, save :: wlla(nla)
+      real(dp), private, save :: wlgast(ngast)
 
 !-----------------------------------------------------------------------------
 ! o2 parameters
@@ -1619,13 +1619,14 @@ WAVE_LENGTH_LOOP : &
 
       o3den(1:nz) = o3(1:nz)*airlev(1:nz)
       cz(1:nz-1)  = 0.5_dp*(o3den(2:nz) + o3den(1:nz-1))*km2cm*(z(2:nz) - z(1:nz-1))
-      cz(nz-1)    = cz(nz-1) + o3top
 
       to3(nz)  = o3top
       do k = nz-1,1,-1
          to3(k) = to3(k+1) + cz(k)
       end do
 
+! Do not double count o3top
+      cz(nz-1)    = cz(nz-1) + o3top
 !-----------------------------------------------------------------------------
 ! ... scale o3 using toms data
 !-----------------------------------------------------------------------------
@@ -2945,11 +2946,23 @@ is_mozart : &
       j = j + 1
       jlabel(j)='cf2brcl (halon-1211) + hv -> products '
 !-----------------------------------------------------------------------------
-! (56) cl2 + hc -> cl + cl
+! (56) cl2 + hv -> cl + cl
 !-----------------------------------------------------------------------------
       j = j + 1
-      jlabel(j)='cl2 + hc -> cl + cl '
+      jlabel(j)='cl2 + hv -> cl + cl '
+!-----------------------------------------------------------------------------
+! (57) hocl + hv -> oh + cl
+!-----------------------------------------------------------------------------
+      j = j + 1
+      jlabel(j)='hocl + hv -> oh + cl'
+!-----------------------------------------------------------------------------
+! (58) fmcl + hv -> cl + co + ho2
+!-----------------------------------------------------------------------------
+      j = j + 1
+      jlabel(j)='fmcl + hv -> cl + co + ho2'
+
       end if is_mozart
+
 
       end subroutine pchem
 

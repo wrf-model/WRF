@@ -15,9 +15,10 @@ subroutine da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv)
    type(vp_type),  intent(out)   :: vv   ! grdipt/eof cv (local).
    real,           intent(inout) :: cv(1:cv_size) ! control variables.
 
-   if (trace_use) call da_trace_entry("da_transform_vtox_adj")
 
    if (.not. use_background_errors) return
+
+   if (trace_use) call da_trace_entry("da_transform_vtox_adj")
 
    if (  cv_options == 3 ) then
 

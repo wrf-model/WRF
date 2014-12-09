@@ -18,6 +18,7 @@
                dgnum4d, dgnumwet4d, dgnum_a1, dgnum_a2, dgnum_a3,    & 
                dgnumwet_a1, dgnumwet_a2, dgnumwet_a3,                & 
                pm2_5_dry,pm2_5_water,pm2_5_dry_ec,                   &
+               tsoa,asoa,bsoa,                                       &
                last_chem_time_year, last_chem_time_month,            &
                last_chem_time_day, last_chem_time_hour,              &
                last_chem_time_minute, last_chem_time_second,         &
@@ -35,6 +36,7 @@
    USE module_mozcart_wetscav, only : wetscav_mozcart_init
    USE module_aerosols_sorgam
    USE module_aerosols_soa_vbs, only: aerosols_soa_vbs_init
+   USE module_aerosols_sorgam_vbs, only: aerosols_sorgam_vbs_init
    USE module_dep_simple
    USE module_data_gocart_dust
    USE module_data_gocart_seas
@@ -76,6 +78,7 @@
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,         &
           INTENT(INOUT   ) ::                                        &
                                pm2_5_dry,pm2_5_water,pm2_5_dry_ec,   &
+                               tsoa,asoa,bsoa,                       &
                                tauaer1,tauaer2,tauaer3,tauaer4,      &
                                extaerlw1,extaerlw2,extaerlw3,extaerlw4,      &
                                extaerlw5,extaerlw6,extaerlw7,extaerlw8,      &
@@ -226,7 +229,12 @@ call wrf_message("**************************************************************
         CALL wrf_debug(15,'calling CBMZ_CAM_MAM7_AQ with AQCHEM chemistry from chem_driver')
         call wrf_message("WARNING: CBMZ_CAM_MAM7_AQ  chemistry option is highly experimental and not recommended for use.")
         call wrf_error_fatal("ERROR: It is recommended that you contact phil.rasch at pnnl.gov for information regarding this option")
-
+     CASE(CB05_SORG_AQ_KPP)
+        numgas_mam = numgas
+        CALL wrf_debug(15,'calling CB05_SORG_AQ_KPP chemistry from chem_driver')
+     CASE(CB05_SORG_VBS_AQ_KPP)
+        numgas_mam = numgas
+        CALL wrf_debug(15,'calling CB05_SORG_VBS_AQ_KPP chemistry from chem_driver')
    END SELECT chem_select
 
    if ( config_flags%dust_opt == 1 ) then
@@ -265,6 +273,7 @@ call wrf_message("**************************************************************
        if(  ( config_flags%chem_opt >= 8 .AND. config_flags%chem_opt <= 13) .OR.  &
             ( config_flags%chem_opt >= 31 .AND. config_flags%chem_opt <= 36) .OR. &
             ( config_flags%chem_opt >= 41 .AND. config_flags%chem_opt <= 43) .OR. &
+            ( config_flags%chem_opt == 131 ) .OR. ( config_flags%chem_opt == 132 ) .OR. &
             ( config_flags%chem_opt == 503 .OR. config_flags%chem_opt == 504) .OR. &
             ( config_flags%chem_opt == 601 .OR. config_flags%chem_opt == 611)  ) then
          call wrf_debug( 15, 'Chemics_init: Wet scavenging turned on' )
@@ -290,6 +299,7 @@ call wrf_message("**************************************************************
            ( config_flags%chem_opt >= 31 .AND. config_flags%chem_opt <= 36)   .OR. &
            ( config_flags%chem_opt >= 501 .AND. config_flags%chem_opt <= 504) .OR. &
            ( config_flags%chem_opt >= 41 .AND. config_flags%chem_opt <= 43)  .OR. &
+           ( config_flags%chem_opt == 131 ) .OR. ( config_flags%chem_opt == 132 ) .OR. &
            ( config_flags%chem_opt >= 601 .AND. config_flags%chem_opt <= 611)  .OR. &
              config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP ) then
            call wrf_debug( 15, 'Chemics_init: Cloud chemistry turned on' )
@@ -316,6 +326,10 @@ call wrf_message("**************************************************************
    if ( config_flags%chem_opt /= 0 .AND. &
       ( config_flags%chem_conv_tr == 1 .and. config_flags%cu_diag == 0) ) then
          call wrf_error_fatal("ERROR: chem_conv_tr=1 requires cu_diag=1")
+   endif
+
+   if ( config_flags%bio_emiss_opt .EQ. 3 .AND. config_flags%ne_area .LT. num_chem ) then
+      call wrf_error_fatal("ERROR: MEGAN biogenics requires ne_area to be equal or greater than num_chem")
    endif
 
     IF ( config_flags%chem_opt == 0 .AND. config_flags%aer_ra_feedback .NE. 0 ) THEN
@@ -624,8 +638,36 @@ end if
              enddo
           enddo
         endif
-
-
+      CASE (CB05_SORG_AQ_KPP)
+        do j=jts,jte
+           do k=kts,kte
+              do i=its,ite
+                 chem(i,k,j,p_apin)=chem(i,k,j,p_terp) * 0.248   ! 0.0885
+                 chem(i,k,j,p_bpin)=chem(i,k,j,p_terp) * 0.294   ! 0.069
+                 chem(i,k,j,p_lim) =chem(i,k,j,p_terp) * 0.164   ! 0.135
+                 chem(i,k,j,p_ter) =chem(i,k,j,p_terp) * 0.006   ! 0.158
+                 chem(i,k,j,p_oci) =chem(i,k,j,p_terp) * 0.213   ! 0.217
+                 chem(i,k,j,p_hum) =chem(i,k,j,p_terp) * 0.074   ! 0.331
+                 chem(i,k,j,p_h2)  = 0.5
+                 chem(i,k,j,p_ch4) =1.7
+              enddo
+           enddo
+        enddo
+      CASE (CB05_SORG_VBS_AQ_KPP)
+        do j=jts,jte
+           do k=kts,kte
+              do i=its,ite
+                 chem(i,k,j,p_apin)=chem(i,k,j,p_terp) * 0.248   ! 0.0885
+                 chem(i,k,j,p_bpin)=chem(i,k,j,p_terp) * 0.294   ! 0.069
+                 chem(i,k,j,p_lim) =chem(i,k,j,p_terp) * 0.164   ! 0.135
+                 chem(i,k,j,p_ter) =chem(i,k,j,p_terp) * 0.006   ! 0.158
+                 chem(i,k,j,p_oci) =chem(i,k,j,p_terp) * 0.213   ! 0.217
+                 chem(i,k,j,p_hum) =chem(i,k,j,p_terp) * 0.074   ! 0.331
+                 chem(i,k,j,p_h2)  = 0.5
+                 chem(i,k,j,p_ch4) =1.7
+              enddo
+           enddo
+        enddo
         CASE (CBMZ_MOSAIC_KPP)
         if(config_flags%chem_in_opt == 0 )then
           do j=jts,jte
@@ -646,7 +688,6 @@ end if
              enddo
           enddo
         endif 
-
         CASE (MOZART_MOSAIC_4BIN_KPP, MOZART_MOSAIC_4BIN_AQ_KPP)
         grid%vbs_nbin=0
         if (config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP) then
@@ -1068,7 +1109,8 @@ ENDIF ghg_block
         ch_dust(:,:) = 0.8D-9
 
      CASE (RADM2SORG, RADM2SORG_AQ, RADM2SORG_AQCHEM, RACMSORG_AQ, RACMSORG_AQCHEM_KPP, RACM_ESRLSORG_AQCHEM_KPP, RADM2SORG_KPP, &
-           RACMSORG_KPP, RACM_ESRLSORG_KPP, CBMZSORG, CBMZSORG_AQ)
+           RACMSORG_KPP, RACM_ESRLSORG_KPP, CBMZSORG, CBMZSORG_AQ, &
+           CB05_SORG_AQ_KPP)
        CALL wrf_debug(15,'call MADE/SORGAM aerosols initialization')
 
        call aerosols_sorgam_init(chem,convfac,z_at_w,                &
@@ -1094,6 +1136,33 @@ ENDIF ghg_block
         endif
         chem(its:ite,kts:min(kte,kde-1),jts:jte,:)=max(chem(its:ite,kts:min(kte,kde-1),jts:jte,:),epsilc)
 !
+    CASE (CB05_SORG_VBS_AQ_KPP)
+       CALL wrf_debug(15,'call MADE/SOA_VBS aerosols initialization')
+
+       call aerosols_sorgam_vbs_init(chem,convfac,z_at_w,                &
+               pm2_5_dry,pm2_5_water,pm2_5_dry_ec,                   &
+               tsoa,asoa,bsoa,                                       &
+               chem_in_opt,config_flags%aer_ic_opt,is_aerosol,       &
+               ids,ide, jds,jde, kds,kde,                            &
+               ims,ime, jms,jme, kms,kme,                            &
+               its,ite, jts,jte, kts,kte, config_flags               )
+!...Convert aerosols to mixing ratio
+        if( .NOT. config_flags%restart ) then
+        if(config_flags%chem_in_opt == 0 .and. num_chem.gt.numgas)then
+        do l=numgas+1,num_chem
+           do j=jts,jte
+              do k=kts,kte
+                 kk = min(k,kde-1)
+                 do i=its,ite
+                    chem(i,k,j,l)=chem(i,kk,j,l)*alt(i,kk,j)
+                 enddo
+              enddo
+           enddo
+        enddo
+        endif
+        endif
+        chem(its:ite,kts:min(kte,kde-1),jts:jte,:)=max(chem(its:ite,kts:min(kte,kde-1),jts:jte,:),epsilc)
+
     CASE (RACM_SOA_VBS_KPP)
        CALL wrf_debug(15,'call MADE/SOA_VBS aerosols initialization')
 
@@ -1168,7 +1237,8 @@ ENDIF ghg_block
    CASE (RADM2SORG_AQ, RADM2SORG_AQCHEM, RACMSORG_AQ, RACMSORG_AQCHEM_KPP, RACM_ESRLSORG_AQCHEM_KPP, &
          CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, CBMZ_MOSAIC_DMS_4BIN_AQ, &
          CBMZ_MOSAIC_DMS_8BIN_AQ,CBMZSORG_AQ,CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP, &
-         MOZART_MOSAIC_4BIN_AQ_KPP)
+         MOZART_MOSAIC_4BIN_AQ_KPP,                                         &
+         CB05_SORG_AQ_KPP, CB05_SORG_VBS_AQ_KPP)
       if( config_flags%progn /= 1 ) &
            call wrf_error_fatal( &
            "ERROR: When using a ..._AQ chemistry package, progn must be 1")
@@ -1778,14 +1848,16 @@ subroutine print_chem_species_index( chem_opt )
      print*,p_bzco_o2,"bzco_o2"
      print*,p_ma_rco3,"ma_rco3"
      print*,p_ch4,"ch4"
-
+  case (CB05_SORG_AQ_KPP, CB05_SORG_VBS_AQ_KPP)
+     print*,p_nh3,"nh3"
   end select
 !
 ! Aerosol species...
 !
   select case (chem_opt)
   case (RADM2SORG, RADM2SORG_AQ, RADM2SORG_AQCHEM, RADM2SORG_KPP, RACMSORG_AQ, RACMSORG_AQCHEM_KPP, &
-        RACM_ESRLSORG_AQCHEM_KPP, RACMSORG_KPP, RACM_ESRLSORG_KPP, CBMZSORG, CBMZSORG_AQ,RACMSORG)
+        RACM_ESRLSORG_AQCHEM_KPP, RACMSORG_KPP, RACM_ESRLSORG_KPP, CBMZSORG, CBMZSORG_AQ,RACMSORG,  &
+        CB05_SORG_AQ_KPP, CB05_SORG_VBS_AQ_KPP)
      print*,p_so4aj,"so4aj"
      print*,p_so4ai,"so4ai"
      print*,p_nh4aj,"nh4aj"

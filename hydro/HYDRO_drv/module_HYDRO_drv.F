@@ -69,7 +69,7 @@ module module_HYDRO_drv
    subroutine HYDRO_out(did)
       implicit none
       integer did, outflag, rtflag
-      character(len=19) out_date, rt_out_date
+      character(len=19) out_date
       integer :: Kt, ounit
 
 !    real, dimension(RT_DOMAIN(did)%ix,RT_DOMAIN(did)%jx):: soilmx_tmp, &
@@ -87,7 +87,6 @@ module module_HYDRO_drv
 #ifdef HYDRO_D
          write(6,*) "output hydrology at time : ",nlst_rt(did)%olddate(1:19), rt_domain(did)%his_out_counts
 #endif
-         call geth_newdate(rt_out_date, nlst_rt(did)%olddate, -1*nint(rt_domain(did)%his_out_counts*nlst_rt(did)%out_dt*60))
          outflag = 99
       else
          if(nlst_rt(did)%dt .gt. nlst_rt(did)%out_dt*60) then
@@ -100,7 +99,6 @@ module module_HYDRO_drv
              write(6,*) "output hydrology at time : ",nlst_rt(did)%olddate(1:19)
 #endif
              outflag = 99
-             call geth_newdate(rt_out_date, nlst_rt(did)%olddate, -1*nint(rt_domain(did)%his_out_counts*nlst_rt(did)%out_dt*60))
          endif
       endif
 #ifdef MPP_LAND
@@ -166,7 +164,7 @@ module module_HYDRO_drv
                 RT_DOMAIN(did)%ixrt, RT_DOMAIN(did)%jxrt, &
                 nlst_rt(did)%nsoil, &
 !               nlst_rt(did)%startdate, nlst_rt(did)%olddate, RT_DOMAIN(did)%QSUBRT,&
-                rt_out_date, nlst_rt(did)%olddate, RT_DOMAIN(did)%QSUBRT,&
+                nlst_rt(did)%sincedate, nlst_rt(did)%olddate, RT_DOMAIN(did)%QSUBRT,&
                 RT_DOMAIN(did)%ZWATTABLRT,RT_DOMAIN(did)%SMCRT,&
                 RT_DOMAIN(did)%SUB_RESID,       &
                    RT_DOMAIN(did)%q_sfcflx_x,RT_DOMAIN(did)%q_sfcflx_y,&
@@ -189,7 +187,7 @@ module module_HYDRO_drv
                 RT_DOMAIN(did)%ixrt, RT_DOMAIN(did)%jxrt,          &
                 nlst_rt(did)%nsoil,                               &
 !               nlst_rt(did)%startdate, nlst_rt(did)%olddate,    &
-                rt_out_date, nlst_rt(did)%olddate,    &
+                nlst_rt(did)%sincedate, nlst_rt(did)%olddate,    &
                 gw2d(did)%h, RT_DOMAIN(did)%SMCRT,                 &
                 gw2d(did)%convgw, RT_DOMAIN(did)%SFCHEADSUBRT,     &
                 nlst_rt(did)%geo_finegrid_flnm,nlst_rt(did)%DT, &
@@ -214,7 +212,7 @@ module module_HYDRO_drv
                nlst_rt(did)%igrid, nlst_rt(did)%split_output_count, &
                RT_DOMAIN(did)%NLINKS,RT_DOMAIN(did)%ORDER, &
 !              nlst_rt(did)%startdate,nlst_rt(did)%olddate,RT_DOMAIN(did)%CHLON,&
-               rt_out_date,nlst_rt(did)%olddate,RT_DOMAIN(did)%CHLON,&
+               nlst_rt(did)%sincedate,nlst_rt(did)%olddate,RT_DOMAIN(did)%CHLON,&
                RT_DOMAIN(did)%CHLAT, &
                RT_DOMAIN(did)%HLINK, RT_DOMAIN(did)%ZELEV, &
                RT_DOMAIN(did)%QLINK,nlst_rt(did)%DT,Kt, &
@@ -239,7 +237,7 @@ module module_HYDRO_drv
                    nlst_rt(did)%igrid, nlst_rt(did)%split_output_count, &
                    RT_DOMAIN(did)%NLAKES, &
 !                  trim(nlst_rt(did)%startdate), trim(nlst_rt(did)%olddate), &
-                   trim(rt_out_date), trim(nlst_rt(did)%olddate), &
+                   trim(nlst_rt(did)%sincedate), trim(nlst_rt(did)%olddate), &
                    RT_DOMAIN(did)%LATLAKE,RT_DOMAIN(did)%LONLAKE, &
                    RT_DOMAIN(did)%ELEVLAKE,RT_DOMAIN(did)%QLAKEI, &
                    RT_DOMAIN(did)%QLAKEO, &
@@ -274,7 +272,8 @@ module module_HYDRO_drv
    call mpp_land_bcast_int1(flag)
 #endif
 
-      
+   nlst_rt(did)%sincedate = nlst_rt(did)%startdate
+   
    if (flag.eq.99) then
 
 #ifdef MPP_LAND
@@ -899,6 +898,7 @@ module module_HYDRO_drv
 !        rt_domain(did)%his_out_counts = rt_domain(did)%his_out_counts + 1
 
        call HYDRO_rst_in(did)
+
 
 !      call HYDRO_out(did)
 

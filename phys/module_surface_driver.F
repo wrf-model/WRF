@@ -6,7 +6,7 @@ CONTAINS
    SUBROUTINE surface_driver(                                         &
      &           HYDRO_dt,sfcheadrt,INFXSRT,soldrain,                 &
      &           acgrdflx,achfx,aclhf                                 &
-     &          ,acsnom,acsnow,akhs,akms,albedo,br,canwat             &
+     &          ,acsnom,acsnow,snowfallac,akhs,akms,albedo,br,canwat  &
      &          ,chklowq,dt,dx,dz8w,dzs,glw                           &
      &          ,grdflx,gsw,swdown,gz1oz0,hfx,ht,ifsnow,isfflx        &
      &          ,fractional_seaice,seaice_albedo_opt                  &
@@ -197,7 +197,8 @@ CONTAINS
      &          ,capg,hol,mol                                         &
      &          ,rainncv,rainshv,rainbl,regime,thc                    &
      &          ,qsg,qvg,qcg,soilt1,tsnav                             &
-     &          ,smfr3d,keepfr3dflag,dew                              &
+     &          ,smfr3d,keepfr3dflag,dew,rhosnf,precipfr              &
+     &          ,graupelncv                                           &
              !  Other optionals (more or less nmm specific)
      &          ,potevp,snopcx,soiltb,sr                              &
              !  Optional observation PX LSM surface nudging
@@ -969,6 +970,10 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(INOUT)::   sr ! NMM and RUC LSM
    REAL, DIMENSION( ims:ime, 1:num_soil_layers, jms:jme ), OPTIONAL, INTENT(INOUT)::   smfr3d
    REAL, DIMENSION( ims:ime, 1:num_soil_layers, jms:jme ), OPTIONAL, INTENT(INOUT)::   keepfr3dflag
+   REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(INOUT)::   rhosnf !  density of snowfall
+   REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(OUT) ::    precipfr ! time-step frozen precip from RUC LSM
+   REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(INOUT)::   snowfallac !  density of snowfall
+   REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(INOUT)::   graupelncv
 
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(OUT), OPTIONAL  ::   NOAHRES
 
@@ -2963,6 +2968,8 @@ CONTAINS
                     IF ( ( XICE(I,J) .GE. XICE_THRESHOLD ) .AND. ( XICE(i,j) .LE. 1 ) ) THEN
                        ALBEDO(I,J) = (ALBEDO(I,J) - (1.-XICE(I,J))*0.08) / XICE(I,J)
                        EMISS(I,J)  = (EMISS(I,J)  - (1.-XICE(I,J))*0.98) / XICE(I,J)
+! also set skin temperature to saved sea-ice portion only
+                       TSK(I,J) = TSK_SAVE(I,J)
                     ENDIF
                  ENDDO
               ENDDO
@@ -2991,8 +2998,13 @@ CONTAINS
            ENDIF
 
            CALL LSMRUC(dtbl,itimestep,num_soil_layers,          &
+#if (EM_CORE==1)
+                lakemodel,lakemask,                             &
+                graupelncv,snowncv,rainncv,                     &
+#endif
                 zs,rainbl,snow,snowh,snowc,sr,frpcpn,           &
-                dz8w,p8w,t_phy,qv_curr,qc_curr,rho,             & !p8w in [pa]
+                rhosnf,precipfr,                                &
+                dz8w,p_phy,t_phy,qv_curr,qc_curr,rho,           & !p_phy in [pa]
                 glw,gsw,emiss,chklowq,                          &
                 chs,flqc,flhc,mavail,canwat,vegfra,albedo,znt,  &
                 z0,snoalb, albbck, lai,                         &   !new
@@ -3004,7 +3016,7 @@ CONTAINS
                 cp,rovcp,g,xlv,stbolt,                          &
                 smois,sh2o,smstav,smstot,tslb,tsk,hfx,qfx,lh,   &
                 sfcrunoff,udrunoff,sfcexc,                      &
-                sfcevp,grdflx,acsnow,acsnom,                    &
+                sfcevp,grdflx,snowfallac,acsnow,acsnom,         &
                 smfr3d,keepfr3dflag,                            &
                 myj,shdmin,shdmax,rdlai2d,                      &
                 ids,ide, jds,jde, kds,kde,                      &
@@ -3060,9 +3072,9 @@ CONTAINS
               endif
            ENDIF
 
-          CALL SFCDIAGS_RUCLSM(HFX,QFX,TSK,QSFC,CQS2,CQS2,T2,TH2,Q2,      &
-                     T_PHY,QV_CURR,RHO,P8W,                              &
-                     PSFC,CP,R_d,RCP,                                    &
+          CALL SFCDIAGS_RUCLSM(HFX,QFX,TSK,QSFC,CHS,CHS2,CQS2,T2,TH2,Q2,      &
+                     T_PHY,QV_CURR,RHO,P_PHY,                            &
+                     CP,R_d,RCP,                                         &
                      ids,ide, jds,jde, kds,kde,                          &
                      ims,ime, jms,jme, kms,kme,                          &
                      i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )

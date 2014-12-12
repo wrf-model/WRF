@@ -1735,7 +1735,7 @@ CONTAINS
               LUMATCH=1
            ELSE
               call wrf_message ( "Skipping over LUTYPE = " // TRIM ( LUTYPE ) )
-              DO LC = 1, LUCATS+12
+              DO LC = 1, LUCATS+14
                  read(19,*)
               ENDDO
            ENDIF

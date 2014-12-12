@@ -1860,7 +1860,6 @@ CONTAINS
                                                       .TRUE. ) THEN
          CALL wrf_debug( 100, 'in PX Surface Layer scheme' )
          IF ( FRACTIONAL_SEAICE == 1 ) THEN
-            CALL WRF_ERROR_FATAL("PXSFCLAY not adapted for FRACTIONAL_SEAICE=1 option")
             CALL PXSFCLAY_SEAICE_WRAPPER(u_phytmp,v_phytmp,t_phy,th_phy,qv_curr,&
                  p_phy,dz8w,cp,g,rcp,r_d,xlv,psfc,chs,chs2,cqs2,cpm, &
                  znt,ust,pblh,mavail,zol,mol,regime,psim,psih,       &
@@ -3091,7 +3090,6 @@ CONTAINS
                                                       .TRUE. ) THEN
           IF ( FRACTIONAL_SEAICE == 1 ) THEN
 
-             CALL WRF_ERROR_FATAL("PXLSM not adapted for FRACTIONAL_SEAICE=1 option")
 
              IF ( isisfc ) THEN
                 !
@@ -3155,10 +3153,7 @@ CONTAINS
 !save old tsk_ice
                          tsk_save(i,j)  = tsk(i,j)
                          tsk(i,j)  = ( tsk(i,j)  * XICE(i,j) ) + ( (1.0-XICE(i,j)) * TSK_SEA(i,j)  )
-                         psih(i,j) = ( psih(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * PSIH_SEA(i,j) )
                          pblh(i,j) = ( pblh(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * PBLH_SEA(i,j) )
-                         rmol(i,j) = ( rmol(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * RMOL_SEA(i,j) )
-                         ust(i,j)  = ( ust(i,j)  * XICE(i,j) ) + ( (1.0-XICE(i,j)) * UST_SEA(i,j)  )
                       ENDIF
                    ENDDO
                 ENDDO

@@ -334,6 +334,26 @@
       ENDIF
 #endif
 
+#if (EM_CORE == 1)
+!-----------------------------------------------------------------------
+!  V3.7 cu_physics = 11 (scale-aware KF) only works with YSU PBL.
+!-----------------------------------------------------------------------
+
+      oops = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( ( model_config_rec%bl_pbl_physics(i) .NE. YSUSCHEME ) .AND. &
+              ( model_config_rec%cu_physics(i) .EQ. MSKFSCHEME ) ) THEN
+            oops = oops + 1
+         END IF
+      ENDDO      ! Loop over domains
+      IF ( oops .GT. 0 ) THEN
+         wrf_err_message = '--- ERROR: bl_pbl_physics must be set to 1 for cu_physics = 11 '
+         CALL wrf_message ( wrf_err_message )
+         wrf_err_message = '--- Fix bl_pbl_physics in namelist.input OR use another cu_physics option '
+         CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
+      END IF
+#endif
+
 !-----------------------------------------------------------------------
 ! If sst_update = 0, set io_form_auxinput4 to 0 so WRF will not try to
 ! input the data; auxinput_interval must also be 0

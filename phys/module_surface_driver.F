@@ -258,6 +258,7 @@ CONTAINS
      &          ,G_URB2D_mosaic,RN_URB2D_mosaic                       &  !danli mosaic 
      &          ,TS_URB2D_mosaic                                      &  !danli mosaic 
      &          ,TS_RUL2D_mosaic                                      &  !danli mosaic     
+     &          ,ZOLOUT                                               &  !ckay
      &                                                             )
               
 #if ( ! NMM_CORE == 1 )
@@ -976,6 +977,7 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(INOUT)::   graupelncv
 
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(OUT), OPTIONAL  ::   NOAHRES
+   REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT), OPTIONAL  ::   ZOLOUT
 
    INTEGER, INTENT(IN) :: MAXPATCH, inest
 
@@ -3734,6 +3736,19 @@ CONTAINS
        !$OMP END PARALLEL DO
 
        ENDIF
+     ENDIF
+
+     IF ( PRESENT( ZOLOUT ) ) THEN
+       !$OMP PARALLEL DO   &
+       !$OMP PRIVATE ( ij, i, j, k )
+       DO ij = 1 , num_tiles
+         DO j=j_start(ij),j_end(ij)
+         DO i=i_start(ij),i_end(ij)
+            ZOLOUT(i,j) = ZOL(i,j)
+         ENDDO
+         ENDDO
+       ENDDO
+       !$OMP END PARALLEL DO
      ENDIF
 
    ENDIF

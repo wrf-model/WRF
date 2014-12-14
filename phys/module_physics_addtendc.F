@@ -1041,7 +1041,7 @@ SUBROUTINE phy_cu_ten(config_flags,rk_step,n_moist,n_scalar,     &
                 ims, ime, jms, jme, kms, kme,                    &
                 its, ite, jts, jte, kts, kte                     )
 
-   CASE (KFETASCHEME)
+   CASE (KFETASCHEME, MSKFSCHEME)
         CALL add_a2a(rt_tendf,RTHCUTEN,config_flags,             &
                 ids,ide, jds, jde, kds, kde,                     &
                 ims, ime, jms, jme, kms, kme,                    &
@@ -1845,7 +1845,7 @@ SUBROUTINE advance_ppt(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,           &
         ENDDO
         ENDDO
 
-   CASE (KFETASCHEME)
+   CASE (KFETASCHEME, MSKFSCHEME)
 
         DO J = j_start,j_end
         DO i = i_start,i_end
@@ -1861,7 +1861,6 @@ SUBROUTINE advance_ppt(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,           &
            ENDIF
 
            IF ( NCA(I,J) .GT. 0 ) THEN
-
 
               IF ( NINT(NCA(I,J) / DT) .LE. 1 ) THEN
 

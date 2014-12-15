@@ -422,7 +422,7 @@ state   real    power          ij       misc      1         -     irh       "Pow
 
 # State for derived time quantities.  
 state   integer itimestep      -        -          -         -     rh         "itimestep"             ""         ""      
-state   real    xtime          -        -          -         -     rh         "xtime"                 "minutes since simulation start"         ""      
+state   real    xtime          -        -          -         -     rh         "xtime"                 "minutes since YYYY-MM-DD hh:mm:ss"      "minutes since simulation start"
 state   real    julian         -        -          -         -     -          "julian"                "day of year, 0.0 at 0Z on 1 Jan."         "days"      
 
 # input file descriptor for lbcs on parent domain                                               
@@ -1725,6 +1725,20 @@ state    real  track_qice     {tl}k      misc     1         -      -       "trac
 state    real  track_qsnow    {tl}k      misc     1         -      -       "track_qsnow"        "snow mixing ratio"          "kg kg-1"
 state    real  track_qgraup   {tl}k      misc     1         -      -       "track_qgraup"       "graupel mixing ratio"       "kg kg-1"
 state    real  track_qvapor   {tl}k      misc     1         -      -       "track_qvapor"       "water vapor mixing ratio"   "kg kg-1"
+
+# CF compliance, these are the 1d projection coordinates
+
+state    character  lambert     -          misc     1         -      irh       "LAMBERT"       "grid_mapping_name:lambert_conformal_conic"   ""
+state    character  polarstereo -          misc     1         -      irh       "POLARSTEREO"   "projection type"   ""
+state    character  mercator    -          misc     1         -      irh       "MERCATOR"      "projection type"   ""
+state    character  latlon      -          misc     1         -      irh       "LATLON"        "projection type"   ""
+
+state    real       xx          i          misc     1         -      irh       "XX"            "long_name=synthesized GeoX coordinate from DX attribute:axis=X" "km"
+state    real       xx_u        i          misc     1         X      irh       "XX_U"          "long_name=synthesized GeoX coordinate from DX attribute:axis=X" "km"
+state    real       yy          j          misc     1         -      irh       "YY"            "long_name=synthesized GeoY coordinate from DY attribute:axis=Y" "km"
+state    real       yy_v        j          misc     1         Y      irh       "YY_V"          "long_name=synthesized GeoY coordinate from DY attribute:axis=Y" "km"
+
+
 #
 #---------------------------------------------------------------------------------------------------------------------------------------
 #                                               

@@ -63,6 +63,7 @@
     INTEGER moist_adv_opt, scalar_adv_opt, tke_adv_opt
     INTEGER save_topo_orig
     INTEGER scalar_pblmix, tracer_pblmix, grav_settling
+    LOGICAL this_is_projection_info , use_this_projection_info
 #endif
     CHARACTER (len=19) simulation_start_date
     CHARACTER (len=len_current_date) current_date_save
@@ -936,6 +937,45 @@ endif
                 dname = p%DataName
                 IF (p%Ntl.GT.0.AND.switch.NE.restart_only)dname=dname(1:len(TRIM(dname))-2)
                 memord = p%MemoryOrder
+                
+                !  CF compliancy would have us put the string "minutes since" // simulation_start_date
+                !  as the ouput in the units attribute.  After the WRF p%Units string has the "minutes since"
+                !  substring, we wipe out the rest of the string and add the model's original (pre-restart) 
+                !  starting date.  This is only for the time variable in WRF (XTIME), which is now considered 
+                !  the time coordinate in netcdf.
+
+                IF (TRIM(p%DataName).EQ."XTIME") THEN
+                  WRITE ( simulation_start_date , FMT = '(I4.4,"-",I2.2,"-",I2.2," ",I2.2,":",I2.2,":",I2.2)' ) &
+                  simulation_start_year,simulation_start_month,simulation_start_day,&
+                  simulation_start_hour,simulation_start_minute,simulation_start_second
+                  IF ( TRIM(p%Description(1:14)) .EQ. 'minutes since ' ) THEN
+                    p%Units(15:33) = TRIM(simulation_start_date)
+                  ENDIF
+                ENDIF
+                
+                !  CF compliancy requires 1d horizontal coordinates.
+
+                this_is_projection_info = .FALSE.
+                IF ( (TRIM(p%DataName).EQ."LAMBERT" ) .OR. &
+                     (TRIM(p%DataName).EQ."POLARST" ) .OR. &
+                     (TRIM(p%DataName).EQ."MERCATOR") .OR. &
+                     (TRIM(p%DataName).EQ."LATLON"  ) ) THEN
+                  this_is_projection_info = .TRUE.
+                ENDIF
+
+                use_this_projection_info = .FALSE.
+                IF ( (TRIM(p%DataName).EQ."LAMBERT") .AND. (map_proj) ) THEN
+                  WRITE (p%Units,'(a,a,f11.6,a,a,f11.6,a)') &
+                                           "grid_mapping_name=lambert_conformal_conic:", &
+                                           "latitude_of_projection_origin=",moad_cen_lat,":", &
+                                           "longitude_of_central_meridian=",stand_lon,":"
+                  WRITE (p%Description,'(a,f11.6,a,f11.6,a,a,f11.6,a)') &
+                                           "standard_parallel=",truelat1,",",truelat2,":", &
+                                           "earth_radius=",1./reradius,":" 
+                  use_this_projection_info = .TRUE.
+                ENDIF
+
+                !IF ( this_is_projection_info .AND. use_this_projection_info ) THEN
                 IF      ( p%Type .EQ. 'r' ) THEN
                   CALL wrf_ext_write_field (  &
                                     fid                     , & ! DataHandle
@@ -1033,6 +1073,7 @@ endif
                     1 , 1 , 1 , 1 , 1 , 1 ,  &
                     ierr )
                 ENDIF
+                !ENDIF ! projection info
               ENDIF
             ENDIF
           ELSE IF ( p%Ndim .EQ. 1 ) THEN

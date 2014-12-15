@@ -535,6 +535,7 @@ CONTAINS
       			             msfu, msfv, msft,                               &
                                      field_u_tend_perturb,field_v_tend_perturb,field_t_tend_perturb, &
 				     spec_bdy_width, spec_zone,  &
+                                     kme_stoch,                  & ! stoch dims
                                      ids,ide, jds,jde, kds,kde,  & ! domain dims
 				     ims,ime, jms,jme, kms,kme,  & ! memory dims
                                      ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
@@ -548,10 +549,11 @@ CONTAINS
    INTEGER ,               INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
                                             ims, ime, jms, jme, kms, kme, &
                                             ips, ipe, jps, jpe, kps, kpe, & 
-                                            its, ite, jts, jte, kts, kte
+                                            its, ite, jts, jte, kts, kte, & 
+                                            kme_stoch
    INTEGER ,               INTENT(IN   ) :: spec_bdy_width, spec_zone
 
-   REAL , DIMENSION( ims:ime , kms:kme, jms:jme  ) , INTENT(INOUT) :: ru_tend, &
+   REAL , DIMENSION( ims:ime , kms:kme ,jms:jme  ) , INTENT(INOUT) :: ru_tend, &
                                                                       rv_tend, &
                                                                       t_tend
 
@@ -561,7 +563,7 @@ CONTAINS
    REAL,  DIMENSION( ims:ime ,           jms:jme ), INTENT(IN     )   :: msfv
    REAL,  DIMENSION( ims:ime ,           jms:jme ), INTENT(IN     )   :: msft
 
-   REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(IN     )   :: field_u_tend_perturb, &
+   REAL,  DIMENSION( ims:ime , kms:kme_stoch , jms:jme ), INTENT(IN     )   :: field_u_tend_perturb, &
                                                                          field_v_tend_perturb, &
                                                                          field_t_tend_perturb
 
@@ -569,6 +571,7 @@ CONTAINS
                                field_u_tend_perturb, mu_2,mub,   &
                                'u', msfu, config_flags,    &
                                spec_bdy_width, spec_zone,  & 
+                               kme_stoch,                  & ! stoch  dims
                                ids,ide, jds,jde, kds,kde,  & ! domain dims
                                ims,ime, jms,jme, kms,kme,  & ! memory dims
                                ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
@@ -577,6 +580,7 @@ CONTAINS
                                field_v_tend_perturb,mu_2,mub,    &
                                'v', msfv, config_flags,    &
                                spec_bdy_width, spec_zone,  &
+                               kme_stoch,                  & ! stoch  dims
                                ids,ide, jds,jde, kds,kde,  & ! domain dims
                                ims,ime, jms,jme, kms,kme,  & ! memory dims
                                ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
@@ -586,12 +590,55 @@ CONTAINS
                                field_t_tend_perturb,mu_2,mub,    &
                                't', msft, config_flags,    &
                                spec_bdy_width, spec_zone,  &
+                               kme_stoch,                  & ! stoch  dims
                                ids,ide, jds,jde, kds,kde,  & ! domain dims
                                ims,ime, jms,jme, kms,kme,  & ! memory dims
                                ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
                                its,ite, jts,jte, kts,kte )
 
    END SUBROUTINE spec_bdy_dry_perturb 
+
+
+
+!------------------------------------------------------------------------
+   SUBROUTINE spec_bdy_chem_perturb (periodic_x,                &
+                                     field_bdy_tend_xs, field_bdy_tend_xe, &
+                                     field_bdy_tend_ys, field_bdy_tend_ye, &
+                                     field_scalar_perturb, &
+                                     spec_bdy_width, spec_zone,  &
+                                     kme_stoch,                  & ! stoch  dims
+                                     ids,ide, jds,jde, kds,kde,  & ! domain dims
+				     ims,ime, jms,jme, kms,kme,  & ! memory dims
+                                     ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
+                                     its, ite, jts, jte, kts, kte)
+   IMPLICIT NONE
+
+
+   LOGICAL ,               INTENT(IN   ) :: periodic_x
+   INTEGER ,               INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
+                                            ims, ime, jms, jme, kms, kme, &
+                                            ips, ipe, jps, jpe, kps, kpe, & 
+                                            its, ite, jts, jte, kts, kte, & 
+                                            kme_stoch
+   INTEGER ,               INTENT(IN   ) :: spec_bdy_width, spec_zone
+
+   REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ),        INTENT(IN   ) :: field_scalar_perturb
+   REAL,  DIMENSION( jms:jme , kds:kde , spec_bdy_width ), INTENT(INOUT) :: field_bdy_tend_xs, field_bdy_tend_xe
+   REAL,  DIMENSION( ims:ime , kds:kde , spec_bdy_width ), INTENT(INOUT) :: field_bdy_tend_ys, field_bdy_tend_ye
+
+
+         CALL spec_bdytend_perturb_chem ( field_bdy_tend_xs, field_bdy_tend_xe, &
+                                          field_bdy_tend_ys, field_bdy_tend_ye, &
+                                          field_scalar_perturb, 'c',       &
+                                          periodic_x,                 &
+                                          spec_bdy_width, spec_zone,  &
+                                          kme_stoch,                  & 
+                                          ids,ide, jds,jde, kds,kde,  & ! domain dims
+                                          ims,ime, jms,jme, kms,kme,  & ! memory dims
+                                          ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
+                                          its,ite, jts,jte, kts,kte )
+
+   END SUBROUTINE spec_bdy_chem_perturb   
 
 
 

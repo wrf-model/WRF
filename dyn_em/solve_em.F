@@ -884,6 +884,7 @@ BENCH_START(relax_bdy_dry_tim)
                              grid%msfu, grid%msfv, grid%msft,	                   &
                              grid%ru_tendf_stoch, grid%rv_tendf_stoch, grid%rt_tendf_stoch, &
                              config_flags%spec_bdy_width, grid%spec_zone,                   &
+                             grid%num_stoch_levels,      & ! stoch dims
                              ids,ide, jds,jde, kds,kde,  & ! domain dims
                              ims,ime, jms,jme, kms,kme,  & ! memory dims
                              ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
@@ -900,6 +901,7 @@ BENCH_START(relax_bdy_dry_tim)
                              grid%msfu, grid%msfv, grid%msft,                      &
                              grid%field_u_tend_perturb, grid%field_v_tend_perturb, grid%field_t_tend_perturb, &
                              config_flags%spec_bdy_width, grid%spec_zone,                   &
+                             grid%num_stoch_levels,      & ! stoch dims
                              ids,ide, jds,jde, kds,kde,  & ! domain dims
                              ims,ime, jms,jme, kms,kme,  & ! memory dims
                              ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
@@ -2358,6 +2360,26 @@ BENCH_START(chem_adv_tim)
                                   kts=k_start    , kte=k_end                              )
 
            IF( config_flags%specified  ) THEN
+
+             IF( config_flags%perturb_chem_bdy==1 ) THEN
+
+                 IF(ic.eq.PARAM_FIRST_SCALAR .and. ij.eq.1) &
+                 CALL wrf_debug (10 , ' spec_bdy_chem_perturb' )
+
+                 CALL spec_bdy_chem_perturb ( config_flags%periodic_x,   &
+                      chem_btxs(jms,kms,1,ic), chem_btxe(jms,kms,1,ic),  &
+                      chem_btys(ims,kms,1,ic), chem_btye(ims,kms,1,ic),  &
+                      grid%rand_pert,                                    &
+                      config_flags%spec_bdy_width, grid%spec_zone,       &
+                      grid%num_stoch_levels,      & ! stoch  dims
+                      ids,ide, jds,jde, kds,kde,  & ! domain dims
+                      ims,ime, jms,jme, kms,kme,  & ! memory dims
+                      ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
+                      grid%i_start(ij), grid%i_end(ij),                  &
+                      grid%j_start(ij), grid%j_end(ij),                  &
+                      k_start, k_end                                  )
+             ENDIF
+
              CALL flow_dep_bdy_chem( chem(ims,kms,jms,ic),                          &
                                      chem_bxs(jms,kms,1,ic), chem_btxs(jms,kms,1,ic),  &
                                      chem_bxe(jms,kms,1,ic), chem_btxe(jms,kms,1,ic),  &

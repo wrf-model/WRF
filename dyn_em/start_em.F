@@ -26,7 +26,7 @@
    USE module_physics_init
    USE module_lightning_driver, ONLY : lightning_init
    USE module_fr_fire_driver_wrf, ONLY : fire_driver_em_init
-   USE module_stoch, ONLY : SETUP_STOCH_SPPT,SETUP_STOCH_SKEBS,rand_seed, update_stoch
+   USE module_stoch, ONLY : setup_rand_perturb, rand_seed, update_stoch
 #if (WRF_CHEM == 1)
    USE module_aerosols_sorgam, ONLY: sum_pm_sorgam
    USE module_gocart_aerosols, ONLY: sum_pm_gocart
@@ -225,56 +225,103 @@
      grid%did_stoch = .FALSE.
    END IF
 
-   IF ( ( grid%id == 1 ) .AND. &
-        ( grid%stoch_force_global_opt == 1 ) .AND. &
-        ( .NOT. grid%did_stoch ) ) THEN
+   IF ((( grid%id == 1) .AND. (.NOT. grid%did_stoch)) .AND. &
+       (( grid%skebs_on== 1) .OR.( grid%sppt_on== 1) .OR. ( grid%rand_perturb_on== 1))) THEN
 
      grid%did_stoch = .TRUE.
-     IF ( wrf_dm_on_monitor () ) THEN
-       CALL rand_seed ( config_flags, grid%SEED1, grid%SEED2, grid%NENS )
-     ENDIF
-#ifdef DM_PARALLEL
-     CALL wrf_dm_bcast_bytes ( grid%SEED1, IWORDSIZE )
-     CALL wrf_dm_bcast_bytes ( grid%SEED2, IWORDSIZE )
-#endif
 
-     IF ( (grid%stoch_force_opt==1) .or. (grid%perturb_bdy==1)) then
-     grid%SPTFORCC=0.0
-     grid%SPTFORCS=0.0
-     call SETUP_STOCH_SKEBS(grid%VERTSTRUCC,grid%VERTSTRUCS,                   &
-                      grid%SPT_AMP,grid%SPSTREAM_AMP,                    &
-                      grid%VERTAMPT,grid%VERTAMPUV,                      &
-                      grid%stoch_vertstruc_opt,                          &
-                      grid%SEED1,grid%SEED2,grid%time_step,              &
-                      grid%DX,grid%DY,                                   &
-                      grid%TOT_BACKSCAT_PSI,grid%TOT_BACKSCAT_T,         &
-                      grid%ZTAU_PSI,grid%ZTAU_T,grid%REXPONENT_PSI,grid%REXPONENT_T,               &
-                      grid%KMINFORC,grid%KMAXFORC,grid%LMINFORC,grid%LMAXFORC,     &
-                      grid%KMINFORCT,grid%KMAXFORCT,grid%LMINFORCT,grid%LMAXFORCT, &
-                      grid%KMAXFORCH,grid%LMAXFORCH,grid%KMAXFORCTH,grid%LMAXFORCTH, &
-                      grid%ZSIGMA2_EPS,grid%ZSIGMA2_ETA,                          &
-                      ids, ide, jds, jde, kds, kde,                      &
-                      ims, ime, jms, jme, kms, kme,                      &
-                      its, ite, jts, jte, kts, kte                       )
-     END IF
-     IF (grid%stoch_force_opt==2) then
+     IF (grid%skebs_on==1) then
 
-        call SETUP_STOCH_SPPT(grid%VERTSTRUCC,grid%VERTSTRUCS,            &
-                       grid%SPT_AMP,                                      &
-                       grid%SPTFORCC,grid%SPTFORCS,                       &
-                       grid%VERTAMPT,grid%VERTAMPUV,                      &
-                       grid%stoch_vertstruc_opt,                          &
-                       grid%SEED1,grid%SEED2,grid%time_step,              &
-                       grid%DX,grid%DY,                                   &
-                       grid%gridpointvariance,grid%l_sppt,grid%tau_sppt,  &
-                       grid%KMINFORCT,grid%KMAXFORCT,grid%LMINFORCT,grid%LMAXFORCT, &
-                       grid%KMAXFORCTH,grid%LMAXFORCTH, &
+! Initialize SKEBS
+!    Initialize streamfunction (1)
+     if (.not.config_flags%restart) then 
+         call rand_seed (config_flags, grid%ISEED_SKEBS, grid%iseedarr_skebs , kms, kme)
+     endif
+     call SETUP_RAND_PERTURB('W',                                         &
+                       grid%skebs_vertstruc,config_flags%restart,         &
+                       grid%SPSTREAM_AMP,                                 &
+                       grid%SPSTREAMFORCS,grid%SPSTREAMFORCC,grid%ALPH_PSI,&
+                       grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPUV,     &
+                       grid%KMINFORCT,grid%KMAXFORCT,                     &
+                       grid%LMINFORCT,grid%LMAXFORCT,                     &
+                       grid%KMAXFORCTH,grid%LMAXFORCTH,                   &
+                       grid%time_step,grid%DX,grid%DY,                    &
+                       grid%gridpt_stddev_sppt,                           &
+                       grid%lengthscale_sppt,                             &
+                       grid%timescale_sppt,                               &
+                       grid%TOT_BACKSCAT_PSI,grid%ZTAU_PSI,               &
+                       grid%REXPONENT_PSI,                                &
                        ids, ide, jds, jde, kds, kde,                      &
                        ims, ime, jms, jme, kms, kme,                      &
                        its, ite, jts, jte, kts, kte                       )
-     ENDIF 
+!    Initialize potential temperature (2)
+     call SETUP_RAND_PERTURB('T',                                         &
+                       grid%skebs_vertstruc,config_flags%restart,     &
+                       grid%SPT_AMP,                                      &
+                       grid%SPTFORCS,grid%SPTFORCC,grid%ALPH_T,           &
+                       grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPT,     &
+                       grid%KMINFORCT,grid%KMAXFORCT,                     &
+                       grid%LMINFORCT,grid%LMAXFORCT,                     &
+                       grid%KMAXFORCTH,grid%LMAXFORCTH,                   &
+                       grid%time_step,grid%DX,grid%DY,                    &
+                       grid%gridpt_stddev_sppt,                           &
+                       grid%lengthscale_sppt,                             &
+                       grid%timescale_sppt,                               &
+                       grid%TOT_BACKSCAT_T,grid%ZTAU_T,                   &
+                       grid%REXPONENT_T,                                  &
+                       ids, ide, jds, jde, kds, kde,                      &
+                       ims, ime, jms, jme, kms, kme,                      &
+                       its, ite, jts, jte, kts, kte                       )
+     ENDIF
 
-    END IF ! ( grid%id == 1 ) .AND. ( grid%stoch_force_global_opt == 1 ) 
+IF (grid%sppt_on==1) then
+! Initialize SPPT (3)
+     if (.not.config_flags%restart) then ! set random number seed (else  iseedarray is read in from restart files)
+         call rand_seed (config_flags, grid%ISEED_SPPT, grid%iseedarr_sppt  , kms, kme)
+     endif
+     call SETUP_RAND_PERTURB('P',                                         &
+                       grid%sppt_vertstruc,config_flags%restart,          &
+                       grid%SPPT_AMP,                                     &
+                       grid%SPPTFORCC,grid%SPPTFORCS,grid%ALPH_SPPT,      &
+                       grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPT,     &
+                       grid%KMINFORCT,grid%KMAXFORCT,                     &
+                       grid%LMINFORCT,grid%LMAXFORCT,                     &
+                       grid%KMAXFORCTH,grid%LMAXFORCTH,                   &
+                       grid%time_step,grid%DX,grid%DY,                    &
+                       grid%gridpt_stddev_sppt,                           &
+                       grid%lengthscale_sppt,                             &
+                       grid%timescale_sppt,                               &
+                       grid%TOT_BACKSCAT_PSI,grid%ZTAU_PSI,               &
+                       grid%REXPONENT_PSI,                                &
+                       ids, ide, jds, jde, kds, kde,                      &
+                       ims, ime, jms, jme, kms, kme,                      &
+                       its, ite, jts, jte, kts, kte                       )
+     ENDIF
+
+! Initialize RAND_PERTURB (4)
+     IF (grid%rand_perturb_on==1) then
+     if (.not.config_flags%restart) then ! set random number seed (else  iseedarray is read in from restart files)
+         call rand_seed (config_flags, grid%ISEED_RAND_PERT, grid%iseedarr_rand_pert  , kms, kme)
+     endif
+     call SETUP_RAND_PERTURB('R',                                         &
+                       grid%rand_pert_vertstruc,config_flags%restart,     &
+                       grid%SP_AMP,                                       &
+                       grid%SPFORCC,grid%SPFORCS,grid%ALPH_RAND,          &
+                       grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPT,     &
+                       grid%KMINFORCT,grid%KMAXFORCT,                     &
+                       grid%LMINFORCT,grid%LMAXFORCT,                     &
+                       grid%KMAXFORCTH,grid%LMAXFORCTH,                   &
+                       grid%time_step,grid%DX,grid%DY,                    &
+                       grid%gridpt_stddev_rand_pert,                      &
+                       grid%lengthscale_rand_pert,                        &
+                       grid%timescale_rand_pert,                          &
+                       grid%TOT_BACKSCAT_PSI,grid%ZTAU_PSI,               &
+                       grid%REXPONENT_PSI,                                &
+                       ids, ide, jds, jde, kds, kde,                      &
+                       ims, ime, jms, jme, kms, kme,                      &
+                       its, ite, jts, jte, kts, kte                       )
+     ENDIF
+     ENDIF ! skebs or sppt or rand_perturb
 !   --- END SETUP STOCHASTIC PERTURBATION SCHEMES ----------
 
 

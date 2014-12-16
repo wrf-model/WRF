@@ -148,7 +148,7 @@ SUBROUTINE calc_mu_uv ( config_flags,                 &
          jm = jte-1
          if(config_flags%periodic_y) jm = jte
          DO i=its,itf
-             muv(i,j) =      mu(i,j-1)        +mub(i,j-1)
+!            muv(i,j) =      mu(i,j-1)        +mub(i,j-1)
 !  fix for periodic b.c., 13 march 2004, wcs
              muv(i,j) = 0.5*(mu(i,j-1)+mu(i,jm)+mub(i,j-1)+mub(i,jm))
          ENDDO

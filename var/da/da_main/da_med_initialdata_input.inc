@@ -82,8 +82,8 @@ subroutine da_med_initialdata_input (grid, config_flags, filename, in_date)
    call nl_set_truelat2 (grid%id , grid%truelat2)
    call nl_set_moad_cen_lat (grid%id , grid%moad_cen_lat)
    call nl_set_stand_lon (grid%id , grid%stand_lon)
+   call nl_set_pole_lat (grid%id , grid%pole_lat)
    call nl_set_map_proj (grid%id , grid%map_proj)
-
    start_date=current_date
 
    call geth_julgmt(julyr, julday, gmt)

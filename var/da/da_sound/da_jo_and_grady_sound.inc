@@ -25,9 +25,15 @@ subroutine da_jo_and_grady_sound(iv, re, jo, jo_grad_y)
    jo % sound_q = 0.0
 
    if (test_dm_exact) then
-      if (iv%info(sound)%ntotal == 0) return
+      if (iv%info(sound)%ntotal == 0) then 
+         if (trace_use_dull) call da_trace_exit("da_jo_and_grady_sound")
+         return
+      end if
    else
-      if (iv%info(sound)%nlocal < 1) return
+      if (iv%info(sound)%nlocal < 1) then
+         if (trace_use_dull) call da_trace_exit("da_jo_and_grady_sound")
+         return
+      end if
    end if
 
    do n=1, iv%info(sound)%nlocal

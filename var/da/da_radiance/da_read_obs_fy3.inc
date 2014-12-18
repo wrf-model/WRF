@@ -87,7 +87,7 @@ END TYPE type_rad_FY3
    real , allocatable :: in(:), out(:)
    logical :: found, head_found
 
-   call da_trace_entry("da_read_obs_fy3")
+   if (trace_use) call da_trace_entry("da_read_obs_fy3")
 
    ! Initialize variables
 
@@ -220,7 +220,7 @@ bufrfile:  do ibufr=1,numbufr
    if (iost /= 0) then
       call da_warning(__FILE__,__LINE__, &
          (/"Cannot open file "//infile/))
-      call da_trace_exit("da_read_obs_fy3")
+      if (trace_use) call da_trace_exit("da_read_obs_fy3")
       return
    end if
 
@@ -264,12 +264,13 @@ bufrfile:  do ibufr=1,numbufr
    
          platform_id = 23
          if(infile(5:5)=='a') then
-          satellite_id = 1
+            satellite_id = 1
          elseif(infile(5:5)=='b') then
-          satellite_id = 2
+            satellite_id = 2
          else
-          write(*,*) 'This character is not coped with presently'
-          return
+            call da_warning(__FILE__,__LINE__,(/"Can not assimilate data from this instrument"/))
+            if (trace_use) call da_trace_exit("da_read_obs_fy3")
+            return
          endif
          ifov = rad%iscanpos    
 
@@ -627,7 +628,7 @@ end do bufrfile
    !    p => p%next
    ! end do
 
-   call da_trace_exit("da_read_obs_fy3")
+   if (trace_use) call da_trace_exit("da_read_obs_fy3")
 
   
 

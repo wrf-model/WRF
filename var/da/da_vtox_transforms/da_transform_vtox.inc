@@ -19,7 +19,10 @@ subroutine da_transform_vtox(grid, cv_size, xbx, be, ep, cv, vv, vp)
 
    call da_zero_x (grid%xa)
    
-   if (.not. use_background_errors) return
+   if (.not. use_background_errors) then
+      if (trace_use) call da_trace_exit("da_transform_vtox")
+      return
+   end if
 
    !----------------------------------------------------------------------
    ! [1.0]: Perform vv = u_h cv transform:

@@ -231,6 +231,14 @@
 #if (EM_CORE == 1)
 
 !-----------------------------------------------------------------------
+! Check that if num_metgrid_levels < 20, lagrange_order should be 1
+!-----------------------------------------------------------------------
+            IF  ( model_config_rec%num_metgrid_levels .LE. 20 ) THEN
+            CALL wrf_message ( 'Linear vertical interpolation is recommended with input vertical resolution this coarse, changing lagrange_order to 1' )
+            model_config_rec%lagrange_order = 1
+            END IF
+
+!-----------------------------------------------------------------------
 ! Check for consistency in the Noah-MP options
 !-----------------------------------------------------------------------
 

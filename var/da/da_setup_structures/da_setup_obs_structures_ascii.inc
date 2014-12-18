@@ -142,7 +142,6 @@ subroutine da_setup_obs_structures_ascii( ob, iv, grid )
             ! scan radar observation file
             write(filename(1:10), fmt='(a, i2.2, a)') 'ob', n,'.radar'
             call da_scan_obs_radar(iv, filename, grid)
-            print*,'scan radar obs ',n,filename(1:10),iv%info(:)%ntotal, iv%info(:)%nlocal
          end if
 
          iv%info(:)%plocal(n) = iv%info(:)%nlocal

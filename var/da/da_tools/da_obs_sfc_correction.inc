@@ -96,7 +96,7 @@ subroutine da_obs_sfc_correction(info, sfc_obs, n, xb)
    !     ----------------------------------------------
 
    if (abs(po - missing_r) < 1.0  .OR. abs(ho - missing_r) < 1.0) then
-
+      if (trace_use_dull) call da_trace_exit("da_obs_sfc_correction")
       return
 
       ! write(unit=message(1), fmt='(/3(1x,a))') &

@@ -27,10 +27,9 @@ subroutine da_varbc_pred(iv)
   integer   :: inst, nlevels, i, npredmax, n, num_rad
   real      :: pred_hk(npred_hk)
 
+  if ( iv%num_inst < 1 ) RETURN
 
   if (trace_use) call da_trace_entry("da_varbc_pred")
-
-  if ( iv%num_inst < 1 ) RETURN
 
   do inst = 1, iv%num_inst                                  ! loop for sensor
     npredmax = iv%instid(inst)%varbc_info%npredmax

@@ -894,11 +894,7 @@ SUBROUTINE spectralnudgingfilterfft2dncar(nx,ny,nwave,fin)
     CALL wrf_message(TRIM(wrf_err_message))
   END IF
 
-  if(MOD(n,2) == 0) then
-    nh = n/2 - 1
-  else
-    nh = (n-1)/2
-  end if
+      nh = min(max(1 + 2*nwave,0),n)
 
 
 ! filter all waves with wavenumber larger than nwave
@@ -906,9 +902,8 @@ SUBROUTINE spectralnudgingfilterfft2dncar(nx,ny,nwave,fin)
   fp = 1.
 
   DO j=1,ny
-     DO i=nwave+1,nh
-         fp(2*i-1,j) = 0.
-         fp(2*i,j) = 0.
+     DO i=nh+1,n
+         fp(i,j) = 0.
      ENDDO
   ENDDO
 

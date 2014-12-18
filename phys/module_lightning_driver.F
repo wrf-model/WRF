@@ -56,7 +56,9 @@
  LOGICAL,  INTENT(IN)        :: restart
  REAL,     INTENT(IN)        :: dt,dx
  INTEGER,  INTENT(IN)        :: cu_physics,mp_physics,do_radar_ref,lightning_option
- REAL,     INTENT(IN)        :: lightning_dt, lightning_start_seconds
+!REAL,     INTENT(IN)        :: lightning_dt, lightning_start_seconds
+ REAL,     INTENT(IN)        :: lightning_start_seconds
+ REAL,     INTENT(INOUT)     :: lightning_dt
  REAL,     INTENT(IN)        :: iccg_prescribed_num, iccg_prescribed_den
  INTEGER,  INTENT(INOUT)     :: cellcount_method
  INTEGER , INTENT(IN)        :: ids, ide, jds, jde, kds, kde,  &
@@ -83,7 +85,9 @@
  IF (itimestep .gt. 0 .or. lightning_option .eq. 0) return
 
 !-- check to see if lightning_dt is a proper multiple of dt
- IF ( MOD(lightning_dt,dt) .ne. 0. ) THEN
+ IF ( lightning_dt == 0. ) THEN
+    lightning_dt = dt
+ ELSEIF ( MOD(lightning_dt,dt) .ne. 0. ) THEN
     CALL wrf_error_fatal (' lightning_init: lightning_dt needs to be a multiple of model time step dt')
  ENDIF
 

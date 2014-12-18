@@ -27,6 +27,7 @@ subroutine da_earth_2_model_wind(eu,ev,mu,mv,lon)
    if (map_projection == 3) then
       mu = eu
       mv = ev
+      if (trace_use) call da_trace_exit("da_earth_2_model_wind")
       return
    end if
 
@@ -49,5 +50,4 @@ subroutine da_earth_2_model_wind(eu,ev,mu,mv,lon)
    if (trace_use) call da_trace_exit("da_earth_2_model_wind")
 
 end subroutine da_earth_2_model_wind
-
 

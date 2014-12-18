@@ -221,63 +221,44 @@
 ! TBH:  TODO:  Use dimnames(*) == south_north || west_east instead of 
 ! TBH:         MemoryOrder and Stagger?  It would also work for both ARW 
 ! TBH:         and NMM and be easier to handle via Registry...  
-      IF ( TRIM(MemoryOrder) == 'XY' ) THEN
+
+      IF ( ( TRIM(MemoryOrder) == 'XY' ) .AND. &
+         ( ( TRIM(Var) == 'XLONG'   ) .OR. &
+           ( TRIM(Var) == 'XLAT'    ) .OR. &
+           ( TRIM(Var) == 'XLONG_U' ) .OR. &
+           ( TRIM(Var) == 'XLAT_U'  ) .OR. &
+           ( TRIM(Var) == 'XLONG_V' ) .OR. &
+           ( TRIM(Var) == 'XLAT_V'  ) ) ) THEN
         horiz_stagger = .FALSE.
         IF ( LEN_TRIM(Stagger) == 1 ) THEN
           IF ( has_char( Stagger, 'x' ) ) THEN
             horiz_stagger = .TRUE.
-            IF ( ( Var(1:5) /= 'XLONG' ) .AND. ( Var(1:4) /= 'XLAT'  ) ) THEN
-              CALL wrf_put_var_ti_char( &
-                               DataHandle                 &  ! DataHandle
-                              ,"coordinates"              &  ! Element
-                              ,Var                        &  ! Data Name
-                              ,"XLONG_U XLAT_U XTIME"     &  ! Data
-                              ,Status )
-            ELSE
-              CALL wrf_put_var_ti_char( &
-                               DataHandle                 &  ! DataHandle
-                              ,"coordinates"              &  ! Element
-                              ,Var                        &  ! Data Name
-                              ,"XLONG_U XLAT_U"           &  ! Data
-                              ,Status )
-            END IF
+            CALL wrf_put_var_ti_char( &
+                             DataHandle                 &  ! DataHandle
+                            ,"coordinates"              &  ! Element
+                            ,Var                        &  ! Data Name
+                            ,"XLONG_U XLAT_U"           &  ! Data
+                            ,Status )
           ELSE IF ( has_char( Stagger, 'y' ) ) THEN
             horiz_stagger = .TRUE.
-            IF ( ( Var(1:5) /= 'XLONG' ) .AND. ( Var(1:4) /= 'XLAT'  ) ) THEN
-              CALL wrf_put_var_ti_char( &
-                               DataHandle                 &  ! DataHandle
-                              ,"coordinates"              &  ! Element
-                              ,Var                        &  ! Data Name
-                              ,"XLONG_V XLAT_V XTIME"     &  ! Data
-                              ,Status )
-            ELSE
-              CALL wrf_put_var_ti_char( &
-                               DataHandle                 &  ! DataHandle
-                              ,"coordinates"              &  ! Element
-                              ,Var                        &  ! Data Name
-                              ,"XLONG_V XLAT_V"           &  ! Data
-                              ,Status )
-            END IF
+            CALL wrf_put_var_ti_char( &
+                             DataHandle                 &  ! DataHandle
+                            ,"coordinates"              &  ! Element
+                            ,Var                        &  ! Data Name
+                            ,"XLONG_V XLAT_V"           &  ! Data
+                            ,Status )
           ENDIF
         ENDIF
         IF ( .NOT. horiz_stagger ) THEN
-          IF ( ( Var(1:5) /= 'XLONG' ) .AND. ( Var(1:4) /= 'XLAT'  ) ) THEN
-            CALL wrf_put_var_ti_char( &
-                             DataHandle                 &  ! DataHandle
-                            ,"coordinates"              &  ! Element
-                            ,Var                        &  ! Data Name
-                            ,"XLONG XLAT XTIME"         &  ! Data
-                            ,Status )
-          ELSE
-            CALL wrf_put_var_ti_char( &
-                             DataHandle                 &  ! DataHandle
-                            ,"coordinates"              &  ! Element
-                            ,Var                        &  ! Data Name
-                            ,"XLONG XLAT"               &  ! Data
-                            ,Status )
-          END IF
+          CALL wrf_put_var_ti_char( &
+                           DataHandle                 &  ! DataHandle
+                          ,"coordinates"              &  ! Element
+                          ,Var                        &  ! Data Name
+                          ,"XLONG XLAT"               &  ! Data
+                          ,Status )
         ENDIF
-      ELSE IF ( ( TRIM(MemoryOrder) == 'XZY' ) .OR. &
+      ELSE IF ( ( TRIM(MemoryOrder) == 'XY'  ) .OR. &
+                ( TRIM(MemoryOrder) == 'XZY' ) .OR. &
                 ( TRIM(MemoryOrder) == 'XYZ' ) ) THEN
         horiz_stagger = .FALSE.
         IF ( LEN_TRIM(Stagger) == 1 ) THEN
@@ -287,7 +268,6 @@
                              DataHandle                 &  ! DataHandle
                             ,"coordinates"              &  ! Element
                             ,Var                        &  ! Data Name
-!                           ,"XLONG_U XLAT_U ZNU XTIME" &  ! Data
                             ,"XLONG_U XLAT_U XTIME"     &  ! Data
                             ,Status )
           ELSE IF ( has_char( Stagger, 'y' ) ) THEN
@@ -296,31 +276,17 @@
                              DataHandle                 &  ! DataHandle
                             ,"coordinates"              &  ! Element
                             ,Var                        &  ! Data Name
-!                           ,"XLONG_V XLAT_V ZNU XTIME" &  ! Data
                             ,"XLONG_V XLAT_V XTIME"     &  ! Data
                             ,Status )
           ENDIF
         ENDIF
         IF ( .NOT. horiz_stagger ) THEN
-          IF ( LEN_TRIM(Stagger) == 1 ) THEN
-            IF ( has_char( Stagger, 'z' ) ) THEN
-              CALL wrf_put_var_ti_char( &
-                               DataHandle               &  ! DataHandle
-                              ,"coordinates"            &  ! Element
-                              ,Var                      &  ! Data Name
-!                             ,"XLONG XLAT ZNW XTIME"   &  ! Data
-                              ,"XLONG XLAT XTIME"       &  ! Data
-                              ,Status )
-            END IF
-          ELSE
-            CALL wrf_put_var_ti_char( &
-                             DataHandle                 &  ! DataHandle
-                            ,"coordinates"              &  ! Element
-                            ,Var                        &  ! Data Name
-!                           ,"XLONG XLAT ZNU XTIME"     &  ! Data
-                            ,"XLONG XLAT XTIME"         &  ! Data
-                            ,Status )
-          END IF
+          CALL wrf_put_var_ti_char( &
+                           DataHandle                 &  ! DataHandle
+                          ,"coordinates"              &  ! Element
+                          ,Var                        &  ! Data Name
+                          ,"XLONG XLAT XTIME"         &  ! Data
+                          ,Status )
         ENDIF
       ENDIF
 #endif

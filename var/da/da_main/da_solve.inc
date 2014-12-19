@@ -192,6 +192,14 @@
          ' Resetting ntmax = 0 for analysis_type = randomcv' 
    end if
 
+#ifdef CLOUD_CV
+   if ( cv_options == 3 ) then
+      write(unit=message(1),fmt='(A,I3)') &
+         'cloud_cv does NOT work with cv_options = ', cv_options
+      call da_error(__FILE__,__LINE__,message(1:1))
+   end if
+#endif
+
    !---------------------------------------------------------------------------
    ! [2.0] Initialise wrfvar parameters:
    !---------------------------------------------------------------------------

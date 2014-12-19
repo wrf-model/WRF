@@ -177,8 +177,12 @@ subroutine da_transform_vptox_adj(grid, vp, be, ep)
 
 
    ! Transform psi and chi to u and v:
-
-   call da_psichi_to_uv_adj(grid%xa % u, grid%xa % v, grid%xb % coefx, grid%xb % coefy, vp % v1, vp % v2)
+   if ( cv_options == 5 .or. cv_options == 6 ) then
+      call da_psichi_to_uv_adj(grid%xa % u, grid%xa % v, grid%xb % coefx, grid%xb % coefy, vp % v1, vp % v2)
+   else if ( cv_options == 7) then
+      vp%v1 = grid%xa%u + vp%v1
+      vp%v2 = grid%xa%v + vp%v2
+   end if
 
    !--------------------------------------------------------------------------
    ! [2] Impose statistical balance constraints:
@@ -227,13 +231,15 @@ subroutine da_transform_vptox_adj(grid, vp, be, ep)
          end do
       end do
    end if
-   do k= kts,kte
-      do j= grid%j_start(ij),grid%j_end(ij)
-         do i =  its, ite
-            vp%v1(i,j,k) = vp%v1(i,j,k) + be%reg_psi_ps(j,k)*grid%xa%psfc(i,j)
+   if (cv_options /= 7) then
+      do k= kts,kte
+         do j= grid%j_start(ij),grid%j_end(ij)
+            do i =  its, ite
+               vp%v1(i,j,k) = vp%v1(i,j,k) + be%reg_psi_ps(j,k)*grid%xa%psfc(i,j)
+            end do
          end do
       end do
-   end do
+   end if
    do j= grid%j_start(ij),grid%j_end(ij)
       do i =  its, ite
          vp%v5(i,j,1) = vp%v5(i,j,1) + grid%xa%psfc(i,j) 
@@ -252,15 +258,17 @@ subroutine da_transform_vptox_adj(grid, vp, be, ep)
          end do
       end do
    end if
-   do k1 = kts,kte
-      do k = kts,kte
-         do j = grid%j_start(ij),grid%j_end(ij)
-            do i =  its, ite
-               vp%v1(i,j,k1) = vp%v1(i,j,k1) + be%reg_psi_t(j,k,k1)*grid%xa%t(i,j,k)
+   if (cv_options /= 7) then
+      do k1 = kts,kte
+         do k = kts,kte
+            do j = grid%j_start(ij),grid%j_end(ij)
+               do i =  its, ite
+                  vp%v1(i,j,k1) = vp%v1(i,j,k1) + be%reg_psi_t(j,k,k1)*grid%xa%t(i,j,k)
+               end do
             end do
          end do
       end do
-   end do
+   end if
    do k = kts,kte
       do j = grid%j_start(ij),grid%j_end(ij)
          do i =  its, ite
@@ -270,13 +278,15 @@ subroutine da_transform_vptox_adj(grid, vp, be, ep)
    end do
 
    ! Chi
-   do k = kts,kte
-      do j = grid%j_start(ij),grid%j_end(ij)
-         do i =  its, ite
-            vp%v1(i,j,k) = vp%v1(i,j,k) + be%reg_psi_chi(j,k)*vp%v2(i,j,k)
-         end do
-       end do
-   end do
+   if (cv_options /= 7) then
+      do k = kts,kte
+         do j = grid%j_start(ij),grid%j_end(ij)
+            do i =  its, ite
+               vp%v1(i,j,k) = vp%v1(i,j,k) + be%reg_psi_chi(j,k)*vp%v2(i,j,k)
+            end do
+          end do
+      end do
+   end if
    if ( cv_options == 6 ) then
       do k = kts,kte
          do j = grid%j_start(ij),grid%j_end(ij)

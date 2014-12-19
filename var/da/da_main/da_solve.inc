@@ -546,7 +546,7 @@
       end if
 
 ! Re-scale the variances and the scale-length for outer-loop > 1:
-      if (it > 1 .and. cv_options == 5) then
+      if (it > 1 .and. (cv_options == 5 .or. cv_options == 7)) then
          print '(/10X,"===> Re-set BE SCALINGS for outer-loop=",i2)', it
          call  da_scale_background_errors ( be, it )
       else if (it > 1 .and. cv_options == 3) then

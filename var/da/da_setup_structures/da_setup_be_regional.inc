@@ -128,17 +128,17 @@ subroutine da_setup_be_regional(xb, be, grid)
 !===========for interpolating CV5==============================================================
 
    if (trace_use) call da_trace_entry("da_setup_be_regional")
-   if( cv_options == 5 .or. cv_options == 6) then
-      write (unit=message(1),fmt='(A,i3)') &
+   if( (cv_options == 5) .or. (cv_options == 6) .or. (cv_options == 7) ) then
+      write (unit=message(1),fmt='(A,I3)') &
          'Set up background errors for regional application for cv_options = ',cv_options
       write (unit=message(2),fmt='(a)') ' '
       call da_message(message(1:2))
-      if ( cv_options == 6 .and. interpolate_stats ) then
-         write (unit=message(1),fmt='(a)') 'interpolate_stats is not implemented for cv_options=6'
+      if ( (cv_options == 7 .or. cv_options == 6) .and. interpolate_stats ) then
+         write (unit=message(1),fmt='(A,I3)') 'interpolate_stats is not implemented for cv_options=',cv_options
          call da_error(__FILE__,__LINE__,message(1:1))
       end if
    else 
-      write (unit=message(1),fmt='(a)') 'cv_options should be 5 or 6'
+      write (unit=message(1),fmt='(a)') 'cv_options should be 5, 6, or 7'
       call da_error(__FILE__,__LINE__,message(1:1))
    end if
 
@@ -175,7 +175,7 @@ subroutine da_setup_be_regional(xb, be, grid)
       lat_stats_option = .FALSE.
       ! Must use the global Eigenvector/eigenvalue
       vert_evalue = 1
-      write (unit=message(1),fmt='(a)') 'interpolate_stats is .true., BE for cv_options=5 will be interpolated.'
+      write (unit=message(1),fmt='(A,I3,A)') 'interpolate_stats is .true., BE for cv_options = ',cv_options,' will be interpolated.'
       call da_message(message(1:1))
       if (rootproc) write(be_out_unit) ix, jy, kz
       write(6,'(a/("k=",i3,2x,f10.4))') 'xb%sigmah=',(k,xb%sigmah(k),k=1,kz)
@@ -264,7 +264,7 @@ subroutine da_setup_be_regional(xb, be, grid)
       allocate  (regcoeff_ps_u_rh(1:nk,1:num_bins2d))
    end if
 
-   if ( cv_options == 5 ) then
+   if ( (cv_options == 5) .or. (cv_options == 7) ) then
    read (be_unit) regcoeff_psi_chi
    read (be_unit) regcoeff_psi_ps  
    read (be_unit) regcoeff_psi_t

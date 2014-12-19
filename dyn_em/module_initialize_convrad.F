@@ -23,6 +23,7 @@ MODULE module_initialize_ideal
    USE module_timing
    USE module_configure
    USE module_init_utilities
+   USE module_soil_pre
 #ifdef DM_PARALLEL
    USE module_dm
 #endif
@@ -39,6 +40,9 @@ CONTAINS
 ! copies of assumed-shape arrays (by passing down as arguments, the 
 ! data are treated as assumed-size -- ie. f77 -- arrays and the copying
 ! business is avoided).  Fie on the F90 designers.  Fie and a pox.
+! NOTE:  Modified to remove all but arrays of rank 4 or more from the 
+!        argument list.  Arrays with rank>3 are still problematic due to the 
+!        above-noted fie- and pox-ities.  TBH 20061129.  
 
    SUBROUTINE init_domain ( grid )
 
@@ -56,7 +60,6 @@ CONTAINS
 #include <actual_new_args.inc>
 !
                         )
-
    END SUBROUTINE init_domain
 
 !-------------------------------------------------------------------
@@ -82,19 +85,15 @@ CONTAINS
                                   its, ite, jts, jte, kts, kte, &
                                   i, j, k
 
-   ! Local data
-
    INTEGER, PARAMETER :: nl_max = 1000
    REAL, DIMENSION(nl_max) :: zk, p_in, theta, rho, u, v, qv, pd_in
    INTEGER :: nl_in
 
-
-   INTEGER :: icm,jcm, ii, im1, jj, jm1, loop, error, fid, nxc, nyc
+   INTEGER :: icm,jcm, ii, im1, jj, jm1, loop, error, fid, nxc, nyc, lm
    REAL    :: u_mean,v_mean, f0, p_surf, p_level, qvf, z_at_v, z_at_u
    REAL    :: z_scale, xrad, yrad, zrad, rad, delt, cof1, cof2
 !   REAL, EXTERNAL :: interp_0
-   REAL    :: hm
-   REAL    :: pi
+   REAL    :: pi, rnd
 
 !  stuff from original initialization that has been dropped from the Registry 
    REAL    :: vnu, xnu, xnus, dinit0, cbh, p0_temp, t0_temp, zd, zt
@@ -104,13 +103,8 @@ CONTAINS
 
    LOGICAL :: moisture_init
    LOGICAL :: stretch_grid, dry_sounding
-
-  INTEGER :: xs , xe , ys , ye
-  REAL :: mtn_ht
-   LOGICAL, EXTERNAL :: wrf_dm_on_monitor
-!  For LES, add randx
-   real :: randx
-
+   character (len=256) :: mminlu2
+   
 #ifdef DM_PARALLEL
 #    include <data_calls.inc>
 #endif
@@ -157,16 +151,18 @@ CONTAINS
    END SELECT
 
 
-!  stretch_grid = .true.
-!  FOR LES, set stretch to false
-   stretch_grid = .false.
-   delt = 3.
+   stretch_grid = .true.
+   delt = 1.
 !   z_scale = .50
-   z_scale = .40
+   z_scale = .32
    pi = 2.*asin(1.0)
    write(6,*) ' pi is ',pi
    nxc = (ide-ids)/2
-   nyc = (jde-jds)/2
+   nyc = jde/2
+   icm = ide/2
+! lm is the half width of the land in terms of grid points
+   lm = 25
+   write(6,*) 'lm,icm-lm,icm+lm = ', lm,icm-lm,icm+lm
 
    CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
 
@@ -183,9 +179,13 @@ CONTAINS
    CALL wrf_dm_bcast_bytes( jcm , IWORDSIZE )
 #endif
 
-    CALL nl_set_mminlu(1, '    ')
-    CALL nl_set_iswater(1,0)
-    CALL nl_set_cen_lat(1,40.)
+    mminlu2 = ' '
+    mminlu2(1:4) = 'USGS'
+    CALL nl_set_mminlu(1, mminlu2)
+!   CALL nl_set_mminlu(1, 'USGS')
+    CALL nl_set_iswater(1,16)
+    CALL nl_set_isice(1,3)
+    CALL nl_set_cen_lat(1,20.)
     CALL nl_set_cen_lon(1,-105.)
     CALL nl_set_truelat1(1,0.)
     CALL nl_set_truelat2(1,0.)
@@ -194,45 +194,101 @@ CONTAINS
     CALL nl_set_pole_lon (1,0.)
     CALL nl_set_pole_lat (1,90.)
     CALL nl_set_map_proj(1,0)
+!   CALL model_to_grid_config_rec(1,model_config_rec,config_flags)
+    CALL nl_get_iswater(1,grid%iswater)
 
-
-!  here we initialize data we currently is not initialized 
+!  here we initialize data that currently is not initialized 
 !  in the input data
 
     DO j = jts, jte
       DO i = its, ite
+         grid%msft(i,j)     = 1.
+         grid%msfu(i,j)     = 1.
+         grid%msfv(i,j)     = 1.
          grid%msftx(i,j)    = 1.
          grid%msfty(i,j)    = 1.
          grid%msfux(i,j)    = 1.
          grid%msfuy(i,j)    = 1.
          grid%msfvx(i,j)    = 1.
-         grid%msfvx_inv(i,j)= 1.
          grid%msfvy(i,j)    = 1.
+         grid%msfvx_inv(i,j)= 1.
          grid%sina(i,j)     = 0.
          grid%cosa(i,j)     = 1.
          grid%e(i,j)        = 0.
-!  for LES, include Coriolis force
-         grid%f(i,j)        = 1.e-4 
-
+         grid%xlat(i,j)     = 10.
+         grid%f(i,j)        = 2.5e-5
+         grid%xlong(i,j)     = 0.
+! Hard-wire the ocean-land configuration
+! all ocean
+!       if (i .ge. (icm-lm) .and. i .lt. (icm+lm)) then
+!        grid%xland(i,j)     = 1.
+!        grid%lu_index(i,j)  = 18
+!else
+	 grid%xland(i,j)     = 2.
+         grid%lu_index(i,j)  = 16
+!end if
       END DO
    END DO
 
-    DO j = jts, jte
+! for Noah LSM, additional variables need to be initialized
+
+   other_masked_fields : SELECT CASE ( model_config_rec%sf_surface_physics(grid%id) )
+
+      CASE (SLABSCHEME)
+
+      CASE (LSMSCHEME)
+
+        DO j = jts , MIN(jde-1,jte)
+           DO i = its , MIN(ide-1,ite)
+              IF (grid%xland(i,j) .lt. 1.5) THEN
+                 grid%vegfra(i,j) = 0.5
+                 grid%canwat(i,j) = 0.
+                 grid%ivgtyp(i,j) = 18
+                 grid%isltyp(i,j) = 8
+                 grid%xice(i,j) = 0.
+                 grid%snow(i,j) = 0.
+              ELSE
+                 grid%vegfra(i,j) = 0.
+                 grid%canwat(i,j) = 0.
+                 grid%ivgtyp(i,j) = 16
+                 grid%isltyp(i,j) = 14
+                 grid%xice(i,j) = 0.
+                 grid%snow(i,j) = 0.
+              ENDIF
+           END DO
+        END DO
+
+      CASE (RUCLSMSCHEME)
+
+   END SELECT other_masked_fields
+
+   DO j = jts, jte
     DO k = kts, kte
       DO i = its, ite
          grid%ww(i,k,j)     = 0.
       END DO
-   END DO
+    END DO
    END DO
 
    grid%step_number = 0
+
+! Process the soil; note that there are some things hard-wired into share/module_soil_pre.F
+      CALL process_soil_ideal(grid%xland,grid%xice,grid%vegfra,grid%snow,grid%canwat, &
+                     grid%ivgtyp,grid%isltyp,grid%tslb,grid%smois, &
+                     grid%tsk,grid%tmn,grid%zs,grid%dzs,model_config_rec%num_soil_layers, &
+                     model_config_rec%sf_surface_physics(grid%id), &
+                                   ids,ide, jds,jde, kds,kde,&
+                                   ims,ime, jms,jme, kms,kme,&
+                                   its,ite, jts,jte, kts,kte )
 
 ! set up the grid
 
    IF (stretch_grid) THEN ! exponential stretch for eta (nearly constant dz)
      DO k=1, kde
-      grid%znw(k) = (exp(-(k-1)/float(kde-1)/z_scale) - exp(-1./z_scale))/ &
-                                (1.-exp(-1./z_scale))
+!     grid%znw(k) = (exp(-(k-1)/float(kde-1)/z_scale) - exp(-1./z_scale))/ &
+!                               (1.-exp(-1./z_scale))
+! read eta_levels from namelist (replace with commented code above if not)
+      grid%znw(k) = model_config_rec%eta_levels(k)
      ENDDO
    ELSE
      DO k=1, kde
@@ -266,21 +322,9 @@ CONTAINS
 !  get the sounding from the ascii sounding file, first get dry sounding and 
 !  calculate base state
 
-  dry_sounding = .true.
-  IF ( wrf_dm_on_monitor() ) THEN
   write(6,*) ' getting dry sounding for base state '
-
+  dry_sounding = .true.
   CALL get_sounding( zk, p_in, pd_in, theta, rho, u, v, qv, dry_sounding, nl_max, nl_in, theta_surf )
-  ENDIF
-  CALL wrf_dm_bcast_real( zk , nl_max )
-  CALL wrf_dm_bcast_real( p_in , nl_max )
-  CALL wrf_dm_bcast_real( pd_in , nl_max )
-  CALL wrf_dm_bcast_real( theta , nl_max )
-  CALL wrf_dm_bcast_real( rho , nl_max )
-  CALL wrf_dm_bcast_real( u , nl_max )
-  CALL wrf_dm_bcast_real( v , nl_max )
-  CALL wrf_dm_bcast_real( qv , nl_max )
-  CALL wrf_dm_bcast_integer ( nl_in , 1 ) 
 
   write(6,*) ' returned from reading sounding, nl_in is ',nl_in
 
@@ -290,46 +334,11 @@ CONTAINS
   grid%p_top = interp_0( p_in, zk, config_flags%ztop, nl_in )
 
   DO j=jts,jte
-  DO i=its,ite
+  DO i=its,ite  ! flat surface
+    grid%phb(i,1,j) = 0.
+    grid%php(i,1,j) = 0.
+    grid%ph0(i,1,j) = 0.
     grid%ht(i,j) = 0.
-  ENDDO
-  ENDDO
-
-  xs=ide/2 -3
-  xs=ids   -3
-  xe=xs + 6
-  ys=jde/2 -3
-  ye=ys + 6
-  mtn_ht = 500
-#ifdef MTN
-  DO j=max(ys,jds),min(ye,jde-1)
-  DO i=max(xs,ids),min(xe,ide-1)
-     grid%ht(i,j) = mtn_ht * 0.25 * &
-               ( 1. + COS ( 2*pi/(xe-xs) * ( i-xs ) + pi ) ) * &
-               ( 1. + COS ( 2*pi/(ye-ys) * ( j-ys ) + pi ) )
-  ENDDO
-  ENDDO
-#endif
-#ifdef EW_RIDGE
-  DO j=max(ys,jds),min(ye,jde-1)
-  DO i=ids,ide
-     grid%ht(i,j) = mtn_ht * 0.50 * &
-               ( 1. + COS ( 2*pi/(ye-ys) * ( j-ys ) + pi ) )
-  ENDDO
-  ENDDO
-#endif
-#ifdef NS_RIDGE
-  DO j=jds,jde
-  DO i=max(xs,ids),min(xe,ide-1)
-     grid%ht(i,j) = mtn_ht * 0.50 * &
-               ( 1. + COS ( 2*pi/(xe-xs) * ( i-xs ) + pi ) )
-  ENDDO
-  ENDDO
-#endif
-  DO j=jts,jte
-  DO i=its,ite
-    grid%phb(i,1,j) = g * grid%ht(i,j)
-    grid%ph0(i,1,j) = g * grid%ht(i,j)
   ENDDO
   ENDDO
 
@@ -360,16 +369,14 @@ CONTAINS
   ENDDO
   ENDDO
 
-  IF ( wrf_dm_on_monitor() ) THEN
-    write(6,*) ' ptop is ',grid%p_top
-    write(6,*) ' base state grid%mub(1,1), p_surf is ',grid%mub(1,1),grid%mub(1,1)+grid%p_top
-  ENDIF
+  write(6,*) ' ptop is ',grid%p_top
+  write(6,*) ' base state grid%mub(1,1), p_surf is ',grid%mub(1,1),grid%mub(1,1)+grid%p_top
 
 !  calculate full state for each column - this includes moisture.
 
   write(6,*) ' getting moist sounding for full state '
   dry_sounding = .false.
-  CALL get_sounding( zk, p_in, pd_in, theta, rho, u, v, qv, dry_sounding, nl_max, nl_in, theta_surf )
+  CALL get_sounding( zk, p_in, pd_in, theta, rho, u, v, qv, dry_sounding, nl_max, nl_in, theta_surf ) 
 
   DO J = jts, min(jde-1,jte)
   DO I = its, min(ide-1,ite)
@@ -444,58 +451,33 @@ CONTAINS
       grid%ph0(i,k,j) = grid%ph_1(i,k,j) + grid%phb(i,k,j)
     ENDDO
 
-    IF ( wrf_dm_on_monitor() ) THEN
     if((i==2) .and. (j==2)) then
      write(6,*) ' grid%ph_1 calc ',grid%ph_1(2,1,2),grid%ph_1(2,2,2),&
                               grid%mu_1(2,2)+grid%mub(2,2),grid%mu_1(2,2), &
                               grid%alb(2,1,2),grid%al(1,2,1),grid%rdnw(1)
     endif
-    ENDIF
 
   ENDDO
   ENDDO
 
-!#if 0
 
-!  thermal perturbation to kick off convection
-
+!  random low-level thermal perturbation to kick off convection
+	call random_seed
   write(6,*) ' nxc, nyc for perturbation ',nxc,nyc
   write(6,*) ' delt for perturbation ',delt
 
-! For LES, change the initial random perturbations
-! For 2D test, call randx outside I-loop
-! For 3D runs, call randx inside both I-J loops
-
   DO J = jts, min(jde-1,jte)
-!   yrad = config_flags%dy*float(j-nyc)/10000.
-    yrad = 0.
     DO I = its, min(ide-1,ite)
-!     xrad = config_flags%dx*float(i-nxc)/10000.
-      xrad = 0.
-      call random_number (randx)
-      randx = randx - 0.5
-!     DO K = 1, kte-1
-      DO K = 1, 4 
+      DO K = 1, 10
 
-!  No bubbles for LES!
-!  put in preturbation theta (bubble) and recalc density.  note,
-!  the mass in the column is not changing, so when theta changes,
-!  we recompute density and geopotential
-
-!       zrad = 0.5*(grid%ph_1(i,k,j)+grid%ph_1(i,k+1,j)  &
-!                  +grid%phb(i,k,j)+grid%phb(i,k+1,j))/g
-!       zrad = (zrad-1500.)/1500.
-        zrad = 0.
-        RAD=SQRT(xrad*xrad+yrad*yrad+zrad*zrad)
-        IF(RAD <= 1.) THEN
-!          grid%t_1(i,k,j)=grid%t_1(i,k,j)+delt*COS(.5*PI*RAD)**2
-           grid%t_1(i,k,j)=grid%t_1(i,k,j)+ 0.1 *randx
+	call RANDOM_NUMBER(rnd)
+	  grid%t_1(i,k,j)=grid%t_1(i,k,j)+delt*(rnd-0.5)
+         !  grid%t_1(i,k,j)=grid%t_1(i,k,j)+delt*COS(.5*PI*RAD)**2
            grid%t_2(i,k,j)=grid%t_1(i,k,j)
            qvf = 1. + rvovrd*moist(i,k,j,P_QV)
            grid%alt(i,k,j) = (r_d/p1000mb)*(grid%t_1(i,k,j)+t0)*qvf* &
                         (((grid%p(i,k,j)+grid%pb(i,k,j))/p1000mb)**cvpm)
            grid%al(i,k,j) = grid%alt(i,k,j) - grid%alb(i,k,j)
-        ENDIF
       ENDDO
 
 !  rebalance hydrostatically
@@ -512,9 +494,6 @@ CONTAINS
     ENDDO
   ENDDO
 
-!#endif
-
-   IF ( wrf_dm_on_monitor() ) THEN
    write(6,*) ' grid%mu_1 from comp ', grid%mu_1(1,1)
    write(6,*) ' full state sounding from comp, ph, grid%p, grid%al, grid%t_1, qv '
    do k=1,kde-1
@@ -529,7 +508,6 @@ CONTAINS
                                       grid%p(1,k,1), grid%al(1,k,1), &
                                       grid%t_1(1,k,1), moist(1,k,1,P_QV)
    enddo
-   ENDIF
 
 ! interp v
 
@@ -543,9 +521,10 @@ CONTAINS
     ELSE
       z_at_v = 0.5*(grid%phb(i,1,j)+grid%phb(i,1,j-1))/g
     END IF
+
     p_surf = interp_0( p_in, zk, z_at_v, nl_in )
 
-    DO K = 1, kte-1
+    DO K = 1, kte
       p_level = grid%znu(k)*(p_surf - grid%p_top) + grid%p_top
       grid%v_1(i,k,j) = interp_0( v, p_in, p_level, nl_in )
       grid%v_2(i,k,j) = grid%v_1(i,k,j)
@@ -569,7 +548,7 @@ CONTAINS
 
     p_surf = interp_0( p_in, zk, z_at_u, nl_in )
 
-    DO K = 1, kte-1
+    DO K = 1, kte
       p_level = grid%znu(k)*(p_surf - grid%p_top) + grid%p_top
       grid%u_1(i,k,j) = interp_0( u, p_in, p_level, nl_in )
       grid%u_2(i,k,j) = grid%u_1(i,k,j)
@@ -595,11 +574,18 @@ CONTAINS
   DO K = kts, kte-1
   DO I = its, min(ide-1,ite)
     grid%h_diabatic(i,k,j) = 0.
+!   if(k.eq.kts)tracer(i,k,j,p_tr17_1)=1.
+!   if(k.eq.kts.and.grid%xland(i,j).lt.1.5)tracer(i,k,j,p_tr17_2)=1.
+!   if(k.eq.kts.and.grid%xland(i,j).gt.1.5)tracer(i,k,j,p_tr17_3)=1.
+!   if(k.le.5)tracer(i,k,j,p_tr17_4)=1.
+!   if(k.le.5.and.grid%xland(i,j).lt.1.5)tracer(i,k,j,p_tr17_5)=1.
+!   if(k.le.5.and.grid%xland(i,j).gt.1.5)tracer(i,k,j,p_tr17_6)=1.
+!   if(k.le.10)tracer(i,k,j,p_tr17_7)=1.
+!   if(k.le.10.and.k.gt.5)tracer(i,k,j,p_tr17_8)=1.
   ENDDO
   ENDDO
   ENDDO
 
-  IF ( wrf_dm_on_monitor() ) THEN
   DO k=1,kte-1
     grid%t_base(k) = grid%t_1(1,k,1)
     grid%qv_base(k) = moist(1,k,1,P_QV)
@@ -607,34 +593,15 @@ CONTAINS
     grid%v_base(k) = grid%v_1(1,k,1)
     grid%z_base(k) = 0.5*(grid%phb(1,k,1)+grid%phb(1,k+1,1)+grid%ph_1(1,k,1)+grid%ph_1(1,k+1,1))/g
   ENDDO
-  ENDIF
-  CALL wrf_dm_bcast_real( grid%t_base , kte )
-  CALL wrf_dm_bcast_real( grid%qv_base , kte )
-  CALL wrf_dm_bcast_real( grid%u_base , kte )
-  CALL wrf_dm_bcast_real( grid%v_base , kte )
-  CALL wrf_dm_bcast_real( grid%z_base , kte )
 
   DO J = jts, min(jde-1,jte)
   DO I = its, min(ide-1,ite)
-     thtmp   = grid%t_2(i,1,j)+t0
-     ptmp    = grid%p(i,1,j)+grid%pb(i,1,j)
-     temp(1) = thtmp * (ptmp/p1000mb)**rcp
-     thtmp   = grid%t_2(i,2,j)+t0
-     ptmp    = grid%p(i,2,j)+grid%pb(i,2,j)
-     temp(2) = thtmp * (ptmp/p1000mb)**rcp
-     thtmp   = grid%t_2(i,3,j)+t0
-     ptmp    = grid%p(i,3,j)+grid%pb(i,3,j)
-     temp(3) = thtmp * (ptmp/p1000mb)**rcp
+         grid%tsk(i,j) = theta_surf * (p_surf/p1000mb)**rcp
+         grid%tmn(i,j) = grid%tsk(i,j)
+  ENDDO
+  ENDDO
 
-!    For LES-CBL, add 5 degrees to the surface temperature!
-!      - Removed in 3.6
-!
-!    grid%tsk(I,J)=grid%cf1*temp(1)+grid%cf2*temp(2)+grid%cf3*temp(3)
-!    grid%tsk(I,J)=grid%cf1*temp(1)+grid%cf2*temp(2)+grid%cf3*temp(3)+5.
-     grid%tsk(I,J)=theta_surf * (p_surf/p1000mb)**rcp
-     grid%tmn(I,J)=grid%tsk(I,J)-0.5
-  ENDDO
-  ENDDO
+  RETURN
 
  END SUBROUTINE init_domain_rk
 
@@ -675,7 +642,7 @@ CONTAINS
       logical dry
 
       integer n
-      parameter(n=1000)
+      parameter(n=3000)
       logical debug
       parameter( debug = .true.)
 
@@ -777,7 +744,7 @@ CONTAINS
 
 
         do k=1,nl
-
+! For the convrad case, we can hard-wire the initial (geostrophic) winds and qv fields 
           zk(k) = h_input(k)
           p(k) = pm_input(k)
           p_dry(k) = p_input(k)

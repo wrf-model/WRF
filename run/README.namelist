@@ -725,6 +725,8 @@ Namelist variables for controlling the adaptive time step option:
                                                       and tke_heat_flux in vertical diffusion
                                                   2 = use drag from sf_sfclay_physics and heat flux from
                                                       tke_heat_flux with bl_pbl_physics=0
+ ideal_xland                         = 1,       ; sets XLAND (1=land,2=water) for ideal cases with no input land-use
+                                                      run-time switch for wrf.exe physics_init (default 1 as before)
  ifsnow                              = 0,	; snow-cover effects
                                                   (only works for sf_surface_physics = 1)
                                                   1 = with snow-cover effect

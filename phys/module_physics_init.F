@@ -788,7 +788,7 @@ integer myproc
    IF ( .NOT. moved ) THEN
    DO j=jts,jtf
    DO i=its,itf
-      XLAND(i,j)=1.
+      XLAND(i,j)=float(config_flags%ideal_xland)
       GSW(i,j)=0.
       GLW(i,j)=0.
 !-- initialize ust to a small value

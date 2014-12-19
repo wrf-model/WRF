@@ -237,6 +237,7 @@ How to compile and run?
       compile em_quarter_ss
       compile em_real
       compile em_seabreeze2d_x
+      compile em_convrad
       compile em_squall2d_x
       compile em_squall2d_y
       compile em_scm_xy

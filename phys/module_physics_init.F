@@ -453,7 +453,7 @@ CONTAINS
              F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY
    REAL, DIMENSION(:), INTENT(INOUT)   :: mp_restart_state,tbpvs_state,tbpvs0_state
    LOGICAL,  INTENT(IN)  :: allowed_to_read, moved
-   REAL, INTENT(IN) :: ccn_conc ! RAS
+   REAL, INTENT(INOUT) :: ccn_conc ! RAS
 
 
 ! ocean mixed layer
@@ -716,13 +716,18 @@ integer myproc
 !..Added G. Thompson to determine if we will compute and pass radiative
 !.. effective radii of cloud water, ice, and snow.  Currently ONLY properly
 !.. connected if using Physics options Thompson-MP and RRTMG-LW/SW.
+! 10/2014: T. Mansell added support for NSSL_2MOM options
    has_reqc = 0
    has_reqi = 0
    has_reqs = 0
    if (config_flags%ra_lw_physics .eq. RRTMG_LWSCHEME .and. &
        config_flags%ra_sw_physics .eq. RRTMG_SWSCHEME .and. &
         (config_flags%mp_physics  .eq. THOMPSON .or.        &
-         config_flags%mp_physics  .eq. THOMPSONAERO) ) then
+         config_flags%mp_physics  .eq. THOMPSONAERO         &
+         .or. config_flags%mp_physics  .eq. NSSL_2MOM .or.       &
+         config_flags%mp_physics  .eq. NSSL_2MOMG .or.      &
+         config_flags%mp_physics  .eq. NSSL_2MOMCCN         &
+         ) ) then
       has_reqc = 1
       has_reqi = 1
       has_reqs = 1
@@ -3419,7 +3424,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                                   F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY
    REAL , DIMENSION(:) ,INTENT(INOUT)  :: mp_restart_state,tbpvs_state,tbpvs0_state
    LOGICAL , INTENT(IN)  :: allowed_to_read
-   REAL, INTENT(IN) :: ccn_conc ! RAS
+   REAL, INTENT(INOUT) :: ccn_conc ! RAS
    REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT):: qnwfa2d                       !  G. Thompson
    REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(IN):: z_at_q                   !  G. Thompson
    INTEGER, INTENT(IN) :: num_sc                                               !  G. Thompson
@@ -3531,9 +3536,12 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
      CASE (NSSL_1MOM)
          CALL nssl_2mom_init(ims,ime, jms,jme, kms,kme,nssl_params,ipctmp=0,mixphase=0,ihvol=0)
      CASE (NSSL_2MOM)
-         CALL nssl_2mom_init(ims,ime, jms,jme, kms,kme,nssl_params,ipctmp=5,mixphase=0,ihvol=0)
+         CALL nssl_2mom_init(ims,ime, jms,jme, kms,kme,nssl_params,ipctmp=5,mixphase=0,ihvol=1)
+     CASE (NSSL_2MOMG)
+         CALL nssl_2mom_init(ims,ime, jms,jme, kms,kme,nssl_params,ipctmp=5,mixphase=0,ihvol=-1) ! turn off hail
      CASE (NSSL_2MOMCCN)
-         CALL nssl_2mom_init(ims,ime, jms,jme, kms,kme,nssl_params,ipctmp=5,mixphase=0,ihvol=0)
+         ccn_conc = nssl_cccn/1.225 ! set this to have correct boundary conditions
+         CALL nssl_2mom_init(ims,ime, jms,jme, kms,kme,nssl_params,ipctmp=5,mixphase=0,ihvol=1)
 !     CASE (NSSL_3MOM)
 !         CALL nssl_2mom_init(ims,ime, jms,jme, kms,kme,nssl_params,ipctmp=8,mixphase=0,ihvol=1)
      CASE (CAMMGMPSCHEME) ! CAM5's microphysics

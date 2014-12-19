@@ -682,6 +682,7 @@ state   real    dfi_qnh        ijkft   dfi_moist       1         -     r      "Q
 #                                               
 # Other Scalars
 state   real    -              ijkftb  scalar      1         -     -    -
+state   real    qndrop         ikjftb  scalar      1         -     i0rhusdf=(bdy_interp:dt)       "QNDROP"        "Droplet number mixing ratio"        "# kg-1"
 state   real    qni            ijkftb  scalar      1         -     i01rusdf=(bdy_interp:dt)       "QNI"              "Ice Number concentration" "# kg(-1)"
 state   real    qt             ikjftb  scalar      1         -     i0rhusdf=(bdy_interp:dt)       "QT"               "Total condensate mixing ratio"      "kg kg-1"
 state   real    qns            ijkftb  scalar      1         -     i01rusdf=(bdy_interp:dt)       "QNS"              "Snow Number concentration" "# kg(-1)"
@@ -695,6 +696,7 @@ state   real    qnwfa          ikjftb  scalar      1         -     i0rhusdf=(bdy
 state   real    qnifa          ikjftb  scalar      1         -     i0rhusdf=(bdy_interp:dt)       "QNIFA"            "ice-friendly aerosol number con"   "# kg(-1)"
 
 state   real    qvolg          ikjftb  scalar      1         -     i0rhusdf=(bdy_interp:dt)       "QVGRAUPEL"        "Graupel Particle Volume" "m(3) kg(-1)"
+state   real    qvolh          ikjftb  scalar      1         -     i0rhusdf=(bdy_interp:dt)       "QVHAIL"        "Hail Particle Volume" "m(3) kg(-1)"
 
 state   real    -              ijkftb  dfi_scalar      1         -     -   -
 state   real    dfi_qndrop     ijkftb  dfi_scalar      1         -     \
@@ -1431,6 +1433,11 @@ package   morr_two_moment  mp_physics==10            -             moist:qv,qc,q
 package   sbu_ylinscheme    mp_physics==13           -             moist:qv,qc,qr,qi,qs
 package   wdm5scheme    mp_physics==14               -             moist:qv,qc,qr,qi,qs;scalar:qnn,qnc,qnr
 package   wdm6scheme    mp_physics==16               -             moist:qv,qc,qr,qi,qs,qg;scalar:qnn,qnc,qnr
+package   nssl_2mom     mp_physics==17                -            moist:qv,qc,qr,qi,qs,qg,qh;scalar:qndrop,qnr,qni,qns,qng,qnh,qvolg,qvolh;state:re_cloud,re_ice,re_snow
+package   nssl_2momccn  mp_physics==18                -            moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnn,qndrop,qnr,qni,qns,qng,qnh,qvolg,qvolh;state:re_cloud,re_ice,re_snow
+package   nssl_1mom     mp_physics==19               -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qvolg
+package   nssl_1momlfo  mp_physics==21               -             moist:qv,qc,qr,qi,qs,qg
+package   nssl_2momg    mp_physics==22                -            moist:qv,qc,qr,qi,qs,qg;scalar:qndrop,qnr,qni,qns,qng,qvolg;state:re_cloud,re_ice,re_snow
 package   etamp_hwrf    mp_physics==85               -             moist:qv,qc,qr,qi,qs
 package   etampold      mp_physics==95               -             moist:qv,qc,qr,qs
 package   radar_refl    compute_radar_ref==1         -             state:refl_10cm,refd_max

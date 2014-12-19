@@ -101,6 +101,23 @@
       END IF
 #endif
 
+!-----------------------------------------------------------------------
+! Check that NSSL microphysics is not allowed for WRF-NMM run 
+!-----------------------------------------------------------------------
+#if (NMM_CORE == 1) || (HWRF == 1)
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec % mp_physics(i) == nssl_2mom .OR. &
+              model_config_rec % mp_physics(i) == nssl_2momccn .OR. & 
+              model_config_rec % mp_physics(i) == nssl_1mom .OR. & 
+              model_config_rec % mp_physics(i) == nssl_1momlfo .OR. & 
+              model_config_rec % mp_physics(i) == nssl_2momg  ) THEN 
+            wrf_err_message = '--- ERROR: NSSL scheme cannot run with WRF-NMM '
+            CALL wrf_message ( wrf_err_message )
+            wrf_err_message = '--- Fix mp_physics in namelist.input '
+            CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
+         END IF
+      ENDDO
+#endif
 
 !-----------------------------------------------------------------------
 ! Check that all values of sf_surface_physics are the same for all domains
@@ -978,6 +995,7 @@
          IF ( ( model_config_rec % mp_physics(i) .EQ. MILBRANDT2MOM ) .OR. &
 #if (EM_CORE == 1)
               ( model_config_rec % mp_physics(i) .EQ. NSSL_2MOM     ) .OR. &
+              ( model_config_rec % mp_physics(i) .EQ. NSSL_2MOMG    ) .OR. &
               ( model_config_rec % mp_physics(i) .EQ. NSSL_2MOMCCN  ) .OR. &
               ( model_config_rec % mp_physics(i) .EQ. NSSL_1MOM     ) .OR. &
               ( model_config_rec % mp_physics(i) .EQ. NSSL_1MOMLFO  ) .OR. &

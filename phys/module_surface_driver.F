@@ -3143,7 +3143,6 @@ CONTAINS
                                                       .TRUE. ) THEN
           IF ( FRACTIONAL_SEAICE == 1 ) THEN
 
-
              IF ( isisfc ) THEN
                 !
                 ! use surface layer routine values from the ice portion of grid point

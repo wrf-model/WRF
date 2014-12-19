@@ -446,6 +446,8 @@ Namelist variables for controlling the adaptive time step option:
                                      = 16, WDM 6-class scheme
                                      = 17, NSSL 2-moment 4-ice scheme (steady background CCN)
                                      = 18, NSSL 2-moment 4-ice scheme with predicted CCN (better for idealized than real cases)
+                                       ; to set a global CCN value, use
+                                       nssl_cccn  = 0.7e9   ; CCN for NSSL scheme (18). Also sets same value to ccn_conc for mp_physics=18
                                      = 19, NSSL 1-moment (7 class: qv,qc,qr,qi,qs,qg,qh; predicts graupel density)
                                      = 21, NSSL 1-moment, (6-class), very similar to Gilmore et al. 2004
                                            Can set intercepts and particle densities in physics namelist, e.g., nssl_cnor
@@ -492,6 +494,8 @@ Namelist variables for controlling the adaptive time step option:
                                                  default value = 0
                                                  gsfcgce_hail is ignored if gsfcgce_2ice is set to 1 or 2.
  hail_opt                            = 0       ; hail switch for WDM6 and Morrison schemes: 0 - off, 1 - on (new in 3.6.1)
+ progn                               = 0       ; switch to use mix-activate scheme (Only for Morrison, WDM6, WDM5, 
+                                                 and NSSL_2MOMCCN/NSSL_2MOM
  ccn_conc                            = 1.E8    ; CCN concentration, used by WDM schemes (new in 3.6.1)
 
  no_mp_heating                       = 0       ; normal
@@ -1138,6 +1142,8 @@ The following are for observation nudging:
                                                       not for real-data cases)
                                                   3 = with w-Rayleigh damping (dampcoef inverse time scale [1/s] e.g. .05; 
                                                       for real-data cases)
+ c_s                                 = 0.25     ; Smagorinsky coeff
+ c_k                                 = 0.15     ; TKE coeff
  diff_6th_opt                        = 0,       ; 6th-order numerical diffusion
                                                   0 = no 6th-order diffusion (default)
                                                   1 = 6th-order numerical diffusion (not recommended)

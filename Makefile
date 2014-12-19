@@ -403,6 +403,13 @@ em_real : wrf
 		/bin/rm -f namelist.input ; cp ../test/em_real/namelist.input . )
 	@echo "build started:   $(START_OF_COMPILE)"
 	@echo "build completed:" `date`
+	@if test -e main/wrf.exe ; then \
+		ls -ls main/*.exe ; \
+	else \
+		echo "================================================================" ; \
+		echo "---> No executables built, look for errors in the build log <---" ; \
+		echo "================================================================" ; \
+	fi
 
 
 em_hill2d_x : wrf

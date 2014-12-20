@@ -141,6 +141,7 @@ CONTAINS
 ! !USES:
    USE module_state_description, ONLY : RRTMSCHEME, GFDLLWSCHEME        &
                                        ,RRTMG_LWSCHEME, RRTMG_SWSCHEME  &
+                                       ,RRTMG_LWSCHEME_FAST, RRTMG_SWSCHEME_FAST  &
                                        ,SWRADSCHEME, GSFCSWSCHEME       &
                                        ,GFDLSWSCHEME, CAMLWSCHEME, CAMSWSCHEME &
                                        ,HELDSUAREZ                      &
@@ -166,6 +167,8 @@ CONTAINS
    USE module_ra_rrtm       , ONLY : rrtmlwrad
    USE module_ra_rrtmg_lw   , ONLY : rrtmg_lwrad
    USE module_ra_rrtmg_sw   , ONLY : rrtmg_swrad
+   USE module_ra_rrtmg_lwf  , ONLY : rrtmg_lwrad_fast
+   USE module_ra_rrtmg_swf  , ONLY : rrtmg_swrad_fast
    USE module_ra_cam        , ONLY : camrad
    USE module_ra_gfdleta    , ONLY : etara
 #ifdef HWRF
@@ -816,7 +819,7 @@ CONTAINS
               allocate(ssaaer_sw(ims:ime, kms:kme, jms:jme, 1:11))
               allocate(asyaer_sw(ims:ime, kms:kme, jms:jme, 1:11))
 
-           case(RRTMG_SWSCHEME)
+           case(RRTMG_SWSCHEME,RRTMG_SWSCHEME_FAST)
               allocate(tauaer_sw(ims:ime, kms:kme, jms:jme, 1:14))
               allocate(ssaaer_sw(ims:ime, kms:kme, jms:jme, 1:14))
               allocate(asyaer_sw(ims:ime, kms:kme, jms:jme, 1:14))
@@ -830,7 +833,7 @@ CONTAINS
               allocate(ssaaer_sw(1, 1, 1, 1))
               allocate(asyaer_sw(1, 1, 1, 1))
 
-           case(RRTMG_SWSCHEME)
+           case(RRTMG_SWSCHEME,RRTMG_SWSCHEME_FAST)
               allocate(tauaer_sw(1, 1, 1, 1))
               allocate(ssaaer_sw(1, 1, 1, 1))
               allocate(asyaer_sw(1, 1, 1, 1))
@@ -1291,6 +1294,60 @@ CONTAINS
                 CALL wrf_error_fatal ( 'arguments not present for calling cam radiation' )
              ENDIF
 
+        CASE (RRTMG_LWSCHEME_FAST)
+             CALL wrf_debug (100, 'CALL rrtmg_lw')
+
+             CALL RRTMG_LWRAD_FAST(                                 &
+                  RTHRATENLW=RTHRATEN,                              &
+                  LWUPT=LWUPT,LWUPTC=LWUPTC,                        &
+                  LWDNT=LWDNT,LWDNTC=LWDNTC,                        &
+                  LWUPB=LWUPB,LWUPBC=LWUPBC,                        &
+                  LWDNB=LWDNB,LWDNBC=LWDNBC,                        &
+                  GLW=GLW,OLR=RLWTOA,LWCF=LWCF,                     &
+                  EMISS=EMISS,                                      &
+                  P8W=p8w,P3D=p,PI3D=pi,DZ8W=dz8w,TSK=tsk,T3D=t,    &
+                  T8W=t8w,RHO3D=rho,R=R_d,G=G,                      &
+                  ICLOUD=icloud,WARM_RAIN=warm_rain,CLDFRA3D=CLDFRA,&
+#if (EM_CORE == 1)
+                  LRADIUS=lradius, IRADIUS=iradius,                 &
+#endif
+                  IS_CAMMGMP_USED=is_cammgmp_used,                  &
+
+!ckay
+!                 CLDFRA_KF3D=cldfra_KF,QC_KF3D=qc_KF,QI_KF3D=qi_KF,&
+                  F_ICE_PHY=F_ICE_PHY,F_RAIN_PHY=F_RAIN_PHY,        &
+                  XLAND=XLAND,XICE=XICE,SNOW=SNOW,                  &
+                  QV3D=QV,QC3D=QC,QR3D=QR,                          &
+                  QI3D=QI,QS3D=QS,QG3D=QG,                          &
+                  O3INPUT=O3INPUT,O33D=O3RAD,                       &
+                  F_QV=F_QV,F_QC=F_QC,F_QR=F_QR,                    &
+                  F_QI=F_QI,F_QS=F_QS,F_QG=F_QG,                    &
+                  RE_CLOUD=re_cloud,RE_ICE=re_ice,RE_SNOW=re_snow,  & ! G. Thompson
+                  has_reqc=has_reqc,has_reqi=has_reqi,has_reqs=has_reqs, & ! G. Thompson
+#if ( WRF_CHEM == 1 )
+                  TAUAERLW1=tauaerlw1,TAUAERLW2=tauaerlw2,          & ! jcb
+                  TAUAERLW3=tauaerlw3,TAUAERLW4=tauaerlw4,          & ! jcb
+                  TAUAERLW5=tauaerlw5,TAUAERLW6=tauaerlw6,          & ! jcb
+                  TAUAERLW7=tauaerlw7,TAUAERLW8=tauaerlw8,          & ! jcb
+                  TAUAERLW9=tauaerlw9,TAUAERLW10=tauaerlw10,          & ! jcb
+                  TAUAERLW11=tauaerlw11,TAUAERLW12=tauaerlw12,          & ! jcb
+                  TAUAERLW13=tauaerlw13,TAUAERLW14=tauaerlw14,          & ! jcb
+                  TAUAERLW15=tauaerlw15,TAUAERLW16=tauaerlw16,          & ! jcb
+                  aer_ra_feedback=aer_ra_feedback,                  &
+!jdfcz            progn=progn,prescribe=prescribe,                   &
+                  progn=progn,                                       &
+#endif
+                  QNDROP3D=qndrop,F_QNDROP=f_qndrop,                &
+!ccc Added for time-varying trace gases.
+                  YR=YR,JULIAN=JULIAN,                              &
+!ccc
+                  IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde,&
+                  IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme,&
+                  ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte,&
+                  LWUPFLX=LWUPFLX,LWUPFLXC=LWUPFLXC,                &
+                  LWDNFLX=LWDNFLX,LWDNFLXC=LWDNFLXC                 &
+                                                                    )
+
         CASE (RRTMG_LWSCHEME)
              CALL wrf_debug (100, 'CALL rrtmg_lw')
 
@@ -1447,7 +1504,7 @@ CONTAINS
               end do
            end do
 
-        case(RRTMG_SWSCHEME)
+        case(RRTMG_SWSCHEME,RRTMG_SWSCHEME_FAST)
            call wrf_debug(100, 'call calc_aerosol_rrtmg_sw')
            call calc_aerosol_rrtmg_sw(ht,dz8w,p,t,qv,aer_type,aer_aod550_opt,aer_angexp_opt,    &
                                       aer_ssa_opt,aer_asy_opt,aer_aod550_val,aer_angexp_val,    &
@@ -1637,6 +1694,74 @@ CONTAINS
              ENDDO
              ENDDO
 
+        CASE (RRTMG_SWSCHEME_FAST)
+             CALL wrf_debug(100, 'CALL rrtmg_sw_fast')
+             CALL RRTMG_SWRAD_FAST(                                    &
+                     RTHRATENSW=RTHRATENSW,                            &
+                     SWUPT=SWUPT,SWUPTC=SWUPTC,                        &
+                     SWDNT=SWDNT,SWDNTC=SWDNTC,                        &
+                     SWUPB=SWUPB,SWUPBC=SWUPBC,                        &
+                     SWDNB=SWDNB,SWDNBC=SWDNBC,                        &
+                     SWCF=SWCF,GSW=GSW,                                &
+                     XTIME=XTIME,GMT=GMT,XLAT=XLAT,XLONG=XLONG,        &
+                     RADT=RADT,DEGRAD=DEGRAD,DECLIN=DECLIN,            &
+                     COSZR=COSZR,JULDAY=JULDAY,SOLCON=SOLCON,          &
+                     ALBEDO=ALBEDO,t3d=t,t8w=t8w,TSK=TSK,              &
+                     p3d=p,p8w=p8w,pi3d=pi,rho3d=rho,                  &
+                     dz8w=dz8w,CLDFRA3D=CLDFRA,                        &
+#if (EM_CORE == 1)
+                     LRADIUS=lradius, IRADIUS=iradius,                 &
+#endif
+                     IS_CAMMGMP_USED=is_cammgmp_used,                  &
+                     R=R_D,G=G,              &
+!ckay
+!                    CLDFRA_KF3D=cldfra_KF,QC_KF3D=qc_KF,QI_KF3D=qi_KF,&
+                     ICLOUD=icloud,WARM_RAIN=warm_rain,                &
+                     F_ICE_PHY=F_ICE_PHY,F_RAIN_PHY=F_RAIN_PHY,        &
+                     XLAND=XLAND,XICE=XICE,SNOW=SNOW,                  &
+                     QV3D=qv,QC3D=qc,QR3D=qr,                          &
+                     QI3D=qi,QS3D=qs,QG3D=qg,                          &
+                     O3INPUT=O3INPUT,O33D=O3RAD,                       &
+                     AER_OPT=AER_OPT,aerod=aerod,no_src=no_src_types,  &
+                     ALSWVISDIR=alswvisdir ,ALSWVISDIF=alswvisdif,     &  !Zhenxin ssib alb comp (06/2010)
+                     ALSWNIRDIR=alswnirdir ,ALSWNIRDIF=alswnirdif,     &  !Zhenxin ssib alb comp (06/2010)
+                     SWVISDIR=swvisdir ,SWVISDIF=swvisdif,             &  !Zhenxin ssib swr comp (06/2010)
+                     SWNIRDIR=swnirdir ,SWNIRDIF=swnirdif,             &  !Zhenxin ssib swr comp (06/2010)
+                     SF_SURFACE_PHYSICS=sf_surface_physics,            &  !Zhenxin ssib sw_phy   (06/2010)
+                     F_QV=f_qv,F_QC=f_qc,F_QR=f_qr,                    &
+                     F_QI=f_qi,F_QS=f_qs,F_QG=f_qg,                    &
+                     RE_CLOUD=re_cloud,RE_ICE=re_ice,RE_SNOW=re_snow,  & ! G. Thompson
+                     has_reqc=has_reqc,has_reqi=has_reqi,has_reqs=has_reqs, & ! G. Thompson
+#if ( WRF_CHEM == 1 )
+                     TAUAER300=tauaer300,TAUAER400=tauaer400,          & ! jcb
+                     TAUAER600=tauaer600,TAUAER999=tauaer999,          & ! jcb
+                     GAER300=gaer300,GAER400=gaer400,                  & ! jcb
+                     GAER600=gaer600,GAER999=gaer999,                  & ! jcb
+                     WAER300=waer300,WAER400=waer400,                  & ! jcb
+                     WAER600=waer600,WAER999=waer999,                  & ! jcb
+                     aer_ra_feedback=aer_ra_feedback,                  &
+!jdfcz               progn=progn,prescribe=prescribe,                  &
+                     progn=progn,                                      &
+#endif
+                     QNDROP3D=qndrop,F_QNDROP=f_qndrop,                &
+                     IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde,&
+                     IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme,&
+                     ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte,&
+                     SWUPFLX=SWUPFLX,SWUPFLXC=SWUPFLXC,                &
+                     SWDNFLX=SWDNFLX,SWDNFLXC=SWDNFLXC,                &
+                     tauaer3d_sw=tauaer_sw,                             & ! jararias 2013/11
+                     ssaaer3d_sw=ssaaer_sw,                             & ! jararias 2013/11
+                     asyaer3d_sw=asyaer_sw,                             & ! jararias 2013/11
+                     swddir=swddir,swddni=swddni,swddif=swddif,         & ! jararias 2013/08/10
+                     xcoszen=coszen,julian=julian                       ) ! jararias 2013/08/14
+
+             DO j=jts,jte
+             DO k=kts,kte
+             DO i=its,ite
+                RTHRATEN(I,K,J)=RTHRATEN(I,K,J)+RTHRATENSW(I,K,J)
+             ENDDO
+             ENDDO
+             ENDDO
         CASE (RRTMG_SWSCHEME)
              CALL wrf_debug(100, 'CALL rrtmg_sw')
              CALL RRTMG_SWRAD(                                         &
@@ -1825,72 +1950,75 @@ CONTAINS
 ! jararias, 14/08/2013
      ! surface direct and diffuse SW fluxes computation. Only for schemes other than RRTMG and Goddard
      ! Backup method in case sw scheme in use does not provide surface SW direct and diffuse irradiances
-     if ((sw_physics .ne. rrtmg_swscheme) .and. (sw_physics .ne. goddardswscheme)) then
-        do j=jts,jte
-           do i=its,ite
-              if (coszen(i,j).gt.1e-3) then
+     IF ((sw_physics .NE. RRTMG_SWSCHEME) .AND. (sw_physics .NE.  RRTMG_SWSCHEME_FAST) &
+           .AND. (sw_physics .ne. GODDARDSWSCHEME)) THEN
+        DO j=jts,jte
+           DO i=its,ite
+              IF (coszen(i,j).GT.1e-3) THEN
                  ioh=solcon*coszen(i,j) ! TOA irradiance
                  kt=swdown(i,j)/max(ioh,1e-3) ! clearness index
-                 ! Optical air mass: Rigollier et al. (2000) doi: 10.1016/S0038-092X(99)00055-9
+                 ! Optical air mass: Rigollier et al. (2000) doi:
+                 ! 10.1016/S0038-092X(99)00055-9
                  airmass=exp(-ht(i,j)/8434.5)/(coszen(i,j)+ &
                         0.50572*(asin(coszen(i,j))*57.295779513082323+6.07995)**(-1.6364))
-                 ! kt correction for air-mass at large sza: Perez et al. (1990) doi: 10.1016/0038-092X(90)90036-C
+                 ! kt correction for air-mass at large sza: Perez et al. (1990)
+                 ! doi: 10.1016/0038-092X(90)90036-C
                  kt=kt/(0.1+1.031*exp(-1.4/(0.9+(9.4/max(airmass,1e-3)))))
-                 ! Diffuse fraction: Ruiz-Arias et al. (2010) (Eq 33) doi: 10.1016/j.enconman.2009.11.024
+                 ! Diffuse fraction: Ruiz-Arias et al. (2010) (Eq 33) doi:
+                 ! 10.1016/j.enconman.2009.11.024
                  kd=0.952-1.041*exp(-exp(2.300-4.702*kt))
                  swddif(i,j)=kd*swdown(i,j)
                  swddir(i,j)=(1.-kd)*swdown(i,j)
                  swddni(i,j)=swddir(i,j)/max(coszen(i,j),1e-4)
-              end if
-           end do
-        end do
-     end if
+              ENDIF
+           ENDDO
+        ENDDO
+     ENDIF
 
+     IF ( PRESENT( diffuse_frac ) ) THEN 
+         DO j=jts,jte
+         DO i=its,ite
+           if (coszen(i,j).gt.1e-3) then
+              diffuse_frac(i,j) = swddif(i,j)/swdown(i,j)
+           else
+              diffuse_frac(i,j) = 0.
+           endif
+         ENDDO
+         ENDDO
+      ENDIF
 
-       IF ( PRESENT( diffuse_frac ) ) THEN 
-           DO j=jts,jte
-           DO i=its,ite
-             if (coszen(i,j).gt.1e-3) then
-                diffuse_frac(i,j) = swddif(i,j)/swdown(i,j)
-             else
-                diffuse_frac(i,j) = 0.
-             endif
-           ENDDO
-           ENDDO
-        ENDIF
+     IF ( PRESENT( qc  ) .AND. PRESENT( qc_cu ) ) THEN 
+         IF ( icloud_cu .NE. 0 ) THEN
+         DO j=jts,jte
+         DO k=kts,kte
+         DO i=its,ite
+           qc(i,k,j) = qc_save(i,k,j)
+         ENDDO
+         ENDDO
+         ENDDO
+         ENDIF
+      ENDIF
+      IF ( PRESENT( qi  ) .AND. PRESENT( qi_cu ) ) THEN
+         IF ( icloud_cu .NE. 0 ) THEN
+         DO j=jts,jte
+         DO k=kts,kte
+         DO i=its,ite
+           qi(i,k,j) = qi_save(i,k,j)
+         ENDDO
+         ENDDO
+         ENDDO
+         ENDIF
+      ENDIF
 
-       IF ( PRESENT( qc  ) .AND. PRESENT( qc_cu ) ) THEN 
-           IF ( icloud_cu .NE. 0 ) THEN
-           DO j=jts,jte
-           DO k=kts,kte
-           DO i=its,ite
-             qc(i,k,j) = qc_save(i,k,j)
-           ENDDO
-           ENDDO
-           ENDDO
-           ENDIF
-        ENDIF
-        IF ( PRESENT( qi  ) .AND. PRESENT( qi_cu ) ) THEN
-           IF ( icloud_cu .NE. 0 ) THEN
-           DO j=jts,jte
-           DO k=kts,kte
-           DO i=its,ite
-             qi(i,k,j) = qi_save(i,k,j)
-           ENDDO
-           ENDDO
-           ENDDO
-           ENDIF
-        ENDIF
-
-     ! jararias, aug 2013, updated 2013/11
-     ! parameters update for SW surface fluxes interpolation
-     if (swint_opt.eq.1) then
-        ! interpolation applies on all-sky fluxes (swddir, swdown)
-        call update_swinterp_parameters(ims,ime,jms,jme,its,ite,jts,jte,   &
-                                        coszen,coszen_loc,swddir,swdown,   &
-                                        swddir_ref,bb,Bx,swdown_ref,gg,Gx, &
-                                        coszen_ref                         )
-     end if
+      ! jararias, aug 2013, updated 2013/11
+      ! parameters update for SW surface fluxes interpolation
+      IF (swint_opt.EQ.1) THEN
+         ! interpolation applies on all-sky fluxes (swddir, swdown)
+         CALL update_swinterp_parameters(ims,ime,jms,jme,its,ite,jts,jte,   &
+                                         coszen,coszen_loc,swddir,swdown,   &
+                                         swddir_ref,bb,Bx,swdown_ref,gg,Gx, &
+                                         coszen_ref                         )
+      ENDIF
 
    ENDDO
    !$OMP END PARALLEL DO
@@ -1924,7 +2052,7 @@ CONTAINS
 
      accumulate_lw_select: SELECT CASE(lw_physics)
 
-     CASE (CAMLWSCHEME,RRTMG_LWSCHEME)
+     CASE (CAMLWSCHEME,RRTMG_LWSCHEME,RRTMG_LWSCHEME_FAST)
    IF(PRESENT(LWUPTC))THEN
    !$OMP PARALLEL DO   &
    !$OMP PRIVATE ( ij ,i,j,k,its,ite,jts,jte)
@@ -1955,7 +2083,7 @@ CONTAINS
 
      accumulate_sw_select: SELECT CASE(sw_physics)
 
-     CASE (CAMSWSCHEME,RRTMG_SWSCHEME)
+     CASE (CAMSWSCHEME,RRTMG_SWSCHEME,RRTMG_SWSCHEME_FAST)
    IF(PRESENT(SWUPTC))THEN
    !$OMP PARALLEL DO   &
    !$OMP PRIVATE ( ij ,i,j,k,its,ite,jts,jte)

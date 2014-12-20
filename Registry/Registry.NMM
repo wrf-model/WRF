@@ -1197,6 +1197,9 @@ rconfig   integer num_metgrid_levels  namelist,domains  1               43      
 rconfig   real    p_top_requested   namelist,domains    1               5000    irh    "p_top_requested" "Pa"      ""
 
 # Physics
+rconfig   logical  read_thompson_tables   namelist,physics      1           .true.
+rconfig   logical  write_thompson_tables   namelist,physics     1           .false.
+
 rconfig   integer     mp_physics          namelist,physics	max_domains    0       rh       "mp_physics"            ""      ""
 rconfig   real        mommix              namelist,physics     max_domains  0.7       irh    "MOMENTUM MIXING FOR SAS CONVECTION SCHEME"
 rconfig   logical     disheat             namelist,physics      max_domains  .true.    irh    "nmm input 7"
@@ -1470,6 +1473,7 @@ package   etampold_dfi      mp_physics_dfi==95       -             dfi_moist:dfi
 package   rrtmscheme    ra_lw_physics==1             -             -
 package   camlwscheme   ra_lw_physics==3             -             -
 package   rrtmg_lwscheme  ra_lw_physics==4           -             -
+package   rrtmg_lwscheme_fast  ra_lw_physics==24     -             -
 package   goddardlwscheme  ra_lw_physics==5          -             -
 package   flglwscheme   ra_lw_physics==7             -             -
 package   gfdllwscheme  ra_lw_physics==99            -             -
@@ -1480,6 +1484,7 @@ package   swradscheme   ra_sw_physics==1             -             -
 package   gsfcswscheme  ra_sw_physics==2             -             -
 package   camswscheme   ra_sw_physics==3             -             -
 package   rrtmg_swscheme  ra_sw_physics==4           -             -
+package   rrtmg_swscheme_fast  ra_sw_physics==24     -             -
 package   goddardswscheme  ra_sw_physics==5          -             -
 package   flgswscheme   ra_sw_physics==7             -             -
 package   gfdlswscheme  ra_sw_physics==99            -             -

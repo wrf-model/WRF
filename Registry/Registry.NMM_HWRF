@@ -1324,6 +1324,9 @@ rconfig   real    p_top_requested         namelist,domains      1              5
 rconfig   logical   use_prep_hybrid namelist,domains    1              .false.     irh      "T=GFS spectral sigma files were used" "" ""
 
 # Physics
+rconfig   logical  read_thompson_tables   namelist,physics      1           .true.
+rconfig   logical  write_thompson_tables   namelist,physics     1           .false.
+
 rconfig   integer     mp_physics          namelist,physics	max_domains    0       rh0123       "mp_physics"            ""      ""
 #for HWRF:
 rconfig   real        mommix              namelist,physics     max_domains  0.7       irh    "MOMENTUM MIXING FOR SAS CONVECTION SCHEME"
@@ -1630,6 +1633,7 @@ package   etampold_dfi      mp_physics_dfi==95       -             dfi_moist:dfi
 package   rrtmscheme    ra_lw_physics==1             -             -
 package   camlwscheme   ra_lw_physics==3             -             -
 package   rrtmg_lwscheme  ra_lw_physics==4           -             -
+package   rrtmg_lwscheme_fast  ra_lw_physics==24     -             -
 package   goddardlwscheme  ra_lw_physics==5          -             -
 package   flglwscheme   ra_lw_physics==7             -             -
 package   gfdllwscheme  ra_lw_physics==99            -             -
@@ -1639,6 +1643,7 @@ package   swradscheme   ra_sw_physics==1             -             -
 package   gsfcswscheme  ra_sw_physics==2             -             -
 package   camswscheme   ra_sw_physics==3             -             -
 package   rrtmg_swscheme  ra_sw_physics==4           -             -
+package   rrtmg_swscheme_fast  ra_sw_physics==24     -             -
 package   goddardswscheme  ra_sw_physics==5          -             -
 package   flgswscheme   ra_sw_physics==7             -             -
 package   gfdlswscheme  ra_sw_physics==99            -             -

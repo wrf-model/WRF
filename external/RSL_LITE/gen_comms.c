@@ -226,6 +226,7 @@ gen_halos ( char * dirname , char * incname , node_t * halos, int split )
   char name_4d[MAX_4DARRAYS][NAMELEN] ;
 #define FRAC 4
   int num_halos, fraction, ihalo, j ;
+  int always_interp_mp = 1;
 
   if ( dirname == NULL ) return(1) ;
 
@@ -244,6 +245,14 @@ gen_halos ( char * dirname , char * incname , node_t * halos, int split )
       }
     } 
   } 
+
+#if (NMM_CORE==1)
+  if (    !strcmp(commname,"HALO_INTERP_DOWN")
+       || !strcmp(commname,"HALO_FORCE_DOWN")
+       || !strcmp(commname,"HALO_INTERP_UP") 
+       || !strcmp(commname,"HALO_INTERP_SMOOTH") )
+    always_interp_mp=0;
+#endif
 
   ihalo = 0 ;
   for ( p = halos ; p != NULL ; p = p->next )
@@ -499,12 +508,12 @@ fprintf(fp,"CALL wrf_debug(3,'calling RSL_LITE_INIT_EXCH %s for Y %s')\n",maxste
     }
 
 /* generate packs prior to stencil exchange in Y */
-    gen_packs_halo( fp, p, maxstenwidth, 0, 0, "RSL_LITE_PACK", "local_communicator" ) ;
+    gen_packs_halo( fp, p, maxstenwidth, 0, 0, "RSL_LITE_PACK", "local_communicator", always_interp_mp ) ;
 /* generate stencil exchange in Y */
     fprintf(fp,"   CALL RSL_LITE_EXCH_Y ( local_communicator , mytask, ntasks, ntasks_x, ntasks_y, &\n") ;
     fprintf(fp,"                          rsl_sendw_m,  rsl_sendw_p, rsl_recvw_m,  rsl_recvw_p    )\n" ) ;
 /* generate unpacks after stencil exchange in Y */
-    gen_packs_halo( fp, p, maxstenwidth, 0, 1 , "RSL_LITE_PACK", "local_communicator" ) ;
+    gen_packs_halo( fp, p, maxstenwidth, 0, 1 , "RSL_LITE_PACK", "local_communicator", always_interp_mp ) ;
     fprintf(fp,"ENDDO\n") ; 
 
 /* generate the stencil init statement for X transfer */
@@ -539,12 +548,12 @@ fprintf(fp,"CALL wrf_debug(3,'calling RSL_LITE_INIT_EXCH %s for Y %s')\n",maxste
       fprintf(fp,"(ips-1)*grid%%sr_x+1,ipe*grid%%sr_x,(jps-1)*grid%%sr_y+1,jpe*grid%%sr_y,kps,kpe)\n") ;
     }
 /* generate packs prior to stencil exchange in X */
-    gen_packs_halo( fp, p, maxstenwidth, 1, 0, "RSL_LITE_PACK", "local_communicator" ) ;
+    gen_packs_halo( fp, p, maxstenwidth, 1, 0, "RSL_LITE_PACK", "local_communicator", always_interp_mp ) ;
 /* generate stencil exchange in X */
     fprintf(fp,"   CALL RSL_LITE_EXCH_X ( local_communicator , mytask, ntasks, ntasks_x, ntasks_y, &\n") ;
     fprintf(fp,"                          rsl_sendw_m,  rsl_sendw_p, rsl_recvw_m,  rsl_recvw_p    )\n" ) ;
 /* generate unpacks after stencil exchange in X */
-    gen_packs_halo( fp, p, maxstenwidth, 1, 1, "RSL_LITE_PACK", "local_communicator" ) ;
+    gen_packs_halo( fp, p, maxstenwidth, 1, 1, "RSL_LITE_PACK", "local_communicator", always_interp_mp ) ;
     fprintf(fp,"    ENDDO\n") ; 
     if ( subgrid != 0 ) {
       fprintf(fp,"ENDIF\n") ;
@@ -564,7 +573,7 @@ fprintf(fp,"CALL wrf_debug(3,'calling RSL_LITE_INIT_EXCH %s for Y %s')\n",maxste
   return(0) ;
 }
 
-gen_packs_halo ( FILE *fp , node_t *p, char *shw, int xy /* 0=y,1=x */ , int pu /* 0=pack,1=unpack */, char * packname, char * commname )   
+gen_packs_halo ( FILE *fp , node_t *p, char *shw, int xy /* 0=y,1=x */ , int pu /* 0=pack,1=unpack */, char * packname, char * commname, int always_interp_mp )   
 {
   node_t * q ;
   node_t * dimd ;
@@ -605,6 +614,10 @@ gen_packs_halo ( FILE *fp , node_t *p, char *shw, int xy /* 0=y,1=x */ , int pu 
           else if ( q->boundary_array ) { ; }
           else
           { 
+            if(!always_interp_mp && p->mp_var) {
+              fprintf(fp,"if(interp_mp) then\n");
+            }
+
             if      ( ! strcmp( q->type->name, "real") )            { wordsize = "RWORDSIZE" ; }
             else if ( ! strcmp( q->type->name, "integer") )         { wordsize = "IWORDSIZE" ; }
             else if ( ! strcmp( q->type->name, "doubleprecision") ) { wordsize = "DWORDSIZE" ; }
@@ -748,8 +761,10 @@ fprintf(fp,"(ips-1)*grid%%sr_x+1,ipe*grid%%sr_x,(jps-1)*grid%%sr_y+1,jpe*grid%%s
                 fprintf(fp,"ENDIF\n") ;
               }
             }
+            if(!always_interp_mp && p->mp_var) {
+              fprintf(fp,"endif\n");
+            }
           }
-          
         }
         t2 = strtok_rentr( NULL , "," , &pos2 ) ;
       }

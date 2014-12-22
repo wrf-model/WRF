@@ -5876,14 +5876,15 @@ INTEGER, INTENT(IN):: ids,ide,jds,jde,kds,kde, &
    8  continue
 !
       do 15 k=1,km
-!
+! Bug fix for idealized simulation by Lin Zhu. forc2. The bug is associated with
+! thermal wind relationship in sheared environment.
       do 9 i=1,lp
       forc1=tt(i,k)*alpy(i)
       if(k.eq.1) then
-      forc2=f(i)*(up1(3)-up1(2))/(rgas*log(sig(3)/sig(2)))
+      forc2= - f(i)*(up1(3)-up1(2))/(rgas*log(sig(3)/sig(2)))
       forc3=(t6(2)-tk(1))*alpy(i)/log(sig(2)/sig1(1))
       else
-      forc2=f(i)*(up1(k+1)-up1(k))/(rgas*log(sig(k+1)/sig(k)))
+      forc2= - f(i)*(up1(3)-up1(2))/(rgas*log(sig(3)/sig(2)))
       forc3=(t6(k+1)-t6(k))*alpy(i)/log(sig(k+1)/sig(k))
       endif
       forc(i)=forc1+forc2+forc3

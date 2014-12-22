@@ -693,6 +693,19 @@ get_mask ( unsigned int * mask , int e )
    }
 }
 
+int dims_ikj_inner(node_t * field_struct) {
+  return field_struct->ndims>=3
+    && !strcmp(field_struct->dims[0]->dim_name,"i")
+    && !strcmp(field_struct->dims[1]->dim_name,"k")
+    && !strcmp(field_struct->dims[2]->dim_name,"j");
+}
+
+int dims_ij_inner(node_t * field_struct) {
+  return field_struct->ndims>=2
+    && !strcmp(field_struct->dims[0]->dim_name,"i")
+    && !strcmp(field_struct->dims[1]->dim_name,"j");
+}
+
 #if 0
 main()
 {

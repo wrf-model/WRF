@@ -9,7 +9,7 @@ MODULE a_module_big_step_utilities_em
 
    USE module_model_constants
    USE module_state_description, only: p_qg, p_qs, p_qi, gdscheme, tiedtkescheme, ntiedtkescheme, &
-   kfetascheme, g3scheme, p_qv, param_first_scalar, p_qr, p_qc, DFI_FWD
+   kfetascheme, mskfscheme, g3scheme, p_qv, param_first_scalar, p_qr, p_qc, DFI_FWD
    USE module_configure, ONLY : grid_config_rec_type
    USE module_wrf_error
 #if (RWORDSIZE == 4)
@@ -12178,7 +12178,8 @@ SUBROUTINE A_PHY_PREP(config_flags, mu, mub, muu, muub, muv, muvb, u, ub&
   IF (((config_flags%cu_physics .EQ. gdscheme .OR. config_flags%&
 &      cu_physics .EQ. g3scheme) .OR. config_flags%cu_physics .EQ. &
 &      kfetascheme) .OR. config_flags%cu_physics .EQ. tiedtkescheme &
-&      .OR. (config_flags%cu_physics == NTIEDTKESCHEME) ) THEN
+&      .OR. (config_flags%cu_physics == NTIEDTKESCHEME) &
+&      .OR. (config_flags%cu_physics == MSKFSCHEME) ) THEN
     IF (p_qv .GE. param_first_scalar) THEN
       CALL PUSHCONTROL2B(0)
     ELSE

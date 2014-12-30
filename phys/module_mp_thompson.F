@@ -14,7 +14,7 @@
 !.. Beginning with WRFv3.6, this is also the "aerosol-aware" scheme as
 !.. described in Thompson, G. and T. Eidhammer, 2014:  A study of
 !.. aerosol impacts on clouds and precipitation development in a large
-!.. winter cyclone.  J. Atmos. Sci., 1??, ????-????.  Setting WRF
+!.. winter cyclone.  J. Atmos. Sci., 71, 3636-3658.  Setting WRF
 !.. namelist option mp_physics=8 utilizes the older one-moment cloud
 !.. water with constant droplet concentration set as Nt_c (found below)
 !.. while mp_physics=28 uses double-moment cloud droplet number
@@ -45,6 +45,9 @@
 
       USE module_wrf_error
       USE module_mp_radar
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
+      USE module_dm, ONLY : wrf_dm_max_real
+#endif
 
       IMPLICIT NONE
 
@@ -412,7 +415,7 @@
 
 
       INTEGER:: i, j, k, l, m, n
-      REAL:: h_01, niIN3, niCCN3
+      REAL:: h_01, niIN3, niCCN3, max_test
       LOGICAL:: micro_init, has_CCN, has_IN
 
       is_aerosol_aware = .FALSE.
@@ -434,7 +437,13 @@
 !..Check for existing aerosol data, both CCN and IN aerosols.  If missing
 !.. fill in just a basic vertical profile, somewhat boundary-layer following.
 
-      if (SUM(nwfa) .lt. eps) then
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
+      max_test = wrf_dm_max_real ( MAXVAL(nwfa(its:ite-1,:,jts:jte-1)) )
+#else
+      max_test = MAXVAL ( nwfa(its:ite-1,:,jts:jte-1) )
+#endif
+
+      if (max_test .lt. eps) then
          write(mp_debug,*) ' Apparently there are no initial CCN aerosols.'
          CALL wrf_debug(100, mp_debug)
          write(mp_debug,*) '   checked column at point (i,j) = ', its,jts
@@ -463,7 +472,14 @@
          CALL wrf_debug(100, mp_debug)
       endif
 
-      if (SUM(nifa) .lt. eps) then
+
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
+      max_test = wrf_dm_max_real ( MAXVAL(nifa(its:ite-1,:,jts:jte-1)) )
+#else
+      max_test = MAXVAL ( nifa(its:ite-1,:,jts:jte-1) )
+#endif
+
+      if (max_test .lt. eps) then
          write(mp_debug,*) ' Apparently there are no initial IN aerosols.'
          CALL wrf_debug(100, mp_debug)
          write(mp_debug,*) '   checked column at point (i,j) = ', its,jts

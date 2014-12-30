@@ -118,6 +118,9 @@ CONTAINS
     REAL, DIMENSION( ims:ime, jms:jme ) :: exch_temf  ! 1/7/09 WA
 
     REAL, DIMENSION( ims:ime, jms:jme ) :: ht_loc, mixht
+!ckay
+    REAL, DIMENSION( ims:ime, jms:jme ) ::  ZOL
+
     INTEGER                             :: ij
     INTEGER  num_roof_layers
     INTEGER  num_wall_layers
@@ -753,11 +756,14 @@ BENCH_START(surf_driver_tim)
      &        ,CAPG=grid%capg, EMISS=grid%emiss, HOL=hol,MOL=grid%mol     &
      &        ,T2OBS=grid%t2obs, Q2OBS=grid%q2obs                         &
      &        ,RAINBL=grid%rainbl,SR=grid%sr,RAINSHV=grid%rainshv         &
+     &        ,GRAUPELNCV=grid%graupelncv, HAILNCV=grid%hailncv           &
      &        ,RAINNCV=grid%rainncv,REGIME=grid%regime,T2=grid%t2,THC=grid%thc            &
      &        ,QSG=grid%qsg,QVG=grid%qvg,QCG=grid%qcg,SOILT1=grid%soilt1,TSNAV=grid%tsnav & ! ruc lsm
      &        ,SMFR3D=grid%smfr3d,KEEPFR3DFLAG=grid%keepfr3dflag,DEW=grid%dew             & ! ruc lsm
      &        ,POTEVP=grid%POTEVP, SNOPCX=grid%SNOPCX, SOILTB=grid%SOILTB                 & ! ruc lsm
-     &        ,MOSAIC_LU=config_flags%mosaic_lu                           &   ! RUC LSM
+     &        ,rhosnf=grid%rhosnf ,precipfr=grid%precipfr                 &   ! RUC LSM
+     &        ,snowfallac=grid%snowfallac                                 &   ! RUC LSM
+     &        ,MOSAIC_LU=config_flags%mosaic_lu                           & ! RUC LSM
      &        ,MOSAIC_SOIL=config_flags%mosaic_soil                       &   ! RUC LSM
      &        ,ISURBAN=isurban, MMINLU=TRIM(mminlu)                       &
      &        ,SNOTIME = grid%SNOTIME                                     &
@@ -796,7 +802,7 @@ BENCH_START(surf_driver_tim)
      &        ,G_URB2D_mosaic=grid%G_URB2D_mosaic,RN_URB2D_mosaic=grid%RN_URB2D_mosaic                  &  !danli mosaic 
      &        ,TS_URB2D_mosaic=grid%TS_URB2D_mosaic                                                     &  !danli mosaic 
      &        ,TS_RUL2D_mosaic=grid%TS_RUL2D_mosaic                                                     &  !danli mosaic          
-     &                                                              )
+     &        ,ZOLOUT=ZOL                                                              )
 
 #ifdef WRF_HYDRO
         if(HYDRO_dt .gt. 1 ) call wrf_drv_HYDRO(HYDRO_dt, grid,  &
@@ -953,7 +959,6 @@ BENCH_START(pbl_driver_tim)
      &        ,NUM_VERT_MIX=grid%num_vert_mix                     &
 #endif
      &        )
-                                                         
 
 BENCH_END(pbl_driver_tim)
 
@@ -1005,7 +1010,7 @@ BENCH_START(cu_driver_tim)
      &             ,CUDTACTTIME=grid%cudtacttime                                       & 
      &             ,RAINC=grid%rainc   ,RAINCV=grid%raincv   ,PRATEC=grid%pratec       &
      &             ,NCA=grid%nca                                                       &
-     &             ,CLDFRA_DP=grid%cldfra_dp  ,CLDFRA_SH=grid%cldfra_sh                & ! ckay for subgrid cloud
+     &             ,CLDFRA_DP=grid%cldfra_dp  ,CLDFRA_SH=grid%cldfra_sh,W_UP=grid%w_up & ! ckay for subgrid cloud
      &             ,QC_CU=grid%QC_CU ,QI_CU=grid%QI_CU                                 &
      &             ,HTOP=grid%cutop     ,HBOT=grid%cubot       ,KPBL=grid%kpbl         &
      &             ,Z=grid%z ,Z_AT_W=grid%z_at_w ,MAVAIL=grid%mavail ,PBLH=grid%pblh   &
@@ -1091,6 +1096,7 @@ BENCH_START(cu_driver_tim)
      &             ,QI_CURR=moist(ims,kms,jms,P_QI), F_QI=F_QI            &
      &             ,QS_CURR=moist(ims,kms,jms,P_QS), F_QS=F_QS            &
      &             ,QG_CURR=moist(ims,kms,jms,P_QG), F_QG=F_QG            &
+     &             ,ZOL=ZOL,WSTAR=grid%wstar_ysu                          & !ckay
 ! Variables for Tiedtke and NSAS schemes
      &             ,ZNU=grid%znu                                          &
      &             ,MP_PHYSICS=config_flags%mp_physics                    &

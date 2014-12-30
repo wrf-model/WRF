@@ -1143,12 +1143,10 @@ print *,'j_save = ',j_save,grid%clat(ids,j_save),grid%mf_fft
                                        ims , ime , jms , jme , kms , kme , &
                                        its , ite , jts , jte , kts , kte )
 
-         IF ( config_flags%rdlai2d ) THEN
          CALL monthly_interp_to_date ( grid%lai12m , current_date , grid%lai , &
                                        ids , ide , jds , jde , kds , kde , &
                                        ims , ime , jms , jme , kms , kme , &
                                        its , ite , jts , jte , kts , kte )
-         ENDIF
 
 #if ( WRF_CHEM == 1 )
          ! Chose the appropriate LAI veg mask for this date (used in the AFWA dust model)

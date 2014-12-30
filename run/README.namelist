@@ -82,6 +82,9 @@ information on NMM specific settings (http://www.dtcenter.org/wrf-nmm/users)
  adjust_output_times                 = .false., ; adjust output times to the nearest hour
  override_restart_timers             = .false., ; whether to change the alarms from what is previously set
  write_hist_at_0h_rst                = .false., ; whether to output history file at the start of restart run
+ output_ready_flag		     = .true.,  ; asks the model to write-out an empty file with the name 'wrfoutReady_d<domain>_<date>.  
+                                                  Useful in production runs so that post-processing code can check on the 
+                                                  completeness of this file
 
 To choose between SI and WPS input to real for EM core:
  auxinput1_inname                    = "met_em.d<domain>.<date>"             ; Input to real from WPS (default since 3.0)

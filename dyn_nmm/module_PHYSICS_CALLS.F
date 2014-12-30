@@ -1421,6 +1421,8 @@
      &          ,MOSAIC_SOIL=CONFIG_FLAGS%MOSAIC_SOIL                   &
      &          ,LANDUSEF=grid%landusef                                 &
      &          ,SOILCTOP=grid%soilctop                                 &
+     &          ,rhosnf=grid%rhosnf,precipfr=grid%precipfr              &
+     &          ,snowfallac=grid%snowfallac                             &
 ! for URBAN
      &          ,NUM_ROOF_LAYERS=NUM_ROOF_LAYERS                        & ! urban
      &          ,NUM_WALL_LAYERS=NUM_WALL_LAYERS                        & ! urban

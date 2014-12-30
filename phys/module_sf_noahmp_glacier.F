@@ -1981,7 +1981,7 @@ contains
 
 ! Jordan (1991)
 
-     IF(OPT_SNF == 1) THEN
+     IF(OPT_SNF == 1 .OR. OPT_SNF == 4) THEN
        IF(SFCTMP > TFRZ+2.5)THEN
            FPICE = 0.
        ELSE
@@ -2015,7 +2015,7 @@ contains
 ! Hedstrom NR and JW Pomeroy (1998), Hydrol. Processes, 12, 1611-1625
 ! fresh snow density
 
-     BDFALL = MIN(120.,67.92+51.25*EXP((SFCTMP-TFRZ)/2.59))
+     BDFALL = MAX(120.,67.92+51.25*EXP((SFCTMP-TFRZ)/2.59))
 
      QRAIN   = PRCP * (1.-FPICE)
      QSNOW   = PRCP * FPICE

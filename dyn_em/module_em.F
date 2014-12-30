@@ -16,7 +16,7 @@ MODULE module_em
         theta_relaxation, vertical_diffusion_mp, zero_tend, zero_tend2d
 	
    USE module_state_description, only: param_first_scalar, p_qr, p_qv, p_qc, p_qg, p_qi, p_qs, tiedtkescheme,ntiedtkescheme, heldsuarez, &
-        positivedef, gdscheme, g3scheme, gfscheme, kfetascheme, monotonic, wenopd_scalar, weno_scalar, weno_mom
+        positivedef, gdscheme, g3scheme, gfscheme, kfetascheme, mskfscheme, monotonic, wenopd_scalar, weno_scalar, weno_mom
 	
    USE module_damping_em, only: held_suarez_damp
 
@@ -1064,7 +1064,7 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
 
      IF((config_flags%cu_physics == GDSCHEME .OR. config_flags%cu_physics == G3SCHEME .OR. &
          config_flags%cu_physics == GFSCHEME .OR.    & 
-         config_flags%cu_physics == KFETASCHEME .OR. &      ! new trigger in KF
+         config_flags%cu_physics == KFETASCHEME .OR. config_flags%cu_physics == MSKFSCHEME .OR. &      ! new trigger in KF
          config_flags%cu_physics == TIEDTKESCHEME .OR. config_flags%cu_physics == NTIEDTKESCHEME  ) &      ! Tiedtke
                      .and. moist_step .and. ( im == P_QV) ) THEN
 

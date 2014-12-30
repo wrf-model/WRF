@@ -422,7 +422,7 @@ state   real    power          ij       misc      1         -     irh       "Pow
 
 # State for derived time quantities.  
 state   integer itimestep      -        -          -         -     rh         "itimestep"             ""         ""      
-state   real    xtime          -        -          -         -     rh         "xtime"                 "minutes since simulation start"         ""      
+state   real    xtime          -        -          -         -     rh         "xtime"                 "minutes since YYYY-MM-DD hh:mm:ss"      "minutes since simulation start"
 state   real    julian         -        -          -         -     -          "julian"                "day of year, 0.0 at 0Z on 1 Jan."         "days"      
 
 # input file descriptor for lbcs on parent domain                                               
@@ -824,6 +824,9 @@ state    real   DECLIN            -     misc        1         -      r       "DE
 state    real   SOLCON            -     misc        1         -      r       "SOLCON"  "SOLAR CONSTANT"         "W m-2"
 
 # RUC LSM
+state    real   RHOSNF           ij     misc        1         -      irh      "RHOSNF"               "DENSITY OF FROZEN PRECIP" "kg/m^3"
+state    real   SNOWFALLAC       ij     misc        1         -      irh      "SNOWFALLAC"           "RUN-TOTAL ACCUMULATED SNOWFALL [mm]" ""
+state    real   PRECIPFR         ij     misc        1         -      -        "PRECIPFR"             "TIME-STEP FROZEN PRECIP [mm]" ""
 state    real   SMFR3D           ilj    misc        1         Z      r        "SMFR3D"               "SOIL ICE" ""
 state    real   KEEPFR3DFLAG     ilj    misc        1         Z      r        "KEEPFR3DFLAG"          "FLAG - 1. FROZEN SOIL YES, 0 - NO"             ""
 
@@ -1183,6 +1186,7 @@ state    real  MASS_FLUX        ij      misc        1         -      r        "M
 # ckay
 state    real  cldfra_dp        ikj     misc        1         -      r        "CLDFRA_DP"             "DEEP CONVECTIVE CLOUD FRACTION FROM KF"  ""
 state    real  cldfra_sh        ikj     misc        1         -      r        "CLDFRA_SH"             "SHALLOW CONVECTIVE CLOUD FRACTION FROM KF"  ""
+state    real  w_up             ikj     misc        1         -      rdu      "W_UP"                  "EFFECTIVE SUBGRID VELOCITY FROM KF"  "m s-1"
 state    real  apr_gr           ij      misc        1         -      r       "APR_GR"                "PRECIP FROM CLOSURE OLD_GRELL"   "mm hour-1"
 state    real  apr_w            ij      misc        1         -      r       "APR_W"                 "PRECIP FROM CLOSURE W"           "mm hour-1"
 state    real  apr_mc           ij      misc        1         -      r       "APR_MC"                "PRECIP FROM CLOSURE KRISH MV"    "mm hour-1"
@@ -1721,6 +1725,7 @@ state    real  track_qice     {tl}k      misc     1         -      -       "trac
 state    real  track_qsnow    {tl}k      misc     1         -      -       "track_qsnow"        "snow mixing ratio"          "kg kg-1"
 state    real  track_qgraup   {tl}k      misc     1         -      -       "track_qgraup"       "graupel mixing ratio"       "kg kg-1"
 state    real  track_qvapor   {tl}k      misc     1         -      -       "track_qvapor"       "water vapor mixing ratio"   "kg kg-1"
+
 #
 #---------------------------------------------------------------------------------------------------------------------------------------
 #                                               
@@ -2460,7 +2465,7 @@ package   bep_bemscheme  sf_urban_physics==3         -             state:a_u_bep
 
 package   slabscheme     sf_surface_physics==1       -             -
 package   lsmscheme      sf_surface_physics==2       -             state:flx4,fvb,fbur,fgsn
-package   ruclsmscheme   sf_surface_physics==3       -             state:smfr3d,keepfr3dflag,soilt1
+package   ruclsmscheme   sf_surface_physics==3       -             state:smfr3d,keepfr3dflag,soilt1,rhosnf,snowfallac,precipfr
 package   noahmpscheme   sf_surface_physics==4       -             state:isnowxy,tvxy,tgxy,canliqxy,canicexy,eahxy,tahxy,cmxy,chxy,fwetxy,sneqvoxy,alboldxy,qsnowxy,wslakexy,zwtxy,waxy,wtxy,tsnoxy,zsnsoxy,snicexy,snliqxy,lfmassxy,rtmassxy,stmassxy,woodxy,stblcpxy,fastcpxy,xsaixy,taussxy,t2mvxy,t2mbxy,q2mvxy,q2mbxy,tradxy,neexy,gppxy,nppxy,fvegxy,qinxy,runsfxy,runsbxy,ecanxy,edirxy,etranxy,fsaxy,firaxy,aparxy,psnxy,savxy,sagxy,rssunxy,rsshaxy,bgapxy,wgapxy,tgvxy,tgbxy,chvxy,chbxy,shgxy,shcxy,shbxy,evgxy,evbxy,ghvxy,ghbxy,irgxy,ircxy,irbxy,trxy,evcxy,chleafxy,chucxy,chv2xy,chb2xy,chstarxy,smoiseq,smcwtdxy,rechxy,deeprechxy,fdepthxy,areaxy,rivercondxy,riverbedxy,eqzwt,pexpxy,qrfxy,qrfsxy,qspringxy,qspringsxy,qslatxy,stepwtd
 package   clmscheme      sf_surface_physics==5       -             state:numc,nump,sabv,sabg,lwup,lhsoi,lhveg,lhtran,snl,snowdp,wtc,wtp,h2osno,t_grnd,t_veg,h2ocan,h2ocan_col,t2m_max,t2m_min,t2clm,t_ref2m,h2osoi_liq_s1,h2osoi_liq_s2,h2osoi_liq_s3,h2osoi_liq_s4,h2osoi_liq_s5,h2osoi_liq1,h2osoi_liq2,h2osoi_liq3,h2osoi_liq4,h2osoi_liq5,h2osoi_liq6,h2osoi_liq7,h2osoi_liq8,h2osoi_liq9,h2osoi_liq10,h2osoi_ice_s1,h2osoi_ice_s2,h2osoi_ice_s3,h2osoi_ice_s4,h2osoi_ice_s5,h2osoi_ice1,h2osoi_ice2,h2osoi_ice3,h2osoi_ice4,h2osoi_ice5,h2osoi_ice6,h2osoi_ice7,h2osoi_ice8,h2osoi_ice9,h2osoi_ice10,t_soisno_s1,t_soisno_s2,t_soisno_s3,t_soisno_s4,t_soisno_s5,t_soisno1,t_soisno2,t_soisno3,t_soisno4,t_soisno5,t_soisno6,t_soisno7,t_soisno8,t_soisno9,t_soisno10,dzsnow1,dzsnow2,dzsnow3,dzsnow4,dzsnow5,snowrds1,snowrds2,snowrds3,snowrds4,snowrds5,t_lake1,t_lake2,t_lake3,t_lake4,t_lake5,t_lake6,t_lake7,t_lake8,t_lake9,t_lake10,h2osoi_vol1,h2osoi_vol2,h2osoi_vol3,h2osoi_vol4,h2osoi_vol5,h2osoi_vol6,h2osoi_vol7,h2osoi_vol8,h2osoi_vol9,h2osoi_vol10,albedosubgrid,lhsubgrid,hfxsubgrid,lwupsubgrid,q2subgrid,sabvsubgrid,sabgsubgrid,nrasubgrid,swupsubgrid
 package   pxlsmscheme    sf_surface_physics==7       -             state:t2_ndg_new,q2_ndg_new,t2_ndg_old,q2_ndg_old
@@ -2493,6 +2498,7 @@ package   gfscheme       cu_physics==3               -             state:cugd_qv
 package   camzmscheme    cu_physics==7               -             state:precz,zmdt,zmdq,zmdice,zmdliq,evaptzm,fzsntzm,evsntzm,evapqzm,zmflxprc,zmflxsnw,zmntprpd,zmntsnpd,zmeiheat,cmfmc,cmfmcdzm,preccdzm,pconvb,pconvt,cape,zmmtu,zmmtv,zmmu,zmmd,zmupgu,zmupgd,zmvpgu,zmvpgd,zmicuu,zmicud,zmicvu,zmicvd,evapcdp3d,icwmrdp3d,rprddp3d,dp3d,du3d,ed3d,eu3d,md3d,mu3d,dsubcld2d,ideep2d,jt2d,maxg2d,lengath2d,dlf,rliq,tpert2d
 package   g3tave         cu_diag==1                  -             state:GD_CLOUD,GD_CLOUD2,GD_CLDFR,GD_CLOUD_A,GD_CLOUD2_A,kbcon_deep,ktop_deep,k22_deep
 package   tiedtkescheme  cu_physics==6               -             -
+package   mskfscheme     cu_physics==11              -             -
 package   ntiedtkescheme cu_physics==16              -             -
 package   nsasscheme     cu_physics==14              -             -
 package   kfscheme       cu_physics==99              -             -

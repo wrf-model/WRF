@@ -6,7 +6,7 @@ CONTAINS
    SUBROUTINE surface_driver(                                         &
      &           HYDRO_dt,sfcheadrt,INFXSRT,soldrain,                 &
      &           acgrdflx,achfx,aclhf                                 &
-     &          ,acsnom,acsnow,akhs,akms,albedo,br,canwat             &
+     &          ,acsnom,acsnow,snowfallac,akhs,akms,albedo,br,canwat  &
      &          ,chklowq,dt,dx,dz8w,dzs,glw                           &
      &          ,grdflx,gsw,swdown,gz1oz0,hfx,ht,ifsnow,isfflx        &
      &          ,fractional_seaice,seaice_albedo_opt                  &
@@ -195,9 +195,9 @@ CONTAINS
      &           ,f_qi,f_qs,f_qg                                      &
              !  Other optionals (more or less em specific)
      &          ,capg,hol,mol                                         &
-     &          ,rainncv,rainshv,rainbl,regime,thc                    &
+     &          ,rainncv,rainshv,rainbl,regime,thc,graupelncv,hailncv &
      &          ,qsg,qvg,qcg,soilt1,tsnav                             &
-     &          ,smfr3d,keepfr3dflag,dew                              &
+     &          ,smfr3d,keepfr3dflag,dew,rhosnf,precipfr              &
              !  Other optionals (more or less nmm specific)
      &          ,potevp,snopcx,soiltb,sr                              &
              !  Optional observation PX LSM surface nudging
@@ -257,6 +257,7 @@ CONTAINS
      &          ,G_URB2D_mosaic,RN_URB2D_mosaic                       &  !danli mosaic 
      &          ,TS_URB2D_mosaic                                      &  !danli mosaic 
      &          ,TS_RUL2D_mosaic                                      &  !danli mosaic     
+     &          ,ZOLOUT                                               &  !ckay
      &                                                             )
               
 #if ( ! NMM_CORE == 1 )
@@ -796,22 +797,35 @@ CONTAINS
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   SHDMIN
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT )::   Z0
 
-   INTEGER, OPTIONAL, INTENT(IN) :: idveg, iopt_crs, iopt_btr, iopt_run, iopt_sfc, iopt_frz, iopt_inf, iopt_rad, iopt_alb, iopt_snf, iopt_tbot, iopt_stc
-   INTEGER, OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(INOUT) :: ISNOWXY
-   REAL, OPTIONAL, DIMENSION(ims:ime ,-2:num_soil_layers, jms:jme), INTENT(INOUT) :: zsnsoxy
-   REAL, OPTIONAL, DIMENSION(ims:ime ,-2:0,               jms:jme), INTENT(INOUT) :: tsnoxy, snicexy, snliqxy
-   REAL, OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(INOUT) :: tvxy, tgxy, canicexy, canliqxy, eahxy, tahxy, cmxy, chxy,               &
-        fwetxy, sneqvoxy, alboldxy, qsnowxy, wslakexy, zwtxy, waxy, wtxy, lfmassxy, rtmassxy, stmassxy, woodxy, stblcpxy, fastcpxy,       &
-        xsaixy, taussxy, t2mvxy   ,t2mbxy, q2mvxy, q2mbxy   ,tradxy, neexy, gppxy, nppxy, fvegxy, runsfxy, runsbxy, ecanxy, edirxy, etranxy, fsaxy, firaxy,               &
-        aparxy, psnxy, savxy, sagxy
-   REAL, OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(INOUT) ::  rssunxy, rsshaxy, bgapxy,wgapxy, &
-        tgvxy ,tgbxy, chvxy, chbxy,SHGXY,SHCXY,SHBXY,EVGXY,EVBXY,GHVXY,GHBXY,IRGXY,IRCXY,IRBXY,TRXY,EVCXY,CHLEAFXY,CHUCXY,CHV2XY,CHB2XY,chstarxy                         
+!  NoahMP specific fields
 
-   REAL, OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(INOUT) ::  smcwtdxy   ,rechxy   ,deeprechxy,  fdepthxy, areaxy,  &
-       rivercondxy,riverbedxy,eqzwt,pexpxy,qrfxy,qspringxy,qslatxy,qrfsxy,qspringsxy                         
-   REAL, OPTIONAL, DIMENSION( ims:ime , 1:num_soil_layers, jms:jme ), INTENT(INOUT)::  smoiseq
-   REAL, OPTIONAL, INTENT(IN) :: wtddt
-   INTEGER, OPTIONAL, INTENT(IN )  :: stepwtd
+   INTEGER, OPTIONAL, INTENT(IN) ::    idveg, iopt_crs, iopt_btr, iopt_run, iopt_sfc , iopt_frz, &
+                                    iopt_inf, iopt_rad, iopt_alb, iopt_snf, iopt_tbot, iopt_stc
+
+   INTEGER, OPTIONAL, DIMENSION(ims:ime , jms:jme),                    INTENT(INOUT) :: ISNOWXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime ,-2:num_soil_layers, jms:jme), INTENT(INOUT) :: ZSNSOXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime ,-2:0,               jms:jme), INTENT(INOUT) :: TSNOXY, SNICEXY, SNLIQXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime , jms:jme),                    INTENT(INOUT) ::                    &
+           TVXY,    TGXY,CANICEXY,CANLIQXY,   EAHXY,   TAHXY,    CMXY,    CHXY,  FWETXY,SNEQVOXY,ALBOLDXY, &
+        QSNOWXY,WSLAKEXY,   ZWTXY,    WAXY,    WTXY,LFMASSXY,RTMASSXY,STMASSXY,  WOODXY,STBLCPXY,FASTCPXY, &
+	 XSAIXY, TAUSSXY,  T2MVXY,  T2MBXY,  Q2MVXY,  Q2MBXY,  TRADXY,   NEEXY,   GPPXY,                   &
+          NPPXY,  FVEGXY, RUNSFXY, RUNSBXY,  ECANXY,  EDIRXY, ETRANXY,   FSAXY,  FIRAXY,  APARXY,   PSNXY, &
+	  SAVXY,   SAGXY, RSSUNXY, RSSHAXY,  BGAPXY,  WGAPXY,   TGVXY,   TGBXY,   CHVXY,   CHBXY,   SHGXY, &
+	  SHCXY,   SHBXY,   EVGXY,   EVBXY,   GHVXY,   GHBXY,   IRGXY,   IRCXY,   IRBXY,    TRXY,   EVCXY, &
+       CHLEAFXY,  CHUCXY,  CHV2XY,  CHB2XY,CHSTARXY                         
+
+!  NoahMP specific fields - runoff option 5
+
+   INTEGER, OPTIONAL, INTENT(IN)      :: stepwtd
+   REAL,    OPTIONAL, INTENT(IN)      :: wtddt
+   REAL,    OPTIONAL, DIMENSION(ims:ime , 1:num_soil_layers, jms:jme ), INTENT(INOUT)::  smoiseq
+   REAL,    OPTIONAL, DIMENSION(ims:ime , jms:jme),                    INTENT(INOUT) ::  &
+    SMCWTDXY,   RECHXY, DEEPRECHXY, FDEPTHXY,  AREAXY,  RIVERCONDXY, RIVERBEDXY,  &
+    EQZWT,      PEXPXY, QRFXY,      QSPRINGXY, QSLATXY, QRFSXY,      QSPRINGSXY                         
+
+!  NoahMP local variables - precip partitioning
+
+   REAL, DIMENSION(ims:ime,jms:jme) :: NOAHMP_RAINC, NOAHMP_RAINNC, NOAHMP_SNOW, NOAHMP_GRAUP, NOAHMP_HAIL
 
 ! Noah UA changes
    LOGICAL, INTENT(IN) :: ua_phys
@@ -947,6 +961,8 @@ CONTAINS
                       qv_curr, qc_curr, qr_curr                  &
                      ,qi_curr, qs_curr, qg_curr
    REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(IN)   ::   snowncv
+   REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(IN)   ::   graupelncv
+   REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(IN)   ::   hailncv
    REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(INOUT)::   capg
    REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(INOUT)::   emiss
    REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(INOUT)::   hol
@@ -969,8 +985,12 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(INOUT)::   sr ! NMM and RUC LSM
    REAL, DIMENSION( ims:ime, 1:num_soil_layers, jms:jme ), OPTIONAL, INTENT(INOUT)::   smfr3d
    REAL, DIMENSION( ims:ime, 1:num_soil_layers, jms:jme ), OPTIONAL, INTENT(INOUT)::   keepfr3dflag
+   REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(INOUT)::   rhosnf !  density of snowfall
+   REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(OUT) ::    precipfr ! time-step frozen precip from RUC LSM
+   REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(INOUT)::   snowfallac !  density of snowfall
 
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(OUT), OPTIONAL  ::   NOAHRES
+   REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT), OPTIONAL  ::   ZOLOUT
 
    INTEGER, INTENT(IN) :: MAXPATCH, inest
 
@@ -1855,7 +1875,6 @@ CONTAINS
                                                       .TRUE. ) THEN
          CALL wrf_debug( 100, 'in PX Surface Layer scheme' )
          IF ( FRACTIONAL_SEAICE == 1 ) THEN
-            CALL WRF_ERROR_FATAL("PXSFCLAY not adapted for FRACTIONAL_SEAICE=1 option")
             CALL PXSFCLAY_SEAICE_WRAPPER(u_phytmp,v_phytmp,t_phy,th_phy,qv_curr,&
                  p_phy,dz8w,cp,g,rcp,r_d,xlv,psfc,chs,chs2,cqs2,cpm, &
                  znt,ust,pblh,mavail,zol,mol,regime,psim,psih,       &
@@ -2712,8 +2731,44 @@ CONTAINS
 #endif
                                                       .TRUE. ) THEN
 !------------------------------------------------------------------
-         IF( PRESENT(sr) ) THEN
-           frpcpn=.true.
+
+         NOAHMP_RAINC(i_start(ij):i_end(ij),j_start(ij):j_end(ij)) = &
+	       RAINCV(i_start(ij):i_end(ij),j_start(ij):j_end(ij))
+
+         IF( PRESENT(RAINNCV) ) THEN
+            NOAHMP_RAINNC(i_start(ij):i_end(ij),j_start(ij):j_end(ij)) = &
+	          RAINNCV(i_start(ij):i_end(ij),j_start(ij):j_end(ij))
+	 ELSE
+            NOAHMP_RAINNC(i_start(ij):i_end(ij),j_start(ij):j_end(ij)) = 0.0
+         ENDIF
+
+#if ( EM_CORE==1)
+         IF( PRESENT(DFGDP) ) THEN
+            NOAHMP_RAINNC(i_start(ij):i_end(ij),j_start(ij):j_end(ij)) = &
+	    NOAHMP_RAINNC(i_start(ij):i_end(ij),j_start(ij):j_end(ij)) + &
+	            DFGDP(i_start(ij):i_end(ij),j_start(ij):j_end(ij))
+         ENDIF
+#endif
+
+         IF( PRESENT(SNOWNCV) ) THEN
+            NOAHMP_SNOW(i_start(ij):i_end(ij),j_start(ij):j_end(ij)) = &
+	        SNOWNCV(i_start(ij):i_end(ij),j_start(ij):j_end(ij))
+	 ELSE
+            NOAHMP_SNOW(i_start(ij):i_end(ij),j_start(ij):j_end(ij)) = 0.0
+         ENDIF
+
+         IF( PRESENT(GRAUPELNCV) ) THEN
+            NOAHMP_GRAUP(i_start(ij):i_end(ij),j_start(ij):j_end(ij)) = &
+	      GRAUPELNCV(i_start(ij):i_end(ij),j_start(ij):j_end(ij))
+	 ELSE
+            NOAHMP_GRAUP(i_start(ij):i_end(ij),j_start(ij):j_end(ij)) = 0.0
+         ENDIF
+
+         IF( PRESENT(HAILNCV) ) THEN
+            NOAHMP_HAIL(i_start(ij):i_end(ij),j_start(ij):j_end(ij)) = &
+	        HAILNCV(i_start(ij):i_end(ij),j_start(ij):j_end(ij))
+	 ELSE
+            NOAHMP_HAIL(i_start(ij):i_end(ij),j_start(ij):j_end(ij)) = 0.0
          ENDIF
 
          IF ( FRACTIONAL_SEAICE == 1) THEN
@@ -2765,11 +2820,13 @@ CONTAINS
 	       IOPT_INF, IOPT_RAD, IOPT_ALB, IOPT_SNF, IOPT_TBOT,   IOPT_STC, &
 	        IZ0TLND,                                                      &
 		  T_PHY,  QV_CURR,    U_PHY,    V_PHY,    SWDOWN,        GLW, &
-		    P8W,   RAINBL,                                            &
+		    P8W,                                                      &
+           NOAHMP_RAINC, NOAHMP_RAINNC, NOAHMP_SNOW, NOAHMP_GRAUP, NOAHMP_HAIL,& ! MB: v3.7 precip partitioning
 		    TSK,      HFX,      QFX,       LH,    GRDFLX,     SMSTAV, &
 		 SMSTOT,SFCRUNOFF, UDRUNOFF,   ALBEDO,     SNOWC,      SMOIS, &
 		   SH2O,     TSLB,     SNOW,    SNOWH,    CANWAT,     ACSNOM, &
 		 ACSNOW,    EMISS,     QSFC,                                  &
+ 		     Z0,      ZNT,                                            & ! IN/OUT LSM eqv
 		ISNOWXY,     TVXY,     TGXY, CANICEXY,  CANLIQXY,      EAHXY, &
 		  TAHXY,     CMXY,     CHXY,   FWETXY,  SNEQVOXY,   ALBOLDXY, &
 		QSNOWXY, WSLAKEXY,    ZWTXY,     WAXY,      WTXY,     TSNOXY, &
@@ -2963,6 +3020,8 @@ CONTAINS
                     IF ( ( XICE(I,J) .GE. XICE_THRESHOLD ) .AND. ( XICE(i,j) .LE. 1 ) ) THEN
                        ALBEDO(I,J) = (ALBEDO(I,J) - (1.-XICE(I,J))*0.08) / XICE(I,J)
                        EMISS(I,J)  = (EMISS(I,J)  - (1.-XICE(I,J))*0.98) / XICE(I,J)
+! also set skin temperature to saved sea-ice portion only
+                       TSK(I,J) = TSK_SAVE(I,J)
                     ENDIF
                  ENDDO
               ENDDO
@@ -2991,8 +3050,13 @@ CONTAINS
            ENDIF
 
            CALL LSMRUC(dtbl,itimestep,num_soil_layers,          &
+#if (EM_CORE==1)
+                lakemodel,lakemask,                             &
+                graupelncv,snowncv,rainncv,                     &
+#endif
                 zs,rainbl,snow,snowh,snowc,sr,frpcpn,           &
-                dz8w,p8w,t_phy,qv_curr,qc_curr,rho,             & !p8w in [pa]
+                rhosnf,precipfr,                                &
+                dz8w,p_phy,t_phy,qv_curr,qc_curr,rho,           & !p_phy in [pa]
                 glw,gsw,emiss,chklowq,                          &
                 chs,flqc,flhc,mavail,canwat,vegfra,albedo,znt,  &
                 z0,snoalb, albbck, lai,                         &   !new
@@ -3004,7 +3068,7 @@ CONTAINS
                 cp,rovcp,g,xlv,stbolt,                          &
                 smois,sh2o,smstav,smstot,tslb,tsk,hfx,qfx,lh,   &
                 sfcrunoff,udrunoff,sfcexc,                      &
-                sfcevp,grdflx,acsnow,acsnom,                    &
+                sfcevp,grdflx,snowfallac,acsnow,acsnom,         &
                 smfr3d,keepfr3dflag,                            &
                 myj,shdmin,shdmax,rdlai2d,                      &
                 ids,ide, jds,jde, kds,kde,                      &
@@ -3060,9 +3124,9 @@ CONTAINS
               endif
            ENDIF
 
-          CALL SFCDIAGS_RUCLSM(HFX,QFX,TSK,QSFC,CQS2,CQS2,T2,TH2,Q2,      &
-                     T_PHY,QV_CURR,RHO,P8W,                              &
-                     PSFC,CP,R_d,RCP,                                    &
+          CALL SFCDIAGS_RUCLSM(HFX,QFX,TSK,QSFC,CHS,CHS2,CQS2,T2,TH2,Q2,      &
+                     T_PHY,QV_CURR,RHO,P_PHY,                            &
+                     CP,R_d,RCP,                                         &
                      ids,ide, jds,jde, kds,kde,                          &
                      ims,ime, jms,jme, kms,kme,                          &
                      i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
@@ -3079,7 +3143,6 @@ CONTAINS
                                                       .TRUE. ) THEN
           IF ( FRACTIONAL_SEAICE == 1 ) THEN
 
-             CALL WRF_ERROR_FATAL("PXLSM not adapted for FRACTIONAL_SEAICE=1 option")
 
              IF ( isisfc ) THEN
                 !
@@ -3143,10 +3206,7 @@ CONTAINS
 !save old tsk_ice
                          tsk_save(i,j)  = tsk(i,j)
                          tsk(i,j)  = ( tsk(i,j)  * XICE(i,j) ) + ( (1.0-XICE(i,j)) * TSK_SEA(i,j)  )
-                         psih(i,j) = ( psih(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * PSIH_SEA(i,j) )
                          pblh(i,j) = ( pblh(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * PBLH_SEA(i,j) )
-                         rmol(i,j) = ( rmol(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * RMOL_SEA(i,j) )
-                         ust(i,j)  = ( ust(i,j)  * XICE(i,j) ) + ( (1.0-XICE(i,j)) * UST_SEA(i,j)  )
                       ENDIF
                    ENDDO
                 ENDDO
@@ -3727,6 +3787,19 @@ CONTAINS
        !$OMP END PARALLEL DO
 
        ENDIF
+     ENDIF
+
+     IF ( PRESENT( ZOLOUT ) ) THEN
+       !$OMP PARALLEL DO   &
+       !$OMP PRIVATE ( ij, i, j, k )
+       DO ij = 1 , num_tiles
+         DO j=j_start(ij),j_end(ij)
+         DO i=i_start(ij),i_end(ij)
+            ZOLOUT(i,j) = ZOL(i,j)
+         ENDDO
+         ENDDO
+       ENDDO
+       !$OMP END PARALLEL DO
      ENDIF
 
    ENDIF

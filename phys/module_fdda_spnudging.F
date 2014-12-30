@@ -819,7 +819,7 @@ SUBROUTINE spectral_nudging_filter_3dy( f, nwave,   &
 
   ! Check to make sure we have full access to all S/N points
   IF ((jts /= jds) .OR. (jte /= jde)) THEN
-     WRITE ( wrf_err_message , * ) 'module_spectral_nudging: 3d: (jts /= jds) or (jte /= jde)',jts,ids,ite,ide
+     WRITE ( wrf_err_message , * ) 'module_spectral_nudging: 3d: (jts /= jds) or (jte /= jde)',jts,jds,jte,jde
      CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
   END IF
 

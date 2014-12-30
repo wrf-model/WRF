@@ -978,7 +978,7 @@ SUBROUTINE g_phy_cu_ten(config_flags,rk_step,n_moist,n_scalar,     &
                 ims, ime, jms, jme, kms, kme,                    &
                 its, ite, jts, jte, kts, kte                     )
 
-   CASE (KFETASCHEME)
+   CASE (KFETASCHEME, MSKFSCHEME)
         CALL add_a2a(rt_tendf,RTHCUTEN,config_flags,             &
                 ids,ide, jds, jde, kds, kde,                     &
                 ims, ime, jms, jme, kms, kme,                    &
@@ -1750,7 +1750,7 @@ SUBROUTINE G_ADVANCE_PPT(rthcuten, rthcutend, rqvcuten, rqvcutend, &
           END IF
         END DO
       END DO
-    CASE (kfetascheme) 
+    CASE (kfetascheme, MSKFSCHEME) 
       DO j=j_start,j_end
         DO i=i_start,i_end
 ! HTOP, HBOT FOR GFDL RADIATION

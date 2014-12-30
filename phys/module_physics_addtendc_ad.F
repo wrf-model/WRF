@@ -509,7 +509,7 @@ SUBROUTINE A_ADVANCE_PPT(rthcuten, rthcutenb, rqvcuten, rqvcutenb, &
           END IF
         END DO
       END DO
-    CASE (kfetascheme) 
+    CASE (kfetascheme, MSKFSCHEME) 
       DO j=j_start,j_end
         DO i=i_start,i_end
 ! HTOP, HBOT FOR GFDL RADIATION

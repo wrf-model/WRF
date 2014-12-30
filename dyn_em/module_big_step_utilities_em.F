@@ -13,8 +13,8 @@
 MODULE module_big_step_utilities_em
 
    USE module_model_constants
-   USE module_state_description, only: p_qg, p_qs, p_qi, gdscheme, tiedtkescheme,ntiedtkescheme, kfetascheme, g3scheme, &
-   gfscheme,p_qv, param_first_scalar, p_qr, p_qc, DFI_FWD
+   USE module_state_description, only: p_qg, p_qs, p_qi, gdscheme, tiedtkescheme, ntiedtkescheme, kfetascheme, mskfscheme, &
+       g3scheme, gfscheme,p_qv, param_first_scalar, p_qr, p_qc, DFI_FWD
    USE module_configure, ONLY : grid_config_rec_type
    USE module_wrf_error
 
@@ -148,8 +148,7 @@ SUBROUTINE calc_mu_uv ( config_flags,                 &
          jm = jte-1
          if(config_flags%periodic_y) jm = jte
          DO i=its,itf
-! comment out the following statement. NPan 05/26/10 
-!             muv(i,j) =      mu(i,j-1)        +mub(i,j-1)
+!            muv(i,j) =      mu(i,j-1)        +mub(i,j-1)
 !  fix for periodic b.c., 13 march 2004, wcs
              muv(i,j) = 0.5*(mu(i,j-1)+mu(i,jm)+mub(i,j-1)+mub(i,jm))
          ENDDO
@@ -5141,6 +5140,7 @@ END SUBROUTINE pole_point_bc
       ( config_flags%cu_physics == GFSCHEME ) .OR.    &
       ( config_flags%cu_physics == G3SCHEME ) .OR.    &
       ( config_flags%cu_physics == KFETASCHEME ) .OR. &
+      ( config_flags%cu_physics == MSKFSCHEME ) .OR. &
       ( config_flags%cu_physics == TIEDTKESCHEME ) .OR. &
       ( config_flags%cu_physics == NTIEDTKESCHEME )) then  ! Tiedtke ZCX&YQW
 

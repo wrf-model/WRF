@@ -91,7 +91,7 @@ CONTAINS
                          CHXY, FWETXY, SNEQVOXY, ALBOLDXY, QSNOWXY,       & ! Optional Noah-MP
                          WSLAKEXY, ZWTXY, WAXY, WTXY, LFMASSXY, RTMASSXY, & ! Optional Noah-MP
                          STMASSXY, WOODXY, STBLCPXY, FASTCPXY,            & ! Optional Noah-MP
-                         XSAIXY,                                          & ! Optional Noah-MP
+                         XSAIXY, LAI,                                     & ! Optional Noah-MP
                          T2MVXY, T2MBXY, CHSTARXY ,                       & ! Optional Noah-MP
                          SMOISEQ  ,SMCWTDXY ,RECHXY, DEEPRECHXY, AREAXY,  & ! Optional Noah-MP 
                          WTDDT , STEPWTD ,QRFSXY ,QSPRINGSXY ,QSLATXY,    & ! Optional Noah-MP
@@ -427,6 +427,7 @@ CONTAINS
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: STBLCPXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: FASTCPXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: XSAIXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: LAI
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: T2MVXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: T2MBXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: CHSTARXY
@@ -1036,7 +1037,7 @@ integer myproc
                 CHXY, FWETXY, SNEQVOXY, ALBOLDXY, QSNOWXY,      &
                 WSLAKEXY, ZWTXY, WAXY, WTXY, LFMASSXY, RTMASSXY,&
                 STMASSXY, WOODXY, STBLCPXY, FASTCPXY,           &
-                XSAIXY,                                         &
+                XSAIXY, LAI,                                    &
                 SMOISEQ, SMCWTDXY, RECHXY, DEEPRECHXY, AREAXY,  &
                 WTDDT, STEPWTD, QRFSXY ,QSPRINGSXY ,QSLATXY,   &
                 FDEPTHXY, RIVERBEDXY, EQZWT, RIVERCONDXY, PEXPXY, & 
@@ -1905,7 +1906,7 @@ integer myproc
                 CHXY, FWETXY, SNEQVOXY, ALBOLDXY, QSNOWXY,      &
                 WSLAKEXY, ZWTXY, WAXY, WTXY, LFMASSXY, RTMASSXY,&
                 STMASSXY, WOODXY, STBLCPXY, FASTCPXY,           &
-                XSAIXY,                                         &
+                XSAIXY, LAI,                                    &
                 SMOISEQ, SMCWTDXY, RECHXY, DEEPRECHXY, AREAXY,  &
                 WTDDT, STEPWTD,QRFSXY ,QSPRINGSXY ,QSLATXY,     &
                 FDEPTHXY, RIVERBEDXY, EQZWT, RIVERCONDXY, PEXPXY, & 
@@ -2179,6 +2180,7 @@ integer myproc
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: STBLCPXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: FASTCPXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: XSAIXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: LAI
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: T2MVXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: T2MBXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: CHSTARXY
@@ -2643,7 +2645,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                      canliqxy ,eahxy    ,tahxy    ,cmxy     ,chxy     ,                     &
                      fwetxy   ,sneqvoxy ,alboldxy ,qsnowxy  ,wslakexy ,zwtxy    ,waxy     , &
                      wtxy     ,tsnoxy   ,zsnsoxy  ,snicexy  ,snliqxy  ,lfmassxy ,rtmassxy , &
-                     stmassxy ,woodxy   ,stblcpxy ,fastcpxy ,xsaixy   ,                     &
+                     stmassxy ,woodxy   ,stblcpxy ,fastcpxy ,xsaixy   ,lai      ,           &
                      t2mvxy   ,t2mbxy   ,chstarxy ,            &
                      num_soil_layers, restart,                 &
                      allowed_to_read, iopt_run ,               &
@@ -3043,6 +3045,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
 !------------------------------------------------------------------
    USE module_cu_kf
    USE module_cu_kfeta
+   USE module_cu_mskf
    USE MODULE_CU_BMJ
    USE module_cu_gd,  ONLY : GDINIT
    USE module_cu_g3,  ONLY : G3INIT
@@ -3148,6 +3151,19 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                       ids, ide, jds, jde, kds, kde,               &
                       ims, ime, jms, jme, kms, kme,               &
                       its, ite, jts, jte, kts, kte                )
+
+#if ( EM_CORE == 1 )
+     CASE (MSKFSCHEME)
+          CALL mskf_init(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,     &
+                      RQICUTEN,RQSCUTEN,NCA,W0AVG,P_QI,P_QS,      &
+                      SVP1,SVP2,SVP3,SVPT0,                       &
+                      PARAM_FIRST_SCALAR,restart,                 &
+                      allowed_to_read ,                           &
+                      ids, ide, jds, jde, kds, kde,               &
+                      ims, ime, jms, jme, kms, kme,               &
+                      its, ite, jts, jte, kts, kte                )
+#endif
+
      CASE (GDSCHEME)
           CALL gdinit(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN,        &
                       MASS_FLUX,cp,restart,                       &

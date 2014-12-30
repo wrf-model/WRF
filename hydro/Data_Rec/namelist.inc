@@ -16,6 +16,7 @@
        character :: hgrid
        character(len=19) :: olddate="123456"
        character(len=19) :: startdate="123456"
+       character(len=19) :: sincedate="123456"
 
 
 

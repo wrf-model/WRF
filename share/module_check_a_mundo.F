@@ -281,34 +281,133 @@
 #endif
 
 #if (EM_CORE == 1)
+
 !-----------------------------------------------------------------------
-! Check that if any stochastic perturbation scheme is turned on in any domain, 
-! if so, set grid%stoch_force_global_opt=1 
+!!!!!!  THIS FEATURE IS CURRENTLY NOT WORKING - FIELDS WILL ALWAYS BE FULL 3D ARRAYS !!!!!
+!-----------------------------------------------------------------------
+!! JDB 10/31/2014: 
+!! Random fields are by default thin 3D arrays (:,1,:).
+!! If random fields have vertical structures (stoch_vertstruc_opt .ne. 0)
+!! make them full 3D array arrays
+!-----------------------------------------------------------------------
+    DO i = 1, model_config_rec % max_dom
+          IF ( model_config_rec % stoch_vertstruc_opt(i) .ne. 99)  then
+             model_config_rec % num_stoch_levels = model_config_rec %e_vert(1)
+          ENDIF
+          IF ( model_config_rec % sppt_vertstruc(i) .ne. 99)  then
+             model_config_rec % num_stoch_levels = model_config_rec %e_vert(1)
+          ENDIF
+          IF ( model_config_rec % rand_pert_vertstruc(i) .ne. 99)  then
+             model_config_rec % num_stoch_levels = model_config_rec %e_vert(1)
+          ENDIF
+    ENDDO
+
+!-----------------------------------------------------------------------
+! JDB 10/31/2014: 
+! Check if any stochastic perturbation scheme is turned on in any domain,
+! if so, set derived variable sppt_on=1 and/or rand_perturb_on and/or skebs_on=1
 !-----------------------------------------------------------------------
 
-   model_config_rec % stoch_force_global_opt=0  !also set in registry.stoch
- ! check if stochastic perturbations are turned on in any domain
    DO i = 1, model_config_rec % max_dom
-         IF ( model_config_rec % stoch_force_opt(i) .NE. 0)  then 
-           model_config_rec % stoch_force_global_opt=1 
+         IF ( model_config_rec % sppt(i) .ne. 0)  then
+           model_config_rec % sppt_on=1
+           IF (( model_config_rec%KMINFORCT .ne. 1) .or. (model_config_rec%KMAXFORCT .ne. 1000000) .or.   & 
+               ( model_config_rec%LMINFORCT .ne. 1) .or. (model_config_rec%LMAXFORCT .ne. 1000000)) then    
+               wrf_err_message = '--- Warning: the namelist parameter "kminforct" etc. are for SKEBS only'
+               CALL wrf_message ( wrf_err_message )
+               wrf_err_message = '             and should not be changed from their default value for SPPT' 
+               CALL wrf_message ( wrf_err_message )
+               wrf_err_message = ' ABORT. If you really want to modify "kminforct" etc.,  edit module_check a_mundo.'
+               CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
+           endif
          endif
-   ENDDO 
+   ENDDO
+   DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec % rand_perturb(i) .ne. 0)  then
+           model_config_rec % rand_perturb_on=1
+           IF (( model_config_rec%KMINFORCT .ne. 1) .or. (model_config_rec%KMAXFORCT .ne. 1000000) .or.   & 
+               ( model_config_rec%LMINFORCT .ne. 1) .or. (model_config_rec%LMAXFORCT .ne. 1000000)) then    
+               wrf_err_message = '--- Warning: the namelist parameter "kminforct" etc are for SKEBS only'
+               CALL wrf_message ( wrf_err_message )
+               wrf_err_message = '             and should not be changed from their default value for RAND_PERTURB' 
+               CALL wrf_message ( wrf_err_message )
+               wrf_err_message = ' ABORT. If you really want to modify "kminforct" etc.,  edit module_check a_mundo.'
+               CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
+           endif
+         endif
+   ENDDO
+   DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec % stoch_vertstruc_opt(i) ==1 )  then
+           model_config_rec % skebs_vertstruc(i)=1    ! parameter stoch_vertstruc_opt is being replaced with skebs_vertstruc
+                                                      ! stoch_vertstruc_opt is obsolete starting with V3.7
+           wrf_err_message = '--- WARNING: the namelist parameter "stoch_vertstruc_opt" is obsolete.'
+           CALL wrf_message ( wrf_err_message )
+           wrf_err_message = '             Please replace with namelist parameter "skebs_vertstruc" in V3.7 and later versions.'
+           CALL wrf_message ( wrf_err_message )
+         endif
+   ENDDO
+   DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec % stoch_force_opt(i) ==1 )  then
+           model_config_rec % skebs(i)=1    ! parameter stoch_forc_opt is being replaced with skebs;
+                                            ! stoch_vertstruc_opt is obsolete starting with V3.7
+           wrf_err_message = '--- WARNING: the namelist parameter "stoch_force_opt" is obsolete.'
+           CALL wrf_message ( wrf_err_message )
+           wrf_err_message = '             Please replace with namelist parameter "skebs" in V3.7 and later versions.'
+           CALL wrf_message ( wrf_err_message )
+         endif
+   ENDDO
+   DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec % skebs(i) .ne. 0)  then
+           model_config_rec % skebs_on=1
+         endif
+   ENDDO
 
 !--------------------------------------------------------------------------------
 ! KRS: 9/12/2012
 ! Check if boundary perturbations is turned on and set to '1' (perturb_bdy=1).
-! If so, make sure stoch_force_global_opt is also turned on. (stoch_force_opt=1)
+! If so, make sure skebs_on is also turned on.
 !--------------------------------------------------------------------------------
    IF ( model_config_rec % perturb_bdy .EQ. 1 ) then
-        model_config_rec % stoch_force_global_opt=1
+        model_config_rec % skebs_on=1
       wrf_err_message = '--- WARNING: perturb_bdy=1 option uses SKEBS pattern and may'
       CALL wrf_message ( wrf_err_message )
       wrf_err_message = '             increase computation time.'
       CALL wrf_message ( wrf_err_message )
    ENDIF
 
+!--------------------------------------------------------------------------------
+! SYHA: 10/17/2014
+! Check if chemistry boundary perturbations is turned on and set to '1' (perturb_chem_bdy=1).
+! If so, make sure rand_perturb_on is also turned on.
+! perturb_chem_bdy can be turned on only if WRF_CHEM is also compiled.
+! If perturb_chem_bdy=1, then have_bcs_chem should be turned on as well.
+!--------------------------------------------------------------------------------
+
+   IF ( model_config_rec % perturb_chem_bdy .EQ. 1 ) then
+
+#if (WRF_CHEM != 1)
+      wrf_err_message = 'This option is only for WRF_CHEM.'
+      CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
+#endif
+
+      model_config_rec % rand_perturb_on=1
+      wrf_err_message = '--- WARNING: perturb_chem_bdy=1 option uses RAND pattern and may'
+      CALL wrf_message ( wrf_err_message )
+      wrf_err_message = '             increase computation time.'
+      CALL wrf_message ( wrf_err_message )
+
+#if (WRF_CHEM == 1)
+      IF ( .NOT. model_config_rec % have_bcs_chem(1) ) THEN
+            wrf_err_message = 'This perturb_chem_bdy option needs '// &
+                              'have_bcs_chem = .true. in chem.'
+            CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
+      ENDIF
+#endif
+
+   ENDIF
+
 !----------------------------------------------------------------------------
-! If trajectory option is turned off, make sure the number of trajectories is 
+! If trajectory option is turned off, make sure the number of trajectories is
 ! zero.
 !----------------------------------------------------------------------------
    IF ( ( model_config_rec%traj_opt .EQ. 0 ) .AND. &
@@ -332,6 +431,26 @@
             CALL wrf_message ( wrf_err_message )
             model_config_rec%adjust_heights = .false.
       ENDIF
+#endif
+
+#if (EM_CORE == 1)
+!-----------------------------------------------------------------------
+!  V3.7 cu_physics = 11 (scale-aware KF) only works with YSU PBL.
+!-----------------------------------------------------------------------
+
+      oops = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( ( model_config_rec%bl_pbl_physics(i) .NE. YSUSCHEME ) .AND. &
+              ( model_config_rec%cu_physics(i) .EQ. MSKFSCHEME ) ) THEN
+            oops = oops + 1
+         END IF
+      ENDDO      ! Loop over domains
+      IF ( oops .GT. 0 ) THEN
+         wrf_err_message = '--- ERROR: bl_pbl_physics must be set to 1 for cu_physics = 11 '
+         CALL wrf_message ( wrf_err_message )
+         wrf_err_message = '--- Fix bl_pbl_physics in namelist.input OR use another cu_physics option '
+         CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
+      END IF
 #endif
 
 !-----------------------------------------------------------------------

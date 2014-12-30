@@ -44,8 +44,12 @@
     REAL    khdif, kvdif, swrad_scat, dampcoef,radt,bldt,cudt
     REAL    dt, adapt_dt_start, adapt_dt_min, adapt_dt_max
     INTEGER sf_urban_physics, w_damping, smooth_option, feedback, surface_input_source, sst_update
-    INTEGER stoch_force_opt, stoch_vertstruc_opt, nens
-    REAL    tot_backscat_psi, tot_backscat_t
+    INTEGER skebs_on, sppt_on, rand_perturb_on, nens,ISEED_SKEBS,ISEED_SPPT,ISEED_RAND_PERT
+    INTEGER stoch_vertstruc_opt, sppt_vertstruc, rand_pert_vertstruc
+    INTEGER LMINFORC,LMAXFORC,KMINFORC,KMAXFORC,LMINFORCT,LMAXFORCT,KMINFORCT,KMAXFORCT
+    REAL    gridpt_stddev_rand_pert,stddev_cutoff_rand_pert,timescale_rand_pert
+    REAL    gridpt_stddev_sppt,stddev_cutoff_sppt,timescale_sppt
+    REAL    tot_backscat_psi,tot_backscat_t,REXPONENT_PSI,REXPONENT_T,ZTAU_PSI,ZTAU_T
 #if (EM_CORE == 1)
     INTEGER grid_id , parent_id , i_parent_start , j_parent_start , parent_grid_ratio
     INTEGER diff_6th_opt
@@ -226,11 +230,36 @@
     ENDIF
 
 #if ( DA_CORE != 1)
-    CALL nl_get_stoch_force_opt     ( grid%id, stoch_force_opt     )
+    CALL nl_get_skebs_on            ( grid%id, skebs_on     )
+    CALL nl_get_sppt_on             ( grid%id, sppt_on     )
+    CALL nl_get_rand_perturb_on     ( grid%id, rand_perturb_on     )
     CALL nl_get_stoch_vertstruc_opt ( grid%id, stoch_vertstruc_opt )
-    CALL nl_get_nens                ( grid%id, nens                )
     CALL nl_get_tot_backscat_psi    ( grid%id, tot_backscat_psi    )
     CALL nl_get_tot_backscat_t      ( grid%id, tot_backscat_t      )
+    CALL nl_get_REXPONENT_PSI       ( grid%id, REXPONENT_PSI       )
+    CALL nl_get_REXPONENT_T         ( grid%id, REXPONENT_T         )
+    CALL nl_get_ZTAU_T              ( grid%id, ZTAU_T              )
+    CALL nl_get_ZTAU_PSI            ( grid%id, ZTAU_PSI            )
+    CALL nl_get_LMINFORC            ( grid%id, LMINFORC            )
+    CALL nl_get_LMAXFORC            ( grid%id, LMAXFORC            )
+    CALL nl_get_KMINFORC            ( grid%id, KMINFORC            )
+    CALL nl_get_KMAXFORC            ( grid%id, KMAXFORC            )
+    CALL nl_get_LMINFORCT           ( grid%id, LMINFORCT           )
+    CALL nl_get_LMAXFORCT           ( grid%id, LMAXFORCT           )
+    CALL nl_get_KMINFORCT           ( grid%id, KMINFORCT           )
+    CALL nl_get_KMAXFORCT           ( grid%id, KMAXFORCT           )
+    CALL nl_get_ISEED_SKEBS         ( grid%id, ISEED_SKEBS         )
+    CALL nl_get_ISEED_SPPT          ( grid%id, ISEED_SPPT          )
+    CALL nl_get_ISEED_RAND_PERT     ( grid%id, ISEED_RAND_PERT     )
+    CALL nl_get_nens                ( grid%id, nens                )
+    CALL nl_get_sppt_vertstruc      ( grid%id, sppt_vertstruc      )
+    CALL nl_get_rand_pert_vertstruc ( grid%id, rand_pert_vertstruc )
+    CALL nl_get_gridpt_stddev_sppt  ( grid%id, gridpt_stddev_sppt  )
+    CALL nl_get_stddev_cutoff_sppt  ( grid%id, stddev_cutoff_sppt  )
+    CALL nl_get_timescale_sppt      ( grid%id, timescale_sppt  )
+    CALL nl_get_gridpt_stddev_rand_pert  ( grid%id, gridpt_stddev_rand_pert  )
+    CALL nl_get_stddev_cutoff_rand_pert  ( grid%id, stddev_cutoff_rand_pert  )
+    CALL nl_get_timescale_rand_pert ( grid%id, timescale_rand_pert  )
 #endif
 #endif
 
@@ -489,14 +518,55 @@ endif
     END IF
 
     IF (switch .EQ. history_only) THEN
-       CALL    wrf_put_dom_ti_integer( fid, 'STOCH_FORCE_OPT'        , stoch_force_opt       , 1, ierr )
-       IF ( stoch_force_opt .NE. 0 )  THEN
-          CALL wrf_put_dom_ti_integer( fid, 'STOCH_VERTSTRUC_OPT'    , stoch_vertstruc_opt   , 1, ierr )
-          CALL wrf_put_dom_ti_integer( fid, 'NENS'                   , nens                  , 1, ierr )
-          CALL wrf_put_dom_ti_real   ( fid, 'tot_backscat_psi'       , tot_backscat_psi      , 1, ierr )
-          CALL wrf_put_dom_ti_real   ( fid, 'tot_backscat_t'         , tot_backscat_t        , 1, ierr )
+       CALL    wrf_put_dom_ti_integer( fid, 'SKEBS_ON'           , config_flags%skebs_on           , 1, ierr )
+       IF ( config_flags%skebs_on .NE. 0 )  THEN
+          CALL wrf_put_dom_ti_real   ( fid, 'TOT_BACKSCAT_PSI'   , config_flags%tot_backscat_psi   , 1, ierr )
+          CALL wrf_put_dom_ti_real   ( fid, 'TOT_BACKSCAT_T'     , config_flags%tot_backscat_t     , 1, ierr )
+          CALL wrf_put_dom_ti_real   ( fid, 'REXPONENT_PSI'      , config_flags%REXPONENT_PSI      , 1, ierr )
+          CALL wrf_put_dom_ti_real   ( fid, 'REXPONENT_T'        , config_flags%REXPONENT_T        , 1, ierr )
+          CALL wrf_put_dom_ti_real   ( fid, 'ZTAU_PSI'           , config_flags%ZTAU_PSI           , 1, ierr )
+          CALL wrf_put_dom_ti_real   ( fid, 'ZTAU_T  '           , config_flags%ZTAU_T             , 1, ierr )
+          CALL wrf_put_dom_ti_integer( fid, 'LMINFORC'           , config_flags%LMINFORC           , 1, ierr )
+          CALL wrf_put_dom_ti_integer( fid, 'LMAXFORC'           , config_flags%LMAXFORC           , 1, ierr )
+          CALL wrf_put_dom_ti_integer( fid, 'KMINFORC'           , config_flags%KMINFORC           , 1, ierr )
+          CALL wrf_put_dom_ti_integer( fid, 'KMAXFORC'           , config_flags%KMAXFORC           , 1, ierr )
+          CALL wrf_put_dom_ti_integer( fid, 'LMINFORCT'          , config_flags%LMINFORCT          , 1, ierr )
+          CALL wrf_put_dom_ti_integer( fid, 'LMAXFORCT'          , config_flags%LMAXFORCT          , 1, ierr )
+          CALL wrf_put_dom_ti_integer( fid, 'KMINFORCT'          , config_flags%KMINFORCT          , 1, ierr )
+          CALL wrf_put_dom_ti_integer( fid, 'KMAXFORCT'          , config_flags%KMAXFORCT          , 1, ierr )
+          CALL wrf_put_dom_ti_integer( fid, 'STOCH_VERTSTRUC_OPT', config_flags%stoch_vertstruc_opt, 1, ierr )
+          CALL wrf_put_dom_ti_integer( fid, 'NENS'               , config_flags%nens               , 1, ierr )
+          CALL wrf_put_dom_ti_integer( fid, 'ISEED_SKEBS'        , config_flags%ISEED_SKEBS        , 1, ierr )
        END IF
+       IF ( config_flags%rand_perturb_on .NE. 0 ) THEN
+          CALL wrf_put_dom_ti_real   ( fid, 'GRIDPT_STDDEV_RAND_PERT', config_flags%gridpt_stddev_rand_pert, 1, ierr )
+          CALL wrf_put_dom_ti_real   ( fid, 'STDDEV_CUTOFF_RAND_PERT', config_flags%stddev_cutoff_rand_pert, 1, ierr )
+          CALL wrf_put_dom_ti_real   ( fid, 'LENGTHSCALE_RAND_PERT',   config_flags%lengthscale_rand_pert, 1, ierr )
+          CALL wrf_put_dom_ti_real   ( fid, 'TIMESCALE_RAND_PERT',     config_flags%timescale_rand_pert, 1, ierr )
+          CALL wrf_put_dom_ti_integer( fid, 'RAND_PERT_VERTSTRUC',     config_flags%rand_pert_vertstruc, 1, ierr )
+          CALL wrf_put_dom_ti_integer( fid, 'NENS'               ,     config_flags%nens               , 1, ierr )
+          CALL wrf_put_dom_ti_integer( fid, 'ISEED_RAND_PERT'    ,     config_flags%ISEED_RAND_PERT    , 1, ierr )
+       END IF
+       IF ( config_flags%sppt_on      .NE. 0 ) THEN
+          CALL wrf_put_dom_ti_real   ( fid, 'GRIDPT_STDDEV_SPPT', config_flags%gridpt_stddev_sppt, 1, ierr )
+          CALL wrf_put_dom_ti_real   ( fid, 'STDDEV_CUTOFF_SPPT', config_flags%stddev_cutoff_sppt, 1, ierr )
+          CALL wrf_put_dom_ti_real   ( fid, 'LENGTHSCALE_SPPT',   config_flags%lengthscale_sppt, 1, ierr )
+          CALL wrf_put_dom_ti_real   ( fid, 'TIMESCALE_SPPT',     config_flags%timescale_sppt, 1, ierr )
+          CALL wrf_put_dom_ti_integer( fid, 'SPPT_VERTSTRUC',     config_flags%sppt_vertstruc, 1, ierr )
+          CALL wrf_put_dom_ti_integer( fid, 'NENS'               ,config_flags%nens               , 1, ierr )
+          CALL wrf_put_dom_ti_integer( fid, 'ISEED_SPPT'         ,config_flags% ISEED_SPPT        , 1, ierr )
+       END IF
+     IF ( config_flags%perturb_bdy .NE. 0 ) THEN
+          CALL wrf_put_dom_ti_integer( fid, 'PERTURB_BDY',        config_flags%perturb_bdy, 1, ierr )
+     END IF
     END IF
+#endif
+
+! added by SYHA (09-19-2014)
+#if ((WRF_CHEM == 1) &&  (EM_CORE == 1))
+     IF ( config_flags%perturb_chem_bdy .NE. 0 ) THEN
+          CALL wrf_put_dom_ti_integer( fid, 'PERTURB_CHEM_BDY', config_flags%perturb_chem_bdy, 1, ierr )
+     END IF
 #endif
 
 ! added this metadatum for H. Chuan, NCEP, 030417, JM
@@ -866,6 +936,25 @@ endif
                 dname = p%DataName
                 IF (p%Ntl.GT.0.AND.switch.NE.restart_only)dname=dname(1:len(TRIM(dname))-2)
                 memord = p%MemoryOrder
+
+#if (EM_CORE == 1)
+                !  CF compliancy would have us put the string "minutes since" // simulation_start_date
+                !  as the ouput in the units attribute.  After the WRF p%Units string has the "minutes since"
+                !  substring, we wipe out the rest of the string and add the model's original (pre-restart)
+                !  starting date.  This is only for the time variable in WRF (XTIME), which is now considered
+                !  the time coordinate in netcdf.
+
+                IF (TRIM(p%DataName).EQ."XTIME") THEN
+                  WRITE ( simulation_start_date , FMT = '(I4.4,"-",I2.2,"-",I2.2," ",I2.2,":",I2.2,":",I2.2)' ) &
+                  simulation_start_year,simulation_start_month,simulation_start_day,&
+                  simulation_start_hour,simulation_start_minute,simulation_start_second
+                  IF ( TRIM(p%Description(1:14)) .EQ. 'minutes since ' ) THEN
+                    p%Description(15:33) = TRIM(simulation_start_date)
+                    p%Units      (15:33) = TRIM(simulation_start_date)
+                  ENDIF
+                ENDIF
+#endif
+
                 IF      ( p%Type .EQ. 'r' ) THEN
                   CALL wrf_ext_write_field (  &
                                     fid                     , & ! DataHandle

@@ -300,7 +300,6 @@ print*,__FILE__,jte,' xa2_v.xa2_v for row= ',jte+1,sum(xa2_v(its:ite, jte+1, kts
 
    if ( (use_radarobs .and. use_radar_rf) .or. (use_rad .and. crtm_cloud) ) then
     if ( cloud_cv_options == 1 )then
-      print*,'Options: set CLOUD_CV and cloud_cv_options to 2 or 3 !'
       ! Partition of hydrometeor increments via warm rain process
       call da_moist_phys_lin(grid)
     end if

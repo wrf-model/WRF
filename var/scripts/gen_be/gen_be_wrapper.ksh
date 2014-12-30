@@ -17,12 +17,25 @@ export RUN_GEN_BE_DIAGS=true
 export RUN_GEN_BE_DIAGS_READ=true
 export RUN_GEN_BE_MULTICOV=true
 
-export WRFVAR_DIR=/kukui/users/xinzhang/code/WRFDA
+export WRFVAR_DIR=/glade/p/work/wrfhelp/PRE_COMPILED_CODE/WRFDA
 
-export START_DATE=2007091500	# the first perturbation valid date
-export END_DATE=2007091700	# the last perturbation valid date
-export NUM_LEVELS=27		# = bottom_top = e_vert - 1
-export BIN_TYPE=5
+export NL_CV_OPTIONS=5       # Specify control variable options
+                             # NL_CV_OPTIONS = 5: default wind control variables (psi and chi_u)
+                             #                 7: u/v wind control variables
+
+export BIN_TYPE=5            # How data is binned for calculating statistics
+                             # BIN_TYPE = 5 (default, recommended): Average over all horizontal points;
+                             #                                        i.e. only one bin per vertical level
+                             #            0: No binning
+                             #            1: X-direction mean
+                             #            2: Bin by latitude and height
+                             #            3: Bin by latitude and vertical level
+                             #            4: Fixed number of horizontal bins and by vertical level
+                             #            6: Average over all points (only 1 bin)
+
+export START_DATE=2007091500 # the first perturbation valid date
+export END_DATE=2007091700   # the last perturbation valid date
+export NUM_LEVELS=27         # = bottom_top = e_vert - 1
 #export DATA_ON_LEVELS=.true. # "False if fields projected onto modes."
 
 export BE_METHOD=NMC
@@ -31,8 +44,8 @@ export FCST_RANGE=12
 #export BE_METHOD=ENS
 #export NE=2 # 30
 
-export FC_DIR=/kukui/users/xinzhang/code/tmp	# where wrf forecasts are
-export RUN_DIR=`pwd`/gen_be${BIN_TYPE}
+export FC_DIR=/glade/p/work/wrfhelp/WRFDA_DATA/fc   # where wrf forecasts are
+export RUN_DIR=`pwd`/gen_be_cv${NL_CV_OPTIONS}
 export DOMAIN=01
 export FCST_RANGE1=24
 export FCST_RANGE2=12

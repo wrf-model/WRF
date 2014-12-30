@@ -2772,7 +2772,7 @@ contains
 
       data icb /1,2,3,3,3,4,4,4,5, 5, 5, 5, 5, 5, 5, 5/
 
-      hvrclc = '$Revision: 1.8 $'
+!jm not thread safe      hvrclc = '$Revision: 1.8 $'
 
       ncbands = 1
 
@@ -3137,7 +3137,7 @@ contains
 !    htrc                         ! clear sky longwave heating rate (k/day)
 
 
-      hvrrtc = '$Revision: 1.3 $'
+!jm not thread safe      hvrrtc = '$Revision: 1.3 $'
 
       do ibnd = 1,nbndlw
          if (ibnd.eq.1 .or. ibnd.eq.4 .or. ibnd.ge.10) then
@@ -3556,7 +3556,7 @@ contains
       real(kind=rb) :: plog, fp, ft, ft1, water, scalefac, factor, compfp
 
 
-      hvrset = '$Revision: 1.3 $'
+!jm not thread safe      hvrset = '$Revision: 1.3 $'
 
       stpfac = 296._rb/1013._rb
 
@@ -4934,7 +4934,7 @@ contains
       real(kind=rb), intent(out) :: taug(:,:)         ! gaseous optical depth 
                                                       !    Dimensions: (nlayers,ngptlw)
 
-      hvrtau = '$Revision: 1.7 $'
+!jm not thread safe      hvrtau = '$Revision: 1.7 $'
 
 ! Calculate gaseous optical depth and planck fractions for each spectral band.
 
@@ -7902,7 +7902,7 @@ contains
 !     BPADE   Inverse of the Pade approximation constant
 !
 
-      hvrini = '$Revision: 1.3 $'
+!jm not thread safe      hvrini = '$Revision: 1.3 $'
 
 ! Initialize model data
       call lwdatinit(cpdair)
@@ -8017,7 +8017,7 @@ contains
       use parrrtm, only : maxxsec, maxinpx
       use rrlw_con, only: heatfac, grav, planck, boltz, &
                           clight, avogad, alosmt, gascon, radcn1, radcn2, &
-                          sbcnst, secdy 
+                          sbcnst, secdy, fluxfac, oneminus, pi
       use rrlw_vsn
 
       save 
@@ -8081,6 +8081,12 @@ contains
                                               ! (W cm-2 K-4)
       secdy = 8.6400e4_rb                     ! Number of seconds per day
                                               ! (s d-1)
+
+!jm moved here for thread safety, 20141107
+      oneminus = 1._rb - 1.e-6_rb
+      pi       = 2._rb * asin(1._rb)
+      fluxfac  =  pi * 2.e4_rb  ! orig:   fluxfac = pi * 2.d4
+
 !
 !     units are generally cgs
 !
@@ -10888,9 +10894,9 @@ contains
 !
 ! Initializations
 
-      oneminus = 1._rb - 1.e-6_rb
-      pi = 2._rb * asin(1._rb)
-      fluxfac = pi * 2.e4_rb                  ! orig:   fluxfac = pi * 2.d4  
+!jm not thread safe      oneminus = 1._rb - 1.e-6_rb
+!jm not thread safe      pi = 2._rb * asin(1._rb)
+!jm not thread safe      fluxfac = pi * 2.e4_rb                  ! orig:   fluxfac = pi * 2.d4  
       istart = 1
       iend = 16
       iout = 0
@@ -11376,23 +11382,23 @@ use rrtmg_lw_rad, only: rrtmg_lw
 use mcica_subcol_gen_lw, only: mcica_subcol_lw
 
     real retab(95)
-    data retab / 						&
-         5.92779, 6.26422, 6.61973, 6.99539, 7.39234,	&
-         7.81177, 8.25496, 8.72323, 9.21800, 9.74075, 10.2930,	&
-         10.8765, 11.4929, 12.1440, 12.8317, 13.5581, 14.2319, 	&
-         15.0351, 15.8799, 16.7674, 17.6986, 18.6744, 19.6955,	&
-         20.7623, 21.8757, 23.0364, 24.2452, 25.5034, 26.8125,	&
-         27.7895, 28.6450, 29.4167, 30.1088, 30.7306, 31.2943, 	&
-         31.8151, 32.3077, 32.7870, 33.2657, 33.7540, 34.2601, 	&
-         34.7892, 35.3442, 35.9255, 36.5316, 37.1602, 37.8078,	&
-         38.4720, 39.1508, 39.8442, 40.5552, 41.2912, 42.0635,	&
-         42.8876, 43.7863, 44.7853, 45.9170, 47.2165, 48.7221,	&
-         50.4710, 52.4980, 54.8315, 57.4898, 60.4785, 63.7898,	&
-         65.5604, 71.2885, 75.4113, 79.7368, 84.2351, 88.8833,	&
-         93.6658, 98.5739, 103.603, 108.752, 114.025, 119.424, 	&
-         124.954, 130.630, 136.457, 142.446, 148.608, 154.956,	&
-         161.503, 168.262, 175.248, 182.473, 189.952, 197.699,	&
-         205.728, 214.055, 222.694, 231.661, 240.971, 250.639/	
+    data retab /                                                &
+         5.92779, 6.26422, 6.61973, 6.99539, 7.39234,   &
+         7.81177, 8.25496, 8.72323, 9.21800, 9.74075, 10.2930,  &
+         10.8765, 11.4929, 12.1440, 12.8317, 13.5581, 14.2319,  &
+         15.0351, 15.8799, 16.7674, 17.6986, 18.6744, 19.6955,  &
+         20.7623, 21.8757, 23.0364, 24.2452, 25.5034, 26.8125,  &
+         27.7895, 28.6450, 29.4167, 30.1088, 30.7306, 31.2943,  &
+         31.8151, 32.3077, 32.7870, 33.2657, 33.7540, 34.2601,  &
+         34.7892, 35.3442, 35.9255, 36.5316, 37.1602, 37.8078,  &
+         38.4720, 39.1508, 39.8442, 40.5552, 41.2912, 42.0635,  &
+         42.8876, 43.7863, 44.7853, 45.9170, 47.2165, 48.7221,  &
+         50.4710, 52.4980, 54.8315, 57.4898, 60.4785, 63.7898,  &
+         65.5604, 71.2885, 75.4113, 79.7368, 84.2351, 88.8833,  &
+         93.6658, 98.5739, 103.603, 108.752, 114.025, 119.424,  &
+         124.954, 130.630, 136.457, 142.446, 148.608, 154.956,  &
+         161.503, 168.262, 175.248, 182.473, 189.952, 197.699,  &
+         205.728, 214.055, 222.694, 231.661, 240.971, 250.639/  
     !
     save retab
     ! For buffer layer adjustment.  Steven Cavallo, Dec 2010.
@@ -11750,15 +11756,15 @@ CONTAINS
                   0.56,0.48,0.41,0.35,0.30,0.26,                  &
                   0.22,0.19,0.16,0.14,0.12,0.10/
     DATA TPROF   /286.96,281.07,275.16,268.11,260.56,253.02,      &
-         	  245.62,238.41,231.57,225.91,221.72,217.79,      &
-		  215.06,212.74,210.25,210.16,210.69,212.14,      &
-		  213.74,215.37,216.82,217.94,219.03,220.18,      &
-		  221.37,222.64,224.16,225.88,227.63,229.51,      &
-		  231.50,233.73,236.18,238.78,241.60,244.44,      &
-		  247.35,250.33,253.32,256.30,259.22,262.12,      &
-		  264.80,266.50,267.59,268.44,268.69,267.76,      &
-		  266.13,263.96,261.54,258.93,256.15,253.23,      &
-		  249.89,246.67,243.48,240.25,236.66,233.86/	
+                  245.62,238.41,231.57,225.91,221.72,217.79,      &
+                  215.06,212.74,210.25,210.16,210.69,212.14,      &
+                  213.74,215.37,216.82,217.94,219.03,220.18,      &
+                  221.37,222.64,224.16,225.88,227.63,229.51,      &
+                  231.50,233.73,236.18,238.78,241.60,244.44,      &
+                  247.35,250.33,253.32,256.30,259.22,262.12,      &
+                  264.80,266.50,267.59,268.44,268.69,267.76,      &
+                  266.13,263.96,261.54,258.93,256.15,253.23,      &
+                  249.89,246.67,243.48,240.25,236.66,233.86/    
 !------------------------------------------------------------------
 #if ( WRF_CHEM == 1 )
       IF ( aer_ra_feedback == 1) then
@@ -12126,8 +12132,8 @@ CONTAINS
        do L=kte+1,nlayers+1,1
           tlev(ncol,L) = varint(L) + (tlev(ncol,kte) - varint(kte))
           !if ( L .le. nlay ) then
-	  tlay(ncol,L-1) = 0.5*(tlev(ncol,L) + tlev(ncol,L-1))  
-	  !endif
+          tlay(ncol,L-1) = 0.5*(tlev(ncol,L) + tlev(ncol,L-1))  
+          !endif
        enddo 
 
        ! Now the chemical species (except for ozone)
@@ -12141,9 +12147,9 @@ CONTAINS
           cfc12vmr(ncol,L) = cfc12vmr(ncol,kte) 
           cfc22vmr(ncol,L) = cfc22vmr(ncol,kte) 
           ccl4vmr(ncol,L) = ccl4vmr(ncol,kte) 
-       enddo	 
+       enddo     
 ! End top of model buffer 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!	
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
 ! Get ozone profile including amount in extra layer above model top.
 ! Steven Cavallo: Must pass nlay-1 into subroutine to get nlayers 
 ! dimension for o3mmr
@@ -12411,18 +12417,18 @@ CONTAINS
          endif
 
          ! Buffer adjustment. Steven Cavallo December 2010
-	 do k=kte+1,nlayers
-	    clwpth(ncol,k) = 0.
-	    ciwpth(ncol,k) = 0.
-	    cswpth(ncol,k) = 0.
-	    rel(ncol,k) = 10.
+         do k=kte+1,nlayers
+            clwpth(ncol,k) = 0.
+            ciwpth(ncol,k) = 0.
+            cswpth(ncol,k) = 0.
+            rel(ncol,k) = 10.
             rei(ncol,k) = 10.
             res(ncol,k) = 10.
             cldfrac(ncol,k) = 0.
-	    do nb = 1,nbndlw
+            do nb = 1,nbndlw
                taucld(nb,ncol,k) = 0.
             enddo
-	 enddo	 
+         enddo   
 
          iplon = 1
          irng = 0
@@ -12724,7 +12730,7 @@ CONTAINS
 ! Steven Cavallo.  Added for buffer layer adjustment.   December 2010.
    NLAYERS = kme + nint(p_top*0.01/deltap)- 1 ! Model levels plus new levels.
                                               ! nlayers will subsequently 
-					      ! replace kte+1
+                                              ! replace kte+1
 
 ! Read in absorption coefficients and other data
    IF ( allowed_to_read ) THEN
@@ -14345,7 +14351,7 @@ IMPLICIT NONE
           index = int(t(i,k)-179.)
           index = min(max(index,1),94)
           corr = t(i,k) - int(t(i,k))
-          re(i,k) = retab(index)*(1.-corr)		&
+          re(i,k) = retab(index)*(1.-corr)              &
                +retab(index+1)*corr
           !           re(i,k) = amax1(amin1(re(i,k),30.),10.)
        end do

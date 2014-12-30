@@ -569,7 +569,7 @@ real(kind=kind_phys) RO(IM),xland1(IM)
      &                     AL(IM,KM-1),     AD(IM,KM),                  &
      &                     AU(IM,KM-1),     A1(IM,KM),                  &
      &                     A2(IM,KM),       THETA(IM,KM),               &
-     &                     AT(IM,KM*(ntrac-1)),DKU(IM,KM-1),DKT(IM,KM-1)
+     &                     AT(IM,KM*(ntrac-1)),DKU(IM,KM-1),DKT(IM,KM-1),WSPM(IM,KM-1) ! RGF added WSPM
       logical              pblflg(IM),   sfcflg(IM), stable(IM)
 !
       real(kind=kind_phys) aphi16,  aphi5,  bet1,   bvf2,               &
@@ -589,6 +589,8 @@ real(kind=kind_phys) RO(IM),xland1(IM)
      &                     tvu,     utend,  vk,     vk2,                &
      &                     vpert,   vtend,  xkzo,   zfac,               &
      &                     zfmin,   zk,     tem1
+      integer kLOC ! RGF
+      real xDKU    ! RGF
 !
       PARAMETER(g=grav)
       PARAMETER(GOR=G/RD,GOCP=G/CP)
@@ -601,6 +603,27 @@ real(kind=kind_phys) RO(IM),xland1(IM)
       PARAMETER(GAMCRT=3.,GAMCRQ=0.)
       PARAMETER(RZERO=0.,RONE=1.)
       PARAMETER(IUN=84)
+#if HWRF==1
+      real*8 :: ran1           !zhang
+      integer :: ens_random_seed !zhang
+      real :: ens_pblamp,rr   !zhang
+      logical :: pert_pbl !zhang
+      logical,save :: pert_pbl_local !zhang
+      integer,save :: ens_random_seed_local !zhang
+      real,save :: ens_pblamp_local   !zhang
+      data ens_random_seed_local/0/
+!zz      print*, 'zhang in pbl==========='
+      if ( ens_random_seed_local .eq. 0 ) then
+      CALL nl_get_pert_pbl(1,pert_pbl)
+      CALL nl_get_ens_random_seed(1,ens_random_seed)
+      CALL nl_get_ens_pblamp(1,ens_pblamp)
+      pert_pbl_local=pert_pbl
+      ens_random_seed_local=ens_random_seed
+      ens_pblamp_local=ens_pblamp
+!zz      print*, "zhang in pbl= one time ", pert_pbl_local, ens_random_seed_local, ens_pblamp_local
+      endif
+!zz      print*, "zhang in pbl=",pert_pbl_local, ens_random_seed_local, ens_pblamp_local
+#endif
 !
 !
 !-----------------------------------------------------------------------
@@ -837,6 +860,14 @@ real(kind=kind_phys) RO(IM),xland1(IM)
                RBINT = (RBCR(I)-RBDN(I))/(RBUP(I)-RBDN(I))
             ENDIF
             HPBL(I) = ZL(I,K-1) + RBINT*(ZL(I,k)-ZL(I,K-1))
+#if (HWRF==1)
+!zhang adding PBL perturtion
+            if ( pert_pbl_local ) then
+            rr=(2.0*ens_pblamp_local*ran1(ens_random_seed_local)-ens_pblamp_local)
+            print*, "zhang inside the loop", rr, ens_pblamp_local,ens_random_seed_local 
+            HPBL(I) = HPBL(I)*(1.0+rr)
+            endif
+#endif
             IF(HPBL(I).LT.ZI(I,KPBL(I))) KPBL(I) = KPBL(I) - 1
             IF(KPBL(I).LE.1) PBLFLG(I) = .FALSE.
          ENDIF
@@ -845,9 +876,42 @@ real(kind=kind_phys) RO(IM),xland1(IM)
 !
 !     COMPUTE DIFFUSION COEFFICIENTS BELOW PBL
 !
-      DO K = 1, KMPBL
-         DO I=1,IM
-            IF(KPBL(I).GT.K) THEN
+
+#if (HWRF==1)
+! -------------------------------------------------------------------------------------
+! begin RGF modifications
+! this is version MOD05
+
+
+! RGF determine wspd at roughly 500 m above surface, or as close as possible, reuse SPDK2
+!  zi(i,k) is AGL, right?  May not matter if applied only to water grid points
+      if(ALPHA.lt.0)then
+
+       DO I=1,IM
+         SPDK2 = 0.
+         WSPM(i,1) = 0.
+         DO K = 1, KMPBL ! kmpbl is like a max possible pbl height
+          if(zi(i,k).le.500.and.zi(i,k+1).gt.500.)then ! find level bracketing 500 m
+           SPDK2 = SQRT(U1(i,k)*U1(i,k)+V1(i,k)*V1(i,k)) ! wspd near 500 m
+           WSPM(i,1) = SPDK2/0.6  ! now the Km limit for 500 m.  just store in K=1
+           WSPM(i,2) = float(k)  ! height of level at gridpoint i. store in K=2
+!           if(i.eq.25) print *,' IK ',i,k,' ZI ',zi(i,k), ' WSPM1 ',wspm(i,1),' KMPBL ',kmpbl,' KPBL ',kpbl(i)
+          endif
+         ENDDO
+       ENDDO ! i
+
+      endif ! ALPHA < 0
+#endif
+
+
+      DO I=1,IM			! RGF SWAPPED ORDER.  TESTED - NO IMPACT
+         DO K = 1, KMPBL
+
+
+
+! First guess at DKU.  If alpha >= 0, this is the only loop executed
+
+            IF(KPBL(I).GT.K) THEN ! first guess DKU, this is original loop
                PRINV = 1.0 / (PHIH(I)/PHIM(I)+CFAC*VK*.1)
                PRINV = MIN(PRINV,PRMAX)
                PRINV = MAX(PRINV,PRMIN)
@@ -859,8 +923,14 @@ real(kind=kind_phys) RO(IM),xland1(IM)
 !              alpha factor (0-1.0) is multiplied to profile function to reduce the effect
 !              height of the Hurricane Boundary Layer. This is gopal's doing
 !
+
+
                DKU(i,k) = XKZO + WSCALE(I)*VK*ZI(I,K+1)                 &
-     &                         *ALPHA* ZFAC**PFAC
+     &                         *ABS(ALPHA)* ZFAC**PFAC 
+! if alpha = -1, the above provides the first guess for DKU, based on assumption alpha = +1
+! 		(other values of alpha < 0 can also be applied)
+! if alpha > 0, the above applies the alpha suppression factor and we are finished
+!               if(i.eq.25) print *,' I25 K ',k,' ORIG DKU ',dku(i,k)
                DKT(i,k) = DKU(i,k)*PRINV
                DKO(i,k) = (DKU(i,k)-XKZO)*PRINV
                DKU(i,k) = MIN(DKU(i,k),DKMAX)
@@ -868,9 +938,79 @@ real(kind=kind_phys) RO(IM),xland1(IM)
                DKT(i,k) = MIN(DKT(i,k),DKMAX)
                DKT(i,k) = MAX(DKT(i,k),DKMIN)
                DKO(i,k) = MAX(RZERO, MIN(DKMAX, DKO(i,k)))
-            ENDIF
-         ENDDO
-      ENDDO
+              endif ! KPBL
+        ENDDO ! K
+
+
+#if (HWRF==1)
+! possible modification of first guess DKU, under certain conditions
+! (1) this applies only to columns over water
+
+        IF(xland1(i).eq.2)then ! sea only
+
+! (2) alpha test
+! if alpha < 0, find alpha for each column and do the loop again
+! if alpha > 0, we are finished
+
+
+        if(alpha.lt.0)then      ! variable alpha test
+
+! k-level of layer around 500 m
+            kLOC = INT(WSPM(i,2)) 
+!            print *,' kLOC ',kLOC,' KPBL ',KPBL(I)
+
+! (3) only do  this IF KPBL(I) >= kLOC.  Otherwise, we are finished, with DKU as if alpha = +1
+
+          if(KPBL(I).ge.kLOC)then
+
+            xDKU = DKU(i,kLOC)     ! Km at k-level
+
+! (4) DKU check.
+! WSPM(i,1) is the KM cap for the 500-m level. 
+!  if DKU at 500-m level < WSPM(i,1), do not limit Km ANYWHERE.  Alpha = abs(alpha).  No need to recalc.
+!  if DKU at 500-m level > WSPM(i,1), then alpha = WSPM(i,1)/xDKU for entire column
+            if(xDKU.ge.WSPM(i,1)) then ! ONLY if DKU at 500-m exceeds cap, otherwise already done
+
+
+            WSPM(i,3) = WSPM(i,1)/xDKU  ! ratio of cap to Km at k-level, store in WSPM(i,3)
+            WSPM(i,4) = amin1(WSPM(I,3),1.0) ! this is new column alpha. cap at 1. ! should never be needed
+
+!    if(i.eq.25) print *,' I25 kLOC ',kLOC,' xDKU ',xDKU,' WSPM1 ',WSPM(i,1),' WSPM3 ',WSPM(i,3),' WSPM4 ',WSPM(i,4)
+
+            DO K = 1, KMPBL ! now go through K loop again
+             IF(KPBL(I).GT.K) THEN
+               PRINV = 1.0 / (PHIH(I)/PHIM(I)+CFAC*VK*.1)
+               PRINV = MIN(PRINV,PRMAX)
+               PRINV = MAX(PRINV,PRMIN)
+!              ZFAC = MAX((1.-(ZI(I,K+1)-ZL1(I))/                       &
+!    &                (HPBL(I)-ZL1(I))), ZFMIN)
+               ZFAC = MAX((1.-(ZI(I,K+1)-ZL(I,1))/                      &
+     &                (HPBL(I)-ZL(I,1))), ZFMIN)
+
+               DKU(i,k) = XKZO + WSCALE(I)*VK*ZI(I,K+1)                 &
+     &                         *WSPM(i,4)* ZFAC**PFAC ! recalculated DKU using column alpha
+!               if(i.eq.25) print *,' I25 K ',k,' DKU AFTER ',dku(i,k)
+
+            
+               DKT(i,k) = DKU(i,k)*PRINV
+               DKO(i,k) = (DKU(i,k)-XKZO)*PRINV
+               DKU(i,k) = MIN(DKU(i,k),DKMAX)
+               DKU(i,k) = MAX(DKU(i,k),DKMIN)
+               DKT(i,k) = MIN(DKT(i,k),DKMAX)
+               DKT(i,k) = MAX(DKT(i,k),DKMIN)
+               DKO(i,k) = MAX(RZERO, MIN(DKMAX, DKO(i,k)))
+            ENDIF ! KPBL
+          ENDDO ! DO K (RGF ALTERED)
+         endif ! xDKU.ge.WSPM(i,1)
+         endif ! KPBL(I).ge.kLOC
+        endif ! alpha < 0
+        endif ! xland1 = 2
+#endif
+      ENDDO ! DO I
+
+! end RGF modifications
+! -------------------------------------------------------------------------------------
+
 !
 !     COMPUTE DIFFUSION COEFFICIENTS OVER PBL (FREE ATMOSPHERE)
 !

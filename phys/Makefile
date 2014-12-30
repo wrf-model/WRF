@@ -108,6 +108,8 @@ MODULES = \
 	module_ra_rrtm.o  \
 	module_ra_rrtmg_lw.o  \
 	module_ra_rrtmg_sw.o  \
+	module_ra_rrtmg_lwf.o  \
+	module_ra_rrtmg_swf.o  \
         module_ra_cam_support.o \
         module_ra_cam.o \
 	module_ra_gfdleta.o \

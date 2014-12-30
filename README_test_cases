@@ -118,3 +118,9 @@ The available test cases are
    case is useful for testing the effects of new model code (e.g., 
    new physics options) on tropical cyclones in an idealized framework. 
 
+12) Convective-radiative equilibrium test (test/em_convrad)
+
+   Idealized 3d convective-radiative equilibrium test with constant SST
+   and full physics at cloud-resolving 1 km grid size. Periodic b.c.s.
+   Tropical conditions, small f and weak wind.
+

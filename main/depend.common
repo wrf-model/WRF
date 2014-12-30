@@ -148,6 +148,9 @@ module_cpl.o: \
 module_cpl_oasis3.o: module_driver_constants.o \
                      module_domain.o
 
+module_clear_halos.o: module_configure.o \
+                     module_domain.o
+
 # End of DEPENDENCIES for frame
 
 # DEPENDENCIES for phys
@@ -465,8 +468,11 @@ module_sf_ruclsm.o: ../frame/module_wrf_error.o module_data_gocart_dust.o
 module_sf_pxlsm.o: ../share/module_model_constants.o module_sf_pxlsm_data.o
 
 module_ra_rrtmg_sw.o: module_ra_rrtmg_lw.o
+module_ra_rrtmg_swf.o: module_ra_rrtmg_lwf.o
 
 module_ra_rrtmg_lw.o: ../share/module_model_constants.o \
+		 module_ra_clWRF_support.o 
+module_ra_rrtmg_lwf.o: ../share/module_model_constants.o \
 		 module_ra_clWRF_support.o 
 
 module_physics_addtendc.o: \
@@ -488,6 +494,8 @@ module_physics_addtendc_ad.o: \
 
 module_physics_init.o : \
 		module_ra_rrtm.o		\
+		module_ra_rrtmg_lwf.o		\
+		module_ra_rrtmg_swf.o		\
 		module_ra_rrtmg_lw.o		\
 		module_ra_rrtmg_sw.o		\
 		module_ra_cam.o		\
@@ -731,6 +739,8 @@ module_radiation_driver.o: \
 		module_ra_rrtm.o \
 		module_ra_rrtmg_lw.o \
 		module_ra_rrtmg_sw.o \
+		module_ra_rrtmg_lwf.o \
+		module_ra_rrtmg_swf.o \
 		module_ra_cam.o \
 		module_ra_gfdleta.o \
 		module_ra_HWRF.o \

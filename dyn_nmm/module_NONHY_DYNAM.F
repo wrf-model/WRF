@@ -1008,6 +1008,11 @@
 !$omp& private(i,j)
       DO J=JTS-5,JTE+5
       DO I=ITS-5,ITE+5
+        ZEW(i,j)=0
+        ZNE(i,j)=0
+        ZNS(i,j)=0
+        ZSE(i,j)=0
+        TTB(i,j)=0
         DPDE(I,J)=0.
         UNED(I,J)=0.
         USED(I,J)=0.

@@ -125,7 +125,7 @@ PROGRAM convert_emissions
 ! Add a logical leap-year variable as we want to calculate Julian day from the volc_d01 file
    LOGICAL :: LEAP
 ! Add beg_yr, beg_mon, and beg_jul to calculate the eruption Julian day and hour from the 
-   volc_d01 data file as it can be different than the run start day and hour.
+!  volc_d01 data file as it can be different than the run start day and hour.
    INTEGER :: iswaterr,itest,beg_yr,beg_mon,beg_jul,beg_day,beg_hour
    INTEGER :: itime = 0
    INTEGER :: inew_nei = 0
@@ -655,7 +655,6 @@ PROGRAM convert_emissions
 	LEAP = .FALSE.
 	IF((MOD(beg_yr,4) .EQ. 0 .AND. MOD(beg_yr,100).NE.0 ).OR. MOD(beg_yr,400).EQ.0 ) THEN
             LEAP = .TRUE.        
-          ENDIF
         ENDIF
 	IF (LEAP) THEN
 	  K = 1

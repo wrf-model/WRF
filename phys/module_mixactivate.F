@@ -24,12 +24,12 @@ CONTAINS
 		ccn_conc, chem_opt,                                   & ! RAS
 		rho_phy, th_phy, pi_phy, w, cldfra, cldfra_old,       &
 		z, dz8w, p_at_w, t_at_w, exch_h,                      &
-        qv, qc, qi, qndrop3d,                                 &
+        qv, qc, qi, qndrop3d,                                &
         nsource,                                              &
 		ids,ide, jds,jde, kds,kde,                            &
 		ims,ime, jms,jme, kms,kme,                            &
 		its,ite, jts,jte, kts,kte,                            &
-		f_qc, f_qi                                            )
+		f_qc, f_qi, cn                                        )
 
 !        USE module_configure
 
@@ -60,6 +60,10 @@ CONTAINS
 	real, intent(in),   &
 		dimension( ims:ime, kms:kme, jms:jme ) :: &
 		qv, qc, qi
+
+	real, intent(inout), optional,  &
+		dimension( ims:ime, kms:kme, jms:jme ) :: &
+		cn ! single-size CCN concentration
 
 	real, intent(inout),   &
 		dimension( ims:ime, kms:kme, jms:jme ) :: &
@@ -142,14 +146,19 @@ CONTAINS
        do m=1,nsize_aer(n)
           ptr=ptr+1
           numptr_aer( m, n, p )=ptr
-	  if(p.eq.ai_phase)then
-	     chem(its:ite,kts:kte,jts:jte,ptr)=naer
-	  else
-	     chem(its:ite,kts:kte,jts:jte,ptr)=0.
-	  endif
-	end do ! size
-	end do ! type
-	end do ! phase
+        
+        if(p.eq.ai_phase)then
+         IF ( present( cn ) ) THEN
+            chem(its:ite,kts:kte,jts:jte,ptr) = cn(its:ite,kts:kte,jts:jte)
+          ELSE  ! ERM: use qndrop3d as a proxy for number of activated CCN
+            chem(its:ite,kts:kte,jts:jte,ptr) = Max(0.0, naer-qndrop3d(its:ite,kts:kte,jts:jte) )
+          ENDIF
+        else
+           chem(its:ite,kts:kte,jts:jte,ptr)=0.
+        endif
+      end do ! size
+      end do ! type
+      end do ! phase
        do p=1,maxd_aphase
        do n=1,ntype_aer
        do m=1,nsize_aer(n)
@@ -164,12 +173,18 @@ CONTAINS
 ! 1.e6 factor converts g to ug
 	     maer= 1.0e6 * naer * dens_aer(l,n) * ( (3.1416/6.) *   &
                  (dgnum_aer(m,n)**3) * exp( 4.5*((log(sigmag_aer(m,n)))**2) ) )
-	     if(p.eq.ai_phase)then
-	        chem(its:ite,kts:kte,jts:jte,ptr)=maer
-	     else
-	        chem(its:ite,kts:kte,jts:jte,ptr)=0.
-	     endif
-	  end do
+           if(p.eq.ai_phase)then
+            IF ( present( cn ) ) THEN
+              chem(its:ite,kts:kte,jts:jte,ptr) = 1.0e6 * cn(its:ite,kts:kte,jts:jte)* dens_aer(l,n) * ( (3.1416/6.) *   &
+                 (dgnum_aer(m,n)**3) * exp( 4.5*((log(sigmag_aer(m,n)))**2) ) )
+            ELSE ! ERM: use qndrop3d as a proxy for number of activated CCN
+              chem(its:ite,kts:kte,jts:jte,ptr) = 1.0e6 * Max(0.0, naer -qndrop3d(its:ite,kts:kte,jts:jte))* &
+                  dens_aer(l,n) * ( (3.1416/6.) *(dgnum_aer(m,n)**3) * exp( 4.5*((log(sigmag_aer(m,n)))**2) ) )
+            ENDIF
+           else
+              chem(its:ite,kts:kte,jts:jte,ptr)=0.
+           endif
+        end do
 	end do ! size
 	end do ! type
 	end do ! phase
@@ -205,6 +220,11 @@ CONTAINS
             grid_id, ktau, dtstep, &
             F_QC=f_qc, F_QI=f_qi                              )
 
+
+       ! ERM : If CCN field was passed in, then copy back the new field, which is the first
+       IF ( present( cn ) ) THEN
+         cn(its:ite,kts:kte,jts:jte) = Max(0.0, chem(its:ite,kts:kte,jts:jte,1))
+       ENDIF
 
       end subroutine prescribe_aerosol_mixactivate
 

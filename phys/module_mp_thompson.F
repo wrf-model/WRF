@@ -90,7 +90,8 @@
       REAL, PARAMETER, PRIVATE:: mu_g = 0.0
       REAL, PARAMETER, PRIVATE:: mu_i = 0.0
       REAL, PRIVATE:: mu_c
-      INTEGER, PRIVATE:: nu_c
+!jm this cannot be a module variable because it isn't thread safe (20141107)
+!jm      INTEGER, PRIVATE:: nu_c
 
 !..Sum of two gamma distrib for snow (Field et al. 2005).
 !.. N(D) = M2**4/M3**3 * [Kap0*exp(-M2*Lam0*D/M3)
@@ -382,7 +383,8 @@
       REAL:: t1_qs_sd, t2_qs_sd, t1_qg_sd, t2_qg_sd
       REAL:: t1_qs_me, t2_qs_me, t1_qg_me, t2_qg_me
 
-      CHARACTER*256:: mp_debug
+!jm not thread safe, make automatic in the routines that use it
+!jm      CHARACTER*256:: mp_debug
 
 !+---+
 !+---+-----------------------------------------------------------------+
@@ -412,6 +414,7 @@
       REAL, DIMENSION(ims:ime,jms:jme), OPTIONAL, INTENT(INOUT) :: nwfa2d
       REAL, OPTIONAL, INTENT(IN) :: DX, DY
       LOGICAL, OPTIONAL, INTENT(IN) :: is_start
+      CHARACTER*256:: mp_debug
 
 
       INTEGER:: i, j, k, l, m, n
@@ -1071,6 +1074,7 @@
       INTEGER:: i_start, j_start, i_end, j_end
       LOGICAL, OPTIONAL, INTENT(IN) :: diagflag
       INTEGER, OPTIONAL, INTENT(IN) :: do_radar_ref
+      CHARACTER*256:: mp_debug
 
 !+---+
 
@@ -1475,6 +1479,8 @@
       LOGICAL:: melti, no_micro
       LOGICAL, DIMENSION(kts:kte):: L_qc, L_qi, L_qr, L_qs, L_qg
       LOGICAL:: debug_flag
+      INTEGER :: nu_c   ! made automatic for thread safety, jm 20141107
+      CHARACTER*256:: mp_debug
 
 !+---+
 
@@ -3552,9 +3558,14 @@
       DOUBLE PRECISION, DIMENSION(nbr):: vr, N_r
       DOUBLE PRECISION:: N0_r, N0_g, lam_exp, lamg, lamr
       DOUBLE PRECISION:: massg, massr, dvg, dvr, t1, t2, z1, z2, y1, y2
+      LOGICAL read_thompson_tables, write_thompson_tables
 
 !+---+
 
+      CALL nl_get_read_thompson_tables(1,read_thompson_tables)
+      CALL nl_get_write_thompson_tables(1,write_thompson_tables)
+
+    IF ( .NOT. read_thompson_tables ) THEN
       do n2 = 1, nbr
 !        vr(n2) = av_r*Dr(n2)**bv_r * DEXP(-fv_r*Dr(n2))
          vr(n2) = -0.1021 + 4.932E3*Dr(n2) - 0.9551E6*Dr(n2)*Dr(n2)     &
@@ -3646,6 +3657,37 @@
       CALL wrf_dm_gatherv(tnr_gacr, ntb_g*ntb_g1, km_s, km_e, R8SIZE)
 #endif
 
+      IF ( write_thompson_tables ) THEN
+        CALL wrf_message("Writing qr_acr_qg.dat in Thompson MP init")
+        OPEN(63,file="qr_acr_qg.dat",form="unformatted",err=9234)
+        WRITE(63,err=9234) tcg_racg
+        WRITE(63,err=9234) tmr_racg
+        WRITE(63,err=9234) tcr_gacr
+        WRITE(63,err=9234) tmg_gacr
+        WRITE(63,err=9234) tnr_racg
+        WRITE(63,err=9234) tnr_gacr
+        CLOSE(63)
+        RETURN    ! ----- RETURN
+ 9234   CONTINUE
+        CALL wrf_error_fatal("Error writing qr_acr_qg.dat")
+      ENDIF
+
+    ELSE  !read_thompson_tables
+
+      CALL wrf_message("ThompMP: read qr_acr_qg.dat stead of computing")
+      OPEN(63,file="qr_acr_qg.dat",form="unformatted",err=1234)
+      READ(63,err=1234) tcg_racg
+      READ(63,err=1234) tmr_racg
+      READ(63,err=1234) tcr_gacr
+      READ(63,err=1234) tmg_gacr
+      READ(63,err=1234) tnr_racg
+      READ(63,err=1234) tnr_gacr
+      CLOSE(63)
+      RETURN    ! ----- RETURN
+ 1234 CONTINUE
+      CALL wrf_error_fatal("Error reading qr_acr_qg.dat")
+
+    ENDIF !read_thompson_tables
 
       end subroutine qr_acr_qg
 !+---+-----------------------------------------------------------------+
@@ -3668,9 +3710,14 @@
       DOUBLE PRECISION:: dvs, dvr, masss, massr
       DOUBLE PRECISION:: t1, t2, t3, t4, z1, z2, z3, z4
       DOUBLE PRECISION:: y1, y2, y3, y4
+      LOGICAL read_thompson_tables, write_thompson_tables
 
 !+---+
 
+      CALL nl_get_read_thompson_tables(1,read_thompson_tables)
+      CALL nl_get_write_thompson_tables(1,write_thompson_tables)
+
+    IF ( .NOT. read_thompson_tables ) THEN
       do n2 = 1, nbr
 !        vr(n2) = av_r*Dr(n2)**bv_r * DEXP(-fv_r*Dr(n2))
          vr(n2) = -0.1021 + 4.932E3*Dr(n2) - 0.9551E6*Dr(n2)*Dr(n2)     &
@@ -3838,6 +3885,49 @@
       CALL wrf_dm_gatherv(tnr_sacr2, ntb_s*ntb_t, km_s, km_e, R8SIZE)
 #endif
 
+      IF ( write_thompson_tables ) THEN
+        CALL wrf_message("Writing qr_acr_qs.dat in Thompson MP init")
+        OPEN(63,file="qr_acr_qs.dat",form="unformatted",err=9234)
+        WRITE(63,err=9234)tcs_racs1
+        WRITE(63,err=9234)tmr_racs1
+        WRITE(63,err=9234)tcs_racs2
+        WRITE(63,err=9234)tmr_racs2
+        WRITE(63,err=9234)tcr_sacr1
+        WRITE(63,err=9234)tms_sacr1
+        WRITE(63,err=9234)tcr_sacr2
+        WRITE(63,err=9234)tms_sacr2
+        WRITE(63,err=9234)tnr_racs1
+        WRITE(63,err=9234)tnr_racs2
+        WRITE(63,err=9234)tnr_sacr1
+        WRITE(63,err=9234)tnr_sacr2
+        CLOSE(63)
+        RETURN    ! ----- RETURN
+ 9234   CONTINUE
+        CALL wrf_error_fatal("Error writing qr_acr_qs.dat")
+      ENDIF
+
+    ELSE  !read_thompson_tables
+
+      CALL wrf_message("ThompMP: read qr_acr_qs.dat stead of computing")
+      OPEN(63,file="qr_acr_qs.dat",form="unformatted",err=1234)
+      READ(63,err=1234)tcs_racs1
+      READ(63,err=1234)tmr_racs1
+      READ(63,err=1234)tcs_racs2
+      READ(63,err=1234)tmr_racs2
+      READ(63,err=1234)tcr_sacr1
+      READ(63,err=1234)tms_sacr1
+      READ(63,err=1234)tcr_sacr2
+      READ(63,err=1234)tms_sacr2
+      READ(63,err=1234)tnr_racs1
+      READ(63,err=1234)tnr_racs2
+      READ(63,err=1234)tnr_sacr1
+      READ(63,err=1234)tnr_sacr2
+      CLOSE(63)
+      RETURN    ! ----- RETURN
+ 1234 CONTINUE
+      CALL wrf_error_fatal("Error reading qr_acr_qs.dat")
+
+    ENDIF !read_thompson_tables
 
       end subroutine qr_acr_qs
 !+---+-----------------------------------------------------------------+
@@ -3859,10 +3949,15 @@
       DOUBLE PRECISION:: sum1, sum2, sumn1, sumn2, &
                          prob, vol, Texp, orho_w, &
                          lam_exp, lamr, N0_r, lamc, N0_c, y
+      INTEGER :: nu_c  ! made automatic, jm 20141107
       REAL:: T_adjust
+      LOGICAL read_thompson_tables, write_thompson_tables
 
 !+---+
+      CALL nl_get_read_thompson_tables(1,read_thompson_tables)
+      CALL nl_get_write_thompson_tables(1,write_thompson_tables)
 
+    IF ( .NOT. read_thompson_tables ) THEN
       orho_w = 1./rho_w
 
       do n2 = 1, nbr
@@ -3928,6 +4023,38 @@
          enddo
       enddo
       enddo
+
+      IF ( write_thompson_tables ) THEN
+        CALL wrf_message("Writing freezeH2O.dat in Thompson MP init")
+        OPEN(63,file="freezeH2O.dat",form="unformatted",err=9234)
+        WRITE(63,err=9234)tpi_qrfz
+        WRITE(63,err=9234)tni_qrfz
+        WRITE(63,err=9234)tpg_qrfz
+        WRITE(63,err=9234)tnr_qrfz
+        WRITE(63,err=9234)tpi_qcfz
+        WRITE(63,err=9234)tni_qcfz
+        CLOSE(63)
+        RETURN    ! ----- RETURN
+ 9234   CONTINUE
+        CALL wrf_error_fatal("Error writing freezeH2O.dat")
+      ENDIF
+
+    ELSE  !read_thompson_tables
+
+      CALL wrf_message("ThompMP: read freezeH2O.dat stead of computing")
+      OPEN(63,file="freezeH2O.dat",form="unformatted",err=1234)
+      READ(63,err=1234)tpi_qrfz
+      READ(63,err=1234)tni_qrfz
+      READ(63,err=1234)tpg_qrfz
+      READ(63,err=1234)tnr_qrfz
+      READ(63,err=1234)tpi_qcfz
+      READ(63,err=1234)tni_qcfz
+      CLOSE(63)
+      RETURN    ! ----- RETURN
+ 1234 CONTINUE
+      CALL wrf_error_fatal("Error reading freezeH2O.dat")
+
+    ENDIF !read_thompson_tables
 
       end subroutine freezeH2O
 !+---+-----------------------------------------------------------------+
@@ -4156,6 +4283,7 @@
       INTEGER:: i, j, k, n
       DOUBLE PRECISION, DIMENSION(nbc):: N_c, massc
       DOUBLE PRECISION:: summ, summ2, lamc, N0_c
+      INTEGER :: nu_c   ! made automatic, jm 20141107
 !      DOUBLE PRECISION:: Nt_r, N0, lam_exp, lam
 !      REAL:: xlimit_intg
 

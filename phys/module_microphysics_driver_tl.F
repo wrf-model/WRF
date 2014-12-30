@@ -35,10 +35,10 @@ SUBROUTINE G_MICROPHYSICS_DRIVER(th, thd, rho, rhod, pi_phy, pi_phyd, p&
 &  cmfmc2_3d, config_flags, fnm, fnp, rh_old_mp, lcd_old_mp, qv_curr, &
 &  qv_currd, qc_curr, qc_currd, qr_curr, qr_currd, qi_curr, qs_curr, qg_curr, qndrop_curr, &
 &  qni_curr, qh_curr, qnh_curr, qzr_curr, qzi_curr, qzs_curr, qzg_curr, &
-&  qzh_curr, qns_curr, qnr_curr, qng_curr, qnn_curr, qnc_curr, qvolg_curr&
+&  qzh_curr, qns_curr, qnr_curr, qng_curr, qnn_curr, qnc_curr, qvolg_curr, qvolh_curr &
 &  , f_qv, f_qc, f_qr, f_qi, f_qs, f_qg, f_qndrop, f_qni, f_qns, f_qnr, &
 &  f_qng, f_qnc, f_qnn, f_qh, f_qnh, f_qzr, f_qzi, f_qzs, f_qzg, f_qzh, &
-&  f_qvolg, qrcuten, qscuten, qicuten, mu, qt_curr, f_qt, &
+&  f_qvolg, f_qvolh, qrcuten, qscuten, qicuten, mu, qt_curr, f_qt, &
 &  mp_restart_state, tbpvs_state, tbpvs0_state, hail, ice2, w, z, rainnc&
 &  , rainncd, rainncv, rainncvd, snownc, snowncv, hailnc, hailncv, &
 &  graupelnc, graupelncv, refl_10cm, ri_curr, diagflag, do_radar_ref)
@@ -46,7 +46,7 @@ SUBROUTINE G_MICROPHYSICS_DRIVER(th, thd, rho, rhod, pi_phy, pi_phyd, p&
    USE module_state_description, ONLY :                                  &
                      KESSLERSCHEME, LINSCHEME, SBU_YLINSCHEME, WSM3SCHEME, WSM5SCHEME    &
                     ,WSM6SCHEME, ETAMPNEW, ETAMPOLD, THOMPSON, MORR_TWO_MOMENT     &
-                    ,GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME, NSSL_2MOM, NSSL_2MOMCCN  &
+                    ,GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME, NSSL_2MOM, NSSL_2MOMCCN, NSSL_2MOMG  &
                     ,NSSL_1MOM,NSSL_1MOMLFO & ! ,NSSL_3MOM       &
                     ,MILBRANDT2MOM, LSCONDSCHEME, MKESSLERSCHEME, CAMMGMPSCHEME  !,MILBRANDT3MOM
 
@@ -123,6 +123,7 @@ SUBROUTINE G_MICROPHYSICS_DRIVER(th, thd, rho, rhod, pi_phy, pi_phyd, p&
 ! Qzg        graupel          reflectivity (m6/kg)
 ! Qzh        hail             reflectivity (m6/kg)
 ! Qvolg        graupel   particle volume (m3/kg)
+! Qvolh        hail      particle volume (m3/kg)
 !
 !----------------------------------------------------------------------
 !-- th        potential temperature    (K)
@@ -181,6 +182,7 @@ SUBROUTINE G_MICROPHYSICS_DRIVER(th, thd, rho, rhod, pi_phy, pi_phyd, p&
 !-- P_QZG         species index for graupel reflectivity
 !-- P_QZH         species index for hail    reflectivity
 !-- P_QVOLG       species index for graupel particle volume,
+!-- P_QVOLH       species index for hail    particle volume,
 !-- id            grid id number
 !-- ids           start index for i in domain
 !-- ide           end index for i in domain
@@ -308,7 +310,7 @@ SUBROUTINE G_MICROPHYSICS_DRIVER(th, thd, rho, rhod, pi_phy, pi_phyd, p&
 &  w, z, t8w, cldfra, cldfra_old, exch_h, qv_curr, qc_curr, qr_curr, &
 &  qi_curr, qs_curr, qg_curr, qt_curr, qndrop_curr, qni_curr, qh_curr, &
 &  qnh_curr, qns_curr, qnr_curr, qng_curr, qnn_curr, qnc_curr, qzr_curr, &
-&  qzi_curr, qzs_curr, qzg_curr, qzh_curr, qvolg_curr
+&  qzi_curr, qzs_curr, qzg_curr, qzh_curr, qvolg_curr, qvolh_curr
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), OPTIONAL, INTENT(INOUT) ::&
 &  qv_currd, qc_currd, qr_currd
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), OPTIONAL, INTENT(IN) :: &
@@ -332,7 +334,7 @@ SUBROUTINE G_MICROPHYSICS_DRIVER(th, thd, rho, rhod, pi_phy, pi_phyd, p&
 !
   LOGICAL, OPTIONAL :: f_qv, f_qc, f_qr, f_qi, f_qs, f_qg, f_qndrop, &
 &  f_qni, f_qt, f_qns, f_qnr, f_qng, f_qnn, f_qnc, f_qh, f_qnh, f_qzr, &
-&  f_qzi, f_qzs, f_qzg, f_qzh, f_qvolg
+&  f_qzi, f_qzs, f_qzg, f_qzh, f_qvolg, f_qvolh
   LOGICAL, OPTIONAL, INTENT(IN) :: diagflag
   INTEGER, OPTIONAL, INTENT(IN) :: do_radar_ref
 ! LOCAL  VAR

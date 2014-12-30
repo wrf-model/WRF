@@ -51,12 +51,14 @@ subroutine da_setup_cv(be)
       be % cv % size7 = ij * be % v7 % mz
       be % cv % size8 = ij * be % v8 % mz
       be % cv % size9 = ij * be % v9 % mz
+      be % cv % size10= ij * be % v10 % mz
+      be % cv % size11i= ij * be % v11 % mz
 #endif
    end if
 #ifdef CLOUD_CV
    be % cv % size_jb = be % cv % size1 + be % cv % size2 + be % cv % size3 + &
       be % cv % size4 + be % cv % size5+ be % cv % size6 + be % cv % size7 + &
-      be % cv % size8 + be % cv % size9
+      be % cv % size8 + be % cv % size9+  be % cv % size10 +  be % cv % size11i
 #else
    be % cv % size_jb = be % cv % size1 + be % cv % size2 + be % cv % size3 + &
       be % cv % size4 + be % cv % size5
@@ -110,7 +112,8 @@ subroutine da_setup_cv(be)
       endif
 #ifdef CLOUD_CV
       cv_size_domain_jb = ij * (be % v1 % mz + be % v2 % mz + be % v3 % mz + &
-             be % v4 % mz + be % v5 % mz + be % v6 % mz + be % v7 % mz +  be % v8 % mz + be % v9 % mz )
+             be % v4 % mz + be % v5 % mz + be % v6 % mz + be % v7 % mz + &
+             be % v8 % mz + be % v9 % mz + be % v10 % mz + be % v11 % mz )
 #else
       cv_size_domain_jb = ij * (be % v1 % mz + be % v2 % mz + be % v3 % mz + &
                                  be % v4 % mz + be % v5 % mz)

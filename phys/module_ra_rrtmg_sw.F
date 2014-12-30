@@ -2049,7 +2049,7 @@
 
 ! Initialize
 
-      hvrclc = '$Revision: 1.3 $'
+!jm not thread safe      hvrclc = '$Revision: 1.3 $'
 
 ! Some of these initializations are done elsewhere
       do lay = 1, nlayers
@@ -2517,7 +2517,7 @@
 
 ! Initialize
 
-      hvrrft = '$Revision: 1.3 $'
+!jm not thread safe      hvrrft = '$Revision: 1.3 $'
 
       zsr3=sqrt(3._rb)
       zwcrit=0.9999995_rb
@@ -3266,7 +3266,7 @@
 !      real(kind=rb), intent(out) :: ssa(:,:)            ! single scattering albedo (inactive)
                                                          !   Dimensions: (nlayers,ngptsw)
 
-      hvrtau = '$Revision: 1.3 $'
+!jm not thread safe      hvrtau = '$Revision: 1.3 $'
 
 ! Calculate gaseous optical depth and planck fractions for each spectral band.
 
@@ -4607,7 +4607,7 @@
 !     BPADE    Inverse of the Pade approximation constant
 !
 
-      hvrini = '$Revision: 1.3 $'
+!jm not thread safe      hvrini = '$Revision: 1.3 $'
 
 ! Initialize model data
       call swdatinit(cpdair)
@@ -4705,7 +4705,7 @@
 
       use rrsw_con, only: heatfac, grav, planck, boltz, &
                           clight, avogad, alosmt, gascon, radcn1, radcn2, &
-                          sbcnst, secdy 
+                          sbcnst, secdy, oneminus, pi
       use rrsw_vsn
 
       save 
@@ -4751,6 +4751,11 @@
                                               ! (W cm-2 K-4)
       secdy = 8.6400e4_rb                     ! Number of seconds per day
                                               ! (s d-1)
+
+!jm 20141107 moved here for thread safety
+      oneminus = 1.0_rb - 1.e-06_rb ! zepsec
+      pi = 2._rb * asin(1._rb)
+
 !
 !     units are generally cgs
 !
@@ -9137,8 +9142,8 @@
       iout = 0 !BSINGH(PNNL) initializing iout to zero(Might be wrong!) as this variable is never initialized but used in spcvmc_sw
       zepsec = 1.e-06_rb
       zepzen = 1.e-10_rb
-      oneminus = 1.0_rb - zepsec
-      pi = 2._rb * asin(1._rb)
+!jm not thread safe      oneminus = 1.0_rb - zepsec
+!jm not thread safe      pi = 2._rb * asin(1._rb)
 
       istart = jpb1
       iend = jpb2

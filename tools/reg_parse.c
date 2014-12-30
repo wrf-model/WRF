@@ -589,10 +589,67 @@ reg_parse( FILE * infile )
 			       }
                                else
 			       {
+#if NMM_CORE==1
+                                 int found_interp=0;
+                                 if(field_struct->type && field_struct->type->name
+                                    && (x=='f'||x=='d'||x=='u'||x=='s')) {
+                                   if(dims_ij_inner(field_struct)) {
+                                     if(x=='u') {
+                                       if(!strcasecmp(field_struct->type->name,"real"))
+                                         found_interp=!!strcpy(fcn_name,"UpCopy");
+                                       else if(!strcasecmp(field_struct->type->name,"integer"))
+                                         found_interp=!!strcpy(fcn_name,"UpINear");
+                                     } else if(x=='d') {
+                                       if(!strcasecmp(field_struct->type->name,"real"))
+                                         found_interp=!!strcpy(fcn_name,"DownCopy");
+                                       else if(!strcasecmp(field_struct->type->name,"integer"))
+                                         found_interp=!!strcpy(fcn_name,"DownINear");
+                                     } else if(x=='f') {
+                                       if(!strcasecmp(field_struct->type->name,"real"))
+                                         found_interp=!!strcpy(fcn_name,"BdyCopy");
+                                       else if(!strcasecmp(field_struct->type->name,"integer"))
+                                         found_interp=!!strcpy(fcn_name,"BdyINear");
+                                     } else if(x=='s') {
+                                       if(!strcasecmp(field_struct->type->name,"real"))
+                                         found_interp=!!strcpy(fcn_name,"nmm_smoother_ijk");
+                                     }
+                                   } else if(dims_ikj_inner(field_struct)) {
+                                     if(x=='d') {
+                                       if(!strcasecmp(field_struct->type->name,"real"))
+                                         found_interp=!!strcpy(fcn_name,"DownNearIKJ");
+                                     } else if(x=='s') {
+                                       if(!strcasecmp(field_struct->type->name,"real"))
+                                         found_interp=!!strcpy(fcn_name,"nmm_smoother_ikj");
+                                     }
+                                   }
+                                 }
+                                 if(!found_interp) {
+                                   fprintf(stderr,"ERROR: %s %c function invalid.  You must specify the function to call in f=, d=, u= or s= when using the NMM cores.  The ARW interp functions do not correctly handle the E grid.\n",tokens[FIELD_SYM],x);
+                                   exit(1);
+                                 } else {
+                                   /*  warning should no longer be needed 
+                                      fprintf(stderr,"WARNING: %c interpolation unspecified for %s.  Using %s.\n",
+                                           x,tokens[FIELD_SYM],fcn_name);
+                                   */
+                                 }
+#else
 				 if ( x == 'f' || x == 'd' ) strcpy(fcn_name,"interp_fcn") ;
 				 if ( x == 'u' ) strcpy(fcn_name,"copy_fcn") ;
 				 if ( x == 's' ) strcpy(fcn_name,"smoother") ;
+#endif
 			       }
+#if NMM_CORE==1
+                               if(dims_ikj_inner(field_struct) && !strcasestr(fcn_name,"ikj")) {
+                                 fprintf(stderr,"ERROR: %s %c %s: you must use IKJ interpolators for IKJ arrays.\n",
+                                         tokens[FIELD_SYM],x,fcn_name);
+                                 exit(1);
+                               }
+                               if(dims_ij_inner(field_struct) && strcasestr(fcn_name,"ikj")) {
+                                 fprintf(stderr,"ERROR: %s %c %s: you cannot use IKJ interpolators for IJ arrays.\n",
+                                         tokens[FIELD_SYM],x,fcn_name);
+                                 exit(1);
+                               }
+#endif
 	                       if      ( x == 'f' )  { 
                                  field_struct->nest_mask |= FORCE_DOWN ; 
                                  strcpy(field_struct->force_fcn_name, fcn_name ) ;

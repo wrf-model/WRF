@@ -638,12 +638,12 @@ reg_parse( FILE * infile )
 #endif
 			       }
 #if NMM_CORE==1
-                               if(dims_ikj_inner(field_struct) && !strcasestr(fcn_name,"ikj")) {
+                               if(dims_ikj_inner(field_struct) && !strcasestr(fcn_name,"ikj") && !strcasestr(fcn_name,"nointerp")) {
                                  fprintf(stderr,"ERROR: %s %c %s: you must use IKJ interpolators for IKJ arrays.\n",
                                          tokens[FIELD_SYM],x,fcn_name);
                                  exit(1);
                                }
-                               if(dims_ij_inner(field_struct) && strcasestr(fcn_name,"ikj")) {
+                               if(dims_ij_inner(field_struct) && strcasestr(fcn_name,"ikj") && !strcasestr(fcn_name,"nointerp")) {
                                  fprintf(stderr,"ERROR: %s %c %s: you cannot use IKJ interpolators for IJ arrays.\n",
                                          tokens[FIELD_SYM],x,fcn_name);
                                  exit(1);

@@ -496,7 +496,6 @@ rsl_lite_allgather_msgs ( mytask_p, ntasks_p, comm )
   int ntasks, mytask ;
   int ii, i, j ;
   int ig, jg ;
-  int *Psize_all ;
   int *sp, *bp ;
   int rc ;
 
@@ -514,21 +513,11 @@ rsl_lite_allgather_msgs ( mytask_p, ntasks_p, comm )
   RSL_TEST_ERR( ntasks == RSL_MAXPROC ,
     "RSL_BCAST_MSGS: raise the compile time value of MAXPROC" ) ;
   
-  Psize_all = RSL_MALLOC( int, ntasks * ntasks ) ;
-
 #ifndef STUBMPI
-  MPI_Allgather( Ssizes, ntasks, MPI_INT , Psize_all, ntasks, MPI_INT, comm ) ;
+  MPI_Alltoall(Ssizes,1,MPI_INT, Rsizes,1,MPI_INT,comm);
 #else
-  Psize_all[0] = Ssizes[0] ;
+  Rsizes[0] = Ssizes[0];
 #endif
-
-  for ( j = 0 ; j < ntasks ; j++ ) 
-    Rsizes[j] = 0 ;
-
-  for ( j = 0 ; j < ntasks ; j++ ) 
-  {
-    Rsizes[j] += Psize_all[ INDEX_2( j , mytask , ntasks ) ] ;
-  }
 
   for ( Rbufsize = 0, P = 0, Rdisplacements[0] = 0 ; P < ntasks ; P++ )
   {
@@ -558,7 +547,6 @@ rsl_lite_allgather_msgs ( mytask_p, ntasks_p, comm )
   *r = RSL_INVALID ;
 
   RSL_FREE( Sendbuf ) ;
-  RSL_FREE( Psize_all ) ;
 
   for ( j = 0 ; j < *ntasks_p ; j++ )  {
     destroy_list ( &(Plist[j]), NULL ) ;

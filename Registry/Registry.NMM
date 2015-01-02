@@ -602,7 +602,7 @@ state  real   dwdtmx    ij    dyn_nmm   1    -     -        "DWDTMX"    "Maximum
 state  real   baro      ij    dyn_nmm   1    -     -        "BARO"      "external mode vvel"           "m s-1"
 state  real   dwdt      ijk   dyn_nmm   1    -     rd=(DownCopy) "DWDT"      "dwdt and 1+(dwdt)/g"              "m s-2"
 state  real   pdwdt     ijk   dyn_nmm   1    -     r
-state  real   pint      ijk   dyn_nmm   1    Z     irh023d=(DownCopy)u=(NoInterp)f=(NoInterp)       "PINT"      "Model layer interface pressure"   "Pa"
+state  real   pint      ijk   dyn_nmm   1    Zn    irh023d=(DownCopy)u=(NoInterp)f=(NoInterp)       "PINT"      "Model layer interface pressure"   "Pa"
 state  real   w         ijk   dyn_nmm   1    Z     rd=(DownCopy)       "W_nonhydro"         "Vertical velocity (non-hydrostatic component only)"                "m s-1"
 state  real   w_tot     ijk   dyn_nmm   1    Z     h023d=(DownCopy)       "W"         "Vertical velocity"                "m s-1"
 state  real   z         ijk   dyn_nmm   1    Z     hd=(DownCopy)        "Z"         "Distance from ground"             "m"
@@ -1841,7 +1841,7 @@ halo HALO_NMM_VT4_NOISE dyn_nmm 8:mslp_noisy
 endif
 
 halo HALO_NMM_INTERP_INFO dyn_nmm 8:pd,iinfo,winfo,pint
-halo HALO_NMM_INT_UP dyn_nmm 8:pd,fis,hres_fis,sm
+halo HALO_NMM_INT_UP dyn_nmm 120:pd,fis,hres_fis,sm
 
 halo HALO_NMM_MEMBRANE_RELAX dyn_nmm 8:relaxwork
 halo HALO_NMM_MEMBRANE_MASK dyn_nmm 8:relaximask

@@ -452,6 +452,7 @@ reg_parse( FILE * infile )
 
       field_struct->stag_x = 0 ; field_struct->stag_y = 0 ; field_struct->stag_z = 0 ;
       field_struct->mp_var = 0 ; field_struct->nmm_v_grid=0 ; field_struct->full_feedback = 0;
+      field_struct->no_feedback = 0;
       for ( i = 0 ; i < strlen(tokens[FIELD_STAG]) ; i++ )
       {
 	if ( tolower(tokens[FIELD_STAG][i]) == 'x' || sw_all_x_staggered ) field_struct->stag_x = 1 ;
@@ -463,6 +464,8 @@ reg_parse( FILE * infile )
           field_struct->mp_var = 1;
         if ( tolower(tokens[FIELD_STAG][i]) == 'f' )
           field_struct->full_feedback = 1;
+        if ( tolower(tokens[FIELD_STAG][i]) == 'n' )
+          field_struct->no_feedback = 1;
       }
 
       field_struct->restart  = 0 ; field_struct->boundary  = 0 ;

@@ -5367,9 +5367,7 @@ integer myproc
 
       CALL rsl_lite_merge_msgs( myproc, nproc, local_comm )
 
-      before_smooth_halo: if(config_flags%smooth_option/=0) then
 #include "nest_feedbackup_unpack.inc"
-      endif before_smooth_halo
 
       ! smooth coarse grid
 
@@ -5381,16 +5379,18 @@ integer myproc
                                 ids, ide, jds, jde, kds, kde,    &
                                 ims, ime, jms, jme, kms, kme,    &
                                 ips, ipe, jps, jpe, kps, kpe    )
-      smoother: if(config_flags%smooth_option/=0) then
+      before_smooth_halo: if(config_flags%smooth_option/=0) then
 #include "HALO_INTERP_UP.inc"
-      endif smoother
+      endif before_smooth_halo
 
       CALL get_ijk_from_grid (  grid ,                   &
                                 cids, cide, cjds, cjde, ckds, ckde,    &
                                 cims, cime, cjms, cjme, ckms, ckme,    &
                                 cips, cipe, cjps, cjpe, ckps, ckpe    )
 
+      smoother: if(config_flags%smooth_option/=0) then
 #include "nest_feedbackup_smooth.inc"
+      endif smoother
 
 !#define COPY_OUT
 !#include <scalar_derefs.inc>

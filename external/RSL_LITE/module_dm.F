@@ -1372,73 +1372,55 @@ CONTAINS
 
 #ifdef HWRF
    SUBROUTINE wrf_dm_minloc_real ( val, lat, lon, z, idex, jdex )
-      IMPLICIT NONE
 #ifndef STUBMPI
-      INCLUDE 'mpif.h'
+      use mpi
+      IMPLICIT NONE
       REAL val, lat, lon, z
-      INTEGER idex, jdex, ierr
-      INTEGER dex(2)
-      REAL vll(4)
-      INTEGER dex_all (2,ntasks)
-      REAL vll_all(4,ntasks)
-      INTEGER i
+      INTEGER idex, jdex, ierr, mrank
+      REAL inreduce(2), outreduce(2), bcast(5)
 
-      vll= (/ val, lat, lon, z /)
-
-      dex(1) = idex ; dex(2) = jdex
-      CALL mpi_allgather ( dex, 2, MPI_INTEGER, dex_all , 2, MPI_INTEGER, local_communicator, ierr )
-      CALL mpi_allgather ( vll, 4, getrealmpitype(), vll_all , 4, getrealmpitype(), local_communicator, ierr )
-      val = vll_all(1,1) ; lat = vll_all(2,1)
-      lon = vll_all(3,1) ; z = vll_all(4,1)
-      idex = dex_all(1,1) ; jdex = dex_all(2,1)
-      DO i = 2, ntasks
-        IF ( vll_all(1,i) .LT. val ) THEN
-           val = vll_all(1,i)
-           lat = vll_all(2,i)
-           lon = vll_all(3,i)
-           z = vll_all(4,i)
-           idex = dex_all(1,i)
-           jdex = dex_all(2,i)
-        ENDIF
-      ENDDO
+      inreduce=(/ val, real(mytask) /)
+      call MPI_Allreduce(inreduce,outreduce,1,MPI_2REAL,MPI_MINLOC,&
+           local_communicator,ierr)
+      val=outreduce(1)
+      mrank=outreduce(2)
+      bcast=(/ lat,lon,z,real(idex),real(jdex) /)
+      call MPI_Bcast(bcast,5,MPI_REAL,mrank,local_communicator,ierr)
+      lat=bcast(1)
+      lon=bcast(2)
+      z=bcast(3)
+      idex=bcast(4)
+      jdex=bcast(5)
 #else
+      IMPLICIT NONE
       REAL val,lat,lon,z
-      INTEGER idex, jdex, ierr
+      INTEGER idex, jdex
 #endif
    END SUBROUTINE wrf_dm_minloc_real
    SUBROUTINE wrf_dm_maxloc_real ( val, lat, lon, z, idex, jdex )
-      IMPLICIT NONE
 #ifndef STUBMPI
-      INCLUDE 'mpif.h'
+      use mpi
+      IMPLICIT NONE
       REAL val, lat, lon, z
-      INTEGER idex, jdex, ierr
-      INTEGER dex(2)
-      REAL vll(4)
-      INTEGER dex_all (2,ntasks)
-      REAL vll_all(4,ntasks)
-      INTEGER i
+      INTEGER idex, jdex, ierr, mrank
+      REAL inreduce(2), outreduce(2), bcast(5)
 
-      vll= (/ val, lat, lon, z /)
-
-      dex(1) = idex ; dex(2) = jdex
-      CALL mpi_allgather ( dex, 2, MPI_INTEGER, dex_all , 2, MPI_INTEGER, local_communicator, ierr )
-      CALL mpi_allgather ( vll, 4, getrealmpitype(), vll_all , 4, getrealmpitype(), local_communicator, ierr )
-      val = vll_all(1,1) ; lat = vll_all(2,1)
-      lon = vll_all(3,1) ; z = vll_all(4,1)
-      idex = dex_all(1,1) ; jdex = dex_all(2,1)
-      DO i = 2, ntasks
-        IF ( vll_all(1,i) .GT. val ) THEN
-           val = vll_all(1,i)
-           lat = vll_all(2,i)
-           lon = vll_all(3,i)
-           z = vll_all(4,i)
-           idex = dex_all(1,i)
-           jdex = dex_all(2,i)
-        ENDIF
-      ENDDO
+      inreduce=(/ val, real(mytask) /)
+      call MPI_Allreduce(inreduce,outreduce,1,MPI_2REAL,MPI_MAXLOC,&
+           local_communicator,ierr)
+      val=outreduce(1)
+      mrank=outreduce(2)
+      bcast=(/ lat,lon,z,real(idex),real(jdex) /)
+      call MPI_Bcast(bcast,5,MPI_REAL,mrank,local_communicator,ierr)
+      lat=bcast(1)
+      lon=bcast(2)
+      z=bcast(3)
+      idex=bcast(4)
+      jdex=bcast(5)
 #else
+      IMPLICIT NONE
       REAL val,lat,lon,z
-      INTEGER idex, jdex, ierr
+      INTEGER idex, jdex
 #endif
    END SUBROUTINE wrf_dm_maxloc_real
 #endif
@@ -1458,187 +1440,157 @@ CONTAINS
    END FUNCTION wrf_dm_bxor_integer
 
    SUBROUTINE wrf_dm_maxval_real ( val, idex, jdex )
+# ifndef STUBMPI
+      use mpi
       IMPLICIT NONE
-#ifndef STUBMPI
-      INCLUDE 'mpif.h'
-      REAL val, val_all( ntasks )
-      INTEGER idex, jdex, ierr
-      INTEGER dex(2)
-      INTEGER dex_all (2,ntasks)
-      INTEGER i
+      REAL val
+      INTEGER :: idex, jdex, i
+      INTEGER :: bcast(2),mrank
+      REAL :: inreduce(2),outreduce(2)
 
-      dex(1) = idex ; dex(2) = jdex
-      CALL mpi_allgather ( dex, 2, MPI_INTEGER, dex_all , 2, MPI_INTEGER, local_communicator, ierr )
-      CALL mpi_allgather ( val, 1, getrealmpitype(), val_all , 1, getrealmpitype(), local_communicator, ierr )
-      val = val_all(1)
-      idex = dex_all(1,1) ; jdex = dex_all(2,1)
-      DO i = 2, ntasks
-        IF ( val_all(i) .GT. val ) THEN
-           val = val_all(i)
-           idex = dex_all(1,i)
-           jdex = dex_all(2,i)
-        ENDIF
-      ENDDO
-#else
+      inreduce=(/ val, real(mytask) /)
+      bcast=(/ idex,jdex /)
+      call MPI_Allreduce(inreduce,outreduce,1,MPI_2REAL,&
+                         MPI_MAXLOC,local_communicator,i)
+      mrank=outreduce(2)
+      val=outreduce(1)
+      call MPI_Bcast(bcast,2,MPI_REAL,mrank,local_communicator,i)
+      idex=bcast(1)
+      jdex=bcast(2)
+# else
+      IMPLICIT NONE
       REAL val
       INTEGER idex, jdex, ierr
-#endif
-   END SUBROUTINE wrf_dm_maxval_real
+# endif
+    END SUBROUTINE wrf_dm_maxval_real
+
+   SUBROUTINE wrf_dm_minval_real ( val, idex, jdex )
+# ifndef STUBMPI
+      use mpi
+      IMPLICIT NONE
+      REAL val
+      INTEGER :: idex, jdex, i
+      INTEGER :: bcast(2),mrank
+      REAL :: inreduce(2),outreduce(2)
+
+      inreduce=(/ val, real(mytask) /)
+      bcast=(/ idex,jdex /)
+      call MPI_Allreduce(inreduce,outreduce,1,MPI_2REAL,&
+                         MPI_MINLOC,local_communicator,i)
+      mrank=outreduce(2)
+      val=outreduce(1)
+      call MPI_Bcast(bcast,2,MPI_REAL,mrank,local_communicator,i)
+      idex=bcast(1)
+      jdex=bcast(2)
+# else
+      IMPLICIT NONE
+      REAL val
+      INTEGER idex, jdex
+# endif
+    END SUBROUTINE wrf_dm_minval_real
 
 #ifndef PROMOTE_FLOAT
    SUBROUTINE wrf_dm_maxval_doubleprecision ( val, idex, jdex )
-      IMPLICIT NONE
 # ifndef STUBMPI
-      INCLUDE 'mpif.h'
-      DOUBLE PRECISION val, val_all( ntasks )
-      INTEGER idex, jdex, ierr
-      INTEGER dex(2)
-      INTEGER dex_all (2,ntasks)
-      INTEGER i
+      use mpi
+      IMPLICIT NONE
+      DOUBLE PRECISION val
+      INTEGER :: idex, jdex, i
+      INTEGER :: bcast(2),mrank
+      DOUBLE PRECISION :: inreduce(2),outreduce(2)
 
-      dex(1) = idex ; dex(2) = jdex
-      CALL mpi_allgather ( dex, 2, MPI_INTEGER, dex_all , 2, MPI_INTEGER, local_communicator, ierr )
-      CALL mpi_allgather ( val, 1, MPI_DOUBLE_PRECISION, val_all , 1, MPI_DOUBLE_PRECISION, local_communicator, ierr )
-      val = val_all(1)
-      idex = dex_all(1,1) ; jdex = dex_all(2,1)
-      DO i = 2, ntasks
-        IF ( val_all(i) .GT. val ) THEN
-           val = val_all(i)
-           idex = dex_all(1,i)
-           jdex = dex_all(2,i)
-        ENDIF
-      ENDDO
+      inreduce=(/ val, dble(mytask) /)
+      bcast=(/ idex,jdex /)
+      call MPI_Allreduce(inreduce,outreduce,1,MPI_2DOUBLE_PRECISION,&
+                         MPI_MAXLOC,local_communicator,i)
+      mrank=outreduce(2)
+      val=outreduce(1)
+      call MPI_Bcast(bcast,2,MPI_DOUBLE_PRECISION,mrank,local_communicator,i)
+      idex=bcast(1)
+      jdex=bcast(2)
 # else
+      IMPLICIT NONE
       DOUBLE PRECISION val
       INTEGER idex, jdex, ierr
 # endif
    END SUBROUTINE wrf_dm_maxval_doubleprecision
-#endif
 
-   SUBROUTINE wrf_dm_maxval_integer ( val, idex, jdex )
-      IMPLICIT NONE
-#ifndef STUBMPI
-      INCLUDE 'mpif.h'
-      INTEGER val, val_all( ntasks )
-      INTEGER idex, jdex, ierr
-      INTEGER dex(2)
-      INTEGER dex_all (2,ntasks)
-      INTEGER i
-
-      dex(1) = idex ; dex(2) = jdex
-      CALL mpi_allgather ( dex, 2, MPI_INTEGER, dex_all , 2, MPI_INTEGER, local_communicator, ierr )
-      CALL mpi_allgather ( val, 1, MPI_INTEGER, val_all , 1, MPI_INTEGER, local_communicator, ierr )
-      val = val_all(1)
-      idex = dex_all(1,1) ; jdex = dex_all(2,1)
-      DO i = 2, ntasks
-        IF ( val_all(i) .GT. val ) THEN
-           val = val_all(i)
-           idex = dex_all(1,i)
-           jdex = dex_all(2,i)
-        ENDIF
-      ENDDO
-#else
-      INTEGER val
-      INTEGER idex, jdex
-#endif
-   END SUBROUTINE wrf_dm_maxval_integer
-
-!  For HWRF some additional computation is required. This is gopal's doing
-
-   SUBROUTINE wrf_dm_minval_real ( val, idex, jdex )
-      IMPLICIT NONE
-      REAL val, val_all( ntasks )
-      INTEGER idex, jdex, ierr
-      INTEGER dex(2)
-      INTEGER dex_all (2,ntasks)
-! <DESCRIPTION>
-! Collective operation. Each processor calls passing a local value and its index; on return
-! all processors are passed back the maximum of all values passed and its index.
-!
-! </DESCRIPTION>
-      INTEGER i, comm
-#ifndef STUBMPI
-      INCLUDE 'mpif.h'
-
-      CALL wrf_get_dm_communicator ( comm )
-      dex(1) = idex ; dex(2) = jdex
-      CALL mpi_allgather ( dex, 2, MPI_INTEGER, dex_all , 2, MPI_INTEGER, comm, ierr )
-      CALL mpi_allgather ( val, 1, MPI_REAL, val_all , 1, MPI_REAL, comm, ierr )
-      val = val_all(1)
-      idex = dex_all(1,1) ; jdex = dex_all(2,1)
-      DO i = 2, ntasks
-        IF ( val_all(i) .LT. val ) THEN
-           val = val_all(i)
-           idex = dex_all(1,i)
-           jdex = dex_all(2,i)
-        ENDIF
-      ENDDO
-#endif
-   END SUBROUTINE wrf_dm_minval_real
-
-#ifndef PROMOTE_FLOAT
    SUBROUTINE wrf_dm_minval_doubleprecision ( val, idex, jdex )
+# ifndef STUBMPI
+      use mpi
       IMPLICIT NONE
-      DOUBLE PRECISION val, val_all( ntasks )
-      INTEGER idex, jdex, ierr
-      INTEGER dex(2)
-      INTEGER dex_all (2,ntasks)
-! <DESCRIPTION>
-! Collective operation. Each processor calls passing a local value and its index; on return
-! all processors are passed back the maximum of all values passed and its index.
-!
-! </DESCRIPTION>
-      INTEGER i, comm
-#ifndef STUBMPI
-      INCLUDE 'mpif.h'
+      DOUBLE PRECISION val
+      INTEGER :: idex, jdex, i
+      INTEGER :: bcast(2),mrank
+      DOUBLE PRECISION :: inreduce(2),outreduce(2)
 
-      CALL wrf_get_dm_communicator ( comm )
-      dex(1) = idex ; dex(2) = jdex
-      CALL mpi_allgather ( dex, 2, MPI_INTEGER, dex_all , 2, MPI_INTEGER, comm, ierr )
-      CALL mpi_allgather ( val, 1, MPI_DOUBLE_PRECISION, val_all , 1, MPI_DOUBLE_PRECISION, comm, ierr )
-      val = val_all(1)
-      idex = dex_all(1,1) ; jdex = dex_all(2,1)
-      DO i = 2, ntasks
-        IF ( val_all(i) .LT. val ) THEN
-           val = val_all(i)
-           idex = dex_all(1,i)
-           jdex = dex_all(2,i)
-        ENDIF
-      ENDDO
-#endif
+      inreduce=(/ val, dble(mytask) /)
+      bcast=(/ idex,jdex /)
+      call MPI_Allreduce(inreduce,outreduce,1,MPI_2DOUBLE_PRECISION,&
+                         MPI_MINLOC,local_communicator,i)
+      mrank=outreduce(2)
+      val=outreduce(1)
+      call MPI_Bcast(bcast,2,MPI_DOUBLE_PRECISION,mrank,local_communicator,i)
+      idex=bcast(1)
+      jdex=bcast(2)
+# else
+      IMPLICIT NONE
+      DOUBLE PRECISION val
+      INTEGER idex, jdex, ierr
+# endif
    END SUBROUTINE wrf_dm_minval_doubleprecision
 #endif
 
-   SUBROUTINE wrf_dm_minval_integer ( val, idex, jdex )
+   SUBROUTINE wrf_dm_maxval_integer ( val, idex, jdex )
+# ifndef STUBMPI
+      use mpi
       IMPLICIT NONE
-      INTEGER val, val_all( ntasks )
-      INTEGER idex, jdex, ierr
-      INTEGER dex(2)
-      INTEGER dex_all (2,ntasks)
-! <DESCRIPTION>
-! Collective operation. Each processor calls passing a local value and its index; on return
-! all processors are passed back the maximum of all values passed and its index.
-!
-! </DESCRIPTION>
-      INTEGER i, comm
-#ifndef STUBMPI
-      INCLUDE 'mpif.h'
+      INTEGER val
+      INTEGER :: idex, jdex, i
+      INTEGER :: bcast(2),mrank
+      INTEGER :: inreduce(2),outreduce(2)
 
-      CALL wrf_get_dm_communicator ( comm )
-      dex(1) = idex ; dex(2) = jdex
-      CALL mpi_allgather ( dex, 2, MPI_INTEGER, dex_all , 2, MPI_INTEGER, comm, ierr )
-      CALL mpi_allgather ( val, 1, MPI_INTEGER, val_all , 1, MPI_INTEGER, comm, ierr )
-      val = val_all(1)
-      idex = dex_all(1,1) ; jdex = dex_all(2,1)
-      DO i = 2, ntasks
-        IF ( val_all(i) .LT. val ) THEN
-           val = val_all(i)
-           idex = dex_all(1,i)
-           jdex = dex_all(2,i)
-        ENDIF
-      ENDDO
-#endif
-   END SUBROUTINE wrf_dm_minval_integer     ! End of gopal's doing
+      inreduce=(/ val, mytask /)
+      bcast=(/ idex,jdex /)
+      call MPI_Allreduce(inreduce,outreduce,1,MPI_2INTEGER,&
+                         MPI_MAXLOC,local_communicator,i)
+      mrank=outreduce(2)
+      val=outreduce(1)
+      call MPI_Bcast(bcast,2,MPI_INTEGER,mrank,local_communicator,i)
+      idex=bcast(1)
+      jdex=bcast(2)
+# else
+      IMPLICIT NONE
+      INTEGER val
+      INTEGER idex, jdex, ierr
+# endif
+    END SUBROUTINE wrf_dm_maxval_integer
+
+   SUBROUTINE wrf_dm_minval_integer ( val, idex, jdex )
+# ifndef STUBMPI
+      use mpi
+      IMPLICIT NONE
+      INTEGER val
+      INTEGER :: idex, jdex, i
+      INTEGER :: bcast(2),mrank
+      INTEGER :: inreduce(2),outreduce(2)
+
+      inreduce=(/ val, mytask /)
+      bcast=(/ idex,jdex /)
+      call MPI_Allreduce(inreduce,outreduce,1,MPI_2INTEGER,&
+                         MPI_MINLOC,local_communicator,i)
+      mrank=outreduce(2)
+      val=outreduce(1)
+      call MPI_Bcast(bcast,2,MPI_INTEGER,mrank,local_communicator,i)
+      idex=bcast(1)
+      jdex=bcast(2)
+# else
+      IMPLICIT NONE
+      INTEGER val
+      INTEGER idex, jdex, ierr
+# endif
+    END SUBROUTINE wrf_dm_minval_integer
+
 
    SUBROUTINE split_communicator
 #ifndef STUBMPI

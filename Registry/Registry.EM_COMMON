@@ -487,7 +487,7 @@ state   real    dfi_qg         ikjftb   dfi_moist       1         -     \
 state   real    dfi_qh         ikjftb   dfi_moist       1         -     \
    rusdf=(bdy_interp:dt)  "DFI_QHAIL"        "Hail mixing ratio"             "kg kg-1"
 state    real   rimi             ikj    misc        1         -     irh         "RIMI"           "riming intensity"  "fraction"
-state    real   qnwfa2d          ij     misc        1         -     rhdu     "QNWFA2D"        "Surface aerosol number conc emission"  "kg-1 s-1"
+state    real   qnwfa2d          ij     misc        1         -     rhdu      "QNWFA2D"        "Surface aerosol number conc emission"  "kg-1 s-1"
 state    real   re_cloud         ikj    misc        1         -     r        "RE_CLOUD"       "Effective radius cloud water"  "m"
 state    real   re_ice           ikj    misc        1         -     r        "RE_ICE"         "Effective radius cloud ice"    "m"
 state    real   re_snow          ikj    misc        1         -     r        "RE_SNOW"        "Effective radius snow"         "m"
@@ -841,12 +841,14 @@ state    real   ALSWNIRDIF        ij    misc        1         Z      r        "A
 
 
 # Additional for P-X PBL and LSM
-state    real   RA               ij     misc        1         -      r        "RA"           "AERODYNAMIC RESISTANCE"   "s m-1"
-state    real   RS               ij     misc        1         -      r        "RS"           "SURFACE RESISTANCE"       "s m-1"
-state    real   LAI              ij     misc        1         -      i0124rh  "LAI"          "LEAF AREA INDEX"          "m-2/m-2"
-state    real   VEGF_PX          ij     misc        1         -      r        "VEGF_PX"      "Vegetation Fraction for PX LSM"    "area/area"
-state    real   T2OBS            ij     misc        1         -      r        "T2OBS"        "2-m temperature from analysis "          "K"
-state    real   Q2OBS            ij     misc        1         -      r        "Q2OBS"        "2-m mixing ratio from analysis "         "kg/kg"
+state    real   RA               ij     misc        1         -      r        "RA"           "AERODYNAMIC RESISTANCE"            "s m-1"
+state    real   RS               ij     misc        1         -      r        "RS"           "SURFACE RESISTANCE"                "s m-1"
+state    real   LAI              ij     misc        1         -      i0124rh  "LAI"          "LEAF AREA INDEX"                   "m-2/m-2"
+state    real   VEGF_PX          ij     misc        1         -      rh       "VEGF_PX"      "Vegetation Fraction for PX LSM"    "area/area"
+state    real   T2OBS            ij     misc        1         -      r        "T2OBS"        "2-m temperature from analysis "    "K"
+state    real   Q2OBS            ij     misc        1         -      r        "Q2OBS"        "2-m mixing ratio from analysis "   "kg/kg"
+state    real   IMPERV           ij     misc        1         -      i012rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)      "IMPERV"       "Impervious surface fraction NLCD"  "percent"
+state    real   CANFRA           ij     misc        1         -      i012rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)      "CANFRA"       "Satellite canopy fraction"         "percent"
 
 # MRF PBL variables
 i1      real   PSIM           ij     misc        1         -     -         "PSIM"                "SIMILARITY FUNCTION FOR MOMENTUM"     ""
@@ -1179,13 +1181,13 @@ state    real  HAILNC           ij      misc        1         -      rhdu     "H
 state    real  SNOWNCV          ij      misc        1         -      r        "SNOWNCV"               "TIME-STEP NONCONVECTIVE SNOW AND ICE"                    "mm"
 state    real  GRAUPELNCV       ij      misc        1         -      r        "GRAUPELNCV"            "TIME-STEP NONCONVECTIVE GRAUPEL"                         "mm"
 state    real  HAILNCV          ij      misc        1         -      r        "HAILNCV"               "TIME-STEP NONCONVECTIVE HAIL"                            "mm"
-state    real    refl_10cm      ikj     dyn_em      1         -     hdu       "refl_10cm"             "Radar reflectivity (lamda = 10 cm)"  "dBZ"
+state    real    refl_10cm      ikj     dyn_em      1         -      hdu       "refl_10cm"             "Radar reflectivity (lamda = 10 cm)"  "dBZ"
 state    real  NCA              ij      misc        1         -      r        "NCA"                   "COUNTER OF THE CLOUD RELAXATION TIME IN KF CUMULUS SCHEME"    ""      
 state    integer  LOWLYR        ij      misc        1         -     -         "LOWLYR"                "INDEX OF LOWEST MODEL LAYER ABOVE THE GROUND IN BMJ SCHEME"   ""      
 state    real  MASS_FLUX        ij      misc        1         -      r        "MASS_FLUX"             "DOWNDRAFT MASS FLUX FOR IN GRELL CUMULUS SCHEME"  "mb hour-1"
 # ckay
-state    real  cldfra_dp        ikj     misc        1         -      r        "CLDFRA_DP"             "DEEP CONVECTIVE CLOUD FRACTION FROM KF"  ""
-state    real  cldfra_sh        ikj     misc        1         -      r        "CLDFRA_SH"             "SHALLOW CONVECTIVE CLOUD FRACTION FROM KF"  ""
+state    real  cldfra_dp        ikj     misc        1         -      r         "CLDFRA_DP"             "DEEP CONVECTIVE CLOUD FRACTION FROM KF"  ""
+state    real  cldfra_sh        ikj     misc        1         -      r         "CLDFRA_SH"             "SHALLOW CONVECTIVE CLOUD FRACTION FROM KF"  ""
 state    real  w_up             ikj     misc        1         -      rdu      "W_UP"                  "EFFECTIVE SUBGRID VELOCITY FROM KF"  "m s-1"
 state    real  apr_gr           ij      misc        1         -      r       "APR_GR"                "PRECIP FROM CLOSURE OLD_GRELL"   "mm hour-1"
 state    real  apr_w            ij      misc        1         -      r       "APR_W"                 "PRECIP FROM CLOSURE W"           "mm hour-1"
@@ -1348,8 +1350,8 @@ state    real  LWUPBC           ij      misc        1         -      rhdu     "L
 state    real  LWDNB            ij      misc        1         -      rhdu     "LWDNB"                 "INSTANTANEOUS DOWNWELLING LONGWAVE FLUX AT BOTTOM"          "W m-2"
 state    real  LWDNBC           ij      misc        1         -      rhdu     "LWDNBC"                "INSTANTANEOUS DOWNWELLING CLEAR SKY LONGWAVE FLUX AT BOTTOM" "W m-2"
 
-state    real  SWCF             ij      misc        1         -      r         "SWCF"                  "SHORT WAVE CLOUD FORCING AT TOA"                     "W m-2"
-state    real  LWCF             ij      misc        1         -      r         "LWCF"                  "LONG WAVE CLOUD FORCING AT TOA"                      "W m-2"
+state    real  SWCF             ij      misc        1         -      r        "SWCF"                  "SHORT WAVE CLOUD FORCING AT TOA"                     "W m-2"
+state    real  LWCF             ij      misc        1         -      r        "LWCF"                  "LONG WAVE CLOUD FORCING AT TOA"                      "W m-2"
 state    real  OLR              ij      misc        1         -      rh        "OLR"                   "TOA OUTGOING LONG WAVE"                              "W m-2"
 
 # these next 2 are for the HFSoLE/PET demo; writing these to auxhist1 output over MCEL for coupling
@@ -1554,7 +1556,7 @@ state    integer NYEAR          -       misc        1         -     r        "NY
 state    real    NDAY           -       misc        1         -     r        "NDAY"                  "ACCUM TIMESTEPS IN A DAY"                      ""
 state    real  XLAND            ij      misc        1         -     i02rhd=(interp_fcnm_imask)u=(copy_fcnm)       "XLAND"                 "LAND MASK (1 FOR LAND, 2 FOR WATER)"          ""      
 state    real  cplmask       i{ncpldom}j      misc        1       z        i0r     "CPLMASK"    "COUPLING MASK (0:VALUE FROM SST UPDATE; 1:VALUE FROM COUPLED OCEAN), vertical dim is number of external domains"  ""
-state    real  ZNT              ij      misc        1         -      i3r      "ZNT"                   "TIME-VARYING ROUGHNESS LENGTH"                "m"      
+state    real  ZNT              ij      misc        1         -      i3r     "ZNT"                   "TIME-VARYING ROUGHNESS LENGTH"                "m"      
 state    real  CK               ij      misc        1         -      r        "CK"                    "ENTHALPY EXCHANGE COEFF AT 10 m"                      ""
 state    real  CKA              ij      misc        1         -      r        "CKA"                   "ENTHALPY EXCHANGE COEFF AT LOWEST MODEL LVL"          ""
 state    real  CD               ij      misc        1         -      r        "CD"                    "DRAG COEFF AT 10m"                      ""

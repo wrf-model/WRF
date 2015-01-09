@@ -26,6 +26,7 @@ subroutine da_lcl(p0, z0, t0, q0, plcl, zlcl, tlcl, qlcl)
       if (eps >= 0.0) then
          zlcl=(1004.0/gravity)*(t0-tlcl)+z0
          qlcl=qs
+         if (trace_use) call da_trace_exit("da_lcl")
          return
       else
          plcl=plcl+dp
@@ -34,6 +35,7 @@ subroutine da_lcl(p0, z0, t0, q0, plcl, zlcl, tlcl, qlcl)
             zlcl=z0
             qlcl=q0
             plcl=p0
+            if (trace_use) call da_trace_exit("da_lcl")
             return
         end if
       end if

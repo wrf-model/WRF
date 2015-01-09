@@ -81,7 +81,11 @@
       deallocate(varbc_param_tl)
    end do
    
-   if (.not. rootproc) return
+   if (.not. rootproc) then
+      if (trace_use) call da_trace_exit("da_varbc_update")
+      return
+   end if
+
    !---------------------------------------------------------------
    ! Write VARBC.out file
    !---------------------------------------------------------------

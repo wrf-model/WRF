@@ -209,6 +209,8 @@ CONTAINS
                          +emis_ant(i,k,j,p_e_hc8)*conv_rho
         chem(i,k,j,p_eth)  = chem(i,k,j,p_eth)                         &
                          +emis_ant(i,k,j,p_e_eth)*conv_rho
+        if(p_ch4.gt.1)chem(i,k,j,p_ch4)  = chem(i,k,j,p_ch4)           &
+                         +emis_ant(i,k,j,p_e_ch4)*conv_rho
         if(p_ol2.gt.1)chem(i,k,j,p_ol2)  = chem(i,k,j,p_ol2)           &
                          +emis_ant(i,k,j,p_e_ol2)*conv_rho
         if(p_ete.gt.1)chem(i,k,j,p_ete)  = chem(i,k,j,p_ete)           &

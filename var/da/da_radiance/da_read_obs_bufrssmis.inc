@@ -132,6 +132,7 @@ bufrfile:  do ibufr=1,numbufr
    if (iost /= 0) then
       call da_warning(__FILE__,__LINE__, &
          (/"Cannot open file "//infile/))
+      call da_trace_exit("da_read_obs_bufrssmis")
       return
    end if
 

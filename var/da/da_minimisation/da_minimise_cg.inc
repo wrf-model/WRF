@@ -85,7 +85,10 @@ subroutine da_minimise_cg(grid, config_flags,            &
                        be%cv%size_jl, xbx, be, iv, xhat, cv, re, y, j_cost, ghat, grid, config_flags)
 
    j0_total = j_cost%total
-   if (j0_total == 0.0) return
+   if (j0_total == 0.0) then
+      if (trace_use) call da_trace_exit("da_minimise_cg")
+      return
+   end if
    ghat0 = ghat
    
    ! [1.1] Preconditioning:

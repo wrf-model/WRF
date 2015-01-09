@@ -80,7 +80,10 @@ subroutine da_minimise_lz(grid, config_flags,            &
                        be%cv%size_jl, xbx, be, iv, xhat, cv, re, y, j_cost, ghat0, grid, config_flags)
  
    j0_total = j_cost%total
-   if (j0_total == 0.0) return
+   if (j0_total == 0.0) then
+      if (trace_use) call da_trace_exit("da_minimise_lz")
+      return
+   end if
    ghat      = - ghat0
    beta(0)   = SQRT(da_dot_cv(cv_size, ghat, ghat, grid, mz, jp_start, jp_end))
    qhat(:,0) = 0.0

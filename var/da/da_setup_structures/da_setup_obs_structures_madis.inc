@@ -1372,7 +1372,8 @@ subroutine da_setup_obs_structures_madis( ob, iv)
 
 ! NPN
 
-   print*,'ntotal_raob=',ntotal(sound)
+   write(unit=message(1),fmt='(A,I10)')'ntotal_raob=',ntotal(sound)
+   call da_message(message(1:1))
    ntmp_n = 0
 
    if(npn_init)then
@@ -1418,7 +1419,8 @@ subroutine da_setup_obs_structures_madis( ob, iv)
    nl_npn = nlocal(sound) - nl_raob
    nt_npn = ntotal(sound) - nt_raob
 
-   print*,'ntotal_npn=',ntotal(sound)
+   write(unit=message(1),fmt='(A,I10)')'ntotal_npn=',ntotal(sound)
+   call da_message(message(1:1))
 ! MAP
 
    ntmp_m = 0
@@ -1467,7 +1469,8 @@ subroutine da_setup_obs_structures_madis( ob, iv)
    nl_map = nlocal(sound) - nl_raob - nl_npn
    nt_map = ntotal(sound) - nt_raob - nt_npn
 
-   print*,'ntotal_map=',ntotal(sound)
+   write(unit=message(1),fmt='(A,I10)')'ntotal_map=',ntotal(sound)
+   call da_message(message(1:1))
 ! If we didn't find anything, we're done with this WRF dataset.
 
    if (nlocal(sound) > 0) then
@@ -1539,7 +1542,6 @@ subroutine da_setup_obs_structures_madis( ob, iv)
 
 ! Now do the NPN dataset.
 
-   print*,'Haha 0'
    if(ntmp_n /= 0)then
 
 ! Allocate the local memory for the MADIS arrays that have a level dimension.
@@ -1606,7 +1608,6 @@ subroutine da_setup_obs_structures_madis( ob, iv)
 
 ! Do the RAOB dataset.
 
-   print*,'Haha 1'
    if(ntmp_r /= 0)then
 
       nlev = max_raoblev
@@ -1699,7 +1700,6 @@ subroutine da_setup_obs_structures_madis( ob, iv)
    iv%info(sonde_sfc)%ntotal = ntotal(sound)
    iv%info(sonde_sfc)%nlocal = nlocal_out
 
-   print*,'Haha 3'
  300  continue
 
 !***** Put the profiler or raob dataset here (at statement 300) when these
@@ -1876,9 +1876,7 @@ subroutine da_setup_obs_structures_madis( ob, iv)
 ! Close the MADIS files and deallocate the memory used for the
 ! MADIS arrays that are dimensioned only by station.
 
-   print*,'Haha 4'
    CALL MMADISCLOSE
-   print*,'Haha 5'
    deallocate (stanam)
    deallocate (provdr)
    deallocate (timeob)
@@ -1890,7 +1888,6 @@ subroutine da_setup_obs_structures_madis( ob, iv)
    deallocate (slp)
    deallocate (keep)
    deallocate (nlevels)
-   print*,'Haha 6'
 
 ! Output the same summary info as the MM5 ingest routine, but just
 ! for those datasets we handle.
@@ -2089,9 +2086,7 @@ subroutine da_setup_obs_structures_madis( ob, iv)
 
 ! Copy data out of the IV structure into the OB structure.
 
-   print*, 'Haha 7'
    CALL da_fill_obs_structures(iv,ob)
-   print*, 'Haha 8'
 
    if(madis_debug > 0)then
 

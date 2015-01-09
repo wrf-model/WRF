@@ -651,6 +651,7 @@ reg_parse( FILE * infile )
                                          tokens[FIELD_SYM],x,fcn_name);
                                  exit(1);
                                }
+#endif
 	                       if      ( x == 'f' )  { 
                                  field_struct->nest_mask |= FORCE_DOWN ; 
                                  strcpy(field_struct->force_fcn_name, fcn_name ) ;
@@ -671,7 +672,6 @@ reg_parse( FILE * infile )
                                  strcpy(field_struct->interpu_fcn_name, fcn_name ) ;
                                  strcpy(field_struct->interpu_aux_fields, aux_fields ) ;
                                }
-#endif
             }
 	    prev = x ;
 	  }

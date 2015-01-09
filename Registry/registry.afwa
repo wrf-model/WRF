@@ -97,7 +97,7 @@ state    real   TORNADO_DUR      ij     misc        1         -      r          
 #  Package declaration for AFWA diagnostics
 
 package   afwa_diag      afwa_diag_opt==1            -             state:afwa_mslp,afwa_pwat,wspd10max
-package   afwa_ptype     afwa_ptype_opt==1           -             state:afwa_precip,afwa_totprecip,fwa_rain,afwa_snow,afwa_ice,afwa_fzra,afwa_snowfall
+package   afwa_ptype     afwa_ptype_opt==1           -             state:afwa_precip,afwa_totprecip,afwa_rain,afwa_snow,afwa_ice,afwa_fzra,afwa_snowfall
 package   afwa_vil       afwa_vil_opt==1             -             state:vil,radarvil
 package   afwa_radar     afwa_radar_opt==1           -             state:echotop,refd_com,refd
 package   afwa_severe    afwa_severe_opt==1          -             state:w_up_max,w_dn_max,tcoli_max,up_heli_max,grpl_flx_max,w_mean,afwa_hail,afwa_cape,afwa_zlfc,afwa_plfc,wup_mask,wdur,tornado_mask,tornado_dur,midrh_min,midrh_min_old,afwa_lidx,afwa_cin,afwa_tornado,afwa_llws

@@ -37,6 +37,7 @@ subroutine da_ffdduv_model (F,D,U,V,ID)
 
          if (F .EQ. 0.0) then
             D = 0.0
+            if (trace_use_frequent) call da_trace_exit("da_ffdduv_model")
             return
          end if
 

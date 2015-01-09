@@ -318,6 +318,10 @@ call wrf_message("**************************************************************
          call wrf_error_fatal("ERROR: chem_conv_tr=1 requires cu_diag=1")
    endif
 
+   if ( config_flags%bio_emiss_opt .EQ. 3 .AND. config_flags%ne_area .LT. num_chem ) then
+      call wrf_error_fatal("ERROR: MEGAN biogenics requires ne_area to be equal or greater than num_chem")
+   endif
+
     IF ( config_flags%chem_opt == 0 .AND. config_flags%aer_ra_feedback .NE. 0 ) THEN
 !       config_flags%aer_ra_feedback = 0
         call wrf_error_fatal(" ERROR: CHEM_INIT: FOR CHEM_OPT = 0, AER_RA_FEEDBACK MUST = 0 ")

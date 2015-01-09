@@ -200,7 +200,7 @@ CONTAINS
       scold = 0
       olen = LEN(odate)
       
-      READ(odate(1:4),  '(I4)') yrold
+      READ(odate(1:4),  '(I4.4)') yrold
 #ifdef PLANET
       READ(odate(6:10), '(I5)') dyold
       moold=0.
@@ -225,7 +225,7 @@ CONTAINS
       scnew = 0
       nlen = LEN(ndate)
       
-      READ(ndate(1:4),  '(I4)') yrnew
+      READ(ndate(1:4),  '(I4.4)') yrnew
 #ifdef PLANET
       READ(ndate(6:10), '(I5)') dynew
       monew=0.
@@ -509,7 +509,7 @@ CONTAINS
       !  Use internal READ statements to convert the CHARACTER string
       !  date into INTEGER components.
    
-      READ(odate(1:4),  '(I4)') yrold
+      READ(odate(1:4),  '(I4.4)') yrold
 #ifdef PLANET
       READ(odate(6:10), '(I5)') dyold
       moold=0.
@@ -773,20 +773,20 @@ CONTAINS
       
       ELSE IF (nlen.eq.19.or.nlen.eq.20) THEN
          WRITE(ndate(1:19),19) yrnew, monew, dynew, hrnew, minew, scnew
-      19   format(I4,'-',I2.2,'-',I2.2,'_',I2.2,':',I2.2,':',I2.2)
+      19   format(I4.4,'-',I2.2,'-',I2.2,'_',I2.2,':',I2.2,':',I2.2)
          IF (nlen.eq.20) ndate = ndate(1:19)//'.'
       
       ELSE IF (nlen.eq.16) THEN
          WRITE(ndate,16) yrnew, monew, dynew, hrnew, minew
-      16   format(I4,'-',I2.2,'-',I2.2,'_',I2.2,':',I2.2)
+      16   format(I4.4,'-',I2.2,'-',I2.2,'_',I2.2,':',I2.2)
       
       ELSE IF (nlen.eq.13) THEN
          WRITE(ndate,13) yrnew, monew, dynew, hrnew
-      13   format(I4,'-',I2.2,'-',I2.2,'_',I2.2)
+      13   format(I4.4,'-',I2.2,'-',I2.2,'_',I2.2)
       
       ELSE IF (nlen.eq.10) THEN
          WRITE(ndate,10) yrnew, monew, dynew
-      10   format(I4,'-',I2.2,'-',I2.2)
+      10   format(I4.4,'-',I2.2,'-',I2.2)
       
       END IF
       
@@ -835,18 +835,18 @@ CONTAINS
    
       INTEGER , INTENT(OUT) :: century_year , month , day , hour , minute , second , ten_thousandth
       
-      READ(date,FMT='(    I4)') century_year
+      READ(date,FMT='(    I4.4)') century_year
 #ifdef PLANET
       month = 0
-      READ(date,FMT='( 5X,I5)') day
+      READ(date,FMT='( 5X,I5.5)') day
 #else
-      READ(date,FMT='( 5X,I2)') month
-      READ(date,FMT='( 8X,I2)') day
+      READ(date,FMT='( 5X,I2.2)') month
+      READ(date,FMT='( 8X,I2.2)') day
 #endif
-      READ(date,FMT='(11X,I2)') hour
-      READ(date,FMT='(14X,I2)') minute
-      READ(date,FMT='(17X,I2)') second
-      READ(date,FMT='(20X,I4)') ten_thousandth
+      READ(date,FMT='(11X,I2.2)') hour
+      READ(date,FMT='(14X,I2.2)') minute
+      READ(date,FMT='(17X,I2.2)') second
+      READ(date,FMT='(20X,I4.4)') ten_thousandth
    
    END SUBROUTINE split_date_char
 

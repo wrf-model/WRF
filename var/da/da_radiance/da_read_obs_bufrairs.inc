@@ -154,7 +154,7 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
   type(model_loc_type)       :: loc
   type (datalink_type), pointer   :: head, p, current, prev
 
-  call da_trace_entry("da_read_obs_bufrairs")
+  if (trace_use) call da_trace_entry("da_read_obs_bufrairs")
 
 !  0.0  Initialize variables
 !-----------------------------------
@@ -204,7 +204,10 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
       if ( inst == rtminit_nsensor .and.           &
            platform_id  /= rtminit_platform(inst)  &
           .or. satellite_id /= rtminit_satid(inst) &
-          .or. sensor_id /= rtminit_sensor(inst)  ) return
+          .or. sensor_id /= rtminit_sensor(inst)  ) then
+         if (trace_use) call da_trace_exit("da_read_obs_bufrairs")
+         return
+      end if
 
   num_eos_file    = 0  ! number of obs in file
   num_eos_global  = 0  ! number of obs within whole domain
@@ -278,6 +281,7 @@ bufrfile:  do ibufr=1,numbufr
         close(airs_table_unit)
         call da_free_unit(airs_table_unit)
      end if
+     if (trace_use) call da_trace_exit("da_read_obs_bufrairs")
      return
   end if
   if ( airstab ) then
@@ -723,7 +727,7 @@ end do bufrfile
       call da_free_unit(airs_table_unit)
    end if
 
-   call da_trace_exit("da_read_obs_bufrairs")
+   if (trace_use) call da_trace_exit("da_read_obs_bufrairs")
 #else
    call da_error(__FILE__,__LINE__,(/"Needs to be compiled with a BUFR library"/))
 #endif

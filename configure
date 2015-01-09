@@ -549,8 +549,24 @@ if [ -n "$WRF_NMM_CORE" -a -n "$WRF_CHEM" ]; then
   fi
 fi
 
-if [ `which timex` ] ; then
+type m4 > /dev/null
+if [ $? -ne 0 ] ; then
+  echo
+  echo "ERROR ERROR ERROR ERROR ERROR ERROR ERROR"
+  echo "'m4' utility not found! Can not configure."
+  echo
+  echo "If on an Ubuntu machine, use the command"
+  echo "         sudo apt-get install m4        "
+  echo "To download and install the 'm4' utility"
+  exit 1
+fi
+
+if command -v timex > /dev/null 2>&1; then
   FORTRAN_COMPILER_TIMER=timex
+  echo "Will use 'timex' to report timing information"
+elif command -v time > /dev/null 2>&1; then
+  FORTRAN_COMPILER_TIMER=time
+  echo "Will use 'time' to report timing information"
 fi
 
 # Found perl, so proceed with configuration
@@ -562,6 +578,7 @@ if test -n "$PERL" ; then
           -compileflags=$compileflags -opt_level=$opt_level -USENETCDFF=$USENETCDFF -time=$FORTRAN_COMPILER_TIMER \
           -wrf_core=$wrf_core -gpfs=$GPFS_PATH -curl=$CURL_PATH -dep_lib_path="$DEP_LIB_PATH"
      if test ! -f configure.wrf ; then
+       echo "configure.wrf not created! Exiting configure script..."
        exit 1
      fi
      if [ "$opt_level" = "-d" ] ; then

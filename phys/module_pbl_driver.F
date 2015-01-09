@@ -28,6 +28,7 @@ CONTAINS
                  ,znu, znw, mut, p_top                             &
 ! paj
                  ,ctopo,ctopo2,windfarm_opt,power                  &
+                 ,ysu_topdown_pblmix                               &
               ! OPTIONAL for TEMF scheme
                  ,te_temf,km_temf,kh_temf                     &
                  ,shf_temf,qf_temf,uw_temf,vw_temf                &
@@ -347,6 +348,7 @@ CONTAINS
 
 
    INTEGER,    INTENT(IN   )    ::     bl_pbl_physics, ra_lw_physics,sf_sfclay_physics,sf_urban_physics,windfarm_opt
+   INTEGER,    INTENT(IN   )    ::     ysu_topdown_pblmix
    INTEGER,    OPTIONAL,  INTENT(IN   )    ::     scalar_pblmix, tracer_pblmix
 
    INTEGER,    INTENT(IN   )    ::     ids,ide, jds,jde, kds,kde, &
@@ -1101,13 +1103,14 @@ CONTAINS
               ,U10=u10,V10=v10                                      &
               ,UOCE=uoce,VOCE=voce                                  &
 ! paj
-              ,CTOPO=ctopo,CTOPO2=ctopo2                &
-!
+              ,CTOPO=ctopo,CTOPO2=ctopo2                            &
+              ,YSU_TOPDOWN_PBLMIX=ysu_topdown_pblmix                &
               ,WSPD=wspd,BR=br,DT=dtbl,KPBL2D=kpbl                  &
               ,EP1=ep_1,EP2=ep_2,KARMAN=karman                      &
               ,EXCH_H=exch_h,REGIME=regime                          &
+              ,RTHRATEN=RTHRATEN                                    &
 ! for grims shallow convection with ysupbl
-              ,WSTAR=wstar,DELTA=delta                        &
+              ,WSTAR=wstar,DELTA=delta                              &
               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &

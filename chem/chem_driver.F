@@ -662,7 +662,8 @@
 
 !--- emissions
 
-    if(config_flags%emiss_inpt_opt > 0 .or. config_flags%dust_opt > 0)then
+    if(config_flags%emiss_inpt_opt > 0 .or. config_flags%dust_opt > 0  &
+       .or. config_flags%tracer_opt > 0  )then
       call wrf_debug(15,'calling emissions driver')
 
       call emissions_driver(grid%id,ktau,grid%dt,grid%DX,                                  &

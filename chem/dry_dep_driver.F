@@ -1231,6 +1231,9 @@ CONTAINS
 
    CASE DEFAULT
    END SELECT mixactivate_select
+
+   IF((config_flags%dust_opt .EQ. 1) .OR. (config_flags%dust_opt .GE. 3) .OR. &
+      (config_flags%seas_opt .GE. 1) ) THEN
    settling_select: SELECT CASE(config_flags%chem_opt)
    CASE (DUST,GOCART_SIMPLE,GOCARTRACM_KPP,MOZCART_KPP,RADM2SORG,RADM2SORG_AQ, &
          RADM2SORG_AQCHEM,RACMSORG_AQCHEM_KPP,RACM_ESRLSORG_AQCHEM_KPP)
@@ -1255,6 +1258,7 @@ CONTAINS
    CASE DEFAULT
        CALL wrf_debug(15,'no settling routine')
    END SELECT settling_select
+   ENDIF
 
        CALL wrf_debug(15,'end of dry_dep_driver')
 

@@ -1619,13 +1619,14 @@ WAVE_LENGTH_LOOP : &
 
       o3den(1:nz) = o3(1:nz)*airlev(1:nz)
       cz(1:nz-1)  = 0.5_dp*(o3den(2:nz) + o3den(1:nz-1))*km2cm*(z(2:nz) - z(1:nz-1))
-      cz(nz-1)    = cz(nz-1) + o3top
 
       to3(nz)  = o3top
       do k = nz-1,1,-1
          to3(k) = to3(k+1) + cz(k)
       end do
 
+! Do not double count o3top
+      cz(nz-1)    = cz(nz-1) + o3top
 !-----------------------------------------------------------------------------
 ! ... scale o3 using toms data
 !-----------------------------------------------------------------------------

@@ -11432,6 +11432,7 @@ CONTAINS
 !ccc added for time varying gases.
                        yr,julian,                                 &
 !ccc
+                       mp_physics,                                &!wang 2014/12/23
                        ids,ide, jds,jde, kds,kde,                 & 
                        ims,ime, jms,jme, kms,kme,                 &
                        its,ite, jts,jte, kts,kte,                 &
@@ -11451,6 +11452,9 @@ CONTAINS
                                        its,ite, jts,jte, kts,kte
 
    INTEGER, INTENT(IN )      ::        ICLOUD
+   INTEGER, INTENT(IN )      ::        mp_physics
+   
+
 !
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme )                 , &
          INTENT(IN   ) ::                                   dz8w, &
@@ -11566,10 +11570,15 @@ CONTAINS
                                                             QC1D, &
                                                             QR1D, &
                                                             QI1D, &
+                                                           RHO1D, &
                                                             QS1D, &
                                                             QG1D, &
                                                             O31D, &
                                                           qndrop1d 
+
+!BSF: From eq. (5) on p. 2434 in McFarquhar & Heymsfield (1996)
+      real, parameter :: re_50C=1250.0/9.917, re_40C=1250.0/9.337,      &
+                         re_30C=1250.0/9.208, re_20C=1250.0/9.387
 
 ! Added local arrays for RRTMG
     integer ::                                              ncol, &
@@ -11647,6 +11656,7 @@ CONTAINS
 ! CLWRF-UC June.09
       REAL(8)                                      :: co2, n2o, ch4, cfc11, cfc12
 #else
+
 
 ! Set trace gas volume mixing ratios, 2005 values, IPCC (2007)
 ! carbon dioxide (379 ppmv)
@@ -11733,7 +11743,7 @@ CONTAINS
     INTEGER, PARAMETER :: nproflevs = 60 ! Constant, from the table
     INTEGER :: L, LL, klev               ! Loop indices      
     REAL, DIMENSION( kts:nlayers+1 ) :: varint
-    REAL :: wght,vark,vark1       
+    REAL :: wght,vark,vark1,tem1,tem2,tem3
     REAL :: PPROF(nproflevs), TPROF(nproflevs)            
     ! Weighted mean pressure and temperature profiles from midlatitude 
     ! summer (MLS),midlatitude winter (MLW), sub-Arctic 
@@ -11846,6 +11856,7 @@ CONTAINS
             TTEN1D(K)=0.
             T1D(K)=T3D(I,K,J)
             P1D(K)=P3D(I,K,J)/100.
+            RHO1D(K)=RHO3D(I,K,J)
             DZ1D(K)=dz8w(I,K,J)
          ENDDO
 
@@ -11946,6 +11957,19 @@ CONTAINS
                ENDIF
             ENDIF
 
+!!! wang for mp option=5 or 85  (new Ferrier- Aligo), QI3D saves all !frozen water (ice+snow)
+           IF ( mp_physics == 5 .OR. mp_physics == 85 ) THEN
+                  DO K=kts,kte
+                     qi1d(k) = qi3d(i,k,j)
+                     qs1d(k) = 0.0  
+                     qc1d(k) = qc3d(i,k,j)
+                     qi1d(k) = max(0.,qi1d(k))
+                     qc1d(k) = max(0.,qc1d(k))
+                  ENDDO
+           ENDIF
+!!! wang
+
+
         ENDIF
 
 !         EMISS0=EMISS(I,J)
@@ -11990,7 +12014,7 @@ CONTAINS
                ENDDO
             ELSE
                DO K=kts,kte
-                  recloud1D(ncol,K) = 5.0
+                  recloud1D(ncol,K) = 10.0   !- was 5.0
                ENDDO
             ENDIF
 
@@ -12006,7 +12030,22 @@ CONTAINS
                ENDDO
             ELSE
                DO K=kts,kte
-                  reice1D(ncol,K) = 10.0
+                  tem2 = 25.0  !- was 10.0
+                  tem3=1.e3*rho1d(k)*qi1d(k)  !- IWC (g m^-3)
+                  if (tem3>thresh) then       !- Only when IWC>1.e-9 g m^-3
+                    tem1=t1d(k)-273.15
+                    if (tem1 < -50.0) then
+                      tem2 = re_50C*tem3**0.109
+                    elseif (tem1 < -40.0) then
+                      tem2 = re_40C*tem3**0.08
+                    elseif (tem1 < -30.0) then
+                      tem2 = re_30C*tem3**0.055
+                    else
+                      tem2 = re_20C*tem3**0.031
+                    endif
+                    tem2 = max(25.,tem2)
+                  endif
+                  reice1D(ncol,K) = min(tem2, 135.72)   !- 1.0315*reice <= 140 microns
                ENDDO
             ENDIF
 
@@ -12329,7 +12368,7 @@ CONTAINS
             reliq(ncol,k) = recloud1d(ncol,k)
          end do
       endif
-      if (iceflglw .ge. 4) then
+      if (iceflglw .ge. 3) then    !BSF: was .ge. 4
          do k = kts, kte
             reice(ncol,k) = reice1d(ncol,k)
          end do

@@ -267,7 +267,7 @@ CONTAINS
    WRITE(message,*)'WITHIN THE GFDL SCHEME, NTSFLG=1 FOR GFDL SLAB  2010 UPGRADS',NTSFLG
    call wrf_debug(1,message)
 
-     write(0,*)'icoef_sf,lcurr_sf=',icoef_sf,lcurr_sf
+!!     write(0,*)'icoef_sf,lcurr_sf=',icoef_sf,lcurr_sf
 
    DO J=jts,jte
 
@@ -838,11 +838,6 @@ CONTAINS
 !        cor1 = 0.
 !        cor2 = 0.
 !
-       yz=            0.0001344
-       y1=            3.015e-05 
-       y2=            1.517e-06 
-       y3=           -3.567e-08
-       y4=            2.046e-10
 
       do i = its,ite
         z10(i) = 1000.

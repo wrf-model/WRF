@@ -306,7 +306,6 @@ INTEGER, PARAMETER :: MAX_ITERATIONS=10
       ENDDO
       ENDDO
 
-       print*,'using new Ferrier-Aligo/ Feb 15 fix// replace etanew mp=5'
 !-----------------------------------------------------------------------
 
       CALL EGCP01DRV(GID,DT,LOWLYR,                                     &

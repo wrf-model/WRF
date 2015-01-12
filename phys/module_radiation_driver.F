@@ -1952,14 +1952,14 @@ CONTAINS
 
         DO j=jts,jte
         DO i=its,ite
-           ACSWUPT(I,J) = ACSWUPT(I,J) + SWUPT(I,J)*DT
-           ACSWUPTC(I,J) = ACSWUPTC(I,J) + SWUPTC(I,J)*DT
-           ACSWDNT(I,J) = ACSWDNT(I,J) + SWDNT(I,J)*DT
-           ACSWDNTC(I,J) = ACSWDNTC(I,J) + SWDNTC(I,J)*DT
-           ACSWUPB(I,J) = ACSWUPB(I,J) + SWUPB(I,J)*DT
-           ACSWUPBC(I,J) = ACSWUPBC(I,J) + SWUPBC(I,J)*DT
-           ACSWDNB(I,J) = ACSWDNB(I,J) + SWDNB(I,J)*DT
-           ACSWDNBC(I,J) = ACSWDNBC(I,J) + SWDNBC(I,J)*DT
+           ACSWUPT(I,J) = ACSWUPT(I,J) + SWUPT(I,J)*RADT*60
+           ACSWUPTC(I,J) = ACSWUPTC(I,J) + SWUPTC(I,J)*RADT*60
+           ACSWDNT(I,J) = ACSWDNT(I,J) + SWDNT(I,J)*RADT*60
+           ACSWDNTC(I,J) = ACSWDNTC(I,J) + SWDNTC(I,J)*RADT*60
+           ACSWUPB(I,J) = ACSWUPB(I,J) + SWUPB(I,J)*RADT*60
+           ACSWUPBC(I,J) = ACSWUPBC(I,J) + SWUPBC(I,J)*RADT*60
+           ACSWDNB(I,J) = ACSWDNB(I,J) + SWDNB(I,J)*RADT*60
+           ACSWDNBC(I,J) = ACSWDNBC(I,J) + SWDNBC(I,J)*RADT*60
         ENDDO
         ENDDO
    ENDDO

@@ -3558,35 +3558,81 @@
       DOUBLE PRECISION, DIMENSION(nbr):: vr, N_r
       DOUBLE PRECISION:: N0_r, N0_g, lam_exp, lamg, lamr
       DOUBLE PRECISION:: massg, massr, dvg, dvr, t1, t2, z1, z2, y1, y2
-      LOGICAL read_thompson_tables, write_thompson_tables
+      LOGICAL force_read_thompson, write_thompson_tables
+      LOGICAL lexist,lopen
+      INTEGER good
+      LOGICAL, EXTERNAL :: wrf_dm_on_monitor
 
 !+---+
 
-      CALL nl_get_read_thompson_tables(1,read_thompson_tables)
+      CALL nl_get_force_read_thompson(1,force_read_thompson)
       CALL nl_get_write_thompson_tables(1,write_thompson_tables)
 
-    IF ( .NOT. read_thompson_tables ) THEN
-      do n2 = 1, nbr
+      good = 0
+      IF ( wrf_dm_on_monitor() ) THEN
+        INQUIRE(FILE="qr_acr_qg.dat",EXIST=lexist)
+        IF ( lexist ) THEN
+          CALL wrf_message("ThompMP: read qr_acr_qg.dat stead of computing")
+          OPEN(63,file="qr_acr_qg.dat",form="unformatted",err=1234)
+          READ(63,err=1234) tcg_racg
+          READ(63,err=1234) tmr_racg
+          READ(63,err=1234) tcr_gacr
+          READ(63,err=1234) tmg_gacr
+          READ(63,err=1234) tnr_racg
+          READ(63,err=1234) tnr_gacr
+          good = 1
+ 1234     CONTINUE
+          IF ( good .NE. 1 ) THEN
+            INQUIRE(63,opened=lopen)
+            IF (lopen) THEN
+              IF( force_read_thompson ) THEN
+                CALL wrf_error_fatal("Error reading qr_acr_qg.dat. Aborting because force_read_thompson is .true.")
+              ENDIF
+              CLOSE(63)
+            ELSE
+              IF( force_read_thompson ) THEN
+                CALL wrf_error_fatal("Error opening qr_acr_qg.dat. Aborting because force_read_thompson is .true.")
+              ENDIF
+            ENDIF
+          ENDIF
+        ELSE
+          IF( force_read_thompson ) THEN
+            CALL wrf_error_fatal("Non-existent qr_acr_qg.dat. Aborting because force_read_thompson is .true.")
+          ENDIF
+        ENDIF
+      ENDIF
+      CALL wrf_dm_bcast_integer(good,1)
+
+      IF ( good .EQ. 1 ) THEN
+        CALL wrf_dm_bcast_double(tcg_racg,SIZE(tcg_racg))
+        CALL wrf_dm_bcast_double(tmr_racg,SIZE(tmr_racg))
+        CALL wrf_dm_bcast_double(tcr_gacr,SIZE(tcr_gacr))
+        CALL wrf_dm_bcast_double(tmg_gacr,SIZE(tmg_gacr))
+        CALL wrf_dm_bcast_double(tnr_racg,SIZE(tnr_racg))
+        CALL wrf_dm_bcast_double(tnr_gacr,SIZE(tnr_gacr))
+      ELSE
+        CALL wrf_message("ThompMP: computing qr_acr_qg")
+        do n2 = 1, nbr
 !        vr(n2) = av_r*Dr(n2)**bv_r * DEXP(-fv_r*Dr(n2))
          vr(n2) = -0.1021 + 4.932E3*Dr(n2) - 0.9551E6*Dr(n2)*Dr(n2)     &
               + 0.07934E9*Dr(n2)*Dr(n2)*Dr(n2)                          &
               - 0.002362E12*Dr(n2)*Dr(n2)*Dr(n2)*Dr(n2)
-      enddo
-      do n = 1, nbg
+        enddo
+        do n = 1, nbg
          vg(n) = av_g*Dg(n)**bv_g
-      enddo
+        enddo
 
 !..Note values returned from wrf_dm_decomp1d are zero-based, add 1 for
 !.. fortran indices.  J. Michalakes, 2009Oct30.
 
 #if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
-      CALL wrf_dm_decomp1d ( ntb_r*ntb_r1, km_s, km_e )
+        CALL wrf_dm_decomp1d ( ntb_r*ntb_r1, km_s, km_e )
 #else
-      km_s = 0
-      km_e = ntb_r*ntb_r1 - 1
+        km_s = 0
+        km_e = ntb_r*ntb_r1 - 1
 #endif
 
-      do km = km_s, km_e
+        do km = km_s, km_e
          m = km / ntb_r1 + 1
          k = mod( km , ntb_r1 ) + 1
 
@@ -3644,50 +3690,34 @@
             tnr_gacr(i,j,k,m) = y2
          enddo
          enddo
-      enddo
+        enddo
 
 !..Note wrf_dm_gatherv expects zero-based km_s, km_e (J. Michalakes, 2009Oct30).
 
 #if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
-      CALL wrf_dm_gatherv(tcg_racg, ntb_g*ntb_g1, km_s, km_e, R8SIZE)
-      CALL wrf_dm_gatherv(tmr_racg, ntb_g*ntb_g1, km_s, km_e, R8SIZE)
-      CALL wrf_dm_gatherv(tcr_gacr, ntb_g*ntb_g1, km_s, km_e, R8SIZE)
-      CALL wrf_dm_gatherv(tmg_gacr, ntb_g*ntb_g1, km_s, km_e, R8SIZE)
-      CALL wrf_dm_gatherv(tnr_racg, ntb_g*ntb_g1, km_s, km_e, R8SIZE)
-      CALL wrf_dm_gatherv(tnr_gacr, ntb_g*ntb_g1, km_s, km_e, R8SIZE)
+        CALL wrf_dm_gatherv(tcg_racg, ntb_g*ntb_g1, km_s, km_e, R8SIZE)
+        CALL wrf_dm_gatherv(tmr_racg, ntb_g*ntb_g1, km_s, km_e, R8SIZE)
+        CALL wrf_dm_gatherv(tcr_gacr, ntb_g*ntb_g1, km_s, km_e, R8SIZE)
+        CALL wrf_dm_gatherv(tmg_gacr, ntb_g*ntb_g1, km_s, km_e, R8SIZE)
+        CALL wrf_dm_gatherv(tnr_racg, ntb_g*ntb_g1, km_s, km_e, R8SIZE)
+        CALL wrf_dm_gatherv(tnr_gacr, ntb_g*ntb_g1, km_s, km_e, R8SIZE)
 #endif
 
-      IF ( write_thompson_tables ) THEN
-        CALL wrf_message("Writing qr_acr_qg.dat in Thompson MP init")
-        OPEN(63,file="qr_acr_qg.dat",form="unformatted",err=9234)
-        WRITE(63,err=9234) tcg_racg
-        WRITE(63,err=9234) tmr_racg
-        WRITE(63,err=9234) tcr_gacr
-        WRITE(63,err=9234) tmg_gacr
-        WRITE(63,err=9234) tnr_racg
-        WRITE(63,err=9234) tnr_gacr
-        CLOSE(63)
-        RETURN    ! ----- RETURN
- 9234   CONTINUE
-        CALL wrf_error_fatal("Error writing qr_acr_qg.dat")
+        IF ( write_thompson_tables .AND. wrf_dm_on_monitor() ) THEN
+          CALL wrf_message("Writing qr_acr_qg.dat in Thompson MP init")
+          OPEN(63,file="qr_acr_qg.dat",form="unformatted",err=9234)
+          WRITE(63,err=9234) tcg_racg
+          WRITE(63,err=9234) tmr_racg
+          WRITE(63,err=9234) tcr_gacr
+          WRITE(63,err=9234) tmg_gacr
+          WRITE(63,err=9234) tnr_racg
+          WRITE(63,err=9234) tnr_gacr
+          CLOSE(63)
+          RETURN    ! ----- RETURN
+ 9234     CONTINUE
+          CALL wrf_error_fatal("Error writing qr_acr_qg.dat")
+        ENDIF
       ENDIF
-
-    ELSE  !read_thompson_tables
-
-      CALL wrf_message("ThompMP: read qr_acr_qg.dat stead of computing")
-      OPEN(63,file="qr_acr_qg.dat",form="unformatted",err=1234)
-      READ(63,err=1234) tcg_racg
-      READ(63,err=1234) tmr_racg
-      READ(63,err=1234) tcr_gacr
-      READ(63,err=1234) tmg_gacr
-      READ(63,err=1234) tnr_racg
-      READ(63,err=1234) tnr_gacr
-      CLOSE(63)
-      RETURN    ! ----- RETURN
- 1234 CONTINUE
-      CALL wrf_error_fatal("Error reading qr_acr_qg.dat")
-
-    ENDIF !read_thompson_tables
 
       end subroutine qr_acr_qg
 !+---+-----------------------------------------------------------------+
@@ -3710,36 +3740,94 @@
       DOUBLE PRECISION:: dvs, dvr, masss, massr
       DOUBLE PRECISION:: t1, t2, t3, t4, z1, z2, z3, z4
       DOUBLE PRECISION:: y1, y2, y3, y4
-      LOGICAL read_thompson_tables, write_thompson_tables
+      LOGICAL force_read_thompson, write_thompson_tables
+      LOGICAL lexist,lopen
+      INTEGER good
+      LOGICAL, EXTERNAL :: wrf_dm_on_monitor
 
 !+---+
 
-      CALL nl_get_read_thompson_tables(1,read_thompson_tables)
+      CALL nl_get_force_read_thompson(1,force_read_thompson)
       CALL nl_get_write_thompson_tables(1,write_thompson_tables)
 
-    IF ( .NOT. read_thompson_tables ) THEN
-      do n2 = 1, nbr
+      good = 0
+      IF ( wrf_dm_on_monitor() ) THEN
+        INQUIRE(FILE="qr_acr_qs.dat",EXIST=lexist)
+        IF ( lexist ) THEN
+          CALL wrf_message("ThompMP: read qr_acr_qs.dat instead of computing")
+          OPEN(63,file="qr_acr_qs.dat",form="unformatted",err=1234)
+          READ(63,err=1234)tcs_racs1
+          READ(63,err=1234)tmr_racs1
+          READ(63,err=1234)tcs_racs2
+          READ(63,err=1234)tmr_racs2
+          READ(63,err=1234)tcr_sacr1
+          READ(63,err=1234)tms_sacr1
+          READ(63,err=1234)tcr_sacr2
+          READ(63,err=1234)tms_sacr2
+          READ(63,err=1234)tnr_racs1
+          READ(63,err=1234)tnr_racs2
+          READ(63,err=1234)tnr_sacr1
+          READ(63,err=1234)tnr_sacr2
+          good = 1
+ 1234     CONTINUE
+          IF ( good .NE. 1 ) THEN
+            INQUIRE(63,opened=lopen)
+            IF (lopen) THEN
+              IF( force_read_thompson ) THEN
+                CALL wrf_error_fatal("Error reading qr_acr_qs.dat. Aborting because force_read_thompson is .true.")
+              ENDIF
+              CLOSE(63)
+            ELSE
+              IF( force_read_thompson ) THEN
+                CALL wrf_error_fatal("Error opening qr_acr_qs.dat. Aborting because force_read_thompson is .true.")
+              ENDIF
+            ENDIF
+          ENDIF
+        ELSE
+          IF( force_read_thompson ) THEN
+            CALL wrf_error_fatal("Non-existent qr_acr_qs.dat. Aborting because force_read_thompson is .true.")
+          ENDIF
+        ENDIF
+      ENDIF
+      CALL wrf_dm_bcast_integer(good,1)
+
+      IF ( good .EQ. 1 ) THEN
+        CALL wrf_dm_bcast_double(tcs_racs1,SIZE(tcs_racs1))
+        CALL wrf_dm_bcast_double(tmr_racs1,SIZE(tmr_racs1))
+        CALL wrf_dm_bcast_double(tcs_racs2,SIZE(tcs_racs2))
+        CALL wrf_dm_bcast_double(tmr_racs2,SIZE(tmr_racs2))
+        CALL wrf_dm_bcast_double(tcr_sacr1,SIZE(tcr_sacr1))
+        CALL wrf_dm_bcast_double(tms_sacr1,SIZE(tms_sacr1))
+        CALL wrf_dm_bcast_double(tcr_sacr2,SIZE(tcr_sacr2))
+        CALL wrf_dm_bcast_double(tms_sacr2,SIZE(tms_sacr2))
+        CALL wrf_dm_bcast_double(tnr_racs1,SIZE(tnr_racs1))
+        CALL wrf_dm_bcast_double(tnr_racs2,SIZE(tnr_racs2))
+        CALL wrf_dm_bcast_double(tnr_sacr1,SIZE(tnr_sacr1))
+        CALL wrf_dm_bcast_double(tnr_sacr2,SIZE(tnr_sacr2))
+      ELSE
+        CALL wrf_message("ThompMP: computing qr_acr_qs")
+        do n2 = 1, nbr
 !        vr(n2) = av_r*Dr(n2)**bv_r * DEXP(-fv_r*Dr(n2))
          vr(n2) = -0.1021 + 4.932E3*Dr(n2) - 0.9551E6*Dr(n2)*Dr(n2)     &
               + 0.07934E9*Dr(n2)*Dr(n2)*Dr(n2)                          &
               - 0.002362E12*Dr(n2)*Dr(n2)*Dr(n2)*Dr(n2)
          D1(n2) = (vr(n2)/av_s)**(1./bv_s)
-      enddo
-      do n = 1, nbs
+        enddo
+        do n = 1, nbs
          vs(n) = 1.5*av_s*Ds(n)**bv_s * DEXP(-fv_s*Ds(n))
-      enddo
+        enddo
 
 !..Note values returned from wrf_dm_decomp1d are zero-based, add 1 for
 !.. fortran indices.  J. Michalakes, 2009Oct30.
 
 #if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
-      CALL wrf_dm_decomp1d ( ntb_r*ntb_r1, km_s, km_e )
+        CALL wrf_dm_decomp1d ( ntb_r*ntb_r1, km_s, km_e )
 #else
-      km_s = 0
-      km_e = ntb_r*ntb_r1 - 1
+        km_s = 0
+        km_e = ntb_r*ntb_r1 - 1
 #endif
 
-      do km = km_s, km_e
+        do km = km_s, km_e
          m = km / ntb_r1 + 1
          k = mod( km , ntb_r1 ) + 1
 
@@ -3866,68 +3954,46 @@
                tnr_sacr2(i,j,k,m) = y4
             enddo
          enddo
-      enddo
+        enddo
 
 !..Note wrf_dm_gatherv expects zero-based km_s, km_e (J. Michalakes, 2009Oct30).
 
 #if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
-      CALL wrf_dm_gatherv(tcs_racs1, ntb_s*ntb_t, km_s, km_e, R8SIZE)
-      CALL wrf_dm_gatherv(tmr_racs1, ntb_s*ntb_t, km_s, km_e, R8SIZE)
-      CALL wrf_dm_gatherv(tcs_racs2, ntb_s*ntb_t, km_s, km_e, R8SIZE)
-      CALL wrf_dm_gatherv(tmr_racs2, ntb_s*ntb_t, km_s, km_e, R8SIZE)
-      CALL wrf_dm_gatherv(tcr_sacr1, ntb_s*ntb_t, km_s, km_e, R8SIZE)
-      CALL wrf_dm_gatherv(tms_sacr1, ntb_s*ntb_t, km_s, km_e, R8SIZE)
-      CALL wrf_dm_gatherv(tcr_sacr2, ntb_s*ntb_t, km_s, km_e, R8SIZE)
-      CALL wrf_dm_gatherv(tms_sacr2, ntb_s*ntb_t, km_s, km_e, R8SIZE)
-      CALL wrf_dm_gatherv(tnr_racs1, ntb_s*ntb_t, km_s, km_e, R8SIZE)
-      CALL wrf_dm_gatherv(tnr_racs2, ntb_s*ntb_t, km_s, km_e, R8SIZE)
-      CALL wrf_dm_gatherv(tnr_sacr1, ntb_s*ntb_t, km_s, km_e, R8SIZE)
-      CALL wrf_dm_gatherv(tnr_sacr2, ntb_s*ntb_t, km_s, km_e, R8SIZE)
+        CALL wrf_dm_gatherv(tcs_racs1, ntb_s*ntb_t, km_s, km_e, R8SIZE)
+        CALL wrf_dm_gatherv(tmr_racs1, ntb_s*ntb_t, km_s, km_e, R8SIZE)
+        CALL wrf_dm_gatherv(tcs_racs2, ntb_s*ntb_t, km_s, km_e, R8SIZE)
+        CALL wrf_dm_gatherv(tmr_racs2, ntb_s*ntb_t, km_s, km_e, R8SIZE)
+        CALL wrf_dm_gatherv(tcr_sacr1, ntb_s*ntb_t, km_s, km_e, R8SIZE)
+        CALL wrf_dm_gatherv(tms_sacr1, ntb_s*ntb_t, km_s, km_e, R8SIZE)
+        CALL wrf_dm_gatherv(tcr_sacr2, ntb_s*ntb_t, km_s, km_e, R8SIZE)
+        CALL wrf_dm_gatherv(tms_sacr2, ntb_s*ntb_t, km_s, km_e, R8SIZE)
+        CALL wrf_dm_gatherv(tnr_racs1, ntb_s*ntb_t, km_s, km_e, R8SIZE)
+        CALL wrf_dm_gatherv(tnr_racs2, ntb_s*ntb_t, km_s, km_e, R8SIZE)
+        CALL wrf_dm_gatherv(tnr_sacr1, ntb_s*ntb_t, km_s, km_e, R8SIZE)
+        CALL wrf_dm_gatherv(tnr_sacr2, ntb_s*ntb_t, km_s, km_e, R8SIZE)
 #endif
 
-      IF ( write_thompson_tables ) THEN
-        CALL wrf_message("Writing qr_acr_qs.dat in Thompson MP init")
-        OPEN(63,file="qr_acr_qs.dat",form="unformatted",err=9234)
-        WRITE(63,err=9234)tcs_racs1
-        WRITE(63,err=9234)tmr_racs1
-        WRITE(63,err=9234)tcs_racs2
-        WRITE(63,err=9234)tmr_racs2
-        WRITE(63,err=9234)tcr_sacr1
-        WRITE(63,err=9234)tms_sacr1
-        WRITE(63,err=9234)tcr_sacr2
-        WRITE(63,err=9234)tms_sacr2
-        WRITE(63,err=9234)tnr_racs1
-        WRITE(63,err=9234)tnr_racs2
-        WRITE(63,err=9234)tnr_sacr1
-        WRITE(63,err=9234)tnr_sacr2
-        CLOSE(63)
-        RETURN    ! ----- RETURN
- 9234   CONTINUE
-        CALL wrf_error_fatal("Error writing qr_acr_qs.dat")
+        IF ( write_thompson_tables .AND. wrf_dm_on_monitor() ) THEN
+          CALL wrf_message("Writing qr_acr_qs.dat in Thompson MP init")
+          OPEN(63,file="qr_acr_qs.dat",form="unformatted",err=9234)
+          WRITE(63,err=9234)tcs_racs1
+          WRITE(63,err=9234)tmr_racs1
+          WRITE(63,err=9234)tcs_racs2
+          WRITE(63,err=9234)tmr_racs2
+          WRITE(63,err=9234)tcr_sacr1
+          WRITE(63,err=9234)tms_sacr1
+          WRITE(63,err=9234)tcr_sacr2
+          WRITE(63,err=9234)tms_sacr2
+          WRITE(63,err=9234)tnr_racs1
+          WRITE(63,err=9234)tnr_racs2
+          WRITE(63,err=9234)tnr_sacr1
+          WRITE(63,err=9234)tnr_sacr2
+          CLOSE(63)
+          RETURN    ! ----- RETURN
+ 9234     CONTINUE
+          CALL wrf_error_fatal("Error writing qr_acr_qs.dat")
+        ENDIF
       ENDIF
-
-    ELSE  !read_thompson_tables
-
-      CALL wrf_message("ThompMP: read qr_acr_qs.dat stead of computing")
-      OPEN(63,file="qr_acr_qs.dat",form="unformatted",err=1234)
-      READ(63,err=1234)tcs_racs1
-      READ(63,err=1234)tmr_racs1
-      READ(63,err=1234)tcs_racs2
-      READ(63,err=1234)tmr_racs2
-      READ(63,err=1234)tcr_sacr1
-      READ(63,err=1234)tms_sacr1
-      READ(63,err=1234)tcr_sacr2
-      READ(63,err=1234)tms_sacr2
-      READ(63,err=1234)tnr_racs1
-      READ(63,err=1234)tnr_racs2
-      READ(63,err=1234)tnr_sacr1
-      READ(63,err=1234)tnr_sacr2
-      CLOSE(63)
-      RETURN    ! ----- RETURN
- 1234 CONTINUE
-      CALL wrf_error_fatal("Error reading qr_acr_qs.dat")
-
-    ENDIF !read_thompson_tables
 
       end subroutine qr_acr_qs
 !+---+-----------------------------------------------------------------+
@@ -3951,26 +4017,74 @@
                          lam_exp, lamr, N0_r, lamc, N0_c, y
       INTEGER :: nu_c  ! made automatic, jm 20141107
       REAL:: T_adjust
-      LOGICAL read_thompson_tables, write_thompson_tables
+      LOGICAL force_read_thompson, write_thompson_tables
+      LOGICAL lexist,lopen
+      INTEGER good
+      LOGICAL, EXTERNAL :: wrf_dm_on_monitor
 
 !+---+
-      CALL nl_get_read_thompson_tables(1,read_thompson_tables)
+      CALL nl_get_force_read_thompson(1,force_read_thompson)
       CALL nl_get_write_thompson_tables(1,write_thompson_tables)
 
-    IF ( .NOT. read_thompson_tables ) THEN
-      orho_w = 1./rho_w
+      good = 0
+      IF ( wrf_dm_on_monitor() ) THEN
+        INQUIRE(FILE="freezeH2O.dat",EXIST=lexist)
+        IF ( lexist ) THEN
+          CALL wrf_message("ThompMP: read freezeH2O.dat stead of computing")
+          OPEN(63,file="freezeH2O.dat",form="unformatted",err=1234)
+          READ(63,err=1234)tpi_qrfz
+          READ(63,err=1234)tni_qrfz
+          READ(63,err=1234)tpg_qrfz
+          READ(63,err=1234)tnr_qrfz
+          READ(63,err=1234)tpi_qcfz
+          READ(63,err=1234)tni_qcfz
+          good = 1
+ 1234     CONTINUE
+          IF ( good .NE. 1 ) THEN
+            INQUIRE(63,opened=lopen)
+            IF (lopen) THEN
+              IF( force_read_thompson ) THEN
+                CALL wrf_error_fatal("Error reading freezeH2O.dat. Aborting because force_read_thompson is .true.")
+              ENDIF
+              CLOSE(63)
+            ELSE
+              IF( force_read_thompson ) THEN
+                CALL wrf_error_fatal("Error opening freezeH2O.dat. Aborting because force_read_thompson is .true.")
+              ENDIF
+            ENDIF
+          ENDIF
+        ELSE
+          IF( force_read_thompson ) THEN
+            CALL wrf_error_fatal("Non-existent freezeH2O.dat. Aborting because force_read_thompson is .true.")
+          ENDIF
+        ENDIF
+      ENDIF
 
-      do n2 = 1, nbr
+      CALL wrf_dm_bcast_integer(good,1)
+
+      IF ( good .EQ. 1 ) THEN
+        CALL wrf_dm_bcast_double(tpi_qrfz,SIZE(tpi_qrfz))
+        CALL wrf_dm_bcast_double(tni_qrfz,SIZE(tni_qrfz))
+        CALL wrf_dm_bcast_double(tpg_qrfz,SIZE(tpg_qrfz))
+        CALL wrf_dm_bcast_double(tnr_qrfz,SIZE(tnr_qrfz))
+        CALL wrf_dm_bcast_double(tpi_qcfz,SIZE(tpi_qcfz))
+        CALL wrf_dm_bcast_double(tni_qcfz,SIZE(tni_qcfz))
+      ELSE
+        CALL wrf_message("ThompMP: computing freezeH2O")
+
+        orho_w = 1./rho_w
+
+        do n2 = 1, nbr
          massr(n2) = am_r*Dr(n2)**bm_r
-      enddo
-      do n = 1, nbc
+        enddo
+        do n = 1, nbc
          massc(n) = am_r*Dc(n)**bm_r
-      enddo
+        enddo
 
 !..Freeze water (smallest drops become cloud ice, otherwise graupel).
-      do m = 1, ntb_IN
-      T_adjust = MAX(-3.0, MIN(3.0 - ALOG10(Nt_IN(m)), 3.0))
-      do k = 1, 45
+        do m = 1, ntb_IN
+        T_adjust = MAX(-3.0, MIN(3.0 - ALOG10(Nt_IN(m)), 3.0))
+        do k = 1, 45
 !         print*, ' Freezing water for temp = ', -k
          Texp = DEXP( DFLOAT(k) - T_adjust*1.0D0 ) - 1.0D0
          do j = 1, ntb_r1
@@ -4021,40 +4135,24 @@
                tni_qcfz(i,j,k,m) = sumn2
             enddo
          enddo
-      enddo
-      enddo
+        enddo
+        enddo
 
-      IF ( write_thompson_tables ) THEN
-        CALL wrf_message("Writing freezeH2O.dat in Thompson MP init")
-        OPEN(63,file="freezeH2O.dat",form="unformatted",err=9234)
-        WRITE(63,err=9234)tpi_qrfz
-        WRITE(63,err=9234)tni_qrfz
-        WRITE(63,err=9234)tpg_qrfz
-        WRITE(63,err=9234)tnr_qrfz
-        WRITE(63,err=9234)tpi_qcfz
-        WRITE(63,err=9234)tni_qcfz
-        CLOSE(63)
-        RETURN    ! ----- RETURN
- 9234   CONTINUE
-        CALL wrf_error_fatal("Error writing freezeH2O.dat")
+        IF ( write_thompson_tables .AND. wrf_dm_on_monitor() ) THEN
+          CALL wrf_message("Writing freezeH2O.dat in Thompson MP init")
+          OPEN(63,file="freezeH2O.dat",form="unformatted",err=9234)
+          WRITE(63,err=9234)tpi_qrfz
+          WRITE(63,err=9234)tni_qrfz
+          WRITE(63,err=9234)tpg_qrfz
+          WRITE(63,err=9234)tnr_qrfz
+          WRITE(63,err=9234)tpi_qcfz
+          WRITE(63,err=9234)tni_qcfz
+          CLOSE(63)
+          RETURN    ! ----- RETURN
+ 9234     CONTINUE
+          CALL wrf_error_fatal("Error writing freezeH2O.dat")
+        ENDIF
       ENDIF
-
-    ELSE  !read_thompson_tables
-
-      CALL wrf_message("ThompMP: read freezeH2O.dat stead of computing")
-      OPEN(63,file="freezeH2O.dat",form="unformatted",err=1234)
-      READ(63,err=1234)tpi_qrfz
-      READ(63,err=1234)tni_qrfz
-      READ(63,err=1234)tpg_qrfz
-      READ(63,err=1234)tnr_qrfz
-      READ(63,err=1234)tpi_qcfz
-      READ(63,err=1234)tni_qcfz
-      CLOSE(63)
-      RETURN    ! ----- RETURN
- 1234 CONTINUE
-      CALL wrf_error_fatal("Error reading freezeH2O.dat")
-
-    ENDIF !read_thompson_tables
 
       end subroutine freezeH2O
 !+---+-----------------------------------------------------------------+

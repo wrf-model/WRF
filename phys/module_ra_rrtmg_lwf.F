@@ -2823,64 +2823,64 @@ end module
 
 !     implicit none
       save
-        
+	
       real , parameter :: cpdair = 1003.5  ! Specific heat capacity of dry air
-                                                         ! at constant pressure at 273 K
-                                                         ! (J kg-1 K-1)
+                                        		 ! at constant pressure at 273 K
+                                        		 ! (J kg-1 K-1)
 
-        
+	
       integer , parameter :: maxAbsorberNameLength = 5, &
                              Absorber              = 12
       character(len = maxAbsorberNameLength), dimension(Absorber), parameter :: &
       AbsorberNames = (/        &
-                                'N2   ',  &
-                                'CCL4 ',  &
-                                'CFC11',  &
-                                'CFC12',  &
-                                'CFC22',  &
-                                'H2O  ',  &
-                                'CO2  ',  &
-                                'O3   ',  &
-                                'N2O  ',  & 
-                                'CO   ',  &
-                                'CH4  ',  &
-                                'O2   '  /)
-        
+     				'N2   ',  &
+     				'CCL4 ',  &
+     				'CFC11',  &
+     				'CFC12',  &
+     				'CFC22',  &
+     				'H2O  ',  &
+     				'CO2  ',  &
+     				'O3   ',  &
+     				'N2O  ',  & 
+     				'CO   ',  &
+     				'CH4  ',  &
+     				'O2   '  /)
+	
        integer , dimension(40) :: status
        integer  :: i
        integer , parameter :: keylower  = 9,   &
-                               keyupper  = 5,   &
-                               Tdiff     = 5,   &
-                               ps        = 59,  &
-                               plower    = 13,  &
-                               pupper    = 47,  &
-                               Tself     = 10,  &
-                               Tforeign  = 4,   &
-                               pforeign  = 4,   &
-                               T         = 19,  &
-                               Tplanck   = 181, &
-                               band      = 16,  &
-                               GPoint    = 16,  &
-                               GPointSet = 2
-                                                  
+    			       keyupper  = 5,   &
+			       Tdiff     = 5,   &
+			       ps        = 59,  &
+			       plower    = 13,  &
+			       pupper    = 47,  &
+			       Tself     = 10,  &
+			       Tforeign  = 4,   &
+			       pforeign  = 4,   &
+			       T         = 19,  &
+			       Tplanck   = 181, &
+			       band      = 16,  &
+			       GPoint    = 16,  &
+			       GPointSet = 2
+						  
       contains 
-        
+	
       subroutine getAbsorberIndex(AbsorberName,AbsorberIndex)
-                character(len = *), intent(in) :: AbsorberName
-                integer , intent(out)           :: AbsorberIndex
-                
-                integer  :: m
-        
-                AbsorberIndex = -1
-                do m = 1, Absorber
-                        if (trim(AbsorberNames(m)) == trim(AbsorberName)) then
-                                AbsorberIndex = m
-                        end if
-                end do
-                
-                if (AbsorberIndex == -1) then
-                        print*, "Absorber name index lookup failed."
-                end if
+		character(len = *), intent(in) :: AbsorberName
+		integer , intent(out)           :: AbsorberIndex
+		
+		integer  :: m
+	
+		AbsorberIndex = -1
+		do m = 1, Absorber
+			if (trim(AbsorberNames(m)) == trim(AbsorberName)) then
+				AbsorberIndex = m
+			end if
+		end do
+		
+		if (AbsorberIndex == -1) then
+			print*, "Absorber name index lookup failed."
+		end if
       end subroutine getAbsorberIndex
 
       end module rrlw_ncpar
@@ -3826,9 +3826,9 @@ contains
 !      end subroutine mcica_cldc
 
 !-------------------------------------------------------------------------------------------------
-       _gpuker subroutine generate_stochastic_cloudsg(colstart,ncol, nlay, icld, ngbd, &
+       _gpuker subroutine generate_stochastic_cloudsg(ncol, nlay, icld, ngbd, &
 #ifndef _CUDA
-                                 pmidd,cldfracd,clwpd,ciwpd,cswpd,taucd, &
+                                 pmidd,cldfracd,clwpd,ciwpd,cswpd,taucd,changeSeed, &
 #endif
                                  cld_stoch, clwp_stoch, ciwp_stoch, cswp_stoch, &
 ! For GSFC, not needed for WRF
@@ -3893,7 +3893,6 @@ contains
 
 ! -- Arguments
 
-      integer , intent(in) :: colstart        ! where the columns start
       integer , intent(in) :: ncol            ! number of columns
       integer , intent(in) :: nlay            ! number of layers
       integer , intent(in) :: icld            ! clear/cloud, cloud overlap flag
@@ -3904,6 +3903,7 @@ contains
 ! were module data but changed to arguments because not thread-safe
       real  :: pmidd(:, :)
       real  :: cldfracd(:,:), clwpd(:,:), ciwpd(:,:), cswpd(:,:), taucd(:,:,:)
+      integer, intent(in) :: changeSeed
 #endif
 
 !      real , intent(in) :: ssac(:,:,:)       ! in-cloud single scattering albedo
@@ -3954,9 +3954,15 @@ contains
 !      real , parameter :: qmin   = 1.0e-10    ! min cloud water and cloud ice (not used)
 
 ! Variables related to random number and seed 
+#ifdef _CUDA
       real  :: CDF(mxlay), CDF2(mxlay)      ! random numbers
       integer  :: seed1, seed2, seed3, seed4 ! seed to create random number (kissvec)
       real  :: rand_num      ! random number (kissvec)
+#else
+      real  :: CDF(ncol,mxlay), CDF2(mxlay)      ! random numbers
+      integer,dimension(ncol)  :: seed1, seed2, seed3, seed4 ! seed to create random number (kissvec)
+      real ,dimension(ncol) :: rand_num      ! random number (kissvec)
+#endif
       integer  :: iseed                       ! seed to create random number (Mersenne Teister)
       real  :: rand_num_mt                    ! random number (Mersenne Twister)
 
@@ -3967,6 +3973,9 @@ contains
       integer  :: ilev, isubcol, i, n         ! indices
       
       integer :: iplon, gp
+      integer  :: m, k, n1, kiss
+
+      m(k, n1) = ieor (k, ishft (k, n1) )
 #ifdef _CUDA
       iplon = (blockidx%x-1) * blockdim%x + threadidx%x
       gp = (blockidx%y-1) * blockdim%y + threadidx%y
@@ -3975,8 +3984,7 @@ contains
      !   print *, "ppp ", iplon, gp
       if (iplon <= ncol .and. gp <= nsubcol) then
 #else
-      do iplon = 1, ncol
-      do gp = 1, nsubcol
+!      do iplon = 1, ncol
 #endif
 
 
@@ -3988,18 +3996,32 @@ contains
    
 ! For kissvec, create a seed that depends on the state of the columns. Maybe not the best way, but it works.  
 ! Must use pmid from bottom four layers. 
-#if 0
+#ifdef _CUDA
            seed1 = (pmidd(iplon,1) - int(pmidd(iplon,1)))  * 1000000000 + (gp) * 11 
            seed3 = (pmidd(iplon,3) - int(pmidd(iplon,3)))  * 1000000000 + (gp) * 13 
            seed2 = seed1 + gp
            seed4 = seed3 - gp 
 #else
-     if (gp.eq.1)then
-       seed1 = (pmidd(iplon,1) - int(pmidd(iplon,1)))  * 1000000000
-       seed2 = (pmidd(iplon,2) - int(pmidd(iplon,2)))  * 1000000000
-       seed3 = (pmidd(iplon,3) - int(pmidd(iplon,3)))  * 1000000000
-       seed4 = (pmidd(iplon,4) - int(pmidd(iplon,4)))  * 1000000000
-     endif
+! Have it agree with the original _lw.F version, jm 20141222
+    do iplon = 1, ncol
+       seed1(iplon) = (pmidd(iplon,1) - int(pmidd(iplon,1)))  * 1000000000
+       seed2(iplon) = (pmidd(iplon,2) - int(pmidd(iplon,2)))  * 1000000000
+       seed3(iplon) = (pmidd(iplon,3) - int(pmidd(iplon,3)))  * 1000000000
+       seed4(iplon) = (pmidd(iplon,4) - int(pmidd(iplon,4)))  * 1000000000
+       do i=1,changeSeed
+!          call kissvec(seed1(iplon), seed2(iplon), seed3(iplon), seed4(iplon), rand_num(iplon))
+
+          seed1(iplon) = 69069 * seed1(iplon) + 1327217885
+          seed2(iplon) = m (m (m (seed2(iplon), 13), - 17), 5)
+          seed3(iplon) = 18000 * iand (seed3(iplon), 65535) + ishft (seed3(iplon), - 16)
+          seed4(iplon) = 30903 * iand (seed4(iplon), 65535) + ishft (seed4(iplon), - 16)
+          kiss = seed1(iplon) + seed2(iplon) + ishft (seed3(iplon), 16) + seed4(iplon)
+          rand_num(iplon) = kiss*2.328306e-10  + 0.5
+
+       enddo
+    enddo
+
+     do gp = 1, nsubcol
 
 #endif
   
@@ -4010,13 +4032,16 @@ contains
 
        select case (icld)
 
+#ifdef _CUDA
 ! Random overlap
        case(1) 
 
+#if 0
            do ilev = 1,nlay
              call kissvec(seed1, seed2, seed3, seed4, rand_num)
-             CDF(ilev) = rand_num
+             CDF(iplon,ilev) = rand_num
            end do
+#endif
         
 
 ! Maximum-Random overlap
@@ -4026,16 +4051,16 @@ contains
              call kissvec(seed1, seed2, seed3, seed4, rand_num)
              CDF(ilev) = rand_num
            end do
-          
+
 
            do ilev = 2,nlay
-             if (CDF(ilev-1) > 1.  - cldfracd(iplon, ilev-1)) then 
+             if (CDF(ilev-1) > 1.  - cldfracd(iplon, ilev-1)) then
                 CDF(ilev) = CDF(ilev-1)
              else
                  CDF(ilev) = CDF(ilev) * (1. - cldfracd(iplon, ilev-1))
              end if
            end do
-            
+
 ! Maximum overlap
        case(3)
 
@@ -4046,7 +4071,8 @@ contains
 
 
 ! For GSFC, not needed for WRF
-! Exponential overlap: weighting between maximum and random overlap increases with the distance. 
+! Exponential overlap: weighting between maximum and random overlap increases
+! with the distance.
 !       case(4)
 !
 !           do ilev = 1,nlay
@@ -4055,7 +4081,7 @@ contains
 !              call kissvec(seed1, seed2, seed3, seed4, rand_num)
 !              CDF2(ilev) = rand_num
 !              call kissvec(seed1, seed2, seed3, seed4, rand_num)
-!              CDF3(ilev) = rand_num 
+!              CDF3(ilev) = rand_num
 !           end do
 !
 !           do ilev = 2,nlay
@@ -4063,46 +4089,82 @@ contains
 !              if (CDF2(ilev) < alphad(iplon,ilev)) then
 !                CDF(ilev) = CDF(ilev-1)
 !              end if
-!           
+!
 !           end do
 
+       end select
+#else
+! Random overlap
+       case(1)
+
+#if 0
+           do ilev = 1,nlay
+             call kissvec(seed1, seed2, seed3, seed4, rand_num)
+             CDF(iplon,ilev) = rand_num
+           end do
+#else
+   CALL wrf_error_fatal("icld == 1 not supported: module_ra_rrtmg_lwf.F")
+#endif
+
+! Maximum-Random overlap
+       case(2)
+
+           do ilev = 1,nlay
+    do iplon = 1, ncol
+!             call kissvec(seed1(iplon), seed2(iplon), seed3(iplon), seed4(iplon), rand_num(iplon))
+             seed1(iplon) = 69069 * seed1(iplon) + 1327217885
+             seed2(iplon) = m (m (m (seed2(iplon), 13), - 17), 5)
+             seed3(iplon) = 18000 * iand (seed3(iplon), 65535) + ishft (seed3(iplon), - 16)
+             seed4(iplon) = 30903 * iand (seed4(iplon), 65535) + ishft (seed4(iplon), - 16)
+             kiss = seed1(iplon) + seed2(iplon) + ishft (seed3(iplon), 16) + seed4(iplon)
+             CDF(iplon,ilev) = kiss*2.328306e-10  + 0.5
+    enddo
+           end do
+          
+
+           do ilev = 2,nlay
+    do iplon = 1, ncol
+             if (CDF(iplon,ilev-1) > 1.  - cldfracd(iplon, ilev-1)) then 
+                CDF(iplon,ilev) = CDF(iplon,ilev-1)
+             else
+                 CDF(iplon,ilev) = CDF(iplon,ilev) * (1. - cldfracd(iplon, ilev-1))
+             end if
+    enddo
+           end do
+            
+! Maximum overlap
+       case(3)
+
+    do iplon = 1, ncol
+!           call kissvec(seed1(iplon), seed2(iplon), seed3(iplon), seed4(iplon), rand_num(iplon))
+          seed1(iplon) = 69069 * seed1(iplon) + 1327217885
+          seed2(iplon) = m (m (m (seed2(iplon), 13), - 17), 5)
+          seed3(iplon) = 18000 * iand (seed3(iplon), 65535) + ishft (seed3(iplon), - 16)
+          seed4(iplon) = 30903 * iand (seed4(iplon), 65535) + ishft (seed4(iplon), - 16)
+          kiss = seed1(iplon) + seed2(iplon) + ishft (seed3(iplon), 16) + seed4(iplon)
+          rand_num(iplon) = kiss*2.328306e-10  + 0.5
+    enddo
+           do ilev = 1,nlay
+    do iplon = 1, ncol
+            CDF(iplon,ilev) = rand_num(iplon)
+    enddo
+           end do
+
        end select 
+#endif
 
-!       if (ih > 0) then
-!
-!          do ilev = 1,nlay
-!             call kissvec(seed1, seed2, seed3, seed4, rand_num)
-!             CDF2(ilev) = rand_num
-!             call kissvec(seed1, seed2, seed3, seed4, rand_num)
-!             CDF3(ilev) = rand_num 
-!          end do
-!
-!
-!          do ilev = 2,nlay
-!             if (CDF2(ilev) < rcorrd (iplon,ilev)) then
-!                 CDF3(ilev) = CDF3(ilev-1) 
-!             end if
-!          end do
-!
-!       end if
-   
-      
-         
-! -- generate subcolumns for homogeneous clouds -----
-     ! do ilev = 1,nlay
-     !    iscloudy(ilev) = (CDF(ilev) >= 1.  - cldfracd(iplon,ilev))
-     ! enddo
-
-! where the subcolumn is cloudy, the subcolumn cloud fraction is 1;
-! where the subcolumn is not cloudy, the subcolumn cloud fraction is 0;
-! where there is a cloud, define the subcolumn cloud properties, 
-! otherwise set these to zero
       n = ngbd(gp)
 
       do ilev = 1,nlay
+    do iplon = 1, ncol
         cfs = cldfracd(iplon, ilev)
          !  do gp = 1, nsubcol
+#ifdef _CUDA
                if (CDF(ilev) >=1.  - cfs) then
+#else
+               if (CDF(iplon,ilev) >=1.  - cfs) then
+#endif
+
                   cld_stoch(iplon,gp,ilev) = 1. 
                   clwp_stoch(iplon,gp,ilev) = clwpd(iplon,ilev)
                   ciwp_stoch(iplon,gp,ilev) = ciwpd(iplon,ilev)
@@ -4110,46 +4172,6 @@ contains
                 
                   tauc_stoch(iplon,gp,ilev) = taucd(iplon,n,ilev)
                   
-! For GSFC, not needed for WRF
-!                   if (ih > 0) then  
-!                     ! Cloud fraction ~ inhomogeneity
-!                     if (cfs .gt. 0.99 ) then
-!                        SIGMA_QCW = 0.5
-!                     elseif (cfs .gt. 0.9 ) then
-!                        SIGMA_QCW = 0.71
-!                     else  
-!                        SIGMA_QCW = 1
-!                     endif
-!
-!                     cld_stoch(iplon,gp,ilev) = 1. 
-!
-!                     ! Horizontally variable clouds:
-!                     ! Determine ZCW = ratio of cloud condensate mixing ratio QC for this cell to
-!                     ! its mean value for all cloudy cells in this layer.
-!                     ! Use bilinear interpolation of ZCW tabulated in array XCW as a function of
-!                     !    * cumulative probability Y (= CDF3)
-!                     !    * relative standard deviation SIGMA
-!                     ! Take care that the definition of RIND2 is consistent with subroutine
-!                     ! TABULATE_XCW
-!                     RIND1 = CDF3(ilev) * (N1 - 1) + 1.0
-!                     IND1  = MAX(1, MIN(INT(RIND1), N1-1))
-!                     RIND1 = RIND1 - IND1
-!                     RIND2 = 40.0 * SIGMA_QCW    - 3.0
-!                     IND2  = MAX(1, MIN(INT(RIND2), N2-1))
-!                     RIND2 = RIND2 - IND2
-!
-!                     ZCW = (1.0-RIND1) * (1.0-RIND2) * XCWD(IND1,IND2) &
-!                          + (1.0-RIND1) * RIND2       * XCWD(IND1,IND2+1) &
-!                          + RIND1 * (1.0-RIND2)       * XCWD(IND1+1,IND2) &
-!                          + RIND1 * RIND2             * XCWD(IND1+1,IND2+1)
-!
-!                     clwp_stoch(iplon,gp,ilev) = clwpd(iplon,ilev) * ZCW
-!                     ciwp_stoch(iplon,gp,ilev) = ciwpd(iplon,ilev) * ZCW
-!                     cswp_stoch(iplon,gp,ilev) = cswpd(iplon,ilev) * ZCW
-!                     tauc_stoch(iplon,gp,ilev) = taucd(iplon,n,ilev)
-!!                  ssac_stoch(isubcol,i,ilev) = ssac(n,i,ilev)
-!!                  asmc_stoch(isubcol,i,ilev) = asmc(n,i,ilev)
-!                   end if
                else
                   cld_stoch(iplon,gp,ilev) = 0. 
                   clwp_stoch(iplon,gp,ilev) = 0. 
@@ -4160,13 +4182,12 @@ contains
 !                  asmc_stoch(isubcol,i,ilev) = 1. 
                endif
            
-       !end do
+   enddo
       enddo
 
 #ifdef _CUDA
       endif
 #else
-      end do
       end do
 #endif
 
@@ -4232,7 +4253,7 @@ contains
       use rrlw_vsn_f, only: hvrclc, hnamclc
 
 #ifdef _CUDA
-          use cudafor
+	  use cudafor
 #endif
       implicit none
 
@@ -4426,7 +4447,7 @@ contains
 
 #ifdef _CUDA
     iplon = (blockidx%x-1) * blockdim%x + threadidx%x
-        lay = (blockidx%y-1) * blockdim%y + threadidx%y
+	lay = (blockidx%y-1) * blockdim%y + threadidx%y
     ig = (blockidx%z-1) * blockdim%z + threadidx%z
 ! (dmb 2012) Make sure that the column, layer, and g-points are all within the proper
 ! range.  They can be out of range if we select certain block configurations due to 
@@ -4463,7 +4484,7 @@ contains
                if (ciwpmcd(iplon,ig,lay)+cswpmcd(iplon,ig,lay) .eq. 0.0) then
                   abscoice = 0.0 
                   abscosno = 0.0 
-                                   
+				   
                elseif (iceflagd(iplon) .eq. 0) then
                   abscoice= absice0d(1) + absice0d(2)/radice
                   abscosno = 0.0 
@@ -4516,12 +4537,14 @@ contains
                if (cswpmcd(iplon,ig,lay).gt.0.0 .and. iceflagd(iplon) .eq. 5) then
                   radsno = resnmcd(iplon,lay)
 
+#ifndef _CUDA
                   if (radsno .lt. 5.0 .or. radsno .gt. 140.0) then
                          write(errmess,'(A,i5,i5,i5,f8.2,f8.2)' )         &
                'ERROR: SNOW GENERALIZED EFFECTIVE SIZE OUT OF BOUNDS'   &
                ,iplon,ig, lay, cswpmcd(iplon,ig,lay), radsno
                          call wrf_error_fatal(errmess)
                   end if
+#endif
 
                   ncbands(iplon) = 16
                   factor = (radsno - 2.)/3.
@@ -4589,7 +4612,7 @@ contains
          allocate( clwpmcd(ncol, ngptlw, nlay+1))
          allocate( cswpmcd(ncol, ngptlw, nlay+1))
 #endif
-        
+	
       end subroutine
 
       ! (dmb 2012) This subroutine deallocates any GPU arrays.
@@ -4612,7 +4635,7 @@ contains
                                  absice0, absice1, absice2, absice3, absliq1)
                                 
          integer :: inflag(:), iceflag(:), liqflag(:)
-        
+	
          real , dimension(:) :: absice0
          real , dimension(:,:) :: absice1
          real , dimension(:,:) :: absice2
@@ -4750,7 +4773,7 @@ contains
       contains
 
 !-----------------------------------------------------------------------------
-      _gpuker subroutine rtrnmcg(colstart,ncol, nlayers, istart, iend, iout                               &
+      _gpuker subroutine rtrnmcg(ncol, nlayers, istart, iend, iout                               &
 #include "rrtmg_lw_cpu_args.h"
                                  ,ngb,icldlyr, taug, fracsd, cldfmcd)
 !-----------------------------------------------------------------------------
@@ -4781,7 +4804,6 @@ contains
 ! ------- Declarations -------
 
 ! ----- Input -----
-integer colstart
       integer(kind=4), value, intent(in) :: nlayers         ! total number of layers
       integer(kind=4), value, intent(in) :: ncol            ! total number of columns
       integer(kind=4), value, intent(in) :: istart          ! beginning band of calculation
@@ -5230,11 +5252,10 @@ integer colstart
 ! final upward and downward flux value for each column and layer.  This subroutine 
 ! is parallelized across the column and layer dimensions.  As long as we parallelize 
 ! across two of the three dimesnions, we should usually have enough GPU saturation.
-      _gpuker subroutine rtrnadd(colstart,ncol, nlay, ngpt, drvf                &
+      _gpuker subroutine rtrnadd(ncol, nlay, ngpt, drvf                &
 #include "rrtmg_lw_cpu_args.h"
                                 )
 
-integer :: colstart
       integer, intent(in), value :: ncol
       integer, intent(in), value :: nlay
       integer, intent(in), value :: ngpt
@@ -8934,7 +8955,7 @@ integer,external :: omp_get_thread_num
 #endif
 #ifdef _CUDA
       !dimGrid = dim3( (ncol + 127) / 128, 1, 1)
-          !dimBlock = dim3( 128,1,1)
+	  !dimBlock = dim3( 128,1,1)
 
       dimGrid = dim3( (ncol + 63) / 64, ((nlayers+1)/2), 1)
       dimBlock = dim3( 64, 2, 1)
@@ -14156,9 +14177,9 @@ integer,external :: omp_get_thread_num
 
 ! ------- Declarations -------
 
-         ! integer , parameter:: maxlay = 203
-         ! integer , parameter:: mxmol = 38
-          
+	 ! integer , parameter:: maxlay = 203
+	 ! integer , parameter:: mxmol = 38
+	  
 
 ! ----- Input -----
 ! Note: All volume mixing ratios are in dimensionless units of mole fraction obtained
@@ -14362,6 +14383,14 @@ cn = CHNK
 
       do  i = 1, ns 
 
+!jm if ( i .eq. IDEBUG_BASE ) then
+!jm call setdebug
+!jm else 
+!jm call unsetdebug
+!jm endif
+
+
+
       call rrtmg_lw_part &
             (ns, ncol, (i-1)*cn + 1, min(cn, ncol - (i-1)*cn), &
              nlay    ,icld    ,idrv,&
@@ -14377,6 +14406,7 @@ cn = CHNK
 !             tauaer  , zm, cloudMH, cloudHH, &
 !             uflx    ,dflx    ,hr      ,uflxc   ,dflxc,  hrc, &
 !             duflx_dt,duflxc_dt,cloudFlag)    
+
       end do  
       
 ! mji - time      
@@ -14744,13 +14774,14 @@ cn = CHNK
 ! For GSFC, not needed for WRF
 !      real  :: zmp(pncol, mxlay+1)
   
+      integer :: permuteseed  ! this is set, below
       integer  :: icb(16)
-         
+	 
       ! local looping variables
       integer :: i,j,kk, piplon
 
       ! cuda return code
-          integer :: ierr
+	  integer :: ierr
       ! cuda thread and grid block dimensions
 #ifdef _CUDA
       type(dim3) :: dimGrid, dimBlock
@@ -14799,7 +14830,7 @@ integer,external :: omp_get_thread_num
 #endif
 ! Initializations
       icb(:) = (/  1,2,3,3,3,4,4,4,5, 5, 5, 5, 5, 5, 5, 5 /)
-         
+	 
       oneminus = 1.  - 1.e-6 
       pi = 2.  * asin(1. )
       fluxfac = pi * 2.e4                   ! orig:   fluxfac = pi * 2.d4  
@@ -14827,7 +14858,7 @@ integer,external :: omp_get_thread_num
       allocate( cldfmcd(pncol, ngptlw, nlay+1))
       allocate( ngbd(140) )
 #endif
-           
+	   
 
 #ifndef _CUDA
 #  define pncol CHNK
@@ -14934,7 +14965,8 @@ integer,external :: omp_get_thread_num
 ! For GSFC, not needed for WRF
 !      zmd = zmp
       
-      call mcica_subcol_lwg(colstart, pncol, nlay, icld, counter, 0,                             &
+      permuteseed=150 ! if you change this, change value in module_ra_rrtmg_lw.F
+      call mcica_subcol_lwg(colstart, pncol, nlay, icld, counter, permuteseed,            &
 #ifndef _CUDA
                             pmid,clwp,ciwp,cswp,tauc,                                     &
 #endif
@@ -14951,9 +14983,9 @@ integer,external :: omp_get_thread_num
       dimBlock = dim3( 256,2,1)
 #endif
       if (icld > 0) then
-         call generate_stochastic_cloudsg _gpuchv (colstart,pncold, nlayd, icldd, ngbd, &
+         call generate_stochastic_cloudsg _gpuchv (pncold, nlayd, icldd, ngbd, &
 #ifndef _CUDA
-                               pmid,cldfracq,clwpq,ciwpq,cswpq,taucq,              &
+                               pmid,cldfracq,clwpq,ciwpq,cswpq,taucq,permuteseed,  &
 #endif
 ! For GSFC, not needed for WRF
 !                               ngbd, cldfmcd, clwpmcd, ciwpmcd, taucmcd, 1, zmd)
@@ -15012,7 +15044,7 @@ integer,external :: omp_get_thread_num
 !  effective radius must be passed into cldprmc.  Cloud fraction and cloud
 !  optical depth are transferred to rrtmg_lw arrays in cldprmc.  
 
-! If the GPU flag is active, then we call the GPU code.  Otherwise, call the CPU code   
+! If the GPU flag is active, then we call the GPU code.  Otherwise, call the CPU code	
 
 ! (dmb 2012) Copy the needed arrays over to the GPU for the cldprmc subroutine.
       call copyGPUcldprmcg( inflag, iceflag, liqflag,&
@@ -15095,7 +15127,7 @@ integer,external :: omp_get_thread_num
                              cldfmcd, taucmcd,  ngbd, icbd, ncbandsd, icldlyr)
 
 ! synchronize the GPU with the CPU before taking timing results or passing data back to the CPU
-#ifdef _CUDA    
+#ifdef _CUDA	
       ierr = cudaThreadSynchronize() 
 #endif
    
@@ -15144,7 +15176,7 @@ integer,external :: omp_get_thread_num
       dimBlock = dim3( 256,2,1)
 #endif    
 
-      call rtrnmcg _gpuchv (colstart,pncol,nlayers, istart, iend, iout  &
+      call rtrnmcg _gpuchv (pncol,nlayers, istart, iend, iout  &
 #include "rrtmg_lw_cpu_args.h"
                     ,ngbd, icldlyr, taug, fracsd, cldfmcd)
 
@@ -15178,7 +15210,7 @@ integer,external :: omp_get_thread_num
 ! (dmb 2012) Here we integrate across the g-point fluxes to arrive at total fluxes
 ! This functionality was factored out of the original rtrnmc routine so that I could
 ! parallelize across multiple dimensions.
-      call rtrnadd _gpuchv (colstart,pncol, nlayers, ngptlw, idrv &
+      call rtrnadd _gpuchv (pncol, nlayers, ngptlw, idrv &
 #include "rrtmg_lw_cpu_args.h"
                            )
 
@@ -15277,23 +15309,23 @@ integer,external :: omp_get_thread_num
 !      use mcica_subcol_gen_lw, only: mcica_subcol_lw
 
       real retab(95)
-      data retab /                                              &
-         5.92779, 6.26422, 6.61973, 6.99539, 7.39234,           &
-         7.81177, 8.25496, 8.72323, 9.21800, 9.74075, 10.2930,  &
-         10.8765, 11.4929, 12.1440, 12.8317, 13.5581, 14.2319,  &
-         15.0351, 15.8799, 16.7674, 17.6986, 18.6744, 19.6955,  &
-         20.7623, 21.8757, 23.0364, 24.2452, 25.5034, 26.8125,  &
-         27.7895, 28.6450, 29.4167, 30.1088, 30.7306, 31.2943,  &
-         31.8151, 32.3077, 32.7870, 33.2657, 33.7540, 34.2601,  &
-         34.7892, 35.3442, 35.9255, 36.5316, 37.1602, 37.8078,  &
-         38.4720, 39.1508, 39.8442, 40.5552, 41.2912, 42.0635,  &
-         42.8876, 43.7863, 44.7853, 45.9170, 47.2165, 48.7221,  &
-         50.4710, 52.4980, 54.8315, 57.4898, 60.4785, 63.7898,  &
-         65.5604, 71.2885, 75.4113, 79.7368, 84.2351, 88.8833,  &
-         93.6658, 98.5739, 103.603, 108.752, 114.025, 119.424,  &
-         124.954, 130.630, 136.457, 142.446, 148.608, 154.956,  &
-         161.503, 168.262, 175.248, 182.473, 189.952, 197.699,  &
-         205.728, 214.055, 222.694, 231.661, 240.971, 250.639/  
+      data retab / 						&
+         5.92779, 6.26422, 6.61973, 6.99539, 7.39234,	        &
+         7.81177, 8.25496, 8.72323, 9.21800, 9.74075, 10.2930,	&
+         10.8765, 11.4929, 12.1440, 12.8317, 13.5581, 14.2319, 	&
+         15.0351, 15.8799, 16.7674, 17.6986, 18.6744, 19.6955,	&
+         20.7623, 21.8757, 23.0364, 24.2452, 25.5034, 26.8125,	&
+         27.7895, 28.6450, 29.4167, 30.1088, 30.7306, 31.2943, 	&
+         31.8151, 32.3077, 32.7870, 33.2657, 33.7540, 34.2601, 	&
+         34.7892, 35.3442, 35.9255, 36.5316, 37.1602, 37.8078,	&
+         38.4720, 39.1508, 39.8442, 40.5552, 41.2912, 42.0635,	&
+         42.8876, 43.7863, 44.7853, 45.9170, 47.2165, 48.7221,	&
+         50.4710, 52.4980, 54.8315, 57.4898, 60.4785, 63.7898,	&
+         65.5604, 71.2885, 75.4113, 79.7368, 84.2351, 88.8833,	&
+         93.6658, 98.5739, 103.603, 108.752, 114.025, 119.424, 	&
+         124.954, 130.630, 136.457, 142.446, 148.608, 154.956,	&
+         161.503, 168.262, 175.248, 182.473, 189.952, 197.699,	&
+         205.728, 214.055, 222.694, 231.661, 240.971, 250.639/	
     !
       save retab
     ! For buffer layer adjustment.  Steven Cavallo, Dec 2010.
@@ -15657,15 +15689,15 @@ integer,external :: omp_get_thread_num
                   0.56,0.48,0.41,0.35,0.30,0.26,                  &
                   0.22,0.19,0.16,0.14,0.12,0.10/
     DATA TPROF   /286.96,281.07,275.16,268.11,260.56,253.02,      &
-                  245.62,238.41,231.57,225.91,221.72,217.79,      &
-                  215.06,212.74,210.25,210.16,210.69,212.14,      &
-                  213.74,215.37,216.82,217.94,219.03,220.18,      &
-                  221.37,222.64,224.16,225.88,227.63,229.51,      &
-                  231.50,233.73,236.18,238.78,241.60,244.44,      &
-                  247.35,250.33,253.32,256.30,259.22,262.12,      &
-                  264.80,266.50,267.59,268.44,268.69,267.76,      &
-                  266.13,263.96,261.54,258.93,256.15,253.23,      &
-                  249.89,246.67,243.48,240.25,236.66,233.86/    
+         	  245.62,238.41,231.57,225.91,221.72,217.79,      &
+		  215.06,212.74,210.25,210.16,210.69,212.14,      &
+		  213.74,215.37,216.82,217.94,219.03,220.18,      &
+		  221.37,222.64,224.16,225.88,227.63,229.51,      &
+		  231.50,233.73,236.18,238.78,241.60,244.44,      &
+		  247.35,250.33,253.32,256.30,259.22,262.12,      &
+		  264.80,266.50,267.59,268.44,268.69,267.76,      &
+		  266.13,263.96,261.54,258.93,256.15,253.23,      &
+		  249.89,246.67,243.48,240.25,236.66,233.86/	
 !------------------------------------------------------------------
 #if ( WRF_CHEM == 1 )
       IF ( aer_ra_feedback == 1) then
@@ -16049,8 +16081,8 @@ integer,external :: omp_get_thread_num
        do L=kte+1,nlayers+1,1
           tlev(icol,L) = varint(L) + (tlev(icol,kte) - varint(kte))
           !if ( L .le. nlay ) then
-          tlay(icol,L-1) = 0.5*(tlev(icol,L) + tlev(icol,L-1))  
-          !endif
+	  tlay(icol,L-1) = 0.5*(tlev(icol,L) + tlev(icol,L-1))  
+	  !endif
        enddo 
 
        ! Now the chemical species (except for ozone)
@@ -16064,9 +16096,9 @@ integer,external :: omp_get_thread_num
           cfc12vmr(icol,L) = cfc12vmr(icol,kte) 
           cfc22vmr(icol,L) = cfc22vmr(icol,kte) 
           ccl4vmr(icol,L) = ccl4vmr(icol,kte) 
-       enddo     
+       enddo	 
 ! End top of model buffer 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!	
 ! Get ozone profile including amount in extra layer above model top.
 ! Steven Cavallo: Must pass nlay-1 into subroutine to get nlayers 
 ! dimension for o3mmr
@@ -16335,23 +16367,22 @@ integer,external :: omp_get_thread_num
          endif
 
          ! Buffer adjustment. Steven Cavallo December 2010
-         do k=kte+1,nlayers
-            clwpth(icol,k) = 0.
-            ciwpth(icol,k) = 0.
-            cswpth(icol,k) = 0.
-            rel(icol,k) = 10.
+	 do k=kte+1,nlayers
+	    clwpth(icol,k) = 0.
+	    ciwpth(icol,k) = 0.
+	    cswpth(icol,k) = 0.
+	    rel(icol,k) = 10.
             rei(icol,k) = 10.
             res(icol,k) = 10.
             cldfrac(icol,k) = 0.
-            do nb = 1,nbndlw
+	    do nb = 1,nbndlw
                taucld(icol,nb,k) = 0.
             enddo
-         enddo   
+	 enddo	 
 
 ! mji - mcica sub-column generator called inside rrtmg_lw for gpu
 !         iplon = 1
 !         irng = 0
-!         permuteseed = 150
 
 ! Sub-column generator for McICA
 !         call mcica_subcol_lw(iplon, ncol, nlay, icld, permuteseed, irng, play, &
@@ -16675,7 +16706,7 @@ integer,external :: omp_get_thread_num
 ! Steven Cavallo.  Added for buffer layer adjustment.   December 2010.
    NLAYERS = kme + nint(p_top*0.01/deltap)- 1 ! Model levels plus new levels.
                                               ! nlayers will subsequently 
-                                              ! replace kte+1
+					      ! replace kte+1
 
 ! Read in absorption coefficients and other data
    IF ( allowed_to_read ) THEN
@@ -18296,7 +18327,7 @@ IMPLICIT NONE
           index = int(t(icol,k)-179.)
           index = min(max(index,1),94)
           corr = t(icol,k) - int(t(icol,k))
-          re(icol,k) = retab(index)*(1.-corr)           &
+          re(icol,k) = retab(index)*(1.-corr)		&
                +retab(index+1)*corr
           !           re(icol,k) = amax1(amin1(re(icol,k),30.),10.)
 !       end do

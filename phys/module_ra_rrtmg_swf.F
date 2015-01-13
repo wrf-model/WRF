@@ -1,5 +1,9 @@
 !!MODULE module_ra_rrtmg_swf
-                
+#define CHNK 8
+!#define CHNK 1849
+!#define CHNK 43
+!#define CHNK 1
+
 !  --------------------------------------------------------------------------
 ! |                                                                          |
 ! |  Copyright 2002-2013, Atmospheric & Environmental Research, Inc. (AER).  |
@@ -9,6 +13,82 @@
 ! |                       (http://www.rtweb.aer.com/)                        |
 ! |                                                                          |
 !  --------------------------------------------------------------------------
+
+#ifndef _CUDA
+! this set of macros reverses the storage order of some of the array variables
+! defined in rrtmg_sw_sub and used in various sections of the code.  Here is a 
+! correspondencet table for the variables as they are known in rrtmg_sw_sub and
+! in the subroutines that rrtmg_sw_sub calls:
+
+!jm     rrtmg_sw_sub    
+!jm      |        mcica_sw        
+!jm      |         |            cldprmc_sw      
+!jm      |         |                |     spcvmc_sw       
+!jm      |         |                |       |       reftra_sw
+!jm     tauc      tauc              |       |         |   
+!jm     ssac      ssac              |       |         |   
+!jm     asmc      asmc              |       |         |   
+!jm     fsfc      fsfc              |       |         |   
+!jm     taucmc    tauc_stoch        |     ptaucmc     |
+!jm     taormc     |                |     ptaormc     |
+!jm     ssacmc    ssac_stoch        |     pomgcmc     |
+!jm     asmcmc    asmc_stoch        |     pasycmc     |
+!jm     fsfcmc    fsfc_stoch        |       |         |           
+!jm     cldfmcl   cld_stoch       cldmfc  pcldfmc   pcldfmc
+!jm     ciwpmcl   ciwp_stoch      ciwpmc    |     
+!jm     clwpmcl   clwp_stoch      clwpmc    |     
+!jm     cswpmcl   cswp_stoch      cswpmc    |     
+!jm     ztauc                               |
+!jm     ztaucorig                           |     
+!jm     zasyc                               |
+!jm     zomgc                               |
+!jm     taua                              ptaua   
+!jm     asya                              pasya   
+!jm     omga                              pomga   
+
+#define tauc(A,B,C)  TAUC(A,C,B)
+#define ssac(A,B,C)  SSAC(A,C,B)
+#define asmc(A,B,C)  ASMC(A,C,B)
+#define fsfc(A,B,C)  FSFC(A,C,B)
+#define taucmc(A,B,C)   TAUCMC(A,C,B)
+#define tauc_stoch(A,B,C) TAUC_STOCH(A,C,B)
+#define ptaucmc(A,B,C)  pTAUCMC(A,C,B)
+#define taormc(A,B,C)   TAORMC(A,C,B)
+#define ptaormc(A,B,C)  pTAORMC(A,C,B)
+#define ssacmc(A,B,C)   SSACMC(A,C,B)
+#define ssac_stoch(A,B,C)   SSAC_STOCH(A,C,B)
+#define pomgcmc(A,B,C)  pOMGCMC(A,C,B)
+#define asmcmc(A,B,C)   ASMCMC(A,C,B)
+#define asmc_stoch(A,B,C)   ASMC_STOCH(A,C,B)
+#define pasycmc(A,B,C)  pASYCMC(A,C,B)
+#define fsfcmc(A,B,C)   FSFCMC(A,C,B)
+#define fsfc_stoch(A,B,C)   FSFC_STOCH(A,C,B)
+
+#define cldfmcl(A,B,C)   CLDFMCL(A,C,B)
+#define cld_stoch(A,B,C) CLD_STOCH(A,C,B)
+#define cldfmc(A,B,C)    CLDFMC(A,C,B)
+#define pcldfmc(A,B,C)   pCLDFMC(A,C,B)
+
+#define ciwpmcl(A,B,C)    CIWPMCL(A,C,B)
+#define ciwp_stoch(A,B,C) CIWP_STOCH(A,C,B)
+#define ciwpmc(A,B,C)     CIWPMC(A,C,B)
+
+#define clwpmcl(A,B,C)    CLWPMCL(A,C,B)
+#define clwp_stoch(A,B,C) CLWP_STOCH(A,C,B)
+#define clwpmc(A,B,C)     CLWPMC(A,C,B)
+
+#define cswpmcl(A,B,C)    CSWPMCL(A,C,B)
+#define cswp_stoch(A,B,C) CSWP_STOCH(A,C,B)
+#define cswpmc(A,B,C)     CSWPMC(A,C,B)
+
+#define taua(A,B,C)  TAUA(A,C,B)
+#define asya(A,B,C)  ASYA(A,C,B)
+#define omga(A,B,C)  OMGA(A,C,B)
+#define ptaua(A,B,C) pTAUA(A,C,B)
+#define pasya(A,B,C) pASYA(A,C,B)
+#define pomga(A,B,C) pOMGA(A,C,B)
+
+#endif
 
 ! Uncomment to use GPU, or comment to use CPU
 !#define _CUDA
@@ -1459,15 +1539,7 @@
                                                       !    Dimensions: (ncol,nlay,nbndsw)
       real , intent(in) :: fsfc(:,:,:)        ! in-cloud forward scattering fraction (non-delta scaled)
                                                       !    Dimensions: (ncol,nlay,nbndsw)
-!      real , intent(inout), dimension(ncol, nlay, nsubcol) gpu_device :: CDF       
-!      real , intent(inout), dimension(ncol, nlay, nsubcol) gpu_device :: CDF2
-!      real , intent(inout), dimension(ncol, nlay, nsubcol) gpu_device :: CDF3
-!      real , intent(inout), dimension(ncol, nlay) :: alpha
-      
 ! for inactive icld=4 option
-!      real , intent(in), dimension(ncol) :: ALAT
-!      real , intent(in), dimension(ncol, nlay) :: zm
-!      integer , intent(in) :: DOY
       
       real , intent(out) :: cld_stoch(:,:,:)  ! subcolumn cloud fraction 
                                                       !    Dimensions: (ngptsw,ncol,nlay)
@@ -1487,18 +1559,22 @@
                                                       !    Dimensions: (ncol,nlay,ngptsw)
       
 ! -- Local variables
-!      real, intent(inout)  :: adl(ncol)                
-!      real, intent(inout)  :: rdl(ncol)
-    
 
 ! Constants (min value for cloud fraction and cloud water and ice)
       real , parameter :: cldmin = 1.0e-20  ! min cloud fraction
 
+#ifndef _CUDA
+# define ncol CHNK
+#endif
 
 ! Variables related to random number and seed 
      
       real, dimension(ncol, nlay, nsubcol) gpu_device :: CDF       
+#ifdef _CUDA
       integer :: seed1, seed2, seed3, seed4  ! seed to create random number
+#else
+      integer, dimension(ncol) :: seed1, seed2, seed3, seed4  ! seed to create random number
+#endif
     
       integer  :: iseed                        ! seed to create random number (Mersenne Twister)
 !      real  :: rand_num_mt                     ! random number (Mersenne Twister)
@@ -1538,6 +1614,7 @@
       if (icld==1) then
 !$acc kernels 
            
+#ifdef _CUDA
             do ilev = 1,nlay
                do i = 1, ncol
                   seed1 = (play(i,1) - int(play(i,1)))  * 100000000 - ilev
@@ -1554,6 +1631,9 @@
                   end do
                end do
             end do
+#else
+         CALL wrf_error_fatal("icld == 1 not supported in module_ra_rrtmg_swf.F")
+#endif
 
 !$acc end kernels      
       endif
@@ -1596,70 +1676,30 @@
 #else
 !jm set up to match the ra_sw_physics=4 random number generator '
 
-!! For kissvec, create a seed that depends on the state of the columns. Maybe not the best way, but it works.
-!! Must use pmid from bottom four layers.
-!         do i=1,ncol
-!            if (pmid(i,1).lt.pmid(i,2)) then
-!               stop 'MCICA_SUBCOL: KISSVEC SEED GENERATOR REQUIRES PMID FROM BOTTOM FOUR LAYERS.'
-!            endif
-!            seed1(i) = (pmid(i,1) - int(pmid(i,1)))  * 1000000000_im
-!            seed2(i) = (pmid(i,2) - int(pmid(i,2)))  * 1000000000_im
-!            seed3(i) = (pmid(i,3) - int(pmid(i,3)))  * 1000000000_im
-!            seed4(i) = (pmid(i,4) - int(pmid(i,4)))  * 1000000000_im
-!         enddo
-!         do i=1,changeSeed  (note, changeSeed is 1)
-!            call kissvec(seed1, seed2, seed3, seed4, rand_num)
-!         enddo
-!
-!         if (irng.eq.0) then
-!            do isubcol = 1,nsubcol
-!               do ilev = 1,nlay
-!                  call kissvec(seed1, seed2, seed3, seed4, rand_num)
-!                  CDF(isubcol,:,ilev) = rand_num
-!               enddo
-!            enddo
-!! inline function
-!      m(k, n) = ieor (k, ishft (k, n) )
-!
-!      sz = size(ran_arr)
-!      do i = 1, sz
-!         seed1(i) = 69069_im * seed1(i) + 1327217885_im
-!         seed2(i) = m (m (m (seed2(i), 13_im), - 17_im), 5_im)
-!         seed3(i) = 18000_im * iand (seed3(i), 65535_im) + ishft (seed3(i), - 16_im)
-!         seed4(i) = 30903_im * iand (seed4(i), 65535_im) + ishft (seed4(i), - 16_im)
-!         kiss = seed1(i) + seed2(i) + ishft (seed3(i), 16_im) + seed4(i)
-!         ran_arr(i) = kiss*2.328306e-10_rb + 0.5_rb
-!      end do
-
 !jm moved isubcol loop out of here and put in the ilev.eq.1 conditional for initial
 !jm computation of seeds so we get the same results as the ra_sw_physics=4 option
            do isubcol = 1,nsubcol
            do ilev = 1,nlay
                do i = 1, ncol
                 if (ilev.eq.1.and.isubcol.eq.1)then
-                  seed1 = (play(i,1)*100 - int(play(i,1)*100))  * 1000000000  !jm
-                  seed2 = (play(i,2)*100 - int(play(i,2)*100))  * 1000000000  !jm
-                  seed3 = (play(i,3)*100 - int(play(i,3)*100))  * 1000000000  !jm
-                  seed4 = (play(i,4)*100 - int(play(i,4)*100))  * 1000000000
-                     seed1 = 69069  * seed1 + 1327217885
-!jm                     seed2 = 11002  * iand (seed2, 65535 ) + ishft (seed2, - 16 )
-                     seed2 = m (m (m (seed2, 13), - 17), 5)
-                     seed3 = 18000  * iand (seed3, 65535 ) + ishft (seed3, - 16 )
-                     seed4 = 30903  * iand (seed4, 65535 ) + ishft (seed4, - 16 )
-                     kiss = seed1 + seed2 + ishft (seed3, 16 ) + seed4
-
+                  seed1(i) = (play(i,1)*100 - int(play(i,1)*100))  * 1000000000  !jm
+                  seed2(i) = (play(i,2)*100 - int(play(i,2)*100))  * 1000000000  !jm
+                  seed3(i) = (play(i,3)*100 - int(play(i,3)*100))  * 1000000000  !jm
+                  seed4(i) = (play(i,4)*100 - int(play(i,4)*100))  * 1000000000
+                     seed1(i) = 69069  * seed1(i) + 1327217885
+                     seed2(i) = m (m (m (seed2(i), 13), - 17), 5)
+                     seed3(i) = 18000  * iand (seed3(i), 65535 ) + ishft (seed3(i), - 16 )
+                     seed4(i) = 30903  * iand (seed4(i), 65535 ) + ishft (seed4(i), - 16 )
+                     kiss = seed1(i) + seed2(i) + ishft (seed3(i), 16 ) + seed4(i)
                  endif
 
-!                  do isubcol = 1,nsubcol
-                     seed1 = 69069  * seed1 + 1327217885
-!jm                     seed2 = 11002  * iand (seed2, 65535 ) + ishft (seed2, - 16 )
-                     seed2 = m (m (m (seed2, 13), - 17), 5)
-                     seed3 = 18000  * iand (seed3, 65535 ) + ishft (seed3, - 16 )
-                     seed4 = 30903  * iand (seed4, 65535 ) + ishft (seed4, - 16 )
-                     kiss = seed1 + seed2 + ishft (seed3, 16 ) + seed4
+                 seed1(i) = 69069  * seed1(i) + 1327217885
+                 seed2(i) = m (m (m (seed2(i), 13), - 17), 5)
+                 seed3(i) = 18000  * iand (seed3(i), 65535 ) + ishft (seed3(i), - 16 )
+                 seed4(i) = 30903  * iand (seed4(i), 65535 ) + ishft (seed4(i), - 16 )
+                 kiss = seed1(i) + seed2(i) + ishft (seed3(i), 16 ) + seed4(i)
 
-                     CDF(i,ilev,isubcol) = kiss*2.328306e-10  + 0.5
-!                  end do
+                 CDF(i,ilev,isubcol) = kiss*2.328306e-10  + 0.5
                end do
             end do
             end do
@@ -1682,6 +1722,7 @@
       if (icld==3) then
 !$acc kernels 
            
+#ifdef _CUDA
             do i = 1, ncol
                seed1 = (play(i,1) - int(play(i,1)))  * 100000000 - ilev
                seed2 = (play(i,2) - int(play(i,2)))  * 100000000 + ilev
@@ -1698,202 +1739,18 @@
                   end do
                end do
             end do
+#else
+         CALL wrf_error_fatal("icld == 3 not supported in module_ra_rrtmg_swf.F")
+#endif
 
 !$acc end kernels      
       endif
-
-! Exponential cloud overlap (icld=4 option, inactive)
-!      if (icld==4) then
-!      ! Exponential overlap: weighting between maximum and random overlap increases with the distance. 
-!      ! The random numbers for exponential overlap verify:
-!      ! j=1   RAN(j)=RND1
-!      ! j>1   if RND1 < alpha(j,j-1) => RAN(j) = RAN(j-1)
-!      !                                 RAN(j) = RND2
-!      ! alpha is obtained from the equation
-!      ! alpha = exp(- (Zi-Zj-1)/Zo) where Zo is a characteristic length scale    
-!
-!!  !$acc kernels
-!         AM1 = 1.4315
-!         AM2 = 2.1219
-!         AM4 = -25.584
-!         AMR = 7.
-!         IF ( DOY .GT. 181 ) THEN
-!            AM3 = -4.*AMR/365*(DOY-272)
-!         ELSE
-!            AM3 = 4.*AMR/365.*(DOY-91)
-!         ENDIF
-!         adl(:) = AM1+AM2*EXP(-(ALAT(:)*180./3.141592-AM3)**2/AM4**2)
-!         adl(:) = adl(:)*1.e3
-!         AM1 = 0.72192
-!         AM2 = 0.78996
-!         AM4 = 40.404
-!         AMR = 8.5
-!         IF ( DOY .GT. 181 ) THEN
-!            AM3 = -4.*AMR/365*(DOY-272)
-!         ELSE
-!            AM3 = 4.*AMR/365.*(DOY-91)
-!         ENDIF
-!         rdl(:) = AM1+AM2*EXP(-(ALAT(:)*180./3.141592-AM3)**2/AM4**2)
-!         rdl(:) = rdl(:)*1.e3
-!!  !$acc end kernels      
-!      
-!!  !$acc kernels
-!         alpha(:,1) = 0.
-!         do ilev = 2, nlay
-!            alpha(:,ilev) = exp( -(zm(:,ilev) - zm(:,ilev-1)) / adl(:))
-!         end do
-!!  !$acc end kernels
-!        
-!!  !$acc kernels
-!         do ilev = 1,nlay
-!               do i = 1, ncol
-!                   seed1 = (play(i,1) - int(play(i,1)))  * 100000000 - ilev
-!                   seed2 = (play(i,2) - int(play(i,2)))  * 100000000 + ilev
-!                   seed3 = (play(i,3) - int(play(i,3)))  * 100000000 + ilev * 6.2
-!                   seed4 = (play(i,4) - int(play(i,4)))  * 100000000           
-!                   do isubcol = 1,nsubcol
-!                       
-!                        seed1 = 69069  * seed1 + 132721785 
-!                        seed2 = 11002  * iand (seed2, 65535 ) + ishft (seed2, - 16 )
-!                        seed3 = 18000  * iand (seed3, 65535 ) + ishft (seed3, - 16 )
-!                        seed4 = 30903  * iand (seed4, 65535 ) + ishft (seed4, - 16 )
-!                        kiss = seed1 + seed2 + ishft (seed3, 16 ) + seed4
-!                        CDF(i,ilev,isubcol) = kiss*2.328306e-10  + 0.5 
-!                        ! for testing purposes to generate determanistic sequence
-!                        !CDF(i,ilev,isubcol) = real(MOD((isubcol * 37 + ilev * 71) , 10000))/10000.0
-!                        
-!                        seed1 = 69069  * seed1 + 132721785 
-!                        seed2 = 11002  * iand (seed2, 65535 ) + ishft (seed2, - 16 )
-!                        seed3 = 18000  * iand (seed3, 65535 ) + ishft (seed3, - 16 )
-!                        seed4 = 30903  * iand (seed4, 65535 ) + ishft (seed4, - 16 )
-!                        kiss = seed1 + seed2 + ishft (seed3, 16 ) + seed4
-!                        CDF2(i,ilev,isubcol) = kiss*2.328306e-10  + 0.5 
-!                        ! for testing purposes to generate determanistic sequence
-!                        !CDF2(i,ilev,isubcol) =  real(MOD((isubcol * 37 + ilev * 73) , 10000))/10000.0
-!                    
-!                    end do
-!               end do
-!         end do
-!!  !$acc end kernels        
-!       
-!!  !$acc kernels
-!         do iplon = 1, ncol
-!            do isubcol = 1, nsubcol
-!                      do ilev = 2, nlay
-!                    if (CDF2(iplon, ilev, isubcol) < alpha(iplon,ilev)) then
-!                        CDF(iplon,  ilev, isubcol) = CDF(iplon, ilev-1, isubcol) 
-!                    end if
-!                end do
-!            end do
-!         end do
-!!  !$acc end kernels
-!         inhm = 1
-!    
-!      end if
-!
-!      if (inhm>=1) then
-!        
-!!  !$acc kernels      
-!        alpha(:,1)=0.
-!        do ilev = 2, nlay
-!            alpha(:, ilev) = exp( -( zm(:, ilev) - zm(:, ilev-1))/rdl(:))
-!        end do
-!!  !$acc end kernels
-!        
-!!  !$acc kernels
-!          do ilev = 1,nlay
-!               do i = 1, ncol
-!                   seed1 = (play(i,1) - int(play(i,1)))  * 100000000 - ilev
-!                   seed2 = (play(i,2) - int(play(i,2)))  * 100000000 + ilev
-!                   seed3 = (play(i,3) - int(play(i,3)))  * 100000000 + ilev * 6.2
-!                   seed4 = (play(i,4) - int(play(i,4)))  * 100000000           
-!                   do isubcol = 1,nsubcol
-!                     
-!                       
-!                        seed1 = 69069  * seed1 + 132721785 
-!                        seed2 = 11002  * iand (seed2, 65535 ) + ishft (seed2, - 16 )
-!                        seed3 = 18000  * iand (seed3, 65535 ) + ishft (seed3, - 16 )
-!                        seed4 = 30903  * iand (seed4, 65535 ) + ishft (seed4, - 16 )
-!                        kiss = seed1 + seed2 + ishft (seed3, 16 ) + seed4
-!                        CDF2(i,ilev,isubcol) = kiss*2.328306e-10  + 0.5 
-!                        ! for testing purposes to generate determanistic sequence
-!                        !CDF2(i,ilev,isubcol) = real(MOD((isubcol * 7 + ilev * 101) , 10000))/10000.0
-!                    
-!                        seed1 = 69069  * seed1 + 132721785 
-!                        seed2 = 11002  * iand (seed2, 65535 ) + ishft (seed2, - 16 )
-!                        seed3 = 18000  * iand (seed3, 65535 ) + ishft (seed3, - 16 )
-!                        seed4 = 30903  * iand (seed4, 65535 ) + ishft (seed4, - 16 )
-!                        kiss = seed1 + seed2 + ishft (seed3, 16 ) + seed4
-!                        CDF3(i,ilev,isubcol) = kiss*2.328306e-10  + 0.5 
-!                        ! for testing purposes to generate determanistic sequence
-!                        !CDF3(i,ilev,isubcol) =  real(MOD((isubcol * 41 + ilev * 89) , 10000))/10000.0
-!                    
-!                    end do
-!               end do
-!          end do
-!!  !$acc end kernels
-!
-!!  !$acc kernels
-!          do iplon = 1, ncol
-!            do isubcol = 1, nsubcol
-!                      do ilev = 2, nlay
-!                    if (CDF2(iplon, ilev, isubcol) < alpha(iplon,ilev)) then
-!                        CDF3(iplon, ilev, isubcol) = CDF3(iplon, ilev-1, isubcol)
-!                    end if
-!                end do
-!            end do
-!          end do
-!!  !$acc end kernels        
-!      end if
-
-
-! where the subcolumn is cloudy, the subcolumn cloud fraction is 1;
-! where the subcolumn is not cloudy, the subcolumn cloud fraction is 0;
-! where there is a cloud, define the subcolumn cloud properties,
-! otherwise set these to zero
 
       ngbm = ngb(1) - 1
 !$acc kernels 
       do ilev = 1,nlay
          do i = 1, ncol
             do isubcol = 1, nsubcol
-
-! For GSFC icld=4 option, not needed for WRF
-!               if ( inhm >= 1 .and. CDF(i,ilev,isubcol)>=(1.0 - cld(i,ilev))) then
-!                  cld_stoch(i,ilev,isubcol) = 1.0 
-!                  
-!                  if (cld(i,ilev) .gt. 0.99 ) then
-!                    SIGMA_QCW = 0.5
-!                  elseif (cld(i,ilev) .gt. 0.9 ) then
-!                    SIGMA_QCW = 0.71
-!                    else  
-!                    SIGMA_QCW = 1
-!                  endif
-!                  
-!                  RIND1 = CDF3(i,ilev,isubcol) * (N1 - 1) + 1.0
-!                  IND1  = MAX(1, MIN(INT(RIND1), N1-1))
-!                  RIND1 = RIND1 - IND1
-!                  RIND2 = 40.0 * SIGMA_QCW    - 3.0
-!                  IND2  = MAX(1, MIN(INT(RIND2), N2-1))
-!                  RIND2 = RIND2 - IND2
-!
-!                   ZCW = (1.0-RIND1) * (1.0-RIND2) * XCW(IND1,IND2) &
-!                       + (1.0-RIND1) * RIND2       * XCW(IND1,IND2+1) &
-!                       + RIND1 * (1.0-RIND2)       * XCW(IND1+1,IND2) &
-!                       + RIND1 * RIND2             * XCW(IND1+1,IND2+1)
-!                   
-!                 
-!                  clwp_stoch(i,ilev,isubcol) = clwp(i,ilev) * ZCW
-!                  ciwp_stoch(i,ilev,isubcol) = ciwp(i,ilev) * ZCW
-!                  cswp_stoch(i,ilev,isubcol) = cswp(i,ilev) * ZCW
-!                  n = ngb(isubcol) - ngbm
-!                  tauc_stoch(i,ilev,isubcol) = tauc(i,ilev,n)
-!                  ssac_stoch(i,ilev,isubcol) = ssac(i,ilev,n)
-!                  asmc_stoch(i,ilev,isubcol) = asmc(i,ilev,n)
-!                  fsfc_stoch(i,ilev,isubcol) = fsfc(i,ilev,n)
-!                
-!                
-!               elseif ( CDF(i,ilev,isubcol)>=(1.0 - cld(i,ilev)) ) then
 
                if ( CDF(i,ilev,isubcol)>=(1.0 - cld(i,ilev)) ) then
                   cld_stoch(i,ilev,isubcol) = 1.0 
@@ -1919,6 +1776,9 @@
          enddo
       enddo
 !$acc end kernels
+#ifndef _CUDA
+# undef ncol
+#endif
 
       end subroutine mcica_sw
 
@@ -2032,6 +1892,9 @@
   
 !$acc end kernels    
 
+#ifndef _CUDA
+#  define ncol CHNK
+#endif
 
 ! Main layer loop
 
@@ -2333,6 +2196,9 @@
 ! End column loop
       enddo
 !$acc end kernels
+#ifndef _CUDA
+#  undef ncol
+#endif
 
       end subroutine cldprmc_sw
 
@@ -2451,6 +2317,10 @@
       real  :: factor
       real  :: co2reg
       real  :: compfp
+
+#ifndef _CUDA
+#  define ncol CHNK
+#endif
 
 
 ! Initializations
@@ -2626,6 +2496,9 @@
 ! End column loop
       end do
 !$acc end kernels
+#ifndef _CUDA
+#  undef ncol
+#endif
 
 end subroutine setcoef_sw
 
@@ -2910,6 +2783,19 @@ end subroutine setcoef_sw
                                                          !   Dimensions: (ncol,nlayers,ngptsw)
 
 ! Local
+#ifdef _CUDA
+# define IKLOOP1_S do iplon=1,ncol;do lay=1,nlayers
+# define IKLOOP1_E enddo;enddo
+# define IKLOOP2_S do iplon=1,ncol;laysolfr=nlayers;do lay=laytrop(iplon)+1,nlayers;if(jp(iplon,lay-1).lt.layreffr.and.jp(iplon,lay).ge.layreffr)laysolfr=lay
+# define IKLOOP2_E
+#else
+# define ncol CHNK
+# define IKLOOP1_S do lay = 1, nlayers ; do iplon = 1, ncol
+# define IKLOOP1_E enddo;enddo
+# define IKLOOP2_S do lay=2,nlayers;do iplon=1,ncol;if(lay>laytrop(iplon))then;laysolfr=nlayers
+# define IKLOOP2_E endif;enddo;enddo
+#endif
+
 
       integer  :: ig, ind0, ind1, inds, indf, js, lay, laysolfr
       real  :: fac000, fac001, fac010, fac011, fac100, fac101, &
@@ -2923,35 +2809,39 @@ end subroutine setcoef_sw
       integer :: iplon
 !      strrat1 = 252.131 
 !      layreffr = 18
-       
 !$acc kernels 
+#ifdef _CUDA
       do iplon=1,ncol
-! Compute the optical depth by interpolating in ln(pressure), 
+! Compute the optical depth by interpolating in ln(pressure),
 ! temperature, and appropriate species.  Below LAYTROP, the water
-! vapor self-continuum is interpolated (in temperature) separately.  
+! vapor self-continuum is interpolated (in temperature) separately.
 
 ! Lower atmosphere loop
       do lay = 1, nlayers
-         if (lay <= laytrop(iplon)) then 
-         speccomb = colh2o(iplon,lay)  + strrat1*colch4(iplon,lay) 
-         specparm = colh2o(iplon,lay) /speccomb 
+#else
+IKLOOP1_S
+#endif
+         if (lay <= laytrop(iplon)) then
+         speccomb = colh2o(iplon,lay)  + strrat1*colch4(iplon,lay)
+         specparm = colh2o(iplon,lay) /speccomb
          if (specparm .ge. oneminus) specparm = oneminus
          specmult = 8. *(specparm)
          js = 1 + int(specmult)
          fs = mod(specmult, 1.  )
-         fac000 = (1.  - fs) * fac00(iplon,lay) 
-         fac010 = (1.  - fs) * fac10(iplon,lay) 
-         fac100 = fs * fac00(iplon,lay) 
-         fac110 = fs * fac10(iplon,lay) 
-         fac001 = (1.  - fs) * fac01(iplon,lay) 
-         fac011 = (1.  - fs) * fac11(iplon,lay) 
-         fac101 = fs * fac01(iplon,lay) 
-         fac111 = fs * fac11(iplon,lay) 
+         fac000 = (1.  - fs) * fac00(iplon,lay)
+         fac010 = (1.  - fs) * fac10(iplon,lay)
+         fac100 = fs * fac00(iplon,lay)
+         fac110 = fs * fac10(iplon,lay)
+         fac001 = (1.  - fs) * fac01(iplon,lay)
+         fac011 = (1.  - fs) * fac11(iplon,lay)
+         fac101 = fs * fac01(iplon,lay)
+         fac111 = fs * fac11(iplon,lay)
          ind0 = ((jp(iplon,lay) -1)*5+(jt(iplon,lay) -1))*nspa(16) + js
          ind1 = (jp(iplon,lay) *5+(jt1(iplon,lay) -1))*nspa(16) + js
-         inds = indself(iplon,lay) 
-         indf = indfor(iplon,lay) 
+         inds = indself(iplon,lay)
+         indf = indfor(iplon,lay)
          tauray = colmol(iplon,lay)  * rayl
+
          do ig = 1, ng16
             taug(iplon,lay,ig)  = speccomb * &
                 (fac000 * absa(ind0   ,ig) + &
@@ -2973,9 +2863,9 @@ end subroutine setcoef_sw
             taur(iplon,lay,ig)  = tauray
          enddo
          end if
+#ifdef _CUDA
       enddo
-     
-      end do
+      enddo
 !$acc end kernels
 
 ! Upper atmosphere loop
@@ -2986,12 +2876,35 @@ end subroutine setcoef_sw
       do lay = laytrop(iplon)+1, nlayers
 !        if (lay > laytrop(iplon)) then
 !          !do lay = laytrop(iplon) +1, nlayers
-         if (jp(iplon,lay-1)  .lt. layreffr .and. jp(iplon,lay)  .ge. layreffr) then
+         if (jp(iplon,lay-1)  .lt. layreffr .and. jp(iplon,lay)  .ge.  layreffr) then
             laysolfr = lay
          end if
+#else
+IKLOOP1_E
+IKLOOP2_S
+#endif
+
+!#ifdef _CUDA
+!      do iplon=1,ncol
+!        laysolfr = nlayers
+!! mji - fix for out of bounds issue on absb - added to pass bounds checking; FINAL
+!      do lay = laytrop(iplon)+1, nlayers
+!!        if (lay > laytrop(iplon)) then
+!!          !do lay = laytrop(iplon) +1, nlayers
+!         if (jp(iplon,lay-1)  .lt. layreffr .and. jp(iplon,lay)  .ge. layreffr) then
+!            laysolfr = lay
+!         end if
+!#else
+!      do lay = minval(laytrop(1:ncol)),nlayers
+!       do iplon=1,ncol
+!        if (lay > laytrop(iplon)) then
+!         laysolfr = nlayers
+!
+!#endif
          ind0 = ((jp(iplon,lay) -13)*5+(jt(iplon,lay) -1))*nspb(16) + 1
          ind1 = ((jp(iplon,lay) -12)*5+(jt1(iplon,lay) -1))*nspb(16) + 1
          tauray = colmol(iplon,lay)  * rayl
+
          do ig = 1, ng16
             taug(iplon,lay,ig)  = colch4(iplon,lay)  * &
                 (fac00(iplon,lay)  * absb(ind0  ,ig) + &
@@ -3002,12 +2915,14 @@ end subroutine setcoef_sw
             if (laysolfr == lay) sfluxzen(iplon,ig)  = sfluxref(ig) 
             taur(iplon,lay,ig)  = tauray  
          enddo
-!        end if
-
-      enddo
-      enddo
-      
+#ifdef _CUDA
+         enddo
+         enddo
+#else
+IKLOOP2_E
+#endif
 !$acc end kernels
+# undef ncol
  end subroutine taumol16
 
 !----------------------------------------------------------------------------
@@ -3071,6 +2986,9 @@ end subroutine setcoef_sw
                                                          !   Dimensions: (ncol,nlayers,ngptsw)
 
 ! Local
+#ifndef _CUDA
+# define ncol CHNK
+#endif
 
       integer  :: ig, ind0, ind1, inds, indf, js, lay, laysolfr
       real  :: fac000, fac001, fac010, fac011, fac100, fac101, &
@@ -3086,6 +3004,7 @@ end subroutine setcoef_sw
 !      layreffr = 30
 !      strrat = 0.364641 
     
+#ifdef _CUDA
 !$acc kernels loop
       do iplon=1,ncol
 ! Compute the optical depth by interpolating in ln(pressure), 
@@ -3095,6 +3014,9 @@ end subroutine setcoef_sw
 ! Lower atmosphere loop
 !$acc loop private(js, fs)
       do lay = 1, nlayers 
+#else
+IKLOOP1_S
+#endif
         if (lay <= laytrop(iplon)) then
           !do lay = 1, laytrop(iplon) 
          speccomb = colh2o(iplon,lay)  + strrat*colco2(iplon,lay) 
@@ -3181,20 +3103,23 @@ end subroutine setcoef_sw
       enddo
       enddo
 !$acc end kernels
-        
 
 !$acc kernels
-      do iplon = 1, ncol      
+#ifdef _CUDA
+      do iplon = 1, ncol
 ! Upper atmosphere loop
-        laysolfr = nlayers 
+        laysolfr = nlayers
       do lay = 2, nlayers
-        if (lay > laytrop(iplon)) then 
+        if (lay > laytrop(iplon)) then
+#else
+IKLOOP2_S
+#endif
           
         if ((jp(iplon,lay-1)  .lt. layreffr) .and. (jp(iplon,lay)  .ge. layreffr)) then
             laysolfr = lay
-          end if
+        end if
           
-          if (lay == laysolfr) then
+        if (lay == laysolfr) then
               
           speccomb = colh2o(iplon,lay)  + strrat*colco2(iplon,lay) 
           specparm = colh2o(iplon,lay) /speccomb 
@@ -3206,11 +3131,16 @@ end subroutine setcoef_sw
             sfluxzen(iplon,ngs16+ig)  = sfluxref(ig,js) &
                + fs * (sfluxref(ig,js+1) - sfluxref(ig,js))
           end do
-          end if
+        end if
+#ifdef _CUDA
         end if
       enddo
-      enddo   
+      enddo
+#else
+IKLOOP2_E
+#endif
 !$acc end kernels      
+# undef ncol
       end subroutine taumol17
 
 !----------------------------------------------------------------------------
@@ -3274,8 +3204,15 @@ end subroutine setcoef_sw
                                                          !   Dimensions: (ncol,nlayers,ngptsw)
 
 ! Local
+#ifndef _CUDA
+# define ncol CHNK
+#endif
 
+#ifdef _CUDA
       integer  :: ig, ind0, ind1, inds, indf, js, lay, laysolfr
+#else
+      integer  :: ig, ind0, ind1, inds, indf, js, lay, laysolfr(ncol)
+#endif
       real  :: fac000, fac001, fac010, fac011, fac100, fac101, &
                        fac110, fac111, fs, speccomb, specmult, specparm, &
                        tauray
@@ -3290,9 +3227,18 @@ end subroutine setcoef_sw
 !      strrat = 38.9589 
 !      layreffr = 6
 !$acc kernels      
+
+#ifdef _CUDA
       do iplon = 1, ncol
           laysolfr = laytrop(iplon)
           do lay = 1, laytrop(iplon)
+#else
+      laysolfr = laytrop
+#define laysolfr LAYSOLFR(iplon)
+      do lay = 1, nlayers
+        do iplon = 1, ncol
+          if (lay <= laytrop(iplon)) then
+#endif
               speccomb = colh2o(iplon,lay)  + strrat*colch4(iplon,lay) 
               specparm = colh2o(iplon,lay) /speccomb 
               if (specparm .ge. oneminus) specparm = oneminus
@@ -3305,14 +3251,17 @@ end subroutine setcoef_sw
                 if (lay .eq. laysolfr) sfluxzen(iplon,ngs17+ig)  = sfluxref(ig,js) &
                   + fs * (sfluxref(ig,js+1) - sfluxref(ig,js))
               end do
+#ifdef _CUDA
+#else
+# undef laysolfr
+         endif
+#endif
           end do
       end do
 !$acc end kernels
       
 !$acc kernels 
-      do iplon = 1, ncol
-
-      do lay = 1, nlayers
+IKLOOP1_S
         if (lay <= laytrop(iplon)) then
           !do lay = 1, laytrop(iplon) 
        
@@ -3377,11 +3326,10 @@ end subroutine setcoef_sw
            taur(iplon,lay,ngs17+ig)  = tauray
          enddo
         end if
-       
-      enddo
-      enddo
+IKLOOP1_E       
 
 !$acc end kernels
+# undef ncol
       end subroutine taumol18
 
 !----------------------------------------------------------------------------
@@ -3445,8 +3393,16 @@ end subroutine setcoef_sw
                                                          !   Dimensions: (ncol,nlayers,ngptsw)
 
 ! Local
+#ifdef _CUDA
+#else
+# define ncol CHNK
+#endif
 
+#ifdef _CUDA
       integer  :: ig, ind0, ind1, inds, indf, js, lay, laysolfr
+#else
+      integer  :: ig, ind0, ind1, inds, indf, js, lay, laysolfr(ncol)
+#endif
       real  :: fac000, fac001, fac010, fac011, fac100, fac101, &
                   fac110, fac111, fs, speccomb, specmult, specparm, &
                   tauray
@@ -3461,6 +3417,7 @@ end subroutine setcoef_sw
       strrat = 5.49281 
       layreffr = 3      
       
+#ifdef _CUDA
 !$acc kernels 
       do iplon=1,ncol
 
@@ -3471,6 +3428,13 @@ end subroutine setcoef_sw
   
 ! Lower atmosphere loop      
       do lay = 1, laytrop(iplon) 
+#else
+      laysolfr = laytrop
+# define laysolfr LAYSOLFR(iplon)
+      do lay = 1, nlayers
+        do iplon = 1, ncol
+          if (lay <= laytrop(iplon)) then
+#endif
             
         if (jp(iplon,lay)  .lt. layreffr .and. jp(iplon,lay+1)  .ge. layreffr) &
             laysolfr = min(lay+1,laytrop(iplon) )
@@ -3487,21 +3451,26 @@ end subroutine setcoef_sw
             sfluxzen(iplon,ngs18+ig)  = sfluxref(ig,js) &
                + fs * (sfluxref(ig,js+1) - sfluxref(ig,js))
          end do
-         end if
+         endif
+#ifdef _CUDA
+#else
+# undef laysolfr
+         endif
+#endif
+
       end do
       end do
 !$acc end kernels
       
       
 !$acc kernels 
-      do iplon=1,ncol
+IKLOOP1_S
 
 ! Compute the optical depth by interpolating in ln(pressure), 
 ! temperature, and appropriate species.  Below LAYTROP, the water
 ! vapor self-continuum is interpolated (in temperature) separately.  
 
 ! Lower atmosphere loop      
-      do lay = 1, nlayers
          if (lay <= laytrop(iplon)) then
        
          speccomb = colh2o(iplon,lay)  + strrat*colco2(iplon,lay) 
@@ -3562,10 +3531,9 @@ end subroutine setcoef_sw
             taur(iplon,lay,ngs18+ig)  = tauray   
          enddo
         end if
-      enddo
-      enddo
-      
+IKLOOP1_E       
 !$acc end kernels
+# undef ncol
       end subroutine taumol19
 
 !----------------------------------------------------------------------------
@@ -3631,8 +3599,13 @@ end subroutine setcoef_sw
                                                          !   Dimensions: (ncol,nlayers,ngptsw)
 
 ! Local
-
+#ifdef _CUDA
       integer  :: ig, ind0, ind1, inds, indf, js, lay, laysolfr
+#else
+# define ncol CHNK
+      integer  :: ig, ind0, ind1, inds, indf, js, lay, laysolfr(ncol)
+#endif
+
 !      integer  :: ig, ind0, ind1, inds, indf, js, lay, laysolfr, &
 !                  layreffr
       real  :: fac000, fac001, fac010, fac011, fac100, fac101, &
@@ -3641,10 +3614,20 @@ end subroutine setcoef_sw
       integer :: iplon
 
 !      layreffr = 3        
+
+#ifdef _CUDA
 !$acc kernels loop independent private(laysolfr)
       do iplon = 1, ncol
       laysolfr = laytrop(iplon)
       do lay = 1, laytrop(iplon)
+#else
+      laysolfr = laytrop
+# define laysolfr LAYSOLFR(iplon)
+      do lay = 1, nlayers
+        do iplon = 1, ncol
+          if (lay <= laytrop(iplon)) then
+#endif
+
          if (jp(iplon,lay)  .lt. layreffr .and. jp(iplon,lay+1)  .ge. layreffr) &
             laysolfr = min(lay+1,laytrop(iplon) )
          if (lay .eq. laysolfr) then 
@@ -3652,14 +3635,17 @@ end subroutine setcoef_sw
                  sfluxzen(iplon,ngs19+ig)  = sfluxref(ig) 
              end do
          end if
+#ifdef _CUDA
+#else
+# undef laysolfr
+         endif
+#endif
       end do
       end do
 !$acc end kernels
        
 !$acc kernels 
-      do iplon=1,ncol
-
-      do lay = 1, nlayers 
+IKLOOP1_S
          if (lay <= laytrop(iplon)) then
          
          ind0 = ((jp(iplon,lay) -1)*5+(jt(iplon,lay) -1))*nspa(20) + 1
@@ -3708,10 +3694,10 @@ end subroutine setcoef_sw
             taur(iplon,lay,ngs19+ig)  = tauray 
          enddo
          end if
-      enddo
-      enddo
+IKLOOP1_E
 
 !$acc end kernels
+# undef ncol
       end subroutine taumol20
 
 !----------------------------------------------------------------------------
@@ -3775,8 +3761,13 @@ end subroutine setcoef_sw
                                                          !   Dimensions: (ncol,nlayers,ngptsw)
 
 ! Local
-
+#ifdef _CUDA
       integer  :: ig, ind0, ind1, inds, indf, js, lay, laysolfr
+#else
+# define ncol CHNK
+      integer  :: ig, ind0, ind1, inds, indf, js, lay, laysolfr(ncol)
+#endif
+
       real  :: fac000, fac001, fac010, fac011, fac100, fac101, &
                   fac110, fac111, fs, speccomb, specmult, specparm, &
                   tauray
@@ -3790,11 +3781,19 @@ end subroutine setcoef_sw
 !      strrat = 0.0045321 
 !      layreffr = 8
      
+#ifdef _CUDA
 !$acc kernels loop independent private(laysolfr)
-      do iplon=1,ncol
-      laysolfr = laytrop(iplon)        
-!$acc loop seq
-      do lay=1,laytrop(iplon)
+      do iplon = 1, ncol
+      laysolfr = laytrop(iplon)
+      do lay = 1, laytrop(iplon)
+#else
+      laysolfr = laytrop
+# define laysolfr LAYSOLFR(iplon)
+      do lay = 1, nlayers
+        do iplon = 1, ncol
+          if (lay <= laytrop(iplon)) then
+#endif
+
          if (jp(iplon,lay)  .lt. layreffr .and. jp(iplon,lay+1)  .ge. layreffr) &
             laysolfr = min(lay+1,laytrop(iplon) )
          if (lay .eq. laysolfr) then 
@@ -3809,21 +3808,25 @@ end subroutine setcoef_sw
                + fs * (sfluxref(ig,js+1) - sfluxref(ig,js))
                end do
           end if
+
+#ifdef _CUDA
+#else
+# undef laysolfr
+         endif
+#endif
       end do
       end do        
 !$acc end kernels
 
-!$acc kernels 
-      do iplon=1,ncol  
 ! Compute the optical depth by interpolating in ln(pressure), 
 ! temperature, and appropriate species.  Below LAYTROP, the water
 ! vapor self-continuum is interpolated (in temperature) separately.  
-
       
 ! Lower atmosphere loop
-      do lay = 1, nlayers 
-        if (lay <= laytrop(iplon)) then 
         
+!$acc kernels 
+IKLOOP1_S
+         if (lay <= laytrop(iplon)) then
          speccomb = colh2o(iplon,lay)  + strrat*colco2(iplon,lay) 
          specparm = colh2o(iplon,lay) /speccomb 
          if (specparm .ge. oneminus) specparm = oneminus
@@ -3906,10 +3909,10 @@ end subroutine setcoef_sw
             taur(iplon,lay,ngs20+ig)  = tauray
          enddo
         end if
-      enddo
-      enddo
+IKLOOP1_E
       
 !$acc end kernels
+# undef ncol
       end subroutine taumol21
 
 !----------------------------------------------------------------------------
@@ -3973,8 +3976,13 @@ end subroutine setcoef_sw
                                                          !   Dimensions: (ncol,nlayers,ngptsw)
 
 ! Local
-
+#ifdef _CUDA
       integer  :: ig, ind0, ind1, inds, indf, js, lay, laysolfr
+#else
+# define ncol CHNK
+      integer  :: ig, ind0, ind1, inds, indf, js, lay, laysolfr(ncol)
+#endif
+
       real  :: fac000, fac001, fac010, fac011, fac100, fac101, &
                   fac110, fac111, fs, speccomb, specmult, specparm, &
                   tauray, o2adj, o2cont
@@ -3997,6 +4005,7 @@ end subroutine setcoef_sw
 !      strrat = 0.022708 
 !      layreffr = 2
       
+#ifdef _CUDA
 !$acc kernels loop independent private(laysolfr)
       do iplon=1,ncol
 
@@ -4005,6 +4014,14 @@ end subroutine setcoef_sw
 ! Lower atmosphere loop
 !$acc loop seq
          do lay = 1, laytrop(iplon) 
+#else
+      laysolfr = laytrop
+# define laysolfr LAYSOLFR(iplon)
+      do lay = 1, nlayers
+        do iplon = 1, ncol
+          if (lay <= laytrop(iplon)) then
+#endif
+
             if (jp(iplon,lay)  .lt. layreffr .and. jp(iplon,lay+1)  .ge. layreffr) &
             laysolfr = min(lay+1,laytrop(iplon) )
                  
@@ -4022,17 +4039,19 @@ end subroutine setcoef_sw
                 + fs * (sfluxref(ig,js+1) - sfluxref(ig,js))
             end do
             end if
+#ifdef _CUDA
+#else
+# undef laysolfr
+         endif
+#endif
          end do
       end do
  !$acc end kernels
  
-!$acc kernels 
-      do iplon=1,ncol
-
-      laysolfr = laytrop(iplon) 
-
 ! Lower atmosphere loop
-         do lay = 1, nlayers 
+!$acc kernels 
+IKLOOP1_S
+
          if (lay<=laytrop(iplon)) then
   
          o2cont = 4.35e-4 *colo2(iplon,lay) /(350.0 *2.0 )
@@ -4100,10 +4119,10 @@ end subroutine setcoef_sw
             taur(iplon,lay,ngs21+ig)  = tauray
          enddo
          end if
-      enddo
-      enddo
+IKLOOP1_E
       
 !$acc end kernels
+# undef ncol
       end subroutine taumol22
 
 !----------------------------------------------------------------------------
@@ -4167,8 +4186,13 @@ end subroutine setcoef_sw
                                                          !   Dimensions: (ncol,nlayers,ngptsw)
 
 ! Local
-
+#ifdef _CUDA
       integer  :: ig, ind0, ind1, inds, indf, js, lay, laysolfr
+#else
+# define ncol CHNK
+      integer  :: ig, ind0, ind1, inds, indf, js, lay, laysolfr(ncol)
+#endif
+
       real  :: fac000, fac001, fac010, fac011, fac100, fac101, &
                   fac110, fac111, fs, speccomb, specmult, specparm, &
                   tauray
@@ -4189,6 +4213,7 @@ end subroutine setcoef_sw
 
 !      layreffr = 6    
       
+#ifdef _CUDA
 !$acc kernels loop independent private(laysolfr)
       do iplon=1,ncol
 
@@ -4197,6 +4222,14 @@ end subroutine setcoef_sw
 ! Lower atmosphere loop
 !$acc loop seq
       do lay = 1, laytrop(iplon) 
+#else
+      laysolfr = laytrop
+# define laysolfr LAYSOLFR(iplon)
+      do lay = 1, nlayers
+        do iplon = 1, ncol
+          if (lay <= laytrop(iplon)) then
+#endif
+
           if (jp(iplon,lay)  .lt. layreffr .and. jp(iplon,lay+1)  .ge. layreffr) &
             laysolfr = min(lay+1,laytrop(iplon) )
          
@@ -4205,15 +4238,19 @@ end subroutine setcoef_sw
               sfluxzen(iplon,ngs22+ig)  = sfluxref(ig) 
             end do
           end if
+#ifdef _CUDA
+#else
+# undef laysolfr
+         endif
+#endif
       end do
       end do      
 !$acc end kernels   
       
-!$acc kernels 
-      do iplon=1,ncol
 
 ! Lower atmosphere loop
-      do lay = 1, nlayers 
+!$acc kernels 
+IKLOOP1_S
          if (lay <= laytrop(iplon)) then
          if (jp(iplon,lay)  .lt. layreffr .and. jp(iplon,lay+1)  .ge. layreffr) &
             laysolfr = min(lay+1,laytrop(iplon) )
@@ -4252,10 +4289,10 @@ end subroutine setcoef_sw
          enddo
          end if
 
-      enddo
-      enddo
+IKLOOP1_E
       
 !$acc end kernels
+# undef ncol
       end subroutine taumol23
 
 !----------------------------------------------------------------------------
@@ -4320,8 +4357,13 @@ end subroutine setcoef_sw
                                                          !   Dimensions: (ncol,nlayers,ngptsw)
 
 ! Local
-
+#ifdef _CUDA
       integer  :: ig, ind0, ind1, inds, indf, js, lay, laysolfr
+#else
+# define ncol CHNK
+      integer  :: ig, ind0, ind1, inds, indf, js, lay, laysolfr(ncol)
+#endif
+
       real  :: fac000, fac001, fac010, fac011, fac100, fac101, &
                   fac110, fac111, fs, speccomb, specmult, specparm, &
                   tauray
@@ -4335,6 +4377,7 @@ end subroutine setcoef_sw
 !      strrat = 0.124692 
 !      layreffr = 1   
         
+#ifdef _CUDA
 !$acc kernels loop independent private(laysolfr)
       do iplon=1,ncol
 ! Compute the optical depth by interpolating in ln(pressure), 
@@ -4346,6 +4389,14 @@ end subroutine setcoef_sw
 ! Lower atmosphere loop
 !$acc loop independent
       do lay = 1, laytrop(iplon) 
+#else
+      laysolfr = laytrop
+# define laysolfr LAYSOLFR(iplon)
+      do lay = 1, nlayers
+        do iplon = 1, ncol
+          if (lay <= laytrop(iplon)) then
+#endif
+
           if (jp(iplon,lay)  .lt. layreffr .and. jp(iplon,lay+1)  .ge. layreffr) &
             laysolfr = min(lay+1,laytrop(iplon) )
           if (lay .eq. laysolfr) then
@@ -4360,18 +4411,22 @@ end subroutine setcoef_sw
                + fs * (sfluxref(ig,js+1) - sfluxref(ig,js))
           end do
           end if
+#ifdef _CUDA
+#else
+# undef laysolfr
+         endif
+#endif
       end do
       end do
 !$acc end kernels
         
 !$acc kernels 
-      do iplon=1,ncol
+IKLOOP1_S
 ! Compute the optical depth by interpolating in ln(pressure), 
 ! temperature, and appropriate species.  Below LAYTROP, the water
 ! vapor self-continuum is interpolated (in temperature) separately.  
 
 ! Lower atmosphere loop
-      do lay = 1, nlayers 
          if (lay <= laytrop(iplon)) then
 
          speccomb = colh2o(iplon,lay)  + strrat*colo2(iplon,lay) 
@@ -4438,10 +4493,10 @@ end subroutine setcoef_sw
          enddo
          endif
 
-      enddo
-      enddo
+IKLOOP1_E
       
 !$acc end kernels
+# undef ncol
       end subroutine taumol24
 
 !----------------------------------------------------------------------------
@@ -4505,8 +4560,14 @@ end subroutine setcoef_sw
                                                          !   Dimensions: (ncol,nlayers,ngptsw)
 
 ! Local
-
+#ifdef _CUDA
       integer  :: ig, ind0, ind1, inds, indf, js, lay, laysolfr
+#else
+# define ncol CHNK
+      integer  :: ig, ind0, ind1, inds, indf, js, lay, laysolfr(ncol)
+#endif
+
+
 !      integer  :: ig, ind0, ind1, inds, indf, js, lay, laysolfr, &
 !                  layreffr
       real  :: fac000, fac001, fac010, fac011, fac100, fac101, &
@@ -4514,6 +4575,7 @@ end subroutine setcoef_sw
                   tauray
       integer :: iplon
 
+#ifdef _CUDA
 !$acc kernels 
       do iplon=1,ncol
 ! Compute the optical depth by interpolating in ln(pressure), 
@@ -4525,6 +4587,13 @@ end subroutine setcoef_sw
 
 ! Lower atmosphere loop
       do lay = 1, laytrop(iplon) 
+#else
+      laysolfr = laytrop
+# define laysolfr LAYSOLFR(iplon)
+      do lay = 1, nlayers
+        do iplon = 1, ncol
+          if (lay <= laytrop(iplon)) then
+#endif
          if (jp(iplon,lay)  .lt. layreffr .and. jp(iplon,lay+1)  .ge. layreffr) &
             laysolfr = min(lay+1,laytrop(iplon) )
          ind0 = ((jp(iplon,lay) -1)*5+(jt(iplon,lay) -1))*nspa(25) + 1
@@ -4542,20 +4611,30 @@ end subroutine setcoef_sw
             if (lay .eq. laysolfr) sfluxzen(iplon,ngs24+ig)  = sfluxref(ig) 
             taur(iplon,lay,ngs24+ig)  = tauray
          enddo
+#ifdef _CUDA
       enddo
-
 ! Upper atmosphere loop
       do lay = laytrop(iplon) +1, nlayers
+#else
+      else 
+#endif
+
          do ig = 1, ng25
             tauray = colmol(iplon,lay)  * rayl(ig)
             taug(iplon,lay,ngs24+ig)  = colo3(iplon,lay)  * abso3b(ig) 
 !            ssa(lay,ngs24+ig) = tauray/taug(lay,ngs24+ig)
             taur(iplon,lay,ngs24+ig)  = tauray
          enddo
+#ifdef _CUDA
+#else
+# undef laysolfr
+      endif
+#endif
       enddo
       enddo
       
 !$acc end kernels
+# undef ncol
       end subroutine taumol25
 
 !----------------------------------------------------------------------------
@@ -4616,13 +4695,19 @@ end subroutine setcoef_sw
                                                          !   Dimensions: (ncol,nlayers,ngptsw)
 
 ! Local
-
+#ifdef _CUDA
       integer  :: ig, ind0, ind1, inds, indf, js, lay, laysolfr
+#else
+# define ncol CHNK
+      integer  :: ig, ind0, ind1, inds, indf, js, lay, laysolfr(ncol)
+#endif
+
       real  :: fac000, fac001, fac010, fac011, fac100, fac101, &
                   fac110, fac111, fs, speccomb, specmult, specparm, &
                   tauray
       integer :: iplon
 
+#ifdef _CUDA
 !$acc kernels 
       do iplon=1,ncol
 ! Compute the optical depth by interpolating in ln(pressure), 
@@ -4633,6 +4718,13 @@ end subroutine setcoef_sw
 
 ! Lower atmosphere loop
       do lay = 1, laytrop(iplon) 
+#else
+      laysolfr = laytrop
+# define laysolfr LAYSOLFR(iplon)
+      do lay = 1, nlayers
+        do iplon = 1, ncol
+          if (lay <= laytrop(iplon)) then
+#endif
          do ig = 1, ng26 
 !            taug(lay,ngs25+ig) = colmol(lay) * rayl(ig)
 !            ssa(lay,ngs25+ig) = 1.0 
@@ -4640,20 +4732,30 @@ end subroutine setcoef_sw
             taug(iplon,lay,ngs25+ig)  = 0. 
             taur(iplon,lay,ngs25+ig)  = colmol(iplon,lay)  * rayl(ig) 
          enddo
+#ifdef _CUDA
       enddo
+      do lay = laytrop(iplon) +1, nlayers
+#else
+      else
+#endif
 
 ! Upper atmosphere loop
-      do lay = laytrop(iplon) +1, nlayers
          do ig = 1, ng26
 !            taug(lay,ngs25+ig) = colmol(lay) * rayl(ig)
 !            ssa(lay,ngs25+ig) = 1.0 
             taug(iplon,lay,ngs25+ig)  = 0. 
             taur(iplon,lay,ngs25+ig)  = colmol(iplon,lay)  * rayl(ig) 
          enddo
+#ifdef _CUDA
+#else
+# undef laysolfr
+      endif
+#endif
       enddo
       enddo
       
 !$acc end kernels
+# undef ncol
       end subroutine taumol26
 
 !----------------------------------------------------------------------------
@@ -4716,8 +4818,13 @@ end subroutine setcoef_sw
                                                          !   Dimensions: (ncol,nlayers,ngptsw)
 
 ! Local
-
+#ifdef _CUDA
       integer  :: ig, ind0, ind1, inds, indf, js, lay, laysolfr
+#else
+# define ncol CHNK
+      integer  :: ig, ind0, ind1, inds, indf, js, lay, laysolfr(ncol)
+#endif
+
       real  :: fac000, fac001, fac010, fac011, fac100, fac101, &
                   fac110, fac111, fs, speccomb, specmult, specparm, &
                   tauray
@@ -4728,6 +4835,7 @@ end subroutine setcoef_sw
 !                  tauray, scalekur
       integer :: iplon
        
+#ifdef _CUDA
 !$acc kernels 
       do iplon=1,ncol
 ! Kurucz solar source function
@@ -4747,6 +4855,13 @@ end subroutine setcoef_sw
 
 ! Lower atmosphere loop
       do lay = 1, laytrop(iplon) 
+#else
+      laysolfr = nlayers
+# define laysolfr LAYSOLFR(iplon)
+      do lay = 1, nlayers
+        do iplon = 1, ncol
+          if (lay <= laytrop(iplon)) then
+#endif
          ind0 = ((jp(iplon,lay) -1)*5+(jt(iplon,lay) -1))*nspa(27) + 1
          ind1 = (jp(iplon,lay) *5+(jt1(iplon,lay) -1))*nspa(27) + 1
 
@@ -4760,12 +4875,16 @@ end subroutine setcoef_sw
 !            ssa(lay,ngs26+ig) = tauray/taug(lay,ngs26+ig)
             taur(iplon,lay,ngs26+ig)  = tauray
          enddo
+#ifdef _CUDA
       enddo
 
       laysolfr = nlayers
 
 ! Upper atmosphere loop
       do lay = laytrop(iplon) +1, nlayers
+#else
+      else
+#endif
          if (jp(iplon,lay-1)  .lt. layreffr .and. jp(iplon,lay)  .ge. layreffr) &
             laysolfr = lay
          ind0 = ((jp(iplon,lay) -13)*5+(jt(iplon,lay) -1))*nspb(27) + 1
@@ -4782,10 +4901,16 @@ end subroutine setcoef_sw
             if (lay.eq.laysolfr) sfluxzen(iplon,ngs26+ig)  = scalekur * sfluxref(ig) 
             taur(iplon,lay,ngs26+ig)  = tauray
          enddo
+#ifdef _CUDA
+#else
+# undef laysolfr
+      endif
+#endif
       enddo
       enddo
       
 !$acc end kernels
+# undef ncol
       end subroutine taumol27
 
 !----------------------------------------------------------------------------
@@ -4848,8 +4973,13 @@ end subroutine setcoef_sw
                                                          !   Dimensions: (ncol,nlayers,ngptsw)
 
 ! Local
-
+#ifdef _CUDA
       integer  :: ig, ind0, ind1, inds, indf, js, lay, laysolfr
+#else
+# define ncol CHNK
+      integer  :: ig, ind0, ind1, inds, indf, js, lay, laysolfr(ncol)
+#endif
+
       real  :: fac000, fac001, fac010, fac011, fac100, fac101, &
                   fac110, fac111, fs, speccomb, specmult, specparm, &
                   tauray
@@ -4860,6 +4990,7 @@ end subroutine setcoef_sw
 !                  tauray, strrat
       integer :: iplon
 
+#ifdef _CUDA
 !$acc kernels 
       do iplon=1,ncol
 ! Compute the optical depth by interpolating in ln(pressure), 
@@ -4871,6 +5002,13 @@ end subroutine setcoef_sw
 
 ! Lower atmosphere loop
       do lay = 1, laytrop(iplon) 
+#else
+      laysolfr = nlayers
+# define laysolfr LAYSOLFR(iplon)
+      do lay = 1, nlayers
+        do iplon = 1, ncol
+          if (lay <= laytrop(iplon)) then
+#endif
          speccomb = colo3(iplon,lay)  + strrat*colo2(iplon,lay) 
          specparm = colo3(iplon,lay) /speccomb 
          if (specparm .ge. oneminus) specparm = oneminus
@@ -4902,12 +5040,16 @@ end subroutine setcoef_sw
 !            ssa(lay,ngs27+ig) = tauray/taug(lay,ngs27+ig)
             taur(iplon,lay,ngs27+ig)  = tauray
          enddo
+#ifdef _CUDA
       enddo
 
       laysolfr = nlayers
 
 ! Upper atmosphere loop
       do lay = laytrop(iplon) +1, nlayers
+#else
+      else
+#endif
          if (jp(iplon,lay-1)  .lt. layreffr .and. jp(iplon,lay)  .ge. layreffr) &
             laysolfr = lay
          speccomb = colo3(iplon,lay)  + strrat*colo2(iplon,lay) 
@@ -4943,10 +5085,16 @@ end subroutine setcoef_sw
                + fs * (sfluxref(ig,js+1) - sfluxref(ig,js))
             taur(iplon,lay,ngs27+ig)  = tauray
          enddo
+#ifdef _CUDA
+#else
+# undef laysolfr
+      endif
+#endif
       enddo
       enddo
       
 !$acc end kernels
+# undef ncol
       end subroutine taumol28
 
 !----------------------------------------------------------------------------
@@ -5010,8 +5158,13 @@ end subroutine setcoef_sw
                                                          !   Dimensions: (ncol,nlayers,ngptsw)
 
 ! Local
-
+#ifdef _CUDA
       integer  :: ig, ind0, ind1, inds, indf, js, lay, laysolfr
+#else
+# define ncol CHNK
+      integer  :: ig, ind0, ind1, inds, indf, js, lay, laysolfr(ncol)
+#endif
+
 !      integer  :: ig, ind0, ind1, inds, indf, js, lay, laysolfr, &
 !                  layreffr
       real  :: fac000, fac001, fac010, fac011, fac100, fac101, &
@@ -5021,12 +5174,20 @@ end subroutine setcoef_sw
 
 !      layreffr = 49  
         
+#ifdef _CUDA
 !$acc kernels loop independent private (laysolfr)
       do iplon=1,ncol
         
         laysolfr = nlayers
 !$acc loop seq
         do lay = laytrop(iplon) +1, nlayers
+#else
+      laysolfr = nlayers
+# define laysolfr LAYSOLFR(iplon)
+      do lay = 1, nlayers
+        do iplon = 1, ncol
+          if (lay > laytrop(iplon)) then
+#endif
          if (jp(iplon,lay-1)  .lt. layreffr .and. jp(iplon,lay)  .ge. layreffr) &
             laysolfr = lay
 
@@ -5035,10 +5196,16 @@ end subroutine setcoef_sw
                 sfluxzen(iplon,ngs28+ig)  = sfluxref(ig) 
                 end do
             end if
+#ifdef _CUDA
+#else
+# undef laysolfr
+         endif
+#endif
         end do
       end do
 !$acc end kernels
        
+#ifdef _CUDA
 !$acc kernels 
       do iplon=1,ncol
 ! Compute the optical depth by interpolating in ln(pressure), 
@@ -5047,6 +5214,10 @@ end subroutine setcoef_sw
 
 ! Lower atmosphere loop
       do lay = 1, nlayers 
+#else
+    do lay = 1, nlayers 
+      do iplon=1,ncol
+#endif
          if (lay <= laytrop(iplon)) then
          ind0 = ((jp(iplon,lay) -1)*5+(jt(iplon,lay) -1))*nspa(29) + 1
          ind1 = (jp(iplon,lay) *5+(jt1(iplon,lay) -1))*nspa(29) + 1
@@ -5095,7 +5266,13 @@ end subroutine setcoef_sw
       enddo
       
 !$acc end kernels
+# undef ncol
       end subroutine taumol29
+
+# undef IKLOOP1_S
+# undef IKLOOP1_E
+# undef IKLOOP2_S 
+# undef IKLOOP2_E
 
       end module rrtmg_sw_taumol_f
 
@@ -8635,12 +8812,11 @@ real gpu_device  :: zcd(tncol,ngptsw,nlayers+1)  , zcu(tncol,ngptsw,nlayers+1)
       real  :: zdbtmc, zdbtmo, zf, zgw, zreflect
       real  :: zwf, tauorig, repclc
 
-#ifndef _CUDA
       real :: zdbt_nodel(tncol,ngptsw,nlayers+1)
       real :: zdbtc_nodel(tncol,ngptsw,nlayers+1)
       real :: ztdbt_nodel(tncol,ngptsw,nlayers+1)
       real :: ztdbtc_nodel(tncol,ngptsw,nlayers+1)
-#endif
+
 
 ! Arrays from rrtmg_sw_vrtqdr routine
   
@@ -8679,6 +8855,10 @@ real gpu_device  :: zcd(tncol,ngptsw,nlayers+1)  , zcu(tncol,ngptsw,nlayers+1)
          klev = nlayers
 !$acc end kernels      
 
+#ifndef _CUDA
+#  define ncol CHNK
+#endif
+
          
 ! Calculate the optical depths for gaseous absorption and Rayleigh scattering     
       call taumol_sw(ncol,nlayers, &
@@ -8693,14 +8873,37 @@ real gpu_device  :: zcd(tncol,ngptsw,nlayers+1)  , zcu(tncol,ngptsw,nlayers+1)
       
       repclc = 1.e-12 
 
+#ifdef _CUDA
+# define ILOOP_S_CPU
+# define ILOOP_E_CPU
+# define ILOOP_S_GPU do iplon = 1, ncol
+# define ILOOP_E_GPU enddo
+# define WLOOP_S_CPU
+# define WLOOP_E_CPU
+# define WLOOP_S_GPU do iw = 1, 112
+# define WLOOP_E_GPU enddo
+#else
+# define ILOOP_S_GPU
+# define ILOOP_E_GPU
+# define ILOOP_S_CPU do iplon = 1, ncol
+# define ILOOP_E_CPU enddo
+# define WLOOP_S_GPU
+# define WLOOP_E_GPU
+# define WLOOP_S_CPU do iw = 1, 112
+# define WLOOP_E_CPU enddo
+#endif
+
    
 !$acc kernels 
 
-      do iplon = 1, ncol
+      ILOOP_S_GPU
+      WLOOP_S_CPU
+
+        WLOOP_S_GPU
+        ILOOP_S_CPU
 
 ! Top of shortwave spectral band loop, jb = 16 -> 29; ibm = 1 -> 14
 
-        do iw = 1, 112
           jb = ngb(iw)
           ibm = jb-15
           
@@ -8721,6 +8924,7 @@ real gpu_device  :: zcd(tncol,ngptsw,nlayers+1)  , zcu(tncol,ngptsw,nlayers+1)
           ztdbt(iplon,iw,1)  =1.0 
           ztdbt_nodel(iplon,iw,1)=1.0
 
+    
 !   Surface values
           zdbt(iplon,iw,klev+1)   =0.0 
           ztra(iplon,iw,klev+1)   =0.0 
@@ -8728,23 +8932,25 @@ real gpu_device  :: zcd(tncol,ngptsw,nlayers+1)  , zcu(tncol,ngptsw,nlayers+1)
           zref(iplon,iw,klev+1)   =palbp(iplon,ibm) 
           zrefd(iplon,iw,klev+1)  =palbd(iplon,ibm) 
     
-        end do
-      end do
+        enddo
+      enddo
+
 !$acc end kernels     
 
 
 !$acc kernels loop 
 
-       do iplon = 1, ncol
+       ILOOP_S_GPU
 !$acc loop private(zf, zwf, ibm, ikl, jb)
-         do iw = 1, 112
+         WLOOP_S_GPU
             !$acc loop seq
             do jk=1,klev
 
                ikl=klev+1-jk
+       WLOOP_S_CPU
                jb = ngb(iw)
                ibm = jb-15
-
+         ILOOP_S_CPU
                ! Clear-sky optical parameters including aerosols
                ztauo(iplon,iw,jk)   = ztaur(iplon,ikl,iw)  + ztaug(iplon,ikl,iw) + ptaua(iplon,ikl,ibm)      
 
@@ -8765,6 +8971,7 @@ real gpu_device  :: zcd(tncol,ngptsw,nlayers+1)  , zcu(tncol,ngptsw,nlayers+1)
 
                zdbtc_nodel(iplon,iw,jk) = zdbtmc
                ztdbtc_nodel(iplon,iw,jk+1) = zdbtc_nodel(iplon,iw,jk) * ztdbtc_nodel(iplon,iw,jk)
+
                tauorig = ztauo(iplon,iw,jk) + ptaormc(iplon,ikl,iw)    ! ztauo corresponds to ztauc at this point in _sw.F version
                ze1 = tauorig / prmu0(iplon)
                if (ze1 .le. od_lo) then
@@ -8779,6 +8986,7 @@ real gpu_device  :: zcd(tncol,ngptsw,nlayers+1)  , zcu(tncol,ngptsw,nlayers+1)
                ztdbt_nodel(iplon,iw,jk+1) = zdbt_nodel(iplon,iw,jk) * ztdbt_nodel(iplon,iw,jk)
 
 #endif
+
                zomco(iplon,iw,jk)   = ztaur(iplon,ikl,iw) + ptaua(iplon,ikl,ibm) * pomga(iplon,ikl,ibm)
                zgco(iplon,iw,jk) = pasya(iplon,ikl,ibm) * pomga(iplon,ikl,ibm) * ptaua(iplon,ikl,ibm) / zomco(iplon,iw,jk)   
                zomco(iplon,iw,jk)   = zomco(iplon,iw,jk) / ztauo(iplon,iw,jk)
@@ -8786,6 +8994,7 @@ real gpu_device  :: zcd(tncol,ngptsw,nlayers+1)  , zcu(tncol,ngptsw,nlayers+1)
                zf = zgco(iplon, iw, jk)
                zf = zf * zf
                zwf = zomco(iplon, iw, jk) * zf
+
                ztauo(iplon, iw, jk) = (1.0 - zwf) * ztauo(iplon, iw, jk)
                zomco(iplon, iw, jk) = (zomco(iplon, iw, jk) - zwf) / (1.0 - zwf)
                zgco(iplon, iw, jk) = (zgco(iplon, iw, jk) - zf) / (1.0 - zf)
@@ -8795,6 +9004,7 @@ real gpu_device  :: zcd(tncol,ngptsw,nlayers+1)  , zcu(tncol,ngptsw,nlayers+1)
       end do
 !$acc end kernels               
 
+
 ! Clear sky reflectivities
       call reftra_sw (ncol, nlayers, &
                       pcldfmc, zgco, prmu0, ztauo, zomco, &
@@ -8802,16 +9012,18 @@ real gpu_device  :: zcd(tncol,ngptsw,nlayers+1)  , zcu(tncol,ngptsw,nlayers+1)
                         
 
 !$acc kernels loop    
-      do iplon = 1, ncol
+       ILOOP_S_GPU
 
 ! Combine clear and cloudy reflectivies and optical depths     
 
 !$acc loop
-        do iw = 1, 112
+       WLOOP_S_GPU
             
 !$acc loop seq
             do jk=1,klev
 
+       WLOOP_S_CPU
+       ILOOP_S_CPU
 ! Combine clear and cloudy contributions for total sky
                !ikl = klev+1-jk 
 
@@ -8844,13 +9056,15 @@ real gpu_device  :: zcd(tncol,ngptsw,nlayers+1)  , zcu(tncol,ngptsw,nlayers+1)
 ! Vertical quadrature for clear-sky fluxes
 
 !$acc kernels 
-      do iplon = 1, ncol
+       ILOOP_S_GPU
+        WLOOP_S_GPU
+       WLOOP_S_CPU
+          jb = ngb(iw)
+          ibm = jb-15
+        ILOOP_S_CPU
 
 ! Top of shortwave spectral band loop, jb = 16 -> 29; ibm = 1 -> 14
 
-        do iw = 1, 112
-          jb = ngb(iw)
-          ibm = jb-15
 
           zgco(iplon,iw,klev+1)   =palbp(iplon,ibm) 
           zomco(iplon,iw,klev+1)  =palbd(iplon,ibm) 
@@ -8859,14 +9073,15 @@ real gpu_device  :: zcd(tncol,ngptsw,nlayers+1)  , zcu(tncol,ngptsw,nlayers+1)
       end do
 !$acc end kernels  
 
+
             call vrtqdr_sw(ncol, klev, &
                            zrefo  , zrefdo  , ztrao  , ztrado  , &
                            zdbt , zrdnd  , zgco, zomco, ztdbt  , &
                            zcd , zcu  , ztra)
-
+            
 ! perform band integration for clear cases      
 !$acc kernels loop
-      do iplon = 1, ncol
+       ILOOP_S_GPU
     
 !$acc loop    
         do ikl=1,klev+1
@@ -8877,6 +9092,8 @@ real gpu_device  :: zcd(tncol,ngptsw,nlayers+1)  , zcu(tncol,ngptsw,nlayers+1)
       
              jk=klev+2-ikl
              ibm = jb-15
+!DIR$ SIMD
+          ILOOP_S_CPU
              zincflx = adjflux(jb)  * zsflxzen(iplon,iw)   * prmu0(iplon)           
 
 ! Accumulate spectral fluxes over whole spectrum  
@@ -8907,22 +9124,21 @@ real gpu_device  :: zcd(tncol,ngptsw,nlayers+1)  , zcu(tncol,ngptsw,nlayers+1)
       enddo               
 !$acc end kernels
 
-         
-! !!!!!!!!!!!!!!!!!!!!!
-!  END CLEAR  !!!!!!!!!
-! !!!!!!!!!!!!!!!!!!!!!
 
 
       if (cc==2) then
 
 !$acc kernels 
-        do iplon = 1, ncol
-          do iw = 1, 112
+        ILOOP_S_GPU
+          WLOOP_S_GPU
             do jk=1,klev
 
                ikl=klev+1-jk
+          WLOOP_S_CPU
                jb = ngb(iw)
                ibm = jb-15
+!DIR$ SIMD
+           ILOOP_S_CPU
                ! since the cloudy cases are now computed in a separate partition from the clear cases, we must
                ! recompute the needed clear sky prerequisites.
                ze1 = ztaur(iplon,ikl,iw) + ptaua(iplon,ikl,ibm) * pomga(iplon, ikl, ibm) 
@@ -8951,6 +9167,7 @@ real gpu_device  :: zcd(tncol,ngptsw,nlayers+1)  , zcu(tncol,ngptsw,nlayers+1)
         end do
 !$acc end kernels
 
+
 ! Total sky reflectivities      
         call reftra_sw (ncol, nlayers, &
                         pcldfmc, zgco, prmu0, ztauo, zomco, &
@@ -8961,16 +9178,18 @@ real gpu_device  :: zcd(tncol,ngptsw,nlayers+1)  , zcu(tncol,ngptsw,nlayers+1)
 
 
 !$acc kernels loop    
-        do iplon = 1, ncol
+        ILOOP_S_GPU
 
 !$acc loop
-          do iw = 1, 112
+          WLOOP_S_GPU
             
 !$acc loop seq
             do jk=1,klev
 
 ! Combine clear and cloudy contributions for total sky
                ikl = klev+1-jk 
+          WLOOP_S_CPU
+            ILOOP_S_CPU
                zclear = 1.0  - pcldfmc(iplon,ikl,iw) 
                zcloud = pcldfmc(iplon,ikl,iw) 
 
@@ -9024,13 +9243,15 @@ real gpu_device  :: zcd(tncol,ngptsw,nlayers+1)  , zcu(tncol,ngptsw,nlayers+1)
 
 
 !$acc kernels 
-        do iplon = 1, ncol
+        ILOOP_S_GPU
+          WLOOP_S_GPU
 
 ! Top of shortwave spectral band loop, jb = 16 -> 29; ibm = 1 -> 14
 
-          do iw = 1, 112
+        WLOOP_S_CPU
             jb = ngb(iw)
             ibm = jb-15
+          ILOOP_S_CPU
 
             zgco(iplon,iw,klev+1)   =palbp(iplon,ibm) 
             zomco(iplon,iw,klev+1)  =palbd(iplon,ibm) 
@@ -9042,10 +9263,12 @@ real gpu_device  :: zcd(tncol,ngptsw,nlayers+1)  , zcu(tncol,ngptsw,nlayers+1)
 
 ! Vertical quadrature for cloudy fluxes
 
+
         call vrtqdr_sw(ncol, klev, &
                        zref  , zrefd  , ztra  , ztrad , &
                        zdbt , zrdnd  , zgco, zomco , ztdbt  , &
                        zfd , zfu  ,  ztrao)
+
 ! Upwelling and downwelling fluxes at levels
 !   Two-stream calculations go from top to bottom; 
 !   layer indexing is reversed to go bottom to top for output arrays
@@ -9054,16 +9277,17 @@ real gpu_device  :: zcd(tncol,ngptsw,nlayers+1)  , zcu(tncol,ngptsw,nlayers+1)
         repclc = 1.e-12 
 
 !$acc kernels loop
-        do iplon = 1, ncol
+        ILOOP_S_GPU
     
 !$acc loop    
           do ikl=1,klev+1
-            
 !$acc loop seq
-            do iw = 1, 112
+          WLOOP_S_GPU
+          WLOOP_S_CPU
                jb = ngb(iw)
                jk=klev+2-ikl
                ibm = jb-15
+            ILOOP_S_CPU
                zincflx = adjflux(jb)  * zsflxzen(iplon,iw)   * prmu0(iplon)           
 
 ! Accumulate spectral fluxes over whole spectrum  
@@ -9110,11 +9334,12 @@ real gpu_device  :: zcd(tncol,ngptsw,nlayers+1)  , zcu(tncol,ngptsw,nlayers+1)
 
 
 !$acc kernels
-      do iplon = 1, ncol
-    
-         do iw = 1, 112
+      ILOOP_S_GPU
+         WLOOP_S_GPU
+      WLOOP_S_CPU
             jb = ngb(iw)
             ibm = jb - 15
+         ILOOP_S_CPU
             zincflx = adjflux(jb)  * zsflxzen(iplon,iw)   * prmu0(iplon)    
             
 ! For GSFC, not needed for WRF
@@ -9137,6 +9362,21 @@ real gpu_device  :: zcd(tncol,ngptsw,nlayers+1)  , zcu(tncol,ngptsw,nlayers+1)
 !$acc end kernels
 
 !!$acc end data
+# undef ILOOP_S_GPU
+# undef ILOOP_E_GPU
+# undef ILOOP_S_CPU
+# undef ILOOP_E_CPU
+# undef WLOOP_S_GPU
+# undef WLOOP_E_GPU
+# undef WLOOP_S_CPU
+# undef WLOOP_E_CPU
+#ifndef _CUDA
+#  undef ncol
+#endif
+         
+! !!!!!!!!!!!!!!!!!!!!!
+!  END CLEAR  !!!!!!!!!
+! !!!!!!!!!!!!!!!!!!!!!
 
       end subroutine spcvmc_sw
              
@@ -9410,6 +9650,7 @@ real gpu_device  :: zcd(tncol,ngptsw,nlayers+1)  , zcu(tncol,ngptsw,nlayers+1)
       integer , intent (in) :: ncol
     
 
+#ifdef _CUDA
       real , intent(in) gpu_device :: pref(:,:,:)             ! direct beam reflectivity
       real , intent(in) gpu_device :: prefd(:,:,:)            ! diffuse beam reflectivity
       real , intent(in) gpu_device :: ptra(:,:,:)             ! direct beam transmissivity
@@ -9428,12 +9669,64 @@ real gpu_device  :: zcd(tncol,ngptsw,nlayers+1)  , zcu(tncol,ngptsw,nlayers+1)
       real , intent(inout) gpu_device  :: pfu(:,:,:)          ! upwelling flux (W/m2)
                                                               ! unadjusted for earth/sun distance or zenith angle
                                                               !   Dimensions: (ncol,nlayers,ngptsw)
+#else
+      real , intent(in) :: pref(CHNK,112,klev+1)             ! direct beam reflectivity
+      real , intent(in) :: prefd(CHNK,112,klev+1)            ! diffuse beam reflectivity
+      real , intent(in) :: ptra(CHNK,112,klev+1)             ! direct beam transmissivity
+      real , intent(in) :: ptrad(CHNK,112,klev+1)            ! diffuse beam transmissivity
+      real , intent(in) :: pdbt(CHNK,112,klev+1)
+      real , intent(in) :: ptdbt(CHNK,112,klev+1)
+      real , intent(out) :: prdnd(CHNK,112,klev+1)
+      real , intent(inout) :: prup(CHNK,112,klev+1)
+      real , intent(inout)  :: prupd(CHNK,112,klev+1)
+      real, intent(inout) :: ztdn(CHNK,112,klev+1)
+                                                              !   Dimensions: (ncol,nlayers,ngptsw)
+
+! Output
+      real , intent(out) gpu_device  :: pfd(CHNK,112,klev+1)            ! downwelling flux (W/m2)
+                                                              ! unadjusted for earth/sun distance or zenith angle
+      real , intent(inout) gpu_device  :: pfu(CHNK,112,klev+1)          ! upwelling flux (W/m2)
+                                                              ! unadjusted for earth/sun distance or zenith angle
+                                                              !   Dimensions: (ncol,nlayers,ngptsw)
+#endif
 
 ! Local
 
       integer  :: ikp, ikx, jk, iplon, iw
 
+#ifdef _CUDA
+
       real  :: zreflect, zreflectj
+
+# define ILOOP_S_CPU 
+# define ILOOP_E_CPU
+# define ILOOP_S_GPU do iplon = 1, ncol
+# define ILOOP_E_GPU enddo
+# define WLOOP_S_CPU 
+# define WLOOP_E_CPU 
+# define WLOOP_S_GPU do iw = 1, 112
+# define WLOOP_E_GPU enddo
+
+#else
+
+!      real, dimension(CHNK)  :: zreflect, zreflectj
+      real  :: zreflect, zreflectj
+
+# define ncol CHNK
+
+# define ILOOP_S_GPU 
+# define ILOOP_E_GPU 
+# define ILOOP_S_CPU do iplon = 1, ncol
+# define ILOOP_E_CPU enddo
+# define WLOOP_S_GPU 
+# define WLOOP_E_GPU 
+# define WLOOP_S_CPU do iw = 1, 112
+# define WLOOP_E_CPU enddo
+
+!# define zreflect ZREFLECT(iplon)
+!# define zreflectj ZREFLECTJ(iplon)
+
+#endif
      
 ! Definitions
 !
@@ -9450,101 +9743,167 @@ real gpu_device  :: zcd(tncol,ngptsw,nlayers+1)  , zcu(tncol,ngptsw,nlayers+1)
 ! Link lowest layer with surface
 ! this kernel has a lot of dependencies
 
+!               CHNK       hardcode      klev+1
+! pref            8         112          52
+! prefd            8         112          52
+! ptra            8         112          52
+! ptrad            8         112          52
+! pdbt            8         112          52
+! ptdbt            8         112          52
+! prdnd            8         112          52
+! prup            8         112          52
+! prupd            8         112          52
+! ztdn            8         112          52
+! pfd            8         112          52
+! pfu            8         112          52
+!DIR$ ASSUME_ALIGNED pref:64,prefd:64,ptra:64,ptrad:64
+!DIR$ ASSUME_ALIGNED pdbt:64,ptdbt:64,prdnd:64,prup:64,prupd:64,ztdn:64,pfd:64,pfu:64
+
+#if 0
+write(0,*)'pref ',shape( pref)             ! direct beam reflectivity
+write(0,*)'prefd ',shape( prefd)            ! diffuse beam reflectivity
+write(0,*)'ptra ',shape( ptra)             ! direct beam transmissivity
+write(0,*)'ptrad ',shape( ptrad)            ! diffuse beam transmissivity
+write(0,*)'pdbt ',shape( pdbt)
+write(0,*)'ptdbt ',shape( ptdbt)
+write(0,*)'prdnd ',shape( prdnd)
+write(0,*)'prup ',shape( prup)
+write(0,*)'prupd ',shape( prupd)
+write(0,*)'ztdn ',shape( ztdn)
+write(0,*)'pfd ',shape( pfd)            ! downwelling flux (W/m2)
+write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
+#endif
+
+
 
 !$acc kernels loop
-      do iplon = 1, ncol
+      ILOOP_S_GPU
 
 !$acc loop private(zreflect)
-         do iw = 1, 112
-      
+        WLOOP_S_GPU
+         WLOOP_S_CPU
+!DIR$ VECTOR ALIGNED
+           ILOOP_S_CPU
             zreflect = 1.  / (1.  - prefd(iplon,iw,klev+1)   * prefd(iplon,iw,klev)  )
             prup(iplon,iw,klev)   = pref(iplon,iw,klev)   + (ptrad(iplon,iw,klev)   * &
                  ((ptra(iplon,iw,klev)   - pdbt(iplon,iw,klev)  ) * prefd(iplon,iw,klev+1)   + &
                    pdbt(iplon,iw,klev)   * pref(iplon,iw,klev+1)  )) * zreflect
             prupd(iplon,iw,klev)   = prefd(iplon,iw,klev)   + ptrad(iplon,iw,klev)   * ptrad(iplon,iw,klev)   * &
                     prefd(iplon,iw,klev+1)   * zreflect
-
-         end do
-      end do
+           ILOOP_E_CPU
+         WLOOP_E_GPU
+        WLOOP_E_CPU
+      ILOOP_E_GPU
 !$acc end kernels
       
 ! Pass from bottom to top 
 !$acc kernels loop
-      do iplon = 1, ncol
+      ILOOP_S_GPU
 
 !$acc loop    
-         do iw = 1, 112
+       WLOOP_S_GPU
 
 !$acc loop seq 
             do jk = 1,klev-1
                ikp = klev+1-jk                       
                ikx = ikp-1
+         WLOOP_S_CPU
+!DIR$ VECTOR ALIGNED
+           ILOOP_S_CPU
                zreflectj = 1.  / (1.  -prupd(iplon,iw,ikp)   * prefd(iplon,iw,ikx)  )
                prup(iplon,iw,ikx)   = pref(iplon,iw,ikx)   + (ptrad(iplon,iw,ikx)   * &
                    ((ptra(iplon,iw,ikx)   - pdbt(iplon,iw,ikx)  ) * prupd(iplon,iw,ikp)   + &
                      pdbt(iplon,iw,ikx)   * prup(iplon,iw,ikp)  )) * zreflectj
                prupd(iplon,iw,ikx)   = prefd(iplon,iw,ikx)   + ptrad(iplon,iw,ikx)   * ptrad(iplon,iw,ikx)   * &
                       prupd(iplon,iw,ikp)   * zreflectj
+           ILOOP_E_CPU
+         WLOOP_E_CPU
             end do
-         end do
-      end do
+       WLOOP_E_GPU
+      ILOOP_E_GPU
 !$acc end kernels
 
 !$acc kernels loop
-      do iplon = 1, ncol
+      ILOOP_S_GPU
 !$acc loop
-         do iw = 1, 112
+        WLOOP_S_GPU
+         WLOOP_S_CPU
 
 ! Upper boundary conditions
+!DIR$ VECTOR ALIGNED
+           ILOOP_S_CPU
             ztdn(iplon, iw, 1) = 1. 
             prdnd(iplon,iw,1)   = 0. 
             ztdn(iplon, iw, 2) = ptra(iplon,iw,1)  
             prdnd(iplon,iw,2)   = prefd(iplon,iw,1)  
-         end do
-      end do
+           ILOOP_E_CPU
+         WLOOP_E_GPU
+        WLOOP_E_CPU
+      ILOOP_E_GPU
 !$acc end kernels      
       
 !$acc kernels loop
-      do iplon = 1, ncol
+      ILOOP_S_GPU
 !$acc loop
-         do iw = 1, 112
+       WLOOP_S_GPU
 
 ! Pass from top to bottom
 !$acc loop seq
             do jk = 2,klev
                ikp = jk+1
+         WLOOP_S_CPU
+!DIR$ VECTOR ALIGNED
+           ILOOP_S_CPU
                zreflect = 1.  / (1.  - prefd(iplon,iw,jk)   * prdnd(iplon,iw,jk)  )
                ztdn(iplon, iw, ikp) = ptdbt(iplon,iw,jk)   * ptra(iplon,iw,jk)   + &
                     (ptrad(iplon,iw,jk)   * ((ztdn(iplon, iw, jk) - ptdbt(iplon,iw,jk)  ) + &
                      ptdbt(iplon,iw,jk)   * pref(iplon,iw,jk)   * prdnd(iplon,iw,jk)  )) * zreflect
                prdnd(iplon,iw,ikp)   = prefd(iplon,iw,jk)   + ptrad(iplon,iw,jk)   * ptrad(iplon,iw,jk)   * &
                       prdnd(iplon,iw,jk)   * zreflect
+           ILOOP_E_CPU
+         WLOOP_E_CPU
             end do
-         end do
-      end do
+       WLOOP_E_GPU
+      ILOOP_E_GPU
 !$acc end kernels
     
 ! Up and down-welling fluxes at levels
 
 !$acc kernels loop
-      do iplon = 1, ncol
+      ILOOP_S_GPU
 !$acc loop
-         do iw = 1, 112
+       WLOOP_S_GPU
 !$acc loop 
             do jk = 1,klev+1
+         WLOOP_S_CPU
+!DIR$ VECTOR ALIGNED
+           ILOOP_S_CPU
                zreflect = 1.  / (1.  - prdnd(iplon,iw,jk)   * prupd(iplon,iw,jk)  )
                pfu(iplon,iw,jk)   = (ptdbt(iplon,iw,jk)   * prup(iplon,iw,jk)   + &
                       (ztdn(iplon, iw, jk) - ptdbt(iplon,iw,jk)  ) * prupd(iplon,iw,jk)  ) * zreflect
                pfd(iplon,iw,jk)   = ptdbt(iplon,iw,jk)   + (ztdn(iplon, iw, jk) - ptdbt(iplon,iw,jk)  + &
                       ptdbt(iplon,iw,jk)   * prup(iplon,iw,jk)   * prdnd(iplon,iw,jk)  ) * zreflect
+           ILOOP_E_CPU
+         WLOOP_E_CPU
             end do
-         end do
-      end do
+       WLOOP_E_GPU
+      ILOOP_E_GPU
 !$acc end kernels
       
       end subroutine vrtqdr_sw
 
       end module rrtmg_sw_spcvmc_f
+# undef ILOOP_S_GPU 
+# undef ILOOP_E_GPU 
+# undef ILOOP_S_CPU
+# undef ILOOP_E_CPU
+# undef WLOOP_S_GPU 
+# undef WLOOP_E_GPU 
+# undef WLOOP_S_CPU
+# undef WLOOP_E_CPU
+# undef zreflect
+# undef zreflectj
+# undef ncol
 
       module rrtmg_sw_rad_f
 !
@@ -9853,7 +10212,7 @@ real gpu_device  :: zcd(tncol,ngptsw,nlayers+1)  , zcu(tncol,ngptsw,nlayers+1)
 #else
       pncol = 2
       pncol = 4
-      pncol = 8
+!jm      pncol = CHNK  redundant, since this is passed in
       
 #endif    
           
@@ -10138,6 +10497,10 @@ real gpu_device  :: zcd(tncol,ngptsw,nlayers+1)  , zcu(tncol,ngptsw,nlayers+1)
       real  :: zepsec, zepzen                 ! epsilon
       real  :: zdpgcp                         ! flux to heating conversion ratio
 
+#ifndef _CUDA
+# define ncol CHNK
+#endif
+
 ! Atmosphere
 
       real  :: coldry(ncol,nlay+1)            ! dry air column amount
@@ -10214,6 +10577,7 @@ real gpu_device  :: zcd(tncol,ngptsw,nlayers+1)  , zcu(tncol,ngptsw,nlayers+1)
 ! For GSFC, not needed for WRF                                                      
 !      real, dimension(ncol) :: znirr,znirf,zparr,zparf,zuvrr,zuvrf
       
+
       real  :: taucmc(ncol,nlay+1,ngptsw)     ! in-cloud optical depth [mcica]
       real  :: taormc(ncol,nlay+1,ngptsw)     ! unscaled in-cloud optical depth [mcica]
       real  :: ssacmc(ncol,nlay+1,ngptsw)     ! in-cloud single scattering albedo [mcica]
@@ -10274,6 +10638,9 @@ real gpu_device  :: zcd(tncol,ngptsw,nlayers+1)  , zcu(tncol,ngptsw,nlayers+1)
       real gpu_device :: zfd(ncol,ngptsw,nlay+1)   , zfu(ncol,ngptsw,nlay+1)  
       real gpu_device :: zsflxzen(ncol,ngptsw)
       real gpu_device :: ztaur(ncol,nlay,ngptsw)   , ztaug(ncol,nlay,ngptsw) 
+#ifndef _CUDA
+# undef ncol
+#endif
 
       integer :: npartc, npart, npartb, cldflag(gncol), profic(gncol), profi(gncol)
 
@@ -10290,7 +10657,7 @@ real gpu_device  :: zcd(tncol,ngptsw,nlayers+1)  , zcu(tncol,ngptsw,nlayers+1)
       real , parameter :: amdo2 = 0.905140  ! Molecular weight of dry air / oxygen
 
       real , parameter :: sbc = 5.67e-08    ! Stefan-Boltzmann constant (W/m2K4)
-integer ii
+      integer ii,jj,kk,iw
       integer  :: isp, l, ix, n, imol  ! Loop indices
       real  :: amm, summol                      ! 
       real  :: adjflx                           ! flux adjustment for Earth/Sun distance
@@ -10348,13 +10715,8 @@ integer ii
             profic(cols) = iplon
         end if
       end do
-    
-! icld=4 option inactive for WRF
-!if (icld==4) then
-!    call TABULATE_XCW_BETA
-!end if
         
-    
+
 !$acc data copyout(swuflxc, swdflxc, swuflx, swdflx, swnflxc, swnflx, swhrc, swhr) &
 !$acc create(laytrop, layswtch, laylow, jp, jt, jt1, &
 !$acc co2mult, colch4, colco2, colh2o, colmol, coln2o, &
@@ -10417,8 +10779,6 @@ integer ii
 !$acc copyin(gh2ovmr, gco2vmr, go3vmr, gn2ovmr, gch4vmr, go2vmr)&
 !$acc copyin(gcld, gciwp, gclwp, gcswp, grei, grel, gres, gplay, gplev, gtlay, gtlev, gtsfc)&
 !$acc copyin(gasdir, galdir, gasdif, galdif,profi,profic,gcoszen)&
-! For GSFC, not needed for WRF
-!!  !$acc copyout(nirr,nirf,parr,parf,uvrr,uvrf)
 !$acc copyout(sibvisdir,sibvisdif,sibnirdir,sibnirdif,swdkdir,swdkdif)
 
 
@@ -10477,6 +10837,11 @@ integer ii
         end if
      
         do ipart = 0,npart-1
+!jm call unsetdebug
+!jm if (ipart.eq.IDEBUG-1) then
+!jm write(0,*)'setting setdebug ipart = ',ipart+1,' npart ',npart
+!jm call setdebug
+!jm endif
           cols = ipart * ncol + 1
           cole = (ipart + 1) * ncol
           if (cole>ncolst) cole=ncolst
@@ -10528,11 +10893,15 @@ integer ii
 
              if (iaer==10) then
 !$acc kernels
+               do iw=1,nbndsw
+               do kk=1,nlay
                do iplon = 1, colr
                  piplon = profic(iplon + cols - 1)
-                 taua(iplon, 1:nlay, :) = gtauaer(piplon, 1:nlay, :)
-                 asya(iplon, 1:nlay, :) = gasmaer(piplon, 1:nlay, :)
-                 omga(iplon, 1:nlay, :) = gssaaer(piplon, 1:nlay, :)
+                 taua(iplon, kk, iw) = gtauaer(piplon, kk, iw)
+                 asya(iplon, kk, iw) = gasmaer(piplon, kk, iw)
+                 omga(iplon, kk, iw) = gssaaer(piplon, kk, iw)
+               end do
+               end do
                end do
 !$acc end kernels
              end if
@@ -10601,11 +10970,15 @@ integer ii
             if (iaer==10) then
 
 !$acc kernels    
+              do iw=1,nbndsw
+              do kk=1,nlay
               do iplon = 1, colr
                 piplon = profi(iplon + cols - 1)
-                taua(iplon, 1:nlay, :) = gtauaer(piplon, 1:nlay, :)
-                asya(iplon, 1:nlay, :) = gasmaer(piplon, 1:nlay, :)
-                omga(iplon, 1:nlay, :) = gssaaer(piplon, 1:nlay, :)
+                taua(iplon, kk, iw) = gtauaer(piplon, kk, iw)
+                asya(iplon, kk, iw) = gasmaer(piplon, kk, iw)
+                omga(iplon, kk, iw) = gssaaer(piplon, kk, iw)
+              end do
+              end do
               end do
 !$acc end kernels
             end if
@@ -10616,12 +10989,16 @@ integer ii
 ! We are on the CPU here
 
 !$acc kernels 
+            do iw=1,nbndsw
+            do kk=1,nlay
             do iplon = 1, colr
               piplon = profi(iplon + cols - 1)
-              tauc(iplon, 1:nlay, :) = gtauc(piplon, 1:nlay, :)
-              ssac(iplon, 1:nlay, :) = gssac(piplon, 1:nlay, :)
-              asmc(iplon, 1:nlay, :) = gasmc(piplon, 1:nlay, :)
-              fsfc(iplon, 1:nlay, :) = gfsfc(piplon, 1:nlay, :)
+              tauc(iplon, kk, iw) = gtauc(piplon, kk, iw)
+              ssac(iplon, kk, iw) = gssac(piplon, kk, iw)
+              asmc(iplon, kk, iw) = gasmc(piplon, kk, iw)
+              fsfc(iplon, kk, iw) = gfsfc(piplon, kk, iw)
+            end do
+            end do
             end do
 !$acc end kernels
 
@@ -10663,6 +11040,91 @@ integer ii
             end do
           end do
 !$acc end kernels
+
+#ifndef _CUDA
+! Use Tom Henderson's technique to pad out and vector remainder
+! with valid data so that we can have a static loop range over 
+! columns without having to test for short vectors.
+      IF ( colr < CHNK ) THEN
+
+        DO jj = 1,ngptsw
+        DO kk = 1,nlay+1
+        DO ii = colr+1, CHNK
+           taormc(ii,kk,jj) = taormc(colr,kk,jj)
+           taucmc(ii,kk,jj) = taucmc(colr,kk,jj)
+           ssacmc(ii,kk,jj) = ssacmc(colr,kk,jj)
+           asmcmc(ii,kk,jj) = asmcmc(colr,kk,jj)
+           fsfcmc(ii,kk,jj) = fsfcmc(colr,kk,jj)
+        ENDDO
+        ENDDO
+        ENDDO
+        DO ib = 1,13
+        DO ii = colr+1, CHNK
+           albdir(ii,ib) = albdir(colr,ib)
+           albdif(ii,ib) = albdif(colr,ib)
+        ENDDO
+        ENDDO
+        DO kk = 1,nlay+1
+        DO ii = colr+1, CHNK
+           plev(ii,kk) = plev(colr,kk)
+           tlev(ii,kk) = tlev(colr,kk)
+           coldry(ii,kk) = coldry(colr,kk)
+        ENDDO
+        ENDDO
+        DO kk = 1,nlay
+        DO ii = colr+1, CHNK
+           play(ii,kk) = play(colr,kk)
+           tlay(ii,kk) = tlay(colr,kk)
+           cld(ii,kk)  = cld(colr,kk)
+           ciwp(ii,kk) = ciwp(colr,kk)
+           clwp(ii,kk) = clwp(colr,kk)
+           cswp(ii,kk) = cswp(colr,kk)
+           rei(ii,kk) = rei(colr,kk)
+           rel(ii,kk) = rel(colr,kk)
+           res(ii,kk) = res(colr,kk)
+        ENDDO
+        ENDDO
+        DO ii = colr+1, CHNK
+           tsfc(ii) = tsfc(colr)
+        ENDDO
+        IF ( iaer==10 ) THEN
+         DO jj = 1,nbndsw
+         DO kk = 1,nlay+1
+         DO ii = colr+1, CHNK
+           taua(ii,kk,jj) = taua(colr,kk,jj)
+           asya(ii,kk,jj) = asya(colr,kk,jj)
+           omga(ii,kk,jj) = omga(colr,kk,jj)
+         ENDDO
+         ENDDO
+         ENDDO
+        ENDIF
+        DO jj = 1,nbndsw
+        DO kk = 1,nlay
+        DO ii = colr+1, CHNK
+           tauc(ii,kk,jj) = tauc(colr,kk,jj)
+           ssac(ii,kk,jj) = ssac(colr,kk,jj)
+           asmc(ii,kk,jj) = asmc(colr,kk,jj)
+           fsfc(ii,kk,jj) = fsfc(colr,kk,jj)
+        ENDDO
+        ENDDO
+        ENDDO
+        DO kk = 1,nlay
+        DO jj = 1,mxmol
+        DO ii = colr+1, CHNK
+           wkl(ii,jj,kk) = wkl(colr,jj,kk)
+        ENDDO
+        ENDDO
+        ENDDO
+        DO ii = colr+1, CHNK
+           coszen(ii) = coszen(colr)
+        ENDDO
+
+      ENDIF
+#endif
+
+#ifndef _CUDA
+#  define colr CHNK
+#endif
 
           if (cc==2) then   ! call mcica for cloudy cases
             call mcica_sw(colr, nlay, 112, icld, irng, play, &
@@ -10706,6 +11168,9 @@ integer ii
 ! For GSFC, not needed for WRF
 !                         znirr,znirf,zparr,zparf,zuvrr,zuvrf)
 
+#ifndef _CUDA
+#  undef colr
+#endif
    
 ! Transfer up and down, clear and total sky fluxes to output arrays.
 ! Vertical indexing goes from bottom to top; reverse here for GCM if necessary.
@@ -10753,18 +11218,6 @@ integer ii
             enddo
 !$acc end kernels 
 
-!! !$acc kernels loop independent
-!            do iplon = 1, colr
-!              piplon = profic(iplon + cols - 1)
-!              nirr(piplon) = znirr(iplon)
-!              nirf(piplon) = znirf(iplon) - znirr(iplon)
-!              parr(piplon) = zparr(iplon)
-!              parf(piplon) = zparf(iplon) - zparr(iplon)
-!              uvrr(piplon) = zuvrr(iplon)
-!              uvrf(piplon) = zuvrf(iplon) - zuvrr(iplon)
-!            end do
-!! !$acc end kernels 
-
           else     ! cc = 2, cloudy
 !$acc kernels loop independent
             do iplon = 1, colr
@@ -10808,48 +11261,12 @@ integer ii
             enddo
 !$acc end kernels 
 
-!! !$acc kernels loop independent
-!            do iplon = 1, colr
-!              piplon = profi(iplon + cols - 1)
-!              nirr(piplon) = znirr(iplon)
-!              nirf(piplon) = znirf(iplon) - znirr(iplon)
-!              parr(piplon) = zparr(iplon)
-!              parf(piplon) = zparf(iplon) - zparr(iplon)
-!              uvrr(piplon) = zuvrr(iplon)
-!              uvrf(piplon) = zuvrf(iplon) - zuvrr(iplon)
-!            end do
-!! !$acc end kernels 
-
           end if   ! if-else-endif clear-cloudy
 
 ! End partition loops
         end do
         
       end do
-
-! For GSFC, not needed for WRF
-!! If the user requested 'normalized' fluxes, then here we
-!! divide the fluxes by the solar constant divided by coszen
-!
-!      if (normFlx==1) then
-!! !$acc kernels
-!        do k = 1, nlay+1
-!          swuflxc(:,k)=swuflxc(:,k)/(scon*max(zepzen,gcoszen(:)))
-!          swdflxc(:,k)=swdflxc(:,k)/(scon*max(zepzen,gcoszen(:)))
-!          swuflx(:,k)=swuflx(:,k)/(scon*max(zepzen,gcoszen(:)))
-!          swdflx(:,k)=swdflx(:,k)/(scon*max(zepzen,gcoszen(:)))
-!        end do
-!        nirr(:)=nirr(:)/(scon*max(zepzen,gcoszen(:)))
-!        nirf(:)=nirf(:)/(scon*max(zepzen,gcoszen(:)))
-!        parr(:)=parr(:)/(scon*max(zepzen,gcoszen(:)))
-!        parf(:)=parf(:)/(scon*max(zepzen,gcoszen(:)))
-!        uvrr(:)=uvrr(:)/(scon*max(zepzen,gcoszen(:)))
-!        uvrf(:)=uvrf(:)/(scon*max(zepzen,gcoszen(:)))
-!! !$acc end kernels
-!      end if
-
-! end of data statement for xcw with icld==4
-!! !$acc end data
 
 !$acc end data
 
@@ -11315,8 +11732,7 @@ integer ii
 #ifdef _CUDA
       rpart = 0
 #else
-      rpart = 2
-      rpart = 1
+      rpart = CHNK
 #endif
 
 
@@ -11340,7 +11756,7 @@ integer ii
 ! longitude loop
       i_loop: do i = its,ite
 !
-         icol = i + (j-jts)*(ite-its+1)
+         icol = i-its+1 + (j-jts)*(ite-its+1)
 
 ! Do shortwave by default, deactivate below if sun below horizon
          dorrsw = .true.
@@ -12107,6 +12523,7 @@ integer ii
 
       endif
 
+
 ! Output net absorbed shortwave surface flux and shortwave cloud forcing
 ! at the top of atmosphere (W/m2)
 
@@ -12128,7 +12545,8 @@ integer ii
             call wrf_error_fatal('xcoszen must be passed into RRTMG_SWRAD_FAST')
          endif
 
-         icol = i + (j-jts)*(ite-its+1)
+
+         icol = i-its+1 + (j-jts)*(ite-its+1)
 
          gsw(i,j) = swdflx(icol,1) - swuflx(icol,1)
          swcf(i,j) = (swdflx(icol,kte+2) - swuflx(icol,kte+2)) - (swdflxc(icol,kte+2) - swuflxc(icol,kte+2))

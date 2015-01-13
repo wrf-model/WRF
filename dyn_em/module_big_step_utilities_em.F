@@ -5228,6 +5228,8 @@ END SUBROUTINE phy_prep
                                      th_phy, pii, pf,                &
                                      z, z_at_w, dz8w,                &
                                      dt,h_diabatic,                  &
+                                     qv,qv_diabatic,                 &
+                                     qc,qc_diabatic,                 &
                                      config_flags,fzm, fzp,          &
                                      ids,ide, jds,jde, kds,kde,      &
                                      ims,ime, jms,jme, kms,kme,      &
@@ -5252,7 +5254,9 @@ END SUBROUTINE phy_prep
                                                     p,   &
                                                     pb,  &
                                                     ph,  &
-                                                    phb
+                                                    phb, &
+                                                    qv,  &
+                                                    qc
 
 
    REAL , DIMENSION( kms:kme ) ,           INTENT(IN   ) ::   fzm, &
@@ -5268,8 +5272,10 @@ END SUBROUTINE phy_prep
                                                  dz8w,  &
                                                   p8w
 
-   REAL, DIMENSION( ims:ime , kms:kme, jms:jme ),       &
-         INTENT(INOUT) ::                         h_diabatic
+   REAL, DIMENSION( ims:ime , kms:kme, jms:jme ),             &
+         INTENT(INOUT) ::                         h_diabatic, &
+                                                 qv_diabatic, &
+                                                 qc_diabatic
 
    REAL, DIMENSION( ims:ime , kms:kme, jms:jme ),        &
          INTENT(INOUT) ::                         t_new, &
@@ -5337,6 +5343,8 @@ END SUBROUTINE phy_prep
 #endif
        th_phy(i,k,j) = t_new(i,k,j) + t0
        h_diabatic(i,k,j) = th_phy(i,k,j)
+       qv_diabatic(i,k,j) = qv(i,k,j)
+       qc_diabatic(i,k,j) = qc(i,k,j)
        rho(i,k,j)  = 1./(al(i,k,j)+alb(i,k,j))
        pii(i,k,j) = ((p(i,k,j)+pb(i,k,j))/p0)**rcp
        z(i,k,j) = 0.5*(z_at_w(i,k,j) +z_at_w(i,k+1,j) )
@@ -5390,6 +5398,8 @@ END SUBROUTINE phy_prep
 
    SUBROUTINE moist_physics_finish_em( t_new, t_old, t0, mut,     &
                                        th_phy, h_diabatic, dt,    &
+                                       qv,qv_diabatic,            &
+                                       qc,qc_diabatic,            &
                                        config_flags,              &
 #if ( WRF_DFI_RADAR == 1 )
                                        dfi_tten_rad,dfi_stage,    &
@@ -5413,7 +5423,14 @@ END SUBROUTINE phy_prep
          INTENT(INOUT) ::                         t_new, &
                                                   t_old, &
                                                  th_phy, &
-                                                  h_diabatic
+                                                  h_diabatic, &
+                                                 qv_diabatic, &
+                                                 qc_diabatic
+
+   REAL, DIMENSION( ims:ime , kms:kme, jms:jme ),        &
+         INTENT(IN   ) ::                           qv,  &
+                                                    qc
+
 #if ( WRF_DFI_RADAR == 1 )
    REAL, DIMENSION( ims:ime , kms:kme, jms:jme ),        &
          INTENT(IN), OPTIONAL ::               dfi_tten_rad
@@ -5422,6 +5439,7 @@ END SUBROUTINE phy_prep
 #endif
 
    REAL mpten, mptenmax, mptenmin
+   REAL :: qvten,qcten
 
    REAL, DIMENSION( ims:ime , jms:jme ),  INTENT(INOUT) ::  mut
 
@@ -5475,6 +5493,8 @@ END SUBROUTINE phy_prep
      DO k = k_start, k_end
      DO i = i_start, i_end
           mpten = th_phy(i,k,j)-h_diabatic(i,k,j)
+          qvten = qv(i,k,j)-qv_diabatic(i,k,j)
+          qcten = qc(i,k,j)-qc_diabatic(i,k,j)
        if(mpten.gt.mptenmax) then
           mptenmax=mpten
           imax=i
@@ -5509,6 +5529,11 @@ END SUBROUTINE phy_prep
          t_new(i,k,j) = t_new(i,k,j) + mpten
 #endif
          h_diabatic(i,k,j) =  mpten/dt
+!!!         ! KLUDGE:
+!!!         qvten = 0.0
+!!!         qcten = 0.0
+         qv_diabatic(i,k,j) =  qvten/dt
+         qc_diabatic(i,k,j) =  qcten/dt
      ENDDO
      ENDDO
      ENDDO
@@ -5520,6 +5545,8 @@ END SUBROUTINE phy_prep
      DO i = i_start, i_end
 !        t_new(i,k,j) = t_new(i,k,j)
          h_diabatic(i,k,j) = 0.
+         qv_diabatic(i,k,j) = 0.
+         qc_diabatic(i,k,j) = 0.
      ENDDO
      ENDDO
      ENDDO

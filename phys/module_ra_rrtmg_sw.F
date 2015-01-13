@@ -10192,6 +10192,26 @@ CONTAINS
 
     REAL :: da, eot ! jararias, 14/08/2013
 
+    integer:: idx_rei
+    real:: corr
+    real retab2(95)
+    data retab2 /                                               &
+         5.92779, 6.26422, 6.61973, 6.99539, 7.39234,           &
+         7.81177, 8.25496, 8.72323, 9.21800, 9.74075, 10.2930,  &
+         10.8765, 11.4929, 12.1440, 12.8317, 13.5581, 14.2319,  &
+         15.0351, 15.8799, 16.7674, 17.6986, 18.6744, 19.6955,  &
+         20.7623, 21.8757, 23.0364, 24.2452, 25.5034, 26.8125,  &
+         27.7895, 28.6450, 29.4167, 30.1088, 30.7306, 31.2943,  &
+         31.8151, 32.3077, 32.7870, 33.2657, 33.7540, 34.2601,  &
+         34.7892, 35.3442, 35.9255, 36.5316, 37.1602, 37.8078,  &
+         38.4720, 39.1508, 39.8442, 40.5552, 41.2912, 42.0635,  &
+         42.8876, 43.7863, 44.7853, 45.9170, 47.2165, 48.7221,  &
+         50.4710, 52.4980, 54.8315, 57.4898, 60.4785, 63.7898,  &
+         65.5604, 71.2885, 75.4113, 79.7368, 84.2351, 88.8833,  &
+         93.6658, 98.5739, 103.603, 108.752, 114.025, 119.424,  &
+         124.954, 130.630, 136.457, 142.446, 148.608, 154.956,  &
+         161.503, 168.262, 175.248, 182.473, 189.952, 197.699,  &
+         205.728, 214.055, 222.694, 231.661, 240.971, 250.639/
 !------------------------------------------------------------------
 #if ( WRF_CHEM == 1 )
       IF ( aer_ra_feedback == 1) then
@@ -10441,6 +10461,13 @@ CONTAINS
                inflgsw = 3
                DO K=kts,kte
                   recloud1D(ncol,K) = MAX(2.5, re_cloud(I,K,J)*1.E6)
+                  if (recloud1D(ncol,K).LE.2.5.AND.cldfra3d(i,k,j).gt.0. &
+     &                            .AND. (XLAND(I,J)-1.5).GT.0.) then     !--- Ocean
+                     recloud1D(ncol,K) = 10.5
+                  elseif (recloud1D(ncol,K).LE.2.5.AND.cldfra3d(i,k,j).gt.0. &
+     &                            .AND. (XLAND(I,J)-1.5).LT.0.) then     !--- Land
+                     recloud1D(ncol,K) = 7.5
+                  endif
                ENDDO
             ELSE
                DO K=kts,kte
@@ -10453,6 +10480,14 @@ CONTAINS
                iceflgsw = 4
                DO K=kts,kte
                   reice1D(ncol,K) = MAX(10., re_ice(I,K,J)*1.E6)
+                  if (reice1D(ncol,K).LE.10..AND.cldfra3d(i,k,j).gt.0.) then
+                     idx_rei = int(t3d(i,k,j)-179.)
+                     idx_rei = min(max(idx_rei,1),75)
+                     corr = t3d(i,k,j) - int(t3d(i,k,j))
+                     reice1D(ncol,K) = retab2(idx_rei)*(1.-corr) +      &
+     &                                 retab2(idx_rei+1)*corr
+                     reice1D(ncol,K) = MAX(reice1D(ncol,K), 10.0)
+                  endif
                ENDDO
             ELSE
                DO K=kts,kte
@@ -10479,11 +10514,11 @@ CONTAINS
                inflgsw  = 5
                iceflgsw = 5
                DO K=kts,kte
-                  resnow1D(ncol,K) = MAX(10., re_snow(I,K,J)*1.E6)
+                  resnow1D(ncol,K) = MAX(25., re_snow(I,K,J)*1.E6)
                ENDDO
             ELSE
                DO K=kts,kte
-                  resnow1D(ncol,K) = 10.0
+                  resnow1D(ncol,K) = 25.0
                ENDDO
             ENDIF
          ENDIF

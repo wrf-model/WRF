@@ -116,6 +116,7 @@ CONTAINS
               ,progn                                            &
               ,slope_rad,topo_shading     &
               ,shadowmask,ht,dx,dy                 &
+              ,DXKM                                                       & ! Optional
               ,SWUPFLX,SWUPFLXC,SWDNFLX,SWDNFLXC                          & ! Optional
               ,LWUPFLX,LWUPFLXC,LWDNFLX,LWDNFLXC                          & ! Optional
               ,radtacttime                                                &
@@ -178,6 +179,8 @@ CONTAINS
 
    USE module_ra_aerosol    , ONLY : calc_aerosol_goddard_sw, &
                                      calc_aerosol_rrtmg_sw
+
+   USE module_mp_thompson   , ONLY : cal_cldfra3
 
    !  This driver calls subroutines for the radiation parameterizations.
    !
@@ -623,6 +626,8 @@ CONTAINS
          OPTIONAL,                                                &
          INTENT(INOUT)  ::                       taucldi,taucldc
 
+   REAL, OPTIONAL, INTENT(IN) :: dxkm  
+
 ! Variables for slope-dependent radiation
 
      REAL, OPTIONAL, INTENT(IN) :: dx,dy
@@ -659,7 +664,9 @@ CONTAINS
                  DJUL,RJUL,ECCFAC
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qi_temp,qc_temp
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qi_save,qc_save
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qs_save
 
+   REAL    ::    gridkm
    REAL    ::    next_rad_time
    LOGICAL ::    run_param , doing_adapt_dt , decided
    LOGICAL ::    flg_lw, flg_sw
@@ -696,6 +703,18 @@ CONTAINS
 !  WRITE ( wrf_err_message , * ) 'itimestep = ',itimestep,', dt = ',dt,', lw and sw options = ',lw_physics,sw_physics
 !  CALL wrf_debug (1, wrf_err_message )
    if (lw_physics .eq. 0 .and. sw_physics .eq. 0)         return
+
+   IF (PRESENT(dxkm)) then
+      gridkm = 1.414*SQRT(dxkm*dxkm + dy*0.001*dy*0.001)
+   else
+      gridkm = SQRT(dx*0.001*dx*0.001 + dy*0.001*dy*0.001)
+   endif
+
+
+   if (itimestep .LE. 100) then
+     WRITE ( wrf_err_message , * ) 'Grid spacing in km ', dx, dy, gridkm
+     CALL wrf_debug (100, wrf_err_message)
+   endif
 
 ! ra_call_offset = -1 gives old method where radiation may be called just before output
 ! ra_call_offset =  0 gives new method where radiation may be called just after output
@@ -1055,6 +1074,49 @@ CONTAINS
                        its,ite, jts,jte, kts,kte             )
      ENDIF
 
+
+!+---+-----------------------------------------------------------------+
+!..New cloud fraction scheme added by G. Thompson (2014Oct31)
+!+---+-----------------------------------------------------------------+
+
+      ELSEIF (ICLOUD == 3) THEN
+        IF (PRESENT(CLDFRA) .AND.                                       &
+                           PRESENT(F_QC) .AND. PRESENT ( F_QI ) ) THEN
+
+           DO j = jts,jte
+           DO k = kts,kte
+           DO i = its,ite
+              qc_save(i,k,j) = qc(i,k,j)
+              qi_save(i,k,j) = qi(i,k,j)
+           ENDDO
+           ENDDO
+           ENDDO
+           IF (PRESENT(F_QS)) THEN
+              DO j = jts,jte
+              DO k = kts,kte
+              DO i = its,ite
+                 qs_save(i,k,j) = qs(i,k,j)
+              ENDDO
+              ENDDO
+              ENDDO
+           ELSE
+              DO j = jts,jte
+              DO k = kts,kte
+              DO i = its,ite
+                 qs_save(i,k,j) = 0.0
+              ENDDO
+              ENDDO
+              ENDDO
+           ENDIF
+
+           CALL wrf_debug (150, 'DEBUG-GT: using gthompsn cloud fraction scheme')
+           CALL cal_cldfra3(CLDFRA, qv, qc, qi, qs,                     &
+     &                 p,t,rho, XLAND, gridkm,                          &
+     &                 ids,ide, jds,jde, kds,kde,                       &
+     &                 ims,ime, jms,jme, kms,kme,                       &
+     &                 its,ite, jts,jte, kts,kte)
+
+        ENDIF
      END IF
 
 ! ww: Interpolating climatological ozone and aerosol to model time and levels
@@ -1843,6 +1905,8 @@ CONTAINS
         end do
      end if
 
+         CALL wrf_debug (150, 'DEBUG-GT: after radiation, resetting grid-explicit cloud vars')
+
        IF ( PRESENT( qc  ) .AND. PRESENT( qc_cu ) ) THEN 
            IF ( icloud_cu .NE. 0 ) THEN
            DO j=jts,jte
@@ -1864,6 +1928,34 @@ CONTAINS
            ENDDO
            ENDDO
            ENDIF
+        ENDIF
+
+        IF ( PRESENT( qc  ) .AND. ICLOUD.eq.3) THEN 
+           DO j=jts,jte
+           DO k=kts,kte
+           DO i=its,ite
+             qc(i,k,j) = qc_save(i,k,j)
+           ENDDO
+           ENDDO
+           ENDDO
+        ENDIF
+        IF ( PRESENT( qi  ) .AND. ICLOUD.eq.3) THEN 
+           DO j=jts,jte
+           DO k=kts,kte
+           DO i=its,ite
+             qi(i,k,j) = qi_save(i,k,j)
+           ENDDO
+           ENDDO
+           ENDDO
+        ENDIF
+        IF ( PRESENT( qs  ) .AND. ICLOUD.eq.3) THEN 
+           DO j=jts,jte
+           DO k=kts,kte
+           DO i=its,ite
+             qs(i,k,j) = qs_save(i,k,j)
+           ENDDO
+           ENDDO
+           ENDDO
         ENDIF
 
      ! jararias, aug 2013, updated 2013/11

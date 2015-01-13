@@ -7975,6 +7975,8 @@ MODULE module_ra_FLG
 !    & ,    ulwtop, ulwbot, dlwbot, netlwstr, netlwbot  &
      & ,   uswtop, ulwtop,NETSWBOT,DLWBOT,DSWBOT & 
      & ,   deltat,dtshort, dtlongwv       &
+!-- amontornes-bcodina (2014-04-29): return direct and diffuse fluxes at surface
+     & ,   swddir,swddif,swddni           &
 !-- for optional aerosol input
 !     & ,   tau_aer_2D, tau_aer_3D, fraca_in      &
 !-- change over
@@ -8009,7 +8011,10 @@ MODULE module_ra_FLG
 !* USWTOP = upward solar flux at TOA (down-up)
 !* DSWTOP = net downward solar flux at TOA (down-up)
 !* DSWBOT = net downward solar flux at surface (down-up)
-!* SWINC = solar flux incident at TOA
+!* swddir = direct horizontal irradiance (amontornes-bcodina, 2014-04-29)
+!* swddif = diffuse irradiance (amontornes-bcodina, 2014-04-29)
+!* swddni = direct normal irradiance (amontornes-bcodina, 2014-04-29)
+!* SWINC  = solar flux incident at TOA
 !* DELTAT = total column physics increment to theta
 !
 !* ULWBOT = upward IR flux at surface
@@ -8169,6 +8174,10 @@ MODULE module_ra_FLG
         real xlat(ims:idim,jms:jdim), xlong(ims:idim, jms:jdim)
 
 	real dswtop(ims:idim,jms:jdim) , dswbot(ims:idim,jms:jdim)
+!c--- amontornes-bcodina (2014-04-29): for DHI, DIF and DNI outputs
+	real swddir(ims:idim,jms:jdim)
+        real swddif(ims:idim,jms:jdim)
+	real swddni(ims:idim,jms:jdim)
 	real uswtop(ims:idim,jms:jdim)  	
 	real netswbot(ims:idim,jms:jdim)  	
 	real swinc(ims:idim,jms:jdim)  	
@@ -8211,6 +8220,8 @@ MODULE module_ra_FLG
 	real fds(kmax), fus(kmax), dts(kmax-1)
 	real fdir(kmax), fuir(kmax), dtir(kmax-1)
 	real fd(kmax), fu(kmax), dt_rad(kmax-1)
+!C-- amontornes-bcodina (2014-04-29): direct and diffuse fluxes
+	real fdsdir(kmax), fdsdif(kmax)
 
 !***************************************************************************
 !* Use Fu-Liou radiation routine and algorithm
@@ -8320,6 +8331,10 @@ MODULE module_ra_FLG
 	  dts(k)=rzero
 	  dtir(k)=rzero
 	  dt_rad(k)=rzero
+!C--- amontornes-bcodina (2014-04-29): direct and diffuse fluxes
+          fdsdir(k)=rzero
+          fdsdif(k)=rzero
+
 	enddo VERTICAL_PROFILE
 
 	    fds(kmax)=rzero
@@ -8328,7 +8343,9 @@ MODULE module_ra_FLG
 	    fuir(kmax)=rzero
 	    fd(kmax)=rzero
 	    fu(kmax)=rzero
-
+!C--- amontornes-bcodina (2014-04-29): direct and diffuse fluxes
+            fdsdir(kmax)=rzero
+            fdsdif(kmax)=rzero
 	    o3ij(kmax) = rzero
 
 
@@ -8910,6 +8927,8 @@ MODULE module_ra_FLG
 !C--- output: fluxes and heating rates
     &  ,         fds, fus, dts, fdir, fuir, dtir   &
     &  ,         fd, fu, dt_rad                    &
+!C--- amontornes-bcodina (2014-04-29): new to save the direct and diffuse fluxes
+    &   ,        fdsdir, fdsdif                    &
     &  )
 !CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 
@@ -8921,7 +8940,17 @@ MODULE module_ra_FLG
 !*** net solar at sfc 
         netswbot(i,j) = fds(kmax) - fus(kmax)
 !*** downward solar at sfc 
-        dswbot(i,j) = fds(kmax) 
+        dswbot(i,j) = fds(kmax)
+!*** DNI, DIR and DIF values (amontornes-bcodina 2014-04-29)
+     if(u0ij .gt. 0.0001) then
+	swddni(i,j) = fdsdir(kmax)/u0ij
+	swddir(i,j) = fdsdir(kmax)
+	swddif(i,j) = fdsdif(kmax)
+     else
+	swddni(i,j) = 0.
+	swddir(i,j) = 0.
+	swddif(i,j) = 0.
+     endif	
 !*** downward IR at sfc 
         dlwbot(i,j) = fdir(kmax)
 !*** upward IR at sfc
@@ -9073,6 +9102,8 @@ MODULE module_ra_FLG
    &   ,           fdsij, fusij, dtsij               &
    &   ,           fdirij, fuirij, dtirij            &
    &   ,           fdij, fuij, dtij                  &
+!C--- amontornes-bcodina (2014-04-29): new to save the direct and diffuse fluxes
+   &   ,           fdsdir, fdsdif                    &
    &   )
 
 !c *********************************************************************
@@ -9160,6 +9191,8 @@ MODULE module_ra_FLG
 !C--- variables in the offline version      
     real, dimension(nv1) :: pp, pt, ph, po
     real, dimension(nv1) :: fds, fus, fdir, fuir, fd, fu
+!C--- amontornes-bcodina (2014-04-29): new to save the direct and diffuse information
+    real, dimension(nv1) :: fdsdir, fdsdif
     real, dimension(nv)  :: dts, dtir, dt
     real, dimension(nv)  :: piwc, plwc, pgwc, prwc, &
    &                                pde, pre, cldamnt
@@ -9168,6 +9201,8 @@ MODULE module_ra_FLG
     real                 :: pts, u0
       
     real, dimension(nv1)              :: fu1, fd1
+!C--- amontornes-bcodina (2014-04-29): new to save the direct and diffuse information
+    real, dimension(nv1)              :: ffddir,ffdif
     real                              :: bf(nv1), bs
     real, dimension(nv)   :: wc1, wc2, wc3, wc4, wc, tt
 ! -- add for partial clouds
@@ -9236,6 +9271,9 @@ MODULE module_ra_FLG
 	  fus(i) = 0.0
 	  fdir(i) = 0.0
 	  fuir(i) = 0.0
+!C--- amontornes-bcodina (2014-04-29): Added for direct and diffuse computations
+	  fdsdir(i) = 0.0
+	  fdsdif(i) = 0.0
 10	end do
     
     as = asij
@@ -9421,8 +9459,9 @@ MODULE module_ra_FLG
 !c 11/4/95 (begin)
                   if ( ib .le. mbs ) then
                     if ( fourssl ) then
+!c amontornes-bcodina (2014-04-29): this line was modified to introduce the direct and diffuse fluxes
                       call qfts ( nv,nv1,ib, as(ib), u0, f0, &
-                     &            wc1,wc2,wc3,wc4,wc,tt,fu1,fd1 )
+                     &            wc1,wc2,wc3,wc4,wc,tt,fu1,fd1,ffddir,ffdif )
                     endif
                     if ( twossl ) then
                       quadra = .false.
@@ -9435,7 +9474,10 @@ MODULE module_ra_FLG
 !                  fds(i) = fds(i) + fd1(i) * hk
 !                 fus(i) = fus(i) + fu1(i) * hk
                       fds(i) = fds(i) + fd1(i) * hk * area
-                      fus(i) = fus(i) + fu1(i) * hk * area           
+                      fus(i) = fus(i) + fu1(i) * hk * area
+!c amontornes-bcodina (2014-04-29): this line was added for the direct and diffuse outputs
+		      fdsdir(i) = fdsdir(i) + ffddir(i) * hk * area
+		      fdsdif(i) = fdsdif(i) + ffdif(i)  * hk * area           
 40                  end do
                   else
                     if ( foursir ) then
@@ -9477,9 +9519,13 @@ MODULE module_ra_FLG
       do i = 1, nv1
         fds(i) = fds(i) * fuq1
         fus(i) = fus(i) * fuq1
+!c amontornes-bcodina (2014-04-29): direct and diffuse fluxes
+        fdsdir(i) = fdsdir(i) * fuq1
+        fdsdif(i) = fdsdif(i) * fuq1
         fuir(i) = fuir(i) + fuq2
         fd(i) = fds(i) + fdir(i)
         fu(i) = fus(i) + fuir(i)
+
 !C--- assign result to output variables
 	    fdsij(i) = fds(i)
 	    fusij(i) = fus(i)
@@ -13520,7 +13566,9 @@ MODULE module_ra_FLG
 !c ww1(nv), ww2(nv), ww3(nv), ww4(nv), ww(nv), and tt(nv)
 !c through common statement 'dfsin'.
 !c **********************************************************************
-      subroutine qfts ( nv, nv1, ib,as,u0,f0,ww1,ww2,ww3,ww4,ww,tt,ffu,ffd )
+
+!c amontornes-bcodina (2014-04-29): this line modified to introduce the direct and diffuse fluxes
+      subroutine qfts ( nv, nv1, ib,as,u0,f0,ww1,ww2,ww3,ww4,ww,tt,ffu,ffd,ffddir,ffdif )
 !# include "para.file"
       USE PARA_FILE
 !    common /dis/ a(4)
@@ -13531,6 +13579,8 @@ MODULE module_ra_FLG
       real, intent(in)             :: as, u0, f0
       real, intent(in), dimension(nv)  :: ww1, ww2, ww3, ww4, ww, tt
       real, intent(out), dimension(nv1) :: ffu, ffd
+!c amontornes-bcodina (2014-04-29): this line was added to introduce the direct and diffuse fluxes
+      real, intent(out), dimension(nv1) :: ffddir,ffdif
       real, dimension(nv)        :: w1, w2, w3, w4, w, t, u0a, f0a
       real    :: fk1(nv), fk2(nv), a4(4,4,nv),  &
      &           z4(4,nv), g4(4,nv)
@@ -13586,6 +13636,9 @@ MODULE module_ra_FLG
 40      end do
         ffu(i)= fw1 * fi(2) + fw2 * fi(1) 
         ffd(i)= fw1 * fi(3) + fw2 * fi(4) + fw3 * y
+!c amontornes-bcodina (2014-04-29): save direct and diffuse terms
+        ffddir(i) = fw3 * y					! amontornes-bcodina Direct downward flux
+        ffdif(i)  = ffd(i)-ffddir(i)                            ! amontornes-bcodina Diffuse downward flux
 10    end do
       return
       end subroutine

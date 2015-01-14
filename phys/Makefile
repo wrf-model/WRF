@@ -31,7 +31,6 @@ MODULES = \
 	module_data_cam_mam_aero.o \
 	module_data_cam_mam_asect.o \
 	module_cam_infnan.o \
-	module_shinhong_tke.o \
 	module_bl_ysu.o \
 	module_bl_shinhong.o \
 	module_bl_mrf.o \

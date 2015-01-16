@@ -173,13 +173,14 @@ CONTAINS
       REAL,     DIMENSION( ims:ime, jms:jme )                    , &
                 INTENT(INOUT)   ::                                 &
                                                               QGH
-
-
                                     
       REAL,     INTENT(IN   )               ::   CP,G,ROVCP,R,XLV,DX
  
       REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme )              , &
-                INTENT(OUT)     ::              ck,cka,cd,cda,ustm
+                INTENT(OUT)     ::                  ck,cka,cd,cda
+
+      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme )              , &
+                INTENT(INOUT)   ::                           USTM
 
       INTEGER,  OPTIONAL,  INTENT(IN )   ::     ISFTCFLX, IZ0TLND
       INTEGER,  OPTIONAL,  INTENT(IN )   ::     SCM_FORCE_FLUX
@@ -324,7 +325,9 @@ CONTAINS
                                                               T1D
  
       REAL, OPTIONAL, DIMENSION( ims:ime )                       , &
-                INTENT(OUT)     ::              ck,cka,cd,cda,ustm
+                INTENT(OUT)     ::                  ck,cka,cd,cda
+      REAL, OPTIONAL, DIMENSION( ims:ime )                       , &
+                INTENT(INOUT)   ::                           USTM
 
       INTEGER,  OPTIONAL,  INTENT(IN )   ::     ISFTCFLX, IZ0TLND
       INTEGER,  OPTIONAL,  INTENT(IN )   ::     SCM_FORCE_FLUX

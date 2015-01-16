@@ -828,8 +828,6 @@ CONTAINS
 
 !  NoahMP local variables - precip partitioning
 
-   REAL, DIMENSION(ims:ime,jms:jme) :: NOAHMP_RAINC, NOAHMP_RAINNC, NOAHMP_SNOW, NOAHMP_GRAUP, NOAHMP_HAIL
-
 ! Noah UA changes
    LOGICAL, INTENT(IN) :: ua_phys
    REAL, DIMENSION(ims:ime , jms:jme), INTENT(OUT) ::  flx4,fvb,fbur,fgsn
@@ -2736,44 +2734,6 @@ CONTAINS
                                                       .TRUE. ) THEN
 !------------------------------------------------------------------
 
-         NOAHMP_RAINC(i_start(ij):i_end(ij),j_start(ij):j_end(ij)) = &
-	       RAINCV(i_start(ij):i_end(ij),j_start(ij):j_end(ij))
-
-         IF( PRESENT(RAINNCV) ) THEN
-            NOAHMP_RAINNC(i_start(ij):i_end(ij),j_start(ij):j_end(ij)) = &
-	          RAINNCV(i_start(ij):i_end(ij),j_start(ij):j_end(ij))
-	 ELSE
-            NOAHMP_RAINNC(i_start(ij):i_end(ij),j_start(ij):j_end(ij)) = 0.0
-         ENDIF
-
-#if ( EM_CORE==1)
-         IF( PRESENT(DFGDP) ) THEN
-            NOAHMP_RAINNC(i_start(ij):i_end(ij),j_start(ij):j_end(ij)) = &
-	    NOAHMP_RAINNC(i_start(ij):i_end(ij),j_start(ij):j_end(ij)) + &
-	            DFGDP(i_start(ij):i_end(ij),j_start(ij):j_end(ij))
-         ENDIF
-#endif
-
-         IF( PRESENT(SNOWNCV) ) THEN
-            NOAHMP_SNOW(i_start(ij):i_end(ij),j_start(ij):j_end(ij)) = &
-	        SNOWNCV(i_start(ij):i_end(ij),j_start(ij):j_end(ij))
-	 ELSE
-            NOAHMP_SNOW(i_start(ij):i_end(ij),j_start(ij):j_end(ij)) = 0.0
-         ENDIF
-
-         IF( PRESENT(GRAUPELNCV) ) THEN
-            NOAHMP_GRAUP(i_start(ij):i_end(ij),j_start(ij):j_end(ij)) = &
-	      GRAUPELNCV(i_start(ij):i_end(ij),j_start(ij):j_end(ij))
-	 ELSE
-            NOAHMP_GRAUP(i_start(ij):i_end(ij),j_start(ij):j_end(ij)) = 0.0
-         ENDIF
-
-         IF( PRESENT(HAILNCV) ) THEN
-            NOAHMP_HAIL(i_start(ij):i_end(ij),j_start(ij):j_end(ij)) = &
-	        HAILNCV(i_start(ij):i_end(ij),j_start(ij):j_end(ij))
-	 ELSE
-            NOAHMP_HAIL(i_start(ij):i_end(ij),j_start(ij):j_end(ij)) = 0.0
-         ENDIF
 
          IF ( FRACTIONAL_SEAICE == 1) THEN
             ! The fields passed to LSM need to represent the full ice values, not
@@ -2824,8 +2784,7 @@ CONTAINS
 	       IOPT_INF, IOPT_RAD, IOPT_ALB, IOPT_SNF, IOPT_TBOT,   IOPT_STC, &
 	        IZ0TLND,                                                      &
 		  T_PHY,  QV_CURR,    U_PHY,    V_PHY,    SWDOWN,        GLW, &
-		    P8W,                                                      &
-           NOAHMP_RAINC, NOAHMP_RAINNC, NOAHMP_SNOW, NOAHMP_GRAUP, NOAHMP_HAIL,& ! MB: v3.7 precip partitioning
+		    P8W,   RAINBL,       SR,                                  &
 		    TSK,      HFX,      QFX,       LH,    GRDFLX,     SMSTAV, &
 		 SMSTOT,SFCRUNOFF, UDRUNOFF,   ALBEDO,     SNOWC,      SMOIS, &
 		   SH2O,     TSLB,     SNOW,    SNOWH,    CANWAT,     ACSNOM, &
@@ -2850,7 +2809,10 @@ CONTAINS
 #endif
                 ids,ide, jds,jde, kds,kde,                      &
                 ims,ime, jms,jme, kms,kme,                      &
-                i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte )
+                i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte,        &
+! variables below are optional
+                MP_RAINC =  RAINCV, MP_RAINNC =    RAINNCV, MP_SHCV = RAINSHV,&
+		MP_SNOW  = SNOWNCV, MP_GRAUP  = GRAUPELNCV, MP_HAIL = HAILNCV )
 
   if(iopt_run.eq.5.and.mod(itimestep,STEPWTD).eq.0)then
            CALL wrf_debug( 100, 'calling WTABLE' )

@@ -668,7 +668,7 @@ CONTAINS
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qi_temp,qc_temp
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qi_save,qc_save
 
-   REAL    ::    next_rad_time
+   REAL    ::    next_rad_time, DTaccum
    LOGICAL ::    run_param , doing_adapt_dt , decided
    LOGICAL ::    flg_lw, flg_sw
 !ZCX
@@ -2066,6 +2066,12 @@ CONTAINS
 
      CASE (CAMLWSCHEME,RRTMG_LWSCHEME,RRTMG_LWSCHEME_FAST)
    IF(PRESENT(LWUPTC))THEN
+!  NMM calls the driver every RADT time steps, EM calls every DT
+#if (EM_CORE == 1)
+   DTaccum = DT
+#else
+   DTaccum = RADT*60
+#endif
    !$OMP PARALLEL DO   &
    !$OMP PRIVATE ( ij ,i,j,k,its,ite,jts,jte)
 
@@ -2077,14 +2083,14 @@ CONTAINS
 
         DO j=jts,jte
         DO i=its,ite
-           ACLWUPT(I,J) = ACLWUPT(I,J) + LWUPT(I,J)*DT
-           ACLWUPTC(I,J) = ACLWUPTC(I,J) + LWUPTC(I,J)*DT
-           ACLWDNT(I,J) = ACLWDNT(I,J) + LWDNT(I,J)*DT
-           ACLWDNTC(I,J) = ACLWDNTC(I,J) + LWDNTC(I,J)*DT
-           ACLWUPB(I,J) = ACLWUPB(I,J) + LWUPB(I,J)*DT
-           ACLWUPBC(I,J) = ACLWUPBC(I,J) + LWUPBC(I,J)*DT
-           ACLWDNB(I,J) = ACLWDNB(I,J) + LWDNB(I,J)*DT
-           ACLWDNBC(I,J) = ACLWDNBC(I,J) + LWDNBC(I,J)*DT
+           ACLWUPT(I,J) = ACLWUPT(I,J) + LWUPT(I,J)*DTaccum
+           ACLWUPTC(I,J) = ACLWUPTC(I,J) + LWUPTC(I,J)*DTaccum
+           ACLWDNT(I,J) = ACLWDNT(I,J) + LWDNT(I,J)*DTaccum
+           ACLWDNTC(I,J) = ACLWDNTC(I,J) + LWDNTC(I,J)*DTaccum
+           ACLWUPB(I,J) = ACLWUPB(I,J) + LWUPB(I,J)*DTaccum
+           ACLWUPBC(I,J) = ACLWUPBC(I,J) + LWUPBC(I,J)*DTaccum
+           ACLWDNB(I,J) = ACLWDNB(I,J) + LWDNB(I,J)*DTaccum
+           ACLWDNBC(I,J) = ACLWDNBC(I,J) + LWDNBC(I,J)*DTaccum
         ENDDO
         ENDDO
    ENDDO
@@ -2097,6 +2103,12 @@ CONTAINS
 
      CASE (CAMSWSCHEME,RRTMG_SWSCHEME,RRTMG_SWSCHEME_FAST)
    IF(PRESENT(SWUPTC))THEN
+!  NMM calls the driver every RADT time steps, EM calls every DT
+#if (EM_CORE == 1)
+   DTaccum = DT
+#else
+   DTaccum = RADT*60
+#endif
    !$OMP PARALLEL DO   &
    !$OMP PRIVATE ( ij ,i,j,k,its,ite,jts,jte)
 
@@ -2108,14 +2120,14 @@ CONTAINS
 
         DO j=jts,jte
         DO i=its,ite
-           ACSWUPT(I,J) = ACSWUPT(I,J) + SWUPT(I,J)*DT
-           ACSWUPTC(I,J) = ACSWUPTC(I,J) + SWUPTC(I,J)*DT
-           ACSWDNT(I,J) = ACSWDNT(I,J) + SWDNT(I,J)*DT
-           ACSWDNTC(I,J) = ACSWDNTC(I,J) + SWDNTC(I,J)*DT
-           ACSWUPB(I,J) = ACSWUPB(I,J) + SWUPB(I,J)*DT
-           ACSWUPBC(I,J) = ACSWUPBC(I,J) + SWUPBC(I,J)*DT
-           ACSWDNB(I,J) = ACSWDNB(I,J) + SWDNB(I,J)*DT
-           ACSWDNBC(I,J) = ACSWDNBC(I,J) + SWDNBC(I,J)*DT
+           ACSWUPT(I,J) = ACSWUPT(I,J) + SWUPT(I,J)*DTaccum
+           ACSWUPTC(I,J) = ACSWUPTC(I,J) + SWUPTC(I,J)*DTaccum
+           ACSWDNT(I,J) = ACSWDNT(I,J) + SWDNT(I,J)*DTaccum
+           ACSWDNTC(I,J) = ACSWDNTC(I,J) + SWDNTC(I,J)*DTaccum
+           ACSWUPB(I,J) = ACSWUPB(I,J) + SWUPB(I,J)*DTaccum
+           ACSWUPBC(I,J) = ACSWUPBC(I,J) + SWUPBC(I,J)*DTaccum
+           ACSWDNB(I,J) = ACSWDNB(I,J) + SWDNB(I,J)*DTaccum
+           ACSWDNBC(I,J) = ACSWDNBC(I,J) + SWDNBC(I,J)*DTaccum
         ENDDO
         ENDDO
    ENDDO

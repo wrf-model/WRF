@@ -1094,7 +1094,7 @@ integer myproc
                 oml_hml0, sf_ocean_physics,                     & !Optional oml
                 TML,T0ML,HML,H0ML,HUML,HVML,TMOML,              & !Optional oml
                 is_CAMMGMP_used                                 &
-               ,TSK_SAVE                                        & !Optional oml
+               ,TSK_SAVE                                        & !Optional fractional seaice
 ! CLM vraiables 
                ,numc,nump,snl,                                      &
                 snowdp,wtc,wtp,h2osno,t_grnd,t_veg,         &
@@ -2446,7 +2446,7 @@ integer myproc
    ENDIF
 
    IF(PRESENT(TSK_SAVE))THEN
-   IF(config_flags%fractional_seaice.EQ.1)THEN
+   IF(.NOT.restart .AND. config_flags%fractional_seaice.EQ.1)THEN
      DO j=jts,jte
      DO i=its,ite
         TSK_SAVE(i,j)=TSK(i,j)

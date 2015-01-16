@@ -1522,6 +1522,7 @@ CONTAINS
 
         XICE_save(I,J) = XICEM(I,J)
         XICEM(i,j) = XICE(i,j)
+        TSK_SAVE(I,J) = TSK(I, J)
 
       ENDDO
       ENDDO

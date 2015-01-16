@@ -884,7 +884,8 @@ CONTAINS
 !  arguments for Ocean Mixed Layer Model
    REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(INOUT )::   TML, T0ML, HML, H0ML, HUML, HVML
    REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(IN    )::   F, TMOML
-   REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(OUT   )::   CK, CKA, CD, CDA, USTM
+   REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(OUT   )::   CK, CKA, CD, CDA
+   REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(INOUT )::   USTM
 
    REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(INOUT )::   TSK_SAVE
 
@@ -4592,7 +4593,9 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
                             &th3d,pi3d,tsq,qsq,cov,Sh3d,el_pbl
 
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme )              , &
-               INTENT(OUT)     ::              ck,cka,cd,cda,ustm
+               INTENT(OUT)     ::                   ck,cka,cd,cda
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme )              , &
+               INTENT(INOUT)   ::                            ustm
      INTEGER,  OPTIONAL,  INTENT(IN )   ::     ISFTCFLX,IZ0TLND
 
 !--------------------------------------------------------------------
@@ -5256,7 +5259,9 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
      REAL,     INTENT(IN   )               ::   CP,G,ROVCP,R,XLV,DX
 
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme )              , &
-               INTENT(OUT)     ::              ck,cka,cd,cda,ustm
+               INTENT(OUT)     ::                   ck,cka,cd,cda
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme )              , &
+               INTENT(INOUT)   ::                            ustm
 
      INTEGER,  OPTIONAL,  INTENT(IN )   ::     ISFTCFLX,IZ0TLND
 
@@ -5669,7 +5674,9 @@ ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
      REAL,     INTENT(IN   )               ::   CP,G,ROVCP,R,XLV,DX
 
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme )              , &
-               INTENT(OUT)     ::              ck,cka,cd,cda,ustm
+               INTENT(OUT)     ::                   ck,cka,cd,cda
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme )              , &
+               INTENT(INOUT)   ::                            ustm
 
      INTEGER,  OPTIONAL,  INTENT(IN )   ::     ISFTCFLX,IZ0TLND
 

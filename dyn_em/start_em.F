@@ -215,7 +215,7 @@
        grid%itimestep=0
    ENDIF
 
-   IF ( config_flags%restart .or. grid%moved ) THEN
+   IF ( config_flags%restart .or. grid%moved .or. config_flags%cycling) THEN
        first_trip_for_this_domain = .TRUE.
    ENDIF
 
@@ -670,6 +670,25 @@ IF (grid%sppt_on==1) then
     ENDIF
 
 ! Use equations from calc_p_rho_phi to derive p and al from ph: linear in log p
+!-----------------------------------------------------------------------------
+!tgs - rebalance if the model is cycled but does not run DFI
+! For HRRR application
+! Rebalance recomputes 1/rho, p, ph_2, ph0, p_hyd
+
+  IF ( ( grid%dfi_opt .EQ. DFI_NODFI ) .and. config_flags%cycling ) then
+      call rebalance_driver_cycl (grid )
+
+       DO j = jts,min(jte,jde-1)
+       DO k = kts,kte
+       DO i = its, min(ite,ide-1)
+          grid%ph_1(i,k,j)=grid%ph_2(i,k,j)
+       ENDDO
+       ENDDO
+       ENDDO
+
+!  ENDIF
+  ELSE
+!------------------------------------------------------------------------------
 
     IF ( config_flags%hypsometric_opt .EQ. 1 ) THEN
        DO j=jts,min(jte,jde-1)
@@ -705,6 +724,8 @@ IF (grid%sppt_on==1) then
     ENDDO
     ENDDO
     ENDDO
+ ENDIF ! rebalance
+!-------------------------------------------------------------------------------------
 
     IF ( .NOT. grid%this_is_an_ideal_run ) THEN
        DO j=jts,min(jte,jde-1)
@@ -767,9 +788,12 @@ IF (grid%sppt_on==1) then
    MPDT = 0.
 
 !tgs
-   IF(config_flags%cycling) start_of_simulation = .true.
+   IF(config_flags%cycling) THEN
+       start_of_simulation = .true.
 !  print *,'cycling, start_of_simulation -->',config_flags%cycling, start_of_simulation
-
+       grid%xtime=0.
+!   print *,'xtime=',grid%xtime
+   ENDIF
 !-----------------------------------------------------------------------------
 ! Adaptive time step: Added by T. Hutchinson, WSI  11/6/07
 !

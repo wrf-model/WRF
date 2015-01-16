@@ -45,6 +45,7 @@ OBJS    = 		        \
 	solve_em.o              \
         start_em.o              \
         shift_domain_em.o       \
+        rebalance_cycl.o        \
         couple_or_uncouple_em.o \
         nest_init_utils.o	\
         adapt_timestep_em.o     \

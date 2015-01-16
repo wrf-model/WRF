@@ -2067,7 +2067,6 @@ integer myproc
    USE module_bl_camuwpbl_driver, ONLY :  camuwpblinit
    USE module_bl_qnsepbl
    USE module_sf_lake
-   USE module_bl_qnsepbl09
    USE module_bl_mfshconvpbl
    USE module_bl_gbmpbl
 #if ( EM_CORE == 1 )
@@ -2954,18 +2953,6 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                                     ims, ime, jms, jme, kms, kme,       &
                                     its, ite, jts, jte, kts, kte   )  
 !          ENDIF
-
-      CASE (QNSEPBL09SCHEME)
-           if(isfc .ne. 4)CALL wrf_error_fatal &
-            ( 'module_physics_init: use qnsesfc scheme for this pbl option' )
-           IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
-            ( 'module_physics_init: use myj (option 2) or boulac (option 8) with BEP/BEM urban scheme' )
-           CALL qnsepblinit09(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN, &
-                        TKE_PBL,EXCH_H,restart,               &
-                        allowed_to_read ,                     &
-                        ids, ide, jds, jde, kds, kde,         &
-                        ims, ime, jms, jme, kms, kme,         &
-                        its, ite, jts, jte, kts, kte          )
 
 #if (NMM_CORE != 1)
       CASE (BOULACSCHEME)

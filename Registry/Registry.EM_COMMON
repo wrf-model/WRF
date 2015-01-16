@@ -2487,7 +2487,6 @@ package   ysuscheme      bl_pbl_physics==1           -             -
 package   myjpblscheme   bl_pbl_physics==2           -             state:tke_pbl,el_pbl
 package   gfsscheme      bl_pbl_physics==3           -             -
 package   qnsepblscheme  bl_pbl_physics==4           -             state:tke_pbl,el_pbl,massflux_EDKF,entr_EDKF,detr_EDKF,thl_up,thv_up,rv_up,rt_up,rc_up,u_up,v_up,frac_up,rc_mf
-package   qnsepbl09scheme  bl_pbl_physics==94        -             state:tke_pbl,el_pbl
 package   mynnpblscheme2 bl_pbl_physics==5           -             scalar:qke_adv;state:qke,tke_pbl,sh3d,tsq,qsq,cov,el_pbl
 package   mynnpblscheme3 bl_pbl_physics==6           -             scalar:qke_adv;state:qke,tke_pbl,sh3d,tsq,qsq,cov,el_pbl
 package   mynn_tkebudget bl_mynn_tkebudget==1        -             state:qSHEAR,qBUOY,qDISS,qWT,dqke

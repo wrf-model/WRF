@@ -164,8 +164,6 @@ module_bl_boulac.o: ../share/module_model_constants.o
 
 module_bl_qnsepbl.o: ../share/module_model_constants.o
 
-module_bl_qnsepbl09.o: ../share/module_model_constants.o
-
 module_progtm.o: module_gfs_machine.o 
 
 module_bl_gfs.o: module_gfs_machine.o \
@@ -516,7 +514,6 @@ module_physics_init.o : \
 		module_bl_acm.o			\
 		module_bl_myjpbl.o		\
 		module_bl_qnsepbl.o		\
-		module_bl_qnsepbl09.o		\
 		module_bl_mynn.o                \
 		module_bl_myjurb.o              \
 		module_bl_boulac.o              \
@@ -614,7 +611,6 @@ module_pbl_driver.o:  \
 		module_bl_myjpbl.o \
 		module_bl_myjurb.o \
 		module_bl_qnsepbl.o \
-		module_bl_qnsepbl09.o \
 		module_bl_acm.o \
 		module_bl_ysu.o \
 		module_bl_mrf.o \

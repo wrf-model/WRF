@@ -38,7 +38,6 @@ MODULES = \
 	module_bl_gfs2011.o \
 	module_bl_myjpbl.o \
 	module_bl_qnsepbl.o \
-	module_bl_qnsepbl09.o \
 	module_bl_acm.o \
 	module_bl_mynn.o \
 	module_bl_fogdes.o \

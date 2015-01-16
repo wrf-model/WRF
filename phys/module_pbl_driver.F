@@ -117,13 +117,13 @@ CONTAINS
                    QNSEPBLSCHEME,MYNNPBLSCHEME2,MYNNPBLSCHEME3,BOULACSCHEME,&
                    CAMUWPBLSCHEME,BEPSCHEME,BEP_BEMSCHEME,MYJSFCSCHEME, &
                    FITCHSCHEME,SHINHONGSCHEME,                       &
-                   TEMFPBLSCHEME,QNSEPBL09SCHEME,GBMPBLSCHEME,  &
+                   TEMFPBLSCHEME,GBMPBLSCHEME,                       &
                    CAMMGMPSCHEME,p_qi,p_qni,p_qnc,param_first_scalar  !CAMMGMPSCHEME, p_qni,p_qnc is used for camuwpbl scheme
 #else
    USE module_state_description, ONLY :                            &
                    YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME,ACMPBLSCHEME &
                    , QNSEPBLSCHEME, p_qi,param_first_scalar &
-                   , TEMFPBLSCHEME, GFS2011SCHEME,QNSEPBL09SCHEME         &
+                   , TEMFPBLSCHEME, GFS2011SCHEME                         &
                    , CAMUWPBLSCHEME                                       &
                    , FITCHSCHEME, SHINHONGSCHEME                          &
                    , GBMPBLSCHEME, MYJSFCSCHEME
@@ -135,7 +135,6 @@ CONTAINS
 
    USE module_bl_myjpbl
    USE module_bl_qnsepbl
-   USE module_bl_qnsepbl09
    USE module_bl_ysu
    USE module_bl_shinhong
    USE module_bl_mrf
@@ -161,7 +160,6 @@ CONTAINS
    !      1. ysupbl
    !      2. myjpbl
    !      4. qnsepbl
-   !     94. qnsepbl09 (old version)
    !      5. mynnpbl2
    !      6. mynnpbl3
    !      7. acmpbl
@@ -1486,44 +1484,6 @@ CONTAINS
                   PRESENT( rqcblten )
                CALL wrf_debug(0,message)
                CALL wrf_error_fatal('Lack arguments to call QNSE pbl')
-           ENDIF
-
-      CASE (QNSEPBL09SCHEME)
-           IF ( PRESENT( qv_curr )  .AND. PRESENT( qc_curr )  .AND. &
-                PRESENT( rqvblten ) .AND. PRESENT( rqcblten ) .AND. &
-                                                        .TRUE.  ) THEN
-             CALL wrf_debug(100,'in QNSEPBL09')
-             CALL qnsepbl09(                                        &
-               DT=dt,STEPBL=stepbl,HT=ht,DZ=dz8w                    &
-              ,PMID=p_phy,PINT=p8w,TH=th_phy,T=t_phy,EXNER=pi_phy   &
-              ,QV=qv_curr, CWM=qc_curr                              &
-              ,U=u_phy,V=v_phy,RHO=rho                              &
-              ,TSK=tsk,QSFC=qsfc,CHKLOWQ=chklowq,THZ0=thz0          &
-              ,QZ0=qz0,UZ0=uz0,VZ0=vz0,CORF=f                       &
-              ,LOWLYR=lowlyr                                        &
-              ,XLAND=xland,SICE=xice,SNOW=snow                      &
-              ,TKE=tke_pbl,EXCH_H=exch_h,EXCH_M=exch_m,USTAR=ust,ZNT=znt      &
-              ,EL_MYJ=el_pbl,PBLH=pblh,KPBL=kpbl,CT=ct              &
-              ,AKHS=akhs,AKMS=akms,ELFLX=lh                         &
-              ,RUBLTEN=rublten,RVBLTEN=rvblten,RTHBLTEN=rthblten    &
-              ,RQVBLTEN=rqvblten,RQCBLTEN=rqcblten                  &
-              ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
-              ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
-              ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
-                                                                    )
-           ELSE
-               WRITE ( message , FMT = '(A,4(L1,1X))' )             &
-                 'present: '//                                      &
-                 'qv_curr, '//                                      &
-                 'qc_curr, '//                                      &
-                 'rqvblten, '//                                     &
-                 'rqcblten = ' ,                                    &
-                  PRESENT( qv_curr ) ,                              &
-                  PRESENT( qc_curr ) ,                              &
-                  PRESENT( rqvblten ) ,                             &
-                  PRESENT( rqcblten )
-               CALL wrf_debug(0,message)
-               CALL wrf_error_fatal('Lack arguments to call old QNSE pbl')
            ENDIF
 
       CASE (ACMPBLSCHEME)

@@ -595,6 +595,14 @@ BENCH_START(surf_driver_tim)
      &        ,XXXB_URB2D=grid%xxxb_urb2d                                 & !H urban
      &        ,XXXG_URB2D=grid%xxxg_urb2d                                 &
      &        ,XXXC_URB2D=grid%xxxc_urb2d                                 & !H urban
+     &        ,CMCR_URB2D=grid%cmcr_urb2d,TGR_URB2D=grid%tgr_urb2d        & !H urban
+     &        ,TGRL_URB3D=grid%tgrl_urb3d,SMR_URB3D=grid%smr_urb3d        & !H urban
+     &        ,JULIAN=grid%julday, JULYR=grid%julyr                       & !I urban
+     &        ,DRELR_URB2D=grid%drelr_urb2d,DRELB_URB2D=grid%drelb_urb2d  & !H urban
+     &        ,DRELG_URB2D=grid%drelg_urb2d                               & !H urban
+     &        ,FLXHUMR_URB2D=grid%flxhumr_urb2d                           & !H urban
+     &        ,FLXHUMB_URB2D=grid%flxhumb_urb2d                           & !H urban
+     &        ,FLXHUMG_URB2D=grid%flxhumg_urb2d                           & !H urban
      &        ,TRL_URB3D=grid%trl_urb3d   ,TBL_URB3D=grid%tbl_urb3d       & !H urban
      &        ,TGL_URB3D=grid%tgl_urb3d                                   & !H urban
      &        ,SH_URB2D=grid%sh_urb2d     ,LH_URB2D=grid%lh_urb2d         &
@@ -637,6 +645,7 @@ BENCH_START(surf_driver_tim)
      &        ,DL_U_BEP=grid%dl_u_bep                                           &
      &        ,CMR_SFCDIF=grid%cmr_sfcdif, CHR_SFCDIF=grid%chr_sfcdif     & !I/O urban
      &        ,CMC_SFCDIF=grid%cmc_sfcdif, CHC_SFCDIF=grid%chc_sfcdif     & !I/O urban
+     &        ,CMGR_SFCDIF=grid%cmgr_sfcdif, CHGR_SFCDIF=grid%chgr_sfcdif & !I/O urban
            ! P-X LSM Variables
      &        ,LANDUSEF=grid%landusef, SOILCTOP=grid%soilctop             &   ! P-X LSM
      &        ,SOILCBOT=grid%soilcbot                                     &   ! P-X LSM

@@ -773,6 +773,7 @@ state    real  dfi_KEEPFR3DFLAG ilj  misc        1         Z     r    "KEEPFR3DF
 
 # urban state variables
 state    real   TR_URB2D         ij     misc        1         -     rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)     "TR_URB"              "URBAN ROOF SKIN TEMPERATURE"        "K"
+state    real   TGR_URB2D        ij     misc        1         -     rd=(interp_mask_land_field:lu_index)u=(copy_fcnm)        "TGR_URB"             "URBAN GREEN ROOF SKIN TEMPERATURE"  "K"
 state    real   TB_URB2D         ij     misc        1         -     rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)     "TB_URB"              "URBAN WALL SKIN TEMPERATURE"        "K" 
 state    real   TG_URB2D         ij     misc        1         -     rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)     "TG_URB"              "URBAN ROAD SKIN TEMPERATURE"        "K" 
 state    real   TC_URB2D         ij     misc        1         -     rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)     "TC_URB"              "URBAN CANOPY TEMPERATURE"           "K"
@@ -782,6 +783,15 @@ state    real   XXXR_URB2D       ij     misc        1         -     rd=(interp_m
 state    real   XXXB_URB2D       ij    misc        1         -      rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)      "XXXB_URB" "M-O LENGTH ABOVE URBAN WALL"   "dimensionless"
 state    real   XXXG_URB2D       ij    misc        1         -      rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)       "XXXG_URB" "M-O LENGTH ABOVE URBAN ROAD"   "dimensionless"
 state    real   XXXC_URB2D       ij    misc        1         -      rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)       "XXXC_URB" "M-O LENGTH ABOVE URBAN CANOPY" "dimensionless"
+state    real   CMCR_URB2D       ij     misc        1         -     rd=(interp_mask_land_field:lu_index)u=(copy_fcnm)     "CMCR_URB"            "GREEN ROOF CANOPY INTERCAPTED WATER"  "m"                          
+state    real   DRELR_URB2D      ij     misc        1         -     rd=(interp_mask_land_field:lu_index)u=(copy_fcnm)     "DRELR_URB"           "WATER HOLDING DEPTH ON ROOF IMPERVIOUS SURFACE"        "m"
+state    real   DRELB_URB2D      ij     misc        1         -     rd=(interp_mask_land_field:lu_index)u=(copy_fcnm)     "DRELB_URB"           "WATER HOLDING DEPTH ON WALL IMPERVIOUS SURFACE"        "m"
+state    real   DRELG_URB2D      ij     misc        1         -     rd=(interp_mask_land_field:lu_index)u=(copy_fcnm)     "DRELG_URB"           "WATER HOLDING DEPTH ON ROAD IMPERVIOUS SURFACE"        "m"
+state    real   FLXHUMR_URB2D    ij     misc        1         -     rd=(interp_mask_land_field:lu_index)u=(copy_fcnm)     "FLXHUMR_URB"         "WATER FLUX ON ROOF IMPERVIOUS SURFACE"        "m/s"
+state    real   FLXHUMB_URB2D    ij     misc        1         -     rd=(interp_mask_land_field:lu_index)u=(copy_fcnm)     "FLXHUMB_URB"         "WATER FLUX ON WALL IMPERVIOUS SURFACE"        "m/s"
+state    real   FLXHUMG_URB2D    ij     misc        1         -     rd=(interp_mask_land_field:lu_index)u=(copy_fcnm)     "FLXHUMG_URB"         "WATER FLUX ON ROAD IMPERVIOUS SURFACE"        "m/s"
+state    real   TGRL_URB3D       ilj    misc        1         Z     rd=(interp_mask_land_field:lu_index)u=(copy_fcnm)     "TGRL_URB" "GREEN ROOF LAYER TEMPERATURE"  
+state    real   SMR_URB3D        ilj    misc        1         Z     rd=(interp_mask_land_field:lu_index)u=(copy_fcnm)     "SMR_URB"  "GREEN ROOF LAYER SOIL MOISTURE"  
 state    real   TRL_URB3D        ilj    misc        1         Z     rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)      "TRL_URB" "ROOF LAYER TEMPERATURE"          "K"
 state    real   TBL_URB3D        ilj    misc        1         Z     rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)      "TBL_URB" "WALL LAYER TEMPERATURE"          "K"
 state    real   TGL_URB3D        ilj    misc        1         Z     rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)      "TGL_URB" "ROAD LAYER TEMPERATURE"          "K"
@@ -817,6 +827,8 @@ state    real   CMR_SFCDIF      ij          misc       1         -     r      "C
 state    real   CHR_SFCDIF      ij          misc       1         -     r      "CHR_SFCDIF" "" ""
 state    real   CMC_SFCDIF      ij          misc       1         -     r      "CMC_SFCDIF" "" ""
 state    real   CHC_SFCDIF      ij          misc       1         -     r      "CHC_SFCDIF" "" ""
+state    real   CMGR_SFCDIF     ij          misc       1         -     r      "CMGR_SFCDIF" "" ""
+state    real   CHGR_SFCDIF     ij          misc       1         -     r      "CHGR_SFCDIF" "" ""
 
 
 # solar location variables from radiation driver
@@ -2472,7 +2484,7 @@ package   temfsfcscheme  sf_sfclay_physics==10       -             state:wm_temf
 package   sfclayrevscheme sf_sfclay_physics==1       -             -
 package   idealscmsfcscheme  sf_sfclay_physics==89   -             -
 
-package   noahucmscheme  sf_urban_physics==1         -             state:trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,sfw1_urb3d,sfw2_urb3d,sfr_urb3d,sfg_urb3d,a_u_bep,a_v_bep,a_t_bep,a_q_bep,a_e_bep,b_u_bep,b_v_bep,b_t_bep,b_q_bep,b_e_bep,dlg_bep,dl_u_bep,sf_bep,vl_bep,mh_urb2d,stdh_urb2d,lf_urb2d,lp_urb2d,hgt_urb2d,lb_urb2d
+package   noahucmscheme  sf_urban_physics==1         -             state:trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,sfw1_urb3d,sfw2_urb3d,sfr_urb3d,sfg_urb3d,a_u_bep,a_v_bep,a_t_bep,a_q_bep,a_e_bep,b_u_bep,b_v_bep,b_t_bep,b_q_bep,b_e_bep,dlg_bep,dl_u_bep,sf_bep,vl_bep,mh_urb2d,stdh_urb2d,lf_urb2d,lp_urb2d,hgt_urb2d,lb_urb2d,tgr_urb2d,cmcr_urb2d,drelr_urb2d,drelb_urb2d,drelg_urb2d,flxhumr_urb2d,flxhumb_urb2d,flxhumg_urb2d,tgrl_urb3d,smr_urb3d,cmgr_sfcdif,chgr_sfcdif
 package   bepscheme      sf_urban_physics==2         -             state:a_u_bep,a_v_bep,a_t_bep,a_q_bep,a_e_bep,b_u_bep,b_v_bep,b_t_bep,b_q_bep,b_e_bep,dlg_bep,dl_u_bep,sf_bep,vl_bep,trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,sfw1_urb3d,sfw2_urb3d,sfr_urb3d,sfg_urb3d,hi_urb2d,lp_urb2d,hgt_urb2d,lb_urb2d
 package   bep_bemscheme  sf_urban_physics==3         -             state:a_u_bep,a_v_bep,a_t_bep,a_q_bep,a_e_bep,b_u_bep,b_v_bep,b_t_bep,b_q_bep,b_e_bep,dlg_bep,dl_u_bep,sf_bep,vl_bep,trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,tlev_urb3d,qlev_urb3d,tw1lev_urb3d,tw2lev_urb3d,tglev_urb3d,tflev_urb3d,sf_ac_urb3d,lf_ac_urb3d,cm_ac_urb3d,sfvent_urb3d,lfvent_urb3d,sfwin1_urb3d,sfwin2_urb3d,sfw1_urb3d,sfw2_urb3d,sfr_urb3d,sfg_urb3d,hi_urb2d,lp_urb2d,hgt_urb2d,lb_urb2d
 

@@ -139,7 +139,7 @@ CONTAINS
 
 #if ( WRF_DFI_RADAR == 1 )
     INTEGER  i_start,i_end,j_start,j_end,i,j,k
-#endif&
+#endif
 
  ! initialize all tendencies to zero in order to update physics
  ! tendencies first (separate from dry dynamics).

@@ -1370,7 +1370,7 @@ USE module_mp_radar
          DO KR=p_ff7i01,p_ff7i33
           KRR=KRR+1
           chem_new(I,K,J,KR)=FF5R(KRR)
-          geo_cs=3.1415*(3*xh(krr)/(4*3.1415*0.9))**(2/3)
+          geo_cs=3.1415*(3*xh(krr)/(4*3.1415*0.9))**(2./3.)
           kext_qh(i,k,j)=kext_qh(i,k,j)+2.*geo_cs*(100.*col*3*xh(krr))*ff5r(krr)
           EFF_NI(i,k,j)=sqrt(geo_cs/3.1415)**3*chem_new(i,k,j,KR)*XH(KRR)+EFF_NI(i,k,j)
           eff_di(i,k,j)=sqrt(geo_cs/3.1415)**2*chem_new(i,k,j,KR)*XH(KRR)+eff_di(i,k,j)

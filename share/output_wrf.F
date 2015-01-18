@@ -97,6 +97,7 @@
     INTEGER seconds, seconds2, iring
     INTEGER :: nio_tasks_per_group
 
+    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
 
     WRITE(wrf_err_message,*)'output_wrf: begin, fid = ',fid
     CALL wrf_debug( 300 , wrf_err_message )
@@ -390,8 +391,18 @@
            ELSE
              write(alarmname,'("WRF_ALARM_SECS_TIL_NEXT_RING_",i2)')i
            ENDIF
-           CALL WRFU_TimeIntervalGet(interval,S=seconds)
-           CALL WRFU_TimeIntervalGet(tmpinterval,S=seconds2)
+
+#ifdef DM_PARALLEL
+           if(wrf_dm_on_monitor()) then
+#endif
+             CALL WRFU_TimeIntervalGet(interval,S=seconds)
+             CALL WRFU_TimeIntervalGet(tmpinterval,S=seconds2)
+#ifdef DM_PARALLEL
+           endif
+
+           call wrf_dm_bcast_integer(seconds, 1)
+           call wrf_dm_bcast_integer(seconds2, 1)
+#endif
            IF ( seconds .GE. 1700000000 .OR. seconds .LE. -1700000000 ) THEN   ! it is a forever value, do not change it
              CALL wrf_put_dom_ti_integer( fid, TRIM(alarmname), seconds, 1, ierr )
            ELSE
@@ -613,6 +624,7 @@ endif
     ! added netcdf-specific metadata:
     IF ( ( use_package( io_form ) == IO_NETCDF ) .OR. &
          ( use_package( io_form ) == IO_PHDF5  ) .OR. &
+         ( use_package( io_form ) == IO_PIO    ) .OR. &
          ( use_package( io_form ) == IO_PNETCDF ) ) THEN
       CALL wrf_put_dom_ti_integer ( fid, 'SURFACE_INPUT_SOURCE', surface_input_source , 1 , ierr )
       CALL wrf_put_dom_ti_integer ( fid, 'SST_UPDATE', sst_update , 1 , ierr )
@@ -962,8 +974,7 @@ endif
                                     TRIM(p%DataName)        , & ! Data Name
                                     p%rfield_0d             , & ! Field
                                     WRF_FLOAT               , & ! FieldType
-                                    grid%communicator       , & ! Comm
-                                    grid%iocommunicator     , & ! Comm
+                                    grid                    , & ! grid
                                     grid%domdesc            , & ! Comm
                                     grid%bdy_mask           , & ! bdy_mask
                                     dryrun                  , & ! flag
@@ -986,8 +997,7 @@ endif
                                     TRIM(p%DataName)        , & ! Data Name
                                     p%dfield_0d             , & ! Field
                                     WRF_DOUBLE              , & ! FieldType
-                                    grid%communicator       , & ! Comm
-                                    grid%iocommunicator     , & ! Comm
+                                    grid                    , & ! grid
                                     grid%domdesc            , & ! Comm
                                     grid%bdy_mask           , & ! bdy_mask
                                     dryrun                  , & ! flag
@@ -1010,8 +1020,7 @@ endif
                                     TRIM(p%DataName)        , & ! Data Name
                                     p%ifield_0d             , & ! Field
                                     WRF_INTEGER             , & ! FieldType
-                                    grid%communicator       , & ! Comm
-                                    grid%iocommunicator     , & ! Comm
+                                    grid                    , & ! grid
                                     grid%domdesc            , & ! Comm
                                     grid%bdy_mask           , & ! bdy_mask
                                     dryrun                  , & ! flag
@@ -1034,8 +1043,7 @@ endif
                                     TRIM(p%DataName)        , & ! Data Name
                                     p%lfield_0d             , & ! Field
                                     WRF_LOGICAL             , & ! FieldType
-                                    grid%communicator       , & ! Comm
-                                    grid%iocommunicator     , & ! Comm
+                                    grid                    , & ! grid
                                     grid%domdesc            , & ! Comm
                                     grid%bdy_mask           , & ! bdy_mask
                                     dryrun                  , & ! flag
@@ -1068,8 +1076,7 @@ endif
                                     TRIM(dname)             , & ! Data Name
                                     p%rfield_1d             , & ! Field
                                     WRF_FLOAT               , & ! FieldType
-                                    grid%communicator       , & ! Comm
-                                    grid%iocommunicator     , & ! Comm
+                                    grid                    , & ! grid
                                     grid%domdesc            , & ! Comm
                                     grid%bdy_mask           , & ! bdy_mask
                                     dryrun                  , & ! flag
@@ -1092,8 +1099,7 @@ endif
                                     TRIM(dname)             , & ! Data Name
                                     p%dfield_1d             , & ! Field
                                     WRF_DOUBLE              , & ! FieldType
-                                    grid%communicator       , & ! Comm
-                                    grid%iocommunicator     , & ! Comm
+                                    grid                    , & ! grid
                                     grid%domdesc            , & ! Comm
                                     grid%bdy_mask           , & ! bdy_mask
                                     dryrun                  , & ! flag
@@ -1116,8 +1122,7 @@ endif
                                     TRIM(dname)             , & ! Data Name
                                     p%ifield_1d             , & ! Field
                                     WRF_INTEGER             , & ! FieldType
-                                    grid%communicator       , & ! Comm
-                                    grid%iocommunicator     , & ! Comm
+                                    grid                    , & ! grid
                                     grid%domdesc            , & ! Comm
                                     grid%bdy_mask           , & ! bdy_mask
                                     dryrun                  , & ! flag
@@ -1140,8 +1145,7 @@ endif
                                     TRIM(dname)             , & ! Data Name
                                     p%lfield_1d             , & ! Field
                                     WRF_LOGICAL             , & ! FieldType
-                                    grid%communicator       , & ! Comm
-                                    grid%iocommunicator     , & ! Comm
+                                    grid                    , & ! grid
                                     grid%domdesc            , & ! Comm
                                     grid%bdy_mask           , & ! bdy_mask
                                     dryrun                  , & ! flag
@@ -1178,8 +1182,7 @@ endif
                                     TRIM(dname)             , & ! Data Name
                                     p%rfield_2d             , & ! Field
                                     WRF_FLOAT               , & ! FieldType
-                                    grid%communicator       , & ! Comm
-                                    grid%iocommunicator     , & ! Comm
+                                    grid                    , & ! grid
                                     grid%domdesc            , & ! Comm
                                     grid%bdy_mask           , & ! bdy_mask
                                     dryrun                  , & ! flag
@@ -1202,8 +1205,7 @@ endif
                                     TRIM(dname)             , & ! Data Name
                                     p%dfield_2d             , & ! Field
                                     WRF_DOUBLE              , & ! FieldType
-                                    grid%communicator       , & ! Comm
-                                    grid%iocommunicator     , & ! Comm
+                                    grid                    , & ! grid
                                     grid%domdesc            , & ! Comm
                                     grid%bdy_mask           , & ! bdy_mask
                                     dryrun                  , & ! flag
@@ -1226,8 +1228,7 @@ endif
                                     TRIM(dname)             , & ! Data Name
                                     p%ifield_2d             , & ! Field
                                     WRF_INTEGER             , & ! FieldType
-                                    grid%communicator       , & ! Comm
-                                    grid%iocommunicator     , & ! Comm
+                                    grid                    , & ! grid
                                     grid%domdesc            , & ! Comm
                                     grid%bdy_mask           , & ! bdy_mask
                                     dryrun                  , & ! flag
@@ -1250,8 +1251,7 @@ endif
                                     TRIM(dname)             , & ! Data Name
                                     p%lfield_2d             , & ! Field
                                     WRF_LOGICAL             , & ! FieldType
-                                    grid%communicator       , & ! Comm
-                                    grid%iocommunicator     , & ! Comm
+                                    grid                    , & ! grid
                                     grid%domdesc            , & ! Comm
                                     grid%bdy_mask           , & ! bdy_mask
                                     dryrun                  , & ! flag
@@ -1288,8 +1288,7 @@ endif
                                     TRIM(dname)             , & ! Data Name
                                     p%rfield_3d             , & ! Field
                                     WRF_FLOAT               , & ! FieldType
-                                    grid%communicator       , & ! Comm
-                                    grid%iocommunicator     , & ! Comm
+                                    grid                    , & ! grid
                                     grid%domdesc            , & ! Comm
                                     grid%bdy_mask           , & ! bdy_mask
                                     dryrun                  , & ! flag
@@ -1312,8 +1311,7 @@ endif
                                     TRIM(dname)             , & ! Data Name
                                     p%dfield_3d             , & ! Field
                                     WRF_DOUBLE              , & ! FieldType
-                                    grid%communicator       , & ! Comm
-                                    grid%iocommunicator     , & ! Comm
+                                    grid                    , & ! grid
                                     grid%domdesc            , & ! Comm
                                     grid%bdy_mask           , & ! bdy_mask
                                     dryrun                  , & ! flag
@@ -1336,8 +1334,7 @@ endif
                                     TRIM(dname)             , & ! Data Name
                                     p%ifield_3d             , & ! Field
                                     WRF_INTEGER             , & ! FieldType
-                                    grid%communicator       , & ! Comm
-                                    grid%iocommunicator     , & ! Comm
+                                    grid                    , & ! grid
                                     grid%domdesc            , & ! Comm
                                     grid%bdy_mask           , & ! bdy_mask
                                     dryrun                  , & ! flag
@@ -1379,8 +1376,7 @@ endif
                                     1, 1, 1                 , & ! see comment above
                                     RWORDSIZE               , &
                                     WRF_FLOAT               , & ! FieldType
-                                    grid%communicator       , & ! Comm
-                                    grid%iocommunicator     , & ! Comm
+                                    grid                    , & ! grid
                                     grid%domdesc            , & ! Comm
                                     grid%bdy_mask           , & ! bdy_mask
                                     dryrun                  , & ! flag
@@ -1406,8 +1402,7 @@ endif
                                     1, 1, 1                 , & ! see comment above
                                     DWORDSIZE               , &
                                     WRF_DOUBLE              , & ! FieldType
-                                    grid%communicator       , & ! Comm
-                                    grid%iocommunicator     , & ! Comm
+                                    grid                    , & ! grid
                                     grid%domdesc            , & ! Comm
                                     grid%bdy_mask           , & ! bdy_mask
                                     dryrun                  , & ! flag
@@ -1433,8 +1428,7 @@ endif
                                     1, 1, 1                 , & ! see comment above
                                     IWORDSIZE               , &
                                     WRF_INTEGER             , & ! FieldType
-                                    grid%communicator       , & ! Comm
-                                    grid%iocommunicator     , & ! Comm
+                                    grid                    , & ! grid
                                     grid%domdesc            , & ! Comm
                                     grid%bdy_mask           , & ! bdy_mask
                                     dryrun                  , & ! flag

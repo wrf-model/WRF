@@ -164,6 +164,7 @@ integer::oops1,oops2
       INTEGER :: j_save
 
       !  Dimension information stored in grid data structure.
+      print *,'DAVE ',grid%msft(1:10:2,1:10:2)
 
       CALL cpu_time(t_start)
       CALL get_ijk_from_grid (  grid ,                   &

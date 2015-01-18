@@ -1567,7 +1567,7 @@ state    real  TMN              ij      misc        1         -     i012rhd=(int
 state    real  TYR              ij      misc        1         -     rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)     "TYR"        "ANNUAL MEAN SFC TEMPERATURE"           "K"
 state    real  TYRA             ij      misc        1         -     rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)     "TYRA"   "ACCUMULATED YEARLY SFC TEMPERATURE FOR CURRENT YEAR"  "K"
 state    real  TDLY             ij      misc        1         -     rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)     "TDLY"     "ACCUMULATED DAILY SFC TEMPERATURE FOR CURRENT DAY"  "K"
-state    real  TLAG             i&j     misc        1         -     rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)     "TLAG"         "DAILY MEAN SFC TEMPERATURE OF PRIOR DAYS"       "K"
+state    real  TLAG             i&j     misc        1         -     d=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)     "TLAG"         "DAILY MEAN SFC TEMPERATURE OF PRIOR DAYS"       "K"
 state    integer NYEAR          -       misc        1         -     r        "NYEAR"                  "ACCUM DAYS IN A YEAR"                         ""
 state    real    NDAY           -       misc        1         -     r        "NDAY"                  "ACCUM TIMESTEPS IN A DAY"                      ""
 state    real  XLAND            ij      misc        1         -     i02rhd=(interp_fcnm_imask)u=(copy_fcnm)       "XLAND"                 "LAND MASK (1 FOR LAND, 2 FOR WATER)"          ""      
@@ -1800,6 +1800,14 @@ rconfig   logical cycling                 namelist,time_control         1       
 rconfig   integer output_diagnostics      namelist,time_control         1              0
 rconfig   integer nwp_diagnostics         namelist,time_control         1              0
 rconfig   logical output_ready_flag       namelist,time_control         1             .false. -    "drop a flag called wrfoutReady_d<domain>_<date> after history write" "" ""
+
+pioprocs, piostart, piostride, pioshift
+# PIO namelist
+rconfig   logical usepio                 namelist,pio_control   1       0     rh   "pioprocs"                  ""      "" 
+rconfig   integer pioprocs               namelist,pio_control   1       0     rh   "pioprocs"                  ""      "" 
+rconfig   integer piostart               namelist,pio_control   1       1     rh   "piostart"                  ""      "" 
+rconfig   integer piostride              namelist,pio_control   1       1     rh   "piostride"                 ""      "" 
+rconfig   integer pioshift               namelist,pio_control   1       1     rh   "pioshift"                  ""      "" 
 
 # DFI namelist
 rconfig   integer dfi_opt                namelist,dfi_control   1       0     rh   "dfi_opt"                  ""      ""
@@ -2644,7 +2652,8 @@ package   io_esmf     io_form_restart==7                     -             -
 package   io_yyy      io_form_restart==8                     -             -
 package   io_zzz      io_form_restart==9                     -             -
 package   io_grib2    io_form_restart==10                    -             -
-package   io_pnetcdf  io_form_restart==11                     -             -
+package   io_pnetcdf  io_form_restart==11                    -             -
+package   io_pio      io_form_restart==12                    -             -
 
 #WRF Hydro
 package   no_wrfhydro    wrf_hydro==0                -            -

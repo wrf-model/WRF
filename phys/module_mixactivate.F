@@ -11,7 +11,7 @@
 
 MODULE module_mixactivate
 PRIVATE
-PUBLIC prescribe_aerosol_mixactivate, mixactivate
+PUBLIC prescribe_aerosol_mixactivate, mixactivate, activate !BSINGH - added 'activate' for WRFCuP scheme
 CONTAINS
 
 
@@ -1369,7 +1369,7 @@ OLD_CLOUD_NSUBMIX_LOOP: do nsub=1,nsubmix
                       msectional, maxd_atype, ntype_aer, maxd_asize, nsize_aer,    &
                       na, volc, dlo_sect,dhi_sect,sigman, hygro, &
                       fn, fs, fm, fluxn, fluxs, fluxm, flux_fullact, &
-                      grid_id, ktau, ii, jj, kk )
+                      grid_id, ktau, ii, jj, kk,smax_prescribed )!BSINGH - Added smax_prescribed for WRFCuP
 
 !      calculates number, surface, and mass fraction of aerosols activated as CCN
 !      calculates flux of cloud droplets, surface area, and aerosol mass into cloud
@@ -1411,6 +1411,7 @@ OLD_CLOUD_NSUBMIX_LOOP: do nsub=1,nsubmix
       real,intent(in) :: volc(maxd_asize,maxd_atype)   ! total aerosol volume  concentration (m3/m3)
       real,intent(in) :: dlo_sect( maxd_asize, maxd_atype ), &  ! minimum size of section (cm)
            dhi_sect( maxd_asize, maxd_atype )     ! maximum size of section (cm)
+      real,intent(in),optional :: smax_prescribed  ! prescribed max. supersaturation for secondary activation !BSINGH - Added for WRFCuP
 
 !      output
 
@@ -1559,6 +1560,26 @@ OLD_CLOUD_NSUBMIX_LOOP: do nsub=1,nsubmix
       else
          isectional = 0
       endif
+      !BSINGH - For WRFCuP
+      if ( present( smax_prescribed ) ) then
+         if (smax_prescribed <= 0.0) then
+            do n=1,ntype_aer
+               do m=1,nsize_aer(n)
+                  fluxn(m,n)=0.
+                  fn(m,n)=0.
+                  fluxs(m,n)=0.
+                  fs(m,n)=0.
+                  fluxm(m,n)=0.
+                  fm(m,n)=0.
+               end do
+            end do
+            flux_fullact=0.
+            return
+         end if
+      end if
+      
+      !BSINGH - ENDS
+
 
       do n=1,ntype_aer
 !         print *,'ntype_aer,n,nsize_aer(n)=',ntype_aer,n,nsize_aer(n)
@@ -1946,8 +1967,16 @@ OLD_CLOUD_NSUBMIX_LOOP: do nsub=1,nsubmix
                     eta(1,n)=1.e10
                  endif
               enddo
-              call maxsat(zeta,eta,maxd_atype,ntype_aer, &
-                   maxd_asize,(/1/),gmsm,gmlnsig,f1,smax)
+              !BSINGH - For WRFCuP scheme
+              ! use smax_prescribed if it is present; otherwise get smax from subr maxsat
+              if ( present( smax_prescribed ) ) then
+                 smax = smax_prescribed
+              else
+                 !BSINGH -ENDS
+                 
+                 call maxsat(zeta,eta,maxd_atype,ntype_aer, &
+                      maxd_asize,(/1/),gmsm,gmlnsig,f1,smax)
+              endif
               lnsmax=log(smax)
               x=2*(log(gmsm(1))-lnsmax)/(3*sq2*gmlnsig(1))
               fnew=0.5*(1.-ERF_ALT(x))
@@ -1959,9 +1988,14 @@ OLD_CLOUD_NSUBMIX_LOOP: do nsub=1,nsubmix
                  eta(m,n)=etafactor1*etafactor2(m,n)
               enddo
               enddo
-
-              call maxsat(zeta,eta,maxd_atype,ntype_aer, &
-                   maxd_asize,nsize_aer,sm,alnsign,f1,smax)
+              !BSINGH - For WRFCuP scheme
+              if ( present( smax_prescribed ) ) then
+                 smax = smax_prescribed
+              else
+                 !BSINGH -ENDS
+                 call maxsat(zeta,eta,maxd_atype,ntype_aer, &
+                      maxd_asize,nsize_aer,sm,alnsign,f1,smax)
+              endif
 !             write(6,*)'w,smax=',w,smax
 
               lnsmax=log(smax)
@@ -2323,8 +2357,15 @@ OLD_CLOUD_NSUBMIX_LOOP: do nsub=1,nsubmix
                  eta(1,n)=1.e10
               endif
               end do
-               call maxsat(zeta,eta,maxd_atype,ntype_aer, &
-                    maxd_asize,(/1/),gmsm,gmlnsig,f1,smax)
+              !BSINGH - For WRFCuP
+              ! use smax_prescribed if it is present; otherwise get smax from subr maxsat
+              if ( present( smax_prescribed ) ) then
+                 smax = smax_prescribed
+              else
+                 !BSINGH -ENDS
+                 call maxsat(zeta,eta,maxd_atype,ntype_aer, &
+                      maxd_asize,(/1/),gmsm,gmlnsig,f1,smax)
+              endif
 
             else
 
@@ -2337,9 +2378,16 @@ OLD_CLOUD_NSUBMIX_LOOP: do nsub=1,nsubmix
                  endif
               end do
               end do
-
-              call maxsat(zeta,eta,maxd_atype,ntype_aer, &
-                   maxd_asize,nsize_aer,sm,alnsign,f1,smax)
+              !BSINGH - For WRFCuP
+              ! use smax_prescribed if it is present; otherwise get smax from subr maxsat
+              if ( present( smax_prescribed ) ) then
+                 smax = smax_prescribed
+              else
+                 !BSINGH -ENDS
+                 
+                 call maxsat(zeta,eta,maxd_atype,ntype_aer, &
+                      maxd_asize,nsize_aer,sm,alnsign,f1,smax)
+              endif
 
             endif
 

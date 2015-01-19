@@ -35,6 +35,13 @@ CONTAINS
                          RUBLTEN,RVBLTEN,RTHBLTEN,               &
                          RQVBLTEN,RQCBLTEN,RQIBLTEN,             &
                          RTHRATEN,RTHRATENLW,RTHRATENSW,         &
+#if ( EM_CORE == 1 )
+                         !BSINGH - For WRFCuP scheme(11/12/2013)
+                         cupflag,cldfra_cup,cldfratend_cup,      & !wig, 18-Sep-2006
+                         shall,                                  & !wig, 18-Sep-2006
+                         tcloud_cup,                             & !rce, 18-apr-2012
+                         !BSINGH - ENDS
+#endif
                          STEPBL,STEPRA,STEPCU,                   &
                          W0AVG, RAINNC, RAINC, RAINCV, RAINNCV,  &
                          SNOWNC, SNOWNCV, GRAUPELNC, GRAUPELNCV, &
@@ -298,6 +305,13 @@ CONTAINS
                                                         ISLTYP
 
    INTEGER                             ::             HAIL_OPT
+#if ( EM_CORE == 1 )
+   !BSINGH - For WRFCuP scheme
+   REAL, DIMENSION( ims:ime, jms:jme )                        , &
+        INTENT(INOUT)    ::                          shall, & !CuP, wig 18-Sep-2006
+                                                    tcloud_cup    !CuP, rce 18-apr-2012
+   !BSINGH - ENDS
+#endif
 ! rad
 
 !..Added by G. Thompson to couple cloud physics variables with RRTMG radiation.
@@ -331,6 +345,15 @@ CONTAINS
              RQSCUTEN, RQICUTEN,                                       &
              RUSHTEN, RVSHTEN, RTHSHTEN, RQVSHTEN, RQRSHTEN, RQCSHTEN, &
              RQSSHTEN, RQISHTEN, RQGSHTEN
+#if ( EM_CORE == 1 )
+   !BSINGH - For WRFCuP scheme
+   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) :: &
+        cldfra_cup,cldfratend_cup                              !CuP, wig 18-Sep-2006
+
+   LOGICAL,  DIMENSION( ims:ime , jms:jme ) , INTENT(OUT) :: cupflag !CuP, wig 9-Oct-2006
+   !BSINGH -ENDS
+#endif
+
    REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT), OPTIONAL :: RQCNCUTEN, RQINCUTEN 
 
    REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) :: W0AVG
@@ -1171,6 +1194,13 @@ integer myproc
                 NCA,RAINC,RAINCV,W0AVG,config_flags,restart,    &
                 CLDEFI,LOWLYR,MASS_FLUX,                        &
                 RTHFTEN, RQVFTEN,                               &
+#if ( EM_CORE == 1 )
+                !BSINGH - For WRFCuP Scheme
+                cupflag,cldfra_cup,cldfratend_cup,              & !CuP, wig 18-Sep-2006
+                shall,                                          & !CuP, wig 18-Sep-2006
+                tcloud_cup,                                     & !CuP, rce 18-apr-2012
+                !BSINGH -ENDS
+#endif
                 APR_GR,APR_W,APR_MC,APR_ST,APR_AS,              &
                 APR_CAPMA,APR_CAPME,APR_CAPMI,                  &
                 cugd_tten,cugd_ttens,cugd_qvten,                &
@@ -3088,6 +3118,13 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                       NCA,RAINC,RAINCV,W0AVG,config_flags,restart, &
                       CLDEFI,LOWLYR,MASS_FLUX,                     &
                       RTHFTEN, RQVFTEN,                            &
+#if ( EM_CORE == 1 )
+                      !BSINGH - For WRFCuP Scheme
+                      cupflag,cldfra_cup,cldfratend_cup,          & !CuP, wig 18-Sep-2006
+                      shall,                                      & !CuP, wig 18-Sep-2006
+                      tcloud_cup,                                 & !CuP, rce 18-apr-2012
+                      !BSINGH -ENDS
+#endif
                       APR_GR,APR_W,APR_MC,APR_ST,APR_AS,           &
                       APR_CAPMA,APR_CAPME,APR_CAPMI,               &
                       cugd_tten,cugd_ttens,cugd_qvten,             &
@@ -3111,8 +3148,11 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    USE module_cu_nsas
    USE module_cu_tiedtke
    USE module_cu_ntiedtke
+#if ( EM_CORE == 1 )
+   USE module_cu_kfcup !BSINGH - For WRFCuP Scheme
+#endif
 !------------------------------------------------------------------
-   IMPLICIT NONE
+   IMPLICIT NONE 
 !------------------------------------------------------------------
    TYPE (grid_config_rec_type) ::     config_flags
    LOGICAL , INTENT(IN)        :: restart
@@ -3127,11 +3167,19 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    LOGICAL , INTENT(IN)        :: allowed_to_read
    INTEGER , INTENT(INOUT)     :: STEPCU
 
-   REAL ,   DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) ::    &
+   REAL ,   DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) ::    &    
             RUCUTEN, RVCUTEN, RTHCUTEN, &
             RQVCUTEN, RQCCUTEN, RQRCUTEN, RQICUTEN, RQSCUTEN
-   REAL ,   DIMENSION( ims:ime , kms:kme , jms:jme ) , OPTIONAL, INTENT(INOUT) ::    &
-                        cugd_tten,cugd_ttens,cugd_qvten,            &
+#if ( EM_CORE == 1 )
+   !BSINGH - For WRFCuP Scheme
+   REAL ,   DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) ::    &    
+        cldfra_cup,cldfratend_cup                               !CuP, wig 18-Sep-2006
+   !BSINGH -ENDS
+#endif
+   
+
+   REAL ,   DIMENSION( ims:ime , kms:kme , jms:jme ) , OPTIONAL, INTENT(INOUT) ::    &    
+                        cugd_tten,cugd_ttens,cugd_qvten,            &    
                         cugd_qvtens,cugd_qcten, RQCNCUTEN, RQINCUTEN
 
    REAL ,   DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) :: W0AVG
@@ -3142,13 +3190,19 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    REAL ,   DIMENSION( ims:ime , jms:jme ), INTENT(OUT):: RAINC, RAINCV
 
    REAL ,   DIMENSION( ims:ime , jms:jme ), INTENT(OUT):: CLDEFI
+#if ( EM_CORE == 1 )
+   !BSINGH - For WRFCuP Scheme
+   REAL ,   DIMENSION( ims:ime , jms:jme ), INTENT(OUT):: shall, & !CuP, wig 18-Sep-2006
+                                                     tcloud_cup    !CuP, rce 18-apr-2012
+   LOGICAL, DIMENSION( ims:ime , jms:jme ), INTENT(OUT):: cupflag  !CuP, wig 9-Oct-2006 !BSINGH - For WRFCuP Scheme
+   !BSINGH -ENDS
+#endif
 
    REAL ,   DIMENSION( ims:ime , jms:jme ), INTENT(INOUT):: NCA
 
    REAL ,   DIMENSION( ims:ime , jms:jme ), INTENT(INOUT):: MASS_FLUX,   &
-                                   APR_GR,APR_W,APR_MC,APR_ST,APR_AS,    &
+                                   APR_GR,APR_W,APR_MC,APR_ST,APR_AS,    &    
                                    APR_CAPMA,APR_CAPME,APR_CAPMI
-
    INTEGER, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT):: LOWLYR
 
 ! LOCAL VAR
@@ -3261,6 +3315,24 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                       ids, ide, jds, jde, kds, kde,               &
                       ims, ime, jms, jme, kms, kme,               &
                       its, ite, jts, jte, kts, kte                )
+
+#if ( EM_CORE == 1 )
+          !BSINGH - For WRFCuP Scheme
+    CASE (KFCUPSCHEME)  !wig: 18-Sep-2006
+       CALL kf_cup_init(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,   &
+                      RQICUTEN,RQSCUTEN,NCA,W0AVG,P_QI,P_QS,      &
+                      SVP1,SVP2,SVP3,SVPT0,                       &
+                      cupflag,cldfra_cup,cldfratend_cup,          &
+                      shall,                                      &
+                      tcloud_cup,                                 &
+                      PARAM_FIRST_SCALAR,restart,                 &
+                      allowed_to_read ,                           &
+                      ids, ide, jds, jde, kds, kde,               &
+                      ims, ime, jms, jme, kms, kme,               &
+                      its, ite, jts, jte, kts, kte                )
+
+    !BSINGH - ENDS
+#endif
 
      CASE (MESO_SAS)   !Kwon
           CALL msasinit(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN,       &

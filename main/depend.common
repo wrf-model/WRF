@@ -289,6 +289,13 @@ module_cam_shr_kind_mod.o:
 
 module_cu_kf.o:  ../frame/module_wrf_error.o
 
+
+module_cu_kfcup.o:  ../frame/module_wrf_error.o     \
+		../frame/module_state_description.o \
+		../chem/module_data_mosaic_asect.o  \
+		../share/module_model_constants.o   \
+		module_mixactivate.o
+
 module_cu_kfeta.o: ../frame/module_wrf_error.o
 
 module_cu_gd.o:
@@ -530,6 +537,7 @@ module_physics_init.o : \
 		module_cu_sas.o			\
 		module_cu_osas.o		\
 		module_cu_camzm_driver.o        \
+		module_cu_kfcup.o               \
 		module_shcu_camuwshcu.o		\
                 module_shcu_grims.o             \
 		module_mp_sbu_ylin.o		\
@@ -599,6 +607,7 @@ module_cumulus_driver.o: \
 		module_cu_osas.o \
 		module_cu_camzm_driver.o \
 		module_cu_tiedtke.o \
+		module_cu_kfcup.o \
 		../frame/module_state_description.o \
 		../frame/module_configure.o \
 		../frame/module_domain.o \

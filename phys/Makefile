@@ -66,6 +66,7 @@ MODULES = \
 	module_cu_sas.o \
 	module_cu_mesosas.o \
 	module_cu_osas.o \
+	module_cu_kfcup.o \
 	module_mp_radar.o \
 	module_mp_kessler.o \
 	module_mp_lin.o  \

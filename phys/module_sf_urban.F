@@ -3524,7 +3524,7 @@ SUBROUTINE SFCDIF_URB (ZLM,Z0,THZ0,THLM,SFCSPD,AKANDA,AKMS,AKHS,RLMO,CD)
 ! ----------------------------------------------------------------------
 ! CALL ROSR12 TO SOLVE THE TRI-DIAGONAL MATRIX
 ! ----------------------------------------------------------------------
-      CALL ROSR12 (CI,AI,BI,CIin,RHSTTin,RHSTT,NSOIL)
+      CALL ROSR12 (CI,AI,BI,CIin,RHSTTin,RHSTT,NSOIL-1)
 ! ----------------------------------------------------------------------
 ! SUM THE PREVIOUS SMC VALUE AND THE MATRIX SOLUTION TO GET A
 ! NEW VALUE.  MIN ALLOWABLE VALUE OF SMC WILL BE 0.02.
@@ -3635,7 +3635,7 @@ SUBROUTINE SFCDIF_URB (ZLM,Z0,THZ0,THLM,SFCSPD,AKANDA,AKMS,AKHS,RLMO,CD)
       C (NSOIL) = 0.0
       P (1) = - C (1) / B (1)
       DELTA (1) = D (1) / B (1)
-      DO K = 2,NSOIL-1
+      DO K = 2,NSOIL
          P (K) = - C (K) * ( 1.0 / (B (K) + A (K) * P (K -1)) )
          DELTA (K) = (D (K) - A (K)* DELTA (K -1))* (1.0/ (B (K) + A (K)&
                     * P (K -1)))
@@ -3648,7 +3648,7 @@ SUBROUTINE SFCDIF_URB (ZLM,Z0,THZ0,THLM,SFCSPD,AKANDA,AKMS,AKHS,RLMO,CD)
 ! ----------------------------------------------------------------------
 ! ADJUST P FOR SOIL LAYERS 2 THRU NSOIL
 ! ----------------------------------------------------------------------
-      DO K = 2,NSOIL-1
+      DO K = 2,NSOIL
          KK = NSOIL - K + 1
          P (KK) = P (KK) * P (KK +1) + DELTA (KK)
       END DO

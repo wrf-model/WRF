@@ -9797,7 +9797,7 @@ END SUBROUTINE nssl_2mom_driver
 !
       if( ndebug .ge. 0 ) THEN
 !mpi!        write(iunit,*) 'Set depletion max/min1'
-!       call flush(iunit)
+!       flush(iunit)
       endif
       do mgs = 1,ngscnt
       qvimxd(mgs) = 0.70*(qx(mgs,lv)-qis(mgs))/dtp ! depletion by all vap. dep to ice.
@@ -9819,7 +9819,7 @@ END SUBROUTINE nssl_2mom_driver
 !
       if( ndebug .ge. 0 ) THEN
 !mpi!        write(iunit,*) 'Set depletion max/min2'
-!       call flush(iunit)
+!       flush(iunit)
       endif
 
       do mgs = 1,ngscnt

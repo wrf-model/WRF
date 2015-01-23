@@ -1266,7 +1266,7 @@ crnt:    DO                      !-- loop on the courant condition
          call write_lake_real(cd,lake_index,nlakes)
 #endif
          write(unit,*) cd
-          call flush(unit)
+          flush(unit)
          return
     end subroutine check_lake
 
@@ -1288,7 +1288,7 @@ crnt:    DO                      !-- loop on the courant condition
 #else
            write(unit,*) cd
 #endif
-          call flush(unit)
+          flush(unit)
           close(unit)
          return
     end subroutine check_channel

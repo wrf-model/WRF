@@ -384,7 +384,7 @@ module module_HYDRO_drv
 
 
 !           write(90 + my_id,*) "finish calling hydro_exe"
-!           call flush(90+my_id)
+!           flush(90+my_id)
 !          call mpp_land_sync()
 
 
@@ -1026,7 +1026,7 @@ end module module_HYDRO_drv
         integer :: ierr
 #ifdef HYDRO_D
       write(6,*) "The job is stoped due to the fatal error. ", trim(msg)
-      call flush(6)
+      flush(6)
 #endif
 #ifdef MPP_LAND
 #ifndef HYDRO_D
@@ -1037,7 +1037,7 @@ end module module_HYDRO_drv
 
 !        call mpp_land_sync()
 !        write(my_id+90,*) msg
-!        call flush(my_id+90)
+!        flush(my_id+90)
 
          call mpp_land_abort()
          call MPI_finalize(ierr)
@@ -1059,7 +1059,7 @@ end module module_HYDRO_drv
         print*, "The model finished successfully......."
 #ifdef MPP_LAND
 !         call mpp_land_abort()
-         call flush(6)
+         flush(6)
          call mpp_land_sync()
          call MPI_finalize(ierr)
          stop 

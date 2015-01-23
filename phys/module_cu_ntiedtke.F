@@ -752,7 +752,7 @@ contains
       integer  jl,jk,ik
       integer  ikb,ikt,icum,itopm2
       real     ztmst,ztau,zerate,zderate,zmfa
-      real     zmfs(klon),pmean(klon),zlon
+      real     zmfs(klon),pmean(klev),zlon
       real     zduten,zdvten,ztdis,pgf_u,pgf_v
 !-------------------------------------------
 !     1.    specify constants and parameters
@@ -1014,7 +1014,6 @@ contains
 !---------------------------------------------------------
          if(ldcum(jl) .and. ktype(jl) .eq. 3 ) then
             zmfub1(jl) = zmfub(jl)
-            zmfub1(jl) = min(zmfub1(jl),zmfmax)
          end if
 
        end do
@@ -1023,7 +1022,7 @@ contains
 !---------------------------------------------------------
        do jk=1,klev
        do jl=1,klon
-        if(loddraf(jl) .and. (ktype(jl) == 1 .or. ktype(jl) == 2) ) then
+        if( ldcum(jl) ) then
            zfac=zmfub1(jl)/max(zmfub(jl),cmfcmin)
            pmfd(jl,jk)=pmfd(jl,jk)*zfac
            zmfds(jl,jk)=zmfds(jl,jk)*zfac
@@ -2163,6 +2162,7 @@ contains
             pmfuq(jl,jk+1) = pmfuq(jl,jk+1)*zfac
             pmfub(jl) = zmfmax
           end if
+          pmfub(jl)=min(pmfub(jl),zmfmax)
         end if
       end do
 

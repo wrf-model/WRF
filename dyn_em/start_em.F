@@ -69,7 +69,7 @@
 
    INTEGER     :: i_m
 
-   REAL        :: p00, t00, a, tiso, p_surf, pd_surf, temp, tiso_tmp
+   REAL        :: p_top_test, p00, t00, a, tiso, p_surf, pd_surf, temp, tiso_tmp
    REAL        :: p_strat, a_strat
 #if (WRF_CHEM == 1)
    REAL        RGASUNIV ! universal gas constant [ J/mol-K ]
@@ -487,13 +487,18 @@ IF (grid%sppt_on==1) then
       END IF
    END IF
 
+   CALL nl_get_p_top_requested  ( 1 , p_top_test )
+   IF ( grid%p_top .NE. p_top_test ) THEN
+      CALL wrf_error_fatal ( 'p_top from the namelist does not match p_top from the input file.' )
+   END IF
+
    IF ( config_flags%use_baseparam_fr_nml ) then
-      CALL nl_get_base_pres        ( 1 , p00     )
-      CALL nl_get_base_temp        ( 1 , t00     )
-      CALL nl_get_base_lapse       ( 1 , a       )
-      CALL nl_get_iso_temp         ( 1 , tiso    )
-      CALL nl_get_base_lapse_strat ( 1 , a_strat )
-      CALL nl_get_base_pres_strat  ( 1 , p_strat )
+      CALL nl_get_base_pres        ( 1 , p00        )
+      CALL nl_get_base_temp        ( 1 , t00        )
+      CALL nl_get_base_lapse       ( 1 , a          )
+      CALL nl_get_iso_temp         ( 1 , tiso       )
+      CALL nl_get_base_lapse_strat ( 1 , a_strat    )
+      CALL nl_get_base_pres_strat  ( 1 , p_strat    )
       IF ( ( t00 .LT. 100. .or. p00 .LT. 10000.) .AND. ( .NOT. grid%this_is_an_ideal_run ) ) THEN
          WRITE(wrf_err_message,*) 'start_em: BAD BASE STATE for T00 or P00 in namelist.input file'
          CALL wrf_error_fatal(TRIM(wrf_err_message))

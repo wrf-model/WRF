@@ -6410,6 +6410,7 @@ end program foo
       REAL(KIND=8) , DIMENSION(prac_levels) :: znw_prac , znu_prac , dnw_prac
       REAL(KIND=8) , DIMENSION(MAX(prac_levels,kde)) :: alb , phb
       REAL(KIND=8) :: alb_max, t_init_max, pb_max, phb_max
+      REAL(KIND=8) :: p00_r8, t00_r8, a_r8, tiso_r8
 
       CHARACTER(LEN=256) :: message
 
@@ -6475,9 +6476,13 @@ end program foo
             dnw_prac(k) = znw_prac(k+1) - znw_prac(k)
          END DO
 
+         tiso_r8    = tiso
+         t00_r8     = t00
+         a_r8       = a
+         p00_r8     = p00
          DO k = 1, prac_levels-1
             pb = znu_prac(k)*(p_surf - p_top) + p_top
-            temp = MAX ( tiso, t00 + A*LOG(pb/p00) )
+            temp = MAX ( tiso_r8, t00_r8 + A_r8*LOG(pb/p00_r8) )
             IF ( pb .LT. p_strat ) THEN
                 temp = tiso + A_strat*LOG(pb/p_strat)
             END IF
@@ -6533,7 +6538,7 @@ end program foo
 
             pb = 0.5*(eta_levels(k)+znw_prac(kk)) * (p_surf - p_top) + p_top
 
-            temp = MAX ( tiso, t00 + A*LOG(pb/p00) )
+            temp = MAX ( tiso_r8, t00_r8 + A_r8*LOG(pb/p00_r8) )
             IF ( pb .LT. p_strat ) THEN
                temp = tiso + A_strat * LOG ( pb/p_strat )
             END IF
@@ -6543,7 +6548,7 @@ end program foo
             eta_levels(k+1) = eta_levels(k) - dz*g / ( mub*alb(k) )
             pb = 0.5*(eta_levels(k)+eta_levels(k+1)) * (p_surf - p_top) + p_top
 
-            temp = MAX ( tiso, t00 + A*LOG(pb/p00) )
+            temp = MAX ( tiso_r8, t00_r8 + A_r8*LOG(pb/p00_r8) )
             IF ( pb .LT. p_strat ) THEN
                temp = tiso + A_strat * LOG ( pb/p_strat )
             END IF
@@ -6576,7 +6581,7 @@ end program foo
             DO loop = 1 , 10
                DO k = 8, kte-1-2-1
                   pb = (znw(k)+znw(k+1))*0.5 * (p_surf - p_top) + p_top
-                  temp = MAX ( tiso, t00 + A*LOG(pb/p00) )
+                  temp = MAX ( tiso_r8, t00_r8 + A_r8*LOG(pb/p00_r8) )
                   IF ( pb .LT. p_strat ) THEN
                      temp = tiso + A_strat * LOG ( pb/p_strat )
                   END IF
@@ -6598,7 +6603,7 @@ end program foo
 
             DO k = 1, kde-1-2
                pb = (znw(k)+znw(k+1))*0.5 * (p_surf - p_top) + p_top
-               temp = MAX ( tiso, t00 + A*LOG(pb/p00) )
+               temp = MAX ( tiso_r8, t00_r8 + A_r8*LOG(pb/p00_r8) )
                IF ( pb .LT. p_strat ) THEN
                   temp = tiso + A_strat * LOG ( pb/p_strat )
                END IF
@@ -6652,7 +6657,7 @@ print *,'namelist p_top (Pa) = ',p_top
 
          DO k = 8, kte-1
             pb = (znw(k)+znw(k+1))*0.5 * (p_surf - p_top) + p_top
-            temp = MAX ( tiso, t00 + A*LOG(pb/p00) )
+            temp = MAX ( tiso_r8, t00_r8 + A_r8*LOG(pb/p00_r8) )
             IF ( pb .LT. p_strat ) THEN
                temp = tiso + A_strat * LOG ( pb/p_strat )
             END IF

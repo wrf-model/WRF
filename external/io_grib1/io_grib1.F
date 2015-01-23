@@ -1068,15 +1068,10 @@ SUBROUTINE ext_gr1_write_field( DataHandle , DateStrIn , VarName , &
            !
            
            ! Potential temperature is sometimes passed in as perturbation 
-           !   potential temperature (i.e., POT-300).  Other times (i.e., from 
-           !   WRF SI), it is passed in as full potential temperature.
-           ! Here, we convert to full potential temperature by adding 300
-           !   only if POT < 200 K.
+           !   potential temperature (i.e., POT-300).
            !
            if (OutName == 'T') then
-              if (data(1,1) < 200) then
-                 data = data + 300
-              endif
+              data = data + 300
            endif
 
            ! 
@@ -1284,6 +1279,7 @@ SUBROUTINE ext_gr1_read_field ( DataHandle , DateStr , VarName , Field , &
   integer                     :: tablenum
   integer                     :: di
   integer                     :: last_grb_index
+  logical                     :: fraction
 
   call wrf_debug ( DEBUG , 'Entering ext_gr1_read_field')
 
@@ -1316,7 +1312,13 @@ SUBROUTINE ext_gr1_read_field ( DataHandle , DateStr , VarName , Field , &
   last_grb_index = -1
   do zidx = z_start,z_end
      
-     CALL gr1_get_levels(VarName,zidx,z_end-z_start,soil_layers,vert_stag, &
+     IF ((VarName .eq. 'LANDUSEF') .or. (VarName .eq. 'SOILCBOT') .or. &
+          (VarName .eq. 'SOILCTOP')) then
+        fraction = .true.
+     ELSE
+        fraction = .false.
+     END IF
+     CALL gr1_get_levels(VarName,zidx,z_end-z_start,soil_layers,vert_stag,fraction, &
           .false., .false., vert_unit,level1,level2)
      
      CALL GET_GRIB_INDEX_VALIDTIME_GUESS(fileinfo(DataHandle)%fileindex(:), center, &

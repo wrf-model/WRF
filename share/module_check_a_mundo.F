@@ -970,6 +970,19 @@
       END DO
 
 !-----------------------------------------------------------------------
+!  Set the namelist parameter o3input to 0 for the radiation schemes other
+!  RRTMG_LWSCHEME and RRTMG_SWSCHEME.
+!-----------------------------------------------------------------------
+
+      IF ( ( model_config_rec % ra_lw_physics(1) .NE. RRTMG_LWSCHEME )  .OR. &
+           ( model_config_rec % ra_sw_physics(1) .NE. RRTMG_SWSCHEME ) ) THEN
+         model_config_rec % o3input = 0
+         wrf_err_message = '--- NOTE: RRTMG radiation is not used, setting:  ' // &
+                           'o3input=0 to avoid data pre-processing'
+         CALL wrf_message ( wrf_err_message )
+      END IF
+
+!-----------------------------------------------------------------------
 !  Remapping namelist variables for gridded and surface fdda to aux streams 9 and 10.
 !  Relocated here so that the remappings are after checking the namelist for inconsistencies.
 !-----------------------------------------------------------------------

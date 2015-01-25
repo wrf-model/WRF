@@ -2141,7 +2141,7 @@ rconfig   integer cam_abs_dim2            namelist,physics      1             1 
 rconfig   integer lagday                  namelist,physics      1             1       -      "lagday"         ""      ""
 rconfig   integer no_src_types            namelist,physics      1             1       -      "no_src_types" "Number of aerosoal types from EC (6)"  ""
 rconfig   integer alevsiz                 namelist,physics      1             1       -      "alevsiz" "Number of aerosoal optical depth data levels from EC (12)"  ""
-rconfig   integer o3input                 namelist,physics      1             0       -      "o3input"      "ozone input for RRTMG for CG domain: original = 0; CAM ozone = 2"      ""
+rconfig   integer o3input                 namelist,physics      1             2       -      "o3input"      "ozone input for RRTMG for CG domain: original = 0; CAM ozone = 2"      ""
 rconfig   integer aer_opt                 namelist,physics      1             0       -      "aer_opt"      "aerosol input option for radiation"      ""
 rconfig   integer swint_opt               namelist,physics      1             0       -      "swint_opt"    "interpolation option for sw radiation"      ""
 rconfig   integer aer_type                namelist,physics      max_domains   1       irh    "aer_type"       "aerosol type: 1 is SF79 rural, 2 is SF79 urban" ""

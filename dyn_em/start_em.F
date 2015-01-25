@@ -487,9 +487,14 @@ IF (grid%sppt_on==1) then
       END IF
    END IF
 
-   CALL nl_get_p_top_requested  ( 1 , p_top_test )
-   IF ( grid%p_top .NE. p_top_test ) THEN
-      CALL wrf_error_fatal ( 'p_top from the namelist does not match p_top from the input file.' )
+   !  Make sure that the base-state vales have not changed between what is in the input file
+   !  and the namelist file.
+
+   IF ( .NOT. grid%this_is_an_ideal_run ) THEN
+      CALL nl_get_p_top_requested  ( 1 , p_top_test )
+      IF ( grid%p_top .NE. p_top_test ) THEN
+         CALL wrf_error_fatal ( 'start_em: p_top from the namelist does not match p_top from the input file.' )
+      END IF
    END IF
 
    IF ( config_flags%use_baseparam_fr_nml ) then

@@ -1466,7 +1466,7 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
      
 ! set up CCN array and some other static local values
      IF ( itimestep == 1 .and. .not. invertccn .and.  present( cn ) ) THEN
-!mchen     IF ( cn((ite+its)/2,(kte+kts)/2,(jte+jts)/2) == 0.0 ) THEN ! initialize ccn if not already done
+!     IF ( cn((ite+its)/2,(kte+kts)/2,(jte+jts)/2) == 0.0 ) THEN ! initialize ccn if not already done
         DO jy = jts,jte
          DO kz = kts,kte
           DO ix = its,ite
@@ -1474,7 +1474,7 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
           ENDDO
          ENDDO
         ENDDO
-!mchen     ENDIF
+!     ENDIF
      ENDIF
      
       IF ( invertccn .and.  present( cn ) ) THEN ! hack for WRF to convert activated ccn to unactivated, then don't have to 
@@ -3469,19 +3469,19 @@ END SUBROUTINE nssl_2mom_driver
          IF ( qx(mgs,lc) > qxmin(lc) ) THEN
 ! Lambda for cloud droplets 
          lam_c = ((cx(mgs,lc)*(Pi/6.)*xdn0(lc)*Gamc1)/(qx(mgs,lc)*rho0(mgs)*Gamc2))**(1./3.)
-          t1(ix,jy,kz) = factor_c/lam_c
+          t1(ix,jy,kz) = 0.5*factor_c/lam_c
          ENDIF
 
          IF ( qx(mgs,li) > qxmin(li) ) THEN
 ! Lambda for cloud ice 
          lam_i = ((cx(mgs,li)*(Pi/6.)*xdn0(li)*Gami1)/(qx(mgs,li)*rho0(mgs)*Gami2))**(1./3.)
-          t2(ix,jy,kz) = factor_i/lam_i
+          t2(ix,jy,kz) = 0.5*factor_i/lam_i
          ENDIF
 
          IF ( qx(mgs,ls) > qxmin(ls) ) THEN
 ! Lambda for snow
          lam_s = ((cx(mgs,ls)*(Pi/6.)*xdn0(ls)*Gams1)/(qx(mgs,ls)*rho0(mgs)*Gams2))**(1./3.)
-          t3(ix,jy,kz) = factor_s/lam_s
+          t3(ix,jy,kz) = 0.5*factor_s/lam_s
          ENDIF
 
       

@@ -213,7 +213,7 @@
       LOGICAL :: WARM_RAIN
       LOGICAL :: IS_CAMMGMP_USED=.FALSE.
 
-      REAL :: DXKM
+      REAL :: DXKM, DYKM
 
 !
 !-----------------------------------------------------------------------
@@ -236,7 +236,8 @@
 !
       CAPA=R_D/CP
 
-      DXKM = config_flags%dx * 111.11
+      DXKM=grid%dlmd*0.01745329*6371200. ! numbers from module_initialize_real.F
+      DYKM=grid%dy_nmm
 !
 !-----------------------------------------------------------------------
 !
@@ -368,7 +369,7 @@
 !-----------------------------------------------------------------------
 !
       CALL SET_TILES(GRID,IDS+1,IDE-1,JDS+2,JDE-2,ITS,ITE,JTS,JTE)
-!
+
       CALL RADIATION_DRIVER(                                            &
      &                  IDS=IDS,IDE=IDE,JDS=JDS,JDE=JDE,KDS=KDS,KDE=KDE &
      &                 ,IMS=IMS,IME=IME,JMS=JMS,JME=JME,KMS=KMS,KME=KME &
@@ -378,7 +379,7 @@
      &                 ,ITIMESTEP=NTSD,DT=DT                            &
      &                 ,ICLOUD_CU=config_flags%ICLOUD_CU                &
      &                 ,QC_CU=GRID%QC_CU,QI_CU=GRID%QI_CU               &
-     &                 ,DX=grid%dx_nmm(1,1),DY=grid%dy_nmm              &
+     &                 ,DX=DXKM,DY=DYKM          &
      &                 ,DXKM=dxkm                                       &
 ! WRF-Solar variables
                        ,swint_opt=config_flags%swint_opt                &   

@@ -971,7 +971,7 @@
 
 !-----------------------------------------------------------------------
 !  Set the namelist parameter o3input to 0 for the radiation schemes other
-!  RRTMG_LWSCHEME and RRTMG_SWSCHEME.
+!  than RRTMG_LWSCHEME and RRTMG_SWSCHEME.
 !-----------------------------------------------------------------------
 
       IF ( ( model_config_rec % ra_lw_physics(1) .NE. RRTMG_LWSCHEME )  .OR. &

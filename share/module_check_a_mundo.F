@@ -302,7 +302,6 @@
 !-----------------------------------------------------------------------
 !!!!!!  THIS FEATURE IS CURRENTLY NOT WORKING - FIELDS WILL ALWAYS BE FULL 3D ARRAYS !!!!!
 !-----------------------------------------------------------------------
-!! JDB 10/31/2014: 
 !! Random fields are by default thin 3D arrays (:,1,:).
 !! If random fields have vertical structures (stoch_vertstruc_opt .ne. 0)
 !! make them full 3D array arrays
@@ -320,7 +319,6 @@
     ENDDO
 
 !-----------------------------------------------------------------------
-! JDB 10/31/2014: 
 ! Check if any stochastic perturbation scheme is turned on in any domain,
 ! if so, set derived variable sppt_on=1 and/or rand_perturb_on and/or skebs_on=1
 !-----------------------------------------------------------------------
@@ -380,7 +378,6 @@
    ENDDO
 
 !--------------------------------------------------------------------------------
-! KRS: 9/12/2012
 ! Check if boundary perturbations is turned on and set to '1' (perturb_bdy=1).
 ! If so, make sure skebs_on is also turned on.
 !--------------------------------------------------------------------------------
@@ -393,7 +390,6 @@
    ENDIF
 
 !--------------------------------------------------------------------------------
-! SYHA: 10/17/2014
 ! Check if chemistry boundary perturbations is turned on and set to '1' (perturb_chem_bdy=1).
 ! If so, make sure rand_perturb_on is also turned on.
 ! perturb_chem_bdy can be turned on only if WRF_CHEM is also compiled.

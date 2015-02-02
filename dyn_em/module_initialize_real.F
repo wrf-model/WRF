@@ -159,12 +159,11 @@ integer::oops1,oops2
 
       !DJW 140626 added for multiple specified sets of eta_levels
       INTEGER :: ks, ke, id
-      LOGICAL :: vnest !DJW 140722 T if using vertical nesting, otherwise F
+      LOGICAL :: vnest ! T if using vertical nesting, otherwise F
 
       INTEGER :: j_save
 
       !  Dimension information stored in grid data structure.
-      print *,'DAVE ',grid%msft(1:10:2,1:10:2)
 
       CALL cpu_time(t_start)
       CALL get_ijk_from_grid (  grid ,                   &

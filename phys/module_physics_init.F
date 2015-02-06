@@ -4213,9 +4213,10 @@ subroutine aerosol_in(aerodm,pina,alevsiz,no_months,no_src_types,XLAT,XLONG,   &
    REAL,  DIMENSION(alevsiz), INTENT(OUT )  ::                   pina
 
 ! Local
-!  data from Torn, computed from EC 6 types of aerosol data:
+!  Data from Ryan Torn, computed from EC 6 types of aerosol data:
 !    organic carbon, sea salt, dust, black carbon, sulfalte 
 !    and stratospheric aerosol (volcanic ashes)
+!  The data dimensions are 46 x 72 x 12 (pressure levels), and in unit of AOD per Pa
 
    INTEGER, PARAMETER :: latsiz = 46
    INTEGER, PARAMETER :: lonsiz = 72

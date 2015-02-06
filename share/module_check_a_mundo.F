@@ -857,6 +857,16 @@
       ENDDO      ! Loop over domains
 
 !-----------------------------------------------------------------------
+!  Need to set lagday to 150 if tmn_update is 1
+!-----------------------------------------------------------------------
+
+      IF ( model_config_rec%tmn_update .EQ. 1 .AND. &
+           model_config_rec%lagday .EQ. 1 ) THEN 
+           wrf_err_message = '--- ERROR: Using tmn_update=1 requires lagday=150 '
+           CALL wrf_error_fatal ( TRIM(wrf_err_message) )
+      END IF
+
+!-----------------------------------------------------------------------
 !  Do not allow digital filtering to be run with TEMF.
 !-----------------------------------------------------------------------
 

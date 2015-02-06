@@ -462,7 +462,7 @@ package   linscheme     mp_physics==2                -             moist:qv,qc,q
 package   sbu_ylinscheme    mp_physics==13           -             moist:qv,qc,qr,qi,qs
 package   wsm3scheme    mp_physics==3                -             moist:qv,qc,qr;g_moist:g_qv,g_qc,g_qr;a_moist:a_qv,a_qc,a_qr
 package   wsm5scheme    mp_physics==4                -             moist:qv,qc,qr,qi,qs;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs
-package   etampnew      mp_physics==5                -             moist:qv,qc,qr,qs;g_moist:g_qv,g_qc,g_qr,g_qs;a_moist:a_qv,a_qc,a_qr,a_qs;scalar:qt
+package   etamp_hr      mp_physics==5                -             moist:qv,qc,qr,qs;g_moist:g_qv,g_qc,g_qr,g_qs;a_moist:a_qv,a_qc,a_qr,a_qs;scalar:qt
 package   wsm6scheme    mp_physics==6                -             moist:qv,qc,qr,qi,qs,qg;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
 package   gsfcgcescheme mp_physics==7                -             moist:qv,qc,qr,qi,qs,qg;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
 package   thompson      mp_physics==8                -             moist:qv,qc,qr,qi,qs,qg;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg;scalar:qni,qnr
@@ -473,7 +473,7 @@ package   wdm5scheme    mp_physics==14               -             moist:qv,qc,q
 package   wdm6scheme    mp_physics==16               -             moist:qv,qc,qr,qi,qs,qg;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg;scalar:qnn,qnc,qnr
 package   nssl_2mom     mp_physics==17               -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnc,qnr,qni,qns,qng,qnh,qvolg
 package   nssl_2momccn  mp_physics==18               -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnn,qnc,qnr,qni,qns,qng,qnh,qvolg
-package   etampold      mp_physics==95               -             moist:qv,qc,qr,qs;scalar:qt
+package   etampnew      mp_physics==95               -             moist:qv,qc,qr,qs;g_moist:g_qv,g_qc,g_qr,g_qs;a_moist:a_qv,a_qc,a_qr,a_qs;scalar:qt
 package   lscondscheme  mp_physics==98               -             moist:qv;g_moist:g_qv;a_moist:a_qv
 package   mkesslerscheme mp_physics==99              -             moist:qv,qc,qr;g_moist:g_qv,g_qc,g_qr;a_moist:a_qv,a_qc,a_qr
 

@@ -2176,6 +2176,9 @@ print *,'j_save = ',j_save,grid%clat(ids,j_save),grid%mf_fft
             IF ( num_st_levels_input .LT. 2 ) THEN
                CALL wrf_error_fatal ( 'Not enough soil temperature data for SSIB LSM scheme.')
             END IF
+            IF ( eta_levels(2) .GT. 0.982 ) THEN
+               CALL wrf_error_fatal ( 'The first two eta levels are too shallow for SSIB LSM scheme.')
+            END IF
 !--------------------------------------------------------
 
       END SELECT enough_data

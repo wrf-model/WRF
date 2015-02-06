@@ -165,7 +165,7 @@ subroutine da_calculate_gradj(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size
    grad = grad_jo + grad_jb + grad_je + grad_jp + grad_js + grad_jl
 
    !-------------------------------------------------------------------------
-   ! [7.0] write Gradient:
+   ! [8.0] write Gradient:
    !-------------------------------------------------------------------------
    if (present(re)) then
       gnorm_j  = sqrt(da_dot_cv(cv_size, grad,    grad,    grid, mz, jp_start, jp_end))

@@ -284,7 +284,7 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
    end if
          
    !-------------------------------------------------------------------------
-   ! [8.0] Calculate Gradient:
+   ! [9.0] Calculate Gradient:
    !-------------------------------------------------------------------------
    call da_calculate_gradj(it,iter,cv_size,cv_size_jb,cv_size_je,cv_size_jp, &
                            cv_size_jl,xbx, be, iv, xhat+cv, y, grad, grid, config_flags, re)

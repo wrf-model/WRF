@@ -37,9 +37,8 @@ subroutine da_setup_cv(be)
       else			! cv space size slightly larger for dwtai2():
          ij = size(be%wsd,1)*size(be%wsd,2)
 !        call da_setup_cv_iyjx2ij(iy,jx,ij,nij,nb,lf,"tile")
-         write(*,&
-            '("da_setup_cv: using ",i0," 2D ",A1,i0," wavelets in ",i0," bands.")')&
-            ij,namw,lf,nb
+         write(unit=message(1),fmt='("da_setup_cv: using ",i0," 2D ",A1,i0," wavelets in ",i0," bands.")') ij,namw,lf,nb
+         call da_message(message(1:1))
       endif			! if( use_rf )
       be % cv % size1 = ij * be % v1 % mz
       be % cv % size2 = ij * be % v2 % mz
@@ -52,13 +51,13 @@ subroutine da_setup_cv(be)
       be % cv % size8 = ij * be % v8 % mz
       be % cv % size9 = ij * be % v9 % mz
       be % cv % size10= ij * be % v10 % mz
-      be % cv % size11i= ij * be % v11 % mz
+      be % cv % size11= ij * be % v11 % mz
 #endif
    end if
 #ifdef CLOUD_CV
    be % cv % size_jb = be % cv % size1 + be % cv % size2 + be % cv % size3 + &
       be % cv % size4 + be % cv % size5+ be % cv % size6 + be % cv % size7 + &
-      be % cv % size8 + be % cv % size9+  be % cv % size10 +  be % cv % size11i
+      be % cv % size8 + be % cv % size9+  be % cv % size10 +  be % cv % size11
 #else
    be % cv % size_jb = be % cv % size1 + be % cv % size2 + be % cv % size3 + &
       be % cv % size4 + be % cv % size5

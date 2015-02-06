@@ -31,13 +31,13 @@ subroutine da_biascorr ( i, ob, iv)
    do n=iv%instid(i)%info%n1,iv%instid(i)%info%n2
       ! get airmass predictors
       !-------------------------
-        if (rtm_option==rtm_option_rttov) then
+      if (rtm_option==rtm_option_rttov) then
 #ifdef RTTOV
          q(1:nlevels) = iv%instid(i)%mr(1:nlevels,n)/q2ppmv
          call da_predictor_rttov(i, pred(1:npred), npred, nlevels, &
-            iv%instid(i)%t(1:nlevels,n), q(1:nlevels), iv%instid(i)%ts(n))
+              iv%instid(i)%t(1:nlevels,n), q(1:nlevels), iv%instid(i)%ts(n))
 #endif
-        else if (rtm_option==rtm_option_crtm) then
+      else if (rtm_option==rtm_option_crtm) then
 #ifdef CRTM
 ! FIX? problems with IBM AIX COMPILER
          temp(1:nlevels) = iv%instid(i)%tm(1:nlevels,n)
@@ -46,32 +46,27 @@ subroutine da_biascorr ( i, ob, iv)
          call da_predictor_crtm(pred(1:npred), npred, nlevels,temp, &
             hum, iv%instid(i)%ts(n), pf)
 #endif
-        end if
-        iscan = iv%instid(i)%scanpos(n)
-        iband = floor(iv%instid(i)%info%lat(1,n)/10.0001) + 10
+      end if
+      iscan = iv%instid(i)%scanpos(n)
+      iband = floor(iv%instid(i)%info%lat(1,n)/10.0001) + 10
       do k=1,iv%instid(i)%nchan
-       ! only do bias correction for used channels
-       if ( (satinfo(i)%iuse(k) == 1) .and. (iv%instid(i)%tb_inv(k,n) > missing_r) ) then
-
-       ! scan bias correction
-       !-----------------------
-        if (global) then
-          iv%instid(i)%tb_inv(k,n) = iv%instid(i)%tb_inv(k,n) - satinfo(i)%scanbias_b(k,iscan,iband)
-        else
-          iv%instid(i)%tb_inv(k,n) = iv%instid(i)%tb_inv(k,n) - satinfo(i)%scanbias(k,iscan) 
-        end if
-       ! airmass bias correction
-       !----------------------------
-          airbias = satinfo(i)%bcoef0(k)
-         do j=1,npred
-          airbias= airbias + satinfo(i)%bcoef(k,j)*pred(j)
-         end do
-          iv%instid(i)%tb_inv(k,n) = iv%instid(i)%tb_inv(k,n)-airbias
-        !if (k==5) then
-        !  write(*,'(6f15.5)') satinfo(i)%scanbias(k,iscan), satinfo(i)%bcoef(k,1:npred),satinfo(i)%bcoef0(k)
-        !  write(*,'(5f15.5)') airbias,pred(1:npred)
-        !end if
-       end if
+         ! only do bias correction for used channels
+         if ( (satinfo(i)%iuse(k) == 1) .and. (iv%instid(i)%tb_inv(k,n) > missing_r) ) then
+            ! scan bias correction
+            !-----------------------
+            if (global) then
+               iv%instid(i)%tb_inv(k,n) = iv%instid(i)%tb_inv(k,n) - satinfo(i)%scanbias_b(k,iscan,iband)
+            else
+               iv%instid(i)%tb_inv(k,n) = iv%instid(i)%tb_inv(k,n) - satinfo(i)%scanbias(k,iscan) 
+            end if
+            ! airmass bias correction
+            !----------------------------
+            airbias = satinfo(i)%bcoef0(k)
+            do j=1,npred
+               airbias= airbias + satinfo(i)%bcoef(k,j)*pred(j)
+            end do
+            iv%instid(i)%tb_inv(k,n) = iv%instid(i)%tb_inv(k,n)-airbias
+         end if
       end do
    end do
 

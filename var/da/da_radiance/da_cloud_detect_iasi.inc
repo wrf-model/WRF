@@ -166,7 +166,10 @@ REAL :: ZHOOK_HANDLE
           ZF_CLR               = ZF_CLR + 0.5*(AMAT(nchan,ndim)-1.0)**2   
         ENDDO
         IF (.NOT. LMATCH) then
-           if (print_detail_rad) WRITE(*,*) 'CLOUD_DETECT_IASI: No matching for channel:',i,Bands(i,JBAND)
+           if (print_detail_rad) then
+              write(unit=message(1),fmt='(A,2I8)') 'CLOUD_DETECT_IASI: No match for channel:',i,Bands(i,JBAND)
+              call da_message(message(1:1))
+           endif
         ENDIF
       ENDDO
     ENDDO BAND_LOOP                      ! Loop over band
@@ -175,7 +178,6 @@ REAL :: ZHOOK_HANDLE
     ! Hessian evaluation !
     !--------------------!
     IF (LPRECON) THEN
-!      write(76,*) '**** HESSIAN ****'
       hessian(:,:)= 0.0      
       DO ilev=1, NDIM
         DO jlev=ilev, NDIM
@@ -186,9 +188,7 @@ REAL :: ZHOOK_HANDLE
           ENDDO
           hessian(jlev,ilev) = hessian(ilev,jlev)   
         ENDDO
-!	write(76,*) hessian(ilev,1:NDIM)
       ENDDO  
-!!!      call da_eof_decomposition(ndim, hessian, eignvec, eignval)
     ENDIF
        
      !-----------------!
@@ -268,11 +268,4 @@ REAL :: ZHOOK_HANDLE
 #endif
     end if  	    
     
-! print*,'ACD_CTP',iv%instid(isensor)%info%lon(1,n), iv%instid(isensor)%info%lat(1,n),&
-!                  iv%instid(isensor)%clwp(n), cldtoplevel, SUM(px(1:ndim-1)), &
-!		  zf/zf_clr, nit, IMODE
-! print*,'ACD_CLR_CLD',zf_clr,zf,px     
-! print*,'ACD: RADOVC',rad_ovc
-! print*,'ACD_RADOBS_RADCLR_RADCLD',rad_obs,rad_clr,rad_cld
- 
 end subroutine da_cloud_detect_iasi

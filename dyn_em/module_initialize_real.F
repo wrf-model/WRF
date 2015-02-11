@@ -157,7 +157,7 @@ integer::oops1,oops2
       REAL :: t_start , t_end
       REAL , ALLOCATABLE , DIMENSION(:,:) :: clat_glob
 
-      !DJW 140626 added for multiple specified sets of eta_levels
+      ! multiple specified sets of eta_levels
       INTEGER :: ks, ke, id
       LOGICAL :: vnest ! T if using vertical nesting, otherwise F
 
@@ -1374,13 +1374,15 @@ print *,'j_save = ',j_save,grid%clat(ids,j_save),grid%mf_fft
              ENDIF
            ENDDO
            IF (vnest) THEN
-            !DJW 140627 Added code for specifying multiple domains' eta_levels.
+
+            !Added code for specifying multiple domains' eta_levels.
             !First check to make sure that we've not specified more
             !eta_levels than the dimensionality of eta_levels can handle! This
             !issue will most likely cause a break sometime before we real this
             !check, however it doesn't hurt to include it. To increase max_eta,
             !go to frame/module_driver_constants.F.
-             write(*,'(A)') "DJW[module_initialize_real]: using vertical nesting, reading in eta_levels specified in namelist.input"
+
+            CALL wrf_debug ( 0, "using vertical nesting, reading in eta_levels specified in namelist.input" )
             ks = 0
             DO id=1,grid%id
               ks = ks+model_config_rec%e_vert(id)
@@ -1419,16 +1421,12 @@ print *,'j_save = ',j_save,grid%clat(ids,j_save),grid%mf_fft
                 CALL wrf_error_fatal("eta_levels are not uniformly decreasing from 1.0 to 0.0")
               ENDIF
             ENDDO
-             !DJW print out eta_levels for debugging purposes
              DO k=1,kde
-               write(*,'(A,I3,A,F5.3)') "DJW[module_initialize_real]: eta_levels(",k,")=",eta_levels(k)
+               write(a_message,'(A,I3,A,F5.3)') "eta_levels(",k,")=",eta_levels(k)
+               CALL wrf_message ( a_message )
              ENDDO
-            !DJW 140627 End of added code for specifying eta_levels
            ELSE !We're not using vertical nesting
-            !DJW start of original code to set eta_levels
-             write(*,'(A)') "DJW[module_initialize_real]: vertical nesting is not enabled but eta_levels are set in namelist.input"
              eta_levels(1:kde) = model_config_rec%eta_levels(1:kde)
-            !DJW end of original code to set eta_levels
            ENDIF
 
             max_dz            = model_config_rec%max_dz

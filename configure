@@ -6,6 +6,7 @@ thiscmd=$0
 
 FORTRAN_COMPILER_TIMER=""
 opt_level="-f"
+rword="-r4"
 print_usage=""
 chemistry=""
 wrf_core=""
@@ -19,6 +20,7 @@ while [ $# -ge 1 ]; do
       -help) print_usage="yes" ;;
       -os) shift ; WRF_OS=$1 ;;
       -mach) shift ; WRF_MACH=$1 ;;
+      -r8) rword="-r8" ;;
       -time) shift ; FORTRAN_COMPILER_TIMER=$1 ;;
       chem) WRF_CHEM=1  ;;
       kpp) WRF_KPP=1  ;;
@@ -588,6 +590,17 @@ if test -n "$PERL" ; then
      if [ "$opt_level" = "-D" ] ; then
         sed -e 's/FCOPTIM[	 ]*=/& # /' -e '/FCDEBUG[	 ]*=/s/#//g' configure.wrf > configure.wrf.edit
         /bin/mv configure.wrf.edit configure.wrf
+     fi
+
+     # GNU has a funny way of doing promotion to real*8
+     if [ "$rword" = "-r8" ] ; then
+       srch=`grep -i "^SFC" configure.wrf | grep -i "gfortran"`
+       if [ -n "$srch" ] ; then
+         sed -e '/^PROMOTION/s/#//' configure.wrf > configure.wrf.edit
+       else
+         sed -e '/^RWORDSIZE/s/$(NATIVE_RWORDSIZE)/8/' configure.wrf > configure.wrf.edit
+       fi
+       /bin/mv configure.wrf.edit configure.wrf
      fi
    else
      WRF_OS=$os ; export WRF_OS

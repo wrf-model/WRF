@@ -6418,7 +6418,7 @@ subroutine CLMDebug( str )
 
 #if (defined DEBUGCLM)
   print*, TRIM(str)
-  call flush(6)
+  flush(6)
 #endif
 
 end subroutine CLMDebug

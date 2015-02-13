@@ -302,7 +302,6 @@
 !-----------------------------------------------------------------------
 !!!!!!  THIS FEATURE IS CURRENTLY NOT WORKING - FIELDS WILL ALWAYS BE FULL 3D ARRAYS !!!!!
 !-----------------------------------------------------------------------
-!! JDB 10/31/2014: 
 !! Random fields are by default thin 3D arrays (:,1,:).
 !! If random fields have vertical structures (stoch_vertstruc_opt .ne. 0)
 !! make them full 3D array arrays
@@ -320,7 +319,6 @@
     ENDDO
 
 !-----------------------------------------------------------------------
-! JDB 10/31/2014: 
 ! Check if any stochastic perturbation scheme is turned on in any domain,
 ! if so, set derived variable sppt_on=1 and/or rand_perturb_on and/or skebs_on=1
 !-----------------------------------------------------------------------
@@ -380,7 +378,6 @@
    ENDDO
 
 !--------------------------------------------------------------------------------
-! KRS: 9/12/2012
 ! Check if boundary perturbations is turned on and set to '1' (perturb_bdy=1).
 ! If so, make sure skebs_on is also turned on.
 !--------------------------------------------------------------------------------
@@ -393,7 +390,6 @@
    ENDIF
 
 !--------------------------------------------------------------------------------
-! SYHA: 10/17/2014
 ! Check if chemistry boundary perturbations is turned on and set to '1' (perturb_chem_bdy=1).
 ! If so, make sure rand_perturb_on is also turned on.
 ! perturb_chem_bdy can be turned on only if WRF_CHEM is also compiled.
@@ -858,6 +854,14 @@
       ENDDO      ! Loop over domains
 
 !-----------------------------------------------------------------------
+!  If this is a restart, shut off the DFI.
+!-----------------------------------------------------------------------
+
+      IF ( model_config_rec%restart ) THEN
+         model_config_rec%dfi_opt = DFI_NODFI
+      END IF
+
+!-----------------------------------------------------------------------
 !  The CLM scheme may not even be compiled, so make sure it is not allowed
 !  to be run if the code is not available.
 !-----------------------------------------------------------------------
@@ -914,13 +918,17 @@
          wrf_err_message = 'resetting scalar_pblmix = 1'
          CALL wrf_message ( wrf_err_message )
       END IF
+
+!-----------------------------------------------------------------------
 !  Check that vertical levels are defined in a logical way.
 !-----------------------------------------------------------------------
+
       DO i = 1, model_config_rec % max_dom
         IF (model_config_rec%vert_refine_method(i) .EQ. 1) THEN
           IF (i .EQ. 1) THEN
-            wrf_err_message = '--- ERROR: vert_refine_method=1 for d01, must be 0.'
-            CALL wrf_error_fatal ( wrf_err_message )
+            wrf_err_message = '--- INFO: vert_refine_method=1 for d01, must be 0., resetting value internally'
+            CALL wrf_message ( wrf_err_message )
+            model_config_rec%vert_refine_method(i) = 0
           ELSE
             IF (MOD((model_config_rec%e_vert(i)-1),(model_config_rec%e_vert(i-1)-1)) .NE. 0) THEN
               wrf_err_message = '--- ERROR: incompatible e_vert for use with int-refinement.'
@@ -934,6 +942,42 @@
           ENDIF
         ENDIF
       ENDDO
+
+!-----------------------------------------------------------------------
+!  Consistency checks between vertical refinement and radiation
+!  scheme selection.  For "choose any vertical levels" for the nest,
+!  only RRTM and RRTMG are eligible.
+!-----------------------------------------------------------------------
+
+      DO i = 2, model_config_rec % max_dom
+        IF (model_config_rec%vert_refine_method(i) .EQ. 2) THEN
+          IF ( ( ( model_config_rec%ra_lw_physics(i) .EQ. RRTMSCHEME          ) .OR. &
+                 ( model_config_rec%ra_lw_physics(i) .EQ. RRTMG_LWSCHEME      ) .OR. &
+                 ( model_config_rec%ra_lw_physics(i) .EQ. RRTMG_LWSCHEME_FAST ) ) .AND. &
+               ( ( model_config_rec%ra_sw_physics(i) .EQ. SWRADSCHEME         ) .OR. &
+                 ( model_config_rec%ra_sw_physics(i) .EQ. RRTMG_SWSCHEME      ) .OR. &
+                 ( model_config_rec%ra_sw_physics(i) .EQ. RRTMG_SWSCHEME_FAST ) ) ) THEN
+             !  We are OK, I just hate writing backwards / negative / convoluted if tests 
+             !  that are not easily comprehensible.
+          ELSE
+            wrf_err_message = '--- ERROR: vert_refine_method=2 only works with either RRTM or RRTMG'
+            CALL wrf_error_fatal ( wrf_err_message )
+          END IF 
+        END IF
+      END DO
+
+!-----------------------------------------------------------------------
+!  Set the namelist parameter o3input to 0 for the radiation schemes other
+!  than RRTMG_LWSCHEME and RRTMG_SWSCHEME.
+!-----------------------------------------------------------------------
+
+      IF ( ( model_config_rec % ra_lw_physics(1) .NE. RRTMG_LWSCHEME )  .OR. &
+           ( model_config_rec % ra_sw_physics(1) .NE. RRTMG_SWSCHEME ) ) THEN
+         model_config_rec % o3input = 0
+         wrf_err_message = '--- NOTE: RRTMG radiation is not used, setting:  ' // &
+                           'o3input=0 to avoid data pre-processing'
+         CALL wrf_message ( wrf_err_message )
+      END IF
 
 !-----------------------------------------------------------------------
 !  Remapping namelist variables for gridded and surface fdda to aux streams 9 and 10.

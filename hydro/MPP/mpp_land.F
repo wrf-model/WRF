@@ -1813,7 +1813,7 @@ MODULE MODULE_MPP_LAND
         real :: inVar
         if(my_id .eq. IO_id) then
            write(unit,*) inVar
-           call flush(unit)
+           flush(unit)
         endif
      end subroutine check_landreal1
 
@@ -1823,7 +1823,7 @@ MODULE MODULE_MPP_LAND
         real :: inVar(:)
         if(my_id .eq. IO_id) then
            write(unit,*) inVar
-           call flush(unit)
+           flush(unit)
         endif
      end subroutine check_landreal1d
      subroutine check_landreal2d(unit, inVar)
@@ -1834,7 +1834,7 @@ MODULE MODULE_MPP_LAND
         call write_io_real(inVar,g_var) 
         if(my_id .eq. IO_id) then
            write(unit,*) g_var 
-           call flush(unit)
+           flush(unit)
         endif
      end subroutine check_landreal2d
 
@@ -1848,7 +1848,7 @@ MODULE MODULE_MPP_LAND
            call write_io_real(inVar(:,k,:),g_var) 
            if(my_id .eq. IO_id) then
               write(unit,*) g_var
-              call flush(unit)
+              flush(unit)
            endif
         end do
      end subroutine check_landreal3d

@@ -2525,7 +2525,7 @@ updraft:    DO NK=K,KL-1
         PEFF2 = PEFF                                ! JSK MODS
        IF(IPRNT)THEN  
          WRITE(98,1035)PEF,PEFCBH,LC,LET,WKL,VWS
-!       call flush(98)   
+!       flush(98)   
        endif     
 !        WRITE(98,1035)PEF,PEFCBH,LC,LET,WKL,VWS
 !*****************************************************************
@@ -2722,7 +2722,7 @@ d_mf:   IF(TDER.LT.1.)THEN
          PEFF=PPTFLX/TRPPT
          IF(IPRNT)THEN
            write(98,*)'PRECIP EFFICIENCY =',PEFF
-!          call flush(98)   
+!          flush(98)   
          ENDIF
 !
 !
@@ -3267,7 +3267,7 @@ iter:     DO NCOUNT=1,10
 !     ENDIF
        IF(IPRNT)THEN  
          WRITE(98,1080)LFS,LDB,LDT,TIMEC,TADVEC,NSTEP,NCOUNT,FABE,AINC
-!        call flush(98)   
+!        flush(98)   
        endif  
 !     
 !...SEND FINAL PARAMETERIZED VALUES TO OUTPUT FILES...
@@ -3296,7 +3296,7 @@ iter:     DO NCOUNT=1,10
                          '   UDR  ','   DMF  ','   DER  '  ,'   DDR  ',&
                          '   EMS  ','    W0  ','  DETLQ ',' DETIC '
            write(98,*)'just before DO 300...'
-!          call flush(98)
+!          flush(98)
            DO NK=1,LTOP
              K=LTOP-NK+1
              DTT=(TG(K)-T0(K))*86400./TIMEC
@@ -3442,7 +3442,7 @@ iter:     DO NCOUNT=1,10
             WRITE(98,4456)P0(K)/100.,T0(K)-273.16,Q0(K)*1000.,          &
                      U0(K),V0(K),W0AVG1D(K),dp(k)/100.,tke(k)
  311        CONTINUE
-!           call flush(98)
+!           flush(98)
 
 !        GOTO 297
 !         STOP 'QVERR'
@@ -3553,7 +3553,7 @@ iter:     DO NCOUNT=1,10
 !      write (6,909)I,J,RNC
 !      WRITE(98,*)'at NTSD =',NTSD,',No. of KF points activated =',
 !     *            NCCNT
-!      call flush(98)
+!      flush(98)
 1000  FORMAT(' ',10A8)
 1005  FORMAT(' ',F6.0,2X,F6.4,2X,F7.3,1X,F6.4,2X,4(F6.3,2X),2(F7.3,1X))
 1010  FORMAT(' ',' VERTICAL VELOCITY IS NEGATIVE AT ',F4.0,' MB')
@@ -3711,7 +3711,7 @@ iter:     DO NCOUNT=1,10
       ithtb=int(tth)+1
        IF(IPTB.GE.220 .OR. IPTB.LE.1 .OR. ITHTB.GE.250 .OR. ITHTB.LE.1)THEN
          write(98,*)'**** OUT OF BOUNDS *********'
-!        call flush(98)
+!        flush(98)
        ENDIF
 !
       t00=ttab(ithtb  ,iptb  )
@@ -4561,8 +4561,8 @@ SUBROUTINE cup_jfd(slopeSfc, slopeEZ, sigmaSfc, sigmaEZ,                &
 !!$                '("KFCuP has a big mterm for JFD. m=",1e15.6," sigmaSfc=",1e15.6," dslope=",1e15.6," slopeEZ=",1e15.6," slopeSfc=",1e15.6)') &
 !!$                m, sigmaSfc,dslope,slopeEZ,slopeSfc
 !!$           call wrf_debug(0,trim(message))
-!!$           call flush(0)
-!!$           call flush(6)
+!!$           flush(0)
+!!$           flush(6)
 !!$        end if
         if( abs(mterm) > bigcheck ) then
 
@@ -4572,8 +4572,8 @@ print*,'bigcheck=',bigcheck
                   " sigmaSfc=",1e15.6)') &
                 m, sigmaSfc
            call wrf_debug(0,trim(message))
-           call flush(0)
-           call flush(6)
+           flush(0)
+           flush(6)
            mterm = sign(bigcheck,mterm)
         else
            mterm = mterm*mterm

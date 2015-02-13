@@ -266,8 +266,8 @@ subroutine calc_aerosol_goddard_sw(ht,dz8w,p,t3d,qv3d,aer_type,                 
              call wrf_error_fatal('Aerosol single-scattering albedo must be within [0,1]. ' // &
                                   'Out of bounds value(s) found in auxinput')
           end if
-          write( wrf_err_message, '("aer_ssa_opt=",I1, &
-                                  ": single-scattering albedo read from auxinput (min=",F6.3," max=",F6.3,")")') &
+          write( wrf_err_message, &
+              '("aer_ssa_opt=",I1,": single-scattering albedo read from auxinput (min=",F6.3," max=",F6.3,")")') &
                                   aer_ssa_opt,minval(aerssa2d),maxval(aerssa2d)
           call wrf_debug(100, wrf_err_message )
           do j=jts,jte
@@ -561,8 +561,8 @@ subroutine calc_aerosol_rrtmg_sw(ht,dz8w,p,t3d,qv3d,aer_type,                   
              write(wrf_err_message,'("aer_ssa_val must be within [0,1]. Illegal value ",F7.4," found")') aer_ssa_val
              call wrf_error_fatal(wrf_err_message)
           end if
-          write( wrf_err_message, '("aer_ssa_opt=",I1, &
-                                    ": single-scattering albedo fixed to value ",F6.3)') aer_ssa_opt,aer_ssa_val
+          write( wrf_err_message, &
+                '("aer_ssa_opt=",I1,": single-scattering albedo fixed to value ",F6.3)') aer_ssa_opt,aer_ssa_val
           call wrf_debug(100, wrf_err_message )
           do j=jts,jte
              do i=its,ite

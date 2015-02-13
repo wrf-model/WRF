@@ -4682,7 +4682,7 @@ end subroutine mpp_output_chrt
         iret =  nf_close(ncid) 
 #ifdef HYDRO_D
         write(6,*) "end of RESTART_IN"
-        call flush(6)
+        flush(6)
 #endif
 
          !call check_channel(81,rt_domain(did)%QLINK(:,1),1,rt_domain(did)%NLINKS)
@@ -6232,7 +6232,7 @@ end subroutine mpp_output_chrt
       end do
 
        write(6,*) "nlinks = ", nlinks, " yw_mpp_nlinks = ", yw_mpp_nlinks
-       call flush(6)
+       flush(6)
 
         call mpp_land_bcast_real(NLAKES,HRZAREA)
         call mpp_land_bcast_real(NLAKES,LAKEMAXH)

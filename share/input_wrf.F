@@ -138,15 +138,15 @@
     check_if_dryrun : IF ( .NOT. dryrun ) THEN
 
 #if (EM_CORE == 1)
-      IF ( switch .EQ. input_only ) THEN
+      IF ( ( switch .EQ. input_only ) .OR. ( switch .EQ. restart_only ) ) THEN
 
         !  Make sure for ARW ideal cases that the hypsometric option, the
         !  way that we integrate the heigh field, is set to 1.  This is the
         !  method that is used in all of the "ideal" programs to get the
         !  base-state height (phb).
 
-        CALL wrf_get_dom_ti_char ( fid , 'TITLE' , input_name , ierr )
-        grid%this_is_an_ideal_run = INDEX(TRIM(input_name) , 'IDEAL' ) .NE. 0
+        CALL wrf_get_dom_ti_char ( fid , 'START_DATE' , input_name , ierr )
+        grid%this_is_an_ideal_run = INDEX(TRIM(input_name) , '0001-' ) .NE. 0
 
         IF ( grid%this_is_an_ideal_run ) THEN
           grid%hypsometric_opt = 1

@@ -202,8 +202,6 @@ subroutine da_setup_obs_structures_ascii( ob, iv, grid )
       iv%time = 1
 
       call da_read_obs_ascii(iv, 'ob.ascii', uvq_direct, grid)
-      do i=1,num_ob_indexes
-      end do
 
       if (use_ssmiretrievalobs .or. use_ssmitbobs) then
          ! read ssmi observation file
@@ -262,20 +260,20 @@ subroutine da_setup_obs_structures_ascii( ob, iv, grid )
    ! [2.5] Set all thinned obs missing  
    !--------------------------------------------------------------------------
     if ( thin_conv_ascii ) then
-     do i = 1, num_ob_indexes
+       do i = 1, num_ob_indexes
 
-        if ( iv%info(i)%ntotal > 0 ) then
-            if ( iv%info(i)%nlocal > 0 ) then
-               if ( ANY(iv%info(i)%thinned(:,:)) ) then
-                  if( i == radar .or. i == airep .or. i==tamdar ) then
-                  call da_set_3d_obs_missing(iv,i)  ! assign missing values level-by-level if thinned=true data
-                  else
-                  call da_set_obs_missing(iv,i)  ! assign missing values to those thinned=true data
-                  end if
-               end if
-            end if
-        end if
-     end do
+          if ( iv%info(i)%ntotal > 0 ) then
+             if ( iv%info(i)%nlocal > 0 ) then
+                if ( ANY(iv%info(i)%thinned(:,:)) ) then
+                   if( i == radar .or. i == airep .or. i==tamdar ) then
+                      call da_set_3d_obs_missing(iv,i)  ! assign missing values level-by-level if thinned=true data
+                   else
+                      call da_set_obs_missing(iv,i)  ! assign missing values to those thinned=true data
+                   end if
+                end if
+             end if
+          end if
+       end do
     end if ! thin_conv_ascii
   
    !--------------------------------------------------------------------------
@@ -283,9 +281,9 @@ subroutine da_setup_obs_structures_ascii( ob, iv, grid )
    !--------------------------------------------------------------------------
 
    if (uvq_direct) then
-     call da_fill_obs_structures(iv, ob, uvq_direct)
+      call da_fill_obs_structures(iv, ob, uvq_direct)
    else
-     call da_fill_obs_structures(iv, ob)
+      call da_fill_obs_structures(iv, ob)
    endif
 
 
@@ -295,10 +293,10 @@ subroutine da_setup_obs_structures_ascii( ob, iv, grid )
    if ( thin_conv_ascii ) then
       do n = 1, num_ob_indexes
          if( n==radar .or. n == airep .or. n==tamdar ) then
-         thin_3d=.true.
-         call destroygrids_conv (n, thin_3d)
+            thin_3d=.true.
+            call destroygrids_conv (n, thin_3d)
          else
-         call destroygrids_conv (n)
+            call destroygrids_conv (n)
          end if
       end do
       deallocate(thinning_grid_conv)

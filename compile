@@ -307,6 +307,11 @@ else
        setenv RTTOV_LIB " "
        setenv RTTOV_SRC " "
     endif
+    if ( $?CLOUD_CV ) then
+       setenv CLOUD_CV_CPP "-DCLOUD_CV"
+    else
+       setenv CLOUD_CV_CPP " "
+    endif
     if ( $?BUFR ) then
        setenv BUFR_CPP "-DBUFR"
        setenv BUFR_LIB "-L../external/bufr -lbufr"

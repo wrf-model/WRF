@@ -67,6 +67,11 @@
 !    collected drops can smaller than number of shed drops
 ! 6) change of specific heat of liquid water from 4218 to 4187 J/kg/K
 
+! CHANGES FOR WRFV3.6.1
+! 1) minor bug fix to melting of snow and graupel, an extra factor of air density (RHO) was removed
+!    from the calculation of PSMLT and PGMLT
+! 2) redundant initialization of PSMLT (non answer-changing)
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 ! THIS SCHEME IS A BULK DOUBLE-MOMENT SCHEME THAT PREDICTS MIXING
@@ -1613,7 +1618,6 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
             PRA(K) = 0.
             NPRA(K) = 0.
             NRAGG(K) = 0.
-            PSMLT(K) = 0.
             NSMLTS(K) = 0.
             NSMLTR(K) = 0.
             EVPMS(K) = 0.
@@ -1822,8 +1826,14 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 !             DUM = -CPW/XLF(K)*T3D(K)*PRACS(K)
              DUM = -CPW/XLF(K)*(T3D(K)-273.15)*PRACS(K)
 
+! hm fix 1/20/15
+!             PSMLT(K)=2.*PI*N0S(K)*KAP(K)*(273.15-T3D(K))/       &
+!                    XLF(K)*RHO(K)*(F1S/(LAMS(K)*LAMS(K))+        &
+!                    F2S*(ASN(K)*RHO(K)/MU(K))**0.5*                      &
+!                    SC(K)**(1./3.)*CONS10/                   &
+!                   (LAMS(K)**CONS35))+DUM
              PSMLT(K)=2.*PI*N0S(K)*KAP(K)*(273.15-T3D(K))/       &
-                    XLF(K)*RHO(K)*(F1S/(LAMS(K)*LAMS(K))+        &
+                    XLF(K)*(F1S/(LAMS(K)*LAMS(K))+        &
                     F2S*(ASN(K)*RHO(K)/MU(K))**0.5*                      &
                     SC(K)**(1./3.)*CONS10/                   &
                    (LAMS(K)**CONS35))+DUM
@@ -1856,8 +1866,14 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 !             DUM = -CPW/XLF(K)*T3D(K)*PRACG(K)
              DUM = -CPW/XLF(K)*(T3D(K)-273.15)*PRACG(K)
 
+! hm fix 1/20/15
+!             PGMLT(K)=2.*PI*N0G(K)*KAP(K)*(273.15-T3D(K))/ 		 &
+!                    XLF(K)*RHO(K)*(F1S/(LAMG(K)*LAMG(K))+                &
+!                    F2S*(AGN(K)*RHO(K)/MU(K))**0.5*                      &
+!                    SC(K)**(1./3.)*CONS11/                   &
+!                   (LAMG(K)**CONS36))+DUM
              PGMLT(K)=2.*PI*N0G(K)*KAP(K)*(273.15-T3D(K))/ 		 &
-                    XLF(K)*RHO(K)*(F1S/(LAMG(K)*LAMG(K))+                &
+                    XLF(K)*(F1S/(LAMG(K)*LAMG(K))+                &
                     F2S*(AGN(K)*RHO(K)/MU(K))**0.5*                      &
                     SC(K)**(1./3.)*CONS11/                   &
                    (LAMG(K)**CONS36))+DUM

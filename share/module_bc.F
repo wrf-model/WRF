@@ -2094,6 +2094,161 @@ CONTAINS
 
    END SUBROUTINE spec_bdyupdate
 !------------------------------------------------------------------------
+   SUBROUTINE spec_bdy_final   ( field, mu, msf,                       &
+                                field_bdy_xs, field_bdy_xe,            &
+                                field_bdy_ys, field_bdy_ye,            &
+                                field_bdy_tend_xs, field_bdy_tend_xe,  &
+                                field_bdy_tend_ys, field_bdy_tend_ye,  &
+                                variable_in, config_flags,             &
+                                spec_bdy_width, spec_zone,             &
+                                dtbc,                       &
+                                ids,ide, jds,jde, kds,kde,  & ! domain dims
+                                ims,ime, jms,jme, kms,kme,  & ! memory dims
+                                ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
+                                its,ite, jts,jte, kts,kte   )
+
+!  This subroutine forces the boundary to match the boundary file value for specified
+!  boundary conditions. Added to avoid drift due to round-off error using just tendencies. 
+!  Boundary-file coupling is u,v,w:mu/msf  other fields:mu
+!  Correctly  staggered mu and msf are passed in (as seen in small_step_finish)
+!  spec_bdy_width is only used to dimension the boundary arrays.
+!  relax_zone is the inner edge of the boundary relaxation zone treated here.
+!  spec_zone is the width of the outer specified b.c.s that are not changed here.
+!  (JD Jan 2015)
+
+      IMPLICIT NONE
+
+      INTEGER,      INTENT(IN   )    :: ids,ide, jds,jde, kds,kde
+      INTEGER,      INTENT(IN   )    :: ims,ime, jms,jme, kms,kme
+      INTEGER,      INTENT(IN   )    :: ips,ipe, jps,jpe, kps,kpe
+      INTEGER,      INTENT(IN   )    :: its,ite, jts,jte, kts,kte
+      INTEGER,      INTENT(IN   )    :: spec_bdy_width, spec_zone
+      REAL,         INTENT(IN   )    :: dtbc
+      CHARACTER,    INTENT(IN   )    :: variable_in
+
+
+      REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(INOUT) :: field
+      REAL,  DIMENSION( ims:ime , jms:jme), INTENT(IN   ) :: mu, msf
+      REAL,  DIMENSION( jms:jme , kds:kde , spec_bdy_width ), INTENT(IN   ) :: field_bdy_xs, field_bdy_xe
+      REAL,  DIMENSION( ims:ime , kds:kde , spec_bdy_width ), INTENT(IN   ) :: field_bdy_ys, field_bdy_ye
+      REAL,  DIMENSION( jms:jme , kds:kde , spec_bdy_width ), INTENT(IN   ) :: field_bdy_tend_xs, field_bdy_tend_xe
+      REAL,  DIMENSION( ims:ime , kds:kde , spec_bdy_width ), INTENT(IN   ) :: field_bdy_tend_ys, field_bdy_tend_ye
+      TYPE( grid_config_rec_type ) config_flags
+
+      CHARACTER  :: variable
+      INTEGER    :: i, j, k, ibs, ibe, jbs, jbe, itf, jtf, ktf, im1, ip1
+      INTEGER    :: b_dist, b_limit
+      REAL       :: bfield, xmsf, xmu
+      LOGICAL    :: periodic_x, msfcouple, mucouple
+
+      periodic_x = config_flags%periodic_x
+      variable = variable_in
+
+      IF (variable == 'U') variable = 'u'
+      IF (variable == 'V') variable = 'v'
+      IF (variable == 'W') variable = 'w'
+      IF (variable == 'M') variable = 'm'
+      IF (variable == 'T') variable = 't'
+      IF (variable == 'H') variable = 'h'
+
+      ibs = ids
+      ibe = ide-1
+      itf = min(ite,ide-1)
+      jbs = jds
+      jbe = jde-1
+      jtf = min(jte,jde-1)
+      ktf = kde-1
+      IF (variable == 'u') ibe = ide
+      IF (variable == 'u') itf = min(ite,ide)
+      IF (variable == 'v') jbe = jde
+      IF (variable == 'v') jtf = min(jte,jde)
+      IF (variable == 't') ktf = kte
+      IF (variable == 'm') ktf = kte
+      IF (variable == 'h') ktf = kde
+      IF (variable == 'w') ktf = kde
+
+      msfcouple = .false.
+      mucouple = .true.
+      IF (variable == 'u' .OR. variable == 'v' .OR. variable == 'w')msfcouple = .true.
+      IF (variable == 'm' )mucouple = .false.
+      xmsf = 1.
+      xmu = 1.
+
+      IF (jts - jbs .lt. spec_zone) THEN
+! Y-start boundary
+        DO j = jts, min(jtf,jbs+spec_zone-1)
+          b_dist = j - jbs
+          b_limit = b_dist
+          IF(periodic_x)b_limit = 0
+          DO k = kts, ktf
+            DO i = max(its,b_limit+ibs), min(itf,ibe-b_limit)
+              bfield = field_bdy_ys(i, k, b_dist+1) &
+                   + dtbc * field_bdy_tend_ys(i, k, b_dist+1) 
+              if(msfcouple)xmsf = msf(i,j)
+              if(mucouple)xmu = mu(i,j)
+              field(i,k,j) = xmsf*bfield/xmu
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDIF
+
+      IF (jbe - jtf .lt. spec_zone) THEN
+! Y-end boundary
+        DO j = max(jts,jbe-spec_zone+1), jtf
+          b_dist = jbe - j
+          b_limit = b_dist
+          IF(periodic_x)b_limit = 0
+
+
+          DO k = kts, ktf
+            DO i = max(its,b_limit+ibs), min(itf,ibe-b_limit)
+              bfield = field_bdy_ye(i, k, b_dist+1) &
+                   + dtbc * field_bdy_tend_ye(i, k, b_dist+1) 
+              if(msfcouple)xmsf = msf(i,j)
+              if(mucouple)xmu = mu(i,j)
+              field(i,k,j) = xmsf*bfield/xmu
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDIF
+
+    IF(.NOT.periodic_x)THEN
+      IF (its - ibs .lt. spec_zone) THEN
+! X-start boundary
+        DO i = its, min(itf,ibs+spec_zone-1)
+          b_dist = i - ibs
+          DO k = kts, ktf
+            DO j = max(jts,b_dist+jbs+1), min(jtf,jbe-b_dist-1)
+              bfield = field_bdy_xs(j, k, b_dist+1) &
+                   + dtbc * field_bdy_tend_xs(j, k, b_dist+1) 
+              if(msfcouple)xmsf = msf(i,j)
+              if(mucouple)xmu = mu(i,j)
+              field(i,k,j) = xmsf*bfield/xmu
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDIF
+
+     IF (ibe - itf .lt. spec_zone) THEN
+! X-end boundary
+        DO i = max(its,ibe-spec_zone+1), itf
+          b_dist = ibe - i
+          DO k = kts, ktf
+            DO j = max(jts,b_dist+jbs+1), min(jtf,jbe-b_dist-1)
+              bfield = field_bdy_xe(j, k, b_dist+1) &
+                   + dtbc * field_bdy_tend_xe(j, k, b_dist+1) 
+              if(msfcouple)xmsf = msf(i,j)
+              if(mucouple)xmu = mu(i,j)
+              field(i,k,j) = xmsf*bfield/xmu
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDIF
+    ENDIF
+
+
+   END SUBROUTINE spec_bdy_final
+!------------------------------------------------------------------------
 
    SUBROUTINE zero_grad_bdy (  field,                     &
                                variable_in, config_flags, & 

@@ -7,7 +7,7 @@ module module_GW_baseflow
 
 #include "gw_field_include.inc"
 #include "rt_include.inc"
-#include "namelist.inc"
+!yw #include "namelist.inc"
 contains
 
 !------------------------------------------------------------------------------

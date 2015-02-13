@@ -32,6 +32,7 @@ MODULES = \
 	module_data_cam_mam_asect.o \
 	module_cam_infnan.o \
 	module_bl_ysu.o \
+	module_bl_shinhong.o \
 	module_bl_mrf.o \
 	module_bl_gfs.o \
 	module_bl_gfs2011.o \

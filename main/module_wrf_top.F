@@ -1451,11 +1451,15 @@ ENDIF
    ENDIF
    IF ( model_config_rec%mp_physics(head_grid%id) .EQ. LSCONDSCHEME ) THEN
       head_grid%h_diabatic = 0.0
+      head_grid%qv_diabatic = 0.0
+      head_grid%qc_diabatic = 0.0
       head_grid%rainnc = 0.0
       head_grid%rainncv = 0.0
    ENDIF
    IF ( model_config_rec%mp_physics(head_grid%id) .EQ. MKESSLERSCHEME ) THEN
       head_grid%h_diabatic = 0.0
+      head_grid%qv_diabatic = 0.0
+      head_grid%qc_diabatic = 0.0
       head_grid%rainnc = 0.0
       head_grid%rainncv = 0.0
    ENDIF
@@ -2001,11 +2005,15 @@ ENDIF
    ENDIF
    IF ( model_config_rec%mp_physics(head_grid%id) .EQ. LSCONDSCHEME ) THEN
       head_grid%h_diabatic = 0.0
+      head_grid%qv_diabatic = 0.0
+      head_grid%qc_diabatic = 0.0
       head_grid%rainnc = 0.0
       head_grid%rainncv = 0.0
    ENDIF
    IF ( model_config_rec%mp_physics(head_grid%id) .EQ. MKESSLERSCHEME ) THEN
       head_grid%h_diabatic = 0.0
+      head_grid%qv_diabatic = 0.0
+      head_grid%qc_diabatic = 0.0
       head_grid%rainnc = 0.0
       head_grid%rainncv = 0.0
    ENDIF

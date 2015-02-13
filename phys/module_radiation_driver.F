@@ -708,6 +708,14 @@ CONTAINS
 !  CALL wrf_debug (1, wrf_err_message )
    if (lw_physics .eq. 0 .and. sw_physics .eq. 0)         return
 
+! amontornes-bcodina (2014-05-02) :: improving the namelist settings consistency for the FLG scheme
+!  if (lw_physics .ne. FLGLWSCHEME .and. sw_physics .eq. FLGSWSCHEME)  then
+!      call wrf_error_fatal('SW and LW schemes are in conflict. SW is FLG and LW is a different scheme!')
+!  end if
+!  if (lw_physics .eq. FLGLWSCHEME .and. sw_physics .ne. FLGSWSCHEME) then
+!      call wrf_error_fatal('SW and LW schemes are in conflict. LW is FLG and SW is a different scheme!')
+!  end if
+
 ! ra_call_offset = -1 gives old method where radiation may be called just before output
 ! ra_call_offset =  0 gives new method where radiation may be called just after output
 !                     and is also consistent with removal of offset in new XTIME
@@ -1270,6 +1278,7 @@ CONTAINS
                     ,SWVISDIR=swvisdir ,SWVISDIF=swvisdif              &  !fds ssib swr comp (06/2010)
                     ,SWNIRDIR=swnirdir ,SWNIRDIF=swnirdif              &  !fds ssib swr comp (06/2010)
                     ,SF_SURFACE_PHYSICS=sf_surface_physics             &  !fds
+                    ,SWDDIR=swddir,SWDDIF=swddif,SWDDNI=swddni         &  !amontornes-bcodina (2014-04-20)
                     ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                     &
                     ,F_QI=f_qi,F_QS=f_qs,F_QG=f_qg                     &
                     ,f_ice_phy=f_ice_phy,f_rain_phy=f_rain_phy         &
@@ -1444,10 +1453,11 @@ CONTAINS
               ,kms=kms,kmax=kme                       &
               ,its=its,ite=ite,jts=jts,jte=jte        &
               ,kts=kts,kte=kte                        &
-		      ,uswtop=RSWTOA,ulwtop=RLWTOA            &
-		      ,NETSWBOT=GSW,DLWBOT=GLW                &
-		      ,DSWBOT=SWDOWN,deltat=RTHRATEN          &
-		      ,dtshort=RTHRATENSW,dtlongwv=RTHRATENLW &
+	      ,uswtop=RSWTOA,ulwtop=RLWTOA            &
+	      ,NETSWBOT=GSW,DLWBOT=GLW                &
+	      ,DSWBOT=SWDOWN,deltat=RTHRATEN          &
+	      ,dtshort=RTHRATENSW,dtlongwv=RTHRATENLW &
+              ,SWDDIR=swddir,SWDDIF=swddif,SWDDNI=swddni &  ! amontornes-bcodina (2014-04-20)
               )
 
           CALL wrf_debug(100, 'a4 Fu_Liou-Gu')
@@ -1663,6 +1673,7 @@ CONTAINS
                     ,SWVISDIR=swvisdir ,SWVISDIF=swvisdif              &  !fds ssib swr comp (06/2010)
                     ,SWNIRDIR=swnirdir ,SWNIRDIF=swnirdif              &  !fds ssib swr comp (06/2010)
                     ,SF_SURFACE_PHYSICS=sf_surface_physics             &  !fds
+                    ,SWDDIR=swddir,SWDDIF=swddif,SWDDNI=swddni         &  !amontornes-bcodina (2014-04-20)
                     ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                     &
                     ,F_QI=f_qi,F_QS=f_qs,F_QG=f_qg                     &
                     ,f_ice_phy=f_ice_phy,f_rain_phy=f_rain_phy         &
@@ -1950,7 +1961,8 @@ CONTAINS
 ! jararias, 14/08/2013
      ! surface direct and diffuse SW fluxes computation. Only for schemes other than RRTMG and Goddard
      ! Backup method in case sw scheme in use does not provide surface SW direct and diffuse irradiances
-     IF ((sw_physics .NE. RRTMG_SWSCHEME) .AND. (sw_physics .NE.  RRTMG_SWSCHEME_FAST) &
+     IF ((sw_physics .NE. RRTMG_SWSCHEME) .AND. (sw_physics .NE. RRTMG_SWSCHEME_FAST) &
+           .AND. (sw_physics .NE. FLGSWSCHEME) .AND. (sw_physics .NE. CAMSWSCHEME) &  ! amontornes-bcodina (2014-04-20)
            .AND. (sw_physics .ne. GODDARDSWSCHEME)) THEN
         DO j=jts,jte
            DO i=its,ite

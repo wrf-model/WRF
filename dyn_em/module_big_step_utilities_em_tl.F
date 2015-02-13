@@ -18,6 +18,7 @@
  USE module_model_constants
  USE module_state_description, only: p_qg, p_qs, p_qi, gdscheme, tiedtkescheme, ntiedtkescheme, &
  kfetascheme, mskfscheme, g3scheme, p_qv, param_first_scalar, p_qr, p_qc, DFI_FWD
+ USE module_state_description, only: LSCONDSCHEME, MKESSLERSCHEME !hcl
  USE module_configure, ONLY : grid_config_rec_type
  USE module_wrf_error
 
@@ -6013,7 +6014,10 @@ END SUBROUTINE G_PHY_PREP
 SUBROUTINE G_MOIST_PHYSICS_PREP_EM(t_new, t_newd, t_old, t0, rho, rhod, &
 &  al, ald, alb, p, pd, p8w, p8wd, p0, pb, ph, phd, phb, th_phy, th_phyd&
 &  , pii, piid, pf, pfd, z, zd, z_at_w, z_at_wd, dz8w, dz8wd, dt, &
-&  h_diabatic, h_diabaticd, config_flags, fzm, fzp, ids, ide, jds, jde, &
+&  h_diabatic, h_diabaticd, &
+&  qv, qvd, qv_diabatic, qv_diabaticd, &
+&  qc, qcd, qc_diabatic, qc_diabaticd, &
+&  config_flags, fzm, fzp, ids, ide, jds, jde, &
 &  kds, kde, ims, ime, jms, jme, kms, kme, its, ite, jts, jte, kts, kte)
   IMPLICIT NONE
 ! Here we construct full fields
@@ -6024,17 +6028,18 @@ SUBROUTINE G_MOIST_PHYSICS_PREP_EM(t_new, t_newd, t_old, t0, rho, rhod, &
   INTEGER, INTENT(IN) :: its, ite, jts, jte, kts, kte
   REAL, INTENT(IN) :: dt
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN) :: al, alb, p, &
-&  pb, ph, phb
+&  pb, ph, phb, qv, qc
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN) :: ald, pd, phd
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN) :: qvd, qcd
   REAL, DIMENSION(kms:kme), INTENT(IN) :: fzm, fzp
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(OUT) :: rho, th_phy&
 &  , pii, pf, z, z_at_w, dz8w, p8w
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(OUT) :: rhod, &
 &  th_phyd, piid, pfd, zd, z_at_wd, dz8wd, p8wd
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: &
-&  h_diabatic
+&  h_diabatic, qv_diabatic, qc_diabatic
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: &
-&  h_diabaticd
+&  h_diabaticd, qv_diabaticd, qc_diabaticd
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: t_new, &
 &  t_old
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: t_newd
@@ -6114,6 +6119,23 @@ SUBROUTINE G_MOIST_PHYSICS_PREP_EM(t_new, t_newd, t_old, t0, rho, rhod, &
         th_phy(i, k, j) = t_new(i, k, j) + t0
         h_diabaticd(i, k, j) = th_phyd(i, k, j)
         h_diabatic(i, k, j) = th_phy(i, k, j)
+        if ( config_flags%mp_physics /= LSCONDSCHEME .and. &
+             config_flags%mp_physics /= MKESSLERSCHEME ) then
+        if ( P_QV >= PARAM_FIRST_SCALAR ) then
+           qv_diabaticd(i, k, j) = qvd(i, k, j)
+           qv_diabatic(i, k, j)  = qv(i, k, j)
+        else
+           qv_diabaticd(i, k, j) = 0.0
+           qv_diabatic(i, k, j)  = 0.0
+        end if
+        if ( P_QC >= PARAM_FIRST_SCALAR ) then
+           qc_diabaticd(i, k, j) = qcd(i, k, j)
+           qc_diabatic(i, k, j)  = qc(i, k, j)
+        else
+           qc_diabaticd(i, k, j) = 0.0
+           qc_diabatic(i, k, j)  = 0.0
+        end if
+        end if !hcl
         rhod(i, k, j) = -(ald(i, k, j)/(al(i, k, j)+alb(i, k, j))**2)
         rho(i, k, j) = 1./(al(i, k, j)+alb(i, k, j))
         pwx1d = pd(i, k, j)/p0
@@ -6192,7 +6214,9 @@ END SUBROUTINE G_MOIST_PHYSICS_PREP_EM
 !   with respect to varying inputs: th_phy h_diabatic t_new
 !   RW status of diff variables: th_phy:in h_diabatic:in-out t_new:in-out
 SUBROUTINE G_MOIST_PHYSICS_FINISH_EM(t_new, t_newd, t_old, t0, mut, &
-&  th_phy, th_phyd, h_diabatic, h_diabaticd, dt, config_flags, ids, ide, &
+&  th_phy, th_phyd, h_diabatic, h_diabaticd, &
+&  qv, qvd, qv_diabatic, qv_diabaticd, qc, qcd, qc_diabatic, qc_diabaticd, &
+&  dt, config_flags, ids, ide, &
 &  jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, its, ite, jts, jte, &
 &  kts, kte)
   IMPLICIT NONE
@@ -6203,11 +6227,13 @@ SUBROUTINE G_MOIST_PHYSICS_FINISH_EM(t_new, t_newd, t_old, t0, mut, &
   INTEGER, INTENT(IN) :: ims, ime, jms, jme, kms, kme
   INTEGER, INTENT(IN) :: its, ite, jts, jte, kts, kte
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: t_new, &
-&  t_old, th_phy, h_diabatic
+&  t_old, th_phy, h_diabatic, qv_diabatic, qc_diabatic
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: t_newd, &
-&  th_phyd, h_diabaticd
-  REAL :: mpten
-  REAL :: mptend
+&  th_phyd, h_diabaticd, qv_diabaticd, qc_diabaticd
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN) :: qv, qc
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN) :: qvd, qcd
+  REAL :: mpten, qvten, qcten
+  REAL :: mptend, qvtend, qctend
   REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT) :: mut
   REAL, INTENT(IN) :: t0, dt
   INTEGER :: i_start, i_end, j_start, j_end, k_start, k_end
@@ -6240,11 +6266,24 @@ SUBROUTINE G_MOIST_PHYSICS_FINISH_EM(t_new, t_newd, t_old, t0, mut, &
   END IF
 !  add microphysics theta diff to perturbation theta, set h_diabatic
   IF (config_flags%no_mp_heating .EQ. 0) THEN
+    qvtend = 0.0
+    qctend = 0.0
     DO j=j_start,j_end
       DO k=k_start,k_end
         DO i=i_start,i_end
           mptend = th_phyd(i, k, j) - h_diabaticd(i, k, j)
           mpten = th_phy(i, k, j) - h_diabatic(i, k, j)
+          if ( config_flags%mp_physics /= LSCONDSCHEME .and. &
+               config_flags%mp_physics /= MKESSLERSCHEME ) then
+          if ( P_QV >= PARAM_FIRST_SCALAR ) then
+             qvtend = qvd(i, k, j) - qv_diabaticd(i, k, j)
+             qvten  = qv(i, k, j)  - qv_diabatic(i, k, j)
+          end if
+          if ( P_QC >= PARAM_FIRST_SCALAR ) then
+             qctend = qcd(i, k, j) - qc_diabaticd(i, k, j)
+             qcten  = qc(i, k, j)  - qc_diabatic(i, k, j)
+          end if
+          end if !hcl mp_physics
           IF (config_flags%mp_tend_lim*dt .GT. mpten) THEN
             mpten = mpten
           ELSE
@@ -6261,6 +6300,23 @@ SUBROUTINE G_MOIST_PHYSICS_FINISH_EM(t_new, t_newd, t_old, t0, mut, &
           t_new(i, k, j) = t_new(i, k, j) + mpten
           h_diabaticd(i, k, j) = mptend/dt
           h_diabatic(i, k, j) = mpten/dt
+          if ( config_flags%mp_physics /= LSCONDSCHEME .and. &
+               config_flags%mp_physics /= MKESSLERSCHEME ) then
+          if ( P_QV >= PARAM_FIRST_SCALAR ) then
+             qv_diabaticd(i, k, j) = qvtend/dt
+             qv_diabatic(i, k, j)  = qvten/dt
+          else
+             qv_diabaticd(i, k, j) = 0.0
+             qv_diabatic(i, k, j)  = 0.0
+          end if
+          if ( P_QC >= PARAM_FIRST_SCALAR ) then
+             qc_diabaticd(i, k, j) = qctend/dt
+             qc_diabatic(i, k, j)  = qcten/dt
+          else
+             qc_diabaticd(i, k, j) = 0.0
+             qc_diabatic(i, k, j)  = 0.0
+          end if
+          end if !hcl
         END DO
       END DO
     END DO
@@ -6270,6 +6326,10 @@ SUBROUTINE G_MOIST_PHYSICS_FINISH_EM(t_new, t_newd, t_old, t0, mut, &
         DO i=i_start,i_end
           h_diabaticd(i, k, j) = 0.0_8
           h_diabatic(i, k, j) = 0.
+          qv_diabaticd(i, k, j) = 0.0
+          qv_diabatic(i, k, j)  = 0.0
+          qc_diabaticd(i, k, j) = 0.0
+          qc_diabatic(i, k, j)  = 0.0
         END DO
       END DO
     END DO

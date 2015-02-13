@@ -2074,6 +2074,34 @@ BENCH_START(rk_scalar_tend_tim)
                            grid%j_start(ij), grid%j_end(ij), &
                            k_start    , k_end               )
 
+               IF( rk_step == 1 )THEN
+               IF( im.eq.p_qv .or. im.eq.p_qc )THEN
+                 CALL q_diabatic_add  ( im, im, config_flags, tenddec,       & 
+                           rk_step, dt_rk, grid%mut,                         &
+                           grid%ru_m, grid%rv_m, grid%ww_m,                  &
+                           grid%muts, grid%mub, grid%mu_1,                   &
+                           grid%alt,                                         &
+                           grid%qv_diabatic,                                 &
+                           grid%qc_diabatic,                                 &
+                           moist_old(ims,kms,jms,im),                        &
+                           moist(ims,kms,jms,im),                            &
+                           moist_tend(ims,kms,jms,im),                       &
+                           advect_tend,h_tendency,z_tendency,grid%rqvften,   & 
+                           grid%qv_base, .true., grid%fnm, grid%fnp,         &
+                           grid%msfux,grid%msfuy, grid%msfvx, grid%msfvx_inv,&
+                           grid%msfvy, grid%msftx,grid%msfty,                & 
+                           grid%rdx, grid%rdy, grid%rdn, grid%rdnw, grid%khdif, &
+                           grid%kvdif, grid%xkhh,                            &
+                           grid%diff_6th_opt, grid%diff_6th_factor,          &
+                           config_flags%moist_adv_opt,                       &
+                           ids, ide, jds, jde, kds, kde,     &
+                           ims, ime, jms, jme, kms, kme,     &
+                           grid%i_start(ij), grid%i_end(ij), &
+                           grid%j_start(ij), grid%j_end(ij), &
+                           k_start    , k_end               )
+               ENDIF
+               ENDIF
+
 BENCH_END(rk_scalar_tend_tim)
 
 BENCH_START(rlx_bdy_scalar_tim)
@@ -2139,6 +2167,35 @@ BENCH_START(update_scal_tim)
                                its=grid%i_start(ij), ite=grid%i_end(ij),               &
                                jts=grid%j_start(ij), jte=grid%j_end(ij),               &
                                kts=k_start    , kte=k_end                              )
+
+               IF( rk_step == rk_order )THEN
+               IF( im.eq.p_qv .or. im.eq.p_qc )THEN
+                 CALL q_diabatic_subtr( im, im, config_flags, tenddec,       & 
+                           rk_step, dt_rk,                                   &
+                           grid%ru_m, grid%rv_m, grid%ww_m,                  &
+                           grid%muts, grid%mub, grid%mu_1,                   &
+                           grid%alt,                                         &
+                           grid%qv_diabatic,                                 &
+                           grid%qc_diabatic,                                 &
+                           moist_old(ims,kms,jms,im),                        &
+                           moist(ims,kms,jms,im),                            &
+                           moist_tend(ims,kms,jms,im),                       &
+                           advect_tend,h_tendency,z_tendency,grid%rqvften,   & 
+                           grid%qv_base, .true., grid%fnm, grid%fnp,         &
+                           grid%msfux,grid%msfuy, grid%msfvx, grid%msfvx_inv,&
+                           grid%msfvy, grid%msftx,grid%msfty,                & 
+                           grid%rdx, grid%rdy, grid%rdn, grid%rdnw, grid%khdif, &
+                           grid%kvdif, grid%xkhh,                            &
+                           grid%diff_6th_opt, grid%diff_6th_factor,          &
+                           config_flags%moist_adv_opt,                       &
+                           ids, ide, jds, jde, kds, kde,     &
+                           ims, ime, jms, jme, kms, kme,     &
+                           grid%i_start(ij), grid%i_end(ij), &
+                           grid%j_start(ij), grid%j_end(ij), &
+                           k_start    , k_end               )
+               ENDIF
+               ENDIF
+
 BENCH_END(update_scal_tim)
 
 BENCH_START(flow_depbdy_tim)
@@ -3343,7 +3400,9 @@ BENCH_START(moist_physics_prep_tim)
                                    grid%al, grid%alb, grid%p, p8w, p0, grid%pb,          &
                                    grid%ph_2, grid%phb, th_phy, pi_phy , p_phy, &
                                    grid%z, grid%z_at_w, dz8w,        &
-                                   dtm, grid%h_diabatic,                  &
+                                   dtm, grid%h_diabatic,                       &
+                                   moist(ims,kms,jms,P_QV),grid%qv_diabatic,   &
+                                   moist(ims,kms,jms,P_QC),grid%qc_diabatic,   &
                                    config_flags,grid%fnm, grid%fnp,            &
                                    ids, ide, jds, jde, kds, kde,     &
                                    ims, ime, jms, jme, kms, kme,     &
@@ -3623,7 +3682,10 @@ BENCH_START(moist_phys_end_tim)
                       k_start    , k_end                                )
 
        CALL moist_physics_finish_em( grid%t_2, grid%t_1, t0, grid%muts, th_phy,       &
-                                      grid%h_diabatic, dtm, config_flags,    &
+                                      grid%h_diabatic, dtm,                    &
+                                      moist(ims,kms,jms,P_QV),grid%qv_diabatic, &
+                                      moist(ims,kms,jms,P_QC),grid%qc_diabatic, &
+                                      config_flags,                            &
 #if ( WRF_DFI_RADAR == 1 )
                                       grid%dfi_tten_rad,grid%dfi_stage,        &
 #endif

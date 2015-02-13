@@ -1133,6 +1133,271 @@ END SUBROUTINE rk_scalar_tend
 
 !-------------------------------------------------------------------------------
 
+SUBROUTINE q_diabatic_add ( scs, sce, config_flags,          &
+                            tenddec,                        & 
+                            rk_step, dt, mu,                 &
+                            ru, rv, ww, mut, mub, mu_old,    &
+                            alt,                             &
+                            qv_diabatic, qc_diabatic,        &
+                            scalar_old, scalar,              &
+                            scalar_tends, advect_tend,       &
+                            h_tendency, z_tendency,          & 
+                            RQVFTEN,                         &
+                            base, moist_step, fnm, fnp,      &
+                            msfux, msfuy, msfvx, msfvx_inv,  &
+                            msfvy, msftx, msfty,             &
+                            rdx, rdy, rdn, rdnw,             &
+                            khdif, kvdif, xkmhd,             &
+                            diff_6th_opt, diff_6th_factor,   &
+                            adv_opt,                         &
+                            ids, ide, jds, jde, kds, kde,    &
+                            ims, ime, jms, jme, kms, kme,    &
+                            its, ite, jts, jte, kts, kte    )
+
+   IMPLICIT NONE
+
+   !  Input data.
+
+   TYPE(grid_config_rec_type   ) ,   INTENT(IN   ) :: config_flags
+
+   LOGICAL ,                INTENT(IN   ) :: tenddec ! tendency term
+
+   INTEGER ,                INTENT(IN   ) :: rk_step, scs, sce
+   INTEGER ,                INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
+                                             ims, ime, jms, jme, kms, kme, &
+                                             its, ite, jts, jte, kts, kte
+
+   LOGICAL , INTENT(IN   ) :: moist_step
+
+      REAL,     DIMENSION( ims:ime, jms:jme )                        , &
+                INTENT(IN   )   ::                                 mu
+
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme ),                &
+                                         INTENT(IN   )  :: qv_diabatic, qc_diabatic
+
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme , scs:sce ),                &
+                                         INTENT(IN   )  :: scalar, scalar_old
+
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme , scs:sce ),                      &
+                                         INTENT(INOUT)  :: scalar_tends
+                                                    
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme  ), INTENT(INOUT) :: advect_tend
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme  ), INTENT(  OUT) :: h_tendency, z_tendency 
+
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme  ), INTENT(OUT  ) :: RQVFTEN
+
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme  ), INTENT(IN   ) ::     ru,  &
+                                                                      rv,  &
+                                                                      ww,  &
+                                                                      xkmhd,  &
+                                                                      alt
+
+
+   REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: fnm,  &
+                                                                  fnp,  &
+                                                                  rdn,  &
+                                                                  rdnw, &
+                                                                  base
+
+   REAL , DIMENSION( ims:ime , jms:jme ) ,       INTENT(IN   ) :: msfux,    &
+                                                                  msfuy,    &
+                                                                  msfvx,    &
+                                                                  msfvx_inv,    &
+                                                                  msfvy,    &
+                                                                  msftx,    &
+                                                                  msfty,    &
+                                                                  mub,     &
+                                                                  mut,     &
+                                                                  mu_old
+
+   REAL ,                                        INTENT(IN   ) :: rdx,     &
+                                                                  rdy,     &
+                                                                  khdif,   &
+                                                                  kvdif
+
+   INTEGER, INTENT( IN ) :: diff_6th_opt
+   REAL,    INTENT( IN ) :: diff_6th_factor
+
+   REAL ,                                        INTENT(IN   ) :: dt
+
+   INTEGER, INTENT(IN   ) :: adv_opt          
+
+   ! Local data
+  
+   INTEGER :: im, i,j,k
+
+
+!<DESCRIPTION>
+!
+!</DESCRIPTION>
+
+!!!       print *,'  q_diab add: '
+!!!       print *,its,MIN(ite,ide-1)
+!!!       print *,jts,MIN(jte,jde-1)
+!!!       print *,kts,kte-1
+
+   scalar_loop : DO im = scs, sce
+
+     IF( im.eq.p_qv )THEN
+!!!       print *,'  qv '
+       DO j = jts,MIN(jte,jde-1)
+       DO k = kts,kte-1
+       DO i = its,MIN(ite,ide-1)
+         scalar_tends(i,k,j,im) = scalar_tends(i,k,j,im) + qv_diabatic(i,k,j)*mu(I,J)
+       ENDDO
+       ENDDO
+       ENDDO
+     ENDIF
+     IF( im.eq.p_qc )THEN
+!!!       print *,'  qc '
+       DO j = jts,MIN(jte,jde-1)
+       DO k = kts,kte-1
+       DO i = its,MIN(ite,ide-1)
+         scalar_tends(i,k,j,im) = scalar_tends(i,k,j,im) + qc_diabatic(i,k,j)*mu(I,J)
+       ENDDO
+       ENDDO
+       ENDDO
+     ENDIF
+
+   END DO scalar_loop
+
+END SUBROUTINE q_diabatic_add
+
+!-------------------------------------------------------------------------------
+
+SUBROUTINE q_diabatic_subtr( scs, sce, config_flags,         &
+                            tenddec,                        & 
+                            rk_step, dt,                     &
+                            ru, rv, ww, mut, mub, mu_old,    &
+                            alt,                             &
+                            qv_diabatic, qc_diabatic,        &
+                            scalar_old, scalar,              &
+                            scalar_tends, advect_tend,       &
+                            h_tendency, z_tendency,          & 
+                            RQVFTEN,                         &
+                            base, moist_step, fnm, fnp,      &
+                            msfux, msfuy, msfvx, msfvx_inv,  &
+                            msfvy, msftx, msfty,             &
+                            rdx, rdy, rdn, rdnw,             &
+                            khdif, kvdif, xkmhd,             &
+                            diff_6th_opt, diff_6th_factor,   &
+                            adv_opt,                         &
+                            ids, ide, jds, jde, kds, kde,    &
+                            ims, ime, jms, jme, kms, kme,    &
+                            its, ite, jts, jte, kts, kte    )
+
+   IMPLICIT NONE
+
+   !  Input data.
+
+   TYPE(grid_config_rec_type   ) ,   INTENT(IN   ) :: config_flags
+
+   LOGICAL ,                INTENT(IN   ) :: tenddec ! tendency term
+
+   INTEGER ,                INTENT(IN   ) :: rk_step, scs, sce
+   INTEGER ,                INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
+                                             ims, ime, jms, jme, kms, kme, &
+                                             its, ite, jts, jte, kts, kte
+
+   LOGICAL , INTENT(IN   ) :: moist_step
+
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme ),                &
+                                         INTENT(IN   )  :: qv_diabatic, qc_diabatic
+
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme , scs:sce ),                &
+                                         INTENT(INOUT)  :: scalar
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme , scs:sce ),                &
+                                         INTENT(IN   )  :: scalar_old
+
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme , scs:sce ),                      &
+                                         INTENT(INOUT)  :: scalar_tends
+                                                    
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme  ), INTENT(INOUT) :: advect_tend
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme  ), INTENT(  OUT) :: h_tendency, z_tendency 
+
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme  ), INTENT(OUT  ) :: RQVFTEN
+
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme  ), INTENT(IN   ) ::     ru,  &
+                                                                      rv,  &
+                                                                      ww,  &
+                                                                      xkmhd,  &
+                                                                      alt
+
+
+   REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: fnm,  &
+                                                                  fnp,  &
+                                                                  rdn,  &
+                                                                  rdnw, &
+                                                                  base
+
+   REAL , DIMENSION( ims:ime , jms:jme ) ,       INTENT(IN   ) :: msfux,    &
+                                                                  msfuy,    &
+                                                                  msfvx,    &
+                                                                  msfvx_inv,    &
+                                                                  msfvy,    &
+                                                                  msftx,    &
+                                                                  msfty,    &
+                                                                  mub,     &
+                                                                  mut,     &
+                                                                  mu_old
+
+   REAL ,                                        INTENT(IN   ) :: rdx,     &
+                                                                  rdy,     &
+                                                                  khdif,   &
+                                                                  kvdif
+
+   INTEGER, INTENT( IN ) :: diff_6th_opt
+   REAL,    INTENT( IN ) :: diff_6th_factor
+
+   REAL ,                                        INTENT(IN   ) :: dt
+
+   INTEGER, INTENT(IN   ) :: adv_opt          
+
+   ! Local data
+  
+   INTEGER :: im, i,j,k
+
+
+!<DESCRIPTION>
+!
+!</DESCRIPTION>
+
+
+!!!       print *,'  q_diab subtr, dt = : ',dt
+!!!       print *,its,MIN(ite,ide-1)
+!!!       print *,jts,MIN(jte,jde-1)
+!!!       print *,kts,kte-1
+
+   scalar_loop : DO im = scs, sce
+
+     IF( im.eq.p_qv )THEN
+!!!       print *,'  qv '
+       DO j = jts,MIN(jte,jde-1)
+       DO k = kts,kte-1
+       DO i = its,MIN(ite,ide-1)
+         scalar(i,k,j,im) = scalar(i,k,j,im) - dt*qv_diabatic(i,k,j)
+       ENDDO
+       ENDDO
+       ENDDO
+     ENDIF
+     IF( im.eq.p_qc )THEN
+!!!       print *,'  qc '
+       DO j = jts,MIN(jte,jde-1)
+       DO k = kts,kte-1
+       DO i = its,MIN(ite,ide-1)
+         scalar(i,k,j,im) = scalar(i,k,j,im) - dt*qc_diabatic(i,k,j)
+       ENDDO
+       ENDDO
+       ENDDO
+     ENDIF
+
+   END DO scalar_loop
+
+END SUBROUTINE q_diabatic_subtr
+
+
+!-------------------------------------------------------------------------------
+
 SUBROUTINE rk_update_scalar( scs, sce,                      &
                              scalar_1, scalar_2, sc_tend,   &
                              advh_t, advz_t,                & 

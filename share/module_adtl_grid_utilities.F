@@ -14,6 +14,7 @@ REAL, ALLOCATABLE :: s_moist(:,:,:,:), s_scalar(:,:,:,:), s_tracer(:,:,:,:)
 REAL, ALLOCATABLE :: s_tke_2(:,:,:)
 
 REAL, ALLOCATABLE :: s_p(:,:,:), s_al(:,:,:), s_h_diabatic(:,:,:)
+REAL, ALLOCATABLE :: s_qv_diabatic(:,:,:), s_qc_diabatic(:,:,:)
 REAL, ALLOCATABLE :: s_ustm(:,:), s_hfx(:,:), s_qfx(:,:)
 
 REAL, ALLOCATABLE :: s_dtaux3d(:,:,:), s_dtauy3d(:,:,:)
@@ -44,6 +45,7 @@ REAL, ALLOCATABLE :: b_moist(:,:,:,:), b_scalar(:,:,:,:), b_tracer(:,:,:,:)
 REAL, ALLOCATABLE :: b_tke_2(:,:,:)
 
 REAL, ALLOCATABLE :: b_p(:,:,:), b_al(:,:,:), b_h_diabatic(:,:,:)
+REAL, ALLOCATABLE :: b_qv_diabatic(:,:,:), b_qc_diabatic(:,:,:)
 REAL, ALLOCATABLE :: b_ustm(:,:), b_hfx(:,:), b_qfx(:,:)
 
 REAL, ALLOCATABLE :: b_dtaux3d(:,:,:), b_dtauy3d(:,:,:)
@@ -139,6 +141,16 @@ CONTAINS
    IF (ierr.NE.0) THEN
      CALL wrf_error_fatal ( &
      'share/module_adtl_grid_utilities.f: Failed to allocate s_h_diabatic(sm31:em31, sm32:em32, sm33:em33). ')
+   ENDIF
+   ALLOCATE ( s_qv_diabatic(sm31:em31, sm32:em32, sm33:em33), STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate s_qv_diabatic(sm31:em31, sm32:em32, sm33:em33). ')
+   ENDIF
+   ALLOCATE ( s_qc_diabatic(sm31:em31, sm32:em32, sm33:em33), STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate s_qc_diabatic(sm31:em31, sm32:em32, sm33:em33). ')
    ENDIF
 
    ALLOCATE ( s_ustm(sm31:em31, sm33:em33), STAT=ierr )
@@ -625,6 +637,16 @@ CONTAINS
    IF (ierr.NE.0) THEN
      CALL wrf_error_fatal ( &
      'share/module_adtl_grid_utilities.f: Failed to allocate b_h_diabatic(sm31:em31, sm32:em32, sm33:em33). ')
+   ENDIF
+   ALLOCATE ( b_qv_diabatic(sm31:em31, sm32:em32, sm33:em33), STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_qv_diabatic(sm31:em31, sm32:em32, sm33:em33). ')
+   ENDIF
+   ALLOCATE ( b_qc_diabatic(sm31:em31, sm32:em32, sm33:em33), STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_qc_diabatic(sm31:em31, sm32:em32, sm33:em33). ')
    ENDIF
 
    ALLOCATE ( b_ustm(sm31:em31, sm33:em33), STAT=ierr )
@@ -1218,6 +1240,8 @@ CONTAINS
    s_p = grid%p
    s_al = grid%al
    s_h_diabatic = grid%h_diabatic
+   s_qv_diabatic = grid%qv_diabatic
+   s_qc_diabatic = grid%qc_diabatic
    s_ustm = grid%ustm
    s_hfx = grid%hfx
    s_qfx = grid%qfx
@@ -1257,6 +1281,8 @@ CONTAINS
    b_tracer = grid%tracer
 
    b_h_diabatic = grid%h_diabatic
+   b_qv_diabatic = grid%qv_diabatic
+   b_qc_diabatic = grid%qc_diabatic
 
    b_p = grid%p
    b_rainnc = grid%rainnc
@@ -1297,6 +1323,8 @@ CONTAINS
    grid%p = s_p
    grid%al = s_al
    grid%h_diabatic = s_h_diabatic
+   grid%qv_diabatic = s_qv_diabatic
+   grid%qc_diabatic = s_qc_diabatic
    grid%ustm = s_ustm
    grid%hfx = s_hfx
    grid%qfx = s_qfx
@@ -1478,6 +1506,8 @@ CONTAINS
    grid%g_ww_m = 0.0
    
    grid%g_h_diabatic = 0.0
+   grid%g_qv_diabatic = 0.0
+   grid%g_qc_diabatic = 0.0
    grid%g_rainnc = 0.0
    grid%g_rainncv = 0.0
    grid%g_rainc = 0.0
@@ -1507,6 +1537,8 @@ CONTAINS
    b_hfx = grid%g_hfx
    b_qfx = grid%g_qfx
    b_h_diabatic = grid%g_h_diabatic
+   b_qv_diabatic = grid%g_qv_diabatic
+   b_qc_diabatic = grid%g_qc_diabatic
    
    IF ( gwd_opt .EQ. 1 ) THEN
       b_dtaux3d = grid%g_dtaux3d
@@ -1621,6 +1653,22 @@ CONTAINS
    DO k = kts,kte-1
    DO i = its,MIN(ite,ide-1)
      save  = save + grid%g_h_diabatic(i,k,j) * grid%g_h_diabatic(i,k,j)
+   ENDDO
+   ENDDO
+   ENDDO
+
+   DO j = jts,MIN(jte,jde-1)
+   DO k = kts,kte-1
+   DO i = its,MIN(ite,ide-1)
+     save  = save + grid%g_qv_diabatic(i,k,j) * grid%g_qv_diabatic(i,k,j)
+   ENDDO
+   ENDDO
+   ENDDO
+
+   DO j = jts,MIN(jte,jde-1)
+   DO k = kts,kte-1
+   DO i = its,MIN(ite,ide-1)
+     save  = save + grid%g_qc_diabatic(i,k,j) * grid%g_qc_diabatic(i,k,j)
    ENDDO
    ENDDO
    ENDDO
@@ -1751,6 +1799,22 @@ CONTAINS
    DO j = jts,MIN(jte,jde-1)
    DO k = kts,kte-1
    DO i = its,MIN(ite,ide-1)
+     save  = save + grid%g_qv_diabatic(i,k,j) * grid%g_qv_diabatic(i,k,j)
+   ENDDO
+   ENDDO
+   ENDDO
+
+   DO j = jts,MIN(jte,jde-1)
+   DO k = kts,kte-1
+   DO i = its,MIN(ite,ide-1)
+     save  = save + grid%g_qc_diabatic(i,k,j) * grid%g_qc_diabatic(i,k,j)
+   ENDDO
+   ENDDO
+   ENDDO
+
+   DO j = jts,MIN(jte,jde-1)
+   DO k = kts,kte-1
+   DO i = its,MIN(ite,ide-1)
      save  = save + grid%g_p(i,k,j) * grid%g_p(i,k,j)
    ENDDO
    ENDDO
@@ -1852,6 +1916,8 @@ CONTAINS
    grid%p = s_p
    grid%al = s_al
    grid%h_diabatic = s_h_diabatic
+   grid%qv_diabatic = s_qv_diabatic
+   grid%qc_diabatic = s_qc_diabatic
    grid%ustm = s_ustm
    grid%hfx = s_hfx
    grid%qfx = s_qfx
@@ -1969,6 +2035,24 @@ CONTAINS
    DO i = its,MIN(ite,ide-1)
      save  = save &
                   + (grid%h_diabatic(i,k,j)-b_h_diabatic(i,k,j)) * (grid%h_diabatic(i,k,j)-b_h_diabatic(i,k,j))
+   ENDDO
+   ENDDO
+   ENDDO
+
+   DO j = jts,MIN(jte,jde-1)
+   DO k = kts,kte-1
+   DO i = its,MIN(ite,ide-1)
+     save  = save &
+                  + (grid%qv_diabatic(i,k,j)-b_qv_diabatic(i,k,j)) * (grid%qv_diabatic(i,k,j)-b_qv_diabatic(i,k,j))
+   ENDDO
+   ENDDO
+   ENDDO
+
+   DO j = jts,MIN(jte,jde-1)
+   DO k = kts,kte-1
+   DO i = its,MIN(ite,ide-1)
+     save  = save &
+                  + (grid%qc_diabatic(i,k,j)-b_qc_diabatic(i,k,j)) * (grid%qc_diabatic(i,k,j)-b_qc_diabatic(i,k,j))
    ENDDO
    ENDDO
    ENDDO
@@ -2104,6 +2188,8 @@ CONTAINS
    DO k = kts,kte-1
    DO i = its,MIN(ite,ide-1)
       grid%a_h_diabatic(i,k,j)  = grid%g_h_diabatic(i,k,j)
+      grid%a_qv_diabatic(i,k,j) = grid%g_qv_diabatic(i,k,j)
+      grid%a_qc_diabatic(i,k,j) = grid%g_qc_diabatic(i,k,j)
    ENDDO
    ENDDO
    ENDDO
@@ -2173,6 +2259,8 @@ CONTAINS
    grid%a_scalar = 0.0
 
    grid%a_h_diabatic = 0.0
+   grid%a_qv_diabatic = 0.0
+   grid%a_qc_diabatic = 0.0
 
    grid%a_rainnc = 0.0
    grid%a_rainncv = 0.0
@@ -2298,6 +2386,8 @@ CONTAINS
    grid%g_scalar = 0.0
 
    grid%g_h_diabatic = 0.0
+   grid%g_qv_diabatic = 0.0
+   grid%g_qc_diabatic = 0.0
 
    grid%g_rainnc = 0.0
    grid%g_rainncv = 0.0
@@ -2474,6 +2564,22 @@ CONTAINS
    DO k = kts,kte-1
    DO i = its,MIN(ite,ide-1)
      save  = save + grid%a_h_diabatic(i,k,j) * b_h_diabatic(i,k,j)
+   ENDDO
+   ENDDO
+   ENDDO
+
+   DO j = jts,MIN(jte,jde-1)
+   DO k = kts,kte-1
+   DO i = its,MIN(ite,ide-1)
+     save  = save + grid%a_qv_diabatic(i,k,j) * b_qv_diabatic(i,k,j)
+   ENDDO
+   ENDDO
+   ENDDO
+
+   DO j = jts,MIN(jte,jde-1)
+   DO k = kts,kte-1
+   DO i = its,MIN(ite,ide-1)
+     save  = save + grid%a_qc_diabatic(i,k,j) * b_qc_diabatic(i,k,j)
    ENDDO
    ENDDO
    ENDDO
@@ -3067,6 +3173,16 @@ CONTAINS
      CALL wrf_error_fatal ( &
      'share/module_adtl_grid_utilities.f: Failed to deallocate s_h_diabatic. ')
    ENDIF
+   DEALLOCATE ( s_qv_diabatic, STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate s_qv_diabatic. ')
+   ENDIF
+   DEALLOCATE ( s_qc_diabatic, STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate s_qc_diabatic. ')
+   ENDIF
 
    DEALLOCATE ( s_ustm, STAT=ierr )
    IF (ierr.NE.0) THEN
@@ -3553,6 +3669,16 @@ CONTAINS
    IF (ierr.NE.0) THEN
      CALL wrf_error_fatal ( &
      'share/module_adtl_grid_utilities.f: Failed to deallocate b_h_diabatic. ')
+   ENDIF
+   DEALLOCATE ( b_qv_diabatic, STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate b_qv_diabatic. ')
+   ENDIF
+   DEALLOCATE ( b_qc_diabatic, STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate b_qc_diabatic. ')
    ENDIF
 
    DEALLOCATE ( b_ustm, STAT=ierr )

@@ -66,6 +66,10 @@ state   real    g_qh           ijkft   g_moist     1         -     rh   "G_QHAIL
 # Other Misc State Variables                                            
 state   real    g_h_diabatic   ijk     misc         1         -      rdu      "g_h_diabatic"          "MICROPHYSICS LATENT HEATING"         "K s-1"      
 state   real    a_h_diabatic   ijk     misc         1         -      rdu      "a_h_diabatic"          "MICROPHYSICS LATENT HEATING"         "K s-1"      
+state   real    g_qv_diabatic  ijk     misc         1         -      rdu      "g_qv_diabatic"         "MICROPHYSICS QV TENDENCY"            "g g-1 s-1"
+state   real    a_qv_diabatic  ijk     misc         1         -      rdu      "a_qv_diabatic"         "MICROPHYSICS QV TENDENCY"            "g g-1 s-1"
+state   real    g_qc_diabatic  ijk     misc         1         -      rdu      "g_qc_diabatic"         "MICROPHYSICS QC TENDENCY"            "g g-1 s-1"
+state   real    a_qc_diabatic  ijk     misc         1         -      rdu      "a_qc_diabatic"         "MICROPHYSICS QC TENDENCY"            "g g-1 s-1"
 state    real  G_RAINC          ij      misc        1         -      rhdu     "G_RAINC"               "ACCUMULATED TOTAL CUMULUS PRECIPITATION"                 "mm"      
 state    real  A_RAINC          ij      misc        1         -      rhdu     "A_RAINC"               "ACCUMULATED TOTAL CUMULUS PRECIPITATION"                 "mm"      
 state    real  G_RAINNC         ij      misc        1         -      rhdu     "G_RAINNC"              "ACCUMULATED TOTAL GRID SCALE PRECIPITATION"              "mm"      

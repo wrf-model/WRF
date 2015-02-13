@@ -47,8 +47,8 @@ CONTAINS
      &          ,sf_sfclay_physics,sf_surface_physics,ra_lw_physics   & 
      &          ,mosaic_lu,mosaic_soil                                &
      &          ,landusef,soilctop,soilcbot,ra,rs,nlcat,nscat,vegf_px & ! PX-LSM
-     &          ,snowncv, anal_interval, lai, pxlsm_smois_init        & ! PX-LSM
-     &          ,pxlsm_soil_nudge                                     & ! PX-LSM
+     &          ,snowncv, anal_interval, lai, imperv, canfra          & ! PX-LSM
+     &          ,pxlsm_smois_init, pxlsm_soil_nudge                   & ! PX-LSM
      &          ,idveg    ,iopt_crs  ,iopt_btr  ,iopt_run  ,iopt_sfc  ,iopt_frz     &
      &          ,iopt_inf ,iopt_rad  ,iopt_alb  ,iopt_snf  ,iopt_tbot ,iopt_stc     &
      &          ,isnowxy  ,tvxy      ,tgxy      ,canicexy  ,canliqxy  ,eahxy        &
@@ -489,8 +489,11 @@ CONTAINS
 !-- LANDUSEF     Landuse fraction                      ! P-X LSM
 !-- SOILCTOP     Top soil fraction                     ! P-X LSM
 !-- SOILCBOT     Bottom soil fraction                  ! P-X LSM
-!-- RA           Aerodynamic resistence                        ! P-X LSM
+!-- RA           Aerodynamic resistence                ! P-X LSM
 !-- RS           Stomatal resistence                   ! P-X LSM
+!-- VEGF_PX      PX LSM internal LU-based Veg Fraction ! P-X LSM
+!-- IMPERV       Impervious surface fraction           ! P-X LSM
+!-- CANFRA       Canopy/Tree fraction                  ! P-X LSM
 !-- NLCAT        Number of landuse categories          ! P-X LSM
 !-- NSCAT        Number of soil categories             ! P-X LSM
 !-- ch - drag coefficient for heat/moisture            ! MYNN LSM
@@ -924,10 +927,11 @@ CONTAINS
    INTEGER, OPTIONAL, INTENT(IN)    :: pxlsm_smois_init, pxlsm_soil_nudge, ANAL_INTERVAL
    REAL, DIMENSION( ims:ime, NLCAT, jms:jme ) , OPTIONAL, INTENT(INOUT)::   LANDUSEF
    REAL, DIMENSION( ims:ime, NSCAT, jms:jme ) , OPTIONAL, INTENT(INOUT)::   SOILCTOP, SOILCBOT
-   REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(INOUT)::   VEGF_PX
-   REAL, DIMENSION( ims:ime, jms:jme ) , OPTIONAL, INTENT(INOUT)::   RA
-   REAL, DIMENSION( ims:ime, jms:jme ) , OPTIONAL, INTENT(INOUT)::   RS
-   REAL, DIMENSION( ims:ime, jms:jme ) , OPTIONAL, INTENT(INOUT)::   LAI
+   REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(INOUT):: IMPERV, CANFRA
+   REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(INOUT):: VEGF_PX
+   REAL, DIMENSION( ims:ime, jms:jme ) , OPTIONAL, INTENT(INOUT):: RA
+   REAL, DIMENSION( ims:ime, jms:jme ) , OPTIONAL, INTENT(INOUT):: RS
+   REAL, DIMENSION( ims:ime, jms:jme ) , OPTIONAL, INTENT(INOUT):: LAI
    REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(OUT)::   T2OBS
    REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(OUT)::   Q2OBS
 
@@ -3168,18 +3172,18 @@ CONTAINS
           CALL wrf_debug(100,'in P-X LSM')
           CALL PXLSM(u_phy, v_phy, dz8w, qv_curr, t_phy, th_phy, rho,&
                      psfc, gsw, glw, rainbl, emiss,                  &
-                     ITIMESTEP, curr_secs, num_soil_layers, DT, anal_interval,  &
-                     xland, xice, albbck, albedo, snoalb, smois, tslb, &
-                     mavail,T2, Q2,                                  &
+                     ITIMESTEP, curr_secs, num_soil_layers, DT,      &
+                     anal_interval, xland, xice, albbck, albedo,     &
+                     snoalb, smois, tslb, mavail,T2, Q2,             &
                      zs, dzs, psih,                                  &
                      landusef,soilctop,soilcbot,vegfra, vegf_px,     &
-                     isltyp,ra,rs,lai,nlcat,nscat,                   &
+                     isltyp,ra,rs,lai,imperv,canfra,nlcat,nscat,     &
                      hfx,qfx,lh,tsk,sst,znt,canwat,                  &
                      grdflx,shdmin,shdmax,                           &
                      snowc,pblh,rmol,ust,capg,dtbl,                  &
                      t2_ndg_old,t2_ndg_new,q2_ndg_old,q2_ndg_new,    &
                      sn_ndg_old, sn_ndg_new, snow, snowh,snowncv,    &
-                     t2obs, q2obs, pxlsm_smois_init, pxlsm_soil_nudge, &
+                     t2obs, q2obs,pxlsm_smois_init,pxlsm_soil_nudge, &
                      ids,ide, jds,jde, kds,kde,                      &
                      ims,ime, jms,jme, kms,kme,                      &
                      i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte)

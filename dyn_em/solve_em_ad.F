@@ -2221,6 +2221,11 @@ BENCH_END(small_step_finish_tim)
              !                  "moist,moist_old")
              CALL PUSHREAL8ARRAY ( moist(:,:,:,im), (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
              CALL PUSHREAL8ARRAY ( moist_old(:,:,:,im), (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+             !IF( rk_step == 1 )THEN
+             !  IF( im.eq.p_qv .or. im.eq.p_qc )THEN
+             !     CALL PUSHREAL8ARRAY ( moist_tend(:,:,:,im), (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+             !  END IF
+             !END IF
              !$OMP PARALLEL DO   &
              !$OMP PRIVATE ( ij, tenddec )
              moist_tile_loop_1: DO ij = 1 , grid%num_tiles
@@ -2250,6 +2255,34 @@ BENCH_START(rk_scalar_tend_tim)
                            grid%i_start(ij), grid%i_end(ij), &
                            grid%j_start(ij), grid%j_end(ij), &
                            k_start    , k_end               )
+
+               IF( rk_step == 1 )THEN
+               IF( im.eq.p_qv .or. im.eq.p_qc )THEN
+                 CALL q_diabatic_add  ( im, im, config_flags, tenddec,       & 
+                           rk_step, dt_rk, grid%mut,                         &
+                           grid%ru_m, grid%rv_m, grid%ww_m,                  &
+                           grid%muts, grid%mub, grid%mu_1,                   &
+                           grid%alt,                                         &
+                           grid%qv_diabatic,                                 &
+                           grid%qc_diabatic,                                 &
+                           moist_old(ims,kms,jms,im),                        &
+                           moist(ims,kms,jms,im),                            &
+                           moist_tend(ims,kms,jms,im),                       &
+                           advect_tend,h_tendency,z_tendency,grid%rqvften,   & 
+                           grid%qv_base, .true., grid%fnm, grid%fnp,         &
+                           grid%msfux,grid%msfuy, grid%msfvx, grid%msfvx_inv,&
+                           grid%msfvy, grid%msftx,grid%msfty,                & 
+                           grid%rdx, grid%rdy, grid%rdn, grid%rdnw, grid%khdif, &
+                           grid%kvdif, grid%xkhh,                            &
+                           grid%diff_6th_opt, grid%diff_6th_factor,          &
+                           config_flags%moist_adv_opt,                       &
+                           ids, ide, jds, jde, kds, kde,     &
+                           ims, ime, jms, jme, kms, kme,     &
+                           grid%i_start(ij), grid%i_end(ij), &
+                           grid%j_start(ij), grid%j_end(ij), &
+                           k_start    , k_end               )
+               ENDIF
+               ENDIF
 
 BENCH_END(rk_scalar_tend_tim)
 
@@ -2304,6 +2337,11 @@ BENCH_END(rlx_bdy_scalar_tim)
                CALL PUSHREAL8ARRAY ( moist_tend(:,:,:,im), (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
                CALL PUSHREAL8ARRAY ( advect_tend, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
              ELSE
+               !IF( rk_step == rk_order )THEN
+               !  IF( im.eq.p_qv .or. im.eq.p_qc )THEN
+               !    CALL PUSHREAL8ARRAY ( moist(:,:,:,im), (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+               !  END IF
+               !END IF
                !CALL push4backup ( moist_old(:,:,:,im),moist_tend(:,:,:,im),advect_tend, &
                !                  "moist_old,moist_tend,advect_tend" ) 
                CALL PUSHREAL8ARRAY ( moist_old(:,:,:,im), (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
@@ -2334,6 +2372,34 @@ BENCH_START(update_scal_tim)
                                its=grid%i_start(ij), ite=grid%i_end(ij),               &
                                jts=grid%j_start(ij), jte=grid%j_end(ij),               &
                                kts=k_start    , kte=k_end                              )
+
+               IF( rk_step == rk_order )THEN
+               IF( im.eq.p_qv .or. im.eq.p_qc )THEN
+                 CALL q_diabatic_subtr( im, im, config_flags, tenddec,       & 
+                           rk_step, dt_rk,                                   &
+                           grid%ru_m, grid%rv_m, grid%ww_m,                  &
+                           grid%muts, grid%mub, grid%mu_1,                   &
+                           grid%alt,                                         &
+                           grid%qv_diabatic,                                 &
+                           grid%qc_diabatic,                                 &
+                           moist_old(ims,kms,jms,im),                        &
+                           moist(ims,kms,jms,im),                            &
+                           moist_tend(ims,kms,jms,im),                       &
+                           advect_tend,h_tendency,z_tendency,grid%rqvften,   & 
+                           grid%qv_base, .true., grid%fnm, grid%fnp,         &
+                           grid%msfux,grid%msfuy, grid%msfvx, grid%msfvx_inv,&
+                           grid%msfvy, grid%msftx,grid%msfty,                & 
+                           grid%rdx, grid%rdy, grid%rdn, grid%rdnw, grid%khdif, &
+                           grid%kvdif, grid%xkhh,                            &
+                           grid%diff_6th_opt, grid%diff_6th_factor,          &
+                           config_flags%moist_adv_opt,                       &
+                           ids, ide, jds, jde, kds, kde,     &
+                           ims, ime, jms, jme, kms, kme,     &
+                           grid%i_start(ij), grid%i_end(ij), &
+                           grid%j_start(ij), grid%j_end(ij), &
+                           k_start    , k_end               )
+               ENDIF
+               ENDIF
 
 BENCH_END(update_scal_tim)
 
@@ -3566,6 +3632,8 @@ BENCH_START(moist_physics_prep_tim)
                                    grid%ph_2, grid%phb, th_phy, pi_phy, p_phy, &
                                    grid%z, grid%z_at_w, dz8w,                  &
                                    dtm, grid%h_diabatic,                  &
+                                   moist(ims,kms,jms,P_QV),grid%qv_diabatic,   &
+                                   moist(ims,kms,jms,P_QC),grid%qc_diabatic,   &
                                    config_flags,grid%fnm, grid%fnp,            &
                                    ids, ide, jds, jde, kds, kde,     &
                                    ims, ime, jms, jme, kms, kme,     &
@@ -3855,8 +3923,13 @@ BENCH_START(moist_phys_end_tim)
 
        CALL PUSHREAL8ARRAY ( grid%t_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
        CALL PUSHREAL8ARRAY ( grid%h_diabatic, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       !CALL PUSHREAL8ARRAY ( grid%qv_diabatic, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       !CALL PUSHREAL8ARRAY ( grid%qc_diabatic, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
        CALL moist_physics_finish_em( grid%t_2, grid%t_1, t0, grid%muts, th_phy,       &
-                                      grid%h_diabatic, dtm, config_flags,    &
+                                     grid%h_diabatic, dtm,              &
+                                     moist(ims,kms,jms,P_QV),grid%qv_diabatic,   &
+                                     moist(ims,kms,jms,P_QC),grid%qc_diabatic,   &
+                                     config_flags,                      &
 #if ( WRF_DFI_RADAR == 1 )
                                       grid%dfi_tten_rad,grid%dfi_stage,        &
 #endif
@@ -4663,12 +4736,18 @@ BENCH_START(adj_moist_phys_end_tim)
        jts = max(grid%j_start(ij),jds+sz)
        jte = min(grid%j_end(ij),jde-1-sz)
 
+       !CALL POPREAL8ARRAY ( grid%qc_diabatic, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       !CALL POPREAL8ARRAY ( grid%qv_diabatic, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
        CALL POPREAL8ARRAY ( grid%h_diabatic, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
        CALL POPREAL8ARRAY ( grid%t_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
        CALL a_moist_physics_finish_em( grid%t_2, grid%a_t_2, grid%t_1,      &
                                       t0, grid%muts,                        &
                                       th_phy, a_th_phy,                     &
                                       grid%h_diabatic,grid%a_h_diabatic,    &
+                                      moist(ims,kms,jms,P_QV),a_moist(ims,kms,jms,P_QV), &
+                                      grid%qv_diabatic, grid%a_qv_diabatic,              &
+                                      moist(ims,kms,jms,P_QC),a_moist(ims,kms,jms,P_QC), &
+                                      grid%qc_diabatic, grid%a_qc_diabatic,              &
                                       dtm, config_flags,    &
 #if ( WRF_DFI_RADAR == 1 )
                                       grid%dfi_tten_rad, a_grid%dfi_tten_rad,  &
@@ -4909,6 +4988,10 @@ BENCH_START(adj_moist_physics_prep_tim)
                                    grid%z, grid%a_z, grid%z_at_w, grid%a_z_at_w, &
                                    dz8w, a_dz8w,                               &
                                    dtm, grid%h_diabatic, grid%a_h_diabatic,    &
+                                   moist(ims,kms,jms,P_QV),a_moist(ims,kms,jms,P_QV), &
+                                   grid%qv_diabatic, grid%a_qv_diabatic,              &
+                                   moist(ims,kms,jms,P_QC),a_moist(ims,kms,jms,P_QC), &
+                                   grid%qc_diabatic, grid%a_qc_diabatic,              &
                                    config_flags,grid%fnm, grid%fnp,            &
                                    ids, ide, jds, jde, kds, kde,     &
                                    ims, ime, jms, jme, kms, kme,     &
@@ -5639,8 +5722,30 @@ BENCH_START(adj_update_scal_tim)
                  CALL POPREAL8ARRAY ( advect_tend, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
                  CALL POPREAL8ARRAY ( moist_tend(:,:,:,im), (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
                  CALL POPREAL8ARRAY ( moist_old(:,:,:,im), (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+                 !IF( rk_step == rk_order )THEN
+                 !  IF( im.eq.p_qv .or. im.eq.p_qc )THEN
+                 !    CALL POPREAL8ARRAY ( moist(:,:,:,im), (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+                 !  END IF
+                 !END IF
                END IF 
                !CALL pop2restore ( grid%mu_1,grid%mu_2, "mu_1,mu_2" )
+
+               IF( rk_step == rk_order )THEN
+               IF( im.eq.p_qv .or. im.eq.p_qc )THEN
+                  CALL a_q_diabatic_subtr( im, im,               &
+                           dt_rk,                                &
+                           grid%qv_diabatic, grid%a_qv_diabatic, &
+                           grid%qc_diabatic, grid%a_qc_diabatic, &
+                           moist(ims,kms,jms,im),                &
+                           a_moist(ims,kms,jms,im),              &
+                           ids, ide, jds, jde, kds, kde,         &
+                           ims, ime, jms, jme, kms, kme,         &
+                           grid%i_start(ij), grid%i_end(ij),     &
+                           grid%j_start(ij), grid%j_end(ij),     &
+                           k_start    , k_end               )
+               END IF
+               END IF
+
                CALL a_rk_update_scalar( scs=im, sce=im,                                &
                                scalar_1=moist_old(ims,kms,jms,im),                     &
                                a_scalar_1=a_moist_old(ims,kms,jms,im),                 &
@@ -5721,6 +5826,11 @@ BENCH_END(adj_rlx_bdy_scalar_tim)
 
 BENCH_START(adj_rk_scalar_tend_tim)
 
+               !IF( rk_step == 1 )THEN
+               !  IF( im.eq.p_qv .or. im.eq.p_qc )THEN
+               !    CALL POPREAL8ARRAY ( moist_tend(:,:,:,im), (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+               !  END IF
+               !END IF
                CALL POPREAL8ARRAY ( moist_old(:,:,:,im), (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
                CALL POPREAL8ARRAY ( moist(:,:,:,im), (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
                !CALL pop2restore (moist(:,:,:,im),moist_old(:,:,:,im), &
@@ -5731,6 +5841,24 @@ BENCH_START(adj_rk_scalar_tend_tim)
                !CALL pop2restore (grid%ru_m,grid%rv_m,grid%ww_m, "ru_m,rv_m,ww_m")
                !CALL pop2restore (grid%mu_1,grid%muts, "mu_1,muts")
                IF ( rk_step == 1 ) CALL pop2restore (grid%alt,grid%xkhh, "alt,xkhh")
+
+               IF( rk_step == 1 )THEN
+               IF( im.eq.p_qv .or. im.eq.p_qc )THEN
+                  CALL a_q_diabatic_add( im, im,                 &
+                           dt_rk,                                &
+                           grid%mut, grid%a_mut,                 &
+                           grid%qv_diabatic, grid%a_qv_diabatic, &
+                           grid%qc_diabatic, grid%a_qc_diabatic, &
+                           moist_tend(ims,kms,jms,im),           &
+                           a_moist_tend(ims,kms,jms,im),         &
+                           ids, ide, jds, jde, kds, kde,         &
+                           ims, ime, jms, jme, kms, kme,         &
+                           grid%i_start(ij), grid%i_end(ij),     &
+                           grid%j_start(ij), grid%j_end(ij),     &
+                           k_start    , k_end               )
+               END IF
+               END IF
+
                CALL a_rk_scalar_tend (  im, im, config_flags, tenddec,       &
                            rk_step, dt_rk,                                   &
                            grid%ru_m, grid%a_ru_m, &

@@ -4680,7 +4680,7 @@ END SUBROUTINE nssl_2mom_driver
                  cd = Max(cdhmin, Min(cdhmax, cdhmin + (cdhmax-cdhmin)* &
      &            (cdhdnmax - Max( cdhdnmin, Min( cdhdnmax, xdn(mgs,lh) ) ) )/(cdhdnmax - cdhdnmin) ) )
                ELSEIF ( icdx .eq. 5 ) THEN
-                 cd = cdx(lh)*(xdn(mgs,lh)/rho_qh)**(2/3)
+                 cd = cdx(lh)*(xdn(mgs,lh)/rho_qh)**(2./3.)
                ELSEIF ( icdx .eq. 6 ) THEN ! Milbrandt and Morrison (2013)
                   aax = axh(mgs)
                   bbx = bxh(mgs)

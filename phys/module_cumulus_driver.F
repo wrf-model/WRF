@@ -27,11 +27,45 @@ CONTAINS
                      ,hfx,qfx,cldfra,cldfra_mp_all,tpert2d            &
                      ,htop,hbot,kpbl,ht                               &
                      ,ensdim,maxiens,maxens,maxens2,maxens3           &
+#if (EM_CORE == 1)
+                     !BSINGH - For WRFCuP Scheme
+                     ,akpbl, br,regime,t2,q2                            & !CuP, wig 3-Aug-2006
+                     ,slopeSfc, slopeEZ, sigmaSfc, sigmaEZ            & !CuP, wig 7-Aug-2006
+                     ,cupflag, cldfra_cup, cldfratend_cup             & !CuP, wig 18-Sep-2006
+                     ,shall, taucloud, tactive                        & !CuP, wig 18-Sep-2006
+                     ,activeFrac                                      & !CuP, lkb 4-May-2010
+                     ,tstar, lnterms, lnint                           & !CuP, wig 4-Oct-2006
+                     ,numBins, thBinSize, rBinSize                    & !CUP, lkb 4-Nov-2009
+                     ,minDeepFreq, minShallowFreq                     & !CUP, lkb 4-Nov-2009
+                     ,wCloudBase                                      & !CuP, lkb 29-April-2010                
+                     ,wact_cup                                        & !CuP, rce 10-may-2012
+                     ,wulcl_cup                                       & !CuP, rce 10-may-2012
+                     ,wup_cup                                         & !CuP, rce 15-mar-2013 !BSINGH (12/06/2013)
+                     ,qc_ic_cup                                       & !CuP, rce 10-may-2012
+                     ,qndrop_ic_cup                                   & !CuP, rce 10-may-2012
+                     ,qc_iu_cup                                       & !CuP, rce 10-may-2012
+                     ,fcvt_qc_to_pr_cup                               & !CuP, rce 10-may-2012
+                     ,fcvt_qc_to_qi_cup                               & !CuP, rce 10-may-2012
+                     ,fcvt_qi_to_pr_cup                               & !CuP, rce 10-may-2012
+                     ,mfup_cup                                        & !CuP, rce 10-may-2012
+                     ,mfup_ent_cup                                    & !CuP, rce 10-may-2012
+                     ,mfdn_cup                                        & !CuP, rce 10-may-2012
+                     ,mfdn_ent_cup                                    & !CuP, rce 10-may-2012
+                     ,updfra_cup                                      & !CuP, rce 10-may-2012
+                     ,tcloud_cup                                      & !CuP, rce 10-may-2012
+                     !BSINGH -ENDS
+#endif
                      ,periodic_x,periodic_y                           &
                      ,is_CAMMGMP_used                                 & 
                      ,evapcdp3d,icwmrdp3d,rprddp3d                    & !Balwinder.Singh@pnnl.gov: Used for CAM's wet scavenging
                  ! Package selection variables
                      ,cu_physics, bl_pbl_physics, sf_sfclay_physics   &
+#if (EM_CORE == 1)
+                     !BSINGH - For WRFCuP Scheme
+                     ,shcu_aerosols_opt                               & !CuP, rce 10-may-2012
+                     ,chem_opt                                        & !CuP, rce 10-may-2012
+                     !BSINGH - ENDS
+#endif
                  ! Optional moisture tracers 
                      ,qv_curr, qc_curr, qr_curr                       &
                      ,qi_curr, qs_curr, qg_curr                       & 
@@ -93,12 +127,15 @@ CONTAINS
                                           ,CAMZMSCHEME, SASSCHEME     &
                                           ,OSASSCHEME,MESO_SAS        &  !Kwon
                                           ,NSASSCHEME, DUCUSCHEME     &
-# if (EM_CORE == 1)
+#if (EM_CORE == 1)
                                           ,MSKFSCHEME                 &
                                           ,CAMMGMPSCHEME              &
-# endif
+                                          ,KFCUPSCHEME                & !CuP, wig 3-Aug-2006  !BSINGH - For WRFCuP scheme
+                                          ,num_chem                   & !CuP, rce 10-may-2012 !BSINGH - For WRFCuP scheme
+#endif
                                           ,TIEDTKESCHEME              &
-                                          ,NTIEDTKESCHEME              
+                                          ,NTIEDTKESCHEME             
+
 
 ! *** add new modules of schemes here
 
@@ -106,9 +143,9 @@ CONTAINS
    USE module_cu_bmj    ,  ONLY : bmjdrv
 #ifdef DM_PARALLEL
    USE module_dm        , ONLY : ntasks_x,ntasks_y,local_communicator,mytask,ntasks 
-# if (EM_CORE == 1)
+#if (EM_CORE == 1)
    USE module_comm_dm   ,  ONLY : halo_cup_g3_in_sub, halo_cup_g3_out_sub
-# endif
+#endif
 #endif
    USE module_domain    , ONLY: domain
    USE module_cu_kfeta  , ONLY : kf_eta_cps
@@ -120,6 +157,9 @@ CONTAINS
    USE module_cu_g3     , ONLY : g3drv,conv_grell_spread3d
    USE module_cu_du     , ONLY : DUCU   
    USE module_cu_sas    , ONLY : cu_sas
+#if (EM_CORE == 1)
+   USE module_cu_kfcup  , ONLY : KF_CUP_CPS !wig, 3-Aug-2006 !BSINGH - For WRFCuP scheme 
+#endif
    USE module_cu_osas   , ONLY : cu_osas
    USE module_cu_mesosas, ONLY : cu_meso_sas
    USE module_cu_camzm_driver, ONLY : camzm_driver
@@ -313,6 +353,14 @@ CONTAINS
    INTEGER, OPTIONAL,     INTENT(IN   )    ::                    &
                    cugd_avedx,clos_choice,bl_pbl_physics,sf_sfclay_physics
 
+#if (EM_CORE == 1)
+   !BSINGH - For WRFCuP scheme
+   INTEGER, OPTIONAL,     INTENT(IN   )    ::                    &
+        shcu_aerosols_opt    !CuP, rce 10-may-2012
+   !BSINGH - ENDS
+#endif
+
+
    INTEGER,      INTENT(IN   )    ::                 cu_physics  
    INTEGER,      INTENT(IN   )    ::   STEPCU
    LOGICAL,      INTENT(IN   )    ::   warm_rain
@@ -323,6 +371,17 @@ CONTAINS
 
    INTEGER,DIMENSION( ims:ime, jms:jme ),                        &
            INTENT(IN ) ::                                LOWLYR
+#if (EM_CORE == 1)
+   !BSINGH - For WRFCuP scheme
+   REAL,DIMENSION( ims:ime, jms:jme ),                           &
+           INTENT(INOUT) ::                               shall, & !CuP, wig 18-Sep-2006
+                                                       taucloud, & !CuP, wig 1-Oct-2006
+                                                        tactive, & !CuP, wig 1-Oct-2006
+                                                     activeFrac, & !CuP, lkb 5-May-2010
+                                                     wCloudBase    !CuP, lkb 29-April-2010  
+   !BSINGH - ENDS
+#endif
+
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
          INTENT(IN ) ::                                          &
@@ -361,6 +420,17 @@ CONTAINS
 
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN) ::           &
           GSW,HT,XLAND
+#if (EM_CORE == 1)
+   !BSINGH - For WRFCuP scheme
+   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN) ::           &
+                                                             br, & !CuP, wig 3-Aug-2006
+                                                         regime, & !CuP, wig 3-Aug-2006
+                                                             t2, & !CuP, wig 3-Aug-2006
+                                                             q2    !CuP, wig 3-Aug-2006
+
+   !BSINGH - ENDS
+#endif
+
 
    REAL, DIMENSION( ims:ime , jms:jme ),                         &
           INTENT(INOUT) ::                                RAINC  &
@@ -369,6 +439,9 @@ CONTAINS
                                                     ,      HTOP  & 
                                                     ,      HBOT  &
                                                     ,    CLDEFI
+#if (EM_CORE == 1)
+   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT) :: akpbl    !CuP, wig 6-Oct-2006 testing !BSINGH - For WRFCuP scheme
+#endif
  
    REAL, DIMENSION( kms:kme ), OPTIONAL, INTENT(IN   ) ::        &
                                                             znu
@@ -467,6 +540,54 @@ CONTAINS
    REAL, DIMENSION( ims:ime , jms:jme , 1:ensdim ),              &
           OPTIONAL,                                              &
           INTENT(INOUT) ::                       XF_ENS, PR_ENS
+
+
+#if (EM_CORE == 1)
+!BSINGH - For WRFCuP Scheme
+  REAL, DIMENSION( ims:ime , jms:jme ),                         &
+         INTENT(OUT) ::                       slopeSfc, slopeEZ, & !CuP, wig 7-Aug-2006
+                                              sigmaSfc, SigmaEZ, & !CuP, wig 7-Aug-2006
+                                                          tstar, & !CuP, wig 4-Oct-2006
+                                                          lnint    !CuP, wig 4-Oct-2006
+
+   REAL, DIMENSION( ims:ime , kms:kme, jms:jme ),                &
+         INTENT(OUT) ::                                          &
+                                                        lnterms, & !CuP, wig 4-Oct-2006
+                                                     cldfra_cup, & !CuP, wig 18-Sep-2006
+                                                 cldfratend_cup    !CuP, wig 18-Sep-2006
+
+   REAL, DIMENSION( ims:ime , jms:jme ),                         &
+          INTENT(INOUT) ::                             wact_cup, & !CuP, rce 10-may-2012
+                                                      wulcl_cup, & !CuP, rce 10-may-2012
+                                                     tcloud_cup    !CuP, rce 10-may-2012
+
+   REAL, DIMENSION( ims:ime , kms:kme, jms:jme ),                &
+         INTENT(INOUT) ::                                        &
+                                                        wup_cup, & !CuP, rce 15-mar-2013 !BSINGH (12/06/2013)
+                                                      qc_ic_cup, & !CuP, rce 10-may-2012
+                                                  qndrop_ic_cup, & !CuP, rce 10-may-2012
+                                                      qc_iu_cup, & !CuP, rce 10-may-2012
+                                              fcvt_qc_to_pr_cup, & !CuP, rce 10-may-2012
+                                              fcvt_qc_to_qi_cup, & !CuP, rce 10-may-2012
+                                              fcvt_qi_to_pr_cup, & !CuP, rce 10-may-2012
+                                                       mfup_cup, & !CuP, rce 10-may-2012
+                                                   mfup_ent_cup, & !CuP, rce 10-may-2012
+                                                       mfdn_cup, & !CuP, rce 10-may-2012
+                                                   mfdn_ent_cup, & !CuP, rce 10-may-2012
+                                                     updfra_cup    !CuP, rce 10-may-2012
+
+   INTEGER, OPTIONAL, INTENT(IN) ::                    chem_opt    !CuP, rce 10-may-2012
+
+   LOGICAL, DIMENSION( ims:ime, jms:jme ),                       &
+            INTENT(OUT) ::                              cupflag    !CuP, wig 9-Oct-2006
+
+   REAL,  INTENT(IN   ) :: thBinSize, rBinSize
+   INTEGER, INTENT(IN ) :: numBins 
+   REAL,  INTENT(IN   ) :: minDeepFreq, minShallowFreq 
+!BSINGH - ENDS
+#endif
+
+
    REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),              &
          OPTIONAL,                                              &
          INTENT(INOUT) ::                                       &
@@ -666,6 +787,18 @@ CONTAINS
         ite = i_end(ij)
         jts = j_start(ij)
         jte = j_end(ij)
+        
+#if (EM_CORE == 1)
+        !BSINGH - For WRFCuP scheme
+        !wig, beg: testing for kpbl to get output to wrfout since kpbl won't output as an integer
+        do j=jts,jte
+           do i=its,ite
+              akpbl(i,j) = kpbl(i,j)
+           end do
+        end do
+        !wig, end.
+        !BSINGH - ENDS
+#endif
 
 
    cps_select: SELECT CASE(cu_physics)
@@ -1217,6 +1350,80 @@ CONTAINS
         ELSE
           CALL wrf_error_fatal('Lacking arguments for CU_NSAS in cumulus driver')
         ENDIF
+#if (EM_CORE == 1)
+        !BSINGH -  For WRFCuP scheme
+     CASE (KFCUPSCHEME)
+        
+        CALL wrf_debug(100,'in cu_kfcup')        
+        CALL KF_CUP_CPS( GRID_ID=grid%grid_id                        & !rce 10-may-2012 add grid%id
+             ,U=u ,V=v ,TH=th ,T=t ,W=w ,RHO=rho                &
+             ,RAINCV=raincv,NCA=nca ,DZ8W=dz8w,XLAND=xland      & !LD add PRATEC 21-Apr-2011
+             ,PCPS=p, PI=pi ,W0AVG=W0AVG                        &
+             ,CUTOP=HTOP,CUBOT=HBOT                             &
+             ,XLV0=XLV0 ,XLV1=XLV1 ,XLS0=XLS0 ,XLS1=XLS1        &
+             ,CP=CP ,R=R_d ,G=G ,EP1=EP_1 ,EP2=EP_2             &
+             ,SVP1=SVP1 ,SVP2=SVP2 ,SVP3=SVP3 ,SVPT0=SVPT0      &
+             ,DT=dt ,KTAU=itimestep ,DX=dx                      &
+             ,STEPCU=stepcu                                     &
+             ,CU_ACT_FLAG=cu_act_flag ,warm_rain=warm_rain      &
+             ,QV=qv_curr                                        &
+             ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde   &
+             ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme   &
+             ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte   &
+             ,PSFC=psfc,Z=z,Z_AT_W=z_at_w,HT=ht,TSK=tsk         & !CuP, wig 5-Oct-2006
+             ,HFX=hfx,QFX=qfx                                   & !CuP, wig, 24-Aug-2006
+             ,MAVAIL=mavail,SF_SFCLAY_PHYSICS=sf_sfclay_physics & !CuP, wig, 24-Aug-2006
+             ,BR=br,REGIME=regime,PBLH=pblh,KPBL=kpbl           & !CuP, wig, 24-Aug-2006
+             ,T2=t2,Q2=q2                                       & !CuP, wig, 24-Aug-2006
+             ,SLOPESFC=slopeSfc,SLOPEEZ=slopeEZ                 & !CuP, wig, 24-Aug-2006
+             ,SIGMASFC=sigmasfc,SIGMAEZ=sigmaEZ                 & !CuP, wig, 24-Aug-2006
+             ,CUPFLAG=cupflag,CLDFRA_CUP=cldfra_cup             & !CuP, wig, 18-Sep-2006
+             ,CLDFRATEND_CUP=cldfratend_cup                     & !CuP, wig, 18-Sep-2006
+             ,SHALL=shall,TAUCLOUD=taucloud,TACTIVE=tactive     & !CuP, wig, 18-Sep-2006
+             ,ACTIVEFRAC=activeFrac                             & !CuP, lkb, 5-May-2010
+             ,TSTAR=tstar, LNTERMS=lnterms                      & !CuP, wig 4-Oct-2006
+             ,LNINT=lnint                                       & !CuP, wig 4-Oct-2006
+             ,NUMBINS=numBins                                   & !CuP, lkb 4-Nov-2009
+             ,THBINSIZE=thBinSize, RBINSIZE=rBinSize            & !CuP, lkb 4-Nov-2009
+             ,MINDEEPFREQ=minDeepFreq, MINSHALLOWFREQ=minShallowFreq  & !CuP, lkb 4-Nov-2009
+             ,WCLOUDBASE=wCloudBase                             & !CuP, lkb 29-April-2010
+             ,WACT_CUP=wact_cup                                 & !CuP, rce 10-may-2012
+             ,WULCL_CUP=wulcl_cup                               & !CuP, rce 10-may-2012
+             ,WUP_CUP=wup_cup                                   & !CuP, rce 15-mar-2013 !BSINGH (12/06/2013)
+             ,QC_IC_CUP=qc_ic_cup                               & !CuP, rce 10-may-2012
+             ,QNDROP_IC_CUP=qndrop_ic_cup                       & !CuP, rce 10-may-2012
+             ,QC_IU_CUP=qc_iu_cup                               & !CuP, rce 10-may-2012
+             ,FCVT_QC_TO_PR_CUP=fcvt_qc_to_pr_cup               & !CuP, rce 10-may-2012
+             ,FCVT_QC_TO_QI_CUP=fcvt_qc_to_qi_cup               & !CuP, rce 10-may-2012
+             ,FCVT_QI_TO_PR_CUP=fcvt_qi_to_pr_cup               & !CuP, rce 10-may-2012
+             ,MFUP_CUP=mfup_cup                                 & !CuP, rce 10-may-2012
+             ,MFUP_ENT_CUP=mfup_ent_cup                         & !CuP, rce 10-may-2012
+             ,MFDN_CUP=mfdn_cup                                 & !CuP, rce 10-may-2012
+             ,MFDN_ENT_CUP=mfdn_ent_cup                         & !CuP, rce 10-may-2012
+             ,UPDFRA_CUP=updfra_cup                             & !CuP, rce 10-may-2012
+             ,TCLOUD_CUP=tcloud_cup                             & !CuP, rce 10-may-2012
+             ,SHCU_AEROSOLS_OPT=shcu_aerosols_opt               & !CuP, rce 10-may-2012
+#if ( WRF_CHEM == 1 )
+             ,CHEM_OPT=chem_opt                                 & !CuP, rce 10-may-2012
+             ,CHEM=grid%chem                                    & !CuP, rce 10-may-2012
+#endif
+             ! optionals
+             ,RTHCUTEN=rthcuten                                 &
+             ,RQVCUTEN=rqvcuten ,RQCCUTEN=rqccuten              &
+             ,RQRCUTEN=rqrcuten ,RQICUTEN=rqicuten              &
+             ,RQSCUTEN=rqscuten                                 &
+             ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                     &
+             ,F_QI=f_qi,F_QS=f_qs                               &
+             )
+        
+        
+        DO J = jts,jte
+           DO I=its,ite
+              tmppratec(i,j)=raincv(i,j)/DT      !!!!!byang, move the pratec after calling cup
+           end do
+        end do
+        !BSINGH -ENDS
+#endif
 
      CASE DEFAULT 
 

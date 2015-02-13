@@ -215,7 +215,7 @@
        grid%itimestep=0
    ENDIF
 
-   IF ( config_flags%restart .or. grid%moved ) THEN
+   IF ( config_flags%restart .or. grid%moved .or. config_flags%cycling) THEN
        first_trip_for_this_domain = .TRUE.
    ENDIF
 
@@ -670,6 +670,25 @@ IF (grid%sppt_on==1) then
     ENDIF
 
 ! Use equations from calc_p_rho_phi to derive p and al from ph: linear in log p
+!-----------------------------------------------------------------------------
+!tgs - rebalance if the model is cycled but does not run DFI
+! For HRRR application
+! Rebalance recomputes 1/rho, p, ph_2, ph0, p_hyd
+
+  IF ( ( grid%dfi_opt .EQ. DFI_NODFI ) .and. config_flags%cycling ) then
+      call rebalance_driver_cycl (grid )
+
+       DO j = jts,min(jte,jde-1)
+       DO k = kts,kte
+       DO i = its, min(ite,ide-1)
+          grid%ph_1(i,k,j)=grid%ph_2(i,k,j)
+       ENDDO
+       ENDDO
+       ENDDO
+
+!  ENDIF
+  ELSE
+!------------------------------------------------------------------------------
 
     IF ( config_flags%hypsometric_opt .EQ. 1 ) THEN
        DO j=jts,min(jte,jde-1)
@@ -707,6 +726,8 @@ IF (grid%sppt_on==1) then
     ENDDO
     ENDDO
     ENDDO
+ ENDIF ! rebalance
+!-------------------------------------------------------------------------------------
 
     IF ( .NOT. grid%this_is_an_ideal_run ) THEN
        DO j=jts,min(jte,jde-1)
@@ -769,9 +790,12 @@ IF (grid%sppt_on==1) then
    MPDT = 0.
 
 !tgs
-   IF(config_flags%cycling) start_of_simulation = .true.
+   IF(config_flags%cycling) THEN
+       start_of_simulation = .true.
 !  print *,'cycling, start_of_simulation -->',config_flags%cycling, start_of_simulation
-
+       grid%xtime=0.
+!   print *,'xtime=',grid%xtime
+   ENDIF
 !-----------------------------------------------------------------------------
 ! Adaptive time step: Added by T. Hutchinson, WSI  11/6/07
 !
@@ -867,6 +891,11 @@ endif
                       grid%rublten,grid%rvblten,grid%rthblten,               &
                       grid%rqvblten,grid%rqcblten,grid%rqiblten,             &
                       grid%rthraten,grid%rthratenlw,grid%rthratensw,         &
+                      !BSINGH - For WRFCuP scheme(11/12/2013)
+                      grid%cupflag,grid%cldfra_cup,grid%cldfratend_cup,      & !wig, 18-Sep-2006
+                      grid%shall,                                            & !wig, 18-Sep-2006
+                      grid%tcloud_cup,                                       & !rce, 18-apr-2012
+                      !BSINGH - ENDS
                       grid%stepbl,grid%stepra,grid%stepcu,                   &
                       grid%w0avg, grid%rainnc, grid%rainc, grid%raincv, grid%rainncv,  &
                       grid%snownc, grid%snowncv, grid%graupelnc, grid%graupelncv,  &
@@ -942,6 +971,9 @@ endif
                       grid%TRL_URB3D, grid%TBL_URB3D, grid%TGL_URB3D,        & !Optional urban
                       grid%SH_URB2D, grid%LH_URB2D, grid%G_URB2D, grid%RN_URB2D,  & !Optional urban
                       grid%TS_URB2D, grid%FRC_URB2D, grid%UTYPE_URB2D,      & !Optional urban
+                      grid%CMCR_URB2D,grid%TGR_URB2D,grid%TGRL_URB3D,grid%SMR_URB3D, & !Optional urban   
+                      grid%DRELR_URB2D,grid%DRELB_URB2D,grid%DRELG_URB2D,    & !Optional urban
+                      grid%FLXHUMR_URB2D,grid%FLXHUMB_URB2D,grid%FLXHUMG_URB2D,   & !Optional urban
                       grid%TRB_URB4D,grid%TW1_URB4D,grid%TW2_URB4D,grid%TGB_URB4D,grid%TLEV_URB3D,  & !multi-layer urban
                       grid%QLEV_URB3D,grid%TW1LEV_URB3D,grid%TW2LEV_URB3D,        & !multi-layer urban
                       grid%TGLEV_URB3D,grid%TFLEV_URB3D,grid%SF_AC_URB3D,         & !multi-layer urban 

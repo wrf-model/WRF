@@ -364,7 +364,7 @@ END SUBROUTINE a_restore_ph_mu
    mub,mu_1,a_mu_1,mu_2,a_mu_2,muu,a_muu,muus,a_muus,muv,a_muv,muvs, &
    a_muvs,mut,a_mut,muts,a_muts,mudf,a_mudf,u_save,a_u_save,v_save, &
    a_v_save,w_save,a_w_save,t_save,a_t_save,ph_save,a_ph_save,mu_save, &
-   a_mu_save,ww,a_ww,ww_save,a_ww_save,dnw,c2a,a_c2a,pb,p,a_p,alt,a_alt, &
+   a_mu_save,ww,a_ww,ww_save,a_ww_save,c2a,a_c2a,pb,p,a_p,alt,a_alt, &
    msfux,msfuy,msfvx,msfvx_inv,msfvy,msftx,msfty,rdx,rdy,rk_step,ids,ide,jds,jde,kds, &
    kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
 
@@ -391,7 +391,6 @@ END SUBROUTINE a_restore_ph_mu
    msfuy,msfvx,msfvx_inv,msfvy,msftx,msfty
    REAL,DIMENSION(ims:ime,jms:jme) :: a_muus,muus,a_muvs,muvs,a_muts,muts,a_mudf,mudf
    REAL,DIMENSION(ims:ime,jms:jme) :: a_mu_save,mu_save
-   REAL,DIMENSION(kms:kme,jms:jme) :: dnw
    REAL :: rdx,rdy
    INTEGER :: i,j,k
    INTEGER :: i_start,i_end,j_start,j_end,k_start,k_end

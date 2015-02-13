@@ -421,6 +421,16 @@ CONTAINS
         BR(i,j)=rib(i)
         CHS(I,J)=CH(I)*wspd (i,j)
         CHS2(I,J)=USTAR(I)*KARMAN/FH2(I)
+
+!!!2014-0922  cap CHS over land points
+          if (xland(i,j) .lt. 1.9) then
+            CHS(I,J)=amin1(CHS(I,J), 0.05)
+            CHS2(I,J)=amin1(CHS2(I,J), 0.05)
+            if (chs2(i,j) < 0) chs2(i,j)=1.0e-6
+          endif
+!!!
+
+
         CPM(I,J)=CP*(1.+0.8*QV3D(i,kts,j))
         esat = fpvs(t1(i))
         QGH(I,J)=ep2*esat/(1000.*ps(i)-esat)
@@ -810,7 +820,7 @@ CONTAINS
 !
        cor1 = .120
        cor2 = 720.
-       yz=           -0.0001344
+       yz=            0.0001344
        y1=            3.015e-05 
        y2=            1.517e-06 
        y3=           -3.567e-08

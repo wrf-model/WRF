@@ -54,9 +54,9 @@ CONTAINS
 !          P2m = PSFC(I,J)*EXP(-0.068283/t3d(i,1,j))
 
 !!! 2-m Temperature - T2 
-!          if(CHS2(I,J).lt.1.E-5) then
+           if(CHS2(I,J).lt.1.E-5) then
 ! may be to small treshold?
-          if(CHS2(I,J).lt.3.E-3 .AND. HFX(I,J).lt.0.) then
+!         if(CHS2(I,J).lt.3.E-3 .AND. HFX(I,J).lt.0.) then
 !             TH2(I,J) = TSK(I,J)*(1.E5/PSFC(I,J))**ROVCP 
              TH2(I,J) = t3d(i,kms,j)*(1.E5/PSFC)**ROVCP 
           else

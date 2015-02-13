@@ -392,7 +392,7 @@ END SUBROUTINE g_restore_ph_mu
  mub,mu_1,g_mu_1,mu_2,g_mu_2,muu,g_muu,muus,g_muus,muv,g_muv,muvs, &
  g_muvs,mut,g_mut,muts,g_muts,mudf,g_mudf,u_save,g_u_save,v_save, &
  g_v_save,w_save,g_w_save,t_save,g_t_save,ph_save,g_ph_save,mu_save, &
- g_mu_save,ww,g_ww,ww_save,g_ww_save,dnw,c2a,g_c2a,pb,p,g_p,alt,g_alt, &
+ g_mu_save,ww,g_ww,ww_save,g_ww_save,c2a,g_c2a,pb,p,g_p,alt,g_alt, &
  msfux,msfuy,msfvx,msfvx_inv,msfvy,msftx,msfty,rdx,rdy,rk_step,ids,ide,jds,jde,kds, &
  kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
 
@@ -415,7 +415,6 @@ END SUBROUTINE g_restore_ph_mu
  REAL,DIMENSION(ims:ime,jms:jme),INTENT(OUT) :: g_muus,muus,g_muvs,muvs, &
  g_muts,muts,g_mudf,mudf
  REAL,DIMENSION(ims:ime,jms:jme),INTENT(OUT) :: g_mu_save,mu_save
- REAL,DIMENSION(kms:kme,jms:jme),INTENT(IN) :: dnw
  REAL,INTENT(IN) :: rdx,rdy
  INTEGER :: i,j,k
  INTEGER :: i_start,i_end,j_start,j_end,k_start,k_end

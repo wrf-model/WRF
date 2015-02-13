@@ -160,10 +160,14 @@ CONTAINS
      &          ,tr_urb2d,tb_urb2d,tg_urb2d,tc_urb2d,qc_urb2d         & !H urban
      &          ,uc_urb2d                                             & !H urban
      &          ,xxxr_urb2d,xxxb_urb2d,xxxg_urb2d,xxxc_urb2d          & !H urban
+     &          ,cmcr_urb2d,tgr_urb2d,tgrl_urb3d,smr_urb3d            & !H urban
+     &          ,julian,julyr,drelr_urb2d,drelb_urb2d,drelg_urb2d     & !H urban
+     &          ,flxhumr_urb2d,flxhumb_urb2d,flxhumg_urb2d            & !H urban
      &          ,trl_urb3d,tbl_urb3d,tgl_urb3d                        & !H urban
      &          ,sh_urb2d,lh_urb2d,g_urb2d,rn_urb2d,ts_urb2d          & !H urban
      &          ,frc_urb2d, utype_urb2d                               & !H urban
      &          ,cmr_sfcdif,chr_sfcdif,cmc_sfcdif,chc_sfcdif          &
+     &          ,cmgr_sfcdif,chgr_sfcdif                              &
 !-----SSiB LSM (fds 06/2010)---------------------------------------------------
      &          ,alswvisdir, alswvisdif, alswnirdir, alswnirdif       & ! ssib
      &          ,swvisdir, swvisdif, swnirdir, swnirdif               & ! ssib
@@ -828,8 +832,6 @@ CONTAINS
 
 !  NoahMP local variables - precip partitioning
 
-   REAL, DIMENSION(ims:ime,jms:jme) :: NOAHMP_RAINC, NOAHMP_RAINNC, NOAHMP_SNOW, NOAHMP_GRAUP, NOAHMP_HAIL
-
 ! Noah UA changes
    LOGICAL, INTENT(IN) :: ua_phys
    REAL, DIMENSION(ims:ime , jms:jme), INTENT(OUT) ::  flx4,fvb,fbur,fgsn
@@ -886,7 +888,8 @@ CONTAINS
 !  arguments for Ocean Mixed Layer Model
    REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(INOUT )::   TML, T0ML, HML, H0ML, HUML, HVML
    REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(IN    )::   F, TMOML
-   REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(OUT   )::   CK, CKA, CD, CDA, USTM
+   REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(OUT   )::   CK, CKA, CD, CDA
+   REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(INOUT )::   USTM
 
    REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(INOUT )::   TSK_SAVE
 
@@ -1111,6 +1114,8 @@ CONTAINS
 !-------------------------------------------------
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CMR_SFCDIF
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CHR_SFCDIF
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CMGR_SFCDIF
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CHGR_SFCDIF
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CMC_SFCDIF
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CHC_SFCDIF
      REAL, OPTIONAL, INTENT(IN) :: DECLIN, SOLCON
@@ -1120,6 +1125,7 @@ CONTAINS
      INTEGER,  INTENT(IN) :: num_roof_layers                         !urban
      INTEGER,  INTENT(IN) :: num_wall_layers                         !urban
      INTEGER,  INTENT(IN) :: num_road_layers                         !urban
+     INTEGER,  INTENT(IN), OPTIONAL :: julian,julyr                            !urban
      REAL, OPTIONAL, DIMENSION(1:num_soil_layers), INTENT(IN) :: DZR          !urban
      REAL, OPTIONAL, DIMENSION(1:num_soil_layers), INTENT(IN) :: DZB          !urban
      REAL, OPTIONAL, DIMENSION(1:num_soil_layers), INTENT(IN) :: DZG          !urban
@@ -1134,6 +1140,20 @@ CONTAINS
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT):: XXXB_URB2D !urban
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT):: XXXG_URB2D !urban
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT):: XXXC_URB2D !urban
+
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: DRELR_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: DRELB_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: DRELG_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: FLXHUMR_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: FLXHUMB_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: FLXHUMG_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CMCR_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TGR_URB2D
+
+     REAL, OPTIONAL, DIMENSION( ims:ime , 1:num_soil_layers, jms:jme ), &       !urban
+           INTENT(INOUT)  :: TGRL_URB3D                                 !urban
+     REAL, OPTIONAL, DIMENSION( ims:ime , 1:num_soil_layers, jms:jme ), &       !urban
+           INTENT(INOUT)  :: SMR_URB3D                                 !urban
      REAL, OPTIONAL, DIMENSION( ims:ime , 1:num_soil_layers, jms:jme ), &       !urban
            INTENT(INOUT)  :: TRL_URB3D                                 !urban
      REAL, OPTIONAL, DIMENSION( ims:ime , 1:num_soil_layers, jms:jme ), &       !urban
@@ -1524,6 +1544,7 @@ CONTAINS
 
         XICE_save(I,J) = XICEM(I,J)
         XICEM(i,j) = XICE(i,j)
+        TSK_SAVE(I,J) = TSK(I, J)
 
       ENDDO
       ENDDO
@@ -2462,6 +2483,7 @@ CONTAINS
                 sf_urban_physics                                &
 !Optional urban
                 ,cmr_sfcdif,chr_sfcdif,cmc_sfcdif,chc_sfcdif    &
+                ,cmgr_sfcdif,chgr_sfcdif                        &
                 ,tr_urb2d,tb_urb2d,tg_urb2d,tc_urb2d,qc_urb2d,  & !H urban
                 uc_urb2d,                                       & !H urban
                 xxxr_urb2d,xxxb_urb2d,xxxg_urb2d,xxxc_urb2d,    & !H urban
@@ -2483,6 +2505,10 @@ CONTAINS
                 xlat_urb2d,                                     & !I urban
                 num_roof_layers, num_wall_layers,               & !I urban
                 num_road_layers, DZR, DZB, DZG,                 & !I urban
+                CMCR_URB2D,TGR_URB2D,TGRL_URB3D,SMR_URB3D,      & !H urban
+                julian,julyr,                                   & !H urban
+                DRELR_URB2D,DRELB_URB2D,DRELG_URB2D,            & !H urban
+                FLXHUMR_URB2D,FLXHUMB_URB2D,FLXHUMG_URB2D,      & !H urban
                 FRC_URB2D, UTYPE_URB2D,                         & !I urban
                 num_urban_layers,                               & !I multi-layer urban
                 num_urban_hi,                                   & !I multi-layer urban
@@ -2539,6 +2565,7 @@ CONTAINS
                 sf_urban_physics                                &
 !Optional urban
                 ,cmr_sfcdif,chr_sfcdif,cmc_sfcdif,chc_sfcdif    &
+                ,cmgr_sfcdif,chgr_sfcdif                        &
                 ,tr_urb2d,tb_urb2d,tg_urb2d,tc_urb2d,qc_urb2d,  & !H urban
                 uc_urb2d,                                       & !H urban
                 xxxr_urb2d,xxxb_urb2d,xxxg_urb2d,xxxc_urb2d,    & !H urban
@@ -2551,6 +2578,10 @@ CONTAINS
                 xlat_urb2d,                                     & !I urban
                 num_roof_layers, num_wall_layers,               & !I urban
                 num_road_layers, DZR, DZB, DZG,                 & !I urban
+                CMCR_URB2D,TGR_URB2D,TGRL_URB3D,SMR_URB3D,      & !H urban
+                DRELR_URB2D,DRELB_URB2D,DRELG_URB2D,            & !H urban
+                FLXHUMR_URB2D,FLXHUMB_URB2D,FLXHUMG_URB2D,      & !H urban
+                julian, julyr,                                  & !H urban
                 FRC_URB2D, UTYPE_URB2D,                         & !I urban
                 num_urban_layers,                               & !I multi-layer urban
                 num_urban_hi,                                   & !I multi-layer urban
@@ -2736,44 +2767,6 @@ CONTAINS
                                                       .TRUE. ) THEN
 !------------------------------------------------------------------
 
-         NOAHMP_RAINC(i_start(ij):i_end(ij),j_start(ij):j_end(ij)) = &
-	       RAINCV(i_start(ij):i_end(ij),j_start(ij):j_end(ij))
-
-         IF( PRESENT(RAINNCV) ) THEN
-            NOAHMP_RAINNC(i_start(ij):i_end(ij),j_start(ij):j_end(ij)) = &
-	          RAINNCV(i_start(ij):i_end(ij),j_start(ij):j_end(ij))
-	 ELSE
-            NOAHMP_RAINNC(i_start(ij):i_end(ij),j_start(ij):j_end(ij)) = 0.0
-         ENDIF
-
-#if ( EM_CORE==1)
-         IF( PRESENT(DFGDP) ) THEN
-            NOAHMP_RAINNC(i_start(ij):i_end(ij),j_start(ij):j_end(ij)) = &
-	    NOAHMP_RAINNC(i_start(ij):i_end(ij),j_start(ij):j_end(ij)) + &
-	            DFGDP(i_start(ij):i_end(ij),j_start(ij):j_end(ij))
-         ENDIF
-#endif
-
-         IF( PRESENT(SNOWNCV) ) THEN
-            NOAHMP_SNOW(i_start(ij):i_end(ij),j_start(ij):j_end(ij)) = &
-	        SNOWNCV(i_start(ij):i_end(ij),j_start(ij):j_end(ij))
-	 ELSE
-            NOAHMP_SNOW(i_start(ij):i_end(ij),j_start(ij):j_end(ij)) = 0.0
-         ENDIF
-
-         IF( PRESENT(GRAUPELNCV) ) THEN
-            NOAHMP_GRAUP(i_start(ij):i_end(ij),j_start(ij):j_end(ij)) = &
-	      GRAUPELNCV(i_start(ij):i_end(ij),j_start(ij):j_end(ij))
-	 ELSE
-            NOAHMP_GRAUP(i_start(ij):i_end(ij),j_start(ij):j_end(ij)) = 0.0
-         ENDIF
-
-         IF( PRESENT(HAILNCV) ) THEN
-            NOAHMP_HAIL(i_start(ij):i_end(ij),j_start(ij):j_end(ij)) = &
-	        HAILNCV(i_start(ij):i_end(ij),j_start(ij):j_end(ij))
-	 ELSE
-            NOAHMP_HAIL(i_start(ij):i_end(ij),j_start(ij):j_end(ij)) = 0.0
-         ENDIF
 
          IF ( FRACTIONAL_SEAICE == 1) THEN
             ! The fields passed to LSM need to represent the full ice values, not
@@ -2824,8 +2817,7 @@ CONTAINS
 	       IOPT_INF, IOPT_RAD, IOPT_ALB, IOPT_SNF, IOPT_TBOT,   IOPT_STC, &
 	        IZ0TLND,                                                      &
 		  T_PHY,  QV_CURR,    U_PHY,    V_PHY,    SWDOWN,        GLW, &
-		    P8W,                                                      &
-           NOAHMP_RAINC, NOAHMP_RAINNC, NOAHMP_SNOW, NOAHMP_GRAUP, NOAHMP_HAIL,& ! MB: v3.7 precip partitioning
+		    P8W,   RAINBL,       SR,                                  &
 		    TSK,      HFX,      QFX,       LH,    GRDFLX,     SMSTAV, &
 		 SMSTOT,SFCRUNOFF, UDRUNOFF,   ALBEDO,     SNOWC,      SMOIS, &
 		   SH2O,     TSLB,     SNOW,    SNOWH,    CANWAT,     ACSNOM, &
@@ -2850,7 +2842,10 @@ CONTAINS
 #endif
                 ids,ide, jds,jde, kds,kde,                      &
                 ims,ime, jms,jme, kms,kme,                      &
-                i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte )
+                i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte,        &
+! variables below are optional
+                MP_RAINC =  RAINCV, MP_RAINNC =    RAINNCV, MP_SHCV = RAINSHV,&
+		MP_SNOW  = SNOWNCV, MP_GRAUP  = GRAUPELNCV, MP_HAIL = HAILNCV )
 
   if(iopt_run.eq.5.and.mod(itimestep,STEPWTD).eq.0)then
            CALL wrf_debug( 100, 'calling WTABLE' )
@@ -3323,6 +3318,7 @@ CONTAINS
                 inest,sf_urban_physics, nlcat                   &
 !Optional urban
                ,cmr_sfcdif,chr_sfcdif,cmc_sfcdif,chc_sfcdif    &
+               ,cmgr_sfcdif,chgr_sfcdif                        &
                ,tr_urb2d,tb_urb2d,tg_urb2d,tc_urb2d,qc_urb2d,  & !H urban
                 uc_urb2d,                                       & !H urban
                 xxxr_urb2d,xxxb_urb2d,xxxg_urb2d,xxxc_urb2d,    & !H urban
@@ -3335,9 +3331,12 @@ CONTAINS
                 xlat_urb2d,                                     & !I urban
                 num_roof_layers, num_wall_layers,               & !I urban
                 num_road_layers, DZR, DZB, DZG,                 & !I urban
-                FRC_URB2D, UTYPE_URB2D                          & !I urban
+                FRC_URB2D, UTYPE_URB2D,                         & !I urban
+                cmcr_urb2d,tgr_urb2d,tgrl_urb3d,smr_urb3d,      & ! urban
+                drelr_urb2d,drelb_urb2d,drelg_urb2d,            & ! urban
+                flxhumr_urb2d,flxhumb_urb2d,flxhumg_urb2d,      &
 ! CLM subgrids
-               ,numc,nump,sabv,sabg,lwup,snl, &
+                numc,nump,sabv,sabg,lwup,snl, &
                 snowdp,wtc,wtp,h2osno,t_grnd,t_veg,         &
                 h2ocan,h2ocan_col,t2m_max,t2m_min,t2clm ,    &
                 t_ref2m,h2osoi_liq_s1,                 &
@@ -4629,7 +4628,9 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
                             &th3d,pi3d,tsq,qsq,cov,Sh3d,el_pbl
 
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme )              , &
-               INTENT(OUT)     ::              ck,cka,cd,cda,ustm
+               INTENT(OUT)     ::                   ck,cka,cd,cda
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme )              , &
+               INTENT(INOUT)   ::                            ustm
      INTEGER,  OPTIONAL,  INTENT(IN )   ::     ISFTCFLX,IZ0TLND
 
 !--------------------------------------------------------------------
@@ -5293,7 +5294,9 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
      REAL,     INTENT(IN   )               ::   CP,G,ROVCP,R,XLV,DX
 
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme )              , &
-               INTENT(OUT)     ::              ck,cka,cd,cda,ustm
+               INTENT(OUT)     ::                   ck,cka,cd,cda
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme )              , &
+               INTENT(INOUT)   ::                            ustm
 
      INTEGER,  OPTIONAL,  INTENT(IN )   ::     ISFTCFLX,IZ0TLND
 
@@ -5706,7 +5709,9 @@ ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
      REAL,     INTENT(IN   )               ::   CP,G,ROVCP,R,XLV,DX
 
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme )              , &
-               INTENT(OUT)     ::              ck,cka,cd,cda,ustm
+               INTENT(OUT)     ::                   ck,cka,cd,cda
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme )              , &
+               INTENT(INOUT)   ::                            ustm
 
      INTEGER,  OPTIONAL,  INTENT(IN )   ::     ISFTCFLX,IZ0TLND
 

@@ -131,6 +131,7 @@ CONTAINS
 
       subroutine mosaic_mixactivate_init(                    &
            config_flags, chem, scalar,                       &
+           chem_in_opt,                                      & !BSINGH(12/04/13):  Added for SAPRC 8 bin vbs
            ims,ime, jms,jme, kms,kme,                        &
            its,ite, jts,jte, kts,kte                         )
 
@@ -146,7 +147,7 @@ CONTAINS
       integer, intent(in) ::               &
            ims, ime, jms, jme, kms, kme,   &
            its, ite, jts, jte, kts, kte
-
+      INTEGER,      INTENT(IN   ) :: chem_in_opt !BSINGH(12/04/13):  Added for SAPRC 8 bin vbs
       real, intent(inout),   &
            dimension( ims:ime, kms:kme, jms:jme, 1:num_chem ) :: &
            chem
@@ -167,14 +168,32 @@ CONTAINS
 
       if( cw_phase > 0 ) then   !sanity check in case using prognostic
                                 !drop number without aq. chemistry
-         do n=1,ntype_aer
-         do m=1,nsize_aer(n)
-            chem(its:ite,kts:kte,jts:jte,numptr_aer(m,n,cw_phase)) = 0.
-            do l=1,ncomp_aer(n)
-               chem(its:ite,kts:kte,jts:jte,massptr_aer(l,m,n,cw_phase)) = 0.
-            end do              ! comp
-         end do                 ! size
-         end do                 ! type
+         if (config_flags%chem_in_opt == 1) then !added by MS to transfer cloud borne species to interstitial species when using chem_in_opt=1
+            do n=1,ntype_aer
+               do m=1,nsize_aer(n)
+                  chem(its:ite,kts:kte,jts:jte,numptr_aer(m,n,cw_phase)) = 0.
+                  do l=1,ncomp_aer(n)
+                     if( ai_phase > 0 ) then
+                        ! add cloud borne aerosol mass to interstitial aerosol mass
+                        chem(its:ite,kts:kte,jts:jte,massptr_aer(l,m,n,ai_phase))= &
+                             chem(its:ite,kts:kte,jts:jte,massptr_aer(l,m,n,ai_phase)) + &
+                             chem(its:ite,kts:kte,jts:jte,massptr_aer(l,m,n,cw_phase))
+                        
+                     endif ! for ai_phase>0
+                     chem(its:ite,kts:kte,jts:jte,massptr_aer(l,m,n,cw_phase)) = 0.
+                  end do              ! comp
+               end do                 ! size
+            end do         
+         else
+            do n=1,ntype_aer
+               do m=1,nsize_aer(n)
+                  chem(its:ite,kts:kte,jts:jte,numptr_aer(m,n,cw_phase)) = 0.
+                  do l=1,ncomp_aer(n)
+                     chem(its:ite,kts:kte,jts:jte,massptr_aer(l,m,n,cw_phase)) = 0.
+                  end do              ! comp
+               end do                 ! size
+            end do                 ! type
+         endif !chem_in_opt
       end if
 
       end subroutine mosaic_mixactivate_init

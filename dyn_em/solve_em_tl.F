@@ -936,7 +936,7 @@ BENCH_START(g_small_step_prep_tim)
                                grid%u_save,grid%g_u_save, grid%v_save,grid%g_v_save, w_save,g_w_save, &
                                grid%t_save,grid%g_t_save, ph_save,g_ph_save, mu_save,g_mu_save,       &
                                grid%ww,grid%g_ww, ww1,g_ww1,                                          &
-                               grid%dnw, c2a,g_c2a, grid%pb, grid%p,grid%g_p, grid%alt,grid%g_alt,    &
+                               c2a,g_c2a, grid%pb, grid%p,grid%g_p, grid%alt,grid%g_alt,&
                                grid%msfux,grid%msfuy, grid%msfvx, grid%msfvx_inv,       &
                                grid%msfvy, grid%msftx,grid%msfty,                       &
                                grid%rdx, grid%rdy, rk_step,                             &

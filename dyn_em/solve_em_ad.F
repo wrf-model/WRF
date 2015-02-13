@@ -976,7 +976,7 @@ BENCH_START(small_step_prep_tim)
                              grid%u_save, grid%v_save, w_save,                        &
                              grid%t_save, ph_save, mu_save,                           &
                              grid%ww, ww1,                                            &
-                             grid%dnw, c2a, grid%pb, grid%p, grid%alt,                &
+                             c2a, grid%pb, grid%p, grid%alt,                          &
                              grid%msfux,grid%msfuy, grid%msfvx, grid%msfvx_inv,       &
                              grid%msfvy, grid%msftx,grid%msfty,                       &
                              grid%rdx, grid%rdy, rk_step,                             &
@@ -3557,6 +3557,7 @@ BENCH_START(advance_ppt_tim)
      CALL wrf_debug ( 200 , ' call advance_ppt' )
 
      CALL advance_ppt(grid%rthcuten,grid%rqvcuten,grid%rqccuten,grid%rqrcuten, &
+                      grid%cldfra_cup,                                         & !BSINGH -  Added for CuP scheme
                       grid%rqicuten,grid%rqscuten,           &
                       grid%rainc,grid%raincv,grid%rainsh,grid%pratec,grid%pratesh, &
                       grid%nca,grid%htop,grid%hbot,grid%cutop,grid%cubot,  &
@@ -6834,7 +6835,7 @@ BENCH_START(adj_small_step_prep_tim)
                                grid%u_save,grid%a_u_save, grid%v_save,grid%a_v_save, w_save,a_w_save, &
                                grid%t_save,grid%a_t_save, ph_save,a_ph_save, mu_save,a_mu_save,       &
                                grid%ww,grid%a_ww, ww1,a_ww1,                                          &
-                               grid%dnw, c2a,a_c2a, grid%pb, grid%p,grid%a_p, grid%alt,grid%a_alt,    &
+                               c2a,a_c2a, grid%pb, grid%p,grid%a_p, grid%alt,grid%a_alt,&
                                grid%msfux,grid%msfuy, grid%msfvx, grid%msfvx_inv,       &
                                grid%msfvy, grid%msftx,grid%msfty,                       &
                                grid%rdx, grid%rdy, rk_step,                             &

@@ -19,8 +19,7 @@ CONTAINS
               IOPT_INF, IOPT_RAD,  IOPT_ALB, IOPT_SNF,IOPT_TBOT, IOPT_STC,  & ! IN : User options
                IZ0TLND,                                                     & ! IN : User options
                    T3D,     QV3D,     U_PHY,    V_PHY,   SWDOWN,      GLW,  & ! IN : Forcing
-		 P8W3D,                                                     & ! IN : Forcing
-              MP_RAINC,MP_RAINNC,   MP_SNOW, MP_GRAUP,  MP_HAIL,            & ! MB: v3.7 precip partitioning
+		 P8W3D,PRECIP_IN,        SR,                                & ! IN : Forcing
                    TSK,      HFX,      QFX,        LH,   GRDFLX,    SMSTAV, & ! IN/OUT LSM eqv
                 SMSTOT,SFCRUNOFF, UDRUNOFF,    ALBEDO,    SNOWC,     SMOIS, & ! IN/OUT LSM eqv
 		  SH2O,     TSLB,     SNOW,     SNOWH,   CANWAT,    ACSNOM, & ! IN/OUT LSM eqv
@@ -45,7 +44,8 @@ CONTAINS
 #endif
                ids,ide,  jds,jde,  kds,kde,                    &
                ims,ime,  jms,jme,  kms,kme,                    &
-               its,ite,  jts,jte,  kts,kte                     )
+               its,ite,  jts,jte,  kts,kte,                    &
+               MP_RAINC, MP_RAINNC, MP_SHCV, MP_SNOW, MP_GRAUP, MP_HAIL     )
 !----------------------------------------------------------------
     USE NOAHMP_PARAMETERS, ONLY: TRANSFER_MP_PARAMETERS, CO2, O2, ISICE
 !----------------------------------------------------------------
@@ -92,11 +92,16 @@ CONTAINS
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ) ::  SWDOWN    ! solar down at surface [W m-2]
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ) ::  GLW       ! longwave down at surface [W m-2]
     REAL,    DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   ) ::  P8W3D     ! 3D pressure, valid at interface [Pa]
-    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ) ::  MP_RAINC  ! convective precipitation entering land model [mm] ! MB/AN : v3.7
-    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ) ::  MP_RAINNC ! large-scale precipitation entering land model [mm]! MB/AN : v3.7
-    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ) ::  MP_SNOW   ! snow precipitation entering land model [mm]       ! MB/AN : v3.7
-    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ) ::  MP_GRAUP  ! graupel precipitation entering land model [mm]    ! MB/AN : v3.7
-    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ) ::  MP_HAIL   ! hail precipitation entering land model [mm]       ! MB/AN : v3.7
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ) ::  PRECIP_IN ! total input precipitation [mm]
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ) ::  SR        ! frozen precipitation ratio [-]
+
+!Optional Detailed Precipitation Partitioning Inputs
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ), OPTIONAL ::  MP_RAINC  ! convective precipitation entering land model [mm] ! MB/AN : v3.7
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ), OPTIONAL ::  MP_RAINNC ! large-scale precipitation entering land model [mm]! MB/AN : v3.7
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ), OPTIONAL ::  MP_SHCV   ! shallow conv precip entering land model [mm]      ! MB/AN : v3.7
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ), OPTIONAL ::  MP_SNOW   ! snow precipitation entering land model [mm]       ! MB/AN : v3.7
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ), OPTIONAL ::  MP_GRAUP  ! graupel precipitation entering land model [mm]    ! MB/AN : v3.7
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ), OPTIONAL ::  MP_HAIL   ! hail precipitation entering land model [mm]       ! MB/AN : v3.7
 #ifdef WRF_HYDRO
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  sfcheadrt,INFXSRT,soldrain   ! for WRF-Hydro
 #endif
@@ -236,11 +241,13 @@ CONTAINS
     REAL                                :: P_ML         ! pressure, valid at interface [Pa]
     REAL                                :: PSFC         ! surface pressure [Pa]
     REAL                                :: PRCP         ! total precipitation entering  [mm]         ! MB/AN : v3.7
-    REAL                                :: PRCP_CV      ! convective precipitation entering  [mm]    ! MB/AN : v3.7
-    REAL                                :: PRCP_NC      ! non-convective precipitation entering [mm] ! MB/AN : v3.7
+    REAL                                :: PRCPCONV     ! convective precipitation entering  [mm]    ! MB/AN : v3.7
+    REAL                                :: PRCPNONC     ! non-convective precipitation entering [mm] ! MB/AN : v3.7
+    REAL                                :: PRCPSHCV     ! shallow convective precip entering  [mm]   ! MB/AN : v3.7
     REAL                                :: PRCPSNOW     ! snow entering land model [mm]              ! MB/AN : v3.7
     REAL                                :: PRCPGRPL     ! graupel entering land model [mm]           ! MB/AN : v3.7
     REAL                                :: PRCPHAIL     ! hail entering land model [mm]              ! MB/AN : v3.7
+    REAL                                :: PRCPOTHR     ! other precip, e.g. fog [mm]                ! MB/AN : v3.7
 
 ! INOUT (with generic LSM equivalent)
 
@@ -467,12 +474,30 @@ CONTAINS
        P_ML   =(P8W3D(I,KTS+1,J)+P8W3D(I,KTS,J))*0.5  ! surface pressure defined at intermediate level [Pa]
 	                                              !    consistent with temperature, mixing ratio
        PSFC   = P8W3D(I,1,J)                          ! surface pressure defined a full levels [Pa]
-    PRCP_CV   = MP_RAINC(I,J) /DT                     ! timestep convective precipitation [mm/s]     ! MB: v3.7
-    PRCP_NC   = MP_RAINNC(I,J)/DT                     ! timestep non-convective precipitation [mm/s] ! MB: v3.7
-   PRCPSNOW   = MP_SNOW(I,J)  /DT                     ! timestep snow precipitation [mm/s]           ! MB: v3.7
-   PRCPGRPL   = MP_GRAUP(I,J) /DT                     ! timestep graupel precipitation [mm/s]        ! MB: v3.7
-   PRCPHAIL   = MP_HAIL(I,J)  /DT                     ! timestep hail precipitation [mm/s]           ! MB: v3.7
-       PRCP   = PRCP_CV + PRCP_NC                     ! timestep total precipitation(glacier) [mm/s] ! MB: v3.7
+       PRCP   = PRECIP_IN (I,J) / DT                  ! timestep total precip rate (glacier) [mm/s]! MB: v3.7
+
+       IF (PRESENT(MP_RAINC) .AND. PRESENT(MP_RAINNC) .AND. PRESENT(MP_SHCV) .AND. &
+           PRESENT(MP_SNOW)  .AND. PRESENT(MP_GRAUP)  .AND. PRESENT(MP_HAIL)   ) THEN
+
+         PRCPCONV  = MP_RAINC (I,J)/DT                ! timestep convective precip rate [mm/s]     ! MB: v3.7
+         PRCPNONC  = MP_RAINNC(I,J)/DT                ! timestep non-convective precip rate [mm/s] ! MB: v3.7
+         PRCPSHCV  = MP_SHCV(I,J)  /DT                ! timestep shallow conv precip rate [mm/s]   ! MB: v3.7
+         PRCPSNOW  = MP_SNOW(I,J)  /DT                ! timestep snow precip rate [mm/s]           ! MB: v3.7
+         PRCPGRPL  = MP_GRAUP(I,J) /DT                ! timestep graupel precip rate [mm/s]        ! MB: v3.7
+         PRCPHAIL  = MP_HAIL(I,J)  /DT                ! timestep hail precip rate [mm/s]           ! MB: v3.7
+
+         PRCPOTHR  = PRCP - PRCPCONV - PRCPNONC - PRCPSHCV ! take care of other (fog) contained in rainbl
+	 PRCPOTHR  = MAX(0.0,PRCPOTHR)
+	 PRCPNONC  = PRCPNONC + PRCPOTHR
+         PRCPSNOW  = PRCPSNOW + SR(I,J)  * PRCPOTHR 
+       ELSE
+         PRCPCONV  = 0.
+         PRCPNONC  = PRCP
+         PRCPSHCV  = 0.
+         PRCPSNOW  = SR(I,J) * PRCP
+         PRCPGRPL  = 0.
+         PRCPHAIL  = 0.
+       ENDIF
 
 ! IN/OUT fields
 
@@ -637,7 +662,7 @@ CONTAINS
             SMCEQ   ,                                                   & ! IN : Vegetation/Soil characteristics
             T_ML    , P_ML    , PSFC    , U_ML    , V_ML    , Q_ML    , & ! IN : Forcing
             QC      , SWDN    , LWDN    ,                               & ! IN : Forcing
-	    PRCP_CV , PRCP_NC , PRCPSNOW, PRCPGRPL, PRCPHAIL,           & ! IN : Forcing
+	    PRCPCONV, PRCPNONC, PRCPSHCV, PRCPSNOW, PRCPGRPL, PRCPHAIL, & ! IN : Forcing
             TBOT    , CO2PP   , O2PP    , FOLN    , FICEOLD , Z_ML    , & ! IN : Forcing
             ALBOLD  , SNEQVO  ,                                         & ! IN/OUT : 
             STC     , SMH2O   , SMC     , TAH     , EAH     , FWET    , & ! IN/OUT : 

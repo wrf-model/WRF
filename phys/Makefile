@@ -38,7 +38,6 @@ MODULES = \
 	module_bl_gfs2011.o \
 	module_bl_myjpbl.o \
 	module_bl_qnsepbl.o \
-	module_bl_qnsepbl09.o \
 	module_bl_acm.o \
 	module_bl_mynn.o \
 	module_bl_fogdes.o \
@@ -75,6 +74,7 @@ MODULES = \
 	module_cu_du_ad.o \
 	module_cu_mesosas.o \
 	module_cu_osas.o \
+	module_cu_kfcup.o \
 	module_mp_radar.o \
 	module_mp_kessler.o \
 	module_mp_mkessler.o \

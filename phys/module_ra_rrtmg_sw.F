@@ -9809,7 +9809,7 @@ use rrtmg_sw_init, only: rrtmg_sw_ini
 use rrtmg_sw_rad, only: rrtmg_sw
 use mcica_subcol_gen_sw, only: mcica_subcol_sw
 
-use module_ra_rrtmg_lw, only : inirad, o3data, relcalc, reicalc
+use module_ra_rrtmg_lw, only : inirad, o3data, relcalc, reicalc, retab
 !                               mcica_random_numbers, randomNumberSequence, &
 !                               new_RandomNumberSequence, getRandomReal
 
@@ -10114,6 +10114,9 @@ CONTAINS
                                                             scon, &  
                                                   snow_mass_factor
     integer ::                                            dyofyr
+
+    integer:: idx_rei
+    real:: corr
 
 ! Set trace gas volume mixing ratios, 2005 values, IPCC (2007)
 ! carbon dioxide (379 ppmv)
@@ -10426,6 +10429,13 @@ CONTAINS
                inflgsw = 3
                DO K=kts,kte
                   recloud1D(ncol,K) = MAX(2.5, re_cloud(I,K,J)*1.E6)
+                  if (recloud1D(ncol,K).LE.2.5.AND.cldfra3d(i,k,j).gt.0. &
+     &                            .AND. (XLAND(I,J)-1.5).GT.0.) then      !--- Ocean
+                     recloud1D(ncol,K) = 10.5
+                  elseif (recloud1D(ncol,K).LE.2.5.AND.cldfra3d(i,k,j).gt.0. &
+     &                            .AND. (XLAND(I,J)-1.5).LT.0.) then      !--- Land
+                     recloud1D(ncol,K) = 7.5
+                  endif
                ENDDO
             ELSE
                DO K=kts,kte
@@ -10438,10 +10448,18 @@ CONTAINS
                iceflgsw = 4
                DO K=kts,kte
                   reice1D(ncol,K) = MAX(10., re_ice(I,K,J)*1.E6)
+                  if (reice1D(ncol,K).LE.10..AND.cldfra3d(i,k,j).gt.0.) then
+                     idx_rei = int(t3d(i,k,j)-179.)
+                     idx_rei = min(max(idx_rei,1),75)
+                     corr = t3d(i,k,j) - int(t3d(i,k,j))
+                     reice1D(ncol,K) = retab(idx_rei)*(1.-corr) +      &
+     &                                 retab(idx_rei+1)*corr
+                     reice1D(ncol,K) = MAX(reice1D(ncol,K), 10.0)
+                  endif
                ENDDO
             ELSE
                DO K=kts,kte
-                  reice1D(ncol,K) = 10.0
+                  reice1D(ncol,K) = 10.
                ENDDO
             ENDIF
 

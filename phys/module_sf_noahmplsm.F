@@ -948,7 +948,7 @@ contains
                    SMCEQ   ,                                                   & ! IN : Vegetation/Soil characteristics
                    SFCTMP  , SFCPRS  , PSFC    , UU      , VV      , Q2      , & ! IN : Forcing
                    QC      , SOLDN   , LWDN    ,                               & ! IN : Forcing
-	           PRCP_CV , PRCP_NC , PRCPSNOW, PRCPGRPL, PRCPHAIL,           & ! IN : Forcing
+	           PRCPCONV, PRCPNONC, PRCPSHCV, PRCPSNOW, PRCPGRPL, PRCPHAIL, & ! IN : Forcing
                    TBOT    , CO2AIR  , O2AIR   , FOLN    , FICEOLD , ZLVL    , & ! IN : Forcing
                    ALBOLD  , SNEQVO  ,                                         & ! IN/OUT : 
                    STC     , SH2O    , SMC     , TAH     , EAH     , FWET    , & ! IN/OUT : 
@@ -1010,11 +1010,12 @@ contains
   REAL                           , INTENT(IN)    :: LAT    !latitude (radians)
   REAL, DIMENSION(-NSNOW+1:    0), INTENT(IN)    :: FICEOLD!ice fraction at last timestep
   REAL, DIMENSION(       1:NSOIL), INTENT(IN)    :: SMCEQ  !equilibrium soil water  content [m3/m3]
-  REAL                           , INTENT(IN)    :: PRCP_CV  ! convective precipitation entering  [mm]    ! MB/AN : v3.7
-  REAL                           , INTENT(IN)    :: PRCP_NC  ! non-convective precipitation entering [mm] ! MB/AN : v3.7
-  REAL                           , INTENT(IN)    :: PRCPSNOW ! snow entering land model [mm]              ! MB/AN : v3.7
-  REAL                           , INTENT(IN)    :: PRCPGRPL ! graupel entering land model [mm]           ! MB/AN : v3.7
-  REAL                           , INTENT(IN)    :: PRCPHAIL ! hail entering land model [mm]              ! MB/AN : v3.7
+  REAL                           , INTENT(IN)    :: PRCPCONV ! convective precipitation entering  [mm/s]    ! MB/AN : v3.7
+  REAL                           , INTENT(IN)    :: PRCPNONC ! non-convective precipitation entering [mm/s] ! MB/AN : v3.7
+  REAL                           , INTENT(IN)    :: PRCPSHCV ! shallow convective precip entering  [mm/s]   ! MB/AN : v3.7
+  REAL                           , INTENT(IN)    :: PRCPSNOW ! snow entering land model [mm/s]              ! MB/AN : v3.7
+  REAL                           , INTENT(IN)    :: PRCPGRPL ! graupel entering land model [mm/s]           ! MB/AN : v3.7
+  REAL                           , INTENT(IN)    :: PRCPHAIL ! hail entering land model [mm/s]              ! MB/AN : v3.7
 
 !jref:start; in 
   REAL                           , INTENT(IN)    :: QC     !cloud water mixing ratio
@@ -1229,10 +1230,11 @@ contains
 ! --------------------------------------------------------------------------------------------------
 ! re-process atmospheric forcing
 
-   CALL ATM (SFCPRS  ,SFCTMP   ,Q2     ,PRCP_CV,PRCP_NC, PRCPSNOW, &
-             PRCPGRPL,PRCPHAIL ,SOLDN  ,COSZ   ,THAIR  , QAIR    , & 
-             EAIR    ,RHOAIR   ,QPRECC ,QPRECL ,SOLAD  , SOLAI   , &
-             SWDOWN  ,BDFALL   ,RAIN   ,SNOW   ,FP     , FPICE, PRCP )     
+   CALL ATM (SFCPRS  ,SFCTMP   ,Q2      ,                            &
+             PRCPCONV, PRCPNONC,PRCPSHCV,PRCPSNOW,PRCPGRPL,PRCPHAIL, &
+             SOLDN   ,COSZ     ,THAIR   ,QAIR    ,                   & 
+             EAIR    ,RHOAIR   ,QPRECC  ,QPRECL  ,SOLAD   ,SOLAI   , &
+             SWDOWN  ,BDFALL   ,RAIN    ,SNOW    ,FP      ,FPICE   , PRCP )     
 
 ! snow/soil layer thickness (m)
 
@@ -1393,10 +1395,11 @@ contains
 
 !== begin atm ======================================================================================
 
-  SUBROUTINE ATM (SFCPRS  ,SFCTMP   ,Q2     ,PRCP_CV,PRCP_NC, PRCPSNOW, &
-                  PRCPGRPL,PRCPHAIL ,SOLDN  ,COSZ   ,THAIR  , QAIR    , & 
-                  EAIR    ,RHOAIR   ,QPRECC ,QPRECL ,SOLAD  , SOLAI   , &
-		  SWDOWN  ,BDFALL   ,RAIN   ,SNOW   ,FP     , FPICE   ,PRCP )     
+  SUBROUTINE ATM (SFCPRS  ,SFCTMP   ,Q2      ,                             &
+                  PRCPCONV,PRCPNONC ,PRCPSHCV,PRCPSNOW,PRCPGRPL,PRCPHAIL , &
+                  SOLDN   ,COSZ     ,THAIR   ,QAIR    ,                    & 
+                  EAIR    ,RHOAIR   ,QPRECC  ,QPRECL  ,SOLAD   , SOLAI   , &
+		  SWDOWN  ,BDFALL   ,RAIN    ,SNOW    ,FP      , FPICE   ,PRCP )     
 ! --------------------------------------------------------------------------------------------------
 ! re-process atmospheric forcing
 ! ----------------------------------------------------------------------
@@ -1409,11 +1412,12 @@ contains
   REAL                          , INTENT(IN)  :: SFCPRS !pressure (pa)
   REAL                          , INTENT(IN)  :: SFCTMP !surface air temperature [k]
   REAL                          , INTENT(IN)  :: Q2     !mixing ratio (kg/kg)
-  REAL                          , INTENT(IN)  :: PRCP_CV  ! convective precipitation entering  [mm]    ! MB/AN : v3.7
-  REAL                          , INTENT(IN)  :: PRCP_NC  ! non-convective precipitation entering [mm] ! MB/AN : v3.7
-  REAL                          , INTENT(IN)  :: PRCPSNOW ! snow entering land model [mm]              ! MB/AN : v3.7
-  REAL                          , INTENT(IN)  :: PRCPGRPL ! graupel entering land model [mm]           ! MB/AN : v3.7
-  REAL                          , INTENT(IN)  :: PRCPHAIL ! hail entering land model [mm]              ! MB/AN : v3.7
+  REAL                          , INTENT(IN)  :: PRCPCONV ! convective precipitation entering  [mm/s]    ! MB/AN : v3.7
+  REAL                          , INTENT(IN)  :: PRCPNONC ! non-convective precipitation entering [mm/s] ! MB/AN : v3.7
+  REAL                          , INTENT(IN)  :: PRCPSHCV ! shallow convective precip entering  [mm/s]   ! MB/AN : v3.7
+  REAL                          , INTENT(IN)  :: PRCPSNOW ! snow entering land model [mm/s]              ! MB/AN : v3.7
+  REAL                          , INTENT(IN)  :: PRCPGRPL ! graupel entering land model [mm/s]           ! MB/AN : v3.7
+  REAL                          , INTENT(IN)  :: PRCPHAIL ! hail entering land model [mm/s]              ! MB/AN : v3.7
   REAL                          , INTENT(IN)  :: SOLDN  !downward shortwave radiation (w/m2)
   REAL                          , INTENT(IN)  :: COSZ   !cosine solar zenith angle [0-1]
 
@@ -1463,11 +1467,11 @@ contains
        SOLAI(1) = SWDOWN*0.3*0.5     ! diffuse vis
        SOLAI(2) = SWDOWN*0.3*0.5     ! diffuse nir
 
-       PRCP = PRCP_CV + PRCP_NC
+       PRCP = PRCPCONV + PRCPNONC + PRCPSHCV
 
        IF(OPT_SNF == 4) THEN
-         QPRECC = PRCP_CV
-	 QPRECL = PRCP_NC
+         QPRECC = PRCPCONV + PRCPSHCV
+	 QPRECL = PRCPNONC
        ELSE
          QPRECC = 0.10 * PRCP          ! should be from the atmospheric model
          QPRECL = 0.90 * PRCP          ! should be from the atmospheric model
@@ -1518,8 +1522,8 @@ contains
      BDFALL = MIN(120.,67.92+51.25*EXP((SFCTMP-TFRZ)/2.59))       !MB/AN: change to MIN  
      IF(OPT_SNF == 4) THEN
         PRCP_FROZEN = PRCPSNOW + PRCPGRPL + PRCPHAIL
-        IF(PRCP_NC > 0. .and. PRCP_FROZEN > 0.) THEN
-	  FPICE = MIN(1.0,PRCP_FROZEN/PRCP_NC)
+        IF(PRCPNONC > 0. .and. PRCP_FROZEN > 0.) THEN
+	  FPICE = MIN(1.0,PRCP_FROZEN/PRCPNONC)
 	  FPICE = MAX(0.0,FPICE)
 	  BDFALL = BDFALL*(PRCPSNOW/PRCP_FROZEN) + RHO_GRPL*(PRCPGRPL/PRCP_FROZEN) + &
 	             RHO_HAIL*(PRCPHAIL/PRCP_FROZEN)
@@ -1529,8 +1533,8 @@ contains
 	
      ENDIF
 
-     RAIN   = (QPRECC + QPRECL) * (1.-FPICE)
-     SNOW   = (QPRECC + QPRECL) * FPICE
+     RAIN   = PRCP * (1.-FPICE)
+     SNOW   = PRCP * FPICE
 
 
   END SUBROUTINE ATM

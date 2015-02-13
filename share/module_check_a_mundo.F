@@ -468,6 +468,17 @@
          wrf_err_message = '--- Fix bl_pbl_physics in namelist.input OR use another cu_physics option '
          CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
       END IF
+
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec%cu_physics(i) .EQ. MSKFSCHEME ) THEN
+            WRITE (wrf_err_message, FMT='(A,A)') '--- NOTE: cu_physics is 11, ', &
+                  'setting icloud = 1 and cu_rad_feedback = T'
+            CALL wrf_message ( wrf_err_message )
+            model_config_rec%cu_rad_feedback(i) = .true.
+            model_config_rec%icloud = 1
+         END IF
+      ENDDO
+
 #endif
 
 !-----------------------------------------------------------------------
@@ -774,6 +785,7 @@
          IF ( model_config_rec%cu_diag(i) .EQ. G3TAVE ) THEN
           IF ( ( model_config_rec%cu_physics(i) .NE. GDSCHEME ) .AND. &
                ( model_config_rec%cu_physics(i) .NE. GFSCHEME ) .AND. &
+               ( model_config_rec%cu_physics(i) .NE. KFCUPSCHEME ) .AND. &
                ( model_config_rec%cu_physics(i) .NE. G3SCHEME ) ) THEN
                 wrf_err_message = '--- ERROR: Using cu_diag=1 requires use of one of the following CU schemes:'
                 CALL wrf_message ( wrf_err_message )
@@ -809,6 +821,7 @@
       DO i = 1, model_config_rec % max_dom
          IF ( ( model_config_rec%cu_physics(i) .EQ. GDSCHEME ) .OR. &
               ( model_config_rec%cu_physics(i) .EQ. GFSCHEME ) .OR. &
+              ( model_config_rec%cu_physics(i) .EQ. KFCUPSCHEME ) .OR. & 
               ( model_config_rec%cu_physics(i) .EQ. G3SCHEME ) ) THEN
             model_config_rec%cu_diag(i) = 1
          ELSE

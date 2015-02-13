@@ -165,8 +165,6 @@ module_bl_boulac.o: ../share/module_model_constants.o
 
 module_bl_qnsepbl.o: ../share/module_model_constants.o
 
-module_bl_qnsepbl09.o: ../share/module_model_constants.o
-
 module_progtm.o: module_gfs_machine.o 
 
 module_bl_gfs.o: module_gfs_machine.o \
@@ -291,6 +289,13 @@ module_cam_support.o: module_cam_shr_kind_mod.o \
 module_cam_shr_kind_mod.o:
 
 module_cu_kf.o:  ../frame/module_wrf_error.o
+
+
+module_cu_kfcup.o:  ../frame/module_wrf_error.o     \
+		../frame/module_state_description.o \
+		../chem/module_data_mosaic_asect.o  \
+		../share/module_model_constants.o   \
+		module_mixactivate.o
 
 module_cu_kfeta.o: ../frame/module_wrf_error.o
 
@@ -533,7 +538,6 @@ module_physics_init.o : \
 		module_bl_acm.o			\
 		module_bl_myjpbl.o		\
 		module_bl_qnsepbl.o		\
-		module_bl_qnsepbl09.o		\
 		module_bl_mynn.o                \
 		module_bl_myjurb.o              \
 		module_bl_boulac.o              \
@@ -550,6 +554,7 @@ module_physics_init.o : \
 		module_cu_sas.o			\
 		module_cu_osas.o		\
 		module_cu_camzm_driver.o        \
+		module_cu_kfcup.o               \
 		module_shcu_camuwshcu.o		\
                 module_shcu_grims.o             \
 		module_mp_sbu_ylin.o		\
@@ -663,6 +668,7 @@ module_cumulus_driver.o: \
 		module_cu_osas.o \
 		module_cu_camzm_driver.o \
 		module_cu_tiedtke.o \
+		module_cu_kfcup.o \
 		../frame/module_state_description.o \
 		../frame/module_configure.o \
 		../frame/module_domain.o \
@@ -695,7 +701,6 @@ module_pbl_driver.o:  \
 		module_bl_myjpbl.o \
 		module_bl_myjurb.o \
 		module_bl_qnsepbl.o \
-		module_bl_qnsepbl09.o \
 		module_bl_acm.o \
 		module_bl_ysu.o \
 		module_bl_mrf.o \
@@ -748,6 +753,7 @@ module_radiation_driver.o: \
 		module_ra_goddard.o \
                 module_ra_flg.o \
                 module_ra_aerosol.o \
+                module_mp_thompson.o \
 		../frame/module_driver_constants.o \
 		../frame/module_state_description.o \
 		../frame/module_dm.o \
@@ -942,7 +948,7 @@ solve_interface.o: solve_em.int ../frame/module_domain.o ../frame/module_configu
 		../frame/module_timing.o ../frame/module_driver_constants.o \
 		../frame/module_wrf_error.o
 
-start_domain.o: start_domain_em.int wrf_timeseries.o track_driver.o  ../frame/module_domain.o ../frame/module_configure.o
+start_domain.o: start_domain_em.int wrf_timeseries.o track_driver.o ../dyn_em/rebalance_cycl.o ../frame/module_domain.o ../frame/module_configure.o
 
 module_date_time.o: ../frame/module_wrf_error.o ../frame/module_configure.o \
                 module_model_constants.o

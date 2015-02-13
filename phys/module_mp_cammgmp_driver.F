@@ -602,7 +602,7 @@ contains
     
     !default values for radius 
     lradius(:,:,:) = 10._r8
-    iradius(:,:,:) = 25._r8
+    iradius(:,:,:) = 70._r8
   
     !Flag for first time step
     is_first_step  = .false.

@@ -636,8 +636,8 @@ Namelist variables for controlling the adaptive time step option:
                                      = 9, UW boundary layer scheme from CAM5 (CESM 1_0_1)
                                      = 10, TEMF (Total Energy Mass Flux) scheme (ARW only)
                                           sf_sfclay_physics=10
+                                     = 11, Shin-Hong 'scale-aware' PBL scheme
                                      = 12, Grenier-Bretherton-McCaa scheme (ARW only)
-                                     = 94, Quasi-Normal Scale Elimination PBL
                                      = 99, MRF scheme
 
  bldt (max_dom)                      = 0,       ; minutes between boundary-layer physics calls
@@ -663,6 +663,7 @@ Namelist variables for controlling the adaptive time step option:
  bl_mynn_tkeadvect (max_dom)         = .false., default off; = .true. do MYNN tke advection
  scalar_pblmix (max_dom)             = 1 ; mix scalar fields consistent with PBL option (exch_h)
  tracer_pblmix (max_dom)             = 1 ; mix tracer fields consistent with PBL option (exch_h)
+ shinhong_tke_diag (max_dom)         = 0 ; diagnostic TKE and mixing length from Shin-Hong PBL
  sf_surface_mosaic                   option to mosaic landuse categories for Noah LSM            
                                      = 0 ; default; use dominant category only
                                      = 1 ; use mosaic landuse categories
@@ -679,7 +680,9 @@ Namelist variables for controlling the adaptive time step option:
                                      = 5, Grell 3D ensemble scheme
                                      = 6, Modifed Tiedtke scheme (ARW only)
                                      = 7, Zhang-McFarlane scheme from CAM5 (CESM 1_0_1)
+                                     = 11, Multi-scale Kain-Fritsch scheme
                                      = 14, New GFS simplified Arakawa-Schubert scheme from YSU (ARW only)
+                                     = 16, A newer Tiedtke scheme
                                      = 84, New GFS simplified Arakawa-Schubert scheme (HWRF) 
                                      = 93, Grell-Devenyi ensemble scheme
                                      = 99, previous Kain-Fritsch scheme

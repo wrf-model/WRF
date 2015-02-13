@@ -36,7 +36,7 @@
 !.. Remaining values should probably be left alone.
 !..
 !..Author: Greg Thompson, NCAR-RAL, gthompsn@ucar.edu, 303-497-2805
-!..Last modified: 19 Mar 2014   Aerosol additions to v3.5.1 code 9/2013
+!..Last modified: 12 Dec 2014   Aerosol additions to v3.5.1 code 9/2013
 !+---+-----------------------------------------------------------------+
 !wrft:model_layer:physics
 !+---+-----------------------------------------------------------------+
@@ -90,8 +90,6 @@
       REAL, PARAMETER, PRIVATE:: mu_g = 0.0
       REAL, PARAMETER, PRIVATE:: mu_i = 0.0
       REAL, PRIVATE:: mu_c
-!jm this cannot be a module variable because it isn't thread safe (20141107)
-!jm      INTEGER, PRIVATE:: nu_c
 
 !..Sum of two gamma distrib for snow (Field et al. 2005).
 !.. N(D) = M2**4/M3**3 * [Kap0*exp(-M2*Lam0*D/M3)
@@ -382,9 +380,6 @@
       REAL:: t1_qr_ev, t2_qr_ev
       REAL:: t1_qs_sd, t2_qs_sd, t1_qg_sd, t2_qg_sd
       REAL:: t1_qs_me, t2_qs_me, t1_qg_me, t2_qg_me
-
-!jm not thread safe, make automatic in the routines that use it
-!jm      CHARACTER*256:: mp_debug
 
 !+---+
 !+---+-----------------------------------------------------------------+
@@ -1328,16 +1323,16 @@
 
          IF (has_reqc.ne.0 .and. has_reqi.ne.0 .and. has_reqs.ne.0) THEN
           do k = kts, kte
-             re_qc1d(k) = 2.51E-6
-             re_qi1d(k) = 10.01E-6
-             re_qs1d(k) = 25.E-6
+             re_qc1d(k) = 2.49E-6
+             re_qi1d(k) = 9.99E-6
+             re_qs1d(k) = 9.99E-6
           enddo
           call calc_effectRad (t1d, p1d, qv1d, qc1d, nc1d, qi1d, ni1d, qs1d,  &
                       re_qc1d, re_qi1d, re_qs1d, kts, kte)
           do k = kts, kte
-             re_cloud(i,k,j) = MAX(2.51E-6, MIN(re_qc1d(k), 50.E-6))
-             re_ice(i,k,j)   = MAX(10.01E-6, MIN(re_qi1d(k), 125.E-6))
-             re_snow(i,k,j)  = MAX(25.E-6, MIN(re_qs1d(k), 999.E-6))
+             re_cloud(i,k,j) = MAX(2.49E-6, MIN(re_qc1d(k), 50.E-6))
+             re_ice(i,k,j)   = MAX(9.99E-6, MIN(re_qi1d(k), 125.E-6))
+             re_snow(i,k,j)  = MAX(9.99E-6, MIN(re_qs1d(k), 999.E-6))
           enddo
          ENDIF
 
@@ -1479,7 +1474,7 @@
       LOGICAL:: melti, no_micro
       LOGICAL, DIMENSION(kts:kte):: L_qc, L_qi, L_qr, L_qs, L_qg
       LOGICAL:: debug_flag
-      INTEGER :: nu_c   ! made automatic for thread safety, jm 20141107
+      INTEGER:: nu_c
       CHARACTER*256:: mp_debug
 
 !+---+
@@ -3601,15 +3596,19 @@
           ENDIF
         ENDIF
       ENDIF
+#if defined(DM_PARALLEL) && !defined(STUBMPI)
       CALL wrf_dm_bcast_integer(good,1)
+#endif
 
       IF ( good .EQ. 1 ) THEN
+#if defined(DM_PARALLEL) && !defined(STUBMPI)
         CALL wrf_dm_bcast_double(tcg_racg,SIZE(tcg_racg))
         CALL wrf_dm_bcast_double(tmr_racg,SIZE(tmr_racg))
         CALL wrf_dm_bcast_double(tcr_gacr,SIZE(tcr_gacr))
         CALL wrf_dm_bcast_double(tmg_gacr,SIZE(tmg_gacr))
         CALL wrf_dm_bcast_double(tnr_racg,SIZE(tnr_racg))
         CALL wrf_dm_bcast_double(tnr_gacr,SIZE(tnr_gacr))
+#endif
       ELSE
         CALL wrf_message("ThompMP: computing qr_acr_qg")
         do n2 = 1, nbr
@@ -3789,9 +3788,12 @@
           ENDIF
         ENDIF
       ENDIF
+#if defined(DM_PARALLEL) && !defined(STUBMPI)
       CALL wrf_dm_bcast_integer(good,1)
+#endif
 
       IF ( good .EQ. 1 ) THEN
+#if defined(DM_PARALLEL) && !defined(STUBMPI)
         CALL wrf_dm_bcast_double(tcs_racs1,SIZE(tcs_racs1))
         CALL wrf_dm_bcast_double(tmr_racs1,SIZE(tmr_racs1))
         CALL wrf_dm_bcast_double(tcs_racs2,SIZE(tcs_racs2))
@@ -3804,6 +3806,7 @@
         CALL wrf_dm_bcast_double(tnr_racs2,SIZE(tnr_racs2))
         CALL wrf_dm_bcast_double(tnr_sacr1,SIZE(tnr_sacr1))
         CALL wrf_dm_bcast_double(tnr_sacr2,SIZE(tnr_sacr2))
+#endif
       ELSE
         CALL wrf_message("ThompMP: computing qr_acr_qs")
         do n2 = 1, nbr
@@ -4015,7 +4018,7 @@
       DOUBLE PRECISION:: sum1, sum2, sumn1, sumn2, &
                          prob, vol, Texp, orho_w, &
                          lam_exp, lamr, N0_r, lamc, N0_c, y
-      INTEGER :: nu_c  ! made automatic, jm 20141107
+      INTEGER:: nu_c
       REAL:: T_adjust
       LOGICAL force_read_thompson, write_thompson_tables
       LOGICAL lexist,lopen
@@ -4060,15 +4063,19 @@
         ENDIF
       ENDIF
 
+#if defined(DM_PARALLEL) && !defined(STUBMPI)
       CALL wrf_dm_bcast_integer(good,1)
+#endif
 
       IF ( good .EQ. 1 ) THEN
+#if defined(DM_PARALLEL) && !defined(STUBMPI)
         CALL wrf_dm_bcast_double(tpi_qrfz,SIZE(tpi_qrfz))
         CALL wrf_dm_bcast_double(tni_qrfz,SIZE(tni_qrfz))
         CALL wrf_dm_bcast_double(tpg_qrfz,SIZE(tpg_qrfz))
         CALL wrf_dm_bcast_double(tnr_qrfz,SIZE(tnr_qrfz))
         CALL wrf_dm_bcast_double(tpi_qcfz,SIZE(tpi_qcfz))
         CALL wrf_dm_bcast_double(tni_qcfz,SIZE(tni_qcfz))
+#endif
       ELSE
         CALL wrf_message("ThompMP: computing freezeH2O")
 
@@ -4381,7 +4388,7 @@
       INTEGER:: i, j, k, n
       DOUBLE PRECISION, DIMENSION(nbc):: N_c, massc
       DOUBLE PRECISION:: summ, summ2, lamc, N0_c
-      INTEGER :: nu_c   ! made automatic, jm 20141107
+      INTEGER:: nu_c
 !      DOUBLE PRECISION:: Nt_r, N0, lam_exp, lam
 !      REAL:: xlimit_intg
 
@@ -4496,7 +4503,9 @@
         ENDDO
  2010   CONTINUE
       ENDIF
+#if defined(DM_PARALLEL) && !defined(STUBMPI)
       CALL wrf_dm_bcast_bytes ( iunit_mp_th1 , IWORDSIZE )
+#endif
       IF ( iunit_mp_th1 < 0 ) THEN
         CALL wrf_error_fatal ( 'module_mp_thompson: table_ccnAct: '//   &
            'Can not find unused fortran unit to read in lookup table.')
@@ -4512,7 +4521,9 @@
 #define DM_BCAST_MACRO(A) CALL wrf_dm_bcast_bytes(A, size(A)*R4SIZE)
 
       IF ( wrf_dm_on_monitor() ) READ(iunit_mp_th1,ERR=9010) tnccn_act
+#if defined(DM_PARALLEL) && !defined(STUBMPI)
       DM_BCAST_MACRO(tnccn_act)
+#endif
 
 
       RETURN
@@ -4988,9 +4999,15 @@
       if (has_qc) then
       do k = kts, kte
          if (rc(k).le.R1 .or. nc(k).le.R2) CYCLE
-         inu_c = MIN(15, NINT(1000.E6/nc(k)) + 2)
+         if (nc(k).lt.100) then
+            inu_c = 15
+         elseif (nc(k).gt.1.E10) then
+            inu_c = 2
+         else
+            inu_c = MIN(15, NINT(1000.E6/nc(k)) + 2)
+         endif
          lamc = (nc(k)*am_r*g_ratio(inu_c)/rc(k))**obmr
-         re_qc1d(k) = MAX(2.51E-6, MIN(SNGL(0.5D0 * DBLE(3.+inu_c)/lamc), 50.E-6))
+         re_qc1d(k) = MAX(2.49E-6, MIN(SNGL(0.5D0 * DBLE(3.+inu_c)/lamc), 50.E-6))
       enddo
       endif
 
@@ -4998,7 +5015,7 @@
       do k = kts, kte
          if (ri(k).le.R1 .or. ni(k).le.R2) CYCLE
          lami = (am_i*cig(2)*oig1*ni(k)/ri(k))**obmi
-         re_qi1d(k) = MAX(10.01E-6, MIN(SNGL(0.5D0 * DBLE(3.+mu_i)/lami), 125.E-6))
+         re_qi1d(k) = MAX(9.99E-6, MIN(SNGL(0.5D0 * DBLE(3.+mu_i)/lami), 125.E-6))
       enddo
       endif
 
@@ -5038,7 +5055,7 @@
      &        + sb(7)*tc0*tc0*cse(1) + sb(8)*tc0*cse(1)*cse(1) &
      &        + sb(9)*tc0*tc0*tc0 + sb(10)*cse(1)*cse(1)*cse(1)
          smoc = a_ * smo2**b_
-         re_qs1d(k) = MAX(25.E-6, MIN(0.5*(smoc/smob), 999.E-6))
+         re_qs1d(k) = MAX(9.99E-6, MIN(0.5*(smoc/smob), 999.E-6))
       enddo
       endif
 
@@ -5350,8 +5367,9 @@
 !     enddo
 
       end subroutine calc_refl10cm
-
+!
 !+---+-----------------------------------------------------------------+
+
 !+---+-----------------------------------------------------------------+
 END MODULE module_mp_thompson
 !+---+-----------------------------------------------------------------+

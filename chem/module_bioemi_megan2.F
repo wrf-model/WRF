@@ -481,7 +481,8 @@ CONTAINS
     CASE (  MOZART_MOSAIC_4BIN_KPP, MOZART_MOSAIC_4BIN_AQ_KPP )
        CALL get_megan2mozm_table
 
-    CASE (SAPRC99_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP) ! FIX FOR SAPRC07A
+    CASE (SAPRC99_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP, &
+         SAPRC99_MOSAIC_8BIN_VBS2_AQ_KPP,SAPRC99_MOSAIC_8BIN_VBS2_KPP)!BSINGH(12/03/2013): Added SAPRC 8 bin and non-aq on (04/07/2014) ! FIX FOR SAPRC07A
        CALL get_megan2saprcnov_table
 
     CASE ( CRIMECH_KPP, CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP )
@@ -1572,7 +1573,8 @@ is_mozm_species : &
 
              END DO
             
-          CASE (SAPRC99_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP) ! FIX FOR SAPRC99 AND SAPRC07
+          CASE (SAPRC99_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP, &
+               SAPRC99_MOSAIC_8BIN_VBS2_AQ_KPP,SAPRC99_MOSAIC_8BIN_VBS2_KPP)!BSINGH(12/03/2013): Added SAPRC 8 bin and non-aq on (04/07/2014) ! FIX FOR SAPRC99 AND SAPRC07
 
              DO icount = 1, n_megan2saprcnov
 
@@ -1664,9 +1666,11 @@ is_mozm_species : &
                          e_bio(i,j,p_rco_oh-1)    = e_bio(i,j,p_rco_oh-1)   + gas_emis*convert2
                       ELSE IF ( p_in_chem .EQ. p_terp) THEN
                          ebio_terp(i,j)         = ebio_terp(i,j)        + gas_emis
+                         ebio_api(i,j)         = ebio_api(i,j)        + gas_emis
                          e_bio(i,j,p_terp-1)    = e_bio(i,j,p_terp-1)   + gas_emis*convert2
                       ELSE IF ( p_in_chem .EQ. p_sesq) THEN
                          ebio_sesq(i,j)         = ebio_sesq(i,j)        + gas_emis
+                         ebio_lim(i,j)         = ebio_lim(i,j)        + gas_emis
                          e_bio(i,j,p_sesq-1)    = e_bio(i,j,p_sesq-1)   + gas_emis*convert2
 !jdf
                       END IF

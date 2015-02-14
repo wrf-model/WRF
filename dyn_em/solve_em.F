@@ -4206,6 +4206,7 @@ BENCH_END(bc_2d_tim)
 
      END DO moisture_loop_bdy_3
 
+#if (WRF_CHEM == 1)
      IF (num_3d_c >= PARAM_FIRST_SCALAR)  THEN
          chem_species_bdy_loop_3 : DO ic = PARAM_FIRST_SCALAR , num_3d_c
 
@@ -4228,6 +4229,7 @@ BENCH_END(bc_2d_tim)
 
          END DO chem_species_bdy_loop_3
      ENDIF
+#endif
 
      tracer_species_bdy_loop_3 : DO im = PARAM_FIRST_SCALAR , num_tracer
 

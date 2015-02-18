@@ -15,7 +15,7 @@ FC              =       CONFIGURE_FC
 CC              =       CONFIGURE_CC
 LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
-PROMOTION       =       # -fdefault-real-8  # uncomment manually
+PROMOTION       =       #-fdefault-real-8
 ARCH_LOCAL      =       -DNEC -DNONSTANDARD_SYSTEM_SUBR -DWRF_USE_CLM
 CFLAGS_LOCAL    =       -c  
 #-DNCARIBM_NOC99 -Xa -Kc99
@@ -59,7 +59,7 @@ FC              =       CONFIGURE_FC
 CC              =       CONFIGURE_CC
 LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
-PROMOTION       =       # -fdefault-real-8  # uncomment manually
+PROMOTION       =       #-fdefault-real-8
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR -DWRF_USE_CLM
 CFLAGS_LOCAL    =       -w -O3 -c 
 LDFLAGS_LOCAL   =
@@ -301,7 +301,7 @@ FC              =       CONFIGURE_FC
 CC              =       CONFIGURE_CC
 LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
-PROMOTION       =       -i4
+PROMOTION       =       -r$(RWORDSIZE) -i4
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_FUNC -DWRF_USE_CLM
 CFLAGS_LOCAL    =       -w -O3 -ip #-xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -no-multibyte-chars
 LDFLAGS_LOCAL   =       -ip #-xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -align all -fno-alias -fno-common
@@ -343,8 +343,8 @@ DM_CC           =       mpiicc -mmic
 FC              =       $(DM_FC)
 CC              =       $(DM_CC)
 LD              =       $(FC)
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
-PROMOTION       =       -i4
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
+PROMOTION       =       -r$(RWORDSIZE) -i4
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_FUNC -DCHUNK=16 -DXEON_OPTIMIZED_WSM5 -DXEON_SIMD -DOPTIMIZE_CFL_TEST -DFSEEKO64_OK -DINTEL_YSU_KLUDGE -DWRF_USE_CLM
 OPTNOSIMD       =
 OPTKNC          =       -fimf-precision=low -fimf-domain-exclusion=15 -opt-assume-safe-padding -opt-streaming-stores always -opt-streaming-cache-evict=0 -mP2OPT_hlo_pref_use_outer_strategy=F
@@ -388,8 +388,8 @@ DM_CC           =       mpicc -cc=$(SCC)
 FC              =       $(DM_FC)
 CC              =       $(DM_CC)
 LD              =       $(FC)
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
-PROMOTION       =       -i4
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
+PROMOTION       =       -r$(RWORDSIZE) -i4
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_FUNC -DCHUNK=64 -DXEON_OPTIMIZED_WSM5 -DOPTIMIZE_CFL_TEST -DWRF_USE_CLM
 OPTNOSIMD       =
 OPTAVX          =       -xAVX
@@ -460,7 +460,7 @@ FC              =       CONFIGURE_FC
 CC              =       CONFIGURE_CC
 LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
-PROMOTION       =       -i4
+PROMOTION       =       -r$(RWORDSIZE) -i4
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_FUNC -DWRF_USE_CLM
 CFLAGS_LOCAL    =       -w -O3 -ip #-xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -no-multibyte-chars
 LDFLAGS_LOCAL   =       -ip -lmpi #-xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -align all -fno-alias -fno-common
@@ -507,7 +507,7 @@ FC              =       CONFIGURE_FC
 CC              =       CONFIGURE_CC
 LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
-PROMOTION       =       -i4
+PROMOTION       =       -r$(RWORDSIZE) -i4
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_FUNC -DWRF_USE_CLM
 CFLAGS_LOCAL    =       -w -O3 -ip #-xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -no-multibyte-chars
 LDFLAGS_LOCAL   =       -ip #-xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -align all -fno-alias -fno-common
@@ -584,7 +584,7 @@ FC              =       CONFIGURE_FC
 CC              =       CONFIGURE_CC
 LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
-PROMOTION       =        -i4
+PROMOTION       =       -r$(RWORDSIZE) -i4
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_FUNC -DWRF_USE_CLM
 CFLAGS_LOCAL    =       -w -O3 -ip #-xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -no-multibyte-chars
 LDFLAGS_LOCAL   =       -ip #-xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -align all -fno-alias -fno-common
@@ -665,7 +665,7 @@ FC              =       CONFIGURE_FC
 CC              =       CONFIGURE_CC
 LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
-PROMOTION       =        -i4
+PROMOTION       =       -r$(RWORDSIZE) -i4
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_FUNC -DWRF_USE_CLM
 CFLAGS_LOCAL    =       -w -O3 -ip #-xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -no-multibyte-chars
 LDFLAGS_LOCAL   =       -ip #-xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -align all -fno-alias -fno-common
@@ -751,7 +751,7 @@ FC              =       CONFIGURE_FC
 CC              =       CONFIGURE_CC
 LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
-PROMOTION       =       # -fdefault-real-8  # uncomment manually
+PROMOTION       =       #-fdefault-real-8
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR -DWRF_USE_CLM
 CFLAGS_LOCAL    =       -w -O3 -c 
 LDFLAGS_LOCAL   =       
@@ -835,7 +835,7 @@ FC              =       CONFIGURE_FC
 CC              =       CONFIGURE_CC
 LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
-PROMOTION       =        -i4
+PROMOTION       =       -r$(RWORDSIZE) -i4
 ARCH_LOCAL      =       -DMACOS -DNONSTANDARD_SYSTEM_FUNC -DWRF_USE_CLM
 CFLAGS_LOCAL    =       -w -O3 -ip -DMACOS #-xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -no-multibyte-chars -DMACOS
 # increase stack size; also note that for OpenMP, set environment OMP_STACKSIZE 4G or greater
@@ -879,7 +879,7 @@ FC              =       CONFIGURE_FC
 CC              =       CONFIGURE_CC
 LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
-PROMOTION       =        -i4
+PROMOTION       =       -r$(RWORDSIZE) -i4
 ARCH_LOCAL      =       -DMACOS -DNONSTANDARD_SYSTEM_FUNC -DWRF_USE_CLM
 CFLAGS_LOCAL    =       -w -O3 -ip -DMACOS #-xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -no-multibyte-chars -DMACOS
 # increase stack size; also note that for OpenMP, set environment OMP_STACKSIZE 4G or greater
@@ -966,7 +966,7 @@ FC              =       CONFIGURE_FC
 CC              =       CONFIGURE_CC
 LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
-PROMOTION       =       # -fdefault-real-8  # uncomment manually
+PROMOTION       =       #-fdefault-real-8
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR -DMACOS -DWRF_USE_CLM
 CFLAGS_LOCAL    =       -w -O3 -c  -DMACOS
 LDFLAGS_LOCAL   =
@@ -1254,7 +1254,7 @@ FC              =       $(DM_FC)
 CC              =       $(DM_CC)
 LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
-PROMOTION       =       -i4
+PROMOTION       =       -r$(RWORDSIZE) -i4
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_FUNC -DWRF_USE_CLM
 OPTNOSIMD       =
 OPTAVX          =       -xAVX
@@ -1298,7 +1298,7 @@ FC              =       CONFIGURE_FC
 CC              =       CONFIGURE_CC
 LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
-PROMOTION       =       #-CcdRR8  # uncomment manually
+PROMOTION       =       -CcdRR$(RWORDSIZE)
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR -DWRF_USE_CLM
 CFLAGS_LOCAL    =       -Kfast -Xg -DSUN
 LDFLAGS_LOCAL   =

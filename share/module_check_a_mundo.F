@@ -96,7 +96,7 @@
 
       IF ( ( model_config_rec %   km_opt(1) .EQ. -1 ) .OR. &
            ( model_config_rec % diff_opt(1) .EQ. -1 ) ) THEN
-            wrf_err_message = 'Both km_opt and diff_opt need to be set in the namelist.input file.'
+            wrf_err_message = '--- ERROR: Both km_opt and diff_opt need to be set in the namelist.input file.'
          CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
       END IF
 #endif
@@ -118,6 +118,22 @@
          END IF
       ENDDO
 #endif
+
+!-----------------------------------------------------------------------
+! Check: if ETAMPNEW microphysics is selected, this has moved to option 95
+!-----------------------------------------------------------------------
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec % mp_physics(i) == etamp_hr ) THEN
+            wrf_err_message = '--- RESET: ETAMPNEW scheme is now mp_physics=95'
+            CALL wrf_message ( wrf_err_message )
+            model_config_rec % mp_physics(i) = etampnew
+         END IF
+         IF ( model_config_rec % mp_physics_dfi(i) == etamp_hr_dfi ) THEN
+            wrf_err_message = '--- RESET: ETAMPNEW_DFI scheme is now mp_physics_dfi=95'
+            CALL wrf_message ( wrf_err_message )
+            model_config_rec % mp_physics_dfi(i) = etampnew_dfi
+         END IF
+      ENDDO
 
 !-----------------------------------------------------------------------
 ! Check that all values of sf_surface_physics are the same for all domains
@@ -332,7 +348,7 @@
                CALL wrf_message ( wrf_err_message )
                wrf_err_message = '             and should not be changed from their default value for SPPT' 
                CALL wrf_message ( wrf_err_message )
-               wrf_err_message = ' ABORT. If you really want to modify "kminforct" etc.,  edit module_check a_mundo.'
+               wrf_err_message = '--- ERROR: If you really want to modify "kminforct" etc.,  edit module_check a_mundo.'
                CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
            endif
          endif
@@ -399,7 +415,7 @@
    IF ( model_config_rec % perturb_chem_bdy .EQ. 1 ) then
 
 #if (WRF_CHEM != 1)
-      wrf_err_message = 'This option is only for WRF_CHEM.'
+      wrf_err_message = '--- ERROR: This option is only for WRF_CHEM.'
       CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
 #endif
 
@@ -411,7 +427,7 @@
 
 #if (WRF_CHEM == 1)
       IF ( .NOT. model_config_rec % have_bcs_chem(1) ) THEN
-            wrf_err_message = 'This perturb_chem_bdy option needs '// &
+            wrf_err_message = '--- ERROR: This perturb_chem_bdy option needs '// &
                               'have_bcs_chem = .true. in chem.'
             CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
       ENDIF
@@ -448,7 +464,7 @@
 
 #if (EM_CORE == 1)
 !-----------------------------------------------------------------------
-!  V3.7 cu_physics = 11 (scale-aware KF) only works with YSU PBL.
+! cu_physics = 11 (scale-aware KF) only works with YSU PBL.
 !-----------------------------------------------------------------------
 
       oops = 0
@@ -503,6 +519,23 @@
             CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
          END IF
       END IF
+
+!-----------------------------------------------------------------------
+! The qndropsource relies on the flag PROGN (when not running chemistry)
+! and is always allocated when running WRF Chem.
+!-----------------------------------------------------------------------
+
+#if ( (EM_CORE == 1) && (WRF_CHEM != 1) )
+      model_config_rec%alloc_qndropsource = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec%progn(i) .EQ. 1 ) THEN
+            model_config_rec%alloc_qndropsource = 1
+         END IF
+      END DO
+
+#elif (WRF_CHEM == 1) 
+      model_config_rec%alloc_qndropsource = 1
+#endif
 
 #if ((EM_CORE == 1) && (DA_CORE != 1))
 !-----------------------------------------------------------------------
@@ -602,7 +635,7 @@
          END IF
       ENDDO      ! Loop over domains
       IF ( oops .GT. 0 ) THEN
-         wrf_err_message = 'bl_pbl_physics /= 4, implies mfshconv must be 0, resetting'
+         wrf_err_message = '--- NOTE: bl_pbl_physics /= 4, implies mfshconv must be 0, resetting'
          CALL wrf_message ( wrf_err_message )
       END IF
 
@@ -624,9 +657,33 @@
          END IF
       ENDDO      ! Loop over domains
       IF ( oops .GT. 0 ) THEN
-         wrf_err_message = 'bl_pbl_physics /= 1,5,6 implies shcu_physics cannot be 3, resetting'
+         wrf_err_message = '--- NOTE: bl_pbl_physics /= 1,5,6 implies shcu_physics cannot be 3, resetting'
          CALL wrf_message ( wrf_err_message )
       END IF
+
+!-----------------------------------------------------------------------
+!  We need to know if any of the cumulus schemes are active. This
+!  allows the model to allocate space.
+!-----------------------------------------------------------------------
+
+      model_config_rec%cu_used = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec%cu_physics(i) .NE. NOCUSCHEME ) THEN
+            model_config_rec%cu_used = 1
+         END IF
+      ENDDO
+
+!-----------------------------------------------------------------------
+!  We need to know if any of the shallow cumulus schemes are active. This
+!  allows the model to allocate space.
+!-----------------------------------------------------------------------
+
+      model_config_rec%shcu_used = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec%shcu_physics(i) .NE. NOSHCUSCHEME ) THEN
+            model_config_rec%shcu_used = 1
+         END IF
+      ENDDO
 
 !-----------------------------------------------------------------------
 !  gwd_opt = 1 only works with YSU PBL.
@@ -642,7 +699,7 @@
          END IF
       ENDDO      ! Loop over domains
       IF ( oops .GT. 0 ) THEN
-         wrf_err_message = 'bl_pbl_physics /= 1, implies gwd_opt cannot be 1, resetting'
+         wrf_err_message = '--- NOTE: bl_pbl_physics /= 1, implies gwd_opt cannot be 1, resetting'
          CALL wrf_message ( wrf_err_message )
       END IF
 
@@ -842,6 +899,16 @@
       ENDDO      ! Loop over domains
 
 !-----------------------------------------------------------------------
+!  Need to set lagday to 150 if tmn_update is 1
+!-----------------------------------------------------------------------
+
+      IF ( model_config_rec%tmn_update .EQ. 1 .AND. &
+           model_config_rec%lagday .EQ. 1 ) THEN 
+           wrf_err_message = '--- ERROR: Using tmn_update=1 requires lagday=150 '
+           CALL wrf_error_fatal ( TRIM(wrf_err_message) )
+      END IF
+
+!-----------------------------------------------------------------------
 !  Do not allow digital filtering to be run with TEMF.
 !-----------------------------------------------------------------------
 
@@ -896,7 +963,7 @@
          END IF
       ENDDO      ! Loop over domains
       IF ( oops .GT. 0 ) THEN
-         wrf_err_message = 'mp_physics == 28, already has gravitational fog settling; resetting grav_settling to 0'
+         wrf_err_message = '--- NOTE: mp_physics == 28, already has gravitational fog settling; resetting grav_settling to 0'
          CALL wrf_message ( wrf_err_message )
       END IF
  
@@ -913,7 +980,7 @@
          END IF
       ENDDO      ! Loop over domains
       IF ( oops .GT. 0 ) THEN
-         wrf_err_message = 'For mp_physics == 28 and use_aero_icbc is true, recommend to turn on scalar_pblmix'
+         wrf_err_message = '--- WARNING: For mp_physics == 28 and use_aero_icbc is true, recommend to turn on scalar_pblmix'
          CALL wrf_message ( wrf_err_message )
          wrf_err_message = 'resetting scalar_pblmix = 1'
          CALL wrf_message ( wrf_err_message )
@@ -1032,6 +1099,39 @@
          CALL wrf_message ( wrf_err_message )
 
       END IF     
+      
+#if ( (NMM_CORE != 1) && (DA_CORE != 1) )
+!-----------------------------------------------------------------------
+! If this is a WRF run with polar boundary conditions, then this is a
+! global domain. A global domain needs to have the FFT arrays allocated.
+!-----------------------------------------------------------------------
+
+      model_config_rec % fft_used = 0
+      IF ( ( model_config_rec % polar(1) ) .AND. &
+           ( model_config_rec % fft_filter_lat .LT. 90. ) ) THEN
+         model_config_rec % fft_used = 1
+      END IF
+
+!-----------------------------------------------------------------------
+! If any CAM scheme is turned on, then there are a few shared variables.
+! These need to be allocated when any CAM scheme is active.
+!-----------------------------------------------------------------------
+
+#if ( (EM_CORE == 1) && (WRF_CHEM != 1) )
+      model_config_rec % cam_used = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( ( model_config_rec % mp_physics(i)     .EQ. CAMMGMPSCHEME   ) .OR. &
+              ( model_config_rec % bl_pbl_physics(i) .EQ. CAMUWPBLSCHEME  ) .OR. &
+              ( model_config_rec % shcu_physics(i)   .EQ. CAMUWSHCUSCHEME ) ) THEN
+            model_config_rec % cam_used = 1
+         END IF
+      ENDDO
+
+#elif (WRF_CHEM == 1) 
+      model_config_rec % cam_used = 1
+#endif
+
+#endif
       
 !-----------------------------------------------------------------------
 ! Set the namelist parameters for the CAM radiation scheme if either 

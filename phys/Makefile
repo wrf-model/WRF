@@ -89,7 +89,6 @@ MODULES = \
 	module_mp_nconvp.o \
 	module_mp_nconvp_tl.o \
 	module_mp_nconvp_ad.o \
-        module_mp_etaold.o \
 	module_mp_HWRF.o \
 	module_mp_thompson.o \
 	module_mp_full_sbm.o \

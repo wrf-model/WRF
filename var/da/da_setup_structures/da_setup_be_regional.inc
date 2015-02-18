@@ -106,7 +106,7 @@ subroutine da_setup_be_regional(xb, be, grid)
    character*5                 :: namv(5)=(/"psi  ","chi_u","t_u  ","rh   ","ps_u "/)
    character*10                :: variable
    character*80                :: var80c
-   character(len=1000)         :: write_fmt
+   character(len=15)           :: write_fmt
    integer                     :: ni, nj, nk, nk_2d, b
    integer                     :: ix, jy, kz, kzs(5), mz, mzs(5)
    real, allocatable   :: regcoeff_psi_chi(:)        ! psi/chi    regression cooefficient.
@@ -958,24 +958,27 @@ subroutine da_setup_be_regional(xb, be, grid)
             b=b+mzs(i)		! point to next variable.
          endif
       enddo
-#ifdef CLOUD_CV
       if (print_detail_be) then
 ! Lengthscale variables (except 5!) are arrays of length "kz", so need to account for this in fmt statement
-         write(write_fmt,'(A,I0,A)')'(A,',kz,'(R10.5)'
+         write(write_fmt,'(A,I0,A)')'(A,',kz,'F10.5)'
          write(unit=message(1),fmt='(A)') 'BE Length scales:'
          write(unit=message(2),fmt=write_fmt) 'be1= ',be1_rf_lengthscale
          write(unit=message(3),fmt=write_fmt) 'be2= ',be2_rf_lengthscale
          write(unit=message(4),fmt=write_fmt) 'be3= ',be3_rf_lengthscale
          write(unit=message(5),fmt=write_fmt) 'be4= ',be4_rf_lengthscale
-         write(unit=message(6),fmt='(A,R10.5)') 'be5= ',be5_rf_lengthscale
+         write(unit=message(6),fmt='(A,F10.5)') 'be5= ',be5_rf_lengthscale
+#ifdef CLOUD_CV
          write(unit=message(7),fmt=write_fmt) 'be6= ',be6_rf_lengthscale
          write(unit=message(8),fmt=write_fmt) 'be7= ',be7_rf_lengthscale
          write(unit=message(9),fmt=write_fmt) 'be8= ',be8_rf_lengthscale
          write(unit=message(10),fmt=write_fmt) 'be9= ',be9_rf_lengthscale
          write(unit=message(11),fmt=write_fmt) 'be10= ',be10_rf_lengthscale
          write(unit=message(12),fmt=write_fmt) 'be11= ',be11_rf_lengthscale
-      end if
+         call da_message(message(1:12))
+#else
+         call da_message(message(1:6))
 #endif
+      end if
 
   endif
 !================== for interpolating CV5 =======================================
@@ -1095,100 +1098,85 @@ subroutine da_setup_be_regional(xb, be, grid)
       call da_gen_eigen(kz, covm2, be2_evec_glo, be2_eval_glo)
       call da_gen_eigen(kz, covm3, be3_evec_glo, be3_eval_glo)
       call da_gen_eigen(kz, covm4, be4_evec_glo, be4_eval_glo)
-!   write(6,*)'be1_evec_glo(10,10)=',be1_evec_glo(10,10)
-!   write(6,*)'be1_eval_glo(10)=',be1_eval_glo(10)
-!   write(6,*)'be2_evec_glo(10,10)=',be2_evec_glo(10,10)
-!   write(6,*)'be2_eval_glo(10)=',be2_eval_glo(10)
-!   write(6,*)'be3_evec_glo(10,10)=',be3_evec_glo(10,10)
-!   write(6,*)'be3_eval_glo(10)=',be3_eval_glo(10)
-!   write(6,*)'be4_evec_glo(10,10)=',be4_evec_glo(10,10)
-!   write(6,*)'be4_eval_glo(10)=',be4_eval_glo(10)
-!   write(6,*)'be5_evec_glo(1,1)=',be5_evec_glo(1,1)
-!   write(6,*)'be5_eval_glo(1)=',be5_eval_glo(1) 
    ! 3.3.6 Write out the interpolated CV5 BE
  
    ! 3.3.6.1 Eigenvector/eigenvalue:
       variable = be % v1 % name
       if (rootproc) then
-      write(be_out_unit) variable
-      write(be_out_unit) kz, num_bins2d_out
-      write(be_out_unit) be1_evec_glo
-      write(be_out_unit) be1_eval_glo
-   ! - Because num_bins2d = 1, be1_evec_loc = be1_evec_glo:
-      write(be_out_unit) be1_evec_glo
-      write(be_out_unit) be1_eval_glo
+         write(be_out_unit) variable
+         write(be_out_unit) kz, num_bins2d_out
+         write(be_out_unit) be1_evec_glo
+         write(be_out_unit) be1_eval_glo
+      ! - Because num_bins2d = 1, be1_evec_loc = be1_evec_glo:
+         write(be_out_unit) be1_evec_glo
+         write(be_out_unit) be1_eval_glo
       endif
       variable = be % v2 % name
       if (rootproc) then
-      write(be_out_unit) variable
-      write(be_out_unit) kz, num_bins2d_out
-      write(be_out_unit) be2_evec_glo
-      write(be_out_unit) be2_eval_glo
-   ! - Because num_bins2d = 1, be2_evec_loc = be2_evec_glo:
-      write(be_out_unit) be2_evec_glo
-      write(be_out_unit) be2_eval_glo
+         write(be_out_unit) variable
+         write(be_out_unit) kz, num_bins2d_out
+         write(be_out_unit) be2_evec_glo
+         write(be_out_unit) be2_eval_glo
+      ! - Because num_bins2d = 1, be2_evec_loc = be2_evec_glo:
+         write(be_out_unit) be2_evec_glo
+         write(be_out_unit) be2_eval_glo
       endif
       variable = be % v3 % name
       if (rootproc) then
-      write(be_out_unit) variable
-      write(be_out_unit) kz, num_bins2d_out
-      write(be_out_unit) be3_evec_glo
-      write(be_out_unit) be3_eval_glo
-   ! - Because num_bins2d = 1, be3_evec_loc = be3_evec_glo:
-      write(be_out_unit) be3_evec_glo
-      write(be_out_unit) be3_eval_glo
+         write(be_out_unit) variable
+         write(be_out_unit) kz, num_bins2d_out
+         write(be_out_unit) be3_evec_glo
+         write(be_out_unit) be3_eval_glo
+      ! - Because num_bins2d = 1, be3_evec_loc = be3_evec_glo:
+         write(be_out_unit) be3_evec_glo
+         write(be_out_unit) be3_eval_glo
       endif
       variable = be % v4 % name
       if (rootproc) then
-      write(be_out_unit) variable
-      write(be_out_unit) kz, num_bins2d_out
-      write(be_out_unit) be4_evec_glo
-      write(be_out_unit) be4_eval_glo
-   ! - Because num_bins2d = 1, be4_evec_loc = be4_evec_glo:
-      write(be_out_unit) be4_evec_glo
-      write(be_out_unit) be4_eval_glo
+         write(be_out_unit) variable
+         write(be_out_unit) kz, num_bins2d_out
+         write(be_out_unit) be4_evec_glo
+         write(be_out_unit) be4_eval_glo
+      ! - Because num_bins2d = 1, be4_evec_loc = be4_evec_glo:
+         write(be_out_unit) be4_evec_glo
+         write(be_out_unit) be4_eval_glo
       endif
       variable = be % v5 % name
       if (rootproc) then
-      write(be_out_unit) variable
-      write(be_out_unit) nk_2d, num_bins2d_out
-      write(be_out_unit) be5_evec_glo
-      write(be_out_unit) be5_eval_glo
-   ! - Because num_bins2d = 1, be5_evec_loc = be5_evec_glo:
-      write(be_out_unit) be5_evec_glo
-      write(be_out_unit) be5_eval_glo
+         write(be_out_unit) variable
+         write(be_out_unit) nk_2d, num_bins2d_out
+         write(be_out_unit) be5_evec_glo
+         write(be_out_unit) be5_eval_glo
+      ! - Because num_bins2d = 1, be5_evec_loc = be5_evec_glo:
+         write(be_out_unit) be5_evec_glo
+         write(be_out_unit) be5_eval_glo
       endif
 
    ! 3.3.6.2 Scale-length
       variable = be % v1 % name
       if (rootproc) then
-      write(be_out_unit) variable
-      write(be_out_unit) be1_rf_lengthscale
-!      write(6,*)'be1_rf_lengthscale(10)=',be1_rf_lengthscale(10)
+         write(be_out_unit) variable
+         write(be_out_unit) be1_rf_lengthscale
       endif
       variable = be % v2 % name
       if (rootproc) then
-      write(be_out_unit) variable
-      write(be_out_unit) be2_rf_lengthscale
-!      write(6,*)'be2_rf_lengthscale(10)=',be2_rf_lengthscale(10)
+         write(be_out_unit) variable
+         write(be_out_unit) be2_rf_lengthscale
       endif
       variable = be % v3 % name
       if (rootproc) then
-      write(be_out_unit) variable
-      write(be_out_unit) be3_rf_lengthscale
-!      write(6,*)'be3_rf_lengthscale(10)=',be3_rf_lengthscale(10)
+         write(be_out_unit) variable
+         write(be_out_unit) be3_rf_lengthscale
       endif
       variable = be % v4 % name
       if (rootproc) then
-      write(be_out_unit) variable
-      write(be_out_unit) be4_rf_lengthscale
-!     write(6,*)'be4_rf_lengthscale(10)=',be4_rf_lengthscale(10)
+         write(be_out_unit) variable
+         write(be_out_unit) be4_rf_lengthscale
       endif
       variable = be % v5 % name
       if (rootproc) then
-      write(be_out_unit) variable
-      write(be_out_unit) be5_rf_lengthscale
-!      write(6,*)'be5_rf_lengthscale(1)=',be5_rf_lengthscale(1)
+         write(be_out_unit) variable
+         write(be_out_unit) be5_rf_lengthscale
       endif 
    ! - Close the output unit:
  
@@ -1535,16 +1523,14 @@ subroutine da_setup_be_regional(xb, be, grid)
        write(be_print_unit,'("mz=",i3,2x,"be%v11%val:"/(10e12.5))') be%v11%mz, be%v11%val(1,:)
 #endif
        write(be_print_unit,'(/"scale-length: kz=",i3)') kz
-       do i = 1,kz 
-         if (i == 1) then
-           write(be_print_unit,'(i3,2x,5e15.5)') i, be % v1 % rf_alpha(i), &
-                be % v2 % rf_alpha(i), be % v3 % rf_alpha(i), be % v4 % rf_alpha(i), &
-                be % v5 % rf_alpha(i)
-         else
-           write(be_print_unit,'(i3,2x,5e15.5)') i, be % v1 % rf_alpha(i), &
-                be % v2 % rf_alpha(i), be % v3 % rf_alpha(i), be % v4 % rf_alpha(i)
+       if (be % ne > 0) then
+          write(be_print_unit,'(/"Hybrid assimilation: number of members=",i3)') be % ne
+          write(be_print_unit,'("be%v1%rf_alpha:"/(10e12.5))') be % v1 % rf_alpha(:)
+          write(be_print_unit,'("be%v2%rf_alpha:"/(10e12.5))') be % v2 % rf_alpha(:)
+          write(be_print_unit,'("be%v3%rf_alpha:"/(10e12.5))') be % v3 % rf_alpha(:)
+          write(be_print_unit,'("be%v4%rf_alpha:"/(10e12.5))') be % v4 % rf_alpha(:)
+          write(be_print_unit,'("be%v5%rf_alpha:"/(10e12.5))') be % v5 % rf_alpha(:)
        endif
-       enddo
 
    endif
 

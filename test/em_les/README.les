@@ -48,6 +48,6 @@ Re-run ideal.exe
 As LES case but larger domain (100x100), top still at 2 km.
 Differences are sounding 10 K cooler, geostrophic u-wind 10 m/s, isfflx=1 using
 input_sounding's surface theta = 295 K as SST, water surface, monotonic
-moist and scalar advection, mp_physics =6, no other physics.
+moist and scalar advection, mp_physics =6, no other physics except sf_sfclay_physics=1.
 This produces a shallow cloud layer capped by a strong inversion that
 grows in response to warmer SST.

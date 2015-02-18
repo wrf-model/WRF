@@ -350,7 +350,7 @@ em_real : wrf
 	( cd test/em_real ; /bin/rm -f real.exe ; ln -s ../../main/real.exe . )
 	( cd test/em_real ; /bin/rm -f tc.exe ; ln -s ../../main/tc.exe . )
 	( cd test/em_real ; /bin/rm -f ndown.exe ; ln -s ../../main/ndown.exe . )
-	( cd test/em_real ; /bin/rm -f nup.exe ; ln -s ../../main/nup.exe . )
+	#TEMPORARILY REMOVED ( cd test/em_real ; /bin/rm -f nup.exe ; ln -s ../../main/nup.exe . )
 	( cd test/em_real ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
 	( cd test/em_real ; /bin/rm -f ETAMPNEW_DATA.expanded_rain ETAMPNEW_DATA RRTM_DATA RRTMG_LW_DATA RRTMG_SW_DATA ;    \
              ln -sf ../../run/ETAMPNEW_DATA . ;                     \
@@ -413,7 +413,7 @@ em_real : wrf
 	( cd run ; /bin/rm -f real.exe ; ln -s ../main/real.exe . )
 	( cd run ; /bin/rm -f tc.exe ; ln -s ../main/tc.exe . )
 	( cd run ; /bin/rm -f ndown.exe ; ln -s ../main/ndown.exe . )
-	( cd run ; /bin/rm -f nup.exe ; ln -s ../main/nup.exe . )
+	#TEMPORARILY REMOVED ( cd run ; /bin/rm -f nup.exe ; ln -s ../main/nup.exe . )
 	( cd run ; if test -f namelist.input ; then \
 		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
 		/bin/rm -f namelist.input ; cp ../test/em_real/namelist.input . )

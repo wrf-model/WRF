@@ -480,7 +480,7 @@ CONTAINS
         TSKV=THGB(I)*(1.+EP1*QSFC(I))                     
         DTHVDZ=(THVX(I)-TSKV)                                                 
 !  Convective velocity scale Vc and subgrid-scale velocity Vsg
-!  following Beljaars (1995, QJRMS) and Mahrt and Sun (1995, MWR)
+!  following Beljaars (1994, QJRMS) and Mahrt and Sun (1995, MWR)
 !                                ... HONG Aug. 2001
 !
 !       VCONV = 0.25*sqrt(g/tskv*pblh(i)*dthvm)

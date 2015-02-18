@@ -59,7 +59,7 @@ SUBROUTINE microphysics_driver(                                          &
                       ,f_qic_effr,f_qip_effr,f_qid_effr                  &                 
                       ,qrcuten, qscuten, qicuten, mu                     &
                       ,qt_curr,f_qt                                      &
-                      ,mp_restart_state,tbpvs_state,tbpvs0_state         & ! for etampnew or etampold
+                      ,mp_restart_state,tbpvs_state,tbpvs0_state         & ! for etampnew or etamp_hr
                       ,hail,ice2                                         & ! for mp_gsfcgce
 !                     ,ccntype                                           & ! for mp_milbrandt2mom
                       ,u,v,w,z                                          &   
@@ -96,14 +96,14 @@ SUBROUTINE microphysics_driver(                                          &
 #if(NMM_CORE==1)
    USE module_state_description, ONLY :                                  &
                      KESSLERSCHEME, LINSCHEME, SBU_YLINSCHEME, WSM3SCHEME, WSM5SCHEME    &
-                    ,WSM6SCHEME, ETAMPNEW, ETAMPOLD, etamp_HWRF,THOMPSON, THOMPSONAERO, MORR_TWO_MOMENT     &
+                    ,WSM6SCHEME, ETAMPNEW, ETAMP_HR, etamp_HWRF,THOMPSON, THOMPSONAERO, MORR_TWO_MOMENT     &
                     ,GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME, NSSL_2MOM, NSSL_2MOMCCN, NSSL_2MOMG  &
                     ,NSSL_1MOM,NSSL_1MOMLFO &
                     ,MILBRANDT2MOM !,MILBRANDT3MOM 
 #else
    USE module_state_description, ONLY :                                  &
                      KESSLERSCHEME, LINSCHEME, SBU_YLINSCHEME, WSM3SCHEME, WSM5SCHEME    &
-                    ,WSM6SCHEME, ETAMPNEW, ETAMPOLD, THOMPSON, THOMPSONAERO, FAST_KHAIN_LYNN, MORR_TWO_MOMENT     &
+                    ,WSM6SCHEME, ETAMPNEW, ETAMP_HR, THOMPSON, THOMPSONAERO, FAST_KHAIN_LYNN, MORR_TWO_MOMENT     &
                     ,GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME, NSSL_2MOM, NSSL_2MOMCCN, NSSL_2MOMG  &
                     ,NSSL_1MOM,NSSL_1MOMLFO & ! ,NSSL_3MOM       &
                     ,MILBRANDT2MOM, LSCONDSCHEME, MKESSLERSCHEME, CAMMGMPSCHEME, FULL_KHAIN_LYNN  !,MILBRANDT3MOM
@@ -134,7 +134,6 @@ SUBROUTINE microphysics_driver(                                          &
    USE module_mp_wsm5
    USE module_mp_wsm6
    USE module_mp_etanew
-   USE module_mp_etaold
    USE module_mp_thompson
    USE module_mp_full_sbm
    USE module_mp_fast_sbm
@@ -172,7 +171,6 @@ SUBROUTINE microphysics_driver(                                          &
    ! WRF Single-Moment 6-class, Lim and Hong (2003 WRF workshop)
    ! Eta Grid-scale Cloud and Precipitation scheme (EGCP01, Ferrier)
    !   * etampnew - what's in the operational 4-km High-Resolution Window Runs
-   !   * etampold - what was run in the 12-km operational NAM
    ! Milbrandt and Yau (2005)
 
 !----------------------------------------------------------------------
@@ -1888,36 +1886,6 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                                                                     )
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling lscond' )
-             ENDIF
-
-        CASE (ETAMPOLD)   !-- What was run in the operational NAM (WRF NMM)
-             CALL wrf_debug ( 100 , 'microphysics_driver: calling etampold')
-
-             IF ( PRESENT( qv_curr ) .AND. PRESENT( qt_curr ) .AND. &
-                  PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV ) .AND.  &
-                  PRESENT( mp_restart_state )                  .AND. &
-                  PRESENT( tbpvs_state )                      .AND. &
-                  PRESENT( tbpvs0_state )                       ) THEN
-               CALL ETAMP_OLD(                                      &
-                  ITIMESTEP=itimestep,DT=dt,DX=dx,DY=dy             &
-                 ,DZ8W=dz8w,RHO_PHY=rho,P_PHY=p,PI_PHY=pi_phy,TH_PHY=th &
-                 ,QV=qv_curr                                        &
-                 ,QC=qc_curr                                        &
-                 ,QS=qs_curr                                        &
-                 ,QR=qr_curr                                        &
-                 ,QT=qt_curr                                        &
-                 ,LOWLYR=LOWLYR,SR=SR                               &
-                 ,F_ICE_PHY=F_ICE_PHY,F_RAIN_PHY=F_RAIN_PHY         &
-                 ,F_RIMEF_PHY=F_RIMEF_PHY                           &
-                 ,RAINNC=rainnc,RAINNCV=rainncv                     &
-                 ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
-                 ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
-                 ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
-                 ,MP_RESTART_STATE=mp_restart_state                 &
-                 ,TBPVS_STATE=tbpvs_state,TBPVS0_STATE=tbpvs0_state &
-                                                                    )
-             ELSE
-                CALL wrf_error_fatal ( 'arguments not present for calling etampold' )
              ENDIF
 
       CASE DEFAULT

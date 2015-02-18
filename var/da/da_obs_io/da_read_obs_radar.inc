@@ -111,7 +111,7 @@ subroutine da_read_obs_radar (iv, filename, grid)
 
 !      if (print_detail_radar) write (unit=stdout,fmt='(A,A5,A,A12)')  &
        write (unit=stdout,fmt='(A,A5,A,A12)')  &
-                           ' Expect: ',platform % stn % platform, &
+                           ' Reading ',platform % stn % platform, &
                            ' data at station:', platform % stn % name
 
       read (unit=char_ned(20:27),fmt='(F8.3)', iostat = iost) platform % stn % lon
@@ -121,7 +121,7 @@ subroutine da_read_obs_radar (iv, filename, grid)
       read (unit=char_ned (40:47),fmt='(F8.1)', iostat = iost) platform % stn % elv
 
       if (print_detail_radar) write (unit=stdout,fmt='(A,2(F8.3,2X),F8.1)')  &
-         'The station longitude, latutude, and altitude are: ', &
+         'The station longitude, latitude, and altitude are: ', &
          platform % stn % lon, &
          platform % stn % lat, platform % stn % elv
 

@@ -2258,24 +2258,11 @@ BENCH_START(rk_scalar_tend_tim)
 
                IF( rk_step == 1 )THEN
                IF( im.eq.p_qv .or. im.eq.p_qc )THEN
-                 CALL q_diabatic_add  ( im, im, config_flags, tenddec,       & 
-                           rk_step, dt_rk, grid%mut,                         &
-                           grid%ru_m, grid%rv_m, grid%ww_m,                  &
-                           grid%muts, grid%mub, grid%mu_1,                   &
-                           grid%alt,                                         &
-                           grid%qv_diabatic,                                 &
-                           grid%qc_diabatic,                                 &
-                           moist_old(ims,kms,jms,im),                        &
-                           moist(ims,kms,jms,im),                            &
-                           moist_tend(ims,kms,jms,im),                       &
-                           advect_tend,h_tendency,z_tendency,grid%rqvften,   & 
-                           grid%qv_base, .true., grid%fnm, grid%fnp,         &
-                           grid%msfux,grid%msfuy, grid%msfvx, grid%msfvx_inv,&
-                           grid%msfvy, grid%msftx,grid%msfty,                & 
-                           grid%rdx, grid%rdy, grid%rdn, grid%rdnw, grid%khdif, &
-                           grid%kvdif, grid%xkhh,                            &
-                           grid%diff_6th_opt, grid%diff_6th_factor,          &
-                           config_flags%moist_adv_opt,                       &
+                 CALL q_diabatic_add  ( im, im,              &
+                           dt_rk, grid%mut,                  &
+                           grid%qv_diabatic,                 &
+                           grid%qc_diabatic,                 &
+                           moist_tend(ims,kms,jms,im),       &
                            ids, ide, jds, jde, kds, kde,     &
                            ims, ime, jms, jme, kms, kme,     &
                            grid%i_start(ij), grid%i_end(ij), &
@@ -2375,24 +2362,11 @@ BENCH_START(update_scal_tim)
 
                IF( rk_step == rk_order )THEN
                IF( im.eq.p_qv .or. im.eq.p_qc )THEN
-                 CALL q_diabatic_subtr( im, im, config_flags, tenddec,       & 
-                           rk_step, dt_rk,                                   &
-                           grid%ru_m, grid%rv_m, grid%ww_m,                  &
-                           grid%muts, grid%mub, grid%mu_1,                   &
-                           grid%alt,                                         &
-                           grid%qv_diabatic,                                 &
-                           grid%qc_diabatic,                                 &
-                           moist_old(ims,kms,jms,im),                        &
-                           moist(ims,kms,jms,im),                            &
-                           moist_tend(ims,kms,jms,im),                       &
-                           advect_tend,h_tendency,z_tendency,grid%rqvften,   & 
-                           grid%qv_base, .true., grid%fnm, grid%fnp,         &
-                           grid%msfux,grid%msfuy, grid%msfvx, grid%msfvx_inv,&
-                           grid%msfvy, grid%msftx,grid%msfty,                & 
-                           grid%rdx, grid%rdy, grid%rdn, grid%rdnw, grid%khdif, &
-                           grid%kvdif, grid%xkhh,                            &
-                           grid%diff_6th_opt, grid%diff_6th_factor,          &
-                           config_flags%moist_adv_opt,                       &
+                 CALL q_diabatic_subtr( im, im,              &
+                           dt_rk,                            &
+                           grid%qv_diabatic,                 &
+                           grid%qc_diabatic,                 &
+                           moist(ims,kms,jms,im),            &
                            ids, ide, jds, jde, kds, kde,     &
                            ims, ime, jms, jme, kms, kme,     &
                            grid%i_start(ij), grid%i_end(ij), &

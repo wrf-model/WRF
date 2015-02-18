@@ -1525,11 +1525,11 @@
       ENDDO
       ENDDO
 !
-!-- ETAMP_Regional logical is true for regional NAM (ETAMPOLD) or HRW (ETAMPNEW) microphysics
+!-- ETAMP_Regional logical is true for regional NAM (ETAMPNEW) or HRW (ETAMPNEW) microphysics
 !
       ETAMP_Regional=.FALSE.
       IF (CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW .OR.                        &
-     &    CONFIG_FLAGS%MP_PHYSICS==ETAMPOLD) ETAMP_Regional=.TRUE.
+     &    CONFIG_FLAGS%MP_PHYSICS==ETAMP_HR) ETAMP_Regional=.TRUE.
 !
       IF(ETAMP_Regional) THEN
 !-- Logical FQ_I and index PQ_I are set to values associated with snow
@@ -2795,11 +2795,11 @@
 !***  UPDATE TEMPERATURE, SPECIFIC HUMIDITY, AND HEATING.
 !-----------------------------------------------------------------------
 !
-!-- ETAMP_Regional logical is true for regional NAM (ETAMPOLD) or HRW (ETAMPNEW) microphysics
+!-- ETAMP_Regional logical is true for regional NAM (ETAMPNEW) or HRW (ETAMPNEW) microphysics
 !
       ETAMP_Regional=.FALSE.
       IF (CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW .OR.                        &
-     &    CONFIG_FLAGS%MP_PHYSICS==ETAMPOLD) ETAMP_Regional=.TRUE.
+     &    CONFIG_FLAGS%MP_PHYSICS==ETAMP_HR) ETAMP_Regional=.TRUE.
 !
 !$omp parallel do                                                       &
 !$omp& private(dqdt,dtdt,i,iendx,j,k,tchange)
@@ -3018,12 +3018,12 @@
 !
 !-----------------------------------------------------------------------
 !
-!-- QT_PRESENT logical is true for regional NAM (ETAMPOLD), HRW (ETAMPNEW),
+!-- QT_PRESENT logical is true for regional NAM (ETAMPNEW), HRW (ETAMPNEW),
 !   or HWRF (ETAMP_HWRF) microphysics
 !
       QT_PRESENT=.FALSE.
       IF (CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW .OR.                        &
-     &    CONFIG_FLAGS%MP_PHYSICS==ETAMPOLD .OR.                        &
+     &    CONFIG_FLAGS%MP_PHYSICS==ETAMP_HR .OR.                        &
      &    CONFIG_FLAGS%MP_PHYSICS==ETAMP_HWRF) QT_PRESENT=.TRUE.
 !
       micro_check1: IF(.NOT.QT_PRESENT) THEN

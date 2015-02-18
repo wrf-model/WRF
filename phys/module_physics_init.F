@@ -3528,7 +3528,6 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    USE module_mp_wsm5
    USE module_mp_wsm6
    USE module_mp_etanew
-   USE module_mp_etaold
 #if (NMM_CORE == 1)
    USE module_mp_HWRF
 #endif
@@ -3700,16 +3699,6 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
              ,ims, ime, jms, jme, kms, kme                   &
              ,its, ite, jts, jte, kts, kte                   )
 #endif
-     CASE (ETAMPOLD)
-         adv_moist_cond = .false.
-         CALL etaoldinit (MPDT,DT,DX,DY,LOWLYR,restart,           &
-                          F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,       &
-                          mp_restart_state,tbpvs_state,tbpvs0_state,&
-                          allowed_to_read,                        &
-                          ids, ide, jds, jde, kds, kde,           &
-                          ims, ime, jms, jme, kms, kme,           &
-                          its, ite, jts, jte, kts, kte            )
-
 
      CASE DEFAULT
 
@@ -4244,9 +4233,10 @@ subroutine aerosol_in(aerodm,pina,alevsiz,no_months,no_src_types,XLAT,XLONG,   &
    REAL,  DIMENSION(alevsiz), INTENT(OUT )  ::                   pina
 
 ! Local
-!  data from Torn, computed from EC 6 types of aerosol data:
+!  Data from Ryan Torn, computed from EC 6 types of aerosol data:
 !    organic carbon, sea salt, dust, black carbon, sulfalte 
 !    and stratospheric aerosol (volcanic ashes)
+!  The data dimensions are 46 x 72 x 12 (pressure levels), and in unit of AOD per Pa
 
    INTEGER, PARAMETER :: latsiz = 46
    INTEGER, PARAMETER :: lonsiz = 72

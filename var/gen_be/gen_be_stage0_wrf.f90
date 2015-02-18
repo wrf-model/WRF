@@ -143,7 +143,7 @@ program gen_be_stage0_wrf
 
    if ( cv_options == 7 ) then
       test_inverse = .false. ! Should not run psi/chi calculation test for cv_options=7
-   else if ( cv_options == 5 ) then
+   else if ( cv_options == 5 .or. cv_options == 6 ) then
       test_inverse = .true.
    else
       write(UNIT=stderr,FMT='(A)') "Invalid cv_options; Stop"
@@ -292,7 +292,7 @@ program gen_be_stage0_wrf
                                v(i,j+1) + v(i+1,j+1) )
                end do
             end do
-         else if (cv_options == 5) then
+         else
             ! Interpolate psi to mass pts ready for output:
             do j = 1, dim2
                do i = 1, dim1

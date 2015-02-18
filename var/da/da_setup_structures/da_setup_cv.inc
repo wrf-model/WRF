@@ -51,13 +51,13 @@ subroutine da_setup_cv(be)
       be % cv % size8 = ij * be % v8 % mz
       be % cv % size9 = ij * be % v9 % mz
       be % cv % size10= ij * be % v10 % mz
-      be % cv % size11= ij * be % v11 % mz
+      be % cv % size11i= ij * be % v11 % mz
 #endif
    end if
 #ifdef CLOUD_CV
    be % cv % size_jb = be % cv % size1 + be % cv % size2 + be % cv % size3 + &
       be % cv % size4 + be % cv % size5+ be % cv % size6 + be % cv % size7 + &
-      be % cv % size8 + be % cv % size9+  be % cv % size10 +  be % cv % size11
+      be % cv % size8 + be % cv % size9+  be % cv % size10 +  be % cv % size11i
 #else
    be % cv % size_jb = be % cv % size1 + be % cv % size2 + be % cv % size3 + &
       be % cv % size4 + be % cv % size5

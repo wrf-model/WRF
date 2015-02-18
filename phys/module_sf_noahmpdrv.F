@@ -591,7 +591,11 @@ CONTAINS
                                 FSA,     FSR,    FIRA,     FSH,    FGEV,   SSOIL, & ! OUT : 
                                TRAD,   ESOIL,   RUNSF,   RUNSB,     SAG,    SALB, & ! OUT :
                               QSNBOT,PONDING,PONDING1,PONDING2,    T2MB,    Q2MB, & ! OUT :
-			      EMISSI,  FPICE,    CHB2 )                             ! OUT :
+			      EMISSI,  FPICE,    CHB2 &                             ! OUT :
+#ifdef WRF_HYDRO
+                              , sfcheadrt(i,j)                                      &
+#endif
+                              )
 
          FSNO   = 1.0       
          TV     = undefined_value     ! Output from standard Noah-MP undefined for glacier points
@@ -692,12 +696,15 @@ CONTAINS
             QFX(I,J) = ECAN + ESOIL + ETRAN
             LH       (I,J)                = FCEV + FGEV + FCTR
 
+   ENDIF ! glacial split ends 
+
 #ifdef WRF_HYDRO
-            soldrain(i,j) = RUNSB*dt        !mm , underground runoff
+!AD_CHANGE: Glacier cells can produce small negative subsurface runoff for mass balance.
+!           This will crash channel routing, so only pass along positive runoff.
+            soldrain(i,j) = max(RUNSB*dt, 0.)        !mm , underground runoff
             INFXSRT(i,j) = RUNSF*dt        !mm , surface runoff
 #endif
 
-   ENDIF ! glacial split ends 
 
 ! INPUT/OUTPUT
 

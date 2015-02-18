@@ -2095,21 +2095,21 @@ BENCH_START(g_rk_scalar_tend_tim)
                            grid%j_start(ij), grid%j_end(ij), &
                            k_start    , k_end               )
 
-               IF( rk_step == 1 )THEN
-               IF( im.eq.p_qv .or. im.eq.p_qc )THEN
-                 CALL g_q_diabatic_add  ( im, im,                 &
-                           dt_rk, grid%mut, grid%g_mut,           &
-                           grid%qv_diabatic, grid%g_qv_diabatic,  &
-                           grid%qc_diabatic, grid%g_qc_diabatic,  &
-                           moist_tend(ims,kms,jms,im),            &
-                           g_moist_tend(ims,kms,jms,im),          &
-                           ids, ide, jds, jde, kds, kde,          &
-                           ims, ime, jms, jme, kms, kme,          &
-                           grid%i_start(ij), grid%i_end(ij),      &
-                           grid%j_start(ij), grid%j_end(ij),      &
-                           k_start    , k_end               )
-               ENDIF
-               ENDIF
+!              IF( rk_step == 1 )THEN
+!              IF( im.eq.p_qv .or. im.eq.p_qc )THEN
+!                CALL g_q_diabatic_add  ( im, im,                 &
+!                          dt_rk, grid%mut, grid%g_mut,           &
+!                          grid%qv_diabatic, grid%g_qv_diabatic,  &
+!                          grid%qc_diabatic, grid%g_qc_diabatic,  &
+!                          moist_tend(ims,kms,jms,im),            &
+!                          g_moist_tend(ims,kms,jms,im),          &
+!                          ids, ide, jds, jde, kds, kde,          &
+!                          ims, ime, jms, jme, kms, kme,          &
+!                          grid%i_start(ij), grid%i_end(ij),      &
+!                          grid%j_start(ij), grid%j_end(ij),      &
+!                          k_start    , k_end               )
+!              ENDIF
+!              ENDIF
 
 BENCH_END(g_rk_scalar_tend_tim)
 
@@ -2191,21 +2191,21 @@ BENCH_START(g_update_scal_tim)
                                jts=grid%j_start(ij), jte=grid%j_end(ij),               &
                                kts=k_start    , kte=k_end                              )
 
-               IF( rk_step == rk_order )THEN
-               IF( im.eq.p_qv .or. im.eq.p_qc )THEN
-                 CALL g_q_diabatic_subtr( im, im,                  &
-                           dt_rk,                                &
-                           grid%qv_diabatic, grid%g_qv_diabatic, &
-                           grid%qc_diabatic, grid%g_qc_diabatic, &
-                           moist(ims,kms,jms,im),                &
-                           g_moist(ims,kms,jms,im),              &
-                           ids, ide, jds, jde, kds, kde,         &
-                           ims, ime, jms, jme, kms, kme,         &
-                           grid%i_start(ij), grid%i_end(ij),     &
-                           grid%j_start(ij), grid%j_end(ij),     &
-                           k_start    , k_end               )
-               ENDIF
-               ENDIF
+!              IF( rk_step == rk_order )THEN
+!              IF( im.eq.p_qv .or. im.eq.p_qc )THEN
+!                CALL g_q_diabatic_subtr( im, im,                &
+!                          dt_rk,                                &
+!                          grid%qv_diabatic, grid%g_qv_diabatic, &
+!                          grid%qc_diabatic, grid%g_qc_diabatic, &
+!                          moist(ims,kms,jms,im),                &
+!                          g_moist(ims,kms,jms,im),              &
+!                          ids, ide, jds, jde, kds, kde,         &
+!                          ims, ime, jms, jme, kms, kme,         &
+!                          grid%i_start(ij), grid%i_end(ij),     &
+!                          grid%j_start(ij), grid%j_end(ij),     &
+!                          k_start    , k_end               )
+!              ENDIF
+!              ENDIF
 
 BENCH_END(g_update_scal_tim)
 

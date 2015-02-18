@@ -45,7 +45,7 @@ export FCST_RANGE=12
 #export NE=2 # 30
 
 export FC_DIR=/glade/p/work/wrfhelp/WRFDA_DATA/fc   # where wrf forecasts are
-export RUN_DIR=`pwd`/gen_be_cv${NL_CV_OPTIONS}
+export RUN_DIR=`pwd`/gen_be${BIN_TYPE}_cv${NL_CV_OPTIONS}
 export DOMAIN=01
 export FCST_RANGE1=24
 export FCST_RANGE2=12

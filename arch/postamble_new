@@ -14,6 +14,7 @@ ARCHFLAGS       =    $(COREDEFS) -DIWORDSIZE=$(IWORDSIZE) -DDWORDSIZE=$(DWORDSIZ
                       CONFIGURE_GRIB2_FLAG \
                       CONFIGURE_RTTOV_FLAG \
                       CONFIGURE_CRTM_FLAG \
+                      CONFIGURE_CLOUDCV_FLAG \
                       CONFIGURE_4DVAR_FLAG \
                       CONFIGURE_WAVELET_FLAG \
                       CONFIGURE_NESTOPT \

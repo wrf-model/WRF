@@ -1850,11 +1850,11 @@ endif
       USE module_configure, ONLY : grid_config_rec_type, model_config_rec
       USE module_model_constants
       USE module_state_description
-      USE module_dm, ONLY : wrf_dm_min_real, wrf_dm_maxval, ntasks_x, ntasks_y, &
-        local_communicator_periodic, local_communicator, mytask, ntasks
+      USE module_driver_constants, ONLY: DATA_ORDER_XYZ, DATA_ORDER_YXZ, DATA_ORDER_ZXY, &
+                                         DATA_ORDER_ZYX, DATA_ORDER_XZY, DATA_ORDER_YZX, &
+                                         DATA_ORDER_XY, DATA_ORDER_YX, model_data_order
 
 #ifdef DM_PARALLEL
-      USE module_dm
       USE module_comm_dm, ONLY : &
                            HALO_EM_INIT_1_sub   &
                           ,HALO_EM_INIT_2_sub   &
@@ -1862,6 +1862,9 @@ endif
                           ,HALO_EM_INIT_4_sub   &
                           ,HALO_EM_INIT_5_sub   &
                           ,HALO_EM_VINTERP_UV_1_sub
+#endif
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
+   USE module_dm, ONLY : ntasks_x, ntasks_y, ntasks, mytask, local_communicator
 #endif
 
       IMPLICIT NONE
@@ -2096,7 +2099,7 @@ endif
         ENDDO !j
 
       ips = its ; ipe = ite ; jps = jts ; jpe = jte ; kps = kts ; kpe = kte
-#ifdef DM_PARALLEL
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
 #   include "HALO_EM_INIT_1.inc"
 #   include "HALO_EM_INIT_2.inc"
 #   include "HALO_EM_INIT_3.inc"

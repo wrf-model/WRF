@@ -4902,6 +4902,7 @@
       log_J_rate = -906.7 + (8502.0*delta_aw)                           &
      &           - (26924.0*delta_aw*delta_aw)                          &
      &           + (29180.0*delta_aw*delta_aw*delta_aw)
+      log_J_rate = MIN(20.0, log_J_rate)
       J_rate     = 0.01*(10.**log_J_rate)                                ! cm-3 s-1
       prob_h     = MIN(1.-exp(-J_rate*ar_volume*DT), 1.)
       if (prob_h .gt. 0.) then

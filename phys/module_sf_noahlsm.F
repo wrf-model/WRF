@@ -402,10 +402,6 @@ CONTAINS
               SMCDRY = 0.40
          ENDIF
 
-         IF(RDLAI2D) THEN
-          IF (SHDFAC > 0.0 .AND. XLAI <= 0.0) XLAI = 0.01 
-         END IF
-
          IF ( SHDFAC >= SHDMAX ) THEN
             EMBRD = EMISSMAX
             IF (.NOT. RDLAI2D) THEN
@@ -756,7 +752,7 @@ CONTAINS
                          VEGTYP,                                         &
                          ETPN,FLX4,UA_PHYS,                              &
                          SFHEAD1RT,INFXS1RT,ETPND1)
-            ETA_KINEMATIC =  ESNOW + ETNS
+            ETA_KINEMATIC =  ESNOW + ETNS - 1000.0*DEW
          END IF
 
 !     Calculate effective mixing ratio at grnd level (skin)
@@ -3932,7 +3928,7 @@ CONTAINS
       REAL, INTENT(OUT)         :: DF
       REAL                      :: AKE, GAMMD, THKDRY, THKICE, THKO,    &
                                    THKQTZ,THKSAT,THKS,THKW,SATRATIO,XU, &
-                                   XUNFROZ
+                                   XUNFROZ,AKEI,AKEL
 
 ! ----------------------------------------------------------------------
 ! WE NOW GET QUARTZ AS AN INPUT ARGUMENT (SET IN ROUTINE REDPRM):
@@ -3996,11 +3992,9 @@ CONTAINS
 ! DRY THERMAL CONDUCTIVITY IN W.M-1.K-1
       THKDRY = (0.135* GAMMD+ 64.7)/ (2700. - 0.947* GAMMD)
 ! FROZEN
-      IF ( (SH2O + 0.0005) <  SMC ) THEN
-         AKE = SATRATIO
+         AKEI = SATRATIO
 ! UNFROZEN
 ! RANGE OF VALIDITY FOR THE KERSTEN NUMBER (AKE)
-      ELSE
 
 ! KERSTEN NUMBER (USING "FINE" FORMULA, VALID FOR SOILS CONTAINING AT
 ! LEAST 5% OF PARTICLES WITH DIAMETER LESS THAN 2.E-6 METERS.)
@@ -4008,16 +4002,16 @@ CONTAINS
 
          IF ( SATRATIO >  0.1 ) THEN
 
-            AKE = LOG10 (SATRATIO) + 1.0
+            AKEL = LOG10 (SATRATIO) + 1.0
 
 ! USE K = KDRY
          ELSE
 
-            AKE = 0.0
+            AKEL = 0.0
          END IF
+      AKE = ((SMC-SH2O)*AKEI + SH2O*AKEL)/SMC
 !  THERMAL CONDUCTIVITY
 
-      END IF
 
       DF = AKE * (THKSAT - THKDRY) + THKDRY
 ! ----------------------------------------------------------------------

@@ -156,7 +156,7 @@ program gen_be_stage2a
          read(iunit)chi
          close(iunit)
 
-         if ( cv_options == 5 ) then
+         if ( cv_options /= 7 ) then
             do k = 1, nk
                do j = 1, nj
                   do i = 1, ni
@@ -184,7 +184,7 @@ program gen_be_stage2a
          read(iunit)temp
          close(iunit)
 
-         if ( cv_options == 5 ) then
+         if ( cv_options /= 7 ) then
             do j = 1, nj
                do i = 1, ni
                   b = bin2d(i,j)
@@ -212,7 +212,7 @@ program gen_be_stage2a
          read(iunit)ps
          close(iunit)
 
-         if ( cv_options == 5 ) then
+         if ( cv_options /= 7 ) then
             do j = 1, nj
                do i = 1, ni
                   b = bin2d(i,j)

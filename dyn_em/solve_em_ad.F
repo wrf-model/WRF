@@ -4353,6 +4353,191 @@ BENCH_START(bc_2d_tim)
    END DO tile_bc_loop_2
    !$OMP END PARALLEL DO
 BENCH_END(bc_2d_tim)
+
+    IF( config_flags%specified .or. config_flags%nested ) THEN
+
+!  this code forces boundary values to specified values to avoid drift
+
+   !$OMP PARALLEL DO   &
+   !$OMP PRIVATE ( ij )
+   tile_bc_loop_3: DO ij = 1 , grid%num_tiles
+
+     CALL wrf_debug ( 200 , ' call spec_bdy_final' )
+
+     CALL spec_bdy_final   ( grid%u_2, muus, grid%msfuy,                         &
+                                grid%u_bxs, grid%u_bxe, grid%u_bys, grid%u_bye,  &
+                                grid%u_btxs,grid%u_btxe,grid%u_btys,grid%u_btye, &
+                                'u', config_flags,                               &
+                                config_flags%spec_bdy_width, grid%spec_zone,     &
+                                grid%dtbc,                                       &
+                                ids,ide, jds,jde, kds,kde,  & ! domain dims
+                                ims,ime, jms,jme, kms,kme,  & ! memory dims
+                                ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
+                                grid%i_start(ij), grid%i_end(ij),       &
+                                grid%j_start(ij), grid%j_end(ij),       &
+                                k_start    , k_end                     )
+
+     CALL spec_bdy_final   ( grid%v_2, muvs, grid%msfvx,                         &
+                                grid%v_bxs, grid%v_bxe, grid%v_bys, grid%v_bye,  &
+                                grid%v_btxs,grid%v_btxe,grid%v_btys,grid%v_btye, &
+                                'v', config_flags,                               &
+                                config_flags%spec_bdy_width, grid%spec_zone,     &
+                                grid%dtbc,                                       &
+                                ids,ide, jds,jde, kds,kde,  & ! domain dims
+                                ims,ime, jms,jme, kms,kme,  & ! memory dims
+                                ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
+                                grid%i_start(ij), grid%i_end(ij),       &
+                                grid%j_start(ij), grid%j_end(ij),       &
+                                k_start    , k_end                     )
+
+     IF( config_flags%nested) THEN
+       CALL spec_bdy_final   ( grid%w_2, grid%muts, grid%msfty,                  &
+                                grid%w_bxs, grid%w_bxe, grid%w_bys, grid%w_bye,  &
+                                grid%w_btxs,grid%w_btxe,grid%w_btys,grid%w_btye, &
+                                'w', config_flags,                               &
+                                config_flags%spec_bdy_width, grid%spec_zone,     &
+                                grid%dtbc,                                       &
+                                ids,ide, jds,jde, kds,kde,  & ! domain dims
+                                ims,ime, jms,jme, kms,kme,  & ! memory dims
+                                ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
+                                grid%i_start(ij), grid%i_end(ij),       &
+                                grid%j_start(ij), grid%j_end(ij),       &
+                                k_start    , k_end                     )
+     ENDIF
+
+     CALL spec_bdy_final   ( grid%t_2, grid%muts, grid%msfty,                    &
+                                grid%t_bxs, grid%t_bxe, grid%t_bys, grid%t_bye,  &
+                                grid%t_btxs,grid%t_btxe,grid%t_btys,grid%t_btye, &
+                                't', config_flags,                               &
+                                config_flags%spec_bdy_width, grid%spec_zone,     &
+                                grid%dtbc,                                       &
+                                ids,ide, jds,jde, kds,kde,  & ! domain dims
+                                ims,ime, jms,jme, kms,kme,  & ! memory dims
+                                ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
+                                grid%i_start(ij), grid%i_end(ij),       &
+                                grid%j_start(ij), grid%j_end(ij),       &
+                                k_start    , k_end                     )
+
+     CALL spec_bdy_final   ( grid%ph_2, grid%muts, grid%msfty,                       &
+                                grid%ph_bxs, grid%ph_bxe, grid%ph_bys, grid%ph_bye,  &
+                                grid%ph_btxs,grid%ph_btxe,grid%ph_btys,grid%ph_btye, &
+                                'h', config_flags,                               &
+                                config_flags%spec_bdy_width, grid%spec_zone,     &
+                                grid%dtbc,                                       &
+                                ids,ide, jds,jde, kds,kde,  & ! domain dims
+                                ims,ime, jms,jme, kms,kme,  & ! memory dims
+                                ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
+                                grid%i_start(ij), grid%i_end(ij),       &
+                                grid%j_start(ij), grid%j_end(ij),       &
+                                k_start    , k_end                     )
+
+     CALL spec_bdy_final   ( grid%mu_2, grid%muts, grid%msfty,                       &
+                                grid%mu_bxs, grid%mu_bxe, grid%mu_bys, grid%mu_bye,  &
+                                grid%mu_btxs,grid%mu_btxe,grid%mu_btys,grid%mu_btye, &
+                                'm', config_flags,                               &
+                                config_flags%spec_bdy_width, grid%spec_zone,     &
+                                grid%dtbc,                                       &
+                                ids,ide, jds,jde, 1,  1,    & ! domain dims
+                                ims,ime, jms,jme, 1,  1,    & ! memory dims
+                                ips,ipe, jps,jpe, 1,  1,    & ! patch  dims
+                                grid%i_start(ij), grid%i_end(ij),       &
+                                grid%j_start(ij), grid%j_end(ij),       &
+                                1  , 1                    )
+
+     moisture_loop_bdy_3 : DO im = PARAM_FIRST_SCALAR , num_3d_m
+
+     IF ( im .EQ. P_QV .OR. config_flags%nested .OR. &
+             ( config_flags%specified .AND. config_flags%have_bcs_moist ) ) THEN
+        CALL spec_bdy_final   ( moist(ims,kms,jms,im), grid%muts, grid%msfty,    &
+                                moist_bxs(jms,kms,1,im),moist_bxe(jms,kms,1,im), &
+                                moist_bys(ims,kms,1,im),moist_bye(ims,kms,1,im), &
+                                moist_btxs(jms,kms,1,im),moist_btxe(jms,kms,1,im), &
+                                moist_btys(ims,kms,1,im),moist_btye(ims,kms,1,im), &
+                                't', config_flags,                               &
+                                config_flags%spec_bdy_width, grid%spec_zone,     &
+                                grid%dtbc,                                       &
+                                ids,ide, jds,jde, kds,kde,  & ! domain dims
+                                ims,ime, jms,jme, kms,kme,  & ! memory dims
+                                ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
+                                grid%i_start(ij), grid%i_end(ij),       &
+                                grid%j_start(ij), grid%j_end(ij),       &
+                                k_start    , k_end                     )
+     ENDIF
+
+     END DO moisture_loop_bdy_3
+
+#if (WRF_CHEM == 1)
+     IF (num_3d_c >= PARAM_FIRST_SCALAR)  THEN
+         chem_species_bdy_loop_3 : DO ic = PARAM_FIRST_SCALAR , num_3d_c
+
+     IF( ( config_flags%nested ) ) THEN
+        CALL spec_bdy_final   ( chem(ims,kms,jms,ic), grid%muts, grid%msfty,   &
+                                chem_bxs(jms,kms,1,ic),chem_bxe(jms,kms,1,ic), &
+                                chem_bys(ims,kms,1,ic),chem_bye(ims,kms,1,ic), &
+                                chem_btxs(jms,kms,1,ic),chem_btxe(jms,kms,1,ic), &
+                                chem_btys(ims,kms,1,ic),chem_btye(ims,kms,1,ic), &
+                                't', config_flags,                               &
+                                config_flags%spec_bdy_width, grid%spec_zone,     &
+                                grid%dtbc,                                       &
+                                ids,ide, jds,jde, kds,kde,  & ! domain dims
+                                ims,ime, jms,jme, kms,kme,  & ! memory dims
+                                ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
+                                grid%i_start(ij), grid%i_end(ij),       &
+                                grid%j_start(ij), grid%j_end(ij),       &
+                                k_start    , k_end                     )
+     ENDIF
+
+         END DO chem_species_bdy_loop_3
+     ENDIF
+#endif
+
+     tracer_species_bdy_loop_3 : DO im = PARAM_FIRST_SCALAR , num_tracer
+
+     IF( ( config_flags%nested ) ) THEN
+        CALL spec_bdy_final   ( tracer(ims,kms,jms,im), grid%muts, grid%msfty,     &
+                                tracer_bxs(jms,kms,1,im),tracer_bxe(jms,kms,1,im), &
+                                tracer_bys(ims,kms,1,im),tracer_bye(ims,kms,1,im), &
+                                tracer_btxs(jms,kms,1,im),tracer_btxe(jms,kms,1,im), &
+                                tracer_btys(ims,kms,1,im),tracer_btye(ims,kms,1,im), &
+                                't', config_flags,                               &
+                                config_flags%spec_bdy_width, grid%spec_zone,     &
+                                grid%dtbc,                                       &
+                                ids,ide, jds,jde, kds,kde,  & ! domain dims
+                                ims,ime, jms,jme, kms,kme,  & ! memory dims
+                                ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
+                                grid%i_start(ij), grid%i_end(ij),       &
+                                grid%j_start(ij), grid%j_end(ij),       &
+                                k_start    , k_end                     )
+     ENDIF
+
+     END DO tracer_species_bdy_loop_3
+
+     scalar_species_bdy_loop_3 : DO is = PARAM_FIRST_SCALAR , num_3d_s
+
+     IF( ( config_flags%nested ) ) THEN
+        CALL spec_bdy_final   ( scalar(ims,kms,jms,is), grid%muts, grid%msfty,     &
+                                scalar_bxs(jms,kms,1,is),scalar_bxe(jms,kms,1,is), &
+                                scalar_bys(ims,kms,1,is),scalar_bye(ims,kms,1,is), &
+                                scalar_btxs(jms,kms,1,is),scalar_btxe(jms,kms,1,is), &
+                                scalar_btys(ims,kms,1,is),scalar_btye(ims,kms,1,is), &
+                                't', config_flags,                               &
+                                config_flags%spec_bdy_width, grid%spec_zone,     &
+                                grid%dtbc,                                       &
+                                ids,ide, jds,jde, kds,kde,  & ! domain dims
+                                ims,ime, jms,jme, kms,kme,  & ! memory dims
+                                ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
+                                grid%i_start(ij), grid%i_end(ij),       &
+                                grid%j_start(ij), grid%j_end(ij),       &
+                                k_start    , k_end                     )
+     ENDIF
+
+     END DO scalar_species_bdy_loop_3
+
+   END DO tile_bc_loop_3
+   !$OMP END PARALLEL DO
+
+    ENDIF
+
 ! Move to the end of subroutine
 !   IF( config_flags%specified .or. config_flags%nested ) THEN
 !     grid%dtbc = grid%dtbc + grid%dt
@@ -4537,6 +4722,232 @@ BENCH_END(bc_2d_tim)
                            k_start, k_end                                   )
    END DO
    !$OMP END PARALLEL DO
+
+   IF( config_flags%specified .or. config_flags%nested ) THEN
+
+   !$OMP PARALLEL DO   &
+   !$OMP PRIVATE ( ij )
+   adj_tile_bc_loop_3: DO ij = grid%num_tiles, 1, -1
+
+     CALL wrf_debug ( 200 , ' call a_spec_bdy_final' )
+
+     adj_scalar_species_bdy_loop_3 : DO is = num_3d_s, PARAM_FIRST_SCALAR , -1
+
+     IF( ( config_flags%nested ) ) THEN
+        CALL a_spec_bdy_final ( scalar(ims,kms,jms,is), a_scalar(ims,kms,jms,is), &
+                                grid%muts, grid%a_muts, grid%msfty,    &
+                                scalar_bxs(jms,kms,1,is),  a_scalar_bxs(jms,kms,1,is),  &
+                                scalar_bxe(jms,kms,1,is),  a_scalar_bxe(jms,kms,1,is),  &
+                                scalar_bys(ims,kms,1,is),  a_scalar_bys(ims,kms,1,is),  &
+                                scalar_bye(ims,kms,1,is),  a_scalar_bye(ims,kms,1,is),  &
+                                scalar_btxs(jms,kms,1,is), a_scalar_btxs(jms,kms,1,is), &
+                                scalar_btxe(jms,kms,1,is), a_scalar_btxe(jms,kms,1,is), &
+                                scalar_btys(ims,kms,1,is), a_scalar_btys(ims,kms,1,is), &
+                                scalar_btye(ims,kms,1,is), a_scalar_btye(ims,kms,1,is), &
+                                't', config_flags,                                      &
+                                config_flags%spec_bdy_width, grid%spec_zone,            &
+                                grid%dtbc,                                              &
+                                ids,ide, jds,jde, kds,kde,                              & ! domain dims
+                                ims,ime, jms,jme, kms,kme,                              & ! memory dims
+                                ips,ipe, jps,jpe, kps,kpe,                              & ! patch  dims
+                                grid%i_start(ij), grid%i_end(ij),                       &
+                                grid%j_start(ij), grid%j_end(ij),                       &
+                                k_start    , k_end                     )
+     ENDIF
+
+     END DO adj_scalar_species_bdy_loop_3
+
+     adj_tracer_species_bdy_loop_3 : DO im = num_tracer, PARAM_FIRST_SCALAR , -1
+
+     IF( ( config_flags%nested ) ) THEN
+        CALL a_spec_bdy_final ( tracer(ims,kms,jms,im), a_tracer(ims,kms,jms,im),       &
+                                grid%muts, grid%a_muts, grid%msfty,                     &
+                                tracer_bxs(jms,kms,1,im),  a_tracer_bxs(jms,kms,1,im),  &
+                                tracer_bxe(jms,kms,1,im),  a_tracer_bxe(jms,kms,1,im),  &
+                                tracer_bys(ims,kms,1,im),  a_tracer_bys(ims,kms,1,im),  &
+                                tracer_bye(ims,kms,1,im),  a_tracer_bye(ims,kms,1,im),  &
+                                tracer_btxs(jms,kms,1,im), a_tracer_btxs(jms,kms,1,im), &
+                                tracer_btxe(jms,kms,1,im), a_tracer_btxe(jms,kms,1,im), &
+                                tracer_btys(ims,kms,1,im), a_tracer_btys(ims,kms,1,im), &
+                                tracer_btye(ims,kms,1,im), a_tracer_btye(ims,kms,1,im), &
+                                't', config_flags,                                      &
+                                config_flags%spec_bdy_width, grid%spec_zone,            &
+                                grid%dtbc,                                              &
+                                ids,ide, jds,jde, kds,kde,                              & ! domain dims
+                                ims,ime, jms,jme, kms,kme,                              & ! memory dims
+                                ips,ipe, jps,jpe, kps,kpe,                              & ! patch  dims
+                                grid%i_start(ij), grid%i_end(ij),                       &
+                                grid%j_start(ij), grid%j_end(ij),                       &
+                                k_start    , k_end                     )
+     ENDIF
+
+     END DO adj_tracer_species_bdy_loop_3
+
+#if (WRF_CHEM == 1)
+     IF (num_3d_c >= PARAM_FIRST_SCALAR)  THEN
+         adj_chem_species_bdy_loop_3 : DO ic = num_3d_c, PARAM_FIRST_SCALAR , -1
+
+     IF( ( config_flags%nested ) ) THEN
+!       CALL a_spec_bdy_final ( chem(ims,kms,jms,ic), a_chem(ims,kms,jms,ic),       &
+!                               grid%muts, grid%a_muts, grid%msfty,                 &
+!                               chem_bxs(jms,kms,1,ic),  a_chem_bxs(jms,kms,1,ic),  &
+!                               chem_bxe(jms,kms,1,ic),  a_chem_bxe(jms,kms,1,ic),  &
+!                               chem_bys(ims,kms,1,ic),  a_chem_bys(ims,kms,1,ic),  &
+!                               chem_bye(ims,kms,1,ic),  a_chem_bye(ims,kms,1,ic),  &
+!                               chem_btxs(jms,kms,1,ic), a_chem_btxs(jms,kms,1,ic), &
+!                               chem_btxe(jms,kms,1,ic), a_chem_btxe(jms,kms,1,ic), &
+!                               chem_btys(ims,kms,1,ic), a_chem_btys(ims,kms,1,ic), &
+!                               chem_btye(ims,kms,1,ic), a_chem_btye(ims,kms,1,ic), &
+!hcl-beg no a_chem for now
+        CALL a_spec_bdy_final ( chem(ims,kms,jms,ic),   chem(ims,kms,jms,ic),       &
+                                grid%muts, grid%a_muts, grid%msfty,                 &
+                                chem_bxs(jms,kms,1,ic),    chem_bxs(jms,kms,1,ic),  &
+                                chem_bxe(jms,kms,1,ic),    chem_bxe(jms,kms,1,ic),  &
+                                chem_bys(ims,kms,1,ic),    chem_bys(ims,kms,1,ic),  &
+                                chem_bye(ims,kms,1,ic),    chem_bye(ims,kms,1,ic),  &
+                                chem_btxs(jms,kms,1,ic),   chem_btxs(jms,kms,1,ic), &
+                                chem_btxe(jms,kms,1,ic),   chem_btxe(jms,kms,1,ic), &
+                                chem_btys(ims,kms,1,ic),   chem_btys(ims,kms,1,ic), &
+                                chem_btye(ims,kms,1,ic),   chem_btye(ims,kms,1,ic), &
+!hcl-end no a_chem for now
+                                't', config_flags,                                  &
+                                config_flags%spec_bdy_width, grid%spec_zone,        &
+                                grid%dtbc,                                          &
+                                ids,ide, jds,jde, kds,kde,                          & ! domain dims
+                                ims,ime, jms,jme, kms,kme,                          & ! memory dims
+                                ips,ipe, jps,jpe, kps,kpe,                          & ! patch  dims
+                                grid%i_start(ij), grid%i_end(ij),                   &
+                                grid%j_start(ij), grid%j_end(ij),                   &
+                                k_start    , k_end                     )
+     ENDIF
+
+         END DO adj_chem_species_bdy_loop_3
+     ENDIF
+#endif
+
+     adj_moisture_loop_bdy_3 : DO im = num_3d_m, PARAM_FIRST_SCALAR , -1
+
+     IF ( im .EQ. P_QV .OR. config_flags%nested .OR. &
+             ( config_flags%specified .AND. config_flags%have_bcs_moist ) ) THEN
+        CALL a_spec_bdy_final ( moist(ims,kms,jms,im), a_moist(ims,kms,jms,im),       &
+                                grid%muts, grid%a_muts, grid%msfty,                   &
+                                moist_bxs(jms,kms,1,im),  a_moist_bxs(jms,kms,1,im),  &
+                                moist_bxe(jms,kms,1,im),  a_moist_bxe(jms,kms,1,im),  &
+                                moist_bys(ims,kms,1,im),  a_moist_bys(ims,kms,1,im),  &
+                                moist_bye(ims,kms,1,im),  a_moist_bye(ims,kms,1,im),  &
+                                moist_btxs(jms,kms,1,im), a_moist_btxs(jms,kms,1,im), &
+                                moist_btxe(jms,kms,1,im), a_moist_btxe(jms,kms,1,im), &
+                                moist_btys(ims,kms,1,im), a_moist_btys(ims,kms,1,im), &
+                                moist_btye(ims,kms,1,im), a_moist_btye(ims,kms,1,im), &
+                                't', config_flags,                                    &
+                                config_flags%spec_bdy_width, grid%spec_zone,          &
+                                grid%dtbc,                                            &
+                                ids,ide, jds,jde, kds,kde,                            & ! domain dims
+                                ims,ime, jms,jme, kms,kme,                            & ! memory dims
+                                ips,ipe, jps,jpe, kps,kpe,                            & ! patch  dims
+                                grid%i_start(ij), grid%i_end(ij),                     &
+                                grid%j_start(ij), grid%j_end(ij),                     &
+                                k_start    , k_end                     )
+     ENDIF
+
+     END DO adj_moisture_loop_bdy_3
+
+     CALL a_spec_bdy_final ( grid%mu_2, grid%a_mu_2, grid%muts, grid%a_muts, grid%msfty, &
+                                grid%mu_bxs, grid%a_mu_bxs, grid%mu_bxe, grid%a_mu_bxe,  &
+                                grid%mu_bys, grid%a_mu_bys, grid%mu_bye, grid%a_mu_bye,  &
+                                grid%mu_btxs,grid%a_mu_btxs,grid%mu_btxe,grid%a_mu_btxe, &
+                                grid%mu_btys,grid%a_mu_btys,grid%mu_btye,grid%a_mu_btye, &
+                                'm', config_flags,                                       &
+                                config_flags%spec_bdy_width, grid%spec_zone,             &
+                                grid%dtbc,                                               &
+                                ids,ide, jds,jde, 1,  1,                                 & ! domain dims
+                                ims,ime, jms,jme, 1,  1,                                 & ! memory dims
+                                ips,ipe, jps,jpe, 1,  1,                                 & ! patch  dims
+                                grid%i_start(ij), grid%i_end(ij),                        &
+                                grid%j_start(ij), grid%j_end(ij),                        &
+                                1  , 1                    )
+
+     CALL a_spec_bdy_final ( grid%ph_2, grid%a_ph_2, grid%muts, grid%a_muts, grid%msfty, &
+                                grid%ph_bxs, grid%a_ph_bxs, grid%ph_bxe, grid%a_ph_bxe,  &
+                                grid%ph_bys, grid%a_ph_bys, grid%ph_bye, grid%a_ph_bye,  &
+                                grid%ph_btxs,grid%a_ph_btxs,grid%ph_btxe,grid%a_ph_btxe, &
+                                grid%ph_btys,grid%a_ph_btys,grid%ph_btye,grid%a_ph_btye, &
+                                'h', config_flags,                                       &
+                                config_flags%spec_bdy_width, grid%spec_zone,             &
+                                grid%dtbc,                                               &
+                                ids,ide, jds,jde, kds,kde,                               & ! domain dims
+                                ims,ime, jms,jme, kms,kme,                               & ! memory dims
+                                ips,ipe, jps,jpe, kps,kpe,                               & ! patch  dims
+                                grid%i_start(ij), grid%i_end(ij),                        &
+                                grid%j_start(ij), grid%j_end(ij),                        &
+                                k_start    , k_end                     )
+
+     CALL a_spec_bdy_final ( grid%t_2, grid%a_t_2, grid%muts, grid%a_muts, grid%msfty, &
+                                grid%t_bxs, grid%a_t_bxs, grid%t_bxe, grid%a_t_bxe,    &
+                                grid%t_bys, grid%a_t_bys, grid%t_bye, grid%a_t_bye,    &
+                                grid%t_btxs,grid%a_t_btxs,grid%t_btxe,grid%a_t_btxe,   &
+                                grid%t_btys,grid%a_t_btys,grid%t_btye,grid%a_t_btye,   &
+                                't', config_flags,                                     &
+                                config_flags%spec_bdy_width, grid%spec_zone,           &
+                                grid%dtbc,                                             &
+                                ids,ide, jds,jde, kds,kde,                             & ! domain dims
+                                ims,ime, jms,jme, kms,kme,                             & ! memory dims
+                                ips,ipe, jps,jpe, kps,kpe,                             & ! patch  dims
+                                grid%i_start(ij), grid%i_end(ij),                      &
+                                grid%j_start(ij), grid%j_end(ij),                      &
+                                k_start    , k_end                     )
+
+     IF( config_flags%nested) THEN
+       CALL a_spec_bdy_final ( grid%w_2, grid%a_w_2, grid%muts, grid%a_muts, grid%msfty, &
+                                grid%w_bxs, grid%a_w_bxs, grid%w_bxe, grid%a_w_bxe,      &
+                                grid%w_bys, grid%a_w_bys, grid%w_bye, grid%a_w_bye,      &
+                                grid%w_btxs,grid%a_w_btxs,grid%w_btxe,grid%a_w_btxe,     &
+                                grid%w_btys,grid%a_w_btys,grid%w_btye,grid%a_w_btye,     &
+                                'w', config_flags,                                       &
+                                config_flags%spec_bdy_width, grid%spec_zone,             &
+                                grid%dtbc,                                               &
+                                ids,ide, jds,jde, kds,kde,                               & ! domain dims
+                                ims,ime, jms,jme, kms,kme,                               & ! memory dims
+                                ips,ipe, jps,jpe, kps,kpe,                               & ! patch  dims
+                                grid%i_start(ij), grid%i_end(ij),                        &
+                                grid%j_start(ij), grid%j_end(ij),                        &
+                                k_start    , k_end                     )
+     ENDIF
+
+     CALL a_spec_bdy_final   ( grid%v_2, grid%a_v_2, muvs, a_muvs, grid%msfvx,       &
+                                grid%v_bxs, grid%a_v_bxs, grid%v_bxe, grid%a_v_bxe,  &
+                                grid%v_bys, grid%a_v_bys, grid%v_bye, grid%a_v_bye,  &
+                                grid%v_btxs,grid%a_v_btxs,grid%v_btxe,grid%a_v_btxe, &
+                                grid%v_btys,grid%a_v_btys,grid%v_btye,grid%a_v_btye, &
+                                'v', config_flags,                                   &
+                                config_flags%spec_bdy_width, grid%spec_zone,         &
+                                grid%dtbc,                                           &
+                                ids,ide, jds,jde, kds,kde,                           & ! domain dims
+                                ims,ime, jms,jme, kms,kme,                           & ! memory dims
+                                ips,ipe, jps,jpe, kps,kpe,                           & ! patch  dims
+                                grid%i_start(ij), grid%i_end(ij),                    &
+                                grid%j_start(ij), grid%j_end(ij),                    &
+                                k_start    , k_end                     )
+
+     CALL a_spec_bdy_final   ( grid%u_2, grid%a_u_2, muus, a_muus, grid%msfuy,       &
+                                grid%u_bxs, grid%a_u_bxs, grid%u_bxe, grid%a_u_bxe,  &
+                                grid%u_bys, grid%a_u_bys, grid%u_bye, grid%a_u_bye,  &
+                                grid%u_btxs,grid%a_u_btxs,grid%u_btxe,grid%a_u_btxe, &
+                                grid%u_btys,grid%a_u_btys,grid%u_btye,grid%a_u_btye, &
+                                'u', config_flags,                                   &
+                                config_flags%spec_bdy_width, grid%spec_zone,         &
+                                grid%dtbc,                                           &
+                                ids,ide, jds,jde, kds,kde,                           & ! domain dims
+                                ims,ime, jms,jme, kms,kme,                           & ! memory dims
+                                ips,ipe, jps,jpe, kps,kpe,                           & ! patch  dims
+                                grid%i_start(ij), grid%i_end(ij),                    &
+                                grid%j_start(ij), grid%j_end(ij),                    &
+                                k_start    , k_end                     )
+
+   END DO adj_tile_bc_loop_3
+   !$OMP END PARALLEL DO
+
+   ENDIF
 
 BENCH_START(adj_bc_2d_tim)
 

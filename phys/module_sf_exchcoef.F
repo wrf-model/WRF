@@ -164,4 +164,61 @@ CONTAINS
 
   END SUBROUTINE znot_t_v0
 
+
+  SUBROUTINE znot_t_v2(uu,znott)
+  IMPLICIT NONE
+
+! uu in MKS
+! znott in m
+! Biju Thomas on 02/12/2015
+!
+
+    REAL, INTENT(IN) :: uu
+    REAL, INTENT(OUT):: znott
+    REAL             :: ta0, ta1, ta2, ta3, ta4, ta5, ta6
+    REAL             :: tb0, tb1, tb2, tb3, tb4, tb5, tb6
+    REAL             :: tt0, tt1, tt2, tt3, tt4, tt5, tt6
+
+    ta0 = 2.51715926619e-09
+    ta1 = -1.66917514012e-07
+    ta2 = 4.57345863551e-06
+    ta3 = -6.64883696932e-05
+    ta4 = 0.00054390175125
+    ta5 = -0.00239645231325
+    ta6 = 0.00453024927761
+
+
+    tb0 = -1.72935914649e-14
+    tb1 = 2.50587455802e-12
+    tb2 = -7.90109676541e-11
+    tb3 = -4.40976353607e-09
+    tb4 = 3.68968179733e-07
+    tb5 = -9.43728336756e-06
+    tb6 = 8.90731312383e-05
+
+    tt0 = 4.68042680888e-14
+    tt1 = -1.98125754931e-11
+    tt2 = 3.41357133496e-09
+    tt3 = -3.05130605309e-07
+    tt4 = 1.48243563819e-05
+    tt5 = -0.000367207751936
+    tt6 = 0.00357204479347
+
+    IF ( uu .LE. 7.0 ) THEN
+       znott = (0.0185 / 9.8*(7.59e-4*uu**2+2.46e-2*uu)**2)
+    ELSEIF ( uu  .GE. 7.0 .AND. uu .LT. 15. ) THEN
+       znott = ta6 + ta5*uu + ta4*uu**2  + ta3*uu**3 + ta2*uu**4 +     &
+               ta1*uu**5 + ta0*uu**6
+    ELSEIF ( uu .GE. 15.0  .AND. uu .LT. 60.0) THEN
+       znott = tb6 + tb5*uu + tb4*uu**2 + tb3*uu**3 + tb2*uu**4 +      & 
+               tb1*uu**5 + tb0*uu**6
+    ELSE
+       znott = tt6 + tt5*uu + tt4*uu**2  + tt3*uu**3 + tt2*uu**4 +    &
+               tt1*uu**5 + tt0*uu**6
+    END IF
+
+  END SUBROUTINE znot_t_v2
+
+
 END MODULE module_sf_exchcoef
+

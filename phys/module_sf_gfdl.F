@@ -869,9 +869,12 @@ CONTAINS
           if ( icoef_sf .EQ. 1) then
              call  znot_m_v1(windmks,znotm)
              call  znot_t_v1(windmks,znott)
-          else
+          else if ( icoef_sf .EQ. 0 ) then
              call  znot_m_v0(windmks,znotm)
              call  znot_t_v0(windmks,znott)
+          else
+             call  znot_m_v1(windmks,znotm)
+             call  znot_t_v2(windmks,znott)
           endif
           zoc(i)  = -100.*znotm
           zot(i) =  -100* znott

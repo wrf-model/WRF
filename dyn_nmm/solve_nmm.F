@@ -710,16 +710,16 @@
 !
 !-----------------------------------------------------------------------
 !
-#ifdef DM_PARALLEL
-#    include "HALO_NMM_A.inc"
-#endif
+!zhang#ifdef DM_PARALLEL
+!zhang#    include "HALO_NMM_A.inc"
+!zhang#endif
 !
 !-----------------------------------------------------------------------
-#ifdef DM_PARALLEL
-      IF (.NOT.ETAMP_PHYSICS) THEN
-#    include "HALO_NMM_A_3.inc"
-      ENDIF
-#endif
+!zhang#ifdef DM_PARALLEL
+!zhang      IF (.NOT.ETAMP_PHYSICS) THEN
+!zhang#    include "HALO_NMM_A_3.inc"
+!zhang      ENDIF
+!zhang#endif
 !-----------------------------------------------------------------------
 !***  FIRST STEP INITIALIZATION OF PASSIVE SUBSTANCE VARIABLES
 !-----------------------------------------------------------------------
@@ -809,10 +809,11 @@
       call blockf(loadimbal_tim,'after atm_tstep_init')
 #endif
       btimx=now_time()
+!zhang try2
 !-----------------
-#ifdef DM_PARALLEL
-#    include "HALO_NMM_D.inc"
-#endif
+!zhang#ifdef DM_PARALLEL
+!zhang#    include "HALO_NMM_D.inc"
+!zhang#endif
 !-----------------
       exch_tim=exch_tim+now_time()-btimx
 #ifdef NMM_FIND_LOAD_IMBALANCE
@@ -910,9 +911,9 @@
       call blockf(loadimbal_tim,'after adve')
 #endif
           btimx=now_time()
-#ifdef DM_PARALLEL
-#    include "HALO_NMM_I.inc"
-#endif
+!zhang#ifdef DM_PARALLEL
+!zhang#    include "HALO_NMM_I.inc"
+!zhang#endif
           exch_tim=exch_tim+now_time()-btimx
 #ifdef NMM_FIND_LOAD_IMBALANCE
       call blockf(loadimbal_tim,'after halo I')
@@ -944,9 +945,9 @@
             ENDDO
           ENDDO
 !
-#ifdef DM_PARALLEL
-#    include "HALO_TRACERS.inc"
-#endif
+!zhang#ifdef DM_PARALLEL
+!zhang#    include "HALO_TRACERS.inc"
+!zhang#endif
       call check_grid(grid,config_flags,'before ADV2', &
             ids,ide,jds,jde,kds,kde, &
             ims,ime,jms,jme,kms,kme, &
@@ -973,9 +974,9 @@
           !temporary arguments
           ,grid%fne,grid%fse,grid%few,grid%fns,S1Z,TCS)
 !
-#ifdef DM_PARALLEL
-#    include "HALO_TRACERS.inc"
-#endif
+!zhang#ifdef DM_PARALLEL
+!zhang#    include "HALO_TRACERS.inc"
+!zhang#endif
       call check_grid(grid,config_flags,'before MONO', &
             ids,ide,jds,jde,kds,kde, &
             ims,ime,jms,jme,kms,kme, &
@@ -1802,15 +1803,15 @@
 #endif
         btimx=now_time()
 !-----------------
-#ifdef DM_PARALLEL
-#    include "HALO_NMM_J.inc"
-#endif
+!zhang#ifdef DM_PARALLEL
+!zhang#    include "HALO_NMM_J.inc"
+!zhang#endif
 !
-#ifdef DM_PARALLEL
-        IF (.NOT.ETAMP_PHYSICS) THEN
-#    include "HALO_NMM_J_3.inc"
-        ENDIF
-#endif
+!zhang#ifdef DM_PARALLEL
+!zhang        IF (.NOT.ETAMP_PHYSICS) THEN
+!zhang#    include "HALO_NMM_J_3.inc"
+!zhang        ENDIF
+!zhang#endif
 !
 !-----------------
         exch_tim=exch_tim+now_time()-btimx
@@ -2343,9 +2344,9 @@
 #endif
         btimx=now_time()
 !-----------------
-#ifdef DM_PARALLEL
-#    include "HALO_NMM_A.inc"
-#endif
+!zhang#ifdef DM_PARALLEL
+!zhang#    include "HALO_NMM_A.inc"
+!zhang#endif
 !-----------------
         exch_tim=exch_tim+now_time()-btimx
 #ifdef NMM_FIND_LOAD_IMBALANCE

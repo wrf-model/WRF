@@ -242,6 +242,12 @@ SUBROUTINE solve_em ( grid , config_flags  &
    num_3d_c        = num_chem
    num_3d_s        = num_scalar
 
+!  backward integration needs to advect only QV
+   if (grid%dfi_stage .EQ. DFI_BCK) then
+       num_3d_m    = P_QV
+       num_3d_s    = PARAM_FIRST_SCALAR - 1
+   endif
+
    f_flux = config_flags%do_avgflx_cugd .EQ. 1
 
 !  Compute these starting and stopping locations for each tile and number of tiles.

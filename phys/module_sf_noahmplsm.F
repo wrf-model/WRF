@@ -2495,7 +2495,7 @@ contains
                     EAIR    ,RHOAIR  ,SNOWH   ,VAI     ,GAMMAV   ,GAMMAG   , & !in
                     FWET    ,LAISUN  ,LAISHA  ,CWP     ,DZSNSO  , & !in
                     ZLVL    ,ZPD     ,Z0M     ,FVEG    , & !in
-                    Z0MG    ,EMV     ,EMG     ,CANLIQ           , & !in
+                    Z0MG    ,EMV     ,EMG     ,CANLIQ  ,FSNO, & !in
                     CANICE  ,STC     ,DF      ,RSSUN   ,RSSHA   , & !in
                     RSURF   ,LATHEAV ,LATHEAG ,PARSUN  ,PARSHA  ,IGS     , & !in
                     FOLN    ,CO2AIR  ,O2AIR   ,BTRAN   ,SFCPRS  , & !in
@@ -2517,7 +2517,7 @@ contains
     CALL BARE_FLUX (NSNOW   ,NSOIL   ,ISNOW   ,DT      ,SAG     , & !in
                     LWDN    ,UR      ,UU      ,VV      ,SFCTMP  , & !in
                     THAIR   ,QAIR    ,EAIR    ,RHOAIR  ,SNOWH   , & !in
-                    DZSNSO  ,ZLVL    ,ZPDG    ,Z0MG    ,          & !in
+                    DZSNSO  ,ZLVL    ,ZPDG    ,Z0MG    ,FSNO,          & !in
                     EMG     ,STC     ,DF      ,RSURF   ,LATHEAG  , & !in
                     GAMMAG   ,RHSUR   ,ILOC    ,JLOC    ,Q2      ,PAHB  , & !in
                     TGB     ,CMB     ,CHB     ,                   & !inout
@@ -3503,7 +3503,7 @@ contains
 ! here assume 1cm snow depth will fully cover the old snow
 
          IF (QSNOW > 0.) then
-           ALB = ALB + MIN(QSNOW*DT,SWEMX) * (0.84-ALB)/(SWEMX)
+           ALB = ALB + MIN(QSNOW,SWEMX/DT) * (0.84-ALB)/(SWEMX/DT)
          ENDIF
 
          ALBSNI(1)= ALB         ! vis diffuse
@@ -3840,7 +3840,7 @@ contains
                        EAIR    ,RHOAIR  ,SNOWH   ,VAI     ,GAMMAV   ,GAMMAG,  & !in
                        FWET    ,LAISUN  ,LAISHA  ,CWP     ,DZSNSO  , & !in
                        ZLVL    ,ZPD     ,Z0M     ,FVEG    , & !in
-                       Z0MG    ,EMV     ,EMG     ,CANLIQ  ,          & !in
+                       Z0MG    ,EMV     ,EMG     ,CANLIQ  ,FSNO,          & !in
                        CANICE  ,STC     ,DF      ,RSSUN   ,RSSHA   , & !in
                        RSURF   ,LATHEAV ,LATHEAG  ,PARSUN  ,PARSHA  ,IGS     , & !in
                        FOLN    ,CO2AIR  ,O2AIR   ,BTRAN   ,SFCPRS  , & !in
@@ -3887,6 +3887,7 @@ contains
   REAL,                            INTENT(IN) :: QAIR   !specific humidity at zlvl (kg/kg)
   REAL,                            INTENT(IN) :: RHOAIR !density air (kg/m**3)
   REAL,                            INTENT(IN) :: DT     !time step (s)
+  REAL,                            INTENT(IN) :: FSNO     !snow fraction
 
   REAL,                            INTENT(IN) :: SNOWH  !actual snow depth [m]
   REAL,                            INTENT(IN) :: FWET   !wetted fraction of canopy
@@ -4103,6 +4104,7 @@ contains
 
         HCAN = HVT
         UC = UR*LOG(HCAN/Z0M)/LOG(ZLVL/Z0M)
+        UC = UR*LOG((HCAN-ZPD+Z0M)/Z0M)/LOG(ZLVL/Z0M)   ! MB: add ZPD v3.7
         IF((HCAN-ZPD) <= 0.) THEN
           WRITE(message,*) "CRITICAL PROBLEM: HCAN <= ZPD"
           call wrf_message ( message )
@@ -4309,9 +4311,10 @@ contains
 
 ! if snow on ground and TG > TFRZ: reset TG = TFRZ. reevaluate ground fluxes.
 
-     IF(OPT_STC == 1) THEN
+     IF(OPT_STC == 1 .OR. OPT_STC == 3) THEN
      IF (SNOWH > 0.05 .AND. TG > TFRZ) THEN
         TG  = TFRZ
+        IF(OPT_STC == 3) TG  = (1.-FSNO)*TG + FSNO*TFRZ   ! MB: allow TG>0C during melt v3.7
         IRG = CIR*TG**4 - EMG*(1.-EMV)*LWDN - EMG*EMV*SB*TV**4
         SHG = CSH * (TG         - TAH)
         EVG = CEV * (ESTG*RHSUR - EAH)
@@ -4360,7 +4363,7 @@ contains
   SUBROUTINE BARE_FLUX (NSNOW   ,NSOIL   ,ISNOW   ,DT      ,SAG     , & !in
                         LWDN    ,UR      ,UU      ,VV      ,SFCTMP  , & !in
                         THAIR   ,QAIR    ,EAIR    ,RHOAIR  ,SNOWH   , & !in
-                        DZSNSO  ,ZLVL    ,ZPD     ,Z0M     ,          & !in
+                        DZSNSO  ,ZLVL    ,ZPD     ,Z0M     ,FSNO    , & !in
                         EMG     ,STC     ,DF      ,RSURF   ,LATHEA  , & !in
                         GAMMA   ,RHSUR   ,ILOC    ,JLOC    ,Q2      ,PAHB  , & !in
                         TGB     ,CM      ,CH      ,          & !inout
@@ -4409,6 +4412,7 @@ contains
   REAL,                            INTENT(IN) :: LATHEA !latent heat of vaporization/subli (j/kg)
   REAL,                            INTENT(IN) :: GAMMA  !psychrometric constant (pa/k)
   REAL,                            INTENT(IN) :: RHSUR  !raltive humidity in surface soil/snow air space (-)
+  REAL,                            INTENT(IN) :: FSNO     !snow fraction
 
 !jref:start; in 
   INTEGER                        , INTENT(IN) :: IVGTYP
@@ -4625,9 +4629,10 @@ contains
 
 ! if snow on ground and TG > TFRZ: reset TG = TFRZ. reevaluate ground fluxes.
 
-     IF(OPT_STC == 1) THEN
+     IF(OPT_STC == 1 .OR. OPT_STC == 3) THEN
      IF (SNOWH > 0.05 .AND. TGB > TFRZ) THEN
           TGB = TFRZ
+          IF(OPT_STC == 3) TGB  = (1.-FSNO)*TGB + FSNO*TFRZ  ! MB: allow TG>0C during melt v3.7
           IRB = CIR * TGB**4 - EMG*LWDN
           SHB = CSH * (TGB        - SFCTMP)
           EVB = CEV * (ESTG*RHSUR - EAIR )          !ESTG reevaluate ?

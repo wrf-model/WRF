@@ -110,6 +110,9 @@ CONTAINS
 !                      These static values are more representative of albedo after snow has melted of fallen from trees. These
 !                      values were also cross verified with http://www.globalbedo.org/global.php
 !                    - USGS 28 category added as an option
+!                    - Impervious surface and canopy fraction data can be used if processed (otherwise 0% so no impact)
+!                      to alter surface heat capacity (See SURFPX subroutine for details) in urban areas and refine
+!                      LAI and VEGF_PX estimations (see VEGLAND subroutine).
 !--------------------------------------------------------------------------------------------------------------
 !--------------------------------------------------------------------------------------------------------------
 !   ARGUMENT LIST:
@@ -394,8 +397,6 @@ CONTAINS
                          FJP,FAS,FC2R,FC1SAT,ISTI,SMOIS(I,1,J),   &
                          SMOIS(I,2,J)) 
           !----------------------------------------------------------
-          ! here FWSAT,FWFC,FWWLT,FB,FCGSAT,FJP,FAS,FC2R,FC1SAT, W2, WG
-          ! should be output. But they are only available for land points !
           !----------------------------------------------------------
             ISLTYP(I,J) = ISTI                      
           ELSE

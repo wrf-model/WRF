@@ -323,6 +323,7 @@ CONTAINS
 
 !... Real
       REAL    ::  TVCON, WSS, TCONV, TH1, TOG, DTMP, WSSQ
+      REAL    ::  ZH1,UH1,VH1                                   ! NEW FOR V3.7
       REAL    ::  psix, THV1
       REAL, DIMENSION( its:ite )          :: FINT, PSTAR, CPAIR
       REAL, DIMENSION( its:ite, kts:kte ) :: THETAV, RIB,             &
@@ -415,38 +416,47 @@ CONTAINS
        ENDDO
 69     CONTINUE
        TH1 = 0.0
+       ZH1 = 0.0
+       UH1 = 0.0
+       VH1 = 0.0
        DO K = 1,KSRC
          TH1 = TH1 + THETAV(I,K)  
+         ZH1 = ZH1 + ZA(I,K)
+         UH1 = UH1 + US(I,K)
+         VH1 = VH1 + VS(I,K)
        ENDDO  
        TH1 = TH1/KSRC
+       ZH1 = ZH1/KSRC
+       UH1 = UH1/KSRC
+       VH1 = VH1/KSRC
        IF(MOL(I).LT.0.0 .AND. XTIME.GT.1) then
          WSS   = (UST(I) ** 3 + 0.6 * WST(I) ** 3) ** 0.33333
          TCONV = -8.5 * UST(I) * TSTV(I) / WSS
          TH1   = TH1 + TCONV
        ENDIF
 
-99     KMIX = 1
-       DO K = 1,kte
+99     KMIX = KSRC
+       DO K = KSRC,kte
          DTMP   = THETAV(I,K) - TH1
          IF (DTMP.LT.0.0) KMIX = K
        ENDDO
-       IF(KMIX.GT.1) THEN
+       IF(KMIX.GT.KSRC) THEN
          FINTT = (TH1 - THETAV(I,KMIX)) / (THETAV(I,KMIX+1)               &
                - THETAV(I,KMIX))
          ZMIX = FINTT * (ZA(I,KMIX+1)-ZA(I,KMIX)) + ZA(I,KMIX)
          UMIX = FINTT * (US(I,KMIX+1)-US(I,KMIX)) + US(I,KMIX)
          VMIX = FINTT * (VS(I,KMIX+1)-VS(I,KMIX)) + VS(I,KMIX)
        ELSE
-         ZMIX = ZA(I,1)
-         UMIX = US(I,1)
-         VMIX = VS(I,1)
+         ZMIX = ZH1
+         UMIX = UH1
+         VMIX = VH1
        ENDIF
        DO K = KMIX,kte
          DTMP   = THETAV(I,K) - TH1
          TOG = 0.5 * (THETAV(I,K) + TH1) / G
          WSSQ = (US(I,K)-UMIX)**2                                     &
               + (VS(I,K)-VMIX)**2
-         IF (KMIX == 1) WSSQ = WSSQ + 100.*UST(I)*UST(I) 
+         IF (KMIX == KSRC) WSSQ = WSSQ + 100.*UST(I)*UST(I) 
          WSSQ = MAX( WSSQ, 0.1 )
          RIB(I,K) = ABS(ZA(I,K)-ZMIX) * DTMP / (TOG * WSSQ)
          IF (RIB(I,K) .GE. RIC) GO TO 201
@@ -466,7 +476,7 @@ CONTAINS
 100  CONTINUE
 
      DO I = its,ite
-       IF (KPBLH(I) .NE. 1) THEN
+       IF (KPBLH(I) .GT. KSRC) THEN
 !---------INTERPOLATE BETWEEN LEVELS -- jp 7/93
          FINT(I) = (RIC - RIB(I,KPBLH(I)-1)) / (RIB(I,KPBLH(I)) -       &
                     RIB(I,KPBLH(I)-1))
@@ -482,9 +492,9 @@ CONTAINS
          KLPBL(I) = KPBLHT
          PBLSIG(I)   = FINT(I) * DSIGH(KPBLHT) + SIGMAF(KPBLHT-1)    ! sigma at PBL height
        ELSE
-         KLPBL(I) = 1
-         PBL(I)    = ZF(I,1)                                                  
-         PBLSIG(I)   = SIGMAF(1)                                             
+         KLPBL(I) = KSRC
+         PBL(I)    = ZA(I,KSRC)                                                  
+         PBLSIG(I)   = SIGMAH(KSRC)                                             
        ENDIF
 
      ENDDO

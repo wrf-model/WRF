@@ -9,6 +9,7 @@ CHEM_FILES =	../chem/module_aerosols_sorgam.o \
 		../chem/module_mosaic_driver.o \
 		../chem/module_input_tracer.o \
 		../chem/module_aerosols_soa_vbs.o
+CHEM_FILES2 =	../chem/module_data_mosaic_asect.o
 
 deflt :
 		@ echo Please compile the code using ./compile
@@ -417,14 +418,24 @@ em_real : wrf
 	( cd run ; if test -f namelist.input ; then \
 		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
 		/bin/rm -f namelist.input ; cp ../test/em_real/namelist.input . )
+	@echo " "
+	@echo "=========================================================================="
 	@echo "build started:   $(START_OF_COMPILE)"
 	@echo "build completed:" `date`
 	@if test -e main/wrf.exe ; then \
+		echo " " ; \
+		echo "--->                  Executables successfully built                  <---" ; \
+		echo " " ; \
 		ls -ls main/*.exe ; \
+		echo " " ; \
+		echo "==========================================================================" ; \
+		echo " " ; \
 	else \
-		echo "================================================================" ; \
-		echo "---> No executables built, look for errors in the build log <---" ; \
-		echo "================================================================" ; \
+		echo " " ; \
+		echo "--->      No executables built, look for errors in the build log      <---" ; \
+		echo " " ; \
+		echo "==========================================================================" ; \
+		echo " " ; \
 	fi
 
 
@@ -676,7 +687,12 @@ chemics :
 
 physics :
 	@ echo '--------------------------------------'
-	( cd phys ; $(MAKE) )
+	if [ $(WRF_CHEM) -eq 0 ] ; then \
+		CF2= ; \
+	else \
+		CF2="$(CHEM_FILES2)" ; \
+	fi
+	( cd phys ; $(MAKE) CF2="$(CF2)" )
 
 em_core :
 	@ echo '--------------------------------------'

@@ -688,11 +688,10 @@ chemics :
 physics :
 	@ echo '--------------------------------------'
 	if [ $(WRF_CHEM) -eq 0 ] ; then \
-		CF2= ; \
+		( cd phys ; $(MAKE) CF2=" " ) ; \
 	else \
-		CF2="$(CHEM_FILES2)" ; \
+		( cd phys ; $(MAKE) CF2="$(CHEM_FILES2)" ) ; \
 	fi
-	( cd phys ; $(MAKE) CF2="$(CF2)" )
 
 em_core :
 	@ echo '--------------------------------------'

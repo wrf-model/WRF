@@ -1149,6 +1149,8 @@ The following are for observation nudging:
                                                       not for real-data cases)
                                                   3 = with w-Rayleigh damping (dampcoef inverse time scale [1/s] e.g. .05; 
                                                       for real-data cases)
+ use_theta_m                         = .false.  ; true: use theta_m=theta(1+1.61Qv)
+                                                  false: use dry theta in dynamics
  c_s                                 = 0.25     ; Smagorinsky coeff
  c_k                                 = 0.15     ; TKE coeff
  diff_6th_opt                        = 0,       ; 6th-order numerical diffusion

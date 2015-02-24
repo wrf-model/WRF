@@ -5,6 +5,7 @@ MODULE module_bc_em
    USE module_bc
    USE module_configure
    USE module_wrf_error
+   USE module_model_constants
 
 CONTAINS
 
@@ -1327,5 +1328,288 @@ CONTAINS
      ENDIF
   
   END SUBROUTINE lbc_fcx_gcx
+
+!------------------------------------------------------------------------
+
+   SUBROUTINE theta_and_thetam_lbc_only (                              &
+                                theta_to_thetam,                       &
+                                mub,                                   &
+                                mu_bdy_xs, mu_bdy_xe,                  &
+                                mu_bdy_ys, mu_bdy_ye,                  &
+                                mu_bdy_tend_xs, mu_bdy_tend_xe,        &
+                                mu_bdy_tend_ys, mu_bdy_tend_ye,        &
+                                t_bdy_xs, t_bdy_xe,                    &
+                                t_bdy_ys, t_bdy_ye,                    &
+                                t_bdy_tend_xs, t_bdy_tend_xe,          &
+                                t_bdy_tend_ys, t_bdy_tend_ye,          &
+                                moist_bdy_xs, moist_bdy_xe,            &
+                                moist_bdy_ys, moist_bdy_ye,            &
+                                moist_bdy_tend_xs, moist_bdy_tend_xe,  &
+                                moist_bdy_tend_ys, moist_bdy_tend_ye,  &
+                                spec_bdy_width,                        &
+                                dt_interval,                           &
+                                ids,ide, jds,jde, kds,kde,             &
+                                ims,ime, jms,jme, kms,kme,             &
+                                ips,ipe, jps,jpe, kps,kpe,             &
+                                its,ite, jts,jte, kts,kte              )
+
+      IMPLICIT NONE
+
+      !  This routine is called from the solve_em routine.  The purpose is to
+      !  convert the thermal lateral boundary conditions between dry potential
+      !  temperature and moist potential temperature.  The first argument is a 
+      !  flag telling us the direction of the conversion:
+      !     True  = convert dry to moist potential temp
+      !     False = convert moist to dry potential temp
+
+      LOGICAL,      INTENT(IN   )    :: theta_to_thetam
+
+      INTEGER,      INTENT(IN   )    :: ids,ide, jds,jde, kds,kde
+      INTEGER,      INTENT(IN   )    :: ims,ime, jms,jme, kms,kme
+      INTEGER,      INTENT(IN   )    :: ips,ipe, jps,jpe, kps,kpe
+      INTEGER,      INTENT(IN   )    :: its,ite, jts,jte, kts,kte
+      INTEGER,      INTENT(IN   )    :: spec_bdy_width
+      REAL   ,      INTENT(IN   )    :: dt_interval
+
+      REAL,  DIMENSION( ims:ime ,           jms:jme        ), INTENT(IN   ) :: mub
+
+      REAL,  DIMENSION( jms:jme , 1       , spec_bdy_width ), INTENT(IN   ) :: mu_bdy_xs, mu_bdy_xe
+      REAL,  DIMENSION( ims:ime , 1       , spec_bdy_width ), INTENT(IN   ) :: mu_bdy_ys, mu_bdy_ye
+      REAL,  DIMENSION( jms:jme , 1       , spec_bdy_width ), INTENT(IN   ) :: mu_bdy_tend_xs, mu_bdy_tend_xe
+      REAL,  DIMENSION( ims:ime , 1       , spec_bdy_width ), INTENT(IN   ) :: mu_bdy_tend_ys, mu_bdy_tend_ye
+
+      REAL,  DIMENSION( jms:jme , kds:kde , spec_bdy_width ), INTENT(INOUT) :: t_bdy_xs, t_bdy_xe
+      REAL,  DIMENSION( ims:ime , kds:kde , spec_bdy_width ), INTENT(INOUT) :: t_bdy_ys, t_bdy_ye
+      REAL,  DIMENSION( jms:jme , kds:kde , spec_bdy_width ), INTENT(INOUT) :: t_bdy_tend_xs, t_bdy_tend_xe
+      REAL,  DIMENSION( ims:ime , kds:kde , spec_bdy_width ), INTENT(INOUT) :: t_bdy_tend_ys, t_bdy_tend_ye
+
+      REAL,  DIMENSION( jms:jme , kds:kde , spec_bdy_width ), INTENT(IN   ) :: moist_bdy_xs, moist_bdy_xe
+      REAL,  DIMENSION( ims:ime , kds:kde , spec_bdy_width ), INTENT(IN   ) :: moist_bdy_ys, moist_bdy_ye
+      REAL,  DIMENSION( jms:jme , kds:kde , spec_bdy_width ), INTENT(IN   ) :: moist_bdy_tend_xs, moist_bdy_tend_xe
+      REAL,  DIMENSION( ims:ime , kds:kde , spec_bdy_width ), INTENT(IN   ) :: moist_bdy_tend_ys, moist_bdy_tend_ye
+
+      !  Local variables
+
+      INTEGER    :: i, j, k, ii, jj
+
+      REAL :: dt_time_until_next_lbc
+
+      REAL :: mu_old_bdy_xs         , mu_old_bdy_xe
+      REAL :: mu_old_bdy_ys         , mu_old_bdy_ye
+      REAL :: mu_new_bdy_xs         , mu_new_bdy_xe
+      REAL :: mu_new_bdy_ys         , mu_new_bdy_ye
+
+      REAL :: t_old_bdy_xs          , t_old_bdy_xe
+      REAL :: t_old_bdy_ys          , t_old_bdy_ye
+      REAL :: t_new_bdy_xs          , t_new_bdy_xe
+      REAL :: t_new_bdy_ys          , t_new_bdy_ye
+      REAL :: t_old_bdy_tend_xs     , t_old_bdy_tend_xe
+      REAL :: t_old_bdy_tend_ys     , t_old_bdy_tend_ye
+
+      REAL :: moist_old_bdy_xs      , moist_old_bdy_xe
+      REAL :: moist_old_bdy_ys      , moist_old_bdy_ye
+      REAL :: moist_new_bdy_xs      , moist_new_bdy_xe
+      REAL :: moist_new_bdy_ys      , moist_new_bdy_ye
+      REAL :: moist_old_bdy_tend_xs , moist_old_bdy_tend_xe
+      REAL :: moist_old_bdy_tend_ys , moist_old_bdy_tend_ye
+
+      !  IF      (       theta_to_thetam ) THEN
+      !     Convert dry potential temperature to theta_m 
+      !     Defined as: theta_m = ( theta   + T0 ) * ( 1. + (R_v/R_d) Qv ) - T0
+      !  ELSE
+      !     Convert dry potential temperature to theta_m 
+      !     Defined as: theta   = ( theta_m + T0 ) / ( 1. + (R_v/R_d) Qv ) - T0
+      !  END IF
+
+      !  We want the current value and the tendency, using information mostly
+      !  from the lateral boundary file.  In that file, the thermal variable 
+      !  is a potential temperature with the T0 offset removed (theta-300).  Both
+      !  the moisture variable and the potential temperature are coupled 
+      !  (multiplied by total dry column pressure).  And to add one more complication,
+      !  the MU variable in the lateral boundary array is perturbation only.
+
+      !  Since we need to end up with lateral boundary values that are coupled,
+      !  we need to first DECOUPLE T and Qv, compute Tm, and then couple that.  As
+      !  there is a need for the lateral tendency also, we compute the T and Qv
+      !  values at the two boundary times (previous/current and next).  These two 
+      !  times are adequate to get us a tendency.  For the tendency, we need to have
+      !  coupled values for the T (or Tm) at both times, which gives us a coupled
+      !  tendency.  We cannot have an uncoupled tendency and somehow multiply that
+      !  by some intermediate/average column pressure.
+
+      !  This routine's purpose is to manufacture a lateral boundary set of arrays
+      !  (all eight of them) for the thermal field.  Depending on the logical flag 
+      !  passed in, this will either be dry potential temperature or moist potential
+      !  temperature.
+
+      !  South and north lateral boundaries.  This is the i-extent of its through ite, but j only
+      !  goes to within spec_bdy_width of the top and bottom (north and south) boundaries.
+
+      !  South boundary: i,k,j
+      !  jj increasing
+
+      DO jj = MAX(jts,1) , MIN(jte,jde-1,spec_bdy_width)
+         j = jj
+         DO k = kts , kte-1
+            DO i = its , MIN(ite,ide-1)
+               mu_old_bdy_ys         =   mu_bdy_ys(i,1,j)    + mub(i,jj)
+               t_old_bdy_ys          = ( t_bdy_ys(i,k,j)                                            ) / mu_old_bdy_ys
+               moist_old_bdy_ys      = ( moist_bdy_ys(i,k,j)                                        ) / mu_old_bdy_ys
+               mu_new_bdy_ys         =   mu_old_bdy_ys       + mu_bdy_tend_ys(i,1,j)   *dt_interval
+               t_new_bdy_ys          = ( t_bdy_ys(i,k,j)     + t_bdy_tend_ys(i,k,j)    *dt_interval ) / mu_new_bdy_ys
+               moist_new_bdy_ys      = ( moist_bdy_ys(i,k,j) + moist_bdy_tend_ys(i,k,j)*dt_interval ) / mu_new_bdy_ys
+               t_old_bdy_tend_ys     = ( t_new_bdy_ys        - t_old_bdy_ys                         ) / dt_interval
+               moist_old_bdy_tend_ys = ( moist_new_bdy_ys    - moist_old_bdy_ys                     ) / dt_interval
+               IF ( theta_to_thetam ) THEN
+if(i.eq.30 .and. k.eq.1 .and. j.eq.1 )then
+print *,'DAVE south BEFORE at theta  = ',t_bdy_ys(i,k,j),t_bdy_tend_ys(i,k,j)
+endif
+                  t_bdy_ys(i,k,j) = ( ( ( t_old_bdy_ys + T0 ) * ( 1. + (R_v/R_d) * moist_old_bdy_ys ) ) - T0 ) * mu_old_bdy_ys
+                  t_bdy_tend_ys(i,k,j) = ( ( mu_new_bdy_ys * ( ( t_new_bdy_ys + T0 ) * ( 1. + (R_v/R_d) * moist_new_bdy_ys ) - T0 ) ) - &
+                                           ( mu_old_bdy_ys * ( ( t_old_bdy_ys + T0 ) * ( 1. + (R_v/R_d) * moist_old_bdy_ys ) - T0 ) ) ) / dt_interval
+if(i.eq.30 .and. k.eq.1 .and. j.eq.1 )then
+print *,'DAVE south AFTER to thetam = ',t_bdy_ys(i,k,j),t_bdy_tend_ys(i,k,j)
+endif
+               ELSE
+if(i.eq.30 .and. k.eq.1 .and. j.eq.1 )then
+print *,'DAVE south BEFORE at thetam = ',t_bdy_ys(i,k,j),t_bdy_tend_ys(i,k,j)
+endif
+                  t_bdy_ys(i,k,j) = ( ( ( t_old_bdy_ys + T0 ) / ( 1. + (R_v/R_d) * moist_old_bdy_ys ) ) - T0 ) * mu_old_bdy_ys
+                  t_bdy_tend_ys(i,k,j) = ( ( mu_new_bdy_ys * ( ( t_new_bdy_ys + T0 ) / ( 1. + (R_v/R_d) * moist_new_bdy_ys ) - T0 ) ) - &
+                                           ( mu_old_bdy_ys * ( ( t_old_bdy_ys + T0 ) / ( 1. + (R_v/R_d) * moist_old_bdy_ys ) - T0 ) ) ) / dt_interval
+if(i.eq.30 .and. k.eq.1 .and. j.eq.1 )then
+print *,'DAVE south AFTER to theta  = ',t_bdy_ys(i,k,j),t_bdy_tend_ys(i,k,j)
+endif
+               END IF
+            END DO
+         END DO
+      END DO
+
+      !  North boundary: i,k,j
+      !  jj decreasing
+
+      DO jj = MIN(jde-1,jte) , MAX(jde-spec_bdy_width,jts) , -1
+         j = jde-jj
+         DO k = kts , kte-1
+            DO i = its , MIN(ite,ide-1)
+               mu_old_bdy_ye         =   mu_bdy_ye(i,1,j)    + mub(i,jj)
+               t_old_bdy_ye          = ( t_bdy_ye(i,k,j)                                            ) / mu_old_bdy_ye
+               moist_old_bdy_ye      = ( moist_bdy_ye(i,k,j)                                        ) / mu_old_bdy_ye
+               mu_new_bdy_ye         =   mu_old_bdy_ye       + mu_bdy_tend_ye(i,1,j)   *dt_interval
+               t_new_bdy_ye          = ( t_bdy_ye(i,k,j)     + t_bdy_tend_ye(i,k,j)    *dt_interval ) / mu_new_bdy_ye
+               moist_new_bdy_ye      = ( moist_bdy_ye(i,k,j) + moist_bdy_tend_ye(i,k,j)*dt_interval ) / mu_new_bdy_ye
+               t_old_bdy_tend_ye     = ( t_new_bdy_ye        - t_old_bdy_ye                         ) / dt_interval
+               moist_old_bdy_tend_ye = ( moist_new_bdy_ye    - moist_old_bdy_ye                     ) / dt_interval
+               IF ( theta_to_thetam ) THEN
+if(i.eq.30 .and. k.eq.1 .and. j.eq.1 )then
+print *,'DAVE north BEFORE at theta  = ',t_bdy_ye(i,k,j),t_bdy_tend_ye(i,k,j)
+endif
+                  t_bdy_ye(i,k,j) = ( ( ( t_old_bdy_ye + T0 ) * ( 1. + (R_v/R_d) * moist_old_bdy_ye ) ) - T0 ) * mu_old_bdy_ye
+                  t_bdy_tend_ye(i,k,j) = ( ( mu_new_bdy_ye * ( ( t_new_bdy_ye + T0 ) * ( 1. + (R_v/R_d) * moist_new_bdy_ye ) - T0 ) ) - &
+                                           ( mu_old_bdy_ye * ( ( t_old_bdy_ye + T0 ) * ( 1. + (R_v/R_d) * moist_old_bdy_ye ) - T0 ) ) ) / dt_interval
+if(i.eq.30 .and. k.eq.1 .and. j.eq.1 )then
+print *,'DAVE north AFTER to thetam = ',t_bdy_ye(i,k,j),t_bdy_tend_ye(i,k,j)
+endif
+               ELSE
+if(i.eq.30 .and. k.eq.1 .and. j.eq.1 )then
+print *,'DAVE north BEFORE at thetam = ',t_bdy_ye(i,k,j),t_bdy_tend_ye(i,k,j)
+endif
+                  t_bdy_ye(i,k,j) = ( ( ( t_old_bdy_ye + T0 ) / ( 1. + (R_v/R_d) * moist_old_bdy_ye ) ) - T0 ) * mu_old_bdy_ye
+                  t_bdy_tend_ye(i,k,j) = ( ( mu_new_bdy_ye * ( ( t_new_bdy_ye + T0 ) / ( 1. + (R_v/R_d) * moist_new_bdy_ye ) - T0 ) ) - &
+                                           ( mu_old_bdy_ye * ( ( t_old_bdy_ye + T0 ) / ( 1. + (R_v/R_d) * moist_old_bdy_ye ) - T0 ) ) ) / dt_interval
+if(i.eq.30 .and. k.eq.1 .and. j.eq.1 )then
+print *,'DAVE north AFTER to theta  = ',t_bdy_ye(i,k,j),t_bdy_tend_ye(i,k,j)
+endif
+               END IF
+            END DO
+         END DO
+      END DO
+
+      !  West and east lateral boundaries.  This is the j-extent of jts through jte, but i only
+      !  goes to within spec_bdy_width of the left and right (west and east) boundaries.
+
+      !  West boundary: j,k,i
+      !  ii increasing
+
+      DO ii = MAX(its,1) , MIN(ite,ide-1,spec_bdy_width)
+         i = ii
+         DO k = kts , kte-1
+            DO j = jts , MIN(jte,jde-1)
+               mu_old_bdy_xs         =   mu_bdy_xs(j,1,i)    + mub(ii,j)
+               t_old_bdy_xs          = ( t_bdy_xs(j,k,i)                                            ) / mu_old_bdy_xs
+               moist_old_bdy_xs      = ( moist_bdy_xs(j,k,i)                                        ) / mu_old_bdy_xs
+               mu_new_bdy_xs         =   mu_old_bdy_xs       + mu_bdy_tend_xs(j,1,i)   *dt_interval
+               t_new_bdy_xs          = ( t_bdy_xs(j,k,i)     + t_bdy_tend_xs(j,k,i)    *dt_interval ) / mu_new_bdy_xs
+               moist_new_bdy_xs      = ( moist_bdy_xs(j,k,i) + moist_bdy_tend_xs(j,k,i)*dt_interval ) / mu_new_bdy_xs
+               t_old_bdy_tend_xs     = ( t_new_bdy_xs        - t_old_bdy_xs                         ) / dt_interval
+               moist_old_bdy_tend_xs = ( moist_new_bdy_xs    - moist_old_bdy_xs                     ) / dt_interval
+               IF ( theta_to_thetam ) THEN
+if(i.eq.1 .and. k.eq.1 .and. j.eq.30 )then
+print *,'DAVE west  BEFORE at theta  = ',t_bdy_xs(j,k,i),t_bdy_tend_xs(j,k,i)
+endif
+                  t_bdy_xs(j,k,i) = ( ( ( t_old_bdy_xs + T0 ) * ( 1. + (R_v/R_d) * moist_old_bdy_xs ) ) - T0 ) * mu_old_bdy_xs
+                  t_bdy_tend_xs(j,k,i) = ( ( mu_new_bdy_xs * ( ( t_new_bdy_xs + T0 ) * ( 1. + (R_v/R_d) * moist_new_bdy_xs ) - T0 ) ) - &
+                                           ( mu_old_bdy_xs * ( ( t_old_bdy_xs + T0 ) * ( 1. + (R_v/R_d) * moist_old_bdy_xs ) - T0 ) ) ) / dt_interval
+if(i.eq.1 .and. k.eq.1 .and. j.eq.30 )then
+print *,'DAVE west  AFTER to thetam = ',t_bdy_xs(j,k,i),t_bdy_tend_xs(j,k,i)
+endif
+               ELSE
+if(i.eq.1 .and. k.eq.1 .and. j.eq.30 )then
+print *,'DAVE west  BEFORE at thetam = ',t_bdy_xs(j,k,i),t_bdy_tend_xs(j,k,i)
+endif
+                  t_bdy_xs(j,k,i) = ( ( ( t_old_bdy_xs + T0 ) / ( 1. + (R_v/R_d) * moist_old_bdy_xs ) ) - T0 ) * mu_old_bdy_xs
+                  t_bdy_tend_xs(j,k,i) = ( ( mu_new_bdy_xs * ( ( t_new_bdy_xs + T0 ) / ( 1. + (R_v/R_d) * moist_new_bdy_xs ) - T0 ) ) - &
+                                           ( mu_old_bdy_xs * ( ( t_old_bdy_xs + T0 ) / ( 1. + (R_v/R_d) * moist_old_bdy_xs ) - T0 ) ) ) / dt_interval
+if(i.eq.1 .and. k.eq.1 .and. j.eq.30 )then
+print *,'DAVE west  AFTER to theta  = ',t_bdy_xs(j,k,i),t_bdy_tend_xs(j,k,i)
+endif
+               END IF
+            END DO
+         END DO
+      END DO
+
+      !  East boundary: j,k,i
+      !  ii decreasing
+
+      DO ii = MIN(ide-1,ite) , MAX(ide-spec_bdy_width,its) , -1
+         i = ide-ii
+         DO k = kts , kte-1
+            DO j = jts , MIN(jte,jde-1)
+               mu_old_bdy_xe         =   mu_bdy_xe(j,1,i)    + mub(ii,j)
+               t_old_bdy_xe          = ( t_bdy_xe(j,k,i)                                            ) / mu_old_bdy_xe
+               moist_old_bdy_xe      = ( moist_bdy_xe(j,k,i)                                        ) / mu_old_bdy_xe
+               mu_new_bdy_xe         =   mu_old_bdy_xe       + mu_bdy_tend_xe(j,1,i)   *dt_interval
+               t_new_bdy_xe          = ( t_bdy_xe(j,k,i)     + t_bdy_tend_xe(j,k,i)    *dt_interval ) / mu_new_bdy_xe
+               moist_new_bdy_xe      = ( moist_bdy_xe(j,k,i) + moist_bdy_tend_xe(j,k,i)*dt_interval ) / mu_new_bdy_xe
+               t_old_bdy_tend_xe     = ( t_new_bdy_xe        - t_old_bdy_xe                         ) / dt_interval
+               moist_old_bdy_tend_xe = ( moist_new_bdy_xe    - moist_old_bdy_xe                     ) / dt_interval
+               IF ( theta_to_thetam ) THEN
+if(i.eq.1 .and. k.eq.1 .and. j.eq.30 )then
+print *,'DAVE east  BEFORE at theta  = ',t_bdy_xe(j,k,i),t_bdy_tend_xe(j,k,i)
+endif
+                  t_bdy_xe(j,k,i) = ( ( ( t_old_bdy_xe + T0 ) * ( 1. + (R_v/R_d) * moist_old_bdy_xe ) ) - T0 ) * mu_old_bdy_xe
+                  t_bdy_tend_xe(j,k,i) = ( ( mu_new_bdy_xe * ( ( t_new_bdy_xe + T0 ) * ( 1. + (R_v/R_d) * moist_new_bdy_xe ) - T0 ) ) - &
+                                           ( mu_old_bdy_xe * ( ( t_old_bdy_xe + T0 ) * ( 1. + (R_v/R_d) * moist_old_bdy_xe ) - T0 ) ) ) / dt_interval
+if(i.eq.1 .and. k.eq.1 .and. j.eq.30 )then
+print *,'DAVE east  AFTER to thetam = ',t_bdy_xe(j,k,i),t_bdy_tend_xe(j,k,i)
+endif
+               ELSE
+if(i.eq.1 .and. k.eq.1 .and. j.eq.30 )then
+print *,'DAVE east  BEFORE at thetam = ',t_bdy_xe(j,k,i),t_bdy_tend_xe(j,k,i)
+endif
+                  t_bdy_xe(j,k,i) = ( ( ( t_old_bdy_xe + T0 ) / ( 1. + (R_v/R_d) * moist_old_bdy_xe ) ) - T0 ) * mu_old_bdy_xe
+                  t_bdy_tend_xe(j,k,i) = ( ( mu_new_bdy_xe * ( ( t_new_bdy_xe + T0 ) / ( 1. + (R_v/R_d) * moist_new_bdy_xe ) - T0 ) ) - &
+                                           ( mu_old_bdy_xe * ( ( t_old_bdy_xe + T0 ) / ( 1. + (R_v/R_d) * moist_old_bdy_xe ) - T0 ) ) ) / dt_interval
+if(i.eq.1 .and. k.eq.1 .and. j.eq.30 )then
+print *,'DAVE east  AFTER to theta  = ',t_bdy_xe(j,k,i),t_bdy_tend_xe(j,k,i)
+endif
+               END IF
+            END DO
+         END DO
+      END DO
+
+   END SUBROUTINE theta_and_thetam_lbc_only
+
+!------------------------------------------------------------------------
   
 END MODULE module_bc_em

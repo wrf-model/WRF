@@ -488,8 +488,9 @@ state   real    dfi_qg         ikjftb   dfi_moist       1         -     \
    rusdf=(bdy_interp:dt)  "DFI_QGRAUP"       "Graupel mixing ratio"          "kg kg-1"
 state   real    dfi_qh         ikjftb   dfi_moist       1         -     \
    rusdf=(bdy_interp:dt)  "DFI_QHAIL"        "Hail mixing ratio"             "kg kg-1"
-state    real   rimi             ikj    misc        1         -     irh         "RIMI"           "riming intensity"  "fraction"
-state    real   qnwfa2d          ij     misc        1         -     rhdu      "QNWFA2D"        "Surface aerosol number conc emission"  "kg-1 s-1"
+state    real   qvold            ikj    misc        1         -     rdu      "QVOLD"          "Water vapor mixing ratio, old time step"      "kg kg-1"
+state    real   rimi             ikj    misc        1         -     irh      "RIMI"           "riming intensity"  "fraction"
+state    real   qnwfa2d          ij     misc        1         -     rhdu     "QNWFA2D"        "Surface aerosol number conc emission"  "kg-1 s-1"
 state    real   re_cloud         ikj    misc        1         -     r        "RE_CLOUD"       "Effective radius cloud water"  "m"
 state    real   re_ice           ikj    misc        1         -     r        "RE_ICE"         "Effective radius cloud ice"    "m"
 state    real   re_snow          ikj    misc        1         -     r        "RE_SNOW"        "Effective radius snow"         "m"
@@ -1173,9 +1174,10 @@ state   real    v_frame        -       misc         1         -     ir        "v
 # collision between a metadata name and a field record in the I/O data
 # resolve this how?  Have the real program throw a switch to tell the code to get it
 # from the metadata?  Otherwise it's a field?
-state logical just_read_auxinput4  -      misc         -         -     r    "we_just_read_sst"           "1=AUXINPUT4 ALARM RINGING, 0=NO AUXINPUT4 ALARM"  "-"
-state   real    mf_fft         -       misc         -         -      r        "mf_fft"                "Mass point map factor at equatorward FFT filter location"  ""
-state   real    p_top          -       misc         -         -     irh       "p_top"                 "PRESSURE TOP OF THE MODEL"  "Pa"
+state logical just_read_auxinput4  -      misc      -         -     r    "we_just_read_sst"          "1=AUXINPUT4 ALARM RINGING, 0=NO AUXINPUT4 ALARM"  "-"
+state logical just_read_boundary   -      misc      -         -     r    "we_just_d01_LBC"           "1=BOUNDARY  ALARM RINGING, 0=NO BOUNDARY  ALARM"  "-"
+state   real    mf_fft         -       misc         -         -     r        "mf_fft"                "Mass point map factor at equatorward FFT filter location"  ""
+state   real    p_top          -       misc         -         -     irh       "p_top"                "PRESSURE TOP OF THE MODEL"  "Pa"
 
 #BSINGH - Adding all these variables for CuP scheme[any var before t00]
 state   real    lat_ll_t       -       dyn_em       -         -     ir       "lat_ll_t"              "latitude lower left, temp point" "degrees"
@@ -2376,6 +2378,7 @@ rconfig   real    khdif                   namelist,dynamics	max_domains    0    
 rconfig   real    kvdif                   namelist,dynamics	max_domains    0       h    "kvdif"         ""      ""
 rconfig   real    diff_6th_factor         namelist,dynamics     max_domains    0.12    h    "diff_6th_factor" "factor that controls rate of 6th-order numerical diffusion"
 rconfig   integer diff_6th_opt            namelist,dynamics     max_domains    0      irh   "diff_6th_opt" "switch for 6th-order numerical diffusion"
+rconfig   logical use_theta_m             namelist,dynamics	1              .false. rh    "use_theta_m" "theta_m = theta (1 + 1.61 Qv)"     ""
 rconfig   real    c_s                     namelist,dynamics     max_domains    0.25    h    "c_s"         "Smagorinsky coeff"      ""
 rconfig   real    c_k                     namelist,dynamics     max_domains    0.15    h    "c_k"         "TKE coeff"      ""
 rconfig   real    smdiv                   namelist,dynamics	max_domains    0.1     h    "smdiv"         ""      ""
@@ -2843,6 +2846,7 @@ halo      HALO_EM_SCALAR_E_5 dyn_em 48:scalar
 halo      HALO_EM_SCALAR_E_7 dyn_em 80:scalar
 halo      HALO_TOPOSHAD phys 24:ht_shad
 halo      HALO_EM_HORIZ_INTERP dyn_em 24:t_2,ph_2,ht,t_max_p,ght_max_p,max_p,t_min_p,ght_min_p,min_p
+halo      HALO_EM_THETAM dyn_em 48:t_1,t_2,h_diabatic
 
 halo      HALO_EM_MOIST_OLD_E_3 dyn_em 24:moist_old
 halo      HALO_EM_MOIST_OLD_E_5 dyn_em 48:moist_old
@@ -2916,6 +2920,7 @@ period    PERIOD_BDY_EM_C dyn_em 2:u_2,u_save,v_2,v_save,t_2,t_save,muv,msfvx,ms
 period    PERIOD_BDY_EM_D dyn_em 3:u_2,v_2,w_2,t_2,ph_2,mu_2,tke_2
 period    PERIOD_BDY_EM_D3 dyn_em 3:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1,tke_2,mu_1,mu_2
 period    PERIOD_EM_DA dyn_em 2:ru_m,rv_m,ww_m,mut,muts
+period    PERIOD_EM_THETAM dyn_em 3:t_1,t_2,h_diabatic
 
 #
 #swap SWAP_ETAMP_NEW  dyn_em 1:dz8w,p_phy,pi_phy,rho,th_phy,moist,F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,RAINNC,RAINNCV,SR,LOWLYR

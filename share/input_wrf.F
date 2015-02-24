@@ -138,6 +138,10 @@
     check_if_dryrun : IF ( .NOT. dryrun ) THEN
 
 #if (EM_CORE == 1)
+      IF ( switch .EQ. boundary_only ) THEN
+         grid%just_read_boundary = .true.
+      END IF
+
       IF ( ( switch .EQ. input_only ) .OR. ( switch .EQ. restart_only ) ) THEN
 
         !  Make sure for ARW ideal cases that the hypsometric option, the

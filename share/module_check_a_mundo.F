@@ -1038,7 +1038,9 @@
 !-----------------------------------------------------------------------
 
       IF ( ( model_config_rec % ra_lw_physics(1) .NE. RRTMG_LWSCHEME )  .OR. &
-           ( model_config_rec % ra_sw_physics(1) .NE. RRTMG_SWSCHEME ) ) THEN
+           ( model_config_rec % ra_sw_physics(1) .NE. RRTMG_SWSCHEME )  .OR. &
+           ( model_config_rec % ra_lw_physics(1) .NE. RRTMG_LWSCHEME_FAST )  .OR. &
+           ( model_config_rec % ra_sw_physics(1) .NE. RRTMG_SWSCHEME_FAST )  ) THEN
          model_config_rec % o3input = 0
          wrf_err_message = '--- NOTE: RRTMG radiation is not used, setting:  ' // &
                            'o3input=0 to avoid data pre-processing'

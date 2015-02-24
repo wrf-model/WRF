@@ -11311,9 +11311,9 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
       use parrrsw_f, only : nbndsw, ngptsw, naerec
       use rrtmg_sw_init_f, only: rrtmg_sw_ini
       use rrtmg_sw_rad_f, only: rrtmg_sw
-!      use mcica_subcol_gen_sw, only: mcica_subcol_sw
+      use mcica_subcol_gen_sw, only: mcica_subcol_sw
 
-      use module_ra_rrtmg_lwf, only : inirad, o3data, relcalc, reicalc
+      use module_ra_rrtmg_lwf, only : inirad, o3data, relcalc, reicalc, retab
 !                               mcica_random_numbers, randomNumberSequence, &
 !                               new_RandomNumberSequence, getRandomReal
 
@@ -11621,6 +11621,9 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
                                                             scon, &  
                                                 snow_mass_factor
     integer ::                                            dyofyr
+
+    integer:: idx_rei
+    real:: corr
 
 ! Set trace gas volume mixing ratios, 2005 values, IPCC (2007)
 ! carbon dioxide (379 ppmv)
@@ -11969,6 +11972,13 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
                inflgsw = 3
                DO K=kts,kte
                   recloud1D(icol,K) = MAX(2.5, re_cloud(I,K,J)*1.E6)
+                  if (recloud1D(icol,K).LE.2.5.AND.cldfra3d(i,k,j).gt.0. &
+     &                            .AND. (XLAND(I,J)-1.5).GT.0.) then      !--- Ocean
+                     recloud1D(icol,K) = 10.5
+                  elseif (recloud1D(icol,K).LE.2.5.AND.cldfra3d(i,k,j).gt.0. &
+     &                            .AND. (XLAND(I,J)-1.5).LT.0.) then      !--- Land
+                     recloud1D(icol,K) = 7.5
+                  endif
                ENDDO
             ELSE
                DO K=kts,kte
@@ -11981,6 +11991,14 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
                iceflgsw = 4
                DO K=kts,kte
                   reice1D(icol,K) = MAX(10., re_ice(I,K,J)*1.E6)
+                  if (reice1D(icol,K).LE.10..AND.cldfra3d(i,k,j).gt.0.) then
+                     idx_rei = int(t3d(i,k,j)-179.)
+                     idx_rei = min(max(idx_rei,1),75)
+                     corr = t3d(i,k,j) - int(t3d(i,k,j))
+                     reice1D(icol,K) = retab(idx_rei)*(1.-corr) +      &
+     &                                 retab(idx_rei+1)*corr
+                     reice1D(icol,K) = MAX(reice1D(icol,K), 10.0)
+                  endif
                ENDDO
             ELSE
                DO K=kts,kte
@@ -11996,7 +12014,7 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
                ENDDO
             ELSE
                DO K=kts,kte
-                  resnow1D(icol,K) = 10.0
+                  resnow1D(icol,K) = 10.
                ENDDO
             ENDIF
          ENDIF

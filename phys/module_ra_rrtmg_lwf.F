@@ -2823,64 +2823,64 @@ end module
 
 !     implicit none
       save
-	
+        
       real , parameter :: cpdair = 1003.5  ! Specific heat capacity of dry air
-                                        		 ! at constant pressure at 273 K
-                                        		 ! (J kg-1 K-1)
+                                                         ! at constant pressure at 273 K
+                                                         ! (J kg-1 K-1)
 
-	
+        
       integer , parameter :: maxAbsorberNameLength = 5, &
                              Absorber              = 12
       character(len = maxAbsorberNameLength), dimension(Absorber), parameter :: &
       AbsorberNames = (/        &
-     				'N2   ',  &
-     				'CCL4 ',  &
-     				'CFC11',  &
-     				'CFC12',  &
-     				'CFC22',  &
-     				'H2O  ',  &
-     				'CO2  ',  &
-     				'O3   ',  &
-     				'N2O  ',  & 
-     				'CO   ',  &
-     				'CH4  ',  &
-     				'O2   '  /)
-	
+                                'N2   ',  &
+                                'CCL4 ',  &
+                                'CFC11',  &
+                                'CFC12',  &
+                                'CFC22',  &
+                                'H2O  ',  &
+                                'CO2  ',  &
+                                'O3   ',  &
+                                'N2O  ',  & 
+                                'CO   ',  &
+                                'CH4  ',  &
+                                'O2   '  /)
+        
        integer , dimension(40) :: status
        integer  :: i
        integer , parameter :: keylower  = 9,   &
-    			       keyupper  = 5,   &
-			       Tdiff     = 5,   &
-			       ps        = 59,  &
-			       plower    = 13,  &
-			       pupper    = 47,  &
-			       Tself     = 10,  &
-			       Tforeign  = 4,   &
-			       pforeign  = 4,   &
-			       T         = 19,  &
-			       Tplanck   = 181, &
-			       band      = 16,  &
-			       GPoint    = 16,  &
-			       GPointSet = 2
-						  
+                               keyupper  = 5,   &
+                               Tdiff     = 5,   &
+                               ps        = 59,  &
+                               plower    = 13,  &
+                               pupper    = 47,  &
+                               Tself     = 10,  &
+                               Tforeign  = 4,   &
+                               pforeign  = 4,   &
+                               T         = 19,  &
+                               Tplanck   = 181, &
+                               band      = 16,  &
+                               GPoint    = 16,  &
+                               GPointSet = 2
+                                                  
       contains 
-	
+        
       subroutine getAbsorberIndex(AbsorberName,AbsorberIndex)
-		character(len = *), intent(in) :: AbsorberName
-		integer , intent(out)           :: AbsorberIndex
-		
-		integer  :: m
-	
-		AbsorberIndex = -1
-		do m = 1, Absorber
-			if (trim(AbsorberNames(m)) == trim(AbsorberName)) then
-				AbsorberIndex = m
-			end if
-		end do
-		
-		if (AbsorberIndex == -1) then
-			print*, "Absorber name index lookup failed."
-		end if
+                character(len = *), intent(in) :: AbsorberName
+                integer , intent(out)           :: AbsorberIndex
+                
+                integer  :: m
+        
+                AbsorberIndex = -1
+                do m = 1, Absorber
+                        if (trim(AbsorberNames(m)) == trim(AbsorberName)) then
+                                AbsorberIndex = m
+                        end if
+                end do
+                
+                if (AbsorberIndex == -1) then
+                        print*, "Absorber name index lookup failed."
+                end if
       end subroutine getAbsorberIndex
 
       end module rrlw_ncpar
@@ -4051,16 +4051,16 @@ contains
              call kissvec(seed1, seed2, seed3, seed4, rand_num)
              CDF(ilev) = rand_num
            end do
-
+          
 
            do ilev = 2,nlay
-             if (CDF(ilev-1) > 1.  - cldfracd(iplon, ilev-1)) then
+             if (CDF(ilev-1) > 1.  - cldfracd(iplon, ilev-1)) then 
                 CDF(ilev) = CDF(ilev-1)
              else
                  CDF(ilev) = CDF(ilev) * (1. - cldfracd(iplon, ilev-1))
              end if
            end do
-
+            
 ! Maximum overlap
        case(3)
 
@@ -4081,7 +4081,7 @@ contains
 !              call kissvec(seed1, seed2, seed3, seed4, rand_num)
 !              CDF2(ilev) = rand_num
 !              call kissvec(seed1, seed2, seed3, seed4, rand_num)
-!              CDF3(ilev) = rand_num
+!              CDF3(ilev) = rand_num 
 !           end do
 !
 !           do ilev = 2,nlay
@@ -4089,10 +4089,10 @@ contains
 !              if (CDF2(ilev) < alphad(iplon,ilev)) then
 !                CDF(ilev) = CDF(ilev-1)
 !              end if
-!
+!           
 !           end do
 
-       end select
+       end select 
 #else
 ! Random overlap
        case(1)
@@ -4108,7 +4108,7 @@ contains
 
 ! Maximum-Random overlap
        case(2)
-
+   
            do ilev = 1,nlay
     do iplon = 1, ncol
 !             call kissvec(seed1(iplon), seed2(iplon), seed3(iplon), seed4(iplon), rand_num(iplon))
@@ -4120,8 +4120,8 @@ contains
              CDF(iplon,ilev) = kiss*2.328306e-10  + 0.5
     enddo
            end do
-          
-
+      
+         
            do ilev = 2,nlay
     do iplon = 1, ncol
              if (CDF(iplon,ilev-1) > 1.  - cldfracd(iplon, ilev-1)) then 
@@ -4253,7 +4253,7 @@ contains
       use rrlw_vsn_f, only: hvrclc, hnamclc
 
 #ifdef _CUDA
-	  use cudafor
+          use cudafor
 #endif
       implicit none
 
@@ -4447,7 +4447,7 @@ contains
 
 #ifdef _CUDA
     iplon = (blockidx%x-1) * blockdim%x + threadidx%x
-	lay = (blockidx%y-1) * blockdim%y + threadidx%y
+        lay = (blockidx%y-1) * blockdim%y + threadidx%y
     ig = (blockidx%z-1) * blockdim%z + threadidx%z
 ! (dmb 2012) Make sure that the column, layer, and g-points are all within the proper
 ! range.  They can be out of range if we select certain block configurations due to 
@@ -4484,7 +4484,7 @@ contains
                if (ciwpmcd(iplon,ig,lay)+cswpmcd(iplon,ig,lay) .eq. 0.0) then
                   abscoice = 0.0 
                   abscosno = 0.0 
-				   
+                                   
                elseif (iceflagd(iplon) .eq. 0) then
                   abscoice= absice0d(1) + absice0d(2)/radice
                   abscosno = 0.0 
@@ -4612,7 +4612,7 @@ contains
          allocate( clwpmcd(ncol, ngptlw, nlay+1))
          allocate( cswpmcd(ncol, ngptlw, nlay+1))
 #endif
-	
+        
       end subroutine
 
       ! (dmb 2012) This subroutine deallocates any GPU arrays.
@@ -4635,7 +4635,7 @@ contains
                                  absice0, absice1, absice2, absice3, absliq1)
                                 
          integer :: inflag(:), iceflag(:), liqflag(:)
-	
+        
          real , dimension(:) :: absice0
          real , dimension(:,:) :: absice1
          real , dimension(:,:) :: absice2
@@ -8955,7 +8955,7 @@ integer,external :: omp_get_thread_num
 #endif
 #ifdef _CUDA
       !dimGrid = dim3( (ncol + 127) / 128, 1, 1)
-	  !dimBlock = dim3( 128,1,1)
+          !dimBlock = dim3( 128,1,1)
 
       dimGrid = dim3( (ncol + 63) / 64, ((nlayers+1)/2), 1)
       dimBlock = dim3( 64, 2, 1)
@@ -14177,9 +14177,9 @@ integer,external :: omp_get_thread_num
 
 ! ------- Declarations -------
 
-	 ! integer , parameter:: maxlay = 203
-	 ! integer , parameter:: mxmol = 38
-	  
+         ! integer , parameter:: maxlay = 203
+         ! integer , parameter:: mxmol = 38
+          
 
 ! ----- Input -----
 ! Note: All volume mixing ratios are in dimensionless units of mole fraction obtained
@@ -14406,7 +14406,6 @@ cn = CHNK
 !             tauaer  , zm, cloudMH, cloudHH, &
 !             uflx    ,dflx    ,hr      ,uflxc   ,dflxc,  hrc, &
 !             duflx_dt,duflxc_dt,cloudFlag)    
-
       end do  
       
 ! mji - time      
@@ -14776,12 +14775,12 @@ cn = CHNK
   
       integer :: permuteseed  ! this is set, below
       integer  :: icb(16)
-	 
+         
       ! local looping variables
       integer :: i,j,kk, piplon
 
       ! cuda return code
-	  integer :: ierr
+          integer :: ierr
       ! cuda thread and grid block dimensions
 #ifdef _CUDA
       type(dim3) :: dimGrid, dimBlock
@@ -14830,7 +14829,7 @@ integer,external :: omp_get_thread_num
 #endif
 ! Initializations
       icb(:) = (/  1,2,3,3,3,4,4,4,5, 5, 5, 5, 5, 5, 5, 5 /)
-	 
+         
       oneminus = 1.  - 1.e-6 
       pi = 2.  * asin(1. )
       fluxfac = pi * 2.e4                   ! orig:   fluxfac = pi * 2.d4  
@@ -14858,7 +14857,7 @@ integer,external :: omp_get_thread_num
       allocate( cldfmcd(pncol, ngptlw, nlay+1))
       allocate( ngbd(140) )
 #endif
-	   
+           
 
 #ifndef _CUDA
 #  define pncol CHNK
@@ -15044,7 +15043,7 @@ integer,external :: omp_get_thread_num
 !  effective radius must be passed into cldprmc.  Cloud fraction and cloud
 !  optical depth are transferred to rrtmg_lw arrays in cldprmc.  
 
-! If the GPU flag is active, then we call the GPU code.  Otherwise, call the CPU code	
+! If the GPU flag is active, then we call the GPU code.  Otherwise, call the CPU code   
 
 ! (dmb 2012) Copy the needed arrays over to the GPU for the cldprmc subroutine.
       call copyGPUcldprmcg( inflag, iceflag, liqflag,&
@@ -15127,7 +15126,7 @@ integer,external :: omp_get_thread_num
                              cldfmcd, taucmcd,  ngbd, icbd, ncbandsd, icldlyr)
 
 ! synchronize the GPU with the CPU before taking timing results or passing data back to the CPU
-#ifdef _CUDA	
+#ifdef _CUDA    
       ierr = cudaThreadSynchronize() 
 #endif
    
@@ -15309,23 +15308,23 @@ integer,external :: omp_get_thread_num
 !      use mcica_subcol_gen_lw, only: mcica_subcol_lw
 
       real retab(95)
-      data retab / 						&
-         5.92779, 6.26422, 6.61973, 6.99539, 7.39234,	        &
-         7.81177, 8.25496, 8.72323, 9.21800, 9.74075, 10.2930,	&
-         10.8765, 11.4929, 12.1440, 12.8317, 13.5581, 14.2319, 	&
-         15.0351, 15.8799, 16.7674, 17.6986, 18.6744, 19.6955,	&
-         20.7623, 21.8757, 23.0364, 24.2452, 25.5034, 26.8125,	&
-         27.7895, 28.6450, 29.4167, 30.1088, 30.7306, 31.2943, 	&
-         31.8151, 32.3077, 32.7870, 33.2657, 33.7540, 34.2601, 	&
-         34.7892, 35.3442, 35.9255, 36.5316, 37.1602, 37.8078,	&
-         38.4720, 39.1508, 39.8442, 40.5552, 41.2912, 42.0635,	&
-         42.8876, 43.7863, 44.7853, 45.9170, 47.2165, 48.7221,	&
-         50.4710, 52.4980, 54.8315, 57.4898, 60.4785, 63.7898,	&
-         65.5604, 71.2885, 75.4113, 79.7368, 84.2351, 88.8833,	&
-         93.6658, 98.5739, 103.603, 108.752, 114.025, 119.424, 	&
-         124.954, 130.630, 136.457, 142.446, 148.608, 154.956,	&
-         161.503, 168.262, 175.248, 182.473, 189.952, 197.699,	&
-         205.728, 214.055, 222.694, 231.661, 240.971, 250.639/	
+      data retab /                                              &
+         5.92779, 6.26422, 6.61973, 6.99539, 7.39234,           &
+         7.81177, 8.25496, 8.72323, 9.21800, 9.74075, 10.2930,  &
+         10.8765, 11.4929, 12.1440, 12.8317, 13.5581, 14.2319,  &
+         15.0351, 15.8799, 16.7674, 17.6986, 18.6744, 19.6955,  &
+         20.7623, 21.8757, 23.0364, 24.2452, 25.5034, 26.8125,  &
+         27.7895, 28.6450, 29.4167, 30.1088, 30.7306, 31.2943,  &
+         31.8151, 32.3077, 32.7870, 33.2657, 33.7540, 34.2601,  &
+         34.7892, 35.3442, 35.9255, 36.5316, 37.1602, 37.8078,  &
+         38.4720, 39.1508, 39.8442, 40.5552, 41.2912, 42.0635,  &
+         42.8876, 43.7863, 44.7853, 45.9170, 47.2165, 48.7221,  &
+         50.4710, 52.4980, 54.8315, 57.4898, 60.4785, 63.7898,  &
+         65.5604, 71.2885, 75.4113, 79.7368, 84.2351, 88.8833,  &
+         93.6658, 98.5739, 103.603, 108.752, 114.025, 119.424,  &
+         124.954, 130.630, 136.457, 142.446, 148.608, 154.956,  &
+         161.503, 168.262, 175.248, 182.473, 189.952, 197.699,  &
+         205.728, 214.055, 222.694, 231.661, 240.971, 250.639/  
     !
       save retab
     ! For buffer layer adjustment.  Steven Cavallo, Dec 2010.
@@ -15665,7 +15664,8 @@ integer,external :: omp_get_thread_num
     integer :: pcols, pver
     integer :: icol
 !
-    INTEGER :: i,j,K
+    INTEGER :: i,j,K, idx_rei
+    REAL :: corr
     LOGICAL :: predicate
 
 ! Added for top of model adjustment.  Steven Cavallo NCAR/MMM December 2010
@@ -15689,15 +15689,15 @@ integer,external :: omp_get_thread_num
                   0.56,0.48,0.41,0.35,0.30,0.26,                  &
                   0.22,0.19,0.16,0.14,0.12,0.10/
     DATA TPROF   /286.96,281.07,275.16,268.11,260.56,253.02,      &
-         	  245.62,238.41,231.57,225.91,221.72,217.79,      &
-		  215.06,212.74,210.25,210.16,210.69,212.14,      &
-		  213.74,215.37,216.82,217.94,219.03,220.18,      &
-		  221.37,222.64,224.16,225.88,227.63,229.51,      &
-		  231.50,233.73,236.18,238.78,241.60,244.44,      &
-		  247.35,250.33,253.32,256.30,259.22,262.12,      &
-		  264.80,266.50,267.59,268.44,268.69,267.76,      &
-		  266.13,263.96,261.54,258.93,256.15,253.23,      &
-		  249.89,246.67,243.48,240.25,236.66,233.86/	
+                  245.62,238.41,231.57,225.91,221.72,217.79,      &
+                  215.06,212.74,210.25,210.16,210.69,212.14,      &
+                  213.74,215.37,216.82,217.94,219.03,220.18,      &
+                  221.37,222.64,224.16,225.88,227.63,229.51,      &
+                  231.50,233.73,236.18,238.78,241.60,244.44,      &
+                  247.35,250.33,253.32,256.30,259.22,262.12,      &
+                  264.80,266.50,267.59,268.44,268.69,267.76,      &
+                  266.13,263.96,261.54,258.93,256.15,253.23,      &
+                  249.89,246.67,243.48,240.25,236.66,233.86/    
 !------------------------------------------------------------------
 #if ( WRF_CHEM == 1 )
       IF ( aer_ra_feedback == 1) then
@@ -15754,7 +15754,7 @@ integer,external :: omp_get_thread_num
 ! longitude loop
       i_loop: do i = its,ite
 
-         icol = i + (j-jts)*(ite-its+1)
+         icol = i-its+1 + (j-jts)*(ite-its+1)
 
          do k=kts,kte+1
             Pw1D(K) = p8w(I,K,J)/100.
@@ -15940,6 +15940,13 @@ integer,external :: omp_get_thread_num
                inflglw = 3
                DO K=kts,kte
                   recloud1D(icol,K) = MAX(2.5, re_cloud(I,K,J)*1.E6)
+                  if (recloud1D(icol,K).LE.2.5.AND.cldfra3d(i,k,j).gt.0. &
+     &                            .AND. (XLAND(I,J)-1.5).GT.0.) then     !--- Ocean
+                     recloud1D(icol,K) = 10.5
+                  elseif(recloud1D(icol,K).LE.2.5.AND.cldfra3d(i,k,j).gt.0. &
+     &                            .AND. (XLAND(I,J)-1.5).LT.0.) then     !--- Land
+                     recloud1D(icol,K) = 7.5
+                  endif
                ENDDO
             ELSE
                DO K=kts,kte
@@ -15956,6 +15963,13 @@ integer,external :: omp_get_thread_num
                iceflglw = 4
                DO K=kts,kte
                   reice1D(icol,K) = MAX(10., re_ice(I,K,J)*1.E6)
+                  if (recloud1D(icol,K).LE.2.5.AND.cldfra3d(i,k,j).gt.0. &
+     &                            .AND. (XLAND(I,J)-1.5).GT.0.) then     !--- Ocean
+                     recloud1D(icol,K) = 10.5
+                  elseif(recloud1D(icol,K).LE.2.5.AND.cldfra3d(i,k,j).gt.0. &
+     &                            .AND. (XLAND(I,J)-1.5).LT.0.) then     !--- Land
+                     recloud1D(icol,K) = 7.5
+                  endif
                ENDDO
             ELSE
                DO K=kts,kte
@@ -16081,8 +16095,8 @@ integer,external :: omp_get_thread_num
        do L=kte+1,nlayers+1,1
           tlev(icol,L) = varint(L) + (tlev(icol,kte) - varint(kte))
           !if ( L .le. nlay ) then
-	  tlay(icol,L-1) = 0.5*(tlev(icol,L) + tlev(icol,L-1))  
-	  !endif
+          tlay(icol,L-1) = 0.5*(tlev(icol,L) + tlev(icol,L-1))  
+          !endif
        enddo 
 
        ! Now the chemical species (except for ozone)
@@ -16096,9 +16110,9 @@ integer,external :: omp_get_thread_num
           cfc12vmr(icol,L) = cfc12vmr(icol,kte) 
           cfc22vmr(icol,L) = cfc22vmr(icol,kte) 
           ccl4vmr(icol,L) = ccl4vmr(icol,kte) 
-       enddo	 
+       enddo     
 ! End top of model buffer 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!	
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
 ! Get ozone profile including amount in extra layer above model top.
 ! Steven Cavallo: Must pass nlay-1 into subroutine to get nlayers 
 ! dimension for o3mmr
@@ -16367,18 +16381,18 @@ integer,external :: omp_get_thread_num
          endif
 
          ! Buffer adjustment. Steven Cavallo December 2010
-	 do k=kte+1,nlayers
-	    clwpth(icol,k) = 0.
-	    ciwpth(icol,k) = 0.
-	    cswpth(icol,k) = 0.
-	    rel(icol,k) = 10.
+         do k=kte+1,nlayers
+            clwpth(icol,k) = 0.
+            ciwpth(icol,k) = 0.
+            cswpth(icol,k) = 0.
+            rel(icol,k) = 10.
             rei(icol,k) = 10.
             res(icol,k) = 10.
             cldfrac(icol,k) = 0.
-	    do nb = 1,nbndlw
+            do nb = 1,nbndlw
                taucld(icol,nb,k) = 0.
             enddo
-	 enddo	 
+         enddo   
 
 ! mji - mcica sub-column generator called inside rrtmg_lw for gpu
 !         iplon = 1
@@ -16488,7 +16502,7 @@ integer,external :: omp_get_thread_num
 ! longitude loop
       i_loop2: do i = its,ite
 
-         icol = i + (j-jts)*(ite-its+1)
+         icol = i-its+1 + (j-jts)*(ite-its+1)
 
          glw(i,j) = dflx(icol,1)
 !         olr(i,j) = uflx(icol,kte+2)
@@ -16706,7 +16720,7 @@ integer,external :: omp_get_thread_num
 ! Steven Cavallo.  Added for buffer layer adjustment.   December 2010.
    NLAYERS = kme + nint(p_top*0.01/deltap)- 1 ! Model levels plus new levels.
                                               ! nlayers will subsequently 
-					      ! replace kte+1
+                                              ! replace kte+1
 
 ! Read in absorption coefficients and other data
    IF ( allowed_to_read ) THEN
@@ -18327,7 +18341,7 @@ IMPLICIT NONE
           index = int(t(icol,k)-179.)
           index = min(max(index,1),94)
           corr = t(icol,k) - int(t(icol,k))
-          re(icol,k) = retab(index)*(1.-corr)		&
+          re(icol,k) = retab(index)*(1.-corr)           &
                +retab(index+1)*corr
           !           re(icol,k) = amax1(amin1(re(icol,k),30.),10.)
 !       end do

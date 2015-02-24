@@ -1461,25 +1461,13 @@ CONTAINS
                t_old_bdy_tend_ys     = ( t_new_bdy_ys        - t_old_bdy_ys                         ) / dt_interval
                moist_old_bdy_tend_ys = ( moist_new_bdy_ys    - moist_old_bdy_ys                     ) / dt_interval
                IF ( theta_to_thetam ) THEN
-if(i.eq.30 .and. k.eq.1 .and. j.eq.1 )then
-print *,'DAVE south BEFORE at theta  = ',t_bdy_ys(i,k,j),t_bdy_tend_ys(i,k,j)
-endif
                   t_bdy_ys(i,k,j) = ( ( ( t_old_bdy_ys + T0 ) * ( 1. + (R_v/R_d) * moist_old_bdy_ys ) ) - T0 ) * mu_old_bdy_ys
                   t_bdy_tend_ys(i,k,j) = ( ( mu_new_bdy_ys * ( ( t_new_bdy_ys + T0 ) * ( 1. + (R_v/R_d) * moist_new_bdy_ys ) - T0 ) ) - &
                                            ( mu_old_bdy_ys * ( ( t_old_bdy_ys + T0 ) * ( 1. + (R_v/R_d) * moist_old_bdy_ys ) - T0 ) ) ) / dt_interval
-if(i.eq.30 .and. k.eq.1 .and. j.eq.1 )then
-print *,'DAVE south AFTER to thetam = ',t_bdy_ys(i,k,j),t_bdy_tend_ys(i,k,j)
-endif
                ELSE
-if(i.eq.30 .and. k.eq.1 .and. j.eq.1 )then
-print *,'DAVE south BEFORE at thetam = ',t_bdy_ys(i,k,j),t_bdy_tend_ys(i,k,j)
-endif
                   t_bdy_ys(i,k,j) = ( ( ( t_old_bdy_ys + T0 ) / ( 1. + (R_v/R_d) * moist_old_bdy_ys ) ) - T0 ) * mu_old_bdy_ys
                   t_bdy_tend_ys(i,k,j) = ( ( mu_new_bdy_ys * ( ( t_new_bdy_ys + T0 ) / ( 1. + (R_v/R_d) * moist_new_bdy_ys ) - T0 ) ) - &
                                            ( mu_old_bdy_ys * ( ( t_old_bdy_ys + T0 ) / ( 1. + (R_v/R_d) * moist_old_bdy_ys ) - T0 ) ) ) / dt_interval
-if(i.eq.30 .and. k.eq.1 .and. j.eq.1 )then
-print *,'DAVE south AFTER to theta  = ',t_bdy_ys(i,k,j),t_bdy_tend_ys(i,k,j)
-endif
                END IF
             END DO
          END DO
@@ -1501,25 +1489,13 @@ endif
                t_old_bdy_tend_ye     = ( t_new_bdy_ye        - t_old_bdy_ye                         ) / dt_interval
                moist_old_bdy_tend_ye = ( moist_new_bdy_ye    - moist_old_bdy_ye                     ) / dt_interval
                IF ( theta_to_thetam ) THEN
-if(i.eq.30 .and. k.eq.1 .and. j.eq.1 )then
-print *,'DAVE north BEFORE at theta  = ',t_bdy_ye(i,k,j),t_bdy_tend_ye(i,k,j)
-endif
                   t_bdy_ye(i,k,j) = ( ( ( t_old_bdy_ye + T0 ) * ( 1. + (R_v/R_d) * moist_old_bdy_ye ) ) - T0 ) * mu_old_bdy_ye
                   t_bdy_tend_ye(i,k,j) = ( ( mu_new_bdy_ye * ( ( t_new_bdy_ye + T0 ) * ( 1. + (R_v/R_d) * moist_new_bdy_ye ) - T0 ) ) - &
                                            ( mu_old_bdy_ye * ( ( t_old_bdy_ye + T0 ) * ( 1. + (R_v/R_d) * moist_old_bdy_ye ) - T0 ) ) ) / dt_interval
-if(i.eq.30 .and. k.eq.1 .and. j.eq.1 )then
-print *,'DAVE north AFTER to thetam = ',t_bdy_ye(i,k,j),t_bdy_tend_ye(i,k,j)
-endif
                ELSE
-if(i.eq.30 .and. k.eq.1 .and. j.eq.1 )then
-print *,'DAVE north BEFORE at thetam = ',t_bdy_ye(i,k,j),t_bdy_tend_ye(i,k,j)
-endif
                   t_bdy_ye(i,k,j) = ( ( ( t_old_bdy_ye + T0 ) / ( 1. + (R_v/R_d) * moist_old_bdy_ye ) ) - T0 ) * mu_old_bdy_ye
                   t_bdy_tend_ye(i,k,j) = ( ( mu_new_bdy_ye * ( ( t_new_bdy_ye + T0 ) / ( 1. + (R_v/R_d) * moist_new_bdy_ye ) - T0 ) ) - &
                                            ( mu_old_bdy_ye * ( ( t_old_bdy_ye + T0 ) / ( 1. + (R_v/R_d) * moist_old_bdy_ye ) - T0 ) ) ) / dt_interval
-if(i.eq.30 .and. k.eq.1 .and. j.eq.1 )then
-print *,'DAVE north AFTER to theta  = ',t_bdy_ye(i,k,j),t_bdy_tend_ye(i,k,j)
-endif
                END IF
             END DO
          END DO
@@ -1544,25 +1520,13 @@ endif
                t_old_bdy_tend_xs     = ( t_new_bdy_xs        - t_old_bdy_xs                         ) / dt_interval
                moist_old_bdy_tend_xs = ( moist_new_bdy_xs    - moist_old_bdy_xs                     ) / dt_interval
                IF ( theta_to_thetam ) THEN
-if(i.eq.1 .and. k.eq.1 .and. j.eq.30 )then
-print *,'DAVE west  BEFORE at theta  = ',t_bdy_xs(j,k,i),t_bdy_tend_xs(j,k,i)
-endif
                   t_bdy_xs(j,k,i) = ( ( ( t_old_bdy_xs + T0 ) * ( 1. + (R_v/R_d) * moist_old_bdy_xs ) ) - T0 ) * mu_old_bdy_xs
                   t_bdy_tend_xs(j,k,i) = ( ( mu_new_bdy_xs * ( ( t_new_bdy_xs + T0 ) * ( 1. + (R_v/R_d) * moist_new_bdy_xs ) - T0 ) ) - &
                                            ( mu_old_bdy_xs * ( ( t_old_bdy_xs + T0 ) * ( 1. + (R_v/R_d) * moist_old_bdy_xs ) - T0 ) ) ) / dt_interval
-if(i.eq.1 .and. k.eq.1 .and. j.eq.30 )then
-print *,'DAVE west  AFTER to thetam = ',t_bdy_xs(j,k,i),t_bdy_tend_xs(j,k,i)
-endif
                ELSE
-if(i.eq.1 .and. k.eq.1 .and. j.eq.30 )then
-print *,'DAVE west  BEFORE at thetam = ',t_bdy_xs(j,k,i),t_bdy_tend_xs(j,k,i)
-endif
                   t_bdy_xs(j,k,i) = ( ( ( t_old_bdy_xs + T0 ) / ( 1. + (R_v/R_d) * moist_old_bdy_xs ) ) - T0 ) * mu_old_bdy_xs
                   t_bdy_tend_xs(j,k,i) = ( ( mu_new_bdy_xs * ( ( t_new_bdy_xs + T0 ) / ( 1. + (R_v/R_d) * moist_new_bdy_xs ) - T0 ) ) - &
                                            ( mu_old_bdy_xs * ( ( t_old_bdy_xs + T0 ) / ( 1. + (R_v/R_d) * moist_old_bdy_xs ) - T0 ) ) ) / dt_interval
-if(i.eq.1 .and. k.eq.1 .and. j.eq.30 )then
-print *,'DAVE west  AFTER to theta  = ',t_bdy_xs(j,k,i),t_bdy_tend_xs(j,k,i)
-endif
                END IF
             END DO
          END DO
@@ -1584,25 +1548,13 @@ endif
                t_old_bdy_tend_xe     = ( t_new_bdy_xe        - t_old_bdy_xe                         ) / dt_interval
                moist_old_bdy_tend_xe = ( moist_new_bdy_xe    - moist_old_bdy_xe                     ) / dt_interval
                IF ( theta_to_thetam ) THEN
-if(i.eq.1 .and. k.eq.1 .and. j.eq.30 )then
-print *,'DAVE east  BEFORE at theta  = ',t_bdy_xe(j,k,i),t_bdy_tend_xe(j,k,i)
-endif
                   t_bdy_xe(j,k,i) = ( ( ( t_old_bdy_xe + T0 ) * ( 1. + (R_v/R_d) * moist_old_bdy_xe ) ) - T0 ) * mu_old_bdy_xe
                   t_bdy_tend_xe(j,k,i) = ( ( mu_new_bdy_xe * ( ( t_new_bdy_xe + T0 ) * ( 1. + (R_v/R_d) * moist_new_bdy_xe ) - T0 ) ) - &
                                            ( mu_old_bdy_xe * ( ( t_old_bdy_xe + T0 ) * ( 1. + (R_v/R_d) * moist_old_bdy_xe ) - T0 ) ) ) / dt_interval
-if(i.eq.1 .and. k.eq.1 .and. j.eq.30 )then
-print *,'DAVE east  AFTER to thetam = ',t_bdy_xe(j,k,i),t_bdy_tend_xe(j,k,i)
-endif
                ELSE
-if(i.eq.1 .and. k.eq.1 .and. j.eq.30 )then
-print *,'DAVE east  BEFORE at thetam = ',t_bdy_xe(j,k,i),t_bdy_tend_xe(j,k,i)
-endif
                   t_bdy_xe(j,k,i) = ( ( ( t_old_bdy_xe + T0 ) / ( 1. + (R_v/R_d) * moist_old_bdy_xe ) ) - T0 ) * mu_old_bdy_xe
                   t_bdy_tend_xe(j,k,i) = ( ( mu_new_bdy_xe * ( ( t_new_bdy_xe + T0 ) / ( 1. + (R_v/R_d) * moist_new_bdy_xe ) - T0 ) ) - &
                                            ( mu_old_bdy_xe * ( ( t_old_bdy_xe + T0 ) / ( 1. + (R_v/R_d) * moist_old_bdy_xe ) - T0 ) ) ) / dt_interval
-if(i.eq.1 .and. k.eq.1 .and. j.eq.30 )then
-print *,'DAVE east  AFTER to theta  = ',t_bdy_xe(j,k,i),t_bdy_tend_xe(j,k,i)
-endif
                END IF
             END DO
          END DO

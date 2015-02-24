@@ -838,24 +838,11 @@ BENCH_START(relax_bdy_dry_tim)
 ! LES_fix convert theta to theta_m: nested or specified LBC, only required on the first rk step
 
          IF   ( ( config_flags%use_theta_m ) .AND. (P_Qv .GE. PARAM_FIRST_SCALAR) ) THEN
-            grid%thold_bxs = grid%t_bxs
-            grid%thold_bxe = grid%t_bxe
-            grid%thold_bys = grid%t_bys
-            grid%thold_bye = grid%t_bye
-            grid%thold_btxs = grid%t_btxs
-            grid%thold_btxe = grid%t_btxe
-            grid%thold_btys = grid%t_btys
-            grid%thold_btye = grid%t_btye
-!print *,grid%grid_id,'DAVE south real thetam      = ',grid%thm_bys(30,1,1),grid%thm_btys(30,1,1)
-!print *,grid%grid_id,'DAVE north real thetam      = ',grid%thm_bye(30,1,1),grid%thm_btye(30,1,1)
-!print *,grid%grid_id,'DAVE west  real thetam      = ',grid%thm_bxs(30,1,1),grid%thm_btxs(30,1,1)
-!print *,grid%grid_id,'DAVE east  real thetam      = ',grid%thm_bxe(30,1,1),grid%thm_btxe(30,1,1)
            IF ( grid%grid_id .EQ. 1 ) THEN
               time_duration_of_lbcs = grid%interval_seconds
            ELSE
               time_duration_of_lbcs = grid%parent_time_step_ratio * grid%dt
            END IF
-print *,'DAVE domain = ',grid%grid_id,'  time step = ',grid%dt,'  length of tendencies = ',time_duration_of_lbcs
            CALL theta_and_thetam_lbc_only (                                                   & 
                                 .TRUE.,                                                       &
                                 grid%mub,                                                     &
@@ -970,11 +957,6 @@ print *,'DAVE domain = ',grid%grid_id,'  time step = ',grid%dt,'  length of tend
                                 grid%i_start(ij), grid%i_end(ij),                             &
                                 grid%j_start(ij), grid%j_end(ij),                             &
                                 k_start    , k_end                                            )
-!print *,grid%grid_id,'DAVE south orig theta       = ',grid%thold_bys(30,1,1),grid%thold_btys(30,1,1)
-!print *,grid%grid_id,'DAVE north orig theta       = ',grid%thold_bye(30,1,1),grid%thold_btye(30,1,1)
-!print *,grid%grid_id,'DAVE west  orig theta       = ',grid%thold_bxs(30,1,1),grid%thold_btxs(30,1,1)
-!print *,grid%grid_id,'DAVE east  orig theta       = ',grid%thold_bxe(30,1,1),grid%thold_btxe(30,1,1)
-!print *,' '
          END IF
 
 ! LES_fix convert theta_m to theta: nested or specified LBC, and only in the last rk step

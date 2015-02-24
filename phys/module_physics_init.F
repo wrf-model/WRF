@@ -813,8 +813,7 @@ integer myproc
 
    icloud_cu = 0
    IF ( config_flags%cu_rad_feedback ) THEN
-      IF ( config_flags%cu_physics == kfetascheme .OR. &
-           config_flags%cu_physics == mskfscheme ) THEN
+      IF ( config_flags%cu_physics == kfetascheme ) THEN
          icloud_cu = 2
       ELSE IF ( config_flags%cu_physics == gfscheme .OR. &
                 config_flags%cu_physics == g3scheme .OR. &
@@ -822,6 +821,11 @@ integer myproc
          icloud_cu = 1
       END IF
    END IF
+#if (EM_CORE == 1)
+   IF ( config_flags%cu_physics == mskfscheme ) THEN
+        icloud_cu = 2
+   END IF
+#endif
    CALL nl_set_icloud_cu ( id , icloud_cu )
 
   IF(.not.restart)THEN

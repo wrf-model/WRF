@@ -422,7 +422,7 @@ em_real : wrf
 	@echo "=========================================================================="
 	@echo "build started:   $(START_OF_COMPILE)"
 	@echo "build completed:" `date`
-	@if test -e main/wrf.exe ; then \
+	@if test -e main/wrf.exe -a -e main/real.exe -a -e main/ndown.exe -a -e main/tc.exe  ; then \
 		echo " " ; \
 		echo "--->                  Executables successfully built                  <---" ; \
 		echo " " ; \
@@ -432,7 +432,7 @@ em_real : wrf
 		echo " " ; \
 	else \
 		echo " " ; \
-		echo "--->      No executables built, look for errors in the build log      <---" ; \
+		echo "---> Problems building executables, look for errors in the build log  <---" ; \
 		echo " " ; \
 		echo "==========================================================================" ; \
 		echo " " ; \

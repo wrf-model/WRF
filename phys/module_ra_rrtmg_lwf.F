@@ -14840,16 +14840,16 @@ integer,external :: omp_get_thread_num
       pncold = pncol
       nlayd = nlay
     
-      cldfracq(:,1:nlay) = cldfrac(colstart:(colstart+pncol-1), 1:nlay)
-      ciwpq(:,1:nlay) = ciwp(colstart:(colstart+pncol-1), 1:nlay)
-      clwpq(:,1:nlay) = clwp(colstart:(colstart+pncol-1), 1:nlay)
-      cswpq(:,1:nlay) = cswp(colstart:(colstart+pncol-1), 1:nlay)
-      reiq(:,1:nlay) = rei(colstart:(colstart+pncol-1), 1:nlay)
-      relq(:,1:nlay) = rel(colstart:(colstart+pncol-1), 1:nlay)
-      resq(:,1:nlay) = res(colstart:(colstart+pncol-1), 1:nlay)
-      taucq(:,1:nbndlw,1:nlay) = tauc(colstart:(colstart+pncol-1), 1:nbndlw, 1:nlay)
+      cldfracq(1:pncol,1:nlay) = cldfrac(colstart:(colstart+pncol-1), 1:nlay)
+      ciwpq(1:pncol,1:nlay) = ciwp(colstart:(colstart+pncol-1), 1:nlay)
+      clwpq(1:pncol,1:nlay) = clwp(colstart:(colstart+pncol-1), 1:nlay)
+      cswpq(1:pncol,1:nlay) = cswp(colstart:(colstart+pncol-1), 1:nlay)
+      reiq(1:pncol,1:nlay) = rei(colstart:(colstart+pncol-1), 1:nlay)
+      relq(1:pncol,1:nlay) = rel(colstart:(colstart+pncol-1), 1:nlay)
+      resq(1:pncol,1:nlay) = res(colstart:(colstart+pncol-1), 1:nlay)
+      taucq(1:pncol,1:nbndlw,1:nlay) = tauc(colstart:(colstart+pncol-1), 1:nbndlw, 1:nlay)
 ! ** mji *** tauaq dimensions?
-      tauaq(:,1:nlay,1:nbndlw) = tauaer(colstart:(colstart+pncol-1), 1:nlay, 1:nbndlw)
+      tauaq(1:pncol,1:nlay,1:nbndlw) = tauaer(colstart:(colstart+pncol-1), 1:nlay, 1:nbndlw)
 ! For GSFC, not needed for WRF
 !      zmp(:,1:nlay) = zm(colstart:(colstart+pncol-1), 1:nlay)
   
@@ -14938,17 +14938,17 @@ integer,external :: omp_get_thread_num
       call copyGPUTaumolMol( colstart, pncol, nlayers, h2ovmr, co2vmr, o3vmr, n2ovmr, ch4vmr, &
                              o2vmr, ccl4vmr, cfc11vmr, cfc12vmr, cfc22vmr, npart)
 #else
-      colh2o(1:pncol, :) = h2ovmr( colstart:(colstart+pncol-1), 1:nlayers)
-      colco2(1:pncol, :) = co2vmr( colstart:(colstart+pncol-1), 1:nlayers)
-      colo3(1:pncol, :) = o3vmr( colstart:(colstart+pncol-1), 1:nlayers)
-      coln2o(1:pncol, :) = n2ovmr( colstart:(colstart+pncol-1), 1:nlayers)
+      colh2o(1:pncol, 1:nlayers) = h2ovmr( colstart:(colstart+pncol-1), 1:nlayers)
+      colco2(1:pncol, 1:nlayers) = co2vmr( colstart:(colstart+pncol-1), 1:nlayers)
+      colo3(1:pncol, 1:nlayers) = o3vmr( colstart:(colstart+pncol-1), 1:nlayers)
+      coln2o(1:pncol, 1:nlayers) = n2ovmr( colstart:(colstart+pncol-1), 1:nlayers)
 
-      colch4(1:pncol, :) = ch4vmr( colstart:(colstart+pncol-1), 1:nlayers)
-      colo2(1:pncol, :) = o2vmr( colstart:(colstart+pncol-1), 1:nlayers)
-      wx1(1:pncol, :) = ccl4vmr(colstart:(colstart+pncol-1), 1:nlayers)
-      wx2(1:pncol, :) = cfc11vmr(colstart:(colstart+pncol-1), 1:nlayers)
-      wx3(1:pncol, :) = cfc12vmr(colstart:(colstart+pncol-1), 1:nlayers)
-      wx4(1:pncol, :) = cfc22vmr(colstart:(colstart+pncol-1), 1:nlayers)
+      colch4(1:pncol, 1:nlayers) = ch4vmr( colstart:(colstart+pncol-1), 1:nlayers)
+      colo2(1:pncol, 1:nlayers) = o2vmr( colstart:(colstart+pncol-1), 1:nlayers)
+      wx1(1:pncol, 1:nlayers) = ccl4vmr(colstart:(colstart+pncol-1), 1:nlayers)
+      wx2(1:pncol, 1:nlayers) = cfc11vmr(colstart:(colstart+pncol-1), 1:nlayers)
+      wx3(1:pncol, 1:nlayers) = cfc12vmr(colstart:(colstart+pncol-1), 1:nlayers)
+      wx4(1:pncol, 1:nlayers) = cfc22vmr(colstart:(colstart+pncol-1), 1:nlayers)
       colco(1:pncol, :) = 0
       if (npart > 1) then
          tauaa(1:pncol, :, :)  = tauaer(colstart:(colstart+pncol-1), :, :)
@@ -15085,13 +15085,13 @@ integer,external :: omp_get_thread_num
       tboundd = tbound
       wbroadd = wbrodl
 !      wkld = wkl
-      semissd = emis(colstart:(colstart+pncol-1),1:nlay)
+      semissd(1:pncol,1:nbndlw) = emis(colstart:(colstart+pncol-1),1:nbndlw)
 
       call copyToGPUref()
       call copyGPUrtrnmcg(pz, pwvcm, idrv, taut)
 #else
 
-      semissd = emis(colstart:(colstart+pncol-1),1:nlay)
+      semissd(1:pncol,1:nbndlw) = emis(colstart:(colstart+pncol-1),1:nbndlw)
 
 # define tzd tz
 # define taveld tavel
@@ -15228,17 +15228,17 @@ integer,external :: omp_get_thread_num
 #endif    
 
 ! copy the partition data back to the CPU
-      uflx(colstart:(colstart+pncol-1), 1:(nlayers+1)) = totufluxd
-      dflx(colstart:(colstart+pncol-1), 1:(nlayers+1)) = totdfluxd
-      uflxc(colstart:(colstart+pncol-1), 1:(nlayers+1)) = totuclfld
-      dflxc(colstart:(colstart+pncol-1), 1:(nlayers+1)) = totdclfld
-      hr(colstart:(colstart+pncol-1), 1:(nlayers+1)) = htrd
-      hrc(colstart:(colstart+pncol-1), 1:(nlayers+1)) = htrcd
+      uflx(colstart:(colstart+pncol-1), 1:(nlayers+1)) = totufluxd(1:pncol,1:(nlayers+1))
+      dflx(colstart:(colstart+pncol-1), 1:(nlayers+1)) = totdfluxd(1:pncol,1:(nlayers+1))
+      uflxc(colstart:(colstart+pncol-1), 1:(nlayers+1)) = totuclfld(1:pncol,1:(nlayers+1))
+      dflxc(colstart:(colstart+pncol-1), 1:(nlayers+1)) = totdclfld(1:pncol,1:(nlayers+1))
+      hr(colstart:(colstart+pncol-1), 1:(nlayers+1)) = htrd(1:pncol,1:(nlayers+1))
+      hrc(colstart:(colstart+pncol-1), 1:(nlayers+1)) = htrcd(1:pncol,1:(nlayers+1))
 
       if (idrv .eq. 1) then
 
-         duflx_dt(colstart:(colstart+pncol-1), 1:(nlayers+1)) = dtotuflux_dtd
-         duflxc_dt(colstart:(colstart+pncol-1), 1:(nlayers+1)) = dtotuclfl_dtd
+         duflx_dt(colstart:(colstart+pncol-1), 1:(nlayers+1)) = dtotuflux_dtd(1:pncol,1:(nlayers+1))
+         duflxc_dt(colstart:(colstart+pncol-1), 1:(nlayers+1)) = dtotuclfl_dtd(1:pncol,1:(nlayers+1))
  
       end if
 
@@ -15511,10 +15511,14 @@ integer,external :: omp_get_thread_num
                                                          inflglw, &
                                                         iceflglw, &
                                                         liqflglw
+! the mod in the macro below is to quiet range checking 
+#define TILEPTS (jte-jts+1)*(ite-its+1)+mod((jte-jts+1)*(ite-its+1),CHNK)
 ! Dimension with extra layer from model top to TOA
-    real, dimension( (jte-jts+1)*(ite-its+1), kts:nlayers+1 )  ::              plev, &
+    real, dimension( TILEPTS, kts:nlayers+1 )  ::                 &
+                                                            plev, &
                                                             tlev
-    real, dimension( (jte-jts+1)*(ite-its+1), kts:nlayers )  ::                play, &
+    real, dimension( TILEPTS, kts:nlayers )  ::                   &
+                                                            play, &
                                                             tlay, &
                                                           h2ovmr, &
                                                            o3vmr, &
@@ -15534,41 +15538,36 @@ integer,external :: omp_get_thread_num
                                                             plwp, &
                                                             piwp
 ! Surface emissivity (for 16 LW spectral bands)
-    real, dimension( (jte-jts+1)*(ite-its+1), nbndlw )  ::                     emis
+    real, dimension( TILEPTS, nbndlw )  ::                        &
+                                                            emis
 ! Dimension with extra layer from model top to TOA, 
 ! though no clouds are allowed in extra layer
-    real, dimension( (jte-jts+1)*(ite-its+1), kts:nlayers )  ::              clwpth, &
+    real, dimension( TILEPTS, kts:nlayers )  ::                   &
+                                                          clwpth, &
                                                           ciwpth, &
                                                           cswpth, &
                                                              rel, &
                                                              rei, &
                                                              res, &
                                                          cldfrac
- !                                                        cldfrac, &
- !                                                        relqmcl, &
- !                                                        reicmcl, &
- !                                                        resnmcl
-    real, dimension( (jte-jts+1)*(ite-its+1), nbndlw, kts:nlayers )  ::      taucld
-!    real, dimension( ngptlw, (jte-jts+1)*(ite-its+1), kts:nlayers )  ::     cldfmcl, &
-!                                                         clwpmcl, &
-!                                                         ciwpmcl, &
-!                                                         cswpmcl, &
-!                                                         taucmcl
-    real, dimension( (jte-jts+1)*(ite-its+1), kts:nlayers, nbndlw )  ::      tauaer
-! For GSFC, not needed for WRF
-!    real, dimension( (jte-jts+1)*(ite-its+1), kts:nlayers )  ::              zm
-
-! Output arrays contain extra layer from model top to TOA
-    real, dimension( (jte-jts+1)*(ite-its+1), kts:nlayers+1 )  ::              uflx, &
+    real, dimension( TILEPTS, nbndlw, kts:nlayers )  ::           &
+                                                          taucld
+    real, dimension( TILEPTS, kts:nlayers, nbndlw )  ::           &
+                                                          tauaer
+    real, dimension( TILEPTS, kts:nlayers+1 )  ::                 &
+                                                            uflx, &
                                                             dflx, &
                                                            uflxc, &
                                                            dflxc
-    real, dimension( (jte-jts+1)*(ite-its+1), kts:nlayers+1 )  ::          duflx_dt, &
+    real, dimension( TILEPTS, kts:nlayers+1 )  ::                 &
+                                                        duflx_dt, &
                                                        duflxc_dt
-    real, dimension( (jte-jts+1)*(ite-its+1), kts:nlayers+1 )  ::                hr, &
+    real, dimension( TILEPTS, kts:nlayers+1 )  ::                 &
+                                                              hr, &
                                                              hrc
 
-    real, dimension ( (jte-jts+1)*(ite-its+1) ) ::                             tsfc, &
+    real, dimension ( TILEPTS ) ::                                &
+                                                            tsfc, &
                                                               ps
     real ::                                                   ro, &
                                                               dz

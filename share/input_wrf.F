@@ -137,7 +137,7 @@
 
     check_if_dryrun : IF ( .NOT. dryrun ) THEN
 
-#if (EM_CORE == 1)
+#if ( ( EM_CORE == 1 ) && ( DA_CORE != 1 ) )
       IF ( switch .EQ. boundary_only ) THEN
          grid%just_read_boundary = .true.
       END IF

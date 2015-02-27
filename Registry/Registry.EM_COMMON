@@ -674,9 +674,9 @@ state    real   ts_qv_profile  ?!k       misc      -         -      -        "TS
 state    real   DZR             l        em      -         Z     r        "DZR"            "THICKNESSES OF ROOF LAYERS"                      "m"
 state    real   DZB             l        em      -         Z     r        "DZB"            "THICKNESSES OF WALL LAYERS"                      "m"
 state    real   DZG             l        em      -         Z     r        "DZG"            "THICKNESSES OF ROAD LAYERS"                      "m"
-state    real   URB_PARAM        i{urb}j misc     1        -     i1d=(interp_fcni)u=(copy_fcni)          "URB_PARAM" "NUDAPT_NBSD Urban Parameters" "parameter"
+state    real   URB_PARAM      i{urb}j  misc      1        -     i1       "URB_PARAM" "NUDAPT_NBSD Urban Parameters" "parameter"
 state    real   LP_URB2D       ij       misc      1        -     i0  "BUILD_AREA_FRACTION" "BUILDING PLAN AREA DENSITY"   "dimensionless"
-state    real   HI_URB2D       i{uhi}j misc       1        Z     i0  "HEIGHT_HISTOGRAMS" "DISTRIBUTION OF BUILDING HEIGHTS" "dimensionless"
+state    real   HI_URB2D       i{uhi}j  misc      1        Z     i0  "HEIGHT_HISTOGRAMS" "DISTRIBUTION OF BUILDING HEIGHTS" "dimensionless"
 state    real   LB_URB2D       ij       misc      1        -     i0  "BUILD_SURF_RATIO" "BUILDING SURFACE AREA TO PLAN AREA RATIO" "dimensionless"
 state    real   HGT_URB2D      ij       misc      1        -     i0  "BUILD_HEIGHT" "AVERAGE BUILDING HEIGHT WEIGHTED BY BUILDING PLAN AREA" "m"
 state    real   FAD0_URB2D     i{uhi}j  misc      1        Z      -  "FAD0_URB2D" "Frontal Area Density from the 0 Degree Wind Direction" "m-1"
@@ -1884,7 +1884,7 @@ rconfig   logical output_ready_flag       namelist,time_control         1       
 
 pioprocs, piostart, piostride, pioshift
 # PIO namelist
-rconfig   logical usepio                 namelist,pio_control   1       0     rh   "pioprocs"                  ""      "" 
+rconfig   logical usepio                 namelist,pio_control   1     .false. rh   "pioprocs"                  ""      "" 
 rconfig   integer pioprocs               namelist,pio_control   1       0     rh   "pioprocs"                  ""      "" 
 rconfig   integer piostart               namelist,pio_control   1       1     rh   "piostart"                  ""      "" 
 rconfig   integer piostride              namelist,pio_control   1       1     rh   "piostride"                 ""      "" 

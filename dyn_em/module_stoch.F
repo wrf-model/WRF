@@ -167,7 +167,7 @@ contains
       call CFFT1I (KMAX, WSAVE2, LENSAV, IER)
       if(ier.ne. 0) write(*,95) ier
 
-      95 format('error in cFFT2I=  'i5)
+      95 format('error in cFFT2I=  ',i5)
 
       call findindex( wavenumber_k, wavenumber_l,             &
                       ids, ide, jds, jde, kds, kde,                &

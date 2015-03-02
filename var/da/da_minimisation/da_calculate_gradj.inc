@@ -32,7 +32,7 @@ subroutine da_calculate_gradj(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size
    real             :: jo_partial                   ! jo for this processor
    type (y_type)    :: jo_grad_y                    ! Grad_y(jo)
 #ifdef CLOUD_CV
-   integer          :: mz(11)
+   integer          :: mz(13)
 #else
    integer          :: mz(7)
 #endif
@@ -57,7 +57,7 @@ subroutine da_calculate_gradj(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size
    ! [0.0] initialization:
    !-------------------------------------------------------------------------
 #ifdef CLOUD_CV
-   mz = (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz, be%v6%mz, be%v7%mz,be%v8%mz, be%v9%mz, be%alpha%mz, be % ne /)
+   mz = (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz, be%v6%mz, be%v7%mz,be%v8%mz, be%v9%mz, be%v10%mz,be%v11%mz, be%alpha%mz, be % ne /)
 #else
   mz = (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz,be%alpha%mz, be % ne /)
 #endif
@@ -165,7 +165,7 @@ subroutine da_calculate_gradj(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size
    grad = grad_jo + grad_jb + grad_je + grad_jp + grad_js + grad_jl
 
    !-------------------------------------------------------------------------
-   ! [7.0] write Gradient:
+   ! [8.0] write Gradient:
    !-------------------------------------------------------------------------
    if (present(re)) then
       gnorm_j  = sqrt(da_dot_cv(cv_size, grad,    grad,    grid, mz, jp_start, jp_end))

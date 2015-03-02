@@ -9,6 +9,7 @@ CHEM_FILES =	../chem/module_aerosols_sorgam.o \
 		../chem/module_mosaic_driver.o \
 		../chem/module_input_tracer.o \
 		../chem/module_aerosols_soa_vbs.o
+CHEM_FILES2 =	../chem/module_data_mosaic_asect.o
 
 deflt :
 		@ echo Please compile the code using ./compile
@@ -234,6 +235,22 @@ em_seabreeze2d_x : wrf
 	@echo "build started:   $(START_OF_COMPILE)"
 	@echo "build completed:" `date`
 
+em_convrad : wrf
+	@ echo '--------------------------------------'
+	( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=convrad em_ideal )
+	( cd test/em_convrad ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
+	( cd test/em_convrad ; /bin/rm -f ideal.exe ; ln -s ../../main/ideal.exe . )
+	( cd test/em_convrad ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
+	( cd test/em_convrad ; /bin/rm -f gribmap.txt ; ln -s ../../run/gribmap.txt . )
+	( cd test/em_convrad ; /bin/rm -f grib2map.tbl ; ln -s ../../run/grib2map.tbl . )
+	( cd run ; /bin/rm -f ideal.exe ; ln -s ../main/ideal.exe . )
+	( cd run ; if test -f namelist.input ; then \
+		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
+		/bin/rm -f namelist.input ; cp ../test/em_convrad/namelist.input . )
+	( cd run ; /bin/rm -f input_sounding ; ln -s ../test/em_convrad/input_sounding . )
+	@echo "build started:   $(START_OF_COMPILE)"
+	@echo "build completed:" `date`
+
 em_tropical_cyclone : wrf
 	@ echo '--------------------------------------'
 	( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=tropical_cyclone em_ideal )
@@ -334,7 +351,7 @@ em_real : wrf
 	( cd test/em_real ; /bin/rm -f real.exe ; ln -s ../../main/real.exe . )
 	( cd test/em_real ; /bin/rm -f tc.exe ; ln -s ../../main/tc.exe . )
 	( cd test/em_real ; /bin/rm -f ndown.exe ; ln -s ../../main/ndown.exe . )
-	( cd test/em_real ; /bin/rm -f nup.exe ; ln -s ../../main/nup.exe . )
+	#TEMPORARILY REMOVED ( cd test/em_real ; /bin/rm -f nup.exe ; ln -s ../../main/nup.exe . )
 	( cd test/em_real ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
 	( cd test/em_real ; /bin/rm -f ETAMPNEW_DATA.expanded_rain ETAMPNEW_DATA RRTM_DATA RRTMG_LW_DATA RRTMG_SW_DATA ;    \
              ln -sf ../../run/ETAMPNEW_DATA . ;                     \
@@ -397,12 +414,29 @@ em_real : wrf
 	( cd run ; /bin/rm -f real.exe ; ln -s ../main/real.exe . )
 	( cd run ; /bin/rm -f tc.exe ; ln -s ../main/tc.exe . )
 	( cd run ; /bin/rm -f ndown.exe ; ln -s ../main/ndown.exe . )
-	( cd run ; /bin/rm -f nup.exe ; ln -s ../main/nup.exe . )
+	#TEMPORARILY REMOVED ( cd run ; /bin/rm -f nup.exe ; ln -s ../main/nup.exe . )
 	( cd run ; if test -f namelist.input ; then \
 		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
 		/bin/rm -f namelist.input ; cp ../test/em_real/namelist.input . )
+	@echo " "
+	@echo "=========================================================================="
 	@echo "build started:   $(START_OF_COMPILE)"
 	@echo "build completed:" `date`
+	@if test -e main/wrf.exe -a -e main/real.exe -a -e main/ndown.exe -a -e main/tc.exe  ; then \
+		echo " " ; \
+		echo "--->                  Executables successfully built                  <---" ; \
+		echo " " ; \
+		ls -ls main/*.exe ; \
+		echo " " ; \
+		echo "==========================================================================" ; \
+		echo " " ; \
+	else \
+		echo " " ; \
+		echo "---> Problems building executables, look for errors in the build log  <---" ; \
+		echo " " ; \
+		echo "==========================================================================" ; \
+		echo " " ; \
+	fi
 
 
 em_hill2d_x : wrf
@@ -597,10 +631,20 @@ framework :
 	@ echo '--------------------------------------'
 	( cd frame ; $(MAKE) $(J) framework; \
           cd ../external/io_netcdf ; \
-          $(MAKE) NETCDFPATH="$(NETCDFPATH)" FC="$(SFC) $(FCBASEOPTS)" RANLIB="$(RANLIB)" \
+          $(MAKE) NETCDFPATH="$(NETCDFPATH)" FC="$(FC) $(FCBASEOPTS)" RANLIB="$(RANLIB)" \
                CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" TRADFLAG="$(TRADFLAG)" ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" \
 	       LIB_LOCAL="$(LIB_LOCAL)" \
                ESMF_MOD_DEPENDENCE="$(ESMF_MOD_DEPENDENCE)" AR="INTERNAL_BUILD_ERROR_SHOULD_NOT_NEED_AR" diffwrf; \
+          cd ../external/io_netcdf ; \
+          $(MAKE) NETCDFPATH="$(NETCDFPATH)" FC="$(SFC) $(FCBASEOPTS)" RANLIB="$(RANLIB)" \
+               CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" TRADFLAG="$(TRADFLAG)" ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" \
+	       LIB_LOCAL="$(LIB_LOCAL)" \
+               ESMF_MOD_DEPENDENCE="$(ESMF_MOD_DEPENDENCE)" AR="INTERNAL_BUILD_ERROR_SHOULD_NOT_NEED_AR"; \
+          cd ../external/io_pio ; \
+          $(MAKE) NETCDFPATH="$(PNETCDFPATH)" FC="$(SFC) $(FCBASEOPTS)" RANLIB="$(RANLIB)" \
+               CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" TRADFLAG="$(TRADFLAG)" ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" \
+	       LIB_LOCAL="$(LIB_LOCAL)" \
+               ESMF_MOD_DEPENDENCE="$(ESMF_MOD_DEPENDENCE)" AR="INTERNAL_BUILD_ERROR_SHOULD_NOT_NEED_AR"; \
           cd ../io_int ; \
           $(MAKE) SFC="$(SFC) $(FCBASEOPTS)" FC="$(SFC) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) $(ARCH_LOCAL)" DM_FC="$(DM_FC) $(FCBASEOPTS)"\
                TRADFLAG="$(TRADFLAG)" ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" \
@@ -643,7 +687,11 @@ chemics :
 
 physics :
 	@ echo '--------------------------------------'
-	( cd phys ; $(MAKE) )
+	if [ $(WRF_CHEM) -eq 0 ] ; then \
+		( cd phys ; $(MAKE) CF2=" " ) ; \
+	else \
+		( cd phys ; $(MAKE) CF2="$(CHEM_FILES2)" ) ; \
+	fi
 
 em_core :
 	@ echo '--------------------------------------'

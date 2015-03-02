@@ -14,6 +14,9 @@ subroutine da_radial_velocity_adj(rv,p,u,v,w,qrn,ps,x,y,z,qrn9)
    real, intent(inout) :: u, v, w, qrn
 
    real :: r, alpha, vt
+   real :: qrrc
+
+   qrrc = 1.0e-3
 
    if (trace_use) call da_trace_entry("da_radial_velocity_adj")
 
@@ -26,10 +29,14 @@ subroutine da_radial_velocity_adj(rv,p,u,v,w,qrn,ps,x,y,z,qrn9)
    w  = w + rv*z
    vt = -rv*z
 
-   if (qrn9 >  0.0) then
+  if (use_radar_rf .or. use_radar_rhv)then
+!   if (qrn9 >  0.0) then
+!      qrn = qrn + vt*0.675*alpha*qrn9**(-0.875)
+!   end if
+   if (qrn9 >  qrrc) then
       qrn = qrn + vt*0.675*alpha*qrn9**(-0.875)
    end if
-
+  end if
    if (trace_use) call da_trace_exit("da_radial_velocity_adj")
 
 end subroutine da_radial_velocity_adj

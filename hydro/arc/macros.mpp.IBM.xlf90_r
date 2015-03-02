@@ -6,6 +6,10 @@ else
 WRF_HYDRO =
 endif
 
+ifeq ($(WRF_HYDRO_RAPID),1)
+WRF_HYDRO = -DWRF_HYDRO -DWRF_HYDRO_RAPID
+endif
+
 ifeq ($(HYDRO_D),1)
 HYDRO_D = -DHYDRO_D $(WRF_HYDRO)
 else

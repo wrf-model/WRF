@@ -1,6 +1,6 @@
-
-
 !WRF:MODEL_LAYER:PHYSICS
+
+
 
 
 
@@ -42,10 +42,20 @@
 !  alphah, alphahl : Size distribution shape parameters for graupel (h) and hail (hl)
 !  infall : changes sedimentation options to see effects (see below)
 !
+! lightning model references:
+!
+!    Fierro, A. O., E.R. Mansell, C. Ziegler and D. R. MacGorman 2013: The
+!    implementation of an explicit charging and discharge lightning scheme
+!    within the WRF-ARW model: Benchmark simulations of a continental squall line, a
+!    tropical cyclone and a winter storm. Monthly Weather Review, Volume 141, 2390-2415 
+!
+!    Mansell et al. 2005: Charge structure and lightning sensitivity in a simulated 
+!     multicell thunderstorm. J. Geophys. Res., 110, D12101, doi:10.1029/2004JD005287
 !
 ! Note: Some parameters below apply to unreleased features.
 !
 !---------------------------------------------------------------------
+
 
 
 MODULE module_mp_nssl_2mom
@@ -55,11 +65,18 @@ MODULE module_mp_nssl_2mom
   public nssl_2mom_driver
   public nssl_2mom_init
   private gamma,gamxinf,GAML02, GAML02d300, GAML02d500, fqvs, fqis
+  private gamma_dp
   private delbk, delabk
   private gammadp
   
   logical, public :: cleardiag = .false.
   PRIVATE
+
+#ifdef WRF_CHEM
+  integer, parameter :: wrfchem_flag = 1
+#else
+  integer, parameter :: wrfchem_flag = 0
+#endif
   
   integer, private :: eqtset = 1 ! Flag for use with cm1 to use alternate equation set (changes latent heating rates)
    double precision, parameter, public :: zscale = 1.0d0 ! 1.000e-10
@@ -80,6 +97,7 @@ MODULE module_mp_nssl_2mom
   integer  :: iusewetgraupel = 0 ! =1 to turn on use of QHW for graupel reflectivity (only for ZVDM -- mixedphase)
                                  ! =2 turn on for graupel density less than 300. only 
   integer  :: iusewethail = 0 ! =1 to turn on use of QHW for graupel reflectivity (only for ZVDM -- mixedphase)
+  integer  :: iusewetsnow = 1 ! =1 to turn on diagnosed bright band
 
 ! microphysics
 
@@ -88,6 +106,7 @@ MODULE module_mp_nssl_2mom
   real, private :: rho_qh =  500., cnoh = 4.0e5  ! set in namelist!!  graupel params
   real, private :: rho_qhl=  900., cnohl = 4.0e4 ! set in namelist!!  hail params
 
+  real, private :: hdnmn  = 170.0  ! minimum graupel density (for variable density graupel)
   real, private :: hldnmn = 500.0  ! minimum hail density (for variable density hail)
 
   real :: cnohmn  = 1.e-2 ! minimum intercept for 2-moment graupel (alphah < 0.5)
@@ -98,7 +117,7 @@ MODULE module_mp_nssl_2mom
   real   , private :: qcmincwrn      = 2.0e-3    ! qc threshold for autonconversion (LFO; for 10ICE use qminrncw for ircnw != 5)
   real   , private :: cwdiap         = 20.0e-6   ! threshold diameter of cloud drops (Ferrier 1994 autoconversion)
   real   , private :: cwdisp         = 0.15      ! assume droplet dispersion parameter (can be 0.3 for maritime)
-  real   , private  :: ccn            = 1.5e+09   ! set in namelist!! Central plains CCN value
+  real   , private  :: ccn            = 0.6e+09   ! set in namelist!! Central plains CCN value
   real   , private :: qccn             ! ccn "mixing ratio"
   integer, private :: iauttim        = 1         ! 10-ice rain delay flag
   real   , private :: auttim         = 300.      ! 10-ice rain delay time
@@ -137,17 +156,21 @@ MODULE module_mp_nssl_2mom
   integer, private :: ipconc = 5
   integer, private :: ichaff = 0
   integer, private :: ilimit = 0
+  
+  real, private :: constccw = -1.
 
   real, private :: cimn = 1.0e3, cimx = 1.0e6
 
 
   real   , private :: ifrzg = 1.0 ! fraction of frozen drops going to graupel. 1=freeze all rain to graupel, 0=freeze all to hail
+  real   , private :: ifrzs = 1.0 ! fraction of small frozen drops going to snow. 1=freeze rain to snow, 0=freeze to cloud ice
   integer, private :: irwfrz = 1 ! compute total rain that can freeze (checks heat budget)
   integer, private :: irimtim = 0 ! future use
 !  integer, private :: infdo = 1   ! 1 = calculate number-weighted fall speeds
 
   real   , private :: rimc1 = 300.0, rimc2 = 0.44  ! rime density coeff. and power (Default Heymsfield and Pflaum, 1985)
   real   , private :: rimc3 = 170.0                ! minimum rime density
+  real    :: rimc4 = 900.0                ! maximum rime density
   real   , private :: rimtim = 120.0               ! cut-off rime time (10ICE)
   real   , private :: eqtot = 1.0e-9               ! threshold for mass budget reporting
 
@@ -164,7 +187,7 @@ MODULE module_mp_nssl_2mom
                              ! = 1 : cnuc = actual available CCN
                              ! otherwise cnuc = cwccn*(1. - renufrac) + ccnc(1:ngscnt)*renucfrac
   real   , private :: cck = 0.6       ! exponent in Twomey expression
-  real   , private :: xcradmx = 40.0e-6,ciintmx = 1.0e6
+  real   , private :: ciintmx = 1.0e6
 
   real   , private :: cwccn ! , cwmasn,cwmasx
   real   , private :: ccwmx
@@ -176,7 +199,7 @@ MODULE module_mp_nssl_2mom
 
 ! 0,2, 5.00e-10, 1, 0, 0, 0      : itype1,itype2,cimas0,icfn,ihrn,ibfc,iacr
   integer, private :: itype1 = 0, itype2 = 2  ! controls Hallett-Mossop process
-  integer, private :: icenucopt = 2       ! =1 Meyers/Ferrier primary ice nucleation; =2 Thompson/Cooper, =3 Phillips (Meyers/Demott)
+  integer, private :: icenucopt = 3       ! =1 Meyers/Ferrier primary ice nucleation; =2 Thompson/Cooper, =3 Phillips (Meyers/Demott)
   integer, private :: icfn = 2                ! contact freezing: 0 = off; 1 = hack (ok for single moment); 2 = full Cotton/Meyers version
   integer, private :: ihrn = 0            ! Hobbs-Rangno ice multiplication (Ferrier, 1994; use in 10-ice only)
   integer, private :: ibfc = 1            ! Flag to use Bigg freezing on droplets (0 = off (uses alternate freezing), 1 = on)
@@ -185,12 +208,15 @@ MODULE module_mp_nssl_2mom
   integer, private :: ibfr = 2            ! Flag for Bigg freezing conversion of freezing drops to graupel
                                  ! (1=min graupel size is vr1mm; 2=use min size of dfrz, 5= as for 2 and apply dbz conservation)
   integer, private :: ibiggopt = 1        ! 1 = old Bigg; 2 = experimental Bigg (only for imurain = 1, however)
-  integer, private :: iacrsize = 1        ! assumed min size of drops freezing by capture
+  integer, private :: iacrsize = 5        ! assumed min size of drops freezing by capture
                                  !  1: > 500 micron diam
                                  !  2: > 300 micron
                                  !  3: > 40 micron
+                                 !  4: all sizes
+                                 !  5: > 150 micron (only for imurain = 1)
   real   , private :: cimas0 = 6.62e-11   ! default mass of Hallett-Mossop crystals
                                  ! 6.62e-11kg results in half the diam. (60 microns) of old default value of 5.0e-10
+  real   , private :: cimas1 = 6.88e-13   ! default mass of new ice crystals
   real   , private :: splintermass = 6.88e-13
   real   , private :: cfnfac = 0.1        ! Hack factor that goes with icfn=1
   integer, private :: iscni = 4           ! default option for ice crystal aggregation/conversion to snow
@@ -200,9 +226,12 @@ MODULE module_mp_nssl_2mom
   integer, private :: iehlw = 1           ! 0 -> ehlw=ehlw0; 1 -> old ehlw; 2 -> test ehlw with Mason table data
                                  ! For ehw/ehlw = 1, ehw0/ehlw0 act as maximum limit on collection efficiency (defaults are 1.0)
   integer, private :: ierw = 1            ! for single-moment rain (LFO/Z)
-  real   , private :: ehw0 = 0.9          ! constant or max assumed graupel-droplet collection efficiency
+  real   , private :: ehw0 = 0.5          ! constant or max assumed graupel-droplet collection efficiency
   real   , private :: erw0 = 1.0          ! constant assumed rain-droplet collection efficiency
-  real   , private :: ehlw0 = 0.9         ! constant or max assumed hail-droplet collection efficiency
+  real   , private :: ehlw0 = 0.75        ! constant or max assumed hail-droplet collection efficiency
+  real    :: ehr0 = 1.0          ! constant or max assumed graupel-rain collection efficiency
+  real    :: ehlr0 = 1.0         ! constant or max assumed hail-rain collection efficiency
+  
 
   real   , private :: esilfo0 = 1.0       ! factor for LFO collection efficiency of snow for cloud ice.
   real   , private :: ehslfo0 = 1.0       ! factor for LFO collection efficiency of hail/graupel for snow.
@@ -223,7 +252,7 @@ MODULE module_mp_nssl_2mom
                                      ! set eii1 = 0 to get a constant value of eii0
   real   , private :: eii0hl = 0.2 ,eii1hl = 0.0  ! hail-crystal coll. eff. parameters: eii0hl*exp(eii1hl*min(temcg(mgs),0.0))
                                      ! set eii1hl = 0 to get a constant value of eii0hl
-  real   , private :: eri0 = 1.0   ! rain efficiency to collect ice crystals
+  real   , private :: eri0 = 0.1   ! rain efficiency to collect ice crystals
   real   , private :: ehs0 = 0.1 ,ehs1 = 0.1  ! graupel-snow coll. eff. parameters: ehs0*exp(ehs1*min(temcg(mgs),0.0))
                                      ! set ehs1 = 0 to get a constant value of ehs0
   real   , private :: ess0 = 1.0 ,ess1 = 0.05 ! snow aggregation coefficients: ess0*exp(ess1*min(temcg(mgs),0.0))
@@ -232,6 +261,7 @@ MODULE module_mp_nssl_2mom
   real   , private :: ehimin = 0.0 ! Minimum collection efficiency (graupel - ice crystal)
   real   , private :: ehimax = 1.0 ! Maximum collection efficiency (graupel - ice crystal)
   real   , private :: ehsmax = 0.5 ! Maximum collection efficiency (graupel - snow)
+  real   , private :: ecollmx = 0.5 ! Maximum collision efficiency for graup/hail with ice; used only for charging rates
   integer, private :: iglcnvi = 1  ! flag for riming conversion from cloud ice to rimed ice/graupel
   integer, private :: iglcnvs = 2  ! flag for conversion from snow to rimed ice/graupel
 
@@ -252,7 +282,7 @@ MODULE module_mp_nssl_2mom
   integer, parameter, private :: icond = 1    ! (Z only) icond = 1 calculates ice deposition (crystals and snow) BEFORE droplet condensation
                           ! icond = 2 does not work (intended to calc. dep in loop with droplet cond.)
   
-  real   , private :: dfrz = 0.15e-3  ! minimum diameter of frozen drops from Bigg freezing (used for vfrz) for iacr > 1
+  real   , private :: dfrz = 0.15e-3 ! 0.25e-3  ! minimum diameter of frozen drops from Bigg freezing (used for vfrz) for iacr > 1
                             ! and for ciacrf for iacr=4
   real   , private :: dmlt = 3.0e-3  ! maximum diameter for rain melting from graupel and hail
   real   , private :: dshd = 1.0e-3  ! nominal diameter for drops shed from graupel/hail
@@ -291,12 +321,61 @@ MODULE module_mp_nssl_2mom
   logical :: rescale_high_alpha = .false.  ! whether to rescale number. conc. when alpha = alphamax (3-moment only)
   logical :: rescale_low_alpha = .true.    ! whether to rescale Z (graupel/hail) when alpha = alphamin (3-moment only)
   logical :: rescale_low_alphar = .true.    ! whether to rescale Z for rain when alpha = alphamin (3-moment only)
-  
+
+  real, parameter :: alpharmax = 8. ! limited for rwvent calculation
   
   integer, private ::  ihlcnh = 1  ! which graupel -> hail conversion to use
                           ! 1 = Milbrandt and Yau (2005) using Ziegler 1985 wet growth diameter
                           ! 2 = Straka and Mansell (2005) conversion using size threshold
+  real, private :: hlcnhdia = 1.e-3 ! threshold diameter for graupel -> hail conversion for ihlcnh = 1 option.
+  real, private :: hlcnhqmin = 0.1e-3 ! minimum graupel mass content for graupel -> hail conversion (ihlcnh = 1)
   real   , private :: hldia1 = 20.0e-3  ! threshold diameter for graupel -> hail conversion for ihlcnh = 2 option.
+  integer :: icvhl2h = 0   ! allow conversion of hail back to graupel when hail density gets close to minimum allowed
+
+  integer, private :: imurain = 1 ! 3 for gamma-volume, 1 for gamma-diameter DSD for rain.
+  integer, private :: imusnow = 3 ! 3 for gamma-volume, 1 for gamma-diameter DSD for snow (=1 NOT IMPLEMENTED!!).
+  integer :: iturbenhance = 0 ! enhancement of rain self-collection by turbulence
+  integer, private :: isedonly = 0 ! 1= only do sedimentation and skip other microphysics
+  integer, private :: iferwisventr = 2 ! =1 for Ferrier rwvent, =2 for Wisner rwvent (imurain=1)
+  integer, private :: izwisventr   = 2 ! =1 for old Ziegler rwvent, =2 for Wisner-style rwvent (imurain=3)
+  integer :: iresetmoments = 0 ! if >0, then set all moments to zero when one of them is zero (3-moment only)
+  integer, private :: imaxdiaopt    = 3 ! = 1 use mean diameter for breakup
+                               ! = 2 use maximum mass diameter for breakup
+                               ! = 3 use mass-weighted diameter for breakup
+  integer, private :: dmrauto       = 0 ! = -1 no limiter on crcnw
+                              ! =  0 limit crcnw when qr > 1.2*L (Cohard-Pinty 2002)
+                              ! =  1 DTD version based on MY code
+                              ! =  2 DTD mass-weighted version based on MY code
+                              ! =  3 Milbrandt version (from Cohard and Pinty's code
+  real, parameter :: alpharaut = 0.0 ! MY2005 for autoconversion
+  real    :: cxmin = 1.e-4  ! threshold cutoff for number concentration
+  real    :: zxmin = 1.e-28 ! threshold cutoff for reflectivity moment
+  
+  integer :: ithompsoncnoh = 0 ! For single moment graupel only
+                           ! 0 = fixed intercept
+                           ! 1 = intercept based on graupel mass
+
+  integer :: ivhmltsoak = 1   ! 0=off, 1=on : flag to simulate soaking (graupel/hail) during melting 
+                         ! when liquid fraction is not predicted
+  integer, private :: ioldlimiter = 0 ! test switch for new(=0) or old(=1) size limiter at the end of GS for 3-moment categories
+  integer, private  :: isnowfall = 2   ! Option for choosing between snow fall speed parameters
+                         ! 1 = original Zrnic et al. (Mansell et al. 2010)
+                         ! 2 = Ferrier 1994 (results in slower fall speeds)
+  
+  integer, private  :: ibiggsnow   = 3 ! 1 = switch conversion over to snow for small frozen drops from Bigg freezing
+                                       ! 2 = switch conversion over to snow for small frozen drops from rain-ice interaction
+                                       ! 3 = switch conversion over to snow for small frozen drops from both
+  
+  integer, private  :: ixtaltype = 1 ! =1 column, =2 disk (similar to Takahashi)
+  
+  real, private     :: evapfac     = 1.0 ! Multiplier on rain evaporation rate
+
+  integer, private :: ibinhmlr = 0  ! =1 use incomplete gammas to determine melting from larger and smaller sizes of graupel, and appropriate shed drop sizes 
+                           ! =2 to test melting by temporary bins
+  integer, private :: ibinhlmlr = 0  ! =1 use incomplete gammas to determine melting from larger and smaller sizes of hail, and appropriate shed drop sizes 
+                            ! =2 to test melting by temporary bins
+  
+
 
   integer, parameter :: lqmx = 30
   integer, parameter :: lt = 1
@@ -318,6 +397,7 @@ MODULE module_mp_nssl_2mom
   integer, private :: lns = 12
   integer, private :: lnh = 13
   integer, private :: lnhl = 0
+  integer, private :: lss = 0
   integer :: lvh = 15
 
   integer, private :: lhab = 8
@@ -386,7 +466,6 @@ MODULE module_mp_nssl_2mom
   real    :: dmuh    = 1.0  ! power in exponential part (graupel)
   real    :: dmuhl   = 1.0  ! power in exponential part (hail)
 
-  real, parameter :: alpharmax = 8. ! limited for rwvent calculation
   real, parameter :: alphamax = 15.
   real, parameter :: alphamin = 0.
   real, parameter :: rnumin = -0.8
@@ -412,45 +491,29 @@ MODULE module_mp_nssl_2mom
       real da1 (lc:lqmx)          ! collection coefficients from Seifert 2005
       real bb  (lc:lqmx)
 
-!
-! max and min mean volumes
-!
-      real :: xvcmn, xvcmx = 2.89e-13  ! min, max droplet volumes
-      real xvrmn, xvrmx0  ! min, max rain volumes
-      real xvsmn, xvsmx  ! min, max snow volumes
-      real xvfmn, xvfmx  ! min, max frozen drop volumes
-      real xvgmn, xvgmx  ! min, max graupel volumes
-      real xvhmn, xvhmn0, xvhmx, xvhmx0  ! min, max hail volumes
-      real xvhlmn, xvhlmx  ! min, max lg hail volumes
-
-      real, private :: dhmn = -1., dhmx = -1.
-      real, parameter :: dhlmn = 0.3e-3, dhlmx = 40.e-3
-
-      parameter( xvcmn=4.188e-18 )   ! mks  min volume = 1 micron radius
-      parameter( xvrmn=0.523599*(80.e-6)**3, xvrmx0=0.523599*(6.e-3)**3 ) !( was 4.1887e-9 )  ! mks
-      real     :: xvdmx = -1.0 ! 3.0e-3
-      real     :: xvrmx
-      parameter( xvsmn=0.523599*(0.1e-3)**3, xvsmx=0.523599*(10.e-3)**3 ) !( was 4.1887e-9 )  ! mks
-      parameter( xvfmn=0.523599*(0.1e-3)**3, xvfmx=0.523599*(10.e-3)**3 )  ! mks xvfmx = (pi/6)*(10mm)**3
-      parameter( xvgmn=0.523599*(0.1e-3)**3, xvgmx=0.523599*(10.e-3)**3 )  ! mks xvfmx = (pi/6)*(10mm)**3
-      parameter( xvhmn0=0.523599*(0.15e-3)**3, xvhmx0=0.523599*(10.e-3)**3 )  ! mks xvfmx = (pi/6)*(10mm)**3
-      parameter( xvhlmn=0.523599*(0.3e-3)**3, xvhlmx=0.523599*(25.e-3)**3 )  ! mks xvfmx = (pi/6)*(10mm)**3
 ! put ipelec here for now....
   integer :: ipelec = 0
   integer :: isaund = 0
   logical :: idonic = .false.
+      real, private    :: delqnw = -1.0e-10!-1.0e-12 !
+      real, private    :: delqxw =  1.0e-10! 1.0e-12 !
+      real :: tindmn = 233, tindmx = 298.0  ! min and max temperatures where inductive charging is allowed
+
 !
 !  gamma function lookup table
 !
       integer ngm0,ngm1,ngm2
       parameter (ngm0=3001,ngm1=500,ngm2=500)
-      real, parameter :: dgam = 0.01, dgami = 100.
-      real gmoi(0:ngm0) ! ,gmod(0:ngm1,0:ngm2),gmdi(0:ngm1,0:ngm2)
+      double precision, parameter :: dgam = 0.01, dgami = 100.
+      double precision gmoi(0:ngm0) ! ,gmod(0:ngm1,0:ngm2),gmdi(0:ngm1,0:ngm2)
 
-      integer, parameter :: nqiacralpha = 15, nqiacrratio = 25
-      real,    parameter :: dqiacralpha = 1., dqiacrratio = 1.
+      integer, parameter :: nqiacralpha = 120 ! 15
+      integer, parameter :: nqiacrratio =  50 ! 25
+      real,    parameter :: dqiacralpha = 15./Float(nqiacralpha), dqiacrratio = 25./Float(nqiacrratio) 
+      real,    parameter :: dqiacrratioinv = 1./dqiacrratio, dqiacralphainv = 1./dqiacralpha
       real :: ciacrratio(0:nqiacrratio,0:nqiacralpha)
       real :: qiacrratio(0:nqiacrratio,0:nqiacralpha)
+      double precision :: gamxinflu(0:nqiacrratio,0:nqiacralpha,8,2) ! last index for graupel (1) or hail (2)
 
     integer, parameter :: ngdnmm = 9
     real :: mmgraupvt(ngdnmm,3)  ! Milbrandt and Morrison (2013) fall speed coefficients for graupel/hail
@@ -510,6 +573,43 @@ MODULE module_mp_nssl_2mom
       real, parameter :: gr = 9.8
 
 !
+! max and min mean volumes
+!
+      real xvrmn, xvrmx0  ! min, max rain volumes
+      real xvsmn, xvsmx  ! min, max snow volumes
+      real xvfmn, xvfmx  ! min, max frozen drop volumes
+      real xvgmn, xvgmx  ! min, max graupel volumes
+      real xvhmn, xvhmn0, xvhmx, xvhmx0  ! min, max hail volumes
+      real xvhlmn, xvhlmx  ! min, max lg hail volumes
+
+      real, parameter :: dhlmn = 0.3e-3, dhlmx = 40.e-3
+      real, parameter :: dhmn0 = 0.3e-3
+      real, private :: dhmn = dhmn0, dhmx = -1.
+
+      real, parameter :: cwradn = 2.5e-6, xcradmn = cwradn    ! minimum radius
+      real, parameter :: cwradx = 40.e-6, xcradmx = cwradx    ! maximum radius
+      real, parameter :: cwc1 = 6.0/(pi*1000.)
+
+!      parameter( xvcmn=4.188e-18 )   ! mks  min volume = 3 micron radius
+      real, parameter :: xvcmn=0.523599*(2.*cwradn)**3    ! mks  min volume = 2.5 micron radius
+      real, parameter :: xvcmx=0.523599*(2.*xcradmx)**3    ! mks  min volume = 2.5 micron radius
+      real, parameter :: cwmasn = 1000.*xvcmn   ! minimum mass, defined by radius of 5.0e-6
+      real, parameter :: cwmasx = 1000.*xvcmx   ! maximum mass, defined by radius of 50.0e-6
+      real, parameter :: cwmasn5 = 1000.*0.523599*(2.*5.0e-6)**3 !  5.23e-13
+
+      real, parameter :: xvimn=0.523599*(2.*5.e-6)**3    ! mks  min volume = 5 micron radius
+      real, parameter :: xvimx=0.523599*(2.*1.e-3)**3    ! mks  max volume = 1 mm radius (solid sphere approx)
+      
+      real     :: xvdmx = -1.0 ! 3.0e-3
+      real     :: xvrmx
+      parameter( xvrmn=0.523599*(80.e-6)**3, xvrmx0=0.523599*(6.e-3)**3 ) !( was 4.1887e-9 )  ! mks
+      parameter( xvsmn=0.523599*(0.1e-3)**3, xvsmx=0.523599*(10.e-3)**3 ) !( was 4.1887e-9 )  ! mks
+      parameter( xvfmn=0.523599*(0.1e-3)**3, xvfmx=0.523599*(10.e-3)**3 )  ! mks xvfmx = (pi/6)*(10mm)**3
+      parameter( xvgmn=0.523599*(0.1e-3)**3, xvgmx=0.523599*(10.e-3)**3 )  ! mks xvfmx = (pi/6)*(10mm)**3
+      parameter( xvhmn0=0.523599*(0.3e-3)**3, xvhmx0=0.523599*(20.e-3)**3 )  ! mks xvfmx = (pi/6)*(10mm)**3
+      parameter( xvhlmn=0.523599*(dhlmn)**3, xvhlmx=0.523599*(dhlmx)**3 )  ! mks xvfmx = (pi/6)*(10mm)**3
+
+!
 !  electrical permitivity of air C / (N m**2) -  check the units
 !
       real eperao
@@ -553,57 +653,26 @@ MODULE module_mp_nssl_2mom
       real, parameter ::  bfnu0 = (rnu + 2.0)/(rnu + 1.0) 
       real :: ventr, ventrn, ventc, c1sw
 
-      real :: cwmasn = 5.23e-13   ! minimum mass, defined by radius of 5.0e-6
-      real :: cwmasn5 =  5.23e-13
-      real :: cwradn = 5.0e-6     ! minimum radius
-      real :: cwmasx = 5.25e-10   ! maximum mass, defined by radius of 50.0e-6
-      real, parameter :: cwc1 = 6.0/(pi*1000.)
 
-      real :: cckm,ccne,ccnefac,cnexp
+      real :: cckm,ccne,ccnefac,cnexp,CCNE0
 
       integer :: na = 9
 
       real gf4p5, gf4ds, gf4br
+      real gsnow1, gsnow53, gsnow73
       real gfcinu1, gfcinu1p47, gfcinu2p47
 
       real :: cwchtmp0 = 1.0
       real :: cwchltmp0 = 1.0
 
-      integer, private :: imurain = 1 ! 3 for gamma-volume, 1 for gamma-diameter DSD for rain.
-      integer :: iturbenhance = 0 ! enhancement of rain self-collection by turbulence
-      integer, private :: isedonly = 0 ! 1= only do sedimentation and skip other microphysics
-      integer, private :: iferwisventr = 2 ! =1 for Ferrier rwvent, =2 for Wisner rwvent (imurain=1)
-      integer, private :: izwisventr   = 2 ! =1 for old Ziegler rwvent, =2 for Wisner-style rwvent (imurain=3)
-      integer :: iresetmoments = 1 ! if >0, then set all moments to zero when one of them is zero (3-moment only)
-      integer, private :: imaxdiaopt    = 3 ! = 1 use mean diameter for breakup
-                                   ! = 2 use maximum mass diameter for breakup
-                                   ! = 3 use mass-weighted diameter for breakup
-      integer, private :: dmrauto       = 0 ! = -1 no limiter on crcnw
-                                  ! =  0 limit crcnw when qr > 1.2*L (Cohard-Pinty 2002)
-                                  ! =  1 DTD version based on MY code
-                                  ! =  2 DTD mass-weighted version based on MY code
-                                  ! =  3 Milbrandt version (from Cohard and Pinty's code
-      real    :: cxmin = 1.e-4  ! threshold cutoff for number concentration
-      real    :: zxmin = 1.e-28 ! threshold cutoff for reflectivity moment
-  
-      integer :: ithompsoncnoh = 0 ! For single moment graupel only
-                               ! 0 = fixed intercept
-                               ! 1 = intercept based on graupel mass
+      real    :: esctot = 1.0e-13
 
-      integer :: ivhmltsoak = 1   ! 0=off, 1=on : flag to simulate soaking (graupel/hail) during melting 
-                             ! when liquid fraction is not predicted
-      integer, private :: ioldlimiter = 0 ! test switch for new(=0) or old(=1) size limiter at the end of GS for 3-moment categories
-  
-      integer :: ibiggsnow   = 0 ! 1 = switch conversion over to snow for small frozen drops
-  
-      integer :: ixtaltype = 1 ! =1 column, =2 disk (similar to Takahashi)
-  
-      real    :: evapfac     = 1.0 ! Multiplier on rain evaporation rate
-  
-      real, private :: hlcnhdia = 1.e-3 ! threshold diameter for graupel -> hail conversion for ihlcnh = 1 option.
-      real, private :: hlcnhqmin = 0.1e-3 ! minimum graupel mass content for graupel -> hail conversion (ihlcnh = 1)
-      integer :: icvhl2h = 0   ! allow conversion of hail back to graupel when hail density gets close to minimum allowed
+      integer iexy(lc:lqmx,lc:lqmx)
+      integer :: ieswi = 1,  ieswc = 1, ieswr = 0
+      integer :: iehlsw = 1, iehli = 1,  iehlc = 1, iehlr = 0
+      integer :: iehwsw = 1, iehwi = 1,  iehwc = 1, iehwr = 0
 
+      logical, parameter :: do_satadj_for_wrfchem = .true.
 
 ! #####################################################################
 ! #####################################################################
@@ -634,14 +703,18 @@ MODULE module_mp_nssl_2mom
   
    integer, intent(in) :: ims,ime, jms,jme, kms,kme
    real,    intent(in), dimension(20) :: nssl_params
+
+
    integer, intent(in) :: ipctmp,mixphase,ihvol
    logical, optional, intent(in) :: idonictmp
 
-     real    :: arg, temq
+     double precision :: arg
+     real    :: temq
      integer :: igam
      integer :: i,il,j,l
      integer :: ltmp
      integer :: isub
+     real    :: bxh,bxhl
 
       real    :: alp,ratio,x,y
      
@@ -650,7 +723,7 @@ MODULE module_mp_nssl_2mom
 !
 ! set some global values from namelist input
 !
-      ccn = nssl_params(1)
+      ccn      = nssl_params(1)
       alphah   = nssl_params(2)
       alphahl  = nssl_params(3)
       cnoh     = nssl_params(4)
@@ -661,9 +734,17 @@ MODULE module_mp_nssl_2mom
       rho_qhl  = nssl_params(9)
       rho_qs   = nssl_params(10)
 
+
       cwccn = ccn
 
-      IF ( ipelec > 0 ) idonic = .true.
+      lhab = 8
+      lhl = 8
+      IF ( ihvol == -1 ) THEN
+        lhab = 7  ! turns off hail -- option for single moment, only!!
+        lhl = 0
+      ENDIF
+
+!      IF ( ipelec > 0 ) idonic = .true.
 
 !
 ! Build lookup table for saturation mixing ratio (Soong and Ogura 73)
@@ -679,48 +760,96 @@ MODULE module_mp_nssl_2mom
      &                 cai/(temq - cbi))*tabqis(l)
       end do
 
+      bx(lr) = 0.85
+      ax(lr) = 1647.81
+      fx(lr) = 135.477
+      
+      IF ( icdx > 0 ) THEN
+        bx(lh) = 0.5
+        ax(lh) = 75.7149
+      ELSE
+        bx(lh) = 0.37 ! 0.6
+        ax(lh) = 19.3
+      ENDIF
+!      bx(lh) = 0.6
+
+      IF ( lhl .gt. 1 ) THEN
+        IF (icdxhl > 0 ) THEN
+         bx(lhl) = 0.5
+         ax(lhl) = 75.7149
+        ELSE
+        ax(lhl) = 206.984
+        bx(lhl) = 0.6384
+        ENDIF
+      ENDIF
+
 ! fill in the complete gamma function lookup table
-     gmoi(0) = 1.e32
+     gmoi(0) = 1.d32
      do igam = 1,ngm0
       arg = dgam*igam
-      gmoi(igam) = gamma(arg)
+      gmoi(igam) = gamma_dp(arg)
      end do
 
      ! build lookup table to compute the number and mass fractions of rain drops 
      ! (imurain=1) greater than a given diameter. Used for qiacr and ciacr
      ! Uses incomplete gamma functions
       
+      bxh = bx(lh)
+      bxhl = bx(Max(lh,lhl))
+      
       DO j = 0,nqiacralpha
-      alp = float(j)
+      alp = float(j)*dqiacralpha
       y = gamma(1.+alp)
       DO i = 1,nqiacrratio
-        ratio = float(i)
+        ratio = float(i)*dqiacrratio
         x = gamxinf( 1.+alp, ratio )
 !        write(0,*) 'i, x/y = ',i, x/y
         ciacrratio(i,j) = x/y
+
+        gamxinflu(i,j,1,1) = x/y
+        gamxinflu(i,j,2,1) = gamxinf( 2.0+alp, ratio )/y
+        gamxinflu(i,j,3,1) = gamxinf( 2.5+alp+0.5*bxh, ratio )/y
+        gamxinflu(i,j,5,1) = gamxinf( 5.0+alp, ratio )/y
+        gamxinflu(i,j,6,1) = gamxinf( 5.5+alp+0.5*bxh, ratio )/y
+        
+        gamxinflu(i,j,1,2) = gamxinflu(i,j,1,1)
+        gamxinflu(i,j,2,2) = gamxinflu(i,j,2,1)
+        gamxinflu(i,j,3,2) = gamxinf( 2.5+alp+0.5*bxhl, ratio )/y
+        gamxinflu(i,j,5,2) = gamxinflu(i,j,5,1)
+        gamxinflu(i,j,6,2) = gamxinf( 5.5+alp+0.5*bxhl, ratio )/y
+
+      IF ( alp > 1.1 ) THEN
+       gamxinflu(i,j,7,1) = gamxinf( alp - 1., ratio )/y
+       gamxinflu(i,j,8,1) = gamxinf( alp - 0.5 + 0.5*bxh, ratio )/y
+       gamxinflu(i,j,8,2) = gamxinf( alp - 0.5 + 0.5*bxhl, ratio )/y
+      ELSE
+       gamxinflu(i,j,7,1) = gamxinf( .1, ratio )/y
+       gamxinflu(i,j,8,1) = gamxinf( 1.1 - 0.5 + 0.5*bxh, ratio )/y
+       gamxinflu(i,j,8,2) = gamxinf( 1.1 - 0.5 + 0.5*bxhl, ratio )/y
+      ENDIF
+        
+        gamxinflu(i,j,7,2) = gamxinflu(i,j,7,1)
+
       ENDDO
       ENDDO
       ciacrratio(0,:) = 1.0
 
       DO j = 0,nqiacralpha
-      alp = float(j)
+      alp = float(j)*dqiacralpha
       y = gamma(4.+alp)
       DO i = 1,nqiacrratio
-        ratio = float(i)
+        ratio = float(i)*dqiacrratio
         x = gamxinf( 4.+alp, ratio )
 !        write(0,*) 'i, x/y = ',i, x/y
         qiacrratio(i,j) = x/y
+        gamxinflu(i,j,4,1) = x/y
+        gamxinflu(i,j,4,2) = x/y
+
       ENDDO
       ENDDO
       qiacrratio(0,:) = 1.0
 
 
-      lhab = 8
-      lhl = 8
-      IF ( ihvol == -1 ) THEN
-        lhab = 7  ! turns off hail -- option for single moment, only!!
-        lhl = 0
-      ENDIF
       isub = Min( 0, ihvol) ! is -1 or 0
 
       lccn = 0
@@ -879,28 +1008,6 @@ MODULE module_mp_nssl_2mom
 !       write(0,*) 'lsw,lhw,lhlw = ',lsw,lhw,lhlw
       ENDIF
 
-      bx(lr) = 0.85
-      ax(lr) = 1647.81
-      fx(lr) = 135.477
-      
-      IF ( icdx > 0 ) THEN
-        bx(lh) = 0.5
-        ax(lh) = 75.7149
-      ELSE
-        bx(lh) = 0.37 ! 0.6
-        ax(lh) = 19.3
-      ENDIF
-!      bx(lh) = 0.6
-
-      IF ( lhl .gt. 1 ) THEN
-        IF (icdxhl > 0 ) THEN
-         bx(lhl) = 0.5
-         ax(lhl) = 75.7149
-        ELSE
-        ax(lhl) = 206.984
-        bx(lhl) = 0.6384
-        ENDIF
-      ENDIF
 
 
       xnu(lc) = 0.0
@@ -991,7 +1098,7 @@ MODULE module_mp_nssl_2mom
       xdnmn(lc) = 1000.0
       xdnmn(li) =  100.0
       xdnmn(ls) =  100.0
-      xdnmn(lh) =  170.0
+      xdnmn(lh) =  hdnmn
       IF ( lhl .gt. 1 ) xdnmn(lhl) = hldnmn
 
       xdn0(:) = 900.0
@@ -1023,7 +1130,7 @@ MODULE module_mp_nssl_2mom
       IF ( lzr > 0 ) irfall = 0
 
       qccn = ccn/rho00
-      xvcmx = (4./3.)*pi*xcradmx**3
+!      xvcmx = (4./3.)*pi*xcradmx**3
 
 ! set max rain diameter
       IF ( xvdmx .gt. 0.0 ) THEN
@@ -1048,11 +1155,13 @@ MODULE module_mp_nssl_2mom
 
 ! load max/min diameters
       xvmn(lc) = xvcmn
+      xvmn(li) = xvimn
       xvmn(lr) = xvrmn
       xvmn(ls) = xvsmn
       xvmn(lh) = xvhmn
 
       xvmx(lc) = xvcmx
+      xvmx(li) = xvimx
       xvmx(lr) = xvrmx
       xvmx(ls) = xvsmx
       xvmx(lh) = xvhmx
@@ -1066,15 +1175,15 @@ MODULE module_mp_nssl_2mom
 !  cloud water constants in mks units
 !
 !      cwmasn = 4.25e-15  ! radius of 1.0e-6
-      cwmasn = 5.23e-13   ! minimum mass, defined by radius of 5.0e-6
-      cwmasn5 =  5.23e-13
-      cwradn = 5.0e-6     ! minimum radius
-      cwmasx = 5.25e-10   ! maximum mass, defined by radius of 50.0e-6
+!      cwmasn = 5.23e-13   ! minimum mass, defined by radius of 5.0e-6
+!      cwmasn5 =  5.23e-13
+!      cwradn = 5.0e-6     ! minimum radius
+!      cwmasx = 5.25e-10   ! maximum mass, defined by radius of 50.0e-6
 !      mwfac = 6.0**(1./3.)
       IF ( ipconc .ge. 2 ) THEN
-        cwmasn = xvmn(lc)*1000.  ! minimum mass, defined by minimum droplet volume
-        cwradn = 1.0e-6          ! minimum radius
-        cwmasx = xvmx(lc)*1000.  ! maximum mass, defined by maximum droplet volume
+!        cwmasn = xvmn(lc)*1000.  ! minimum mass, defined by minimum droplet volume
+!        cwradn = 1.0e-6          ! minimum radius
+!        cwmasx = xvmx(lc)*1000.  ! maximum mass, defined by maximum droplet volume
         
       ENDIF
 !        rwmasn = xvmn(lr)*1000.  ! minimum mass, defined by minimum rain volume
@@ -1118,7 +1227,7 @@ MODULE module_mp_nssl_2mom
       IF ( li .gt. 1 .and. lni .gt. 1 ) qxmin(li ) = 1.0e-13
       IF ( ls .gt. 1 .and. lns .gt. 1 ) qxmin(ls ) = 1.0e-13
       IF ( lh .gt. 1 .and. lnh .gt. 1 ) qxmin(lh ) = 1.0e-12
-      IF ( lhl.gt. 1 .and. lnhl.gt. 1 ) qxmin(lhl) = 1.0e-9
+      IF ( lhl.gt. 1 .and. lnhl.gt. 1 ) qxmin(lhl) = 1.0e-12
 
   ! constants for droplet nucleation
 
@@ -1128,11 +1237,13 @@ MODULE module_mp_nssl_2mom
 ! ccne is all the factors with w in eq. A7 in Mansell et al. 2010 (JAS).  The constant changes
 ! if k (cck) is changed!
       ccne = ccnefac*1.e6*(1.e-6*Abs(cwccn))**(2./(2.+cck))
+      ccne0 = ccnefac*1.e6*(1.e-6)**(2./(2.+cck))
+      write(0,*) 'cwccn, cck, ccne = ',cwccn,cck,ccne,ccnefac,cnexp
       IF ( cwccn .lt. 0.0 ) THEN
       cwccn = Abs(cwccn)
-      ccwmx = cwccn
+      ccwmx = 50.e9 ! cwccn
       ELSE
-      ccwmx = cwccn ! *1.4
+      ccwmx = 50.e9 ! cwccn ! *1.4
       ENDIF
 
 !
@@ -1170,8 +1281,29 @@ MODULE module_mp_nssl_2mom
         gfcinu1p47 = gamma(cinu + 1.47167)
         gfcinu2p47 = gamma(cinu + 2.47167)
 
+        gsnow1 = gamma(snu + 1.0)
+        gsnow53 = gamma(snu + 5./3.)
+        gsnow73 = gamma(snu + 7./3.)
+
         IF ( lh  .gt. 1 ) cwchtmp0 = 6.0/pi*gamma( (xnu(lh) + 1.)/xmu(lh) )/gamma( (xnu(lh) + 2.)/xmu(lh) )
         IF ( lhl .gt. 1 ) cwchltmp0 = 6.0/pi*gamma( (xnu(lhl) + 1)/xmu(lhl) )/gamma( (xnu(lhl) + 2)/xmu(lhl) )
+
+
+      iexy(:,:)=0; ! sets to zero the ones Imight have forgotten
+
+!     snow
+      iexy(ls,li) = ieswi
+      iexy(ls,lc) = ieswc ; iexy(ls,lr) = ieswr ;
+
+!     graupel
+      iexy(lh,ls)  = iehwsw ; iexy(lh,li) = iehwi ;
+      iexy(lh,lc) = iehwc ; iexy(lh,lr)  = iehwr ;
+
+!     hail
+      IF (lhl .gt. 1 ) THEN
+      iexy(lhl,ls)  = iehlsw ; iexy(lhl,li) = iehli ;
+      iexy(lhl,lc) = iehlc ; iexy(lhl,lr)  = iehlr ;
+      ENDIF
 
 
   RETURN
@@ -1187,13 +1319,19 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
                               th, pii, p, w, dn, dz, dtp, itimestep,                    &
                               RAINNC,RAINNCV, SNOWNC, SNOWNCV, GRPLNC, GRPLNCV,         &
                               SR,HAILNC, HAILNCV,                                       &
+                              re_cloud, re_ice, re_snow,                                &
+                              has_reqc, has_reqi, has_reqs,                             &
                               dx, dy,                                                   &
                               dbz, vzf,compdbz,                                         &
-                              rscghis_3d, rscghis_2d,                                   &
+                              rscghis_2d,                                               &
                               scr,scw,sci,scs,sch,schl,sctot,noninduc,                  &
                               induc,elec,scion,sciona,                                  &
                               ipelectmp,                                                &
                               diagflag,                                                 &
+                              nssl_progn,                                              & ! wrf-chem 
+! 20130903 acd_mb_washout start
+                              rainprod, evapprod,                                       & ! wrf-chem 
+! 20130903 acd_mb_washout end
                               ids,ide, jds,jde, kds,kde,                                &  ! domain dims
                               ims,ime, jms,jme, kms,kme,                                &  ! memory dims
                               its,ite, jts,jte, kts,kte)                                   ! tile dims
@@ -1220,7 +1358,7 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
       real, dimension(ims:ime, kms:kme, jms:jme), optional, intent(inout):: dbz, vzf, cn
       real, dimension(ims:ime, jms:jme), optional, intent(inout):: compdbz
       real, dimension(ims:ime, jms:jme), optional, intent(inout):: rscghis_2d
-      real, dimension(ims:ime, kms:kme, jms:jme), optional, intent(inout)::rscghis_3d
+!      real, dimension(ims:ime, kms:kme, jms:jme), optional, intent(inout)::rscghis_3d
       real, dimension(ims:ime, kms:kme, jms:jme),  optional, intent(inout)::                   &
                             scr,scw,sci,scs,sch,schl,sciona,sctot,induc,noninduc  ! space charge
       real, dimension(ims:ime, kms:kme, jms:jme),  optional, intent(in) :: elec ! elecsave = Ez     
@@ -1231,15 +1369,31 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
                             RAINNC,RAINNCV,SNOWNC,SNOWNCV,GRPLNC,GRPLNCV,SR        ! accumulated precip (NC) and rate (NCV)
       real, dimension(ims:ime, jms:jme), optional, intent(inout)::                                 &
                             HAILNC,HAILNCV ! accumulated precip (NC) and rate (NCV)
+      REAL, DIMENSION(ims:ime, kms:kme, jms:jme), optional, INTENT(INOUT):: &
+                          re_cloud, re_ice, re_snow
+      INTEGER, INTENT(IN), optional :: has_reqc, has_reqi, has_reqs
       real, optional, intent(in) :: dx,dy
       real, intent(in)::    dtp
       integer, intent(in):: itimestep !, ccntype
       logical, optional, intent(in) :: diagflag
-      real, optional, intent(in) :: ipelectmp
+      integer, optional, intent(in) :: ipelectmp
+
+  LOGICAL, INTENT(IN), OPTIONAL ::    nssl_progn  ! wrf-chem
+!   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), optional,INTENT(INOUT):: qndrop
+  LOGICAL :: flag_qndrop  ! wrf-chem
+
+! 20130903 acd_ck_washout start
+! rainprod - total tendency of conversion of cloud water/ice and graupel to rain (kg kg-1 s-1)
+! evapprod - tendency of evaporation of rain (kg kg-1 s-1)
+! 20130903 acd_ck_washout end
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), optional,INTENT(INOUT)::  rainprod, evapprod
+
 !
 ! local variables
 !
-     real, dimension(its:ite, 1, kts:kte,2) :: scion2 ! 1=- , 2=+
+     real, dimension(its:ite, 1, kts:kte) :: elec2 ! ez = elecsave slab
+!     real, dimension(its:ite, 1, kts:kte,2) :: scion2 ! 1=- , 2=+
+     real, dimension(its:ite, kts:kte) :: rainprod2d, evapprod2d
      real, dimension(its:ite, 1, kts:kte, na) :: an
      real, dimension(its:ite, 1, kts:kte) :: t0,t1,t2,t3,t4,t5,t6,t7,t8,t9
      real, dimension(its:ite, 1, kts:kte) :: dn1,t00,t77,ssat,pn,wn,dz2d,dz2dinv,dbz2d,vzf2d
@@ -1262,6 +1416,8 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
       real, parameter :: cnin2a = 12.96
       real, parameter :: cnin2b = 0.639
 
+      logical, parameter :: invertccn = .false. ! =true for base state of ccn=0, =false for ccn initialized in the base state
+
       real :: tmp,dv
 
       double precision :: dt1,dt2
@@ -1274,11 +1430,17 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
 
       
 !      write(0,*) 'N2M: entering routine'
-      
-      
+
+     flag_qndrop = .false.
+     IF ( PRESENT ( nssl_progn ) ) flag_qndrop = nssl_progn
+       
      IF ( present( vzf ) ) vzflag0 = 1
      
-     IF ( present( ipelectmp ) ) ipelec = Nint(ipelectmp)
+     IF ( present( ipelectmp ) ) THEN
+       ipelec = ipelectmp
+     ELSE
+       ipelec = 0
+     ENDIF
 !       IF ( present( dbz ) ) THEN
 !       DO jy = jts,jte
 !         DO kz = kts,kte
@@ -1303,18 +1465,30 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
      nz = kte-kts+1
      
 ! set up CCN array and some other static local values
-     IF ( itimestep == 1 ) THEN
-      IF ( itimestep == 1 .and. present( cn ) ) THEN
+     IF ( itimestep == 1 .and. .not. invertccn .and.  present( cn ) ) THEN
+!     IF ( cn((ite+its)/2,(kte+kts)/2,(jte+jts)/2) == 0.0 ) THEN ! initialize ccn if not already done
+        DO jy = jts,jte
+         DO kz = kts,kte
+          DO ix = its,ite
+            cn(ix,kz,jy) = qccn
+          ENDDO
+         ENDDO
+        ENDDO
+!     ENDIF
+     ENDIF
+     
+      IF ( invertccn .and.  present( cn ) ) THEN ! hack for WRF to convert activated ccn to unactivated, then don't have to 
+                                              ! worry about initial and boundary conditions - they are zero
         DO jy = jts,jte
          DO kz = kts,kte
            DO ix = its,ite
-             cn(ix,kz,jy) = qccn 
+             cn(ix,kz,jy) = Max( 0.0, qccn - cn(ix,kz,jy) )
            ENDDO
          ENDDO
        ENDDO
        ENDIF
 
-     ENDIF ! itimestep == 1
+!     ENDIF ! itimestep == 1
 
 ! sedimentation settings
 
@@ -1365,8 +1539,7 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
      
      xfall(:,:,:) = 0.0
 
-
-!     write(0,*) 'N2M: load an, jy = ',jy
+!     write(0,*) 'N2M: load an, jy,lccn = ',jy,lccn,qccn
      
    ! copy from 3D array to 2D slab
    
@@ -1385,11 +1558,14 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
            IF ( present( cn ) ) THEN
             an(ix,1,kz,lccn) = cn(ix,kz,jy)
            ELSE
-            an(ix,1,kz,lccn) = qccn
+            an(ix,1,kz,lccn) = qccn - ccw(ix,kz,jy)
            ENDIF
           ENDIF
           IF ( ipconc >= 5 ) THEN
-          an(ix,1,kz,lnc)  = ccw(ix,kz,jy)
+             an(ix,1,kz,lnc)  = ccw(ix,kz,jy)
+          IF ( constccw > 0.0 ) THEN
+            an(ix,1,kz,lnc)  = constccw
+          ENDIF
           an(ix,1,kz,lnr)  = crw(ix,kz,jy)
           an(ix,1,kz,lni)  = cci(ix,kz,jy)
           an(ix,1,kz,lns)  = csw(ix,kz,jy)
@@ -1469,7 +1645,8 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
                                      ! Here, the fit line values from Cooper 1986 are converted. Very little difference 
                                      ! in practice
       
-        t7(ix,1,kz) = 0.00446684*exp(0.3108*(273.16 - Max(233.0, t0(ix,1,kz) ) ) )
+        t7(ix,1,kz) = 1000.*0.00446684*exp(0.3108*(273.16 - Max(233.0, t0(ix,1,kz) ) ) ) ! factor of 1000 to convert L**-1 to m**-3
+
 !        write(0,*) 'Cooper t7,ssival = ',ix,kz,t7(ix,1,kz),ssival
       
       ELSEIF ( icenucopt == 3 ) THEN ! Phillips (Meyers/DeMott)
@@ -1494,6 +1671,10 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
         ENDDO
        ENDDO
 
+         IF ( wrfchem_flag > 0 ) THEN
+           IF ( PRESENT( rainprod ) ) rainprod2d(its:ite,kts:kte) = 0
+           IF ( PRESENT( evapprod ) ) evapprod2d(its:ite,kts:kte) = 0
+         ENDIF
 
    ! transform from number mixing ratios to number conc.
      
@@ -1564,6 +1745,7 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
 !      IF ( isedonly /= 2 ) THEN
 
 
+      
       call nssl_2mom_gs   &
      &  (nx,ny,nz,na,jy   &
      &  ,nor,nor          &
@@ -1577,8 +1759,9 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
 !     &   ln,ipc,lvol,lz,lliq,   &
      &   cdx,                              &
      &   xdn0,dbz2d,timevtcalc  &
+     &   ,rainprod2d, evapprod2d  &
+     & ,elec2,its,ids,ide,jds,jde &
      & )
-
 
 
 
@@ -1587,15 +1770,18 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
    ENDIF ! isedonly /= 1
    
  ! droplet nucleation/condensation/evaporation
+   IF ( .true. ) THEN
    CALL NUCOND    &
      &  (nx,ny,nz,na,jy & 
      &  ,nor,nor & 
      &  ,dtp,dz2d & 
-     &  ,t0,t1,t2,t3,t4,t5,t6,t7,t8,t9 & 
+     &  ,t0,t9 & 
      &  ,an,dn1,t77 & 
      &  ,pn,wn & 
-     &  ,ssat,t00,t77,dbz2d,scion2)
+     &  ,ssat,t00,t77,flag_qndrop)
 
+
+   ENDIF
 
 
 ! compute diagnostic S-band reflectivity if needed
@@ -1620,6 +1806,38 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
         ENDDO
        ENDDO
 
+
+! Following Greg Thompson, calculation for effective radii. Used by RRTMG LW/SW schemes if enabled in module_physics_init.F
+      IF ( present( has_reqc ).and. present( has_reqi ) .and. present( has_reqs ) .and.  &
+           present( re_cloud ).and. present( re_ice ) .and. present( re_snow ) ) THEN
+       IF ( has_reqc.ne.0 .and. has_reqi.ne.0 .and. has_reqs.ne.0) THEN
+         DO kz = kts,kte
+          DO ix = its,ite
+             re_cloud(ix,kz,jy)  = 2.51E-6
+             re_ice(ix,kz,jy)    = 10.01E-6
+             re_snow(ix,kz,jy)   = 25.E-6
+             t1(ix,1,kz) = 2.51E-6
+             t2(ix,1,kz) = 10.01E-6
+             t3(ix,1,kz) = 25.E-6
+          ENDDO
+         ENDDO
+
+          call calc_eff_radius   &
+     &         (nx,ny,nz,na,jy & 
+     &          ,nor,nor & 
+     &          ,t1,t2,t3  & 
+     &          ,an,dn1 )
+
+        DO kz = kts,kte
+          DO ix = its,ite
+             re_cloud(ix,kz,jy) = MAX(2.51E-6, MIN(t1(ix,1,kz), 50.E-6))
+             re_ice(ix,kz,jy)   = MAX(10.01E-6, MIN(t2(ix,1,kz), 125.E-6))
+             re_snow(ix,kz,jy)  = MAX(25.E-6, MIN(t3(ix,1,kz), 999.E-6))
+          ENDDO
+         ENDDO
+       
+         ENDIF
+        ENDIF
 
        ENDIF
    
@@ -1648,10 +1866,11 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
          qs(ix,kz,jy)  = an(ix,1,kz,ls)
          qh(ix,kz,jy)  = an(ix,1,kz,lh)
          IF ( lhl > 1 ) qhl(ix,kz,jy) = an(ix,1,kz,lhl)
-         IF ( present( cn ) .and. lccn > 1 ) THEN
+         IF ( present( cn ) .and. lccn > 1 .and. .not. flag_qndrop) THEN
            cn(ix,kz,jy) = an(ix,1,kz,lccn)
          ENDIF
          IF ( ipconc >= 5 ) THEN
+
           ccw(ix,kz,jy) = an(ix,1,kz,lnc)
           crw(ix,kz,jy) = an(ix,1,kz,lnr)
           cci(ix,kz,jy) = an(ix,1,kz,lni)
@@ -1666,10 +1885,27 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
          IF ( lvh > 0 )  vhw(ix,kz,jy) = an(ix,1,kz,lvh)
          IF ( lvhl > 0 .and. present( vhl ) ) vhl(ix,kz,jy) = an(ix,1,kz,lvhl)
 
+#ifdef WRF_CHEM
+         IF ( wrfchem_flag > 0 ) THEN
+           IF ( PRESENT( rainprod ) ) rainprod(ix,kz,jy) = rainprod2d(ix,kz)
+           IF ( PRESENT( evapprod ) ) evapprod(ix,kz,jy) = evapprod2d(ix,kz)
+         ENDIF
+#endif
         ENDDO
        ENDDO
   
      ENDDO ! jy
+
+      IF (  invertccn .and. present( cn ) ) THEN ! hack to convert unactivated ccn  back to activated
+        DO jy = jts,jte
+         DO kz = kts,kte
+           DO ix = its,ite
+             cn(ix,kz,jy) = Max( 0.0, qccn - cn(ix,kz,jy) )
+           ENDDO
+         ENDDO
+       ENDDO
+       ENDIF
+
 
 
 
@@ -1724,10 +1960,10 @@ END SUBROUTINE nssl_2mom_driver
 !       ===================================================
 !       Purpose: Compute the incomplete gamma function
 !                from x to infinity
-!       Input :  a   --- Parameter ( a ף 170 )
+!       Input :  a   --- Parameter ( a  170 )
 !                x   --- Argument 
-!       Output:  GIM --- ג(a,x) t=x,Infinity
-!       Routine called: GAMMA for computing ג(x)
+!       Output:  GIM --- gamma(a,x) t=x,Infinity
+!       Routine called: GAMMA for computing gamma(x)
 !       ===================================================
 
 !        IMPLICIT DOUBLE PRECISION (A-H,O-Z)
@@ -1916,7 +2152,7 @@ END SUBROUTINE nssl_2mom_driver
 !       Input :  p  --- Parameter  ( p > 0 )
 !                q  --- Parameter  ( q > 0 )
 !       Output:  BT --- B(p,q)
-!       Routine called: GAMMA for computing ג(x)
+!       Routine called: GAMMA for computing gamma(x)
 !       ==========================================
 !
 !        IMPLICIT real (A-H,O-Z)
@@ -1935,14 +2171,48 @@ END SUBROUTINE nssl_2mom_driver
         END function BETA
 
 ! #####################################################################
+! #####################################################################
+
+      DOUBLE PRECISION FUNCTION GAMMA_DP(xx)
+
+      implicit none
+      double precision xx
+      integer j
+
+! Double precision ser,stp,tmp,x,y,cof(6)
+
+      real*8 ser,stp,tmp,x,y,cof(6)
+      SAVE cof,stp
+      DATA cof,stp/76.18009172947146d+0,  &
+     &            -86.50532032941677d0,   &
+     &             24.01409824083091d0,   &
+     &             -1.231739572450155d0,  &
+     &              0.1208650973866179d-2,&
+     &             -0.5395239384953d-5,   &
+     &              2.5066282746310005d0/
+
+      x = xx
+      y = x
+      tmp = x + 5.5d0
+      tmp = (x + 0.5d0)*Log(tmp) - tmp
+      ser = 1.000000000190015d0
+      DO j=1,6
+        y = y + 1.0d0
+        ser = ser + cof(j)/y
+      END DO
+      gamma_dp = Exp(tmp + log(stp*ser/x))
+
+      RETURN
+      END function gamma_dp
+! #####################################################################
 
         SUBROUTINE GAMMADP(X,GA)
 !
 !       ==================================================
-!       Purpose: Compute gamma function ג(x)
-!       Input :  x  --- Argument of ג(x)
-!                       ( x is not equal to 0,-1,-2,תתת)
-!       Output:  GA --- ג(x)
+!       Purpose: Compute gamma function Gamma(x)
+!       Input :  x  --- Argument of Gamma(x)
+!                       ( x is not equal to 0,-1,-2,...)
+!       Output:  GA --- gamma(x)
 !       ==================================================
 !
 !        IMPLICIT DOUBLE PRECISION (A-H,O-Z)
@@ -2121,6 +2391,15 @@ END SUBROUTINE nssl_2mom_driver
 ! #####################################################################
 !
 ! #####################################################################
+!--------------------------------------------------------------------------
+      subroutine cld_cpu(string)
+
+      implicit none
+      character( LEN = * ) string
+      
+      return
+      
+      end subroutine cld_cpu
 
 !
 !--------------------------------------------------------------------------
@@ -2187,7 +2466,7 @@ END SUBROUTINE nssl_2mom_driver
       real ::  xdn(ngs,lc:lhab) 
       real ::  xdia(ngs,lc:lhab,3) 
       real ::  vx(ngs,li:lhab) 
-      real ::  alpha(ngs,lr:lhab) 
+      real ::  alpha(ngs,lc:lhab) 
       real ::  zx(ngs,lr:lhab) 
       logical :: hasmass(nx,lc+1:lhab)
 
@@ -2205,7 +2484,7 @@ END SUBROUTINE nssl_2mom_driver
       real cimasn,cimasx,cnina(ngs),cimas(ngs)
       
       real cnostmp(ngs)
-
+      
 
 !-----------------------------------------------------------------------------
 
@@ -2295,7 +2574,7 @@ END SUBROUTINE nssl_2mom_driver
 
 
 ! loop over each species and do sedimentation for all moments
-     DO il = lc+1,lhab
+     DO il = lc,lhab
 
 !       IF ( .not. hasmass(ix,il) ) CYCLE
 
@@ -2638,7 +2917,7 @@ END SUBROUTINE nssl_2mom_driver
 ! ##############################################################################
 
       subroutine calczgr1d(nx,ny,nz,nor,na,a,ixe,kze,              &
-     &    z,db,jgs,ipconc, alpha, l,ln, qmin, xvmn,xvmx, lvol, rho_qh, ixcol)
+     &    z,db,jgs,ipconc, alpha, l,ln, qmin, xvmn,xvmx, lvol, rho_qx, ixcol)
 
 
       implicit none
@@ -2659,7 +2938,7 @@ END SUBROUTINE nssl_2mom_driver
       integer l   ! index for q
       integer ln  ! index for N
       integer lvol ! index for volume
-      real    rho_qh
+      real    rho_qx
 
 
       integer ix,jy,kz
@@ -2681,12 +2960,12 @@ END SUBROUTINE nssl_2mom_driver
             IF ( lvol .gt. 1 ) THEN
                 IF ( a(ix,jy,kz,lvol) .gt. 0.0 ) THEN
                   xdn = db(ix,kz)*a(ix,jy,kz,l)/a(ix,jy,kz,lvol)
-                  xdn = Min( 900., Max( 170., xdn ) )
+                  xdn = Min( 900., Max( hdnmn, xdn ) )
                 ELSE
-                  xdn = rho_qh
+                  xdn = rho_qx
                 ENDIF
             ELSE
-                xdn = rho_qh
+                xdn = rho_qx
             ENDIF
 
             IF ( l == lr ) xdn = 1000.
@@ -2757,7 +3036,7 @@ END SUBROUTINE nssl_2mom_driver
 
       subroutine calcnfromz1d(nx,ny,nz,nor,na,a,t0,ixe,kze,    &
      &    z0,db,jgs,ipconc, alpha, l,ln, qmin, xvmn,xvmx,t1, &
-     &    lvol, rho_qh, infall, ixcol)
+     &    lvol, rho_qx, infall, ixcol)
 
       
       implicit none
@@ -2780,7 +3059,7 @@ END SUBROUTINE nssl_2mom_driver
       integer l   ! index for q
       integer ln  ! index for N
       integer lvol ! index for volume
-      real    rho_qh
+      real    rho_qx
       integer infall
       
       
@@ -2812,12 +3091,12 @@ END SUBROUTINE nssl_2mom_driver
             IF ( lvol .gt. 1 ) THEN
                IF ( a(ix,jy,kz,lvol) .gt. 0.0 ) THEN
                  xdn = db(ix,kz)*a(ix,jy,kz,l)/a(ix,jy,kz,lvol)
-                 xdn = Min( 900., Max( 170., xdn ) )
+                 xdn = Min( 900., Max( hdnmn, xdn ) )
                ELSE 
-                 xdn = rho_qh
+                 xdn = rho_qx
                ENDIF
             ELSE
-               xdn = rho_qh
+               xdn = rho_qx
             ENDIF
             
             IF ( l == lr ) xdn = 1000.
@@ -2962,7 +3241,6 @@ END SUBROUTINE nssl_2mom_driver
       real    xvmn,xvmx
       integer ipconc
       integer lvol ! index for volume
-      real    rho_qh
       integer infall
       
       
@@ -3075,24 +3353,18 @@ END SUBROUTINE nssl_2mom_driver
       
       END subroutine calcnfromq
 
-
-
 ! #####################################################################
 ! #####################################################################
-!
-! Subroutine for explicit cloud condensation and droplet nucleation
-!
-   SUBROUTINE NUCOND    &
+
+   SUBROUTINE calc_eff_radius    &
      &  (nx,ny,nz,na,jyslab & 
      &  ,nor,norz & 
-     &  ,dtp,dz3d & 
-     &  ,t0,t1,t2,t3,t4,t5,t6,t7,t8,t9 & 
-     &  ,an,dn,p2 & 
-     &  ,pn,w & 
-     &  ,ssfilt,t00,t77,tmp3d,scion)
+     &  ,t1,t2,t3  & 
+     &  ,an,dn )
 
    implicit none
 
+      integer, parameter :: ng1 = 1
       integer :: nx,ny,nz,na
       integer :: ng
       integer :: nor,norz, jyslab ! ,nht,ngt,igsr
@@ -3102,49 +3374,33 @@ END SUBROUTINE nssl_2mom_driver
 !
 ! external temporary arrays
 !
-      real t00(-nor+1:nx+nor,-nor+1:ny+nor,-norz+1:nz+norz)
-      real t77(-nor+1:nx+nor,-nor+1:ny+nor,-norz+1:nz+norz)
 
-      real t0(-nor+1:nx+nor,-nor+1:ny+nor,-norz+1:nz+norz)
       real t1(-nor+1:nx+nor,-nor+1:ny+nor,-norz+1:nz+norz)
       real t2(-nor+1:nx+nor,-nor+1:ny+nor,-norz+1:nz+norz)
       real t3(-nor+1:nx+nor,-nor+1:ny+nor,-norz+1:nz+norz)
-      real t4(-nor+1:nx+nor,-nor+1:ny+nor,-norz+1:nz+norz)
-      real t5(-nor+1:nx+nor,-nor+1:ny+nor,-norz+1:nz+norz)
-      real t6(-nor+1:nx+nor,-nor+1:ny+nor,-norz+1:nz+norz)
-      real t7(-nor+1:nx+nor,-nor+1:ny+nor,-norz+1:nz+norz)
-      real t8(-nor+1:nx+nor,-nor+1:ny+nor,-norz+1:nz+norz)
-      real t9(-nor+1:nx+nor,-nor+1:ny+nor,-norz+1:nz+norz)
       
 
-      real p2(-nor+1:nx+nor,-nor+1:ny+nor,-norz+1:nz+norz)  ! perturbation Pi
-      real pn(-nor+1:nx+nor,-nor+1:ny+nor,-norz+1:nz+norz)
       real an(-nor+1:nx+nor,-nor+1:ny+nor,-norz+1:nz+norz,na)
       real dn(-nor+1:nx+nor,-nor+1:ny+nor,-norz+1:nz+norz)
 
-      real w(-nor+1:nx+nor,-nor+1:ny+nor,-norz+1:nz+norz)
-!      real qv(-nor+1:nx+nor,-nor+1:ny+nor,-norz+1:nz+norz)
-
-      real ssfilt(-nor+1:nx+nor,-nor+1:ny+nor,-norz+1:nz+norz)
       
-      real dz3d(-nor+1:nx+nor,-nor+1:ny+nor,-norz+1:nz+norz)
 
-      real tmp3d(-nor+1:nx+nor,-nor+1:ny+nor,-norz+1:nz+norz)
 
-      real scion(-nor+1:nx+nor,-nor+1:ny+nor,-norz+1:nz+norz,2)
       
     ! local
+    
+      real pb(-norz+ng1:nz+norz)
+      real pinit(-norz+ng1:nz+norz)
 
 ! 
 !  declarations microphysics and for gather/scatter
 !
       integer nxmpb,nzmpb,nxz
       integer mgs,ngs,numgs,inumgs
-      parameter (ngs=500)
+      parameter (ngs=1)
       integer ngscnt,igs(ngs),kgs(ngs)
-      integer kgsp(ngs),kgsm(ngs)
-      integer nsvcnt
-      
+      real rho0(ngs)
+
       integer ix,kz,i,n, kp1
       integer :: jy, jgs
       integer ixb,ixe,jyb,jye,kzb,kze
@@ -3153,134 +3409,18 @@ END SUBROUTINE nssl_2mom_driver
       integer ixend,jyend,kzend,kzbeg
       integer nxend,nyend,nzend,nzbeg
 
-!
-! Variables for Ziegler warm rain microphysics
-!      
-
-
-      real ccnc(ngs), ccna(ngs), cnuc(ngs), cwnccn(ngs)
-      real sscb  ! 'cloud base' SS threshold
-      parameter ( sscb = 2.0 )
-      integer idecss  ! flag to turn on (=1) decay of ssmax when no cloud or ice crystals
-      parameter ( idecss = 1 )
-      integer iba ! flag to do condensation/nucleation in 1st or 2nd loop
-                  ! =0 to use ad to calculate SS
-                  ! =1 to use an at end of main jy loop to calculate SS
-      parameter (iba = 1)
-      integer ifilt   ! =1 to filter ssat, =0 to set ssfilt=ssat
-      parameter ( ifilt = 0 ) 
-      real temp1,temp2 ! ,ssold
-      real ssmax(ngs)       ! maximum SS experienced by a parcel
-      real ssmx
-      real dnnet,dqnet
-!      real cnu,rnu,snu,cinu
-!      parameter ( cnu = 0.0, rnu = -0.8, snu = -0.8, cinu = 0.0 )
-      real ventrx(ngs)
-      real ventrxn(ngs)
-      real volb, t2s
-      real, parameter :: aa1 = 9.44e15, aa2 = 5.78e3  ! a1 in Ziegler
-
-      real ec0, ex1, ft, rhoinv(ngs)
-      
-      real chw, g1, rd1
-
-      real ac1,bc, taus, c1,d1,e1,f1,p380,tmp,tmp2 ! , sstdy, super
-      real x,y,del,r,alpr
-      double precision :: vent1,vent2
-      real g1palp
-      real bs
-      real v1, v2
-      real d1r, d1i, d1s, e1i
-      integer nc ! condensation step
-      real dtcon,dtcon1,dtcon2 ! condensation time step (dtcon*nc = dtp)
-      real delta
-      integer ltemq1,ltemq1m ! ,ltemq1m2
-      real dqv,qv1,ss1,ss2,qvs1,dqvs,dtemp,dt1   ! temporaries for condensation
-
-      real ssi1, ssi2, dqvi, dqvis, dqvii,qis1
-      real dqvr, dqc, dqr, dqi, dqs
-      real qv1m,qvs1m,ss1m,ssi1m,qis1m
-      real cwmastmp 
-      real  dcloud,dcloud2 ! ,as, bs
-      real cn(ngs) 
-
-      integer ltemq
-      
-      integer il
-
-      real  es(ngs) ! ss(ngs),
-      real  eis(ngs)
-      real ssf(ngs),ssfkp1(ngs),ssfkm1(ngs),ssat0(ngs)
-      real ssfjp1(ngs),ssfjm1(ngs)
-      real ssfip1(ngs),ssfim1(ngs)
-
-      real supcb, supmx
-      parameter (supcb=0.5,supmx=238.0)
-      real r2dxm, r2dym, r2dzm
-      real dssdz, dssdy, dssdx
-!      real tqvcon
-      real epsi,d
-      parameter (epsi = 0.622, d = 0.266)
-      real r1,qevap ! ,slv
-      
-      real vr,nrx,qr,z1,z2,rdi,alp,xnutmp,xnuc
-      real ctmp, ccwtmp
-      real f5, qvs0  ! Kessler condensation factor
-      real    :: t0p1, t0p3
-      real qvex
-      
-!      real, dimension(ngs) :: temp, tempc, elv, elf, els, pqs, theta, temg, temcg
-      real dqvcnd(ngs),dqwv(ngs),dqcw(ngs),dqci(ngs)
-      real temp(ngs),tempc(ngs)
-      real temg(ngs),temcg(ngs),theta(ngs),qvap(ngs) ! ,tembzg(ngs)
-      real temgx(ngs),temcgx(ngs)
-      real qvs(ngs),qis(ngs),qss(ngs),pqs(ngs)
-      real felv(ngs),felf(ngs),fels(ngs)
-      real felvcp(ngs)
-      real gamw(ngs),gams(ngs)   !   qciavl(ngs),
-      real tsqr(ngs),ssi(ngs),ssw(ngs)
-      real cc3(ngs),cqv1(ngs),cqv2(ngs)
-      real qcwtmp(ngs),qtmp
-
-      real fvent(ngs) !,fraci(ngs),fracl(ngs)
-      real fwvdf(ngs),ftka(ngs),fthdf(ngs)
-      real fadvisc(ngs),fakvisc(ngs)
-      real fci(ngs),fcw(ngs)
-      real fschm(ngs),fpndl(ngs)
-
-      real pres(ngs)
-      real pk(ngs)
-      real rho0(ngs),pi0(ngs)
-      real rhovt(ngs)
-      real thetap(ngs),theta0(ngs),qwvp(ngs),qv0(ngs)
-      real thsave(ngs)
-      real qss0(ngs)
-      real fcqv1(ngs)
-      real wvel(ngs),wvelkm1(ngs)
-
-      real wvdf(ngs),tka(ngs)
-      real advisc(ngs)
-
-      real rwvent(ngs)
-      
-
       real :: qx(ngs,lv:lhab)
       real :: cx(ngs,lc:lhab)
       real :: xv(ngs,lc:lhab)
       real :: xmas(ngs,lc:lhab)
       real :: xdn(ngs,lc:lhab)
       real :: xdia(ngs,lc:lhab,3)
-      real :: alpha(ngs,lr:lhab)
-      real :: zx(ngs,lr:lhab)
-
-
-      logical zerocx(lc:lqmx)
-
-      integer, parameter :: iunit = 0
+      real :: alpha(ngs,lc:lhab)
       
-      real :: frac, hwdn, tmpg
-      
-      real :: cvm
+      real :: gamc1,gamc2,gami1,gami2,gams1,gams2, factor_c, factor_i, factor_s
+      real :: lam_c, lam_i, lam_s
+      integer :: il
+
 
 ! -------------------------------------------------------------------------------
       itile = nx
@@ -3295,32 +3435,20 @@ END SUBROUTINE nssl_2mom_driver
       kzbeg = 1
       nzbeg = 1
 
-      jy = 1
-      
-      IF ( ipconc <= 1 .or. isedonly == 2 ) GOTO 2200
+       jy = 1
+       pb(:) = 0.0
+       pinit(:) = 0.0
 
-!
-!  Ziegler nucleation 
-!
+     gamc1 = Gamma(2. + cnu)
+     gamc2 = 1. ! Gamma[1 + alphac]
+     gami1 = Gamma(2. + cinu)
+     gami2 = 1. ! Gamma[1 + alphac]
+     gams1 = Gamma(2. + cinu)
+     gams2 = Gamma(1. + snu)
 
-      ssfilt(:,:,:) = 0.0
-
-      do kz = 1,nz
-        do ix = 1,nx
-
-         temp1 = an(ix,jy,kz,lt)*t77(ix,jy,kz)
-          t0(ix,jy,kz) = temp1
-          ltemq = Int( (temp1-163.15)/fqsat+1.5 )
-         ltemq = Min( nqsat, Max(1,ltemq) )
-
-          c1 = t00(ix,jy,kz)*tabqvs(ltemq)
-
-          ssfilt(ix,jy,kz) = 100.*(an(ix,jy,kz,lv)/c1 - 1.0)  ! from "new" values
-
-
-        ENDDO
-      ENDDO
-
+     factor_c = (1. + cnu)*Gamma(1. + cnu)/Gamma(5./3. + cnu)
+     factor_i = (1. + cinu)*Gamma(1. + cinu)/Gamma(5./3. + cinu)
+     factor_s = (1. + snu)*Gamma(1. + snu)/Gamma(5./3. + snu)
 
 !
 !     jy = 1 ! working on a 2d slab
@@ -3328,1296 +3456,41 @@ END SUBROUTINE nssl_2mom_driver
 
       jgs = jy
 
-!
-!..Gather microphysics
-!
-      if ( ndebug .gt. 0 ) write(0,*) 'ICEZVD_DR: Gather stage'
-
-      nxmpb = 1
-      nzmpb = 1
-      nxz = nx*nz
-      numgs = nxz/ngs + 1
-
-
-      do 2000 inumgs = 1,numgs
-
-      ngscnt = 0
-
-
-      kzb = nzmpb
-      kze = nz
- !     if (kzbeg .le. nzmpb .and. kzend .gt. nzmpb) kzb = nzmpb
-
-      ixb = nxmpb
-      ixe = itile
-!      if (ixbeg .le. nxmpb .and. ixend .gt. nxmpb) ixb = nxmpb
-
-      do kz = kzb,kze
-      do ix = nxmpb,nx
-
-      pqs(1) = 380.0/pn(ix,jy,kz)
-      theta(1) = an(ix,jy,kz,lt)
-      temg(1) = t0(ix,jy,kz)
-
-      temcg(1) = temg(1) - tfr
-      ltemq = (temg(1)-163.15)/fqsat+1.5
-      ltemq = Min( nqsat, Max(1,ltemq) )
-      qvs(1) = pqs(1)*tabqvs(ltemq)
-      qis(1) = pqs(1)*tabqis(ltemq)
-
-      qss(1) = qvs(1)
-
-
-      if ( temg(1) .lt. tfr ) then
-      end if
-!
-      if ( (temg(1) .gt. tfrh ) .and.  &
-     &   ( an(ix,jy,kz,lv)  .gt. qss(1) .or. &
-     &     an(ix,jy,kz,lc)  .gt. qxmin(lc)   .or.  &
-     &     ( an(ix,jy,kz,lr)  .gt. qxmin(lr) .and. rcond == 2 )  &
-     &     )) then
-      ngscnt = ngscnt + 1
-      igs(ngscnt) = ix
-      kgs(ngscnt) = kz
-      if ( ngscnt .eq. ngs ) goto 2100
-      end if
-
-      end do  !ix
-
-      nxmpb = 1
-      end do  !kz
-!      if ( jy .eq. (ny-jstag) ) iend = 1
- 2100 continue
-
-      if ( ngscnt .eq. 0 ) go to 29998
-
-      if (ndebug .gt. 0 ) write(0,*) 'ICEZVD_DR: dbg = 8'
-
-      
-      qx(:,:) = 0.0
-      cx(:,:) = 0.0
-
-      xv(:,:) = 0.0
-      xmas(:,:) = 0.0
-
-      alpha(:,lr) = xnu(lr)
-
-!
-!  define temporaries for state variables to be used in calculations
-!
-      DO mgs = 1,ngscnt
-      qx(mgs,lv) = an(igs(mgs),jy,kgs(mgs),lv)
-       DO il = lc,lhab
-        qx(mgs,il) = max(an(igs(mgs),jy,kgs(mgs),il), 0.0)
-       ENDDO
-
-       qcwtmp(mgs) = qx(mgs,lc)
-
-
-      theta0(mgs) = an(igs(mgs),jy,kgs(mgs),lt) !
-      thetap(mgs) = 0.0
-      theta(mgs) = an(igs(mgs),jy,kgs(mgs),lt)
-      qv0(mgs) =  qx(mgs,lv)
-      qwvp(mgs) = qx(mgs,lv) - qv0(mgs)
-
-       pres(mgs) = pn(igs(mgs),jy,kgs(mgs))
-       rho0(mgs) = dn(igs(mgs),jy,kgs(mgs))
-       rhoinv(mgs) = 1.0/rho0(mgs)
-       rhovt(mgs) = Sqrt(rho00/rho0(mgs))
-       pi0(mgs) = p2(igs(mgs),jy,kgs(mgs))
-       temg(mgs) = t0(igs(mgs),jy,kgs(mgs))
-       pk(mgs) = t77(igs(mgs),jy,kgs(mgs)) ! ( pres(mgs) / poo ) ** cap
-       temcg(mgs) = temg(mgs) - tfr
-       qss0(mgs) = (380.0)/(pres(mgs))
-       pqs(mgs) = (380.0)/(pres(mgs))
-       ltemq = (temg(mgs)-163.15)/fqsat+1.5
-       ltemq = Min( nqsat, Max(1,ltemq) )
-       qvs(mgs) = pqs(mgs)*tabqvs(ltemq)
-       qis(mgs) = pqs(mgs)*tabqis(ltemq)
-!
-        qvap(mgs) = max( (qwvp(mgs) + qv0(mgs)), 0.0 )
-        es(mgs) = 6.1078e2*tabqvs(ltemq)
-        qss(mgs) = qvs(mgs)
-
-
-        temgx(mgs) = min(temg(mgs),313.15)
-        temgx(mgs) = max(temgx(mgs),233.15)
-        felv(mgs) = 2500837.367 * (273.15/temgx(mgs))**((0.167)+(3.67e-4)*temgx(mgs))
-!
-        IF ( eqtset <= 1 ) THEN
-          felvcp(mgs) = felv(mgs)*cpi
-        ELSE ! equation set 2 in cm1
-          tmp = qx(mgs,li)+qx(mgs,ls)+qx(mgs,lh)
-          IF ( lhl > 1 ) tmp = tmp + qx(mgs,lhl)
-          cvm = cv+cvv*qx(mgs,lv)+cpl*(qx(mgs,lc)+qx(mgs,lr))   &
-                                  +cpigb*(tmp)
-          felvcp(mgs) = (felv(mgs)-rw*temg(mgs))/cvm
-        ENDIF
-
-        temcgx(mgs) = min(temg(mgs),273.15)
-        temcgx(mgs) = max(temcgx(mgs),223.15)
-        temcgx(mgs) = temcgx(mgs)-273.15
-        felf(mgs) = 333690.6098 + (2030.61425)*temcgx(mgs) - (10.46708312)*temcgx(mgs)**2
-!
-        fels(mgs) = felv(mgs) + felf(mgs)
-        fcqv1(mgs) = 4098.0258*felv(mgs)*cpi
-
-      wvdf(mgs) = (2.11e-05)*((temg(mgs)/tfr)**1.94)* &
-     &  (101325.0/pn(igs(mgs),jgs,kgs(mgs)))                            ! diffusivity of water vapor, Hall and Pruppacher (76)
-      advisc(mgs) = advisc0*(416.16/(temg(mgs)+120.0))* &
-     &  (temg(mgs)/296.0)**(1.5)                         ! dynamic viscosity (SMT; see Beard & Pruppacher 71)
-      tka(mgs) = tka0*advisc(mgs)/advisc1                 ! thermal conductivity
-
-
-      ENDDO
-
-
-
-!
-! load concentrations
-!
-      if ( ipconc .ge. 1 ) then
-       do mgs = 1,ngscnt
-        cx(mgs,li) = Max(an(igs(mgs),jy,kgs(mgs),lni), 0.0)
-       end do
-      end if
-      if ( ipconc .ge. 2 ) then
-       do mgs = 1,ngscnt
-        cx(mgs,lc) = Max(an(igs(mgs),jy,kgs(mgs),lnc), 0.0)
-        cwnccn(mgs) = cwccn*rho0(mgs)/rho00
-        cn(mgs) = 0.0
-        IF ( lccn .gt. 1 ) THEN
-          ccnc(mgs) = an(igs(mgs),jy,kgs(mgs),lccn)
-        ELSE
-          ccnc(mgs) = cwnccn(mgs)
-        ENDIF
-        IF ( lccna > 1 ) THEN
-          ccna(mgs) = an(igs(mgs),jy,kgs(mgs),lccna)
-        ELSE
-          IF ( lccn > 1 ) THEN
-            ccna(mgs) = cwnccn(mgs) - ccnc(mgs)
-          ELSE
-            ccna(mgs) = cx(mgs,lc) ! approximation of number of activated ccn
-          ENDIF
-        ENDIF
-       end do
-      end if
-      if ( ipconc .ge. 3 ) then
-       do mgs = 1,ngscnt
-        cx(mgs,lr) = Max(an(igs(mgs),jy,kgs(mgs),lnr), 0.0)
-       end do
-      end if
-
-        cnuc(1:ngscnt) = cwccn*(1. - renucfrac) + ccnc(1:ngscnt)*renucfrac
-
-
-!  Set density
-!
-      if (ndebug .gt. 0 ) write(0,*) 'ICEZVD_DR: Set density'
-
-      do mgs = 1,ngscnt
-        xdn(mgs,lc) = xdn0(lc)
-        xdn(mgs,lr) = xdn0(lr)
-      end do
-
-      ventrx(:) = ventr
-      ventrxn(:) = ventrn
-      
-
-
-      
-      DO mgs = 1,ngscnt
-      
-      kp1 = Min(nz, kgs(mgs)+1 )
-      wvel(mgs) = (0.5)*(w(igs(mgs),jgs,kp1) & 
-     &                  +w(igs(mgs),jgs,kgs(mgs)))
-      wvelkm1(mgs) = (0.5)*(w(igs(mgs),jgs,kgs(mgs)) & 
-     &                  +w(igs(mgs),jgs,Max(1,kgs(mgs)-1)))
-
-      ssat0(mgs)  = ssfilt(igs(mgs),jgs,kgs(mgs))
-      ssf(mgs)    = ssfilt(igs(mgs),jgs,kgs(mgs))
-      
-      ssfkp1(mgs) = ssfilt(igs(mgs),jgs,Min(nz-1,kgs(mgs)+1))
-      ssfkm1(mgs) = ssfilt(igs(mgs),jgs,Max(1,kgs(mgs)-1))
-
-
-      ENDDO
-
-
-
-!
-!  cloud water variables
-!
-
-      if ( ndebug .gt. 0 )write(0,*) 'ICEZVD_DR: Set cloud water variables'
-
-      do mgs = 1,ngscnt
-      xv(mgs,lc) = 0.0
-      IF ( ipconc .ge. 2 .and. cx(mgs,lc) .gt. 1.0e6 ) THEN
-        xmas(mgs,lc) = &
-     &    min( max(qx(mgs,lc)*rho0(mgs)/cx(mgs,lc),cwmasn),cwmasx )
-        xv(mgs,lc) = xmas(mgs,lc)/xdn(mgs,lc)
-      ELSE
-       IF ( qx(mgs,lc) .gt. qxmin(lc) .and. cx(mgs,lc) .gt. 0.01 ) THEN
-        xmas(mgs,lc) = &
-     &     min( max(qx(mgs,lc)*rho0(mgs)/cx(mgs,lc),xdn(mgs,lc)*xvmn(lc)), &
-     &      xdn(mgs,lc)*xvmx(lc) )
-
-        cx(mgs,lc) = qx(mgs,lc)*rho0(mgs)/xmas(mgs,lc)
-
-       ELSEIF ( qx(mgs,lc) .gt. qxmin(lc) .and. cx(mgs,lc) .le. 0.01 ) THEN
-        xmas(mgs,lc) = xdn(mgs,lc)*4.*pi/3.*(5.0e-6)**3
-        cx(mgs,lc) = rho0(mgs)*qx(mgs,lc)/xmas(mgs,lc)
-
-       ELSE
-        xmas(mgs,lc) = cwmasn
-       ENDIF
-      ENDIF
-      xdia(mgs,lc,1) = (xmas(mgs,lc)*cwc1)**c1f3
-
-
-      end do
-!
-! rain
-!
-      do mgs = 1,ngscnt
-      if ( qx(mgs,lr) .gt. qxmin(lr) ) then
-
-      if ( ipconc .ge. 3 ) then
-        xv(mgs,lr) = rho0(mgs)*qx(mgs,lr)/(xdn(mgs,lr)*Max(1.0e-9,cx(mgs,lr)))
-!      parameter( xvmn(lr)=2.8866e-13, xvmx(lr)=4.1887e-9 )  ! mks
-        IF ( xv(mgs,lr) .gt. xvmx(lr) ) THEN
-          xv(mgs,lr) = xvmx(lr)
-          cx(mgs,lr) = rho0(mgs)*qx(mgs,lr)/(xvmx(lr)*xdn(mgs,lr))
-        ELSEIF ( xv(mgs,lr) .lt. xvmn(lr) ) THEN
-          xv(mgs,lr) = xvmn(lr)
-          cx(mgs,lr) = rho0(mgs)*qx(mgs,lr)/(xvmn(lr)*xdn(mgs,lr))
-        ENDIF
-
-        xmas(mgs,lr) = xv(mgs,lr)*xdn(mgs,lr)
-        xdia(mgs,lr,3) = (xmas(mgs,lr)*cwc1)**(1./3.) ! xdia(mgs,lr,1)
-        IF ( imurain == 3 ) THEN
-!          xdia(mgs,lr,1) = (6.*pii*xv(mgs,lr)/(alpha(mgs,lr)+1.))**(1./3.)
-          xdia(mgs,lr,1) = xdia(mgs,lr,3) ! formulae for Ziegler (1985) use mean volume diameter, not lambda**(-1)
-        ELSE ! imurain == 1, Characteristic diameter (1/lambda)
-          xdia(mgs,lr,1) = (6.*piinv*xv(mgs,lr)/((alpha(mgs,lr)+3.)*(alpha(mgs,lr)+2.)*(alpha(mgs,lr)+1.)))**(1./3.)
-        ENDIF
-!        rwrad(mgs) = 0.5*xdia(mgs,lr,1)
-
-! Inverse exponential version:
-!        xdia(mgs,lr,1) =
-!     >  (qx(mgs,lr)*rho0(mgs)
-!     > /(pi*xdn(mgs,lr)*cx(mgs,lr)))**(0.333333)
-      ELSE
-        xdia(mgs,lr,1) = &
-     &  (qx(mgs,lr)*rho0(mgs)/(pi*xdn(mgs,lr)*cno(lr)))**(0.25)
-      end if
-      else
-        xdia(mgs,lr,1) = 1.e-9
-!        rwrad(mgs) = 0.5*xdia(mgs,lr,1)
-      end if
-
-      end do
-
-
-!
-!  Ventilation coefficients
-
-      do mgs = 1,ngscnt
-
-
-      fadvisc(mgs) = advisc0*(416.16/(temg(mgs)+120.0))* & 
-     &  (temg(mgs)/296.0)**(1.5)
-
-      fakvisc(mgs) = fadvisc(mgs)*rhoinv(mgs)
-
-      fwvdf(mgs) = (2.11e-05)*((temg(mgs)/tfr)**1.94)* & 
-     &  (101325.0/(pres(mgs)))
-      
-      fschm(mgs) = (fakvisc(mgs)/fwvdf(mgs))
-
-      fvent(mgs) = (fschm(mgs)**(1./3.)) * (fakvisc(mgs)**(-0.5))
-
-      end do
-!
-!
-!  Ziegler nucleation 
-!
-!
-! cloud evaporation, condensation, and nucleation
-!  sqsat -> qss(mgs)
-
-      DO mgs=1,ngscnt
-        dcloud = 0.0
-        IF ( temg(mgs) .le. tfrh ) THEN
-
-
-         CYCLE
-        ENDIF
-
-      IF( ssat0(mgs) .GT. 0. .OR. ssf(mgs) .GT. 0. ) GO TO 620
-!6/4      IF( qvap(mgs) .EQ. qss(mgs) ) GO TO 631
-!
-!.... EVAPORATION. QV IS LESS THAN qss(mgs).
-!.... EVAPORATE CLOUD FIRST
-!
-      IF ( qx(mgs,lc) .LE. 0. ) GO TO 631
-!.... CLOUD EVAPORATION.
-! convert input 'cp' to cgs
-      R1=1./(1. + caw*(273.15 - cbw)*qss(mgs)*felv(mgs)/ &
-     &            (cp*(temg(mgs) - cbw)**2))
-      QEVAP= Min( qx(mgs,lc), R1*(qss(mgs)-qvap(mgs)) )
-
-
-      IF ( qx(mgs,lc) .LT. QEVAP ) THEN ! GO TO 63
-        qwvp(mgs) = qwvp(mgs) + qx(mgs,lc)
-        thetap(mgs) = thetap(mgs) - felv(mgs)*qx(mgs,lc)/(cp*pi0(mgs))
-!        t9(igs(mgs),jy,kgs(mgs)) = t9(igs(mgs),jy,kgs(mgs)) - (qx(mgs,lc))/dtp*felv(mgs)/(cp*pi0(mgs)) !* &
-!!     &                 dx*dy*dz3d(igs(mgs),jy,kgs(mgs))
-        qx(mgs,lc) = 0.
-        cx(mgs,lc) = 0.
-      ELSE
-        qwvp(mgs) = qwvp(mgs) + QEVAP
-        qx(mgs,lc) = qx(mgs,lc) - QEVAP
-        IF ( qx(mgs,lc) .le. 0. ) cx(mgs,lc) = 0.
-        thetap(mgs) = thetap(mgs) - felv(mgs)*QEVAP/(CP*pi0(mgs))
-!        t9(igs(mgs),jy,kgs(mgs)) = t9(igs(mgs),jy,kgs(mgs)) - (qevap)/dtp*felv(mgs)/(cp*pi0(mgs)) !* &
-!!     &                 dx*dy*dz3d(igs(mgs),jy,kgs(mgs))
-      ENDIF
-
-      GO TO 631
-
-
-  620 CONTINUE
-
-!.... CLOUD CONDENSATION
-
-        IF ( qx(mgs,lc) .GT. qxmin(lc) .and. cx(mgs,lc) .ge. 1. ) THEN
-
-
-
-!       ac1 =  xdn(mgs,lc)*elv(kgs(mgs))**2*epsi/
-!     :        (tka(kgs(mgs))*rw*temg(mgs)**2)
-! took out xdn factor because it cancels later...
-       ac1 =  felv(mgs)**2/(tka(mgs)*rw*temg(mgs)**2)
-
-
-!       bc = xdn(mgs,lc)*rw*temg(mgs)/
-!     :       (epsi*wvdf(kgs(mgs))*es(mgs))
-! took out xdn factor because it cancels later...
-       bc =   rw*temg(mgs)/(wvdf(mgs)*es(mgs))
-
-!       bs = rho0(mgs)*((rd*temg(mgs)/(epsi*es(mgs)))+
-!     :             (epsi*elv(kgs(mgs))**2/(pres(mgs)*temg(mgs)*cp)))
-
-!       taus = Min(dtp, xdn(mgs,lc)*rho0(mgs)*(ac1+bc)/
-!     :        (4*pi*0.89298*BS*0.5*xdia(mgs,lc,1)*cx(mgs,lc)*xdn(mgs,lc)))
-
-!
-      IF ( ssf(mgs) .gt. 0.0 .or. ssat0(mgs) .gt. 0.0 ) THEN
-       IF ( ny .le. 2 ) THEN
-!        write(0,*)  'undershoot: ',ssf(mgs),
-!     :   ( (qx(mgs,lv) - dcloud)/c1 - 1.0)*100.
-       ENDIF
-
-
-
-       IF ( qx(mgs,lc) .gt. qxmin(lc) ) THEN
-
-         IF ( xdia(mgs,lc,1) .le. 0.0 ) THEN
-          xmas(mgs,lc) = cwmasn
-          xdia(mgs,lc,1) = (xmas(mgs,lc)*cwc1)**c1f3
+      mgs = 1
+      DO kz = 1,nz
+       DO ix = 1,nx ! ixcol
+
+         rho0(mgs) = dn(ix,jy,kz)
+         DO il = lc,ls
+          qx(mgs,il) = max(an(ix,jy,kz,il), 0.0) 
+          cx(mgs,il) = max(an(ix,jy,kz,ln(il)), 0.0) 
+         ENDDO
+         
+         IF ( qx(mgs,lc) > qxmin(lc) ) THEN
+! Lambda for cloud droplets 
+         lam_c = ((cx(mgs,lc)*(Pi/6.)*xdn0(lc)*Gamc1)/(qx(mgs,lc)*rho0(mgs)*Gamc2))**(1./3.)
+          t1(ix,jy,kz) = 0.5*factor_c/lam_c
          ENDIF
-        d1 = (1./(ac1 + bc))*4.0*pi*ventc &
-     &        *0.5*xdia(mgs,lc,1)*cx(mgs,lc)*rhoinv(mgs)
 
-       ELSE
-         d1 = 0.0
-       ENDIF
-
-       IF ( rcond .eq. 2 .and. qx(mgs,lr) .gt. qxmin(lr) .and. cx(mgs,lr) > 1.e-9 ) THEN
-          IF ( imurain == 3 ) THEN
-           IF ( izwisventr == 1 ) THEN
-            rwvent(mgs) = ventrx(mgs)*(1.6 + 124.9*(1.e-3*rho0(mgs)*qx(mgs,lr))**.2046)
-           ELSE ! izwisventr = 2
-!  Following Wisner et al. (1972) but using gamma of volume. Note that Ferrier's rain fall speed does not integrate with gamma of volume, so using Vr = ar*d^br
-          rwvent(mgs) =   &
-     &  (0.78*ventrx(mgs) + 0.308*ventrxn(mgs)*fvent(mgs)   &
-     &   *Sqrt((ar*rhovt(mgs)))   &
-     &    *(xdia(mgs,lr,1)**((1.0+br)/2.0)) )
-           ENDIF
-
-          ELSE ! imurain == 1
-
-           IF ( iferwisventr == 1 ) THEN
-             alpr = Min(alpharmax,alpha(mgs,lr) )
-!             alpr = alpha(mgs,lr)
-             x =  1. + alpr
-
-              tmp = 1 + alpr
-              i = Int(dgami*(tmp))
-              del = tmp - dgam*i
-              g1palp = gmoi(i) + (gmoi(i+1) - gmoi(i))*del*dgami
-
-              tmp = 2.5 + alpr + 0.5*bx(lr)
-              i = Int(dgami*(tmp))
-              del = tmp - dgam*i
-              y = (gmoi(i) + (gmoi(i+1) - gmoi(i))*del*dgami)/g1palp ! ratio of gamma functions
-
-         vent1 = dble(xdia(mgs,lr,1))**(-2. - alpr)
-         vent2 = dble(1./xdia(mgs,lr,1) + 0.5*fx(lr))**dble(2.5+alpr+0.5*bx(lr))
-        
-        
-        rwvent(mgs) =    &
-     &    0.78*x +    &
-     &    0.308*fvent(mgs)*y*   &
-     &            Sqrt(ax(lr)*rhovt(mgs))*(vent1/vent2)
-
-           ELSEIF ( iferwisventr == 2 ) THEN
-          
-!  Following Wisner et al. (1972) but using gamma of volume. Note that Ferrier's rain fall speed does not integrate with gamma of volume, so using Vr = ar*d^br
-            x =  1. + alpha(mgs,lr)
-
-            rwvent(mgs) =   &
-     &        (0.78*x + 0.308*ventrxn(mgs)*fvent(mgs)   &
-     &         *Sqrt((ar*rhovt(mgs)))   &
-     &         *(xdia(mgs,lr,1)**((1.0+br)/2.0)) )
-
-          
-          ENDIF ! iferwisventr
-          
-       ENDIF ! imurain
-
-       d1r = (1./(ac1 + bc))*4.0*pi*rwvent(mgs) & 
-     &        *0.5*xdia(mgs,lr,1)*cx(mgs,lr)*rhoinv(mgs)
-       ELSE
-       d1r = 0.0
-       ENDIF
-       
-       
-       e1  = felvcp(mgs)/(pi0(mgs))
-       f1 = pk(mgs) ! (pres(mgs)/poo)**cap
-
-!
-!  fifth trial to see what happens:
-!
-       ltemq = (temg(mgs)-163.15)/fqsat+1.5
-       ltemq = Min( nqsat, Max(1,ltemq) )
-       ltemq1 = ltemq
-       temp1 = temg(mgs)
-       p380 = 380.0/pres(mgs)
-
-!       taus = Max( 0.05*dtp, Min(taus, 0.25*dtp ) )
-!       nc = NInt(dtp/Min(1.0,0.5*taus))
-!       dtcon = dtp/float(nc)
-       ss1 = qx(mgs,lv)/qvs(mgs)
-       ss2 = ss1
-       temp2 = temp1
-       qv1 = qx(mgs,lv)
-       qvs1 = qvs(mgs)
-       qis1 = qis(mgs)
-       dt1 = 0.0
-
-
-!          dtcon = Max(dtcon,0.2)
-!          nc = Nint(dtp/dtcon)
-
-       ltemq1 = ltemq
-! want to start out with a small time step to handle the steep slope
-! and fast changes, then can switch to a larger step (dtcon2) for the
-! rest of the big time step.
-! base the initial time step (dtcon1) on the slope (delta)
-       IF ( Abs(ss1 - 1.0) .gt. 1.e-5 ) THEN
-         delta = 0.5*(qv1-qvs1)/(d1*(ss1 - 1.0))
-       ELSE
-         delta = 0.1*dtp
-       ENDIF
-! delta is the extrapolated time to get halfway from qv1 to qvs1
-! want at least 5 time steps to the halfway point, so multiply by 0.2
-! for the initial time step
-       dtcon1 = Min(0.05,0.2*delta)
-       nc = Max(5,2*NInt( (dtp-4.0*dtcon1)/delta))
-       dtcon2 = (dtp-4.0*dtcon1)/nc
-
-       n = 1
-       dt1 = 0.0
-       nc = 0
-       dqc = 0.0
-       dqr = 0.0
-       dqi = 0.0
-       dqs = 0.0
-
-       RK2c: DO WHILE ( dt1 .lt. dtp )
-          nc = 0
-          IF ( n .le. 4 ) THEN
-            dtcon = dtcon1
-          ELSE
-            dtcon = dtcon2
-          ENDIF
- 609       dqv  = -(ss1 - 1.)*d1*dtcon
-           dqvr = -(ss1 - 1.)*d1r*dtcon
-            dtemp = -0.5*e1*f1*(dqv + dqvr)
-!          write(0,*) 'RK2c dqv1 = ',dqv
-! calculate midpoint values:
-           ltemq1m = ltemq1 + Nint(dtemp*fqsat + 0.5)
-           IF ( ltemq1m .lt. 1 .or. ltemq1m .gt. nqsat ) THEN
-             write(0,*) 'STOP in icezvd_dr line 3790 '
-             write(0,*) ' ltemq1m,icond = ',ltemq1m,icond
-             write(0,*) ' dtemp,e1,f1,dqv,dqvr = ', dtemp,e1,f1,dqv,dqvr
-             write(0,*) ' d1,d1r,dtcon,ss1 = ',d1,d1r,dtcon,ss1
-             write(0,*) ' dqc, dqr = ',dqc,dqr
-             write(0,*) ' qv,qc,qr = ',qx(mgs,lv)*1000.,qx(mgs,lc)*1000.,qx(mgs,lr)*1000.
-             write(0,*) ' i, j, k = ',igs(mgs),jy,kgs(mgs)
-             write(0,*) ' dtcon1,dtcon2,delta = ',dtcon1,dtcon2,delta
-             write(0,*) ' nc,dtp = ',nc,dtp
-             write(0,*) ' rwvent,xdia,crw = ', rwvent(mgs),xdia(mgs,lr,1),cx(mgs,lr)
-             write(0,*) ' fvent,alphar = ',fvent(mgs),alpha(mgs,lr)
-             write(0,*) ' xvr,xmasr,xdnr,cwc1 = ',xv(mgs,lr),xmas(mgs,lr),xdn(mgs,lr),cwc1
-           ENDIF
-            dqvs = dtemp*p380*dtabqvs(ltemq1m)
-            qv1m = qv1 + dqv + dqvr
-!          qv1mr = qv1r + dqvr
-
-            qvs1m = qvs1 + dqvs
-            ss1m = qv1m/qvs1m
-
-    ! check for undersaturation when no ice is present, if so, then reduce time step
-          IF ( ss1m .lt. 1.  .and. (dqvii + dqvis) .eq. 0.0 ) THEN
-            dtcon = (0.5*dtcon)
-            IF ( dtcon .ge. dtcon1 ) THEN
-             GOTO 609
-            ELSE
-             EXIT
-            ENDIF
-          ENDIF
-! calculate full step:
-          dqv  = -(ss1m - 1.)*d1*dtcon
-          dqvr = -(ss1m - 1.)*d1r*dtcon
-
-
-!          write(0,*) 'RK2a dqv1m = ',dqv
-          dtemp = -e1*f1*(dqv + dqvr)
-          ltemq1 = ltemq1 + Nint(dtemp*fqsat + 0.5)
-           IF ( ltemq1 .lt. 1 .or. ltemq1 .gt. nqsat ) THEN
-             write(0,*) 'STOP in icezvd_dr line 3856 '
-             write(0,*) ' ltemq1m,icond = ',ltemq1m,icond
-             write(0,*) ' dtemp,e1,dqv,dqvr = ', dtemp,e1,dqv,dqvr
-           ENDIF
-          dqvs = dtemp*p380*dtabqvs(ltemq1)
-
-          qv1 = qv1 + dqv + dqvr
-
-          dqc = dqc - dqv
-          dqr = dqr - dqvr
-
-          qvs1 = qvs1 + dqvs
-          ss1 = qv1/qvs1
-          temp1 = temp1 + dtemp
-          IF ( temp2 .eq. temp1 .or. ss2 .eq. ss1 .or.  &
-     &           ss1 .eq. 1.00 .or.  &
-     &      ( n .gt. 10 .and. ss1 .lt. 1.0005 ) ) THEN
-!           write(0,*) 'RK2c break'
-           EXIT
-          ELSE
-           ss2 = ss1
-           temp2 = temp1
-           dt1 = dt1 + dtcon
-           n = n + 1
-          ENDIF
-       ENDDO RK2c
-
-
-        dcloud = dqc ! qx(mgs,lv) - qv1
-        thetap(mgs) = thetap(mgs) + e1*(DCLOUD + dqr)
-        qwvp(mgs) = qwvp(mgs) - (DCLOUD + dqr)
-        qx(mgs,lc) = qx(mgs,lc) + DCLOUD
-        qx(mgs,lr) = qx(mgs,lr) + dqr
-!        t9(igs(mgs),jy,kgs(mgs)) = t9(igs(mgs),jy,kgs(mgs)) + (DCLOUD + dqr)/dtp*felv(mgs)/(cp*pi0(mgs)) !* &
-!!     &                 dx*dy*dz3d(igs(mgs),jy,kgs(mgs))
-
-
-        theta(mgs) = thetap(mgs) + theta0(mgs)
-        temg(mgs) = theta(mgs)*f1
-        ltemq = (temg(mgs)-163.15)/fqsat+1.5
-        ltemq = Min( nqsat, Max(1,ltemq) )
-        qvs(mgs) = pqs(mgs)*tabqvs(ltemq)
-        es(mgs) = 6.1078e2*tabqvs(ltemq)
-
-!
-
-      ENDIF  ! dcloud .gt. 0.
-
-
-      ELSE  ! qc .le. qxmin(lc)
-
-        IF ( ssf(mgs) .gt. 0.0 ) THEN ! .and.  ssmax(mgs) .lt. sscb ) THEN
-
-          IF ( iqcinit == 1 ) THEN
-
-         qvs0   = 380.*exp(17.27*(temg(mgs)-273.)/(temg(mgs)- 36.))/pk(mgs)
-
-         dcloud = Max(0.0, (qx(mgs,lv)-qvs0) / (1.+qvs0*f5/(temg(mgs)-36.)**2) )
-
-          ELSEIF ( iqcinit == 3 ) THEN
-              R1=1./(1. + caw*(273.15 - cbw)*qss(mgs)*felvcp(mgs)/ & 
-     &             ((temg(mgs) - cbw)**2))
-            DCLOUD=R1*(qvap(mgs) - qvs(mgs))  ! KW model adjustment; 
-                              ! this will put mass into qc if qv > sqsat exists
-          
-          ELSEIF ( iqcinit == 2 ) THEN
-!              R1=1./(1. + caw*(273.15 - cbw)*qss(mgs)*felv(mgs)/
-!     :             (cp*(temg(mgs) - cbw)**2))
-!            DCLOUD=R1*(qvap(mgs) - qvs(mgs))  ! KW model adjustment; 
-                              ! this will put mass into qc if qv > sqsat exists
-         ssmx = ssmxinit
-
-          IF ( ssf(mgs) > ssmx ) THEN
-           CALL QVEXCESS(ngs,mgs,qwvp,qv0,qx(1,lc),pres,thetap,theta0,dcloud, & 
-     &      pi0,tabqvs,nqsat,fqsat,cbw,fcqv1,felvcp,ssmx,pk,ngscnt)
-          ELSE
-            dcloud = 0.0
-          ENDIF
+         IF ( qx(mgs,li) > qxmin(li) ) THEN
+! Lambda for cloud ice 
+         lam_i = ((cx(mgs,li)*(Pi/6.)*xdn0(li)*Gami1)/(qx(mgs,li)*rho0(mgs)*Gami2))**(1./3.)
+          t2(ix,jy,kz) = 0.5*factor_i/lam_i
          ENDIF
-        ELSE
-            dcloud = 0.0
-        ENDIF
 
-        thetap(mgs) = thetap(mgs) + felvcp(mgs)*DCLOUD/(pi0(mgs))
-        qwvp(mgs) = qwvp(mgs) - DCLOUD
-        qx(mgs,lc) = qx(mgs,lc) + DCLOUD
-
-!        t9(igs(mgs),jy,kgs(mgs)) = t9(igs(mgs),jy,kgs(mgs)) + (DCLOUD)/dtp*felv(mgs)/(cp*pi0(mgs)) ! * &
-!!     &                 dx*dy*dz3d(igs(mgs),jy,kgs(mgs))
-
-        theta(mgs) = thetap(mgs) + theta0(mgs)
-        temg(mgs) = theta(mgs)*pk(mgs) !( pres(mgs) / poo ) ** cap
-!        temg(mgs) = theta2temp( theta(mgs), pres(mgs) )
-        ltemq = (temg(mgs)-163.15)/fqsat+1.5
-        ltemq = Min( nqsat, Max(1,ltemq) )
-        qvs(mgs) = pqs(mgs)*tabqvs(ltemq)
-        es(mgs) = 6.1078e2*tabqvs(ltemq)
-
-!.... S. TWOMEY (1959)
-! Note: get here if there is no previous cloud water and w > 0.
-      cn(mgs) = 0.0
-      
-      IF ( ncdebug .ge. 1 ) THEN
-        write(iunit,*) 'at 613: ',qx(mgs,lc),cx(mgs,lc),wvel(mgs),ssmax(mgs),kgs(mgs)
-      ENDIF
-      
-!      IF ( ssmax(mgs) .lt. sscb .and. qx(mgs,lc) .gt. qxmin(lc)) THEN
-      IF ( dcloud .gt. qxmin(lc) .and. wvel(mgs) > 0.0) THEN
-       CN(mgs) =   CCNE*wvel(mgs)**cnexp ! *Min(1.0,1./dtp) ! 0.3465
-        IF ( ny .le. 2 .and. cn(mgs) .gt. 0.0    &
-     &                    .and. ncdebug .ge. 1 ) THEN ! .and. kgs(mgs) <= 6 ) THEN
-          write(iunit,*) 'CN: ',cn(mgs)*1.e-6, cx(mgs,lc)*1.e-6, qx(mgs,lc)*1.e3,   &
-     &       wvel(mgs), dcloud*1.e3
-          IF ( cn(mgs) .gt. 1.0 ) write(iunit,*) 'cwrad = ',   &
-     &       1.e6*(rho0(mgs)*qx(mgs,lc)/cn(mgs)*cwc1)**c1f3,   &
-     &   igs(mgs),kgs(mgs),temcg(mgs),    &
-     &   1.e3*an(igs(mgs),jgs,kgs(mgs)-1,lc)
-        ENDIF
-        IF ( iccwflg .eq. 1 ) THEN
-          cn(mgs) = Min(cwccn, Max(cn(mgs),   &
-     &       rho0(mgs)*qx(mgs,lc)/(xdn(mgs,lc)*(4.*pi/3.)*(4.e-6)**3)))
-        ENDIF
-      ELSE
-          cn(mgs) = Min(cwccn,    &
-     &       rho0(mgs)*dcloud/(xdn(mgs,lc)*(4.*pi/3.)*(4.e-6)**3) )
-      ENDIF
-
-      IF ( cn(mgs) .gt. 0.0 ) THEN
-       IF ( cn(mgs) .gt. ccnc(mgs) ) THEN
-         cn(mgs) = ccnc(mgs)
-!         ccnc(mgs) = 0.0
-       ENDIF
-!      cx(mgs,lc) = cx(mgs,lc) + cn(mgs)
-      ccnc(mgs) = Max(0.0, ccnc(mgs) - cn(mgs))
-      ccna(mgs) = ccna(mgs) + cn(mgs)
-      ENDIF
-
-!       write(91,*) 'nuc1: cn, ix, kz = ',cn(mgs),igs(mgs),kgs(mgs),wvel(mgs),cnexp,ccnc(mgs)
-
-      IF( CN(mgs) .GT. cx(mgs,lc) ) cx(mgs,lc) = CN(mgs)
-      IF( cx(mgs,lc) .GT. 0. .AND. qx(mgs,lc) .le. qxmin(lc) ) THEN
-        cx(mgs,lc) = 0.
-      ELSE
-        cx(mgs,lc) = Min(cx(mgs,lc),rho0(mgs)*Max(0.0,qx(mgs,lc))/cwmasn)
-      ENDIF
-
-        END IF ! qc .gt. 0.
-
-!        ES=EES(PIB(K)*PT)
-!        SQSAT=EPSI*ES/(PB(K)*1000.-ES)
-
-!.... CLOUD NUCLEATION
-!      T=PIB(K)*PT
-!      ES=1.E3*PB(K)*QV/EPSI
-
-      IF ( wvel(mgs) .le. 0. ) GO TO 616
-      IF ( cx(mgs,lc) .le. 0. )  GO TO 613                             !TWOMEY (1959) Nucleation
-      IF ( kzbeg-1+kgs(mgs) .GT. 1 .and. qx(mgs,lc) .le. qxmin(lc)) GO TO 613  !TWOMEY (1959) Nucleation
-      IF ( kzbeg-1+kgs(mgs) .eq. 1 .and. wvel(mgs) .gt. 0. ) GO TO 613         !TWOMEY (1959) Nucleation
-!.... ATTEMPT ZIEGLER CLOUD NUCLEATION IN CLOUD INTERIOR UNLESS...
-  616 IF ( ssf(mgs) .LE. SUPCB .AND. wvel(mgs) .GT. 0. ) GO TO 631 !... weakly saturated updraft
-      IF ( kzbeg-1+kgs(mgs) .GT. 1 .AND. kzbeg-1+kgs(mgs) .LT. nzend-1 .AND.  &
-     &    (ssfkp1(mgs) .GE. SUPMX .OR. &
-     &     ssf(mgs)    .GE. SUPMX .OR. &
-     &     ssfkm1(mgs) .GE. SUPMX)) GO TO 631                      !... too much vapour
-      IF (ssf(mgs) .LT. 1.E-10 .OR. ssf(mgs) .GE. SUPMX) GO TO 631 !... at the extremes for ss
-
-!
-! get here if ( qc > 0 and ss > supcb) or (w < 0)
-!
-
-      if (ndebug .gt. 0) write(0,*) "ICEZVD_DR: Entered Ziegler Cloud Nucleation" !mpidebug
-
-      DSSDZ=0.
-      r2dzm=0.50/dz3d(igs(mgs),jy,kgs(mgs))
-      IF ( irenuc >= 0 ) THEN
-
-      IF ( irenuc /= 2 ) THEN !{
-
-        IF ( kzend == nzend ) THEN
-          t0p3 = t0(igs(mgs),jgs,Min(kze,kgs(mgs)+3))
-          t0p1 = t0(igs(mgs),jgs,Min(kze,kgs(mgs)+1))
-        ELSE
-          t0p3 = t0(igs(mgs),jgs,kgs(mgs)+3)
-          t0p1 = t0(igs(mgs),jgs,kgs(mgs)+1)
-        ENDIF
-
-      IF ( ( ssf(mgs) .gt. ssmax(mgs) .or.  irenuc .eq. 1 ) &
-     &   .and.  ( ( lccn .lt. 1 .and.  &
-     &            cx(mgs,lc) .lt. cwccn*(Min(1.0,rho0(mgs)))) .or. &
-     &    ( lccn .gt. 1 .and. ccnc(mgs) .gt. 0. )   ) &
-     &    ) THEN
-      IF( kzbeg-1+kgs(mgs) .GT. 1 .AND. kzbeg-1+kgs(mgs) .LT. nzend-1 &
-     &  .and. ssf(mgs) .gt. 0.0 &
-     &  .and. ssfkp1(mgs) .LT. SUPMX .and. ssfkp1(mgs) .ge. 0.0  &
-     &  .AND. ssfkm1(mgs) .LT. SUPMX .AND. ssfkm1(mgs) .ge. 0.0  &
-     &  .AND. ssfkp1(mgs) .gt. ssfkm1(mgs)  &
-     &  .and. t0p3 .gt. 233.2) THEN
-          DSSDZ = (ssfkp1(mgs) - ssfkm1(mgs))*R2DZM
-!
-! otherwise check for cloud base condition with updraft:
-!
-        ELSEIF( kzbeg-1+kgs(mgs) .GT. 1 .AND. kzbeg-1+kgs(mgs) .LT. nzend-1 &
-!        IF( kgs(mgs) .GT. 1 .AND. kgs(mgs) .LT. NZ-1 &
-     &  .and. ssf(mgs) .gt. 0.0  .and. wvel(mgs) .gt. 0.0 &
-     &  .and. ssfkp1(mgs) .gt. 0.0   &
-     &  .AND. ssfkm1(mgs) .le. 0.0 .and. wvelkm1(mgs) .gt. 0.0 &
-     &  .AND. ssf(mgs) .gt. ssfkm1(mgs)  &
-     &  .and. t0p1 .gt. 233.2) THEN
-         DSSDZ = 2.*(ssf(mgs) - ssfkm1(mgs))*R2DZM  ! 1-sided difference
-        ENDIF
-
-       ENDIF
-!
-!CLZ  IF(wijk.LE.0.) CN=CCN*ssfilt(ix,jy,kz)**CCK
-! note: CCN -> cwccn, DELT -> dtp
-      c1 = Max(0.0, rho0(mgs)*(qx(mgs,lv) - qss(mgs))/ &
-     &        (xdn(mgs,lc)*(4.*pi/3.)*(4.e-6)**3))
-      IF ( lccn .lt. 1 ) THEN
-       CN(mgs) = cwccn*CCK*ssf(mgs)**CCKM*dtp*   &
-     & Max(0.0,    &
-     &         (wvel(mgs)*DSSDZ) )      ! probably the vertical gradient dominates
-      ELSE
-      CN(mgs) =  &
-     &    Min(ccnc(mgs), cnuc(mgs)*CCK*ssf(mgs)**CCKM*dtp*   &
-     & Max(0.0,    &
-     &         ( wvel(mgs)*DSSDZ) )  )
-!      IF ( cn(mgs) .gt. 0 ) ccnc(mgs) = ccnc(mgs) - cn(mgs)
-      ENDIF
-
-      IF ( cn(mgs) .gt. 0.0 ) THEN
-       IF ( ccnc(mgs) .lt. 5.e7 .and. cn(mgs) .ge. 5.e7 ) THEN
-          cn(mgs) = 5.e7
-          ccnc(mgs) = 0.0
-       ELSEIF ( cn(mgs) .gt. ccnc(mgs) ) THEN
-         cn(mgs) = ccnc(mgs)
-         ccnc(mgs) = 0.0
-       ENDIF
-      cx(mgs,lc) = cx(mgs,lc) + cn(mgs)
-      ccnc(mgs) = Max(0.0, ccnc(mgs) - cn(mgs))
-      ENDIF
-
-      ELSEIF ( irenuc == 2 ) THEN !} { 
-      ! simple Twomey scheme
-       CN(mgs) =   CCNE*Max(0.0,wvel(mgs))**cnexp ! *Min(1.0,1./dtp) ! 0.3465
-!!       CN(mgs) = Max( 0.0, CN(mgs) - ccna(mgs) )
-       CN(mgs) = Min(cn(mgs), ccnc(mgs))
-       
-       cx(mgs,lc) = cx(mgs,lc) + cn(mgs)
-       
-       ccnc(mgs) = Max(0.0, ccnc(mgs) - cn(mgs))
-       
-      ENDIF ! }
-
-      ccna(mgs) = ccna(mgs) + cn(mgs)
-
-      ENDIF ! irenuc >= 0
-
-      IF( cx(mgs,lc) .GT. 0. .AND. qx(mgs,lc) .LE. qxmin(lc)) cx(mgs,lc)=0.
-      GO TO 631
-!.... NUCLEATION ON CLOUD INFLOW BOUNDARY POINT
-
-  613 CONTINUE
-
-  631  CONTINUE
-
-!
-! Check for supersaturation greater than ssmx and adjust down
-!
-       ssmx = 1.1
-       qv1 = qv0(mgs) + qwvp(mgs)
-       qvs1 = qvs(mgs)
-
-       IF ( qv1 .gt. (ssmx*qvs1) ) THEN
-        
-         ss1 = qv1/qvs1
-
-        ssmx = 100.*(ssmx - 1.0)
-
-        CALL QVEXCESS(ngs,mgs,qwvp,qv0,qx(1,lc),pres,thetap,theta0,qvex,   &
-     &    pi0,tabqvs,nqsat,fqsat,cbw,fcqv1,felvcp,ssmx,pk,ngscnt)
-
-
-
-        IF ( qvex .gt. 0.0 ) THEN
-        thetap(mgs) = thetap(mgs) + felvcp(mgs)*qvex/(pi0(mgs))
-
-!        t9(igs(mgs),jy,kgs(mgs)) = t9(igs(mgs),jy,kgs(mgs)) + (qvex)/dtp*felv(mgs)/(cp*pi0(mgs)) !* &
-!!     &                 dx*dy*dz3d(igs(mgs),jy,kgs(mgs))
-
-        qwvp(mgs) = qwvp(mgs) - qvex
-        qx(mgs,lc) = qx(mgs,lc) + qvex
-        cn(mgs) = Min( ccwmx, qvex/Max( cwmasn5, xmas(mgs,lc) )  )
-        ccnc(mgs) = Max( 0.0, ccnc(mgs) - cn(mgs) )
-        cx(mgs,lc) = cx(mgs,lc) + cn(mgs)
-        
-!        write(iunit,*) 'theta = ',theta0(mgs) + thetap(mgs)
-
-!        temg(mgs) = theta(mgs)*( pres(mgs) / poo ) ** cap
-
-        ENDIF
-
-       
-       ENDIF
-
-!
-! Calculate droplet volume and check if it is within bounds.
-!  Adjust if necessary
-!  
-
-
-      cx(mgs,lc) = Min( ccwmx, cx(mgs,lc) )
-      IF ( cx(mgs,lc) .GT. 1.0e7 .AND. qx(mgs,lc) .GT. qxmin(lc)) THEN
-        xmas(mgs,lc) = rho0(mgs)*qx(mgs,lc)/(cx(mgs,lc))
-      ENDIF
-
-      xmas(mgs,lc) = Min( xmas(mgs,lc), cwmasx )
-      xmas(mgs,lc) = Max( xmas(mgs,lc), cwmasn )
-
-
-!      IF( cx(mgs,lc) .GT. 10.e6 .AND. qx(mgs,lc) .GT. qxmin(lc) ) GO TO 681
-!        ccwtmp = cx(mgs,lc)
-!        cwmastmp = xmas(mgs,lc)
-!       xmas(mgs,lc) = Max(xmas(mgs,lc), cwmasn)
-!       IF (qx(mgs,lc) .GT. qxmin(lc) .AND. cx(mgs,lc) .le. 0.) THEN
-!          cx(mgs,lc) = Min(0.5*cwccn,rho0(mgs)*qx(mgs,lc)/xmas(mgs,lc))
-!          xmas(mgs,lc) = rho0(mgs)*qx(mgs,lc)/cx(mgs,lc)
-!       ENDIF
-!      IF (cx(mgs,lc) .GT. 0. .AND. qx(mgs,lc) .GT. qxmin(lc))    &
-!     &        xmas(mgs,lc) = rho0(mgs)*qx(mgs,lc)/cx(mgs,lc)
-!      IF (qx(mgs,lc) .GT. qxmin(lc) .AND. xmas(mgs,lc) .LT. cwmasn)    &
-!     &          xmas(mgs,lc) = cwmasn
-!      IF (qx(mgs,lc) .GT. qxmin(lc) .AND. xmas(mgs,lc) .GT. cwmasx)    &
-!     &    xmas(mgs,lc) = cwmasx
-!      IF ( qx(mgs,lc) .gt. qxmin(lc) ) THEN
-!        cx(mgs,lc) = rho0(mgs)*qx(mgs,lc)/Max(cwmasn,xmas(mgs,lc))
-!      ENDIF
-        
-
- 681  CONTINUE
-        
-      IF ( ipconc .ge. 3 .and. rcond == 2 ) THEN
-
-        
-        IF (cx(mgs,lr) .GT. 0. .AND. qx(mgs,lr) .GT. qxmin(lr))    &
-     &       xv(mgs,lr)=rho0(mgs)*qx(mgs,lr)/(xdn(mgs,lr)*cx(mgs,lr))
-        IF (xv(mgs,lr) .GT. xvmx(lr)) xv(mgs,lr) = xvmx(lr)
-        IF (xv(mgs,lr) .LT. xvmn(lr)) xv(mgs,lr) = xvmn(lr)
-
-      ENDIF
-
-
-
-      ENDDO ! mgs
-
-
-! ################################################################
-      DO mgs=1,ngscnt
-      IF ( ssf(mgs) .gt. ssmax(mgs)    &
-     &  .and. ( idecss .eq. 0 .or. qx(mgs,lc) .gt. qxmin(lc)) ) THEN
-        ssmax(mgs) = ssf(mgs)
-      ENDIF
-      ENDDO
-!
-
-      do mgs = 1,ngscnt
-      an(igs(mgs),jy,kgs(mgs),lt) = theta0(mgs) + thetap(mgs)
-      an(igs(mgs),jy,kgs(mgs),lv) =  qv0(mgs) + qwvp(mgs)
-!      tmp3d(igs(mgs),jy,kgs(mgs)) = tmp3d(igs(mgs),jy,kgs(mgs)) + t9(igs(mgs),jy,kgs(mgs)) !  pi0(mgs) ! wvdf(mgs) ! ssf(mgs) ! cn(mgs)
-!
-       if ( ido(lc) .eq. 1 )  then
-        an(igs(mgs),jy,kgs(mgs),lc) = qx(mgs,lc) +    &
-     &    min( an(igs(mgs),jy,kgs(mgs),lc), 0.0 )
-!        qx(mgs,lc) = an(igs(mgs),jy,kgs(mgs),lc)
-       end if
-!
-
-       if ( ido(lr) .eq. 1 .and. rcond == 2 )  then
-        an(igs(mgs),jy,kgs(mgs),lr) = qx(mgs,lr) +    &
-     &    min( an(igs(mgs),jy,kgs(mgs),lr), 0.0 )
-!        qx(mgs,lr) = an(igs(mgs),jy,kgs(mgs),lr)
-       end if
-
-
-
-       IF (  ipconc .ge. 2 ) THEN
-        an(igs(mgs),jy,kgs(mgs),lnc) = Max(cx(mgs,lc) , 0.0)
-        IF ( lccn .gt. 1 ) THEN
-          an(igs(mgs),jy,kgs(mgs),lccn) = Max(0.0, Min( ccwmx, ccnc(mgs) ) )
-        ENDIF
-       ENDIF
-       IF (  ipconc .ge. 3 .and. rcond == 2 ) THEN
-        an(igs(mgs),jy,kgs(mgs),lnr) = Max(cx(mgs,lr) , 0.0)
-       ENDIF
-      end do
-
-
-29998 continue
-
-
-      if ( kz .gt. nz-1 .and. ix .ge. nx) then
-        if ( ix .ge. nx ) then
-         go to 2200 ! exit gather scatter
-        else
-         nzmpb = kz
-        endif
-      else
-        nzmpb = kz
-      end if
-
-      if ( ix .ge. nx ) then
-        nxmpb = 1
-        nzmpb = kz+1
-      else
-       nxmpb = ix+1
-      end if
-
- 2000 continue ! inumgs
- 2200 continue
-!
-!  end of gather scatter (for this jy slice)
-
-
-! Redistribute inappreciable cloud particles and charge
-!
-! Redistribution everywhere in the domain...
-!
-      frac = 1.0 ! 0.25 ! 1.0 ! 0.2
-!
-!  alternate test version for ipconc .ge. 3
-!  just vaporize stuff to prevent noise in the number concentrations
-
-
-      do kz = 1,nz
-!      do jy = 1,1
-      do ix = 1,nx
-      
-      zerocx(:) = .false.
-      DO il = lc,lhab
-        IF ( ln(il) > 1 ) zerocx(il) = ( an(ix,jy,kz,ln(il)) < cxmin )
-        IF ( lz(il) > 1 ) zerocx(il) = ( zerocx(il) .or. an(ix,jy,kz,lz(il)) < zxmin )
-      ENDDO
-
-      IF ( lhl .gt. 1 ) THEN
-      
-      
-      if ( an(ix,jy,kz,lhl) .lt. frac*qxmin(lhl) .or. zerocx(lhl) ) then
-
-!        IF ( an(ix,jy,kz,lhl) .gt. 0 ) THEN
-          an(ix,jy,kz,lv) = an(ix,jy,kz,lv) + an(ix,jy,kz,lhl)
-          an(ix,jy,kz,lhl) = 0.0
-!        ENDIF
-
-        IF ( ipconc .ge. 5 ) THEN ! .and. an(ix,jy,kz,lnh) .gt. 0.0 ) THEN
-          an(ix,jy,kz,lnhl) = 0.0
-        ENDIF
-
-        IF ( lvhl .gt. 1 ) THEN
-           an(ix,jy,kz,lvhl) = 0.0
-        ENDIF
-
-        IF ( lhlw .gt. 1 ) THEN
-           an(ix,jy,kz,lhlw) = 0.0
-        ENDIF
-      
-        IF ( lzhl .gt. 1 ) THEN
-           an(ix,jy,kz,lzhl) = 0.0
-        ENDIF
-
-      ELSE
-       IF ( lvol(lhl) .gt. 1 ) THEN  ! check density
-        IF ( an(ix,jy,kz,lvhl) .gt. 0.0 ) THEN
-         tmp = dn(ix,jy,kz)*an(ix,jy,kz,lhl)/an(ix,jy,kz,lvhl)
-        ELSE 
-         tmp = 0.5*( xdnmn(lhl) + xdnmx(lhl) )
-          an(ix,jy,kz,lvhl) = dn(ix,jy,kz)*an(ix,jy,kz,lhl)/tmp
-        ENDIF
-
-! DEBUG
-!          tmp = 850.
-!          an(ix,jy,kz,lvhl) = dn(ix,jy,kz)*an(ix,jy,kz,lhl)/tmp
-!        IF ( an(ix,jy,kz,lhl) .gt. 1.0e-3 ) THEN
-!          write(iunit,*) 'HAILdr: dn,q,c,v = ',tmp,an(ix,jy,kz,lhl)*1000.,
-!     :       an(ix,jy,kz,lnhl), an(ix,jy,kz,lvhl)
-!          write(iunit,*) 'lvhl = ',lvhl
-!        ENDIF
-
-
-        IF ( tmp .gt. xdnmx(lhl) .or. tmp .lt. xdnmn(lhl) ) THEN
-          tmp = Min( xdnmx(lhl), Max( xdnmn(lhl) , tmp ) )
-          an(ix,jy,kz,lvhl) = dn(ix,jy,kz)*an(ix,jy,kz,lhl)/tmp
-        ENDIF
-        
-       ENDIF
-       
-       
-!  CHECK INTERCEPT
-       IF ( ipconc == 5 .and.  an(ix,jy,kz,lhl) .gt. qxmin(lhl) .and.  alphahl .le. 0.1 .and. lnhl .gt. 1 .and. lzhl == 0 ) THEN
-       
-         IF ( lvhl .gt. 1 ) THEN
-           hwdn = dn(ix,jy,kz)*an(ix,jy,kz,lhl)/an(ix,jy,kz,lvhl)
-         ELSE
-           hwdn = xdn0(lhl)
+         IF ( qx(mgs,ls) > qxmin(ls) ) THEN
+! Lambda for snow
+         lam_s = ((cx(mgs,ls)*(Pi/6.)*xdn0(ls)*Gams1)/(qx(mgs,ls)*rho0(mgs)*Gams2))**(1./3.)
+          t3(ix,jy,kz) = 0.5*factor_s/lam_s
          ENDIF
-           tmp = (hwdn*an(ix,jy,kz,lnhl))/(dn(ix,jy,kz)*an(ix,jy,kz,lhl))
-           tmpg = an(ix,jy,kz,lnhl)*(tmp*(3.14159))**(1./3.)
-           IF ( tmpg .lt. cnohlmn ) THEN
-             tmp = ( (hwdn)/(dn(ix,jy,kz)*an(ix,jy,kz,lhl))*(3.14159))**(1./3.)
-              an(ix,jy,kz,lnhl) = (cnohlmn/tmp)**(3./4.)
-           ENDIF
-       
-       ENDIF
-!      ELSE  ! check mean size here?
 
-      end if
-
-
-
-      ENDIF !lhl
-
-
-      if ( an(ix,jy,kz,lh) .lt. frac*qxmin(lh) .or. zerocx(lh) ) then
-
-!        IF ( an(ix,jy,kz,lh) .gt. 0 ) THEN
-          an(ix,jy,kz,lv) = an(ix,jy,kz,lv) + an(ix,jy,kz,lh)
-          an(ix,jy,kz,lh) = 0.0
-!        ENDIF
-
-        IF ( ipconc .ge. 5 ) THEN ! .and. an(ix,jy,kz,lnh) .gt. 0.0 ) THEN
-          an(ix,jy,kz,lnh) = 0.0
-        ENDIF
-
-        IF ( lvh .gt. 1 ) THEN
-           an(ix,jy,kz,lvh) = 0.0
-        ENDIF
       
-        IF ( lhw .gt. 1 ) THEN
-           an(ix,jy,kz,lhw) = 0.0
-        ENDIF
-      
-        IF ( lzh .gt. 1 ) THEN
-           an(ix,jy,kz,lzh) = 0.0
-        ENDIF
+       ENDDO ! ix
+      ENDDO ! kz
 
-      ELSE
-       IF ( lvol(lh) .gt. 1 ) THEN  ! check density
-        IF ( an(ix,jy,kz,lvh) .gt. 0.0 ) THEN
-         tmp = dn(ix,jy,kz)*an(ix,jy,kz,lh)/an(ix,jy,kz,lvh)
-        ELSE
-         tmp = rho_qh
-          an(ix,jy,kz,lvh) = dn(ix,jy,kz)*an(ix,jy,kz,lh)/tmp
-        ENDIF
-
-        IF (  tmp .lt. xdnmn(lh) ) THEN
-          tmp = Max( xdnmn(lh), tmp )
-          an(ix,jy,kz,lvh) = dn(ix,jy,kz)*an(ix,jy,kz,lh)/tmp
-        ENDIF
-
-        IF ( tmp .gt. xdnmx(lh) .and. lhw .le. 0 ) THEN ! no liquid allowed on graupel
-          tmp = Min( xdnmx(lh), tmp )
-          an(ix,jy,kz,lvh) = dn(ix,jy,kz)*an(ix,jy,kz,lh)/tmp
-        ELSEIF ( tmp .gt. xdnmx(lh) .and. lhw .gt. 1 ) THEN  ! allow for liquid on graupel
-          IF ( tmp .gt. xdnmx(lh) .and. an(ix,jy,kz,lhw) .lt. qxmin(lh) ) THEN
-            tmp = Min( xdnmx(lh), tmp )
-            an(ix,jy,kz,lvh) = dn(ix,jy,kz)*an(ix,jy,kz,lh)/tmp
-          ELSEIF ( tmp .gt. xdnmx(lr) ) THEN
-            tmp =  xdnmn(lr)
-            an(ix,jy,kz,lvh) = dn(ix,jy,kz)*an(ix,jy,kz,lh)/tmp
-          ENDIF
-        ENDIF
-
-        IF ( lhw .gt. 1 ) THEN ! check if basically pure water
-          IF ( an(ix,jy,kz,lhw) .gt. 0.98*an(ix,jy,kz,lh) ) THEN
-           tmp = xdnmx(lr)
-           an(ix,jy,kz,lvh) = dn(ix,jy,kz)*an(ix,jy,kz,lh)/tmp
-          ENDIF
-        ENDIF
-        
-       ENDIF
-
-!  CHECK INTERCEPT
-       IF ( ipconc == 5 .and.  an(ix,jy,kz,lh) .gt. qxmin(lh) .and.  alphah .le. 0.1 .and. lnh .gt. 1 .and. lzh == 0 ) THEN
-       
-         IF ( lvh .gt. 1 ) THEN
-           IF ( an(ix,jy,kz,lvh) .gt. 0.0 ) THEN
-             hwdn = dn(ix,jy,kz)*an(ix,jy,kz,lh)/an(ix,jy,kz,lvh)
-           ELSE
-             hwdn = xdn0(lh)
-           ENDIF
-           hwdn = Max( xdnmn(lh), hwdn )
-         ELSE
-           hwdn = xdn0(lh)
-         ENDIF
-           tmp = (hwdn*an(ix,jy,kz,lnh))/(dn(ix,jy,kz)*an(ix,jy,kz,lh))
-           tmpg = an(ix,jy,kz,lnh)*(tmp*(3.14159))**(1./3.)
-           IF ( tmpg .lt. cnohmn ) THEN
-!           tmpg = an(ix,jy,kz,lnh)*( (hwdn*an(ix,jy,kz,lnh))/(dn(ix,jy,kz)*an(ix,jy,kz,lh))*(3.14159))**(1./3.)
-!           tmpg = an(ix,jy,kz,lnh)**(4./3.)*( (hwdn)/(dn(ix,jy,kz)*an(ix,jy,kz,lh))*(3.14159))**(1./3.)
-             tmp = ( (hwdn)/(dn(ix,jy,kz)*an(ix,jy,kz,lh))*(3.14159))**(1./3.)
-              an(ix,jy,kz,lnh) = (cnohmn/tmp)**(3./4.)
-           ENDIF
-       
-       ENDIF
-        
-      end if
-
-
-      if ( an(ix,jy,kz,ls) .lt.  frac*qxmin(ls)  .or. zerocx(ls)  & ! .or.  an(ix,jy,kz,lns) .lt. 0.1 ! .and.
-     &         ) then
-      IF ( t0(ix,jy,kz) .lt. 273.15 ) THEN
-!        IF ( an(ix,jy,kz,ls) .gt. 0 ) THEN
-          an(ix,jy,kz,lv) = an(ix,jy,kz,lv) + an(ix,jy,kz,ls)
-          an(ix,jy,kz,ls) = 0.0
-!        ENDIF
-      
-        IF ( ipconc .ge. 4 ) THEN ! .and. an(ix,jy,kz,lns) .gt. 0.0  ) THEN ! 
-!          an(ix,jy,kz,lni) = an(ix,jy,kz,lni) + an(ix,jy,kz,lns)
-          an(ix,jy,kz,lns) = 0.0
-        ENDIF
-        
-        IF ( lvs .gt. 1 ) THEN
-           an(ix,jy,kz,lvs) = 0.0
-        ENDIF
-
-        IF ( lsw .gt. 1 ) THEN
-           an(ix,jy,kz,lsw) = 0.0
-        ENDIF
-
-      ELSE
-!        IF ( an(ix,jy,kz,ls) .gt. 0 ) THEN
-          an(ix,jy,kz,lv) = an(ix,jy,kz,lv) + an(ix,jy,kz,ls)
-          an(ix,jy,kz,ls) = 0.0
-!        ENDIF
-
-        IF ( lvs .gt. 1 ) THEN
-           an(ix,jy,kz,lvs) = 0.0
-        ENDIF
-
-        IF ( lsw .gt. 1 ) THEN
-           an(ix,jy,kz,lsw) = 0.0
-        ENDIF
-
-        IF ( ipconc .ge. 4 ) THEN ! .and. an(ix,jy,kz,lns) .gt. 0.0  ) THEN ! 
-!          an(ix,jy,kz,lnr) = an(ix,jy,kz,lnr) + an(ix,jy,kz,lns)
-          an(ix,jy,kz,lns) = 0.0
-        ENDIF
-
-      ENDIF
-      
-
-      ELSEIF ( lvol(ls) .gt. 1 ) THEN  ! check density
-        IF ( an(ix,jy,kz,lvs) .gt. 0.0 ) THEN
-          tmp = dn(ix,jy,kz)*an(ix,jy,kz,ls)/an(ix,jy,kz,lvs)
-          IF ( tmp .gt. xdnmx(ls) .or. tmp .lt. xdnmn(ls) ) THEN
-            tmp = Min( xdnmx(ls), Max( xdnmn(ls), tmp ) )
-            an(ix,jy,kz,lvs) = dn(ix,jy,kz)*an(ix,jy,kz,ls)/tmp
-          ENDIF
-        ELSE
-          tmp = rho_qs
-          an(ix,jy,kz,lvs) = dn(ix,jy,kz)*an(ix,jy,kz,ls)/tmp
-        ENDIF
-
-
-      end if
-
-
-      if ( an(ix,jy,kz,lr) .lt. frac*qxmin(lr)  .or. zerocx(lr)  &
-     &  ) then
-        an(ix,jy,kz,lv) = an(ix,jy,kz,lv) + an(ix,jy,kz,lr)
-        an(ix,jy,kz,lr) = 0.0
-        IF ( ipconc .ge. 3 ) THEN
-!          an(ix,jy,kz,lnc) = an(ix,jy,kz,lnc) + an(ix,jy,kz,lnr)
-          an(ix,jy,kz,lnr) = 0.0
-        ENDIF
-        
-      end if
-
-!
-!  for qci
-!
-      IF ( an(ix,jy,kz,li) .le. frac*qxmin(li) .or. zerocx(li)   & ! .or.  an(ix,jy,kz,lni) .lt. 0.1
-     &    ) THEN
-      an(ix,jy,kz,lv) = an(ix,jy,kz,lv) + an(ix,jy,kz,li)
-      an(ix,jy,kz,li)= 0.0
-       IF ( ipconc .ge. 1 ) THEN
-         an(ix,jy,kz,lni) = 0.0
-       ENDIF
-      ENDIF
-
-!
-!  for qcw
-!
-
-      IF ( an(ix,jy,kz,lc) .le. frac*qxmin(lc) .or. zerocx(lc)   &
-     &       ) THEN
-      an(ix,jy,kz,lv) = an(ix,jy,kz,lv) + an(ix,jy,kz,lc)
-      an(ix,jy,kz,lc)= 0.0
-       IF ( ipconc .ge. 2 ) THEN
-        IF ( lccn .gt. 1 ) THEN
-         an(ix,jy,kz,lccn) =     &
-     &      Min( ccwmx, an(ix,jy,kz,lccn) + Max(0.0,an(ix,jy,kz,lnc)) )
-        ENDIF
-         an(ix,jy,kz,lnc) = 0.0
-
-       ENDIF
-
-      ENDIF
-
-      end do
-!      end do
-      end do
-      
-      
-      IF ( ndebug .ge. 1 ) write(6,*) 'END OF ICEZVD_DR'
-!
-!
-   
    RETURN
-   END SUBROUTINE NUCOND
+   END SUBROUTINE calc_eff_radius
+
 
 ! #####################################################################
 ! #####################################################################
@@ -4776,8031 +3649,16 @@ END SUBROUTINE nssl_2mom_driver
 
 
 
-! #undef CHGELEC
-
-!#include "sam.def.h"
-!#define ICE10
-!#define ELEC
-!#define SAM
-!
-! Things to do:
-!
-!  Test using exponential formulation for rain fall speed.  If there is little change
-!  from the quadratic, it would be less complicated to use.
-!
-!  Contact nucleation needs to be fixed up to be similar to Cotton et al. 1986 and Meyers et al 1992.
-!
-! The following are done?
-!
-!  Fix Rain evaporation for gamma function (ipconc >= 3)
-!
-!  convert cloud ice to snow as in Ferrier 1994 (change only mass in cloud ice),
-!    then can try turning off direct conversion from cloud ice to graupel and rimed ice
-!
-!  look at an iterative check on overdepletion;  need to be careful with two-moment
-!
-!  check ice supersaturation in two-moment.  Getting enough deposition, or need 
-!      to do sat adj. when cloud droplets are all gone?
-!
-!  
-!
-! new comment
-!
-! Fix use of gt for SWM IN FALLOUT ROUTINES
-!
-!  How to remove hl for ipconc=5?  Need to preprocess?
-!
-!   When the charging rates are moved to a subroutine, need to move the
-!   call to be after the wet growth calculations -- or at least the 
-!   splashing stuff.  Think about this....
-!
-!  Think about what to do with cracif
-!
-!    Replace qv0 with qx(mgs,lv)? No. qv0 is base val
-!
-! Need to look at limiting supersaturation to 1 or so by nucleation/condensation
-!
-!  put in temperature-dependent function for homogeneous freezing
-!
-!c--------------------------------------------------------------------------
-!
-!
-!--------------------------------------------------------------------------
-!
-      subroutine nssl_2mom_gs   &
-     &  (nx,ny,nz,na,jyslab  &
-     &  ,nor,norz          &
-     &  ,dtp,gz       &
-     &  ,t0,t1,t2,t3,t4,t5,t6,t7,t8,t9      &
-     &  ,an,dn,p2                  &
-     &  ,pn,w,iunit                   &
-     &  ,t00,t77,                             &
-     &   ventr,ventc,c1sw,jgs,ido,    &
-     &   xdnmx,xdnmn,               &
-!     &   ln,ipc,lvol,lz,lliq,   &
-     &   cdx,                              &
-     &   xdn0,tmp3d,timevtcalc  &
-     & )
-!
-!--------------------------------------------------------------------------
-!                                
-!     Ziegler 1985 parameterized microphysics (also Zrnic et al. 1993)
-!     1)  cloud water
-!     2)  rain
-!     3)  column ice 
-!     6)  snow
-!     11) graupel/hail
-!
-!--------------------------------------------------------------------------
-!
-! Notes:
-!
-!  4/27/2009: allows for liquid water to be advected on snow and graupel particles using flag "mixedphase"
-!
-!  3/14/2007: (APS) added qproc temp to make microphysic process timeseries
-!
-!  10/17/2006: added flag (iehw) to select how to calculate ehw
-!
-!  10/5/2006: switched chacr to integrated version rather than assuming that average rain
-!             drop mass does not change.  This acts to reduce rain size somewhat via graupel
-!             collection.
-!             Use Mason data for ehw, with scaling toward ehw=1 as air density decreases.
-!
-!  10/3/2006: Turned off Meyers nucleation for T > -5 (can turn on with imeyers5 flag)
-!             Turned off contact nucleation in updrafts
-!
-!  7/24/2006:  Turned on Meyers nucleation for -5 < T < 0
-!
-!  5/12/2006:  Converted qsacw/csacw and qsaci/csaci to Z93
-!
-!  5/12/2006:  Put a threshold on Bigg rain freezing.  If the frozen drops
-!              have an average volume less than xvhmn, then the drops are put
-!              into snow instead of graupel/hail.
-!
-!              Fixed bug when vapor deposition was limited.
-!
-!  5/13/2006:  Note that qhacr has a large effect, but Z85 did not include it.
-!              Turned off qsacr (set to zero).
-!
-!  9/14/2007: erm: recalculate vx(lh) after setting xdn(lh) in case xdn was out of allowed range.
-!             added parameter rimc3 for minimum rime density.  Default value set at 170. kg/m**3
-!             instead of previous use of 100.  (Farley, 1987)
-!
-!--------------------------------------------------------------------------
-!
-!  general declarations
-!
-!--------------------------------------------------------------------------
-!
-!
-!
-      implicit none
-
-!
-!      integer icond 
-!      parameter ( icond = 2 )
-
-      
-      integer jyslab,its,ids,ide,jds,jde ! domain boundaries
-      integer ng1
-      integer, intent(in) :: iunit !,iunit0
-      parameter(ng1 = 1)
-      real qvex
-      integer iraincv, icgxconv
-      parameter ( iraincv = 1, icgxconv = 1)
-      real ffrz
-
-      real qcitmp,cirdiatmp ! ,qiptmp,qirtmp
-      real ccwtmp,ccitmp ! ,ciptmp,cirtmp
-      real cpqc,cpci ! ,cpip,cpir
-      real cpqc0,cpci0 ! ,cpip0,cpir0
-      real scfac ! ,cpip1
-      
-      double precision dp1
-      
-      real    :: delqnw = -1.0e-10!-1.0e-12 !
-      real    :: delqxw =  1.0e-10! 1.0e-12 !
-      real :: tindmn = 233, tindmx = 298.0  ! min and max temperatures where inductive charging is allowed
-
-      double precision frac, frach, xvfrz
-
-      integer iexy(lc:lqmx,lc:lqmx)
-      integer :: ieswi = 1,  ieswc = 1, ieswr = 0
-      integer :: iehlsw = 1, iehli = 1,  iehlc = 1, iehlr = 0
-      integer :: iehwsw = 1, iehwi = 1,  iehwc = 1, iehwr = 0
-      
-      double precision :: timevtcalc
-      double precision :: dpt1,dpt2
-            
-!      real rar  ! rime accretion rate as calculated from qxacw
-
-
-! a few vars for time-split fallout      
-      real vtmax
-      integer n,ndfall
-      
-      double precision chgneg,chgpos
-      
-      real temgtmp
-      integer nx,ny,nz,na,nba,nv
-      integer nor,norz,istag,jstag,kstag ! ,nht,ngt,igsr
-      integer iwrite
-      real dtp,dx,dy,dz
-      real gz(-nor+ng1:nx+nor,-nor+ng1:ny+nor,-norz+ng1:nz+norz)
-      
-      real qimax,xni0,roqi0
-
-
-      real dv
-
-      real dtptmp
-      integer itest,nidx,id1,jd1,kd1
-      parameter (itest=1)
-      parameter (nidx=10)
-      parameter (id1=1,jd1=1,kd1=1)
-      integer ierr
-      integer iend
-
-      integer ix,kz, il, ic, ir, icp1, irp1, ip1,jp1,kp1
-      integer :: jy
-      integer i,j
-      real slope1, slope2
-      real x1, x2, x3
-      real eps,eps2
-      parameter (eps=1.e-20,eps2=1.e-5)
-!
-!  Other elec. vars
-!
-      real  temele
-      real  trev
-      
-      logical ldovol, ishail, ltest
-!
-!
-!  wind indicies
-!
-      integer mu,mv,mw
-      parameter (mu=1,mv=2,mw=3)
-!
-!  conversion parameters
-!
-      integer mqcw,mqxw,mtem,mrho,mtim
-      parameter (mqcw=21,mqxw=21,mtem=21,mrho=5,mtim=6)
-
-      real xftim,xftimi,yftim, xftem,yftem, xfqcw,yfqcw, xfqxw,yfqxw
-      parameter (xftim=0.05,xftimi = 1./xftim,yftim=1.)
-      parameter (xftem=0.5,yftem=1.)
-      parameter (xfqcw=2000.,yfqcw=1.)
-      parameter (xfqxw=2000.,yfqxw=1.)
-      real dtfac
-      parameter ( dtfac = 1.0 )
-      integer ido(lc:lqmx)
-
-!      integer iexy(lc:lqmx,lc:lqmx)
-!      integer ieswi, ieswir, ieswip, ieswc, ieswr
-!      integer ieglsw, iegli, ieglir, ieglip, ieglc, ieglr
-!      integer iegmsw, iegmi, iegmir, iegmip, iegmc, iegmr
-!      integer ieghsw, ieghi, ieghir, ieghip, ieghc, ieghr
-!      integer iefwsw, iefwi, iefwir, iefwip, iefwc, iefwr
-!      integer iehwsw, iehwi, iehwir, iehwip, iehwc, iehwr
-!      integer iehlsw, iehli, iehlir, iehlip, iehlc, iehlr
-!      real delqnsa, delqxsa, delqnsb, delqxsb, delqnia, delqxia
-!      real delqnra, delqxra
-
-       real delqnxa(lc:lqmx)
-       real delqxxa(lc:lqmx)
-!
-! external temporary arrays
-!
-      real t00(-nor+ng1:nx+nor,-nor+ng1:ny+nor,-norz+ng1:nz+norz)
-      real t77(-nor+ng1:nx+nor,-nor+ng1:ny+nor,-norz+ng1:nz+norz)
-
-      real t0(-nor+ng1:nx+nor,-nor+ng1:ny+nor,-norz+ng1:nz+norz)
-      real t1(-nor+ng1:nx+nor,-nor+ng1:ny+nor,-norz+ng1:nz+norz)
-      real t2(-nor+ng1:nx+nor,-nor+ng1:ny+nor,-norz+ng1:nz+norz)
-      real t3(-nor+ng1:nx+nor,-nor+ng1:ny+nor,-norz+ng1:nz+norz)
-      real t4(-nor+ng1:nx+nor,-nor+ng1:ny+nor,-norz+ng1:nz+norz)
-      real t5(-nor+ng1:nx+nor,-nor+ng1:ny+nor,-norz+ng1:nz+norz)
-      real t6(-nor+ng1:nx+nor,-nor+ng1:ny+nor,-norz+ng1:nz+norz)
-      real t7(-nor+ng1:nx+nor,-nor+ng1:ny+nor,-norz+ng1:nz+norz)
-      real t8(-nor+ng1:nx+nor,-nor+ng1:ny+nor,-norz+ng1:nz+norz)
-      real t9(-nor+ng1:nx+nor,-nor+ng1:ny+nor,-norz+ng1:nz+norz)
-
-      real p2(-nor+1:nx+nor,-nor+1:ny+nor,-norz+ng1:nz+norz)  ! perturbation Pi
-      real pn(-nor+1:nx+nor,-nor+1:ny+nor,-norz+ng1:nz+norz)
-      real an(-nor+ng1:nx+nor,-nor+ng1:ny+nor,-norz+ng1:nz+norz,na)
-      real dn(-nor+1:nx+nor,-nor+1:ny+nor,-norz+ng1:nz+norz)
-      real w(-nor+1:nx+nor,-nor+1:ny+nor,-norz+ng1:nz+norz)
-
-      real tmp3d(-nor+ng1:nx+nor,-nor+ng1:ny+nor,-norz+ng1:nz+norz)
-
-! 
-!  declarations microphyscs and for gather/scatter
-!
-      integer nxmpb,nzmpb,nxz
-      integer jgs,mgs,ngs,numgs
-      parameter (ngs=500) !500)
-      integer, parameter :: ngsz = 500
-      integer ntt
-      parameter (ntt=300)
-
-      integer ngscnt,igs(ngs),kgs(ngs)
-      integer kgsp(ngs),kgsm(ngs),kgsm2(ngs)
-      integer ncuse
-      parameter (ncuse=0)
-      integer il0(ngs),il5(ngs),il2(ngs),il3(ngs)
-!      integer il1m(ngs),il2m(ngs),il3m(ngs),il4m(ngs),il5m(ngs)
-!
-      real cai,caw,cbi,cbw
-      real tdtol,temsav,tfrcbw,tfrcbi,thnuc
-      
-      real tfr,tfrh
-      parameter ( tfr = 273.15, tfrh = 233.15)
-      
-!
-!  Ice Multiplication Arrays.
-!
-      real  fimt1(ngs),fimta(ngs),fimt2(ngs) !,qmul1(ngs),qmul2(ngs)
-      real xcwmas
-!
-!
-! Variables for Ziegler warm rain microphysics
-!      
-
-
-      real ccnc(ngs),ccin(ngs),cina(ngs),ccna(ngs)
-      real sscb  ! 'cloud base' SS threshold
-      parameter ( sscb = 2.0 )
-      integer idecss  ! flag to turn on (=1) decay of ssmax when no cloud or ice crystals
-      parameter ( idecss = 1 )
-      integer iba ! flag to do condensation/nucleation in 1st or 2nd loop
-                  ! =0 to use ad to calculate SS
-                  ! =1 to use an at end of main jy loop to calculate SS
-      parameter (iba = 1)
-      integer ifilt   ! =1 to filter ssat, =0 to set ssfilt=ssat
-      parameter ( ifilt = 0 ) 
-      real temp1,temp2 ! ,ssold
-      real :: mwat, mice, dice, mwshed, fwmax, fw, mwcrit, massfactor
-      real, parameter :: shedalp = 3.  ! set 3 for maximum mass diameter, 4 for mass-weighted diameter
-      real ssmax(ngs)       ! maximum SS experienced by a parcel
-      real ssmx
-      real dnnet,dqnet
-!      real cnu,rnu,snu,cinu
-!      parameter ( cnu = 0.0, rnu = -0.8, snu = -0.8, cinu = 0.0 )
-      real bfnu, bfnu0, bfnu1
-      parameter ( bfnu0 = (rnu + 2.0)/(rnu + 1.0)  )
-      real ventr, ventc
-      real volb, aa1, aa2
-      double precision t2s, xdp
-      double precision xl2p(ngs),rb(ngs)
-      parameter ( aa1 = 9.44e15, aa2 = 5.78e3 ) ! a1 in Ziegler
-! snow parameters:
-      real cexs, cecs
-      parameter ( cexs = 0.1, cecs = 0.5 )
-      real rvt      ! ratio of collection kernels (Zrnic et al, 1993)
-      parameter ( rvt = 0.104 )
-      real kfrag    ! rate coefficent for collisional splintering (Schuur & Rutledge 00b)
-      parameter ( kfrag = 1.0e-6 )
-      real mfrag    ! assumed ice fragment mass for collisional splintering (Schuur & Rutledge 00b)
-      parameter ( mfrag = 1.0e-10)
-      double precision cautn(ngs), rh(ngs), nh(ngs)
-      real ex1, ft, rhoinv(ngs)
-      double precision ec0(ngs)
-      
-      real ac1,bc, taus, c1,d1,e1,f1,p380,tmp,tmp1,tmp2,tmp3,tmp4 ! , sstdy, super
-      real ratio, delx, dely
-      real dbigg,volt
-      real chgtmp,fac
-      real x,y,del,r,alpr
-      double precision :: vent1,vent2,dprwvent
-      real g1palp
-      real fqt !charge separation as fn of temperature from Dong and Hallett 1992
-      real bs
-      real v1, v2
-      real d1r, d1i, d1s, e1i
-      real c1sw   ! integration factor for snow melting with snu = -0.8
-      real, parameter :: vr1mm = 5.23599e-10 ! volume of 1mm diameter sphere (m**3)
-      real, parameter :: vr3mm = 5.23599e-10*(3.0/1.)**3   ! volume of a 3 mm diameter sphere (m**3) (Rasmussen et al. 1984b, JAS)
-      real, parameter :: vr4p5mm = 5.23599e-10*(4.5/1.)**3 ! volume of 4.5mm diameter sphere (m**3) (Rasmussen et al. 1984b, JAS)
-      real vmlt,vshd
-      real rhosm
-      parameter ( rhosm = 500. )
-      integer nc ! condensation step
-      real dtcon,dtcon1,dtcon2 ! condensation time step (dtcon*nc = dtp)
-      real delta
-      integer ltemq1,ltemq1m ! ,ltemq1m2
-      real dqv,qv1,ss1,ss2,qvs1,dqvs,dtemp,dt1   ! temporaries for condensation
-      real ssi1, ssi2, dqvi, dqvis, dqvii,qis1
-      real dqvr, dqc, dqr, dqi, dqs
-      real qv1m,qvs1m,ss1m,ssi1m,qis1m
-      real cwmastmp
-      real  dcloud,dcloud2 ! ,as, bs
-      real cn(ngs)
-      double precision xvc, xvr
-      real mwfac
-      real  es(ngs) ! ss(ngs),
-      real  eis(ngs)
-
-      real rwmasn,rwmasx
-
-      real vgra,vfrz
-      parameter ( vgra = 0.523599*(1.0e-3)**3 )
-     
-      real epsi,d
-      parameter (epsi = 0.622, d = 0.266)
-      real r1,qevap ! ,slv
-      
-      real vr,nrx,chw,g1,qr,z,z1,rdi,alp,xnutmp,xnuc,g1r
-      
-      real, parameter :: rhofrz = 900.   ! density of graupel from newly-frozen rain
-      real, parameter :: rimedens = 500. ! default rime density
-
-!      real svc(ngs)  !  droplet volume
-!
-!  contact freezing nucleation
-!
-      real raero,kaero !assumd aerosol radius, thermal conductivity
-      parameter ( raero = 3.e-7, kaero = 5.39e-3 )
-      real kb   ! Boltzman constant  J K-1
-      parameter (kb = 1.3807e-23)
-      
-      real knud(ngs),knuda(ngs) !knudsen number and correction factor
-      real gtp(ngs)  !G(T,p) = 1/(a' + b')  Cotton 72b
-      real dfar(ngs) !aerosol diffusivity
-      real fn1(ngs),fn2(ngs),fnft(ngs)
-      
-      real ccia(ngs)
-      real ctfzbd(ngs),ctfzth(ngs),ctfzdi(ngs)
-!
-!  misc
-!
-      real ni,nr,d0
-      real dqvcnd(ngs),dqwv(ngs),dqcw(ngs),dqci(ngs)
-      real tempc(ngs)
-      real temg(ngs),temcg(ngs),theta(ngs),qvap(ngs) 
-      real temgkm1(ngs), temgkm2(ngs)
-      real temgx(ngs),temcgx(ngs)
-      real qvs(ngs),qis(ngs),qss(ngs),pqs(ngs)
-      real elv(ngs),elf(ngs),els(ngs)
-      real tsqr(ngs),ssi(ngs),ssw(ngs)
-      real qcwtmp(ngs),qtmp,qtot(ngs) 
-      real qcond(ngs)
-      real ctmp, sctmp
-      real cwmasn,cwmasx
-      real cwmasn5
-      real cwradn
-      real cimasn,cimasx,ccimx
-      real pid4
-      real ar,br,cs,ds,gf7,gf6,gf5,gf4,gf3,gf2,gf1
-      real gf73rds, gf83rds
-      real gf43rds, gf53rds
-      real aradcw,bradcw,cradcw,dradcw,cwrad,rwrad,rwradmn
-      parameter ( rwradmn = 50.e-6 )
-      real dh0
-      
-      real clionpmx,clionnmx
-      parameter (clionpmx=1.e9,clionnmx=1.e9) ! Takahashi 84
-!
-!  other arrays
-
-      real fwet1(ngs),fwet2(ngs)   
-      real fmlt1(ngs),fmlt2(ngs)  
-      real fvds(ngs),fvce(ngs),fiinit(ngs) 
-      real fvent(ngs),fraci(ngs),fracl(ngs)
-!
-      real fai(ngs),fav(ngs),fbi(ngs),fbv(ngs)
-      real felv(ngs),fels(ngs),felf(ngs)
-      real felvcp(ngs),felscp(ngs),felfcp(ngs)
-      real felvs(ngs),felss(ngs)      !   ,felfs(ngs)
-      real fwvdf(ngs),ftka(ngs),fthdf(ngs)
-      real fadvisc(ngs),fakvisc(ngs)
-      real fci(ngs),fcw(ngs)
-      real fschm(ngs),fpndl(ngs)
-      real fgamw(ngs),fgams(ngs)
-      real fcqv1(ngs),fcqv2(ngs),fcc3(ngs) 
-      
-      real cvm
-!
-      real fcci(ngs), fcip(ngs)
-!
-      real :: sfm1(ngs),sfm2(ngs)
-      real :: gfm1(ngs),gfm2(ngs)
-      real :: hfm1(ngs),hfm2(ngs)
-
-      logical :: wetsfc(ngs),wetsfchl(ngs)
-      logical :: wetgrowth(ngs), wetgrowthhl(ngs)
-
-       real qitmp(ngs)
-       
-      real rzxh(ngs), rzxhl(ngs), rzxhlh(ngs)
-      real vt2ave(ngs)
-
-      real ::  qx(ngs,lv:lhab)
-      real ::  qxw(ngs,ls:lhab)
-      real ::  cx(ngs,lc:lhab)
-      real ::  cxmxd(ngs,lc:lhab)
-      real ::  qxmxd(ngs,lv:lhab)
-      real ::  scx(ngs,lc:lhab)
-      real ::  xv(ngs,lc:lhab)
-!      real ::  xsfca(ngs,lc:lhab)
-      real ::  vtxbar(ngs,lc:lhab,3)
-      real ::  xmas(ngs,lc:lhab)
-      real ::  xdn(ngs,lc:lhab)
-      real ::  xdia(ngs,lc:lhab,3)
-      real ::  rarx(ngs,ls:lhab)
-      real ::  vx(ngs,li:lhab)
-      real ::  rimdn(ngs,li:lhab)
-      real ::  raindn(ngs,li:lhab)
-      real ::  alpha(ngs,lr:lhab)
-      real ::  dab0lh(ngs,lc:lhab,lr:lhab)
-      real ::  dab1lh(ngs,lc:lhab,lr:lhab)
-      
-      
-      real, parameter :: alpharaut = 0.0 ! MY2005 for autoconversion
-      real, parameter :: galpharaut = (6.+alpharaut)* &
-     &                                (5.+alpharaut)* &
-     &                                (4.+alpharaut)/ &
-     &                               ((3.+alpharaut)* &
-     &                                (2.+alpharaut)* &
-     &                                (1.+alpharaut))
-      
-      real ventrx(ngs)
-      real ventrxn(ngs)
-      real g1shr, alphashr
-      real g1mlr, alphamlr
-      
-      real swvent(ngs),hwvent(ngs),rwvent(ngs),hlvent(ngs)
-      real civent(ngs)
-!
-      real xmascw(ngs)
-      real xdnmx(lc:lhab), xdnmn(lc:lhab)
-      real dnmx
-!
-      real cilen(ngs) ! ,ciplen(ngs)
-!
-!
-      real rwcap(ngs),swcap(ngs)
-      real hwcap(ngs)
-      real hlcap(ngs)
-      real cicap(ngs)
-
-      real qvimxd(ngs)
-      real qimxd(ngs),qcmxd(ngs),qrmxd(ngs),qsmxd(ngs),qhmxd(ngs),qhlmxd(ngs)
-      real cimxd(ngs),ccmxd(ngs),crmxd(ngs),csmxd(ngs),chmxd(ngs)
-      real cionpmxd(ngs),cionnmxd(ngs)
-      real clionpmxd(ngs),clionnmxd(ngs)
-
-!
-!
-      real chmul1(ngs),chlmul1(ngs),csmul1(ngs),csmul(ngs)
-      real qhmul1(ngs),qhlmul1(ngs),qsmul1(ngs),qsmul(ngs)
-      
-      real csplinter(ngs),qsplinter(ngs)
-      real csplinter2(ngs),qsplinter2(ngs)
-!
-!
-!  concentration arrays...
-!
-      real :: chlcnh(ngs), vhlcnh(ngs), vhlcnhl(ngs)
-      real cracif(ngs), ciacrf(ngs)
-      real cracr(ngs)
-
-!
-      real ciint(ngs), crfrz(ngs), crfrzf(ngs), crfrzs(ngs)
-      real cicint(ngs)
-      real cipint(ngs)
-      real ciacw(ngs), cwacii(ngs) 
-      real ciacr(ngs), craci(ngs)
-      real csacw(ngs)
-      real csacr(ngs)
-      real csaci(ngs),   csacs(ngs)
-      real cracw(ngs) 
-      real chacw(ngs), chacr(ngs)
-      real :: chlacw(ngs) ! = 0.0
-      real chaci(ngs), chacs(ngs)
-!
-      real :: chlacr(ngs)
-      real :: chlaci(ngs), chlacs(ngs)
-      real crcnw(ngs) 
-      real cidpv(ngs),cisbv(ngs)
-      real cimlr(ngs)
-
-      real chlsbv(ngs), chldpv(ngs)
-      real chlmlr(ngs), chlmlrr(ngs) 
-      real chlshr(ngs), chlshrr(ngs)
-
-      real chdpv(ngs),chsbv(ngs)
-      real chmlr(ngs),chcev(ngs)
-      real chmlrr(ngs)
-      real chshr(ngs), chshrr(ngs)
-
-      real csdpv(ngs),cssbv(ngs)
-      real csmlr(ngs),cscev(ngs)
-      real csshr(ngs)
-
-      real crcev(ngs)
-      real crshr(ngs)
-!
-!
-! arrays for w-ac-x ;  x-ac-w
-!
-!
-!
-      real qrcnw(ngs), qwcnr(ngs)
-      real zrcnw(ngs),zracr(ngs),zracw(ngs),zrcev(ngs)
-
-
-      real qracw(ngs) ! qwacr(ngs),
-      real qiacw(ngs) !, qwaci(ngs)
-
-      real qsacw(ngs) ! ,qwacs(ngs),
-      real qhacw(ngs) ! qwach(ngs),
-      real :: qhlacw(ngs) ! = 0.0
-      real vhacw(ngs), vsacw(ngs), vhlacw(ngs), vhlacr(ngs)
-
-!
-      real qsacws(ngs)
-
-!
-!  arrays for x-ac-r and r-ac-x; 
-!
-      real qsacr(ngs),qracs(ngs)
-      real qhacr(ngs) ! ,qrach(ngs)
-      real vhacr(ngs), zhacr(ngs), zhacrf(ngs), zrach(ngs), zrachl(ngs)
-      real qiacr(ngs),qraci(ngs)
-      
-      real ziacr(ngs)
-
-      real qracif(ngs),qiacrf(ngs),qiacrs(ngs)
-
-      real :: qhlacr(ngs) ! = 0.0
-      real qsacrs(ngs) !,qracss(ngs)
-!
-!  ice - ice interactions
-!
-      real qsaci(ngs)
-      real qhaci(ngs)
-      real qhacs(ngs)
-
-      real :: qhlaci(ngs) ! = 0.0
-      real :: qhlacs(ngs) ! = 0.0
-!
-!  conversions
-!
-      real qrfrz(ngs) ! , qirirhr(ngs)
-      real zrfrz(ngs), zrfrzf(ngs)
-      real ziacrf(ngs), zhcnsh(ngs), zhcnih(ngs)
-      real zhacw(ngs), zhacs(ngs)
-      real zhmlr(ngs), zhdsv(ngs), zhsbv(ngs), zhlcnh(ngs), zhshr(ngs)
-      real zhmlrr(ngs),zhlmlrr(ngs),zhshrr(ngs),zhlshrr(ngs)
-      real zsmlr(ngs), zsmlrr(ngs), zsshr(ngs)
-      real zhwdn(ngs) ! change in Z due to density changes
-      real zhldn(ngs) ! change in Z due to density changes
-
-      real zhlacw(ngs), zhlacs(ngs), zhlacr(ngs)
-      real zhlmlr(ngs), zhldsv(ngs), zhlsbv(ngs), zhlshr(ngs)
-
-      
-      real vrfrzf(ngs), viacrf(ngs)
-      real qrfrzs(ngs), qrfrzf(ngs)
-      real qwfrz(ngs), qwctfz(ngs)
-      real cwfrz(ngs), cwctfz(ngs)
-      real qwfrzc(ngs), qwctfzc(ngs)
-      real cwfrzc(ngs), cwctfzc(ngs)
-      real qwfrzp(ngs), qwctfzp(ngs)
-      real cwfrzp(ngs), cwctfzp(ngs)
-      real xcolmn(ngs), xplate(ngs)
-      real ciihr(ngs), qiihr(ngs)
-      real cicichr(ngs), qicichr(ngs)
-      real cipiphr(ngs), qipiphr(ngs)
-      real qscni(ngs), cscni(ngs), cscnis(ngs)
-      real qscnvi(ngs), cscnvi(ngs), cscnvis(ngs)
-      real qhcns(ngs), chcns(ngs), chcnsh(ngs), vhcns(ngs)
-      real qhcni(ngs), chcni(ngs), chcnih(ngs), vhcni(ngs)
-      real qiint(ngs),qipipnt(ngs),qicicnt(ngs)
-      real cninm(ngs),cnina(ngs),cninp(ngs),wvel(ngs),wvelkm1(ngs)
-      real tke(ngs)
-      real uvel(ngs),vvel(ngs)
-!
-      real qidpv(ngs),qisbv(ngs) ! qicnv(ngs),qievv(ngs),
-      real qimlr(ngs),qidsv(ngs),qidsvp(ngs) ! ,qicev(ngs)
-
-!
-      real qfdpv(ngs),qfsbv(ngs) ! qfcnv(ngs),qfevv(ngs),
-      real qfmlr(ngs),qfdsv(ngs) ! ,qfcev(ngs)
-      real qfwet(ngs),qfdry(ngs),qfshr(ngs)
-      real qfshrp(ngs)
-!
-      real :: qhldpv(ngs), qhlsbv(ngs) ! qhlcnv(ngs),qhlevv(ngs),
-      real :: qhlmlr(ngs), qhldsv(ngs) 
-      real :: qhlwet(ngs), qhldry(ngs), qhlshr(ngs) 
-!
-      real :: qrfz(ngs),qsfz(ngs),qhfz(ngs),qhlfz(ngs)
-!
-      real qhdpv(ngs),qhsbv(ngs) ! qhcnv(ngs),qhevv(ngs),
-      real qhmlr(ngs),qhdsv(ngs),qhcev(ngs),qhcndv(ngs),qhevv(ngs)
-      real qhlcev(ngs), chlcev(ngs)
-      real qhwet(ngs),qhdry(ngs),qhshr(ngs)
-      real qhshrp(ngs)
-      real qhshh(ngs) !accreted water that remains on graupel
-      real qhmlh(ngs) !melt water that remains on graupel
-      real qhfzh(ngs) !water that freezes on mixed-phase graupel
-      real qhlfzhl(ngs) !water that freezes on mixed-phase hail
-
-      real vhfzh(ngs) ! change in volume from water that freezes on mixed-phase graupel
-      real vhlfzhl(ngs) !  change in volume from water that freezes on mixed-phase hail
-
-      real vhshdr(ngs) !accreted water that leaves on graupel (mixedphase)
-      real vhlshdr(ngs) !accreted water that leaves on hail (mixedphase)
-      real vhmlr(ngs) !melt water that leaves graupel (single phase)
-      real vhlmlr(ngs) !melt water that leaves hail (single phase)
-      real vhsoak(ngs) !  aquired water that seeps into graupel.
-      real vhlsoak(ngs) !  aquired water that seeps into hail.
-!
-      real qsdpv(ngs),qssbv(ngs) ! qscnv(ngs),qsevv(ngs),
-      real qsmlr(ngs),qsdsv(ngs),qscev(ngs),qscndv(ngs),qsevv(ngs)
-      real qswet(ngs),qsdry(ngs),qsshr(ngs)
-      real qsshrp(ngs)
-      real qsfzs(ngs)
-!
-!
-      real qipdpv(ngs),qipsbv(ngs)
-      real qipmlr(ngs),qipdsv(ngs)
-!
-      real qirdpv(ngs),qirsbv(ngs)
-      real qirmlr(ngs),qirdsv(ngs),qirmlw(ngs)
-!
-      real qgldpv(ngs),qglsbv(ngs)
-      real qglmlr(ngs),qgldsv(ngs)
-      real qglwet(ngs),qgldry(ngs),qglshr(ngs)
-      real qglshrp(ngs)
-!
-      real qgmdpv(ngs),qgmsbv(ngs)
-      real qgmmlr(ngs),qgmdsv(ngs)
-      real qgmwet(ngs),qgmdry(ngs),qgmshr(ngs)
-      real qgmshrp(ngs)
-      real qghdpv(ngs),qghsbv(ngs)
-      real qghmlr(ngs),qghdsv(ngs) 
-      real qghwet(ngs),qghdry(ngs),qghshr(ngs)
-      real qghshrp(ngs)
-!
-      real qrztot(ngs),qrzmax(ngs),qrzfac(ngs)
-      real qrcev(ngs)
-      real qrshr(ngs)
-      real fsw(ngs),fhw(ngs),fhlw(ngs) !liquid water fractions
-      real qhcnf(ngs) 
-      real :: qhlcnh(ngs) ! = 0.0
-      real qhcngh(ngs),qhcngm(ngs),qhcngl(ngs)
-      
-      real :: qhcnhl(ngs), chcnhl(ngs), zhcnhl(ngs), vhcnhl(ngs) ! conversion of low-density hail back to graupel
-
-      real eiw(ngs),eii(ngs),eiri(ngs),eipir(ngs)
-      real erw(ngs),esw(ngs),eglw(ngs),eghw(ngs),efw(ngs)
-      real ehxw(ngs),ehlw(ngs),egmw(ngs),ehw(ngs)
-      real err(ngs),esr(ngs),eglr(ngs),eghr(ngs),efr(ngs)
-      real ehxr(ngs),ehlr(ngs),egmr(ngs) 
-      real eri(ngs),esi(ngs),egli(ngs),eghi(ngs),efi(ngs)
-      real ehxi(ngs),ehli(ngs),egmi(ngs),ehi(ngs) 
-      real ers(ngs),ess(ngs),egls(ngs),eghs(ngs),efs(ngs),ehs(ngs)
-      real ehscnv(ngs)
-      real ehxs(ngs),ehls(ngs),egms(ngs),egmip(ngs) 
-
-      real ew(8,6)
-      real cwr(8,2)  ! radius and inverse of interval
-      data cwr / 2.0, 3.0, 4.0, 6.0,  8.0,  10.0, 15.0,  20.0 , & ! radius
-     &           1.0, 1.0, 0.5, 0.5,  0.5,   0.2,  0.2,  1.  /   ! inverse of interval
-      integer icwr(ngs), igwr(ngs), irwr(ngs), ihlr(ngs)
-      real grad(6,2) ! graupel radius and inverse of interval
-      data grad / 100., 200., 300., 400., 600., 1000.,   &
-     &            1.e-2,1.e-2,1.e-2,5.e-3,2.5e-3, 1.    /
-!droplet radius: 2     3     4     6     8    10    15    20
-      data ew /0.03, 0.07, 0.17, 0.41, 0.58, 0.69, 0.82, 0.88,  & ! 100
-!     :         0.07, 0.13, 0.27, 0.48, 0.65, 0.73, 0.84, 0.91,  ! 150
-     &         0.10, 0.20, 0.34, 0.58, 0.70, 0.78, 0.88, 0.92,  & ! 200
-     &         0.15, 0.31, 0.44, 0.65, 0.75, 0.83, 0.96, 0.91,  & ! 300
-     &         0.17, 0.37, 0.50, 0.70, 0.81, 0.87, 0.93, 0.96,  & ! 400
-     &         0.17, 0.40, 0.54, 0.71, 0.83, 0.88, 0.94, 0.98,  & ! 600
-     &         0.15, 0.37, 0.52, 0.74, 0.82, 0.88, 0.94, 0.98 / ! 1000
-!     :         0.11, 0.34, 0.49, 0.71, 0.83, 0.88, 0.94, 0.95 / ! 1400
-
-
-      real da0lr(ngs)
-      real da0lh(ngs)
-      real da0lhl(ngs)
-
-
-
-      real va0 (lc:lqmx)          ! collection coefficients from Seifert 2005
-      real vab0(lc:lqmx,lc:lqmx)  ! collection coefficients from Seifert 2005
-      real vab1(lc:lqmx,lc:lqmx)  ! collection coefficients from Seifert 2005
-      real va1 (lc:lqmx)          ! collection coefficients from Seifert 2005
-      real ehip(ngs),ehlip(ngs),ehlir(ngs)
-      real erir(ngs),esir(ngs),eglir(ngs),egmir(ngs),eghir(ngs)
-      real efir(ngs),ehir(ngs),eirw(ngs),eirir(ngs),ehr(ngs)
-      real erip(ngs),esip(ngs),eglip(ngs),eghip(ngs)
-      real efip(ngs),eipi(ngs),eipw(ngs),eipip(ngs)
-!
-!  arrays for production terms
-!
-      real ptotal(ngs) ! , pqtot(ngs)
-!
-      real pqcwi(ngs),pqcii(ngs),pqrwi(ngs)
-      real pqswi(ngs),pqhwi(ngs),pqwvi(ngs)
-      real pqgli(ngs),pqghi(ngs),pqfwi(ngs)
-      real pqgmi(ngs),pqhli(ngs) ! ,pqhxi(ngs)
-      real pqiri(ngs),pqipi(ngs) ! pqwai(ngs),
-      real pqlwsi(ngs),pqlwhi(ngs),pqlwhli(ngs)
-      
-      real pvhwi(ngs), pvhwd(ngs)
-      real pvhli(ngs), pvhld(ngs)
-      real pvswi(ngs), pvswd(ngs)
-!
-      real pqcwd(ngs),pqcid(ngs),pqrwd(ngs)
-      real pqswd(ngs),pqhwd(ngs),pqwvd(ngs)
-      real pqgld(ngs),pqghd(ngs),pqfwd(ngs)
-      real pqgmd(ngs),pqhld(ngs) ! ,pqhxd(ngs)
-      real pqird(ngs),pqipd(ngs) ! pqwad(ngs),
-      real pqlwsd(ngs),pqlwhd(ngs),pqlwhld(ngs)
-!
-!      real pqxii(ngs,nhab),pqxid(ngs,nhab)
-!
-      real  pctot(ngs)
-      real  pcipi(ngs), pcipd(ngs)
-      real  pciri(ngs), pcird(ngs)
-      real  pccwi(ngs), pccwd(ngs)
-      real  pccii(ngs), pccid(ngs)
-      real  pcrwi(ngs), pcrwd(ngs)
-      real  pcswi(ngs), pcswd(ngs)
-      real  pchwi(ngs), pchwd(ngs)
-      real  pchli(ngs), pchld(ngs)
-      real  pcfwi(ngs), pcfwd(ngs)
-      real  pcgli(ngs), pcgld(ngs)
-      real  pcgmi(ngs), pcgmd(ngs)
-      real  pcghi(ngs), pcghd(ngs)
-
-      real  pzrwi(ngs), pzrwd(ngs)
-      real  pzhwi(ngs), pzhwd(ngs)
-      real  pzhli(ngs), pzhld(ngs)
-      real  pzswi(ngs), pzswd(ngs)
-
-!
-!  other arrays
-!
-      real dqisdt(ngs) !,advisc(ngs) !dqwsdt(ngs), ,schm(ngs),pndl(ngs)
-
-      real qss0(ngs)
-
-      real advisc0,advisc1,tka0
-
-      real qsacip(ngs)
-      real pres(ngs)
-      real pk(ngs)
-      real rho0(ngs),pi0(ngs)
-      real rhovt(ngs)
-      real thetap(ngs),theta0(ngs),qwvp(ngs),qv0(ngs)
-      real thsave(ngs)
-      real ptwfzi(ngs),ptimlw(ngs)
-      real psub(ngs),pvap(ngs),pfrz(ngs),ptem(ngs),pmlt(ngs),pevap(ngs),pdep(ngs)
-      
-      real cnostmp(ngs)   ! for diagnosed snow intercept
-!
-!  iholef = 1 to do hole filling technique version 1
-!  which uses all hydrometerors to do hole filling of all hydrometeors
-!  iholef = 2 to do hole filling technique version 2
-!  which uses an individual hydrometeror species to do hole
-!  filling of a species of a hydrometeor
-!
-!  iholen = interval that hole filling is done
-!
-      integer  iholef
-      integer  iholen
-      parameter (iholef = 1)
-      parameter (iholen = 1)
-      real  cqtotn,cqtotn1
-      real  cctotn
-      real  citotn
-      real  crtotn
-      real  cstotn
-      real  cvtotn
-      real  cftotn
-      real  cgltotn
-      real  cghtotn
-      real  chtotn
-      real  cqtotp,cqtotp1
-      real  cctotp
-      real  citotp
-      real  ciptotp
-      real  crtotp
-      real  cstotp
-      real  cvtotp
-      real  cftotp
-      real  chltotp
-      real  cgltotp
-      real  cgmtotp
-      real  cghtotp
-      real  chtotp
-      real  cqfac
-      real  ccfac
-      real  cifac
-      real  cipfac
-      real  crfac
-      real  csfac
-      real  cvfac
-      real  cffac
-      real  cglfac
-      real  cghfac
-      real  chfac
-      
-      real ssifac, qvapor
-!
-!   Miscellaneous variables
-!
-      integer ireadqf,lrho,lqsw,lqgl,lqgm ,lqgh 
-      integer lqrw
-      real vt
-      real arg  ! gamma is a function
-      real erbnd1, fdgt1, costhe1
-      real qeps
-      real dyi2,dzi2,cp608,bta1,cnit,dragh,dnz00,rho00,pii
-      real qccrit,gf4br,gf4ds,gf4p5, gf3ds, gf1ds,gr
-
-      
-      real xdn0(lc:lhab)
-      real xdn_new,drhodt
-      
-      integer l ,ltemq,inumgs, idelq
-
-      real c1f3,brz,arz,rw,temq
-
-      real ssival,tqvcon
-      real cdx(lc:lhab)
-      real cnox
-      real cval,aval,eval,fval,gval ,qsign,ftelwc,qconkq
-      real qconm,qconn,cfce15,gf8,gf4i,gf3p5,gf1a,gf1p5,qdiff,argrcnw
-      real c4,bradp,bl2,bt2,dtrh,hrifac, hdia0,hdia1,civenta,civentb
-      real civentc,civentd,civente,civentf,civentg,cireyn,xcivent
-      real cipventa,cipventb,cipventc,cipventd,cipreyn,cirventa
-      real cirventb
-      integer igmrwa,igmrwb,igmswa, igmswb,igmfwa,igmfwb,igmhwa,igmhwb
-      real rwventa ,rwventb,swventa,swventb,fwventa,fwventb,fwventc
-      real hwventa,hwventb
-      real    hwventc, hlventa, hlventb,  hlventc
-      real  glventa, glventb, glventc
-      real   gmventa, gmventb,  gmventc, ghventa, ghventb, ghventc
-      real  dzfacp,  dzfacm,  cmassin,  cwdiar 
-      real  rimmas, rhobar
-      real   argtim, argqcw, argqxw, argtem
-      real   frcswsw, frcswgl, frcswgm, frcswgh, frcswfw, frcswsw1
-      real   frcglgl, frcglgm, frcglgh,  frcglfw, frcglgl1
-      real   frcgmgl, frcgmgm, frcgmgh,  frcgmfw, frcgmgm1
-      real   frcghgl, frcghgm, frcghgh,  frcghfw,  frcghgh1
-      real   frcfwgl, frcfwgm, frcfwgh, frcfwfw,  frcfwfw1
-      real   frcswrsw, frcswrgl,  frcswrgm,  frcswrgh, frcswrfw
-      real   frcswrsw1
-      real   frcrswsw, frcrswgl, frcrswgm, frcrswgh, frcrswfw
-      real  frcrswsw1
-      real  frcglrgl, frcglrgm, frcglrgh,  frcglrfw, frcglrgl1
-      real  frcrglgl
-      real  frcrglgm,  frcrglgh, frcrglfw, frcrglgl1
-      real  frcgmrgl, frcgmrgm, frcgmrgh, frcgmrfw,  frcgmrgm1
-      real  frcrgmgl, frcrgmgm,  frcrgmgh, frcrgmfw, frcrgmgm1
-      real  sum,  qweps,  gf2a, gf4a, dqldt, dqidt, dqdt
-      real frcghrgl, frcghrgm, frcghrgh, frcghrfw, frcghrgh1, frcrghgl
-      real frcrghgm, frcrghgh,  frcrghfw, frcrghgh1
-      real    a1,a2,a3,a4,a5,a6
-      real   gamss
-      real cdw, cdi, denom1, denom2, delqci1, delqip1
-      real cirtotn,  ciptotn, cgmtotn, chltotn,  cirtotp
-      real  cgmfac, chlfac,  cirfac
-      integer igmhla, igmhlb, igmgla, igmglb, igmgma,  igmgmb
-      integer igmgha, igmghb
-      integer idqis, item, itim0 
-      integer  iqgl, iqgm, iqgh, iqrw, iqsw 
-      integer  itertd, ia
-      
-      real tau, ewtmp
-      
-      integer cntnic_noliq
-      real     q_noliqmn, q_noliqmx
-      real     scsacimn, scsacimx
-      
-      double precision :: dtpinv
-      
-!   arrays for temporary bin space
-
-      integer nbin
-      parameter (nbin=50)  ! number of mass bins for bin model
-      real rn(nbin) !,rd(nbin),rm(nbin)
-      real rq(nbin),vtr(nbin) !,rdrd(nbin)
-      
-       real vtra(nbin)
-       real hmmin,hjo
-!       parameter ( hjo = 0.8*7.5*nbin/(41.) )
-       parameter (hmmin = 1.e-11, hjo = 0.8*7.5 )
- 
-      integer itile,jtile,ktile
-      integer ixend,jyend,kzend,kzbeg
-      integer nxend,nyend,nzend,nzbeg
-      
-      real :: qaacw ! combined qsacw-qhacw for WSM6 variation
-
-
-!
-! ####################################################################
-!
-!  Start routine
-!
-! ####################################################################
-
-
-
-      iexy(:,:)=0; ! sets to zero the ones Imight have forgotten
-
-!     snow
-      iexy(ls,li) = ieswi
-      iexy(ls,lc) = ieswc ; iexy(ls,lr) = ieswr ;
-
-!     graupel
-      iexy(lh,ls)  = iehwsw ; iexy(lh,li) = iehwi ;
-      iexy(lh,lc) = iehwc ; iexy(lh,lr)  = iehwr ;
-
-!     hail
-      IF (lhl .gt. 1 ) THEN
-      iexy(lhl,ls)  = iehlsw ; iexy(lhl,li) = iehli ;
-      iexy(lhl,lc) = iehlc ; iexy(lhl,lr)  = iehlr ;
-      ENDIF
-!
-
-      itile = nx
-      jtile = ny
-      ktile = nz
-      ixend = nx
-      jyend = ny
-      kzend = nz
-      nxend = nx + 1
-      nyend = ny + 1
-      nzend = nz
-      kzbeg = 1
-      nzbeg = 1
-
-      istag = 0
-      jstag = 0
-      kstag = 1
-
-!
-!  slope intercepts
-!
-
-      IF ( ngs .lt. nz ) THEN
-!       write(0,*) 'Error in ICEZVD: Must have ngs .ge. nz!'
-!       STOP
-      ENDIF
-
-      cntnic_noliq = 0
-      q_noliqmn = 0.0
-      q_noliqmx = 0.0
-      scsacimn = 0.0
-      scsacimx = 0.0
-
-      ldovol = .false.
-
-      DO il = lc,lhab
-        ldovol = ldovol .or. ( lvol(il) .gt. 1 )
-      ENDDO
-
-
-!      DO il = lc,lhab
-!        write(iunit,*) 'delqnxa(',il,') = ',delqnxa(il)
-!      ENDDO
-      
-!
-!  density maximums and minimums
-!
-
-!
-!  Set terminal velocities...
-!    also set drag coefficients
-!
-
-      dtpinv = 1.d0/dtp
-
-!
-
-!
-!  electricity constants
-!
-!  mixing ratio epsilon
-!
-      qeps  = 1.0e-20
-
-!  rebound efficiency (erbnd)
-!
-!
-!
-!  constants
-!
-      cai = 21.87455
-      caw = 17.2693882
-      cbi = 7.66
-      cbw = 35.86
-
-      cp608 = 0.608
-      ar = 841.99666  
-      br = 0.8
-      aradcw = -0.27544
-      bradcw = 0.26249e+06
-      cradcw = -1.8896e+10
-      dradcw = 4.4626e+14
-      bta1 = 0.6
-      cnit = 1.0e-02
-      dragh = 0.60
-      dnz00 = 1.225
-      rho00 = 1.225
-!      cs = 4.83607122
-!      ds = 0.25
-!  new values for  cs and ds
-      cs = 12.42
-      ds = 0.42
-      pii = piinv ! 1./pi
-      pid4 = pi/4.0 
-!      qscrit = 6.0e-04
-      gf1 = 1.0 ! gamma(1.0)
-      gf1p5 = 0.8862269255  ! gamma(1.5)
-      gf2 = 1.0 ! gamma(2.0)
-      gf3 = 2.0 ! gamma(3.0)
-      gf3p5 = 3.32335097 ! gamma(3.5)
-      gf4 = 6.00 ! gamma(4.0)
-      gf5 = 24.0 ! gamma(5.0)
-      gf6 = 120.0 ! gamma(6.0)
-      gf7 = 720.0 ! gamma(7.0)
-      gf4br = 17.837861981813607 ! gamma(4.0+br)
-      gf4ds = 10.41688578110938 ! gamma(4.0+ds)
-      gf4p5 = 11.63172839656745 ! gamma(4.0+0.5)
-      gf3ds = 3.0458730354120997 ! gamma(3.0+ds)
-      gf1ds = 0.8863557896089221 ! gamma(1.0+ds)
-      gr = 9.8
-      gf43rds = 0.8929795116 ! gamma(4./3.)
-      gf53rds = 0.9027452930 ! gamma(5./3.)
-      gf73rds = 1.190639349 ! gamma(7./3.)
-      gf83rds = 1.504575488 ! gamma(8./3.)
-!
-!  constants
-!
-      c1f3 = 1.0/3.0
-!
-!  general constants for microphysics
-!
-      brz = 100.0
-      arz = 0.66
-      cai = 21.87455
-      caw = 17.2693882
-      cbi = 7.66
-      cbw = 35.86
-      
-      bfnu1 = (4. + alphar)*(5. + alphar)*(6. + alphar)/((1. + alphar)*(2. + alphar)*(3. + alphar))
-      
-      vfrz = 0.523599*(dfrz)**3 
-      vmlt = Min(xvmx(lr), 0.523599*(dmlt)**3 )
-      vshd = Min(xvmx(lr), 0.523599*(dshd)**3 )
-
-      
-
-      tdtol = 1.0e-05
-      thnuc = 233.15
-      rw = 461.5              ! gas const. for water vapor
-      advisc0 = 1.832e-05
-      advisc1 = 1.718e-05    ! dynamic viscosity
-      tka0 = 2.43e-02        ! thermal conductivity
-      tfrcbw = tfr - cbw
-      tfrcbi = tfr - cbi
-!
-!
-!  cw constants in mks units
-!
-!      cwmasn = 4.25e-15  ! radius of 1.0e-6
-      cwmasn = 5.23e-13  ! radius of 5.0e-6
-      cwmasn5 =  5.23e-13
-      cwradn = 5.0e-6
-      cwmasx = 5.25e-10  ! radius of 50.0e-6
-      mwfac = 6.0**(1./3.)
-      IF ( ipconc .ge. 2 ) THEN
-        cwmasn = xvmn(lc)*1000.
-        cwradn = 1.0e-6
-        cwmasx = xvmx(lc)*1000.
-      ENDIF
-        rwmasn = xvmn(lr)*1000.
-        rwmasx = xvmx(lr)*1000.
-
-!
-!  ci constants in mks units
-!
-      cimasn = Min(cimas0, 6.88e-13) ! 12 microns for  0.1871*(xmas(mgs,li)**(0.3429))
-      cimasx = 1.0e-8   ! 338 microns
-      ccimx = 5000.0e3   ! max of 5000 per liter
-
-!
-!  constants for paramerization
-!
-!
-!  set save counter (number of saves):  nsvcnt
-!
-!      nsvcnt = 0
-      iend = 0
-
-!      timetd1 = etime(tarray)
-!      timetd1 = tarray(1)
-
-!
-!$     ndebug = -1
-! cmic$  cncall
-!***********************************************************
-!  start jy loop
-!***********************************************************
-!
-
-!      do 9999 jy = 1,ny-jstag
-!
-!  VERY IMPORTANT:  SET jy = jgs
-!
-      jy = jgs
-      
-      IF ( ipconc < 2 ) THEN ! Make a copy of cloud droplet mixing ratio to use for homogeneous freezing
-        DO kz = 1,nz
-         DO ix = 1,nx
-           t9(ix,jy,kz) = an(ix,jy,kz,lc)
-         ENDDO
-        ENDDO
-      ENDIF
-      
-!
-!..Gather microphysics  
-!
-      if ( ndebug .gt. 0 ) write(0,*) 'ICEZVD_GS: ENTER GATHER STAGE'
-
-
-      nxmpb = 1
-      nzmpb = 1
-      nxz = nx*nz
-      numgs = nxz/ngs + 1
-!      write(0,*) 'ICEZVD_GS: ENTER GATHER STAGE: nx,nz,nxz,numgs,ngs = ',nx,nz,nxz,numgs,ngs
-
-      do 1000 inumgs = 1,numgs
-      ngscnt = 0
-      
-      do kz = nzmpb,nz
-      do ix = nxmpb,nx
-
-      pqs(1) = t00(ix,jy,kz)
-!      pqs(kz) = t00(ix,jy,kz)
-
-      theta(1) = an(ix,jy,kz,lt)
-      temg(1) = t0(ix,jy,kz)
-      temcg(1) = temg(1) - tfr
-      tqvcon = temg(1)-cbw
-      ltemq = (temg(1)-163.15)/fqsat+1.5
-      ltemq = Min( nqsat, Max(1,ltemq) )
-      qvs(1) = pqs(1)*tabqvs(ltemq)
-      qis(1) = pqs(1)*tabqis(ltemq)
-
-      qss(1) = qvs(1)
-
-!      IF ( jy .eq. 1 .and. ix .eq. 24 ) THEN
-!       write(91,*) 'kz,qv,th: ',kz,an(ix,jy,kz,lv),an(ix,jy,kz,lt),pqs(kz),tabqvs(ltemq),qvs(kz)
-!      ENDIF
-
-      if ( temg(1) .lt. tfr ) then
-!      if( qcw(kz) .le. qxmin(lc) .and. qci(kz) .gt. qxmin(li))
-!     >  qss(kz) = qis(kz)
-!      if( qcw(kz) .gt. qxmin(lc) .and. qci(kz) .gt. qxmin(li))
-!     >   qss(kz) = (qcw(kz)*qvs(kz) + qci(kz)*qis(kz)) /
-!     >   (qcw(kz) + qci(kz))
-      qss(1) = qis(1)
-      else
-!       IF ( an(ix,jy,kz,lv)  .gt. qss(kz) ) THEN
-!       write(iunit,*) 'qss exceeded at ',ix,jy,kz,qss(kz),an(ix,jy,kz,lv),temg(kz)
-!       write(iunit,*) 'other temg = ',theta(kz)*(pinit(kz)+p2(ix,jy,kz))
-!       ENDIF
-      end if
-!
-      ishail = .false.
-      IF ( lhl > 1 ) THEN
-        IF ( an(ix,jy,kz,lhl)  .gt. qxmin(lhl) ) ishail = .true.
-      ENDIF
-      
-      if ( an(ix,jy,kz,lv)  .gt. qss(1) .or.   &
-     &     an(ix,jy,kz,lc)  .gt. qxmin(lc)   .or.    &
-     &     an(ix,jy,kz,li)  .gt. qxmin(li)   .or.   &
-     &     an(ix,jy,kz,lr)  .gt. qxmin(lr)   .or.   &
-     &     an(ix,jy,kz,ls)  .gt. qxmin(ls)   .or.   &
-     &     an(ix,jy,kz,lh)  .gt. qxmin(lh)   .or.  ishail ) then
-      ngscnt = ngscnt + 1
-      igs(ngscnt) = ix
-      kgs(ngscnt) = kz
-      if ( ngscnt .eq. ngs ) goto 1100
-      end if
-      enddo !ix
-      nxmpb = 1
-      enddo !kz
- 1100 continue
-
-      if ( ngscnt .eq. 0 ) go to 9998
-
-      if ( ndebug .gt. 0 ) write(0,*) 'ICEZVD_GS: dbg = 5'
-
-!      write(0,*) 'allocating qc
-
-      
-      xv(:,:) = 0.0
-!      xsfca(:,:) = 0.0
-      xmas(:,:) = 0.0
-      vtxbar(:,:,:) = 0.0
-      xdia(:,:,:) = 0.0
-      raindn(:,:) = 900.
-      cx(:,:) = 0.0
-      alpha(:,:) = 0.0
-      DO il = li,lhab
-        DO mgs = 1,ngscnt
-          rimdn(mgs,il)  = rimedens ! xdn0(il)
-        ENDDO
-      ENDDO
-!
-!  define temporaries for state variables to be used in calculations
-!
-      do mgs = 1,ngscnt
-      kgsm(mgs) = max(kgs(mgs)-1,1)
-      kgsm2(mgs) = Max(kgs(mgs)-2,1)
-      kgsp(mgs) = min(kgs(mgs)+1,nz-1)
-      theta0(mgs) = 0.0
-      thetap(mgs) = an(igs(mgs),jy,kgs(mgs),lt) - theta0(mgs)
-      theta(mgs) = an(igs(mgs),jy,kgs(mgs),lt)
-      qv0(mgs) = 0.0
-      qwvp(mgs) = an(igs(mgs),jy,kgs(mgs),lv)  - qv0(mgs) ! qv0(mgs) is zero, so qwvp is the FULL qv!
-
-      pres(mgs) = pn(igs(mgs),jy,kgs(mgs))
-      rho0(mgs) = dn(igs(mgs),jy,kgs(mgs))
-      rhoinv(mgs) = 1.0/rho0(mgs)
-      rhovt(mgs) = Sqrt(rho00/rho0(mgs))
-      pi0(mgs) = p2(igs(mgs),jy,kgs(mgs)) ! pinit(kgs(mgs))
-      temg(mgs) = t0(igs(mgs),jy,kgs(mgs))
-      temgkm1(mgs) = t0(igs(mgs),jy,kgsm(mgs))
-      temgkm2(mgs) = t0(igs(mgs),jy,kgsm2(mgs))
-      pk(mgs)   = p2(igs(mgs),jy,kgs(mgs)) ! t77(igs(mgs),jy,kgs(mgs))
-      temcg(mgs) = temg(mgs) - tfr
-      qss0(mgs) = (380.0)/(pres(mgs))
-      pqs(mgs) = (380.0)/(pres(mgs))
-      ltemq = (temg(mgs)-163.15)/fqsat+1.5
-      ltemq = Min( nqsat, Max(1,ltemq) )
-      qvs(mgs) = pqs(mgs)*tabqvs(ltemq)
-      qis(mgs) = pqs(mgs)*tabqis(ltemq)
-      es(mgs)  = 6.1078e2*tabqvs(ltemq)
-      eis(mgs) = 6.1078e2*tabqis(ltemq)
-      cnostmp(mgs) = cno(ls)
-!
-      il5(mgs) = 0
-      if ( temg(mgs) .lt. tfr ) then
-      il5(mgs) = 1
-      end if
-      enddo !mgs
-      
-      IF ( ipconc < 1 .and. lwsm6 ) THEN
-        DO mgs = 1,ngscnt
-          tmp = Min( 0.0, temcg(mgs) )
-          cnostmp(mgs) = Min( 2.e8, 2.e6*exp(0.12*tmp) )
-        ENDDO
-      ENDIF
-
-
-!
-! zero arrays that are used but not otherwise set (tm)
-!
-      do mgs = 1,ngscnt
-         qhshr(mgs) = 0.0 
-       end do
-!
-!  set temporaries for microphysics variables
-!
-      DO il = lv,lhab
-      do mgs = 1,ngscnt
-        qx(mgs,il) = max(an(igs(mgs),jy,kgs(mgs),il), 0.0) 
-      ENDDO
-      end do
-
-      qxw(:,:) = 0.0
-
-
-        scx(:,:) = 0.0
-!
-!  set shape parameters
-!
-      IF ( imurain == 1 ) THEN
-        alpha(:,lr) = alphar
-      ELSEIF ( imurain == 3 ) THEN
-        alpha(:,lr) = xnu(lr)
-      ENDIF
-
-      DO il = lc,lhab
-      do mgs = 1,ngscnt
-        IF ( il .ge. lg ) alpha(mgs,il) = dnu(il)
-        DO ic = lr,lhab
-        dab0lh(mgs,il,ic) = dab0(ic,il)
-        dab1lh(mgs,il,ic) = dab1(ic,il)
-        ENDDO
-      ENDDO
-      end do
-      
-      
-!      DO mgs = 1,ngscnt
-        da0lh(:) = da0(lh)
-        da0lr(:) = da0(lr)
-        IF ( lzh < 1 .or. lzhl < 1 ) THEN
-          rzxhlh(:) = rzhl/rz
-        ELSEIF ( lzh > 1 .and. lzhl > 1 ) THEN
-          rzxhlh(:) = 1.
-        ENDIF
-        IF ( lzr > 1 ) THEN
-          rzxh(:) = 1.
-          rzxhl(:) = 1.
-        ELSE
-          rzxh(:) = rz
-          rzxhl(:) = rzhl
-        ENDIF
- !     ENDDO
-      
-      IF ( lhl .gt. 1 ) THEN
-      DO mgs = 1,ngscnt
-        da0lhl(mgs) = da0(lhl)
-      ENDDO
-      ENDIF
-      
-      ventrx(:) = ventr
-      ventrxn(:) = ventrn
-
-!
-!  set concentrations
-!
-!      ssmax = 0.0
-
-
-
-      if ( ipconc .ge. 1 ) then
-       do mgs = 1,ngscnt
-        cx(mgs,li) = Max(an(igs(mgs),jy,kgs(mgs),lni), 0.0)
-        IF ( lcina .gt. 1 ) THEN
-         cina(mgs) = an(igs(mgs),jy,kgs(mgs),lcina)
-        ELSE
-         cina(mgs) = cx(mgs,li)
-        ENDIF
-        IF ( lcin > 1 ) THEN
-         ccin(mgs) = an(igs(mgs),jy,kgs(mgs),lcin)
-        ENDIF
-        IF ( qx(mgs,li) .le. qxmin(li) .or. cx(mgs,li) .le. 0.0 ) THEN
-          cx(mgs,li) = 0.0
-          an(igs(mgs),jy,kgs(mgs),lni) = 0.0
-          qx(mgs,lv) = qx(mgs,lv) +  qx(mgs,li)
-          qx(mgs,li) = 0.0
-        ENDIF
-       end do
-      end if
-      if ( ipconc .ge. 2 ) then
-       do mgs = 1,ngscnt
-        cx(mgs,lc) = Max(an(igs(mgs),jy,kgs(mgs),lnc), 0.0)
-        cx(mgs,lc) = Min( ccwmx, cx(mgs,lc) )
-        IF ( qx(mgs,lc) .le. qxmin(lc) .or. cx(mgs,lc) .le. 0.0  ) THEN
-          cx(mgs,lc) = 0.0
-          an(igs(mgs),jy,kgs(mgs),lnc) = 0.0
-          qx(mgs,lv) = qx(mgs,lv) +  qx(mgs,lc)
-          qx(mgs,lc) = 0.0
-        ENDIF
-        IF ( lccn .gt. 1 ) THEN
-         ccnc(mgs) = an(igs(mgs),jy,kgs(mgs),lccn)
-        ELSE
-         ccnc(mgs) = 0.0
-        ENDIF
-       end do
-!       ELSE
-!       cx(mgs,lc) = Abs(ccn)
-      end if
-      if ( ipconc .ge. 3 ) then
-       do mgs = 1,ngscnt
-        cx(mgs,lr) = Max(an(igs(mgs),jy,kgs(mgs),lnr), 0.0)
-        IF ( qx(mgs,lr) .le. qxmin(lr) .or. cx(mgs,lr) .le. 0.0 ) THEN
-          cx(mgs,lr) = 0.0
-          an(igs(mgs),jy,kgs(mgs),lnr) = 0.0
-          qx(mgs,lv) = qx(mgs,lv) +  qx(mgs,lr)
-          qx(mgs,lr) = 0.0
-        ENDIF
-        IF ( cx(mgs,lr) .eq. 0.0 .and. qx(mgs,lr) .lt. 3.0*qxmin(lr) ) THEN
-          qx(mgs,lv) = qx(mgs,lv) + qx(mgs,lr)
-          qx(mgs,lr) = 0.0
-        ELSE
-          cx(mgs,lr) = Max( 1.e-9, cx(mgs,lr) )
-       IF ( .not. ( cx(mgs,lr) < 1.e30 .and. cx(mgs,lr) > -1.e20 ) ) THEN
-         write(0,*) 'icezvd_gs: problem with cx(mgs,lr)! ',qx(mgs,lr),cx(mgs,lr)
-         STOP
-       ENDIF
-        ENDIF
-
-       end do
-      end if
-      if ( ipconc .ge. 4 ) then
-       do mgs = 1,ngscnt
-        cx(mgs,ls) = Max(an(igs(mgs),jy,kgs(mgs),lns), 0.0)
-        IF ( qx(mgs,ls) .le. qxmin(ls) .or. cx(mgs,ls) .le. 0.0 ) THEN
-          cx(mgs,ls) = 0.0
-          an(igs(mgs),jy,kgs(mgs),lns) = 0.0
-          qx(mgs,lv) = qx(mgs,lv) +  qx(mgs,ls)
-          qx(mgs,ls) = 0.0
-        ENDIF
-        IF ( cx(mgs,ls) .eq. 0.0 .and. qx(mgs,ls) .lt. 3.0*qxmin(ls) ) THEN
-          qx(mgs,lv) = qx(mgs,lv) + qx(mgs,ls)
-          qx(mgs,ls) = 0.0
-        ELSE
-          cx(mgs,ls) = Max( 1.e-9, cx(mgs,ls) )
-
-         IF ( ilimit .ge. ipc(ls) ) THEN
-            tmp = (xdn0(ls)*cx(mgs,ls))/(rho0(mgs)*qx(mgs,ls))
-            tmp2 = (tmp*(3.14159))**(1./3.)
-            cnox = cx(mgs,ls)*(tmp2)
-         IF ( cnox .gt. 3.0*cno(ls) ) THEN
-           cx(mgs,ls) = 3.0*cno(ls)/tmp2
-         ENDIF
-         ENDIF
-        ENDIF
-       end do
-      end if
-      if ( ipconc .ge. 5 ) then
-       do mgs = 1,ngscnt
-
-        cx(mgs,lh) = Max(an(igs(mgs),jy,kgs(mgs),lnh), 0.0)
-        IF ( qx(mgs,lh) .le. qxmin(lh) .or. cx(mgs,lh) .le. 0.0 ) THEN
-          cx(mgs,lh) = 0.0
-          an(igs(mgs),jy,kgs(mgs),lnh) = 0.0
-          qx(mgs,lv) = qx(mgs,lv) +  qx(mgs,lh)
-          qx(mgs,lh) = 0.0
-        ENDIF
-        IF ( cx(mgs,lh) .eq. 0.0 .and. qx(mgs,lh) .lt. 3.0*qxmin(lh) ) THEN
-          qx(mgs,lv) = qx(mgs,lv) + qx(mgs,lh)
-          qx(mgs,lh) = 0.0
-        ELSE
-          cx(mgs,lh) = Max( 1.e-9, cx(mgs,lh) )
-         IF ( ilimit .ge. ipc(lh) ) THEN
-            tmp = (xdn0(lh)*cx(mgs,lh))/(rho0(mgs)*qx(mgs,lh))
-            tmp2 = (tmp*(3.14159))**(1./3.)
-            cnox = cx(mgs,lh)*(tmp2)
-         IF ( cnox .gt. 3.0*cno(lh) ) THEN
-           cx(mgs,lh) = 3.0*cno(lh)/tmp2
-         ENDIF
-         ENDIF
-        ENDIF
-       end do
-      end if
-
-      if ( lhl .gt. 1 .and. ipconc .ge. 5 ) then
-       do mgs = 1,ngscnt
-
-        cx(mgs,lhl) = Max(an(igs(mgs),jy,kgs(mgs),lnhl), 0.0)
-        IF ( qx(mgs,lhl) .le. qxmin(lhl) .or. cx(mgs,lhl) .le. 0.0 ) THEN
-          cx(mgs,lhl) = 0.0
-          an(igs(mgs),jy,kgs(mgs),lnhl) = 0.0
-          qx(mgs,lv) = qx(mgs,lv) +  qx(mgs,lhl)
-          qx(mgs,lhl) = 0.0
-        ENDIF
-        IF ( cx(mgs,lhl) .eq. 0.0 .and. qx(mgs,lhl) .lt. 3.0*qxmin(lhl) ) THEN
-          qx(mgs,lv) = qx(mgs,lv) + qx(mgs,lhl)
-          qx(mgs,lhl) = 0.0
-        ELSE
-          cx(mgs,lhl) = Max( 1.e-9, cx(mgs,lhl) )
-         IF ( ilimit .ge. ipc(lhl) ) THEN
-            tmp = (xdn0(lhl)*cx(mgs,lhl))/(rho0(mgs)*qx(mgs,lhl))
-            tmp2 = (tmp*(3.14159))**(1./3.)
-            cnox = cx(mgs,lhl)*(tmp2)
-         IF ( cnox .gt. 3.0*cno(lhl) ) THEN
-           cx(mgs,lhl) = 3.0*cno(lhl)/tmp2
-         ENDIF
-         ENDIF
-        ENDIF
-       end do
-      end if
-
-!
-! Set mean particle volume
-!
-      IF ( ldovol ) THEN
-
-      vx(:,:) = 0.0
-
-       DO il = li,lhab
-
-        IF ( lvol(il) .ge. 1 ) THEN
-
-          DO mgs = 1,ngscnt
-            vx(mgs,il) = Max(an(igs(mgs),jy,kgs(mgs),lvol(il)), 0.0)
-          ENDDO
-
-        ENDIF
-
-       ENDDO
-
-      ENDIF
-
-
-
-
-
-!
-!  set factors
-!
-      do mgs = 1,ngscnt
-!
-      ssi(mgs) = qx(mgs,lv)/qis(mgs)
-      ssw(mgs) = qx(mgs,lv)/qvs(mgs)
-!
-      tsqr(mgs) = temg(mgs)**2
-!
-      temgx(mgs) = min(temg(mgs),313.15)
-      temgx(mgs) = max(temgx(mgs),233.15)
-      felv(mgs) = 2500837.367 * (273.15/temgx(mgs))**((0.167)+(3.67e-4)*temgx(mgs))
-!
-      temcgx(mgs) = min(temg(mgs),273.15)
-      temcgx(mgs) = max(temcgx(mgs),223.15)
-      temcgx(mgs) = temcgx(mgs)-273.15
-
-! felf = latent heat of fusion, fels = LH of sublimation, felv = LH of vaporization
-      felf(mgs) = 333690.6098 + (2030.61425)*temcgx(mgs) - (10.46708312)*temcgx(mgs)**2
-!
-      fels(mgs) = felv(mgs) + felf(mgs)
-!
-      felvs(mgs) = felv(mgs)*felv(mgs)
-      felss(mgs) = fels(mgs)*fels(mgs)
-      
-        IF ( eqtset <= 1 ) THEN
-          felvcp(mgs) = felv(mgs)*cpi
-          felscp(mgs) = fels(mgs)*cpi
-          felfcp(mgs) = felf(mgs)*cpi
-        ELSE
-          tmp = qx(mgs,li)+qx(mgs,ls)+qx(mgs,lh)
-          IF ( lhl > 1 ) tmp = tmp + qx(mgs,lhl)
-          cvm = cv+cvv*qx(mgs,lv)+cpl*(qx(mgs,lc)+qx(mgs,lr))   &
-                                  +cpigb*(tmp)
-          felvcp(mgs) = (felv(mgs)-rw*temg(mgs))/cvm
-          felscp(mgs) = (fels(mgs)-rw*temg(mgs))/cvm
-          felfcp(mgs) = felf(mgs)/cvm
-        ENDIF
-!
-      fgamw(mgs) = felvcp(mgs)/pi0(mgs)
-      fgams(mgs) = felscp(mgs)/pi0(mgs)
-!
-      fcqv1(mgs) = 4098.0258*pi0(mgs)*fgamw(mgs)
-      fcqv2(mgs) = 5807.6953*pi0(mgs)*fgams(mgs)
-      fcc3(mgs) = felfcp(mgs)/pi0(mgs)
-!
-!  fwvdf = water vapor diffusivity
-      fwvdf(mgs) = (2.11e-05)*((temg(mgs)/tfr)**1.94)*(101325.0/(pres(mgs)))
-!
-! fadvisc = 1/Reynolds number
-      fadvisc(mgs) = advisc0*(416.16/(temg(mgs)+120.0))*(temg(mgs)/296.0)**(1.5)
-!
-      fakvisc(mgs) = fadvisc(mgs)*rhoinv(mgs)
-!
-      temcgx(mgs) = min(temg(mgs),273.15)
-      temcgx(mgs) = max(temcgx(mgs),233.15)
-      temcgx(mgs) = temcgx(mgs)-273.15
-      fci(mgs) = (2.118636 + 0.007371*(temcgx(mgs)))*(1.0e+03)
-!
-      if ( temg(mgs) .lt. 273.15 ) then
-      temcgx(mgs) = min(temg(mgs),273.15)
-      temcgx(mgs) = max(temcgx(mgs),233.15)
-      temcgx(mgs) = temcgx(mgs)-273.15
-      fcw(mgs) = 4203.1548  + (1.30572e-2)*((temcgx(mgs)-35.)**2)   &
-     &                 + (1.60056e-5)*((temcgx(mgs)-35.)**4)
-      end if
-      if ( temg(mgs) .ge. 273.15 ) then
-      temcgx(mgs) = min(temg(mgs),308.15)
-      temcgx(mgs) = max(temcgx(mgs),273.15)
-      temcgx(mgs) = temcgx(mgs)-273.15
-      fcw(mgs) = 4243.1688  + (3.47104e-1)*(temcgx(mgs)**2)
-      end if
-!
-      ftka(mgs) = tka0*fadvisc(mgs)/advisc1  ! thermal conductivity
-!      fthdf(mgs) = ftka(mgs)*cpi*rhoinv(mgs)
-!
-      fschm(mgs) = (fakvisc(mgs)/fwvdf(mgs))  ! Schmidt number
-!      fpndl(mgs) = (fakvisc(mgs)/fthdf(mgs))  ! Prandl number (not used)
-!
-      fai(mgs) = (fels(mgs)**2)/(ftka(mgs)*rw*temg(mgs)**2)
-      fbi(mgs) = (1.0/(rho0(mgs)*fwvdf(mgs)*qis(mgs)))
-      fav(mgs) = (felv(mgs)**2)/(ftka(mgs)*rw*temg(mgs)**2)
-      fbv(mgs) = (1.0/(rho0(mgs)*fwvdf(mgs)*qvs(mgs)))
-!
-      end do
-!
-!
-!   ice habit fractions
-!
-!
-!
-!  Set density
-!
-      if (ndebug .gt. 0 ) write(0,*) 'ICEZVD_GS: Set density'
-!
-
-      do mgs = 1,ngscnt
-        xdn(mgs,li) = xdn0(li)
-        xdn(mgs,lc) = xdn0(lc)
-        xdn(mgs,lr) = xdn0(lr)
-        xdn(mgs,ls) = xdn0(ls)
-        xdn(mgs,lh) = xdn0(lh)
-        IF ( lvol(ls) .gt. 1 ) THEN
-         IF ( vx(mgs,ls) .gt. 0.0 .and. qx(mgs,ls) .gt. qxmin(ls) ) THEN
-           xdn(mgs,ls) = Min( xdnmx(ls), Max( xdnmn(ls), rho0(mgs)*qx(mgs,ls)/vx(mgs,ls) ) )
-         ENDIF
-        ENDIF
-
-        IF ( lvol(lh) .gt. 1 ) THEN
-         IF ( vx(mgs,lh) .gt. 0.0 .and. qx(mgs,lh) .gt. qxmin(lh) ) THEN
-           IF ( mixedphase ) THEN
-           ELSE
-             dnmx = xdnmx(lh)
-           ENDIF
-           xdn(mgs,lh) = Min( dnmx, Max( xdnmn(lh), rho0(mgs)*qx(mgs,lh)/vx(mgs,lh) ) )
-           vx(mgs,lh) = rho0(mgs)*qx(mgs,lh)/xdn(mgs,lh)
-         ENDIF
-        ENDIF
-
-        IF ( lhl .gt. 1 ) THEN
-
-          xdn(mgs,lhl) = xdn0(lhl)
-
-          IF ( lvol(lhl) .gt. 1 ) THEN
-           IF ( vx(mgs,lhl) .gt. 0.0 .and. qx(mgs,lhl) .gt. qxmin(lhl) ) THEN
-
-           IF ( mixedphase .and. lhlw > 1 ) THEN
-           ELSE
-             dnmx = xdnmx(lhl)
-           ENDIF
-
-             xdn(mgs,lhl) = Min( dnmx, Max( xdnmn(lhl), rho0(mgs)*qx(mgs,lhl)/vx(mgs,lhl) ) )
-             vx(mgs,lhl) = rho0(mgs)*qx(mgs,lhl)/xdn(mgs,lhl)
-           ENDIF
-          ENDIF
-
-        ENDIF
-
-! adjust density for wet snow and graupel (Ferrier 94)
-! (aps): for the time being, do not adjust density until we keep track of fully melted snow/graupel
-!
-!        IF (mixedphase) THEN
-          IF (qsdenmod) THEN
-           IF(fsw(mgs) .gt. 0.01) THEN
-            xdn(mgs,ls) = (1.-fsw(mgs))*rho_qs + fsw(mgs)*rho_qr        !Ferrier: 100./(1.-fsw(mgs))
-            IF(fsw(mgs) .eq. 1.) xdn(mgs,ls) = rho_qr   ! fsw = 1 means it's liquid water, yo!
-           ENDIF
-          ENDIF
-
-          IF (qhdenmod) THEN
-!          IF(fhw(mgs) .gt. 0.01) THEN
-!           IF(fhw(mgs) .lt. 1.) xdn(mgs,lh) = rho_qh / (1. - fhw(mgs))       !Ferrier: 400./(1.-fsw(mgs))
-!           IF(fhw(mgs) .eq. 1.) xdn(mgs,lh) = rho_qr   ! fhw = 1 means it's liquid water, yo!
-!          ENDIF
-          ENDIF
-!        ENDIF
-
-      end do
-
-
-!
-!  set some values for ice nucleation
-!
-      do mgs = 1,ngscnt
-      kp1 = Min(nz, kgs(mgs)+1 )
-      wvel(mgs) = (0.5)*(w(igs(mgs),jgs,kp1)   &
-     &                  +w(igs(mgs),jgs,kgs(mgs)))
-      wvelkm1(mgs) = (0.5)*(w(igs(mgs),jgs,kgs(mgs))   &
-     &                  +w(igs(mgs),jgs,Max(1,kgs(mgs)-1)))
-      kgsm(mgs) = max(kgs(mgs)-1,1)
-      kgsp(mgs) = min(kgs(mgs)+1,nz-1)
-      cninm(mgs) = t7(igs(mgs),jgs,kgsm(mgs))
-      cnina(mgs) = t7(igs(mgs),jgs,kgs(mgs))
-      cninp(mgs) = t7(igs(mgs),jgs,kgsp(mgs))
-      end do
-
-!
-!  Set a couple of cloud variables...
-!
-
-!      SUBROUTINE setvt(ngscnt,qx,qxmin,cx,rho0,rhovt,xdia,cno,
-!     :                 xmas,xdn,xvmn,xvmx,xv,cdx,
-!     :                 ipconc,ndebug)
-!      SUBROUTINE setvtz(ngscnt,qx,qxmin,qxw,cx,rho0,rhovt,xdia,cno, &
-!     &                 xmas,vtxbar,xdn,xvmn,xvmx,xv,cdx,            &
-!     &                 ipconc1,ndebug1,ngs,nz,kgs,cwnccn,fadvisc,   &
-!     &                 cwmasn,cwmasx,cwradn,cnina,cimna,cimxa,      &
-!     &                 itype1a,itype2a,temcg,infdo,alpha)
-
-
-      call setvtz(ngscnt,ngs,qx,qxmin,qxw,cx,rho0,rhovt,xdia,cno,cnostmp,   &
-     &                 xmas,vtxbar,xdn,xvmn,xvmx,xv,cdx,   &
-     &                 ipconc,ndebug,ngs,nz,kgs,fadvisc,   &
-     &                 cwmasn,cwmasx,cwradn,cnina,cimn,cimx,   &
-     &                 itype1,itype2,temcg,0,alpha,0)
-
-
-       IF ( lwsm6 .and. ipconc == 0 ) THEN
-         tmp = Max(qxmin(lh), qxmin(ls))
-         DO mgs = 1,ngscnt
-           sum = qx(mgs,lh) + qx(mgs,ls)
-           IF ( sum > tmp ) THEN
-             vt2ave(mgs) = (qx(mgs,lh)*vtxbar(mgs,lh,1) + qx(mgs,ls)*vtxbar(mgs,ls,1))/sum
-           ELSE
-             vt2ave(mgs) = 0.0
-           ENDIF
-         ENDDO
-       ENDIF
-
-
-!
-!  Set number concentrations (need xdia from setvt)
-!
-      if ( ndebug .gt. 0 ) write(0,*) 'ICEZVD_GS: Set concentration'
-      IF ( ipconc .lt. 1 ) THEN
-         cina(1:ngscnt) = cx(1:ngscnt,li)
-      ENDIF
-      if ( ipconc .lt. 5 ) then
-      do mgs = 1,ngscnt
-
-
-      IF ( ipconc .lt. 3 ) THEN
-!      cx(mgs,lr) = 0.0
-      if ( qx(mgs,lr) .gt. qxmin(lh) )  then
-!      cx(mgs,lr) = cno(lr)*xdia(mgs,lr,1)
-!      xv(mgs,lr) = rho0(mgs)*qx(mgs,lr)/(xdn(mgs,lr)*cx(mgs,lr))
-      end if
-      ENDIF
-
-      IF ( ipconc .lt. 4 ) THEN
-!      tmp = cx(mgs,ls)
-!      cx(mgs,ls) = 0.0
-      if ( qx(mgs,ls) .gt. qxmin(ls) )  then
-!      cx(mgs,ls) = cno(ls)*xdia(mgs,ls,1)
-!      xv(mgs,ls) = rho0(mgs)*qx(mgs,ls)/(xdn(mgs,ls)*cx(mgs,ls))
-      end if
-      ENDIF ! ( ipconc .lt. 4 )
-
-      IF ( ipconc .lt. 5 ) THEN
-
-
-!      cx(mgs,lh) = 0.0
-      if ( qx(mgs,lh) .gt. qxmin(lh) )  then
-!      cx(mgs,lh) = cno(lh)*xdia(mgs,lh,1)
-!      xv(mgs,lh) = Max(xvmn(lh), rho0(mgs)*qx(mgs,lh)/(xdn(mgs,lh)*cx(mgs,lh)) )
-!      xdia(mgs,lh,3) = (xv(mgs,lh)*6./pi)**(1./3.) 
-      end if
-
-      ENDIF ! ( ipconc .lt. 5 )
-
-      end do
-      end if
-
-      IF ( ipconc .ge. 2 ) THEN
-      DO mgs = 1,ngscnt
-        rb(mgs) = 0.5*xdia(mgs,lc,1)*((1./(1.+cnu)))**(1./6.)
-        xl2p(mgs) = Max(0.0d0, 2.7e-2*xdn(mgs,lc)*cx(mgs,lc)*xv(mgs,lc)*   &
-     &           ((0.5e20*rb(mgs)**3*xdia(mgs,lc,1))-0.4) )
-        IF ( rb(mgs) .gt. 3.51e-6 ) THEN
-!          rh(mgs) = Max( 0.5d0*xdia(mgs,lc,1), 6.3d-4/(1.d6*(rb(mgs) - 3.5d-6)) )
-          rh(mgs) = Max( 41.d-6, 6.3d-4/(1.d6*(rb(mgs) - 3.5d-6)) )
-        ELSE
-          rh(mgs) = 41.d-6
-        ENDIF
-        IF ( xl2p(mgs) .gt. 0.0 ) THEN
-          nh(mgs) = 4.2d9*xl2p(mgs)
-        ELSE
-          nh(mgs) = 1.e30
-        ENDIF
-      ENDDO
-      ENDIF
-
-!
-!
-!
-!
-!  maximum depletion tendency by any one source
-!
-!
-      if( ndebug .ge. 0 ) THEN
-!mpi!        write(iunit,*) 'Set depletion max/min1'
-!       call flush(iunit)
-      endif
-      do mgs = 1,ngscnt
-      qvimxd(mgs) = 0.70*(qx(mgs,lv)-qis(mgs))/dtp ! depletion by all vap. dep to ice.
-      qvimxd(mgs) = max(qvimxd(mgs), 0.0)
-!      qimxd(mgs)  = 0.20*qx(mgs,li)/dtp
-!      qcmxd(mgs)  = 0.20*qx(mgs,lc)/dtp
-!      qrmxd(mgs)  = 0.20*qx(mgs,lr)/dtp
-!      qsmxd(mgs)  = 0.20*qx(mgs,ls)/dtp
-!      qhmxd(mgs)  = 0.20*qx(mgs,lh)/dtp
-
-      frac = 0.1d0
-      qimxd(mgs)  = frac*qx(mgs,li)/dtp
-      qcmxd(mgs)  = frac*qx(mgs,lc)/dtp
-      qrmxd(mgs)  = frac*qx(mgs,lr)/dtp
-      qsmxd(mgs)  = frac*qx(mgs,ls)/dtp
-      qhmxd(mgs)  = frac*qx(mgs,lh)/dtp
-      IF ( lhl > 1 ) qhlmxd(mgs)  = frac*qx(mgs,lhl)/dtp
-      end do
-!
-      if( ndebug .ge. 0 ) THEN
-!mpi!        write(iunit,*) 'Set depletion max/min2'
-!       call flush(iunit)
-      endif
-
-      do mgs = 1,ngscnt
-!
-      if ( qx(mgs,lc) .le. qxmin(lc) ) then
-      ccmxd(mgs)  = 0.20*cx(mgs,lc)/dtp
-      else
-      IF ( ipconc .ge. 2 ) THEN
-        ccmxd(mgs)  = frac*cx(mgs,lc)/dtp
-      ELSE
-        ccmxd(mgs)  = frac*qx(mgs,lc)/(xmas(mgs,lc)*rho0(mgs)*dtp)
-      ENDIF
-      end if
-!
-      if ( qx(mgs,li) .le. qxmin(li) ) then
-      cimxd(mgs)  = frac*cx(mgs,li)/dtp
-      else
-      IF ( ipconc .ge. 1 ) THEN
-        cimxd(mgs)  = frac*cx(mgs,li)/dtp
-      ELSE
-        cimxd(mgs)  = frac*qx(mgs,li)/(xmas(mgs,li)*rho0(mgs)*dtp)
-      ENDIF
-      end if
-!
-!
-      crmxd(mgs)  = 0.10*cx(mgs,lr)/dtp
-      csmxd(mgs)  = frac*cx(mgs,ls)/dtp
-      chmxd(mgs)  = frac*cx(mgs,lh)/dtp
-
-      ccmxd(mgs)  = frac*cx(mgs,lc)/dtp
-      cimxd(mgs)  = frac*cx(mgs,li)/dtp
-      crmxd(mgs)  = frac*cx(mgs,lr)/dtp
-      csmxd(mgs)  = frac*cx(mgs,ls)/dtp
-      chmxd(mgs)  = frac*cx(mgs,lh)/dtp
-
-      qxmxd(mgs,lv) = Max(0.0, 0.1*(qx(mgs,lv) - qvs(mgs))/dtp)
-
-      DO il = lc,lhab
-       qxmxd(mgs,il) = frac*qx(mgs,il)/dtp
-       cxmxd(mgs,il) = frac*cx(mgs,il)/dtp
-      ENDDO
-
-
-      end do
-
-
-!
-!
-!
-!
-!  microphysics source terms (1/s) for mixing ratios 
-!
-!
-!
-!  Collection efficiencies:
-!
-      if (ndebug .gt. 0 ) write(0,*) 'ICEZVD_GS: Set collection efficiencies'
-!
-      do mgs = 1,ngscnt
-!
-!
-!
-      erw(mgs) = 0.0
-      esw(mgs) = 0.0
-      ehw(mgs) = 0.0
-      ehlw(mgs) = 0.0
-!      ehxw(mgs) = 0.0
-!
-      err(mgs) = 0.0
-      esr(mgs) = 0.0
-      il2(mgs) = 0
-      il3(mgs) = 0
-      ehr(mgs) = 0.0
-      ehlr(mgs) = 0.0
-!      ehxr(mgs) = 0.0
-!
-      eri(mgs) = 0.0
-      esi(mgs) = 0.0
-      ehi(mgs) = 0.0
-      ehli(mgs) = 0.0
-!      ehxi(mgs) = 0.0
-!
-      ers(mgs) = 0.0
-      ess(mgs) = 0.0
-      ehs(mgs) = 0.0
-      ehls(mgs) = 0.0
-      ehscnv(mgs) = 0.0
-!      ehxs(mgs) = 0.0
-!
-      eiw(mgs) = 0.0
-      eii(mgs) = 0.0
-
-      icwr(mgs) = 1
-      IF ( qx(mgs,lc) .gt. qxmin(lc) ) THEN
-       cwrad = 0.5*xdia(mgs,lc,1)
-      DO il = 1,8
-         IF ( cwrad .ge. 1.e-6*cwr(il,1) ) icwr(mgs) = il
-      ENDDO
-      ENDIF
-
-
-      irwr(mgs) = 1
-      IF ( qx(mgs,lr) .gt. qxmin(lr) ) THEN
-         rwrad = 0.5*xdia(mgs,lr,3)  ! changed to mean volume diameter (10/6/06)
-      DO il = 1,6
-         IF ( rwrad .ge. 1.e-6*grad(il,1) ) irwr(mgs) = il
-      ENDDO
-      ENDIF
-
-
-      igwr(mgs) = 1
-!      IF ( qx(mgs,lr) .gt. qxmin(lr) ) THEN
-!         rwrad = 0.5*xdia(mgs,lr,1)
-! setting erw = 1 always, so now use igwr for graupel
-      IF ( qx(mgs,lh) .gt. qxmin(lh) ) THEN
-         rwrad = 0.5*xdia(mgs,lh,3)  ! changed to mean volume diameter (10/6/06)
-      DO il = 1,6
-         IF ( rwrad .ge. 1.e-6*grad(il,1) ) igwr(mgs) = il
-      ENDDO
-      ENDIF
-
-      IF ( lhl .gt. 1 ) THEN ! hail is turned on
-      ihlr(mgs) = 1
-      IF ( qx(mgs,lhl) .gt. qxmin(lhl) ) THEN
-         rwrad = 0.5*xdia(mgs,lhl,3)  ! changed to mean volume diameter (10/6/06)
-      DO il = 1,6
-         IF ( rwrad .ge. 1.e-6*grad(il,1) ) ihlr(mgs) = il
-      ENDDO
-      ENDIF
-      ENDIF
-
-!
-!
-!  Ice-Ice: Collection (cxc) efficiencies
-!
-!
-      if ( qx(mgs,li) .gt. qxmin(li) ) then
-!      IF ( ipconc .ge. 14 ) THEN
-!       eii(mgs)=0.1*exp(0.1*temcg(mgs))
-!       if ( temg(mgs) .lt. 243.15 .and. qx(mgs,lc) .gt. 1.e-6 ) then
-!        eii(mgs)=0.1
-!       end if
-!      
-!      ELSE
-        eii(mgs) = exp(0.025*Min(temcg(mgs),0.0))  ! alpha1 from LFO83 (21)
-!      ENDIF
-      if ( temg(mgs) .gt. 273.15 ) eii(mgs) = 1.0
-      end if
-!
-!
-!
-!  Ice-cloud water: Collection (cxc) efficiencies
-!
-!
-      eiw(mgs) = 0.0
-      if ( qx(mgs,li).gt.qxmin(li) .and. qx(mgs,lc).gt.qxmin(lc) ) then
-      if (xdia(mgs,lc,1).gt.15.0e-06 .and. xdia(mgs,li,1).gt.30.0e-06) then
-! erm 5/10/2007 test following change:
-!      if (xdia(mgs,lc,1).gt.12.0e-06 .and. xdia(mgs,li,1).gt.50.0e-06) then
-      eiw(mgs) = 0.5
-      end if
-      if ( temg(mgs) .ge. 273.15 ) eiw(mgs) = 0.0
-      end if
-!
-!
-!
-!  Rain: Collection (cxc) efficiencies
-!
-!
-      if ( qx(mgs,lr).gt.qxmin(lr) .and. qx(mgs,lc).gt.qxmin(lc) ) then
-
-       IF ( lnr .gt. 1 ) THEN
-       erw(mgs) = 1.0
-
-       ELSE
-
-!      cwrad = 0.5*xdia(mgs,lc,1)
-!      erw(mgs) =
-!     >  min((aradcw + cwrad*(bradcw + cwrad*
-!     <  (cradcw + cwrad*(dradcw)))), 1.0)
-!       IF ( xdia(mgs,lc,1) .lt. 2.4e-06 .or. xdia(mgs,lr,1) .le. 50.0e-6 ) THEN
-!          erw(mgs)=0.0
-!       ENDIF
-!       erw(mgs) = ew(icwr(mgs),igwr(mgs))
-! interpolate along droplet radius
-       ic = icwr(mgs)
-       icp1 = Min( 8, ic+1 )
-       ir = irwr(mgs)
-       irp1 = Min( 6, ir+1 )
-       cwrad = 0.5*xdia(mgs,lc,3)
-       rwrad = 0.5*xdia(mgs,lr,3)
-       
-       slope1 = (ew(icp1, ir  ) - ew(ic,ir  ))*cwr(ic,2)
-       slope2 = (ew(icp1, irp1) - ew(ic,irp1))*cwr(ic,2)
-
-!       write(iunit,*) 'slop1: ',slope1,slope2,ew(ic,ir),cwr(ic,2)
-
-       x1 = ew(ic,  ir) + slope1*Max(0.0, (cwrad - cwr(ic,1)) )
-       x2 = ew(icp1,ir) + slope2*Max(0.0, (cwrad - cwr(ic,1)) )
-
-       slope1 = (x2 - x1)*grad(ir,2)
-
-       erw(mgs) = Max(0.0, x1 + slope1*Max(0.0, (rwrad - grad(ir,1)) ))
-
-!       write(iunit,*) 'erw: ',erw(mgs),1.e6*cwrad,1.e6*rwrad,ic,ir,x1,x2
-!       write(iunit,*)
-
-       erw(mgs) = Max(0.0, erw(mgs) )
-       IF ( rwrad .lt. 50.e-6 ) THEN
-         erw(mgs) = 0.0
-       ELSEIF (  rwrad .lt. 100.e-6 ) THEN  ! linear change from zero at 50 to erw at 100 microns
-         erw(mgs) = erw(mgs)*(rwrad - 50.e-6)/50.e-6
-       ENDIF
-
-       ENDIF
-      end if
-      IF ( cx(mgs,lc) .le. 0.0 ) erw(mgs) = 0.0
-!
-      if ( qx(mgs,lr).gt.qxmin(lr) .and. qx(mgs,lr).gt.qxmin(lr) ) then
-      err(mgs)=1.0
-      end if
-!
-      if ( qx(mgs,lr).gt.qxmin(lr) .and. qx(mgs,ls).gt.qxmin(ls) ) then
-      ers(mgs)=1.0
-      end if
-!
-      if ( qx(mgs,lr).gt.qxmin(lr) .and. qx(mgs,li).gt.qxmin(li) ) then
-!        IF ( vtxbar(mgs,lr,1) .gt. vtxbar(mgs,li,1) .and.
-!     :       xdia(mgs,lr,3) .gt. 200.e-6 .and. xdia(mgs,li,3) .gt. 100.e-6 ) THEN
-         eri(mgs) = eri0
-!      cwrad = 0.5*xdia(mgs,li,3)
-!      eri(mgs) =
-!     >  1.0*min((aradcw + cwrad*(bradcw + cwrad*
-!     <  (cradcw + cwrad*(dradcw)))), 1.0)
-!         ENDIF
-!       if ( xdia(mgs,li,1) .lt. 10.e-6 ) eri(mgs)=0.0
-       if ( xdia(mgs,li,1) .lt. 40.e-6 ) eri(mgs)=0.0
-      end if
-!
-!
-!  Snow aggregates: Collection (cxc) efficiencies
-!
-! Modified by ERM with a linear function for small droplets and large
-! snow agg. based numerical data from Wang and Ji (1992) in P&K 1997, which
-! allows collection of very small droplets, albeit at low efficiency.  But slow
-! fall speeds of snow make up for the efficiency.
-!
-      esw(mgs) = 0.0
-      if ( qx(mgs,ls).gt.qxmin(ls) .and. qx(mgs,lc).gt.qxmin(lc) ) then
-        esw(mgs) = 0.5
-        if ( xdia(mgs,lc,1) .gt. 15.e-6 .and. xdia(mgs,ls,1) .gt. 100.e-6) then
-          esw(mgs) = 0.5
-        ELSEIF ( xdia(mgs,ls,1) .ge. 500.e-6 ) THEN
-          esw(mgs) = Min(0.5, 0.05 + (0.8-0.05)/(40.e-6)*xdia(mgs,lc,1) )
-        ENDIF
-      end if
-!
-      if ( qx(mgs,ls).gt.qxmin(ls) .and. qx(mgs,lr).gt.qxmin(lr)  &
-     &     .and. temg(mgs) .lt. tfr - 1.   &
-     &                               ) then
-      esr(mgs)=Exp(-(40.e-6)**3/xv(mgs,lr))*Exp(-40.e-6/xdia(mgs,ls,1))
-      IF ( qx(mgs,ls) < 1.e-4 .and. qx(mgs,lr) < 1.e-4 ) il2(mgs) = 1
-      end if
-      
-      IF ( ipconc < 3 .and. temg(mgs) < tfr .and. qx(mgs,lr).gt.qxmin(lr) .and. qx(mgs,lr) < 1.e-4 ) THEN
-        il3(mgs) = 1
-      ENDIF
-!
-!      if ( qx(mgs,ls).gt.qxmin(ls) ) then
-      if ( temcg(mgs) < 0.0 ) then
-      IF ( ipconc .lt. 4 .or. temcg(mgs) < -25. ) THEN
-        ess(mgs) = 0.0
-!        ess(mgs)=0.1*exp(0.1*min(temcg(mgs),0.0))
-!        ess(mgs)=min(0.1,ess(mgs))
-      ELSE
-        IF ( temcg(mgs) > -25. .and. temcg(mgs) < -20. ) THEN
-        ess(mgs) = ess0*Exp(ess1*(-20.) )*(temcg(mgs) + 25.)/5.
-        ELSEIF ( temcg(mgs) >= -20.0 ) THEN
-        ess(mgs) = ess0*Exp(ess1*Min( temcg(mgs), 0.0 ) )
-        ENDIF
-      ENDIF
-      end if
-!
-      if ( qx(mgs,ls).gt.qxmin(ls) .and. qx(mgs,li).gt.qxmin(li) ) then
-!      IF ( ipconc .lt. 4 ) THEN
-      IF ( ipconc < 1 .and. lwsm6 ) THEN
-        esi(mgs) = exp(0.7*min(temcg(mgs),0.0))
-      ELSE
-        esi(mgs)=0.1*exp(0.1*min(temcg(mgs),0.0))
-        esi(mgs)=min(0.1,esi(mgs))
-      ENDIF
-      IF ( ipconc .le. 3 ) THEN
-       esi(mgs) =  exp(0.025*min(temcg(mgs),0.0)) ! LFO
-!       esi(mgs) =  Min(0.5, exp(0.025*min(temcg(mgs),0.0)) ) ! LFO
-!       esi(mgs)=0.5*exp(0.1*min(temcg(mgs),0.0))  ! 10ice
-      ENDIF
-!      ELSE ! zrnic/ziegler 1993
-!      esi(mgs)= 0.1 ! 0.5*exp(0.1*min(temcg(mgs),0.0))
-!      ENDIF
-      if ( temg(mgs) .gt. 273.15 ) esi(mgs) = 0.0
-      end if
-!
-!
-!
-!
-!  Graupel: Collection (cxc) efficiencies
-!
-!
-       xmascw(mgs) = xmas(mgs,lc)
-      if ( qx(mgs,lh).gt.qxmin(lh) .and. qx(mgs,lc).gt.qxmin(lc) ) then
-       ehw(mgs) = 1.0
-       IF ( iehw .eq. 0 ) THEN
-       ehw(mgs) = ehw0  ! default value is 1.0
-       ELSEIF ( iehw .eq. 1 .or. iehw .eq. 10 ) THEN
-      cwrad = 0.5*xdia(mgs,lc,1)
-      ehw(mgs) = Min( ehw0,    &
-     &  ewfac*min((aradcw + cwrad*(bradcw + cwrad*   &
-     &  (cradcw + cwrad*(dradcw)))), 1.0) )
-      
-       ELSEIF ( iehw .eq. 2 .or. iehw .eq. 10 ) THEN
-       ic = icwr(mgs)
-       icp1 = Min( 8, ic+1 )
-       ir = igwr(mgs)
-       irp1 = Min( 6, ir+1 )
-       cwrad = 0.5*xdia(mgs,lc,1)
-       rwrad = 0.5*xdia(mgs,lh,3)  ! changed to mean volume diameter
-       
-       slope1 = (ew(icp1, ir  ) - ew(ic,ir  ))*cwr(ic,2)
-       slope2 = (ew(icp1, irp1) - ew(ic,irp1))*cwr(ic,2)
- 
-!        write(iunit,*) 'slop1: ',slope1,slope2,ew(ic,ir),cwr(ic,2)
-
-       x1 = ew(ic,  ir) + slope1*Max(0.0, (cwrad - cwr(ic,1)) )
-       x2 = ew(icp1,ir) + slope2*Max(0.0, (cwrad - cwr(ic,1)) )
-       
-       slope1 = (x2 - x1)*grad(ir,2)
-       
-       tmp = Max( 0.0, Min( 1.0, x1 + slope1*Max(0.0, (rwrad - grad(ir,1)) ) ) )
-       ehw(mgs) = Min( ehw(mgs), tmp )
-
-!       write(iunit,*) 'ehw: ',ehw(mgs),1.e6*cwrad,1.e6*rwrad,ic,ir,x1,x2
-!       write(iunit,*)
-
-!       ehw(mgs) = Max( 0.2, ehw(mgs) )
-!  assume that ehw = 1 for zero air resistance (rho0 = 0.0) and extrapolate toward that
-!      ehw(mgs) = ehw(mgs) + (ehw(mgs) - 1.0)*(rho0(mgs) - rho00)/rho00
-!      ehw(mgs) = ehw(mgs) + (1.0 - ehw(mgs))*((Max(0.0,rho00 - rho0(mgs)))/rho00)**2
-
-       ELSEIF ( iehw .eq. 3 .or. iehw .eq. 10 ) THEN ! use fraction of droplets greater than dmincw diameter
-         tmp = Exp(- (dmincw/xdia(mgs,lc,1))**3)
-         xmascw(mgs) = xmas(mgs,lc) + xdn0(lc)*(pi*dmincw**3/6.0) ! this is the average mass of the droplets with d > dmincw
-         ehw(mgs) = Min( ehw(mgs), tmp )
-       ELSEIF ( iehw .eq. 4 .or. iehw .eq. 10 ) THEN ! Cober and List 1993
-         tmp =  &
-     &   2.0*xdn(mgs,lc)*vtxbar(mgs,lh,1)*(0.5*xdia(mgs,lc,1))**2 &
-     &  /(9.0*fadvisc(mgs)*0.5*xdia(mgs,lh,3))
-         tmp = Max( 1.5, Min(10.0, tmp) )
-         ehw(mgs) = Min( ehw(mgs), 0.55*Log10(2.51*tmp) )
-       ENDIF
-      if ( xdia(mgs,lc,1) .lt. 2.4e-06 ) ehw(mgs)=0.0
-
-       ehw(mgs) = Min( ehw0, ehw(mgs) )
-       
-       IF ( ibfc == -1 .and. temcg(mgs) < -41.0 ) THEN
-        ehw(mgs) = 0.0
-       ENDIF 
-
-      end if
-!
-      if ( qx(mgs,lh).gt.qxmin(lh) .and. qx(mgs,lr).gt.qxmin(lr)    &
-     &     .and. temg(mgs) .lt. tfr    &
-     &                               ) then
-!      ehr(mgs) = Exp(-(40.e-6)**3/xv(mgs,lr))*Exp(-40.e-6/xdia(mgs,lh,1))
-      ehr(mgs) = 1.0
-      end if
-!
-      IF ( qx(mgs,ls).gt.qxmin(ls) ) THEN
-        IF ( ipconc .ge. 4 ) THEN
-        ehscnv(mgs) = ehs0*exp(ehs1*min(temcg(mgs),0.0))
-        ELSE
-        ehscnv(mgs) = exp(0.09*min(temcg(mgs),0.0))
-        ENDIF
-        if ( qx(mgs,lh).gt.qxmin(lh)  ) then
-          ehs(mgs) = ehscnv(mgs)
-        end if
-      ENDIF
-!
-      if ( qx(mgs,lh).gt.qxmin(lh) .and. qx(mgs,li).gt.qxmin(li) ) then
-      ehi(mgs)=eii0*exp(eii1*min(temcg(mgs),0.0))
-      ehi(mgs) = Min( ehimax, Max( ehi(mgs), ehimin ) )
-      if ( temg(mgs) .gt. 273.15 ) ehi(mgs) = 0.0
-      end if
-
-
-!
-!
-!  Hail: Collection (cxc) efficiencies
-!
-!
-      IF ( lhl .gt. 1 ) THEN
-
-      if ( qx(mgs,lhl).gt.qxmin(lhl) .and. qx(mgs,lc).gt.qxmin(lc) ) then
-       IF ( iehw == 3 ) iehlw = 3
-       IF ( iehw == 4 ) iehlw = 4
-       ehlw(mgs) = ehlw0
-       IF ( iehlw .eq. 0 ) THEN
-       ehlw(mgs) = ehlw0  ! default value is 1.0
-       ELSEIF ( iehlw .eq. 1 .or. iehlw .eq. 10 ) THEN
-      cwrad = 0.5*xdia(mgs,lc,1)
-      ehlw(mgs) = Min( ehlw0,    &
-     &  ewfac*min((aradcw + cwrad*(bradcw + cwrad*   &
-     &  (cradcw + cwrad*(dradcw)))), 1.0) )
-      
-       ELSEIF ( iehlw .eq. 2 .or. iehlw .eq. 10 ) THEN
-       ic = icwr(mgs)
-       icp1 = Min( 8, ic+1 )
-       ir = ihlr(mgs)
-       irp1 = Min( 6, ir+1 )
-       cwrad = 0.5*xdia(mgs,lc,1)
-       rwrad = 0.5*xdia(mgs,lhl,3)  ! changed to mean volume diameter
-       
-       slope1 = (ew(icp1, ir  ) - ew(ic,ir  ))*cwr(ic,2)
-       slope2 = (ew(icp1, irp1) - ew(ic,irp1))*cwr(ic,2)
-       
-       x1 = ew(ic,  ir) + slope1*(cwrad - cwr(ic,1))
-       x2 = ew(icp1,ir) + slope2*(cwrad - cwr(ic,1))
-       
-       slope1 = (x2 - x1)*grad(ir,2)
-       
-       tmp = Max( 0.0, Min( 1.0, x1 + slope1*(rwrad - grad(ir,1)) ) )
-         ehlw(mgs) = Min( ehlw(mgs), tmp )
-       ehlw(mgs) = Min( ehlw0, ehlw(mgs) )
-!       ehw(mgs) = Max( 0.2, ehw(mgs) )
-!  assume that ehw = 1 for zero air resistance (rho0 = 0.0) and extrapolate toward that
-!      ehw(mgs) = ehw(mgs) + (ehw(mgs) - 1.0)*(rho0(mgs) - rho00)/rho00
-!      ehlw(mgs) = ehlw(mgs) + (1.0 - ehlw(mgs))*((Max(0.0,rho00 - rho0(mgs)))/rho00)**2
-
-       ELSEIF ( iehlw .eq. 3 .or. iehlw .eq. 10 ) THEN ! use fraction of droplets greater than 15 micron diameter
-         tmp = Exp(- (dmincw/xdia(mgs,lc,1))**3)
-         ehlw(mgs) = Min( ehlw(mgs), tmp )
-       ELSEIF ( iehlw .eq. 4 .or. iehlw .eq. 10 ) THEN ! Cober and List 1993
-         tmp =  &
-     &   2.0*xdn(mgs,lc)*vtxbar(mgs,lhl,1)*(0.5*xdia(mgs,lc,1))**2 &
-     &  /(9.0*fadvisc(mgs)*0.5*xdia(mgs,lhl,3))
-         tmp = Max( 1.5, Min(10.0, tmp) )
-         ehlw(mgs) = Min( ehlw(mgs), 0.55*Log10(2.51*tmp) )
-       ENDIF
-      if ( xdia(mgs,lc,1) .lt. 2.4e-06 ) ehlw(mgs)=0.0
-       ehlw(mgs) = Min( ehlw0, ehlw(mgs) )
-
-       IF ( ibfc == -1 .and. temcg(mgs) < -41.0 ) THEN 
-        ehlw(mgs) = 0.0
-       ENDIF 
-
-      end if
-!
-      if ( qx(mgs,lhl).gt.qxmin(lhl) .and. qx(mgs,lr).gt.qxmin(lr)    &
-     &     .and. temg(mgs) .lt. tfr    &
-     &                               ) then
-        ehlr(mgs) = 1.0
-      end if
-!
-      IF ( qx(mgs,ls).gt.qxmin(ls) ) THEN
-        if ( qx(mgs,lhl).gt.qxmin(lhl)  ) then
-          ehls(mgs) = ehscnv(mgs)
-        end if
-      ENDIF
-!
-      if ( qx(mgs,lhl).gt.qxmin(lhl) .and. qx(mgs,li).gt.qxmin(li) ) then
-      ehli(mgs)=eii0hl*exp(eii1hl*min(temcg(mgs),0.0))
-      ehli(mgs) = Min( ehimax, Max( ehli(mgs), ehimin ) )
-      if ( temg(mgs) .gt. 273.15 ) ehli(mgs) = 1.0
-      end if
-
-
-      ENDIF ! lhl .gt. 1
-
-      ENDDO  ! mgs loop for collection efficiencies
-
-!
-!
-!
-!  Set flags for plates vs. columns
-!
-!
-      do mgs = 1,ngscnt
-!
-      xplate(mgs) = 0.0
-      xcolmn(mgs) = 1.0
-!
-!      if ( temcg(mgs) .lt. 0. .and. temcg(mgs) .ge. -4. ) then
-!      xplate(mgs) = 1.0
-!      xcolmn(mgs) = 0.0
-!      end if
-!c
-!      if ( temcg(mgs) .lt. -4. .and. temcg(mgs) .ge. -9. ) then
-!      xplate(mgs) = 0.0
-!      xcolmn(mgs) = 1.0
-!      end if
-!c
-!      if ( temcg(mgs) .lt. -9. .and. temcg(mgs) .ge. -22.5 ) then
-!      xplate(mgs) = 1.0
-!      xcolmn(mgs) = 0.0
-!      end if
-!c
-!      if ( temcg(mgs) .lt. -22.5 .and. temcg(mgs) .ge. -90. ) then
-!      xplate(mgs) = 0.0
-!      xcolmn(mgs) = 1.0
-!      end if
-!
-      end do
-!
-!
-!
-!  Collection growth equations....
-!
-!
-      if (ndebug .gt. 0 ) write(0,*) 'Collection: rain collects xxxxx'
-!
-      do mgs = 1,ngscnt
-      qracw(mgs) =  0.0
-      IF ( qx(mgs,lr) .gt. qxmin(lr) .and. erw(mgs) .gt. 0.0 ) THEN
-      IF ( ipconc .lt. 3 ) THEN
-       IF ( erw(mgs) .gt. 0.0 .and. qx(mgs,lr) .gt. 1.e-7 ) THEN
-       vt = (ar*(xdia(mgs,lc,1)**br))*rhovt(mgs)
-       qracw(mgs) =    &
-     &   (0.25)*pi*erw(mgs)*qx(mgs,lc)*cx(mgs,lr) &
-!     >  *abs(vtxbar(mgs,lr,1)-vtxbar(mgs,lc,1))   &
-     &  *Max(0.0, vtxbar(mgs,lr,1)-vt)   &
-     &  *(  gf3*xdia(mgs,lr,2)    &
-     &    + 2.0*gf2*xdia(mgs,lr,1)*xdia(mgs,lc,1)    &
-     &    + gf1*xdia(mgs,lc,2) )
-!       qracw(mgs) = 0.0
-!      write(iunit,*) 'qracw,cx =',qracw(mgs),1.e6*xdia(mgs,lr,1),erw(mgs)
-!      write(iunit,*) 'qracw,cx =',qracw(mgs),cx(mgs,lc),kgs(mgs),cx(mgs,lr),1.e6*xdia(mgs,lr,1),vtxbar(mgs,lr,1),vt
-!      write(iunit,*) 'vtr: ',vtxbar(mgs,lr,1), ar*gf4br/6.0*xdia(mgs,lr,1)**br, rhovt(mgs),
-!     :         ar*gf4br/6.0*xdia(mgs,lr,1)**br * rhovt(mgs)
-       ENDIF
-      ELSE
-
-      IF ( dmrauto <= 0 .or.  rho0(mgs)*qx(mgs,lr) > 1.2*xl2p(mgs) ) THEN 
-       rwrad = 0.5*xdia(mgs,lr,3)
-        IF ( rwrad .gt. rh(mgs) ) THEN ! .or. cx(mgs,lr) .gt. nh(mgs) ) THEN
-         IF ( rwrad .gt. rwradmn ) THEN
-!      DM1CCC=A2*XNC*XNR*XVC*(((CNU+2.)/(CNU+1.))*XVC+XVR)       ! (A12)
-!     NOTE: Result is independent of imurain, assumes mucloud = 3
-           qracw(mgs) = erw(mgs)*aa2*cx(mgs,lr)*cx(mgs,lc)*xmas(mgs,lc)*   &
-     &        ((cnu + 2.)*xv(mgs,lc)/(cnu + 1.) + xv(mgs,lr))/rho0(mgs) !*rhoinv(mgs)
-         ELSE
-
-          IF ( imurain == 3 ) THEN
-
-!      DM1CCC=A1*XNC*XNR*(((CNU+3.)*(CNU+2.)/(CNU+1.)**2)*XVC**3+ ! (A14)
-!     1 ((RNU+2.)/(RNU+1.))*XVC*XVR**2)
-
-!           qracw(mgs) = aa1*cx(mgs,lr)*cx(mgs,lc)*xdn(mgs,lc)*   &
-!     &        ((cnu + 3.)*(cnu + 2.)*xv(mgs,lc)**3/(cnu + 1.)**2 +    &
-!     &         (alpha(mgs,lr) + 2.)*xv(mgs,lc)*xv(mgs,lr)**2/(alpha(mgs,lr) + 1.))/rho0(mgs) !*rhoinv(mgs)
-! save multiplies by converting cx*xdn*xv/rho0 to qx
-           qracw(mgs) = aa1*cx(mgs,lr)*qx(mgs,lc)*   &
-     &        ((cnu + 3.)*(cnu + 2.)*xv(mgs,lc)**2/(cnu + 1.)**2 +    &
-     &         (alpha(mgs,lr) + 2.)*xv(mgs,lr)**2/(alpha(mgs,lr) + 1.)) 
-           
-           ELSE ! imurain == 1
-
-           qracw(mgs) = aa1*cx(mgs,lr)*qx(mgs,lc)*   &
-     &        ((cnu + 3.)*(cnu + 2.)*xv(mgs,lc)**2/(cnu + 1.)**2 +    &
-     &         (alpha(mgs,lr) + 6.)*(alpha(mgs,lr) + 5.)*(alpha(mgs,lr) + 4.)*xv(mgs,lr)**2/ &
-     &          ((alpha(mgs,lr) + 3.)*(alpha(mgs,lr) + 2.)*(alpha(mgs,lr) + 1.))) 
-           
-           ENDIF
-           
-         ENDIF
-        ENDIF
-        ENDIF
-       ENDIF
-!       qracw(mgs) = Min(qracw(mgs), qx(mgs,lc))
-       qracw(mgs) = Min(qracw(mgs), qcmxd(mgs))
-       ENDIF
-      end do
-!
-      do mgs = 1,ngscnt
-      qraci(mgs) = 0.0
-      craci(mgs) = 0.0
-      IF ( eri(mgs) .gt. 0.0 .and. iacr .ge. 1 .and. xdia(mgs,lr,3) .gt. 2.*rwradmn ) THEN
-        IF ( ipconc .ge. 3 ) THEN
-
-           tmp = eri(mgs)*aa2*cx(mgs,lr)*cx(mgs,li)*   &
-     &        ((cinu + 2.)*xv(mgs,li)/(cinu + 1.) + xv(mgs,lr))
-
-        qraci(mgs) = Min( qxmxd(mgs,li), tmp*xmas(mgs,li)*rhoinv(mgs) )
-        craci(mgs) = Min( cxmxd(mgs,li), tmp )
-
-!       vt = Sqrt((vtxbar(mgs,lr,1)-vtxbar(mgs,li,1))**2 +
-!     :            0.04*vtxbar(mgs,lr,1)*vtxbar(mgs,li,1) )
-!
-!          qraci(mgs) = 0.25*pi*eri(mgs)*cx(mgs,lr)*qx(mgs,li)*vt*
-!     :         (  da0(lr)*xdia(mgs,lr,3)**2 +
-!     :            dab1(lr,li)*xdia(mgs,lr,3)*xdia(mgs,li,3) +
-!     :            da1(li)*xdia(mgs,li,3)**2 )
-!
-!
-!       vt = Sqrt((vtxbar(mgs,lr,1)-vtxbar(mgs,li,1))**2 +
-!     :            0.04*vtxbar(mgs,lr,1)*vtxbar(mgs,li,1) )
-!
-!          craci(mgs) = 0.25*pi*eri(mgs)*cx(mgs,lr)*cx(mgs,li)*vt*
-!     :         (  da0(lr)*xdia(mgs,lr,3)**2 +
-!     :            dab0(lr,li)*xdia(mgs,lr,3)*xdia(mgs,li,3) +
-!     :            da0(li)*xdia(mgs,li,3)**2 )
-!
-!          qraci(mgs) = Min( qraci(mgs), qxmxd(mgs,li) )
-!          craci(mgs) = Min( craci(mgs), cxmxd(mgs,li) )
-
-        ELSE
-          qraci(mgs) =    &
-     &     min(   &
-     &     (0.25)*pi*eri(mgs)*qx(mgs,li)*cx(mgs,lr)   &
-     &    *abs(vtxbar(mgs,lr,1)-vtxbar(mgs,li,1))   &
-     &    *(  gf3*xdia(mgs,lr,2)    &
-     &      + 2.0*gf2*xdia(mgs,lr,1)*xdia(mgs,li,1)    &
-     &      + gf1*xdia(mgs,li,2) )     &
-     &    , qimxd(mgs))
-        ENDIF
-      if ( temg(mgs) .gt. 268.15 ) then
-      qraci(mgs) = 0.0
-      end if
-      ENDIF
-      end do
-!
-      do mgs = 1,ngscnt
-      qracs(mgs) =  0.0
-      IF ( ers(mgs) .gt. 0.0 .and. ipconc < 3 ) THEN
-       IF ( lwsm6 .and. ipconc == 0 ) THEN
-         vt = vt2ave(mgs)
-       ELSE
-         vt = vtxbar(mgs,ls,1)
-       ENDIF
-      qracs(mgs) =      &
-     &   min(     &
-     &   ((0.25)*pi/gf4)*ers(mgs)*qx(mgs,ls)*cx(mgs,lr)     &
-     &  *abs(vtxbar(mgs,lr,1)-vt)     &
-     &  *(  gf6*gf1*xdia(mgs,ls,2)     &
-     &    + 2.0*gf5*gf2*xdia(mgs,ls,1)*xdia(mgs,lr,1)      &
-     &    + gf4*gf3*xdia(mgs,lr,2) )      &
-     &  , qsmxd(mgs))
-      ENDIF
-      end do
-
-!
-!
-      if (ndebug .gt. 0 ) write(0,*) 'Collection: snow collects xxxxx'
-!
-      do mgs = 1,ngscnt
-      qsacw(mgs) =  0.0
-      csacw(mgs) =  0.0
-      vsacw(mgs) =  0.0
-      IF ( esw(mgs) .gt. 0.0 ) THEN
-
-       IF ( ipconc .ge. 4 ) THEN
-!      QSACC=CECS*RVT*A2*XNC*XNS*XVC*ROS*
-!     *    (((CNU+2.)/(CNU+1.))*XVC+XVS)/RO
-
-!        tmp = esw(mgs)*rvt*aa2*cx(mgs,ls)*cx(mgs,lc)*
-!     :        ((cnu + 2.)*xv(mgs,lc)/(cnu + 1.) + xv(mgs,ls))
-        tmp = 1.0*rvt*aa2*cx(mgs,ls)*cx(mgs,lc)*   &
-     &        ((cnu + 2.)*xv(mgs,lc)/(cnu + 1.) + xv(mgs,ls))
-
-        qsacw(mgs) = Min( qxmxd(mgs,lc), tmp*xmas(mgs,lc)*rhoinv(mgs) )
-        csacw(mgs) = Min( cxmxd(mgs,lc), tmp )
-
-          IF ( lvol(ls) .gt. 1 ) THEN
-             IF ( temg(mgs) .lt. 273.15) THEN
-             rimdn(mgs,ls) = rimc1*(-((0.5)*(1.e+06)*xdia(mgs,lc,1))   &
-     &                *((0.60)*vtxbar(mgs,ls,1))   &
-     &                /(temg(mgs)-273.15))**(rimc2)
-             rimdn(mgs,ls) = Min( Max( rimc3, rimdn(mgs,ls) ), 900.0 )
-             ELSE
-             rimdn(mgs,ls) = 1000.
-             ENDIF
-
-           vsacw(mgs) = rho0(mgs)*qsacw(mgs)/rimdn(mgs,ls)
-
-          ENDIF
-
-
-!        qsacw(mgs) = cecs*aa2*cx(mgs,ls)*cx(mgs,lc)*xmas(mgs,lc)*
-!     :        ((cnu + 2.)*xv(mgs,lc)/(cnu + 1.) + xv(mgs,ls))*rhoinv(mgs)
-       ELSE
-!      qsacw(mgs) =
-!     >   min(
-!     >   ((0.25)*pi)*esw(mgs)*qx(mgs,lc)*cx(mgs,ls)
-!     >  *abs(vtxbar(mgs,ls,1)-vtxbar(mgs,lc,1))
-!     >  *(  gf3*xdia(mgs,ls,2)
-!     >    + 2.0*gf2*xdia(mgs,ls,1)*xdia(mgs,lc,1)
-!     >    + gf1*xdia(mgs,lc,2) )
-!     <  , qcmxd(mgs))
-
-            vt = abs(vtxbar(mgs,ls,1)-vtxbar(mgs,lc,1))
-
-          qsacw(mgs) = 0.25*pi*esw(mgs)*cx(mgs,ls)*qx(mgs,lc)*vt*   &
-     &         (  da0(ls)*xdia(mgs,ls,3)**2 +     &
-     &            dab1(ls,lc)*xdia(mgs,ls,3)*xdia(mgs,lc,3) +    &
-     &            da1(lc)*xdia(mgs,lc,3)**2 )
-        qsacw(mgs) = Min( qsacw(mgs), qxmxd(mgs,ls) )
-        csacw(mgs) = rho0(mgs)*qsacw(mgs)/xmas(mgs,lc)
-       ENDIF
-      ENDIF
-      end do
-!
-!
-      do mgs = 1,ngscnt
-      qsaci(mgs) = 0.0
-      csaci(mgs) = 0.0
-      IF ( ipconc .ge. 4 ) THEN
-      IF ( esi(mgs) .gt. 0.0 ) THEN
-!      QSCOI=CEXS*RVT*A2*XNCI*XNS*XVCI*ROS*
-!     *  (((CINU+2.)/(CINU+1.))*VCIP+XVS)/RO
-
-        tmp = esi(mgs)*rvt*aa2*cx(mgs,ls)*cx(mgs,li)*   &
-     &        ((cinu + 2.)*xv(mgs,li)/(cinu + 1.) + xv(mgs,ls))
-
-        qsaci(mgs) = Min( qxmxd(mgs,li), tmp*xmas(mgs,li)*rhoinv(mgs) )
-        csaci(mgs) = Min( cxmxd(mgs,li), tmp )
-
-!      qsaci(mgs) =
-!     >   min(
-!     >   ((0.25)*pi)*esi(mgs)*qx(mgs,li)*cx(mgs,ls)
-!     >  *abs(vtxbar(mgs,ls,1)-vtxbar(mgs,li,1))
-!     >  *(  gf3*xdia(mgs,ls,2)
-!     >    + 2.0*gf2*xdia(mgs,ls,1)*xdia(mgs,li,1)
-!     >    + gf1*xdia(mgs,li,2) )
-!     <  , qimxd(mgs))
-      ENDIF
-      ELSE ! 
-      IF ( esi(mgs) .gt. 0.0 ) THEN
-         qsaci(mgs) =    &
-     &   min(   &
-     &   ((0.25)*pi)*esi(mgs)*qx(mgs,li)*cx(mgs,ls)   &
-     &  *abs(vtxbar(mgs,ls,1)-vtxbar(mgs,li,1))   &
-     &  *(  gf3*xdia(mgs,ls,2)    &
-     &    + 2.0*gf2*xdia(mgs,ls,1)*xdia(mgs,li,1)    &
-     &    + gf1*xdia(mgs,li,2) )     &
-     &  , qimxd(mgs))
-      ENDIF
-      ENDIF
-      end do
-!
-!
-!
-      do mgs = 1,ngscnt
-      qsacr(mgs) = 0.0
-      qsacrs(mgs) = 0.0
-      csacr(mgs) = 0.0
-      IF ( esr(mgs) .gt. 0.0 ) THEN
-      IF ( ipconc .ge. 3 ) THEN
-!       vt = Sqrt((vtxbar(mgs,ls,1)-vtxbar(mgs,lr,1))**2 + 
-!     :            0.04*vtxbar(mgs,ls,1)*vtxbar(mgs,lr,1) )
-!       qsacr(mgs) = esr(mgs)*cx(mgs,ls)*vt*
-!     :     qx(mgs,lr)*0.25*pi*
-!     :      (3.02787*xdia(mgs,lr,2) + 
-!     :       3.30669*xdia(mgs,ls,1)*xdia(mgs,lr,1) + 
-!     :       2.*xdia(mgs,ls,2))
-!        qsacr(mgs) = Min( qsacr(mgs), qrmxd(mgs) )
-!        csacr(mgs) = qsacr(mgs)*cx(mgs,lr)/qx(mgs,lr)
-!        csacr(mgs) = min(csacr(mgs),crmxd(mgs))
-      ELSE
-       IF ( lwsm6 .and. ipconc == 0 ) THEN
-         vt = vt2ave(mgs)
-       ELSE
-         vt = vtxbar(mgs,ls,1)
-       ENDIF
-       
-       qsacr(mgs) =   &
-     &   min(   &
-     &   ((0.25)*pi/gf4)*esr(mgs)*qx(mgs,lr)*cx(mgs,ls)   &
-     &  *abs(vtxbar(mgs,lr,1)-vt)   &
-     &  *(  gf6*gf1*xdia(mgs,lr,2)   &
-     &    + 2.0*gf5*gf2*xdia(mgs,lr,1)*xdia(mgs,ls,1)    &
-     &    + gf4*gf3*xdia(mgs,ls,2) )    &
-     &  , qrmxd(mgs))
-      ENDIF
-      ENDIF
-      end do
-!
-!
-!
-      if (ndebug .gt. 0 ) write(0,*) 'Collection: graupel collects xxxxx'
-!
-      do mgs = 1,ngscnt
-      qhacw(mgs) = 0.0
-      rarx(mgs,lh) = 0.0
-      vhacw(mgs) = 0.0
-      vhsoak(mgs) = 0.0
-      zhacw(mgs) = 0.0
-      
-      IF ( .false. ) THEN
-        vtmax = (gz(igs(mgs),jgs,kgs(mgs))/dtp)
-        vtxbar(mgs,lh,1) = Min( vtmax, vtxbar(mgs,lh,1))
-        vtxbar(mgs,lh,2) = Min( vtmax, vtxbar(mgs,lh,2))
-        vtxbar(mgs,lh,3) = Min( vtmax, vtxbar(mgs,lh,3))
-      ENDIF
-      IF ( ehw(mgs) .gt. 0.0 ) THEN
-
-        IF ( ipconc .ge. 2 ) THEN
-
-        IF ( .false. ) THEN  
-        qhacw(mgs) = (ehw(mgs)*qx(mgs,lc)*cx(mgs,lh)*pi*   &
-     &    abs(vtxbar(mgs,lh,1)-vtxbar(mgs,lc,1))*   &
-     &    (2.0*xdia(mgs,lh,1)*(xdia(mgs,lh,1) +    &
-     &         xdia(mgs,lc,1)*gf73rds) +    &
-     &      xdia(mgs,lc,2)*gf83rds))/4.     
-     
-         ELSE  ! using Seifert coefficients
-            vt = abs(vtxbar(mgs,lh,1)-vtxbar(mgs,lc,1)) 
-
-          qhacw(mgs) = 0.25*pi*ehw(mgs)*cx(mgs,lh)*qx(mgs,lc)*vt*   &
-     &         (  da0lh(mgs)*xdia(mgs,lh,3)**2 +     &
-     &            dab1lh(mgs,lc,lh)*xdia(mgs,lh,3)*xdia(mgs,lc,3) +    &
-     &            da1(lc)*xdia(mgs,lc,3)**2 ) 
-         
-         ENDIF
-          qhacw(mgs) = Min( qhacw(mgs), 0.5*qx(mgs,lc)/dtp )
-        
-         IF ( lzh .gt. 1 ) THEN
-          tmp = qx(mgs,lh)/cx(mgs,lh)
-          
-!!          g1 = (6.0 + alpha(mgs,lh))*(5.0 + alpha(mgs,lh))*(4.0 + alpha(mgs,lh))/
-!!     :         ((3.0 + alpha(mgs,lh))*(2.0 + alpha(mgs,lh))*(1.0 + alpha(mgs,lh)))
-!          alp = Max( 1.0, alpha(mgs,lh)+1. )
-!          g1 = (6.0 + alp)*(5.0 + alp)*(4.0 + alp)/
-!     :         ((3.0 + alp)*(2.0 + alp)*(1.0 + alp))
-!          zhacw(mgs) =  g1*(6.*rho0(mgs)/(pi*1000.))**2*( 2.*( qx(mgs,lh)/cx(mgs,lh)) * qhacw(mgs) )
-         ENDIF
-        
-        ELSE
-         qhacw(mgs) =    &
-     &   min(   &
-     &   ((0.25)*pi)*ehw(mgs)*qx(mgs,lc)*cx(mgs,lh)   &
-     &  *abs(vtxbar(mgs,lh,1)-vtxbar(mgs,lc,1))   &
-     &  *(  gf3*xdia(mgs,lh,2)    &
-     &    + 2.0*gf2*xdia(mgs,lh,1)*xdia(mgs,lc,1)    &
-     &    + gf1*xdia(mgs,lc,2) )     &
-     &    , 0.5*qx(mgs,lc)/dtp)
-!     <  , qxmxd(mgs,lc))
-!     <  , qcmxd(mgs))
-       
-       
-         IF ( lwsm6 .and. qsacw(mgs) > 0.0 .and.  qhacw(mgs) > 0.0) THEN
-           qaacw = ( qx(mgs,ls)*qsacw(mgs) + qx(mgs,lh)*qhacw(mgs) )/(qx(mgs,ls) + qx(mgs,lh))
-!           qaacw = Min( qaacw, 0.5*(qsacw(mgs) + qhacw(mgs) ) )
-           qsacw(mgs) = qaacw
-           qhacw(mgs) = qaacw
-         ENDIF
-         
-       ENDIF
-
-          IF ( lvol(lh) .gt. 1 .or. lhl .gt. 1 ) THEN ! calculate rime density for graupel volume and/or for graupel conversion to hail
-             
-             IF ( temg(mgs) .lt. 273.15) THEN
-             rimdn(mgs,lh) = rimc1*(-((0.5)*(1.e+06)*xdia(mgs,lc,1))   &
-     &                *((0.60)*vtxbar(mgs,lh,1))   &
-     &                /(temg(mgs)-273.15))**(rimc2)
-             rimdn(mgs,lh) = Min( Max( rimc3, rimdn(mgs,lh) ), 900.0 )
-             ELSE
-             rimdn(mgs,lh) = 1000.
-             ENDIF
-             
-             IF ( lvol(lh) > 1 ) vhacw(mgs) = rho0(mgs)*qhacw(mgs)/rimdn(mgs,lh)
-
-          ENDIF
-      
-        IF ( qx(mgs,lh) .gt. qxmin(lh) .and. ipelec .gt. 0 ) THEN
-         rarx(mgs,lh) =     &
-     &    qhacw(mgs)*1.0e3*rho0(mgs)/((pi/2.0)*xdia(mgs,lh,2)*cx(mgs,lh))
-        ENDIF
-      
-      ENDIF  
-      end do   
-!
-!
-      do mgs = 1,ngscnt
-      qhaci(mgs) = 0.0
-      IF ( ehi(mgs) .gt. 0.0 ) THEN
-       IF (  ipconc .ge. 5 ) THEN
-
-       vt = Sqrt((vtxbar(mgs,lh,1)-vtxbar(mgs,li,1))**2 +    &
-     &            0.04*vtxbar(mgs,lh,1)*vtxbar(mgs,li,1) )
-
-          qhaci(mgs) = 0.25*pi*ehi(mgs)*cx(mgs,lh)*qx(mgs,li)*vt*   &
-     &         (  da0lh(mgs)*xdia(mgs,lh,3)**2 +     &
-     &            dab1lh(mgs,li,lh)*xdia(mgs,lh,3)*xdia(mgs,li,3) +    &
-     &            da1(li)*xdia(mgs,li,3)**2 ) 
-          qhaci(mgs) = Min( qhaci(mgs), qimxd(mgs) )
-       ELSE
-        qhaci(mgs) =    &
-     &  min(   &
-     &  ((0.25)*pi)*ehi(mgs)*qx(mgs,li)*cx(mgs,lh)   &
-     &  *abs(vtxbar(mgs,lh,1)-vtxbar(mgs,li,1))   &
-     &  *(  gf3*xdia(mgs,lh,2)    &
-     &    + 2.0*gf2*xdia(mgs,lh,1)*xdia(mgs,li,1)    &
-     &    + gf1*xdia(mgs,li,2) )     &
-     &  , qimxd(mgs))
-       ENDIF
-      ENDIF
-      end do   
-!
-!
-      do mgs = 1,ngscnt
-      qhacs(mgs) = 0.0
-      IF ( ehs(mgs) .gt. 0.0 ) THEN
-       IF ( ipconc .ge. 5 ) THEN
-
-       vt = Sqrt((vtxbar(mgs,lh,1)-vtxbar(mgs,ls,1))**2 +    &
-     &            0.04*vtxbar(mgs,lh,1)*vtxbar(mgs,ls,1) )
-
-          qhacs(mgs) = 0.25*pi*ehs(mgs)*cx(mgs,lh)*qx(mgs,ls)*vt*   &
-     &         (  da0lh(mgs)*xdia(mgs,lh,3)**2 +     &
-     &            dab1lh(mgs,ls,lh)*xdia(mgs,lh,3)*xdia(mgs,ls,3) +    &
-     &            da1(ls)*xdia(mgs,ls,3)**2 ) 
-      
-          qhacs(mgs) = Min( qhacs(mgs), qsmxd(mgs) )
-
-       ELSE
-         qhacs(mgs) =   &
-     &   min(   &
-     &   ((0.25)*pi/gf4)*ehs(mgs)*qx(mgs,ls)*cx(mgs,lh)   &
-     &  *abs(vtxbar(mgs,lh,1)-vtxbar(mgs,ls,1))   &
-     &  *(  gf6*gf1*xdia(mgs,ls,2)   &
-     &    + 2.0*gf5*gf2*xdia(mgs,ls,1)*xdia(mgs,lh,1)   &
-     &    + gf4*gf3*xdia(mgs,lh,2) )   &
-     &  , qsmxd(mgs))
-        ENDIF
-      ENDIF
-      end do   
-!
-      do mgs = 1,ngscnt
-      qhacr(mgs) = 0.0
-      vhacr(mgs) = 0.0
-      chacr(mgs) = 0.0
-      zhacr(mgs) = 0.0
-      IF ( temg(mgs) .gt. tfr ) raindn(mgs,lh) = 1000.0
-
-      IF ( ehr(mgs) .gt. 0.0 ) THEN
-      IF ( ipconc .ge. 3 ) THEN
-       vt = Sqrt((vtxbar(mgs,lh,1)-vtxbar(mgs,lr,1))**2 +    &
-     &            0.04*vtxbar(mgs,lh,1)*vtxbar(mgs,lr,1) )
-!       qhacr(mgs) = ehr(mgs)*cx(mgs,lh)*vt*
-!     :     qx(mgs,lr)*0.25*pi*
-!     :      (3.02787*xdia(mgs,lr,2) + 
-!     :       3.30669*xdia(mgs,lh,1)*xdia(mgs,lr,1) + 
-!     :       2.*xdia(mgs,lh,2))
-     
-       qhacr(mgs) = 0.25*pi*ehr(mgs)*cx(mgs,lh)*qx(mgs,lr)*vt*   &
-     &         (  da0lh(mgs)*xdia(mgs,lh,3)**2 +     &
-     &            dab1lh(mgs,lr,lh)*xdia(mgs,lh,3)*xdia(mgs,lr,3) +    &
-     &            da1(lr)*xdia(mgs,lr,3)**2 )
-!       IF ( qhacr(mgs) .gt. 0. .or. tmp .gt. 0.0 ) write(0,*) 'qhacr= ',qhacr(mgs),tmp
-!!        qhacr(mgs) = Min( qhacr(mgs), qrmxd(mgs) )
-!!        chacr(mgs) = qhacr(mgs)*cx(mgs,lr)/qx(mgs,lr)
-!!        chacr(mgs) = min(chacr(mgs),crmxd(mgs))
-
-        qhacr(mgs) = Min( qhacr(mgs), qxmxd(mgs,lr) )
-!        chacr(mgs) = Min( qhacr(mgs)*rho0(mgs)/xmas(mgs,lr), cxmxd(mgs,lr) )
-
-!       chacr(mgs) = ehr(mgs)*cx(mgs,lh)*vt*
-!     :     cx(mgs,lr)*0.25*pi*
-!     :      (0.69874*xdia(mgs,lr,2) +
-!     :       1.24001*xdia(mgs,lh,1)*xdia(mgs,lr,1) +
-!     :       2.*xdia(mgs,lh,2))
-
-!        chacr(mgs) = 0.25*pi*ehr(mgs)*cx(mgs,lh)*cx(mgs,lr)*vt*
-!     :         (  da0lh(mgs)*xdia(mgs,lh,3)**2 +
-!     :            dab0lh(mgs,lr)*xdia(mgs,lh,3)*xdia(mgs,lr,3) +
-!     :            da0(lr)*xdia(mgs,lr,3)**2 )
-
-!       IF ( qhacr(mgs) .gt. 0. .or. tmp .gt. 0.0 ) write(0,*) 'chacr= ',chacr(mgs),tmp
-
-        chacr(mgs) = qhacr(mgs)*cx(mgs,lr)/qx(mgs,lr)
-        chacr(mgs) = min(chacr(mgs),crmxd(mgs))
-
-      IF ( lzh .gt. 1 ) THEN
-          tmp = qx(mgs,lh)/cx(mgs,lh)
-
-!          g1 = (6.0 + alpha(mgs,lh))*(5.0 + alpha(mgs,lh))*(4.0 + alpha(mgs,lh))/
-!     :         ((3.0 + alpha(mgs,lh))*(2.0 + alpha(mgs,lh))*(1.0 + alpha(mgs,lh)))
-!          alp = Max( 1.0, alpha(mgs,lh)+1. )
-!          g1 = (6.0 + alp)*(5.0 + alp)*(4.0 + alp)/
-!     :         ((3.0 + alp)*(2.0 + alp)*(1.0 + alp))
-!        zhacr(mgs) =  g1*(6.*rho0(mgs)/(pi*1000.))**2*( 2.*( tmp ) * qhacr(mgs) - tmp**2 * chacr(mgs) )
-!        zhacr(mgs) =  g1*(6.*rho0(mgs)/(pi*xdn(mgs,lh)))**2*( 2.*( tmp ) * qhacr(mgs) )
-      ENDIF
-      
-      ELSE
-       IF ( lwsm6 .and. ipconc == 0 ) THEN
-         vt = vt2ave(mgs)
-       ELSE
-         vt = vtxbar(mgs,lh,1)
-       ENDIF
-
-      qhacr(mgs) =   &
-     &   min(   &
-     &   ((0.25)*pi/gf4)*ehr(mgs)*qx(mgs,lr)*cx(mgs,lh)   &
-     &  *abs(vt-vtxbar(mgs,lr,1))   &
-     &  *(  gf6*gf1*xdia(mgs,lr,2)   &
-     &    + 2.0*gf5*gf2*xdia(mgs,lr,1)*xdia(mgs,lh,1)   &
-     &    + gf4*gf3*xdia(mgs,lh,2) )   &
-     &  , qrmxd(mgs))
-      ENDIF
-        IF ( lvol(lh) .gt. 1 ) THEN
-         vhacr(mgs) = rho0(mgs)*qhacr(mgs)/raindn(mgs,lh)
-        ENDIF
-      ENDIF
-      end do
-
-!
-!
-      if (ndebug .gt. 0 ) write(0,*) 'Collection: hail collects xxxxx'
-!
-
-      do mgs = 1,ngscnt
-      qhlacw(mgs) = 0.0
-      vhlacw(mgs) = 0.0
-      vhlsoak(mgs) = 0.0
-      IF ( lhl > 1 .and. .true.) THEN
-        vtmax = (gz(igs(mgs),jgs,kgs(mgs))/dtp)
-        vtxbar(mgs,lhl,1) = Min( vtmax, vtxbar(mgs,lhl,1))
-        vtxbar(mgs,lhl,2) = Min( vtmax, vtxbar(mgs,lhl,2))
-        vtxbar(mgs,lhl,3) = Min( vtmax, vtxbar(mgs,lhl,3))
-      ENDIF
-
-      IF ( lhl > 0 ) THEN
-      rarx(mgs,lhl) = 0.0
-      ENDIF
-
-      IF ( lhl .gt. 1 .and. ehlw(mgs) .gt. 0.0 ) THEN
-
-
-!        IF ( ipconc .ge. 2 ) THEN
-
-            vt = abs(vtxbar(mgs,lhl,1)-vtxbar(mgs,lc,1))
-
-          qhlacw(mgs) = 0.25*pi*ehlw(mgs)*cx(mgs,lhl)*qx(mgs,lc)*vt*   &
-     &         (  da0lhl(mgs)*xdia(mgs,lhl,3)**2 +     &
-     &            dab1lh(mgs,lc,lhl)*xdia(mgs,lhl,3)*xdia(mgs,lc,3) +    &
-     &            da1(lc)*xdia(mgs,lc,3)**2 )
-
-
-          qhlacw(mgs) = Min( qhlacw(mgs), 0.5*qx(mgs,lc)/dtp )
-
-          IF ( lvol(lhl) .gt. 1 ) THEN
-
-             IF ( temg(mgs) .lt. 273.15) THEN
-             rimdn(mgs,lhl) = rimc1*(-((0.5)*(1.e+06)*xdia(mgs,lc,1))   &
-     &                *((0.60)*vtxbar(mgs,lhl,1))   &
-     &                /(temg(mgs)-273.15))**(rimc2)
-             rimdn(mgs,lhl) = Min( Max( rimc3, rimdn(mgs,lhl) ), 900.0 )
-             ELSE
-             rimdn(mgs,lhl) = 1000.
-             ENDIF
-
-             vhlacw(mgs) = rho0(mgs)*qhlacw(mgs)/rimdn(mgs,lhl)
-
-          ENDIF
-
-
-        IF ( qx(mgs,lhl) .gt. qxmin(lhl) .and. ipelec .gt. 0 ) THEN
-         rarx(mgs,lhl) =     &
-     &    qhlacw(mgs)*1.0e3*rho0(mgs)/((pi/2.0)*xdia(mgs,lhl,2)*cx(mgs,lhl))
-        ENDIF
-
-      ENDIF
-      end do
-
-      qhlaci(:) = 0.0
-      IF ( lhl .gt. 1  ) THEN
-      do mgs = 1,ngscnt
-      IF ( ehli(mgs) .gt. 0.0 ) THEN
-       IF (  ipconc .ge. 5 ) THEN
-
-       vt = Sqrt((vtxbar(mgs,lhl,1)-vtxbar(mgs,li,1))**2 +    &
-     &            0.04*vtxbar(mgs,lhl,1)*vtxbar(mgs,li,1) )
-
-          qhlaci(mgs) = 0.25*pi*ehli(mgs)*cx(mgs,lhl)*qx(mgs,li)*vt*   &
-     &         (  da0lhl(mgs)*xdia(mgs,lhl,3)**2 +     &
-     &            dab1lh(mgs,li,lhl)*xdia(mgs,lhl,3)*xdia(mgs,li,3) +    &
-     &            da1(li)*xdia(mgs,li,3)**2 )
-          qhlaci(mgs) = Min( qhlaci(mgs), qimxd(mgs) )
-       ENDIF
-      ENDIF
-      end do
-      ENDIF
-!
-      qhlacs(:) = 0.0
-      IF ( lhl .gt. 1 ) THEN
-      do mgs = 1,ngscnt
-      IF ( ehls(mgs) .gt. 0.0) THEN
-       IF ( ipconc .ge. 5 ) THEN
-
-       vt = Sqrt((vtxbar(mgs,lhl,1)-vtxbar(mgs,ls,1))**2 +    &
-     &            0.04*vtxbar(mgs,lhl,1)*vtxbar(mgs,ls,1) )
-
-          qhlacs(mgs) = 0.25*pi*ehli(mgs)*cx(mgs,lhl)*qx(mgs,ls)*vt*   &
-     &         (  da0lhl(mgs)*xdia(mgs,lhl,3)**2 +     &
-     &            dab1lh(mgs,ls,lhl)*xdia(mgs,lhl,3)*xdia(mgs,ls,3) +    &
-     &            da1(ls)*xdia(mgs,ls,3)**2 )
-
-          qhlacs(mgs) = Min( qhlacs(mgs), qsmxd(mgs) )
-
-        ENDIF
-      ENDIF
-      end do
-      ENDIF
-
-
-      do mgs = 1,ngscnt
-      qhlacr(mgs) = 0.0
-      chlacr(mgs) = 0.0
-      vhlacr(mgs) = 0.0
-      IF ( lhl .gt. 1 .and. temg(mgs) .gt. tfr ) raindn(mgs,lhl) = 1000.0
-
-      IF ( lhl .gt. 1 .and. ehlr(mgs) .gt. 0.0 ) THEN
-      IF ( ipconc .ge. 3 ) THEN
-       vt = Sqrt((vtxbar(mgs,lhl,1)-vtxbar(mgs,lr,1))**2 +    &
-     &            0.04*vtxbar(mgs,lhl,1)*vtxbar(mgs,lr,1) )
-
-       qhlacr(mgs) = 0.25*pi*ehlr(mgs)*cx(mgs,lhl)*qx(mgs,lr)*vt*   &
-     &         (  da0lhl(mgs)*xdia(mgs,lhl,3)**2 +     &
-     &            dab1lh(mgs,lr,lhl)*xdia(mgs,lhl,3)*xdia(mgs,lr,3) +    &
-     &            da1(lr)*xdia(mgs,lr,3)**2 )
-!       IF ( qhacr(mgs) .gt. 0. .or. tmp .gt. 0.0 ) write(0,*) 'qhacr= ',qhacr(mgs),tmp
-!!        qhacr(mgs) = Min( qhacr(mgs), qrmxd(mgs) )
-!!        chacr(mgs) = qhacr(mgs)*cx(mgs,lr)/qx(mgs,lr)
-!!        chacr(mgs) = min(chacr(mgs),crmxd(mgs))
-
-        qhlacr(mgs) = Min( qhlacr(mgs), qxmxd(mgs,lr) )
-
-
-        chlacr(mgs) = 0.25*pi*ehlr(mgs)*cx(mgs,lhl)*cx(mgs,lr)*vt*   &
-     &         (  da0lhl(mgs)*xdia(mgs,lhl,3)**2 +     &
-     &            dab0(lhl,lr)*xdia(mgs,lhl,3)*xdia(mgs,lr,3) +    &
-     &            da0(lr)*xdia(mgs,lr,3)**2 )
-
-        chlacr(mgs) = min(chlacr(mgs),crmxd(mgs))
-
-        IF ( lvol(lhl) .gt. 1 ) THEN
-         vhlacr(mgs) = rho0(mgs)*qhlacr(mgs)/raindn(mgs,lhl)
-        ENDIF
-      ENDIF
-      ENDIF
-      end do
-
-
-
-!
-!
-!
-!
-      if (ndebug .gt. 0 ) write(0,*) 'Collection: Cloud collects xxxxx'
-
-      if (ndebug .gt. 0 ) write(0,*) 'Collection: cloud ice collects xxxx2'
-!
-      do mgs = 1,ngscnt
-      qiacw(mgs) = 0.0
-      IF ( eiw(mgs) .gt. 0.0 ) THEN
-
-       vt = Sqrt((vtxbar(mgs,li,1)-vtxbar(mgs,lc,1))**2 +    &
-     &            0.04*vtxbar(mgs,li,1)*vtxbar(mgs,lc,1) )
-
-          qiacw(mgs) = 0.25*pi*eiw(mgs)*cx(mgs,li)*qx(mgs,lc)*vt*   &
-     &         (  da0(li)*xdia(mgs,li,3)**2 +     &
-     &            dab1(li,lc)*xdia(mgs,li,3)*xdia(mgs,lc,3) +    &
-     &            da1(lc)*xdia(mgs,lc,3)**2 )
-
-       qiacw(mgs) = Min( qiacw(mgs), qxmxd(mgs,lc) )
-      ENDIF
-      end do
-!
-!
-      if (ndebug .gt. 0 ) write(0,*) 'Collection: cloud ice collects xxxx8'
-!
-      do mgs = 1,ngscnt
-      qiacr(mgs) = 0.0
-      qiacrf(mgs) = 0.0
-      qiacrs(mgs) = 0.0
-      ciacr(mgs) = 0.0
-      ciacrf(mgs) = 0.0
-      viacrf(mgs) = 0.0
-      csplinter(mgs) = 0.0
-      qsplinter(mgs) = 0.0
-      csplinter2(mgs) = 0.0
-      qsplinter2(mgs) = 0.0
-      IF ( iacr .ge. 1 .and. eri(mgs) .gt. 0.0    &
-     &     .and. temg(mgs) .le. 270.15 ) THEN
-      IF ( ipconc .ge. 3 ) THEN
-       ni = 0.0
-         IF ( xdia(mgs,li,1) .ge. 10.e-6 ) THEN
-          ni = ni + cx(mgs,li)*Exp(- (40.e-6/xdia(mgs,li,1))**3 )
-         ENDIF
-       IF ( imurain == 1 ) THEN ! gamma of diameter
-           IF ( iacrsize .eq. 1 ) THEN
-             ratio = 500.e-6/xdia(mgs,lr,1)
-           ELSEIF ( iacrsize .eq. 2 ) THEN
-             ratio = 300.e-6/xdia(mgs,lr,1)
-           ELSEIF ( iacrsize .eq. 3 ) THEN
-             ratio = 40.e-6/xdia(mgs,lr,1)
-           ENDIF
-           
-           i = Int(Min(25.0,ratio))
-           j = Int(Max(0.0,Min(15.,alpha(mgs,lr))))
-           delx = ratio - float(i)
-           dely = alpha(mgs,lr) - float(j)
-           ip1 = Min( i+1, nqiacrratio )
-           jp1 = Min( j+1, nqiacralpha )
-
-           ! interpolate along x, i.e., ratio; note interval spacing is 1., so division is left out
-           tmp1 = ciacrratio(i,j) + delx*(ciacrratio(ip1,j) - ciacrratio(i,j))
-           tmp2 = ciacrratio(i,jp1) + delx*(ciacrratio(ip1,jp1) - ciacrratio(i,jp1))
-           
-           ! interpoate along alpha; note interval spacing is 1., so division is left out
-           
-           nr = (tmp1 + dely*(tmp2 - tmp1))*cx(mgs,lr)
-           
-           ! interpolate along x, i.e., ratio; note interval spacing is 1., so division is left out
-           tmp1 = qiacrratio(i,j) + delx*(qiacrratio(ip1,j) - qiacrratio(i,j))
-           tmp2 = qiacrratio(i,jp1) + delx*(qiacrratio(ip1,jp1) - qiacrratio(i,jp1))
-           
-           ! interpoate along alpha; note interval spacing is 1., so division is left out
-           
-           qr = (tmp1 + dely*(tmp2 - tmp1))*qx(mgs,lr)
-
-          vt = Sqrt((vtxbar(mgs,lr,1)-vtxbar(mgs,li,1))**2 +     &
-     &            0.04*vtxbar(mgs,lr,1)*vtxbar(mgs,li,1) )
-
-          qiacr(mgs) = 0.25*pi*eri(mgs)*ni*qr*vt*   &
-     &         (  da0(li)*xdia(mgs,li,3)**2 +     &
-     &            dab1lh(mgs,lr,li)*xdia(mgs,lh,3)*xdia(mgs,li,3) +    &
-     &            da1(lr)*xdia(mgs,lr,3)**2 ) 
-
-          qiacr(mgs) = Min( qrmxd(mgs), qiacr(mgs) )
-
-          ciacr(mgs) = 0.25*pi*eri(mgs)*ni*nr*vt*   &
-     &         (  da0(li)*xdia(mgs,li,3)**2 +     &
-     &            dab0lh(mgs,lr,li)*xdia(mgs,lr,3)*xdia(mgs,li,3) +    &
-     &            da0(lr)*xdia(mgs,lr,3)**2 ) 
-
-          ciacr(mgs) = Min( crmxd(mgs), ciacr(mgs) )
-          
-!          write(iunit,*) 'qiacr: ',cx(mgs,lr),nr,qx(mgs,lr),qr,qiacr(mgs),ciacr(mgs)
-!          write(iunit,*) 'xdia r li = ',xdia(mgs,lr,3),xdia(mgs,li,3),xdia(mgs,lr,1),xdia(mgs,li,1)
-!          write(iunit,*) 'i,j,ratio = ',i,j,ciacrratio(i,j),qiacrratio(i,j)
-!          write(iunit,*) 'ni,ci = ',ni,cx(mgs,li),qx(mgs,li)
-
-       ELSEIF ( imurain == 3 ) THEN ! gamma of volume
-!   Set nr to the number of drops greater than 40 microns.
-         arg = 1000.*xdia(mgs,lr,3)
-!         nr = cx(mgs,lr)*gaml02( arg )
-!        IF ( iacr .eq. 1 ) THEN
-         IF ( ipconc .ge. 3 ) THEN
-           IF ( iacrsize .eq. 1 ) THEN
-            nr = cx(mgs,lr)*gaml02d500( arg )  ! number greater than 500 microns in diameter
-           ELSEIF ( iacrsize .eq. 2 ) THEN
-            nr = cx(mgs,lr)*gaml02d300( arg )  ! number greater than 300 microns in diameter
-           ELSEIF ( iacrsize .eq. 3 ) THEN
-            nr = cx(mgs,lr)*gaml02( arg ) ! number greater than 40 microns in diameter
-           ELSEIF ( iacrsize .eq. 4 ) THEN
-            nr = cx(mgs,lr) ! all raindrops
-           ENDIF
-         ELSE
-         nr = cx(mgs,lr)*gaml02( arg )
-         ENDIF
-!        ELSEIF ( iacr .eq. 2 ) THEN
-!         nr = cx(mgs,lr)*gaml02d300( arg )  ! number greater than 300 microns in diameter
-!        ENDIF
-       IF ( ni .gt. 0.0 .and. nr .gt. 0.0 ) THEN
-       d0 = xdia(mgs,lr,3)
-       qiacr(mgs) = xdn(mgs,lr)*rhoinv(mgs)*   &
-     &     (0.217239*(0.522295*(d0**5) +    &
-     &      49711.81*(d0**6) -    &
-     &      1.673016e7*(d0**7)+    &
-     &      2.404471e9*(d0**8) -    &
-     &      1.22872e11*(d0**9))*ni*nr)
-      qiacr(mgs) = Min( qrmxd(mgs), qiacr(mgs) )
-      ciacr(mgs) =   &
-     &   (0.217239*(0.2301947*(d0**2) +    &
-     &      15823.76*(d0**3) -    &
-     &      4.167685e6*(d0**4) +    &
-     &      4.920215e8*(d0**5) -    &
-     &      2.133344e10*(d0**6))*ni*nr)
-      ciacr(mgs) = Min( crmxd(mgs), ciacr(mgs) )
-!      ciacr(mgs) = qiacr(mgs)*cx(mgs,lr)/qx(mgs,lr)
-      ENDIF
-       IF ( iacr .eq. 1 .or. iacr .eq. 3 ) THEN
-         ciacrf(mgs) = Min(ciacr(mgs), qiacr(mgs)/(1.0*vr1mm*1000.0)*rho0(mgs) ) ! *rzxh(mgs)
-       ELSEIF ( iacr .eq. 2 ) THEN
-         ciacrf(mgs) = ciacr(mgs) ! *rzxh(mgs)
-       ELSEIF ( iacr .eq. 4 ) THEN
-         ciacrf(mgs) = Min(ciacr(mgs), qiacr(mgs)/(1.0*vfrz*1000.0)*rho0(mgs) ) ! *rzxh(mgs)
-       ELSEIF ( iacr .eq. 5 ) THEN
-         ciacrf(mgs) = ciacr(mgs)*rzxh(mgs)
-       ENDIF 
-!      crfrzf(mgs) = Min(crfrz(mgs), qrfrz(mgs)/(bfnu*27.0*vr1mm*1000.0)*rho0(mgs) ) ! rzxh(mgs)*crfrz(mgs)
-       ENDIF
-      
-      
-      ELSE ! single-moment rain
-      qiacr(mgs) =    &
-     &  min(        &
-     &   ((0.25/gf4)*pi)*eri(mgs)*cx(mgs,li)*qx(mgs,lr)   &
-     &  *abs(vtxbar(mgs,lr,1)-vtxbar(mgs,li,1))   &
-     &  *(  gf6*gf1*xdia(mgs,lr,2)    &
-     &    + 2.0*gf5*gf2*xdia(mgs,lr,1)*xdia(mgs,li,1)    &
-     &    + gf4*gf3*xdia(mgs,li,2) )     &
-     &  , qrmxd(mgs))
-      ENDIF
-!      if ( temg(mgs) .gt. 268.15 ) then
-!      qiacr(mgs) = 0.0
-!      ciacr(mgs) = 0.0
-!      end if
-      ENDIF
-
-      IF ( ipconc .ge. 1 ) THEN
-        IF ( nsplinter .ge. 0 ) THEN
-          csplinter(mgs) = nsplinter*ciacr(mgs)
-        ELSE
-          csplinter(mgs) = -nsplinter*ciacrf(mgs)
-        ENDIF
-        qsplinter(mgs) = Min(0.1*qiacr(mgs), csplinter(mgs)*splintermass/rho0(mgs) ) ! makes splinters smaller if too much mass is taken from graupel
-      ENDIF
-      
-      qiacrf(mgs) = qiacr(mgs)
-!      IF ( lwsm6 .and. ipconc == 0 .and. qx(mgs,lr) < 1.e-4 ) THEN
-!        qiacrs(mgs) = qiacr(mgs)
-!        qiacrf(mgs) = 0.0
-!      ENDIF
-
-      IF ( lvol(lh) > 1 ) THEN
-         viacrf(mgs) = rho0(mgs)*qiacrf(mgs)/rhofrz
-      ENDIF
-      
-      end do
-!
-!
-!
-!
-
-! snow aggregation here
-      if ( ipconc .ge. 4 .or. ipelec .ge. 100 ) then !
-      do mgs = 1,ngscnt
-      csacs(mgs) = 0.0
-      IF ( ess(mgs) .gt. 0.0 ) THEN
-!      csacs(mgs) = -a2*eps*ess(mgs)*cx(mgs,ls)**2*xv(mgs,ls)
-      csacs(mgs) = rvt*aa2*ess(mgs)*cx(mgs,ls)**2*xv(mgs,ls)
-      csacs(mgs) = min(csacs(mgs),csmxd(mgs))
-      ENDIF
-      end do
-      end if
-!
-!
-      if (ndebug .gt. 0 ) write(0,*) 'ICEZVD_GS: conc 11'
-      if ( ipconc .ge. 2 .or. ipelec .ge. 9 ) then
-      do mgs = 1,ngscnt
-      ciacw(mgs) = 0.0
-      IF ( eiw(mgs) .gt. 0.0 ) THEN
-
-        ciacw(mgs) = qiacw(mgs)*rho0(mgs)/xmas(mgs,lc)
-      ciacw(mgs) = min(ciacw(mgs),ccmxd(mgs))
-      ENDIF
-      end do
-      end if
-
-      if (ndebug .gt. 0 ) write(0,*) 'ICEZVD_GS: conc 18'
-      if ( ipconc .ge. 2 .or. ipelec .ge. 1 ) then
-      do mgs = 1,ngscnt
-       cracw(mgs) = 0.0
-       cracr(mgs) = 0.0
-       ec0(mgs) = 1.e9
-      IF ( qx(mgs,lc) .gt. qxmin(lc) .and. qx(mgs,lr) .gt. qxmin(lr)    &
-     &      .and. qracw(mgs) .gt. 0.0 ) THEN
-
-       IF ( ipconc .lt. 3 ) THEN
-        IF ( erw(mgs) .gt. 0.0 ) THEN
-        cracw(mgs) =   &
-     &   ((0.25)*pi)*erw(mgs)*cx(mgs,lc)*cx(mgs,lr)   &
-     &  *abs(vtxbar(mgs,lr,1)-vtxbar(mgs,lc,1))   &
-     &  *(  gf1*xdia(mgs,lc,2)   &
-     &    + 2.0*gf2*xdia(mgs,lc,1)*xdia(mgs,lr,1)   &
-     &    + gf3*xdia(mgs,lr,2) )
-        ENDIF
-       ELSE ! IF ( ipconc .ge. 3 .and. 
-        IF ( dmrauto <= 0 .or.  rho0(mgs)*qx(mgs,lr) > 1.2*xl2p(mgs) ) THEN  !{
-        IF ( 0.5*xdia(mgs,lr,3) .gt. rh(mgs) ) THEN ! { .or. cx(mgs,lr) .gt. nh(mgs) 
-!        IF ( qx(mgs,lc) .gt. qxmin(lc) .and. qx(mgs,lr) .gt. qxmin(lr) ) THEN
-          IF ( 0.5*xdia(mgs,lr,3) .gt. rwradmn ) THEN ! r > 50.e-6 
-!          DM0CCC=A2*XNC*XNR*(XVC+XVR)                               ! (A11)
-!         NOTE: murain drops out, so same result for imurain = 1 and 3
-            cracw(mgs) = aa2*cx(mgs,lr)*cx(mgs,lc)*(xv(mgs,lc) + xv(mgs,lr))
-          ELSE
-            IF ( imurain == 3 ) THEN
-!          DM0CCC=A1*XNC*XNR*(((CNU+2.)/(CNU+1.))*XVC**2+((RNU+2.)/(RNU+1.))*XVR**2) ! (A13)
-            cracw(mgs) = aa1*cx(mgs,lr)*cx(mgs,lc)*   &
-     &          ((cnu + 2.)*xv(mgs,lc)**2/(cnu + 1.) +    &
-     &          (alpha(mgs,lr) + 2.)*xv(mgs,lr)**2/(alpha(mgs,lr) + 1.))
-            ELSE ! imurain == 1 USE CP00 for rain DSD in diameter
-            cracw(mgs) = aa1*cx(mgs,lr)*cx(mgs,lc)*   &
-     &          ((cnu + 2.)*xv(mgs,lc)**2/(cnu + 1.) +    &
-     &          (alpha(mgs,lr) + 6.)*(alpha(mgs,lr) + 5.)*(alpha(mgs,lr) + 4.)*xv(mgs,lr)**2/  &
-     &             ((alpha(mgs,lr) + 3.)*(alpha(mgs,lr) + 2.)*(alpha(mgs,lr) + 1.)) )
-            ENDIF ! imurain
-          ENDIF
-        ENDIF ! } rh
-        ENDIF ! } dmrauto
-       ENDIF ! ipconc
-      ENDIF ! qc > qcmin & qr > qrmin
-        
-! Rain self collection (cracr) and break-up (factor of ec0)
-!
-!       
-        ec0(mgs) = 2.e9
-        IF ( qx(mgs,lr) .gt. qxmin(lr) ) THEN
-        rwrad = 0.5*xdia(mgs,lr,3)
-        IF ( xdia(mgs,lr,3) .gt. 2.0e-3 ) THEN
-          ec0(mgs) = 0.0
-          cracr(mgs) = 0.0
-        ELSE
-         IF ( dmrauto <= 0 .or.  rho0(mgs)*qx(mgs,lr) > 1.2*xl2p(mgs) ) THEN 
-          IF ( xdia(mgs,lr,3) .lt. 6.1e-4 ) THEN
-            ec0(mgs) = 1.0
-          ELSE
-            ec0(mgs) = Exp(-50.0*(50.0*(xdia(mgs,lr,3) - 6.0e-4)))
-          ENDIF
-          
-
-          IF ( rwrad .ge. 50.e-6 ) THEN
-              cracr(mgs) = ec0(mgs)*aa2*cx(mgs,lr)**2*xv(mgs,lr)
-          ELSE
-            IF ( imurain == 3 ) THEN
-             cracr(mgs) = ec0(mgs)*aa1*(cx(mgs,lr)*xv(mgs,lr))**2*   &
-     &                   (alpha(mgs,lr) + 2.)/(alpha(mgs,lr) + 1.)
-            ELSE ! imurain == 1
-             cracr(mgs) = ec0(mgs)*aa1*(cx(mgs,lr)*xv(mgs,lr))**2*   &
-     &                   (alpha(mgs,lr) + 6.)*(alpha(mgs,lr) + 5.)*(alpha(mgs,lr) + 4.)/ &
-     &                  ((alpha(mgs,lr) + 3.)*(alpha(mgs,lr) + 2.)*(alpha(mgs,lr) + 1.))
-              
-            ENDIF
-          ENDIF
-!          cracr(mgs) = Min(cracr(mgs),crmxd(mgs))
-         ENDIF
-        ENDIF
-        ENDIF
-
-!      cracw(mgs) = min(cracw(mgs),ccmxd(mgs))
-      end do
-      end if
-!
-!
-!
-!  Graupel
-!
-      if (ndebug .gt. 0 ) write(0,*) 'ICEZVD_GS: conc 22ii'
-      chacw(:) = 0.0
-      if ( ipconc .ge. 1 .or. ipelec .ge. 1 ) then
-      do mgs = 1,ngscnt
-
-      IF ( ipconc .ge. 5 ) THEN
-       IF ( qhacw(mgs) .gt. 0.0 .and. xmas(mgs,lc) .gt. 0.0 ) THEN
-
-!  This is the explict version of chacw, which turns out to be very close to the
-!  approximation that the droplet size does not change, to within a few percent.
-!  This may _not_ be the case for cnu other than zero!
-!          chacw(mgs) = (ehw(mgs)*cx(mgs,lc)*cx(mgs,lh)*(pi/4.)*
-!     :    abs(vtxbar(mgs,lh,1)-vtxbar(mgs,lc,1))*
-!     :    (2.0*xdia(mgs,lh,1)*(xdia(mgs,lh,1) +
-!     :         xdia(mgs,lc,1)*gf43rds) +
-!     :      xdia(mgs,lc,2)*gf53rds))
-
-!          chacw(mgs) = Min( chacw(mgs), 0.6*cx(mgs,lc)/dtp )
-
-!        chacw(mgs) = qhacw(mgs)*rho0(mgs)/xmas(mgs,lc)
-        chacw(mgs) = qhacw(mgs)*rho0(mgs)/xmascw(mgs)
-!        chacw(mgs) = min(chacw(mgs),cxmxd(mgs,lc))
-        chacw(mgs) = Min( chacw(mgs), 0.5*cx(mgs,lc)/dtp )
-       ELSE
-        qhacw(mgs) = 0.0
-       ENDIF
-      ELSE
-      chacw(mgs) =   &
-     &   ((0.25)*pi)*ehw(mgs)*cx(mgs,lc)*cx(mgs,lh)   &
-     &  *abs(vtxbar(mgs,lh,1)-vtxbar(mgs,lc,1))   &
-     &  *(  gf1*xdia(mgs,lc,2)   &
-     &    + 2.0*gf2*xdia(mgs,lc,1)*xdia(mgs,lh,1)   &
-     &    + gf3*xdia(mgs,lh,2) )
-      chacw(mgs) = min(chacw(mgs),0.5*cx(mgs,lc)/dtp)
-!      chacw(mgs) = min(chacw(mgs),cxmxd(mgs,lc))
-!      chacw(mgs) = min(chacw(mgs),ccmxd(mgs))
-      ENDIF
-      end do
-      end if
-!
-      if (ndebug .gt. 0 ) write(0,*) 'ICEZVD_GS: conc 22kk'
-      chaci(:) = 0.0
-      if ( ipconc .ge. 1 .or. ipelec .ge. 1 ) then
-      do mgs = 1,ngscnt
-      IF ( ehi(mgs) .gt. 0.0 ) THEN
-       IF ( ipconc .ge. 5 ) THEN
-
-       vt = Sqrt((vtxbar(mgs,lh,1)-vtxbar(mgs,li,1))**2 +    &
-     &            0.04*vtxbar(mgs,lh,1)*vtxbar(mgs,li,1) )
-
-          chaci(mgs) = 0.25*pi*ehi(mgs)*cx(mgs,lh)*cx(mgs,li)*vt*   &
-     &         (  da0lh(mgs)*xdia(mgs,lh,3)**2 +     &
-     &            dab0lh(mgs,li,lh)*xdia(mgs,lh,3)*xdia(mgs,li,3) +    &
-     &            da0(li)*xdia(mgs,li,3)**2 )
-
-       ELSE
-        chaci(mgs) =   &
-     &   ((0.25)*pi)*ehi(mgs)*cx(mgs,li)*cx(mgs,lh)   &
-     &  *abs(vtxbar(mgs,lh,1)-vtxbar(mgs,li,1))   &
-     &  *(  gf1*xdia(mgs,li,2)   &
-     &    + 2.0*gf2*xdia(mgs,li,1)*xdia(mgs,lh,1)   &
-     &    + gf3*xdia(mgs,lh,2) )
-        ENDIF
-
-        chaci(mgs) = min(chaci(mgs),cimxd(mgs))
-       ENDIF
-      end do
-      end if
-!
-!
-      if (ndebug .gt. 0 ) write(0,*) 'ICEZVD_GS: conc 22nn'
-      chacs(:) = 0.0
-      if ( ipconc .ge. 1 .or. ipelec .ge. 1 ) then
-      do mgs = 1,ngscnt
-      IF ( ehs(mgs) .gt. 0 ) THEN
-       IF ( ipconc .ge. 5 ) THEN
-
-       vt = Sqrt((vtxbar(mgs,lh,1)-vtxbar(mgs,ls,1))**2 +    &
-     &            0.04*vtxbar(mgs,lh,1)*vtxbar(mgs,ls,1) )
-
-          chacs(mgs) = 0.25*pi*ehs(mgs)*cx(mgs,lh)*cx(mgs,ls)*vt*   &
-     &         (  da0lh(mgs)*xdia(mgs,lh,3)**2 +     &
-     &            dab0lh(mgs,ls,lh)*xdia(mgs,lh,3)*xdia(mgs,ls,3) +    &
-     &            da0(ls)*xdia(mgs,ls,3)**2 )
-
-       ELSE
-      chacs(mgs) =   &
-     &   ((0.25)*pi)*ehs(mgs)*cx(mgs,ls)*cx(mgs,lh)   &
-     &  *abs(vtxbar(mgs,lh,1)-vtxbar(mgs,ls,1))   &
-     &  *(  gf3*gf1*xdia(mgs,ls,2)   &
-     &    + 2.0*gf2*gf2*xdia(mgs,ls,1)*xdia(mgs,lh,1)   &
-     &    + gf1*gf3*xdia(mgs,lh,2) )
-      ENDIF
-      chacs(mgs) = min(chacs(mgs),csmxd(mgs))
-      ENDIF
-      end do
-      end if
-
-
-!
-!
-!  Hail
-!
-      if (ndebug .gt. 0 ) write(0,*) 'ICEZVD_GS: conc 22ii'
-      chlacw(:) = 0.0
-      if ( ipconc .ge. 1 .or. ipelec .ge. 1 ) then
-      do mgs = 1,ngscnt
-
-      IF ( lhl .gt. 1 .and. ipconc .ge. 5 ) THEN
-       IF ( qhlacw(mgs) .gt. 0.0 .and. xmas(mgs,lc) .gt. 0.0 ) THEN
-
-!  This is the explict version of chacw, which turns out to be very close to the
-!  approximation that the droplet size does not change, to within a few percent.
-!  This may _not_ be the case for cnu other than zero!
-!          chlacw(mgs) = (ehlw(mgs)*cx(mgs,lc)*cx(mgs,lhl)*(pi/4.)*
-!     :    abs(vtxbar(mgs,lhl,1)-vtxbar(mgs,lc,1))*
-!     :    (2.0*xdia(mgs,lhl,1)*(xdia(mgs,lhl,1) +
-!     :         xdia(mgs,lc,1)*gf43rds) +
-!     :      xdia(mgs,lc,2)*gf53rds))
-
-!          chlacw(mgs) = Min( chlacw(mgs), 0.6*cx(mgs,lc)/dtp )
-
-!        chlacw(mgs) = qhlacw(mgs)*rho0(mgs)/xmas(mgs,lc)
-        chlacw(mgs) = qhlacw(mgs)*rho0(mgs)/xmascw(mgs)
-!        chlacw(mgs) = min(chlacw(mgs),cxmxd(mgs,lc))
-        chlacw(mgs) = Min( chlacw(mgs), 0.5*cx(mgs,lc)/dtp )
-       ELSE
-        qhlacw(mgs) = 0.0
-       ENDIF
-!      ELSE
-!      chlacw(mgs) =
-!     >   ((0.25)*pi)*ehlw(mgs)*cx(mgs,lc)*cx(mgs,lhl)
-!     >  *abs(vtxbar(mgs,lhl,1)-vtxbar(mgs,lc,1))
-!     >  *(  gf1*xdia(mgs,lc,2)
-!     >    + 2.0*gf2*xdia(mgs,lc,1)*xdia(mgs,lhl,1)
-!     >    + gf3*xdia(mgs,lhl,2) )
-!      chlacw(mgs) = min(chlacw(mgs),0.5*cx(mgs,lc)/dtp)
-!      chlacw(mgs) = min(chlacw(mgs),cxmxd(mgs,lc))
-!      chlacw(mgs) = min(chlacw(mgs),ccmxd(mgs))
-      ENDIF
-      end do
-      end if
-!
-      if (ndebug .gt. 0 ) write(0,*) 'ICEZVD_GS: conc 22kk'
-      chlaci(:) = 0.0
-      if ( ipconc .ge. 1 .or. ipelec .ge. 1 ) then
-      do mgs = 1,ngscnt
-      IF ( lhl .gt. 1 .and. ehli(mgs) .gt. 0.0 ) THEN
-       IF ( ipconc .ge. 5 ) THEN
-
-       vt = Sqrt((vtxbar(mgs,lhl,1)-vtxbar(mgs,li,1))**2 +    &
-     &            0.04*vtxbar(mgs,lhl,1)*vtxbar(mgs,li,1) )
-
-          chlaci(mgs) = 0.25*pi*ehli(mgs)*cx(mgs,lhl)*cx(mgs,li)*vt*   &
-     &         (  da0lhl(mgs)*xdia(mgs,lhl,3)**2 +     &
-     &            dab0(lhl,li)*xdia(mgs,lhl,3)*xdia(mgs,li,3) +    &
-     &            da0(li)*xdia(mgs,li,3)**2 )
-
-!       ELSE
-!        chlaci(mgs) =
-!     >   ((0.25)*pi)*ehli(mgs)*cx(mgs,li)*cx(mgs,lhl)
-!     >  *abs(vtxbar(mgs,lhl,1)-vtxbar(mgs,li,1))
-!     >  *(  gf1*xdia(mgs,li,2)
-!     >    + 2.0*gf2*xdia(mgs,li,1)*xdia(mgs,lhl,1)
-!     >    + gf3*xdia(mgs,lhl,2) )
-        ENDIF
-
-        chlaci(mgs) = min(chlaci(mgs),cimxd(mgs))
-       ENDIF
-      end do
-      end if
-!
-!
-      if (ndebug .gt. 0 ) write(0,*) 'ICEZVD_GS: conc 22jj'
-      chlacs(:) = 0.0
-      if ( ipconc .ge. 1 .or. ipelec .ge. 1 ) then
-      do mgs = 1,ngscnt
-      IF ( lhl .gt. 1 .and. ehls(mgs) .gt. 0 ) THEN
-       IF ( ipconc .ge. 5 ) THEN
-
-       vt = Sqrt((vtxbar(mgs,lhl,1)-vtxbar(mgs,ls,1))**2 +    &
-     &            0.04*vtxbar(mgs,lhl,1)*vtxbar(mgs,ls,1) )
-
-          chlacs(mgs) = 0.25*pi*ehls(mgs)*cx(mgs,lhl)*cx(mgs,ls)*vt*   &
-     &         (  da0lhl(mgs)*xdia(mgs,lhl,3)**2 +     &
-     &            dab0(lhl,ls)*xdia(mgs,lhl,3)*xdia(mgs,ls,3) +    &
-     &            da0(ls)*xdia(mgs,ls,3)**2 )
-
-!       ELSE
-!      chlacs(mgs) =
-!     >   ((0.25)*pi)*ehls(mgs)*cx(mgs,ls)*cx(mgs,lhl)
-!     >  *abs(vtxbar(mgs,lhl,1)-vtxbar(mgs,ls,1))
-!     >  *(  gf3*gf1*xdia(mgs,ls,2)
-!     >    + 2.0*gf2*gf2*xdia(mgs,ls,1)*xdia(mgs,lhl,1)
-!     >    + gf1*gf3*xdia(mgs,lhl,2) )
-      ENDIF
-      chlacs(mgs) = min(chlacs(mgs),csmxd(mgs))
-      ENDIF
-      end do
-      end if
-
-!
-! Ziegler (1985) autoconversion
-!
-!
-      IF ( ipconc .ge. 2 .and. ircnw /= -1) THEN ! DTD: added flag for autoconversion.  If -1, turns off autoconversion
-      if (ndebug .gt. 0 ) write(0,*) 'conc 26a'
-      
-      DO mgs = 1,ngscnt
-        zrcnw(mgs) = 0.0
-        qrcnw(mgs) = 0.0
-        crcnw(mgs) = 0.0
-        cautn(mgs) = 0.0
-      ENDDO
-      
-      DO mgs = 1,ngscnt
-!      qracw(mgs) = 0.0
-!      cracw(mgs) = 0.0
-       IF ( qx(mgs,lc) .gt. qxmin(lc) .and. cx(mgs,lc) .gt. 1000. .and. temg(mgs) .gt. tfrh+4.) THEN
-       ! .and. w(igs(mgs),jgs,kgs(mgs)) > 5.0) THEN ! DTD: added w threshold for testing                                                                                                            
-         volb = xv(mgs,lc)*(1./(1.+CNU))**(1./2.)
-         cautn(mgs) = Min(ccmxd(mgs),   &
-     &      ((CNU+2.)/(CNU+1.))*aa1*cx(mgs,lc)**2*xv(mgs,lc)**2)
-         cautn(mgs) = Max( 0.0d0, cautn(mgs) )
-         IF ( rb(mgs) .le. 7.51d-6 ) THEN
-           t2s = 1.d30
-!           cautn(mgs) = 0.0
-         ELSE
-!         XL2P=2.7E-2*XNC*XVC*((1.E12*RB**3*RC)-0.4)
-         
-!        T2S=3.72E-3/(((1.E4*RB)-7.5)*XNC*XVC) 
-!           t2s = 3.72E-3/(((1.e6*rb)-7.5)*cx(mgs,lc)*xv(mgs,lc))
-!           t2s = 3.72/(((1.e6*rb(mgs))-7.5)*rho0(mgs)*qx(mgs,lc))
-           t2s = 3.72/(1.e6*(rb(mgs)-7.500d-6)*rho0(mgs)*qx(mgs,lc))
-
-           qrcnw(mgs) = Max( 0.0d0, xl2p(mgs)/(t2s*rho0(mgs)) )
-           crcnw(mgs) = Max( 0.0d0, Min(3.5e9*xl2p(mgs)/t2s,0.5*cautn(mgs)) )
-           
-           IF ( dmrauto == 0 ) THEN
-             IF ( qx(mgs,lr)*rho0(mgs) > 1.2*xl2p(mgs) .and. cx(mgs,lr) > cxmin ) THEN ! Cohard and Pinty (2000a) switch over from (18) to (19)
-               crcnw(mgs) = cx(mgs,lr)/qx(mgs,lr)*qrcnw(mgs)
-             ENDIF
-           ELSEIF ( dmrauto == 1  .and. cx(mgs,lr) > cxmin) THEN
-             IF ( qx(mgs,lr) > qxmin(lr) ) THEN
-               tmp = qrcnw(mgs)*cx(mgs,lr)/qx(mgs,lr)
-               crcnw(mgs) = Min(tmp,crcnw(mgs) )
-             ENDIF
-           ELSEIF ( dmrauto == 2  .and. cx(mgs,lr) > cxmin) THEN
-               tmp = crcnw(mgs)
-               tmp2 = qrcnw(mgs)*cx(mgs,lr)/qx(mgs,lr)
-               ! try mass-weighted average of old and new Dmr
-               crcnw(mgs) = (tmp*qrcnw(mgs)+tmp2*qx(mgs,lr))/(qrcnw(mgs)+qx(mgs,lr))
-           ELSEIF ( dmrauto == 3  .and. cx(mgs,lr) > cxmin) THEN ! adapted from MY/CP code
-              tmp = Max( 2.d0*rh(mgs), dble( xdia(mgs,lr,3) ) )
-              crcnw(mgs) = rho0(mgs)*qrcnw(mgs)/(pi/6.*1000.*tmp**3)
-           ENDIF
-           
-           IF ( crcnw(mgs) < 1.e-30 ) qrcnw(mgs) = 0.0
-
-!           IF (  crcnw(mgs) .gt. cautn(mgs) .and. crcnw(mgs) .gt. 1.0 )
-!     :          THEN
-!             write(0,*)  'crcnw,cautn ',crcnw(mgs)/cautn(mgs),
-!     :          crcnw(mgs),cautn(mgs),igs(mgs),kgs(mgs),t2s,qx(mgs,lr)
-!             write(0,*)  '            ',qx(mgs,lc),cx(mgs,lc),0.5e6*xdia(mgs,lc,1)
-!             write(0,*)  '            ',rho0(mgs)*qrcnw(mgs)/crcnw(mgs),
-!     :         1.e6*(( 3/(4.*pi))*rho0(mgs)*qrcnw(mgs)/
-!     :       (crcnw(mgs)*xdn(mgs,lr)))**(1./3.),rh(mgs)*1.e6,rwrad(mgs)
-!           ELSEIF ( crcnw(mgs) .gt. 1.0 .and. cautn(mgs) .gt. 0.) THEN
-!             write(0,*)  'crcnw,cautn ',crcnw(mgs)/cautn(mgs),
-!     :          crcnw(mgs),cautn(mgs),igs(mgs),kgs(mgs),t2s
-!             write(0,*)  '            ',rho0(mgs)*qrcnw(mgs)/crcnw(mgs),
-!     :  1.e6*(( 3*pi/4.)*rho0(mgs)*qrcnw(mgs)/
-!     :   (crcnw(mgs)*xdn(mgs,lr)))**(1./3.)
-!           ENDIF
-!           crcnw(mgs) = Min(cautn(mgs),3.5e9*xl2p(mgs)/t2s)
-
-!           IF ( qrcnw(mgs) .gt. 0.3e-2 ) THEN
-!            write(0,*)  'QRCNW'
-!            write(0,*)  qrcnw(mgs),crcnw(mgs),cautn(mgs)
-!            write(0,*)  xl2p,t2s,rho0(mgs),xv(mgs,lc),cx(mgs,lc),qx(mgs,lc)
-!            write(0,*)  rb,0.5*xdia(mgs,lc,1),mgs,igs(mgs),kgs(mgs)
-!           ENDIF
-!           qrcnw(mgs) = Min(qrcnw(mgs),qcmxd(mgs))
-         ENDIF
-
-
-       ENDIF
-      ENDDO
-
-
-
-      ELSE
-
-!
-!  Berry 1968 auto conversion for rain (Orville & Kopp 1977)
-!
-!
-      if ( ircnw .eq. 4 ) then
-      do mgs = 1,ngscnt
-!      sconvmix(lcw,mgs) = 0.0
-      qrcnw(mgs) =  0.0
-      qdiff = max((qx(mgs,lc)-qminrncw),0.0)
-      if ( qdiff .gt. 0.0 .and. xdia(mgs,lc,1) .gt. 20.0e-6 ) then
-      argrcnw =   &
-     &  ((1.2e-4)+(1.596e-12)*(cx(mgs,lc)*1.0e-6)   &
-     &  /(cwdisp*qdiff*1.0e-3*rho0(mgs)))
-      qrcnw(mgs) = (rho0(mgs)*1e-3)*(qdiff**2)/argrcnw
-!      sconvmix(lcw,mgs) = max(sconvmix(lcw,mgs),0.0)
-      qrcnw(mgs) = (max(qrcnw(mgs),0.0))
-      end if
-      end do
-
-      ENDIF
-!
-!
-!
-!  Berry 1968 auto conversion for rain (Ferrier 1994)
-!
-!
-      if ( ircnw .eq. 5 ) then
-      do mgs = 1,ngscnt
-      qrcnw(mgs) = 0.0
-      qrcnw(mgs) =  0.0
-      qccrit = (pi/6.)*(cx(mgs,lc)*cwdiap**3)*xdn(mgs,lc)/rho0(mgs)
-      qdiff = max((qx(mgs,lc)-qccrit),0.)
-      if ( qdiff .gt. 0.0 .and. cx(mgs,lc) .gt. 1.0 ) then
-      argrcnw = &
-!     >  ((1.2e-4)+(1.596e-12)*cx(mgs,lc)/(cwdisp*rho0(mgs)*qdiff))   &
-     &  ((1.2e-4)+(1.596e-12)*cx(mgs,lc)*1.0e-3/(cwdisp*rho0(mgs)*qdiff))
-      qrcnw(mgs) = &
-!     >  timflg(mgs)*rho0(mgs)*(qdiff**2)/argrcnw   &
-     &  1.0e-3*rho0(mgs)*(qdiff**2)/argrcnw
-      qrcnw(mgs) = Min(qxmxd(mgs,lc), (max(qrcnw(mgs),0.0)) )
-
-!      write(iunit,*) 'qrcnw,cx =',qrcnw(mgs),cx(mgs,lc),mgs,1.e3*qx(mgs,lc),cno(lr)
-      end if
-      end do
-      end if
-
-!
-!
-!  kessler auto conversion for rain.
-!
-      if ( ircnw .eq. 2 ) then
-      do mgs = 1,ngscnt
-      qrcnw(mgs) = 0.0
-      qrcnw(mgs) = (0.001)*max((qx(mgs,lc)-qminrncw),0.0)
-      end do
-      end if
-!
-!  c4 = pi/6
-!  c1 = 0.12-0.32 for colorado storms...typically 0.3-0.4
-!  berry reinhart type conversion (proctor 1988)
-!
-      if ( ircnw .eq. 1 ) then
-      do mgs = 1,ngscnt
-      qrcnw(mgs) = 0.0
-      c1 = 0.2
-      c4 = pi/(6.0)
-      bradp =    &
-     & (1.e+06) * ((c1/(0.38))**(1./3.)) * (xdia(mgs,lc,1)*(0.5))
-      bl2 =   &
-     & (0.027) * ((100.0)*(bradp**3)*(xdia(mgs,lc,1)*(0.5)) - (0.4))
-      bt2 = (bradp -7.5) / (3.72)
-      qrcnw(mgs) = 0.0
-      if ( bl2 .gt. 0.0 .and. bt2 .gt. 0.0 ) then
-      qrcnw(mgs) = bl2 * bt2 * rho0(mgs)   &
-     &  * qx(mgs,lc) * qx(mgs,lc)
-      end if
-      end do
-      end if
-
-
-
-      ENDIF  !  ( ipconc .ge. 2 )
-
-!
-!
-!
-!  Bigg Freezing of Rain
-!
-      if (ndebug .gt. 0 ) write(0,*) 'conc 27a'
-      qrfrz(:) = 0.0
-      qrfrzs(:) = 0.0
-      qrfrzf(:) = 0.0
-      vrfrzf(:) = 0.0
-      crfrz(:) = 0.0
-      crfrzs(:) = 0.0
-      crfrzf(:) = 0.0
-      zrfrz(:)  = 0.0
-      zrfrzf(:)  = 0.0
-      qwcnr(:) = 0.0
-      
-      IF ( .not. ( ipconc == 0 .and. lwsm6 ) ) THEN
-      
-      do mgs = 1,ngscnt 
-      if ( qx(mgs,lr) .gt. qxmin(lr) .and. temcg(mgs) .lt. -5. ) then
-!      brz = 100.0
-!      arz = 0.66
-       IF ( ipconc .lt. 3 ) THEN
-       qrfrz(mgs) =    &
-     &  min(   &
-     &  (20.0)*(pi**2)*brz*(xdn(mgs,lr)/rho0(mgs))   &
-     &   *cx(mgs,lr)*(xdia(mgs,lr,1)**6)   &
-     &   *(exp(max(-arz*temcg(mgs), 0.0))-1.0)   &
-     &  , qrmxd(mgs))
-        qrfrzf(mgs) = qrfrz(mgs)
-
-!       ELSEIF ( ipconc .ge. 3 .and. xv(mgs,lr) .gt. 1.1*xvmn(lr) ) THEN
-       ELSEIF ( ipconc .ge. 3 ) THEN
-!         tmp = brz*cx(mgs,lr)*(Exp(Max( -arz*temcg(mgs), 0.0 )) - 1.0)
-!         crfrz(mgs) = xv(mgs,lr)*tmp
-
-         frach = 1.0d0
-         
-         IF ( ibiggopt == 2 .and. imurain == 1 ) THEN
-         ! integrate from Bigg diameter (for given supercooling Ts) to infinity
-           
-           volt = exp( 16.2 + 1.0*temcg(mgs) )* 1.0e-6 !  Ts == -temcg ; volt comes from the fit in Fig. 1 in Bigg 1953 
-                                               ! for mean temperature for freezing: -ln (V) = a*Ts - b
-                                               ! volt is given in cm**3, so convert to m**3
-           dbigg = (6./pi* volt )**(1./3.) 
-           
-           ! perhaps should also test that W > V_t_dbigg, i.e., that drops the size of dbigg are being lifted and cooled. 
-           
-             ratio = dbigg/xdia(mgs,lr,1)
-           
-           i = Int(Min(25.0,ratio))
-           j = Int(Max(0.0,Min(15.,alpha(mgs,lr))))
-           delx = ratio - float(i)
-           dely = alpha(mgs,lr) - float(j)
-           ip1 = Min( i+1, nqiacrratio )
-           jp1 = Min( j+1, nqiacralpha )
-
-           ! interpolate along x, i.e., ratio; note interval spacing is 1., so division is left out
-           tmp1 = ciacrratio(i,j) + delx*(ciacrratio(ip1,j) - ciacrratio(i,j))
-           tmp2 = ciacrratio(i,jp1) + delx*(ciacrratio(ip1,jp1) - ciacrratio(i,jp1))
-           
-           ! interpolate along alpha; note interval spacing is 1., so division is left out
-           
-           crfrz(mgs) = (tmp1 + dely*(tmp2 - tmp1))*cx(mgs,lr)/dtp
-           
-           ! interpolate along x, i.e., ratio; note interval spacing is 1., so division is left out
-           tmp1 = qiacrratio(i,j) + delx*(qiacrratio(ip1,j) - qiacrratio(i,j))
-           tmp2 = qiacrratio(i,jp1) + delx*(qiacrratio(ip1,jp1) - qiacrratio(i,jp1))
-           
-           ! interpolate along alpha; note interval spacing is 1., so division is left out
-           
-           qrfrz(mgs) = (tmp1 + dely*(tmp2 - tmp1))*qx(mgs,lr)/dtp
-           
-           
-           
-           IF ( dbigg < Max(dfrz,dhmn) .and. ibiggsnow > 0 ) THEN ! convert some to snow or ice crystals
-            ! temporarily store qrfrz and crfrz in snow terms
-            crfrzs(mgs) = qrfrz(mgs)
-            qrfrzs(mgs) = crfrz(mgs)
-
-
-           ! recalculate using dhmn for ratio
-           ratio = Max(dfrz,dhmn)/xdia(mgs,lr,1)
-           
-           i = Int(Min(25.0,ratio))
-           j = Int(Max(0.0,Min(15.,alpha(mgs,lr))))
-           delx = ratio - float(i)
-           dely = alpha(mgs,lr) - float(j)
-           ip1 = Min( i+1, nqiacrratio )
-           jp1 = Min( j+1, nqiacralpha )
-
-           ! interpolate along x, i.e., ratio; note interval spacing is 1., so division is left out
-           tmp1 = ciacrratio(i,j) + delx*(ciacrratio(ip1,j) - ciacrratio(i,j))
-           tmp2 = ciacrratio(i,jp1) + delx*(ciacrratio(ip1,jp1) - ciacrratio(i,jp1))
-           
-           ! interpolate along alpha; note interval spacing is 1., so division is left out
-           
-           crfrz(mgs) = (tmp1 + dely*(tmp2 - tmp1))*cx(mgs,lr)/dtp
-           
-           ! interpolate along x, i.e., ratio; note interval spacing is 1., so division is left out
-           tmp1 = qiacrratio(i,j) + delx*(qiacrratio(ip1,j) - qiacrratio(i,j))
-           tmp2 = qiacrratio(i,jp1) + delx*(qiacrratio(ip1,jp1) - qiacrratio(i,jp1))
-           
-           ! interpolate along alpha; note interval spacing is 1., so division is left out
-           
-           qrfrz(mgs) = (tmp1 + dely*(tmp2 - tmp1))*qx(mgs,lr)/dtp
-
-           ! now subtract off the difference
-            crfrzs(mgs) = crfrzs(mgs) - crfrz(mgs)
-            qrfrzs(mgs) = qrfrzs(mgs) - qrfrz(mgs)
-
-           
-           ELSE
-            crfrzs(mgs) = 0.0
-            qrfrzs(mgs) = 0.0
-           ENDIF
-           
-           IF ( (qrfrzs(mgs) + qrfrz(mgs))*dtp > qx(mgs,lr) ) THEN
-             fac = ( qrfrzs(mgs) + qrfrz(mgs) )*dtp/qx(mgs,lr)
-             qrfrz(mgs) = fac*qrfrz(mgs)
-             qrfrzs(mgs) = fac*qrfrzs(mgs)
-             qrfrzf(mgs) = fac*qrfrzf(mgs)
-             crfrz(mgs) = fac*crfrz(mgs)
-             crfrzs(mgs) = fac*crfrzs(mgs)
-             crfrzf(mgs) = fac*crfrzf(mgs)
-           ENDIF
-!           IF ( (crfrzs(mgs) + crfrz(mgs))*dtp > cx(mgs,lr) ) THEN
-!             fac = ( crfrzs(mgs) + crfrz(mgs) )*dtp/cx(mgs,lr)
-!             crfrz(mgs) = fac*crfrz(mgs)
-!             crfrzs(mgs) = fac*crfrzs(mgs)
-!           ENDIF
-           
-           qrfrzf(mgs) = qrfrz(mgs)
-           crfrzf(mgs) = crfrz(mgs)
-           
-           qrfrz(mgs) = qrfrzf(mgs) + qrfrzs(mgs)
-           crfrz(mgs) = crfrzf(mgs) + crfrzs(mgs)
-
-           
-         ELSE ! ibiggopt == 1 
-         
-         tmp = xv(mgs,lr)*brz*cx(mgs,lr)*(Exp(Max( -arz*temcg(mgs), 0.0 )) - 1.0)
-         IF ( .false. .and. tmp .gt. cxmxd(mgs,lr) ) THEN ! {
-!           write(iunit,*) 'Bigg Freezing problem!',mgs,igs(mgs),kgs(mgs)
-!           write(iunit,*)  'tmp, cx(lr), xv = ',tmp, cx(mgs,lr), xv(mgs,lr), (Exp(Max( -arz*temcg(mgs), 0.0 )) - 1.0)
-!           write(iunit,*)  'qr,temcg = ',qx(mgs,lr)*1000.,temcg(mgs)
-           crfrz(mgs) = cxmxd(mgs,lr) ! cx(mgs,lr)/dtp
-           qrfrz(mgs) = qxmxd(mgs,lr) ! qx(mgs,lr)/dtp
-!           STOP
-         ELSE ! } {
-         crfrz(mgs) = tmp
- !        crfrzfmx = cx(mgs,lr)*Exp(-4./3.*pi*(40.e-6)**3/xv(mgs,lr))
- !        IF ( crfrz(mgs) .gt. crfrzmx ) THEN
- !          crfrz(mgs) = crfrzmx
- !          qrfrz(mgs) = bfnu*xmas(mgs,lr)*rhoinv(mgs)*crfrzmx
- !          qwcnr(mgs) = cx(mgs,lr) - crfrzmx
- !        ELSE
-         IF ( lzr < 1 ) THEN
-           IF ( imurain == 3 ) THEN
-             bfnu = bfnu0
-           ELSE !imurain == 1
-             bfnu = bfnu1
-           ENDIF
-         ELSE
- !         bfnu = 1.0 ! (alpha(mgs,lr)+2.0)/(alpha(mgs,lr)+1.)
-           IF ( imurain == 3 ) THEN
-             bfnu = (alpha(mgs,lr)+2.0)/(alpha(mgs,lr)+1.)
-           ELSE !imurain == 1
-!             bfnu = bfnu1
-            bfnu = (4. + alpha(mgs,lr))*(5. + alpha(mgs,lr))*(6. + alpha(mgs,lr))/  &
-     &            ((1. + alpha(mgs,lr))*(2. + alpha(mgs,lr))*(3. + alpha(mgs,lr)))
-!            bfnu = 1.
-           ENDIF
-         ENDIF 
-         qrfrz(mgs) = bfnu*xmas(mgs,lr)*rhoinv(mgs)*crfrz(mgs)
-
-         qrfrz(mgs) = Min( qrfrz(mgs), 1.*qx(mgs,lr)/dtp ) ! qxmxd(mgs,lr) 
-         crfrz(mgs) = Min( crfrz(mgs), 1.*cx(mgs,lr)/dtp ) !cxmxd(mgs,lr) 
-         qrfrz(mgs) = Min( qrfrz(mgs), qx(mgs,lr) )
-         qrfrzf(mgs) = qrfrz(mgs)
-         ENDIF !}
-
-         
-         
-         
-         IF ( crfrz(mgs) .gt. 0.0 ) THEN
-!          IF ( xdia(mgs,lr,1) .lt. 200.e-6 ) THEN
-!           IF ( xv(mgs,lr) .lt. xvmn(lh) ) THEN
-           
-           IF ( ibiggsnow == 1 .or. ibiggsnow == 3 ) THEN
-           xvfrz = rho0(mgs)*qrfrz(mgs)/(crfrz(mgs)*900.) ! mean volume of frozen drops; 900. for frozen drop density
-           frach = 0.5 *(1. +  Tanh(0.2e12 *( xvfrz - 1.15*xvmn(lh))))
-
-             qrfrzs(mgs) = (1.-frach)*qrfrz(mgs)
-             crfrzs(mgs) = (1.-frach)*crfrz(mgs) ! *rzxh(mgs)
-!             qrfrzf(mgs) = frach*qrfrz(mgs)
-           
-           ENDIF
-           
-           IF ( ipconc .ge. 14 .and. 1.e-3*rho0(mgs)*qrfrz(mgs)/crfrz(mgs) .lt. xvmn(lh) ) THEN
-             qrfrzs(mgs) = qrfrz(mgs)
-             crfrzs(mgs) = crfrz(mgs) ! *rzxh(mgs)
-           ELSE
-!           crfrz(mgs) = Min( crfrz(mgs), 0.1*cx(mgs,lr)/dtp ) ! cxmxd(mgs,lr) )
-!           qrfrz(mgs) = Min( qrfrz(mgs), 0.1*qx(mgs,lr)/dtp ) ! qxmxd(mgs,lr) )
-             qrfrzf(mgs) = frach*qrfrz(mgs)
-!             crfrzf(mgs) = Min( qrfrz(mgs)*rho0(mgs)/(xdn(mgs,lh)*vgra), crfrz(mgs) )
-            IF ( ibfr .le. 1 ) THEN
-             crfrzf(mgs) = Min(frach*crfrz(mgs), dble(qrfrz(mgs)/(bfnu*1.0*vr1mm*1000.0)*rho0(mgs)) ) ! rzxh(mgs)*crfrz(mgs)
-            ELSEIF ( ibfr .eq. 5 ) THEN
-             crfrzf(mgs) = Min(frach*crfrz(mgs), dble(qrfrz(mgs)/(bfnu*vfrz*1000.0)*rho0(mgs)) )*rzxh(mgs)  !*crfrz(mgs)
-            ELSE
-             crfrzf(mgs) = Min(frach*crfrz(mgs), dble(qrfrz(mgs)/(bfnu*vfrz*1000.0)*rho0(mgs)) ) ! rzxh(mgs)*crfrz(mgs)
-            ENDIF
-!             crfrzf(mgs) = Min(crfrz(mgs), qrfrz(mgs)/(bfnu*xvmn(lh)*1000.0)*rho0(mgs) ) ! rzxh(mgs)*crfrz(mgs)
-!            IF ( lz(lr) > 1 .and. lz(lh) > 1 ) THEN
-!              crfrzf(mgs) = crfrz(mgs)
-!            ENDIF
-            
-           ENDIF
-!         crfrz(mgs) = Min( cxmxd(mgs,lr), rho0(mgs)*qrfrz(mgs)/xmas(mgs,lr) )
-         ELSE
-          crfrz(mgs) = 0.0
-          qrfrz(mgs) = 0.0
-         ENDIF
-
-         ENDIF ! ibiggopt
-
-          IF ( lvol(lh) .gt. 1 ) THEN
-           vrfrzf(mgs) = rho0(mgs)*qrfrzf(mgs)/rhofrz
-          ENDIF
-
-        
-        IF ( nsplinter .ne. 0 ) THEN
-          IF ( nsplinter .gt. 0 ) THEN
-            tmp = nsplinter*crfrz(mgs)
-          ELSE
-            tmp = -nsplinter*crfrzf(mgs)
-          ENDIF
-          csplinter2(mgs) = tmp
-          qsplinter2(mgs) = Min(0.1*qrfrz(mgs), tmp*splintermass/rho0(mgs) ) ! makes splinters smaller if too much mass is taken from graupel
-
-!          csplinter(mgs) = csplinter(mgs) + tmp
-!          qsplinter(mgs) = qsplinter(mgs) + Min(0.1*qrfrz(mgs), tmp*splintermass/rho0(mgs) ) ! makes splinters smaller if too much mass is taken from graupel
-        ENDIF
-!         IF ( temcg(mgs) .lt. -31.0 ) THEN
-!           qrfrz(mgs) = qx(mgs,lr)/dtp + qrcnw(mgs)
-!           qrfrzf(mgs) = qrfrz(mgs)
-!           crfrz(mgs) = cx(mgs,lr)/dtp + crcnw(mgs)
-!           crfrzf(mgs) = Min(crfrz(mgs), qrfrz(mgs)/(bfnu*1.0*vr1mm*1000.0)*rho0(mgs) ) ! rzxh(mgs)*crfrz(mgs)
-!         ENDIF
-!         qrfrz(mgs) = 6.0*xdn(mgs,lr)*xv(mgs,lr)**2*tmp*rhoinv(mgs)
-!         qrfrz(mgs) = Min( qrfrz(mgs), ffrz*qrmxd(mgs) )
-!         crfrz(mgs) = Min( crmxd(mgs), ffrz*crfrz(mgs))
-!         crfrz(mgs) = Min(crmxd(mgs),qrfrz(mgs)*rho0(mgs)/xmas(mgs,lr))
-       ENDIF
-!      if ( temg(mgs) .gt. 268.15 ) then
-      else
-!      end if
-      end if
-      end do
-      
-      ENDIF
-!
-!  Homogeneous freezing of cloud drops to ice crystals
-!  following Bigg (1953) and Ferrier (1994).
-!
-      if (ndebug .gt. 0 ) write(0,*) 'conc 25b'
-      do mgs = 1,ngscnt
-      qwfrz(mgs) = 0.0
-      cwfrz(mgs) = 0.0
-      qwfrzc(mgs) = 0.0
-      cwfrzc(mgs) = 0.0
-      qwfrzp(mgs) = 0.0
-      cwfrzp(mgs) = 0.0
-      IF ( ibfc == 1 .and. temg(mgs) <= 268.15 ) THEN
-!      if ( qx(mgs,lc) .gt. qxmin(lc) .and. cx(mgs,lc) .gt. 1.  .and.   &
-!     &     .not. (ipconc .ge. 2 .and. xdia(mgs,lc,1) .lt. 10.e-6) ) then
-      if ( qx(mgs,lc) .gt. qxmin(lc) .and. cx(mgs,lc) .gt. 0.0 ) THEN
-      IF ( ipconc < 2 ) THEN
-      qwfrz(mgs) = ((2.0)*(brz)/(xdn(mgs,lc)*cx(mgs,lc)))   &
-     &  *(exp(max(-arz*temcg(mgs), 0.0))-1.0)   &
-     &  *rho0(mgs)*(qx(mgs,lc)**2)
-      qwfrz(mgs) = max(qwfrz(mgs), 0.0)
-      qwfrz(mgs) = min(qwfrz(mgs),qcmxd(mgs))
-         cwfrz(mgs) = qwfrz(mgs)*rho0(mgs)/xmas(mgs,li)
-       ELSEIF ( ipconc .ge. 2 ) THEN
-         IF ( xdia(mgs,lc,3) > 0.e-6 ) THEN
-          volt = exp( 16.2 + 1.0*temcg(mgs) )* 1.0e-6 !  Ts == -temcg ; volt comes from the fit in Fig. 1 in Bigg 1953 
-                                               ! for mean temperature for freezing: -ln (V) = a*Ts - b
-                                               ! volt is given in cm**3, so factor of 1.e-6 to convert to m**3
-!           dbigg = (6./pi* volt )**(1./3.) 
-
-         
-         cwfrz(mgs) = cx(mgs,lc)*Exp(-volt/xv(mgs,lc))/dtp ! number of droplets with volume greater than volt
-!turn off limit so that all can freeze at low temp
-!!!       cwfrz(mgs) = Min(cwfrz(mgs),ccmxd(mgs))
-
-         qwfrz(mgs) = cwfrz(mgs)*xdn0(lc)*rhoinv(mgs)*(volt + xv(mgs,lc))
-!         cwfrz(mgs) = cx(mgs,lc)*qwfrz(mgs)/qx(mgs,lc) ! reset number frozen to same fraction as mass. This makes 
-                                                       ! sure that cwfrz and qwfrz are consistent and prevents 
-                                                       ! spurious creation of ice crystals.
-         IF ( temg(mgs) < tfrh - 3 ) THEN
-          cwfrz(mgs) = cx(mgs,lc)
-          qwfrz(mgs) = qx(mgs,lc)
-         ENDIF
-!         IF ( qwfrz(mgs) > 0.5*qx(mgs,lc) ) THEN
-!           write(0,*) 'Problem with qwfrz(mgs): qwfrz,temcg,volt,xv,cx = ',qwfrz(mgs),qx(mgs,lc),temcg(mgs),volt,xv(mgs,lc),cx(mgs,lc),cwfrz(mgs)
-!           STOP
-!         ENDIF
-!turn off limit so that all can freeze at low temp
-!!!         qwfrz(mgs) = Min( qwfrz(mgs), qxmxd(mgs,lc) )
-         ENDIF
-       ENDIF
-      if ( temg(mgs) .gt. 268.15 ) then
-      qwfrz(mgs) = 0.0
-      cwfrz(mgs) = 0.0
-      end if
-      end if
-      ENDIF
-!
-      if ( xplate(mgs) .eq. 1 ) then
-      qwfrzp(mgs) = qwfrz(mgs)
-      cwfrzp(mgs) = cwfrz(mgs)
-      end if
-!
-      if ( xcolmn(mgs) .eq. 1 ) then
-      qwfrzc(mgs) = qwfrz(mgs)
-      cwfrzc(mgs) = cwfrz(mgs)
-      end if
-!
-!     qwfrzp(mgs) = 0.0
-!     qwfrzc(mgs) = qwfrz(mgs)
-!
-      end do
-!
-!
-!  Contact freezing nucleation:  factor is to convert from L-1
-!  T < -2C:  via Meyers et al. JAM July, 1992 (31, 708-721)
-!
-      if (ndebug .gt. 0 ) write(0,*) 'conc 25a'
-      do mgs = 1,ngscnt
-
-       ccia(mgs) = 0.0
-
-       cwctfz(mgs) = 0.0
-       qwctfz(mgs) = 0.0
-       ctfzbd(mgs) = 0.0
-       ctfzth(mgs) = 0.0
-       ctfzdi(mgs) = 0.0
-
-       cwctfzc(mgs) = 0.0
-       qwctfzc(mgs) = 0.0
-       cwctfzp(mgs) = 0.0
-       qwctfzp(mgs) = 0.0
-
-       IF ( icfn .ge. 1 ) THEN
-
-       IF ( temg(mgs) .lt. 271.15  .and. qx(mgs,lc) .gt. qxmin(lc)) THEN
-
-!       find available # of ice nuclei & limit value to max depletion of cloud water
-
-        IF ( icfn .ge. 2 ) THEN
-         ccia(mgs) = exp( 4.11 - (0.262)*temcg(mgs) )  ! in m-3, see Walko et al. 1995
-         !ccia(mgs) = Min(cwctfz(mgs), ccmxd(mgs) )
-
-!       now find how many of these collect cloud water to form IN
-!       Cotton et al 1986
-
-         knud(mgs) = 2.28e-5 * temg(mgs) / ( pres(mgs)*raero ) !Walko et al. 1995
-         knuda(mgs) = 1.257 + 0.4*exp(-1.1/knud(mgs))          !Pruppacher & Klett 1997 eqn 11-16
-         gtp(mgs) = 1. / ( fai(mgs) + fbi(mgs) )               !Byers 65 / Cotton 72b
-         dfar(mgs) = kb*temg(mgs)*(1.+knuda(mgs)*knud(mgs))/(6.*pi*fadvisc(mgs)*raero) !P&K 1997 eqn 11-15
-         fn1(mgs) = 2.*pi*xdia(mgs,lc,1)*cx(mgs,lc)*ccia(mgs)
-         fn2(mgs) = -gtp(mgs)*(ssw(mgs)-1.)*felv(mgs)/pres(mgs)
-         fnft(mgs) = 0.4*(1.+1.45*knud(mgs)+0.4*knud(mgs)*exp(-1./knud(mgs)))*(ftka(mgs)+2.5*knud(mgs)*kaero)      &
-     &              / ( (1.+3.*knud(mgs))*(2*ftka(mgs)+5.*knud(mgs)*kaero+kaero) )
-
-
-!      Brownian diffusion
-         ctfzbd(mgs) = fn1(mgs)*dfar(mgs)
-
-!      Thermophoretic contact nucleation
-         ctfzth(mgs) = fn1(mgs)*fn2(mgs)*fnft(mgs)/rho0(mgs)
-
-!      Diffusiophoretic contact nucleation
-         ctfzdi(mgs) = fn1(mgs)*fn2(mgs)*rw*temg(mgs)/(felv(mgs)*rho0(mgs))
-
-         cwctfz(mgs) = max( ctfzbd(mgs) + ctfzth(mgs) + ctfzdi(mgs) , 0.)
-
-!      Sum of the contact nucleation processes
-!         IF ( cx(mgs,lc) .gt. 50.e6) write(6,*) 'ctfzbd,etc = ',ctfzbd(mgs),ctfzth(mgs),ctfzdi(mgs)
-!         IF ( wvel(mgs) .lt. -0.05 ) write(6,*) 'ctfzbd,etc = ',ctfzbd(mgs),ctfzth(mgs),ctfzdi(mgs),cx(mgs,lc)*1e-6,wvel(mgs)
-!         IF ( ssw(mgs) .lt. 1.0 .and. cx(mgs,lc) .gt. 1.e6 .and. cwctfz(mgs) .gt. 1. ) THEN
-!          write(6,*) 'ctfzbd,etc = ',ctfzbd(mgs),ctfzth(mgs),ctfzdi(mgs),cx(mgs,lc)*1e-6,wvel(mgs),fn1(mgs),fn2(mgs)
-!          write(6,*) 'more = ',nstep,ssw(mgs),dfar(mgs),gtp(mgs),felv(mgs),pres(mgs)
-!         ENDIF
-
-        ELSEIF ( icfn .eq. 1 ) THEN
-         IF ( wvel(mgs) .lt. -0.05 ) THEN ! older kludgy version
-           cwctfz(mgs) = cfnfac*exp( (-2.80) - (0.262)*temcg(mgs) )
-           cwctfz(mgs) = Min((1.0e3)*cwctfz(mgs), ccmxd(mgs) )  !convert to m-3
-         ENDIF
-        ENDIF   ! icfn
-
-        IF ( ipconc .ge. 2 ) THEN
-         cwctfz(mgs) = Min( cwctfz(mgs)/dtp, ccmxd(mgs) )
-         qwctfz(mgs) = xmas(mgs,lc)*cwctfz(mgs)/rho0(mgs)
-        ELSE
-         qwctfz(mgs) = (cimasn)*cwctfz(mgs)/(dtp*rho0(mgs))
-         qwctfz(mgs) = max(qwctfz(mgs), 0.0)
-         qwctfz(mgs) = min(qwctfz(mgs),qcmxd(mgs))
-        ENDIF
-
-!
-        if ( xplate(mgs) .eq. 1 ) then
-         qwctfzp(mgs) = qwctfz(mgs)
-         cwctfzp(mgs) = cwctfz(mgs)
-        end if
-!
-        if ( xcolmn(mgs) .eq. 1 ) then
-         qwctfzc(mgs) = qwctfz(mgs)
-         cwctfzc(mgs) = cwctfz(mgs)
-        end if
-!
-!     qwctfzc(mgs) = qwctfz(mgs)
-!     qwctfzp(mgs) = 0.0
-!
-       end if
-
-       ENDIF ! icfn
-
-      end do
-!
-!
-!
-! Hobbs-Rangno ice enhancement (Ferrier, 1994)
-!
-      if (ndebug .gt. 0 ) write(0,*) 'conc 23a'
-      dtrh = 300.0
-      hrifac = (1.e-3)*((0.044)*(0.01**3))
-      do mgs = 1,ngscnt
-      ciihr(mgs) = 0.0
-      qiihr(mgs) = 0.0
-      cicichr(mgs) = 0.0
-      qicichr(mgs) = 0.0
-      cipiphr(mgs) = 0.0
-      qipiphr(mgs) = 0.0
-      IF ( ihrn .ge. 1 ) THEN
-      if ( qx(mgs,lc) .gt. qxmin(lc) ) then
-      if ( temg(mgs) .lt. 273.15 ) then
-!      write(iunit,'(3(1x,i3),3(1x,1pe12.5))')
-!     : igs(mgs),jgs,kgs(mgs),cx(mgs,lc),rho0(mgs),qx(mgs,lc)
-!      write(iunit,'(1pe15.6)')
-!     :  log(cx(mgs,lc)*(1.e-6)/(3.0)),
-!     :  ((1.e-3)*rho0(mgs)*qx(mgs,lc)),
-!     :  (cx(mgs,lc)*(1.e-6)),
-!     : ((1.e-3)*rho0(mgs)*qx(mgs,lc))/(cx(mgs,lc)*(1.e-6)),
-!     : (alog(cx(mgs,lc)*(1.e-6)/(3.0)) *
-!     >  ((1.e-3)*rho0(mgs)*qx(mgs,lc))/(cx(mgs,lc)*(1.e-6)))
-
-      IF ( Log(cx(mgs,lc)*(1.e-6)/(3.0)) .gt. 0.0 ) THEN
-      ciihr(mgs) = ((1.69e17)/dtrh)   &
-     & *(log(cx(mgs,lc)*(1.e-6)/(3.0)) *   &
-     &  ((1.e-3)*rho0(mgs)*qx(mgs,lc))/(cx(mgs,lc)*(1.e-6)))**(7./3.)
-      ciihr(mgs) = ciihr(mgs)*(1.0e6)
-      qiihr(mgs) = hrifac*ciihr(mgs)/rho0(mgs)
-      qiihr(mgs) = max(qiihr(mgs), 0.0)
-      qiihr(mgs) = min(qiihr(mgs),qcmxd(mgs))
-      ENDIF
-!
-      if ( xplate(mgs) .eq. 1 ) then
-      qipiphr(mgs) = qiihr(mgs)
-      cipiphr(mgs) = ciihr(mgs)
-      end if
-!
-      if ( xcolmn(mgs) .eq. 1 ) then
-      qicichr(mgs) = qiihr(mgs)
-      cicichr(mgs) = ciihr(mgs)
-      end if
-!
-!     qipiphr(mgs) = 0.0
-!     qicichr(mgs) = qiihr(mgs)
-!
-      end if
-      end if
-      ENDIF ! ihrn
-      end do
-!
-!
-!
-!  simple frozen rain to hail conversion.  All of the
-!  frozen rain larger than 5.0e-3 m in diameter are converted
-!  to hail.  This is done by considering the equation for
-!  frozen rain mixing ratio:
-!
-!
-!  qfw = [ cno(lf) * pi * fwdn / (6 rhoair) ]
-!
-!         /inf
-!      *  |     fwdia*3 exp(-dia/fwdia) d(dia)
-!         /Do
-!
-!  The amount to be reclassified as hail is the integral above from
-!  Do to inf where Do is 5.0e-3 m.
-!
-!
-!  qfauh = [ cno(lf) * pi * fwdn / (6 rhoair) ]
-!
-!
-
-
-      hdia0 = 300.0e-6
-      do mgs = 1,ngscnt
-      qscnvi(mgs) = 0.0
-      cscnvi(mgs) = 0.0
-      cscnvis(mgs) = 0.0
-!      IF ( .false. ) THEN
-!      IF ( temg(mgs) .lt. tfr .and. ssi(mgs) .gt. 1.01 .and. qx(mgs,li) .gt. qxmin(li) ) THEN
-      IF ( temg(mgs) .lt. tfr .and. qx(mgs,li) .gt. qxmin(li) ) THEN
-        IF ( ipconc .ge. 4 .and. .false. ) THEN
-         if ( cx(mgs,li) .gt. 10. .and. xdia(mgs,li,1) .gt. 50.e-6 ) then !{
-         cirdiatmp =   &
-     &  (qx(mgs,li)*rho0(mgs)   &
-     & /(pi*xdn(mgs,li)*cx(mgs,li)))**(1./3.)
-          IF ( cirdiatmp .gt. 100.e-6 ) THEN !{
-          qscnvi(mgs) =   &
-     &  ((pi*xdn(mgs,li)*cx(mgs,li)) / (6.0*rho0(mgs)*dtp))   &
-     & *exp(-hdia0/cirdiatmp)   &
-     & *( (hdia0**3) + 3.0*(hdia0**2)*cirdiatmp   &
-     &  + 6.0*(hdia0)*(cirdiatmp**2) + 6.0*(cirdiatmp**3) )
-      qscnvi(mgs) =   &
-     &  min(qscnvi(mgs),qimxd(mgs))
-          IF ( ipconc .ge. 4 ) THEN
-            cscnvi(mgs) = Min( cimxd(mgs), cx(mgs,li)*Exp(-hdia0/cirdiatmp))
-          ENDIF
-         ENDIF  ! }
-        end if ! }
-
-       ELSEIF ( ipconc .lt. 4 ) THEN
-
-        qscnvi(mgs) = 0.001*eii(mgs)*max((qx(mgs,li)-1.e-3),0.0)
-        qscnvi(mgs) = min(qscnvi(mgs),qxmxd(mgs,li))
-        cscnvi(mgs) = qscnvi(mgs)*rho0(mgs)/xmas(mgs,li)
-        cscnvis(mgs) = 0.5*cscnvi(mgs)
-
-       ENDIF
-      ENDIF
-!      ENDIF
-      end do
-
-!
-!  Ventilation coeficients
-!
-      do mgs = 1,ngscnt
-      fvent(mgs) = (fschm(mgs)**(1./3.)) * (fakvisc(mgs)**(-0.5))
-      end do
-!
-!
-      if ( ndebug .gt. 0 ) write(0,*) 'civent'
-!
-      civenta = 1.258e4
-      civentb = 2.331
-      civentc = 5.662e4
-      civentd = 2.373
-      civente = 0.8241
-      civentf = -0.042
-      civentg = 1.70
-
-      do mgs = 1,ngscnt
-      IF ( icond .eq. 1 .or. temg(mgs) .le. tfrh    &
-     &      .or. (qx(mgs,lr) .le. qxmin(lr) .and. qx(mgs,lc) .le. qxmin(lc)) ) THEN
-      IF ( qx(mgs,li) .gt. qxmin(li) ) THEN
-      cireyn =   &
-     &  (civenta*xdia(mgs,li,1)**civentb   &
-     &  +civentc*xdia(mgs,li,1)**civentd)   &
-     &  /   &
-     &  (civente*xdia(mgs,li,1)**civentf+civentg)
-      xcivent = (fschm(mgs)**(1./3.))*((cireyn/fakvisc(mgs))**0.5)
-      if ( xcivent .lt. 1.0 ) then
-      civent(mgs) = 1.0 + 0.14*xcivent**2
-      end if
-      if ( xcivent .ge. 1.0 ) then
-      civent(mgs) = 0.86 + 0.28*xcivent
-      end if
-      ELSE
-       civent(mgs) = 0.0
-      ENDIF
-      ENDIF ! icond .eq. 1
-      end do
-
-!
-!
-      igmrwa = 100.0*2.0
-      igmrwb = 100.*((5.0+br)/2.0)
-      rwventa = (0.78)*gmoi(igmrwa)  ! 0.78
-      rwventb = (0.308)*gmoi(igmrwb) ! 0.562825
-      do mgs = 1,ngscnt
-      IF ( qx(mgs,lr) .gt. qxmin(lr) ) THEN
-        IF ( ipconc .ge. 3 ) THEN
-          IF ( imurain == 3 ) THEN
-           IF ( izwisventr == 1 ) THEN
-            rwvent(mgs) = ventrx(mgs)*(1.6 + 124.9*(1.e-3*rho0(mgs)*qx(mgs,lr))**.2046)
-           ELSE ! izwisventr = 2
-!  Following Wisner et al. (1972) but using gamma of volume. Note that Ferrier's rain fall speed does not integrate with gamma of volume, so using Vr = ar*d^br
-          rwvent(mgs) =   &
-     &  (0.78*ventrx(mgs) + 0.308*ventrxn(mgs)*fvent(mgs)   &
-     &   *Sqrt((ar*rhovt(mgs)))   &
-     &    *(xdia(mgs,lr,1)**((1.0+br)/2.0)) )
-           ENDIF
-
-          ELSE ! imurain == 1
-       ! linear interpolation of complete gamma function
-!        tmp = 2. + alpha(mgs,lr)
-!        i = Int(dgami*(tmp))
-!        del = tmp - dgam*i
-!        x = gmoi(i) + (gmoi(i+1) - gmoi(i))*del*dgami
-
-        IF ( iferwisventr == 1 ) THEN
- 
-         alpr = Min(alpharmax, alpha(mgs,lr))
-!        alpr = alpha(mgs,lr)
-        x =  1. + alpr
-
-        tmp = 1 + alpr
-        i = Int(dgami*(tmp))
-        del = tmp - dgam*i
-        g1palp = gmoi(i) + (gmoi(i+1) - gmoi(i))*del*dgami
-
-        tmp = 2.5 + alpr + 0.5*bx(lr)
-        i = Int(dgami*(tmp))
-        del = tmp - dgam*i
-        y = (gmoi(i) + (gmoi(i+1) - gmoi(i))*del*dgami)/g1palp ! ratio of gamma functions
-
-        
-         vent1 = dble(xdia(mgs,lr,1))**(-2. - alpr)
-         vent2 = dble(1./xdia(mgs,lr,1) + 0.5*fx(lr))**dble(2.5+alpr+0.5*bx(lr))
-        
-        
-        rwvent(mgs) =    &
-     &    0.78*x +    &
-     &    0.308*fvent(mgs)*y*   &
-     &            Sqrt(ax(lr)*rhovt(mgs))*(vent1/vent2)
-       
-        ELSEIF ( iferwisventr == 2 ) THEN
-          
-!  Following Wisner et al. (1972) 
-         x =  1. + alpha(mgs,lr)
-
-           rwvent(mgs) =   &
-     &  (0.78*x + 0.308*ventrxn(mgs)*fvent(mgs)   &
-     &   *Sqrt((ar*rhovt(mgs)))   &
-     &    *(xdia(mgs,lr,1)**((1.0+br)/2.0)) )
-
-          
-          ENDIF ! iferwisventr
-          
-          ENDIF ! imurain
-        ELSE
-         rwvent(mgs) =   &
-     &  (rwventa + rwventb*fvent(mgs)   &
-     &   *Sqrt((ar*rhovt(mgs)))   &
-     &    *(xdia(mgs,lr,1)**((1.0+br)/2.0)) )
-        ENDIF
-      ELSE
-       rwvent(mgs) = 0.0
-      ENDIF
-      end do
-!
-      igmswa = 100.0*2.0
-      igmswb = 100.*((5.0+ds)/2.0)
-      swventa = (0.78)*gmoi(igmswa)
-      swventb = (0.308)*gmoi(igmswb)
-      do mgs = 1,ngscnt
-      IF ( qx(mgs,ls) .gt. qxmin(ls) ) THEN
-      IF ( ipconc .ge. 4 ) THEN
-      swvent(mgs) = 0.65 + 0.44*fvent(mgs)*Sqrt(vtxbar(mgs,ls,1)*xdia(mgs,ls,1))
-      ELSE
-! 10-ice version:
-       swvent(mgs) =   &
-     &  (swventa + swventb*fvent(mgs)   &
-     &   *Sqrt((cs*rhovt(mgs)))   &
-     &   *(xdia(mgs,ls,1)**((1.0+ds)/2.0)) )
-      ENDIF
-      ELSE
-      swvent(mgs) = 0.0
-      ENDIF
-      end do
-!
-!
-
-      igmhwa = 100.0*2.0
-      igmhwb = 100.0*2.75
-      hwventa = (0.78)*gmoi(igmhwa)
-      hwventb = (0.308)*gmoi(igmhwb)
-      hwventc = (4.0*gr/(3.0*cdx(lh)))**(0.25)
-      do mgs = 1,ngscnt
-      IF ( qx(mgs,lh) .gt. qxmin(lh) ) THEN
-       IF ( .false. .or. alpha(mgs,lh) .eq. 0.0 ) THEN
-        hwvent(mgs) =   &
-     &  ( hwventa + hwventb*hwventc*fvent(mgs)   &
-     &    *((xdn(mgs,lh)/rho0(mgs))**(0.25))   &
-     &    *(xdia(mgs,lh,1)**(0.75)))
-       ELSE ! Ferrier 1994, eq. B.36
-       ! linear interpolation of complete gamma function
-!        tmp = 2. + alpha(mgs,lh)
-!        i = Int(dgami*(tmp))
-!        del = tmp - dgam*i
-!        x = gmoi(i) + (gmoi(i+1) - gmoi(i))*del*dgami
-        
-        x =  1. + alpha(mgs,lh)
-
-        tmp = 1 + alpha(mgs,lh)
-        i = Int(dgami*(tmp))
-        del = tmp - dgam*i
-        g1palp = gmoi(i) + (gmoi(i+1) - gmoi(i))*del*dgami
-
-        tmp = 2.5 + alpha(mgs,lh) + 0.5*bx(lh)
-        i = Int(dgami*(tmp))
-        del = tmp - dgam*i
-        y = (gmoi(i) + (gmoi(i+1) - gmoi(i))*del*dgami)/g1palp
-        
-        hwvent(mgs) =    &
-     &  ( 0.78*x +    &
-     &    0.308*fvent(mgs)*y*(xdia(mgs,lh,1)**(0.5 + 0.5*bx(lh)))*   &
-     &            Sqrt(xdn(mgs,lh)*ax(lh)*rhovt(mgs)/rg0) )
-       
-       ENDIF
-      ELSE
-      hwvent(mgs) = 0.0
-      ENDIF
-      end do
-      
-      hlvent(:) = 0.0
-
-      IF ( lhl .gt. 1 ) THEN
-      igmhwa = 100.0*2.0
-      igmhwb = 100.0*2.75
-      hwventa = (0.78)*gmoi(igmhwa)
-      hwventb = (0.308)*gmoi(igmhwb)
-      hwventc = (4.0*gr/(3.0*cdx(lhl)))**(0.25)
-      do mgs = 1,ngscnt
-      IF ( qx(mgs,lhl) .gt. qxmin(lhl) ) THEN
-
-       IF ( .false. .or. alpha(mgs,lhl) .eq. 0.0 ) THEN
-        hlvent(mgs) =   &
-     &  ( hwventa + hwventb*hwventc*fvent(mgs)   &
-     &    *((xdn(mgs,lhl)/rho0(mgs))**(0.25))   &
-     &    *(xdia(mgs,lhl,1)**(0.75)))
-       ELSE ! Ferrier 1994, eq. B.36
-       ! linear interpolation of complete gamma function
-!        tmp = 2. + alpha(mgs,lhl)
-!        i = Int(dgami*(tmp))
-!        del = tmp - dgam*i
-!        x = gmoi(i) + (gmoi(i+1) - gmoi(i))*del*dgami
-        x =  1. + alpha(mgs,lhl)
-
-        tmp = 1 + alpha(mgs,lhl)
-        i = Int(dgami*(tmp))
-        del = tmp - dgam*i
-        g1palp = gmoi(i) + (gmoi(i+1) - gmoi(i))*del*dgami
-
-        tmp = 2.5 + alpha(mgs,lhl) + 0.5*bx(lhl)
-        i = Int(dgami*(tmp))
-        del = tmp - dgam*i
-        y = (gmoi(i) + (gmoi(i+1) - gmoi(i))*del*dgami)/g1palp ! ratio of gamma functions
-
-        
-        hlvent(mgs) =    &
-     &  ( 0.78*x +    &
-     &    0.308*fvent(mgs)*y*(xdia(mgs,lhl,1)**(0.5 + 0.5*bx(lhl)))*   &
-     &            Sqrt(ax(lhl)*rhovt(mgs)))
-!     :            Sqrt(xdn(mgs,lhl)*ax(lhl)*rhovt(mgs)/rg0))/tmp
-
-        ENDIF
-       ENDIF
-      end do
-      ENDIF
-
-!
-!
-!
-!  Wet growth constants
-!
-      do mgs = 1,ngscnt
-      fwet1(mgs) =   &
-     & (2.0*pi)*   &
-     & ( felv(mgs)*fwvdf(mgs)*rho0(mgs)*(qss0(mgs)-qx(mgs,lv))   &
-     &  -ftka(mgs)*temcg(mgs) )   &
-     & / ( rho0(mgs)*(felf(mgs)+fcw(mgs)*temcg(mgs)) )
-      fwet2(mgs) =   &
-     &  (1.0)-fci(mgs)*temcg(mgs)   &
-     & / ( felf(mgs)+fcw(mgs)*temcg(mgs) )
-      end do
-!
-!  Melting constants
-!
-      do mgs = 1,ngscnt
-      fmlt1(mgs) = (2.0*pi)*   &
-     &  ( felv(mgs)*fwvdf(mgs)*(qss0(mgs)-qx(mgs,lv))   &
-     &   -ftka(mgs)*temcg(mgs)/rho0(mgs) )    &
-     &  / (felf(mgs))
-      fmlt2(mgs) = -fcw(mgs)*temcg(mgs)/felf(mgs)
-      end do
-!
-!  Vapor Deposition constants
-!
-      do mgs = 1,ngscnt
-      fvds(mgs) =    &
-     &  (4.0*pi/rho0(mgs))*(ssi(mgs)-1.0)*   &
-     &  (1.0/(fai(mgs)+fbi(mgs)))
-      end do
-      do mgs = 1,ngscnt
-      fvce(mgs) =    &
-     &  (4.0*pi/rho0(mgs))*(ssw(mgs)-1.0)*   &
-     &  (1.0/(fav(mgs)+fbv(mgs)))
-      end do
-
-!
-!  deposition, sublimation, and melting of snow, graupel and hail
-!
-      qsmlr(:) = 0.0
-      qimlr(:) = 0.0
-      qhmlr(:) = 0.0
-      qhlmlr(:) = 0.0
-      qhfzh(:) = 0.0
-      qhlfzhl(:) = 0.0
-      vhfzh(:) = 0.0
-      vhlfzhl(:) = 0.0
-      qsfzs(:) = 0.0
-      zsmlr(:) = 0.0
-      zhmlr(:) = 0.0
-      zhmlrr(:) = 0.0
-      zhshr(:) = 0.0
-      zhlmlr(:) = 0.0
-      zhlshr(:) = 0.0
-
-      zhshrr(:) = 0.0
-      zhlmlrr(:) = 0.0
-      zhlshrr(:) = 0.0
-
-      csmlr(:) = 0.0
-      chmlr(:) = 0.0
-      chmlrr(:) = 0.0
-      chlmlr(:) = 0.0
-      chlmlrr(:) = 0.0
-
-      if ( .not. mixedphase ) then !{
-      do mgs = 1,ngscnt
-!
-      IF ( temg(mgs) .gt. tfr ) THEN
-      
-      IF (  qx(mgs,ls) .gt. qxmin(ls) ) THEN
-      qsmlr(mgs) =   &
-     &   min(   &
-     &  (c1sw*fmlt1(mgs)*cx(mgs,ls)*swvent(mgs)*xdia(mgs,ls,1) ) & ! /rhosm    &
-     &   , 0.0 )
-      ENDIF
-      
-!       IF ( qx(mgs,ls) .gt. 0.1e-4 ) write(0,*) 'qsmlr: ',qsmlr(mgs),qx(mgs,ls),cx(mgs,ls),fmlt1(mgs),
-!     :        temcg(mgs),swvent(mgs),xdia(mgs,ls,1),qss0(mgs)-qx(mgs,lv)
-!      ELSE
-!       qsmlr(mgs) = 0.0
-!      ENDIF
-! 10ice version:
-!     >   min(
-!     >  (fmlt1(mgs)*cx(mgs,ls)*swvent(mgs)*xdia(mgs,ls,1) +
-!     >   fmlt2(mgs)*(qsacr(mgs)+qsacw(mgs)) )
-!     <   , 0.0 )
-
-      IF (  qx(mgs,lh) .gt. qxmin(lh) ) THEN
-      qhmlr(mgs) =   &
-     &   min(   &
-     &  fmlt1(mgs)*cx(mgs,lh)*hwvent(mgs)*xdia(mgs,lh,1)   &
-     &  + fmlt2(mgs)*(qhacr(mgs)+qhacw(mgs))    &
-     &   , 0.0 )
-     
-       IF ( ivhmltsoak > 0 .and. qhmlr(mgs) < 0.0 .and. lvol(lh) > 1 .and. xdn(mgs,lh) .lt. xdnmx(lh) ) THEN
-         ! act as if 100% of the meltwater were soaked into the graupel
-           v1 = (1. - xdn(mgs,lh)/xdnmx(lh))*(vx(mgs,lh) + rho0(mgs)*qhmlr(mgs)/xdn(mgs,lh) )/(dtp) ! volume available for filling
-           v2 = -1.0*rho0(mgs)*qhmlr(mgs)/xdnmx(lh)  ! volume of melted ice if it were refrozen in the matrix
-           
-           vhsoak(mgs) = Min(v1,v2)
-           
-       ENDIF
-
-      ENDIF
-
-      
-      IF ( lhl .gt. 1  .and. lhlw < 1 ) THEN
-       IF ( qx(mgs,lhl) .gt. qxmin(lhl) ) THEN
-        qhlmlr(mgs) =   &
-     &   min(   &
-     &  fmlt1(mgs)*cx(mgs,lhl)*hlvent(mgs)*xdia(mgs,lhl,1)   &
-     &  + fmlt2(mgs)*(qhlacr(mgs)+qhlacw(mgs))    &
-     &   , 0.0 )
-
-       IF ( ivhmltsoak > 0 .and.  qhlmlr(mgs) < 0.0 .and. lvol(lhl) > 1 .and. xdn(mgs,lhl) .lt. xdnmx(lhl) ) THEN
-         ! act as if 50% of the meltwater were soaked into the graupel
-           v1 = (1. - xdn(mgs,lhl)/xdnmx(lhl))*(vx(mgs,lhl) + rho0(mgs)*qhlmlr(mgs)/xdn(mgs,lhl) )/(dtp) ! volume available for filling
-           v2 = -1.0*rho0(mgs)*qhlmlr(mgs)/xdnmx(lhl)  ! volume of melted ice if it were refrozen in the matrix
-           
-           vhlsoak(mgs) = Min(v1,v2)
-           
-       ENDIF
-        
-        ENDIF
-       ENDIF
-
-      ENDIF
-      
-!
-!      qimlr(mgs)  = max( qimlr(mgs), -qimxd(mgs) ) 
-!      qsmlr(mgs)  = max( qsmlr(mgs),  -qsmxd(mgs) ) 
-! erm 5/10/2007 changed to next line:
-      if ( .not. mixedphase ) qsmlr(mgs)  = max( qsmlr(mgs),  Min( -qsmxd(mgs), -0.7*qx(mgs,ls)/dtp ) ) 
-      if ( .not. mixedphase ) qhmlr(mgs)  = max( qhmlr(mgs),  Min( -qhmxd(mgs), -0.5*qx(mgs,lh)/dtp ) ) 
-!      qhmlr(mgs)  = max( max( qhmlr(mgs),  -qhmxd(mgs) ) , -0.5*qx(mgs,lh)/dtp ) !limits to 1/2 qh or max depletion
-      qhmlh(mgs)  = 0.
-
-
-      ! Rasmussen and Heymsfield say melt water remains on graupel up to 9 mm before shedding
-
-
-      IF ( lhl .gt. 1 .and. lhlw < 1 ) qhlmlr(mgs)  = max( qhlmlr(mgs),  Min( -qxmxd(mgs,lhl), -0.5*qx(mgs,lhl)/dtp ) )
-
-!
-      end do
-
-      endif  ! } not mixedphase
-!
-      if ( ipconc .ge. 1 ) then
-      do mgs = 1,ngscnt
-      cimlr(mgs)  = (cx(mgs,li)/(qx(mgs,li)+1.e-20))*qimlr(mgs)
-
-      IF ( .not. mixedphase ) THEN
-      IF ( xdia(mgs,ls,1) .gt. 1.e-6 .and. -qsmlr(mgs) .ge. 0.5*qxmin(ls) .and. ipconc .ge. 4 ) THEN
-      csmlr(mgs)  = rho0(mgs)*qsmlr(mgs)/(xv(mgs,ls)*rhosm)
-      ELSE
-      csmlr(mgs)  = (cx(mgs,ls)/(qx(mgs,ls)+1.e-20))*qsmlr(mgs)
-      ENDIF
-
-
-!      IF ( xdia(mgs,lh,1) .gt. 1.e-6 .and. Abs(qhmlr(mgs)) .ge. qxmin(lh) ) THEN
-!      chmlr(mgs) = rho0(mgs)*qhmlr(mgs)/(pi*xdn(mgs,lh)*xdia(mgs,lh,1)**3)  ! out of hail
-!      chmlr(mgs) = Max( chmlr(mgs), -chmxd(mgs) )
-!      ELSE
-       chmlr(mgs)  = (cx(mgs,lh)/(qx(mgs,lh)+1.e-20))*qhmlr(mgs)
-!      ENDIF
-
-
-     IF ( chmlr(mgs) < 0.0 ) THEN
-      
-      IF ( ihmlt .eq. 1 ) THEN
-        chmlrr(mgs)  = Min( chmlr(mgs), rho0(mgs)*qhmlr(mgs)/(xdn(mgs,lr)*vmlt) ) ! into rain 
-      ELSEIF ( ihmlt .eq. 2 ) THEN
-        IF ( xv(mgs,lh) .gt. 0.0 .and. chmlr(mgs) .lt. 0.0 ) THEN
-!        chmlrr(mgs) = Min( chmlr(mgs), rho0(mgs)*qhmlr(mgs)/(xdn(mgs,lh)*xv(mgs,lh)) ) ! into rain 
-! guess what, this is the same as chmlr: rho0*qhmlr/xmas(lh) --> cx/qx = rho0/xmas
-          IF(imltshddmr > 0) THEN
-            ! DTD: If Dmg < sheddiam, then assume complete melting into
-            ! maximal raindrop.  Between sheddiam and sheddiam0 mm, linearly ramp down to a 3 mm shed drop
-            tmp = -rho0(mgs)*qhmlr(mgs)/(Min(xdn(mgs,lr)*xvmx(lr), xdn(mgs,lh)*xv(mgs,lh))) ! Min of Maximum raindrop size/mean hail size
-            tmp2 = -rho0(mgs)*qhmlr(mgs)/(xdn(mgs,lr)*vr3mm) ! conc. change for a 3 mm mean drop diameter
-            chmlrr(mgs) = tmp*(sheddiam0-xdia(mgs,lh,3))/(sheddiam0-sheddiam)+tmp2*(xdia(mgs,lh,3)-sheddiam)/(sheddiam0-sheddiam)
-            chmlrr(mgs) = -Max(tmp,Min(tmp2,chmlrr(mgs)))
-          ELSE ! Old method
-            chmlrr(mgs) =  rho0(mgs)*qhmlr(mgs)/(Min(xdn(mgs,lr)*xvmx(lr), xdn(mgs,lh)*xv(mgs,lh)))  ! into rain 
-          ENDIF
-        ELSE
-        chmlrr(mgs) = chmlr(mgs)
-        ENDIF
-      ELSEIF ( ihmlt .eq. 0 ) THEN
-        chmlrr(mgs) = chmlr(mgs)
-      ENDIF
-      
-      ENDIF ! chmlr(mgs) < 0.0
-
-      IF ( lhl .gt. 1 .and. lhlw < 1 .and. .not. mixedphase .and. qhlmlr(mgs) < 0.0 ) THEN ! {
-      
-!      IF ( xdia(mgs,lhl,1) .gt. 1.e-6 .and. Abs(qhlmlr(mgs)) .ge. qxmin(lhl) ) THEN
-!      chlmlr(mgs) = rho0(mgs)*qhlmlr(mgs)/(pi*xdn(mgs,lhl)*xdia(mgs,lhl,1)**3)  ! out of hail
-!      chlmlr(mgs) = Max( chlmlr(mgs), -cxmxd(mgs,lhl) )
-!      ELSE
-      chlmlr(mgs)  = (cx(mgs,lhl)/(qx(mgs,lhl)+1.e-20))*qhlmlr(mgs)
-!      ENDIF
-      
-      IF ( ihmlt .eq. 1 ) THEN
-        chlmlrr(mgs)  = Min( chlmlr(mgs), rho0(mgs)*qhlmlr(mgs)/(xdn(mgs,lr)*vmlt) ) ! into rain 
-      ELSEIF ( ihmlt .eq. 2 ) THEN
-        IF ( xv(mgs,lhl) .gt. 0.0 .and. chlmlr(mgs) .lt. 0.0 ) THEN
-!        chlmlrr(mgs) = rho0(mgs)*qhlmlr(mgs)/(Min(xdn(mgs,lr)*xvmx(lr), xdn(mgs,lhl)*xv(mgs,lhl)))  ! into rain 
-!        chlmlrr(mgs) = Min( chlmlr(mgs), rho0(mgs)*qhlmlr(mgs)/(xdn(mgs,lhl)*xv(mgs,lhl)) ) ! into rain 
-          IF(imltshddmr > 0) THEN
-            tmp = -rho0(mgs)*qhlmlr(mgs)/(Min(xdn(mgs,lr)*xvmx(lr), xdn(mgs,lhl)*xv(mgs,lhl))) ! Min of Maximum raindrop size/mean hail size
-            tmp2 = -rho0(mgs)*qhlmlr(mgs)/(xdn(mgs,lr)*vr3mm) ! conc. change for a 3 mm mean drop diameter
-            chlmlrr(mgs) = tmp*(20.e-3-xdia(mgs,lhl,3))/(20.e-3-sheddiam)+tmp2*(xdia(mgs,lhl,3)-sheddiam)/(20.e-3-sheddiam)
-            chlmlrr(mgs) = -Max(tmp,Min(tmp2,chlmlrr(mgs)))
-          ELSE
-            chlmlrr(mgs) = rho0(mgs)*qhlmlr(mgs)/(Min(xdn(mgs,lr)*xvmx(lr), xdn(mgs,lhl)*xv(mgs,lhl)))  ! into rain 
-          ENDIF
-        ELSE
-        chlmlrr(mgs) = chlmlr(mgs)
-        ENDIF
-      ELSEIF ( ihmlt .eq. 0 ) THEN
-        chlmlrr(mgs) = chlmlr(mgs)
-      ENDIF
-        
-      ENDIF ! }
-
-      ENDIF ! .not. mixedphase
-
-! 10ice versions:
-!      chmlr(mgs)  = (cx(mgs,lh)/(qx(mgs,lh)+1.e-20))*qhmlr(mgs)
-!      chmlrr(mgs) = chmlr(mgs)
-      end do
-      end if
-
-!
-!  deposition/sublimation of ice
-!
-      DO mgs = 1,ngscnt
-
-      rwcap(mgs) = (0.5)*xdia(mgs,lr,1)
-      swcap(mgs) = (0.5)*xdia(mgs,ls,1)
-      hwcap(mgs) = (0.5)*xdia(mgs,lh,1)
-      IF ( lhl .gt. 1 ) hlcap(mgs) = (0.5)*xdia(mgs,lhl,1)
-
-      if ( qx(mgs,li).gt.qxmin(li) .and. xdia(mgs,li,1) .gt. 0.0 ) then
-!
-! from Cotton, 1972 (Part II)
-!
-        cilen(mgs)   = 0.4764*(xdia(mgs,li,1))**(0.958)
-        cval = xdia(mgs,li,1)
-        aval = cilen(mgs)
-        eval = Sqrt(1.0-(aval**2)/(cval**2))
-        fval = min(0.99,eval)
-        gval = alog( abs( (1.+fval)/(1.-fval) ) )
-        cicap(mgs) = cval*fval / gval
-      ELSE
-       cicap(mgs) = 0.0
-      end if
-      ENDDO
-!
-!
-      qhldsv(:) = 0.0
-
-      do mgs = 1,ngscnt
-      IF ( icond .eq. 1 .or. temg(mgs) .le. tfrh    &
-     &      .or. (qx(mgs,lr) .le. qxmin(lr) .and. qx(mgs,lc) .le. qxmin(lc)) ) THEN
-        qidsv(mgs) =   &
-     &    fvds(mgs)*cx(mgs,li)*civent(mgs)*cicap(mgs)
-        qsdsv(mgs) =   &
-     &    fvds(mgs)*cx(mgs,ls)*swvent(mgs)*swcap(mgs)
-!        IF ( ny .eq. 2 .and. igs(mgs) .eq. 302 .and. temg(mgs) .le. tfrh+10 .and. qx(mgs,lv) .gt. qis(mgs)
-!     :       .and. qx(mgs,li) .gt. qxmin(li) ) THEN
-!         write(0,*) 'qidsv = ',nstep,kgs(mgs),qidsv(mgs),temg(mgs)-tfrh,100.*(qx(mgs,lv)/qis(mgs) - 1.),1.e6*xdia(mgs,li,1),
-!     :            fvds(mgs),civent(mgs),cicap(mgs)
-!        ENDIF
-      ELSE
-        qidsv(mgs) = 0.0
-        qsdsv(mgs) = 0.0
-      ENDIF
-        qhdsv(mgs) =   &
-     &    fvds(mgs)*cx(mgs,lh)*hwvent(mgs)*hwcap(mgs)
-
-        IF ( lhl .gt. 1 ) qhldsv(mgs) = fvds(mgs)*cx(mgs,lhl)*hlvent(mgs)*hlcap(mgs)
-!
-!
-      end do
-!
-      do mgs = 1,ngscnt
-      IF ( icond .eq. 1 .or. temg(mgs) .le. tfrh    &
-     &      .or. (qx(mgs,lr) .le. qxmin(lr) .and. qx(mgs,lc) .le. qxmin(lc)) ) THEN
-!        qisbv(mgs) = max( min(qidsv(mgs), 0.0), -qimxd(mgs) )
-!        qssbv(mgs) = max( min(qsdsv(mgs), 0.0), -qsmxd(mgs) )
-! erm 5/10/2007:
-        qisbv(mgs) = max( min(qidsv(mgs), 0.0),  Min( -qimxd(mgs), -0.7*qx(mgs,li)/dtp ) )
-        qssbv(mgs) = max( min(qsdsv(mgs), 0.0),  Min( -qsmxd(mgs), -0.7*qx(mgs,ls)/dtp ) )
-        qidpv(mgs) = Max(qidsv(mgs), 0.0)
-        qsdpv(mgs) = Max(qsdsv(mgs), 0.0)
-      ELSE
-        qisbv(mgs) = 0.0
-        qssbv(mgs) = 0.0
-        qidpv(mgs) = 0.0
-        qsdpv(mgs) = 0.0
-      ENDIF
-
-      qhsbv(mgs) = max( min(qhdsv(mgs), 0.0), -qhmxd(mgs) )
-
-
-      qhdpv(mgs) = Max(qhdsv(mgs), 0.0)
-
-      qhlsbv(mgs) = 0.0
-      qhldpv(mgs) = 0.0
-      IF ( lhl .gt. 1 ) THEN
-        qhlsbv(mgs) = max( min(qhldsv(mgs), 0.0), -qxmxd(mgs,lhl) )
-        qhldpv(mgs) = Max(qhldsv(mgs), 0.0)
-      ENDIF
-
-      temp1 = qidpv(mgs) + qsdpv(mgs) + qhdpv(mgs) + qhldpv(mgs)
-
-      IF ( temp1 .gt. qvimxd(mgs) ) THEN
-
-      frac = qvimxd(mgs)/temp1
-
-      qidpv(mgs) = frac*qidpv(mgs)
-      qsdpv(mgs) = frac*qsdpv(mgs)
-      qhdpv(mgs) = frac*qhdpv(mgs)
-      qhldpv(mgs) = frac*qhldpv(mgs)
-
-!        IF ( ny .eq. 2 .and. igs(mgs) .eq. 302 .and. temg(mgs) .le. tfrh+10 .and. qx(mgs,lv) .gt. qis(mgs)
-!     :       .and. qx(mgs,li) .gt. qxmin(li) ) THEN
-!         write(0,*) 'qidpv,frac = ',kgs(mgs),qidpv(mgs),frac
-!        ENDIF
-
-      ENDIF
-
-      end do
-!
-!
-      if ( ipconc .ge. 1 ) then
-      do mgs = 1,ngscnt
-      cssbv(mgs)  = (cx(mgs,ls)/(qx(mgs,ls)+1.e-20))*qssbv(mgs)
-      cisbv(mgs)  = (cx(mgs,li)/(qx(mgs,li)+1.e-20))*qisbv(mgs)
-      chsbv(mgs)  = (cx(mgs,lh)/(qx(mgs,lh)+1.e-20))*qhsbv(mgs)
-      IF ( lhl .gt. 1 ) chlsbv(mgs)  = (cx(mgs,lhl)/(qx(mgs,lhl)+1.e-20))*qhlsbv(mgs)
-      csdpv(mgs)  = 0.0 ! (cx(mgs,ls)/(qx(mgs,ls)+1.e-20))*qsdpv(mgs)
-      cidpv(mgs) =  0.0 ! (cx(mgs,li)/(qx(mgs,li)+1.e-20))*qidpv(mgs)
-      chdpv(mgs)  = 0.0 ! (cx(mgs,lh)/(qx(mgs,lh)+1.e-20))*qhdpv(mgs)
-      chldpv(mgs) = 0.0
-      end do
-      end if
-
-!
-!  Aggregation of crystals
-!
-      if (ndebug .gt. 0 ) write(0,*) 'conc 29a'
-      do mgs = 1,ngscnt
-      qscni(mgs) =  0.0
-      cscni(mgs) = 0.0
-      cscnis(mgs) = 0.0
-      if ( ipconc .ge. 4 .and. iscni .ge. 1 .and. qx(mgs,li) .gt. qxmin(li) ) then
-        IF ( iscni .eq. 1 ) THEN
-         qscni(mgs) =    &
-     &      pi*rho0(mgs)*((0.25)/(6.0))   &
-     &      *eii(mgs)*(qx(mgs,li)**2)*(xdia(mgs,li,2))   &
-     &      *vtxbar(mgs,li,1)/xmas(mgs,li)
-         cscni(mgs) = Min(cimxd(mgs),qscni(mgs)*rho0(mgs)/xmas(mgs,li))
-         cscnis(mgs) = 0.5*cscni(mgs)
-        ELSEIF ( iscni .eq. 2 .or. iscni .eq. 4 ) THEN  ! Zeigler 1985/Zrnic 1993, sort of
-          IF ( qidpv(mgs) .gt. 0.0 .and.  xdia(mgs,li,3) .ge. 100.e-6 ) THEN
-!            IF ( xdia(mgs,ls,3) .gt. xdia(mgs,li,3) ) THEN
-!              qscni(mgs) = Max(0.1,xdia(mgs,li,3)/xdia(mgs,ls,3))*qidpv(mgs)
-! erm 9/5/08 changed max to min
-              qscni(mgs) = Min(0.5, xdia(mgs,li,3)/200.e-6)*qidpv(mgs)
-!            ELSE
-!              qscni(mgs) = 0.1*qidpv(mgs)
-!            ENDIF
-            cscni(mgs) = 0.5*Min(cimxd(mgs),qscni(mgs)*rho0(mgs)/Max(xdn(mgs,ls)*xvsmn,xmas(mgs,li)))
-!            cscni(mgs) = Min(cimxd(mgs),qscni(mgs)*rho0(mgs)/xmas(mgs,li) )
-!            IF ( xdia(mgs,ls,3) .le. 200.e-6 ) THEN
-              cscnis(mgs) = cscni(mgs)
-!            ELSE
-!              cscnis(mgs) = 0.0
-!            ENDIF
-          ENDIF
-
-           IF ( iscni .ne. 4 ) THEN
-! erm 9/5/08 commented second line and added xv to 1st line (zrnic et al 1993)
-             tmp = ess(mgs)*rvt*aa2*cx(mgs,li)*cx(mgs,li)*xv(mgs,li)
-!     :         ((cinu + 2.)*xv(mgs,li)/(cinu + 1.) + xv(mgs,li))
-
-!           csacs(mgs) = rvt*aa2*ess(mgs)*cx(mgs,ls)**2*xv(mgs,ls)
-
-             qscni(mgs) = qscni(mgs) + Min( qxmxd(mgs,li), 2.0*tmp*xmas(mgs,li)*rhoinv(mgs) )
-             cscni(mgs) = cscni(mgs) + Min( cxmxd(mgs,li), 2.0*tmp )
-             cscnis(mgs) = cscnis(mgs) + Min( cxmxd(mgs,li), tmp )
-           ENDIF
-        ELSEIF ( iscni .eq. 3 ) THEN ! LFO
-           qscni(mgs) = 0.001*eii(mgs)*max((qx(mgs,li)-1.e-3),0.0)
-           qscni(mgs) = min(qscni(mgs),qxmxd(mgs,li))
-           cscni(mgs) = qscni(mgs)*rho0(mgs)/xmas(mgs,li)
-           cscnis(mgs) = 0.5*cscni(mgs)
-!           write(iunit,*) 'qscni, qi = ',qscni(mgs),qx(mgs,li),igs(mgs),kgs(mgs)
-        ENDIF
-
-      ELSEIF ( ipconc < 4 ) THEN ! LFO
-           IF ( lwsm6 ) THEN
-             qimax = rhoinv(mgs)*roqimax
-             qscni(mgs) = Min(0.9d0*qx(mgs,li), Max( 0.d0, (qx(mgs,li) - qimax)*dtpinv ) )
-           ELSE
-             qscni(mgs) = 0.001*eii(mgs)*max((qx(mgs,li)-1.e-3),0.0)
-             qscni(mgs) = min(qscni(mgs),qxmxd(mgs,li))
-           ENDIF
-      else ! 10-ice version
-      if ( qx(mgs,li) .gt. qxmin(li) ) then
-          qscni(mgs) =    &
-     &    pi*rho0(mgs)*((0.25)/(6.0))   &
-     &    *eii(mgs)*(qx(mgs,li)**2)*(xdia(mgs,li,2))   &
-     &    *vtxbar(mgs,li,1)/xmas(mgs,li)
-         cscni(mgs) = Min(cimxd(mgs),qscni(mgs)*rho0(mgs)/xmas(mgs,li))
-        end if
-
-      end if
-      end do
-
-!
-!
-!  compute dry growth rate of snow, graupel, and hail
-!
-      do mgs = 1,ngscnt
-!
-      qsdry(mgs)  = qsacr(mgs)    + qsacw(mgs)   &
-     &            + qsaci(mgs)
-!
-      qhdry(mgs)  = qhaci(mgs)    + qhacs(mgs)   &
-     &            + qhacr(mgs)   &
-     &            + qhacw(mgs)
-!
-      qhldry(mgs) = 0.0
-      IF ( lhl .gt. 1 ) THEN
-      qhldry(mgs)  = qhlaci(mgs)    + qhlacs(mgs)   &
-     &               + qhlacr(mgs)   &
-     &               + qhlacw(mgs)
-      ENDIF
-      end do
-!
-!  set wet growth and shedding
-!
-      do mgs = 1,ngscnt
-!
-!      qswet(mgs) =
-!     >  ( xdia(mgs,ls,1)*swvent(mgs)*cx(mgs,ls)*fwet1(mgs)
-!     >  + fwet2(mgs)*(qsaci(mgs)+qsacir(mgs)
-!     >               +qsacip(mgs)) )
-!      qswet(mgs) = max( 0.0, qswet(mgs))
-!
-!      IF ( dnu(lh) .ne. 0. ) THEN
-!        qhwet(mgs) = qhdry(mgs)
-!      ELSE
-        qhwet(mgs) =   &
-     &    ( xdia(mgs,lh,1)*hwvent(mgs)*cx(mgs,lh)*fwet1(mgs)   &
-     &   + fwet2(mgs)*(qhaci(mgs) + qhacs(mgs)) )
-       qhwet(mgs) = max( 0.0, qhwet(mgs))
-!      ENDIF
-
-       qhlwet(mgs) = 0.0
-       IF ( lhl .gt. 1 ) THEN
-       qhlwet(mgs) =   &
-     &    ( xdia(mgs,lhl,1)*hlvent(mgs)*cx(mgs,lhl)*fwet1(mgs)   &
-     &   + fwet2(mgs)*(qhlaci(mgs) + qhlacs(mgs)) )
-       qhlwet(mgs) = max( 0.0, qhlwet(mgs))
-       ENDIF
-!
-!      qhlwet(mgs) = qhldry(mgs)
-
-      end do
-!
-! shedding rate
-!
-      qsshr(:)  =  0.0
-      qhshr(:)  =  0.0
-      qhlshr(:) =  0.0
-      qhshh(:)  =  0.0
-      csshr(:)  =  0.0
-      chshr(:)  =  0.0
-      chlshr(:)  =  0.0
-      chshrr(:)  =  0.0
-      chlshrr(:)  =  0.0
-      vhshdr(:)  = 0.0
-      vhlshdr(:)  = 0.0
-      wetsfc(:)  = .false.
-      wetgrowth(:)  = .false.
-      wetsfchl(:)  = .false.
-      wetgrowthhl(:)  = .false.
-
-
-      do mgs = 1,ngscnt
-!
-!
-!
-      qhshr(mgs)  = Min( 0.0, qhwet(mgs) - qhdry(mgs) )  ! water that freezes should never be more than what sheds
-      
-
-
-      qhlshr(mgs)  =  Min( 0.0, qhlwet(mgs) - qhldry(mgs) )
-
-!
-! limit wet growth to only higher density particles
-!
-      qsshr(mgs)  =  0.0
-!
-!
-!  no shedding for temperatures < 243.15 
-!
-      if ( temg(mgs) .lt. 243.15 ) then
-       qsshr(mgs)  =  0.0
-       qhshr(mgs)  =  0.0
-       qhlshr(mgs) =  0.0
-       vhshdr(mgs)  = 0.0
-       vhlshdr(mgs)  = 0.0
-       wetsfc(mgs) = .false.
-       wetgrowth(mgs) = .false.
-       wetsfchl(mgs) = .false.
-       wetgrowthhl(mgs) = .false.
-      end if
-!
-!  shed all at temperatures > 273.15
-!
-      if ( temg(mgs) .gt. tfr ) then
-
-       qsshr(mgs)   = -qsdry(mgs)
-       qhlshr(mgs)  = -qhldry(mgs)
-
-       qhshr(mgs)  = -qhdry(mgs)
-       vhshdr(mgs)  = -vhacw(mgs) - vhacr(mgs)
-       vhlshdr(mgs)  = -vhlacw(mgs)
-       qhwet(mgs)  = 0.0
-       qhlwet(mgs) = 0.0
-      end if
-!
-!      if (qhshr(mgs) .lt. 0.0 .and. temg(mgs) < tfr  ) THEN
-        wetsfc(mgs) =  (qhshr(mgs) .lt. 0.0 .and. temg(mgs) < tfr ) .or. ( qhmlr(mgs) < -qxmin(lh) .and.  temg(mgs) > tfr )
-        wetgrowth(mgs) = (qhshr(mgs) .lt. 0.0 .and. temg(mgs) < tfr )
-!      ENDIF
-
-      if (qhlshr(mgs) .lt. 0.0 .and. temg(mgs) < tfr ) THEN
-        wetsfchl(mgs) = (qhlshr(mgs) .lt. 0.0 .and. temg(mgs) < tfr ) .or. ( qhlmlr(mgs) < -qxmin(lhl) .and.  temg(mgs) > tfr )
-        wetgrowthhl(mgs) = (qhlshr(mgs) .lt. 0.0 .and. temg(mgs) < tfr )
-      ENDIF
-
-      end do
-!
-      if ( ipconc .ge. 1 ) then
-      do mgs = 1,ngscnt
-      csshr(mgs)  = 0.0 ! (cx(mgs,ls)/(qx(mgs,ls)+1.e-20))*Min(0.0,qsshr(mgs))
-      chshr(mgs)  = (cx(mgs,lh)/(qx(mgs,lh)+1.e-20))*qhshr(mgs)
-      IF ( temg(mgs) < tfr ) THEN
-         chshrr(mgs) = Min( chshr(mgs), rho0(mgs)*qhshr(mgs)/(xdn0(lr)*vshd) ) ! maximum of dshd from shedding
-      ELSE
-        IF(imltshddmr > 0) THEN
-          ! DTD: If Dmg < sheddiam, then assume complete melting into
-          ! maximal raindrop.  Between sheddiam and sheddiam0, linearly ramp down to a 3 mm shed drop
-          tmp = -Min( chshr(mgs), rho0(mgs)*qhshr(mgs)/(xdn(mgs,lr)*xvmx(lr)) ) ! limit to maximum size allowed for rain
-          tmp2 = -rho0(mgs)*qhshr(mgs)/(xdn(mgs,lr)*vr3mm) ! conc. change for a 3 mm mean drop diameter
-          chshrr(mgs) = tmp*(sheddiam0-xdia(mgs,lh,3))/(sheddiam0-sheddiam)+tmp2*(xdia(mgs,lh,3)-sheddiam)/(sheddiam0-sheddiam)
-          chshrr(mgs) = -Max(tmp,Min(tmp2,chshrr(mgs)))
-        ELSE
-         chshrr(mgs) = Min( chshr(mgs), rho0(mgs)*qhshr(mgs)/(xdn(mgs,lr)*Min(vr4p5mm,xvmx(lr))) ) ! limit to maximum size allowed for rain or 4.5mm diameter, whichever is smaller
-!        chlmlrr(mgs) = rho0(mgs)*qhlmlr(mgs)/(Min(xdn(mgs,lr)*xvmx(lr), xdn(mgs,lhl)*xv(mgs,lhl)))  ! into rain 
-        ENDIF
-      ENDIF
-      chlshr(mgs) = 0.0
-      chlshrr(mgs) = 0.0
-      IF ( lhl .gt. 1 ) THEN 
-         chlshr(mgs)  = (cx(mgs,lhl)/(qx(mgs,lhl)+1.e-20))*qhlshr(mgs)
-        IF ( temg(mgs) < tfr ) THEN
-          chlshrr(mgs) = Min( chlshr(mgs), rho0(mgs)*qhlshr(mgs)/(xdn0(lr)*vshd) ) ! maximum of dshd from shedding
-!         chlshrr(mgs) = Min( chlshr(mgs), rho0(mgs)*qhlshr(mgs)/(xdn0(lr)*vr1mm) ) ! maximum of 1mm drops from shedding
-        ELSE
-          IF(imltshddmr > 0) THEN
-            ! DTD: If Dmg < sheddiam, then assume complete melting into
-            ! maximal raindrop.  Between sheddiam and sheddiam0, linearly ramp down to a 3 mm shed drop
-            tmp = -Min( chlshr(mgs), rho0(mgs)*qhlshr(mgs)/(xdn(mgs,lr)*xvmx(lr)) ) ! limit to maximum size allowed for rain
-            tmp2 = -rho0(mgs)*qhlshr(mgs)/(xdn(mgs,lr)*vr3mm) ! conc. change for a 3 mm mean drop diameter
-            chlshrr(mgs) = tmp*(sheddiam0-xdia(mgs,lhl,3))/(sheddiam0-sheddiam)+tmp2*(xdia(mgs,lhl,3)-sheddiam)/(sheddiam0-sheddiam)
-            chlshrr(mgs) = -Max(tmp,Min(tmp2,chlshrr(mgs)))
-          ELSE
-           chlshrr(mgs) = Min( chlshr(mgs), rho0(mgs)*qhlshr(mgs)/(xdn(mgs,lr)*Min(vr4p5mm,xvmx(lr))) ) ! limit to 4.5mm diameter or maximum size allowed for rain, whichever is smaller
-!        chlmlrr(mgs) = rho0(mgs)*qhlmlr(mgs)/(Min(xdn(mgs,lr)*xvmx(lr), xdn(mgs,lhl)*xv(mgs,lhl)))  ! into rain 
-          ENDIF
-        ENDIF
-      ENDIF
-      end do
-      end if
-
-
-!
-!  final decisions
-!
-      do mgs = 1,ngscnt
-!
-!  Snow
-!
-      if ( qsshr(mgs) .lt. 0.0 ) then
-      qsdpv(mgs) = 0.0
-      qssbv(mgs) = 0.0
-      else
-      qsshr(mgs) = 0.0
-      end if
-!
-!     if ( qsdry(mgs) .lt. qswet(mgs) ) then
-!     qswet(mgs) = 0.0
-!     else
-!     qsdry(mgs) = 0.0
-!     end if
-!
-
-! zero the shedding rates when wet snow/graupel included.
-! shedding of wet snow/graupel is calculated after summing other sources/sinks.
-      if (mixedphase) then
-        qsshr(mgs) = 0.0
-        qhshr(mgs) = 0.0
-        csshr(mgs) = 0.0
-        chshr(mgs) = 0.0
-        chshrr(mgs) = 0.0
-        vhshdr(mgs) = 0.0
-        IF ( lhlw > 1 ) THEN
-          qhlshr(mgs) = 0.0
-          vhlshdr(mgs) = 0.0
-          chlshr(mgs) = 0.0
-          chlshrr(mgs) = 0.0
-        ENDIF
-      end if
-
-!  graupel
-!
-!
-      if ( wetgrowth(mgs) .or. (mixedphase .and. fhw(mgs) .gt. 0.05 .and. temg(mgs) .gt. 243.15) ) then
-      
-
-! soaking (when not advected liquid water film with graupel)
-
-        IF ( lvol(lh) .gt. 1 .and. .not. mixedphase) THEN
-        ! rescale volumes to maximum density
-         rimdn(mgs,lh) = xdnmx(lh)
-         raindn(mgs,lh) = xdnmx(lh)
-         vhacw(mgs) = qhacw(mgs)*rho0(mgs)/rimdn(mgs,lh)
-         vhacr(mgs) = qhacr(mgs)*rho0(mgs)/raindn(mgs,lh)
-!        IF ( lvol(lh) .gt. 1 .and. wetgrowth(mgs) ) THEN
-         IF ( xdn(mgs,lh) .lt. xdnmx(lh) ) THEN
-         ! soak some liquid into the graupel
-!           v1 = xdnmx(lh)*vx(mgs,lh)/(xdn(mgs,lh)*dtp) ! volume available for filling
-           v1 = (1. - xdn(mgs,lh)/xdnmx(lh))*vx(mgs,lh)/(dtp) ! volume available for filling
-!            tmp = (vx(mgs,lh)/rho0(mgs))*(xdnmx(lh) - xdn(mgs,lh)) ! max mixing ratio of liquid water that can be added
-           v2 = rho0(mgs)*qhwet(mgs)/xdnmx(lh)  ! volume of frozen accretion
-           
-           vhsoak(mgs) = Min(v1,v2)
-           
-         ENDIF
-
-         vhshdr(mgs) = Min(0.0, rho0(mgs)*qhwet(mgs)/xdnmx(lh) - vhacw(mgs) - vhacr(mgs) )
-         
-        ELSEIF ( lvol(lh) .gt. 1  .and. mixedphase ) THEN
-!         vhacw(mgs) = rho0(mgs)*qhacw(mgs)/xdn0(lr)
-!         vhacr(mgs) = rho0(mgs)*qhacr(mgs)/xdn0(lr)
-        ENDIF
-        
-
-      qhdpv(mgs) = 0.0
-!      qhsbv(mgs) = 0.0
-      chdpv(mgs) = 0.0
-!      chsbv(mgs) = 0.0
-
-! collection efficiency modification
-
-      IF ( ehi(mgs) .gt. 0.0 ) THEN
-        qhaci(mgs) = Min(qimxd(mgs),qhaci(mgs)/ehi(mgs))  ! effectively sets collection eff to 1
-      ENDIF
-      IF ( ehs(mgs) .gt. 0.0 ) THEN
-!        qhacs(mgs) = Min(qsmxd(mgs),qhacs(mgs)/ehs(mgs))  ! effectively sets collection eff to 1
-        qhacs(mgs) = qhacs(mgs)/ehs(mgs)                   ! divide out the collection efficiency
-        ehs(mgs) = min(ehsfrac*ehs(mgs),ehsmax)            ! modify it
-        qhacs(mgs) = Min(qsmxd(mgs),qhacs(mgs)*ehs(mgs))   ! plug it back in
-      ENDIF
-
-! be sure to catch particles with wet surfaces but not in wet growth to turn off Hallett-Mossop
-      wetsfc(mgs) = .true.
-
-      else
-!        qhshr(mgs) = 0.0
-      end if
-!
-!
-!  hail
-!
-!      if ( lhl .gt. 1 .and. qhlshr(mgs) .lt. 0.0 ) then
-      if ( wetgrowthhl(mgs) .or. (mixedphase .and. fhlw(mgs) .gt. 0.05 .and. temg(mgs) .gt. 243.15) ) then
-!      if ( wetgrowthhl(mgs) ) then
-       
-
-      qhldpv(mgs) = 0.0
-!      qhlsbv(mgs) = 0.0
-      chldpv(mgs) = 0.0
-!      chlsbv(mgs) = 0.0
-
-
-
-
-        IF ( lvol(lhl) .gt. 1  .and. .not. mixedphase ) THEN
-!        IF ( lvol(lhl) .gt. 1 .and. wetgrowthhl(mgs) ) THEN
-
-         rimdn(mgs,lhl) = xdnmx(lhl) 
-         raindn(mgs,lhl) = xdnmx(lhl) 
-         vhlacw(mgs) = qhlacw(mgs)*rho0(mgs)/rimdn(mgs,lhl)
-         vhlacr(mgs) = qhlacr(mgs)*rho0(mgs)/raindn(mgs,lhl)
-
-         IF ( xdn(mgs,lhl) .lt. xdnmx(lhl) ) THEN
-         ! soak some liquid into the hail
-!           v1 = xdnmx(lhl)*vx(mgs,lhl)/(xdn(mgs,lhl)*dtp) ! volume available for filling
-           v1 = (1. - xdn(mgs,lhl)/xdnmx(lhl))*vx(mgs,lhl)/(dtp) ! volume available for filling
-!            tmp = (vx(mgs,lhl)/rho0(mgs))*(xdnmx(lhl) - xdn(mgs,lhl)) ! max mixing ratio of liquid water that can be added
-           v2 = rho0(mgs)*qhlwet(mgs)/xdnmx(lhl)  ! volume of frozen accretion
-           IF ( v1 > v2 ) THEN ! all the frozen stuff fits in
-             vhlsoak(mgs) = v2
-           ELSE  ! fill up the available space
-             vhlsoak(mgs) = v1
-           ENDIF
-!           vhlacw(mgs) = 0.0
-!           vhlacr(mgs) = Max( 0.0, v2 - v1 )
-         ELSE
-           vhlsoak(mgs) = 0.0
-!           vhlacw(mgs) = 0.0
-!           vhlacr(mgs) = rho0(mgs)*qhlwet(mgs)/raindn(mgs,lhl)
-         
-         ENDIF
-
-         vhlshdr(mgs) = Min(0.0, rho0(mgs)*qhlwet(mgs)/xdnmx(lhl) - vhlacw(mgs) - vhlacr(mgs) )
-
-
-        ELSEIF ( lvol(lhl) .gt. 1  .and. mixedphase ) THEN
-!         vhlacw(mgs) = rho0(mgs)*qhlacw(mgs)/xdn0(lr)
-!         vhlacr(mgs) = rho0(mgs)*qhlacr(mgs)/xdn0(lr)
-        ENDIF
-
-      IF ( ehli(mgs) .gt. 0.0 ) THEN
-        qhlaci(mgs) = Min(qimxd(mgs),qhlaci(mgs)/ehli(mgs))
-      ENDIF
-      IF ( ehls(mgs) .gt. 0.0 ) THEN
-        qhlacs(mgs) = Min(qsmxd(mgs),qhlacs(mgs)/ehls(mgs))
-      ENDIF
-      
-!      qhlwet(mgs) = 1.0
-
-! be sure to catch particles with wet surfaces but not in wet growth to turn off Hallett-Mossop
-      wetsfchl(mgs) = .true.
-
-
-      else
-!      qhlshr(mgs) = 0.0
-!      qhlwet(mgs) = 0.0
-      end if
-
-
-      end do
-!
-! Ice -> graupel conversion
-!
-      DO mgs = 1,ngscnt
-      
-      qhcni(mgs) = 0.0
-      chcni(mgs) = 0.0
-      chcnih(mgs) = 0.0
-      vhcni(mgs) = 0.0
-      
-      IF ( iglcnvi .ge. 1 ) THEN
-      IF ( temg(mgs) .lt. 273.0 .and. qiacw(mgs) - qidpv(mgs) .gt. 0.0 ) THEN
-      
-        
-        tmp = rimc1*(-((0.5)*(1.e+06)*xdia(mgs,lc,1))   &
-     &                *((0.60)*vtxbar(mgs,li,1))   &
-     &                /(temg(mgs)-273.15))**(rimc2)
-        tmp = Min( Max( rimc3, tmp ), 900.0 )
-        
-        !  Assume that half the volume of the embryo is rime with density 'tmp'
-        !  m = rhoi*(V/2) + rhorime*(V/2) = (rhoi + rhorime)*V/2
-        !  V = 2*m/(rhoi + rhorime)
-        
-!        write(0,*)  'rime dens = ',tmp
-        
-        IF ( tmp .ge. 200.0 .or. iglcnvi >= 2 ) THEN
-          r = Max( 0.5*(xdn(mgs,li) + tmp), xdnmn(lh) )
-!          r = Max( r, 400. )
-          qhcni(mgs) = (qiacw(mgs) - qidpv(mgs)) ! *float(iglcnvi)
-          chcni(mgs) = cx(mgs,li)*qhcni(mgs)/qx(mgs,li)
-!          chcnih(mgs) = rho0(mgs)*qhcni(mgs)/(1.6e-10)
-          chcnih(mgs) = Min(chcni(mgs), rho0(mgs)*qhcni(mgs)/(r*xvmn(lh)) )
-!          vhcni(mgs) = rho0(mgs)*2.0*qhcni(mgs)/(xdn(mgs,li) + tmp)
-          vhcni(mgs) = rho0(mgs)*qhcni(mgs)/r
-        ENDIF
-      
-      ENDIF
-
-      
-      ENDIF
-      
-      
-      ENDDO
-      
-      
-      qhlcnh(:) = 0.0
-      chlcnh(:) = 0.0
-      vhlcnh(:) = 0.0
-      vhlcnhl(:) = 0.0
-      zhlcnh(:) = 0.0
-
-      qhcnhl(:) = 0.0
-      chcnhl(:) = 0.0
-      vhcnhl(:) = 0.0
-      zhcnhl(:) = 0.0
-      
-
-      IF ( lhl .gt. 1  ) THEN
-      
-      IF ( ihlcnh == 1 ) THEN
-
-!
-!  Graupel (h) conversion to hail (hl) based on Milbrandt and Yau 2005b
-!
-      DO mgs = 1,ngscnt
-
-!        IF ( lhl .gt. 1 .and. ipconc .ge. 5 .and. qx(mgs,lh) .gt. 1.0e-3 .and.
-!     :        xdn(mgs,lh) .gt. 750. .and. qhshr(mgs) .lt. 0.0 .and.
-!     :        xdia(mgs,lh,3) .gt. 1.e-3 ) THEN
-        IF (  wetgrowth(mgs) .and. (xdn(mgs,lh) .gt. hldnmn .or. lvh < 1 ) .and.  & ! correct this when hail gets turned on
-!        IF (  ( qhshr(mgs) .lt. 0.0 .or. rimdn(mgs,lh) .gt. 800. ) .and.   &
-     &        rimdn(mgs,lh) .gt. 800. .and.   &
-     &        xdia(mgs,lh,3) .gt. hlcnhdia .and. qx(mgs,lh) .gt. hlcnhqmin ) THEN
-!     :        xdia(mgs,lh,3) .gt. 2.e-3 .and. qx(mgs,lh) .gt. 1.0e-3 ) THEN ! 0823.2008 erm test
-!        IF ( xdia(mgs,lh,3) .gt. 1.e-3 ) THEN
-        IF ( qhacw(mgs) .gt. 0.0 .and. qhacw(mgs) .gt. qhaci(mgs) .and. temg(mgs) .le. tfr-2.0 ) THEN
-        ! dh0 is the diameter dividing wet growth from dry growth (Ziegler 1985), modified by MY05
-!          dh0 = 0.01*(exp(temcg(mgs)/(1.1e4*(qx(mgs,lc)+qx(mgs,lr)) - 
-!     :           1.3e3*qx(mgs,li) + 1.0e-3 ) ) - 1.0)
-          x = (1.1e4*(rho0(mgs)*qx(mgs,lc)) - 1.3e3*rho0(mgs)*qx(mgs,li) + 1.0e-3 )
-          IF ( x > 1.e-20 ) THEN
-          arg = Min(70.0, (-temcg(mgs)/x )) ! prevent overflow of the exp function in 32 bit
-          dh0 = 0.01*(exp(arg) - 1.0)
-          ELSE
-           dh0 = 1.e30
-          ENDIF
-!          dh0 = Max( dh0, 5.e-3 )
-          
-!         IF ( dh0 .gt. 0.0 ) write(0,*) 'dh0 = ',dh0
-!         IF ( dh0 .gt. 1.0e-4 ) THEN
-         IF ( xdia(mgs,lh,3)/dh0 .gt. 0.1 ) THEN 
-!         IF ( xdia(mgs,lh,3) .lt. 20.*dh0 .and. dh0 .lt. 2.0*xdia(mgs,lh,3) ) THEN 
-           tmp = qhacw(mgs) + qhacr(mgs) + qhaci(mgs) + qhacs(mgs)
-!           qtmp = Min( 1.0, xdia(mgs,lh,3)/(2.0*dh0) )*(tmp)
-           qtmp = Min( 100.0, xdia(mgs,lh,3)/(2.0*dh0) )*(tmp)
-           IF ( .false. .and. qx(mgs,lhl) + qtmp*dtp .lt. 0.5e-3 ) THEN
-             hdia1 = Max(dh0, xdia(mgs,lh,3) )
-            qtmp = qtmp + Min(qxmxd(mgs,lh), Max( 0.0,   &
-     &      ((pi*xdn(mgs,lh)*cx(mgs,lh)) / (6.0*rho0(mgs)*dtp))   &
-     &      *exp(-hdia1/xdia(mgs,lh,1))   &
-     &      *( (hdia1**3) + 3.0*(hdia1**2)*xdia(mgs,lh,1)   &
-     &      + 6.0*(hdia1)*(xdia(mgs,lh,1)**2) + 6.0*(xdia(mgs,lh,1)**3) ) ) )
-
-!c           qtmp = Min( qxmxd(mgs,lh), qtmp )
-!c           tmp = tmp + Min( 0.5e-3/dtp, qtmp )
-           ENDIF
-!           write(0,*) 'dh0 = ',dh0,tmp,qx(mgs,lh)*1000.
-!           qhlcnh(mgs) = Min( 0.5*(qx(mgs,lh))+tmp, xdia(mgs,lh,3)/(2.0*dh0)*(tmp) )
-!           qhlcnh(mgs) = Min(  qxmxd(mgs,lh), xdia(mgs,lh,3)/(2.0*dh0)*(tmp) )
-           qhlcnh(mgs) = Min(  qxmxd(mgs,lh), qtmp )
-           
-           IF ( ipconc .ge. 5 ) THEN
-!           dh0 = Max( xdia(mgs,lh,3), Min( dh0, 5.e-3 ) ) ! don't create hail greater than 5mm diam. unless the graupel is larger
-           dh0 = Min( dh0, 10.e-3 ) ! don't create hail greater than 10mm diam., which is the max graupel size
-!           IF ( qx(mgs,lhl) > 0.1e-3 ) dh0 = xdia(mgs,lhl,3) ! when enough hail is established, don't dilute the size
-           chlcnh(mgs) = Min( cxmxd(mgs,lh), rho0(mgs)*qhlcnh(mgs)/(pi*xdn(mgs,lh)*dh0**3/6.0) )
-!           chlcnh(mgs) = Min( chlcnh(mgs), (1./8.)*rho0(mgs)*qhlcnh(mgs)/(xdn(mgs,lh)*xv(mgs,lh)) )
-!           chlcnh(mgs) = Min( chlcnh(mgs), (1./2.)*rho0(mgs)*qhlcnh(mgs)/(xdn(mgs,lh)*xv(mgs,lh)) )
-           r = rho0(mgs)*qhlcnh(mgs)/(xdn(mgs,lh)*xv(mgs,lh))  ! number of graupel particles at mean volume diameter
-!           chlcnh(mgs) = Min( Max( 1./8.*r , chlcnh(mgs)), r )
-!           chlcnh(mgs) = Min( chlcnh(mgs), r )
-           chlcnh(mgs) = Max( chlcnh(mgs), r )
-!           chlcnh(mgs) =  r 
-           ENDIF
-           
-           vhlcnh(mgs) = rho0(mgs)*qhlcnh(mgs)/xdn(mgs,lh)
-           vhlcnhl(mgs) = rho0(mgs)*qhlcnh(mgs)/Max(xdnmn(lhl), xdn(mgs,lh))
-!           write(0,*) 'qhlcnh = ',qhlcnh(mgs)*1000.,chlcnh(mgs)
-          ENDIF
-!         write(0,*) 'graupel to hail conversion not complete! STOP!'
-!         STOP
-        ENDIF
-        ENDIF
-      
-      ENDDO
-      
-      ELSEIF ( ihlcnh == 2 ) THEN ! 10-ice type conversion 
-
-!
-! Staka and Mansell (2005) type conversion -- assuming alphah = 0 for now!
-!
-!      hldia1 is set in micro_module and namelist
-      do mgs = 1,ngscnt
-!      qhlcnh(mgs) = 0.0
-!      chlcnh(mgs) = 0.0
-      if ( wetgrowth(mgs) .and. temg(mgs) .lt. tfr-5. .and. qx(mgs,lh) > qxmin(lh) ) then
-      if ( qhacw(mgs).gt.1.e-6 .and. xdn(mgs,lh) > 700. ) then
-      qhlcnh(mgs) =                                                   &
-        ((pi*xdn(mgs,lh)*cx(mgs,lh)) / (6.0*rho0(mgs)*dtp))           &
-       *exp(-hldia1/xdia(mgs,lh,1))                                    &
-       *( (hldia1**3) + 3.0*(hldia1**2)*xdia(mgs,lh,1)                  &
-        + 6.0*(hldia1)*(xdia(mgs,lh,1)**2) + 6.0*(xdia(mgs,lh,1)**3) )
-      qhlcnh(mgs) =   min(qhlcnh(mgs),qhmxd(mgs))
-      IF ( ipconc .ge. 5 ) THEN
-        chlcnh(mgs) = Min( cxmxd(mgs,lh), cx(mgs,lh)*Exp(-hldia1/xdia(mgs,lh,1)))
-!        chlcnh(mgs) = Min( cxmxd(mgs,lh), rho0(mgs)*qhlcnh(mgs)/(2.0*xmas(mgs,lh) ))
-      ENDIF
-           vhlcnh(mgs) = rho0(mgs)*qhlcnh(mgs)/xdn(mgs,lh)
-           vhlcnhl(mgs) = rho0(mgs)*qhlcnh(mgs)/Max(xdnmn(lhl), xdn(mgs,lh))
-      end if
-      end if
-      end do
-
-      ENDIF
-
-      ENDIF ! lhl > 1
-
-
-!
-! Ziegler snow conversion to graupel
-!
-      DO mgs = 1,ngscnt
-
-      qhcns(mgs) = 0.0
-      chcns(mgs) = 0.0
-      chcnsh(mgs) = 0.0
-      vhcns(mgs) = 0.0
-
-      IF ( ipconc .ge. 5 ) THEN
-
-        IF ( qx(mgs,ls) .gt. qxmin(ls) .and. qsacw(mgs) .gt. 0.0 ) THEN
-
-!      DATA VGRA/1.413E-2/  ! this is the volume (cm**3) of a 3mm diam. sphere
-!    vgra = 1.4137e-8 m**3
-
-!      DNNET=DNCNV-DNAGG
-!      DQNET=QXCON+QSACC+SDEP
-!
-!      DNSCNV=EXP(-(ROS*XNS*VGRA/(RO*QI)))*((1.-(XNS*VGRA*ROS/
-!     / (RO*QI)))*DNNET + (XNS**2*VGRA*ROS/(RO*QI**2))*DQNET)
-!      IF(DNSCNV.LT.0.) DNSCNV=0.
-!
-!      QIHC=(ROS*VGRA/RO)*DNSCNV
-!
-!      QH=QH+DT*QIHC
-!      QI=QI-DT*QIHC
-!      XNH=XNH+DT*DNSCNV
-!      XNS=XNS-DT*DNSCNV
-
-        IF ( iglcnvs .eq. 1 ) THEN  ! Zrnic, Ziegler et al (1993)
-
-        dnnet = cscnvis(mgs) + cscnis(mgs) - csacs(mgs)
-        dqnet = qscnvi(mgs) + qscni(mgs) + qsacw(mgs) + qsdpv(mgs) + qssbv(mgs)
-
-        a3 = 1./(rho0(mgs)*qx(mgs,ls))
-        a1 = Exp( - xdn(mgs,ls)*cx(mgs,ls)*vgra*a3 )  ! EXP(-(ROS*XNS*VGRA/(RO*QI)))
-! (1.-(XNS*VGRA*ROS/(RO*QI)))*DNNET
-        a2 =  (1.-(cx(mgs,ls)*vgra*xdn(mgs,ls)*a3))*dnnet
-! (XNS**2*VGRA*ROS/(RO*QI**2))*DQNET
-        a4 = cx(mgs,ls)**2*vgra*xdn(mgs,ls)*a3/qx(mgs,ls)*dqnet
-
-        chcns(mgs) = Max( 0.0, a1*(a2 + a4) )
-        chcns(mgs) = Min( chcns(mgs), cxmxd(mgs,ls) )
-        chcnsh(mgs) = chcns(mgs)
-
-        qhcns(mgs) = Min( xdn(mgs,ls)*vgra*rhoinv(mgs)*chcns(mgs), qxmxd(mgs,ls) )
-        vhcns(mgs) = rho0(mgs)*qhcns(mgs)/Max(xdn(mgs,ls),xdnmn(lh))
-!        vhcns(mgs) = rho0(mgs)*qhcns(mgs)/Max(xdn(mgs,ls),400.)
-
-        ELSEIF ( iglcnvs .ge. 2  ) THEN  ! treat like ice crystals, i.e., check for rime density (ERM)
-
-          IF ( temg(mgs) .lt. 273.0 .and. qsacw(mgs) - qsdpv(mgs) .gt. 0.0 ) THEN
-
-
-        tmp = rimc1*(-((0.5)*(1.e+06)*xdia(mgs,lc,1))   &
-     &                *((0.60)*vtxbar(mgs,ls,1))   &
-     &                /(temg(mgs)-273.15))**(rimc2)
-        tmp = Min( Max( rimc3, tmp ), 900.0 )
-
-        !  Assume that half the volume of the embryo is rime with density 'tmp'
-        !  m = rhoi*(V/2) + rhorime*(V/2) = (rhoi + rhorime)*V/2
-        !  V = 2*m/(rhoi + rhorime)
-
-!        write(0,*)  'rime dens = ',tmp
-
-        IF ( tmp .ge. 200.0 .or. iglcnvs >= 3 ) THEN
-          r = Max( 0.5*(xdn(mgs,ls) + tmp), xdnmn(lh) )
-!          r = Max( r, 400. )
-          qhcns(mgs) = (qsacw(mgs) - qsdpv(mgs))
-          chcns(mgs) = cx(mgs,ls)*qhcns(mgs)/qx(mgs,ls)
-!          chcnih(mgs) = rho0(mgs)*qhcni(mgs)/(1.6e-10)
-          chcnsh(mgs) = Min(chcns(mgs), rho0(mgs)*qhcns(mgs)/(r*xvmn(lh)) )
-!          vhcni(mgs) = rho0(mgs)*2.0*qhcni(mgs)/(xdn(mgs,li) + tmp)
-          vhcns(mgs) = rho0(mgs)*qhcns(mgs)/r
-        ENDIF
-
-      ENDIF
-
-        ENDIF
-
-
-        ENDIF
-
-       ELSE ! single moment lfo
-
-        qhcns(mgs) = 0.001*ehscnv(mgs)*max((qx(mgs,ls)-6.e-4),0.0)
-        qhcns(mgs) = min(qhcns(mgs),qxmxd(mgs,ls))
-        IF ( lvol(lh) .ge. 1 ) vhcns(mgs) = rho0(mgs)*qhcns(mgs)/Max(xdn(mgs,ls),400.)
-
-       ENDIF
-      ENDDO
-!
-!
-!  heat budget for rain---not all rain that collects ice can freeze
-!
-!
-!
-      if ( irwfrz .gt. 0 .and. .not. mixedphase) then
-!
-      do mgs = 1,ngscnt
-!
-!  compute total rain that freeze when it interacts with cloud ice
-!
-      qrztot(mgs) = qrfrz(mgs) + qiacr(mgs) + qsacr(mgs)
-!
-!  compute the maximum amount of rain that can freeze
-!  Used to limit freezing to 4*qrmxd, but now allow all rain to freeze if possible
-!
-      qrzmax(mgs) =   &
-     &  ( xdia(mgs,lr,1)*rwvent(mgs)*cx(mgs,lr)*fwet1(mgs) )
-      qrzmax(mgs) = max(qrzmax(mgs), 0.0)
-      qrzmax(mgs) = min(qrztot(mgs), qrzmax(mgs))
-      qrzmax(mgs) = min(qx(mgs,lr)/dtp, qrzmax(mgs))
-
-      IF ( temcg(mgs) < -30. ) THEN ! allow all to freeze if T < -30 because fwet becomes invalid (negative)
-        qrzmax(mgs) = qx(mgs,lr)/dtp
-      ENDIF
-!      qrzmax(mgs) = min(4.*qrmxd(mgs), qrzmax(mgs))
-!
-!  compute the correction factor
-!
-!      IF ( qrztot(mgs) .gt. qxmin(lr) ) THEN
-      IF ( qrztot(mgs) .gt. qrzmax(mgs) .and. qrztot(mgs) .gt. qxmin(lr) ) THEN
-        qrzfac(mgs) = qrzmax(mgs)/(qrztot(mgs))
-      ELSE
-        qrzfac(mgs) = 1.0
-      ENDIF
-      qrzfac(mgs) = min(1.0, qrzfac(mgs))
-!
-      end do
-!
-!
-! now correct the above sources
-!
-!
-      do mgs = 1,ngscnt
-      if ( temg(mgs) .le. 273.15 .and. qrzfac(mgs) .lt. 1.0 ) then
-      qrfrz(mgs)   = qrzfac(mgs)*qrfrz(mgs)
-      qrfrzs(mgs)  = qrzfac(mgs)*qrfrzs(mgs)
-      qrfrzf(mgs)  = qrzfac(mgs)*qrfrzf(mgs)
-      qiacr(mgs)   = qrzfac(mgs)*qiacr(mgs)
-      qsacr(mgs)   = qrzfac(mgs)*qsacr(mgs)
-      qiacrf(mgs)  = qrzfac(mgs)*qiacrf(mgs)
-      crfrz(mgs)   = qrzfac(mgs)*crfrz(mgs)
-      crfrzf(mgs)  = qrzfac(mgs)*crfrzf(mgs)
-      crfrzs(mgs)  = qrzfac(mgs)*crfrzs(mgs)
-      ciacr(mgs)   = qrzfac(mgs)*ciacr(mgs)
-      ciacrf(mgs)  = qrzfac(mgs)*ciacrf(mgs)
-
-      
-       vrfrzf(mgs)  = qrzfac(mgs)*vrfrzf(mgs)
-       viacrf(mgs)  = qrzfac(mgs)*viacrf(mgs)
-      end if
-      end do
-!
-!
-!
-      end if
-!
-!
-!
-!  evaporation of rain
-!
-!
-!
-      qrcev(:) = 0.0
-      crcev(:) = 0.0
-
-
-      do mgs = 1,ngscnt
-!
-      IF ( qx(mgs,lr) .gt. qxmin(lr) ) THEN
-
-      qrcev(mgs) =   &
-     &  fvce(mgs)*cx(mgs,lr)*rwvent(mgs)*rwcap(mgs)
-! this line to allow condensation on rain:
-      IF ( rcond .eq. 1 ) THEN
-        qrcev(mgs) = min(qrcev(mgs), qxmxd(mgs,lv))
-! this line to have evaporation only:
-      ELSE
-        qrcev(mgs) = min(qrcev(mgs), 0.0)
-      ENDIF
-
-      qrcev(mgs) = max(qrcev(mgs), -qrmxd(mgs))
-!      if ( temg(mgs) .lt. 273.15 ) qrcev(mgs) = 0.0
-      IF ( qrcev(mgs) .lt. 0. .and. lnr > 1 ) THEN
-!        qrcev(mgs) =   -qrmxd(mgs)
-!        crcev(mgs) = (rho0(mgs)/(xmas(mgs,lr)+1.e-20))*qrcev(mgs)
-      crcev(mgs) = (cx(mgs,lr)/(qx(mgs,lr)))*qrcev(mgs)
-      ELSE
-         crcev(mgs) = 0.0
-      ENDIF
-!      if ( temg(mgs) .lt. 273.15 ) crcev(mgs) = 0.0
-!
-      ENDIF
-
-      end do
-!
-! evaporation/condensation of wet graupel and snow
-!
-      qscev(:) = 0.0
-      cscev(:) = 0.0
-      qhcev(:) = 0.0
-      chcev(:) = 0.0
-      qhlcev(:) = 0.0
-      chlcev(:) = 0.0
-
-!
-!
-!
-!  ICE MULTIPLICATION: Two modes (rimpa, and rimpb)
-!  (following Cotton et al. 1986)
-!
- 
-      chmul1(:) =  0.0
-      chlmul1(:) =  0.0
-      csmul1(:) = 0.0
-!
-      qhmul1(:) =  0.0
-      qhlmul1(:) =  0.0
-      qsmul1(:) =  0.0
-
-      do mgs = 1,ngscnt
- 
-       ltest =  qx(mgs,lh) .gt. qxmin(lh)
-       IF ( lhl > 1 )  ltest =  ltest .or. qx(mgs,lhl) .gt. qxmin(lhl)
-       
-      IF ( (itype1 .ge. 1 .or. itype2 .ge. 1 )   &
-     &              .and. qx(mgs,lc) .gt. qxmin(lc)) THEN
-      if ( temg(mgs) .ge. 265.15 .and. temg(mgs) .le. 271.15 ) then
-       IF ( ipconc .ge. 2 ) THEN
-        IF ( xv(mgs,lc) .gt. 0.0     &
-     &     .and.  ltest &
-!     .and. itype2 .ge. 2    &
-     &       ) THEN
-!
-!  Ziegler et al. 1986 Hallett-Mossop process.  VSTAR = 7.23e-15 (vol of 12micron radius)
-!
-         ex1 = (1./250.)*Exp(-7.23e-15/xv(mgs,lc))
-       IF ( itype2 .le. 2 ) THEN
-         ft = Max(0.0,Min(1.0,-0.11*temcg(mgs)**2 - 1.1*temcg(mgs)-1.7))
-       ELSE
-        IF ( temg(mgs) .ge. 265.15 .and. temg(mgs) .le. 267.15 ) THEN
-          ft = 0.5
-        ELSEIF (temg(mgs) .ge. 267.15 .and. temg(mgs) .le. 269.15 ) THEN
-          ft = 1.0
-        ELSEIF (temg(mgs) .ge. 269.15 .and. temg(mgs) .le. 271.15 ) THEN
-          ft = 0.5
-        ELSE 
-          ft = 0.0
-        ENDIF
-       ENDIF
-!        rhoinv = 1./rho0(mgs)
-!        DNSTAR = ex1*cglacw(mgs)
-        
-       IF ( ft > 0.0 ) THEN
-        
-        IF ( itype2 > 0 ) THEN
-         IF ( qx(mgs,lh) .gt. qxmin(lh) .and. (.not. wetsfc(mgs))  ) THEN
-          chmul1(mgs) = (ft*ex1*chacw(mgs))
-          qhmul1(mgs) = cimas0*chmul1(mgs)*rhoinv(mgs)
-         ENDIF
-         IF ( lhl .gt. 1 ) THEN
-           IF ( qx(mgs,lhl) .gt. qxmin(lhl) .and. (.not. wetsfchl(mgs))  ) THEN
-            chlmul1(mgs) = (ft*ex1*chlacw(mgs))
-            qhlmul1(mgs) = cimas0*chlmul1(mgs)*rhoinv(mgs)
-           ENDIF
-         ENDIF
-        ENDIF ! itype2
-
-        IF ( itype1 > 0 ) THEN
-         IF ( qx(mgs,lh) .gt. qxmin(lh) .and. (.not. wetsfc(mgs))  ) THEN
-          tmp = ft*(3.5e+08)*rho0(mgs)*qhacw(mgs)
-          chmul1(mgs) = chmul1(mgs) + tmp
-          qhmul1(mgs) = qhmul1(mgs) + cimas0*tmp*rhoinv(mgs)
-         ENDIF
-         IF ( lhl .gt. 1 ) THEN
-           IF ( qx(mgs,lhl) .gt. qxmin(lhl) .and. (.not. wetsfchl(mgs)) ) THEN
-            tmp = ft*(3.5e+08)*rho0(mgs)*qhlacw(mgs)
-            chlmul1(mgs) = chlmul1(mgs) + tmp
-            qhlmul1(mgs) = qhlmul1(mgs) + cimas0*tmp*rhoinv(mgs)
-           ENDIF
-         ENDIF
-        ENDIF ! itype1
-        
-        ENDIF ! ft
-
-        ENDIF ! xv(mgs,lc) .gt. 0.0 .and.
-
-       ELSE ! ipconc .lt. 2
-!
-!  define the temperature function
-!
-      fimt1(mgs) = 0.0
-!
-! Cotton et al. (1986) version
-!
-      if ( temg(mgs) .ge. 268.15 .and. temg(mgs) .le. 270.15 ) then
-        fimt1(mgs) = 1.0 -(temg(mgs)-268.15)/2.0
-      elseif (temg(mgs) .le. 268.15 .and. temg(mgs) .ge. 265.15 ) then
-        fimt1(mgs) = 1.0 +(temg(mgs)-268.15)/3.0
-      ELSE 
-        fimt1(mgs) = 0.0
-      end if
-!
-! Ferrier (1994) version
-!
-      if ( temg(mgs) .ge. 265.15 .and. temg(mgs) .le. 267.15 ) then
-        fimt1(mgs) = 0.5
-      elseif (temg(mgs) .ge. 267.15 .and. temg(mgs) .le. 269.15 ) then
-        fimt1(mgs) = 1.0
-      elseif (temg(mgs) .ge. 269.15 .and. temg(mgs) .le. 271.15 ) then
-        fimt1(mgs) = 0.5
-      ELSE 
-        fimt1(mgs) = 0.0
-      end if
-!
-!
-!   type I:  350 splinters are formed for every 1e-3 grams of cloud
-!            water accreted by graupel/hail (note converted to MKS units)
-!            3.5e+8 has units of 1/kg
-!
-      IF ( itype1 .ge. 1 ) THEN
-       fimta(mgs) = (3.5e+08)*rho0(mgs)
-      ELSE
-       fimta(mgs) = 0.0
-      ENDIF
-
-!
-!
-!   type II:  1 splinter formed for every 250 cloud droplets larger than
-!             24 micons in diameter (12 microns in radius) accreted by
-!             graupel/hail
-!
-!
-      fimt2(mgs) = 0.0
-      xcwmas = xmas(mgs,lc) * 1000.
-!
-      IF ( itype2 .ge. 1 ) THEN
-      if ( xcwmas.lt.1.26e-9 ) then
-        fimt2(mgs) = 0.0
-      end if
-      if ( xcwmas .le. 3.55e-9 .and. xcwmas .ge. 1.26e-9 ) then
-        fimt2(mgs) = (2.27)*alog(xcwmas) + 13.39
-      end if
-      if ( xcwmas .gt. 3.55e-9 ) then
-        fimt2(mgs) = 1.0
-      end if
-
-      fimt2(mgs) = min(fimt2(mgs),1.0)
-      fimt2(mgs) = max(fimt2(mgs),0.0)
-      
-      ENDIF
-!
-!     qhmul2 = 0.0
-!     qsmul2 = 0.0
-!
-!     qhmul2 =
-!    >  (4.0e-03)*fimt1(mgs)*fimt2(mgs)*qhacw(mgs)
-!     qsmul2 =
-!    >  (4.0e-03)*fimt1(mgs)*fimt2(mgs)*qsacw(mgs)
-!
-!      cimas0 = (1.0e-12)
-!      cimas0 = 2.5e-10
-      IF ( .not. wetsfc(mgs) ) THEN
-      chmul1(mgs) =  fimt1(mgs)*(fimta(mgs) +   &
-     &                           (4.0e-03)*fimt2(mgs))*qhacw(mgs)
-      ENDIF
-!
-      qhmul1(mgs) =  chmul1(mgs)*(cimas0/rho0(mgs))
-
-
-         IF ( lhl .gt. 1 ) THEN
-           IF ( qx(mgs,lhl) .gt. qxmin(lhl) .and. (.not. wetsfchl(mgs)) ) THEN
-            tmp = fimt1(mgs)*(fimta(mgs) +   &
-     &                           (4.0e-03)*fimt2(mgs))*qhlacw(mgs)
-            chlmul1(mgs) =  tmp
-            qhlmul1(mgs) = cimas0*tmp*rhoinv(mgs)
-           ENDIF
-         ENDIF
-
-!      qsmul1(mgs) =  csmul1(mgs)*(cimas0/rho0(mgs))
-!
-      ENDIF ! ( ipconc .ge. 2 )
-      
-      end if ! (in temperature range)
-      
-      ENDIF ! ( itype1 .eq. 1 .or. itype2 .eq. 1)
-!
-      end do
-!
-!
-!
-!     end if
-!
-!     end do
-!
-!
-! ICE MULTIPLICATION FROM SNOW
-!   Lo and Passarelli 82 / Willis and Heymsfield 89 / Schuur and Rutledge 00b
-!   using kfrag as fragmentation rate (s-1) / 500 microns as char mean diam for max snow mix ratio
-!
-      csmul(:) = 0.0
-      qsmul(:) = 0.0
-      
-      IF ( isnwfrac /= 0 ) THEN
-      do mgs = 1,ngscnt
-       IF (temg(mgs) .gt. 265.0) THEN !{
-        if (xdia(mgs,ls,1) .gt. 100.e-6 .and. xdia(mgs,ls,1) .lt. 2.0e-3) then  ! equiv diameter 100microns to 2mm
-
-        tmp = rhoinv(mgs)*pi*xdn(mgs,ls)*cx(mgs,ls)*(500.e-6)**3
-        qsmul(mgs) = Max( kfrag*( qx(mgs,ls) - tmp ) , 0.0 )
-
-        qsmul(mgs) = Min( qxmxd(mgs,li), qsmul(mgs) )
-        csmul(mgs) = Min( cxmxd(mgs,li), rho0(mgs)*qsmul(mgs)/mfrag )
-
-        endif
-       ENDIF !}
-      enddo
-      ENDIF
-
-!
-!  frozen rain-rain interaction....
-!
-!
-!
-!
-!  rain-ice interaction
-!
-!
-      do mgs = 1,ngscnt
-      qracif(mgs) = qraci(mgs)
-      cracif(mgs) = craci(mgs)
-!      ciacrf(mgs) = ciacr(mgs)
-      end do
-!
-! 
-!  vapor to pristine ice crystals   UP
-!
-!
-!
-!  compute the nucleation rate
-!
-!     do mgs = 1,ngscnt
-!     idqis = 0
-!     if ( ssi(mgs) .gt. 1.0 ) idqis = 1
-!     fiinit(mgs) = (felv(mgs)**2)/(cp*rw)
-!     dqisdt(mgs) = (qx(mgs,lv)-qis(mgs))/
-!    >  (1.0 + fiinit(mgs)*qis(mgs)/tsqr(mgs))
-!     qidsvp(mgs) = dqisdt(mgs)
-!     cnnt = min(cnit*exp(-temcg(mgs)*bta1),1.0e+09)
-!     qiint(mgs) = 
-!    >  il5(mgs)*idqis*(1.0/dtp)
-!    <  *min((6.88e-13)*cnnt/rho0(mgs), 0.25*dqisdt(mgs)) 
-!     end do
-!
-!  Meyers et al. (1992; JAS) and Ferrier (1994) primary ice nucleation
-!
-      cmassin = cimasn  ! 6.88e-13
-      do mgs = 1,ngscnt
-      qiint(mgs) = 0.0
-      ciint(mgs) = 0.0
-      qicicnt(mgs) = 0.0
-      cicint(mgs) = 0.0
-      qipipnt(mgs) = 0.0
-      cipint(mgs) = 0.0
-      IF ( icenucopt == 1 ) THEN
-      if ( ( temg(mgs) .lt. 268.15 .or.  &
-!     : ( imeyers5 .and. temg(mgs) .lt.  273.0) ) .and.    &
-     & ( imeyers5 .and. temg(mgs) .lt.  272.0 .and. temgkm2(mgs) .lt. tfr) ) .and.    &
-     &    ciintmx .gt. (cx(mgs,li))  &
-!     :    .and. cninm(mgs) .gt. 0.   &
-     &     ) then
-       IF ( ipconc >= 4 .or. .not. lwsm6 ) THEN
-      
-      fiinit(mgs) = (felv(mgs)**2)/(cp*rw)
-      dqisdt(mgs) = (qx(mgs,lv)-qis(mgs))/   &
-     &  (1.0 + fiinit(mgs)*qis(mgs)/tsqr(mgs))
-!      qidsvp(mgs) = dqisdt(mgs)
-      idqis = 0
-      if ( ssi(mgs) .gt. 1.0 ) THEN
-      idqis = 1 
-      dzfacp = max( float(kgsp(mgs)-kgs(mgs)), 0.0 )
-      dzfacm = max( float(kgs(mgs)-kgsm(mgs)), 0.0 )
-      qiint(mgs) =   &
-     &  idqis*il5(mgs)   &
-     &  *(cmassin/rho0(mgs))   &
-     &  *max(0.0,wvel(mgs))   &
-     &  *max((cninp(mgs)-cninm(mgs)),0.0)/gz(igs(mgs),jgs,kgs(mgs))   &
-     &  /((dzfacp+dzfacm))
-
-      qiint(mgs) = min(qiint(mgs), max(0.25*dqisdt(mgs),0.0)) 
-      ciint(mgs) = qiint(mgs)*rho0(mgs)/cmassin
-      
-       ELSE ! lwsm6 = true
-
-        IF ( ssi(mgs) .gt. 1.0 ) THEN
-          xni0 = 1.e3*exp(0.1*temcg(mgs))
-          roqi0 = 4.92e-11*xni0**1.33
-!          qiint(mgs) = Max(0.,(roqi0*rhoinv(mgs) - Max(qx(mgs,li),0.))*dtpinv)
-          qiint(mgs) = Max(0.0d0,dble(roqi0*rhoinv(mgs) - Max(qx(mgs,li),0.))*dtpinv)
-!             ciint(mgs) = qiint(mgs)*rho0(mgs)/cmassin
-        ENDIF
-       ENDIF
-
-      ENDIF
-!
-! limit new crystals so it does not increase the current concentration
-!  above ciintmx 20,000 per liter (2.e7 per m**3)
-!
-!      ciintmx = 1.e9
-      IF ( ciint(mgs) .gt. (ciintmx - (cx(mgs,li)))) THEN
-        ciint(mgs) = Max(0.0, ciintmx - (cx(mgs,li)) )
-        qiint(mgs) = ciint(mgs)*cmassin/rho0(mgs)
-      ENDIF
-!
-      end if
-      ELSEIF ( icenucopt == 2 ) THEN
-
-!        IF ( temg(mgs) .lt. 268.15 )  write(0,*) 'Cooper: i,k,ssi = ',igs(mgs),kgs(mgs),ssi(mgs)
-      
-        IF ( ( temg(mgs) .lt. 268.15 .and. ssw(mgs) > 0.999 ) .or. ssi(mgs) > 1.05 ) THEN
-          ciint(mgs) = Max( 0.0, cnina(mgs) - cina(mgs) )
-          qiint(mgs) = ciint(mgs)*cmassin/rho0(mgs)
-
-          fiinit(mgs) = (felv(mgs)**2)/(cp*rw)
-          dqisdt(mgs) = (qx(mgs,lv)-qis(mgs))/(1.0 + fiinit(mgs)*qis(mgs)/tsqr(mgs))
-          qiint(mgs) = min(qiint(mgs), max(0.25*dqisdt(mgs),0.0))
-          ciint(mgs) = qiint(mgs)*rho0(mgs)/cmassin
-
-!          IF ( qiint(mgs) > 0.0 ) write(0,*) 'Cooper: i,k,qiint = ',igs(mgs),kgs(mgs),qiint(mgs),ssi(mgs),cnina(mgs),cina(mgs)
-        ENDIF
-      
-      
-      
-      ELSEIF ( icenucopt == 3 ) THEN
-        IF (  temg(mgs) .lt. 268.15 ) THEN
-          ciint(mgs) = Max( 0.0, cnina(mgs) - cina(mgs) )
-          qiint(mgs) = ciint(mgs)*cmassin/rho0(mgs)
-        ENDIF
-
-      ENDIF
-
-      if ( xplate(mgs) .eq. 1 ) then
-      qipipnt(mgs) = qiint(mgs)
-      cipint(mgs) = ciint(mgs)
-      end if
-!
-      if ( xcolmn(mgs) .eq. 1 ) then
-      qicicnt(mgs) = qiint(mgs)
-      cicint(mgs) = ciint(mgs)
-      end if
-!
-!     qipipnt(mgs) = 0.0
-!     qicicnt(mgs) = qiint(mgs)
-!
-      end do
-!
-! 
-
-!
-!  vapor to cloud droplets   UP
-!
-      if (ndebug .gt. 0 ) write(0,*) 'dbg = 8'
-!
-!
-      if (ndebug .gt. 0 ) write(0,*) 'Collection: set 3-component'
-!
-!  time for riming....
-!
-!     rimtim = 240.0
-!     dtrim = rimtim
-!     xacrtim  = 120.0
-!     tranfr = 0.50
-!     tranfw = 0.50
-!
-!  coefficients for riming
-!
-!     rimc1 = 300.00
-!     rimc2 = 0.44
-!
-! 
-!  zero som arrays
-!
-!
-      do mgs = 1,ngscnt
-      qrshr(mgs) = 0.0
-      qsshrp(mgs) = 0.0
-      qhshrp(mgs) = 0.0
-      end do
-!
-!
-!  first sum all of the shed rain
-!
-!
-      do mgs = 1,ngscnt
-      qrshr(mgs) = qsshr(mgs) + qhshr(mgs) + qhlshr(mgs)
-      crshr(mgs) = chshrr(mgs)/rzxh(mgs) + chlshrr(mgs)/rzxhl(mgs)
-      IF ( ipconc .ge. 3 ) THEN
-!       crshr(mgs) = Max(crshr(mgs), rho0(mgs)*qrshr(mgs)/(xdn(mgs,lr)*vr1mm) )
-      ENDIF
-      end do 
-!
-!
-!
-
-!
-!
-!
-!
-      IF ( ipconc .ge. 1 ) THEN
-!
-!
-!  concentration production terms
-!
-!  YYY
-!
-!
-!       DO mgs = 1,ngscnt
-       pccwi(:) = 0.0
-       pccwd(:) = 0.0
-       pccii(:) = 0.0
-       pccid(:) = 0.0
-       pcrwi(:) = 0.0
-       pcrwd(:) = 0.0
-       pcswi(:) = 0.0
-       pcswd(:) = 0.0
-       pchwi(:) = 0.0
-       pchwd(:) = 0.0
-       pchli(:) = 0.0
-       pchld(:) = 0.0
-!       ENDDO
-!
-!  Cloud ice
-!
-!      IF ( ipconc .ge. 1 ) THEN
-
-      IF ( warmonly < 0.5 ) THEN
-      do mgs = 1,ngscnt
-      pccii(mgs) =   &
-     &   il5(mgs)*cicint(mgs) &
-!     >  +il5(mgs)*cidpv(mgs)
-!     >  +il5(mgs)*(cwacii(mgs))   &
-     &  +il5(mgs)*(cwfrzc(mgs)+cwctfzc(mgs)   &
-     &  +cicichr(mgs))   &
-     &  +chmul1(mgs)   &
-     &  +chlmul1(mgs)    &
-     &  + csplinter(mgs) + csplinter2(mgs)   &
-!     >  + nsplinter*(crfrzf(mgs) + crfrz(mgs))
-     &  +csmul(mgs)
-      pccid(mgs) =   &
-     &   il5(mgs)*(-cscni(mgs) - cscnvi(mgs) & ! - cwaci(mgs)   &
-     &  -craci(mgs)    &
-     &  -csaci(mgs)   &
-     &  -chaci(mgs) - chlaci(mgs)   &
-     &  -chcni(mgs))   &
-     &  +il5(mgs)*cisbv(mgs)   &
-     &  -(1.-il5(mgs))*cimlr(mgs)
-      end do
-      ELSEIF ( warmonly < 0.8 ) THEN
-      do mgs = 1,ngscnt
-      
-!      qiint(mgs) = 0.0
-!      cicint(mgs) = 0.0
-!      qicicnt(mgs) = 0.0
-      
-      pccii(mgs) =   &
-     &   il5(mgs)*cicint(mgs)  &
-     &  +il5(mgs)*(cwfrzc(mgs)+cwctfzc(mgs)   &
-     &  +cicichr(mgs))   &
-     &  +chmul1(mgs)   &
-     &  +chlmul1(mgs)    &
-     &  + csplinter(mgs) + csplinter2(mgs)   &
-     &  +csmul(mgs)
-      pccid(mgs) =   &
-!     &   il5(mgs)*(-cscni(mgs) - cscnvi(mgs) & ! - cwaci(mgs)   &
-!     &  -craci(mgs)    &
-!     &  -csaci(mgs)   &
-!     &  -chaci(mgs) - chlaci(mgs)   &
-!     &  -chcni(mgs))   &
-     &  +il5(mgs)*cisbv(mgs)   &
-     &  -(1.-il5(mgs))*cimlr(mgs)
-      end do
-      ENDIF ! warmonly
-
-      
-!      ENDIF ! ( ipconc .ge. 1 )
-!
-!  Cloud water
-!
-      IF ( ipconc .ge. 2 ) THEN
-      
-      do mgs = 1,ngscnt
-      pccwi(mgs) =  (0.0) ! + (1-il5(mgs))*(-cirmlw(mgs))
-      
-      IF ( warmonly < 0.5 ) THEN
-      pccwd(mgs) =    &
-     &  - cautn(mgs) +   &
-     &  il5(mgs)*(-ciacw(mgs)-cwfrzp(mgs)-cwctfzp(mgs)   &
-     &  -cwfrzc(mgs)-cwctfzc(mgs)   &
-     &   )   &
-     &  -cracw(mgs) -csacw(mgs)  -chacw(mgs) - chlacw(mgs)
-      ELSEIF ( warmonly < 0.8 ) THEN
-      pccwd(mgs) =    &
-     &  - cautn(mgs) +   &
-     &  il5(mgs)*(  &
-     & -ciacw(mgs)-cwfrzp(mgs)-cwctfzp(mgs)   &
-     &  -cwfrzc(mgs)-cwctfzc(mgs)   &
-     &   )   &
-     &  -cracw(mgs) -chacw(mgs) -chlacw(mgs) 
-      ELSE
-      
-!       tmp3d(igs(mgs),jy,kgs(mgs)) = crcnw(mgs)
-
-!       cracw(mgs) = 0.0 ! turn off accretion
-!       qracw(mgs) = 0.0
-!       crcev(mgs) = 0.0 ! turn off evap
-!       qrcev(mgs) = 0.0 ! turn off evap
-!       cracr(mgs) = 0.0 ! turn off self collection
-       
-       
-!       cautn(mgs) = 0.0 
-!       crcnw(mgs) = 0.0
-!       qrcnw(mgs) = 0.0
-
-      pccwd(mgs) =    &
-     &  - cautn(mgs) -cracw(mgs)
-      ENDIF
-
-
-      IF ( -pccwd(mgs)*dtp .gt. cx(mgs,lc) ) THEN
-!       write(0,*) 'OUCH! pccwd(mgs)*dtp .gt. ccw(mgs) ',pccwd(mgs),cx(mgs,lc)
-!       write(0,*) 'qc = ',qx(mgs,lc)
-!       write(0,*) -ciacw(mgs)-cwfrzp(mgs)-cwctfzp(mgs)-cwfrzc(mgs)-cwctfzc(mgs)
-!       write(0,*)  -cracw(mgs) -csacw(mgs)  -chacw(mgs)
-!       write(0,*) - cautn(mgs)
-
-       frac = -cx(mgs,lc)/(pccwd(mgs)*dtp)
-       pccwd(mgs) = -cx(mgs,lc)/dtp
-
-        ciacw(mgs)   = frac*ciacw(mgs)
-        cwfrzp(mgs)  = frac*cwfrzp(mgs)
-        cwctfzp(mgs) = frac*cwctfzp(mgs)
-        cwfrzc(mgs)  = frac*cwfrzc(mgs)
-        cwctfzc(mgs) = frac*cwctfzc(mgs)
-        cracw(mgs)   = frac*cracw(mgs)
-        csacw(mgs)   = frac*csacw(mgs)
-        chacw(mgs)   = frac*chacw(mgs)
-        cautn(mgs)   = frac*cautn(mgs)
-       
-        pccii(mgs) = pccii(mgs) - (1.-frac)*il5(mgs)*(cwfrzc(mgs)+cwctfzc(mgs))
-        IF ( lhl .gt. 1 ) chlacw(mgs)   = frac*chlacw(mgs)
-
-!       STOP
-      ENDIF
-
-      end do
-
-      ENDIF ! ipconc
-
-!
-!  Rain
-!
-      IF ( ipconc .ge. 3 ) THEN
-
-      do mgs = 1,ngscnt
-
-      IF ( warmonly < 0.5 ) THEN
-      pcrwi(mgs) = &
-!     >   cracw(mgs) +    &
-     &   crcnw(mgs)   &
-     &  +(1-il5(mgs))*(   &
-     &    -chmlrr(mgs)/rzxh(mgs)   &
-     &    -chlmlrr(mgs)/rzxhl(mgs)   &
-     &    -csmlr(mgs)     &
-     &   - cimlr(mgs) )   &
-     &  -crshr(mgs)             !null at this point when wet snow/graupel included
-      pcrwd(mgs) =   &
-     &   il5(mgs)*(-ciacr(mgs) - crfrz(mgs) ) & ! - cipacr(mgs))
-!     >  -csacr(mgs)   &
-     &  - chacr(mgs) - chlacr(mgs)   &
-     &  +crcev(mgs)   &
-     &  - cracr(mgs)
-!     >  -il5(mgs)*ciracr(mgs)
-      ELSEIF ( warmonly < 0.8 ) THEN
-       pcrwi(mgs) = &
-     &   crcnw(mgs)   &
-     &  +(1-il5(mgs))*(   &
-     &    -chmlrr(mgs)/rzxh(mgs)    &
-     &    -chlmlrr(mgs)/rzxhl(mgs)   &
-     &    -csmlr(mgs)     &
-     &   - cimlr(mgs) )   &
-     &  -crshr(mgs)             !null at this point when wet snow/graupel included
-      pcrwd(mgs) =   &
-     &   il5(mgs)*( - crfrz(mgs) ) & ! - cipacr(mgs))
-     &  - chacr(mgs)    &
-     &  - chlacr(mgs)    &
-     &  +crcev(mgs)   &
-     &  - cracr(mgs)
-      ELSE
-      pcrwi(mgs) =   &
-     &   crcnw(mgs)
-      pcrwd(mgs) =   &
-     &  +crcev(mgs)   &
-     &  - cracr(mgs)
-
-!        tmp3d(igs(mgs),jy,kgs(mgs)) = vtxbar(mgs,lr,1) ! crcnw(mgs) ! (pcrwi(mgs) + pcrwd(mgs))
-!        pcrwi(mgs) = 0.0
-!        pcrwd(mgs) = 0.0
-!        qrcnw(mgs) = 0.0
-
-      ENDIF
-
-
-      frac = 0.0
-      IF ( -pcrwd(mgs)*dtp .gt. cx(mgs,lr) ) THEN
-!       write(0,*) 'OUCH! pcrwd(mgs)*dtp .gt. crw(mgs) ',pcrwd(mgs)*dtp,cx(mgs,lr),mgs,igs(mgs),kgs(mgs)
-!       write(0,*) -ciacr(mgs)
-!       write(0,*) -crfrz(mgs)
-!       write(0,*) -chacr(mgs)
-!       write(0,*)  crcev(mgs)
-!       write(0,*)  -cracr(mgs)
-
-       frac =  -cx(mgs,lr)/(pcrwd(mgs)*dtp)
-       pcrwd(mgs) = -cx(mgs,lr)/dtp
-
-        ciacr(mgs) = frac*ciacr(mgs)
-        crfrz(mgs) = frac*crfrz(mgs)
-        crfrzf(mgs) = frac*crfrzf(mgs)
-        chacr(mgs) = frac*chacr(mgs)
-        crcev(mgs) = frac*crcev(mgs)
-        cracr(mgs) = frac*cracr(mgs)
-
-!       STOP
-      ENDIF
-
-      end do
-
-      ENDIF
-
-
-      IF ( warmonly < 0.5 ) THEN
-
-!
-!  Snow
-!
-      IF ( ipconc .ge. 4 ) THEN !
-
-      do mgs = 1,ngscnt
-      pcswi(mgs) =   &
-     &   il5(mgs)*(cscnis(mgs) + cscnvis(mgs) )    &
-     &  + crfrzs(mgs)
-      pcswd(mgs) = &
-!     :  cracs(mgs)     &
-     &  -chacs(mgs) - chlacs(mgs)   &
-     &  -chcns(mgs)   &
-     &  +(1-il5(mgs))*csmlr(mgs) + csshr(mgs) & ! + csshrp(mgs)
-!     >  +il5(mgs)*(cssbv(mgs))   &
-     &   + cssbv(mgs)   &
-     &  - csacs(mgs)
-      end do
-
-      ENDIF
-
-!
-!  Graupel
-!
-      IF ( ipconc .ge. 5 ) THEN !
-      do mgs = 1,ngscnt
-      pchwi(mgs) =   &
-     &  +ifrzg*(crfrzf(mgs)   &
-     & +il5(mgs)*(ciacrf(mgs) ))    &
-     & + chcnsh(mgs) + chcnih(mgs)
-
-      pchwd(mgs) =   &
-     &  (1-il5(mgs))*chmlr(mgs) &
-!     >  + il5(mgs)*chsbv(mgs)   &
-     &  + chsbv(mgs)   &
-     &  - il5(mgs)*chlcnh(mgs)
-      end do
-!
-
-!
-!  Hail
-!
-      IF ( lhl .gt. 1 ) THEN !
-      do mgs = 1,ngscnt
-      pchli(mgs) = (1.0-ifrzg)*(crfrzf(mgs) +il5(mgs)*(ciacrf(mgs) ))  &
-     & + chlcnh(mgs) *rzxhlh(mgs)
-
-      pchld(mgs) =   &
-     &  (1-il5(mgs))*chlmlr(mgs)   &
-!     >  + il5(mgs)*chlsbv(mgs)   &
-     &  + chlsbv(mgs)
-
-!      IF ( pchli(mgs) .ne. 0. .or. pchld(mgs) .ne. 0 ) THEN
-!       write(0,*) 'dr: pchli,pchld = ', pchli(mgs),pchld(mgs), igs(mgs),kgs(mgs)
-!      ENDIF
-      end do
-
-      ENDIF
-!
-
-      ENDIF ! (ipconc .ge. 5 )
-
-      ELSEIF ( warmonly < 0.8 ) THEN
-
-!
-!  Graupel
-!
-      IF ( ipconc .ge. 5 ) THEN !
-      do mgs = 1,ngscnt
-      pchwi(mgs) =   &
-     &  +ifrzg*(crfrzf(mgs) )
-
-      pchwd(mgs) =   &
-     &  (1-il5(mgs))*chmlr(mgs) &
-     &  - il5(mgs)*chlcnh(mgs)
-      end do
-!
-!  Hail
-!
-      IF ( lhl .gt. 1 ) THEN !
-      do mgs = 1,ngscnt
-      pchli(mgs) = & ! (1.0-ifrzg)*(crfrzf(mgs) +il5(mgs)*(ciacrf(mgs) ))  &
-     & + chlcnh(mgs) *rzxhl(mgs)/rzxh(mgs)
-
-      pchld(mgs) =   &
-     &  (1-il5(mgs))*chlmlr(mgs) !  &
-!     >  + il5(mgs)*chlsbv(mgs)   &
-!     &  + chlsbv(mgs)
-
-!      IF ( pchli(mgs) .ne. 0. .or. pchld(mgs) .ne. 0 ) THEN
-!       write(0,*) 'dr: pchli,pchld = ', pchli(mgs),pchld(mgs), igs(mgs),kgs(mgs)
-!      ENDIF
-      end do
-
-      ENDIF
-
-      ENDIF ! ipconc >= 5
-
-      ENDIF ! warmonly
-
-!
-
-!
-!  Balance and checks for continuity.....within machine precision...
-!
-      do mgs = 1,ngscnt
-      pctot(mgs)   = pccwi(mgs) +pccwd(mgs) +   &
-     &               pccii(mgs) +pccid(mgs) +   &
-     &               pcrwi(mgs) +pcrwd(mgs) +   &
-     &               pcswi(mgs) +pcswd(mgs) +   &
-     &               pchwi(mgs) +pchwd(mgs) +   &
-     &               pchli(mgs) +pchld(mgs)
-      end do
-!
-!
-      ENDIF ! ( ipconc .ge. 1 )
-!
-!
-!
-!
-!
-!  GOGO
-!  production terms for mass
-!
-!
-       pqwvi(:) = 0.0
-       pqwvd(:) = 0.0
-       pqcwi(:) = 0.0
-       pqcwd(:) = 0.0
-       pqcii(:) = 0.0
-       pqcid(:) = 0.0
-       pqrwi(:) = 0.0
-       pqrwd(:) = 0.0
-       pqswi(:) = 0.0
-       pqswd(:) = 0.0
-       pqhwi(:) = 0.0
-       pqhwd(:) = 0.0
-       pqhli(:) = 0.0
-       pqhld(:) = 0.0
-       pqlwsi(:) = 0.0
-       pqlwsd(:) = 0.0
-       pqlwhi(:) = 0.0
-       pqlwhd(:) = 0.0
-       pqlwhli(:) = 0.0
-       pqlwhld(:) = 0.0
-!
-!  Vapor
-!
-      IF ( warmonly < 0.5 ) THEN
-      do mgs = 1,ngscnt
-      pqwvi(mgs) =    &
-     &  -Min(0.0, qrcev(mgs))   &
-     &  -Min(0.0, qhcev(mgs))   &
-     &  -Min(0.0, qhlcev(mgs))   &
-     &  -Min(0.0, qscev(mgs))   &
-!     >  +il5(mgs)*(-qhsbv(mgs) - qhlsbv(mgs) )   &
-     &  -qhsbv(mgs) - qhlsbv(mgs)   &
-     &  -qssbv(mgs)    &
-     &  -il5(mgs)*qisbv(mgs)
-      pqwvd(mgs) =     &
-     &  -Max(0.0, qrcev(mgs))   &
-     &  -Max(0.0, qhcev(mgs))   &
-     &  -Max(0.0, qhlcev(mgs))   &
-     &  -Max(0.0, qscev(mgs))   &
-     &  +il5(mgs)*(-qiint(mgs)   &
-     &  -qhdpv(mgs) -qsdpv(mgs) - qhldpv(mgs))   &
-     &  -il5(mgs)*qidpv(mgs)
-      end do
-
-      ELSEIF ( warmonly < 0.8 ) THEN
-      do mgs = 1,ngscnt
-      pqwvi(mgs) =    &
-     &  -Min(0.0, qrcev(mgs)) &
-     &  -il5(mgs)*qisbv(mgs)
-      pqwvd(mgs) =     &
-     &  +il5(mgs)*(-qiint(mgs)   &
-!     &  -qhdpv(mgs) ) & !- qhldpv(mgs))   &
-     &  -qhdpv(mgs) - qhldpv(mgs))   &
-!     &  -qhdpv(mgs) -qsdpv(mgs) - qhldpv(mgs))   &
-     &  -Max(0.0, qrcev(mgs))     &
-     &  -il5(mgs)*qidpv(mgs)
-      end do
-
-      ELSE
-      do mgs = 1,ngscnt
-      pqwvi(mgs) =    &
-     &  -Min(0.0, qrcev(mgs))
-      pqwvd(mgs) =     &
-     &  -Max(0.0, qrcev(mgs))
-      end do
-
-      ENDIF ! warmonly
-!
-!  Cloud water
-!
-      do mgs = 1,ngscnt
-
-      pqcwi(mgs) =  (0.0) + qwcnr(mgs)
-
-      IF ( warmonly < 0.5 ) THEN
-      pqcwd(mgs) =    &
-     &  il5(mgs)*(-qiacw(mgs)-qwfrzc(mgs)-qwctfzc(mgs))   &
-     &  -il5(mgs)*(qicichr(mgs))   &
-     &  -qracw(mgs) -qsacw(mgs) -qrcnw(mgs) -qhacw(mgs) - qhlacw(mgs)
-!     >  -il5(mgs)*(qwfrzp(mgs)+qwctfzp(mgs))
-      ELSEIF ( warmonly < 0.8 ) THEN
-      pqcwd(mgs) =    &
-     &  il5(mgs)*(-qiacw(mgs)-qwfrzc(mgs)-qwctfzc(mgs))   &
-!     &  il5(mgs)*(-qwfrzc(mgs)-qwctfzc(mgs))   &
-     &  -il5(mgs)*(qicichr(mgs))   &
-     &  -qracw(mgs) -qrcnw(mgs) -qhacw(mgs) -qhlacw(mgs)
-      ELSE
-      pqcwd(mgs) =    &
-     &  -qracw(mgs) - qrcnw(mgs)
-      ENDIF
-
-      IF ( pqcwd(mgs) .lt. 0.0 .and. -pqcwd(mgs)*dtp .gt. qx(mgs,lc) ) THEN
-
-       frac = -Max(0.0,qx(mgs,lc))/(pqcwd(mgs)*dtp)
-       pqcwd(mgs) = -qx(mgs,lc)/dtp
-
-        qiacw(mgs)   = frac*qiacw(mgs)
-!        qwfrzp(mgs)  = frac*qwfrzp(mgs)
-!        qwctfzp(mgs) = frac*qwctfzp(mgs)
-        qwfrzc(mgs)  = frac*qwfrzc(mgs)
-        qwctfzc(mgs) = frac*qwctfzc(mgs)
-        qracw(mgs)   = frac*qracw(mgs)
-        qsacw(mgs)   = frac*qsacw(mgs)
-        qhacw(mgs)   = frac*qhacw(mgs)
-        vhacw(mgs)   = frac*vhacw(mgs)
-        qrcnw(mgs)   = frac*qrcnw(mgs)
-        IF ( lhl .gt. 1 ) THEN
-          qhlacw(mgs)   = frac*qhlacw(mgs)
-          vhlacw(mgs)   = frac*vhlacw(mgs)
-        ENDIF
-!        IF ( lzh .gt. 1 ) zhacw(mgs) = frac*zhacw(mgs)
-
-!       STOP
-      ENDIF
-      
-
-      end do
-!
-!  Cloud ice
-!
-      IF ( warmonly < 0.5 ) THEN
-
-      do mgs = 1,ngscnt
-      pqcii(mgs) =     &
-     &   il5(mgs)*qicicnt(mgs)    &
-     &  +il5(mgs)*qidpv(mgs)    &
-     &  +il5(mgs)*qiacw(mgs)   & ! (qiacwi(mgs)+qwacii(mgs))   &
-     &  +il5(mgs)*(qwfrzc(mgs)+qwctfzc(mgs))   &
-     &  +il5(mgs)*(qicichr(mgs))   &
-     &  +qsmul(mgs)               &
-     &  +qhmul1(mgs) + qhlmul1(mgs)   &
-     & + qsplinter(mgs) + qsplinter2(mgs)
-!     > + cimas0*nsplinter*(crfrzf(mgs) + crfrz(mgs))/rho0(mgs)
-
-      pqcid(mgs) =     &
-     &   il5(mgs)*(-qscni(mgs) - qscnvi(mgs)    & ! -qwaci(mgs)    &
-     &  -qraci(mgs)    &
-     &  -qsaci(mgs) )   &
-     &  -qhaci(mgs)   &
-     &  -qhlaci(mgs)    &
-     &  +il5(mgs)*qisbv(mgs)    &
-     &  +(1.-il5(mgs))*qimlr(mgs)   &
-     &  - qhcni(mgs)
-      end do
-
-      ELSEIF ( warmonly < 0.8 ) THEN
-
-      do mgs = 1,ngscnt
-      pqcii(mgs) =     &
-     &   il5(mgs)*qicicnt(mgs)     &
-     &  +il5(mgs)*(qwfrzc(mgs)+qwctfzc(mgs))   &
-!     &  +il5(mgs)*(qicichr(mgs))   &
-!     &  +qsmul(mgs)               &
-     &  +qhmul1(mgs) + qhlmul1(mgs)   &
-     & + qsplinter(mgs) + qsplinter2(mgs) &
-     &  +il5(mgs)*qidpv(mgs)    &
-     &  +il5(mgs)*qiacw(mgs)  ! & ! (qiacwi(mgs)+qwacii(mgs))   &
-!     &  +il5(mgs)*(qwfrzc(mgs)+qwctfzc(mgs))   &
-!     &  +il5(mgs)*(qicichr(mgs))   &
-!     &  +qsmul(mgs)               &
-!     &  +qhmul1(mgs) + qhlmul1(mgs)   &
-!     & + qsplinter(mgs) + qsplinter2(mgs)
-
-      pqcid(mgs) =     &
-!     &   il5(mgs)*(-qscni(mgs) - qscnvi(mgs)    & ! -qwaci(mgs)    &
-!     &  -qraci(mgs)    &
-!     &  -qsaci(mgs) )   &
-!     &  -qhaci(mgs)   &
-!     &  -qhlaci(mgs)    &
-     &  +il5(mgs)*qisbv(mgs)    &
-     &  +(1.-il5(mgs))*qimlr(mgs)  ! &
-!     &  - qhcni(mgs)
-      end do
-
-      ENDIF
-!
-!  Rain
-!
-
-      do mgs = 1,ngscnt
-      IF ( warmonly < 0.5 ) THEN
-      pqrwi(mgs) =     &
-     &   qracw(mgs) + qrcnw(mgs) + Max(0.0, qrcev(mgs))   &
-     &  +(1-il5(mgs))*(   &
-     &    -qhmlr(mgs)                 &            !null at this point when wet snow/graupel included
-     &    -qsmlr(mgs)  - qhlmlr(mgs)     &
-     &    -qimlr(mgs))   &
-     &    -qsshr(mgs)       &                      !null at this point when wet snow/graupel included
-     &    -qhshr(mgs)       &                      !null at this point when wet snow/graupel included
-     &    -qhlshr(mgs)
-      pqrwd(mgs) =     &
-     &  il5(mgs)*(-qiacr(mgs)-qrfrz(mgs))    &
-     &  - qsacr(mgs) - qhacr(mgs) - qhlacr(mgs) - qwcnr(mgs)   &
-     &  + Min(0.0,qrcev(mgs))
-      ELSEIF ( warmonly < 0.8 ) THEN
-      pqrwi(mgs) =     &
-     &   qracw(mgs) + qrcnw(mgs) + Max(0.0, qrcev(mgs))   &
-     &  +(1-il5(mgs))*(   &
-     &    -qhmlr(mgs)                 &            !null at this point when wet snow/graupel included
-     &    -qhshr(mgs)                 &           !null at this point when wet snow/graupel included
-     &    -qhlmlr(mgs)                 &            !null at this point when wet snow/graupel included
-     &    -qhlshr(mgs) )                           !null at this point when wet snow/graupel included
-      pqrwd(mgs) =     &
-     &  il5(mgs)*(-qrfrz(mgs))    &
-     &   - qhacr(mgs)    &
-     &   - qhlacr(mgs)    &
-     &  + Min(0.0,qrcev(mgs))
-      ELSE
-      pqrwi(mgs) =     &
-     &   qracw(mgs) + qrcnw(mgs) + Max(0.0, qrcev(mgs))
-      pqrwd(mgs) =  Min(0.0,qrcev(mgs))
-      ENDIF ! warmonly
-
-
- !      IF ( pqrwd(mgs) .lt. 0.0 .and. -(pqrwd(mgs) + pqrwi(mgs))*dtp .gt. qx(mgs,lr)  ) THEN
-      IF ( pqrwd(mgs) .lt. 0.0 .and. -(pqrwd(mgs) + pqrwi(mgs))*dtp .gt. qx(mgs,lr)  ) THEN
-
-       frac = (-qx(mgs,lr) + pqrwi(mgs)*dtp)/(pqrwd(mgs)*dtp)
-!       pqrwd(mgs) = -qx(mgs,lr)/dtp  + pqrwi(mgs)
-
-       pqwvi(mgs) = pqwvi(mgs)    &
-     &  + Min(0.0, qrcev(mgs))   &
-     &  - frac*Min(0.0, qrcev(mgs))
-       pqwvd(mgs) =  pqwvd(mgs)   &
-     &  + Max(0.0, qrcev(mgs))   &
-     &  - frac*Max(0.0, qrcev(mgs))
-
-       qiacr(mgs)  = frac*qiacr(mgs)
-       qiacrf(mgs) = frac*qiacrf(mgs)
-       viacrf(mgs) = frac*viacrf(mgs)
-       qrfrz(mgs)  = frac*qrfrz(mgs) 
-       qrfrzs(mgs) = frac*qrfrzs(mgs) 
-       qrfrzf(mgs) = frac*qrfrzf(mgs)
-       vrfrzf(mgs) = frac*vrfrzf(mgs)
-       qsacr(mgs)  = frac*qsacr(mgs)
-       qhacr(mgs)  = frac*qhacr(mgs)
-       vhacr(mgs)  = frac*vhacr(mgs)
-       qrcev(mgs)  = frac*qrcev(mgs)
-       qhlacr(mgs) = frac*qhlacr(mgs)
-       vhlacr(mgs) = frac*vhlacr(mgs)
-!       qhcev(mgs)  = frac*qhcev(mgs)
-
-
-      IF ( warmonly < 0.5 ) THEN
-       pqrwd(mgs) =     &
-     &  il5(mgs)*(-qiacr(mgs)-qrfrz(mgs) - qsacr(mgs))    &
-     &  - qhacr(mgs) - qhlacr(mgs) - qwcnr(mgs)   &
-     &  + Min(0.0,qrcev(mgs))
-      ELSEIF ( warmonly < 0.8 ) THEN
-      pqrwd(mgs) =     &
-     &  il5(mgs)*(-qrfrz(mgs))    &
-     &   - qhacr(mgs)    &
-     &   - qhlacr(mgs)    &
-     &  + Min(0.0,qrcev(mgs))
-      ELSE
-       pqrwd(mgs) =  Min(0.0,qrcev(mgs))
-      ENDIF ! warmonly
-
-!
-! Resum for vapor since qrcev has changed
-!
-      IF ( qrcev(mgs) .ne. 0.0 ) THEN
-       pqwvi(mgs) =    &
-     &  -Min(0.0, qrcev(mgs))   &
-     &  -Min(0.0, qhcev(mgs))   &
-     &  -Min(0.0, qhlcev(mgs))   &
-     &  -Min(0.0, qscev(mgs))   &
-!     >  +il5(mgs)*(-qhsbv(mgs)  - qhlsbv(mgs) )   &
-     &  -qhsbv(mgs)  - qhlsbv(mgs)   &
-     &  -qssbv(mgs)    &
-     &  -il5(mgs)*qisbv(mgs)
-       pqwvd(mgs) =     &
-     &  -Max(0.0, qrcev(mgs))   &
-     &  -Max(0.0, qhcev(mgs))   &
-     &  -Max(0.0, qhlcev(mgs))   &
-     &  -Max(0.0, qscev(mgs))   &
-     &  +il5(mgs)*(-qiint(mgs)   &
-     &  -qhdpv(mgs) -qsdpv(mgs) - qhldpv(mgs))   &
-     &  -il5(mgs)*qidpv(mgs)
-       ENDIF
-
-
-!       STOP
-      ENDIF
-      end do
-
-      IF ( warmonly < 0.5 ) THEN
-
-!
-!  Snow
-!
-      do mgs = 1,ngscnt
-      pqswi(mgs) =     &
-     &   il5(mgs)*(qscni(mgs)+qsaci(mgs)+qsdpv(mgs)   &
-     &   + qscnvi(mgs) + qrfrzs(mgs) + il2(mgs)*qsacr(mgs))   &
-     &   + il3(mgs)*(qiacrf(mgs)+qracif(mgs)) &
-     &   + Max(0.0, qscev(mgs))   &
-     &   + qsacw(mgs)
-      pqswd(mgs) =    &
-!     >  -qfacs(mgs) ! -qwacs(mgs)   &
-     &  -qracs(mgs)*(1-il2(mgs)) -qhacs(mgs) - qhlacs(mgs)   &
-     &  -qhcns(mgs)   &
-     &  +(1-il5(mgs))*qsmlr(mgs) + qsshr(mgs)    &    !null at this point when wet snow included
-!     >  +il5(mgs)*(qssbv(mgs))   &
-     &  + (qssbv(mgs))   &
-     &  + Min(0.0, qscev(mgs))  &
-     &  -qsmul(mgs)
-      
-      
-      end do 
-      
-!
-!  Graupel
-!
-      do mgs = 1,ngscnt
-      pqhwi(mgs) =    &
-     &  +il5(mgs)*ifrzg*(qrfrzf(mgs)  + (1-il3(mgs))*(qiacrf(mgs)+qracif(mgs)))   &
-     &  + (1-il2(mgs))*(qracs(mgs) + qsacr(mgs))  &
-     &  +il5(mgs)*(qhdpv(mgs))   &
-     &  +Max(0.0, qhcev(mgs))   &
-     &  +qhacr(mgs)+qhacw(mgs)   &
-     &  +qhacs(mgs)+qhaci(mgs)   &
-     &  + qhcns(mgs) + qhcni(mgs)
-      pqhwd(mgs) =     &
-     &   qhshr(mgs)                &    !null at this point when wet graupel included
-     &  +(1-il5(mgs))*qhmlr(mgs)   &    !null at this point when wet graupel included
-!     >  +il5(mgs)*qhsbv(mgs)   &
-     &  + qhsbv(mgs)   &
-     &  + Min(0.0, qhcev(mgs))   &
-     &  -qhmul1(mgs) - qhlcnh(mgs)   &
-     &  - qsplinter(mgs) - qsplinter2(mgs)
-!     > - cimas0*nsplinter*(crfrzf(mgs) + crfrz(mgs))/rho0(mgs)
-      end do
-
-!
-!  Hail
-!
-      IF ( lhl .gt. 1 ) THEN
-
-      do mgs = 1,ngscnt
-      pqhli(mgs) =    &
-     &  +il5(mgs)*(qhldpv(mgs) + (1.0-ifrzg)*(qiacrf(mgs)+qrfrzf(mgs)  + qracif(mgs)))   &
-     &  +Max(0.0, qhlcev(mgs))   &
-     &  +qhlacr(mgs)+qhlacw(mgs)   &
-     &  +qhlacs(mgs)+qhlaci(mgs)   &
-     &  + qhlcnh(mgs)
-      pqhld(mgs) =     &
-     &   qhlshr(mgs)    &
-     &  +(1-il5(mgs))*qhlmlr(mgs)    &
-!     >  +il5(mgs)*qhlsbv(mgs)   &
-     &  + qhlsbv(mgs)   &
-     &  + Min(0.0, qhlcev(mgs))   &
-     &  -qhlmul1(mgs)
-      end do
-      
-      ENDIF ! lhl
-
-      ELSEIF ( warmonly < 0.8 ) THEN
-!
-!  Graupel
-!
-      do mgs = 1,ngscnt
-      pqhwi(mgs) =    &
-     &  +il5(mgs)*ifrzg*(qrfrzf(mgs) )   &
-     &  +il5(mgs)*(qhdpv(mgs))   &
-     &  +qhacr(mgs)+qhacw(mgs)   
-      pqhwd(mgs) =     &
-     &   qhshr(mgs)                &    !null at this point when wet graupel included
-     &  - qhlcnh(mgs)   &
-     &  - qhmul1(mgs)   &
-     &  - qsplinter(mgs) - qsplinter2(mgs) &
-     &  +(1-il5(mgs))*qhmlr(mgs)        !null at this point when wet graupel included
-       end do
-
-!
-!  Hail
-!
-      IF ( lhl .gt. 1 ) THEN
-
-      do mgs = 1,ngscnt
-      pqhli(mgs) =    &
-     &  +il5(mgs)*(qhldpv(mgs) ) & ! + (1.0-ifrzg)*(qiacrf(mgs)+qrfrzf(mgs)  + qracif(mgs)))   &
-     &  +qhlacr(mgs)+qhlacw(mgs)   &
-!     &  +qhlacs(mgs)+qhlaci(mgs)   &
-     &  + qhlcnh(mgs)
-      pqhld(mgs) =     &
-     &   qhlshr(mgs)    &
-     &  +(1-il5(mgs))*qhlmlr(mgs)    &
-!     >  +il5(mgs)*qhlsbv(mgs)   &
-     &  + qhlsbv(mgs)   &
-     &  -qhlmul1(mgs)
-
-      end do
-
-      ENDIF ! lhl
-
-      ENDIF ! warmonly
-
-!
-!  Liquid water on snow and graupel
-!
-
-      vhmlr(:) = 0.0
-      vhlmlr(:) = 0.0
-      vhfzh(:) = 0.0
-      vhlfzhl(:) = 0.0
-
-      IF ( mixedphase ) THEN
-      ELSE ! set arrays for non-mixedphase graupel
-      
-!        vhshdr(:) = 0.0
-        vhmlr(:) = qhmlr(:) ! not actually volume, but treated as q in rate equation
-!        vhsoak(:) = 0.0
-
-!        vhlshdr(:) = 0.0
-        vhlmlr(:) = qhlmlr(:) ! not actually volume, but treated as q in rate equation
-!        vhlmlr(:) = rho0(:)*qhlmlr(:)/xdn(:,lhl) 
-!        vhlsoak(:) = 0.0
-      
-      ENDIF  ! mixedphase
-
-
-
-!
-!  Snow volume
-!
-      IF ( lvol(ls) .gt. 1 ) THEN
-      do mgs = 1,ngscnt
-!      pvswi(mgs) = rho0(mgs)*( pqswi(mgs) )/xdn0(ls)
-
-      pvswi(mgs) = rho0(mgs)*(    &
-!aps     >   il5*qsfzs(mgs)/xdn(mgs,ls)   &
-!aps     >  -il5*qsfzs(mgs)/xdn(mgs,lr)   &
-     &  +il5(mgs)*(qscni(mgs)+qsaci(mgs)+qsdpv(mgs)   &
-     &   + qscnvi(mgs) + qrfrzs(mgs))/xdn0(ls)   &
-     &    + (qsacr(mgs))/rimdn(mgs,ls) ) + vsacw(mgs)
-!     >   + (qsacw(mgs) + qsacr(mgs))/rimdn(mgs,ls) )
-      pvswd(mgs) = rho0(mgs)*( pqswd(mgs) )/xdn0(ls)  &
-!     >  -qhacs(mgs)
-!     >  -qhcns(mgs)
-!     >  +(1-il5(mgs))*qsmlr(mgs) + qsshr(mgs)
-!     >  +il5(mgs)*(qssbv(mgs))
-     &   -rho0(mgs)*qsmul(mgs)/xdn0(ls)
-!aps     >   +rho0(mgs)*(1-il5(mgs))*(
-!aps     >             qsmlr(mgs)/xdn(mgs,ls)
-!aps     >    +(qscev-qsmlr(mgs))/xdn(mgs,lr) )
-      end do
-
-!aps      IF (mixedphase) THEN
-!aps        pvswd(mgs) = pvswd(mgs)
-!aps     >   + rho0(mgs)*qsshr(mgs)/xdn(mgs,lr)
-!aps      ENDIF
-
-      ENDIF
-!
-!  Graupel volume
-!
-      IF ( lvol(lh) .gt. 1 ) THEN
-      DO mgs = 1,ngscnt
-!      pvhwi(mgs) = rho0(mgs)*( (pqhwi(mgs) )/xdn0(lh) )
-
-!      pvhwi(mgs) = rho0(mgs)*( (pqhwi(mgs) - il5(mgs)*qrfrzf(mgs) )/xdn0(lh) !
-!     :  +  il5(mgs)*qrfrzf(mgs)/rhofrz )
-
-      pvhwi(mgs) = rho0(mgs)*(   &
-     &  +il5(mgs)*( qracif(mgs))/rhofrz   &
-!erm     >  + il5(mgs)*qhfzh(mgs)/rhofrz !aps: or use xdnmx(lh)?   &
-     &  + (  il5(mgs)*qhdpv(mgs)   &
-     &     + qhacs(mgs) + qhaci(mgs) )/xdnmn(lh) )   &
-     &  +   rho0(mgs)*Max(0.0, qhcev(mgs))/1000.   & ! only used in mixed phase: evaporation of liquid water coating
-!     >     + qhacs(mgs) + qhaci(mgs) )/xdn0(ls) )   &
-     &  + vhcns(mgs)   &
-     &  + vhacr(mgs) + vhacw(mgs)  + vhfzh(mgs)   & ! qhacw(mgs)/rimdn(mgs,lh)
-!     >  + vhfrh(mgs)   &
-     &  + vhcni(mgs) + viacrf(mgs) + vrfrzf(mgs)
-!     >  +qhacr(mgs)/raindn(mgs,lh) + qhacw(mgs)/rimdn(mgs,lh)
-      
-!      pvhwd(mgs) = rho0(mgs)*(pqhwd(mgs) )/xdn0(lh)
-
-      pvhwd(mgs) = rho0(mgs)*(   &
-!     >   qhshr(mgs)/xdn0(lr)   &
-!     >  - il5(mgs)*qhfzh(mgs)/xdn(mgs,lr)   &
-     &  +( (1-il5(mgs))*vhmlr(mgs)    &
-!     >     +il5(mgs)*qhsbv(mgs)   &
-     &     + qhsbv(mgs)   &
-     &     + Min(0.0, qhcev(mgs))   &
-     &     -qhmul1(mgs) )/xdn(mgs,lh) )   &
-     &  - vhlcnh(mgs) + vhshdr(mgs) - vhsoak(mgs)
-
-!      IF (mixedphase) THEN
-!       pvhwd(mgs) = pvhwd(mgs) 
-!     >  + rho0(mgs)*qhshr(mgs)/xdn(mgs,lh) !xdn(mgs,lr)
-!      ENDIF
-
-      IF ( .false. .and. ny .eq. 2 .and. kgs(mgs) .eq. 9 .and. igs(mgs) .eq. 19 ) THEN
-
-      write(iunit,*)
-      write(iunit,*)   'Graupel at ',igs(mgs),kgs(mgs)
-!
-      write(iunit,*)   il5(mgs)*qrfrzf(mgs), qrfrzf(mgs) - qrfrz(mgs)
-      write(iunit,*)   il5(mgs)*qiacrf(mgs)
-      write(iunit,*)   il5(mgs)*qracif(mgs)
-      write(iunit,*)   'qhcns',qhcns(mgs)
-      write(iunit,*)   'qhcni',qhcni(mgs)
-      write(iunit,*)   il5(mgs)*(qhdpv(mgs))
-      write(iunit,*)   'qhacr ',qhacr(mgs)
-      write(iunit,*)   'qhacw', qhacw(mgs)
-      write(iunit,*)   'qhacs', qhacs(mgs)
-      write(iunit,*)   'qhaci', qhaci(mgs)
-      write(iunit,*)   'pqhwi = ',pqhwi(mgs)
-      write(iunit,*)
-      write(iunit,*) 'qhcev',qhcev(mgs)
-      write(iunit,*)
-      write(iunit,*)   'qhshr',qhshr(mgs)
-      write(iunit,*)  'qhmlr', (1-il5(mgs))*qhmlr(mgs)
-      write(iunit,*)   'qhsbv', qhsbv(mgs)
-      write(iunit,*)   'qhlcnh',-qhlcnh(mgs)
-      write(iunit,*)   'qhmul1',-qhmul1(mgs)
-      write(iunit,*)   'pqhwd = ', pqhwd(mgs)
-      write(iunit,*)
-      write(iunit,*)  'Volume'
-      write(iunit,*)
-      write(iunit,*)  'pvhwi',pvhwi(mgs)
-      write(iunit,*)   'vhcns', vhcns(mgs)
-      write(iunit,*)  'vhacr,vhacw',vhacr(mgs), vhacw(mgs) ! qhacw(mgs)/rimdn(mgs,lh)
-      write(iunit,*)  'vhcni',vhcni(mgs)
-      write(iunit,*)
-      write(iunit,*)  'pvhwd',pvhwd(mgs)
-      write(iunit,*)  'vhlcnh,vhshdr,vhsoak ', vhlcnh(mgs),  vhshdr(mgs), vhsoak(mgs)
-      write(iunit,*)  'vhmlr', vhmlr(mgs)
-      write(iunit,*)
-!      write(iunit,*)
-!      write(iunit,*)
-!      write(iunit,*)
-      write(iunit,*)  'Concentration'
-      write(iunit,*)   pchwi(mgs),pchwd(mgs)
-      write(iunit,*)  crfrzf(mgs)
-      write(iunit,*)  chcns(mgs)
-      write(iunit,*)  ciacrf(mgs)
-
-
-      ENDIF
-
-
-      ENDDO
-
-      ENDIF
-!
-!
-!
-
-!
-!  Hail volume
-!
-      IF ( lhl .gt. 1 ) THEN
-      IF ( lvol(lhl) .gt. 1 ) THEN
-      DO mgs = 1,ngscnt
-
-      pvhli(mgs) = rho0(mgs)*(   &
-     &  + (  il5(mgs)*qhldpv(mgs)   &
-!     &  +    Max(0.0, qhlcev(mgs))   &
-!     &     + qhlacs(mgs) + qhlaci(mgs) )/xdnmn(lhl) )   & ! xdn0(ls) )   &
-     &     + qhlacs(mgs) + qhlaci(mgs) )/xdnmn(lh) )   &  ! yes, this is 'lh' on purpose
-     &  +   rho0(mgs)*Max(0.0, qhlcev(mgs))/1000.   &
-     &  + vhlcnhl(mgs)   &
-     &  + vhlacr(mgs) + vhlacw(mgs) + vhlfzhl(mgs) ! qhlacw(mgs)/rimdn(mgs,lhl)
-      
-      pvhld(mgs) = rho0(mgs)*(   &
-     &  +(  qhlsbv(mgs)   &
-     &     + Min(0.0, qhlcev(mgs))   &
-     &     -qhlmul1(mgs) )/xdn(mgs,lhl) ) &
-!     &   + vhlmlr(mgs)                    &
-     &   + rho0(mgs)*(1-il5(mgs))*vhlmlr(mgs)/xdn(mgs,lhl)  &
-     &   + vhlshdr(mgs) - vhlsoak(mgs)
-
-
-      ENDDO
-      
-      ENDIF
-      ENDIF
-
-
-      if ( ndebug .ge. 1 ) then
-      do mgs = 1,ngscnt
-!
-      ptotal(mgs) = 0.
-      ptotal(mgs) = ptotal(mgs)    &
-     &  + pqwvi(mgs) + pqwvd(mgs)   &
-     &  + pqcwi(mgs) + pqcwd(mgs)   &
-     &  + pqcii(mgs) + pqcid(mgs)   &
-     &  + pqrwi(mgs) + pqrwd(mgs)   &
-     &  + pqswi(mgs) + pqswd(mgs)   &
-     &  + pqhwi(mgs) + pqhwd(mgs)   &
-     &  + pqhli(mgs) + pqhld(mgs)
-!
-
-      if ( ( (ndebug .ge. 1  ) .and. abs(ptotal(mgs)) .gt. eqtot )   &
-!      if ( (  abs(ptotal(mgs)) .gt. eqtot )
-!     :    .or. pqswi(mgs)*dtp .gt. 1.e-3
-!     :    .or. pqhwi(mgs)*dtp .gt. 1.e-3
-!     :     .or. dtp*(pqrwi(mgs)+pqrwd(mgs)) .gt. 10.0e-3
-!     :     .or. dtp*(pccii(mgs)+pccid(mgs)) .gt. 1.e7
-!     :     .or. dtp*(pcipi(mgs)+pcipd(mgs)) .gt. 1.e7    &
-     &  .or.  .not. (ptotal(mgs) .lt. 1.0 .and.   &
-     &            ptotal(mgs) .gt. -1.0)    ) then
-      write(iunit,*) 'YIKES! ','ptotal1',mgs,igs(mgs),jgs,   &
-     &       kgs(mgs),ptotal(mgs)
-
-      write(iunit,*) 't7: ', t7(igs(mgs),jgs,kgs(mgs))
-      write(iunit,*)  'cci,ccw,crw,rdia: ',cx(mgs,li),cx(mgs,lc),cx(mgs,lr),0.5*xdia(mgs,lr,1)
-      write(iunit,*)  'qc,qi,qr : ',qx(mgs,lc),qx(mgs,li),qx(mgs,lr)
-      write(iunit,*)  'rmas, qrcalc : ',xmas(mgs,lr),xmas(mgs,lr)*cx(mgs,lr)/rho0(mgs)
-      write(iunit,*)  'vti,vtc,eiw,vtr: ',vtxbar(mgs,li,1),vtxbar(mgs,lc,1),eiw(mgs),vtxbar(mgs,lr,1)
-      write(iunit,*)  'cidia,cwdia,qcmxd: ', xdia(mgs,li,1),xdia(mgs,lc,1),qcmxd(mgs)
-      write(iunit,*)  'snow: ',qx(mgs,ls),cx(mgs,ls),swvent(mgs),vtxbar(mgs,ls,1),xdia(mgs,ls,1)
-      write(iunit,*)  'graupel: ',qx(mgs,lh),cx(mgs,lh),hwvent(mgs),vtxbar(mgs,lh,1),xdia(mgs,lh,1)
-      IF ( lhl .gt. 1 ) write(iunit,*)  'hail: ',qx(mgs,lhl),cx(mgs,lhl),hlvent(mgs),vtxbar(mgs,lhl,1),xdia(mgs,lhl,1)
-
-
-      write(iunit,*)  'li: ',xdia(mgs,li,1),xdia(mgs,li,2),xmas(mgs,li),qx(mgs,li),   &
-     &         vtxbar(mgs,li,1)
-
-
-      write(iunit,*)  'rain cx,xv : ',cx(mgs,lr),xv(mgs,lr)
-      write(iunit,*)  'temcg = ', temcg(mgs)
-
-      write(iunit,*)  pqwvi(mgs) ,pqwvd(mgs)
-      write(iunit,*)  pqcwi(mgs) ,pqcwd(mgs)
-      write(iunit,*)  pqcii(mgs) ,pqcid(mgs)
-      write(iunit,*)  pqrwi(mgs) ,pqrwd(mgs)
-      write(iunit,*)  pqswi(mgs) ,pqswd(mgs)
-      write(iunit,*)  pqhwi(mgs) ,pqhwd(mgs)
-      write(iunit,*)  pqhli(mgs) ,pqhld(mgs)
-      write(iunit,*) 'END OF OUTPUT OF SOURCE AND SINK'
-
-!
-!  print production terms
-!
-      write(iunit,*)
-      write(iunit,*)   'Vapor'
-!
-      write(iunit,*)   -Min(0.0,qrcev(mgs))
-      write(iunit,*)   -il5(mgs)*qhsbv(mgs)
-      write(iunit,*)   -il5(mgs)*qhlsbv(mgs)
-      write(iunit,*)   -il5(mgs)*qssbv(mgs)
-      write(iunit,*)   -il5(mgs)*qisbv(mgs)
-      write(iunit,*)    'pqwvi= ', pqwvi(mgs)
-      write(iunit,*)   -Max(0.0,qrcev(mgs))
-      write(iunit,*)   -il5(mgs)*qiint(mgs)
-      write(iunit,*)   -il5(mgs)*qhdpv(mgs)
-      write(iunit,*)   -il5(mgs)*qhldpv(mgs)
-      write(iunit,*)   -il5(mgs)*qsdpv(mgs)
-      write(iunit,*)   -il5(mgs)*qidpv(mgs)
-      write(iunit,*)    'pqwvd = ', pqwvd(mgs)
-!
-      write(iunit,*)
-      write(iunit,*)   'Cloud ice'
-!
-      write(iunit,*)   il5(mgs)*qicicnt(mgs)
-      write(iunit,*)   il5(mgs)*qidpv(mgs)
-      write(iunit,*)   il5(mgs)*qiacw(mgs)
-      write(iunit,*)   il5(mgs)*qwfrz(mgs)
-      write(iunit,*)   il5(mgs)*qwctfz(mgs)
-      write(iunit,*)   il5(mgs)*qicichr(mgs)
-      write(iunit,*)   qhmul1(mgs)
-      write(iunit,*)   qhlmul1(mgs)
-      write(iunit,*)   'pqcii = ', pqcii(mgs)
-      write(iunit,*)   -il5(mgs)*qscni(mgs)
-      write(iunit,*)   -il5(mgs)*qscnvi(mgs)
-      write(iunit,*)   -il5(mgs)*qraci(mgs)
-      write(iunit,*)   -il5(mgs)*qsaci(mgs)
-      write(iunit,*)   -il5(mgs)*qhaci(mgs)
-      write(iunit,*)   -il5(mgs)*qhlaci(mgs)
-      write(iunit,*)   il5(mgs)*qisbv(mgs)
-      write(iunit,*)   (1.-il5(mgs))*qimlr(mgs)
-      write(iunit,*)   -il5(mgs)*qhcni(mgs)
-      write(iunit,*)   'pqcid = ', pqcid(mgs)
-      write(iunit,*)   ' Conc:'
-      write(iunit,*)   pccii(mgs),pccid(mgs)
-      write(iunit,*)   il5(mgs),cicint(mgs)
-      write(iunit,*)   cwacii(mgs),cwfrzc(mgs),cwctfzc(mgs)
-      write(iunit,*)   cicichr(mgs)
-      write(iunit,*)   chmul1(mgs)
-      write(iunit,*)   chlmul1(mgs)
-      write(iunit,*)   csmul(mgs)
-!
-!
-!
-!
-      write(iunit,*)
-      write(iunit,*)   'Cloud water'
-!
-      write(iunit,*)   'pqcwi =', pqcwi(mgs)
-      write(iunit,*)   -il5(mgs)*qiacw(mgs)
-      write(iunit,*)   -il5(mgs)*qwfrzc(mgs)
-      write(iunit,*)   -il5(mgs)*qwctfzc(mgs)
-!      write(iunit,*)   -il5(mgs)*qwfrzp(mgs)
-!      write(iunit,*)   -il5(mgs)*qwctfzp(mgs)
-      write(iunit,*)   -il5(mgs)*qiihr(mgs)
-      write(iunit,*)   -il5(mgs)*qicichr(mgs)
-      write(iunit,*)   -il5(mgs)*qipiphr(mgs)
-      write(iunit,*)   -qracw(mgs)
-      write(iunit,*)   -qsacw(mgs)
-      write(iunit,*)   -qrcnw(mgs)
-      write(iunit,*)   -qhacw(mgs)
-      write(iunit,*)   -qhlacw(mgs)
-      write(iunit,*)   'pqcwd = ', pqcwd(mgs)
-
-
-      write(iunit,*)
-      write(iunit,*)  'Concentration:'
-      write(iunit,*)   -cautn(mgs)
-      write(iunit,*)   -cracw(mgs)
-      write(iunit,*)   -csacw(mgs)
-      write(iunit,*)   -chacw(mgs)
-      write(iunit,*)  -ciacw(mgs)
-      write(iunit,*)  -cwfrzp(mgs)
-      write(iunit,*)  -cwctfzp(mgs)
-      write(iunit,*)  -cwfrzc(mgs)
-      write(iunit,*)  -cwctfzc(mgs)
-      write(iunit,*)   pccwd(mgs)
-!
-      write(iunit,*)
-      write(iunit,*)      'Rain '
-!
-      write(iunit,*)      qracw(mgs)
-      write(iunit,*)      qrcnw(mgs)
-      write(iunit,*)      Max(0.0, qrcev(mgs))
-      write(iunit,*)       -(1-il5(mgs))*qhmlr(mgs)
-      write(iunit,*)       -(1-il5(mgs))*qhlmlr(mgs)
-      write(iunit,*)       -(1-il5(mgs))*qsmlr(mgs)
-      write(iunit,*)       -(1-il5(mgs))*qimlr(mgs)
-      write(iunit,*)       -qrshr(mgs)
-      write(iunit,*)       'pqrwi = ', pqrwi(mgs)    
-      write(iunit,*)        -qsshr(mgs)     
-      write(iunit,*)        -qhshr(mgs)     
-      write(iunit,*)        -qhlshr(mgs)
-      write(iunit,*)        -il5(mgs)*qiacr(mgs),qiacr(mgs), qiacrf(mgs)
-      write(iunit,*)        -il5(mgs)*qrfrz(mgs)
-      write(iunit,*)        -qsacr(mgs)
-      write(iunit,*)        -qhacr(mgs)
-      write(iunit,*)        -qhlacr(mgs)
-      write(iunit,*)        qrcev(mgs)
-      write(iunit,*)       'pqrwd = ', pqrwd(mgs) 
-      write(iunit,*)       'fhw, fhlw = ',fhw(mgs),fhlw(mgs)
-      write(iunit,*)        'qrzfac = ', qrzfac(mgs)
-!
-      
-      write(iunit,*)
-      write(iunit,*)  'Rain concentration'
-      write(iunit,*)  pcrwi(mgs) 
-      write(iunit,*)    crcnw(mgs)
-      write(iunit,*)    1-il5(mgs)
-      write(iunit,*)   -chmlr(mgs),-csmlr(mgs)
-      write(iunit,*)     -crshr(mgs)
-      write(iunit,*)  pcrwd(mgs) 
-      write(iunit,*)    il5(mgs)
-      write(iunit,*)   -ciacr(mgs),-crfrz(mgs) 
-      write(iunit,*)   -csacr(mgs),-chacr(mgs)
-      write(iunit,*)   +crcev(mgs)
-      write(iunit,*)   cracr(mgs)
-!      write(iunit,*)   -il5(mgs)*ciracr(mgs)
-
-
-      write(iunit,*)
-      write(iunit,*)   'Snow'
-!
-      write(iunit,*)        il5(mgs)*qscni(mgs), qscnvi(mgs)
-      write(iunit,*)        il5(mgs)*qsaci(mgs)
-      write(iunit,*)        il5(mgs)*qrfrzs(mgs)
-      write(iunit,*)        il5(mgs)*qsdpv(mgs)
-      write(iunit,*)        qsacw(mgs)
-      write(iunit,*)        qsacr(mgs)
-      write(iunit,*)        'pqswi = ',pqswi(mgs)
-      write(iunit,*)        -qhcns(mgs)
-!      write(iunit,*)        -qracs(mgs)
-      write(iunit,*)        -qhacs(mgs)
-      write(iunit,*)        -qhlacs(mgs)
-      write(iunit,*)       (1-il5(mgs))*qsmlr(mgs)
-      write(iunit,*)       qsshr(mgs)
-!      write(iunit,*)       qsshrp(mgs)
-      write(iunit,*)       il5(mgs)*(qssbv(mgs))
-      write(iunit,*)       'pqswd = ', pqswd(mgs)
-!
-!
-      write(iunit,*)
-      write(iunit,*)   'Graupel'
-!
-      write(iunit,*)   il5(mgs)*qrfrzf(mgs), qrfrzf(mgs) - qrfrz(mgs)
-      write(iunit,*)   il5(mgs)*qiacrf(mgs)
-      write(iunit,*)   il5(mgs)*qracif(mgs)
-      write(iunit,*)   qhcns(mgs)
-      write(iunit,*)   qhcni(mgs)
-      write(iunit,*)   il5(mgs)*(qhdpv(mgs))
-      write(iunit,*)   qhacr(mgs)
-      write(iunit,*)   qhacw(mgs)
-      write(iunit,*)   qhacs(mgs)
-      write(iunit,*)   qhaci(mgs)
-      write(iunit,*)   'pqhwi = ',pqhwi(mgs)
-      write(iunit,*)
-      write(iunit,*)   qhshr(mgs)
-      write(iunit,*)   (1-il5(mgs))*qhmlr(mgs)
-      write(iunit,*)   il5(mgs),qhsbv(mgs)
-      write(iunit,*)   -qhlcnh(mgs)
-      write(iunit,*)   -qhmul1(mgs)
-      write(iunit,*)   'pqhwd = ', pqhwd(mgs)
-      write(iunit,*)  'Concentration'
-      write(iunit,*)   pchwi(mgs),pchwd(mgs)
-      write(iunit,*)  crfrzf(mgs)
-      write(iunit,*)  chcns(mgs)
-      write(iunit,*)  ciacrf(mgs)
-
-!
-      write(iunit,*)
-      write(iunit,*)   'Hail'
-!
-      write(iunit,*)   qhlcnh(mgs)
-      write(iunit,*)   il5(mgs)*(qhldpv(mgs))
-      write(iunit,*)   qhlacr(mgs)
-      write(iunit,*)   qhlacw(mgs)
-      write(iunit,*)   qhlacs(mgs)
-      write(iunit,*)   qhlaci(mgs)
-      write(iunit,*)   pqhli(mgs)
-      write(iunit,*)
-      write(iunit,*)   qhlshr(mgs)
-      write(iunit,*)   (1-il5(mgs))*qhlmlr(mgs)
-      write(iunit,*)   il5(mgs)*qhlsbv(mgs)
-      write(iunit,*)   pqhld(mgs)
-      write(iunit,*)  'Concentration'
-      write(iunit,*)   pchli(mgs),pchld(mgs)
-      write(iunit,*)  chlcnh(mgs)
-!
-!  Balance and checks for continuity.....within machine precision...
-!
-!
-      write(iunit,*) 'END OF OUTPUT OF SOURCE AND SINK'
-      write(iunit,*) 'PTOTAL',ptotal(mgs)
-!
-      end if
-!
-      end do
-!
-
-      end if ! ( nstep/12*12 .eq. nstep )
-
-!
-!  latent heating from phase changes (except qcw, qci cond, and evap)
-!
-      do mgs = 1,ngscnt
-      IF ( warmonly < 0.5 ) THEN
-      pfrz(mgs) =    &
-     &  (1-il5(mgs))*   &
-     &  (qhmlr(mgs)+qsmlr(mgs)+qhlmlr(mgs))   & !+qhmlh(mgs))   &
-     &  +il5(mgs)*(qhfzh(mgs)+qsfzs(mgs)+qhlfzhl(mgs))   &
-     &  +il5(mgs)*(1-imixedphase)*(   &
-     &   qsacw(mgs)+qhacw(mgs) + qhlacw(mgs)   &
-     &  +qsacr(mgs)+qhacr(mgs) + qhlacr(mgs)   &
-     &  +qsshr(mgs)   &
-     &  +qhshr(mgs)   &
-     &  +qhlshr(mgs) +qrfrz(mgs)+qiacr(mgs)  &
-     &  )  &
-     &  +il5(mgs)*(qwfrz(mgs)    &
-     &  +qwctfz(mgs)+qiihr(mgs)   &
-     &  +qiacw(mgs))
-      pmlt(mgs) =    &
-     &  (1-il5(mgs))*   &
-     &  (qhmlr(mgs)+qsmlr(mgs)+qhlmlr(mgs))    !+qhmlh(mgs))   
-      psub(mgs) =    &
-     &   il5(mgs)*(   &
-     &  + qsdpv(mgs) + qhdpv(mgs)   &
-     &  + qhldpv(mgs)    &
-     &  + qidpv(mgs) + qisbv(mgs) )   &
-     &   + qssbv(mgs)  + qhsbv(mgs) + qhlsbv(mgs)   &
-     &  +il5(mgs)*(qiint(mgs))
-      pvap(mgs) =    &
-     &   qrcev(mgs) + qhcev(mgs) + qscev(mgs) + qhlcev(mgs)
-      pevap(mgs) =    &
-     &   Min(0.0,qrcev(mgs)) + Min(0.0,qhcev(mgs)) + Min(0.0,qscev(mgs)) + Min(0.0,qhlcev(mgs))
-      pdep(mgs) =    &
-     &   il5(mgs)*(   &
-     &  + qsdpv(mgs) + qhdpv(mgs)   &
-     &  + qhldpv(mgs)    &
-     &  + qidpv(mgs)  )   &
-     &  +il5(mgs)*(qiint(mgs))
-      ELSEIF ( warmonly < 0.8 ) THEN
-      pfrz(mgs) =    &
-     &  (1-il5(mgs))*   &
-     &  (qhmlr(mgs)+qhlmlr(mgs))   & !+qhmlh(mgs))   &
-     &  +il5(mgs)*(qhfzh(mgs)+qhlfzhl(mgs))   &
-     &  +il5(mgs)*(   &
-     &  +qhshr(mgs)   &
-     &  +qhlshr(mgs)   &
-     &  +qrfrz(mgs)+qwfrz(mgs)   &
-     &  +qwctfz(mgs)+qiihr(mgs)   &
-     &  +qiacw(mgs)                &
-     & +qhacw(mgs) + qhlacw(mgs)   &
-     & +qhacr(mgs) + qhlacr(mgs)  ) 
-      psub(mgs) =  0.0 +  &
-     &   il5(mgs)*(   &
-     &  + qhdpv(mgs)   &
-     &  + qhldpv(mgs)    &
-     &  + qidpv(mgs) + qisbv(mgs) )   &
-     &  +il5(mgs)*(qiint(mgs))
-      pvap(mgs) =    &
-     &   qrcev(mgs) + qhcev(mgs) + qhlcev(mgs) ! + qscev(mgs) 
-      ELSE
-      pfrz(mgs) = 0.0
-      psub(mgs) = 0.0
-      pvap(mgs) = qrcev(mgs)
-      ENDIF ! warmonly
-      ptem(mgs) =    &
-     &  (1./pi0(mgs))*   &
-     &  (felfcp(mgs)*pfrz(mgs)   &
-     &  +felscp(mgs)*psub(mgs)    &
-     &  +felvcp(mgs)*pvap(mgs))
-      thetap(mgs) = thetap(mgs) + dtp*ptem(mgs)
-      end do
-
-
-
-
-!
-!  sum the sources and sinks for qwvp, qcw, qci, qrw, qsw
-!
-!
-      do mgs = 1,ngscnt
-      qwvp(mgs) = qwvp(mgs) +        &
-     &   dtp*(pqwvi(mgs)+pqwvd(mgs))
-      qx(mgs,lc) = qx(mgs,lc) +   &
-     &   dtp*(pqcwi(mgs)+pqcwd(mgs))
-!      IF ( qx(mgs,lr) .gt. 10.0e-3 )  THEN
-!       write(0,*)  'RAIN1a: ',igs(mgs),kgs(mgs),qx(mgs,lr)
-!      ENDIF
-      qx(mgs,lr) = qx(mgs,lr) +   &
-     &   dtp*(pqrwi(mgs)+pqrwd(mgs))
-!      IF ( qx(mgs,lr) .gt. 10.0e-3 ) THEN
-!        write(0,*)  'RAIN1b: ',igs(mgs),kgs(mgs),qx(mgs,lr)
-!        write(0,*)  pqrwi(mgs),pqrwd(mgs)
-!       ENDIF
-      qx(mgs,li) = qx(mgs,li) +   &
-     &   dtp*(pqcii(mgs)+pqcid(mgs))
-      qx(mgs,ls) = qx(mgs,ls) +   &
-     &   dtp*(pqswi(mgs)+pqswd(mgs))
-      qx(mgs,lh) = qx(mgs,lh) +    &
-     &   dtp*(pqhwi(mgs)+pqhwd(mgs))
-      IF ( lhl .gt. 1 ) THEN
-      qx(mgs,lhl) = qx(mgs,lhl) +    &
-     &   dtp*(pqhli(mgs)+pqhld(mgs))
-!       IF ( pqhli(mgs) .gt. 1.e-8 ) write(0,*) ' pqhli,qx(lhl) = ',pqhli(mgs),qx(mgs,lhl)
-      ENDIF
-
-
-      end do
-
-! sum sources for particle volume
-
-      IF ( ldovol ) THEN
-
-      do mgs = 1,ngscnt
-
-      IF ( lvol(ls) .gt. 1 ) THEN
-      vx(mgs,ls) = vx(mgs,ls) +    &
-     &   dtp*(pvswi(mgs)+pvswd(mgs))
-      ENDIF
-
-      IF ( lvol(lh) .gt. 1 ) THEN
-      vx(mgs,lh) = vx(mgs,lh) +    &
-     &   dtp*(pvhwi(mgs)+pvhwd(mgs))
-!     >   rho0(mgs)*dtp*(pqhwi(mgs)+pqhwd(mgs))/xdn0(lh)
-      ENDIF
-
-      IF ( lhl .gt. 1 ) THEN
-      IF ( lvol(lhl) .gt. 1 ) THEN
-      vx(mgs,lhl) = vx(mgs,lhl) +    &
-     &   dtp*(pvhli(mgs)+pvhld(mgs))
-!     >   rho0(mgs)*dtp*(pqhwi(mgs)+pqhwd(mgs))/xdn0(lh)
-      ENDIF
-      ENDIF
-
-      ENDDO
-
-      ENDIF  ! ldovol
-
-!
-!
-!
-! concentrations
-!
-      if ( ipconc .ge. 1  ) then
-      do mgs = 1,ngscnt
-      cx(mgs,li) = cx(mgs,li) +   &
-     &   dtp*(pccii(mgs)+pccid(mgs))
-      IF ( ipconc .ge. 2 ) THEN
-      cx(mgs,lc) = cx(mgs,lc) +   &
-     &   dtp*(pccwi(mgs)+pccwd(mgs))
-      ENDIF
-      IF ( ipconc .ge. 3 ) THEN
-      cx(mgs,lr) = cx(mgs,lr) +   &
-     &   dtp*(pcrwi(mgs)+pcrwd(mgs))
-      ENDIF
-      IF ( ipconc .ge. 4 ) THEN
-      cx(mgs,ls) = cx(mgs,ls) +   &
-     &   dtp*(pcswi(mgs)+pcswd(mgs))
-      ENDIF
-      IF ( ipconc .ge. 5 ) THEN
-      cx(mgs,lh) = cx(mgs,lh) +    &
-     &   dtp*(pchwi(mgs)+pchwd(mgs))
-       IF ( lhl .gt. 1 ) THEN
-        cx(mgs,lhl) = cx(mgs,lhl) +    &
-     &     dtp*(pchli(mgs)+pchld(mgs))
-!      IF ( pchli(mgs) .ne. 0. .or. pchld(mgs) .ne. 0 ) THEN
-!       write(0,*) 'dr: cx,pchli,pchld = ', cx(mgs,lhl),pchli(mgs),pchld(mgs), igs(mgs),kgs(mgs)
-!      ENDIF
-       ENDIF
-      ENDIF
-      end do
-      end if
-!
-!
-!
-! start saturation adjustment
-!
-      if (ndebug .gt. 0 ) write(0,*) 'conc 30a'
-!      include 'sam.jms.satadj.sgi'
-!
-!
-!
-!  Modified Straka adjustment (nearly identical to Tao et al. 1989 MWR)
-!
-!
-!
-!  set up temperature and vapor arrays
-!
-      do mgs = 1,ngscnt
-      pqs(mgs) = (380.0)/(pres(mgs))
-      theta(mgs) = thetap(mgs) + theta0(mgs)
-      qvap(mgs) = max( (qwvp(mgs) + qv0(mgs)), 0.0 )
-      temg(mgs) = theta(mgs)*pk(mgs) ! ( pres(mgs) / poo ) ** cap
-      end do
-!
-!  melting of cloud ice
-!
-      do mgs = 1,ngscnt
-      qcwtmp(mgs) = qx(mgs,lc)
-      ptimlw(mgs) = 0.0
-      end do
-!
-      do mgs = 1,ngscnt
-      qitmp(mgs) = qx(mgs,li)
-      if( temg(mgs) .gt. tfr .and.   &
-     &    qitmp(mgs) .gt. 0.0 ) then
-      qx(mgs,lc) = qx(mgs,lc) + qitmp(mgs)
-!      pfrz(mgs) = pfrz(mgs) - qitmp(mgs)/dtp
-      ptem(mgs) =  ptem(mgs) +   &
-     &  (1./pi0(mgs))*   &
-     &  felfcp(mgs)*(- qitmp(mgs)/dtp)  
-      pmlt(mgs) = pmlt(mgs) - qitmp(mgs)/dtp
-      scx(mgs,lc) = scx(mgs,lc) + scx(mgs,li)
-      thetap(mgs) = thetap(mgs) -   &
-     &  fcc3(mgs)*qitmp(mgs)
-      ptimlw(mgs) = -fcc3(mgs)*qitmp(mgs)/dtp
-      cx(mgs,lc) = cx(mgs,lc) + cx(mgs,li)
-      qx(mgs,li) = 0.0
-      cx(mgs,li) = 0.0
-      scx(mgs,li) = 0.0
-      vx(mgs,li) = 0.0
-      qitmp(mgs) = 0.0
-      end if
-      end do
-!
-!
-
-
-!      do mgs = 1,ngscnt
-!      qimlw(mgs) = (qcwtmp(mgs)-qx(mgs,lc))/dtp
-!      end do
-!
-!  homogeneous freezing of cloud water
-!
-      IF ( warmonly < 0.8 ) THEN
-
-      do mgs = 1,ngscnt
-      qcwtmp(mgs) = qx(mgs,lc)
-      ptwfzi(mgs) = 0.0
-      end do
-!
-      do mgs = 1,ngscnt
-
-!      if( temg(mgs) .lt. tfrh ) THEN
-!       write(0,*) 'GS: mgs,temp,qc,qi = ',mgs,temg(mgs),temcg(mgs),qx(mgs,lc),qx(mgs,li)
-!      ENDIF
-
-      ctmp = 0.0
-      frac = 0.0
-      qtmp = 0.0
-      
-!      if( ( temg(mgs) .lt. thnuc + 2. .or. (ibfc == 2 .and. temg(mgs) < thnuc + 10. ) ) .and.    &
-!     &  qx(mgs,lc) .gt. qxmin(lc) .and. (ipconc < 2 .or. ibfc == 0 .or. ibfc == 2 )) then
-      if( temg(mgs) .lt. thnuc + 0. .and.    &
-     &  qx(mgs,lc) .gt. 0.0 .and. (ipconc < 2 .or. ibfc == 0 )) then
-
-      IF ( ibfc /= 2 .or. ipconc < 2 ) THEN
-      frac = Max( 0.25, Min( 1., ((thnuc + 2.) - temg(mgs) )/4.0 ) )
-      ELSE
-          volt = exp( 16.2 + 1.0*temcg(mgs) )* 1.0e-6 !  Ts == -temcg ; volt comes from the fit in Fig. 1 in Bigg 1953 
-                                               ! for mean temperature for freezing: -ln (V) = a*Ts - b
-                                               ! volt is given in cm**3, so factor of 1.e-6 to convert to m**3
-         
-         cwfrz(mgs) = cx(mgs,lc)*Exp(-volt/xv(mgs,lc)) ! number of droplets with volume greater than volt
-
-         qtmp = cwfrz(mgs)*xdn0(lc)*rhoinv(mgs)*(volt + xv(mgs,lc))
-         frac = qtmp/qx(mgs,lc) ! reset number frozen to same fraction as mass. This makes 
-                                                       ! sure that cwfrz and qwfrz are consistent and prevents 
-                                                       ! spurious creation of ice crystals.
-      
-      ENDIF
-      qtmp = frac*qx(mgs,lc)
-
-      qx(mgs,li) = qx(mgs,li) + qtmp ! qx(mgs,lc)
-      pfrz(mgs) = pfrz(mgs) + qtmp/dtp
-      ptem(mgs) =  ptem(mgs) +   &
-     &  (1./pi0(mgs))*   &
-     &  felfcp(mgs)*(qtmp/dtp)  
-!      IF ( lvol(li) .gt. 1 ) vx(mgs,li) = vx(mgs,li) + rho0(mgs)*qx(mgs,lc)/xdn0(li)
-      IF ( lvol(li) .gt. 1 ) vx(mgs,li) = vx(mgs,li) + rho0(mgs)*qtmp/xdn0(li)
-
-      IF ( ipconc .ge. 2 ) THEN
-        ctmp = frac*cx(mgs,lc)
-!        cx(mgs,li) = cx(mgs,li) + cx(mgs,lc)
-        cx(mgs,li) = cx(mgs,li) + ctmp
-      ELSE ! (ipconc .lt. 2 )
-        ctmp = 0.0
-        IF ( t9(igs(mgs),jgs,kgs(mgs)-1) .gt. qx(mgs,lc) ) THEN
-           qtmp = frac*t9(igs(mgs),jgs,kgs(mgs)-1)  
-
-!           cx(mgs,lc) = cx(mgs,lc)*qx(mgs,lc)*rho0(mgs)/qtmp
-           ctmp = cx(mgs,lc)*qx(mgs,lc)*rho0(mgs)/qtmp
-        ELSE
-           cx(mgs,lc) = Max(0.0,wvel(mgs))*dtp*cwccn   &
-     &      /gz(igs(mgs),jgs,kgs(mgs))
-          cx(mgs,lc) = cwccn
-        ENDIF
-
-       IF ( ipconc .ge. 1 ) cx(mgs,li) = Min(ccimx, cx(mgs,li) + cx(mgs,lc))
-      ENDIF
-
-      sctmp = frac*scx(mgs,lc)
-!      scx(mgs,li) = scx(mgs,li) + scx(mgs,lc)
-      scx(mgs,li) = scx(mgs,li) + sctmp
-!      thetap(mgs) = thetap(mgs) + fcc3(mgs)*qx(mgs,lc)
-!      ptwfzi(mgs) = fcc3(mgs)*qx(mgs,lc)/dtp
-!      qx(mgs,lc) = 0.0
-!      cx(mgs,lc) = 0.0
-!      scx(mgs,lc) = 0.0
-      thetap(mgs) = thetap(mgs) + fcc3(mgs)*qtmp
-      ptwfzi(mgs) = fcc3(mgs)*qtmp/dtp
-      qx(mgs,lc) = qx(mgs,lc) - qtmp
-      cx(mgs,lc) = cx(mgs,lc) - ctmp
-      scx(mgs,lc) = scx(mgs,lc) - sctmp
-      end if
-      end do
-
-      ENDIF ! warmonly
-!
-!      do mgs = 1,ngscnt
-!      qwfzi(mgs) = (qcwtmp(mgs)-qx(mgs,lc))/dtp   ! Not used?? (ERM)
-!      end do
-!
-!  reset temporaries for cloud particles and vapor
-!
-      qcond(:) = 0.0
-      
-      IF ( ipconc .le. 1 .and.  lwsm6 ) THEN ! Explicit cloud condensation/evaporation (Rutledge and Hobbs 1983)
-       DO mgs = 1,ngscnt
-
-        qcwtmp(mgs) = qx(mgs,lc)
-        theta(mgs) = thetap(mgs) + theta0(mgs)
-        temgtmp = temg(mgs)
-!        temg(mgs) = theta(mgs)*(p2(igs(mgs),jgs,kgs(mgs)) ) ! *pk(mgs) ! ( pres(mgs) / poo ) ** cap
-!        temsav = temg(mgs)
-!        thsave(mgs) = thetap(mgs)
-        temg(mgs) = theta(mgs)*pk(mgs) ! ( pres(mgs) / poo ) ** cap
-        temcg(mgs) = temg(mgs) - tfr
-        ltemq = (temg(mgs)-163.15)/fqsat+1.5
-        ltemq = Min( nqsat, Max(1,ltemq) )
-
-        qvs(mgs) = pqs(mgs)*tabqvs(ltemq)
-
-        IF ( ( qwvp(mgs) > qvs(mgs) .or. qx(mgs,lc) > qxmin(lc) ) .and. temg(mgs) > tfrh ) THEN
-          tmp = (qwvp(mgs) - qvs(mgs))/(1. + qvs(mgs)*felv(mgs)**2/(cp*rw*temg(mgs)**2) )
-          qcond(mgs) = Min( Max( 0.0, tmp ), (qwvp(mgs)-qvs(mgs)) )
-          IF ( qx(mgs,lc) > qxmin(lc) .and. tmp < 0.0 ) THEN ! evaporation
-            qcond(mgs) = Max( tmp, -qx(mgs,lc) )
-          ENDIF
-          qwvp(mgs) = qwvp(mgs) - qcond(mgs)
-          qx(mgs,lc) = Max( 0.0, qx(mgs,lc) + qcond(mgs) )
-          thetap(mgs) = thetap(mgs) + felvcp(mgs)*qcond(mgs)/(pi0(mgs))
-          
-        ENDIF
-        
-        ENDDO
-      
-      ENDIF
-      
-      
-      IF ( ipconc .le. 1 .and. .not. lwsm6 ) THEN
-!      IF ( ipconc .le. 1  ) THEN
-      
-      do mgs = 1,ngscnt
-      qx(mgs,lv) = max( 0.0, qvap(mgs) )
-      qx(mgs,lc) = max( 0.0, qx(mgs,lc) )
-      qx(mgs,li) = max( 0.0, qx(mgs,li) )
-      qitmp(mgs) = qx(mgs,li)
-      end do
-!
-!
-      do mgs = 1,ngscnt
-      qcwtmp(mgs) = qx(mgs,lc)
-      qitmp(mgs) = qx(mgs,li)
-      theta(mgs) = thetap(mgs) + theta0(mgs)
-      temgtmp = temg(mgs)
-      temg(mgs) = theta(mgs)*(p2(igs(mgs),jgs,kgs(mgs)) ) ! *pk(mgs) ! ( pres(mgs) / poo ) ** cap
-      temsav = temg(mgs)
-      thsave(mgs) = thetap(mgs)
-      temcg(mgs) = temg(mgs) - tfr
-      tqvcon = temg(mgs)-cbw
-      ltemq = (temg(mgs)-163.15)/fqsat+1.5
-      ltemq = Min( nqsat, Max(1,ltemq) )
-!      IF ( ltemq .lt. 1 .or. ltemq .gt. nqsat ) THEN
-! C$PAR CRITICAL SECTION
-!        write(iunit,*) 'out of range ltemq!',temgtmp,temg(mgs),
-!     :      thetap(mgs),theta0(mgs),pres(mgs),theta(mgs),
-!     :      ltemq,igs(mgs),jy,kgs(mgs)
-!        write(iunit,*) an(igs(mgs),jy,kgs(mgs),lt),
-!     :   ab(igs(mgs),jy,kgs(mgs),lt),
-!     :   t0(igs(mgs),jy,kgs(mgs))
-!        write(iunit,*) fcc3(mgs),qx(mgs,lc),qitmp(mgs),dtp,ptem(mgs)
-!        STOP
-! C$PAR END CRITICAL SECTION
-!      END IF
-      qvs(mgs) = pqs(mgs)*tabqvs(ltemq)
-      qis(mgs) = pqs(mgs)*tabqis(ltemq)
-!      qss(kz) = qvs(kz)
-!      if ( temg(kz) .lt. tfr ) then
-!      if( qcw(kz) .le. qxmin(lc) .and. qci(kz) .gt. qxmin(li))
-!     >  qss(kz) = qis(kz)
-!      if( qcw(kz) .gt. qxmin(lc) .and. qci(kz) .gt. qxmin(li))
-!     >   qss(kz) = (qcw(kz)*qvs(kz) + qci(kz)*qis(kz)) /
-!     >   (qcw(kz) + qci(kz))
-!      qss(kz) = qis(kz)
-!      end if
-! dont get enough condensation with qcw .le./.gt. qxmin(lc)
-!      if ( temg(mgs) .lt. tfr ) then
-!      if( qx(mgs,lc) .ge. 0.0 .and. qitmp(mgs) .le. qxmin(li) )
-!     >  qss(mgs) = qvs(mgs)
-!      if( qx(mgs,lc) .eq. 0.0 .and. qitmp(mgs) .gt. qxmin(li))
-!     >  qss(mgs) = qis(mgs)
-!      if( qx(mgs,lc) .gt. 0.0 .and. qitmp(mgs) .gt. qxmin(li))
-!     >   qss(mgs) = (qx(mgs,lc)*qvs(mgs) + qitmp(mgs)*qis(mgs)) /
-!     >   (qx(mgs,lc) + qitmp(mgs))
-!      else
-!      qss(mgs) = qvs(mgs)
-!      end if
-      qss(mgs) = qvs(mgs)
-      if ( temg(mgs) .lt. tfr ) then
-      if( qx(mgs,lc) .ge. 0.0 .and. qitmp(mgs) .le. qxmin(li) )   &
-     &  qss(mgs) = qvs(mgs)
-      if( qx(mgs,lc) .le. qxmin(lc) .and. qitmp(mgs) .gt. qxmin(li))   &
-     &  qss(mgs) = qis(mgs)
-      if( qx(mgs,lc) .gt. qxmin(lc) .and. qitmp(mgs) .gt. qxmin(li))   &
-     &   qss(mgs) = (qx(mgs,lc)*qvs(mgs) + qitmp(mgs)*qis(mgs)) /   &
-     &   (qx(mgs,lc) + qitmp(mgs))
-      end if
-      end do
-!
-!  iterate  adjustment
-!
-      do itertd = 1,2
-!
-      do mgs = 1,ngscnt
-!
-!  calculate super-saturation
-!
-      qitmp(mgs) = qx(mgs,li)
-      fcci(mgs) = 0.0
-      fcip(mgs) = 0.0
-      dqcw(mgs) = 0.0
-      dqci(mgs) = 0.0
-      dqwv(mgs) = ( qx(mgs,lv) - qss(mgs) )
-!
-!  evaporation and sublimation adjustment
-!
-      if( dqwv(mgs) .lt. 0. ) then           !  subsaturated
-        if( qx(mgs,lc) .gt. -dqwv(mgs) ) then  ! check if qc can make up all of the deficit
-          dqcw(mgs) = dqwv(mgs)
-          dqwv(mgs) = 0.
-        else                                 !  otherwise make all qc available for evap
-          dqcw(mgs) = -qx(mgs,lc)
-          dqwv(mgs) = dqwv(mgs) + qx(mgs,lc)
-        end if
-!
-        if( qitmp(mgs) .gt. -dqwv(mgs) ) then  ! check if qi can make up all the deficit
-          dqci(mgs) = dqwv(mgs)
-          dqwv(mgs) = 0.
-        else                                  ! otherwise make all ice available for sublimation
-          dqci(mgs) = -qitmp(mgs)
-          dqwv(mgs) = dqwv(mgs) + qitmp(mgs)
-        end if
-!
-       qwvp(mgs) = qwvp(mgs) - ( dqcw(mgs) + dqci(mgs) )  ! add to perturbation vapor
-!
-! This next line removed 3/19/2003 thanks to Adam Houston,
-!  who found the bug in the 3-ICE code
-!      qwvp(mgs) = max(qwvp(mgs), 0.0)
-      qitmp(mgs) = qx(mgs,li)
-      IF ( qitmp(mgs) .gt. qxmin(li) ) THEN
-        fcci(mgs) = qx(mgs,li)/(qitmp(mgs))
-      ELSE
-        fcci(mgs) = 0.0
-      ENDIF
-      qx(mgs,lc) = qx(mgs,lc) + dqcw(mgs)
-      qx(mgs,li) = qx(mgs,li) + dqci(mgs) * fcci(mgs)
-      thetap(mgs) = thetap(mgs) +   &
-     &  1./pi0(mgs)*   &
-     &  (felvcp(mgs)*dqcw(mgs) +felscp(mgs)*dqci(mgs))
-
-      end if  ! dqwv(mgs) .lt. 0. (end of evap/sublim)
-!
-! condensation/deposition
-!
-      IF ( dqwv(mgs) .ge. 0. ) THEN
-      
-!      write(iunit,*) 'satadj: mgs,iter = ',mgs,itertd,dqwv(mgs),qss(mgs),qx(mgs,lv),qx(mgs,lc)
-!
-        qitmp(mgs) = qx(mgs,li)
-        fracl(mgs) = 1.0
-        fraci(mgs) = 0.0
-        if ( temg(mgs) .lt. tfr .and. temg(mgs) .gt. thnuc ) then
-          fracl(mgs) = max(min(1.,(temg(mgs)-233.15)/(20.)),0.0)
-          fraci(mgs) = 1.0-fracl(mgs)
-        end if
-        if ( temg(mgs) .le. thnuc ) then
-           fraci(mgs) = 1.0
-           fracl(mgs) = 0.0
-         end if
-        fraci(mgs) = 1.0-fracl(mgs)
-!
-       gamss = (felvcp(mgs)*fracl(mgs) + felscp(mgs)*fraci(mgs))   &
-     &      / (pi0(mgs))
-!
-      IF ( temg(mgs) .lt. tfr ) then
-        IF (qx(mgs,lc) .ge. 0.0 .and. qitmp(mgs) .le. qxmin(li) ) then
-         dqvcnd(mgs) = dqwv(mgs)/(1. + fcqv1(mgs)*qss(mgs)/   &
-     &  ((temg(mgs)-cbw)**2))
-        END IF
-        IF ( qx(mgs,lc) .eq. 0.0 .and. qitmp(mgs) .gt. qxmin(li) ) then
-          dqvcnd(mgs) = dqwv(mgs)/(1. + fcqv2(mgs)*qss(mgs)/   &
-     &  ((temg(mgs)-cbi)**2))
-        END IF
-        IF ( qx(mgs,lc) .gt. 0.0 .and. qitmp(mgs) .gt. qxmin(li) ) then
-         cdw = caw*pi0(mgs)*tfrcbw/((temg(mgs)-cbw)**2)
-         cdi = cai*pi0(mgs)*tfrcbi/((temg(mgs)-cbi)**2)
-         denom1 = qx(mgs,lc) + qitmp(mgs)
-         denom2 = 1.0 + gamss*   &
-     &    (qx(mgs,lc)*qvs(mgs)*cdw + qitmp(mgs)*qis(mgs)*cdi) / denom1
-         dqvcnd(mgs) =  dqwv(mgs) / denom2
-        END IF 
-
-      ENDIF  !  temg(mgs) .lt. tfr
-!
-      if ( temg(mgs) .ge. tfr ) then
-      dqvcnd(mgs) = dqwv(mgs)/(1. + fcqv1(mgs)*qss(mgs)/   &
-     &  ((temg(mgs)-cbw)**2))
-      end if
-!
-      delqci1=qx(mgs,li)
-!
-      IF ( qitmp(mgs) .gt. qxmin(li) ) THEN
-        fcci(mgs) = qx(mgs,li)/(qitmp(mgs))
-      ELSE
-        fcci(mgs) = 0.0
-      ENDIF
-!
-      dqcw(mgs) = dqvcnd(mgs)*fracl(mgs)
-      dqci(mgs) = dqvcnd(mgs)*fraci(mgs)
-!
-      thetap(mgs) = thetap(mgs) +   &
-     &   (felvcp(mgs)*dqcw(mgs) + felscp(mgs)*dqci(mgs))   &
-     & / (pi0(mgs))
-      qwvp(mgs) = qwvp(mgs) - ( dqvcnd(mgs) )
-      qx(mgs,lc) = qx(mgs,lc) + dqcw(mgs)
-      IF ( qitmp(mgs) .gt. qxmin(li) ) THEN
-        qx(mgs,li) = qx(mgs,li) + dqci(mgs)*fcci(mgs)
-        qitmp(mgs) = qx(mgs,li)
-      ENDIF
-!
-!      delqci(mgs) =  dqci(mgs)*fcci(mgs)
-!
-      END IF !  dqwv(mgs) .ge. 0.
-      end do
-!
-      do mgs = 1,ngscnt
-      qitmp(mgs) = qx(mgs,li)
-      theta(mgs) = thetap(mgs) + theta0(mgs)
-      temg(mgs) = theta(mgs)*pk(mgs) ! ( pres(mgs) / poo ) ** cap
-      qvap(mgs) = Max((qwvp(mgs) + qv0(mgs)), 0.0)
-      temcg(mgs) = temg(mgs) - tfr
-      tqvcon = temg(mgs)-cbw
-      ltemq = (temg(mgs)-163.15)/fqsat+1.5
-      ltemq = Min( nqsat, Max(1,ltemq) )
-      qvs(mgs) = pqs(mgs)*tabqvs(ltemq)
-      qis(mgs) = pqs(mgs)*tabqis(ltemq)
-      qx(mgs,lc) = max( 0.0, qx(mgs,lc) )
-      qitmp(mgs) = max( 0.0, qitmp(mgs) )
-      qx(mgs,lv) = max( 0.0, qvap(mgs))
-!      if ( temg(mgs) .lt. tfr ) then
-!      if( qx(mgs,lc) .ge. 0.0 .and. qitmp(mgs) .le. qxmin(li) )
-!     >  qss(mgs) = qvs(mgs)
-!c      if( qx(mgs,lc) .le. qxmin(lc) .and. qitmp(mgs) .gt. qxmin(li))
-!      if( qx(mgs,lc) .eq. 0.0 .and. qitmp(mgs) .gt. qxmin(li))
-!     >  qss(mgs) = qis(mgs)
-!c      if( qx(mgs,lc) .gt. qxmin(lc) .and. qitmp(mgs) .gt. qxmin(li))
-!      if( qx(mgs,lc) .gt. 0.0 .and. qitmp(mgs) .gt. qxmin(li))
-!     >  qss(mgs) = (qx(mgs,lc)*qvs(mgs) + qitmp(mgs)*qis(mgs)) /
-!     > (qx(mgs,lc) + qitmp(mgs))
-!      else
-!      qss(mgs) = qvs(mgs)
-!      end if
-      qss(mgs) = qvs(mgs)
-      if ( temg(mgs) .lt. tfr ) then
-      if( qx(mgs,lc) .ge. 0.0 .and. qitmp(mgs) .le. qxmin(li) )   &
-     &  qss(mgs) = qvs(mgs)
-      if( qx(mgs,lc) .le. qxmin(lc) .and. qitmp(mgs) .gt. qxmin(li))   &
-     &  qss(mgs) = qis(mgs)
-      if( qx(mgs,lc) .gt. qxmin(lc) .and. qitmp(mgs) .gt. qxmin(li))   &
-     &   qss(mgs) = (qx(mgs,lc)*qvs(mgs) + qitmp(mgs)*qis(mgs)) /   &
-     &   (qx(mgs,lc) + qitmp(mgs))
-      end if
-!      pceds(mgs) = (thetap(mgs) - thsave(mgs))/dtp
-!      write(iunit,*) 'satadj2: mgs,iter = ',mgs,itertd,dqwv(mgs),qss(mgs),qx(mgs,lv),qx(mgs,lc)
-      end do
-!
-!  end the saturation adjustment iteration loop
-!
-      end do
-
-     ENDIF ! ( ipconc .le. 1 )
-
-!
-!  spread the growth owing to vapor diffusion onto the
-!  ice crystal categories using the
-!
-!  END OF SATURATION ADJUSTMENT
-!
-
-      if (ndebug .gt. 0 ) write(0,*) 'conc 30b'
-!
-!
-!  end of saturation adjustment
-!
-!
-! !DIR$ IVDEP
-      do mgs = 1,ngscnt
-      t0(igs(mgs),jy,kgs(mgs)) =  temg(mgs)
-      end do
-!
-! Load the save arrays
-!
-
-
-      if (ndebug .gt. 0 ) write(0,*) 'gs 11'
-
-      do mgs = 1,ngscnt
-!
-      an(igs(mgs),jy,kgs(mgs),lt) =    &
-     &  theta0(mgs) + thetap(mgs) 
-      an(igs(mgs),jy,kgs(mgs),lv) = qwvp(mgs) ! qv0(mgs) is zero, so qwvp is the FULL qv!
-!
-      
-      DO il = lc,lhab
-        IF ( ido(il) .eq. 1 ) THEN
-         an(igs(mgs),jy,kgs(mgs),il) = qx(mgs,il) +   &
-     &     min( an(igs(mgs),jy,kgs(mgs),il), 0.0 )
-         qx(mgs,il) = an(igs(mgs),jy,kgs(mgs),il)
-        ENDIF
-      ENDDO
-
-
-!
-      end do
-!
-
-      if ( ipconc .ge. 1 ) then
-      DO il = lc,lhab !{
-
-!        write(0,*) 'limiter loop: il,ipc,lz: ',il,ipc(il),lz(il),ipconc
-
-       IF ( ipconc .ge. ipc(il) ) THEN ! {
-
-         IF (  ipconc .ge. 4 .and. ipc(il) .ge. 3 ) THEN ! {
-
-!            write(0,*) 'MY limiter: il,ipc,lz: ',il,ipc(il),lz(il),lr,lzr
-!            STOP
-
-          IF ( lz(il) <= 1 .or. ioldlimiter == 1 ) THEN ! { { is a two-moment category so dont worry about reflectivity
-          
-
-           DO mgs = 1,ngscnt
-            IF ( qx(mgs,il) .le. 0.0 ) THEN
-              cx(mgs,il) = 0.0
-            ELSE
-              xv(mgs,il) = rho0(mgs)*qx(mgs,il)/(xdn(mgs,il)*Max(1.0e-9,cx(mgs,il)))
-              
-!              IF ( lhl .gt. 1 .and. il .eq. lhl ) THEN
-!               write(0,*) 'dr: xv,cx,qx,xdn,ln = ',xv(mgs,il),cx(mgs,il),qx(mgs,il),xdn(mgs,il),ln(il)
-!              ENDIF
-              
-              IF ( xv(mgs,il) .lt. xvmn(il) .or. xv(mgs,il) .gt. xvmx(il) ) THEN
-                xv(mgs,il) = Min( xvmx(il), Max( xvmn(il),xv(mgs,il) ) )
-                cx(mgs,il) = rho0(mgs)*qx(mgs,il)/(xv(mgs,il)*xdn(mgs,il))
-               ENDIF
-
-!              IF ( lhl .gt. 1 .and. il .eq. lhl ) THEN
-!               write(0,*) 'dr: xv,cx,= ',xv(mgs,il),cx(mgs,il)
-!              ENDIF
-
-            ENDIF
-           ENDDO ! mgs
-          
-          
-          ENDIF ! }}
-          ENDIF ! }
-
-          DO mgs = 1,ngscnt
-            an(igs(mgs),jy,kgs(mgs),ln(il)) = Max(cx(mgs,il), 0.0)
-          ENDDO
-        ENDIF ! }
-      ENDDO ! il }
-
-      IF (   lcin > 1 ) THEN
-      do mgs = 1,ngscnt
-        an(igs(mgs),jy,kgs(mgs),lcin) = Max(0.0, ccin(mgs))
-      end do
-      ENDIF
-
-      IF (  ipconc .ge. 2 ) THEN
-      do mgs = 1,ngscnt
-        IF ( lccn > 1 ) THEN
-        an(igs(mgs),jy,kgs(mgs),lccn) = Max(0.0, Min(ccwmx,ccnc(mgs)) )
-        ENDIF
-      end do
-      ENDIF
-      
-      ELSEIF ( ipconc .eq. 0 .and. lni .gt. 1 ) THEN
-      
-          DO mgs = 1,ngscnt
-            an(igs(mgs),jy,kgs(mgs),lni) = Max(cx(mgs,li), 0.0)
-          ENDDO
-
-
-      end if
-
-      IF ( ldovol ) THEN
-
-       DO il = li,lhab
-
-        IF ( lvol(il) .ge. 1 ) THEN
-
-          DO mgs = 1,ngscnt
-
-           an(igs(mgs),jy,kgs(mgs),lvol(il)) = Max( 0.0, vx(mgs,il) )
-          ENDDO
-          
-        ENDIF
-      
-       ENDDO
-      
-      ENDIF
-!
-!
-!
-!
-!
-      if (ndebug .gt. 0 ) write(0,*) 'gs 12'
-
-
-
-      if (ndebug .gt. 0 ) write(0,*) 'gs 13'
-
- 9998 continue
-
-      if ( kz .gt. nz-1 .and. ix .ge. nx) then
-        if ( ix .ge. nx ) then
-         go to 1200 ! exit gather scatter
-        else
-         nzmpb = kz
-        endif
-      else
-        nzmpb = kz
-      end if
-
-      if ( ix .ge. nx ) then
-        nxmpb = 1
-        nzmpb = kz+1
-      else
-       nxmpb = ix+1
-      end if
-
- 1000 continue
- 1200 continue
-!
-!  end of gather scatter (for this jy slice)
-!
-!
-
-      return
-      end subroutine nssl_2mom_gs
-!
-!--------------------------------------------------------------------------
-!
 
 
 !
 ! ##############################################################################
 !
-      SUBROUTINE setvtz(ngscnt,ngs0,qx,qxmin,qxw,cx,rho0,rhovt,xdia,cno,cnostmp, &
+      SUBROUTINE setvtz(ngscnt,qx,qxmin,qxw,cx,rho0,rhovt,xdia,cno,cnostmp, &
      &                 xmas,vtxbar,xdn,xvmn0,xvmx0,xv,cdx,            &
      &                 ipconc1,ndebug1,ngs,nz,kgs,fadvisc,   &
      &                 cwmasn,cwmasx,cwradn,cnina,cimna,cimxa,      &
-     &                 itype1a,itype2a,temcg,infdo,alpha,ildo)
+     &                 itype1a,itype2a,temcg,infdo,alpha,ildo,axh,bxh,axhl,bxhl)
 
 
       implicit none
@@ -12811,18 +3669,18 @@ END SUBROUTINE nssl_2mom_driver
       integer ngscnt,ngs0,ngs,nz
 !      integer infall    ! whether to calculate number-weighted fall speeds
       
-      real xv(ngs0,lc:lhab)
-      real qx(ngs0,lv:lhab)
-      real qxw(ngs0,ls:lhab)
-      real cx(ngs0,lc:lhab)
-      real vtxbar(ngs0,lc:lhab,3)
-      real xmas(ngs0,lc:lhab)
-      real xdn(ngs0,lc:lhab)
-      real xdia(ngs0,lc:lhab,3)
+      real xv(ngs,lc:lhab)
+      real qx(ngs,lv:lhab)
+      real qxw(ngs,ls:lhab)
+      real cx(ngs,lc:lhab)
+      real vtxbar(ngs,lc:lhab,3)
+      real xmas(ngs,lc:lhab)
+      real xdn(ngs,lc:lhab)
+      real xdia(ngs,lc:lhab,3)
       real xvmn0(lc:lhab), xvmx0(lc:lhab)
       real qxmin(lc:lhab)
       real cdx(lc:lhab)
-      real alpha(ngs0,lr:lhab)
+      real alpha(ngs,lc:lhab)
       
       real rho0(ngs),rhovt(ngs),temcg(ngs)
       real cno(lc:lhab)
@@ -12839,12 +3697,14 @@ END SUBROUTINE nssl_2mom_driver
       
       integer, intent (in) :: itype1a,itype2a,infdo
       integer, intent (in) :: ildo ! which species to do, or all if ildo=0
+
+      real :: axh(ngs),bxh(ngs)
+      real :: axhl(ngs),bxhl(ngs)
       
 ! Local vars
 
-      real :: axh(ngs0),bxh(ngs0)
-      real :: axhl(ngs0),bxhl(ngs0)
-
+      
+      
       real cd
       real cwc0 ! ,cwc1
       real :: cwch(ngscnt), cwchl(ngscnt)
@@ -13559,9 +4419,21 @@ END SUBROUTINE nssl_2mom_driver
         IF ( ipconc .ge. 4 ) THEN
          if ( mixedphase .and. qsvtmod ) then
          else
+          IF ( isnowfall == 1 ) THEN
+           ! original (Zrnic et al. 1993)
            vtxbar(mgs,ls,1) = 5.72462*rhovt(mgs)*(xv(mgs,ls))**(1./12.)
+          ELSEIF ( isnowfall == 2 ) THEN
+          ! Ferrier:
+            vtxbar(mgs,ls,1) = 11.9495*rhovt(mgs)*(xv(mgs,ls))**(0.14)
+          ENDIF
+          
           IF(sssflg == 1) THEN
-            vtxbar(mgs,ls,2) = 4.04091*rhovt(mgs)*(xv(mgs,ls))**(1./12.)
+            IF ( isnowfall == 1 ) THEN
+              vtxbar(mgs,ls,2) = 4.04091*rhovt(mgs)*(xv(mgs,ls))**(1./12.)
+            ELSEIF ( isnowfall == 2 ) THEN
+            ! Ferrier:
+              vtxbar(mgs,ls,1) = 7.02909*rhovt(mgs)*(xv(mgs,ls))**(0.14)
+            ENDIF
           ELSE
             vtxbar(mgs,ls,2) = vtxbar(mgs,ls,1)
           ENDIF
@@ -13598,12 +4470,12 @@ END SUBROUTINE nssl_2mom_driver
 !         cd = Max(0.55, Min(1.0, 0.55 + 0.25*(800.0 - Max( 500., Min( 800.0, xdn(mgs,lh) ) ) )/(800. - 500.) ) )
        ELSEIF ( icdx .eq. 3 ) THEN
 !         cd = Max(0.45, Min(1.0, 0.45 + 0.55*(800.0 - Max( 300., Min( 800.0, xdn(mgs,lh) ) ) )/(800. - 300.) ) )
-         cd = Max(0.45, Min(1.2, 0.45 + 0.55*(800.0 - Max( 170.0, Min( 800.0, xdn(mgs,lh) ) ) )/(800. - 170.0) ) )
+         cd = Max(0.45, Min(1.2, 0.45 + 0.55*(800.0 - Max( hdnmn, Min( 800.0, xdn(mgs,lh) ) ) )/(800. - 170.0) ) )
        ELSEIF ( icdx .eq. 4 ) THEN
          cd = Max(cdhmin, Min(cdhmax, cdhmin + (cdhmax-cdhmin)* &
      &        (cdhdnmax - Max( cdhdnmin, Min( cdhdnmax, xdn(mgs,lh) ) ) )/(cdhdnmax - cdhdnmin) ) )
        ELSEIF ( icdx .eq. 5 ) THEN
-         cd = cdx(lh)*(xdn(mgs,lh)/rho_qh)**(2/3)
+         cd = cdx(lh)*(xdn(mgs,lh)/rho_qh)**(2./3.)
        ELSEIF ( icdx .eq. 6 ) THEN ! Milbrandt and Morrison (2013)
          indxr = Int( (xdn(mgs,lh)-50.)/100. ) + 1
          indxr = Min( ngdnmm, Max(1,indxr) )
@@ -13648,9 +4520,13 @@ END SUBROUTINE nssl_2mom_driver
         IF ( icdx > 0 .and. icdx /= 6) THEN
           aax = Sqrt(4.0*xdn(mgs,lh)*gr/(3.0*cd*rho00))
           vtxbar(mgs,lh,1) =  rhovt(mgs)*aax* Sqrt(xdia(mgs,lh,1)) * x/y
+          axh(mgs) = aax
+          bxh(mgs) = bbx
         ELSEIF (icdx == 6 ) THEN
           vtxbar(mgs,lh,1) =  rhovt(mgs)*aax* xdia(mgs,lh,1)**bbx * x/y
         ELSE
+          axh(mgs) = ax(lh)
+          bxh(mgs) = bx(lh)
           vtxbar(mgs,lh,1) =  rhovt(mgs)*ax(lh)*(xdia(mgs,lh,1)**bx(lh)*x)/y          
         ENDIF
 
@@ -13683,10 +4559,12 @@ END SUBROUTINE nssl_2mom_driver
          cd = cdx(lhl)
        ELSEIF ( icdxhl .eq. 3 ) THEN
 !         cd = Max(0.45, Min(1.0, 0.45 + 0.55*(800.0 - Max( 300., Min( 800.0, xdn(mgs,lhl) ) ) )/(800. - 300.) ) )
-         cd = Max(0.45, Min(1.2, 0.45 + 0.55*(800.0 - Max( 170.0, Min( 800.0, xdn(mgs,lhl) ) ) )/(800. - 170.0) ) )
+         cd = Max(0.45, Min(1.2, 0.45 + 0.55*(800.0 - Max( hldnmn, Min( 800.0, xdn(mgs,lhl) ) ) )/(800. - 170.0) ) )
        ELSEIF ( icdxhl .eq. 4 ) THEN
          cd = Max(cdhlmin, Min(cdhlmax, cdhlmin + (cdhlmax-cdhlmin)*  &
      &       (cdhldnmax - Max( cdhldnmin, Min( cdhldnmax, xdn(mgs,lhl) ) ) )/(cdhldnmax - cdhldnmin) ) )
+       ELSEIF ( icdxhl .eq. 5 ) THEN
+         cd = cdx(lh)*(xdn(mgs,lhl)/rho_qh)**(2./3.)
        ELSEIF ( icdxhl .eq. 6 ) THEN ! Milbrandt and Morrison (2013)
          indxr = Int( (xdn(mgs,lhl)-50.)/100. ) + 1
          indxr = Min( ngdnmm, Max(1,indxr) )
@@ -13713,12 +4591,12 @@ END SUBROUTINE nssl_2mom_driver
          cd = Max(0.45, Min(0.6, 0.45 + 0.15*(800.0 - Max( 500., Min( 800.0, xdn(mgs,lhl) ) ) )/(800. - 500.) ) )
        ENDIF
 
-      IF ( alpha(mgs,lhl) .eq. 0.0 .and. icdxhl > 0 ) THEN
+      IF ( alpha(mgs,lhl) .eq. 0.0 .and. icdxhl > 0 .and. icdxhl /= 6) THEN
       vtxbar(mgs,lhl,1) = (gf4p5/6.0)* &
      &  Sqrt( (xdn(mgs,lhl)*xdia(mgs,lhl,1)*4.0*gr) / &
      &    (3.0*cd*rho0(mgs)) )
       ELSE
-        IF ( icdx /= 6 ) bbx = bx(lhl)
+        IF ( icdxhl /= 6 ) bbx = bx(lhl)
         tmp = 4. + alpha(mgs,lhl) + bbx
         i = Int(dgami*(tmp))
         del = tmp - dgam*i
@@ -13732,9 +4610,13 @@ END SUBROUTINE nssl_2mom_driver
         IF ( icdxhl > 0 .and. icdxhl /= 6) THEN
           aax = Sqrt(4.0*xdn(mgs,lhl)*gr/(3.0*cd*rho00))
           vtxbar(mgs,lhl,1) =  rhovt(mgs)*aax* Sqrt(xdia(mgs,lhl,1)) * x/y
-        ELSEIF ( icdx == 6 ) THEN
+          axhl(mgs) = aax
+          bxhl(mgs) = bbx
+        ELSEIF ( icdxhl == 6 ) THEN
           vtxbar(mgs,lhl,1) =  rhovt(mgs)*aax* (xdia(mgs,lhl,1))**bbx * x/y
         ELSE
+          axhl(mgs) = ax(lhl)
+          bxhl(mgs) = bx(lhl)
          vtxbar(mgs,lhl,1) =  rhovt(mgs)*(ax(lhl)*xdia(mgs,lhl,1)**bx(lhl)*x)/y
         ENDIF
         
@@ -13793,12 +4675,12 @@ END SUBROUTINE nssl_2mom_driver
 !                 cd = Max(0.55, Min(1.0, 0.55 + 0.25*(800.0 - Max( 500., Min( 800.0, xdn(mgs,lh) ) ) )/(800. - 500.) ) )
                ELSEIF ( icdx .eq. 3 ) THEN
 !                 cd = Max(0.45, Min(1.0, 0.45 + 0.55*(800.0 - Max( 170.0, Min( 800.0, xdn(mgs,lh) ) ) )/(800. - 170.0) ) )
-                 cd = Max(0.45, Min(1.2, 0.45 + 0.55*(800.0 - Max( 170.0, Min( 800.0, xdn(mgs,lh) ) ) )/(800. - 170.0) ) )
+                 cd = Max(0.45, Min(1.2, 0.45 + 0.55*(800.0 - Max( hdnmn, Min( 800.0, xdn(mgs,lh) ) ) )/(800. - 170.0) ) )
                ELSEIF ( icdx .eq. 4 ) THEN
                  cd = Max(cdhmin, Min(cdhmax, cdhmin + (cdhmax-cdhmin)* &
      &            (cdhdnmax - Max( cdhdnmin, Min( cdhdnmax, xdn(mgs,lh) ) ) )/(cdhdnmax - cdhdnmin) ) )
                ELSEIF ( icdx .eq. 5 ) THEN
-                 cd = cdx(lh)*(xdn(mgs,lh)/rho_qh)**(2/3)
+                 cd = cdx(lh)*(xdn(mgs,lh)/rho_qh)**(2./3.)
                ELSEIF ( icdx .eq. 6 ) THEN ! Milbrandt and Morrison (2013)
                   aax = axh(mgs)
                   bbx = bxh(mgs)
@@ -13810,7 +4692,7 @@ END SUBROUTINE nssl_2mom_driver
                  cd = cdx(lhl)
                ELSEIF ( icdxhl .eq. 3 ) THEN
 !               cd = Max(0.45, Min(1.0, 0.45 + 0.55*(800.0 - Max( 300., Min( 800.0, xdn(mgs,lhl) ) ) )/(800. - 300.) ) )
-                cd = Max(0.45, Min(1.2, 0.45 + 0.55*(800.0 - Max( 170.0, Min( 800.0, xdn(mgs,lhl) ) ) )/(800. - 170.0) ) )
+                cd = Max(0.45, Min(1.2, 0.45 + 0.55*(800.0 - Max( hldnmn, Min( 800.0, xdn(mgs,lhl) ) ) )/(800. - 170.0) ) )
                ELSEIF ( icdxhl .eq. 4 ) THEN
                 cd = Max(cdhlmin, Min(cdhlmax, cdhlmin + (cdhlmax-cdhlmin)*  &
      &               (cdhldnmax - Max( cdhldnmin, Min( cdhldnmax, xdn(mgs,lhl) ) ) )/(cdhldnmax - cdhldnmin) ) )
@@ -13877,8 +4759,10 @@ END SUBROUTINE nssl_2mom_driver
 !     &               x)/y
                   IF ( infdo .ge. 2 ) THEN ! Z-weighted
                    vtxbar(mgs,il,3) = rhovt(mgs)*                 &
-     &                (aax*(1.0/xdia(mgs,il,1) )**(- bx(il))*  &
-     &                 Gamma(7.0 + alpha(mgs,il) + bx(il)))/Gamma(7. + alpha(mgs,il))
+     &                (aax*(1.0/xdia(mgs,il,1) )**(- bbx)*  &
+     &                 Gamma(7.0 + alpha(mgs,il) + bbx))/Gamma(7. + alpha(mgs,il))
+!     &                (aax*(1.0/xdia(mgs,il,1) )**(- bx(il))*  &
+!     &                 Gamma(7.0 + alpha(mgs,il) + bx(il)))/Gamma(7. + alpha(mgs,il))
                   ENDIF
 
       if ( ndebug1 .gt. 0 ) write(0,*) 'SETVTZ: Set hail vt3'
@@ -13890,8 +4774,10 @@ END SUBROUTINE nssl_2mom_driver
 
                  IF ( infdo .ge. 2 ) THEN ! Z-weighted
                   vtxbar(mgs,il,3) = rhovt(mgs)*                 &
-     &              (ax(il)*(1.0/xdia(mgs,il,1) )**(- bx(il))*  &
-     &               Gamma(7.0 + alpha(mgs,il) + bx(il)))/Gamma(7. + alpha(mgs,il))
+     &              (aax*(1.0/xdia(mgs,il,1) )**(- bbx)*  &
+     &               Gamma(7.0 + alpha(mgs,il) + bbx))/Gamma(7. + alpha(mgs,il))
+!     &              (ax(il)*(1.0/xdia(mgs,il,1) )**(- bx(il))*  &
+!     &               Gamma(7.0 + alpha(mgs,il) + bx(il)))/Gamma(7. + alpha(mgs,il))
                   ENDIF
 
       if ( ndebug1 .gt. 0 ) write(0,*) 'SETVTZ: Set hail vt4'
@@ -14035,12 +4921,13 @@ END SUBROUTINE nssl_2mom_driver
       real ::  xdn(ngs,lc:lhab) 
       real ::  xdia(ngs,lc:lhab,3) 
       real ::  vx(ngs,li:lhab) 
-      real ::  alpha(ngs,lr:lhab) 
+      real ::  alpha(ngs,lc:lhab) 
 !#ifdef Z3MOM
       real ::  zx(ngs,lr:lhab) 
 !#endif
 
       real xdnmx(lc:lhab), xdnmn(lc:lhab)
+      real axh(ngs),bxh(ngs),axhl(ngs),bxhl(ngs)
 
 !
 !   drag coefficients
@@ -14275,7 +5162,7 @@ END SUBROUTINE nssl_2mom_driver
       if ( ipconc .ge. 2 .and. lc .gt. 1 .and. (ildo == 0 .or. ildo == lc ) ) then
        do mgs = 1,ngscnt
         cx(mgs,lc) = Max(an(igs(mgs),jy,kgs(mgs),lnc), 0.0)
-        cx(mgs,lc) = Min( ccwmx, cx(mgs,lc) )
+!        cx(mgs,lc) = Min( ccwmx, cx(mgs,lc) )
        end do
       end if
       if ( ipconc .ge. 3 .and. lr .gt. 1 .and. (ildo == 0 .or. ildo == lr ) ) then
@@ -14365,7 +5252,11 @@ END SUBROUTINE nssl_2mom_driver
       ENDDO
       ENDDO
       
-      alpha(:,lr) = xnu(lr)
+      IF ( imurain == 1 ) THEN
+        alpha(:,lr) = alphar
+      ELSEIF ( imurain == 3 ) THEN
+        alpha(:,lr) = xnu(lr)
+      ENDIF
        
 
 
@@ -14379,11 +5270,12 @@ END SUBROUTINE nssl_2mom_driver
       if (ndebugzf .gt. 0 ) write(0,*)  'ZIEGFALL: call setvtz'
 !
       
-      call setvtz(ngscnt,ngs,qx,qxmin,qxw,cx,rho0,rhovt,xdia,cno,cnostmp,   &
+      call setvtz(ngscnt,qx,qxmin,qxw,cx,rho0,rhovt,xdia,cno,cnostmp,   &
      &                 xmas,vtxbar,xdn,xvmn,xvmx,xv,cdx,        &
      &                 ipconc,ndebugzf,ngs,nz,kgs,fadvisc, &
      &                 cwmasn,cwmasx,cwradn,cnina,cimn,cimx,    &
-     &                 itype1,itype2,temcg,infdo,alpha,ildo)
+     &                 itype1,itype2,temcg,infdo,alpha,ildo,axh,bxh,axhl,bxhl)
+
 
 
 !
@@ -14609,6 +5501,7 @@ END SUBROUTINE nssl_2mom_driver
       real cwnccn(nz)
       
       real :: vzsnow, vzrain, vzgraupel, vzhail
+      real :: ksq
       real :: dtp
 
 
@@ -14746,7 +5639,7 @@ END SUBROUTINE nssl_2mom_driver
 !      IF ( lh > 1 ) THEN
 !      xdnmn(li) =  100.0
 !      xdnmn(ls) =  100.0
-!      xdnmn(lh) =  170.0
+!      xdnmn(lh) =  hdnmn
 !      ENDIF
 !      IF ( lhl .gt. 1 ) xdnmn(lhl) = 500.0
 !
@@ -15024,7 +5917,7 @@ END SUBROUTINE nssl_2mom_driver
         IF ( lvh .gt. 1 ) THEN
           IF ( an(ix,jy,kz,lvh) .gt. 0.0 ) THEN
             hwdn = db(ix,jy,kz)*an(ix,jy,kz,lh)/an(ix,jy,kz,lvh)
-            hwdn = Min( 900., Max( 170., hwdn ) )
+            hwdn = Min( 900., Max( hdnmn, hwdn ) )
           ELSE 
             hwdn = 500. ! hwdn1t
           ENDIF
@@ -15082,18 +5975,33 @@ END SUBROUTINE nssl_2mom_driver
            IF ( an(ix,jy,kz,ls) .ge. qsmin ) THEN !{
             IF ( ipconc .ge. 4 ) THEN  ! (Ferrier 94) !{
 
-             if (lsw .gt. 1) qxw = an(ix,jy,kz,lsw)
+             if (lsw .gt. 1) THEN 
+               qxw = an(ix,jy,kz,lsw)
+             ELSEIF ( iusewetsnow == 1 .and. temk(ix,jy,kz) .gt. tfr+1. .and. an(ix,jy,kz,ls) > an(ix,jy,kz,lr) &
+     &              .and. an(ix,jy,kz,lr) > qsmin) THEN
+               qxw = Min(0.5*an(ix,jy,kz,ls), an(ix,jy,kz,lr))
+             ENDIF
 
              vr = xvs ! db(ix,jy,kz)*an(ix,jy,kz,lr)/(1000.*an(ix,jy,kz,lnr))
 !             gtmp(ix,kz) = 3.6e18*(0.243*rhos**2/0.93)*(snu+2.)*an(ix,jy,kz,lns)*vr**2/(snu+1.)
              
-             IF ( an(ix,jy,kz,lns) .gt. 1.e-5 ) THEN
-             gtmp(ix,kz) = 3.6e18*(snu+2.)*( 0.224*an(ix,jy,kz,ls) + 0.776*qxw)*an(ix,jy,kz,ls)/ &
-     &           (an(ix,jy,kz,lns)*(snu+1.)*rwdn**2)
+             ksq = 0.189 ! Smith (1984, JAMC) for equiv. ice sphere
+             IF ( an(ix,jy,kz,lns) .gt. 1.e-7 ) THEN
+               IF ( qxw > qsmin ) THEN ! old version
+!                gtmp(ix,kz) = 3.6e18*(snu+2.)*( 0.224*an(ix,jy,kz,ls) + 0.776*qxw)*an(ix,jy,kz,ls)/ &
+!     &              (an(ix,jy,kz,lns)*(snu+1.)*rwdn**2)*db(ix,jy,kz)**2
+                gtmp(ix,kz) = 3.6e18*(snu+2.)*( 0.224*(an(ix,jy,kz,ls)+qxw) + 0.776*qxw)*(an(ix,jy,kz,ls)+qxw)/ &
+     &              (an(ix,jy,kz,lns)*(snu+1.)*rwdn**2)*db(ix,jy,kz)**2
+
+               ELSE ! new form using a mass relationship m = p d^2 (instead of d^3 -- Cox 1988 QJRMS) so that density depends on size
+                 gtmp(ix,kz) = 1.e18* 1.06214**2*(ksq*an(ix,jy,kz,ls) + (1.-ksq)*qxw)*an(ix,jy,kz,ls)*db(ix,jy,kz)**2*gsnow1* gsnow73/    &
+     &                   (an(ix,jy,kz,lns)*(917.)**2* gsnow53**2)
+               ENDIF
+             
              ENDIF
              
-             tmp = Min(1.0,1.e3*(an(ix,jy,kz,ls))*db(ix,jy,kz))
-             gtmp(ix,kz) = Max( 1.0*gtmp(ix,kz), 750.0*(tmp)**1.98)
+!             tmp = Min(1.0,1.e3*(an(ix,jy,kz,ls))*db(ix,jy,kz))
+!             gtmp(ix,kz) = Max( 1.0*gtmp(ix,kz), 750.0*(tmp)**1.98)
              dtmps = gtmp(ix,kz)
              dtmp(ix,kz) = dtmp(ix,kz) + gtmp(ix,kz)
             ELSE
@@ -15170,6 +6078,10 @@ END SUBROUTINE nssl_2mom_driver
                     qxw = an(ix,jy,kz,lhw)
                   ENDIF
                ENDIF
+             ELSEIF ( iusewetgraupel .eq. 3 ) THEN
+                  IF ( hwdn .lt. 300. .and. temk(ix,jy,kz) > tfr .and. an(ix,jy,kz,lr) > qhmin ) THEN
+                    qxw = Min( an(ix,jy,kz,lh), an(ix,jy,kz,lr))
+                  ENDIF
              ENDIF
              
              IF ( lzh .gt. 1 ) THEN
@@ -15412,6 +6324,9827 @@ END SUBROUTINE nssl_2mom_driver
 
 ! ##############################################################################
 ! ##############################################################################
+
+
+! #####################################################################
+! #####################################################################
+!
+! Subroutine for explicit cloud condensation and droplet nucleation
+!
+   SUBROUTINE NUCOND    &
+     &  (nx,ny,nz,na,jyslab & 
+     &  ,nor,norz,dtp & 
+     &  ,dz3d & 
+     &  ,t0,t9 & 
+     &  ,an,dn,p2 & 
+     &  ,pn,w & 
+     &  ,ssfilt,t00,t77,flag_qndrop  &
+     & )
+
+
+   implicit none
+
+      integer :: nx,ny,nz,na
+      integer :: nor,norz, jyslab ! ,nht,ngt,igsr
+      real    :: dtp  ! time step
+      logical :: flag_qndrop
+
+      integer, parameter :: ng1 = 1
+
+
+!
+! external temporary arrays
+!
+      real t00(-nor+1:nx+nor,-nor+1:ny+nor,-norz+1:nz+norz)
+      real t77(-nor+1:nx+nor,-nor+1:ny+nor,-norz+1:nz+norz)
+
+      real t0(-nor+1:nx+nor,-nor+1:ny+nor,-norz+1:nz+norz)
+!      real t1(-nor+1:nx+nor,-nor+1:ny+nor,-norz+1:nz+norz)
+!      real t2(-nor+1:nx+nor,-nor+1:ny+nor,-norz+1:nz+norz)
+!      real t3(-nor+1:nx+nor,-nor+1:ny+nor,-norz+1:nz+norz)
+!      real t4(-nor+1:nx+nor,-nor+1:ny+nor,-norz+1:nz+norz)
+!      real t5(-nor+1:nx+nor,-nor+1:ny+nor,-norz+1:nz+norz)
+!      real t6(-nor+1:nx+nor,-nor+1:ny+nor,-norz+1:nz+norz)
+!      real t7(-nor+1:nx+nor,-nor+1:ny+nor,-norz+1:nz+norz)
+!      real t8(-nor+1:nx+nor,-nor+1:ny+nor,-norz+1:nz+norz)
+      real t9(-nor+1:nx+nor,-nor+1:ny+nor,-norz+1:nz+norz)
+      
+
+      real p2(-nor+1:nx+nor,-nor+1:ny+nor,-norz+1:nz+norz)  ! perturbation Pi
+      real pn(-nor+1:nx+nor,-nor+1:ny+nor,-norz+1:nz+norz)
+      real an(-nor+1:nx+nor,-nor+1:ny+nor,-norz+1:nz+norz,na)
+      real dn(-nor+1:nx+nor,-nor+1:ny+nor,-norz+1:nz+norz)
+
+      real w(-nor+1:nx+nor,-nor+1:ny+nor,-norz+1:nz+norz)
+!      real qv(-nor+1:nx+nor,-nor+1:ny+nor,-norz+1:nz+norz)
+
+      real ssfilt(-nor+1:nx+nor,-nor+1:ny+nor,-norz+1:nz+norz)
+      
+
+      real pb(-norz+ng1:nz+norz)
+      real pinit(-norz+ng1:nz+norz)
+
+      real dz3d(-nor+1:nx+nor,-nor+1:ny+nor,-norz+1:nz+norz)
+
+      
+    ! local
+
+
+! 
+!  declarations microphysics and for gather/scatter
+!
+      integer nxmpb,nzmpb,nxz
+      integer mgs,ngs,numgs,inumgs
+      parameter (ngs=500)
+      integer ngscnt,igs(ngs),kgs(ngs)
+      integer kgsp(ngs),kgsm(ngs)
+      integer nsvcnt
+      
+      integer ix,kz,i,n, kp1
+      integer :: jy, jgs
+      integer ixb,ixe,jyb,jye,kzb,kze
+    
+      integer itile,jtile,ktile
+      integer ixend,jyend,kzend,kzbeg
+      integer nxend,nyend,nzend,nzbeg
+
+!
+! Variables for Ziegler warm rain microphysics
+!      
+
+
+      real ccnc(ngs), ccna(ngs), cnuc(ngs), cwnccn(ngs)
+      real sscb  ! 'cloud base' SS threshold
+      parameter ( sscb = 2.0 )
+      integer idecss  ! flag to turn on (=1) decay of ssmax when no cloud or ice crystals
+      parameter ( idecss = 1 )
+      integer iba ! flag to do condensation/nucleation in 1st or 2nd loop
+                  ! =0 to use ad to calculate SS
+                  ! =1 to use an at end of main jy loop to calculate SS
+      parameter (iba = 1)
+      integer ifilt   ! =1 to filter ssat, =0 to set ssfilt=ssat
+      parameter ( ifilt = 0 ) 
+      real temp1,temp2 ! ,ssold
+      real ssmax(ngs)       ! maximum SS experienced by a parcel
+      real ssmx
+      real dnnet,dqnet
+!      real cnu,rnu,snu,cinu
+!      parameter ( cnu = 0.0, rnu = -0.8, snu = -0.8, cinu = 0.0 )
+      real ventrx(ngs)
+      real ventrxn(ngs)
+      real volb, t2s
+      real, parameter :: aa1 = 9.44e15, aa2 = 5.78e3  ! a1 in Ziegler
+
+      real ec0, ex1, ft, rhoinv(ngs)
+      
+      real chw, g1, rd1
+
+      real ac1,bc, taus, c1,d1,e1,f1,p380,tmp,tmp2 ! , sstdy, super
+      real x,y,del,r,alpr
+      double precision :: vent1,vent2
+      real g1palp
+      real bs
+      real v1, v2
+      real d1r, d1i, d1s, e1i
+      integer nc ! condensation step
+      real dtcon,dtcon1,dtcon2 ! condensation time step (dtcon*nc = dtp)
+      real delta
+      integer ltemq1,ltemq1m ! ,ltemq1m2
+      real dqv,qv1,ss1,ss2,qvs1,dqvs,dtemp,dt1   ! temporaries for condensation
+
+      real ssi1, ssi2, dqvi, dqvis, dqvii,qis1
+      real dqvr, dqc, dqr, dqi, dqs
+      real qv1m,qvs1m,ss1m,ssi1m,qis1m
+      real cwmastmp 
+      real  dcloud,dcloud2 ! ,as, bs
+      real cn(ngs) 
+
+      integer ltemq
+      
+      integer il
+
+      real  es(ngs) ! ss(ngs),
+      real  eis(ngs)
+      real ssf(ngs),ssfkp1(ngs),ssfkm1(ngs),ssat0(ngs)
+      real ssfjp1(ngs),ssfjm1(ngs)
+      real ssfip1(ngs),ssfim1(ngs)
+
+      real supcb, supmx
+      parameter (supcb=0.5,supmx=238.0)
+      real r2dxm, r2dym, r2dzm
+      real dssdz, dssdy, dssdx
+!      real tqvcon
+      real epsi,d
+      parameter (epsi = 0.622, d = 0.266)
+      real r1,qevap ! ,slv
+      
+      real vr,nrx,qr,z1,z2,rdi,alp,xnutmp,xnuc
+      real ctmp, ccwtmp
+      real f5, qvs0  ! Kessler condensation factor
+      real    :: t0p1, t0p3
+      real qvex
+      
+!      real, dimension(ngs) :: temp, tempc, elv, elf, els, pqs, theta, temg, temcg
+      real dqvcnd(ngs),dqwv(ngs),dqcw(ngs),dqci(ngs)
+      real temp(ngs),tempc(ngs)
+      real temg(ngs),temcg(ngs),theta(ngs),qvap(ngs) ! ,tembzg(ngs)
+      real temgx(ngs),temcgx(ngs)
+      real qvs(ngs),qis(ngs),qss(ngs),pqs(ngs)
+      real felv(ngs),felf(ngs),fels(ngs)
+      real felvcp(ngs)
+      real gamw(ngs),gams(ngs)   !   qciavl(ngs),
+      real tsqr(ngs),ssi(ngs),ssw(ngs)
+      real cc3(ngs),cqv1(ngs),cqv2(ngs)
+      real qcwtmp(ngs),qtmp
+
+      real fvent(ngs) !,fraci(ngs),fracl(ngs)
+      real fwvdf(ngs),ftka(ngs),fthdf(ngs)
+      real fadvisc(ngs),fakvisc(ngs)
+      real fci(ngs),fcw(ngs)
+      real fschm(ngs),fpndl(ngs)
+
+      real pres(ngs)
+      real pk(ngs)
+      real rho0(ngs),pi0(ngs)
+      real rhovt(ngs)
+      real thetap(ngs),theta0(ngs),qwvp(ngs),qv0(ngs)
+      real thsave(ngs)
+      real qss0(ngs)
+      real fcqv1(ngs)
+      real wvel(ngs),wvelkm1(ngs)
+
+      real wvdf(ngs),tka(ngs)
+      real advisc(ngs)
+
+      real rwvent(ngs)
+      
+
+      real :: qx(ngs,lv:lhab)
+      real :: cx(ngs,lc:lhab)
+      real :: xv(ngs,lc:lhab)
+      real :: xmas(ngs,lc:lhab)
+      real :: xdn(ngs,lc:lhab)
+      real :: xdia(ngs,lc:lhab,3)
+      real :: alpha(ngs,lc:lhab)
+      real :: zx(ngs,lr:lhab)
+
+
+      logical zerocx(lc:lqmx)
+
+      integer, parameter :: iunit = 0
+      
+      real :: frac, hwdn, tmpg
+      
+      real :: cvm
+      
+      integer :: kstag
+      
+      integer :: count
+      
+
+! -------------------------------------------------------------------------------
+      itile = nx
+      jtile = ny
+      ktile = nz
+      ixend = nx
+      jyend = ny
+      kzend = nz
+      nxend = nx + 1
+      nyend = ny + 1
+      nzend = nz
+      kzbeg = 1
+      nzbeg = 1
+
+       jy = 1
+       kstag = 0
+       pb(:) = 0.0
+       pinit(:) = 0.0
+      
+      IF ( ipconc <= 1 .or. isedonly == 2 ) GOTO 2200
+
+!
+!  Ziegler nucleation 
+!
+
+      ssfilt(:,:,:) = 0.0
+      ssmx = 0
+      count = 0
+
+      do kz = 1,nz-kstag
+        do ix = 1,nx
+
+         temp1 = an(ix,jy,kz,lt)*t77(ix,jy,kz)
+          t0(ix,jy,kz) = temp1
+          ltemq = Int( (temp1-163.15)/fqsat+1.5 )
+         ltemq = Min( nqsat, Max(1,ltemq) )
+
+          c1 = t00(ix,jy,kz)*tabqvs(ltemq)
+
+          ssfilt(ix,jy,kz) = 100.*(an(ix,jy,kz,lv)/c1 - 1.0)  ! from "new" values
+
+
+        ENDDO
+      ENDDO
+
+
+!
+!     jy = 1 ! working on a 2d slab
+!!  VERY IMPORTANT:  SET jgs = jy
+
+      jgs = jy
+
+!
+!..Gather microphysics
+!
+      if ( ndebug .gt. 0 ) write(0,*) 'ICEZVD_DR: Gather stage'
+
+      nxmpb = 1
+      nzmpb = 1
+      nxz = nx*nz
+      numgs = nxz/ngs + 1
+
+
+      do 2000 inumgs = 1,numgs
+
+      ngscnt = 0
+
+
+      kzb = nzmpb
+      kze = nz-kstag
+ !     if (kzbeg .le. nzmpb .and. kzend .gt. nzmpb) kzb = nzmpb
+
+      ixb = nxmpb
+      ixe = itile
+!      if (ixbeg .le. nxmpb .and. ixend .gt. nxmpb) ixb = nxmpb
+
+      do kz = kzb,kze
+      do ix = nxmpb,nx
+
+      pqs(1) = 380.0/(pn(ix,jy,kz) + pb(kz))
+      theta(1) = an(ix,jy,kz,lt)
+      temg(1) = t0(ix,jy,kz)
+
+      temcg(1) = temg(1) - tfr
+      ltemq = (temg(1)-163.15)/fqsat+1.5
+      ltemq = Min( nqsat, Max(1,ltemq) )
+      qvs(1) = pqs(1)*tabqvs(ltemq)
+      qis(1) = pqs(1)*tabqis(ltemq)
+
+      qss(1) = qvs(1)
+
+
+      if ( temg(1) .lt. tfr ) then
+      end if
+!
+      if ( (temg(1) .gt. tfrh ) .and.  &
+     &   ( an(ix,jy,kz,lv)  .gt. qss(1) .or. &
+     &     an(ix,jy,kz,lc)  .gt. qxmin(lc)   .or.  &
+     &     ( an(ix,jy,kz,lr)  .gt. qxmin(lr) .and. rcond == 2 )  &
+     &     )) then
+      ngscnt = ngscnt + 1
+      igs(ngscnt) = ix
+      kgs(ngscnt) = kz
+      if ( ngscnt .eq. ngs ) goto 2100
+      end if
+
+      end do  !ix
+
+      nxmpb = 1
+      end do  !kz
+!      if ( jy .eq. (ny-jstag) ) iend = 1
+ 2100 continue
+
+      if ( ngscnt .eq. 0 ) go to 29998
+
+      if (ndebug .gt. 0 ) write(0,*) 'ICEZVD_DR: dbg = 8'
+      
+!      write(0,*) 'NUCOND: dbg = 8, ngscnt,ssmx = ',ngscnt,ssmx
+
+      
+      qx(:,:) = 0.0
+      cx(:,:) = 0.0
+
+      xv(:,:) = 0.0
+      xmas(:,:) = 0.0
+
+      IF ( imurain == 1 ) THEN
+        alpha(:,lr) = alphar
+      ELSEIF ( imurain == 3 ) THEN
+        alpha(:,lr) = xnu(lr)
+      ENDIF
+
+!
+!  define temporaries for state variables to be used in calculations
+!
+      DO mgs = 1,ngscnt
+      qx(mgs,lv) = an(igs(mgs),jy,kgs(mgs),lv)
+       DO il = lc,lhab
+        qx(mgs,il) = max(an(igs(mgs),jy,kgs(mgs),il), 0.0)
+       ENDDO
+
+       qcwtmp(mgs) = qx(mgs,lc)
+
+
+      theta0(mgs) = an(igs(mgs),jy,kgs(mgs),lt) !
+      thetap(mgs) = 0.0
+      theta(mgs) = an(igs(mgs),jy,kgs(mgs),lt)
+      qv0(mgs) =  qx(mgs,lv)
+      qwvp(mgs) = qx(mgs,lv) - qv0(mgs)
+
+       pres(mgs) = pn(igs(mgs),jy,kgs(mgs)) + pb(kgs(mgs))
+       rho0(mgs) = dn(igs(mgs),jy,kgs(mgs))
+       rhoinv(mgs) = 1.0/rho0(mgs)
+       rhovt(mgs) = Sqrt(rho00/rho0(mgs))
+       pi0(mgs) = p2(igs(mgs),jy,kgs(mgs)) + pinit(kgs(mgs))
+       temg(mgs) = t0(igs(mgs),jy,kgs(mgs))
+       pk(mgs) = t77(igs(mgs),jy,kgs(mgs)) ! ( pres(mgs) / poo ) ** cap
+       temcg(mgs) = temg(mgs) - tfr
+       qss0(mgs) = (380.0)/(pres(mgs))
+       pqs(mgs) = (380.0)/(pres(mgs))
+       ltemq = (temg(mgs)-163.15)/fqsat+1.5
+       ltemq = Min( nqsat, Max(1,ltemq) )
+       qvs(mgs) = pqs(mgs)*tabqvs(ltemq)
+       qis(mgs) = pqs(mgs)*tabqis(ltemq)
+!
+        qvap(mgs) = max( (qwvp(mgs) + qv0(mgs)), 0.0 )
+        es(mgs) = 6.1078e2*tabqvs(ltemq)
+        qss(mgs) = qvs(mgs)
+
+
+        temgx(mgs) = min(temg(mgs),313.15)
+        temgx(mgs) = max(temgx(mgs),233.15)
+        felv(mgs) = 2500837.367 * (273.15/temgx(mgs))**((0.167)+(3.67e-4)*temgx(mgs))
+!
+        IF ( eqtset <= 1 ) THEN
+          felvcp(mgs) = felv(mgs)*cpi
+        ELSE ! equation set 2 in cm1
+          tmp = qx(mgs,li)+qx(mgs,ls)+qx(mgs,lh)
+          IF ( lhl > 1 ) tmp = tmp + qx(mgs,lhl)
+          cvm = cv+cvv*qx(mgs,lv)+cpl*(qx(mgs,lc)+qx(mgs,lr))   &
+                                  +cpigb*(tmp)
+          felvcp(mgs) = (felv(mgs)-rw*temg(mgs))/cvm
+        ENDIF
+
+        temcgx(mgs) = min(temg(mgs),273.15)
+        temcgx(mgs) = max(temcgx(mgs),223.15)
+        temcgx(mgs) = temcgx(mgs)-273.15
+        felf(mgs) = 333690.6098 + (2030.61425)*temcgx(mgs) - (10.46708312)*temcgx(mgs)**2
+!
+        fels(mgs) = felv(mgs) + felf(mgs)
+        fcqv1(mgs) = 4098.0258*felv(mgs)*cpi
+
+      wvdf(mgs) = (2.11e-05)*((temg(mgs)/tfr)**1.94)* &
+     &  (101325.0/(pb(kgs(mgs)) + pn(igs(mgs),jgs,kgs(mgs))))                            ! diffusivity of water vapor, Hall and Pruppacher (76)
+      advisc(mgs) = advisc0*(416.16/(temg(mgs)+120.0))* &
+     &  (temg(mgs)/296.0)**(1.5)                         ! dynamic viscosity (SMT; see Beard & Pruppacher 71)
+      tka(mgs) = tka0*advisc(mgs)/advisc1                 ! thermal conductivity
+
+
+      ENDDO
+
+
+
+!
+! load concentrations
+!
+      if ( ipconc .ge. 1 ) then
+       do mgs = 1,ngscnt
+        cx(mgs,li) = Max(an(igs(mgs),jy,kgs(mgs),lni), 0.0)
+       end do
+      end if
+      if ( ipconc .ge. 2 ) then
+       do mgs = 1,ngscnt
+        cx(mgs,lc) = Max(an(igs(mgs),jy,kgs(mgs),lnc), 0.0)
+        cwnccn(mgs) = cwccn*rho0(mgs)/rho00
+        cn(mgs) = 0.0
+        IF ( lccn .gt. 1 ) THEN
+          ccnc(mgs) = an(igs(mgs),jy,kgs(mgs),lccn)
+        ELSE
+          ccnc(mgs) = cwnccn(mgs)
+        ENDIF
+        IF ( lccna > 1 ) THEN
+          ccna(mgs) = an(igs(mgs),jy,kgs(mgs),lccna)
+        ELSE
+          IF ( lccn > 1 ) THEN
+            ccna(mgs) = cwnccn(mgs) - ccnc(mgs)
+          ELSE
+            ccna(mgs) = cx(mgs,lc) ! approximation of number of activated ccn
+          ENDIF
+        ENDIF
+       end do
+      end if
+      if ( ipconc .ge. 3 ) then
+       do mgs = 1,ngscnt
+        cx(mgs,lr) = Max(an(igs(mgs),jy,kgs(mgs),lnr), 0.0)
+       end do
+      end if
+
+!        cnuc(1:ngscnt) = cwccn*rho0(mgs)/rho00*(1. - renucfrac) + ccnc(1:ngscnt)*renucfrac
+       DO mgs = 1,ngscnt
+        cnuc(mgs) = Max(ccnc(mgs),cwnccn(mgs))*(1. - renucfrac) + ccnc(mgs)*renucfrac
+       ENDDO
+
+!  Set density
+!
+      if (ndebug .gt. 0 ) write(0,*) 'ICEZVD_DR: Set density'
+
+      do mgs = 1,ngscnt
+        xdn(mgs,lc) = xdn0(lc)
+        xdn(mgs,lr) = xdn0(lr)
+      end do
+
+      ventrx(:) = ventr
+      ventrxn(:) = ventrn
+      
+
+
+!       write(0,*) 'NUCOND: Set ssf variables, ssmxinit =',ssmxinit
+      ssmx = 0.0
+      DO mgs = 1,ngscnt
+      
+      kp1 = Min(nz, kgs(mgs)+1 )
+      wvel(mgs) = (0.5)*(w(igs(mgs),jgs,kp1) & 
+     &                  +w(igs(mgs),jgs,kgs(mgs)))
+      wvelkm1(mgs) = (0.5)*(w(igs(mgs),jgs,kgs(mgs)) & 
+     &                  +w(igs(mgs),jgs,Max(1,kgs(mgs)-1)))
+
+      ssat0(mgs)  = ssfilt(igs(mgs),jgs,kgs(mgs))
+      ssf(mgs)    = ssfilt(igs(mgs),jgs,kgs(mgs))
+!      ssmx = Max( ssmx, ssf(mgs) )
+
+      
+      ssfkp1(mgs) = ssfilt(igs(mgs),jgs,Min(nz-1,kgs(mgs)+1))
+      ssfkm1(mgs) = ssfilt(igs(mgs),jgs,Max(1,kgs(mgs)-1))
+
+
+      ENDDO
+
+
+
+!
+!  cloud water variables
+!
+
+      if ( ndebug .gt. 0 )write(0,*) 'ICEZVD_DR: Set cloud water variables'
+
+      do mgs = 1,ngscnt
+      xv(mgs,lc) = 0.0
+      IF ( ipconc .ge. 2 .and. cx(mgs,lc) .gt. 1.0e6 ) THEN
+        xmas(mgs,lc) = &
+     &    min( max(qx(mgs,lc)*rho0(mgs)/cx(mgs,lc),cwmasn),cwmasx )
+        xv(mgs,lc) = xmas(mgs,lc)/xdn(mgs,lc)
+      ELSE
+       IF ( qx(mgs,lc) .gt. qxmin(lc) .and. cx(mgs,lc) .gt. 0.01 ) THEN
+        xmas(mgs,lc) = &
+     &     min( max(qx(mgs,lc)*rho0(mgs)/cx(mgs,lc),xdn(mgs,lc)*xvmn(lc)), &
+     &      xdn(mgs,lc)*xvmx(lc) )
+
+        cx(mgs,lc) = qx(mgs,lc)*rho0(mgs)/xmas(mgs,lc)
+
+       ELSEIF ( qx(mgs,lc) .gt. qxmin(lc) .and. cx(mgs,lc) .le. 0.01 ) THEN
+        xmas(mgs,lc) = xdn(mgs,lc)*4.*pi/3.*(5.0e-6)**3
+        cx(mgs,lc) = rho0(mgs)*qx(mgs,lc)/xmas(mgs,lc)
+
+       ELSE
+        xmas(mgs,lc) = cwmasn
+       ENDIF
+      ENDIF
+      xdia(mgs,lc,1) = (xmas(mgs,lc)*cwc1)**c1f3
+
+
+      end do
+!
+! rain
+!
+      do mgs = 1,ngscnt
+      if ( qx(mgs,lr) .gt. qxmin(lr) ) then
+
+      if ( ipconc .ge. 3 ) then
+        xv(mgs,lr) = rho0(mgs)*qx(mgs,lr)/(xdn(mgs,lr)*Max(1.0e-9,cx(mgs,lr)))
+!      parameter( xvmn(lr)=2.8866e-13, xvmx(lr)=4.1887e-9 )  ! mks
+        IF ( xv(mgs,lr) .gt. xvmx(lr) ) THEN
+          xv(mgs,lr) = xvmx(lr)
+          cx(mgs,lr) = rho0(mgs)*qx(mgs,lr)/(xvmx(lr)*xdn(mgs,lr))
+        ELSEIF ( xv(mgs,lr) .lt. xvmn(lr) ) THEN
+          xv(mgs,lr) = xvmn(lr)
+          cx(mgs,lr) = rho0(mgs)*qx(mgs,lr)/(xvmn(lr)*xdn(mgs,lr))
+        ENDIF
+
+        xmas(mgs,lr) = xv(mgs,lr)*xdn(mgs,lr)
+        xdia(mgs,lr,3) = (xmas(mgs,lr)*cwc1)**(1./3.) ! xdia(mgs,lr,1)
+        IF ( imurain == 3 ) THEN
+!          xdia(mgs,lr,1) = (6.*pii*xv(mgs,lr)/(alpha(mgs,lr)+1.))**(1./3.)
+          xdia(mgs,lr,1) = xdia(mgs,lr,3) ! formulae for Ziegler (1985) use mean volume diameter, not lambda**(-1)
+        ELSE ! imurain == 1, Characteristic diameter (1/lambda)
+          xdia(mgs,lr,1) = (6.*piinv*xv(mgs,lr)/((alpha(mgs,lr)+3.)*(alpha(mgs,lr)+2.)*(alpha(mgs,lr)+1.)))**(1./3.)
+        ENDIF
+!        rwrad(mgs) = 0.5*xdia(mgs,lr,1)
+
+! Inverse exponential version:
+!        xdia(mgs,lr,1) =
+!     >  (qx(mgs,lr)*rho0(mgs)
+!     > /(pi*xdn(mgs,lr)*cx(mgs,lr)))**(0.333333)
+      ELSE
+        xdia(mgs,lr,1) = &
+     &  (qx(mgs,lr)*rho0(mgs)/(pi*xdn(mgs,lr)*cno(lr)))**(0.25)
+      end if
+      else
+        xdia(mgs,lr,1) = 1.e-9
+!        rwrad(mgs) = 0.5*xdia(mgs,lr,1)
+      end if
+
+      end do
+
+
+!
+!  Ventilation coefficients
+
+      do mgs = 1,ngscnt
+
+
+      fadvisc(mgs) = advisc0*(416.16/(temg(mgs)+120.0))* & 
+     &  (temg(mgs)/296.0)**(1.5)
+
+      fakvisc(mgs) = fadvisc(mgs)*rhoinv(mgs)
+
+      fwvdf(mgs) = (2.11e-05)*((temg(mgs)/tfr)**1.94)* & 
+     &  (101325.0/(pres(mgs)))
+      
+      fschm(mgs) = (fakvisc(mgs)/fwvdf(mgs))
+
+      fvent(mgs) = (fschm(mgs)**(1./3.)) * (fakvisc(mgs)**(-0.5))
+
+      end do
+!
+!
+!  Ziegler nucleation 
+!
+!
+! cloud evaporation, condensation, and nucleation
+!  sqsat -> qss(mgs)
+
+      DO mgs=1,ngscnt
+        dcloud = 0.0
+        IF ( temg(mgs) .le. tfrh ) THEN
+         CYCLE
+        ENDIF
+
+      IF( ssat0(mgs) .GT. 0. .OR. ssf(mgs) .GT. 0. ) GO TO 620
+!6/4      IF( qvap(mgs) .EQ. qss(mgs) ) GO TO 631
+!
+!.... EVAPORATION. QV IS LESS THAN qss(mgs).
+!.... EVAPORATE CLOUD FIRST
+!
+      IF ( qx(mgs,lc) .LE. 0. ) GO TO 631
+!.... CLOUD EVAPORATION.
+! convert input 'cp' to cgs
+      R1=1./(1. + caw*(273.15 - cbw)*qss(mgs)*felv(mgs)/ &
+     &            (cp*(temg(mgs) - cbw)**2))
+      QEVAP= Min( qx(mgs,lc), R1*(qss(mgs)-qvap(mgs)) )
+
+
+      IF ( qx(mgs,lc) .LT. QEVAP ) THEN ! GO TO 63
+        qwvp(mgs) = qwvp(mgs) + qx(mgs,lc)
+        thetap(mgs) = thetap(mgs) - felv(mgs)*qx(mgs,lc)/(cp*pi0(mgs))
+!        t9(igs(mgs),jy,kgs(mgs)) = t9(igs(mgs),jy,kgs(mgs)) - (qx(mgs,lc))/dtp*felv(mgs)/(cp*pi0(mgs)) !* &
+!!     &                 dx*dy*dz3d(igs(mgs),jy,kgs(mgs))
+        qx(mgs,lc) = 0.
+        cx(mgs,lc) = 0.
+      ELSE
+        qwvp(mgs) = qwvp(mgs) + QEVAP
+        qx(mgs,lc) = qx(mgs,lc) - QEVAP
+        IF ( qx(mgs,lc) .le. 0. ) cx(mgs,lc) = 0.
+        thetap(mgs) = thetap(mgs) - felv(mgs)*QEVAP/(CP*pi0(mgs))
+!        t9(igs(mgs),jy,kgs(mgs)) = t9(igs(mgs),jy,kgs(mgs)) - (qevap)/dtp*felv(mgs)/(cp*pi0(mgs)) !* &
+!!     &                 dx*dy*dz3d(igs(mgs),jy,kgs(mgs))
+      ENDIF
+
+      GO TO 631
+
+
+  620 CONTINUE
+
+!.... CLOUD CONDENSATION
+
+        IF ( qx(mgs,lc) .GT. qxmin(lc) .and. cx(mgs,lc) .ge. 1. ) THEN
+
+
+
+!       ac1 =  xdn(mgs,lc)*elv(kgs(mgs))**2*epsi/
+!     :        (tka(kgs(mgs))*rw*temg(mgs)**2)
+! took out xdn factor because it cancels later...
+       ac1 =  felv(mgs)**2/(tka(mgs)*rw*temg(mgs)**2)
+
+
+!       bc = xdn(mgs,lc)*rw*temg(mgs)/
+!     :       (epsi*wvdf(kgs(mgs))*es(mgs))
+! took out xdn factor because it cancels later...
+       bc =   rw*temg(mgs)/(wvdf(mgs)*es(mgs))
+
+!       bs = rho0(mgs)*((rd*temg(mgs)/(epsi*es(mgs)))+
+!     :             (epsi*elv(kgs(mgs))**2/(pres(mgs)*temg(mgs)*cp)))
+
+!       taus = Min(dtp, xdn(mgs,lc)*rho0(mgs)*(ac1+bc)/
+!     :        (4*pi*0.89298*BS*0.5*xdia(mgs,lc,1)*cx(mgs,lc)*xdn(mgs,lc)))
+
+!
+      IF ( ssf(mgs) .gt. 0.0 .or. ssat0(mgs) .gt. 0.0 ) THEN
+       IF ( ny .le. 2 ) THEN
+!        write(0,*)  'undershoot: ',ssf(mgs),
+!     :   ( (qx(mgs,lv) - dcloud)/c1 - 1.0)*100.
+       ENDIF
+
+
+
+       IF ( qx(mgs,lc) .gt. qxmin(lc) ) THEN
+
+         IF ( xdia(mgs,lc,1) .le. 0.0 ) THEN
+          xmas(mgs,lc) = cwmasn
+          xdia(mgs,lc,1) = (xmas(mgs,lc)*cwc1)**c1f3
+         ENDIF
+        d1 = (1./(ac1 + bc))*4.0*pi*ventc &
+     &        *0.5*xdia(mgs,lc,1)*cx(mgs,lc)*rhoinv(mgs)
+
+       ELSE
+         d1 = 0.0
+       ENDIF
+
+       IF ( rcond .eq. 2 .and. qx(mgs,lr) .gt. qxmin(lr) .and. cx(mgs,lr) > 1.e-9 ) THEN
+          IF ( imurain == 3 ) THEN
+           IF ( izwisventr == 1 ) THEN
+            rwvent(mgs) = ventrx(mgs)*(1.6 + 124.9*(1.e-3*rho0(mgs)*qx(mgs,lr))**.2046)
+           ELSE ! izwisventr = 2
+!  Following Wisner et al. (1972) but using gamma of volume. Note that Ferrier's rain fall speed does not integrate with gamma of volume, so using Vr = ar*d^br
+          rwvent(mgs) =   &
+     &  (0.78*ventrx(mgs) + 0.308*ventrxn(mgs)*fvent(mgs)   &
+     &   *Sqrt((ar*rhovt(mgs)))   &
+     &    *(xdia(mgs,lr,1)**((1.0+br)/2.0)) )
+           ENDIF
+
+          ELSE ! imurain == 1
+
+           IF ( iferwisventr == 1 ) THEN
+             alpr = Min(alpharmax,alpha(mgs,lr) )
+!             alpr = alpha(mgs,lr)
+             x =  1. + alpr
+
+              tmp = 1 + alpr
+              i = Int(dgami*(tmp))
+              del = tmp - dgam*i
+              g1palp = gmoi(i) + (gmoi(i+1) - gmoi(i))*del*dgami
+
+              tmp = 2.5 + alpr + 0.5*bx(lr)
+              i = Int(dgami*(tmp))
+              del = tmp - dgam*i
+              y = (gmoi(i) + (gmoi(i+1) - gmoi(i))*del*dgami)/g1palp ! ratio of gamma functions
+
+         vent1 = dble(xdia(mgs,lr,1))**(-2. - alpr)
+         vent2 = dble(1./xdia(mgs,lr,1) + 0.5*fx(lr))**dble(2.5+alpr+0.5*bx(lr))
+        
+        
+        rwvent(mgs) =    &
+     &    0.78*x +    &
+     &    0.308*fvent(mgs)*y*   &
+     &            Sqrt(ax(lr)*rhovt(mgs))*(vent1/vent2)
+
+           ELSEIF ( iferwisventr == 2 ) THEN
+          
+!  Following Wisner et al. (1972) but using gamma of volume. Note that Ferrier's rain fall speed does not integrate with gamma of volume, so using Vr = ar*d^br
+            x =  1. + alpha(mgs,lr)
+
+            rwvent(mgs) =   &
+     &        (0.78*x + 0.308*ventrxn(mgs)*fvent(mgs)   &
+     &         *Sqrt((ar*rhovt(mgs)))   &
+     &         *(xdia(mgs,lr,1)**((1.0+br)/2.0)) )
+
+          
+          ENDIF ! iferwisventr
+          
+       ENDIF ! imurain
+
+       d1r = (1./(ac1 + bc))*4.0*pi*rwvent(mgs) & 
+     &        *0.5*xdia(mgs,lr,1)*cx(mgs,lr)*rhoinv(mgs)
+       ELSE
+       d1r = 0.0
+       ENDIF
+       
+       
+       e1  = felvcp(mgs)/(pi0(mgs))
+       f1 = pk(mgs) ! (pres(mgs)/poo)**cap
+
+!
+!  fifth trial to see what happens:
+!
+       ltemq = (temg(mgs)-163.15)/fqsat+1.5
+       ltemq = Min( nqsat, Max(1,ltemq) )
+       ltemq1 = ltemq
+       temp1 = temg(mgs)
+       p380 = 380.0/pres(mgs)
+
+!       taus = Max( 0.05*dtp, Min(taus, 0.25*dtp ) )
+!       nc = NInt(dtp/Min(1.0,0.5*taus))
+!       dtcon = dtp/float(nc)
+       ss1 = qx(mgs,lv)/qvs(mgs)
+       ss2 = ss1
+       temp2 = temp1
+       qv1 = qx(mgs,lv)
+       qvs1 = qvs(mgs)
+       qis1 = qis(mgs)
+       dt1 = 0.0
+
+
+!          dtcon = Max(dtcon,0.2)
+!          nc = Nint(dtp/dtcon)
+
+       ltemq1 = ltemq
+! want to start out with a small time step to handle the steep slope
+! and fast changes, then can switch to a larger step (dtcon2) for the
+! rest of the big time step.
+! base the initial time step (dtcon1) on the slope (delta)
+       IF ( Abs(ss1 - 1.0) .gt. 1.e-5 ) THEN
+         delta = 0.5*(qv1-qvs1)/(d1*(ss1 - 1.0))
+       ELSE
+         delta = 0.1*dtp
+       ENDIF
+! delta is the extrapolated time to get halfway from qv1 to qvs1
+! want at least 5 time steps to the halfway point, so multiply by 0.2
+! for the initial time step
+       dtcon1 = Min(0.05,0.2*delta)
+       nc = Max(5,2*NInt( (dtp-4.0*dtcon1)/delta))
+       dtcon2 = (dtp-4.0*dtcon1)/nc
+
+       n = 1
+       dt1 = 0.0
+       nc = 0
+       dqc = 0.0
+       dqr = 0.0
+       dqi = 0.0
+       dqs = 0.0
+
+       RK2c: DO WHILE ( dt1 .lt. dtp )
+          nc = 0
+          IF ( n .le. 4 ) THEN
+            dtcon = dtcon1
+          ELSE
+            dtcon = dtcon2
+          ENDIF
+ 609       dqv  = -(ss1 - 1.)*d1*dtcon
+           dqvr = -(ss1 - 1.)*d1r*dtcon
+            dtemp = -0.5*e1*f1*(dqv + dqvr)
+!          write(0,*) 'RK2c dqv1 = ',dqv
+! calculate midpoint values:
+           ltemq1m = ltemq1 + Nint(dtemp*fqsat + 0.5)
+           IF ( ltemq1m .lt. 1 .or. ltemq1m .gt. nqsat ) THEN
+             write(0,*) 'STOP in icezvd_dr line 3790 '
+             write(0,*) ' ltemq1m,icond = ',ltemq1m,icond
+             write(0,*) ' dtemp,e1,f1,dqv,dqvr = ', dtemp,e1,f1,dqv,dqvr
+             write(0,*) ' d1,d1r,dtcon,ss1 = ',d1,d1r,dtcon,ss1
+             write(0,*) ' dqc, dqr = ',dqc,dqr
+             write(0,*) ' qv,qc,qr = ',qx(mgs,lv)*1000.,qx(mgs,lc)*1000.,qx(mgs,lr)*1000.
+             write(0,*) ' i, j, k = ',igs(mgs),jy,kgs(mgs)
+             write(0,*) ' dtcon1,dtcon2,delta = ',dtcon1,dtcon2,delta
+             write(0,*) ' nc,dtp = ',nc,dtp
+             write(0,*) ' rwvent,xdia,crw = ', rwvent(mgs),xdia(mgs,lr,1),cx(mgs,lr)
+             write(0,*) ' fvent,alphar = ',fvent(mgs),alpha(mgs,lr)
+             write(0,*) ' xvr,xmasr,xdnr,cwc1 = ',xv(mgs,lr),xmas(mgs,lr),xdn(mgs,lr),cwc1
+           ENDIF
+            dqvs = dtemp*p380*dtabqvs(ltemq1m)
+            qv1m = qv1 + dqv + dqvr
+!          qv1mr = qv1r + dqvr
+
+            qvs1m = qvs1 + dqvs
+            ss1m = qv1m/qvs1m
+
+    ! check for undersaturation when no ice is present, if so, then reduce time step
+          IF ( ss1m .lt. 1.  .and. (dqvii + dqvis) .eq. 0.0 ) THEN
+            dtcon = (0.5*dtcon)
+            IF ( dtcon .ge. dtcon1 ) THEN
+             GOTO 609
+            ELSE
+             EXIT
+            ENDIF
+          ENDIF
+! calculate full step:
+          dqv  = -(ss1m - 1.)*d1*dtcon
+          dqvr = -(ss1m - 1.)*d1r*dtcon
+
+
+!          write(0,*) 'RK2a dqv1m = ',dqv
+          dtemp = -e1*f1*(dqv + dqvr)
+          ltemq1 = ltemq1 + Nint(dtemp*fqsat + 0.5)
+           IF ( ltemq1 .lt. 1 .or. ltemq1 .gt. nqsat ) THEN
+             write(0,*) 'STOP in icezvd_dr line 3856 '
+             write(0,*) ' ltemq1m,icond = ',ltemq1m,icond
+             write(0,*) ' dtemp,e1,dqv,dqvr = ', dtemp,e1,dqv,dqvr
+           ENDIF
+          dqvs = dtemp*p380*dtabqvs(ltemq1)
+
+          qv1 = qv1 + dqv + dqvr
+
+          dqc = dqc - dqv
+          dqr = dqr - dqvr
+
+          qvs1 = qvs1 + dqvs
+          ss1 = qv1/qvs1
+          temp1 = temp1 + dtemp
+          IF ( temp2 .eq. temp1 .or. ss2 .eq. ss1 .or.  &
+     &           ss1 .eq. 1.00 .or.  &
+     &      ( n .gt. 10 .and. ss1 .lt. 1.0005 ) ) THEN
+!           write(0,*) 'RK2c break'
+           EXIT
+          ELSE
+           ss2 = ss1
+           temp2 = temp1
+           dt1 = dt1 + dtcon
+           n = n + 1
+          ENDIF
+       ENDDO RK2c
+
+
+        dcloud = dqc ! qx(mgs,lv) - qv1
+        thetap(mgs) = thetap(mgs) + e1*(DCLOUD + dqr)
+        qwvp(mgs) = qwvp(mgs) - (DCLOUD + dqr)
+        qx(mgs,lc) = qx(mgs,lc) + DCLOUD
+        qx(mgs,lr) = qx(mgs,lr) + dqr
+!        t9(igs(mgs),jy,kgs(mgs)) = t9(igs(mgs),jy,kgs(mgs)) + (DCLOUD + dqr)/dtp*felv(mgs)/(cp*pi0(mgs)) !* &
+!!     &                 dx*dy*dz3d(igs(mgs),jy,kgs(mgs))
+
+
+        theta(mgs) = thetap(mgs) + theta0(mgs)
+        temg(mgs) = theta(mgs)*f1
+        ltemq = (temg(mgs)-163.15)/fqsat+1.5
+        ltemq = Min( nqsat, Max(1,ltemq) )
+        qvs(mgs) = pqs(mgs)*tabqvs(ltemq)
+        es(mgs) = 6.1078e2*tabqvs(ltemq)
+
+!
+
+      ENDIF  ! dcloud .gt. 0.
+
+
+      ELSE  ! qc .le. qxmin(lc)
+
+!        IF ( ssf(mgs) .gt. 0.0 .and. .not. flag_qndrop ) THEN ! flag_qndrop turns off primary nucleation when using wrf-chem with progn=1
+        IF ( ssf(mgs) .gt. 0.0 ) THEN ! .and.  ssmax(mgs) .lt. sscb ) THEN ! except that wrf-chem does not seem to initialize qc for activated aerosols, so keep this, after all
+
+          IF ( iqcinit == 1 ) THEN
+
+         qvs0   = 380.*exp(17.27*(temg(mgs)-273.)/(temg(mgs)- 36.))/pk(mgs)
+
+         dcloud = Max(0.0, (qx(mgs,lv)-qvs0) / (1.+qvs0*f5/(temg(mgs)-36.)**2) )
+
+          ELSEIF ( iqcinit == 3 ) THEN
+              R1=1./(1. + caw*(273.15 - cbw)*qss(mgs)*felvcp(mgs)/ & 
+     &             ((temg(mgs) - cbw)**2))
+            DCLOUD=R1*(qvap(mgs) - qvs(mgs))  ! KW model adjustment; 
+                              ! this will put mass into qc if qv > sqsat exists
+          
+          ELSEIF ( iqcinit == 2 ) THEN
+!              R1=1./(1. + caw*(273.15 - cbw)*qss(mgs)*felv(mgs)/
+!     :             (cp*(temg(mgs) - cbw)**2))
+!            DCLOUD=R1*(qvap(mgs) - qvs(mgs))  ! KW model adjustment; 
+                              ! this will put mass into qc if qv > sqsat exists
+         ssmx = ssmxinit
+
+          IF ( ssf(mgs) > ssmx ) THEN
+           CALL QVEXCESS(ngs,mgs,qwvp,qv0,qx(1,lc),pres,thetap,theta0,dcloud, & 
+     &      pi0,tabqvs,nqsat,fqsat,cbw,fcqv1,felvcp,ssmx,pk,ngscnt)
+          ELSE
+            dcloud = 0.0
+          ENDIF
+         ENDIF
+        ELSE
+            dcloud = 0.0
+        ENDIF
+
+        thetap(mgs) = thetap(mgs) + felvcp(mgs)*DCLOUD/(pi0(mgs))
+        qwvp(mgs) = qwvp(mgs) - DCLOUD
+        qx(mgs,lc) = qx(mgs,lc) + DCLOUD
+
+!        t9(igs(mgs),jy,kgs(mgs)) = t9(igs(mgs),jy,kgs(mgs)) + (DCLOUD)/dtp*felv(mgs)/(cp*pi0(mgs)) ! * &
+!!     &                 dx*dy*dz3d(igs(mgs),jy,kgs(mgs))
+
+        theta(mgs) = thetap(mgs) + theta0(mgs)
+        temg(mgs) = theta(mgs)*pk(mgs) !( pres(mgs) / poo ) ** cap
+!        temg(mgs) = theta2temp( theta(mgs), pres(mgs) )
+        ltemq = (temg(mgs)-163.15)/fqsat+1.5
+        ltemq = Min( nqsat, Max(1,ltemq) )
+        qvs(mgs) = pqs(mgs)*tabqvs(ltemq)
+        es(mgs) = 6.1078e2*tabqvs(ltemq)
+
+!.... S. TWOMEY (1959)
+! Note: get here if there is no previous cloud water and w > 0.
+      cn(mgs) = 0.0
+      
+      IF ( ncdebug .ge. 1 ) THEN
+        write(iunit,*) 'at 613: ',qx(mgs,lc),cx(mgs,lc),wvel(mgs),ssmax(mgs),kgs(mgs)
+      ENDIF
+      
+      IF (  .not. flag_qndrop ) THEN ! { only calculate mass change when using wrf-chem
+
+      
+!      IF ( ssmax(mgs) .lt. sscb .and. qx(mgs,lc) .gt. qxmin(lc)) THEN
+      IF ( dcloud .gt. qxmin(lc) .and. wvel(mgs) > 0.0) THEN
+!       CN(mgs) =   CCNE*wvel(mgs)**cnexp ! *Min(1.0,1./dtp) ! 0.3465
+       CN(mgs) =   CCNE0*cnuc(mgs)**(2./(2.+cck))*wvel(mgs)**cnexp ! *Min(1.0,1./dtp) ! 0.3465
+        IF ( ny .le. 2 .and. cn(mgs) .gt. 0.0    &
+     &                    .and. ncdebug .ge. 1 ) THEN 
+          write(iunit,*) 'CN: ',cn(mgs)*1.e-6, cx(mgs,lc)*1.e-6, qx(mgs,lc)*1.e3,   &
+     &       wvel(mgs), dcloud*1.e3
+          IF ( cn(mgs) .gt. 1.0 ) write(iunit,*) 'cwrad = ',   &
+     &       1.e6*(rho0(mgs)*qx(mgs,lc)/cn(mgs)*cwc1)**c1f3,   &
+     &   igs(mgs),kgs(mgs),temcg(mgs),    &
+     &   1.e3*an(igs(mgs),jgs,kgs(mgs)-1,lc)
+        ENDIF
+        IF ( iccwflg .eq. 1 ) THEN
+          cn(mgs) = Min(cwccn*rho0(mgs)/rho00, Max(cn(mgs),   &
+     &       rho0(mgs)*qx(mgs,lc)/(xdn(mgs,lc)*(4.*pi/3.)*(4.e-6)**3)))
+        ENDIF
+      ELSE
+       cn(mgs) = 0.0
+       dcloud = 0.0
+!          cn(mgs) = Min(cwccn,    &
+!     &       rho0(mgs)*dcloud/(xdn(mgs,lc)*(4.*pi/3.)*(4.e-6)**3) )
+      ENDIF
+
+      IF ( cn(mgs) .gt. 0.0 ) THEN
+       IF ( cn(mgs) .gt. ccnc(mgs) ) THEN
+         cn(mgs) = ccnc(mgs)
+!         ccnc(mgs) = 0.0
+       ENDIF
+!      cx(mgs,lc) = cx(mgs,lc) + cn(mgs)
+      ccnc(mgs) = Max(0.0, ccnc(mgs) - cn(mgs))
+      ccna(mgs) = ccna(mgs) + cn(mgs)
+      ENDIF
+
+!       write(91,*) 'nuc1: cn, ix, kz = ',cn(mgs),igs(mgs),kgs(mgs),wvel(mgs),cnexp,ccnc(mgs)
+
+      IF( CN(mgs) .GT. cx(mgs,lc) ) cx(mgs,lc) = CN(mgs)
+      IF( cx(mgs,lc) .GT. 0. .AND. qx(mgs,lc) .le. qxmin(lc) ) THEN
+        cx(mgs,lc) = 0.
+      ELSE
+        cx(mgs,lc) = Min(cx(mgs,lc),rho0(mgs)*Max(0.0,qx(mgs,lc))/cwmasn)
+      ENDIF
+      
+      ENDIF ! }.not. flag_qndrop
+
+        GOTO 613
+        
+        END IF ! qc .gt. 0.
+
+!        ES=EES(PIB(K)*PT)
+!        SQSAT=EPSI*ES/(PB(K)*1000.-ES)
+
+!.... CLOUD NUCLEATION
+!      T=PIB(K)*PT
+!      ES=1.E3*PB(K)*QV/EPSI
+
+      IF ( wvel(mgs) .le. 0. ) GO TO 616
+      IF ( cx(mgs,lc) .le. 0. )  GO TO 613                             !TWOMEY (1959) Nucleation
+      IF ( kzbeg-1+kgs(mgs) .GT. 1 .and. qx(mgs,lc) .le. qxmin(lc)) GO TO 613  !TWOMEY (1959) Nucleation
+      IF ( kzbeg-1+kgs(mgs) .eq. 1 .and. wvel(mgs) .gt. 0. ) GO TO 613         !TWOMEY (1959) Nucleation
+!.... ATTEMPT ZIEGLER CLOUD NUCLEATION IN CLOUD INTERIOR UNLESS...
+  616 IF ( ssf(mgs) .LE. SUPCB .AND. wvel(mgs) .GT. 0. ) GO TO 631 !... weakly saturated updraft
+      IF ( kzbeg-1+kgs(mgs) .GT. 1 .AND. kzbeg-1+kgs(mgs) .LT. nzend-1 .AND.  &
+     &    (ssfkp1(mgs) .GE. SUPMX .OR. &
+     &     ssf(mgs)    .GE. SUPMX .OR. &
+     &     ssfkm1(mgs) .GE. SUPMX)) GO TO 631                      !... too much vapour
+      IF (ssf(mgs) .LT. 1.E-10 .OR. ssf(mgs) .GE. SUPMX) GO TO 631 !... at the extremes for ss
+
+!
+! get here if ( qc > 0 and ss > supcb) or (w < 0)
+!
+
+      if (ndebug .gt. 0) write(0,*) "ICEZVD_DR: Entered Ziegler Cloud Nucleation" !mpidebug
+
+      DSSDZ=0.
+      r2dzm=0.50/dz3d(igs(mgs),jy,kgs(mgs))
+      IF ( irenuc >= 0 .and. .not. flag_qndrop) THEN ! turn off nucleation when flag_qndrop (using WRF-CHEM for activation)
+
+      IF ( irenuc /= 2 ) THEN !{
+
+        IF ( kzend == nzend ) THEN
+          t0p3 = t0(igs(mgs),jgs,Min(kze,kgs(mgs)+3))
+          t0p1 = t0(igs(mgs),jgs,Min(kze,kgs(mgs)+1))
+        ELSE
+          t0p3 = t0(igs(mgs),jgs,kgs(mgs)+3)
+          t0p1 = t0(igs(mgs),jgs,kgs(mgs)+1)
+        ENDIF
+
+      IF ( ( ssf(mgs) .gt. ssmax(mgs) .or.  irenuc .eq. 1 ) &
+     &   .and.  ( ( lccn .lt. 1 .and.  &
+     &            cx(mgs,lc) .lt. cwccn*(Min(1.0,rho0(mgs)))) .or. &
+     &    ( lccn .gt. 1 .and. ccnc(mgs) .gt. 0. )   ) &
+     &    ) THEN
+      IF( kzbeg-1+kgs(mgs) .GT. 1 .AND. kzbeg-1+kgs(mgs) .LT. nzend-1 &
+     &  .and. ssf(mgs) .gt. 0.0 &
+     &  .and. ssfkp1(mgs) .LT. SUPMX .and. ssfkp1(mgs) .ge. 0.0  &
+     &  .AND. ssfkm1(mgs) .LT. SUPMX .AND. ssfkm1(mgs) .ge. 0.0  &
+     &  .AND. ssfkp1(mgs) .gt. ssfkm1(mgs)  &
+     &  .and. t0p3 .gt. 233.2) THEN
+          DSSDZ = (ssfkp1(mgs) - ssfkm1(mgs))*R2DZM
+!
+! otherwise check for cloud base condition with updraft:
+!
+        ELSEIF( kzbeg-1+kgs(mgs) .GT. 1 .AND. kzbeg-1+kgs(mgs) .LT. nzend-1 &
+!        IF( kgs(mgs) .GT. 1 .AND. kgs(mgs) .LT. NZ-1 &
+     &  .and. ssf(mgs) .gt. 0.0  .and. wvel(mgs) .gt. 0.0 &
+     &  .and. ssfkp1(mgs) .gt. 0.0   &
+     &  .AND. ssfkm1(mgs) .le. 0.0 .and. wvelkm1(mgs) .gt. 0.0 &
+     &  .AND. ssf(mgs) .gt. ssfkm1(mgs)  &
+     &  .and. t0p1 .gt. 233.2) THEN
+         DSSDZ = 2.*(ssf(mgs) - ssfkm1(mgs))*R2DZM  ! 1-sided difference
+        ENDIF
+
+       ENDIF
+!
+!CLZ  IF(wijk.LE.0.) CN=CCN*ssfilt(ix,jy,kz)**CCK
+! note: CCN -> cwccn, DELT -> dtp
+      c1 = Max(0.0, rho0(mgs)*(qx(mgs,lv) - qss(mgs))/ &
+     &        (xdn(mgs,lc)*(4.*pi/3.)*(4.e-6)**3))
+      IF ( lccn .lt. 1 ) THEN
+       CN(mgs) = cwccn*rho0(mgs)/rho00*CCK*ssf(mgs)**CCKM*dtp*   &
+     & Max(0.0,    &
+     &         (wvel(mgs)*DSSDZ) )      ! probably the vertical gradient dominates
+      ELSE
+      CN(mgs) =  &
+     &    Min(ccnc(mgs), cnuc(mgs)*CCK*ssf(mgs)**CCKM*dtp*   &
+     & Max(0.0,    &
+     &         ( wvel(mgs)*DSSDZ) )  )
+!      IF ( cn(mgs) .gt. 0 ) ccnc(mgs) = ccnc(mgs) - cn(mgs)
+      ENDIF
+
+      IF ( cn(mgs) .gt. 0.0 ) THEN
+       IF ( ccnc(mgs) .lt. 5.e7 .and. cn(mgs) .ge. 5.e7 ) THEN
+          cn(mgs) = 5.e7
+          ccnc(mgs) = 0.0
+       ELSEIF ( cn(mgs) .gt. ccnc(mgs) ) THEN
+         cn(mgs) = ccnc(mgs)
+         ccnc(mgs) = 0.0
+       ENDIF
+      cx(mgs,lc) = cx(mgs,lc) + cn(mgs)
+      ccnc(mgs) = Max(0.0, ccnc(mgs) - cn(mgs))
+      ENDIF
+
+      ELSEIF ( irenuc == 2 ) THEN !} { 
+      ! simple Twomey scheme
+!      if (ndebug .gt. 0) write(0,*) 'ICEZVD_DR:  Cloud reNucleation, wvel = ',wvel(mgs)
+       CN(mgs) =   CCNE0*cnuc(mgs)**(2./(2.+cck))*Max(0.0,wvel(mgs))**cnexp ! *Min(1.0,1./dtp) ! 0.3465
+!      ccne = ccnefac*1.e6*(1.e-6*Abs(cwccn))**(2./(2.+cck))
+!!!       CN(mgs) = Max( 0.0, CN(mgs) - ccna(mgs) ) ! this was from
+               ! Philips, Donner et al. 2007, but results in too much limitation of
+               ! nucleation
+       CN(mgs) = Min(cn(mgs), ccnc(mgs))
+       cn(mgs) = Min(cn(mgs), 0.5*dqc/cwmasn) ! limit the nucleation mass to half of the condensation mass
+       
+       cx(mgs,lc) = cx(mgs,lc) + cn(mgs)
+       
+       ccnc(mgs) = Max(0.0, ccnc(mgs) - cn(mgs))
+       
+      ENDIF ! }
+
+      ccna(mgs) = ccna(mgs) + cn(mgs)
+
+      ENDIF ! irenuc >= 0 .and. .not. flag_qndrop
+
+      IF( cx(mgs,lc) .GT. 0. .AND. qx(mgs,lc) .LE. qxmin(lc)) cx(mgs,lc)=0.
+      GO TO 631
+!.... NUCLEATION ON CLOUD INFLOW BOUNDARY POINT
+
+  613 CONTINUE
+
+  631  CONTINUE
+
+!
+! Check for supersaturation greater than ssmx and adjust down
+!
+       ssmx = 1.9
+       qv1 = qv0(mgs) + qwvp(mgs)
+       qvs1 = qvs(mgs)
+       
+!       IF ( flag_qndrop .and. do_satadj_for_wrfchem ) ssmx = 1.04 ! set lower threshold for progn=1 when using WRF-CHEM
+
+       IF ( qv1 .gt. (ssmx*qvs1) ) THEN
+! use line below to disable saturation adjustment when flag_qndrop is true
+!       IF ( qv1 .gt. (ssmx*qvs1) .and. .not. flag_qndrop ) THEN
+        
+         ss1 = qv1/qvs1
+
+        ssmx = 100.*(ssmx - 1.0)
+        
+        qvex = 0.0
+
+        CALL QVEXCESS(ngs,mgs,qwvp,qv0,qx(1,lc),pres,thetap,theta0,qvex,   &
+     &    pi0,tabqvs,nqsat,fqsat,cbw,fcqv1,felvcp,ssmx,pk,ngscnt)
+
+
+
+        IF ( qvex .gt. 0.0 ) THEN
+        thetap(mgs) = thetap(mgs) + felvcp(mgs)*qvex/(pi0(mgs))
+
+!        t9(igs(mgs),jy,kgs(mgs)) = t9(igs(mgs),jy,kgs(mgs)) + (qvex)/dtp*felv(mgs)/(cp*pi0(mgs)) !* &
+!!     &                 dx*dy*dz3d(igs(mgs),jy,kgs(mgs))
+
+        qwvp(mgs) = qwvp(mgs) - qvex
+        qx(mgs,lc) = qx(mgs,lc) + qvex
+        IF ( .not. flag_qndrop) THEN
+        cn(mgs) = Min( Max(ccnc(mgs),cwnccn(mgs)), rho0(mgs)*qvex/Max( cwmasn5, xmas(mgs,lc) )  )
+        ccnc(mgs) = Max( 0.0, ccnc(mgs) - cn(mgs) )
+        cx(mgs,lc) = cx(mgs,lc) + cn(mgs)
+        ENDIF
+        
+!        write(iunit,*) 'theta = ',theta0(mgs) + thetap(mgs)
+
+!        temg(mgs) = theta(mgs)*( pres(mgs) / poo ) ** cap
+
+        ENDIF
+
+       
+       ENDIF
+
+!
+! Calculate droplet volume and check if it is within bounds.
+!  Adjust if necessary
+!  
+!      if (ndebug .gt. 0) write(0,*) "ICEZVD_DR: check droplet volume" 
+
+
+!      cx(mgs,lc) = Min( cwnccn(mgs), cx(mgs,lc) )
+      IF( cx(mgs,lc) > cxmin .AND. qx(mgs,lc) .GT. qxmin(lc)) THEN
+!        SVC(mgs) = rho0(mgs)*qx(mgs,lc)/(cx(mgs,lc)*xdn(mgs,lc))
+        xmas(mgs,lc) = rho0(mgs)*qx(mgs,lc)/(cx(mgs,lc))
+        
+       IF (  xmas(mgs,lc) < cwmasn .or.  xmas(mgs,lc) > cwmasx ) THEN
+        xmas(mgs,lc) = Min( xmas(mgs,lc), cwmasx )
+        xmas(mgs,lc) = Max( xmas(mgs,lc), cwmasn )
+        cx(mgs,lc) = rho0(mgs)*qx(mgs,lc)/xmas(mgs,lc)
+       ENDIF
+      ENDIF
+
+
+!      IF( cx(mgs,lc) .GT. 10.e6 .AND. qx(mgs,lc) .GT. qxmin(lc) ) GO TO 681
+!        ccwtmp = cx(mgs,lc)
+!        cwmastmp = xmas(mgs,lc)
+!       xmas(mgs,lc) = Max(xmas(mgs,lc), cwmasn)
+!       IF (qx(mgs,lc) .GT. qxmin(lc) .AND. cx(mgs,lc) .le. 0.) THEN
+!          cx(mgs,lc) = Min(0.5*cwccn,rho0(mgs)*qx(mgs,lc)/xmas(mgs,lc))
+!          xmas(mgs,lc) = rho0(mgs)*qx(mgs,lc)/cx(mgs,lc)
+!       ENDIF
+!      IF (cx(mgs,lc) .GT. 0. .AND. qx(mgs,lc) .GT. qxmin(lc))    &
+!     &        xmas(mgs,lc) = rho0(mgs)*qx(mgs,lc)/cx(mgs,lc)
+!      IF (qx(mgs,lc) .GT. qxmin(lc) .AND. xmas(mgs,lc) .LT. cwmasn)    &
+!     &          xmas(mgs,lc) = cwmasn
+!      IF (qx(mgs,lc) .GT. qxmin(lc) .AND. xmas(mgs,lc) .GT. cwmasx)    &
+!     &    xmas(mgs,lc) = cwmasx
+!      IF ( qx(mgs,lc) .gt. qxmin(lc) ) THEN
+!        cx(mgs,lc) = rho0(mgs)*qx(mgs,lc)/Max(cwmasn,xmas(mgs,lc))
+!      ENDIF
+!        
+!
+! 681  CONTINUE
+
+        
+      IF ( ipconc .ge. 3 .and. rcond == 2 ) THEN
+
+        
+        IF (cx(mgs,lr) .GT. 0. .AND. qx(mgs,lr) .GT. qxmin(lr))    &
+     &       xv(mgs,lr)=rho0(mgs)*qx(mgs,lr)/(xdn(mgs,lr)*cx(mgs,lr))
+        IF (xv(mgs,lr) .GT. xvmx(lr)) xv(mgs,lr) = xvmx(lr)
+        IF (xv(mgs,lr) .LT. xvmn(lr)) xv(mgs,lr) = xvmn(lr)
+
+      ENDIF
+
+
+
+      ENDDO ! mgs
+
+
+! ################################################################
+      DO mgs=1,ngscnt
+      IF ( ssf(mgs) .gt. ssmax(mgs)    &
+     &  .and. ( idecss .eq. 0 .or. qx(mgs,lc) .gt. qxmin(lc)) ) THEN
+        ssmax(mgs) = ssf(mgs)
+      ENDIF
+      ENDDO
+!
+
+      do mgs = 1,ngscnt
+      an(igs(mgs),jy,kgs(mgs),lt) = theta0(mgs) + thetap(mgs)
+      an(igs(mgs),jy,kgs(mgs),lv) =  qv0(mgs) + qwvp(mgs)
+!      tmp3d(igs(mgs),jy,kgs(mgs)) = tmp3d(igs(mgs),jy,kgs(mgs)) + t9(igs(mgs),jy,kgs(mgs)) !  pi0(mgs) ! wvdf(mgs) ! ssf(mgs) ! cn(mgs)
+!
+       if ( ido(lc) .eq. 1 )  then
+        an(igs(mgs),jy,kgs(mgs),lc) = qx(mgs,lc) +    &
+     &    min( an(igs(mgs),jy,kgs(mgs),lc), 0.0 )
+!        qx(mgs,lc) = an(igs(mgs),jy,kgs(mgs),lc)
+       end if
+!
+
+       if ( ido(lr) .eq. 1 .and. rcond == 2 )  then
+        an(igs(mgs),jy,kgs(mgs),lr) = qx(mgs,lr) +    &
+     &    min( an(igs(mgs),jy,kgs(mgs),lr), 0.0 )
+!        qx(mgs,lr) = an(igs(mgs),jy,kgs(mgs),lr)
+       end if
+
+
+
+       IF (  ipconc .ge. 2 ) THEN
+        an(igs(mgs),jy,kgs(mgs),lnc) = Max(cx(mgs,lc) , 0.0)
+        IF ( lccn .gt. 1 ) THEN
+          an(igs(mgs),jy,kgs(mgs),lccn) = Max(0.0,  ccnc(mgs) )
+        ENDIF
+       ENDIF
+       IF (  ipconc .ge. 3 .and. rcond == 2 ) THEN
+        an(igs(mgs),jy,kgs(mgs),lnr) = Max(cx(mgs,lr) , 0.0)
+       ENDIF
+      end do
+
+
+29998 continue
+
+
+      if ( kz .gt. nz-1 .and. ix .ge. nx) then
+        if ( ix .ge. nx ) then
+         go to 2200 ! exit gather scatter
+        else
+         nzmpb = kz
+        endif
+      else
+        nzmpb = kz
+      end if
+
+      if ( ix .ge. nx ) then
+        nxmpb = 1
+        nzmpb = kz+1
+      else
+       nxmpb = ix+1
+      end if
+
+ 2000 continue ! inumgs
+ 2200 continue
+!
+!  end of gather scatter (for this jy slice)
+
+
+!#ifdef COMMAS
+!    GOTO 9999
+!#endif
+
+! Redistribute inappreciable cloud particles and charge
+!
+! Redistribution everywhere in the domain...
+!
+      frac = 1.0 ! 0.25 ! 1.0 ! 0.2
+!
+!  alternate test version for ipconc .ge. 3
+!  just vaporize stuff to prevent noise in the number concentrations
+
+
+      do kz = 1,nz
+!      do jy = 1,1
+      do ix = 1,nx
+      
+      zerocx(:) = .false.
+      DO il = lc,lhab
+       IF ( iresetmoments == 1 .or. iresetmoments == il ) THEN
+        IF ( ln(il) > 1 ) zerocx(il) = ( an(ix,jy,kz,ln(il)) < cxmin )
+        IF ( lz(il) > 1 ) zerocx(il) = ( zerocx(il) .or. an(ix,jy,kz,lz(il)) < zxmin )
+       ELSE
+        IF ( il == lc ) THEN
+          IF ( ln(il) > 1 ) zerocx(il) = ( an(ix,jy,kz,ln(il)) <= 0 ) .and. .not. flag_qndrop ! don't reset if progn=1 (WRF-CHEM)
+        ELSE
+         IF ( ln(il) > 1 ) zerocx(il) = ( an(ix,jy,kz,ln(il)) <= 0 )
+        ENDIF
+       ENDIF
+      ENDDO
+
+      IF ( lhl .gt. 1 ) THEN
+      
+      
+      if ( an(ix,jy,kz,lhl) .lt. frac*qxmin(lhl) .or. zerocx(lhl) ) then
+
+!        IF ( an(ix,jy,kz,lhl) .gt. 0 ) THEN
+          an(ix,jy,kz,lv) = an(ix,jy,kz,lv) + an(ix,jy,kz,lhl)
+          an(ix,jy,kz,lhl) = 0.0
+!        ENDIF
+
+        IF ( ipconc .ge. 5 ) THEN ! .and. an(ix,jy,kz,lnh) .gt. 0.0 ) THEN
+          an(ix,jy,kz,lnhl) = 0.0
+        ENDIF
+
+        IF ( lvhl .gt. 1 ) THEN
+           an(ix,jy,kz,lvhl) = 0.0
+        ENDIF
+
+        IF ( lhlw .gt. 1 ) THEN
+           an(ix,jy,kz,lhlw) = 0.0
+        ENDIF
+      
+        IF ( lzhl .gt. 1 ) THEN
+           an(ix,jy,kz,lzhl) = 0.0
+        ENDIF
+
+      ELSE
+       IF ( lvol(lhl) .gt. 1 ) THEN  ! check density
+        IF ( an(ix,jy,kz,lvhl) .gt. 0.0 ) THEN
+         tmp = dn(ix,jy,kz)*an(ix,jy,kz,lhl)/an(ix,jy,kz,lvhl)
+        ELSE 
+         tmp = 0.5*( xdnmn(lhl) + xdnmx(lhl) )
+          an(ix,jy,kz,lvhl) = dn(ix,jy,kz)*an(ix,jy,kz,lhl)/tmp
+        ENDIF
+
+! DEBUG
+!          tmp = 850.
+!          an(ix,jy,kz,lvhl) = dn(ix,jy,kz)*an(ix,jy,kz,lhl)/tmp
+!        IF ( an(ix,jy,kz,lhl) .gt. 1.0e-3 ) THEN
+!          write(iunit,*) 'HAILdr: dn,q,c,v = ',tmp,an(ix,jy,kz,lhl)*1000.,
+!     :       an(ix,jy,kz,lnhl), an(ix,jy,kz,lvhl)
+!          write(iunit,*) 'lvhl = ',lvhl
+!        ENDIF
+
+
+        IF ( tmp .gt. xdnmx(lhl) .or. tmp .lt. xdnmn(lhl) ) THEN
+          tmp = Min( xdnmx(lhl), Max( xdnmn(lhl) , tmp ) )
+          an(ix,jy,kz,lvhl) = dn(ix,jy,kz)*an(ix,jy,kz,lhl)/tmp
+        ENDIF
+        
+       ENDIF
+       
+       
+!  CHECK INTERCEPT
+       IF ( ipconc == 5 .and.  an(ix,jy,kz,lhl) .gt. qxmin(lhl) .and.  alphahl .le. 0.1 .and. lnhl .gt. 1 .and. lzhl == 0 ) THEN
+       
+         IF ( lvhl .gt. 1 ) THEN
+           hwdn = dn(ix,jy,kz)*an(ix,jy,kz,lhl)/an(ix,jy,kz,lvhl)
+         ELSE
+           hwdn = xdn0(lhl)
+         ENDIF
+           tmp = (hwdn*an(ix,jy,kz,lnhl))/(dn(ix,jy,kz)*an(ix,jy,kz,lhl))
+           tmpg = an(ix,jy,kz,lnhl)*(tmp*(3.14159))**(1./3.)
+           IF ( tmpg .lt. cnohlmn ) THEN
+             tmp = ( (hwdn)/(dn(ix,jy,kz)*an(ix,jy,kz,lhl))*(3.14159))**(1./3.)
+              an(ix,jy,kz,lnhl) = (cnohlmn/tmp)**(3./4.)
+           ENDIF
+       
+       ENDIF
+!      ELSE  ! check mean size here?
+
+      end if
+
+
+
+      ENDIF !lhl
+
+
+      if ( an(ix,jy,kz,lh) .lt. frac*qxmin(lh) .or. zerocx(lh) ) then
+
+!        IF ( an(ix,jy,kz,lh) .gt. 0 ) THEN
+          an(ix,jy,kz,lv) = an(ix,jy,kz,lv) + an(ix,jy,kz,lh)
+          an(ix,jy,kz,lh) = 0.0
+!        ENDIF
+
+        IF ( ipconc .ge. 5 ) THEN ! .and. an(ix,jy,kz,lnh) .gt. 0.0 ) THEN
+          an(ix,jy,kz,lnh) = 0.0
+        ENDIF
+
+        IF ( lvh .gt. 1 ) THEN
+           an(ix,jy,kz,lvh) = 0.0
+        ENDIF
+      
+        IF ( lhw .gt. 1 ) THEN
+           an(ix,jy,kz,lhw) = 0.0
+        ENDIF
+      
+        IF ( lzh .gt. 1 ) THEN
+           an(ix,jy,kz,lzh) = 0.0
+        ENDIF
+
+      ELSE
+       IF ( lvol(lh) .gt. 1 ) THEN  ! check density
+        IF ( an(ix,jy,kz,lvh) .gt. 0.0 ) THEN
+         tmp = dn(ix,jy,kz)*an(ix,jy,kz,lh)/an(ix,jy,kz,lvh)
+        ELSE
+         tmp = rho_qh
+          an(ix,jy,kz,lvh) = dn(ix,jy,kz)*an(ix,jy,kz,lh)/tmp
+        ENDIF
+
+        IF (  tmp .lt. xdnmn(lh) ) THEN
+          tmp = Max( xdnmn(lh), tmp )
+          an(ix,jy,kz,lvh) = dn(ix,jy,kz)*an(ix,jy,kz,lh)/tmp
+        ENDIF
+
+        IF ( tmp .gt. xdnmx(lh) .and. lhw .le. 0 ) THEN ! no liquid allowed on graupel
+          tmp = Min( xdnmx(lh), tmp )
+          an(ix,jy,kz,lvh) = dn(ix,jy,kz)*an(ix,jy,kz,lh)/tmp
+        ELSEIF ( tmp .gt. xdnmx(lh) .and. lhw .gt. 1 ) THEN  ! allow for liquid on graupel
+          IF ( tmp .gt. xdnmx(lh) .and. an(ix,jy,kz,lhw) .lt. qxmin(lh) ) THEN
+            tmp = Min( xdnmx(lh), tmp )
+            an(ix,jy,kz,lvh) = dn(ix,jy,kz)*an(ix,jy,kz,lh)/tmp
+          ELSEIF ( tmp .gt. xdnmx(lr) ) THEN
+            tmp =  xdnmn(lr)
+            an(ix,jy,kz,lvh) = dn(ix,jy,kz)*an(ix,jy,kz,lh)/tmp
+          ENDIF
+        ENDIF
+
+        IF ( lhw .gt. 1 ) THEN ! check if basically pure water
+          IF ( an(ix,jy,kz,lhw) .gt. 0.98*an(ix,jy,kz,lh) ) THEN
+           tmp = xdnmx(lr)
+           an(ix,jy,kz,lvh) = dn(ix,jy,kz)*an(ix,jy,kz,lh)/tmp
+          ENDIF
+        ENDIF
+        
+       ENDIF
+
+!  CHECK INTERCEPT
+       IF ( ipconc == 5 .and.  an(ix,jy,kz,lh) .gt. qxmin(lh) .and.  alphah .le. 0.1 .and. lnh .gt. 1 .and. lzh == 0 ) THEN
+       
+         IF ( lvh .gt. 1 ) THEN
+           IF ( an(ix,jy,kz,lvh) .gt. 0.0 ) THEN
+             hwdn = dn(ix,jy,kz)*an(ix,jy,kz,lh)/an(ix,jy,kz,lvh)
+           ELSE
+             hwdn = xdn0(lh)
+           ENDIF
+           hwdn = Max( xdnmn(lh), hwdn )
+         ELSE
+           hwdn = xdn0(lh)
+         ENDIF
+           tmp = (hwdn*an(ix,jy,kz,lnh))/(dn(ix,jy,kz)*an(ix,jy,kz,lh))
+           tmpg = an(ix,jy,kz,lnh)*(tmp*(3.14159))**(1./3.)
+           IF ( tmpg .lt. cnohmn ) THEN
+!           tmpg = an(ix,jy,kz,lnh)*( (hwdn*an(ix,jy,kz,lnh))/(dn(ix,jy,kz)*an(ix,jy,kz,lh))*(3.14159))**(1./3.)
+!           tmpg = an(ix,jy,kz,lnh)**(4./3.)*( (hwdn)/(dn(ix,jy,kz)*an(ix,jy,kz,lh))*(3.14159))**(1./3.)
+             tmp = ( (hwdn)/(dn(ix,jy,kz)*an(ix,jy,kz,lh))*(3.14159))**(1./3.)
+              an(ix,jy,kz,lnh) = (cnohmn/tmp)**(3./4.)
+           ENDIF
+       
+       ENDIF
+        
+      end if
+
+
+      if ( an(ix,jy,kz,ls) .lt.  frac*qxmin(ls)  .or. zerocx(ls)  & ! .or.  an(ix,jy,kz,lns) .lt. 0.1 ! .and.
+     &         ) then
+      IF ( t0(ix,jy,kz) .lt. 273.15 ) THEN
+!        IF ( an(ix,jy,kz,ls) .gt. 0 ) THEN
+          an(ix,jy,kz,lv) = an(ix,jy,kz,lv) + an(ix,jy,kz,ls)
+          an(ix,jy,kz,ls) = 0.0
+!        ENDIF
+      
+        IF ( ipconc .ge. 4 ) THEN ! .and. an(ix,jy,kz,lns) .gt. 0.0  ) THEN ! 
+!          an(ix,jy,kz,lni) = an(ix,jy,kz,lni) + an(ix,jy,kz,lns)
+          an(ix,jy,kz,lns) = 0.0
+        ENDIF
+        
+        IF ( lvs .gt. 1 ) THEN
+           an(ix,jy,kz,lvs) = 0.0
+        ENDIF
+
+        IF ( lsw .gt. 1 ) THEN
+           an(ix,jy,kz,lsw) = 0.0
+        ENDIF
+
+      ELSE
+!        IF ( an(ix,jy,kz,ls) .gt. 0 ) THEN
+          an(ix,jy,kz,lv) = an(ix,jy,kz,lv) + an(ix,jy,kz,ls)
+          an(ix,jy,kz,ls) = 0.0
+!        ENDIF
+
+        IF ( lvs .gt. 1 ) THEN
+           an(ix,jy,kz,lvs) = 0.0
+        ENDIF
+
+        IF ( lsw .gt. 1 ) THEN
+           an(ix,jy,kz,lsw) = 0.0
+        ENDIF
+
+        IF ( ipconc .ge. 4 ) THEN ! .and. an(ix,jy,kz,lns) .gt. 0.0  ) THEN ! 
+!          an(ix,jy,kz,lnr) = an(ix,jy,kz,lnr) + an(ix,jy,kz,lns)
+          an(ix,jy,kz,lns) = 0.0
+        ENDIF
+
+      ENDIF
+      
+
+      ELSEIF ( lvol(ls) .gt. 1 ) THEN  ! check density
+        IF ( an(ix,jy,kz,lvs) .gt. 0.0 ) THEN
+          tmp = dn(ix,jy,kz)*an(ix,jy,kz,ls)/an(ix,jy,kz,lvs)
+          IF ( tmp .gt. xdnmx(ls) .or. tmp .lt. xdnmn(ls) ) THEN
+            tmp = Min( xdnmx(ls), Max( xdnmn(ls), tmp ) )
+            an(ix,jy,kz,lvs) = dn(ix,jy,kz)*an(ix,jy,kz,ls)/tmp
+          ENDIF
+        ELSE
+          tmp = rho_qs
+          an(ix,jy,kz,lvs) = dn(ix,jy,kz)*an(ix,jy,kz,ls)/tmp
+        ENDIF
+
+
+      end if
+
+
+      if ( an(ix,jy,kz,lr) .lt. frac*qxmin(lr)  .or. zerocx(lr)  &
+     &  ) then
+        an(ix,jy,kz,lv) = an(ix,jy,kz,lv) + an(ix,jy,kz,lr)
+        an(ix,jy,kz,lr) = 0.0
+        IF ( ipconc .ge. 3 ) THEN
+!          an(ix,jy,kz,lnc) = an(ix,jy,kz,lnc) + an(ix,jy,kz,lnr)
+          an(ix,jy,kz,lnr) = 0.0
+        ENDIF
+        
+      end if
+
+!
+!  for qci
+!
+      IF ( an(ix,jy,kz,li) .le. frac*qxmin(li) .or. zerocx(li)   & ! .or.  an(ix,jy,kz,lni) .lt. 0.1
+     &    ) THEN
+      an(ix,jy,kz,lv) = an(ix,jy,kz,lv) + an(ix,jy,kz,li)
+      an(ix,jy,kz,li)= 0.0
+       IF ( ipconc .ge. 1 ) THEN
+         an(ix,jy,kz,lni) = 0.0
+       ENDIF
+      ENDIF
+
+!
+!  for qcw
+!
+
+      IF ( an(ix,jy,kz,lc) .le. frac*qxmin(lc) .or. zerocx(lc)   &
+     &       ) THEN
+      an(ix,jy,kz,lv) = an(ix,jy,kz,lv) + an(ix,jy,kz,lc)
+      an(ix,jy,kz,lc)= 0.0
+       IF ( ipconc .ge. 2 ) THEN
+        IF ( lccn .gt. 1 ) THEN
+         an(ix,jy,kz,lccn) =     &
+     &       an(ix,jy,kz,lccn) + Max(0.0,an(ix,jy,kz,lnc))
+        ENDIF
+         an(ix,jy,kz,lnc) = 0.0
+
+       ENDIF
+
+      ENDIF
+
+      end do
+!      end do
+      end do
+      
+      
+      IF ( ndebug .ge. 1 ) write(6,*) 'END OF ICEZVD_DR'
+!
+!
+   
+   
+   9999 RETURN
+   
+   END SUBROUTINE NUCOND
+
+
+! #####################################################################
+! #####################################################################
+
+
+!
+! Things to do:
+!
+!  Test using exponential formulation for rain fall speed.  If there is little change
+!  from the quadratic, it would be less complicated to use.
+!
+!  Contact nucleation needs to be fixed up to be similar to Cotton et al. 1986 and Meyers et al 1992.
+!
+! The following are done?
+!
+!  Fix Rain evaporation for gamma function (ipconc >= 3)
+!
+!  convert cloud ice to snow as in Ferrier 1994 (change only mass in cloud ice),
+!    then can try turning off direct conversion from cloud ice to graupel and rimed ice
+!
+!  look at an iterative check on overdepletion;  need to be careful with two-moment
+!
+!  check ice supersaturation in two-moment.  Getting enough deposition, or need 
+!      to do sat adj. when cloud droplets are all gone?
+!
+!  
+!
+! new comment
+!
+! Fix use of gt for SWM IN FALLOUT ROUTINES
+!
+!  How to remove hl for ipconc=5?  Need to preprocess?
+!
+!   When the charging rates are moved to a subroutine, need to move the
+!   call to be after the wet growth calculations -- or at least the 
+!   splashing stuff.  Think about this....
+!
+!  Think about what to do with cracif
+!
+!    Replace qv0 with qx(mgs,lv)? No. qv0 is base val
+!
+! Need to look at limiting supersaturation to 1 or so by nucleation/condensation
+!
+!  put in temperature-dependent function for homogeneous freezing
+!
+!c--------------------------------------------------------------------------
+!
+!
+!--------------------------------------------------------------------------
+!
+
+      subroutine nssl_2mom_gs   &
+     &  (nx,ny,nz,na,jyslab  &
+     &  ,nor,norz          &
+     &  ,dtp,gz       &
+     &  ,t0,t1,t2,t3,t4,t5,t6,t7,t8,t9      &
+     &  ,an,dn,p2                  &
+     &  ,pn,w,iunit                   &
+     &  ,t00,t77,                             &
+     &   ventr,ventc,c1sw,jgs,ido,    &
+     &   xdnmx,xdnmn,               &
+!     &   ln,ipc,lvol,lz,lliq,   &
+     &   cdx,                              &
+     &   xdn0,tmp3d  &
+     & ,timevtcalc  &
+     & ,rainprod2d, evapprod2d &
+     & ,elec,its,ids,ide,jds,jde &
+     & )
+
+
+!
+!--------------------------------------------------------------------------
+!                                
+!     Ziegler 1985 parameterized microphysics (also Zrnic et al. 1993)
+!     1)  cloud water
+!     2)  rain
+!     3)  column ice 
+!     6)  snow
+!     11) graupel/hail
+!
+!--------------------------------------------------------------------------
+!
+! Notes:
+!
+!  4/27/2009: allows for liquid water to be advected on snow and graupel particles using flag "mixedphase"
+!
+!  3/14/2007: (APS) added qproc temp to make microphysic process timeseries
+!
+!  10/17/2006: added flag (iehw) to select how to calculate ehw
+!
+!  10/5/2006: switched chacr to integrated version rather than assuming that average rain
+!             drop mass does not change.  This acts to reduce rain size somewhat via graupel
+!             collection.
+!             Use Mason data for ehw, with scaling toward ehw=1 as air density decreases.
+!
+!  10/3/2006: Turned off Meyers nucleation for T > -5 (can turn on with imeyers5 flag)
+!             Turned off contact nucleation in updrafts
+!
+!  7/24/2006:  Turned on Meyers nucleation for -5 < T < 0
+!
+!  5/12/2006:  Converted qsacw/csacw and qsaci/csaci to Z93
+!
+!  5/12/2006:  Put a threshold on Bigg rain freezing.  If the frozen drops
+!              have an average volume less than xvhmn, then the drops are put
+!              into snow instead of graupel/hail.
+!
+!              Fixed bug when vapor deposition was limited.
+!
+!  5/13/2006:  Note that qhacr has a large effect, but Z85 did not include it.
+!              Turned off qsacr (set to zero).
+!
+!  9/14/2007: erm: recalculate vx(lh) after setting xdn(lh) in case xdn was out of allowed range.
+!             added parameter rimc3 for minimum rime density.  Default value set at 170. kg/m**3
+!             instead of previous use of 100.  (Farley, 1987)
+!
+!--------------------------------------------------------------------------
+!
+!  general declarations
+!
+!--------------------------------------------------------------------------
+!
+!
+!
+
+
+      implicit none
+!
+!      integer icond 
+!      parameter ( icond = 2 )
+
+      integer, parameter :: ng1 = 1
+
+      integer nx,ny,nz,na,nba,nv
+      integer nor,norz,istag,jstag,kstag ! ,nht,ngt,igsr
+      integer iwrite
+      real dtp,dx,dy,dz
+
+      integer itile,jtile,ktile
+      integer ixbeg,jybeg
+      integer ixend,jyend,kzend,kzbeg
+      integer nxend,nyend,nzend,nzbeg
+      integer :: my_rank = 0
+      integer, parameter :: myprock = 1, nprock = 1
+      real rainprod2d(-nor+1:nx+nor,-norz+ng1:nz+norz)
+      real evapprod2d(-nor+1:nx+nor,-norz+ng1:nz+norz)
+
+
+      real :: galpharaut
+      
+      integer jyslab,its,ids,ide,jds,jde ! domain boundaries
+      integer, intent(in) :: iunit !,iunit0
+      real qvex
+      integer iraincv, icgxconv
+      parameter ( iraincv = 1, icgxconv = 1)
+      real ffrz
+
+      real qcitmp,cirdiatmp ! ,qiptmp,qirtmp
+      real ccwtmp,ccitmp ! ,ciptmp,cirtmp
+      real cpqc,cpci ! ,cpip,cpir
+      real cpqc0,cpci0 ! ,cpip0,cpir0
+      real scfac ! ,cpip1
+      
+      double precision dp1
+      
+      double precision frac, frach, xvfrz
+      
+      double precision :: timevtcalc
+      double precision :: dpt1,dpt2
+            
+      
+      logical, parameter :: usegamxinf = .false.
+      logical, parameter :: usegamxinf2 = .true.
+!      real rar  ! rime accretion rate as calculated from qxacw
+
+
+! a few vars for time-split fallout      
+      real vtmax
+      integer n,ndfall
+      
+      double precision chgneg,chgpos
+      
+      real temgtmp
+
+      real pb(-norz+ng1:nz+norz)
+      real pinit(-norz+ng1:nz+norz)
+
+      real gz(-nor+ng1:nx+nor,-nor+ng1:ny+nor,-norz+ng1:nz+norz) ! dz
+      
+      real qimax,xni0,roqi0
+
+
+      real dv
+
+      real dtptmp
+      integer itest,nidx,id1,jd1,kd1
+      parameter (itest=1)
+      parameter (nidx=10)
+      parameter (id1=1,jd1=1,kd1=1)
+      integer ierr
+      integer iend
+
+      integer ix,kz, il, ic, ir, icp1, irp1, ip1,jp1,kp1
+      integer :: jy
+      integer i,j,k,i1
+      integer kzb,kze
+      real slope1, slope2
+      real x1, x2, x3
+      real eps,eps2
+      parameter (eps=1.e-20,eps2=1.e-5)
+!
+!  Other elec. vars
+!
+      real  temele
+      real  trev
+      
+      logical ldovol, ishail, ltest
+!
+!
+!  wind indicies
+!
+      integer mu,mv,mw
+      parameter (mu=1,mv=2,mw=3)
+!
+!  conversion parameters
+!
+      integer mqcw,mqxw,mtem,mrho,mtim
+      parameter (mqcw=21,mqxw=21,mtem=21,mrho=5,mtim=6)
+
+      real xftim,xftimi,yftim, xftem,yftem, xfqcw,yfqcw, xfqxw,yfqxw
+      parameter (xftim=0.05,xftimi = 1./xftim,yftim=1.)
+      parameter (xftem=0.5,yftem=1.)
+      parameter (xfqcw=2000.,yfqcw=1.)
+      parameter (xfqxw=2000.,yfqxw=1.)
+      real dtfac
+      parameter ( dtfac = 1.0 )
+      integer ido(lc:lqmx)
+
+!      integer iexy(lc:lqmx,lc:lqmx)
+!      integer ieswi, ieswir, ieswip, ieswc, ieswr
+!      integer ieglsw, iegli, ieglir, ieglip, ieglc, ieglr
+!      integer iegmsw, iegmi, iegmir, iegmip, iegmc, iegmr
+!      integer ieghsw, ieghi, ieghir, ieghip, ieghc, ieghr
+!      integer iefwsw, iefwi, iefwir, iefwip, iefwc, iefwr
+!      integer iehwsw, iehwi, iehwir, iehwip, iehwc, iehwr
+!      integer iehlsw, iehli, iehlir, iehlip, iehlc, iehlr
+!      real delqnsa, delqxsa, delqnsb, delqxsb, delqnia, delqxia
+!      real delqnra, delqxra
+
+       real delqnxa(lc:lqmx)
+       real delqxxa(lc:lqmx)
+!
+! external temporary arrays
+!
+      real t00(-nor+ng1:nx+nor,-nor+ng1:ny+nor,-norz+ng1:nz+norz)
+      real t77(-nor+ng1:nx+nor,-nor+ng1:ny+nor,-norz+ng1:nz+norz)
+
+      real t0(-nor+ng1:nx+nor,-nor+ng1:ny+nor,-norz+ng1:nz+norz)
+      real t1(-nor+ng1:nx+nor,-nor+ng1:ny+nor,-norz+ng1:nz+norz)
+      real t2(-nor+ng1:nx+nor,-nor+ng1:ny+nor,-norz+ng1:nz+norz)
+      real t3(-nor+ng1:nx+nor,-nor+ng1:ny+nor,-norz+ng1:nz+norz)
+      real t4(-nor+ng1:nx+nor,-nor+ng1:ny+nor,-norz+ng1:nz+norz)
+      real t5(-nor+ng1:nx+nor,-nor+ng1:ny+nor,-norz+ng1:nz+norz)
+      real t6(-nor+ng1:nx+nor,-nor+ng1:ny+nor,-norz+ng1:nz+norz)
+      real t7(-nor+ng1:nx+nor,-nor+ng1:ny+nor,-norz+ng1:nz+norz)
+      real t8(-nor+ng1:nx+nor,-nor+ng1:ny+nor,-norz+ng1:nz+norz)
+      real t9(-nor+ng1:nx+nor,-nor+ng1:ny+nor,-norz+ng1:nz+norz)
+
+      real p2(-nor+1:nx+nor,-nor+1:ny+nor,-norz+ng1:nz+norz)  ! perturbation Pi
+      real pn(-nor+1:nx+nor,-nor+1:ny+nor,-norz+ng1:nz+norz)
+      real an(-nor+ng1:nx+nor,-nor+ng1:ny+nor,-norz+ng1:nz+norz,na)
+      real dn(-nor+1:nx+nor,-nor+1:ny+nor,-norz+ng1:nz+norz)
+      real w(-nor+1:nx+nor,-nor+1:ny+nor,-norz+ng1:nz+norz)
+
+      real tmp3d(-nor+ng1:nx+nor,-nor+ng1:ny+nor,-norz+ng1:nz+norz)
+
+! 
+!  declarations microphyscs and for gather/scatter
+!
+      integer nxmpb,nzmpb,nxz
+      integer jgs,mgs,ngs,numgs
+      parameter (ngs=500) !500)
+      integer, parameter :: ngsz = 500
+      integer ntt
+      parameter (ntt=300)
+
+      integer ngscnt,igs(ngs),kgs(ngs)
+      integer kgsp(ngs),kgsm(ngs),kgsm2(ngs)
+      integer ncuse
+      parameter (ncuse=0)
+      integer il0(ngs),il5(ngs),il2(ngs),il3(ngs)
+!      integer il1m(ngs),il2m(ngs),il3m(ngs),il4m(ngs),il5m(ngs)
+!
+      real tdtol,temsav,tfrcbw,tfrcbi
+      real, parameter :: thnuc = 235.15
+!
+!  Ice Multiplication Arrays.
+!
+      real  fimt1(ngs),fimta(ngs),fimt2(ngs) !,qmul1(ngs),qmul2(ngs)
+      real xcwmas
+!
+!
+! Variables for Ziegler warm rain microphysics
+!      
+
+
+      real ccnc(ngs),ccin(ngs),cina(ngs),ccna(ngs)
+      real cwnccn(ngs)
+      real sscb  ! 'cloud base' SS threshold
+      parameter ( sscb = 2.0 )
+      integer idecss  ! flag to turn on (=1) decay of ssmax when no cloud or ice crystals
+      parameter ( idecss = 1 )
+      integer iba ! flag to do condensation/nucleation in 1st or 2nd loop
+                  ! =0 to use ad to calculate SS
+                  ! =1 to use an at end of main jy loop to calculate SS
+      parameter (iba = 1)
+      integer ifilt   ! =1 to filter ssat, =0 to set ssfilt=ssat
+      parameter ( ifilt = 0 ) 
+      real temp1,temp2 ! ,ssold
+      real :: mwat, mice, dice, mwshed, fwmax, fw, mwcrit, massfactor
+      real, parameter :: shedalp = 3.  ! set 3 for maximum mass diameter, 4 for mass-weighted diameter
+      real ssmax(ngs)       ! maximum SS experienced by a parcel
+      real ssmx
+      real dnnet,dqnet
+!      real cnu,rnu,snu,cinu
+!      parameter ( cnu = 0.0, rnu = -0.8, snu = -0.8, cinu = 0.0 )
+      real bfnu, bfnu0, bfnu1
+      parameter ( bfnu0 = (rnu + 2.0)/(rnu + 1.0)  )
+      real ventr, ventc
+      real volb, aa1, aa2
+      double precision t2s, xdp
+      double precision xl2p(ngs),rb(ngs)
+      parameter ( aa1 = 9.44e15, aa2 = 5.78e3 ) ! a1 in Ziegler
+! snow parameters:
+      real cexs, cecs
+      parameter ( cexs = 0.1, cecs = 0.5 )
+      real rvt      ! ratio of collection kernels (Zrnic et al, 1993)
+      parameter ( rvt = 0.104 )
+      real kfrag    ! rate coefficent for collisional splintering (Schuur & Rutledge 00b)
+      parameter ( kfrag = 1.0e-6 )
+      real mfrag    ! assumed ice fragment mass for collisional splintering (Schuur & Rutledge 00b)
+      parameter ( mfrag = 1.0e-10)
+      double precision cautn(ngs), rh(ngs), nh(ngs)
+      real ex1, ft, rhoinv(ngs)
+      double precision ec0(ngs)
+      
+      real ac1,bc, taus, c1,d1,e1,f1,p380,tmp,tmp1,tmp2,tmp3,tmp4 ! , sstdy, super
+      real ratio, delx, dely
+      real dbigg,volt
+      real chgtmp,fac
+      real x,y,del,r,rtmp,alpr
+      double precision :: vent1,vent2
+      real g1palp,g4palp
+      real fqt !charge separation as fn of temperature from Dong and Hallett 1992
+      real bs
+      real v1, v2
+      real d1r, d1i, d1s, e1i
+      real c1sw   ! integration factor for snow melting with snu = -0.8
+      real, parameter :: vr1mm = 5.23599e-10 ! volume of 1mm diameter sphere (m**3)
+      real, parameter :: vr3mm = 5.23599e-10*(3.0/1.)**3   ! volume of a 3 mm diameter sphere (m**3) (Rasmussen et al. 1984b, JAS)
+      real, parameter :: vr4p5mm = 5.23599e-10*(4.5/1.)**3 ! volume of 4.5mm diameter sphere (m**3) (Rasmussen et al. 1984b, JAS)
+      real vmlt,vshd
+      real rhosm
+      parameter ( rhosm = 500. )
+      integer nc ! condensation step
+      real dtcon,dtcon1,dtcon2 ! condensation time step (dtcon*nc = dtp)
+      real delta
+      integer ltemq1,ltemq1m ! ,ltemq1m2
+      real dqv,qv1,ss1,ss2,qvs1,dqvs,dtemp,dt1   ! temporaries for condensation
+      real ssi1, ssi2, dqvi, dqvis, dqvii,qis1
+      real dqvr, dqc, dqr, dqi, dqs
+      real qv1m,qvs1m,ss1m,ssi1m,qis1m
+      real cwmastmp
+      real  dcloud,dcloud2 ! ,as, bs
+      real cn(ngs)
+      double precision xvc, xvr
+      real mwfac
+      real  es(ngs) ! ss(ngs),
+      real  eis(ngs)
+
+      real rwmasn,rwmasx
+
+      real vgra,vfrz
+      parameter ( vgra = 0.523599*(1.0e-3)**3 )
+     
+      real epsi,d
+      parameter (epsi = 0.622, d = 0.266)
+      real r1,qevap ! ,slv
+      
+      real vr,nrx,chw,g1,qr,z,z1,rdi,alp,xnutmp,xnuc,g1r,rd1,rdia
+      
+      real, parameter :: rhofrz = 900.   ! density of graupel from newly-frozen rain
+      real, parameter :: rimedens = 500. ! default rime density
+
+!      real svc(ngs)  !  droplet volume
+!
+!  contact freezing nucleation
+!
+      real raero,kaero !assumd aerosol radius, thermal conductivity
+      parameter ( raero = 3.e-7, kaero = 5.39e-3 )
+      real kb   ! Boltzman constant  J K-1
+      parameter (kb = 1.3807e-23)
+      
+      real knud(ngs),knuda(ngs) !knudsen number and correction factor
+      real gtp(ngs)  !G(T,p) = 1/(a' + b')  Cotton 72b
+      real dfar(ngs) !aerosol diffusivity
+      real fn1(ngs),fn2(ngs),fnft(ngs)
+      
+      real ccia(ngs)
+      real ctfzbd(ngs),ctfzth(ngs),ctfzdi(ngs)
+!
+!  misc
+!
+      real ni,nr,d0
+      real dqvcnd(ngs),dqwv(ngs),dqcw(ngs),dqci(ngs)
+      real tempc(ngs)
+      real temg(ngs),temcg(ngs),theta(ngs),qvap(ngs) 
+      real temgkm1(ngs), temgkm2(ngs)
+      real temgx(ngs),temcgx(ngs)
+      real qvs(ngs),qis(ngs),qss(ngs),pqs(ngs)
+      real elv(ngs),elf(ngs),els(ngs)
+      real tsqr(ngs),ssi(ngs),ssw(ngs)
+      real qcwtmp(ngs),qtmp,qtot(ngs) 
+      real qcond(ngs)
+      real ctmp, sctmp
+      real cimasn,cimasx,ccimx
+      real pid4
+      real cs,ds,gf7,gf6,gf5,gf4,gf3,gf2,gf1
+      real gf73rds, gf83rds
+      real gf43rds, gf53rds
+      real aradcw,bradcw,cradcw,dradcw,cwrad,rwrad,rwradmn
+      parameter ( rwradmn = 50.e-6 )
+      real dh0
+      
+      real clionpmx,clionnmx
+      parameter (clionpmx=1.e9,clionnmx=1.e9) ! Takahashi 84
+!
+!  other arrays
+
+      real fwet1(ngs),fwet2(ngs)   
+      real fmlt1(ngs),fmlt2(ngs)  
+      real fvds(ngs),fvce(ngs),fiinit(ngs) 
+      real fvent(ngs),fraci(ngs),fracl(ngs)
+!
+      real fai(ngs),fav(ngs),fbi(ngs),fbv(ngs)
+      real felv(ngs),fels(ngs),felf(ngs)
+      real felvcp(ngs),felscp(ngs),felfcp(ngs)
+      real felvs(ngs),felss(ngs)      !   ,felfs(ngs)
+      real fwvdf(ngs),ftka(ngs),fthdf(ngs)
+      real fadvisc(ngs),fakvisc(ngs)
+      real fci(ngs),fcw(ngs)
+      real fschm(ngs),fpndl(ngs)
+      real fgamw(ngs),fgams(ngs)
+      real fcqv1(ngs),fcqv2(ngs),fcc3(ngs) 
+      
+      real cvm
+!
+      real fcci(ngs), fcip(ngs)
+!
+      real :: sfm1(ngs),sfm2(ngs)
+      real :: gfm1(ngs),gfm2(ngs)
+      real :: hfm1(ngs),hfm2(ngs)
+
+      logical :: wetsfc(ngs),wetsfchl(ngs)
+      logical :: wetgrowth(ngs), wetgrowthhl(ngs)
+
+       real qitmp(ngs)
+       
+      real rzxh(ngs), rzxhl(ngs), rzxhlh(ngs)
+      real axh(ngs),bxh(ngs),axhl(ngs),bxhl(ngs)
+      real vt2ave(ngs)
+
+      real ::  qx(ngs,lv:lhab)
+      real ::  qxw(ngs,ls:lhab)
+      real ::  cx(ngs,lc:lhab)
+      real ::  cxmxd(ngs,lc:lhab)
+      real ::  qxmxd(ngs,lv:lhab)
+      real ::  scx(ngs,lc:lhab)
+      real ::  xv(ngs,lc:lhab)
+      real ::  vtxbar(ngs,lc:lhab,3)
+      real ::  xmas(ngs,lc:lhab)
+      real ::  xdn(ngs,lc:lhab)
+      real ::  xdia(ngs,lc:lhab,3)
+      real ::  rarx(ngs,ls:lhab)
+      real ::  vx(ngs,li:lhab)
+      real ::  rimdn(ngs,li:lhab)
+      real ::  raindn(ngs,li:lhab)
+      real ::  alpha(ngs,lc:lhab)
+      real ::  dab0lh(ngs,lc:lhab,lr:lhab)
+      real ::  dab1lh(ngs,lc:lhab,lr:lhab)
+      
+      real :: galphrout
+      
+      real ventrx(ngs)
+      real ventrxn(ngs)
+      real g1shr, alphashr
+      real g1mlr, alphamlr
+      
+!
+      real swvent(ngs),hwvent(ngs),rwvent(ngs),hlvent(ngs),hwventy(ngs),hlventy(ngs)
+      integer, parameter :: ndiam = 10
+      integer :: numdiam
+      real hwvent0(ndiam+3),hlvent0 ! 0 to d1
+      real hwvent1,hlvent1 ! d1 to infinity
+      real hwvent2,hlvent2 ! d2 to infinity
+      real gama0,gamb0
+      real gama1,gamb1
+      real gama2,gamb2
+      real, parameter :: mltdiam1 = 9.0e-3, mltdiam2 = 19.0e-3, mltdiam3 = 200.0e-3, mltdiam05 = 4.5e-3
+      real :: mltdiam(ndiam+3)
+      real mltmass1inv,mltmass2inv, mltmass1cgs, mltmass2cgs
+      real qhmlr0, qhmlr05, qhmlr1, qhmlr2, qhmlr12
+      real qhlmlr0, qhlmlr05, qhlmlr1, qhlmlr2, qhlmlr12
+      real qxd1, cxd1 ! mass and number up to mltdiam1
+      real qxd05, cxd05 ! mass and number up to mltdiam1/2
+      
+      real :: qxd(ndiam+3), cxd(ndiam+3), qhml(ndiam+3), qhml0(ndiam+3)
+      real :: dqxd(ndiam+3), dcxd(ndiam+3), dqhml(ndiam+3)
+      
+      
+      real civent(ngs)
+!
+      real xmascw(ngs)
+      real xdnmx(lc:lhab), xdnmn(lc:lhab)
+      real dnmx
+      real :: xdiamxmas(ngs,lc:lhab)
+!
+      real cilen(ngs) ! ,ciplen(ngs)
+!
+!
+      real rwcap(ngs),swcap(ngs)
+      real hwcap(ngs)
+      real hlcap(ngs)
+      real cicap(ngs)
+
+      real qvimxd(ngs)
+      real qimxd(ngs),qcmxd(ngs),qrmxd(ngs),qsmxd(ngs),qhmxd(ngs),qhlmxd(ngs)
+      real cimxd(ngs),ccmxd(ngs),crmxd(ngs),csmxd(ngs),chmxd(ngs)
+      real cionpmxd(ngs),cionnmxd(ngs)
+      real clionpmxd(ngs),clionnmxd(ngs)
+
+
+      real elec(-nor+ng1:nx+nor,-nor+ng1:ny+nor,-norz+ng1:nz+norz) ! Ez (elecsave)
+
+!
+!
+      ! Hallett-Mossop arrays
+      real chmul1(ngs),chlmul1(ngs),csmul1(ngs),csmul(ngs)
+      real qhmul1(ngs),qhlmul1(ngs),qsmul1(ngs),qsmul(ngs)
+      
+      ! splinters from drop freezing
+      real csplinter(ngs),qsplinter(ngs)
+      real csplinter2(ngs),qsplinter2(ngs)
+!
+!
+!  concentration arrays...
+!
+      real :: chlcnh(ngs), vhlcnh(ngs), vhlcnhl(ngs)
+      real cracif(ngs), ciacrf(ngs)
+      real cracr(ngs)
+
+!
+      real ciint(ngs), crfrz(ngs), crfrzf(ngs), crfrzs(ngs)
+      real cicint(ngs)
+      real cipint(ngs)
+      real ciacw(ngs), cwacii(ngs) 
+      real ciacr(ngs), craci(ngs)
+      real csacw(ngs)
+      real csacr(ngs)
+      real csaci(ngs),   csacs(ngs)
+      real cracw(ngs) 
+      real chacw(ngs), chacr(ngs)
+      real :: chlacw(ngs) ! = 0.0
+      real chaci(ngs), chacs(ngs)
+!
+      real :: chlacr(ngs)
+      real :: chlaci(ngs), chlacs(ngs)
+      real crcnw(ngs) 
+      real cidpv(ngs),cisbv(ngs)
+      real cimlr(ngs)
+
+      real chlsbv(ngs), chldpv(ngs)
+      real chlmlr(ngs), chlmlrr(ngs) 
+      real chlshr(ngs), chlshrr(ngs)
+
+      real chdpv(ngs),chsbv(ngs)
+      real chmlr(ngs),chcev(ngs)
+      real chmlrr(ngs)
+      real chshr(ngs), chshrr(ngs)
+
+      real csdpv(ngs),cssbv(ngs)
+      real csmlr(ngs),cscev(ngs)
+      real csshr(ngs)
+
+      real crcev(ngs)
+      real crshr(ngs)
+!
+!
+! arrays for w-ac-x ;  x-ac-w
+!
+!
+!
+      real qrcnw(ngs), qwcnr(ngs)
+      real zrcnw(ngs),zracr(ngs),zracw(ngs),zrcev(ngs)
+
+
+      real qracw(ngs) ! qwacr(ngs),
+      real qiacw(ngs) !, qwaci(ngs)
+
+      real qsacw(ngs) ! ,qwacs(ngs),
+      real qhacw(ngs) ! qwach(ngs),
+      real :: qhlacw(ngs) ! = 0.0
+      real vhacw(ngs), vsacw(ngs), vhlacw(ngs), vhlacr(ngs)
+
+!
+      real qsacws(ngs)
+
+!
+!  arrays for x-ac-r and r-ac-x; 
+!
+      real qsacr(ngs),qracs(ngs)
+      real qhacr(ngs),qhacrmlr(ngs) ! ,qrach(ngs)
+      real vhacr(ngs), zhacr(ngs), zhacrf(ngs), zrach(ngs), zrachl(ngs)
+      real qiacr(ngs),qraci(ngs)
+      
+      real ziacr(ngs)
+
+      real qracif(ngs),qiacrf(ngs),qiacrs(ngs),ciacrs(ngs)
+
+      real :: qhlacr(ngs),qhlacrmlr(ngs) ! = 0.0
+      real qsacrs(ngs) !,qracss(ngs)
+!
+!  ice - ice interactions
+!
+      real qsaci(ngs)
+      real qhaci(ngs)
+      real qhacs(ngs)
+
+      real :: csaci0(ngs) ! collision rate only
+      real :: chaci0(ngs) ! collision rate only
+      real :: chacs0(ngs) ! collision rate only
+      real :: chlaci0(ngs) ! = 0.0
+      real :: chlacs0(ngs) ! = 0.0
+
+      real :: qsaci0(ngs) ! collision rate only
+      real :: qhaci0(ngs) ! collision rate only
+      real :: qhacs0(ngs) ! collision rate only
+      real :: qhlaci0(ngs) ! = 0.0
+      real :: qhlacs0(ngs) ! = 0.0
+
+      real :: qhlaci(ngs) ! = 0.0
+      real :: qhlacs(ngs) ! = 0.0
+!
+!  conversions
+!
+      real qrfrz(ngs) ! , qirirhr(ngs)
+      real zrfrz(ngs), zrfrzf(ngs)
+      real ziacrf(ngs), zhcnsh(ngs), zhcnih(ngs)
+      real zhacw(ngs), zhacs(ngs), zhaci(ngs)
+      real zhmlr(ngs), zhdsv(ngs), zhsbv(ngs), zhlcnh(ngs), zhshr(ngs)
+      real zhmlrtmp,zhmlr0inf,zhlmlr0inf
+      real zhmlrr(ngs),zhlmlrr(ngs),zhshrr(ngs),zhlshrr(ngs)
+      real zsmlr(ngs), zsmlrr(ngs), zsshr(ngs)
+      real zhcns(ngs), zhcni(ngs)
+      real zhwdn(ngs) ! change in Z due to density changes
+      real zhldn(ngs) ! change in Z due to density changes
+
+      real zhlacw(ngs), zhlacs(ngs), zhlacr(ngs)
+      real zhlmlr(ngs), zhldsv(ngs), zhlsbv(ngs), zhlshr(ngs)
+
+      
+      real vrfrzf(ngs), viacrf(ngs)
+      real qrfrzs(ngs), qrfrzf(ngs)
+      real qwfrz(ngs), qwctfz(ngs)
+      real cwfrz(ngs), cwctfz(ngs)
+      real qwfrzc(ngs), qwctfzc(ngs)
+      real cwfrzc(ngs), cwctfzc(ngs)
+      real qwfrzp(ngs), qwctfzp(ngs)
+      real cwfrzp(ngs), cwctfzp(ngs)
+      real xcolmn(ngs), xplate(ngs)
+      real ciihr(ngs), qiihr(ngs)
+      real cicichr(ngs), qicichr(ngs)
+      real cipiphr(ngs), qipiphr(ngs)
+      real qscni(ngs), cscni(ngs), cscnis(ngs)
+      real qscnvi(ngs), cscnvi(ngs), cscnvis(ngs)
+      real qhcns(ngs), chcns(ngs), chcnsh(ngs), vhcns(ngs)
+      real qscnh(ngs), cscnh(ngs), vscnh(ngs)
+      real qhcni(ngs), chcni(ngs), chcnih(ngs), vhcni(ngs)
+      real qiint(ngs),qipipnt(ngs),qicicnt(ngs)
+      real cninm(ngs),cnina(ngs),cninp(ngs),wvel(ngs),wvelkm1(ngs)
+      real tke(ngs)
+      real uvel(ngs),vvel(ngs)
+!
+      real qidpv(ngs),qisbv(ngs) ! qicnv(ngs),qievv(ngs),
+      real qimlr(ngs),qidsv(ngs),qidsvp(ngs) ! ,qicev(ngs)
+
+!
+      real qfdpv(ngs),qfsbv(ngs) ! qfcnv(ngs),qfevv(ngs),
+      real qfmlr(ngs),qfdsv(ngs) ! ,qfcev(ngs)
+      real qfwet(ngs),qfdry(ngs),qfshr(ngs)
+      real qfshrp(ngs)
+!
+      real :: qhldpv(ngs), qhlsbv(ngs) ! qhlcnv(ngs),qhlevv(ngs),
+      real :: qhlmlr(ngs), qhldsv(ngs) 
+      real :: qhlwet(ngs), qhldry(ngs), qhlshr(ngs) 
+!
+      real :: qrfz(ngs),qsfz(ngs),qhfz(ngs),qhlfz(ngs)
+!
+      real qhdpv(ngs),qhsbv(ngs) ! qhcnv(ngs),qhevv(ngs),
+      real qhmlr(ngs),qhdsv(ngs),qhcev(ngs),qhcndv(ngs),qhevv(ngs)
+      real qhmlrlg(ngs),qhlmlrlg(ngs) ! melting from the larger diameters
+      real qhlcev(ngs), chlcev(ngs)
+      real qhwet(ngs),qhdry(ngs),qhshr(ngs)
+      real qhshrp(ngs)
+      real qhshh(ngs) !accreted water that remains on graupel
+      real qhmlh(ngs) !melt water that remains on graupel
+      real qhfzh(ngs) !water that freezes on mixed-phase graupel
+      real qhlfzhl(ngs) !water that freezes on mixed-phase hail
+
+      real vhfzh(ngs) ! change in volume from water that freezes on mixed-phase graupel
+      real vhlfzhl(ngs) !  change in volume from water that freezes on mixed-phase hail
+
+      real vhshdr(ngs) !accreted water that leaves on graupel (mixedphase)
+      real vhlshdr(ngs) !accreted water that leaves on hail (mixedphase)
+      real vhmlr(ngs) !melt water that leaves graupel (single phase)
+      real vhlmlr(ngs) !melt water that leaves hail (single phase)
+      real vhsoak(ngs) !  aquired water that seeps into graupel.
+      real vhlsoak(ngs) !  aquired water that seeps into hail.
+!
+      real qsdpv(ngs),qssbv(ngs) ! qscnv(ngs),qsevv(ngs),
+      real qsmlr(ngs),qsdsv(ngs),qscev(ngs),qscndv(ngs),qsevv(ngs)
+      real qswet(ngs),qsdry(ngs),qsshr(ngs)
+      real qsshrp(ngs)
+      real qsfzs(ngs)
+!
+!
+      real qipdpv(ngs),qipsbv(ngs)
+      real qipmlr(ngs),qipdsv(ngs)
+!
+      real qirdpv(ngs),qirsbv(ngs)
+      real qirmlr(ngs),qirdsv(ngs),qirmlw(ngs)
+!
+      real qgldpv(ngs),qglsbv(ngs)
+      real qglmlr(ngs),qgldsv(ngs)
+      real qglwet(ngs),qgldry(ngs),qglshr(ngs)
+      real qglshrp(ngs)
+!
+      real qgmdpv(ngs),qgmsbv(ngs)
+      real qgmmlr(ngs),qgmdsv(ngs)
+      real qgmwet(ngs),qgmdry(ngs),qgmshr(ngs)
+      real qgmshrp(ngs)
+      real qghdpv(ngs),qghsbv(ngs)
+      real qghmlr(ngs),qghdsv(ngs) 
+      real qghwet(ngs),qghdry(ngs),qghshr(ngs)
+      real qghshrp(ngs)
+!
+      real qrztot(ngs),qrzmax(ngs),qrzfac(ngs)
+      real qrcev(ngs)
+      real qrshr(ngs)
+      real fsw(ngs),fhw(ngs),fhlw(ngs) !liquid water fractions
+      real qhcnf(ngs) 
+      real :: qhlcnh(ngs) ! = 0.0
+      real qhcngh(ngs),qhcngm(ngs),qhcngl(ngs)
+      
+      real :: qhcnhl(ngs), chcnhl(ngs), zhcnhl(ngs), vhcnhl(ngs) ! conversion of low-density hail back to graupel
+
+      real eiw(ngs),eii(ngs),eiri(ngs),eipir(ngs)
+      real erw(ngs),esw(ngs),eglw(ngs),eghw(ngs),efw(ngs)
+      real ehxw(ngs),ehlw(ngs),egmw(ngs),ehw(ngs)
+      real err(ngs),esr(ngs),eglr(ngs),eghr(ngs),efr(ngs)
+      real ehxr(ngs),ehlr(ngs),egmr(ngs) 
+      real eri(ngs),esi(ngs),egli(ngs),eghi(ngs),efi(ngs)
+      real ehxi(ngs),ehli(ngs),egmi(ngs),ehi(ngs) 
+      real ers(ngs),ess(ngs),egls(ngs),eghs(ngs),efs(ngs),ehs(ngs)
+      real ehscnv(ngs)
+      real ehxs(ngs),ehls(ngs),egms(ngs),egmip(ngs) 
+
+      real ehsclsn(ngs),ehiclsn(ngs)
+      real ehlsclsn(ngs),ehliclsn(ngs)
+      real esiclsn(ngs)
+
+      real :: ehs_collsn = 0.5, ehi_collsn = 1.0
+      real :: ehls_collsn = 1.0, ehli_collsn = 1.0
+      real :: esi_collsn = 1.0
+      
+      real ew(8,6)
+      real cwr(8,2)  ! radius and inverse of interval
+      data cwr / 2.0, 3.0, 4.0, 6.0,  8.0,  10.0, 15.0,  20.0 , & ! radius
+     &           1.0, 1.0, 0.5, 0.5,  0.5,   0.2,  0.2,  1.  /   ! inverse of interval
+      integer icwr(ngs), igwr(ngs), irwr(ngs), ihlr(ngs)
+      real grad(6,2) ! graupel radius and inverse of interval
+      data grad / 100., 200., 300., 400., 600., 1000.,   &
+     &            1.e-2,1.e-2,1.e-2,5.e-3,2.5e-3, 1.    /
+!droplet radius: 2     3     4     6     8    10    15    20
+      data ew /0.03, 0.07, 0.17, 0.41, 0.58, 0.69, 0.82, 0.88,  & ! 100
+!     :         0.07, 0.13, 0.27, 0.48, 0.65, 0.73, 0.84, 0.91,  ! 150
+     &         0.10, 0.20, 0.34, 0.58, 0.70, 0.78, 0.88, 0.92,  & ! 200
+     &         0.15, 0.31, 0.44, 0.65, 0.75, 0.83, 0.96, 0.91,  & ! 300
+     &         0.17, 0.37, 0.50, 0.70, 0.81, 0.87, 0.93, 0.96,  & ! 400
+     &         0.17, 0.40, 0.54, 0.71, 0.83, 0.88, 0.94, 0.98,  & ! 600
+     &         0.15, 0.37, 0.52, 0.74, 0.82, 0.88, 0.94, 0.98 / ! 1000
+!     :         0.11, 0.34, 0.49, 0.71, 0.83, 0.88, 0.94, 0.95 / ! 1400
+
+
+      real da0lr(ngs)
+      real da0lh(ngs)
+      real da0lhl(ngs)
+      
+      real va0 (lc:lqmx)          ! collection coefficients from Seifert 2005
+      real vab0(lc:lqmx,lc:lqmx)  ! collection coefficients from Seifert 2005
+      real vab1(lc:lqmx,lc:lqmx)  ! collection coefficients from Seifert 2005
+      real va1 (lc:lqmx)          ! collection coefficients from Seifert 2005
+      real ehip(ngs),ehlip(ngs),ehlir(ngs)
+      real erir(ngs),esir(ngs),eglir(ngs),egmir(ngs),eghir(ngs)
+      real efir(ngs),ehir(ngs),eirw(ngs),eirir(ngs),ehr(ngs)
+      real erip(ngs),esip(ngs),eglip(ngs),eghip(ngs)
+      real efip(ngs),eipi(ngs),eipw(ngs),eipip(ngs)
+!
+!  arrays for production terms
+!
+      real ptotal(ngs) ! , pqtot(ngs)
+!
+      real pqcwi(ngs),pqcii(ngs),pqrwi(ngs)
+      real pqswi(ngs),pqhwi(ngs),pqwvi(ngs)
+      real pqgli(ngs),pqghi(ngs),pqfwi(ngs)
+      real pqgmi(ngs),pqhli(ngs) ! ,pqhxi(ngs)
+      real pqiri(ngs),pqipi(ngs) ! pqwai(ngs),
+      real pqlwsi(ngs),pqlwhi(ngs),pqlwhli(ngs)
+      
+      real pvhwi(ngs), pvhwd(ngs)
+      real pvhli(ngs), pvhld(ngs)
+      real pvswi(ngs), pvswd(ngs)
+!
+      real pqcwd(ngs),pqcid(ngs),pqrwd(ngs)
+      real pqswd(ngs),pqhwd(ngs),pqwvd(ngs)
+      real pqgld(ngs),pqghd(ngs),pqfwd(ngs)
+      real pqgmd(ngs),pqhld(ngs) ! ,pqhxd(ngs)
+      real pqird(ngs),pqipd(ngs) ! pqwad(ngs),
+      real pqlwsd(ngs),pqlwhd(ngs),pqlwhld(ngs)
+!
+!      real pqxii(ngs,nhab),pqxid(ngs,nhab)
+!
+      real  pctot(ngs)
+      real  pcipi(ngs), pcipd(ngs)
+      real  pciri(ngs), pcird(ngs)
+      real  pccwi(ngs), pccwd(ngs)
+      real  pccii(ngs), pccid(ngs)
+      real  pccin(ngs)
+      real  pcrwi(ngs), pcrwd(ngs)
+      real  pcswi(ngs), pcswd(ngs)
+      real  pchwi(ngs), pchwd(ngs)
+      real  pchli(ngs), pchld(ngs)
+      real  pcfwi(ngs), pcfwd(ngs)
+      real  pcgli(ngs), pcgld(ngs)
+      real  pcgmi(ngs), pcgmd(ngs)
+      real  pcghi(ngs), pcghd(ngs)
+
+      real  pzrwi(ngs), pzrwd(ngs)
+      real  pzhwi(ngs), pzhwd(ngs)
+      real  pzhli(ngs), pzhld(ngs)
+      real  pzswi(ngs), pzswd(ngs)
+
+!
+!  other arrays
+!
+      real dqisdt(ngs) !,advisc(ngs) !dqwsdt(ngs), ,schm(ngs),pndl(ngs)
+
+      real qss0(ngs)
+
+      real qsacip(ngs)
+      real pres(ngs)
+      real pk(ngs)
+      real rho0(ngs),pi0(ngs)
+      real rhovt(ngs),sqrtrhovt
+      real thetap(ngs),theta0(ngs),qwvp(ngs),qv0(ngs)
+      real thsave(ngs)
+      real ptwfzi(ngs),ptimlw(ngs)
+      real psub(ngs),pvap(ngs),pfrz(ngs),ptem(ngs),pmlt(ngs),pevap(ngs),pdep(ngs)
+      
+      real cnostmp(ngs)   ! for diagnosed snow intercept
+!
+!  iholef = 1 to do hole filling technique version 1
+!  which uses all hydrometerors to do hole filling of all hydrometeors
+!  iholef = 2 to do hole filling technique version 2
+!  which uses an individual hydrometeror species to do hole
+!  filling of a species of a hydrometeor
+!
+!  iholen = interval that hole filling is done
+!
+      integer  iholef
+      integer  iholen
+      parameter (iholef = 1)
+      parameter (iholen = 1)
+      real  cqtotn,cqtotn1
+      real  cctotn
+      real  citotn
+      real  crtotn
+      real  cstotn
+      real  cvtotn
+      real  cftotn
+      real  cgltotn
+      real  cghtotn
+      real  chtotn
+      real  cqtotp,cqtotp1
+      real  cctotp
+      real  citotp
+      real  ciptotp
+      real  crtotp
+      real  cstotp
+      real  cvtotp
+      real  cftotp
+      real  chltotp
+      real  cgltotp
+      real  cgmtotp
+      real  cghtotp
+      real  chtotp
+      real  cqfac
+      real  ccfac
+      real  cifac
+      real  cipfac
+      real  crfac
+      real  csfac
+      real  cvfac
+      real  cffac
+      real  cglfac
+      real  cghfac
+      real  chfac
+      
+      real ssifac, qvapor
+!
+!   Miscellaneous variables
+!
+      integer ireadqf,lrho,lqsw,lqgl,lqgm ,lqgh 
+      integer lqrw
+      real vt
+      real arg  ! gamma is a function
+      real erbnd1, fdgt1, costhe1
+      real qeps
+      real dyi2,dzi2,cp608,bta1,cnit,dragh,dnz00,pii
+      real qccrit,gf4br,gf4ds,gf4p5, gf3ds, gf1ds,gr
+
+      
+      real xdn0(lc:lhab)
+      real xdn_new,drhodt
+      
+      integer l ,ltemq,inumgs, idelq
+
+      real brz,arz,temq
+
+      real ssival,tqvcon
+      real cdx(lc:lhab)
+      real cnox
+      real cval,aval,eval,fval,gval ,qsign,ftelwc,qconkq
+      real qconm,qconn,cfce15,gf8,gf4i,gf3p5,gf1a,gf1p5,qdiff,argrcnw
+      real c4,bradp,bl2,bt2,dtrh,hrifac, hdia0,hdia1,civenta,civentb
+      real civentc,civentd,civente,civentf,civentg,cireyn,xcivent
+      real cipventa,cipventb,cipventc,cipventd,cipreyn,cirventa
+      real cirventb
+      integer igmrwa,igmrwb,igmswa, igmswb,igmfwa,igmfwb,igmhwa,igmhwb
+      real rwventa ,rwventb,swventa,swventb,fwventa,fwventb,fwventc
+      real hwventa,hwventb
+      real    hwventc, hlventa, hlventb,  hlventc
+      real  glventa, glventb, glventc
+      real   gmventa, gmventb,  gmventc, ghventa, ghventb, ghventc
+      real  dzfacp,  dzfacm,  cmassin,  cwdiar 
+      real  rimmas, rhobar
+      real   argtim, argqcw, argqxw, argtem
+      real   frcswsw, frcswgl, frcswgm, frcswgh, frcswfw, frcswsw1
+      real   frcglgl, frcglgm, frcglgh,  frcglfw, frcglgl1
+      real   frcgmgl, frcgmgm, frcgmgh,  frcgmfw, frcgmgm1
+      real   frcghgl, frcghgm, frcghgh,  frcghfw,  frcghgh1
+      real   frcfwgl, frcfwgm, frcfwgh, frcfwfw,  frcfwfw1
+      real   frcswrsw, frcswrgl,  frcswrgm,  frcswrgh, frcswrfw
+      real   frcswrsw1
+      real   frcrswsw, frcrswgl, frcrswgm, frcrswgh, frcrswfw
+      real  frcrswsw1
+      real  frcglrgl, frcglrgm, frcglrgh,  frcglrfw, frcglrgl1
+      real  frcrglgl
+      real  frcrglgm,  frcrglgh, frcrglfw, frcrglgl1
+      real  frcgmrgl, frcgmrgm, frcgmrgh, frcgmrfw,  frcgmrgm1
+      real  frcrgmgl, frcrgmgm,  frcrgmgh, frcrgmfw, frcrgmgm1
+      real  sum,  qweps,  gf2a, gf4a, dqldt, dqidt, dqdt
+      real frcghrgl, frcghrgm, frcghrgh, frcghrfw, frcghrgh1, frcrghgl
+      real frcrghgm, frcrghgh,  frcrghfw, frcrghgh1
+      real    a1,a2,a3,a4,a5,a6
+      real   gamss
+      real cdw, cdi, denom1, denom2, delqci1, delqip1
+      real cirtotn,  ciptotn, cgmtotn, chltotn,  cirtotp
+      real  cgmfac, chlfac,  cirfac
+      integer igmhla, igmhlb, igmgla, igmglb, igmgma,  igmgmb
+      integer igmgha, igmghb
+      integer idqis, item, itim0 
+      integer  iqgl, iqgm, iqgh, iqrw, iqsw 
+      integer  itertd, ia
+      
+      real tau, ewtmp
+      
+      integer cntnic_noliq
+      real     q_noliqmn, q_noliqmx
+      real     scsacimn, scsacimx
+      
+      double precision :: dtpinv
+      
+!   arrays for temporary bin space
+
+
+      real :: qaacw ! combined qsacw-qhacw for WSM6 variation
+
+! inline functions for Newton method
+
+
+!
+! ####################################################################
+!
+!  Start routine
+!
+! ####################################################################
+
+
+
+!
+
+       pb(:) = 0.0
+       pinit(:) = 0.0
+      itile = nx
+      jtile = ny
+      ktile = nz
+      ixend = nx
+      jyend = ny
+      kzend = nz
+      nxend = nx + 1
+      nyend = ny + 1
+      nzend = nz
+      kzbeg = 1
+      nzbeg = 1
+
+      istag = 0
+      jstag = 0
+      kstag = 1
+
+
+!
+!  slope intercepts
+!
+
+      IF ( ngs .lt. nz ) THEN
+!       write(0,*) 'Error in ICEZVD: Must have ngs .ge. nz!'
+!       STOP
+      ENDIF
+
+      cntnic_noliq = 0
+      q_noliqmn = 0.0
+      q_noliqmx = 0.0
+      scsacimn = 0.0
+      scsacimx = 0.0
+
+      ldovol = .false.
+
+      DO il = lc,lhab
+        ldovol = ldovol .or. ( lvol(il) .gt. 1 )
+      ENDDO
+
+
+!      DO il = lc,lhab
+!        write(iunit,*) 'delqnxa(',il,') = ',delqnxa(il)
+!      ENDDO
+      
+!
+!  density maximums and minimums
+!
+
+!
+!  Set terminal velocities...
+!    also set drag coefficients
+!
+
+      dtpinv = 1.d0/dtp
+
+!
+
+!
+!  electricity constants
+!
+!  mixing ratio epsilon
+!
+      qeps  = 1.0e-20
+
+!  rebound efficiency (erbnd)
+!
+!
+!
+!  constants
+!
+
+      cp608 = 0.608
+      aradcw = -0.27544
+      bradcw = 0.26249e+06
+      cradcw = -1.8896e+10
+      dradcw = 4.4626e+14
+      bta1 = 0.6
+      cnit = 1.0e-02
+      dragh = 0.60
+      dnz00 = 1.225
+!      cs = 4.83607122
+!      ds = 0.25
+!  new values for  cs and ds
+      cs = 12.42
+      ds = 0.42
+      pii = piinv ! 1./pi
+      pid4 = pi/4.0 
+!      qscrit = 6.0e-04
+      gf1 = 1.0 ! gamma(1.0)
+      gf1p5 = 0.8862269255  ! gamma(1.5)
+      gf2 = 1.0 ! gamma(2.0)
+      gf3 = 2.0 ! gamma(3.0)
+      gf3p5 = 3.32335097 ! gamma(3.5)
+      gf4 = 6.00 ! gamma(4.0)
+      gf5 = 24.0 ! gamma(5.0)
+      gf6 = 120.0 ! gamma(6.0)
+      gf7 = 720.0 ! gamma(7.0)
+      gf4br = 17.837861981813607 ! gamma(4.0+br)
+      gf4ds = 10.41688578110938 ! gamma(4.0+ds)
+      gf4p5 = 11.63172839656745 ! gamma(4.0+0.5)
+      gf3ds = 3.0458730354120997 ! gamma(3.0+ds)
+      gf1ds = 0.8863557896089221 ! gamma(1.0+ds)
+      gr = 9.8
+      gf43rds = 0.8929795116 ! gamma(4./3.)
+      gf53rds = 0.9027452930 ! gamma(5./3.)
+      gf73rds = 1.190639349 ! gamma(7./3.)
+      gf83rds = 1.504575488 ! gamma(8./3.)
+!
+!  constants
+!
+!
+!  general constants for microphysics
+!
+      brz = 100.0
+      arz = 0.66
+      
+      bfnu1 = (4. + alphar)*(5. + alphar)*(6. + alphar)/ &
+     &       ((1. + alphar)*(2. + alphar)*(3. + alphar))
+
+       galpharaut = (6.+alpharaut)*(5.+alpharaut)*(4.+alpharaut)/ &
+     &             ((3.+alpharaut)*(2.+alpharaut)*(1.+alpharaut))
+      
+      vfrz = 0.523599*(dfrz)**3 
+      vmlt = Min(xvmx(lr), 0.523599*(dmlt)**3 )
+      vshd = Min(xvmx(lr), 0.523599*(dshd)**3 )
+
+     
+
+      tdtol = 1.0e-05
+      tfrcbw = tfr - cbw
+      tfrcbi = tfr - cbi
+!
+!
+
+!
+!  cw constants in mks units
+!
+!      cwmasn = 4.25e-15  ! radius of 1.0e-6
+      mwfac = 6.0**(1./3.)
+      IF ( ipconc .ge. 2 ) THEN
+!        cwmasn = xvmn(lc)*1000.
+!        cwradn = 1.0e-6
+!        cwmasx = xvmx(lc)*1000.
+      ENDIF
+        rwmasn = xvmn(lr)*1000.
+        rwmasx = xvmx(lr)*1000.
+
+!
+!  ci constants in mks units
+!
+      cimasn = Min(cimas0, cimas1) ! 12 microns for  0.1871*(xmas(mgs,li)**(0.3429))
+      cimasx = 1.0e-8   ! 338 microns
+      ccimx = 5000.0e3   ! max of 5000 per liter
+
+!
+!  constants for paramerization
+!
+!
+!  set save counter (number of saves):  nsvcnt
+!
+!      nsvcnt = 0
+      iend = 0
+
+
+!      timetd1 = etime(tarray)
+!      timetd1 = tarray(1)
+
+!
+!***********************************************************
+!  start jy loop
+!***********************************************************
+!
+
+!      do 9999 jy = 1,ny-jstag
+!
+!  VERY IMPORTANT:  SET jy = jgs
+!
+      jy = jgs
+     
+     
+!      t1(:,:,:) = 0
+!      t2(:,:,:) = 0
+!      t3(:,:,:) = 0
+!      t4(:,:,:) = 0
+!      t5(:,:,:) = 0
+!      t6(:,:,:) = 0
+!      t8(:,:,:) = 0
+      
+      IF ( ipconc < 2 ) THEN ! Make a copy of cloud droplet mixing ratio to use for homogeneous freezing
+        DO kz = 1,nz
+         DO ix = 1,itile
+           t9(ix,jy,kz) = an(ix,jy,kz,lc)
+         ENDDO
+        ENDDO
+      ENDIF
+      
+!
+!..Gather microphysics  
+!
+      if ( ndebug .gt. 0 ) write(0,*) 'ICEZVD_GS: ENTER GATHER STAGE'
+
+
+      
+      nxmpb = 1
+      nzmpb = 1
+      nxz = itile*nz
+      numgs = nxz/ngs + 1
+!      write(0,*) 'ICEZVD_GS: ENTER GATHER STAGE: nx,nz,nxz,numgs,ngs = ',nx,nz,nxz,numgs,ngs
+
+      do 1000 inumgs = 1,numgs
+      ngscnt = 0
+      
+      do kz = nzmpb,nz
+      do ix = nxmpb,itile
+
+      pqs(1) = t00(ix,jy,kz)
+!      pqs(kz) = t00(ix,jy,kz)
+
+      theta(1) = an(ix,jy,kz,lt)
+      temg(1) = t0(ix,jy,kz)
+      temcg(1) = temg(1) - tfr
+      tqvcon = temg(1)-cbw
+      ltemq = (temg(1)-163.15)/fqsat+1.5
+      ltemq = Min( nqsat, Max(1,ltemq) )
+      qvs(1) = pqs(1)*tabqvs(ltemq)
+      qis(1) = pqs(1)*tabqis(ltemq)
+
+      qss(1) = qvs(1)
+
+!      IF ( jy .eq. 1 .and. ix .eq. 24 ) THEN
+!       write(91,*) 'kz,qv,th: ',kz,an(ix,jy,kz,lv),an(ix,jy,kz,lt),pqs(kz),tabqvs(ltemq),qvs(kz)
+!      ENDIF
+
+      if ( temg(1) .lt. tfr ) then
+!      if( qcw(kz) .le. qxmin(lc) .and. qci(kz) .gt. qxmin(li))
+!     >  qss(kz) = qis(kz)
+!      if( qcw(kz) .gt. qxmin(lc) .and. qci(kz) .gt. qxmin(li))
+!     >   qss(kz) = (qcw(kz)*qvs(kz) + qci(kz)*qis(kz)) /
+!     >   (qcw(kz) + qci(kz))
+      qss(1) = qis(1)
+      else
+!       IF ( an(ix,jy,kz,lv)  .gt. qss(kz) ) THEN
+!       write(iunit,*) 'qss exceeded at ',ix,jy,kz,qss(kz),an(ix,jy,kz,lv),temg(kz)
+!       write(iunit,*) 'other temg = ',theta(kz)*(pinit(kz)+p2(ix,jy,kz))
+!       ENDIF
+      end if
+!
+      ishail = .false.
+      IF ( lhl > 1 ) THEN
+        IF ( an(ix,jy,kz,lhl)  .gt. qxmin(lhl) ) ishail = .true.
+      ENDIF
+      
+      if ( an(ix,jy,kz,lv)  .gt. qss(1) .or.   &
+     &     an(ix,jy,kz,lc)  .gt. qxmin(lc)   .or.    &
+     &     an(ix,jy,kz,li)  .gt. qxmin(li)   .or.   &
+     &     an(ix,jy,kz,lr)  .gt. qxmin(lr)   .or.   &
+     &     an(ix,jy,kz,ls)  .gt. qxmin(ls)   .or.   &
+     &     an(ix,jy,kz,lh)  .gt. qxmin(lh)   .or.  ishail ) then
+      ngscnt = ngscnt + 1
+      igs(ngscnt) = ix
+      kgs(ngscnt) = kz
+      if ( ngscnt .eq. ngs ) goto 1100
+      end if
+      enddo !ix
+      nxmpb = 1
+      enddo !kz
+ 1100 continue
+
+      if ( ngscnt .eq. 0 ) go to 9998
+
+      if ( ndebug .gt. 0 ) write(0,*) 'ICEZVD_GS: dbg = 5'
+
+!      write(0,*) 'allocating qc
+
+      
+      xv(:,:) = 0.0
+      xmas(:,:) = 0.0
+      vtxbar(:,:,:) = 0.0
+      xdia(:,:,:) = 0.0
+      raindn(:,:) = 900.
+      cx(:,:) = 0.0
+      alpha(:,:) = 0.0
+      DO il = li,lhab
+        DO mgs = 1,ngscnt
+          rimdn(mgs,il)  = rimedens ! xdn0(il)
+        ENDDO
+      ENDDO
+!
+!  define temporaries for state variables to be used in calculations
+!
+      do mgs = 1,ngscnt
+      kgsm(mgs) = max(kgs(mgs)-1,1)
+      kgsp(mgs) = min(kgs(mgs)+1,nz-1)
+      kgsm2(mgs) = Max(kgs(mgs)-2,1)
+      theta0(mgs) = an(igs(mgs),jy,kgs(mgs),lt)
+      thetap(mgs) = an(igs(mgs),jy,kgs(mgs),lt) - theta0(mgs)
+      theta(mgs) = an(igs(mgs),jy,kgs(mgs),lt)
+      qv0(mgs) = an(igs(mgs),jy,kgs(mgs),lv)
+      qwvp(mgs) = an(igs(mgs),jy,kgs(mgs),lv)  - qv0(mgs) ! qv0(mgs) is full qv, so qwvp starts as zero!
+
+      pres(mgs) = pn(igs(mgs),jy,kgs(mgs)) + pb(kgs(mgs))
+      rho0(mgs) = dn(igs(mgs),jy,kgs(mgs))
+      rhoinv(mgs) = 1.0/rho0(mgs)
+      rhovt(mgs) = Sqrt(rho00/rho0(mgs))
+      pi0(mgs) = p2(igs(mgs),jy,kgs(mgs)) + pinit(kgs(mgs))
+      temg(mgs) = t0(igs(mgs),jy,kgs(mgs))
+      temgkm1(mgs) = t0(igs(mgs),jy,kgsm(mgs))
+      temgkm2(mgs) = t0(igs(mgs),jy,kgsm2(mgs))
+      pk(mgs)   = p2(igs(mgs),jy,kgs(mgs)) + pinit(kgs(mgs)) ! t77(igs(mgs),jy,kgs(mgs))
+      temcg(mgs) = temg(mgs) - tfr
+      qss0(mgs) = (380.0)/(pres(mgs))
+      pqs(mgs) = (380.0)/(pres(mgs))
+      ltemq = (temg(mgs)-163.15)/fqsat+1.5
+      ltemq = Min( nqsat, Max(1,ltemq) )
+      qvs(mgs) = pqs(mgs)*tabqvs(ltemq)
+      qis(mgs) = pqs(mgs)*tabqis(ltemq)
+      es(mgs)  = 6.1078e2*tabqvs(ltemq)
+      eis(mgs) = 6.1078e2*tabqis(ltemq)
+      cnostmp(mgs) = cno(ls)
+!
+
+      il5(mgs) = 0
+      if ( temg(mgs) .lt. tfr ) then
+      il5(mgs) = 1
+      end if
+      enddo !mgs
+      
+      IF ( ipconc < 1 .and. lwsm6 ) THEN
+        DO mgs = 1,ngscnt
+          tmp = Min( 0.0, temcg(mgs) )
+          cnostmp(mgs) = Min( 2.e8, 2.e6*exp(0.12*tmp) )
+        ENDDO
+      ENDIF
+
+
+!
+! zero arrays that are used but not otherwise set (tm)
+!
+      do mgs = 1,ngscnt
+         qhshr(mgs) = 0.0 
+       end do
+!
+!  set temporaries for microphysics variables
+!
+      DO il = lv,lhab
+      do mgs = 1,ngscnt
+        qx(mgs,il) = max(an(igs(mgs),jy,kgs(mgs),il), 0.0) 
+      ENDDO
+      end do
+
+      qxw(:,:) = 0.0
+
+
+
+        scx(:,:) = 0.0
+!
+!  set shape parameters
+!
+      IF ( imurain == 1 ) THEN
+        alpha(:,lr) = alphar
+      ELSEIF ( imurain == 3 ) THEN
+        alpha(:,lr) = xnu(lr)
+      ENDIF
+      
+      alpha(:,li) = xnu(li)
+
+      IF ( imusnow == 1 ) THEN
+        alpha(:,ls) = alphas
+      ELSEIF ( imusnow == 3 ) THEN
+        alpha(:,ls) = xnu(ls)
+      ENDIF
+      
+      DO il = lc,lhab
+      do mgs = 1,ngscnt
+        IF ( il .ge. lg ) alpha(mgs,il) = dnu(il)
+        DO ic = lr,lhab
+        dab0lh(mgs,il,ic) = dab0(ic,il)
+        dab1lh(mgs,il,ic) = dab1(ic,il)
+        ENDDO
+      ENDDO
+      end do
+      
+      
+!      DO mgs = 1,ngscnt
+        da0lh(:) = da0(lh)
+        da0lr(:) = da0(lr)
+        IF ( lzh < 1 .or. lzhl < 1 ) THEN
+          rzxhlh(:) = rzhl/rz
+        ELSEIF ( lzh > 1 .and. lzhl > 1 ) THEN
+          rzxhlh(:) = 1.
+        ENDIF
+        IF ( lzr > 1 ) THEN
+          rzxh(:) = 1.
+          rzxhl(:) = 1.
+        ELSE
+          rzxh(:) = rz
+          rzxhl(:) = rzhl
+        ENDIF
+ !     ENDDO
+      
+      IF ( lhl .gt. 1 ) THEN
+      DO mgs = 1,ngscnt
+        da0lhl(mgs) = da0(lhl)
+      ENDDO
+      ENDIF
+      
+      ventrx(:) = ventr
+      ventrxn(:) = ventrn
+
+!
+!  set concentrations
+!
+!      ssmax = 0.0
+      
+      
+      
+      if ( ipconc .ge. 1 ) then
+       do mgs = 1,ngscnt
+        cx(mgs,li) = Max(an(igs(mgs),jy,kgs(mgs),lni), 0.0)
+        IF ( lcina .gt. 1 ) THEN
+         cina(mgs) = an(igs(mgs),jy,kgs(mgs),lcina)
+        ELSE
+         cina(mgs) = cx(mgs,li)
+        ENDIF
+        IF ( lcin > 1 ) THEN
+         ccin(mgs) = an(igs(mgs),jy,kgs(mgs),lcin)
+        ENDIF
+       end do
+      end if
+      if ( ipconc .ge. 2 ) then
+       do mgs = 1,ngscnt
+        cx(mgs,lc) = Max(an(igs(mgs),jy,kgs(mgs),lnc), 0.0)
+!        cx(mgs,lc) = Min( ccwmx, cx(mgs,lc) )
+        IF ( lss > 1 ) THEN
+        ssmax(mgs) = an(igs(mgs),jy,kgs(mgs),lss)
+        ENDIF
+        IF ( lccn .gt. 1 ) THEN
+         ccnc(mgs) = an(igs(mgs),jy,kgs(mgs),lccn)
+        ELSE
+         ccnc(mgs) = 0.0
+        ENDIF
+        IF ( lccna .gt. 1 ) THEN
+         ccna(mgs) = an(igs(mgs),jy,kgs(mgs),lccna)
+        ELSE
+         ccna(mgs) = cx(mgs,lc)
+        ENDIF
+       end do
+!       ELSE
+!       cx(mgs,lc) = Abs(ccn)
+      end if
+      if ( ipconc .ge. 3 ) then
+       do mgs = 1,ngscnt
+        cx(mgs,lr) = Max(an(igs(mgs),jy,kgs(mgs),lnr), 0.0)
+        IF ( qx(mgs,lr) .le. qxmin(lr) ) THEN
+!          cx(mgs,lr) = 0.0
+        ELSEIF ( cx(mgs,lr) .eq. 0.0 .and. qx(mgs,lr) .lt. 3.0*qxmin(lr) ) THEN
+          qx(mgs,lv) = qx(mgs,lv) + qx(mgs,lr)
+          qx(mgs,lr) = 0.0
+        ELSE
+          cx(mgs,lr) = Max( 1.e-9, cx(mgs,lr) )
+        ENDIF
+       end do
+      end if
+      if ( ipconc .ge. 4 ) then
+       do mgs = 1,ngscnt
+        cx(mgs,ls) = Max(an(igs(mgs),jy,kgs(mgs),lns), 0.0)
+        IF ( qx(mgs,ls) .le. qxmin(ls) ) THEN
+!          cx(mgs,ls) = 0.0
+        ELSEIF ( cx(mgs,ls) .eq. 0.0 .and. qx(mgs,ls) .lt. 3.0*qxmin(ls) ) THEN
+          qx(mgs,lv) = qx(mgs,lv) + qx(mgs,ls)
+          qx(mgs,ls) = 0.0
+        ELSE
+          cx(mgs,ls) = Max( 1.e-9, cx(mgs,ls) )
+
+         IF ( ilimit .ge. ipc(ls) ) THEN
+            tmp = (xdn0(ls)*cx(mgs,ls))/(rho0(mgs)*qx(mgs,ls))
+            tmp2 = (tmp*(3.14159))**(1./3.)
+            cnox = cx(mgs,ls)*(tmp2)
+         IF ( cnox .gt. 3.0*cno(ls) ) THEN
+           cx(mgs,ls) = 3.0*cno(ls)/tmp2
+         ENDIF
+         ENDIF
+        ENDIF
+       end do
+      end if
+      if ( ipconc .ge. 5 ) then
+       do mgs = 1,ngscnt
+
+        cx(mgs,lh) = Max(an(igs(mgs),jy,kgs(mgs),lnh), 0.0)
+        IF ( qx(mgs,lh) .le. qxmin(lh) ) THEN
+!          cx(mgs,lh) = 0.0
+        ELSEIF ( cx(mgs,lh) .eq. 0.0 .and. qx(mgs,lh) .lt. 3.0*qxmin(lh) ) THEN
+          qx(mgs,lv) = qx(mgs,lv) + qx(mgs,lh) 
+          qx(mgs,lh) = 0.0
+        ELSE
+          cx(mgs,lh) = Max( 1.e-9, cx(mgs,lh) )
+         IF ( ilimit .ge. ipc(lh) ) THEN
+            tmp = (xdn0(lh)*cx(mgs,lh))/(rho0(mgs)*qx(mgs,lh))
+            tmp2 = (tmp*(3.14159))**(1./3.)
+            cnox = cx(mgs,lh)*(tmp2)
+         IF ( cnox .gt. 3.0*cno(lh) ) THEN
+           cx(mgs,lh) = 3.0*cno(lh)/tmp2
+         ENDIF
+         ENDIF
+        ENDIF
+       end do
+      end if
+
+      if ( lhl .gt. 1 .and. ipconc .ge. 5 ) then
+       do mgs = 1,ngscnt
+
+        cx(mgs,lhl) = Max(an(igs(mgs),jy,kgs(mgs),lnhl), 0.0)
+        IF ( qx(mgs,lhl) .le. qxmin(lhl) ) THEN
+          cx(mgs,lhl) = 0.0
+        ELSEIF ( cx(mgs,lhl) .eq. 0.0 .and. qx(mgs,lhl) .lt. 3.0*qxmin(lhl) ) THEN
+          qx(mgs,lv) = qx(mgs,lv) + qx(mgs,lhl) 
+          qx(mgs,lhl) = 0.0
+        ELSE
+          cx(mgs,lhl) = Max( 1.e-9, cx(mgs,lhl) )
+         IF ( ilimit .ge. ipc(lhl) ) THEN
+            tmp = (xdn0(lhl)*cx(mgs,lhl))/(rho0(mgs)*qx(mgs,lhl))
+            tmp2 = (tmp*(3.14159))**(1./3.)
+            cnox = cx(mgs,lhl)*(tmp2)
+         IF ( cnox .gt. 3.0*cno(lhl) ) THEN
+           cx(mgs,lhl) = 3.0*cno(lhl)/tmp2
+         ENDIF
+         ENDIF
+        ENDIF
+       end do
+      end if
+
+!
+! Set mean particle volume
+!
+      IF ( ldovol ) THEN
+      
+      vx(:,:) = 0.0
+      
+       DO il = li,lhab
+        
+        IF ( lvol(il) .ge. 1 ) THEN
+        
+          DO mgs = 1,ngscnt
+            vx(mgs,il) = Max(an(igs(mgs),jy,kgs(mgs),lvol(il)), 0.0)
+          ENDDO
+
+        ENDIF
+
+       ENDDO
+
+      ENDIF
+
+
+
+
+
+!
+!  set factors
+!
+      do mgs = 1,ngscnt
+!
+      ssi(mgs) = qx(mgs,lv)/qis(mgs)
+      ssw(mgs) = qx(mgs,lv)/qvs(mgs)
+!
+      tsqr(mgs) = temg(mgs)**2
+!
+      temgx(mgs) = min(temg(mgs),313.15)
+      temgx(mgs) = max(temgx(mgs),233.15)
+      felv(mgs) = 2500837.367 * (273.15/temgx(mgs))**((0.167)+(3.67e-4)*temgx(mgs))
+!
+      temcgx(mgs) = min(temg(mgs),273.15)
+      temcgx(mgs) = max(temcgx(mgs),223.15)
+      temcgx(mgs) = temcgx(mgs)-273.15
+
+! felf = latent heat of fusion, fels = LH of sublimation, felv = LH of vaporization
+      felf(mgs) = 333690.6098 + (2030.61425)*temcgx(mgs) - (10.46708312)*temcgx(mgs)**2
+!
+      fels(mgs) = felv(mgs) + felf(mgs)
+!
+      felvs(mgs) = felv(mgs)*felv(mgs)
+      felss(mgs) = fels(mgs)*fels(mgs)
+      
+        IF ( eqtset <= 1 ) THEN
+          felvcp(mgs) = felv(mgs)*cpi
+          felscp(mgs) = fels(mgs)*cpi
+          felfcp(mgs) = felf(mgs)*cpi
+        ELSE
+          tmp = qx(mgs,li)+qx(mgs,ls)+qx(mgs,lh)
+          IF ( lhl > 1 ) tmp = tmp + qx(mgs,lhl)
+          cvm = cv+cvv*qx(mgs,lv)+cpl*(qx(mgs,lc)+qx(mgs,lr))   &
+                                  +cpigb*(tmp)
+          felvcp(mgs) = (felv(mgs)-rw*temg(mgs))/cvm
+          felscp(mgs) = (fels(mgs)-rw*temg(mgs))/cvm
+          felfcp(mgs) = felf(mgs)/cvm
+        ENDIF
+!
+      fgamw(mgs) = felvcp(mgs)/pi0(mgs)
+      fgams(mgs) = felscp(mgs)/pi0(mgs)
+!
+      fcqv1(mgs) = 4098.0258*pi0(mgs)*fgamw(mgs)
+      fcqv2(mgs) = 5807.6953*pi0(mgs)*fgams(mgs)
+      fcc3(mgs) = felfcp(mgs)/pi0(mgs)
+!
+!  fwvdf = water vapor diffusivity
+      fwvdf(mgs) = (2.11e-05)*((temg(mgs)/tfr)**1.94)*(101325.0/(pres(mgs)))
+!
+! fadvisc = kinematic viscosity
+      fadvisc(mgs) = advisc0*(416.16/(temg(mgs)+120.0))*(temg(mgs)/296.0)**(1.5) ! dynamic visc.
+!
+      fakvisc(mgs) = fadvisc(mgs)*rhoinv(mgs) ! divide by rho_air to get kinematic visc. (note the 'k' vs. 'd')
+!
+      temcgx(mgs) = min(temg(mgs),273.15)
+      temcgx(mgs) = max(temcgx(mgs),233.15)
+      temcgx(mgs) = temcgx(mgs)-273.15
+      fci(mgs) = (2.118636 + 0.007371*(temcgx(mgs)))*(1.0e+03)
+!
+      if ( temg(mgs) .lt. 273.15 ) then
+      temcgx(mgs) = min(temg(mgs),273.15)
+      temcgx(mgs) = max(temcgx(mgs),233.15)
+      temcgx(mgs) = temcgx(mgs)-273.15
+      fcw(mgs) = 4203.1548  + (1.30572e-2)*((temcgx(mgs)-35.)**2)   &
+     &                 + (1.60056e-5)*((temcgx(mgs)-35.)**4)
+      end if
+      if ( temg(mgs) .ge. 273.15 ) then
+      temcgx(mgs) = min(temg(mgs),308.15)
+      temcgx(mgs) = max(temcgx(mgs),273.15)
+      temcgx(mgs) = temcgx(mgs)-273.15
+      fcw(mgs) = 4243.1688  + (3.47104e-1)*(temcgx(mgs)**2)
+      end if
+!
+      ftka(mgs) = tka0*fadvisc(mgs)/advisc1  ! thermal conductivity: proportional to dynamic viscosity
+      fthdf(mgs) = ftka(mgs)*cpi*rhoinv(mgs)
+!
+      fschm(mgs) = (fakvisc(mgs)/fwvdf(mgs))  ! Schmidt number
+      fpndl(mgs) = (fakvisc(mgs)/fthdf(mgs))  ! Prandl number (not used)
+!
+      fai(mgs) = (fels(mgs)**2)/(ftka(mgs)*rw*temg(mgs)**2)
+      fbi(mgs) = (1.0/(rho0(mgs)*fwvdf(mgs)*qis(mgs)))
+      fav(mgs) = (felv(mgs)**2)/(ftka(mgs)*rw*temg(mgs)**2)
+      fbv(mgs) = (1.0/(rho0(mgs)*fwvdf(mgs)*qvs(mgs)))
+!
+      end do
+!
+!
+!   ice habit fractions
+!
+!
+!
+!  Set density
+!
+      if (ndebug .gt. 0 ) write(0,*) 'ICEZVD_GS: Set density'
+!
+
+      do mgs = 1,ngscnt
+        xdn(mgs,li) = xdn0(li)
+        xdn(mgs,lc) = xdn0(lc)
+        xdn(mgs,lr) = xdn0(lr)
+        xdn(mgs,ls) = xdn0(ls)
+        xdn(mgs,lh) = xdn0(lh)
+        IF ( lvol(ls) .gt. 1 ) THEN
+         IF ( vx(mgs,ls) .gt. 0.0 .and. qx(mgs,ls) .gt. qxmin(ls) ) THEN
+           xdn(mgs,ls) = Min( xdnmx(ls), Max( xdnmn(ls), rho0(mgs)*qx(mgs,ls)/vx(mgs,ls) ) )
+         ENDIF
+        ENDIF
+
+        IF ( lvol(lh) .gt. 1 ) THEN
+         IF ( vx(mgs,lh) .gt. 0.0 .and. qx(mgs,lh) .gt. qxmin(lh) ) THEN
+           IF ( mixedphase ) THEN
+           ELSE
+             dnmx = xdnmx(lh)
+           ENDIF
+           xdn(mgs,lh) = Min( dnmx, Max( xdnmn(lh), rho0(mgs)*qx(mgs,lh)/vx(mgs,lh) ) )
+           vx(mgs,lh) = rho0(mgs)*qx(mgs,lh)/xdn(mgs,lh)
+         ENDIF
+        ENDIF
+
+        IF ( lhl .gt. 1 ) THEN
+
+          xdn(mgs,lhl) = xdn0(lhl)
+
+          IF ( lvol(lhl) .gt. 1 ) THEN
+           IF ( vx(mgs,lhl) .gt. 0.0 .and. qx(mgs,lhl) .gt. qxmin(lhl) ) THEN
+
+           IF ( mixedphase .and. lhlw > 1 ) THEN
+           ELSE
+             dnmx = xdnmx(lhl)
+           ENDIF
+
+             xdn(mgs,lhl) = Min( dnmx, Max( xdnmn(lhl), rho0(mgs)*qx(mgs,lhl)/vx(mgs,lhl) ) )
+             vx(mgs,lhl) = rho0(mgs)*qx(mgs,lhl)/xdn(mgs,lhl)
+           ENDIF
+          ENDIF
+
+        ENDIF
+
+! adjust density for wet snow and graupel (Ferrier 94)
+! (aps): for the time being, do not adjust density until we keep track of fully melted snow/graupel
+!
+!        IF (mixedphase) THEN
+          IF (qsdenmod) THEN
+           IF(fsw(mgs) .gt. 0.01) THEN
+            xdn(mgs,ls) = (1.-fsw(mgs))*rho_qs + fsw(mgs)*rho_qr        !Ferrier: 100./(1.-fsw(mgs))
+            IF(fsw(mgs) .eq. 1.) xdn(mgs,ls) = rho_qr   ! fsw = 1 means it's liquid water, yo!
+           ENDIF
+          ENDIF
+
+          IF (qhdenmod) THEN
+!          IF(fhw(mgs) .gt. 0.01) THEN
+!           IF(fhw(mgs) .lt. 1.) xdn(mgs,lh) = rho_qh / (1. - fhw(mgs))       !Ferrier: 400./(1.-fsw(mgs))
+!           IF(fhw(mgs) .eq. 1.) xdn(mgs,lh) = rho_qr   ! fhw = 1 means it's liquid water, yo!
+!          ENDIF
+          ENDIF
+!        ENDIF
+
+      end do
+
+
+!
+!  set some values for ice nucleation
+!
+      do mgs = 1,ngscnt
+      kp1 = Min(nz, kgs(mgs)+1 )
+      wvel(mgs) = (0.5)*(w(igs(mgs),jgs,kp1)   &
+     &                  +w(igs(mgs),jgs,kgs(mgs)))
+
+      
+        wvelkm1(mgs) = (0.5)*(w(igs(mgs),jgs,kgs(mgs))   &
+     &                    +w(igs(mgs),jgs,kgsm(mgs)))
+      cninm(mgs) = t7(igs(mgs),jgs,kgsm(mgs))
+      cnina(mgs) = t7(igs(mgs),jgs,kgs(mgs))
+      cninp(mgs) = t7(igs(mgs),jgs,kgsp(mgs))
+      end do
+
+!
+!  Set a couple of cloud variables...
+!
+
+!      SUBROUTINE setvt(ngscnt,qx,qxmin,cx,rho0,rhovt,xdia,cno,
+!     :                 xmas,xdn,xvmn,xvmx,xv,cdx,
+!     :                 ipconc,ndebug)
+!      SUBROUTINE setvtz(ngscnt,qx,qxmin,qxw,cx,rho0,rhovt,xdia,cno, &
+!     &                 xmas,vtxbar,xdn,xvmn,xvmx,xv,cdx,            &
+!     &                 ipconc1,ndebug1,ngs,nz,kgs,cwnccn,fadvisc,   &
+!     &                 cwmasn,cwmasx,cwradn,cnina,cimna,cimxa,      &
+!     &                 itype1a,itype2a,temcg,infdo,alpha)
+
+
+      call setvtz(ngscnt,qx,qxmin,qxw,cx,rho0,rhovt,xdia,cno,cnostmp,   &
+     &                 xmas,vtxbar,xdn,xvmn,xvmx,xv,cdx,   &
+     &                 ipconc,ndebug,ngs,nz,kgs,fadvisc,   &
+     &                 cwmasn,cwmasx,cwradn,cnina,cimn,cimx,   &
+     &                 itype1,itype2,temcg,0,alpha,0,axh,bxh,axhl,bxhl)
+
+
+       IF ( lwsm6 .and. ipconc == 0 ) THEN
+         tmp = Max(qxmin(lh), qxmin(ls))
+         DO mgs = 1,ngscnt
+           sum = qx(mgs,lh) + qx(mgs,ls)
+           IF ( sum > tmp ) THEN
+             vt2ave(mgs) = (qx(mgs,lh)*vtxbar(mgs,lh,1) + qx(mgs,ls)*vtxbar(mgs,ls,1))/sum
+           ELSE
+             vt2ave(mgs) = 0.0
+           ENDIF
+         ENDDO
+       ENDIF
+
+
+!
+!  Set number concentrations (need xdia from setvt)
+!
+      if ( ndebug .gt. 0 ) write(0,*) 'ICEZVD_GS: Set concentration'
+      IF ( ipconc .lt. 1 ) THEN
+         cina(1:ngscnt) = cx(1:ngscnt,li)
+      ENDIF
+      if ( ipconc .lt. 5 ) then
+      do mgs = 1,ngscnt
+
+
+      IF ( ipconc .lt. 3 ) THEN
+!      cx(mgs,lr) = 0.0
+      if ( qx(mgs,lr) .gt. qxmin(lh) )  then
+!      cx(mgs,lr) = cno(lr)*xdia(mgs,lr,1)
+!      xv(mgs,lr) = rho0(mgs)*qx(mgs,lr)/(xdn(mgs,lr)*cx(mgs,lr))
+      end if
+      ENDIF
+
+      IF ( ipconc .lt. 4 ) THEN
+!      tmp = cx(mgs,ls)
+!      cx(mgs,ls) = 0.0
+      if ( qx(mgs,ls) .gt. qxmin(ls) )  then
+!      cx(mgs,ls) = cno(ls)*xdia(mgs,ls,1)
+!      xv(mgs,ls) = rho0(mgs)*qx(mgs,ls)/(xdn(mgs,ls)*cx(mgs,ls))
+      end if
+      ENDIF ! ( ipconc .lt. 4 )
+
+      IF ( ipconc .lt. 5 ) THEN
+
+
+!      cx(mgs,lh) = 0.0
+      if ( qx(mgs,lh) .gt. qxmin(lh) )  then
+!      cx(mgs,lh) = cno(lh)*xdia(mgs,lh,1)
+!      xv(mgs,lh) = Max(xvmn(lh), rho0(mgs)*qx(mgs,lh)/(xdn(mgs,lh)*cx(mgs,lh)) )
+!      xdia(mgs,lh,3) = (xv(mgs,lh)*6./pi)**(1./3.) 
+      end if
+
+      ENDIF ! ( ipconc .lt. 5 )
+
+      end do
+      end if
+      
+      IF ( ipconc .ge. 2 ) THEN
+      DO mgs = 1,ngscnt
+        rb(mgs) = 0.5*xdia(mgs,lc,1)*((1./(1.+cnu)))**(1./6.)
+        xl2p(mgs) = Max(0.0d0, 2.7e-2*xdn(mgs,lc)*cx(mgs,lc)*xv(mgs,lc)*   &
+     &           ((0.5e20*rb(mgs)**3*xdia(mgs,lc,1))-0.4) )
+        IF ( rb(mgs) .gt. 3.51e-6 ) THEN
+!          rh(mgs) = Max( 0.5d0*xdia(mgs,lc,1), 6.3d-4/(1.d6*(rb(mgs) - 3.5d-6)) )
+          rh(mgs) = Max( 41.d-6, 6.3d-4/(1.d6*(rb(mgs) - 3.5d-6)) )
+        ELSE
+          rh(mgs) = 41.d-6
+        ENDIF
+        IF ( xl2p(mgs) .gt. 0.0 ) THEN
+          nh(mgs) = 4.2d9*xl2p(mgs)
+        ELSE
+          nh(mgs) = 1.e30
+        ENDIF
+      ENDDO
+      ENDIF
+      
+!
+!
+!              
+!
+!  maximum depletion tendency by any one source
+!
+!
+      if( ndebug .ge. 0 ) THEN
+!mpi!        write(iunit,*) 'Set depletion max/min1'
+!       flush(iunit)
+      endif
+      do mgs = 1,ngscnt
+      qvimxd(mgs) = 0.70*(qx(mgs,lv)-qis(mgs))/dtp ! depletion by all vap. dep to ice.
+      qvimxd(mgs) = max(qvimxd(mgs), 0.0)
+!      qimxd(mgs)  = 0.20*qx(mgs,li)/dtp
+!      qcmxd(mgs)  = 0.20*qx(mgs,lc)/dtp
+!      qrmxd(mgs)  = 0.20*qx(mgs,lr)/dtp
+!      qsmxd(mgs)  = 0.20*qx(mgs,ls)/dtp
+!      qhmxd(mgs)  = 0.20*qx(mgs,lh)/dtp
+
+      frac = 0.1d0
+      qimxd(mgs)  = frac*qx(mgs,li)/dtp
+      qcmxd(mgs)  = frac*qx(mgs,lc)/dtp
+      qrmxd(mgs)  = frac*qx(mgs,lr)/dtp
+      qsmxd(mgs)  = frac*qx(mgs,ls)/dtp
+      qhmxd(mgs)  = frac*qx(mgs,lh)/dtp
+      IF ( lhl > 1 ) qhlmxd(mgs)  = frac*qx(mgs,lhl)/dtp
+      end do
+!
+      if( ndebug .ge. 0 ) THEN
+!mpi!        write(iunit,*) 'Set depletion max/min2'
+!       flush(iunit)
+      endif
+
+      do mgs = 1,ngscnt
+!
+      if ( qx(mgs,lc) .le. qxmin(lc) ) then
+      ccmxd(mgs)  = 0.20*cx(mgs,lc)/dtp
+      else
+      IF ( ipconc .ge. 2 ) THEN
+        ccmxd(mgs)  = frac*cx(mgs,lc)/dtp
+      ELSE
+        ccmxd(mgs)  = frac*qx(mgs,lc)/(xmas(mgs,lc)*rho0(mgs)*dtp)
+      ENDIF
+      end if
+!
+      if ( qx(mgs,li) .le. qxmin(li) ) then
+      cimxd(mgs)  = frac*cx(mgs,li)/dtp
+      else
+      IF ( ipconc .ge. 1 ) THEN
+        cimxd(mgs)  = frac*cx(mgs,li)/dtp
+      ELSE
+        cimxd(mgs)  = frac*qx(mgs,li)/(xmas(mgs,li)*rho0(mgs)*dtp)
+      ENDIF
+      end if
+!
+!
+      crmxd(mgs)  = 0.10*cx(mgs,lr)/dtp
+      csmxd(mgs)  = frac*cx(mgs,ls)/dtp
+      chmxd(mgs)  = frac*cx(mgs,lh)/dtp
+
+      ccmxd(mgs)  = frac*cx(mgs,lc)/dtp
+      cimxd(mgs)  = frac*cx(mgs,li)/dtp
+      crmxd(mgs)  = frac*cx(mgs,lr)/dtp
+      csmxd(mgs)  = frac*cx(mgs,ls)/dtp
+      chmxd(mgs)  = frac*cx(mgs,lh)/dtp
+
+      qxmxd(mgs,lv) = Max(0.0, 0.1*(qx(mgs,lv) - qvs(mgs))/dtp)
+
+      DO il = lc,lhab
+       qxmxd(mgs,il) = frac*qx(mgs,il)/dtp
+       cxmxd(mgs,il) = frac*cx(mgs,il)/dtp
+      ENDDO
+
+      end do
+
+
+
+
+! calculate maximum mass diameters
+
+!
+!
+!  microphysics source terms (1/s) for mixing ratios 
+!
+!
+!
+!  Collection efficiencies:
+!
+      if (ndebug .gt. 0 ) write(0,*) 'ICEZVD_GS: Set collection efficiencies'
+!
+      do mgs = 1,ngscnt
+!
+!
+!
+      erw(mgs) = 0.0
+      esw(mgs) = 0.0
+      ehw(mgs) = 0.0
+      ehlw(mgs) = 0.0
+!      ehxw(mgs) = 0.0
+!
+      err(mgs) = 0.0
+      esr(mgs) = 0.0
+      il2(mgs) = 0
+      il3(mgs) = 0
+      ehr(mgs) = 0.0
+      ehlr(mgs) = 0.0
+!      ehxr(mgs) = 0.0
+!
+      eri(mgs) = 0.0
+      esi(mgs) = 0.0
+      ehi(mgs) = 0.0
+      ehli(mgs) = 0.0
+!      ehxi(mgs) = 0.0
+!
+      ers(mgs) = 0.0
+      ess(mgs) = 0.0
+      ehs(mgs) = 0.0
+      ehls(mgs) = 0.0
+      ehscnv(mgs) = 0.0
+!      ehxs(mgs) = 0.0
+!
+      eiw(mgs) = 0.0
+      eii(mgs) = 0.0
+
+      ehsclsn(mgs) = 0.0
+      ehiclsn(mgs) = 0.0
+      ehlsclsn(mgs) = 0.0
+      ehliclsn(mgs) = 0.0
+      esiclsn(mgs) = 0.0
+
+
+      icwr(mgs) = 1
+      IF ( qx(mgs,lc) .gt. qxmin(lc) ) THEN
+       cwrad = 0.5*xdia(mgs,lc,1)
+      DO il = 1,8
+         IF ( cwrad .ge. 1.e-6*cwr(il,1) ) icwr(mgs) = il
+      ENDDO
+      ENDIF
+
+
+      irwr(mgs) = 1
+      IF ( qx(mgs,lr) .gt. qxmin(lr) ) THEN
+         rwrad = 0.5*xdia(mgs,lr,3)  ! changed to mean volume diameter (10/6/06)
+      DO il = 1,6
+         IF ( rwrad .ge. 1.e-6*grad(il,1) ) irwr(mgs) = il
+      ENDDO
+      ENDIF
+
+
+      igwr(mgs) = 1
+!      IF ( qx(mgs,lr) .gt. qxmin(lr) ) THEN
+!         rwrad = 0.5*xdia(mgs,lr,1)
+! setting erw = 1 always, so now use igwr for graupel
+      IF ( qx(mgs,lh) .gt. qxmin(lh) ) THEN
+         rwrad = 0.5*xdia(mgs,lh,3)  ! changed to mean volume diameter (10/6/06)
+      DO il = 1,6
+         IF ( rwrad .ge. 1.e-6*grad(il,1) ) igwr(mgs) = il
+      ENDDO
+      ENDIF
+
+      IF ( lhl .gt. 1 ) THEN ! hail is turned on
+      ihlr(mgs) = 1
+      IF ( qx(mgs,lhl) .gt. qxmin(lhl) ) THEN
+         rwrad = 0.5*xdia(mgs,lhl,3)  ! changed to mean volume diameter (10/6/06)
+      DO il = 1,6
+         IF ( rwrad .ge. 1.e-6*grad(il,1) ) ihlr(mgs) = il
+      ENDDO
+      ENDIF
+      ENDIF
+
+!
+!
+!  Ice-Ice: Collection (cxc) efficiencies
+!
+!
+      if ( qx(mgs,li) .gt. qxmin(li) ) then
+!      IF ( ipconc .ge. 14 ) THEN
+!       eii(mgs)=0.1*exp(0.1*temcg(mgs))
+!       if ( temg(mgs) .lt. 243.15 .and. qx(mgs,lc) .gt. 1.e-6 ) then
+!        eii(mgs)=0.1
+!       end if
+!      
+!      ELSE
+        eii(mgs) = exp(0.025*Min(temcg(mgs),0.0))  ! alpha1 from LFO83 (21)
+!      ENDIF
+      if ( temg(mgs) .gt. 273.15 ) eii(mgs) = 1.0
+      end if
+!
+!
+!
+!  Ice-cloud water: Collection (cxc) efficiencies
+!
+!
+      eiw(mgs) = 0.0
+      if ( qx(mgs,li).gt.qxmin(li) .and. qx(mgs,lc).gt.qxmin(lc) ) then
+      if (xdia(mgs,lc,1).gt.15.0e-06 .and. xdia(mgs,li,1).gt.30.0e-06) then
+! erm 5/10/2007 test following change:
+!      if (xdia(mgs,lc,1).gt.12.0e-06 .and. xdia(mgs,li,1).gt.50.0e-06) then
+      eiw(mgs) = 0.5
+      end if
+      if ( temg(mgs) .ge. 273.15 ) eiw(mgs) = 0.0
+      end if
+!
+!
+!
+!  Rain: Collection (cxc) efficiencies
+!
+!
+      if ( qx(mgs,lr).gt.qxmin(lr) .and. qx(mgs,lc).gt.qxmin(lc) ) then
+
+       IF ( lnr .gt. 1 ) THEN
+       erw(mgs) = 1.0
+
+       ELSE
+
+!      cwrad = 0.5*xdia(mgs,lc,1)
+!      erw(mgs) =
+!     >  min((aradcw + cwrad*(bradcw + cwrad*
+!     <  (cradcw + cwrad*(dradcw)))), 1.0)
+!       IF ( xdia(mgs,lc,1) .lt. 2.4e-06 .or. xdia(mgs,lr,1) .le. 50.0e-6 ) THEN
+!          erw(mgs)=0.0
+!       ENDIF
+!       erw(mgs) = ew(icwr(mgs),igwr(mgs))
+! interpolate along droplet radius
+       ic = icwr(mgs)
+       icp1 = Min( 8, ic+1 )
+       ir = irwr(mgs)
+       irp1 = Min( 6, ir+1 )
+       cwrad = 0.5*xdia(mgs,lc,3)
+       rwrad = 0.5*xdia(mgs,lr,3)
+       
+       slope1 = (ew(icp1, ir  ) - ew(ic,ir  ))*cwr(ic,2)
+       slope2 = (ew(icp1, irp1) - ew(ic,irp1))*cwr(ic,2)
+
+!       write(iunit,*) 'slop1: ',slope1,slope2,ew(ic,ir),cwr(ic,2)
+
+       x1 = ew(ic,  ir) + slope1*Max(0.0, (cwrad - cwr(ic,1)) )
+       x2 = ew(icp1,ir) + slope2*Max(0.0, (cwrad - cwr(ic,1)) )
+
+       slope1 = (x2 - x1)*grad(ir,2)
+
+       erw(mgs) = Max(0.0, x1 + slope1*Max(0.0, (rwrad - grad(ir,1)) ))
+
+!       write(iunit,*) 'erw: ',erw(mgs),1.e6*cwrad,1.e6*rwrad,ic,ir,x1,x2
+!       write(iunit,*)
+
+       erw(mgs) = Max(0.0, erw(mgs) )
+       IF ( rwrad .lt. 50.e-6 ) THEN
+         erw(mgs) = 0.0
+       ELSEIF (  rwrad .lt. 100.e-6 ) THEN  ! linear change from zero at 50 to erw at 100 microns
+         erw(mgs) = erw(mgs)*(rwrad - 50.e-6)/50.e-6
+       ENDIF
+
+       ENDIF
+      end if
+      IF ( cx(mgs,lc) .le. 0.0 ) erw(mgs) = 0.0
+!
+      if ( qx(mgs,lr).gt.qxmin(lr) .and. qx(mgs,lr).gt.qxmin(lr) ) then
+      err(mgs)=1.0
+      end if
+!
+      if ( qx(mgs,lr).gt.qxmin(lr) .and. qx(mgs,ls).gt.qxmin(ls) ) then
+      ers(mgs)=1.0
+      end if
+!
+      if ( qx(mgs,lr).gt.qxmin(lr) .and. qx(mgs,li).gt.qxmin(li) ) then
+!        IF ( vtxbar(mgs,lr,1) .gt. vtxbar(mgs,li,1) .and.
+!     :       xdia(mgs,lr,3) .gt. 200.e-6 .and. xdia(mgs,li,3) .gt. 100.e-6 ) THEN
+         eri(mgs) = eri0
+!      cwrad = 0.5*xdia(mgs,li,3)
+!      eri(mgs) =
+!     >  1.0*min((aradcw + cwrad*(bradcw + cwrad*
+!     <  (cradcw + cwrad*(dradcw)))), 1.0)
+!         ENDIF
+!       if ( xdia(mgs,li,1) .lt. 10.e-6 ) eri(mgs)=0.0
+       if ( xdia(mgs,li,3) .lt. 40.e-6 ) eri(mgs)=0.0
+      end if
+!
+!
+!  Snow aggregates: Collection (cxc) efficiencies
+!
+! Modified by ERM with a linear function for small droplets and large
+! snow agg. based numerical data from Wang and Ji (1992) in P&K 1997, which
+! allows collection of very small droplets, albeit at low efficiency.  But slow
+! fall speeds of snow make up for the efficiency.
+!
+      esw(mgs) = 0.0
+      if ( qx(mgs,ls).gt.qxmin(ls) .and. qx(mgs,lc).gt.qxmin(lc) ) then
+        esw(mgs) = 0.5
+        if ( xdia(mgs,lc,1) .gt. 15.e-6 .and. xdia(mgs,ls,1) .gt. 100.e-6) then
+          esw(mgs) = 0.5
+        ELSEIF ( xdia(mgs,ls,1) .ge. 500.e-6 ) THEN
+          esw(mgs) = Min(0.5, 0.05 + (0.8-0.05)/(40.e-6)*xdia(mgs,lc,1) )
+        ENDIF
+      end if
+!
+      if ( qx(mgs,ls).gt.qxmin(ls) .and. qx(mgs,lr).gt.qxmin(lr)  &
+     &     .and. temg(mgs) .lt. tfr - 1.   &
+     &                               ) then
+      esr(mgs)=Exp(-(40.e-6)**3/xv(mgs,lr))*Exp(-40.e-6/xdia(mgs,ls,1))
+      IF ( qx(mgs,ls) < 1.e-4 .and. qx(mgs,lr) < 1.e-4 ) il2(mgs) = 1
+      end if
+      
+      IF ( ipconc < 3 .and. temg(mgs) < tfr .and. qx(mgs,lr).gt.qxmin(lr) .and. qx(mgs,lr) < 1.e-4 ) THEN
+        il3(mgs) = 1
+      ENDIF
+!
+!      if ( qx(mgs,ls).gt.qxmin(ls) ) then
+      if ( temcg(mgs) < 0.0 ) then
+      IF ( ipconc .lt. 4 .or. temcg(mgs) < -25. ) THEN
+        ess(mgs) = 0.0
+!        ess(mgs)=0.1*exp(0.1*min(temcg(mgs),0.0))
+!        ess(mgs)=min(0.1,ess(mgs))
+      ELSE
+        IF ( temcg(mgs) > -25. .and. temcg(mgs) < -20. ) THEN  ! only nonzero for T > -25
+        ess(mgs) = ess0*Exp(ess1*(-20.) )*(temcg(mgs) + 25.)/5. ! linear ramp up from zero at -25 to value at -20
+        ELSEIF ( temcg(mgs) >= -20.0 ) THEN
+        ess(mgs) = ess0*Exp(ess1*Min( temcg(mgs), 0.0 ) )
+        ENDIF
+      ENDIF
+      end if
+!
+      if ( qx(mgs,ls).gt.qxmin(ls) .and. qx(mgs,li).gt.qxmin(li) ) then
+       esiclsn(mgs) = esi_collsn
+!      IF ( ipconc .lt. 4 ) THEN
+      IF ( ipconc < 1 .and. lwsm6 ) THEN
+        esi(mgs) = exp(0.7*min(temcg(mgs),0.0))
+      ELSE
+        esi(mgs)=0.1*exp(0.1*min(temcg(mgs),0.0))
+        esi(mgs)=min(0.1,esi(mgs))
+      ENDIF
+      IF ( ipconc .le. 3 ) THEN
+       esi(mgs) =  exp(0.025*min(temcg(mgs),0.0)) ! LFO
+!       esi(mgs) =  Min(0.5, exp(0.025*min(temcg(mgs),0.0)) ) ! LFO
+!       esi(mgs)=0.5*exp(0.1*min(temcg(mgs),0.0))  ! 10ice
+      ENDIF
+!      ELSE ! zrnic/ziegler 1993
+!      esi(mgs)= 0.1 ! 0.5*exp(0.1*min(temcg(mgs),0.0))
+!      ENDIF
+      if ( temg(mgs) .gt. 273.15 ) esi(mgs) = 0.0
+      end if
+!
+!
+!
+!
+!  Graupel: Collection (cxc) efficiencies
+!
+!
+       xmascw(mgs) = xmas(mgs,lc)
+      if ( qx(mgs,lh).gt.qxmin(lh) .and. qx(mgs,lc).gt.qxmin(lc) ) then
+       ehw(mgs) = 1.0
+       IF ( iehw .eq. 0 ) THEN
+       ehw(mgs) = ehw0  ! default value is 1.0
+       ELSEIF ( iehw .eq. 1 .or. iehw .eq. 10 ) THEN
+      cwrad = 0.5*xdia(mgs,lc,1)
+      ehw(mgs) = Min( ehw0,    &
+     &  ewfac*min((aradcw + cwrad*(bradcw + cwrad*   &
+     &  (cradcw + cwrad*(dradcw)))), 1.0) )
+      
+       ELSEIF ( iehw .eq. 2 .or. iehw .eq. 10 ) THEN
+       ic = icwr(mgs)
+       icp1 = Min( 8, ic+1 )
+       ir = igwr(mgs)
+       irp1 = Min( 6, ir+1 )
+       cwrad = 0.5*xdia(mgs,lc,1)
+       rwrad = 0.5*xdia(mgs,lh,3)  ! changed to mean volume diameter
+       
+       slope1 = (ew(icp1, ir  ) - ew(ic,ir  ))*cwr(ic,2)
+       slope2 = (ew(icp1, irp1) - ew(ic,irp1))*cwr(ic,2)
+ 
+!        write(iunit,*) 'slop1: ',slope1,slope2,ew(ic,ir),cwr(ic,2)
+
+       x1 = ew(ic,  ir) + slope1*Max(0.0, (cwrad - cwr(ic,1)) )
+       x2 = ew(icp1,ir) + slope2*Max(0.0, (cwrad - cwr(ic,1)) )
+       
+       slope1 = (x2 - x1)*grad(ir,2)
+       
+       tmp = Max( 0.0, Min( 1.0, x1 + slope1*Max(0.0, (rwrad - grad(ir,1)) ) ) )
+       ehw(mgs) = Min( ehw(mgs), tmp )
+
+!       write(iunit,*) 'ehw: ',ehw(mgs),1.e6*cwrad,1.e6*rwrad,ic,ir,x1,x2
+!       write(iunit,*)
+
+!       ehw(mgs) = Max( 0.2, ehw(mgs) )
+!  assume that ehw = 1 for zero air resistance (rho0 = 0.0) and extrapolate toward that
+!      ehw(mgs) = ehw(mgs) + (ehw(mgs) - 1.0)*(rho0(mgs) - rho00)/rho00
+!      ehw(mgs) = ehw(mgs) + (1.0 - ehw(mgs))*((Max(0.0,rho00 - rho0(mgs)))/rho00)**2
+
+       ELSEIF ( iehw .eq. 3 .or. iehw .eq. 10 ) THEN ! use fraction of droplets greater than dmincw diameter
+         tmp = Exp(- (dmincw/xdia(mgs,lc,1))**3)
+         xmascw(mgs) = xmas(mgs,lc) + xdn0(lc)*(pi*dmincw**3/6.0) ! this is the average mass of the droplets with d > dmincw
+         ehw(mgs) = Min( ehw(mgs), tmp )
+       ELSEIF ( iehw .eq. 4 .or. iehw .eq. 10 ) THEN ! Cober and List 1993
+         tmp =  &
+     &   2.0*xdn(mgs,lc)*vtxbar(mgs,lh,1)*(0.5*xdia(mgs,lc,1))**2 &
+     &  /(9.0*fadvisc(mgs)*0.5*xdia(mgs,lh,3))
+         tmp = Max( 1.5, Min(10.0, tmp) )
+         ehw(mgs) = Min( ehw(mgs), 0.55*Log10(2.51*tmp) )
+       ENDIF
+      if ( xdia(mgs,lc,1) .lt. 2.4e-06 ) ehw(mgs)=0.0
+
+       ehw(mgs) = Min( ehw0, ehw(mgs) )
+       
+       IF ( ibfc == -1 .and. temcg(mgs) < -41.0 ) THEN
+        ehw(mgs) = 0.0
+       ENDIF 
+
+      end if
+!
+      if ( qx(mgs,lh).gt.qxmin(lh) .and. qx(mgs,lr).gt.qxmin(lr)    &
+!     &     .and. temg(mgs) .lt. tfr    &
+     &                               ) then
+!      ehr(mgs) = Exp(-(40.e-6)**3/xv(mgs,lr))*Exp(-40.e-6/xdia(mgs,lh,1))
+      ehr(mgs) = 1.0
+       ehr(mgs) = Min( ehr0, ehr(mgs) )
+      end if
+!
+      IF ( qx(mgs,ls).gt.qxmin(ls) ) THEN
+        IF ( ipconc .ge. 4 ) THEN
+        ehscnv(mgs) = ehs0*exp(ehs1*min(temcg(mgs),0.0))
+        ELSE
+        ehscnv(mgs) = exp(0.09*min(temcg(mgs),0.0))
+        ENDIF
+        if ( qx(mgs,lh).gt.qxmin(lh) .and. qx(mgs,lc) > qxmin(lc)  ) then
+          ehsclsn(mgs) = ehs_collsn
+          IF ( xdia(mgs,ls,3) < 40.e-6 ) THEN
+            ehsclsn(mgs) = 0.0
+          ELSEIF ( xdia(mgs,ls,3) < 150.e-6 ) THEN
+            ehsclsn(mgs) =  ehs_collsn*(xdia(mgs,ls,3) - 40.e-6)/(150.e-6 - 40.e-6)
+          ELSE
+            ehsclsn(mgs) = ehs_collsn
+          ENDIF
+!          ehs(mgs) = ehscnv(mgs)*Min(1.0, Max(0., xdn(mgs,lh) - xdnmn(lh)*1.2)/xdnmn(lh)  ) ! shut off qhacs as graupel goes to lowest density
+          ehs(mgs) = ehscnv(mgs)*Min(1.0, Max(0.0,xdn(mgs,lh) - 300.)/300.  ) ! shut off qhacs as graupel goes to lowest density
+        end if
+      ENDIF
+!
+      if ( qx(mgs,lh).gt.qxmin(lh) .and. qx(mgs,li).gt.qxmin(li) ) then
+      ehiclsn(mgs) = ehi_collsn
+      ehi(mgs)=eii0*exp(eii1*min(temcg(mgs),0.0))
+      ehi(mgs) = Min( ehimax, Max( ehi(mgs), ehimin ) )
+      if ( temg(mgs) .gt. 273.15 ) ehi(mgs) = 0.0
+      end if
+
+
+!
+!
+!  Hail: Collection (cxc) efficiencies
+!
+!
+      IF ( lhl .gt. 1 ) THEN
+
+      if ( qx(mgs,lhl).gt.qxmin(lhl) .and. qx(mgs,lc).gt.qxmin(lc) ) then
+       IF ( iehw == 3 ) iehlw = 3
+       IF ( iehw == 4 ) iehlw = 4
+       ehlw(mgs) = ehlw0
+       IF ( iehlw .eq. 0 ) THEN
+       ehlw(mgs) = ehlw0  ! default value is 1.0
+       ELSEIF ( iehlw .eq. 1 .or. iehlw .eq. 10 ) THEN
+      cwrad = 0.5*xdia(mgs,lc,1)
+      ehlw(mgs) = Min( ehlw0,    &
+     &  ewfac*min((aradcw + cwrad*(bradcw + cwrad*   &
+     &  (cradcw + cwrad*(dradcw)))), 1.0) )
+      
+       ELSEIF ( iehlw .eq. 2 .or. iehlw .eq. 10 ) THEN
+       ic = icwr(mgs)
+       icp1 = Min( 8, ic+1 )
+       ir = ihlr(mgs)
+       irp1 = Min( 6, ir+1 )
+       cwrad = 0.5*xdia(mgs,lc,1)
+       rwrad = 0.5*xdia(mgs,lhl,3)  ! changed to mean volume diameter
+       
+       slope1 = (ew(icp1, ir  ) - ew(ic,ir  ))*cwr(ic,2)
+       slope2 = (ew(icp1, irp1) - ew(ic,irp1))*cwr(ic,2)
+       
+       x1 = ew(ic,  ir) + slope1*(cwrad - cwr(ic,1))
+       x2 = ew(icp1,ir) + slope2*(cwrad - cwr(ic,1))
+       
+       slope1 = (x2 - x1)*grad(ir,2)
+       
+       tmp = Max( 0.0, Min( 1.0, x1 + slope1*(rwrad - grad(ir,1)) ) )
+         ehlw(mgs) = Min( ehlw(mgs), tmp )
+       ehlw(mgs) = Min( ehlw0, ehlw(mgs) )
+!       ehw(mgs) = Max( 0.2, ehw(mgs) )
+!  assume that ehw = 1 for zero air resistance (rho0 = 0.0) and extrapolate toward that
+!      ehw(mgs) = ehw(mgs) + (ehw(mgs) - 1.0)*(rho0(mgs) - rho00)/rho00
+!      ehlw(mgs) = ehlw(mgs) + (1.0 - ehlw(mgs))*((Max(0.0,rho00 - rho0(mgs)))/rho00)**2
+
+       ELSEIF ( iehlw .eq. 3 .or. iehlw .eq. 10 ) THEN ! use fraction of droplets greater than 15 micron diameter
+         tmp = Exp(- (dmincw/xdia(mgs,lc,1))**3)
+         ehlw(mgs) = Min( ehlw(mgs), tmp )
+       ELSEIF ( iehlw .eq. 4 .or. iehlw .eq. 10 ) THEN ! Cober and List 1993
+         tmp =  &
+     &   2.0*xdn(mgs,lc)*vtxbar(mgs,lhl,1)*(0.5*xdia(mgs,lc,1))**2 &
+     &  /(9.0*fadvisc(mgs)*0.5*xdia(mgs,lhl,3))
+         tmp = Max( 1.5, Min(10.0, tmp) )
+         ehlw(mgs) = Min( ehlw(mgs), 0.55*Log10(2.51*tmp) )
+       ENDIF
+      if ( xdia(mgs,lc,1) .lt. 2.4e-06 ) ehlw(mgs)=0.0
+       ehlw(mgs) = Min( ehlw0, ehlw(mgs) )
+
+       IF ( ibfc == -1 .and. temcg(mgs) < -41.0 ) THEN 
+        ehlw(mgs) = 0.0
+       ENDIF 
+
+      end if
+!
+      if ( qx(mgs,lhl).gt.qxmin(lhl) .and. qx(mgs,lr).gt.qxmin(lr)    &
+!     &     .and. temg(mgs) .lt. tfr    &
+     &                               ) then
+        ehlr(mgs) = 1.0
+       ehlr(mgs) = Min( ehlr0, ehlr(mgs) )
+      end if
+!
+      IF ( qx(mgs,ls).gt.qxmin(ls) ) THEN
+        if ( qx(mgs,lhl).gt.qxmin(lhl)  ) then
+          ehlsclsn(mgs) = ehls_collsn
+          ehls(mgs) = ehscnv(mgs)
+        end if
+      ENDIF
+!
+      if ( qx(mgs,lhl).gt.qxmin(lhl) .and. qx(mgs,li).gt.qxmin(li) ) then
+      ehliclsn(mgs) = ehli_collsn
+      ehli(mgs)=eii0hl*exp(eii1hl*min(temcg(mgs),0.0))
+      ehli(mgs) = Min( ehimax, Max( ehli(mgs), ehimin ) )
+      if ( temg(mgs) .gt. 273.15 ) ehli(mgs) = 1.0
+      end if
+
+
+      ENDIF ! lhl .gt. 1
+
+      ENDDO  ! mgs loop for collection efficiencies
+
+!
+!
+!
+!  Set flags for plates vs. columns
+!
+!
+      do mgs = 1,ngscnt
+!
+      xplate(mgs) = 0.0
+      xcolmn(mgs) = 1.0
+!
+!      if ( temcg(mgs) .lt. 0. .and. temcg(mgs) .ge. -4. ) then
+!      xplate(mgs) = 1.0
+!      xcolmn(mgs) = 0.0
+!      end if
+!c
+!      if ( temcg(mgs) .lt. -4. .and. temcg(mgs) .ge. -9. ) then
+!      xplate(mgs) = 0.0
+!      xcolmn(mgs) = 1.0
+!      end if
+!c
+!      if ( temcg(mgs) .lt. -9. .and. temcg(mgs) .ge. -22.5 ) then
+!      xplate(mgs) = 1.0
+!      xcolmn(mgs) = 0.0
+!      end if
+!c
+!      if ( temcg(mgs) .lt. -22.5 .and. temcg(mgs) .ge. -90. ) then
+!      xplate(mgs) = 0.0
+!      xcolmn(mgs) = 1.0
+!      end if
+!
+      end do
+!
+!
+!
+!  Collection growth equations....
+!
+!
+      if (ndebug .gt. 0 ) write(0,*) 'Collection: rain collects xxxxx'
+!
+      do mgs = 1,ngscnt
+      qracw(mgs) =  0.0
+      IF ( qx(mgs,lr) .gt. qxmin(lr) .and. erw(mgs) .gt. 0.0 ) THEN
+      IF ( ipconc .lt. 3 ) THEN
+       IF ( erw(mgs) .gt. 0.0 .and. qx(mgs,lr) .gt. 1.e-7 ) THEN
+       vt = (ar*(xdia(mgs,lc,1)**br))*rhovt(mgs)
+       qracw(mgs) =    &
+     &   (0.25)*pi*erw(mgs)*qx(mgs,lc)*cx(mgs,lr) &
+!     >  *abs(vtxbar(mgs,lr,1)-vtxbar(mgs,lc,1))   &
+     &  *Max(0.0, vtxbar(mgs,lr,1)-vt)   &
+     &  *(  gf3*xdia(mgs,lr,2)    &
+     &    + 2.0*gf2*xdia(mgs,lr,1)*xdia(mgs,lc,1)    &
+     &    + gf1*xdia(mgs,lc,2) )
+!       qracw(mgs) = 0.0
+!      write(iunit,*) 'qracw,cx =',qracw(mgs),1.e6*xdia(mgs,lr,1),erw(mgs)
+!      write(iunit,*) 'qracw,cx =',qracw(mgs),cx(mgs,lc),kgs(mgs),cx(mgs,lr),1.e6*xdia(mgs,lr,1),vtxbar(mgs,lr,1),vt
+!      write(iunit,*) 'vtr: ',vtxbar(mgs,lr,1), ar*gf4br/6.0*xdia(mgs,lr,1)**br, rhovt(mgs),
+!     :         ar*gf4br/6.0*xdia(mgs,lr,1)**br * rhovt(mgs)
+       ENDIF
+      ELSE
+
+      IF ( dmrauto <= 0 .or.  rho0(mgs)*qx(mgs,lr) > 1.2*xl2p(mgs) ) THEN 
+       rwrad = 0.5*xdia(mgs,lr,3)
+        IF ( rwrad .gt. rh(mgs) ) THEN ! .or. cx(mgs,lr) .gt. nh(mgs) ) THEN
+         IF ( rwrad .gt. rwradmn ) THEN
+!      DM1CCC=A2*XNC*XNR*XVC*(((CNU+2.)/(CNU+1.))*XVC+XVR)       ! (A12)
+!     NOTE: Result is independent of imurain, assumes mucloud = 3
+           qracw(mgs) = erw(mgs)*aa2*cx(mgs,lr)*cx(mgs,lc)*xmas(mgs,lc)*   &
+     &        ((cnu + 2.)*xv(mgs,lc)/(cnu + 1.) + xv(mgs,lr))/rho0(mgs) !*rhoinv(mgs)
+         ELSE
+
+          IF ( imurain == 3 ) THEN
+
+!      DM1CCC=A1*XNC*XNR*(((CNU+3.)*(CNU+2.)/(CNU+1.)**2)*XVC**3+ ! (A14)
+!     1 ((RNU+2.)/(RNU+1.))*XVC*XVR**2)
+
+!           qracw(mgs) = aa1*cx(mgs,lr)*cx(mgs,lc)*xdn(mgs,lc)*   &
+!     &        ((cnu + 3.)*(cnu + 2.)*xv(mgs,lc)**3/(cnu + 1.)**2 +    &
+!     &         (alpha(mgs,lr) + 2.)*xv(mgs,lc)*xv(mgs,lr)**2/(alpha(mgs,lr) + 1.))/rho0(mgs) !*rhoinv(mgs)
+! save multiplies by converting cx*xdn*xv/rho0 to qx
+           qracw(mgs) = aa1*cx(mgs,lr)*qx(mgs,lc)*   &
+     &        ((cnu + 3.)*(cnu + 2.)*xv(mgs,lc)**2/(cnu + 1.)**2 +    &
+     &         (alpha(mgs,lr) + 2.)*xv(mgs,lr)**2/(alpha(mgs,lr) + 1.)) 
+           
+           ELSE ! imurain == 1
+
+           qracw(mgs) = aa1*cx(mgs,lr)*qx(mgs,lc)*   &
+     &        ((cnu + 3.)*(cnu + 2.)*xv(mgs,lc)**2/(cnu + 1.)**2 +    &
+     &         (alpha(mgs,lr) + 6.)*(alpha(mgs,lr) + 5.)*(alpha(mgs,lr) + 4.)*xv(mgs,lr)**2/ &
+     &          ((alpha(mgs,lr) + 3.)*(alpha(mgs,lr) + 2.)*(alpha(mgs,lr) + 1.))) 
+           
+           ENDIF
+           
+         ENDIF
+        ENDIF
+        ENDIF
+       ENDIF
+!       qracw(mgs) = Min(qracw(mgs), qx(mgs,lc))
+       qracw(mgs) = Min(qracw(mgs), qcmxd(mgs))
+       ENDIF
+      end do
+!
+      do mgs = 1,ngscnt
+      qraci(mgs) = 0.0
+      craci(mgs) = 0.0
+      IF ( eri(mgs) .gt. 0.0 .and. iacr .ge. 1 .and. xdia(mgs,lr,3) .gt. 2.*rwradmn ) THEN
+        IF ( ipconc .ge. 3 ) THEN
+
+           tmp = eri(mgs)*aa2*cx(mgs,lr)*cx(mgs,li)*   &
+     &        ((cinu + 2.)*xv(mgs,li)/(cinu + 1.) + xv(mgs,lr))
+
+        qraci(mgs) = Min( qxmxd(mgs,li), tmp*xmas(mgs,li)*rhoinv(mgs) )
+        craci(mgs) = Min( cxmxd(mgs,li), tmp )
+
+!       vt = Sqrt((vtxbar(mgs,lr,1)-vtxbar(mgs,li,1))**2 +
+!     :            0.04*vtxbar(mgs,lr,1)*vtxbar(mgs,li,1) )
+!
+!          qraci(mgs) = 0.25*pi*eri(mgs)*cx(mgs,lr)*qx(mgs,li)*vt*
+!     :         (  da0(lr)*xdia(mgs,lr,3)**2 +
+!     :            dab1(lr,li)*xdia(mgs,lr,3)*xdia(mgs,li,3) +
+!     :            da1(li)*xdia(mgs,li,3)**2 )
+!
+!
+!       vt = Sqrt((vtxbar(mgs,lr,1)-vtxbar(mgs,li,1))**2 +
+!     :            0.04*vtxbar(mgs,lr,1)*vtxbar(mgs,li,1) )
+!
+!          craci(mgs) = 0.25*pi*eri(mgs)*cx(mgs,lr)*cx(mgs,li)*vt*
+!     :         (  da0(lr)*xdia(mgs,lr,3)**2 +
+!     :            dab0(lr,li)*xdia(mgs,lr,3)*xdia(mgs,li,3) +
+!     :            da0(li)*xdia(mgs,li,3)**2 )
+!
+!          qraci(mgs) = Min( qraci(mgs), qxmxd(mgs,li) )
+!          craci(mgs) = Min( craci(mgs), cxmxd(mgs,li) )
+
+        ELSE
+          qraci(mgs) =    &
+     &     min(   &
+     &     (0.25)*pi*eri(mgs)*qx(mgs,li)*cx(mgs,lr)   &
+     &    *abs(vtxbar(mgs,lr,1)-vtxbar(mgs,li,1))   &
+     &    *(  gf3*xdia(mgs,lr,2)    &
+     &      + 2.0*gf2*xdia(mgs,lr,1)*xdia(mgs,li,1)    &
+     &      + gf1*xdia(mgs,li,2) )     &
+     &    , qimxd(mgs))
+        ENDIF
+      if ( temg(mgs) .gt. 268.15 ) then
+      qraci(mgs) = 0.0
+      end if
+      ENDIF
+      end do
+!
+      do mgs = 1,ngscnt
+      qracs(mgs) =  0.0
+      IF ( ers(mgs) .gt. 0.0 .and. ipconc < 3 ) THEN
+       IF ( lwsm6 .and. ipconc == 0 ) THEN
+         vt = vt2ave(mgs)
+       ELSE
+         vt = vtxbar(mgs,ls,1)
+       ENDIF
+      qracs(mgs) =      &
+     &   min(     &
+     &   ((0.25)*pi/gf4)*ers(mgs)*qx(mgs,ls)*cx(mgs,lr)     &
+     &  *abs(vtxbar(mgs,lr,1)-vt)     &
+     &  *(  gf6*gf1*xdia(mgs,ls,2)     &
+     &    + 2.0*gf5*gf2*xdia(mgs,ls,1)*xdia(mgs,lr,1)      &
+     &    + gf4*gf3*xdia(mgs,lr,2) )      &
+     &  , qsmxd(mgs))
+      ENDIF
+      end do
+
+!
+!
+      if (ndebug .gt. 0 ) write(0,*) 'Collection: snow collects xxxxx'
+!
+      do mgs = 1,ngscnt
+      qsacw(mgs) =  0.0
+      csacw(mgs) =  0.0
+      vsacw(mgs) =  0.0
+      IF ( esw(mgs) .gt. 0.0 ) THEN
+
+       IF ( ipconc .ge. 4 ) THEN
+!      QSACC=CECS*RVT*A2*XNC*XNS*XVC*ROS*
+!     *    (((CNU+2.)/(CNU+1.))*XVC+XVS)/RO
+
+!        tmp = esw(mgs)*rvt*aa2*cx(mgs,ls)*cx(mgs,lc)*
+!     :        ((cnu + 2.)*xv(mgs,lc)/(cnu + 1.) + xv(mgs,ls))
+        tmp = 1.0*rvt*aa2*cx(mgs,ls)*cx(mgs,lc)*   &
+     &        ((cnu + 2.)*xv(mgs,lc)/(cnu + 1.) + xv(mgs,ls))
+
+        qsacw(mgs) = Min( qxmxd(mgs,lc), tmp*xmas(mgs,lc)*rhoinv(mgs) )
+        csacw(mgs) = Min( cxmxd(mgs,lc), tmp )
+
+          IF ( lvol(ls) .gt. 1 ) THEN
+             IF ( temg(mgs) .lt. 273.15) THEN
+             rimdn(mgs,ls) = rimc1*(-((0.5)*(1.e+06)*xdia(mgs,lc,1))   &
+     &                *((0.60)*vtxbar(mgs,ls,1))   &
+     &                /(temg(mgs)-273.15))**(rimc2)
+             rimdn(mgs,ls) = Min( Max( rimc3, rimdn(mgs,ls) ), rimc4 )
+             ELSE
+             rimdn(mgs,ls) = 1000.
+             ENDIF
+
+           vsacw(mgs) = rho0(mgs)*qsacw(mgs)/rimdn(mgs,ls)
+
+          ENDIF
+
+
+!        qsacw(mgs) = cecs*aa2*cx(mgs,ls)*cx(mgs,lc)*xmas(mgs,lc)*
+!     :        ((cnu + 2.)*xv(mgs,lc)/(cnu + 1.) + xv(mgs,ls))*rhoinv(mgs)
+       ELSE
+!      qsacw(mgs) =
+!     >   min(
+!     >   ((0.25)*pi)*esw(mgs)*qx(mgs,lc)*cx(mgs,ls)
+!     >  *abs(vtxbar(mgs,ls,1)-vtxbar(mgs,lc,1))
+!     >  *(  gf3*xdia(mgs,ls,2)
+!     >    + 2.0*gf2*xdia(mgs,ls,1)*xdia(mgs,lc,1)
+!     >    + gf1*xdia(mgs,lc,2) )
+!     <  , qcmxd(mgs))
+
+            vt = abs(vtxbar(mgs,ls,1)-vtxbar(mgs,lc,1))
+
+          qsacw(mgs) = 0.25*pi*esw(mgs)*cx(mgs,ls)*qx(mgs,lc)*vt*   &
+     &         (  da0(ls)*xdia(mgs,ls,3)**2 +     &
+     &            dab1(ls,lc)*xdia(mgs,ls,3)*xdia(mgs,lc,3) +    &
+     &            da1(lc)*xdia(mgs,lc,3)**2 )
+        qsacw(mgs) = Min( qsacw(mgs), qxmxd(mgs,ls) )
+        csacw(mgs) = rho0(mgs)*qsacw(mgs)/xmas(mgs,lc)
+       ENDIF
+      ENDIF
+      end do
+!
+!
+      do mgs = 1,ngscnt
+      qsaci(mgs) = 0.0
+      csaci(mgs) = 0.0
+      csaci0(mgs) = 0.0
+      IF ( ipconc .ge. 4 ) THEN
+      IF ( esi(mgs) .gt. 0.0 .or. ( ipelec > 0 .and. esiclsn(mgs) > 0.0 )) THEN
+!      QSCOI=CEXS*RVT*A2*XNCI*XNS*XVCI*ROS*
+!     *  (((CINU+2.)/(CINU+1.))*VCIP+XVS)/RO
+
+        tmp = esiclsn(mgs)*rvt*aa2*cx(mgs,ls)*cx(mgs,li)*   &
+     &        ((cinu + 2.)*xv(mgs,li)/(cinu + 1.) + xv(mgs,ls))
+
+        qsaci(mgs) = Min( qxmxd(mgs,li), esi(mgs)*tmp*xmas(mgs,li)*rhoinv(mgs) )
+        csaci0(mgs) = tmp
+        csaci(mgs) = Min(cxmxd(mgs,li), esi(mgs)*tmp )
+
+!      qsaci(mgs) =
+!     >   min(
+!     >   ((0.25)*pi)*esi(mgs)*qx(mgs,li)*cx(mgs,ls)
+!     >  *abs(vtxbar(mgs,ls,1)-vtxbar(mgs,li,1))
+!     >  *(  gf3*xdia(mgs,ls,2)
+!     >    + 2.0*gf2*xdia(mgs,ls,1)*xdia(mgs,li,1)
+!     >    + gf1*xdia(mgs,li,2) )
+!     <  , qimxd(mgs))
+      ENDIF
+      ELSE ! 
+      IF ( esi(mgs) .gt. 0.0 ) THEN
+         qsaci(mgs) =    &
+     &   min(   &
+     &   ((0.25)*pi)*esi(mgs)*qx(mgs,li)*cx(mgs,ls)   &
+     &  *abs(vtxbar(mgs,ls,1)-vtxbar(mgs,li,1))   &
+     &  *(  gf3*xdia(mgs,ls,2)    &
+     &    + 2.0*gf2*xdia(mgs,ls,1)*xdia(mgs,li,1)    &
+     &    + gf1*xdia(mgs,li,2) )     &
+     &  , qimxd(mgs))
+      ENDIF
+      ENDIF
+      end do
+!
+!
+!
+      do mgs = 1,ngscnt
+      qsacr(mgs) = 0.0
+      qsacrs(mgs) = 0.0
+      csacr(mgs) = 0.0
+      IF ( esr(mgs) .gt. 0.0 ) THEN
+      IF ( ipconc .ge. 3 ) THEN
+!       vt = Sqrt((vtxbar(mgs,ls,1)-vtxbar(mgs,lr,1))**2 + 
+!     :            0.04*vtxbar(mgs,ls,1)*vtxbar(mgs,lr,1) )
+!       qsacr(mgs) = esr(mgs)*cx(mgs,ls)*vt*
+!     :     qx(mgs,lr)*0.25*pi*
+!     :      (3.02787*xdia(mgs,lr,2) + 
+!     :       3.30669*xdia(mgs,ls,1)*xdia(mgs,lr,1) + 
+!     :       2.*xdia(mgs,ls,2))
+!        qsacr(mgs) = Min( qsacr(mgs), qrmxd(mgs) )
+!        csacr(mgs) = qsacr(mgs)*cx(mgs,lr)/qx(mgs,lr)
+!        csacr(mgs) = min(csacr(mgs),crmxd(mgs))
+      ELSE
+       IF ( lwsm6 .and. ipconc == 0 ) THEN
+         vt = vt2ave(mgs)
+       ELSE
+         vt = vtxbar(mgs,ls,1)
+       ENDIF
+       
+       qsacr(mgs) =   &
+     &   min(   &
+     &   ((0.25)*pi/gf4)*esr(mgs)*qx(mgs,lr)*cx(mgs,ls)   &
+     &  *abs(vtxbar(mgs,lr,1)-vt)   &
+     &  *(  gf6*gf1*xdia(mgs,lr,2)   &
+     &    + 2.0*gf5*gf2*xdia(mgs,lr,1)*xdia(mgs,ls,1)    &
+     &    + gf4*gf3*xdia(mgs,ls,2) )    &
+     &  , qrmxd(mgs))
+      ENDIF
+      ENDIF
+      end do
+!
+!
+!
+      if (ndebug .gt. 0 ) write(0,*) 'Collection: graupel collects xxxxx'
+!
+      do mgs = 1,ngscnt
+      qhacw(mgs) = 0.0
+      rarx(mgs,lh) = 0.0
+      vhacw(mgs) = 0.0
+      vhsoak(mgs) = 0.0
+      zhacw(mgs) = 0.0
+      
+      IF ( .false. ) THEN
+        vtmax = (gz(igs(mgs),jgs,kgs(mgs))/dtp)
+        vtxbar(mgs,lh,1) = Min( vtmax, vtxbar(mgs,lh,1))
+        vtxbar(mgs,lh,2) = Min( vtmax, vtxbar(mgs,lh,2))
+        vtxbar(mgs,lh,3) = Min( vtmax, vtxbar(mgs,lh,3))
+      ENDIF
+      IF ( ehw(mgs) .gt. 0.0 ) THEN
+
+        IF ( ipconc .ge. 2 ) THEN
+
+        IF ( .false. ) THEN  
+        qhacw(mgs) = (ehw(mgs)*qx(mgs,lc)*cx(mgs,lh)*pi*   &
+     &    abs(vtxbar(mgs,lh,1)-vtxbar(mgs,lc,1))*   &
+     &    (2.0*xdia(mgs,lh,1)*(xdia(mgs,lh,1) +    &
+     &         xdia(mgs,lc,1)*gf73rds) +    &
+     &      xdia(mgs,lc,2)*gf83rds))/4.     
+     
+         ELSE  ! using Seifert coefficients
+            vt = abs(vtxbar(mgs,lh,1)-vtxbar(mgs,lc,1)) 
+
+          qhacw(mgs) = 0.25*pi*ehw(mgs)*cx(mgs,lh)*qx(mgs,lc)*vt*   &
+     &         (  da0lh(mgs)*xdia(mgs,lh,3)**2 +     &
+     &            dab1lh(mgs,lc,lh)*xdia(mgs,lh,3)*xdia(mgs,lc,3) +    &
+     &            da1(lc)*xdia(mgs,lc,3)**2 ) 
+         
+         ENDIF
+          qhacw(mgs) = Min( qhacw(mgs), 0.5*qx(mgs,lc)/dtp )
+        
+         IF ( lzh .gt. 1 ) THEN
+          tmp = qx(mgs,lh)/cx(mgs,lh)
+          
+!!          g1 = (6.0 + alpha(mgs,lh))*(5.0 + alpha(mgs,lh))*(4.0 + alpha(mgs,lh))/
+!!     :         ((3.0 + alpha(mgs,lh))*(2.0 + alpha(mgs,lh))*(1.0 + alpha(mgs,lh)))
+!          alp = Max( 1.0, alpha(mgs,lh)+1. )
+!          g1 = (6.0 + alp)*(5.0 + alp)*(4.0 + alp)/
+!     :         ((3.0 + alp)*(2.0 + alp)*(1.0 + alp))
+!          zhacw(mgs) =  g1*(6.*rho0(mgs)/(pi*1000.))**2*( 2.*( qx(mgs,lh)/cx(mgs,lh)) * qhacw(mgs) )
+         ENDIF
+        
+        ELSE
+         qhacw(mgs) =    &
+     &   min(   &
+     &   ((0.25)*pi)*ehw(mgs)*qx(mgs,lc)*cx(mgs,lh)   &
+     &  *abs(vtxbar(mgs,lh,1)-vtxbar(mgs,lc,1))   &
+     &  *(  gf3*xdia(mgs,lh,2)    &
+     &    + 2.0*gf2*xdia(mgs,lh,1)*xdia(mgs,lc,1)    &
+     &    + gf1*xdia(mgs,lc,2) )     &
+     &    , 0.5*qx(mgs,lc)/dtp)
+!     <  , qxmxd(mgs,lc))
+!     <  , qcmxd(mgs))
+       
+       
+         IF ( lwsm6 .and. qsacw(mgs) > 0.0 .and.  qhacw(mgs) > 0.0) THEN
+           qaacw = ( qx(mgs,ls)*qsacw(mgs) + qx(mgs,lh)*qhacw(mgs) )/(qx(mgs,ls) + qx(mgs,lh))
+!           qaacw = Min( qaacw, 0.5*(qsacw(mgs) + qhacw(mgs) ) )
+           qsacw(mgs) = qaacw
+           qhacw(mgs) = qaacw
+         ENDIF
+         
+       ENDIF
+
+          IF ( lvol(lh) .gt. 1 .or. lhl .gt. 1 ) THEN ! calculate rime density for graupel volume and/or for graupel conversion to hail
+             
+             IF ( temg(mgs) .lt. 273.15) THEN
+             rimdn(mgs,lh) = rimc1*(-((0.5)*(1.e+06)*xdia(mgs,lc,1))   &
+     &                *((0.60)*vtxbar(mgs,lh,1))   &
+     &                /(temg(mgs)-273.15))**(rimc2)
+             rimdn(mgs,lh) = Min( Max( hdnmn, rimc3, rimdn(mgs,lh) ), rimc4 )
+             ELSE
+             rimdn(mgs,lh) = 1000.
+             ENDIF
+             
+             IF ( lvol(lh) > 1 ) vhacw(mgs) = rho0(mgs)*qhacw(mgs)/rimdn(mgs,lh)
+
+          ENDIF
+      
+        IF ( qx(mgs,lh) .gt. qxmin(lh) .and. ipelec .gt. 0 ) THEN
+         rarx(mgs,lh) =     &
+     &    qhacw(mgs)*1.0e3*rho0(mgs)/((pi/2.0)*xdia(mgs,lh,2)*cx(mgs,lh))
+        ENDIF
+      
+      ENDIF  
+      end do   
+!
+!
+      do mgs = 1,ngscnt
+      qhaci(mgs) = 0.0
+      qhaci0(mgs) = 0.0
+      IF ( ehi(mgs) .gt. 0.0 ) THEN
+       IF (  ipconc .ge. 5 ) THEN
+
+       vt = Sqrt((vtxbar(mgs,lh,1)-vtxbar(mgs,li,1))**2 +    &
+     &            0.04*vtxbar(mgs,lh,1)*vtxbar(mgs,li,1) )
+
+          qhaci0(mgs) = 0.25*pi*ehiclsn(mgs)*cx(mgs,lh)*qx(mgs,li)*vt*   &
+     &         (  da0lh(mgs)*xdia(mgs,lh,3)**2 +     &
+     &            dab1lh(mgs,li,lh)*xdia(mgs,lh,3)*xdia(mgs,li,3) +    &
+     &            da1(li)*xdia(mgs,li,3)**2 ) 
+          qhaci(mgs) = Min( ehi(mgs)*qhaci0(mgs), qimxd(mgs) )
+       ELSE
+        qhaci(mgs) =    &
+     &  min(   &
+     &  ((0.25)*pi)*ehi(mgs)*ehiclsn(mgs)*qx(mgs,li)*cx(mgs,lh)   &
+     &  *abs(vtxbar(mgs,lh,1)-vtxbar(mgs,li,1))   &
+     &  *(  gf3*xdia(mgs,lh,2)    &
+     &    + 2.0*gf2*xdia(mgs,lh,1)*xdia(mgs,li,1)    &
+     &    + gf1*xdia(mgs,li,2) )     &
+     &  , qimxd(mgs))
+       ENDIF
+      ENDIF
+      end do   
+!
+!
+      do mgs = 1,ngscnt
+      qhacs(mgs) = 0.0
+      qhacs0(mgs) = 0.0
+      IF ( ehs(mgs) .gt. 0.0 ) THEN
+       IF ( ipconc .ge. 5 ) THEN
+
+       vt = Sqrt((vtxbar(mgs,lh,1)-vtxbar(mgs,ls,1))**2 +    &
+     &            0.04*vtxbar(mgs,lh,1)*vtxbar(mgs,ls,1) )
+
+          qhacs0(mgs) = 0.25*pi*ehsclsn(mgs)*cx(mgs,lh)*qx(mgs,ls)*vt*   &
+     &         (  da0lh(mgs)*xdia(mgs,lh,3)**2 +     &
+     &            dab1lh(mgs,ls,lh)*xdia(mgs,lh,3)*xdia(mgs,ls,3) +    &
+     &            da1(ls)*xdia(mgs,ls,3)**2 ) 
+      
+          qhacs(mgs) = Min( ehs(mgs)*qhacs0(mgs), qsmxd(mgs) )
+
+       ELSE
+         qhacs(mgs) =   &
+     &   min(   &
+     &   ((0.25)*pi/gf4)*ehs(mgs)*ehsclsn(mgs)*qx(mgs,ls)*cx(mgs,lh)   &
+     &  *abs(vtxbar(mgs,lh,1)-vtxbar(mgs,ls,1))   &
+     &  *(  gf6*gf1*xdia(mgs,ls,2)   &
+     &    + 2.0*gf5*gf2*xdia(mgs,ls,1)*xdia(mgs,lh,1)   &
+     &    + gf4*gf3*xdia(mgs,lh,2) )   &
+     &  , qsmxd(mgs))
+        ENDIF
+      ENDIF
+      end do   
+!
+      do mgs = 1,ngscnt
+      qhacr(mgs) = 0.0
+      qhacrmlr(mgs) = 0.0
+      vhacr(mgs) = 0.0
+      chacr(mgs) = 0.0
+      zhacr(mgs) = 0.0
+      IF ( temg(mgs) .gt. tfr ) raindn(mgs,lh) = 1000.0
+
+      IF ( ehr(mgs) .gt. 0.0 ) THEN
+      IF ( ipconc .ge. 3 ) THEN
+       vt = Sqrt((vtxbar(mgs,lh,1)-vtxbar(mgs,lr,1))**2 +    &
+     &            0.04*vtxbar(mgs,lh,1)*vtxbar(mgs,lr,1) )
+!       qhacr(mgs) = ehr(mgs)*cx(mgs,lh)*vt*
+!     :     qx(mgs,lr)*0.25*pi*
+!     :      (3.02787*xdia(mgs,lr,2) + 
+!     :       3.30669*xdia(mgs,lh,1)*xdia(mgs,lr,1) + 
+!     :       2.*xdia(mgs,lh,2))
+     
+       qhacr(mgs) = 0.25*pi*ehr(mgs)*cx(mgs,lh)*qx(mgs,lr)*vt*   &
+     &         (  da0lh(mgs)*xdia(mgs,lh,3)**2 +     &
+     &            dab1lh(mgs,lr,lh)*xdia(mgs,lh,3)*xdia(mgs,lr,3) +    &
+     &            da1(lr)*xdia(mgs,lr,3)**2 )
+!       IF ( qhacr(mgs) .gt. 0. .or. tmp .gt. 0.0 ) write(0,*) 'qhacr= ',qhacr(mgs),tmp
+!!        qhacr(mgs) = Min( qhacr(mgs), qrmxd(mgs) )
+!!        chacr(mgs) = qhacr(mgs)*cx(mgs,lr)/qx(mgs,lr)
+!!        chacr(mgs) = min(chacr(mgs),crmxd(mgs))
+
+        qhacr(mgs) = Min( qhacr(mgs), qxmxd(mgs,lr) )
+
+        IF ( temg(mgs) > tfr ) THEN
+          qhacrmlr(mgs) = qhacr(mgs)
+          qhacr(mgs) = 0.0
+        ELSE
+!        chacr(mgs) = Min( qhacr(mgs)*rho0(mgs)/xmas(mgs,lr), cxmxd(mgs,lr) )
+
+!       chacr(mgs) = ehr(mgs)*cx(mgs,lh)*vt*
+!     :     cx(mgs,lr)*0.25*pi*
+!     :      (0.69874*xdia(mgs,lr,2) +
+!     :       1.24001*xdia(mgs,lh,1)*xdia(mgs,lr,1) +
+!     :       2.*xdia(mgs,lh,2))
+
+!        chacr(mgs) = 0.25*pi*ehr(mgs)*cx(mgs,lh)*cx(mgs,lr)*vt*
+!     :         (  da0lh(mgs)*xdia(mgs,lh,3)**2 +
+!     :            dab0lh(mgs,lr)*xdia(mgs,lh,3)*xdia(mgs,lr,3) +
+!     :            da0(lr)*xdia(mgs,lr,3)**2 )
+
+!       IF ( qhacr(mgs) .gt. 0. .or. tmp .gt. 0.0 ) write(0,*) 'chacr= ',chacr(mgs),tmp
+
+        chacr(mgs) = qhacr(mgs)*cx(mgs,lr)/qx(mgs,lr)
+        chacr(mgs) = min(chacr(mgs),crmxd(mgs))
+
+      IF ( lzh .gt. 1 ) THEN
+          tmp = qx(mgs,lh)/cx(mgs,lh)
+
+!          g1 = (6.0 + alpha(mgs,lh))*(5.0 + alpha(mgs,lh))*(4.0 + alpha(mgs,lh))/
+!     :         ((3.0 + alpha(mgs,lh))*(2.0 + alpha(mgs,lh))*(1.0 + alpha(mgs,lh)))
+!          alp = Max( 1.0, alpha(mgs,lh)+1. )
+!          g1 = (6.0 + alp)*(5.0 + alp)*(4.0 + alp)/
+!     :         ((3.0 + alp)*(2.0 + alp)*(1.0 + alp))
+!        zhacr(mgs) =  g1*(6.*rho0(mgs)/(pi*1000.))**2*( 2.*( tmp ) * qhacr(mgs) - tmp**2 * chacr(mgs) )
+!        zhacr(mgs) =  g1*(6.*rho0(mgs)/(pi*xdn(mgs,lh)))**2*( 2.*( tmp ) * qhacr(mgs) )
+      ENDIF
+      ENDIF ! temg > tfr
+      
+      ELSE
+       IF ( lwsm6 .and. ipconc == 0 ) THEN
+         vt = vt2ave(mgs)
+       ELSE
+         vt = vtxbar(mgs,lh,1)
+       ENDIF
+
+      qhacr(mgs) =   &
+     &   min(   &
+     &   ((0.25)*pi/gf4)*ehr(mgs)*qx(mgs,lr)*cx(mgs,lh)   &
+     &  *abs(vt-vtxbar(mgs,lr,1))   &
+     &  *(  gf6*gf1*xdia(mgs,lr,2)   &
+     &    + 2.0*gf5*gf2*xdia(mgs,lr,1)*xdia(mgs,lh,1)   &
+     &    + gf4*gf3*xdia(mgs,lh,2) )   &
+     &  , qrmxd(mgs))
+      
+        IF ( temg(mgs) > tfr ) THEN
+          qhacrmlr(mgs) = qhacr(mgs)
+          qhacr(mgs) = 0.0
+        ENDIF
+      
+      ENDIF
+        IF ( lvol(lh) .gt. 1 ) THEN
+         vhacr(mgs) = rho0(mgs)*qhacr(mgs)/raindn(mgs,lh)
+        ENDIF
+      ENDIF
+      end do
+
+!
+!
+      if (ndebug .gt. 0 ) write(0,*) 'Collection: hail collects xxxxx'
+!
+
+      do mgs = 1,ngscnt
+      qhlacw(mgs) = 0.0
+      vhlacw(mgs) = 0.0
+      vhlsoak(mgs) = 0.0
+      IF ( lhl > 1 .and. .true.) THEN
+        vtmax = (gz(igs(mgs),jgs,kgs(mgs))/dtp)
+        vtxbar(mgs,lhl,1) = Min( vtmax, vtxbar(mgs,lhl,1))
+        vtxbar(mgs,lhl,2) = Min( vtmax, vtxbar(mgs,lhl,2))
+        vtxbar(mgs,lhl,3) = Min( vtmax, vtxbar(mgs,lhl,3))
+      ENDIF
+
+      IF ( lhl > 0 ) THEN
+      rarx(mgs,lhl) = 0.0
+      ENDIF
+
+      IF ( lhl .gt. 1 .and. ehlw(mgs) .gt. 0.0 ) THEN
+
+
+!        IF ( ipconc .ge. 2 ) THEN
+
+            vt = abs(vtxbar(mgs,lhl,1)-vtxbar(mgs,lc,1))
+
+          qhlacw(mgs) = 0.25*pi*ehlw(mgs)*cx(mgs,lhl)*qx(mgs,lc)*vt*   &
+     &         (  da0lhl(mgs)*xdia(mgs,lhl,3)**2 +     &
+     &            dab1lh(mgs,lc,lhl)*xdia(mgs,lhl,3)*xdia(mgs,lc,3) +    &
+     &            da1(lc)*xdia(mgs,lc,3)**2 )
+
+
+          qhlacw(mgs) = Min( qhlacw(mgs), 0.5*qx(mgs,lc)/dtp )
+
+          IF ( lvol(lhl) .gt. 1 ) THEN
+
+             IF ( temg(mgs) .lt. 273.15) THEN
+             rimdn(mgs,lhl) = rimc1*(-((0.5)*(1.e+06)*xdia(mgs,lc,1))   &
+     &                *((0.60)*vtxbar(mgs,lhl,1))   &
+     &                /(temg(mgs)-273.15))**(rimc2)
+             rimdn(mgs,lhl) = Min( Max( hldnmn, rimc3, rimdn(mgs,lhl) ), rimc4 )
+             ELSE
+             rimdn(mgs,lhl) = 1000.
+             ENDIF
+
+             vhlacw(mgs) = rho0(mgs)*qhlacw(mgs)/rimdn(mgs,lhl)
+
+          ENDIF
+
+
+        IF ( qx(mgs,lhl) .gt. qxmin(lhl) .and. ipelec .gt. 0 ) THEN
+         rarx(mgs,lhl) =     &
+     &    qhlacw(mgs)*1.0e3*rho0(mgs)/((pi/2.0)*xdia(mgs,lhl,2)*cx(mgs,lhl))
+        ENDIF
+
+      ENDIF
+      end do
+
+      qhlaci(:) = 0.0
+      IF ( lhl .gt. 1  ) THEN
+      do mgs = 1,ngscnt
+      IF ( ehli(mgs) .gt. 0.0 ) THEN
+       IF (  ipconc .ge. 5 ) THEN
+
+       vt = Sqrt((vtxbar(mgs,lhl,1)-vtxbar(mgs,li,1))**2 +    &
+     &            0.04*vtxbar(mgs,lhl,1)*vtxbar(mgs,li,1) )
+
+          qhlaci(mgs) = 0.25*pi*ehli(mgs)*cx(mgs,lhl)*qx(mgs,li)*vt*   &
+     &         (  da0lhl(mgs)*xdia(mgs,lhl,3)**2 +     &
+     &            dab1lh(mgs,li,lhl)*xdia(mgs,lhl,3)*xdia(mgs,li,3) +    &
+     &            da1(li)*xdia(mgs,li,3)**2 )
+          qhlaci(mgs) = Min( qhlaci(mgs), qimxd(mgs) )
+       ENDIF
+      ENDIF
+      end do
+      ENDIF
+!
+      qhlacs(:) = 0.0
+      IF ( lhl .gt. 1 ) THEN
+      do mgs = 1,ngscnt
+      IF ( ehls(mgs) .gt. 0.0) THEN
+       IF ( ipconc .ge. 5 ) THEN
+
+       vt = Sqrt((vtxbar(mgs,lhl,1)-vtxbar(mgs,ls,1))**2 +    &
+     &            0.04*vtxbar(mgs,lhl,1)*vtxbar(mgs,ls,1) )
+
+          qhlacs(mgs) = 0.25*pi*ehli(mgs)*cx(mgs,lhl)*qx(mgs,ls)*vt*   &
+     &         (  da0lhl(mgs)*xdia(mgs,lhl,3)**2 +     &
+     &            dab1lh(mgs,ls,lhl)*xdia(mgs,lhl,3)*xdia(mgs,ls,3) +    &
+     &            da1(ls)*xdia(mgs,ls,3)**2 )
+
+          qhlacs(mgs) = Min( qhlacs(mgs), qsmxd(mgs) )
+
+        ENDIF
+      ENDIF
+      end do
+      ENDIF
+
+
+      do mgs = 1,ngscnt
+      qhlacr(mgs) = 0.0
+      qhlacrmlr(mgs) = 0.0
+      chlacr(mgs) = 0.0
+      vhlacr(mgs) = 0.0
+      IF ( lhl .gt. 1 .and. temg(mgs) .gt. tfr ) raindn(mgs,lhl) = 1000.0
+
+      IF ( lhl .gt. 1 .and. ehlr(mgs) .gt. 0.0 ) THEN
+      IF ( ipconc .ge. 3 ) THEN
+       vt = Sqrt((vtxbar(mgs,lhl,1)-vtxbar(mgs,lr,1))**2 +    &
+     &            0.04*vtxbar(mgs,lhl,1)*vtxbar(mgs,lr,1) )
+
+       qhlacr(mgs) = 0.25*pi*ehlr(mgs)*cx(mgs,lhl)*qx(mgs,lr)*vt*   &
+     &         (  da0lhl(mgs)*xdia(mgs,lhl,3)**2 +     &
+     &            dab1lh(mgs,lr,lhl)*xdia(mgs,lhl,3)*xdia(mgs,lr,3) +    &
+     &            da1(lr)*xdia(mgs,lr,3)**2 )
+!       IF ( qhacr(mgs) .gt. 0. .or. tmp .gt. 0.0 ) write(0,*) 'qhacr= ',qhacr(mgs),tmp
+!!        qhacr(mgs) = Min( qhacr(mgs), qrmxd(mgs) )
+!!        chacr(mgs) = qhacr(mgs)*cx(mgs,lr)/qx(mgs,lr)
+!!        chacr(mgs) = min(chacr(mgs),crmxd(mgs))
+
+        qhlacr(mgs) = Min( qhlacr(mgs), qxmxd(mgs,lr) )
+
+     
+        qhlacrmlr(mgs) = qhlacr(mgs)
+        IF ( temg(mgs) > tfr ) THEN
+        qhlacr(mgs) = 0.0
+        ELSE
+        chlacr(mgs) = 0.25*pi*ehlr(mgs)*cx(mgs,lhl)*cx(mgs,lr)*vt*   &
+     &         (  da0lhl(mgs)*xdia(mgs,lhl,3)**2 +     &
+     &            dab0(lhl,lr)*xdia(mgs,lhl,3)*xdia(mgs,lr,3) +    &
+     &            da0(lr)*xdia(mgs,lr,3)**2 )
+
+        chlacr(mgs) = min(chlacr(mgs),crmxd(mgs))
+
+        IF ( lvol(lhl) .gt. 1 ) THEN
+         vhlacr(mgs) = rho0(mgs)*qhlacr(mgs)/raindn(mgs,lhl)
+        ENDIF
+        ENDIF
+      ENDIF
+      ENDIF
+      end do
+
+
+
+!
+!
+!
+!
+!      if (ndebug .gt. 0 ) write(0,*) 'Collection: Cloud collects xxxxx'
+
+      if (ndebug .gt. 0 ) write(0,*) 'Collection: cloud ice collects xxxx2'
+!
+      do mgs = 1,ngscnt
+      qiacw(mgs) = 0.0
+      IF ( eiw(mgs) .gt. 0.0 ) THEN
+
+       vt = Sqrt((vtxbar(mgs,li,1)-vtxbar(mgs,lc,1))**2 +    &
+     &            0.04*vtxbar(mgs,li,1)*vtxbar(mgs,lc,1) )
+
+          qiacw(mgs) = 0.25*pi*eiw(mgs)*cx(mgs,li)*qx(mgs,lc)*vt*   &
+     &         (  da0(li)*xdia(mgs,li,3)**2 +     &
+     &            dab1(li,lc)*xdia(mgs,li,3)*xdia(mgs,lc,3) +    &
+     &            da1(lc)*xdia(mgs,lc,3)**2 )
+
+       qiacw(mgs) = Min( qiacw(mgs), qxmxd(mgs,lc) )
+      ENDIF
+      end do
+!
+!
+      if (ndebug .gt. 0 ) write(0,*) 'Collection: cloud ice collects xxxx8'
+!
+      do mgs = 1,ngscnt
+      qiacr(mgs) = 0.0
+      qiacrf(mgs) = 0.0
+      qiacrs(mgs) = 0.0
+      ciacrs(mgs) = 0.0
+      ciacr(mgs) = 0.0
+      ciacrf(mgs) = 0.0
+      viacrf(mgs) = 0.0
+      csplinter(mgs) = 0.0
+      qsplinter(mgs) = 0.0
+      csplinter2(mgs) = 0.0
+      qsplinter2(mgs) = 0.0
+      IF ( iacr .ge. 1 .and. eri(mgs) .gt. 0.0    &
+     &     .and. temg(mgs) .le. 270.15 ) THEN
+      IF ( ipconc .ge. 3 ) THEN
+       ni = 0.0
+         IF ( xdia(mgs,li,1) .ge. 10.e-6 ) THEN
+          ni = ni + cx(mgs,li)*Exp(- (40.e-6/xdia(mgs,li,1))**3 )
+         ENDIF
+       IF ( imurain == 1 ) THEN ! gamma of diameter
+           IF ( iacrsize /= 4 ) THEN
+           IF ( iacrsize .eq. 1 ) THEN
+             ratio = 500.e-6/xdia(mgs,lr,1)
+           ELSEIF ( iacrsize .eq. 2 ) THEN
+             ratio = 300.e-6/xdia(mgs,lr,1)
+           ELSEIF ( iacrsize .eq. 3 ) THEN
+             ratio = 40.e-6/xdia(mgs,lr,1)
+           ELSEIF ( iacrsize .eq. 5 ) THEN
+             ratio = 150.e-6/xdia(mgs,lr,1)
+           ENDIF
+           i = Min(nqiacrratio,Int(ratio*dqiacrratioinv))
+           j = Int(Max(0.0,Min(15.,alpha(mgs,lr)))*dqiacralphainv)
+           delx = ratio - float(i)*dqiacrratio
+           dely = alpha(mgs,lr) - float(j)*dqiacralpha
+           ip1 = Min( i+1, nqiacrratio )
+           jp1 = Min( j+1, nqiacralpha )
+
+           ! interpolate along x, i.e., ratio
+           tmp1 = ciacrratio(i,j) + delx*dqiacrratioinv*(ciacrratio(ip1,j) - ciacrratio(i,j))
+           tmp2 = ciacrratio(i,jp1) + delx*dqiacrratioinv*(ciacrratio(ip1,jp1) - ciacrratio(i,jp1))
+           
+           ! interpolate along alpha
+           
+           nr = (tmp1 + dely*dqiacralphainv*(tmp2 - tmp1))*cx(mgs,lr)
+           
+           ! interpolate along x, i.e., ratio; 
+           tmp1 = qiacrratio(i,j) + delx*dqiacrratioinv*(qiacrratio(ip1,j) - qiacrratio(i,j))
+           tmp2 = qiacrratio(i,jp1) + delx*dqiacrratioinv*(qiacrratio(ip1,jp1) - qiacrratio(i,jp1))
+           
+           ! interpolate along alpha; 
+           
+           qr = (tmp1 + dely*dqiacralphainv*(tmp2 - tmp1))*qx(mgs,lr)
+           
+           ELSE ! iacrsize == 4 : use all
+             nr = cx(mgs,lr)
+             qr = qx(mgs,lr)
+           ENDIF
+
+          vt = Sqrt((vtxbar(mgs,lr,1)-vtxbar(mgs,li,1))**2 +     &
+     &            0.04*vtxbar(mgs,lr,1)*vtxbar(mgs,li,1) )
+
+          qiacr(mgs) = 0.25*pi*eri(mgs)*ni*qr*vt*   &
+     &         (  da0(li)*xdia(mgs,li,3)**2 +     &
+     &            dab1lh(mgs,lr,li)*xdia(mgs,lh,3)*xdia(mgs,li,3) +    &
+     &            da1(lr)*xdia(mgs,lr,3)**2 ) 
+          
+          qiacr(mgs) = Min( qrmxd(mgs), qiacr(mgs) )
+          
+
+          ciacr(mgs) = 0.25*pi*eri(mgs)*ni*nr*vt*   &
+     &         (  da0(li)*xdia(mgs,li,3)**2 +     &
+     &            dab0lh(mgs,lr,li)*xdia(mgs,lr,3)*xdia(mgs,li,3) +    &
+     &            da0(lr)*xdia(mgs,lr,3)**2 ) 
+
+          ciacr(mgs) = Min( crmxd(mgs), ciacr(mgs) )
+          
+!          write(iunit,*) 'qiacr: ',cx(mgs,lr),nr,qx(mgs,lr),qr,qiacr(mgs),ciacr(mgs)
+!          write(iunit,*) 'xdia r li = ',xdia(mgs,lr,3),xdia(mgs,li,3),xdia(mgs,lr,1),xdia(mgs,li,1)
+!          write(iunit,*) 'i,j,ratio = ',i,j,ciacrratio(i,j),qiacrratio(i,j)
+!          write(iunit,*) 'ni,ci = ',ni,cx(mgs,li),qx(mgs,li)
+
+       ELSEIF ( imurain == 3 ) THEN ! gamma of volume
+!   Set nr to the number of drops greater than 40 microns.
+         arg = 1000.*xdia(mgs,lr,3)
+!         nr = cx(mgs,lr)*gaml02( arg )
+!        IF ( iacr .eq. 1 ) THEN
+         IF ( ipconc .ge. 3 ) THEN
+           IF ( iacrsize .eq. 1 ) THEN
+            nr = cx(mgs,lr)*gaml02d500( arg )  ! number greater than 500 microns in diameter
+           ELSEIF ( iacrsize .eq. 2 .or. iacrsize .eq. 5 ) THEN
+            nr = cx(mgs,lr)*gaml02d300( arg )  ! number greater than 300 microns in diameter
+           ELSEIF ( iacrsize .eq. 3 ) THEN
+            nr = cx(mgs,lr)*gaml02( arg ) ! number greater than 40 microns in diameter
+           ELSEIF ( iacrsize .eq. 4 ) THEN
+            nr = cx(mgs,lr) ! all raindrops
+           ENDIF
+         ELSE
+         nr = cx(mgs,lr)*gaml02( arg )
+         ENDIF
+!        ELSEIF ( iacr .eq. 2 ) THEN
+!         nr = cx(mgs,lr)*gaml02d300( arg )  ! number greater than 300 microns in diameter
+!        ENDIF
+       IF ( ni .gt. 0.0 .and. nr .gt. 0.0 ) THEN
+       d0 = xdia(mgs,lr,3)
+       qiacr(mgs) = xdn(mgs,lr)*rhoinv(mgs)*   &
+     &     (0.217239*(0.522295*(d0**5) +    &
+     &      49711.81*(d0**6) -    &
+     &      1.673016e7*(d0**7)+    &
+     &      2.404471e9*(d0**8) -    &
+     &      1.22872e11*(d0**9))*ni*nr)
+      qiacr(mgs) = Min( qrmxd(mgs), qiacr(mgs) )
+      ciacr(mgs) =   &
+     &   (0.217239*(0.2301947*(d0**2) +    &
+     &      15823.76*(d0**3) -    &
+     &      4.167685e6*(d0**4) +    &
+     &      4.920215e8*(d0**5) -    &
+     &      2.133344e10*(d0**6))*ni*nr)
+      ciacr(mgs) = Min( crmxd(mgs), ciacr(mgs) )
+!      ciacr(mgs) = qiacr(mgs)*cx(mgs,lr)/qx(mgs,lr)
+      ENDIF
+      ENDIF
+       IF ( iacr .eq. 1 .or. iacr .eq. 3 ) THEN
+         ciacrf(mgs) = Min(ciacr(mgs), qiacr(mgs)/(1.0*vr1mm*1000.0)*rho0(mgs) ) ! *rzxh(mgs)
+       ELSEIF ( iacr .eq. 2 ) THEN
+         ciacrf(mgs) = ciacr(mgs) ! *rzxh(mgs)
+       ELSEIF ( iacr .eq. 4 ) THEN
+         ciacrf(mgs) = Min(ciacr(mgs), qiacr(mgs)/(1.0*vfrz*1000.0)*rho0(mgs) ) ! *rzxh(mgs)
+       ELSEIF ( iacr .eq. 5 ) THEN
+         ciacrf(mgs) = ciacr(mgs)*rzxh(mgs)
+       ENDIF 
+!      crfrzf(mgs) = Min(crfrz(mgs), qrfrz(mgs)/(bfnu*27.0*vr1mm*1000.0)*rho0(mgs) ) ! rzxh(mgs)*crfrz(mgs)
+       ENDIF
+      
+      
+      ELSE ! single-moment rain
+      qiacr(mgs) =    &
+     &  min(        &
+     &   ((0.25/gf4)*pi)*eri(mgs)*cx(mgs,li)*qx(mgs,lr)   &
+     &  *abs(vtxbar(mgs,lr,1)-vtxbar(mgs,li,1))   &
+     &  *(  gf6*gf1*xdia(mgs,lr,2)    &
+     &    + 2.0*gf5*gf2*xdia(mgs,lr,1)*xdia(mgs,li,1)    &
+     &    + gf4*gf3*xdia(mgs,li,2) )     &
+     &  , qrmxd(mgs))
+      ENDIF
+!      if ( temg(mgs) .gt. 268.15 ) then
+!      qiacr(mgs) = 0.0
+!      ciacr(mgs) = 0.0
+!      end if
+
+      IF ( ipconc .ge. 1 ) THEN
+        IF ( nsplinter .ge. 0 ) THEN
+          csplinter(mgs) = nsplinter*ciacr(mgs)
+        ELSE
+          csplinter(mgs) = -nsplinter*ciacrf(mgs)
+        ENDIF
+        qsplinter(mgs) = Min(0.1*qiacr(mgs), csplinter(mgs)*splintermass/rho0(mgs) ) ! makes splinters smaller if too much mass is taken from graupel
+      ENDIF
+      
+      frach = 1.0
+           IF ( ibiggsnow == 2 .or. ibiggsnow == 3 ) THEN
+           IF ( ciacr(mgs) > qxmin(lh) ) THEN
+           xvfrz = rho0(mgs)*qiacr(mgs)/(ciacr(mgs)*900.) ! mean volume of frozen drops; 900. for frozen drop density
+           frach = 0.5 *(1. +  Tanh(0.2e12 *( xvfrz - 1.15*xvmn(lh))))
+
+             qiacrs(mgs) = (1.-frach)*qiacr(mgs)
+             ciacrs(mgs) = (1.-frach)*ciacr(mgs) ! *rzxh(mgs)
+           
+           ENDIF
+           ENDIF
+
+      qiacrf(mgs) = frach*qiacr(mgs)
+      ciacrf(mgs) = frach*ciacrf(mgs)
+
+      IF ( lvol(lh) > 1 ) THEN
+         viacrf(mgs) = rho0(mgs)*qiacrf(mgs)/rhofrz
+      ENDIF
+      
+      end do
+!
+!
+!
+!
+
+! snow aggregation here
+      if ( ipconc .ge. 4 .or. ipelec .ge. 100 ) then !
+      do mgs = 1,ngscnt
+      csacs(mgs) = 0.0
+      IF ( qx(mgs,ls) > qxmin(ls) .and. ess(mgs) .gt. 0.0 .and. xv(mgs,ls) < 0.25*xvmx(ls) ) THEN
+      csacs(mgs) = rvt*aa2*ess(mgs)*cx(mgs,ls)**2*xv(mgs,ls)
+      csacs(mgs) = min(csacs(mgs),csmxd(mgs))
+      ENDIF
+      end do
+      end if
+!
+!
+      if (ndebug .gt. 0 ) write(0,*) 'ICEZVD_GS: conc 11'
+      if ( ipconc .ge. 2 .or. ipelec .ge. 9 ) then
+      do mgs = 1,ngscnt
+      ciacw(mgs) = 0.0
+      IF ( eiw(mgs) .gt. 0.0 ) THEN
+
+        ciacw(mgs) = qiacw(mgs)*rho0(mgs)/xmas(mgs,lc)
+      ciacw(mgs) = min(ciacw(mgs),ccmxd(mgs))
+      ENDIF
+      end do
+      end if
+
+      if (ndebug .gt. 0 ) write(0,*) 'ICEZVD_GS: conc 18'
+      if ( ipconc .ge. 2 .or. ipelec .ge. 1 ) then
+      do mgs = 1,ngscnt
+       cracw(mgs) = 0.0
+       cracr(mgs) = 0.0
+       ec0(mgs) = 1.e9
+      IF ( qx(mgs,lc) .gt. qxmin(lc) .and. qx(mgs,lr) .gt. qxmin(lr)    &
+     &      .and. qracw(mgs) .gt. 0.0 ) THEN
+
+       IF ( ipconc .lt. 3 ) THEN
+        IF ( erw(mgs) .gt. 0.0 ) THEN
+        cracw(mgs) =   &
+     &   ((0.25)*pi)*erw(mgs)*cx(mgs,lc)*cx(mgs,lr)   &
+     &  *abs(vtxbar(mgs,lr,1)-vtxbar(mgs,lc,1))   &
+     &  *(  gf1*xdia(mgs,lc,2)   &
+     &    + 2.0*gf2*xdia(mgs,lc,1)*xdia(mgs,lr,1)   &
+     &    + gf3*xdia(mgs,lr,2) )
+        ENDIF
+       ELSE ! IF ( ipconc .ge. 3 .and. 
+        IF ( dmrauto <= 0 .or.  rho0(mgs)*qx(mgs,lr) > 1.2*xl2p(mgs) ) THEN  !{
+        IF ( 0.5*xdia(mgs,lr,3) .gt. rh(mgs) ) THEN ! { .or. cx(mgs,lr) .gt. nh(mgs) 
+!        IF ( qx(mgs,lc) .gt. qxmin(lc) .and. qx(mgs,lr) .gt. qxmin(lr) ) THEN
+          IF ( 0.5*xdia(mgs,lr,3) .gt. rwradmn ) THEN ! r > 50.e-6 
+!          DM0CCC=A2*XNC*XNR*(XVC+XVR)                               ! (A11)
+!         NOTE: murain drops out, so same result for imurain = 1 and 3
+            cracw(mgs) = aa2*cx(mgs,lr)*cx(mgs,lc)*(xv(mgs,lc) + xv(mgs,lr))
+          ELSE
+            IF ( imurain == 3 ) THEN
+!          DM0CCC=A1*XNC*XNR*(((CNU+2.)/(CNU+1.))*XVC**2+((RNU+2.)/(RNU+1.))*XVR**2) ! (A13)
+            cracw(mgs) = aa1*cx(mgs,lr)*cx(mgs,lc)*   &
+     &          ((cnu + 2.)*xv(mgs,lc)**2/(cnu + 1.) +    &
+     &          (alpha(mgs,lr) + 2.)*xv(mgs,lr)**2/(alpha(mgs,lr) + 1.))
+            ELSE ! imurain == 1 USE CP00 for rain DSD in diameter
+            cracw(mgs) = aa1*cx(mgs,lr)*cx(mgs,lc)*   &
+     &          ((cnu + 2.)*xv(mgs,lc)**2/(cnu + 1.) +    &
+     &          (alpha(mgs,lr) + 6.)*(alpha(mgs,lr) + 5.)*(alpha(mgs,lr) + 4.)*xv(mgs,lr)**2/  &
+     &             ((alpha(mgs,lr) + 3.)*(alpha(mgs,lr) + 2.)*(alpha(mgs,lr) + 1.)) )
+            ENDIF ! imurain
+          ENDIF
+        ENDIF ! } rh
+        ENDIF ! } dmrauto
+       ENDIF ! ipconc
+      ENDIF ! qc > qcmin & qr > qrmin
+        
+! Rain self collection (cracr) and break-up (factor of ec0)
+!
+!       
+        ec0(mgs) = 2.e9
+        IF ( qx(mgs,lr) .gt. qxmin(lr) ) THEN
+        rwrad = 0.5*xdia(mgs,lr,3)
+        IF ( xdia(mgs,lr,3) .gt. 2.0e-3 ) THEN
+          ec0(mgs) = 0.0
+          cracr(mgs) = 0.0
+        ELSE
+         IF ( dmrauto <= 0 .or.  rho0(mgs)*qx(mgs,lr) > 1.2*xl2p(mgs) ) THEN 
+          IF ( xdia(mgs,lr,3) .lt. 6.1e-4 ) THEN
+            ec0(mgs) = 1.0
+          ELSE
+            ec0(mgs) = Exp(-50.0*(50.0*(xdia(mgs,lr,3) - 6.0e-4)))
+          ENDIF
+          
+
+          IF ( rwrad .ge. 50.e-6 ) THEN
+              cracr(mgs) = ec0(mgs)*aa2*cx(mgs,lr)**2*xv(mgs,lr)
+          ELSE
+            IF ( imurain == 3 ) THEN
+             cracr(mgs) = ec0(mgs)*aa1*(cx(mgs,lr)*xv(mgs,lr))**2*   &
+     &                   (alpha(mgs,lr) + 2.)/(alpha(mgs,lr) + 1.)
+            ELSE ! imurain == 1
+             cracr(mgs) = ec0(mgs)*aa1*(cx(mgs,lr)*xv(mgs,lr))**2*   &
+     &                   (alpha(mgs,lr) + 6.)*(alpha(mgs,lr) + 5.)*(alpha(mgs,lr) + 4.)/ &
+     &                  ((alpha(mgs,lr) + 3.)*(alpha(mgs,lr) + 2.)*(alpha(mgs,lr) + 1.))
+              
+            ENDIF
+          ENDIF
+!          cracr(mgs) = Min(cracr(mgs),crmxd(mgs))
+         ENDIF
+        ENDIF
+        ENDIF
+
+!      cracw(mgs) = min(cracw(mgs),ccmxd(mgs))
+      end do
+      end if
+!
+!
+!
+!  Graupel
+!
+      if (ndebug .gt. 0 ) write(0,*) 'ICEZVD_GS: conc 22ii'
+      chacw(:) = 0.0
+      if ( ipconc .ge. 1 .or. ipelec .ge. 1 ) then
+      do mgs = 1,ngscnt
+
+      IF ( ipconc .ge. 5 ) THEN
+       IF ( qhacw(mgs) .gt. 0.0 .and. xmas(mgs,lc) .gt. 0.0 ) THEN
+
+!  This is the explict version of chacw, which turns out to be very close to the
+!  approximation that the droplet size does not change, to within a few percent.
+!  This may _not_ be the case for cnu other than zero!
+!          chacw(mgs) = (ehw(mgs)*cx(mgs,lc)*cx(mgs,lh)*(pi/4.)*
+!     :    abs(vtxbar(mgs,lh,1)-vtxbar(mgs,lc,1))*
+!     :    (2.0*xdia(mgs,lh,1)*(xdia(mgs,lh,1) +
+!     :         xdia(mgs,lc,1)*gf43rds) +
+!     :      xdia(mgs,lc,2)*gf53rds))
+
+!          chacw(mgs) = Min( chacw(mgs), 0.6*cx(mgs,lc)/dtp )
+
+!        chacw(mgs) = qhacw(mgs)*rho0(mgs)/xmas(mgs,lc)
+        chacw(mgs) = qhacw(mgs)*rho0(mgs)/xmascw(mgs)
+!        chacw(mgs) = min(chacw(mgs),cxmxd(mgs,lc))
+        chacw(mgs) = Min( chacw(mgs), 0.5*cx(mgs,lc)/dtp )
+       ELSE
+        qhacw(mgs) = 0.0
+       ENDIF
+      ELSE
+      chacw(mgs) =   &
+     &   ((0.25)*pi)*ehw(mgs)*cx(mgs,lc)*cx(mgs,lh)   &
+     &  *abs(vtxbar(mgs,lh,1)-vtxbar(mgs,lc,1))   &
+     &  *(  gf1*xdia(mgs,lc,2)   &
+     &    + 2.0*gf2*xdia(mgs,lc,1)*xdia(mgs,lh,1)   &
+     &    + gf3*xdia(mgs,lh,2) )
+      chacw(mgs) = min(chacw(mgs),0.5*cx(mgs,lc)/dtp)
+!      chacw(mgs) = min(chacw(mgs),cxmxd(mgs,lc))
+!      chacw(mgs) = min(chacw(mgs),ccmxd(mgs))
+      ENDIF
+      end do
+      end if
+!
+      if (ndebug .gt. 0 ) write(0,*) 'ICEZVD_GS: conc 22kk'
+      chaci(:) = 0.0
+      if ( ipconc .ge. 1 .or. ipelec .ge. 1 ) then
+      do mgs = 1,ngscnt
+      IF ( ehi(mgs) .gt. 0.0 .or. ( ehiclsn(mgs) > 0.0 .and. ipelec > 0 )) THEN
+       IF ( ipconc .ge. 5 ) THEN
+
+       vt = Sqrt((vtxbar(mgs,lh,1)-vtxbar(mgs,li,1))**2 +    &
+     &            0.04*vtxbar(mgs,lh,1)*vtxbar(mgs,li,1) )
+
+          chaci0(mgs) = 0.25*pi*ehiclsn(mgs)*cx(mgs,lh)*cx(mgs,li)*vt*   &
+     &         (  da0lh(mgs)*xdia(mgs,lh,3)**2 +     &
+     &            dab0lh(mgs,li,lh)*xdia(mgs,lh,3)*xdia(mgs,li,3) +    &
+     &            da0(li)*xdia(mgs,li,3)**2 )
+
+       ELSE
+        chaci0(mgs) =   &
+     &   ((0.25)*pi)*ehiclsn(mgs)*cx(mgs,li)*cx(mgs,lh)   &
+     &  *abs(vtxbar(mgs,lh,1)-vtxbar(mgs,li,1))   &
+     &  *(  gf1*xdia(mgs,li,2)   &
+     &    + 2.0*gf2*xdia(mgs,li,1)*xdia(mgs,lh,1)   &
+     &    + gf3*xdia(mgs,lh,2) )
+        ENDIF
+
+        chaci(mgs) = min(ehi(mgs)*chaci0(mgs),cimxd(mgs))
+       ENDIF
+      end do
+      end if
+!
+!
+      if (ndebug .gt. 0 ) write(0,*) 'ICEZVD_GS: conc 22nn'
+      chacs(:) = 0.0
+      if ( ipconc .ge. 1 .or. ipelec .ge. 1 ) then
+      do mgs = 1,ngscnt
+      IF ( ehs(mgs) .gt. 0 ) THEN
+       IF ( ipconc .ge. 5 .or. ( ehsclsn(mgs) > 0.0 .and. ipelec > 0 ) ) THEN
+
+       vt = Sqrt((vtxbar(mgs,lh,1)-vtxbar(mgs,ls,1))**2 +    &
+     &            0.04*vtxbar(mgs,lh,1)*vtxbar(mgs,ls,1) )
+
+          chacs0(mgs) = 0.25*pi*ehsclsn(mgs)*cx(mgs,lh)*cx(mgs,ls)*vt*   &
+     &         (  da0lh(mgs)*xdia(mgs,lh,3)**2 +     &
+     &            dab0lh(mgs,ls,lh)*xdia(mgs,lh,3)*xdia(mgs,ls,3) +    &
+     &            da0(ls)*xdia(mgs,ls,3)**2 )
+
+       ELSE
+      chacs0(mgs) =   &
+     &   ((0.25)*pi)*ehsclsn(mgs)*cx(mgs,ls)*cx(mgs,lh)   &
+     &  *abs(vtxbar(mgs,lh,1)-vtxbar(mgs,ls,1))   &
+     &  *(  gf3*gf1*xdia(mgs,ls,2)   &
+     &    + 2.0*gf2*gf2*xdia(mgs,ls,1)*xdia(mgs,lh,1)   &
+     &    + gf1*gf3*xdia(mgs,lh,2) )
+      ENDIF
+      chacs(mgs) = min(ehs(mgs)*chacs0(mgs),csmxd(mgs))
+      ENDIF
+      end do
+      end if
+
+
+!
+!
+!  Hail
+!
+      if (ndebug .gt. 0 ) write(0,*) 'ICEZVD_GS: conc 22ii'
+      chlacw(:) = 0.0
+      if ( ipconc .ge. 1 .or. ipelec .ge. 1 ) then
+      do mgs = 1,ngscnt
+
+      IF ( lhl .gt. 1 .and. ipconc .ge. 5 ) THEN
+       IF ( qhlacw(mgs) .gt. 0.0 .and. xmas(mgs,lc) .gt. 0.0 ) THEN
+
+!  This is the explict version of chacw, which turns out to be very close to the
+!  approximation that the droplet size does not change, to within a few percent.
+!  This may _not_ be the case for cnu other than zero!
+!          chlacw(mgs) = (ehlw(mgs)*cx(mgs,lc)*cx(mgs,lhl)*(pi/4.)*
+!     :    abs(vtxbar(mgs,lhl,1)-vtxbar(mgs,lc,1))*
+!     :    (2.0*xdia(mgs,lhl,1)*(xdia(mgs,lhl,1) +
+!     :         xdia(mgs,lc,1)*gf43rds) +
+!     :      xdia(mgs,lc,2)*gf53rds))
+
+!          chlacw(mgs) = Min( chlacw(mgs), 0.6*cx(mgs,lc)/dtp )
+
+!        chlacw(mgs) = qhlacw(mgs)*rho0(mgs)/xmas(mgs,lc)
+        chlacw(mgs) = qhlacw(mgs)*rho0(mgs)/xmascw(mgs)
+!        chlacw(mgs) = min(chlacw(mgs),cxmxd(mgs,lc))
+        chlacw(mgs) = Min( chlacw(mgs), 0.5*cx(mgs,lc)/dtp )
+       ELSE
+        qhlacw(mgs) = 0.0
+       ENDIF
+!      ELSE
+!      chlacw(mgs) =
+!     >   ((0.25)*pi)*ehlw(mgs)*cx(mgs,lc)*cx(mgs,lhl)
+!     >  *abs(vtxbar(mgs,lhl,1)-vtxbar(mgs,lc,1))
+!     >  *(  gf1*xdia(mgs,lc,2)
+!     >    + 2.0*gf2*xdia(mgs,lc,1)*xdia(mgs,lhl,1)
+!     >    + gf3*xdia(mgs,lhl,2) )
+!      chlacw(mgs) = min(chlacw(mgs),0.5*cx(mgs,lc)/dtp)
+!      chlacw(mgs) = min(chlacw(mgs),cxmxd(mgs,lc))
+!      chlacw(mgs) = min(chlacw(mgs),ccmxd(mgs))
+      ENDIF
+      end do
+      end if
+!
+      if (ndebug .gt. 0 ) write(0,*) 'ICEZVD_GS: conc 22kk'
+      chlaci(:) = 0.0
+      chlaci0(:) = 0.0
+      if ( ipconc .ge. 1 .or. ipelec .ge. 1 ) then
+      do mgs = 1,ngscnt
+      IF ( lhl .gt. 1 .and. ( ehli(mgs) .gt. 0.0 .or. (ipelec > 0 .and. ehliclsn(mgs) > 0.0) )  ) THEN
+       IF ( ipconc .ge. 5 ) THEN
+
+       vt = Sqrt((vtxbar(mgs,lhl,1)-vtxbar(mgs,li,1))**2 +    &
+     &            0.04*vtxbar(mgs,lhl,1)*vtxbar(mgs,li,1) )
+
+          chlaci0(mgs) = 0.25*pi*ehliclsn(mgs)*cx(mgs,lhl)*cx(mgs,li)*vt*   &
+     &         (  da0lhl(mgs)*xdia(mgs,lhl,3)**2 +     &
+     &            dab0(lhl,li)*xdia(mgs,lhl,3)*xdia(mgs,li,3) +    &
+     &            da0(li)*xdia(mgs,li,3)**2 )
+
+!       ELSE
+!        chlaci(mgs) =
+!     >   ((0.25)*pi)*ehli(mgs)*cx(mgs,li)*cx(mgs,lhl)
+!     >  *abs(vtxbar(mgs,lhl,1)-vtxbar(mgs,li,1))
+!     >  *(  gf1*xdia(mgs,li,2)
+!     >    + 2.0*gf2*xdia(mgs,li,1)*xdia(mgs,lhl,1)
+!     >    + gf3*xdia(mgs,lhl,2) )
+        ENDIF
+
+        chlaci(mgs) = min(ehli(mgs)*chlaci0(mgs),cimxd(mgs))
+       ENDIF
+      end do
+      end if
+!
+!
+      if (ndebug .gt. 0 ) write(0,*) 'ICEZVD_GS: conc 22jj'
+      chlacs(:) = 0.0
+      chlacs0(:) = 0.0
+      if ( ipconc .ge. 1 .or. ipelec .ge. 1 ) then
+      do mgs = 1,ngscnt
+      IF ( lhl .gt. 1 .and. ( ehls(mgs) .gt. 0.0 .or. (ipelec > 0 .and. ehlsclsn(mgs) > 0.0) ) ) THEN
+       IF ( ipconc .ge. 5 ) THEN
+
+       vt = Sqrt((vtxbar(mgs,lhl,1)-vtxbar(mgs,ls,1))**2 +    &
+     &            0.04*vtxbar(mgs,lhl,1)*vtxbar(mgs,ls,1) )
+
+          chlacs0(mgs) = 0.25*pi*ehlsclsn(mgs)*cx(mgs,lhl)*cx(mgs,ls)*vt*   &
+     &         (  da0lhl(mgs)*xdia(mgs,lhl,3)**2 +     &
+     &            dab0(lhl,ls)*xdia(mgs,lhl,3)*xdia(mgs,ls,3) +    &
+     &            da0(ls)*xdia(mgs,ls,3)**2 )
+
+!       ELSE
+!      chlacs(mgs) =
+!     >   ((0.25)*pi)*ehls(mgs)*cx(mgs,ls)*cx(mgs,lhl)
+!     >  *abs(vtxbar(mgs,lhl,1)-vtxbar(mgs,ls,1))
+!     >  *(  gf3*gf1*xdia(mgs,ls,2)
+!     >    + 2.0*gf2*gf2*xdia(mgs,ls,1)*xdia(mgs,lhl,1)
+!     >    + gf1*gf3*xdia(mgs,lhl,2) )
+      ENDIF
+      chlacs(mgs) = min(ehls(mgs)*chlacs0(mgs),csmxd(mgs))
+      ENDIF
+      end do
+      end if
+
+!
+! Ziegler (1985) autoconversion
+!
+!
+      IF ( ipconc .ge. 2 .and. ircnw /= -1) THEN ! DTD: added flag for autoconversion.  If -1, turns off autoconversion
+      if (ndebug .gt. 0 ) write(0,*) 'conc 26a'
+      
+      DO mgs = 1,ngscnt
+        zrcnw(mgs) = 0.0
+        qrcnw(mgs) = 0.0
+        crcnw(mgs) = 0.0
+        cautn(mgs) = 0.0
+      ENDDO
+      
+      DO mgs = 1,ngscnt
+!      qracw(mgs) = 0.0
+!      cracw(mgs) = 0.0
+       IF ( qx(mgs,lc) .gt. qxmin(lc) .and. cx(mgs,lc) .gt. 1000. .and. temg(mgs) .gt. tfrh+4.) THEN
+       ! .and. w(igs(mgs),jgs,kgs(mgs)) > 5.0) THEN ! DTD: added w threshold for testing                                                                                                            
+         volb = xv(mgs,lc)*(1./(1.+CNU))**(1./2.)
+         cautn(mgs) = Min(ccmxd(mgs),   &
+     &      ((CNU+2.)/(CNU+1.))*aa1*cx(mgs,lc)**2*xv(mgs,lc)**2)
+         cautn(mgs) = Max( 0.0d0, cautn(mgs) )
+         IF ( rb(mgs) .le. 7.51d-6 ) THEN
+           t2s = 1.d30
+!           cautn(mgs) = 0.0
+         ELSE
+!         XL2P=2.7E-2*XNC*XVC*((1.E12*RB**3*RC)-0.4)
+         
+!        T2S=3.72E-3/(((1.E4*RB)-7.5)*XNC*XVC) 
+!           t2s = 3.72E-3/(((1.e6*rb)-7.5)*cx(mgs,lc)*xv(mgs,lc))
+!           t2s = 3.72/(((1.e6*rb(mgs))-7.5)*rho0(mgs)*qx(mgs,lc))
+           t2s = 3.72/(1.e6*(rb(mgs)-7.500d-6)*rho0(mgs)*qx(mgs,lc))
+
+           qrcnw(mgs) = Max( 0.0d0, xl2p(mgs)/(t2s*rho0(mgs)) )
+           crcnw(mgs) = Max( 0.0d0, Min(3.5e9*xl2p(mgs)/t2s,0.5*cautn(mgs)) )
+           
+           IF ( dmrauto == 0 ) THEN
+             IF ( qx(mgs,lr)*rho0(mgs) > 1.2*xl2p(mgs) .and. cx(mgs,lr) > cxmin ) THEN ! Cohard and Pinty (2000a) switch over from (18) to (19)
+               crcnw(mgs) = cx(mgs,lr)/qx(mgs,lr)*qrcnw(mgs)
+             ENDIF
+           ELSEIF ( dmrauto == 1  .and. cx(mgs,lr) > cxmin) THEN
+             IF ( qx(mgs,lr) > qxmin(lr) ) THEN
+               tmp = qrcnw(mgs)*cx(mgs,lr)/qx(mgs,lr)
+               crcnw(mgs) = Min(tmp,crcnw(mgs) )
+             ENDIF
+           ELSEIF ( dmrauto == 2  .and. cx(mgs,lr) > cxmin) THEN
+               tmp = crcnw(mgs)
+               tmp2 = qrcnw(mgs)*cx(mgs,lr)/qx(mgs,lr)
+               ! try mass-weighted average of old and new Dmr
+               crcnw(mgs) = (tmp*qrcnw(mgs)+tmp2*qx(mgs,lr))/(qrcnw(mgs)+qx(mgs,lr))
+           ELSEIF ( dmrauto == 3  .and. cx(mgs,lr) > cxmin) THEN ! adapted from MY/CP code
+              tmp = Max( 2.d0*rh(mgs), dble( xdia(mgs,lr,3) ) )
+              crcnw(mgs) = rho0(mgs)*qrcnw(mgs)/(pi/6.*1000.*tmp**3)
+           ENDIF
+           
+           IF ( crcnw(mgs) < 1.e-30 ) qrcnw(mgs) = 0.0
+
+!           IF (  crcnw(mgs) .gt. cautn(mgs) .and. crcnw(mgs) .gt. 1.0 )
+!     :          THEN
+!             write(0,*)  'crcnw,cautn ',crcnw(mgs)/cautn(mgs),
+!     :          crcnw(mgs),cautn(mgs),igs(mgs),kgs(mgs),t2s,qx(mgs,lr)
+!             write(0,*)  '            ',qx(mgs,lc),cx(mgs,lc),0.5e6*xdia(mgs,lc,1)
+!             write(0,*)  '            ',rho0(mgs)*qrcnw(mgs)/crcnw(mgs),
+!     :         1.e6*(( 3/(4.*pi))*rho0(mgs)*qrcnw(mgs)/
+!     :       (crcnw(mgs)*xdn(mgs,lr)))**(1./3.),rh(mgs)*1.e6,rwrad(mgs)
+!           ELSEIF ( crcnw(mgs) .gt. 1.0 .and. cautn(mgs) .gt. 0.) THEN
+!             write(0,*)  'crcnw,cautn ',crcnw(mgs)/cautn(mgs),
+!     :          crcnw(mgs),cautn(mgs),igs(mgs),kgs(mgs),t2s
+!             write(0,*)  '            ',rho0(mgs)*qrcnw(mgs)/crcnw(mgs),
+!     :  1.e6*(( 3*pi/4.)*rho0(mgs)*qrcnw(mgs)/
+!     :   (crcnw(mgs)*xdn(mgs,lr)))**(1./3.)
+!           ENDIF
+!           crcnw(mgs) = Min(cautn(mgs),3.5e9*xl2p(mgs)/t2s)
+
+!           IF ( qrcnw(mgs) .gt. 0.3e-2 ) THEN
+!            write(0,*)  'QRCNW'
+!            write(0,*)  qrcnw(mgs),crcnw(mgs),cautn(mgs)
+!            write(0,*)  xl2p,t2s,rho0(mgs),xv(mgs,lc),cx(mgs,lc),qx(mgs,lc)
+!            write(0,*)  rb,0.5*xdia(mgs,lc,1),mgs,igs(mgs),kgs(mgs)
+!           ENDIF
+!           qrcnw(mgs) = Min(qrcnw(mgs),qcmxd(mgs))
+         ENDIF
+
+
+       ENDIF
+      ENDDO
+
+
+
+      ELSE
+
+!
+!  Berry 1968 auto conversion for rain (Orville & Kopp 1977)
+!
+!
+      if ( ircnw .eq. 4 ) then
+      do mgs = 1,ngscnt
+!      sconvmix(lcw,mgs) = 0.0
+      qrcnw(mgs) =  0.0
+      qdiff = max((qx(mgs,lc)-qminrncw),0.0)
+      if ( qdiff .gt. 0.0 .and. xdia(mgs,lc,1) .gt. 20.0e-6 ) then
+      argrcnw =   &
+     &  ((1.2e-4)+(1.596e-12)*(cx(mgs,lc)*1.0e-6)   &
+     &  /(cwdisp*qdiff*1.0e-3*rho0(mgs)))
+      qrcnw(mgs) = (rho0(mgs)*1e-3)*(qdiff**2)/argrcnw
+!      sconvmix(lcw,mgs) = max(sconvmix(lcw,mgs),0.0)
+      qrcnw(mgs) = (max(qrcnw(mgs),0.0))
+      end if
+      end do
+
+      ENDIF
+!
+!
+!
+!  Berry 1968 auto conversion for rain (Ferrier 1994)
+!
+!
+      if ( ircnw .eq. 5 ) then
+      do mgs = 1,ngscnt
+      qrcnw(mgs) = 0.0
+      qrcnw(mgs) =  0.0
+      qccrit = (pi/6.)*(cx(mgs,lc)*cwdiap**3)*xdn(mgs,lc)/rho0(mgs)
+      qdiff = max((qx(mgs,lc)-qccrit),0.)
+      if ( qdiff .gt. 0.0 .and. cx(mgs,lc) .gt. 1.0 ) then
+      argrcnw = &
+!     >  ((1.2e-4)+(1.596e-12)*cx(mgs,lc)/(cwdisp*rho0(mgs)*qdiff))   &
+     &  ((1.2e-4)+(1.596e-12)*cx(mgs,lc)*1.0e-3/(cwdisp*rho0(mgs)*qdiff))
+      qrcnw(mgs) = &
+!     >  timflg(mgs)*rho0(mgs)*(qdiff**2)/argrcnw   &
+     &  1.0e-3*rho0(mgs)*(qdiff**2)/argrcnw
+      qrcnw(mgs) = Min(qxmxd(mgs,lc), (max(qrcnw(mgs),0.0)) )
+
+!      write(iunit,*) 'qrcnw,cx =',qrcnw(mgs),cx(mgs,lc),mgs,1.e3*qx(mgs,lc),cno(lr)
+      end if
+      end do
+      end if
+
+!
+!
+!  kessler auto conversion for rain.
+!
+      if ( ircnw .eq. 2 ) then
+      do mgs = 1,ngscnt
+      qrcnw(mgs) = 0.0
+      qrcnw(mgs) = (0.001)*max((qx(mgs,lc)-qminrncw),0.0)
+      end do
+      end if
+!
+!  c4 = pi/6
+!  c1 = 0.12-0.32 for colorado storms...typically 0.3-0.4
+!  berry reinhart type conversion (proctor 1988)
+!
+      if ( ircnw .eq. 1 ) then
+      do mgs = 1,ngscnt
+      qrcnw(mgs) = 0.0
+      c1 = 0.2
+      c4 = pi/(6.0)
+      bradp =    &
+     & (1.e+06) * ((c1/(0.38))**(1./3.)) * (xdia(mgs,lc,1)*(0.5))
+      bl2 =   &
+     & (0.027) * ((100.0)*(bradp**3)*(xdia(mgs,lc,1)*(0.5)) - (0.4))
+      bt2 = (bradp -7.5) / (3.72)
+      qrcnw(mgs) = 0.0
+      if ( bl2 .gt. 0.0 .and. bt2 .gt. 0.0 ) then
+      qrcnw(mgs) = bl2 * bt2 * rho0(mgs)   &
+     &  * qx(mgs,lc) * qx(mgs,lc)
+      end if
+      end do
+      end if
+
+
+
+      ENDIF  !  ( ipconc .ge. 2 )
+
+!
+!
+!
+!  Bigg Freezing of Rain
+!
+      if (ndebug .gt. 0 ) write(0,*) 'conc 27a'
+      qrfrz(:) = 0.0
+      qrfrzs(:) = 0.0
+      qrfrzf(:) = 0.0
+      vrfrzf(:) = 0.0
+      crfrz(:) = 0.0
+      crfrzs(:) = 0.0
+      crfrzf(:) = 0.0
+      zrfrz(:)  = 0.0
+      zrfrzf(:)  = 0.0
+      qwcnr(:) = 0.0
+      
+      IF ( .not. ( ipconc == 0 .and. lwsm6 ) ) THEN
+      
+      do mgs = 1,ngscnt 
+      if ( qx(mgs,lr) .gt. qxmin(lr) .and. temcg(mgs) .lt. -5. .and. ibiggopt > 0 ) then
+!      brz = 100.0
+!      arz = 0.66
+       IF ( ipconc .lt. 3 ) THEN
+       qrfrz(mgs) =    &
+     &  min(   &
+     &  (20.0)*(pi**2)*brz*(xdn(mgs,lr)/rho0(mgs))   &
+     &   *cx(mgs,lr)*(xdia(mgs,lr,1)**6)   &
+     &   *(exp(max(-arz*temcg(mgs), 0.0))-1.0)   &
+     &  , qrmxd(mgs))
+        qrfrzf(mgs) = qrfrz(mgs)
+
+!       ELSEIF ( ipconc .ge. 3 .and. xv(mgs,lr) .gt. 1.1*xvmn(lr) ) THEN
+       ELSEIF ( ipconc .ge. 3 ) THEN
+!         tmp = brz*cx(mgs,lr)*(Exp(Max( -arz*temcg(mgs), 0.0 )) - 1.0)
+!         crfrz(mgs) = xv(mgs,lr)*tmp
+
+         frach = 1.0d0
+         
+         IF ( ibiggopt == 2 .and. imurain == 1 ) THEN
+         ! integrate from Bigg diameter (for given supercooling Ts) to infinity
+           
+           volt = exp( 16.2 + 1.0*temcg(mgs) )* 1.0e-6 !  Ts == -temcg ; volt comes from the fit in Fig. 1 in Bigg 1953 
+                                               ! for mean temperature for freezing: -ln (V) = a*Ts - b
+                                               ! volt is given in cm**3, so convert to m**3
+           dbigg = (6./pi* volt )**(1./3.) 
+           
+           ! perhaps should also test that W > V_t_dbigg, i.e., that drops the size of dbigg are being lifted and cooled. 
+           
+             ratio = dbigg/xdia(mgs,lr,1)
+           
+           i = Min(nqiacrratio,Int(ratio*dqiacrratioinv))
+!           j = Int(Max(0.0,Min(15.,alpha(mgs,lr))))
+           j = Int(Max(0.0,Min(15.,alpha(mgs,lr)))*dqiacralphainv)
+           delx = ratio - float(i)*dqiacrratio
+           dely = alpha(mgs,lr) - float(j)*dqiacralpha
+           ip1 = Min( i+1, nqiacrratio )
+           jp1 = Min( j+1, nqiacralpha )
+
+           ! interpolate along x, i.e., ratio; 
+           tmp1 = ciacrratio(i,j) + delx*dqiacrratioinv*(ciacrratio(ip1,j) - ciacrratio(i,j))
+           tmp2 = ciacrratio(i,jp1) + delx*dqiacrratioinv*(ciacrratio(ip1,jp1) - ciacrratio(i,jp1))
+           
+           ! interpolate along alpha; 
+           
+           crfrz(mgs) = (tmp1 + dely*dqiacralphainv*(tmp2 - tmp1))*cx(mgs,lr)/dtp
+           
+           ! interpolate along x, i.e., ratio; 
+           tmp1 = qiacrratio(i,j) + delx*dqiacrratioinv*(qiacrratio(ip1,j) - qiacrratio(i,j))
+           tmp2 = qiacrratio(i,jp1) + delx*dqiacrratioinv*(qiacrratio(ip1,jp1) - qiacrratio(i,jp1))
+           
+           ! interpolate along alpha; 
+           
+           qrfrz(mgs) = (tmp1 + dely*dqiacralphainv*(tmp2 - tmp1))*qx(mgs,lr)/dtp
+           
+           
+           
+           IF ( dbigg < Min(dfrz,dhmn) .and. ( ibiggsnow == 1 .or. ibiggsnow == 3 ) ) THEN ! convert some to snow or ice crystals
+            ! temporarily store qrfrz and crfrz in snow terms
+            crfrzs(mgs) = qrfrz(mgs)
+            qrfrzs(mgs) = crfrz(mgs)
+
+
+           ! recalculate using dhmn for ratio
+           ratio = Min(dfrz,dhmn)/xdia(mgs,lr,1)
+           
+           i = Min(nqiacrratio,Int(ratio*dqiacrratioinv))
+!           j = Int(Max(0.0,Min(15.,alpha(mgs,lr))))
+           j = Int(Max(0.0,Min(15.,alpha(mgs,lr)))*dqiacralphainv)
+           delx = ratio - float(i)*dqiacrratio
+           dely = alpha(mgs,lr) - float(j)*dqiacralpha
+           ip1 = Min( i+1, nqiacrratio )
+           jp1 = Min( j+1, nqiacralpha )
+
+           ! interpolate along x, i.e., ratio; 
+           tmp1 = ciacrratio(i,j) + delx*dqiacrratioinv*(ciacrratio(ip1,j) - ciacrratio(i,j))
+           tmp2 = ciacrratio(i,jp1) + delx*dqiacrratioinv*(ciacrratio(ip1,jp1) - ciacrratio(i,jp1))
+           
+           ! interpolate along alpha; 
+           
+           crfrz(mgs) = (tmp1 + dely*dqiacralphainv*(tmp2 - tmp1))*cx(mgs,lr)/dtp
+           
+           ! interpolate along x, i.e., ratio; 
+           tmp1 = qiacrratio(i,j) + delx*dqiacrratioinv*(qiacrratio(ip1,j) - qiacrratio(i,j))
+           tmp2 = qiacrratio(i,jp1) + delx*dqiacrratioinv*(qiacrratio(ip1,jp1) - qiacrratio(i,jp1))
+           
+           ! interpolate along alpha; 
+           
+           qrfrz(mgs) = (tmp1 + dely*dqiacralphainv*(tmp2 - tmp1))*qx(mgs,lr)/dtp
+
+           ! now subtract off the difference
+            crfrzs(mgs) = crfrzs(mgs) - crfrz(mgs)
+            qrfrzs(mgs) = qrfrzs(mgs) - qrfrz(mgs)
+
+           
+           ELSE
+            crfrzs(mgs) = 0.0
+            qrfrzs(mgs) = 0.0
+           ENDIF
+           
+           IF ( (qrfrzs(mgs) + qrfrz(mgs))*dtp > qx(mgs,lr) ) THEN
+             fac = ( qrfrzs(mgs) + qrfrz(mgs) )*dtp/qx(mgs,lr)
+             qrfrz(mgs) = fac*qrfrz(mgs)
+             qrfrzs(mgs) = fac*qrfrzs(mgs)
+             qrfrzf(mgs) = fac*qrfrzf(mgs)
+             crfrz(mgs) = fac*crfrz(mgs)
+             crfrzs(mgs) = fac*crfrzs(mgs)
+             crfrzf(mgs) = fac*crfrzf(mgs)
+           ENDIF
+!           IF ( (crfrzs(mgs) + crfrz(mgs))*dtp > cx(mgs,lr) ) THEN
+!             fac = ( crfrzs(mgs) + crfrz(mgs) )*dtp/cx(mgs,lr)
+!             crfrz(mgs) = fac*crfrz(mgs)
+!             crfrzs(mgs) = fac*crfrzs(mgs)
+!           ENDIF
+           
+           qrfrzf(mgs) = qrfrz(mgs)
+           crfrzf(mgs) = crfrz(mgs)
+           
+           qrfrz(mgs) = qrfrzf(mgs) + qrfrzs(mgs)
+           crfrz(mgs) = crfrzf(mgs) + crfrzs(mgs)
+
+           
+         ELSE ! ibiggopt == 1 
+         
+         tmp = xv(mgs,lr)*brz*cx(mgs,lr)*(Exp(Max( -arz*temcg(mgs), 0.0 )) - 1.0)
+         IF ( .false. .and. tmp .gt. cxmxd(mgs,lr) ) THEN ! {
+!           write(iunit,*) 'Bigg Freezing problem!',mgs,igs(mgs),kgs(mgs)
+!           write(iunit,*)  'tmp, cx(lr), xv = ',tmp, cx(mgs,lr), xv(mgs,lr), (Exp(Max( -arz*temcg(mgs), 0.0 )) - 1.0)
+!           write(iunit,*)  'qr,temcg = ',qx(mgs,lr)*1000.,temcg(mgs)
+           crfrz(mgs) = cxmxd(mgs,lr) ! cx(mgs,lr)/dtp
+           qrfrz(mgs) = qxmxd(mgs,lr) ! qx(mgs,lr)/dtp
+!           STOP
+         ELSE ! } {
+         crfrz(mgs) = tmp
+ !        crfrzfmx = cx(mgs,lr)*Exp(-4./3.*pi*(40.e-6)**3/xv(mgs,lr))
+ !        IF ( crfrz(mgs) .gt. crfrzmx ) THEN
+ !          crfrz(mgs) = crfrzmx
+ !          qrfrz(mgs) = bfnu*xmas(mgs,lr)*rhoinv(mgs)*crfrzmx
+ !          qwcnr(mgs) = cx(mgs,lr) - crfrzmx
+ !        ELSE
+         IF ( lzr < 1 ) THEN
+           IF ( imurain == 3 ) THEN
+             bfnu = bfnu0
+           ELSE !imurain == 1
+             bfnu = bfnu1
+           ENDIF
+         ELSE
+ !         bfnu = 1.0 ! (alpha(mgs,lr)+2.0)/(alpha(mgs,lr)+1.)
+           IF ( imurain == 3 ) THEN
+             bfnu = (alpha(mgs,lr)+2.0)/(alpha(mgs,lr)+1.)
+           ELSE !imurain == 1
+!             bfnu = bfnu1
+            bfnu = (4. + alpha(mgs,lr))*(5. + alpha(mgs,lr))*(6. + alpha(mgs,lr))/  &
+     &            ((1. + alpha(mgs,lr))*(2. + alpha(mgs,lr))*(3. + alpha(mgs,lr)))
+!            bfnu = 1.
+           ENDIF
+         ENDIF 
+         qrfrz(mgs) = bfnu*xmas(mgs,lr)*rhoinv(mgs)*crfrz(mgs)
+
+         qrfrz(mgs) = Min( qrfrz(mgs), 1.*qx(mgs,lr)/dtp ) ! qxmxd(mgs,lr) 
+         crfrz(mgs) = Min( crfrz(mgs), 1.*cx(mgs,lr)/dtp ) !cxmxd(mgs,lr) 
+         qrfrz(mgs) = Min( qrfrz(mgs), qx(mgs,lr) )
+         qrfrzf(mgs) = qrfrz(mgs)
+         ENDIF !}
+
+         
+         
+         
+         IF ( crfrz(mgs) .gt. qxmin(lh) ) THEN
+!          IF ( xdia(mgs,lr,1) .lt. 200.e-6 ) THEN
+!           IF ( xv(mgs,lr) .lt. xvmn(lh) ) THEN
+           
+           IF ( ibiggsnow == 1 .or. ibiggsnow == 3 ) THEN
+           xvfrz = rho0(mgs)*qrfrz(mgs)/(crfrz(mgs)*900.) ! mean volume of frozen drops; 900. for frozen drop density
+           frach = 0.5 *(1. +  Tanh(0.2e12 *( xvfrz - 1.15*xvmn(lh))))
+
+             qrfrzs(mgs) = (1.-frach)*qrfrz(mgs)
+             crfrzs(mgs) = (1.-frach)*crfrz(mgs) ! *rzxh(mgs)
+!             qrfrzf(mgs) = frach*qrfrz(mgs)
+           
+           ENDIF
+           
+           IF ( ipconc .ge. 14 .and. 1.e-3*rho0(mgs)*qrfrz(mgs)/crfrz(mgs) .lt. xvmn(lh) ) THEN
+             qrfrzs(mgs) = qrfrz(mgs)
+             crfrzs(mgs) = crfrz(mgs) ! *rzxh(mgs)
+           ELSE
+!           crfrz(mgs) = Min( crfrz(mgs), 0.1*cx(mgs,lr)/dtp ) ! cxmxd(mgs,lr) )
+!           qrfrz(mgs) = Min( qrfrz(mgs), 0.1*qx(mgs,lr)/dtp ) ! qxmxd(mgs,lr) )
+             qrfrzf(mgs) = frach*qrfrz(mgs)
+!             crfrzf(mgs) = Min( qrfrz(mgs)*rho0(mgs)/(xdn(mgs,lh)*vgra), crfrz(mgs) )
+            IF ( ibfr .le. 1 ) THEN
+             crfrzf(mgs) = frach*Min(crfrz(mgs), dble(qrfrz(mgs)/(bfnu*1.0*vr1mm*1000.0)*rho0(mgs)) ) ! rzxh(mgs)*crfrz(mgs)
+            ELSEIF ( ibfr .eq. 5 ) THEN
+             crfrzf(mgs) = frach*Min(crfrz(mgs), dble(qrfrz(mgs)/(bfnu*vfrz*1000.0)*rho0(mgs)) )*rzxh(mgs)  !*crfrz(mgs)
+            ELSEIF ( ibfr .eq. 2 ) THEN
+             crfrzf(mgs) = frach*Min(crfrz(mgs), dble(qrfrz(mgs)/(bfnu*vfrz*1000.0)*rho0(mgs)) ) ! rzxh(mgs)*crfrz(mgs)
+            ELSEIF ( ibfr .eq. 6 ) THEN
+             crfrzf(mgs) = frach*Max(crfrz(mgs), dble(qrfrz(mgs)/(bfnu*9.*xv(mgs,lr)*1000.0)*rho0(mgs)) ) ! rzxh(mgs)*crfrz(mgs)
+            ELSE
+             crfrzf(mgs) = frach*crfrz(mgs)
+            ENDIF
+!             crfrzf(mgs) = Min(crfrz(mgs), qrfrz(mgs)/(bfnu*xvmn(lh)*1000.0)*rho0(mgs) ) ! rzxh(mgs)*crfrz(mgs)
+!            IF ( lz(lr) > 1 .and. lz(lh) > 1 ) THEN
+!              crfrzf(mgs) = crfrz(mgs)
+!            ENDIF
+            
+           ENDIF
+!         crfrz(mgs) = Min( cxmxd(mgs,lr), rho0(mgs)*qrfrz(mgs)/xmas(mgs,lr) )
+         ELSE
+          crfrz(mgs) = 0.0
+          qrfrz(mgs) = 0.0
+         ENDIF
+
+         ENDIF ! ibiggopt
+
+          IF ( lvol(lh) .gt. 1 ) THEN
+           vrfrzf(mgs) = rho0(mgs)*qrfrzf(mgs)/rhofrz
+          ENDIF
+
+        
+        IF ( nsplinter .ne. 0 ) THEN
+          IF ( nsplinter .gt. 0 ) THEN
+            tmp = nsplinter*crfrz(mgs)
+          ELSE
+            tmp = -nsplinter*crfrzf(mgs)
+          ENDIF
+          csplinter2(mgs) = tmp
+          qsplinter2(mgs) = Min(0.1*qrfrz(mgs), tmp*splintermass/rho0(mgs) ) ! makes splinters smaller if too much mass is taken from graupel
+
+!          csplinter(mgs) = csplinter(mgs) + tmp
+!          qsplinter(mgs) = qsplinter(mgs) + Min(0.1*qrfrz(mgs), tmp*splintermass/rho0(mgs) ) ! makes splinters smaller if too much mass is taken from graupel
+        ENDIF
+!         IF ( temcg(mgs) .lt. -31.0 ) THEN
+!           qrfrz(mgs) = qx(mgs,lr)/dtp + qrcnw(mgs)
+!           qrfrzf(mgs) = qrfrz(mgs)
+!           crfrz(mgs) = cx(mgs,lr)/dtp + crcnw(mgs)
+!           crfrzf(mgs) = Min(crfrz(mgs), qrfrz(mgs)/(bfnu*1.0*vr1mm*1000.0)*rho0(mgs) ) ! rzxh(mgs)*crfrz(mgs)
+!         ENDIF
+!         qrfrz(mgs) = 6.0*xdn(mgs,lr)*xv(mgs,lr)**2*tmp*rhoinv(mgs)
+!         qrfrz(mgs) = Min( qrfrz(mgs), ffrz*qrmxd(mgs) )
+!         crfrz(mgs) = Min( crmxd(mgs), ffrz*crfrz(mgs))
+!         crfrz(mgs) = Min(crmxd(mgs),qrfrz(mgs)*rho0(mgs)/xmas(mgs,lr))
+       ENDIF
+!      if ( temg(mgs) .gt. 268.15 ) then
+      else
+!      end if
+      end if
+      end do
+      
+      ENDIF
+!
+!  Homogeneous freezing of cloud drops to ice crystals
+!  following Bigg (1953) and Ferrier (1994).
+!
+      if (ndebug .gt. 0 ) write(0,*) 'conc 25b'
+      do mgs = 1,ngscnt
+      qwfrz(mgs) = 0.0
+      cwfrz(mgs) = 0.0
+      qwfrzc(mgs) = 0.0
+      cwfrzc(mgs) = 0.0
+      qwfrzp(mgs) = 0.0
+      cwfrzp(mgs) = 0.0
+      IF ( ibfc .ge. 1 .and. temg(mgs) < 268.15 ) THEN
+!      if ( qx(mgs,lc) .gt. qxmin(lc) .and. cx(mgs,lc) .gt. 1.  .and.   &
+!     &     .not. (ipconc .ge. 2 .and. xdia(mgs,lc,1) .lt. 10.e-6) ) then
+      if ( qx(mgs,lc) .gt. qxmin(lc) .and. cx(mgs,lc) .gt. cxmin ) THEN
+      IF ( ipconc < 2 ) THEN
+      qwfrz(mgs) = ((2.0)*(brz)/(xdn(mgs,lc)*cx(mgs,lc)))   &
+     &  *(exp(max(-arz*temcg(mgs), 0.0))-1.0)   &
+     &  *rho0(mgs)*(qx(mgs,lc)**2)
+      qwfrz(mgs) = max(qwfrz(mgs), 0.0)
+      qwfrz(mgs) = min(qwfrz(mgs),qcmxd(mgs))
+         cwfrz(mgs) = qwfrz(mgs)*rho0(mgs)/xmas(mgs,li)
+       ELSEIF ( ipconc .ge. 2 ) THEN
+         IF ( xdia(mgs,lc,3) > 0.e-6 ) THEN
+          volt = exp( 16.2 + 1.0*temcg(mgs) )* 1.0e-6 !  Ts == -temcg ; volt comes from the fit in Fig. 1 in Bigg 1953 
+                                               ! for mean temperature for freezing: -ln (V) = a*Ts - b
+                                               ! volt is given in cm**3, so factor of 1.e-6 to convert to m**3
+!           dbigg = (6./pi* volt )**(1./3.) 
+
+         cwfrz(mgs) = cx(mgs,lc)*Exp(-volt/xv(mgs,lc))/dtp ! number of droplets with volume greater than volt
+!turn off limit so that all can freeze at low temp
+!!!       cwfrz(mgs) = Min(cwfrz(mgs),ccmxd(mgs))
+
+         qwfrz(mgs) = cwfrz(mgs)*xdn0(lc)*rhoinv(mgs)*(volt + xv(mgs,lc))
+!         cwfrz(mgs) = cx(mgs,lc)*qwfrz(mgs)/qx(mgs,lc) ! reset number frozen to same fraction as mass. This makes 
+                                                       ! sure that cwfrz and qwfrz are consistent and prevents 
+                                                       ! spurious creation of ice crystals.
+!         IF ( temg(mgs) < tfrh - 3 ) THEN
+!          cwfrz(mgs) = cx(mgs,lc)
+!          qwfrz(mgs) = qx(mgs,lc)
+!         ENDIF
+!         IF ( qwfrz(mgs) > 0.5*qx(mgs,lc) ) THEN
+!           write(0,*) 'Problem with qwfrz(mgs): qwfrz,temcg,volt,xv,cx = ',qwfrz(mgs),qx(mgs,lc),temcg(mgs),volt,xv(mgs,lc),cx(mgs,lc),cwfrz(mgs)
+!           STOP
+!         ENDIF
+!turn off limit so that all can freeze at low temp
+!!!         qwfrz(mgs) = Min( qwfrz(mgs), qxmxd(mgs,lc) )
+         ENDIF
+       ENDIF
+      if ( temg(mgs) .gt. 268.15 ) then
+      qwfrz(mgs) = 0.0
+      cwfrz(mgs) = 0.0
+      end if
+      end if
+      ENDIF
+!
+      if ( xplate(mgs) .eq. 1 ) then
+      qwfrzp(mgs) = qwfrz(mgs)
+      cwfrzp(mgs) = cwfrz(mgs)
+      end if
+!
+      if ( xcolmn(mgs) .eq. 1 ) then
+      qwfrzc(mgs) = qwfrz(mgs)
+      cwfrzc(mgs) = cwfrz(mgs)
+      end if
+!
+!     qwfrzp(mgs) = 0.0
+!     qwfrzc(mgs) = qwfrz(mgs)
+!
+      end do
+!
+!
+!  Contact freezing nucleation:  factor is to convert from L-1
+!  T < -2C:  via Meyers et al. JAM July, 1992 (31, 708-721)
+!
+      if (ndebug .gt. 0 ) write(0,*) 'conc 25a'
+      do mgs = 1,ngscnt
+
+       ccia(mgs) = 0.0
+
+       cwctfz(mgs) = 0.0
+       qwctfz(mgs) = 0.0
+       ctfzbd(mgs) = 0.0
+       ctfzth(mgs) = 0.0
+       ctfzdi(mgs) = 0.0
+
+       cwctfzc(mgs) = 0.0
+       qwctfzc(mgs) = 0.0
+       cwctfzp(mgs) = 0.0
+       qwctfzp(mgs) = 0.0
+
+       IF ( icfn .ge. 1 ) THEN
+
+       IF ( temg(mgs) .lt. 271.15  .and. qx(mgs,lc) .gt. qxmin(lc)) THEN
+
+!       find available # of ice nuclei & limit value to max depletion of cloud water
+
+        IF ( icfn .ge. 2 ) THEN
+         ccia(mgs) = exp( 4.11 - (0.262)*temcg(mgs) )  ! in m-3, see Walko et al. 1995
+         !ccia(mgs) = Min(cwctfz(mgs), ccmxd(mgs) )
+
+!       now find how many of these collect cloud water to form IN
+!       Cotton et al 1986
+
+         knud(mgs) = 2.28e-5 * temg(mgs) / ( pres(mgs)*raero ) !Walko et al. 1995
+         knuda(mgs) = 1.257 + 0.4*exp(-1.1/knud(mgs))          !Pruppacher & Klett 1997 eqn 11-16
+         gtp(mgs) = 1. / ( fai(mgs) + fbi(mgs) )               !Byers 65 / Cotton 72b
+         dfar(mgs) = kb*temg(mgs)*(1.+knuda(mgs)*knud(mgs))/(6.*pi*fadvisc(mgs)*raero) !P&K 1997 eqn 11-15
+         fn1(mgs) = 2.*pi*xdia(mgs,lc,1)*cx(mgs,lc)*ccia(mgs)
+         fn2(mgs) = -gtp(mgs)*(ssw(mgs)-1.)*felv(mgs)/pres(mgs)
+         fnft(mgs) = 0.4*(1.+1.45*knud(mgs)+0.4*knud(mgs)*exp(-1./knud(mgs)))*(ftka(mgs)+2.5*knud(mgs)*kaero)      &
+     &              / ( (1.+3.*knud(mgs))*(2*ftka(mgs)+5.*knud(mgs)*kaero+kaero) )
+
+
+!      Brownian diffusion
+         ctfzbd(mgs) = fn1(mgs)*dfar(mgs)
+
+!      Thermophoretic contact nucleation
+         ctfzth(mgs) = fn1(mgs)*fn2(mgs)*fnft(mgs)/rho0(mgs)
+
+!      Diffusiophoretic contact nucleation
+         ctfzdi(mgs) = fn1(mgs)*fn2(mgs)*rw*temg(mgs)/(felv(mgs)*rho0(mgs))
+
+         cwctfz(mgs) = max( ctfzbd(mgs) + ctfzth(mgs) + ctfzdi(mgs) , 0.)
+
+!      Sum of the contact nucleation processes
+!         IF ( cx(mgs,lc) .gt. 50.e6) write(6,*) 'ctfzbd,etc = ',ctfzbd(mgs),ctfzth(mgs),ctfzdi(mgs)
+!         IF ( wvel(mgs) .lt. -0.05 ) write(6,*) 'ctfzbd,etc = ',ctfzbd(mgs),ctfzth(mgs),ctfzdi(mgs),cx(mgs,lc)*1e-6,wvel(mgs)
+!         IF ( ssw(mgs) .lt. 1.0 .and. cx(mgs,lc) .gt. 1.e6 .and. cwctfz(mgs) .gt. 1. ) THEN
+!          write(6,*) 'ctfzbd,etc = ',ctfzbd(mgs),ctfzth(mgs),ctfzdi(mgs),cx(mgs,lc)*1e-6,wvel(mgs),fn1(mgs),fn2(mgs)
+!          write(6,*) 'more = ',nstep,ssw(mgs),dfar(mgs),gtp(mgs),felv(mgs),pres(mgs)
+!         ENDIF
+
+        ELSEIF ( icfn .eq. 1 ) THEN
+         IF ( wvel(mgs) .lt. -0.05 ) THEN ! older kludgy version
+           cwctfz(mgs) = cfnfac*exp( (-2.80) - (0.262)*temcg(mgs) )
+           cwctfz(mgs) = Min((1.0e3)*cwctfz(mgs), ccmxd(mgs) )  !convert to m-3
+         ENDIF
+        ENDIF   ! icfn
+
+        IF ( ipconc .ge. 2 ) THEN
+         cwctfz(mgs) = Min( cwctfz(mgs)/dtp, ccmxd(mgs) )
+         qwctfz(mgs) = xmas(mgs,lc)*cwctfz(mgs)/rho0(mgs)
+        ELSE
+         qwctfz(mgs) = (cimasn)*cwctfz(mgs)/(dtp*rho0(mgs))
+         qwctfz(mgs) = max(qwctfz(mgs), 0.0)
+         qwctfz(mgs) = min(qwctfz(mgs),qcmxd(mgs))
+        ENDIF
+
+!
+        if ( xplate(mgs) .eq. 1 ) then
+         qwctfzp(mgs) = qwctfz(mgs)
+         cwctfzp(mgs) = cwctfz(mgs)
+        end if
+!
+        if ( xcolmn(mgs) .eq. 1 ) then
+         qwctfzc(mgs) = qwctfz(mgs)
+         cwctfzc(mgs) = cwctfz(mgs)
+        end if
+!
+!     qwctfzc(mgs) = qwctfz(mgs)
+!     qwctfzp(mgs) = 0.0
+!
+       end if
+
+       ENDIF ! icfn
+
+      end do
+!
+!
+!
+! Hobbs-Rangno ice enhancement (Ferrier, 1994)
+!
+      if (ndebug .gt. 0 ) write(0,*) 'conc 23a'
+      dtrh = 300.0
+      hrifac = (1.e-3)*((0.044)*(0.01**3))
+      do mgs = 1,ngscnt
+      ciihr(mgs) = 0.0
+      qiihr(mgs) = 0.0
+      cicichr(mgs) = 0.0
+      qicichr(mgs) = 0.0
+      cipiphr(mgs) = 0.0
+      qipiphr(mgs) = 0.0
+      IF ( ihrn .ge. 1 ) THEN
+      if ( qx(mgs,lc) .gt. qxmin(lc) ) then
+      if ( temg(mgs) .lt. 273.15 ) then
+!      write(iunit,'(3(1x,i3),3(1x,1pe12.5))')
+!     : igs(mgs),jgs,kgs(mgs),cx(mgs,lc),rho0(mgs),qx(mgs,lc)
+!      write(iunit,'(1pe15.6)')
+!     :  log(cx(mgs,lc)*(1.e-6)/(3.0)),
+!     :  ((1.e-3)*rho0(mgs)*qx(mgs,lc)),
+!     :  (cx(mgs,lc)*(1.e-6)),
+!     : ((1.e-3)*rho0(mgs)*qx(mgs,lc))/(cx(mgs,lc)*(1.e-6)),
+!     : (alog(cx(mgs,lc)*(1.e-6)/(3.0)) *
+!     >  ((1.e-3)*rho0(mgs)*qx(mgs,lc))/(cx(mgs,lc)*(1.e-6)))
+
+      IF ( Log(cx(mgs,lc)*(1.e-6)/(3.0)) .gt. 0.0 ) THEN
+      ciihr(mgs) = ((1.69e17)/dtrh)   &
+     & *(log(cx(mgs,lc)*(1.e-6)/(3.0)) *   &
+     &  ((1.e-3)*rho0(mgs)*qx(mgs,lc))/(cx(mgs,lc)*(1.e-6)))**(7./3.)
+      ciihr(mgs) = ciihr(mgs)*(1.0e6)
+      qiihr(mgs) = hrifac*ciihr(mgs)/rho0(mgs)
+      qiihr(mgs) = max(qiihr(mgs), 0.0)
+      qiihr(mgs) = min(qiihr(mgs),qcmxd(mgs))
+      ENDIF
+!
+      if ( xplate(mgs) .eq. 1 ) then
+      qipiphr(mgs) = qiihr(mgs)
+      cipiphr(mgs) = ciihr(mgs)
+      end if
+!
+      if ( xcolmn(mgs) .eq. 1 ) then
+      qicichr(mgs) = qiihr(mgs)
+      cicichr(mgs) = ciihr(mgs)
+      end if
+!
+!     qipiphr(mgs) = 0.0
+!     qicichr(mgs) = qiihr(mgs)
+!
+      end if
+      end if
+      ENDIF ! ihrn
+      end do
+!
+!
+!
+!  simple frozen rain to hail conversion.  All of the
+!  frozen rain larger than 5.0e-3 m in diameter are converted
+!  to hail.  This is done by considering the equation for
+!  frozen rain mixing ratio:
+!
+!
+!  qfw = [ cno(lf) * pi * fwdn / (6 rhoair) ]
+!
+!         /inf
+!      *  |     fwdia*3 exp(-dia/fwdia) d(dia)
+!         /Do
+!
+!  The amount to be reclassified as hail is the integral above from
+!  Do to inf where Do is 5.0e-3 m.
+!
+!
+!  qfauh = [ cno(lf) * pi * fwdn / (6 rhoair) ]
+!
+!
+
+
+      hdia0 = 300.0e-6
+      do mgs = 1,ngscnt
+      qscnvi(mgs) = 0.0
+      cscnvi(mgs) = 0.0
+      cscnvis(mgs) = 0.0
+!      IF ( .false. ) THEN
+!      IF ( temg(mgs) .lt. tfr .and. ssi(mgs) .gt. 1.01 .and. qx(mgs,li) .gt. qxmin(li) ) THEN
+      IF ( temg(mgs) .lt. tfr .and. qx(mgs,li) .gt. qxmin(li) ) THEN
+        IF ( ipconc .ge. 4 .and. .false. ) THEN
+         if ( cx(mgs,li) .gt. 10. .and. xdia(mgs,li,1) .gt. 50.e-6 ) then !{
+         cirdiatmp =   &
+     &  (qx(mgs,li)*rho0(mgs)   &
+     & /(pi*xdn(mgs,li)*cx(mgs,li)))**(1./3.)
+          IF ( cirdiatmp .gt. 100.e-6 ) THEN !{
+          qscnvi(mgs) =   &
+     &  ((pi*xdn(mgs,li)*cx(mgs,li)) / (6.0*rho0(mgs)*dtp))   &
+     & *exp(-hdia0/cirdiatmp)   &
+     & *( (hdia0**3) + 3.0*(hdia0**2)*cirdiatmp   &
+     &  + 6.0*(hdia0)*(cirdiatmp**2) + 6.0*(cirdiatmp**3) )
+      qscnvi(mgs) =   &
+     &  min(qscnvi(mgs),qimxd(mgs))
+          IF ( ipconc .ge. 4 ) THEN
+            cscnvi(mgs) = Min( cimxd(mgs), cx(mgs,li)*Exp(-hdia0/cirdiatmp))
+          ENDIF
+         ENDIF  ! }
+        end if ! }
+
+       ELSEIF ( ipconc .lt. 4 ) THEN
+
+        qscnvi(mgs) = 0.001*eii(mgs)*max((qx(mgs,li)-1.e-3),0.0)
+        qscnvi(mgs) = min(qscnvi(mgs),qxmxd(mgs,li))
+        cscnvi(mgs) = qscnvi(mgs)*rho0(mgs)/xmas(mgs,li)
+        cscnvis(mgs) = 0.5*cscnvi(mgs)
+
+       ENDIF
+      ENDIF
+!      ENDIF
+      end do
+
+!
+!  Ventilation coeficients
+!
+      do mgs = 1,ngscnt
+      fvent(mgs) = (fschm(mgs)**(1./3.)) * (fakvisc(mgs)**(-0.5))
+      end do
+!
+!
+      if ( ndebug .gt. 0 ) write(0,*) 'civent'
+!
+      civenta = 1.258e4
+      civentb = 2.331
+      civentc = 5.662e4
+      civentd = 2.373
+      civente = 0.8241
+      civentf = -0.042
+      civentg = 1.70
+
+      do mgs = 1,ngscnt
+      IF ( icond .eq. 1 .or. temg(mgs) .le. tfrh    &
+     &      .or. (qx(mgs,lr) .le. qxmin(lr) .and. qx(mgs,lc) .le. qxmin(lc)) ) THEN
+      IF ( qx(mgs,li) .gt. qxmin(li) ) THEN
+      cireyn =   &
+     &  (civenta*xdia(mgs,li,1)**civentb   &
+     &  +civentc*xdia(mgs,li,1)**civentd)   &
+     &  /   &
+     &  (civente*xdia(mgs,li,1)**civentf+civentg)
+      xcivent = (fschm(mgs)**(1./3.))*((cireyn/fakvisc(mgs))**0.5)
+      if ( xcivent .lt. 1.0 ) then
+      civent(mgs) = 1.0 + 0.14*xcivent**2
+      end if
+      if ( xcivent .ge. 1.0 ) then
+      civent(mgs) = 0.86 + 0.28*xcivent
+      end if
+      ELSE
+       civent(mgs) = 0.0
+      ENDIF
+      ENDIF ! icond .eq. 1
+      end do
+
+!
+!
+      igmrwa = 100.0*2.0
+      igmrwb = 100.*((5.0+br)/2.0)
+      rwventa = (0.78)*gmoi(igmrwa)  ! 0.78
+      rwventb = (0.308)*gmoi(igmrwb) ! 0.562825
+      do mgs = 1,ngscnt
+      IF ( qx(mgs,lr) .gt. qxmin(lr) ) THEN
+        IF ( ipconc .ge. 3 ) THEN
+          IF ( imurain == 3 ) THEN
+           IF ( izwisventr == 1 ) THEN
+            rwvent(mgs) = ventrx(mgs)*(1.6 + 124.9*(1.e-3*rho0(mgs)*qx(mgs,lr))**.2046)
+           ELSE ! izwisventr = 2
+!  Following Wisner et al. (1972) but using gamma of volume. Note that Ferrier's rain fall speed does not integrate with gamma of volume, so using Vr = ar*d^br
+          rwvent(mgs) =   &
+     &  (0.78*ventrx(mgs) + 0.308*ventrxn(mgs)*fvent(mgs)   &
+     &   *Sqrt((ar*rhovt(mgs)))   &
+     &    *(xdia(mgs,lr,1)**((1.0+br)/2.0)) )
+           ENDIF
+
+          ELSE ! imurain == 1
+       ! linear interpolation of complete gamma function
+!        tmp = 2. + alpha(mgs,lr)
+!        i = Int(dgami*(tmp))
+!        del = tmp - dgam*i
+!        x = gmoi(i) + (gmoi(i+1) - gmoi(i))*del*dgami
+
+        IF ( iferwisventr == 1 ) THEN
+
+        alpr = Min(alpharmax,alpha(mgs,lr) )
+
+        x =  1. + alpha(mgs,lr)
+
+        IF ( lzr > 1 ) THEN ! 3 moment
+        ELSE
+         y = ventrxn(mgs)
+        ENDIF
+
+         vent1 = dble(xdia(mgs,lr,1))**(-2. - alpr)
+         vent2 = dble(1./xdia(mgs,lr,1) + 0.5*fx(lr))**dble(2.5+alpr+0.5*bx(lr))
+        
+        
+        rwvent(mgs) =    &
+     &    0.78*x +    &
+     &    0.308*fvent(mgs)*y*   &
+     &            Sqrt(ax(lr)*rhovt(mgs))*(vent1/vent2)
+       
+        ELSEIF ( iferwisventr == 2 ) THEN
+          
+!  Following Wisner et al. (1972) but using gamma of volume. Note that Ferrier's rain fall speed does not integrate with gamma of volume, so using Vr = ar*d^br
+         x =  1. + alpha(mgs,lr)
+
+           rwvent(mgs) =   &
+     &  (0.78*x + 0.308*ventrxn(mgs)*fvent(mgs)   &
+     &   *Sqrt((ar*rhovt(mgs)))   &
+     &    *(xdia(mgs,lr,1)**((1.0+br)/2.0)) )
+
+          
+          ENDIF ! iferwisventr
+          
+          ENDIF ! imurain
+        ELSE
+         rwvent(mgs) =   &
+     &  (rwventa + rwventb*fvent(mgs)   &
+     &   *Sqrt((ar*rhovt(mgs)))   &
+     &    *(xdia(mgs,lr,1)**((1.0+br)/2.0)) )
+        ENDIF
+      ELSE
+       rwvent(mgs) = 0.0
+      ENDIF
+      end do
+!
+      igmswa = 100.0*2.0
+      igmswb = 100.*((5.0+ds)/2.0)
+      swventa = (0.78)*gmoi(igmswa)
+      swventb = (0.308)*gmoi(igmswb)
+      do mgs = 1,ngscnt
+      IF ( qx(mgs,ls) .gt. qxmin(ls) ) THEN
+      IF ( ipconc .ge. 4 ) THEN
+      swvent(mgs) = 0.65 + 0.44*fvent(mgs)*Sqrt(vtxbar(mgs,ls,1)*xdia(mgs,ls,1))
+      ELSE
+! 10-ice version:
+       swvent(mgs) =   &
+     &  (swventa + swventb*fvent(mgs)   &
+     &   *Sqrt((cs*rhovt(mgs)))   &
+     &   *(xdia(mgs,ls,1)**((1.0+ds)/2.0)) )
+      ENDIF
+      ELSE
+      swvent(mgs) = 0.0
+      ENDIF
+      end do
+!
+!
+
+      igmhwa = 100.0*2.0
+      igmhwb = 100.0*2.75
+      hwventa = (0.78)*gmoi(igmhwa)
+      hwventb = (0.308)*gmoi(igmhwb)
+      hwventc = (4.0*gr/(3.0*cdx(lh)))**(0.25)
+      do mgs = 1,ngscnt
+      IF ( qx(mgs,lh) .gt. qxmin(lh) ) THEN
+       IF ( .false. .or. alpha(mgs,lh) .eq. 0.0 ) THEN
+        hwvent(mgs) =   &
+     &  ( hwventa + hwventb*hwventc*fvent(mgs)   &
+     &    *((xdn(mgs,lh)/rho0(mgs))**(0.25))   &
+     &    *(xdia(mgs,lh,1)**(0.75)))
+       ELSE ! Ferrier 1994, eq. B.36
+       ! linear interpolation of complete gamma function
+!        tmp = 2. + alpha(mgs,lh)
+!        i = Int(dgami*(tmp))
+!        del = tmp - dgam*i
+!        x = gmoi(i) + (gmoi(i+1) - gmoi(i))*del*dgami
+        
+! note that hwvent includes a division by Gamma(1+alpha), so Gamma(2+alpha)/Gamma(1+alpha) = 1 + alpha
+! and g1palp = Gamma(1+alpha) divides into y
+        x =  1. + alpha(mgs,lh)
+
+        tmp = 1 + alpha(mgs,lh)
+        i = Int(dgami*(tmp))
+        del = tmp - dgam*i
+        g1palp = gmoi(i) + (gmoi(i+1) - gmoi(i))*del*dgami
+
+        tmp = 2.5 + alpha(mgs,lh) + 0.5*bxh(mgs)
+        i = Int(dgami*(tmp))
+        del = tmp - dgam*i
+        y = (gmoi(i) + (gmoi(i+1) - gmoi(i))*del*dgami)/g1palp
+        
+        
+        hwventy(mgs) = 0.308*fvent(mgs)*(xdia(mgs,lh,1)**(0.5 + 0.5*bxh(mgs)))*Sqrt(axh(mgs)*rhovt(mgs)) 
+        hwvent(mgs) =    &
+     &  ( 0.78*x +  y*hwventy(mgs) ) !   &
+!     &    0.308*fvent(mgs)*y*(xdia(mgs,lh,1)**(0.5 + 0.5*bxh(mgs)))*   &
+!     &            Sqrt(axh(mgs)*rhovt(mgs)) )
+       
+       ENDIF
+      ELSE
+      hwvent(mgs) = 0.0
+      hwventy(mgs) = 0.0
+      ENDIF
+      end do
+      
+      hlvent(:) = 0.0
+      hlventy(:) = 0.0
+
+      IF ( lhl .gt. 1 ) THEN
+      igmhwa = 100.0*2.0
+      igmhwb = 100.0*2.75
+      hwventa = (0.78)*gmoi(igmhwa)
+      hwventb = (0.308)*gmoi(igmhwb)
+      hwventc = (4.0*gr/(3.0*cdx(lhl)))**(0.25)
+      do mgs = 1,ngscnt
+      IF ( qx(mgs,lhl) .gt. qxmin(lhl) ) THEN
+
+       IF ( .false. .or. alpha(mgs,lhl) .eq. 0.0 ) THEN
+        hlvent(mgs) =   &
+     &  ( hwventa + hwventb*hwventc*fvent(mgs)   &
+     &    *((xdn(mgs,lhl)/rho0(mgs))**(0.25))   &
+     &    *(xdia(mgs,lhl,1)**(0.75)))
+       ELSE ! Ferrier 1994, eq. B.36
+       ! linear interpolation of complete gamma function
+!        tmp = 2. + alpha(mgs,lhl)
+!        i = Int(dgami*(tmp))
+!        del = tmp - dgam*i
+!        x = gmoi(i) + (gmoi(i+1) - gmoi(i))*del*dgami
+
+! note that hlvent includes a division by Gamma(1+alpha), so x = Gamma(2+alpha)/Gamma(1+alpha) = 1 + alpha
+! and g1palp = Gamma(1+alpha) divides into y
+
+        x =  1. + alpha(mgs,lhl)
+
+        tmp = 1 + alpha(mgs,lhl)
+        i = Int(dgami*(tmp))
+        del = tmp - dgam*i
+        g1palp = gmoi(i) + (gmoi(i+1) - gmoi(i))*del*dgami
+
+        tmp = 2.5 + alpha(mgs,lhl) + 0.5*bxhl(mgs)
+        i = Int(dgami*(tmp))
+        del = tmp - dgam*i
+        y = (gmoi(i) + (gmoi(i+1) - gmoi(i))*del*dgami)/g1palp ! ratio of gamma functions
+
+        hlventy(mgs) = 0.308*fvent(mgs)*(xdia(mgs,lhl,1)**(0.5 + 0.5*bxhl(mgs)))*Sqrt(axhl(mgs)*rhovt(mgs)) 
+        
+        hlvent(mgs) =  0.78*x + y*hlventy(mgs)  !   &
+!     &    0.308*fvent(mgs)*y*(xdia(mgs,lhl,1)**(0.5 + 0.5*bxhl(mgs)))*   &
+!     &            Sqrt(axhl(mgs)*rhovt(mgs)))
+!     :            Sqrt(xdn(mgs,lhl)*ax(lhl)*rhovt(mgs)/rg0))/tmp
+
+        ENDIF
+       ENDIF
+      end do
+      ENDIF
+
+!
+!
+!
+!  Wet growth constants
+!
+      do mgs = 1,ngscnt
+      fwet1(mgs) =   &
+     & (2.0*pi)*   &
+     & ( felv(mgs)*fwvdf(mgs)*rho0(mgs)*(qss0(mgs)-qx(mgs,lv))   &
+     &  -ftka(mgs)*temcg(mgs) )   &
+     & / ( rho0(mgs)*(felf(mgs)+fcw(mgs)*temcg(mgs)) )
+      fwet2(mgs) =   &
+     &  (1.0)-fci(mgs)*temcg(mgs)   &
+     & / ( felf(mgs)+fcw(mgs)*temcg(mgs) )
+      end do
+!
+!  Melting constants
+!
+      do mgs = 1,ngscnt
+      fmlt1(mgs) = (2.0*pi)*   &
+     &  ( felv(mgs)*fwvdf(mgs)*(qss0(mgs)-qx(mgs,lv))   &
+     &   -ftka(mgs)*temcg(mgs)/rho0(mgs) )    &
+     &  / (felf(mgs))
+      fmlt2(mgs) = -fcw(mgs)*temcg(mgs)/felf(mgs)
+      end do
+!
+!  Vapor Deposition constants
+!
+      do mgs = 1,ngscnt
+      fvds(mgs) =    &
+     &  (4.0*pi/rho0(mgs))*(ssi(mgs)-1.0)*   &
+     &  (1.0/(fai(mgs)+fbi(mgs)))
+      end do
+      do mgs = 1,ngscnt
+      fvce(mgs) =    &
+     &  (4.0*pi/rho0(mgs))*(ssw(mgs)-1.0)*   &
+     &  (1.0/(fav(mgs)+fbv(mgs)))
+      end do
+
+!
+!  deposition, sublimation, and melting of snow, graupel and hail
+!
+      qsmlr(:) = 0.0
+      qimlr(:) = 0.0 ! this is not used. qi melts to qc way down in the code.
+      qhmlr(:) = 0.0
+      qhlmlr(:) = 0.0
+      qhmlrlg(:) = 0.0
+      qhlmlrlg(:) = 0.0
+      qhfzh(:) = 0.0
+      qhlfzhl(:) = 0.0
+      vhfzh(:) = 0.0
+      vhlfzhl(:) = 0.0
+      qsfzs(:) = 0.0
+      zsmlr(:) = 0.0
+      zhmlr(:) = 0.0
+      zhmlrr(:) = 0.0
+      zhshr(:) = 0.0
+      zhlmlr(:) = 0.0
+      zhlshr(:) = 0.0
+
+      zhshrr(:) = 0.0
+      zhlmlrr(:) = 0.0
+      zhlshrr(:) = 0.0
+
+      csmlr(:) = 0.0
+      chmlr(:) = 0.0
+      chmlrr(:) = 0.0
+      chlmlr(:) = 0.0
+      chlmlrr(:) = 0.0
+
+      if ( .not. mixedphase ) then !{
+      do mgs = 1,ngscnt
+!
+      IF ( temg(mgs) .gt. tfr ) THEN
+      
+      IF (  qx(mgs,ls) .gt. qxmin(ls) ) THEN
+      qsmlr(mgs) =   &
+     &   min(   &
+     &  (c1sw*fmlt1(mgs)*cx(mgs,ls)*swvent(mgs)*xdia(mgs,ls,1) ) & ! /rhosm    &
+     &   , 0.0 )
+      ENDIF
+      
+!       IF ( qx(mgs,ls) .gt. 0.1e-4 ) write(0,*) 'qsmlr: ',qsmlr(mgs),qx(mgs,ls),cx(mgs,ls),fmlt1(mgs),
+!     :        temcg(mgs),swvent(mgs),xdia(mgs,ls,1),qss0(mgs)-qx(mgs,lv)
+!      ELSE
+!       qsmlr(mgs) = 0.0
+!      ENDIF
+! 10ice version:
+!     >   min(
+!     >  (fmlt1(mgs)*cx(mgs,ls)*swvent(mgs)*xdia(mgs,ls,1) +
+!     >   fmlt2(mgs)*(qsacr(mgs)+qsacw(mgs)) )
+!     <   , 0.0 )
+
+      IF (  qx(mgs,lh) .gt. qxmin(lh) ) THEN
+
+      IF ( ibinhmlr == 0 .or. lzh < 1 ) THEN
+       qhmlr(mgs) =   &
+     &   min(   &
+     &  fmlt1(mgs)*cx(mgs,lh)*hwvent(mgs)*xdia(mgs,lh,1)   &
+     &  + fmlt2(mgs)*(qhacrmlr(mgs)+qhacw(mgs))    &
+     &   , 0.0 )
+       ELSEIF ( ibinhmlr == 1 ) THEN ! use incomplete gamma functions to approximate the bin results
+
+       ENDIF
+       
+       
+       IF ( ivhmltsoak > 0 .and. qhmlr(mgs) < 0.0 .and. lvol(lh) > 1 .and. xdn(mgs,lh) .lt. xdnmx(lh) ) THEN
+         ! act as if 100% of the meltwater were soaked into the graupel
+           v1 = (1. - xdn(mgs,lh)/xdnmx(lh))*(vx(mgs,lh) + rho0(mgs)*qhmlr(mgs)/xdn(mgs,lh) )/(dtp) ! volume available for filling
+           v2 = -1.0*rho0(mgs)*qhmlr(mgs)/xdnmx(lh)  ! volume of melted ice if it were refrozen in the matrix
+           
+           vhsoak(mgs) = Min(v1,v2)
+           
+       ENDIF
+
+      ENDIF !  qx(mgs,lh) .gt. qxmin(lh)
+
+      
+      IF ( lhl .gt. 1  .and. lhlw < 1 ) THEN
+
+       IF ( qx(mgs,lhl) .gt. qxmin(lhl) ) THEN
+         IF ( ibinhlmlr == 0  .or. lzhl < 1) THEN
+       qhlmlr(mgs) =   &
+     &   min(   &
+     &  fmlt1(mgs)*cx(mgs,lhl)*hlvent(mgs)*xdia(mgs,lhl,1)   &
+     &  + fmlt2(mgs)*(qhlacrmlr(mgs)+qhlacw(mgs))    &
+     &   , 0.0 )
+
+       ELSEIF ( ibinhlmlr == 1 ) THEN ! use incomplete gamma functions to approximate the bin results
+
+        ENDIF ! ibinhlmlr
+
+
+       IF ( ivhmltsoak > 0 .and.  qhlmlr(mgs) < 0.0 .and. lvol(lhl) > 1 .and. xdn(mgs,lhl) .lt. xdnmx(lhl) ) THEN
+         ! act as if 50% of the meltwater were soaked into the graupel
+           v1 = (1. - xdn(mgs,lhl)/xdnmx(lhl))*(vx(mgs,lhl) + rho0(mgs)*qhlmlr(mgs)/xdn(mgs,lhl) )/(dtp) ! volume available for filling
+           v2 = -1.0*rho0(mgs)*qhlmlr(mgs)/xdnmx(lhl)  ! volume of melted ice if it were refrozen in the matrix
+           
+           vhlsoak(mgs) = Min(v1,v2)
+           
+       ENDIF
+        
+        ENDIF
+       ENDIF
+
+      ENDIF
+      
+!
+!      qimlr(mgs)  = max( qimlr(mgs), -qimxd(mgs) ) 
+!      qsmlr(mgs)  = max( qsmlr(mgs),  -qsmxd(mgs) ) 
+! erm 5/10/2007 changed to next line:
+      if ( .not. mixedphase ) qsmlr(mgs)  = max( qsmlr(mgs),  Min( -qsmxd(mgs), -0.7*qx(mgs,ls)/dtp ) ) 
+      if ( .not. mixedphase ) qhmlr(mgs)  = max( qhmlr(mgs),  Min( -qhmxd(mgs), -0.5*qx(mgs,lh)/dtp ) ) 
+!      qhmlr(mgs)  = max( max( qhmlr(mgs),  -qhmxd(mgs) ) , -0.5*qx(mgs,lh)/dtp ) !limits to 1/2 qh or max depletion
+      qhmlh(mgs)  = 0.
+
+
+      ! Rasmussen and Heymsfield say melt water remains on graupel up to 9 mm before shedding
+
+
+      IF ( lhl .gt. 1 .and. lhlw < 1 ) qhlmlr(mgs)  = max( qhlmlr(mgs),  Min( -qxmxd(mgs,lhl), -0.5*qx(mgs,lhl)/dtp ) )
+
+!
+      end do
+
+      endif  ! } not mixedphase
+!
+      if ( ipconc .ge. 1 ) then
+      do mgs = 1,ngscnt
+      cimlr(mgs)  = (cx(mgs,li)/(qx(mgs,li)+1.e-20))*qimlr(mgs)
+
+      IF ( .not. mixedphase ) THEN
+      IF ( xdia(mgs,ls,1) .gt. 1.e-6 .and. -qsmlr(mgs) .ge. 0.5*qxmin(ls) .and. ipconc .ge. 4 ) THEN
+!      csmlr(mgs)  = rho0(mgs)*qsmlr(mgs)/(xv(mgs,ls)*rhosm)
+      csmlr(mgs)  = (cx(mgs,ls)/(qx(mgs,ls)+1.e-20))*qsmlr(mgs)
+      ELSE
+      csmlr(mgs)  = (cx(mgs,ls)/(qx(mgs,ls)+1.e-20))*qsmlr(mgs)
+      ENDIF
+
+
+!      IF ( xdia(mgs,lh,1) .gt. 1.e-6 .and. Abs(qhmlr(mgs)) .ge. qxmin(lh) ) THEN
+!      chmlr(mgs) = rho0(mgs)*qhmlr(mgs)/(pi*xdn(mgs,lh)*xdia(mgs,lh,1)**3)  ! out of hail
+!      chmlr(mgs) = Max( chmlr(mgs), -chmxd(mgs) )
+!      ELSE
+       chmlr(mgs)  = (cx(mgs,lh)/(qx(mgs,lh)+1.e-20))*qhmlr(mgs)
+!      ENDIF
+
+
+     IF ( chmlr(mgs) < 0.0 ) THEN
+      
+      IF ( ihmlt .eq. 1 ) THEN
+        chmlrr(mgs)  = Min( chmlr(mgs), rho0(mgs)*qhmlr(mgs)/(xdn(mgs,lr)*vmlt) ) ! into rain 
+      ELSEIF ( ihmlt .eq. 2 ) THEN
+        IF ( xv(mgs,lh) .gt. 0.0 .and. chmlr(mgs) .lt. 0.0 ) THEN
+!        chmlrr(mgs) = Min( chmlr(mgs), rho0(mgs)*qhmlr(mgs)/(xdn(mgs,lh)*xv(mgs,lh)) ) ! into rain 
+! guess what, this is the same as chmlr: rho0*qhmlr/xmas(lh) --> cx/qx = rho0/xmas
+          IF(imltshddmr > 0) THEN
+            ! DTD: If Dmg < sheddiam, then assume complete melting into
+            ! maximal raindrop.  Between sheddiam and sheddiam0 mm, linearly ramp down to a 3 mm shed drop
+            tmp = -rho0(mgs)*qhmlr(mgs)/(Min(xdn(mgs,lr)*xvmx(lr), xdn(mgs,lh)*xv(mgs,lh))) ! Min of Maximum raindrop size/mean hail size
+            tmp2 = -rho0(mgs)*qhmlr(mgs)/(xdn(mgs,lr)*vr3mm) ! conc. change for a 3 mm mean drop diameter
+            chmlrr(mgs) = tmp*(sheddiam0-xdia(mgs,lh,3))/(sheddiam0-sheddiam)+tmp2*(xdia(mgs,lh,3)-sheddiam)/(sheddiam0-sheddiam)
+            chmlrr(mgs) = -Max(tmp,Min(tmp2,chmlrr(mgs)))
+          ELSE ! Old method
+            chmlrr(mgs) =  rho0(mgs)*qhmlr(mgs)/(Min(xdn(mgs,lr)*xvmx(lr), xdn(mgs,lh)*xv(mgs,lh)))  ! into rain 
+          ENDIF
+        ELSE
+        chmlrr(mgs) = chmlr(mgs)
+        ENDIF
+      ELSEIF ( ihmlt .eq. 0 ) THEN
+        chmlrr(mgs) = chmlr(mgs)
+      ENDIF
+      
+      ENDIF ! chmlr(mgs) < 0.0
+
+      IF ( lhl .gt. 1 .and. lhlw < 1 .and. .not. mixedphase .and. qhlmlr(mgs) < 0.0 ) THEN ! {
+      
+!      IF ( xdia(mgs,lhl,1) .gt. 1.e-6 .and. Abs(qhlmlr(mgs)) .ge. qxmin(lhl) ) THEN
+!      chlmlr(mgs) = rho0(mgs)*qhlmlr(mgs)/(pi*xdn(mgs,lhl)*xdia(mgs,lhl,1)**3)  ! out of hail
+!      chlmlr(mgs) = Max( chlmlr(mgs), -cxmxd(mgs,lhl) )
+!      ELSE
+      chlmlr(mgs)  = (cx(mgs,lhl)/(qx(mgs,lhl)+1.e-20))*qhlmlr(mgs)
+!      ENDIF
+      
+      IF ( ihmlt .eq. 1 ) THEN
+        chlmlrr(mgs)  = Min( chlmlr(mgs), rho0(mgs)*qhlmlr(mgs)/(xdn(mgs,lr)*vmlt) ) ! into rain 
+      ELSEIF ( ihmlt .eq. 2 ) THEN
+        IF ( xv(mgs,lhl) .gt. 0.0 .and. chlmlr(mgs) .lt. 0.0 ) THEN
+!        chlmlrr(mgs) = rho0(mgs)*qhlmlr(mgs)/(Min(xdn(mgs,lr)*xvmx(lr), xdn(mgs,lhl)*xv(mgs,lhl)))  ! into rain 
+!        chlmlrr(mgs) = Min( chlmlr(mgs), rho0(mgs)*qhlmlr(mgs)/(xdn(mgs,lhl)*xv(mgs,lhl)) ) ! into rain 
+          IF(imltshddmr > 0) THEN
+            tmp = -rho0(mgs)*qhlmlr(mgs)/(Min(xdn(mgs,lr)*xvmx(lr), xdn(mgs,lhl)*xv(mgs,lhl))) ! Min of Maximum raindrop size/mean hail size
+            tmp2 = -rho0(mgs)*qhlmlr(mgs)/(xdn(mgs,lr)*vr3mm) ! conc. change for a 3 mm mean drop diameter
+            chlmlrr(mgs) = tmp*(20.e-3-xdia(mgs,lhl,3))/(20.e-3-sheddiam)+tmp2*(xdia(mgs,lhl,3)-sheddiam)/(20.e-3-sheddiam)
+            chlmlrr(mgs) = -Max(tmp,Min(tmp2,chlmlrr(mgs)))
+          ELSE
+            chlmlrr(mgs) = rho0(mgs)*qhlmlr(mgs)/(Min(xdn(mgs,lr)*xvmx(lr), xdn(mgs,lhl)*xv(mgs,lhl)))  ! into rain 
+          ENDIF
+        ELSE
+        chlmlrr(mgs) = chlmlr(mgs)
+        ENDIF
+      ELSEIF ( ihmlt .eq. 0 ) THEN
+        chlmlrr(mgs) = chlmlr(mgs)
+      ENDIF
+        
+      ENDIF ! }
+
+      ENDIF ! .not. mixedphase
+
+! 10ice versions:
+!      chmlr(mgs)  = (cx(mgs,lh)/(qx(mgs,lh)+1.e-20))*qhmlr(mgs)
+!      chmlrr(mgs) = chmlr(mgs)
+      end do
+      end if
+
+!
+!  deposition/sublimation of ice
+!
+      DO mgs = 1,ngscnt
+
+      rwcap(mgs) = (0.5)*xdia(mgs,lr,1)
+      swcap(mgs) = (0.5)*xdia(mgs,ls,1)
+      hwcap(mgs) = (0.5)*xdia(mgs,lh,1)
+      IF ( lhl .gt. 1 ) hlcap(mgs) = (0.5)*xdia(mgs,lhl,1)
+
+      if ( qx(mgs,li).gt.qxmin(li) .and. xdia(mgs,li,1) .gt. 0.0 ) then
+!
+! from Cotton, 1972 (Part II)
+!
+        cilen(mgs)   = 0.4764*(xdia(mgs,li,1))**(0.958)
+        cval = xdia(mgs,li,1)
+        aval = cilen(mgs)
+        eval = Sqrt(1.0-(aval**2)/(cval**2))
+        fval = min(0.99,eval)
+        gval = alog( abs( (1.+fval)/(1.-fval) ) )
+        cicap(mgs) = cval*fval / gval
+      ELSE
+       cicap(mgs) = 0.0
+      end if
+      ENDDO
+!
+!
+      qhldsv(:) = 0.0
+
+      do mgs = 1,ngscnt
+      IF ( icond .eq. 1 .or. temg(mgs) .le. tfrh    &
+     &      .or. (qx(mgs,lr) .le. qxmin(lr) .and. qx(mgs,lc) .le. qxmin(lc)) ) THEN
+        qidsv(mgs) =   &
+     &    fvds(mgs)*cx(mgs,li)*civent(mgs)*cicap(mgs)
+        qsdsv(mgs) =   &
+     &    fvds(mgs)*cx(mgs,ls)*swvent(mgs)*swcap(mgs)
+!        IF ( ny .eq. 2 .and. igs(mgs) .eq. 302 .and. temg(mgs) .le. tfrh+10 .and. qx(mgs,lv) .gt. qis(mgs)
+!     :       .and. qx(mgs,li) .gt. qxmin(li) ) THEN
+!         write(0,*) 'qidsv = ',nstep,kgs(mgs),qidsv(mgs),temg(mgs)-tfrh,100.*(qx(mgs,lv)/qis(mgs) - 1.),1.e6*xdia(mgs,li,1),
+!     :            fvds(mgs),civent(mgs),cicap(mgs)
+!        ENDIF
+      ELSE
+        qidsv(mgs) = 0.0
+        qsdsv(mgs) = 0.0
+      ENDIF
+        qhdsv(mgs) =   &
+     &    fvds(mgs)*cx(mgs,lh)*hwvent(mgs)*hwcap(mgs)
+
+        IF ( lhl .gt. 1 ) qhldsv(mgs) = fvds(mgs)*cx(mgs,lhl)*hlvent(mgs)*hlcap(mgs)
+!
+!
+      end do
+!
+      do mgs = 1,ngscnt
+      IF ( icond .eq. 1 .or. temg(mgs) .le. tfrh    &
+     &      .or. (qx(mgs,lr) .le. qxmin(lr) .and. qx(mgs,lc) .le. qxmin(lc)) ) THEN
+!        qisbv(mgs) = max( min(qidsv(mgs), 0.0), -qimxd(mgs) )
+!        qssbv(mgs) = max( min(qsdsv(mgs), 0.0), -qsmxd(mgs) )
+! erm 5/10/2007:
+        qisbv(mgs) = max( min(qidsv(mgs), 0.0),  Min( -qimxd(mgs), -0.7*qx(mgs,li)/dtp ) )
+        qssbv(mgs) = max( min(qsdsv(mgs), 0.0),  Min( -qsmxd(mgs), -0.7*qx(mgs,ls)/dtp ) )
+        qidpv(mgs) = Max(qidsv(mgs), 0.0)
+        qsdpv(mgs) = Max(qsdsv(mgs), 0.0)
+      ELSE
+        qisbv(mgs) = 0.0
+        qssbv(mgs) = 0.0
+        qidpv(mgs) = 0.0
+        qsdpv(mgs) = 0.0
+      ENDIF
+
+      qhsbv(mgs) = max( min(qhdsv(mgs), 0.0), -qhmxd(mgs) )
+
+
+      qhdpv(mgs) = Max(qhdsv(mgs), 0.0)
+
+      qhlsbv(mgs) = 0.0
+      qhldpv(mgs) = 0.0
+      IF ( lhl .gt. 1 ) THEN
+        qhlsbv(mgs) = max( min(qhldsv(mgs), 0.0), -qxmxd(mgs,lhl) )
+        qhldpv(mgs) = Max(qhldsv(mgs), 0.0)
+      ENDIF
+
+      temp1 = qidpv(mgs) + qsdpv(mgs) + qhdpv(mgs) + qhldpv(mgs)
+
+      IF ( temp1 .gt. qvimxd(mgs) ) THEN
+
+      frac = qvimxd(mgs)/temp1
+
+      qidpv(mgs) = frac*qidpv(mgs)
+      qsdpv(mgs) = frac*qsdpv(mgs)
+      qhdpv(mgs) = frac*qhdpv(mgs)
+      qhldpv(mgs) = frac*qhldpv(mgs)
+
+!        IF ( ny .eq. 2 .and. igs(mgs) .eq. 302 .and. temg(mgs) .le. tfrh+10 .and. qx(mgs,lv) .gt. qis(mgs)
+!     :       .and. qx(mgs,li) .gt. qxmin(li) ) THEN
+!         write(0,*) 'qidpv,frac = ',kgs(mgs),qidpv(mgs),frac
+!        ENDIF
+
+      ENDIF
+
+      end do
+!
+!
+      if ( ipconc .ge. 1 ) then
+      do mgs = 1,ngscnt
+      cssbv(mgs)  = (cx(mgs,ls)/(qx(mgs,ls)+1.e-20))*qssbv(mgs)
+      cisbv(mgs)  = (cx(mgs,li)/(qx(mgs,li)+1.e-20))*qisbv(mgs)
+      chsbv(mgs)  = (cx(mgs,lh)/(qx(mgs,lh)+1.e-20))*qhsbv(mgs)
+      IF ( lhl .gt. 1 ) chlsbv(mgs)  = (cx(mgs,lhl)/(qx(mgs,lhl)+1.e-20))*qhlsbv(mgs)
+      csdpv(mgs)  = 0.0 ! (cx(mgs,ls)/(qx(mgs,ls)+1.e-20))*qsdpv(mgs)
+      cidpv(mgs) =  0.0 ! (cx(mgs,li)/(qx(mgs,li)+1.e-20))*qidpv(mgs)
+      chdpv(mgs)  = 0.0 ! (cx(mgs,lh)/(qx(mgs,lh)+1.e-20))*qhdpv(mgs)
+      chldpv(mgs) = 0.0
+      end do
+      end if
+
+!
+!  Aggregation of crystals
+!
+      if (ndebug .gt. 0 ) write(0,*) 'conc 29a'
+      do mgs = 1,ngscnt
+      qscni(mgs) =  0.0
+      cscni(mgs) = 0.0
+      cscnis(mgs) = 0.0
+      if ( ipconc .ge. 4 .and. iscni .ge. 1 .and. qx(mgs,li) .gt. qxmin(li) ) then
+        IF ( iscni .eq. 1 ) THEN
+         qscni(mgs) =    &
+     &      pi*rho0(mgs)*((0.25)/(6.0))   &
+     &      *eii(mgs)*(qx(mgs,li)**2)*(xdia(mgs,li,2))   &
+     &      *vtxbar(mgs,li,1)/xmas(mgs,li)
+         cscni(mgs) = Min(cimxd(mgs),qscni(mgs)*rho0(mgs)/xmas(mgs,li))
+         cscnis(mgs) = 0.5*cscni(mgs)
+        ELSEIF ( iscni .eq. 2 .or. iscni .eq. 4 .or. iscni .eq. 5 ) THEN  ! Zeigler 1985/Zrnic 1993, sort of
+          IF ( iscni .ne. 5 .and. qidpv(mgs) .gt. 0.0 .and.  xdia(mgs,li,3) .ge. 100.e-6 ) THEN
+          ! convert larger crystals to snow
+!            IF ( xdia(mgs,ls,3) .gt. xdia(mgs,li,3) ) THEN
+!              qscni(mgs) = Max(0.1,xdia(mgs,li,3)/xdia(mgs,ls,3))*qidpv(mgs)
+! erm 9/5/08 changed max to min
+              qscni(mgs) = Min(0.5, xdia(mgs,li,3)/200.e-6)*qidpv(mgs)
+!            ELSE
+!              qscni(mgs) = 0.1*qidpv(mgs)
+!            ENDIF
+            cscni(mgs) = 0.5*Min(cimxd(mgs),qscni(mgs)*rho0(mgs)/Max(xdn(mgs,ls)*xvsmn,xmas(mgs,li)))
+!            cscni(mgs) = Min(cimxd(mgs),qscni(mgs)*rho0(mgs)/xmas(mgs,li) )
+!            IF ( xdia(mgs,ls,3) .le. 200.e-6 ) THEN
+              cscnis(mgs) = cscni(mgs)
+!            ELSE
+!              cscnis(mgs) = 0.0
+!            ENDIF
+          ENDIF
+
+           IF ( iscni .ne. 4 ) THEN
+           ! crystal aggregation to become snow
+! erm 9/5/08 commented second line and added xv to 1st line (zrnic et al 1993)
+             tmp = ess(mgs)*rvt*aa2*cx(mgs,li)*cx(mgs,li)*xv(mgs,li)
+!     :         ((cinu + 2.)*xv(mgs,li)/(cinu + 1.) + xv(mgs,li))
+
+!           csacs(mgs) = rvt*aa2*ess(mgs)*cx(mgs,ls)**2*xv(mgs,ls)
+
+             qscni(mgs) = qscni(mgs) + Min( qxmxd(mgs,li), 2.0*tmp*xmas(mgs,li)*rhoinv(mgs) )
+             cscni(mgs) = cscni(mgs) + Min( cxmxd(mgs,li), 2.0*tmp )
+             cscnis(mgs) = cscnis(mgs) + Min( cxmxd(mgs,li), tmp )
+           ENDIF
+        ELSEIF ( iscni .eq. 3 ) THEN ! LFO
+           qscni(mgs) = 0.001*eii(mgs)*max((qx(mgs,li)-1.e-3),0.0)
+           qscni(mgs) = min(qscni(mgs),qxmxd(mgs,li))
+           cscni(mgs) = qscni(mgs)*rho0(mgs)/xmas(mgs,li)
+           cscnis(mgs) = 0.5*cscni(mgs)
+!           write(iunit,*) 'qscni, qi = ',qscni(mgs),qx(mgs,li),igs(mgs),kgs(mgs)
+        ENDIF
+
+      ELSEIF ( ipconc < 4 ) THEN ! LFO
+           IF ( lwsm6 ) THEN
+             qimax = rhoinv(mgs)*roqimax
+             qscni(mgs) = Min(0.9d0*qx(mgs,li), Max( 0.d0, (qx(mgs,li) - qimax)*dtpinv ) )
+           ELSE
+             qscni(mgs) = 0.001*eii(mgs)*max((qx(mgs,li)-1.e-3),0.0)
+             qscni(mgs) = min(qscni(mgs),qxmxd(mgs,li))
+           ENDIF
+      else ! 10-ice version
+      if ( qx(mgs,li) .gt. qxmin(li) ) then
+          qscni(mgs) =    &
+     &    pi*rho0(mgs)*((0.25)/(6.0))   &
+     &    *eii(mgs)*(qx(mgs,li)**2)*(xdia(mgs,li,2))   &
+     &    *vtxbar(mgs,li,1)/xmas(mgs,li)
+         cscni(mgs) = Min(cimxd(mgs),qscni(mgs)*rho0(mgs)/xmas(mgs,li))
+        end if
+
+      end if
+      end do
+
+!
+!
+!  compute dry growth rate of snow, graupel, and hail
+!
+      do mgs = 1,ngscnt
+!
+      qsdry(mgs)  = qsacr(mgs)    + qsacw(mgs)   &
+     &            + qsaci(mgs)
+!
+      qhdry(mgs)  = qhaci(mgs)    + qhacs(mgs)   &
+     &            + qhacr(mgs)   &
+     &            + qhacw(mgs)
+!
+      qhldry(mgs) = 0.0
+      IF ( lhl .gt. 1 ) THEN
+      qhldry(mgs)  = qhlaci(mgs)    + qhlacs(mgs)   &
+     &               + qhlacr(mgs)   &
+     &               + qhlacw(mgs)
+      ENDIF
+      end do
+!
+!  set wet growth and shedding
+!
+      do mgs = 1,ngscnt
+!
+!      qswet(mgs) =
+!     >  ( xdia(mgs,ls,1)*swvent(mgs)*cx(mgs,ls)*fwet1(mgs)
+!     >  + fwet2(mgs)*(qsaci(mgs)+qsacir(mgs)
+!     >               +qsacip(mgs)) )
+!      qswet(mgs) = max( 0.0, qswet(mgs))
+!
+!      IF ( dnu(lh) .ne. 0. ) THEN
+!        qhwet(mgs) = qhdry(mgs)
+!      ELSE
+        qhwet(mgs) =   &
+     &    ( xdia(mgs,lh,1)*hwvent(mgs)*cx(mgs,lh)*fwet1(mgs)   &
+     &   + fwet2(mgs)*(qhaci(mgs) + qhacs(mgs)) )
+       qhwet(mgs) = max( 0.0, qhwet(mgs))
+!      ENDIF
+
+       qhlwet(mgs) = 0.0
+       IF ( lhl .gt. 1 ) THEN
+       qhlwet(mgs) =   &
+     &    ( xdia(mgs,lhl,1)*hlvent(mgs)*cx(mgs,lhl)*fwet1(mgs)   &
+     &   + fwet2(mgs)*(qhlaci(mgs) + qhlacs(mgs)) )
+       qhlwet(mgs) = max( 0.0, qhlwet(mgs))
+       ENDIF
+!
+!      qhlwet(mgs) = qhldry(mgs)
+
+      end do
+!
+! shedding rate
+!
+      qsshr(:)  =  0.0
+      qhshr(:)  =  0.0
+      qhlshr(:) =  0.0
+      qhshh(:)  =  0.0
+      csshr(:)  =  0.0
+      chshr(:)  =  0.0
+      chlshr(:)  =  0.0
+      chshrr(:)  =  0.0
+      chlshrr(:)  =  0.0
+      vhshdr(:)  = 0.0
+      vhlshdr(:)  = 0.0
+      wetsfc(:)  = .false.
+      wetgrowth(:)  = .false.
+      wetsfchl(:)  = .false.
+      wetgrowthhl(:)  = .false.
+
+
+      do mgs = 1,ngscnt
+!
+!
+!
+      qhshr(mgs)  = Min( 0.0, qhwet(mgs) - qhdry(mgs) )  ! water that freezes should never be more than what sheds
+      
+
+
+      qhlshr(mgs)  =  Min( 0.0, qhlwet(mgs) - qhldry(mgs) )
+
+!
+! limit wet growth to only higher density particles
+!
+      qsshr(mgs)  =  0.0
+!
+!
+!  no shedding for temperatures < 243.15 
+!
+      if ( temg(mgs) .lt. 243.15 ) then
+       qsshr(mgs)  =  0.0
+       qhshr(mgs)  =  0.0
+       qhlshr(mgs) =  0.0
+       vhshdr(mgs)  = 0.0
+       vhlshdr(mgs)  = 0.0
+       wetsfc(mgs) = .false.
+       wetgrowth(mgs) = .false.
+       wetsfchl(mgs) = .false.
+       wetgrowthhl(mgs) = .false.
+      end if
+!
+!  shed all at temperatures > 273.15
+!
+      if ( temg(mgs) .gt. tfr ) then
+
+       qsshr(mgs)   = -qsdry(mgs)
+       qhlshr(mgs)  = -qhldry(mgs)
+
+       qhshr(mgs)  = -qhdry(mgs)
+       vhshdr(mgs)  = -vhacw(mgs) - vhacr(mgs)
+       vhlshdr(mgs)  = -vhlacw(mgs)
+       qhwet(mgs)  = 0.0
+       qhlwet(mgs) = 0.0
+      end if
+!
+!      if (qhshr(mgs) .lt. 0.0 .and. temg(mgs) < tfr  ) THEN
+        wetsfc(mgs) =  (qhshr(mgs) .lt. 0.0 .and. temg(mgs) < tfr ) .or. ( qhmlr(mgs) < -qxmin(lh) .and.  temg(mgs) > tfr )
+        wetgrowth(mgs) = (qhshr(mgs) .lt. 0.0 .and. temg(mgs) < tfr )
+!      ENDIF
+
+      if (qhlshr(mgs) .lt. 0.0 .and. temg(mgs) < tfr ) THEN
+        wetsfchl(mgs) = (qhlshr(mgs) .lt. 0.0 .and. temg(mgs) < tfr ) .or. ( qhlmlr(mgs) < -qxmin(lhl) .and.  temg(mgs) > tfr )
+        wetgrowthhl(mgs) = (qhlshr(mgs) .lt. 0.0 .and. temg(mgs) < tfr )
+      ENDIF
+
+      end do
+!
+      if ( ipconc .ge. 1 ) then
+      do mgs = 1,ngscnt
+      csshr(mgs)  = 0.0 ! (cx(mgs,ls)/(qx(mgs,ls)+1.e-20))*Min(0.0,qsshr(mgs))
+      chshr(mgs)  = (cx(mgs,lh)/(qx(mgs,lh)+1.e-20))*qhshr(mgs)
+      IF ( temg(mgs) < tfr ) THEN
+         chshrr(mgs) = Min( chshr(mgs), rho0(mgs)*qhshr(mgs)/(xdn0(lr)*vshd) ) ! maximum of dshd from shedding
+      ELSE
+        IF(imltshddmr > 0) THEN
+          ! DTD: If Dmg < sheddiam, then assume complete melting into
+          ! maximal raindrop.  Between sheddiam and sheddiam0, linearly ramp down to a 3 mm shed drop
+          tmp = -Min( chshr(mgs), rho0(mgs)*qhshr(mgs)/(xdn(mgs,lr)*xvmx(lr)) ) ! limit to maximum size allowed for rain
+          tmp2 = -rho0(mgs)*qhshr(mgs)/(xdn(mgs,lr)*vr3mm) ! conc. change for a 3 mm mean drop diameter
+          chshrr(mgs) = tmp*(sheddiam0-xdia(mgs,lh,3))/(sheddiam0-sheddiam)+tmp2*(xdia(mgs,lh,3)-sheddiam)/(sheddiam0-sheddiam)
+          chshrr(mgs) = -Max(tmp,Min(tmp2,chshrr(mgs)))
+        ELSE
+         chshrr(mgs) = Min( chshr(mgs), rho0(mgs)*qhshr(mgs)/(xdn(mgs,lr)*Min(vr4p5mm,xvmx(lr))) ) ! limit to maximum size allowed for rain or 4.5mm diameter, whichever is smaller
+!        chlmlrr(mgs) = rho0(mgs)*qhlmlr(mgs)/(Min(xdn(mgs,lr)*xvmx(lr), xdn(mgs,lhl)*xv(mgs,lhl)))  ! into rain 
+        ENDIF
+      ENDIF
+      chlshr(mgs) = 0.0
+      chlshrr(mgs) = 0.0
+      IF ( lhl .gt. 1 ) THEN 
+         chlshr(mgs)  = (cx(mgs,lhl)/(qx(mgs,lhl)+1.e-20))*qhlshr(mgs)
+        IF ( temg(mgs) < tfr ) THEN
+          chlshrr(mgs) = Min( chlshr(mgs), rho0(mgs)*qhlshr(mgs)/(xdn0(lr)*vshd) ) ! maximum of dshd from shedding
+!         chlshrr(mgs) = Min( chlshr(mgs), rho0(mgs)*qhlshr(mgs)/(xdn0(lr)*vr1mm) ) ! maximum of 1mm drops from shedding
+        ELSE
+          IF(imltshddmr > 0) THEN
+            ! DTD: If Dmg < sheddiam, then assume complete melting into
+            ! maximal raindrop.  Between sheddiam and sheddiam0, linearly ramp down to a 3 mm shed drop
+            tmp = -Min( chlshr(mgs), rho0(mgs)*qhlshr(mgs)/(xdn(mgs,lr)*xvmx(lr)) ) ! limit to maximum size allowed for rain
+            tmp2 = -rho0(mgs)*qhlshr(mgs)/(xdn(mgs,lr)*vr3mm) ! conc. change for a 3 mm mean drop diameter
+            chlshrr(mgs) = tmp*(sheddiam0-xdia(mgs,lhl,3))/(sheddiam0-sheddiam)+tmp2*(xdia(mgs,lhl,3)-sheddiam)/(sheddiam0-sheddiam)
+            chlshrr(mgs) = -Max(tmp,Min(tmp2,chlshrr(mgs)))
+          ELSE
+           chlshrr(mgs) = Min( chlshr(mgs), rho0(mgs)*qhlshr(mgs)/(xdn(mgs,lr)*Min(vr4p5mm,xvmx(lr))) ) ! limit to 4.5mm diameter or maximum size allowed for rain, whichever is smaller
+!        chlmlrr(mgs) = rho0(mgs)*qhlmlr(mgs)/(Min(xdn(mgs,lr)*xvmx(lr), xdn(mgs,lhl)*xv(mgs,lhl)))  ! into rain 
+          ENDIF
+        ENDIF
+      ENDIF
+      end do
+      end if
+
+
+
+!
+!  final decisions
+!
+      do mgs = 1,ngscnt
+!
+!  Snow
+!
+      if ( qsshr(mgs) .lt. 0.0 ) then
+      qsdpv(mgs) = 0.0
+      qssbv(mgs) = 0.0
+      else
+      qsshr(mgs) = 0.0
+      end if
+!
+!     if ( qsdry(mgs) .lt. qswet(mgs) ) then
+!     qswet(mgs) = 0.0
+!     else
+!     qsdry(mgs) = 0.0
+!     end if
+!
+
+! zero the shedding rates when wet snow/graupel included.
+! shedding of wet snow/graupel is calculated after summing other sources/sinks.
+      if (mixedphase) then
+        qsshr(mgs) = 0.0
+        qhshr(mgs) = 0.0
+        csshr(mgs) = 0.0
+        chshr(mgs) = 0.0
+        chshrr(mgs) = 0.0
+        vhshdr(mgs) = 0.0
+        IF ( lhlw > 1 ) THEN
+          qhlshr(mgs) = 0.0
+          vhlshdr(mgs) = 0.0
+          chlshr(mgs) = 0.0
+          chlshrr(mgs) = 0.0
+        ENDIF
+      end if
+
+!  graupel
+!
+!
+      if ( wetgrowth(mgs) .or. (mixedphase .and. fhw(mgs) .gt. 0.05 .and. temg(mgs) .gt. 243.15) ) then
+      
+
+! soaking (when not advected liquid water film with graupel)
+
+        IF ( lvol(lh) .gt. 1 .and. .not. mixedphase) THEN
+        ! rescale volumes to maximum density
+         rimdn(mgs,lh) = xdnmx(lh)
+         raindn(mgs,lh) = xdnmx(lh)
+         vhacw(mgs) = qhacw(mgs)*rho0(mgs)/rimdn(mgs,lh)
+         vhacr(mgs) = qhacr(mgs)*rho0(mgs)/raindn(mgs,lh)
+!        IF ( lvol(lh) .gt. 1 .and. wetgrowth(mgs) ) THEN
+         IF ( xdn(mgs,lh) .lt. xdnmx(lh) ) THEN
+         ! soak some liquid into the graupel
+!           v1 = xdnmx(lh)*vx(mgs,lh)/(xdn(mgs,lh)*dtp) ! volume available for filling
+           v1 = (1. - xdn(mgs,lh)/xdnmx(lh))*vx(mgs,lh)/(dtp) ! volume available for filling
+!            tmp = (vx(mgs,lh)/rho0(mgs))*(xdnmx(lh) - xdn(mgs,lh)) ! max mixing ratio of liquid water that can be added
+           v2 = rho0(mgs)*qhwet(mgs)/xdnmx(lh)  ! volume of frozen accretion
+           
+           vhsoak(mgs) = Min(v1,v2)
+           
+         ENDIF
+
+         vhshdr(mgs) = Min(0.0, rho0(mgs)*qhwet(mgs)/xdnmx(lh) - vhacw(mgs) - vhacr(mgs) )
+         
+        ELSEIF ( lvol(lh) .gt. 1  .and. mixedphase ) THEN
+!         vhacw(mgs) = rho0(mgs)*qhacw(mgs)/xdn0(lr)
+!         vhacr(mgs) = rho0(mgs)*qhacr(mgs)/xdn0(lr)
+        ENDIF
+        
+
+      qhdpv(mgs) = 0.0
+!      qhsbv(mgs) = 0.0
+      chdpv(mgs) = 0.0
+!      chsbv(mgs) = 0.0
+
+! collection efficiency modification
+
+      IF ( ehi(mgs) .gt. 0.0 ) THEN
+        qhaci(mgs) = Min(qimxd(mgs),qhaci0(mgs))  ! effectively sets collection eff to 1
+        chaci(mgs) = Min(cimxd(mgs),chaci0(mgs))  ! effectively sets collection eff to 1
+      ENDIF
+      IF ( ehs(mgs) .gt. 0.0 ) THEN
+!        qhacs(mgs) = Min(qsmxd(mgs),qhacs(mgs)/ehs(mgs))  ! effectively sets collection eff to 1
+        qhacs(mgs) = qhacs0(mgs) !/ehs(mgs)                   ! divide out the collection efficiency
+        chacs(mgs) = chacs0(mgs) !/ehs(mgs)                   ! divide out the collection efficiency
+        ehs(mgs) = 1.0 ! min(ehsfrac*ehs(mgs),ehsmax)            ! modify it
+ !       qhacs(mgs) = Min(qsmxd(mgs),qhacs(mgs)*ehs(mgs))   ! plug it back in
+      ENDIF
+
+! be sure to catch particles with wet surfaces but not in wet growth to turn off Hallett-Mossop
+      wetsfc(mgs) = .true.
+
+      else
+!        qhshr(mgs) = 0.0
+      end if
+!
+!
+!  hail
+!
+!      if ( lhl .gt. 1 .and. qhlshr(mgs) .lt. 0.0 ) then
+      if ( wetgrowthhl(mgs) .or. (mixedphase .and. fhlw(mgs) .gt. 0.05 .and. temg(mgs) .gt. 243.15) ) then
+!      if ( wetgrowthhl(mgs) ) then
+       
+
+      qhldpv(mgs) = 0.0
+!      qhlsbv(mgs) = 0.0
+      chldpv(mgs) = 0.0
+!      chlsbv(mgs) = 0.0
+
+
+
+
+        IF ( lvol(lhl) .gt. 1  .and. .not. mixedphase ) THEN
+!        IF ( lvol(lhl) .gt. 1 .and. wetgrowthhl(mgs) ) THEN
+
+         rimdn(mgs,lhl) = xdnmx(lhl) 
+         raindn(mgs,lhl) = xdnmx(lhl) 
+         vhlacw(mgs) = qhlacw(mgs)*rho0(mgs)/rimdn(mgs,lhl)
+         vhlacr(mgs) = qhlacr(mgs)*rho0(mgs)/raindn(mgs,lhl)
+
+         IF ( xdn(mgs,lhl) .lt. xdnmx(lhl) ) THEN
+         ! soak some liquid into the hail
+!           v1 = xdnmx(lhl)*vx(mgs,lhl)/(xdn(mgs,lhl)*dtp) ! volume available for filling
+           v1 = (1. - xdn(mgs,lhl)/xdnmx(lhl))*vx(mgs,lhl)/(dtp) ! volume available for filling
+!            tmp = (vx(mgs,lhl)/rho0(mgs))*(xdnmx(lhl) - xdn(mgs,lhl)) ! max mixing ratio of liquid water that can be added
+           v2 = rho0(mgs)*qhlwet(mgs)/xdnmx(lhl)  ! volume of frozen accretion
+           IF ( v1 > v2 ) THEN ! all the frozen stuff fits in
+             vhlsoak(mgs) = v2
+           ELSE  ! fill up the available space
+             vhlsoak(mgs) = v1
+           ENDIF
+!           vhlacw(mgs) = 0.0
+!           vhlacr(mgs) = Max( 0.0, v2 - v1 )
+         ELSE
+           vhlsoak(mgs) = 0.0
+!           vhlacw(mgs) = 0.0
+!           vhlacr(mgs) = rho0(mgs)*qhlwet(mgs)/raindn(mgs,lhl)
+         
+         ENDIF
+
+         vhlshdr(mgs) = Min(0.0, rho0(mgs)*qhlwet(mgs)/xdnmx(lhl) - vhlacw(mgs) - vhlacr(mgs) )
+
+
+        ELSEIF ( lvol(lhl) .gt. 1  .and. mixedphase ) THEN
+!         vhlacw(mgs) = rho0(mgs)*qhlacw(mgs)/xdn0(lr)
+!         vhlacr(mgs) = rho0(mgs)*qhlacr(mgs)/xdn0(lr)
+        ENDIF
+
+      IF ( ehli(mgs) .gt. 0.0 ) THEN
+        qhlaci(mgs) = Min(qimxd(mgs),qhlaci(mgs)/ehli(mgs))
+      ENDIF
+      IF ( ehls(mgs) .gt. 0.0 ) THEN
+        qhlacs(mgs) = Min(qsmxd(mgs),qhlacs(mgs)/ehls(mgs))
+      ENDIF
+      
+!      qhlwet(mgs) = 1.0
+
+! be sure to catch particles with wet surfaces but not in wet growth to turn off Hallett-Mossop
+      wetsfchl(mgs) = .true.
+
+
+      else
+!      qhlshr(mgs) = 0.0
+!      qhlwet(mgs) = 0.0
+      end if
+
+
+      end do
+!
+! Ice -> graupel conversion
+!
+      DO mgs = 1,ngscnt
+      
+      qhcni(mgs) = 0.0
+      chcni(mgs) = 0.0
+      chcnih(mgs) = 0.0
+      vhcni(mgs) = 0.0
+      
+      IF ( iglcnvi .ge. 1 ) THEN
+      IF ( temg(mgs) .lt. 273.0 .and. qiacw(mgs) - qidpv(mgs) .gt. 0.0 ) THEN
+      
+        
+        tmp = rimc1*(-((0.5)*(1.e+06)*xdia(mgs,lc,1))   &
+     &                *((0.60)*vtxbar(mgs,li,1))   &
+     &                /(temg(mgs)-273.15))**(rimc2)
+        tmp = Min( Max( rimc3, tmp ), 900.0 )
+        
+        !  Assume that half the volume of the embryo is rime with density 'tmp'
+        !  m = rhoi*(V/2) + rhorime*(V/2) = (rhoi + rhorime)*V/2
+        !  V = 2*m/(rhoi + rhorime)
+        
+!        write(0,*)  'rime dens = ',tmp
+        
+        IF ( tmp .ge. 200.0 .or. iglcnvi >= 2 ) THEN
+          r = Max( 0.5*(xdn(mgs,li) + tmp), xdnmn(lh) )
+!          r = Max( r, 400. )
+          qhcni(mgs) = (qiacw(mgs) - qidpv(mgs)) ! *float(iglcnvi)
+          chcni(mgs) = cx(mgs,li)*qhcni(mgs)/qx(mgs,li)
+!          chcnih(mgs) = rho0(mgs)*qhcni(mgs)/(1.6e-10)
+          chcnih(mgs) = Min(chcni(mgs), rho0(mgs)*qhcni(mgs)/(r*xvmn(lh)) )
+!          vhcni(mgs) = rho0(mgs)*2.0*qhcni(mgs)/(xdn(mgs,li) + tmp)
+          vhcni(mgs) = rho0(mgs)*qhcni(mgs)/r
+        ENDIF
+      
+      ENDIF
+
+      
+      ENDIF
+      
+      
+      ENDDO
+      
+      
+      qhlcnh(:) = 0.0
+      chlcnh(:) = 0.0
+      vhlcnh(:) = 0.0
+      vhlcnhl(:) = 0.0
+      zhlcnh(:) = 0.0
+
+      qhcnhl(:) = 0.0
+      chcnhl(:) = 0.0
+      vhcnhl(:) = 0.0
+      zhcnhl(:) = 0.0
+      
+
+      IF ( lhl .gt. 1  ) THEN
+      
+      IF ( ihlcnh == 1 ) THEN
+
+!
+!  Graupel (h) conversion to hail (hl) based on Milbrandt and Yau 2005b
+!
+      DO mgs = 1,ngscnt
+
+!        IF ( lhl .gt. 1 .and. ipconc .ge. 5 .and. qx(mgs,lh) .gt. 1.0e-3 .and.
+!     :        xdn(mgs,lh) .gt. 750. .and. qhshr(mgs) .lt. 0.0 .and.
+!     :        xdia(mgs,lh,3) .gt. 1.e-3 ) THEN
+        IF (  wetgrowth(mgs) .and. (xdn(mgs,lh) .gt. hldnmn .or. lvh < 1 ) .and.  & ! correct this when hail gets turned on
+!        IF (  ( qhshr(mgs) .lt. 0.0 .or. rimdn(mgs,lh) .gt. 800. ) .and.   &
+     &        rimdn(mgs,lh) .gt. 800. .and.   &
+     &        xdia(mgs,lh,3) .gt. hlcnhdia .and. qx(mgs,lh) .gt. hlcnhqmin ) THEN
+!     :        xdia(mgs,lh,3) .gt. 2.e-3 .and. qx(mgs,lh) .gt. 1.0e-3 ) THEN ! 0823.2008 erm test
+!        IF ( xdia(mgs,lh,3) .gt. 1.e-3 ) THEN
+        IF ( qhacw(mgs) .gt. 0.0 .and. qhacw(mgs) .gt. qhaci(mgs) .and. temg(mgs) .le. tfr-2.0 ) THEN
+        ! dh0 is the diameter dividing wet growth from dry growth (Ziegler 1985), modified by MY05
+!          dh0 = 0.01*(exp(temcg(mgs)/(1.1e4*(qx(mgs,lc)+qx(mgs,lr)) - 
+!     :           1.3e3*qx(mgs,li) + 1.0e-3 ) ) - 1.0)
+          x = (1.1e4*(rho0(mgs)*qx(mgs,lc)) - 1.3e3*rho0(mgs)*qx(mgs,li) + 1.0e-3 )
+          IF ( x > 1.e-20 ) THEN
+          arg = Min(70.0, (-temcg(mgs)/x )) ! prevent overflow of the exp function in 32 bit
+          dh0 = 0.01*(exp(arg) - 1.0)
+          ELSE
+           dh0 = 1.e30
+          ENDIF
+!          dh0 = Max( dh0, 5.e-3 )
+          
+!         IF ( dh0 .gt. 0.0 ) write(0,*) 'dh0 = ',dh0
+!         IF ( dh0 .gt. 1.0e-4 ) THEN
+         IF ( xdia(mgs,lh,3)/dh0 .gt. 0.1 ) THEN 
+!         IF ( xdia(mgs,lh,3) .lt. 20.*dh0 .and. dh0 .lt. 2.0*xdia(mgs,lh,3) ) THEN 
+           tmp = qhacw(mgs) + qhacr(mgs) + qhaci(mgs) + qhacs(mgs)
+!           qtmp = Min( 1.0, xdia(mgs,lh,3)/(2.0*dh0) )*(tmp)
+           qtmp = Min( 100.0, xdia(mgs,lh,3)/(2.0*dh0) )*(tmp)
+           IF ( .false. .and. qx(mgs,lhl) + qtmp*dtp .lt. 0.5e-3 ) THEN
+             hdia1 = Max(dh0, xdia(mgs,lh,3) )
+            qtmp = qtmp + Min(qxmxd(mgs,lh), Max( 0.0,   &
+     &      ((pi*xdn(mgs,lh)*cx(mgs,lh)) / (6.0*rho0(mgs)*dtp))   &
+     &      *exp(-hdia1/xdia(mgs,lh,1))   &
+     &      *( (hdia1**3) + 3.0*(hdia1**2)*xdia(mgs,lh,1)   &
+     &      + 6.0*(hdia1)*(xdia(mgs,lh,1)**2) + 6.0*(xdia(mgs,lh,1)**3) ) ) )
+
+!c           qtmp = Min( qxmxd(mgs,lh), qtmp )
+!c           tmp = tmp + Min( 0.5e-3/dtp, qtmp )
+           ENDIF
+!           write(0,*) 'dh0 = ',dh0,tmp,qx(mgs,lh)*1000.
+!           qhlcnh(mgs) = Min( 0.5*(qx(mgs,lh))+tmp, xdia(mgs,lh,3)/(2.0*dh0)*(tmp) )
+!           qhlcnh(mgs) = Min(  qxmxd(mgs,lh), xdia(mgs,lh,3)/(2.0*dh0)*(tmp) )
+           qhlcnh(mgs) = Min(  qxmxd(mgs,lh), qtmp )
+           
+           IF ( ipconc .ge. 5 ) THEN
+!           dh0 = Max( xdia(mgs,lh,3), Min( dh0, 5.e-3 ) ) ! don't create hail greater than 5mm diam. unless the graupel is larger
+           dh0 = Min( dh0, 10.e-3 ) ! don't create hail greater than 10mm diam., which is the max graupel size
+!           IF ( qx(mgs,lhl) > 0.1e-3 ) dh0 = xdia(mgs,lhl,3) ! when enough hail is established, don't dilute the size
+           chlcnh(mgs) = Min( cxmxd(mgs,lh), rho0(mgs)*qhlcnh(mgs)/(pi*xdn(mgs,lh)*dh0**3/6.0) )
+!           chlcnh(mgs) = Min( chlcnh(mgs), (1./8.)*rho0(mgs)*qhlcnh(mgs)/(xdn(mgs,lh)*xv(mgs,lh)) )
+!           chlcnh(mgs) = Min( chlcnh(mgs), (1./2.)*rho0(mgs)*qhlcnh(mgs)/(xdn(mgs,lh)*xv(mgs,lh)) )
+           r = rho0(mgs)*qhlcnh(mgs)/(xdn(mgs,lh)*xv(mgs,lh))  ! number of graupel particles at mean volume diameter
+!           chlcnh(mgs) = Min( Max( 1./8.*r , chlcnh(mgs)), r )
+!           chlcnh(mgs) = Min( chlcnh(mgs), r )
+           chlcnh(mgs) = Max( chlcnh(mgs), r )
+!           chlcnh(mgs) =  r 
+           ENDIF
+           
+           vhlcnh(mgs) = rho0(mgs)*qhlcnh(mgs)/xdn(mgs,lh)
+           vhlcnhl(mgs) = rho0(mgs)*qhlcnh(mgs)/Max(xdnmn(lhl), xdn(mgs,lh))
+!           write(0,*) 'qhlcnh = ',qhlcnh(mgs)*1000.,chlcnh(mgs)
+          ENDIF
+!         write(0,*) 'graupel to hail conversion not complete! STOP!'
+!         STOP
+        ENDIF
+        ENDIF
+      
+      ENDDO
+      
+      ELSEIF ( ihlcnh == 2 ) THEN ! 10-ice type conversion 
+
+!
+! Staka and Mansell (2005) type conversion -- assuming alphah = 0 for now!
+!
+!      hldia1 is set in micro_module and namelist
+      do mgs = 1,ngscnt
+!      qhlcnh(mgs) = 0.0
+!      chlcnh(mgs) = 0.0
+      if ( wetgrowth(mgs) .and. temg(mgs) .lt. tfr-5. .and. qx(mgs,lh) > qxmin(lh) ) then
+      if ( qhacw(mgs).gt.1.e-6 .and. xdn(mgs,lh) > 700. ) then
+      qhlcnh(mgs) =                                                   &
+        ((pi*xdn(mgs,lh)*cx(mgs,lh)) / (6.0*rho0(mgs)*dtp))           &
+       *exp(-hldia1/xdia(mgs,lh,1))                                    &
+       *( (hldia1**3) + 3.0*(hldia1**2)*xdia(mgs,lh,1)                  &
+        + 6.0*(hldia1)*(xdia(mgs,lh,1)**2) + 6.0*(xdia(mgs,lh,1)**3) )
+      qhlcnh(mgs) =   min(qhlcnh(mgs),qhmxd(mgs))
+      IF ( ipconc .ge. 5 ) THEN
+        chlcnh(mgs) = Min( cxmxd(mgs,lh), cx(mgs,lh)*Exp(-hldia1/xdia(mgs,lh,1)))
+!        chlcnh(mgs) = Min( cxmxd(mgs,lh), rho0(mgs)*qhlcnh(mgs)/(2.0*xmas(mgs,lh) ))
+      ENDIF
+           vhlcnh(mgs) = rho0(mgs)*qhlcnh(mgs)/xdn(mgs,lh)
+           vhlcnhl(mgs) = rho0(mgs)*qhlcnh(mgs)/Max(xdnmn(lhl), xdn(mgs,lh))
+      end if
+      end if
+      end do
+      
+      ENDIF
+      
+     ! convert low-density hail to graupel
+      IF ( icvhl2h >= 1 ) THEN
+      DO mgs = 1,ngscnt
+        IF (  qx(mgs,lhl) > qxmin(lhl) .and. xdn(mgs,lhl) < 0.5*(xdnmn(lhl) + xdnmx(lhl)) ) THEN
+          tmp = Min(0.95, 1. - 0.5*(1. + tanh(0.125*(xdn(mgs,lhl) - 1.01*xdnmn(lhl) )) ))
+          qhcnhl(mgs) = tmp*qx(mgs,lhl)/dtp
+          chcnhl(mgs) = cx(mgs,lhl)*qhcnhl(mgs)/qx(mgs,lhl)
+          vhcnhl(mgs) = vx(mgs,lhl)*qhcnhl(mgs)/qx(mgs,lhl)
+          
+        ENDIF
+      ENDDO
+      
+      ENDIF
+      
+      
+      ENDIF ! lhl > 1
+
+
+!
+! Ziegler snow conversion to graupel
+!
+      DO mgs = 1,ngscnt
+
+      qhcns(mgs) = 0.0
+      chcns(mgs) = 0.0
+      chcnsh(mgs) = 0.0
+      vhcns(mgs) = 0.0
+
+      qscnh(mgs) = 0.0
+      cscnh(mgs) = 0.0
+      vscnh(mgs) = 0.0
+
+      IF ( ipconc .ge. 5 ) THEN
+
+        IF ( temg(mgs) < tfr .and. qx(mgs,lh) .gt. qxmin(lh) .and. qhdpv(mgs) > qxmin(lh)*dtpinv  &
+     &       .and. qhacw(mgs) < qxmin(lh)*dtpinv ) THEN
+          IF ( xdn(mgs,lh) < 290. ) THEN
+!          qscnh(mgs) = 2.*qhdpv(mgs)
+!          cscnh(mgs) = cx(mgs,lh)*qscnh(mgs)/qx(mgs,lh)
+!          vscnh(mgs) = rho0(mgs)*qscnh(mgs)/xdn(mgs,lh)
+          ENDIF
+        ENDIF
+
+
+        IF ( qx(mgs,ls) .gt. qxmin(ls) .and. qsacw(mgs) .gt. 0.0 ) THEN
+
+!      DATA VGRA/1.413E-2/  ! this is the volume (cm**3) of a 3mm diam. sphere
+!    vgra = 1.4137e-8 m**3
+
+!      DNNET=DNCNV-DNAGG
+!      DQNET=QXCON+QSACC+SDEP
+!
+!      DNSCNV=EXP(-(ROS*XNS*VGRA/(RO*QI)))*((1.-(XNS*VGRA*ROS/
+!     / (RO*QI)))*DNNET + (XNS**2*VGRA*ROS/(RO*QI**2))*DQNET)
+!      IF(DNSCNV.LT.0.) DNSCNV=0.
+!
+!      QIHC=(ROS*VGRA/RO)*DNSCNV
+!
+!      QH=QH+DT*QIHC
+!      QI=QI-DT*QIHC
+!      XNH=XNH+DT*DNSCNV
+!      XNS=XNS-DT*DNSCNV
+
+        IF ( iglcnvs .eq. 1 ) THEN  ! Zrnic, Ziegler et al (1993)
+
+        dnnet = cscnvis(mgs) + cscnis(mgs) - csacs(mgs)
+        dqnet = qscnvi(mgs) + qscni(mgs) + qsacw(mgs) + qsdpv(mgs) + qssbv(mgs)
+
+        a3 = 1./(rho0(mgs)*qx(mgs,ls))
+        a1 = Exp( - xdn(mgs,ls)*cx(mgs,ls)*vgra*a3 )  ! EXP(-(ROS*XNS*VGRA/(RO*QI)))
+! (1.-(XNS*VGRA*ROS/(RO*QI)))*DNNET
+        a2 =  (1.-(cx(mgs,ls)*vgra*xdn(mgs,ls)*a3))*dnnet
+! (XNS**2*VGRA*ROS/(RO*QI**2))*DQNET
+        a4 = cx(mgs,ls)**2*vgra*xdn(mgs,ls)*a3/qx(mgs,ls)*dqnet
+
+        chcns(mgs) = Max( 0.0, a1*(a2 + a4) )
+        chcns(mgs) = Min( chcns(mgs), cxmxd(mgs,ls) )
+        chcnsh(mgs) = chcns(mgs)
+
+        qhcns(mgs) = Min( xdn(mgs,ls)*vgra*rhoinv(mgs)*chcns(mgs), qxmxd(mgs,ls) )
+        vhcns(mgs) = rho0(mgs)*qhcns(mgs)/Max(xdn(mgs,ls),xdnmn(lh))
+!        vhcns(mgs) = rho0(mgs)*qhcns(mgs)/Max(xdn(mgs,ls),400.)
+
+        ELSEIF ( iglcnvs .ge. 2  ) THEN  ! treat like ice crystals, i.e., check for rime density (ERM)
+
+          IF ( temg(mgs) .lt. 273.0 .and. qsacw(mgs) - qsdpv(mgs) .gt. 0.0 ) THEN
+
+
+        tmp = rimc1*(-((0.5)*(1.e+06)*xdia(mgs,lc,1))   &
+     &                *((0.60)*vtxbar(mgs,ls,1))   &
+     &                /(temg(mgs)-273.15))**(rimc2)
+        tmp = Min( Max( rimc3, tmp ), 900.0 )
+
+        !  Assume that half the volume of the embryo is rime with density 'tmp'
+        !  m = rhoi*(V/2) + rhorime*(V/2) = (rhoi + rhorime)*V/2
+        !  V = 2*m/(rhoi + rhorime)
+
+!        write(0,*)  'rime dens = ',tmp
+
+        IF ( tmp .ge. 200.0 .or. iglcnvs >= 3 ) THEN
+          r = Max( 0.5*(xdn(mgs,ls) + tmp), xdnmn(lh) )
+!          r = Max( r, 400. )
+          qhcns(mgs) = (qsacw(mgs) - qsdpv(mgs))
+          chcns(mgs) = cx(mgs,ls)*qhcns(mgs)/qx(mgs,ls)
+!          chcnih(mgs) = rho0(mgs)*qhcni(mgs)/(1.6e-10)
+          chcnsh(mgs) = Min(chcns(mgs), rho0(mgs)*qhcns(mgs)/(r*xvmn(lh)) )
+!          vhcni(mgs) = rho0(mgs)*2.0*qhcni(mgs)/(xdn(mgs,li) + tmp)
+          vhcns(mgs) = rho0(mgs)*qhcns(mgs)/r
+        ENDIF
+
+      ENDIF
+
+        ENDIF
+
+
+        ENDIF
+
+       ELSE ! single moment lfo
+
+        qhcns(mgs) = 0.001*ehscnv(mgs)*max((qx(mgs,ls)-6.e-4),0.0)
+        qhcns(mgs) = min(qhcns(mgs),qxmxd(mgs,ls))
+        IF ( lvol(lh) .ge. 1 ) vhcns(mgs) = rho0(mgs)*qhcns(mgs)/Max(xdn(mgs,ls),400.)
+
+       ENDIF
+      ENDDO
+!
+!
+!  heat budget for rain---not all rain that collects ice can freeze
+!
+!
+!
+      if ( irwfrz .gt. 0 .and. .not. mixedphase) then
+!
+      do mgs = 1,ngscnt
+!
+!  compute total rain that freeze when it interacts with cloud ice
+!
+      qrztot(mgs) = qrfrz(mgs) + qiacr(mgs) + qsacr(mgs)
+!
+!  compute the maximum amount of rain that can freeze
+!  Used to limit freezing to 4*qrmxd, but now allow all rain to freeze if possible
+!
+      qrzmax(mgs) =   &
+     &  ( xdia(mgs,lr,1)*rwvent(mgs)*cx(mgs,lr)*fwet1(mgs) )
+      qrzmax(mgs) = max(qrzmax(mgs), 0.0)
+      qrzmax(mgs) = min(qrztot(mgs), qrzmax(mgs))
+      qrzmax(mgs) = min(qx(mgs,lr)/dtp, qrzmax(mgs))
+
+      IF ( temcg(mgs) < -30. ) THEN ! allow all to freeze if T < -30 because fwet becomes invalid (negative)
+        qrzmax(mgs) = qx(mgs,lr)/dtp
+      ENDIF
+!      qrzmax(mgs) = min(4.*qrmxd(mgs), qrzmax(mgs))
+!
+!  compute the correction factor
+!
+!      IF ( qrztot(mgs) .gt. qxmin(lr) ) THEN
+      IF ( qrztot(mgs) .gt. qrzmax(mgs) .and. qrztot(mgs) .gt. qxmin(lr) ) THEN
+        qrzfac(mgs) = qrzmax(mgs)/(qrztot(mgs))
+      ELSE
+        qrzfac(mgs) = 1.0
+      ENDIF
+      qrzfac(mgs) = min(1.0, qrzfac(mgs))
+!
+      end do
+!
+!
+! now correct the above sources
+!
+!
+      do mgs = 1,ngscnt
+      if ( temg(mgs) .le. 273.15 .and. qrzfac(mgs) .lt. 1.0 ) then
+      qrfrz(mgs)   = qrzfac(mgs)*qrfrz(mgs)
+      qrfrzs(mgs)  = qrzfac(mgs)*qrfrzs(mgs)
+      qrfrzf(mgs)  = qrzfac(mgs)*qrfrzf(mgs)
+      qiacr(mgs)   = qrzfac(mgs)*qiacr(mgs)
+      qsacr(mgs)   = qrzfac(mgs)*qsacr(mgs)
+      qiacrf(mgs)  = qrzfac(mgs)*qiacrf(mgs)
+      qiacrs(mgs)  = qrzfac(mgs)*qiacrs(mgs)
+      crfrz(mgs)   = qrzfac(mgs)*crfrz(mgs)
+      crfrzf(mgs)  = qrzfac(mgs)*crfrzf(mgs)
+      crfrzs(mgs)  = qrzfac(mgs)*crfrzs(mgs)
+      ciacr(mgs)   = qrzfac(mgs)*ciacr(mgs)
+      ciacrf(mgs)  = qrzfac(mgs)*ciacrf(mgs)
+      ciacrs(mgs)  = qrzfac(mgs)*ciacrs(mgs)
+
+      
+       vrfrzf(mgs)  = qrzfac(mgs)*vrfrzf(mgs)
+       viacrf(mgs)  = qrzfac(mgs)*viacrf(mgs)
+      end if
+      end do
+!
+!
+!
+      end if
+!
+!
+!
+!  evaporation of rain
+!
+!
+!
+      qrcev(:) = 0.0
+      crcev(:) = 0.0
+
+
+      do mgs = 1,ngscnt
+!
+      IF ( qx(mgs,lr) .gt. qxmin(lr) ) THEN
+
+      qrcev(mgs) =   &
+     &  fvce(mgs)*cx(mgs,lr)*rwvent(mgs)*rwcap(mgs)*evapfac
+! this line to allow condensation on rain:
+      IF ( rcond .eq. 1 ) THEN
+        qrcev(mgs) = min(qrcev(mgs), qxmxd(mgs,lv))
+! this line to have evaporation only:
+      ELSE
+        qrcev(mgs) = min(qrcev(mgs), 0.0)
+      ENDIF
+
+      qrcev(mgs) = max(qrcev(mgs), -qrmxd(mgs))
+!      if ( temg(mgs) .lt. 273.15 ) qrcev(mgs) = 0.0
+      IF ( qrcev(mgs) .lt. 0. .and. lnr > 1 ) THEN
+!        qrcev(mgs) =   -qrmxd(mgs)
+!        crcev(mgs) = (rho0(mgs)/(xmas(mgs,lr)+1.e-20))*qrcev(mgs)
+      crcev(mgs) = (cx(mgs,lr)/(qx(mgs,lr)))*qrcev(mgs)
+      ELSE
+         crcev(mgs) = 0.0
+      ENDIF
+!      if ( temg(mgs) .lt. 273.15 ) crcev(mgs) = 0.0
+!
+      ENDIF
+
+      end do
+!
+! evaporation/condensation of wet graupel and snow
+!
+      qscev(:) = 0.0
+      cscev(:) = 0.0
+      qhcev(:) = 0.0
+      chcev(:) = 0.0
+      qhlcev(:) = 0.0
+      chlcev(:) = 0.0
+
+!
+!
+!
+!  ICE MULTIPLICATION: Two modes (rimpa, and rimpb)
+!  (following Cotton et al. 1986)
+!
+ 
+      chmul1(:) =  0.0
+      chlmul1(:) =  0.0
+      csmul1(:) = 0.0
+!
+      qhmul1(:) =  0.0
+      qhlmul1(:) =  0.0
+      qsmul1(:) =  0.0
+
+      do mgs = 1,ngscnt
+ 
+       ltest =  qx(mgs,lh) .gt. qxmin(lh)
+       IF ( lhl > 1 )  ltest =  ltest .or. qx(mgs,lhl) .gt. qxmin(lhl)
+       
+      IF ( (itype1 .ge. 1 .or. itype2 .ge. 1 )   &
+     &              .and. qx(mgs,lc) .gt. qxmin(lc)) THEN
+      if ( temg(mgs) .ge. 265.15 .and. temg(mgs) .le. 271.15 ) then
+       IF ( ipconc .ge. 2 ) THEN
+        IF ( xv(mgs,lc) .gt. 0.0     &
+     &     .and.  ltest &
+!     .and. itype2 .ge. 2    &
+     &       ) THEN
+!
+!  Ziegler et al. 1986 Hallett-Mossop process.  VSTAR = 7.23e-15 (vol of 12micron radius)
+!
+         ex1 = (1./250.)*Exp(-7.23e-15/xv(mgs,lc))
+       IF ( itype2 .le. 2 ) THEN
+         ft = Max(0.0,Min(1.0,-0.11*temcg(mgs)**2 - 1.1*temcg(mgs)-1.7))
+       ELSE
+        IF ( temg(mgs) .ge. 265.15 .and. temg(mgs) .le. 267.15 ) THEN
+          ft = 0.5
+        ELSEIF (temg(mgs) .ge. 267.15 .and. temg(mgs) .le. 269.15 ) THEN
+          ft = 1.0
+        ELSEIF (temg(mgs) .ge. 269.15 .and. temg(mgs) .le. 271.15 ) THEN
+          ft = 0.5
+        ELSE 
+          ft = 0.0
+        ENDIF
+       ENDIF
+!        rhoinv = 1./rho0(mgs)
+!        DNSTAR = ex1*cglacw(mgs)
+        
+       IF ( ft > 0.0 ) THEN
+        
+        IF ( itype2 > 0 ) THEN
+         IF ( qx(mgs,lh) .gt. qxmin(lh) .and. (.not. wetsfc(mgs))  ) THEN
+          chmul1(mgs) = ft*ex1*chacw(mgs)
+!          chmul1(mgs) = Min( ft*ex1*chacw(mgs), ft*(30.*1.e+06)*rho0(mgs)*qhacw(mgs) ) ! 1.e+6 converts kg to mg; Saunders & Hosseini (2001) average of about 30 crystals per mg
+          qhmul1(mgs) = cimas0*chmul1(mgs)*rhoinv(mgs)
+         ENDIF
+         IF ( lhl .gt. 1 ) THEN
+           IF ( qx(mgs,lhl) .gt. qxmin(lhl) .and. (.not. wetsfchl(mgs))  ) THEN
+            chlmul1(mgs) = (ft*ex1*chlacw(mgs))
+            qhlmul1(mgs) = cimas0*chlmul1(mgs)*rhoinv(mgs)
+           ENDIF
+         ENDIF
+        ENDIF ! itype2
+
+        IF ( itype1 > 0 ) THEN
+         IF ( qx(mgs,lh) .gt. qxmin(lh) .and. (.not. wetsfc(mgs))  ) THEN
+          tmp = ft*(3.5e+08)*rho0(mgs)*qhacw(mgs)
+          chmul1(mgs) = chmul1(mgs) + tmp
+          qhmul1(mgs) = qhmul1(mgs) + cimas0*tmp*rhoinv(mgs)
+         ENDIF
+         IF ( lhl .gt. 1 ) THEN
+           IF ( qx(mgs,lhl) .gt. qxmin(lhl) .and. (.not. wetsfchl(mgs)) ) THEN
+            tmp = ft*(3.5e+08)*rho0(mgs)*qhlacw(mgs)
+            chlmul1(mgs) = chlmul1(mgs) + tmp
+            qhlmul1(mgs) = qhlmul1(mgs) + cimas0*tmp*rhoinv(mgs)
+           ENDIF
+         ENDIF
+        ENDIF ! itype1
+        
+        ENDIF ! ft
+
+        ENDIF ! xv(mgs,lc) .gt. 0.0 .and.
+
+       ELSE ! ipconc .lt. 2
+!
+!  define the temperature function
+!
+      fimt1(mgs) = 0.0
+!
+! Cotton et al. (1986) version
+!
+      if ( temg(mgs) .ge. 268.15 .and. temg(mgs) .le. 270.15 ) then
+        fimt1(mgs) = 1.0 -(temg(mgs)-268.15)/2.0
+      elseif (temg(mgs) .le. 268.15 .and. temg(mgs) .ge. 265.15 ) then
+        fimt1(mgs) = 1.0 +(temg(mgs)-268.15)/3.0
+      ELSE 
+        fimt1(mgs) = 0.0
+      end if
+!
+! Ferrier (1994) version
+!
+      if ( temg(mgs) .ge. 265.15 .and. temg(mgs) .le. 267.15 ) then
+        fimt1(mgs) = 0.5
+      elseif (temg(mgs) .ge. 267.15 .and. temg(mgs) .le. 269.15 ) then
+        fimt1(mgs) = 1.0
+      elseif (temg(mgs) .ge. 269.15 .and. temg(mgs) .le. 271.15 ) then
+        fimt1(mgs) = 0.5
+      ELSE 
+        fimt1(mgs) = 0.0
+      end if
+!
+!
+!   type I:  350 splinters are formed for every 1e-3 grams of cloud
+!            water accreted by graupel/hail (note converted to MKS units)
+!            3.5e+8 has units of 1/kg
+!
+      IF ( itype1 .ge. 1 ) THEN
+       fimta(mgs) = (3.5e+08)*rho0(mgs)
+      ELSE
+       fimta(mgs) = 0.0
+      ENDIF
+
+!
+!
+!   type II:  1 splinter formed for every 250 cloud droplets larger than
+!             24 micons in diameter (12 microns in radius) accreted by
+!             graupel/hail
+!
+!
+      fimt2(mgs) = 0.0
+      xcwmas = xmas(mgs,lc) * 1000.
+!
+      IF ( itype2 .ge. 1 ) THEN
+      if ( xcwmas.lt.1.26e-9 ) then
+        fimt2(mgs) = 0.0
+      end if
+      if ( xcwmas .le. 3.55e-9 .and. xcwmas .ge. 1.26e-9 ) then
+        fimt2(mgs) = (2.27)*alog(xcwmas) + 13.39
+      end if
+      if ( xcwmas .gt. 3.55e-9 ) then
+        fimt2(mgs) = 1.0
+      end if
+
+      fimt2(mgs) = min(fimt2(mgs),1.0)
+      fimt2(mgs) = max(fimt2(mgs),0.0)
+      
+      ENDIF
+!
+!     qhmul2 = 0.0
+!     qsmul2 = 0.0
+!
+!     qhmul2 =
+!    >  (4.0e-03)*fimt1(mgs)*fimt2(mgs)*qhacw(mgs)
+!     qsmul2 =
+!    >  (4.0e-03)*fimt1(mgs)*fimt2(mgs)*qsacw(mgs)
+!
+!      cimas0 = (1.0e-12)
+!      cimas0 = 2.5e-10
+      IF ( .not. wetsfc(mgs) ) THEN
+      chmul1(mgs) =  fimt1(mgs)*(fimta(mgs) +   &
+     &                           (4.0e-03)*fimt2(mgs))*qhacw(mgs)
+      ENDIF
+!
+      qhmul1(mgs) =  chmul1(mgs)*(cimas0/rho0(mgs))
+
+
+         IF ( lhl .gt. 1 ) THEN
+           IF ( qx(mgs,lhl) .gt. qxmin(lhl) .and. (.not. wetsfchl(mgs)) ) THEN
+            tmp = fimt1(mgs)*(fimta(mgs) +   &
+     &                           (4.0e-03)*fimt2(mgs))*qhlacw(mgs)
+            chlmul1(mgs) =  tmp
+            qhlmul1(mgs) = cimas0*tmp*rhoinv(mgs)
+           ENDIF
+         ENDIF
+
+!      qsmul1(mgs) =  csmul1(mgs)*(cimas0/rho0(mgs))
+!
+      ENDIF ! ( ipconc .ge. 2 )
+      
+      end if ! (in temperature range)
+      
+      ENDIF ! ( itype1 .eq. 1 .or. itype2 .eq. 1)
+!
+      end do
+!
+!
+!
+!     end if
+!
+!     end do
+!
+!
+! ICE MULTIPLICATION FROM SNOW
+!   Lo and Passarelli 82 / Willis and Heymsfield 89 / Schuur and Rutledge 00b
+!   using kfrag as fragmentation rate (s-1) / 500 microns as char mean diam for max snow mix ratio
+!
+      csmul(:) = 0.0
+      qsmul(:) = 0.0
+      
+      IF ( isnwfrac /= 0 ) THEN
+      do mgs = 1,ngscnt
+       IF (temg(mgs) .gt. 265.0) THEN !{
+        if (xdia(mgs,ls,1) .gt. 100.e-6 .and. xdia(mgs,ls,1) .lt. 2.0e-3) then  ! equiv diameter 100microns to 2mm
+
+        tmp = rhoinv(mgs)*pi*xdn(mgs,ls)*cx(mgs,ls)*(500.e-6)**3
+        qsmul(mgs) = Max( kfrag*( qx(mgs,ls) - tmp ) , 0.0 )
+
+        qsmul(mgs) = Min( qxmxd(mgs,li), qsmul(mgs) )
+        csmul(mgs) = Min( cxmxd(mgs,li), rho0(mgs)*qsmul(mgs)/mfrag )
+
+        endif
+       ENDIF !}
+      enddo
+      ENDIF
+
+!
+!  frozen rain-rain interaction....
+!
+!
+!
+!
+!  rain-ice interaction
+!
+!
+      do mgs = 1,ngscnt
+      qracif(mgs) = qraci(mgs)
+      cracif(mgs) = craci(mgs)
+!      ciacrf(mgs) = ciacr(mgs)
+      end do
+!
+! 
+!  vapor to pristine ice crystals   UP
+!
+!
+!
+!  compute the nucleation rate
+!
+!     do mgs = 1,ngscnt
+!     idqis = 0
+!     if ( ssi(mgs) .gt. 1.0 ) idqis = 1
+!     fiinit(mgs) = (felv(mgs)**2)/(cp*rw)
+!     dqisdt(mgs) = (qx(mgs,lv)-qis(mgs))/
+!    >  (1.0 + fiinit(mgs)*qis(mgs)/tsqr(mgs))
+!     qidsvp(mgs) = dqisdt(mgs)
+!     cnnt = min(cnit*exp(-temcg(mgs)*bta1),1.0e+09)
+!     qiint(mgs) = 
+!    >  il5(mgs)*idqis*(1.0/dtp)
+!    <  *min((6.88e-13)*cnnt/rho0(mgs), 0.25*dqisdt(mgs)) 
+!     end do
+!
+!  Meyers et al. (1992; JAS) and Ferrier (1994) primary ice nucleation
+!
+      cmassin = cimasn  ! 6.88e-13
+      do mgs = 1,ngscnt
+      qiint(mgs) = 0.0
+      ciint(mgs) = 0.0
+      qicicnt(mgs) = 0.0
+      cicint(mgs) = 0.0
+      qipipnt(mgs) = 0.0
+      cipint(mgs) = 0.0
+      IF ( icenucopt == 1 ) THEN
+      if ( ( temg(mgs) .lt. 268.15 .or.  &
+!     : ( imeyers5 .and. temg(mgs) .lt.  273.0) ) .and.    &
+     & ( imeyers5 .and. temg(mgs) .lt.  272.0 .and. temgkm2(mgs) .lt. tfr) ) .and.    &
+     &    ciintmx .gt. (cx(mgs,li))  &
+!     :    .and. cninm(mgs) .gt. 0.   &
+     &     ) then
+      fiinit(mgs) = (felv(mgs)**2)/(cp*rw)
+      dqisdt(mgs) = (qx(mgs,lv)-qis(mgs))/   &
+     &  (1.0 + fiinit(mgs)*qis(mgs)/tsqr(mgs))
+!      qidsvp(mgs) = dqisdt(mgs)
+      idqis = 0
+      if ( ssi(mgs) .gt. 1.0 ) THEN
+      idqis = 1 
+      dzfacp = max( float(kgsp(mgs)-kgs(mgs)), 0.0 )
+      dzfacm = max( float(kgs(mgs)-kgsm(mgs)), 0.0 )
+      qiint(mgs) =   &
+     &  idqis*il5(mgs)   &
+     &  *(cmassin/rho0(mgs))   &
+     &  *max(0.0,wvel(mgs))   &
+     &  *max((cninp(mgs)-cninm(mgs)),0.0)/gz(igs(mgs),jgs,kgs(mgs))   &
+     &  /((dzfacp+dzfacm))
+
+      qiint(mgs) = min(qiint(mgs), max(0.25*dqisdt(mgs),0.0)) 
+      ciint(mgs) = qiint(mgs)*rho0(mgs)/cmassin
+!
+! limit new crystals so it does not increase the current concentration
+!  above ciintmx 20,000 per liter (2.e7 per m**3)
+!
+!      ciintmx = 1.e9
+!      ciintmx = 1.e9
+      IF ( lcin > 1 ) THEN
+        ciint(mgs) = Min(ciint(mgs), ccin(mgs))
+        ccin(mgs) = ccin(mgs) - ciint(mgs)
+        qiint(mgs) = ciint(mgs)*cmassin/rho0(mgs)
+      ELSEIF ( lcina > 1 ) THEN
+        ciint(mgs) = Max(0.0, Min( ciint(mgs), Min( cnina(mgs), ciintmx ) - cina(mgs) ))
+        qiint(mgs) = ciint(mgs)*cmassin/rho0(mgs)
+      
+      ELSEIF ( ciint(mgs) .gt. (ciintmx - (cx(mgs,li)))) THEN
+        ciint(mgs) = Max(0.0, ciintmx - (cx(mgs,li)) )
+        qiint(mgs) = ciint(mgs)*cmassin/rho0(mgs)
+      ENDIF
+      end if
+      endif
+
+      ELSEIF ( icenucopt == 2 .or. icenucopt == -1 .or. icenucopt == -2 ) THEN
+      
+        IF ( ( temg(mgs) .lt. 268.15 .and. ssw(mgs) > 0.999 ) .or. ssi(mgs) > 1.05 ) THEN
+          IF ( lcin > 1 ) THEN
+           ciint(mgs) = Min(cnina(mgs), ccin(mgs))
+           ccin(mgs) = ccin(mgs) - ciint(mgs)
+          ELSE
+           ciint(mgs) = Max( 0.0, cnina(mgs) - cina(mgs) )
+          ENDIF
+          qiint(mgs) = ciint(mgs)*cmassin/rho0(mgs)
+
+          fiinit(mgs) = (felv(mgs)**2)/(cp*rw)
+          dqisdt(mgs) = (qx(mgs,lv)-qis(mgs))/(1.0 + fiinit(mgs)*qis(mgs)/tsqr(mgs))
+          qiint(mgs) = min(qiint(mgs), max(0.25*dqisdt(mgs),0.0))
+          ciint(mgs) = qiint(mgs)*rho0(mgs)/cmassin
+        ENDIF
+      
+      
+      
+      ELSEIF ( icenucopt == 3 ) THEN
+        IF (  temg(mgs) .lt. 268.15 ) THEN
+          IF ( lcin > 1 ) THEN
+           ciint(mgs) = Min(cnina(mgs), ccin(mgs))
+           ccin(mgs) = ccin(mgs) - ciint(mgs)
+          ELSE
+           ciint(mgs) = Max( 0.0, cnina(mgs) - cina(mgs) )
+          ENDIF
+          qiint(mgs) = ciint(mgs)*cmassin/rho0(mgs)
+        ENDIF
+
+      ENDIF
+!
+      if ( xplate(mgs) .eq. 1 ) then
+      qipipnt(mgs) = qiint(mgs)
+      cipint(mgs) = ciint(mgs)
+      end if
+!
+      if ( xcolmn(mgs) .eq. 1 ) then
+      qicicnt(mgs) = qiint(mgs)
+      cicint(mgs) = ciint(mgs)
+      end if
+!
+!     qipipnt(mgs) = 0.0
+!     qicicnt(mgs) = qiint(mgs)
+!
+      end do
+!
+! 
+
+!
+!  vapor to cloud droplets   UP
+!
+      if (ndebug .gt. 0 ) write(0,*) 'dbg = 8'
+!
+!
+      if (ndebug .gt. 0 ) write(0,*) 'Collection: set 3-component'
+!
+!  time for riming....
+!
+!     rimtim = 240.0
+!     dtrim = rimtim
+!     xacrtim  = 120.0
+!     tranfr = 0.50
+!     tranfw = 0.50
+!
+!  coefficients for riming
+!
+!     rimc1 = 300.00
+!     rimc2 = 0.44
+!
+! 
+!  zero som arrays
+!
+!
+      do mgs = 1,ngscnt
+      qrshr(mgs) = 0.0
+      qsshrp(mgs) = 0.0
+      qhshrp(mgs) = 0.0
+      end do
+!
+!
+!  first sum all of the shed rain
+!
+!
+      do mgs = 1,ngscnt
+      qrshr(mgs) = qsshr(mgs) + qhshr(mgs) + qhlshr(mgs)
+      crshr(mgs) = chshrr(mgs)/rzxh(mgs) + chlshrr(mgs)/rzxhl(mgs)
+      IF ( ipconc .ge. 3 ) THEN
+!       crshr(mgs) = Max(crshr(mgs), rho0(mgs)*qrshr(mgs)/(xdn(mgs,lr)*vr1mm) )
+      ENDIF
+      end do 
+!
+!
+!
+
+!
+!
+!
+!
+      IF ( ipconc .ge. 1 ) THEN
+!
+!
+!  concentration production terms
+!
+!  YYY
+!
+!
+!       DO mgs = 1,ngscnt
+       pccwi(:) = 0.0
+       pccwd(:) = 0.0
+       pccii(:) = 0.0
+       pccin(:) = 0.0
+       pccid(:) = 0.0
+       pcrwi(:) = 0.0
+       pcrwd(:) = 0.0
+       pcswi(:) = 0.0
+       pcswd(:) = 0.0
+       pchwi(:) = 0.0
+       pchwd(:) = 0.0
+       pchli(:) = 0.0
+       pchld(:) = 0.0
+!       ENDDO
+!
+!  Cloud ice
+!
+!      IF ( ipconc .ge. 1 ) THEN
+
+      IF ( warmonly < 0.5 ) THEN
+      do mgs = 1,ngscnt
+      pccii(mgs) =   &
+     &   il5(mgs)*cicint(mgs) &
+!     >  +il5(mgs)*cidpv(mgs)
+!     >  +il5(mgs)*(cwacii(mgs))   &
+     &  +il5(mgs)*(cwfrzc(mgs)+cwctfzc(mgs)   &
+     &  +cicichr(mgs))   &
+     &  +chmul1(mgs)   &
+     &  +chlmul1(mgs)    &
+     &  + csplinter(mgs) + csplinter2(mgs)   &
+!     >  + nsplinter*(crfrzf(mgs) + crfrz(mgs))
+     &  +csmul(mgs)
+      pccid(mgs) =   &
+     &   il5(mgs)*(-cscni(mgs) - cscnvi(mgs) & ! - cwaci(mgs)   &
+     &  -craci(mgs)    &
+     &  -csaci(mgs)   &
+     &  -chaci(mgs) - chlaci(mgs)   &
+     &  -chcni(mgs))   &
+     &  +il5(mgs)*cisbv(mgs)   &
+     &  -(1.-il5(mgs))*cimlr(mgs)
+
+      pccin(mgs) = ciint(mgs)
+      end do
+      ELSEIF ( warmonly < 0.8 ) THEN
+      do mgs = 1,ngscnt
+      
+!      qiint(mgs) = 0.0
+!      cicint(mgs) = 0.0
+!      qicicnt(mgs) = 0.0
+      
+      pccii(mgs) =   &
+     &   il5(mgs)*cicint(mgs)  &
+     &  +il5(mgs)*(cwfrzc(mgs)+cwctfzc(mgs)   &
+     &  +cicichr(mgs))   &
+     &  +chmul1(mgs)   &
+     &  +chlmul1(mgs)    &
+     &  + csplinter(mgs) + csplinter2(mgs)   &
+     &  +csmul(mgs)
+      pccid(mgs) =   &
+!     &   il5(mgs)*(-cscni(mgs) - cscnvi(mgs) & ! - cwaci(mgs)   &
+!     &  -craci(mgs)    &
+!     &  -csaci(mgs)   &
+!     &  -chaci(mgs) - chlaci(mgs)   &
+!     &  -chcni(mgs))   &
+     &  +il5(mgs)*cisbv(mgs)   &
+     &  -(1.-il5(mgs))*cimlr(mgs)
+
+      pccin(mgs) = ciint(mgs)
+
+      end do
+      ENDIF ! warmonly
+
+      
+!      ENDIF ! ( ipconc .ge. 1 )
+!
+!  Cloud water
+!
+      IF ( ipconc .ge. 2 ) THEN
+      
+      do mgs = 1,ngscnt
+      pccwi(mgs) =  (0.0) ! + (1-il5(mgs))*(-cirmlw(mgs))
+      
+      IF ( warmonly < 0.5 ) THEN
+      pccwd(mgs) =    &
+     &  - cautn(mgs) +   &
+     &  il5(mgs)*(-ciacw(mgs)-cwfrzp(mgs)-cwctfzp(mgs)   &
+     &  -cwfrzc(mgs)-cwctfzc(mgs)   &
+     &   )   &
+     &  -cracw(mgs) -csacw(mgs)  -chacw(mgs) - chlacw(mgs)
+      ELSEIF ( warmonly < 0.8 ) THEN
+      pccwd(mgs) =    &
+     &  - cautn(mgs) +   &
+     &  il5(mgs)*(  &
+     & -ciacw(mgs)-cwfrzp(mgs)-cwctfzp(mgs)   &
+     &  -cwfrzc(mgs)-cwctfzc(mgs)   &
+     &   )   &
+     &  -cracw(mgs) -chacw(mgs) -chlacw(mgs) 
+      ELSE
+      
+!       tmp3d(igs(mgs),jy,kgs(mgs)) = crcnw(mgs)
+
+!       cracw(mgs) = 0.0 ! turn off accretion
+!       qracw(mgs) = 0.0
+!       crcev(mgs) = 0.0 ! turn off evap
+!       qrcev(mgs) = 0.0 ! turn off evap
+!       cracr(mgs) = 0.0 ! turn off self collection
+       
+       
+!       cautn(mgs) = 0.0 
+!       crcnw(mgs) = 0.0
+!       qrcnw(mgs) = 0.0
+
+      pccwd(mgs) =    &
+     &  - cautn(mgs) -cracw(mgs)
+      ENDIF
+
+
+      IF ( -pccwd(mgs)*dtp .gt. cx(mgs,lc) ) THEN
+!       write(0,*) 'OUCH! pccwd(mgs)*dtp .gt. ccw(mgs) ',pccwd(mgs),cx(mgs,lc)
+!       write(0,*) 'qc = ',qx(mgs,lc)
+!       write(0,*) -ciacw(mgs)-cwfrzp(mgs)-cwctfzp(mgs)-cwfrzc(mgs)-cwctfzc(mgs)
+!       write(0,*)  -cracw(mgs) -csacw(mgs)  -chacw(mgs)
+!       write(0,*) - cautn(mgs)
+
+       frac = -cx(mgs,lc)/(pccwd(mgs)*dtp)
+       pccwd(mgs) = -cx(mgs,lc)/dtp
+
+        ciacw(mgs)   = frac*ciacw(mgs)
+        cwfrzp(mgs)  = frac*cwfrzp(mgs)
+        cwctfzp(mgs) = frac*cwctfzp(mgs)
+        cwfrzc(mgs)  = frac*cwfrzc(mgs)
+        cwctfzc(mgs) = frac*cwctfzc(mgs)
+        cracw(mgs)   = frac*cracw(mgs)
+        csacw(mgs)   = frac*csacw(mgs)
+        chacw(mgs)   = frac*chacw(mgs)
+        cautn(mgs)   = frac*cautn(mgs)
+       
+        pccii(mgs) = pccii(mgs) - (1.-frac)*il5(mgs)*(cwfrzc(mgs)+cwctfzc(mgs))
+        IF ( lhl .gt. 1 ) chlacw(mgs)   = frac*chlacw(mgs)
+
+!       STOP
+      ENDIF
+
+      end do
+
+      ENDIF ! ipconc
+
+!
+!  Rain
+!
+      IF ( ipconc .ge. 3 ) THEN
+
+      do mgs = 1,ngscnt
+
+      IF ( warmonly < 0.5 ) THEN
+      pcrwi(mgs) = &
+!     >   cracw(mgs) +    &
+     &   crcnw(mgs)   &
+     &  +(1-il5(mgs))*(   &
+     &    -chmlrr(mgs)/rzxh(mgs)   &
+     &    -chlmlrr(mgs)/rzxhl(mgs)   &
+     &    -csmlr(mgs)     &
+     &   - cimlr(mgs) )   &
+     &  -crshr(mgs)             !null at this point when wet snow/graupel included
+      pcrwd(mgs) =   &
+     &   il5(mgs)*(-ciacr(mgs) - crfrz(mgs) ) & ! - cipacr(mgs))
+!     >  -csacr(mgs)   &
+     &  - chacr(mgs) - chlacr(mgs)   &
+     &  +crcev(mgs)   &
+     &  - cracr(mgs)
+!     >  -il5(mgs)*ciracr(mgs)
+      ELSEIF ( warmonly < 0.8 ) THEN
+       pcrwi(mgs) = &
+     &   crcnw(mgs)   &
+     &  +(1-il5(mgs))*(   &
+     &    -chmlrr(mgs)/rzxh(mgs)    &
+     &    -chlmlrr(mgs)/rzxhl(mgs)   &
+     &    -csmlr(mgs)     &
+     &   - cimlr(mgs) )   &
+     &  -crshr(mgs)             !null at this point when wet snow/graupel included
+      pcrwd(mgs) =   &
+     &   il5(mgs)*( - crfrz(mgs) ) & ! - cipacr(mgs))
+     &  - chacr(mgs)    &
+     &  - chlacr(mgs)    &
+     &  +crcev(mgs)   &
+     &  - cracr(mgs)
+      ELSE
+      pcrwi(mgs) =   &
+     &   crcnw(mgs)
+      pcrwd(mgs) =   &
+     &  +crcev(mgs)   &
+     &  - cracr(mgs)
+
+!        tmp3d(igs(mgs),jy,kgs(mgs)) = vtxbar(mgs,lr,1) ! crcnw(mgs) ! (pcrwi(mgs) + pcrwd(mgs))
+!        pcrwi(mgs) = 0.0
+!        pcrwd(mgs) = 0.0
+!        qrcnw(mgs) = 0.0
+
+      ENDIF
+
+
+      frac = 0.0
+      IF ( -pcrwd(mgs)*dtp .gt. cx(mgs,lr) ) THEN
+!       write(0,*) 'OUCH! pcrwd(mgs)*dtp .gt. crw(mgs) ',pcrwd(mgs)*dtp,cx(mgs,lr),mgs,igs(mgs),kgs(mgs)
+!       write(0,*) -ciacr(mgs)
+!       write(0,*) -crfrz(mgs)
+!       write(0,*) -chacr(mgs)
+!       write(0,*)  crcev(mgs)
+!       write(0,*)  -cracr(mgs)
+
+       frac =  -cx(mgs,lr)/(pcrwd(mgs)*dtp)
+       pcrwd(mgs) = -cx(mgs,lr)/dtp
+
+        ciacr(mgs) = frac*ciacr(mgs)
+        ciacrf(mgs) = frac*ciacrf(mgs)
+        ciacrs(mgs) = frac*ciacrs(mgs)
+        crfrz(mgs) = frac*crfrz(mgs)
+        crfrzf(mgs) = frac*crfrzf(mgs)
+        crfrzs(mgs) = frac*crfrzs(mgs)
+        chacr(mgs) = frac*chacr(mgs)
+        crcev(mgs) = frac*crcev(mgs)
+        cracr(mgs) = frac*cracr(mgs)
+
+!       STOP
+      ENDIF
+
+      end do
+
+      ENDIF
+
+
+      IF ( warmonly < 0.5 ) THEN
+
+!
+!  Snow
+!
+      IF ( ipconc .ge. 4 ) THEN !
+
+      do mgs = 1,ngscnt
+      pcswi(mgs) =   &
+     &   il5(mgs)*(cscnis(mgs) + cscnvis(mgs) )    &
+     &  + ifrzs*crfrzs(mgs) &
+     &  + ifrzs*ciacrs(mgs) &
+     &  + cscnh(mgs)
+      pcswd(mgs) = &
+!     :  cracs(mgs)     &
+     &  -chacs(mgs) - chlacs(mgs)   &
+     &  -chcns(mgs)   &
+     &  +(1-il5(mgs))*csmlr(mgs) + csshr(mgs) & ! + csshrp(mgs)
+!     >  +il5(mgs)*(cssbv(mgs))   &
+     &   + cssbv(mgs)   &
+     &  - csacs(mgs)
+
+      pccii(mgs) =  pccii(mgs) &
+     &  + (1. - ifrzs)*crfrzs(mgs) &
+     &  + (1. - ifrzs)*ciacrs(mgs)
+
+      end do
+
+      ENDIF
+
+!
+!  Graupel
+!
+      IF ( ipconc .ge. 5 ) THEN !
+      do mgs = 1,ngscnt
+      pchwi(mgs) =   &
+     &  +ifrzg*(crfrzf(mgs)   &
+     & +il5(mgs)*(ciacrf(mgs) ))    &
+     & + chcnsh(mgs) + chcnih(mgs) + chcnhl(mgs)
+
+      pchwd(mgs) =   &
+     &  (1-il5(mgs))*chmlr(mgs) &
+!     >  + il5(mgs)*chsbv(mgs)   &
+     &  + chsbv(mgs)   &
+     &  - il5(mgs)*chlcnh(mgs) &
+     &  - cscnh(mgs)
+      end do
+!
+
+!
+!  Hail
+!
+      IF ( lhl .gt. 1 ) THEN !
+      do mgs = 1,ngscnt
+      pchli(mgs) = (1.0-ifrzg)*(crfrzf(mgs) +il5(mgs)*(ciacrf(mgs) ))  &
+     & + chlcnh(mgs) *rzxhlh(mgs)
+
+      pchld(mgs) =   &
+     &  (1-il5(mgs))*chlmlr(mgs)   &
+!     >  + il5(mgs)*chlsbv(mgs)   &
+     &  + chlsbv(mgs) - chcnhl(mgs)
+      
+!      IF ( pchli(mgs) .ne. 0. .or. pchld(mgs) .ne. 0 ) THEN
+!       write(0,*) 'dr: pchli,pchld = ', pchli(mgs),pchld(mgs), igs(mgs),kgs(mgs)
+!      ENDIF
+      end do
+      
+      ENDIF
+!
+
+      ENDIF ! (ipconc .ge. 5 )
+
+      ELSEIF ( warmonly < 0.8 ) THEN
+
+!
+!  Graupel
+!
+      IF ( ipconc .ge. 5 ) THEN !
+      do mgs = 1,ngscnt
+      pchwi(mgs) =   &
+     &  +ifrzg*(crfrzf(mgs) )
+
+      pchwd(mgs) =   &
+     &  (1-il5(mgs))*chmlr(mgs) &
+     &  - il5(mgs)*chlcnh(mgs)
+      end do
+!
+!  Hail
+!
+      IF ( lhl .gt. 1 ) THEN !
+      do mgs = 1,ngscnt
+      pchli(mgs) = & ! (1.0-ifrzg)*(crfrzf(mgs) +il5(mgs)*(ciacrf(mgs) ))  &
+     & + chlcnh(mgs) *rzxhl(mgs)/rzxh(mgs)
+
+      pchld(mgs) =   &
+     &  (1-il5(mgs))*chlmlr(mgs) !  &
+!     >  + il5(mgs)*chlsbv(mgs)   &
+!     &  + chlsbv(mgs)
+
+!      IF ( pchli(mgs) .ne. 0. .or. pchld(mgs) .ne. 0 ) THEN
+!       write(0,*) 'dr: pchli,pchld = ', pchli(mgs),pchld(mgs), igs(mgs),kgs(mgs)
+!      ENDIF
+      end do
+
+      ENDIF
+
+      ENDIF ! ipconc >= 5
+
+      ENDIF ! warmonly
+
+!
+
+!
+!  Balance and checks for continuity.....within machine precision...
+!
+      do mgs = 1,ngscnt
+      pctot(mgs)   = pccwi(mgs) +pccwd(mgs) +   &
+     &               pccii(mgs) +pccid(mgs) +   &
+     &               pcrwi(mgs) +pcrwd(mgs) +   &
+     &               pcswi(mgs) +pcswd(mgs) +   &
+     &               pchwi(mgs) +pchwd(mgs) +   &
+     &               pchli(mgs) +pchld(mgs)
+      end do
+!
+!
+      ENDIF ! ( ipconc .ge. 1 )
+!
+!
+!
+!
+!
+!  GOGO
+!  production terms for mass
+!
+!
+       pqwvi(:) = 0.0
+       pqwvd(:) = 0.0
+       pqcwi(:) = 0.0
+       pqcwd(:) = 0.0
+       pqcii(:) = 0.0
+       pqcid(:) = 0.0
+       pqrwi(:) = 0.0
+       pqrwd(:) = 0.0
+       pqswi(:) = 0.0
+       pqswd(:) = 0.0
+       pqhwi(:) = 0.0
+       pqhwd(:) = 0.0
+       pqhli(:) = 0.0
+       pqhld(:) = 0.0
+       pqlwsi(:) = 0.0
+       pqlwsd(:) = 0.0
+       pqlwhi(:) = 0.0
+       pqlwhd(:) = 0.0
+       pqlwhli(:) = 0.0
+       pqlwhld(:) = 0.0
+!
+!  Vapor
+!
+      IF ( warmonly < 0.5 ) THEN
+      do mgs = 1,ngscnt
+      pqwvi(mgs) =    &
+     &  -Min(0.0, qrcev(mgs))   &
+     &  -Min(0.0, qhcev(mgs))   &
+     &  -Min(0.0, qhlcev(mgs))   &
+     &  -Min(0.0, qscev(mgs))   &
+!     >  +il5(mgs)*(-qhsbv(mgs) - qhlsbv(mgs) )   &
+     &  -qhsbv(mgs) - qhlsbv(mgs)   &
+     &  -qssbv(mgs)    &
+     &  -il5(mgs)*qisbv(mgs)
+      pqwvd(mgs) =     &
+     &  -Max(0.0, qrcev(mgs))   &
+     &  -Max(0.0, qhcev(mgs))   &
+     &  -Max(0.0, qhlcev(mgs))   &
+     &  -Max(0.0, qscev(mgs))   &
+     &  +il5(mgs)*(-qiint(mgs)   &
+     &  -qhdpv(mgs) -qsdpv(mgs) - qhldpv(mgs))   &
+     &  -il5(mgs)*qidpv(mgs)
+      end do
+
+      ELSEIF ( warmonly < 0.8 ) THEN
+      do mgs = 1,ngscnt
+      pqwvi(mgs) =    &
+     &  -Min(0.0, qrcev(mgs)) &
+     &  -il5(mgs)*qisbv(mgs)
+      pqwvd(mgs) =     &
+     &  +il5(mgs)*(-qiint(mgs)   &
+!     &  -qhdpv(mgs) ) & !- qhldpv(mgs))   &
+     &  -qhdpv(mgs) - qhldpv(mgs))   &
+!     &  -qhdpv(mgs) -qsdpv(mgs) - qhldpv(mgs))   &
+     &  -Max(0.0, qrcev(mgs))     &
+     &  -il5(mgs)*qidpv(mgs)
+      end do
+
+      ELSE
+      do mgs = 1,ngscnt
+      pqwvi(mgs) =    &
+     &  -Min(0.0, qrcev(mgs))
+      pqwvd(mgs) =     &
+     &  -Max(0.0, qrcev(mgs))
+      end do
+
+      ENDIF ! warmonly
+!
+!  Cloud water
+!
+      do mgs = 1,ngscnt
+
+      pqcwi(mgs) =  (0.0) + qwcnr(mgs)
+
+      IF ( warmonly < 0.5 ) THEN
+      pqcwd(mgs) =    &
+     &  il5(mgs)*(-qiacw(mgs)-qwfrzc(mgs)-qwctfzc(mgs))   &
+     &  -il5(mgs)*(qicichr(mgs))   &
+     &  -qracw(mgs) -qsacw(mgs) -qrcnw(mgs) -qhacw(mgs) - qhlacw(mgs)
+!     >  -il5(mgs)*(qwfrzp(mgs)+qwctfzp(mgs))
+      ELSEIF ( warmonly < 0.8 ) THEN
+      pqcwd(mgs) =    &
+     &  il5(mgs)*(-qiacw(mgs)-qwfrzc(mgs)-qwctfzc(mgs))   &
+!     &  il5(mgs)*(-qwfrzc(mgs)-qwctfzc(mgs))   &
+     &  -il5(mgs)*(qicichr(mgs))   &
+     &  -qracw(mgs) -qrcnw(mgs) -qhacw(mgs) -qhlacw(mgs)
+      ELSE
+      pqcwd(mgs) =    &
+     &  -qracw(mgs) - qrcnw(mgs)
+      ENDIF
+
+      IF ( pqcwd(mgs) .lt. 0.0 .and. -pqcwd(mgs)*dtp .gt. qx(mgs,lc) ) THEN
+
+       frac = -Max(0.0,qx(mgs,lc))/(pqcwd(mgs)*dtp)
+       pqcwd(mgs) = -qx(mgs,lc)/dtp
+
+        qiacw(mgs)   = frac*qiacw(mgs)
+!        qwfrzp(mgs)  = frac*qwfrzp(mgs)
+!        qwctfzp(mgs) = frac*qwctfzp(mgs)
+        qwfrzc(mgs)  = frac*qwfrzc(mgs)
+        qwctfzc(mgs) = frac*qwctfzc(mgs)
+        qracw(mgs)   = frac*qracw(mgs)
+        qsacw(mgs)   = frac*qsacw(mgs)
+        qhacw(mgs)   = frac*qhacw(mgs)
+        vhacw(mgs)   = frac*vhacw(mgs)
+        qrcnw(mgs)   = frac*qrcnw(mgs)
+        qwfrz(mgs)   = frac*qwfrz(mgs)
+        qwfrzp(mgs)  = frac*qwfrzp(mgs)
+        IF ( lhl .gt. 1 ) THEN
+          qhlacw(mgs)   = frac*qhlacw(mgs)
+          vhlacw(mgs)   = frac*vhlacw(mgs)
+        ENDIF
+!        IF ( lzh .gt. 1 ) zhacw(mgs) = frac*zhacw(mgs)
+
+!       STOP
+      ENDIF
+      
+
+      end do
+!
+!  Cloud ice
+!
+      IF ( warmonly < 0.5 ) THEN
+
+      do mgs = 1,ngscnt
+      pqcii(mgs) =     &
+     &   il5(mgs)*qicicnt(mgs)    &
+     &  +il5(mgs)*qidpv(mgs)    &
+     &  +il5(mgs)*qiacw(mgs)   & ! (qiacwi(mgs)+qwacii(mgs))   &
+     &  +il5(mgs)*(qwfrzc(mgs)+qwctfzc(mgs))   &
+     &  +il5(mgs)*(qicichr(mgs))   &
+     &  +qsmul(mgs)               &
+     &  +qhmul1(mgs) + qhlmul1(mgs)   &
+     & + qsplinter(mgs) + qsplinter2(mgs)
+!     > + cimas0*nsplinter*(crfrzf(mgs) + crfrz(mgs))/rho0(mgs)
+
+      pqcid(mgs) =     &
+     &   il5(mgs)*(-qscni(mgs) - qscnvi(mgs)    & ! -qwaci(mgs)    &
+     &  -qraci(mgs)    &
+     &  -qsaci(mgs) )   &
+     &  -qhaci(mgs)   &
+     &  -qhlaci(mgs)    &
+     &  +il5(mgs)*qisbv(mgs)    &
+     &  +(1.-il5(mgs))*qimlr(mgs)   &
+     &  - qhcni(mgs)
+      end do
+
+      ELSEIF ( warmonly < 0.8 ) THEN
+
+      do mgs = 1,ngscnt
+      pqcii(mgs) =     &
+     &   il5(mgs)*qicicnt(mgs)     &
+     &  +il5(mgs)*(qwfrzc(mgs)+qwctfzc(mgs))   &
+!     &  +il5(mgs)*(qicichr(mgs))   &
+!     &  +qsmul(mgs)               &
+     &  +qhmul1(mgs) + qhlmul1(mgs)   &
+     & + qsplinter(mgs) + qsplinter2(mgs) &
+     &  +il5(mgs)*qidpv(mgs)    &
+     &  +il5(mgs)*qiacw(mgs)  ! & ! (qiacwi(mgs)+qwacii(mgs))   &
+!     &  +il5(mgs)*(qwfrzc(mgs)+qwctfzc(mgs))   &
+!     &  +il5(mgs)*(qicichr(mgs))   &
+!     &  +qsmul(mgs)               &
+!     &  +qhmul1(mgs) + qhlmul1(mgs)   &
+!     & + qsplinter(mgs) + qsplinter2(mgs)
+
+      pqcid(mgs) =     &
+!     &   il5(mgs)*(-qscni(mgs) - qscnvi(mgs)    & ! -qwaci(mgs)    &
+!     &  -qraci(mgs)    &
+!     &  -qsaci(mgs) )   &
+!     &  -qhaci(mgs)   &
+!     &  -qhlaci(mgs)    &
+     &  +il5(mgs)*qisbv(mgs)    &
+     &  +(1.-il5(mgs))*qimlr(mgs)  ! &
+!     &  - qhcni(mgs)
+      end do
+
+      ENDIF
+!
+!  Rain
+!
+
+      do mgs = 1,ngscnt
+      IF ( warmonly < 0.5 ) THEN
+      pqrwi(mgs) =     &
+     &   qracw(mgs) + qrcnw(mgs) + Max(0.0, qrcev(mgs))   &
+     &  +(1-il5(mgs))*(   &
+     &    -qhmlr(mgs)                 &            !null at this point when wet snow/graupel included
+     &    -qsmlr(mgs)  - qhlmlr(mgs)     &
+     &    -qimlr(mgs))   &
+     &    -qsshr(mgs)       &                      !null at this point when wet snow/graupel included
+     &    -qhshr(mgs)       &                      !null at this point when wet snow/graupel included
+     &    -qhlshr(mgs)
+      pqrwd(mgs) =     &
+     &  il5(mgs)*(-qiacr(mgs)-qrfrz(mgs))    &
+     &  - qsacr(mgs) - qhacr(mgs) - qhlacr(mgs) - qwcnr(mgs)   &
+     &  + Min(0.0,qrcev(mgs))
+      ELSEIF ( warmonly < 0.8 ) THEN
+      pqrwi(mgs) =     &
+     &   qracw(mgs) + qrcnw(mgs) + Max(0.0, qrcev(mgs))   &
+     &  +(1-il5(mgs))*(   &
+     &    -qhmlr(mgs)                 &            !null at this point when wet snow/graupel included
+     &    -qhshr(mgs)                 &           !null at this point when wet snow/graupel included
+     &    -qhlmlr(mgs)                 &            !null at this point when wet snow/graupel included
+     &    -qhlshr(mgs) )                           !null at this point when wet snow/graupel included
+      pqrwd(mgs) =     &
+     &  il5(mgs)*(-qrfrz(mgs))    &
+     &   - qhacr(mgs)    &
+     &   - qhlacr(mgs)    &
+     &  + Min(0.0,qrcev(mgs))
+      ELSE
+      pqrwi(mgs) =     &
+     &   qracw(mgs) + qrcnw(mgs) + Max(0.0, qrcev(mgs))
+      pqrwd(mgs) =  Min(0.0,qrcev(mgs))
+      ENDIF ! warmonly
+
+
+ !      IF ( pqrwd(mgs) .lt. 0.0 .and. -(pqrwd(mgs) + pqrwi(mgs))*dtp .gt. qx(mgs,lr)  ) THEN
+      IF ( pqrwd(mgs) .lt. 0.0 .and. -(pqrwd(mgs) + pqrwi(mgs))*dtp .gt. qx(mgs,lr)  ) THEN
+
+       frac = (-qx(mgs,lr) + pqrwi(mgs)*dtp)/(pqrwd(mgs)*dtp)
+!       pqrwd(mgs) = -qx(mgs,lr)/dtp  + pqrwi(mgs)
+
+       pqwvi(mgs) = pqwvi(mgs)    &
+     &  + Min(0.0, qrcev(mgs))   &
+     &  - frac*Min(0.0, qrcev(mgs))
+       pqwvd(mgs) =  pqwvd(mgs)   &
+     &  + Max(0.0, qrcev(mgs))   &
+     &  - frac*Max(0.0, qrcev(mgs))
+
+       qiacr(mgs)  = frac*qiacr(mgs)
+       qiacrf(mgs) = frac*qiacrf(mgs)
+       qiacrs(mgs) = frac*qiacrs(mgs)
+       viacrf(mgs) = frac*viacrf(mgs)
+       qrfrz(mgs)  = frac*qrfrz(mgs) 
+       qrfrzs(mgs) = frac*qrfrzs(mgs) 
+       qrfrzf(mgs) = frac*qrfrzf(mgs)
+       vrfrzf(mgs) = frac*vrfrzf(mgs)
+       qsacr(mgs)  = frac*qsacr(mgs)
+       qhacr(mgs)  = frac*qhacr(mgs)
+       vhacr(mgs)  = frac*vhacr(mgs)
+       qrcev(mgs)  = frac*qrcev(mgs)
+       qhlacr(mgs) = frac*qhlacr(mgs)
+       vhlacr(mgs) = frac*vhlacr(mgs)
+!       qhcev(mgs)  = frac*qhcev(mgs)
+
+
+      IF ( warmonly < 0.5 ) THEN
+       pqrwd(mgs) =     &
+     &  il5(mgs)*(-qiacr(mgs)-qrfrz(mgs) - qsacr(mgs))    &
+     &  - qhacr(mgs) - qhlacr(mgs) - qwcnr(mgs)   &
+     &  + Min(0.0,qrcev(mgs))
+      ELSEIF ( warmonly < 0.8 ) THEN
+      pqrwd(mgs) =     &
+     &  il5(mgs)*(-qrfrz(mgs))    &
+     &   - qhacr(mgs)    &
+     &   - qhlacr(mgs)    &
+     &  + Min(0.0,qrcev(mgs))
+      ELSE
+       pqrwd(mgs) =  Min(0.0,qrcev(mgs))
+      ENDIF ! warmonly
+
+!
+! Resum for vapor since qrcev has changed
+!
+      IF ( qrcev(mgs) .ne. 0.0 ) THEN
+       pqwvi(mgs) =    &
+     &  -Min(0.0, qrcev(mgs))   &
+     &  -Min(0.0, qhcev(mgs))   &
+     &  -Min(0.0, qhlcev(mgs))   &
+     &  -Min(0.0, qscev(mgs))   &
+!     >  +il5(mgs)*(-qhsbv(mgs)  - qhlsbv(mgs) )   &
+     &  -qhsbv(mgs)  - qhlsbv(mgs)   &
+     &  -qssbv(mgs)    &
+     &  -il5(mgs)*qisbv(mgs)
+       pqwvd(mgs) =     &
+     &  -Max(0.0, qrcev(mgs))   &
+     &  -Max(0.0, qhcev(mgs))   &
+     &  -Max(0.0, qhlcev(mgs))   &
+     &  -Max(0.0, qscev(mgs))   &
+     &  +il5(mgs)*(-qiint(mgs)   &
+     &  -qhdpv(mgs) -qsdpv(mgs) - qhldpv(mgs))   &
+     &  -il5(mgs)*qidpv(mgs)
+       ENDIF
+
+
+!       STOP
+      ENDIF
+      end do
+
+      IF ( warmonly < 0.5 ) THEN
+
+!
+!  Snow
+!
+      do mgs = 1,ngscnt
+      pqswi(mgs) =     &
+     &   il5(mgs)*(qscni(mgs)+qsaci(mgs)+qsdpv(mgs)   &
+     &   + qscnvi(mgs)                        &
+     &   + ifrzs*(qiacrs(mgs) + qrfrzs(mgs))  &
+     &   + il2(mgs)*qsacr(mgs))   &
+     &   + il3(mgs)*(qiacrf(mgs)+qracif(mgs)) &
+     &   + Max(0.0, qscev(mgs))   &
+     &   + qsacw(mgs) + qscnh(mgs)
+      pqswd(mgs) =    &
+!     >  -qfacs(mgs) ! -qwacs(mgs)   &
+     &  -qracs(mgs)*(1-il2(mgs)) -qhacs(mgs) - qhlacs(mgs)   &
+     &  -qhcns(mgs)   &
+     &  +(1-il5(mgs))*qsmlr(mgs) + qsshr(mgs)    &    !null at this point when wet snow included
+!     >  +il5(mgs)*(qssbv(mgs))   &
+     &  + (qssbv(mgs))   &
+     &  + Min(0.0, qscev(mgs))  &
+     &  -qsmul(mgs)
+      
+      pqcii(mgs) =  pqcii(mgs) &
+     &  + (1. - ifrzs)*qrfrzs(mgs) &
+     &  + (1. - ifrzs)*qiacrs(mgs)
+      
+      end do 
+      
+!
+!  Graupel
+!
+      do mgs = 1,ngscnt
+      pqhwi(mgs) =    &
+     &  +il5(mgs)*ifrzg*(qrfrzf(mgs)  + (1-il3(mgs))*(qiacrf(mgs)+qracif(mgs)))   &
+     &  + (1-il2(mgs))*(qracs(mgs) + qsacr(mgs))  &
+     &  +il5(mgs)*(qhdpv(mgs))   &
+     &  +Max(0.0, qhcev(mgs))   &
+     &  +qhacr(mgs)+qhacw(mgs)   &
+     &  +qhacs(mgs)+qhaci(mgs)   &
+     &  + qhcns(mgs) + qhcni(mgs) + qhcnhl(mgs)
+      pqhwd(mgs) =     &
+     &   qhshr(mgs)                &    !null at this point when wet graupel included
+     &  +(1-il5(mgs))*qhmlr(mgs)   &    !null at this point when wet graupel included
+!     >  +il5(mgs)*qhsbv(mgs)   &
+     &  + qhsbv(mgs)   &
+     &  + Min(0.0, qhcev(mgs))   &
+     &  -qhmul1(mgs) - qhlcnh(mgs) - qscnh(mgs)  &
+     &  - qsplinter(mgs) - qsplinter2(mgs)
+!     > - cimas0*nsplinter*(crfrzf(mgs) + crfrz(mgs))/rho0(mgs)
+      end do
+
+!
+!  Hail
+!
+      IF ( lhl .gt. 1 ) THEN
+
+      do mgs = 1,ngscnt
+      pqhli(mgs) =    &
+     &  +il5(mgs)*(qhldpv(mgs) + (1.0-ifrzg)*(qiacrf(mgs)+qrfrzf(mgs)  + qracif(mgs)))   &
+     &  +Max(0.0, qhlcev(mgs))   &
+     &  +qhlacr(mgs)+qhlacw(mgs)   &
+     &  +qhlacs(mgs)+qhlaci(mgs)   &
+     &  + qhlcnh(mgs)
+      pqhld(mgs) =     &
+     &   qhlshr(mgs)    &
+     &  +(1-il5(mgs))*qhlmlr(mgs)    &
+!     >  +il5(mgs)*qhlsbv(mgs)   &
+     &  + qhlsbv(mgs)   &
+     &  + Min(0.0, qhlcev(mgs))   &
+     &  -qhlmul1(mgs) - qhcnhl(mgs)
+      end do
+      
+      ENDIF ! lhl
+
+      ELSEIF ( warmonly < 0.8 ) THEN
+!
+!  Graupel
+!
+      do mgs = 1,ngscnt
+      pqhwi(mgs) =    &
+     &  +il5(mgs)*ifrzg*(qrfrzf(mgs) )   &
+     &  +il5(mgs)*(qhdpv(mgs))   &
+     &  +qhacr(mgs)+qhacw(mgs)   
+      pqhwd(mgs) =     &
+     &   qhshr(mgs)                &    !null at this point when wet graupel included
+     &  - qhlcnh(mgs)   &
+     &  - qhmul1(mgs)   &
+     &  - qsplinter(mgs) - qsplinter2(mgs) &
+     &  +(1-il5(mgs))*qhmlr(mgs)        !null at this point when wet graupel included
+       end do
+
+!
+!  Hail
+!
+      IF ( lhl .gt. 1 ) THEN
+
+      do mgs = 1,ngscnt
+      pqhli(mgs) =    &
+     &  +il5(mgs)*(qhldpv(mgs) ) & ! + (1.0-ifrzg)*(qiacrf(mgs)+qrfrzf(mgs)  + qracif(mgs)))   &
+     &  +qhlacr(mgs)+qhlacw(mgs)   &
+!     &  +qhlacs(mgs)+qhlaci(mgs)   &
+     &  + qhlcnh(mgs)
+      pqhld(mgs) =     &
+     &   qhlshr(mgs)    &
+     &  +(1-il5(mgs))*qhlmlr(mgs)    &
+!     >  +il5(mgs)*qhlsbv(mgs)   &
+     &  + qhlsbv(mgs)   &
+     &  -qhlmul1(mgs) - qhcnhl(mgs)
+
+      end do
+
+      ENDIF ! lhl
+
+      ENDIF ! warmonly
+
+!
+!  Liquid water on snow and graupel
+!
+
+      vhmlr(:) = 0.0
+      vhlmlr(:) = 0.0
+      vhfzh(:) = 0.0
+      vhlfzhl(:) = 0.0
+
+      IF ( mixedphase ) THEN
+      ELSE ! set arrays for non-mixedphase graupel
+      
+!        vhshdr(:) = 0.0
+        vhmlr(:) = qhmlr(:) ! not actually volume, but treated as q in rate equation
+!        vhsoak(:) = 0.0
+
+!        vhlshdr(:) = 0.0
+        vhlmlr(:) = qhlmlr(:) ! not actually volume, but treated as q in rate equation
+!        vhlmlr(:) = rho0(:)*qhlmlr(:)/xdn(:,lhl) 
+!        vhlsoak(:) = 0.0
+      
+      ENDIF  ! mixedphase
+
+
+
+!
+!  Snow volume
+!
+      IF ( lvol(ls) .gt. 1 ) THEN
+      do mgs = 1,ngscnt
+!      pvswi(mgs) = rho0(mgs)*( pqswi(mgs) )/xdn0(ls)
+
+      pvswi(mgs) = rho0(mgs)*(    &
+!aps     >   il5*qsfzs(mgs)/xdn(mgs,ls)   &
+!aps     >  -il5*qsfzs(mgs)/xdn(mgs,lr)   &
+     &  +il5(mgs)*(qscni(mgs)+qsaci(mgs)+qsdpv(mgs)   &
+     &   + qscnvi(mgs) + (1. - ifrzs)*qiacrs(mgs) &
+     &   + (1. - ifrzs)*qrfrzs(mgs)  &
+     &  )/xdn0(ls)   &
+     &    + (qsacr(mgs))/rimdn(mgs,ls) ) + vsacw(mgs)
+!     >   + (qsacw(mgs) + qsacr(mgs))/rimdn(mgs,ls) )
+      pvswd(mgs) = rho0(mgs)*( pqswd(mgs) )/xdn0(ls)  &
+!     >  -qhacs(mgs)
+!     >  -qhcns(mgs)
+!     >  +(1-il5(mgs))*qsmlr(mgs) + qsshr(mgs)
+!     >  +il5(mgs)*(qssbv(mgs))
+     &   -rho0(mgs)*qsmul(mgs)/xdn0(ls)
+!aps     >   +rho0(mgs)*(1-il5(mgs))*(
+!aps     >             qsmlr(mgs)/xdn(mgs,ls)
+!aps     >    +(qscev-qsmlr(mgs))/xdn(mgs,lr) )
+      end do
+
+!aps      IF (mixedphase) THEN
+!aps        pvswd(mgs) = pvswd(mgs)
+!aps     >   + rho0(mgs)*qsshr(mgs)/xdn(mgs,lr)
+!aps      ENDIF
+
+      ENDIF
+!
+!  Graupel volume
+!
+      IF ( lvol(lh) .gt. 1 ) THEN
+      DO mgs = 1,ngscnt
+!      pvhwi(mgs) = rho0(mgs)*( (pqhwi(mgs) )/xdn0(lh) )
+
+!      pvhwi(mgs) = rho0(mgs)*( (pqhwi(mgs) - il5(mgs)*qrfrzf(mgs) )/xdn0(lh) !
+!     :  +  il5(mgs)*qrfrzf(mgs)/rhofrz )
+
+      pvhwi(mgs) = rho0(mgs)*(   &
+     &  +il5(mgs)*( qracif(mgs))/rhofrz   &
+!erm     >  + il5(mgs)*qhfzh(mgs)/rhofrz !aps: or use xdnmx(lh)?   &
+     &  + (  il5(mgs)*qhdpv(mgs)   &
+     &     + qhacs(mgs) + qhaci(mgs) )/xdnmn(lh) )   &
+     &  +   rho0(mgs)*Max(0.0, qhcev(mgs))/1000.   & ! only used in mixed phase: evaporation of liquid water coating
+!     >     + qhacs(mgs) + qhaci(mgs) )/xdn0(ls) )   &
+     &  + vhcns(mgs)   &
+     &  + vhacr(mgs) + vhacw(mgs)  + vhfzh(mgs)   & ! qhacw(mgs)/rimdn(mgs,lh)
+!     >  + vhfrh(mgs)   &
+     &  + vhcni(mgs) + ifrzg*(viacrf(mgs) + vrfrzf(mgs))
+!     >  +qhacr(mgs)/raindn(mgs,lh) + qhacw(mgs)/rimdn(mgs,lh)
+      
+!      pvhwd(mgs) = rho0(mgs)*(pqhwd(mgs) )/xdn0(lh)
+
+      pvhwd(mgs) = rho0(mgs)*(   &
+!     >   qhshr(mgs)/xdn0(lr)   &
+!     >  - il5(mgs)*qhfzh(mgs)/xdn(mgs,lr)   &
+     &  +( (1-il5(mgs))*vhmlr(mgs)    &
+!     >     +il5(mgs)*qhsbv(mgs)   &
+     &     + qhsbv(mgs)   &
+     &     + Min(0.0, qhcev(mgs))   &
+     &     -qhmul1(mgs) )/xdn(mgs,lh) )   &
+     &  - vhlcnh(mgs) + vhshdr(mgs) - vhsoak(mgs) - vscnh(mgs)
+
+!      IF (mixedphase) THEN
+!       pvhwd(mgs) = pvhwd(mgs) 
+!     >  + rho0(mgs)*qhshr(mgs)/xdn(mgs,lh) !xdn(mgs,lr)
+!      ENDIF
+
+      IF ( .false. .and. ny .eq. 2 .and. kgs(mgs) .eq. 9 .and. igs(mgs) .eq. 19 ) THEN
+
+      write(iunit,*)
+      write(iunit,*)   'Graupel at ',igs(mgs),kgs(mgs)
+!
+      write(iunit,*)   il5(mgs)*qrfrzf(mgs), qrfrzf(mgs) - qrfrz(mgs)
+      write(iunit,*)   il5(mgs)*qiacrf(mgs)
+      write(iunit,*)   il5(mgs)*qracif(mgs)
+      write(iunit,*)   'qhcns',qhcns(mgs)
+      write(iunit,*)   'qhcni',qhcni(mgs)
+      write(iunit,*)   il5(mgs)*(qhdpv(mgs))
+      write(iunit,*)   'qhacr ',qhacr(mgs)
+      write(iunit,*)   'qhacw', qhacw(mgs)
+      write(iunit,*)   'qhacs', qhacs(mgs)
+      write(iunit,*)   'qhaci', qhaci(mgs)
+      write(iunit,*)   'pqhwi = ',pqhwi(mgs)
+      write(iunit,*)
+      write(iunit,*) 'qhcev',qhcev(mgs)
+      write(iunit,*)
+      write(iunit,*)   'qhshr',qhshr(mgs)
+      write(iunit,*)  'qhmlr', (1-il5(mgs))*qhmlr(mgs)
+      write(iunit,*)   'qhsbv', qhsbv(mgs)
+      write(iunit,*)   'qhlcnh',-qhlcnh(mgs)
+      write(iunit,*)   'qhmul1',-qhmul1(mgs)
+      write(iunit,*)   'pqhwd = ', pqhwd(mgs)
+      write(iunit,*)
+      write(iunit,*)  'Volume'
+      write(iunit,*)
+      write(iunit,*)  'pvhwi',pvhwi(mgs)
+      write(iunit,*)   'vhcns', vhcns(mgs)
+      write(iunit,*)  'vhacr,vhacw',vhacr(mgs), vhacw(mgs) ! qhacw(mgs)/rimdn(mgs,lh)
+      write(iunit,*)  'vhcni',vhcni(mgs)
+      write(iunit,*)
+      write(iunit,*)  'pvhwd',pvhwd(mgs)
+      write(iunit,*)  'vhlcnh,vhshdr,vhsoak ', vhlcnh(mgs),  vhshdr(mgs), vhsoak(mgs)
+      write(iunit,*)  'vhmlr', vhmlr(mgs)
+      write(iunit,*)
+!      write(iunit,*)
+!      write(iunit,*)
+!      write(iunit,*)
+      write(iunit,*)  'Concentration'
+      write(iunit,*)   pchwi(mgs),pchwd(mgs)
+      write(iunit,*)  crfrzf(mgs)
+      write(iunit,*)  chcns(mgs)
+      write(iunit,*)  ciacrf(mgs)
+
+
+      ENDIF
+
+
+      ENDDO
+
+      ENDIF
+!
+!
+!
+
+!
+!  Hail volume
+!
+      IF ( lhl .gt. 1 ) THEN
+      IF ( lvol(lhl) .gt. 1 ) THEN
+      DO mgs = 1,ngscnt
+
+      pvhli(mgs) = rho0(mgs)*(   &
+     &  + (  il5(mgs)*qhldpv(mgs)   &
+!     &  +    Max(0.0, qhlcev(mgs))   &
+!     &     + qhlacs(mgs) + qhlaci(mgs) )/xdnmn(lhl) )   & ! xdn0(ls) )   &
+     &     + qhlacs(mgs) + qhlaci(mgs) )/xdnmn(lh) )   &  ! yes, this is 'lh' on purpose
+     &  +   rho0(mgs)*Max(0.0, qhlcev(mgs))/1000.   &
+     &  + vhlcnhl(mgs) + (1.0-ifrzg)*(viacrf(mgs) + vrfrzf(mgs))  & 
+     &  + vhlacr(mgs) + vhlacw(mgs) + vhlfzhl(mgs) ! qhlacw(mgs)/rimdn(mgs,lhl)
+      
+      pvhld(mgs) = rho0(mgs)*(   &
+     &  +(  qhlsbv(mgs)   &
+     &     + Min(0.0, qhlcev(mgs))   &
+     &     -qhlmul1(mgs) )/xdn(mgs,lhl) ) &
+!     &   + vhlmlr(mgs)                    &
+     &   + rho0(mgs)*(1-il5(mgs))*vhlmlr(mgs)/xdn(mgs,lhl)  &
+     &   + vhlshdr(mgs) - vhlsoak(mgs)
+
+
+      ENDDO
+      
+      ENDIF
+      ENDIF
+
+
+      if ( ndebug .ge. 1 ) then
+      do mgs = 1,ngscnt
+!
+      ptotal(mgs) = 0.
+      ptotal(mgs) = ptotal(mgs)    &
+     &  + pqwvi(mgs) + pqwvd(mgs)   &
+     &  + pqcwi(mgs) + pqcwd(mgs)   &
+     &  + pqcii(mgs) + pqcid(mgs)   &
+     &  + pqrwi(mgs) + pqrwd(mgs)   &
+     &  + pqswi(mgs) + pqswd(mgs)   &
+     &  + pqhwi(mgs) + pqhwd(mgs)   &
+     &  + pqhli(mgs) + pqhld(mgs)
+!
+
+      if ( ( (ndebug .ge. 1  ) .and. abs(ptotal(mgs)) .gt. eqtot )   &
+!      if ( (  abs(ptotal(mgs)) .gt. eqtot )
+!     :    .or. pqswi(mgs)*dtp .gt. 1.e-3
+!     :    .or. pqhwi(mgs)*dtp .gt. 1.e-3
+!     :     .or. dtp*(pqrwi(mgs)+pqrwd(mgs)) .gt. 10.0e-3
+!     :     .or. dtp*(pccii(mgs)+pccid(mgs)) .gt. 1.e7
+!     :     .or. dtp*(pcipi(mgs)+pcipd(mgs)) .gt. 1.e7    &
+     &  .or.  .not. (ptotal(mgs) .lt. 1.0 .and.   &
+     &            ptotal(mgs) .gt. -1.0)    ) then
+      write(iunit,*) 'YIKES! ','ptotal1',mgs,igs(mgs),jgs,   &
+     &       kgs(mgs),ptotal(mgs)
+
+      write(iunit,*) 't7: ', t7(igs(mgs),jgs,kgs(mgs))
+      write(iunit,*)  'cci,ccw,crw,rdia: ',cx(mgs,li),cx(mgs,lc),cx(mgs,lr),0.5*xdia(mgs,lr,1)
+      write(iunit,*)  'qc,qi,qr : ',qx(mgs,lc),qx(mgs,li),qx(mgs,lr)
+      write(iunit,*)  'rmas, qrcalc : ',xmas(mgs,lr),xmas(mgs,lr)*cx(mgs,lr)/rho0(mgs)
+      write(iunit,*)  'vti,vtc,eiw,vtr: ',vtxbar(mgs,li,1),vtxbar(mgs,lc,1),eiw(mgs),vtxbar(mgs,lr,1)
+      write(iunit,*)  'cidia,cwdia,qcmxd: ', xdia(mgs,li,1),xdia(mgs,lc,1),qcmxd(mgs)
+      write(iunit,*)  'snow: ',qx(mgs,ls),cx(mgs,ls),swvent(mgs),vtxbar(mgs,ls,1),xdia(mgs,ls,1)
+      write(iunit,*)  'graupel: ',qx(mgs,lh),cx(mgs,lh),hwvent(mgs),vtxbar(mgs,lh,1),xdia(mgs,lh,1)
+      IF ( lhl .gt. 1 ) write(iunit,*)  'hail: ',qx(mgs,lhl),cx(mgs,lhl),hlvent(mgs),vtxbar(mgs,lhl,1),xdia(mgs,lhl,1)
+
+
+      write(iunit,*)  'li: ',xdia(mgs,li,1),xdia(mgs,li,2),xmas(mgs,li),qx(mgs,li),   &
+     &         vtxbar(mgs,li,1)
+
+
+      write(iunit,*)  'rain cx,xv : ',cx(mgs,lr),xv(mgs,lr)
+      write(iunit,*)  'temcg = ', temcg(mgs)
+
+      write(iunit,*)  pqwvi(mgs) ,pqwvd(mgs)
+      write(iunit,*)  pqcwi(mgs) ,pqcwd(mgs)
+      write(iunit,*)  pqcii(mgs) ,pqcid(mgs)
+      write(iunit,*)  pqrwi(mgs) ,pqrwd(mgs)
+      write(iunit,*)  pqswi(mgs) ,pqswd(mgs)
+      write(iunit,*)  pqhwi(mgs) ,pqhwd(mgs)
+      write(iunit,*)  pqhli(mgs) ,pqhld(mgs)
+      write(iunit,*) 'END OF OUTPUT OF SOURCE AND SINK'
+
+!
+!  print production terms
+!
+      write(iunit,*)
+      write(iunit,*)   'Vapor'
+!
+      write(iunit,*)   -Min(0.0,qrcev(mgs))
+      write(iunit,*)   -il5(mgs)*qhsbv(mgs)
+      write(iunit,*)   -il5(mgs)*qhlsbv(mgs)
+      write(iunit,*)   -il5(mgs)*qssbv(mgs)
+      write(iunit,*)   -il5(mgs)*qisbv(mgs)
+      write(iunit,*)    'pqwvi= ', pqwvi(mgs)
+      write(iunit,*)   -Max(0.0,qrcev(mgs))
+      write(iunit,*)   -Max(0.0,qhcev(mgs))
+      write(iunit,*)   -Max(0.0,qhlcev(mgs))
+      write(iunit,*)   -Max(0.0,qscev(mgs))
+      write(iunit,*)   -il5(mgs)*qiint(mgs)
+      write(iunit,*)   -il5(mgs)*qhdpv(mgs)
+      write(iunit,*)   -il5(mgs)*qhldpv(mgs)
+      write(iunit,*)   -il5(mgs)*qsdpv(mgs)
+      write(iunit,*)   -il5(mgs)*qidpv(mgs)
+      write(iunit,*)    'pqwvd = ', pqwvd(mgs)
+!
+      write(iunit,*)
+      write(iunit,*)   'Cloud ice'
+!
+      write(iunit,*)   il5(mgs)*qicicnt(mgs)
+      write(iunit,*)   il5(mgs)*qidpv(mgs)
+      write(iunit,*)   il5(mgs)*qiacw(mgs)
+      write(iunit,*)   il5(mgs)*qwfrz(mgs)
+      write(iunit,*)   il5(mgs)*qwctfz(mgs)
+      write(iunit,*)   il5(mgs)*qicichr(mgs)
+      write(iunit,*)   qhmul1(mgs)
+      write(iunit,*)   qhlmul1(mgs)
+      write(iunit,*)   'pqcii = ', pqcii(mgs)
+      write(iunit,*)   -il5(mgs)*qscni(mgs)
+      write(iunit,*)   -il5(mgs)*qscnvi(mgs)
+      write(iunit,*)   -il5(mgs)*qraci(mgs)
+      write(iunit,*)   -il5(mgs)*qsaci(mgs)
+      write(iunit,*)   -il5(mgs)*qhaci(mgs)
+      write(iunit,*)   -il5(mgs)*qhlaci(mgs)
+      write(iunit,*)   il5(mgs)*qisbv(mgs)
+      write(iunit,*)   (1.-il5(mgs))*qimlr(mgs)
+      write(iunit,*)   -il5(mgs)*qhcni(mgs)
+      write(iunit,*)   'pqcid = ', pqcid(mgs)
+      write(iunit,*)   ' Conc:'
+      write(iunit,*)   pccii(mgs),pccid(mgs)
+      write(iunit,*)   il5(mgs),cicint(mgs)
+      write(iunit,*)   cwacii(mgs),cwfrzc(mgs),cwctfzc(mgs)
+      write(iunit,*)   cicichr(mgs)
+      write(iunit,*)   chmul1(mgs)
+      write(iunit,*)   chlmul1(mgs)
+      write(iunit,*)   csmul(mgs)
+!
+!
+!
+!
+      write(iunit,*)
+      write(iunit,*)   'Cloud water'
+!
+      write(iunit,*)   'pqcwi =', pqcwi(mgs)
+      write(iunit,*)   -il5(mgs)*qiacw(mgs)
+      write(iunit,*)   -il5(mgs)*qwfrzc(mgs)
+      write(iunit,*)   -il5(mgs)*qwctfzc(mgs)
+!      write(iunit,*)   -il5(mgs)*qwfrzp(mgs)
+!      write(iunit,*)   -il5(mgs)*qwctfzp(mgs)
+      write(iunit,*)   -il5(mgs)*qiihr(mgs)
+      write(iunit,*)   -il5(mgs)*qicichr(mgs)
+      write(iunit,*)   -il5(mgs)*qipiphr(mgs)
+      write(iunit,*)   -qracw(mgs)
+      write(iunit,*)   -qsacw(mgs)
+      write(iunit,*)   -qrcnw(mgs)
+      write(iunit,*)   -qhacw(mgs)
+      write(iunit,*)   -qhlacw(mgs)
+      write(iunit,*)   'pqcwd = ', pqcwd(mgs)
+
+
+      write(iunit,*)
+      write(iunit,*)  'Concentration:'
+      write(iunit,*)   -cautn(mgs)
+      write(iunit,*)   -cracw(mgs)
+      write(iunit,*)   -csacw(mgs)
+      write(iunit,*)   -chacw(mgs)
+      write(iunit,*)  -ciacw(mgs)
+      write(iunit,*)  -cwfrzp(mgs)
+      write(iunit,*)  -cwctfzp(mgs)
+      write(iunit,*)  -cwfrzc(mgs)
+      write(iunit,*)  -cwctfzc(mgs)
+      write(iunit,*)   pccwd(mgs)
+!
+      write(iunit,*)
+      write(iunit,*)      'Rain '
+!
+      write(iunit,*)      qracw(mgs)
+      write(iunit,*)      qrcnw(mgs)
+      write(iunit,*)      Max(0.0, qrcev(mgs))
+      write(iunit,*)       -(1-il5(mgs))*qhmlr(mgs)
+      write(iunit,*)       -(1-il5(mgs))*qhlmlr(mgs)
+      write(iunit,*)       -(1-il5(mgs))*qsmlr(mgs)
+      write(iunit,*)       -(1-il5(mgs))*qimlr(mgs)
+      write(iunit,*)       -qrshr(mgs)
+      write(iunit,*)       'pqrwi = ', pqrwi(mgs)    
+      write(iunit,*)        -qsshr(mgs)     
+      write(iunit,*)        -qhshr(mgs)     
+      write(iunit,*)        -qhlshr(mgs)
+      write(iunit,*)        -il5(mgs)*qiacr(mgs),qiacr(mgs), qiacrf(mgs)
+      write(iunit,*)        -il5(mgs)*qrfrz(mgs)
+      write(iunit,*)        -qsacr(mgs)
+      write(iunit,*)        -qhacr(mgs)
+      write(iunit,*)        -qhlacr(mgs)
+      write(iunit,*)        qrcev(mgs)
+      write(iunit,*)       'pqrwd = ', pqrwd(mgs) 
+      write(iunit,*)       'fhw, fhlw = ',fhw(mgs),fhlw(mgs)
+      write(iunit,*)        'qrzfac = ', qrzfac(mgs)
+!
+      
+      write(iunit,*)
+      write(iunit,*)  'Rain concentration'
+      write(iunit,*)  pcrwi(mgs) 
+      write(iunit,*)    crcnw(mgs)
+      write(iunit,*)    1-il5(mgs)
+      write(iunit,*)   -chmlr(mgs),-csmlr(mgs)
+      write(iunit,*)     -crshr(mgs)
+      write(iunit,*)  pcrwd(mgs) 
+      write(iunit,*)    il5(mgs)
+      write(iunit,*)   -ciacr(mgs),-crfrz(mgs) 
+      write(iunit,*)   -csacr(mgs),-chacr(mgs)
+      write(iunit,*)   +crcev(mgs)
+      write(iunit,*)   cracr(mgs)
+!      write(iunit,*)   -il5(mgs)*ciracr(mgs)
+
+
+      write(iunit,*)
+      write(iunit,*)   'Snow'
+!
+      write(iunit,*)        il5(mgs)*qscni(mgs), qscnvi(mgs)
+      write(iunit,*)        il5(mgs)*qsaci(mgs)
+      write(iunit,*)        il5(mgs)*qrfrzs(mgs)
+      write(iunit,*)        il5(mgs)*qiacrs(mgs),il3(mgs)*(qiacrf(mgs)+qracif(mgs)),il3(mgs),qiacrf(mgs),qracif(mgs)
+      write(iunit,*)        il5(mgs)*qsdpv(mgs), qscev(mgs)
+      write(iunit,*)        qsacw(mgs)
+      write(iunit,*)        qsacr(mgs), qscnh(mgs)
+       write(iunit,*)        'pqswi = ',pqswi(mgs)
+      write(iunit,*)        -qhcns(mgs)
+      write(iunit,*)        -qracs(mgs)
+      write(iunit,*)        -qhacs(mgs)
+      write(iunit,*)        -qhlacs(mgs)
+      write(iunit,*)       (1-il5(mgs))*qsmlr(mgs)
+      write(iunit,*)       qsshr(mgs)
+!      write(iunit,*)       qsshrp(mgs)
+      write(iunit,*)       il5(mgs)*(qssbv(mgs))
+      write(iunit,*)       'pqswd = ', pqswd(mgs)
+!
+!
+      write(iunit,*)
+      write(iunit,*)   'Graupel'
+!
+      write(iunit,*)   il5(mgs)*qrfrzf(mgs), qrfrzf(mgs) - qrfrz(mgs)
+      write(iunit,*)   il5(mgs)*qiacrf(mgs)
+      write(iunit,*)   il5(mgs)*qracif(mgs)
+      write(iunit,*)   qhcns(mgs)
+      write(iunit,*)   qhcni(mgs)
+      write(iunit,*)   il5(mgs)*(qhdpv(mgs))
+      write(iunit,*)   qhacr(mgs)
+      write(iunit,*)   qhacw(mgs)
+      write(iunit,*)   qhacs(mgs)
+      write(iunit,*)   qhaci(mgs)
+      write(iunit,*)   'pqhwi = ',pqhwi(mgs)
+      write(iunit,*)
+      write(iunit,*)   qhshr(mgs)
+      write(iunit,*)   (1-il5(mgs))*qhmlr(mgs)
+      write(iunit,*)   il5(mgs),qhsbv(mgs)
+      write(iunit,*)   -qhlcnh(mgs)
+      write(iunit,*)   -qhmul1(mgs)
+      write(iunit,*)   'pqhwd = ', pqhwd(mgs)
+      write(iunit,*)  'Concentration'
+      write(iunit,*)   pchwi(mgs),pchwd(mgs)
+      write(iunit,*)  crfrzf(mgs)
+      write(iunit,*)  chcns(mgs)
+      write(iunit,*)  ciacrf(mgs)
+
+!
+      write(iunit,*)
+      write(iunit,*)   'Hail'
+!
+      write(iunit,*)   qhlcnh(mgs)
+      write(iunit,*)   il5(mgs)*(qhldpv(mgs))
+      write(iunit,*)   qhlacr(mgs)
+      write(iunit,*)   qhlacw(mgs)
+      write(iunit,*)   qhlacs(mgs)
+      write(iunit,*)   qhlaci(mgs)
+      write(iunit,*)   pqhli(mgs)
+      write(iunit,*)
+      write(iunit,*)   qhlshr(mgs)
+      write(iunit,*)   (1-il5(mgs))*qhlmlr(mgs)
+      write(iunit,*)   il5(mgs)*qhlsbv(mgs)
+      write(iunit,*)   pqhld(mgs)
+      write(iunit,*)  'Concentration'
+      write(iunit,*)   pchli(mgs),pchld(mgs)
+      write(iunit,*)  chlcnh(mgs)
+!
+!  Balance and checks for continuity.....within machine precision...
+!
+!
+      write(iunit,*) 'END OF OUTPUT OF SOURCE AND SINK'
+      write(iunit,*) 'PTOTAL',ptotal(mgs)
+!
+      end if
+!
+      end do
+!
+      end if ! ( nstep/12*12 .eq. nstep )
+
+!
+!  latent heating from phase changes (except qcw, qci cond, and evap)
+!
+      do mgs = 1,ngscnt
+      IF ( warmonly < 0.5 ) THEN
+      pfrz(mgs) =    &
+     &  (1-il5(mgs))*   &
+     &  (qhmlr(mgs)+qsmlr(mgs)+qhlmlr(mgs))   & !+qhmlh(mgs))   &
+     &  +il5(mgs)*(qhfzh(mgs)+qsfzs(mgs)+qhlfzhl(mgs))   &
+     &  +il5(mgs)*(1-imixedphase)*(   &
+     &   qsacw(mgs)+qhacw(mgs) + qhlacw(mgs)   &
+     &  +qsacr(mgs)+qhacr(mgs) + qhlacr(mgs)   &
+     &  +qsshr(mgs)   &
+     &  +qhshr(mgs)   &
+     &  +qhlshr(mgs) +qrfrz(mgs)+qiacr(mgs)  &
+     &  )  &
+     &  +il5(mgs)*(qwfrz(mgs)    &
+     &  +qwctfz(mgs)+qiihr(mgs)   &
+     &  +qiacw(mgs))
+      pmlt(mgs) =    &
+     &  (1-il5(mgs))*   &
+     &  (qhmlr(mgs)+qsmlr(mgs)+qhlmlr(mgs))    !+qhmlh(mgs))   
+      psub(mgs) =    &
+     &   il5(mgs)*(   &
+     &  + qsdpv(mgs) + qhdpv(mgs)   &
+     &  + qhldpv(mgs)    &
+     &  + qidpv(mgs) + qisbv(mgs) )   &
+     &   + qssbv(mgs)  + qhsbv(mgs) + qhlsbv(mgs)   &
+     &  +il5(mgs)*(qiint(mgs))
+      pvap(mgs) =    &
+     &   qrcev(mgs) + qhcev(mgs) + qscev(mgs) + qhlcev(mgs)
+      pevap(mgs) =    &
+     &   Min(0.0,qrcev(mgs)) + Min(0.0,qhcev(mgs)) + Min(0.0,qscev(mgs)) + Min(0.0,qhlcev(mgs))
+      pdep(mgs) =    &
+     &   il5(mgs)*(   &
+     &  + qsdpv(mgs) + qhdpv(mgs)   &
+     &  + qhldpv(mgs)    &
+     &  + qidpv(mgs)  )   &
+     &  +il5(mgs)*(qiint(mgs))
+      ELSEIF ( warmonly < 0.8 ) THEN
+      pfrz(mgs) =    &
+     &  (1-il5(mgs))*   &
+     &  (qhmlr(mgs)+qhlmlr(mgs))   & !+qhmlh(mgs))   &
+     &  +il5(mgs)*(qhfzh(mgs)+qhlfzhl(mgs))   &
+     &  +il5(mgs)*(   &
+     &  +qhshr(mgs)   &
+     &  +qhlshr(mgs)   &
+     &  +qrfrz(mgs)+qwfrz(mgs)   &
+     &  +qwctfz(mgs)+qiihr(mgs)   &
+     &  +qiacw(mgs)                &
+     & +qhacw(mgs) + qhlacw(mgs)   &
+     & +qhacr(mgs) + qhlacr(mgs)  ) 
+      psub(mgs) =  0.0 +  &
+     &   il5(mgs)*(   &
+     &  + qhdpv(mgs)   &
+     &  + qhldpv(mgs)    &
+     &  + qidpv(mgs) + qisbv(mgs) )   &
+     &  +il5(mgs)*(qiint(mgs))
+      pvap(mgs) =    &
+     &   qrcev(mgs) + qhcev(mgs) + qhlcev(mgs) ! + qscev(mgs) 
+      ELSE
+      pfrz(mgs) = 0.0
+      psub(mgs) = 0.0
+      pvap(mgs) = qrcev(mgs)
+      ENDIF ! warmonly
+      ptem(mgs) =    &
+     &  (1./pi0(mgs))*   &
+     &  (felfcp(mgs)*pfrz(mgs)   &
+     &  +felscp(mgs)*psub(mgs)    &
+     &  +felvcp(mgs)*pvap(mgs))
+      thetap(mgs) = thetap(mgs) + dtp*ptem(mgs)
+      end do
+
+
+
+
+!
+!  sum the sources and sinks for qwvp, qcw, qci, qrw, qsw
+!
+!
+      do mgs = 1,ngscnt
+      qwvp(mgs) = qwvp(mgs) +        &
+     &   dtp*(pqwvi(mgs)+pqwvd(mgs))
+      qx(mgs,lc) = qx(mgs,lc) +   &
+     &   dtp*(pqcwi(mgs)+pqcwd(mgs))
+!      IF ( qx(mgs,lr) .gt. 10.0e-3 )  THEN
+!       write(0,*)  'RAIN1a: ',igs(mgs),kgs(mgs),qx(mgs,lr)
+!      ENDIF
+      qx(mgs,lr) = qx(mgs,lr) +   &
+     &   dtp*(pqrwi(mgs)+pqrwd(mgs))
+!      IF ( qx(mgs,lr) .gt. 10.0e-3 ) THEN
+!        write(0,*)  'RAIN1b: ',igs(mgs),kgs(mgs),qx(mgs,lr)
+!        write(0,*)  pqrwi(mgs),pqrwd(mgs)
+!       ENDIF
+      qx(mgs,li) = qx(mgs,li) +   &
+     &   dtp*(pqcii(mgs)+pqcid(mgs))
+      qx(mgs,ls) = qx(mgs,ls) +   &
+     &   dtp*(pqswi(mgs)+pqswd(mgs))
+      qx(mgs,lh) = qx(mgs,lh) +    &
+     &   dtp*(pqhwi(mgs)+pqhwd(mgs))
+      IF ( lhl .gt. 1 ) THEN
+      qx(mgs,lhl) = qx(mgs,lhl) +    &
+     &   dtp*(pqhli(mgs)+pqhld(mgs))
+!       IF ( pqhli(mgs) .gt. 1.e-8 ) write(0,*) ' pqhli,qx(lhl) = ',pqhli(mgs),qx(mgs,lhl)
+      ENDIF
+
+
+      end do
+
+! sum sources for particle volume
+
+      IF ( ldovol ) THEN
+
+      do mgs = 1,ngscnt
+
+      IF ( lvol(ls) .gt. 1 ) THEN
+      vx(mgs,ls) = vx(mgs,ls) +    &
+     &   dtp*(pvswi(mgs)+pvswd(mgs))
+      ENDIF
+
+      IF ( lvol(lh) .gt. 1 ) THEN
+      vx(mgs,lh) = vx(mgs,lh) +    &
+     &   dtp*(pvhwi(mgs)+pvhwd(mgs))
+!     >   rho0(mgs)*dtp*(pqhwi(mgs)+pqhwd(mgs))/xdn0(lh)
+      ENDIF
+
+      IF ( lhl .gt. 1 ) THEN
+      IF ( lvol(lhl) .gt. 1 ) THEN
+      vx(mgs,lhl) = vx(mgs,lhl) +    &
+     &   dtp*(pvhli(mgs)+pvhld(mgs))
+!     >   rho0(mgs)*dtp*(pqhwi(mgs)+pqhwd(mgs))/xdn0(lh)
+      ENDIF
+      ENDIF
+
+      ENDDO
+
+      ENDIF  ! ldovol
+
+!
+!
+!
+! concentrations
+!
+      if ( ipconc .ge. 1  ) then
+      do mgs = 1,ngscnt
+      cx(mgs,li) = cx(mgs,li) +   &
+     &   dtp*(pccii(mgs)+pccid(mgs))
+      IF ( ipconc .ge. 2 ) THEN
+      cx(mgs,lc) = cx(mgs,lc) +   &
+     &   dtp*(pccwi(mgs)+pccwd(mgs))
+      ENDIF
+      IF ( ipconc .ge. 3 ) THEN
+      cx(mgs,lr) = cx(mgs,lr) +   &
+     &   dtp*(pcrwi(mgs)+pcrwd(mgs))
+      ENDIF
+      IF ( ipconc .ge. 4 ) THEN
+      cx(mgs,ls) = cx(mgs,ls) +   &
+     &   dtp*(pcswi(mgs)+pcswd(mgs))
+      ENDIF
+      IF ( ipconc .ge. 5 ) THEN
+      cx(mgs,lh) = cx(mgs,lh) +    &
+     &   dtp*(pchwi(mgs)+pchwd(mgs))
+       IF ( lhl .gt. 1 ) THEN
+        cx(mgs,lhl) = cx(mgs,lhl) +    &
+     &     dtp*(pchli(mgs)+pchld(mgs))
+!      IF ( pchli(mgs) .ne. 0. .or. pchld(mgs) .ne. 0 ) THEN
+!       write(0,*) 'dr: cx,pchli,pchld = ', cx(mgs,lhl),pchli(mgs),pchld(mgs), igs(mgs),kgs(mgs)
+!      ENDIF
+       ENDIF
+      ENDIF
+      end do
+      end if
+
+
+      IF ( wrfchem_flag > 0 ) THEN
+! 20130917 acd_mb_washout start
+        DO mgs = 1,ngscnt
+         evapprod2d(igs(mgs),kgs(mgs)) = -(qrcev(mgs) + qssbv(mgs)  + qhsbv(mgs) + qhlsbv(mgs)) ! - PRE(K) - EVPMS(K) - EVPMG(K)
+         rainprod2d(igs(mgs),kgs(mgs)) = qrcnw(mgs) + qracw(mgs) + qsacw(mgs) + qhacw(mgs) + qhlacw(mgs) + &
+                                         qraci(mgs) + qsaci(mgs) + qhaci(mgs) + qhlaci(mgs) + qscni(mgs)     ! PRA(K) + PRC(K) + tqimelt(K)
+!         evapprod(k) = - PRE(K) - EPRDS(K) - EPRDG(K) 
+!         rainprod(k) = PRA(K) + PRC(K) + PSACWS(K) + PSACWG(K) + PGSACW(K) & 
+!                       + PRAI(K) + PRCI(K) + PRACI(K) + PRACIS(K) + &
+!                       + PRDS(K) + PRDG(K)
+        ENDDO
+! 20130917 acd_mb_washout end
+      ENDIF
+!
+!
+!
+! start saturation adjustment
+!
+      if (ndebug .gt. 0 ) write(0,*) 'conc 30a'
+!      include 'sam.jms.satadj.sgi'
+!
+!
+!
+!  Modified Straka adjustment (nearly identical to Tao et al. 1989 MWR)
+!
+!
+!
+!  set up temperature and vapor arrays
+!
+      do mgs = 1,ngscnt
+      pqs(mgs) = (380.0)/(pres(mgs))
+      theta(mgs) = thetap(mgs) + theta0(mgs)
+      qvap(mgs) = max( (qwvp(mgs) + qv0(mgs)), 0.0 )
+      temg(mgs) = theta(mgs)*pk(mgs) ! ( pres(mgs) / poo ) ** cap
+      end do
+!
+!  melting of cloud ice
+!
+      do mgs = 1,ngscnt
+      qcwtmp(mgs) = qx(mgs,lc)
+      ptimlw(mgs) = 0.0
+      end do
+!
+      do mgs = 1,ngscnt
+      qitmp(mgs) = qx(mgs,li)
+      if( temg(mgs) .gt. tfr .and.   &
+     &    qitmp(mgs) .gt. 0.0 ) then
+      qx(mgs,lc) = qx(mgs,lc) + qitmp(mgs)
+!      pfrz(mgs) = pfrz(mgs) - qitmp(mgs)/dtp
+      ptem(mgs) =  ptem(mgs) +   &
+     &  (1./pi0(mgs))*   &
+     &  felfcp(mgs)*(- qitmp(mgs)/dtp)  
+      pmlt(mgs) = pmlt(mgs) - qitmp(mgs)/dtp
+      scx(mgs,lc) = scx(mgs,lc) + scx(mgs,li)
+      thetap(mgs) = thetap(mgs) -   &
+     &  fcc3(mgs)*qitmp(mgs)
+      ptimlw(mgs) = -fcc3(mgs)*qitmp(mgs)/dtp
+      cx(mgs,lc) = cx(mgs,lc) + cx(mgs,li)
+      qx(mgs,li) = 0.0
+      cx(mgs,li) = 0.0
+      scx(mgs,li) = 0.0
+      vx(mgs,li) = 0.0
+      qitmp(mgs) = 0.0
+      end if
+      end do
+!
+!
+
+
+!      do mgs = 1,ngscnt
+!      qimlw(mgs) = (qcwtmp(mgs)-qx(mgs,lc))/dtp
+!      end do
+!
+!  homogeneous freezing of cloud water
+!
+      IF ( warmonly < 0.8 ) THEN
+
+      do mgs = 1,ngscnt
+      qcwtmp(mgs) = qx(mgs,lc)
+      ptwfzi(mgs) = 0.0
+      end do
+!
+      do mgs = 1,ngscnt
+
+!      if( temg(mgs) .lt. tfrh ) THEN
+!       write(0,*) 'GS: mgs,temp,qc,qi = ',mgs,temg(mgs),temcg(mgs),qx(mgs,lc),qx(mgs,li)
+!      ENDIF
+
+      ctmp = 0.0
+      frac = 0.0
+      qtmp = 0.0
+      
+!      if( ( temg(mgs) .lt. thnuc + 2. .or. (ibfc == 2 .and. temg(mgs) < thnuc + 10. ) ) .and.    &
+!     &  qx(mgs,lc) .gt. qxmin(lc) .and. (ipconc < 2 .or. ibfc == 0 .or. ibfc == 2 )) then
+      if( temg(mgs) .lt. thnuc + 0. .and.    &
+     &  qx(mgs,lc) .gt. 0.0 .and. (ipconc < 2 .or. ibfc == 0 )) then
+
+      IF ( ibfc /= 2 .or. ipconc < 2 ) THEN
+      frac = Max( 0.25, Min( 1., ((thnuc + 1.) - temg(mgs) )/4.0 ) )
+      ELSE
+          volt = exp( 16.2 + 1.0*temcg(mgs) )* 1.0e-6 !  Ts == -temcg ; volt comes from the fit in Fig. 1 in Bigg 1953 
+                                               ! for mean temperature for freezing: -ln (V) = a*Ts - b
+                                               ! volt is given in cm**3, so factor of 1.e-6 to convert to m**3
+         
+         cwfrz(mgs) = cx(mgs,lc)*Exp(-volt/xv(mgs,lc)) ! number of droplets with volume greater than volt
+
+         qtmp = cwfrz(mgs)*xdn0(lc)*rhoinv(mgs)*(volt + xv(mgs,lc))
+         frac = qtmp/qx(mgs,lc) ! reset number frozen to same fraction as mass. This makes 
+                                                       ! sure that cwfrz and qwfrz are consistent and prevents 
+                                                       ! spurious creation of ice crystals.
+      
+      ENDIF
+      qtmp = frac*qx(mgs,lc)
+
+      qx(mgs,li) = qx(mgs,li) + qtmp ! qx(mgs,lc)
+      pfrz(mgs) = pfrz(mgs) + qtmp/dtp
+      ptem(mgs) =  ptem(mgs) +   &
+     &  (1./pi0(mgs))*   &
+     &  felfcp(mgs)*(qtmp/dtp)  
+!      IF ( lvol(li) .gt. 1 ) vx(mgs,li) = vx(mgs,li) + rho0(mgs)*qx(mgs,lc)/xdn0(li)
+      IF ( lvol(li) .gt. 1 ) vx(mgs,li) = vx(mgs,li) + rho0(mgs)*qtmp/xdn0(li)
+
+      IF ( ipconc .ge. 2 ) THEN
+        ctmp = frac*cx(mgs,lc)
+!        cx(mgs,li) = cx(mgs,li) + cx(mgs,lc)
+        cx(mgs,li) = cx(mgs,li) + ctmp
+      ELSE ! (ipconc .lt. 2 )
+        ctmp = 0.0
+        IF ( t9(igs(mgs),jgs,kgs(mgs)-1) .gt. qx(mgs,lc) ) THEN
+           qtmp = frac*t9(igs(mgs),jgs,kgs(mgs)-1)  
+
+!           cx(mgs,lc) = cx(mgs,lc)*qx(mgs,lc)*rho0(mgs)/qtmp
+           ctmp = cx(mgs,lc)*qx(mgs,lc)*rho0(mgs)/qtmp
+        ELSE
+           cx(mgs,lc) = Max(0.0,wvel(mgs))*dtp*cwccn   &
+     &      /gz(igs(mgs),jgs,kgs(mgs))
+          cx(mgs,lc) = cwccn
+        ENDIF
+
+       IF ( ipconc .ge. 1 ) cx(mgs,li) = Min(ccimx, cx(mgs,li) + cx(mgs,lc))
+      ENDIF
+
+      sctmp = frac*scx(mgs,lc)
+!      scx(mgs,li) = scx(mgs,li) + scx(mgs,lc)
+      scx(mgs,li) = scx(mgs,li) + sctmp
+!      thetap(mgs) = thetap(mgs) + fcc3(mgs)*qx(mgs,lc)
+!      ptwfzi(mgs) = fcc3(mgs)*qx(mgs,lc)/dtp
+!      qx(mgs,lc) = 0.0
+!      cx(mgs,lc) = 0.0
+!      scx(mgs,lc) = 0.0
+      thetap(mgs) = thetap(mgs) + fcc3(mgs)*qtmp
+      ptwfzi(mgs) = fcc3(mgs)*qtmp/dtp
+      qx(mgs,lc) = qx(mgs,lc) - qtmp
+      cx(mgs,lc) = cx(mgs,lc) - ctmp
+      scx(mgs,lc) = scx(mgs,lc) - sctmp
+      end if
+      end do
+
+      ENDIF ! warmonly
+!
+!      do mgs = 1,ngscnt
+!      qwfzi(mgs) = (qcwtmp(mgs)-qx(mgs,lc))/dtp   ! Not used?? (ERM)
+!      end do
+!
+!  reset temporaries for cloud particles and vapor
+!
+      qcond(:) = 0.0
+      
+      IF ( ipconc .le. 1 .and.  lwsm6 ) THEN ! Explicit cloud condensation/evaporation (Rutledge and Hobbs 1983)
+       DO mgs = 1,ngscnt
+
+        qcwtmp(mgs) = qx(mgs,lc)
+        theta(mgs) = thetap(mgs) + theta0(mgs)
+        temgtmp = temg(mgs)
+!        temg(mgs) = theta(mgs)*(p2(igs(mgs),jgs,kgs(mgs)) ) ! *pk(mgs) ! ( pres(mgs) / poo ) ** cap
+!        temsav = temg(mgs)
+!        thsave(mgs) = thetap(mgs)
+        temg(mgs) = theta(mgs)*pk(mgs) ! ( pres(mgs) / poo ) ** cap
+        temcg(mgs) = temg(mgs) - tfr
+        ltemq = (temg(mgs)-163.15)/fqsat+1.5
+        ltemq = Min( nqsat, Max(1,ltemq) )
+
+        qvs(mgs) = pqs(mgs)*tabqvs(ltemq)
+
+        IF ( ( qvap(mgs) > qvs(mgs) .or. qx(mgs,lc) > qxmin(lc) ) .and. temg(mgs) > tfrh ) THEN
+          tmp = (qvap(mgs) - qvs(mgs))/(1. + qvs(mgs)*felv(mgs)**2/(cp*rw*temg(mgs)**2) )
+          qcond(mgs) = Min( Max( 0.0, tmp ), (qvap(mgs)-qvs(mgs)) )
+          IF ( qx(mgs,lc) > qxmin(lc) .and. tmp < 0.0 ) THEN ! evaporation
+            qcond(mgs) = Max( tmp, -qx(mgs,lc) )
+          ENDIF
+          qwvp(mgs) = qwvp(mgs) - qcond(mgs)
+          qvap(mgs) = qvap(mgs) - qcond(mgs)
+          qx(mgs,lc) = Max( 0.0, qx(mgs,lc) + qcond(mgs) )
+          thetap(mgs) = thetap(mgs) + felvcp(mgs)*qcond(mgs)/(pi0(mgs))
+          
+        ENDIF
+        
+        ENDDO
+      
+      ENDIF
+      
+      
+      IF ( ipconc .le. 1 .and. .not. lwsm6 ) THEN
+!      IF ( ipconc .le. 1  ) THEN
+      
+      do mgs = 1,ngscnt
+      qx(mgs,lv) = max( 0.0, qvap(mgs) )
+      qx(mgs,lc) = max( 0.0, qx(mgs,lc) )
+      qx(mgs,li) = max( 0.0, qx(mgs,li) )
+      qitmp(mgs) = qx(mgs,li)
+      end do
+!
+!
+      do mgs = 1,ngscnt
+      qcwtmp(mgs) = qx(mgs,lc)
+      qitmp(mgs) = qx(mgs,li)
+      theta(mgs) = thetap(mgs) + theta0(mgs)
+      temgtmp = temg(mgs)
+      temg(mgs) = theta(mgs)*(pinit(kgs(mgs)) + p2(igs(mgs),jgs,kgs(mgs)) ) ! *pk(mgs) ! ( pres(mgs) / poo ) ** cap
+      temsav = temg(mgs)
+      thsave(mgs) = thetap(mgs)
+      temcg(mgs) = temg(mgs) - tfr
+      tqvcon = temg(mgs)-cbw
+      ltemq = (temg(mgs)-163.15)/fqsat+1.5
+      ltemq = Min( nqsat, Max(1,ltemq) )
+!      IF ( ltemq .lt. 1 .or. ltemq .gt. nqsat ) THEN
+! C$PAR CRITICAL SECTION
+!        write(iunit,*) 'out of range ltemq!',temgtmp,temg(mgs),
+!     :      thetap(mgs),theta0(mgs),pres(mgs),theta(mgs),
+!     :      ltemq,igs(mgs),jy,kgs(mgs)
+!        write(iunit,*) an(igs(mgs),jy,kgs(mgs),lt),
+!     :   ab(igs(mgs),jy,kgs(mgs),lt),
+!     :   t0(igs(mgs),jy,kgs(mgs))
+!        write(iunit,*) fcc3(mgs),qx(mgs,lc),qitmp(mgs),dtp,ptem(mgs)
+!        STOP
+! C$PAR END CRITICAL SECTION
+!      END IF
+      qvs(mgs) = pqs(mgs)*tabqvs(ltemq)
+      qis(mgs) = pqs(mgs)*tabqis(ltemq)
+!      qss(kz) = qvs(kz)
+!      if ( temg(kz) .lt. tfr ) then
+!      if( qcw(kz) .le. qxmin(lc) .and. qci(kz) .gt. qxmin(li))
+!     >  qss(kz) = qis(kz)
+!      if( qcw(kz) .gt. qxmin(lc) .and. qci(kz) .gt. qxmin(li))
+!     >   qss(kz) = (qcw(kz)*qvs(kz) + qci(kz)*qis(kz)) /
+!     >   (qcw(kz) + qci(kz))
+!      qss(kz) = qis(kz)
+!      end if
+! dont get enough condensation with qcw .le./.gt. qxmin(lc)
+!      if ( temg(mgs) .lt. tfr ) then
+!      if( qx(mgs,lc) .ge. 0.0 .and. qitmp(mgs) .le. qxmin(li) )
+!     >  qss(mgs) = qvs(mgs)
+!      if( qx(mgs,lc) .eq. 0.0 .and. qitmp(mgs) .gt. qxmin(li))
+!     >  qss(mgs) = qis(mgs)
+!      if( qx(mgs,lc) .gt. 0.0 .and. qitmp(mgs) .gt. qxmin(li))
+!     >   qss(mgs) = (qx(mgs,lc)*qvs(mgs) + qitmp(mgs)*qis(mgs)) /
+!     >   (qx(mgs,lc) + qitmp(mgs))
+!      else
+!      qss(mgs) = qvs(mgs)
+!      end if
+      qss(mgs) = qvs(mgs)
+      if ( temg(mgs) .lt. tfr ) then
+      if( qx(mgs,lc) .ge. 0.0 .and. qitmp(mgs) .le. qxmin(li) )   &
+     &  qss(mgs) = qvs(mgs)
+      if( qx(mgs,lc) .le. qxmin(lc) .and. qitmp(mgs) .gt. qxmin(li))   &
+     &  qss(mgs) = qis(mgs)
+      if( qx(mgs,lc) .gt. qxmin(lc) .and. qitmp(mgs) .gt. qxmin(li))   &
+     &   qss(mgs) = (qx(mgs,lc)*qvs(mgs) + qitmp(mgs)*qis(mgs)) /   &
+     &   (qx(mgs,lc) + qitmp(mgs))
+      end if
+      end do
+!
+!  iterate  adjustment
+!
+      do itertd = 1,2
+!
+      do mgs = 1,ngscnt
+!
+!  calculate super-saturation
+!
+      qitmp(mgs) = qx(mgs,li)
+      fcci(mgs) = 0.0
+      fcip(mgs) = 0.0
+      dqcw(mgs) = 0.0
+      dqci(mgs) = 0.0
+      dqwv(mgs) = ( qx(mgs,lv) - qss(mgs) )
+!
+!  evaporation and sublimation adjustment
+!
+      if( dqwv(mgs) .lt. 0. ) then           !  subsaturated
+        if( qx(mgs,lc) .gt. -dqwv(mgs) ) then  ! check if qc can make up all of the deficit
+          dqcw(mgs) = dqwv(mgs)
+          dqwv(mgs) = 0.
+        else                                 !  otherwise make all qc available for evap
+          dqcw(mgs) = -qx(mgs,lc)
+          dqwv(mgs) = dqwv(mgs) + qx(mgs,lc)
+        end if
+!
+        if( qitmp(mgs) .gt. -dqwv(mgs) ) then  ! check if qi can make up all the deficit
+          dqci(mgs) = dqwv(mgs)
+          dqwv(mgs) = 0.
+        else                                  ! otherwise make all ice available for sublimation
+          dqci(mgs) = -qitmp(mgs)
+          dqwv(mgs) = dqwv(mgs) + qitmp(mgs)
+        end if
+!
+       qwvp(mgs) = qwvp(mgs) - ( dqcw(mgs) + dqci(mgs) )  ! add to perturbation vapor
+!
+! This next line removed 3/19/2003 thanks to Adam Houston,
+!  who found the bug in the 3-ICE code
+!      qwvp(mgs) = max(qwvp(mgs), 0.0)
+      qitmp(mgs) = qx(mgs,li)
+      IF ( qitmp(mgs) .gt. qxmin(li) ) THEN
+        fcci(mgs) = qx(mgs,li)/(qitmp(mgs))
+      ELSE
+        fcci(mgs) = 0.0
+      ENDIF
+      qx(mgs,lc) = qx(mgs,lc) + dqcw(mgs)
+      qx(mgs,li) = qx(mgs,li) + dqci(mgs) * fcci(mgs)
+      thetap(mgs) = thetap(mgs) +   &
+     &  1./pi0(mgs)*   &
+     &  (felvcp(mgs)*dqcw(mgs) +felscp(mgs)*dqci(mgs))
+
+      end if  ! dqwv(mgs) .lt. 0. (end of evap/sublim)
+!
+! condensation/deposition
+!
+      IF ( dqwv(mgs) .ge. 0. ) THEN
+      
+!      write(iunit,*) 'satadj: mgs,iter = ',mgs,itertd,dqwv(mgs),qss(mgs),qx(mgs,lv),qx(mgs,lc)
+!
+        qitmp(mgs) = qx(mgs,li)
+        fracl(mgs) = 1.0
+        fraci(mgs) = 0.0
+        if ( temg(mgs) .lt. tfr .and. temg(mgs) .gt. thnuc ) then
+          fracl(mgs) = max(min(1.,(temg(mgs)-233.15)/(20.)),0.0)
+          fraci(mgs) = 1.0-fracl(mgs)
+        end if
+        if ( temg(mgs) .le. thnuc ) then
+           fraci(mgs) = 1.0
+           fracl(mgs) = 0.0
+         end if
+        fraci(mgs) = 1.0-fracl(mgs)
+!
+       gamss = (felvcp(mgs)*fracl(mgs) + felscp(mgs)*fraci(mgs))   &
+     &      / (pi0(mgs))
+!
+      IF ( temg(mgs) .lt. tfr ) then
+        IF (qx(mgs,lc) .ge. 0.0 .and. qitmp(mgs) .le. qxmin(li) ) then
+         dqvcnd(mgs) = dqwv(mgs)/(1. + fcqv1(mgs)*qss(mgs)/   &
+     &  ((temg(mgs)-cbw)**2))
+        END IF
+        IF ( qx(mgs,lc) .eq. 0.0 .and. qitmp(mgs) .gt. qxmin(li) ) then
+          dqvcnd(mgs) = dqwv(mgs)/(1. + fcqv2(mgs)*qss(mgs)/   &
+     &  ((temg(mgs)-cbi)**2))
+        END IF
+        IF ( qx(mgs,lc) .gt. 0.0 .and. qitmp(mgs) .gt. qxmin(li) ) then
+         cdw = caw*pi0(mgs)*tfrcbw/((temg(mgs)-cbw)**2)
+         cdi = cai*pi0(mgs)*tfrcbi/((temg(mgs)-cbi)**2)
+         denom1 = qx(mgs,lc) + qitmp(mgs)
+         denom2 = 1.0 + gamss*   &
+     &    (qx(mgs,lc)*qvs(mgs)*cdw + qitmp(mgs)*qis(mgs)*cdi) / denom1
+         dqvcnd(mgs) =  dqwv(mgs) / denom2
+        END IF 
+
+      ENDIF  !  temg(mgs) .lt. tfr
+!
+      if ( temg(mgs) .ge. tfr ) then
+      dqvcnd(mgs) = dqwv(mgs)/(1. + fcqv1(mgs)*qss(mgs)/   &
+     &  ((temg(mgs)-cbw)**2))
+      end if
+!
+      delqci1=qx(mgs,li)
+!
+      IF ( qitmp(mgs) .gt. qxmin(li) ) THEN
+        fcci(mgs) = qx(mgs,li)/(qitmp(mgs))
+      ELSE
+        fcci(mgs) = 0.0
+      ENDIF
+!
+      dqcw(mgs) = dqvcnd(mgs)*fracl(mgs)
+      dqci(mgs) = dqvcnd(mgs)*fraci(mgs)
+!
+      thetap(mgs) = thetap(mgs) +   &
+     &   (felvcp(mgs)*dqcw(mgs) + felscp(mgs)*dqci(mgs))   &
+     & / (pi0(mgs))
+      qwvp(mgs) = qwvp(mgs) - ( dqvcnd(mgs) )
+      qx(mgs,lc) = qx(mgs,lc) + dqcw(mgs)
+      IF ( qitmp(mgs) .gt. qxmin(li) ) THEN
+        qx(mgs,li) = qx(mgs,li) + dqci(mgs)*fcci(mgs)
+        qitmp(mgs) = qx(mgs,li)
+      ENDIF
+!
+!      delqci(mgs) =  dqci(mgs)*fcci(mgs)
+!
+      END IF !  dqwv(mgs) .ge. 0.
+      end do
+!
+      do mgs = 1,ngscnt
+      qitmp(mgs) = qx(mgs,li)
+      theta(mgs) = thetap(mgs) + theta0(mgs)
+      temg(mgs) = theta(mgs)*pk(mgs) ! ( pres(mgs) / poo ) ** cap
+      qvap(mgs) = Max((qwvp(mgs) + qv0(mgs)), 0.0)
+      temcg(mgs) = temg(mgs) - tfr
+      tqvcon = temg(mgs)-cbw
+      ltemq = (temg(mgs)-163.15)/fqsat+1.5
+      ltemq = Min( nqsat, Max(1,ltemq) )
+      qvs(mgs) = pqs(mgs)*tabqvs(ltemq)
+      qis(mgs) = pqs(mgs)*tabqis(ltemq)
+      qx(mgs,lc) = max( 0.0, qx(mgs,lc) )
+      qitmp(mgs) = max( 0.0, qitmp(mgs) )
+      qx(mgs,lv) = max( 0.0, qvap(mgs))
+!      if ( temg(mgs) .lt. tfr ) then
+!      if( qx(mgs,lc) .ge. 0.0 .and. qitmp(mgs) .le. qxmin(li) )
+!     >  qss(mgs) = qvs(mgs)
+!c      if( qx(mgs,lc) .le. qxmin(lc) .and. qitmp(mgs) .gt. qxmin(li))
+!      if( qx(mgs,lc) .eq. 0.0 .and. qitmp(mgs) .gt. qxmin(li))
+!     >  qss(mgs) = qis(mgs)
+!c      if( qx(mgs,lc) .gt. qxmin(lc) .and. qitmp(mgs) .gt. qxmin(li))
+!      if( qx(mgs,lc) .gt. 0.0 .and. qitmp(mgs) .gt. qxmin(li))
+!     >  qss(mgs) = (qx(mgs,lc)*qvs(mgs) + qitmp(mgs)*qis(mgs)) /
+!     > (qx(mgs,lc) + qitmp(mgs))
+!      else
+!      qss(mgs) = qvs(mgs)
+!      end if
+      qss(mgs) = qvs(mgs)
+      if ( temg(mgs) .lt. tfr ) then
+      if( qx(mgs,lc) .ge. 0.0 .and. qitmp(mgs) .le. qxmin(li) )   &
+     &  qss(mgs) = qvs(mgs)
+      if( qx(mgs,lc) .le. qxmin(lc) .and. qitmp(mgs) .gt. qxmin(li))   &
+     &  qss(mgs) = qis(mgs)
+      if( qx(mgs,lc) .gt. qxmin(lc) .and. qitmp(mgs) .gt. qxmin(li))   &
+     &   qss(mgs) = (qx(mgs,lc)*qvs(mgs) + qitmp(mgs)*qis(mgs)) /   &
+     &   (qx(mgs,lc) + qitmp(mgs))
+      end if
+!      pceds(mgs) = (thetap(mgs) - thsave(mgs))/dtp
+!      write(iunit,*) 'satadj2: mgs,iter = ',mgs,itertd,dqwv(mgs),qss(mgs),qx(mgs,lv),qx(mgs,lc)
+      end do
+!
+!  end the saturation adjustment iteration loop
+!
+      end do
+
+     ENDIF ! ( ipconc .le. 1 )
+
+!
+!  spread the growth owing to vapor diffusion onto the
+!  ice crystal categories using the
+!
+!  END OF SATURATION ADJUSTMENT
+!
+
+      if (ndebug .gt. 0 ) write(0,*) 'conc 30b'
+!
+!
+!  end of saturation adjustment
+!
+!
+! !DIR$ IVDEP
+      do mgs = 1,ngscnt
+      t0(igs(mgs),jy,kgs(mgs)) =  temg(mgs)
+      end do
+!
+! Load the save arrays
+!
+
+
+      if (ndebug .gt. 0 ) write(0,*) 'gs 11'
+
+      do mgs = 1,ngscnt
+!
+      an(igs(mgs),jy,kgs(mgs),lt) =    &
+     &  theta0(mgs) + thetap(mgs) 
+      an(igs(mgs),jy,kgs(mgs),lv) = qwvp(mgs) + qv0(mgs) !
+!
+      
+      DO il = lc,lhab
+        IF ( ido(il) .eq. 1 ) THEN
+         an(igs(mgs),jy,kgs(mgs),il) = qx(mgs,il) +   &
+     &     min( an(igs(mgs),jy,kgs(mgs),il), 0.0 )
+         qx(mgs,il) = an(igs(mgs),jy,kgs(mgs),il)
+        ENDIF
+      ENDDO
+
+
+!
+      end do
+!
+
+      if ( ipconc .ge. 1 ) then
+      DO il = lc,lhab !{
+
+!        write(0,*) 'limiter loop: il,ipc,lz: ',il,ipc(il),lz(il),ipconc
+
+       IF ( ipconc .ge. ipc(il) ) THEN ! {
+
+         IF (  ipconc .ge. 4 .and. ipc(il) .ge. 1 ) THEN ! {
+
+!            write(0,*) 'MY limiter: il,ipc,lz: ',il,ipc(il),lz(il),lr,lzr
+!            STOP
+
+          IF ( lz(il) <= 1 .or. ioldlimiter == 1 ) THEN ! { { is a two-moment category so dont worry about reflectivity
+          
+
+           DO mgs = 1,ngscnt
+            IF ( qx(mgs,il) .le. 0.0 ) THEN
+              cx(mgs,il) = 0.0
+            ELSE !{
+              IF ( cx(mgs,il) .gt. cxmin ) THEN !{
+!              xv(mgs,il) = rho0(mgs)*qx(mgs,il)/(xdn(mgs,il)*Max(1.0e-9,cx(mgs,il)))
+!              xv(mgs,il) = rho0(mgs)*qx(mgs,il)/(xdn(mgs,il)*Max(cxmin,cx(mgs,il)))
+                xv(mgs,il) = rho0(mgs)*qx(mgs,il)/(xdn(mgs,il)*cx(mgs,il))
+              
+!              IF ( lhl .gt. 1 .and. il .eq. lhl ) THEN
+!               write(0,*) 'dr: xv,cx,qx,xdn,ln = ',xv(mgs,il),cx(mgs,il),qx(mgs,il),xdn(mgs,il),ln(il)
+!              ENDIF
+              
+               IF ( xv(mgs,il) .lt. xvmn(il) .or. xv(mgs,il) .gt. xvmx(il) ) THEN
+                xv(mgs,il) = Min( xvmx(il), xv(mgs,il) )
+                xv(mgs,il) = Max( xvmn(il), xv(mgs,il) )
+                cx(mgs,il) = rho0(mgs)*qx(mgs,il)/(xv(mgs,il)*xdn(mgs,il))
+               ENDIF
+              
+             ENDIF !}
+
+!              IF ( lhl .gt. 1 .and. il .eq. lhl ) THEN
+!               write(0,*) 'dr: xv,cx,= ',xv(mgs,il),cx(mgs,il)
+!              ENDIF
+
+            ENDIF !}
+           ENDDO ! mgs
+          
+          
+          ENDIF ! }}
+          ENDIF ! }
+
+          DO mgs = 1,ngscnt
+            an(igs(mgs),jy,kgs(mgs),ln(il)) = Max(cx(mgs,il), 0.0)
+          ENDDO
+        ENDIF ! }
+      ENDDO ! il }
+
+      IF ( lcin > 1 ) THEN
+      do mgs = 1,ngscnt
+        an(igs(mgs),jy,kgs(mgs),lcin) = Max(0.0, ccin(mgs))
+      end do
+      ENDIF
+
+      IF ( ipconc .ge. 2 ) THEN
+      do mgs = 1,ngscnt
+        IF ( lccn > 1 ) THEN
+        an(igs(mgs),jy,kgs(mgs),lccn) = Max(0.0, ccnc(mgs) )
+        ENDIF
+      end do
+      ENDIF
+      
+      ELSEIF ( ipconc .eq. 0 .and. lni .gt. 1 ) THEN
+      
+          DO mgs = 1,ngscnt
+            an(igs(mgs),jy,kgs(mgs),lni) = Max(cx(mgs,li), 0.0)
+          ENDDO
+
+
+      end if
+
+      IF ( ldovol ) THEN
+
+       DO il = li,lhab
+
+        IF ( lvol(il) .ge. 1 ) THEN
+
+          DO mgs = 1,ngscnt
+
+           an(igs(mgs),jy,kgs(mgs),lvol(il)) = Max( 0.0, vx(mgs,il) )
+          ENDDO
+          
+        ENDIF
+      
+       ENDDO
+      
+      ENDIF
+!
+!
+!
+!
+!
+      if (ndebug .gt. 0 ) write(0,*) 'gs 12'
+
+
+
+      if (ndebug .gt. 0 ) write(0,*) 'gs 13'
+
+ 9998 continue
+
+      if ( kz .gt. nz-1 .and. ix .ge. itile) then
+        if ( ix .ge. itile ) then
+         go to 1200 ! exit gather scatter
+        else
+         nzmpb = kz
+        endif
+      else
+        nzmpb = kz
+      end if
+
+      if ( ix .ge. itile ) then
+        nxmpb = 1
+        nzmpb = kz+1
+      else
+       nxmpb = ix+1
+      end if
+
+ 1000 continue
+ 1200 continue
+!
+!  end of gather scatter (for this jy slice)
+!
+!
+
+      return
+      end subroutine nssl_2mom_gs
+!
+!--------------------------------------------------------------------------
+!
+
+
+
+!
+!--------------------------------------------------------------------------
+!
 
 
 END MODULE module_mp_nssl_2mom

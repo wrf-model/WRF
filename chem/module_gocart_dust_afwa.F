@@ -21,6 +21,7 @@ CONTAINS
          its,ite, jts,jte, kts,kte                                         )
   USE module_configure
   USE module_state_description
+  USE module_data_sorgam, ONLY: factnuma,factnumc,soilfac
 
    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
 
@@ -125,11 +126,20 @@ CONTAINS
       ! Total concentration at lowest model level. This is still hardcoded
       ! for 5 bins.
 
-      tc(1)=chem(i,kts,j,p_dust_1)*conver
-      tc(2)=chem(i,kts,j,p_dust_2)*conver
-      tc(3)=chem(i,kts,j,p_dust_3)*conver
-      tc(4)=chem(i,kts,j,p_dust_4)*conver
-      tc(5)=chem(i,kts,j,p_dust_5)*conver
+      IF(config_flags%chem_opt == CB05_SORG_AQ_KPP .or. &
+         config_flags%chem_opt == CB05_SORG_VBS_AQ_KPP ) then
+        tc(1)=0.0
+        tc(2)=0.0
+        tc(3)=0.0
+        tc(4)=0.0
+        tc(5)=0.0
+      ELSE
+        tc(1)=chem(i,kts,j,p_dust_1)*conver
+        tc(2)=chem(i,kts,j,p_dust_2)*conver
+        tc(3)=chem(i,kts,j,p_dust_3)*conver
+        tc(4)=chem(i,kts,j,p_dust_4)*conver
+        tc(5)=chem(i,kts,j,p_dust_5)*conver
+      END IF
 
       ! Air mass and density at lowest model level.
 
@@ -292,6 +302,22 @@ CONTAINS
 
       IF(config_flags%chem_opt == 2 .or. config_flags%chem_opt == 11 ) then
         dustin(i,j,1:5)=tc(1:5)*converi
+      ELSE IF(config_flags%chem_opt == CB05_SORG_AQ_KPP .or.  &
+              config_flags%chem_opt == CB05_SORG_VBS_AQ_KPP) then
+!KW            chem(i,kts,j,p_p25i)=chem(i,kts,j,p_p25i) &
+!                         +.25*(tc(1)+.286*tc(2))*converi
+!            chem(i,kts,j,p_p25i)=max(chem(i,kts,j,p_p25i),1.e-16)
+!            chem(i,kts,j,p_p25j)=chem(i,kts,j,p_p25j) &
+!                         +.75*(tc(1)+.286*tc(2))*converi
+!            chem(i,kts,j,p_p25j)=max(chem(i,kts,j,p_p25j),1.e-16)
+!            chem(i,kts,j,p_soila)=chem(i,kts,j,p_soila) &
+!                         +(.714*tc(2)+tc(3))*converi
+!            chem(i,kts,j,p_soila)=max(chem(i,kts,j,p_soila),1.e-16)
+         chem(i,kts,j,p_p25j)=chem(i,kts,j,p_p25j) + 0.03*sum(tc(1:5))*converi
+         chem(i,kts,j,p_soila)=chem(i,kts,j,p_soila) + 0.97*1.02*sum(tc(1:5))*converi
+
+         chem(i,kts,j,p_ac0) =  chem(i,kts,j,p_ac0) +  0.03*sum(tc(1:5))*converi*factnuma*soilfac
+         chem(i,kts,j,p_corn) =  chem(i,kts,j,p_corn) + 0.97*1.02*sum(tc(1:5))*converi*factnumc*soilfac
       ELSE
         chem(i,kts,j,p_dust_1)=tc(1)*converi
         chem(i,kts,j,p_dust_2)=tc(2)*converi

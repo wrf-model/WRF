@@ -339,7 +339,7 @@
       ETAMP_PHYSICS=.FALSE.
 !
       IF (CONFIG_FLAGS%MP_PHYSICS == ETAMPNEW .OR.                 &
-     &    CONFIG_FLAGS%MP_PHYSICS == ETAMPOLD .OR.                 &
+     &    CONFIG_FLAGS%MP_PHYSICS == ETAMP_HR .OR.                 &
      &    CONFIG_FLAGS%MP_PHYSICS == ETAMP_HWRF ) THEN
 !
          ETAMP_PHYSICS=.TRUE.
@@ -3436,8 +3436,11 @@
                             ITS,ITE,JTS,JTE,KTS,KTE)
         use module_domain, only : domain
         use module_configure, only : grid_config_rec_type
+#ifndef NO_IEEE_MODULE
         use, intrinsic :: ieee_arithmetic
+#endif
         implicit none
+        LOGICAL ISNAN, EXTERNAL           ! NaN values detection
         character*(*), intent(in) :: where
         type(grid_config_rec_type),intent(in) :: config_flags
         type(domain), intent(in) :: grid
@@ -3451,6 +3454,7 @@
         if(config_flags%halo_debug/=2 .and. config_flags%halo_debug/=3) then
            return
         endif
+#ifndef NO_IEEE_MODULE
         call wrf_debug(2,'Check for NaN')
 
         do k=kts,kte-1
@@ -3484,6 +3488,7 @@
               enddo
            enddo
         enddo
+#endif
       END SUBROUTINE check_grid
 !----------------------------------------------------------------------
 #if defined(NMM_FIND_LOAD_IMBALANCE)

@@ -105,6 +105,12 @@ subroutine da_readwrite_be_stage2(outunit, nk)
    read(iunit)regcoeff_psi_t
    end if
 
+   if( cv_options == 7) then
+   read(iunit)regcoeff_psi_chi
+   read(iunit)regcoeff_psi_ps
+   read(iunit)regcoeff_psi_t
+   end if
+
    if( cv_options == 6) then
    read(iunit)variable_psi_chi
    read(iunit)regcoeff_psi_chi
@@ -170,6 +176,12 @@ subroutine da_readwrite_be_stage2(outunit, nk)
    ! Write out the coefficients:
 
    if( cv_options == 5) then
+   write(outunit)regcoeff_psi_chi
+   write(outunit)regcoeff_psi_ps
+   write(outunit)regcoeff_psi_t
+   end if
+
+   if( cv_options == 7) then
    write(outunit)regcoeff_psi_chi
    write(outunit)regcoeff_psi_ps
    write(outunit)regcoeff_psi_t

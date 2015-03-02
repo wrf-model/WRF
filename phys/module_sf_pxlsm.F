@@ -26,12 +26,12 @@ CONTAINS
 !-------------------------------------------------------------------------
    SUBROUTINE pxlsm(U3D, V3D, DZ8W, QV3D,T3D,TH3D, RHO,         &   
                     PSFC, GSW, GLW, RAINBL, EMISS,              &
-                    ITIMESTEP,CURR_SECS, NSOIL, DT, ANAL_INTERVAL, &            
-                    XLAND, XICE, ALBBCK, ALBEDO, SNOALB,        &
-                    SMOIS, TSLB, MAVAIL, TA2, QA2,              &
-                    ZS,DZS, PSIH,                               &
+                    ITIMESTEP,CURR_SECS,NSOIL,DT,ANAL_INTERVAL, &            
+                    XLAND, XICE, ALBBCK, ALBEDO,                &
+                    SNOALB, SMOIS, TSLB, MAVAIL, TA2,           &
+                    QA2, ZS,DZS, PSIH,                          &
                     LANDUSEF,SOILCTOP,SOILCBOT,VEGFRA,VEGF_PX,  &
-                    ISLTYP,RA,RS,LAI,NLCAT,NSCAT,               & 
+                    ISLTYP,RA,RS,LAI,IMPERV,CANFRA,NLCAT,NSCAT, & 
                     HFX,QFX,LH,TSK,SST,ZNT,CANWAT,              &
                     GRDFLX,SHDMIN,SHDMAX,                       &
                     SNOWC,PBLH,RMOL,UST,CAPG,DTBL,              &
@@ -74,7 +74,7 @@ CONTAINS
 !                      assimilation. J. Appl. Meteoro., Vol. 42, 1811-1822.
 ! 
 ! Pleim and Gilliam, 2009: An Indirect Data Assimilation Scheme for Deep Soil Temperature in the 
-!                          Pleim–Xiu Land Surface Model. J. Appl. Meteor. Climatol., 48, 1362–1376.
+!                          Pleim-Xiu Land Surface Model. J. Appl. Meteor. Climatol., 48, 1362-1376.
 !
 ! Gilliam and Pleim, 2010: Performance assessment of new land-surface and planetary boundary layer 
 !                          physics in the WRF-ARW. Journal of Applied Meteorology and Climatology, 49, 760-774. 
@@ -97,52 +97,67 @@ CONTAINS
 !                      For the NLCD40 and NLCD50 roughness and leaf area were made consistent between the US NLCD and
 !                      outside US MODIS datasets. Prior, US boundaries created boundaries of roughness and LAI.
 !
-!
+!     RG     10/2014 - Wetlands soil moisture treatment. Grid cell soil moisture cannot fall less than fraction of a grid
+!                      cells wetland area * soil saturation (e.g., SMOIS of cell with 50% wetlands cannot fall below 50% of WSAT)
+!                    - Both soil levels are initialized using MVAVAIL (Soil moisture availability) instead of just layer 2.
+!                    - Veg Cv (heat capacity) changed from 8x10-6 to 1.2x10-5 (K-M2/J)
+!                    - Alternate empirical stomatal function of PAR (F1) to better replicate photosynthesis-conductance models.
+!                      The main effect is to reduce stomatal conductance for low PAR.
+!                    - Snow albedo is now computed using fractional land-use weighting. Values for each land-use class
+!                      are defined like other PX landuse parameters in module_sf_pxlsm_data.F. These are based on values
+!                      used by NOAH LSM MODIS in VEGPARM.TBL (MAXALB), but tuned to better match satellite values in maxsnowalb 
+!                      dataset. Tuning reduced the MAXALB for all forest classes from values in the 50-60% range to 30-40% range.
+!                      These static values are more representative of albedo after snow has melted of fallen from trees. These
+!                      values were also cross verified with http://www.globalbedo.org/global.php
+!                    - USGS 28 category added as an option
+!                    - Impervious surface and canopy fraction data can be used if processed (otherwise 0% so no impact)
+!                      to alter surface heat capacity (See SURFPX subroutine for details) in urban areas and refine
+!                      LAI and VEGF_PX estimations (see VEGLAND subroutine).
 !--------------------------------------------------------------------------------------------------------------
 !--------------------------------------------------------------------------------------------------------------
 !   ARGUMENT LIST:
 !
 !... Inputs:
-!-- U3D             3D u-velocity interpolated to theta points (m/s)
-!-- V3D             3D v-velocity interpolated to theta points (m/s)
-!-- DZ8W            dz between full levels (m)
-!-- QV3D	    3D mixing ratio
-!-- T3D             Temperature (K)
-!-- TH3D            Theta (K)
-!-- RHO             3D dry air density (kg/m^3)
+!-- U3D          3D u-velocity interpolated to theta points (m/s)
+!-- V3D          3D v-velocity interpolated to theta points (m/s)
+!-- DZ8W         dz between full levels (m)
+!-- QV3D	       3D mixing ratio
+!-- T3D          Temperature (K)
+!-- TH3D         Theta (K)
+!-- RHO          3D dry air density (kg/m^3)
 
-!-- PSFC		surface pressure (Pa)
-!-- GSW			downward short wave flux at ground surface (W/m^2)      
-!-- GLW			downward long wave flux at ground surface (W/m^2)
-!-- RAINBL		Timestep rainfall 
-!-- EMISS		surface emissivity (between 0 and 1)
+!-- PSFC         surface pressure (Pa)
+!-- GSW          downward short wave flux at ground surface (W/m^2)      
+!-- GLW          downward long wave flux at ground surface (W/m^2)
+!-- RAINBL       Timestep rainfall 
+!-- EMISS        surface emissivity (between 0 and 1)
 
-!-- ITIMESTEP		  time step number 
-!-- NSOIL	        number of soil layers
-!-- DT			      time step (second)
-!-- CURR_SECS     time on model domain in seconds, universal WRF variable
+!-- ITIMESTEP    time step number 
+!-- NSOIL        number of soil layers
+!-- DT           time step (second)
+!-- CURR_SECS    time on model domain in seconds, universal WRF variable
 !-- ANAL_INTERVAL Interval of analyses used for soil moisture and temperature nudging
 
-!-- XLAND       	land mask (1 for land, 2 for water)
-!-- XICE          Sea ice
-!-- ALBBCK              Background Albedo
-!-- ALBEDO      	surface albedo with snow cover effects
-!-- SNOALB              Albedo of snow
+!-- XLAND        land mask (1 for land, 2 for water)
+!-- XICE         Sea ice
+!-- ALBBCK       Background Albedo
+!-- ALBEDO       surface albedo with snow cover effects
+!-- SNOALB       Albedo of snow
 
-!-- SMOIS       	total soil moisture content (volumetric fraction)
-!-- TSLB        	soil temp (k)
-!-- MAVAIL              Moisture availibility of soil
-!-- TA2                 2-m temperature
-!-- QA2                 2-m mixing ratio
+!-- SMOIS        total soil moisture content (volumetric fraction)
+!-- TSLB         soil temp (k)
+!-- MAVAIL       Moisture availibility of soil
+!-- TA2          2-m temperature
+!-- QA2          2-m mixing ratio
 
-!-- SVPT0       constant for saturation vapor pressure (K)
-!-- SVP1        constant for saturation vapor pressure (kPa)
-!-- SVP2        constant for saturation vapor pressure (dimensionless)
-!-- SVP3        constant for saturation vapor pressure (K)
+!-- SVPT0        constant for saturation vapor pressure (K)
+!-- SVP1         constant for saturation vapor pressure (kPa)
+!-- SVP2         constant for saturation vapor pressure (dimensionless)
+!-- SVP3         constant for saturation vapor pressure (K)
 
-!-- ZS          depths of centers of soil layers
-!-- DZS         thicknesses of soil layers
-!-- PSIH        similarity stability function for heat
+!-- ZS           depths of centers of soil layers
+!-- DZS          thicknesses of soil layers
+!-- PSIH         similarity stability function for heat
 
 !-- LANDUSEF     Landuse fraction		
 !-- SOILCTOP     Top soil fraction		
@@ -154,42 +169,44 @@ CONTAINS
 !-- RA           Aerodynamic resistence			
 !-- RS           Stomatal resistence			
 !-- LAI          Leaf area index (weighted according to fractional landuse)
+!-- IMPERV       Fraction (percent) of grid cell that is impervious surface (concrete/road/non-veg)
+!-- CANFRA       Fraction (percent) of grid cell that is covered with tree canopy
 !-- NLCAT        Number of landuse categories		
 !-- NSCAT        Number of soil categories		
 
-!-- HFX           net upward heat flux at the surface (W/m^2)
-!-- QFX           net upward moisture flux at the surface (kg/m^2/s)
-!-- LH            net upward latent heat flux at surface (W/m^2)
-!-- TSK 	  surface skin temperature (K)
-!-- SST     sea surface temperature
-!-- ZNT           rougness length
-!-- CANWAT        Canopy water (mm)
+!-- HFX          net upward heat flux at the surface (W/m^2)
+!-- QFX          net upward moisture flux at the surface (kg/m^2/s)
+!-- LH           net upward latent heat flux at surface (W/m^2)
+!-- TSK          surface skin temperature (K)
+!-- SST          sea surface temperature
+!-- ZNT          rougness length
+!-- CANWAT       Canopy water (mm)
 
-!-- GRDFLX        Ground heat flux
-!-- SFCEVP      Evaportation from surface
+!-- GRDFLX       Ground heat flux
+!-- SFCEVP       Evaportation from surface
 !-- SHDMIN       Minimum annual vegetation fraction for each grid cell
 !-- SHDMAX       Maximum annual vegetation fraction for each grid cell
 
-!-- SNOWC         flag indicating snow coverage (1 for snow cover)
-!-- PBLH          PBL height (m)
-!-- RMOL          1/L Reciprocal of Monin-Obukhov length
-!-- UST           u* in similarity theory (m/s)
-!-- CAPG          heat capacity for soil (J/K/m^3)
-!-- DTBL	  time step of boundary layer calls
+!-- SNOWC        flag indicating snow coverage (1 for snow cover)
+!-- PBLH         PBL height (m)
+!-- RMOL         1/L Reciprocal of Monin-Obukhov length
+!-- UST          u* in similarity theory (m/s)
+!-- CAPG         heat capacity for soil (J/K/m^3)
+!-- DTBL	       time step of boundary layer calls
 
-!-- T2_NDG_OLD    Analysis temperature prior to current time
-!-- T2_NDG_NEW    Analysis temperature ahead of current time
-!-- Q2_NDG_OLD    Analysis mixing ratio prior to current time
-!-- Q2_NDG_NEW    Analysis mixing ratio ahead of current time
+!-- T2_NDG_OLD   Analysis temperature prior to current time
+!-- T2_NDG_NEW   Analysis temperature ahead of current time
+!-- Q2_NDG_OLD   Analysis mixing ratio prior to current time
+!-- Q2_NDG_NEW   Analysis mixing ratio ahead of current time
 
-!-- SN_NDG_OLD    Analysis snow water prior to current time
-!-- SN_NDG_NEW    Analysis snow water ahead of current time
-!-- SNOW          Snow water equivalent
-!-- SNOWH         Physical snow depth
-!-- SNOWNCV       Time step accumulated snow
+!-- SN_NDG_OLD   Analysis snow water prior to current time
+!-- SN_NDG_NEW   Analysis snow water ahead of current time
+!-- SNOW         Snow water equivalent
+!-- SNOWH        Physical snow depth
+!-- SNOWNCV      Time step accumulated snow
 
-!-- T2OBS         Analysis temperature interpolated from prior and next in time analysese
-!-- Q2OBS         Analysis moisture interpolated from prior and next in time analysese
+!-- T2OBS             Analysis temperature interpolated from prior and next in time analysese
+!-- Q2OBS             Analysis moisture interpolated from prior and next in time analysese
 !-- PXLSM_SMOIS_INIT  Flag to intialize deep soil moisture to a value derived from moisture availiability.
 !-- PXLSM_SOIL_NUDGE  Flag to use soil moisture and temperature nudging in the PX LSM
 !                     This is typically done for the first simulation.
@@ -245,10 +262,10 @@ CONTAINS
 
    REAL,    DIMENSION( ims:ime, jms:jme ),                                     &
             INTENT(IN) ::                            PSFC, GSW, GLW, RAINBL,   &                
-                                                     EMISS, SNOALB,            &
                                                      ALBBCK, SHDMIN, SHDMAX,   &
                                                      PBLH, RMOL, SNOWNCV,      &
-                                                     UST, MAVAIL, SST
+                                                     UST, MAVAIL, SST, EMISS
+                                                      
    REAL,    DIMENSION( ims:ime, jms:jme ),                                     &
             INTENT(IN) ::                            T2_NDG_OLD, T2_NDG_NEW,   &                
                                                      Q2_NDG_OLD, Q2_NDG_NEW,   & 
@@ -258,9 +275,9 @@ CONTAINS
                                                      
    REAL,    DIMENSION( ims:ime, jms:jme ),                                     &
             INTENT(INOUT) ::           CAPG,CANWAT, QFX, HFX, LH,              &
-                                       PSIH,VEGFRA, VEGF_PX, SNOW,             &
-                                       SNOWH, SNOWC, ALBEDO, XLAND, XICE
-
+                                       PSIH,VEGFRA, VEGF_PX, SNOW, SNOALB,     &
+                                       SNOWH, SNOWC, ALBEDO, XLAND, XICE,      &
+                                       IMPERV, CANFRA
 
    LOGICAL :: radiation
 
@@ -281,7 +298,7 @@ CONTAINS
       !----  REALS
       REAL,     DIMENSION( ims:ime, jms:jme ) :: XLAI, XLAIMN, RSTMIN, &
                                                  XVEG, XVEGMN, XSNUP, &
-                                                 XALB
+                                                 XALB, XSNOALB, WETFRA
                                                   
       REAL,     DIMENSION( ims:ime, jms:jme ) :: RADNET, EG, ER, ETR, QST
 
@@ -318,7 +335,7 @@ CONTAINS
       ELSE IF (NLCAT == 24) THEN
          LAND_USE_TYPE = 'USGS'
       ELSE IF (NLCAT == 28) THEN
-         LAND_USE_TYPE = 'USGS'
+         LAND_USE_TYPE = 'USGS28'
       ELSE
          call wrf_error_fatal("Error: Unknown Land Use Category")
       END IF 
@@ -340,28 +357,28 @@ CONTAINS
       !-----------------------------------------------------------------------------------
       !--- Compute time relatve to old and new analysis time for timestep interpolation
       IF(PXLSM_SOIL_NUDGE .EQ. 1) THEN
-        DT_FDDA = ANAL_INTERVAL * 1.0    ! Convert DT of Analysis to real 
+        DT_FDDA = ANAL_INTERVAL * 1.0    ! Convert DT of Analysis to real
         TIME_BETWEEN_ANALYSIS = MOD(CURR_SECS,DT_FDDA)
-        IF (TIME_BETWEEN_ANALYSIS .EQ. 0.0) THEN   
-          CORB = 1.0       
+        IF (TIME_BETWEEN_ANALYSIS .EQ. 0.0) THEN
+          CORB = 1.0
           CORE = 0.0    
-        ELSE    
-          CORE = TIME_BETWEEN_ANALYSIS  / DT_FDDA     
-          CORB = 1.0 - CORE  
+        ELSE
+          CORE = TIME_BETWEEN_ANALYSIS  / DT_FDDA
+          CORB = 1.0 - CORE
         ENDIF 
       ENDIF 
       !-----------------------------------------------------------------------------------
       ! Compute vegetation and land-use characteristics by land-use fraction weighting
-      ! These parameters include LAI, VEGF, ZNT, ALBEDO, RS, etc.
+      ! These parameters include LAI, VEGF, ZNT, ALBEDO, SNOALB, RS, etc.
       CALL VEGELAND(LANDUSEF, VEGFRA, SHDMIN, SHDMAX,         &
                     SOILCTOP, SOILCBOT, NLCAT, NSCAT,         &
-                    ZNT,XLAI,XLAIMN,RSTMIN,XVEG,XVEGMN,XSNUP,&
-                    XLAND, XALB,                              &
-                    ids,ide, jds,jde, kds,kde,          &
-                    ims,ime, jms,jme, kms,kme,          &
+                    ZNT,XLAI,XLAIMN,RSTMIN,XVEG,XVEGMN,XSNUP, &
+                    XLAND, XALB,XSNOALB,WETFRA,IMPERV,CANFRA, &
+                    ids,ide, jds,jde, kds,kde,                &
+                    ims,ime, jms,jme, kms,kme,                &
                     its,ite, jts,jte, kts,kte, LAND_USE_TYPE   )
       !-----------------------------------------------------------------------------------
-
+      
       !-----------------------------------------------------------------------------------
       ! Main loop over individual grid cells
       DO J = jts,jte    !-- J LOOP
@@ -377,7 +394,9 @@ CONTAINS
                          ITIMESTEP, MAVAIL(I,J),                  &
                          PXLSM_SMOIS_INIT,                        &
                          FWSAT,FWFC,FWWLT,FB,FCGSAT,              &  
-                         FJP,FAS,FC2R,FC1SAT,ISTI,SMOIS(I,2,J)    ) 
+                         FJP,FAS,FC2R,FC1SAT,ISTI,SMOIS(I,1,J),   &
+                         SMOIS(I,2,J)) 
+          !----------------------------------------------------------
           !----------------------------------------------------------
             ISLTYP(I,J) = ISTI                      
           ELSE
@@ -399,7 +418,7 @@ CONTAINS
           PRECIP = MAX ( 1.0E-3*RAINBL(i,j)/DTBL,0.0) ! accumulated precip. rate during DT (=dtpbl)
                                                       ! convert RAINBL from mm to m for PXLSM
           WR     = 1.0E-3*CANWAT(I,J)                 ! convert CANWAT from mm to m for PXLSM
-          THETA1 = TH3D(i,1,j)                  ! potential temp at first layer
+          THETA1 = TH3D(i,1,j)                        ! potential temp at first layer
           SNOBS  = SNOW(I,J)                          ! Set snow cover to existing model value
                                                       !   this is overwritten below if snow analysis is availiable
                                                       !   otherwise snow cover remains constant through simulation
@@ -422,13 +441,16 @@ CONTAINS
 
           USTAR  = MAX(UST(I,J),0.005)
           
-          IF (IFLAND .GT. 1.5) THEN ! if over water                            
+          IF (IFLAND .GE. 1.5) THEN ! if over water                            
             ZNT(I,J) = CZO * UST(I,J) * UST(I,J) / G + OZO
           ENDIF                                                              
           
-          Z0     = ZNT(I,J)
-          CPAIR  = CPD * (1.0 + 0.84 * QV1)            ! J/(K KG)
+          Z0       = ZNT(I,J)
+          CPAIR    = CPD * (1.0 + 0.84 * QV1)            ! J/(K KG)
 
+          ! Set WRF Snow albedo to PX snow albedo based on fractional landuse
+          ! Snow albedo for each landuse class is defined in module_sf_pxlsm_data.F
+          SNOALB(I,J) = XSNOALB(I,J)
           !-------------------------------------------------------------
           ! Compute fractional snow area and snow albedo
           CALL PXSNOW (ITIMESTEP, SNOBS, SNOWNCV(I,J), SNOW(I,J),  &
@@ -441,7 +463,7 @@ CONTAINS
           ! Sea Ice from analysis and water cells that are very cold, but more than 50% water
           ! are converted to ice/snow for more reasonable treatment.
           IF( (XICE(I,J).GE.0.5) .OR.   &
-              (SST(I,J).LE.270.0.AND.XLAND(I,J).GT.1.50) ) THEN
+              (SST(I,J).LE.270.0.AND.XLAND(I,J).GE.1.50) ) THEN
               XLAND(I,J) = 1.0
               IFLAND = 1.0
               ZNT(I,J) = 0.001  !  Ice
@@ -468,8 +490,9 @@ CONTAINS
           VEGF_PX(I,J)   = XVEGMN(I,J) + FSEAS*(XVEG(I,J) - XVEGMN(I,J))                       
           
           ! Ensure veg algorithms not used for water 
-          IF (IFLAND .GT. 1.5) THEN                        
-             VEGF_PX(I,J) = 0.0         
+          IF (IFLAND .GE. 1.5) THEN                        
+             VEGF_PX(I,J) = 0.0
+             LAI(I,J) = 0.0         
           ENDIF                                                                   
           !-------------------------------------------------------------
 
@@ -494,7 +517,8 @@ CONTAINS
           QST12 = KARMAN * ZFUNC*(QV2-QV1) / (ZA2-ZLVL)
                
 
-!--- LSM sub-time loop too prevent dt > 40 sec       
+          !-------------------------------------------------------------
+          !-- LSM sub-time loop too prevent dt > 40 sec       
           NTSPS = INT(DT / (DTPBLX + 0.000001) + 1.0)                                
           DTPBL = DT / NTSPS                                                       
 
@@ -522,16 +546,16 @@ CONTAINS
                       THETA1,   PRECIP,                                         & !in
                       CPAIR, PSIH(I,J),                                         & !in
                       RH2OBS,T2OBS(I,J),                                        & !in
-                      VEGF_PX(I,J), ISTI,   LAI(I,J),   BETAP,                  & !in
-                      RSTMIN(I,J), HC_SNOW, SNOW_FRA,                           & !in          
+                      VEGF_PX(I,J), ISTI, LAI(I,J), IMPERV(I,J), CANFRA(I,J),   & !in
+                      BETAP, RSTMIN(I,J), HC_SNOW, SNOW_FRA, WETFRA(I,J),       & !in          
                       FWWLT, FWFC, FCGSAT,  FWSAT, FB,                          & !in
                       FC1SAT,FC2R,FAS,FJP,DZS(1),DZS(2),QST12,                  & !in
                       RADNET(I,J), GRDFLX(I,J), HFX(I,J), QFX(I,J), LH(I,J),    & !out
                       EG(I,J), ER(I,J), ETR(I,J),                               & !out
                       QST(I,J), CAPG(I,J), RS(I,J), RA(I,J),                    & !out
                       TSLB(I,1,J), TSLB(I,2,J),                                 & !out
-                      SMOIS(I,1,J), SMOIS(I,2,J), WR, TA2(I,J), QA2(I,J),       &
-                      LAND_USE_TYPE )
+                      SMOIS(I,1,J), SMOIS(I,2,J), WR,                           &
+                      TA2(I,J), QA2(I,J), LAND_USE_TYPE,I,J )
             !-------------------------------------------------------------------------
           
           END DO                        ! Time internal PX time loop   
@@ -550,15 +574,15 @@ CONTAINS
 
 !-------------------------------------------------------------------------
 !-------------------------------------------------------------------------
-      SUBROUTINE VEGELAND( landusef, vegfra,                      & 
+      SUBROUTINE VEGELAND( landusef, vegfra,                            & 
                             shdmin, shdmax,                             &                          
-                            soilctop, soilcbot, nlcat, nscat,           &
-                            znt,  xlai, xlaimn, rstmin, xveg, xvegmn,  &
-                            xsnup, xland, xalb,                         &
-                            ids,ide, jds,jde, kds,kde,            &
-                            ims,ime, jms,jme, kms,kme,            &
+                            soilctop, soilcbot, nlcat, nscat,znt, xlai, &
+                            xlaimn, rstmin, xveg, xvegmn, xsnup, xland, &
+                            xalb, xsnoalb, wetfra, imperv, canfra,      &
+                            ids,ide, jds,jde, kds,kde,                  &
+                            ims,ime, jms,jme, kms,kme,                  &
                             its,ite, jts,jte, kts,kte,                  &
-                            LAND_USE_TYPE                                 )
+                            LAND_USE_TYPE                                )
 !-------------------------------------------------------------------------
 !           
 !   CALLED FROM Sub. bl_init in module_physics.init.F
@@ -589,28 +613,32 @@ CONTAINS
                                                                    
       REAL,    DIMENSION( ims:ime, jms:jme ),            INTENT(IN) ::  VEGFRA, SHDMIN, SHDMAX 
 
-      REAL,     DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: ZNT
+      REAL,     DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: ZNT, IMPERV, CANFRA
 
       REAL,     DIMENSION( ims:ime, jms:jme ), INTENT(OUT) :: XLAI, XLAIMN, RSTMIN, XALB, &
-                                                              XVEG, XVEGMN, XSNUP, XLAND 
+                                                              XVEG, XVEGMN, XSNUP, XLAND, &
+                                                              WETFRA, XSNOALB 
       CHARACTER (LEN = 6), INTENT(IN) :: LAND_USE_TYPE
 
                                      
 !... local variables
 
-      INTEGER :: itf, jtf, k, j, i
-      REAL    :: SUMLAI, SUMLMN, SUMRSI, SUMLZ0, SUMVEG, SUMVMN, ALAI, VEGF, SUMSNUP
-      REAL    :: VFMX, VFMN, VSEAS, FAREA, FWAT, ZNOTC, SUMALB
-      REAL,   DIMENSION( NLCAT )  :: LAIMX, LAIMN, Z0, VEG, VEGMN, SNUP
-      REAL, PARAMETER      :: ZNOTCMN = 5.0  ! CM, MIN Zo FOR CROPS
-      REAL, PARAMETER      :: ZNOTCMX = 15.0 ! CM, MAX Zo FOR CROPS
+      INTEGER :: ITF, JTF, K, J, I
+      REAL    :: SUMLAI, SUMLMN, SUMRSI, SUMLZ0, SUMVEG, SUMVMN, &
+                 ALAI, VEGF, SUMSNUP, SUMALB, SUMSNOALB
+                 
+      REAL    :: VFMX, VFMN, VSEAS, FAREA, FWAT, ZNOTC, FCAN, FIMP, FORFRA, EXTFOR
+      REAL,   DIMENSION( NLCAT )  :: LAIMX, LAIMN, Z0, VEG, VEGMN, SNUP, ALB, SNOALB
 
-      REAL, SAVE, DIMENSION(:), POINTER  :: RSMIN, Z00, VEG0, VEGMN0, LAI0, LAIMN0, SNUP0, ALBF
+      REAL, PARAMETER :: ZNOTCMN = 5.0  ! CM, MIN Zo FOR CROPS
+      REAL, PARAMETER :: ZNOTCMX = 15.0 ! CM, MAX Zo FOR CROPS
+
+      REAL, SAVE, DIMENSION(:), POINTER  :: RSMIN, Z00, VEG0, VEGMN0, LAI0, &
+                                            LAIMN0, SNUP0, ALBF, SNOALBF
 
       !---- INITIALIZE PARAMETERS
+      INTEGER, SAVE :: KWAT, LIMIT1, LIMIT2
 
-      INTEGER, SAVE :: KWAT
-      INTEGER, SAVE :: LIMIT1, LIMIT2
      ! Initialize LU characteristics by LU Dataset
       IF (LAND_USE_TYPE == 'USGS') THEN
          KWAT = 16
@@ -622,6 +650,20 @@ CONTAINS
          LAIMN0 => LAIMN0_USGS 
          SNUP0  => SNUP0_USGS 
          ALBF   => ALBF_USGS
+         SNOALBF=> SNOALB_USGS
+         LIMIT1 = 2
+         LIMIT1 = 6
+      ELSE IF (LAND_USE_TYPE == 'USGS28') THEN
+         KWAT = 16
+         RSMIN  => RSMIN_USGS28
+         Z00    => Z00_USGS28  
+         VEG0   => VEG0_USGS28 
+         VEGMN0 => VEGMN0_USGS28 
+         LAI0   => LAI0_USGS28 
+         LAIMN0 => LAIMN0_USGS28 
+         SNUP0  => SNUP0_USGS28 
+         ALBF   => ALBF_USGS28
+         SNOALBF=> SNOALB_USGS28
          LIMIT1 = 2
          LIMIT1 = 6
       ELSE IF (LAND_USE_TYPE == 'NLCD50') THEN
@@ -634,6 +676,7 @@ CONTAINS
          LAIMN0 => LAIMN0_NLCD50 
          SNUP0  => SNUP0_NLCD50 
          ALBF   => ALBF_NLCD50
+         SNOALBF=> SNOALB_NLCD50
          LIMIT1 = 20
          LIMIT1 = 43
       ELSE IF (LAND_USE_TYPE == 'NLCD40') THEN
@@ -646,6 +689,7 @@ CONTAINS
          LAIMN0 => LAIMN0_NLCD40 
          SNUP0  => SNUP0_NLCD40 
          ALBF   => ALBF_NLCD40
+         SNOALBF=> SNOALB_NLCD40
          LIMIT1 = 20
          LIMIT1 = 43
       ELSE IF (LAND_USE_TYPE == 'MODIS') THEN
@@ -658,6 +702,7 @@ CONTAINS
          LAIMN0 => LAIMN0_MODIS 
          SNUP0  => SNUP0_MODIS 
          ALBF   => ALBF_MODIS
+         SNOALBF=> SNOALB_MODIS
          LIMIT1 = 12
          LIMIT1 = 14
       END IF
@@ -671,34 +716,43 @@ CONTAINS
           XVEGMN(I,J) = 0.0
           XSNUP(I,J)  = 0.0                                                            
           XALB(I,J)   = 0.0                                                            
+          XSNOALB(I,J)= 0.0                                                            
+
+          ! Code that may be needed in case these arrays are not intialized
+          ! with zero by real.exe when not defined by GEOGRID or present 
+          ! in met_em* files
+          !IMPERV(I,J) = AMAX1(0.0001,IMPERV(I,J))                                                           
+          !CANFRA(I,J) = AMAX1(0.0001,CANFRA(I,J))                                                           
+
         ENDDO   ! END LOOP THROUGH GRID CELLS
       ENDDO     ! END LOOP THROUGH GRID CELLS
       !--------------------------------------------------------------------
 
       DO J = jts,jte
         DO I = its,ite
-      
-
           !-- Initialize 2 and 3-D veg parameters to be caculated
-          DO K=1,NLCAT                                                               
+          DO K=1,NLCAT
             LAIMX(K) = LAI0(K)                                                       
             LAIMN(K) = LAIMN0(K)                                                   
             Z0(K)    = Z00(K)                                                   
             VEG(K)   = VEG0(K)                                              
             VEGMN(K) = VEGMN0(K)
             SNUP(K)  = SNUP0(K)                                            
+            ALB(K)   = ALBF(K)                                            
+            SNOALB(K)= SNOALBF(K)                                            
           ENDDO                                              
 
           !--  INITIALIZE SUMS
-          SUMLAI = 0.0
-          SUMLMN = 0.0
-          SUMRSI = 0.0
-          SUMLZ0 = 0.0
-          SUMVEG = 0.0
-          SUMVMN = 0.0
-          ALAI   = 0.0
-          SUMSNUP= 0.0
-          SUMALB = 0.0
+          SUMLAI    = 0.0
+          SUMLMN    = 0.0
+          SUMRSI    = 0.0
+          SUMLZ0    = 0.0
+          SUMVEG    = 0.0
+          SUMVMN    = 0.0
+          ALAI      = 0.0
+          SUMSNUP   = 0.0
+          SUMALB    = 0.0
+          SUMSNOALB = 0.0
 
           !--   ESTIMATE CROP EMERGANCE DATE FROM VEGFRAC
           VFMX   = SHDMAX(I,J)
@@ -716,7 +770,6 @@ CONTAINS
             ZNOTC = ZNOTCMN * (1-VSEAS) + ZNOTCMX * VSEAS  ! Zo FOR CROPS
             DO K = 1, NLCAT
               IF (LAND_USE_TYPE == 'MODIS') THEN
-
                 !-- USE THE VEGFRAC DATA ONLY FOR CROPS
                 IF (K.EQ.12 .OR. K.EQ.14) THEN
                    LAIMX(K) = LAIMN0(K) * (1-VSEAS) + LAI0(K) * VSEAS
@@ -776,6 +829,22 @@ CONTAINS
                       Z0(K)  = 0.5 * (ZNOTC + Z00(K))
                    ENDIF
                 ENDIF
+              ELSE IF (LAND_USE_TYPE == 'USGS28') THEN
+                !-- USE THE VEGFRAC DATA ONLY FOR CROPS 
+                IF (K .GE. 2 .AND. K .LE. 6) THEN
+                   LAIMX(K) = LAIMN0(K) * (1-VSEAS) + LAI0(K) * VSEAS
+                   LAIMN(K) = LAIMX(K)
+                   VEG(K)   = VEGMN0(K) * (1-VSEAS) + VEG0(K) * VSEAS
+                   VEGMN(K) = VEG(K)
+                   !-- SEASONALLY VARY Zo FOR DryCrop (k=2) OR Irigated Crop (k=3) OR  Mix Crop (k=4)
+                   IF (K .GE. 2 .AND. K .LE. 4) THEN
+                      Z0(K) = ZNOTC
+                   !-- CrGrM (k=5) or CrWdM (k=6) USE AVG WITH GRASS AND FOREST
+                   ELSE IF (K .GE.5 .AND. K .LE. 6) THEN
+                      Z0(K)  = 0.5 * (ZNOTC + Z00(K))
+                   ENDIF
+                ENDIF
+
               END IF
 
             ENDDO
@@ -785,21 +854,23 @@ CONTAINS
           !-------------------------------------
           !-- LOOP THROUGH LANDUSE Fraction and compute totals
           DO K = 1, NLCAT 
-            FAREA  = LANDUSEF(I,K,J)
-            SUMLAI = SUMLAI + LAIMX(K) * FAREA
-            SUMLMN = SUMLMN + LAIMN(K) * FAREA
-            ALAI   = ALAI + FAREA
-            SUMRSI = SUMRSI + FAREA * LAIMX(K) / RSMIN(K)
-            SUMLZ0 = SUMLZ0 + FAREA * ALOG(Z0(K))
-            SUMVEG = SUMVEG + FAREA * VEG(K)
-            SUMVMN = SUMVMN + FAREA * VEGMN(K)
-            SUMSNUP= SUMSNUP+ FAREA * SNUP(K)
-            SUMALB = SUMALB + FAREA * ALBF(K)
+            FAREA    = LANDUSEF(I,K,J)
+            SUMLAI   = SUMLAI + LAIMX(K) * FAREA
+            SUMLMN   = SUMLMN + LAIMN(K) * FAREA
+            ALAI     = ALAI + FAREA
+            SUMRSI   = SUMRSI + FAREA * LAIMX(K) / RSMIN(K)
+            SUMLZ0   = SUMLZ0 + FAREA * ALOG(Z0(K))
+            SUMVEG   = SUMVEG + FAREA * VEG(K)
+            SUMVMN   = SUMVMN + FAREA * VEGMN(K)
+            SUMSNUP  = SUMSNUP+ FAREA * SNUP(K)
+            SUMALB   = SUMALB + FAREA * ALB(K)
+            SUMSNOALB= SUMSNOALB + FAREA * SNOALB(K)
           ENDDO
 
-          !-- CHECK FOR WATER
           FWAT = LANDUSEF(I,KWAT,J)
-          IF (FWAT .GT. 0.999) THEN
+          !-- CHECK FOR WATER
+          IF (FWAT .GE. 0.50) THEN        ! Changed WRFV3.7
+!          IF (FWAT .GE. 0.9999) THEN
             XLAI(I,J)   = LAIMX(KWAT)
             XLAIMN(I,J) = LAIMN(KWAT)
             RSTMIN(I,J) = RSMIN(KWAT)
@@ -807,7 +878,8 @@ CONTAINS
             XVEG(I,J)   = VEG(KWAT)
             XVEGMN(I,J) = VEGMN(KWAT)
             XSNUP(I,J)  = SNUP(KWAT)
-            XALB(I,J)   = ALBF(KWAT)
+            XALB(I,J)   = ALB(KWAT)
+            XSNOALB(I,J)= SNOALB(KWAT)
           ELSE
             IF (FWAT .GT. 0.10) THEN
               ALAI   = ALAI - FWAT
@@ -819,21 +891,56 @@ CONTAINS
             ZNT(I,J)    = EXP(SUMLZ0/ALAI)
             XVEG(I,J)   = SUMVEG / ALAI
             XVEGMN(I,J) = SUMVMN / ALAI
-            XSNUP(I,J)  = SUMSNUP/ALAI
-            XALB(I,J)   = SUMALB/ALAI
+            XSNUP(I,J)  = SUMSNUP
+            XALB(I,J)   = SUMALB
+            XSNOALB(I,J)= SUMSNOALB
           ENDIF
 
           IF (FWAT .GT. 0.50) THEN
-            ZNT(I,J) = Z0(KWAT)
-            XALB(I,J)= ALBF(KWAT)
+            ZNT(I,J)    = Z0(KWAT)
+            XALB(I,J)   = ALB(KWAT)
+            XSNOALB(I,J)= SNOALB(KWAT)
           ENDIF
+
+          !-- Compute wetlands fraction for proper MMLUIN data set
+          !-- Note: if LU categories change, these hard coded indicies must be updated
+          IF (LAND_USE_TYPE == 'USGS') THEN
+            WETFRA(I,J)  = LANDUSEF(I,17,J)+LANDUSEF(I,18,J)
+          ELSE IF (LAND_USE_TYPE == 'USGS28') THEN
+            WETFRA(I,J)  = LANDUSEF(I,17,J)+LANDUSEF(I,18,J)
+          ELSE IF (LAND_USE_TYPE == 'NLCD50') THEN
+            WETFRA(I,J)  = LANDUSEF(I,22,J)+LANDUSEF(I,23,J)+LANDUSEF(I,27,J)+LANDUSEF(I,28,J)+LANDUSEF(I,42,J)
+          ELSE IF (LAND_USE_TYPE == 'NLCD40') THEN
+            WETFRA(I,J)  = LANDUSEF(I,39,J)+LANDUSEF(I,40,J)+LANDUSEF(I,11,J)
+          ELSE IF (LAND_USE_TYPE == 'MODIS') THEN
+            WETFRA(I,J)  = LANDUSEF(I,11,J)
+          END IF
 
           ZNT(I,J)    = ZNT(I,J) * 0.01           !CONVERT TO M
           XVEG(I,J)   = XVEG(I,J) * 0.01          !CONVERT TO FRAC
           XVEGMN(I,J) = XVEGMN(I,J) * 0.01
           XLAND(I,J)  = 1.0 + FWAT
           XALB(I,J)   = XALB(I,J) * 0.01
+          XSNOALB(I,J)= XSNOALB(I,J) * 0.01
         
+          !-------Adjustment according to CANFRA and IMPERV fo NLCD40 only -----------
+          FIMP = IMPERV(I,J) * 0.01
+          FCAN = CANFRA(I,J) * 0.01
+          IF (LAND_USE_TYPE == 'NLCD40') THEN
+             XVEG(I,J) = MIN(XVEG(I,J),1.0-FIMP)
+             XVEGMN(I,J) = MIN(XVEGMN(I,J),1.0-FIMP)
+             XVEG(I,J) = MAX(XVEG(I,J),FCAN)
+             XVEGMN(I,J) = MAX(XVEGMN(I,J),FCAN)
+           
+             FORFRA = LANDUSEF(I,39,J)+LANDUSEF(I,30,J)+LANDUSEF(I,29,J)+LANDUSEF(I,28,J)
+             EXTFOR =  FCAN - FORFRA
+             IF (EXTFOR.GE.0.01) THEN
+                XLAI(I,J) = LAIMX(30) * EXTFOR + XLAI(I,J) * (1-EXTFOR)
+                XLAIMN(I,J) = LAIMN(30) * EXTFOR + XLAIMN(I,J) * (1-EXTFOR)
+             ENDIF
+          ENDIF
+          !--------------------------------------------------------------------------
+
         ENDDO     ! END LOOP THROUGH GRID CELLS
       ENDDO       ! END LOOP THROUGH GRID CELLS
       !--------------------------------------------------------------------
@@ -842,20 +949,15 @@ CONTAINS
 
 !------------------------------------------------------------------------------
 !------------------------------------------------------------------------------
-      SUBROUTINE SURFPX(DTPBL,  IFLAND, ISNOW,  NUDGEX, XICE1,               & !in
-                        SOLDN,  GSW, LWDN,   EMISSI, Z1,                     & !in
-                        MOL,    ZNT,    UST,                                 & !in 
-                        PSURF,  DENS1,  QV1,    QSS,   TA1,                  & !in
-                        THETA1, PRECIP,                                      & !in
-                        CPAIR, PSIH,                                         & !in
-                        RH2OBS, T2OBS,                                       & !in
-                        VEGFRC, ISTI,   LAI,   BETAP,                        & !in
-                        RSTMIN, HC_SNOW, SNOW_FRA,                           & !in
-                        WWLT, WFC, CGSAT, WSAT, B,                           & !in
-                        C1SAT, C2R, AS, JP, DS1, DS2,QST12,                  & !in
+      SUBROUTINE SURFPX(DTPBL, IFLAND, ISNOW, NUDGEX, XICE1, SOLDN, GSW,     & !in
+                        LWDN, EMISSI, Z1, MOL, ZNT, UST, PSURF, DENS1,       & !in
+                        QV1, QSS, TA1, THETA1, PRECIP, CPAIR, PSIH,          & !in
+                        RH2OBS, T2OBS, VEGFRC, ISTI,LAI,IMPERV,CANFRA,BETAP, & !in
+                        RSTMIN, HC_SNOW, SNOW_FRA, WETFRA, WWLT, WFC,        & !in
+                        CGSAT, WSAT, B, C1SAT, C2R, AS, JP, DS1, DS2, QST12, & !in
                         RADNET, GRDFLX, HFX, QFX, LH, EG, ER,  ETR,          & !out
-                        QST,    CAPG,   RS, RA,  TG,     T2,                 & !out
-                        WG,     W2,     WR, TA2, QA2, LAND_USE_TYPE   )        !out
+                        QST, CAPG, RS, RA, TG, T2, WG, W2, WR,               & !out
+                        TA2, QA2, LAND_USE_TYPE, I, J )                            !out
 
 !------------------------------------------------------------------------------
 ! 
@@ -895,7 +997,10 @@ CONTAINS
 !    VEGFRC:  Vegetation coverage
 !    ISTI:    soil type
 !    LAI:     Leaf area index
+!    IMPERV:  Percentage of IMPERVIOUS Fraction 
+!    CANFRA:  Percentage of Canopy/Tree Fraction 
 !    BETAP:   Coefficient for bare soil evaporation
+!    WETFRA:  Fraction of Wetlands area 
 !    THZ1OB:  Observed TEMP FROM ANAL OF OBS TEMPS AT SCREEN HT
 !    RHOBS:   Observed relative humidity at SCREEN HT
 !    RSTMIN   Minimum Stomatol resistence
@@ -930,7 +1035,7 @@ CONTAINS
 !.......Arguments
 
 !.. Integer
-      INTEGER , INTENT(IN)  :: ISTI, NUDGEX
+      INTEGER , INTENT(IN)  :: ISTI, NUDGEX, I, J
 
 !... Real
       REAL ,    INTENT(IN)  :: DTPBL, DS1, DS2
@@ -939,8 +1044,8 @@ CONTAINS
       REAL ,    INTENT(IN)  :: ZNT
       REAL ,    INTENT(IN)  :: PSURF, DENS1, QV1, QSS, TA1,  THETA1, PRECIP
       REAL ,    INTENT(IN)  :: CPAIR
-      REAL ,    INTENT(IN)  :: VEGFRC, LAI
-      REAL ,    INTENT(IN)  :: RSTMIN, HC_SNOW, SNOW_FRA 
+      REAL ,    INTENT(IN)  :: VEGFRC, LAI, IMPERV, CANFRA
+      REAL ,    INTENT(IN)  :: RSTMIN, HC_SNOW, SNOW_FRA, WETFRA 
       REAL ,    INTENT(IN)  :: WWLT, WFC, CGSAT, WSAT, B, C1SAT, C2R, AS, JP
       REAL ,    INTENT(IN)  :: RH2OBS,T2OBS
       REAL ,    INTENT(IN)  :: QST12
@@ -956,7 +1061,7 @@ CONTAINS
 !... Local Variables
 
 !... Real
-      REAL        :: HF, LV, CQ4 
+      REAL        :: HF, LV, CQ4, WETSAT, SM2 
       REAL        :: RAH, RAW, ET, W2CG, CG, CT, SOILFLX, CPOT, THETAG
       REAL        :: ZOL, ZOBOL, ZNTOL, Y, Y0, PSIH15, YNT
       REAL        :: WGNUDG, W2NUDG, ALPH1, ALPH2, BET1, BET2, T1P5
@@ -967,21 +1072,46 @@ CONTAINS
       REAL        :: ALN10, TMP1, TMP2, TMP3, AA, AB, TST, RBH, CTVEG
       REAL        :: QST1,PHIH,PSIOB
       REAL        :: T2NUD, T2NUDF
-      REAL        :: VAPPRS, QSBT, RH2MOD
+      REAL        :: VAPPRS, QSBT, RH2MOD, IMF, VEGF, SOILF
 
 !... Parameters
-      REAL        :: ZOBS, GAMAH, BETAH, SIGF, BH, CT_SNOW
-      REAL, PARAMETER :: CV = 8.0E-6   ! K-M2/J
-      PARAMETER (ZOBS  = 1.5)      ! height for observed screen temp., (m)
+      REAL        :: ZOBS, GAMAH, BETAH, SIGF, BH, CT_SNOW, CT_IMPERV
+
+      REAL, PARAMETER :: CV = 1.2E-5   ! K-M2/J Note: Update from 8E-6 10/14 Jon Pleim
+
+      PARAMETER (ZOBS  = 1.5)    ! height for observed screen temp., (m)
       PARAMETER (BH    = 15.7)
       PARAMETER (GAMAH = 16. )   !11.6)
       PARAMETER (BETAH = 5.0 )   !8.21)
-      PARAMETER (SIGF  = 0.5)      ! rain interception see LSM (can be 0-1)
-      !PARAMETER (CT_SNOW  = 5.54E-5)   
-! New value of CT_SNOW calibrated using multilayer soil model where csnow=6.9E5 J/(m3 K) 
-! from NCAR CSM                                         
+      PARAMETER (SIGF  = 0.5)    ! rain interception see LSM (can be 0-1)
+      !--------------------------------------------------------------------
+      !  OLD PX legacy value from MM5 ... unknown origin PARAMETER (CT_SNOW  = 5.54E-5)   
+      ! New value of CT_SNOW calibrated using multilayer soil model where csnow=6.9E5 J/(m3 K) 
+      ! from NCAR (WRFV3.2 -WRFV3.6.1) CSM PARAMETER (CT_SNOW  = 2.0E-5) 
       PARAMETER (CT_SNOW  = 2.0E-5)  
-      ALN10  = ALOG(10.0)
+
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      ! CS for concrete/asphalt/road material (http://www.engineeringtoolbox.com/specific-heat-capacity-d_391.html)
+      !                                        cs_imperv = 920 J kg-1 K-1 
+      ! CS for asphalt and concrete from 0.1785 to 0.20 cal g-1 K-1 (http://pages.towson.edu/morgan/files/Impervious.pdf)
+      ! the values above translate to ~750 to 850 J kg-1 K-1
+      !
+      ! CAPG used for WRF urban physics ranges from 1.0E6 for roof and building walls to 1.4E6 J m-3 K-1 for roads/urban ground
+      ! Using these values to back out CS along with 0.15 m thickness 1.4E6 J m-3 K-1 * 0.15 m = 2.1E5 J m-2 K-1
+      ! inverse of the value above gives CT_IMPERV value of 1/0.000021 = 4.762E-6 K m2 J-1
+
+      ! The middle value will be used for now. 850 J kg-1 K-1. This needs to be converted from J/K per kg to area using 
+      ! the approxiate concrete/asphalt density and layer thickness or represenative thickness. For starters (12/2011)
+      ! well not use the PX first layer thickness, but representative thickness of most roads/parkinglots/buildings.
+      ! for now welll use 6 inches or about 15 cm or 0.15 m. Density of concrete (normal) from 
+      ! Dorf, Richard. Engineering Handbook. New York: CRC Press, 1996. is ~2400 kg m-3.
+      ! Using these values 850 J kg-1 K-1 * 2400 kg m-3 * 0.15 m = 3.06E5 J m-2 K-1 or in CT form (inverse) 3.268E-6 K m2 J-1
+      ! If you look at the range of possible values considering density differences of concrete/asphalt/etc
+      ! Values can range from 2.5 to 6.0 E-6                                 
+      PARAMETER (CT_IMPERV  = 3.268E-6)  
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+        ALN10  = ALOG(10.0)
         RADNET = SOLDN - (EMISSI *(STBOLT *TG **4 - LWDN))        ! NET RADIATION                             
         !--------------------------------------------------------------------
         CPOT= (100.0 / PSURF) ** ROVCP       ! rcp is global constant(module_model_constants)                            
@@ -1025,6 +1155,17 @@ CONTAINS
         RA=PR0* ( ALOG(Z1/ZNT) - PSIH )/(KARMAN*UST)
         RAH = RA + 5.0 / UST
         RAW = RA + 4.503 / UST
+
+        !--------------------------------------------------------------------
+        ! Compute soil moisture layer 2 that considers fraction of saturated 
+        ! wetlands. If 100% of cell is wetland, soil moisture can be no lower
+        ! than full soil saturation. If half wetland, no less than half saturated 
+        IF (IFLAND .LT. 1.5 ) THEN
+        WETSAT = 1.00 * WSAT                           ! Wetlands soil moisture
+        SM2    = (WETFRA * WETSAT)                     ! 
+        W2     = AMAX1(SM2, W2)                        ! In case that W2 > Field capacity (heavy precip), use wetter W2
+        ENDIF
+
         !--------------------------------------------------------------------
         !--  COMPUTE MOISTURE FLUX
         CALL QFLUX( DENS1,  QV1,    TA1,  SOLDN,  RAW, QSS,            &
@@ -1035,7 +1176,7 @@ CONTAINS
         !--------------------------------------------------------------------
 
         !--------------------------------------------------------------------
-        !..........Total evaporation (ET)
+        !    Compute Total evaporation (ET) from various modes of moisture flux
         ET  = EG + ER + ETR
         QST = -ET / (DENS1 * UST)
  
@@ -1072,7 +1213,13 @@ CONTAINS
           W2CG = AMAX1(W2,WWLT)
           CG   = CGSAT * 1.0E-6 * (WSAT/ W2CG) **    &  
                  (0.5 * B / ALN10)
-          CT   = 1./((1-VEGFRC)/CG + VEGFRC/CV)
+          ! IMPERVIOUS weighting scheme -- Subtract highly accurate impervious fraction from cell
+          ! remainder is split between ground and vegetation. CT is a weighted fractional average.
+          ! Snow CT is then applied for final heat capacity
+          IMF  = AMAX1(0.0,IMPERV/100.0)
+          VEGF = (1.0 - IMF) * VEGFRC
+          SOILF= (1.0 - IMF) * (1.0 - VEGFRC)
+          CT   = 1./( IMF/CT_IMPERV + VEGF/CV + SOILF/CG)                        
           CT   = 1./(SNOW_FRA/CT_SNOW + (1-SNOW_FRA)/CT)
           CAPG = 1.0/CT          
 
@@ -1100,7 +1247,6 @@ CONTAINS
             IF (W2 .GE. WFC)  W2NUDG = AMIN1(W2NUDG,0.0)
             IF (W2 .LE. WWLT) W2NUDG = AMAX1(W2NUDG,0.0)
             T2NUD = T2NUDF * (T2OBS - TA2)
-          !print *, 'T2NUD =',T2NUD,T2NUDF
           ENDIF
         ENDIF
         !-----------------------------------------------------------------------------------------
@@ -1194,7 +1340,7 @@ CONTAINS
               C1 = C1SAT * (WSAT / WWLT) ** (0.5 * B + 1.0)
             ENDIF
             C2 = C2R * W2HLF / (WSAT - W2HLF + 1.E-11) 
-            IF (W2HLF .EQ. WSAT) THEN
+            IF (W2HLF .GE. WSAT) THEN
               WEQ = WSAT
             ELSE
               WEQ = W2HLF - AS * WSAT * W2REL ** JP *         &
@@ -1287,7 +1433,7 @@ CONTAINS
       REAL    :: WRMAX, DELTA, SIGG, RADL, RADF, W2AVAIL, W2MXAV
       REAL    :: FTOT, F1, F2, F3,  F4
       REAL    :: FSHELT, GS, GA, FX
-
+      REAL    :: PAR, F1MAX
 
 
 !... Parameters
@@ -1332,12 +1478,17 @@ CONTAINS
         
         !!!-RADIATION
         IF (RSTMIN .GT. 130.0) THEN
-          RADL = 30.0                                            ! W/M2
+!          RADL = 30.0                                            ! W/M2
+          F1MAX = 1.-0.03*LAI
         ELSE
-          RADL = 100.0                                           ! W/M2
+!          RADL = 100.0                                           ! W/M2
+          F1MAX = 1.-0.05*LAI
         ENDIF
-        RADF = 1.1 * RG / (RADL * LAI)                  ! NP89 - EQN34
-        F1   = (RSTMIN / RSMAX + RADF) / (1.0 + RADF)
+!        RADF = 1.1 * RG / (RADL * LAI)                  ! NP89 - EQN34
+!        F1   = (RSTMIN / RSMAX + RADF) / (1.0 + RADF)
+        PAR = 0.45 * RG
+        F1 = F1MAX*(2./(1.+EXP(-0.014*PAR))-1.)
+        F1 = AMAX1(F1,RSTMIN / RSMAX)
 
         !!!-SOIL MOISTURE
         W2AVAIL = W2 - WWLT
@@ -1449,7 +1600,7 @@ CONTAINS
       SUBROUTINE SOILPROP (SOILCBOT,WEIGHT, ITIMESTEP, MAVAIL, &  ! IN
                            PXLSM_SMOIS_INIT,                   &  ! IN
                            FWSAT,FWFC,FWWLT,FB,FCGSAT,         &  ! OUT
-                           FJP,FAS,FC2R,FC1SAT,ISTI, W2        )  ! OUT
+                           FJP,FAS,FC2R,FC1SAT,ISTI, WG, W2    )  ! OUT
      !------------------------------------------------------------------------
      !     SOILPROP COMPUTES SOIL PARAMETERS FOR BOTH BOTTOM AND TOP LAYERS
      !              USING FRACTIONAL SOIL TYPE. A HARD CODED OPTION IS AVAILIABLE
@@ -1463,14 +1614,14 @@ CONTAINS
      !   2  LOAMY SAND .410 .150  .075  4.38  3.057    4  .404  3.7  .098
      !   3  SANDY LOAM .435 .195  .114  4.90  3.560    4  .219  1.8  .132
      !   4  SILT LOAM  .485 .255  .179  5.30  4.418    6  .105  0.8  .153
-     !   4  SILT       .485 .255  .179  5.30  4.418    6  .105  0.8  .153 NP89 does not have Silt so mapped to Silt Loam
-     !   5  LOAM       .451 .240  .155  5.39  4.111    6  .148  0.8  .191
-     !   6  SND CLY LM .420 .255  .175  7.12  3.670    6  .135  0.8  .213
-     !   7  SLT CLY LM .477 .322  .218  7.75  3.593    8  .127  0.4  .385
-     !   8  CLAY LOAM  .476 .325  .250  8.52  3.995   10  .084  0.6  .227
-     !   9  SANDY CLAY .426 .310  .219 10.40  3.058    8  .139  0.3  .421
-     !  10  SILTY CLAY .482 .370  .283 10.40  3.729   10  .075  0.3  .375
-     !  11  CLAY       .482 .367  .286 11.40  3.600   12  .083  0.3  .342
+     !   5  SILT       .485 .255  .179  5.30  4.418    6  .105  0.8  .153 NP89 does not have Silt so mapped to Silt Loam
+     !   6  LOAM       .451 .240  .155  5.39  4.111    6  .148  0.8  .191
+     !   7  SND CLY LM .420 .255  .175  7.12  3.670    6  .135  0.8  .213
+     !   8  SLT CLY LM .477 .322  .218  7.75  3.593    8  .127  0.4  .385
+     !   9  CLAY LOAM  .476 .325  .250  8.52  3.995   10  .084  0.6  .227
+     !  10  SANDY CLAY .426 .310  .219 10.40  3.058    8  .139  0.3  .421
+     !  11  SILTY CLAY .482 .370  .283 10.40  3.729   10  .075  0.3  .375
+     !  12  CLAY       .482 .367  .286 11.40  3.600   12  .083  0.3  .342
      !------------------------------------------------------------------------
 !------------------------------------------------------------------------------------------
 !------------------------------------------------------------------------------------------
@@ -1485,7 +1636,7 @@ CONTAINS
       REAL,     DIMENSION(1:NSCAT), INTENT(IN)   :: SOILCBOT
       REAL,                         INTENT(OUT)  :: FWSAT,FWFC,FWWLT,FB,FCGSAT,          &
                                                     FJP,FAS,FC2R,FC1SAT
-      REAL,                         INTENT(INOUT)  :: W2
+      REAL,                         INTENT(INOUT)  :: W2, WG
 
 
       INTEGER,                      INTENT(OUT)  :: ISTI
@@ -1674,6 +1825,7 @@ CONTAINS
     
     ! Compute W2 using soil moisture availiability if pxlsm_smois_init (in namelist) is not zero
     IF (ITIMESTEP .EQ. 1 .AND. PXLSM_SMOIS_INIT .GT. 0) THEN
+       WG = FWWLT + (0.5*(FWSAT+FWFC) - FWWLT)  * MAVAIL 
        W2 = FWWLT + (0.5*(FWSAT+FWFC) - FWWLT)  * MAVAIL 
     ENDIF                                                                    
     

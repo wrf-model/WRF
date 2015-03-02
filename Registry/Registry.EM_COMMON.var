@@ -388,7 +388,8 @@ package   io_esmf     io_form_restart==7                     -             -
 package   io_yyy      io_form_restart==8                     -             -
 package   io_zzz      io_form_restart==9                     -             -
 package   io_grib2    io_form_restart==10                    -             -
-package   io_pnetcdf  io_form_restart==11                     -             -
+package   io_pnetcdf  io_form_restart==11                    -             -
+package   io_pio      io_form_restart==12                    -             -
 
 #WRF Hydro
 package   no_wrfhydro    wrf_hydro==0                -            -

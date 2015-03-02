@@ -1956,7 +1956,8 @@ subroutine retrieve_field(in_unit,wrfges,out,start_block,end_block,start_byte,en
   integer(i_llong),parameter:: lrecl=2**20
   integer(i_byte) buf(lrecl)
   integer(i_kind) i,ii,k
-  integer(i_llong) ibegin,iend,ierr
+  integer(i_llong) ibegin,iend
+  integer :: ierr
 
   open(in_unit,file=trim(wrfges),access='direct',recl=lrecl)
 

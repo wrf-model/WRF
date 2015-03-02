@@ -53,10 +53,10 @@ subroutine da_cv_to_global(cv_size, cv_size_global, x, grid, mzs, xg )
    allocate(vv_x%v7(ims:ime,jms:jme,mzs(7)))
    allocate(vv_x%v8(ims:ime,jms:jme,mzs(8)))
    allocate(vv_x%v9(ims:ime,jms:jme,mzs(9)))
-!  allocate(vv_x%alpha(ims:ime,jms:jme,kms:kme,mzs(11)))
-   allocate(vv_x%alpha(ims_int:ime_int,jms_int:jme_int,kms_int:kme_int,mzs(11)))
+   allocate(vv_x%v10(ims:ime,jms:jme,mzs(10)))
+   allocate(vv_x%v11(ims:ime,jms:jme,mzs(11)))   
+   allocate(vv_x%alpha(ims_int:ime_int,jms_int:jme_int,kms_int:kme_int,mzs(13)))
 #else
-!  allocate(vv_x%alpha(ims:ime,jms:jme,kms:kme,mzs(7)))
    allocate(vv_x%alpha(ims_int:ime_int,jms_int:jme_int,kms_int:kme_int,mzs(7)))
 #endif
 
@@ -74,8 +74,10 @@ subroutine da_cv_to_global(cv_size, cv_size_global, x, grid, mzs, xg )
       allocate(vv_xg%v7(ids:ide,jds:jde,mzs(7)))
       allocate(vv_xg%v8(ids:ide,jds:jde,mzs(8)))
       allocate(vv_xg%v9(ids:ide,jds:jde,mzs(9)))
-!     allocate(vv_xg%alpha(ids:ide,jds:jde,kds:kde,mzs(11)))
-      allocate(vv_xg%alpha(ids_int:ide_int,jds_int:jde_int,kds_int:kde_int,mzs(11)))
+      allocate(vv_xg%v10(ids:ide,jds:jde,mzs(10)))
+      allocate(vv_xg%v11(ids:ide,jds:jde,mzs(11)))
+!     allocate(vv_xg%alpha(ids:ide,jds:jde,kds:kde,mzs(13)))
+      allocate(vv_xg%alpha(ids_int:ide_int,jds_int:jde_int,kds_int:kde_int,mzs(13)))
 #else
 !     allocate(vv_xg%alpha(ids:ide,jds:jde,kds:kde,mzs(7)))
       allocate(vv_xg%alpha(ids_int:ide_int,jds_int:jde_int,kds_int:kde_int,mzs(7)))
@@ -93,6 +95,8 @@ subroutine da_cv_to_global(cv_size, cv_size_global, x, grid, mzs, xg )
       allocate(vv_xg%v7(1,1,1))
       allocate(vv_xg%v8(1,1,1))
       allocate(vv_xg%v9(1,1,1))
+      allocate(vv_xg%v10(1,1,1))
+      allocate(vv_xg%v11(1,1,1))
 #endif
       allocate(vv_xg%alpha(1,1,1,1))
    end if
@@ -111,14 +115,16 @@ subroutine da_cv_to_global(cv_size, cv_size_global, x, grid, mzs, xg )
    call da_patch_to_global(grid, vv_x%v7,    vv_xg%v7,    mzs(7))
    call da_patch_to_global(grid, vv_x%v8,    vv_xg%v8,    mzs(8))
    call da_patch_to_global(grid, vv_x%v9,    vv_xg%v9,    mzs(9))
+   call da_patch_to_global(grid, vv_x%v10,    vv_xg%v10,    mzs(10))
+   call da_patch_to_global(grid, vv_x%v11,    vv_xg%v11,    mzs(11))
 #endif
 #ifdef CLOUD_CV
-   if ( mzs(11) > 0 ) then
-      do n = 1, mzs(11) ! Ensemble size
+   if ( mzs(13) > 0 ) then
+      do n = 1, mzs(13) ! Ensemble size
          if ( anal_type_hybrid_dual_res ) then
-            call da_patch_to_global_dual_res(grid%intermediate_grid, vv_x%alpha(:,:,:,n), vv_xg%alpha(:,:,:,n), mzs(10))
+            call da_patch_to_global_dual_res(grid%intermediate_grid, vv_x%alpha(:,:,:,n), vv_xg%alpha(:,:,:,n), mzs(12))
          else
-            call da_patch_to_global(grid, vv_x%alpha(:,:,:,n), vv_xg%alpha(:,:,:,n), mzs(10))
+            call da_patch_to_global(grid, vv_x%alpha(:,:,:,n), vv_xg%alpha(:,:,:,n), mzs(12))
          endif
       end do
    end if
@@ -135,7 +141,7 @@ subroutine da_cv_to_global(cv_size, cv_size_global, x, grid, mzs, xg )
 #endif
 #ifdef CLOUD_CV
    ! deallocate vv_x
-   deallocate (vv_x%v1, vv_x%v2, vv_x%v3, vv_x%v4, vv_x%v5, vv_x%v6, vv_x%v7, vv_x%v8, vv_x%v9, vv_x%alpha)
+   deallocate (vv_x%v1, vv_x%v2, vv_x%v3, vv_x%v4, vv_x%v5, vv_x%v6, vv_x%v7, vv_x%v8, vv_x%v9, vv_x%v10, vv_x%v11, vv_x%alpha)
 #else
    ! deallocate vv_x
    deallocate (vv_x%v1, vv_x%v2, vv_x%v3, vv_x%v4, vv_x%v5, vv_x%alpha)
@@ -155,7 +161,7 @@ subroutine da_cv_to_global(cv_size, cv_size_global, x, grid, mzs, xg )
    end if
 #ifdef CLOUD_CV
    ! deallocate vv_xg
-   deallocate(vv_xg%v1, vv_xg%v2, vv_xg%v3, vv_xg%v4, vv_xg%v5, vv_xg%v6, vv_xg%v7,vv_xg%v8,vv_xg%v9, vv_xg%alpha)
+   deallocate(vv_xg%v1, vv_xg%v2, vv_xg%v3, vv_xg%v4, vv_xg%v5, vv_xg%v6, vv_xg%v7,vv_xg%v8,vv_xg%v9, vv_xg%v10, vv_xg%v11, vv_xg%alpha)
 #else
    ! deallocate vv_xg
    deallocate(vv_xg%v1, vv_xg%v2, vv_xg%v3, vv_xg%v4, vv_xg%v5, vv_xg%alpha)

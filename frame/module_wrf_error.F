@@ -117,7 +117,7 @@ CONTAINS
        write(6,*) 'Namelist logging not found in namelist.input. Using registry defaults for variables in logging.'
 #endif
 #      ifdef _WIN32
-          CALL FLUSH(0)
+          FLUSH(0)
 #      endif
        close(27)
        return
@@ -144,7 +144,7 @@ CONTAINS
        write(0,500) 'Disabling stderr logging since buffering is enabled.'
        write(6,500) 'Disabling stderr logging since buffering is enabled.'
 #      ifdef _WIN32
-          CALL FLUSH(0)
+          FLUSH(0)
 #      endif
        stderrlog=0
     endif
@@ -219,7 +219,7 @@ SUBROUTINE wrf_message( str )
 300     format(A)
         write(0,300) trim(str)
 # ifdef _WIN32
-  CALL FLUSH(0)
+  FLUSH(0)
 # endif
      endif
      print 300,trim(str)
@@ -248,7 +248,7 @@ SUBROUTINE wrf_message2( str )
 400 format(A)
   write(0,400) str
 # ifdef _WIN32
-  CALL FLUSH(0)
+  FLUSH(0)
 # endif
 !$OMP END MASTER
 #ifdef ESMFIO
@@ -294,11 +294,11 @@ SUBROUTINE wrf_error_fatal3( file_str, line, str )
   endif force_stderr
 
   ! Flush all streams.
-  CALL flush(6)
+  flush(6)
 #if defined(WRF_LOG_BUFFERING)
   if(buffered/=0) call wrf_log_action(wrf_log_flush,1,' ')
 # endif
-  CALL flush(0)
+  flush(0)
 
 #ifdef ESMFIO
 ! 5.2.0r  CALL esmf_finalize(terminationflag=ESMF_ABORT)

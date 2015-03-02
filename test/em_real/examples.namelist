@@ -42,20 +42,19 @@ Note, this is not a namelist.input file. Find what interests you, and cut and pa
    sf_surface_physics = 4
 
 &noah_mp
- dveg                               = 4,
- opt_crs                            = 1,
- opt_btr                            = 2,
- opt_sfc                            = 1,
- opt_run                            = 1,
- opt_frz                            = 1,
- opt_inf                            = 1,
- opt_rad                            = 3,
- opt_alb                            = 2,
- opt_snf                            = 1,
- opt_tbot                           = 1,
- opt_stc                            = 1,
- /
-
+ dveg     = 4,
+ opt_crs  = 1,
+ opt_btr  = 1,
+ opt_run  = 1,
+ opt_sfc  = 1, 
+ opt_frz  = 1, 
+ opt_inf  = 1, 
+ opt_rad  = 3, 
+ opt_alb  = 2,
+ opt_snf  = 1,
+ opt_tbot = 2, 
+ opt_stc  = 1,
+/
 
 ** Using lake model
 &physics

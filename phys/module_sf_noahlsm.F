@@ -74,7 +74,7 @@ CONTAINS
                        RIBB,                                            &
                        SMCWLT,SMCDRY,SMCREF,SMCMAX,NROOT,   &
                        SFHEAD1RT,                                       &    !I
-                       INFXS1RT,ETPND1 )                    !P
+                       INFXS1RT,ETPND1,AOASIS )                    !P
 ! ----------------------------------------------------------------------
 ! SUBROUTINE SFLX - UNIFIED NOAHLSM VERSION 1.0 JULY 2007
 ! ----------------------------------------------------------------------
@@ -298,7 +298,7 @@ CONTAINS
       REAL, INTENT(IN)   :: SHDMIN,SHDMAX,DT,DQSDT2,LWDN,PRCP,PRCPRAIN,     &
                             Q2,Q2SAT,SFCPRS,SFCSPD,SFCTMP, SNOALB,          &
                             SOLDN,SOLNET,TBOT,TH2,ZLVL,                            &
-                            FFROZP
+                            FFROZP,AOASIS
       REAL, INTENT(OUT)  :: EMBRD
       REAL, INTENT(OUT)  :: ALBEDO
       REAL, INTENT(INOUT):: COSZ, SOLARDIRECT,CH,CM,                        &
@@ -401,10 +401,6 @@ CONTAINS
               SMCWLT = 0.40
               SMCDRY = 0.40
          ENDIF
-
-         IF(RDLAI2D) THEN
-          IF (SHDFAC > 0.0 .AND. XLAI <= 0.0) XLAI = 0.01 
-         END IF
 
          IF ( SHDFAC >= SHDMAX ) THEN
             EMBRD = EMISSMAX
@@ -701,7 +697,7 @@ CONTAINS
 
          CALL PENMAN (SFCTMP,SFCPRS,CH,T2V,TH2,PRCP,FDOWN,T24,SSOIL,     &
                        Q2,Q2SAT,ETP,RCH,EPSCA,RR,SNOWNG,FRZGRA,          &
-                       DQSDT2,FLX2,EMISSI,SNEQV,T1,SNCOVR,           &
+                       DQSDT2,FLX2,EMISSI,SNEQV,T1,SNCOVR,AOASIS,        &
 		       ALBEDO,SOLDN,FVB,GAMA,STC(1),ETPN,FLX4,UA_PHYS)
 !
 ! ----------------------------------------------------------------------
@@ -756,7 +752,7 @@ CONTAINS
                          VEGTYP,                                         &
                          ETPN,FLX4,UA_PHYS,                              &
                          SFHEAD1RT,INFXS1RT,ETPND1)
-            ETA_KINEMATIC =  ESNOW + ETNS
+            ETA_KINEMATIC =  ESNOW + ETNS - 1000.0*DEW
          END IF
 
 !     Calculate effective mixing ratio at grnd level (skin)
@@ -2031,7 +2027,7 @@ CONTAINS
 
       SUBROUTINE PENMAN (SFCTMP,SFCPRS,CH,T2V,TH2,PRCP,FDOWN,T24,SSOIL, &
      &                   Q2,Q2SAT,ETP,RCH,EPSCA,RR,SNOWNG,FRZGRA,       &
-     &                   DQSDT2,FLX2,EMISSI_IN,SNEQV,T1,SNCOVR,          &
+     &                   DQSDT2,FLX2,EMISSI_IN,SNEQV,T1,SNCOVR,AOASIS,  &
 		         ALBEDO,SOLDN,FVB,GAMA,STC1,ETPN,FLX4,UA_PHYS)
 
 ! ----------------------------------------------------------------------
@@ -2045,7 +2041,7 @@ CONTAINS
       LOGICAL, INTENT(IN)     :: SNOWNG, FRZGRA
       REAL, INTENT(IN)        :: CH, DQSDT2,FDOWN,PRCP,                 &
                                  Q2, Q2SAT,SSOIL, SFCPRS, SFCTMP,       &
-                                 T2V, TH2,EMISSI_IN,SNEQV
+                                 T2V, TH2,EMISSI_IN,SNEQV,AOASIS
       REAL, INTENT(IN)        :: T1 , SNCOVR
       REAL, INTENT(IN)        :: ALBEDO,SOLDN,FVB,GAMA,STC1
       LOGICAL, INTENT(IN)     :: UA_PHYS
@@ -2135,6 +2131,8 @@ CONTAINS
 !      A = ELCP * (Q2SAT - Q2)
       A = ELCP1 * (Q2SAT - Q2)
       EPSCA = (A * RR + RAD * DELTA) / (DELTA + RR)
+! Fei-Mike
+      IF (EPSCA>0.) EPSCA = EPSCA * AOASIS
 !      ETP = EPSCA * RCH / LSUBC
       ETP = EPSCA * RCH / LVS
 
@@ -3932,7 +3930,7 @@ CONTAINS
       REAL, INTENT(OUT)         :: DF
       REAL                      :: AKE, GAMMD, THKDRY, THKICE, THKO,    &
                                    THKQTZ,THKSAT,THKS,THKW,SATRATIO,XU, &
-                                   XUNFROZ
+                                   XUNFROZ,AKEI,AKEL
 
 ! ----------------------------------------------------------------------
 ! WE NOW GET QUARTZ AS AN INPUT ARGUMENT (SET IN ROUTINE REDPRM):
@@ -3996,11 +3994,9 @@ CONTAINS
 ! DRY THERMAL CONDUCTIVITY IN W.M-1.K-1
       THKDRY = (0.135* GAMMD+ 64.7)/ (2700. - 0.947* GAMMD)
 ! FROZEN
-      IF ( (SH2O + 0.0005) <  SMC ) THEN
-         AKE = SATRATIO
+         AKEI = SATRATIO
 ! UNFROZEN
 ! RANGE OF VALIDITY FOR THE KERSTEN NUMBER (AKE)
-      ELSE
 
 ! KERSTEN NUMBER (USING "FINE" FORMULA, VALID FOR SOILS CONTAINING AT
 ! LEAST 5% OF PARTICLES WITH DIAMETER LESS THAN 2.E-6 METERS.)
@@ -4008,16 +4004,16 @@ CONTAINS
 
          IF ( SATRATIO >  0.1 ) THEN
 
-            AKE = LOG10 (SATRATIO) + 1.0
+            AKEL = LOG10 (SATRATIO) + 1.0
 
 ! USE K = KDRY
          ELSE
 
-            AKE = 0.0
+            AKEL = 0.0
          END IF
+      AKE = ((SMC-SH2O)*AKEI + SH2O*AKEL)/SMC
 !  THERMAL CONDUCTIVITY
 
-      END IF
 
       DF = AKE * (THKSAT - THKDRY) + THKDRY
 ! ----------------------------------------------------------------------

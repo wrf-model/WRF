@@ -654,6 +654,165 @@ tile_lon_loop : &
          end do
       end if
 
+!-----------------------------------------------------------
+! For cb05
+!-----------------------------------------------------------
+!
+! For the additional CB05 species, assign similar RADM counter parts for
+! now. Short lived species get a zero velocity since dry dep should be
+! unimportant.  **ALSO**, treat p_sulf as h2so4 vapor, not aerosol sulfate
+!
+      if ( (config_flags%chem_opt == CB05_SORG_AQ_KPP) ) then
+         do j=jts,jte
+            do i=its,ite
+               ddvel(i,j,p_sulf)        = ddvel(i,j,p_hno3)
+               ddvel(i,j,p_hcl)         = ddvel(i,j,p_hno3)
+               ddvel(i,j,p_meo2)        = 0.
+               ddvel(i,j,p_meoh)        = ddvel(i,j,p_form)
+               ddvel(i,j,p_etoh)        = ddvel(i,j,p_form)
+               ddvel(i,j,p_to2)         = 0.
+               ddvel(i,j,p_cro)         = 0.
+               ddvel(i,j,p_open)        = ddvel(i,j,p_xyl)
+               ddvel(i,j,p_c2o3)        = 0.
+               ddvel(i,j,p_xo2n)        = 0.
+               ddvel(i,j,p_xo2)         = 0.
+               ddvel(i,j,p_ispd)        = 0.
+               ddvel(i,j,p_o1d)         = 0.
+               ddvel(i,j,p_o)           = 0.
+               ddvel(i,j,p_terp)        = ddvel(i,j,p_isop)
+               ddvel(i,j,p_terpaer)     = ddvel(i,j,p_isop)
+               ddvel(i,j,p_hum)         = ddvel(i,j,p_isop)
+               ddvel(i,j,p_humaer)      = ddvel(i,j,p_isop)
+               ddvel(i,j,p_lim)         = ddvel(i,j,p_isop)
+               ddvel(i,j,p_limaer1)     = ddvel(i,j,p_isop)
+               ddvel(i,j,p_limaer2)     = ddvel(i,j,p_isop)
+               ddvel(i,j,p_oci)         = ddvel(i,j,p_isop)
+               ddvel(i,j,p_ociaer1)     = ddvel(i,j,p_isop)
+               ddvel(i,j,p_ociaer2)     = ddvel(i,j,p_isop)
+               ddvel(i,j,p_apin)        = ddvel(i,j,p_isop)
+               ddvel(i,j,p_apinaer1)    = ddvel(i,j,p_isop)
+               ddvel(i,j,p_apinaer2)    = ddvel(i,j,p_isop)
+               ddvel(i,j,p_apinaer3)    = ddvel(i,j,p_isop)
+               ddvel(i,j,p_apinaer4)    = ddvel(i,j,p_isop)
+               ddvel(i,j,p_bpin)        = ddvel(i,j,p_isop)
+               ddvel(i,j,p_bpinaer1)    = ddvel(i,j,p_isop)
+               ddvel(i,j,p_bpinaer2)    = ddvel(i,j,p_isop)
+               ddvel(i,j,p_bpinaer3)    = ddvel(i,j,p_isop)
+               ddvel(i,j,p_bpinaer4)    = ddvel(i,j,p_isop)
+               ddvel(i,j,p_bpinaer5)    = ddvel(i,j,p_isop)
+               ddvel(i,j,p_ter)         = ddvel(i,j,p_isop)
+               ddvel(i,j,p_teraer1)     = ddvel(i,j,p_isop)
+               ddvel(i,j,p_teraer2)     = ddvel(i,j,p_isop)
+               ddvel(i,j,p_tolaer1)     = ddvel(i,j,p_tol)
+               ddvel(i,j,p_tolaer2)     = ddvel(i,j,p_tol)
+               ddvel(i,j,p_cslaer)      = ddvel(i,j,p_cres)
+               ddvel(i,j,p_xylaer1)     = ddvel(i,j,p_xyl)
+               ddvel(i,j,p_xylaer2)     = ddvel(i,j,p_xyl)
+               ddvel(i,j,p_isoaer1)     = ddvel(i,j,p_isop)
+               ddvel(i,j,p_isoaer2)     = ddvel(i,j,p_isop)
+               ddvel(i,j,p_sulaer)      = ddvel(i,j,p_hno3)
+               ddvel(i,j,p_panx)        = ddvel(i,j,p_pan)
+               ddvel(i,j,p_hco3)        = 0.
+               ddvel(i,j,p_ror)         = 0.
+               ddvel(i,j,p_alkh)        = ddvel(i,j,p_par)
+               ddvel(i,j,p_alkhaer1)    = ddvel(i,j,p_par)
+               ddvel(i,j,p_pah)         = 0.
+               ddvel(i,j,p_pahaer1)     = 0.
+               ddvel(i,j,p_pahaer2)     = 0.
+               ddvel(i,j,p_cl2)         = 0.
+               ddvel(i,j,p_cl)          = 0.
+               ddvel(i,j,p_hocl)        = 0.
+               ddvel(i,j,p_clo)         = 0.
+               ddvel(i,j,p_fmcl)        = 0.
+               if (ivgtyp(i,j).eq.iswater_temp) then
+                  ddvel(i,j,p_hg0)      = 0.00e-2
+               else
+                  ddvel(i,j,p_hg0)      = 0.01e-2
+               end if
+               ddvel(i,j,p_hg2)         = 0.50e-2
+               end do
+         end do
+      else if ( (config_flags%chem_opt == CB05_SORG_VBS_AQ_KPP) ) then
+         do j=jts,jte
+            do i=its,ite
+               ddvel(i,j,p_sulf)        = ddvel(i,j,p_hno3)
+               ddvel(i,j,p_hcl)         = ddvel(i,j,p_hno3)
+               ddvel(i,j,p_meo2)        = 0.
+               ddvel(i,j,p_meoh)        = ddvel(i,j,p_form)
+               ddvel(i,j,p_etoh)        = ddvel(i,j,p_form)
+               ddvel(i,j,p_to2)         = 0.
+               ddvel(i,j,p_cro)         = 0.
+               ddvel(i,j,p_open)        = ddvel(i,j,p_xyl)
+               ddvel(i,j,p_c2o3)        = 0.
+               ddvel(i,j,p_xo2n)        = 0.
+               ddvel(i,j,p_xo2)         = 0.
+               ddvel(i,j,p_ispd)        = 0.
+               ddvel(i,j,p_o1d)         = 0.
+               ddvel(i,j,p_o)           = 0.
+               ddvel(i,j,p_terp)        = ddvel(i,j,p_isop)
+               ddvel(i,j,p_terpaer)     = ddvel(i,j,p_isop)
+               ddvel(i,j,p_hum)         = ddvel(i,j,p_isop)
+               ddvel(i,j,p_humaer)      = ddvel(i,j,p_isop)
+               ddvel(i,j,p_lim)         = ddvel(i,j,p_isop)
+               ddvel(i,j,p_limaer1)     = ddvel(i,j,p_isop)
+               ddvel(i,j,p_limaer2)     = ddvel(i,j,p_isop)
+               ddvel(i,j,p_oci)         = ddvel(i,j,p_isop)
+               ddvel(i,j,p_ociaer1)     = ddvel(i,j,p_isop)
+               ddvel(i,j,p_ociaer2)     = ddvel(i,j,p_isop)
+               ddvel(i,j,p_apin)        = ddvel(i,j,p_isop)
+               ddvel(i,j,p_apinaer1)    = ddvel(i,j,p_isop)
+               ddvel(i,j,p_apinaer2)    = ddvel(i,j,p_isop)
+               ddvel(i,j,p_apinaer3)    = ddvel(i,j,p_isop)
+               ddvel(i,j,p_apinaer4)    = ddvel(i,j,p_isop)
+               ddvel(i,j,p_bpin)        = ddvel(i,j,p_isop)
+               ddvel(i,j,p_bpinaer1)    = ddvel(i,j,p_isop)
+               ddvel(i,j,p_bpinaer2)    = ddvel(i,j,p_isop)
+               ddvel(i,j,p_bpinaer3)    = ddvel(i,j,p_isop)
+               ddvel(i,j,p_bpinaer4)    = ddvel(i,j,p_isop)
+               ddvel(i,j,p_bpinaer5)    = ddvel(i,j,p_isop)
+               ddvel(i,j,p_ter)         = ddvel(i,j,p_isop)
+               ddvel(i,j,p_teraer1)     = ddvel(i,j,p_isop)
+               ddvel(i,j,p_teraer2)     = ddvel(i,j,p_isop)
+               ddvel(i,j,p_tolaer1)     = ddvel(i,j,p_tol)
+               ddvel(i,j,p_tolaer2)     = ddvel(i,j,p_tol)
+               ddvel(i,j,p_cslaer)      = ddvel(i,j,p_cres)
+               ddvel(i,j,p_xylaer1)     = ddvel(i,j,p_xyl)
+               ddvel(i,j,p_xylaer2)     = ddvel(i,j,p_xyl)
+               ddvel(i,j,p_isoaer1)     = ddvel(i,j,p_isop)
+               ddvel(i,j,p_isoaer2)     = ddvel(i,j,p_isop)
+               ddvel(i,j,p_sulaer)      = ddvel(i,j,p_hno3)
+               ddvel(i,j,p_panx)        = ddvel(i,j,p_pan)
+               ddvel(i,j,p_hco3)        = 0.
+               ddvel(i,j,p_ror)         = 0.
+               ddvel(i,j,p_alkh)        = ddvel(i,j,p_par)
+               ddvel(i,j,p_alkhaer1)    = ddvel(i,j,p_par)
+               ddvel(i,j,p_pah)         = 0.
+               ddvel(i,j,p_pahaer1)     = 0.
+               ddvel(i,j,p_pahaer2)     = 0.
+               ddvel(i,j,p_cl2)         = 0.
+               ddvel(i,j,p_cl)          = 0.
+               ddvel(i,j,p_hocl)        = 0.
+               ddvel(i,j,p_clo)         = 0.
+               ddvel(i,j,p_fmcl)        = 0.
+               if (ivgtyp(i,j).eq.iswater_temp) then
+                  ddvel(i,j,p_hg0)      = 0.00e-2
+               else
+                  ddvel(i,j,p_hg0)      = 0.01e-2
+               end if
+               ddvel(i,j,p_hg2)         = 0.50e-2
+               ddvel(i,j,p_cvasoa1) = ddvel(i,j,p_hno3)
+               ddvel(i,j,p_cvasoa2) = ddvel(i,j,p_hno3)
+               ddvel(i,j,p_cvasoa3) = ddvel(i,j,p_hno3)
+               ddvel(i,j,p_cvasoa4) = ddvel(i,j,p_hno3)
+
+               ddvel(i,j,p_cvbsoa1) = ddvel(i,j,p_hno3)
+               ddvel(i,j,p_cvbsoa2) = ddvel(i,j,p_hno3)
+               ddvel(i,j,p_cvbsoa3) = ddvel(i,j,p_hno3)
+               ddvel(i,j,p_cvbsoa4) = ddvel(i,j,p_hno3)
+               end do
+         end do
+      end if
+
 
 END SUBROUTINE wesely_driver
 
@@ -1756,7 +1915,9 @@ include 'netcdf.inc'
 !--------------------------------------------------
 is_cbm4_kpp : &
 
-        if (config_flags%chem_opt /= CBM4_KPP) then
+        if (config_flags%chem_opt /= CBM4_KPP .or. &
+             config_flags%chem_opt /= CB05_SORG_AQ_KPP .or. &
+             config_flags%chem_opt /= CB05_SORG_VBS_AQ_KPP) then
            if( config_flags%chem_opt == MOZART_KPP .or. &
                config_flags%chem_opt == MOZCART_KPP .or. &
                config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
@@ -3219,6 +3380,307 @@ is_cbm4_kpp : &
 !--------------------------------------------------
           scpr23(l) = (sc/0.72)**(2./3.)               ! (Schmidt # / Prandtl #)**
         END DO
+
+! start of addition
+        else if ( (config_flags%chem_opt == CB05_SORG_AQ_KPP) ) then
+
+        hstar(p_no2) = 6.40E-3
+        hstar(p_no) = 1.90E-3
+        hstar(p_pan) = 2.97E+0
+        hstar(p_o3) = 1.13E-2
+        hstar(p_form) = 2.97E+3
+        hstar(p_cxo3) = 1.14E+1
+        hstar(p_hono) = 3.47E+5
+        hstar(p_no3) = 1.50E+1
+        hstar(p_pna) = 2.00E+13
+        hstar(p_h2o2) = 7.45E+4
+        hstar(p_co) = 8.20E-3
+        hstar(p_ald2) = 1.14E+1
+        hstar(p_aldx) = 1.14E+1
+        hstar(p_mepx) = 2.21E+2
+        hstar(p_rooh) = 1.68E+6
+        hstar(p_pacd) = 4.73E+2
+        hstar(p_mgly) = 3.71E+3
+        hstar(p_ntr) = 1.13E+0
+        hstar(p_so2) = 2.53E+5
+        hstar(p_etha) = 2.00E-3
+        hstar(p_ole) = 4.76E-3
+        hstar(p_iole) = 1.35E-3
+        hstar(p_tol) = 1.51E-1
+        hstar(p_cres) = 4.00E+5
+        hstar(p_xyl) = 1.45E-1
+        hstar(p_isop) = 4.76E-3
+        hstar(p_hno3) = 2.69E+13
+        hstar(p_facd) = 9.85E+6
+        hstar(p_aacd) = 9.63E+5
+        hstar(p_nh3) = 1.04E+4
+        hstar(p_n2o5) = 1.00E+10
+        hstar(p_eth) = 4.67E-3
+        hstar(p_par) = 1.13E-3  !wig, 1-May-2007: for CB05
+
+        dhr(p_no2) = 2500.
+        dhr(p_no) = 1480.
+        dhr(p_pan) = 5760.
+        dhr(p_o3) = 2300.
+        dhr(p_form) = 7190.
+        dhr(p_cxo3) = 6266.
+        dhr(p_hono) = 3775.
+        dhr(p_no3) = 0.
+        dhr(p_pna) = 0.
+        dhr(p_h2o2) = 6615.
+        dhr(p_co) = 0.
+        dhr(p_ald2) = 6266.
+        dhr(p_aldx) = 6266.
+        dhr(p_mepx) = 5607.
+        dhr(p_rooh) = 10240.
+        dhr(p_pacd) = 6170.
+        dhr(p_mgly) = 7541.
+        dhr(p_ntr) = 5487.
+        dhr(p_so2) = 5816.
+        dhr(p_etha) = 0.
+        dhr(p_ole) = 0.
+        dhr(p_iole) = 0.
+        dhr(p_tol) = 0.
+        dhr(p_cres) = 0.
+        dhr(p_xyl) = 0.
+        dhr(p_isop) = 0.
+        dhr(p_hno3) = 8684.
+        dhr(p_facd) = 5716.
+        dhr(p_aacd) = 8374.
+        dhr(p_nh3) = 3660.
+        dhr(p_n2o5) = 0.
+        dhr(p_eth) = 0.
+        dhr(p_par) = 0.   !wig, 1-May-2007: for CB05
+
+        f0(p_no2) = 0.1
+        f0(p_no) = 0.
+        f0(p_pan) = 0.1
+        f0(p_o3) = 1.
+        f0(p_form) = 0.
+        f0(p_cxo3) = 1.
+        f0(p_hono) = 0.1
+        f0(p_no3) = 1.
+        f0(p_pna) = 0.1
+        f0(p_h2o2) = 1.
+        f0(p_co) = 0.
+        f0(p_ald2) = 0.
+        f0(p_aldx) = 0.
+        f0(p_mepx) = 0.1
+        f0(p_rooh) = 0.1
+        f0(p_pacd) = 0.1
+        f0(p_mgly) = 0.
+        f0(p_ntr) = 0.
+        f0(p_so2) = 0.
+        f0(p_etha) = 0.
+        f0(p_ole) = 0.
+        f0(p_iole) = 0.
+        f0(p_tol) = 0.
+        f0(p_cres) = 0.
+        f0(p_xyl) = 0.
+        f0(p_isop) = 0.
+        f0(p_hno3) = 0.
+        f0(p_facd) = 0.
+        f0(p_aacd) = 0.
+        f0(p_nh3) = 0.
+        f0(p_n2o5) = 1.
+        f0(p_eth) = 0.
+        f0(p_par) = 0.   !wig, 1-May-2007: for CB05
+        dvj(p_no2) = 0.147
+        dvj(p_no) = 0.183
+        dvj(p_pan) = 0.091
+        dvj(p_o3)   = 0.175
+        dvj(p_form) = 0.183
+        dvj(p_cxo3) = 0.115
+        dvj(p_hono) = 0.153
+        dvj(p_no3) = 0.127
+        dvj(p_pna) = 0.113
+        dvj(p_h2o2) = 0.171
+        dvj(p_co) = 0.189
+        dvj(p_ald2) = 0.151
+        dvj(p_aldx) = 0.151
+        dvj(p_mepx) = 0.144
+        dvj(p_rooh) = 0.127
+        dvj(p_pacd) = 0.115
+        dvj(p_mgly) = 0.118
+        dvj(p_ntr) = 0.092
+        dvj(p_so2) = 0.126
+        dvj(p_etha) = 0.183
+        dvj(p_ole) = 0.154
+        dvj(p_iole) = 0.121
+        dvj(p_tol) = 0.104
+        dvj(p_cres) = 0.096
+        dvj(p_xyl) = 0.097
+        dvj(p_isop) = 0.121
+        dvj(p_hno3) = 0.126
+        dvj(p_facd) = 0.153
+        dvj(p_aacd) = 0.124
+        dvj(p_nh3) = 0.227
+        dvj(p_n2o5) = 0.110
+        dvj(p_ho) = 0.243
+        dvj(p_ho2) = 0.174
+        dvj(p_eth) = 0.189
+        dvj(p_par) = 0.118   !wig, 1-May-2007: for CB05
+
+        DO l = 1, numgas
+          hstar4(l) = hstar(l) ! preliminary
+! Correction of diff. coeff
+          dvj(l) = dvj(l)*(293.15/298.15)**1.75
+          sc = 0.15/dvj(l) ! Schmidt Number at 20degC
+          dratio(l) = 0.242/dvj(l) !                                            ! of water vapor and gas at
+! Ratio of diffusion coeffi
+          scpr23(l) = (sc/0.72)**(2./3.) ! (Schmidt # / Prandtl #)**
+        END DO
+
+        else if ( (config_flags%chem_opt == CB05_SORG_VBS_AQ_KPP) ) then
+
+        hstar(p_no2) = 6.40E-3
+        hstar(p_no) = 1.90E-3
+        hstar(p_pan) = 2.97E+0
+        hstar(p_o3) = 1.13E-2
+        hstar(p_form) = 2.97E+3
+        hstar(p_cxo3) = 1.14E+1
+        hstar(p_hono) = 3.47E+5
+        hstar(p_no3) = 1.50E+1
+        hstar(p_pna) = 2.00E+13
+        hstar(p_h2o2) = 7.45E+4
+        hstar(p_co) = 8.20E-3
+        hstar(p_ald2) = 1.14E+1
+        hstar(p_aldx) = 1.14E+1
+        hstar(p_mepx) = 2.21E+2
+        hstar(p_rooh) = 1.68E+6
+        hstar(p_pacd) = 4.73E+2
+        hstar(p_mgly) = 3.71E+3
+        hstar(p_ntr) = 1.13E+0
+        hstar(p_so2) = 2.53E+5
+        hstar(p_etha) = 2.00E-3
+        hstar(p_ole) = 4.76E-3
+        hstar(p_iole) = 1.35E-3
+        hstar(p_tol) = 1.51E-1
+        hstar(p_cres) = 4.00E+5
+        hstar(p_xyl) = 1.45E-1
+        hstar(p_isop) = 4.76E-3
+        hstar(p_hno3) = 2.69E+13
+        hstar(p_facd) = 9.85E+6
+        hstar(p_aacd) = 9.63E+5
+        hstar(p_nh3) = 1.04E+4
+        hstar(p_n2o5) = 1.00E+10
+        hstar(p_eth) = 4.67E-3
+        hstar(p_par) = 1.13E-3  !wig, 1-May-2007: for CB05
+
+        dhr(p_no2) = 2500.
+        dhr(p_no) = 1480.
+        dhr(p_pan) = 5760.
+        dhr(p_o3) = 2300.
+        dhr(p_form) = 7190.
+        dhr(p_cxo3) = 6266.
+        dhr(p_hono) = 3775.
+        dhr(p_no3) = 0.
+        dhr(p_pna) = 0.
+        dhr(p_h2o2) = 6615.
+        dhr(p_co) = 0.
+        dhr(p_ald2) = 6266.
+        dhr(p_aldx) = 6266.
+        dhr(p_mepx) = 5607.
+        dhr(p_rooh) = 10240.
+        dhr(p_pacd) = 6170.
+        dhr(p_mgly) = 7541.
+        dhr(p_ntr) = 5487.
+        dhr(p_so2) = 5816.
+        dhr(p_etha) = 0.
+        dhr(p_ole) = 0.
+        dhr(p_iole) = 0.
+        dhr(p_tol) = 0.
+        dhr(p_cres) = 0.
+        dhr(p_xyl) = 0.
+        dhr(p_isop) = 0.
+        dhr(p_hno3) = 8684.
+        dhr(p_facd) = 5716.
+        dhr(p_aacd) = 8374.
+        dhr(p_nh3) = 3660.
+        dhr(p_n2o5) = 0.
+        dhr(p_eth) = 0.
+        dhr(p_par) = 0.   !wig, 1-May-2007: for CB05
+
+        f0(p_no2) = 0.1
+        f0(p_no) = 0.
+        f0(p_pan) = 0.1
+        f0(p_o3) = 1.
+        f0(p_form) = 0.
+        f0(p_cxo3) = 1.
+        f0(p_hono) = 0.1
+        f0(p_no3) = 1.
+        f0(p_pna) = 0.1
+        f0(p_h2o2) = 1.
+        f0(p_co) = 0.
+        f0(p_ald2) = 0.
+        f0(p_aldx) = 0.
+        f0(p_mepx) = 0.1
+        f0(p_rooh) = 0.1
+        f0(p_pacd) = 0.1
+        f0(p_mgly) = 0.
+        f0(p_ntr) = 0.
+        f0(p_so2) = 0.
+        f0(p_etha) = 0.
+        f0(p_ole) = 0.
+        f0(p_iole) = 0.
+        f0(p_tol) = 0.
+        f0(p_cres) = 0.
+        f0(p_xyl) = 0.
+        f0(p_isop) = 0.
+        f0(p_hno3) = 0.
+        f0(p_facd) = 0.
+        f0(p_aacd) = 0.
+        f0(p_nh3) = 0.
+        f0(p_n2o5) = 1.
+        f0(p_eth) = 0.
+        f0(p_par) = 0.   !wig, 1-May-2007: for CB05
+        dvj(p_no2) = 0.147
+        dvj(p_no) = 0.183
+        dvj(p_pan) = 0.091
+        dvj(p_o3)   = 0.175
+        dvj(p_form) = 0.183
+        dvj(p_cxo3) = 0.115
+        dvj(p_hono) = 0.153
+        dvj(p_no3) = 0.127
+        dvj(p_pna) = 0.113
+        dvj(p_h2o2) = 0.171
+        dvj(p_co) = 0.189
+        dvj(p_ald2) = 0.151
+        dvj(p_aldx) = 0.151
+        dvj(p_mepx) = 0.144
+        dvj(p_rooh) = 0.127
+        dvj(p_pacd) = 0.115
+        dvj(p_mgly) = 0.118
+        dvj(p_ntr) = 0.092
+        dvj(p_so2) = 0.126
+        dvj(p_etha) = 0.183
+        dvj(p_ole) = 0.154
+        dvj(p_iole) = 0.121
+        dvj(p_tol) = 0.104
+        dvj(p_cres) = 0.096
+        dvj(p_xyl) = 0.097
+        dvj(p_isop) = 0.121
+        dvj(p_hno3) = 0.126
+        dvj(p_facd) = 0.153
+        dvj(p_aacd) = 0.124
+        dvj(p_nh3) = 0.227
+        dvj(p_n2o5) = 0.110
+        dvj(p_ho) = 0.243
+        dvj(p_ho2) = 0.174
+        dvj(p_eth) = 0.189
+        dvj(p_par) = 0.118   !wig, 1-May-2007: for CB05
+
+        DO l = 1, numgas
+          hstar4(l) = hstar(l) ! preliminary
+! Correction of diff. coeff
+          dvj(l) = dvj(l)*(293.15/298.15)**1.75
+          sc = 0.15/dvj(l) ! Schmidt Number at 20degC
+          dratio(l) = 0.242/dvj(l) !                                            ! of water vapor and gas at
+! Ratio of diffusion coeffi
+          scpr23(l) = (sc/0.72)**(2./3.) ! (Schmidt # / Prandtl #)**
+        END DO
+
+! end of addition
 
         else is_cbm4_kpp
 

@@ -26,7 +26,9 @@ contains
 
     use module_domain, only: domain,get_ijk_from_grid,fieldlist
     use module_configure, only: PARAM_FIRST_SCALAR
+#ifndef NO_IEEE_MODULE
     use,intrinsic :: ieee_arithmetic
+#endif
     implicit none
 
     logical, intent(in), optional :: full_domain
@@ -53,14 +55,26 @@ contains
        badI = 0
     case(2)
        call wrf_message('Fill I and J halos with -maxint or quiet NaN.')
+#ifndef NO_IEEE_MODULE
        badR = ieee_value(badR,ieee_quiet_nan)
        badD = ieee_value(badD,ieee_quiet_nan)
        badI = -huge(badI)
+#else
+       badR = -huge(badR) 
+       badD = -huge(badD)
+       badI = -huge(badI)
+#endif
     case(3)
        call wrf_message('Fill I and J halos with -maxint or signalling NaN.')
+#ifndef NO_IEEE_MODULE
        badR = ieee_value(badR,ieee_signaling_nan)
        badD = ieee_value(badD,ieee_signaling_nan)
        badI = -huge(badI)
+#else
+       badR = -huge(badR) 
+       badD = -huge(badD)
+       badI = -huge(badI)
+#endif
     case default
        if(fulldom) then
           call wrf_message('Invalid value for clear_ij_full_domain/clear_ij_halos "how" parameter.  Will not clear domain.')

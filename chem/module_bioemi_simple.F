@@ -135,7 +135,7 @@ MODULE module_bioemi_simple
 
 !     PRINT *, eiso, emter, eovoc, e_n, eisoc, eovocc                 
       CALL biosplit(iland,eiso,emter,eovoc,e_n,emiss_bio,ne_area,vegfrac, &
-        luse_typ,vegflag)
+        config_flags, luse_typ,vegflag)
 !     PRINT *, 'emiss_bio(liso)  emiss_bio(lald)  emiss_bio(lhcho) ', &
 !       ' emiss_bio(lhc3)'
 !     PRINT *, emiss_bio(liso), emiss_bio(lald), emiss_bio(lhcho), &
@@ -1153,7 +1153,8 @@ END SUBROUTINE bio_emissions
 ! ***********************  SUBROUTINE BIOSPLIT *************************
 ! **********************************************************************
       SUBROUTINE biosplit(iland,eiso,emter,eovoc,e_n,emiss_bio,ne_area, &
-          vegfrc,mminlu,vegflag)
+          vegfrc, &
+          config_flags, mminlu,vegflag)
 !     THIS PROGRAMM SPLITS THE BIOGENIC EMISSION RATES FOR
 !     MONOTERPENES AND OTHER ORGANIC COMPOUNDS INTO THE
 !     COMPOUND CLASSES OF THE CHEMISTRY MODEL
@@ -1206,6 +1207,12 @@ END SUBROUTINE bio_emissions
 !        XYL -- p-cymene
 !        The other VOCs are grouped according to Middleton et al. (1990)
 !***********************************************************************
+  USE module_configure
+  USE module_state_description
+
+   TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
+
+
 ! .. Scalar Arguments ..
         REAL :: eiso, emter, eovoc, e_n, vegfrc
         INTEGER :: iland, ne_area
@@ -1233,6 +1240,67 @@ END SUBROUTINE bio_emissions
 
         emiss_bio(liso) = eiso
         emiss_bio(lno) = emiss_bio(lno) + e_n
+
+      if (config_flags%chem_opt == CB05_SORG_AQ_KPP .OR. &
+          config_flags%chem_opt == CB05_SORG_VBS_AQ_KPP ) then
+
+      emiss_bio(ltpan) = emter ! Use tpan to represent terpene
+
+!     *****************************************************************
+!     Agricultural land
+
+        IF (ixxxlu(iland)==2) THEN
+          emiss_bio(lhc5) = emiss_bio(lhc5) + 0.16*eovoc
+          emiss_bio(lhc8) = emiss_bio(lhc8) + 0.27*eovoc
+          emiss_bio(lolt) = emiss_bio(lolt) + 0.05*eovoc
+          emiss_bio(loli) = emiss_bio(loli) + 0.37*eovoc
+          emiss_bio(lket) = emiss_bio(lket) + 0.03*eovoc
+          emiss_bio(lald) = emiss_bio(lald) + 0.12*eovoc
+        END IF
+
+!     *****************************************************************
+!     Grassland
+
+        IF (ixxxlu(iland)==3) THEN
+          emiss_bio(lhc5) = emiss_bio(lhc5) + 0.09*eovoc
+          emiss_bio(lolt) = emiss_bio(lolt) + 0.07*eovoc
+          emiss_bio(loli) = emiss_bio(loli) + 0.51*eovoc
+          emiss_bio(lket) = emiss_bio(lket) + 0.15*eovoc
+          emiss_bio(lald) = emiss_bio(lald) + 0.18*eovoc
+        END IF
+
+!     *****************************************************************
+!     Deciduous forest
+
+        IF (ixxxlu(iland)==4) THEN
+          emiss_bio(lhcho) = emiss_bio(lhcho) + 0.19*eovoc
+          emiss_bio(lald) = emiss_bio(lald) + 0.13*eovoc
+          emiss_bio(lxyl) = emiss_bio(lxyl) + 0.04*emter
+          emiss_bio(lhc5) = emiss_bio(lhc5) + 0.03*eovoc
+          emiss_bio(loli) = emiss_bio(loli) + 0.07*eovoc
+          emiss_bio(lora1) = emiss_bio(lora1) + 0.23*eovoc
+          emiss_bio(lora2) = emiss_bio(lora2) + 0.35*eovoc
+        END IF
+
+!     *****************************************************************
+!     Coniferous forest and mixed forest
+
+
+        IF (ixxxlu(iland)==5) THEN
+          emiss_bio(lhcho) = emiss_bio(lhcho) + 0.04*eovoc
+          emiss_bio(lhcho) = emiss_bio(lhcho) + 0.04*eovoc
+          emiss_bio(lald) = emiss_bio(lald) + 0.14*eovoc
+          emiss_bio(lhc3) = emiss_bio(lhc3) + 0.07*eovoc
+          emiss_bio(lhc5) = emiss_bio(lhc5) + 0.07*eovoc
+          emiss_bio(lolt) = emiss_bio(lolt) + 0.07*eovoc
+          emiss_bio(loli) = emiss_bio(loli) + 0.50*eovoc
+          emiss_bio(lket) = emiss_bio(lket) + 0.03*eovoc
+          emiss_bio(lora1) = emiss_bio(lora1) + 0.03*eovoc
+          emiss_bio(lora2) = emiss_bio(lora2) + 0.05*eovoc
+        END IF
+
+      else
+      
 
 !     *****************************************************************
 !     Agricultural land
@@ -1300,6 +1368,8 @@ END SUBROUTINE bio_emissions
         IF ((mminlu=='OLD ') .AND. (iland==12)) THEN
           emiss_bio(loli) = emiss_bio(loli) + emter
         END IF
+
+      end if
 
       END SUBROUTINE biosplit
 

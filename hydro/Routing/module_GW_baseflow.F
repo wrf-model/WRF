@@ -7,7 +7,7 @@ module module_GW_baseflow
 
 #include "gw_field_include.inc"
 #include "rt_include.inc"
-#include "namelist.inc"
+!yw #include "namelist.inc"
 contains
 
 !------------------------------------------------------------------------------
@@ -15,7 +15,7 @@ contains
 !------------------------------------------------------------------------------
 
    subroutine simp_gw_buck(ix,jx,ixrt,jxrt,numbasns,basns_area,&
-                            gwsubbasmsk, runoff1x, runoff2x, z_gwsubbas, qin_gwsubbas,&
+                            gwsubbasmsk, runoff1x, runoff2x, z_gwsubbas_tmp, qin_gwsubbas,&
                             qout_gwsubbas,qinflowbase,gw_strm_msk,gwbas_pix_ct,dist,DT,&
                             C,ex,z_mx,GWBASESWCRT,OVRTSWCRT)
    implicit none
@@ -30,11 +30,14 @@ contains
    real, intent(in),dimension(numbasns)              :: C,ex,z_mx
    real, intent(out),dimension(numbasns)             :: qout_gwsubbas
    real, intent(out),dimension(numbasns)             :: qin_gwsubbas
-   real, intent(out),dimension(numbasns)             :: z_gwsubbas
+   real*8                                            :: z_gwsubbas(numbasns)
+   real                                              :: qout_max, qout_spill, z_gw_spill
+   real, intent(inout),dimension(numbasns)           :: z_gwsubbas_tmp
    real, intent(out),dimension(ixrt,jxrt)            :: qinflowbase
    integer, intent(in),dimension(ixrt,jxrt)          :: gw_strm_msk
    integer, intent(in)                               :: GWBASESWCRT
    integer, intent(in)                               :: OVRTSWCRT
+   
 
    real*8, dimension(numbasns)                      :: sum_perc8,ct_bas8
    real, dimension(numbasns)                        :: sum_perc
@@ -43,7 +46,6 @@ contains
    real, dimension(numbasns)                        :: ct_bas
    real, dimension(numbasns)                        :: gwbas_pix_ct
    integer                                          :: i,j,bas
-   real                                             :: zbastmp
    character(len=19)				    :: header
    character(len=1)				    :: jnk
 
@@ -54,6 +56,7 @@ contains
    net_perc = 0.
    qout_gwsubbas = 0.
    qin_gwsubbas = 0.
+   z_gwsubbas = z_gwsubbas_tmp
 
 
 
@@ -86,45 +89,99 @@ contains
 !!!Loop through GW basins to adjust for inflow/outflow
 
    DO bas=1,numbasns     ! Loop for GW bucket calcs...
-#ifdef MPP_LAND
-     if(ct_bas(bas) .gt. 0) then
-#endif
+! #ifdef MPP_LAND
+!      if(ct_bas(bas) .gt. 0) then
+! #endif
 
      net_perc(bas) = sum_perc(bas) / ct_bas(bas)   !units (mm)
-     qin_gwsubbas(bas) = net_perc(bas)/1000. * ct_bas(bas) * basns_area(bas) !units (m^3)
+!DJG...old change to cms     qin_gwsubbas(bas) = net_perc(bas)/1000. * ct_bas(bas) * basns_area(bas) !units (m^3)
+     qin_gwsubbas(bas) = net_perc(bas)/1000.* &
+                         ct_bas(bas)*basns_area(bas)/DT    !units (m^3/s)
 
-!Adjust level of GW depth...(conceptual GW bucket units (m))
-     z_gwsubbas(bas) = z_gwsubbas(bas) + net_perc(bas) / 1000.0   ! (m)
-     zbastmp = z_gwsubbas(bas)
 
-!Calculate baseflow as a function of GW depth...
+!Adjust level of GW depth...(conceptual GW bucket units (mm))
+!DJG...old change to cms inflow...     z_gwsubbas(bas) = z_gwsubbas(bas) + net_perc(bas) / 1000.0   ! (m)
 
-     if(GWBASESWCRT.eq.1) then  !active exponential bucket...
-! Assuming and exponential relation between z and Q...
-       qout_gwsubbas(bas) = C(bas)*EXP(ex(bas)*z_gwsubbas(bas)/z_mx(bas)) !Exp.model. q_out (m^3/s)
+!DJG...debug    write (6,*) "DJG...before",C(bas),ex(bas),z_gwsubbas(bas),z_mx(bas),z_gwsubbas(bas)/z_mx(bas)
 
-!Adjust level of GW depth...
-       z_gwsubbas(bas) = z_gwsubbas(bas) - qout_gwsubbas(bas)*DT &
-                       / (ct_bas(bas)*basns_area(bas))   !units(m)
+     z_gwsubbas(bas) = z_gwsubbas(bas) + qin_gwsubbas(bas)*DT/( &
+                       ct_bas(bas)*basns_area(bas))*1000.   !  units (mm)
+
+
+
+
+
+!Calculate baseflow as a function of GW bucket depth...
+
+     if(GWBASESWCRT.eq.1) then  !active exponential bucket... if/then for bucket model discharge type...
+
+!DJG...Estimation of bucket 'overflow' (qout_spill) if/when bucket gets filled...
+     qout_spill = 0.
+     z_gw_spill = 0.
+     if (z_gwsubbas(bas).gt.z_mx(bas)) then  !If/then for bucket overflow case...
+       z_gw_spill = z_gwsubbas(bas) - z_mx(bas)
+       z_gwsubbas(bas) = z_mx(bas)
+       write (6,*) "Bucket spilling...", bas, z_gwsubbas(bas), z_mx(bas), z_gw_spill
+     else
+       z_gw_spill = 0.
+     end if   ! End if for bucket overflow case...
+
+     qout_spill = z_gw_spill/1000.*(ct_bas(bas)*basns_area(bas))/DT  !amount spilled from bucket overflow...units (cms)
+
+
+!DJG...Maximum estimation of bucket outlfow that is limited by total quantity in bucket...
+     qout_max = z_gwsubbas(bas)/1000.*(ct_bas(bas)*basns_area(bas))/DT   ! Estimate max bucket disharge limit to total volume in bucket...(m^3/s)
+
+
+! Assume exponential relation between z/zmax and Q...
+!DJG...old...creates non-asymptotic flow...   qout_gwsubbas(bas) = C(bas)*EXP(ex(bas)*z_gwsubbas(bas)/z_mx(bas)) !Exp.model. q_out (m^3/s)
+!DJG force asymptote to zero to prevent 'overdraft'... 
+!DJG debug hardwire test...       qout_gwsubbas(bas) = 1*(EXP(7.0*10./100.)-1) !Exp.model. q_out (m^3/s)
+     qout_gwsubbas(bas) = C(bas)*(EXP(ex(bas)*z_gwsubbas(bas)/z_mx(bas))-1) !Exp.model. q_out (m^3/s)
+       
+!DJG...Calculation of max bucket outlfow that is limited by total quantity in bucket...
+     qout_gwsubbas(bas) = MIN(qout_max,qout_gwsubbas(bas))   ! Limit bucket discharge to max. bucket limit
+
+     write (6,*) "DJG-exp bucket...during",C(bas),ex(bas),z_gwsubbas(bas),qin_gwsubbas(bas),z_mx(bas),z_gwsubbas(bas)/z_mx(bas), qout_gwsubbas(bas), qout_max, qout_spill
 
 
 
      elseif (GWBASESWCRT.eq.2) then  !Pass through/steady-state bucket
 
 ! Assuming a steady-state (inflow=outflow) model...
-       qout_gwsubbas(bas) = qin_gwsubbas(bas)  !steady-state model...(m^3)
+!DJG convert input and output units to cms...       qout_gwsubbas(bas) = qin_gwsubbas(bas)  !steady-state model...(m^3)
+       qout_gwsubbas(bas) = qin_gwsubbas(bas)  !steady-state model...(m^3/s)
+
+!DJG...debug       write (6,*) "DJG-pass through...during",C(bas),ex(bas),qin_gwsubbas(bas), z_gwsubbas(bas),z_mx(bas),z_gwsubbas(bas)/z_mx(bas), qout_gwsubbas(bas), qout_max
+
+     end if    ! End if for bucket model discharge type....
 
 
 
-     end if
+
+!Adjust level of GW depth...
+!DJG bug adjust output to be mm and correct area bug...       z_gwsubbas(bas) = z_gwsubbas(bas) - qout_gwsubbas(bas)*DT &
+!DJG bug adjust output to be mm and correct area bug...                       / (ct_bas(bas)*basns_area(bas))   !units(m)
+
+     z_gwsubbas(bas) = z_gwsubbas(bas) - qout_gwsubbas(bas)*DT/( &
+                       ct_bas(bas)*basns_area(bas))*1000.   ! units (mm)	
+
+!DJG...Combine calculated bucket discharge and amount spilled from bucket...
+     qout_gwsubbas(bas) = qout_gwsubbas(bas) + qout_spill   ! units (cms)
+
+
+     write (6,*) "DJG...after",C(bas),ex(bas),z_gwsubbas(bas),z_mx(bas),z_gwsubbas(bas)/z_mx(bas), qout_gwsubbas(bas), qout_spill
+     write (6,*) "DJG...after...calc",bas,ct_bas(bas),ct_bas(bas)*basns_area(bas),basns_area(bas),DT
 
 
 
-#ifdef MPP_LAND
-     endif
-#endif
+
+! #ifdef MPP_LAND
+!      endif
+! #endif
    END DO                 ! End loop for GW bucket calcs...
 
+   z_gwsubbas_tmp = z_gwsubbas
 
 
 !!!Distribute basin integrated baseflow to stream pixels as stream 'inflow'...
@@ -137,15 +194,8 @@ contains
 !!!    -simple uniform disaggregation (8.31.06)
            if (gw_strm_msk(i,j).gt.0) then
 
-            if(GWBASESWCRT.eq.1) then  !calc stream inflow from exponential bucket... (m^3/s to mm)
              qinflowbase(i,j) = qout_gwsubbas(gw_strm_msk(i,j))*1000.*DT/ &
-                gwbas_pix_ct(gw_strm_msk(i,j))/dist(i,j,9) !(mm)
-
-            elseif (GWBASESWCRT.eq.2) then  !calc stream inflow from passthrough/steady-state bucket (m^3 to mm)
-             qinflowbase(i,j) = qout_gwsubbas(gw_strm_msk(i,j))*1000./ &
-                gwbas_pix_ct(gw_strm_msk(i,j))/dist(i,j,9) !(mm)
-
-            end if
+                gwbas_pix_ct(gw_strm_msk(i,j))/dist(i,j,9)     ! units (mm) that gets passed into chan routing as stream inflow
 
            end if
         end do
@@ -160,6 +210,8 @@ contains
 !           end do
 !         end do
 
+        z_gwsubbas = z_gwsubbas_tmp
+
    return
 
 !------------------------------------------------------------------------------
@@ -167,13 +219,8 @@ contains
 !------------------------------------------------------------------------------
 
 
-!------------------------------------------------------------------------------
-!DJG   Wedge-Aquifer Scheme (TBA)
-!------------------------------------------------------------------------------
 
-!------------------------------------------------------------------------------
-!DJG   TOPMODEL Scheme (TBA)
-!------------------------------------------------------------------------------
+
 #ifdef MPP_LAND
    subroutine pix_ct_1(in_gw_strm_msk,ixrt,jxrt,gwbas_pix_ct,numbasns)
       USE module_mpp_land

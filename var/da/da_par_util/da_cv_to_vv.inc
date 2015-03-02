@@ -28,8 +28,7 @@ subroutine da_cv_to_vv (cv_size, rcv, mzs, vv)
       js = jts
       je = jte
    else
-      write(*,'(A," should not be called!"/)')__FILE__
-      call wrf_abort
+      call da_error(__FILE__,__LINE__,(/"This subroutine should not be called for use_rf = .false."/))
    endif
    ix = ie-is+1
    jy = je-js+1
@@ -69,60 +68,76 @@ subroutine da_cv_to_vv (cv_size, rcv, mzs, vv)
    ! Fill v4
    mz = mzs(4)
    if (mz > 0) then
-     ijm = ix * jy * mz
-     cv_s = cv_e + 1
-     cv_e = cv_s + ijm - 1
-     vv % v4(is:ie,js:je,1:mz) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz/))
+      ijm = ix * jy * mz
+      cv_s = cv_e + 1
+      cv_e = cv_s + ijm - 1
+      vv % v4(is:ie,js:je,1:mz) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz/))
    end if
 
    ! Fill v5
    mz = mzs(5)
    if (mz == 1) then ! Can only be 0 or 1 (2D ps_u field)
-     ijm = ix * jy * mz
-     cv_s = cv_e + 1
-     cv_e = cv_s + ijm - 1
-     vv % v5(is:ie,js:je,1:mz) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy,mz/))
+      ijm = ix * jy * mz
+      cv_s = cv_e + 1
+      cv_e = cv_s + ijm - 1
+      vv % v5(is:ie,js:je,1:mz) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy,mz/))
    end if
 #ifdef CLOUD_CV
    ! Fill v6
    mz = mzs(6)
    if (mz > 0) then
-     ijm = ix * jy * mz
-     cv_s = cv_e + 1
-     cv_e = cv_s + ijm - 1
-     vv % v6(is:ie,js:je,1:mz) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz/))
+      ijm = ix * jy * mz
+      cv_s = cv_e + 1
+      cv_e = cv_s + ijm - 1
+      vv % v6(is:ie,js:je,1:mz) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz/))
    end if
    ! Fill v7
    mz = mzs(7)
    if (mz > 0) then
-     ijm = ix * jy * mz
-     cv_s = cv_e + 1
-     cv_e = cv_s + ijm - 1
-     vv % v7(is:ie,js:je,1:mz) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz/))
+      ijm = ix * jy * mz
+      cv_s = cv_e + 1
+      cv_e = cv_s + ijm - 1
+      vv % v7(is:ie,js:je,1:mz) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz/))
    end if
    ! Fill v8
    mz = mzs(8)
    if (mz > 0) then
-     ijm = ix * jy * mz
-     cv_s = cv_e + 1
-     cv_e = cv_s + ijm - 1
-     vv % v8(is:ie,js:je,1:mz) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz/))
+      ijm = ix * jy * mz
+      cv_s = cv_e + 1
+      cv_e = cv_s + ijm - 1
+      vv % v8(is:ie,js:je,1:mz) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz/))
    end if
    ! Fill v9
    mz = mzs(9)
    if (mz > 0) then
-     ijm = ix * jy * mz
-     cv_s = cv_e + 1
-     cv_e = cv_s + ijm - 1
-     vv % v9(is:ie,js:je,1:mz) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz/))
+      ijm = ix * jy * mz
+      cv_s = cv_e + 1
+      cv_e = cv_s + ijm - 1
+      vv % v9(is:ie,js:je,1:mz) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz/))
+   end if
+   ! Fill v10
+   mz = mzs(10)
+   if (mz > 0) then
+      ijm = ix * jy * mz
+      cv_s = cv_e + 1
+      cv_e = cv_s + ijm - 1
+      vv % v10(is:ie,js:je,1:mz) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz/))
+   end if
+   ! Fill v11
+   mz = mzs(11)
+   if (mz > 0) then
+      ijm = ix * jy * mz
+      cv_s = cv_e + 1
+      cv_e = cv_s + ijm - 1
+      vv % v11(is:ie,js:je,1:mz) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz/))
    end if
 #endif
    !--------------------------------------------------------------------------
    ! [2] Transfer components of Je control variable:
    !--------------------------------------------------------------------------
 #ifdef CLOUD_CV
-   mz = mzs(10)
-   ne = mzs(11)
+   mz = mzs(12)
+   ne = mzs(13)
 #else
    mz = mzs(6)
    ne = mzs(7)

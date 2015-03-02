@@ -9,13 +9,19 @@
      }
    }
 
+  ${NETCDF_LIB} = $ENV{NETCDF_LIB};
   if(! defined($ENV{NETCDF_LIB})){
      if(defined($ENV{NETCDF})) {
        $tt = `echo "NETCDF_LIB = \${NETCDF}/lib" >> macros.tmp` ; 
+       ${NETCDF_LIB} = $ENV{NETCDF}."/lib";
      } else {
        print"Error: environment variable NETCDF_LIB not defined. \n";
        exit(0);
      }
+  }
+  
+  if(! -e "${NETCDF_LIB}/libnetcdff.a"){
+    $tt = `echo "NETCDFLIB       =       -L${NETCDF_LIB} -lnetcdf" >> macros.tmp `;
   }
 
   if(-e macros) {system (rm -f macros);}
@@ -97,5 +103,5 @@
   }
   if(! (-e lib)) {mkdir lib;}
   if(! (-e mod)) {mkdir mod;}
-  if(-e "macros.tmp")  { system("cat macros.tmp macros > macros.a; rm -f macros.tmp; mv macros.a macros");}
+  if(-e "macros.tmp")  { system("cat macros macros.tmp > macros.a; rm -f macros.tmp; mv macros.a macros");}
   if((-d "LandModel") ) {system "cat macros LandModel/user_build_options.bak  > LandModel/user_build_options";}

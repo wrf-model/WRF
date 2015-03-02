@@ -13,8 +13,8 @@
 MODULE module_big_step_utilities_em
 
    USE module_model_constants
-   USE module_state_description, only: p_qg, p_qs, p_qi, gdscheme, tiedtkescheme, kfetascheme, g3scheme, &
-   gfscheme,p_qv, param_first_scalar, p_qr, p_qc, DFI_FWD
+   USE module_state_description, only: p_qg, p_qs, p_qi, gdscheme, tiedtkescheme, ntiedtkescheme, kfetascheme, mskfscheme, &
+       g3scheme, gfscheme,p_qv, param_first_scalar, p_qr, p_qc, DFI_FWD
    USE module_configure, ONLY : grid_config_rec_type
    USE module_wrf_error
 
@@ -148,7 +148,7 @@ SUBROUTINE calc_mu_uv ( config_flags,                 &
          jm = jte-1
          if(config_flags%periodic_y) jm = jte
          DO i=its,itf
-             muv(i,j) =      mu(i,j-1)        +mub(i,j-1)
+!            muv(i,j) =      mu(i,j-1)        +mub(i,j-1)
 !  fix for periodic b.c., 13 march 2004, wcs
              muv(i,j) = 0.5*(mu(i,j-1)+mu(i,jm)+mub(i,j-1)+mub(i,jm))
          ENDDO
@@ -5140,7 +5140,9 @@ END SUBROUTINE pole_point_bc
       ( config_flags%cu_physics == GFSCHEME ) .OR.    &
       ( config_flags%cu_physics == G3SCHEME ) .OR.    &
       ( config_flags%cu_physics == KFETASCHEME ) .OR. &
-      ( config_flags%cu_physics == TIEDTKESCHEME ) ) then  ! Tiedtke ZCX&YQW
+      ( config_flags%cu_physics == MSKFSCHEME ) .OR. &
+      ( config_flags%cu_physics == TIEDTKESCHEME ) .OR. &
+      ( config_flags%cu_physics == NTIEDTKESCHEME )) then  ! Tiedtke ZCX&YQW
 
       DO J=j_start,j_end
       DO I=i_start,i_end
@@ -5226,6 +5228,8 @@ END SUBROUTINE phy_prep
                                      th_phy, pii, pf,                &
                                      z, z_at_w, dz8w,                &
                                      dt,h_diabatic,                  &
+                                     qv,qv_diabatic,                 &
+                                     qc,qc_diabatic,                 &
                                      config_flags,fzm, fzp,          &
                                      ids,ide, jds,jde, kds,kde,      &
                                      ims,ime, jms,jme, kms,kme,      &
@@ -5250,7 +5254,9 @@ END SUBROUTINE phy_prep
                                                     p,   &
                                                     pb,  &
                                                     ph,  &
-                                                    phb
+                                                    phb, &
+                                                    qv,  &
+                                                    qc
 
 
    REAL , DIMENSION( kms:kme ) ,           INTENT(IN   ) ::   fzm, &
@@ -5266,8 +5272,10 @@ END SUBROUTINE phy_prep
                                                  dz8w,  &
                                                   p8w
 
-   REAL, DIMENSION( ims:ime , kms:kme, jms:jme ),       &
-         INTENT(INOUT) ::                         h_diabatic
+   REAL, DIMENSION( ims:ime , kms:kme, jms:jme ),             &
+         INTENT(INOUT) ::                         h_diabatic, &
+                                                 qv_diabatic, &
+                                                 qc_diabatic
 
    REAL, DIMENSION( ims:ime , kms:kme, jms:jme ),        &
          INTENT(INOUT) ::                         t_new, &
@@ -5335,6 +5343,8 @@ END SUBROUTINE phy_prep
 #endif
        th_phy(i,k,j) = t_new(i,k,j) + t0
        h_diabatic(i,k,j) = th_phy(i,k,j)
+       qv_diabatic(i,k,j) = qv(i,k,j)
+       qc_diabatic(i,k,j) = qc(i,k,j)
        rho(i,k,j)  = 1./(al(i,k,j)+alb(i,k,j))
        pii(i,k,j) = ((p(i,k,j)+pb(i,k,j))/p0)**rcp
        z(i,k,j) = 0.5*(z_at_w(i,k,j) +z_at_w(i,k+1,j) )
@@ -5388,6 +5398,8 @@ END SUBROUTINE phy_prep
 
    SUBROUTINE moist_physics_finish_em( t_new, t_old, t0, mut,     &
                                        th_phy, h_diabatic, dt,    &
+                                       qv,qv_diabatic,            &
+                                       qc,qc_diabatic,            &
                                        config_flags,              &
 #if ( WRF_DFI_RADAR == 1 )
                                        dfi_tten_rad,dfi_stage,    &
@@ -5411,7 +5423,14 @@ END SUBROUTINE phy_prep
          INTENT(INOUT) ::                         t_new, &
                                                   t_old, &
                                                  th_phy, &
-                                                  h_diabatic
+                                                  h_diabatic, &
+                                                 qv_diabatic, &
+                                                 qc_diabatic
+
+   REAL, DIMENSION( ims:ime , kms:kme, jms:jme ),        &
+         INTENT(IN   ) ::                           qv,  &
+                                                    qc
+
 #if ( WRF_DFI_RADAR == 1 )
    REAL, DIMENSION( ims:ime , kms:kme, jms:jme ),        &
          INTENT(IN), OPTIONAL ::               dfi_tten_rad
@@ -5420,6 +5439,7 @@ END SUBROUTINE phy_prep
 #endif
 
    REAL mpten, mptenmax, mptenmin
+   REAL :: qvten,qcten
 
    REAL, DIMENSION( ims:ime , jms:jme ),  INTENT(INOUT) ::  mut
 
@@ -5473,6 +5493,8 @@ END SUBROUTINE phy_prep
      DO k = k_start, k_end
      DO i = i_start, i_end
           mpten = th_phy(i,k,j)-h_diabatic(i,k,j)
+          qvten = qv(i,k,j)-qv_diabatic(i,k,j)
+          qcten = qc(i,k,j)-qc_diabatic(i,k,j)
        if(mpten.gt.mptenmax) then
           mptenmax=mpten
           imax=i
@@ -5507,6 +5529,11 @@ END SUBROUTINE phy_prep
          t_new(i,k,j) = t_new(i,k,j) + mpten
 #endif
          h_diabatic(i,k,j) =  mpten/dt
+!!!         ! KLUDGE:
+!!!         qvten = 0.0
+!!!         qcten = 0.0
+         qv_diabatic(i,k,j) =  qvten/dt
+         qc_diabatic(i,k,j) =  qcten/dt
      ENDDO
      ENDDO
      ENDDO
@@ -5518,6 +5545,8 @@ END SUBROUTINE phy_prep
      DO i = i_start, i_end
 !        t_new(i,k,j) = t_new(i,k,j)
          h_diabatic(i,k,j) = 0.
+         qv_diabatic(i,k,j) = 0.
+         qc_diabatic(i,k,j) = 0.
      ENDDO
      ENDDO
      ENDDO
@@ -6221,8 +6250,109 @@ END SUBROUTINE set_tend
 !------------------------------------------------------------------------------
  
     END SUBROUTINE sixth_order_diffusion
- 
+
 !==============================================================================
+
+SUBROUTINE theta_to_thetam ( t_1 , moist_old ,                &
+                             t_tendf  , moist_tend ,          &
+                             t_2 , moist ,                    &
+                             h_diabatic ,                     &
+                             itimestep ,                      &
+                             rk_step ,                        & 
+                             ids, ide, jds, jde, kds, kde ,   &
+                             ims, ime, jms, jme, kms, kme ,   &
+                             its, ite, jts, jte, kts, kte     )
+
+   !  Convert dry potential temperature to "moist" theta:
+   !  theta_m = theta ( 1 + Rv/Rd Qv )
+
+   IMPLICIT NONE
+
+   INTEGER , INTENT(IN) ::   ids, ide, jds, jde, kds, kde ,   &
+                             ims, ime, jms, jme, kms, kme ,   &
+                             its, ite, jts, jte, kts, kte     
+   INTEGER , INTENT(IN) ::   rk_step, itimestep
+   REAL    , INTENT(IN   ) , DIMENSION(ims:ime,kms:kme,jms:jme) :: moist, moist_tend
+   REAL    , INTENT(INOUT) , DIMENSION(ims:ime,kms:kme,jms:jme) :: moist_old
+   REAL    , INTENT(INOUT) , DIMENSION(ims:ime,kms:kme,jms:jme) :: t_1, t_tendf, t_2, h_diabatic
+
+   !  Local variables
+
+   INTEGER :: i , j , k
+
+   !  First time step, there is no OLD moisture.
+
+   IF ( itimestep .EQ. 1 ) THEN
+      DO j = jts , MIN(jte,jde-1)
+         DO k = kts , kte-1
+            DO i = its , MIN(ite,ide-1)
+               moist_old(i,k,j) = moist(i,k,j)
+            END DO
+         END DO
+      END DO
+   END IF
+
+   !  First RK loop, this info is from the physics packages.  It is modified immediately after the
+   !  call to the physics schemes, and the remains constant for the remainder of the RK loops.
+
+   IF ( rk_step .EQ. 1 ) THEN
+      DO j = jts , MIN(jte,jde-1)
+         DO k = kts , kte-1
+            DO i = its , MIN(ite,ide-1)
+               t_tendf(i,k,j) = (1. + (R_v/R_d) * moist_old(i,k,j))*t_tendf(i,k,j) + (R_v/R_d)*(t_1(i,k,j)+T0)*moist_tend(i,k,j)
+               h_diabatic(i,k,j) =  (1. + (R_v/R_d) * moist_old(i,k,j))*h_diabatic(i,k,j)
+            END DO
+         END DO
+      END DO
+   END IF
+
+   !  T at time period 1 and 2 are modified in the small steps, so they are each converted from dry to moist.
+
+   DO j = jts , MIN(jte,jde-1)
+      DO k = kts , kte-1
+         DO i = its , MIN(ite,ide-1)
+            t_1(i,k,j) = t_1(i,k,j) * (1. + (R_v/R_d) * moist_old(i,k,j)) + T0*(R_v/R_d)*moist_old(i,k,j)
+            t_2(i,k,j) = t_2(i,k,j) * (1. + (R_v/R_d) * moist(i,k,j)) + T0*(R_v/R_d)*moist(i,k,j)
+         END DO
+      END DO
+   END DO
+
+END SUBROUTINE theta_to_thetam
+
+!==============================================================================
+
+SUBROUTINE thetam_to_theta ( t_1 , moist_old ,                &
+                             t_2 , moist ,                    &
+                             ids, ide, jds, jde, kds, kde ,   &
+                             ims, ime, jms, jme, kms, kme ,   &
+                             its, ite, jts, jte, kts, kte     )
+
+   !  Convert moist potential temperature to dry theta:
+   !  theta = theta_m / ( 1 + Rv/Rd Qv )
+
+   IMPLICIT NONE
+
+   INTEGER , INTENT(IN) ::   ids, ide, jds, jde, kds, kde ,   &
+                             ims, ime, jms, jme, kms, kme ,   &
+                             its, ite, jts, jte, kts, kte     
+   REAL    , INTENT(IN   ) , DIMENSION(ims:ime,kms:kme,jms:jme) :: moist, moist_old
+   REAL    , INTENT(INOUT) , DIMENSION(ims:ime,kms:kme,jms:jme) :: t_1, t_2
+
+   !  Local variables
+
+   INTEGER :: i , j , k
+
+   DO j = jts , MIN(jte,jde-1)
+      DO k = kts , kte-1
+         DO i = its , MIN(ite,ide-1)
+            t_1(i,k,j) = -T0 + (t_1(i,k,j)+T0)/(1. + (R_v/R_d) * moist_old(i,k,j))
+            t_2(i,k,j) = -T0 + (t_2(i,k,j)+T0)/(1. + (R_v/R_d) * moist(i,k,j))
+         END DO
+      END DO
+   END DO
+
+END SUBROUTINE thetam_to_theta
+
 !==============================================================================
 
 END MODULE module_big_step_utilities_em

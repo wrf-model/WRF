@@ -216,6 +216,8 @@ module da_control
    real, parameter    :: typical_qrn_rms = 0.00001 ! g/kg
    real, parameter    :: typical_qcw_rms = 0.00001 ! g/kg
    real, parameter    :: typical_qci_rms = 0.00001 ! g/kg
+   real, parameter    :: typical_qsn_rms = 0.00001 ! g/kg
+   real, parameter    :: typical_qgr_rms = 0.00001 ! g/kg
    real, parameter    :: typical_w_rms = 0.1     ! m/s
    real, parameter    :: typical_rv_rms = 1.0    ! m/s
    real, parameter    :: typical_rf_rms = 1.0    ! dBZ
@@ -520,7 +522,7 @@ module da_control
       "mtgirs        ", &
       "tamdar        ", &
       "tamdar_sfc    ", &
-      "rain          " &  
+      "rain          " &
    /)
 
    integer, parameter :: max_no_fm = 290

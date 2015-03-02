@@ -392,7 +392,8 @@ CONTAINS
 	        + fr_tno_mosaic_c(n)*emis_ant(i,k,j,p_e_oc_25_10)  
 
          chem_select_1 : SELECT CASE( config_flags%chem_opt )
-         CASE(CBMZ_MOSAIC_4BIN_VBS2_KPP, SAPRC99_MOSAIC_4BIN_VBS2_KPP) ! Set the oc to zero for VBS
+         CASE(CBMZ_MOSAIC_4BIN_VBS2_KPP, SAPRC99_MOSAIC_4BIN_VBS2_KPP, SAPRC99_MOSAIC_8BIN_VBS2_AQ_KPP, &
+              SAPRC99_MOSAIC_8BIN_VBS2_KPP)!BSINGH(12/04/2013): Added SAPRC 8 bin and non-aq on 04/03/2014! Set the oc to zero for VBS
              aem_oc = 0.0
          END SELECT  chem_select_1 
 
@@ -1590,19 +1591,36 @@ END MODULE module_mosaic_addemiss
 !       sz(4)=0.84
         itype=1
 	if (nsize_aer(itype) .eq. 8) then
-          sz(1)=0.0
-          sz(2)=0.0
-          sz(3)=0.0005
-          sz(4)=0.0095
-          sz(5)=0.01
-          sz(6)=0.06
-          sz(7)=0.20
-          sz(8)=0.72
+          !BSINGH(12/11/2013): Based on the suggestions by Manish Shrivastva, sz variable is modified below.
+          !Original values are commented out
+          !sz(1)=0.0
+          !sz(2)=0.0
+          !sz(3)=0.0005
+          !sz(4)=0.0095
+          !sz(5)=0.01
+          !sz(6)=0.06
+          !sz(7)=0.20
+          !sz(8)=0.72
+          
+          sz(1)=0
+          sz(2)=1.78751e-06
+          sz(3)=0.000273786
+          sz(4)=0.00847978
+          sz(5)=0.056055
+          sz(6)=0.0951896
+          sz(7)=0.17
+          sz(8)=0.67
 	else if (nsize_aer(itype) .eq. 4) then
-          sz(1)=0.0
-          sz(2)=0.01
-          sz(3)=0.07
-          sz(4)=0.92
+          !BSINGH(12/11/2013): Based on the suggestions by Manish Shrivastva, sz variable is modified below.
+          !Original values are commented out
+          !sz(1)=0.0
+          !sz(2)=0.01
+          !sz(3)=0.07
+          !sz(4)=0.92
+          sz(1)=1.78751e-06
+          sz(2)=0.00875357
+          sz(3)=0.1512446
+          sz(4)=0.84
           sz(5)=0.0
           sz(6)=0.0
           sz(7)=0.0

@@ -12,7 +12,7 @@ MODULE uoc_dust
   USE qf03
   USE module_soilpsd
   USE module_sf_noahlsm, ONLY:DRYSMC
-  USE module_sf_noahmplsm, ONLY: DRYSMC_nmp => DRYSMC
+  USE NOAHMP_PARAMETERS, ONLY: DRYSMC_nmp => SMCDRY
   USE module_sf_ruclsm,  ONLY:DRYSMC_ruc => DRYSMC
   
   CONTAINS

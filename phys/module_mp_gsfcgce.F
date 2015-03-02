@@ -820,7 +820,7 @@ CONTAINS
 !                     
 
 !   write(6,*) 'i=',i,' j=',j,'   ', pptrain, pptsnow, pptgraul, pptice
-!   call flush(6)
+!   flush(6)
 
    snowncv(i,j) = pptsnow
    snownc(i,j) = snownc(i,j) + pptsnow

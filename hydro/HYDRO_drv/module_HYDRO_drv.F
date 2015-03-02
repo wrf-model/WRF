@@ -10,11 +10,13 @@ module module_HYDRO_drv
         output_lsm
    use module_rt_data, only: rt_domain
    use module_GW_baseflow_data, only: gw2d
-   use module_GW_baseflow, only: gw2d_allocate, gw2d_ini
-   use module_namelist, only: nlst_rt
+   use module_GW_baseflow, only:simp_gw_buck, gwstep, gw2d_allocate, gw2d_ini
+   use module_channel_routing, only: drive_channel
+   use module_namelist, only: nlst_rt, read_rt_nlst
    use module_routing, only: getChanDim, landrt_ini
    use module_HYDRO_utils
-   use module_namelist
+!   use module_namelist
+   use module_lsm_forcing, only: geth_newdate
    
    implicit none
 
@@ -33,13 +35,15 @@ module module_HYDRO_drv
      else
         call geth_newdate(out_date, nlst_rt(did)%startdate, nint(nlst_rt(did)%rst_dt*60*rt_domain(did)%rst_counts))
      endif
-     if ( out_date(1:19) == nlst_rt(did)%olddate(1:19) ) then
+     if ( (nlst_rt(did)%rst_dt .gt. 0) .and. (out_date(1:19) == nlst_rt(did)%olddate(1:19)) ) then
            rst_out = 99
            rt_domain(did)%rst_counts = rt_domain(did)%rst_counts + 1
      endif
 ! restart every month automatically.
-     if ((nlst_rt(did)%olddate(9:10) == "01") .and. (nlst_rt(did)%olddate(12:13) == "00") .and. &
-          (nlst_rt(did)%olddate(15:16) == "00").and. (nlst_rt(did)%olddate(18:19) == "00")) rst_out = 99
+     if ( (nlst_rt(did)%olddate(9:10) == "01") .and. (nlst_rt(did)%olddate(12:13) == "00") .and. &
+          (nlst_rt(did)%olddate(15:16) == "00").and. (nlst_rt(did)%olddate(18:19) == "00") .and. &
+          (nlst_rt(did)%rst_dt .le. 0)  ) rst_out = 99
+
 #ifdef MPP_LAND
    endif
      call mpp_land_bcast_int1(rst_out)
@@ -64,8 +68,8 @@ module module_HYDRO_drv
 
    subroutine HYDRO_out(did)
       implicit none
-      integer did, outflag
-      character(len=19) out_date, rt_out_date
+      integer did, outflag, rtflag
+      character(len=19) out_date
       integer :: Kt, ounit
 
 !    real, dimension(RT_DOMAIN(did)%ix,RT_DOMAIN(did)%jx):: soilmx_tmp, &
@@ -83,7 +87,6 @@ module module_HYDRO_drv
 #ifdef HYDRO_D
          write(6,*) "output hydrology at time : ",nlst_rt(did)%olddate(1:19), rt_domain(did)%his_out_counts
 #endif
-         call geth_newdate(rt_out_date, nlst_rt(did)%olddate, -1*nint(rt_domain(did)%his_out_counts*nlst_rt(did)%out_dt*60))
          outflag = 99
       else
          if(nlst_rt(did)%dt .gt. nlst_rt(did)%out_dt*60) then
@@ -96,7 +99,6 @@ module module_HYDRO_drv
              write(6,*) "output hydrology at time : ",nlst_rt(did)%olddate(1:19)
 #endif
              outflag = 99
-             call geth_newdate(rt_out_date, nlst_rt(did)%olddate, -1*nint(rt_domain(did)%his_out_counts*nlst_rt(did)%out_dt*60))
          endif
       endif
 #ifdef MPP_LAND
@@ -118,6 +120,24 @@ module module_HYDRO_drv
      endif
 
 
+! jump the ouput for the initial time when it has restart file from routing.
+   rtflag = -99
+#ifdef MPP_LAND
+   if(IO_id .eq. my_id) then
+#endif
+       if ( (trim(nlst_rt(did)%restart_file) /= "") .and. ( nlst_rt(did)%startdate(1:19) == nlst_rt(did)%olddate(1:19) ) ) then
+             print*, "yyyywww restart_file = ", trim(nlst_rt(did)%restart_file) 
+             rtflag = 1
+       endif
+#ifdef MPP_LAND
+   endif  
+   call mpp_land_bcast_int1(rtflag)
+#endif
+
+
+!yw keep the initial time otuput for debug
+      if(rtflag == 1) return ! jump the initial time output for routing restart
+
 
 
      call output_lsm(trim(nlst_rt(did)%olddate(1:4)//nlst_rt(did)%olddate(6:7)//nlst_rt(did)%olddate(9:10)  &
@@ -132,6 +152,8 @@ module module_HYDRO_drv
              .or. nlst_rt(did)%GWBASESWCRT .gt. 0 ) then
            if (nlst_rt(did)%HIRES_OUT.ge.1) then
 
+           
+!              goto 9991
 
 #ifdef MPP_LAND
               call mpp_output_rt(rt_domain(did)%g_ixrt, rt_domain(did)%g_jxrt,    &
@@ -142,7 +164,7 @@ module module_HYDRO_drv
                 RT_DOMAIN(did)%ixrt, RT_DOMAIN(did)%jxrt, &
                 nlst_rt(did)%nsoil, &
 !               nlst_rt(did)%startdate, nlst_rt(did)%olddate, RT_DOMAIN(did)%QSUBRT,&
-                rt_out_date, nlst_rt(did)%olddate, RT_DOMAIN(did)%QSUBRT,&
+                nlst_rt(did)%sincedate, nlst_rt(did)%olddate, RT_DOMAIN(did)%QSUBRT,&
                 RT_DOMAIN(did)%ZWATTABLRT,RT_DOMAIN(did)%SMCRT,&
                 RT_DOMAIN(did)%SUB_RESID,       &
                    RT_DOMAIN(did)%q_sfcflx_x,RT_DOMAIN(did)%q_sfcflx_y,&
@@ -153,6 +175,11 @@ module module_HYDRO_drv
                 RT_DOMAIN(did)%LONVAL,RT_DOMAIN(did)%dist,nlst_rt(did)%HIRES_OUT,&
                 RT_DOMAIN(did)%QBDRYRT )
 
+! 9991            continue
+
+           end if
+
+
            if(nlst_rt(did)%GWBASESWCRT .eq. 3) then
 	     
               call output_gw(    &
@@ -160,7 +187,7 @@ module module_HYDRO_drv
                 RT_DOMAIN(did)%ixrt, RT_DOMAIN(did)%jxrt,          &
                 nlst_rt(did)%nsoil,                               &
 !               nlst_rt(did)%startdate, nlst_rt(did)%olddate,    &
-                rt_out_date, nlst_rt(did)%olddate,    &
+                nlst_rt(did)%sincedate, nlst_rt(did)%olddate,    &
                 gw2d(did)%h, RT_DOMAIN(did)%SMCRT,                 &
                 gw2d(did)%convgw, RT_DOMAIN(did)%SFCHEADSUBRT,     &
                 nlst_rt(did)%geo_finegrid_flnm,nlst_rt(did)%DT, &
@@ -171,7 +198,6 @@ module module_HYDRO_drv
 	  endif
 ! BF end gw2d output section
 
-           end if
 #ifdef HYDRO_D
           write(6,*) "before call output_chrt"
 #endif
@@ -179,27 +205,27 @@ module module_HYDRO_drv
            if (nlst_rt(did)%CHANRTSWCRT.eq.1.or.nlst_rt(did)%CHANRTSWCRT.eq.2) then 
 
 #ifdef MPP_LAND
-             call mpp_output_chrt(rt_domain(did)%mpp_nlinks,rt_domain(did)%nlinks_index, &
+             call mpp_output_chrt(rt_domain(did)%gnlinks,rt_domain(did)%map_l2g, &
 #else
              call output_chrt(  &
 #endif
                nlst_rt(did)%igrid, nlst_rt(did)%split_output_count, &
                RT_DOMAIN(did)%NLINKS,RT_DOMAIN(did)%ORDER, &
 !              nlst_rt(did)%startdate,nlst_rt(did)%olddate,RT_DOMAIN(did)%CHLON,&
-               rt_out_date,nlst_rt(did)%olddate,RT_DOMAIN(did)%CHLON,&
+               nlst_rt(did)%sincedate,nlst_rt(did)%olddate,RT_DOMAIN(did)%CHLON,&
                RT_DOMAIN(did)%CHLAT, &
                RT_DOMAIN(did)%HLINK, RT_DOMAIN(did)%ZELEV, &
                RT_DOMAIN(did)%QLINK,nlst_rt(did)%DT,Kt, &
                RT_DOMAIN(did)%STRMFRXSTPTS,nlst_rt(did)%order_to_write)
 
 #ifdef MPP_LAND
-              call mpp_output_chrtgrd(nlst_rt(did)%igrid, nlst_rt(did)%split_output_count, &
-                  RT_DOMAIN(did)%ixrt,RT_DOMAIN(did)%jxrt, RT_DOMAIN(did)%NLINKS,   &
-                  RT_DOMAIN(did)%CH_NETRT, RT_DOMAIN(did)%CH_NETLNK, RT_DOMAIN(did)%ORDER, &
-                  nlst_rt(did)%startdate, nlst_rt(did)%olddate, &
-                  RT_DOMAIN(did)%qlink, nlst_rt(did)%dt, nlst_rt(did)%geo_finegrid_flnm,   &
-                  RT_DOMAIN(did)%mpp_nlinks,RT_DOMAIN(did)%nlinks_index,                   &
-                  RT_DOMAIN(did)%g_ixrt,RT_DOMAIN(did)%g_jxrt )
+!             call mpp_output_chrtgrd(nlst_rt(did)%igrid, nlst_rt(did)%split_output_count, &
+!                 RT_DOMAIN(did)%ixrt,RT_DOMAIN(did)%jxrt, RT_DOMAIN(did)%NLINKS,   &
+!                 RT_DOMAIN(did)%CH_NETRT, RT_DOMAIN(did)%CH_NETLNK, RT_DOMAIN(did)%ORDER, &
+!                 nlst_rt(did)%startdate, nlst_rt(did)%olddate, &
+!                 RT_DOMAIN(did)%qlink, nlst_rt(did)%dt, nlst_rt(did)%geo_finegrid_flnm,   &
+!                 RT_DOMAIN(did)%mpp_nlinks,RT_DOMAIN(did)%nlinks_index,                   &
+!                 RT_DOMAIN(did)%g_ixrt,RT_DOMAIN(did)%g_jxrt )
 #endif
 
                if (RT_DOMAIN(did)%NLAKES.gt.0)  &
@@ -211,7 +237,7 @@ module module_HYDRO_drv
                    nlst_rt(did)%igrid, nlst_rt(did)%split_output_count, &
                    RT_DOMAIN(did)%NLAKES, &
 !                  trim(nlst_rt(did)%startdate), trim(nlst_rt(did)%olddate), &
-                   trim(rt_out_date), trim(nlst_rt(did)%olddate), &
+                   trim(nlst_rt(did)%sincedate), trim(nlst_rt(did)%olddate), &
                    RT_DOMAIN(did)%LATLAKE,RT_DOMAIN(did)%LONLAKE, &
                    RT_DOMAIN(did)%ELEVLAKE,RT_DOMAIN(did)%QLAKEI, &
                    RT_DOMAIN(did)%QLAKEO, &
@@ -246,7 +272,8 @@ module module_HYDRO_drv
    call mpp_land_bcast_int1(flag)
 #endif
 
-      
+   nlst_rt(did)%sincedate = nlst_rt(did)%startdate
+   
    if (flag.eq.99) then
 
 #ifdef MPP_LAND
@@ -260,9 +287,10 @@ module module_HYDRO_drv
 #endif
       call   RESTART_IN_nc(trim(nlst_rt(did)%restart_file), did)
 
-  if (trim(nlst_rt(did)%restart_file) /= "") then 
-          nlst_rt(did)%restart_file = ""
-  endif
+!yw  if (trim(nlst_rt(did)%restart_file) /= "") then 
+!yw          nlst_rt(did)%restart_file = ""
+!yw  endif
+
   endif
  end subroutine HYDRO_rst_in
 
@@ -283,476 +311,6 @@ module module_HYDRO_drv
    endif
 #endif
      end subroutine HYDRO_time_adv
-
-  integer function nfeb_yw(year)
-    !
-    ! Compute the number of days in February for the given year.
-    !
-    implicit none
-    integer, intent(in) :: year ! Four-digit year
-
-    nfeb_yw = 28 ! By default, February has 28 days ...
-    if (mod(year,4).eq.0) then
-       nfeb_yw = 29  ! But every four years, it has 29 days ...
-       if (mod(year,100).eq.0) then
-          nfeb_yw = 28  ! Except every 100 years, when it has 28 days ...
-          if (mod(year,400).eq.0) then
-             nfeb_yw = 29  ! Except every 400 years, when it has 29 days ...
-             if (mod(year,3600).eq.0) then
-                nfeb_yw = 28  ! Except every 3600 years, when it has 28 days.
-             endif
-          endif
-       endif
-    endif
-  end function nfeb_yw
-
-  subroutine geth_newdate (ndate, odate, idt)
-    implicit none
-
-    !  From old date ("YYYY-MM-DD HH:MM:SS.ffff" or "YYYYMMDDHHMMSSffff") and 
-    !  delta-time, compute the new date.
-
-    !  on entry     -  odate  -  the old hdate.
-    !                  idt    -  the change in time
-
-    !  on exit      -  ndate  -  the new hdate.
-
-    integer, intent(in)           :: idt
-    character (len=*), intent(out) :: ndate
-    character (len=*), intent(in)  :: odate
-
-    !  Local Variables
-
-    !  yrold    -  indicates the year associated with "odate"
-    !  moold    -  indicates the month associated with "odate"
-    !  dyold    -  indicates the day associated with "odate"
-    !  hrold    -  indicates the hour associated with "odate"
-    !  miold    -  indicates the minute associated with "odate"
-    !  scold    -  indicates the second associated with "odate"
-
-    !  yrnew    -  indicates the year associated with "ndate"
-    !  monew    -  indicates the month associated with "ndate"
-    !  dynew    -  indicates the day associated with "ndate"
-    !  hrnew    -  indicates the hour associated with "ndate"
-    !  minew    -  indicates the minute associated with "ndate"
-    !  scnew    -  indicates the second associated with "ndate"
-
-    !  mday     -  a list assigning the number of days in each month
-
-    !  i        -  loop counter
-    !  nday     -  the integer number of days represented by "idt"
-    !  nhour    -  the integer number of hours in "idt" after taking out
-    !              all the whole days
-    !  nmin     -  the integer number of minutes in "idt" after taking out
-    !              all the whole days and whole hours.
-    !  nsec     -  the integer number of minutes in "idt" after taking out
-    !              all the whole days, whole hours, and whole minutes.
-
-    integer :: newlen, oldlen
-    integer :: yrnew, monew, dynew, hrnew, minew, scnew, frnew
-    integer :: yrold, moold, dyold, hrold, miold, scold, frold
-    integer :: nday, nhour, nmin, nsec, nfrac, i, ifrc
-    logical :: opass
-    character (len=10) :: hfrc
-    character (len=1) :: sp
-    logical :: punct
-    integer :: yrstart, yrend, mostart, moend, dystart, dyend
-    integer :: hrstart, hrend, mistart, miend, scstart, scend, frstart
-    integer :: units
-    integer, dimension(12) :: mday = (/31,28,31,30,31,30,31,31,30,31,30,31/)
-!yw    integer nfeb_yw   
-
-    ! Determine if odate is "YYYY-MM-DD_HH ... " or "YYYYMMDDHH...."
-    if (odate(5:5) == "-") then
-       punct = .TRUE.
-    else
-       punct = .FALSE.
-    endif
-
-    !  Break down old hdate into parts
-
-    hrold = 0
-    miold = 0
-    scold = 0
-    frold = 0
-    oldlen = LEN(odate)
-    if (punct) then
-       yrstart = 1
-       yrend = 4
-       mostart = 6
-       moend = 7
-       dystart = 9
-       dyend = 10
-       hrstart = 12
-       hrend = 13
-       mistart = 15
-       miend = 16
-       scstart = 18
-       scend = 19
-       frstart = 21
-       select case (oldlen)
-       case (10)
-          ! Days
-          units = 1
-       case (13)
-          ! Hours
-          units = 2
-       case (16)
-          ! Minutes
-          units = 3
-       case (19)
-          ! Seconds
-          units = 4
-       case (21)
-          ! Tenths
-          units = 5
-       case (22)
-          ! Hundredths
-          units = 6
-       case (23)
-          ! Thousandths
-          units = 7
-       case (24)
-          ! Ten thousandths
-          units = 8
-       case default
-#ifdef HYDRO_D
-          write(*,*) 'ERROR: geth_newdate:  odd length: #'//trim(odate)//'#'
-          stop
-#endif
-       end select
-
-       if (oldlen.ge.11) then
-          sp = odate(11:11)
-       else
-          sp = ' '
-       end if
-
-    else
-
-       yrstart = 1
-       yrend = 4
-       mostart = 5
-       moend = 6
-       dystart = 7
-       dyend = 8
-       hrstart = 9
-       hrend = 10
-       mistart = 11
-       miend = 12
-       scstart = 13
-       scend = 14
-       frstart = 15
-
-       select case (oldlen)
-       case (8)
-          ! Days
-          units = 1
-       case (10)
-          ! Hours
-          units = 2
-       case (12)
-          ! Minutes
-          units = 3
-       case (14)
-          ! Seconds
-          units = 4
-       case (15)
-          ! Tenths
-          units = 5
-       case (16)
-          ! Hundredths
-          units = 6
-       case (17)
-          ! Thousandths
-          units = 7
-       case (18)
-          ! Ten thousandths
-          units = 8
-       case default
-#ifdef HYDRO_D
-          write(*,*) 'ERROR: geth_newdate:  odd length: #'//trim(odate)//'#'
-          stop
-#endif
-       end select
-    endif
-
-    !  Use internal READ statements to convert the CHARACTER string
-    !  date into INTEGER components.
-
-    read(odate(yrstart:yrend),  '(i4)') yrold
-    read(odate(mostart:moend),  '(i2)') moold
-    read(odate(dystart:dyend), '(i2)') dyold
-    if (units.ge.2) then
-       read(odate(hrstart:hrend),'(i2)') hrold
-       if (units.ge.3) then
-          read(odate(mistart:miend),'(i2)') miold
-          if (units.ge.4) then
-             read(odate(scstart:scend),'(i2)') scold
-             if (units.ge.5) then
-                read(odate(frstart:oldlen),*) frold
-             end if
-          end if
-       end if
-    end if
-
-    !  Set the number of days in February for that year.
-
-    mday(2) = nfeb_yw(yrold)
-
-    !  Check that ODATE makes sense.
-
-    opass = .TRUE.
-
-    !  Check that the month of ODATE makes sense.
-
-    if ((moold.gt.12).or.(moold.lt.1)) then
-#ifdef HYDRO_D
-       write(*,*) 'GETH_NEWDATE:  Month of ODATE = ', moold
-#endif
-       opass = .FALSE.
-    end if
-
-    !  Check that the day of ODATE makes sense.
-
-    if ((dyold.gt.mday(moold)).or.(dyold.lt.1)) then
-#ifdef HYDRO_D
-       write(*,*) 'GETH_NEWDATE:  Day of ODATE = ', dyold
-#endif
-       opass = .FALSE.
-    end if
-
-    !  Check that the hour of ODATE makes sense.
-
-    if ((hrold.gt.23).or.(hrold.lt.0)) then
-#ifdef HYDRO_D
-       write(*,*) 'GETH_NEWDATE:  Hour of ODATE = ', hrold
-#endif
-       opass = .FALSE.
-    end if
-
-    !  Check that the minute of ODATE makes sense.
-
-    if ((miold.gt.59).or.(miold.lt.0)) then
-#ifdef HYDRO_D
-       write(*,*) 'GETH_NEWDATE:  Minute of ODATE = ', miold
-#endif
-       opass = .FALSE.
-    end if
-
-    !  Check that the second of ODATE makes sense.
-
-    if ((scold.gt.59).or.(scold.lt.0)) then
-#ifdef HYDRO_D
-       write(*,*) 'GETH_NEWDATE:  Second of ODATE = ', scold
-#endif
-       opass = .FALSE.
-    end if
-
-    !  Check that the fractional part  of ODATE makes sense.
-    if (.not.opass) then
-#ifdef HYDRO_D
-       write(*,*) 'Crazy ODATE: ', odate(1:oldlen), oldlen
-       stop
-#endif
-    end if
-
-    !  Date Checks are completed.  Continue.
-
-
-    !  Compute the number of days, hours, minutes, and seconds in idt
-
-    if (units.ge.5) then !idt should be in fractions of seconds
-       ifrc = oldlen-(frstart)+1
-       ifrc = 10**ifrc
-       nday   = abs(idt)/(86400*ifrc)
-       nhour  = mod(abs(idt),86400*ifrc)/(3600*ifrc)
-       nmin   = mod(abs(idt),3600*ifrc)/(60*ifrc)
-       nsec   = mod(abs(idt),60*ifrc)/(ifrc)
-       nfrac = mod(abs(idt), ifrc)
-    else if (units.eq.4) then  !idt should be in seconds
-       ifrc = 1
-       nday   = abs(idt)/86400 ! integer number of days in delta-time
-       nhour  = mod(abs(idt),86400)/3600
-       nmin   = mod(abs(idt),3600)/60
-       nsec   = mod(abs(idt),60)
-       nfrac  = 0
-    else if (units.eq.3) then !idt should be in minutes
-       ifrc = 1
-       nday   = abs(idt)/1440 ! integer number of days in delta-time
-       nhour  = mod(abs(idt),1440)/60
-       nmin   = mod(abs(idt),60)
-       nsec   = 0
-       nfrac  = 0
-    else if (units.eq.2) then !idt should be in hours
-       ifrc = 1
-       nday   = abs(idt)/24 ! integer number of days in delta-time
-       nhour  = mod(abs(idt),24)
-       nmin   = 0
-       nsec   = 0
-       nfrac  = 0
-    else if (units.eq.1) then !idt should be in days
-       ifrc = 1
-       nday   = abs(idt)    ! integer number of days in delta-time
-       nhour  = 0
-       nmin   = 0
-       nsec   = 0
-       nfrac  = 0
-    else
-#ifdef HYDRO_D
-       write(*,'(''GETH_NEWDATE: Strange length for ODATE: '', i3)') &
-            oldlen
-       write(*,*) '#'//odate(1:oldlen)//'#'
-       stop
-#endif
-    end if
-
-    if (idt.ge.0) then
-
-       frnew = frold + nfrac
-       if (frnew.ge.ifrc) then
-          frnew = frnew - ifrc
-          nsec = nsec + 1
-       end if
-
-       scnew = scold + nsec
-       if (scnew .ge. 60) then
-          scnew = scnew - 60
-          nmin  = nmin + 1
-       end if
-
-       minew = miold + nmin
-       if (minew .ge. 60) then
-          minew = minew - 60
-          nhour  = nhour + 1
-       end if
-
-       hrnew = hrold + nhour
-       if (hrnew .ge. 24) then
-          hrnew = hrnew - 24
-          nday  = nday + 1
-       end if
-
-       dynew = dyold
-       monew = moold
-       yrnew = yrold
-       do i = 1, nday
-          dynew = dynew + 1
-          if (dynew.gt.mday(monew)) then
-             dynew = dynew - mday(monew)
-             monew = monew + 1
-             if (monew .gt. 12) then
-                monew = 1
-                yrnew = yrnew + 1
-                ! If the year changes, recompute the number of days in February
-                mday(2) = nfeb_yw(yrnew)
-             end if
-          end if
-       end do
-
-    else if (idt.lt.0) then
-
-       frnew = frold - nfrac
-       if (frnew .lt. 0) then
-          frnew = frnew + ifrc
-          nsec = nsec + 1
-       end if
-
-       scnew = scold - nsec
-       if (scnew .lt. 00) then
-          scnew = scnew + 60
-          nmin  = nmin + 1
-       end if
-
-       minew = miold - nmin
-       if (minew .lt. 00) then
-          minew = minew + 60
-          nhour  = nhour + 1
-       end if
-
-       hrnew = hrold - nhour
-       if (hrnew .lt. 00) then
-          hrnew = hrnew + 24
-          nday  = nday + 1
-       end if
-
-       dynew = dyold
-       monew = moold
-       yrnew = yrold
-       do i = 1, nday
-          dynew = dynew - 1
-          if (dynew.eq.0) then
-             monew = monew - 1
-             if (monew.eq.0) then
-                monew = 12
-                yrnew = yrnew - 1
-                ! If the year changes, recompute the number of days in February
-                mday(2) = nfeb_yw(yrnew)
-             end if
-             dynew = mday(monew)
-          end if
-       end do
-    end if
-
-    !  Now construct the new mdate
-
-    newlen = LEN(ndate)
-
-    if (punct) then
-
-       if (newlen.gt.frstart) then
-          write(ndate(1:scend),19) yrnew, monew, dynew, hrnew, minew, scnew
-          write(hfrc,'(i10)') frnew+1000000000
-          ndate = ndate(1:scend)//'.'//hfrc(31-newlen:10)
-
-       else if (newlen.eq.scend) then
-          write(ndate(1:scend),19) yrnew, monew, dynew, hrnew, minew, scnew
-19        format(i4,'-',i2.2,'-',i2.2,'_',i2.2,':',i2.2,':',i2.2)
-
-       else if (newlen.eq.miend) then
-          write(ndate,16) yrnew, monew, dynew, hrnew, minew
-16        format(i4,'-',i2.2,'-',i2.2,'_',i2.2,':',i2.2)
-
-       else if (newlen.eq.hrend) then
-          write(ndate,13) yrnew, monew, dynew, hrnew
-13        format(i4,'-',i2.2,'-',i2.2,'_',i2.2)
-
-       else if (newlen.eq.dyend) then
-          write(ndate,10) yrnew, monew, dynew
-10        format(i4,'-',i2.2,'-',i2.2)
-
-       end if
-
-    else
-
-       if (newlen.gt.frstart) then
-          write(ndate(1:scend),119) yrnew, monew, dynew, hrnew, minew, scnew
-          write(hfrc,'(i10)') frnew+1000000000
-          ndate = ndate(1:scend)//'.'//hfrc(31-newlen:10)
-
-       else if (newlen.eq.scend) then
-          write(ndate(1:scend),119) yrnew, monew, dynew, hrnew, minew, scnew
-119       format(i4,i2.2,i2.2,i2.2,i2.2,i2.2)
-
-       else if (newlen.eq.miend) then
-          write(ndate,116) yrnew, monew, dynew, hrnew, minew
-116       format(i4,i2.2,i2.2,i2.2,i2.2)
-
-       else if (newlen.eq.hrend) then
-          write(ndate,113) yrnew, monew, dynew, hrnew
-113       format(i4,i2.2,i2.2,i2.2)
-
-       else if (newlen.eq.dyend) then
-          write(ndate,110) yrnew, monew, dynew
-110       format(i4,i2.2,i2.2)
-
-       end if
-
-    endif
-
-    if (punct .and. (oldlen.ge.11) .and. (newlen.ge.11)) ndate(11:11) = sp
-
-  end subroutine geth_newdate
   
      subroutine HYDRO_exe(did)
 
@@ -782,23 +340,52 @@ module module_HYDRO_drv
 
 
 
-           IF (nlst_rt(did)%GWBASESWCRT .ne. 0     &
+           if (nlst_rt(did)%GWBASESWCRT .ne. 0     &
                .or. nlst_rt(did)%SUBRTSWCRT .NE.0  &
                .or. nlst_rt(did)%OVRTSWCRT .NE. 0 ) THEN
 
 
-! running routing model
-                call exeRouting(did)
-
-    END IF    ! End if for channel routing option
+              RT_DOMAIN(did)%QSTRMVOLRT_DUM = RT_DOMAIN(did)%QSTRMVOLRT
+              RT_DOMAIN(did)%LAKE_INFLORT_DUM = RT_DOMAIN(did)%LAKE_INFLORT
 
 
-! advance to next time step
-!      if(
+
+                ! step 1) disaggregate specific fields from LSM to Hydro grid
+                  call disaggregateDomain_drv(did)
+
+		! step 2) 
+                  call SubsurfaceRouting_drv(did)
+		
+		! step 3) todo split
+  		  call OverlandRouting_drv(did)
+
+              RT_DOMAIN(did)%QSTRMVOLRT_TS = RT_DOMAIN(did)%QSTRMVOLRT-RT_DOMAIN(did)%QSTRMVOLRT_DUM
+              RT_DOMAIN(did)%LAKE_INFLORT_TS = RT_DOMAIN(did)%LAKE_INFLORT-RT_DOMAIN(did)%LAKE_INFLORT_DUM
+
+			
+		! step 4) baseflow or groundwater physics
+		  call driveGwBaseflow(did)
+		
+		! step 5) river channel physics
+		  call driveChannelRouting(did)
+	
+		! step 6) aggregate specific fields from Hydro to LSM grid
+		  call aggregateDomain(did)
+
+
+           end if
+
+
+       ! advance to next time step
            call HYDRO_time_adv(did)
 
       ! output for history 
            call HYDRO_out(did)
+
+
+!           write(90 + my_id,*) "finish calling hydro_exe"
+!           flush(90+my_id)
+!          call mpp_land_sync()
 
 
             
@@ -809,6 +396,316 @@ module module_HYDRO_drv
 
       end subroutine HYDRO_exe
 
+      
+      
+!----------------------------------------------------      
+      subroutine driveGwBaseflow(did)
+       
+       implicit none
+       integer, intent(in) :: did
+       
+       integer :: i
+
+!------------------------------------------------------------------
+!DJG Begin GW/Baseflow Routines
+!-------------------------------------------------------------------
+
+  IF (nlst_rt(did)%GWBASESWCRT.GE.1) THEN     ! Switch to activate/specify GW/Baseflow
+
+!  IF (nlst_rt(did)%GWBASESWCRT.GE.1000) THEN     ! Switch to activate/specify GW/Baseflow
+
+    If (nlst_rt(did)%GWBASESWCRT.EQ.1.OR.nlst_rt(did)%GWBASESWCRT.EQ.2) Then   ! Call simple bucket baseflow scheme
+
+#ifdef HYDRO_D
+           write(6,*) "*****yw******start simp_gw_buck "
+#endif
+
+       call simp_gw_buck(RT_DOMAIN(did)%ix,RT_DOMAIN(did)%jx,RT_DOMAIN(did)%ixrt,&
+             RT_DOMAIN(did)%jxrt,RT_DOMAIN(did)%numbasns,RT_DOMAIN(did)%basns_area,&
+             RT_DOMAIN(did)%gwsubbasmsk, RT_DOMAIN(did)%INFXSRT, &
+             RT_DOMAIN(did)%SOLDRAIN, &
+             RT_DOMAIN(did)%z_gwsubbas,&
+             RT_DOMAIN(did)%qin_gwsubbas,RT_DOMAIN(did)%qout_gwsubbas,&
+             RT_DOMAIN(did)%qinflowbase,&
+             RT_DOMAIN(did)%gw_strm_msk,RT_DOMAIN(did)%gwbas_pix_ct, &
+             RT_DOMAIN(did)%dist,nlst_rt(did)%DT,&
+             RT_DOMAIN(did)%gw_buck_coeff,RT_DOMAIN(did)%gw_buck_exp, &
+             RT_DOMAIN(did)%z_max,&
+             nlst_rt(did)%GWBASESWCRT,nlst_rt(did)%OVRTSWCRT)
+
+
+#ifdef MPP_LAND
+      if(my_id .eq. IO_id) then
+#endif
+
+       open (unit=51,file='GW_inflow.txt',form='formatted',&
+             status='unknown',position='append')
+       open (unit=52,file='GW_outflow.txt',form='formatted',&
+             status='unknown',position='append')
+       open (unit=53,file='GW_zlev.txt',form='formatted',&
+             status='unknown',position='append')
+       do i=1,RT_DOMAIN(did)%numbasns
+          write (51,951) i,nlst_rt(did)%olddate,rt_domain(did)%qin_gwsubbas(i)
+951        FORMAT(I3,1X,A19,1X,F11.3)
+          write (52,951) i,nlst_rt(did)%olddate,rt_domain(did)%qout_gwsubbas(i)
+          write (53,951) i,nlst_rt(did)%olddate,rt_domain(did)%z_gwsubbas(i)
+       end do
+       close(51)
+       close(52)
+       close(53)
+#ifdef MPP_LAND
+     endif
+#endif
+
+#ifdef HYDRO_D 
+           write(6,*) "*****yw******end simp_gw_buck "
+#endif
+
+!!!For parameter setup runs output the percolation for each basin,
+!!!otherwise comment out this output...
+    else if (nlst_rt(did)%GWBASESWCRT .eq. 3) then
+
+#ifdef HYDRO_D
+           write(6,*) "*****bf******start 2d_gw_model "
+#endif
+
+           call gwstep(gw2d(did)%ix, gw2d(did)%jx, gw2d(did)%dx, &
+			gw2d(did)%ltype, gw2d(did)%elev, gw2d(did)%bot, &
+			gw2d(did)%hycond, gw2d(did)%poros, gw2d(did)%compres, &
+			gw2d(did)%ho, gw2d(did)%h, gw2d(did)%convgw, &
+			gw2d(did)%ebot, gw2d(did)%eocn, gw2d(did)%dt, &
+			gw2d(did)%istep)
+           
+           
+! bftodo head postprocessing block 
+! GW-SOIL-CHANNEL interaction section
+	  gw2d(did)%ho = gw2d(did)%h
+
+#ifdef HYDRO_D
+           write(6,*) "*****bf******end 2d_gw_model "
+#endif
+      
+    End if
+
+  END IF    !DJG (End if for RTE SWC activation)
+!------------------------------------------------------------------
+!DJG End GW/Baseflow Routines
+!-------------------------------------------------------------------
+       
+      
+      end subroutine driveGwBaseflow
+      
+      
+      
+      
+!-------------------------------------------      
+      subroutine driveChannelRouting(did)
+       
+       implicit none
+       integer, intent(in) :: did
+       
+!-------------------------------------------------------------------
+!-------------------------------------------------------------------
+!DJG,DNY  Begin Channel and Lake Routing Routines
+!-------------------------------------------------------------------
+  IF (nlst_rt(did)%CHANRTSWCRT.EQ.1 .or. nlst_rt(did)%CHANRTSWCRT.EQ.2) THEN
+ 
+    call drive_CHANNEL(RT_DOMAIN(did)%latval,RT_DOMAIN(did)%lonval, &
+       RT_DOMAIN(did)%timestep_flag,RT_DOMAIN(did)%IXRT,RT_DOMAIN(did)%JXRT, &
+       nlst_rt(did)%SUBRTSWCRT, RT_DOMAIN(did)%QSUBRT, &
+       RT_DOMAIN(did)%LAKE_INFLORT_TS, RT_DOMAIN(did)%QSTRMVOLRT_TS,&
+       RT_DOMAIN(did)%TO_NODE, RT_DOMAIN(did)%FROM_NODE, RT_DOMAIN(did)%TYPEL,&
+       RT_DOMAIN(did)%ORDER, RT_DOMAIN(did)%MAXORDER, RT_DOMAIN(did)%NLINKS,&
+       RT_DOMAIN(did)%CH_NETLNK, RT_DOMAIN(did)%CH_NETRT, &
+       RT_DOMAIN(did)%LAKE_MSKRT, nlst_rt(did)%DT, nlst_rt(did)%DTCT,nlst_rt(did)%DTRT,&
+       RT_DOMAIN(did)%MUSK, RT_DOMAIN(did)%MUSX,  RT_DOMAIN(did)%QLINK, &
+       RT_DOMAIN(did)%HLINK, RT_DOMAIN(did)%ELRT,RT_DOMAIN(did)%CHANLEN,&
+       RT_DOMAIN(did)%MannN,RT_DOMAIN(did)%So, RT_DOMAIN(did)%ChSSlp, &
+       RT_DOMAIN(did)%Bw,&
+       RT_DOMAIN(did)%RESHT, RT_DOMAIN(did)%HRZAREA, RT_DOMAIN(did)%LAKEMAXH,&
+       RT_DOMAIN(did)%WEIRC, RT_DOMAIN(did)%WEIRL, RT_DOMAIN(did)%ORIFICEC, &
+       RT_DOMAIN(did)%ORIFICEA, &
+       RT_DOMAIN(did)%ORIFICEE, RT_DOMAIN(did)%ZELEV, RT_DOMAIN(did)%CVOL, &
+       RT_DOMAIN(did)%NLAKES, RT_DOMAIN(did)%QLAKEI, RT_DOMAIN(did)%QLAKEO,&
+       RT_DOMAIN(did)%LAKENODE, RT_DOMAIN(did)%dist, &
+       RT_DOMAIN(did)%QINFLOWBASE, RT_DOMAIN(did)%CHANXI, &
+       RT_DOMAIN(did)%CHANYJ, nlst_rt(did)%channel_option, &
+       RT_DOMAIN(did)%RETDEP_CHAN &
+       , RT_DOMAIN(did)%node_area &
+#ifdef MPP_LAND
+       ,RT_DOMAIN(did)%lake_index,RT_DOMAIN(did)%link_location,&
+       RT_DOMAIN(did)%mpp_nlinks,RT_DOMAIN(did)%nlinks_index, &
+       RT_DOMAIN(did)%yw_mpp_nlinks  &
+#endif
+       )
+  endif
+
+#ifdef HYDRO_D
+           write(6,*) "*****yw******end drive_CHANNEL "
+#endif
+      
+      end subroutine driveChannelRouting
+ 
+ 
+ 
+!------------------------------------------------ 
+      subroutine aggregateDomain(did)
+       
+       implicit none
+       integer, intent(in) :: did
+
+       integer :: i, j, krt, ixxrt, jyyrt, &
+                  AGGFACYRT, AGGFACXRT
+#ifdef HYDRO_D
+ 	print *, "Beginning Aggregation..."
+#endif
+
+
+        do J=1,RT_DOMAIN(did)%JX
+          do I=1,RT_DOMAIN(did)%IX
+
+             RT_DOMAIN(did)%SFCHEADAGGRT = 0.
+!DJG Subgrid weighting edit...
+             RT_DOMAIN(did)%LSMVOL=0.
+             do KRT=1,nlst_rt(did)%NSOIL
+!                SMCAGGRT(KRT) = 0.
+               RT_DOMAIN(did)%SH2OAGGRT(KRT) = 0.
+             end do
+
+
+             do AGGFACYRT=nlst_rt(did)%AGGFACTRT-1,0,-1
+              do AGGFACXRT=nlst_rt(did)%AGGFACTRT-1,0,-1
+
+
+                IXXRT=I*nlst_rt(did)%AGGFACTRT-AGGFACXRT
+                JYYRT=J*nlst_rt(did)%AGGFACTRT-AGGFACYRT
+#ifdef MPP_LAND
+       if(left_id.ge.0) IXXRT=IXXRT+1
+       if(down_id.ge.0) JYYRT=JYYRT+1
+#else
+!yw ????
+!       IXXRT=IXXRT+1
+!       JYYRT=JYYRT+1
+#endif
+
+!State Variables
+                RT_DOMAIN(did)%SFCHEADAGGRT = RT_DOMAIN(did)%SFCHEADAGGRT &
+                                            + RT_DOMAIN(did)%SFCHEADSUBRT(IXXRT,JYYRT)
+!DJG Subgrid weighting edit...
+                RT_DOMAIN(did)%LSMVOL = RT_DOMAIN(did)%LSMVOL &
+                                      + RT_DOMAIN(did)%SFCHEADSUBRT(IXXRT,JYYRT) &
+                                      * RT_DOMAIN(did)%dist(IXXRT,JYYRT,9)
+
+                do KRT=1,nlst_rt(did)%NSOIL
+!DJG               SMCAGGRT(KRT)=SMCAGGRT(KRT)+SMCRT(IXXRT,JYYRT,KRT)
+                   RT_DOMAIN(did)%SH2OAGGRT(KRT) = RT_DOMAIN(did)%SH2OAGGRT(KRT) &
+                                                 + RT_DOMAIN(did)%SMCRT(IXXRT,JYYRT,KRT)
+                end do
+
+              end do
+             end do
+
+
+
+            RT_DOMAIN(did)%SFCHEADRT(I,J) = RT_DOMAIN(did)%SFCHEADAGGRT &
+                                          / (nlst_rt(did)%AGGFACTRT**2)
+
+            do KRT=1,nlst_rt(did)%NSOIL
+!DJG              SMC(I,J,KRT)=SMCAGGRT(KRT)/(AGGFACTRT**2)
+               RT_DOMAIN(did)%SH2OX(I,J,KRT) = RT_DOMAIN(did)%SH2OAGGRT(KRT) &
+                                             / (nlst_rt(did)%AGGFACTRT**2)
+            end do
+
+
+
+!DJG Calculate subgrid weighting array...
+
+              do AGGFACYRT=nlst_rt(did)%AGGFACTRT-1,0,-1
+                do AGGFACXRT=nlst_rt(did)%AGGFACTRT-1,0,-1
+                  IXXRT=I*nlst_rt(did)%AGGFACTRT-AGGFACXRT
+                  JYYRT=J*nlst_rt(did)%AGGFACTRT-AGGFACYRT
+#ifdef MPP_LAND
+       if(left_id.ge.0) IXXRT=IXXRT+1
+       if(down_id.ge.0) JYYRT=JYYRT+1
+#else
+!yw ???
+!       IXXRT=IXXRT+1
+!       JYYRT=JYYRT+1
+#endif
+                  if (RT_DOMAIN(did)%LSMVOL.gt.0.) then
+                    RT_DOMAIN(did)%INFXSWGT(IXXRT,JYYRT) &
+                                          = RT_DOMAIN(did)%SFCHEADSUBRT(IXXRT,JYYRT) &
+                                          * RT_DOMAIN(did)%dist(IXXRT,JYYRT,9) &
+					  / RT_DOMAIN(did)%LSMVOL
+                  else
+                    RT_DOMAIN(did)%INFXSWGT(IXXRT,JYYRT) &
+                                          = 1./FLOAT(nlst_rt(did)%AGGFACTRT**2)
+                  end if
+
+                  do KRT=1,nlst_rt(did)%NSOIL
+
+!!!yw added for debug
+                   if(RT_DOMAIN(did)%SMCRT(IXXRT,JYYRT,KRT) .lt. 0) then
+                      print*, "Error negative SMCRT", RT_DOMAIN(did)%SH2OWGT(IXXRT,JYYRT,KRT), RT_DOMAIN(did)%SMCRT(IXXRT,JYYRT,KRT),RT_DOMAIN(did)%SH2OX(I,J,KRT)
+                   endif
+                   if(RT_DOMAIN(did)%SH2OWGT(IXXRT,JYYRT,KRT) .lt. 0) then
+                      print *, "Error negative SH2OWGT", RT_DOMAIN(did)%SH2OWGT(IXXRT,JYYRT,KRT), RT_DOMAIN(did)%SMCRT(IXXRT,JYYRT,KRT),RT_DOMAIN(did)%SH2OX(I,J,KRT)
+                   endif
+
+!end 
+                    IF (RT_DOMAIN(did)%SMCRT(IXXRT,JYYRT,KRT) .GT. &
+                        RT_DOMAIN(did)%SMCMAXRT(IXXRT,JYYRT,KRT)) THEN
+#ifdef HYDRO_D
+                      print *, "SMCMAX exceeded upon aggregation...", &
+                           RT_DOMAIN(did)%SMCRT(IXXRT,JYYRT,KRT),  &
+                           RT_DOMAIN(did)%SMCMAXRT(IXXRT,JYYRT,KRT)
+                      call hydro_stop("aggregateDomain")
+#endif
+                    END IF
+                    IF(RT_DOMAIN(did)%SH2OX(I,J,KRT).LE.0.) THEN
+#ifdef HYDRO_D
+                      print *, "Erroneous value of SH2O...", &
+                                RT_DOMAIN(did)%SH2OX(I,J,KRT),I,J,KRT
+                      print *, "Error negative SH2OX", RT_DOMAIN(did)%SH2OWGT(IXXRT,JYYRT,KRT), RT_DOMAIN(did)%SMCRT(IXXRT,JYYRT,KRT),RT_DOMAIN(did)%SH2OX(I,J,KRT)
+                      call hydro_stop("aggregateDomain")
+#endif
+                    END IF
+                    RT_DOMAIN(did)%SH2OWGT(IXXRT,JYYRT,KRT) &
+                                 = RT_DOMAIN(did)%SMCRT(IXXRT,JYYRT,KRT) &
+                                 / RT_DOMAIN(did)%SH2OX(I,J,KRT)
+!?yw
+                    RT_DOMAIN(did)%SH2OWGT(IXXRT,JYYRT,KRT) = max(1.0E-30, RT_DOMAIN(did)%SH2OWGT(IXXRT,JYYRT,KRT))
+                  end do
+
+                end do
+              end do
+
+         end do
+        end do
+
+        
+#ifdef MPP_LAND
+        call MPP_LAND_COM_REAL(RT_DOMAIN(did)%INFXSWGT, &
+                               RT_DOMAIN(did)%IXRT,    &
+                               RT_DOMAIN(did)%JXRT, 99)
+	
+        do i = 1, nlst_rt(did)%NSOIL
+           call MPP_LAND_COM_REAL(RT_DOMAIN(did)%SH2OWGT(:,:,i), &
+                                  RT_DOMAIN(did)%IXRT, &
+				  RT_DOMAIN(did)%JXRT, 99)
+        end do
+#endif
+
+!DJG Update SMC with SICE (unchanged) and new value of SH2O from routing...
+	RT_DOMAIN(did)%SMC = RT_DOMAIN(did)%SH2OX + RT_DOMAIN(did)%SICE
+#ifdef HYDRO_D
+ 	print *, "Finished Aggregation..."
+#endif
+
+	
+      end subroutine aggregateDomain
+      
+      
 
       subroutine HYDRO_ini(ntime, did,ix0,jx0, vegtyp,soltyp)
         implicit none
@@ -962,6 +859,7 @@ module module_HYDRO_drv
        write(6,*) "finish LandRT_ini"
 #endif
 
+    
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
      IF (nlst_rt(did)%TERADJ_SOLAR.EQ.1 .and. nlst_rt(did)%CHANRTSWCRT.NE.2) THEN   ! Perform ter rain adjustment of incoming solar
@@ -987,13 +885,22 @@ module module_HYDRO_drv
      endif
      
 
+!    if (trim(nlst_rt(did)%restart_file) == "") then
+! output at the initial time
+!        call HYDRO_out(did)
+!        return
+!    endif
 
-!      if(rt_domain(did)%rst_flag .eq. -99 ) return
 ! restart the file
+
+        ! jummp the initial time output
+!        rt_domain(did)%out_counts = rt_domain(did)%out_counts + 1
+!        rt_domain(did)%his_out_counts = rt_domain(did)%his_out_counts + 1
+
        call HYDRO_rst_in(did)
 
-! output at the initial time
-       call HYDRO_out(did)
+
+!      call HYDRO_out(did)
 
 
       end subroutine HYDRO_ini
@@ -1088,7 +995,8 @@ module module_HYDRO_drv
        rt_domain(did)%lksat = 0.0
        do j = 1, RT_DOMAIN(did)%jx
              do i = 1, RT_DOMAIN(did)%ix
-                rt_domain(did)%lksat(i,j) = xdum1(soltyp(i,j) ) * 1000.0
+                !yw rt_domain(did)%lksat(i,j) = xdum1(soltyp(i,j) ) * 1000.0
+                rt_domain(did)%lksat(i,j) = xdum1(soltyp(i,j) ) 
                 IF(rt_domain(did)%VEGTYP(i,j) == 1 ) THEN   ! urban
                     rt_domain(did)%SMCMAX1(i,j) = 0.45
                     rt_domain(did)%SMCREF1(i,j) = 0.42
@@ -1110,10 +1018,15 @@ module module_HYDRO_drv
 end module module_HYDRO_drv
 
 ! stop the job due to the fatal error.
-      subroutine HYDRO_stop()
+      subroutine HYDRO_stop(msg)
+#ifdef MPP_LAND
+        use module_mpp_land
+#endif
+        character(len=*) :: msg
         integer :: ierr
 #ifdef HYDRO_D
-      write(6,*) "The job is stoped due to the fatal error."
+      write(6,*) "The job is stoped due to the fatal error. ", trim(msg)
+      flush(6)
 #endif
 #ifdef MPP_LAND
 #ifndef HYDRO_D
@@ -1121,6 +1034,11 @@ end module module_HYDRO_drv
       print*, "ERROR! Program stopped. Recompile with environment variable HYDRO_D set to 1 for enhanced debug information."
       print*, ""
 #endif
+
+!        call mpp_land_sync()
+!        write(my_id+90,*) msg
+!        flush(my_id+90)
+
          call mpp_land_abort()
          call MPI_finalize(ierr)
 #else
@@ -1129,6 +1047,7 @@ end module module_HYDRO_drv
 
      return
      end  subroutine HYDRO_stop  
+
 
 ! stop the job due to the fatal error.
       subroutine HYDRO_finish()
@@ -1140,6 +1059,7 @@ end module module_HYDRO_drv
         print*, "The model finished successfully......."
 #ifdef MPP_LAND
 !         call mpp_land_abort()
+         flush(6)
          call mpp_land_sync()
          call MPI_finalize(ierr)
          stop 
@@ -1149,4 +1069,3 @@ end module module_HYDRO_drv
 
      return
      end  subroutine HYDRO_finish
-

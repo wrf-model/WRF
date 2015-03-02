@@ -231,9 +231,7 @@ CONTAINS
                                                         TH2,T2,Q2
 
       REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme )              , &
-                INTENT(OUT)     ::                  ck,cka,cd,cda
-      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme )              , &
-                INTENT(INOUT)   ::                           ustm
+                INTENT(OUT)     ::              ck,cka,cd,cda,ustm
 !
       REAL,     DIMENSION( ims:ime, jms:jme )                    , &
                 INTENT(INOUT)               ::             REGIME, &
@@ -435,9 +433,7 @@ CONTAINS
                                                         TH2,T2,Q2
 
       REAL, OPTIONAL, DIMENSION( ims:ime )                       , &
-                INTENT(OUT)     ::                  ck,cka,cd,cda
-      REAL, OPTIONAL, DIMENSION( ims:ime )                       , &
-                INTENT(INOUT)   ::                           ustm
+                INTENT(OUT)     ::              ck,cka,cd,cda,ustm
 !--------------------------------------------
 !JOE-additinal output
       REAL,     DIMENSION( ims:ime ) ::    zratio,BRi,wstar,qstar, &

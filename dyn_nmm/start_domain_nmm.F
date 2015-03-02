@@ -2102,7 +2102,7 @@
      &                WTXY=grid%WTXY, LFMASSXY=grid%LFMASSXY, RTMASSXY=grid%RTMASSXY,    & ! Optional Noah-MP
      &                STMASSXY=grid%STMASSXY, WOODXY=grid%WOODXY,                        & ! Optional Noah-MP
      &                STBLCPXY=grid%STBLCPXY, FASTCPXY=grid%FASTCPXY,                    & ! Optional Noah-MP
-     &                XSAIXY=grid%XSAIXY,LAI=grid%LAI,                                   & ! Optional Noah-MP
+     &                XSAIXY=grid%XSAIXY,                                                & ! Optional Noah-MP
      &                T2MVXY=grid%T2MVXY, T2MBXY=grid%T2MBXY, CHSTARXY=grid%CHSTARXY,    & ! Optional Noah-MP
      &                smoiseq=grid%smoiseq, smcwtdxy=grid%smcwtdxy, rechxy=grid%rechxy,   &
      &                deeprechxy=grid%deeprechxy,                                         &
@@ -2233,7 +2233,7 @@
            IF( .not. ( (maxval(grid%f_ice(ips:ipe,:,jps:jpe)) &
                +maxval(grid%f_rain(ips:ipe,:,jps:jpe))) .gt. EPSQ) ) THEN
             ETAMP_Regional=.FALSE.    !-- Regional NAM or HRW (Ferrier) microphysics
-            if (model_config_rec%mp_physics(grid%id).EQ.ETAMP_HR .OR.          &
+            if (model_config_rec%mp_physics(grid%id).EQ.ETAMPOLD .OR.          &
      &          model_config_rec%mp_physics(grid%id).EQ.ETAMPNEW )             &
      &          ETAMP_Regional=.TRUE.
             CALL wrf_message(' computing grid%f_ice')

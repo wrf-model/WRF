@@ -43,11 +43,9 @@ subroutine da_transform_vptox_adj(grid, vp, be, ep)
    !--------------------------------------------------------------------------
 
   if ( (use_radarobs .and. use_radar_rf) .or. (use_rad .and. crtm_cloud) .or. &
-       (use_radarobs .and. use_radar_rhv) .or. (use_radarobs .and. use_radar_rqv) .or. cloud_cv_options .ge. 2 .or. &
        (grid%pseudo_var(1:1).eq.'q' .and. grid%pseudo_var(2:2).ne.' ') .or.  &
        (grid%pseudo_var(1:1).eq.'Q' .and. grid%pseudo_var(2:2).ne.' ') ) then
-
-   if ( cloud_cv_options == 1 .and. use_3dvar_phy ) then
+   if ( cloud_cv_options == 1 ) then
       ! Pseudo RH --> Total water mixing ratio:
       !$OMP PARALLEL DO &
       !$OMP PRIVATE ( ij )
@@ -61,9 +59,7 @@ subroutine da_transform_vptox_adj(grid, vp, be, ep)
          end do
       end do
       !$OMP END PARALLEL DO
-   end if
-
-   if ( cloud_cv_options .ge. 2) then 
+   else 
       ! Pseudo RH --> Water vapor mixing ratio:
       !$OMP PARALLEL DO &
       !$OMP PRIVATE ( ij )
@@ -78,7 +74,7 @@ subroutine da_transform_vptox_adj(grid, vp, be, ep)
       end do
       !$OMP END PARALLEL DO
 #ifdef CLOUD_CV
-      !qcloud
+!qcloud
       !$OMP PARALLEL DO &
       !$OMP PRIVATE ( ij )
       do ij = 1 , grid%num_tiles
@@ -91,7 +87,7 @@ subroutine da_transform_vptox_adj(grid, vp, be, ep)
          end do
       end do
       !$OMP END PARALLEL DO
-      !qrain
+!qrain
       !$OMP PARALLEL DO &
       !$OMP PRIVATE ( ij )
       do ij = 1 , grid%num_tiles
@@ -104,7 +100,7 @@ subroutine da_transform_vptox_adj(grid, vp, be, ep)
          end do
       end do
       !$OMP END PARALLEL DO
-      !qice
+!qice
       !$OMP PARALLEL DO &
       !$OMP PRIVATE ( ij )
       do ij = 1 , grid%num_tiles
@@ -117,7 +113,7 @@ subroutine da_transform_vptox_adj(grid, vp, be, ep)
          enddo
       enddo
       !$OMP END PARALLEL DO
-      !qsnow
+!qsnow
       !$OMP PARALLEL DO &
       !$OMP PRIVATE ( ij )
       do ij = 1 , grid%num_tiles
@@ -130,35 +126,6 @@ subroutine da_transform_vptox_adj(grid, vp, be, ep)
          enddo
       enddo
       !$OMP END PARALLEL DO
-
-      !qgraupel
-      !$OMP PARALLEL DO &
-      !$OMP PRIVATE ( ij )
-      do ij = 1 , grid%num_tiles
-         do k = kts, kte
-            do j = grid%j_start(ij), grid%j_end(ij)
-               do i = its, ite
-                  vp%v10(i,j,k)  = vp%v10(i,j,k) + grid%xa%qgr(i,j,k)
-               enddo
-            enddo
-         enddo
-      enddo
-      !$OMP END PARALLEL DO
-
-      !vertical velocity
-      !$OMP PARALLEL DO &
-      !$OMP PRIVATE ( ij )
-      do ij = 1 , grid%num_tiles
-         do k = kts, kte
-            do j = grid%j_start(ij), grid%j_end(ij)
-               do i = its, ite
-                  vp%v11(i,j,k)  = vp%v11(i,j,k) + grid%xa%w(i,j,k)
-               enddo
-            enddo
-         enddo
-      enddo
-      !$OMP END PARALLEL DO
-
 #endif
    end if
   else ! no rf or cloud radiance
@@ -210,12 +177,8 @@ subroutine da_transform_vptox_adj(grid, vp, be, ep)
 
 
    ! Transform psi and chi to u and v:
-   if ( cv_options == 5 .or. cv_options == 6 ) then
-      call da_psichi_to_uv_adj(grid%xa % u, grid%xa % v, grid%xb % coefx, grid%xb % coefy, vp % v1, vp % v2)
-   else if ( cv_options == 7) then
-      vp%v1 = grid%xa%u + vp%v1
-      vp%v2 = grid%xa%v + vp%v2
-   end if
+
+   call da_psichi_to_uv_adj(grid%xa % u, grid%xa % v, grid%xb % coefx, grid%xb % coefy, vp % v1, vp % v2)
 
    !--------------------------------------------------------------------------
    ! [2] Impose statistical balance constraints:
@@ -264,15 +227,13 @@ subroutine da_transform_vptox_adj(grid, vp, be, ep)
          end do
       end do
    end if
-   if (cv_options /= 7) then
-      do k= kts,kte
-         do j= grid%j_start(ij),grid%j_end(ij)
-            do i =  its, ite
-               vp%v1(i,j,k) = vp%v1(i,j,k) + be%reg_psi_ps(j,k)*grid%xa%psfc(i,j)
-            end do
+   do k= kts,kte
+      do j= grid%j_start(ij),grid%j_end(ij)
+         do i =  its, ite
+            vp%v1(i,j,k) = vp%v1(i,j,k) + be%reg_psi_ps(j,k)*grid%xa%psfc(i,j)
          end do
       end do
-   end if
+   end do
    do j= grid%j_start(ij),grid%j_end(ij)
       do i =  its, ite
          vp%v5(i,j,1) = vp%v5(i,j,1) + grid%xa%psfc(i,j) 
@@ -291,17 +252,15 @@ subroutine da_transform_vptox_adj(grid, vp, be, ep)
          end do
       end do
    end if
-   if (cv_options /= 7) then
-      do k1 = kts,kte
-         do k = kts,kte
-            do j = grid%j_start(ij),grid%j_end(ij)
-               do i =  its, ite
-                  vp%v1(i,j,k1) = vp%v1(i,j,k1) + be%reg_psi_t(j,k,k1)*grid%xa%t(i,j,k)
-               end do
+   do k1 = kts,kte
+      do k = kts,kte
+         do j = grid%j_start(ij),grid%j_end(ij)
+            do i =  its, ite
+               vp%v1(i,j,k1) = vp%v1(i,j,k1) + be%reg_psi_t(j,k,k1)*grid%xa%t(i,j,k)
             end do
          end do
       end do
-   end if
+   end do
    do k = kts,kte
       do j = grid%j_start(ij),grid%j_end(ij)
          do i =  its, ite
@@ -311,15 +270,13 @@ subroutine da_transform_vptox_adj(grid, vp, be, ep)
    end do
 
    ! Chi
-   if (cv_options /= 7) then
-      do k = kts,kte
-         do j = grid%j_start(ij),grid%j_end(ij)
-            do i =  its, ite
-               vp%v1(i,j,k) = vp%v1(i,j,k) + be%reg_psi_chi(j,k)*vp%v2(i,j,k)
-            end do
-          end do
-      end do
-   end if
+   do k = kts,kte
+      do j = grid%j_start(ij),grid%j_end(ij)
+         do i =  its, ite
+            vp%v1(i,j,k) = vp%v1(i,j,k) + be%reg_psi_chi(j,k)*vp%v2(i,j,k)
+         end do
+       end do
+   end do
    if ( cv_options == 6 ) then
       do k = kts,kte
          do j = grid%j_start(ij),grid%j_end(ij)

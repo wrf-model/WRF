@@ -4,9 +4,9 @@ MODULE module_sf_sfcdiags_ruclsm
 
 CONTAINS
 
-   SUBROUTINE SFCDIAGS_RUCLSM(HFX,QFX,TSK,QSFC,CHS,CHS2,CQS2,T2,TH2,Q2,       &
+   SUBROUTINE SFCDIAGS_RUCLSM(HFX,QFX,TSK,QSFC,CHS2,CQS2,T2,TH2,Q2,       &
                      T3D,QV3D,RHO3D,P3D,                           &
-                     CP,R_d,ROVCP,                                 &
+                     PSFC,CP,R_d,ROVCP,                            &
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte                     )
@@ -26,8 +26,7 @@ CONTAINS
                                                               TH2, &
                                                               T2
       REAL,     DIMENSION( ims:ime, jms:jme )                    , &
-                INTENT(IN)                  ::                     &
-                                                              CHS, &
+                INTENT(IN)                  ::               PSFC, &
                                                              CHS2, &
                                                              CQS2
       REAL,    DIMENSION( ims:ime, kms:kme, jms:jme )            , &
@@ -39,98 +38,62 @@ CONTAINS
       REAL,     INTENT(IN   )               ::       CP,R_d,ROVCP
 ! LOCAL VARS
       INTEGER ::  I,J
-      REAL    ::  RHO, x2m, qlev1, tempc, qsat, p2m, qsfcprox, qsfcmr, psfc
+      REAL    ::  RHO, x2m, qlev1, tempc, qsat, p2m
 
-      LOGICAL :: FLUX
-
-      flux = .true.
-!      flux = .false.
 
       DO J=jts,jte
         DO I=its,ite
-          RHO = RHO3D(i,kms,j)
-          PSFC = P3D(I,kms,J)
-! Assume that 2-m pressure also equal to PSFC
-!          P2m = PSFC(I,J)*EXP(-0.068283/t3d(i,1,j))
+!          RHO = PSFC(I,J)/(R_d * TSK(I,J))
+          RHO = RHO3D(i,1,j)
+          P2m = PSFC(I,J)*EXP(-0.068283/t3d(i,1,j))
 
-!!! 2-m Temperature - T2 
-           if(CHS2(I,J).lt.1.E-5) then
-! may be to small treshold?
-!         if(CHS2(I,J).lt.3.E-3 .AND. HFX(I,J).lt.0.) then
+          if(CHS2(I,J).lt.1.E-5) then
 !             TH2(I,J) = TSK(I,J)*(1.E5/PSFC(I,J))**ROVCP 
-             TH2(I,J) = t3d(i,kms,j)*(1.E5/PSFC)**ROVCP 
+             TH2(I,J) = t3d(i,1,j)*(1.E5/P2m)**ROVCP 
           else
-             TH2(I,J) = TSK(I,J)*(1.E5/PSFC)**ROVCP - HFX(I,J)/(RHO*CP*CHS2(I,J))
-!             T2(I,J) = TSK(I,J) - HFX(I,J)/(RHO*CP*CHS2(I,J))
+             TH2(I,J) = TSK(I,J)*(1.E5/PSFC(I,J))**ROVCP - HFX(I,J)/(RHO*CP*CHS2(I,J))
+!tgs             T2(I,J) = TSK(I,J) - HFX(I,J)/(RHO*CP*CHS2(I,J))
           endif
-!             TH2(I,J) = T2(I,J)*(1.E5/PSFC(I,J))**ROVCP
-             T2(I,J) = TH2(I,J)*(1.E-5*PSFC)**ROVCP
-! check that T2 values lie in the range between TSK and T at the 1st level
-             x2m     = MAX(MIN(tsk(i,j),t3d(i,kms,j)) , t2(i,j))
-             t2(i,j) = MIN(MAX(tsk(i,j),t3d(i,kms,j)) , x2m)
+!tgs             TH2(I,J) = T2(I,J)*(1.E5/PSFC(I,J))**ROVCP
+             T2(I,J) = TH2(I,J)*(1.E-5*P2m)**ROVCP
+!tgs check that T2 values lie in the range between TSK and T at the 1st level
+             x2m     = MAX(MIN(tsk(i,j),t3d(i,1,j)) , t2(i,j))
+             t2(i,j) = MIN(MAX(tsk(i,j),t3d(i,1,j)) , x2m)
 
-             TH2(I,J) = T2(I,J)*(1.E5/PSFC)**ROVCP
+             TH2(I,J) = T2(I,J)*(1.E5/P2m)**ROVCP
 
-!!! 2-m Water vapor mixing ratio - Q2
-             qlev1 = qv3d(i,kms,j)
-! saturation check
-             tempc=t3d(i,kms,j)-273.15
+!tgs check that Q2 values in the lie between QSFC and Q at the 1st level
+             qlev1 = qv3d(i,1,j)
+!tgs saturation check
+             tempc=t3d(i,1,j)-273.15
            if (tempc .le. 0.0) then
-! over ice
-             qsat = rsif(p3d(i,kms,j), t3d(i,kms,j))
+! qsat - mixing ratio
+             qsat = rsif(p3d(i,1,j), t3d(i,1,j))
            else
-             qsat = rslf(p3d(i,kms,j), t3d(i,kms,j))
+             qsat = rslf(p3d(i,1,j), t3d(i,1,j))
            endif
-!remove oversaturation at level 1
              qlev1 = min(qsat, qlev1)
 
-! Compute QSFC proxy from QFX, qlev1 and CHS
-! Use of QSFCprox is more accurate diagnostics for densely vegetated areas,
-! like cropland in summer
-             qsfcprox=qlev1+QFX(I,J)/(RHO*CHS(I,J))
-             qsfcmr = qsfc(i,j)/(1.-qsfc(i,j))
-
-!  if(i.eq.426.and.j.eq.250) then
-!! cropland point
-!    print *,'qsfc,qsfcmr,qsfcprox,qlev1',qsfc(i,j),qsfcmr,qsfcprox,qlev1
-!    print *,'(qsfcprox-qsfcmr)/qsfcmr =', (qsfcprox-qsfcmr)/qsfcmr
-!  endif
-
-    if ( flux ) then
           if(CQS2(I,J).lt.1.E-5) then
-! - under very stable conditions use first level for 2-m mixing ratio
+!tgs - here Q2 is 2-m water vapor mixing ratio
              Q2(I,J)=qlev1
           else
-!             x2m = QSFCmr - QFX(I,J)/(RHO*CQS2(I,J))
-             x2m = QSFCprox - QFX(I,J)/(RHO*CQS2(I,J))
-             q2(i,j) = x2m
+             x2m = QSFC(I,J) - QFX(I,J)/(RHO*CQS2(I,J))
+             Q2(I,J)=x2m/(1.-x2m)
           endif
-    else
-! QFX is not used
-            Q2(I,J) = qsfcmr - CHS(I,J)/CHS2(I,J)*(qsfcmr - qlev1)
-    endif
 
-! Check that Q2 values lie between QSFCmr and qlev1
-             x2m     = MAX(MIN(qsfcmr,qlev1) , q2(i,j))
-             q2(i,j) = MIN(MAX(qsfcmr,qlev1) , x2m)
-
-! saturation check
+             x2m     = MAX(MIN(qsfc(i,j)/(1.-qsfc(i,j)),qlev1) , q2(i,j))
+             q2(i,j) = MIN(MAX(qsfc(i,j)/(1.-qsfc(i,j)),qlev1) , x2m)
+!tgs saturation check
              tempc=t2(i,j)-273.15
            if (tempc .le. 0.0) then
-! ice and supercooled water
-             qsat = rsif(psfc, t2(i,j))
+! qsat - mixing ratio
+             qsat = rsif(psfc(i,j), t2(i,j))
            else
-! water
-             qsat = rslf(psfc, t2(i,j))
+             qsat = rslf(psfc(i,j), t2(i,j))
            endif
             
              q2(i,j) = min(qsat, q2(i,j))
-!  if(i.eq.426.and.j.eq.250) then
-!! cropland point
-!    print *,'FINAL - qsfc,qsfcmr,qsfcprox,q2(i,j),qlev1', &
-!                     qsfc(i,j),qsfcmr,qsfcprox,q2(i,j),qlev1
-!    print *,'(q2-qlev1)/qlev1 =', (q2(i,j)-qlev1)/qlev1
-!  endif
 
         ENDDO
       ENDDO

@@ -5,7 +5,7 @@
                                 ,idx4, idx5, idx6, idx7           &
                                 ,nx4 , nx5 , nx6                  &
                                 ,TypeSizeInBytes                  &
-                                ,FieldType, grid                  &
+                                ,FieldType,Comm,IOComm            &
                                 ,DomainDesc                       &
                                 ,bdy_mask                         &
                                 ,MemoryOrder                      &
@@ -18,7 +18,6 @@
     USE module_wrf_error
     USE module_state_description
     USE module_timing
-    USE module_domain
     IMPLICIT NONE
 
     INTEGER, INTENT(IN)       :: idx4, idx5, idx6, idx7
@@ -29,7 +28,8 @@
     CHARACTER*(*)         ,INTENT(IN   )         :: Var
     INTEGER               ,INTENT(INOUT)         :: Field(*)
     INTEGER               ,INTENT(IN   )         :: FieldType
-    TYPE(domain)                                 :: grid
+    INTEGER               ,INTENT(IN   )         :: Comm
+    INTEGER               ,INTENT(IN   )         :: IOComm
     INTEGER               ,INTENT(IN   )         :: DomainDesc
     CHARACTER*(*)         ,INTENT(IN   )         :: MemoryOrder
     LOGICAL, DIMENSION(4) ,INTENT(IN   )         :: bdy_mask
@@ -59,7 +59,7 @@
                                       +(idx5-1)*nx4*(me3-ms3+1)*(me2-ms2+1)*(me1-ms1+1)             &                              
                                       +(idx6-1)*nx5*nx4*(me3-ms3+1)*(me2-ms2+1)*(me1-ms1+1)         &                              
                                       +(idx7-1)*nx6*nx5*nx4*(me3-ms3+1)*(me2-ms2+1)*(me1-ms1+1)))   &                              
-                                ,FieldType, grid                  &
+                                ,FieldType,Comm,IOComm            &
                                 ,DomainDesc                       &
                                 ,bdy_mask                         &
                                 ,MemoryOrder                      &
@@ -71,7 +71,7 @@
     
   END SUBROUTINE wrf_ext_read_field_arr
 
-  SUBROUTINE wrf_ext_read_field( DataHandle,DateStr,Var,Field,FieldType,grid, &
+  SUBROUTINE wrf_ext_read_field( DataHandle,DateStr,Var,Field,FieldType,Comm,IOComm, &
                                  DomainDesc, bdy_mask, MemoryOrder,Stagger,             &
                                  debug_message ,                              &
                                  ds1, de1, ds2, de2, ds3, de3,                &
@@ -79,8 +79,6 @@
                                  ps1, pe1, ps2, pe2, ps3, pe3, Status          )
     USE module_io
     USE module_wrf_error
-    USE module_domain
-
     IMPLICIT NONE
 
     integer                                      :: DataHandle
@@ -88,7 +86,8 @@
     character*(*)                                :: Var
     integer                                      :: Field(*)
     integer                                      :: FieldType
-    TYPE(domain)                                 :: grid
+    integer                                      :: Comm
+    integer                                      :: IOComm
     integer                                      :: DomainDesc
     logical, dimension(4)                        :: bdy_mask
     character*(*)                                :: MemoryOrder
@@ -141,7 +140,8 @@
                       ,Var                        &  ! Data Name
                       ,Field                      &  ! Field
                       ,FieldType                  &  ! FieldType
-                      ,grid                       &  ! domain grid
+                      ,Comm                       &  ! Comm
+                      ,IOComm                     &  ! IOComm
                       ,DomainDesc                 &  ! DomainDesc
                       ,bdy_mask                   &  ! bdy_mask
                       ,MemoryOrder                &  ! MemoryOrder

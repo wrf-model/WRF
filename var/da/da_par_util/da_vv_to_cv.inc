@@ -8,7 +8,7 @@ subroutine da_vv_to_cv(vv, xp, mzs, cv_size, rcv)
 
    type (vp_type), intent(in)    :: vv          ! Grdipt/EOF rcv.
    type (xpose_type), intent(in) :: xp          ! Dimensions and xpose buffers.
-   integer,        intent(in)    :: mzs(:)      ! Background error structure levels.
+   integer,        intent(in)    :: mzs(:) ! Background error structure levels.
    integer,        intent(in)    :: cv_size     ! Length of CV array.
    real,           intent(inout) :: rcv(1:cv_size) ! Control variables v.
 
@@ -33,7 +33,8 @@ subroutine da_vv_to_cv(vv, xp, mzs, cv_size, rcv)
       js = xp % jts
       je = xp % jte
    else
-      call da_error(__FILE__,__LINE__,(/"This subroutine should not be called for use_rf = .false."/))
+      write(*,'(A," should not be called!"/)')__FILE__
+      call wrf_abort
    endif
    ix = ie-is+1
    jy = je-js+1
@@ -74,10 +75,10 @@ subroutine da_vv_to_cv(vv, xp, mzs, cv_size, rcv)
                ijk = ijk + 1
                rcv(ijk) = vv%v2(i,j,k)
             end do
-         end do
-      end do
+        end do
+     end do
 #else
-      rcv(cv_s:cv_e) = RESHAPE(vv % v2(is:ie,js:je,1:mz), (/ijm/))
+     rcv(cv_s:cv_e) = RESHAPE(vv % v2(is:ie,js:je,1:mz), (/ijm/))
 #endif
    end if
    ! Store v3
@@ -215,49 +216,11 @@ subroutine da_vv_to_cv(vv, xp, mzs, cv_size, rcv)
       rcv(cv_s:cv_e) = RESHAPE(vv % v9(is:ie,js:je,1:mz), (/ijm/))
 #endif
    end if
-   ! Store v10
-   mz = mzs(10)
-   if (mz > 0) then
-      ijm = ix * jy * mz
-      cv_s = cv_e + 1
-      cv_e = cv_s + ijm - 1
-#ifdef NORESHAPE
-      do k=1,mz
-         do j=js,je
-            do i=is,ie
-               ijk = ijk + 1
-               rcv(ijk) = vv%v10(i,j,k)
-            end do
-         end do
-      end do
-#else
-      rcv(cv_s:cv_e) = RESHAPE(vv % v10(is:ie,js:je,1:mz), (/ijm/))
-#endif
-   end if
-   ! Store v11
-   mz = mzs(11)
-   if (mz > 0) then
-      ijm = ix * jy * mz
-      cv_s = cv_e + 1
-      cv_e = cv_s + ijm - 1
-#ifdef NORESHAPE
-      do k=1,mz
-         do j=js,je
-            do i=is,ie
-               ijk = ijk + 1
-               rcv(ijk) = vv%v11(i,j,k)
-            end do
-         end do
-      end do
-#else
-      rcv(cv_s:cv_e) = RESHAPE(vv % v11(is:ie,js:je,1:mz), (/ijm/))
-#endif
-   end if
 #endif
 #ifdef CLOUD_CV
    ! Store alpha:
-   mz = mzs(12)
-   ne = mzs(13)
+   mz = mzs(10)
+   ne = mzs(11)
 #else
    ! Store alpha:
    mz = mzs(6)

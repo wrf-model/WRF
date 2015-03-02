@@ -17,7 +17,6 @@ CONTAINS
          v_phy,vvel,e_bio,p_phy,chem,rho_phy,dz8w,ne_area,emis_ant,        &
          emis_vol,tsk,erod,erod_dri,lai_vegmask,                           &
          g,emis_seas,emis_dust,tracer,                                     &
-         emis_seas2,                                                       &
          ebu, ebu_in,mean_fct_agtf,mean_fct_agef,                          &
          mean_fct_agsv,mean_fct_aggr,firesize_agtf,firesize_agef,          &
          firesize_agsv,firesize_aggr,                                      &
@@ -86,7 +85,6 @@ CONTAINS
   USE module_bioemi_megan2
   USE module_aerosols_sorgam, only: sorgam_addemiss
   USE module_cbmz_addemiss
-  USE module_cb05_addemiss
   USE gocart_dust
   USE gocart_dust_afwa
   USE gocart_seasalt
@@ -96,7 +94,6 @@ CONTAINS
   USE module_add_emis_cptec
   USE module_add_emiss_burn
   USE module_plumerise1
-  USE module_aerosols_sorgam_vbs, only: sorgam_vbs_addemiss
   USE module_aerosols_soa_vbs, only: soa_vbs_addemiss
   USE module_ghg_fluxes
   USE module_lightning_nox_driver
@@ -149,10 +146,7 @@ CONTAINS
          OPTIONAL,                                                         &
          INTENT(INOUT ) ::                                                 &
          emis_seas
-   REAL, DIMENSION( ims:ime, 1, jms:jme,num_emis_seas2),   &
-         OPTIONAL,                                                         &
-         INTENT(INOUT ) ::                                                 &
-         emis_seas2
+
    REAL, DIMENSION( ims:ime,  jms:jme ),                                   &
          OPTIONAL,                                                         &
          INTENT(IN ) ::                                                    &
@@ -907,6 +901,8 @@ CONTAINS
             ims,ime, jms,jme, kms,kme,                                  &
             its,ite, jts,jte, kts,kte                                   )
        call wrf_debug(15,'emissions_driver calling add_biogenics')
+       ! Do NOT call add_biogenics if using MEGAN v2.04 biogenic emissions
+       ! module
        call add_biogenics(id,dtstep,dz8w,config_flags, rho_phy,chem,    &
             e_bio,ne_area,                                              &
             ebio_iso,ebio_oli,ebio_api,ebio_lim,ebio_xyl,               &
@@ -939,6 +935,10 @@ CONTAINS
             ims,ime, jms,jme, kms,kme,                                   &
             its,ite, jts,jte, kts,kte                                    )
        call wrf_debug(15,'emissions_driver calling cbmz_addemiss_bio')
+       !**BSINGH- Should I delete this comment??
+       ! Do NOT call add_biogenics if using MEGAN v2.04 biogenic emissions
+       ! module
+
        !BSINGH: 03/13/2013
        !Commented out (or delete??) the following call to "cbmz_addemiss_bio"and
        !replaced with an "add_biogenic" call to make it consistent 
@@ -958,28 +958,6 @@ CONTAINS
             ids,ide, jds,jde, kds,kde,                                  &
             ims,ime, jms,jme, kms,kme,                                  &
             its,ite, jts,jte, kts,kte                                   )
-
-    CASE (CB05_SORG_AQ_KPP, CB05_SORG_VBS_AQ_KPP)
-       IF(config_flags%kemit .GT. kte-ksub) THEN
-         message = ' EMISSIONS_DRIVER: KEMIT > KME '
-         CALL WRF_ERROR_FATAL (message)
-       ENDIF
-       call wrf_debug(15,'emissions_driver calling cb05_addemiss_anthro')
-       call cb05_addemiss_anthro( id, dtstep, dz8w, config_flags,        &
-            rho_phy, chem,                                               &
-            emis_ant,ids,ide, jds,jde, kds,kde,                                   &
-            ims,ime, jms,jme, kms,kme,                                   &
-            its,ite, jts,jte, kts,kte                                    )
-       call wrf_debug(15,'emissions_driver calling cb05_addemiss_bio')
-       ! Do NOT call add_biogenics if using MEGAN v2.04 biogenic emissions
-       ! module
-       if ( config_flags%bio_emiss_opt .ne. megan2 ) then
-         call cb05_addemiss_bio( id, dtstep, dz8w, config_flags,         &
-              rho_phy, chem, e_bio, ne_area, emis_ant(ims,kms,jms,p_e_iso),&
-              ids,ide, jds,jde, kds,kde,                                 &
-              ims,ime, jms,jme, kms,kme,                                 &
-              its,ite, jts,jte, kts,kte                                  )
-       endif
 
     CASE (CHEM_TRACER)
        do j=jts,jte  
@@ -1519,8 +1497,7 @@ CONTAINS
     aer_addemiss_select: SELECT CASE(config_flags%chem_opt)
 
     CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_AQCHEM,RADM2SORG_KPP, &
-          RACMSORG_AQ,RACMSORG_AQCHEM_KPP,RACM_ESRLSORG_AQCHEM_KPP,RACMSORG_KPP,RACM_ESRLSORG_KPP,CBMZSORG,CBMZSORG_AQ, &
-          CB05_SORG_AQ_KPP)
+          RACMSORG_AQ,RACMSORG_AQCHEM_KPP,RACM_ESRLSORG_AQCHEM_KPP,RACMSORG_KPP,RACM_ESRLSORG_KPP,CBMZSORG,CBMZSORG_AQ)
        call wrf_debug(15,'emissions_driver calling sorgam_addemiss')
        call sorgam_addemiss( id, dtstep, u10, v10, alt, dz8w, xland, chem,  &
             ebu,                                                        &
@@ -1529,28 +1506,13 @@ CONTAINS
             seasalt_emiss_active,config_flags%kemit,                    &
             config_flags%biomass_burn_opt,                              &
             config_flags%num_soil_layers,config_flags%emiss_opt,        &
+!jdf
             config_flags%dust_opt,                                      &
             ktau,p8w,u_phy,v_phy,rho_phy,g,dx,erod,                     &
+!jdf
             ids,ide, jds,jde, kds,kde,                                  &
             ims,ime, jms,jme, kms,kme,                                  &
             its,ite, jts,jte, kts,kte                                   )
-
-    CASE (CB05_SORG_VBS_AQ_KPP)
-       call wrf_debug(15,'emissions_driver calling sorgam_vbs_addemiss')
-       call sorgam_vbs_addemiss( id, dtstep, u10, v10, alt, dz8w, xland, chem,  &
-            ebu,                                                        &
-            slai,ust,smois,ivgtyp,isltyp,                               &
-            emis_ant,dust_emiss_active,                                 &
-            seasalt_emiss_active,config_flags%kemit,                    &
-            config_flags%biomass_burn_opt,                              &
-            config_flags%num_soil_layers,config_flags%emiss_opt,        &
-            config_flags%dust_opt,                                      &
-            ktau,p8w,u_phy,v_phy,rho_phy,g,dx,erod,                     &
-            emis_seas2,                                                 &
-            ids,ide, jds,jde, kds,kde,                                  &
-            ims,ime, jms,jme, kms,kme,                                  &
-            its,ite, jts,jte, kts,kte                                   )
-
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     CASE (RACM_SOA_VBS_KPP)
        call wrf_debug(15,'emissions_driver calling soa_vbs_addemiss')
@@ -1575,13 +1537,15 @@ CONTAINS
           CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ,SAPRC99_MOSAIC_4BIN_VBS2_KPP,&
           CBMZ_MOSAIC_4BIN_VBS2_KPP,&
           MOZART_MOSAIC_4BIN_KPP, MOZART_MOSAIC_4BIN_AQ_KPP, &
-          CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP,SAPRC99_MOSAIC_8BIN_VBS2_AQ_KPP   )
+          CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP   )
        call wrf_debug(15,'emissions_driver calling mosaic_addemiss')
        call mosaic_addemiss( id, dtstep, u10, v10, alt, dz8w, xland,     &
             config_flags, chem, slai, ust, smois, ivgtyp, isltyp,        &
+!jdf
             emis_ant,ebu,config_flags%biomass_burn_opt,                  &
             config_flags%dust_opt,                                       &
             ktau,p8w,u_phy,v_phy,rho_phy,g,dx,erod,                      &
+!jdf
             dust_emiss_active, seasalt_emiss_active,                     &
             dust_flux, seas_flux,                                        &
             ids,ide, jds,jde, kds,kde,                                   &

@@ -109,10 +109,9 @@ subroutine da_read_obs_radar (iv, filename, grid)
 
       read (unit=char_ned (8:19),fmt='(A12)', iostat = iost) platform % stn % name
 
-!      if (print_detail_radar) write (unit=stdout,fmt='(A,A5,A,A12)')  &
-       write (unit=stdout,fmt='(A,A5,A,A12)')  &
-                           ' Reading ',platform % stn % platform, &
-                           ' data at station:', platform % stn % name
+      if (print_detail_radar) write (unit=stdout,fmt='(A,A5,A,A12)')  &
+                           ' Expect: ',platform % stn % platform, &
+                           'data at station:', platform % stn % name
 
       read (unit=char_ned(20:27),fmt='(F8.3)', iostat = iost) platform % stn % lon
 
@@ -121,7 +120,7 @@ subroutine da_read_obs_radar (iv, filename, grid)
       read (unit=char_ned (40:47),fmt='(F8.1)', iostat = iost) platform % stn % elv
 
       if (print_detail_radar) write (unit=stdout,fmt='(A,2(F8.3,2X),F8.1)')  &
-         'The station longitude, latitude, and altitude are: ', &
+         'The station longitude, latutude, and altitude are: ', &
          platform % stn % lon, &
          platform % stn % lat, platform % stn % elv
 
@@ -212,7 +211,6 @@ subroutine da_read_obs_radar (iv, filename, grid)
          read (platform%info%date_char,'(i4,4(1x,i2))') &
                iyear, imonth, iday, ihour, imin
          call da_get_julian_time (iyear,imonth,iday,ihour,imin,obs_time)
-         ! If you skip this part, you have to skip in da_scan_obs_radar.inc too!
          if ( obs_time < time_slots(0) .or. &
               obs_time >= time_slots(num_fgat_time) ) then
             if (print_detail_radar) then
@@ -229,7 +227,7 @@ subroutine da_read_obs_radar (iv, filename, grid)
          if( outside_all ) then
             if (print_detail_radar) then
                write(unit=stdout, fmt='(a)') '*** Report is outside of domain:'
-               write(unit=stdout, fmt='(2x,a,2(2x,f7.3),2x,a)') &
+               write(unit=stdout, fmt=fmt_info) &
                      platform%info%platform,    &
                      platform%info%lat,   &
                      platform%info%lon,   &
@@ -274,13 +272,14 @@ subroutine da_read_obs_radar (iv, filename, grid)
          do ndup = 1, n_dup
             select case (fm)
             case (128)
-            if (.not.use_radarobs .or. ntotal == max_radar_input) cycle reports
+             if (.not.use_radarobs .or. ntotal == max_radar_input) cycle reports
 
             if( .not. thin_conv_ascii) then
-               if (ndup==1 ) ntotal = ntotal + 1
-               if (outside) cycle reports
-               nlocal = nlocal + 1
-               ilocal = ilocal + 1
+             if (ndup==1 ) ntotal = ntotal + 1
+             if (outside) cycle reports
+                   nlocal = nlocal + 1
+                   ilocal = ilocal + 1
+
                iv % radar (ilocal) % stn_loc % lon = platform % stn % lon
                iv % radar (ilocal) % stn_loc % lat = platform % stn % lat
                iv % radar (ilocal) % stn_loc % elv = platform % stn % elv
@@ -306,186 +305,89 @@ subroutine da_read_obs_radar (iv, filename, grid)
                iv%info(radar)%dym(:,ilocal)         = platform%loc%dym
                iv%info(radar)%proc_domain(:,ilocal) = platform%loc%proc_domain
                iv%info(radar)%obs_global_index(ilocal) = ntotal
-               if( nlocal == ilocal) then
-                  allocate (iv % radar (ilocal) % model_p  (1:iv%info(radar)%max_lev))
-                  allocate (iv % radar (ilocal) % model_rho(1:iv%info(radar)%max_lev))
-                  allocate (iv % radar (ilocal) % model_qrn(1:iv%info(radar)%max_lev))
-                  allocate (iv % radar (ilocal) % model_qcl(1:iv%info(radar)%max_lev))
-                  allocate (iv % radar (ilocal) % model_qci(1:iv%info(radar)%max_lev))
-                  allocate (iv % radar (ilocal) % model_qsn(1:iv%info(radar)%max_lev))
-                  allocate (iv % radar (ilocal) % model_qgr(1:iv%info(radar)%max_lev))
-                  allocate (iv % radar (ilocal) % height   (1:iv%info(radar)%max_lev))
-                  allocate (iv % radar (ilocal) % height_qc(1:iv%info(radar)%max_lev))
-                  allocate (iv % radar (ilocal) % rv       (1:iv%info(radar)%max_lev))
-                  allocate (iv % radar (ilocal) % rf       (1:iv%info(radar)%max_lev))
-                  allocate (iv % radar (ilocal) % rrn      (1:iv%info(radar)%max_lev))
-                  allocate (iv % radar (ilocal) % rcl      (1:iv%info(radar)%max_lev))
-                  allocate (iv % radar (ilocal) % rci      (1:iv%info(radar)%max_lev))
-                  allocate (iv % radar (ilocal) % rsn      (1:iv%info(radar)%max_lev))
-                  allocate (iv % radar (ilocal) % rgr      (1:iv%info(radar)%max_lev))
-                  allocate (iv % radar (ilocal) % rqv      (1:iv%info(radar)%max_lev))
 
-                  allocate (iv % radar (ilocal) % rrno     (1:iv%info(radar)%max_lev))
-                  allocate (iv % radar (ilocal) % rclo     (1:iv%info(radar)%max_lev))
-                  allocate (iv % radar (ilocal) % rcio     (1:iv%info(radar)%max_lev))
-                  allocate (iv % radar (ilocal) % rsno     (1:iv%info(radar)%max_lev))
-                  allocate (iv % radar (ilocal) % rgro     (1:iv%info(radar)%max_lev))
-                  allocate (iv % radar (ilocal) % rqvo     (1:iv%info(radar)%max_lev))
-               end if
+              if( nlocal == ilocal) then
+               allocate (iv % radar (ilocal) % model_p  (1:iv%info(radar)%max_lev))
+               allocate (iv % radar (ilocal) % model_rho(1:iv%info(radar)%max_lev))
+               allocate (iv % radar (ilocal) % model_qrn(1:iv%info(radar)%max_lev))
+               allocate (iv % radar (ilocal) % height   (1:iv%info(radar)%max_lev))
+               allocate (iv % radar (ilocal) % height_qc(1:iv%info(radar)%max_lev))
+               allocate (iv % radar (ilocal) % rv       (1:iv%info(radar)%max_lev))
+               allocate (iv % radar (ilocal) % rf       (1:iv%info(radar)%max_lev))
+               allocate (iv % radar (ilocal) % rr       (1:iv%info(radar)%max_lev))
+               allocate (iv % radar (ilocal) % rro      (1:iv%info(radar)%max_lev))
+              end if
                do i = 1, nlevels
                   iv % radar (ilocal) % height(i)    = platform % each(i) % height
                   iv % radar (ilocal) % height_qc(i) = platform % each(i) % height_qc
                   iv % radar (ilocal) % rv(i)        = platform % each(i) % rv
                   iv % radar (ilocal) % rf(i)        = platform % each(i) % rf
-
-                  iv % radar (ilocal) % rrn(i) % inv   = missing_r
-                  iv % radar (ilocal) % rrn(i) % qc    = missing_data
-                  iv % radar (ilocal) % rrn(i) % error = missing_r
-                  iv % radar (ilocal) % rrno(i)        = missing_r
-
-                  iv % radar (ilocal) % rcl(i) % inv   = missing_r
-                  iv % radar (ilocal) % rcl(i) % qc    = missing_data
-                  iv % radar (ilocal) % rcl(i) % error = missing_r
-                  iv % radar (ilocal) % rclo(i)        = missing_r
-
-                  iv % radar (ilocal) % rci(i) % inv   = missing_r
-                  iv % radar (ilocal) % rci(i) % qc    = missing_data
-                  iv % radar (ilocal) % rci(i) % error = missing_r
-                  iv % radar (ilocal) % rcio(i)        = missing_r
-
-                  iv % radar (ilocal) % rsn(i) % inv   = missing_r
-                  iv % radar (ilocal) % rsn(i) % qc    = missing_data
-                  iv % radar (ilocal) % rsn(i) % error = missing_r
-                  iv % radar (ilocal) % rsno(i)        = missing_r
-
-                  iv % radar (ilocal) % rgr(i) % inv   = missing_r
-                  iv % radar (ilocal) % rgr(i) % qc    = missing_data
-                  iv % radar (ilocal) % rgr(i) % error = missing_r
-                  iv % radar (ilocal) % rgro(i)        = missing_r
-
-                  iv % radar (ilocal) % rqv(i) % inv   = missing_r
-                  iv % radar (ilocal) % rqv(i) % qc    = missing_data
-                  iv % radar (ilocal) % rqv(i) % error = missing_r
-                  iv % radar (ilocal) % rqvo(i)        = missing_r
                end do
 
             else ! if thin_conv_ascii==true
-               thin_3d=.true.
-               i1   = platform%loc%i
-               j1   = platform%loc%j
-               dx   = platform%loc%dx
-               dy   = platform%loc%dy
-               dxm  = platform%loc%dxm
-               dym  = platform%loc%dym
+              thin_3d=.true.
+              i1   = platform%loc%i
+              j1   = platform%loc%j
+              dx   = platform%loc%dx
+              dy   = platform%loc%dy
+              dxm  = platform%loc%dxm
+              dym  = platform%loc%dym
 
-               do k=kms,kme
+                 do k=kms,kme
                   v_h(k) = dym*(dxm*grid%xb%h(i1,j1,k)+dx*grid%xb%h(i1+1,j1,k)) + &
-                         dy*(dxm*grid%xb%h(i1,j1+1,k)+dx*grid%xb%h(i1+1,j1+1,k))
+                            dy*(dxm*grid%xb%h(i1,j1+1,k)+dx*grid%xb%h(i1+1,j1+1,k))
+                 end do
+              do k= 1, nlevels
+             if (ndup==1 ) ntotal = ntotal + 1
+             if (outside) cycle 
+               zk = missing_r
+                 call da_to_zk(platform%each(k)%height , v_h, v_interp_h, zk)
+               if ( zk == missing_r ) cycle
+               crit = tdiff
+               call map2grids_conv(radar,dlat_earth,dlon_earth,crit,nlocal,itx,1,itt,ilocal,iuse,zk,thin_3d)
+               if ( .not. iuse ) cycle
+               iv%info(radar)%levels(ilocal)    = 1
+               iv%info(radar)%name(ilocal)      = platform%info%name
+               iv%info(radar)%platform(ilocal)  = platform%info%platform
+               iv%info(radar)%id(ilocal)        = platform%info%id
+               iv%info(radar)%date_char(ilocal) = platform%info%date_char
+               iv%info(radar)%lat(:,ilocal)     = platform%info%lat
+               iv%info(radar)%lon(:,ilocal)     = platform%info%lon
+               iv%info(radar)%elv(ilocal)       = platform%info%elv
+               iv%info(radar)%pstar(ilocal)     = platform%info%pstar
+
+               iv%info(radar)%slp(ilocal)           = platform%loc%slp
+               iv%info(radar)%pw(ilocal)            = platform%loc%pw
+               iv%info(radar)%x(:,ilocal)           = platform%loc%x
+               iv%info(radar)%y(:,ilocal)           = platform%loc%y
+               iv%info(radar)%i(:,ilocal)           = platform%loc%i
+               iv%info(radar)%j(:,ilocal)           = platform%loc%j
+               iv%info(radar)%dx(:,ilocal)          = platform%loc%dx
+               iv%info(radar)%dxm(:,ilocal)         = platform%loc%dxm
+               iv%info(radar)%dy(:,ilocal)          = platform%loc%dy
+               iv%info(radar)%dym(:,ilocal)         = platform%loc%dym
+               iv%info(radar)%proc_domain(:,ilocal) = platform%loc%proc_domain
+               iv%info(radar)%obs_global_index(ilocal) = ntotal 
+               if( nlocal == ilocal) then
+                allocate (iv % radar (ilocal) % model_p  (1:iv%info(radar)%max_lev))
+                allocate (iv % radar (ilocal) % model_rho(1:iv%info(radar)%max_lev))
+                allocate (iv % radar (ilocal) % model_qrn(1:iv%info(radar)%max_lev))
+                allocate (iv % radar (ilocal) % height   (1:iv%info(radar)%max_lev))
+                allocate (iv % radar (ilocal) % height_qc(1:iv%info(radar)%max_lev))
+                allocate (iv % radar (ilocal) % rv       (1:iv%info(radar)%max_lev))
+                allocate (iv % radar (ilocal) % rf       (1:iv%info(radar)%max_lev))
+                allocate (iv % radar (ilocal) % rr       (1:iv%info(radar)%max_lev))
+                allocate (iv % radar (ilocal) % rro      (1:iv%info(radar)%max_lev))
+               end if
+
+               do i = 1, 1
+                 iv % radar (ilocal) % height(i)    = platform % each(i) % height
+                 iv % radar (ilocal) % height_qc(i) = platform % each(i) % height_qc
+                 iv % radar (ilocal) % rv(i)        = platform % each(i) % rv
+                 iv % radar (ilocal) % rf(i)        = platform % each(i) % rf
                end do
-               do k= 1, nlevels
-                  if (ndup==1 ) ntotal = ntotal + 1
-                  if (outside) cycle 
-                  zk = missing_r
-                  call da_to_zk(platform%each(k)%height , v_h, v_interp_h, zk)
-                  if ( zk == missing_r ) cycle
-                  crit = tdiff
-                  call map2grids_conv(radar,dlat_earth,dlon_earth,crit,nlocal,itx,1,itt,ilocal,iuse,zk,thin_3d)
-                  if ( .not. iuse ) cycle
-                  iv%info(radar)%levels(ilocal)    = 1
-                  iv%info(radar)%name(ilocal)      = platform%info%name
-                  iv%info(radar)%platform(ilocal)  = platform%info%platform
-                  iv%info(radar)%id(ilocal)        = platform%info%id
-                  iv%info(radar)%date_char(ilocal) = platform%info%date_char
-                  iv%info(radar)%lat(:,ilocal)     = platform%info%lat
-                  iv%info(radar)%lon(:,ilocal)     = platform%info%lon
-                  iv%info(radar)%elv(ilocal)       = platform%info%elv
-                  iv%info(radar)%pstar(ilocal)     = platform%info%pstar
-
-                  iv%info(radar)%slp(ilocal)           = platform%loc%slp
-                  iv%info(radar)%pw(ilocal)            = platform%loc%pw
-                  iv%info(radar)%x(:,ilocal)           = platform%loc%x
-                  iv%info(radar)%y(:,ilocal)           = platform%loc%y
-                  iv%info(radar)%i(:,ilocal)           = platform%loc%i
-                  iv%info(radar)%j(:,ilocal)           = platform%loc%j
-                  iv%info(radar)%dx(:,ilocal)          = platform%loc%dx
-                  iv%info(radar)%dxm(:,ilocal)         = platform%loc%dxm
-                  iv%info(radar)%dy(:,ilocal)          = platform%loc%dy
-                  iv%info(radar)%dym(:,ilocal)         = platform%loc%dym
-                  iv%info(radar)%proc_domain(:,ilocal) = platform%loc%proc_domain
-                  iv%info(radar)%obs_global_index(ilocal) = ntotal 
-                  if( nlocal == ilocal) then
-                     allocate (iv % radar (ilocal) % model_p  (1:iv%info(radar)%max_lev))
-                     allocate (iv % radar (ilocal) % model_rho(1:iv%info(radar)%max_lev))
-                     allocate (iv % radar (ilocal) % model_qrn(1:iv%info(radar)%max_lev))
-                     allocate (iv % radar (ilocal) % height   (1:iv%info(radar)%max_lev))
-                     allocate (iv % radar (ilocal) % height_qc(1:iv%info(radar)%max_lev))
-                     allocate (iv % radar (ilocal) % rv       (1:iv%info(radar)%max_lev))
-                     allocate (iv % radar (ilocal) % rf       (1:iv%info(radar)%max_lev))
-
-                     allocate (iv % radar (ilocal) % model_p  (1:iv%info(radar)%max_lev))
-                     allocate (iv % radar (ilocal) % model_rho(1:iv%info(radar)%max_lev))
-                     allocate (iv % radar (ilocal) % model_qrn(1:iv%info(radar)%max_lev))
-                     allocate (iv % radar (ilocal) % model_qcl(1:iv%info(radar)%max_lev))
-                     allocate (iv % radar (ilocal) % model_qci(1:iv%info(radar)%max_lev))
-                     allocate (iv % radar (ilocal) % model_qsn(1:iv%info(radar)%max_lev))
-                     allocate (iv % radar (ilocal) % model_qgr(1:iv%info(radar)%max_lev))
-
-                     allocate (iv % radar (ilocal) % height   (1:iv%info(radar)%max_lev))
-                     allocate (iv % radar (ilocal) % height_qc(1:iv%info(radar)%max_lev))
-                     allocate (iv % radar (ilocal) % rv       (1:iv%info(radar)%max_lev))
-                     allocate (iv % radar (ilocal) % rf       (1:iv%info(radar)%max_lev))
-                     allocate (iv % radar (ilocal) % rrn      (1:iv%info(radar)%max_lev))
-                     allocate (iv % radar (ilocal) % rcl      (1:iv%info(radar)%max_lev))
-                     allocate (iv % radar (ilocal) % rci      (1:iv%info(radar)%max_lev))
-                     allocate (iv % radar (ilocal) % rsn      (1:iv%info(radar)%max_lev))
-                     allocate (iv % radar (ilocal) % rgr      (1:iv%info(radar)%max_lev))
-                     allocate (iv % radar (ilocal) % rqv      (1:iv%info(radar)%max_lev))
-
-                     allocate (iv % radar (ilocal) % rrno     (1:iv%info(radar)%max_lev))
-                     allocate (iv % radar (ilocal) % rclo     (1:iv%info(radar)%max_lev))
-                     allocate (iv % radar (ilocal) % rcio     (1:iv%info(radar)%max_lev))
-                     allocate (iv % radar (ilocal) % rsno     (1:iv%info(radar)%max_lev))
-                     allocate (iv % radar (ilocal) % rgro     (1:iv%info(radar)%max_lev))
-                     allocate (iv % radar (ilocal) % rqvo     (1:iv%info(radar)%max_lev))
-                  end if
-
-                  do i = 1, 1
-                     iv % radar (ilocal) % height(i)    = platform % each(i) % height
-                     iv % radar (ilocal) % height_qc(i) = platform % each(i) % height_qc
-                     iv % radar (ilocal) % rv(i)        = platform % each(i) % rv
-                     iv % radar (ilocal) % rf(i)        = platform % each(i) % rf
-                     iv % radar (ilocal) % rrn(i) % inv  = missing_r
-                     iv % radar (ilocal) % rrn(i) % qc   = missing_data
-                     iv % radar (ilocal) % rrn(i) % error= missing_r
-                     iv % radar (ilocal) % rrno(i)       = missing_r
-
-                     iv % radar (ilocal) % rcl(i) % inv  = missing_r
-                     iv % radar (ilocal) % rcl(i) % qc   = missing_data
-                     iv % radar (ilocal) % rcl(i) % error= missing_r
-                     iv % radar (ilocal) % rclo(i)       = missing_r
-
-                     iv % radar (ilocal) % rci(i) % inv  = missing_r
-                     iv % radar (ilocal) % rci(i) % qc   = missing_data
-                     iv % radar (ilocal) % rci(i) % error= missing_r
-                     iv % radar (ilocal) % rcio(i)       = missing_r
-
-                     iv % radar (ilocal) % rsn(i) % inv  = missing_r
-                     iv % radar (ilocal) % rsn(i) % qc   = missing_data
-                     iv % radar (ilocal) % rsn(i) % error= missing_r
-                     iv % radar (ilocal) % rsno(i)       = missing_r
-
-                     iv % radar (ilocal) % rgr(i) % inv  = missing_r
-                     iv % radar (ilocal) % rgr(i) % qc   = missing_data
-                     iv % radar (ilocal) % rgr(i) % error= missing_r
-                     iv % radar (ilocal) % rgro(i)       = missing_r
-
-                     iv % radar (ilocal) % rqv(i) % inv  = missing_r
-                     iv % radar (ilocal) % rqv(i) % qc   = missing_data
-                     iv % radar (ilocal) % rqv(i) % error= missing_r
-                     iv % radar (ilocal) % rqvo(i)       = missing_r
-                  end do
      
-               end do ! loop over k levels
+              end do ! loop over k levels
 
             end if ! if over thin_conv_ascii
 

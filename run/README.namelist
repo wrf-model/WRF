@@ -82,9 +82,6 @@ information on NMM specific settings (http://www.dtcenter.org/wrf-nmm/users)
  adjust_output_times                 = .false., ; adjust output times to the nearest hour
  override_restart_timers             = .false., ; whether to change the alarms from what is previously set
  write_hist_at_0h_rst                = .false., ; whether to output history file at the start of restart run
- output_ready_flag		     = .true.,  ; asks the model to write-out an empty file with the name 'wrfoutReady_d<domain>_<date>.  
-                                                  Useful in production runs so that post-processing code can check on the 
-                                                  completeness of this file
 
 To choose between SI and WPS input to real for EM core:
  auxinput1_inname                    = "met_em.d<domain>.<date>"             ; Input to real from WPS (default since 3.0)
@@ -446,8 +443,6 @@ Namelist variables for controlling the adaptive time step option:
                                      = 16, WDM 6-class scheme
                                      = 17, NSSL 2-moment 4-ice scheme (steady background CCN)
                                      = 18, NSSL 2-moment 4-ice scheme with predicted CCN (better for idealized than real cases)
-                                       ; to set a global CCN value, use
-                                       nssl_cccn  = 0.7e9   ; CCN for NSSL scheme (18). Also sets same value to ccn_conc for mp_physics=18
                                      = 19, NSSL 1-moment (7 class: qv,qc,qr,qi,qs,qg,qh; predicts graupel density)
                                      = 21, NSSL 1-moment, (6-class), very similar to Gilmore et al. 2004
                                            Can set intercepts and particle densities in physics namelist, e.g., nssl_cnor
@@ -493,9 +488,7 @@ Namelist variables for controlling the adaptive time step option:
                                                  (only used in very extreme situation)
                                                  default value = 0
                                                  gsfcgce_hail is ignored if gsfcgce_2ice is set to 1 or 2.
- hail_opt                            = 0       ; hail switch for WSM6, WDM6 and Morrison schemes: 0 - off, 1 - on (new in 3.6.1)
- progn                               = 0       ; switch to use mix-activate scheme (Only for Morrison, WDM6, WDM5, 
-                                                 and NSSL_2MOMCCN/NSSL_2MOM
+ hail_opt                            = 0       ; hail switch for WDM6 and Morrison schemes: 0 - off, 1 - on (new in 3.6.1)
  ccn_conc                            = 1.E8    ; CCN concentration, used by WDM schemes (new in 3.6.1)
 
  no_mp_heating                       = 0       ; normal
@@ -636,8 +629,8 @@ Namelist variables for controlling the adaptive time step option:
                                      = 9, UW boundary layer scheme from CAM5 (CESM 1_0_1)
                                      = 10, TEMF (Total Energy Mass Flux) scheme (ARW only)
                                           sf_sfclay_physics=10
-                                     = 11, Shin-Hong 'scale-aware' PBL scheme
                                      = 12, Grenier-Bretherton-McCaa scheme (ARW only)
+                                     = 94, Quasi-Normal Scale Elimination PBL
                                      = 99, MRF scheme
 
  bldt (max_dom)                      = 0,       ; minutes between boundary-layer physics calls
@@ -663,7 +656,6 @@ Namelist variables for controlling the adaptive time step option:
  bl_mynn_tkeadvect (max_dom)         = .false., default off; = .true. do MYNN tke advection
  scalar_pblmix (max_dom)             = 1 ; mix scalar fields consistent with PBL option (exch_h)
  tracer_pblmix (max_dom)             = 1 ; mix tracer fields consistent with PBL option (exch_h)
- shinhong_tke_diag (max_dom)         = 0 ; diagnostic TKE and mixing length from Shin-Hong PBL
  sf_surface_mosaic                   option to mosaic landuse categories for Noah LSM            
                                      = 0 ; default; use dominant category only
                                      = 1 ; use mosaic landuse categories
@@ -680,9 +672,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 5, Grell 3D ensemble scheme
                                      = 6, Modifed Tiedtke scheme (ARW only)
                                      = 7, Zhang-McFarlane scheme from CAM5 (CESM 1_0_1)
-                                     = 11, Multi-scale Kain-Fritsch scheme
                                      = 14, New GFS simplified Arakawa-Schubert scheme from YSU (ARW only)
-                                     = 16, A newer Tiedtke scheme
                                      = 84, New GFS simplified Arakawa-Schubert scheme (HWRF) 
                                      = 93, Grell-Devenyi ensemble scheme
                                      = 99, previous Kain-Fritsch scheme
@@ -732,8 +722,6 @@ Namelist variables for controlling the adaptive time step option:
                                                       and tke_heat_flux in vertical diffusion
                                                   2 = use drag from sf_sfclay_physics and heat flux from
                                                       tke_heat_flux with bl_pbl_physics=0
- ideal_xland                         = 1,       ; sets XLAND (1=land,2=water) for ideal cases with no input land-use
-                                                      run-time switch for wrf.exe physics_init (default 1 as before)
  ifsnow                              = 0,	; snow-cover effects
                                                   (only works for sf_surface_physics = 1)
                                                   1 = with snow-cover effect
@@ -933,17 +921,14 @@ Options for use with the Noah-MP Land Surface Model:
 &noah_mp
  dveg                               = 4,        ; Noah-MP Dynamic Vegetation option:
                                                 ;    1 = Off (LAI from table; FVEG = shdfac)
-                                                ;    2 = On  (LAI predicted;  FVEG calculated)
+                                                ;    2 = On
                                                 ;    3 = Off (LAI from table; FVEG calculated)
                                                 ;    4 = Off (LAI from table; FVEG = maximum veg. fraction)
-                         			;    5 = On  (LAI predicted;  FVEG = maximum veg. fraction)
-						;    6 = Off (LAI from input; FVEG = maximum veg. fraction)
  opt_crs                            = 1,        ; Noah-MP Stomatal Resistance option:
                                                 ;    1 = Ball-Berry; 2 = Jarvis
  opt_sfc                            = 1         ; Noah-MP surface layer drag coefficient calculation
                                                 ;    1 = Monin-Obukhov; 2 = original Noah (Chen97);
                                                 ;    3 = MYJ consistent; 4 = YSU consistent.
-                                                ;    options 3 and 4 removed in 3.7
  opt_btr                            = 1,        ; Noah-MP Soil Moisture Factor for Stomatal Resistance
                                                 ;    1 = Noah; 2 = CLM; 3 = SSiB
  opt_run                            = 1,        ; Noah-MP Runoff and Groundwater option
@@ -966,14 +951,12 @@ Options for use with the Noah-MP Land Surface Model:
                                                 ;    1 = Jordan (1991)
                                                 ;    2 = BATS:  Snow when SFCTMP < TFRZ+2.2
                                                 ;    3 = Snow when SFCTMP < TFRZ
-						;    4 = Use WRF precipitation partitioning
  opt_tbot                           = 2,        ; Noah-MP Soil Temperature Lower Boundary Condition
                                                 ;    1 = Zero heat flux
                                                 ;    2 = TBOT at 8 m from input file
  opt_stc                            = 1,        ; Noah-MP Snow/Soil temperature time scheme
                                                 ;    1 = semi-implicit
                                                 ;    2 = full-implicit
-						;    3 = semi-implicit where Ts uses snow cover fraction
  /
 
  &fdda
@@ -1149,10 +1132,6 @@ The following are for observation nudging:
                                                       not for real-data cases)
                                                   3 = with w-Rayleigh damping (dampcoef inverse time scale [1/s] e.g. .05; 
                                                       for real-data cases)
- use_theta_m                         = .false.  ; true: use theta_m=theta(1+1.61Qv)
-                                                  false: use dry theta in dynamics
- c_s                                 = 0.25     ; Smagorinsky coeff
- c_k                                 = 0.15     ; TKE coeff
  diff_6th_opt                        = 0,       ; 6th-order numerical diffusion
                                                   0 = no 6th-order diffusion (default)
                                                   1 = 6th-order numerical diffusion (not recommended)

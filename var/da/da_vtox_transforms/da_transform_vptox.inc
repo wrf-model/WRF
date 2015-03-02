@@ -51,15 +51,13 @@ subroutine da_transform_vptox(grid, vp, be, ep)
    end if
 
    ! Chi:
-   if (cv_options /= 7) then
-      do k = kts, kte
-         do j = grid%j_start(ij), grid%j_end(ij)
-            do i = its, ite
-               vp%v2(i,j,k) = vp%v2(i,j,k) + be%reg_psi_chi(j,k)* vp%v1(i,j,k)
-            end do
+   do k = kts, kte
+      do j = grid%j_start(ij), grid%j_end(ij)
+         do i = its, ite
+            vp%v2(i,j,k) = vp%v2(i,j,k) + be%reg_psi_chi(j,k)* vp%v1(i,j,k)
          end do
       end do
-   end if
+   end do
   
    ! Temperature:
    do k = kts, kte
@@ -70,18 +68,15 @@ subroutine da_transform_vptox(grid, vp, be, ep)
       end do
    end do
 
-   if (cv_options /= 7) then
-      do k1 = kts, kte
-         do k = kts, kte
-            do j = grid%j_start(ij), grid%j_end(ij)
-               do i = its, ite
-                  grid%xa%t(i,j,k) = grid%xa%t(i,j,k) + be%reg_psi_t(j,k,k1)*vp%v1(i,j,k1)
-               end do
+   do k1 = kts, kte
+      do k = kts, kte
+         do j = grid%j_start(ij), grid%j_end(ij)
+            do i = its, ite
+               grid%xa%t(i,j,k) = grid%xa%t(i,j,k) + be%reg_psi_t(j,k,k1)*vp%v1(i,j,k1)
             end do
          end do
       end do
-   end if
-
+   end do
    if ( cv_options == 6 ) then
       do k1 = kts, kte
          do k = kts, kte
@@ -101,16 +96,13 @@ subroutine da_transform_vptox(grid, vp, be, ep)
       end do
    end do
 
-   if (cv_options /= 7) then
-      do k = kts,kte
-         do j = grid%j_start(ij), grid%j_end(ij)
-            do i = its, ite
-               grid%xa%psfc(i,j) = grid%xa%psfc(i,j) + be%reg_psi_ps(j,k)*vp%v1(i,j,k)
-            end do
+   do k = kts,kte
+      do j = grid%j_start(ij), grid%j_end(ij)
+         do i = its, ite
+            grid%xa%psfc(i,j) = grid%xa%psfc(i,j) +  be%reg_psi_ps(j,k)*vp%v1(i,j,k)
          end do
       end do
-   end if
-
+   end do
    if ( cv_options == 6 ) then
       do k = kts,kte
          do j = grid%j_start(ij), grid%j_end(ij)
@@ -185,20 +177,15 @@ subroutine da_transform_vptox(grid, vp, be, ep)
 #endif
 
    ! Psi and chi to u and v:
-   if ( cv_options == 5 .or. cv_options == 6 ) then
-      call da_psichi_to_uv(vp % v1, vp % v2, grid%xb % coefx, &
-           grid%xb % coefy , grid%xa % u, grid%xa % v)
-   else if ( cv_options == 7 ) then
-      grid%xa%u = vp%v1
-      grid%xa%v = vp%v2
-   end if
 
-  if ( (use_radarobs .and. use_radar_rf) .or. (use_rad .and. crtm_cloud).or. &
-       (use_radarobs .and. use_radar_rhv) .or. (use_radarobs .and. use_radar_rqv) .or. cloud_cv_options .ge. 2 .or. & 
+   call da_psichi_to_uv(vp % v1, vp % v2, grid%xb % coefx, &
+      grid%xb % coefy , grid%xa % u, grid%xa % v)
+
+  if ( (use_radarobs .and. use_radar_rf) .or. (use_rad .and. crtm_cloud).or. & 
        (grid%pseudo_var(1:1).eq.'q' .and. grid%pseudo_var(2:2).ne.' ') .or.  &
        (grid%pseudo_var(1:1).eq.'Q' .and. grid%pseudo_var(2:2).ne.' ') ) then
 
-     if ( cloud_cv_options == 1 .and. use_3dvar_phy) then
+   if ( cloud_cv_options == 1 ) then
       ! Pseudo RH --> Total water mixing ratio:
       !$OMP PARALLEL DO &
       !$OMP PRIVATE ( ij, i, j, k )
@@ -212,8 +199,7 @@ subroutine da_transform_vptox(grid, vp, be, ep)
          enddo
       enddo
       !$OMP END PARALLEL DO
-     end if
-     if ( cloud_cv_options .ge. 2 ) then 
+   else
       ! Pseudo RH --> Water vapor mixing ratio:
       !$OMP PARALLEL DO &
       !$OMP PRIVATE ( ij, i, j, k )
@@ -228,7 +214,7 @@ subroutine da_transform_vptox(grid, vp, be, ep)
       enddo
       !$OMP END PARALLEL DO
 #ifdef CLOUD_CV
-      !qcloud
+!qcloud
       !$OMP PARALLEL DO &
       !$OMP PRIVATE ( ij, i, j, k )
       do ij = 1 , grid%num_tiles
@@ -241,7 +227,7 @@ subroutine da_transform_vptox(grid, vp, be, ep)
          enddo
       enddo
       !$OMP END PARALLEL DO
-      !qrain
+!qrain
       !$OMP PARALLEL DO &
       !$OMP PRIVATE ( ij, i, j, k )
       do ij = 1 , grid%num_tiles
@@ -254,7 +240,7 @@ subroutine da_transform_vptox(grid, vp, be, ep)
          enddo
       enddo
       !$OMP END PARALLEL DO
-      !qice
+!qice
       !$OMP PARALLEL DO &
       !$OMP PRIVATE ( ij, i, j, k )
       do ij = 1 , grid%num_tiles
@@ -267,7 +253,7 @@ subroutine da_transform_vptox(grid, vp, be, ep)
          enddo
       enddo
       !$OMP END PARALLEL DO
-      !qsnow
+!qsnow
       !$OMP PARALLEL DO &
       !$OMP PRIVATE ( ij, i, j, k )
       do ij = 1 , grid%num_tiles
@@ -280,34 +266,8 @@ subroutine da_transform_vptox(grid, vp, be, ep)
          enddo
       enddo
       !$OMP END PARALLEL DO
-      !qgraupel
-      !$OMP PARALLEL DO &
-      !$OMP PRIVATE ( ij, i, j, k )
-      do ij = 1 , grid%num_tiles
-         do k = kts, kte
-            do j = grid%j_start(ij), grid%j_end(ij)
-               do i = its, ite
-                  grid%xa % qgr(i,j,k) =  vp%v10(i,j,k)
-               enddo
-            enddo
-         enddo
-      enddo
-      !$OMP END PARALLEL DO
-      !vertical velocity
-      !$OMP PARALLEL DO &
-      !$OMP PRIVATE ( ij, i, j, k )
-      do ij = 1 , grid%num_tiles
-         do k = kts, kte
-            do j = grid%j_start(ij), grid%j_end(ij)
-               do i = its, ite
-                  grid%xa % w(i,j,k) =  vp%v11(i,j,k)
-               enddo
-            enddo
-         enddo
-      enddo
-      !$OMP END PARALLEL DO
 #endif
-     end if
+   end if
   else  ! no rf or cloud radiance
       ! Pseudo RH --> Water vapor mixing ratio:
       !$OMP PARALLEL DO &

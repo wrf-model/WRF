@@ -21,7 +21,6 @@ program gen_be_stage2a
    integer             :: num_bins             ! Number of bins (3D fields).
    integer             :: num_bins2d           ! Number of bins (2D fields).
    integer             :: num_passes           ! Recursive filter passes.
-   integer             :: cv_options           ! Control variable option
    real                :: lat_min, lat_max     ! Used if bin_type = 2 (degrees).
    real                :: binwidth_lat         ! Used if bin_type = 2 (degrees).
    real                :: hgt_min, hgt_max     ! Used if bin_type = 2 (m).
@@ -40,7 +39,7 @@ program gen_be_stage2a
    real, allocatable   :: regcoeff3(:,:,:)     ! psi/T regression cooefficient.
 
    namelist / gen_be_stage2a_nl / start_date, end_date, interval, &
-                                  ne, num_passes, rf_scale, cv_options
+                                  ne, num_passes, rf_scale
 
    integer :: ounit,iunit,namelist_unit
 
@@ -61,7 +60,6 @@ program gen_be_stage2a
    ne = 1
    num_passes = 0
    rf_scale = 1.0
-   cv_options = 5
 
    open(unit=namelist_unit, file='gen_be_stage2a_nl.nl', &
         form='formatted', status='old', action='read')
@@ -156,16 +154,14 @@ program gen_be_stage2a
          read(iunit)chi
          close(iunit)
 
-         if ( cv_options /= 7 ) then
-            do k = 1, nk
-               do j = 1, nj
-                  do i = 1, ni
-                     b = bin(i,j,k)
-                     chi(i,j,k) = chi(i,j,k) - regcoeff1(b) * psi(i,j,k)
-                  end do
+         do k = 1, nk
+            do j = 1, nj
+               do i = 1, ni
+                  b = bin(i,j,k)
+                  chi(i,j,k) = chi(i,j,k) - regcoeff1(b) * psi(i,j,k)
                end do
             end do
-         end if
+         end do
 
          variable = 'chi_u'
          filename = trim(variable)//'/'//date(1:10)
@@ -184,16 +180,14 @@ program gen_be_stage2a
          read(iunit)temp
          close(iunit)
 
-         if ( cv_options /= 7 ) then
-            do j = 1, nj
-               do i = 1, ni
-                  b = bin2d(i,j)
-                  do k = 1, nk
-                     temp(i,j,k) = temp(i,j,k) - SUM(regcoeff3(k,1:nk,b) * psi(i,j,1:nk))
-                  end do
+         do j = 1, nj
+            do i = 1, ni
+               b = bin2d(i,j)
+               do k = 1, nk
+                  temp(i,j,k) = temp(i,j,k) - SUM(regcoeff3(k,1:nk,b) * psi(i,j,1:nk))
                end do
             end do
-         end if
+         end do
 
          variable = 't_u'
          filename = trim(variable)//'/'//date(1:10)
@@ -212,14 +206,12 @@ program gen_be_stage2a
          read(iunit)ps
          close(iunit)
 
-         if ( cv_options /= 7 ) then
-            do j = 1, nj
-               do i = 1, ni
-                  b = bin2d(i,j)
-                  ps(i,j) = ps(i,j) - SUM(regcoeff2(1:nk,b) * psi(i,j,1:nk))
-               end do
+         do j = 1, nj
+            do i = 1, ni
+               b = bin2d(i,j)
+               ps(i,j) = ps(i,j) - SUM(regcoeff2(1:nk,b) * psi(i,j,1:nk))
             end do
-         end if
+         end do
 
          variable = 'ps_u'
          filename = trim(variable)//'/'//date(1:10)

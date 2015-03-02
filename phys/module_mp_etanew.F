@@ -1189,7 +1189,7 @@ MODULE module_mp_etanew
       !--- Collection of cloud water by large ice particles ("snow")
       !    PIACWI=PIACW for riming, PIACWI=0 for shedding
       !
-              FWS=MIN(.1, CIACW*VEL_INC*NLICE*ACCRI(INDEXS)/PP**C1)
+              FWS=MIN(1., CIACW*VEL_INC*NLICE*ACCRI(INDEXS)/PP**C1)
               PIACW=FWS*QW
               IF (TC .LT. 0.) PIACWI=PIACW    ! Large ice riming
             ENDIF           ! End IF (QLICE .GT. EPSQ)
@@ -1550,7 +1550,7 @@ MODULE module_mp_etanew
                 PREVP=MAX(DUM, PRLOSS)
               ELSE IF (QW .GT. EPSQ) THEN
                 FWR=CRACW*GAMMAR*N0r*ACCRR(INDEXR)
-                PRACW=MIN(.1,FWR)*QW
+                PRACW=MIN(1.0,FWR)*QW
               ENDIF           ! End IF (DWVr.LT.0. .AND. DUM.LE.EPSQ)
       !
               IF (TC.LT.0. .AND. TCC.LT.0.) THEN
@@ -2311,15 +2311,15 @@ nsteps = 0
 !
 !--- CIACW is used in calculating riming rates
 !      The assumed effective collection efficiency of cloud water rimed onto
-!      ice is =0.1 :
+!      ice is =0.5 :
 !
-        CIACW=0.1*DTPH*0.25*PI*(1.E5)**C1
+        CIACW=0.5*DTPH*0.25*PI*(1.E5)**C1
 
 !
-!--- CIACR is used in calculating freezing of rain colliding with large ice
-!      The assumed collection efficiency is 0.5
+!--- CIACR is us5d in calculating freezing of rain colliding with large ice
+!      The assumed collection efficiency is 1.0
 !
-        CIACR=0.5*PI*DTPH
+        CIACR=1.0*PI*DTPH
 !
 !--- Based on rain lookup tables for mean diameters from 0.05 to 1.0 mm
 !    * Four different functional relationships of mean drop diameter as 
@@ -2350,9 +2350,9 @@ nsteps = 0
         CN0r_DMRmax=1./(PI*RHOL*DMRmax**4)
 !
 !--- CRACW is used in calculating collection of cloud water by rain (an
-!      assumed collection efficiency of 0.1)
+!      assumed collection efficiency of 1.0)
 !
-        CRACW=0.1*DTPH*0.25*PI
+        CRACW=1.0*DTPH*0.25*PI
 !
         ESW0=1000.*FPVS0(T0C)     ! Saturation vapor pressure at 0C
         RFmax=1.1**Nrime          ! Maximum rime factor allowed

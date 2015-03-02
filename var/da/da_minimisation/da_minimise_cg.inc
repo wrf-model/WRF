@@ -40,7 +40,7 @@ subroutine da_minimise_cg(grid, config_flags,            &
    integer                           :: iter            
    integer                           :: jp_start, jp_end       ! Start/end indices of Jp.
 #ifdef CLOUD_CV
-   integer                           :: mz(11)
+   integer                           :: mz(13)
 #else
    integer                           :: mz(7)
 #endif
@@ -58,7 +58,7 @@ subroutine da_minimise_cg(grid, config_flags,            &
    real                              :: g_total, g_partial, jo_partial                          
    integer                           :: i, ii, nv, nn, istart, iend
 #ifdef CLOUD_CV
-   integer                           ::  sz(9)
+   integer                           ::  sz(11)
 #else
    integer                           ::  sz(5)
 #endif
@@ -72,8 +72,8 @@ subroutine da_minimise_cg(grid, config_flags,            &
    ! [1.0] Initialization:
    !-------------------------------------------------------------------------
 #ifdef CLOUD_CV
-   mz = (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz, be%v6%mz, be%v7%mz,be%v8%mz,be%v9%mz, be%alpha%mz, be % ne /)
-   sz = (/ be%cv%size1, be%cv%size2, be%cv%size3, be%cv%size4, be%cv%size5, be%cv%size6, be%cv%size7,be%cv%size8, be%cv%size9 /)
+   mz = (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz, be%v6%mz, be%v7%mz,be%v8%mz,be%v9%mz,be%v10%mz,be%v11%mz, be%alpha%mz, be % ne /)
+   sz = (/ be%cv%size1, be%cv%size2, be%cv%size3, be%cv%size4, be%cv%size5, be%cv%size6, be%cv%size7,be%cv%size8, be%cv%size9,be%cv%size10,be%cv%size11i /)
 #else
    mz = (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz, be%alpha%mz, be % ne /)
    sz = (/ be%cv%size1, be%cv%size2, be%cv%size3, be%cv%size4, be%cv%size5 /)
@@ -100,7 +100,7 @@ subroutine da_minimise_cg(grid, config_flags,            &
       
       iend    = 0
 #ifdef CLOUD_CV
-      do nv = 1, 9
+      do nv = 1, 11 
 #else
       do nv = 1, 5
 #endif
@@ -110,7 +110,7 @@ subroutine da_minimise_cg(grid, config_flags,            &
             iend       = istart + nn - 1
 	    g_partial  = da_dot(nn, ghat(istart:iend), ghat(istart:iend))
 #ifdef CLOUD_CV
-            jo_partial = j0_total / SUM(mz(1:8))
+            jo_partial = j0_total / SUM(mz(1:10))
 #else
             jo_partial = j0_total / SUM(mz(1:5))
 #endif

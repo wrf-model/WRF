@@ -90,11 +90,11 @@ CONTAINS
       ! We don't free any memory here - that is done immediately after the
       ! write of each patch is completed
       DO j = 1, outpatch_table(i)%npatch
-         outpatch_table(i)%PatchList(j)%forDeletion   = .FALSE.
-         outpatch_table(i)%PatchList(j)%PatchStart(:) = 0
-         outpatch_table(i)%PatchList(j)%PatchEnd(:)   = 0
-         outpatch_table(i)%PatchList(j)%PatchExtent(:)= 0
          IF (ALLOCATED(outpatch_table(i)%PatchList)) THEN
+            outpatch_table(i)%PatchList(j)%forDeletion   = .FALSE.
+            outpatch_table(i)%PatchList(j)%PatchStart(:) = 0
+            outpatch_table(i)%PatchList(j)%PatchEnd(:)   = 0
+            outpatch_table(i)%PatchList(j)%PatchExtent(:)= 0
             IF (ASSOCIATED(outpatch_table(i)%PatchList(j)%rptr)) &
                NULLIFY( outpatch_table(i)%PatchList(j)%rptr )
             IF (ASSOCIATED(outpatch_table(i)%PatchList(j)%iptr)) &

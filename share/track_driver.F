@@ -263,8 +263,14 @@ SUBROUTINE write_track( grid )
 #endif
 
 !====================================================================================
+#if 1
+!We actually always need to include 'netcdf.inc',
+!as this routine won't compile without netcdf.
+include 'netcdf.inc'
+#else
 #ifdef NETCDF
 include 'netcdf.inc'
+#endif
 #endif
 
 

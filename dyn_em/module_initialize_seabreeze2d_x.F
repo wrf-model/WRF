@@ -677,6 +677,7 @@ CONTAINS
       parameter(n=3000)
       logical debug
       parameter( debug = .true.)
+      character*256 message
 
 ! input sounding data
 
@@ -758,6 +759,11 @@ CONTAINS
             do it=1,10
               pm_input(k) = pm_input(k-1) &
                       - 0.5*dz*(rho_input(k)+rho_input(k-1))*g*qvf1
+              IF(pm_input(k) .LE. 0. )THEN
+                CALL wrf_message("Integrated pressure has gone negative - too cold for chosen height")
+                WRITE(message,*)'k,pm_input(k),h_input(k),th_input(k) = ',k,pm_input(k),h_input(k),th_input(k)
+                CALL wrf_error_fatal ( message )
+              ENDIF
               rho_input(k) = 1./((r/p1000mb)*th_input(k)*qvf*((pm_input(k)/p1000mb)**cvpm))
             enddo
           enddo

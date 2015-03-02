@@ -16,6 +16,7 @@
        character :: hgrid
        character(len=19) :: olddate="123456"
        character(len=19) :: startdate="123456"
+       character(len=19) :: sincedate="123456"
 
 
 
@@ -23,7 +24,7 @@
                   SUBRTSWCRT,OVRTSWCRT,AGGFACTRT, &
                   GWBASESWCRT, GW_RESTART,RSTRT_SWC,TERADJ_SOLAR, &
                   sys_cpl
-          real:: DTRT,dxrt0
+          real:: DTRT,dxrt0, DTCT
           character(len=256) :: route_topo_f=""
           character(len=256) :: route_chan_f=""
           character(len=256) :: route_link_f=""

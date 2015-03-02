@@ -309,6 +309,61 @@ SUBROUTINE phy_bl_ten(config_flags,rk_step,n_moist,n_scalar,     &
                 its, ite, jts, jte, kts, kte                     )
        ENDIF
 
+      CASE (SHINHONGSCHEME)
+
+           CALL add_a2a(rt_tendf,RTHBLTEN,config_flags,          &
+                ids,ide, jds, jde, kds, kde,                     &
+                ims, ime, jms, jme, kms, kme,                    &
+                its, ite, jts, jte, kts, kte                     )
+
+           CALL add_a2c_u(ru_tendf,RUBLTEN,config_flags,         &
+                ids,ide, jds, jde, kds, kde,                     &
+                ims, ime, jms, jme, kms, kme,                    &
+                its, ite, jts, jte, kts, kte                     )
+
+           CALL add_a2c_v(rv_tendf,RVBLTEN,config_flags,         &
+                ids,ide, jds, jde, kds, kde,                     &
+                ims, ime, jms, jme, kms, kme,                    &
+                its, ite, jts, jte, kts, kte                     )
+
+        if (P_QV .ge. PARAM_FIRST_SCALAR)                        &
+           CALL add_a2a(moist_tendf(ims,kms,jms,P_QV),RQVBLTEN,  &
+                config_flags,                                    &
+                ids,ide, jds, jde, kds, kde,                     &
+                ims, ime, jms, jme, kms, kme,                    &
+                its, ite, jts, jte, kts, kte                     )
+
+        if (P_QC .ge. PARAM_FIRST_SCALAR)                        &
+           CALL add_a2a(moist_tendf(ims,kms,jms,P_QC),RQCBLTEN,  &
+                config_flags,                                    &
+                ids,ide, jds, jde, kds, kde,                     &
+                ims, ime, jms, jme, kms, kme,                    &
+                its, ite, jts, jte, kts, kte                     )
+
+        if (P_QI .ge. PARAM_FIRST_SCALAR)                        &
+           CALL add_a2a(moist_tendf(ims,kms,jms,P_QI),RQIBLTEN,  &
+                config_flags,                                    &
+                ids,ide, jds, jde, kds, kde,                     &
+                ims, ime, jms, jme, kms, kme,                    &
+                its, ite, jts, jte, kts, kte                     )
+
+       IF(.not. adv_moist_cond)THEN
+
+        if (P_QT .ge. PARAM_FIRST_SCALAR)                        &
+           CALL add_a2a(scalar_tendf(ims,kms,jms,P_QT),RQCBLTEN, &
+                config_flags,                                    &
+                ids,ide, jds, jde, kds, kde,                     &
+                ims, ime, jms, jme, kms, kme,                    &
+                its, ite, jts, jte, kts, kte                     )
+
+        if (P_QT .ge. PARAM_FIRST_SCALAR)                        &
+           CALL add_a2a(scalar_tendf(ims,kms,jms,P_QT),RQIBLTEN, &
+                config_flags,                                    &
+                ids,ide, jds, jde, kds, kde,                     &
+                ims, ime, jms, jme, kms, kme,                    &
+                its, ite, jts, jte, kts, kte                     )
+       ENDIF
+
       CASE (MRFSCHEME)
 
            CALL add_a2a(rt_tendf,RTHBLTEN,config_flags,          &
@@ -520,7 +575,7 @@ SUBROUTINE phy_bl_ten(config_flags,rk_step,n_moist,n_scalar,     &
      
        ENDIF
 
-      CASE (QNSEPBLSCHEME,QNSEPBL09SCHEME)
+      CASE (QNSEPBLSCHEME)
 
            CALL add_a2a(rt_tendf,RTHBLTEN,config_flags,          &
                 ids,ide, jds, jde, kds, kde,                     &
@@ -1041,7 +1096,7 @@ SUBROUTINE phy_cu_ten(config_flags,rk_step,n_moist,n_scalar,     &
                 ims, ime, jms, jme, kms, kme,                    &
                 its, ite, jts, jte, kts, kte                     )
 
-   CASE (KFETASCHEME)
+   CASE (KFETASCHEME, MSKFSCHEME, KFCUPSCHEME)!BSINGH -  Added KFCUPSCHEME for CuP
         CALL add_a2a(rt_tendf,RTHCUTEN,config_flags,             &
                 ids,ide, jds, jde, kds, kde,                     &
                 ims, ime, jms, jme, kms, kme,                    &
@@ -1327,7 +1382,7 @@ SUBROUTINE phy_cu_ten(config_flags,rk_step,n_moist,n_scalar,     &
 
        ENDIF
 
-   CASE (TIEDTKESCHEME)
+   CASE (TIEDTKESCHEME, NTIEDTKESCHEME)
         CALL add_a2a(rt_tendf,RTHCUTEN,config_flags,             &
                 ids,ide, jds, jde, kds, kde,                     &
                 ims, ime, jms, jme, kms, kme,                    &
@@ -1714,6 +1769,7 @@ END SUBROUTINE phy_fr_ten
 
 !----------------------------------------------------------------------
 SUBROUTINE advance_ppt(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,           &
+                     CLDFRA_CUP,                                      &     ! add LD 01/11/2012 !BSINGH -  Added for CuP
                      RQICUTEN,RQSCUTEN,                               &
                      RAINC,RAINCV,RAINSH,PRATEC,PRATESH,  &
                      NCA, HTOP,HBOT,CUTOP,CUBOT,                      &
@@ -1742,7 +1798,8 @@ SUBROUTINE advance_ppt(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,           &
                                                        RQCCUTEN, &
                                                        RQRCUTEN, &
                                                        RQICUTEN, &
-                                                       RQSCUTEN
+                                                       RQSCUTEN, &
+                                                       CLDFRA_CUP        ! add LD 01/11/2012 !BSINGH - For CuP
 
    REAL, DIMENSION( ims:ime , jms:jme ),                         &
           INTENT(INOUT) ::                                RAINC, &
@@ -1845,7 +1902,7 @@ SUBROUTINE advance_ppt(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,           &
         ENDDO
         ENDDO
 
-   CASE (KFETASCHEME)
+   CASE (KFETASCHEME, MSKFSCHEME, KFCUPSCHEME)!BSINGH - added KFCUPSCHEME for CuP
 
         DO J = j_start,j_end
         DO i = i_start,i_end
@@ -1862,7 +1919,6 @@ SUBROUTINE advance_ppt(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,           &
 
            IF ( NCA(I,J) .GT. 0 ) THEN
 
-
               IF ( NINT(NCA(I,J) / DT) .LE. 1 ) THEN
 
               ! set tendency to zero
@@ -1875,6 +1931,7 @@ SUBROUTINE advance_ppt(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,           &
                     RQRCUTEN(i,k,j)=0.
                     if (P_QI .ge. PARAM_FIRST_SCALAR) RQICUTEN(i,k,j)=0.
                     if (P_QS .ge. PARAM_FIRST_SCALAR) RQSCUTEN(i,k,j)=0.
+                    CLDFRA_CUP(i,k,j)=0. ! By LKB 12/22/11 01/11/2012 !BSINGH - For CuP
                  ENDDO
               ENDIF
 

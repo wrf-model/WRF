@@ -22,7 +22,7 @@ module da_test
    use module_state_description, only : dyn_em,dyn_em_tl,dyn_em_ad,p_a_qv
 
    use da_control, only : trace_use,ierr, trace_use_dull, comm,global,stdout,rootproc, &
-      sfc_assi_options,typical_qrn_rms,typical_qci_rms,jcdfi_use, jcdfi_diag, &
+      sfc_assi_options,typical_qrn_rms,typical_qci_rms,typical_qsn_rms,typical_qgr_rms,jcdfi_use, jcdfi_diag, &
       typical_u_rms,typical_v_rms,typical_w_rms,typical_t_rms, typical_p_rms, typical_rain_rms, &
       typical_q_rms,typical_qcw_rms,print_detail_testing,typical_rh_rms, &
       fg_format, fg_format_wrf_arw_global, fg_format_wrf_arw_regional,fg_format_wrf_nmm_regional, &
@@ -37,8 +37,8 @@ module da_test
       sound, sonde_sfc, mtgirs, synop, profiler, gpsref, gpspw, polaramv, geoamv, ships, metar, &
       satem, radar, ssmi_rv, ssmi_tb, ssmt1, ssmt2, airsr, pilot, airep, tamdar, tamdar_sfc, rain, &
       bogus, buoy, qscat, pseudo, radiance, use_radarobs, use_ssmiretrievalobs,use_rainobs, &
-      use_gpsrefobs, use_ssmt1obs, use_ssmitbobs, use_ssmt2obs, use_gpspwobs,&
-      use_gpsztdobs, Use_Radar_rf, use_rad, crtm_cloud, cloud_cv_options, &
+      use_gpsrefobs, use_ssmt1obs, use_ssmitbobs, use_ssmt2obs, use_gpspwobs, &
+      use_gpsztdobs, use_radar_rf, use_radar_rhv, use_rad, crtm_cloud, cloud_cv_options, &
       ids,ide,jds,jde,kds,kde, ims,ime,jms,jme,kms,kme, fgat_rain_flags, &
       its,ite,jts,jte,kts,kte, ips,ipe,jps,jpe,kps,kpe, cv_options, cv_size, &
       cloud_cv_options, cp, gas_constant, test_dm_exact, cv_size_domain, &

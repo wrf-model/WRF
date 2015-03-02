@@ -22,6 +22,7 @@ CONTAINS
                t8w, dx, dy, p_phy, chem,                                   &
                rho_phy, cldfra, cldfra2, rainprod, evapprod,               &
                hno3_col_mdel, qlsink, precr, preci, precs, precg,          &
+               wdflx, &
 	       gas_aqfrac, numgas_aqfrac, dz8w,                            &
 	       h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,cvaro1,           &
                cvaro2,cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2,           &
@@ -62,11 +63,8 @@ CONTAINS
    USE modal_aero_data,        only:  ntot_amode               ! For cam_mam_wetscav variables
    USE module_mozcart_wetscav, only:  wetscav_mozcart
    USE module_mosaic_wetscav, only:  wetscav_cbmz_mosaic, wetscav_mozart_mosaic
-   USE modal_aero_data,        only:  ntot_amode               ! For cam_mam_wetscav variables
-   USE module_mosaic_wetscav,  only:  wetscav_cbmz_mosaic
-   USE modal_aero_data,        only:  ntot_amode               ! For cam_mam_wetscav variables
-   USE module_mosaic_wetscav,  only:  wetscav_cbmz_mosaic
    USE module_aerosols_sorgam, only:  wetscav_sorgam_driver
+   USE module_aerosols_sorgam_vbs, only:  wetscav_sorgam_vbs_driver
    USE module_cam_mam_wetscav, only:  wetscav_cam_mam_driver
    USE module_cam_support,     only:  pcnst =>pcnst_runtime
    USE module_data_mosaic_asect, only: mw_so4_aer, mw_no3_aer, mw_nh4_aer, &
@@ -248,6 +246,10 @@ CONTAINS
                                                        qs_b4mp
    REAL,  DIMENSION( ims:ime , jms:jme )         ,                  &
          INTENT(INOUT ) ::                             hno3_col_mdel
+
+   REAL, DIMENSION( ims:ime, jms:jme, num_chem )            ,       &
+          INTENT(INOUT) ::                                          &
+                                                       wdflx !wet deposition mol/m^2 or #/m^2 or ug/m^2
 !
 !input (4D)
 REAL,  DIMENSION( ims:ime , kms:kme , jms:jme , ntot_amode ),       &
@@ -285,9 +287,31 @@ REAL,  DIMENSION( ims:ime , kms:kme , jms:jme , ntot_amode ),       &
 !
    cps_select: SELECT CASE(config_flags%chem_opt)
 
-   CASE ( RADM2SORG_AQ, RADM2SORG_AQCHEM, RACMSORG_AQ, RACMSORG_AQCHEM_KPP, RACM_ESRLSORG_AQCHEM_KPP, CBMZSORG_AQ )
+   CASE ( RADM2SORG_AQ, RADM2SORG_AQCHEM, RACMSORG_AQ, RACMSORG_AQCHEM_KPP, RACM_ESRLSORG_AQCHEM_KPP, CBMZSORG_AQ, &
+          CB05_SORG_AQ_KPP)
        CALL wrf_debug(15,'wetscav_driver calling sorgam_wetscav_driver' )
        call wetscav_sorgam_driver (id,ktau,dtstep,ktauc,config_flags,      &
+               dtstepc,alt,t_phy,p8w,t8w,p_phy,chem,rho_phy,cldfra,        &
+               qlsink,precr,preci,precs,precg, qsrflx,                     &
+               gas_aqfrac, numgas_aqfrac,                                  &
+               ids,ide, jds,jde, kds,kde,                                  &
+               ims,ime, jms,jme, kms,kme,                                  &
+               its,ite, jts,jte, kts,kte                                   )
+! not clear if the following is necessary or appropriate
+       tmp_minval = 1.0e7
+       do jj=jts,jte
+       do kk=kts,kte
+       do ii=its,ite
+          if (chem(ii,kk,jj,p_nu0) .lt. tmp_minval) then
+             chem(ii,kk,jj,p_nu0) = tmp_minval
+          endif
+       enddo
+       enddo
+       enddo
+
+   CASE (CB05_SORG_VBS_AQ_KPP )
+       CALL wrf_debug(15,'wetscav_driver calling sorgam_wetscav_driver' )
+       call wetscav_sorgam_vbs_driver (id,ktau,dtstep,ktauc,config_flags,      &
                dtstepc,alt,t_phy,p8w,t8w,p_phy,chem,rho_phy,cldfra,        &
                qlsink,precr,preci,precs,precg, qsrflx,                     &
                gas_aqfrac, numgas_aqfrac,                                  &
@@ -310,7 +334,7 @@ REAL,  DIMENSION( ims:ime , kms:kme , jms:jme , ntot_amode ),       &
        CALL wrf_error_fatal('Wet scavenging is currently not possible with MOSAIC unless aqueous aerosols are turned on.')
 
    CASE (CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ, &
-   			CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP )
+   			CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP,SAPRC99_MOSAIC_8BIN_VBS2_AQ_KPP )!BSINGH(12/05/2013): Added for SAPRC 8 bin vbs )
        CALL wrf_debug(15,'wetscav_driver calling mosaic_wetscav_driver')
        call wetscav_cbmz_mosaic (id,ktau,dtstep,ktauc,config_flags,        &
                dtstepc,alt,t_phy,p8w,t8w,p_phy,chem,rho_phy,cldfra,        &
@@ -633,6 +657,11 @@ CASE (CBMZ_CAM_MAM3_NOAQ,CBMZ_CAM_MAM3_AQ,CBMZ_CAM_MAM7_NOAQ,CBMZ_CAM_MAM7_AQ)
     CASE DEFAULT
       
     END SELECT
+
+    if( config_flags%diagnostic_dep == 1 ) then
+       wdflx(its:ite,jts:jte,:)=wdflx(its:ite,jts:jte,:)-qsrflx(its:ite,jts:jte,:)
+    end if
+
    end subroutine wetscav_driver
 
 

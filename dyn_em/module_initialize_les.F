@@ -98,7 +98,7 @@ CONTAINS
 
 !  stuff from original initialization that has been dropped from the Registry 
    REAL    :: vnu, xnu, xnus, dinit0, cbh, p0_temp, t0_temp, zd, zt
-   REAL    :: qvf1, qvf2, pd_surf
+   REAL    :: qvf1, qvf2, pd_surf, theta_surf
    INTEGER :: it
    real :: thtmp, ptmp, temp(3)
 
@@ -270,7 +270,7 @@ CONTAINS
   IF ( wrf_dm_on_monitor() ) THEN
   write(6,*) ' getting dry sounding for base state '
 
-  CALL get_sounding( zk, p_in, pd_in, theta, rho, u, v, qv, dry_sounding, nl_max, nl_in )
+  CALL get_sounding( zk, p_in, pd_in, theta, rho, u, v, qv, dry_sounding, nl_max, nl_in, theta_surf )
   ENDIF
   CALL wrf_dm_bcast_real( zk , nl_max )
   CALL wrf_dm_bcast_real( p_in , nl_max )
@@ -369,7 +369,7 @@ CONTAINS
 
   write(6,*) ' getting moist sounding for full state '
   dry_sounding = .false.
-  CALL get_sounding( zk, p_in, pd_in, theta, rho, u, v, qv, dry_sounding, nl_max, nl_in )
+  CALL get_sounding( zk, p_in, pd_in, theta, rho, u, v, qv, dry_sounding, nl_max, nl_in, theta_surf )
 
   DO J = jts, min(jde-1,jte)
   DO I = its, min(ide-1,ite)
@@ -629,8 +629,9 @@ CONTAINS
 !    For LES-CBL, add 5 degrees to the surface temperature!
 !      - Removed in 3.6
 !
-     grid%tsk(I,J)=grid%cf1*temp(1)+grid%cf2*temp(2)+grid%cf3*temp(3)
+!    grid%tsk(I,J)=grid%cf1*temp(1)+grid%cf2*temp(2)+grid%cf3*temp(3)
 !    grid%tsk(I,J)=grid%cf1*temp(1)+grid%cf2*temp(2)+grid%cf3*temp(3)+5.
+     grid%tsk(I,J)=theta_surf * (p_surf/p1000mb)**rcp
      grid%tmn(I,J)=grid%tsk(I,J)-0.5
   ENDDO
   ENDDO
@@ -665,7 +666,7 @@ CONTAINS
 !---------------------------------------------------------------------------
 
       subroutine get_sounding( zk, p, p_dry, theta, rho, &
-                               u, v, qv, dry, nl_max, nl_in )
+                               u, v, qv, dry, nl_max, nl_in, th_surf )
       implicit none
 
       integer nl_max, nl_in

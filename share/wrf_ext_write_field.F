@@ -4,7 +4,7 @@
                                 ,idx4, idx5, idx6, idx7           &
                                 ,nx4 , nx5 , nx6                  &
                                 ,TypeSizeInBytes                  &
-                                ,FieldType,Comm,IOComm            &
+                                ,FieldType,grid                   &
                                 ,DomainDesc                       &
                                 ,bdy_mask                         &
                                 ,dryrun                           &
@@ -20,6 +20,8 @@
     USE module_wrf_error
     USE module_state_description
     USE module_timing
+    USE module_domain
+
     IMPLICIT NONE
 
     INTEGER, INTENT(IN)       :: idx4, idx5, idx6, idx7
@@ -30,8 +32,7 @@
     CHARACTER*(*)         ,INTENT(IN   )         :: Var
     INTEGER               ,INTENT(IN   )         :: Field(*)
     INTEGER               ,INTENT(IN   )         :: FieldType
-    INTEGER               ,INTENT(IN   )         :: Comm
-    INTEGER               ,INTENT(IN   )         :: IOComm
+    TYPE(domain)                                 :: grid
     INTEGER               ,INTENT(IN   )         :: DomainDesc
     LOGICAL               ,INTENT(IN   )         :: dryrun
     CHARACTER*(*)         ,INTENT(IN   )         :: MemoryOrder
@@ -64,7 +65,7 @@
                                       +(idx5-1)*nx4*(me3-ms3+1)*(me2-ms2+1)*(me1-ms1+1)             &
                                       +(idx6-1)*nx5*nx4*(me3-ms3+1)*(me2-ms2+1)*(me1-ms1+1)         &
                                       +(idx7-1)*nx6*nx5*nx4*(me3-ms3+1)*(me2-ms2+1)*(me1-ms1+1)))   &
-                                ,FieldType,Comm,IOComm            &
+                                ,FieldType,grid                   &
                                 ,DomainDesc                       &
                                 ,bdy_mask                         &
                                 ,dryrun                           &
@@ -80,7 +81,7 @@
   END SUBROUTINE wrf_ext_write_field_arr
 
 
-  SUBROUTINE wrf_ext_write_field(DataHandle,DateStr,Var,Field,FieldType,Comm,IOComm, &
+  SUBROUTINE wrf_ext_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
                                  DomainDesc,                      &
                                  bdy_mask   ,                     &
                                  dryrun        ,                  &
@@ -96,6 +97,8 @@
     USE module_wrf_error
     USE module_state_description
     USE module_timing
+    USE module_domain
+
     IMPLICIT NONE
 
     INTEGER               ,INTENT(IN   )         :: DataHandle
@@ -103,8 +106,7 @@
     CHARACTER*(*)         ,INTENT(IN   )         :: Var
     INTEGER               ,INTENT(IN   )         :: Field(*)
     INTEGER               ,INTENT(IN   )         :: FieldType
-    INTEGER               ,INTENT(IN   )         :: Comm
-    INTEGER               ,INTENT(IN   )         :: IOComm
+    TYPE(domain)                                 :: grid
     INTEGER               ,INTENT(IN   )         :: DomainDesc
     LOGICAL               ,INTENT(IN   )         :: dryrun
     CHARACTER*(*)         ,INTENT(IN   )         :: MemoryOrder
@@ -126,9 +128,10 @@
 
     integer                       ,intent(inout)   :: Status
     LOGICAL for_out, horiz_stagger
-    INTEGER Hndl, io_form
+    INTEGER io_form
     LOGICAL, EXTERNAL :: has_char
     INTEGER, EXTERNAL :: use_package
+    INTEGER Hndl
 
     IF ( wrf_at_debug_level( 500 ) ) THEN
       call start_timing
@@ -164,15 +167,13 @@
 #endif
     Status = 0
 
-
     CALL wrf_write_field (   &
                        DataHandle                 &  ! DataHandle
                       ,DateStr                    &  ! DateStr
                       ,Var                        &  ! Data Name
                       ,Field                      &  ! Field
                       ,FieldType                  &  ! FieldType
-                      ,Comm                       &  ! Comm
-                      ,IOComm                     &  ! IOComm
+                      ,grid                       &  ! grid
                       ,DomainDesc                 &  ! DomainDesc
                       ,bdy_mask                   &  ! bdy_mask
                       ,MemoryOrder                &  ! MemoryOrder
@@ -189,6 +190,7 @@
     CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 
     IF ( ( dryrun .AND. ( use_package(io_form) .EQ. IO_NETCDF .OR. &
+                          use_package(io_form) .EQ. IO_PIO    .OR. &
                           use_package(io_form) .EQ. IO_PNETCDF ) ) .OR. &
                         ( use_package(io_form) .EQ. IO_PHDF5  )   ) THEN
 
@@ -218,20 +220,17 @@
 ! TBH:         named "XLONG", "XLAT", "XLONG_U", "XLAT_U", "XLONG_V", and 
 ! TBH:         "XLAT_V" for EM_CORE.  We need a more general way to handle 
 ! TBH:         this, possibly via the Registry.  
-! TBH:  TODO:  Leave this on all the time or make it namelist-selectable?  
 ! TBH:  TODO:  Use dimnames(*) == south_north || west_east instead of 
 ! TBH:         MemoryOrder and Stagger?  It would also work for both ARW 
 ! TBH:         and NMM and be easier to handle via Registry...  
-!      IF ( ( ( MemoryOrder(1:2) == 'XY' ) .OR. &
-!             ( MemoryOrder(1:3) == 'XZY' ) ) .AND. &
-!           ( Var(1:5) /= 'XLONG' ) .AND. &
-!           ( Var(1:4) /= 'XLAT'  ) ) THEN
-! JM used trim instead, to avoid spurious errors when bounds checking on
-      IF ( ( ( TRIM(MemoryOrder) == 'XY' ) .OR. &
-             ( TRIM(MemoryOrder) == 'XZY' ) .OR. &
-             ( TRIM(MemoryOrder) == 'XYZ' ) ) .AND. &
-           ( TRIM(Var) /= 'XLONG' ) .AND. &
-           ( TRIM(Var) /= 'XLAT'  ) ) THEN
+
+      IF ( ( TRIM(MemoryOrder) == 'XY' ) .AND. &
+         ( ( TRIM(Var) == 'XLONG'   ) .OR. &
+           ( TRIM(Var) == 'XLAT'    ) .OR. &
+           ( TRIM(Var) == 'XLONG_U' ) .OR. &
+           ( TRIM(Var) == 'XLAT_U'  ) .OR. &
+           ( TRIM(Var) == 'XLONG_V' ) .OR. &
+           ( TRIM(Var) == 'XLAT_V'  ) ) ) THEN
         horiz_stagger = .FALSE.
         IF ( LEN_TRIM(Stagger) == 1 ) THEN
           IF ( has_char( Stagger, 'x' ) ) THEN
@@ -258,6 +257,37 @@
                           ,"coordinates"              &  ! Element
                           ,Var                        &  ! Data Name
                           ,"XLONG XLAT"               &  ! Data
+                          ,Status )
+        ENDIF
+      ELSE IF ( ( TRIM(MemoryOrder) == 'XY'  ) .OR. &
+                ( TRIM(MemoryOrder) == 'XZY' ) .OR. &
+                ( TRIM(MemoryOrder) == 'XYZ' ) ) THEN
+        horiz_stagger = .FALSE.
+        IF ( LEN_TRIM(Stagger) == 1 ) THEN
+          IF ( has_char( Stagger, 'x' ) ) THEN
+            horiz_stagger = .TRUE.
+            CALL wrf_put_var_ti_char( &
+                             DataHandle                 &  ! DataHandle
+                            ,"coordinates"              &  ! Element
+                            ,Var                        &  ! Data Name
+                            ,"XLONG_U XLAT_U XTIME"     &  ! Data
+                            ,Status )
+          ELSE IF ( has_char( Stagger, 'y' ) ) THEN
+            horiz_stagger = .TRUE.
+            CALL wrf_put_var_ti_char( &
+                             DataHandle                 &  ! DataHandle
+                            ,"coordinates"              &  ! Element
+                            ,Var                        &  ! Data Name
+                            ,"XLONG_V XLAT_V XTIME"     &  ! Data
+                            ,Status )
+          ENDIF
+        ENDIF
+        IF ( .NOT. horiz_stagger ) THEN
+          CALL wrf_put_var_ti_char( &
+                           DataHandle                 &  ! DataHandle
+                          ,"coordinates"              &  ! Element
+                          ,Var                        &  ! Data Name
+                          ,"XLONG XLAT XTIME"         &  ! Data
                           ,Status )
         ENDIF
       ENDIF

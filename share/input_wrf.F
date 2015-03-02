@@ -10,6 +10,7 @@
     USE module_date_time
     USE module_bc_time_utilities
     USE module_utility
+
     IMPLICIT NONE
 #include <wrf_io_flags.h>
 #include <wrf_status_codes.h>
@@ -107,7 +108,7 @@
 !
 !</DESCRIPTION>
 
-    WRITE(wrf_err_message,*)'input_wrf: begin, fid = ',fid
+    WRITE(wrf_err_message,*)'input_wrf: begin'
     CALL wrf_debug( 300 , wrf_err_message )
 
     CALL modify_io_masks ( grid%id )   ! this adjusts the I/O masks according to the users run-time specs, if any
@@ -126,7 +127,7 @@
       CALL wrf_error_fatal( wrf_err_message )
     ENDIF
 
-    WRITE(wrf_err_message,*)'input_wrf: fid,filestate = ',fid,filestate
+    WRITE(wrf_err_message,*)'input_wrf: filestate = ',filestate
     CALL wrf_debug( 300 , wrf_err_message )
 
     dryrun        = ( filestate .EQ. WRF_FILE_OPENED_NOT_COMMITTED )
@@ -136,16 +137,21 @@
 
     check_if_dryrun : IF ( .NOT. dryrun ) THEN
 
-#if (EM_CORE == 1)
-      IF ( switch .EQ. input_only ) THEN
+#if ( ( EM_CORE == 1 ) && ( DA_CORE != 1 ) )
+      IF ( switch .EQ. boundary_only ) THEN
+         grid%just_read_boundary = .true.
+      END IF
+
+      IF ( ( switch .EQ. input_only ) .OR. ( switch .EQ. restart_only ) ) THEN
 
         !  Make sure for ARW ideal cases that the hypsometric option, the
         !  way that we integrate the heigh field, is set to 1.  This is the
         !  method that is used in all of the "ideal" programs to get the
         !  base-state height (phb).
 
-        CALL wrf_get_dom_ti_char ( fid , 'TITLE' , input_name , ierr )
-        grid%this_is_an_ideal_run = INDEX(TRIM(input_name) , 'IDEAL' ) .NE. 0
+        CALL wrf_get_dom_ti_char ( fid , 'START_DATE' , input_name , ierr )
+        grid%this_is_an_ideal_run = INDEX(TRIM(input_name) , '0001-' ) .NE. 0
+
         IF ( grid%this_is_an_ideal_run ) THEN
           grid%hypsometric_opt = 1
           config_flags%hypsometric_opt = 1
@@ -267,6 +273,7 @@
 
       CALL wrf_get_dom_ti_char ( fid , 'SIMULATION_START_DATE' , simulation_start_date , ierr )
       CALL nl_get_reset_simulation_start ( 1, reset_simulation_start )
+
       IF ( ( ierr .EQ. 0 ) .AND. ( .NOT. reset_simulation_start ) ) THEN
         ! Overwrite simulation start date with metadata.
 #ifdef PLANET
@@ -288,11 +295,11 @@
         CALL nl_set_simulation_start_minute ( 1 , simulation_start_minute )
         CALL nl_set_simulation_start_second ( 1 , simulation_start_second )
         IF ( switch .EQ. input_only  ) THEN
-          WRITE(wrf_err_message,*)fid,' input_wrf, input_only:  SIMULATION_START_DATE = ', &
+          WRITE(wrf_err_message,*) ' input_wrf, input_only:  SIMULATION_START_DATE = ', &
                                   simulation_start_date(1:19)
           CALL wrf_debug ( 300 , TRIM(wrf_err_message ) )
         ELSE IF ( switch .EQ. restart_only  ) THEN
-          WRITE(wrf_err_message,*)fid,' input_wrf, restart_only:  SIMULATION_START_DATE = ', &
+          WRITE(wrf_err_message,*) ' input_wrf, restart_only:  SIMULATION_START_DATE = ', &
                                   simulation_start_date(1:19)
           CALL wrf_debug ( 300 , TRIM(wrf_err_message ) )
         ENDIF
@@ -381,6 +388,7 @@
 
        CALL wrf_get_dom_ti_real ( fid , 'DX' ,  dx_compare , 1 , icnt , ierr )
        CALL wrf_get_dom_ti_real ( fid , 'DY' ,  dy_compare , 1 , icnt , ierr )
+
        IF ( ( ABS ( dx_compare - config_flags%dx ) .GT. 1.E-5 * dx_compare ) .OR. &
             ( ABS ( dy_compare - config_flags%dy ) .GT. 1.E-5 * dy_compare ) ) THEN
           IF ( ( config_flags%polar ) .AND. ( config_flags%grid_id .EQ. 1 ) ) THEN
@@ -1006,9 +1014,8 @@
                                     TRIM(dname)             , & ! Data Name
                                     p%rfield_0d             , & ! Field
                                     WRF_FLOAT               , & ! FieldType
-                                    grid%communicator       , & ! Comm
-                                    grid%iocommunicator     , & ! Comm
-                                    grid%domdesc            , & ! Comm
+                                    grid                    , & ! grid
+                                    grid%domdesc            , & ! domdesc
                                     grid%bdy_mask           , & ! bdy_mask
                                     '0'                     , & ! MemoryOrder
                                     ''                      , & ! Stagger
@@ -1024,9 +1031,8 @@
                                     TRIM(dname)             , & ! Data Name
                                     p%dfield_0d             , & ! Field
                                     WRF_DOUBLE              , & ! FieldType
-                                    grid%communicator       , & ! Comm
-                                    grid%iocommunicator     , & ! Comm
-                                    grid%domdesc            , & ! Comm
+                                    grid                    , & ! grid
+                                    grid%domdesc            , & ! domdesc
                                     grid%bdy_mask           , & ! bdy_mask
                                     '0'                     , & ! MemoryOrder
                                     ''                      , & ! Stagger
@@ -1042,9 +1048,8 @@
                                     TRIM(dname)             , & ! Data Name
                                     p%ifield_0d             , & ! Field
                                     WRF_INTEGER             , & ! FieldType
-                                    grid%communicator       , & ! Comm
-                                    grid%iocommunicator     , & ! Comm
-                                    grid%domdesc            , & ! Comm
+                                    grid                    , & ! grid
+                                    grid%domdesc            , & ! domdesc
                                     grid%bdy_mask           , & ! bdy_mask
                                     '0'                     , & ! MemoryOrder
                                     ''                      , & ! Stagger
@@ -1060,9 +1065,8 @@
                                     TRIM(dname)             , & ! Data Name
                                     p%lfield_0d             , & ! Field
                                     WRF_LOGICAL             , & ! FieldType
-                                    grid%communicator       , & ! Comm
-                                    grid%iocommunicator     , & ! Comm
-                                    grid%domdesc            , & ! Comm
+                                    grid                    , & ! grid
+                                    grid%domdesc            , & ! domdesc
                                     grid%bdy_mask           , & ! bdy_mask
                                     '0'                     , & ! MemoryOrder
                                     ''                      , & ! Stagger
@@ -1105,11 +1109,10 @@
                                        fid                     , & ! DataHandle
                                        current_date(1:19)      , & ! DateStr
                                        TRIM(dname)             , & ! Data Name
-                                       f_vint_1d                , & ! Field
+                                       f_vint_1d               , & ! Field
                                        WRF_FLOAT               , & ! FieldType
-                                       grid%communicator       , & ! Comm
-                                       grid%iocommunicator     , & ! Comm
-                                       grid%domdesc            , & ! Comm
+                                       grid                    , & ! grid
+                                       grid%domdesc            , & ! domdesc
                                        grid%bdy_mask           , & ! bdy_mask
                                        TRIM(memord)            , & ! MemoryOrder
                                        p%Stagger               , & ! Stagger
@@ -1131,9 +1134,8 @@
                                        TRIM(dname)             , & ! Data Name
                                        p%rfield_1d             , & ! Field
                                        WRF_FLOAT               , & ! FieldType
-                                       grid%communicator       , & ! Comm
-                                       grid%iocommunicator     , & ! Comm
-                                       grid%domdesc            , & ! Comm
+                                       grid                    , & ! grid
+                                       grid%domdesc            , & ! domdesc
                                        grid%bdy_mask           , & ! bdy_mask
                                        TRIM(memord)            , & ! MemoryOrder
                                        p%Stagger               , & ! Stagger
@@ -1150,9 +1152,8 @@
                                     TRIM(dname)             , & ! Data Name
                                     p%dfield_1d             , & ! Field
                                     WRF_DOUBLE              , & ! FieldType
-                                    grid%communicator       , & ! Comm
-                                    grid%iocommunicator     , & ! Comm
-                                    grid%domdesc            , & ! Comm
+                                    grid                    , & ! grid
+                                    grid%domdesc            , & ! domdesc
                                     grid%bdy_mask           , & ! bdy_mask
                                     TRIM(memord)            , & ! MemoryOrder
                                     TRIM(p%Stagger)         , & ! Stagger
@@ -1168,9 +1169,8 @@
                                     TRIM(dname)             , & ! Data Name
                                     p%ifield_1d             , & ! Field
                                     WRF_INTEGER             , & ! FieldType
-                                    grid%communicator       , & ! Comm
-                                    grid%iocommunicator     , & ! Comm
-                                    grid%domdesc            , & ! Comm
+                                    grid                    , & ! grid
+                                    grid%domdesc            , & ! domdesc
                                     grid%bdy_mask           , & ! bdy_mask
                                     TRIM(memord)            , & ! MemoryOrder
                                     TRIM(p%Stagger)         , & ! Stagger
@@ -1186,9 +1186,8 @@
                                     TRIM(dname)             , & ! Data Name
                                     p%lfield_1d             , & ! Field
                                     WRF_LOGICAL             , & ! FieldType
-                                    grid%communicator       , & ! Comm
-                                    grid%iocommunicator     , & ! Comm
-                                    grid%domdesc            , & ! Comm
+                                    grid                    , & ! grid
+                                    grid%domdesc            , & ! domdesc
                                     grid%bdy_mask           , & ! bdy_mask
                                     TRIM(memord)            , & ! MemoryOrder
                                     TRIM(p%Stagger)         , & ! Stagger
@@ -1218,9 +1217,8 @@
                                     TRIM(dname)             , & ! Data Name
                                     p%rfield_2d             , & ! Field
                                     WRF_FLOAT               , & ! FieldType
-                                    grid%communicator       , & ! Comm
-                                    grid%iocommunicator     , & ! Comm
-                                    grid%domdesc            , & ! Comm
+                                    grid                    , & ! grid
+                                    grid%domdesc            , & ! domdesc
                                     grid%bdy_mask           , & ! bdy_mask
                                     TRIM(memord)            , & ! MemoryOrder
                                     TRIM(p%Stagger)         , & ! Stagger
@@ -1236,9 +1234,8 @@
                                     TRIM(dname)             , & ! Data Name
                                     p%dfield_2d             , & ! Field
                                     WRF_DOUBLE              , & ! FieldType
-                                    grid%communicator       , & ! Comm
-                                    grid%iocommunicator     , & ! Comm
-                                    grid%domdesc            , & ! Comm
+                                    grid                    , & ! grid
+                                    grid%domdesc            , & ! domdesc
                                     grid%bdy_mask           , & ! bdy_mask
                                     TRIM(memord)            , & ! MemoryOrder
                                     TRIM(p%Stagger)         , & ! Stagger
@@ -1254,9 +1251,8 @@
                                     TRIM(dname)             , & ! Data Name
                                     p%ifield_2d             , & ! Field
                                     WRF_INTEGER             , & ! FieldType
-                                    grid%communicator       , & ! Comm
-                                    grid%iocommunicator     , & ! Comm
-                                    grid%domdesc            , & ! Comm
+                                    grid                    , & ! grid
+                                    grid%domdesc            , & ! domdesc
                                     grid%bdy_mask           , & ! bdy_mask
                                     TRIM(memord)            , & ! MemoryOrder
                                     TRIM(p%Stagger)         , & ! Stagger
@@ -1272,9 +1268,8 @@
                                     TRIM(dname)             , & ! Data Name
                                     p%lfield_2d             , & ! Field
                                     WRF_LOGICAL             , & ! FieldType
-                                    grid%communicator       , & ! Comm
-                                    grid%iocommunicator     , & ! Comm
-                                    grid%domdesc            , & ! Comm
+                                    grid                    , & ! grid
+                                    grid%domdesc            , & ! domdesc
                                     grid%bdy_mask           , & ! bdy_mask
                                     TRIM(memord)            , & ! MemoryOrder
                                     TRIM(p%Stagger)         , & ! Stagger
@@ -1321,9 +1316,8 @@
                                        TRIM(dname)             , & ! Data Name
                                        f_vint_3d               , & ! Field
                                        WRF_FLOAT               , & ! FieldType
-                                       grid%communicator       , & ! Comm
-                                       grid%iocommunicator     , & ! Comm
-                                       grid%domdesc            , & ! Comm
+                                       grid                    , & ! grid
+                                       grid%domdesc            , & ! domdesc
                                        grid%bdy_mask           , & ! bdy_mask
                                        TRIM(memord)            , & ! MemoryOrder
                                        TRIM(p%Stagger)         , & ! Stagger
@@ -1348,9 +1342,8 @@
                                        TRIM(dname)             , & ! Data Name
                                        p%rfield_3d             , & ! Field
                                        WRF_FLOAT               , & ! FieldType
-                                       grid%communicator       , & ! Comm
-                                       grid%iocommunicator     , & ! Comm
-                                       grid%domdesc            , & ! Comm
+                                       grid                    , & ! grid
+                                       grid%domdesc            , & ! domdesc
                                        grid%bdy_mask           , & ! bdy_mask
                                        TRIM(memord)            , & ! MemoryOrder
                                        TRIM(p%Stagger)         , & ! Stagger
@@ -1385,9 +1378,8 @@
                                     TRIM(dname)             , & ! Data Name
                                     p%ifield_3d             , & ! Field
                                     WRF_INTEGER             , & ! FieldType
-                                    grid%communicator       , & ! Comm
-                                    grid%iocommunicator     , & ! Comm
-                                    grid%domdesc            , & ! Comm
+                                    grid                    , & ! grid
+                                    grid%domdesc            , & ! domdesc
                                     grid%bdy_mask           , & ! bdy_mask
                                     TRIM(memord)            , & ! MemoryOrder
                                     TRIM(p%Stagger)         , & ! Stagger
@@ -1439,9 +1431,8 @@
                                          1, 1, 1                 , & ! see comment above
                                          RWORDSIZE               , &
                                          WRF_FLOAT               , & ! FieldType
-                                         grid%communicator       , & ! Comm
-                                         grid%iocommunicator     , & ! Comm
-                                         grid%domdesc            , & ! Comm
+                                         grid                    , & ! grid
+                                         grid%domdesc            , & ! domdesc
                                          grid%bdy_mask           , & ! bdy_mask
                                          TRIM(memord)            , & ! MemoryOrder
                                          TRIM(p%Stagger)         , & ! Stagger
@@ -1468,9 +1459,8 @@
                                     1, 1, 1                 , & ! see comment above
                                     RWORDSIZE               , &
                                     WRF_FLOAT               , & ! FieldType
-                                    grid%communicator       , & ! Comm
-                                    grid%iocommunicator     , & ! Comm
-                                    grid%domdesc            , & ! Comm
+                                    grid                    , & ! grid
+                                    grid%domdesc            , & ! domdesc
                                     grid%bdy_mask           , & ! bdy_mask
                                     TRIM(memord)            , & ! MemoryOrder
                                     TRIM(p%Stagger)         , & ! Stagger
@@ -1490,9 +1480,8 @@
                                     1, 1, 1                 , & ! see comment above
                                     DWORDSIZE               , &
                                     WRF_DOUBLE              , & ! FieldType
-                                    grid%communicator       , & ! Comm
-                                    grid%iocommunicator     , & ! Comm
-                                    grid%domdesc            , & ! Comm
+                                    grid                    , & ! grid
+                                    grid%domdesc            , & ! domdesc
                                     grid%bdy_mask           , & ! bdy_mask
                                     TRIM(memord)            , & ! MemoryOrder
                                     TRIM(p%Stagger)         , & ! Stagger
@@ -1511,9 +1500,8 @@
                                     1, 1, 1                 , & ! see comment above
                                     IWORDSIZE               , &
                                     WRF_INTEGER             , & ! FieldType
-                                    grid%communicator       , & ! Comm
-                                    grid%iocommunicator     , & ! Comm
-                                    grid%domdesc            , & ! Comm
+                                    grid                    , & ! grid
+                                    grid%domdesc            , & ! domdesc
                                     grid%bdy_mask           , & ! bdy_mask
                                     TRIM(memord)            , & ! MemoryOrder
                                     TRIM(p%Stagger)         , & ! Stagger

@@ -100,7 +100,7 @@ SUBROUTINE camzm_driver(                                      &
                                dz8w, & !height between interfaces (m)
                                   p, & !pressure at mid-level (Pa)
                                 p8w, & !pressure at level interface (Pa)
-                             pi_phy, & !exner function, (p0/p)^(R/cpair) (none)
+                             pi_phy, & !exner function, (p/p0)^(R/cpair) (none)
                                  qv, & !water vapor mixing ratio (kg/kg-dry air)
                                  th, & !potential temperature (K)
                             tke_pbl, & !turbulent kinetic energy from PBL (m2/s2)

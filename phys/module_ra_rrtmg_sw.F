@@ -2049,7 +2049,7 @@
 
 ! Initialize
 
-      hvrclc = '$Revision: 1.3 $'
+!jm not thread safe      hvrclc = '$Revision: 1.3 $'
 
 ! Some of these initializations are done elsewhere
       do lay = 1, nlayers
@@ -2517,7 +2517,7 @@
 
 ! Initialize
 
-      hvrrft = '$Revision: 1.3 $'
+!jm not thread safe      hvrrft = '$Revision: 1.3 $'
 
       zsr3=sqrt(3._rb)
       zwcrit=0.9999995_rb
@@ -3266,7 +3266,7 @@
 !      real(kind=rb), intent(out) :: ssa(:,:)            ! single scattering albedo (inactive)
                                                          !   Dimensions: (nlayers,ngptsw)
 
-      hvrtau = '$Revision: 1.3 $'
+!jm not thread safe      hvrtau = '$Revision: 1.3 $'
 
 ! Calculate gaseous optical depth and planck fractions for each spectral band.
 
@@ -4607,7 +4607,7 @@
 !     BPADE    Inverse of the Pade approximation constant
 !
 
-      hvrini = '$Revision: 1.3 $'
+!jm not thread safe      hvrini = '$Revision: 1.3 $'
 
 ! Initialize model data
       call swdatinit(cpdair)
@@ -4705,7 +4705,7 @@
 
       use rrsw_con, only: heatfac, grav, planck, boltz, &
                           clight, avogad, alosmt, gascon, radcn1, radcn2, &
-                          sbcnst, secdy 
+                          sbcnst, secdy, oneminus, pi
       use rrsw_vsn
 
       save 
@@ -4751,6 +4751,11 @@
                                               ! (W cm-2 K-4)
       secdy = 8.6400e4_rb                     ! Number of seconds per day
                                               ! (s d-1)
+
+!jm 20141107 moved here for thread safety
+      oneminus = 1.0_rb - 1.e-06_rb ! zepsec
+      pi = 2._rb * asin(1._rb)
+
 !
 !     units are generally cgs
 !
@@ -9137,8 +9142,8 @@
       iout = 0 !BSINGH(PNNL) initializing iout to zero(Might be wrong!) as this variable is never initialized but used in spcvmc_sw
       zepsec = 1.e-06_rb
       zepzen = 1.e-10_rb
-      oneminus = 1.0_rb - zepsec
-      pi = 2._rb * asin(1._rb)
+!jm not thread safe      oneminus = 1.0_rb - zepsec
+!jm not thread safe      pi = 2._rb * asin(1._rb)
 
       istart = jpb1
       iend = jpb2
@@ -9804,7 +9809,7 @@ use rrtmg_sw_init, only: rrtmg_sw_ini
 use rrtmg_sw_rad, only: rrtmg_sw
 use mcica_subcol_gen_sw, only: mcica_subcol_sw
 
-use module_ra_rrtmg_lw, only : inirad, o3data, relcalc, reicalc
+use module_ra_rrtmg_lw, only : inirad, o3data, relcalc, reicalc, retab
 !                               mcica_random_numbers, randomNumberSequence, &
 !                               new_RandomNumberSequence, getRandomReal
 
@@ -9922,7 +9927,7 @@ CONTAINS
             swddif      ! All-sky broadband surface diffuse irradiance
    real, optional, intent(in) :: &
             julian      ! julian day (1-366)
-   real, dimension(ims:ime,jms:jme), optional, intent(in) :: &
+   real, dimension(ims:ime,jms:jme), intent(in) :: &
             xcoszen     ! cosine of the solar zenith angle
   real, dimension(ims:ime,kms:kme,jms:jme,nbndsw), optional,      &
         intent(in)                                :: tauaer3d_sw, &
@@ -10110,6 +10115,9 @@ CONTAINS
                                                   snow_mass_factor
     integer ::                                            dyofyr
 
+    integer:: idx_rei
+    real:: corr
+
 ! Set trace gas volume mixing ratios, 2005 values, IPCC (2007)
 ! carbon dioxide (379 ppmv)
     real :: co2
@@ -10178,8 +10186,6 @@ CONTAINS
 
     integer :: pcols, pver
 
-    REAL :: XT24, TLOCTM, HRANG, XXLAT
-
     INTEGER :: i,j,K, na
     LOGICAL :: predicate
 
@@ -10212,11 +10218,6 @@ CONTAINS
 ! All fields are ordered vertically from bottom to top
 ! Pressures are in mb
 
-     ! jararias, 14/08/2013
-     if (present(xcoszen)) then
-         call wrf_debug(100,'coszen from radiation driver')
-     end if
-
 ! latitude loop
   j_loop: do j = jts,jte
 
@@ -10228,26 +10229,9 @@ CONTAINS
 
 ! Cosine solar zenith angle for current time step
 !
-! xt24 is the fractional part of simulation days plus half of radt expressed in 
-! units of minutes
-! julian is in days
-! radt is in minutes
           ! jararias, 14/08/2013
-          if (present(xcoszen)) then
-             coszr(i,j)=xcoszen(i,j)
-             coszrs=xcoszen(i,j)
-          else
-!            da=6.2831853071795862*(julian-1)/365.
-!            eot=(0.000075+0.001868*cos(da)-0.032077*sin(da) &
-!               -0.014615*cos(2*da)-0.04089*sin(2*da))*(229.18)
-             xt24 = mod(xtime+radt*0.5,1440.)+eot
-             tloctm = gmt + xt24/60. + xlong(i,j)/15.
-             hrang = 15. * (tloctm-12.) * degrad
-             xxlat = xlat(i,j) * degrad
-             coszrs = sin(xxlat) * sin(declin) &
-                    + cos(xxlat) * cos(declin) * cos(hrang)
-             coszr(i,j) = coszrs
-          end if
+          coszr(i,j)=xcoszen(i,j)
+          coszrs=xcoszen(i,j)
 
 ! Set flag to prevent shortwave calculation when sun below horizon
          if (coszrs.le.0.0) dorrsw = .false.
@@ -10421,6 +10405,13 @@ CONTAINS
                inflgsw = 3
                DO K=kts,kte
                   recloud1D(ncol,K) = MAX(2.5, re_cloud(I,K,J)*1.E6)
+                  if (recloud1D(ncol,K).LE.2.5.AND.cldfra3d(i,k,j).gt.0. &
+     &                            .AND. (XLAND(I,J)-1.5).GT.0.) then      !--- Ocean
+                     recloud1D(ncol,K) = 10.5
+                  elseif (recloud1D(ncol,K).LE.2.5.AND.cldfra3d(i,k,j).gt.0. &
+     &                            .AND. (XLAND(I,J)-1.5).LT.0.) then      !--- Land
+                     recloud1D(ncol,K) = 7.5
+                  endif
                ENDDO
             ELSE
                DO K=kts,kte
@@ -10433,10 +10424,18 @@ CONTAINS
                iceflgsw = 4
                DO K=kts,kte
                   reice1D(ncol,K) = MAX(10., re_ice(I,K,J)*1.E6)
+                  if (reice1D(ncol,K).LE.10..AND.cldfra3d(i,k,j).gt.0.) then
+                     idx_rei = int(t3d(i,k,j)-179.)
+                     idx_rei = min(max(idx_rei,1),75)
+                     corr = t3d(i,k,j) - int(t3d(i,k,j))
+                     reice1D(ncol,K) = retab(idx_rei)*(1.-corr) +      &
+     &                                 retab(idx_rei+1)*corr
+                     reice1D(ncol,K) = MAX(reice1D(ncol,K), 10.0)
+                  endif
                ENDDO
             ELSE
                DO K=kts,kte
-                  reice1D(ncol,K) = 10.0
+                  reice1D(ncol,K) = 10.
                ENDDO
             ENDIF
 

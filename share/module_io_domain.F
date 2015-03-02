@@ -19,8 +19,7 @@ CONTAINS
    CHARACTER*128             :: DataSet, tmp
    LOGICAL                   :: anyway
    CALL wrf_open_for_read ( fname ,                     &
-                            grid%communicator ,         &
-                            grid%iocommunicator ,       &
+                            grid ,                      &
                             sysdepinfo ,                &
                             id ,                        &
                             ierr )
@@ -45,8 +44,7 @@ CONTAINS
      write(sysdepinfo_tmp,'(a,i2)')TRIM(sysdepinfo)//',GRIDID=',grid%id
    ENDIF
    CALL wrf_open_for_write_begin ( fname ,     &
-                                   grid%communicator ,         &
-                                   grid%iocommunicator ,       &
+                                   grid ,      &
                                    sysdepinfo_tmp ,            &
                                    id ,                        &
                                    ierr )
@@ -57,8 +55,7 @@ CONTAINS
    ENDIF
    IF ( ierr .LE. 0 ) THEN
      CALL wrf_debug ( 100 , 'calling wrf_open_for_write_commit in open_w_dataset' )
-     CALL wrf_open_for_write_commit ( id ,                        &
-                                      ierr )
+     CALL wrf_open_for_write_commit ( id , ierr )
      CALL wrf_debug ( 100 , 'back from wrf_open_for_write_commit in open_w_dataset' )
    ENDIF
   END SUBROUTINE open_w_dataset
@@ -75,8 +72,7 @@ CONTAINS
    LOGICAL                   :: anyway
    CALL wrf_debug ( 100 , 'calling wrf_open_for_read_begin in open_u_dataset' )
    CALL wrf_open_for_read_begin ( fname ,     &
-                                   grid%communicator ,         &
-                                   grid%iocommunicator ,       &
+                                   grid ,     &
                                    sysdepinfo ,                &
                                    id ,                        &
                                    ierr )
@@ -86,8 +82,7 @@ CONTAINS
    ENDIF
    IF ( ierr .LE. 0 ) THEN
      CALL wrf_debug ( 100 , 'calling wrf_open_for_read_commit in open_u_dataset' )
-     CALL wrf_open_for_read_commit ( id ,                        &
-                                       ierr )
+     CALL wrf_open_for_read_commit ( id , ierr )
      CALL wrf_debug ( 100 , 'back from wrf_open_for_read_commit in open_u_dataset' )
    ENDIF
   END SUBROUTINE open_u_dataset
@@ -268,6 +263,8 @@ SUBROUTINE construct_filename4( result , basename , fld1 , len1 , date_char , io
      ext = '.nc '
   ELSE IF ( use_package(io_form) .EQ. IO_PNETCDF ) THEN
     ext = '.nc '
+  ELSE IF ( use_package(io_form) .EQ. IO_PIO ) THEN
+    ext = '.nc '
   ELSE IF ( use_package(io_form) .EQ. IO_GRIB1 ) THEN
      ext = '.gb '
   ELSE
@@ -299,6 +296,8 @@ SUBROUTINE construct_filename4a( result , basename , fld1 , len1 , date_char , i
   ELSE IF ( use_package(io_form) .EQ. IO_NETCDF ) THEN
      ext = '.nc '
   ELSE IF ( use_package(io_form) .EQ. IO_PNETCDF ) THEN
+    ext = '.nc '
+  ELSE IF ( use_package(io_form) .EQ. IO_PIO ) THEN
     ext = '.nc '
   ELSE IF ( use_package(io_form) .EQ. IO_GRIB1 ) THEN
      ext = '.gb '
@@ -402,6 +401,8 @@ SUBROUTINE maybe_remove_colons( FileName )
   IF ( nocolons ) THEN
     DO i = 3, l
       IF ( FileName(i:i) .EQ. ':' ) THEN
+        FileName(i:i) = '_'
+      ELSE IF ( FileName(i:i) .EQ. '-' ) THEN
         FileName(i:i) = '_'
       ENDIF
     ENDDO

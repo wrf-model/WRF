@@ -8,25 +8,26 @@
 
 !!!! MODEL INPUT DATA FILES !!!
 !Specify land surface model gridded input data file...(e.g.: "geo_em.d03.nc")
- GEO_STATIC_FLNM = "RT/geo_em.d03.nc"
+ GEO_STATIC_FLNM = "DOMAIN/geo_em.d03.nc"
 
 !Specify the high-resolution routing terrain input data file...(e.g.: "Fulldom_hires_hydrofile.nc"
- GEO_FINEGRID_FLNM = "/d1/gochis/NDHMS/terrain/FRNG/Fulldom_hires_hydrofile_ohd_new_basns_w_cal_params_full_domain.nc"
+ GEO_FINEGRID_FLNM = "DOMAIN/Fulldom_hires_hydrofile_ohd_new_basns_w_cal_params_full_domain.nc"
 
 !Specify the name of the restart file if starting from restart...comment out with '!' if not...
-  RESTART_FILE  = 'HYDRO_RST.2010-10-01_06:00_DOMAIN2'
+! RESTART_FILE  = 'HYDRO_RST.2012-07-21_12:00_DOMAIN2'
 
 
 
 !!!! MODEL SETUP AND I/O CONTROL !!!!
 !Specify the domain or nest number identifier...(integer)
- IGRID = 2
+ IGRID = 3
 
 !Specify the restart file write frequency...(minutes)
- rst_dt = 60   
+ !rst_dt = 360   
+ rst_dt = 30   
 
 !Specify the output file write frequency...(minutes)
- out_dt = 60 ! minutes
+ out_dt = 15 ! minutes
 
 !Specify if output history files are to be written...(.TRUE. or .FALSE.)
  HISTORY_OUTPUT = .TRUE.
@@ -37,7 +38,7 @@
  SPLIT_OUTPUT_COUNT = 1
 
 ! rst_typ = 1 : overwrite the soil variables from routing restart file.
- rst_typ = 1
+ rst_typ = 0
 
 !Restart switch to set restart accumulation variables = 0 (0-no reset, 1-yes reset to 0.0)
  RSTRT_SWC = 0
@@ -47,7 +48,7 @@
 
 !Specify the minimum stream order to output to netcdf point file...(integer)
 !Note: lower value of stream order produces more output.
- order_to_write = 2
+ order_to_write = 1
 
 
 
@@ -61,10 +62,10 @@
 ! Notes: In Version 1 of WRF-Hydro these must be the same as in the namelist.input file
 !       Future versions will permit this to be different.
  NSOIL=4
- ZSOIL8(1) = -0.05
- ZSOIL8(2) = -0.25
- ZSOIL8(3) = -0.70 
- ZSOIL8(4) = -1.5 
+ ZSOIL8(1) = -0.10
+ ZSOIL8(2) = -0.40
+ ZSOIL8(3) = -1.0 
+ ZSOIL8(4) = -2.0 
 
 !Specify the grid spacing of the terrain routing grid...(meters)
  DXRT = 100
@@ -73,7 +74,7 @@
  AGGFACTRT = 10
 
 !Specify the routing model timestep...(seconds)
- DTRT = 10
+ DTRT = 2
 
 !Switch activate subsurface routing...(0=no, 1=yes)
  SUBRTSWCRT = 1
@@ -83,7 +84,7 @@
 
 !Switch to activate channel routing Routing Option: 1=Seepest Descent (D8) 2=CASC2D
  rt_option    = 1
- CHANRTSWCRT = 1
+ CHANRTSWCRT = 0
 
 !Specify channel routing option: 1=Muskingam-reach, 2=Musk.-Cunge-reach, 3=Diff.Wave-gridded
  channel_option =3
@@ -92,13 +93,13 @@
  route_link_f = ""
 
 !Switch to activate baseflow bucket model...(0=none, 1=exp. bucket, 2=pass-through)
- GWBASESWCRT = 1
+ GWBASESWCRT = 2
 
 !Specify baseflow/bucket model initialization...(0=cold start from table, 1=restart file)
- GW_RESTART = 1
+ GW_RESTART = 0
 
 !Groundwater/baseflow mask specified on land surface model grid...
 !Note: Only required if baseflow bucket model is active
- gwbasmskfil = "RT/basn_msk1k_frng_ohd.txt"
+ gwbasmskfil = "DOMAIN/basn_msk1k_frng_ohd.txt"
 
 /

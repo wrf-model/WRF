@@ -28,6 +28,12 @@ CONTAINS
 !-------------------------------------------------------------------
       IMPLICIT NONE
 !-------------------------------------------------------------------
+!   Changes in V3.7 over water surfaces: 
+!          1. for ZNT/Cd, replacing constant OZO with 0.11*1.5E-5/UST(I)
+!             the COARE 3.5 (Edson et al. 2013) formulation is also available
+!          2. for VCONV, reducing magnitude by half
+!          3. for Ck, replacing Carlson-Boland with COARE 3
+!-------------------------------------------------------------------
 !-- U3D         3D u-velocity interpolated to theta points (m/s)
 !-- V3D         3D v-velocity interpolated to theta points (m/s)
 !-- T3D         temperature (K)
@@ -174,12 +180,13 @@ CONTAINS
                 INTENT(INOUT)   ::                                 &
                                                               QGH
 
-
-                                    
       REAL,     INTENT(IN   )               ::   CP,G,ROVCP,R,XLV,DX
  
       REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme )              , &
-                INTENT(OUT)     ::              ck,cka,cd,cda,ustm
+                INTENT(OUT)     ::                  ck,cka,cd,cda
+
+      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme )              , &
+                INTENT(INOUT)   ::                           USTM
 
       INTEGER,  OPTIONAL,  INTENT(IN )   ::     ISFTCFLX, IZ0TLND
       INTEGER,  OPTIONAL,  INTENT(IN )   ::     SCM_FORCE_FLUX
@@ -325,7 +332,9 @@ CONTAINS
                                                               T1D
  
       REAL, OPTIONAL, DIMENSION( ims:ime )                       , &
-                INTENT(OUT)     ::              ck,cka,cd,cda,ustm
+                INTENT(OUT)     ::                  ck,cka,cd,cda
+      REAL, OPTIONAL, DIMENSION( ims:ime )                       , &
+                INTENT(INOUT)   ::                           USTM
 
       INTEGER,  OPTIONAL,  INTENT(IN )   ::     ISFTCFLX, IZ0TLND
       INTEGER,  OPTIONAL,  INTENT(IN )   ::     SCM_FORCE_FLUX
@@ -363,6 +372,7 @@ CONTAINS
       REAL    ::  DTG,PSIX,DTTHX,PSIX10,PSIT,PSIT2,PSIQ,PSIQ2,PSIQ10
       REAL    ::  FLUXC,VSGD,Z0Q,VISC,RESTAR,CZIL,GZ0OZQ,GZ0OZT
       REAL    ::  ZW, ZN1, ZN2
+      REAL    ::  Z0T, CZC
 !-------------------------------------------------------------------
       KL=kte
 
@@ -477,7 +487,7 @@ CONTAINS
         TSKV=THGB(I)*(1.+EP1*QSFC(I))                     
         DTHVDZ=(THVX(I)-TSKV)                                                 
 !  Convective velocity scale Vc and subgrid-scale velocity Vsg
-!  following Beljaars (1995, QJRMS) and Mahrt and Sun (1995, MWR)
+!  following Beljaars (1994, QJRMS) and Mahrt and Sun (1995, MWR)
 !                                ... HONG Aug. 2001
 !
 !       VCONV = 0.25*sqrt(g/tskv*pblh(i)*dthvm)
@@ -492,7 +502,9 @@ CONTAINS
         ELSE
           DTHVM=0.
         ENDIF
-        VCONV = 2.*SQRT(DTHVM)
+!       VCONV = 2.*SQRT(DTHVM)
+! V3.7: reducing contribution in calm conditions
+        VCONV = SQRT(DTHVM)
         endif
 ! Mahrt and Sun low-res correction
         VSGD = 0.32 * (max(dx/5000.-1.,0.))**.33
@@ -686,6 +698,26 @@ CONTAINS
         PSIQ2=ALOG(KARMAN*UST(I)*2./XKA+2./ZL)-PSIH2(I)                                   
 ! AHW: mods to compute ck, cd
         PSIQ10=ALOG(KARMAN*UST(I)*10./XKA+10./ZL)-PSIH10(I)
+
+! V3.7: using Fairall 2003 to compute z0q and z0t over water:
+!       adapted from module_sf_mynn.F
+        IF ( (XLAND(I)-1.5).GE.0. ) THEN
+              VISC=(1.32+0.009*(SCR3(I)-273.15))*1.E-5
+!             VISC=1.326e-5*(1. + 6.542e-3*SCR3(I) + 8.301e-6*SCR3(I)*SCR3(I) &
+!                 - 4.84e-9*SCR3(I)*SCR3(I)*SCR3(I))
+              RESTAR=UST(I)*ZNT(I)/VISC
+              Z0T = (5.5e-5)*(RESTAR**(-0.60))
+              Z0T = MIN(Z0T,1.0e-4)
+              Z0T = MAX(Z0T,2.0e-9)
+              Z0Q = Z0T
+
+              PSIQ=max(ALOG((ZA(I)+Z0Q)/Z0Q)-PSIH(I), 2.)
+              PSIT=max(ALOG((ZA(I)+Z0T)/Z0T)-PSIH(I), 2.)
+              PSIQ2=max(ALOG((2.+Z0Q)/Z0Q)-PSIH2(I), 2.)
+              PSIT2=max(ALOG((2.+Z0T)/Z0T)-PSIH2(I), 2.)
+              PSIQ10=max(ALOG((10.+Z0Q)/Z0Q)-PSIH10(I), 2.)
+        ENDIF
+
         IF ( PRESENT(ISFTCFLX) ) THEN
            IF ( ISFTCFLX.EQ.1 .AND. (XLAND(I)-1.5).GE.0. ) THEN
 ! v3.1
@@ -789,7 +821,13 @@ CONTAINS
                                                                                  
       DO 360 I=its,ite
         IF((XLAND(I)-1.5).GE.0)THEN                                            
-          ZNT(I)=CZO*UST(I)*UST(I)/G+OZO                                   
+!         ZNT(I)=CZO*UST(I)*UST(I)/G+OZO                                   
+! Since V3.7 (ref: EC Physics document for Cy36r1)
+          ZNT(I)=CZO*UST(I)*UST(I)/G+0.11*1.5E-5/UST(I)
+! COARE 3.5 (Edson et al. 2013)
+!         CZC = 0.0017*WSPD(I)-0.005
+!         CZC = min(CZC,0.028)
+!         ZNT(I)=CZC*UST(I)*UST(I)/G+0.11*1.5E-5/UST(I)
 ! AHW: change roughness length, and hence the drag coefficients Ck and Cd
           IF ( PRESENT(ISFTCFLX) ) THEN
              IF ( ISFTCFLX.NE.0 ) THEN

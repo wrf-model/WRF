@@ -111,7 +111,7 @@ contains
        case default
 #ifdef HYDRO_D
           write(*,*) 'ERROR: geth_newdate:  odd length: #'//trim(odate)//'#'
-          call hydro_stop()
+          call hydro_stop("geth_newdate")
 #endif
        end select
 
@@ -165,7 +165,7 @@ contains
        case default
 #ifdef HYDRO_D
           write(*,*) 'ERROR: geth_newdate:  odd length: #'//trim(odate)//'#'
-          call hydro_stop()
+          call hydro_stop("geth_newdate")
 #endif
        end select
     endif
@@ -298,7 +298,7 @@ contains
        write(*,'(''GETH_NEWDATE: Strange length for ODATE: '', i3)') &
             oldlen
        write(*,*) '#'//odate(1:oldlen)//'#'
-       call hydro_stop()
+       call hydro_stop("geth_newdate")
 #endif
     end if
 
@@ -504,7 +504,7 @@ contains
     if (newlen.ne.oldlen) then
 #ifdef HYDRO_D
        write(*,'("GETH_IDTS: NEWLEN /= OLDLEN: ", A, 3x, A)') newdate(1:newlen), olddate(1:oldlen)
-       call hydro_stop()
+       call hydro_stop("geth_newdate")
 #endif
     endif
 
@@ -532,7 +532,7 @@ contains
 #ifdef HYDRO_D
           write(*,'("GETH_IDTS: Dates appear to be different formats: ", A, 3x, A)') &
                ndate(1:newlen), odate(1:oldlen)
-          call hydro_stop()
+          call hydro_stop("geth_idts")
 #endif
        endif
     else
@@ -541,7 +541,7 @@ contains
 #ifdef HYDRO_D
           write(*,'("GETH_IDTS: Dates appear to be different formats: ", A, 3x, A)') &
                ndate(1:newlen), odate(1:oldlen)
-          call hydro_stop()
+          call hydro_stop("geth_idts")
 #endif
        endif
     endif
@@ -588,7 +588,7 @@ contains
        case default
 #ifdef HYDRO_D
           write(*,*) 'ERROR: geth_idts:  odd length: #'//trim(odate)//'#'
-          call hydro_stop()
+          call hydro_stop("geth_idts")
 #endif
        end select
     else
@@ -635,7 +635,7 @@ contains
        case default
 #ifdef HYDRO_D
           write(*,*) 'ERROR: geth_idts:  odd length: #'//trim(odate)//'#'
-          call hydro_stop()
+          call hydro_stop("geth_idts")
 #endif
        end select
     endif
@@ -805,14 +805,14 @@ contains
     if (.not. npass) then
 #ifdef HYDRO_D
        print*, 'Screwy NDATE: ', ndate(1:newlen)
-       call hydro_stop()
+       call hydro_stop("geth_idts")
 #endif
     end if
 
     if (.not. opass) then
 #ifdef HYDRO_D
        print*, 'Screwy ODATE: ', odate(1:oldlen)
-       call hydro_stop()
+       call hydro_stop("geth_idts")
 #endif
     end if
 
@@ -953,7 +953,7 @@ contains
 #ifdef HYDRO_D
        write(*, '("Function monthabbr_to_mm:  mon = <",A,">")') mon
        print*,  "Function monthabbr_to_mm:  Unrecognized mon"
-       call hydro_stop()
+       call hydro_stop("monthabbr_to_mm")
 #endif
     endif
   end function monthabbr_to_mm
@@ -987,7 +987,7 @@ contains
        case default
 #ifdef HYDRO_D
           write(*,'("Unrecognized length: <", A,">")') indate
-         call hydro_stop()
+         call hydro_stop("swap_date_format")
 #endif
        end select
     else
@@ -1014,7 +1014,7 @@ contains
        case default
 #ifdef HYDRO_D
           write(*,'("Unrecognized length: <", A,">")') indate
-          call hydro_stop()
+          call hydro_stop("swap_date_format")
 #endif
        end select
     endif
@@ -1032,7 +1032,7 @@ contains
     else
 #ifdef HYDRO_D
        print*, "mm_to_monthabbr"
-       call hydro_stop()
+       call hydro_stop("mm_to_monthabbr")
 #endif
     endif
   end function mm_to_monthabbr

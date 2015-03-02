@@ -1,4 +1,4 @@
-     27 USGS for OV_ROUGH
+     28 USGS for OV_ROUGH
    SFC_ROUGH'
      0.025,    'Urban and Built-Up Land'  
      0.035,    'Dryland Cropland and Pasture' 
@@ -27,6 +27,7 @@
      0.010,    'Playa' 
      0.100,    'Lava'   
      0.010,    'White Sand' 
+     0.005,    'Non-Ocean Water Bodies'
 19, for SATDK
 SATDK     MAXSMC    REFSMC   WLTSMC  QTZ    '
 1.07E-6,  0.339,    0.236,   0.010,  0.92, 'SAND'
@@ -43,7 +44,7 @@ SATDK     MAXSMC    REFSMC   WLTSMC  QTZ    '
 9.74E-7,  0.468,    0.412,   0.138,  0.25, 'CLAY'
 3.38E-6,  0.439,    0.329,   0.066,  0.05, 'ORGANIC MATERIAL'
     0.0,  1.0,      0.0,     0.0,    0.60, 'WATER'
-1.41E-4,  0.20,     0.170,   0.006,  0.07, 'BEDROCK'
+1.75E-5,  0.20,     0.170,   0.006,  0.07, 'BEDROCK'
 1.41E-5,  0.421,    0.283,   0.028,  0.25, 'OTHER(land-ice)'
 9.74E-7,  0.468,    0.454,   0.030,  0.60, 'PLAYA'
 1.41E-4,  0.200,    0.170,   0.006,  0.52, 'LAVA'

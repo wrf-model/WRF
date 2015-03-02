@@ -22,13 +22,14 @@ CONTAINS
                  ,thz0,qz0,uz0,vz0,qsfc,f                          &
                  ,lowlyr,u10,v10,uoce,voce,t2                      &
                  ,psim,psih,fm,fhh,gz1oz0, wspd,br,chklowq         &
-                 ,bl_pbl_physics, ra_lw_physics, dx                &
+                 ,bl_pbl_physics, ra_lw_physics, dx, dy            &
                  ,stepbl,warm_rain                                 &
                  ,kpbl,mixht,ct,lh,snow,xice                       &
                  ,znu, znw, mut, p_top                             &
 ! paj
                  ,ctopo,ctopo2,windfarm_opt,power                  &
                  ,ysu_topdown_pblmix                               &
+                 ,shinhong_tke_diag                                &
               ! OPTIONAL for TEMF scheme
                  ,te_temf,km_temf,kh_temf                     &
                  ,shf_temf,qf_temf,uw_temf,vw_temf                &
@@ -115,16 +116,16 @@ CONTAINS
                    YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME,ACMPBLSCHEME,&
                    QNSEPBLSCHEME,MYNNPBLSCHEME2,MYNNPBLSCHEME3,BOULACSCHEME,&
                    CAMUWPBLSCHEME,BEPSCHEME,BEP_BEMSCHEME,MYJSFCSCHEME, &
-                   FITCHSCHEME,                                      &
-                   TEMFPBLSCHEME,QNSEPBL09SCHEME,GBMPBLSCHEME,  &
+                   FITCHSCHEME,SHINHONGSCHEME,                       &
+                   TEMFPBLSCHEME,GBMPBLSCHEME,                       &
                    CAMMGMPSCHEME,p_qi,p_qni,p_qnc,param_first_scalar  !CAMMGMPSCHEME, p_qni,p_qnc is used for camuwpbl scheme
 #else
    USE module_state_description, ONLY :                            &
                    YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME,ACMPBLSCHEME &
                    , QNSEPBLSCHEME, p_qi,param_first_scalar &
-                   , TEMFPBLSCHEME, GFS2011SCHEME,QNSEPBL09SCHEME         &
+                   , TEMFPBLSCHEME, GFS2011SCHEME                         &
                    , CAMUWPBLSCHEME                                       &
-                   , FITCHSCHEME                                       &
+                   , FITCHSCHEME, SHINHONGSCHEME                          &
                    , GBMPBLSCHEME, MYJSFCSCHEME
 #endif
 
@@ -134,8 +135,8 @@ CONTAINS
 
    USE module_bl_myjpbl
    USE module_bl_qnsepbl
-   USE module_bl_qnsepbl09
    USE module_bl_ysu
+   USE module_bl_shinhong
    USE module_bl_mrf
    USE module_bl_gfs
    USE module_bl_gfs2011, only: bl_gfs2011
@@ -159,13 +160,13 @@ CONTAINS
    !      1. ysupbl
    !      2. myjpbl
    !      4. qnsepbl
-   !     94. qnsepbl09 (old version)
    !      5. mynnpbl2
    !      6. mynnpbl3
    !      7. acmpbl
    !      8. boulacpbl
    !      9. camuwpbl
    !      10. temfpbl
+   !      11. shinhongpbl
    !      99. mrfpbl
    !      12. gbmpbl
    !
@@ -349,6 +350,7 @@ CONTAINS
 
    INTEGER,    INTENT(IN   )    ::     bl_pbl_physics, ra_lw_physics,sf_sfclay_physics,sf_urban_physics,windfarm_opt
    INTEGER,    INTENT(IN   )    ::     ysu_topdown_pblmix
+   INTEGER,    OPTIONAL,  INTENT(IN   )    ::     shinhong_tke_diag
    INTEGER,    OPTIONAL,  INTENT(IN   )    ::     scalar_pblmix, tracer_pblmix
 
    INTEGER,    INTENT(IN   )    ::     ids,ide, jds,jde, kds,kde, &
@@ -386,7 +388,7 @@ CONTAINS
                OPTIONAL, INTENT(IN   )    ::               znu,   &
                                                            znw
 !
-   REAL,       INTENT(IN   )    ::     DT,DX
+   REAL,       INTENT(IN   )    ::     DT,DX,DY
    REAL,       INTENT(IN   ),OPTIONAL    ::     bldt
    REAL,       INTENT(IN   ),OPTIONAL    ::     curr_secs
    LOGICAL,    INTENT(IN   ),OPTIONAL    ::     adapt_step_flag
@@ -1136,6 +1138,64 @@ CONTAINS
                CALL wrf_error_fatal('Lack arguments to call YSU pbl')
            ENDIF
 
+      CASE (SHINHONGSCHEME)
+        CALL wrf_debug(100,'in SHINHONG PBL')
+           IF ( PRESENT( qv_curr )  .AND. PRESENT( qc_curr )  .AND. &
+                PRESENT( qi_curr )                            .AND. &
+                PRESENT( rqvblten ) .AND. PRESENT( rqcblten ) .AND. &
+                PRESENT( rqiblten )                           .AND. &
+                PRESENT( hol      ) ) THEN
+!
+             CALL shinhong(                                         &
+               U3D=u_phytmp,V3D=v_phytmp,TH3D=th_phy,T3D=t_phy      &
+              ,QV3D=qv_curr,QC3D=qc_curr,QI3D=qi_curr               &
+              ,P3D=p_phy,P3DI=p8w,PI3D=pi_phy                       &
+              ,RUBLTEN=rublten,RVBLTEN=rvblten                      &
+              ,RTHBLTEN=rthblten,RQVBLTEN=rqvblten                  &
+              ,RQCBLTEN=rqcblten,RQIBLTEN=rqiblten                  &
+              ,FLAG_QI=flag_qi                                      &
+              ,CP=cp,G=g,ROVCP=rcp,RD=r_D,ROVG=rovg                 &
+              ,DZ8W=dz8w,XLV=XLV,RV=r_v,PSFC=PSFC                   &
+              ,ZNU=znu,ZNW=znw,MUT=mut,P_TOP=p_top                  &
+              ,ZNT=znt,UST=ust,HPBL=pblh                            &
+              ,PSIM=fm,PSIH=fhh,XLAND=xland                         &
+              ,HFX=hfx,QFX=qfx                                      &
+              ,U10=u10,V10=v10                                      &
+! paj
+              ,CTOPO=ctopo,CTOPO2=ctopo2                            &
+              ,SHINHONG_TKE_DIAG=shinhong_tke_diag                  &
+              ,WSPD=wspd,BR=br,DT=dtbl,KPBL2D=kpbl                  &
+              ,EP1=ep_1,EP2=ep_2,KARMAN=karman                      &
+              ,EXCH_H=exch_h,REGIME=regime                          &
+! for grims shallow convection with shinhongpbl
+              ,WSTAR=wstar,DELTA=delta                              &
+              ,TKE_PBL=tke_pbl,EL_PBL=el_pbl,CORF=f                 &
+              ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
+              ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
+              ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
+              ,DX=dx,DY=dy                                          &
+                                                                    )
+           ELSE
+               WRITE ( message , FMT = '(A,7(L1,1X))' )             &
+                 'present: '//                                      &
+                 'qv_curr, '//                                      &
+                 'qc_curr, '//                                      &
+                 'qi_curr, '//                                      &
+                 'rqvblten, '//                                     &
+                 'rqcblten, '//                                     &
+                 'rqiblten, '//                                     &
+                 'hol = ' ,                                         &
+                  PRESENT( qv_curr ) ,                              &
+                  PRESENT( qc_curr ) ,                              &
+                  PRESENT( qi_curr ) ,                              &
+                  PRESENT( rqvblten ) ,                             &
+                  PRESENT( rqcblten ) ,                             &
+                  PRESENT( rqiblten ) ,                             &
+                  PRESENT( hol      )
+               CALL wrf_debug(0,message)
+               CALL wrf_error_fatal('Lack arguments to call SHINHONG pbl')
+           ENDIF
+
       CASE (MRFSCHEME)
            IF ( PRESENT( qv_curr )  .AND. PRESENT( qc_curr )  .AND. &
                 PRESENT( rqvblten ) .AND. PRESENT( rqcblten ) .AND. &
@@ -1424,44 +1484,6 @@ CONTAINS
                   PRESENT( rqcblten )
                CALL wrf_debug(0,message)
                CALL wrf_error_fatal('Lack arguments to call QNSE pbl')
-           ENDIF
-
-      CASE (QNSEPBL09SCHEME)
-           IF ( PRESENT( qv_curr )  .AND. PRESENT( qc_curr )  .AND. &
-                PRESENT( rqvblten ) .AND. PRESENT( rqcblten ) .AND. &
-                                                        .TRUE.  ) THEN
-             CALL wrf_debug(100,'in QNSEPBL09')
-             CALL qnsepbl09(                                        &
-               DT=dt,STEPBL=stepbl,HT=ht,DZ=dz8w                    &
-              ,PMID=p_phy,PINT=p8w,TH=th_phy,T=t_phy,EXNER=pi_phy   &
-              ,QV=qv_curr, CWM=qc_curr                              &
-              ,U=u_phy,V=v_phy,RHO=rho                              &
-              ,TSK=tsk,QSFC=qsfc,CHKLOWQ=chklowq,THZ0=thz0          &
-              ,QZ0=qz0,UZ0=uz0,VZ0=vz0,CORF=f                       &
-              ,LOWLYR=lowlyr                                        &
-              ,XLAND=xland,SICE=xice,SNOW=snow                      &
-              ,TKE=tke_pbl,EXCH_H=exch_h,EXCH_M=exch_m,USTAR=ust,ZNT=znt      &
-              ,EL_MYJ=el_pbl,PBLH=pblh,KPBL=kpbl,CT=ct              &
-              ,AKHS=akhs,AKMS=akms,ELFLX=lh                         &
-              ,RUBLTEN=rublten,RVBLTEN=rvblten,RTHBLTEN=rthblten    &
-              ,RQVBLTEN=rqvblten,RQCBLTEN=rqcblten                  &
-              ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
-              ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
-              ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
-                                                                    )
-           ELSE
-               WRITE ( message , FMT = '(A,4(L1,1X))' )             &
-                 'present: '//                                      &
-                 'qv_curr, '//                                      &
-                 'qc_curr, '//                                      &
-                 'rqvblten, '//                                     &
-                 'rqcblten = ' ,                                    &
-                  PRESENT( qv_curr ) ,                              &
-                  PRESENT( qc_curr ) ,                              &
-                  PRESENT( rqvblten ) ,                             &
-                  PRESENT( rqcblten )
-               CALL wrf_debug(0,message)
-               CALL wrf_error_fatal('Lack arguments to call old QNSE pbl')
            ENDIF
 
       CASE (ACMPBLSCHEME)

@@ -58,7 +58,7 @@ state    real   AFWA_LLTURBLGT   ij     misc        1         -      rh02       
 state    real   AFWA_LLTURBMDT   ij     misc        1         -      rh02       "AFWA_LLTURBMDT"  "AFWA Diagnostic: Prob of MDT Low-level Turb"   "%"
 state    real   AFWA_LLTURBSVR   ij     misc        1         -      rh02       "AFWA_LLTURBSVR"  "AFWA Diagnostic: Prob of SVR Low-level Turb"   "%"
 state    real   AFWA_PRECIP      ij     misc        1         -      r          "AFWA_PRECIP"     "AFWA Diagnostic: Precipitation bucket"         "mm"
-state    real   AFWA_TOTPRECIP  ij      misc        1         -      rh02       "AFWA_TOTPRECIP"  "AFWA Diagnostic: Total simulation precip"      "mm"            "mm"
+state    real   AFWA_TOTPRECIP  ij      misc        1         -      rh02       "AFWA_TOTPRECIP"  "AFWA Diagnostic: Total simulation precip"      "mm" 
 state    real   AFWA_RAIN        ij     misc        1         -      rh02       "AFWA_RAIN"       "AFWA Diagnostic: Rain fall"                    "mm"
 state    real   AFWA_SNOW        ij     misc        1         -      rh02       "AFWA_SNOW"       "AFWA Diagnostic: Liq Equiv Snow fall"          "mm"
 state    real   AFWA_ICE         ij     misc        1         -      rh02       "AFWA_ICE"        "AFWA Diagnostic: Ice fall"                     "mm"

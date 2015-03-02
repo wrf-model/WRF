@@ -3903,65 +3903,65 @@ USE module_mp_radar
 	IF(DEL_T.GE.0.AND.FF_MAX.NE.0) THEN
 ! Fan's "MASS LOOP"
           DO KR = 1,NKR
-             ARG_M = 0.
+          ARG_M = 0.
             DO ICE = 1,ICEMAX
              IF (ICE ==1) THEN
                  IF (KR .le. 10) THEN
-                     FF2(KR,ICE)=0.
                      ARG_M = ARG_M+FF2(KR,ICE)
+                     FF2(KR,ICE)=0.
                  ELSEIF (KR .gt. 10 .and. KR .lt. 18) THEN
                      meltrate = 0.5/50.
-                     FF2(KR,ICE)=FF2(KR,ICE)-FF2(KR,ICE)*(meltrate*dt)
                      ARG_M=ARG_M+FF2(KR,ICE)*(meltrate*dt)
+                     FF2(KR,ICE)=FF2(KR,ICE)-FF2(KR,ICE)*(meltrate*dt)
                  ELSE
                      meltrate = 0.683/120.
-                     FF2(KR,ICE)=FF2(KR,ICE)-FF2(KR,ICE)*(meltrate*dt)
                      ARG_M=ARG_M+FF2(KR,ICE)*(meltrate*dt)
+                     FF2(KR,ICE)=FF2(KR,ICE)-FF2(KR,ICE)*(meltrate*dt)
                  ENDIF
              ENDIF
              IF (ICE ==2 .or. ICE ==3) THEN
                 IF (kr .le. 12) THEN
-                    FF2(KR,ICE)=0.
                     ARG_M = ARG_M+FF2(KR,ICE)
+                    FF2(KR,ICE)=0.
                 ELSEIF (kr .gt. 12 .and. kr .lt. 20) THEN
                     meltrate = 0.5/50.
-                    FF2(KR,ICE)=FF2(KR,ICE)-FF2(KR,ICE)*(meltrate*dt)
                     ARG_M=ARG_M+FF2(KR,ICE)*(meltrate*dt)
+                    FF2(KR,ICE)=FF2(KR,ICE)-FF2(KR,ICE)*(meltrate*dt)
                  ELSE
-                     meltrate = 0.683/120.
-                    FF2(KR,ICE)=FF2(KR,ICE)-FF2(KR,ICE)*(meltrate*dt)
+                    meltrate = 0.683/120.
                     ARG_M=ARG_M+FF2(KR,ICE)*(meltrate*dt)
+                    FF2(KR,ICE)=FF2(KR,ICE)-FF2(KR,ICE)*(meltrate*dt)
                  ENDIF
              ENDIF
             ENDDO  ! Do ice
 ! snow
                  IF (kr .le. 14) THEN
-                    FF3(KR)=0.
                     ARG_M = ARG_M+FF3(KR)
+                    FF3(KR)=0.
                  ELSEIF (kr .gt. 14 .and. kr .lt. 22) THEN
                     meltrate = 0.5/50.
-                    FF3(KR)=FF3(KR)-FF3(KR)*(meltrate*dt)
                     ARG_M=ARG_M+FF3(KR)*(meltrate*dt)
+                    FF3(KR)=FF3(KR)-FF3(KR)*(meltrate*dt)
                  ELSE
                     meltrate = 0.683/120.
-                    FF3(KR)=FF3(KR)-FF3(KR)*(meltrate*dt)
                     ARG_M=ARG_M+FF3(KR)*(meltrate*dt)
+                    FF3(KR)=FF3(KR)-FF3(KR)*(meltrate*dt)
                  ENDIF
 ! graupel/hail
                  IF (kr .le. 13) then
+                     ARG_M = ARG_M+FF4(KR)+FF5(KR)
                      FF4(KR)=0.
                      FF5(KR)=0.
-                     ARG_M = ARG_M+FF4(KR)+FF5(KR)
                  ELSEIF (kr .gt. 13 .and. kr .lt. 23) THEN
                      meltrate = 0.5/50.
+                     ARG_M=ARG_M+(FF4(KR)+FF5(KR))*(meltrate*dt)
                      FF4(KR)=FF4(KR)-FF4(KR)*(meltrate*dt)
                      FF5(KR)=FF5(KR)-FF5(KR)*(meltrate*dt)
-                     ARG_M=ARG_M+(FF4(KR)+FF5(KR))*(meltrate*dt)
                  ELSE
-                     meltrate = 0.683/120.
+                    meltrate = 0.683/120.
+                    ARG_M=ARG_M+(FF4(KR)+FF5(KR))*(meltrate*dt)
                     FF4(KR)=FF4(KR)-FF4(KR)*(meltrate*dt)
                     FF5(KR)=FF5(KR)-FF5(KR)*(meltrate*dt)
-                    ARG_M=ARG_M+(FF4(KR)+FF5(KR))*(meltrate*dt)
                  ENDIF
 
                    FF1(KR)=FF1(KR)+ARG_M
@@ -3978,6 +3978,7 @@ USE module_mp_radar
 	ENDIF
    	RETURN                                                           
       	END SUBROUTINE J_W_MELT                                                             
+!===================================================================
       SUBROUTINE JERNUCL01(PSI1,PSI2,FCCNR &
      &                    ,X1,X2,DTT,DQQ,ROR,PP,DSUP1,DSUP2 &
      &  ,COL,AA1_MY, BB1_MY, AA2_MY, BB2_MY &

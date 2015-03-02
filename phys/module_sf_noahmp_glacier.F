@@ -157,7 +157,11 @@ contains
                    FSA     ,FSR     ,FIRA    ,FSH     ,FGEV    ,SSOIL   , & ! OUT : 
                    TRAD    ,EDIR    ,RUNSRF  ,RUNSUB  ,SAG     ,ALBEDO  , & ! OUT :
                    QSNBOT  ,PONDING ,PONDING1,PONDING2,T2M     ,Q2E     , & ! OUT :
-                   EMISSI,  FPICE,    CH2B)                                 ! OUT :
+                   EMISSI,  FPICE,    CH2B                                & ! OUT :
+#ifdef WRF_HYDRO
+                   , sfcheadrt                                            &
+#endif
+                   )
 
 ! --------------------------------------------------------------------------------------------------
 ! Initial code: Guo-Yue Niu, Oct. 2007
@@ -184,6 +188,10 @@ contains
   REAL                           , INTENT(IN)    :: ZLVL   !reference height (m)
   REAL, DIMENSION(-NSNOW+1:    0), INTENT(IN)    :: FICEOLD!ice fraction at last timestep
   REAL, DIMENSION(       1:NSOIL), INTENT(IN)    :: ZSOIL  !layer-bottom depth from soil surf (m)
+
+#ifdef WRF_HYDRO
+  REAL                           , INTENT(INOUT)    :: sfcheadrt
+#endif
 
 ! input/output : need arbitary intial values
   REAL                           , INTENT(INOUT) :: QSNOW  !snowfall [mm/s]
@@ -297,7 +305,11 @@ contains
                          QVAP   ,QDEW   ,FICEOLD,ZSOIL  ,                 & !in
                          ISNOW  ,SNOWH  ,SNEQV  ,SNICE  ,SNLIQ  ,STC    , & !inout
                          DZSNSO ,SH2O   ,SICE   ,PONDING,ZSNSO  ,         & !inout
-                         RUNSRF ,RUNSUB ,QSNOW  ,PONDING1       ,PONDING2,QSNBOT,FPICE)  !out
+                         RUNSRF ,RUNSUB ,QSNOW  ,PONDING1       ,PONDING2,QSNBOT,FPICE &  !out
+#ifdef WRF_HYDRO
+                        , sfcheadrt                     &
+#endif
+                        )
 
      IF(MAXVAL(SICE) < 0.0001) THEN
        WRITE(message,*) "GLACIER HAS MELTED AT:",ILOC,JLOC," ARE YOU SURE THIS SHOULD BE A GLACIER POINT?"
@@ -1912,7 +1924,11 @@ contains
                             QVAP   ,QDEW   ,FICEOLD,ZSOIL  ,                 & !in
                             ISNOW  ,SNOWH  ,SNEQV  ,SNICE  ,SNLIQ  ,STC    , & !inout
                             DZSNSO ,SH2O   ,SICE   ,PONDING,ZSNSO  ,         & !inout
-                            RUNSRF ,RUNSUB ,QSNOW  ,PONDING1 ,PONDING2,QSNBOT,FPICE     )   !out
+                            RUNSRF ,RUNSUB ,QSNOW  ,PONDING1 ,PONDING2,QSNBOT,FPICE     &   !out
+#ifdef WRF_HYDRO
+                            , sfcheadrt                                      &
+#endif
+                            )  !out
 ! ----------------------------------------------------------------------  
 ! Code history:
 ! Initial code: Guo-Yue Niu, Oct. 2007
@@ -1967,6 +1983,10 @@ contains
   REAL, DIMENSION(       1:NSOIL)                :: SH2O_SAVE  !soil liquid water content [m3/m3]
   INTEGER :: ILEV
 
+#ifdef WRF_HYDRO
+  REAL                           , INTENT(INOUT)    :: sfcheadrt
+#endif
+
 ! ----------------------------------------------------------------------
 ! initialize
 
@@ -1981,7 +2001,7 @@ contains
 
 ! Jordan (1991)
 
-     IF(OPT_SNF == 1) THEN
+     IF(OPT_SNF == 1 .OR. OPT_SNF == 4) THEN
        IF(SFCTMP > TFRZ+2.5)THEN
            FPICE = 0.
        ELSE
@@ -2015,7 +2035,7 @@ contains
 ! Hedstrom NR and JW Pomeroy (1998), Hydrol. Processes, 12, 1611-1625
 ! fresh snow density
 
-     BDFALL = MIN(120.,67.92+51.25*EXP((SFCTMP-TFRZ)/2.59))
+     BDFALL = MIN(120.,67.92+51.25*EXP((SFCTMP-TFRZ)/2.59)) !MB: change to MIN v3.7
 
      QRAIN   = PRCP * (1.-FPICE)
      QSNOW   = PRCP * FPICE
@@ -2064,6 +2084,10 @@ contains
     ELSE
       RUNSRF = RUNSRF + QSNBOT
     ENDIF
+
+#ifdef WRF_HYDRO
+      RUNSRF = RUNSRF + sfcheadrt/DT  !sfcheadrt units (mm)
+#endif
     
     REPLACE = 0.0
     DO ILEV = 1,NSOIL
@@ -2924,6 +2948,7 @@ contains
    END_WB = SNEQV
    ERRWAT = END_WB-BEG_WB-(PRCP-EDIR-RUNSRF-RUNSUB)*DT
 
+#ifndef WRF_HYDRO
    IF(ABS(ERRWAT) > 0.1) THEN
       if (ERRWAT > 0) then
          call wrf_message ('The model is gaining water (ERRWAT is positive)')
@@ -2939,6 +2964,7 @@ contains
            call wrf_message(trim(message))
            call wrf_error_fatal("Water budget problem in NOAHMP GLACIER")
         END IF
+#endif
 
  END SUBROUTINE ERROR_GLACIER
 ! ==================================================================================================

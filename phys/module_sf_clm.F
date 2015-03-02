@@ -3828,6 +3828,7 @@ CONTAINS
                    ,inest, sf_urban_physics,nlcat,               &
 !Optional urban
                 CMR_SFCDIF,CHR_SFCDIF,CMC_SFCDIF,CHC_SFCDIF,   &
+                CMGR_SFCDIF,CHGR_SFCDIF,                       &
                 tr_urb2d,tb_urb2d,tg_urb2d,tc_urb2d,qc_urb2d,  & !H urban
                 uc_urb2d,                                       & !H urban
                 xxxr_urb2d,xxxb_urb2d,xxxg_urb2d,xxxc_urb2d,    & !H urban
@@ -3840,9 +3841,12 @@ CONTAINS
                 xlat_urb2d,                                     & !I urban
                 num_roof_layers, num_wall_layers,               & !I urban
                 num_road_layers, DZR, DZB, DZG,                 & !I urban
-                FRC_URB2D, UTYPE_URB2D                          & ! urban
+                FRC_URB2D, UTYPE_URB2D,                         & ! urban
+                cmcr_urb2d,tgr_urb2d,tgrl_urb3d,smr_urb3d,      & ! urban
+                drelr_urb2d,drelb_urb2d,drelg_urb2d,            & ! urban
+                flxhumr_urb2d,flxhumb_urb2d,flxhumg_urb2d,      &
 ! subgrids
-               ,numc,nump,sabv,sabg,lwup,snl, &
+               numc,nump,sabv,sabg,lwup,snl, &
                 snowdp,wtc,wtp,h2osno,t_grnd,t_veg,         &
                 h2ocan,h2ocan_col,t2m_max,t2m_min,t2clm ,    &
                 t_ref2m,h2osoi_liq_s1,                 &
@@ -3911,6 +3915,7 @@ CONTAINS
 
   USE module_date_time
   USE module_sf_urban, only: urban
+  USE module_ra_gfdleta,  only: cal_mon_day
   USE module_configure
 
   implicit none
@@ -4196,6 +4201,30 @@ CONTAINS
      REAL, DIMENSION(1:num_wall_layers) :: TBL_URB  ! wall layer temp [K]
      REAL, DIMENSION(1:num_road_layers) :: TGL_URB  ! road layer temp [K]
      LOGICAL  :: LSOLAR_URB
+     
+!===Yang,2014/10/08,hydrological variable for single layer UCM===
+     INTEGER :: jmonth, jday
+     REAL :: DRELR_URB
+     REAL :: DRELB_URB
+     REAL :: DRELG_URB
+     REAL :: FLXHUMR_URB
+     REAL :: FLXHUMB_URB
+     REAL :: FLXHUMG_URB
+     REAL :: CMCR_URB
+     REAL :: TGR_URB
+     REAL, DIMENSION(1:num_roof_layers) :: SMR_URB  ! green roof layer moisture
+     REAL, DIMENSION(1:num_roof_layers) :: TGRL_URB ! green roof layer temp [K]
+
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: DRELR_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: DRELB_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: DRELG_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: FLXHUMR_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: FLXHUMB_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: FLXHUMG_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CMCR_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TGR_URB2D
+     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_roof_layers, jms:jme ), INTENT(INOUT) :: TGRL_URB3D
+     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_roof_layers, jms:jme ), INTENT(INOUT) :: SMR_URB3D
 
 ! state variable surface_driver <--> lsm <--> urban
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TR_URB2D
@@ -4219,10 +4248,12 @@ CONTAINS
      REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_wall_layers, jms:jme ), INTENT(INOUT) :: TBL_URB3D
      REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_road_layers, jms:jme ), INTENT(INOUT) :: TGL_URB3D
 
-   REAL :: CMR_URB, CHR_URB, CMC_URB, CHC_URB
+   REAL :: CMR_URB, CHR_URB, CMC_URB, CHC_URB, CMGR_URB, CHGR_URB
 
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CMR_SFCDIF
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CHR_SFCDIF
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CMGR_SFCDIF
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CHGR_SFCDIF
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CMC_SFCDIF
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CHC_SFCDIF
 
@@ -5141,6 +5172,8 @@ CONTAINS
 
             DO K = 1,num_roof_layers
               TRL_URB(K) = TRL_URB3D(I,K,J)
+              SMR_URB(K) = SMR_URB3D(I,K,J)
+              TGRL_URB(K)= TGRL_URB3D(I,K,J)
             END DO
             DO K = 1,num_wall_layers
               TBL_URB(K) = TBL_URB3D(I,K,J)
@@ -5148,6 +5181,15 @@ CONTAINS
             DO K = 1,num_road_layers
               TGL_URB(K) = TGL_URB3D(I,K,J)
             END DO
+
+            TGR_URB   = TGR_URB2D(I,J)
+            CMCR_URB  = CMCR_URB2D(I,J)
+            FLXHUMR_URB = FLXHUMR_URB2D(I,J)
+            FLXHUMB_URB = FLXHUMB_URB2D(I,J)
+            FLXHUMG_URB = FLXHUMG_URB2D(I,J)
+            DRELR_URB = DRELR_URB2D(I,J)
+            DRELB_URB = DRELB_URB2D(I,J)
+            DRELG_URB = DRELG_URB2D(I,J)
 
             XXXR_URB = XXXR_URB2D(I,J)
             XXXB_URB = XXXB_URB2D(I,J)
@@ -5160,6 +5202,8 @@ CONTAINS
             IF (PRESENT(CMR_SFCDIF)) THEN
                CMR_URB = CMR_SFCDIF(I,J)
                CHR_URB = CHR_SFCDIF(I,J)
+               CMGR_URB = CMGR_SFCDIF(I,J)
+               CHGR_URB = CHGR_SFCDIF(I,J)
                CMC_URB = CMC_SFCDIF(I,J)
                CHC_URB = CHC_SFCDIF(I,J)
             ENDIF
@@ -5177,6 +5221,7 @@ CONTAINS
 !
 
 ! Call urban
+            CALL cal_mon_day(julday,julyr,jmonth,jday)
             CALL urban(LSOLAR_URB,                                      & ! I
                        num_roof_layers,num_wall_layers,num_road_layers, & ! C
                        DZR,DZB,DZG,                                     & ! C
@@ -5194,7 +5239,10 @@ CONTAINS
                        CMR_URB, CHR_URB, CMC_URB, CHC_URB,              &
                        U10_URB, V10_URB, TH2_URB, Q2_URB,               & ! O
                        UST_URB,mh_urb, stdh_urb, lf_urb, lp_urb,        & ! 0
-                       hgt_urb,frc_urb,lb_urb, check)
+                       hgt_urb,frc_urb,lb_urb, check,CMCR_URB,TGR_URB,  & ! H
+                       TGRL_URB,SMR_URB,CMGR_URB, CHGR_URB, jmonth,     & ! H
+                       DRELR_URB,DRELB_URB,                             & ! H
+                       DRELG_URB,FLXHUMR_URB,FLXHUMB_URB,FLXHUMG_URB)    
 
             TS_URB2D(I,J) = TS_URB
 
@@ -5218,6 +5266,8 @@ CONTAINS
 
             DO K = 1,num_roof_layers
               TRL_URB3D(I,K,J) = TRL_URB(K)
+              SMR_URB3D(I,K,J) = SMR_URB(K)
+              TGRL_URB3D(I,K,J)= TGRL_URB(K)
             END DO
             DO K = 1,num_wall_layers
               TBL_URB3D(I,K,J) = TBL_URB(K)
@@ -5225,6 +5275,16 @@ CONTAINS
             DO K = 1,num_road_layers
               TGL_URB3D(I,K,J) = TGL_URB(K)
             END DO
+
+            TGR_URB2D(I,J) =TGR_URB 
+            CMCR_URB2D(I,J)=CMCR_URB
+            FLXHUMR_URB2D(I,J)=FLXHUMR_URB 
+            FLXHUMB_URB2D(I,J)=FLXHUMB_URB
+            FLXHUMG_URB2D(I,J)=FLXHUMG_URB
+            DRELR_URB2D(I,J) = DRELR_URB 
+            DRELB_URB2D(I,J) = DRELB_URB 
+            DRELG_URB2D(I,J) = DRELG_URB
+
             XXXR_URB2D(I,J) = XXXR_URB
             XXXB_URB2D(I,J) = XXXB_URB
             XXXG_URB2D(I,J) = XXXG_URB
@@ -5246,6 +5306,8 @@ CONTAINS
             IF (PRESENT(CMR_SFCDIF)) THEN
                CMR_SFCDIF(I,J) = CMR_URB
                CHR_SFCDIF(I,J) = CHR_URB
+               CMGR_SFCDIF(I,J) = CMGR_URB
+               CHGR_SFCDIF(I,J) = CHGR_URB
                CMC_SFCDIF(I,J) = CMC_URB
                CHC_SFCDIF(I,J) = CHC_URB
             ENDIF
@@ -6356,7 +6418,7 @@ subroutine CLMDebug( str )
 
 #if (defined DEBUGCLM)
   print*, TRIM(str)
-  call flush(6)
+  flush(6)
 #endif
 
 end subroutine CLMDebug

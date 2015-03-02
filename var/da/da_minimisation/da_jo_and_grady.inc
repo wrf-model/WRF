@@ -379,18 +379,24 @@ subroutine da_jo_and_grady(iv, re, jot, jo, jo_grad_y)
 
    if (iv%info(radar)%nlocal > 0) then
       call da_jo_and_grady_radar(iv, re, jo, jo_grad_y)
-      jo_radar = jo%radar_rv + jo%radar_rf + jo%radar_rr
+      jo_radar = jo%radar_rv + jo%radar_rf + jo%radar_rrn + jo%radar_rsn + jo%radar_rgr + jo%radar_rqv
       if (print_detail_grad) then
           write(unit=stdout, fmt='(a, e24.12)') &
                ' jo_radar          ', jo_radar, &
                '   jo%radar_rv     ', jo%radar_rv, &
                '   jo%radar_rf     ', jo%radar_rf, &
-               '   jo%radar_rr     ', jo%radar_rr
+               '   jo%radar_rrn    ', jo%radar_rrn, &
+               '   jo%radar_rsn    ', jo%radar_rsn, &
+               '   jo%radar_rgr    ', jo%radar_rgr, &
+               '   jo%radar_rqv    ', jo%radar_rqv
       end if
    else
-      jo % radar_rv = 0.0
-      jo % radar_rf = 0.0
-      jo % radar_rr = 0.0
+      jo % radar_rv  = 0.0
+      jo % radar_rf  = 0.0
+      jo % radar_rrn = 0.0
+      jo % radar_rsn = 0.0
+      jo % radar_rgr = 0.0
+      jo % radar_rqv = 0.0
       jo_radar = 0.0
    end if
 
@@ -427,7 +433,7 @@ subroutine da_jo_and_grady(iv, re, jot, jo, jo_grad_y)
       jo % pseudo_q = 0.0
       jo_pseudo = 0.0
    end if
-
+   
    if (iv%info(qscat)%nlocal > 0) then
       call da_jo_and_grady_qscat(iv, re, jo, jo_grad_y)
       jo_qscat = jo%qscat_u + jo%qscat_v

@@ -23,7 +23,7 @@ subroutine da_amat_mul(be, grid, cv_size, ntmaxit, neign, eignval, eignvec, qhat
    real,           intent(out):: xhat(cv_size)          ! Output vector: xhat = A.shat
 
 #ifdef CLOUD_CV
-   integer                    :: mz(11)                 ! mz for each variable
+   integer                    :: mz(13)                 ! mz for each variable
 #else
    integer                    :: mz(7)
 #endif
@@ -34,7 +34,7 @@ subroutine da_amat_mul(be, grid, cv_size, ntmaxit, neign, eignval, eignvec, qhat
    if (trace_use) call da_trace_entry("da_amat_mul")
 
 #ifdef CLOUD_CV
-   mz       = (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz, be%v6%mz, be%v7%mz, be%v8%mz, be%v9%mz, be%alpha%mz, be % ne /)
+   mz       = (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz, be%v6%mz, be%v7%mz, be%v8%mz, be%v9%mz,  be%v10%mz, be%v11%mz, be%alpha%mz, be % ne /)
 #else
    mz       = (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz, be%alpha%mz, be % ne /)
 #endif

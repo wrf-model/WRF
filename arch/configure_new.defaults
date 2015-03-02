@@ -15,7 +15,7 @@ FC              =       CONFIGURE_FC
 CC              =       CONFIGURE_CC
 LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
-PROMOTION       =       # -fdefault-real-8  # uncomment manually
+PROMOTION       =       #-fdefault-real-8
 ARCH_LOCAL      =       -DNEC -DNONSTANDARD_SYSTEM_SUBR -DWRF_USE_CLM
 CFLAGS_LOCAL    =       -c  
 #-DNCARIBM_NOC99 -Xa -Kc99
@@ -59,7 +59,7 @@ FC              =       CONFIGURE_FC
 CC              =       CONFIGURE_CC
 LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
-PROMOTION       =       # -fdefault-real-8  # uncomment manually
+PROMOTION       =       #-fdefault-real-8
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR -DWRF_USE_CLM
 CFLAGS_LOCAL    =       -w -O3 -c 
 LDFLAGS_LOCAL   =
@@ -301,7 +301,7 @@ FC              =       CONFIGURE_FC
 CC              =       CONFIGURE_CC
 LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
-PROMOTION       =       -i4
+PROMOTION       =       -r$(RWORDSIZE) -i4
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_FUNC -DWRF_USE_CLM
 CFLAGS_LOCAL    =       -w -O3 -ip #-xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -no-multibyte-chars
 LDFLAGS_LOCAL   =       -ip #-xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -align all -fno-alias -fno-common
@@ -343,8 +343,8 @@ DM_CC           =       mpiicc -mmic
 FC              =       $(DM_FC)
 CC              =       $(DM_CC)
 LD              =       $(FC)
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
-PROMOTION       =       -i4
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
+PROMOTION       =       -r$(RWORDSIZE) -i4
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_FUNC -DCHUNK=16 -DXEON_OPTIMIZED_WSM5 -DXEON_SIMD -DOPTIMIZE_CFL_TEST -DFSEEKO64_OK -DINTEL_YSU_KLUDGE -DWRF_USE_CLM
 OPTNOSIMD       =
 OPTKNC          =       -fimf-precision=low -fimf-domain-exclusion=15 -opt-assume-safe-padding -opt-streaming-stores always -opt-streaming-cache-evict=0 -mP2OPT_hlo_pref_use_outer_strategy=F
@@ -388,8 +388,8 @@ DM_CC           =       mpicc -cc=$(SCC)
 FC              =       $(DM_FC)
 CC              =       $(DM_CC)
 LD              =       $(FC)
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
-PROMOTION       =       -i4
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
+PROMOTION       =       -r$(RWORDSIZE) -i4
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_FUNC -DCHUNK=64 -DXEON_OPTIMIZED_WSM5 -DOPTIMIZE_CFL_TEST -DWRF_USE_CLM
 OPTNOSIMD       =
 OPTAVX          =       -xAVX
@@ -460,7 +460,7 @@ FC              =       CONFIGURE_FC
 CC              =       CONFIGURE_CC
 LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
-PROMOTION       =       -i4
+PROMOTION       =       -r$(RWORDSIZE) -i4
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_FUNC -DWRF_USE_CLM
 CFLAGS_LOCAL    =       -w -O3 -ip #-xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -no-multibyte-chars
 LDFLAGS_LOCAL   =       -ip -lmpi #-xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -align all -fno-alias -fno-common
@@ -507,7 +507,7 @@ FC              =       CONFIGURE_FC
 CC              =       CONFIGURE_CC
 LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
-PROMOTION       =       -i4
+PROMOTION       =       -r$(RWORDSIZE) -i4
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_FUNC -DWRF_USE_CLM
 CFLAGS_LOCAL    =       -w -O3 -ip #-xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -no-multibyte-chars
 LDFLAGS_LOCAL   =       -ip #-xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -align all -fno-alias -fno-common
@@ -584,7 +584,7 @@ FC              =       CONFIGURE_FC
 CC              =       CONFIGURE_CC
 LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
-PROMOTION       =        -i4
+PROMOTION       =       -r$(RWORDSIZE) -i4
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_FUNC -DWRF_USE_CLM
 CFLAGS_LOCAL    =       -w -O3 -ip #-xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -no-multibyte-chars
 LDFLAGS_LOCAL   =       -ip #-xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -align all -fno-alias -fno-common
@@ -665,7 +665,7 @@ FC              =       CONFIGURE_FC
 CC              =       CONFIGURE_CC
 LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
-PROMOTION       =        -i4
+PROMOTION       =       -r$(RWORDSIZE) -i4
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_FUNC -DWRF_USE_CLM
 CFLAGS_LOCAL    =       -w -O3 -ip #-xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -no-multibyte-chars
 LDFLAGS_LOCAL   =       -ip #-xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -align all -fno-alias -fno-common
@@ -751,7 +751,7 @@ FC              =       CONFIGURE_FC
 CC              =       CONFIGURE_CC
 LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
-PROMOTION       =       # -fdefault-real-8  # uncomment manually
+PROMOTION       =       #-fdefault-real-8
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR -DWRF_USE_CLM
 CFLAGS_LOCAL    =       -w -O3 -c 
 LDFLAGS_LOCAL   =       
@@ -835,7 +835,7 @@ FC              =       CONFIGURE_FC
 CC              =       CONFIGURE_CC
 LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
-PROMOTION       =        -i4
+PROMOTION       =       -r$(RWORDSIZE) -i4
 ARCH_LOCAL      =       -DMACOS -DNONSTANDARD_SYSTEM_FUNC -DWRF_USE_CLM
 CFLAGS_LOCAL    =       -w -O3 -ip -DMACOS #-xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -no-multibyte-chars -DMACOS
 # increase stack size; also note that for OpenMP, set environment OMP_STACKSIZE 4G or greater
@@ -879,7 +879,7 @@ FC              =       CONFIGURE_FC
 CC              =       CONFIGURE_CC
 LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
-PROMOTION       =        -i4
+PROMOTION       =       -r$(RWORDSIZE) -i4
 ARCH_LOCAL      =       -DMACOS -DNONSTANDARD_SYSTEM_FUNC -DWRF_USE_CLM
 CFLAGS_LOCAL    =       -w -O3 -ip -DMACOS #-xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -no-multibyte-chars -DMACOS
 # increase stack size; also note that for OpenMP, set environment OMP_STACKSIZE 4G or greater
@@ -966,7 +966,7 @@ FC              =       CONFIGURE_FC
 CC              =       CONFIGURE_CC
 LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
-PROMOTION       =       # -fdefault-real-8  # uncomment manually
+PROMOTION       =       #-fdefault-real-8
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR -DMACOS -DWRF_USE_CLM
 CFLAGS_LOCAL    =       -w -O3 -c  -DMACOS
 LDFLAGS_LOCAL   =
@@ -1133,13 +1133,13 @@ RANLIB          =       ranlib
 CC_TOOLS        =       cc
 
 ###########################################################
-#ARCH    Cray XT CLE/Linux x86_64, PGI compiler with gcc # serial dmpar smpar dm+sm
+#ARCH    Cray XC CLE/Linux x86_64, PGI compiler with gcc # serial dmpar smpar dm+sm
 #
 # Recommended CLE/Linux memory allocation settings at run time:
 # export MALLOC_MMAP_MAX_=0
 # export MALLOC_TRIM_THRESHOLD_=536870912
 #
-DESCRIPTION     =       PGI ($SFC/$SCC): Cray XT CLE
+DESCRIPTION     =       PGI ($SFC/$SCC): Cray XC CLE
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -mp -Mrecursive
@@ -1194,10 +1194,13 @@ RANLIB          =      ranlib
 CC_TOOLS        =      $(SCC) 
 
 ###########################################################
-#ARCH    Cray XE and XC30 CLE/Linux x86_64, Cray CCE compiler # serial dmpar smpar dm+sm
-# Use this for both XE6 systems with AMD Opteron and XC30 with Intel SB or IB
+#ARCH    Cray XE and XC CLE/Linux x86_64, Cray CCE compiler # serial dmpar smpar dm+sm
+# Use this for both XE6 systems with AMD Opteron and XC with Intel x86_64
 
-DESCRIPTION     =       CRAY CCE ($SFC/$SCC): Cray XE and XC30
+DESCRIPTION     =       CRAY CCE ($SFC/$SCC): Cray XE and XC
+# OpenMP is enabled by default for Cray CCE compiler
+# This turns it off
+OMP             =       -hnoomp
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -homp
@@ -1225,7 +1228,7 @@ FORMAT_FIXED    =       -f fixed
 FORMAT_FREE     =       -f free
 FCSUFFIX        =
 BYTESWAPIO      =       -h byteswapio
-FCBASEOPTS_NO_G =       -h noomp -N255 $(FORMAT_FREE) $(BYTESWAPIO) #-ra
+FCBASEOPTS_NO_G =       -N1023 $(FORMAT_FREE) $(BYTESWAPIO) #-ra
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =     
 TRADFLAG        =      -traditional
@@ -1237,10 +1240,10 @@ RANLIB          =      ranlib
 CC_TOOLS        =      gcc
 
 ###########################################################
-#ARCH    Cray XC30 CLE/Linux x86_64, Xeon ifort compiler # serial dmpar smpar dm+sm
+#ARCH    Cray XC CLE/Linux x86_64, Xeon ifort compiler # serial dmpar smpar dm+sm
 #
 
-DESCRIPTION     =       INTEL ($SFC/$SCC): Cray XC30
+DESCRIPTION     =       INTEL ($SFC/$SCC): Cray XC
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -openmp -fpp -auto
@@ -1254,15 +1257,16 @@ FC              =       $(DM_FC)
 CC              =       $(DM_CC)
 LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
-PROMOTION       =       -i4
+PROMOTION       =       -r$(RWORDSIZE) -i4
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_FUNC -DWRF_USE_CLM
 OPTNOSIMD       =
-OPTAVX          =       -xAVX
-CFLAGS_LOCAL    =       -w -O3 $(OPTAVX)
+# set this to override Cray 'craype' module setting
+#OPTAVX          =       -xAVX
+CFLAGS_LOCAL    =       -w -O3 -ip $(OPTAVX)
 LDFLAGS_LOCAL   =       $(OPTAVX)
 CPLUSPLUSLIB    =       
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
-FCOPTIM         =       -O3 $(OPTAVX)
+FCOPTIM         =       -ip -O3 $(OPTAVX)
 FCREDUCEDOPT	=       $(FCOPTIM)
 FCNOOPT		=       -O0 -fno-inline -fno-ip
 FCDEBUG         =       # -g $(FCNOOPT) -traceback # -fpe0 -check all -ftrapuv -unroll0 -u
@@ -1270,7 +1274,7 @@ FORMAT_FIXED    =       -FI
 FORMAT_FREE     =       -FR
 FCSUFFIX        =
 BYTESWAPIO      =       -convert big_endian
-FCBASEOPTS_NO_G =       -w -ftz -fno-alias $(FORMAT_FREE) $(BYTESWAPIO) #-vec-report6
+FCBASEOPTS_NO_G =       -w -ftz -fno-alias -align all $(FORMAT_FREE) $(BYTESWAPIO) #-vec-report6
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =     
 TRADFLAG        =      -traditional
@@ -1298,7 +1302,7 @@ FC              =       CONFIGURE_FC
 CC              =       CONFIGURE_CC
 LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
-PROMOTION       =       #-CcdRR8  # uncomment manually
+PROMOTION       =       -CcdRR$(RWORDSIZE)
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR -DWRF_USE_CLM
 CFLAGS_LOCAL    =       -Kfast -Xg -DSUN
 LDFLAGS_LOCAL   =

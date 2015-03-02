@@ -139,9 +139,6 @@
 	       end do
 	    end if
 	 end if   
-!         do i = 1, npred
-!	    print*,inst,k,i,(iv%instid(inst)%varbc(k)%vtox(i,j),j=1,npred)
-!	 end do
       end do                     !  end loop for channels	
       deallocate(hessian, eignvec, eignval)   
    end do                        !  end loop for sensor

@@ -954,7 +954,7 @@
         call MPI_BARRIER(COMM_local,ierr)
         call GLOB_ABORT(ierr,'CMP_FLUSH: MPI_BARRIER failed, aborting', &
      &  rc)
-        if (i.eq.process_rank_local) call FLUSH(nunit)
+        if (i.eq.process_rank_local) FLUSH(nunit)
       end do
 
       return

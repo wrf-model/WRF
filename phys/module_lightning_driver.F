@@ -87,7 +87,7 @@
 !-- check to see if lightning_dt is a proper multiple of dt
  IF ( lightning_dt == 0. ) THEN
     lightning_dt = dt
- ELSEIF ( MOD(lightning_dt,dt) .ne. 0. ) THEN
+ ELSEIF ( ABS(1.-(1./NINT(lightning_dt/dt)) * (lightning_dt/dt)) .GT. 0.001 ) THEN
     CALL wrf_error_fatal (' lightning_init: lightning_dt needs to be a multiple of model time step dt')
  ENDIF
 

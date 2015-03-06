@@ -40,6 +40,10 @@ subroutine da_allocate_observations (iv)
    if (iv%info(pseudo)%nlocal    > 0) allocate(iv%pseudo   (1:iv%info(pseudo)%nlocal))
    if (iv%info(rain)%nlocal      > 0) allocate(iv%rain     (1:iv%info(rain)%nlocal))
    do i=1,num_ob_indexes
+
+      ! Radar structures now allocated in their own subroutine (da_setup_obs_structures_radar)
+      if (i == radar) cycle
+
       if (iv%info(i)%nlocal > 0) then
          allocate (iv%info(i)%name(iv%info(i)%nlocal))     
          allocate (iv%info(i)%platform(iv%info(i)%nlocal)) 

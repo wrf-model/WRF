@@ -41,6 +41,7 @@ subroutine da_scan_obs_ascii (iv, filename, grid)
 ! Initialize 
       if ( thin_conv_ascii ) then
           do n = 1, num_ob_indexes
+             if ( n == radar ) cycle
              call cleangrids_conv(n)
           end do
       end if

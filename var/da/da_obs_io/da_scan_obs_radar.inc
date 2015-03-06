@@ -22,19 +22,12 @@ subroutine da_scan_obs_radar (iv, filename, grid)
    logical                       :: outside, outside_all
    integer                       :: n_dup, ndup
 
-   real*8                        :: obs_time, analysis_time
+   real*8                        :: obs_time
    integer                       :: iyear, imonth, iday, ihour, imin
-   real                          :: tdiff, dlat_earth,dlon_earth,crit
-   integer                       :: itt,itx,iout
-   logical                       :: iuse, thin_3d
-   integer                       :: i1,j1,k
-   real                          :: dx,dy,dxm,dym,zk
-   real                          :: v_h(kms:kme)
 
 
    if (trace_use) call da_trace_entry("da_scan_obs_radar")
-   thin_3d=.false. 
-   if( thin_conv_ascii) thin_3d=.true.
+
    ! 1. open file
    ! ============
 
@@ -83,7 +76,6 @@ subroutine da_scan_obs_radar (iv, filename, grid)
 
    do n = 1, total_radar
 
-   if ( thin_conv_ascii ) call cleangrids_conv(radar)
       ! 3.1 skip one blank line
 
       read (unit=iunit, fmt = '(A)', iostat = iost)
@@ -174,16 +166,6 @@ subroutine da_scan_obs_radar (iv, filename, grid)
          call da_llxy (platform%info, platform%loc, outside, outside_all)
          if( outside_all ) cycle reports
 
-         read (analysis_date,'(i4,4(1x,i2))')iyear, imonth, iday, ihour, imin
-         call da_get_julian_time (iyear,imonth,iday,ihour,imin,analysis_time)
-         tdiff = abs((obs_time - analysis_time)-0.02)
-         dlat_earth = platform%info%lat
-         dlon_earth = platform%info%lon
-         if (dlon_earth < 0.0) dlon_earth = dlon_earth + 360.0
-         if (dlon_earth >= 360.0) dlon_earth = dlon_earth - 360.0
-         dlat_earth = dlat_earth * deg2rad
-         dlon_earth = dlon_earth * deg2rad
-
          nlevels = platform%info%levels
 
          if (nlevels > max_ob_levels) then
@@ -207,33 +189,9 @@ subroutine da_scan_obs_radar (iv, filename, grid)
 
             case (128)
                if (.not.use_radarobs .or. iv%info(radar)%ntotal == max_radar_input) cycle reports
-               if ( .not. thin_conv_ascii ) then
-                  if (ndup==1) iv%info(radar)%ntotal = iv%info(radar)%ntotal + 1
-                  if (outside) cycle reports
-                  iv%info(radar)%nlocal = iv%info(radar)%nlocal + 1
-               else 
-                  crit = tdiff
-                  i1   = platform%loc%i
-                  j1   = platform%loc%j
-                  dx   = platform%loc%dx
-                  dy   = platform%loc%dy
-                  dxm  = platform%loc%dxm
-                  dym  = platform%loc%dym
-
-                  do k=kms,kme
-                     v_h(k) = dym*(dxm*grid%xb%h(i1,j1,k)+dx*grid%xb%h(i1+1,j1,k)) + &
-                              dy*(dxm*grid%xb%h(i1,j1+1,k)+dx*grid%xb%h(i1+1,j1+1,k))
-                  end do
-
-                  do k=1,nlevels
-                     if (ndup==1) iv%info(radar)%ntotal = iv%info(radar)%ntotal + 1
-                     if (outside) cycle 
-                     call da_to_zk(platform%each(k)%height, v_h, v_interp_h, zk)
-                     if ( zk == missing_r ) cycle   
-                     call map2grids_conv(radar,dlat_earth,dlon_earth,crit,iv%info(radar)%nlocal,itx,1,itt,iout,iuse,zk,thin_3d)
-                     if ( .not. iuse ) cycle   
-                  end do 
-               end if ! if thin_conv_ascii
+               if (ndup==1) iv%info(radar)%ntotal = iv%info(radar)%ntotal + 1
+               if (outside) cycle reports
+               iv%info(radar)%nlocal = iv%info(radar)%nlocal + 1
 
             case default;
                write(unit=stdout, fmt='(a)') 'Warning: unsaved obs found:'
@@ -245,11 +203,7 @@ subroutine da_scan_obs_radar (iv, filename, grid)
                   'platform % info % levels=', platform % info % levels
             end select
 
-            if( .not. thin_conv_ascii) then
-               iv%info(radar)%max_lev = max(iv%info(radar)%max_lev, platform%info%levels)
-            else
-               iv%info(radar)%max_lev = 1
-            end if
+            iv%info(radar)%max_lev = max(iv%info(radar)%max_lev, platform%info%levels)
          end do        !  loop over duplicate
       end do reports
       

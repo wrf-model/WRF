@@ -28,8 +28,7 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
 
    if (use_synopobs .OR. use_shipsobs .OR. use_metarobs .OR. use_pilotobs .OR. &
       use_profilerobs .OR. use_buoyobs .OR. use_soundobs .OR. use_mtgirsobs .OR. use_bogusobs .OR. &
-      use_radarobs .OR. use_radar_rv .OR. use_radar_rf .OR. use_satemobs .OR. &
-      use_geoamvobs .OR. use_polaramvobs .OR. use_airepobs .OR. use_tamdarobs .OR. &
+      use_satemobs .OR. use_geoamvobs .OR. use_polaramvobs .OR. use_airepobs .OR. use_tamdarobs .OR. &
       use_gpspwobs .OR. use_gpsztdobs .OR. use_gpsrefobs .OR. use_ssmiretrievalobs .OR. &
       use_ssmitbobs .OR. use_ssmt1obs .OR. use_ssmt2obs .OR. use_qscatobs .OR. &
       use_airsretobs) then
@@ -226,6 +225,13 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
          write(unit=message(1),fmt='(A,I3)') 'Invalid ob_format = ', ob_format
          call da_error(__FILE__,__LINE__,message(1:1))
       end if
+   end if
+
+
+   if (use_radarobs) then
+      ! Radar obs are read from separate file(s)
+         call da_message((/'Using ASCII format radar observation input'/))
+         call da_setup_obs_structures_radar (grid, ob, iv)
    end if
 
    if (use_rainobs .and. var4d) then

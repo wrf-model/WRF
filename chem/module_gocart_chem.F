@@ -137,7 +137,7 @@ CONTAINS
        enddo
        enddo
        enddo
-     CASE (GOCARTRACM_KPP,GOCARTRADM2_KPP,GOCARTRADM2)
+     CASE (GOCARTRACM_KPP,GOCARTRADM2)
        CALL wrf_debug(15,'calling gocart chemistry in addition to racm_kpp')
        do j=jts,jte
        do i=its,ite

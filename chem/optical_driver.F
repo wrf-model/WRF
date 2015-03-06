@@ -114,7 +114,7 @@
    case ( RADM2SORG,           RADM2SORG_KPP,      RADM2SORG_AQ, RADM2SORG_AQCHEM, &
           GOCART_SIMPLE,       RACMSORG_KPP,       RACMSORG_AQ,  RACMSORG_AQCHEM_KPP, &
           RACM_ESRLSORG_AQCHEM_KPP, RACM_SOA_VBS_KPP,                                      &
-          GOCARTRACM_KPP,      GOCARTRADM2_KPP,    GOCARTRADM2,  &
+          GOCARTRACM_KPP,      GOCARTRADM2,  &
           RACM_ESRLSORG_KPP,   MOZCART_KPP,                      &
           CBMZ_MOSAIC_4BIN,    CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_KPP,   &
           CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, CBMZSORG, CBMZSORG_AQ, &
@@ -142,7 +142,7 @@
 !
    select case (config_flags%chem_opt)
    case ( RADM2SORG, RACM_ESRLSORG_KPP, RADM2SORG_KPP, RADM2SORG_AQ, RADM2SORG_AQCHEM, &
-          GOCARTRACM_KPP,      GOCARTRADM2_KPP,    GOCARTRADM2,      &
+          GOCARTRACM_KPP,      GOCARTRADM2,      &
           GOCART_SIMPLE,       RACMSORG_KPP,       RACMSORG_AQ,      RACMSORG_AQCHEM_KPP, &
           RACM_ESRLSORG_AQCHEM_KPP, RACM_SOA_VBS_KPP,                                          &
           CBMZSORG,            CBMZSORG_AQ,        MOZCART_KPP,       &

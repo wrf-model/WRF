@@ -395,7 +395,6 @@ tile_lon_loop : &
 ! For gocartracm,radm
 !-----------------------------------------------------------
       if  ((config_flags%chem_opt == GOCARTRACM_KPP)  .OR.     &
-           (config_flags%chem_opt == GOCARTRADM2_KPP) .OR.     &
            (config_flags%chem_opt == GOCARTRADM2))   then
          do j=jts,jte
             do i=its,ite

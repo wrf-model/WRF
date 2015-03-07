@@ -1365,10 +1365,9 @@ CONTAINS
                 CALL wrf_error_fatal ( 'arguments not present for calling cam radiation' )
              ENDIF
 
-        CASE (RRTMG_LWSCHEME_FAST)
+        CASE (RRTMG_LWSCHEME)
              CALL wrf_debug (100, 'CALL rrtmg_lw')
-
-             CALL RRTMG_LWRAD_FAST(                                 &
+             CALL RRTMG_LWRAD(                                      &
                   RTHRATENLW=RTHRATEN,                              &
                   LWUPT=LWUPT,LWUPTC=LWUPTC,                        &
                   LWDNT=LWDNT,LWDNTC=LWDNTC,                        &
@@ -1400,13 +1399,13 @@ CONTAINS
                   TAUAERLW3=tauaerlw3,TAUAERLW4=tauaerlw4,          & ! jcb
                   TAUAERLW5=tauaerlw5,TAUAERLW6=tauaerlw6,          & ! jcb
                   TAUAERLW7=tauaerlw7,TAUAERLW8=tauaerlw8,          & ! jcb
-                  TAUAERLW9=tauaerlw9,TAUAERLW10=tauaerlw10,          & ! jcb
-                  TAUAERLW11=tauaerlw11,TAUAERLW12=tauaerlw12,          & ! jcb
-                  TAUAERLW13=tauaerlw13,TAUAERLW14=tauaerlw14,          & ! jcb
-                  TAUAERLW15=tauaerlw15,TAUAERLW16=tauaerlw16,          & ! jcb
+                  TAUAERLW9=tauaerlw9,TAUAERLW10=tauaerlw10,        & ! jcb
+                  TAUAERLW11=tauaerlw11,TAUAERLW12=tauaerlw12,      & ! jcb
+                  TAUAERLW13=tauaerlw13,TAUAERLW14=tauaerlw14,      & ! jcb
+                  TAUAERLW15=tauaerlw15,TAUAERLW16=tauaerlw16,      & ! jcb
                   aer_ra_feedback=aer_ra_feedback,                  &
 !jdfcz            progn=progn,prescribe=prescribe,                   &
-                  progn=progn,                                       &
+                  progn=progn,                                      &
 #endif
                   QNDROP3D=qndrop,F_QNDROP=f_qndrop,                &
 !ccc Added for time-varying trace gases.
@@ -1419,9 +1418,10 @@ CONTAINS
                   LWDNFLX=LWDNFLX,LWDNFLXC=LWDNFLXC                 &
                                                                     )
 
-        CASE (RRTMG_LWSCHEME)
+        CASE (RRTMG_LWSCHEME_FAST)
              CALL wrf_debug (100, 'CALL rrtmg_lw')
-             CALL RRTMG_LWRAD(                                      &
+
+             CALL RRTMG_LWRAD_FAST(                                 &
                   RTHRATENLW=RTHRATEN,                              &
                   LWUPT=LWUPT,LWUPTC=LWUPTC,                        &
                   LWDNT=LWDNT,LWDNTC=LWDNTC,                        &
@@ -1766,9 +1766,9 @@ CONTAINS
              ENDDO
              ENDDO
 
-        CASE (RRTMG_SWSCHEME_FAST)
-             CALL wrf_debug(100, 'CALL rrtmg_sw_fast')
-             CALL RRTMG_SWRAD_FAST(                                    &
+        CASE (RRTMG_SWSCHEME)
+             CALL wrf_debug(100, 'CALL rrtmg_sw')
+             CALL RRTMG_SWRAD(                                         &
                      RTHRATENSW=RTHRATENSW,                            &
                      SWUPT=SWUPT,SWUPTC=SWUPTC,                        &
                      SWDNT=SWDNT,SWDNTC=SWDNTC,                        &
@@ -1834,9 +1834,10 @@ CONTAINS
              ENDDO
              ENDDO
              ENDDO
-        CASE (RRTMG_SWSCHEME)
-             CALL wrf_debug(100, 'CALL rrtmg_sw')
-             CALL RRTMG_SWRAD(                                         &
+
+        CASE (RRTMG_SWSCHEME_FAST)
+             CALL wrf_debug(100, 'CALL rrtmg_sw_fast')
+             CALL RRTMG_SWRAD_FAST(                                    &
                      RTHRATENSW=RTHRATENSW,                            &
                      SWUPT=SWUPT,SWUPTC=SWUPTC,                        &
                      SWDNT=SWDNT,SWDNTC=SWDNTC,                        &

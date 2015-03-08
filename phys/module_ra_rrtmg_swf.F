@@ -14,7 +14,7 @@
 ! |                                                                          |
 !  --------------------------------------------------------------------------
 
-#ifndef _CUDA
+#ifndef _ACCEL
 ! this set of macros reverses the storage order of some of the array variables
 ! defined in rrtmg_sw_sub and used in various sections of the code.  Here is a 
 ! correspondencet table for the variables as they are known in rrtmg_sw_sub and
@@ -91,9 +91,9 @@
 #endif
 
 ! Uncomment to use GPU, or comment to use CPU
-!#define _CUDA
+!#define _ACCEL
 
-#ifdef _CUDA
+#ifdef _ACCEL
 #define gpu_device ,device
 #else
 #define gpu_device 
@@ -1563,14 +1563,14 @@
 ! Constants (min value for cloud fraction and cloud water and ice)
       real , parameter :: cldmin = 1.0e-20  ! min cloud fraction
 
-#ifndef _CUDA
+#ifndef _ACCEL
 # define ncol CHNK
 #endif
 
 ! Variables related to random number and seed 
      
       real, dimension(ncol, nlay, nsubcol) gpu_device :: CDF       
-#ifdef _CUDA
+#ifdef _ACCEL
       integer :: seed1, seed2, seed3, seed4  ! seed to create random number
 #else
       integer, dimension(ncol) :: seed1, seed2, seed3, seed4  ! seed to create random number
@@ -1590,7 +1590,7 @@
 !      real     :: rind1, rind2
 !      integer  :: ind1, ind2
 !      real     :: zcw
-#ifndef _CUDA
+#ifndef _ACCEL
       integer :: m, k
 ! inline function
       m(k, n) = ieor (k, ishft (k, n) )
@@ -1614,7 +1614,7 @@
       if (icld==1) then
 !$acc kernels 
            
-#ifdef _CUDA
+#ifdef _ACCEL
             do ilev = 1,nlay
                do i = 1, ncol
                   seed1 = (play(i,1) - int(play(i,1)))  * 100000000 - ilev
@@ -1640,7 +1640,7 @@
 
 ! Maximum-Random cloud overlap
       if (icld==2) then
-#ifdef _CUDA
+#ifdef _ACCEL
 !$acc kernels 
            
             do ilev = 1,nlay
@@ -1722,7 +1722,7 @@
       if (icld==3) then
 !$acc kernels 
            
-#ifdef _CUDA
+#ifdef _ACCEL
             do i = 1, ncol
                seed1 = (play(i,1) - int(play(i,1)))  * 100000000 - ilev
                seed2 = (play(i,2) - int(play(i,2)))  * 100000000 + ilev
@@ -1776,7 +1776,7 @@
          enddo
       enddo
 !$acc end kernels
-#ifndef _CUDA
+#ifndef _ACCEL
 # undef ncol
 #endif
 
@@ -1892,7 +1892,7 @@
   
 !$acc end kernels    
 
-#ifndef _CUDA
+#ifndef _ACCEL
 #  define ncol CHNK
 #endif
 
@@ -2196,7 +2196,7 @@
 ! End column loop
       enddo
 !$acc end kernels
-#ifndef _CUDA
+#ifndef _ACCEL
 #  undef ncol
 #endif
 
@@ -2318,7 +2318,7 @@
       real  :: co2reg
       real  :: compfp
 
-#ifndef _CUDA
+#ifndef _ACCEL
 #  define ncol CHNK
 #endif
 
@@ -2496,7 +2496,7 @@
 ! End column loop
       end do
 !$acc end kernels
-#ifndef _CUDA
+#ifndef _ACCEL
 #  undef ncol
 #endif
 
@@ -2783,7 +2783,7 @@ end subroutine setcoef_sw
                                                          !   Dimensions: (ncol,nlayers,ngptsw)
 
 ! Local
-#ifdef _CUDA
+#ifdef _ACCEL
 # define IKLOOP1_S do iplon=1,ncol;do lay=1,nlayers
 # define IKLOOP1_E enddo;enddo
 # define IKLOOP2_S do iplon=1,ncol;laysolfr=nlayers;do lay=laytrop(iplon)+1,nlayers;if(jp(iplon,lay-1).lt.layreffr.and.jp(iplon,lay).ge.layreffr)laysolfr=lay
@@ -2810,7 +2810,7 @@ end subroutine setcoef_sw
 !      strrat1 = 252.131 
 !      layreffr = 18
 !$acc kernels 
-#ifdef _CUDA
+#ifdef _ACCEL
       do iplon=1,ncol
 ! Compute the optical depth by interpolating in ln(pressure),
 ! temperature, and appropriate species.  Below LAYTROP, the water
@@ -2863,7 +2863,7 @@ IKLOOP1_S
             taur(iplon,lay,ig)  = tauray
          enddo
          end if
-#ifdef _CUDA
+#ifdef _ACCEL
       enddo
       enddo
 !$acc end kernels
@@ -2884,7 +2884,7 @@ IKLOOP1_E
 IKLOOP2_S
 #endif
 
-!#ifdef _CUDA
+!#ifdef _ACCEL
 !      do iplon=1,ncol
 !        laysolfr = nlayers
 !! mji - fix for out of bounds issue on absb - added to pass bounds checking; FINAL
@@ -2915,7 +2915,7 @@ IKLOOP2_S
             if (laysolfr == lay) sfluxzen(iplon,ig)  = sfluxref(ig) 
             taur(iplon,lay,ig)  = tauray  
          enddo
-#ifdef _CUDA
+#ifdef _ACCEL
          enddo
          enddo
 #else
@@ -2986,7 +2986,7 @@ IKLOOP2_E
                                                          !   Dimensions: (ncol,nlayers,ngptsw)
 
 ! Local
-#ifndef _CUDA
+#ifndef _ACCEL
 # define ncol CHNK
 #endif
 
@@ -3004,7 +3004,7 @@ IKLOOP2_E
 !      layreffr = 30
 !      strrat = 0.364641 
     
-#ifdef _CUDA
+#ifdef _ACCEL
 !$acc kernels loop
       do iplon=1,ncol
 ! Compute the optical depth by interpolating in ln(pressure), 
@@ -3105,7 +3105,7 @@ IKLOOP1_S
 !$acc end kernels
 
 !$acc kernels
-#ifdef _CUDA
+#ifdef _ACCEL
       do iplon = 1, ncol
 ! Upper atmosphere loop
         laysolfr = nlayers
@@ -3132,7 +3132,7 @@ IKLOOP2_S
                + fs * (sfluxref(ig,js+1) - sfluxref(ig,js))
           end do
         end if
-#ifdef _CUDA
+#ifdef _ACCEL
         end if
       enddo
       enddo
@@ -3204,11 +3204,11 @@ IKLOOP2_E
                                                          !   Dimensions: (ncol,nlayers,ngptsw)
 
 ! Local
-#ifndef _CUDA
+#ifndef _ACCEL
 # define ncol CHNK
 #endif
 
-#ifdef _CUDA
+#ifdef _ACCEL
       integer  :: ig, ind0, ind1, inds, indf, js, lay, laysolfr
 #else
       integer  :: ig, ind0, ind1, inds, indf, js, lay, laysolfr(ncol)
@@ -3228,7 +3228,7 @@ IKLOOP2_E
 !      layreffr = 6
 !$acc kernels      
 
-#ifdef _CUDA
+#ifdef _ACCEL
       do iplon = 1, ncol
           laysolfr = laytrop(iplon)
           do lay = 1, laytrop(iplon)
@@ -3251,7 +3251,7 @@ IKLOOP2_E
                 if (lay .eq. laysolfr) sfluxzen(iplon,ngs17+ig)  = sfluxref(ig,js) &
                   + fs * (sfluxref(ig,js+1) - sfluxref(ig,js))
               end do
-#ifdef _CUDA
+#ifdef _ACCEL
 #else
 # undef laysolfr
          endif
@@ -3393,12 +3393,12 @@ IKLOOP1_E
                                                          !   Dimensions: (ncol,nlayers,ngptsw)
 
 ! Local
-#ifdef _CUDA
+#ifdef _ACCEL
 #else
 # define ncol CHNK
 #endif
 
-#ifdef _CUDA
+#ifdef _ACCEL
       integer  :: ig, ind0, ind1, inds, indf, js, lay, laysolfr
 #else
       integer  :: ig, ind0, ind1, inds, indf, js, lay, laysolfr(ncol)
@@ -3417,7 +3417,7 @@ IKLOOP1_E
       strrat = 5.49281 
       layreffr = 3      
       
-#ifdef _CUDA
+#ifdef _ACCEL
 !$acc kernels 
       do iplon=1,ncol
 
@@ -3452,7 +3452,7 @@ IKLOOP1_E
                + fs * (sfluxref(ig,js+1) - sfluxref(ig,js))
          end do
          endif
-#ifdef _CUDA
+#ifdef _ACCEL
 #else
 # undef laysolfr
          endif
@@ -3599,7 +3599,7 @@ IKLOOP1_E
                                                          !   Dimensions: (ncol,nlayers,ngptsw)
 
 ! Local
-#ifdef _CUDA
+#ifdef _ACCEL
       integer  :: ig, ind0, ind1, inds, indf, js, lay, laysolfr
 #else
 # define ncol CHNK
@@ -3615,7 +3615,7 @@ IKLOOP1_E
 
 !      layreffr = 3        
 
-#ifdef _CUDA
+#ifdef _ACCEL
 !$acc kernels loop independent private(laysolfr)
       do iplon = 1, ncol
       laysolfr = laytrop(iplon)
@@ -3635,7 +3635,7 @@ IKLOOP1_E
                  sfluxzen(iplon,ngs19+ig)  = sfluxref(ig) 
              end do
          end if
-#ifdef _CUDA
+#ifdef _ACCEL
 #else
 # undef laysolfr
          endif
@@ -3761,7 +3761,7 @@ IKLOOP1_E
                                                          !   Dimensions: (ncol,nlayers,ngptsw)
 
 ! Local
-#ifdef _CUDA
+#ifdef _ACCEL
       integer  :: ig, ind0, ind1, inds, indf, js, lay, laysolfr
 #else
 # define ncol CHNK
@@ -3781,7 +3781,7 @@ IKLOOP1_E
 !      strrat = 0.0045321 
 !      layreffr = 8
      
-#ifdef _CUDA
+#ifdef _ACCEL
 !$acc kernels loop independent private(laysolfr)
       do iplon = 1, ncol
       laysolfr = laytrop(iplon)
@@ -3809,7 +3809,7 @@ IKLOOP1_E
                end do
           end if
 
-#ifdef _CUDA
+#ifdef _ACCEL
 #else
 # undef laysolfr
          endif
@@ -3976,7 +3976,7 @@ IKLOOP1_E
                                                          !   Dimensions: (ncol,nlayers,ngptsw)
 
 ! Local
-#ifdef _CUDA
+#ifdef _ACCEL
       integer  :: ig, ind0, ind1, inds, indf, js, lay, laysolfr
 #else
 # define ncol CHNK
@@ -4005,7 +4005,7 @@ IKLOOP1_E
 !      strrat = 0.022708 
 !      layreffr = 2
       
-#ifdef _CUDA
+#ifdef _ACCEL
 !$acc kernels loop independent private(laysolfr)
       do iplon=1,ncol
 
@@ -4039,7 +4039,7 @@ IKLOOP1_E
                 + fs * (sfluxref(ig,js+1) - sfluxref(ig,js))
             end do
             end if
-#ifdef _CUDA
+#ifdef _ACCEL
 #else
 # undef laysolfr
          endif
@@ -4186,7 +4186,7 @@ IKLOOP1_E
                                                          !   Dimensions: (ncol,nlayers,ngptsw)
 
 ! Local
-#ifdef _CUDA
+#ifdef _ACCEL
       integer  :: ig, ind0, ind1, inds, indf, js, lay, laysolfr
 #else
 # define ncol CHNK
@@ -4213,7 +4213,7 @@ IKLOOP1_E
 
 !      layreffr = 6    
       
-#ifdef _CUDA
+#ifdef _ACCEL
 !$acc kernels loop independent private(laysolfr)
       do iplon=1,ncol
 
@@ -4238,7 +4238,7 @@ IKLOOP1_E
               sfluxzen(iplon,ngs22+ig)  = sfluxref(ig) 
             end do
           end if
-#ifdef _CUDA
+#ifdef _ACCEL
 #else
 # undef laysolfr
          endif
@@ -4357,7 +4357,7 @@ IKLOOP1_E
                                                          !   Dimensions: (ncol,nlayers,ngptsw)
 
 ! Local
-#ifdef _CUDA
+#ifdef _ACCEL
       integer  :: ig, ind0, ind1, inds, indf, js, lay, laysolfr
 #else
 # define ncol CHNK
@@ -4377,7 +4377,7 @@ IKLOOP1_E
 !      strrat = 0.124692 
 !      layreffr = 1   
         
-#ifdef _CUDA
+#ifdef _ACCEL
 !$acc kernels loop independent private(laysolfr)
       do iplon=1,ncol
 ! Compute the optical depth by interpolating in ln(pressure), 
@@ -4411,7 +4411,7 @@ IKLOOP1_E
                + fs * (sfluxref(ig,js+1) - sfluxref(ig,js))
           end do
           end if
-#ifdef _CUDA
+#ifdef _ACCEL
 #else
 # undef laysolfr
          endif
@@ -4560,7 +4560,7 @@ IKLOOP1_E
                                                          !   Dimensions: (ncol,nlayers,ngptsw)
 
 ! Local
-#ifdef _CUDA
+#ifdef _ACCEL
       integer  :: ig, ind0, ind1, inds, indf, js, lay, laysolfr
 #else
 # define ncol CHNK
@@ -4575,7 +4575,7 @@ IKLOOP1_E
                   tauray
       integer :: iplon
 
-#ifdef _CUDA
+#ifdef _ACCEL
 !$acc kernels 
       do iplon=1,ncol
 ! Compute the optical depth by interpolating in ln(pressure), 
@@ -4611,7 +4611,7 @@ IKLOOP1_E
             if (lay .eq. laysolfr) sfluxzen(iplon,ngs24+ig)  = sfluxref(ig) 
             taur(iplon,lay,ngs24+ig)  = tauray
          enddo
-#ifdef _CUDA
+#ifdef _ACCEL
       enddo
 ! Upper atmosphere loop
       do lay = laytrop(iplon) +1, nlayers
@@ -4625,7 +4625,7 @@ IKLOOP1_E
 !            ssa(lay,ngs24+ig) = tauray/taug(lay,ngs24+ig)
             taur(iplon,lay,ngs24+ig)  = tauray
          enddo
-#ifdef _CUDA
+#ifdef _ACCEL
 #else
 # undef laysolfr
       endif
@@ -4695,7 +4695,7 @@ IKLOOP1_E
                                                          !   Dimensions: (ncol,nlayers,ngptsw)
 
 ! Local
-#ifdef _CUDA
+#ifdef _ACCEL
       integer  :: ig, ind0, ind1, inds, indf, js, lay, laysolfr
 #else
 # define ncol CHNK
@@ -4707,7 +4707,7 @@ IKLOOP1_E
                   tauray
       integer :: iplon
 
-#ifdef _CUDA
+#ifdef _ACCEL
 !$acc kernels 
       do iplon=1,ncol
 ! Compute the optical depth by interpolating in ln(pressure), 
@@ -4732,7 +4732,7 @@ IKLOOP1_E
             taug(iplon,lay,ngs25+ig)  = 0. 
             taur(iplon,lay,ngs25+ig)  = colmol(iplon,lay)  * rayl(ig) 
          enddo
-#ifdef _CUDA
+#ifdef _ACCEL
       enddo
       do lay = laytrop(iplon) +1, nlayers
 #else
@@ -4746,7 +4746,7 @@ IKLOOP1_E
             taug(iplon,lay,ngs25+ig)  = 0. 
             taur(iplon,lay,ngs25+ig)  = colmol(iplon,lay)  * rayl(ig) 
          enddo
-#ifdef _CUDA
+#ifdef _ACCEL
 #else
 # undef laysolfr
       endif
@@ -4818,7 +4818,7 @@ IKLOOP1_E
                                                          !   Dimensions: (ncol,nlayers,ngptsw)
 
 ! Local
-#ifdef _CUDA
+#ifdef _ACCEL
       integer  :: ig, ind0, ind1, inds, indf, js, lay, laysolfr
 #else
 # define ncol CHNK
@@ -4835,7 +4835,7 @@ IKLOOP1_E
 !                  tauray, scalekur
       integer :: iplon
        
-#ifdef _CUDA
+#ifdef _ACCEL
 !$acc kernels 
       do iplon=1,ncol
 ! Kurucz solar source function
@@ -4875,7 +4875,7 @@ IKLOOP1_E
 !            ssa(lay,ngs26+ig) = tauray/taug(lay,ngs26+ig)
             taur(iplon,lay,ngs26+ig)  = tauray
          enddo
-#ifdef _CUDA
+#ifdef _ACCEL
       enddo
 
       laysolfr = nlayers
@@ -4901,7 +4901,7 @@ IKLOOP1_E
             if (lay.eq.laysolfr) sfluxzen(iplon,ngs26+ig)  = scalekur * sfluxref(ig) 
             taur(iplon,lay,ngs26+ig)  = tauray
          enddo
-#ifdef _CUDA
+#ifdef _ACCEL
 #else
 # undef laysolfr
       endif
@@ -4973,7 +4973,7 @@ IKLOOP1_E
                                                          !   Dimensions: (ncol,nlayers,ngptsw)
 
 ! Local
-#ifdef _CUDA
+#ifdef _ACCEL
       integer  :: ig, ind0, ind1, inds, indf, js, lay, laysolfr
 #else
 # define ncol CHNK
@@ -4990,7 +4990,7 @@ IKLOOP1_E
 !                  tauray, strrat
       integer :: iplon
 
-#ifdef _CUDA
+#ifdef _ACCEL
 !$acc kernels 
       do iplon=1,ncol
 ! Compute the optical depth by interpolating in ln(pressure), 
@@ -5040,7 +5040,7 @@ IKLOOP1_E
 !            ssa(lay,ngs27+ig) = tauray/taug(lay,ngs27+ig)
             taur(iplon,lay,ngs27+ig)  = tauray
          enddo
-#ifdef _CUDA
+#ifdef _ACCEL
       enddo
 
       laysolfr = nlayers
@@ -5085,7 +5085,7 @@ IKLOOP1_E
                + fs * (sfluxref(ig,js+1) - sfluxref(ig,js))
             taur(iplon,lay,ngs27+ig)  = tauray
          enddo
-#ifdef _CUDA
+#ifdef _ACCEL
 #else
 # undef laysolfr
       endif
@@ -5158,7 +5158,7 @@ IKLOOP1_E
                                                          !   Dimensions: (ncol,nlayers,ngptsw)
 
 ! Local
-#ifdef _CUDA
+#ifdef _ACCEL
       integer  :: ig, ind0, ind1, inds, indf, js, lay, laysolfr
 #else
 # define ncol CHNK
@@ -5174,7 +5174,7 @@ IKLOOP1_E
 
 !      layreffr = 49  
         
-#ifdef _CUDA
+#ifdef _ACCEL
 !$acc kernels loop independent private (laysolfr)
       do iplon=1,ncol
         
@@ -5196,7 +5196,7 @@ IKLOOP1_E
                 sfluxzen(iplon,ngs28+ig)  = sfluxref(ig) 
                 end do
             end if
-#ifdef _CUDA
+#ifdef _ACCEL
 #else
 # undef laysolfr
          endif
@@ -5205,7 +5205,7 @@ IKLOOP1_E
       end do
 !$acc end kernels
        
-#ifdef _CUDA
+#ifdef _ACCEL
 !$acc kernels 
       do iplon=1,ncol
 ! Compute the optical depth by interpolating in ln(pressure), 
@@ -8855,7 +8855,7 @@ real gpu_device  :: zcd(tncol,ngptsw,nlayers+1)  , zcu(tncol,ngptsw,nlayers+1)
          klev = nlayers
 !$acc end kernels      
 
-#ifndef _CUDA
+#ifndef _ACCEL
 #  define ncol CHNK
 #endif
 
@@ -8873,7 +8873,7 @@ real gpu_device  :: zcd(tncol,ngptsw,nlayers+1)  , zcu(tncol,ngptsw,nlayers+1)
       
       repclc = 1.e-12 
 
-#ifdef _CUDA
+#ifdef _ACCEL
 # define ILOOP_S_CPU
 # define ILOOP_E_CPU
 # define ILOOP_S_GPU do iplon = 1, ncol
@@ -8954,7 +8954,7 @@ real gpu_device  :: zcd(tncol,ngptsw,nlayers+1)  , zcu(tncol,ngptsw,nlayers+1)
                ! Clear-sky optical parameters including aerosols
                ztauo(iplon,iw,jk)   = ztaur(iplon,ikl,iw)  + ztaug(iplon,ikl,iw) + ptaua(iplon,ikl,ibm)      
 
-#ifndef _CUDA
+#ifndef _ACCEL
 ! Use exponential lookup table for transmittance, or expansion of
 ! exponential for low tau
                zclear = 1.0  - pcldfmc(iplon,ikl,iw)
@@ -9030,7 +9030,7 @@ real gpu_device  :: zcd(tncol,ngptsw,nlayers+1)  , zcu(tncol,ngptsw,nlayers+1)
 ! Direct beam transmittance        
 
                ze1 = (ztauo(iplon,iw,jk))  / prmu0(iplon)      
-#ifdef _CUDA
+#ifdef _ACCEL
                zdbtmc = exp(-ze1)
 #else
                ze1 = ztauo(iplon,iw,jk) / prmu0(iplon)
@@ -9201,7 +9201,7 @@ real gpu_device  :: zcd(tncol,ngptsw,nlayers+1)  , zcu(tncol,ngptsw,nlayers+1)
 ! Clear + Cloud
 
                ze1 = ztauo(iplon,iw,jk )   / prmu0(iplon)   
-#ifdef _CUDA
+#ifdef _ACCEL
                zdbtmo = exp(-ze1)            
 #else
               if (ze1 .le. od_lo) then
@@ -9213,7 +9213,7 @@ real gpu_device  :: zcd(tncol,ngptsw,nlayers+1)  , zcu(tncol,ngptsw,nlayers+1)
                endif
 #endif
                ze1 = (ztauo(iplon,iw,jk) - ptaucmc(iplon,ikl,iw))  / prmu0(iplon)           
-#ifdef _CUDA
+#ifdef _ACCEL
                zdbtmc = exp(-ze1)
 #else
                if (ze1 .le. od_lo) then
@@ -9370,7 +9370,7 @@ real gpu_device  :: zcd(tncol,ngptsw,nlayers+1)  , zcu(tncol,ngptsw,nlayers+1)
 # undef WLOOP_E_GPU
 # undef WLOOP_S_CPU
 # undef WLOOP_E_CPU
-#ifndef _CUDA
+#ifndef _ACCEL
 #  undef ncol
 #endif
          
@@ -9650,7 +9650,7 @@ real gpu_device  :: zcd(tncol,ngptsw,nlayers+1)  , zcu(tncol,ngptsw,nlayers+1)
       integer , intent (in) :: ncol
     
 
-#ifdef _CUDA
+#ifdef _ACCEL
       real , intent(in) gpu_device :: pref(:,:,:)             ! direct beam reflectivity
       real , intent(in) gpu_device :: prefd(:,:,:)            ! diffuse beam reflectivity
       real , intent(in) gpu_device :: ptra(:,:,:)             ! direct beam transmissivity
@@ -9694,7 +9694,7 @@ real gpu_device  :: zcd(tncol,ngptsw,nlayers+1)  , zcu(tncol,ngptsw,nlayers+1)
 
       integer  :: ikp, ikx, jk, iplon, iw
 
-#ifdef _CUDA
+#ifdef _ACCEL
 
       real  :: zreflect, zreflectj
 
@@ -9992,7 +9992,7 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
       use rrsw_wvn_f, only : wavenum2, ngb
       use rrsw_ref_f, only : preflog, tref
 
-#ifdef _CUDA
+#ifdef _ACCEL
       use cudafor
 #endif 
 
@@ -10148,7 +10148,7 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
 ! mji - time
       real :: t1, t2
       
-#ifdef _CUDA
+#ifdef _ACCEL
       type(cudadeviceprop) :: prop
       real :: gmem
       integer :: err
@@ -10159,7 +10159,7 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
          pncol = rpart
       else
 
-#ifdef _CUDA
+#ifdef _ACCEL
  
       err = cudaGetDeviceProperties( prop, 0)
       gmem = prop%totalGlobalMem / (1024.0 * 1024.0)
@@ -10497,7 +10497,7 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
       real  :: zepsec, zepzen                 ! epsilon
       real  :: zdpgcp                         ! flux to heating conversion ratio
 
-#ifndef _CUDA
+#ifndef _ACCEL
 # define ncol CHNK
 #endif
 
@@ -10638,7 +10638,7 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
       real gpu_device :: zfd(ncol,ngptsw,nlay+1)   , zfu(ncol,ngptsw,nlay+1)  
       real gpu_device :: zsflxzen(ncol,ngptsw)
       real gpu_device :: ztaur(ncol,nlay,ngptsw)   , ztaug(ncol,nlay,ngptsw) 
-#ifndef _CUDA
+#ifndef _ACCEL
 # undef ncol
 #endif
 
@@ -11041,7 +11041,7 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
           end do
 !$acc end kernels
 
-#ifndef _CUDA
+#ifndef _ACCEL
 ! Use Tom Henderson's technique to pad out and vector remainder
 ! with valid data so that we can have a static loop range over 
 ! columns without having to test for short vectors.
@@ -11122,7 +11122,7 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
       ENDIF
 #endif
 
-#ifndef _CUDA
+#ifndef _ACCEL
 #  define colr CHNK
 #endif
 
@@ -11168,7 +11168,7 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
 ! For GSFC, not needed for WRF
 !                         znirr,znirf,zparr,zparf,zuvrr,zuvrf)
 
-#ifndef _CUDA
+#ifndef _ACCEL
 #  undef colr
 #endif
    
@@ -11732,7 +11732,7 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
 ! Initial value of number of columns per partition; 
 ! Use 2 for CPU; for GPU set to 0 here to allow selection
 ! of appropriate value in rrtmg_sw
-#ifdef _CUDA
+#ifdef _ACCEL
       rpart = 0
 #else
       rpart = CHNK

@@ -233,10 +233,10 @@ CFLAGS_LOCAL    =       -w -O3
 LDFLAGS_LOCAL   =
 CPLUSPLUSLIB    =
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
-FCOPTIM         =       -fastsse -Mvect=noaltcode -Msmartalloc -Mprefetch=distance:8 -ta=nvidia:fastmath,host # -Minfo=all =Mneginfo=all
+FCOPTIM         =       -Kieee -acc -ta=nvidia,fastmath,cuda5.0,cc35 -Mcuda -fastsse -Mvect=noaltcode -Msmartalloc -Mprefetch=distance:8  # -Minfo=all =Mneginfo=all
 FCREDUCEDOPT    =       $(FCOPTIM)
 FCNOOPT         =       -O0
-FCDEBUG         =       # -g $(FCNOOPT) # -C -Ktrap=fp -traceback
+FCDEBUG         =       # -g $(FCNOOPT) -Kieee -acc -ta=nvidia,cuda5.0,cc35 -Mcuda # -C -Ktrap=fp -traceback
 FORMAT_FIXED    =       -Mfixed
 FORMAT_FREE     =       -Mfree
 FCSUFFIX        =

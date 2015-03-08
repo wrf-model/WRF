@@ -756,6 +756,18 @@ endif
       CALL wrf_put_dom_ti_integer   ( fid, 'DFI_OPT',          config_flags%dfi_opt      , 1 , ierr ) 
 
       ENDIF ! history_only
+
+#if (EM_CORE == 1) && ( DA_CORE != 1)
+      IF ( ( switch .EQ. input_only   ) .OR. &
+           ( switch .EQ. history_only ) .OR. &
+           ( switch .EQ. restart_only ) ) THEN
+         IF ( grid%this_is_an_ideal_run ) THEN
+            CALL wrf_put_dom_ti_char ( fid , 'SIMULATION_INITIALIZATION_TYPE', "IDEALIZED DATA" , ierr )
+         ELSE
+            CALL wrf_put_dom_ti_char ( fid , 'SIMULATION_INITIALIZATION_TYPE', "REAL-DATA CASE" , ierr )
+         END IF
+      END IF
+#endif
     ENDIF
 
 ! added these fields for use by reassembly programs , 010831, JM

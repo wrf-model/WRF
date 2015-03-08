@@ -49,7 +49,7 @@
     CHARACTER*19  new_date
     CHARACTER*24  base_date
     CHARACTER*80  fname
-    CHARACTER*80  dname, memord
+    CHARACTER*80  dname, memord, sim_type
     LOGICAL dryrun
     INTEGER idt
     INTEGER itmp
@@ -93,7 +93,6 @@
     !  Local variables: are we are using the correct hypsometric option for ARW ideal cases.
 
     CHARACTER (LEN=80) :: input_name
-    LOGICAL :: this_is_an_ideal_run
     INTEGER :: loop, hypsometric_opt
 
     CHARACTER (LEN=256) :: a_message
@@ -140,27 +139,6 @@
 #if ( ( EM_CORE == 1 ) && ( DA_CORE != 1 ) )
       IF ( switch .EQ. boundary_only ) THEN
          grid%just_read_boundary = .true.
-      END IF
-
-      IF ( ( switch .EQ. input_only ) .OR. ( switch .EQ. restart_only ) ) THEN
-
-        !  Make sure for ARW ideal cases that the hypsometric option, the
-        !  way that we integrate the heigh field, is set to 1.  This is the
-        !  method that is used in all of the "ideal" programs to get the
-        !  base-state height (phb).
-
-        CALL wrf_get_dom_ti_char ( fid , 'START_DATE' , input_name , ierr )
-        grid%this_is_an_ideal_run = INDEX(TRIM(input_name) , '0001-' ) .NE. 0
-
-        IF ( grid%this_is_an_ideal_run ) THEN
-          grid%hypsometric_opt = 1
-          config_flags%hypsometric_opt = 1
-	  DO loop = 1 , grid%max_dom
-            CALL nl_set_hypsometric_opt ( loop , 1 ) 
-          END DO
-          WRITE(wrf_err_message,*)'Ideal cases do not support the hypsometric option.'
-          CALL wrf_debug( 0 , wrf_err_message )
-        END IF
       END IF
 #endif
 
@@ -364,25 +342,6 @@
        IF ( ierr3 .NE. 0 ) CALL wrf_error_fatal( 'wrf_get_dom_ti_integer getting dimension information from dataset' )
 
 #if (EM_CORE == 1)
-
-       IF ( ( switch .EQ. input_only ) .AND. ( config_flags%io_form_input .EQ. 2 ) ) THEN
-
-        !  For backward compatibility.  If we do not find the hypsometric_opt defined
-        !  in the input data, this is pre version 3.4.  Most likely, the hypsometric_opt
-        !  was the default value, 1.  
-
-        hypsometric_opt = -1
-        CALL wrf_get_dom_ti_integer ( fid , 'HYPSOMETRIC_OPT' , hypsometric_opt , 1 , icnt , ierr )
-        IF ( ( hypsometric_opt .NE. 1 ) .AND. ( hypsometric_opt .NE. 2 ) ) THEN
-          grid%hypsometric_opt = 1
-          config_flags%hypsometric_opt = 1
-	  DO loop = 1 , grid%max_dom
-            CALL nl_set_hypsometric_opt ( loop , 1 ) 
-          END DO
-          WRITE(wrf_err_message,*)'Resetting the hypsometric_opt from default value of 2 to 1'
-          CALL wrf_debug( 0 , wrf_err_message )
-        END IF
-       END IF
 
        !  Test to make sure that the grid distances are the right size.
 
@@ -840,6 +799,55 @@
        END IF
     END IF
 
+#endif
+
+#if ( ( EM_CORE == 1 ) && ( DA_CORE != 1 ) )
+      IF ( ( switch .EQ. input_only ) .OR. ( switch .EQ. restart_only ) ) THEN
+
+        !  Make sure for ARW ideal cases that the hypsometric option, the
+        !  way that we integrate the heigh field, is set to 1.  This is the
+        !  method that is used in all of the "ideal" programs to get the
+        !  base-state height (phb).
+
+        CALL wrf_get_dom_ti_char ( fid , 'SIMULATION_INITIALIZATION_TYPE', sim_type , ierr )
+        IF      ( TRIM(sim_type) .EQ. "IDEALIZED DATA" ) THEN
+           grid%this_is_an_ideal_run = .TRUE.
+        ELSE IF ( TRIM(sim_type) .EQ. "REAL-DATA CASE" ) THEN
+           grid%this_is_an_ideal_run = .FALSE.
+        ELSE IF ( ierr .NE. 0 ) THEN
+           CALL wrf_get_dom_ti_char ( fid , 'START_DATE' , input_name , ierr )
+           grid%this_is_an_ideal_run = INDEX(TRIM(input_name) , '0001-' ) .NE. 0
+        END IF
+
+        IF ( grid%this_is_an_ideal_run ) THEN
+          grid%hypsometric_opt = 1
+          config_flags%hypsometric_opt = 1
+	  DO loop = 1 , grid%max_dom
+            CALL nl_set_hypsometric_opt ( loop , 1 ) 
+          END DO
+          WRITE(wrf_err_message,*)'Ideal cases do not support the hypsometric option.'
+          CALL wrf_debug( 0 , wrf_err_message )
+        END IF
+      END IF
+
+       IF ( ( switch .EQ. input_only ) .AND. ( config_flags%io_form_input .EQ. 2 ) ) THEN
+
+        !  For backward compatibility.  If we do not find the hypsometric_opt defined
+        !  in the input data, this is pre version 3.4.  Most likely, the hypsometric_opt
+        !  was the default value, 1.  
+
+        hypsometric_opt = -1
+        CALL wrf_get_dom_ti_integer ( fid , 'HYPSOMETRIC_OPT' , hypsometric_opt , 1 , icnt , ierr )
+        IF ( ( hypsometric_opt .NE. 1 ) .AND. ( hypsometric_opt .NE. 2 ) ) THEN
+          grid%hypsometric_opt = 1
+          config_flags%hypsometric_opt = 1
+	  DO loop = 1 , grid%max_dom
+            CALL nl_set_hypsometric_opt ( loop , 1 ) 
+          END DO
+          WRITE(wrf_err_message,*)'Resetting the hypsometric_opt from default value of 2 to 1'
+          CALL wrf_debug( 0 , wrf_err_message )
+        END IF
+       END IF
 #endif
 
     ENDIF check_if_dryrun

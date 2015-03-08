@@ -370,7 +370,7 @@ state    real    cfn1           -       misc      -         -     irh       "cfn
 state    integer step_number    -       misc      -         -     ir        "step_number"  ""
 
 # Idealized run
-state    logical this_is_an_ideal_run   - misc    -         -      r     "this_is_an_ideal_run"     "T/F flag: this is an ARW ideal simulation"
+state    logical this_is_an_ideal_run   - misc    -         -     irh    "this_is_an_ideal_run"     "T/F flag: this is an ARW ideal simulation"
 
 # For the adaptive timestep restart
 state    logical stepping_to_time       - misc    -         -      r     "stepping_to_time"         ""

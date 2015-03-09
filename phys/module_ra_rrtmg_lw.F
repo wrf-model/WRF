@@ -11850,6 +11850,9 @@ CONTAINS
                O31D(K)=O33D(I,K,J)
             ENDDO
          ELSE
+#if HWRF==1
+            call wrf_error_fatal('The O33D variable was not passed to RRTMG.  This will remove the ozone layer.')
+#endif
             DO K=kts,kte
                O31D(K)=0.0
             ENDDO

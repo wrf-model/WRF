@@ -470,7 +470,7 @@
      &                 ,F_ICE_PHY=F_ICE,F_RAIN_PHY=F_RAIN               &
      &                 ,LWCF=LWCF,SWCF=SWCF                             &
      &                 ,O3INPUT=config_flags%O3INPUT,AER_OPT=config_flags%AER_OPT  &
-     &                 ,O33D=grid%o33d                                  &
+     &                 ,O3RAD=grid%o3rad,ozmixm=grid%ozmixm              &
      &                 ,SF_SURFACE_PHYSICS=CONFIG_FLAGS%SF_SURFACE_PHYSICS &
      &                 ,QV=MOIST_TRANS(IMS,KMS,JMS,P_QV),F_QV=F_QV      &
      &                 ,QC=MOIST_TRANS(IMS,KMS,JMS,P_QC),F_QC=F_QC      &

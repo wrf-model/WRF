@@ -12206,7 +12206,6 @@ CONTAINS
         if(present(o33d)) then
          do k = kts, nlayers
             o3vmr(ncol,k) = o3mmr(k) * amdo
-            IF ( PRESENT( O33D ) ) THEN
             if(o3input .eq. 2)then
                if(k.le.kte)then
                  o3vmr(ncol,k) = o31d(k)
@@ -12216,9 +12215,11 @@ CONTAINS
                  if(o3vmr(ncol,k) .le. 0.)o3vmr(ncol,k) = o3mmr(k)*amdo
                endif
             endif
-            ENDIF
          enddo
         else
+#if HWRF==1
+            call wrf_error_fatal('The O33D variable was not passed to RRTMG.  This will remove the ozone layer.')
+#endif
          do k = kts, nlayers
             o3vmr(ncol,k) = o3mmr(k) * amdo
          enddo

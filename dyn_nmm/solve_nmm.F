@@ -113,7 +113,7 @@
 !     INTEGER :: MPI_COMM_COMP,MYPE,MYPROC,NPES
       INTEGER :: MYPROC,imid,jmid
       INTEGER :: KVH,NTSD_rad,RC
-      INTEGER :: NUM_OZMIXM,NUM_AEROSOLC
+      INTEGER :: NUM_AEROSOLC
 !
       REAL :: DT_INV,FICE,FRAIN,GPS,QI,QR,QW,WC,WP
 !
@@ -1509,7 +1509,6 @@
 !***  When allocating CAM radiation 4d arrays (ozmixm, aerosolc), 
 !***  the following two scalars are not needed.
 !
-      NUM_OZMIXM=1
       NUM_AEROSOLC=1
 !
       IF(grid%ntsd<=0)THEN

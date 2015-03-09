@@ -687,7 +687,7 @@ CONTAINS
    real, dimension(:,:,:,:), allocatable :: tauaer_sw, ssaaer_sw, asyaer_sw
 
 #ifdef HWRF
-   CHARACTER(len=265) :: wrf_err_message
+   CHARACTER(len=255) :: wrf_err_message
 #endif
 
    ! This allows radiation schemes (mainly HWRF) to correctly
@@ -698,6 +698,22 @@ CONTAINS
    else
       expl_conv=.true. ! backward compatibility for ARW
    endif
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! FIXME: REMOVE
+   if(.not. present(pin)) then
+      call wrf_error_fatal('pin is missing')
+   endif
+   if(.not. present(ozmixm)) then
+      call wrf_error_fatal('ozmixm is missing')
+   endif
+   if(n_ozmixm<12) then
+37    format('n_ozmixm=',I0,'<12')
+      write(wrf_err_message,37) n_ozmixm
+      call wrf_error_fatal(wrf_err_message)
+   endif
+! END OF STUFF TO REMOVE
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
    CALL wrf_debug (1, 'Top of Radiation Driver')
 !  WRITE ( wrf_err_message , * ) 'itimestep = ',itimestep,', dt = ',dt,', lw and sw options = ',lw_physics,sw_physics

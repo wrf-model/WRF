@@ -558,7 +558,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
 ! the nests.  Parallel NetCDF does a header check on all the metadata being written
 ! from multiple processors and if it differs, it throws up an error. This avoids that.
    IF ( grid%id .EQ. 1 ) THEN   ! only moad can have specified boundaries
-     CALL domain_alarm_create( grid, BOUNDARY_ALARM )
+     CALL domain_alarm_create( grid, BOUNDARY_ALARM, interval )
      CALL WRFU_AlarmEnable( grid%alarms( BOUNDARY_ALARM ), rc=rc )
      CALL wrf_check_error( WRFU_SUCCESS, rc, &
                            'WRFU_AlarmEnable(BOUNDARY_ALARM) FAILED', &

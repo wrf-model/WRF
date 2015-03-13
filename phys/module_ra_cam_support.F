@@ -3491,7 +3491,7 @@ subroutine oznini(ozmixm,pin,levsiz,num_months,XLAT,                &
 !-- read in ozone pressure data
 
      WRITE(message,*)'num_months = ',num_months
-     CALL wrf_debug(50,message)
+     CALL wrf_debug(1,message)
 
       pin_unit = 27
         OPEN(pin_unit, FILE='ozone_plev.formatted',FORM='FORMATTED',STATUS='OLD')
@@ -3530,6 +3530,9 @@ subroutine oznini(ozmixm,pin,levsiz,num_months,XLAT,                &
       enddo
       close(29)
 
+96    format('lat_ozone = ',F0.4,'..',F0.4)
+      write(message,96) minval(lat_ozone(:)),maxval(lat_ozone(:))
+      call wrf_debug(1,message)
 
 !-- latitudinally interpolate ozone data (and extend longitudinally)
 !-- using function lin_interpol2(x, f, y) result(g)
@@ -3555,6 +3558,10 @@ subroutine oznini(ozmixm,pin,levsiz,num_months,XLAT,                &
       enddo
       enddo
       enddo
+
+404    format('ozmixm = ',F0.8,'..',F0.8)
+      write(message,404) minval(ozmixm),maxval(ozmixm)
+      call wrf_debug(1,message)
 
 ! Old code for fixed ozone
 

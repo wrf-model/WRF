@@ -656,7 +656,7 @@ CONTAINS
    INTEGER ::    i,j,k,its,ite,jts,jte,ij
    INTEGER ::    STEPABS
    LOGICAL ::    gfdl_lw,gfdl_sw
-   LOGICAL ::    doabsems
+   LOGICAL ::    doabsems, use_aer3d
    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
    INTEGER ::    s
 
@@ -701,6 +701,11 @@ CONTAINS
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! FIXME: REMOVE
+   if(levsiz/=59) then
+38    format('levsiz=',I0,' is not 59')
+      write(wrf_err_message,38) levsiz
+      call wrf_error_fatal(wrf_err_message)
+   endif
    if(.not. present(pin)) then
       call wrf_error_fatal('pin is missing')
    endif
@@ -831,40 +836,32 @@ CONTAINS
 
    gfdl_lw = .false.
    gfdl_sw = .false.
+   use_aer3d = .false.
 
 ! Allocate aerosol arrays used by aer_opt = 2 option
-   IF ( PRESENT( AOD5502D ) ) THEN
+   IF ( PRESENT( AOD5502D ) .and. aer_opt==2 ) THEN
      ! jararias, 2013/11
-     IF ( aer_opt .EQ. 2 ) THEN
-        swrad_aerosol_select: select case(sw_physics)
+      swrad_aerosol_select: select case(sw_physics)
+         
+      case(GODDARDSWSCHEME)
+         allocate(tauaer_sw(ims:ime, kms:kme, jms:jme, 1:11))
+         allocate(ssaaer_sw(ims:ime, kms:kme, jms:jme, 1:11))
+         allocate(asyaer_sw(ims:ime, kms:kme, jms:jme, 1:11))
+         use_aer3d=.true.
+         
+      case(RRTMG_SWSCHEME)
+         allocate(tauaer_sw(ims:ime, kms:kme, jms:jme, 1:14))
+         allocate(ssaaer_sw(ims:ime, kms:kme, jms:jme, 1:14))
+         allocate(asyaer_sw(ims:ime, kms:kme, jms:jme, 1:14))
+         use_aer3d=.true.
 
-           case(GODDARDSWSCHEME)
-              allocate(tauaer_sw(ims:ime, kms:kme, jms:jme, 1:11))
-              allocate(ssaaer_sw(ims:ime, kms:kme, jms:jme, 1:11))
-              allocate(asyaer_sw(ims:ime, kms:kme, jms:jme, 1:11))
-
-           case(RRTMG_SWSCHEME)
-              allocate(tauaer_sw(ims:ime, kms:kme, jms:jme, 1:14))
-              allocate(ssaaer_sw(ims:ime, kms:kme, jms:jme, 1:14))
-              allocate(asyaer_sw(ims:ime, kms:kme, jms:jme, 1:14))
-
-        end select swrad_aerosol_select
-     ELSE
-        swrad_aerosol_select_stub: select case(sw_physics)
-
-           case(GODDARDSWSCHEME)
-              allocate(tauaer_sw(1, 1, 1, 1))
-              allocate(ssaaer_sw(1, 1, 1, 1))
-              allocate(asyaer_sw(1, 1, 1, 1))
-
-           case(RRTMG_SWSCHEME)
-              allocate(tauaer_sw(1, 1, 1, 1))
-              allocate(ssaaer_sw(1, 1, 1, 1))
-              allocate(asyaer_sw(1, 1, 1, 1))
-
-        end select swrad_aerosol_select_stub
-     ENDIF
+      end select swrad_aerosol_select
    ENDIF
+
+   ! Stubs to ensure these variables are not passed in unallocated:
+   if(.not.allocated(tauaer_sw)) allocate(tauaer_sw(1, 1, 1, 1))
+   if(.not.allocated(ssaaer_sw)) allocate(ssaaer_sw(1, 1, 1, 1))
+   if(.not.allocated(asyaer_sw)) allocate(asyaer_sw(1, 1, 1, 1))
 
 !---------------
 ! Calculate constant for short wave radiation
@@ -1237,6 +1234,7 @@ CONTAINS
                     ,f_qi=f_qi,f_qs=f_qs,f_qg=f_qg                     &
                     ,erbe_out=erbe_out                                 & !optional
                     ,aer_opt=aer_opt                                   &
+                    ,use_aer3d=.false.                                 & ! no tauaer3d_sw in this call
                                                                        )
 
         CASE (GFDLLWSCHEME)
@@ -1501,9 +1499,8 @@ CONTAINS
           ENDIF
      ENDIF       
 
-     IF ( PRESENT( AOD5502D ) ) THEN
+     IF ( PRESENT( AOD5502D ) .and. aer_opt==2) THEN
      ! jararias, 2013/11
-     IF ( aer_opt .EQ. 2 ) THEN
      swrad_aerosol_select2: select case(sw_physics)
         case(GODDARDSWSCHEME)
            call wrf_debug(100, 'call calc_aerosol_goddard_sw')
@@ -1537,7 +1534,6 @@ CONTAINS
 
         case default
      end select swrad_aerosol_select2
-     ENDIF
      ENDIF
 
      swrad_select: SELECT CASE(sw_physics)
@@ -1645,6 +1641,7 @@ CONTAINS
                     ,tauaer3d_sw=tauaer_sw                             & ! jararias, 2013/11
                     ,ssaaer3d_sw=ssaaer_sw                             & ! jararias, 2013/11
                     ,asyaer3d_sw=asyaer_sw                             & ! jararias, 2012/11
+                    ,use_aer3d=use_aer3d                               & ! bug fix, SGT 2015/03
                     ,aer_opt=aer_opt                                   &
                                                                        )
 
@@ -1712,6 +1709,25 @@ CONTAINS
 
         CASE (RRTMG_SWSCHEME)
              CALL wrf_debug(100, 'CALL rrtmg_sw')
+             if(size(gsw)<2) call wrf_error_fatal('gsw size is 1')
+             if(size(swcf)<2) call wrf_error_fatal('swcf size is 1')
+             if(size(coszr)<2) call wrf_error_fatal('coszr size is 1')
+             if(size(swddir)<2) call wrf_error_fatal('swddir size is 1')
+             if(size(swddni)<2) call wrf_error_fatal('swddni size is 1')
+             if(size(swddif)<2) call wrf_error_fatal('swddif size is 1')
+             if(size(SWUPT)<2) call wrf_error_fatal('SWUPT size is 1')
+             if(size(SWUPTC)<2) call wrf_error_fatal('SWUPTC size is 1')
+             if(size(SWDNT)<2) call wrf_error_fatal('SWDNT size is 1')
+             if(size(SWDNTC)<2) call wrf_error_fatal('SWDNTC size is 1')
+             if(size(SWUPB)<2) call wrf_error_fatal('SWUPB size is 1')
+             if(size(SWUPBC)<2) call wrf_error_fatal('SWUPBC size is 1')
+             if(size(SWDNB)<2) call wrf_error_fatal('SWDNB size is 1')
+             if(size(SWDNBC)<2) call wrf_error_fatal('SWDNBC size is 1')
+             if(size(SWUPFLX)<2) call wrf_error_fatal('SWUPFLX size is 1')
+             if(size(SWUPFLXC)<2) call wrf_error_fatal('SWUPFLXC size is 1')
+             if(size(SWDNFLX)<2) call wrf_error_fatal('SWDNFLX size is 1')
+             if(size(SWDNFLXC)<2) call wrf_error_fatal('SWDNFLXC size is 1')
+
              CALL RRTMG_SWRAD(                                         &
                      RTHRATENSW=RTHRATENSW,                            &
                      SWUPT=SWUPT,SWUPTC=SWUPTC,                        &
@@ -1769,6 +1785,7 @@ CONTAINS
                      tauaer3d_sw=tauaer_sw,                             & ! jararias 2013/11
                      ssaaer3d_sw=ssaaer_sw,                             & ! jararias 2013/11
                      asyaer3d_sw=asyaer_sw,                             & ! jararias 2013/11
+                     use_aer3d=use_aer3d,                               & ! bug fix, SGT 2015/03
                      swddir=swddir,swddni=swddni,swddif=swddif,         & ! jararias 2013/08/10
                      xcoszen=coszen,julian=julian                       ) ! jararias 2013/08/14
 

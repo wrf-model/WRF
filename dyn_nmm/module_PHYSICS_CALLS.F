@@ -248,8 +248,6 @@
 !
         PDSL(I,J)=PD(I,J)*RES(I,J)
         P8W(I,KTE+1,J)=PT
-        XLAT(I,J)=GLAT(I,J)/DEGRAD
-        XLON(I,J)=GLON(I,J)/DEGRAD
         XLAND(I,J)=SM(I,J)+1.
         PSFC=PD(I,J)+PDTOP+PT
         REXNSFC(I,J)=(PSFC*1.E-5)**CAPA
@@ -399,7 +397,7 @@
      &                 ,RTHRATEN=RTHRATEN                               &
      &                 ,CEN_LAT=grid%cen_lat                            &
      &                 ,GLW=TOTLWDN,GSW=SWNETDN,SWDOWN=TOTSWDN          &
-     &                 ,XLAT=XLAT,XLONG=XLON,ALBEDO=ALBEDO,EMISS=EPSR   &
+     &                 ,XLAT=grid%HLAT,XLONG=grid%HLON,ALBEDO=ALBEDO,EMISS=EPSR   &
      &                 ,XICE=SICE,XLAND=XLAND,Z=Z,TSK=TSFC              &
      &                 ,N_AEROSOLC=NUM_AEROSOLC,PAERLEV=GRID%PAERLEV    &
      &                 ,ID=grid%id                                      &
@@ -470,7 +468,7 @@
      &                 ,F_ICE_PHY=F_ICE,F_RAIN_PHY=F_RAIN               &
      &                 ,LWCF=LWCF,SWCF=SWCF                             &
      &                 ,O3INPUT=config_flags%O3INPUT,AER_OPT=config_flags%AER_OPT  &
-     &                 ,O3RAD=grid%o3rad,ozmixm=grid%ozmixm              &
+     &                 ,O3RAD=grid%o3rad,ozmixm=grid%ozmixm,pin=grid%pin   &
      &                 ,SF_SURFACE_PHYSICS=CONFIG_FLAGS%SF_SURFACE_PHYSICS &
      &                 ,QV=MOIST_TRANS(IMS,KMS,JMS,P_QV),F_QV=F_QV      &
      &                 ,QC=MOIST_TRANS(IMS,KMS,JMS,P_QC),F_QC=F_QC      &

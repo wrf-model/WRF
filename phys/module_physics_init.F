@@ -988,7 +988,10 @@ integer myproc
 
 
    CALL wrf_debug ( 200 , 'module_start: phy_init: Before call to ra_init' )
-
+   if(n_ozmixm<13) call wrf_error_fatal('must have 13 oxmixm')
+   if(size(ozmixm,2)<59) call wrf_error_fatal('must have 59 ozmixm in 2nd dimension.')
+   if(size(ozmixm,1)<2) call wrf_error_fatal('unit dimension for dim 1 of ozmixm')
+   if(size(ozmixm,3)<2) call wrf_error_fatal('unit dimension for dim 3 of ozmixm')
    CALL ra_init(id=id,STEPRA=STEPRA,RADT=RADT,DT=DT,RTHRATEN=RTHRATEN,RTHRATENLW=RTHRATENLW,             &
                 RTHRATENSW=RTHRATENSW,CLDFRA=CLDFRA,EMISS=EMISS,cen_lat=cen_lat,JULYR=JULYR,JULDAY=JULDAY,GMT=GMT,    &
                 levsiz=levsiz,XLAT=XLAT,XLONG=XLONG,n_ozmixm=n_ozmixm,     &
@@ -1636,6 +1639,7 @@ integer myproc
    LOGICAL :: aclwalloc = .false.
    integer :: month,iday
    INTEGER :: i, j, k, itf, jtf, ktf
+   character*255 :: message
 !---------------------------------------------------------------------
 
    jtf=min0(jte,jde-1)
@@ -1691,14 +1695,30 @@ integer myproc
 !   Read in CAM ozone data, and interpolate data to model grid
 !   Interpolation is done on domain 1 only
 
-   IF ( config_flags%o3input .EQ. 2 .AND. id .EQ. 1 ) THEN
+   IF ( config_flags%o3input .EQ. 2 .AND. id .EQ. 1) THEN
+      call wrf_debug(1,'Call oznini to get ozone lookup tables')
+      if(size(ozmixm,1)/=ime-ims+1 .or. size(ozmixm,2)/=59 .or. &
+           size(ozmixm,3)/=jme-jms+1 .or. size(ozmixm,4)/=13) then
+         write(message,28) size(ozmixm,1),ime-ims+1,&
+              size(ozmixm,2),59, size(ozmixm,3),jme-jms+1, &
+              size(ozmixm,4),13
+28       format('Wrong size for OZMIXM: I=',I0,'vs',I0,' LV=',I0,'vs',I0,&
+              'J=',I0,'vs',I0,' t=',I0,'vs',I0)
+         call wrf_error_fatal(trim(message))
+      endif
       CALL oznini(ozmixm,pin,levsiz,n_ozmixm,XLAT,                &
                      ids, ide, jds, jde, kds, kde,                  &
                      ims, ime, jms, jme, kms, kme,                  &
                      its, ite, jts, jte, kts, kte)
+   else
+      write(message,38) config_flags%o3input,id
+      call wrf_debug(1,message)
+38    format('Not calling ozini: o3input=',I0,' (should be 2) and id=',&
+              I0," (should be 1).")
    ENDIF
 
    IF ( config_flags%aer_opt .EQ. 1 .AND. id .EQ. 1 ) THEN
+      call wrf_debug(1,'Call zerosol to get aerosol lookup tables')
       CALL aerosol_in(aerodm,pina,alevsiz,n_ozmixm-1,no_src_types,XLAT,XLONG,   &
                      ids, ide, jds, jde, kds, kde,                  &
                      ims, ime, jms, jme, kms, kme,                  &

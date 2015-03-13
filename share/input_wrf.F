@@ -796,6 +796,23 @@
              call wrf_message(wrf_err_message)
              call wrf_error_fatal("Mismatch between namelist and global attribute HYPSOMETRIC_OPT")
           END IF
+       ELSE
+          ! For WRFDA backward compatibility.  If hypsometric_opt is not defined in the fg file, it is
+          ! pre-version 3.4 WRF input data.  For older versions, hypsometric_opt should be 1.
+          hypsometric_opt = -1
+          CALL wrf_get_dom_ti_integer ( fid , 'HYPSOMETRIC_OPT' , hypsometric_opt, 1 , icnt , ierr )
+          IF ( ( hypsometric_opt .NE. 1 ) .AND. ( hypsometric_opt .NE. 2 ) ) THEN
+             grid%hypsometric_opt = 1
+             config_flags%hypsometric_opt = 1
+             DO loop = 1 , grid%max_dom
+                CALL nl_set_hypsometric_opt ( loop , 1 )
+             END DO
+             WRITE(wrf_err_message,*)'Background (fg) file appears to be from earlier than WRF V3.4;'
+             call wrf_message(wrf_err_message)
+             WRITE(wrf_err_message,*)'Resetting the hypsometric_opt from default value of 2 to 1'
+             CALL wrf_message(wrf_err_message)
+          END IF
+
        END IF
     END IF
 
@@ -805,7 +822,7 @@
       IF ( ( switch .EQ. input_only ) .OR. ( switch .EQ. restart_only ) ) THEN
 
         !  Make sure for ARW ideal cases that the hypsometric option, the
-        !  way that we integrate the heigh field, is set to 1.  This is the
+        !  way that we integrate the height field, is set to 1.  This is the
         !  method that is used in all of the "ideal" programs to get the
         !  base-state height (phb).
 

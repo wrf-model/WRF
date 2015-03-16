@@ -97,6 +97,20 @@ subroutine da_vertical_transform(grid, string, be, vertical_wgt, vv, vp)
          vp % v9(its:ite,jts:jte,kts:kte) = 0.0
       end if
 
+      if (be % v10% mz > 0) then
+         call da_transform_vvtovp (grid, be % v10 % evec, be % v10 % val, vertical_wgt, &
+            vv % v10, vp % v10, be % v10 % mz, kte)
+      else
+         vp % v10(its:ite,jts:jte,kts:kte) = 0.0
+      end if
+
+      if (be % v11 % mz > 0) then
+         call da_transform_vvtovp (grid, be % v11 % evec, be % v11 % val, vertical_wgt, &
+            vv % v11, vp % v11, be % v11 % mz, kte)
+      else
+         vp % v11(its:ite,jts:jte,kts:kte) = 0.0
+      end if
+
      elseif(cloud_cv_options == 3)then
       if (be % v6 % mz > 0) then
          vp % v6 = vv % v6
@@ -112,6 +126,14 @@ subroutine da_vertical_transform(grid, string, be, vertical_wgt, vv, vp)
 
       if (be % v9 % mz > 0) then
          vp % v9 = vv % v9
+      end if
+
+      if (be % v10 % mz > 0) then
+         vp % v10 = vv % v10
+      end if
+
+      if (be % v11 % mz > 0) then
+         vp % v11 = vv % v11
       end if
 
      end if
@@ -202,6 +224,19 @@ subroutine da_vertical_transform(grid, string, be, vertical_wgt, vv, vp)
             its,ite, jts,jte, kts,kte)
       end if
 
+      if (be % v10 % mz > 0) then
+         call da_transform_vptovv (be % v10 % evec, be % v10 % val, vertical_wgt, &
+            vp % v10, vv % v10, be % v10 % mz, kds,kde, ims,ime, jms,jme, kms,kme, &
+            its,ite, jts,jte, kts,kte)
+      end if
+
+      if (be % v11 % mz > 0) then
+         call da_transform_vptovv (be % v11 % evec, be % v11 % val, vertical_wgt, &
+            vp % v11, vv % v11, be % v11 % mz, kds,kde, ims,ime, jms,jme, kms,kme, &
+            its,ite, jts,jte, kts,kte)
+      end if
+
+
      elseif(cloud_cv_options == 3)then
       if (be % v6 % mz > 0) then
          vv % v6 = vp % v6
@@ -217,6 +252,14 @@ subroutine da_vertical_transform(grid, string, be, vertical_wgt, vv, vp)
 
       if (be % v9 % mz > 0) then
          vv % v9 = vp % v9
+      end if
+
+      if (be % v10 % mz > 0) then
+         vv % v10 = vp % v10
+      end if
+
+      if (be % v11 % mz > 0) then
+         vv % v11 = vp % v11
       end if
 
      end if
@@ -290,6 +333,16 @@ subroutine da_vertical_transform(grid, string, be, vertical_wgt, vv, vp)
             vp % v9, vv % v9, be % v9 % mz, kte)
       end if
 
+      if (be % v10 % mz > 0) then
+         call da_transform_vvtovp_adj (grid, be % v10 % evec, be % v10 % val, vertical_wgt, &
+            vp % v10, vv % v10, be % v10 % mz, kte)
+      end if
+
+      if (be % v11 % mz > 0) then
+         call da_transform_vvtovp_adj (grid, be % v11 % evec, be % v11 % val, vertical_wgt, &
+            vp % v11, vv % v11, be % v11 % mz, kte)
+      end if
+
      elseif(cloud_cv_options == 3)then
       if (be % v6 % mz > 0) then
          vv % v6 = vp % v6
@@ -305,6 +358,14 @@ subroutine da_vertical_transform(grid, string, be, vertical_wgt, vv, vp)
 
       if (be % v9 % mz > 0) then
          vv % v9 = vp % v9
+      end if
+
+      if (be % v10 % mz > 0) then
+         vv % v10 = vp % v10
+      end if
+
+      if (be % v11 % mz > 0) then
+         vv % v11 = vp % v11
       end if
 
      end if

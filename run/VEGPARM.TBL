@@ -40,6 +40,8 @@ BARE
 19
 NATURAL
 5
+CROP
+3
 Vegetation Parameters
 MODIFIED_IGBP_MODIS_NOAH
 20,1, 'SHDFAC NROOT   RS      RGL      HS      SNUP  MAXALB   LAIMIN  LAIMAX   EMISSMIN EMISSMAX ALBEDOMIN ALBEDOMAX   Z0MIN    Z0MAX   ZTOPV    ZBOTV'
@@ -75,10 +77,12 @@ BARE
 16
 NATURAL
 14
+CROP
+12
 Vegetation Parameters
 USGS-RUC
 28,1, 'ALBEDO    Z0   LEMI     PC   SHDFAC IFOR   RS      RGL      HS      SNUP    LAI    MAXALB'
-1,     .18,     2.0,   .88,   .40,   .10,   9,    200.,   999.,   999.0,   0.04,   1.00,     40.,    'Urban and Built-Up Land'
+1,     .18,     1.0,   .88,   .40,   .10,   9,    200.,   999.,   999.0,   0.04,   1.00,     40.,    'Urban and Built-Up Land'
 2,     .17,     .06,   .92,   .30,   .80,   7,     40.,   100.,   36.25,   0.04,   5.68,     64.,    'Dryland Cropland and Pasture'
 3,     .18,     .075,  .92,   .40,   .80,   7,     40.,   100.,   36.25,   0.04,   5.68,     64.,    'Irrigated Cropland and Pasture'
 4,     .18,     .125,  .92,   .40,   .80,   7,     40.,   100.,   36.25,   0.04,   4.50,     64.,    'Mixed Dryland/Irrigated Cropland and Pasture'
@@ -118,6 +122,8 @@ BARE
 19
 NATURAL
 5
+CROP
+3
 Vegetation Parameters
 MODI-RUC
 21,1, 'ALBEDO    Z0    LEMI    PC   SHDFAC IFOR   RS      RGL      HS      SNUP    LAI    MAXALB'
@@ -132,9 +138,9 @@ MODI-RUC
 9,      .20,    .15,   .920,  .40,    .50,   5,     70.,    65.,   54.53,   0.04,   3.66,   50.,     'Savannas'
 10,     .19,   .075,   .920,  .40,    .80,   5,     40.,   100.,   36.35,   0.04,   2.90,   70.,     'Grasslands'
 11      .14,    .30,   .950,  .40,    .60,   4,     70.,    65.,   55.97   0.015    5.72,   59.,     'Permanent wetlands'
-12,     .18,    .15,   .935,  .40,    .80,   7,     40.,   100.,   36.25,   0.04,   5.68,   66.,     'Croplands'
-13,     .18,    2.0,   .880,  .40,    .10,   9,    200.,   999.,   999.0,   0.04,   1.00,   46.,     'Urban and Built-Up'
-14      .16,    .14,   .920,  .40,    .80,   7,     40.,   100.,   36.25,   0.04,   4.29,   68.,     'cropland/natural vegetation mosaic'
+12,     .18,    .20,   .935,  .40,    .80,   7,     40.,   100.,   36.25,   0.04,   5.68,   66.,     'Croplands'
+13,     .18,    1.0,   .880,  .40,    .10,   9,    200.,   999.,   999.0,   0.04,   1.00,   46.,     'Urban and Built-Up'
+14      .16,    .20,   .920,  .40,    .80,   7,     40.,   100.,   36.25,   0.04,   4.29,   68.,     'cropland/natural vegetation mosaic'
 15,     .55,   .011,   .980,  .00,    .00,   9,    999.,   999.,   999.0,   0.02,   0.01,   82.,     'Snow and Ice'
 16,     .25,   .065,   .850,  .30,    .01,   5,    999.,   999.,   999.0,   0.02,   0.75,   75.,     'Barren or Sparsely Vegetated'
 17,     .08,  .0001,   .980,  .00,    .00,   9,    100.,    30.,   51.75,   0.01,   0.01,   70.,     'Water'
@@ -153,7 +159,9 @@ RSMAX_DATA
 BARE
 16
 NATURAL
-14
+10
+CROP
+12
 Vegetation Parameters
 NLCD40
 40,1, 'SHDFAC NROOT  RS      RGL      HS     SNUP  MAXALB    LAIMIN  LAIMAX  EMISSMIN EMISSMAX ALBEDOMIN ALBEDOMAX  Z0MIN    Z0MAX    ZTOPV    ZBOTV'
@@ -209,3 +217,5 @@ BARE
 16
 NATURAL
 14
+CROP
+12

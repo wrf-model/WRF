@@ -13,6 +13,7 @@ MODULE MODULE_MPP_LAND
   integer, public :: global_rt_nx, global_rt_ny
   integer, public :: local_rt_nx,local_rt_ny,rt_AGGFACTRT
   integer, public :: numprocs   ! total process, get by mpi initialization.
+  integer :: local_startx, local_starty
 
   integer mpp_status(MPI_STATUS_SIZE)
 
@@ -20,6 +21,28 @@ MODULE MODULE_MPP_LAND
   integer, allocatable, DIMENSION(:), public :: local_nx_size,local_ny_size
   integer, allocatable, DIMENSION(:), public :: local_rt_nx_size,local_rt_ny_size
   integer, allocatable, DIMENSION(:), public :: startx,starty
+  integer, allocatable, DIMENSION(:), public :: mpp_nlinks
+
+  interface check_land
+     module procedure check_landreal1
+     module procedure check_landreal1d
+     module procedure check_landreal2d
+     module procedure check_landreal3d
+  end interface
+  interface write_io_land
+     module procedure write_io_real3d
+  end interface
+  interface mpp_land_bcast
+     module procedure mpp_land_bcast_real2
+     module procedure mpp_land_bcast_real_1d
+     module procedure mpp_land_bcast_real1
+     module procedure mpp_land_bcast_char1d 
+     module procedure mpp_land_bcast_char1
+     module procedure mpp_land_bcast_int1 
+     module procedure mpp_land_bcast_int1d 
+     module procedure mpp_land_bcast_int2d 
+     module procedure mpp_land_bcast_logical
+  end interface
  
   contains
 
@@ -96,23 +119,45 @@ MODULE MODULE_MPP_LAND
      subroutine MPP_LAND_PAR_INI(over_lap,in_global_nx,in_global_ny,AGGFACTRT)
         integer in_global_nx,in_global_ny, AGGFACTRT
         integer :: over_lap   ! the overlaped grid number. (default is 1)
+        integer :: i
+
         global_nx = in_global_nx
         global_ny = in_global_ny 
         rt_AGGFACTRT = AGGFACTRT
         global_rt_nx = in_global_nx*AGGFACTRT
         global_rt_ny = in_global_ny *AGGFACTRT
         !overlap_n = 1
-        local_nx = global_nx / left_right_np 
-        if(left_right_p .eq. (left_right_np-1) ) then
-              local_nx = global_nx   &
-                    -int(global_nx/left_right_np)*(left_right_np-1)
-        end if
-        local_ny = global_ny / up_down_np 
-        if(  up_down_p .eq. (up_down_np-1) ) then
-           local_ny = global_ny  &
-                 -int(global_ny/up_down_np)*(up_down_np -1)
+!ywold        local_nx = global_nx / left_right_np 
+!ywold        if(left_right_p .eq. (left_right_np-1) ) then
+!ywold              local_nx = global_nx   &
+!ywold                    -int(global_nx/left_right_np)*(left_right_np-1)
+!ywold        end if
+!ywold        local_ny = global_ny / up_down_np 
+!ywold        if(  up_down_p .eq. (up_down_np-1) ) then
+!ywold           local_ny = global_ny  &
+!ywold                 -int(global_ny/up_down_np)*(up_down_np -1)
+!ywold       end if
+
+        local_nx = int(global_nx / left_right_np)
+        !if(global_nx .ne. (local_nx*left_right_np) ) then
+        if(mod(global_nx, left_right_np) .ne. 0) then
+            do i = 1, mod(global_nx, left_right_np)
+               if(left_right_p .eq. i ) then
+                   local_nx = local_nx + 1
+               end if
+            end do
         end if
 
+        local_ny = int(global_ny / up_down_np)
+        !if(global_ny .ne. (local_ny * up_down_np) ) then
+        if(mod(global_ny,up_down_np) .ne. 0 ) then
+            do i = 1, mod(global_ny,up_down_np)
+                 if( up_down_p .eq. i) then
+                     local_ny = local_ny + 1
+                 end if
+            end do
+        end if
+        
         local_rt_nx=local_nx*AGGFACTRT+2
         local_rt_ny=local_ny*AGGFACTRT+2
         if(left_id.lt.0) local_rt_nx = local_rt_nx -1
@@ -477,17 +522,37 @@ MODULE MODULE_MPP_LAND
   
   subroutine calculate_start_p()
 ! calculate startx and starty
-    integer :: local_startx, local_starty
     integer :: i,status, ierr, tag
     integer :: r_s(2)
+    integer ::  t_nx, t_ny
 
     allocate(starty(numprocs),stat = ierr) 
     allocate(startx(numprocs),stat = ierr)
 
     local_startx = int(global_nx/left_right_np) * left_right_p+1 
     local_starty = int(global_ny/up_down_np) * up_down_p+1 
+
+!ywold
+    t_nx = 0
+    do i = 1, mod(global_nx,left_right_np)
+       if(left_right_p .gt. i ) then
+           t_nx = t_nx + 1
+       end if
+    end do
+    local_startx = local_startx + t_nx
+
+    t_ny = 0
+    do i = 1, mod(global_ny,up_down_np)
+       if( up_down_p .gt. i) then
+           t_ny = t_ny + 1
+       end if
+    end do
+    local_starty = local_starty + t_ny
+
+
     if(left_id .lt. 0) local_startx = 1
     if(down_id .lt. 0) local_starty = 1
+
 
     if(my_id .eq. IO_id) then
          startx(my_id+1) = local_startx
@@ -519,6 +584,16 @@ MODULE MODULE_MPP_LAND
 
      return
   end subroutine calculate_start_p
+
+  subroutine decompose_data_real3d (in_buff,out_buff,klevel)
+      implicit none
+      integer:: klevel, k
+      real in_buff(global_nx,1:klevel,global_ny),out_buff(local_nx,1:klevel,local_ny) 
+      do k = 1, klevel
+          call decompose_data_real(in_buff(:,k,:),out_buff(:,k,:))
+      end do
+  end subroutine decompose_data_real3d
+
 
   subroutine decompose_data_real (in_buff,out_buff)
 ! usage: all of the cpu call this subroutine.
@@ -612,6 +687,17 @@ MODULE MODULE_MPP_LAND
       end if
       return
   end subroutine write_IO_int
+
+  subroutine write_IO_real3d(in_buff,out_buff,klevel)
+     implicit none
+! the IO node will receive the data from the rest process.
+      integer klevel, k
+      real in_buff(1:local_nx,1:klevel,1:local_ny),    &
+          out_buff(global_nx,1:klevel,global_ny)
+      do k = 1, klevel
+         call write_IO_real(in_buff(:,k,:),out_buff(:,k,:))
+      end do
+  end subroutine write_IO_real3d
 
   subroutine write_IO_real(in_buff,out_buff)
 ! the IO node will receive the data from the rest process.
@@ -737,6 +823,7 @@ MODULE MODULE_MPP_LAND
 !     return
 ! end subroutine mpp_land_sync
 
+
   subroutine mpp_land_bcast_int(size,inout)
       integer size
       integer inout(size)
@@ -747,6 +834,17 @@ MODULE MODULE_MPP_LAND
     return 
   end subroutine mpp_land_bcast_int
 
+  subroutine mpp_land_bcast_int1d(inout)
+      integer len 
+      integer inout(:)
+      integer ierr
+      len = size(inout,1)
+        call mpi_bcast(inout,len,MPI_INTEGER,   &
+            IO_id,MPI_COMM_WORLD,ierr)
+      call mpp_land_sync()
+    return 
+  end subroutine mpp_land_bcast_int1d
+
   subroutine mpp_land_bcast_int1(inout)
       integer inout
       integer ierr
@@ -755,6 +853,15 @@ MODULE MODULE_MPP_LAND
       call mpp_land_sync()
     return 
   end subroutine mpp_land_bcast_int1
+
+  subroutine mpp_land_bcast_logical(inout)
+      logical ::  inout
+      integer ierr
+        call mpi_bcast(inout,1,MPI_LOGICAL,   &
+            IO_id,MPI_COMM_WORLD,ierr)
+      call mpp_land_sync()
+    return 
+  end subroutine mpp_land_bcast_logical
 
   subroutine mpp_land_bcast_real1(inout)
       real inout
@@ -765,6 +872,17 @@ MODULE MODULE_MPP_LAND
     return 
   end subroutine mpp_land_bcast_real1
 
+  subroutine mpp_land_bcast_real_1d(inout)
+      integer len
+      real inout(:)
+      integer ierr
+      len = size(inout,1) 
+        call mpi_bcast(inout,len,MPI_real,   &
+            IO_id,MPI_COMM_WORLD,ierr)
+      call mpp_land_sync()
+    return
+  end subroutine mpp_land_bcast_real_1d
+
   subroutine mpp_land_bcast_real(size,inout)
       integer size
       real inout(size)
@@ -774,6 +892,34 @@ MODULE MODULE_MPP_LAND
       call mpp_land_sync()
     return
   end subroutine mpp_land_bcast_real
+
+  subroutine mpp_land_bcast_int2d(inout)
+      integer length1, k,length2
+      integer inout(:,:)
+      integer ierr
+      length1 = size(inout,1)
+      length2 = size(inout,2)
+      do k = 1, length2
+        call mpi_bcast(inout(:,k),length1,MPI_INTEGER,   &
+            IO_id,MPI_COMM_WORLD,ierr)
+      end do
+      call mpp_land_sync()
+    return
+  end subroutine mpp_land_bcast_int2d
+
+  subroutine mpp_land_bcast_real2(inout)
+      integer length1, k,length2
+      real inout(:,:)
+      integer ierr
+      length1 = size(inout,1)
+      length2 = size(inout,2)
+      do k = 1, length2
+        call mpi_bcast(inout(:,k),length1,MPI_real,   &
+            IO_id,MPI_COMM_WORLD,ierr)
+      end do
+      call mpp_land_sync()
+    return
+  end subroutine mpp_land_bcast_real2
 
   subroutine mpp_land_bcast_rd(size,inout)
       integer size
@@ -794,6 +940,28 @@ MODULE MODULE_MPP_LAND
       call mpp_land_sync()
     return
   end subroutine mpp_land_bcast_char
+
+  subroutine mpp_land_bcast_char1d(inout)
+      integer len
+      character inout(:)
+      integer ierr
+      len = size(inout,1)
+      call mpi_bcast(inout,len,MPI_CHARACTER,   &
+            IO_id,MPI_COMM_WORLD,ierr)
+      call mpp_land_sync()
+    return
+  end subroutine mpp_land_bcast_char1d
+
+  subroutine mpp_land_bcast_char1(inout)
+      integer len
+      character(len=*) inout
+      integer ierr
+      len = LEN_TRIM(inout)
+      call mpi_bcast(inout,len,MPI_CHARACTER,   &
+            IO_id,MPI_COMM_WORLD,ierr)
+      call mpp_land_sync()
+    return
+  end subroutine mpp_land_bcast_char1
 
  
   subroutine MPP_LAND_COM_REAL(in_out_data,NX,NY,flag)
@@ -1045,7 +1213,7 @@ MODULE MODULE_MPP_LAND
 
       if(numprocs .ne. total_pe) then
          write(6,*) "Error: numprocs .ne. total_pe ",numprocs, total_pe 
-         call hydro_stop()
+         call mpp_land_abort()
       endif
 
 
@@ -1115,10 +1283,14 @@ MODULE MODULE_MPP_LAND
       integer i,j, flag
       real Link_V(size), tmp_inout(ix,jy)
 
-       if(size .eq. 0) return
+      tmp_inout = -999
 
-!     map the Link_V data to tmp_inout(ix,jy)
-      do i = 1,ix 
+      if(size .eq. 0) then  
+            tmp_inout = -999
+      else
+
+         !     map the Link_V data to tmp_inout(ix,jy)
+         do i = 1,ix 
             if(Link_location(i,1) .gt. 0) &
                tmp_inout(i,1) = Link_V(Link_location(i,1))
             if(Link_location(i,2) .gt. 0) &
@@ -1127,8 +1299,8 @@ MODULE MODULE_MPP_LAND
                tmp_inout(i,jy-1) = Link_V(Link_location(i,jy-1))
             if(Link_location(i,jy) .gt. 0) &
                tmp_inout(i,jy) = Link_V(Link_location(i,jy))
-        enddo
-      do j = 1,jy 
+          enddo
+         do j = 1,jy 
             if(Link_location(1,j) .gt. 0) &
                tmp_inout(1,j) = Link_V(Link_location(1,j))
             if(Link_location(2,j) .gt. 0) &
@@ -1137,34 +1309,97 @@ MODULE MODULE_MPP_LAND
                tmp_inout(ix-1,j) = Link_V(Link_location(ix-1,j))
             if(Link_location(ix,j) .gt. 0) &
                tmp_inout(ix,j) = Link_V(Link_location(ix,j))
-      enddo
+         enddo
+    endif
 
 !   commu nicate tmp_inout
     call MPP_LAND_COM_REAL(tmp_inout, ix,jy,flag)
 
 !map the data back to Link_V
+    if(size .eq. 0) return
       do j = 1,jy 
-            if(Link_location(1,j) .gt. 0) &
+            if( (Link_location(1,j) .gt. 0) .and. (tmp_inout(1,j) .ne. -999) ) &
                Link_V(Link_location(1,j)) = tmp_inout(1,j)
-            if(Link_location(2,j) .gt. 0) &
+            if((Link_location(2,j) .gt. 0) .and. (tmp_inout(2,j) .ne. -999) ) &
                Link_V(Link_location(2,j)) = tmp_inout(2,j)
-            if(Link_location(ix-1,j) .gt. 0) &
+            if((Link_location(ix-1,j) .gt. 0) .and. (tmp_inout(ix-1,j) .ne. -999)) &
                Link_V(Link_location(ix-1,j)) = tmp_inout(ix-1,j)
-            if(Link_location(ix,j) .gt. 0) &
+            if((Link_location(ix,j) .gt. 0) .and. (tmp_inout(ix,j) .ne. -999) )&
                Link_V(Link_location(ix,j)) = tmp_inout(ix,j)
       enddo
       do i = 1,ix 
-            if(Link_location(i,1) .gt. 0) &
+            if((Link_location(i,1) .gt. 0) .and. (tmp_inout(i,1) .ne. -999) )&
                Link_V(Link_location(i,1)) = tmp_inout(i,1)
-            if(Link_location(i,2) .gt. 0) &
+            if( (Link_location(i,2) .gt. 0) .and. (tmp_inout(i,2) .ne. -999) )&
                Link_V(Link_location(i,2)) = tmp_inout(i,2)
-            if(Link_location(i,jy-1) .gt. 0) &
+            if((Link_location(i,jy-1) .gt. 0) .and. (tmp_inout(i,jy-1) .ne. -999) ) &
                Link_V(Link_location(i,jy-1)) = tmp_inout(i,jy-1)
-            if(Link_location(i,jy) .gt. 0) &
+            if((Link_location(i,jy) .gt. 0) .and. (tmp_inout(i,jy) .ne. -999) ) &
                Link_V(Link_location(i,jy)) = tmp_inout(i,jy)
       enddo
   end subroutine MPP_CHANNEL_COM_REAL
 
+  subroutine MPP_CHANNEL_COM_INT(Link_location,ix,jy,Link_V,size,flag)
+  ! communicate the data for channel routine.
+      implicit none
+      integer ix,jy,size
+      integer Link_location(ix,jy)
+      integer i,j, flag
+      integer Link_V(size), tmp_inout(ix,jy)
+
+      if(size .eq. 0) then  
+           tmp_inout = -999
+      else
+
+         !     map the Link_V data to tmp_inout(ix,jy)
+         do i = 1,ix 
+            if(Link_location(i,1) .gt. 0) &
+               tmp_inout(i,1) = Link_V(Link_location(i,1))
+            if(Link_location(i,2) .gt. 0) &
+               tmp_inout(i,2) = Link_V(Link_location(i,2))
+            if(Link_location(i,jy-1) .gt. 0) &
+               tmp_inout(i,jy-1) = Link_V(Link_location(i,jy-1))
+            if(Link_location(i,jy) .gt. 0) &
+               tmp_inout(i,jy) = Link_V(Link_location(i,jy))
+          enddo
+         do j = 1,jy 
+            if(Link_location(1,j) .gt. 0) &
+               tmp_inout(1,j) = Link_V(Link_location(1,j))
+            if(Link_location(2,j) .gt. 0) &
+               tmp_inout(2,j) = Link_V(Link_location(2,j))
+            if(Link_location(ix-1,j) .gt. 0) &
+               tmp_inout(ix-1,j) = Link_V(Link_location(ix-1,j))
+            if(Link_location(ix,j) .gt. 0) &
+               tmp_inout(ix,j) = Link_V(Link_location(ix,j))
+         enddo
+    endif
+
+!   commu nicate tmp_inout
+    call MPP_LAND_COM_INTEGER(tmp_inout, ix,jy,flag)
+
+!map the data back to Link_V
+    if(size .eq. 0) return
+      do j = 1,jy 
+            if( (Link_location(1,j) .gt. 0) .and. (tmp_inout(1,j) .ne. -999) ) &
+               Link_V(Link_location(1,j)) = tmp_inout(1,j)
+            if((Link_location(2,j) .gt. 0) .and. (tmp_inout(2,j) .ne. -999) ) &
+               Link_V(Link_location(2,j)) = tmp_inout(2,j)
+            if((Link_location(ix-1,j) .gt. 0) .and. (tmp_inout(ix-1,j) .ne. -999)) &
+               Link_V(Link_location(ix-1,j)) = tmp_inout(ix-1,j)
+            if((Link_location(ix,j) .gt. 0) .and. (tmp_inout(ix,j) .ne. -999) )&
+               Link_V(Link_location(ix,j)) = tmp_inout(ix,j)
+      enddo
+      do i = 1,ix 
+            if((Link_location(i,1) .gt. 0) .and. (tmp_inout(i,1) .ne. -999) )&
+               Link_V(Link_location(i,1)) = tmp_inout(i,1)
+            if( (Link_location(i,2) .gt. 0) .and. (tmp_inout(i,2) .ne. -999) )&
+               Link_V(Link_location(i,2)) = tmp_inout(i,2)
+            if((Link_location(i,jy-1) .gt. 0) .and. (tmp_inout(i,jy-1) .ne. -999) ) &
+               Link_V(Link_location(i,jy-1)) = tmp_inout(i,jy-1)
+            if((Link_location(i,jy) .gt. 0) .and. (tmp_inout(i,jy) .ne. -999) ) &
+               Link_V(Link_location(i,jy)) = tmp_inout(i,jy)
+      enddo
+  end subroutine MPP_CHANNEL_COM_INT
      subroutine print_2(unit,in,fm)
         integer unit
         character(len=*) fm
@@ -1256,69 +1491,51 @@ MODULE MODULE_MPP_LAND
        call mpp_land_bcast_int1(v)
      end subroutine mpp_same_int1
 
-     subroutine write_chanel_real8(v,nodelist_in,mpp_nlinks,nlinks)   
+
+
+     subroutine write_chanel_real(v,map_l2g,gnlinks,nlinks,g_v)   
         implicit none
-        real*8 recv(nlinks), v(nlinks)
-        integer nodelist(nlinks), mpp_nlinks,nlinks, nodelist_in(nlinks)
-        integer i, ierr, tag, k
-        integer length, node
-
-        nodelist = nodelist_in
-        if(my_id .eq. IO_id) then
-           do i = 0, numprocs - 1
-              if(i .ne. my_id) then
-                 !block receive  from other node.
-                 tag = 109
-                 call mpi_recv(nodelist,nlinks,MPI_INTEGER,i, &
-                      tag,MPI_COMM_WORLD,mpp_status,ierr)
-                   tag = 119
-                 call mpi_recv(recv(:),nlinks,MPI_DOUBLE_PRECISION,i,  &
-                   tag,MPI_COMM_WORLD,mpp_status,ierr)
-
-                 do k = 1,nodelist(nlinks)
-                    if(nodelist(k) .gt. -99) then
-                      node = nodelist(k) 
-                      v(node) = recv(node)
-                    endif
-                 enddo
-              end if
-            
-           end do
-        else
-           tag =  109
-           nodelist(nlinks) = mpp_nlinks 
-           call mpi_send(nodelist,nlinks,MPI_INTEGER, IO_id,     &
-               tag,MPI_COMM_WORLD,ierr)
-           tag = 119
-           call mpi_send(v,nlinks,MPI_DOUBLE_PRECISION,IO_id,   &
-               tag,MPI_COMM_WORLD,ierr)
-        end if
-     end subroutine write_chanel_real8
-
-
-     subroutine write_chanel_real(v,nodelist_in,mpp_nlinks,nlinks)   
-        implicit none
+        integer  gnlinks,nlinks, map_l2g(nlinks),tmp_map(gnlinks)
         real recv(nlinks), v(nlinks)
-        integer nodelist(nlinks), mpp_nlinks,nlinks, nodelist_in(nlinks)
+        real g_v(gnlinks), tmp_v(gnlinks)
         integer i, ierr, tag, k
-        integer length, node
+        integer length, node, message_len
 
-        nodelist = nodelist_in
+        if(nlinks .le. 0) then
+            tmp_map = -999
+        else
+            tmp_map(1:nlinks) = map_l2g(1:nlinks)
+        endif
+
         if(my_id .eq. IO_id) then
            do i = 0, numprocs - 1
+              message_len = mpp_nlinks(i+1)
               if(i .ne. my_id) then
                  !block receive  from other node.
+
                  tag = 109
-                 call mpi_recv(nodelist,nlinks,MPI_INTEGER,i, &
+                 call mpi_recv(tmp_map(1:message_len),message_len,MPI_INTEGER,i, &
                       tag,MPI_COMM_WORLD,mpp_status,ierr)
                    tag = 119
-                 call mpi_recv(recv(:),nlinks,MPI_REAL,i,  &
+
+                 call mpi_recv(tmp_v(1:message_len),message_len,MPI_REAL,i,  &
                    tag,MPI_COMM_WORLD,mpp_status,ierr)
 
-                 do k = 1,nodelist(nlinks)
-                    if(nodelist(k) .gt. -99) then
-                      node = nodelist(k) 
-                      v(node) = recv(node)
+                 do k = 1,message_len
+                    node = tmp_map(k) 
+                    if(node .gt. 0) then
+                      g_v(node) = tmp_v(k)
+                    else
+                      write(6,*) "Maping infor k=",k," node=", node
+                    endif
+                 enddo
+              else
+                 do k = 1,nlinks
+                    node = map_l2g(k) 
+                    if(node .gt. 0) then
+                      g_v(node) = v(k)
+                    else
+                      write(6,*) "local Maping infor k=",k," node=",node 
                     endif
                  enddo
               end if
@@ -1326,38 +1543,57 @@ MODULE MODULE_MPP_LAND
            end do
         else
            tag =  109
-           nodelist(nlinks) = mpp_nlinks 
-           call mpi_send(nodelist,nlinks,MPI_INTEGER, IO_id,     &
+           call mpi_send(map_l2g,nlinks,MPI_INTEGER, IO_id,     &
                tag,MPI_COMM_WORLD,ierr)
            tag = 119
            call mpi_send(v,nlinks,MPI_REAL,IO_id,   &
                tag,MPI_COMM_WORLD,ierr)
+
         end if
      end subroutine write_chanel_real
 
-     subroutine write_chanel_int(v,nodelist_in,mpp_nlinks,nlinks)   
+     subroutine write_chanel_int(v,map_l2g,gnlinks,nlinks,g_v)   
         implicit none
-        integer :: recv(nlinks), v(nlinks)
-        integer nodelist(nlinks), mpp_nlinks,nlinks, nodelist_in(nlinks)
+        integer gnlinks,nlinks, map_l2g(nlinks),tmp_map(gnlinks)
+        integer ::  recv(nlinks), v(nlinks)
+        integer ::  g_v(gnlinks), tmp_v(gnlinks)
         integer i, ierr, tag, k
-        integer length, node
+        integer length, node, message_len
 
-        nodelist = nodelist_in
+        if(nlinks .le. 0) then
+            tmp_map = -999
+        else
+            tmp_map(1:nlinks) = map_l2g(1:nlinks)
+        endif
         if(my_id .eq. IO_id) then
            do i = 0, numprocs - 1
+              message_len = mpp_nlinks(i+1)
               if(i .ne. my_id) then
                  !block receive  from other node.
+
                  tag = 109
-                 call mpi_recv(nodelist,nlinks,MPI_INTEGER,i, &
+                 call mpi_recv(tmp_map(1:message_len),message_len,MPI_INTEGER,i, &
                       tag,MPI_COMM_WORLD,mpp_status,ierr)
                    tag = 119
-                 call mpi_recv(recv(:),nlinks,MPI_INTEGER,i,  &
+
+                 call mpi_recv(tmp_v(1:message_len),message_len,MPI_INTEGER,i,  &
                    tag,MPI_COMM_WORLD,mpp_status,ierr)
 
-                 do k = 1,nodelist(nlinks)
-                    if(nodelist(k) .gt. -99) then
-                      node = nodelist(k) 
-                      v(node) = recv(node)
+                 do k = 1,message_len
+                    if(tmp_map(k) .gt. 0) then
+                      node = tmp_map(k) 
+                      g_v(node) = tmp_v(k)
+                    else 
+                      write(6,*) "Maping infor k=",k," node=",tmp_v(k)
+                    endif
+                 enddo
+              else
+                 do k = 1,nlinks
+                    if(map_l2g(k) .gt. 0) then
+                      node = map_l2g(k) 
+                      g_v(node) = v(k)
+                    else
+                      write(6,*) "Maping infor k=",k," node=",map_l2g(k)
                     endif
                  enddo
               end if
@@ -1365,14 +1601,14 @@ MODULE MODULE_MPP_LAND
            end do
         else
            tag =  109
-           nodelist(nlinks) = mpp_nlinks 
-           call mpi_send(nodelist,nlinks,MPI_INTEGER, IO_id,     &
+           call mpi_send(map_l2g,nlinks,MPI_INTEGER, IO_id,     &
                tag,MPI_COMM_WORLD,ierr)
            tag = 119
            call mpi_send(v,nlinks,MPI_INTEGER,IO_id,   &
                tag,MPI_COMM_WORLD,ierr)
         end if
      end subroutine write_chanel_int
+
 
 
      subroutine write_lake_real(v,nodelist_in,nlakes)   
@@ -1429,11 +1665,12 @@ MODULE MODULE_MPP_LAND
      return
      end subroutine read_rst_crt_r  
 
-         subroutine write_rst_crt_r(unit,cd,nlinks_index,mpp_nlinks,nlinks)
-         integer :: unit,mpp_nlinks,nlinks,nlinks_index(nlinks)
+         subroutine write_rst_crt_r(unit,cd,map_l2g,gnlinks,nlinks)
+         integer :: unit,gnlinks,nlinks,map_l2g(nlinks)
          real cd(nlinks)
-         call write_chanel_real(cd,nlinks_index,mpp_nlinks,nlinks)
-         write(unit) cd
+         real g_cd (gnlinks)
+         call write_chanel_real(cd,map_l2g,gnlinks,nlinks, g_cd)
+         write(unit) g_cd
          return
          end subroutine write_rst_crt_r
 
@@ -1535,6 +1772,86 @@ MODULE MODULE_MPP_LAND
       CALL MPI_ALLREDUCE(send,inout,1,MPI_DOUBLE_PRECISION,MPI_SUM,MPI_COMM_WORLD,ierr)
   end subroutine sum_double
 
+  subroutine mpp_chrt_nlinks_collect(nlinks)
+  ! collect the nlinks
+       implicit none
+       integer :: nlinks
+       integer :: i, ierr, status, tag
+       allocate(mpp_nlinks(numprocs),stat = status) 
+                 tag = 138
+       mpp_nlinks = 0
+       if(my_id .eq. IO_id) then
+          do i = 0,numprocs -1
+            if(i .ne. my_id) then
+               call mpi_recv(mpp_nlinks(i+1),1,MPI_INTEGER,i, &
+                      tag,MPI_COMM_WORLD,mpp_status,ierr)
+            else
+               mpp_nlinks(i+1) = 0
+            end if
+          end do
+       else
+           call mpi_send(nlinks,1,MPI_INTEGER, IO_id,     &
+               tag,MPI_COMM_WORLD,ierr)
+       endif
+
+     
+  end subroutine mpp_chrt_nlinks_collect
+
+     subroutine  getLocalXY(ix,jx,startx,starty,endx,endy)
+!!! this is for NoahMP only
+        implicit none
+        integer:: ix,jx,startx,starty,endx,endy
+        startx = local_startx
+        starty = local_starty
+        endx = startx + ix -1
+        endy = starty + jx -1
+     end subroutine getLocalXY
+
+     subroutine check_landreal1(unit, inVar)
+        implicit none
+        integer :: unit
+        real :: inVar
+        if(my_id .eq. IO_id) then
+           write(unit,*) inVar
+           flush(unit)
+        endif
+     end subroutine check_landreal1
+
+     subroutine check_landreal1d(unit, inVar)
+        implicit none
+        integer :: unit
+        real :: inVar(:)
+        if(my_id .eq. IO_id) then
+           write(unit,*) inVar
+           flush(unit)
+        endif
+     end subroutine check_landreal1d
+     subroutine check_landreal2d(unit, inVar)
+        implicit none
+        integer :: unit
+        real :: inVar(:,:)
+        real :: g_var(global_nx,global_ny)
+        call write_io_real(inVar,g_var) 
+        if(my_id .eq. IO_id) then
+           write(unit,*) g_var 
+           flush(unit)
+        endif
+     end subroutine check_landreal2d
+
+     subroutine check_landreal3d(unit, inVar)
+        implicit none
+        integer :: unit, k, klevel
+        real :: inVar(:,:,:)
+        real :: g_var(global_nx,global_ny)
+        klevel = size(inVar,2)
+        do k = 1, klevel
+           call write_io_real(inVar(:,k,:),g_var) 
+           if(my_id .eq. IO_id) then
+              write(unit,*) g_var
+              flush(unit)
+           endif
+        end do
+     end subroutine check_landreal3d
 
 END MODULE MODULE_MPP_LAND
 

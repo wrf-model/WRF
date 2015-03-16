@@ -78,13 +78,13 @@ subroutine da_setup_be_nmm_regional(xb, be)
 
    if (trace_use) call da_trace_entry("da_setup_be_nmm_regional")
    
-   if( cv_options == 5 .or. cv_options == 6) then
-   write (unit=message(1),fmt='(A,i3)') &
-      'Set up background errors for regional application for cv_option= ',cv_options
+   if( (cv_options == 5) .or. (cv_options == 6) .or. (cv_options == 7) ) then
+      write (unit=message(1),fmt='(A,i3)') &
+          'Set up background errors for regional application for cv_option= ',cv_options
       call da_message(message(1:1))
    else 
       write(unit=message(1),fmt='(A,I4)') &
-          'This subroutine is for cv_options = 5 or 6; you have selected cv_options = ', cv_options
+          'This subroutine is for cv_options = 5, 6, or 7; you have selected cv_options = ', cv_options
       call da_error(__FILE__,__LINE__,message(1:1))
    end if
 
@@ -106,7 +106,7 @@ subroutine da_setup_be_nmm_regional(xb, be)
    else
       if ( nk /= kz ) then
          call da_error(__FILE__,__LINE__,  &
-            (/"Vertial levels in fg and be.dat do not match."/))
+            (/"Vertical levels in fg and be.dat do not match."/))
       end if
    endif
 
@@ -141,7 +141,7 @@ subroutine da_setup_be_nmm_regional(xb, be)
    regcoeff_t_u_rh     = 0.
    regcoeff_ps_u_rh    = 0.
 
-   if ( cv_options == 5 ) then
+   if ( (cv_options == 5) .or. (cv_options == 7) ) then
    read (be_unit) regcoeff_psi_chi
    read (be_unit) regcoeff_psi_ps
    read (be_unit) regcoeff_psi_t

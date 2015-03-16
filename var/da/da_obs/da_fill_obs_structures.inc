@@ -470,7 +470,7 @@ subroutine da_fill_obs_structures(iv, ob, uvq_direct)
          do k = 1, iv%info(radar)%levels(n)
             ! Copy observation variables:
             ob % radar(n) % rv(k) = iv % radar(n) % rv(k) % inv
-           ob % radar(n) % rf(k) = iv % radar(n) % rf(k) % inv
+            ob % radar(n) % rf(k) = iv % radar(n) % rf(k) % inv
          end do
       end do
    end if

@@ -18,6 +18,7 @@
                dgnum4d, dgnumwet4d, dgnum_a1, dgnum_a2, dgnum_a3,    & 
                dgnumwet_a1, dgnumwet_a2, dgnumwet_a3,                & 
                pm2_5_dry,pm2_5_water,pm2_5_dry_ec,                   &
+               tsoa,asoa,bsoa,                                       &
                last_chem_time_year, last_chem_time_month,            &
                last_chem_time_day, last_chem_time_hour,              &
                last_chem_time_minute, last_chem_time_second,         &
@@ -35,6 +36,7 @@
    USE module_mozcart_wetscav, only : wetscav_mozcart_init
    USE module_aerosols_sorgam
    USE module_aerosols_soa_vbs, only: aerosols_soa_vbs_init
+   USE module_aerosols_sorgam_vbs, only: aerosols_sorgam_vbs_init
    USE module_dep_simple
    USE module_data_gocart_dust
    USE module_data_gocart_seas
@@ -76,6 +78,7 @@
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,         &
           INTENT(INOUT   ) ::                                        &
                                pm2_5_dry,pm2_5_water,pm2_5_dry_ec,   &
+                               tsoa,asoa,bsoa,                       &
                                tauaer1,tauaer2,tauaer3,tauaer4,      &
                                extaerlw1,extaerlw2,extaerlw3,extaerlw4,      &
                                extaerlw5,extaerlw6,extaerlw7,extaerlw8,      &
@@ -176,6 +179,15 @@ call wrf_message("**************************************************************
        CALL wrf_debug(15,'calling SAPRC99_MOSAIC_4BIN_VBS2_4BIN from chem_driver')
        call wrf_message("WARNING: SAPRC99_MOSAIC_4BIN_VBS2_4BIN chemistry option is highly experimental and not recommended for use.")
 !jdf   call wrf_error_fatal("WARNING: SAPRC99_MOSAIC_4BIN_VBS2_4BIN chemistry option is useable but does not fully pass regtesting. It is recommended that you contact Jerome.Fast@pnl.gov for information regarding this option.")
+       !BSINGH(04/03/2014): Added SAPRC 8 bin non-aq
+    CASE (SAPRC99_MOSAIC_8BIN_VBS2_KPP )
+       CALL wrf_debug(15,'calling SAPRC99_MOSAIC_8BIN_VBS2_4BIN from chem_driver')
+       call wrf_message("WARNING: SAPRC99_MOSAIC_8BIN_VBS2_4BIN chemistry option is highly experimental and not recommended for use.")
+       !BSINGH(12/03/2013): Added SAPRC 8 bin aq
+    CASE (SAPRC99_MOSAIC_8BIN_VBS2_AQ_KPP )
+       CALL wrf_debug(15,'calling SAPRC99_MOSAIC_8BIN_VBS2_AQ_KPP from chem_driver')
+       call wrf_message("WARNING: SAPRC99_MOSAIC_8BIN_VBS2_AQ_KPP chemistry option is highly experimental and not recommended for use.")
+       !BSINGH -ENDS
      CASE (CBMZ_MOSAIC_4BIN_VBS2_KPP )
        CALL wrf_debug(15,'calling CBMZ_MOSAIC_4BIN_VBS2_4BIN from chem_driver')
        call wrf_message("WARNING: CBMZ_MOSAIC_4BIN_VBS2_4BIN chemistry option is highly experimental and not recommended for use.")
@@ -226,7 +238,12 @@ call wrf_message("**************************************************************
         CALL wrf_debug(15,'calling CBMZ_CAM_MAM7_AQ with AQCHEM chemistry from chem_driver')
         call wrf_message("WARNING: CBMZ_CAM_MAM7_AQ  chemistry option is highly experimental and not recommended for use.")
         call wrf_error_fatal("ERROR: It is recommended that you contact phil.rasch at pnnl.gov for information regarding this option")
-
+     CASE(CB05_SORG_AQ_KPP)
+        numgas_mam = numgas
+        CALL wrf_debug(15,'calling CB05_SORG_AQ_KPP chemistry from chem_driver')
+     CASE(CB05_SORG_VBS_AQ_KPP)
+        numgas_mam = numgas
+        CALL wrf_debug(15,'calling CB05_SORG_VBS_AQ_KPP chemistry from chem_driver')
    END SELECT chem_select
 
    if ( config_flags%dust_opt == 1 ) then
@@ -265,18 +282,22 @@ call wrf_message("**************************************************************
        if(  ( config_flags%chem_opt >= 8 .AND. config_flags%chem_opt <= 13) .OR.  &
             ( config_flags%chem_opt >= 31 .AND. config_flags%chem_opt <= 36) .OR. &
             ( config_flags%chem_opt >= 41 .AND. config_flags%chem_opt <= 43) .OR. &
+            ( config_flags%chem_opt == 131 ) .OR. ( config_flags%chem_opt == 132 ) .OR. &
             ( config_flags%chem_opt == 503 .OR. config_flags%chem_opt == 504) .OR. &
+            ( config_flags%chem_opt == 203).OR.                                    & !BSINGH(12/17/2013): Added for SAPRC 8 bin vbs
             ( config_flags%chem_opt == 601 .OR. config_flags%chem_opt == 611)  ) then
          call wrf_debug( 15, 'Chemics_init: Wet scavenging turned on' )
        else
          call wrf_error_fatal("ERROR: wet scavenging option requires chem_opt = 8 through 13 or 31 to 36 or 41 to 42 or 503 or 504 or 601 or 611 to function.")
        endif
-       if ( config_flags%mp_physics /= 2 .and. config_flags%mp_physics /= 10 .and. config_flags%mp_physics /= 11) then
-         call wrf_error_fatal("ERROR: wet scavenging option requires mp_phys = 2 (Lin et al.) or 10 (Morrison) or 11 (CAMMGMP) to function.")
+       if ( config_flags%mp_physics /= 2 .and. config_flags%mp_physics /= 10 .and. config_flags%mp_physics /= 11  &
+            .and. config_flags%mp_physics /= 17 .and. config_flags%mp_physics /= 18 .and. config_flags%mp_physics /= 22) then
+         call wrf_error_fatal("ERROR: wet scavenging option requires mp_phys = 2 (Lin et al.) or 10 (Morrison) or 11 (CAMMGMP) or 17/18/22 NSSL_2mom to function.")
        endif
      elseif( id == 1 ) then
-       if ( config_flags%mp_physics /= 8 .and. config_flags%mp_physics /= 10 ) then
-         call wrf_error_fatal("ERROR: wet scavenging option for MOZART,MOZCART requires mp_phys = 8 (Thompson) or 10 (Morrison) to function.")
+       if ( config_flags%mp_physics /= 8 .and. config_flags%mp_physics /= 10 .and. config_flags%mp_physics /= 17  &
+            .and. config_flags%mp_physics /= 18 .and. config_flags%mp_physics /= 22) then
+         call wrf_error_fatal("ERROR: wet scavenging option for MOZART,MOZCART requires mp_phys = 8 (Thompson) or 10 (Morrison) .or 17/18/22 (NSSL 2-moment) to function.")
        else
          write(message_txt,*) 'chem_init: calling wetscav_mozcart_init for domain ',id
          call wrf_message( trim(message_txt) )
@@ -290,15 +311,17 @@ call wrf_message("**************************************************************
            ( config_flags%chem_opt >= 31 .AND. config_flags%chem_opt <= 36)   .OR. &
            ( config_flags%chem_opt >= 501 .AND. config_flags%chem_opt <= 504) .OR. &
            ( config_flags%chem_opt >= 41 .AND. config_flags%chem_opt <= 43)  .OR. &
-           ( config_flags%chem_opt >= 601 .AND. config_flags%chem_opt <= 611)  .OR. &
-             config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP ) then
+           ( config_flags%chem_opt == 203).OR.                                    &
+           ( config_flags%chem_opt == 131 ) .OR. ( config_flags%chem_opt == 132 ) .OR. &
+           ( config_flags%chem_opt >= 601 .AND. config_flags%chem_opt <= 611) ) then
            call wrf_debug( 15, 'Chemics_init: Cloud chemistry turned on' )
       else
         call wrf_error_fatal("ERROR: cloud chemistry option requires chem_opt = 8 through 13 or 31 to 36 or 41 to 43 to function.")
       endif
-      if ( config_flags%mp_physics /= 2 .and. config_flags%mp_physics /= 10 .and. config_flags%mp_physics /= 11 ) then
-        call wrf_error_fatal("ERROR: cloud chemistry option requires mp_phys = 2 (Lin et al.) or 10 (Morrison) or 11 (CAMMGMP)to function.")
-      endif
+       if ( config_flags%mp_physics /= 2 .and. config_flags%mp_physics /= 10 .and. config_flags%mp_physics /= 11  &
+            .and. config_flags%mp_physics /= 17 .and. config_flags%mp_physics /= 18 .and. config_flags%mp_physics /= 22 ) then
+         call wrf_error_fatal("ERROR: cloud chemistry option requires mp_phys = 2 (Lin et al.) or 10 (Morrison) or 11 (CAMMGMP) or 17/18/22 NSSL_2mom to function.")
+       endif
    endif
 
    if ( config_flags%cu_physics == 5 .OR. config_flags%cu_physics == 3) then
@@ -308,8 +331,8 @@ call wrf_message("**************************************************************
    endif
 
    if ( config_flags%cu_diag == 1) then
-   if ( config_flags%cu_physics /= 3 .AND. config_flags%cu_physics /= 5) then
-         call wrf_error_fatal(" Time averaged variables (cu_diag = 1) requires cu_physics = 3 or 5")
+   if ( config_flags%cu_physics /= 3 .AND. config_flags%cu_physics /= 5 .AND. config_flags%cu_physics /= 10) then !BSINGH(12/17/2013): Added for WRFCUP scheme
+         call wrf_error_fatal(" Time averaged variables (cu_diag = 1) requires cu_physics = 3 or 5 or 10")
    endif
    endif
 
@@ -346,9 +369,8 @@ call wrf_message("**************************************************************
             (config_flags%chem_opt >= 31  .AND. config_flags%chem_opt <= 34)  .OR. &
              config_flags%chem_opt == 170 .OR.  config_flags%chem_opt == 198  .OR. &
              config_flags%chem_opt == 199 .OR.  config_flags%chem_opt == 201  .OR. &
-             config_flags%chem_opt == 601 .OR.  config_flags%chem_opt == 611  .OR. &
-             config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP .OR. &
-             config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP) then
+             config_flags%chem_opt == 203 .OR.                                     &
+             config_flags%chem_opt == 601 .OR.  config_flags%chem_opt == 611 ) then
             call wrf_debug( 15, 'using N2O5 heterogeneous chemistry without Cl- pathway')
         else
             call wrf_error_fatal("ERROR: N2O5 heterogenous chemistry (without Cl- pathway) must be run with MOSAIC aerosol")
@@ -628,8 +650,36 @@ end if
              enddo
           enddo
         endif
-
-
+      CASE (CB05_SORG_AQ_KPP)
+        do j=jts,jte
+           do k=kts,kte
+              do i=its,ite
+                 chem(i,k,j,p_apin)=chem(i,k,j,p_terp) * 0.248   ! 0.0885
+                 chem(i,k,j,p_bpin)=chem(i,k,j,p_terp) * 0.294   ! 0.069
+                 chem(i,k,j,p_lim) =chem(i,k,j,p_terp) * 0.164   ! 0.135
+                 chem(i,k,j,p_ter) =chem(i,k,j,p_terp) * 0.006   ! 0.158
+                 chem(i,k,j,p_oci) =chem(i,k,j,p_terp) * 0.213   ! 0.217
+                 chem(i,k,j,p_hum) =chem(i,k,j,p_terp) * 0.074   ! 0.331
+                 chem(i,k,j,p_h2)  = 0.5
+                 chem(i,k,j,p_ch4) =1.7
+              enddo
+           enddo
+        enddo
+      CASE (CB05_SORG_VBS_AQ_KPP)
+        do j=jts,jte
+           do k=kts,kte
+              do i=its,ite
+                 chem(i,k,j,p_apin)=chem(i,k,j,p_terp) * 0.248   ! 0.0885
+                 chem(i,k,j,p_bpin)=chem(i,k,j,p_terp) * 0.294   ! 0.069
+                 chem(i,k,j,p_lim) =chem(i,k,j,p_terp) * 0.164   ! 0.135
+                 chem(i,k,j,p_ter) =chem(i,k,j,p_terp) * 0.006   ! 0.158
+                 chem(i,k,j,p_oci) =chem(i,k,j,p_terp) * 0.213   ! 0.217
+                 chem(i,k,j,p_hum) =chem(i,k,j,p_terp) * 0.074   ! 0.331
+                 chem(i,k,j,p_h2)  = 0.5
+                 chem(i,k,j,p_ch4) =1.7
+              enddo
+           enddo
+        enddo
         CASE (CBMZ_MOSAIC_KPP)
         if(config_flags%chem_in_opt == 0 )then
           do j=jts,jte
@@ -650,7 +700,6 @@ end if
              enddo
           enddo
         endif 
-
         CASE (MOZART_MOSAIC_4BIN_KPP, MOZART_MOSAIC_4BIN_AQ_KPP)
         grid%vbs_nbin=0
         if (config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP) then
@@ -886,11 +935,561 @@ end if
                 enddo
              enddo
           enddo
-        endif
-
-
-
-
+       endif
+       
+       !BSINGH(04/03/2014): Added 8 bin vbs non-aq pakage
+    CASE (SAPRC99_MOSAIC_8BIN_VBS2_KPP)
+       if(config_flags%chem_in_opt == 0 )then
+          grid%vbs_nbin=3
+          do j=jts,jte
+             do k=kts,kte
+                do i=its,ite
+                   chem(i,k,j,p_co2)=370.
+                   chem(i,k,j,p_ch4)=1.7
+                   if (p_pcg1_b_c.gt.1) chem(i,k,j,p_pcg1_b_c)=0.00
+                   if (p_pcg2_b_c.gt.1) chem(i,k,j,p_pcg2_b_c)=0.00
+                   if (p_pcg3_b_c.gt.1) chem(i,k,j,p_pcg3_b_c)=0.00
+                   if (p_pcg4_b_c.gt.1) chem(i,k,j,p_pcg4_b_c)=0.00
+                   if (p_pcg5_b_c.gt.1) chem(i,k,j,p_pcg5_b_c)=0.00
+                   if (p_pcg6_b_c.gt.1) chem(i,k,j,p_pcg6_b_c)=0.00
+                   if (p_pcg7_b_c.gt.1) chem(i,k,j,p_pcg7_b_c)=0.00
+                   if (p_pcg8_b_c.gt.1) chem(i,k,j,p_pcg8_b_c)=0.00
+                   if (p_pcg9_b_c.gt.1) chem(i,k,j,p_pcg9_b_c)=0.00
+                   if (p_pcg1_b_o.gt.1) chem(i,k,j,p_pcg1_b_o)=0.00
+                   if (p_pcg2_b_o.gt.1) chem(i,k,j,p_pcg2_b_o)=0.00
+                   if (p_pcg3_b_o.gt.1) chem(i,k,j,p_pcg3_b_o)=0.00
+                   if (p_pcg4_b_o.gt.1) chem(i,k,j,p_pcg4_b_o)=0.00
+                   if (p_pcg5_b_o.gt.1) chem(i,k,j,p_pcg5_b_o)=0.00
+                   if (p_pcg6_b_o.gt.1) chem(i,k,j,p_pcg6_b_o)=0.00
+                   if (p_pcg7_b_o.gt.1) chem(i,k,j,p_pcg7_b_o)=0.00
+                   if (p_pcg8_b_o.gt.1) chem(i,k,j,p_pcg8_b_o)=0.00
+                   if (p_pcg9_b_o.gt.1) chem(i,k,j,p_pcg9_b_o)=0.00
+                   if (p_opcg1_b_c.gt.1) chem(i,k,j,p_opcg1_b_c)=0.00
+                   if (p_opcg2_b_c.gt.1) chem(i,k,j,p_opcg2_b_c)=0.00
+                   if (p_opcg3_b_c.gt.1) chem(i,k,j,p_opcg3_b_c)=0.00
+                   if (p_opcg4_b_c.gt.1) chem(i,k,j,p_opcg4_b_c)=0.00
+                   if (p_opcg5_b_c.gt.1) chem(i,k,j,p_opcg5_b_c)=0.00
+                   if (p_opcg6_b_c.gt.1) chem(i,k,j,p_opcg6_b_c)=0.00
+                   if (p_opcg7_b_c.gt.1) chem(i,k,j,p_opcg7_b_c)=0.00
+                   if (p_opcg8_b_c.gt.1) chem(i,k,j,p_opcg8_b_c)=0.00
+                   if (p_opcg1_b_o.gt.1) chem(i,k,j,p_opcg1_b_o)=0.00
+                   if (p_opcg2_b_o.gt.1) chem(i,k,j,p_opcg2_b_o)=0.00
+                   if (p_opcg3_b_o.gt.1) chem(i,k,j,p_opcg3_b_o)=0.00
+                   if (p_opcg4_b_o.gt.1) chem(i,k,j,p_opcg4_b_o)=0.00
+                   if (p_opcg5_b_o.gt.1) chem(i,k,j,p_opcg5_b_o)=0.00
+                   if (p_opcg6_b_o.gt.1) chem(i,k,j,p_opcg6_b_o)=0.00
+                   if (p_opcg7_b_o.gt.1) chem(i,k,j,p_opcg7_b_o)=0.00
+                   if (p_opcg8_b_o.gt.1) chem(i,k,j,p_opcg8_b_o)=0.00
+                   if (p_pcg1_f_c.gt.1) chem(i,k,j,p_pcg1_f_c)=0.00
+                   if (p_pcg2_f_c.gt.1) chem(i,k,j,p_pcg2_f_c)=0.00
+                   if (p_pcg3_f_c.gt.1) chem(i,k,j,p_pcg3_f_c)=0.00
+                   if (p_pcg4_f_c.gt.1) chem(i,k,j,p_pcg4_f_c)=0.00
+                   if (p_pcg5_f_c.gt.1) chem(i,k,j,p_pcg5_f_c)=0.00
+                   if (p_pcg6_f_c.gt.1) chem(i,k,j,p_pcg6_f_c)=0.00
+                   if (p_pcg7_f_c.gt.1) chem(i,k,j,p_pcg7_f_c)=0.00
+                   if (p_pcg8_f_c.gt.1) chem(i,k,j,p_pcg8_f_c)=0.00
+                   if (p_pcg9_f_c.gt.1) chem(i,k,j,p_pcg9_f_c)=0.00
+                   if (p_pcg1_f_o.gt.1) chem(i,k,j,p_pcg1_f_o)=0.00
+                   if (p_pcg2_f_o.gt.1) chem(i,k,j,p_pcg2_f_o)=0.00
+                   if (p_pcg3_f_o.gt.1) chem(i,k,j,p_pcg3_f_o)=0.00
+                   if (p_pcg4_f_o.gt.1) chem(i,k,j,p_pcg4_f_o)=0.00
+                   if (p_pcg5_f_o.gt.1) chem(i,k,j,p_pcg5_f_o)=0.00
+                   if (p_pcg6_f_o.gt.1) chem(i,k,j,p_pcg6_f_o)=0.00
+                   if (p_pcg7_f_o.gt.1) chem(i,k,j,p_pcg7_f_o)=0.00
+                   if (p_pcg8_f_o.gt.1) chem(i,k,j,p_pcg8_f_o)=0.00
+                   if (p_pcg9_f_o.gt.1) chem(i,k,j,p_pcg9_f_o)=0.00
+                   if (p_opcg1_f_c.gt.1) chem(i,k,j,p_opcg1_f_c)=0.00
+                   if (p_opcg2_f_c.gt.1) chem(i,k,j,p_opcg2_f_c)=0.00
+                   if (p_opcg3_f_c.gt.1) chem(i,k,j,p_opcg3_f_c)=0.00
+                   if (p_opcg4_f_c.gt.1) chem(i,k,j,p_opcg4_f_c)=0.00
+                   if (p_opcg5_f_c.gt.1) chem(i,k,j,p_opcg5_f_c)=0.00
+                   if (p_opcg6_f_c.gt.1) chem(i,k,j,p_opcg6_f_c)=0.00
+                   if (p_opcg7_f_c.gt.1) chem(i,k,j,p_opcg7_f_c)=0.00
+                   if (p_opcg8_f_c.gt.1) chem(i,k,j,p_opcg8_f_c)=0.00
+                   if (p_opcg1_f_o.gt.1) chem(i,k,j,p_opcg1_f_o)=0.00
+                   if (p_opcg2_f_o.gt.1) chem(i,k,j,p_opcg2_f_o)=0.00
+                   if (p_opcg3_f_o.gt.1) chem(i,k,j,p_opcg3_f_o)=0.00
+                   if (p_opcg4_f_o.gt.1) chem(i,k,j,p_opcg4_f_o)=0.00
+                   if (p_opcg5_f_o.gt.1) chem(i,k,j,p_opcg5_f_o)=0.00
+                   if (p_opcg6_f_o.gt.1) chem(i,k,j,p_opcg6_f_o)=0.00
+                   if (p_opcg7_f_o.gt.1) chem(i,k,j,p_opcg7_f_o)=0.00
+                   if (p_opcg8_f_o.gt.1) chem(i,k,j,p_opcg8_f_o)=0.00
+                   if (p_ant1_c.gt.1)    chem(i,k,j,p_ant1_c)=0.0
+                   if (p_ant2_c.gt.1)    chem(i,k,j,p_ant2_c)=0.0
+                   if (p_ant3_c.gt.1)    chem(i,k,j,p_ant3_c)=0.0
+                   if (p_ant4_c.gt.1)    chem(i,k,j,p_ant4_c)=0.0
+                   if (p_ant1_o.gt.1)    chem(i,k,j,p_ant1_o)=0.0
+                   if (p_ant2_o.gt.1)    chem(i,k,j,p_ant2_o)=0.0
+                   if (p_ant3_o.gt.1)    chem(i,k,j,p_ant3_o)=0.0
+                   if (p_ant4_o.gt.1)    chem(i,k,j,p_ant4_o)=0.0
+                   if (p_biog1_c.gt.1)    chem(i,k,j,p_biog1_c)=0.0
+                   if (p_biog2_c.gt.1)    chem(i,k,j,p_biog2_c)=0.0
+                   if (p_biog3_c.gt.1)    chem(i,k,j,p_biog3_c)=0.0
+                   if (p_biog4_c.gt.1)    chem(i,k,j,p_biog4_c)=0.0
+                   if (p_biog1_o.gt.1)    chem(i,k,j,p_biog1_o)=0.0
+                   if (p_biog2_o.gt.1)    chem(i,k,j,p_biog2_o)=0.0
+                   if (p_biog3_o.gt.1)    chem(i,k,j,p_biog3_o)=0.0
+                   if (p_biog4_o.gt.1)    chem(i,k,j,p_biog4_o)=0.0
+                   if (p_bgas.gt.1)    chem(i,k,j,p_bgas)=0.0
+                   if (p_agas.gt.1)    chem(i,k,j,p_agas)=0.0
+                   if (p_nume.gt.1)    chem(i,k,j,p_nume)=0.0
+                   if (p_den.gt.1)    chem(i,k,j,p_den)=0.0
+                   if (p_psd1.gt.1)    chem(i,k,j,p_psd1)=0.0
+                   if (p_psd2.gt.1)    chem(i,k,j,p_psd2)=0.0
+                   if (p_isoprene.gt.1)    chem(i,k,j,p_isoprene)=0.0
+                   if (p_terp.gt.1)    chem(i,k,j,p_terp)=0.0
+                   if (p_sesq.gt.1)    chem(i,k,j,p_sesq)=0.0
+                   if (p_aro1.gt.1)    chem(i,k,j,p_aro1)=0.0
+                   if (p_aro2.gt.1)    chem(i,k,j,p_aro2)=0.0
+                   
+                   
+                   if (p_pcg1_b_c_a01.gt.1)    chem(i,k,j,p_pcg1_b_c_a01)=0.0
+                   if (p_pcg1_b_o_a01.gt.1)    chem(i,k,j,p_pcg1_b_o_a01)=0.0
+                   if (p_opcg1_b_c_a01.gt.1)    chem(i,k,j,p_opcg1_b_c_a01)=0.0
+                   if (p_opcg1_b_o_a01.gt.1)    chem(i,k,j,p_opcg1_b_o_a01)=0.0
+                   if (p_pcg1_f_c_a01.gt.1)    chem(i,k,j,p_pcg1_f_c_a01)=0.0
+                   if (p_pcg1_f_o_a01.gt.1)    chem(i,k,j,p_pcg1_f_o_a01)=0.0
+                   if (p_opcg1_f_c_a01.gt.1)    chem(i,k,j,p_opcg1_f_c_a01)=0.0
+                   if (p_opcg1_f_o_a01.gt.1)    chem(i,k,j,p_opcg1_f_o_a01)=0.0
+                   if (p_ant1_c_a01.gt.1)    chem(i,k,j,p_ant1_c_a01)=0.0
+                   if (p_biog1_c_a01.gt.1)    chem(i,k,j,p_biog1_c_a01)=0.0
+                   if (p_ant2_c_a01.gt.1)    chem(i,k,j,p_ant2_c_a01)=0.0
+                   if (p_biog2_c_a01.gt.1)    chem(i,k,j,p_biog2_c_a01)=0.0
+                   if (p_biog3_c_a01.gt.1)    chem(i,k,j,p_biog3_c_a01)=0.0
+                   if (p_biog4_c_a01.gt.1)    chem(i,k,j,p_biog4_c_a01)=0.0
+                   if (p_biog1_o_a01.gt.1)    chem(i,k,j,p_biog1_o_a01)=0.0
+                   if (p_biog2_o_a01.gt.1)    chem(i,k,j,p_biog2_o_a01)=0.0
+                   if (p_ant3_c_a01.gt.1)    chem(i,k,j,p_ant3_c_a01)=0.0
+                   if (p_ant4_c_a01.gt.1)    chem(i,k,j,p_ant4_c_a01)=0.0
+                   
+                   
+                   if (p_pcg1_b_c_a02.gt.1)    chem(i,k,j,p_pcg1_b_c_a02)=0.0
+                   if (p_pcg1_b_o_a02.gt.1)    chem(i,k,j,p_pcg1_b_o_a02)=0.0
+                   if (p_opcg1_b_c_a02.gt.1)    chem(i,k,j,p_opcg1_b_c_a02)=0.0
+                   if (p_opcg1_b_o_a02.gt.1)    chem(i,k,j,p_opcg1_b_o_a02)=0.0
+                   if (p_pcg1_f_c_a02.gt.1)    chem(i,k,j,p_pcg1_f_c_a02)=0.0
+                   if (p_pcg1_f_o_a02.gt.1)    chem(i,k,j,p_pcg1_f_o_a02)=0.0
+                   if (p_opcg1_f_c_a02.gt.1)    chem(i,k,j,p_opcg1_f_c_a02)=0.0
+                   if (p_opcg1_f_o_a02.gt.1)    chem(i,k,j,p_opcg1_f_o_a02)=0.0
+                   if (p_ant1_c_a02.gt.1)    chem(i,k,j,p_ant1_c_a02)=0.0
+                   if (p_biog1_c_a02.gt.1)    chem(i,k,j,p_biog1_c_a02)=0.0
+                   if (p_ant2_c_a02.gt.1)    chem(i,k,j,p_ant2_c_a02)=0.0
+                   if (p_biog2_c_a02.gt.1)    chem(i,k,j,p_biog2_c_a02)=0.0
+                   if (p_biog3_c_a02.gt.1)    chem(i,k,j,p_biog3_c_a02)=0.0
+                   if (p_biog4_c_a02.gt.1)    chem(i,k,j,p_biog4_c_a02)=0.0
+                   if (p_biog1_o_a02.gt.1)    chem(i,k,j,p_biog1_o_a02)=0.0
+                   if (p_biog2_o_a02.gt.1)    chem(i,k,j,p_biog2_o_a02)=0.0
+                   if (p_ant3_c_a02.gt.1)    chem(i,k,j,p_ant3_c_a02)=0.0
+                   if (p_ant4_c_a02.gt.1)    chem(i,k,j,p_ant4_c_a02)=0.0
+                   
+                   
+                   
+                   if (p_pcg1_b_c_a03.gt.1)    chem(i,k,j,p_pcg1_b_c_a03)=0.0
+                   if (p_pcg1_b_o_a03.gt.1)    chem(i,k,j,p_pcg1_b_o_a03)=0.0
+                   if (p_opcg1_b_c_a03.gt.1)    chem(i,k,j,p_opcg1_b_c_a03)=0.0
+                   if (p_opcg1_b_o_a03.gt.1)    chem(i,k,j,p_opcg1_b_o_a03)=0.0
+                   if (p_pcg1_f_c_a03.gt.1)    chem(i,k,j,p_pcg1_f_c_a03)=0.0
+                   if (p_pcg1_f_o_a03.gt.1)    chem(i,k,j,p_pcg1_f_o_a03)=0.0
+                   if (p_opcg1_f_c_a03.gt.1)    chem(i,k,j,p_opcg1_f_c_a03)=0.0
+                   if (p_opcg1_f_o_a03.gt.1)    chem(i,k,j,p_opcg1_f_o_a03)=0.0
+                   if (p_ant1_c_a03.gt.1)    chem(i,k,j,p_ant1_c_a03)=0.0
+                   if (p_biog1_c_a03.gt.1)    chem(i,k,j,p_biog1_c_a03)=0.0
+                   if (p_ant2_c_a03.gt.1)    chem(i,k,j,p_ant2_c_a03)=0.0
+                   if (p_biog2_c_a03.gt.1)    chem(i,k,j,p_biog2_c_a03)=0.0
+                   if (p_biog3_c_a03.gt.1)    chem(i,k,j,p_biog3_c_a03)=0.0
+                   if (p_biog4_c_a03.gt.1)    chem(i,k,j,p_biog4_c_a03)=0.0
+                   if (p_biog1_o_a03.gt.1)    chem(i,k,j,p_biog1_o_a03)=0.0
+                   if (p_biog2_o_a03.gt.1)    chem(i,k,j,p_biog2_o_a03)=0.0
+                   if (p_ant3_c_a03.gt.1)    chem(i,k,j,p_ant3_c_a03)=0.0
+                   if (p_ant4_c_a03.gt.1)    chem(i,k,j,p_ant4_c_a03)=0.0
+                   
+                   
+                   if (p_pcg1_b_c_a04.gt.1)    chem(i,k,j,p_pcg1_b_c_a04)=0.0
+                   if (p_pcg1_b_o_a04.gt.1)    chem(i,k,j,p_pcg1_b_o_a04)=0.0
+                   if (p_opcg1_b_c_a04.gt.1)    chem(i,k,j,p_opcg1_b_c_a04)=0.0
+                   if (p_opcg1_b_o_a04.gt.1)    chem(i,k,j,p_opcg1_b_o_a04)=0.0
+                   if (p_pcg1_f_c_a04.gt.1)    chem(i,k,j,p_pcg1_f_c_a04)=0.0
+                   if (p_pcg1_f_o_a04.gt.1)    chem(i,k,j,p_pcg1_f_o_a04)=0.0
+                   if (p_opcg1_f_c_a04.gt.1)    chem(i,k,j,p_opcg1_f_c_a04)=0.0
+                   if (p_opcg1_f_o_a04.gt.1)    chem(i,k,j,p_opcg1_f_o_a04)=0.0
+                   if (p_ant1_c_a04.gt.1)    chem(i,k,j,p_ant1_c_a04)=0.0
+                   if (p_biog1_c_a04.gt.1)    chem(i,k,j,p_biog1_c_a04)=0.0
+                   if (p_ant2_c_a04.gt.1)    chem(i,k,j,p_ant2_c_a04)=0.0
+                   if (p_biog2_c_a04.gt.1)    chem(i,k,j,p_biog2_c_a04)=0.0
+                   if (p_biog3_c_a04.gt.1)    chem(i,k,j,p_biog3_c_a04)=0.0
+                   if (p_biog4_c_a04.gt.1)    chem(i,k,j,p_biog4_c_a04)=0.0
+                   if (p_biog1_o_a04.gt.1)    chem(i,k,j,p_biog1_o_a04)=0.0
+                   if (p_biog2_o_a04.gt.1)    chem(i,k,j,p_biog2_o_a04)=0.0
+                   if (p_ant3_c_a04.gt.1)    chem(i,k,j,p_ant3_c_a04)=0.0
+                   if (p_ant4_c_a04.gt.1)    chem(i,k,j,p_ant4_c_a04)=0.0
+                   
+                   
+                   if (p_pcg1_b_c_a05.gt.1)    chem(i,k,j,p_pcg1_b_c_a05)=0.0
+                   if (p_pcg1_b_o_a05.gt.1)    chem(i,k,j,p_pcg1_b_o_a05)=0.0
+                   if (p_opcg1_b_c_a05.gt.1)    chem(i,k,j,p_opcg1_b_c_a05)=0.0
+                   if (p_opcg1_b_o_a05.gt.1)    chem(i,k,j,p_opcg1_b_o_a05)=0.0
+                   if (p_pcg1_f_c_a05.gt.1)    chem(i,k,j,p_pcg1_f_c_a05)=0.0
+                   if (p_pcg1_f_o_a05.gt.1)    chem(i,k,j,p_pcg1_f_o_a05)=0.0
+                   if (p_opcg1_f_c_a05.gt.1)    chem(i,k,j,p_opcg1_f_c_a05)=0.0
+                   if (p_opcg1_f_o_a05.gt.1)    chem(i,k,j,p_opcg1_f_o_a05)=0.0
+                   if (p_ant1_c_a05.gt.1)    chem(i,k,j,p_ant1_c_a05)=0.0
+                   if (p_biog1_c_a05.gt.1)    chem(i,k,j,p_biog1_c_a05)=0.0
+                   if (p_ant2_c_a05.gt.1)    chem(i,k,j,p_ant2_c_a05)=0.0
+                   if (p_biog2_c_a05.gt.1)    chem(i,k,j,p_biog2_c_a05)=0.0
+                   if (p_biog3_c_a05.gt.1)    chem(i,k,j,p_biog3_c_a05)=0.0
+                   if (p_biog4_c_a05.gt.1)    chem(i,k,j,p_biog4_c_a05)=0.0
+                   if (p_biog1_o_a05.gt.1)    chem(i,k,j,p_biog1_o_a05)=0.0
+                   if (p_biog2_o_a05.gt.1)    chem(i,k,j,p_biog2_o_a05)=0.0
+                   if (p_ant3_c_a05.gt.1)    chem(i,k,j,p_ant3_c_a05)=0.0
+                   if (p_ant4_c_a05.gt.1)    chem(i,k,j,p_ant4_c_a05)=0.0
+                   
+                   
+                   if (p_pcg1_b_c_a06.gt.1)    chem(i,k,j,p_pcg1_b_c_a06)=0.0
+                   if (p_pcg1_b_o_a06.gt.1)    chem(i,k,j,p_pcg1_b_o_a06)=0.0
+                   if (p_opcg1_b_c_a06.gt.1)    chem(i,k,j,p_opcg1_b_c_a06)=0.0
+                   if (p_opcg1_b_o_a06.gt.1)    chem(i,k,j,p_opcg1_b_o_a06)=0.0
+                   if (p_pcg1_f_c_a06.gt.1)    chem(i,k,j,p_pcg1_f_c_a06)=0.0
+                   if (p_pcg1_f_o_a06.gt.1)    chem(i,k,j,p_pcg1_f_o_a06)=0.0
+                   if (p_opcg1_f_c_a06.gt.1)    chem(i,k,j,p_opcg1_f_c_a06)=0.0
+                   if (p_opcg1_f_o_a06.gt.1)    chem(i,k,j,p_opcg1_f_o_a06)=0.0
+                   if (p_ant1_c_a06.gt.1)    chem(i,k,j,p_ant1_c_a06)=0.0
+                   if (p_biog1_c_a06.gt.1)    chem(i,k,j,p_biog1_c_a06)=0.0
+                   if (p_ant2_c_a06.gt.1)    chem(i,k,j,p_ant2_c_a06)=0.0
+                   if (p_biog2_c_a06.gt.1)    chem(i,k,j,p_biog2_c_a06)=0.0
+                   if (p_biog3_c_a06.gt.1)    chem(i,k,j,p_biog3_c_a06)=0.0
+                   if (p_biog4_c_a06.gt.1)    chem(i,k,j,p_biog4_c_a06)=0.0
+                   if (p_biog1_o_a06.gt.1)    chem(i,k,j,p_biog1_o_a06)=0.0
+                   if (p_biog2_o_a06.gt.1)    chem(i,k,j,p_biog2_o_a06)=0.0
+                   if (p_ant3_c_a06.gt.1)    chem(i,k,j,p_ant3_c_a06)=0.0
+                   if (p_ant4_c_a06.gt.1)    chem(i,k,j,p_ant4_c_a06)=0.0
+                   
+                   
+                   if (p_pcg1_b_c_a07.gt.1)    chem(i,k,j,p_pcg1_b_c_a07)=0.0
+                   if (p_pcg1_b_o_a07.gt.1)    chem(i,k,j,p_pcg1_b_o_a07)=0.0
+                   if (p_opcg1_b_c_a07.gt.1)    chem(i,k,j,p_opcg1_b_c_a07)=0.0
+                   if (p_opcg1_b_o_a07.gt.1)    chem(i,k,j,p_opcg1_b_o_a07)=0.0
+                   if (p_pcg1_f_c_a07.gt.1)    chem(i,k,j,p_pcg1_f_c_a07)=0.0
+                   if (p_pcg1_f_o_a07.gt.1)    chem(i,k,j,p_pcg1_f_o_a07)=0.0
+                   if (p_opcg1_f_c_a07.gt.1)    chem(i,k,j,p_opcg1_f_c_a07)=0.0
+                   if (p_opcg1_f_o_a07.gt.1)    chem(i,k,j,p_opcg1_f_o_a07)=0.0
+                   if (p_ant1_c_a07.gt.1)    chem(i,k,j,p_ant1_c_a07)=0.0
+                   if (p_biog1_c_a07.gt.1)    chem(i,k,j,p_biog1_c_a07)=0.0
+                   if (p_ant2_c_a07.gt.1)    chem(i,k,j,p_ant2_c_a07)=0.0
+                   if (p_biog2_c_a07.gt.1)    chem(i,k,j,p_biog2_c_a07)=0.0
+                   if (p_biog3_c_a07.gt.1)    chem(i,k,j,p_biog3_c_a07)=0.0
+                   if (p_biog4_c_a07.gt.1)    chem(i,k,j,p_biog4_c_a07)=0.0
+                   if (p_biog1_o_a07.gt.1)    chem(i,k,j,p_biog1_o_a07)=0.0
+                   if (p_biog2_o_a07.gt.1)    chem(i,k,j,p_biog2_o_a07)=0.0
+                   if (p_ant3_c_a07.gt.1)    chem(i,k,j,p_ant3_c_a07)=0.0
+                   if (p_ant4_c_a07.gt.1)    chem(i,k,j,p_ant4_c_a07)=0.0
+                   
+                   
+                   if (p_pcg1_b_c_a08.gt.1)    chem(i,k,j,p_pcg1_b_c_a08)=0.0
+                   if (p_pcg1_b_o_a08.gt.1)    chem(i,k,j,p_pcg1_b_o_a08)=0.0
+                   if (p_opcg1_b_c_a08.gt.1)    chem(i,k,j,p_opcg1_b_c_a08)=0.0
+                   if (p_opcg1_b_o_a08.gt.1)    chem(i,k,j,p_opcg1_b_o_a08)=0.0
+                   if (p_pcg1_f_c_a08.gt.1)    chem(i,k,j,p_pcg1_f_c_a08)=0.0
+                   if (p_pcg1_f_o_a08.gt.1)    chem(i,k,j,p_pcg1_f_o_a08)=0.0
+                   if (p_opcg1_f_c_a08.gt.1)    chem(i,k,j,p_opcg1_f_c_a08)=0.0
+                   if (p_opcg1_f_o_a08.gt.1)    chem(i,k,j,p_opcg1_f_o_a08)=0.0
+                   if (p_ant1_c_a08.gt.1)    chem(i,k,j,p_ant1_c_a08)=0.0
+                   if (p_biog1_c_a08.gt.1)    chem(i,k,j,p_biog1_c_a08)=0.0
+                   if (p_ant2_c_a08.gt.1)    chem(i,k,j,p_ant2_c_a08)=0.0
+                   if (p_biog2_c_a08.gt.1)    chem(i,k,j,p_biog2_c_a08)=0.0
+                   if (p_biog3_c_a08.gt.1)    chem(i,k,j,p_biog3_c_a08)=0.0
+                   if (p_biog4_c_a08.gt.1)    chem(i,k,j,p_biog4_c_a08)=0.0
+                   if (p_biog1_o_a08.gt.1)    chem(i,k,j,p_biog1_o_a08)=0.0
+                   if (p_biog2_o_a08.gt.1)    chem(i,k,j,p_biog2_o_a08)=0.0
+                   if (p_ant3_c_a08.gt.1)    chem(i,k,j,p_ant3_c_a08)=0.0
+                   if (p_ant4_c_a08.gt.1)    chem(i,k,j,p_ant4_c_a08)=0.0
+                   
+                   
+                   
+                enddo
+             enddo
+          enddo
+       endif
+       !BSINGH(04/03/2014):ENDS
+       
+       
+       !BSINGH(12/03/2013) - Added case statement for SAPRC 8 bin 
+    CASE (SAPRC99_MOSAIC_8BIN_VBS2_AQ_KPP )!BSINGH (12/11/13): Got rid of SAPRC99_MOSAIC_4BIN_VBS2_AQ_KPP and SAPRC99_MOSAIC_4BIN_VBS2_KPP
+       
+       if(config_flags%chem_in_opt == 1 ) grid%vbs_nbin=2
+       if(config_flags%chem_in_opt == 0 )then
+          grid%vbs_nbin=2
+          do j=jts,jte
+             do k=kts,kte
+                do i=its,ite
+                   chem(i,k,j,p_co2)=370.
+                   chem(i,k,j,p_ch4)=1.7
+                   if (p_pcg1_b_c.gt.1)        chem(i,k,j,p_pcg1_b_c)=0.00
+                   if (p_pcg2_b_c.gt.1)        chem(i,k,j,p_pcg2_b_c)=0.00
+                   if (p_pcg3_b_c.gt.1)        chem(i,k,j,p_pcg3_b_c)=0.00
+                   if (p_pcg4_b_c.gt.1)        chem(i,k,j,p_pcg4_b_c)=0.00
+                   if (p_pcg5_b_c.gt.1)        chem(i,k,j,p_pcg5_b_c)=0.00
+                   if (p_pcg6_b_c.gt.1)        chem(i,k,j,p_pcg6_b_c)=0.00
+                   if (p_pcg7_b_c.gt.1)        chem(i,k,j,p_pcg7_b_c)=0.00
+                   if (p_pcg8_b_c.gt.1)        chem(i,k,j,p_pcg8_b_c)=0.00
+                   if (p_pcg9_b_c.gt.1)        chem(i,k,j,p_pcg9_b_c)=0.00
+                   if (p_pcg1_b_o.gt.1)        chem(i,k,j,p_pcg1_b_o)=0.00
+                   if (p_pcg2_b_o.gt.1)        chem(i,k,j,p_pcg2_b_o)=0.00
+                   if (p_pcg3_b_o.gt.1)        chem(i,k,j,p_pcg3_b_o)=0.00
+                   if (p_pcg4_b_o.gt.1)        chem(i,k,j,p_pcg4_b_o)=0.00
+                   if (p_pcg5_b_o.gt.1)        chem(i,k,j,p_pcg5_b_o)=0.00
+                   if (p_pcg6_b_o.gt.1)        chem(i,k,j,p_pcg6_b_o)=0.00
+                   if (p_pcg7_b_o.gt.1)        chem(i,k,j,p_pcg7_b_o)=0.00
+                   if (p_pcg8_b_o.gt.1)        chem(i,k,j,p_pcg8_b_o)=0.00
+                   if (p_pcg9_b_o.gt.1)        chem(i,k,j,p_pcg9_b_o)=0.00
+                   if (p_opcg1_b_c.gt.1)       chem(i,k,j,p_opcg1_b_c)=0.00
+                   if (p_opcg2_b_c.gt.1)       chem(i,k,j,p_opcg2_b_c)=0.00
+                   if (p_opcg3_b_c.gt.1)       chem(i,k,j,p_opcg3_b_c)=0.00
+                   if (p_opcg4_b_c.gt.1)       chem(i,k,j,p_opcg4_b_c)=0.00
+                   if (p_opcg5_b_c.gt.1)       chem(i,k,j,p_opcg5_b_c)=0.00
+                   if (p_opcg6_b_c.gt.1)       chem(i,k,j,p_opcg6_b_c)=0.00
+                   if (p_opcg7_b_c.gt.1)       chem(i,k,j,p_opcg7_b_c)=0.00
+                   if (p_opcg8_b_c.gt.1)       chem(i,k,j,p_opcg8_b_c)=0.00
+                   if (p_opcg1_b_o.gt.1)       chem(i,k,j,p_opcg1_b_o)=0.00
+                   if (p_opcg2_b_o.gt.1)       chem(i,k,j,p_opcg2_b_o)=0.00
+                   if (p_opcg3_b_o.gt.1)       chem(i,k,j,p_opcg3_b_o)=0.00
+                   if (p_opcg4_b_o.gt.1)       chem(i,k,j,p_opcg4_b_o)=0.00
+                   if (p_opcg5_b_o.gt.1)       chem(i,k,j,p_opcg5_b_o)=0.00
+                   if (p_opcg6_b_o.gt.1)       chem(i,k,j,p_opcg6_b_o)=0.00
+                   if (p_opcg7_b_o.gt.1)       chem(i,k,j,p_opcg7_b_o)=0.00
+                   if (p_opcg8_b_o.gt.1)       chem(i,k,j,p_opcg8_b_o)=0.00
+                   if (p_pcg1_f_c.gt.1)        chem(i,k,j,p_pcg1_f_c)=0.00
+                   if (p_pcg2_f_c.gt.1)        chem(i,k,j,p_pcg2_f_c)=0.00
+                   if (p_pcg3_f_c.gt.1)        chem(i,k,j,p_pcg3_f_c)=0.00
+                   if (p_pcg4_f_c.gt.1)        chem(i,k,j,p_pcg4_f_c)=0.00
+                   if (p_pcg5_f_c.gt.1)        chem(i,k,j,p_pcg5_f_c)=0.00
+                   if (p_pcg6_f_c.gt.1)        chem(i,k,j,p_pcg6_f_c)=0.00
+                   if (p_pcg7_f_c.gt.1)        chem(i,k,j,p_pcg7_f_c)=0.00
+                   if (p_pcg8_f_c.gt.1)        chem(i,k,j,p_pcg8_f_c)=0.00
+                   if (p_pcg9_f_c.gt.1)        chem(i,k,j,p_pcg9_f_c)=0.00
+                   if (p_pcg1_f_o.gt.1)        chem(i,k,j,p_pcg1_f_o)=0.00
+                   if (p_pcg2_f_o.gt.1)        chem(i,k,j,p_pcg2_f_o)=0.00
+                   if (p_pcg3_f_o.gt.1)        chem(i,k,j,p_pcg3_f_o)=0.00
+                   if (p_pcg4_f_o.gt.1)        chem(i,k,j,p_pcg4_f_o)=0.00
+                   if (p_pcg5_f_o.gt.1)        chem(i,k,j,p_pcg5_f_o)=0.00
+                   if (p_pcg6_f_o.gt.1)        chem(i,k,j,p_pcg6_f_o)=0.00
+                   if (p_pcg7_f_o.gt.1)        chem(i,k,j,p_pcg7_f_o)=0.00
+                   if (p_pcg8_f_o.gt.1)        chem(i,k,j,p_pcg8_f_o)=0.00
+                   if (p_pcg9_f_o.gt.1)        chem(i,k,j,p_pcg9_f_o)=0.00
+                   if (p_opcg1_f_c.gt.1)       chem(i,k,j,p_opcg1_f_c)=0.00
+                   if (p_opcg2_f_c.gt.1)       chem(i,k,j,p_opcg2_f_c)=0.00
+                   if (p_opcg3_f_c.gt.1)       chem(i,k,j,p_opcg3_f_c)=0.00
+                   if (p_opcg4_f_c.gt.1)       chem(i,k,j,p_opcg4_f_c)=0.00
+                   if (p_opcg5_f_c.gt.1)       chem(i,k,j,p_opcg5_f_c)=0.00
+                   if (p_opcg6_f_c.gt.1)       chem(i,k,j,p_opcg6_f_c)=0.00
+                   if (p_opcg7_f_c.gt.1)       chem(i,k,j,p_opcg7_f_c)=0.00
+                   if (p_opcg8_f_c.gt.1)       chem(i,k,j,p_opcg8_f_c)=0.00
+                   if (p_opcg1_f_o.gt.1)       chem(i,k,j,p_opcg1_f_o)=0.00
+                   if (p_opcg2_f_o.gt.1)       chem(i,k,j,p_opcg2_f_o)=0.00
+                   if (p_opcg3_f_o.gt.1)       chem(i,k,j,p_opcg3_f_o)=0.00
+                   if (p_opcg4_f_o.gt.1)       chem(i,k,j,p_opcg4_f_o)=0.00
+                   if (p_opcg5_f_o.gt.1)       chem(i,k,j,p_opcg5_f_o)=0.00
+                   if (p_opcg6_f_o.gt.1)       chem(i,k,j,p_opcg6_f_o)=0.00
+                   if (p_opcg7_f_o.gt.1)       chem(i,k,j,p_opcg7_f_o)=0.00
+                   if (p_opcg8_f_o.gt.1)       chem(i,k,j,p_opcg8_f_o)=0.00
+                   if (p_ant1_c.gt.1)          chem(i,k,j,p_ant1_c)=0.0
+                   if (p_ant2_c.gt.1)          chem(i,k,j,p_ant2_c)=0.0
+                   if (p_ant3_c.gt.1)          chem(i,k,j,p_ant3_c)=0.0
+                   if (p_ant4_c.gt.1)          chem(i,k,j,p_ant4_c)=0.0
+                   if (p_ant1_o.gt.1)          chem(i,k,j,p_ant1_o)=0.0
+                   if (p_ant2_o.gt.1)          chem(i,k,j,p_ant2_o)=0.0
+                   if (p_ant3_o.gt.1)          chem(i,k,j,p_ant3_o)=0.0
+                   if (p_ant4_o.gt.1)          chem(i,k,j,p_ant4_o)=0.0
+                   if (p_biog1_c.gt.1)         chem(i,k,j,p_biog1_c)=0.0
+                   if (p_biog2_c.gt.1)         chem(i,k,j,p_biog2_c)=0.0
+                   if (p_biog3_c.gt.1)         chem(i,k,j,p_biog3_c)=0.0
+                   if (p_biog4_c.gt.1)         chem(i,k,j,p_biog4_c)=0.0
+                   if (p_biog1_o.gt.1)         chem(i,k,j,p_biog1_o)=0.0
+                   if (p_biog2_o.gt.1)         chem(i,k,j,p_biog2_o)=0.0
+                   if (p_biog3_o.gt.1)         chem(i,k,j,p_biog3_o)=0.0
+                   if (p_biog4_o.gt.1)         chem(i,k,j,p_biog4_o)=0.0
+                   
+                   if (p_pcg1_b_c_a01.gt.1)    chem(i,k,j,p_pcg1_b_c_a01)=0.0
+                   if (p_pcg1_b_o_a01.gt.1)    chem(i,k,j,p_pcg1_b_o_a01)=0.0
+                   if (p_opcg1_b_c_a01.gt.1)   chem(i,k,j,p_opcg1_b_c_a01)=0.0
+                   if (p_opcg1_b_o_a01.gt.1)   chem(i,k,j,p_opcg1_b_o_a01)=0.0
+                   if (p_pcg1_f_c_a01.gt.1)    chem(i,k,j,p_pcg1_f_c_a01)=0.0
+                   if (p_pcg1_f_o_a01.gt.1)    chem(i,k,j,p_pcg1_f_o_a01)=0.0
+                   if (p_opcg1_f_c_a01.gt.1)   chem(i,k,j,p_opcg1_f_c_a01)=0.0
+                   if (p_opcg1_f_o_a01.gt.1)   chem(i,k,j,p_opcg1_f_o_a01)=0.0
+                   if (p_ant1_c_a01.gt.1)      chem(i,k,j,p_ant1_c_a01)=0.0
+                   if (p_biog1_c_a01.gt.1)     chem(i,k,j,p_biog1_c_a01)=0.0
+                   
+                   if (p_pcg1_b_c_a02.gt.1)    chem(i,k,j,p_pcg1_b_c_a02)=0.0
+                   if (p_pcg1_b_o_a02.gt.1)    chem(i,k,j,p_pcg1_b_o_a02)=0.0
+                   if (p_opcg1_b_c_a02.gt.1)   chem(i,k,j,p_opcg1_b_c_a02)=0.0
+                   if (p_opcg1_b_o_a02.gt.1)   chem(i,k,j,p_opcg1_b_o_a02)=0.0
+                   if (p_pcg1_f_c_a02.gt.1)    chem(i,k,j,p_pcg1_f_c_a02)=0.0
+                   if (p_pcg1_f_o_a02.gt.1)    chem(i,k,j,p_pcg1_f_o_a02)=0.0
+                   if (p_opcg1_f_c_a02.gt.1)   chem(i,k,j,p_opcg1_f_c_a02)=0.0
+                   if (p_opcg1_f_o_a02.gt.1)   chem(i,k,j,p_opcg1_f_o_a02)=0.0
+                   if (p_ant1_c_a02.gt.1)      chem(i,k,j,p_ant1_c_a02)=0.0
+                   if (p_biog1_c_a02.gt.1)     chem(i,k,j,p_biog1_c_a02)=0.0
+                   
+                   if (p_pcg1_b_c_a03.gt.1)    chem(i,k,j,p_pcg1_b_c_a03)=0.0
+                   if (p_pcg1_b_o_a03.gt.1)    chem(i,k,j,p_pcg1_b_o_a03)=0.0
+                   if (p_opcg1_b_c_a03.gt.1)   chem(i,k,j,p_opcg1_b_c_a03)=0.0
+                   if (p_opcg1_b_o_a03.gt.1)   chem(i,k,j,p_opcg1_b_o_a03)=0.0
+                   if (p_pcg1_f_c_a03.gt.1)    chem(i,k,j,p_pcg1_f_c_a03)=0.0
+                   if (p_pcg1_f_o_a03.gt.1)    chem(i,k,j,p_pcg1_f_o_a03)=0.0
+                   if (p_opcg1_f_c_a03.gt.1)   chem(i,k,j,p_opcg1_f_c_a03)=0.0
+                   if (p_opcg1_f_o_a03.gt.1)   chem(i,k,j,p_opcg1_f_o_a03)=0.0
+                   if (p_ant1_c_a03.gt.1)      chem(i,k,j,p_ant1_c_a03)=0.0
+                   if (p_biog1_c_a03.gt.1)     chem(i,k,j,p_biog1_c_a03)=0.0
+                   
+                   if (p_pcg1_b_c_a04.gt.1)    chem(i,k,j,p_pcg1_b_c_a04)=0.0
+                   if (p_pcg1_b_o_a04.gt.1)    chem(i,k,j,p_pcg1_b_o_a04)=0.0
+                   if (p_opcg1_b_c_a04.gt.1)   chem(i,k,j,p_opcg1_b_c_a04)=0.0
+                   if (p_opcg1_b_o_a04.gt.1)   chem(i,k,j,p_opcg1_b_o_a04)=0.0
+                   if (p_pcg1_f_c_a04.gt.1)    chem(i,k,j,p_pcg1_f_c_a04)=0.0
+                   if (p_pcg1_f_o_a04.gt.1)    chem(i,k,j,p_pcg1_f_o_a04)=0.0
+                   if (p_opcg1_f_c_a04.gt.1)   chem(i,k,j,p_opcg1_f_c_a04)=0.0
+                   if (p_opcg1_f_o_a04.gt.1)   chem(i,k,j,p_opcg1_f_o_a04)=0.0
+                   if (p_ant1_c_a04.gt.1)      chem(i,k,j,p_ant1_c_a04)=0.0
+                   if (p_biog1_c_a04.gt.1)     chem(i,k,j,p_biog1_c_a04)=0.0
+                   
+                   if (p_pcg1_b_c_a05.gt.1)    chem(i,k,j,p_pcg1_b_c_a05)=0.0
+                   if (p_pcg1_b_o_a05.gt.1)    chem(i,k,j,p_pcg1_b_o_a05)=0.0
+                   if (p_opcg1_b_c_a05.gt.1)   chem(i,k,j,p_opcg1_b_c_a05)=0.0
+                   if (p_opcg1_b_o_a05.gt.1)   chem(i,k,j,p_opcg1_b_o_a05)=0.0
+                   if (p_pcg1_f_c_a05.gt.1)    chem(i,k,j,p_pcg1_f_c_a05)=0.0
+                   if (p_pcg1_f_o_a05.gt.1)    chem(i,k,j,p_pcg1_f_o_a05)=0.0
+                   if (p_opcg1_f_c_a05.gt.1)   chem(i,k,j,p_opcg1_f_c_a05)=0.0
+                   if (p_opcg1_f_o_a05.gt.1)   chem(i,k,j,p_opcg1_f_o_a05)=0.0
+                   if (p_ant1_c_a05.gt.1)      chem(i,k,j,p_ant1_c_a05)=0.0
+                   if (p_biog1_c_a05.gt.1)     chem(i,k,j,p_biog1_c_a05)=0.0
+                   
+                   if (p_pcg1_b_c_a06.gt.1)    chem(i,k,j,p_pcg1_b_c_a06)=0.0
+                   if (p_pcg1_b_o_a06.gt.1)    chem(i,k,j,p_pcg1_b_o_a06)=0.0
+                   if (p_opcg1_b_c_a06.gt.1)   chem(i,k,j,p_opcg1_b_c_a06)=0.0
+                   if (p_opcg1_b_o_a06.gt.1)   chem(i,k,j,p_opcg1_b_o_a06)=0.0
+                   if (p_pcg1_f_c_a06.gt.1)    chem(i,k,j,p_pcg1_f_c_a06)=0.0
+                   if (p_pcg1_f_o_a06.gt.1)    chem(i,k,j,p_pcg1_f_o_a06)=0.0
+                   if (p_opcg1_f_c_a06.gt.1)   chem(i,k,j,p_opcg1_f_c_a06)=0.0
+                   if (p_opcg1_f_o_a06.gt.1)   chem(i,k,j,p_opcg1_f_o_a06)=0.0
+                   if (p_ant1_c_a06.gt.1)      chem(i,k,j,p_ant1_c_a06)=0.0
+                   if (p_biog1_c_a06.gt.1)     chem(i,k,j,p_biog1_c_a06)=0.0
+                   
+                   if (p_pcg1_b_c_a07.gt.1)    chem(i,k,j,p_pcg1_b_c_a07)=0.0
+                   if (p_pcg1_b_o_a07.gt.1)    chem(i,k,j,p_pcg1_b_o_a07)=0.0
+                   if (p_opcg1_b_c_a07.gt.1)   chem(i,k,j,p_opcg1_b_c_a07)=0.0
+                   if (p_opcg1_b_o_a07.gt.1)   chem(i,k,j,p_opcg1_b_o_a07)=0.0
+                   if (p_pcg1_f_c_a07.gt.1)    chem(i,k,j,p_pcg1_f_c_a07)=0.0
+                   if (p_pcg1_f_o_a07.gt.1)    chem(i,k,j,p_pcg1_f_o_a07)=0.0
+                   if (p_opcg1_f_c_a07.gt.1)   chem(i,k,j,p_opcg1_f_c_a07)=0.0
+                   if (p_opcg1_f_o_a07.gt.1)   chem(i,k,j,p_opcg1_f_o_a07)=0.0
+                   if (p_ant1_c_a07.gt.1)      chem(i,k,j,p_ant1_c_a07)=0.0
+                   if (p_biog1_c_a07.gt.1)     chem(i,k,j,p_biog1_c_a07)=0.0
+                   
+                   if (p_pcg1_b_c_a08.gt.1)    chem(i,k,j,p_pcg1_b_c_a08)=0.0
+                   if (p_pcg1_b_o_a08.gt.1)    chem(i,k,j,p_pcg1_b_o_a08)=0.0
+                   if (p_opcg1_b_c_a08.gt.1)   chem(i,k,j,p_opcg1_b_c_a08)=0.0
+                   if (p_opcg1_b_o_a08.gt.1)   chem(i,k,j,p_opcg1_b_o_a08)=0.0
+                   if (p_pcg1_f_c_a08.gt.1)    chem(i,k,j,p_pcg1_f_c_a08)=0.0
+                   if (p_pcg1_f_o_a08.gt.1)    chem(i,k,j,p_pcg1_f_o_a08)=0.0
+                   if (p_opcg1_f_c_a08.gt.1)   chem(i,k,j,p_opcg1_f_c_a08)=0.0
+                   if (p_opcg1_f_o_a08.gt.1)   chem(i,k,j,p_opcg1_f_o_a08)=0.0
+                   if (p_ant1_c_a08.gt.1)      chem(i,k,j,p_ant1_c_a08)=0.0
+                   if (p_biog1_c_a08.gt.1)     chem(i,k,j,p_biog1_c_a08)=0.0
+                   
+                   
+                   
+                   if (p_pcg1_b_c_cw01.gt.1)   chem(i,k,j,p_pcg1_b_c_cw01)=0.0
+                   if (p_pcg1_b_o_cw01.gt.1)   chem(i,k,j,p_pcg1_b_o_cw01)=0.0
+                   if (p_opcg1_b_c_cw01.gt.1)  chem(i,k,j,p_opcg1_b_c_cw01)=0.0
+                   if (p_opcg1_b_o_cw01.gt.1)  chem(i,k,j,p_opcg1_b_o_cw01)=0.0
+                   if (p_pcg1_f_c_cw01.gt.1)   chem(i,k,j,p_pcg1_f_c_cw01)=0.0
+                   if (p_pcg1_f_o_cw01.gt.1)   chem(i,k,j,p_pcg1_f_o_cw01)=0.0
+                   if (p_opcg1_f_c_cw01.gt.1)  chem(i,k,j,p_opcg1_f_c_cw01)=0.0
+                   if (p_opcg1_f_o_cw01.gt.1)  chem(i,k,j,p_opcg1_f_o_cw01)=0.0
+                   if (p_ant1_c_cw01.gt.1)     chem(i,k,j,p_ant1_c_cw01)=0.0
+                   if (p_biog1_c_cw01.gt.1)    chem(i,k,j,p_biog1_c_cw01)=0.0
+                   
+                   if (p_pcg1_b_c_cw02.gt.1)   chem(i,k,j,p_pcg1_b_c_cw02)=0.0
+                   if (p_pcg1_b_o_cw02.gt.1)   chem(i,k,j,p_pcg1_b_o_cw02)=0.0
+                   if (p_opcg1_b_c_cw02.gt.1)  chem(i,k,j,p_opcg1_b_c_cw02)=0.0
+                   if (p_opcg1_b_o_cw02.gt.1)  chem(i,k,j,p_opcg1_b_o_cw02)=0.0
+                   if (p_pcg1_f_c_cw02.gt.1)   chem(i,k,j,p_pcg1_f_c_cw02)=0.0
+                   if (p_pcg1_f_o_cw02.gt.1)   chem(i,k,j,p_pcg1_f_o_cw02)=0.0
+                   if (p_opcg1_f_c_cw02.gt.1)  chem(i,k,j,p_opcg1_f_c_cw02)=0.0
+                   if (p_opcg1_f_o_cw02.gt.1)  chem(i,k,j,p_opcg1_f_o_cw02)=0.0
+                   if (p_ant1_c_cw02.gt.1)     chem(i,k,j,p_ant1_c_cw02)=0.0
+                   if (p_biog1_c_cw02.gt.1)    chem(i,k,j,p_biog1_c_cw02)=0.0
+                   
+                   if (p_pcg1_b_c_cw03.gt.1)   chem(i,k,j,p_pcg1_b_c_cw03)=0.0
+                   if (p_pcg1_b_o_cw03.gt.1)   chem(i,k,j,p_pcg1_b_o_cw03)=0.0
+                   if (p_opcg1_b_c_cw03.gt.1)  chem(i,k,j,p_opcg1_b_c_cw03)=0.0
+                   if (p_opcg1_b_o_cw03.gt.1)  chem(i,k,j,p_opcg1_b_o_cw03)=0.0
+                   if (p_pcg1_f_c_cw03.gt.1)   chem(i,k,j,p_pcg1_f_c_cw03)=0.0
+                   if (p_pcg1_f_o_cw03.gt.1)   chem(i,k,j,p_pcg1_f_o_cw03)=0.0
+                   if (p_opcg1_f_c_cw03.gt.1)  chem(i,k,j,p_opcg1_f_c_cw03)=0.0
+                   if (p_opcg1_f_o_cw03.gt.1)  chem(i,k,j,p_opcg1_f_o_cw03)=0.0
+                   if (p_ant1_c_cw03.gt.1)     chem(i,k,j,p_ant1_c_cw03)=0.0
+                   if (p_biog1_c_cw03.gt.1)    chem(i,k,j,p_biog1_c_cw03)=0.0
+                   
+                   if (p_pcg1_b_c_cw04.gt.1)   chem(i,k,j,p_pcg1_b_c_cw04)=0.0
+                   if (p_pcg1_b_o_cw04.gt.1)   chem(i,k,j,p_pcg1_b_o_cw04)=0.0
+                   if (p_opcg1_b_c_cw04.gt.1)  chem(i,k,j,p_opcg1_b_c_cw04)=0.0
+                   if (p_opcg1_b_o_cw04.gt.1)  chem(i,k,j,p_opcg1_b_o_cw04)=0.0
+                   if (p_pcg1_f_c_cw04.gt.1)   chem(i,k,j,p_pcg1_f_c_cw04)=0.0
+                   if (p_pcg1_f_o_cw04.gt.1)   chem(i,k,j,p_pcg1_f_o_cw04)=0.0
+                   if (p_opcg1_f_c_cw04.gt.1)  chem(i,k,j,p_opcg1_f_c_cw04)=0.0
+                   if (p_opcg1_f_o_cw04.gt.1)  chem(i,k,j,p_opcg1_f_o_cw04)=0.0
+                   if (p_ant1_c_cw04.gt.1)     chem(i,k,j,p_ant1_c_cw04)=0.0
+                   if (p_biog1_c_cw04.gt.1)    chem(i,k,j,p_biog1_c_cw04)=0.0
+                   
+                   if (p_pcg1_b_c_cw05.gt.1)   chem(i,k,j,p_pcg1_b_c_cw05)=0.0
+                   if (p_pcg1_b_o_cw05.gt.1)   chem(i,k,j,p_pcg1_b_o_cw05)=0.0
+                   if (p_opcg1_b_c_cw05.gt.1)  chem(i,k,j,p_opcg1_b_c_cw05)=0.0
+                   if (p_opcg1_b_o_cw05.gt.1)  chem(i,k,j,p_opcg1_b_o_cw05)=0.0
+                   if (p_pcg1_f_c_cw05.gt.1)   chem(i,k,j,p_pcg1_f_c_cw05)=0.0
+                   if (p_pcg1_f_o_cw05.gt.1)   chem(i,k,j,p_pcg1_f_o_cw05)=0.0
+                   if (p_opcg1_f_c_cw05.gt.1)  chem(i,k,j,p_opcg1_f_c_cw05)=0.0
+                   if (p_opcg1_f_o_cw05.gt.1)  chem(i,k,j,p_opcg1_f_o_cw05)=0.0
+                   if (p_ant1_c_cw05.gt.1)     chem(i,k,j,p_ant1_c_cw05)=0.0
+                   if (p_biog1_c_cw05.gt.1)    chem(i,k,j,p_biog1_c_cw05)=0.0
+                   
+                   if (p_pcg1_b_c_cw06.gt.1)   chem(i,k,j,p_pcg1_b_c_cw06)=0.0
+                   if (p_pcg1_b_o_cw06.gt.1)   chem(i,k,j,p_pcg1_b_o_cw06)=0.0
+                   if (p_opcg1_b_c_cw06.gt.1)  chem(i,k,j,p_opcg1_b_c_cw06)=0.0
+                   if (p_opcg1_b_o_cw06.gt.1)  chem(i,k,j,p_opcg1_b_o_cw06)=0.0
+                   if (p_pcg1_f_c_cw06.gt.1)   chem(i,k,j,p_pcg1_f_c_cw06)=0.0
+                   if (p_pcg1_f_o_cw06.gt.1)   chem(i,k,j,p_pcg1_f_o_cw06)=0.0
+                   if (p_opcg1_f_c_cw06.gt.1)  chem(i,k,j,p_opcg1_f_c_cw06)=0.0
+                   if (p_opcg1_f_o_cw06.gt.1)  chem(i,k,j,p_opcg1_f_o_cw06)=0.0
+                   if (p_ant1_c_cw06.gt.1)     chem(i,k,j,p_ant1_c_cw06)=0.0
+                   if (p_biog1_c_cw06.gt.1)    chem(i,k,j,p_biog1_c_cw06)=0.0
+                   
+                   if (p_pcg1_b_c_cw07.gt.1)   chem(i,k,j,p_pcg1_b_c_cw07)=0.0
+                   if (p_pcg1_b_o_cw07.gt.1)   chem(i,k,j,p_pcg1_b_o_cw07)=0.0
+                   if (p_opcg1_b_c_cw07.gt.1)  chem(i,k,j,p_opcg1_b_c_cw07)=0.0
+                   if (p_opcg1_b_o_cw07.gt.1)  chem(i,k,j,p_opcg1_b_o_cw07)=0.0
+                   if (p_pcg1_f_c_cw07.gt.1)   chem(i,k,j,p_pcg1_f_c_cw07)=0.0
+                   if (p_pcg1_f_o_cw07.gt.1)   chem(i,k,j,p_pcg1_f_o_cw07)=0.0
+                   if (p_opcg1_f_c_cw07.gt.1)  chem(i,k,j,p_opcg1_f_c_cw07)=0.0
+                   if (p_opcg1_f_o_cw07.gt.1)  chem(i,k,j,p_opcg1_f_o_cw07)=0.0
+                   if (p_ant1_c_cw07.gt.1)     chem(i,k,j,p_ant1_c_cw07)=0.0
+                   if (p_biog1_c_cw07.gt.1)    chem(i,k,j,p_biog1_c_cw07)=0.0
+                   
+                   if (p_pcg1_b_c_cw08.gt.1)   chem(i,k,j,p_pcg1_b_c_cw08)=0.0
+                   if (p_pcg1_b_o_cw08.gt.1)   chem(i,k,j,p_pcg1_b_o_cw08)=0.0
+                   if (p_opcg1_b_c_cw08.gt.1)  chem(i,k,j,p_opcg1_b_c_cw08)=0.0
+                   if (p_opcg1_b_o_cw08.gt.1)  chem(i,k,j,p_opcg1_b_o_cw08)=0.0
+                   if (p_pcg1_f_c_cw08.gt.1)   chem(i,k,j,p_pcg1_f_c_cw08)=0.0
+                   if (p_pcg1_f_o_cw08.gt.1)   chem(i,k,j,p_pcg1_f_o_cw08)=0.0
+                   if (p_opcg1_f_c_cw08.gt.1)  chem(i,k,j,p_opcg1_f_c_cw08)=0.0
+                   if (p_opcg1_f_o_cw08.gt.1)  chem(i,k,j,p_opcg1_f_o_cw08)=0.0
+                   if (p_ant1_c_cw08.gt.1)     chem(i,k,j,p_ant1_c_cw08)=0.0
+                   if (p_biog1_c_cw08.gt.1)    chem(i,k,j,p_biog1_c_cw08)=0.0
+                enddo
+             enddo
+          enddo
+       endif
+       !BSINGH - ENDS
 
    END SELECT kpp_select
    endif
@@ -1072,7 +1671,8 @@ ENDIF ghg_block
         ch_dust(:,:) = 0.8D-9
 
      CASE (RADM2SORG, RADM2SORG_AQ, RADM2SORG_AQCHEM, RACMSORG_AQ, RACMSORG_AQCHEM_KPP, RACM_ESRLSORG_AQCHEM_KPP, RADM2SORG_KPP, &
-           RACMSORG_KPP, RACM_ESRLSORG_KPP, CBMZSORG, CBMZSORG_AQ)
+           RACMSORG_KPP, RACM_ESRLSORG_KPP, CBMZSORG, CBMZSORG_AQ, &
+           CB05_SORG_AQ_KPP)
        CALL wrf_debug(15,'call MADE/SORGAM aerosols initialization')
 
        call aerosols_sorgam_init(chem,convfac,z_at_w,                &
@@ -1098,6 +1698,33 @@ ENDIF ghg_block
         endif
         chem(its:ite,kts:min(kte,kde-1),jts:jte,:)=max(chem(its:ite,kts:min(kte,kde-1),jts:jte,:),epsilc)
 !
+    CASE (CB05_SORG_VBS_AQ_KPP)
+       CALL wrf_debug(15,'call MADE/SOA_VBS aerosols initialization')
+
+       call aerosols_sorgam_vbs_init(chem,convfac,z_at_w,                &
+               pm2_5_dry,pm2_5_water,pm2_5_dry_ec,                   &
+               tsoa,asoa,bsoa,                                       &
+               chem_in_opt,config_flags%aer_ic_opt,is_aerosol,       &
+               ids,ide, jds,jde, kds,kde,                            &
+               ims,ime, jms,jme, kms,kme,                            &
+               its,ite, jts,jte, kts,kte, config_flags               )
+!...Convert aerosols to mixing ratio
+        if( .NOT. config_flags%restart ) then
+        if(config_flags%chem_in_opt == 0 .and. num_chem.gt.numgas)then
+        do l=numgas+1,num_chem
+           do j=jts,jte
+              do k=kts,kte
+                 kk = min(k,kde-1)
+                 do i=its,ite
+                    chem(i,k,j,l)=chem(i,kk,j,l)*alt(i,kk,j)
+                 enddo
+              enddo
+           enddo
+        enddo
+        endif
+        endif
+        chem(its:ite,kts:min(kte,kde-1),jts:jte,:)=max(chem(its:ite,kts:min(kte,kde-1),jts:jte,:),epsilc)
+
     CASE (RACM_SOA_VBS_KPP)
        CALL wrf_debug(15,'call MADE/SOA_VBS aerosols initialization')
 
@@ -1153,9 +1780,10 @@ ENDIF ghg_block
            CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ, &
            CBMZ_MOSAIC_4BIN_VBS2_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP, &
            MOZART_MOSAIC_4BIN_KPP,MOZART_MOSAIC_4BIN_AQ_KPP, &
-           CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP )
+           CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP,SAPRC99_MOSAIC_8BIN_VBS2_AQ_KPP, &  !BSINGH(12/03/2013): Added SAPRC 8 bin
+           SAPRC99_MOSAIC_8BIN_VBS2_KPP) !BSINGH(04/03/2014): Added SAPRC 8 bin non-aq
        call wrf_debug(15,'call MOSAIC aerosols initialization')
-       call init_data_mosaic_asect(config_flags%n2o5_hetchem,is_aerosol)
+       call init_data_mosaic_asect(id,config_flags%n2o5_hetchem,is_aerosol)
        if(config_flags%chem_in_opt == 0 )then
        if( .NOT. config_flags%restart ) &
             call mosaic_init_wrf_mixrats(                            &
@@ -1172,7 +1800,8 @@ ENDIF ghg_block
    CASE (RADM2SORG_AQ, RADM2SORG_AQCHEM, RACMSORG_AQ, RACMSORG_AQCHEM_KPP, RACM_ESRLSORG_AQCHEM_KPP, &
          CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, CBMZ_MOSAIC_DMS_4BIN_AQ, &
          CBMZ_MOSAIC_DMS_8BIN_AQ,CBMZSORG_AQ,CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP, &
-         MOZART_MOSAIC_4BIN_AQ_KPP)
+         MOZART_MOSAIC_4BIN_AQ_KPP,SAPRC99_MOSAIC_8BIN_VBS2_AQ_KPP,   &
+         CB05_SORG_AQ_KPP, CB05_SORG_VBS_AQ_KPP)
       if( config_flags%progn /= 1 ) &
            call wrf_error_fatal( &
            "ERROR: When using a ..._AQ chemistry package, progn must be 1")
@@ -1239,8 +1868,13 @@ ENDIF ghg_block
 ! Initialize the cloud droplet number and mass
 !
     if( (.not.config_flags%restart) .and. (config_flags%progn > 0) ) then
+!BSINGH(12/03/2013): send chem_in_opt as an arg
+!    For chem_in_opt==1 modified the mosaic_mixactivate_init
+!    The sum of mass from interstitial and cloud borne aerosols is attributed to interstitial aerosols
+!    Cloud drop number and cloud aerosol mass are then initialized to zero
        call mosaic_mixactivate_init(                   &
             config_flags, chem, scalar,                &
+            chem_in_opt,                               & !BSINGH(12/03/2013):send chem_in_opt as an arg
             ims,ime, jms,jme, kms,kme,                 &
             its,ite, jts,jte, kts,kte                  )
     end if
@@ -1617,87 +2251,7 @@ subroutine print_chem_species_index( chem_opt )
      print*,p_isopn,"isopn"
      print*,p_isopo2,"isopo2"
 
-  select case (chem_opt)
-  case( CBMZ_CAM_MAM3_NOAQ, CBMZ_CAM_MAM3_AQ, CBMZ_CAM_MAM7_NOAQ, CBMZ_CAM_MAM7_AQ )
-        print*,p_soag,"soag"
-     end select
-  end select
-  
-  case (CBMZ_MOSAIC_KPP, CBMZ_MOSAIC_4BIN_VBS2_KPP)
-    print*,p_so2,"so2"
-     print*,p_sulf,"sulf"
-     print*,p_no2,"no2"
-     print*,p_no,"no"
-     print*,p_o3,"o3"
-     print*,p_hno3,"hno3"
-     print*,p_h2o2,"h2o2"
-     print*,p_ald,"ald"
-     print*,p_hcho,"hcho"
-     print*,p_op1,"op1"
-     print*,p_op2,"op2"
-     print*,p_paa,"paa"
-     print*,p_ora1,"ora1"
-     print*,p_ora2,"ora2"
-     print*,p_nh3,"nh3"
-     print*,p_n2o5,"n2o5"
-     print*,p_no3,"no3"
-     print*,p_pan,"pan"
-     print*,p_hc3,"hc3"
-     print*,p_hc5,"hc5"
-     print*,p_hc8,"hc8"
-     print*,p_eth,"eth"
-     print*,p_ch4,"ch4"
-     print*,p_co,"co"
-     print*,p_ol2,"ol2"
-     print*,p_olt,"olt"
-     print*,p_oli,"oli"
-     print*,p_tol,"tol"
-     print*,p_xyl,"xyl"
-     print*,p_aco3,"aco3"
-     print*,p_tpan,"tpan"
-     print*,p_hono,"hono"
-     print*,p_hno4,"hno4"
-     print*,p_ket,"ket"
-     print*,p_gly,"gly"
-     print*,p_mgly,"mgly"
-     print*,p_dcb,"dcb"
-     print*,p_onit,"onit"
-     print*,p_csl,"csl"
-     print*,p_iso,"iso"
-     print*,p_ho,"ho"
-     print*,p_ho2,"ho2"
-     print*,p_hcl,"hcl"
-     print*,p_ch3o2,"ch3o2"
-     print*,p_ethp,"ethp"
-     print*,p_ch3oh,"ch3oh"
-     print*,p_c2h5oh,"c2h5oh"
-     print*,p_par,"par"
-     print*,p_to2,"to2"
-     print*,p_cro,"cro"
-     print*,p_open,"open"
-     print*,p_op3,"op3"
-     print*,p_c2o3,"c2o3"
-     print*,p_ro2,"ro2"
-     print*,p_ano2,"ano2"
-     print*,p_nap,"nap"
-     print*,p_xo2,"xo2"
-     print*,p_xpar,"xpar"
-     print*,p_isoprd,"isoprd"
-     print*,p_isopp,"isopp"
-     print*,p_isopn,"isopn"
-     print*,p_isopo2,"isopo2"
-     print*,p_aro1,"aro1"
-     print*,p_aro2,"aro2"
-     print*,p_alk1,"alk1"
-     print*,p_ole1,"ole1"
-     print*,p_api1,"api1"
-     print*,p_api2,"api2"
-     print*,p_lim1,"lim1"
-     print*,p_lim2,"lim2"
-     print*,p_api,"api"
-     print*,p_lim,"lim"
-
-  case (SAPRC99_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP)
+     case (SAPRC99_MOSAIC_8BIN_VBS2_KPP) !BSINGh -  Added for 8bin vbs pkg
      print*,p_o3,"o3"
      print*,p_h2o2,"h2o2"
      print*,p_no,"no"
@@ -1783,13 +2337,181 @@ subroutine print_chem_species_index( chem_opt )
      print*,p_ma_rco3,"ma_rco3"
      print*,p_ch4,"ch4"
 
+  select case (chem_opt)
+  case( CBMZ_CAM_MAM3_NOAQ, CBMZ_CAM_MAM3_AQ, CBMZ_CAM_MAM7_NOAQ, CBMZ_CAM_MAM7_AQ )
+        print*,p_soag,"soag"
+     end select
+  end select
+  
+  case (CBMZ_MOSAIC_KPP, CBMZ_MOSAIC_4BIN_VBS2_KPP)
+    print*,p_so2,"so2"
+     print*,p_sulf,"sulf"
+     print*,p_no2,"no2"
+     print*,p_no,"no"
+     print*,p_o3,"o3"
+     print*,p_hno3,"hno3"
+     print*,p_h2o2,"h2o2"
+     print*,p_ald,"ald"
+     print*,p_hcho,"hcho"
+     print*,p_op1,"op1"
+     print*,p_op2,"op2"
+     print*,p_paa,"paa"
+     print*,p_ora1,"ora1"
+     print*,p_ora2,"ora2"
+     print*,p_nh3,"nh3"
+     print*,p_n2o5,"n2o5"
+     print*,p_no3,"no3"
+     print*,p_pan,"pan"
+     print*,p_hc3,"hc3"
+     print*,p_hc5,"hc5"
+     print*,p_hc8,"hc8"
+     print*,p_eth,"eth"
+     print*,p_ch4,"ch4"
+     print*,p_co,"co"
+     print*,p_ol2,"ol2"
+     print*,p_olt,"olt"
+     print*,p_oli,"oli"
+     print*,p_tol,"tol"
+     print*,p_xyl,"xyl"
+     print*,p_aco3,"aco3"
+     print*,p_tpan,"tpan"
+     print*,p_hono,"hono"
+     print*,p_hno4,"hno4"
+     print*,p_ket,"ket"
+     print*,p_gly,"gly"
+     print*,p_mgly,"mgly"
+     print*,p_dcb,"dcb"
+     print*,p_onit,"onit"
+     print*,p_csl,"csl"
+     print*,p_iso,"iso"
+     print*,p_ho,"ho"
+     print*,p_ho2,"ho2"
+     print*,p_hcl,"hcl"
+     print*,p_ch3o2,"ch3o2"
+     print*,p_ethp,"ethp"
+     print*,p_ch3oh,"ch3oh"
+     print*,p_c2h5oh,"c2h5oh"
+     print*,p_par,"par"
+     print*,p_to2,"to2"
+     print*,p_cro,"cro"
+     print*,p_open,"open"
+     print*,p_op3,"op3"
+     print*,p_c2o3,"c2o3"
+     print*,p_ro2,"ro2"
+     print*,p_ano2,"ano2"
+     print*,p_nap,"nap"
+     print*,p_xo2,"xo2"
+     print*,p_xpar,"xpar"
+     print*,p_isoprd,"isoprd"
+     print*,p_isopp,"isopp"
+     print*,p_isopn,"isopn"
+     print*,p_isopo2,"isopo2"
+     print*,p_aro1,"aro1"
+     print*,p_aro2,"aro2"
+     print*,p_alk1,"alk1"
+     print*,p_ole1,"ole1"
+     print*,p_api1,"api1"
+     print*,p_api2,"api2"
+     print*,p_lim1,"lim1"
+     print*,p_lim2,"lim2"
+     print*,p_api,"api"
+     print*,p_lim,"lim"
+
+  case (SAPRC99_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP,SAPRC99_MOSAIC_8BIN_VBS2_AQ_KPP)!BSINGH(12/03/2013): Added SAPRC 8 bin 
+     print*,p_o3,"o3"
+     print*,p_h2o2,"h2o2"
+     print*,p_no,"no"
+     print*,p_no2,"no2"
+     print*,p_no3,"no3"
+     print*,p_n2o5,"n2o5"
+     print*,p_hono,"hono"
+     print*,p_hno3,"hno3"
+     print*,p_hno4,"hno4"
+     print*,p_so2,"so2"
+     print*,p_h2so4,"h2so4"
+     print*,p_co,"co"
+     print*,p_hcho,"hcho"
+     print*,p_ccho,"ccho"
+     print*,p_rcho,"rcho"
+     print*,p_acet,"acet"
+     print*,p_mek,"mek"
+     print*,p_hcooh,"hcooh"
+     print*,p_meoh,"meoh"
+     print*,p_etoh,"etoh"
+     print*,p_cco_oh,"cco_oh"
+     print*,p_rco_oh,"rco_oh"
+     print*,p_gly,"gly"
+     print*,p_mgly,"mgly"
+     print*,p_bacl,"bacl"
+     print*,p_cres,"cres"
+     print*,p_bald,"bald"
+     print*,p_isoprod,"isoprod"
+     print*,p_methacro,"methacro"
+     print*,p_mvk,"mvk"
+     print*,p_prod2,"prod2"
+     print*,p_dcb1,"dcb1"
+     print*,p_dcb2,"dcb2"
+     print*,p_dcb3,"dcb3"
+     print*,p_ethene,"ethene"
+     print*,p_isoprene,"isoprene"
+     print*,p_c2h6,"c2h6"
+     print*,p_c3h8,"c3h8"
+     print*,p_c2h2,"c2h2"
+     print*,p_c3h6,"c3h6"
+     print*,p_alk3,"alk3"
+     print*,p_alk4,"alk4"
+     print*,p_alk5,"alk5"
+     print*,p_aro1,"aro1"
+     print*,p_aro2,"aro2"
+     print*,p_ole1,"ole1"
+     print*,p_ole2,"ole2"
+     print*,p_terp,"terp"
+     print*,p_sesq,"sesq"
+     print*,p_rno3,"rno3"
+     print*,p_nphe,"nphe"
+     print*,p_phen,"phen"
+     print*,p_pan,"pan"
+     print*,p_pan2,"pan2"
+     print*,p_pbzn,"pbzn"
+     print*,p_ma_pan,"ma_pan"
+     print*,p_bc_spr,"bc_spr"
+     print*,p_oc_spr,"oc_spr"
+     print*,p_ssf,"ssf"
+     print*,p_ssc,"ssc"
+     print*,p_pm10_spr,"pm10_spr"
+     print*,p_pm25_spr,"pm25_spr"
+     print*,p_dms,"dms"
+     print*,p_dst1,"dst1"
+     print*,p_dst2,"dst2"
+     print*,p_dst3,"dst3"
+     print*,p_co2,"co2"
+     print*,p_cco_ooh,"cco_ooh"
+     print*,p_rco_o2,"rco_o2"
+     print*,p_rco_ooh,"rco_ooh"
+     print*,p_xn,"xn"
+     print*,p_xc,"xc"
+     print*,p_ho,"oh"
+     print*,p_ho2,"ho2"
+     print*,p_c_o2,"c_o2"
+     print*,p_cooh,"cooh"
+     print*,p_rooh,"rooh"
+     print*,p_ro2_r,"ro2_r"
+     print*,p_r2o2,"r2o2"
+     print*,p_ro2_n,"ro2_n"
+     print*,p_cco_o2,"cco_o2"
+     print*,p_bzco_o2,"bzco_o2"
+     print*,p_ma_rco3,"ma_rco3"
+     print*,p_ch4,"ch4"
+  case (CB05_SORG_AQ_KPP, CB05_SORG_VBS_AQ_KPP)
+     print*,p_nh3,"nh3"
   end select
 !
 ! Aerosol species...
 !
   select case (chem_opt)
   case (RADM2SORG, RADM2SORG_AQ, RADM2SORG_AQCHEM, RADM2SORG_KPP, RACMSORG_AQ, RACMSORG_AQCHEM_KPP, &
-        RACM_ESRLSORG_AQCHEM_KPP, RACMSORG_KPP, RACM_ESRLSORG_KPP, CBMZSORG, CBMZSORG_AQ,RACMSORG)
+        RACM_ESRLSORG_AQCHEM_KPP, RACMSORG_KPP, RACM_ESRLSORG_KPP, CBMZSORG, CBMZSORG_AQ,RACMSORG,  &
+        CB05_SORG_AQ_KPP, CB05_SORG_VBS_AQ_KPP)
      print*,p_so4aj,"so4aj"
      print*,p_so4ai,"so4ai"
      print*,p_nh4aj,"nh4aj"

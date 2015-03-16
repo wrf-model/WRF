@@ -34,4 +34,4 @@ state    real   q_pl   i{np}j   misc    1  Z   h{23}  "Q_PL"    "Pressure level 
 #  Package declarations
 
 package   skip_press_diags      p_lev_diags==0     -        -
-package        press_diags      p_lev_diags==1     -        state:p_pl,u_pl,v_pl,t_pl,rh_pl,ght_pl,s_pl,td_pl
+package        press_diags      p_lev_diags==1     -        state:p_pl,u_pl,v_pl,t_pl,rh_pl,ght_pl,s_pl,td_pl,q_pl

@@ -16,6 +16,7 @@ subroutine init_4dvar
 
    ! Save the some physics options, as they will be changed in TL and AD model.
    call nl_get_mp_physics (head_grid%id, original_mp_physics) 
+   call nl_get_mp_physics_ad (head_grid%id, original_mp_physics_ad)
    call nl_get_ra_lw_physics (head_grid%id, original_ra_lw_physics)
    call nl_get_ra_sw_physics (head_grid%id, original_ra_sw_physics)
    call nl_get_sf_sfclay_physics (head_grid%id, original_sf_sfclay_physics)

@@ -32,7 +32,7 @@ character*256 :: timestr
 ! Define some variables to save the NL physical option
 integer :: original_mp_physics, original_ra_lw_physics, original_ra_sw_physics, &
            original_sf_sfclay_physics, original_bl_pbl_physics, original_cu_physics, &
-           original_ifsnow, original_icloud, original_cudt
+           original_ifsnow, original_icloud, original_cudt, original_mp_physics_ad
 
 REAL , DIMENSION(:,:,:) , ALLOCATABLE  :: ubdy3dtemp1 , vbdy3dtemp1 , tbdy3dtemp1 , pbdy3dtemp1 , qbdy3dtemp1
 REAL , DIMENSION(:,:,:) , ALLOCATABLE  :: ubdy3dtemp2 , vbdy3dtemp2 , tbdy3dtemp2 , pbdy3dtemp2 , qbdy3dtemp2

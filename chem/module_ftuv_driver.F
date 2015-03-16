@@ -116,6 +116,11 @@
       integer, private, parameter :: pid_hyac  = 29
       integer, private, parameter :: pid_glyald= 30
 
+! added for CB05CL
+! These numbers are referred to from module_wave_data.F (sjref(ii,XX))
+      integer, private, parameter :: pid_cl2   = 56
+      integer, private, parameter :: pid_hocl  = 57
+      integer, private, parameter :: pid_fmcl  = 58
 
       contains
 
@@ -135,7 +140,9 @@
                               ph_pooh,ph_rooh,ph_xooh,ph_isopooh,      &
                               ph_alkooh,ph_mekooh,ph_tolooh,           &
                               ph_terpooh,ph_n2o5,ph_mvk,ph_glyald,     &
-                              ph_hyac, ivgtyp,                         &
+                              ph_hyac,                                 &
+                              ph_cl2,ph_hocl,ph_fmcl,                  &
+                              ivgtyp,                                  &
                               ph_radfld, ph_adjcoe, ph_prate,          &
                               wc_x, zref_x,                            &
                               tauaer1, tauaer2, tauaer3, tauaer4,      &    !rajesh
@@ -207,7 +214,8 @@
                              ph_bigald, ph_mek, ph_c2h5ooh, ph_c3h7ooh,&
                              ph_pooh,ph_rooh,ph_xooh,ph_isopooh,       &
                              ph_alkooh,ph_mekooh,ph_tolooh,ph_terpooh, &
-                             ph_n2o5,ph_mvk,ph_glyald,ph_hyac
+                             ph_n2o5,ph_mvk,ph_glyald,ph_hyac,         &
+                             ph_cl2,ph_hocl,ph_fmcl
 
       real, dimension( ims:ime, nref, jms:jme, nw-1 ),                 &
             intent(out  ) :: ph_radfld
@@ -284,7 +292,8 @@
       isorg=0
       aer_select: SELECT CASE(config_flags%chem_opt)
          CASE (RADM2SORG,RADM2SORG_KPP,RACMSORG_KPP,RADM2SORG_AQCHEM,RACM_ESRLSORG_KPP,RACMSORG_AQ,RACMSORG_AQCHEM_KPP, &
-               RACM_ESRLSORG_AQCHEM_KPP,CBMZSORG,CBMZSORG_AQ)
+               RACM_ESRLSORG_AQCHEM_KPP,CBMZSORG,CBMZSORG_AQ, &
+               CB05_SORG_AQ_KPP,CB05_SORG_VBS_AQ_KPP)
              isorg=1
              CALL wrf_debug(15,'SORGAM aerosols initialization ')
          CASE (MOZART_MOSAIC_4BIN_KPP, MOZART_MOSAIC_4BIN_AQ_KPP)
@@ -403,11 +412,21 @@ level_loop : &
              acb1(kp1) = chem(i,k,j,p_ecj)
 !            acb2(kp1) = 0.0_dp
 !            aoc1(kp1) = chem(i,k,j,p_orgpaj) + chem(i,k,j,p_orgbaj) + chem(i,k,j,p_orgaj)
+
+             if(config_flags%chem_opt == CB05_SORG_VBS_AQ_KPP) then
+             aoc1(kp1) = chem(i,k,j,p_orgpaj)+chem(i,k,j,p_asoa1j)+chem(i,k,j,p_asoa2j) &
+                         + chem(i,k,j,p_asoa3j)+chem(i,k,j,p_asoa4j) &
+                         + chem(i,k,j,p_bsoa1j)+chem(i,k,j,p_bsoa2j) &
+                         + chem(i,k,j,p_bsoa3j)+chem(i,k,j,p_bsoa4j)
+             else
              aoc1(kp1) = chem(i,k,j,p_orgpaj)
-!            aoc2(kp1) = 0.0_dp
+             endif
+!             aoc1(kp1) = chem(i,k,j,p_orgpaj)
+!             aoc2(kp1) = 0.0_dp
              aant(kp1) = chem(i,k,j,p_no3aj) + chem(i,k,j,p_nh4aj)
              aso4(kp1) = chem(i,k,j,p_so4aj)
-             asal(kp1) = chem(i,k,j,p_seas)
+!             asal(kp1) = chem(i,k,j,p_seas)
+             asal(kp1) = chem(i,k,j,p_seas) + chem(i,k,j,p_naaj) + chem(i,k,j,p_claj)
           elseif( config_flags%chem_opt == MOZART_KPP .or. &
                   config_flags%chem_opt == MOZCART_KPP ) then
              aso4(kp1) = chem(i,k,j,p_sulf)*air(kp1)*real(mw_so4_aer,kind=dp)*kg_per_amu*1.e-9_dp
@@ -544,6 +563,11 @@ level_loop : &
           ph_onit(i,k,j)  = max( 0._dp,prate(k,pid_onit)*m2s )
           ph_macr(i,k,j)  = max( 0._dp,prate(k,pid_macr) *m2s )
           ph_ch3coc2h5(i,k,j) = max( 0._dp,prate(k,23)*m2s )
+          ph_cl2(i,k,j)   = max( 0._dp,prate(k,pid_cl2)*m2s )
+          ph_hocl(i,k,j)  = max( 0._dp,prate(k,pid_hocl)*m2s )
+          ph_fmcl(i,k,j)  = max( 0._dp,prate(k,pid_fmcl)*m2s )
+          ph_pan(i,k,j)   = max( 0._dp,prate(k,pid_pan)*m2s )
+          ph_n2o5(i,k,j)  = max( 0._dp,prate(k,pid_n2o5)*m2s )
         enddo
 
         do m = 1,nw-1

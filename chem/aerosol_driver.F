@@ -4,6 +4,7 @@
 !                   William Gustafson (PNNL),Rainer Schmitz (University of Chile)  and Georg Grell
 !
 ! 10/12/2011 - Ravan Ahmadov (NOAA) updated to include the RACM_SOA_VBS option
+! 10/08/2014 - Kai Wang and Yang Zhang (NCSU) updated to include the CB05_MADE/SORGAM and CB05_MADE/VBS options
 !
       SUBROUTINE aerosols_driver (id,curr_secs,ktau,dtstep,ktauc,          &
                config_flags,dtstepc,dx,                                    &
@@ -29,6 +30,7 @@
    USE module_data_sorgam
    USE module_mosaic_driver, only:  mosaic_aerchem_driver
    USE module_aerosols_soa_vbs, only: soa_vbs_driver
+   USE module_aerosols_sorgam_vbs, only: sorgam_vbs_driver
    USE module_data_soa_vbs, only: ldrog_vbs
    USE module_cam_mam_aerchem_driver, only:  cam_mam_aerchem_driver
    USE modal_aero_data, only:  ntot_amode_cam_mam => ntot_amode
@@ -210,7 +212,8 @@
          ids,ide, jds,jde, kds,kde,                                        &
          ims,ime, jms,jme, kms,kme,                                        &
          its,ite, jts,jte, kts,kte                                         )
-   CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_AQCHEM,RADM2SORG_KPP,CBMZSORG,CBMZSORG_AQ)
+   CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_AQCHEM,RADM2SORG_KPP,CBMZSORG,CBMZSORG_AQ, &
+          CB05_SORG_AQ_KPP) 
        CALL wrf_debug(15,'aerosols_driver calling sorgam_driver')
        do ii=its,ite
           do kk=kts,kte
@@ -230,6 +233,25 @@
                ids,ide, jds,jde, kds,kde,                               &
                ims,ime, jms,jme, kms,kme,                               &
                its,ite, jts,jte, kts,kte                                )
+   CASE (CB05_SORG_VBS_AQ_KPP)
+       CALL wrf_debug(15,'aerosols_driver calling sorgam_vbs_driver')
+       do ii=its,ite
+          do kk=kts,kte
+             do jj=jts,jte
+                if(chem(ii,kk,jj,p_nu0).lt.1.e07)then
+                   chem(ii,kk,jj,p_nu0)=1.e7
+                endif
+             enddo
+          enddo
+       enddo
+       call sorgam_vbs_driver (id,ktauc,dtstepc,t_phy,moist,aerwrf,p8w,t8w, &
+            alt,p_phy,chem,rho_phy,dz8w,rh,z,z_at_w,                 &
+            h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,               &
+            vcsulf_old,vdrog3_vbs,                                   &
+            config_flags%kemit,brch_ratio,                           &
+            ids,ide, jds,jde, kds,kde,                               &
+            ims,ime, jms,jme, kms,kme,                               &
+            its,ite, jts,jte, kts,kte                                )
 
    CASE (RACMSORG_AQ,RACMSORG_AQCHEM_KPP,RACM_ESRLSORG_AQCHEM_KPP,RACMSORG_KPP,RACM_ESRLSORG_KPP)
 ! ???? are separate cases needed here for radm2sorg and racmsorg packages ????
@@ -256,6 +278,7 @@
    CASE (CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_KPP, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, &
          CBMZ_MOSAIC_8BIN_AQ, CBMZ_MOSAIC_4BIN_VBS2_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP, &
          MOZART_MOSAIC_4BIN_KPP, MOZART_MOSAIC_4BIN_AQ_KPP, &
+         SAPRC99_MOSAIC_8BIN_VBS2_AQ_KPP, SAPRC99_MOSAIC_8BIN_VBS2_KPP, & !BSINGH  Added "SAPRC99_MOSAIC_8BIN_VBS2_AQ_KPP" and "SAPRC99_MOSAIC_8BIN_VBS2_KPP"
          CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ)
        CALL wrf_debug(15,'aerosols_driver calling mosaic_aerchem_driver')
        CALL mosaic_aerchem_driver(                                      &
@@ -313,21 +336,51 @@
 !
 
    SUBROUTINE sum_pm_driver ( config_flags,                            &
-            alt, chem, h2oaj, h2oai,                                   &
-            pm2_5_dry, pm2_5_water, pm2_5_dry_ec, pm10,                &
+             alt, chem, h2oaj, h2oai,                                  &
+             pm2_5_dry, pm2_5_water, pm2_5_dry_ec, pm10,               &
+             tsoa,asoa,bsoa,                                           &
              hoa_a01,hoa_a02,hoa_a03,hoa_a04,                          &
+             hoa_a05,hoa_a06,hoa_a07,hoa_a08,                          & !BSINGH Added 4 more bins for each species for SAPRC 8 bin version
              bboa_a01,bboa_a02,bboa_a03,bboa_a04,                      &
+             bboa_a05,bboa_a06,bboa_a07,bboa_a08,                      &
              soa_a01,soa_a02,soa_a03,soa_a04,                          &
+             soa_a05,soa_a06,soa_a07,soa_a08,                          &
              bbsoa_a01,bbsoa_a02,bbsoa_a03,bbsoa_a04,                  &
+             bbsoa_a05,bbsoa_a06,bbsoa_a07,bbsoa_a08,                  &
              hsoa_a01,hsoa_a02,hsoa_a03,hsoa_a04,                      &
+             hsoa_a05,hsoa_a06,hsoa_a07,hsoa_a08,                      &
              biog_a01,biog_a02,biog_a03,biog_a04,                      &
-             asmpsoa_a01,asmpsoa_a02,asmpsoa_a03,asmpsoa_a04,              &
+             biog_a05,biog_a06,biog_a07,biog_a08,                      &
+             asmpsoa_a01,asmpsoa_a02,asmpsoa_a03,asmpsoa_a04,          &
              arosoa_a01,arosoa_a02,arosoa_a03,arosoa_a04,              &
+             arosoa_a05,arosoa_a06,arosoa_a07,arosoa_a08,              &
              totoa_a01,totoa_a02,totoa_a03,totoa_a04,                  &
+             totoa_a05,totoa_a06,totoa_a07,totoa_a08,                  &
              hsoa_c,hsoa_o,bbsoa_c,bbsoa_o,                            &
              biog_v1,biog_v2,biog_v3,biog_v4,                          &
              ant_v1,ant_v2,ant_v3,ant_v4,                              &
-             smpa_v1,smpbb_v1,                              &
+             smpa_v1,smpbb_v1,                                         &
+             !BSINGH - Added cw aerosols(for VBS)
+             hoa_cw01,    hoa_cw02,    hoa_cw03,    hoa_cw04,          &
+             hoa_cw05,    hoa_cw06,    hoa_cw07,    hoa_cw08,          &
+             bboa_cw01,   bboa_cw02,   bboa_cw03,   bboa_cw04,         &
+             bboa_cw05,   bboa_cw06,   bboa_cw07,   bboa_cw08,         &
+             soa_cw01,    soa_cw02,    soa_cw03,    soa_cw04,          &
+             soa_cw05,    soa_cw06,    soa_cw07,    soa_cw08,          &
+             bbsoa_cw01,  bbsoa_cw02,  bbsoa_cw03,  bbsoa_cw04,        &
+             bbsoa_cw05,  bbsoa_cw06,  bbsoa_cw07,  bbsoa_cw08,        &
+             biog_cw01,   biog_cw02,   biog_cw03,   biog_cw04,         &
+             biog_cw05,   biog_cw06,   biog_cw07,   biog_cw08,         &
+             hsoa_cw01,   hsoa_cw02,   hsoa_cw03,   hsoa_cw04,         &
+             hsoa_cw05,   hsoa_cw06,   hsoa_cw07,   hsoa_cw08,         &
+             arosoa_cw01, arosoa_cw02, arosoa_cw03, arosoa_cw04,       &
+             arosoa_cw05, arosoa_cw06, arosoa_cw07, arosoa_cw08,       &
+             totoa_cw01,  totoa_cw02,  totoa_cw03,  totoa_cw04,        &
+             totoa_cw05,  totoa_cw06,  totoa_cw07,  totoa_cw08,        &        
+             hsoa_cw_c,   hsoa_cw_o,   bbsoa_cw_c,  bbsoa_cw_o,        &
+             biog_cw_v1,                                               &
+             ant_cw_v1,                                                &
+             !BSINGH -ENDS
              ids,ide, jds,jde, kds,kde,                                &
              ims,ime, jms,jme, kms,kme,                                &
              its,ite, jts,jte, kts,kte                                  )
@@ -336,9 +389,10 @@
    USE module_configure
    USE module_aerosols_sorgam, only: sum_pm_sorgam
    USE module_mosaic_driver, only: sum_pm_mosaic,sum_pm_mosaic_vbs2,sum_pm_mosaic_vbs0,sum_pm_mosaic_vbs4,&
-                                   sum_vbs9,sum_vbs2,sum_vbs0,sum_vbs4
+                                   sum_vbs9,sum_vbs2,sum_vbs0,sum_vbs4,sum_aq_vbs2
    USE module_gocart_aerosols, only: sum_pm_gocart
    USE module_aerosols_soa_vbs, only: sum_pm_soa_vbs
+   USE module_aerosols_sorgam_vbs, only: sum_pm_sorgam_vbs
 
    IMPLICIT NONE
 
@@ -359,20 +413,50 @@
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                       &
          OPTIONAL,                                                     &
          INTENT(OUT) :: pm2_5_dry,pm2_5_water,pm2_5_dry_ec,pm10,       &
+             tsoa,asoa,bsoa,                                           &
              hoa_a01,hoa_a02,hoa_a03,hoa_a04,                          &
+             hoa_a05,hoa_a06,hoa_a07,hoa_a08,                          &!BSINGH Added 4 more bins for each species for SAPRC 8 bin version             
              bboa_a01,bboa_a02,bboa_a03,bboa_a04,                      &
+             bboa_a05,bboa_a06,bboa_a07,bboa_a08,                      & 
              soa_a01,soa_a02,soa_a03,soa_a04,                          &
+             soa_a05,soa_a06,soa_a07,soa_a08,                          & 
              bbsoa_a01,bbsoa_a02,bbsoa_a03,bbsoa_a04,                  &
+             bbsoa_a05,bbsoa_a06,bbsoa_a07,bbsoa_a08,                  &       
              hsoa_a01,hsoa_a02,hsoa_a03,hsoa_a04,                      &
+             hsoa_a05,hsoa_a06,hsoa_a07,hsoa_a08,                      &  
              biog_a01,biog_a02,biog_a03,biog_a04,                      &
+             biog_a05,biog_a06,biog_a07,biog_a08,                      & 
              arosoa_a01,arosoa_a02,arosoa_a03,arosoa_a04,              &
+             arosoa_a05,arosoa_a06,arosoa_a07,arosoa_a08,              &   
              totoa_a01,totoa_a02,totoa_a03,totoa_a04,                  &
+             totoa_a05,totoa_a06,totoa_a07,totoa_a08,                  &    
              hsoa_c,hsoa_o,bbsoa_c,bbsoa_o,                            &
              biog_v1,biog_v2,biog_v3,biog_v4,                          &
-             ant_v1,ant_v2,ant_v3,ant_v4,                         &
-             smpa_v1,                          &
-             smpbb_v1,                          &
-             asmpsoa_a01,asmpsoa_a02,asmpsoa_a03,asmpsoa_a04
+             ant_v1,ant_v2,ant_v3,ant_v4,                              &
+             smpa_v1,                                                  &
+             smpbb_v1,                                                 &
+             asmpsoa_a01,asmpsoa_a02,asmpsoa_a03,asmpsoa_a04,       &!BSINGH - Not adding 5-8 bins for asmpsoa, as it is not req. for 8 bin SAPRC
+             !BSINGH - Added cw aerosols(for VBS)
+             hoa_cw01,    hoa_cw02,    hoa_cw03,    hoa_cw04,          &
+             hoa_cw05,    hoa_cw06,    hoa_cw07,    hoa_cw08,          &
+             bboa_cw01,   bboa_cw02,   bboa_cw03,   bboa_cw04,         &
+             bboa_cw05,   bboa_cw06,   bboa_cw07,   bboa_cw08,         &
+             soa_cw01,    soa_cw02,    soa_cw03,    soa_cw04,          &
+             soa_cw05,    soa_cw06,    soa_cw07,    soa_cw08,          &
+             bbsoa_cw01,  bbsoa_cw02,  bbsoa_cw03,  bbsoa_cw04,        &
+             bbsoa_cw05,  bbsoa_cw06,  bbsoa_cw07,  bbsoa_cw08,        &
+             biog_cw01,   biog_cw02,   biog_cw03,   biog_cw04,         &
+             biog_cw05,   biog_cw06,   biog_cw07,   biog_cw08,         &
+             hsoa_cw01,   hsoa_cw02,   hsoa_cw03,   hsoa_cw04,         &
+             hsoa_cw05,   hsoa_cw06,   hsoa_cw07,   hsoa_cw08,         &
+             arosoa_cw01, arosoa_cw02, arosoa_cw03, arosoa_cw04,       &
+             arosoa_cw05, arosoa_cw06, arosoa_cw07, arosoa_cw08,       &
+             totoa_cw01,  totoa_cw02,  totoa_cw03,  totoa_cw04,        &
+             totoa_cw05,  totoa_cw06,  totoa_cw07,  totoa_cw08,        &        
+             hsoa_cw_c,   hsoa_cw_o,   bbsoa_cw_c,  bbsoa_cw_o,        &
+             biog_cw_v1,                                               &
+             ant_cw_v1                                                 
+             !BSINGH -ENDS
  
 
    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
@@ -389,13 +473,21 @@
             ids,ide, jds,jde, kds,kde,                                 &
             ims,ime, jms,jme, kms,kme,                                 &
             its,ite, jts,jte, kts,kte                                  )
-
    CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_AQCHEM,RACMSORG_AQ,RACMSORG_AQCHEM_KPP,RACM_ESRLSORG_AQCHEM_KPP,RADM2SORG_KPP, &
-         RACMSORG_KPP,RACM_ESRLSORG_KPP,CBMZSORG,CBMZSORG_AQ)
+         RACMSORG_KPP,RACM_ESRLSORG_KPP,CBMZSORG,CBMZSORG_AQ,CB05_SORG_AQ_KPP)
        CALL wrf_debug(15,'sum_pm_driver: calling sum_pm_sorgam')
        CALL sum_pm_sorgam (                                            &
             alt, chem, h2oaj, h2oai,                                   &
             pm2_5_dry, pm2_5_water, pm2_5_dry_ec, pm10,                &
+            config_flags%dust_opt,ids,ide, jds,jde, kds,kde,           &
+            ims,ime, jms,jme, kms,kme,                                 &
+            its,ite, jts,jte, kts,kte                                  )
+      CASE (CB05_SORG_VBS_AQ_KPP)
+       CALL wrf_debug(15,'sum_pm_driver: calling sum_pm_sorgam_vbs')
+       CALL sum_pm_sorgam_vbs (                                        &
+            alt, chem, h2oaj, h2oai,                                   &
+            pm2_5_dry, pm2_5_water, pm2_5_dry_ec, pm10,                &
+            tsoa,asoa,bsoa,                                            &
             config_flags%dust_opt,ids,ide, jds,jde, kds,kde,           &
             ims,ime, jms,jme, kms,kme,                                 &
             its,ite, jts,jte, kts,kte                                  )
@@ -434,13 +526,21 @@
        call sum_vbs2 (                                                 &
              alt, chem,                                                &
              hoa_a01,hoa_a02,hoa_a03,hoa_a04,                          &
+             hoa_a05,hoa_a06,hoa_a07,hoa_a08,                          &
              bboa_a01,bboa_a02,bboa_a03,bboa_a04,                      &
+             bboa_a05,bboa_a06,bboa_a07,bboa_a08,                      &
              soa_a01,soa_a02,soa_a03,soa_a04,                          &
+             soa_a05,soa_a06,soa_a07,soa_a08,                          &
              bbsoa_a01,bbsoa_a02,bbsoa_a03,bbsoa_a04,                  &
+             bbsoa_a05,bbsoa_a06,bbsoa_a07,bbsoa_a08,                  &
              hsoa_a01,hsoa_a02,hsoa_a03,hsoa_a04,                      &
+             hsoa_a05,hsoa_a06,hsoa_a07,hsoa_a08,                      &
              biog_a01,biog_a02,biog_a03,biog_a04,                      &
+             biog_a05,biog_a06,biog_a07,biog_a08,                      &
              arosoa_a01,arosoa_a02,arosoa_a03,arosoa_a04,              &
+             arosoa_a05,arosoa_a06,arosoa_a07,arosoa_a08,              &
              totoa_a01,totoa_a02,totoa_a03,totoa_a04,                  &
+             totoa_a05,totoa_a06,totoa_a07,totoa_a08,                  &
              hsoa_c,hsoa_o,bbsoa_c,bbsoa_o,                            &
              biog_v1,biog_v2,biog_v3,biog_v4,                          &
              ant_v1,ant_v2,ant_v3,ant_v4,                              &
@@ -497,7 +597,64 @@
              ant_v1,ant_v2,ant_v3,ant_v4,                              &
              ids,ide, jds,jde, kds,kde,                                &
              ims,ime, jms,jme, kms,kme,                                &
+             its,ite, jts,jte, kts,kte                                 )
+       !BSINGH -  Added for 8 bin SAPRC VBS 2 and non-aq on (04/07/2014)
+    CASE (SAPRC99_MOSAIC_8BIN_VBS2_AQ_KPP,SAPRC99_MOSAIC_8BIN_VBS2_KPP)
+       
+       CALL wrf_debug(15,'sum_pm_driver: calling sum_pm_mosaic_vbs2')
+       call sum_pm_mosaic_vbs2 (                                       &
+            alt, chem,                                                 &
+            pm2_5_dry, pm2_5_water, pm2_5_dry_ec, pm10,                &
+            ids,ide, jds,jde, kds,kde,                                 &
+            ims,ime, jms,jme, kms,kme,                                 &
+            its,ite, jts,jte, kts,kte                                  )
+
+       CALL wrf_debug(15,'sum_pm_driver: calling sum_vbs2')
+       call sum_vbs2 (                                                 &
+             alt, chem,                                                &
+             hoa_a01,hoa_a02,hoa_a03,hoa_a04,                          &
+             hoa_a05,hoa_a06,hoa_a07,hoa_a08,                          &
+             bboa_a01,bboa_a02,bboa_a03,bboa_a04,                      &
+             bboa_a05,bboa_a06,bboa_a07,bboa_a08,                      &
+             soa_a01,soa_a02,soa_a03,soa_a04,                          &
+             soa_a05,soa_a06,soa_a07,soa_a08,                          &
+             bbsoa_a01,bbsoa_a02,bbsoa_a03,bbsoa_a04,                  &
+             bbsoa_a05,bbsoa_a06,bbsoa_a07,bbsoa_a08,                  &
+             hsoa_a01,hsoa_a02,hsoa_a03,hsoa_a04,                      &
+             hsoa_a05,hsoa_a06,hsoa_a07,hsoa_a08,                      &
+             biog_a01,biog_a02,biog_a03,biog_a04,                      &
+             biog_a05,biog_a06,biog_a07,biog_a08,                      &
+             arosoa_a01,arosoa_a02,arosoa_a03,arosoa_a04,              &
+             arosoa_a05,arosoa_a06,arosoa_a07,arosoa_a08,              &
+             totoa_a01,totoa_a02,totoa_a03,totoa_a04,                  &
+             totoa_a05,totoa_a06,totoa_a07,totoa_a08,                  &
+             hsoa_c,hsoa_o,bbsoa_c,bbsoa_o,                            &
+             biog_v1,biog_v2,biog_v3,biog_v4,                          &
+             ant_v1,ant_v2,ant_v3,ant_v4,                              &
+             ids,ide, jds,jde, kds,kde,                                &
+             ims,ime, jms,jme, kms,kme,                                &
              its,ite, jts,jte, kts,kte                                  )
+
+
+
+       CALL wrf_debug(15,'sum_pm_driver: calling sum_aq_vbs2')
+       call sum_aq_vbs2 (                                                  &
+             alt, chem,                                                    &
+             hoa_cw01,hoa_cw02,hoa_cw03,hoa_cw04,hoa_cw05,hoa_cw06,hoa_cw07,hoa_cw08,                          &
+             bboa_cw01,bboa_cw02,bboa_cw03,bboa_cw04,bboa_cw05,bboa_cw06,bboa_cw07,bboa_cw08,                  &
+             soa_cw01,soa_cw02,soa_cw03,soa_cw04,soa_cw05,soa_cw06,soa_cw07,soa_cw08,                          &
+             bbsoa_cw01,bbsoa_cw02,bbsoa_cw03,bbsoa_cw04,bbsoa_cw05,bbsoa_cw06,bbsoa_cw07,bbsoa_cw08,          &
+             hsoa_cw01,hsoa_cw02,hsoa_cw03,hsoa_cw04,hsoa_cw05,hsoa_cw06,hsoa_cw07,hsoa_cw08,                  &
+             biog_cw01,biog_cw02,biog_cw03,biog_cw04,biog_cw05,biog_cw06,biog_cw07,biog_cw08,                  &
+             arosoa_cw01,arosoa_cw02,arosoa_cw03,arosoa_cw04,arosoa_cw05,arosoa_cw06,arosoa_cw07,arosoa_cw08,  &
+             totoa_cw01,totoa_cw02,totoa_cw03,totoa_cw04,totoa_cw05,totoa_cw06,totoa_cw07,totoa_cw08,          &
+             hsoa_cw_c,hsoa_cw_o,bbsoa_cw_c,bbsoa_cw_o,                    &
+             biog_cw_v1,                                                   &
+             ant_cw_v1,                                                    &
+             ids,ide, jds,jde, kds,kde,                                &
+             ims,ime, jms,jme, kms,kme,                                &
+             its,ite, jts,jte, kts,kte                                  )
+       !BSINGH -ENDS
 
    CASE DEFAULT 
 

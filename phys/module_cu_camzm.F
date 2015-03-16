@@ -197,7 +197,16 @@ end subroutine zmconv_readnl
    ! convection is too weak, thus adjusted to 2400.
 #ifndef WRF_PORT
    hgrid = get_resolution()
-#endif
+   tau = 3600._r8
+!  PMA: Standard 2-deg CAM5.1 uses 1-hr relaxation time scale which is too long for the
+!  mesoscale model to remove CAPE quickly. As a result, the model generates grid-scale 
+!  storms and becomes unstable sometimes (Williamson, 2012). Hence, we sets tau as a function
+!  of the length of time step. The caveat of this is that the model behavior
+!  of precipitation will be different to CAM5. We acknowledge that reducing dynamical
+!  time step can also make a stable model simulation. March 12, 2013
+!
+   tau = max(min(2._r8*DTT,1200._r8),120._r8)
+#else
 
 !PMA: The 1.9x2.5 deg CAM5 uses tau = 3600s. With higher resolution and shorter timestep in CAM,
 !     tau is set to a smaller value. Williamson (2012) found that without reducing tau in a high-res
@@ -218,6 +227,7 @@ end subroutine zmconv_readnl
 
    tau = max(taumin, taumax*min(1._r8,deltax/ref_dx))
 
+#endif
    if ( masterproc ) then
       write(iulog,*) 'delta X =',deltax
 #ifdef WRF_PORT
@@ -229,6 +239,10 @@ end subroutine zmconv_readnl
       call wrf_debug(1,iulog)
 #endif
       write(iulog,*) 'tuning parameters zm_convi: tau',tau
+#ifdef WRF_PORT
+      call wrf_message(iulog)
+#endif
+      write(iulog,*) 'Standard 2-deg CAM5.1 sets tau=3600s and is reduced for the mesoscale model WRF'
 #ifdef WRF_PORT
       call wrf_debug(1,iulog)
 #endif

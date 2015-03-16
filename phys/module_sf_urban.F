@@ -19,6 +19,7 @@ MODULE module_sf_urban
    REAL, ALLOCATABLE, DIMENSION(:) :: RW_TBL
    REAL, ALLOCATABLE, DIMENSION(:) :: HGT_TBL
    REAL, ALLOCATABLE, DIMENSION(:) :: AH_TBL
+   REAL, ALLOCATABLE, DIMENSION(:) :: ALH_TBL
    REAL, ALLOCATABLE, DIMENSION(:) :: BETR_TBL
    REAL, ALLOCATABLE, DIMENSION(:) :: BETB_TBL
    REAL, ALLOCATABLE, DIMENSION(:) :: BETG_TBL
@@ -67,6 +68,20 @@ MODULE module_sf_urban
    REAL, DIMENSION(1:24)           :: ahdiuprf        ! ah diurnal profile, tloc: 1-24
    REAL, DIMENSION(1:24)           :: hsequip_tbl
 
+!===Yang, 2014/10/08, urban hydrological processes for single layer UCM===
+   INTEGER                         :: IMP_SCHEME, IRI_SCHEME
+   INTEGER                         :: alhoption       ! anthropogenic latent heat option
+   INTEGER                         :: groption        ! anthropogenic latent heat option
+   REAL                            :: fgr             ! green roof fraction
+   REAL                            :: oasis           ! urban oasis parameter
+   REAL, DIMENSION(1:4)            :: DZGR            ! Layer depth of green roof 
+   REAL, DIMENSION(1:4)            :: alhseason       ! seasonal variation of alh
+   REAL, DIMENSION(1:48)           :: alhdiuprf       ! alh diurnal profile, tloc2: 1-48
+   REAL, DIMENSION(1:3)            :: porimp          ! porosity of pavement over impervious surface
+   REAL, DIMENSION(1:3)            :: dengimp         ! maximum water-holding depth of pavement
+
+!===end hydrological processes===
+   
    INTEGER                         :: allocate_status 
 
 !   INTEGER                         :: num_roof_layers
@@ -189,6 +204,7 @@ MODULE module_sf_urban
 ! Following parameter are assigned in run/URBPARM.TBL
 !
 !  AH  [ W m{-2} ]        : anthropogenic heat  ( W m{-2} in the table, converted internally to cal cm{-2} )
+!  ALH [ W m{-2} ]        : anthropogenic latent heat  ( W m{-2} in the table, converted internally to cal cm{-2} )
 !  CAPR[ J m{-3} K{-1} ]  : heat capacity of roof ( units converted in code to [ cal cm{-3} deg{-1} ] )
 !  CAPB[ J m{-3} K{-1} ]  : heat capacity of building wall ( units converted in code to [ cal cm{-3} deg{-1} ] )
 !  CAPG[ J m{-3} K{-1} ]  : heat capacity of road ( units converted in code to [ cal cm{-3} deg{-1} ] )
@@ -222,7 +238,11 @@ MODULE module_sf_urban
 !                         [1: M-O Similarity Theory,  2: Empirical Form (recommend)]
 !  TS_SCHEME [integer 1 or 2] : Scheme for computing surface temperature (for roof, wall, and road)
 !                         [1: 4-layer model,  2: Force-Restore method]
-!
+!  IMP_SCHEME[integer 1 or 2] : Evaporation scheme for impervious surfaces (roof, wall, and road)
+!                         [1: Hypothesized evaporation during large rainfall events
+!                         [2: Water-holding scheme over impervious surface
+!  IRI_SCHEME[integer 0 or 1] : Scheme for urban irrigation
+!                         [0: No irrigation,  1: Summertime (May-Sep) irrigation everyday at 9pm]
 !for BEP
 !  numdir [ - ]             : Number of street directions defined for a particular urban category
 !  street_direction [ deg ] : Direction of streets for a particular urban category and a particular street direction
@@ -251,6 +271,7 @@ MODULE module_sf_urban
 !     Kusaka et al. (2001) Bound.-Layer Meteor., vol.101, p329-358
 !
 ! History:
+!     2014/10,         modified by Jiachuan Yang (ASU)
 !     2006/06          modified by H. Kusaka (Univ. Tsukuba), M. Tewari 
 !     2005/10/26,      modified by Fei Chen, Mukul Tewari
 !     2003/07/21 WRF , modified  by H. Kusaka of CRIEPI (NCAR/MMM)
@@ -277,7 +298,9 @@ MODULE module_sf_urban
                     GZ1OZ0,                                           & ! O
                     CMR_URB,CHR_URB,CMC_URB,CHC_URB,                  & ! I/O
                     U10,V10,TH2,Q2,UST,mh_urb,stdh_urb,lf_urb,        & ! O 
-                    lp_urb,hgt_urb,frc_urb,lb_urb,zo_check)
+                    lp_urb,hgt_urb,frc_urb,lb_urb,zo_check,           & ! O
+                    CMCR,TGR,TGRL,SMR,CMGR_URB,CHGR_URB,jmonth,       & ! H
+                    DRELR,DRELB,DRELG,FLXHUMR,FLXHUMB,FLXHUMG)
 
    IMPLICIT NONE
 
@@ -320,7 +343,7 @@ MODULE module_sf_urban
 
    INTEGER, INTENT(IN) :: UTYPE ! urban type [1=Commercial/Industrial, 2=High-intensity residential, 
                                 ! 3=low-intensity residential]
-
+   INTEGER, INTENT(IN) :: jmonth! current month 
    REAL, INTENT(IN)    :: TA   ! potential temp at 1st atmospheric level [K]
    REAL, INTENT(IN)    :: QA   ! mixing ratio at 1st atmospheric level  [kg/kg]
    REAL, INTENT(IN)    :: UA   ! wind speed at 1st atmospheric level    [m/s]
@@ -408,11 +431,30 @@ MODULE module_sf_urban
    REAL, DIMENSION(1:num_wall_layers), INTENT(INOUT) :: TBL
    REAL, DIMENSION(1:num_road_layers), INTENT(INOUT) :: TGL
 
+!===Yang,2014/10/08, urban hydrological variables for single layer UCM===
+! FLXHUMR: evaporation over roof  [m/s];     FLXHUMRP: at previous time step [m/s]
+! FLXHUMB: evaporation over wall  [m/s];     FLXHUMBP: at previous time step [m/s]
+! FLXHUMG: evaporation over road  [m/s];     FLXHUMGP: at previous time step [m/s]
+
+! DRELR: water retention depth on roof [m];  DRELRP: at previous time stp [m] 
+! DRELB: water retention depth on wall [m];  DRELBP: at previous time stp [m] 
+! DRELG: water retention depth on road [m];  DRELGP: at previous time stp [m]
+  
+! TGR: green roof surface temperature  [K];      TGRP: at previous time step [K]
+! CMCR: Canopy intercepted water on green roof;  CMCRP: at previous time step
+! SMR: soil moisture at each layer on roof [-];  SMRP: at previous time step
+! TGRL:layer temperature on green roof [K]
+  
+   REAL, INTENT(INOUT):: FLXHUMR,FLXHUMB,FLXHUMG,DRELR,DRELB,DRELG
+   REAL, INTENT(INOUT):: TGR,CMCR,CHGR_URB,CMGR_URB
+   REAL, DIMENSION(1:num_roof_layers), INTENT(INOUT) :: SMR        
+   REAL, DIMENSION(1:num_roof_layers), INTENT(INOUT) :: TGRL
+
 !-------------------------------------------------------------------------------
 ! L:  Local variables from read_param
 !-------------------------------------------------------------------------------
 
-   REAL :: ZR, Z0C, Z0HC, ZDC, SVF, R, RW, HGT, AH
+   REAL :: ZR, Z0C, Z0HC, ZDC, SVF, R, RW, HGT, AH, ALH
    REAL :: SIGMA_ZED
    REAL :: CAPR, CAPB, CAPG, AKSR, AKSB, AKSG, ALBR, ALBB, ALBG 
    REAL :: EPSR, EPSB, EPSG, Z0R,  Z0B,  Z0G,  Z0HB, Z0HG
@@ -449,12 +491,12 @@ MODULE module_sf_urban
    REAL :: W, VFGS, VFGW, VFWG, VFWS, VFWW
    REAL :: HOUI1, HOUI2, HOUI3, HOUI4, HOUI5, HOUI6, HOUI7, HOUI8
    REAL :: SLX, SLX1, SLX2, SLX3, SLX4, SLX5, SLX6, SLX7, SLX8
-   REAL :: FLXTHR, FLXTHB, FLXTHG, FLXHUMR, FLXHUMB, FLXHUMG
+   REAL :: FLXTHR, FLXTHB, FLXTHG
    REAL :: SR, SB, SG, RR, RB, RG
    REAL :: SR1, SR2, SB1, SB2, SG1, SG2, RR1, RR2, RB1, RB2, RG1, RG2
    REAL :: HR, HB, HG, ELER, ELEB, ELEG, G0R, G0B, G0G
    REAL :: ALPHAC, ALPHAR, ALPHAB, ALPHAG
-   REAL :: CHC, CHR, CHB, CHG, CDC, CDR, CDB, CDG
+   REAL :: CHC, CHR, CHB, CHG, CDC, CDR, CDB, CDG, CDGR
    REAL :: C1R, C1B, C1G, TE, TC1, TC2, QC1, QC2, QS0R, QS0B, QS0G,RHO,ES
 
    REAL :: DESDT
@@ -492,7 +534,50 @@ MODULE module_sf_urban
    REAL :: lambda_f,alpha_macd,beta_macd,lambda_fr
 
    INTEGER :: iteration, K, NUDAPT 
-   INTEGER :: tloc
+   INTEGER :: tloc, tloc2, Kalh
+
+!===Yang,2014/10/08, urban hydrological variables for single layer UCM===
+   REAL :: FLXHUMRP, FLXHUMBP, FLXHUMGP
+   REAL :: DRELRP, DRELBP, DRELGP
+   REAL :: TGRP, CMCRP
+   REAL, DIMENSION(1:num_roof_layers) :: ZSOILR, ETR, SMRP
+!===Define parameters for green roof===
+   INTEGER :: KZ
+   REAL :: RUNOFF1, RUNOFF2, RUNOFF3
+   REAL :: SGR, SGR1, T1VGR, CHGR, ALPHAGR 
+   REAL :: FLXTHGR, FLXHUMGR, HGR, ELEGR, G0GR
+   REAL :: QS0GR, EPGR, EDIR, ETTR, FV, DTGR, DRIP
+!   REAL :: DQS0GRDTGR, ETR, ECR,RAIN1, RAINDR, DEW, ETAR, BETGR
+   REAL :: DQS0GRDTGR, ECR,RAIN1, RAINDR, DEW, ETAR, BETGR
+!   REAL :: DF1, RGR, RGRR, RCH, RR1, RR2, YY, ZZ1, SSOILR
+   REAL :: DF1, RGR, RGRR, RCH, YY, ZZ1, SSOILR
+   REAL :: DRRDTGR, DHRDTGR, DELERDTGR, DG0RDTGR, DFDVT  
+   real,parameter  :: SHDFAC   = 0.80   ! Vegetated area fraction of green roof vegetation
+   real,parameter  :: ALBV     = 0.20   ! green roof albedo
+   real,parameter  :: EPSV     = 0.93   ! green roof emissivity
+   real,parameter  :: LAI      = 1.50   ! leaf area index on green roof
+   real,parameter  :: CMCMAX   = 0.5E-3 ! Maximum canopy interception capacity   
+   real,parameter  :: SMCREF   = 0.329  ! Reference soil moisture
+   real,parameter  :: SMCDRY   = 0.066  ! Residual  soil moisture
+   real,parameter  :: SMCWLT   = 0.084  ! Wilting point        
+   real,parameter  :: SMCMAX   = 0.439  ! Saturated soil moisture
+   real,parameter  :: RSMAX    = 5000   ! Maximum stomatal resistance
+   real,parameter  :: RSMIN    = 100    ! Minimum stomatal resistance
+   real,parameter  :: RGL      = 100    ! Radiation limit where photosynthesis begins
+   real,parameter  :: CFACTR   = 0.5    ! Parameter used in the canopy inteception calculation        
+   real,parameter  :: DWSAT    = 0.143E-4 ! Saturated soil conductivity            
+   real,parameter  :: DKSAT    = 3.38E-6  ! Saturated soil diffusivity
+   real,parameter  :: BEXP     = 5.25   ! B parameter in soil hydraulic calculation
+   real,parameter  :: FXEXP    = 2.0    ! Parameter for computing direct soil evaporation        
+   real,parameter  :: ZBOT     = -2.0   
+   real,parameter  :: QUARTZ   = 0.40
+   real,parameter  :: CSOIL    = 2.0E+6
+   real,parameter  :: HS       = 36
+   integer,parameter ::  NROOT = 2      ! Root depth layer of green roof
+   integer,parameter ::  NGR   = 4      ! Layer of green roof
+   integer,parameter ::  IMPR  = 1     
+   integer,parameter ::  IMPB  = 2      
+   integer,parameter ::  IMPG  = 3    
 
 !-------------------------------------------------------------------------------
 ! Set parameters
@@ -503,6 +588,12 @@ MODULE module_sf_urban
      tloc=mod(int(OMG/PI*180./15.+12.+0.5 ),24)
      if(tloc.lt.0) tloc=tloc+24
      if(tloc==0) tloc=24
+   endif
+! Yang, 2014/10/08, cal. alh
+   if(alhoption==1) then
+     tloc2=mod(int((OMG/PI*180./15.+12.)*2.+0.5 ),48)
+     if(tloc2.lt.0) tloc=tloc+48
+     if(tloc2==0) tloc2=48
    endif
 
    CALL read_param(UTYPE,ZR,SIGMA_ZED,Z0C,Z0HC,ZDC,SVF,R,RW,HGT,  &
@@ -515,7 +606,7 @@ MODULE module_sf_urban
                    HPERCENT_BIN,                                  & 
 !end BEP
                    BOUNDR,BOUNDB,BOUNDG,CH_SCHEME,TS_SCHEME,      &
-                   AKANDA_URBAN)
+                   AKANDA_URBAN,ALH)
 
 ! Glotfelty, 2012/07/05, NUDAPT Modification
 
@@ -666,6 +757,16 @@ MODULE module_sf_urban
 ! Miao, 2007/01/17, cal. ah
    if(ahoption==1) AH=AH*ahdiuprf(tloc)
 
+! Yang, 2014/10/08, cal. alh
+   Kalh=0
+   if(alhoption==1) THEN
+     if(jmonth==3 .or. jmonth==4 .or. jmonth==5) Kalh=1
+     if(jmonth==6 .or. jmonth==7 .or. jmonth==8) Kalh=2
+     if(jmonth==9 .or. jmonth==10.or. jmonth==11)Kalh=3
+     if(jmonth==12.or. jmonth==1 .or. jmonth==2) Kalh=4
+   endif
+   if(alhoption==1) ALH = ALH*alhdiuprf(tloc2)*alhseason(Kalh)
+
    IF( ZDC+Z0C+2. >= ZA) THEN
     CALL wrf_error_fatal ("ZDC + Z0C + 2m is larger than the 1st WRF level "// &
                            "Stop in subroutine urban - change ZDC and Z0C" ) 
@@ -702,6 +803,29 @@ MODULE module_sf_urban
    TCP=TC
    QCP=QC
 
+!===Yang,2014/10/08, urban hydrological variables for single layer UCM===
+   FLXHUMRP = FLXHUMR
+   FLXHUMBP = FLXHUMB
+   FLXHUMGP = FLXHUMG
+   DRELRP = DRELR
+   DRELBP = DRELB
+   DRELGP = DRELG
+   TGRP   = TGR
+   CMCRP  = CMCR
+   SMRP   = SMR 
+
+!===Yang,2014/10/08, urban irrigation, May-Sep, 9-10pm
+   IF(IRI_SCHEME==1) THEN
+       IF (tloc==21 .or. tloc==22) THEN
+         IF(jmonth==5 .or. jmonth==6 .or. jmonth ==7 .or. &
+          jmonth==8 .or. jmonth==9 ) THEN
+            DO KZ = 1,2
+               SMRP(KZ)= SMCREF
+             END DO
+       ENDIF
+     ENDIF
+   ENDIF
+
    TAV=TA*(1.+0.61*QA)
    PS=RHOO*287.*TAV/100. ![hPa]
 
@@ -734,6 +858,7 @@ MODULE module_sf_urban
      IF(.NOT.SHADOW) THEN              ! no shadow effects model
 
        SR1=SX*(1.-ALBR)
+       SGR1=SX*(1.-ALBV)
        SG1=SX*VFGS*(1.-ALBG)
        SB1=SX*VFWS*(1.-ALBB)
        SG2=SB1*ALBB/(1.-ALBB)*VFGW*(1.-ALBG)
@@ -779,6 +904,7 @@ MODULE module_sf_urban
        SLX=(SLX1+SLX2+SLX3+SLX4+SLX5+SLX6+SLX7+SLX8)/8.
 
        SR1=SD*(1.-ALBR)+SQ*(1.-ALBR)
+       SGR1=SD*(1.-ALBV)+SQ*(1.-ALBV)
        SG1=SD*(RW-SLX)/RW*(1.-ALBG)+SQ*VFGS*(1.-ALBG)
        SB1=SD*SLX/W*(1.-ALBB)+SQ*VFWS*(1.-ALBB)
        SG2=SB1*ALBB/(1.-ALBB)*VFGW*(1.-ALBG)
@@ -787,15 +913,21 @@ MODULE module_sf_urban
      END IF
 
      SR=SR1
+     SGR=SGR1
      SG=SG1+SG2
      SB=SB1+SB2
 
+     IF (GROPTION ==1) THEN
+     SNET=R*FGR*SGR+R*(1.-FGR)*SR+W*SB+RW*SG
+     ELSE
      SNET=R*SR+W*SB+RW*SG
+     ENDIF
 
    ELSE
 
      SR=0.
      SG=0.
+     SGR=0.
      SB=0.
      SNET=0.
 
@@ -825,7 +957,30 @@ MODULE module_sf_urban
    ALPHAR =  RHO*CP*CHR_URB
    CHR=ALPHAR/RHO/CP/UA
 
-   IF(RAIN > 1.) BETR=0.7  
+! Yang, 03/12/2014 -- LH for impervious roof surface  
+   RAIN1 = RAIN * 0.001 /3600          ! CONVERT FROM mm/hr to m/s
+   IF (IMP_SCHEME==1) then
+   IF (RAIN > 1.) BETR=0.7
+   ENDIF   
+
+   IF (IMP_SCHEME==2) then
+   IF (FLXHUMRP <= 0.) FLXHUMRP = 0. 
+!  Compute water retention depth from previous time step 
+   DrelR = DrelRP+(RAIN1-FLXHUMRP)*DELT/porimp(IMPR)
+   IF (RAIN > 0. .AND. DrelR < DrelRP) DrelR = DrelRP 
+  
+   IF (DrelR <= 0.) then
+   DrelR  = 0.0
+   BETR	  = 0.0
+   ELSEIf (DrelR <= dengimp(IMPR)) then
+   BETR = DrelR/dengimp(IMPR)*porimp(IMPR)
+   ELSE
+   DrelR = dengimp(IMPR)
+   BETR  = porimp(IMPR)   
+   ENDIF
+
+   IF ( BETR < 1.E-5 ) BETR = 0.0
+   ENDIF
 
    IF (TS_SCHEME == 1) THEN 
 
@@ -899,6 +1054,113 @@ MODULE module_sf_urban
    FLXHUMR=ELER/RHO/EL/100.
 
 !-------------------------------------------------------------------------------
+! Green Roof
+! Must use multiple layers scheme (TS_SCHEME=1)
+!-------------------------------------------------------------------------------     
+   IF (GROPTION == 1) THEN
+   T1VGR = TGRP* (1.0+ 0.61 * QA) 
+   RLMO_URB=0.0
+   CALL SFCDIF_URB (ZA,Z0R,T1VGR,TH2V,UA,AKANDA_URBAN,CMGR_URB,CHGR_URB,RLMO_URB,CDGR)
+   ALPHAGR =  RHO*CP*CHGR_URB
+   CHGR=ALPHAGR/RHO/CP/UA
+   RUNOFF1 = 0.0
+   RUNOFF2 = 0.0
+   RUNOFF3 = 0.0
+
+   KZ = 1
+   ZSOILR (KZ) = - DZGR (KZ) 
+   DO KZ = 2,NGR
+      ZSOILR (KZ) = - DZGR(KZ) + ZSOILR (KZ -1)
+   END DO
+
+   DO ITERATION=1,100
+       KZ=1     
+       ES=6.11*EXP( (2.5*10.**6./461.51)*(TGRP-273.15)/(273.15*TGRP) )
+       DESDT=(2.5*10.**6./461.51)*ES/(TGRP**2.)
+       QS0GR=0.622*ES/(PS-0.378*ES) 
+       DQS0GRDTGR = DESDT*0.622*PS/((PS-0.378*ES)**2.) 
+       EPGR=RHOO*CHGR*UA*(QS0GR-QA)   ! Potential evaporation [kg/m2/s]
+
+       IF (EPGR > 0.0) THEN
+       ! Direct evaporation from soil on green roof 
+       CALL DIREVAP (EDIR,EPGR,SMRP(KZ),SHDFAC,SMCMAX,SMCDRY,FXEXP)    
+       ! Evapotranspiration and canopy intercepted evaporation
+       CALL TRANSP  (ETTR,ETR,ECR,SHDFAC,EPGR,CMCRP,CFACTR,CMCMAX,LAI,RSMIN,RSMAX,RGL,SX, &
+                     TGRP,TA,QA,SMRP,SMCDRY,SMCREF,CPP,PS,CHGR,EPSV,DELT,NROOT,NGR,DZGR, &
+                     ZSOILR,HS)
+       ! Update moisture in soil layers
+       CALL SMFLX   (SMRP,SMR,NGR,CMCRP,CMCR,DELT,RAIN,ZSOILR,SMCMAX,BEXP,SMCWLT,DKSAT,&
+                     DWSAT,SHDFAC,CMCMAX,RUNOFF1,RUNOFF2,RUNOFF3,EDIR,ECR,ETR,DRIP)  
+       else 
+       DEW  = - EPGR
+       RAINDR = RAIN  + DEW * 3600.
+       EDIR=0.0
+       ECR =0.0
+       ETTR=0.0
+       CALL SMFLX (SMRP,SMR,NGR,CMCRP,CMCR,DELT,RAINDR,ZSOILR,SMCMAX,BEXP,SMCWLT,DKSAT,&
+                   DWSAT,SHDFAC,CMCMAX,RUNOFF1,RUNOFF2,RUNOFF3,EDIR,ECR,ETR,DRIP)  
+       END IF
+! ----------------------------------------------------------------------
+! CONVERT MODELED EVAPOTRANSPIRATION FROM  M S-1  TO  KG M-2 S-1.
+! ----------------------------------------------------------------------
+       EDIR = EDIR  * 1000.0
+       ETTR = ETTR  * 1000.0
+       ECR  = ECR   * 1000.0
+       ETAR = EDIR + ETTR + ECR
+       IF (ETAR < 1.E-20) ETAR = 0.0
+
+       IF ( EPGR <= 0.0 ) THEN
+         BETGR = 0.0
+       ELSE
+         BETGR = ETAR / EPGR 
+       END IF   
+       ELEGR= ETAR* RHO * EL /RHOO * 100
+          
+       CALL TDFCND (DF1,SMR(KZ), QUARTZ, SMCMAX )
+       DF1 = DF1 * EXP(-2.0 * SHDFAC)  
+       RGR = EPSV*(RX-SIG*(TGRP**4.)/60.)
+       RGRR= (SGR+RGR) * 697.7 * 60.
+       RCH = RHOO*CPP*CHGR
+       RR1 = EPSV*(TA**4) * 6.48E-8 / (PS* CHGR) + 1.0
+       IF (RAIN >  0.0) then
+       RR2 = RR1 + RAIN / 3600 * 4.218E+3 / RCH
+       else
+       RR2 = RR1
+       end if 
+       YY  = TA + (RGRR / RCH - BETGR * EPGR * ELL/ RCH) / RR2  
+       ZZ1 = DF1 / (-0.5 * ZSOILR (KZ) * RCH * RR2 ) + 1.0
+       ! Update temperature in soil layer
+       CALL SHFLX (SSOILR,TGRL,SMR,SMCMAX,NGR,TGRP,DELT,YY,ZZ1,ZSOILR,       &
+                  TRLEND,ZBOT,SMCWLT,DF1,QUARTZ,CSOIL,CAPR) 
+
+       HGR=RHO*CP*CHGR*UA*(TGRP-TA)*100.     
+       RUNOFF3 = RUNOFF3/ DELT
+       RUNOFF2 = RUNOFF2+ RUNOFF3      
+       G0GR    = SSOILR / 697.7 / 60
+
+       FV = SGR + RGR - HGR - ELEGR - G0GR
+       DRRDTGR   = (-4.*EPSV*SIG*TGRP**3.)/60.
+       DHRDTGR   = RHO*CP*CHGR*UA*100.
+       DELERDTGR = RHO*EL*CHGR*UA*BETGR*DQS0GRDTGR*100.
+       DG0RDTGR  = 2.*DF1/ DZGR(KZ) * ( 1.0 / 4.1868 ) * 1.E-4
+       DFDVT = DRRDTGR - DHRDTGR - DELERDTGR - DG0RDTGR 
+       DTGR = FV/DFDVT/ 6
+       TGR  = TGRP - DTGR
+       TGRP = TGR
+
+       IF( ABS(FV) < 0.0001 .AND. ABS(DTGR) < 0.001 ) then
+       EXIT
+       ENDIF
+     END DO
+    
+   FLXTHGR=HGR/RHO/CP/100.
+   FLXHUMGR=ELEGR/RHO/EL/100.
+ELSE
+   FLXTHGR=0.
+   FLXHUMGR=0.
+ENDIF
+
+!-------------------------------------------------------------------------------
 !  Wall and Road 
 !-------------------------------------------------------------------------------
 
@@ -942,8 +1204,45 @@ MODULE module_sf_urban
    CHB=ALPHAB/RHO/CP/UC
    CHG=ALPHAG/RHO/CP/UC
 
+!Yang 10/10/2013 -- LH from impervious wall and ground
+ IF (IMP_SCHEME==1) then
    BETB=0.0
    IF(RAIN > 1.) BETG=0.7
+ ENDIF
+
+ IF (IMP_SCHEME==2) then
+   IF (FLXHUMBP <= 0.) FLXHUMBP = 0. 
+   IF (FLXHUMGP <= 0.) FLXHUMGP = 0. 
+! Compute water retention from previous time step for wall and ground
+  DrelB = DrelBP+(RAIN1-FLXHUMBP)*DELT/porimp(IMPB) 
+    IF (RAIN > 0. .AND. DrelB < DrelBP) DrelB = DrelBP 
+  DrelG = DrelGP+(RAIN1-FLXHUMGP)*DELT/porimp(IMPG)  
+    IF (RAIN > 0. .AND. DrelG < DrelGP) DrelG = DrelGP 
+  
+  IF (DrelB <= 0.) then
+  DrelB   = 0.0
+  BETB    = 0.0
+  ELSEIf (DrelB <= dengimp(IMPB)) then
+  BETB  = DrelB/dengimp(IMPB)*porimp(IMPB) 
+  ELSE
+  DrelB = dengimp(IMPB)
+  BETB = porimp(IMPB) 
+  ENDIF
+
+  IF (DrelG <= 0.) then
+  DrelG   = 0.0
+  BETG    = 0.0
+  ELSEIf (DrelG <= dengimp(IMPG)) then
+  BETG  = DrelG/dengimp(IMPG)*porimp(IMPG) 
+  ELSE
+  DrelG = dengimp(IMPG)
+  BETG  = porimp(IMPG) 
+  ENDIF
+
+  if ( BETG < 1.E-5 ) BETG = 0.0
+  if ( BETB < 1.E-5 ) BETB = 0.0
+ 
+ENDIF
 
    IF (TS_SCHEME == 1) THEN
 
@@ -1144,17 +1443,36 @@ MODULE module_sf_urban
 !-------------------------------------------------------------------------------
 ! Total Fluxes from Urban Canopy
 !-------------------------------------------------------------------------------
-
-   FLXUV  = ( R*CDR + RW*CDC )*UA*UA
-! Miao, 2007/01/17, cal. ah
+!===Yang, 2014/10/08, cal. ah. alh. green roof===
+ if(groption==1) then
+   if(ahoption==1) then
+     FLXTH  = ((1.-FGR)*R*FLXTHR + FGR*R*FLXTHGR + W*FLXTHB + RW*FLXTHG)+ AH/RHOO/CPP
+   else
+     FLXTH  = ((1.-FGR)*R*FLXTHR + FGR*R*FLXTHGR + W*FLXTHB + RW*FLXTHG)
+   endif
+   if(alhoption==1) then
+     FLXHUM  = ((1.-FGR)*R*FLXHUMR + FGR*R*FLXHUMGR + W*FLXHUMB + RW*FLXHUMG)+ ALH/RHOO/ELL
+   else
+     FLXHUM  = ((1.-FGR)*R*FLXHUMR + FGR*R*FLXHUMGR + W*FLXHUMB + RW*FLXHUMG)
+   endif
+   FLXUV  = ((1.-FGR)*R*CDR + FGR*R*CDGR + RW*CDC )*UA*UA
+   FLXG =   ((1.-FGR)*R*G0R + FGR*R*G0GR+ W*G0B + RW*G0G)
+   LNET =   (1.-FGR) * R * RR + FGR *R* RGR + W * RB +  RW * RG 
+ else
    if(ahoption==1) then
      FLXTH  = ( R*FLXTHR  + W*FLXTHB  + RW*FLXTHG ) + AH/RHOO/CPP
    else
      FLXTH  = ( R*FLXTHR  + W*FLXTHB  + RW*FLXTHG )
    endif
-   FLXHUM = ( R*FLXHUMR + W*FLXHUMB + RW*FLXHUMG )
+   if(alhoption==1) then
+     FLXHUM = ( R*FLXHUMR + W*FLXHUMB + RW*FLXHUMG )+ ALH/RHOO/ELL
+   else
+     FLXHUM = ( R*FLXHUMR + W*FLXHUMB + RW*FLXHUMG )
+   endif
+   FLXUV  = ( R*CDR + RW*CDC )*UA*UA
    FLXG =   ( R*G0R + W*G0B + RW*G0G )
    LNET =     R*RR + W*RB + RW*RG
+ endif
 
 !----------------------------------------------------------------------------
 ! Convert Unit: FLUXES and u* T* q*  --> WRF
@@ -1523,11 +1841,11 @@ MODULE module_sf_urban
                          HPERCENT_BIN,                                 & ! out
 !end BEP
                          BOUNDR,BOUNDB,BOUNDG,CH_SCHEME,TS_SCHEME,     & ! out
-                         AKANDA_URBAN)                                   ! out
+                         AKANDA_URBAN,ALH)         ! out
 
    INTEGER, INTENT(IN)  :: UTYPE 
 
-   REAL, INTENT(OUT)    :: ZR,Z0C,Z0HC,ZDC,SVF,R,RW,HGT,AH,              &
+   REAL, INTENT(OUT)    :: ZR,Z0C,Z0HC,ZDC,SVF,R,RW,HGT,AH,ALH,          &
                            CAPR,CAPB,CAPG,AKSR,AKSB,AKSG,ALBR,ALBB,ALBG, &
                            SIGMA_ZED,                                    &
                            EPSR,EPSB,EPSG,Z0R,Z0B,Z0G,Z0HB,Z0HG,         &
@@ -1556,6 +1874,7 @@ MODULE module_sf_urban
    RW=      RW_TBL(UTYPE)
    HGT=     HGT_TBL(UTYPE)
    AH=      AH_TBL(UTYPE)
+   ALH=     ALH_TBL(UTYPE)
    BETR=    BETR_TBL(UTYPE)
    BETB=    BETB_TBL(UTYPE)
    BETG=    BETG_TBL(UTYPE)
@@ -1709,6 +2028,8 @@ MODULE module_sf_urban
             if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating HGT_TBL in urban_param_init')
             ALLOCATE( AH_TBL(ICATE), stat=allocate_status )
             if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating AH_TBL in urban_param_init')
+            ALLOCATE( ALH_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating ALH_TBL in urban_param_init')
             ALLOCATE( BETR_TBL(ICATE), stat=allocate_status )
             if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating BETR_TBL in urban_param_init')
             ALLOCATE( BETB_TBL(ICATE), stat=allocate_status )
@@ -1827,6 +2148,8 @@ MODULE module_sf_urban
          read(string(indx+1:),*) road_width(1:icate)
       else if (name == "AH") then
          read(string(indx+1:),*) ah_tbl(1:icate)
+      else if (name == "ALH") then
+         read(string(indx+1:),*) alh_tbl(1:icate)
       else if (name == "FRC_URB") then
          read(string(indx+1:),*) frc_urb_tbl(1:icate)
       else if (name == "CAPR") then
@@ -1903,6 +2226,28 @@ MODULE module_sf_urban
          read(string(indx+1:),*) ahoption
       else if (name == "AHDIUPRF") then
          read(string(indx+1:),*) ahdiuprf(1:24)
+      else if (name == "ALHOPTION") then
+         read(string(indx+1:),*) alhoption
+      else if (name == "ALHSEASON") then
+         read(string(indx+1:),*) alhseason(1:4)
+      else if (name == "ALHDIUPRF") then
+         read(string(indx+1:),*) alhdiuprf(1:48)
+      else if (name == "PORIMP") then
+         read(string(indx+1:),*) porimp(1:3)
+      else if (name == "DENGIMP") then
+         read(string(indx+1:),*) dengimp(1:3)
+      else if (name == "IMP_SCHEME") then
+         read(string(indx+1:),*) imp_scheme
+      else if (name == "IRI_SCHEME") then
+         read(string(indx+1:),*) iri_scheme
+      else if (name == "OASIS") then
+         read(string(indx+1:),*) oasis
+      else if (name == "GROPTION") then
+         read(string(indx+1:),*) groption
+      else if (name == "FGR") then
+         read(string(indx+1:),*) fgr
+      else if (name == "DZGR") then
+         read(string(indx+1:),*) dzgr(1:4)
 !for BEP
       else if (name == "STREET PARAMETERS") then
 
@@ -2074,9 +2419,12 @@ MODULE module_sf_urban
                              SFVENT_URB3D,LFVENT_URB3D,                    & ! inout
                              SFWIN1_URB3D,SFWIN2_URB3D,                    & ! inout
                              SFW1_URB3D,SFW2_URB3D,SFR_URB3D,SFG_URB3D,    & ! inout
-                             LP_URB2D,HI_URB2D,LB_URB2D,                   & !inout
-                             HGT_URB2D,MH_URB2D,STDH_URB2D,                & !inout
-                             LF_URB2D,                                     & !inout
+                             LP_URB2D,HI_URB2D,LB_URB2D,                   & ! inout
+                             HGT_URB2D,MH_URB2D,STDH_URB2D,                & ! inout
+                             LF_URB2D,                                     & ! inout
+                             CMCR_URB2D,TGR_URB2D,TGRL_URB3D,SMR_URB3D,    & ! inout
+                             DRELR_URB2D,DRELB_URB2D,DRELG_URB2D,          & ! inout
+                             FLXHUMR_URB2D, FLXHUMB_URB2D, FLXHUMG_URB2D,  & ! inout
                              A_U_BEP,A_V_BEP,A_T_BEP,A_Q_BEP,              & ! inout multi-layer urban
                              A_E_BEP,B_U_BEP,B_V_BEP,                      & ! inout multi-layer urban
                              B_T_BEP,B_Q_BEP,B_E_BEP,DLG_BEP,              & ! inout multi-layer urban
@@ -2106,12 +2454,23 @@ MODULE module_sf_urban
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: XXXG_URB2D
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: XXXC_URB2D
 
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: DRELR_URB2D
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: DRELB_URB2D
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: DRELG_URB2D
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: FLXHUMR_URB2D
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: FLXHUMB_URB2D
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: FLXHUMG_URB2D
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CMCR_URB2D
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TGR_URB2D
+
 !   REAL, DIMENSION(ims:ime, 1:num_roof_layers, jms:jme), INTENT(INOUT) :: TRL_URB3D
 !   REAL, DIMENSION(ims:ime, 1:num_wall_layers, jms:jme), INTENT(INOUT) :: TBL_URB3D
 !   REAL, DIMENSION(ims:ime, 1:num_road_layers, jms:jme), INTENT(INOUT) :: TGL_URB3D
    REAL, DIMENSION(ims:ime, 1:num_soil_layers, jms:jme), INTENT(INOUT) :: TRL_URB3D
    REAL, DIMENSION(ims:ime, 1:num_soil_layers, jms:jme), INTENT(INOUT) :: TBL_URB3D
    REAL, DIMENSION(ims:ime, 1:num_soil_layers, jms:jme), INTENT(INOUT) :: TGL_URB3D
+   REAL, DIMENSION(ims:ime, 1:num_soil_layers, jms:jme), INTENT(INOUT) :: TGRL_URB3D
+   REAL, DIMENSION(ims:ime, 1:num_soil_layers, jms:jme), INTENT(INOUT) :: SMR_URB3D
 
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: SH_URB2D
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: LH_URB2D
@@ -2361,7 +2720,15 @@ MODULE module_sf_urban
       XXXG_URB2D(I,J)=0.
       XXXC_URB2D(I,J)=0.
 
+      DRELR_URB2D(I,J) = 0.
+      DRELB_URB2D(I,J) = 0.
+      DRELG_URB2D(I,J) = 0.
+      FLXHUMR_URB2D(I,J) = 0.
+      FLXHUMB_URB2D(I,J) = 0.
+      FLXHUMG_URB2D(I,J) = 0.
+      CMCR_URB2D(I,J)  = 0.
 
+      TGR_URB2D(I,J)=TSURFACE0_URB(I,J)+0.
       TC_URB2D(I,J)=TSURFACE0_URB(I,J)+0.
       TR_URB2D(I,J)=TSURFACE0_URB(I,J)+0.
       TB_URB2D(I,J)=TSURFACE0_URB(I,J)+0.
@@ -2380,6 +2747,16 @@ MODULE module_sf_urban
           TRL_URB3D(I,2,J)=0.5*(TLAYER0_URB(I,1,J)+TLAYER0_URB(I,2,J))
           TRL_URB3D(I,3,J)=TLAYER0_URB(I,2,J)+0.
           TRL_URB3D(I,4,J)=TLAYER0_URB(I,2,J)+(TLAYER0_URB(I,3,J)-TLAYER0_URB(I,2,J))*0.29
+
+          TGRL_URB3D(I,1,J)=TLAYER0_URB(I,1,J)+0.
+          TGRL_URB3D(I,2,J)=0.5*(TLAYER0_URB(I,1,J)+TLAYER0_URB(I,2,J))
+          TGRL_URB3D(I,3,J)=TLAYER0_URB(I,2,J)+0.
+          TGRL_URB3D(I,4,J)=TLAYER0_URB(I,2,J)+(TLAYER0_URB(I,3,J)-TLAYER0_URB(I,2,J))*0.29
+
+          SMR_URB3D(I,1,J)=0.2
+          SMR_URB3D(I,2,J)=0.2
+          SMR_URB3D(I,3,J)=0.2
+          SMR_URB3D(I,4,J)=0.
 !     END DO
 
 !      DO K=1,num_wall_layers
@@ -2794,6 +3171,858 @@ SUBROUTINE SFCDIF_URB (ZLM,Z0,THZ0,THLM,SFCSPD,AKANDA,AKMS,AKHS,RLMO,CD)
       CD = USTAR*USTAR/SFCSPD**2
 ! ----------------------------------------------------------------------
   END SUBROUTINE SFCDIF_URB
+! ----------------------------------------------------------------------
+!===========================================================================
+!  DIREVAP 
+!  CALCULATE DIRECT SOIL EVAPORATION
+!===========================================================================
+   SUBROUTINE DIREVAP (EDIR,ETP,SMC,SHDFAC,SMCMAX,SMCDRY,FXEXP)
+
+     REAL, INTENT(IN)  :: ETP,SMC,SHDFAC,SMCMAX,SMCDRY,FXEXP
+     REAL, INTENT(OUT) :: EDIR
+     REAL              :: FX, SRATIO
+
+! ----------------------------------------------------------------------
+! FX > 1 REPRESENTS DEMAND CONTROL
+! FX < 1 REPRESENTS FLUX CONTROL
+! ----------------------------------------------------------------------
+      SRATIO = (SMC - SMCDRY) / (SMCMAX - SMCDRY)
+      IF (SRATIO > 0.) THEN
+        FX = SRATIO**FXEXP
+        FX = MAX ( MIN ( FX, 1. ) ,0. )
+      ELSE
+        FX = 0.
+      ENDIF
+      EDIR = FX * ( 1.0- SHDFAC ) * ETP * 0.001
+      
+ END SUBROUTINE DIREVAP
+!===========================================================================
+!  TRANSP
+!  CALCULATE EVAPOTRANSPIRATION FOR VEGETATIO SURFACE
+!===========================================================================
+      
+     SUBROUTINE TRANSP (ETT,ET,EC,SHDFAC,ETP1,CMC,CFACTR,CMCMAX,LAI,RSMIN,RSMAX,RGL,SX, &
+                        TS,TA,QA,SMC,SMCDRY,SMCREF,CPP,PS,CH,EPSV,DELT, NROOT,NSOIL,    &
+                        DZVR, ZSOIL, HS)
+     INTEGER, INTENT(IN)   :: NROOT, NSOIL
+     REAL, INTENT(IN)  :: SHDFAC,ETP1,CMC,CFACTR,CMCMAX,LAI,RSMIN,RSMAX,RGL,SX,TA
+     REAL, INTENT(IN)  :: TS,QA, SMCDRY, SMCREF, CPP, PS,CH, EPSV, DELT, HS
+     REAL, DIMENSION(1:NSOIL), INTENT(IN)   :: ZSOIL, DZVR, SMC
+     REAL, DIMENSION(1:NSOIL), INTENT(INOUT):: ET
+     REAL, INTENT(OUT) :: EC, ETT
+     REAL              :: RC, RCS, RCT, RCQ, RCSOIL, FF, WS, SLV, DESDT
+     REAL              :: SIGMA, PC, CMC2MS, SGX, DENOM, RTX, ETT1
+     INTEGER           :: K
+     REAL, DIMENSION(1:NROOT) ::  PART, GX
+     
+     SLV    = 2.501E+6
+     SIGMA  = 5.67E-8
+     ETT    = 0.0
+     DO K = 1, NSOIL
+       ET(K) = 0.
+     END DO
+     
+! ----------------------------------------------------------------------
+! INITIALIZE CANOPY RESISTANCE MULTIPLIER TERMS.
+! ----------------------------------------------------------------------
+      RCS = 0.0
+      RCT = 0.0
+      RCQ = 0.0
+      RCSOIL = 0.0
+      
+! ----------------------------------------------------------------------
+! CONTRIBUTION DUE TO INCOMING SOLAR RADIATION
+! ----------------------------------------------------------------------
+      FF  = 0.55*2.0* SX*697.7 * 60/ (RGL * LAI)
+      RCS = (FF + RSMIN / RSMAX) / (1.0+ FF)
+      RCS = MAX (RCS,0.0001)
+! ----------------------------------------------------------------------
+! CONTRIBUTION DUE TO AIR TEMPERATURE AT FIRST MODEL LEVEL ABOVE GROUND
+! RCT EXPRESSION FROM NOILHAN AND PLANTON (1989, MWR).
+! ----------------------------------------------------------------------
+      RCT = 1.0- 0.0016* ( (298 - TA)**2.0)
+      RCT = MAX (RCT,0.0001)
+! ----------------------------------------------------------------------
+! CONTRIBUTION DUE TO VAPOR PRESSURE DEFICIT AT FIRST MODEL LEVEL.
+! RCQ EXPRESSION FROM SSIB  (Niyogi and Raman, 1997)
+! ----------------------------------------------------------------------
+      EA = 6.11*EXP((2.5*10.**6./461.51)*(TA-273.15)/(273.15*TA) )
+      WS = 0.622*EA/1013   
+      RCQ = 1.0/ (1.0+ HS * (WS - QA))
+      RCQ = MAX (RCQ,0.01)
+! ----------------------------------------------------------------------
+! CONTRIBUTION DUE TO SOIL MOISTURE AVAILABILITY.
+! DETERMINE CONTRIBUTION FROM EACH SOIL LAYER, THEN ADD THEM UP.
+! ----------------------------------------------------------------------
+      DO K = 1, NROOT  
+       GX(K) = (SMC(K) - SMCWLT) / (SMCREF - SMCWLT)
+         IF (GX(K) >  1.) GX(K) = 1.
+         IF (GX(K) <  0.) GX(K) = 0.
+         PART (K) = ( -DZVR (K)/ ZSOIL (3)) * GX(K)
+      END DO
+      
+      SGX =0.0
+      DO K = 1, NROOT 
+        SGX    = SGX    + GX (K)
+        RCSOIL = RCSOIL + PART (K)
+      END DO
+      SGX =SGX / NROOT
+      
+      RCSOIL = MAX (RCSOIL,0.0001)
+
+      RC = RSMIN / (LAI * RCS * RCT * RCQ * RCSOIL)
+      DESDT = 0.622*SLV*EA/461.51/TA/TA/1013
+      DELTA = (SLV / CPP)* DESDT
+      RR = (4.* EPSV *SIGMA * 287.04 / CPP)* (TA **4.)/ (TS * CH) + 1.0
+      PC = (RR + DELTA)/ (RR * (1. + RC * CH) + DELTA)  
+      
+      IF (CMC .ne. 0.0) THEN
+         ETT1 = SHDFAC * PC * ETP1 * (1.0- (CMC / CMCMAX) ** CFACTR) * 0.001
+      ELSE
+         ETT1 = SHDFAC * PC * ETP1 * 0.001
+      ENDIF
+
+      DENOM = 0.
+      DO K = 1, NROOT 
+         RTX= (-DZVR (K)/ ZSOIL (3)) + GX(K) - SGX
+         GX (K) = GX (K) * MAX ( RTX, 0. )
+         DENOM  = DENOM + GX (K)
+      END DO 
+      IF (DENOM .le. 0.0) DENOM =1.
+      
+      DO K = 1, NROOT 
+         ET(K) = ETT1 * GX (K) / DENOM
+         ETT   = ETT + ET (K)
+      END DO
+      
+      
+      IF (CMC > 0.0) THEN
+      EC = SHDFAC * ( ( CMC / CMCMAX ) ** CFACTR ) * ETP1 * 0.001
+      ELSE
+      EC = 0.0
+      END IF
+      CMC2MS = CMC / DELT
+      EC   = MIN ( CMC2MS, EC )
+      
+  END SUBROUTINE TRANSP
+! ----------------------------------------------------------------------
+! SUBROUTINE SMFLX
+! ----------------------------------------------------------------------
+  
+       SUBROUTINE SMFLX (SMCP,SMC,NSOIL,CMCP,CMC,DT,PRCP1,ZSOIL,       &
+     &                   SMCMAX,BEXP,SMCWLT,DKSAT,DWSAT,               &
+     &                   SHDFAC,CMCMAX,RUNOFF1,RUNOFF2,RUNOFF3,        &
+                         EDIR,EC,ET,DRIP)              
+
+! CALCULATE SOIL MOISTURE FLUX.  THE SOIL MOISTURE CONTENT IS UPDATED WITH
+! PROGNOSTIC EQNS. THE CANOPY MOISTURE CONTENT (CMC) IS ALSO UPDATED.
+! ----------------------------------------------------------------------
+      IMPLICIT NONE
+
+      INTEGER, INTENT(IN)   :: NSOIL
+      INTEGER               :: I,K
+      REAL, INTENT(IN)      :: BEXP, CMCMAX, DKSAT,DWSAT, DT, EC, EDIR,  &
+                               PRCP1, SHDFAC, SMCMAX, SMCWLT
+      REAL, INTENT(OUT)     :: DRIP, RUNOFF1, RUNOFF2, RUNOFF3
+      REAL, INTENT(IN)      :: CMCP
+      REAL, INTENT(OUT)     :: CMC
+      REAL, DIMENSION(1:NSOIL), INTENT(IN)   :: ZSOIL, ET
+      REAL, DIMENSION(1:NSOIL), INTENT(IN)   :: SMCP
+      REAL, DIMENSION(1:NSOIL), INTENT(OUT)  :: SMC
+      REAL, DIMENSION(1:NSOIL)               :: AI, BI, CI, STCF,RHSTS, RHSTT
+      REAL                  :: EXCESS,PCPDRP,RHSCT,TRHSCT
+
+
+! ----------------------------------------------------------------------
+! ADD PRECIPITATION TO EXISTING CMC.IF RESULTING AMT EXCEEDS MAX CAPACITY,
+! IT BECOMES DRIP AND WILL FALL TO THE GRND.
+! ----------------------------------------------------------------------
+      RHSCT = SHDFAC * PRCP1 * 0.001 /3600. - EC
+      DRIP = 0.
+      TRHSCT = DT * RHSCT
+      EXCESS = CMCP + TRHSCT
+
+! ----------------------------------------------------------------------
+! PCPDRP IS THE COMBINED PRCP1 AND DRIP (FROM CMCP) THAT GOES INTO THE
+! SOIL
+! ----------------------------------------------------------------------
+      IF (EXCESS > CMCMAX) DRIP = EXCESS - CMCMAX
+      PCPDRP = (1. - SHDFAC) * PRCP1 * 0.001 /3600. + DRIP / DT
+
+! ----------------------------------------------------------------------
+! CALL SUBROUTINES SRT AND SSTEP TO SOLVE THE SOIL MOISTURE
+! TENDENCY EQUATIONS.
+! ----------------------------------------------------------------------
+      CALL SRT (RHSTT,EDIR,ET,SMCP,NSOIL,PCPDRP,ZSOIL,DWSAT,DKSAT,    &
+                   SMCMAX,BEXP,RUNOFF1,RUNOFF2,DT,SMCWLT,AI,BI,CI) 
+                   
+      CALL SSTEP (SMCP,SMC,CMCP,CMC,RHSTT,RHSCT,DT,NSOIL,SMCMAX,     &
+                        CMCMAX,RUNOFF3,ZSOIL,AI,BI,CI)
+! ----------------------------------------------------------------------
+  END SUBROUTINE SMFLX
+! ----------------------------------------------------------------------
+
+      SUBROUTINE SRT (RHSTT,EDIR,ET,SMCP,NSOIL,PCPDRP,ZSOIL,DWSAT,    &
+                      DKSAT,SMCMAX,BEXP,RUNOFF1,            &
+                      RUNOFF2,DT,SMCWLT,AI,BI,CI)
+
+! ----------------------------------------------------------------------
+! CALCULATE THE RIGHT HAND SIDE OF THE TIME TENDENCY TERM OF THE SOIL
+! WATER DIFFUSION EQUATION.  ALSO TO COMPUTE ( PREPARE ) THE MATRIX
+! COEFFICIENTS FOR THE TRI-DIAGONAL MATRIX OF THE IMPLICIT TIME SCHEME.
+! ----------------------------------------------------------------------
+      IMPLICIT NONE
+      INTEGER, INTENT(IN)       :: NSOIL
+      INTEGER                   :: K, KS
+
+      REAL, INTENT(IN)          :: BEXP, DKSAT, DT, DWSAT, EDIR,  &
+                                   PCPDRP, SMCMAX, SMCWLT
+      REAL, INTENT(OUT)         :: RUNOFF1, RUNOFF2
+      REAL, DIMENSION(1:NSOIL), INTENT(IN)   :: SMCP, ZSOIL, ET
+      REAL, DIMENSION(1:NSOIL), INTENT(OUT)  :: RHSTT
+      REAL, DIMENSION(1:NSOIL), INTENT(OUT)  :: AI, BI, CI
+      REAL, DIMENSION(1:NSOIL)  :: DDMAX
+      REAL                      :: DD, DDT, DDZ, DDZ2, DENOM,       &
+                                   DENOM2, DSMDZ, DSMDZ2, DT1,      &
+                                   INFMAX,MXSMC,MXSMC2,NUMER,PDDUM, &
+                                   PX,SMCAV, SSTT, PAR,         &
+                                   VAL, WCND, WCND2, WDF, WDF2,KDT
+
+! ----------------------------------------------------------------------
+! DETERMINE RAINFALL INFILTRATION RATE AND RUNOFF.  INCLUDE THE
+! INFILTRATION FORMULE FROM SCHAAKE AND KOREN MODEL.
+! MODIFIED BY Q DUAN
+! ----------------------------------------------------------------------
+         
+         PDDUM = PCPDRP
+         RUNOFF1 = 0.0
+         PAR = 2.0E-6
+         
+         IF (PCPDRP /=  0.0) THEN         
+         SMCAV = SMCMAX - SMCWLT
+         DDMAX (1) = - ZSOIL (1)* SMCAV
+         DDMAX (1) = DDMAX (1)* (1.0- (SMCP (1) - SMCWLT)/ SMCAV)        
+         DDMAX (2) = (ZSOIL (1) - ZSOIL (2))* SMCAV
+         DDMAX (2) = DDMAX (2)* (1.0- (SMCP (2) - SMCWLT)/ SMCAV)
+         DDMAX (3) = (ZSOIL (2) - ZSOIL (3))* SMCAV
+         DDMAX (3) = DDMAX (3)* (1.0- (SMCP (3) - SMCWLT)/ SMCAV)
+         
+         DD = DDMAX(1)+DDMAX(2)+DDMAX(3)
+         DT1 = DT/86400
+         KDT = 3.0 * DKSAT / PAR
+         VAL = (1. - EXP ( - KDT * DT1))
+         DDT = DD * VAL
+         PX = PCPDRP * DT
+         IF (PX <  0.0) PX = 0.0
+
+         INFMAX = (PX * (DDT / (PX + DDT)))/ DT
+         MXSMC = SMCP (1)
+         CALL WDFCND (WDF,WCND,MXSMC,SMCMAX,BEXP,DKSAT,DWSAT)
+         INFMAX = MAX (INFMAX,WCND)
+         INFMAX = MIN (INFMAX,PX/DT)
+         
+
+         IF (PCPDRP >  INFMAX) THEN
+          RUNOFF1  = PCPDRP - INFMAX
+          PDDUM = INFMAX
+         END IF
+        END IF
+! ----------------------------------------------------------------------
+! TOP LAYER
+! ----------------------------------------------------------------------
+      CALL WDFCND (WDF,WCND,SMCP(1),SMCMAX,BEXP,DKSAT,DWSAT)
+      DDZ = 1. / ( - .5 * ZSOIL (2) )
+      AI (1) = 0.0
+      BI (1) = WDF * DDZ / ( - ZSOIL (1) )
+      CI (1) = - BI (1)   
+      DSMDZ = (SMCP (1) - SMCP (2) )/( - 0.5 * ZSOIL(2))
+      RHSTT (1) = (WDF * DSMDZ + WCND- PDDUM + EDIR + ET(1))/ ZSOIL (1)
+      SSTT = WDF * DSMDZ + WCND+ EDIR + ET(1)
+
+! ----------------------------------------------------------------------
+! LOOP THRU THE REMAINING SOIL LAYERS, REPEATING THE ABV PROCESS
+! ----------------------------------------------------------------------
+      DDZ2 = 0.0
+      DO K = 2,NSOIL-1
+         DENOM2 = (ZSOIL (K -1) - ZSOIL (K))
+         IF (K /= NSOIL-1) THEN
+            MXSMC2 = SMCP (K)
+            CALL WDFCND (WDF2,WCND2,MXSMC2,SMCMAX,BEXP,DKSAT,DWSAT)
+            DENOM = (ZSOIL (K -1) - ZSOIL (K +1))
+            DSMDZ2 = (SMCP (K) - SMCP (K +1)) / (DENOM * 0.5)
+            DDZ2 = 2.0 / DENOM
+            CI (K) = - WDF2 * DDZ2 / DENOM2
+         ELSE
+          CALL WDFCND (WDF2,WCND2,SMCP(NSOIL-1),SMCMAX,BEXP,DKSAT,DWSAT)
+            DSMDZ2 = 0.0
+            CI (K) = 0.0
+         END IF  
+         NUMER = (WDF2 * DSMDZ2) - (WDF * DSMDZ)         &
+                 - WCND+ ET(K)
+         RHSTT (K) = NUMER / ( - DENOM2)
+         AI (K) = - WDF * DDZ / DENOM2
+         BI (K) = - ( AI (K) + CI (K) )
+         IF (K .eq. NSOIL-1) THEN
+            RUNOFF2 = 0.0
+         END IF
+         IF (K .ne. NSOIL-1) THEN
+            WDF = WDF2
+            WCND = WCND2
+            DSMDZ = DSMDZ2
+            DDZ = DDZ2
+         END IF
+      END DO
+! ----------------------------------------------------------------------
+  END SUBROUTINE SRT
+! ----------------------------------------------------------------------
+
+      SUBROUTINE SSTEP (SMCP,SMC,CMCP,CMC,RHSTT,RHSCT,DT,     &
+                        NSOIL,SMCMAX,CMCMAX,RUNOFF3,ZSOIL,        &
+                        AI,BI,CI)
+
+! ----------------------------------------------------------------------
+! SUBROUTINE SSTEP
+! ----------------------------------------------------------------------
+! CALCULATE/UPDATE SOIL MOISTURE CONTENT VALUES AND CANOPY MOISTURE
+! CONTENT VALUES.
+! ----------------------------------------------------------------------
+      IMPLICIT NONE
+      INTEGER, INTENT(IN)       :: NSOIL
+      INTEGER                   :: I, K, KK11
+
+      REAL, INTENT(IN)          :: CMCMAX, DT, SMCMAX
+      REAL, INTENT(OUT)         :: RUNOFF3
+      REAL, INTENT(IN)          :: CMCP
+      REAL, INTENT(OUT)         :: CMC
+      REAL, DIMENSION(1:NSOIL), INTENT(IN)     :: SMCP, ZSOIL
+      REAL, DIMENSION(1:NSOIL), INTENT(OUT)    :: SMC
+      REAL, DIMENSION(1:NSOIL), INTENT(INOUT)  :: RHSTT
+      REAL, DIMENSION(1:NSOIL), INTENT(INOUT)  :: AI, BI, CI 
+      REAL, DIMENSION(1:NSOIL)  :: RHSTTin, SMCOUT,SMCIN
+      REAL, DIMENSION(1:NSOIL)  :: CIin
+      REAL                      :: DDZ, RHSCT, WPLUS, STOT
+
+! ----------------------------------------------------------------------
+! CREATE 'AMOUNT' VALUES OF VARIABLES TO BE INPUT TO THE
+! TRI-DIAGONAL MATRIX ROUTINE.
+! ----------------------------------------------------------------------
+      DO K = 1,NSOIL-1
+         RHSTT (K) = RHSTT (K) * DT
+         AI (K) = AI (K) * DT
+         BI (K) = 1. + BI (K) * DT
+         CI (K) = CI (K) * DT
+      END DO
+! ----------------------------------------------------------------------
+! COPY VALUES FOR INPUT VARIABLES BEFORE CALL TO ROSR12
+! ----------------------------------------------------------------------
+      DO K = 1,NSOIL-1
+         RHSTTin (K) = RHSTT (K)
+      END DO
+      DO K = 1,NSOIL-1
+         CIin (K) = CI (K)
+      END DO
+! ----------------------------------------------------------------------
+! CALL ROSR12 TO SOLVE THE TRI-DIAGONAL MATRIX
+! ----------------------------------------------------------------------
+      CALL ROSR12 (CI,AI,BI,CIin,RHSTTin,RHSTT,NSOIL-1)
+! ----------------------------------------------------------------------
+! SUM THE PREVIOUS SMC VALUE AND THE MATRIX SOLUTION TO GET A
+! NEW VALUE.  MIN ALLOWABLE VALUE OF SMC WILL BE 0.02.
+! RUNOFF3: RUNOFF WITHIN SOIL LAYERS
+! ----------------------------------------------------------------------
+      WPLUS = 0.0
+      RUNOFF3 = 0.
+
+      DDZ = - ZSOIL (1)
+      DO K = 1,NSOIL-1
+         IF (K /= 1) DDZ = ZSOIL (K - 1) - ZSOIL (K)
+         SMCOUT (K) = SMCP (K) + CI (K) + WPLUS / DDZ
+         STOT = SMCOUT (K)
+         IF (STOT > SMCMAX) THEN
+            IF (K .eq. 1) THEN
+               DDZ = - ZSOIL (1)
+            ELSE
+               KK11 = K - 1
+               DDZ = - ZSOIL (K) + ZSOIL (KK11)
+            END IF
+            WPLUS = (STOT - SMCMAX) * DDZ
+         ELSE
+            WPLUS = 0.
+         END IF
+         SMC (K) = MAX ( MIN (STOT,SMCMAX),0.066 )
+      END DO
+
+! ----------------------------------------------------------------------
+! UPDATE CANOPY WATER CONTENT/INTERCEPTION (CMC).  CONVERT RHSCT TO
+! AN 'AMOUNT' VALUE AND ADD TO PREVIOUS CMC VALUE TO GET NEW CMC.
+! ----------------------------------------------------------------------
+      RUNOFF3 = WPLUS
+      CMC = CMCP + DT * RHSCT
+      IF (CMC < 1.E-20) CMC = 0.0
+      CMC = MIN (CMC,CMCMAX)
+
+! ----------------------------------------------------------------------
+  END SUBROUTINE SSTEP
+! ----------------------------------------------------------------------
+
+      SUBROUTINE WDFCND (WDF,WCND,SMC,SMCMAX,BEXP,DKSAT,DWSAT)
+
+! ----------------------------------------------------------------------
+! SUBROUTINE WDFCND
+! ----------------------------------------------------------------------
+! CALCULATE SOIL WATER DIFFUSIVITY AND SOIL HYDRAULIC CONDUCTIVITY.
+! ----------------------------------------------------------------------
+      IMPLICIT NONE
+      REAL     BEXP
+      REAL     DKSAT
+      REAL     DWSAT
+      REAL     EXPON
+      REAL     FACTR1
+      REAL     FACTR2
+      REAL     SMC
+      REAL     SMCMAX
+      REAL     WCND
+
+! ----------------------------------------------------------------------
+!     CALC THE RATIO OF THE ACTUAL TO THE MAX PSBL SOIL H2O CONTENT
+! ----------------------------------------------------------------------
+      REAL     WDF
+      FACTR1 = 0.05 / SMCMAX
+
+! ----------------------------------------------------------------------
+! PREP AN EXPNTL COEF AND CALC THE SOIL WATER DIFFUSIVITY AND CONDUCTIVITY
+! ----------------------------------------------------------------------
+      FACTR2 = SMC / SMCMAX
+      FACTR1 = MIN(FACTR1,FACTR2)
+      EXPON  = BEXP + 2.0
+      WDF    = DWSAT * FACTR2 ** EXPON
+      EXPON  = (2.0 * BEXP) + 3.0
+      WCND   = DKSAT * FACTR2 ** EXPON
+
+! ----------------------------------------------------------------------
+  END SUBROUTINE WDFCND
+! ----------------------------------------------------------------------
+! SUBROUTINE ROSR12
+! ----------------------------------------------------------------------
+! INVERT (SOLVE) THE TRI-DIAGONAL MATRIX PROBLEM SHOWN BELOW:
+! ###                                            ### ###  ###   ###  ###
+! #B(1), C(1),  0  ,  0  ,  0  ,   . . .  ,    0   # #      #   #      #
+! #A(2), B(2), C(2),  0  ,  0  ,   . . .  ,    0   # #      #   #      #
+! # 0  , A(3), B(3), C(3),  0  ,   . . .  ,    0   # #      #   # D(3) #
+! # 0  ,  0  , A(4), B(4), C(4),   . . .  ,    0   # # P(4) #   # D(4) #
+! # 0  ,  0  ,  0  , A(5), B(5),   . . .  ,    0   # # P(5) #   # D(5) #
+! # .                                          .   # #  .   # = #   .  #
+! # .                                          .   # #  .   #   #   .  #
+! # .                                          .   # #  .   #   #   .  #
+! # 0  , . . . , 0 , A(M-2), B(M-2), C(M-2),   0   # #P(M-2)#   #D(M-2)#
+! # 0  , . . . , 0 ,   0   , A(M-1), B(M-1), C(M-1)# #P(M-1)#   #D(M-1)#
+! # 0  , . . . , 0 ,   0   ,   0   ,  A(M) ,  B(M) # # P(M) #   # D(M) #
+! ###                                            ### ###  ###   ###  ###
+! ----------------------------------------------------------------------
+  
+  SUBROUTINE ROSR12 (P,A,B,C,D,DELTA,NSOIL)
+      IMPLICIT NONE
+
+      INTEGER, INTENT(IN)   :: NSOIL
+      INTEGER               :: K, KK
+
+      REAL, DIMENSION(1:NSOIL), INTENT(IN):: A, B, D
+      REAL, DIMENSION(1:NSOIL),INTENT(INOUT):: C,P,DELTA
+
+! ----------------------------------------------------------------------
+! INITIALIZE EQN COEF C FOR THE LOWEST SOIL LAYER
+! ----------------------------------------------------------------------
+      C (NSOIL) = 0.0
+      P (1) = - C (1) / B (1)
+      DELTA (1) = D (1) / B (1)
+      DO K = 2,NSOIL
+         P (K) = - C (K) * ( 1.0 / (B (K) + A (K) * P (K -1)) )
+         DELTA (K) = (D (K) - A (K)* DELTA (K -1))* (1.0/ (B (K) + A (K)&
+                    * P (K -1)))
+      END DO
+! ----------------------------------------------------------------------
+! SET P TO DELTA FOR LOWEST SOIL LAYER
+! ----------------------------------------------------------------------
+      P (NSOIL) = DELTA (NSOIL)
+
+! ----------------------------------------------------------------------
+! ADJUST P FOR SOIL LAYERS 2 THRU NSOIL
+! ----------------------------------------------------------------------
+      DO K = 2,NSOIL
+         KK = NSOIL - K + 1
+         P (KK) = P (KK) * P (KK +1) + DELTA (KK)
+      END DO
+! ----------------------------------------------------------------------
+  END SUBROUTINE ROSR12
+!----------------------------------------------------------------------
+
+      SUBROUTINE SHFLX (SSOIL,STC,SMC,SMCMAX,NSOIL,T1,DT,YY,ZZ1,ZSOIL, &
+                         TBOT,ZBOT,SMCWLT,DF1,QUARTZ,CSOIL,CAPR)
+
+! ----------------------------------------------------------------------
+! SUBROUTINE SHFLX
+! ----------------------------------------------------------------------
+! UPDATE THE TEMPERATURE STATE OF THE SOIL COLUMN BASED ON THE THERMAL
+! DIFFUSION EQUATION AND UPDATE THE FROZEN SOIL MOISTURE CONTENT BASED
+! ON THE TEMPERATURE.
+! ----------------------------------------------------------------------
+      IMPLICIT NONE
+
+      INTEGER, INTENT(IN)   :: NSOIL
+      INTEGER               :: I
+
+      REAL, INTENT(IN)      :: DF1,DT,SMCMAX, SMCWLT, TBOT,YY, ZBOT,ZZ1, QUARTZ
+      REAL, INTENT(IN)      :: CSOIL, CAPR
+      REAL, INTENT(INOUT)   :: T1
+      REAL, INTENT(OUT)     :: SSOIL
+      REAL, DIMENSION(1:NSOIL), INTENT(IN)    :: SMC,ZSOIL
+      REAL, DIMENSION(1:NSOIL), INTENT(INOUT) :: STC
+      REAL, DIMENSION(1:NSOIL)             :: AI, BI, CI, STCF,RHSTS
+
+! ----------------------------------------------------------------------
+! HRT ROUTINE CALCS THE RIGHT HAND SIDE OF THE SOIL TEMP DIF EQN
+! ----------------------------------------------------------------------
+
+      ! Land case
+
+      CALL HRT (RHSTS,STC,SMC,SMCMAX,NSOIL,ZSOIL,YY,ZZ1,TBOT,        &
+                ZBOT,DT,DF1,AI,BI,CI,QUARTZ,CSOIL,CAPR)
+
+      CALL HSTEP (STCF,STC,RHSTS,DT,NSOIL,AI,BI,CI)
+
+      DO I = 1,NSOIL
+         STC (I) = STCF (I)
+      ENDDO
+
+! ----------------------------------------------------------------------
+! CALCULATE SURFACE SOIL HEAT FLUX
+! ----------------------------------------------------------------------
+      T1 = (YY + (ZZ1- 1.0) * STC (1)) / ZZ1
+      SSOIL = DF1 * (STC (1) - T1) / (0.5 * ZSOIL (1))
+
+! ----------------------------------------------------------------------
+  END SUBROUTINE SHFLX
+! ----------------------------------------------------------------------
+! SUBROUTINE HRT
+! ----------------------------------------------------------------------
+! CALCULATE THE RIGHT HAND SIDE OF THE TIME TENDENCY TERM OF THE SOIL
+! THERMAL DIFFUSION EQUATION.  ALSO TO COMPUTE ( PREPARE ) THE MATRIX
+! COEFFICIENTS FOR THE TRI-DIAGONAL MATRIX OF THE IMPLICIT TIME SCHEME.
+! ----------------------------------------------------------------------
+
+      SUBROUTINE HRT (RHSTS,STC,SMC,SMCMAX,NSOIL,ZSOIL,YY,ZZ1,          &
+                       TBOT,ZBOT,DT,DF1,AI,BI,CI,QUARTZ,CSOIL,CAPR)
+                       
+      IMPLICIT NONE
+      LOGICAL              :: ITAVG
+      INTEGER, INTENT(IN)  :: NSOIL
+      INTEGER              :: I, K
+
+      REAL, INTENT(IN)     :: DF1, DT,SMCMAX ,TBOT,YY,ZZ1, ZBOT, QUARTZ, CSOIL, CAPR
+      REAL, DIMENSION(1:NSOIL), INTENT(IN)   :: SMC,STC,ZSOIL
+      REAL, DIMENSION(1:NSOIL), INTENT(OUT)  :: RHSTS
+      REAL, DIMENSION(1:NSOIL), INTENT(OUT)  :: AI, BI,CI
+      REAL                 :: DDZ, DDZ2, DENOM, DF1K, DTSDZ,DF1N,      &
+                              DTSDZ2,HCPCT,QTOT,SSOIL,SICE,TAVG,TBK,     &
+                              TBK1,TSNSR,TSURF
+      REAL, PARAMETER      :: CAIR = 1004.0, CH2O = 4.2E6
+
+
+! ----------------------------------------------------------------------
+! INITIALIZE LOGICAL FOR SOIL LAYER TEMPERATURE AVERAGING.
+! ----------------------------------------------------------------------
+       ITAVG = .TRUE.
+       
+! ----------------------------------------------------------------------
+! TOP SOIL LAYER
+! ----------------------------------------------------------------------
+      HCPCT = SMC (1)* CH2O + (1.0- SMCMAX)* CSOIL + (SMCMAX - SMC (1))&
+       * CAIR                                                          
+      DDZ = 1.0 / ( -0.5 * ZSOIL (2) )
+      AI (1) = 0.0
+      CI (1) = (DF1 * DDZ) / (ZSOIL (1) * HCPCT)
+
+! ----------------------------------------------------------------------
+! CALCULATE THE VERTICAL SOIL TEMP GRADIENT BTWN THE 1ST AND 2ND SOIL
+! LAYERS.  THEN CALCULATE THE SUBSURFACE HEAT FLUX. 
+! ----------------------------------------------------------------------
+      BI (1) = - CI (1) + DF1 / (0.5 * ZSOIL (1) * ZSOIL (1)* HCPCT *    &
+       ZZ1)
+      DTSDZ = (STC (1) - STC (2)) / (-0.5 * ZSOIL (2))
+      SSOIL = DF1 * (STC (1) - YY) / (0.5 * ZSOIL (1) * ZZ1)
+      DENOM = (ZSOIL (1) * HCPCT)
+
+! ----------------------------------------------------------------------
+! NEXT CAPTURE THE VERTICAL DIFFERENCE OF THE HEAT FLUX AT TOP AND
+! BOTTOM OF FIRST SOIL LAYER FOR USE IN HEAT FLUX CONSTRAINT
+! ----------------------------------------------------------------------
+      RHSTS (1) = (DF1 * DTSDZ - SSOIL) / DENOM
+      QTOT = -1.0* RHSTS (1)* DENOM
+      IF (ITAVG) THEN
+         TSURF = (YY + (ZZ1-1) * STC (1)) / ZZ1
+         CALL TBND (STC (1),STC (2),ZSOIL,ZBOT,1,NSOIL,TBK)
+     ENDIF
+      DDZ2 = 0.0
+      DF1N = DF1
+
+! ----------------------------------------------------------------------
+! LOOP THRU THE REMAINING SOIL LAYERS, REPEATING THE ABOVE PROCESS
+! (EXCEPT SUBSFC OR "GROUND" HEAT FLUX NOT REPEATED IN LOWER LAYERS)
+! ----------------------------------------------------------------------
+      DO K = 2,NSOIL
+! ----------------------------------------------------------------------
+! THIS SECTION FOR LAYER 2 OR GREATER, BUT NOT LAST LAYER.
+! ----------------------------------------------------------------------
+         IF (K < NSOIL-1 ) THEN
+         HCPCT = SMC (K)* CH2O + (1.0- SMCMAX)* CSOIL + (SMCMAX - SMC (  &
+                K))* CAIR 
+            CALL TDFCND  (DF1K, SMC(K), QUARTZ, SMCMAX)
+            DENOM = 0.5 * ( ZSOIL (K -1) - ZSOIL (K +1) )
+            DTSDZ2 = (STC (K) - STC (K +1) ) / DENOM
+            DDZ2 = 2. / (ZSOIL (K -1) - ZSOIL (K +1))
+
+! ----------------------------------------------------------------------
+! IF TEMPERATURE AVERAGING INVOKED (ITAVG=TRUE; ELSE SKIP):  CALCULATE
+! TEMP AT BOTTOM OF LAYER.
+! ----------------------------------------------------------------------
+            CI (K) = - DF1K * DDZ2 / ( (ZSOIL (K -1) - ZSOIL (K)) *      &
+       HCPCT)
+            IF (ITAVG) THEN
+               CALL TBND (STC (K),STC (K +1),ZSOIL,ZBOT,K,NSOIL,TBK1)
+            END IF
+
+         ELSEIF (K == NSOIL-1) THEN
+         
+         HCPCT = SMC (K)* CH2O + (1.0- SMCMAX)* CSOIL + (SMCMAX- SMC (  &
+                K))* CAIR 
+            CALL TDFCND  (DF1K, SMC(K), QUARTZ, SMCMAX)
+            DENOM = 0.5 * ( ZSOIL (K -1) - ZSOIL (K +1) )
+            DTSDZ2 = (STC (K) - STC (K +1) ) / DENOM
+            DDZ2 = 2. / (ZSOIL (K -1) - ZSOIL (K +1))
+!-----------------------------------------------------------------------
+! IF TEMPERATURE AVERAGING INVOKED (ITAVG=TRUE; ELSE SKIP):  CALCULATE
+! TEMP AT BOTTOM OF LAST LAYER.
+! ----------------------------------------------------------------------
+            CI (K) = - DF1K * DDZ2 / ( (ZSOIL (K -1) - ZSOIL (K)) *      &
+       HCPCT)
+            IF (ITAVG) THEN
+               CALL TBND (STC (K),TBOT,ZSOIL,ZBOT,K,NSOIL,TBK1)
+            END IF        
+         ELSE         
+! ----------------------------------------------------------------------
+! SPECIAL CASE OF BOTTOM LAYER (CONCRETE ROOF)
+! ----------------------------------------------------------------------
+            HCPCT = CAPR * 4.1868 * 1.E6
+            DF1K  = 3.24
+! ----------------------------------------------------------------------
+! CALC THE VERTICAL TEMP GRADIENT THRU BOTTOM LAYER.
+! ----------------------------------------------------------------------
+            DENOM = .5 * (ZSOIL (K -1) + ZSOIL (K)) - ZBOT
+            DTSDZ2 = (STC (K) - TBOT) / DENOM
+! ----------------------------------------------------------------------
+! IF TEMPERATURE AVERAGING INVOKED (ITAVG=TRUE; ELSE SKIP):  CALCULATE
+! TEMP AT BOTTOM OF LAST LAYER.
+! ----------------------------------------------------------------------
+            CI (K) = 0.
+            IF (ITAVG) THEN
+               CALL TBND (STC (K),TBOT,ZSOIL,ZBOT,K,NSOIL,TBK1)
+            END IF
+! ----------------------------------------------------------------------
+! THIS ENDS SPECIAL LOOP FOR BOTTOM LAYER.
+         END IF
+! ----------------------------------------------------------------------
+! CALCULATE RHSTS FOR THIS LAYER AFTER CALC'NG A PARTIAL PRODUCT.
+! ----------------------------------------------------------------------
+         DENOM = ( ZSOIL (K) - ZSOIL (K -1) ) * HCPCT
+         RHSTS (K) = ( DF1K * DTSDZ2- DF1N * DTSDZ ) / DENOM
+         QTOT = -1.0* DENOM * RHSTS (K)
+
+! ----------------------------------------------------------------------
+! CALC MATRIX COEFS, AI, AND BI FOR THIS LAYER.
+! ----------------------------------------------------------------------
+         AI (K) = - DF1N * DDZ / ( (ZSOIL (K -1) - ZSOIL (K)) * HCPCT)
+
+! ----------------------------------------------------------------------
+! RESET VALUES OF DF1, DTSDZ, DDZ, AND TBK FOR LOOP TO NEXT SOIL LAYER.
+! ----------------------------------------------------------------------
+         BI (K) = - (AI (K) + CI (K))
+         TBK = TBK1
+         DF1N = DF1K
+         DTSDZ = DTSDZ2
+         DDZ = DDZ2
+      END DO
+! ----------------------------------------------------------------------
+  END SUBROUTINE HRT
+! ----------------------------------------------------------------------
+
+      SUBROUTINE HSTEP (STCOUT,STCIN,RHSTS,DT,NSOIL,AI,BI,CI)
+!      CALCULATE/UPDATE THE SOIL TEMPERATURE FIELD.
+! ----------------------------------------------------------------------
+      IMPLICIT NONE
+      INTEGER, INTENT(IN)  :: NSOIL
+      INTEGER              :: K
+
+      REAL, DIMENSION(1:NSOIL), INTENT(IN):: STCIN
+      REAL, DIMENSION(1:NSOIL), INTENT(OUT):: STCOUT
+      REAL, DIMENSION(1:NSOIL), INTENT(INOUT):: RHSTS
+      REAL, DIMENSION(1:NSOIL), INTENT(INOUT):: AI,BI,CI
+      REAL, DIMENSION(1:NSOIL) :: RHSTSin
+      REAL, DIMENSION(1:NSOIL) :: CIin
+      REAL                 :: DT
+
+! ----------------------------------------------------------------------
+! CREATE FINITE DIFFERENCE VALUES FOR USE IN ROSR12 ROUTINE
+! ----------------------------------------------------------------------
+      DO K = 1,NSOIL
+         RHSTS (K) = RHSTS (K) * DT
+         AI (K) = AI (K) * DT
+         BI (K) = 1. + BI (K) * DT
+         CI (K) = CI (K) * DT
+      END DO
+! ----------------------------------------------------------------------
+! COPY VALUES FOR INPUT VARIABLES BEFORE CALL TO ROSR12
+! ----------------------------------------------------------------------
+      DO K = 1,NSOIL
+         RHSTSin (K) = RHSTS (K)
+      END DO
+      DO K = 1,NSOIL
+         CIin (K) = CI (K)
+      END DO
+! ----------------------------------------------------------------------
+! SOLVE THE TRI-DIAGONAL MATRIX EQUATION
+! ----------------------------------------------------------------------
+      CALL ROSR12 (CI,AI,BI,CIin,RHSTSin,RHSTS,NSOIL)
+! ----------------------------------------------------------------------
+! CALC/UPDATE THE SOIL TEMPS USING MATRIX SOLUTION
+! ----------------------------------------------------------------------
+      DO K = 1,NSOIL
+         STCOUT (K) = STCIN (K) + CI (K)
+      END DO
+! ----------------------------------------------------------------------
+  END SUBROUTINE HSTEP
+! ----------------------------------------------------------------------
+! ----------------------------------------------------------------------
+
+      SUBROUTINE TBND (TU,TB,ZSOIL,ZBOT,K,NSOIL,TBND1)
+
+! ----------------------------------------------------------------------
+! SUBROUTINE TBND
+! ----------------------------------------------------------------------
+! CALCULATE TEMPERATURE ON THE BOUNDARY OF THE LAYER BY INTERPOLATION OF
+! THE MIDDLE LAYER TEMPERATURES
+! ----------------------------------------------------------------------
+      IMPLICIT NONE
+      INTEGER, INTENT(IN)       :: NSOIL
+      INTEGER                   :: K
+      REAL, INTENT(IN)          :: TB, TU, ZBOT
+      REAL, INTENT(OUT)         :: TBND1
+      REAL, DIMENSION(1:NSOIL), INTENT(IN)   :: ZSOIL
+      REAL                      :: ZB, ZUP
+
+! ----------------------------------------------------------------------
+! USE SURFACE TEMPERATURE ON THE TOP OF THE FIRST LAYER
+! ----------------------------------------------------------------------
+     IF (K == 1) THEN
+         ZUP = 0.
+      ELSE
+         ZUP = ZSOIL (K -1)
+      END IF
+! ----------------------------------------------------------------------
+! USE DEPTH OF THE CONSTANT BOTTOM TEMPERATURE WHEN INTERPOLATE
+! TEMPERATURE INTO THE LAST LAYER BOUNDARY
+! ----------------------------------------------------------------------
+      IF (K ==  NSOIL) THEN
+         ZB = 2.* ZBOT - ZSOIL (K)
+      ELSE
+         ZB = ZSOIL (K +1)
+      END IF
+! ----------------------------------------------------------------------
+! LINEAR INTERPOLATION BETWEEN THE AVERAGE LAYER TEMPERATURES
+! ----------------------------------------------------------------------
+
+      TBND1 = TU + (TB - TU)* (ZUP - ZSOIL (K))/ (ZUP - ZB)
+! ----------------------------------------------------------------------
+  END SUBROUTINE TBND
+! ----------------------------------------------------------------------
+      SUBROUTINE TDFCND (DF, SMC, QZ, SMCMAX)
+! ----------------------------------------------------------------------
+! CALCULATE THERMAL CONDUCTIVITY OF THE SOIL
+! ----------------------------------------------------------------------
+! PETERS-LIDARD APPROACH (PETERS-LIDARD et al., 1998)
+! ----------------------------------------------------------------------
+      IMPLICIT NONE
+      REAL, INTENT(IN)          :: QZ,  SMC, SMCMAX
+      REAL, INTENT(OUT)         :: DF
+      REAL                      :: AKE, GAMMD, THKDRY, THKO,         &
+                                   THKQTZ,THKSAT,THKS,THKW,SATRATIO
+
+! ----------------------------------------------------------------------
+! IF THE SOIL HAS ANY MOISTURE CONTENT COMPUTE A PARTIAL SUM/PRODUCT
+! OTHERWISE USE A CONSTANT VALUE WHICH WORKS WELL WITH MOST SOILS
+! ----------------------------------------------------------------------
+!  THKW ......WATER THERMAL CONDUCTIVITY
+!  THKQTZ ....THERMAL CONDUCTIVITY FOR QUARTZ
+!  THKO ......THERMAL CONDUCTIVITY FOR OTHER SOIL COMPONENTS
+!  THKS ......THERMAL CONDUCTIVITY FOR THE SOLIDS COMBINED(QUARTZ+OTHER)
+!  SMCMAX ....POROSITY (= SMCMAX)
+!  QZ .........QUARTZ CONTENT (SOIL TYPE DEPENDENT)
+! ----------------------------------------------------------------------
+! USE AS IN PETERS-LIDARD, 1998 (MODIF. FROM JOHANSEN, 1975).
+
+!                                  PABLO GRUNMANN, 08/17/98
+! REFS.:
+!      FAROUKI, O.T.,1986: THERMAL PROPERTIES OF SOILS. SERIES ON ROCK
+!              AND SOIL MECHANICS, VOL. 11, TRANS TECH, 136 PP.
+!      JOHANSEN, O., 1975: THERMAL CONDUCTIVITY OF SOILS. PH.D. THESIS,
+!              UNIVERSITY OF TRONDHEIM,
+!      PETERS-LIDARD, C. D., ET AL., 1998: THE EFFECT OF SOIL THERMAL
+!              CONDUCTIVITY PARAMETERIZATION ON SURFACE ENERGY FLUXES
+!              AND TEMPERATURES. JOURNAL OF THE ATMOSPHERIC SCIENCES,
+!              VOL. 55, PP. 1209-1224.
+! ----------------------------------------------------------------------
+! NEEDS PARAMETERS
+! POROSITY(SOIL TYPE):
+!      POROS = SMCMAX
+! SATURATION RATIO:
+! PARAMETERS  W/(M.K)
+      SATRATIO = SMC / SMCMAX
+! WATER CONDUCTIVITY:
+      THKW = 0.57
+! THERMAL CONDUCTIVITY OF "OTHER" SOIL COMPONENTS
+!      IF (QZ .LE. 0.2) THKO = 3.0
+      THKO = 2.0
+! QUARTZ' CONDUCTIVITY
+      THKQTZ = 7.7
+! SOLIDS' CONDUCTIVITY
+      THKS = (THKQTZ ** QZ)* (THKO ** (1. - QZ))
+
+! SATURATED THERMAL CONDUCTIVITY
+      THKSAT = THKS ** (1. - SMCMAX)* THKW ** (SMCMAX)
+
+! DRY DENSITY IN KG/M3
+      GAMMD = (1. - SMCMAX)*2700.
+
+! DRY THERMAL CONDUCTIVITY IN W.M-1.K-1
+      THKDRY = (0.135* GAMMD+ 64.7)/ (2700. - 0.947* GAMMD)
+
+! KERSTEN NUMBER (USING "FINE" FORMULA, VALID FOR SOILS CONTAINING AT
+! LEAST 5% OF PARTICLES WITH DIAMETER LESS THAN 2.E-6 METERS.)
+! (FOR "COARSE" FORMULA, SEE PETERS-LIDARD ET AL., 1998).
+
+         IF ( SATRATIO >  0.1 ) THEN
+
+            AKE = LOG10 (SATRATIO) + 1.0
+
+! USE K = KDRY
+         ELSE
+
+            AKE = 0.0
+         END IF
+!  THERMAL CONDUCTIVITY
+
+      DF = AKE * (THKSAT - THKDRY) + THKDRY
+! ----------------------------------------------------------------------
+  END SUBROUTINE TDFCND
 ! ----------------------------------------------------------------------
 !===========================================================================
 END MODULE module_sf_urban

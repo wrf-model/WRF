@@ -29,6 +29,13 @@ export START_DATE_STAGE0=$($DAAT $START_DATE -$FCST_RANGE1)
 export END_DATE_STAGE0=$($DAAT $END_DATE   -$FCST_RANGE1)
 export DATE=$START_DATE_STAGE0
 
+if [[ $START_DATE_STAGE0 > $END_DATE_STAGE0 ]]; then
+   echo "Start date $START_DATE_STAGE0 must be before $END_DATE_STAGE0!"
+   exit -1
+fi
+
+export CV_OPTIONS=$NL_CV_OPTIONS #Set CV_OPTIONS (either specified by wrapper or defaults)
+
 while [[ $DATE -le $END_DATE_STAGE0 ]]; do
    export TMP_DIR=${WORK_DIR}/${DATE}
    rm -rf ${TMP_DIR} 2>/dev/null
@@ -68,7 +75,7 @@ while [[ $DATE -le $END_DATE_STAGE0 ]]; do
    fi
 
    ln -fs ${BUILD_DIR}/gen_be_stage0_wrf.exe .
-   ./gen_be_stage0_wrf.exe ${BE_METHOD} ${FCST_TIME} $NE $FILE1 > gen_be_stage0_wrf.${FCST_TIME}.log 2>&1
+   ./gen_be_stage0_wrf.exe ${BE_METHOD} ${FCST_TIME} $NE $FILE1 ${CV_OPTIONS} > gen_be_stage0_wrf.${FCST_TIME}.log 2>&1
 
    #  Tidy:
    mv pert.${FCST_TIME}* ${STAGE0_DIR}

@@ -33,14 +33,17 @@ subroutine da_write_oa_radar_ascii ( ob, iv, re, it )
 #ifdef DM_PARALLEL
    write(unit=filename, fmt='(a,i2.2,a,i4.4)') 'radar_omb_oma_',it,'.', myproc
 #else
-   write(unit=filename, fmt='(a,i2.2,a)') 'radar_omb_oma_',it,'.0000'
+   write(unit=message(1),fmt='(A)') 'write_ao_radar does not work in serial mode'
+   call da_warning(__FILE__,__LINE__,message(1:1))
+   if (trace_use) call da_trace_exit("da_write_oa_radar_ascii")
+   return
+!   write(unit=filename, fmt='(a,i2.2,a)') 'radar_omb_oma_',it,'.0000'
 #endif
-
    call da_get_unit(oma_radar_unit)
    open(unit=oma_radar_unit,file=trim(filename),form='formatted',iostat=ios)
    if (ios /= 0) Then
        call da_error(__FILE__,__LINE__, &
-         (/"Cannot open oma radiance file"//filename/))
+         (/"Cannot open oma radar file"//filename/))
    endif
 
    if (iv % info(radar)%nlocal  >0 ) then

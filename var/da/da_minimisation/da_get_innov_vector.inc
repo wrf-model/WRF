@@ -115,11 +115,11 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
          call da_get_innov_vector_polaramv  (it, num_qcstat_conv,grid, ob, iv)
       if (iv%info(airep)%nlocal     > 0) &
          call da_get_innov_vector_airep     (it, num_qcstat_conv,grid, ob, iv)
-      if (iv%info(pilot)%nlocal> 0) &
+      if (iv%info(pilot)%nlocal     > 0) &
          call da_get_innov_vector_pilot     (it, num_qcstat_conv,grid, ob, iv)
-      if (iv%info(bogus)%nlocal > 0) &
+      if (iv%info(bogus)%nlocal     > 0) &
          call da_get_innov_vector_bogus     (it, num_qcstat_conv, grid, ob, iv)
-      if (iv%info(metar)%nlocal > 0) &
+      if (iv%info(metar)%nlocal     > 0) &
          call da_get_innov_vector_metar     (it, num_qcstat_conv,grid, ob, iv)
       if (iv%info(ships)%nlocal     > 0) &
          call da_get_innov_vector_ships     (it, num_qcstat_conv,grid, ob, iv)
@@ -131,7 +131,7 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
            (pseudo_var(1:3) == 'ztd' .and. iv%info(pseudo)%nlocal > 0) ) then
          call da_get_innov_vector_gpsztd    ( it, num_qcstat_conv, grid, ob, iv )
       endif 
-      if ( (iv%info(gpsref)%nlocal    > 0  ) .or. &
+      if ( (iv%info(gpsref)%nlocal  > 0  ) .or. &
            (pseudo_var(1:3) == 'ref' .and. iv%info(pseudo)%nlocal > 0) ) &
          call da_get_innov_vector_gpsref    (it, num_qcstat_conv, grid, ob, iv)
       if (iv%info(ssmi_tb)%nlocal   > 0) &
@@ -152,14 +152,14 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
          call da_get_innov_vector_profiler  (it,num_qcstat_conv, grid, ob, iv)
       if (iv%info(buoy)%nlocal      > 0) &
          call da_get_innov_vector_buoy      (it,num_qcstat_conv, grid, ob, iv)
-      if (iv%info(rain)%nlocal     > 0) &
+      if (iv%info(rain)%nlocal      > 0) &
          call da_get_innov_vector_rain      (it,num_qcstat_conv, grid, ob, iv, &
                                              hr_rainc(:,:,n),hr_rainnc(:,:,n))
 
 #if defined(CRTM) || defined(RTTOV)
-      if (use_rad                           ) call da_get_innov_vector_radiance (it, grid, ob, iv)
+      if (use_rad                      ) call da_get_innov_vector_radiance (it, grid, ob, iv)
 #endif
-      if (iv%info(pseudo)%nlocal         > 0) call da_get_innov_vector_pseudo   (grid, ob, iv)
+      if (iv%info(pseudo)%nlocal    ==1) call da_get_innov_vector_pseudo   (grid, ob, iv)
       if (iv%info(airsr)%nlocal     > 0) &
       call da_get_innov_vector_airsr    (it,num_qcstat_conv, grid, ob, iv)
 

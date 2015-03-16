@@ -21,6 +21,7 @@ $sw_rwordsize="\$\(NATIVE_RWORDSIZE\)";
 $sw_rttov_flag = "" ;
 $sw_rttov_inc = "" ;
 $sw_crtm_flag = "" ;
+$sw_cloudcv_flag = "" ;
 $sw_4dvar_flag = "" ;
 $sw_wavelet_flag = "" ;
 $WRFCHEM = 0 ;
@@ -255,6 +256,10 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
        $sw_rttov_flag = "-DRTTOV";
        $sw_rttov_inc = "-I$ENV{RTTOV}/include -I$ENV{RTTOV}/mod";
        }
+     if ( $ENV{CLOUD_CV} )
+       {
+       $sw_cloudcv_flag = "-DCLOUD_CV";
+       }
      if ( $sw_wrf_core eq "4D_DA_CORE" )
        {
        $sw_4dvar_flag = "-DVAR4D";
@@ -420,6 +425,7 @@ while ( <CONFIGURE_DEFAULTS> )
     $_ =~ s/CONFIGURE_CRTM_FLAG/$sw_crtm_flag/g ;
     $_ =~ s/CONFIGURE_RTTOV_FLAG/$sw_rttov_flag/g ;
     $_ =~ s/CONFIGURE_RTTOV_INC/$sw_rttov_inc/g ;
+    $_ =~ s/CONFIGURE_CLOUDCV_FLAG/$sw_cloudcv_flag/g ;
     $_ =~ s/CONFIGURE_WAVELET_FLAG/$sw_wavelet_flag/g ;
     if ( $sw_ifort_r8 ) {
       $_ =~ s/^PROMOTION.*=/PROMOTION       =       -r8 /g ;

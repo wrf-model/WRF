@@ -3565,8 +3565,6 @@ contains
       use rrlw_con_f, only: grav
       use rrlw_wvn_f, only: ngb
       use rrlw_vsn_f
-! For GSFC, not needed for WRF
-!      use WaterDistributionMod, only: n1, n2, tabulate_xcw_beta, tabulate_xcw_gamma
 
 #ifdef _ACCEL
       use cudafor
@@ -3575,21 +3573,12 @@ contains
 
       implicit none
 
-! For GSFC, not needed for WRF
-!      real , dimension(n1,n2) :: XCW
-!      real  _gpudev, allocatable :: pmidd(:, :),xcwd(:,:)
-
 #ifdef _ACCEL
       real  _gpudev, allocatable :: pmidd(:, :)
       real  _gpudev, allocatable :: cldfracd(:,:), clwpd(:,:), ciwpd(:,:), cswpd(:,:), taucd(:,:,:)
 
 !$OMP THREADPRIVATE(pmidd,cldfracd,clwpd,ciwpd,cswpd,taucd)
 #endif
-
-! For GSFC, not needed for WRF
-!      real  _gpudev, allocatable :: alphad(:,:), rcorrd(:,:)
-!      integer  _gpudev, allocatable :: cloudFlagd(:,:)
-
 
 ! public interfaces/functions/subroutines
       !public :: mcica_subcol_lwg, generate_stochastic_cloudsg 
@@ -3601,8 +3590,6 @@ contains
 !------------------------------------------------------------------
 
       subroutine mcica_subcol_lwg(colstart, ncol, nlay, icld, permuteseed, irng,       &
-! For GSFC, not needed for WRF
-!                       ciwpmcl, clwpmcl, cswpmcl, taucmcl, cloudFlag, cloudMH, cloudHH, zmd, inhm)
 #ifndef _ACCEL
                        pmidd,clwpd,ciwpd,cswpd,taucd, &
 #endif
@@ -3661,11 +3648,6 @@ contains
       real  :: clwpd(:,:), ciwpd(:,:), cswpd(:,:), taucd(:,:,:)
 #endif
 
-! For GSFC, not needed for WRF
-!      real  _gpudev, intent(in) :: zmd(:,:)  ! Height of midpoints (above surface)
-                                                      !    Dimensions: (ncol,nlay)
-!      integer , intent(in)  :: inhm
-
 ! ----- Local -----
 
 ! Stochastic cloud generator variables [mcica]
@@ -3673,15 +3655,10 @@ contains
       integer  :: ilev                        ! loop index
 
       real  :: pmid(ncol, nlay)               ! layer pressures (Pa) 
-! For GSFC, not needed for WRF
-!      real  :: alpha(ncol, nlay), rcorr(ncol, nlay)
 #ifdef _ACCEL
       type(dim3) :: dimGrid, dimBlock
 #endif
       integer, save :: counter = 0
-! For GSFC, not needed for WRF
-!      real , parameter  :: Zo = 2000.         ! length scale (m) 
-!      real , parameter  :: Zc = 1000.         ! length scale (m) 
       integer :: i,j,k,tk
       real :: t1, t2
   
@@ -3707,42 +3684,16 @@ contains
 ! Convert pressures from mb to Pa
 
 #ifdef  _ACCEL
-! JM Not sure we wouldn't want to handle the CUDA path the same way as the #else part, but ask AER first
-!      made this change on my own, 20150304 jm
       pmid(1:ncol,:nlay) = play(colstart:colstart+ncol-1,:nlay)*1.e2
 #else
       pmidd(1:ncol,:nlay) = play(colstart:colstart+ncol-1,:nlay)*1.e2
 #endif
 
-! For GSFC, not needed for WRF
-!         if     (inhm == 1) then
-!            call tabulate_xcw_beta(xcw)
-!         elseif (inhm == 2) then
-!            call tabulate_xcw_gamma(xcw)
-!         endif
-
 #ifdef _ACCEL
       allocate( pmidd(ncol, nlay), cldfracd(ncol, mxlay+1))
       allocate( clwpd(ncol, mxlay+1), ciwpd(ncol, mxlay+1), cswpd(ncol, mxlay+1))
       allocate( taucd(ncol, nbndlw, mxlay))
-! For GSFC, not needed for WRF
-!      allocate( xcwd( n1, n2))
-!      allocate( alphad( ncol, nlay), rcorrd(ncol, nlay))
-!      allocate( cloudFlagd( ncol, 4))
 #endif
-
-!      ! compute alpha and rcorr
-        
-!!      !$acc kernels 
-!      do j = 1, ncol
-!        alphad(j, 1) = 0.0
-!        rcorrd(j, 1) = 0.0
-!        do i = 2, nlay
-!             alphad(j,i) = exp( -( zmd (j, i) -  zmd (j, i-1)) / Zo)
-!             rcorrd(j,i) = exp( -( zmd (j, i) -  zmd (j, i-1)) / Zc)
-!        end do
-!      end do
-!!      !$acc end kernels
 
 #ifdef _ACCEL
       pmidd = pmid
@@ -3753,78 +3704,8 @@ contains
       cswpd = cswp
       taucd = tauc
 #endif
-! For GSFC, not needed for WRF
-!      xcwd = xcw
 
       end subroutine mcica_subcol_lwg
-
-!      subroutine mcica_cldc(ncol, icld, nlay, cloudmh, cloudhh, cloudflag, cldfmcl)
-!
-!      integer :: i,j,k,tk
-!      integer , parameter :: nsubclw = ngptlw ! number of sub-columns (g-point intervals)
-!      integer , intent(in) :: ncol            ! number of columns
-!      integer , intent(in) :: nlay            ! number of model layers
-!      integer , intent(in) :: cloudMH, cloudHH
-!      integer , intent(out) :: cloudFlag(:,:)
-!      integer , intent(in) :: icld
-!      real  _gpudev, intent(in) :: cldfmcl(:,:,:)    ! cloud fraction [mcica]
-!      if (icld.eq.0) return                                             
-!
-!
-!      !$acc kernels
-!      do i = 1, ncol
-!        cloudFlagd(i,1)=0        
-!        cloudFlagd(i,2)=0
-!        cloudFlagd(i,3)=0
-!        cloudFlagd(i,4)=0
-!       
-!        do j = 1, nsubclw
-!            tk=0
-!            do k = 1, nlay
-!                 if (cldfmcl(i,j,k) > 0.5) then 
-!                    tk=1
-!                 end if
-!            end do
-!            if (tk .eq. 0) then 
-!                cloudFlagd(i,1) = cloudFlagd(i,1)+1
-!            end if
-!            tk=0
-!            do k = cloudHH, nlay
-!                 if (cldfmcl(i,j,k) > 0.5) then 
-!                    tk=1
-!                 end if
-!            end do
-!            if (tk .eq. 0) then 
-!                cloudFlagd(i,2) = cloudFlagd(i,2)+1
-!            end if
-!              tk=0
-!            do k = cloudMH, cloudHH+1
-!                 if (cldfmcl(i,j,k) > 0.5) then 
-!                    tk=1
-!                 end if
-!            end do
-!            if (tk .eq. 0) then 
-!                cloudFlagd(i,3) = cloudFlagd(i,3)+1
-!            end if
-!              tk=0
-!            do k = 1, cloudMH+1
-!                 if (cldfmcl(i,j,k) > 0.5) then 
-!                    tk=1
-!                 end if
-!            end do
-!            if (tk .eq. 0) then 
-!                cloudFlagd(i,4) = cloudFlagd(i,4)+1
-!            end if 
-!        end do
-!      end do
-!      !$acc end kernels
-   
-!      cloudFlag = cloudFlagd
-!     
-!      deallocate( clwpd, ciwpd, cswpd, taucd, xcwd, cloudFlagd)
-!      deallocate( alphad, rcorrd)
-!
-!      end subroutine mcica_cldc
 
 !-------------------------------------------------------------------------------------------------
        _gpuker subroutine generate_stochastic_cloudsg(ncol, nlay, icld, ngbd, &
@@ -3832,8 +3713,6 @@ contains
                                  pmidd,cldfracd,clwpd,ciwpd,cswpd,taucd,changeSeed, &
 #endif
                                  cld_stoch, clwp_stoch, ciwp_stoch, cswp_stoch, &
-! For GSFC, not needed for WRF
-!                                 tauc_stoch, ih, zm) 
                                  tauc_stoch) 
 !-------------------------------------------------------------------------------------------------
 
@@ -3930,11 +3809,7 @@ contains
 !      real , intent(out) :: asmc_stoch(:,:,:)! subcolumn in-cloud asymmetry parameter
                                                       !    Dimensions: (ngptlw,ncol,nlay)
                                                       !   inactive - for future expansion
-! For GSFC, not needed for WRF
-!      real  _gpudev, intent(in) :: zm(:,:)  ! Height of midpoints (above surface)
-                                                      !    Dimensions: (ncol,nlay)
      
-!      integer , value, intent(in) :: ih      
       !integer, value, intent(in) :: counter
    
        
@@ -3945,8 +3820,6 @@ contains
      
        real  :: CDF3(mxlay)      ! random numbers
 
-! For GSFC, not needed for WRF
-!       integer  :: inhm_ 
        real  :: cfs
        integer, parameter :: nsubcol = 140
        
@@ -3990,8 +3863,6 @@ contains
 # define ILOOP_S_CPU do iplon = 1, ncol
 # define ILOOP_E_CPU enddo
 #endif
-
-
 
 
 ! ----- Create seed  --------
@@ -4073,28 +3944,6 @@ contains
             CDF(ilev) = rand_num
            end do
 
-
-! For GSFC, not needed for WRF
-! Exponential overlap: weighting between maximum and random overlap increases
-! with the distance.
-!       case(4)
-!
-!           do ilev = 1,nlay
-!              call kissvec(seed1, seed2, seed3, seed4, rand_num)
-!              CDF(ilev) = rand_num
-!              call kissvec(seed1, seed2, seed3, seed4, rand_num)
-!              CDF2(ilev) = rand_num
-!              call kissvec(seed1, seed2, seed3, seed4, rand_num)
-!              CDF3(ilev) = rand_num 
-!           end do
-!
-!           do ilev = 2,nlay
-!
-!              if (CDF2(ilev) < alphad(iplon,ilev)) then
-!                CDF(ilev) = CDF(ilev-1)
-!              end if
-!           
-!           end do
 
        end select 
 #else
@@ -9149,9 +8998,9 @@ integer,external :: omp_get_thread_num
       sreg( rat_n2oco2_1 , ncol, nlayers )
       sreg( rat_o3co2 , ncol, nlayers )
       sreg( rat_o3co2_1 , ncol, nlayers )
-#ifdef _ACCEL
+
       call dflush()
-#endif
+
       allocate( pavel( ncol, nlayers ))
       dreg( wx1 , ncol, nlayers )
       dreg( wx2 , ncol, nlayers )
@@ -14069,10 +13918,6 @@ integer,external :: omp_get_thread_num
              tauaer  , &
              uflx    ,dflx    ,hr      ,uflxc   ,dflxc   ,hrc , &
              duflx_dt,duflxc_dt)
-! For GSFC, not needed for WRF
-!             tauaer  ,zm      ,cloudMH, cloudHH, &
-!             uflx    ,dflx    ,hr      ,uflxc   ,dflxc   ,hrc , &
-!             duflx_dt,duflxc_dt, cloudFlag)
 ! -------- Description --------
 
 ! This program is the driver subroutine for RRTMG_LW, the AER LW radiation 
@@ -14266,8 +14111,6 @@ integer,external :: omp_get_thread_num
       real , intent(in) :: tauaer(:,:,:)              ! aerosol optical depth
                                                       !   at mid-point of LW spectral bands
                                                       !    Dimensions: (ncol,nlay,nbndlw)
-! For GSFC, not needed for WRF
-!      real , intent(in) :: zm(:, :)                   ! Layer height above surface (m)
 
 ! ----- Output -----
 
@@ -14357,26 +14200,18 @@ integer,external :: omp_get_thread_num
       if (cn < 500) then 
         cn = 500 
       end if
-! mji - used 2048 for Northeast grid (4380 columns)
-! mji - used 4096 for CONUS grid (33750 columns)
-!      cn = 2
-!      cn = 256
-!      cn = 512
-!      cn = 1024
-!      cn = 2048
-      cn = 4096
+! Set number of columns per partition to be no larger than total number of columns
+      if (cn > ncol) then 
+        cn = ncol
+      end if
 #else
-cn = CHNK
+      cn = CHNK
 #endif
 !
-! mji - Reduce number of columns per partition by number of CPU processors for dmpar
-! mji - Running WRF in dmpar with 8 processors
-!      cn = cn / 8
-
-      print *, "Number of columns is                          ", ncol
-      print *, "Number of columns per partition (rrtmg_lw) is ", cn
+      print *, "RRTMG_LWF: Number of columns is               ", ncol
+      print *, "RRTMG_LWF: Number of columns per partition is ", cn
       ns = ceiling( real(ncol) / real(cn) )
-      print *, "Number of partitions is                       ", ns
+      print *, "RRTMG_LWF: Number of partitions is            ", ns
 
 ! mji - time      
       call cpu_time(t1)
@@ -14403,10 +14238,6 @@ cn = CHNK
              tauaer  , &
              uflx    ,dflx    ,hr      ,uflxc   ,dflxc,  hrc, &
              duflx_dt,duflxc_dt)    
-! For GSFC, not needed for WRF
-!             tauaer  , zm, cloudMH, cloudHH, &
-!             uflx    ,dflx    ,hr      ,uflxc   ,dflxc,  hrc, &
-!             duflx_dt,duflxc_dt,cloudFlag)    
 !write(0,*)__FILE__,__LINE__,i,'uflx ',uflx(10,10)
 !write(0,*)__FILE__,__LINE__,i,'dflx ',dflx(10,10)
       end do  
@@ -14414,7 +14245,7 @@ cn = CHNK
 ! mji - time      
       call cpu_time(t2)
       print *, "------------------------------------------------"
-      print *, "TOTAL RRTMG_LW RUN TIME IS   ", t2-t1
+      print *, "TOTAL RRTMG_LWF RUN TIME IS   ", t2-t1
       print *, "------------------------------------------------"
 
       end subroutine
@@ -14430,13 +14261,7 @@ cn = CHNK
              tauaer  , &
              uflx    ,dflx    ,hr      ,uflxc   ,dflxc,  hrc, &
              duflx_dt,duflxc_dt)
-! For GSFC, not needed for WRF
-!             tauaer  , zm, cloudMH, cloudHH, &
-!             uflx    ,dflx    ,hr      ,uflxc   ,dflxc,  hrc, &
-!             duflx_dt,duflxc_dt,cloudFlag)
-
    
-!      use gpu_mcica_subcol_gen_lw, only: mcica_subcol_lwg, mcica_cldc, generate_stochastic_cloudsg
       use gpu_mcica_subcol_gen_lw, only: mcica_subcol_lwg, generate_stochastic_cloudsg
    
       use parrrtm_f, only : nbndlw, ngptlw, maxxsec, mxmol, mxlay, nbndlw, nmol
@@ -14500,7 +14325,6 @@ cn = CHNK
       integer , intent(in) :: iceflglw                ! Flag for ice particle specification
       integer , intent(in) :: liqflglw                ! Flag for liquid droplet specification
 
-!      integer , intent(in) :: cloudMH, cloudHH        ! cloud layer heights for cloudFlag
       real , intent(in) :: cldfrac(:,:)               ! Cloud fraction
                                                       !    Dimensions: (ngptlw,ncol,nlay)
       real , intent(in) :: ciwp(:,:)                  ! In-cloud ice water path (g/m2)
@@ -14531,8 +14355,6 @@ cn = CHNK
       real , intent(in) :: tauaer(:,:,:)              ! aerosol optical depth
                                                       !   at mid-point of LW spectral bands
                                                       !    Dimensions: (ncol,nlay,nbndlw)
-! For GSFC, not needed for WRF
-!      real , intent(in) :: zm(:, :)                   ! Layer height above surface (m)
 
       integer , intent(in) :: pncol
       integer , intent(in) :: colstart
@@ -14773,9 +14595,6 @@ cn = CHNK
                                                       !    Dimensions: (ncol,nlay,nbndlw)
 
 
-! For GSFC, not needed for WRF
-!      real  :: zmp(pncol, mxlay+1)
-  
       integer :: permuteseed  ! this is set, below
       integer  :: icb(16)
          
@@ -14814,8 +14633,6 @@ cn = CHNK
       real , parameter :: amdo2 = 0.905140  ! Molecular weight of dry air / oxygen
       real , parameter :: amdc1 = 0.210852  ! Molecular weight of dry air / CFC11
       real , parameter :: amdc2 = 0.239546  ! Molecular weight of dry air / CFC12
-! For GSFC, not needed for WRF
-!      real  _gpudeva ::  zmd(:,:)
       real  :: amm, amttl, wvttl, wvsh, summol  
       integer  :: isp, l, ix, n, imol, ib   ! Loop indices
       integer, save :: counter =0
@@ -14854,10 +14671,7 @@ integer,external :: omp_get_thread_num
       relq(1:pncol,1:nlay) = rel(colstart:(colstart+pncol-1), 1:nlay)
       resq(1:pncol,1:nlay) = res(colstart:(colstart+pncol-1), 1:nlay)
       taucq(1:pncol,1:nbndlw,1:nlay) = tauc(colstart:(colstart+pncol-1), 1:nbndlw, 1:nlay)
-! ** mji *** tauaq dimensions?
       tauaq(1:pncol,1:nlay,1:nbndlw) = tauaer(colstart:(colstart+pncol-1), 1:nlay, 1:nbndlw)
-! For GSFC, not needed for WRF
-!      zmp(:,1:nlay) = zm(colstart:(colstart+pncol-1), 1:nlay)
   
 #ifdef _ACCEL
       allocate( cldfmcd(pncol, ngptlw, nlay+1))
@@ -14935,8 +14749,6 @@ integer,external :: omp_get_thread_num
 #ifdef _ACCEL
       allocate( fracsd( pncol, nlayers+1, ngptlw ))
       allocate( taug( pncol, nlayers+1, ngptlw ))
-! For GSFC, not needed for WRF
-!      allocate( zmd(pncol, mxlay+1))
 #endif
 !write(0,*)__FILE__,__LINE__
       tbound = tsfc(colstart:(colstart+pncol-1))
@@ -14973,9 +14785,6 @@ integer,external :: omp_get_thread_num
 #  undef pncol
 #endif
 
-! For GSFC, not needed for WRF
-!      zmd = zmp
-      
 !write(0,*)__FILE__,__LINE__
       permuteseed=150 ! if you change this, change value in module_ra_rrtmg_lw.F
       call mcica_subcol_lwg(colstart, pncol, nlay, icld, counter, permuteseed,            &
@@ -14984,8 +14793,6 @@ integer,external :: omp_get_thread_num
 #endif
                             play, cldfracq, ciwpq,                                        &
                             clwpq, cswpq, taucq,ngbd, cldfmcd, ciwpmcd, clwpmcd, cswpmcd, & 
-! For GSFC, not needed for WRF
-!                             taucmcd,  cloudFlagq, cloudMH, cloudHH, zmd, 1)
                              taucmcd)
 !write(0,*)__FILE__,__LINE__
 !jm write(0,*)__FILE__,__LINE__,omp_get_thread_num()
@@ -15001,8 +14808,6 @@ integer,external :: omp_get_thread_num
 #ifndef _ACCEL
                                pmid,cldfracq,clwpq,ciwpq,cswpq,taucq,permuteseed,  &
 #endif
-! For GSFC, not needed for WRF
-!                               ngbd, cldfmcd, clwpmcd, ciwpmcd, taucmcd, 1, zmd)
                                cldfmcd, clwpmcd, ciwpmcd, cswpmcd, taucmcd)
 !write(0,*)__FILE__,__LINE__
       end if
@@ -15047,11 +14852,6 @@ integer,external :: omp_get_thread_num
 
 !write(0,*)__FILE__,__LINE__
 #ifdef _ACCEL
-! For GSFC, not needed for WRF
-!      call mcica_cldc(pncol, icld, nlay, cloudmh, cloudhh, cloudflagq, cldfmcd)
-!      cloudFlag(colstart:(colstart+pncol-1), :) = cloudFlagq
-!      deallocate(zmd)
-! Moved here from mcica_cldc
       deallocate( pmidd, cldfracd)
       deallocate( clwpd, ciwpd, cswpd, taucd)
 
@@ -15963,12 +15763,6 @@ integer,external :: omp_get_thread_num
          iceflglw = 3
          liqflglw = 1
 
-! For GSFC, not needed for WRF
-! To use icld=4 option (currently inactive), must fill zm here with model layer heights above surface (m)
-!         do k = kts,nlayers
-!            zm(icol,k) = 0.
-!         end do
-
 !Mukul change the flags here with reference to the new effective cloud/ice/snow radius
          IF (ICLOUD .ne. 0) THEN
             IF ( has_reqc .ne. 0) THEN
@@ -16437,7 +16231,6 @@ integer,external :: omp_get_thread_num
 ! mji - mcica sub-column generator called inside rrtmg_lw for gpu
 !         iplon = 1
 !         irng = 0
-
 ! Sub-column generator for McICA
 !         call mcica_subcol_lw(iplon, ncol, nlay, icld, permuteseed, irng, play, &
 !                       cldfrac, ciwpth, clwpth, cswpth, rei, rel, res, taucld, cldfmcl, &
@@ -16528,8 +16321,6 @@ integer,external :: omp_get_thread_num
              cfc11vmr,cfc12vmr,cfc22vmr,ccl4vmr ,emis    , &
              inflglw ,iceflglw,liqflglw,cldfrac , &
              taucld  ,ciwpth  ,clwpth  ,cswpth  ,rei  ,rel ,res , &
-! For GSFC, not needed for WRF
-!             tauaer  ,zm      , &
              tauaer  , &
              uflx    ,dflx    ,hr      ,uflxc   ,dflxc,  hrc, &
              duflx_dt,duflxc_dt)
@@ -16589,15 +16380,6 @@ integer,external :: omp_get_thread_num
 !
       end do i_loop2
    end do j_loop2                                           
-
-! mji - write
-!      do j=jts,jte
-!      write(62,995) (olr(i,j),i=its,ite)
-!      enddo
-!      do j=jts,jte
-!      write(62,995) (glw(i,j),i=its,ite)
-!      enddo
-! 995  format(1p6e12.5)
 
 !-------------------------------------------------------------------
 

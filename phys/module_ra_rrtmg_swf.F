@@ -1426,8 +1426,6 @@
       use rrsw_con_f, only: grav
       use rrsw_wvn_f, only: ngb
       use rrsw_vsn_f
-! For GSFC, not needed for WRF
-!      use tab_xcw
 
       implicit none
 
@@ -1435,17 +1433,9 @@
       
       contains
 !-------------------------------------------------------------------------------------------------
-! mji - fixed order of clwp, ciwp, clwp_stoch, ciwp_stoch
       subroutine mcica_sw(ncol, nlay, nsubcol, icld, irng, play, cld, ciwp, clwp, cswp, &
                           tauc, ssac, asmc, fsfc, cld_stoch, ciwp_stoch, clwp_stoch, cswp_stoch, &
-!      subroutine mcica_sw(ncol, nlay, nsubcol, icld, irng, play, cld, clwp, ciwp, cswp, &
-!                          tauc, ssac, asmc, fsfc, cld_stoch, clwp_stoch, ciwp_stoch, cswp_stoch, &
                           tauc_stoch, ssac_stoch, asmc_stoch, fsfc_stoch, changeSeed )
-! for inactive icld=4 option
-!                          CDF,&
-!                          CDF2, CDF3, alpha, &
-!                          zm, alat, &
-!                          DOY, rdl, adl) 
 !-------------------------------------------------------------------------------------------------
 
   !----------------------------------------------------------------------------------------------------------------
@@ -1539,8 +1529,7 @@
                                                       !    Dimensions: (ncol,nlay,nbndsw)
       real , intent(in) :: fsfc(:,:,:)        ! in-cloud forward scattering fraction (non-delta scaled)
                                                       !    Dimensions: (ncol,nlay,nbndsw)
-! for inactive icld=4 option
-      
+
       real , intent(out) :: cld_stoch(:,:,:)  ! subcolumn cloud fraction 
                                                       !    Dimensions: (ngptsw,ncol,nlay)
       real , intent(out) :: clwp_stoch(:,:,:) ! subcolumn in-cloud liquid water path
@@ -1583,13 +1572,6 @@
 
 ! Indices
       integer  :: ilev, isubcol, i, n, ngbm, iplon   ! indices
-! For inactive icld=4 option
-!      integer  :: inhm
-!      real     :: am1,am2,am3,am4,amr
-!      real     :: SIGMA_QCW
-!      real     :: rind1, rind2
-!      integer  :: ind1, ind2
-!      real     :: zcw
 #ifndef _ACCEL
       integer :: m, k
 ! inline function
@@ -1601,9 +1583,6 @@
 ! Note: in GPU version of code, only kissvec method is used, Mersenne Twister not installed
 
 ! Pass input cloud overlap setting to local variable
-
-! For inactive icld=4 option
-!      inhm = 0
 
 
 ! ------ Apply overlap assumption --------
@@ -8646,8 +8625,6 @@ IKLOOP1_E
              pbbfddir, pbbcddir, puvfddir, puvcddir, pnifddir, pnicddir, &
              zgco,zomco,zrdnd,zref,zrefo,zrefd,zrefdo,ztauo,zdbt,ztdbt, &
              ztra,ztrao,ztrad,ztrado,zfd,zfu,ztaug, ztaur, zsflxzen)
-! For GSFC, not needed for WRF
-!             znirr,znirf,zparr,zparf,zuvrr,zuvrf)
 ! ---------------------------------------------------------------------------
 !
 ! Purpose: Contains spectral loop to compute the shortwave radiative fluxes, 
@@ -8792,10 +8769,6 @@ real gpu_device  :: zcd(tncol,ngptsw,nlayers+1)  , zcu(tncol,ngptsw,nlayers+1)
       real , intent(out) :: pnicddir(:,:) 
       real , intent(out) :: pnifddir(:,:) 
       
-! For GSFC, not needed for WRF
-!      real, intent(out), dimension(:) :: znirr,znirf,zparr,zparf,zuvrr,zuvrf
-                                                               !   Dimensions: (ncol)
-
 ! ------- Local -------
   
       integer   :: klev
@@ -9342,21 +9315,6 @@ real gpu_device  :: zcd(tncol,ngptsw,nlayers+1)  , zcu(tncol,ngptsw,nlayers+1)
          ILOOP_S_CPU
             zincflx = adjflux(jb)  * zsflxzen(iplon,iw)   * prmu0(iplon)    
             
-! For GSFC, not needed for WRF
-!! Accumulate surface direct fluxes for NIR
-!            if (ibm == 14 .or. ibm <= 8) then
-!               znirr(iplon) = znirr(iplon) + zincflx*ztdbt(iplon, iw, klev+1)     ! Direct flux
-!               znirf(iplon) = znirf(iplon) + zincflx*zfd(iplon, iw, klev+1)       ! Total flux
-!! Accumulate surface direct fluxes for PAR
-!            else if (ibm >= 9 .and. ibm <= 11) then
-!               zparr(iplon) = zparr(iplon) + zincflx*ztdbt(iplon, iw, klev+1)     ! Direct flux
-!               zparf(iplon) = zparf(iplon) + zincflx*zfd(iplon, iw, klev+1)       ! Total flux
-!! Accumulate surface direct fluxes for UV
-!            else if (ibm >= 12 .and. ibm <= 13) then
-!               zuvrr(iplon) = zuvrr(iplon) + zincflx*ztdbt(iplon, iw, klev+1)     ! Direct flux
-!               zuvrf(iplon) = zuvrf(iplon) + zincflx*zfd(iplon, iw, klev+1)       ! Total flux
-!            endif
-
          end do
       end do
 !$acc end kernels
@@ -9964,14 +9922,10 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
              asdir   ,asdif   ,aldir   ,aldif   , &
              coszen  ,adjes   ,dyofyr  ,scon    , &
              inflgsw ,iceflgsw,liqflgsw,cld     , &
-! for inactive icld=4 option
-!             zm      ,alat    , &
              tauc    ,ssac    ,asmc    ,fsfc    , &
              ciwp    ,clwp    ,cswp    ,rei     ,rel    ,res   , &
              tauaer  ,ssaaer  ,asmaer  ,ecaer   , &
              swuflx  ,swdflx  ,swhr    ,swuflxc ,swdflxc,swhrc , &
-! For GSFC, not needed for WRF
-!             nirr    ,nirf    ,parr    ,parf    ,uvrr   ,uvrf  ,normFlx, &
 ! --------- Add the following four compenants for ssib shortwave down radiation ---!
 ! -------------------      by Zhenxin 2011-06-20      --------------------------------!
              sibvisdir, sibvisdif, sibnirdir, sibnirdif,         &
@@ -10094,14 +10048,6 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
       real , intent(in) :: ecaer(:,:,:)       ! Aerosol optical depth at 0.55 micron (iaer=6 only)
                                               !    Dimensions: (ncol,nlay,naerec)
                                               ! (non-delta scaled)      
-! For GSFC, not needed for WRF
-!      integer , intent(in) :: normFlx         ! Normalize fluxes flag
-!                                              ! 0 = no normalization
-!                                              ! 1 = normalize fluxes ( / (scon * coszen) )
-! for inactive icld=4 option
-!      real , intent(in) :: zm(:,:)
-!      real , intent(in) :: alat(:)
-                                              
                                               
 ! ----- Output -----
 
@@ -10117,19 +10063,7 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
                                               !    Dimensions: (ncol,nlay+1)
       real , intent(out) :: swhrc(:,:)        ! Clear sky shortwave radiative heating rate (K/d)
                                               !    Dimensions: (ncol,nlay)
-! For GSFC, not needed for WRF
-! Output added for Land/Surface process
-!      real , intent(out) :: nirr(:)           ! Near-IR direct downward shortwave flux (w/m2)
-!                                              !    Dimensions: (ncol)
-!      real , intent(out) :: nirf(:)           ! Near-IR diffuse downward shortwave flux (w/m2)
-!                                              !    Dimensions: (ncol)
-!      real , intent(out) :: parr(:)           ! Visible direct downward shortwave flux (w/m2)
-!                                              !    Dimensions: (ncol)
-!      real , intent(out) :: parf(:)           ! Visible diffuse downward shortwave flux (w/m2)
-!                                              !    Dimensions: (ncol)
-!      real , intent(out) :: uvrr(:)           ! UV direct downward shortwave flux (w/m2)
-!                                              !    Dimensions: (ncol)
-!      real , intent(out) :: uvrf(:)           ! UV diffuse downward shortwave flux (w/m2)
+
       real, intent(out) :: sibvisdir(:,:)      ! visible direct downward flux  (W/m2)
                                                !    Dimensions: (ncol,nlay+1) Zhenxin (2011/06/20)
       real, intent(out) :: sibvisdif(:,:)      ! visible diffusion downward flux  (W/m2)
@@ -10143,7 +10077,7 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
       real, intent(out) :: swdkdif(:,:)        ! Total shortwave downward diffuse flux (W/m2)
                                                !    Dimensions: (ncol,nlay+1) jararias, 2013/08/10
 
-      integer :: npart, pncol
+      integer :: npart, pncol, ns
 
 ! mji - time
       real :: t1, t2
@@ -10196,19 +10130,6 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
           pncol = pncol/2
       end if
 
-! mji - skip code above and set pncol manually to test several values
-! mji - used 2048 for Northeast grid (4380 columns)
-! mji - used 4096 for CONUS grid (33750 columns)
-!      pncol = 2
-!      pncol = 512
-!      pncol = 1024
-!      pncol = 2048
-      pncol = 4096
-      
-! mji - Reduce number of columns per partition by number of CPU processors for dmpar
-! mji - Running WRF in dmpar with 8 processors
-!      pncol = pncol / 8
-
 #else
       pncol = 2
       pncol = 4
@@ -10218,7 +10139,10 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
           
       end if
 
-      print *, "Number of columns per partition (rrtmg_sw) is ", pncol
+      print *, "RRTMG_SWF: Number of columns is               ", ncol
+      print *, "RRTMG_SWF: Number of columns per partition is ", pncol
+      ns = ceiling( real(ncol) / real(pncol) )
+      print *, "RRTMG_SWF: Number of partitions is            ", ns
 
       call cpu_time(t1)
                                                       
@@ -10229,20 +10153,16 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
              asdir   ,asdif   ,aldir   ,aldif   , &
              coszen  ,adjes   ,dyofyr  ,scon    , &
              inflgsw ,iceflgsw,liqflgsw,cld     , &
-! for inactive icld=4 option
-!             zm      ,alat    , &
              tauc    ,ssac    ,asmc    ,fsfc    , &
              ciwp    ,clwp    ,cswp    ,rei     ,rel    ,res   , &
              tauaer  ,ssaaer  ,asmaer  ,ecaer   , &
              swuflx  ,swdflx  ,swhr    ,swuflxc ,swdflxc ,swhrc, &
-! For GSFC, not needed for WRF
-!             nirr    ,nirf    ,parr    ,parf    ,uvrr    ,uvrf , normFlx, &
              sibvisdir, sibvisdif, sibnirdir, sibnirdif,         &
              swdkdir  , swdkdif                                  & ! jararias, 2013/08/10
                                 )
       call cpu_time(t2)
       print *, "------------------------------------------------"
-      print *, "TOTAL RRTMG_SW RUN TIME IS   ", t2-t1
+      print *, "TOTAL RRTMG_SWF RUN TIME IS   ", t2-t1
       print *, "------------------------------------------------"
 
                                                       
@@ -10256,14 +10176,10 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
              gasdir  ,gasdif  ,galdir  ,galdif  , &
              gcoszen ,adjes   ,dyofyr  ,scon    , &
              inflgsw ,iceflgsw,liqflgsw,gcld    , &
-! for inactive icld=4 option
-!             gzm     ,galat   , &
              gtauc   ,gssac   ,gasmc   ,gfsfc   , &
              gciwp   ,gclwp   ,gcswp   ,grei    ,grel    ,gres   , &
              gtauaer ,gssaaer ,gasmaer ,gecaer  , &
              swuflx  ,swdflx  ,swhr    ,swuflxc ,swdflxc ,swhrc, &
-! For GSFC, not needed for WRF
-!             nirr    ,nirf    ,parr    ,parf    ,uvrr    ,uvrf  , normFlx, &
              sibvisdir, sibvisdif, sibnirdir, sibnirdif,         &
              swdkdir  , swdkdif                                  & ! jararias, 2013/08/10
                                 )
@@ -10278,8 +10194,6 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
                            abari, bbari, cbari, dbari, ebari, fbari
       use rrsw_wvn_f, only : wavenum2, ngb, icxa, nspa, nspb
       use rrsw_ref_f, only : preflog, tref
-! For GSFC, not needed for WRF
-!      use tab_xcw
       use rrsw_kg16_f, kao16 => kao, kbo16 => kbo, selfrefo16 => selfrefo, forrefo16 => forrefo, sfluxrefo16 => sfluxrefo
       use rrsw_kg16_f, ka16 => ka, kb16 => kb, selfref16 => selfref, forref16 => forref, sfluxref16 => sfluxref
 
@@ -10425,10 +10339,7 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
 !      integer , intent(in) :: normFlx                 ! Normalize fluxes flag
                                                        ! 0 = no normalization
                                                        ! 1 = normalize fluxes ( / (scon * coszen) )
-! for inactive icld=4 option
-!      real, intent(in) :: gzm(gncol, nlay)
-!      real, intent(in) :: galat(gncol)
-                                              
+
 ! ----- Output -----
 
       real , intent(out) :: swuflx(:,:)               ! Total sky shortwave upward flux (W/m2)
@@ -10443,21 +10354,6 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
                                                       !    Dimensions: (ncol,nlay+1)
       real , intent(out) :: swhrc(:,:)                ! Clear sky shortwave radiative heating rate (K/d)
                                                       !    Dimensions: (ncol,nlay)
-
-! For GSFC, not needed for WRF
-! Output added for Land/Surface process
-!      real , intent(out) :: nirr(:)                   ! Near-IR direct downward shortwave flux (w/m2)
-!                                                      !    Dimensions: (ncol)
-!      real , intent(out) :: nirf(:)                   ! Near-IR diffuse downward shortwave flux (w/m2)
-!                                                      !    Dimensions: (ncol)
-!      real , intent(out) :: parr(:)                   ! Visible direct downward shortwave flux (w/m2)
-!                                                      !    Dimensions: (ncol)
-!      real , intent(out) :: parf(:)                   ! Visible diffuse downward shortwave flux (w/m2)
-!                                                      !    Dimensions: (ncol)
-!      real , intent(out) :: uvrr(:)                   ! UV direct downward shortwave flux (w/m2)
-!                                                      !    Dimensions: (ncol)
-!      real , intent(out) :: uvrf(:)                   ! UV diffuse downward shortwave flux (w/m2)
-!                                                      !    Dimensions: (ncol)
 
       real, intent(out) :: sibvisdir(:,:)              ! visible direct downward flux  (W/m2)
                                                        !    Dimensions: (ncol,nlay+1) Zhenxin (2011/06/20)
@@ -10570,14 +10466,6 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
       real   :: rel(ncol,nlay)                ! Cloud water drop effective radius (microns)
       real   :: res(ncol,nlay)                ! Cloud snow effective radius (microns)
       
-! for inactive icld=4 option
-!      real   :: alat(ncol)
-!      real   :: zm(ncol, nlay)
-
-! For GSFC, not needed for WRF                                                      
-!      real, dimension(ncol) :: znirr,znirf,zparr,zparf,zuvrr,zuvrf
-      
-
       real  :: taucmc(ncol,nlay+1,ngptsw)     ! in-cloud optical depth [mcica]
       real  :: taormc(ncol,nlay+1,ngptsw)     ! unscaled in-cloud optical depth [mcica]
       real  :: ssacmc(ncol,nlay+1,ngptsw)     ! in-cloud single scattering albedo [mcica]
@@ -10690,8 +10578,6 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
          adjflux(ib) = adjflx * scon / rrsw_scon
       end do
 
-! For GSFC, not used for WRF
-!      if (icld.lt.0.or.icld.gt.4) icld = 1
       if (icld.lt.0.or.icld.gt.3) icld = 2
     
       
@@ -10732,17 +10618,11 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
 !$acc zfd,zfu,zdbt,zgco,&
 !$acc zomco,zrdnd,ztaug, ztaur,zsflxzen)&
 !$acc create(ciwp, clwp, cswp, cld, tauc, ssac, asmc, fsfc, rei, rel, res) &
-!! For GSFC, not needed for WRF
-!!  !$acc create(rdl, adl) &
 !$acc create(play, tlay, plev, tlev, tsfc, cldflag, coszen) &
 !$acc create(coldry, wkl) &
-!! For GSFC, not needed for WRF
-!!  !$acc create(znirr,znirf,zparr,zparf,zuvrr,zuvrf) &
 !$acc create(extliq1, ssaliq1, asyliq1, extice2, ssaice2, asyice2) &
 !$acc create(extice3, ssaice3, asyice3, fdlice3, abari, bbari, cbari, dbari, ebari, fbari) &
 !$acc create(taua, asya, omga,gtauaer,gssaaer,gasmaer) &
-! for inactive icld=4 option
-!!  !$acc create(zm, alat) &
 !$acc copyin(wavenum2, ngb) &
 !$acc copyin(tref, preflog, albdif, albdir, cossza)&
 !$acc copyin(icxa, adjflux, nspa, nspb)&
@@ -10768,8 +10648,6 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
 !$acc copyin(ka25,sfluxref25,abso3a25,abso3b25,rayl25)&
 !$acc copyin(sfluxrefo26)&
 !$acc copyin(sfluxref26)&
-! for inactive icld=4 option
-!! !$acc copyin(gzm,galat)&
 !$acc copyin(kao27,kbo27,sfluxrefo27, raylo27)&
 !$acc copyin(ka27,kb27,sfluxref27, rayl27)&
 !$acc copyin(kao28,kbo28,sfluxrefo28)&
@@ -10780,10 +10658,6 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
 !$acc copyin(gcld, gciwp, gclwp, gcswp, grei, grel, gres, gplay, gplev, gtlay, gtlev, gtsfc)&
 !$acc copyin(gasdir, galdir, gasdif, galdif,profi,profic,gcoszen)&
 !$acc copyout(sibvisdir,sibvisdif,sibnirdir,sibnirdif,swdkdir,swdkdif)
-
-
-! For GSFC, not needed for WRF
-!! !$acc data copyin(XCW) if(icld==4)
 
 !$acc update device(extliq1, ssaliq1, asyliq1, extice2, ssaice2, asyice2) &
 !$acc device(extice3, ssaice3, asyice3, fdlice3, abari, bbari, cbari, dbari, ebari, fbari) &
@@ -10961,9 +10835,6 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
               rei(iplon,:) = grei(piplon, 1:nlay) 
               rel(iplon,:) = grel(piplon, 1:nlay)
               res(iplon,:) = gres(piplon, 1:nlay)
-! for inactive icld=4 option
-!              zm(iplon,:) = gzm(piplon, 1:nlay)
-!              alat(iplon) = galat(piplon)
             end do
 
 !$acc end kernels
@@ -11131,10 +11002,6 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
                           cld, ciwp, clwp, cswp, tauc, ssac, asmc, fsfc, &
                           cldfmcl, ciwpmcl, clwpmcl, cswpmcl, &
                           taucmc, ssacmc, asmcmc, fsfcmc, 1 ) 
-! mji - inactive for icld=4 option
-!                          zref, zrefo, zrefd, zbbfu, &
-!                          zm, alat, &
-!                          dyofyr, rdl, adl)
           end if   
 
           if (cc==2) then   ! call cldprmc for cloudy cases
@@ -11165,8 +11032,6 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
                          zbbfddir, zbbcddir, zuvfddir, zuvcddir, znifddir, znicddir,&
                          zgco,zomco,zrdnd,zref,zrefo,zrefd,zrefdo,ztauo,zdbt,ztdbt,&
                          ztra,ztrao,ztrad,ztrado,zfd,zfu,ztaug, ztaur, zsflxzen)
-! For GSFC, not needed for WRF
-!                         znirr,znirf,zparr,zparf,zuvrr,zuvrf)
 
 #ifndef _ACCEL
 #  undef colr
@@ -11959,13 +11824,6 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
          iceflgsw = 3
          liqflgsw = 1
 
-! To use icld=4 option (currently inactive), must fill zm here with model layer heights above surface (m)
-!         do k = kts,nlayers
-!            zm(icol,k) = 0.
-!         end do
-! To use icld=4 option (currently inactive), must fill alat here with model latitudes
-!         alat(icol) = 0.
-
 !Mukul change the flags here with reference to the new effective cloud/ice/snow radius
          IF (ICLOUD .ne. 0) THEN
             IF ( has_reqc .ne. 0) THEN
@@ -12346,9 +12204,7 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
 !         iplon = 1
 !         irng = 0
 !         permuteseed = 1
-
 ! Sub-column generator for McICA
-
 !         call mcica_subcol_sw(iplon, icol, nlay, icld, permuteseed, irng, play, &
 !                       cldfrac, ciwpth, clwpth, cswpth, rei, rel, res, taucld, ssacld, asmcld, fsfcld, &
 !                       cldfmcl, ciwpmcl, clwpmcl, cswpmcl, reicmcl, relqmcl, resnmcl, &
@@ -12527,8 +12383,6 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
              asdir   ,asdif   ,aldir   ,aldif   , &
              coszen  ,adjes   ,dyofyr  ,scon    , &
              inflgsw ,iceflgsw,liqflgsw,cldfrac , &
-! for inactive icld=4 option
-!             zm      ,alat    , &
              taucld  ,ssacld  ,asmcld  ,fsfcld  , &
              ciwpth  ,clwpth  ,cswpth  ,rei     ,rel     ,res, &
              tauaer  ,ssaaer  ,asmaer  ,ecaer   , &

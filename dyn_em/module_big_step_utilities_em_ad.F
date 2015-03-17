@@ -9,7 +9,6 @@ MODULE a_module_big_step_utilities_em
    USE module_model_constants
    USE module_state_description, only: p_qg, p_qs, p_qi, gdscheme, tiedtkescheme, ntiedtkescheme, &
    kfetascheme, mskfscheme, g3scheme, p_qv, param_first_scalar, p_qr, p_qc, DFI_FWD
-   USE module_state_description, only: LSCONDSCHEME, MKESSLERSCHEME !hcl
    USE module_configure, ONLY : grid_config_rec_type
    USE module_wrf_error
 #if (RWORDSIZE == 4)
@@ -12766,8 +12765,6 @@ SUBROUTINE A_MOIST_PHYSICS_PREP_EM(t_new, t_newb, t_old, t0, rho, rhob, &
   DO j=j_start,j_end
     DO k=k_start,k_end
       DO i=i_start,i_end
-        if ( config_flags%mp_physics /= LSCONDSCHEME .and. &
-             config_flags%mp_physics /= MKESSLERSCHEME ) then
         IF (p_qv .GE. param_first_scalar) THEN
           CALL PUSHCONTROL1B(0)
         ELSE
@@ -12778,7 +12775,6 @@ SUBROUTINE A_MOIST_PHYSICS_PREP_EM(t_new, t_newb, t_old, t0, rho, rhob, &
         ELSE
           CALL PUSHCONTROL1B(1)
         END IF
-        end if !hcl mp_physics
         z(i, k, j) = 0.5*(z_at_w(i, k, j)+z_at_w(i, k+1, j))
         pf(i, k, j) = p(i, k, j) + pb(i, k, j)
       END DO
@@ -12854,8 +12850,6 @@ SUBROUTINE A_MOIST_PHYSICS_PREP_EM(t_new, t_newb, t_old, t0, rho, rhob, &
         temp = alb(i, k, j) + al(i, k, j)
         alb0(i, k, j) = alb0(i, k, j) - rhob(i, k, j)/temp**2
         rhob(i, k, j) = 0.0
-        if ( config_flags%mp_physics /= LSCONDSCHEME .and. &
-             config_flags%mp_physics /= MKESSLERSCHEME ) then
         CALL POPCONTROL1B(branch)
         IF (branch .EQ. 0) THEN
           qcb(i, k, j) = qcb(i, k, j) + qc_diabaticb(i, k, j)
@@ -12870,7 +12864,6 @@ SUBROUTINE A_MOIST_PHYSICS_PREP_EM(t_new, t_newb, t_old, t0, rho, rhob, &
         ELSE
           qv_diabaticb(i, k, j) = 0.0
         END IF
-        end if !hcl mp_physics
         th_phyb(i, k, j) = th_phyb(i, k, j) + h_diabaticb(i, k, j)
         h_diabaticb(i, k, j) = 0.0
         t_newb(i, k, j) = t_newb(i, k, j) + th_phyb(i, k, j)
@@ -12973,8 +12966,6 @@ SUBROUTINE A_MOIST_PHYSICS_FINISH_EM(t_new, t_newb, t_old, t0, mut, &
       DO k=k_start,k_end
         DO i=i_start,i_end
           mpten = th_phy(i, k, j) - h_diabatic(i, k, j)
-          if ( config_flags%mp_physics /= LSCONDSCHEME .and. &
-               config_flags%mp_physics /= MKESSLERSCHEME ) then
           IF (p_qv .GE. param_first_scalar) THEN
             !qvten = qv(i, k, j) - qv_diabatic(i, k, j)
             CALL PUSHCONTROL1B(0)
@@ -12987,7 +12978,6 @@ SUBROUTINE A_MOIST_PHYSICS_FINISH_EM(t_new, t_newb, t_old, t0, mut, &
           ELSE
             CALL PUSHCONTROL1B(1)
           END IF
-          end if !hcl mp_physics
           IF (config_flags%mp_tend_lim*dt .GT. mpten) THEN
             CALL PUSHCONTROL1B(0)
             mpten = mpten
@@ -13000,8 +12990,6 @@ SUBROUTINE A_MOIST_PHYSICS_FINISH_EM(t_new, t_newb, t_old, t0, mut, &
           ELSE
             CALL PUSHCONTROL1B(1)
           END IF
-          if ( config_flags%mp_physics /= LSCONDSCHEME .and. &
-               config_flags%mp_physics /= MKESSLERSCHEME ) then
           IF (p_qv .GE. param_first_scalar) THEN
             CALL PUSHCONTROL1B(0)
           ELSE
@@ -13012,7 +13000,6 @@ SUBROUTINE A_MOIST_PHYSICS_FINISH_EM(t_new, t_newb, t_old, t0, mut, &
           ELSE
             CALL PUSHCONTROL1B(1)
           END IF
-          end if !hcl mp_physics
         END DO
       END DO
     END DO
@@ -13021,8 +13008,6 @@ SUBROUTINE A_MOIST_PHYSICS_FINISH_EM(t_new, t_newb, t_old, t0, mut, &
     DO j=j_end,j_start,-1
       DO k=k_end,k_start,-1
         DO i=i_end,i_start,-1
-          if ( config_flags%mp_physics /= LSCONDSCHEME .and. &
-               config_flags%mp_physics /= MKESSLERSCHEME ) then
           CALL POPCONTROL1B(branch)
           IF (branch .EQ. 0) THEN
             qctenb = qctenb + qc_diabaticb(i, k, j)/dt
@@ -13037,15 +13022,12 @@ SUBROUTINE A_MOIST_PHYSICS_FINISH_EM(t_new, t_newb, t_old, t0, mut, &
           ELSE
             qv_diabaticb(i, k, j) = 0.0
           END IF
-          end if !hcl mp_physics
           mptenb = t_newb(i, k, j) + h_diabaticb(i, k, j)/dt
           h_diabaticb(i, k, j) = 0.0_8
           CALL POPCONTROL1B(branch)
           IF (branch .NE. 0) mptenb = 0.0_8
           CALL POPCONTROL1B(branch)
           IF (branch .NE. 0) mptenb = 0.0_8
-          if ( config_flags%mp_physics /= LSCONDSCHEME .and. &
-               config_flags%mp_physics /= MKESSLERSCHEME ) then
           CALL POPCONTROL1B(branch)
           IF (branch .EQ. 0) THEN
             qcb(i, k, j) = qcb(i, k, j) + qctenb
@@ -13058,7 +13040,6 @@ SUBROUTINE A_MOIST_PHYSICS_FINISH_EM(t_new, t_newb, t_old, t0, mut, &
             qv_diabaticb(i, k, j) = qv_diabaticb(i, k, j) - qvtenb
             qvtenb = 0.0
           END IF
-          end if !hcl mp_physics
           th_phyb(i, k, j) = th_phyb(i, k, j) + mptenb
           h_diabaticb(i, k, j) = h_diabaticb(i, k, j) - mptenb
         END DO

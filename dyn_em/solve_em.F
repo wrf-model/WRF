@@ -242,6 +242,12 @@ SUBROUTINE solve_em ( grid , config_flags  &
    num_3d_c        = num_chem
    num_3d_s        = num_scalar
 
+!  backward integration needs to advect only QV
+   if (grid%dfi_stage .EQ. DFI_BCK) then
+       num_3d_m    = P_QV
+       num_3d_s    = PARAM_FIRST_SCALAR - 1
+   endif
+
    f_flux = config_flags%do_avgflx_cugd .EQ. 1
 
 !  Compute these starting and stopping locations for each tile and number of tiles.
@@ -2076,7 +2082,7 @@ BENCH_START(rk_scalar_tend_tim)
 
 !              IF( rk_step == 1 )THEN
 !              IF( im.eq.p_qv .or. im.eq.p_qc )THEN
-!                CALL q_diabatic_add  ( im, im,              &
+!                  CALL q_diabatic_add  ( im, im,            & 
 !                          dt_rk, grid%mut,                  &
 !                          grid%qv_diabatic,                 &
 !                          grid%qc_diabatic,                 &
@@ -2154,10 +2160,9 @@ BENCH_START(update_scal_tim)
                                its=grid%i_start(ij), ite=grid%i_end(ij),               &
                                jts=grid%j_start(ij), jte=grid%j_end(ij),               &
                                kts=k_start    , kte=k_end                              )
-
 !              IF( rk_step == rk_order )THEN
 !              IF( im.eq.p_qv .or. im.eq.p_qc )THEN
-!                CALL q_diabatic_subtr( im, im,              &
+!                  CALL q_diabatic_subtr( im, im,            & 
 !                          dt_rk,                            &
 !                          grid%qv_diabatic,                 &
 !                          grid%qc_diabatic,                 &
@@ -2169,7 +2174,6 @@ BENCH_START(update_scal_tim)
 !                          k_start    , k_end               )
 !              ENDIF
 !              ENDIF
-
 BENCH_END(update_scal_tim)
 
 BENCH_START(flow_depbdy_tim)

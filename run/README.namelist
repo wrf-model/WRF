@@ -933,9 +933,11 @@ Options for use with the Noah-MP Land Surface Model:
 &noah_mp
  dveg                               = 4,        ; Noah-MP Dynamic Vegetation option:
                                                 ;    1 = Off (LAI from table; FVEG = shdfac)
-                                                ;    2 = On
+                                                ;    2 = On  (LAI predicted;  FVEG calculated)
                                                 ;    3 = Off (LAI from table; FVEG calculated)
                                                 ;    4 = Off (LAI from table; FVEG = maximum veg. fraction)
+                         			;    5 = On  (LAI predicted;  FVEG = maximum veg. fraction)
+						;    6 = Off (LAI from input; FVEG = maximum veg. fraction)
  opt_crs                            = 1,        ; Noah-MP Stomatal Resistance option:
                                                 ;    1 = Ball-Berry; 2 = Jarvis
  opt_sfc                            = 1         ; Noah-MP surface layer drag coefficient calculation
@@ -964,12 +966,14 @@ Options for use with the Noah-MP Land Surface Model:
                                                 ;    1 = Jordan (1991)
                                                 ;    2 = BATS:  Snow when SFCTMP < TFRZ+2.2
                                                 ;    3 = Snow when SFCTMP < TFRZ
+						;    4 = Use WRF precipitation partitioning
  opt_tbot                           = 2,        ; Noah-MP Soil Temperature Lower Boundary Condition
                                                 ;    1 = Zero heat flux
                                                 ;    2 = TBOT at 8 m from input file
  opt_stc                            = 1,        ; Noah-MP Snow/Soil temperature time scheme
                                                 ;    1 = semi-implicit
                                                 ;    2 = full-implicit
+						;    3 = semi-implicit where Ts uses snow cover fraction
  /
 
  &fdda

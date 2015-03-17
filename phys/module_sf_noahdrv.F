@@ -898,8 +898,10 @@ CONTAINS
                    IF (IRIOPTION ==1) THEN
                    IF (tloc==21 .or. tloc==22) THEN  !irrigation on vegetaion in urban area, MAY-SEP, 9-10pm
                    IF (jmonth==5 .or. jmonth==6 .or. jmonth==7 .or. jmonth==8 .or. jmonth==9) THEN
-                      IF (SMC(USOIL) .LT. SMCREF) SMC(USOIL)= SMCREF
-                      IF (SMC(DSOIL) .LT. SMCREF) SMC(DSOIL)= SMCREF
+!                      IF (SMC(USOIL) .LT. SMCREF) SMC(USOIL)= SMCREF
+!                      IF (SMC(DSOIL) .LT. SMCREF) SMC(DSOIL)= SMCREF
+                      IF (SMC(USOIL) .LT. SMCREF) SMC(USOIL)= REFSMC(ISLTYP(I,J))                      
+                      IF (SMC(DSOIL) .LT. SMCREF) SMC(DSOIL)= REFSMC(ISLTYP(I,J))                    
                    ENDIF
                    ENDIF
                    ENDIF
@@ -983,7 +985,7 @@ CONTAINS
                  RIBB,                                             &
                  SMCWLT,SMCDRY,SMCREF,SMCMAX,NROOT,                &
                  sfcheadrt(i,j),                                   &    !I
-                 INFXSRT(i,j),ETPND1                               &    !O
+                 INFXSRT(i,j),ETPND1,AOASIS                        &    !O
                  )
 
 #ifdef WRF_HYDRO
@@ -3198,7 +3200,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                        RIBB,                                             &
                        SMCWLT,SMCDRY,SMCREF,SMCMAX,NROOT,                &
                        sfcheadrt(i,j),                                   &    !I
-                       INFXSRT(i,j),ETPND1                               &    !O
+                       INFXSRT(i,j),ETPND1,AOASIS                        &    !O
                        )
       
 #ifdef WRF_HYDRO
@@ -4072,7 +4074,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                        RIBB,                                             &
                        SMCWLT,SMCDRY,SMCREF,SMCMAX,NROOT,                &
                        sfcheadrt(i,j),                                   &    !I
-                       INFXSRT(i,j),ETPND1                               &    !O
+                       INFXSRT(i,j),ETPND1,AOASIS                        &    !O
                        )
       
 #ifdef WRF_HYDRO

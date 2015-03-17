@@ -293,7 +293,7 @@ module_cu_kf.o:  ../frame/module_wrf_error.o
 
 module_cu_kfcup.o:  ../frame/module_wrf_error.o     \
 		../frame/module_state_description.o \
-		../chem/module_data_mosaic_asect.o  \
+		$(CF2)                              \
 		../share/module_model_constants.o   \
 		module_mixactivate.o
 

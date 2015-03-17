@@ -39,7 +39,15 @@ while [ $# -ge 1 ]; do
     shift
 done
 if [ -n "$print_usage" ] ; then
+  echo ' '
+  echo '*****************************************************************************'
   echo usage: $thiscmd '[-d|-D|-s|-f|-os os|-mach mach|-time timecommand] [chem] [kpp]'
+  echo '-d    build with debugging information and no optimization'
+  echo '-D    build with -d AND floating traps, traceback, uninitialized variables'
+  echo '-r8   build with 8 byte reals'
+  echo '-help print this message'
+  echo '*****************************************************************************'
+  echo ' '
   exit 
 fi
 

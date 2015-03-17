@@ -74,7 +74,7 @@ CONTAINS
                        RIBB,                                            &
                        SMCWLT,SMCDRY,SMCREF,SMCMAX,NROOT,   &
                        SFHEAD1RT,                                       &    !I
-                       INFXS1RT,ETPND1 )                    !P
+                       INFXS1RT,ETPND1,AOASIS )                    !P
 ! ----------------------------------------------------------------------
 ! SUBROUTINE SFLX - UNIFIED NOAHLSM VERSION 1.0 JULY 2007
 ! ----------------------------------------------------------------------
@@ -298,7 +298,7 @@ CONTAINS
       REAL, INTENT(IN)   :: SHDMIN,SHDMAX,DT,DQSDT2,LWDN,PRCP,PRCPRAIN,     &
                             Q2,Q2SAT,SFCPRS,SFCSPD,SFCTMP, SNOALB,          &
                             SOLDN,SOLNET,TBOT,TH2,ZLVL,                            &
-                            FFROZP
+                            FFROZP,AOASIS
       REAL, INTENT(OUT)  :: EMBRD
       REAL, INTENT(OUT)  :: ALBEDO
       REAL, INTENT(INOUT):: COSZ, SOLARDIRECT,CH,CM,                        &
@@ -697,7 +697,7 @@ CONTAINS
 
          CALL PENMAN (SFCTMP,SFCPRS,CH,T2V,TH2,PRCP,FDOWN,T24,SSOIL,     &
                        Q2,Q2SAT,ETP,RCH,EPSCA,RR,SNOWNG,FRZGRA,          &
-                       DQSDT2,FLX2,EMISSI,SNEQV,T1,SNCOVR,           &
+                       DQSDT2,FLX2,EMISSI,SNEQV,T1,SNCOVR,AOASIS,        &
 		       ALBEDO,SOLDN,FVB,GAMA,STC(1),ETPN,FLX4,UA_PHYS)
 !
 ! ----------------------------------------------------------------------
@@ -2027,7 +2027,7 @@ CONTAINS
 
       SUBROUTINE PENMAN (SFCTMP,SFCPRS,CH,T2V,TH2,PRCP,FDOWN,T24,SSOIL, &
      &                   Q2,Q2SAT,ETP,RCH,EPSCA,RR,SNOWNG,FRZGRA,       &
-     &                   DQSDT2,FLX2,EMISSI_IN,SNEQV,T1,SNCOVR,          &
+     &                   DQSDT2,FLX2,EMISSI_IN,SNEQV,T1,SNCOVR,AOASIS,  &
 		         ALBEDO,SOLDN,FVB,GAMA,STC1,ETPN,FLX4,UA_PHYS)
 
 ! ----------------------------------------------------------------------
@@ -2041,7 +2041,7 @@ CONTAINS
       LOGICAL, INTENT(IN)     :: SNOWNG, FRZGRA
       REAL, INTENT(IN)        :: CH, DQSDT2,FDOWN,PRCP,                 &
                                  Q2, Q2SAT,SSOIL, SFCPRS, SFCTMP,       &
-                                 T2V, TH2,EMISSI_IN,SNEQV
+                                 T2V, TH2,EMISSI_IN,SNEQV,AOASIS
       REAL, INTENT(IN)        :: T1 , SNCOVR
       REAL, INTENT(IN)        :: ALBEDO,SOLDN,FVB,GAMA,STC1
       LOGICAL, INTENT(IN)     :: UA_PHYS
@@ -2131,6 +2131,8 @@ CONTAINS
 !      A = ELCP * (Q2SAT - Q2)
       A = ELCP1 * (Q2SAT - Q2)
       EPSCA = (A * RR + RAD * DELTA) / (DELTA + RR)
+! Fei-Mike
+      IF (EPSCA>0.) EPSCA = EPSCA * AOASIS
 !      ETP = EPSCA * RCH / LSUBC
       ETP = EPSCA * RCH / LVS
 

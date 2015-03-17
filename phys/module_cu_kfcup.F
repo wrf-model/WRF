@@ -138,7 +138,7 @@ CONTAINS
                                                              )
 !
    USE module_state_description, only:  num_chem
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
    USE module_state_description, only:  cbmz_mosaic_4bin, cbmz_mosaic_4bin_aq, &
                                         cbmz_mosaic_8bin, cbmz_mosaic_8bin_aq, &
                                         saprc99_mosaic_8bin_vbs2_aq_kpp,       &
@@ -413,7 +413,7 @@ CONTAINS
 
 ! flag_chem is .TRUE. only when chem is present, shcu_aerosols_opt >= 2, and chem_opt is appropriate
    flag_chem = .FALSE.
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
    if ( PRESENT( chem ) .and. shcu_aerosols_opt >= 2) then
       if ( chem_opt == cbmz_mosaic_4bin    .or. &
            chem_opt == cbmz_mosaic_4bin_aq .or. &
@@ -738,7 +738,7 @@ PERTLOOPS:     do jpert = 1,numBins
                        wact, qndrop1d, qc1d, qi1d,          & !         "
                        fcvt_qc_to_qi, fcvt_qc_to_pr,        & !         "
                        fcvt_qi_to_pr, chem1d,               & !         "
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
                        maxd_acomp, maxd_aphase,             & !         "
                        maxd_atype, maxd_asize,              & !         "
                        ntype_aer, nsize_aer, ncomp_aer,     & !         "
@@ -1154,7 +1154,7 @@ main_test_on_deep_shall_freq: &  ! rce 11-may-2012
                     wact, qndrop1d, qc1d, qi1d,          & !         "
                     fcvt_qc_to_qi, fcvt_qc_to_pr,        & !         "
                     fcvt_qi_to_pr, chem1d,               & !         "
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
                     maxd_acomp, maxd_aphase,             & !         "
                     maxd_atype, maxd_asize,              & !         "
                     ntype_aer, nsize_aer, ncomp_aer,     & !         "

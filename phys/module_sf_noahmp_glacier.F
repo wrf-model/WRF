@@ -2035,7 +2035,7 @@ contains
 ! Hedstrom NR and JW Pomeroy (1998), Hydrol. Processes, 12, 1611-1625
 ! fresh snow density
 
-     BDFALL = MAX(120.,67.92+51.25*EXP((SFCTMP-TFRZ)/2.59))
+     BDFALL = MIN(120.,67.92+51.25*EXP((SFCTMP-TFRZ)/2.59)) !MB: change to MIN v3.7
 
      QRAIN   = PRCP * (1.-FPICE)
      QSNOW   = PRCP * FPICE

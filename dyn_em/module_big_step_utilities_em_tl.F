@@ -18,7 +18,6 @@
  USE module_model_constants
  USE module_state_description, only: p_qg, p_qs, p_qi, gdscheme, tiedtkescheme, ntiedtkescheme, &
  kfetascheme, mskfscheme, g3scheme, p_qv, param_first_scalar, p_qr, p_qc, DFI_FWD
- USE module_state_description, only: LSCONDSCHEME, MKESSLERSCHEME !hcl
  USE module_configure, ONLY : grid_config_rec_type
  USE module_wrf_error
 
@@ -6119,8 +6118,6 @@ SUBROUTINE G_MOIST_PHYSICS_PREP_EM(t_new, t_newd, t_old, t0, rho, rhod, &
         th_phy(i, k, j) = t_new(i, k, j) + t0
         h_diabaticd(i, k, j) = th_phyd(i, k, j)
         h_diabatic(i, k, j) = th_phy(i, k, j)
-        if ( config_flags%mp_physics /= LSCONDSCHEME .and. &
-             config_flags%mp_physics /= MKESSLERSCHEME ) then
         if ( P_QV >= PARAM_FIRST_SCALAR ) then
            qv_diabaticd(i, k, j) = qvd(i, k, j)
            qv_diabatic(i, k, j)  = qv(i, k, j)
@@ -6135,7 +6132,6 @@ SUBROUTINE G_MOIST_PHYSICS_PREP_EM(t_new, t_newd, t_old, t0, rho, rhod, &
            qc_diabaticd(i, k, j) = 0.0
            qc_diabatic(i, k, j)  = 0.0
         end if
-        end if !hcl
         rhod(i, k, j) = -(ald(i, k, j)/(al(i, k, j)+alb(i, k, j))**2)
         rho(i, k, j) = 1./(al(i, k, j)+alb(i, k, j))
         pwx1d = pd(i, k, j)/p0
@@ -6273,8 +6269,6 @@ SUBROUTINE G_MOIST_PHYSICS_FINISH_EM(t_new, t_newd, t_old, t0, mut, &
         DO i=i_start,i_end
           mptend = th_phyd(i, k, j) - h_diabaticd(i, k, j)
           mpten = th_phy(i, k, j) - h_diabatic(i, k, j)
-          if ( config_flags%mp_physics /= LSCONDSCHEME .and. &
-               config_flags%mp_physics /= MKESSLERSCHEME ) then
           if ( P_QV >= PARAM_FIRST_SCALAR ) then
              qvtend = qvd(i, k, j) - qv_diabaticd(i, k, j)
              qvten  = qv(i, k, j)  - qv_diabatic(i, k, j)
@@ -6283,7 +6277,6 @@ SUBROUTINE G_MOIST_PHYSICS_FINISH_EM(t_new, t_newd, t_old, t0, mut, &
              qctend = qcd(i, k, j) - qc_diabaticd(i, k, j)
              qcten  = qc(i, k, j)  - qc_diabatic(i, k, j)
           end if
-          end if !hcl mp_physics
           IF (config_flags%mp_tend_lim*dt .GT. mpten) THEN
             mpten = mpten
           ELSE
@@ -6300,8 +6293,6 @@ SUBROUTINE G_MOIST_PHYSICS_FINISH_EM(t_new, t_newd, t_old, t0, mut, &
           t_new(i, k, j) = t_new(i, k, j) + mpten
           h_diabaticd(i, k, j) = mptend/dt
           h_diabatic(i, k, j) = mpten/dt
-          if ( config_flags%mp_physics /= LSCONDSCHEME .and. &
-               config_flags%mp_physics /= MKESSLERSCHEME ) then
           if ( P_QV >= PARAM_FIRST_SCALAR ) then
              qv_diabaticd(i, k, j) = qvtend/dt
              qv_diabatic(i, k, j)  = qvten/dt
@@ -6316,7 +6307,6 @@ SUBROUTINE G_MOIST_PHYSICS_FINISH_EM(t_new, t_newd, t_old, t0, mut, &
              qc_diabaticd(i, k, j) = 0.0
              qc_diabatic(i, k, j)  = 0.0
           end if
-          end if !hcl
         END DO
       END DO
     END DO

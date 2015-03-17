@@ -21,7 +21,7 @@
 !                       (2004, mon. wea. rev., 132, 274-296), improvements for pbl clouds
 !                       (2007, mon. wea. rev., 135, 567-585), diurnal cycle of precipitation
 !               ifs documentation - cy33r1, cy37r2, cy38r1, cy40r1    
-!   this scheme is on testing
+!   this scheme is experimental
 !###########################################################
 module module_cu_ntiedtke
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

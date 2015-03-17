@@ -15,7 +15,6 @@ MODULE module_big_step_utilities_em
    USE module_model_constants
    USE module_state_description, only: p_qg, p_qs, p_qi, gdscheme, tiedtkescheme, ntiedtkescheme, kfetascheme, mskfscheme, &
        g3scheme, gfscheme,p_qv, param_first_scalar, p_qr, p_qc, DFI_FWD
-   USE module_state_description, only: LSCONDSCHEME, MKESSLERSCHEME !hcl
    USE module_configure, ONLY : grid_config_rec_type
    USE module_wrf_error
 
@@ -5344,8 +5343,6 @@ END SUBROUTINE phy_prep
 #endif
        th_phy(i,k,j) = t_new(i,k,j) + t0
        h_diabatic(i,k,j) = th_phy(i,k,j)
-       if ( config_flags%mp_physics /= LSCONDSCHEME .and. &
-            config_flags%mp_physics /= MKESSLERSCHEME ) then
        if ( P_QV >= PARAM_FIRST_SCALAR ) then
           qv_diabatic(i,k,j) = qv(i,k,j)
        else
@@ -5356,7 +5353,6 @@ END SUBROUTINE phy_prep
        else
           qc_diabatic(i,k,j) = 0.0
        end if
-       end if !hcl mp_physics
        rho(i,k,j)  = 1./(al(i,k,j)+alb(i,k,j))
        pii(i,k,j) = ((p(i,k,j)+pb(i,k,j))/p0)**rcp
        z(i,k,j) = 0.5*(z_at_w(i,k,j) +z_at_w(i,k+1,j) )
@@ -5505,11 +5501,8 @@ END SUBROUTINE phy_prep
      DO k = k_start, k_end
      DO i = i_start, i_end
           mpten = th_phy(i,k,j)-h_diabatic(i,k,j)
-          if ( config_flags%mp_physics /= LSCONDSCHEME .and. &
-               config_flags%mp_physics /= MKESSLERSCHEME ) then
           if ( P_QV >= PARAM_FIRST_SCALAR ) qvten = qv(i,k,j)-qv_diabatic(i,k,j)
           if ( P_QC >= PARAM_FIRST_SCALAR ) qcten = qc(i,k,j)-qc_diabatic(i,k,j)
-          end if !hcl mp_physics
        if(mpten.gt.mptenmax) then
           mptenmax=mpten
           imax=i
@@ -5547,8 +5540,6 @@ END SUBROUTINE phy_prep
 !!!         ! KLUDGE:
 !!!         qvten = 0.0
 !!!         qcten = 0.0
-         if ( config_flags%mp_physics /= LSCONDSCHEME .and. &
-              config_flags%mp_physics /= MKESSLERSCHEME ) then
          if ( P_QV >= PARAM_FIRST_SCALAR ) then
             qv_diabatic(i,k,j) =  qvten/dt
          else
@@ -5559,7 +5550,6 @@ END SUBROUTINE phy_prep
          else
             qc_diabatic(i,k,j) =  0.0
          end if
-         end if !hcl mp_physics
      ENDDO
      ENDDO
      ENDDO

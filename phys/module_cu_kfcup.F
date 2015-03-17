@@ -861,8 +861,8 @@ PERTLOOPS:     do jpert = 1,numBins
                      nca_shall    = nca(i,j)!NINT(TIMEC_SHALL/DT)*DT ! add 01/11/2012 real(ntst)*DT !add dt 01/11/2012 All shallow clouds have a 40 min time scale per KF code.
                      raincv_shall = raincv_shall + raincv(i,j)*jfd(ipert,jpert)
                      !!!raincv_shall = raincv_shall + raincv(i,j)
-                     cubot_shall  = cubot_shall + z1d(cubot(i,j))*jfd(ipert,jpert) !Average the heights, then back out index later
-                     cutop_shall  = cutop_shall + z1d(cutop(i,j))*jfd(ipert,jpert) !ditto
+                     cubot_shall  = cubot_shall + z1d(nint(cubot(i,j)))*jfd(ipert,jpert) !Average the heights, then back out index later
+                     cutop_shall  = cutop_shall + z1d(nint(cutop(i,j)))*jfd(ipert,jpert) !ditto
                      qlg_shall    = qlg_shall + qlg*jfd(ipert,jpert)
                      !!!qlg_shall    = qlg_shall + qlg
                      qig_shall    = qig_shall + qig*jfd(ipert,jpert)
@@ -4548,7 +4548,7 @@ SUBROUTINE cup_jfd(slopeSfc, slopeEZ, sigmaSfc, sigmaEZ,                &
         if( abs(cterm) > bigcheck ) then
            write(message, &
            '("KFCuP setting a bogus cterm for JFD. c=",1e15.6," &
-              sigmaEZ=",1e15.6)') &
+            & sigmaEZ=",1e15.6)') &
                 c, sigmaEZ
            call wrf_debug(0,trim(message))
            cterm = sign(bigcheck,cterm)
@@ -4569,7 +4569,7 @@ SUBROUTINE cup_jfd(slopeSfc, slopeEZ, sigmaSfc, sigmaEZ,                &
 print*,'bigcheck=',bigcheck
            write(message, &
                 '("KFCuP setting a bogus mterm for JFD. m=",1e15.6, &
-                  " sigmaSfc=",1e15.6)') &
+                & " sigmaSfc=",1e15.6)') &
                 m, sigmaSfc
            call wrf_debug(0,trim(message))
            flush(0)

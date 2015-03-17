@@ -6266,8 +6266,109 @@ END SUBROUTINE set_tend
 !------------------------------------------------------------------------------
  
     END SUBROUTINE sixth_order_diffusion
- 
+
 !==============================================================================
+
+SUBROUTINE theta_to_thetam ( t_1 , moist_old ,                &
+                             t_tendf  , moist_tend ,          &
+                             t_2 , moist ,                    &
+                             h_diabatic ,                     &
+                             itimestep ,                      &
+                             rk_step ,                        & 
+                             ids, ide, jds, jde, kds, kde ,   &
+                             ims, ime, jms, jme, kms, kme ,   &
+                             its, ite, jts, jte, kts, kte     )
+
+   !  Convert dry potential temperature to "moist" theta:
+   !  theta_m = theta ( 1 + Rv/Rd Qv )
+
+   IMPLICIT NONE
+
+   INTEGER , INTENT(IN) ::   ids, ide, jds, jde, kds, kde ,   &
+                             ims, ime, jms, jme, kms, kme ,   &
+                             its, ite, jts, jte, kts, kte     
+   INTEGER , INTENT(IN) ::   rk_step, itimestep
+   REAL    , INTENT(IN   ) , DIMENSION(ims:ime,kms:kme,jms:jme) :: moist, moist_tend
+   REAL    , INTENT(INOUT) , DIMENSION(ims:ime,kms:kme,jms:jme) :: moist_old
+   REAL    , INTENT(INOUT) , DIMENSION(ims:ime,kms:kme,jms:jme) :: t_1, t_tendf, t_2, h_diabatic
+
+   !  Local variables
+
+   INTEGER :: i , j , k
+
+   !  First time step, there is no OLD moisture.
+
+   IF ( itimestep .EQ. 1 ) THEN
+      DO j = jts , MIN(jte,jde-1)
+         DO k = kts , kte-1
+            DO i = its , MIN(ite,ide-1)
+               moist_old(i,k,j) = moist(i,k,j)
+            END DO
+         END DO
+      END DO
+   END IF
+
+   !  First RK loop, this info is from the physics packages.  It is modified immediately after the
+   !  call to the physics schemes, and the remains constant for the remainder of the RK loops.
+
+   IF ( rk_step .EQ. 1 ) THEN
+      DO j = jts , MIN(jte,jde-1)
+         DO k = kts , kte-1
+            DO i = its , MIN(ite,ide-1)
+               t_tendf(i,k,j) = (1. + (R_v/R_d) * moist_old(i,k,j))*t_tendf(i,k,j) + (R_v/R_d)*(t_1(i,k,j)+T0)*moist_tend(i,k,j)
+               h_diabatic(i,k,j) =  (1. + (R_v/R_d) * moist_old(i,k,j))*h_diabatic(i,k,j)
+            END DO
+         END DO
+      END DO
+   END IF
+
+   !  T at time period 1 and 2 are modified in the small steps, so they are each converted from dry to moist.
+
+   DO j = jts , MIN(jte,jde-1)
+      DO k = kts , kte-1
+         DO i = its , MIN(ite,ide-1)
+            t_1(i,k,j) = t_1(i,k,j) * (1. + (R_v/R_d) * moist_old(i,k,j)) + T0*(R_v/R_d)*moist_old(i,k,j)
+            t_2(i,k,j) = t_2(i,k,j) * (1. + (R_v/R_d) * moist(i,k,j)) + T0*(R_v/R_d)*moist(i,k,j)
+         END DO
+      END DO
+   END DO
+
+END SUBROUTINE theta_to_thetam
+
+!==============================================================================
+
+SUBROUTINE thetam_to_theta ( t_1 , moist_old ,                &
+                             t_2 , moist ,                    &
+                             ids, ide, jds, jde, kds, kde ,   &
+                             ims, ime, jms, jme, kms, kme ,   &
+                             its, ite, jts, jte, kts, kte     )
+
+   !  Convert moist potential temperature to dry theta:
+   !  theta = theta_m / ( 1 + Rv/Rd Qv )
+
+   IMPLICIT NONE
+
+   INTEGER , INTENT(IN) ::   ids, ide, jds, jde, kds, kde ,   &
+                             ims, ime, jms, jme, kms, kme ,   &
+                             its, ite, jts, jte, kts, kte     
+   REAL    , INTENT(IN   ) , DIMENSION(ims:ime,kms:kme,jms:jme) :: moist, moist_old
+   REAL    , INTENT(INOUT) , DIMENSION(ims:ime,kms:kme,jms:jme) :: t_1, t_2
+
+   !  Local variables
+
+   INTEGER :: i , j , k
+
+   DO j = jts , MIN(jte,jde-1)
+      DO k = kts , kte-1
+         DO i = its , MIN(ite,ide-1)
+            t_1(i,k,j) = -T0 + (t_1(i,k,j)+T0)/(1. + (R_v/R_d) * moist_old(i,k,j))
+            t_2(i,k,j) = -T0 + (t_2(i,k,j)+T0)/(1. + (R_v/R_d) * moist(i,k,j))
+         END DO
+      END DO
+   END DO
+
+END SUBROUTINE thetam_to_theta
+
 !==============================================================================
 
 END MODULE module_big_step_utilities_em

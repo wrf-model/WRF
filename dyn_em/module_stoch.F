@@ -167,7 +167,7 @@ contains
       call CFFT1I (KMAX, WSAVE2, LENSAV, IER)
       if(ier.ne. 0) write(*,95) ier
 
-      95 format('error in cFFT2I=  'i5)
+      95 format('error in cFFT2I=  ',i5)
 
       call findindex( wavenumber_k, wavenumber_l,             &
                       ids, ide, jds, jde, kds, kde,                &
@@ -686,7 +686,9 @@ contains
 
 ! Local Variabels 
       INTEGER                  ::               IK,IL,ILEV,NLON,NLAT,IJ,I,J,K
-      REAL                     ::               gridep32y,gridep32x,gridem32y,gridem32x
+      INTEGER                  ::               gridsp32y,gridsm32y,gridsp32x,gridsm32x,gridsp32 ,gridsm32
+      INTEGER                  ::               gridep32y,gridem32y,gridep32x,gridem32x,gridep32 ,gridem32
+
       REAL, DIMENSION(ims:ime,kms:kme_stoch, jms:jme)         :: RAND_REAL, RAND_IMAG
       LOGICAL :: RESTART
       CHARACTER  :: variable
@@ -765,47 +767,94 @@ contains
 
 ! Transform spectral pattern to gridpoint space 
           
-!          Roll out into latitude bands and perform FFT along latitude bands
 #if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
-gridep32x=grid%ep32x
-gridem32x=grid%em32x
-!grid%ep32x=min(kpex,grid%num_stoch_levels)
-!grid%em32x=min(kmex,grid%num_stoch_levels)
+
+! Roll out into latitude bands and perform FFT along latitude bands
+
+! Save a copy of the indices as we might need them to change when
+! doing the "thin" 3d arrays (where the "k" dimension is unity).
+! These are the original Z-transposed and X-transposed k-dimensions.
+
+        gridsp32x=grid%sp32x
+        gridsm32x=grid%sm32x
+        gridep32x=grid%ep32x
+        gridem32x=grid%em32x
+        gridsp32 =grid%sp32
+        gridsm32 =grid%sm32
+        gridep32 =grid%ep32
+        gridem32 =grid%em32
+
+! Set number of vertical levels to which ever is smaller: the full number
+! of vertical levels, or the number of levels to be transformed into 
+! gridpoint space.
+
+        grid%sp32x=min(kpsx,grid%num_stoch_levels)
+        grid%sm32x=min(kmsx,grid%num_stoch_levels)
+        grid%ep32x=min(kpex,grid%num_stoch_levels)
+        grid%em32x=min(kmex,grid%num_stoch_levels)
+        grid%sp32 =min(kps ,grid%num_stoch_levels)
+        grid%sm32 =min(kms ,grid%num_stoch_levels)
+        grid%ep32 =min(kpe ,grid%num_stoch_levels)
+        grid%em32 =min(kme ,grid%num_stoch_levels)
 
 #include "XPOSE_RAND_REAL_z2x.inc"
 #include "XPOSE_RAND_IMAG_z2x.inc"
-!grid%ep32y=min(kpey,grid%num_stoch_levels)
-!grid%em32y=min(kmey,grid%num_stoch_levels)
-           call do_fftback_along_x(grid%RAND_REAL_xxx,grid%RAND_IMAG_xxx,               &
+        call do_fftback_along_x(grid%RAND_REAL_xxx,grid%RAND_IMAG_xxx,                  &
                               ids,ide,jds,jde,                                          & 
                               imsx,imex,jmsx,jmex,kmsx,min(kmex,grid%num_stoch_levels), & 
                               ipsx,ipex,jpsx,jpex,kpsx,min(kpex,grid%num_stoch_levels))  
 #include "XPOSE_RAND_REAL_x2z.inc"
 #include "XPOSE_RAND_IMAG_x2z.inc"
 
-!          Roll out into longitude bands and perform FFT along longitude bands
-gridep32y=grid%ep32y
-gridem32y=grid%em32y
+! Roll out into longitude bands and perform FFT along longitude bands
+
+! Save a copy of the indices as we might need them to change when
+! doing the "thin" 3d arrays (where the "k" dimension is unity).
+! These are the original Y-transposed k-dimensions.
+
+        gridsp32y=grid%sp32y
+        gridsm32y=grid%sm32y
+        gridep32y=grid%ep32y
+        gridem32y=grid%em32y
+
+! Again, set number of vertical levels to the min of the number of levels and the
+! number of stochastic levels.
+
+        grid%sp32y=min(kpsy,grid%num_stoch_levels)
+        grid%sm32y=min(kmsy,grid%num_stoch_levels)
+        grid%ep32y=min(kpey,grid%num_stoch_levels)
+        grid%em32y=min(kmey,grid%num_stoch_levels)
+
 #include "XPOSE_RAND_REAL_z2y.inc"
 #include "XPOSE_RAND_IMAG_z2y.inc"
-           call do_fftback_along_y(grid%RAND_REAL_yyy,grid%RAND_IMAG_yyy,               &
+        call do_fftback_along_y(grid%RAND_REAL_yyy,grid%RAND_IMAG_yyy,                  &
                               ids,ide,jds,jde,                                          & 
                               imsy,imey,jmsy,jmey,kmsy,min(kmey,grid%num_stoch_levels), & 
                               ipsy,ipey,jpsy,jpey,kpsy,min(kpey,grid%num_stoch_levels))
 #include "XPOSE_RAND_REAL_y2z.inc"
 #include "XPOSE_RAND_IMAG_y2z.inc"
-grid%ep32x = gridep32x
-grid%em32x = gridem32x
-grid%ep32y = gridep32y
-grid%em32y = gridem32y
 
+! Put the original vertical "k" dimensions back.
+
+        grid%sp32x=gridsp32x
+        grid%sm32x=gridsm32x
+        grid%ep32x=gridep32x
+        grid%em32x=gridem32x
+        grid%sp32y=gridsp32y
+        grid%sm32y=gridsm32y
+        grid%ep32y=gridep32y
+        grid%em32y=gridem32y
+        grid%sp32 =gridsp32
+        grid%sm32 =gridsm32
+        grid%ep32 =gridep32
+        grid%em32 =gridem32
 
 #else
-           call do_fftback_along_x(grid%RAND_REAL,grid%RAND_IMAG,                       &
+        call do_fftback_along_x(grid%RAND_REAL,grid%RAND_IMAG,                          &
                               ids,ide,jds,jde,                                          & 
                               imsx,imex,jmsx,jmex,kmsx,min(kmex,grid%num_stoch_levels), & 
                               ipsx,ipex,jpsx,jpex,kpsx,min(kpex,grid%num_stoch_levels))   
-           call do_fftback_along_y(grid%RAND_REAL,grid%RAND_IMAG,                       & 
+        call do_fftback_along_y(grid%RAND_REAL,grid%RAND_IMAG,                          & 
                               ids,ide,jds,jde,                                          & 
                               imsy,imey,jmsy,jmey,kmsy,min(kmey,grid%num_stoch_levels), & 
                               ipsy,ipey,jpsy,jpey,kpsy,min(kpey,grid%num_stoch_levels))
@@ -814,7 +863,7 @@ grid%em32y = gridem32y
 
       !$OMP PARALLEL DO   &
       !$OMP PRIVATE ( ij )
-       DO ij = 1 , grid%num_tiles
+        DO ij = 1 , grid%num_tiles
                RAND_PERT=0.0  
                DO k=kts,min(kte,grid%num_stoch_levels)
                  DO I=grid%i_start(ij), grid%i_end(ij)
@@ -825,9 +874,6 @@ grid%em32y = gridem32y
                 ENDDO
         ENDDO
        !$OMP END PARALLEL DO
-
-      !if ((grid%perturb_bdy==1) .and. (skebs==0)) then 
-
 
 
        END SUBROUTINE RAND_PERT_UPDATE

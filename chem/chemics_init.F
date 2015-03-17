@@ -154,8 +154,6 @@ call wrf_message("**************************************************************
    chem_select: SELECT CASE(config_flags%chem_opt)
      CASE (GOCART_SIMPLE)
        CALL wrf_debug(15,'calling only gocart aerosols driver from chem_driver')
-     CASE (GOCARTRADM2_KPP)
-       CALL wrf_debug(15,'calling gocart and radmkpp driver from chem_driver')
      CASE (GOCARTRADM2)
        CALL wrf_debug(15,'calling gocart and radm driver from chem_driver')
      CASE (GOCARTRACM_KPP)
@@ -629,7 +627,7 @@ end if
              enddo
           enddo
         endif
-     CASE (RADM2_KPP,RADM2SORG_KPP,GOCARTRADM2,GOCARTRADM2_KPP,SAPRC99_KPP)
+     CASE (RADM2_KPP,RADM2SORG_KPP,GOCARTRADM2,SAPRC99_KPP)
         if(config_flags%chem_in_opt == 0 )then
           do j=jts,jte
              do k=kts,kte
@@ -1565,7 +1563,7 @@ ENDIF ghg_block
             enddo
           endif
         endif
-     CASE (GOCARTRACM_KPP,GOCARTRADM2,GOCARTRADM2_KPP)
+     CASE (GOCARTRACM_KPP,GOCARTRADM2)
        CALL wrf_debug(15,'call GOCARTRACM_KPP chem/aerosols initialization')
         ch_dust(:,:)=0.8D-9
         ch_ss(:,:)=1.
@@ -2020,7 +2018,7 @@ subroutine print_chem_species_index( chem_opt )
 ! Gas species...
 !
   select case (chem_opt)
-  case (RADM2, RADM2SORG, RADM2SORG_AQ, RADM2SORG_AQCHEM, RADM2_KPP, RADM2SORG_KPP, GOCARTRADM2,GOCARTRADM2_KPP)
+  case (RADM2, RADM2SORG, RADM2SORG_AQ, RADM2SORG_AQCHEM, RADM2_KPP, RADM2SORG_KPP, GOCARTRADM2)
      print*,p_so2,"so2"
      print*,p_sulf,"sulf"
      print*,p_no2,"no2"

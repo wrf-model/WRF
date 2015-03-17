@@ -481,9 +481,6 @@
      CASE (GOCARTRACM_KPP)
        CALL wrf_debug(15,'calling gocart and racm driver from chem_driver')
        haveaer = .false.
-     CASE (GOCARTRADM2_KPP)
-       CALL wrf_debug(15,'calling gocart and radmkpp driver from chem_driver')
-       haveaer = .false.
      CASE (GOCARTRADM2)
        CALL wrf_debug(15,'calling gocart and radm driver from chem_driver')
        haveaer = .false.

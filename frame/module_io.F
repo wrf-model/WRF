@@ -83,7 +83,7 @@ SUBROUTINE wrf_ioinit( Status )
   INTEGER, INTENT(INOUT) :: Status
 !Local
   CHARACTER(len=80) :: SysDepInfo
-  INTEGER :: ierr(10), minerr, maxerr
+  INTEGER :: ierr(100), minerr, maxerr
 !
   Status = 0
   ierr = 0
@@ -92,41 +92,41 @@ SUBROUTINE wrf_ioinit( Status )
   CALL init_io_handles    ! defined below
 #ifdef NETCDF
   if ( model_config_rec%use_netcdf_classic ) SysDepInfo="use_netcdf_classic"
-  CALL ext_ncd_ioinit(   SysDepInfo, ierr(1) )
+  CALL ext_ncd_ioinit  ( SysDepInfo, ierr( 1) )
   SysDepInfo = " "
 #endif
 #ifdef INTIO
-  CALL ext_int_ioinit(   SysDepInfo, ierr(2) )
+  CALL ext_int_ioinit  ( SysDepInfo, ierr( 2) )
 #endif
 #ifdef PHDF5
-  CALL ext_phdf5_ioinit( SysDepInfo, ierr(3) )
-#endif
-#ifdef PNETCDF
-  CALL ext_pnc_ioinit( SysDepInfo, ierr(11) )
-#endif
-#ifdef PIO
-  CALL ext_pio_ioinit( SysDepInfo, ierr(12) )
+  CALL ext_phdf5_ioinit( SysDepInfo, ierr( 3) )
 #endif
 #ifdef MCELIO
-  CALL ext_mcel_ioinit(  SysDepInfo, ierr(4) )
+  CALL ext_mcel_ioinit ( SysDepInfo, ierr( 4) )
 #endif
 #ifdef XXX
-  CALL ext_xxx_ioinit(   SysDepInfo, ierr(5) )
+  CALL ext_xxx_ioinit  ( SysDepInfo, ierr( 5) )
 #endif
 #ifdef YYY
-  CALL ext_yyy_ioinit(   SysDepInfo, ierr(6) )
+  CALL ext_yyy_ioinit  ( SysDepInfo, ierr( 6) )
 #endif
 #ifdef ZZZ
-  CALL ext_zzz_ioinit(   SysDepInfo, ierr(7) )
+  CALL ext_zzz_ioinit  ( SysDepInfo, ierr( 7) )
 #endif
 #ifdef ESMFIO
-  CALL ext_esmf_ioinit(  SysDepInfo, ierr(8) )
+  CALL ext_esmf_ioinit ( SysDepInfo, ierr( 8) )
 #endif
 #ifdef GRIB1
-  CALL ext_gr1_ioinit(   SysDepInfo, ierr(9) )
+  CALL ext_gr1_ioinit  ( SysDepInfo, ierr( 9) )
 #endif
 #ifdef GRIB2
-  CALL ext_gr2_ioinit(   SysDepInfo, ierr(10) )
+  CALL ext_gr2_ioinit  ( SysDepInfo, ierr(10) )
+#endif
+#ifdef PNETCDF
+  CALL ext_pnc_ioinit  ( SysDepInfo, ierr(11) )
+#endif
+#ifdef PIO
+  CALL ext_pio_ioinit  ( SysDepInfo, ierr(12) )
 #endif
   minerr = MINVAL(ierr)
   maxerr = MAXVAL(ierr)
@@ -151,46 +151,46 @@ SUBROUTINE wrf_ioexit( Status )
   INTEGER, INTENT(INOUT) :: Status
 !Local
   LOGICAL, EXTERNAL :: use_output_servers
-  INTEGER :: ierr(11), minerr, maxerr
+  INTEGER :: ierr(100), minerr, maxerr
 !
   Status = 0
   ierr = 0
   CALL wrf_debug( DEBUG_LVL, 'module_io.F: in wrf_ioexit' )
 #ifdef NETCDF
-  CALL ext_ncd_ioexit(  ierr(1) )
+  CALL ext_ncd_ioexit  ( ierr( 1) )
 #endif
 #ifdef INTIO
-  CALL ext_int_ioexit(  ierr(2) )
+  CALL ext_int_ioexit  ( ierr( 2) )
 #endif
 #ifdef PHDF5
-  CALL ext_phdf5_ioexit(ierr(3) )
-#endif
-#ifdef PNETCDF
-  CALL ext_pnc_ioexit(ierr(11) )
-#endif
-#ifdef PIO
-  CALL ext_pio_ioexit(ierr(12) )
+  CALL ext_phdf5_ioexit( ierr( 3) )
 #endif
 #ifdef MCELIO
-  CALL ext_mcel_ioexit( ierr(4) )
+  CALL ext_mcel_ioexit ( ierr( 4) )
 #endif
 #ifdef XXX
-  CALL ext_xxx_ioexit(  ierr(5) )
+  CALL ext_xxx_ioexit  ( ierr( 5) )
 #endif
 #ifdef YYY
-  CALL ext_yyy_ioexit(  ierr(6) )
+  CALL ext_yyy_ioexit  ( ierr( 6) )
 #endif
 #ifdef ZZZ
-  CALL ext_zzz_ioexit(  ierr(7) )
+  CALL ext_zzz_ioexit  ( ierr( 7) )
 #endif
 #ifdef ESMFIO
-  CALL ext_esmf_ioexit( ierr(8) )
+  CALL ext_esmf_ioexit ( ierr( 8) )
 #endif
 #ifdef GRIB1
-  CALL ext_gr1_ioexit(  ierr(9) )
+  CALL ext_gr1_ioexit  ( ierr( 9) )
 #endif
 #ifdef GRIB2
-  CALL ext_gr2_ioexit(  ierr(10) )
+  CALL ext_gr2_ioexit  ( ierr(10) )
+#endif
+#ifdef PNETCDF
+  CALL ext_pnc_ioexit  ( ierr(11) )
+#endif
+#ifdef PIO
+  CALL ext_pio_ioexit  ( ierr(12) )
 #endif
  
   IF ( use_output_servers() ) CALL wrf_quilt_ioexit( ierr(11) )

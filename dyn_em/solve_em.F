@@ -11,7 +11,8 @@ SUBROUTINE solve_em ( grid , config_flags  &
                   domain, get_ijk_from_grid, get_ijk_from_subgrid                          &
                  ,domain_get_current_time, domain_get_start_time                           &
                  ,domain_get_sim_start_time, domain_clock_get,is_alarm_tstep
-   USE module_domain_type, ONLY : history_alarm, restart_alarm, auxinput4_alarm
+   USE module_domain_type, ONLY : history_alarm, restart_alarm, auxinput4_alarm            &
+                 ,boundary_alarm
    USE module_configure, ONLY : grid_config_rec_type
    USE module_driver_constants
    USE module_machine
@@ -43,7 +44,7 @@ SUBROUTINE solve_em ( grid , config_flags  &
                  ,period_bdy_em_scalar_sub,period_bdy_em_tke_old_sub                       &
                  ,period_bdy_em_tracer2_sub,period_bdy_em_tracer_old_sub                   &
                  ,period_bdy_em_tracer_sub,period_em_da_sub,period_em_hydro_uv_sub         &
-                 ,halo_em_f_sub,halo_em_init_4_sub
+                 ,halo_em_f_sub,halo_em_init_4_sub,halo_em_thetam_sub,period_em_thetam_sub
 #endif
    USE module_utility
 ! Mediation layer modules
@@ -112,7 +113,7 @@ SUBROUTINE solve_em ( grid , config_flags  &
 
    LOGICAL                         :: specified_bdy, channel_bdy
 
-   REAL                            :: t_new
+   REAL                            :: t_new, time_duration_of_lbcs
    
    ! Changes in tendency at this timestep
    real ,DIMENSION(grid%sm31:grid%em31,grid%sm32:grid%em32,grid%sm33:grid%em33) :: h_tendency, &
@@ -747,6 +748,29 @@ BENCH_END(set_phys_bc_tim)
 
      END IF rk_step_is_one
 
+!************************************************************************************************************************
+! LES_fix convert theta to theta_m: point 1  ! 28 January 2015
+
+     IF ( ( config_flags%use_theta_m ) .AND. (P_Qv .GE. PARAM_FIRST_SCALAR) ) THEN
+        CALL theta_to_thetam ( grid%t_1 , moist_old(ims,kms,jms,P_qv) ,  &
+                               t_tendf  , moist_tend(ims,kms,jms,P_qv) , &
+                               grid%t_2 , moist(ims,kms,jms,P_qv) ,      &
+                               grid%h_diabatic ,                         &
+                               grid%itimestep ,                          &
+                               rk_step ,                                 & 
+                               ids, ide, jds, jde, kds, kde ,            &
+                               ims, ime, jms, jme, kms, kme ,            &
+                               ips, ipe, jps, jpe, kps, kpe              )
+# ifdef DM_PARALLEL
+#      include "HALO_EM_THETAM.inc"
+#      include "PERIOD_EM_THETAM.inc"
+#endif
+     END IF
+
+!
+! end theta_m fix point 1
+!************************************************************************************************************************
+
 BENCH_START(rk_tend_tim)
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij )
@@ -808,7 +832,40 @@ BENCH_START(relax_bdy_dry_tim)
      !$OMP PRIVATE ( ij )
      DO ij = 1 , grid%num_tiles
 
-       IF( (config_flags%specified .or. config_flags%nested) .and. rk_step == 1 ) THEN 
+       IF ( (config_flags%specified .or. config_flags%nested) .and. ( rk_step == 1 ) ) THEN 
+
+!************************************************************************************************************************
+! LES_fix convert theta to theta_m: nested or specified LBC, only required on the first rk step
+
+         IF   ( ( config_flags%use_theta_m ) .AND. (P_Qv .GE. PARAM_FIRST_SCALAR) ) THEN
+           IF ( grid%grid_id .EQ. 1 ) THEN
+              time_duration_of_lbcs = grid%interval_seconds
+           ELSE
+              time_duration_of_lbcs = grid%parent_time_step_ratio * grid%dt
+           END IF
+           CALL theta_and_thetam_lbc_only (                                                   & 
+                                .TRUE.,                                                       &
+                                grid%mub,                                                     &
+                                grid%mu_bxs,grid%mu_bxe,grid%mu_bys,grid%mu_bye,              &
+                                grid%mu_btxs,grid%mu_btxe,grid%mu_btys,grid%mu_btye,          &
+                                grid%t_bxs,grid%t_bxe,grid%t_bys,grid%t_bye,                  &
+                                grid%t_btxs,grid%t_btxe,grid%t_btys,grid%t_btye,              &
+                                moist_bxs(jms,kms,1,P_Qv),moist_bxe(jms,kms,1,P_Qv),          &
+                                moist_bys(ims,kms,1,P_Qv),moist_bye(ims,kms,1,P_Qv),          &
+                                moist_btxs(jms,kms,1,P_Qv),moist_btxe(jms,kms,1,P_Qv),        &
+                                moist_btys(ims,kms,1,P_Qv),moist_btye(ims,kms,1,P_Qv),        &
+                                config_flags%spec_bdy_width,                                  &
+                                time_duration_of_lbcs,                                        &
+                                ids,ide, jds,jde, kds,kde,                                    &
+                                ims,ime, jms,jme, kms,kme,                                    &
+                                ips,ipe, jps,jpe, kps,kpe,                                    &
+                                grid%i_start(ij), grid%i_end(ij),                             &
+                                grid%j_start(ij), grid%j_end(ij),                             &
+                                k_start    , k_end                                            )
+         END IF
+
+! LES_fix convert theta to theta_m: nested or specified LBC
+!************************************************************************************************************************
 
          CALL relax_bdy_dry ( config_flags,                                &
                               grid%u_save, grid%v_save, ph_save, grid%t_save,             &
@@ -875,7 +932,37 @@ BENCH_START(relax_bdy_dry_tim)
                              grid%i_start(ij), grid%i_end(ij),                &
                              grid%j_start(ij), grid%j_end(ij),                &
                              k_start, k_end                                  )
-     
+
+!************************************************************************************************************************
+! LES_fix convert theta_m to theta: nested or specified LBC, and only in the last rk step
+! since we do not need the theta_m lateral boundaries any more.
+
+         IF   ( ( config_flags%use_theta_m ) .AND. (P_Qv .GE. PARAM_FIRST_SCALAR) .AND. ( rk_step == rk_order ) ) THEN
+           CALL theta_and_thetam_lbc_only (                                                   & 
+                                .FALSE.,                                                      &           
+                                grid%mub,                                                     &
+                                grid%mu_bxs,grid%mu_bxe,grid%mu_bys,grid%mu_bye,              &
+                                grid%mu_btxs,grid%mu_btxe,grid%mu_btys,grid%mu_btye,          &
+                                grid%t_bxs,grid%t_bxe,grid%t_bys,grid%t_bye,                  &
+                                grid%t_btxs,grid%t_btxe,grid%t_btys,grid%t_btye,              &
+                                moist_bxs(jms,kms,1,P_Qv),moist_bxe(jms,kms,1,P_Qv),          &
+                                moist_bys(ims,kms,1,P_Qv),moist_bye(ims,kms,1,P_Qv),          &
+                                moist_btxs(jms,kms,1,P_Qv),moist_btxe(jms,kms,1,P_Qv),        &
+                                moist_btys(ims,kms,1,P_Qv),moist_btye(ims,kms,1,P_Qv),        &
+                                config_flags%spec_bdy_width,                                  &
+                                time_duration_of_lbcs,                                        &
+                                ids,ide, jds,jde, kds,kde,                                    &
+                                ims,ime, jms,jme, kms,kme,                                    &
+                                ips,ipe, jps,jpe, kps,kpe,                                    &
+                                grid%i_start(ij), grid%i_end(ij),                             &
+                                grid%j_start(ij), grid%j_end(ij),                             &
+                                k_start    , k_end                                            )
+         END IF
+
+! LES_fix convert theta_m to theta: nested or specified LBC, and only in the last rk step
+! since we do not need the theta_m lateral boundaries any more.
+!************************************************************************************************************************
+
        ENDIF
 
 !---------------------------------------------------------------------------------------------
@@ -2735,6 +2822,24 @@ BENCH_END(tracer_adv_tim)
 
      ENDIF other_scalar_advance
 
+!************************************************************************************************************************
+! LES_fix: convert theta_m back to theta, point 2 ! 28 January 2015
+
+     IF ( ( config_flags%use_theta_m ) .AND. (P_Qv .GE. PARAM_FIRST_SCALAR) ) THEN
+        CALL thetam_to_theta ( grid%t_1 , moist_old(ims,kms,jms,P_qv) ,  &
+                               grid%t_2 , moist(ims,kms,jms,P_qv) ,      &
+                               ids, ide, jds, jde, kds, kde ,            &
+                               ims, ime, jms, jme, kms, kme ,            &
+                               ips, ipe, jps, jpe, kps, kpe              )
+# ifdef DM_PARALLEL
+#      include "HALO_EM_THETAM.inc"
+#      include "PERIOD_EM_THETAM.inc"
+#endif
+     END IF
+
+! end theta_m fix point 2
+!************************************************************************************************************************
+
  !  update the pressure and density at the new time level
 
      !$OMP PARALLEL DO   &
@@ -4419,6 +4524,9 @@ BENCH_END(bc_2d_tim)
 !  Are we about to read SST input from the wrflowinput file?  That data is saved
 !  for use in fractional merging of external/coupled SST and input SST. 
    IF ( coupler_on )   grid%just_read_auxinput4 = Is_alarm_tstep(grid%domain_clock, grid%alarms(AUXINPUT4_ALARM))
+
+!  Are we about to read the lateral boundary file?  This is a domain one action only.
+   IF ( grid%id .EQ. 1 ) grid%just_read_boundary = Is_alarm_tstep(grid%domain_clock, grid%alarms(BOUNDARY_ALARM))
 
 ! Finish timers if compiled with -DBENCH.
 #include <bench_solve_em_end.h>

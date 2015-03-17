@@ -29,14 +29,20 @@ module_advect_em_ad.o: ../share/module_bc.o \
 		../share/module_model_constants.o \
 		../frame/module_wrf_error.o
 
-module_bc_em.o: ../share/module_bc.o ../frame/module_configure.o \
+module_bc_em.o: ../share/module_bc.o \
+		../share/module_model_constants.o \
+		../frame/module_configure.o \
 		../frame/module_wrf_error.o
 
-module_bc_em_tl.o: ../share/module_bc.o ../frame/module_configure.o \
+module_bc_em_tl.o: ../share/module_bc.o \
+		../share/module_model_constants.o \
+		../frame/module_configure.o \
 		../share/module_bc_tl.o \
 		../frame/module_wrf_error.o
 
-module_bc_em_ad.o: ../share/module_bc.o ../frame/module_configure.o \
+module_bc_em_ad.o: ../share/module_bc.o \
+		../share/module_model_constants.o \
+		../frame/module_configure.o \
 		../share/module_bc_ad.o \
 		../frame/module_wrf_error.o
 

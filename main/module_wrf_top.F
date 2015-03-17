@@ -33,7 +33,7 @@ MODULE module_wrf_top
 #endif
 
 #ifdef DM_PARALLEL
-   USE module_dm, ONLY : wrf_dm_initialize, wrf_dm_sum_real
+   USE module_dm, ONLY : wrf_dm_initialize,wrf_get_hostid, wrf_dm_sum_real
 #endif
 
    USE module_date_time, ONLY : current_date, start_date

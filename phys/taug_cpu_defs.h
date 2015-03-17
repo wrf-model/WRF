@@ -1,4 +1,4 @@
-#ifndef _CUDA
+#ifndef _ACCEL
       integer :: ncol__,nlayers__,nbndlw__,ngptlw__
 ! changed to arguments for thread safety (could reduce this list a bit)
 # ifndef ncol__

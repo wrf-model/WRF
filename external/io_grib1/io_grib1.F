@@ -1484,7 +1484,7 @@ END SUBROUTINE ext_gr1_inquire_filename
 !*****************************************************************************
 
 SUBROUTINE ext_gr1_get_var_info ( DataHandle , VarName , NDim , &
-     MemoryOrder , Stagger , DomainStart , DomainEnd , WrfType, Status )
+     MemoryOrder , Stagger , DomainStart , DomainEnd , Status )
 
   USE gr1_data_info
   IMPLICIT NONE
@@ -1495,7 +1495,6 @@ SUBROUTINE ext_gr1_get_var_info ( DataHandle , VarName , NDim , &
   character*(*)         ,intent(out)    :: MemoryOrder
   character*(*)         ,intent(out)    :: Stagger
   integer ,dimension(*) ,intent(out)    :: DomainStart, DomainEnd
-  integer               ,intent(out)    :: WrfType
   integer               ,intent(out)    :: Status
 
   call wrf_debug ( DEBUG , 'Entering ext_gr1_get_var_info')

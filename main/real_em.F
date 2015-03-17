@@ -783,6 +783,8 @@ real::t1,t2
 
       !  Open the wrfinput file.  From this program, this is an *output* file.
 
+      grid%this_is_an_ideal_run = .FALSE.
+
       CALL construct_filename1( inpname , 'wrfinput' , grid%id , 2 )
       CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_input , "DATASET=INPUT", ierr )
       IF ( ierr .NE. 0 ) THEN

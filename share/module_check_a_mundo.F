@@ -316,25 +316,6 @@
 #if (EM_CORE == 1)
 
 !-----------------------------------------------------------------------
-!!!!!!  THIS FEATURE IS CURRENTLY NOT WORKING - FIELDS WILL ALWAYS BE FULL 3D ARRAYS !!!!!
-!-----------------------------------------------------------------------
-!! Random fields are by default thin 3D arrays (:,1,:).
-!! If random fields have vertical structures (stoch_vertstruc_opt .ne. 0)
-!! make them full 3D array arrays
-!-----------------------------------------------------------------------
-    DO i = 1, model_config_rec % max_dom
-          IF ( model_config_rec % stoch_vertstruc_opt(i) .ne. 99)  then
-             model_config_rec % num_stoch_levels = model_config_rec %e_vert(1)
-          ENDIF
-          IF ( model_config_rec % sppt_vertstruc(i) .ne. 99)  then
-             model_config_rec % num_stoch_levels = model_config_rec %e_vert(1)
-          ENDIF
-          IF ( model_config_rec % rand_pert_vertstruc(i) .ne. 99)  then
-             model_config_rec % num_stoch_levels = model_config_rec %e_vert(1)
-          ENDIF
-    ENDDO
-
-!-----------------------------------------------------------------------
 ! Check if any stochastic perturbation scheme is turned on in any domain,
 ! if so, set derived variable sppt_on=1 and/or rand_perturb_on and/or skebs_on=1
 !-----------------------------------------------------------------------
@@ -369,7 +350,7 @@
    ENDDO
    DO i = 1, model_config_rec % max_dom
          IF ( model_config_rec % stoch_vertstruc_opt(i) ==1 )  then
-           model_config_rec % skebs_vertstruc(i)=1    ! parameter stoch_vertstruc_opt is being replaced with skebs_vertstruc
+           model_config_rec % skebs_vertstruc=1       ! parameter stoch_vertstruc_opt is being replaced with skebs_vertstruc
                                                       ! stoch_vertstruc_opt is obsolete starting with V3.7
            wrf_err_message = '--- WARNING: the namelist parameter "stoch_vertstruc_opt" is obsolete.'
            CALL wrf_message ( wrf_err_message )
@@ -377,6 +358,22 @@
            CALL wrf_message ( wrf_err_message )
          endif
    ENDDO
+
+!-----------------------------------------------------------------------
+! Random fields are by default thin 3D arrays (:,1,:).
+! If random fields have vertical structures (stoch_vertstruc_opt .ne. 0)
+! make them full 3D array arrays
+!-----------------------------------------------------------------------
+   IF ( model_config_rec % skebs_vertstruc     .ne. 99)  then
+      model_config_rec % num_stoch_levels = model_config_rec %e_vert(1)
+   ENDIF
+   IF ( model_config_rec % sppt_vertstruc      .ne. 99)  then
+      model_config_rec % num_stoch_levels = model_config_rec %e_vert(1)
+   ENDIF
+   IF ( model_config_rec % rand_pert_vertstruc .ne. 99)  then
+      model_config_rec % num_stoch_levels = model_config_rec %e_vert(1)
+   ENDIF
+
    DO i = 1, model_config_rec % max_dom
          IF ( model_config_rec % stoch_force_opt(i) ==1 )  then
            model_config_rec % skebs(i)=1    ! parameter stoch_forc_opt is being replaced with skebs;

@@ -1931,7 +1931,6 @@ SUBROUTINE advance_ppt(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,           &
                     RQRCUTEN(i,k,j)=0.
                     if (P_QI .ge. PARAM_FIRST_SCALAR) RQICUTEN(i,k,j)=0.
                     if (P_QS .ge. PARAM_FIRST_SCALAR) RQSCUTEN(i,k,j)=0.
-                    CLDFRA_CUP(i,k,j)=0. ! By LKB 12/22/11 01/11/2012 !BSINGH - For CuP
                  ENDDO
               ENDIF
 
@@ -1942,6 +1941,20 @@ SUBROUTINE advance_ppt(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,           &
 !
         ENDDO
         ENDDO
+
+        IF ( config_flags%cu_physics == kfcupscheme ) THEN
+           DO J = j_start,j_end
+           DO i = i_start,i_end
+             IF ( NCA(I,J) .GT. 0 ) THEN
+              IF ( NINT(NCA(I,J) / DT) .LE. 1 ) THEN
+                 DO k = k_start,k_end
+                    CLDFRA_CUP(i,k,j)=0. ! By LKB 12/22/11 01/11/2012 !BSINGH - For CuP
+                 ENDDO
+              ENDIF
+             ENDIF
+           ENDDO
+           ENDDO
+        ENDIF
 
    CASE DEFAULT
 

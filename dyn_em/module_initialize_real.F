@@ -5319,9 +5319,8 @@ print *,'p target= ',target_x
          !  an odd order interpolator.  For the even guys, we'll do it twice
          !  and shift the range one index, then get an average.
 
-! cubic spline
          IF ( n .EQ. 9 ) THEN
-            CALL cubic_spline (all_dim-1, all_x, all_y, P2)
+            CALL cubic_spline (all_dim, all_x, all_y, P2)
 !
 ! Find the value of function f(x)
 !
@@ -5336,9 +5335,6 @@ print *,'p target= ',target_x
                                   *(target_x(target_loop)-all_x(loc_center_right)) &
                      +GAMMA*(target_x(target_loop)-all_x(loc_center_left)) &
                      +ETA*(target_x(target_loop)-all_x(loc_center_right))
-
-!        IF      ( MOD(n,2) .NE. 0 ) THEN
-!  end cubic spline block
 
          ELSE IF ( MOD(n,2) .NE. 0 ) THEN
             IF ( ( loc_center_left -(((n+1)/2)-1) .GE.       1 ) .AND. &

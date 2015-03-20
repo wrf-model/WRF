@@ -162,6 +162,12 @@ ifdef HWRF=1
 include registry.tracker
 endif
 
+# Nest motion safeguard: don't let nest get close to parent boundary.
+# Default values are lowest possible - anything lower would read
+# outside of memory in intermediate domain.
+rconfig integer coral_x     namelist,domains     max_domains    5   h "coral_x" "Minimum parent gridpoints on each side of nest in X direction." ""
+rconfig integer coral_y     namelist,domains     max_domains    5   h "coral_y" "Minimum parent gridpoints on each side of nest in Y direction." ""
+
 
 #
 # For the moving nest. This is gopal's doing

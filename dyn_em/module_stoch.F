@@ -242,7 +242,7 @@ contains
       WRITE(*,'(''                                               '')')
       WRITE(*,'('' =============================================='')')
       WRITE(*,'('' >> Initializing Stochastically Perturbed Physics Tendency scheme << '')')
-      WRITE(*,'('' skebs_vertstruc                             '',I10)') skebs_vertstruc
+      WRITE(*,'('' sppt_vertstruc                              '',I10)') skebs_vertstruc
       WRITE(*,'('' Time step: itime_step='',I10)') itime_step
       WRITE(*,'('' Decorrelation time of noise, Tau ='',E12.5)') tau_rand_perturb
       WRITE(*,'('' Autoregressive parameter Phi ='',E12.5)') phi
@@ -258,7 +258,7 @@ contains
       WRITE(*,'(''                                               '')')
       WRITE(*,'('' =============================================='')')
       WRITE(*,'('' >> Initializing random pertubations << '')')
-      WRITE(*,'('' skebs_vertstruc                             '',I10)') skebs_vertstruc
+      WRITE(*,'('' rand_pert_vertstruc                         '',I10)') skebs_vertstruc
       WRITE(*,'('' Time step: itime_step='',I10)') itime_step
       WRITE(*,'('' Decorrelation time of noise, Tau ='',E12.5)') tau_rand_perturb
       WRITE(*,'('' Autoregressive parameter Phi ='',E12.5)') phi
@@ -852,12 +852,12 @@ contains
 #else
         call do_fftback_along_x(grid%RAND_REAL,grid%RAND_IMAG,                          &
                               ids,ide,jds,jde,                                          & 
-                              imsx,imex,jmsx,jmex,kmsx,min(kmex,grid%num_stoch_levels), & 
-                              ipsx,ipex,jpsx,jpex,kpsx,min(kpex,grid%num_stoch_levels))   
+                              ims,ime,jms,jme,kms,min(kme,grid%num_stoch_levels),       & 
+                              ips,ipe,jps,jpe,kps,min(kpe,grid%num_stoch_levels))   
         call do_fftback_along_y(grid%RAND_REAL,grid%RAND_IMAG,                          & 
                               ids,ide,jds,jde,                                          & 
-                              imsy,imey,jmsy,jmey,kmsy,min(kmey,grid%num_stoch_levels), & 
-                              ipsy,ipey,jpsy,jpey,kpsy,min(kpey,grid%num_stoch_levels))
+                              ims,ime,jms,jme,kms,min(kme,grid%num_stoch_levels),       & 
+                              ips,ipe,jps,jpe,kps,min(kpe,grid%num_stoch_levels))
 #endif
 
 

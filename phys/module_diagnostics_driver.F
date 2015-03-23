@@ -418,9 +418,9 @@ CONTAINS
 
       AFWA_DIAGS : IF ( config_flags%afwa_diag_opt == 1 ) THEN
 
-         IF ( ( config_flags%auxhist2_interval == 0 ) ) THEN
+         IF ( ( config_flags%history_interval == 0 ) ) THEN
             WRITE (diag_message , * ) &
-            "AFWA Diagnostics Error : No 'auxhist2_interval' defined in 'namelist.input'"
+            "AFWA Diagnostics Error : No 'history_interval' defined in namelist"
             CALL wrf_error_fatal ( diag_message )
          END IF
 

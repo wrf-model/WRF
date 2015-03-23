@@ -11176,7 +11176,7 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
       use parrrsw_f, only : nbndsw, ngptsw, naerec
       use rrtmg_sw_init_f, only: rrtmg_sw_ini
       use rrtmg_sw_rad_f, only: rrtmg_sw
-      use mcica_subcol_gen_sw, only: mcica_subcol_sw
+!     use mcica_subcol_gen_sw, only: mcica_subcol_sw
 
       use module_ra_rrtmg_lwf, only : inirad, o3data, relcalc, reicalc, retab
 !                               mcica_random_numbers, randomNumberSequence, &

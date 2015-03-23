@@ -273,7 +273,6 @@ tile_lon_loop : &
            (config_flags%chem_opt == CBMZ_BB       ) .or.          &
            (config_flags%chem_opt == CBMZ_BB_KPP   ) .or.          &
            (config_flags%chem_opt == CBMZ_MOSAIC_KPP   ) .or.      &
-           (config_flags%chem_opt == CBMZ_MOSAIC_4BIN_VBS2_KPP).or.&
            (config_flags%chem_opt == CBMZ_MOSAIC_4BIN_AQ) .or.     &
            (config_flags%chem_opt == CBMZ_MOSAIC_8BIN_AQ) .or.     &
            (config_flags%chem_opt == CBMZ_MOSAIC_4BIN) .or.        &

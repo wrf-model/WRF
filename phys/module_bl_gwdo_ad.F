@@ -345,17 +345,16 @@ SUBROUTINE GWDO2D_B(dudt, dudtb, dvdt, dvdtb, dtaux2d, dtaux2db, dtauy2d&
   REAL, PARAMETER :: olmin=1.0e-5
   REAL, PARAMETER :: odmin=0.1
   REAL, PARAMETER :: odmax=10.
-  REAL, PARAMETER :: cd=0.25
   REAL, PARAMETER :: erad=6371.315e+3
   INTEGER :: komax(its:ite)
   INTEGER :: kblk
+  REAL :: cd
   REAL :: zblk, tautem
   REAL :: zblkb, tautemb
   REAL :: pe, ke
   REAL :: delx, dely, dxy4(4), dxy4p(4)
   REAL :: dxy(its:ite), dxyp(its:ite)
-  REAL :: ol4p(4), olp(its:ite), od(its:ite), fr0(its:ite)
-  REAL :: fr0b(its:ite)
+  REAL :: ol4p(4), olp(its:ite), od(its:ite)
   REAL :: taufb(its:ite, kts:kte+1)
   REAL :: taufbb(its:ite, kts:kte+1)
   REAL :: tmp
@@ -531,7 +530,7 @@ SUBROUTINE GWDO2D_B(dudt, dudtb, dvdt, dvdtb, dtaux2d, dtaux2db, dtauy2d&
     END IF
   END DO
 !
-!  determine the level of maximum subgrid orographic height
+!  determine the level of maximum orographic height
 !
   komax(:) = kbl(:)
 !
@@ -586,7 +585,7 @@ SUBROUTINE GWDO2D_B(dudt, dudtb, dvdt, dvdtb, dtaux2d, dtaux2db, dtauy2d&
       max1 = ol(i)
     END IF
 !
-!----- compute orograhpic direction (horizontal orograhpic aspect ratio)
+!----- compute orographic direction (horizontal orographic aspect ratio)
 !
     od(i) = olp(i)/max1
     IF (od(i) .GT. odmax) THEN
@@ -753,15 +752,14 @@ SUBROUTINE GWDO2D_B(dudt, dudtb, dvdt, dvdtb, dtaux2d, dtaux2db, dtauy2d&
   DO i=its,ite
     IF (.NOT.ldrag(i)) THEN
       bnv(i) = SQRT(bnv2(i, 1))
-      fr0(i) = bnv(i)*rulow(i)*2.*var(i)*od(i)
-      IF (fr0(i) .GT. frmax) THEN
-        fr0(i) = frmax
+      fr(i) = bnv(i)*rulow(i)*2.*var(i)*od(i)
+      IF (fr(i) .GT. frmax) THEN
+        fr(i) = frmax
         CALL PUSHCONTROL1B(0)
       ELSE
         CALL PUSHCONTROL1B(1)
-        fr0(i) = fr0(i)
+        fr(i) = fr(i)
       END IF
-      fr(i) = fr0(i)
       xn(i) = ubar(i)*rulow(i)
       yn(i) = vbar(i)*rulow(i)
       CALL PUSHCONTROL1B(1)
@@ -956,6 +954,15 @@ SUBROUTINE GWDO2D_B(dudt, dudtb, dvdt, dvdtb, dtaux2d, dtaux2db, dtauy2d&
 !
 !--------- compute flow-blocking stress
 !
+        IF (2.0 - 1.0/od(i) .LT. 0.0) THEN
+          CALL PUSHREAL8(cd)
+          cd = 0.0
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(cd)
+          cd = 2.0 - 1.0/od(i)
+          CALL PUSHCONTROL1B(1)
+        END IF
         taufb(i, kts) = 0.5*roll(i)*coefm(i)/dxy(i)**2*cd*dxyp(i)*olp(i)&
 &         *zblk*ulow(i)**2
         tautem = taufb(i, kts)/FLOAT(kblk-kts)
@@ -1124,6 +1131,12 @@ SUBROUTINE GWDO2D_B(dudt, dudtb, dvdt, dvdtb, dtaux2d, dtaux2db, dtauy2d&
         zblkb = zblkb + roll(i)*tempb19
         ulowb(i) = ulowb(i) + roll(i)*zblk*2*ulow(i)*tempb18/dxy(i)**2
         taufbb(i, kts) = 0.0
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(cd)
+        ELSE
+          CALL POPREAL8(cd)
+        END IF
       END IF
       DO k=kpblmin,kte,1
         CALL POPCONTROL2B(branch)
@@ -1277,7 +1290,6 @@ SUBROUTINE GWDO2D_B(dudt, dudtb, dvdt, dvdtb, dtaux2d, dtaux2db, dtauy2d&
 &         *(fr(i)/frc))*LOG(oa(i)+2.)*efactb/frc
     END IF
   END DO
-  fr0b = 0.0
   vbarb = 0.0
   ubarb = 0.0
   rulowb = 0.0
@@ -1289,14 +1301,12 @@ SUBROUTINE GWDO2D_B(dudt, dudtb, dvdt, dvdtb, dtaux2d, dtaux2db, dtauy2d&
       ynb(i) = 0.0
       ubarb(i) = ubarb(i) + rulow(i)*xnb(i)
       xnb(i) = 0.0
-      fr0b(i) = fr0b(i) + frb(i)
-      frb(i) = 0.0
       CALL POPCONTROL1B(branch)
-      IF (branch .EQ. 0) fr0b(i) = 0.0
-      tempb9 = var(i)*2.*od(i)*fr0b(i)
+      IF (branch .EQ. 0) frb(i) = 0.0
+      tempb9 = var(i)*2.*od(i)*frb(i)
       bnvb(i) = bnvb(i) + rulow(i)*tempb9
       rulowb(i) = rulowb(i) + bnv(i)*tempb9
-      fr0b(i) = 0.0
+      frb(i) = 0.0
       IF (.NOT.bnv2(i, 1) .EQ. 0.0) bnv2b(i, 1) = bnv2b(i, 1) + bnvb(i)/&
 &         (2.0*SQRT(bnv2(i, 1)))
       bnvb(i) = 0.0

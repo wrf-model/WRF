@@ -281,17 +281,16 @@ SUBROUTINE GWDO2D_D(dudt, dudtd, dvdt, dvdtd, dtaux2d, dtaux2dd, dtauy2d&
   REAL, PARAMETER :: olmin=1.0e-5
   REAL, PARAMETER :: odmin=0.1
   REAL, PARAMETER :: odmax=10.
-  REAL, PARAMETER :: cd=0.25
   REAL, PARAMETER :: erad=6371.315e+3
   INTEGER :: komax(its:ite)
   INTEGER :: kblk
+  REAL :: cd
   REAL :: zblk, tautem
   REAL :: zblkd, tautemd
   REAL :: pe, ke
   REAL :: delx, dely, dxy4(4), dxy4p(4)
   REAL :: dxy(its:ite), dxyp(its:ite)
-  REAL :: ol4p(4), olp(its:ite), od(its:ite), fr0(its:ite)
-  REAL :: fr0d(its:ite)
+  REAL :: ol4p(4), olp(its:ite), od(its:ite)
   REAL :: taufb(its:ite, kts:kte+1)
   REAL :: taufbd(its:ite, kts:kte+1)
   REAL :: result1
@@ -448,7 +447,7 @@ SUBROUTINE GWDO2D_D(dudt, dudtd, dvdt, dvdtd, dtaux2d, dtaux2dd, dtauy2d&
     END IF
   END DO
 !
-!  determine the level of maximum subgrid orographic height
+!  determine the level of maximum orographic height
 !
   komax(:) = kbl(:)
   delksd = 0.0
@@ -514,7 +513,7 @@ SUBROUTINE GWDO2D_D(dudt, dudtd, dvdt, dvdtd, dtaux2d, dtaux2dd, dtauy2d&
       max1 = ol(i)
     END IF
 !
-!----- compute orograhpic direction (horizontal orograhpic aspect ratio)
+!----- compute orographic direction (horizontal orographic aspect ratio)
 !
     od(i) = olp(i)/max1
     IF (od(i) .GT. odmax) THEN
@@ -694,7 +693,6 @@ SUBROUTINE GWDO2D_D(dudt, dudtd, dvdt, dvdtd, dtaux2d, dtaux2dd, dtauy2d&
       END IF
     END DO
   END DO
-  fr0d = 0.0
   bnvd = 0.0
   xnd = 0.0
   ynd = 0.0
@@ -708,16 +706,14 @@ SUBROUTINE GWDO2D_D(dudt, dudtd, dvdt, dvdtd, dtaux2d, dtaux2dd, dtauy2d&
         bnvd(i) = bnv2d(i, 1)/(2.0*SQRT(bnv2(i, 1)))
       END IF
       bnv(i) = SQRT(bnv2(i, 1))
-      fr0d(i) = 2.*var(i)*od(i)*(bnvd(i)*rulow(i)+bnv(i)*rulowd(i))
-      fr0(i) = bnv(i)*rulow(i)*2.*var(i)*od(i)
-      IF (fr0(i) .GT. frmax) THEN
-        fr0d(i) = 0.0
-        fr0(i) = frmax
+      frd(i) = 2.*var(i)*od(i)*(bnvd(i)*rulow(i)+bnv(i)*rulowd(i))
+      fr(i) = bnv(i)*rulow(i)*2.*var(i)*od(i)
+      IF (fr(i) .GT. frmax) THEN
+        frd(i) = 0.0
+        fr(i) = frmax
       ELSE
-        fr0(i) = fr0(i)
+        fr(i) = fr(i)
       END IF
-      frd(i) = fr0d(i)
-      fr(i) = fr0(i)
       xnd(i) = ubard(i)*rulow(i) + ubar(i)*rulowd(i)
       xn(i) = ubar(i)*rulow(i)
       ynd(i) = vbard(i)*rulow(i) + vbar(i)*rulowd(i)
@@ -932,6 +928,11 @@ SUBROUTINE GWDO2D_D(dudt, dudtd, dvdt, dvdtd, dtaux2d, dtaux2dd, dtauy2d&
 !
 !--------- compute flow-blocking stress
 !
+        IF (2.0 - 1.0/od(i) .LT. 0.0) THEN
+          cd = 0.0
+        ELSE
+          cd = 2.0 - 1.0/od(i)
+        END IF
         taufbd(i, kts) = cd*dxyp(i)*olp(i)*(0.5*coefm(i)*rolld(i)*zblk*&
 &         ulow(i)**2/dxy(i)**2+0.5*roll(i)*coefm(i)*(zblkd*ulow(i)**2+&
 &         zblk*2*ulow(i)*ulowd(i))/dxy(i)**2)

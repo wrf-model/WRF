@@ -203,6 +203,7 @@ contains
 !
 !  program history log:
 !    2014-10-01  Hyun-Joo Choi (from KIAPS)  flow-blocking drag of kim and doyle
+!                              with blocked height by dividing streamline theory
 !
 !  references:
 !        hong et al. (2008), wea. and forecasting
@@ -313,15 +314,15 @@ contains
    real,parameter       :: olmin  = 1.0e-5
    real,parameter       :: odmin  = 0.1 
    real,parameter       :: odmax  = 10. 
-   real,parameter       :: cd     = 0.25
    real,parameter       :: erad   = 6371.315e+3
    integer              :: komax(its:ite)
    integer              :: kblk
+   real                 :: cd
    real                 :: zblk,tautem
    real                 :: pe,ke 
    real                 :: delx,dely,dxy4(4),dxy4p(4)
    real                 :: dxy(its:ite),dxyp(its:ite)
-   real                 :: ol4p(4),olp(its:ite),od(its:ite),fr0(its:ite)
+   real                 :: ol4p(4),olp(its:ite),od(its:ite)
    real                 :: taufb(its:ite,kts:kte+1)
 !
 !---- constants                                                         
@@ -428,7 +429,7 @@ contains
      kbl(i)   = max(min(kbl(i),kpblmax),kpblmin)
    enddo
 !
-!  determine the level of maximum subgrid orographic height
+!  determine the level of maximum orographic height
 !
    komax(:) = kbl(:)
 !
@@ -472,7 +473,7 @@ contains
      ol4p(4) = ol4(i,3)
      olp(i)  = ol4p(mod(nwd-1,4)+1) 
 !
-!----- compute orograhpic direction (horizontal orograhpic aspect ratio)
+!----- compute orographic direction (horizontal orographic aspect ratio)
 !
      od(i) = olp(i)/max(ol(i),olmin)
      od(i) = min(od(i),odmax)
@@ -579,9 +580,8 @@ contains
    do i = its,ite 
      if (.not.ldrag(i))   then   
        bnv(i) = sqrt( bnv2(i,1) )                                  
-       fr0(i) = bnv(i)  * rulow(i) * 2. * var(i) * od(i)
-       fr0(i) = min(fr0(i),frmax)
-       fr(i)  = fr0(i)
+       fr(i) = bnv(i)  * rulow(i) * 2. * var(i) * od(i)
+       fr(i) = min(fr(i),frmax)
        xn(i)  = ubar(i) * rulow(i)
        yn(i)  = vbar(i) * rulow(i)
      endif
@@ -700,6 +700,7 @@ contains
 !
 !--------- compute flow-blocking stress
 !
+          cd = max(2.0-1.0/od(i),0.0)
           taufb(i,kts) = 0.5 * roll(i) * coefm(i) / dxy(i)**2 * cd * dxyp(i)   &
                          * olp(i) * zblk * ulow(i)**2
           tautem = taufb(i,kts)/float(kblk-kts)

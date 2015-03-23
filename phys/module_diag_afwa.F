@@ -568,7 +568,7 @@ CONTAINS
    
          !~ Identify the last layer within 100 hPa of the surface
          !  -----------------------------------------------------
-         pdiff = ( p (k) - p (sfc) ) / REAL ( 100 )
+         pdiff = ( p (sfc) - p (k) ) / REAL ( 100 )
          IF ( pdiff <= REAL (100) ) mlev = k
 
          !~ If we've made it past the lowest 180 hPa, exit the loop
@@ -1804,7 +1804,8 @@ CONTAINS
 
     ! Local
     ! -----
-    CHARACTER*256 :: message, timestr 
+    CHARACTER*512 :: message
+    CHARACTER*256 :: timestr 
     INTEGER :: i,j,k,nz,ostat
     INTEGER :: icing_opt
     REAL :: bdump
@@ -1831,10 +1832,14 @@ CONTAINS
                                               ,        wind10m  &
                                               ,       wup_mask  &
                                               ,       wind125m  &
+                                              ,           llws  &
                                               ,         pwater
 
     LOGICAL :: do_buoy_calc, do_hailcast_calc
-    REAL :: zlfc_msl,dum1,dum2,dum3,wind_vel
+    REAL :: zlfc_msl, dum1, dum2, dum3, wind_vel, wind_blend
+    REAL :: prate_mm_per_hr, factor
+    REAL :: u1km, v1km, ublend, vblend, u2000, v2000, us, vs
+    LOGICAL :: is_target_level
 
     ! Timing
     ! ------
@@ -1879,6 +1884,34 @@ CONTAINS
     ! ---------------------------------
     is_first_timestep = ( Currtime .eq. StartTime + dtint )
         
+    ! Here is an optional check for bad data in case the model has gone
+    ! off the hinges unchecked until now.  This happens under certain
+    ! configurations and can lead to very wrong data writes.  This is just
+    ! a simple check for sane winds and potential temperatures.
+    ! --------------------------------------------------------------------
+    IF ( config_flags%afwa_bad_data_check .GT. 0 ) THEN
+      IF ( ( is_output_timestep ) .AND. ( .NOT. is_first_timestep ) ) THEN      
+        DO i=its, MIN( ide-1, ite )
+          DO k=k_start, k_end
+            DO j=jts, MIN( jde-1, jte )
+              IF ( ( u_phy(i,k,j)  .GT.  300.  ) .OR. &
+                   ( u_phy(i,k,j)  .LT. -300.  ) .OR. &
+                   ( v_phy(i,k,j)  .GT.  300.  ) .OR. &
+                   ( v_phy(i,k,j)  .LT. -300.  ) .OR. &
+                   ( th_phy(i,k,j) .GT.  9999. ) .OR. &
+                   ( th_phy(i,k,j) .LT.  99.   ) ) THEN
+                write ( message, * ) "AFWA Diagnostics: ERROR - Model winds and/or " // &
+                "potential temperature appear to be bad. If you do not want this check, " // &
+                "set afwa_bad_data_check=0. i=",i,", j=",j,", k=",k,", u_phy=",u_phy(i,k,j), &
+                ", v_phy=", v_phy(i,k,j),", th_phy=",th_phy(i,k,j)
+                CALL wrf_error_fatal( message )
+              ENDIF
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDIF
+    ENDIF
+
     ! 3-D arrays for moisture variables
     ! ---------------------------------
     DO i=ims, ime
@@ -1926,6 +1959,15 @@ CONTAINS
       ENDDO
     ENDDO
 
+    ! Time-step precipitation (convective + nonconvective)
+    ! --------------------------------------------------------------
+    DO i=ims,ime
+      DO j=jms,jme
+        grid % afwa_precip(i,j) = grid%raincv(i,j) + grid%rainncv(i,j)
+        grid % afwa_totprecip(i,j) = grid%rainc(i,j) + grid%rainnc(i,j)
+      ENDDO
+    ENDDO
+
     ! Calculate precipitable water
     ! ----------------------------
     nz=kme-kms+1
@@ -1945,18 +1987,86 @@ CONTAINS
       DO j = jms, jme
         DO i = ims, ime
           grid % wspd10max(i,j) = 0.
+          grid % afwa_llws(i,j) = 0.
         ENDDO
       ENDDO
     ENDIF 
 
     ! Calculate the max 10 m wind speed between output times
     ! ------------------------------------------------------
+    ! UPDATE 20150112 - GAC
+    ! Diagnose from model 10 m winds, and blend with 1 km AGL
+    ! winds when precipitation rate is > 50 mm/hr to account
+    ! for increased surface wind gust potential when precip
+    ! is heavy and when winds aloft are strong.  Will use the
+    ! higher of the surface and the blended winds. Blending
+    ! is linear weighted between 50-150 mm/hr precip rates.
+    ! -------------------------------------------------------
     DO j = jms, jme
       DO i = ims, ime
         wind_vel = uv_wind ( grid % u10(i,j) , grid % v10(i,j) )
+        prate_mm_per_hr = ( grid % afwa_precip(i,j) / grid % dt ) * 3600.
+
+        ! Is this an area of heavy precip?  Calculate 1km winds to blend down
+        ! -------------------------------------------------------------------
+        IF ( prate_mm_per_hr .GT. 50. ) THEN
+          is_target_level=.false.
+          DO k=kms,kme    
+            IF ( ( zagl(i,k,j) >= 1000. ) .and. &
+                 ( .NOT. is_target_level ) .and. &
+                 ( k .ne. kms ) ) THEN
+              is_target_level = .true.
+              u1km = u_phy(i,k-1,j) + (1000. - (zagl(i,k-1,j))) &
+                     * ((u_phy(i,k,j) - u_phy(i,k-1,j))/(zagl(i,k,j)))
+              v1km = v_phy(i,k-1,j) + (1000. - (zagl(i,k-1,j))) &
+                     * ((v_phy(i,k,j) - v_phy(i,k-1,j))/(zagl(i,k,j)))
+              EXIT ! We've found our level, break the loop
+            ENDIF
+          ENDDO
+          
+          ! Compute blended wind
+          ! --------------------
+          factor = MAX ( ( ( 150. - prate_mm_per_hr ) / 100. ), 0. )
+          ublend = grid % u10(i,j) * factor + u1km * (1. - factor)
+          vblend = grid % v10(i,j) * factor + v1km * (1. - factor)
+          wind_blend = uv_wind ( ublend, vblend )
+
+          ! Set the surface wind to the blended wind if higher
+          ! --------------------------------------------------
+          IF ( wind_blend .GT. wind_vel ) THEN
+            wind_vel = wind_blend
+          ENDIF
+        ENDIF
+
         IF ( wind_vel .GT. grid % wspd10max(i,j) ) THEN
           grid % wspd10max(i,j) = wind_vel
         ENDIF
+      ENDDO
+    ENDDO
+
+    ! Calculate 0-2000 foot (0 - 609.6 meter) shear.
+    ! ----------------------------------------------
+    DO j = jts, jte
+      DO i = its, ite
+        is_target_level=.false.
+        DO k=kms,kme    
+          IF ( ( zagl(i,k,j) >= 609.6 ) .and. &
+               ( .NOT. is_target_level ) .and. &
+               ( k .ne. kms ) ) THEN
+            is_target_level = .true.
+            u2000 = u_phy(i,k-1,j) + (609.6 - (zagl(i,k-1,j))) &
+                    * ((u_phy(i,k,j) - u_phy(i,k-1,j))/(zagl(i,k,j)))
+            v2000 = v_phy(i,k-1,j) + (609.6 - (zagl(i,k-1,j))) &
+                    * ((v_phy(i,k,j) - v_phy(i,k-1,j))/(zagl(i,k,j)))
+            us = u2000 - grid % u10(i,j) 
+            vs = v2000 - grid % v10(i,j) 
+            llws(i,j) = uv_wind ( us , vs )
+            IF ( llws(i,j) .gt. grid % afwa_llws(i,j) ) THEN
+              grid % afwa_llws(i,j) = llws(i,j)
+            ENDIF
+            EXIT ! We've found our level, break the loop
+          ENDIF
+        ENDDO
       ENDDO
     ENDDO
 
@@ -1996,12 +2106,11 @@ CONTAINS
             grid%grpl_flx_max(i,j) = 0.
             grid%up_heli_max(i,j) = 0.
 !            grid%refd_max(i,j) = 0.
-            grid%afwa_llws(i,j) = 0.
             grid%afwa_tornado(i,j) = 0.
             grid%midrh_min_old(i,j) = grid%midrh_min(i,j) ! Save old midrh_min
             grid%midrh_min(i,j) = 999.
+            grid%afwa_hail(i,j) = 0.
             IF ( config_flags % afwa_hailcast_opt == 1 ) THEN
-              grid%afwa_hail(i,j) = 0.
               grid%afwa_hail_new1(i,j) = 0.
               grid%afwa_hail_new2(i,j) = 0.
               grid%afwa_hail_new3(i,j) = 0.
@@ -2065,7 +2174,7 @@ CONTAINS
                              , grid % afwa_zlfc                 &
                              , grid % afwa_plfc                 &
                              , grid % afwa_lidx                 &
-                             , grid % afwa_llws                 &
+                             , llws                             &
                              , grid % afwa_tornado              &
                              , grid % grpl_flx_max              &
                              , grid % u10                       &
@@ -2120,15 +2229,6 @@ CONTAINS
         ENDDO
       ENDIF
   
-      ! Time-step and total precipitation (convective + nonconvective)
-      ! --------------------------------------------------------------
-      DO i=ims,ime
-        DO j=jms,jme
-          grid%afwa_precip(i,j)=grid%raincv(i,j)+grid%rainncv(i,j)
-          grid%afwa_totprecip(i,j)=grid%rainc(i,j)+grid%rainnc(i,j)
-        ENDDO
-      ENDDO
-
       ! Diagnose precipitation type
       ! ---------------------------
       CALL precip_type_diagnostics ( grid % t_phy               &
@@ -2555,7 +2655,7 @@ CONTAINS
                              , zlfc                             &
                              , plfc                             &
                              , lidx                             &
-                             , llws_max                         &
+                             , llws                             &
                              , afwa_tornado                     &
                              , grpl_flx_max                     &
                              , u10                              &
@@ -2623,6 +2723,7 @@ CONTAINS
                                               ,             ht  &
                                               ,  midrh_min_old  &
                                               ,    up_heli_max  &
+                                              ,           llws  &
                                               ,           pwat
 
 
@@ -2631,7 +2732,6 @@ CONTAINS
                                               ,       w_dn_max  &
                                               ,      tcoli_max  &
                                               ,      midrh_min  &
-                                              ,       llws_max  &
                                               ,      afwa_hail  &
                                               , afwa_hail_new1  &
                                               , afwa_hail_new2  &
@@ -2672,19 +2772,17 @@ CONTAINS
     REAL    :: zagl, zlfc_msl, melt_term, midrh_term, hail, midrh
     REAL    :: dum1, dum2, dum3
     REAL    :: tornado, lfc_term, shr_term, midrh2_term, uh_term
-    REAL    :: u2000, v2000, us, vs
     REAL    :: wind_vel, p_tot, tcoli, grpl_flx, w_n15, qg_n15
     INTEGER :: nz, ostat
-    LOGICAL :: is_target_level
     REAL, DIMENSION( ims:ime, jms:jme ) ::                w_up  &
                                               ,           w_dn  &
-                                              ,           llws  &
                                               ,  wup_mask_prev  &
                                               ,      wdur_prev  &
                                            , tornado_mask_prev  &
                                            ,  tornado_dur_prev
     REAL :: dhail1,dhail2,dhail3,dhail4,dhail5
     REAL :: time_factor, time_factor_prev
+    LOGICAL :: is_target_level
 
     ! Calculate midlevel relative humidity minimum
     ! --------------------------------------------
@@ -2750,7 +2848,9 @@ CONTAINS
       DO i = its, ite
         melt_term=max(t2(i,j)-288.15,0.)
         midrh_term=max(2*(min(midrh_min(i,j),midrh_min_old(i,j))-70.),0.)
-        hail=max((w_up(i,j)/1.4)**1.25-melt_term-midrh_term,0.)
+        ! Change exponent to 1.1 to reduce probabilities for large sizes
+        !hail=max((w_up(i,j)/1.4)**1.25-melt_term-midrh_term,0.)
+        hail=max((w_up(i,j)/1.4)**1.1-melt_term-midrh_term,0.)
         hail=hail*((uh(i,j)/100)+0.25)
         IF ( hail .gt. afwa_hail(i,j) ) THEN
           afwa_hail(i,j)=hail
@@ -2939,32 +3039,6 @@ CONTAINS
         ENDDO
       ENDDO
     ENDIF
-
-    ! Calculate 0-2000 foot (0 - 609.6 meter) shear.
-    ! ----------------------------------------------
-    DO j = jts, jte
-      DO i = its, ite
-        is_target_level=.false.
-        DO k=kms,kme    
-          zagl = z(i,k,j) - ht(i,j)
-          IF ( ( zagl >= 609.6 ) .and. &
-               ( .NOT. is_target_level ) .and. &
-               ( k .ne. kms ) ) THEN
-            is_target_level = .true.
-            u2000 = u_phy(i,k-1,j) + (609.6 - (z(i,k-1,j) - ht(i,j))) &
-                    * ((u_phy(i,k,j) - u_phy(i,k-1,j))/(z(i,k,j) - z(i,k-1,j)))
-            v2000 = v_phy(i,k-1,j) + (609.6 - (z(i,k-1,j) - ht(i,j))) &
-                    * ((v_phy(i,k,j) - v_phy(i,k-1,j))/(z(i,k,j) - z(i,k-1,j)))
-            us = u2000 - u10(i,j) 
-            vs = v2000 - v10(i,j) 
-            llws(i,j) = uv_wind ( us , vs )
-            IF ( llws(i,j) .gt. llws_max(i,j) ) THEN
-              llws_max(i,j) = llws(i,j)
-            ENDIF
-          ENDIF
-        ENDDO
-      ENDDO
-    ENDDO
 
     ! Maximum tornado wind speed in ms-1.
     ! First, save off old tornado mask and duration arrays
@@ -4218,7 +4292,7 @@ CONTAINS
                                    , defor22 ( i, kms:kme-1, j )  &
                                    ,             lyrbot  ( n ) )
 
-          !~ Compute Knapp-Elrond clear air turbulence
+          !~ Compute Knapp-Ellrod clear air turbulence
           !  -----------------------------------------
           turb ( i, n, j ) = CATTurbulence (                       ugrdbot  &
                                                ,                   ugrdtop  &

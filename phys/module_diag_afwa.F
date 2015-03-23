@@ -2026,7 +2026,7 @@ CONTAINS
           
           ! Compute blended wind
           ! --------------------
-          factor = MIN ( ( ( 150. - prate_mm_per_hr ) / 100. ), 0. )
+          factor = MAX ( ( ( 150. - prate_mm_per_hr ) / 100. ), 0. )
           ublend = grid % u10(i,j) * factor + u1km * (1. - factor)
           vblend = grid % v10(i,j) * factor + v1km * (1. - factor)
           wind_blend = uv_wind ( ublend, vblend )

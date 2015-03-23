@@ -45,7 +45,7 @@
     REAL    dt, adapt_dt_start, adapt_dt_min, adapt_dt_max
     INTEGER sf_urban_physics, w_damping, smooth_option, feedback, surface_input_source, sst_update
     INTEGER skebs_on, sppt_on, rand_perturb_on, nens,ISEED_SKEBS,ISEED_SPPT,ISEED_RAND_PERT
-    INTEGER stoch_vertstruc_opt, sppt_vertstruc, rand_pert_vertstruc
+    INTEGER skebs_vertstruc, sppt_vertstruc, rand_pert_vertstruc
     INTEGER LMINFORC,LMAXFORC,KMINFORC,KMAXFORC,LMINFORCT,LMAXFORCT,KMINFORCT,KMAXFORCT
     REAL    gridpt_stddev_rand_pert,stddev_cutoff_rand_pert,timescale_rand_pert
     REAL    gridpt_stddev_sppt,stddev_cutoff_sppt,timescale_sppt
@@ -231,10 +231,10 @@
     ENDIF
 
 #if ( DA_CORE != 1)
-    CALL nl_get_skebs_on            ( grid%id, skebs_on     )
-    CALL nl_get_sppt_on             ( grid%id, sppt_on     )
+    CALL nl_get_skebs_on            ( grid%id, skebs_on            )
+    CALL nl_get_sppt_on             ( grid%id, sppt_on             )
     CALL nl_get_rand_perturb_on     ( grid%id, rand_perturb_on     )
-    CALL nl_get_stoch_vertstruc_opt ( grid%id, stoch_vertstruc_opt )
+    CALL nl_get_skebs_vertstruc     ( grid%id, skebs_vertstruc     )
     CALL nl_get_tot_backscat_psi    ( grid%id, tot_backscat_psi    )
     CALL nl_get_tot_backscat_t      ( grid%id, tot_backscat_t      )
     CALL nl_get_REXPONENT_PSI       ( grid%id, REXPONENT_PSI       )
@@ -545,7 +545,7 @@ endif
           CALL wrf_put_dom_ti_integer( fid, 'LMAXFORCT'          , config_flags%LMAXFORCT          , 1, ierr )
           CALL wrf_put_dom_ti_integer( fid, 'KMINFORCT'          , config_flags%KMINFORCT          , 1, ierr )
           CALL wrf_put_dom_ti_integer( fid, 'KMAXFORCT'          , config_flags%KMAXFORCT          , 1, ierr )
-          CALL wrf_put_dom_ti_integer( fid, 'STOCH_VERTSTRUC_OPT', config_flags%stoch_vertstruc_opt, 1, ierr )
+          CALL wrf_put_dom_ti_integer( fid, 'SKEBS_VERTSTRUC'    , config_flags%skebs_vertstruc    , 1, ierr )
           CALL wrf_put_dom_ti_integer( fid, 'NENS'               , config_flags%nens               , 1, ierr )
           CALL wrf_put_dom_ti_integer( fid, 'ISEED_SKEBS'        , config_flags%ISEED_SKEBS        , 1, ierr )
        END IF

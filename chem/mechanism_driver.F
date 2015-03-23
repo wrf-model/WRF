@@ -146,7 +146,6 @@
                  CBMZ_MOSAIC_4BIN_AQ,     CBMZ_MOSAIC_8BIN_AQ,     &
                  CBMZ_MOSAIC_DMS_4BIN,    CBMZ_MOSAIC_DMS_8BIN,    &
                  CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ, &
-                 CBMZ_MOSAIC_4BIN_VBS2_KPP,                        &
                  CBMZSORG, CBMZSORG_AQ, CBMZ_CAM_MAM3_NOAQ,        &
                  CBMZ_CAM_MAM3_AQ,CBMZ_CAM_MAM7_NOAQ,              &
                  CBMZ_CAM_MAM7_AQ)

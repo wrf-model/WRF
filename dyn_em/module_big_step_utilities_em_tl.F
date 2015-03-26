@@ -5524,11 +5524,11 @@ SUBROUTINE G_PHY_PREP(config_flags, mu, mud, muu, muud, muv, muvd, u, ud&
   END IF
 
 !jdf
-    do j = j_start,j_end
-    do i = i_start, i_end
-      if(landmask(i,j).lt.0.5) xland(i,j)=2.0
-    enddo
-    enddo
+!    do j = j_start,j_end
+!    do i = i_start, i_end
+!      if(landmask(i,j).lt.0.5) xland(i,j)=2.0
+!    enddo
+!    enddo
 !jdf
 
 !  compute thermodynamics and velocities at pressure points (or half levels)

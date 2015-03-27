@@ -1784,6 +1784,8 @@ state    real    UH               ij     misc        1         -      r         
 state    real    W_COLMEAN        ij     misc        1         -     -           "W_COLMEAN"      "COLUMN MEAN Z-WIND"      "m s-1"
 state    real    NUMCOLPTS        ij     misc        1         -     -           "NUMCOLPTS"      "NUMBER OF COLUMN PTS"    "dimensionless"
 state    real    GRPL_COLINT      ij     misc        1         -     -           "GRPL_COLINT"    "COL INT GRAUPEL"         "kg m-2"
+state    real    HAIL_MAXK1       ij     misc        1         -      rh02       "HAIL_MAXK1"     "MAX HAIL DIAMETER K=1"   "m"
+state    real    HAIL_MAX2D       ij     misc        1         -      rh02       "HAIL_MAX2D"     "MAX HAIL DIAMETER ENTIRE COLUMN"   "m"
 
 state   real    max_cfl         -       misc        1         -     -       "max_cfl"           "maximum CFL value in grid at a time" "-"
 
@@ -2582,7 +2584,7 @@ package   gsfcswscheme    ra_sw_physics==2           -             state:taucldc
 package   camswscheme     ra_sw_physics==3           -             ozmixm:mth01,mth02,mth03,mth04,mth05,mth06,mth07,mth08,mth09,mth10,mth11,mth12;aerosolc:sul,sslt,dust1,dust2,dust3,dust4,ocpho,bcpho,ocphi,bcphi,bg,volc;state:emstot,abstot,absnxt,acswupt,acswuptc,acswdnt,acswdntc,acswupb,acswupbc,acswdnb,acswdnbc,aclwupt,aclwuptc,aclwdnt,aclwdntc,aclwupb,aclwupbc,aclwdnb,aclwdnbc,i_acswupt,i_acswuptc,i_acswdnt,i_acswdntc,i_acswupb,i_acswupbc,i_acswdnb,i_acswdnbc,i_aclwupt,i_aclwuptc,i_aclwdnt,i_aclwdntc,i_aclwupb,i_aclwupbc,i_aclwdnb,i_aclwdnbc,swupt,swuptc,swdnt,swdntc,swupb,swupbc,swdnb,swdnbc,lwupt,lwuptc,lwdnt,lwdntc,lwupb,lwupbc,lwdnb,lwdnbc,taucldc,taucldi
 package   rrtmg_swscheme  ra_sw_physics==4           -             ozmixm:mth01,mth02,mth03,mth04,mth05,mth06,mth07,mth08,mth09,mth10,mth11,mth12;state:acswupt,acswuptc,acswdnt,acswdntc,acswupb,acswupbc,acswdnb,acswdnbc,i_acswupt,i_acswuptc,i_acswdnt,i_acswdntc,i_acswupb,i_acswupbc,i_acswdnb,i_acswdnbc,swupt,swuptc,swdnt,swdntc,swupb,swupbc,swdnb,swdnbc,o3rad;aerod:ocarbon,seasalt,dust,bcarbon,sulfate,upperaer
 package   rrtmg_swscheme_fast  ra_sw_physics==24     -             ozmixm:mth01,mth02,mth03,mth04,mth05,mth06,mth07,mth08,mth09,mth10,mth11,mth12;state:acswupt,acswuptc,acswdnt,acswdntc,acswupb,acswupbc,acswdnb,acswdnbc,i_acswupt,i_acswuptc,i_acswdnt,i_acswdntc,i_acswupb,i_acswupbc,i_acswdnb,i_acswdnbc,swupt,swuptc,swdnt,swdntc,swupb,swupbc,swdnb,swdnbc,o3rad;aerod:ocarbon,seasalt,dust,bcarbon,sulfate,upperaer
-package   goddardswscheme ra_sw_physics==5           -             state:tswdn,tswup,sswdn,sswup
+package   goddardswscheme ra_sw_physics==5           -             state:tswdn,tswup,sswdn,sswup,taucldc,taucldi
 package   flgswscheme     ra_sw_physics==7           -             -
 package   gfdlswscheme    ra_sw_physics==99          -             -
 
@@ -2696,7 +2698,7 @@ package   weno_scalar    moist_adv_opt==3            -             -
 package   wenopd_scalar  moist_adv_opt==4            -             -
 
 package   maxmin_output  output_diagnostics==1            -    state:t2min,t2max,tt2min,tt2max,t2mean,t2std,q2min,q2max,tq2min,tq2max,q2mean,q2std,skintempmin,skintempmax,tskintempmin,tskintempmax,skintempmean,skintempstd,u10max,v10max,spduv10max,tspduv10max,u10mean,v10mean,spduv10mean,u10std,v10std,spduv10std,raincvmax,rainncvmax,traincvmax,trainncvmax,raincvmean,rainncvmean,raincvstd,rainncvstd
-package   nwp_output     nwp_diagnostics==1            -       state:wspd10max,w_up_max,w_dn_max,up_heli_max,w_mean,grpl_max
+package   nwp_output     nwp_diagnostics==1            -       state:wspd10max,w_up_max,w_dn_max,up_heli_max,w_mean,grpl_max,hail_maxk1,hail_max2d
 
 package   dfi_setup      dfi_stage==0                -             -
 package   dfi_bck        dfi_stage==1                -             -

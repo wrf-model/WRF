@@ -288,10 +288,10 @@ CONTAINS
 !        semi-lagrangian sedimentation (JH,2010),hong, aug 2009
 !        ==> higher accuracy and efficient at lower resolutions
 !        reflectivity computation from greg thompson, lim, jun 2011
-!        ==> only dignostic, but with removal of too large drops
+!        ==> only diagnostic, but with removal of too large drops
 !        add hail option from afwa, aug 2014
 !        ==> switch graupel or hail by changing no, den, fall vel.
-!        effetive radius of hydrometeors, bae from kiaps, jan 2015
+!        effective radius of hydrometeors, bae from kiaps, jan 2015
 !        ==> consistency in solar insolation of rrtmg radiation
 !
 !  Reference) Hong, Dudhia, Chen (HDC, 2004) Mon. Wea. Rev.

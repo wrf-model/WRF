@@ -315,6 +315,14 @@ CONTAINS
 !  Implemented by Song-You Hong (Yonsei Univ.) and Jimy Dudhia (NCAR)
 !             Summer 2003
 !
+!  further modifications :
+!        semi-lagrangian sedimentation (JH,2010),hong, aug 2009
+!        ==> higher accuracy and efficient at lower resolutions
+!        reflectivity computation from greg thompson, lim, jun 2011
+!        ==> only diagnostic, but with removal of too large drops
+!        effective radius of hydrometeors, bae from kiaps, jan 2015
+!        ==> consistency in solar insolation of rrtmg radiation
+!
 !  Reference) Hong, Dudhia, Chen (HDC, 2004) Mon. Wea. Rev.
 !             Rutledge, Hobbs (RH83, 1983) J. Atmos. Sci.
 !             Hong and Lim (HL, 2006) J. Korean Meteor. Soc.

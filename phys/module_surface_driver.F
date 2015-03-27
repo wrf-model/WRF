@@ -6434,13 +6434,16 @@ HFX_SEA, LH_SEA, QFX_SEA, QGH_SEA, QSFC_SEA, TSK_SEA,  &
      XXLAT=XLAT1*DEGRAD
 
 ! RETURN IF NIGHT
-         IF(CSZA.LE.1.E-9) return 
+         IF(CSZA.LE.1.E-4) return 
         
-!  Parameterize diffuse fraction of global solar radiation as a function of the ratio between TOA radiation and surface global radiation
+!  Parameterize diffuse fraction of global solar radiation as a function of the ratio 
+!    between TOA radiation and surface global radiation
 !             diffuse_frac = min(1.,1./(max(0.1,2.1-2.8*log(log(csza*solcon/max(SWDOWN_IN,1.e-3))))))
               diffuse_frac = diffuse_frac_in
-        if ((slope.eq.0).or.(diffuse_frac.eq.1).or.(csza.lt.1.e-2)) then  ! no topographic effects when all radiation diffuse or sun too close to horizon
+        if ((slope.eq.0).or.(diffuse_frac.eq.1).or.(csza.le.1.e-4)) then
+!  no topographic effects when all radiation diffuse or sun too close to horizon
           corr_fac = 1
+          if(shadow.eq.1) corr_fac = diffuse_frac
           goto 140
         endif
 
@@ -6455,7 +6458,8 @@ HFX_SEA, LH_SEA, QFX_SEA, QGH_SEA, QSFC_SEA, TSK_SEA,  &
 ! Topographic shading
         if (shadow.eq.1) csza_slp = 0
 
-! Correction factor for sloping topography; the diffuse fraction of solar radiation is assumed to be unaffected by the slope
+! Correction factor for sloping topography; the diffuse fraction of solar radiation 
+!   is assumed to be unaffected by the slope
         corr_fac = diffuse_frac + (1-diffuse_frac)*csza_slp/csza
 
  140        continue

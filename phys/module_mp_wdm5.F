@@ -111,6 +111,14 @@ CONTAINS
 !
 !  Implemented by Kyo-Sun Lim and Jimy Dudhia (NCAR) Winter 2008
 !
+!  further modifications :
+!        semi-lagrangian sedimentation (JH,2010),hong, aug 2009
+!        ==> higher accuracy and efficient at lower resolutions
+!        reflectivity computation from greg thompson, lim, jun 2011
+!        ==> only diagnostic, but with removal of too large drops
+!        effective radius of hydrometeors, bae from kiaps, jan 2015
+!        ==> consistency in solar insolation of rrtmg radiation
+!
 !  Reference) Lim and Hong (LH, 2010) Mon. Wea. Rev. 
 !             Juang and Hong (JH, 2010) Mon. Wea. Rev.
 !             Hong, Dudhia, Chen (HDC, 2004) Mon. Wea. Rev.

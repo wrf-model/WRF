@@ -2305,16 +2305,14 @@
 
 !..Freezing of aqueous aerosols based on Koop et al (2001, Nature)
           xni = smo0(k)+ni(k) + (pni_rfz(k)+pni_wfz(k)+pni_inu(k))*dtsave
-          if (is_aerosol_aware .AND. homogIce .AND. (xni.le.100.)       &
-     &                .AND. (pni_inu(k).lt.eps) .AND. (temp(k).lt.238)  &
-     &                .AND. (ssati(k).ge.0.4) ) then
+          if (is_aerosol_aware .AND. homogIce .AND. (xni.le.500.E3)     &
+     &                .AND.(temp(k).lt.238).AND.(ssati(k).ge.0.4) ) then 
             xnc = iceKoop(temp(k),qv(k),qvs(k),nwfa(k), dtsave)
             pni_iha(k) = xnc*odts
             pri_iha(k) = MIN(DBLE(rate_max), xm0i*0.1*pni_iha(k))
             pni_iha(k) = pri_iha(k)/(xm0i*0.1)
           endif
 !+---+------------------ END NEW ICE NUCLEATION -----------------------+
-
 
 !..Deposition/sublimation of cloud ice (Srivastava & Coen 1992).
           if (L_qi(k)) then

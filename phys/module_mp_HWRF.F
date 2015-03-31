@@ -172,6 +172,11 @@ MODULE module_mp_HWRF
       REAL,  DIMENSION(ims:ime,jms:jme):: APREC,PREC,ACPREC
       REAL,  DIMENSION(its:ite, kts:kte, jts:jte):: t_phy
 
+!jm 20150331
+! see comment below
+      REAL :: PI, DTPH
+!jm 20150331
+
       INTEGER :: I,J,K,KFLIP
 !
 !-----------------------------------------------------------------------
@@ -192,6 +197,23 @@ MODULE module_mp_HWRF
 !HWRF      TBPVS(1:NX) =TBPVS_STATE(1:NX)
 !HWRF      TBPVS0(1:NX)=TBPVS0_STATE(1:NX)
 !
+!jm 20150331
+! Temp fix problem with SAVEd variables CIACW, CIACR, CRACW, and CRAUT that
+! are inadvertantly recalculated when the etanewinit_HWRF routine, below,
+! is called for other domains.  Best solution is to move these to state (put
+! in registry) so there will be separate copies for each domain. For now,
+! just recompute each time this routine is entered.  Will be an innocuous
+! race condition (many set with same value) with threading so need to fix.
+! Temporary fix is idea of Weiguo Wang.
+     PI=ACOS(-1.)
+     DTPH=DT
+     CALL MY_GROWTH_RATES(DT)
+     CIACW=DTPH*0.25*PI*0.5*(1.E5)**C1
+     CIACR=PI*DTPH
+     CRACW=DTPH*0.25*PI*1.0
+     CRAUT=1.-EXP(-1.E-3*DTPH)
+!jm 20150331
+
       DO j = jts,jte
       DO k = kts,kte
       DO i = its,ite

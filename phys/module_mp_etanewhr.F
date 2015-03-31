@@ -217,6 +217,7 @@ INTEGER, PARAMETER :: MAX_ITERATIONS=10
 
       INTEGER :: I,J,K,KFLIP
       REAL :: WC
+      REAL :: PI, DTPH, BETA6, RDIS
 !
 !-----------------------------------------------------------------------
 !**********************************************************************
@@ -236,6 +237,53 @@ INTEGER, PARAMETER :: MAX_ITERATIONS=10
 !HWRF      TBPVS(1:NX) =TBPVS_STATE(1:NX)
 !HWRF      TBPVS0(1:NX)=TBPVS0_STATE(1:NX)
 !
+!----------
+!2015-03-30, recalculate some constants which may depend on phy time step
+          !DTPH=NINT(DT)    !  seconds in integer, make sure DT is phys step
+          DTPH=DT     !  seconds in integer, make sure DT is phys step
+          CALL MY_GROWTH_RATES (DT)
+          PI=ACOS(-1.)
+
+!--- CIACW is used in calculating riming rates
+!      The assumed effective collection efficiency of cloud water rimed onto
+!      ice is =0.5 below:
+!
+        CIACW=DT*0.25*PI*0.5*(1.E5)**C1
+!
+!--- CIACR is used in calculating freezing of rain colliding with large ice
+!      The assumed collection efficiency is 1.0
+!
+        CIACR=PI*DT
+!
+!--- CRACW is used in calculating collection of cloud water by rain (an
+!      assumed collection efficiency of 1.0)
+!
+        CRACW=DT*0.25*PI*1.0
+!
+!-- Relative dispersion == standard deviation of droplet spectrum / mean radius
+!   (see pp 1542-1543, Liu & Daum, JAS, 2004)
+        RDIS=0.5  !-- relative dispersion of droplet spectrum
+        BETA6=( (1.+3.*RDIS*RDIS)*(1.+4.*RDIS*RDIS)*(1.+5.*RDIS*RDIS)/  &
+     &         ((1.+RDIS*RDIS)*(1.+2.*RDIS*RDIS) ) )
+
+!-- Kappa=1.1e10 g^-2 cm^3 s^-1 after eq. (8b) on p.1105 of Liu et al. (JAS, 2006)
+!   => More extensive units conversion than can be described here to go from
+!      eq. (13) in Liu et al. (JAS, 2006) to what's programmed below.  Note that
+!      the units used throughout the paper are in cgs units!
+!
+        ARAUT=1.03e19/(NCW*SQRT(NCW))
+        BRAUT=DT*1.1E10*BETA6/NCW
+
+!       write(*,*)'dt=',dt,dtph
+!       write(*,*)'pi=',pi
+!       write(*,*)'ciacw=',ciacw 
+!       write(*,*)'ciacr=',ciacr 
+!       write(*,*)'cracw=',cracw 
+!       write(*,*)'araut=',araut
+!       write(*,*)'braut=',braut
+!! END OF adding, 2015-03-30
+!-----------
+
       DO j = jts,jte
       DO k = kts,kte
       DO i = its,ite

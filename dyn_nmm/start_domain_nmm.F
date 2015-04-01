@@ -95,16 +95,22 @@
       USE MODULE_DIFFUSION_NMM,ONLY: HDIFF
       USE MODULE_PHYSICS_INIT
       USE MODULE_GWD
+      USE MODULE_OZMIXM
 !     USE MODULE_RA_GFDLETA
 !
       USE MODULE_EXT_INTERNAL
 !
    USE module_tornado_genesis, only: init_tornado_genesis
-
 !
 !----------------------------------------------------------------------
 !
       IMPLICIT NONE
+   INTERFACE
+      SUBROUTINE med_set_egrid_locs ( parent , nest )
+        use module_domain_type, only: domain
+        type(domain) :: parent,nest
+      END SUBROUTINE med_set_egrid_locs
+   END INTERFACE
 !
 !----------------------------------------------------------------------
 !***
@@ -2031,6 +2037,17 @@
          ENDIF
       END IF
 
+      call init_module_ozmixm(ims,ime,59,jms,jme,set_n_ozmixm=13,&
+           set_alevsiz=12,set_no_src_types=6)
+      call check_module_ozmixm('after init')
+      if(allowed_to_read) then
+         call wrf_debug(1,'Set E grid locations for PHY_INIT.')
+         if(grid%id==1) then
+            call med_set_egrid_locs(grid,grid)
+         else
+            call med_set_egrid_locs(grid%parents(1)%ptr,grid)
+         endif
+      end if
       CALL PHY_INIT(GRID%ID,CONFIG_FLAGS,GRID%DT,LRESTART,SFULL,SMID    &
      &             ,grid%pt,TSFC,GRID%RADT,GRID%BLDT,GRID%CUDT,GRID%GSMDT    &
      &             ,grid%DUCUDT, grid%DVCUDT                            &
@@ -2060,8 +2077,7 @@
      &             ,grid%hlat,grid%hlon,grid%glat,grid%glon&
      &             ,grid%albedo,grid%albbck                             &
      &             ,GRID%GMT,GRID%JULYR,GRID%JULDAY                     &
-     &             ,GRID%LEVSIZ, NUM_OZMIXM, NUM_AEROSOLC, GRID%PAERLEV &
-     &             ,grid%alevsiz, grid%no_src_types                     &
+     &             ,NUM_AEROSOLC, GRID%PAERLEV &
      &             ,TMN,grid%xland,grid%znt,grid%z0,grid%ustar,grid%mol,grid%pblh,grid%tke_pbl             &
      &             ,grid%exch_h,THC,SNOWC,grid%mavail,HFX,QFX,RAINBL              &
      &             ,grid%stc,grid%sldpth,grid%DZSoil,GRID%NUM_SOIL_LAYERS,WARM_RAIN           &
@@ -2106,9 +2122,9 @@
      &                lakedepth_default=config_flags%lakedepth_default, lake_min_elev=config_flags%lake_min_elev, lake_depth=grid%lake_depth,               & !lake
      &                lake_depth_flag=grid%LAKE_DEPTH_FLAG, use_lakedepth=grid%use_lakedepth,                                                      & !lake
      &                sf_surface_mosaic=config_flags%sf_surface_mosaic, mosaic_cat=config_flags%mosaic_cat, nlcat=1,     & ! Noah tiling
-     &                MAXPATCH=1,ccn_conc=config_flags%ccn_conc, & ! CLM
-     &                ozmixm=grid%ozmixm, pin=grid%pin &
+     &                MAXPATCH=1,ccn_conc=config_flags%ccn_conc & ! CLM
      &                )
+      call check_module_ozmixm('after phy_init')
 
 #ifdef HWRF
 !zhang's doing

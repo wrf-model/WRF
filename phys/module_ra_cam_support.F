@@ -3503,6 +3503,9 @@ subroutine oznini(ozmixm,pin,levsiz,num_months,XLAT,                &
       do k=1,levsiz
         pin(k) = pin(k)*100.
       end do
+47    format('pin range = ',F0.3,'...',F0.3)
+      write(message,47) minval(pin),maxval(pin)
+      call wrf_debug(1,message)
 
 !-- read in ozone lat data
 

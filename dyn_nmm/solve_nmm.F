@@ -1532,9 +1532,10 @@
             ids,ide,jds,jde,kds,kde, &
             ims,ime,jms,jme,kms,kme, &
             its,ite,jts,jte,kts,kte)
-      IF(MOD(NTSD_rad,GRID%NRADS)==0.OR.                               &
+      rad_time: IF(MOD(NTSD_rad,GRID%NRADS)==0.OR.     &
      &   MOD(NTSD_rad,GRID%NRADL)==0)THEN
 !
+        grid%o3rad_changed=.true.
         btimx=now_time()
         IF(OPERATIONAL_PHYSICS)THEN
           CALL UPDATE_MOIST(MOIST,grid%q,grid%cwm,grid%f_ice,grid%f_rain,N_MOIST           &
@@ -1557,7 +1558,7 @@
      &                ,grid%cfracl,grid%cfracm,grid%cfrach,grid%sigt4                      &
      &                ,grid%acfrst,grid%ncfrst,grid%acfrcv,grid%ncfrcv                     &
      &                ,grid%cuppt,grid%vegfrc,grid%sno,grid%htop,grid%hbot                      &
-     &                ,grid%z,grid%sice,NUM_AEROSOLC,NUM_OZMIXM                  &
+     &                ,grid%z,grid%sice,NUM_AEROSOLC                  &
      &                ,GRID,CONFIG_FLAGS                               &
      &                ,RTHRATEN                                        &  
      &                ,grid%re_cloud,grid%re_ice,grid%re_snow          &  ! G. Thompson
@@ -1602,7 +1603,14 @@
 !                            ***  NOTE  ***
 !
         radiation_tim=radiation_tim+now_time()-btimx
-      ENDIF
+     ELSE
+        grid%o3rad_changed=.false.
+     ENDIF rad_time
+     if(grid%o3rad_changed) then
+        call wrf_debug(1,'o3rad_changed=.true.')
+     else
+        call wrf_debug(1,'o3rad_changed=.false.')
+     endif
 !
 !----------------------------------------------------------------------
 !***  APPLY TEMPERATURE TENDENCY DUE TO RADIATION

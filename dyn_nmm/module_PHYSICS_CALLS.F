@@ -46,7 +46,7 @@
      &                    ,CFRACL,CFRACM,CFRACH,SIGT4                   &
      &                    ,ACFRST,NCFRST,ACFRCV,NCFRCV                  &
      &                    ,CUPPT,VEGFRC,SNOW,HTOP,HBOT                  &
-     &                    ,Z,SICE,NUM_AEROSOLC,NUM_OZMIXM               &
+     &                    ,Z,SICE,NUM_AEROSOLC               &
      &                    ,GRID,CONFIG_FLAGS                            &
      &                    ,RTHRATEN                                     &
      &                    ,re_cloud,re_ice,re_snow                      & ! G. Thompson
@@ -101,7 +101,7 @@
      &                     ,ITS,ITE,JTS,JTE,KTS,KTE                     &
      &                     ,IHRST,JULDAY,JULYR                          &
      &                     ,N_MOIST,NPHS,NRADL,NRADS,NTSD               &
-     &                     ,NUM_AEROSOLC,NUM_OZMIXM
+     &                     ,NUM_AEROSOLC
 !
       INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: NCFRCV,NCFRST
 !
@@ -404,8 +404,6 @@
      &                 ,CAM_ABS_DIM1=GRID%CAM_ABS_DIM1                  &
      &                 ,CAM_ABS_DIM2=GRID%CAM_ABS_DIM2                  &
      &                 ,CAM_ABS_FREQ_S=GRID%CAM_ABS_FREQ_S              &
-     &                 ,ALEVSIZ=grid%alevsiz,no_src_types=grid%no_src_types   &
-     &                 ,LEVSIZ=GRID%LEVSIZ,N_OZMIXM=NUM_OZMIXM          &
      &                 ,HTOP=HTOP,HBOT=HBOT,CUPPT=CUPPTR                &
      &                 ,HTOPR=HTOPR,HBOTR=HBOTR                         &
      &                 ,VEGFRA=VEGFRC,SNOW=SNOW                         &
@@ -468,7 +466,7 @@
      &                 ,F_ICE_PHY=F_ICE,F_RAIN_PHY=F_RAIN               &
      &                 ,LWCF=LWCF,SWCF=SWCF                             &
      &                 ,O3INPUT=config_flags%O3INPUT,AER_OPT=config_flags%AER_OPT  &
-     &                 ,O3RAD=grid%o3rad,ozmixm=grid%ozmixm,pin=grid%pin   &
+     &                 ,O3RAD=grid%o3rad   &
      &                 ,SF_SURFACE_PHYSICS=CONFIG_FLAGS%SF_SURFACE_PHYSICS &
      &                 ,QV=MOIST_TRANS(IMS,KMS,JMS,P_QV),F_QV=F_QV      &
      &                 ,QC=MOIST_TRANS(IMS,KMS,JMS,P_QC),F_QC=F_QC      &

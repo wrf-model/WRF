@@ -36,8 +36,6 @@ CONTAINS
               ,DECLINX ,SOLCONX ,COSZEN ,HRANG    &
               , CEN_LAT                                      &
               ,Z                                             &
-              ,ALEVSIZ, no_src_types               &
-              ,LEVSIZ, N_OZMIXM                    &
               ,N_AEROSOLC                                    &
               ,PAERLEV   ,ID                                 &
               ,CAM_ABS_DIM1, CAM_ABS_DIM2 &
@@ -90,9 +88,7 @@ CONTAINS
               ,LWDNB ,LWDNBC                  &
               ,LWCF                           &
               ,SWCF                           &
-              ,OLR                            &
-              ,aerodm, PINA, aodtot           &
-              ,OZMIXM, PIN                    &
+              ,OLR,aodtot                     &
               ,M_PS_1, M_PS_2, AEROSOLC_1     &
               ,AEROSOLC_2, M_HYBI0            &
               ,ABSTOT, ABSNXT, EMSTOT         &
@@ -181,7 +177,7 @@ CONTAINS
                                      calc_aerosol_rrtmg_sw
 
    USE module_mp_thompson   , ONLY : cal_cldfra3
-
+   use module_ozmixm
    !  This driver calls subroutines for the radiation parameterizations.
    !
    !  short wave radiation choices:
@@ -364,8 +360,6 @@ CONTAINS
                 i_start,i_end,j_start,j_end
 
    INTEGER,      INTENT(IN   )    ::   STEPRA,ICLOUD,ra_call_offset
-   INTEGER,      INTENT(IN   )    ::   alevsiz, no_src_types
-   INTEGER,      INTENT(IN   )    ::   levsiz, n_ozmixm
    INTEGER,      INTENT(IN   )    ::   paerlev, n_aerosolc, cam_abs_dim1, cam_abs_dim2
    REAL,      INTENT(IN   )       ::   cam_abs_freq_s
 
@@ -380,19 +374,12 @@ CONTAINS
                                                              TSK, &
                                                           VEGFRA, &
                                                             SNOW 
-   REAL,  DIMENSION( ims:ime, levsiz, jms:jme, n_ozmixm ),  OPTIONAL,    &
-          INTENT(IN   ) ::                                  OZMIXM
-   REAL,  DIMENSION( ims:ime, alevsiz, jms:jme, no_src_types, n_ozmixm-1 ),  OPTIONAL,    &
-          INTENT(IN   ) ::                                  AERODM
    REAL,  DIMENSION( ims:ime, kms:kme, jms:jme, no_src_types ),  OPTIONAL,    &
           INTENT(INOUT) ::                                  AEROD
    REAL,  DIMENSION( ims:ime, jms:jme ), OPTIONAL,                &
           INTENT(INOUT) ::                                  AODTOT
 
    REAL,  DIMENSION( ims:ime, levsiz, jms:jme, n_ozmixm ) :: OZFLG
-
-   REAL,  DIMENSION(levsiz), OPTIONAL, INTENT(IN )  ::     PIN
-   REAL,  DIMENSION(alevsiz), OPTIONAL, INTENT(IN )  ::     PINA
 
    REAL,  DIMENSION(ims:ime,jms:jme), OPTIONAL, INTENT(IN )  ::      m_ps_1,m_ps_2
    REAL,  DIMENSION( ims:ime, paerlev, jms:jme, n_aerosolc ), OPTIONAL, &
@@ -705,12 +692,6 @@ CONTAINS
 38    format('levsiz=',I0,' is not 59')
       write(wrf_err_message,38) levsiz
       call wrf_error_fatal(wrf_err_message)
-   endif
-   if(.not. present(pin)) then
-      call wrf_error_fatal('pin is missing')
-   endif
-   if(.not. present(ozmixm)) then
-      call wrf_error_fatal('ozmixm is missing')
    endif
    if(n_ozmixm<12) then
 37    format('n_ozmixm=',I0,'<12')
@@ -1153,7 +1134,11 @@ CONTAINS
                               ids , ide , jds , jde , kds , kde ,     &
                               ims , ime , jms , jme , kms , kme ,     &
                               its , ite , jts , jte , kts , kte )
+     else if(id == 1) then
+        call wrf_error_fatal('Wrong o3input.  Should be 2.')
      ENDIF
+     else
+        call wrf_error_fatal('o3rad is missing in radation driver')
      ENDIF
 
      IF ( PRESENT( AEROD ) ) THEN
@@ -1308,7 +1293,7 @@ CONTAINS
 
              CALL wrf_debug(100, 'CALL camrad lw')
 
-             IF ( PRESENT( OZMIXM ) .AND. PRESENT( PIN ) .AND. &
+             IF ( &
                   PRESENT(M_PS_1) .AND. PRESENT(M_PS_2) .AND.  &
                   PRESENT(M_HYBI0) .AND. PRESENT(AEROSOLC_1)    &
                   .AND. PRESENT(AEROSOLC_2).AND. PRESENT(ALSWVISDIR) ) THEN
@@ -1647,7 +1632,7 @@ CONTAINS
 
         CASE (CAMSWSCHEME)
              CALL wrf_debug(100, 'CALL camrad sw')
-             IF ( PRESENT( OZMIXM ) .AND. PRESENT( PIN ) .AND. &
+             IF ( &
                   PRESENT(M_PS_1) .AND. PRESENT(M_PS_2) .AND.  &
                   PRESENT(M_HYBI0) .AND. PRESENT(AEROSOLC_1)    &
                   .AND. PRESENT(AEROSOLC_2) .AND. PRESENT(ALSWVISDIR)) THEN
@@ -3314,96 +3299,111 @@ SUBROUTINE ozn_p_int(p ,pin, levsiz, ozmixt, o3vmr, &
 
    real    dpu                 ! upper level pressure difference
    real    dpl                 ! lower level pressure difference
+   real :: maxp, maxpin, minp, minpin
+   character*255 :: message
 
    ncol = ite - its + 1
    pver = kte - kts + 1
+   if(levsiz/=59) then
+404   format('Wrong levsiz.  Should be 59, but is ',I0,'.')
+      write(message,404) levsiz
+      call wrf_error_fatal(message)
+   endif
+   maxp=maxval(p(its:ite,kts:kte,jts:jte))
+   minp=minval(p(its:ite,kts:kte,jts:jte))
+   maxpin=maxval(pin)
+   minpin=minval(pin)
+   if(maxp>10*maxpin .or. maxpin>10*maxp) then
+38    format('Mismatch in radiation pressure array units.  Ozone P=',F0.3,'...',F0.3,' while model P=',F0.3,'...',F0.3,'.')
+      write(message,38) minpin,maxpin,minp,maxp
+      call wrf_error_fatal(message)
+   else
+      write(message,37) minp,maxp,minpin,maxpin
+      call wrf_debug(1,message)
+37    format('Ozone P=',F0.3,'...',F0.3,' model P=',F0.3,'...',F0.3)
+   end if
 
-   do j=jts,jte
-!
-! Initialize index array
-!
-!  do i=1, ncol
-   do i=its, ite
-      kupper(i) = 1
-   end do
-!
-! Reverse the pressure array, and pin is in Pa, the same as model pmid
-!
+   bigj: do j=jts,jte
+      !
+      ! Initialize index array
+      !
+      !  do i=1, ncol
+      do i=its, ite
+         kupper(i) = 1
+      end do
+      !
+      ! Reverse the pressure array, and pin is in Pa, the same as model pmid
+      !
       do k = kts,kte
          kk = kte - k + kts
-      do i = its,ite
-         pmid(i,kk) = p(i,k,j)
-      enddo
+         do i = its,ite
+            pmid(i,kk) = p(i,k,j)
+         enddo
       enddo
 
-   do k=1,pver
+      bigk: do k=1,pver
 
-      kout = pver - k + 1
-!     kout = k
-!
-! Top level we need to start looking is the top level for the previous k
-! for all longitude points
-!
-      kkstart = levsiz
-!     do i=1,ncol
-      do i=its,ite
-         kkstart = min0(kkstart,kupper(i))
-      end do
-      kount = 0
-!
-! Store level indices for interpolation
-!
-      do kk=kkstart,levsiz-1
-!        do i=1,ncol
+         kout = pver - k + 1
+         !     kout = k
+         !
+         ! Top level we need to start looking is the top level for the
+         ! previous k for all longitude points
+         !
+         kkstart = levsiz
+         !     do i=1,ncol
          do i=its,ite
-            if (pin(kk).lt.pmid(i,k) .and. pmid(i,k).le.pin(kk+1)) then
-               kupper(i) = kk
-               kount = kount + 1
+            kkstart = min0(kkstart,kupper(i))
+         end do
+         kount = 0
+         !
+         ! Store level indices for interpolation
+         !
+         do kk=kkstart,levsiz-1
+            do i=its,ite
+               if (pin(kk).lt.pmid(i,k) .and. pmid(i,k).le.pin(kk+1)) then
+                  kupper(i) = kk
+                  kount = kount + 1
+               end if
+            end do
+            !
+            ! If all indices for this level have been found, do the
+            ! interpolation and go to the next level
+            !
+            if (kount.eq.ncol) then
+               !           do i=1,ncol
+               do i=its,ite
+                  dpu = pmid(i,k) - pin(kupper(i))
+                  dpl = pin(kupper(i)+1) - pmid(i,k)
+                  o3vmr(i,kout,j) = (ozmixt(i,kupper(i),j)*dpl + &
+                       ozmixt(i,kupper(i)+1,j)*dpu)/(dpl + dpu)
+               end do
+               cycle bigk
             end if
          end do
-!
-! If all indices for this level have been found, do the interpolation and
-! go to the next level
-!
-         if (kount.eq.ncol) then
-!           do i=1,ncol
-            do i=its,ite
+         !
+         ! If we've fallen through the kk=1,levsiz-1 loop, we cannot
+         ! interpolate and must extrapolate from the bottom or top
+         ! ozone data level for at least some of the longitude points.
+         !
+         do i=its,ite
+            if (pmid(i,k) .lt. pin(1)) then
+               o3vmr(i,kout,j) = ozmixt(i,1,j)*pmid(i,k)/pin(1)
+            else if (pmid(i,k) .gt. pin(levsiz)) then
+               o3vmr(i,kout,j) = ozmixt(i,levsiz,j)
+            else
                dpu = pmid(i,k) - pin(kupper(i))
                dpl = pin(kupper(i)+1) - pmid(i,k)
                o3vmr(i,kout,j) = (ozmixt(i,kupper(i),j)*dpl + &
-                             ozmixt(i,kupper(i)+1,j)*dpu)/(dpl + dpu)
-            end do
-            goto 35
+                    ozmixt(i,kupper(i)+1,j)*dpu)/(dpl + dpu)
+            end if
+         end do
+
+         if (kount.gt.ncol) then
+            call wrf_error_fatal ('OZN_P_INT: Bad ozone data: non-monotonicity suspected')
          end if
-      end do
-!
-! If we've fallen through the kk=1,levsiz-1 loop, we cannot interpolate and
-! must extrapolate from the bottom or top ozone data level for at least some
-! of the longitude points.
-!
-!     do i=1,ncol
-      do i=its,ite
-         if (pmid(i,k) .lt. pin(1)) then
-            o3vmr(i,kout,j) = ozmixt(i,1,j)*pmid(i,k)/pin(1)
-         else if (pmid(i,k) .gt. pin(levsiz)) then
-            o3vmr(i,kout,j) = ozmixt(i,levsiz,j)
-         else
-            dpu = pmid(i,k) - pin(kupper(i))
-            dpl = pin(kupper(i)+1) - pmid(i,k)
-            o3vmr(i,kout,j) = (ozmixt(i,kupper(i),j)*dpl + &
-                          ozmixt(i,kupper(i)+1,j)*dpu)/(dpl + dpu)
-         end if
-      end do
-
-      if (kount.gt.ncol) then
-!        call endrun ('OZN_P_INT: Bad ozone data: non-monotonicity suspected')
-         call wrf_error_fatal ('OZN_P_INT: Bad ozone data: non-monotonicity suspected')
-      end if
-35    continue
-
-   end do
-   end do
-
+      end do bigk
+   end do bigj
+   
    return
 END SUBROUTINE ozn_p_int
 

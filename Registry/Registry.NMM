@@ -1451,7 +1451,8 @@ rconfig   integer ICLOUD_CU               derived               1             0 
 rconfig   real h_diff                     namelist,physics      max_domains  0.1      irh    "nmm input 9"
 
 # new rad variables
-state    real   o3rad           ikj     misc        1         -      irhd      "o3rad"    "RADIATION 3D OZONE" "ppmv"
+state    logical o3rad_changed  -       misc        1         -      r         "o3rad_changed"  "Do we need to update O3RAD in nests?" ""
+state    real   o3rad           ikj     misc        1         -      irhd=(DownCopyIKJ)f=(FlagCopyIKJ:o3rad_changed)      "o3rad"    "RADIATION 3D OZONE" "ppmv"
 
 ifdef HWRF=1
 rconfig   integer movemin                 namelist,physics      max_domains  10       irh    "movemin" "nest movement timestep (multiples of nphs)"
@@ -1545,22 +1546,6 @@ rconfig   integer background_proc_id      namelist,grib2 	        1     255    r
 rconfig   integer forecast_proc_id        namelist,grib2 	        1     255    rh    "forecast_proc_id"      "Analysis and forecast processing id for grib2"  ""
 rconfig   integer production_status       namelist,grib2 	        1     255    rh    "production_status"     "Background processing id for grib2"  ""
 rconfig   integer compression             namelist,grib2 	        1      40    rh    "compression"           "grib2 compression, 40 for JPEG2000 or 41 for PNG"  ""
-
-# CAM radiation variables needed for climatology ozone in RRTMG:
-state  real    -       i{ls}jf ozmixm      1    -   -     -
-state  real   mth01    i{ls}jf ozmixm      1    -   h     "mth01"  "Month 01 Ozone Lookup Tables"
-state  real   mth02    i{ls}jf ozmixm      1    -   h     "mth02"  "Month 02 Ozone Lookup Tables"
-state  real   mth03    i{ls}jf ozmixm      1    -   h     "mth03"  "Month 03 Ozone Lookup Tables"
-state  real   mth04    i{ls}jf ozmixm      1    -   h     "mth04"  "Month 04 Ozone Lookup Tables"
-state  real   mth05    i{ls}jf ozmixm      1    -   h     "mth05"  "Month 05 Ozone Lookup Tables"
-state  real   mth06    i{ls}jf ozmixm      1    -   h     "mth06"  "Month 06 Ozone Lookup Tables"
-state  real   mth07    i{ls}jf ozmixm      1    -   h     "mth07"  "Month 07 Ozone Lookup Tables"
-state  real   mth08    i{ls}jf ozmixm      1    -   h     "mth08"  "Month 08 Ozone Lookup Tables"
-state  real   mth09    i{ls}jf ozmixm      1    -   h     "mth09"  "Month 09 Ozone Lookup Tables"
-state  real   mth10    i{ls}jf ozmixm      1    -   h     "mth10"  "Month 10 Ozone Lookup Tables"
-state  real   mth11    i{ls}jf ozmixm      1    -   h     "mth11"  "Month 11 Ozone Lookup Tables"
-state  real   mth12    i{ls}jf ozmixm      1    -   h     "mth12"  "Month 12 Ozone Lookup Tables"
-state  real   pin       {ls}     misc      1    -   -      "PIN"             "PRESSURE LEVEL OF OZONE MIXING RATIO"  "millibar"
 
 # NAMELIST DERIVED
 rconfig   real    cen_lat                 derived                  max_domains    0       -        "cen_lat"              "center latitude"      "degrees, negative is south"
@@ -1659,7 +1644,7 @@ package   etampold_dfi      mp_physics_dfi==95       -             dfi_moist:dfi
 
 package   rrtmscheme    ra_lw_physics==1             -             -
 package   camlwscheme   ra_lw_physics==3             -             state:acswupt,acswuptc,acswdnt,acswdntc,acswupb,acswupbc,acswdnb,acswdnbc,aclwupt,aclwuptc,aclwdnt,aclwdntc,aclwupb,aclwupbc,aclwdnb,aclwdnbc,swupt,swuptc,swdnt,swdntc,swupb,swupbc,swdnb,swdnbc,lwupt,lwuptc,lwdnt,lwdntc,lwupb,lwupbc,lwdnb,lwdnbc
-package   rrtmg_lwscheme  ra_lw_physics==4           -             ozmixm:mth01,mth02,mth03,mth04,mth05,mth06,mth07,mth08,mth09,mth10,mth11,mth12;state:aclwupt,aclwuptc,aclwdnt,aclwdntc,aclwupb,aclwupbc,aclwdnb,aclwdnbc,lwupt,lwuptc,lwdnt,lwdntc,lwupb,lwupbc,lwdnb,lwdnbc,o3rad
+package   rrtmg_lwscheme  ra_lw_physics==4           -             state:aclwupt,aclwuptc,aclwdnt,aclwdntc,aclwupb,aclwupbc,aclwdnb,aclwdnbc,lwupt,lwuptc,lwdnt,lwdntc,lwupb,lwupbc,lwdnb,lwdnbc,o3rad
 package   goddardlwscheme  ra_lw_physics==5          -             -
 package   flglwscheme   ra_lw_physics==7             -             -
 package   gfdllwscheme  ra_lw_physics==99            -             -
@@ -1668,7 +1653,7 @@ package   hwrflwscheme  ra_lw_physics==98            -             -
 package   swradscheme   ra_sw_physics==1             -             -
 package   gsfcswscheme  ra_sw_physics==2             -             -
 package   camswscheme   ra_sw_physics==3             -             state:acswupt,acswuptc,acswdnt,acswdntc,acswupb,acswupbc,acswdnb,acswdnbc,aclwupt,aclwuptc,aclwdnt,aclwdntc,aclwupb,aclwupbc,aclwdnb,aclwdnbc,swupt,swuptc,swdnt,swdntc,swupb,swupbc,swdnb,swdnbc,lwupt,lwuptc,lwdnt,lwdntc,lwupb,lwupbc,lwdnb,lwdnbc
-package   rrtmg_swscheme  ra_sw_physics==4           -             ozmixm:mth01,mth02,mth03,mth04,mth05,mth06,mth07,mth08,mth09,mth10,mth11,mth12;state:acswupt,acswuptc,acswdnt,acswdntc,acswupb,acswupbc,acswdnb,acswdnbc,swupt,swuptc,swdnt,swdntc,swupb,swupbc,swdnb,swdnbc,o3rad
+package   rrtmg_swscheme  ra_sw_physics==4           -             state:acswupt,acswuptc,acswdnt,acswdntc,acswupb,acswupbc,acswdnb,acswdnbc,swupt,swuptc,swdnt,swdntc,swupb,swupbc,swdnb,swdnbc,o3rad
 package   goddardswscheme  ra_sw_physics==5          -             -
 package   flgswscheme   ra_sw_physics==7             -             -
 package   gfdlswscheme  ra_sw_physics==99            -             -

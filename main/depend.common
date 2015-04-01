@@ -477,6 +477,7 @@ module_physics_addtendc.o: \
 
 
 module_physics_init.o : \
+		module_ozmixm.o			\
 		module_ra_rrtm.o		\
 		module_ra_rrtmg_lw.o		\
 		module_ra_rrtmg_sw.o		\
@@ -636,6 +637,7 @@ module_mixactivate.o: \
 		module_radiation_driver.o
 
 module_radiation_driver.o: \
+		module_ozmixm.o \
 		module_ra_sw.o \
 		module_ra_gsfcsw.o \
 		module_ra_rrtm.o \

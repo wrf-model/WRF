@@ -313,6 +313,22 @@
 
 #endif
 
+#if (NMM_CORE == 1) || (HWRF == 1)
+!-----------------------------------------------------------------------
+!           Check that NOAH-MP LSM is not allowed for WRF-NMM run 
+!-----------------------------------------------------------------------
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec%sf_surface_physics(i) == NOAHMPSCHEME ) THEN
+            WRITE(wrf_err_message, '(" --- ERROR:   Noah-MP LSM scheme (sf_surface_physics==", I2, ")")') NOAHMPSCHEME
+            CALL wrf_message ( TRIM ( wrf_err_message ) )
+            WRITE(wrf_err_message, '("              does not work with NMM ")')
+            CALL wrf_message ( TRIM ( wrf_err_message ) )
+            WRITE(wrf_err_message, '("Select a different LSM scheme ")')
+            CALL wrf_error_fatal ( TRIM ( wrf_err_message ) )
+         END IF
+      END DO
+#endif
+
 #if (EM_CORE == 1)
 
 !-----------------------------------------------------------------------

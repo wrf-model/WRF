@@ -4704,6 +4704,7 @@ print *,'column of cg pres = ',cprs
      endif
    end subroutine UpMassIKJ
 
+
    subroutine UpMass        (cfld,                                 &  ! CD field
         cids, cide, ckds, ckde, cjds, cjde,   &
         cims, cime, ckms, ckme, cjms, cjme,   &
@@ -4903,6 +4904,52 @@ print *,'column of cg pres = ',cprs
      endif
    end subroutine DownCopy
 
+   subroutine DownCopyIKJ   (cfld,                                 &  ! CD field
+        cids, cide, ckds, ckde, cjds, cjde,   &
+        cims, cime, ckms, ckme, cjms, cjme,   &
+        cits, cite, ckts, ckte, cjts, cjte,   &
+        nfld,                                 &  ! ND field
+        nids, nide, nkds, nkde, njds, njde,   &
+        nims, nime, nkms, nkme, njms, njme,   &
+        nits, nite, nkts, nkte, njts, njte,   &
+        shw,                                  &  ! stencil half width for interp
+        imask,                                &  ! interpolation mask
+        xstag, ystag,                         &  ! staggering of field
+        ipos, jpos,                           &  ! Position of lower left of nest in CD
+        nri, nrj)                                ! nest ratios                         
+     use module_interp_store
+     use module_interp_nmm, only: c2n_copy3d_ikj, c2n_copy2d
+     implicit none
+     LOGICAL,INTENT(IN) :: xstag, ystag
+     INTEGER,INTENT(IN) :: cids, cide, ckds, ckde, cjds, cjde,   &
+          cims, cime, ckms, ckme, cjms, cjme,   &
+          cits, cite, ckts, ckte, cjts, cjte,   &
+          nids, nide, nkds, nkde, njds, njde,   &
+          nims, nime, nkms, nkme, njms, njme,   &
+          nits, nite, nkts, nkte, njts, njte,   &
+          shw,ipos,jpos,nri,nrj
+
+     INTEGER,DIMENSION(nims:nime,njms:njme),          INTENT(IN)           :: IMASK
+     REAL,DIMENSION(cims:cime,ckms:ckme,cjms:cjme),   INTENT(IN)           :: CFLD
+     REAL,DIMENSION(nims:nime,nkms:nkme,njms:njme),   INTENT(INOUT)        :: nfld
+
+     if(nkts==nkte) then
+        call c2n_copy2d(IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,  &
+             cfld,nfld,imask,                &
+             cims, cime, cjms, cjme,   &
+             nids, nide, njds, njde,   &
+             nims, nime, njms, njme,   &
+             nits, nite, njts, njte, .true.)
+     else
+        call c2n_copy3d_ikj(IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,  &
+             cfld,nfld,imask,                &
+             cims, cime, cjms, cjme, ckms, ckme,   &
+             nids, nide, njds, njde, nkds, nkde,   &
+             nims, nime, njms, njme, nkms, nkme,   &
+             nits, nite, njts, njte, nkts, nkte, .true.)
+     endif
+   end subroutine DownCopyIKJ
+
    subroutine UpVel   (cfld,                                 &  ! CD field
         cids, cide, ckds, ckde, cjds, cjde,   &
         cims, cime, ckms, ckme, cjms, cjme,   &
@@ -5080,6 +5127,67 @@ print *,'column of cg pres = ',cprs
              nits, nite, njts, njte, nkts, nkte)
      endif
    END SUBROUTINE BdyMass
+   !
+   !--------------------------------------------------------------------------------------
+   !
+   SUBROUTINE FlagCopyIKJ  (cfld,             &  ! CD field
+        cids, cide, ckds, ckde, cjds, cjde,   &
+        cims, cime, ckms, ckme, cjms, cjme,   &
+        cits, cite, ckts, ckte, cjts, cjte,   &
+        nfld,                                 &  ! ND field
+        nids, nide, nkds, nkde, njds, njde,   &
+        nims, nime, nkms, nkme, njms, njme,   &
+        nits, nite, nkts, nkte, njts, njte,   &
+        shw,                                  &  ! stencil half width
+        imask,                                &  ! interpolation mask
+        xstag, ystag,                         &  ! staggering of field
+        ipos, jpos,                           &  ! Position of lower left of nest in CD
+        nri, nrj,                             &  ! nest ratios
+        c_flag,n_flag)
+     !     use module_state_description
+     USE module_configure
+     USE module_wrf_error
+     use module_interp_nmm, only: c2n_copy3d_ikj_nomask, c2n_copy2d_nomask
+     use module_interp_store
+
+     IMPLICIT NONE
+     integer, parameter :: bdyw = 1
+
+     INTEGER, INTENT(IN) :: cids, cide, ckds, ckde, cjds, cjde,   &
+          cims, cime, ckms, ckme, cjms, cjme,   &
+          cits, cite, ckts, ckte, cjts, cjte,   &
+          nids, nide, nkds, nkde, njds, njde,   &
+          nims, nime, nkms, nkme, njms, njme,   &
+          nits, nite, nkts, nkte, njts, njte,   &
+          shw,                                  &
+          ipos, jpos,                           &
+          nri, nrj
+
+     LOGICAL, INTENT(IN) :: xstag, ystag, c_flag,n_flag
+
+     REAL, DIMENSION ( cims:cime, ckms:ckme, cjms:cjme ) :: cfld
+     REAL, DIMENSION ( nims:nime, nkms:nkme, njms:njme ) :: nfld
+     !
+     INTEGER, DIMENSION ( nims:nime, njms:njme ) :: imask
+
+     if(.not.c_flag) return ! only interpolate when the flag is true in parent
+     if(nkts==nkte) then
+        call c2n_copy2d_nomask(IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,  &
+             cfld,nfld,                &
+             cims, cime, cjms, cjme,   &
+             nids, nide, njds, njde,   &
+             nims, nime, njms, njme,   &
+             nits, nite, njts, njte, .true.)
+     else
+        call c2n_copy3d_ikj_nomask(IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,  &
+             cfld,nfld,            &
+             cims, cime, cjms, cjme, ckms, ckme,   &
+             nids, nide, njds, njde, nkds, nkde,   &
+             nims, nime, njms, njme, nkms, nkme,   &
+             nits, nite, njts, njte, nkts, nkte, .true.)
+     endif
+
+   END SUBROUTINE FlagCopyIKJ
 
    !
    !--------------------------------------------------------------------------------------

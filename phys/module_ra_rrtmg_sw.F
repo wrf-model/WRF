@@ -9852,6 +9852,7 @@ CONTAINS
                        its,ite, jts,jte, kts,kte,                 &
                        swupflx, swupflxc, swdnflx, swdnflxc,      &
                        tauaer3d_sw,ssaaer3d_sw,asyaer3d_sw,       & ! jararias 2013/11
+                       use_aer3d,                                 & ! bug fix, SGT 2015/03
                        swddir, swddni, swddif,                    & ! jararias 2013/08
                        xcoszen,julian                             & ! jararias 2013/08
                                                                   )
@@ -9964,7 +9965,7 @@ CONTAINS
          INTENT(IN   ) ::                                         &
                                                        F_ICE_PHY, &
                                                       F_RAIN_PHY
-
+   LOGICAL, INTENT(IN) :: USE_AER3D
    LOGICAL, OPTIONAL, INTENT(IN)   ::                             &
                                 F_QV,F_QC,F_QR,F_QI,F_QS,F_QG,F_QNDROP
 
@@ -10306,6 +10307,9 @@ CONTAINS
                O31D(K)=O33D(I,K,J)
             ENDDO
          ELSE
+#if HWRF==1
+            call wrf_error_fatal('The O33D variable was not passed to RRTMG.  This will remove the ozone layer.')
+#endif
             DO K=kts,kte
                O31D(K)=0.0
             ENDDO
@@ -10577,7 +10581,6 @@ CONTAINS
         if(present(o33d)) then
          do k = kts, kte+1
             o3vmr(ncol,k) = o3mmr(k) * amdo
-            IF ( PRESENT( O33D ) ) THEN
             if(o3input .eq. 2)then
                if(k.le.kte)then
                  o3vmr(ncol,k) = o31d(k)
@@ -10587,9 +10590,11 @@ CONTAINS
                  if(o3vmr(ncol,k) .le. 0.)o3vmr(ncol,k) = o3mmr(k)*amdo
                endif
             endif
-            ENDIF
          enddo
         else
+#if HWRF==1
+         call wrf_error_fatal('The O33D variable was not passed to RRTMG.  This will remove the ozone layer.')
+#endif
          do k = kts, kte+1
             o3vmr(ncol,k) = o3mmr(k) * amdo
          enddo
@@ -10891,7 +10896,7 @@ CONTAINS
       end do
       end do
 
-      if ( present (tauaer3d_sw) ) then
+      if ( use_aer3d ) then
 ! ---- jararias 11/2012
          if ( aer_opt .eq. 2) then
             do nb=1,nbndsw

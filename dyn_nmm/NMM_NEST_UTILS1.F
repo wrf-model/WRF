@@ -209,14 +209,13 @@ SUBROUTINE med_nest_egrid_configure ( parent , nest )
 !   CALL nl_get_real_data_init_type (parent%real_data_init_type)
 
 END SUBROUTINE med_nest_egrid_configure
-
-SUBROUTINE med_construct_egrid_weights ( parent , nest )
+SUBROUTINE med_set_egrid_locs ( parent , nest )
  USE module_domain
  USE module_configure
  USE module_timing
 
  IMPLICIT NONE
- TYPE(domain) , POINTER             :: parent , nest
+ TYPE(domain)             :: parent , nest
  LOGICAL, EXTERNAL                  :: wrf_dm_on_monitor
  INTEGER                            :: IDS,IDE,JDS,JDE,KDS,KDE
  INTEGER                            :: IMS,IME,JMS,JME,KMS,KME
@@ -227,6 +226,7 @@ SUBROUTINE med_construct_egrid_weights ( parent , nest )
  REAL                               :: SW_LATD,SW_LOND
  REAL                               :: ADDSUM1,ADDSUM2
  REAL                               :: xr,zr,xc
+character*255 :: message
 !-----------------------------------------------------------------------------------------------------------
 !   PURPOSE: 
 !           - Initialize lat-lons and determine weights 
@@ -275,6 +275,8 @@ SUBROUTINE med_construct_egrid_weights ( parent , nest )
                         IMS,IME,JMS,JME,KMS,KME,                                          &
                         ITS,ITE,JTS,JTE,KTS,KTE                                           )
 
+    if(nest%id == parent%id) return ! nothing more to do; same data structure
+
 !   Nested grid configuration, including, western and southern boundary
 
     IDS = nest%sd31
@@ -314,6 +316,80 @@ SUBROUTINE med_construct_egrid_weights ( parent , nest )
                         IDS,IDE,JDS,JDE,KDS,KDE,                                 & ! nested domain dimension
                         IMS,IME,JMS,JME,KMS,KME,                                 &
                         ITS,ITE,JTS,JTE,KTS,KTE                                  )
+  end SUBROUTINE med_set_egrid_locs
+SUBROUTINE med_construct_egrid_weights ( parent , nest )
+ USE module_domain
+ USE module_configure
+ USE module_timing
+
+ IMPLICIT NONE
+   INTERFACE
+      SUBROUTINE med_set_egrid_locs ( parent , nest )
+        use module_domain_type, only: domain
+        type(domain) :: parent,nest
+      END SUBROUTINE med_set_egrid_locs
+   END INTERFACE
+ TYPE(domain) , POINTER             :: parent , nest
+ LOGICAL, EXTERNAL                  :: wrf_dm_on_monitor
+ INTEGER                            :: IDS,IDE,JDS,JDE,KDS,KDE
+ INTEGER                            :: IMS,IME,JMS,JME,KMS,KME
+ INTEGER                            :: ITS,ITE,JTS,JTE,KTS,KTE
+ INTEGER                            :: I,J,II,JJ,NII,NJJ
+ REAL                               :: parent_CLAT,parent_CLON,parent_WBD,parent_SBD,parent_DLMD,parent_DPHD
+ REAL                               :: nest_WBD,nest_SBD,nest_DLMD,nest_DPHD
+ REAL                               :: SW_LATD,SW_LOND
+ REAL                               :: ADDSUM1,ADDSUM2
+ REAL                               :: xr,zr,xc
+!-----------------------------------------------------------------------------------------------------------
+!   PURPOSE: 
+!           - Initialize lat-lons and determine weights 
+!
+!----------------------------------------------------------------------------------------------------------
+
+!   First obtain central latitude and longitude for the parent domain
+
+    CALL nl_get_cen_lat (parent%ID, parent_CLAT)
+    CALL nl_get_cen_lon (parent%ID, parent_CLON)
+
+!   Parent grid configuration, including, western and southern boundary
+!
+    parent_DLMD = parent%dx                ! DLMD: dlamda in degrees 
+    parent_DPHD = parent%dy                ! DPHD: dphi in degrees 
+    parent_WBD  = parent%wbd0
+    parent_SBD  = parent%sbd0
+
+!   Nested grid configuration, including, western and southern boundary
+
+    IDS = nest%sd31
+    IDE = nest%ed31
+    JDS = nest%sd32
+    JDE = nest%ed32
+    KDS = nest%sd33
+    KDE = nest%ed33
+
+    IMS = nest%sm31
+    IME = nest%em31
+    JMS = nest%sm32
+    JME = nest%em32
+    KMS = nest%sm33
+    KME = nest%em33
+
+    ITS  = nest%sp31
+    ITE  = nest%ep31
+    JTS  = nest%sp32
+    JTE  = nest%ep32
+    KTS  = nest%sp33
+    KTE  = nest%ep33
+!
+    nest_DLMD = nest%dx
+    nest_DPHD = nest%dy
+    nest_WBD  = nest%wbd0
+    nest_SBD  = nest%sbd0
+
+!   Now compute Geodetic lat/lon (Positive East) of nest in degrees,
+!   with the same central lat-lon as the parent grid
+
+    call med_set_egrid_locs(parent,nest)
 
 !   Determine the weights of nested grid h points nearest to H points of parent domain 
 

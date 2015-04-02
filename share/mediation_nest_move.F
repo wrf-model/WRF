@@ -1275,7 +1275,8 @@ LOGICAL FUNCTION direction_of_move2 ( parent , grid , move_cd_x, move_cd_y )
    endif
 
    !  SWITCH OFF NEST MOTION IF TOO CLOSE TO ANY OF THE BOUNDARIES
-
+   coral_x = grid%coral_x
+   coral_y = grid%coral_y
    coral_x = grid%coral_x
    coral_y = grid%coral_y
    coral_dist=(grid%ed31+grid%parent_grid_ratio-1)/grid%parent_grid_ratio

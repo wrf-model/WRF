@@ -36,8 +36,6 @@ CONTAINS
               ,DECLINX ,SOLCONX ,COSZEN ,HRANG    &
               , CEN_LAT                                      &
               ,Z                                             &
-              ,ALEVSIZ, no_src_types               &
-              ,LEVSIZ, N_OZMIXM                    &
               ,N_AEROSOLC                                    &
               ,PAERLEV   ,ID                                 &
               ,CAM_ABS_DIM1, CAM_ABS_DIM2 &
@@ -90,9 +88,7 @@ CONTAINS
               ,LWDNB ,LWDNBC                  &
               ,LWCF                           &
               ,SWCF                           &
-              ,OLR                            &
-              ,aerodm, PINA, aodtot           &
-              ,OZMIXM, PIN                    &
+              ,OLR,aodtot                     &
               ,M_PS_1, M_PS_2, AEROSOLC_1     &
               ,AEROSOLC_2, M_HYBI0            &
               ,ABSTOT, ABSNXT, EMSTOT         &
@@ -181,7 +177,7 @@ CONTAINS
                                      calc_aerosol_rrtmg_sw
 
    USE module_mp_thompson   , ONLY : cal_cldfra3
-
+   use module_ozmixm
    !  This driver calls subroutines for the radiation parameterizations.
    !
    !  short wave radiation choices:
@@ -364,8 +360,6 @@ CONTAINS
                 i_start,i_end,j_start,j_end
 
    INTEGER,      INTENT(IN   )    ::   STEPRA,ICLOUD,ra_call_offset
-   INTEGER,      INTENT(IN   )    ::   alevsiz, no_src_types
-   INTEGER,      INTENT(IN   )    ::   levsiz, n_ozmixm
    INTEGER,      INTENT(IN   )    ::   paerlev, n_aerosolc, cam_abs_dim1, cam_abs_dim2
    REAL,      INTENT(IN   )       ::   cam_abs_freq_s
 
@@ -380,19 +374,12 @@ CONTAINS
                                                              TSK, &
                                                           VEGFRA, &
                                                             SNOW 
-   REAL,  DIMENSION( ims:ime, levsiz, jms:jme, n_ozmixm ),  OPTIONAL,    &
-          INTENT(IN   ) ::                                  OZMIXM
-   REAL,  DIMENSION( ims:ime, alevsiz, jms:jme, no_src_types, n_ozmixm-1 ),  OPTIONAL,    &
-          INTENT(IN   ) ::                                  AERODM
    REAL,  DIMENSION( ims:ime, kms:kme, jms:jme, no_src_types ),  OPTIONAL,    &
           INTENT(INOUT) ::                                  AEROD
    REAL,  DIMENSION( ims:ime, jms:jme ), OPTIONAL,                &
           INTENT(INOUT) ::                                  AODTOT
 
    REAL,  DIMENSION( ims:ime, levsiz, jms:jme, n_ozmixm ) :: OZFLG
-
-   REAL,  DIMENSION(levsiz), OPTIONAL, INTENT(IN )  ::     PIN
-   REAL,  DIMENSION(alevsiz), OPTIONAL, INTENT(IN )  ::     PINA
 
    REAL,  DIMENSION(ims:ime,jms:jme), OPTIONAL, INTENT(IN )  ::      m_ps_1,m_ps_2
    REAL,  DIMENSION( ims:ime, paerlev, jms:jme, n_aerosolc ), OPTIONAL, &
@@ -656,7 +643,7 @@ CONTAINS
    INTEGER ::    i,j,k,its,ite,jts,jte,ij
    INTEGER ::    STEPABS
    LOGICAL ::    gfdl_lw,gfdl_sw
-   LOGICAL ::    doabsems
+   LOGICAL ::    doabsems, use_aer3d
    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
    INTEGER ::    s
 
@@ -687,7 +674,7 @@ CONTAINS
    real, dimension(:,:,:,:), allocatable :: tauaer_sw, ssaaer_sw, asyaer_sw
 
 #ifdef HWRF
-   CHARACTER(len=265) :: wrf_err_message
+   CHARACTER(len=255) :: wrf_err_message
 #endif
 
    ! This allows radiation schemes (mainly HWRF) to correctly
@@ -698,6 +685,21 @@ CONTAINS
    else
       expl_conv=.true. ! backward compatibility for ARW
    endif
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! FIXME: REMOVE
+   if(levsiz/=59) then
+38    format('levsiz=',I0,' is not 59')
+      write(wrf_err_message,38) levsiz
+      call wrf_error_fatal(wrf_err_message)
+   endif
+   if(n_ozmixm<12) then
+37    format('n_ozmixm=',I0,'<12')
+      write(wrf_err_message,37) n_ozmixm
+      call wrf_error_fatal(wrf_err_message)
+   endif
+! END OF STUFF TO REMOVE
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
    CALL wrf_debug (1, 'Top of Radiation Driver')
 !  WRITE ( wrf_err_message , * ) 'itimestep = ',itimestep,', dt = ',dt,', lw and sw options = ',lw_physics,sw_physics
@@ -815,40 +817,32 @@ CONTAINS
 
    gfdl_lw = .false.
    gfdl_sw = .false.
+   use_aer3d = .false.
 
 ! Allocate aerosol arrays used by aer_opt = 2 option
-   IF ( PRESENT( AOD5502D ) ) THEN
+   IF ( PRESENT( AOD5502D ) .and. aer_opt==2 ) THEN
      ! jararias, 2013/11
-     IF ( aer_opt .EQ. 2 ) THEN
-        swrad_aerosol_select: select case(sw_physics)
+      swrad_aerosol_select: select case(sw_physics)
+         
+      case(GODDARDSWSCHEME)
+         allocate(tauaer_sw(ims:ime, kms:kme, jms:jme, 1:11))
+         allocate(ssaaer_sw(ims:ime, kms:kme, jms:jme, 1:11))
+         allocate(asyaer_sw(ims:ime, kms:kme, jms:jme, 1:11))
+         use_aer3d=.true.
+         
+      case(RRTMG_SWSCHEME)
+         allocate(tauaer_sw(ims:ime, kms:kme, jms:jme, 1:14))
+         allocate(ssaaer_sw(ims:ime, kms:kme, jms:jme, 1:14))
+         allocate(asyaer_sw(ims:ime, kms:kme, jms:jme, 1:14))
+         use_aer3d=.true.
 
-           case(GODDARDSWSCHEME)
-              allocate(tauaer_sw(ims:ime, kms:kme, jms:jme, 1:11))
-              allocate(ssaaer_sw(ims:ime, kms:kme, jms:jme, 1:11))
-              allocate(asyaer_sw(ims:ime, kms:kme, jms:jme, 1:11))
-
-           case(RRTMG_SWSCHEME)
-              allocate(tauaer_sw(ims:ime, kms:kme, jms:jme, 1:14))
-              allocate(ssaaer_sw(ims:ime, kms:kme, jms:jme, 1:14))
-              allocate(asyaer_sw(ims:ime, kms:kme, jms:jme, 1:14))
-
-        end select swrad_aerosol_select
-     ELSE
-        swrad_aerosol_select_stub: select case(sw_physics)
-
-           case(GODDARDSWSCHEME)
-              allocate(tauaer_sw(1, 1, 1, 1))
-              allocate(ssaaer_sw(1, 1, 1, 1))
-              allocate(asyaer_sw(1, 1, 1, 1))
-
-           case(RRTMG_SWSCHEME)
-              allocate(tauaer_sw(1, 1, 1, 1))
-              allocate(ssaaer_sw(1, 1, 1, 1))
-              allocate(asyaer_sw(1, 1, 1, 1))
-
-        end select swrad_aerosol_select_stub
-     ENDIF
+      end select swrad_aerosol_select
    ENDIF
+
+   ! Stubs to ensure these variables are not passed in unallocated:
+   if(.not.allocated(tauaer_sw)) allocate(tauaer_sw(1, 1, 1, 1))
+   if(.not.allocated(ssaaer_sw)) allocate(ssaaer_sw(1, 1, 1, 1))
+   if(.not.allocated(asyaer_sw)) allocate(asyaer_sw(1, 1, 1, 1))
 
 !---------------
 ! Calculate constant for short wave radiation
@@ -1140,7 +1134,11 @@ CONTAINS
                               ids , ide , jds , jde , kds , kde ,     &
                               ims , ime , jms , jme , kms , kme ,     &
                               its , ite , jts , jte , kts , kte )
+     else if(id == 1) then
+        call wrf_error_fatal('Wrong o3input.  Should be 2.')
      ENDIF
+     else
+        call wrf_error_fatal('o3rad is missing in radation driver')
      ENDIF
 
      IF ( PRESENT( AEROD ) ) THEN
@@ -1221,6 +1219,7 @@ CONTAINS
                     ,f_qi=f_qi,f_qs=f_qs,f_qg=f_qg                     &
                     ,erbe_out=erbe_out                                 & !optional
                     ,aer_opt=aer_opt                                   &
+                    ,use_aer3d=.false.                                 & ! no tauaer3d_sw in this call
                                                                        )
 
         CASE (GFDLLWSCHEME)
@@ -1294,7 +1293,7 @@ CONTAINS
 
              CALL wrf_debug(100, 'CALL camrad lw')
 
-             IF ( PRESENT( OZMIXM ) .AND. PRESENT( PIN ) .AND. &
+             IF ( &
                   PRESENT(M_PS_1) .AND. PRESENT(M_PS_2) .AND.  &
                   PRESENT(M_HYBI0) .AND. PRESENT(AEROSOLC_1)    &
                   .AND. PRESENT(AEROSOLC_2).AND. PRESENT(ALSWVISDIR) ) THEN
@@ -1485,9 +1484,8 @@ CONTAINS
           ENDIF
      ENDIF       
 
-     IF ( PRESENT( AOD5502D ) ) THEN
+     IF ( PRESENT( AOD5502D ) .and. aer_opt==2) THEN
      ! jararias, 2013/11
-     IF ( aer_opt .EQ. 2 ) THEN
      swrad_aerosol_select2: select case(sw_physics)
         case(GODDARDSWSCHEME)
            call wrf_debug(100, 'call calc_aerosol_goddard_sw')
@@ -1521,7 +1519,6 @@ CONTAINS
 
         case default
      end select swrad_aerosol_select2
-     ENDIF
      ENDIF
 
      swrad_select: SELECT CASE(sw_physics)
@@ -1629,12 +1626,13 @@ CONTAINS
                     ,tauaer3d_sw=tauaer_sw                             & ! jararias, 2013/11
                     ,ssaaer3d_sw=ssaaer_sw                             & ! jararias, 2013/11
                     ,asyaer3d_sw=asyaer_sw                             & ! jararias, 2012/11
+                    ,use_aer3d=use_aer3d                               & ! bug fix, SGT 2015/03
                     ,aer_opt=aer_opt                                   &
                                                                        )
 
         CASE (CAMSWSCHEME)
              CALL wrf_debug(100, 'CALL camrad sw')
-             IF ( PRESENT( OZMIXM ) .AND. PRESENT( PIN ) .AND. &
+             IF ( &
                   PRESENT(M_PS_1) .AND. PRESENT(M_PS_2) .AND.  &
                   PRESENT(M_HYBI0) .AND. PRESENT(AEROSOLC_1)    &
                   .AND. PRESENT(AEROSOLC_2) .AND. PRESENT(ALSWVISDIR)) THEN
@@ -1696,6 +1694,25 @@ CONTAINS
 
         CASE (RRTMG_SWSCHEME)
              CALL wrf_debug(100, 'CALL rrtmg_sw')
+             if(size(gsw)<2) call wrf_error_fatal('gsw size is 1')
+             if(size(swcf)<2) call wrf_error_fatal('swcf size is 1')
+             if(size(coszr)<2) call wrf_error_fatal('coszr size is 1')
+             if(size(swddir)<2) call wrf_error_fatal('swddir size is 1')
+             if(size(swddni)<2) call wrf_error_fatal('swddni size is 1')
+             if(size(swddif)<2) call wrf_error_fatal('swddif size is 1')
+             if(size(SWUPT)<2) call wrf_error_fatal('SWUPT size is 1')
+             if(size(SWUPTC)<2) call wrf_error_fatal('SWUPTC size is 1')
+             if(size(SWDNT)<2) call wrf_error_fatal('SWDNT size is 1')
+             if(size(SWDNTC)<2) call wrf_error_fatal('SWDNTC size is 1')
+             if(size(SWUPB)<2) call wrf_error_fatal('SWUPB size is 1')
+             if(size(SWUPBC)<2) call wrf_error_fatal('SWUPBC size is 1')
+             if(size(SWDNB)<2) call wrf_error_fatal('SWDNB size is 1')
+             if(size(SWDNBC)<2) call wrf_error_fatal('SWDNBC size is 1')
+             if(size(SWUPFLX)<2) call wrf_error_fatal('SWUPFLX size is 1')
+             if(size(SWUPFLXC)<2) call wrf_error_fatal('SWUPFLXC size is 1')
+             if(size(SWDNFLX)<2) call wrf_error_fatal('SWDNFLX size is 1')
+             if(size(SWDNFLXC)<2) call wrf_error_fatal('SWDNFLXC size is 1')
+
              CALL RRTMG_SWRAD(                                         &
                      RTHRATENSW=RTHRATENSW,                            &
                      SWUPT=SWUPT,SWUPTC=SWUPTC,                        &
@@ -1753,6 +1770,7 @@ CONTAINS
                      tauaer3d_sw=tauaer_sw,                             & ! jararias 2013/11
                      ssaaer3d_sw=ssaaer_sw,                             & ! jararias 2013/11
                      asyaer3d_sw=asyaer_sw,                             & ! jararias 2013/11
+                     use_aer3d=use_aer3d,                               & ! bug fix, SGT 2015/03
                      swddir=swddir,swddni=swddni,swddif=swddif,         & ! jararias 2013/08/10
                      xcoszen=coszen,julian=julian                       ) ! jararias 2013/08/14
 
@@ -3281,96 +3299,107 @@ SUBROUTINE ozn_p_int(p ,pin, levsiz, ozmixt, o3vmr, &
 
    real    dpu                 ! upper level pressure difference
    real    dpl                 ! lower level pressure difference
+   real :: maxp, maxpin, minp, minpin
+   character*255 :: message
 
    ncol = ite - its + 1
    pver = kte - kts + 1
+   if(levsiz/=59) then
+404   format('Wrong levsiz.  Should be 59, but is ',I0,'.')
+      write(message,404) levsiz
+      call wrf_error_fatal(message)
+   endif
+   maxp=maxval(p(its:ite,kts:kte,jts:jte))
+   minp=minval(p(its:ite,kts:kte,jts:jte))
+   maxpin=maxval(pin)
+   minpin=minval(pin)
+   if(maxp>10*maxpin .or. maxpin>10*maxp) then
+38    format('Mismatch in radiation pressure array units.  Ozone P=',F0.3,'...',F0.3,' while model P=',F0.3,'...',F0.3,'.')
+      write(message,38) minpin,maxpin,minp,maxp
+      call wrf_error_fatal(message)
+   end if
 
-   do j=jts,jte
-!
-! Initialize index array
-!
-!  do i=1, ncol
-   do i=its, ite
-      kupper(i) = 1
-   end do
-!
-! Reverse the pressure array, and pin is in Pa, the same as model pmid
-!
+   bigj: do j=jts,jte
+      !
+      ! Initialize index array
+      !
+      !  do i=1, ncol
+      do i=its, ite
+         kupper(i) = 1
+      end do
+      !
+      ! Reverse the pressure array, and pin is in Pa, the same as model pmid
+      !
       do k = kts,kte
          kk = kte - k + kts
-      do i = its,ite
-         pmid(i,kk) = p(i,k,j)
-      enddo
+         do i = its,ite
+            pmid(i,kk) = p(i,k,j)
+         enddo
       enddo
 
-   do k=1,pver
+      bigk: do k=1,pver
 
-      kout = pver - k + 1
-!     kout = k
-!
-! Top level we need to start looking is the top level for the previous k
-! for all longitude points
-!
-      kkstart = levsiz
-!     do i=1,ncol
-      do i=its,ite
-         kkstart = min0(kkstart,kupper(i))
-      end do
-      kount = 0
-!
-! Store level indices for interpolation
-!
-      do kk=kkstart,levsiz-1
-!        do i=1,ncol
+         kout = pver - k + 1
+         !     kout = k
+         !
+         ! Top level we need to start looking is the top level for the
+         ! previous k for all longitude points
+         !
+         kkstart = levsiz
+         !     do i=1,ncol
          do i=its,ite
-            if (pin(kk).lt.pmid(i,k) .and. pmid(i,k).le.pin(kk+1)) then
-               kupper(i) = kk
-               kount = kount + 1
+            kkstart = min0(kkstart,kupper(i))
+         end do
+         kount = 0
+         !
+         ! Store level indices for interpolation
+         !
+         do kk=kkstart,levsiz-1
+            do i=its,ite
+               if (pin(kk).lt.pmid(i,k) .and. pmid(i,k).le.pin(kk+1)) then
+                  kupper(i) = kk
+                  kount = kount + 1
+               end if
+            end do
+            !
+            ! If all indices for this level have been found, do the
+            ! interpolation and go to the next level
+            !
+            if (kount.eq.ncol) then
+               !           do i=1,ncol
+               do i=its,ite
+                  dpu = pmid(i,k) - pin(kupper(i))
+                  dpl = pin(kupper(i)+1) - pmid(i,k)
+                  o3vmr(i,kout,j) = (ozmixt(i,kupper(i),j)*dpl + &
+                       ozmixt(i,kupper(i)+1,j)*dpu)/(dpl + dpu)
+               end do
+               cycle bigk
             end if
          end do
-!
-! If all indices for this level have been found, do the interpolation and
-! go to the next level
-!
-         if (kount.eq.ncol) then
-!           do i=1,ncol
-            do i=its,ite
+         !
+         ! If we've fallen through the kk=1,levsiz-1 loop, we cannot
+         ! interpolate and must extrapolate from the bottom or top
+         ! ozone data level for at least some of the longitude points.
+         !
+         do i=its,ite
+            if (pmid(i,k) .lt. pin(1)) then
+               o3vmr(i,kout,j) = ozmixt(i,1,j)*pmid(i,k)/pin(1)
+            else if (pmid(i,k) .gt. pin(levsiz)) then
+               o3vmr(i,kout,j) = ozmixt(i,levsiz,j)
+            else
                dpu = pmid(i,k) - pin(kupper(i))
                dpl = pin(kupper(i)+1) - pmid(i,k)
                o3vmr(i,kout,j) = (ozmixt(i,kupper(i),j)*dpl + &
-                             ozmixt(i,kupper(i)+1,j)*dpu)/(dpl + dpu)
-            end do
-            goto 35
+                    ozmixt(i,kupper(i)+1,j)*dpu)/(dpl + dpu)
+            end if
+         end do
+
+         if (kount.gt.ncol) then
+            call wrf_error_fatal ('OZN_P_INT: Bad ozone data: non-monotonicity suspected')
          end if
-      end do
-!
-! If we've fallen through the kk=1,levsiz-1 loop, we cannot interpolate and
-! must extrapolate from the bottom or top ozone data level for at least some
-! of the longitude points.
-!
-!     do i=1,ncol
-      do i=its,ite
-         if (pmid(i,k) .lt. pin(1)) then
-            o3vmr(i,kout,j) = ozmixt(i,1,j)*pmid(i,k)/pin(1)
-         else if (pmid(i,k) .gt. pin(levsiz)) then
-            o3vmr(i,kout,j) = ozmixt(i,levsiz,j)
-         else
-            dpu = pmid(i,k) - pin(kupper(i))
-            dpl = pin(kupper(i)+1) - pmid(i,k)
-            o3vmr(i,kout,j) = (ozmixt(i,kupper(i),j)*dpl + &
-                          ozmixt(i,kupper(i)+1,j)*dpu)/(dpl + dpu)
-         end if
-      end do
-
-      if (kount.gt.ncol) then
-!        call endrun ('OZN_P_INT: Bad ozone data: non-monotonicity suspected')
-         call wrf_error_fatal ('OZN_P_INT: Bad ozone data: non-monotonicity suspected')
-      end if
-35    continue
-
-   end do
-   end do
-
+      end do bigk
+   end do bigj
+   
    return
 END SUBROUTINE ozn_p_int
 

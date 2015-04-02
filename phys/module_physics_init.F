@@ -51,8 +51,7 @@ CONTAINS
                          landuse_LUSEAS, landuse_ISN,            &
                          lu_state,                               &
                          XLAT,XLONG,xlong_u,xlat_v,ALBEDO,ALBBCK,GMT,JULYR,JULDAY,&
-                         levsiz, n_ozmixm, n_aerosolc, paerlev,  &
-                         alevsiz, no_src_types,                  &
+                         n_aerosolc, paerlev,  &
                          TMN,XLAND,ZNT,Z0,UST,MOL,PBLH,TKE_PBL,  &
                          EXCH_H,THC,SNOWC,MAVAIL,HFX,QFX,RAINBL, &
                          TSLB,ZS,DZS,num_soil_layers,warm_rain,  &
@@ -77,8 +76,6 @@ CONTAINS
                          gd_cloud,gd_cloud2,                     &    ! Optional
                          gd_cloud_a,gd_cloud2_a,                 &    ! Optional
                          QC_CU,QI_CU,                            &    ! Optional
-                         ozmixm,pin,                             &    ! Optional
-                         aerodm,pina,                            &    ! Optional
                          m_ps_1,m_ps_2,m_hybi,aerosolc_1,aerosolc_2,& ! Optional
                          RUNDGDTEN,RVNDGDTEN,RTHNDGDTEN,         &    ! Optional
                          RPHNDGDTEN,RQVNDGDTEN,RMUNDGDTEN,       &    ! Optional
@@ -216,6 +213,7 @@ CONTAINS
    USE module_cam_support,         ONLY : cam_mam_aerosols
 #endif
    USE module_wind_fitch
+   USE module_ozmixm
    IMPLICIT NONE
 !-----------------------------------------------------------------
    TYPE (grid_config_rec_type)              :: config_flags
@@ -245,17 +243,7 @@ CONTAINS
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(IN) :: TSK, XLAT, XLONG,xlong_u,xlat_v
    REAL,  DIMENSION(ims:ime,jms:jme), INTENT(IN) , OPTIONAL :: msftx,msfty
 
-   INTEGER,      INTENT(IN   )    ::   levsiz, n_ozmixm
    INTEGER,      INTENT(IN   )    ::   paerlev, n_aerosolc
-   INTEGER,      INTENT(IN   )    ::   alevsiz, no_src_types
-
-   REAL,  DIMENSION( ims:ime, levsiz, jms:jme, n_ozmixm ), OPTIONAL, &
-          INTENT(INOUT) ::                                  OZMIXM
-   REAL,  DIMENSION( ims:ime, alevsiz, jms:jme, n_ozmixm-1, no_src_types ), OPTIONAL, &
-          INTENT(INOUT) ::                                  aerodm
-
-   REAL,  DIMENSION(levsiz), OPTIONAL, INTENT(INOUT)  ::        PIN
-   REAL,  DIMENSION(alevsiz), OPTIONAL, INTENT(INOUT)  ::       PINA
 
    REAL,  DIMENSION(ims:ime,jms:jme), OPTIONAL, INTENT(INOUT)  :: m_ps_1,m_ps_2
    REAL,  DIMENSION(paerlev), OPTIONAL,INTENT(INOUT)  ::          m_hybi
@@ -988,7 +976,10 @@ integer myproc
 
 
    CALL wrf_debug ( 200 , 'module_start: phy_init: Before call to ra_init' )
-
+   if(n_ozmixm<13) call wrf_error_fatal('must have 13 oxmixm')
+   if(size(ozmixm,2)<59) call wrf_error_fatal('must have 59 ozmixm in 2nd dimension.')
+   if(size(ozmixm,1)<2) call wrf_error_fatal('unit dimension for dim 1 of ozmixm')
+   if(size(ozmixm,3)<2) call wrf_error_fatal('unit dimension for dim 3 of ozmixm')
    CALL ra_init(id=id,STEPRA=STEPRA,RADT=RADT,DT=DT,RTHRATEN=RTHRATEN,RTHRATENLW=RTHRATENLW,             &
                 RTHRATENSW=RTHRATENSW,CLDFRA=CLDFRA,EMISS=EMISS,cen_lat=cen_lat,JULYR=JULYR,JULDAY=JULDAY,GMT=GMT,    &
                 levsiz=levsiz,XLAT=XLAT,XLONG=XLONG,n_ozmixm=n_ozmixm,     &
@@ -1636,8 +1627,8 @@ integer myproc
    LOGICAL :: aclwalloc = .false.
    integer :: month,iday
    INTEGER :: i, j, k, itf, jtf, ktf
+   character*255 :: message
 !---------------------------------------------------------------------
-
    jtf=min0(jte,jde-1)
    ktf=min0(kte,kde-1)
    itf=min0(ite,ide-1)
@@ -1691,14 +1682,33 @@ integer myproc
 !   Read in CAM ozone data, and interpolate data to model grid
 !   Interpolation is done on domain 1 only
 
-   IF ( config_flags%o3input .EQ. 2 .AND. id .EQ. 1 ) THEN
+   IF ( config_flags%o3input .EQ. 2 .AND. id .EQ. 1) THEN
+      if(size(ozmixm,1)/=ime-ims+1 .or. size(ozmixm,2)/=59 .or. &
+           size(ozmixm,3)/=jme-jms+1 .or. size(ozmixm,4)/=13) then
+         write(message,28) size(ozmixm,1),ime-ims+1,&
+              size(ozmixm,2),59, size(ozmixm,3),jme-jms+1, &
+              size(ozmixm,4),13
+28       format('Wrong size for OZMIXM: I=',I0,'vs',I0,' LV=',I0,'vs',I0,&
+              'J=',I0,'vs',I0,' t=',I0,'vs',I0)
+         call wrf_error_fatal(trim(message))
+      endif
       CALL oznini(ozmixm,pin,levsiz,n_ozmixm,XLAT,                &
                      ids, ide, jds, jde, kds, kde,                  &
                      ims, ime, jms, jme, kms, kme,                  &
                      its, ite, jts, jte, kts, kte)
+101   format('pin=',F0.7,'...',F0.7,' after ozini')
+      write(message,101) minval(pin),maxval(pin)
+      call wrf_debug(1,message)
+102   format('ozmixm=',F0.7,'...',F0.7,' after ozini')
+      write(message,102) minval(ozmixm),maxval(ozmixm)
+      call wrf_debug(1,message)
+103   format('n_ozmixm=',I0,' xlat=',F0.7,'...',F0.7)
+      write(message,103) n_ozmixm,minval(xlat),maxval(xlat)
+      call wrf_debug(1,message)
    ENDIF
 
    IF ( config_flags%aer_opt .EQ. 1 .AND. id .EQ. 1 ) THEN
+      call wrf_debug(1,'Call zerosol to get aerosol lookup tables')
       CALL aerosol_in(aerodm,pina,alevsiz,n_ozmixm-1,no_src_types,XLAT,XLONG,   &
                      ids, ide, jds, jde, kds, kde,                  &
                      ims, ime, jms, jme, kms, kme,                  &

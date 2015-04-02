@@ -95,16 +95,22 @@
       USE MODULE_DIFFUSION_NMM,ONLY: HDIFF
       USE MODULE_PHYSICS_INIT
       USE MODULE_GWD
+      USE MODULE_OZMIXM
 !     USE MODULE_RA_GFDLETA
 !
       USE MODULE_EXT_INTERNAL
 !
    USE module_tornado_genesis, only: init_tornado_genesis
-
 !
 !----------------------------------------------------------------------
 !
       IMPLICIT NONE
+   INTERFACE
+      SUBROUTINE med_set_egrid_locs ( parent , nest )
+        use module_domain_type, only: domain
+        type(domain) :: parent,nest
+      END SUBROUTINE med_set_egrid_locs
+   END INTERFACE
 !
 !----------------------------------------------------------------------
 !***
@@ -231,7 +237,7 @@
       integer :: i_t=096,j_t=195,n_t=11
       integer :: i_u=49,j_u=475,n_u=07
       integer :: i_v=49,j_v=475,n_v=07
-      integer :: num_ozmixm, num_aerosolc
+      integer :: num_aerosolc
       real :: cen_lat,cen_lon,dtphs   ! GWD
       integer :: num_urban_layers,num_urban_hi
 !Rogers GMT
@@ -1992,7 +1998,6 @@
       ENDIF
 !
 ! when allocating CAM radiation 4d arrays (ozmixm, aerosolc) these are not needed
-      num_ozmixm=1
       num_aerosolc=1
 
 ! Set GMT, JULDAY, and JULYR outside of phy_init because it is no longer 
@@ -2004,20 +2009,12 @@
       CALL domain_setgmtetc( GRID, START_OF_SIMULATION )
 
       if(restrt) then
-#ifdef HWRF
-!zhang 
-     CALL nl_get_julyr (grid%id, grid%julyr)
-     CALL nl_get_julday (grid%id, grid%julday)
-     CALL nl_get_gmt (grid%id, grid%gmt)
-!zhang end
-#else
         CALL domain_clock_get( grid, current_time=currentTime )
         CALL WRFU_TimeGet( currentTime, YY=grid%julyr, dayOfYear=grid%julday, &
                            H=hr, M=mn, S=sec, MS=ms, rc=rc)
         grid%gmt=hr+real(mn)/60.+real(sec)/3600.+real(ms)/(1000*3600)
         WRITE( wrf_err_message , * ) 'DEBUG start_domain_nmm():  gmt = ',grid%gmt
         CALL wrf_debug( 150, TRIM(wrf_err_message) )
-#endif
       endif
 
 ! Several arguments are RCONFIG entries in Registry.NMM. Registry no longer
@@ -2040,6 +2037,17 @@
          ENDIF
       END IF
 
+      call init_module_ozmixm(ims,ime,59,jms,jme,set_n_ozmixm=13,&
+           set_alevsiz=12,set_no_src_types=6)
+      call check_module_ozmixm('after init')
+      if(allowed_to_read) then
+         call wrf_debug(1,'Set E grid locations for PHY_INIT.')
+         if(grid%id==1) then
+            call med_set_egrid_locs(grid,grid)
+         else
+            call med_set_egrid_locs(grid%parents(1)%ptr,grid)
+         endif
+      end if
       CALL PHY_INIT(GRID%ID,CONFIG_FLAGS,GRID%DT,LRESTART,SFULL,SMID    &
      &             ,grid%pt,TSFC,GRID%RADT,GRID%BLDT,GRID%CUDT,GRID%GSMDT    &
      &             ,grid%DUCUDT, grid%DVCUDT                            &
@@ -2066,11 +2074,10 @@
      &             ,GRID%LANDUSE_ISICE, GRID%LANDUSE_LUCATS             &
      &             ,GRID%LANDUSE_LUSEAS, GRID%LANDUSE_ISN               &
      &             ,GRID%LU_STATE                                       &
-     &             ,grid%xlat,grid%xlong,grid%glat,grid%glon&
+     &             ,grid%hlat,grid%hlon,grid%glat,grid%glon&
      &             ,grid%albedo,grid%albbck                             &
      &             ,GRID%GMT,GRID%JULYR,GRID%JULDAY                     &
-     &             ,GRID%LEVSIZ, NUM_OZMIXM, NUM_AEROSOLC, GRID%PAERLEV &
-     &             ,grid%alevsiz, grid%no_src_types                     &
+     &             ,NUM_AEROSOLC, GRID%PAERLEV &
      &             ,TMN,grid%xland,grid%znt,grid%z0,grid%ustar,grid%mol,grid%pblh,grid%tke_pbl             &
      &             ,grid%exch_h,THC,SNOWC,grid%mavail,HFX,QFX,RAINBL              &
      &             ,grid%stc,grid%sldpth,grid%DZSoil,GRID%NUM_SOIL_LAYERS,WARM_RAIN           &
@@ -2117,6 +2124,7 @@
      &                sf_surface_mosaic=config_flags%sf_surface_mosaic, mosaic_cat=config_flags%mosaic_cat, nlcat=1,     & ! Noah tiling
      &                MAXPATCH=1,ccn_conc=config_flags%ccn_conc & ! CLM
      &                )
+      call check_module_ozmixm('after phy_init')
 
 #ifdef HWRF
 !zhang's doing

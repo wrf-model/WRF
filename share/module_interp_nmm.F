@@ -117,7 +117,7 @@ module module_interp_nmm
   public :: c2b_near2d, c2n_near2d, n2c_near2d
   public :: c2b_inear2d, c2n_inear2d, n2c_inear2d
 
-  public :: c2n_near3dikj, c2n_sst, c2n_near3d
+  public :: c2n_near3dikj, c2n_sst, c2n_near3d, c2n_copy3d_ikj_nomask, c2n_copy3d_ikj
 
 ! unimplemented:  public :: nmm_method_quadratic, nmm_method_spline_log, nmm_method_copy, nmm_method_spline
 
@@ -686,6 +686,7 @@ contains
        nits, nite, njts, njte, hgrid)
     implicit none
     logical, intent(in) :: hgrid
+
     real, intent(in), dimension(nims:nime,njms:njme) :: &
          W1,W2,W3,W4
     integer, intent(in), dimension(nims:nime,njms:njme) :: II,JJ
@@ -987,6 +988,86 @@ contains
        enddo interploop
     end do bigj
   end subroutine c2n_copy3d
+
+  subroutine c2n_copy3d_ikj_nomask (II,JJ,W1,W2,W3,W4,    &
+       cfield,nfield,      &
+       cims, cime, cjms, cjme, ckms, ckme,   &
+       nids, nide, njds, njde, nkds, nkde,   &
+       nims, nime, njms, njme, nkms, nkme,   &
+       nits, nite, njts, njte, nkts, nkte,   &
+       hgrid)
+    implicit none
+    real, intent(in), dimension(nims:nime,njms:njme) :: &
+         W1,W2,W3,W4
+    integer, intent(in), dimension(nims:nime,njms:njme) :: II,JJ
+    logical, intent(in) :: hgrid
+    integer, intent(in):: cims, cime, cjms, cjme, ckms, ckme,   &
+         nids, nide, njds, njde, nkds, nkde,   &
+         nims, nime, njms, njme, nkms, nkme,   &
+         nits, nite, njts, njte, nkts, nkte
+
+    real, intent(in) :: cfield(cims:cime,ckms:ckme,cjms:cjme)
+    real, intent(out) :: nfield(nims:nime,nkms:nkme,njms:njme)
+
+    integer :: j,i,a,nx,nz,k
+
+    nx=min(nide-1,nite)-max(nids,nits)+1
+    nz=nkde-nkds+1
+
+    bigj: do j=max(njds,njts),min(njde-1,njte)
+       kinterploop: do k=nkds,nkde
+          interploop: do i=max(nids,nits),min(nide-1,nite)
+             if(hgrid) then
+                a=1-mod(JJ(i,j),2)
+             else
+                a=mod(JJ(i,j),2)
+             endif
+             nfield(i,k,j) = IKJCOPY(cfield,i,k,j)
+          enddo interploop
+       enddo kinterploop
+    end do bigj
+  end subroutine c2n_copy3d_ikj_nomask
+
+  subroutine c2n_copy3d_ikj (II,JJ,W1,W2,W3,W4,    &
+       cfield,nfield,imask,      &
+       cims, cime, cjms, cjme, ckms, ckme,   &
+       nids, nide, njds, njde, nkds, nkde,   &
+       nims, nime, njms, njme, nkms, nkme,   &
+       nits, nite, njts, njte, nkts, nkte,   &
+       hgrid)
+    implicit none
+    real, intent(in), dimension(nims:nime,njms:njme) :: &
+         W1,W2,W3,W4
+    integer, intent(in), dimension(nims:nime,njms:njme) :: II,JJ
+    integer, intent(in), dimension(nims:nime,njms:njme) :: imask
+    logical, intent(in) :: hgrid
+    integer, intent(in):: cims, cime, cjms, cjme, ckms, ckme,   &
+         nids, nide, njds, njde, nkds, nkde,   &
+         nims, nime, njms, njme, nkms, nkme,   &
+         nits, nite, njts, njte, nkts, nkte
+
+    real, intent(in) :: cfield(cims:cime,ckms:ckme,cjms:cjme)
+    real, intent(out) :: nfield(nims:nime,nkms:nkme,njms:njme)
+
+    integer :: j,i,a,nx,nz,k
+
+    nx=min(nide-1,nite)-max(nids,nits)+1
+    nz=nkde-nkds+1
+
+    bigj: do j=max(njds,njts),min(njde-1,njte)
+       kinterploop: do k=nkds,nkde
+          interploop: do i=max(nids,nits),min(nide-1,nite)
+             if(imask(i,j)/=0) cycle interploop
+             if(hgrid) then
+                a=1-mod(JJ(i,j),2)
+             else
+                a=mod(JJ(i,j),2)
+             endif
+             nfield(i,k,j) = IKJCOPY(cfield,i,k,j)
+          enddo interploop
+       enddo kinterploop
+    end do bigj
+  end subroutine c2n_copy3d_ikj
 
   ! ********************************************************************
   ! subs *_MASS -- horizontally and vertically interpolate.  Vertical

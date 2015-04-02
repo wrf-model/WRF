@@ -267,6 +267,7 @@ this_time=now_time()
                             grid%sm31y, grid%em31y, grid%sm32y, grid%em32y, grid%sm33y, grid%em33y  &   ! y-xpose
       )
 #endif
+  nested_grid%intermediate_grid%o3rad_changed=parent_grid%o3rad_changed .or. nested_grid%o3rad_changed
    nested_grid%intermediate_grid%interp_mp=parent_grid%interp_mp .or. nested_grid%interp_mp
 #if (HWRF == 1)
   nested_grid%intermediate_grid%pdyn_parent_age=parent_grid%pdyn_parent_age

@@ -29,13 +29,15 @@ subroutine da_get_innov_vector_rain( it, num_qcstat_conv, grid, ob, iv, hr_rainc
 
    allocate (model_rainc(iv%info(rain)%n1:iv%info(rain)%n2))
    allocate (model_rainnc(iv%info(rain)%n1:iv%info(rain)%n2))
+   model_rainc  = 0.0
+   model_rainnc = 0.0
+
+   ! [1.0] horizontal interpolation:
+
+   call da_interp_lin_2d (hr_rainc,  iv%info(rain), 1, model_rainc)
+   call da_interp_lin_2d (hr_rainnc, iv%info(rain), 1, model_rainnc)
 
    do n=iv%info(rain)%n1,iv%info(rain)%n2
-      
-      ! [1.0] Get horizontal interpolation weights: 
-
-      call da_interp_lin_2d (hr_rainc,  iv%info(rain), 1, model_rainc) 
-      call da_interp_lin_2d (hr_rainnc,  iv%info(rain), 1, model_rainnc)
 
       ! [2.0] Initialise components of innovation vector: 
 

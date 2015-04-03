@@ -592,7 +592,7 @@ MODULE module_sf_urban
 ! Yang, 2014/10/08, cal. alh
    if(alhoption==1) then
      tloc2=mod(int((OMG/PI*180./15.+12.)*2.+0.5 ),48)
-     if(tloc2.lt.0) tloc=tloc+48
+     if(tloc2.lt.0) tloc2=tloc2+48
      if(tloc2==0) tloc2=48
    endif
 
@@ -1086,7 +1086,7 @@ MODULE module_sf_urban
        CALL DIREVAP (EDIR,EPGR,SMRP(KZ),SHDFAC,SMCMAX,SMCDRY,FXEXP)    
        ! Evapotranspiration and canopy intercepted evaporation
        CALL TRANSP  (ETTR,ETR,ECR,SHDFAC,EPGR,CMCRP,CFACTR,CMCMAX,LAI,RSMIN,RSMAX,RGL,SX, &
-                     TGRP,TA,QA,SMRP,SMCDRY,SMCREF,CPP,PS,CHGR,EPSV,DELT,NROOT,NGR,DZGR, &
+                     TGRP,TA,QA,SMRP,SMCWLT,SMCREF,CPP,PS,CHGR,EPSV,DELT,NROOT,NGR,DZGR, &
                      ZSOILR,HS)
        ! Update moisture in soil layers
        CALL SMFLX   (SMRP,SMR,NGR,CMCRP,CMCR,DELT,RAIN,ZSOILR,SMCMAX,BEXP,SMCWLT,DKSAT,&
@@ -3202,11 +3202,11 @@ SUBROUTINE SFCDIF_URB (ZLM,Z0,THZ0,THLM,SFCSPD,AKANDA,AKMS,AKHS,RLMO,CD)
 !===========================================================================
       
      SUBROUTINE TRANSP (ETT,ET,EC,SHDFAC,ETP1,CMC,CFACTR,CMCMAX,LAI,RSMIN,RSMAX,RGL,SX, &
-                        TS,TA,QA,SMC,SMCDRY,SMCREF,CPP,PS,CH,EPSV,DELT, NROOT,NSOIL,    &
+                        TS,TA,QA,SMC,SMCWLT,SMCREF,CPP,PS,CH,EPSV,DELT, NROOT,NSOIL,    &
                         DZVR, ZSOIL, HS)
      INTEGER, INTENT(IN)   :: NROOT, NSOIL
      REAL, INTENT(IN)  :: SHDFAC,ETP1,CMC,CFACTR,CMCMAX,LAI,RSMIN,RSMAX,RGL,SX,TA
-     REAL, INTENT(IN)  :: TS,QA, SMCDRY, SMCREF, CPP, PS,CH, EPSV, DELT, HS
+     REAL, INTENT(IN)  :: TS,QA, SMCWLT, SMCREF, CPP, PS,CH, EPSV, DELT, HS
      REAL, DIMENSION(1:NSOIL), INTENT(IN)   :: ZSOIL, DZVR, SMC
      REAL, DIMENSION(1:NSOIL), INTENT(INOUT):: ET
      REAL, INTENT(OUT) :: EC, ETT

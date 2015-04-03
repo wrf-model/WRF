@@ -93,7 +93,7 @@
     !  Local variables: are we are using the correct hypsometric option for ARW ideal cases.
 
     CHARACTER (LEN=80) :: input_name
-    INTEGER :: loop, hypsometric_opt
+    INTEGER :: loop, hypsometric_opt, icount
 
     CHARACTER (LEN=256) :: a_message
 
@@ -952,37 +952,57 @@
           write(wrf_err_message, '(4a)') "WRF restart, LBC starts at ", &
                                      & trim(current_date), " and restart starts at ", trim(currtimestr)
           CALL wrf_debug( 0 , wrf_err_message )
+          CALL wrf_get_dom_td_char ( fid , 'THISBDYTIME' ,  current_date(1:19), this_datestr , ierr )
+          CALL wrf_atotime( this_datestr(1:19), grid%this_bdy_time )
+          CALL wrf_get_dom_td_char ( fid , 'NEXTBDYTIME' ,  current_date(1:19), next_datestr , ierr )
+          CALL wrf_atotime( next_datestr(1:19), grid%next_bdy_time )
+         
+          WRITE ( wrf_err_message , * ) 'LBC for restart: Starting valid date = ',this_datestr(1:19),', Ending valid date = ',next_datestr(1:19)
+          CALL wrf_message( TRIM(wrf_err_message) )
+          WRITE ( wrf_err_message , * ) 'LBC for restart: Restart time            = ',trim(currtimestr)
+          CALL wrf_message( TRIM(wrf_err_message) )
 
-          !  While the lateral BC time is less than the restart time, advance forward to the next LBC time.
+          IF ( ( grid%this_bdy_time .LE. currentTime ) .AND. ( grid%next_bdy_time .GT. currentTime ) ) THEN
+              WRITE ( wrf_err_message , * ) 'LBC for restart: Found the correct bounding LBC time periods'
+              CALL wrf_message( TRIM(wrf_err_message) )
+          ELSE
 
-          DO WHILE (time .lt. currentTime)
-              CALL wrf_get_next_time(fid, current_date , ierr)
-              CALL wrf_atotime(current_date(1:19), time)
-              WRITE(wrf_err_message,*) 'Advancing LBC file: wrf_get_next_time current_date: ',&
-                                      & current_date(1:19),' Status = ',ierr
-              IF ( ierr .EQ. 0 ) THEN
-                 CALL wrf_debug ( 0 , TRIM(wrf_err_message ) )
-              ELSE
-                 CALL wrf_error_fatal ( 'Cannot find a valid time to start the LBC during this restart' )
-              END IF
-          END DO
+              WRITE ( wrf_err_message , * ) 'LBC for restart: Looking for a bounding time'
+              CALL wrf_message( TRIM(wrf_err_message) )
 
-          !  Now the LBC time either matches or is beyond the restart time.  If it matches, we are at the
-          !  right time.  If we have gone too far, then back up one time period, and we are good to go.
+              !  While the lateral BC time is less than the restart time, advance forward to the next LBC time.
 
-          IF ( time .eq. currentTime ) THEN
-              CALL wrf_debug ( 0 , 'Found correct time, LBC matches the restart interval.' )
-          ELSE IF ( time .gt. currentTime ) THEN
-              CALL wrf_debug ( 0 , 'Went one LBC interval too far, backing up for restart.' )
-              CALL wrf_get_previous_time(fid, current_date , ierr)
-              IF ( ierr .EQ. 0 ) THEN
-                 CALL wrf_atotime(current_date(1:19), time)
-                 WRITE(wrf_err_message,*) 'LBC: wrf_get_prev_time current_date: ',&
-                                         & current_date(1:19),' Status = ',ierr
-                 CALL wrf_debug ( 0 , TRIM(wrf_err_message ) )
-                 CALL wrf_debug ( 0 , 'LBC is now correctly positioned for requested restart time' )
-              ELSE
-                 CALL wrf_error_fatal ( 'Problems backing up in the LBC file to find startig location for restart' )
+              icount = 0
+              DO WHILE ( ( currentTime .GE. grid%next_bdy_time ) .AND. ( icount < 10000 ) ) 
+                  CALL wrf_get_next_time(fid, current_date , ierr)
+                  IF ( ierr .NE. 0 ) THEN
+                     CALL wrf_error_fatal ( 'Cannot find a valid time to start the LBC during this restart, likely ran out of time periods to test' )
+                  END IF
+                  CALL wrf_get_dom_td_char ( fid , 'THISBDYTIME' ,  current_date(1:19), this_datestr , ierr )
+                  CALL wrf_get_dom_td_char ( fid , 'NEXTBDYTIME' ,  current_date(1:19), next_datestr , ierr )
+                  CALL wrf_atotime( next_datestr(1:19), grid%next_bdy_time )
+                  WRITE ( wrf_err_message , * ) 'LBC for restart: Starting valid date = ',this_datestr(1:19),', Ending valid date = ',next_datestr(1:19)
+                  CALL wrf_message( TRIM(wrf_err_message) )
+                  icount = icount + 1
+              END DO
+             
+              !  Now the LBC time either matches or is beyond the restart time.  If it matches, we are at the
+              !  right time.  If we have gone too far, then back up one time period, and we are good to go.
+
+              IF ( time .eq. currentTime ) THEN
+                  CALL wrf_debug ( 0 , 'Found correct time, LBC matches the restart interval.' )
+              ELSE IF ( time .gt. currentTime ) THEN
+                  CALL wrf_debug ( 0 , 'Went one LBC interval too far, backing up for restart.' )
+                  CALL wrf_get_previous_time(fid, current_date , ierr)
+                  IF ( ierr .EQ. 0 ) THEN
+                     CALL wrf_atotime(current_date(1:19), time)
+                     WRITE(wrf_err_message,*) 'LBC: wrf_get_prev_time current_date: ',&
+                                             & current_date(1:19),' Status = ',ierr
+                     CALL wrf_debug ( 0 , TRIM(wrf_err_message ) )
+                     CALL wrf_debug ( 0 , 'LBC is now correctly positioned for requested restart time' )
+                  ELSE
+                     CALL wrf_error_fatal ( 'Problems backing up in the LBC file to find startig location for restart' )
+                  END IF
               END IF
           END IF
 
@@ -990,6 +1010,8 @@
           CALL wrf_atotime( this_datestr(1:19), grid%this_bdy_time )
           CALL wrf_get_dom_td_char ( fid , 'NEXTBDYTIME' ,  current_date(1:19), next_datestr , ierr )
           CALL wrf_atotime( next_datestr(1:19), grid%next_bdy_time )
+          WRITE ( wrf_err_message , * ) 'LBC for restart: Found the correct bounding LBC time periods for restart time = ',trim(currtimestr)
+          CALL wrf_message ( TRIM(wrf_err_message) )
 
        ELSE IF ( .NOT. config_flags%restart ) THEN
           CALL domain_clock_get( grid, current_time=currentTime )
@@ -1001,7 +1023,7 @@
 #if (DA_CORE != 1)
        IF( currentTime .GE. grid%next_bdy_time ) THEN
           IF ( wrf_dm_on_monitor() ) THEN
-             write(a_message,*) 'THIS TIME ',this_datestr(1:19),'NEXT TIME ',next_datestr(1:19)
+             write(a_message,*) 'THIS TIME ',this_datestr(1:19),', NEXT TIME ',next_datestr(1:19)
              CALL wrf_message ( a_message ) 
           END IF
           RETURN

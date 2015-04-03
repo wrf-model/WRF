@@ -5447,10 +5447,15 @@ print *,'p target= ',target_x
 !
 ! Assign the intervals and function differences
 !
-  DO I = 1, N
+  DO I = 1, N-1
     H(I) = XI(I+1) - XI(I)
     G(I) = FI(I+1) - FI(I)
   END DO
+!
+! The top vertical derivative is zero
+!
+  H(N) = H(N-1)
+  G(N) = 0
 !
 ! Evaluate the coefficient matrix elements
   DO I = 1, N-1
@@ -5463,7 +5468,6 @@ print *,'p target= ',target_x
 !
   CALL TRIDIAGONAL_LINEAR_EQ (N-1, D, C, C, B, G)
   P2(1) = 0
-  P2(N+1) = 0
   DO I = 2, N
     P2(I) = G(I-1)
   END DO

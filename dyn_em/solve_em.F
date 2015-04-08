@@ -974,7 +974,7 @@ BENCH_START(relax_bdy_dry_tim)
          CALL spec_bdy_dry_perturb ( config_flags,                                 &
                              grid%ru_tend, grid%rv_tend, t_tend,                   &
                              grid%mu_2, grid%mub,                                  &
-                             grid%msfu, grid%msfv, grid%msft,	                   &
+                             grid%msfux, grid%msfvx, grid%msft,	                   &
                              grid%ru_tendf_stoch, grid%rv_tendf_stoch, grid%rt_tendf_stoch, &
                              config_flags%spec_bdy_width, grid%spec_zone,                   &
                              grid%num_stoch_levels,      & ! stoch dims
@@ -991,7 +991,7 @@ BENCH_START(relax_bdy_dry_tim)
          CALL spec_bdy_dry_perturb ( config_flags,                                 &
                              grid%ru_tend, grid%rv_tend, t_tend,                   &
                              grid%mu_2, grid%mub,                                  &
-                             grid%msfu, grid%msfv, grid%msft,                      &
+                             grid%msfux, grid%msfvx, grid%msft,                    &
                              grid%field_u_tend_perturb, grid%field_v_tend_perturb, grid%field_t_tend_perturb, &
                              config_flags%spec_bdy_width, grid%spec_zone,                   &
                              grid%num_stoch_levels,      & ! stoch dims

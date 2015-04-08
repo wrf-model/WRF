@@ -396,13 +396,13 @@
 ! If random fields have vertical structures (stoch_vertstruc_opt .ne. 0)
 ! make them full 3D array arrays
 !-----------------------------------------------------------------------
-   IF ( model_config_rec % skebs_vertstruc     .ne. 0)  then
+   IF ( model_config_rec % skebs_vertstruc     .ne. 99 )  then
       model_config_rec % num_stoch_levels = model_config_rec %e_vert(1)
    ENDIF
-   IF ( model_config_rec % sppt_vertstruc      .ne. 0)  then
+   IF ( model_config_rec % sppt_vertstruc      .ne. 99 )  then
       model_config_rec % num_stoch_levels = model_config_rec %e_vert(1)
    ENDIF
-   IF ( model_config_rec % rand_pert_vertstruc .ne. 0)  then
+   IF ( model_config_rec % rand_pert_vertstruc .ne. 99 )  then
       model_config_rec % num_stoch_levels = model_config_rec %e_vert(1)
    ENDIF
 

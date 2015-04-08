@@ -41,6 +41,37 @@ ALL_MODULES =                           \
                $(INCLUDE_MODULES)
 
 configcheck:
+	@echo " "
+	@echo "============================================================================================== "
+	@echo " "
+	@echo "The following indicate the compilers selected to build the WRF system"
+	@echo " "
+	@echo "Serial Fortran compiler (mostly for tool generation):"
+	@echo which SFC
+	@which `echo $(SFC) | cut -d " " -f1`
+	@echo " "
+	@echo "Serial C compiler (mostly for tool generation):"
+	@echo which SCC
+	@which `echo $(SCC) | cut -d " " -f1`
+	@echo " "
+	@echo "Fortran compiler for the model source code:"
+	@echo which FC
+	@if command -v timex > /dev/null 2>&1; then \
+	  which `echo $(FC) | cut -d " " -f2` ; \
+	  echo "Will use 'timex' to report timing information" ; \
+	elif command -v time > /dev/null 2>&1; then \
+	  which `echo $(FC) | cut -d " " -f2` ; \
+	  echo "Will use 'time' to report timing information" ; \
+	else \
+	  which `echo $(FC) | cut -d " " -f1` ; \
+	fi
+	@echo " "
+	@echo "C compiler for the model source code:"
+	@echo which CC
+	@which `echo $(CC) | cut -d " " -f1`
+	@echo " "
+	@echo "============================================================================================== "
+	@echo " "
 	@if [ "$(A2DCASE)" -a "$(DMPARALLEL)" ] ; then \
 	 echo "------------------------------------------------------------------------------" ; \
 	 echo "WRF CONFIGURATION ERROR                                                       " ; \
@@ -51,6 +82,7 @@ configcheck:
 	 echo "------------------------------------------------------------------------------" ; \
          exit 2 ; \
 	fi
+ 
 
 framework_only : configcheck
 	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" ext

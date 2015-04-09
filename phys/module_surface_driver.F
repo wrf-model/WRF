@@ -261,7 +261,7 @@ CONTAINS
      &          ,G_URB2D_mosaic,RN_URB2D_mosaic                       &  !danli mosaic 
      &          ,TS_URB2D_mosaic                                      &  !danli mosaic 
      &          ,TS_RUL2D_mosaic                                      &  !danli mosaic     
-     &          ,ZOLOUT                                               &  !ckay
+     &          ,ZOL                                                  &  !ckay
      &                                                             )
               
 #if ( ! NMM_CORE == 1 )
@@ -995,7 +995,7 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(INOUT)::   snowfallac !  density of snowfall
 
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(OUT), OPTIONAL  ::   NOAHRES
-   REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT), OPTIONAL  ::   ZOLOUT
+   REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)          ::   ZOL
 
    INTEGER, INTENT(IN) :: MAXPATCH, inest
 
@@ -1083,8 +1083,6 @@ CONTAINS
 
    REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ) ::v_phytmp
    REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ) ::u_phytmp
-
-   REAL,       DIMENSION( ims:ime, jms:jme )          ::  ZOL
 
    REAL,       DIMENSION( ims:ime, jms:jme )          ::          &
                                                              QGH, &
@@ -1352,7 +1350,6 @@ CONTAINS
         ENDDO
       ENDDO
       DO i = i_start(ij),i_end(ij)
-         ZOL(i,j) = 0.
          QGH(i,j) = 0.
          CHS(i,j) = 0.
          CPM(i,j) = 0.
@@ -3787,19 +3784,6 @@ CONTAINS
        !$OMP END PARALLEL DO
 
        ENDIF
-     ENDIF
-
-     IF ( PRESENT( ZOLOUT ) ) THEN
-       !$OMP PARALLEL DO   &
-       !$OMP PRIVATE ( ij, i, j, k )
-       DO ij = 1 , num_tiles
-         DO j=j_start(ij),j_end(ij)
-         DO i=i_start(ij),i_end(ij)
-            ZOLOUT(i,j) = ZOL(i,j)
-         ENDDO
-         ENDDO
-       ENDDO
-       !$OMP END PARALLEL DO
      ENDIF
 
    ENDIF

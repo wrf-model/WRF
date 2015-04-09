@@ -118,8 +118,6 @@ CONTAINS
     REAL, DIMENSION( ims:ime, jms:jme ) :: exch_temf  ! 1/7/09 WA
 
     REAL, DIMENSION( ims:ime, jms:jme ) :: ht_loc, mixht
-!ckay
-    REAL, DIMENSION( ims:ime, jms:jme ) ::  ZOL
 
     INTEGER                             :: ij
     INTEGER  num_roof_layers
@@ -812,7 +810,7 @@ BENCH_START(surf_driver_tim)
      &        ,G_URB2D_mosaic=grid%G_URB2D_mosaic,RN_URB2D_mosaic=grid%RN_URB2D_mosaic                  &  !danli mosaic 
      &        ,TS_URB2D_mosaic=grid%TS_URB2D_mosaic                                                     &  !danli mosaic 
      &        ,TS_RUL2D_mosaic=grid%TS_RUL2D_mosaic                                                     &  !danli mosaic          
-     &        ,ZOLOUT=ZOL                                                              )
+     &        ,ZOL=grid%ZOL                                                              )
 
 #ifdef WRF_HYDRO
         if(HYDRO_dt .gt. 1 ) call wrf_drv_HYDRO(HYDRO_dt, grid,  &
@@ -1137,7 +1135,7 @@ BENCH_START(cu_driver_tim)
      &             ,QI_CURR=moist(ims,kms,jms,P_QI), F_QI=F_QI            &
      &             ,QS_CURR=moist(ims,kms,jms,P_QS), F_QS=F_QS            &
      &             ,QG_CURR=moist(ims,kms,jms,P_QG), F_QG=F_QG            &
-     &             ,ZOL=ZOL,WSTAR=grid%wstar_ysu                          & !ckay
+     &             ,ZOL=grid%ZOL,WSTAR=grid%wstar_ysu                     & !ckay
 ! Variables for Tiedtke and NSAS schemes
      &             ,ZNU=grid%znu                                          &
      &             ,MP_PHYSICS=config_flags%mp_physics                    &

@@ -570,6 +570,9 @@ endif
      IF ( config_flags%perturb_bdy .NE. 0 ) THEN
           CALL wrf_put_dom_ti_integer( fid, 'PERTURB_BDY',        config_flags%perturb_bdy, 1, ierr )
      END IF
+     IF ( config_flags%spec_bdy_final_mu .NE. 0 ) THEN
+          CALL wrf_put_dom_ti_integer( fid, 'SPEC_BDY_FINAL_MU',  config_flags%spec_bdy_final_mu, 1, ierr )
+     END IF
     END IF
 #endif
 

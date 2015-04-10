@@ -242,7 +242,7 @@ RSL_LITE_TO_CHILD_INFO ( Fcomm, msize_p,
         Pptr = Plist[Pcurs] ;
       } else {
         *retval_p = 0 ;
-        return 0 ;  /* done */
+        return ;  /* done */
       }
   }
 
@@ -256,7 +256,7 @@ RSL_LITE_TO_CHILD_INFO ( Fcomm, msize_p,
   *r++ =           0 ; Sendbufcurs += sizeof(int) ;  /* store start for size */
   *retval_p = 1 ;
 
-  return 1 ;
+  return ;
 }
 
 /********************************************/
@@ -362,7 +362,7 @@ RSL_LITE_TO_PARENT_INFO ( Fcomm, msize_p,
         Pptr = Plist[Pcurs] ;
       } else {
         *retval_p = 0 ;
-        return 0 ;  /* done */
+        return ;  /* done */
       }
   }
 
@@ -376,7 +376,7 @@ RSL_LITE_TO_PARENT_INFO ( Fcomm, msize_p,
   *r++ =           0 ; Sendbufcurs += sizeof(int) ;  /* store start for size */
   *retval_p = 1 ;
 
-  return 1 ;
+  return ;
 }
 
 
@@ -611,7 +611,7 @@ rsl_lite_from_peerpoint_info ( ig_p, jg_p, retval_p )
     RSL_FREE( Recvbuf ) ;
   }
      
-  return 0 ;
+  return ;
 }
 
 /********************************************/

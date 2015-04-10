@@ -240,7 +240,7 @@ RSL_FATAL(2) ;
    return(retval) ;
 }
 
-void rsl_free( p )
+rsl_free( p )
    char **p ;
 {
    if ( *p == zero_length_storage ) return ;    /* fix from ANU */

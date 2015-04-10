@@ -56,7 +56,7 @@ RSL_LITE_ERROR_DUP1 ( int *me )
     {
         perror("error_dup: cannot open rsl.out.nnnn") ;
         fprintf(stderr,"...sending output to standard output and continuing.\n") ;
-        return 0 ;
+        return ;
     }
     if( dup2( newfd, STANDARD_OUTPUT ) < 0 )
     {
@@ -86,14 +86,14 @@ RSL_LITE_ERROR_DUP1 ( int *me )
     {
         perror("error_dup: cannot open rsl.error.log") ;
         fprintf(stderr,"...sending error to standard error and continuing.\n") ;
-        return 0 ;
+        return ;
     }
     if( dup2( newfd, STANDARD_ERROR ) < 0 )
     {
         perror("error_dup: dup2 fails to change error descriptor") ;
         fprintf(stderr,"...sending error to standard error and continuing.\n") ;
         close(newfd) ;
-        return 0 ;
+        return ;
     }
     fprintf( stdout, "taskid: %d hostname: %s\n",*me,hostname) ;
     fprintf( stderr, "taskid: %d hostname: %s\n",*me,hostname) ;

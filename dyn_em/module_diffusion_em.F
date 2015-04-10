@@ -3570,9 +3570,11 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
        tao_xz=cd0*V0_u*u_2(i,kts,j)
        ru_tendf(i,kts,j)=ru_tendf(i,kts,j)            &
                          -0.25*(mu(i,j)+mu(i-1,j))*tao_xz*(rdzw(i,kts,j)+rdzw(i-1,kts,j))
+       IF ( (config_flags%m_opt .EQ. 1) .OR. (config_flags%sfs_opt .GT. 0) ) THEN
+          nba_mij(i,kts,j,P_m13) = -tao_xz
+       ENDIF   
     ENDDO
     ENDDO
- 
 !
     DO j = j_start, jte
     DO i = i_start, i_end
@@ -3586,6 +3588,9 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
        tao_yz=cd0*V0_v*v_2(i,kts,j)
        rv_tendf(i,kts,j)=rv_tendf(i,kts,j)            &
                          -0.25*(mu(i,j)+mu(i,j-1))*tao_yz*(rdzw(i,kts,j)+rdzw(i,kts,j-1))
+       IF ( (config_flags%m_opt .EQ. 1) .OR. (config_flags%sfs_opt .GT. 0) ) THEN
+          nba_mij(i,kts,j,P_m23) = -tao_yz
+       ENDIF
     ENDDO
     ENDDO
 
@@ -3603,6 +3608,9 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
        tao_xz=ustar*ustar*u_2(i,kts,j)/V0_u
        ru_tendf(i,kts,j)=ru_tendf(i,kts,j)            &
                          -0.25*(mu(i,j)+mu(i-1,j))*tao_xz*(rdzw(i,kts,j)+rdzw(i-1,kts,j))
+       IF ( (config_flags%m_opt .EQ. 1) .OR. (config_flags%sfs_opt .GT. 0) ) THEN
+          nba_mij(i,kts,j,P_m13) = -tao_xz
+       ENDIF
     ENDDO
     ENDDO
  
@@ -3619,6 +3627,9 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
        tao_yz=ustar*ustar*v_2(i,kts,j)/V0_v
        rv_tendf(i,kts,j)=rv_tendf(i,kts,j)            &
                          -0.25*(mu(i,j)+mu(i,j-1))*tao_yz*(rdzw(i,kts,j)+rdzw(i,kts,j-1))
+       IF ( (config_flags%m_opt .EQ. 1) .OR. (config_flags%sfs_opt .GT. 0) ) THEN
+          nba_mij(i,kts,j,P_m23) = -tao_yz
+       ENDIF
     ENDDO
     ENDDO
 

@@ -5125,6 +5125,11 @@ END SUBROUTINE G_COMPUTE_DIFF_METRICS
  g_ru_tendf(i,kts,j) =g_ru_tendf(i,kts,j) -g_Tmpv2
  ru_tendf(i,kts,j) =ru_tendf(i,kts,j) -Tmpv2
 
+ IF ( (config_flags%m_opt .EQ. 1) .OR. (config_flags%sfs_opt .GT. 0) ) THEN
+    g_nba_mij(i,kts,j,P_m13) = -g_tao_xz
+    nba_mij(i,kts,j,P_m13) = -tao_xz
+ ENDIF
+
  ENDDO
  ENDDO
 
@@ -5164,6 +5169,11 @@ END SUBROUTINE G_COMPUTE_DIFF_METRICS
 
  g_rv_tendf(i,kts,j) =g_rv_tendf(i,kts,j) -g_Tmpv2
  rv_tendf(i,kts,j) =rv_tendf(i,kts,j) -Tmpv2
+
+ IF ( (config_flags%m_opt .EQ. 1) .OR. (config_flags%sfs_opt .GT. 0) ) THEN
+    g_nba_mij(i,kts,j,P_m23) = -g_tao_yz
+    nba_mij(i,kts,j,P_m23) = -tao_yz
+ ENDIF
 
  ENDDO
  ENDDO
@@ -5211,6 +5221,11 @@ END SUBROUTINE G_COMPUTE_DIFF_METRICS
  g_ru_tendf(i,kts,j) =g_ru_tendf(i,kts,j) -g_Tmpv2
  ru_tendf(i,kts,j) =ru_tendf(i,kts,j) -Tmpv2
 
+ IF ( (config_flags%m_opt .EQ. 1) .OR. (config_flags%sfs_opt .GT. 0) ) THEN
+    g_nba_mij(i,kts,j,P_m13) = -g_tao_xz
+    nba_mij(i,kts,j,P_m13) = -tao_xz
+ ENDIF
+
  ENDDO
  ENDDO
 
@@ -5254,6 +5269,11 @@ END SUBROUTINE G_COMPUTE_DIFF_METRICS
 
  g_rv_tendf(i,kts,j) =g_rv_tendf(i,kts,j) -g_Tmpv2
  rv_tendf(i,kts,j) =rv_tendf(i,kts,j) -Tmpv2
+
+ IF ( (config_flags%m_opt .EQ. 1) .OR. (config_flags%sfs_opt .GT. 0) ) THEN
+    g_nba_mij(i,kts,j,P_m23) = -g_tao_yz
+    nba_mij(i,kts,j,P_m23) = -tao_yz
+ ENDIF
 
  ENDDO
  ENDDO

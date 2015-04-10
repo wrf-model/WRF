@@ -15653,6 +15653,12 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
 
    DO j =jte, j_start, -1
    DO i =i_end, i_start, -1
+   IF ( (config_flags%m_opt .EQ. 1) .OR. (config_flags%sfs_opt .GT. 0) ) THEN
+      a_tao_yz = -a_nba_mij(i, kts, j, p_m23)
+      a_nba_mij(i, kts, j, p_m23) = 0.0
+   ELSE
+      a_tao_yz = 0.0
+   ENDIF
    tao_yz =Tmpv3016(i,j)  ! Added by Ning Pan, 2010-08-11
    a_Tmpv6 =a_rv_tendf(i,kts,j)
    a_rv_tendf(i,kts,j) =0.0
@@ -15705,6 +15711,12 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
    ENDDO
    DO j =j_end, j_start, -1
    DO i =ite, i_start, -1
+   IF ( (config_flags%m_opt .EQ. 1) .OR. (config_flags%sfs_opt .GT. 0) ) THEN
+      a_tao_xz = -a_nba_mij(i, kts, j, p_m13)
+      a_nba_mij(i, kts, j, p_m13) = 0.0
+   ELSE
+      a_tao_xz = 0.0
+   ENDIF
    tao_xz =Tmpv306(i,j)  ! Added by Ning Pan, 2010-08-11
    a_Tmpv6 =a_ru_tendf(i,kts,j)
    a_ru_tendf(i,kts,j) =0.0
@@ -15762,6 +15774,12 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
 
    DO j =jte, j_start, -1
    DO i =i_end, i_start, -1
+   IF ( (config_flags%m_opt .EQ. 1) .OR. (config_flags%sfs_opt .GT. 0) ) THEN
+      a_tao_yz = -a_nba_mij(i, kts, j, p_m23)
+      a_nba_mij(i, kts, j, p_m23) = 0.0
+   ELSE
+      a_tao_yz = 0.0
+   ENDIF
    tao_yz =Tmpv3038(i,j)  ! Added by Ning Pan, 2010-08-11
    a_Tmpv6 =a_rv_tendf(i,kts,j)
    a_rv_tendf(i,kts,j) =0.0
@@ -15826,6 +15844,12 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
    ENDDO
    DO j =j_end, j_start, -1
    DO i =ite, i_start, -1
+   IF ( (config_flags%m_opt .EQ. 1) .OR. (config_flags%sfs_opt .GT. 0) ) THEN
+      a_tao_xz = -a_nba_mij(i, kts, j, p_m13)
+      a_nba_mij(i, kts, j, p_m13) = 0.0
+   ELSE
+      a_tao_xz = 0.0
+   ENDIF
    tao_xz =Tmpv3027(i,j)  ! Added by Ning Pan, 2010-08-11
    a_Tmpv6 =a_ru_tendf(i,kts,j)
    a_ru_tendf(i,kts,j) =0.0

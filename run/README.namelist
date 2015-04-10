@@ -511,6 +511,7 @@ Namelist variables for controlling the adaptive time step option:
                                           also requires levsiz, paerlev, cam_abs_dim1/2 (see below)
                                      = 4, rrtmg scheme
                                        (Default values for GHG in V3.5: co2vmr=379.e-6, n2ovmr=319.e-9, ch4vmr=1774.e-9)
+                                     = 24, fast rrtmg scheme for GPU and MIC (since 3.7)
                                      = 5, Goddard longwave scheme
                                      = 7, FLG (UCLA) scheme 
                                      = 31, Earth Held-Suarez forcing
@@ -524,6 +525,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 3, cam scheme
                                           also must set levsiz, paerlev, cam_abs_dim1/2 (see below)
                                      = 4, rrtmg scheme
+                                     = 24, fast rrtmg scheme for GPU and MIC (since 3.7)
                                      = 5, Goddard shortwave scheme
                                      = 7, FLG (UCLA) scheme
                                      = 99, GFDL (Eta) longwave (semi-supported)
@@ -747,6 +749,7 @@ Namelist variables for controlling the adaptive time step option:
                                                       (Xu-Randall method) 
                                                   0 = without cloud effect
                                                   2 = with cloud effect, and use cloud fraction option 2
+                                                  3 = with cloud effect, and use cloud fraction option 3 (since 3.7)
  swrad_scat                          = 1.       ; scattering tuning parameter (default 1. is 1.e-5 m2/kg)
                                                   (works for ra_sw_physics = 1 option only)
  surface_input_source                = 1,	; where landuse and soil category data come from:
@@ -901,34 +904,6 @@ Options for wind turbine drag parameterization:
  windfarm_ij                        = 0         ; whether to use lat-lon or i-j coordinate as wind turbine locations    
                                                 ; 0 = The coordinate of the turbines are defined in terms of lat-lon
                                                 ; 1 = The coordinate of the turbines are defined in terms of grid points
-
-
-Options for stochastic kinetic-energy backscatter scheme:
-
- stoch_force_opt (max_dom)          = 0,        : No stochastic parameterization
-                                      1,        : Stochastic kinetic-energy backscatter scheme (SKEB)
- stoch_vertstruc_opt (max_dom)      = 0,        : Constant vertical structure of random pattern generator
-                                      1,        : Random phase vertical structure random pattern generator
- tot_backscat_psi                   = 1.0E-05   ; Controls amplitude of rotational wind perturbations
- tot_backscat_t                     = 1.0E-06   ; Controls amplitude of potential temperature perturbations
- nens                               = 1         ; an integer that controls the random number stream which will then
-                                                  change the run. When running an ensemble, this can be
-                                                  ensemble member number, so that each ensemble member gets a
-                                                  different random number stream, hence a different perturbed run.
- ztau_psi                           = 10800.0   ; decorr. time of noise for psi perturb
- ztau_t                             = 10800.0   ; decorr. time of noise for theta perturb
- rexponent_psi                      = -1.83     ; spectral slope of forcing for psi
- rexponent_t                        = -1.83     ; spectral slope of forcing for theta
- zsigma2_eps                        = 0.0833    ; variance of noise for psi perturb
- zsigma2_eta                        = 0.0833    ; variance of noise for theta perturb
- kminforc                           = 1         ; min. forcing wavenumber in lon. for psi perturb
- lminforc                           = 1         ; min. forcing wavenumber in lat. for psi perturb
- kminforct                          = 1         ; min. forcing wavenumber in lon. for theta perturb
- lminforct                          = 1         ; min. forcing wavenumber in lat. for theta perturb
- kmaxforc                           = 1000000   ; max. forcing wavenumber in lon. for psi perturb
- lmaxforc                           = 1000000   ; max. forcing wavenumber in lat. for psi perturb
- kmaxforct                          = 1000000   ; max. forcing wavenumber in lon. for theta perturb
- lmaxforct                          = 1000000   ; max. forcing wavenumber in lat. for theta perturb
 
 Options for use with the Noah-MP Land Surface Model:
 
@@ -1235,6 +1210,42 @@ The following are for observation nudging:
                                      = 1       ; adds output of Mij stress terms when NBA is not used
  tracer_opt(max_dom)                 = 0       ; 
 
+Options for stochastic kinetic-energy backscatter scheme:
+
+ &stoch
+ skebs (max_dom)                    = 0,        : No stochastic parameterization
+                                      1,        : Stochastic kinetic-energy backscatter scheme (SKEBS)
+ stoch_force_opt (max_dom)                      : Same as skebs - retained for backward compatibility
+ skebs_vertstruc (max_dom)          = 0,        : Constant vertical structure of random pattern generator
+                                      1,        : Random phase vertical structure random pattern generator
+ stoch_vertstruc_opt (max_dom)                  : Same as skebs_vertstruc - retained for backward compatibility
+ tot_backscat_psi                   = 1.0E-05   ; Controls amplitude of rotational wind perturbations
+ tot_backscat_t                     = 1.0E-06   ; Controls amplitude of potential temperature perturbations
+ nens                               = 1         ; an integer that controls the random number stream which will then
+                                                  change the run. When running an ensemble, this can be
+                                                  ensemble member number, so that each ensemble member gets a
+                                                  different random number stream, hence a different perturbed run.
+ ztau_psi                           = 10800.0   ; decorr. time of noise for psi perturb
+ ztau_t                             = 10800.0   ; decorr. time of noise for theta perturb
+ rexponent_psi                      = -1.83     ; spectral slope of forcing for psi
+ rexponent_t                        = -1.83     ; spectral slope of forcing for theta
+ zsigma2_eps                        = 0.0833    ; variance of noise for psi perturb
+ zsigma2_eta                        = 0.0833    ; variance of noise for theta perturb
+ kminforc                           = 1         ; min. forcing wavenumber in lon. for psi perturb
+ lminforc                           = 1         ; min. forcing wavenumber in lat. for psi perturb
+ kminforct                          = 1         ; min. forcing wavenumber in lon. for theta perturb
+ lminforct                          = 1         ; min. forcing wavenumber in lat. for theta perturb
+ kmaxforc                           = 1000000   ; max. forcing wavenumber in lon. for psi perturb
+ lmaxforc                           = 1000000   ; max. forcing wavenumber in lat. for psi perturb
+ kmaxforct                          = 1000000   ; max. forcing wavenumber in lon. for theta perturb
+ lmaxforct                          = 1000000   ; max. forcing wavenumber in lat. for theta perturb
+ iseed_skebs                        = 811       ; random seed for SKEBS
+ perturb_bdy                                    ; Options for perturbing lateral boundaries of fields U, V, T:
+                                                  = 0: off; = 1: on with SKEBS pattern; = 2: on with user provided pattern
+ perturb_chem_bdy                               ; Options for perturbing lateral boundaries of chemical tracers:
+                                                  = 0: off; = 1: on with RAND_PERTURB pattern
+ /
+
  &bdy_control
  spec_bdy_width                      = 5,       ; total number of rows for specified boundary value nudging
  spec_zone                           = 1,       ; number of points in specified zone (spec b.c. option)
@@ -1244,6 +1255,8 @@ The following are for observation nudging:
  spec_exp                            = 0.       ; exponential multiplier for relaxation zone ramp for specified=.t.
                                                   (0.=linear ramp default, e.g. 0.33=~3*dx exp decay factor)
  constant_bc                         = .false.  ; constant boundary condition used with DFI
+ spec_bdy_final_mu                   = 0,       ; whether to call spec_bdy_final for mu (since 3.7): 
+                                                  = 0, no call; = 1: call (this may cause different restart results)
 
  periodic_x (max_dom)                = .false., ; periodic boundary conditions in x direction
  symmetric_xs (max_dom)              = .false., ; symmetric boundary conditions at x start (west)
@@ -1258,9 +1271,6 @@ The following are for observation nudging:
  nested (max_dom)                    = .false., ; nested boundary conditions (must be used for nests)
  polar                               = .false., ; polar boundary condition
                                                   (v=0 at polarward-most v-point)
- perturb_bdy                         = 0        ; No boundary perturbations
-                                       1        ; Use SKEBS pattern for boundary perturbations
-                                       2        ; Use other user-provided pattern for boundary perturbations
  have_bcs_moist                      = .false., ; model run after ndown only: do not use microphysics variables in bdy file
                                      = .true. , ; use microphysics variables in bdy file
  have_bcs_scalar                     = .false., ; model run after ndown only: do not use scalar variables in bdy file

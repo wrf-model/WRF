@@ -2533,7 +2533,7 @@ integer myproc
            CALL sfclayinit( allowed_to_read )
            isfc = 1
       CASE (SFCLAYREVSCHEME)
-!           CALL sfclayinit( allowed_to_read )
+            CALL sfclayrevinit
            isfc = 1
       CASE (PXSFCSCHEME)
            CALL pxsfclayinit( allowed_to_read )

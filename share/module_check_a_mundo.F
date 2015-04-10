@@ -396,13 +396,13 @@
 ! If random fields have vertical structures (stoch_vertstruc_opt .ne. 0)
 ! make them full 3D array arrays
 !-----------------------------------------------------------------------
-   IF ( model_config_rec % skebs_vertstruc     .ne. 0)  then
+   IF ( model_config_rec % skebs_vertstruc     .ne. 99 )  then
       model_config_rec % num_stoch_levels = model_config_rec %e_vert(1)
    ENDIF
-   IF ( model_config_rec % sppt_vertstruc      .ne. 0)  then
+   IF ( model_config_rec % sppt_vertstruc      .ne. 99 )  then
       model_config_rec % num_stoch_levels = model_config_rec %e_vert(1)
    ENDIF
-   IF ( model_config_rec % rand_pert_vertstruc .ne. 0)  then
+   IF ( model_config_rec % rand_pert_vertstruc .ne. 99 )  then
       model_config_rec % num_stoch_levels = model_config_rec %e_vert(1)
    ENDIF
 
@@ -503,6 +503,23 @@
             model_config_rec%icloud = 1
          END IF
       ENDDO
+
+!-----------------------------------------------------------------------
+! cu_physics = 10 (Cumulus-potential KF) does not work in 3.7 yet 
+!-----------------------------------------------------------------------
+
+      oops = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec%cu_physics(i) .EQ. KFCUPSCHEME ) THEN
+            oops = oops + 1
+         END IF
+      ENDDO      ! Loop over domains
+      IF ( oops .GT. 0 ) THEN
+         wrf_err_message = '--- ERROR: cu_physics = 10 is not available in 3.7 '
+         CALL wrf_message ( wrf_err_message )
+         wrf_err_message = '--- Please select another cu_physics option '
+         CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
+      END IF
 
 #endif
 

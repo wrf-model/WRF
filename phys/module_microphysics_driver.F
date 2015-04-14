@@ -1002,6 +1002,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 
          CALL mp_milbrandt2mom_driver(                   &
                      ITIMESTEP=itimestep,                &
+                     p8w=p8w,                              &
                      TH=th,                              &
                      QV=qv_curr,                         &
                      QC=qc_curr,                         &

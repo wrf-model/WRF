@@ -59,6 +59,18 @@
 
 #if (EM_CORE == 1)
 !-----------------------------------------------------------------------
+! The option to include moist theta in the WRF solver only works with
+! a single domain.
+!-----------------------------------------------------------------------
+
+      IF ( ( model_config_rec % max_dom     .GT. 1 ) .AND. &
+           ( model_config_rec % use_theta_m .EQ. 1 ) ) THEN
+            wrf_err_message = '--- ERROR: The use_theta_m option is only available for single domain cases' 
+         CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
+      END IF
+
+
+!-----------------------------------------------------------------------
 ! Check that all values of diff_opt and km_opt are filled in.  A flag
 ! value of "-1" from the nml file means that this column (domain) is not
 ! filled as a max_doamins variable.  Since we changed these two variables 

@@ -1451,7 +1451,7 @@ CONTAINS
       DO jj = MAX(jts,1) , MIN(jte,jde-1,spec_bdy_width)
          j = jj
          DO k = kts , kte-1
-            DO i = its , MIN(ite,ide-1)
+            DO i = MAX(1,its-4) , MIN(ite+4,ide-1)
                mu_old_bdy_ys         =   mu_bdy_ys(i,1,j)    + mub(i,jj)
                t_old_bdy_ys          = ( t_bdy_ys(i,k,j)                                            ) / mu_old_bdy_ys
                moist_old_bdy_ys      = ( moist_bdy_ys(i,k,j)                                        ) / mu_old_bdy_ys
@@ -1479,7 +1479,7 @@ CONTAINS
       DO jj = MIN(jde-1,jte) , MAX(jde-spec_bdy_width,jts) , -1
          j = jde-jj
          DO k = kts , kte-1
-            DO i = its , MIN(ite,ide-1)
+            DO i = MAX(1,its-4) , MIN(ite+4,ide-1)
                mu_old_bdy_ye         =   mu_bdy_ye(i,1,j)    + mub(i,jj)
                t_old_bdy_ye          = ( t_bdy_ye(i,k,j)                                            ) / mu_old_bdy_ye
                moist_old_bdy_ye      = ( moist_bdy_ye(i,k,j)                                        ) / mu_old_bdy_ye
@@ -1510,7 +1510,7 @@ CONTAINS
       DO ii = MAX(its,1) , MIN(ite,ide-1,spec_bdy_width)
          i = ii
          DO k = kts , kte-1
-            DO j = jts , MIN(jte,jde-1)
+            DO j = MAX(1,jts-4) , MIN(jte+4,jde-1)
                mu_old_bdy_xs         =   mu_bdy_xs(j,1,i)    + mub(ii,j)
                t_old_bdy_xs          = ( t_bdy_xs(j,k,i)                                            ) / mu_old_bdy_xs
                moist_old_bdy_xs      = ( moist_bdy_xs(j,k,i)                                        ) / mu_old_bdy_xs
@@ -1538,7 +1538,7 @@ CONTAINS
       DO ii = MIN(ide-1,ite) , MAX(ide-spec_bdy_width,its) , -1
          i = ide-ii
          DO k = kts , kte-1
-            DO j = jts , MIN(jte,jde-1)
+            DO j = MAX(1,jts-4) , MIN(jte+4,jde-1)
                mu_old_bdy_xe         =   mu_bdy_xe(j,1,i)    + mub(ii,j)
                t_old_bdy_xe          = ( t_bdy_xe(j,k,i)                                            ) / mu_old_bdy_xe
                moist_old_bdy_xe      = ( moist_bdy_xe(j,k,i)                                        ) / mu_old_bdy_xe

@@ -751,7 +751,7 @@ BENCH_END(set_phys_bc_tim)
 !************************************************************************************************************************
 ! LES_fix convert theta to theta_m: point 1  ! 28 January 2015
 
-     IF ( ( config_flags%use_theta_m ) .AND. (P_Qv .GE. PARAM_FIRST_SCALAR) ) THEN
+     IF ( ( config_flags%use_theta_m .EQ. 1 ) .AND. (P_Qv .GE. PARAM_FIRST_SCALAR) ) THEN
         CALL theta_to_thetam ( grid%t_1 , moist_old(ims,kms,jms,P_qv) ,  &
                                t_tendf  , moist_tend(ims,kms,jms,P_qv) , &
                                grid%t_2 , moist(ims,kms,jms,P_qv) ,      &
@@ -761,9 +761,30 @@ BENCH_END(set_phys_bc_tim)
                                ids, ide, jds, jde, kds, kde ,            &
                                ims, ime, jms, jme, kms, kme ,            &
                                ips, ipe, jps, jpe, kps, kpe              )
-# ifdef DM_PARALLEL
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
 #      include "HALO_EM_THETAM.inc"
 #      include "PERIOD_EM_THETAM.inc"
+#else
+        its=ips ; ite = ipe
+        jts=jps ; jte = jpe
+        CALL set_physical_bc3d( grid%h_diabatic, 'p', config_flags,      &
+                                ids, ide, jds, jde, kds, kde,     &
+                                ims, ime, jms, jme, kms, kme,     &
+                                ips, ipe, jps, jpe, kps, kpe,     &
+                                its, ite, jts, jte,               &
+                                k_start    , k_end                )
+        CALL set_physical_bc3d( grid%t_1, 'p', config_flags,      &
+                                ids, ide, jds, jde, kds, kde,     &
+                                ims, ime, jms, jme, kms, kme,     &
+                                ips, ipe, jps, jpe, kps, kpe,     &
+                                its, ite, jts, jte,               &
+                                k_start    , k_end                )
+        CALL set_physical_bc3d( grid%t_2, 'p', config_flags,      &
+                                ids, ide, jds, jde, kds, kde,     &
+                                ims, ime, jms, jme, kms, kme,     &
+                                ips, ipe, jps, jpe, kps, kpe,     &
+                                its, ite, jts, jte,               &
+                                k_start    , k_end                )
 #endif
      END IF
 
@@ -837,7 +858,7 @@ BENCH_START(relax_bdy_dry_tim)
 !************************************************************************************************************************
 ! LES_fix convert theta to theta_m: nested or specified LBC, only required on the first rk step
 
-         IF   ( ( config_flags%use_theta_m ) .AND. (P_Qv .GE. PARAM_FIRST_SCALAR) ) THEN
+         IF   ( ( config_flags%use_theta_m .EQ. 1 ) .AND. (P_Qv .GE. PARAM_FIRST_SCALAR) ) THEN
            IF ( grid%grid_id .EQ. 1 ) THEN
               time_duration_of_lbcs = grid%interval_seconds
            ELSE
@@ -937,7 +958,7 @@ BENCH_START(relax_bdy_dry_tim)
 ! LES_fix convert theta_m to theta: nested or specified LBC, and only in the last rk step
 ! since we do not need the theta_m lateral boundaries any more.
 
-         IF   ( ( config_flags%use_theta_m ) .AND. (P_Qv .GE. PARAM_FIRST_SCALAR) .AND. ( rk_step == rk_order ) ) THEN
+         IF   ( ( config_flags%use_theta_m .EQ. 1 ) .AND. (P_Qv .GE. PARAM_FIRST_SCALAR) .AND. ( rk_step == rk_order ) ) THEN
            CALL theta_and_thetam_lbc_only (                                                   & 
                                 .FALSE.,                                                      &           
                                 grid%mub,                                                     &
@@ -2825,7 +2846,7 @@ BENCH_END(tracer_adv_tim)
 !************************************************************************************************************************
 ! LES_fix: convert theta_m back to theta, point 2 ! 28 January 2015
 
-     IF ( ( config_flags%use_theta_m ) .AND. (P_Qv .GE. PARAM_FIRST_SCALAR) ) THEN
+     IF ( ( config_flags%use_theta_m .EQ. 1 ) .AND. (P_Qv .GE. PARAM_FIRST_SCALAR) ) THEN
         CALL thetam_to_theta ( grid%t_1 , moist_old(ims,kms,jms,P_qv) ,  &
                                grid%t_2 , moist(ims,kms,jms,P_qv) ,      &
                                ids, ide, jds, jde, kds, kde ,            &

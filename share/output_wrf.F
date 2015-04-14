@@ -575,6 +575,9 @@ endif
      IF ( config_flags%spec_bdy_final_mu .NE. 0 ) THEN
           CALL wrf_put_dom_ti_integer( fid, 'SPEC_BDY_FINAL_MU',  config_flags%spec_bdy_final_mu, 1, ierr )
      END IF
+     IF ( config_flags%use_q_diabatic .NE. 0 ) THEN
+          CALL wrf_put_dom_ti_integer( fid, 'USE_Q_DIABATIC',  config_flags%use_q_diabatic, 1, ierr )
+     END IF
     END IF
 #endif
 

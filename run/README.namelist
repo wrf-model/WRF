@@ -1128,6 +1128,11 @@ The following are for observation nudging:
                                                       for real-data cases)
  use_theta_m                         = .false.  ; true: use theta_m=theta(1+1.61Qv)
                                                   false: use dry theta in dynamics
+ use_q_diabatic                      = 0        ; whether to include QV and QC tendencies in advection (new in 3.7)
+                                                  0 = default, old behavior
+                                                  1 = include QV and QC tendencies - this helps to produce correct solution
+                                                      in an idealized 'moist benchmark' test case (Bryan, 2014).
+                                                      In real data testing, time step needs to be reduce to maintain stable solution
  c_s                                 = 0.25     ; Smagorinsky coeff
  c_k                                 = 0.15     ; TKE coeff
  diff_6th_opt                        = 0,       ; 6th-order numerical diffusion

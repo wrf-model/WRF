@@ -59,14 +59,30 @@
 
 #if (EM_CORE == 1)
 !-----------------------------------------------------------------------
-! The option to include moist theta in the WRF solver only works with
-! a single domain.
+! There are restrictions for the use_theta_m option:
+! 1. The option to include moist theta in the WRF solver only works with a single domain.
+! 2. The option may not be used in conjunction with damp_opt=2.
+! 3. The option may not be used with rad_nudge.
 !-----------------------------------------------------------------------
 
       IF ( ( model_config_rec % max_dom     .GT. 1 ) .AND. &
            ( model_config_rec % use_theta_m .EQ. 1 ) ) THEN
-            wrf_err_message = '--- ERROR: The use_theta_m option is only available for single domain cases' 
+         wrf_err_message = '--- ERROR: The use_theta_m option is only available for single domain cases' 
          CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
+      END IF
+
+      IF ( ( model_config_rec % use_theta_m .EQ. 1 ) .AND. &
+           ( model_config_rec % damp_opt    .EQ. 2 ) ) THEN
+         CALL wrf_message ( "The use_theta_m option may not be paired with damp_opt=2." )
+         wrf_err_message = '--- ERROR: Either turn off use_theta_m, or select a different damp_opt option'
+         CALL wrf_error_fatal ( TRIM(wrf_err_message) )
+      END IF
+
+      IF ( ( model_config_rec % use_theta_m .EQ. 1 ) .AND. &
+           ( model_config_rec % rad_nudge   .EQ. 1 ) ) THEN
+         CALL wrf_message ( "The use_theta_m option may not be paired with rad_nudge=1." )
+         wrf_err_message = '--- ERROR: Either turn off use_theta_m, or turn off the rad_nudge option'
+         CALL wrf_error_fatal ( TRIM(wrf_err_message) )
       END IF
 
 

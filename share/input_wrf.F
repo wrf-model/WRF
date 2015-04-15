@@ -502,18 +502,36 @@
     grid%map_proj = config_flags%map_proj
 
     CALL wrf_get_dom_ti_char ( fid , 'MMINLU', mminlu , ierr )
-    IF ( ierr .NE. 0 ) THEN
-      WRITE(wrf_err_message,*)'MMINLU error on input'
-      mminlu = " "
-      CALL wrf_debug ( 0 , wrf_err_message )
-    ELSE IF ( ( ( mminlu(1:1) .GE. "A" ) .AND. ( mminlu(1:1) .LE. "Z" ) ) .OR. &
-              ( ( mminlu(1:1) .GE. "a" ) .AND. ( mminlu(1:1) .LE. "z" ) ) .OR. &
-              ( ( mminlu(1:1) .GE. "0" ) .AND. ( mminlu(1:1) .LE. "9" ) ) ) THEN
-       ! no-op, the mminlu field is probably OK
-    ELSE IF ( mminlu(1:1) .EQ. " " ) THEN
-       mminlu = " "
-    ELSE
-       mminlu = " "
+#if ( ( EM_CORE == 1 ) && ( DA_CORE != 1 ) )
+    IF ( ( ( switch .EQ. input_only ) .OR. ( switch .EQ. restart_only ) ) .AND. &
+         ( ( config_flags%io_form_input .EQ.  2 ) .OR. &
+           ( config_flags%io_form_input .EQ. 11 ) ) ) THEN
+      CALL wrf_get_dom_ti_char ( fid , 'SIMULATION_INITIALIZATION_TYPE', sim_type , icnt )
+      IF ( TRIM(sim_type) .NE. "IDEALIZED DATA" ) THEN
+        IF ( ierr .NE. 0 ) THEN
+          WRITE(wrf_err_message,*)'MMINLU error on input'
+          mminlu = " "
+          CALL wrf_debug ( 0 , wrf_err_message )
+        END IF
+      END IF
+    ELSE IF ( ( switch .EQ. input_only ) .OR. ( switch .EQ. restart_only ) ) THEN
+      IF ( ierr .NE. 0 ) THEN
+        WRITE(wrf_err_message,*)'MMINLU error on input'
+        mminlu = " "
+        CALL wrf_debug ( 0 , wrf_err_message )
+      END IF
+    END IF
+#endif
+    IF ( ierr .EQ. 0 ) THEN
+      IF ( ( ( mminlu(1:1) .GE. "A" ) .AND. ( mminlu(1:1) .LE. "Z" ) ) .OR. &
+                ( ( mminlu(1:1) .GE. "a" ) .AND. ( mminlu(1:1) .LE. "z" ) ) .OR. &
+                ( ( mminlu(1:1) .GE. "0" ) .AND. ( mminlu(1:1) .LE. "9" ) ) ) THEN
+         ! no-op, the mminlu field is probably OK
+      ELSE IF ( mminlu(1:1) .EQ. " " ) THEN
+         mminlu = " "
+      ELSE
+         mminlu = " "
+      END IF
     END IF
     call wrf_debug( 1 , "mminlu = '" // TRIM(mminlu) // "'")
     if (index(mminlu, char(0)) > 0) mminlu(index(mminlu, char(0)):) = " "
@@ -842,8 +860,8 @@
 	  DO loop = 1 , grid%max_dom
             CALL nl_set_hypsometric_opt ( loop , 1 ) 
           END DO
-          WRITE(wrf_err_message,*)'Ideal cases do not support the hypsometric option.'
-          CALL wrf_debug( 0 , wrf_err_message )
+          WRITE(wrf_err_message,*)'NOTE:  Ideal cases always use hypsometric_opt=1, regardless of namelist setting'
+          CALL wrf_debug( 1 , wrf_err_message )
         END IF
       END IF
 

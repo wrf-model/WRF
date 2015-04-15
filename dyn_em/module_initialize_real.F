@@ -666,7 +666,6 @@ integer::oops1,oops2
      END DO find_j_index_of_fft_filter
      grid%mf_fft = grid%msft(ids,j_save)
 #endif
-print *,'j_save = ',j_save,grid%clat(ids,j_save),grid%mf_fft
 
          CALL pxft ( grid=grid                                              &
                ,lineno=__LINE__                                             &

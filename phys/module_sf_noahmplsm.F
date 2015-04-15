@@ -1479,6 +1479,7 @@ contains
 
 ! fractional area that receives precipitation (see, Niu et al. 2005)
    
+    FP = 0.0
     IF(QPRECC + QPRECL > 0.) & 
        FP = (QPRECC + QPRECL) / (10.*QPRECC + QPRECL)
 
@@ -4074,6 +4075,7 @@ contains
 ! ---------------------------------------------------------------------------------------------
         DTV = 0.
         DTG = 0.
+        MOZ    = 0.
         MOZSGN = 0
         MOZOLD = 0.
         HG     = 0.
@@ -4526,6 +4528,7 @@ contains
 ! -----------------------------------------------------------------
         MPE = 1E-6
         DTG = 0.
+        MOZ    = 0.
         MOZSGN = 0
         MOZOLD = 0.
         H      = 0.

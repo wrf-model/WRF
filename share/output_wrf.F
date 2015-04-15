@@ -38,7 +38,8 @@
     REAL    gmt, cen_lat, cen_lon, bdyfrq , truelat1 , truelat2 , moad_cen_lat , stand_lon
     INTEGER km_opt, diff_opt, damp_opt,  &
             mp_physics, ra_lw_physics, ra_sw_physics, sf_sfclay_physics, &
-            sf_surface_physics, bl_pbl_physics, cu_physics, hypsometric_opt, sf_lake_physics
+            sf_surface_physics, bl_pbl_physics, cu_physics, hypsometric_opt, sf_lake_physics, &
+            use_theta_m
     INTEGER swint_opt, aer_type,aer_aod550_opt,aer_angexp_opt,aer_ssa_opt,aer_asy_opt, aer_opt
     REAL    aer_aod550_val,aer_angexp_val,aer_ssa_val,aer_asy_val
     REAL    khdif, kvdif, swrad_scat, dampcoef,radt,bldt,cudt
@@ -174,6 +175,7 @@
 
 #if (EM_CORE == 1)
     call nl_get_hypsometric_opt    ( 1, hypsometric_opt           )
+    call nl_get_use_theta_m        ( 1, use_theta_m               )
     CALL nl_get_moist_adv_opt  ( grid%id , moist_adv_opt )
     CALL nl_get_scalar_adv_opt ( grid%id , scalar_adv_opt )
     CALL nl_get_tke_adv_opt    ( grid%id , tke_adv_opt )
@@ -573,6 +575,9 @@ endif
      IF ( config_flags%spec_bdy_final_mu .NE. 0 ) THEN
           CALL wrf_put_dom_ti_integer( fid, 'SPEC_BDY_FINAL_MU',  config_flags%spec_bdy_final_mu, 1, ierr )
      END IF
+     IF ( config_flags%use_q_diabatic .NE. 0 ) THEN
+          CALL wrf_put_dom_ti_integer( fid, 'USE_Q_DIABATIC',  config_flags%use_q_diabatic, 1, ierr )
+     END IF
     END IF
 #endif
 
@@ -639,6 +644,7 @@ endif
       CALL wrf_put_dom_ti_integer ( fid, 'SGFDDA_INTERVAL_M', sgfdda_interval_m , 1 , ierr )
       CALL wrf_put_dom_ti_integer ( fid, 'SGFDDA_END_H', sgfdda_end_h , 1 , ierr )
       CALL wrf_put_dom_ti_integer ( fid, 'HYPSOMETRIC_OPT', hypsometric_opt , 1 , ierr )
+      CALL wrf_put_dom_ti_integer ( fid, 'USE_THETA_M', use_theta_m , 1 , ierr )
 #endif
 
       IF ( switch .EQ. history_only ) THEN

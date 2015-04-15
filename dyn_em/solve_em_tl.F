@@ -2095,7 +2095,7 @@ BENCH_START(g_rk_scalar_tend_tim)
                            grid%j_start(ij), grid%j_end(ij), &
                            k_start    , k_end               )
 
-!              IF( rk_step == 1 )THEN
+!              IF( rk_step == 1 .AND. config_flags%use_q_diabatic == 1 )THEN
 !              IF( im.eq.p_qv .or. im.eq.p_qc )THEN
 !                CALL g_q_diabatic_add  ( im, im,                 &
 !                          dt_rk, grid%mut, grid%g_mut,           &
@@ -2191,7 +2191,7 @@ BENCH_START(g_update_scal_tim)
                                jts=grid%j_start(ij), jte=grid%j_end(ij),               &
                                kts=k_start    , kte=k_end                              )
 
-!              IF( rk_step == rk_order )THEN
+!              IF( rk_step == rk_order .AND. config_flags%use_q_diabatic == 1 )THEN
 !              IF( im.eq.p_qv .or. im.eq.p_qc )THEN
 !                CALL g_q_diabatic_subtr( im, im,                &
 !                          dt_rk,                                &

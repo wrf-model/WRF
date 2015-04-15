@@ -474,3 +474,8 @@ specifics of the wind turbine type: wind-turbine-1.tbl
 The location of wind turbines are specified as lat lon, and 
 the turbine type: windturbines.txt
 
+** Using stochastic schemes
+&stoch
+ skebs              = 1, 1, 1, 
+ rand_perturb       = 1, 1, 1, 
+

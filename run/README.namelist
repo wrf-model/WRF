@@ -905,6 +905,56 @@ Options for wind turbine drag parameterization:
                                                 ; 0 = The coordinate of the turbines are defined in terms of lat-lon
                                                 ; 1 = The coordinate of the turbines are defined in terms of grid points
 
+
+Stochastic parameterization schemes:
+
+&stoch
+ skebs                                = 1       ; stochastic kinetic-energy backscatter scheme, 1: on
+ tot_backscat_psi                     = 1.0E-05 ; total backscattered dissipation for streamfunction; 
+                                                ; determines amplitude of streamfunction perturbations
+ tot_backscat_t                       = 1.0E-06 ; total backscattered dissipation for potential temperature 
+ ztau_psi                             = 10800.0 ; decorrelation time scale of noise for streamfunction perturbations
+ rand_perturb                         = 1       ; generate array with random perturbations for user determined use, 1: on
+ gridpt_stddev_rand_pert              = 0.03    ; standard deviation of random perturbations at each gridpoint  
+                                                ; determines amplitude of random perturbations 
+ stddev_cutoff_rand_pert              = 3.0     ; cutoff tails of pdf above this threshold standard deviation
+ lengthscale_rand_pert                = 500000.0 ; correlation length scale in meters
+ timescale_rand_pert                  = 21600.0 ; decorrelation time scale in s
+ nens                                 = 1       ; creates different seed for random number streams in either stochastic scheme
+                                                ; must be different for each member in ensemble forecasts 
+
+Options for stochastic kinetic-energy backscatter scheme:
+
+ stoch_force_opt (max_dom)          = 0,        : No stochastic parameterization
+                                      1,        : Stochastic kinetic-energy backscatter scheme (SKEB)
+ stoch_vertstruc_opt (max_dom)      = 0,        : Constant vertical structure of random pattern generator
+                                      1,        : Random phase vertical structure random pattern generator
+ tot_backscat_psi                   = 1.0E-05   ; Controls amplitude of rotational wind perturbations
+ tot_backscat_t                     = 1.0E-06   ; Controls amplitude of potential temperature perturbations
+ nens                               = 1         ; an integer that controls the random number stream which will then
+                                                  change the run. When running an ensemble, this can be
+                                                  ensemble member number, so that each ensemble member gets a
+                                                  different random number stream, hence a different perturbed run.
+ ztau_psi                           = 10800.0   ; decorr. time of noise for psi perturb
+ ztau_t                             = 10800.0   ; decorr. time of noise for theta perturb
+ rexponent_psi                      = -1.83     ; spectral slope of forcing for psi
+ rexponent_t                        = -1.83     ; spectral slope of forcing for theta
+ zsigma2_eps                        = 0.0833    ; variance of noise for psi perturb
+ zsigma2_eta                        = 0.0833    ; variance of noise for theta perturb
+ kminforc                           = 1         ; min. forcing wavenumber in lon. for psi perturb
+ lminforc                           = 1         ; min. forcing wavenumber in lat. for psi perturb
+ kminforct                          = 1         ; min. forcing wavenumber in lon. for theta perturb
+ lminforct                          = 1         ; min. forcing wavenumber in lat. for theta perturb
+ kmaxforc                           = 1000000   ; max. forcing wavenumber in lon. for psi perturb
+ lmaxforc                           = 1000000   ; max. forcing wavenumber in lat. for psi perturb
+ kmaxforct                          = 1000000   ; max. forcing wavenumber in lon. for theta perturb
+ lmaxforct                          = 1000000   ; max. forcing wavenumber in lat. for theta perturb
+ perturb_chem_bdy                               ; Options for perturbing lateral boundaries of chemical tracers:
+                                                  0 = off; 1 = on with RAND_PERTURB pattern
+ perturb_bdy                        = 0         ; No boundary perturbations
+                                      1         ; Use SKEBS pattern for boundary perturbations
+                                      2         ; Use other user-provided pattern for boundary perturbations
+
 Options for use with the Noah-MP Land Surface Model:
 
 &noah_mp
@@ -1214,42 +1264,6 @@ The following are for observation nudging:
  m_opt (max_dom)                     = 0       ; no added output
                                      = 1       ; adds output of Mij stress terms when NBA is not used
  tracer_opt(max_dom)                 = 0       ; 
-
-Options for stochastic kinetic-energy backscatter scheme:
-
- &stoch
- skebs (max_dom)                    = 0,        : No stochastic parameterization
-                                      1,        : Stochastic kinetic-energy backscatter scheme (SKEBS)
- stoch_force_opt (max_dom)                      : Same as skebs - retained for backward compatibility
- skebs_vertstruc (max_dom)          = 0,        : Constant vertical structure of random pattern generator
-                                      1,        : Random phase vertical structure random pattern generator
- stoch_vertstruc_opt (max_dom)                  : Same as skebs_vertstruc - retained for backward compatibility
- tot_backscat_psi                   = 1.0E-05   ; Controls amplitude of rotational wind perturbations
- tot_backscat_t                     = 1.0E-06   ; Controls amplitude of potential temperature perturbations
- nens                               = 1         ; an integer that controls the random number stream which will then
-                                                  change the run. When running an ensemble, this can be
-                                                  ensemble member number, so that each ensemble member gets a
-                                                  different random number stream, hence a different perturbed run.
- ztau_psi                           = 10800.0   ; decorr. time of noise for psi perturb
- ztau_t                             = 10800.0   ; decorr. time of noise for theta perturb
- rexponent_psi                      = -1.83     ; spectral slope of forcing for psi
- rexponent_t                        = -1.83     ; spectral slope of forcing for theta
- zsigma2_eps                        = 0.0833    ; variance of noise for psi perturb
- zsigma2_eta                        = 0.0833    ; variance of noise for theta perturb
- kminforc                           = 1         ; min. forcing wavenumber in lon. for psi perturb
- lminforc                           = 1         ; min. forcing wavenumber in lat. for psi perturb
- kminforct                          = 1         ; min. forcing wavenumber in lon. for theta perturb
- lminforct                          = 1         ; min. forcing wavenumber in lat. for theta perturb
- kmaxforc                           = 1000000   ; max. forcing wavenumber in lon. for psi perturb
- lmaxforc                           = 1000000   ; max. forcing wavenumber in lat. for psi perturb
- kmaxforct                          = 1000000   ; max. forcing wavenumber in lon. for theta perturb
- lmaxforct                          = 1000000   ; max. forcing wavenumber in lat. for theta perturb
- iseed_skebs                        = 811       ; random seed for SKEBS
- perturb_bdy                                    ; Options for perturbing lateral boundaries of fields U, V, T:
-                                                  = 0: off; = 1: on with SKEBS pattern; = 2: on with user provided pattern
- perturb_chem_bdy                               ; Options for perturbing lateral boundaries of chemical tracers:
-                                                  = 0: off; = 1: on with RAND_PERTURB pattern
- /
 
  &bdy_control
  spec_bdy_width                      = 5,       ; total number of rows for specified boundary value nudging

@@ -56,6 +56,18 @@
    model_config_rec % wrf_hydro = 0
 #endif
 
+#if (defined MOVE_NESTS) && (defined VORTEX_CENTER)
+!-----------------------------------------------------------------------
+! A known problem with moving nests.  Users with number of eta levels 
+! above 55 get a model crash.
+!-----------------------------------------------------------------------
+
+      IF ( ( model_config_rec % max_dom  .GT.  1 ) .AND. &
+           ( model_config_rec %e_vert(1) .GT. 55 ) ) THEN
+         wrf_err_message = '--- ERROR: Known problem.  Moving nests need e_vert .LE. 55'
+         CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
+      END IF
+#endif
 
 #if (EM_CORE == 1)
 !-----------------------------------------------------------------------

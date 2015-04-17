@@ -63,7 +63,7 @@
     REAL    guv_sfc, gt_sfc, gq_sfc, rinblw
     INTEGER moist_adv_opt, scalar_adv_opt, tke_adv_opt
     INTEGER save_topo_orig
-    INTEGER scalar_pblmix, tracer_pblmix, grav_settling
+    INTEGER scalar_pblmix, tracer_pblmix, grav_settling, ysu_topdown_pblmix
 #endif
     CHARACTER (len=19) simulation_start_date
     CHARACTER (len=len_current_date) current_date_save
@@ -189,6 +189,7 @@
     CALL nl_get_auxinput9_interval_m ( grid%id , sgfdda_interval_m )
     CALL nl_get_scalar_pblmix  ( grid%id , scalar_pblmix )
     CALL nl_get_tracer_pblmix  ( grid%id , tracer_pblmix )
+    CALL nl_get_ysu_topdown_pblmix  ( grid%id , ysu_topdown_pblmix )
     CALL nl_get_grav_settling  ( grid%id , grav_settling )
 
     IF ( grid_fdda == 1 ) THEN
@@ -572,12 +573,8 @@ endif
      IF ( config_flags%perturb_bdy .NE. 0 ) THEN
           CALL wrf_put_dom_ti_integer( fid, 'PERTURB_BDY',        config_flags%perturb_bdy, 1, ierr )
      END IF
-     IF ( config_flags%spec_bdy_final_mu .NE. 0 ) THEN
-          CALL wrf_put_dom_ti_integer( fid, 'SPEC_BDY_FINAL_MU',  config_flags%spec_bdy_final_mu, 1, ierr )
-     END IF
-     IF ( config_flags%use_q_diabatic .NE. 0 ) THEN
-          CALL wrf_put_dom_ti_integer( fid, 'USE_Q_DIABATIC',  config_flags%use_q_diabatic, 1, ierr )
-     END IF
+     CALL wrf_put_dom_ti_integer( fid, 'SPEC_BDY_FINAL_MU',  config_flags%spec_bdy_final_mu, 1, ierr )
+     CALL wrf_put_dom_ti_integer( fid, 'USE_Q_DIABATIC',     config_flags%use_q_diabatic,    1, ierr )
     END IF
 #endif
 
@@ -742,6 +739,7 @@ endif
       CALL wrf_put_dom_ti_integer   ( fid, 'ICLOUD_CU',   config_flags%icloud_cu   , 1 , ierr ) 
       CALL wrf_put_dom_ti_integer   ( fid, 'TRACER_PBLMIX', tracer_pblmix , 1 , ierr )
       CALL wrf_put_dom_ti_integer   ( fid, 'SCALAR_PBLMIX', scalar_pblmix , 1 , ierr )
+      CALL wrf_put_dom_ti_integer   ( fid, 'YSU_TOPDOWN_PBLMIX', ysu_topdown_pblmix , 1 , ierr )
       CALL wrf_put_dom_ti_integer   ( fid, 'GRAV_SETTLING', grav_settling , 1 , ierr )
 
 #endif

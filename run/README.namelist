@@ -286,6 +286,22 @@ a known first several layers, then generates equi-height spaced levels up to the
                                        0.150, 0.127, 0.106, 0.088, 0.070,
                                        0.055, 0.040, 0.026, 0.013, 0.000
 
+                                     = 0,2,      ; this allows vertical nesting in the nest domain
+                                       Note that with vertical nesting one can only use RRTM and RRTMG radiation physics
+
+ An example to define vertical nested levels (in program real):
+                                       
+ e_vert                              = 35,    45,
+ eta_levels(1:35)                    = 1., 0.993, 0.983, 0.97, 0.954, 0.934, 0.909, 0.88, 0.8406663, 0.8013327,
+                                       0.761999, 0.7226653, 0.6525755, 0.5877361, 0.5278192, 0.472514,
+                                       0.4215262, 0.3745775, 0.3314044, 0.2917579, 0.2554026, 0.2221162,
+                                       0.1916888, 0.1639222, 0.1386297, 0.1156351, 0.09525016, 0.07733481,
+                                       0.06158983, 0.04775231, 0.03559115, 0.02490328, 0.0155102, 0.007255059, 0.
+ eta_levels(36:81)                   = 1.0000, 0.9946, 0.9875, 0.9789, 0.9685, 0.9562, 0.9413, 0.9238, 0.9037, 0.8813, 0.8514,
+                                       0.8210, 0.7906, 0.7602, 0.7298, 0.6812, 0.6290, 0.5796, 0.5333, 0.4901, 0.4493, 0.4109,
+                                       0.3746, 0.3412, 0.3098, 0.2802, 0.2524, 0.2267, 0.2028, 0.1803, 0.1593, 0.1398, 0.1219,
+                                       0.1054, 0.0904, 0.0766, 0.0645, 0.0534, 0.0433, 0.0341, 0.0259, 0.0185, 0.0118, 0.0056, 0.
+
 Horizontal interpolation options, coarse grid to fine grid.  The default is to use
 the Smolarkiewicz "SINT" method.  However, this is known to break with the 
 implementation inside of WRF for large refinement ratios (such as 15:1).  For those
@@ -748,8 +764,10 @@ Namelist variables for controlling the adaptive time step option:
                                                   1 = with cloud effect, and use cloud fraction option 1
                                                       (Xu-Randall method) 
                                                   0 = without cloud effect
-                                                  2 = with cloud effect, and use cloud fraction option 2
-                                                  3 = with cloud effect, and use cloud fraction option 3 (since 3.7)
+                                                  2 = with cloud effect, and use cloud fraction option 2 (0/1 based
+                                                      on threshold
+                                                  3 = with cloud effect, and use cloud fraction option 3, based on
+                                                      Sundqvist et al. (1989) (since 3.7)
  swrad_scat                          = 1.       ; scattering tuning parameter (default 1. is 1.e-5 m2/kg)
                                                   (works for ra_sw_physics = 1 option only)
  surface_input_source                = 1,	; where landuse and soil category data come from:
@@ -964,7 +982,6 @@ Options for use with the Noah-MP Land Surface Model:
                                                 ;    3 = Off (LAI from table; FVEG calculated)
                                                 ;    4 = Off (LAI from table; FVEG = maximum veg. fraction)
                          			;    5 = On  (LAI predicted;  FVEG = maximum veg. fraction)
-						;    6 = Off (LAI from input; FVEG = maximum veg. fraction)
  opt_crs                            = 1,        ; Noah-MP Stomatal Resistance option:
                                                 ;    1 = Ball-Berry; 2 = Jarvis
  opt_sfc                            = 1         ; Noah-MP surface layer drag coefficient calculation
@@ -1176,8 +1193,8 @@ The following are for observation nudging:
                                                       not for real-data cases)
                                                   3 = with w-Rayleigh damping (dampcoef inverse time scale [1/s] e.g. .05; 
                                                       for real-data cases)
- use_theta_m                         = .false.  ; true: use theta_m=theta(1+1.61Qv)
-                                                  false: use dry theta in dynamics
+ use_theta_m                         = 0        ; 1: use theta_m=theta(1+1.61Qv)
+                                                  0: use dry theta in dynamics
  use_q_diabatic                      = 0        ; whether to include QV and QC tendencies in advection (new in 3.7)
                                                   0 = default, old behavior
                                                   1 = include QV and QC tendencies - this helps to produce correct solution

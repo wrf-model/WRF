@@ -1,4 +1,4 @@
-WRFPLUS Model Version 3.6.1 (August 14, 2014)
+WRFPLUS Model Version 3.7 (April 20, 2015)
 http://www.mmm.ucar.edu/wrf/users/wrfda/download/wrfplus.html
 
 ------------------------
@@ -30,6 +30,7 @@ This is the main directory for the WRFPLUS Version 3 source code release.
 WRFPLUS contains the WRF non-linear, WRF tangent-linear, and WRF adjoint models, and is intended for use with WRFDA 4DVAR.
 
 For information on how to compile/run, reference the User's Guide:
-http://www.mmm.ucar.edu/wrf/users/wrfda/Docs/user_guide_V3.6.1/WRFDA_Users_Guide.html
+http://www.mmm.ucar.edu/wrf/users/wrfda/Docs/user_guide_V3.7/WRFDA_Users_Guide.html
 
 You can find more information about WRFDA and WRFPLUS at the WRFDA User's Page: http://www.mmm.ucar.edu/wrf/users/wrfda/index.html
+

@@ -23,6 +23,30 @@ WRFDA, including infringement actions.
 This is the main directory for the WRFDA Version 3 source code release.
 ======================================
 
+V3.7 Release Notes :
+-------------------
+
+Version 3.7 was released on April 20, 2015.
+
+  For more information on WRFDA, visit the WRFDA Users home page
+  http://www.mmm.ucar.edu/wrf/users/wrfda/index.html
+
+  New features:
+
+    -New background error option: CV7 (cv_options = 7)
+    -Radar assimilation has been updated: new options have been added for reflectivity assimilation
+    -A new mp_physics option is available for WRFPLUS in 4DVAR runs
+
+  Updated features:
+
+    -WRFDA can now use WRF files with the "lat-lon" (cylindrical equidistant) map projection. This 
+     does not include global WRF files.
+    -Updated libraries:
+        -RTTOV interface is now for RTTOV Version 11.1 or 11.2
+    -Bug fixes and performance improvements
+    -WRFPLUS has been upgraded to V3.7.
+======================================
+
 V3.6.1 Release Notes :
 -------------------
 

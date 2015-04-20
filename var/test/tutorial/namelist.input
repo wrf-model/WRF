@@ -74,7 +74,6 @@ e_sn=60,
 e_vert=41,
 dx=60000,
 dy=60000,
-hypsometric_opt=1,
 /
 &dfi_control
 /

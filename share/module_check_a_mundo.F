@@ -1107,10 +1107,14 @@
 !  than RRTMG_LWSCHEME and RRTMG_SWSCHEME.
 !-----------------------------------------------------------------------
 
-      IF ( ( model_config_rec % ra_lw_physics(1) .NE. RRTMG_LWSCHEME )  .OR. &
-           ( model_config_rec % ra_sw_physics(1) .NE. RRTMG_SWSCHEME )  .OR. &
-           ( model_config_rec % ra_lw_physics(1) .NE. RRTMG_LWSCHEME_FAST )  .OR. &
-           ( model_config_rec % ra_sw_physics(1) .NE. RRTMG_SWSCHEME_FAST )  ) THEN
+      IF ( ( model_config_rec % ra_lw_physics(1) .EQ. RRTMG_LWSCHEME )  .OR. &
+           ( model_config_rec % ra_sw_physics(1) .EQ. RRTMG_SWSCHEME )  .OR. &
+           ( model_config_rec % ra_lw_physics(1) .EQ. RRTMG_LWSCHEME_FAST )  .OR. &
+           ( model_config_rec % ra_sw_physics(1) .EQ. RRTMG_SWSCHEME_FAST )  ) THEN
+         wrf_err_message = '--- NOTE: RRTMG radiation is used, namelist ' // &
+                           'value for o3input (ozone input) is used '
+!        CALL wrf_message ( wrf_err_message )
+      ELSE
          model_config_rec % o3input = 0
          wrf_err_message = '--- NOTE: RRTMG radiation is not used, setting:  ' // &
                            'o3input=0 to avoid data pre-processing'

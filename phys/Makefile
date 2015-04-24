@@ -106,6 +106,7 @@ MODULES = \
 	module_sf_sfclay.o \
 	module_sf_sfclayrev.o \
 	module_sf_gfs.o \
+        module_sf_exchcoef.o \
 	module_sf_gfdl.o \
 	module_sf_slab.o  \
 	module_sf_noahdrv.o  \

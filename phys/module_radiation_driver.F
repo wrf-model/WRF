@@ -134,6 +134,7 @@ CONTAINS
               ,aer_asy_opt, aer_asy_val                                   &
               ,aod5502d, angexp2d, aerssa2d, aerasy2d                     &
               ,aod5503d                                                   &
+              ,mp_physics                                                 &
                                                                           )
 
 
@@ -355,7 +356,7 @@ CONTAINS
                                                          kts,kte, &
                                        num_tiles
 
-   INTEGER, INTENT(IN)            :: lw_physics, sw_physics
+   INTEGER, INTENT(IN)            :: lw_physics, sw_physics, mp_physics
    INTEGER, INTENT(IN)            :: o3input, aer_opt
    INTEGER, INTENT(IN)            :: id
    integer, intent(in)            :: swint_opt
@@ -1038,6 +1039,7 @@ CONTAINS
         CALL cal_cldfra1(CLDFRA,qv,qc,qi,qs,               &
                    F_QV,F_QC,F_QI,F_QS,t,p,                &
                    F_ICE_PHY,F_RAIN_PHY,                   &
+                   mp_physics,                             &
                    ids,ide, jds,jde, kds,kde,              &
                    ims,ime, jms,jme, kms,kme,              &
                    its,ite, jts,jte, kts,kte               )
@@ -1465,6 +1467,7 @@ CONTAINS
 !ccc Added for time-varying trace gases.
                   YR=YR,JULIAN=JULIAN,                              &
 !ccc
+                  mp_physics=mp_physics,                            &
                   IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde,&
                   IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme,&
                   ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte,&
@@ -1884,6 +1887,7 @@ CONTAINS
                      progn=progn,                                      &
 #endif
                      QNDROP3D=qndrop,F_QNDROP=f_qndrop,                &
+                     mp_physics=mp_physics,                            &
                      IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde,&
                      IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme,&
                      ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte,&
@@ -2715,6 +2719,7 @@ CONTAINS
    SUBROUTINE cal_cldfra1(CLDFRA, QV, QC, QI, QS,                     &
                          F_QV, F_QC, F_QI, F_QS, t_phy, p_phy,       &
                          F_ICE_PHY,F_RAIN_PHY,                       &
+                         mp_physics,                                 &
           ids,ide, jds,jde, kds,kde,                                 &
           ims,ime, jms,jme, kms,kme,                                 &
           its,ite, jts,jte, kts,kte                                  )
@@ -2747,6 +2752,7 @@ CONTAINS
                                                          F_RAIN_PHY
 
    LOGICAL,OPTIONAL,INTENT(IN) :: F_QC,F_QI,F_QV,F_QS
+   INTEGER :: mp_physics
 
 !  REAL thresh
    INTEGER:: i,j,k
@@ -2861,7 +2867,19 @@ CONTAINS
               weight = F_ICE_PHY(i,k,j)
            ENDIF
          ENDIF
-
+!BSF - For HWRF MP option; (qc = liquid, qi = cloud ice+snow)
+!         IF ( F_QC .and. F_QI .and. .not. F_QS ) THEN
+         IF ( mp_physics .eq. 5 .or. mp_physics .eq. 85) THEN
+           QIMID = QI(i,k,j)     !- total ice (cloud ice + snow)
+           QWMID = QC(i,k,j)     !- cloud water
+           QCLD=QWMID+QIMID      !- cloud water + total ice
+           IF (QCLD .LT. QCLDMIN) THEN
+              weight = 0.
+           ELSE
+              weight = QIMID/QCLD
+              if (tc<-40.) weight=1.
+           ENDIF
+         ENDIF
       ELSE
          CLDFRA(i,k,j)=0.
 

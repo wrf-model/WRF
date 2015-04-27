@@ -471,7 +471,8 @@
      &                 ,QS=MOIST_TRANS(IMS,KMS,JMS,P_QS),F_QS=F_QS      &
      &                 ,QG=MOIST_TRANS(IMS,KMS,JMS,P_QG),F_QG=F_QG      &
      &                 ,IS_CAMMGMP_USED=IS_CAMMGMP_USED                 &
-     &                 ,EXPLICIT_CONVECTION=config_flags%cu_physics==0)
+     &                 ,EXPLICIT_CONVECTION=config_flags%cu_physics==0  &
+     &                 ,MP_PHYSICS=CONFIG_FLAGS%MP_PHYSICS)
 
 
 !

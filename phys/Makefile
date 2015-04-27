@@ -75,6 +75,7 @@ MODULES = \
 	module_mp_wsm5.o \
 	module_mp_wsm6.o \
 	module_mp_etanew.o \
+        module_mp_fer_hires.o \
 	module_mp_HWRF.o \
 	module_mp_thompson.o \
 	module_mp_full_sbm.o \

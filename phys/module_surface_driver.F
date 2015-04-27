@@ -1364,8 +1364,10 @@ CONTAINS
          CHS(i,j) = 0.
          CPM(i,j) = 0.
          CHS2(i,j) = 0.
+#if (NMM_CORE==1)
          Cd_out(i,j) = 0.
          Ch_out(i,j) = 0.
+#endif
       ENDDO
     ENDDO
   ENDDO

@@ -213,6 +213,8 @@
       LOGICAL :: WARM_RAIN
       LOGICAL :: IS_CAMMGMP_USED=.FALSE.
 
+      REAL :: DXKM, DYKM
+
 !
 !-----------------------------------------------------------------------
 !***********************************************************************
@@ -233,6 +235,9 @@
 !-----------------------------------------------------------------------
 !
       CAPA=R_D/CP
+
+      DXKM=grid%dlmd*0.01745329*6371200. ! numbers from module_initialize_real.F
+      DYKM=grid%dy_nmm
 !
 !-----------------------------------------------------------------------
 !
@@ -243,8 +248,6 @@
 !
         PDSL(I,J)=PD(I,J)*RES(I,J)
         P8W(I,KTE+1,J)=PT
-        XLAT(I,J)=GLAT(I,J)/DEGRAD
-        XLON(I,J)=GLON(I,J)/DEGRAD
         XLAND(I,J)=SM(I,J)+1.
         PSFC=PD(I,J)+PDTOP+PT
         REXNSFC(I,J)=(PSFC*1.E-5)**CAPA
@@ -364,7 +367,7 @@
 !-----------------------------------------------------------------------
 !
       CALL SET_TILES(GRID,IDS+1,IDE-1,JDS+2,JDE-2,ITS,ITE,JTS,JTE)
-!
+
       CALL RADIATION_DRIVER(                                            &
      &                  IDS=IDS,IDE=IDE,JDS=JDS,JDE=JDE,KDS=KDS,KDE=KDE &
      &                 ,IMS=IMS,IME=IME,JMS=JMS,JME=JME,KMS=KMS,KME=KME &
@@ -374,6 +377,8 @@
      &                 ,ITIMESTEP=NTSD,DT=DT                            &
      &                 ,ICLOUD_CU=config_flags%ICLOUD_CU                &
      &                 ,QC_CU=GRID%QC_CU,QI_CU=GRID%QI_CU               &
+     &                 ,DX=DXKM,DY=DYKM          &
+     &                 ,DXKM=dxkm                                       &
 ! WRF-Solar variables
                        ,swint_opt=config_flags%swint_opt                &   
      &       ,SWDDIR=grid%swddir,SWDDNI=grid%swddni,SWDDIF=grid%swddif     & ! jararias
@@ -392,7 +397,7 @@
      &                 ,RTHRATEN=RTHRATEN                               &
      &                 ,CEN_LAT=grid%cen_lat                            &
      &                 ,GLW=TOTLWDN,GSW=SWNETDN,SWDOWN=TOTSWDN          &
-     &                 ,XLAT=XLAT,XLONG=XLON,ALBEDO=ALBEDO,EMISS=EPSR   &
+     &                 ,XLAT=grid%HLAT,XLONG=grid%HLON,ALBEDO=ALBEDO,EMISS=EPSR   &
      &                 ,XICE=SICE,XLAND=XLAND,Z=Z,TSK=TSFC              &
      &                 ,N_AEROSOLC=NUM_AEROSOLC,PAERLEV=GRID%PAERLEV    &
      &                 ,ID=grid%id                                      &
@@ -1485,7 +1490,7 @@
      &        ,  chv2xy=grid%chv2xy   ,  chb2xy=grid%chb2xy , chstarxy=grid%chstarxy &                       
      &        ,  smoiseq=grid%smoiseq, smcwtdxy=grid%smcwtdxy, rechxy=grid%rechxy    &                       
      &        ,  deeprechxy=grid%deeprechxy                                          &                       
-     &        ,coszen=grid%czen,xlat_urb2d=grid%xlat                                 &
+     &        ,coszen=grid%czen,xlat_urb2d=grid%hlat                                 &
 ! mosaic tiling for Noah
      &        ,sf_surface_mosaic=config_flags%sf_surface_mosaic,  mosaic_cat=config_flags%mosaic_cat      &
 ! lake module

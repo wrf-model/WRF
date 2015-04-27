@@ -56,6 +56,20 @@
    model_config_rec % wrf_hydro = 0
 #endif
 
+#if ( NMM_NEST == 1 )
+! Ensure that minimum NMM coral distances are supplied for all domains.
+   do i=1,model_config_rec%max_dom
+      if(model_config_rec%coral_x(i)<5) then
+         call wrf_message("Coral X distance must be at least 5 due to intermediate domain halos.")
+         model_config_rec%coral_x(i)=5
+      endif
+      if(model_config_rec%coral_y(i)<5) then
+         call wrf_message("Coral Y distance must be at least 5 due to intermediate domain halos.")
+         model_config_rec%coral_y(i)=5
+      endif
+    enddo
+#endif
+
 
 #if (EM_CORE == 1)
 !-----------------------------------------------------------------------

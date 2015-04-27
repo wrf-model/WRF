@@ -107,6 +107,12 @@
       IMPLICIT NONE
 !
 !----------------------------------------------------------------------
+   INTERFACE
+      SUBROUTINE med_set_egrid_locs ( parent , nest )
+        use module_domain_type, only: domain
+        type(domain) :: parent,nest
+      END SUBROUTINE med_set_egrid_locs
+   END INTERFACE
 !***
 !***  Arguments
 !***
@@ -2004,20 +2010,12 @@
       CALL domain_setgmtetc( GRID, START_OF_SIMULATION )
 
       if(restrt) then
-#ifdef HWRF
-!zhang 
-     CALL nl_get_julyr (grid%id, grid%julyr)
-     CALL nl_get_julday (grid%id, grid%julday)
-     CALL nl_get_gmt (grid%id, grid%gmt)
-!zhang end
-#else
         CALL domain_clock_get( grid, current_time=currentTime )
         CALL WRFU_TimeGet( currentTime, YY=grid%julyr, dayOfYear=grid%julday, &
                            H=hr, M=mn, S=sec, MS=ms, rc=rc)
         grid%gmt=hr+real(mn)/60.+real(sec)/3600.+real(ms)/(1000*3600)
         WRITE( wrf_err_message , * ) 'DEBUG start_domain_nmm():  gmt = ',grid%gmt
         CALL wrf_debug( 150, TRIM(wrf_err_message) )
-#endif
       endif
 
 ! Several arguments are RCONFIG entries in Registry.NMM. Registry no longer
@@ -2040,6 +2038,14 @@
          ENDIF
       END IF
 
+      if(allowed_to_read) then
+         call wrf_debug(1,'Set E grid locations for PHY_INIT.')
+         if(grid%id==1) then
+            call med_set_egrid_locs(grid,grid)
+         else
+            call med_set_egrid_locs(grid%parents(1)%ptr,grid)
+         endif
+      end if
       CALL PHY_INIT(GRID%ID,CONFIG_FLAGS,GRID%DT,LRESTART,SFULL,SMID    &
      &             ,grid%pt,TSFC,GRID%RADT,GRID%BLDT,GRID%CUDT,GRID%GSMDT    &
      &             ,grid%DUCUDT, grid%DVCUDT                            &
@@ -2066,7 +2072,7 @@
      &             ,GRID%LANDUSE_ISICE, GRID%LANDUSE_LUCATS             &
      &             ,GRID%LANDUSE_LUSEAS, GRID%LANDUSE_ISN               &
      &             ,GRID%LU_STATE                                       &
-     &             ,grid%xlat,grid%xlong,grid%glat,grid%glon&
+     &             ,grid%hlat,grid%hlon,grid%glat,grid%glon&
      &             ,grid%albedo,grid%albbck                             &
      &             ,GRID%GMT,GRID%JULYR,GRID%JULDAY                     &
      &             ,GRID%LEVSIZ, NUM_OZMIXM, NUM_AEROSOLC, GRID%PAERLEV &

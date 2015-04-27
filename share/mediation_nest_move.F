@@ -637,6 +637,16 @@ call wrf_debug(1,message)
                                      ids, ide-1 , jds , jde-1 , 1 , 1 , &
                                      ims, ime   , jms , jme   , 1 , 1 , &
                                      ips, ipe   , jps , jpe   , 1 , 1   )
+#if(NMM_CORE==1)
+     CALL wrf_patch_to_global_real ( grid%hlat , xlat , grid%domdesc, "z", "xy", &
+                                     ids, ide-1 , jds , jde-1 , 1 , 1 , &
+                                     ims, ime   , jms , jme   , 1 , 1 , &
+                                     ips, ipe   , jps , jpe   , 1 , 1   )
+     CALL wrf_patch_to_global_real ( grid%hlon , xlong , grid%domdesc, "z", "xy", &
+                                     ids, ide-1 , jds , jde-1 , 1 , 1 , &
+                                     ims, ime   , jms , jme   , 1 , 1 , &
+                                     ips, ipe   , jps , jpe   , 1 , 1   )
+#else
      CALL wrf_patch_to_global_real ( grid%xlat , xlat , grid%domdesc, "z", "xy", &
                                      ids, ide-1 , jds , jde-1 , 1 , 1 , &
                                      ims, ime   , jms , jme   , 1 , 1 , &
@@ -645,6 +655,7 @@ call wrf_debug(1,message)
                                      ids, ide-1 , jds , jde-1 , 1 , 1 , &
                                      ims, ime   , jms , jme   , 1 , 1 , &
                                      ips, ipe   , jps , jpe   , 1 , 1   )
+#endif
      CALL wrf_patch_to_global_real ( grid%ht , terrain , grid%domdesc, "z", "xy", &
                                      ids, ide-1 , jds , jde-1 , 1 , 1 , &
                                      ims, ime   , jms , jme   , 1 , 1 , &
@@ -1212,7 +1223,7 @@ LOGICAL FUNCTION direction_of_move2 ( parent , grid , move_cd_x, move_cd_y )
                   nips, nipe, njps, njpe, nkps, nkpe
    real :: dx,dy,kid_ic,kid_jc,my_ic,my_jc,pgr,pgrn,hr,two_dt,when,before,after
    real, parameter :: pmult=1.35
-   integer :: inew,jnew
+   integer :: inew,jnew,coral_x,coral_y
    logical :: abort
 
 ! PURPOSE: DECIDE THE DIRECTION OF MOVE
@@ -1276,23 +1287,26 @@ LOGICAL FUNCTION direction_of_move2 ( parent , grid , move_cd_x, move_cd_y )
 
    !  SWITCH OFF NEST MOTION IF TOO CLOSE TO ANY OF THE BOUNDARIES
 
+   coral_x = max(5,grid%coral_x)
+   coral_y = max(5,grid%coral_y)
+
    coral_dist=(grid%ed31+grid%parent_grid_ratio-1)/grid%parent_grid_ratio
-   IF(grid%i_parent_start .le. 5) then
+   IF(grid%i_parent_start .le. coral_x) then
       abort=.true.
       write(mess,'("d",I0,": cannot move: too close to parent d",I0," -X boundary")') grid%id,parent%id
       call wrf_message(trim(mess))
-   ELSEIF((grid%i_parent_start+coral_dist) .ge. parent%ed31 - 5)THEN  
+   ELSEIF((grid%i_parent_start+coral_dist) .ge. parent%ed31 - coral_x)THEN  
       abort=.true.
       write(mess,'("d",I0,": cannot move: too close to parent d",I0," +X boundary")') grid%id,parent%id
       call wrf_message(trim(mess))
   ENDIF
 
    coral_dist=(grid%ed32+grid%parent_grid_ratio-1)/grid%parent_grid_ratio
-   IF(grid%j_parent_start .le. 5) THEN
+   IF(grid%j_parent_start .le. coral_y) THEN
       abort=.true.
       write(mess,'("d",I0,": cannot move: too close to parent d",I0," -Y boundary")') grid%id,parent%id
       call wrf_message(trim(mess))
-   ELSEIF((grid%j_parent_start+coral_dist) .ge. parent%ed32 - 5)THEN
+   ELSEIF((grid%j_parent_start+coral_dist) .ge. parent%ed32 - coral_y)THEN
       abort=.true.
       write(mess,'("d",I0,": cannot move: too close to parent d",I0," +Y boundary")') grid%id,parent%id
       call wrf_message(trim(mess))

@@ -162,6 +162,11 @@ ifdef HWRF=1
 include registry.tracker
 endif
 
+# Nest motion safeguard: don't let nest get close to parent boundary.
+# Default values are lowest possible - anything lower would read
+# outside of memory in intermediate domain.
+rconfig integer coral_x     namelist,domains     max_domains    5   h "coral_x" "Minimum parent gridpoints on each side of nest in X direction." ""
+rconfig integer coral_y     namelist,domains     max_domains    5   h "coral_y" "Minimum parent gridpoints on each side of nest in Y direction." ""
 
 #
 # For the moving nest. This is gopal's doing
@@ -565,8 +570,8 @@ state  real   grnflx    ij    dyn_nmm   1    -     irh023      "GRNFLX"    "Deep
 state  real   pctsno    ij    dyn_nmm   1    -     irh023
 state  real   soiltb    ij    dyn_nmm   1    -     i01rh023d=(DownNear) "SOILTB"    "Deep ground soil temperature"     "K"
 state  real   vegfrc    ij    dyn_nmm   1    -     i014rh023d=(DownNear) "VEGFRC"    "Vegetation fraction"              ""
-state  real   shdmin    ij    dyn_nmm   1    -     -
-state  real   shdmax    ij    dyn_nmm   1    -     -
+state  real   shdmin    ij    dyn_nmm   1    -     ir
+state  real   shdmax    ij    dyn_nmm   1    -     ir
 state  real   sh2o      ilj   dyn_nmm   1    Z     irh023d=(DownNearIKJ)   "SH2O"      "Unfrozen soil moisture volume fraction"  ""
 state  real   smc       ilj   dyn_nmm   1    Z     irh023d=(DownNearIKJ)   "SMC"       "Soil moisture volume fraction"    ""
 state  real   stc       ilj   dyn_nmm   1    Z     irh023d=(DownNearIKJ)   "STC"       "Soil temperature"                 "K"
@@ -915,8 +920,6 @@ state    real   lake_depth       ij     misc        1         -     rd=(interp_m
 # variables added for CHEMISTRY compatibility with ARW core - kludge
 #################################################################
 state    real   GSW             ij     misc        1         -      -       ""                 ""
-state    real   XLAT            ij     misc        1         -      -       ""                 ""
-state    real   XLONG           ij     misc        1         -      -       ""                 ""
 state    real   XLAND           ij     misc        1         -      -       ""                 ""
 state    real   RAINCV          ij     misc        1         -      -       ""                 ""
 

@@ -41,6 +41,37 @@ ALL_MODULES =                           \
                $(INCLUDE_MODULES)
 
 configcheck:
+	@echo " "
+	@echo "============================================================================================== "
+	@echo " "
+	@echo "The following indicate the compilers selected to build the WRF system"
+	@echo " "
+	@echo "Serial Fortran compiler (mostly for tool generation):"
+	@echo which SFC
+	@which `echo $(SFC) | cut -d " " -f1`
+	@echo " "
+	@echo "Serial C compiler (mostly for tool generation):"
+	@echo which SCC
+	@which `echo $(SCC) | cut -d " " -f1`
+	@echo " "
+	@echo "Fortran compiler for the model source code:"
+	@echo which FC
+	@if command -v timex > /dev/null 2>&1; then \
+	  which `echo $(FC) | cut -d " " -f2` ; \
+	  echo "Will use 'timex' to report timing information" ; \
+	elif command -v time > /dev/null 2>&1; then \
+	  which `echo $(FC) | cut -d " " -f2` ; \
+	  echo "Will use 'time' to report timing information" ; \
+	else \
+	  which `echo $(FC) | cut -d " " -f1` ; \
+	fi
+	@echo " "
+	@echo "C compiler for the model source code:"
+	@echo which CC
+	@which `echo $(CC) | cut -d " " -f1`
+	@echo " "
+	@echo "============================================================================================== "
+	@echo " "
 	@if [ "$(A2DCASE)" -a "$(DMPARALLEL)" ] ; then \
 	 echo "------------------------------------------------------------------------------" ; \
 	 echo "WRF CONFIGURATION ERROR                                                       " ; \
@@ -51,6 +82,7 @@ configcheck:
 	 echo "------------------------------------------------------------------------------" ; \
          exit 2 ; \
 	fi
+ 
 
 framework_only : configcheck
 	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" ext
@@ -113,13 +145,13 @@ nmm_wrf : wrf
 #  Eulerian mass coordinate initializations
 
 em_fire : wrf
+	@/bin/rm -f ideal.exe > /dev/null 2>&1
+	@/bin/rm -f wrf.exe   > /dev/null 2>&1
 	@ echo '--------------------------------------'
 	( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=fire em_ideal )
 	( cd test/em_fire ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
 	( cd test/em_fire ; /bin/rm -f ideal.exe ; ln -s ../../main/ideal.exe . )
 	( cd test/em_fire ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
-	( cd test/em_fire ; /bin/rm -f gribmap.txt ; ln -s ../../run/gribmap.txt . )
-	( cd test/em_fire ; /bin/rm -f grib2map.tbl ; ln -s ../../run/grib2map.tbl . )
 	( cd test/em_fire ; /bin/sh create_links.sh )
 	( cd run ; /bin/rm -f ideal.exe ; ln -s ../main/ideal.exe . )
 	( cd run ; if test -f namelist.input ; then \
@@ -130,13 +162,13 @@ em_fire : wrf
 	@echo "build completed:" `date`
 
 em_quarter_ss : wrf
+	@/bin/rm -f ideal.exe > /dev/null 2>&1
+	@/bin/rm -f wrf.exe   > /dev/null 2>&1
 	@ echo '--------------------------------------'
 	( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=quarter_ss em_ideal )
 	( cd test/em_quarter_ss ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
 	( cd test/em_quarter_ss ; /bin/rm -f ideal.exe ; ln -s ../../main/ideal.exe . )
 	( cd test/em_quarter_ss ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
-	( cd test/em_quarter_ss ; /bin/rm -f gribmap.txt ; ln -s ../../run/gribmap.txt . )
-	( cd test/em_quarter_ss ; /bin/rm -f grib2map.tbl ; ln -s ../../run/grib2map.tbl . )
 	( cd test/em_quarter_ss ; /bin/rm -f bulkdens.asc_s_0_03_0_9 ; ln -s ../../run/bulkdens.asc_s_0_03_0_9 . )
 	( cd test/em_quarter_ss ; /bin/rm -f bulkradii.asc_s_0_03_0_9 ; ln -s ../../run/bulkradii.asc_s_0_03_0_9 . )
 	( cd test/em_quarter_ss ; /bin/rm -f capacity.asc ; ln -s ../../run/capacity.asc . )
@@ -152,17 +184,34 @@ em_quarter_ss : wrf
 		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
 		/bin/rm -f namelist.input ; cp ../test/em_quarter_ss/namelist.input . )
 	( cd run ; /bin/rm -f input_sounding ; ln -s ../test/em_quarter_ss/input_sounding . )
+	@echo " "
+	@echo "=========================================================================="
 	@echo "build started:   $(START_OF_COMPILE)"
 	@echo "build completed:" `date`
+	@if test -e main/wrf.exe -a -e main/ideal.exe ; then \
+		echo " " ; \
+		echo "--->                  Executables successfully built                  <---" ; \
+		echo " " ; \
+		ls -l main/*.exe ; \
+		echo " " ; \
+		echo "==========================================================================" ; \
+		echo " " ; \
+	else \
+		echo " " ; \
+		echo "---> Problems building executables, look for errors in the build log  <---" ; \
+		echo " " ; \
+		echo "==========================================================================" ; \
+		echo " " ; \
+	fi
 
 em_squall2d_x : wrf
+	@/bin/rm -f ideal.exe > /dev/null 2>&1
+	@/bin/rm -f wrf.exe   > /dev/null 2>&1
 	@ echo '--------------------------------------'
 	( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=squall2d_x em_ideal )
 	( cd test/em_squall2d_x ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
 	( cd test/em_squall2d_x ; /bin/rm -f ideal.exe ; ln -s ../../main/ideal.exe . )
 	( cd test/em_squall2d_x ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
-	( cd test/em_squall2d_x ; /bin/rm -f gribmap.txt ; ln -s ../../run/gribmap.txt . )
-	( cd test/em_squall2d_x ; /bin/rm -f grib2map.tbl ; ln -s ../../run/grib2map.tbl . )
 	( cd run ; /bin/rm -f ideal.exe ; ln -s ../main/ideal.exe . )
 	( cd run ; if test -f namelist.input ; then \
 		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
@@ -170,70 +219,157 @@ em_squall2d_x : wrf
 	( cd run ; /bin/rm -f input_sounding ; ln -s ../test/em_squall2d_x/input_sounding . )
 	@echo "build started:   $(START_OF_COMPILE)"
 	@echo "build completed:" `date`
+	@echo " "
+	@echo "=========================================================================="
+	@echo "build started:   $(START_OF_COMPILE)"
+	@echo "build completed:" `date`
+	@if test -e main/wrf.exe -a -e main/ideal.exe ; then \
+		echo " " ; \
+		echo "--->                  Executables successfully built                  <---" ; \
+		echo " " ; \
+		ls -l main/*.exe ; \
+		echo " " ; \
+		echo "==========================================================================" ; \
+		echo " " ; \
+	else \
+		echo " " ; \
+		echo "---> Problems building executables, look for errors in the build log  <---" ; \
+		echo " " ; \
+		echo "==========================================================================" ; \
+		echo " " ; \
+	fi
 
 em_squall2d_y : wrf
+	@/bin/rm -f ideal.exe > /dev/null 2>&1
+	@/bin/rm -f wrf.exe   > /dev/null 2>&1
 	@ echo '--------------------------------------'
 	( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=squall2d_y em_ideal )
 	( cd test/em_squall2d_y ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
 	( cd test/em_squall2d_y ; /bin/rm -f ideal.exe ; ln -s ../../main/ideal.exe . )
 	( cd test/em_squall2d_y ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
-	( cd test/em_squall2d_y ; /bin/rm -f gribmap.txt ; ln -s ../../run/gribmap.txt . )
-	( cd test/em_squall2d_y ; /bin/rm -f grib2map.tbl ; ln -s ../../run/grib2map.tbl . )
 	( cd run ; /bin/rm -f ideal.exe ; ln -s ../main/ideal.exe . )
 	( cd run ; if test -f namelist.input ; then \
 		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
 		/bin/rm -f namelist.input ; cp ../test/em_squall2d_y/namelist.input . )
 	( cd run ; /bin/rm -f input_sounding ; ln -s ../test/em_squall2d_y/input_sounding . )
+	@echo " "
+	@echo "=========================================================================="
 	@echo "build started:   $(START_OF_COMPILE)"
 	@echo "build completed:" `date`
+	@if test -e main/wrf.exe -a -e main/ideal.exe ; then \
+		echo " " ; \
+		echo "--->                  Executables successfully built                  <---" ; \
+		echo " " ; \
+		ls -l main/*.exe ; \
+		echo " " ; \
+		echo "==========================================================================" ; \
+		echo " " ; \
+	else \
+		echo " " ; \
+		echo "---> Problems building executables, look for errors in the build log  <---" ; \
+		echo " " ; \
+		echo "==========================================================================" ; \
+		echo " " ; \
+	fi
 
 em_b_wave : wrf
+	@/bin/rm -f ideal.exe > /dev/null 2>&1
+	@/bin/rm -f wrf.exe   > /dev/null 2>&1
 	@ echo '--------------------------------------'
 	( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=b_wave em_ideal )
 	( cd test/em_b_wave ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
 	( cd test/em_b_wave ; /bin/rm -f ideal.exe ; ln -s ../../main/ideal.exe . )
 	( cd test/em_b_wave ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
-	( cd test/em_b_wave ; /bin/rm -f gribmap.txt ; ln -s ../../run/gribmap.txt . )
-	( cd test/em_b_wave ; /bin/rm -f grib2map.tbl ; ln -s ../../run/grib2map.tbl . )
 	( cd run ; /bin/rm -f ideal.exe ; ln -s ../main/ideal.exe . )
 	( cd run ; if test -f namelist.input ; then \
 		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
 		/bin/rm -f namelist.input ; cp ../test/em_b_wave/namelist.input . )
 	( cd run ; /bin/rm -f input_jet ; ln -s ../test/em_b_wave/input_jet . )
+	@echo " "
+	@echo "=========================================================================="
 	@echo "build started:   $(START_OF_COMPILE)"
 	@echo "build completed:" `date`
+	@if test -e main/wrf.exe -a -e main/ideal.exe ; then \
+		echo " " ; \
+		echo "--->                  Executables successfully built                  <---" ; \
+		echo " " ; \
+		ls -l main/*.exe ; \
+		echo " " ; \
+		echo "==========================================================================" ; \
+		echo " " ; \
+	else \
+		echo " " ; \
+		echo "---> Problems building executables, look for errors in the build log  <---" ; \
+		echo " " ; \
+		echo "==========================================================================" ; \
+		echo " " ; \
+	fi
 
 em_les : wrf
+	@/bin/rm -f ideal.exe > /dev/null 2>&1
+	@/bin/rm -f wrf.exe   > /dev/null 2>&1
 	@ echo '--------------------------------------'
 	( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=les em_ideal )
 	( cd test/em_les ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
 	( cd test/em_les ; /bin/rm -f ideal.exe ; ln -s ../../main/ideal.exe . )
 	( cd test/em_les ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
-	( cd test/em_les ; /bin/rm -f gribmap.txt ; ln -s ../../run/gribmap.txt . )
-	( cd test/em_les ; /bin/rm -f grib2map.tbl ; ln -s ../../run/grib2map.tbl . )
 	( cd run ; /bin/rm -f ideal.exe ; ln -s ../main/ideal.exe . )
 	( cd run ; if test -f namelist.input ; then \
 		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
 		/bin/rm -f namelist.input ; cp ../test/em_les/namelist.input . )
 	( cd run ; /bin/rm -f input_sounding ; ln -s ../test/em_les/input_sounding . )
+	@echo " "
+	@echo "=========================================================================="
 	@echo "build started:   $(START_OF_COMPILE)"
 	@echo "build completed:" `date`
+	@if test -e main/wrf.exe -a -e main/ideal.exe ; then \
+		echo " " ; \
+		echo "--->                  Executables successfully built                  <---" ; \
+		echo " " ; \
+		ls -l main/*.exe ; \
+		echo " " ; \
+		echo "==========================================================================" ; \
+		echo " " ; \
+	else \
+		echo " " ; \
+		echo "---> Problems building executables, look for errors in the build log  <---" ; \
+		echo " " ; \
+		echo "==========================================================================" ; \
+		echo " " ; \
+	fi
 
 em_seabreeze2d_x : wrf
+	@/bin/rm -f ideal.exe > /dev/null 2>&1
+	@/bin/rm -f wrf.exe   > /dev/null 2>&1
 	@ echo '--------------------------------------'
 	( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=seabreeze2d_x em_ideal )
 	( cd test/em_seabreeze2d_x ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
 	( cd test/em_seabreeze2d_x ; /bin/rm -f ideal.exe ; ln -s ../../main/ideal.exe . )
 	( cd test/em_seabreeze2d_x ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
-	( cd test/em_seabreeze2d_x ; /bin/rm -f gribmap.txt ; ln -s ../../run/gribmap.txt . )
-	( cd test/em_seabreeze2d_x ; /bin/rm -f grib2map.tbl ; ln -s ../../run/grib2map.tbl . )
 	( cd run ; /bin/rm -f ideal.exe ; ln -s ../main/ideal.exe . )
 	( cd run ; if test -f namelist.input ; then \
 		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
 		/bin/rm -f namelist.input ; cp ../test/em_seabreeze2d_x/namelist.input . )
 	( cd run ; /bin/rm -f input_sounding ; ln -s ../test/em_seabreeze2d_x/input_sounding . )
+	@echo " "
+	@echo "=========================================================================="
 	@echo "build started:   $(START_OF_COMPILE)"
 	@echo "build completed:" `date`
+	@if test -e main/wrf.exe -a -e main/ideal.exe ; then \
+		echo " " ; \
+		echo "--->                  Executables successfully built                  <---" ; \
+		echo " " ; \
+		ls -l main/*.exe ; \
+		echo " " ; \
+		echo "==========================================================================" ; \
+		echo " " ; \
+	else \
+		echo " " ; \
+		echo "---> Problems building executables, look for errors in the build log  <---" ; \
+		echo " " ; \
+		echo "==========================================================================" ; \
+		echo " " ; \
+	fi
 
 em_convrad : wrf
 	@ echo '--------------------------------------'
@@ -241,8 +377,6 @@ em_convrad : wrf
 	( cd test/em_convrad ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
 	( cd test/em_convrad ; /bin/rm -f ideal.exe ; ln -s ../../main/ideal.exe . )
 	( cd test/em_convrad ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
-	( cd test/em_convrad ; /bin/rm -f gribmap.txt ; ln -s ../../run/gribmap.txt . )
-	( cd test/em_convrad ; /bin/rm -f grib2map.tbl ; ln -s ../../run/grib2map.tbl . )
 	( cd run ; /bin/rm -f ideal.exe ; ln -s ../main/ideal.exe . )
 	( cd run ; if test -f namelist.input ; then \
 		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
@@ -252,6 +386,8 @@ em_convrad : wrf
 	@echo "build completed:" `date`
 
 em_tropical_cyclone : wrf
+	@/bin/rm -f ideal.exe > /dev/null 2>&1
+	@/bin/rm -f wrf.exe   > /dev/null 2>&1
 	@ echo '--------------------------------------'
 	( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=tropical_cyclone em_ideal )
 	( cd test/em_tropical_cyclone ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
@@ -262,10 +398,29 @@ em_tropical_cyclone : wrf
 		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
 		/bin/rm -f namelist.input ; cp ../test/em_tropical_cyclone/namelist.input . )
 	( cd run ; /bin/rm -f input_sounding ; ln -s ../test/em_tropical_cyclone/input_sounding . )
+	@echo " "
+	@echo "=========================================================================="
 	@echo "build started:   $(START_OF_COMPILE)"
 	@echo "build completed:" `date`
+	@if test -e main/wrf.exe -a -e main/ideal.exe ; then \
+		echo " " ; \
+		echo "--->                  Executables successfully built                  <---" ; \
+		echo " " ; \
+		ls -l main/*.exe ; \
+		echo " " ; \
+		echo "==========================================================================" ; \
+		echo " " ; \
+	else \
+		echo " " ; \
+		echo "---> Problems building executables, look for errors in the build log  <---" ; \
+		echo " " ; \
+		echo "==========================================================================" ; \
+		echo " " ; \
+	fi
 
 em_scm_xy : wrf
+	@/bin/rm -f ideal.exe > /dev/null 2>&1
+	@/bin/rm -f wrf.exe   > /dev/null 2>&1
 	@ echo '--------------------------------------'
 	( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=scm_xy em_ideal )
 	( cd test/em_scm_xy ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
@@ -276,8 +431,25 @@ em_scm_xy : wrf
 		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
 		/bin/rm -f namelist.input ; cp ../test/em_scm_xy/namelist.input . )
 	( cd run ; /bin/rm -f input_sounding ; ln -s ../test/em_scm_xy/input_sounding . )
+	@echo " "
+	@echo "=========================================================================="
 	@echo "build started:   $(START_OF_COMPILE)"
 	@echo "build completed:" `date`
+	@if test -e main/wrf.exe -a -e main/ideal.exe ; then \
+		echo " " ; \
+		echo "--->                  Executables successfully built                  <---" ; \
+		echo " " ; \
+		ls -l main/*.exe ; \
+		echo " " ; \
+		echo "==========================================================================" ; \
+		echo " " ; \
+	else \
+		echo " " ; \
+		echo "---> Problems building executables, look for errors in the build log  <---" ; \
+		echo " " ; \
+		echo "==========================================================================" ; \
+		echo " " ; \
+	fi
 
 convert_em : framework_only
 	if [ $(WRF_CONVERT) -eq 1 ] ; then \
@@ -290,6 +462,10 @@ convert_em : framework_only
 # wrf_SST_ESMF.exe is a coupled application.  Note that make 
 # target $(SOLVER)_wrf_SST_ESMF builds wrf_SST_ESMF.exe.  
 em_real : wrf
+	@/bin/rm -f real.exe  > /dev/null 2>&1
+	@/bin/rm -f tc.exe    > /dev/null 2>&1
+	@/bin/rm -f ndown.exe > /dev/null 2>&1
+	@/bin/rm -f wrf.exe   > /dev/null 2>&1
 	@ echo '--------------------------------------'
 	( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=real em_real )
 	( cd test/em_real ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
@@ -426,7 +602,7 @@ em_real : wrf
 		echo " " ; \
 		echo "--->                  Executables successfully built                  <---" ; \
 		echo " " ; \
-		ls -ls main/*.exe ; \
+		ls -l main/*.exe ; \
 		echo " " ; \
 		echo "==========================================================================" ; \
 		echo " " ; \
@@ -440,51 +616,102 @@ em_real : wrf
 
 
 em_hill2d_x : wrf
+	@/bin/rm -f ideal.exe > /dev/null 2>&1
+	@/bin/rm -f wrf.exe   > /dev/null 2>&1
 	@ echo '--------------------------------------'
 	( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=hill2d_x em_ideal )
 	( cd test/em_hill2d_x ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
 	( cd test/em_hill2d_x ; /bin/rm -f ideal.exe ; ln -s ../../main/ideal.exe . )
 	( cd test/em_hill2d_x ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
-	( cd test/em_hill2d_x ; /bin/rm -f gribmap.txt ; ln -s ../../run/gribmap.txt . )
-	( cd test/em_hill2d_x ; /bin/rm -f grib2map.tbl ; ln -s ../../run/grib2map.tbl . )
 	( cd run ; /bin/rm -f ideal.exe ; ln -s ../main/ideal.exe . )
 	( cd run ; if test -f namelist.input ; then \
 		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
 		/bin/rm -f namelist.input ; cp ../test/em_hill2d_x/namelist.input . )
 	( cd run ; /bin/rm -f input_sounding ; ln -s ../test/em_hill2d_x/input_sounding . )
+	@echo " "
+	@echo "=========================================================================="
 	@echo "build started:   $(START_OF_COMPILE)"
 	@echo "build completed:" `date`
+	@if test -e main/wrf.exe -a -e main/ideal.exe ; then \
+		echo " " ; \
+		echo "--->                  Executables successfully built                  <---" ; \
+		echo " " ; \
+		ls -l main/*.exe ; \
+		echo " " ; \
+		echo "==========================================================================" ; \
+		echo " " ; \
+	else \
+		echo " " ; \
+		echo "---> Problems building executables, look for errors in the build log  <---" ; \
+		echo " " ; \
+		echo "==========================================================================" ; \
+		echo " " ; \
+	fi
 
 em_grav2d_x : wrf
+	@/bin/rm -f ideal.exe > /dev/null 2>&1
+	@/bin/rm -f wrf.exe   > /dev/null 2>&1
 	@ echo '--------------------------------------'
 	( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=grav2d_x em_ideal )
 	( cd test/em_grav2d_x ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
 	( cd test/em_grav2d_x ; /bin/rm -f ideal.exe ; ln -s ../../main/ideal.exe . )
 	( cd test/em_grav2d_x ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
-	( cd test/em_grav2d_x ; /bin/rm -f gribmap.txt ; ln -s ../../run/gribmap.txt . )
-	( cd test/em_grav2d_x ; /bin/rm -f grib2map.tbl ; ln -s ../../run/grib2map.tbl . )
 	( cd run ; /bin/rm -f ideal.exe ; ln -s ../main/ideal.exe . )
 	( cd run ; if test -f namelist.input ; then \
 		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
 		/bin/rm -f namelist.input ; cp ../test/em_grav2d_x/namelist.input . )
 	( cd run ; /bin/rm -f input_sounding ; ln -s ../test/em_grav2d_x/input_sounding . )
+	@echo " "
+	@echo "=========================================================================="
 	@echo "build started:   $(START_OF_COMPILE)"
 	@echo "build completed:" `date`
+	@if test -e main/wrf.exe -a -e main/ideal.exe ; then \
+		echo " " ; \
+		echo "--->                  Executables successfully built                  <---" ; \
+		echo " " ; \
+		ls -l main/*.exe ; \
+		echo " " ; \
+		echo "==========================================================================" ; \
+		echo " " ; \
+	else \
+		echo " " ; \
+		echo "---> Problems building executables, look for errors in the build log  <---" ; \
+		echo " " ; \
+		echo "==========================================================================" ; \
+		echo " " ; \
+	fi
 
 em_heldsuarez : wrf
+	@/bin/rm -f ideal.exe > /dev/null 2>&1
+	@/bin/rm -f wrf.exe   > /dev/null 2>&1
 	@ echo '--------------------------------------'
 	( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=heldsuarez em_ideal )
 	( cd test/em_heldsuarez ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
 	( cd test/em_heldsuarez ; /bin/rm -f ideal.exe ; ln -s ../../main/ideal.exe . )
 	( cd test/em_heldsuarez ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
-	( cd test/em_heldsuarez ; /bin/rm -f gribmap.txt ; ln -s ../../run/gribmap.txt . )
-	( cd test/em_heldsuarez ; /bin/rm -f grib2map.tbl ; ln -s ../../run/grib2map.tbl . )
 	( cd run ; /bin/rm -f ideal.exe ; ln -s ../main/ideal.exe . )
 	( cd run ; if test -f namelist.input ; then \
 		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
 		/bin/rm -f namelist.input ; cp ../test/em_heldsuarez/namelist.input . )
+	@echo " "
+	@echo "=========================================================================="
 	@echo "build started:   $(START_OF_COMPILE)"
 	@echo "build completed:" `date`
+	@if test -e main/wrf.exe -a -e main/ideal.exe ; then \
+		echo " " ; \
+		echo "--->                  Executables successfully built                  <---" ; \
+		echo " " ; \
+		ls -l main/*.exe ; \
+		echo " " ; \
+		echo "==========================================================================" ; \
+		echo " " ; \
+	else \
+		echo " " ; \
+		echo "---> Problems building executables, look for errors in the build log  <---" ; \
+		echo " " ; \
+		echo "==========================================================================" ; \
+		echo " " ; \
+	fi
 
 #### anthropogenic emissions converter
 

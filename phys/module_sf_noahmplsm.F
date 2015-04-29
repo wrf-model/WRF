@@ -1479,6 +1479,7 @@ contains
 
 ! fractional area that receives precipitation (see, Niu et al. 2005)
    
+    FP = 0.0
     IF(QPRECC + QPRECL > 0.) & 
        FP = (QPRECC + QPRECL) / (10.*QPRECC + QPRECL)
 
@@ -4074,6 +4075,7 @@ contains
 ! ---------------------------------------------------------------------------------------------
         DTV = 0.
         DTG = 0.
+        MOZ    = 0.
         MOZSGN = 0
         MOZOLD = 0.
         HG     = 0.
@@ -4526,6 +4528,7 @@ contains
 ! -----------------------------------------------------------------
         MPE = 1E-6
         DTG = 0.
+        MOZ    = 0.
         MOZSGN = 0
         MOZOLD = 0.
         H      = 0.
@@ -8698,7 +8701,7 @@ END  SUBROUTINE SHALLOWWATERTABLE
      IF(VEGTYP ==EBLFOREST) LEAFPT = EXP(0.01*(1.-EXP(0.50*XLAI))*XLAI)
 
      NONLEF = 1.0 - LEAFPT
-     STEMPT = XLAI/10.0
+     STEMPT = XLAI/10.0*LEAFPT
      LEAFPT = LEAFPT - STEMPT
 
 !  fraction of carbon into wood versus root
@@ -8714,8 +8717,8 @@ END  SUBROUTINE SHALLOWWATERTABLE
 
 ! leaf and root turnover per time step
 
-     LFTOVR = LTOVRC*1.E-6*LFMASS
-     STTOVR = LTOVRC*1.E-6*STMASS
+     LFTOVR = LTOVRC*5.E-7*LFMASS
+     STTOVR = LTOVRC*5.E-7*STMASS
      RTTOVR = RTOVRC*RTMASS
      WDTOVR = 9.5E-10*WOOD
 
@@ -8736,10 +8739,10 @@ END  SUBROUTINE SHALLOWWATERTABLE
 
 ! Impose lower T limit for photosynthesis
 
-!     ADDNPPLF = MAX(0.,LEAFPT*CARBFX - GRLEAF-RSLEAF)
-!     ADDNPPST = MAX(0.,STEMPT*CARBFX - GRSTEM-RSSTEM)
-     ADDNPPLF = LEAFPT*CARBFX - GRLEAF-RSLEAF  ! MB: test Kjetil 
-     ADDNPPST = STEMPT*CARBFX - GRSTEM-RSSTEM  ! MB: test Kjetil 
+     ADDNPPLF = MAX(0.,LEAFPT*CARBFX - GRLEAF-RSLEAF)
+     ADDNPPST = MAX(0.,STEMPT*CARBFX - GRSTEM-RSSTEM)
+!     ADDNPPLF = LEAFPT*CARBFX - GRLEAF-RSLEAF  ! MB: test Kjetil 
+!     ADDNPPST = STEMPT*CARBFX - GRSTEM-RSSTEM  ! MB: test Kjetil 
      IF(TV.LT.TMIN) ADDNPPLF =0.
      IF(TV.LT.TMIN) ADDNPPST =0.
 
@@ -8785,7 +8788,7 @@ END  SUBROUTINE SHALLOWWATERTABLE
 !  total carbon flux
 
      CFLUX  = - CARBFX + RSLEAF + RSROOT + RSWOOD + RSSTEM &  ! MB: add RSSTEM,GRSTEM,0.9*RSSOIL v3.7
-              + RSSOIL + GRLEAF + GRROOT + GRWOOD + GRSTEM + 0.9*RSSOIL   ! g/m2/s
+          + 0.9*RSSOIL + GRLEAF + GRROOT + GRWOOD + GRSTEM    ! g/m2/s
 
 ! for outputs
 

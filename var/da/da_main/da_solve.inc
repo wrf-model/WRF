@@ -68,8 +68,10 @@
       call nl_get_iso_temp   ( 1 , iso_temp )
       if ( iso_temp .NE. grid%tiso ) THEN
          write(unit=message(1),fmt='(A)') &
-           'da_solve: namelist iso_temp does not equal iso_temp from fg. Reset namelist value and rerun'
-         call da_error(__FILE__,__LINE__,message(1:1))
+           'Namelist iso_temp does not equal iso_temp from fg. Reset namelist value and rerun.'
+         write(unit=message(2),fmt='(A,F10.5)')'Namelist iso_temp   = ',iso_temp
+         write(unit=message(3),fmt='(A,F10.5)')'Background iso_temp = ',grid%tiso
+         call da_error(__FILE__,__LINE__,message(1:3))
       end if
       call nl_get_base_pres_strat  ( 1, base_pres_strat )
       call nl_get_base_lapse_strat ( 1, base_lapse_strat )

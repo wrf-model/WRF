@@ -1,4 +1,4 @@
-WRF Model Version 3.6.1 (August 14, 2014)
+WRF Model Version 3.7 (April 17, 2015)
 http://wrf-model.org/users/users.php
 
 ------------------------
@@ -27,18 +27,25 @@ infringement actions.
 This is the main directory for the WRF Version 3 source code release.
 ======================================
 
+V3.7 Release Notes (4/17/15) (rev 8345):
+-------------------
+
+- For more information on WRF V3.7 release, visit WRF User's home pages
+  http://www2.mmm.ucar.edu/wrf/users/, and
+  http://www.dtcenter.org/wrf-nmm/users/, and read the online User's Guide.
+
 V3.6.1 Release Notes (8/14/14) (rev 7630):
 -------------------
 
 - For more information on WRF V3.6.1 release, visit WRF User's home pages
-  http://www.mmm.ucar.edu/wrf/users/, and
+  http://www2.mmm.ucar.edu/wrf/users/, and
   http://www.dtcenter.org/wrf-nmm/users/, and read the online User's Guide.
 
 V3.6 Release Notes (4/18/14) (rev 7412):
 -------------------
 
 - For more information on WRF V3.6 release, visit WRF User's home pages
-  http://www.mmm.ucar.edu/wrf/users/, and
+  http://www2.mmm.ucar.edu/wrf/users/, and
   http://www.dtcenter.org/wrf-nmm/users/, and read the online User's Guide.
 
 ======================================
@@ -47,7 +54,7 @@ V3.5.1 Release Notes (9/23/13) (rev 6868):
 -------------------
 
 - For more information on WRF V3.5.1 release, visit WRF User's home pages
-  http://www.mmm.ucar.edu/wrf/users/, and
+  http://www2.mmm.ucar.edu/wrf/users/, and
   http://www.dtcenter.org/wrf-nmm/users/, and read the online User's Guide.
 
 ======================================
@@ -56,7 +63,7 @@ V3.5 Release Notes (4/18/13) (rev 6660):
 -------------------
 
 - For more information on WRF V3.5 release, visit WRF User's home pages
-  http://www.mmm.ucar.edu/wrf/users/, and
+  http://www2.mmm.ucar.edu/wrf/users/, and
   http://www.dtcenter.org/wrf-nmm/users/, and read the online User's Guide.
 
 ======================================
@@ -65,7 +72,7 @@ V3.4.1 Release Notes (8/16/12) (rev 5930):
 -------------------
 
 This is a bug fix release. The detailed updates for WRF-ARW can be found at
-http://www.mmm.ucar.edu/wrf/users/wrfv3.4/updates-3.4.1.html,
+http://www2.mmm.ucar.edu/wrf/users/wrfv3.4/updates-3.4.1.html,
 and for WRF-NMM at
 http://www.dtcenter.org/wrf-nmm/users/model/wrfv3/updates.php
 
@@ -77,7 +84,7 @@ V3.4 Release Notes:
 Version 3.4 is released on April 6, 2012 (rev 5745).
 
 - For more information on WRF V3.4 release, visit WRF User's home pages
-  http://www.mmm.ucar.edu/wrf/users/, and
+  http://www2.mmm.ucar.edu/wrf/users/, and
   http://www.dtcenter.org/wrf-nmm/users/, and read the online User's Guide.
 
 ======================================
@@ -86,7 +93,7 @@ V3.3.1 Release Notes (9/16/11) (rev 5130):
 -------------------
 
 This is a bug fix release. The detailed updates for WRF-ARW can be found at
-http://www.mmm.ucar.edu/wrf/users/wrfv3.3/updates-3.3.1.html,
+http://www2.mmm.ucar.edu/wrf/users/wrfv3.3/updates-3.3.1.html,
 and for WRF-NMM at
 http://www.dtcenter.org/wrf-nmm/users/model/wrfv3/updates.php
 
@@ -98,7 +105,7 @@ V3.3 Release Notes:
 Version 3.3 is released on April 6, 2011 (rev 4896).
 
 - For more information on WRF V3.3 release, visit WRF User's home pages
-  http://www.mmm.ucar.edu/wrf/users/, and
+  http://www2.mmm.ucar.edu/wrf/users/, and
   http://www.dtcenter.org/wrf-nmm/users/, and read the online User's Guide.
 
 
@@ -108,7 +115,7 @@ V3.2.1 Release Notes (8/18/10):
 ------------------
 
 This is a bug fix release. The detailed updates for WRF-ARW can be found at
-http://www.mmm.ucar.edu/wrf/users/wrfv3.2/updates-3.2.1.html, and
+http://www2.mmm.ucar.edu/wrf/users/wrfv3.2/updates-3.2.1.html, and
 for WRF-NMM at
 http://www.dtcenter.org/wrf-nmm/users/model/wrfv3/updates.php
 
@@ -122,7 +129,7 @@ V3.2 Release Notes:
 Version 3.2 is released on March 31, 2010.
 
 - For more information on WRF V3.2 release, visit WRF User's home pages
-  http://www.mmm.ucar.edu/wrf/users/, and 
+  http://www2.mmm.ucar.edu/wrf/users/, and 
   http://www.dtcenter.org/wrf-nmm/users/, and read the online User's Guide.
 
 
@@ -132,7 +139,7 @@ V3.1.1 Release Notes (7/31/09):
 ------------------
 
 This is a bug fix release. The detailed updates for WRF-ARW can be found at
-http://www.mmm.ucar.edu/wrf/users/wrfv3.1/updates-3.1.1.html, and
+http://www2.mmm.ucar.edu/wrf/users/wrfv3.1/updates-3.1.1.html, and
 for WRF-NMM at
 http://www.dtcenter.org/wrf-nmm/users/model/wrfv3/updates.php
 
@@ -146,7 +153,7 @@ V3.1 Release Notes:
 Version 3.1 is released on April 9, 2009.
 
 - For more information on WRF V3.1 release, visit WRF Users home page
-  http://www.mmm.ucar.edu/wrf/users/, and read the online User's Guide.
+  http://www2.mmm.ucar.edu/wrf/users/, and read the online User's Guide.
 - WRF V3 executable will work with V3.0 wrfinput/wrfbdy (but requires 
   inserting a new namelist variable use_baseparam_fr_nml in &dynamics). As
   always, rerunning the new programs is recommended.
@@ -161,14 +168,14 @@ V3.0.1.1 Release Notes:
 
 Version 3.0.1.1 has only limited bug fixes compared to version 3.0.1.
 The detailed updates for WRF-ARW can be found at
-http://www.mmm.ucar.edu/wrf/users/wrfv3/updates-3.0.1.1.html.
+http://www2.mmm.ucar.edu/wrf/users/wrfv3/updates-3.0.1.1.html.
 
 
 V3.0.1 Release Notes:
 ---------------------
 
 This is a bug fix release. The detailed updates for WRF-ARW can be found at
-http://www.mmm.ucar.edu/wrf/users/wrfv3/updates-3.0.1.html.
+http://www2.mmm.ucar.edu/wrf/users/wrfv3/updates-3.0.1.html.
 
 Online User's Guides have also been updated.
 
@@ -179,7 +186,7 @@ V3.0 Release Notes:
 
 - For directions on compiling WRF, see below or Users Web page.
 - For more information on WRF V3 release, visit WRF Users home page
-  http://www.mmm.ucar.edu/wrf/users/
+  http://www2.mmm.ucar.edu/wrf/users/
 - WRF V3 works with WPS, and SI is no longer supported. 
   Please see User' Guide for WPS.
 - WRF V3 executable does not work with wrfinput/wrfbdy produced by previous versions.
@@ -211,6 +218,8 @@ WRF update history:
 - V3.4.1: Aug 16, 2012
 - V3.5: April 18, 2013
 - V3.5.1: Sept 23, 2013
+- V3.6: April 18, 2014
+- V3.6.1: Aug 14, 2014
 
 ======================================
 
@@ -290,7 +299,7 @@ How to compile and run?
   mpirun -np number-of-processors wrf.exe
 
 - For information on how to make nested runs, visit
-  http://www.mmm.ucar.edu/wrf/users/
+  http://www2.mmm.ucar.edu/wrf/users/
 
 
 ======================================
@@ -333,10 +342,11 @@ What is in WRF V3?
     Betts-Miller-Janjic / Grell-Devenyi ensemble / Grell 3D (with shallow convection option) /
     Grell-Freitas ensemble /
     Tiedtke (with shallow conv and momentum transport) / NSAS (with shallow conv and momentum transport) /
-    SAS (with shallow conv for ARW) / Zhang-McFarlane (with momentum transport) )
+    SAS (with shallow conv for ARW) / Zhang-McFarlane (with momentum transport) ) /
+    New Tiedtke (with shallow conv and momentum transport) / Multi-scale KF (with shallow convection)
   * UW shallow convection / GRIMS shallow convection
   * planetary boundary layer (Yosei University / Mellor-Yamada-Janjic / ACM2 / QNSE-EDMF / MYNN / 
-    BouLac / UW / TEMF / Grenier-Bretherton-McCaa )
+    BouLac / UW / TEMF / Grenier-Bretherton-McCaa ) / Shin-Hong 
   * slab soil model (5-layer thermal diffusion / Noah land-surface model (4 levels) /
     RUC LSM (6 levels) / Pleim-Xu (2 levels / Noah-MP (4 levels) / SSiB (3 levels) / CLM4 (10 levels) )
   * Urban canopy model, BEP multi-layer and BEM  (works with Noah LSM, BEP and 
@@ -347,7 +357,7 @@ What is in WRF V3?
   * sub-grid turbulence (constant K diffusion/ 2-D Smagorinsky/ predicted TKE /
     2-D, 6th order diffusion / Nonlinear Backscatter Anisotropic (NBA) sub-grid turbulence stress for LES )
   * Rayleigh damping for w at the upper boundary layer
-  * gravity wave drag
+  * gravity wave drag (including flow blocking)
   * land-use categories determine surface properties; support for 24 category USGS and 
     20 category MODIS 
   * Options for modifying SST, sea ice, vegetation fraction, albedo, and deep soil temp

@@ -2198,8 +2198,6 @@ CONTAINS
           b_dist = jbe - j
           b_limit = b_dist
           IF(periodic_x)b_limit = 0
-
-
           DO k = kts, ktf
             DO i = max(its,b_limit+ibs), min(itf,ibe-b_limit)
               bfield = field_bdy_ye(i, k, b_dist+1) &
@@ -2245,7 +2243,6 @@ CONTAINS
         ENDDO
       ENDIF
     ENDIF
-
 
    END SUBROUTINE spec_bdy_final
 !------------------------------------------------------------------------

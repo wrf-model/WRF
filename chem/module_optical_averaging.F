@@ -259,18 +259,11 @@
           its,ite, jts,jte, kts,kte                                    )
 !    call mieaer_modal()
 !
-!   CASE (CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN  , CBMZ_MOSAIC_KPP,        &
-!         CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ,                     &
-!         CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN,                   &
-!         CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ,             &
-!         CBMZ_MOSAIC_4BIN_VBS2_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP,       &
-!         MOZART_MOSAIC_4BIN_KPP,CRI_MOSAIC_8BIN_AQ_KPP,           &
-!         CRI_MOSAIC_4BIN_AQ_KPP ) 
    CASE (CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN  , CBMZ_MOSAIC_KPP,        &
          CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ,                     &
          CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN,                   &
          CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ,             &
-         CBMZ_MOSAIC_4BIN_VBS2_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP,       &
+         SAPRC99_MOSAIC_4BIN_VBS2_KPP,                                 &
          MOZART_MOSAIC_4BIN_KPP,MOZART_MOSAIC_4BIN_AQ_KPP,   &
          CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP,         &
          SAPRC99_MOSAIC_8BIN_VBS2_AQ_KPP,SAPRC99_MOSAIC_8BIN_VBS2_KPP)!BSINGH(12/05/2013): Added for SAPRC 8 bin vbs and non-aq on (04/07/2014)
@@ -285,7 +278,7 @@
           ids,ide, jds,jde, kds,kde,                                   &
           ims,ime, jms,jme, kms,kme,                                   &
           its,ite, jts,jte, kts,kte                                    )
-   CASE (GOCART_SIMPLE, GOCARTRACM_KPP, GOCARTRADM2_KPP, GOCARTRADM2,  &
+   CASE (GOCART_SIMPLE, GOCARTRACM_KPP, GOCARTRADM2,  &
          MOZCART_KPP                                                   )
      call optical_prep_gocart(nbin_o, chem, alt,relhum,                &
           radius_core,radius_wet, number_bin,                          &

@@ -95,6 +95,7 @@
  mix_full_fields                     = .true., .true., .true.,
  non_hydrostatic                     = .true., .true., .true.,
  pert_coriolis                       = .true., .true., .true.,
+ use_theta_m                         = 1,
  /
 
  &bdy_control

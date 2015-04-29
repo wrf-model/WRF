@@ -401,6 +401,20 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
                grid%t_init(i,j,k) = temp*(base_pres/grid%pb(i,j,k))**(gas_constant/cp) - t0
                grid%alb(i,j,k) = (gas_constant/base_pres)*(grid%t_init(i,j,k)+t0)*(grid%pb(i,j,k)/base_pres)**cvpm
             end do
+            grid%mub(i,j) = p_surf - grid%p_top
+            grid%phb(i,j,1) = grid%ht(i,j) * gravity
+            if (grid%hypsometric_opt == 1) then
+               do k = kts,kte
+                  grid%phb(i,j,k+1) = grid%phb(i,j,k) - grid%dnw(k)*grid%mub(i,j)*grid%alb(i,j,k)
+               end do
+            else if (grid%hypsometric_opt == 2) then
+               do k = kts,kte
+                  pfu = grid%mub(i,j)*grid%znw(k+1) + grid%p_top
+                  pfd = grid%mub(i,j)*grid%znw(k  ) + grid%p_top
+                  phm = grid%mub(i,j)*grid%znu(k  ) + grid%p_top
+                  grid%phb(i,j,k+1) = grid%phb(i,j,k) + grid%alb(i,j,k)*phm*LOG(pfd/pfu)
+               end do
+            end if
           end do
          end do
 

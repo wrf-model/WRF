@@ -666,7 +666,6 @@ integer::oops1,oops2
      END DO find_j_index_of_fft_filter
      grid%mf_fft = grid%msft(ids,j_save)
 #endif
-print *,'j_save = ',j_save,grid%clat(ids,j_save),grid%mf_fft
 
          CALL pxft ( grid=grid                                              &
                ,lineno=__LINE__                                             &
@@ -3155,6 +3154,34 @@ endif
                END DO
 #endif
 
+               !  Recompute density, simlar to what the model does.
+
+               IF (grid%hypsometric_opt == 1) THEN
+               DO k=kts,kte-1
+                  grid%al(i,k,j)=-1./(grid%mub(i,j)+grid%mu_2(i,j))*(grid%alb(i,k,j)*grid%mu_2(i,j)  &
+                                 +grid%rdnw(k)*(grid%ph_2(i,k+1,j)-grid%ph_2(i,k,j)))
+               ENDDO
+               ELSE IF (grid%hypsometric_opt == 2) THEN
+               DO k=kts,kte-1
+                  pfu = (grid%mub(i,j)+grid%mu_2(i,j))*grid%znw(k+1)+grid%p_top
+                  pfd = (grid%mub(i,j)+grid%mu_2(i,j))*grid%znw(k)  +grid%p_top
+                  phm = (grid%mub(i,j)+grid%mu_2(i,j))*grid%znu(k)  +grid%p_top
+                  grid%al(i,k,j) = (grid%ph_2(i,k+1,j)-grid%ph_2(i,k,j)+grid%phb(i,k+1,j)-grid%phb(i,k,j)) &
+                                    /phm/LOG(pfd/pfu)-grid%alb(i,k,j)
+               ENDDO     
+               END IF
+     
+               !  Compute pressure similarly to how computed within model.
+
+               DO k=kts,kte-1
+                  qvf = 1.+rvovrd*moist(i,k,j,P_QV)
+                  grid%p(i,k,j)=p1000mb*( (r_d*(t0+grid%t_2(i,k,j))*qvf)/                     &
+                               (p1000mb*(grid%al(i,k,j)+grid%alb(i,k,j))) )**cpovcv  &
+                               -grid%pb(i,k,j)
+                  grid%p_hyd(i,k,j) = grid%p(i,k,j) + grid%pb(i,k,j)
+                  grid%alt(i,k,j) = grid%al(i,k,j) + grid%alb(i,k,j)
+               ENDDO
+
                !  Adjust the column pressure so that the computed 500 mb height is close to the
                !  input value (of course, not when we are doing hybrid input).
 
@@ -3256,6 +3283,20 @@ endif
                            ims , ime , jms , jme , kms , kme ,                    &
                            its , ite , jts , jte , kts , kte-1 )
       END IF
+     
+      !  Compute pressure similarly to how computed within model, with final Qv.
+
+      DO j = jts, min(jde-1,jte)
+         DO k=kts,kte-1
+            DO i = its, min(ide,ite)
+               qvf = 1.+rvovrd*moist(i,k,j,P_QV)
+               grid%p(i,k,j)=p1000mb*( (r_d*(t0+grid%t_2(i,k,j))*qvf)/                     &
+                            (p1000mb*(grid%al(i,k,j)+grid%alb(i,k,j))) )**cpovcv  &
+                            -grid%pb(i,k,j)
+               grid%p_hyd(i,k,j) = grid%p(i,k,j) + grid%pb(i,k,j)
+            ENDDO
+         ENDDO
+      ENDDO
 
       !  If this is data from the SI, then we probably do not have the original
       !  surface data laying around.  Note that these are all the lowest levels
@@ -5319,9 +5360,8 @@ print *,'p target= ',target_x
          !  an odd order interpolator.  For the even guys, we'll do it twice
          !  and shift the range one index, then get an average.
 
-! cubic spline
          IF ( n .EQ. 9 ) THEN
-            CALL cubic_spline (all_dim-1, all_x, all_y, P2)
+            CALL cubic_spline (all_dim, all_x, all_y, P2)
 !
 ! Find the value of function f(x)
 !
@@ -5336,9 +5376,6 @@ print *,'p target= ',target_x
                                   *(target_x(target_loop)-all_x(loc_center_right)) &
                      +GAMMA*(target_x(target_loop)-all_x(loc_center_left)) &
                      +ETA*(target_x(target_loop)-all_x(loc_center_right))
-
-!        IF      ( MOD(n,2) .NE. 0 ) THEN
-!  end cubic spline block
 
          ELSE IF ( MOD(n,2) .NE. 0 ) THEN
             IF ( ( loc_center_left -(((n+1)/2)-1) .GE.       1 ) .AND. &
@@ -5409,10 +5446,15 @@ print *,'p target= ',target_x
 !
 ! Assign the intervals and function differences
 !
-  DO I = 1, N
+  DO I = 1, N-1
     H(I) = XI(I+1) - XI(I)
     G(I) = FI(I+1) - FI(I)
   END DO
+!
+! The top vertical derivative is zero
+!
+  H(N) = H(N-1)
+  G(N) = 0
 !
 ! Evaluate the coefficient matrix elements
   DO I = 1, N-1
@@ -5425,7 +5467,6 @@ print *,'p target= ',target_x
 !
   CALL TRIDIAGONAL_LINEAR_EQ (N-1, D, C, C, B, G)
   P2(1) = 0
-  P2(N+1) = 0
   DO I = 2, N
     P2(I) = G(I-1)
   END DO

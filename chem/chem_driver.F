@@ -481,17 +481,11 @@
      CASE (GOCARTRACM_KPP)
        CALL wrf_debug(15,'calling gocart and racm driver from chem_driver')
        haveaer = .false.
-     CASE (GOCARTRADM2_KPP)
-       CALL wrf_debug(15,'calling gocart and radmkpp driver from chem_driver')
-       haveaer = .false.
      CASE (GOCARTRADM2)
        CALL wrf_debug(15,'calling gocart and radm driver from chem_driver')
        haveaer = .false.
      CASE (SAPRC99_KPP)
        CALL wrf_debug(15,'calling saprc99_kpp from chem_driver')
-       haveaer = .false.
-     CASE (CBMZ_MOSAIC_4BIN_VBS2_KPP)
-       CALL wrf_debug(15,'calling cbmz_mosaic_4bin_vbs2_kpp from chem_driver')
        haveaer = .false.
      CASE (SAPRC99_MOSAIC_4BIN_VBS2_KPP)
        CALL wrf_debug(15,'calling saprc99_mosaic_4bin_vbs2_kpp from chem_driver')
@@ -646,7 +640,7 @@
          enddo
 
 ! Special treatment of CH4 in SAPRC99
-      case (CBMZ_MOSAIC_4BIN_VBS2_KPP, SAPRC99_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP, &
+      case (SAPRC99_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP, &
            SAPRC99_MOSAIC_8BIN_VBS2_AQ_KPP,SAPRC99_MOSAIC_8BIN_VBS2_KPP) !BSINGH -  Added for SAPRC 8 bin and non-aq on (04/04/2014)
          CALL wrf_debug ( 15 , ' fixing ch4 conc using co conc' )
          do j=jps,jpe
@@ -1159,8 +1153,7 @@
 
 #if ( WRF_KPP == 1 )
 
-         if( config_flags%chem_opt == CBMZ_MOSAIC_4BIN_VBS2_KPP .or. &
-              config_flags%chem_opt == SAPRC99_MOSAIC_4BIN_VBS2_KPP.or. &
+         if( config_flags%chem_opt == SAPRC99_MOSAIC_4BIN_VBS2_KPP.or. &
               config_flags%chem_opt ==SAPRC99_MOSAIC_8BIN_VBS2_AQ_KPP ) then
           do k=kts,kte
            do i=its,ite

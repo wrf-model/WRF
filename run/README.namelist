@@ -119,6 +119,7 @@ For additional regional climate surface fields
  io_form_auxhist3                    = 2        ; netcdf
  auxhist3_interval                   = 1440     ; minutes between outputs (1440 gives daily max/min)
  frames_per_auxhist3                 = 1        ; output times per file
+                                                  Note: do restart only at multiple of auxhist3_intervals
 
 For observation nudging:
  auxinput11_interval                 = 10       ; interval in minutes for observation data. It should be 
@@ -284,6 +285,22 @@ a known first several layers, then generates equi-height spaced levels up to the
                                        0.298, 0.263, 0.231, 0.202, 0.175,
                                        0.150, 0.127, 0.106, 0.088, 0.070,
                                        0.055, 0.040, 0.026, 0.013, 0.000
+
+                                     = 0,2,      ; this allows vertical nesting in the nest domain
+                                       Note that with vertical nesting one can only use RRTM and RRTMG radiation physics
+
+ An example to define vertical nested levels (in program real):
+                                       
+ e_vert                              = 35,    45,
+ eta_levels(1:35)                    = 1., 0.993, 0.983, 0.97, 0.954, 0.934, 0.909, 0.88, 0.8406663, 0.8013327,
+                                       0.761999, 0.7226653, 0.6525755, 0.5877361, 0.5278192, 0.472514,
+                                       0.4215262, 0.3745775, 0.3314044, 0.2917579, 0.2554026, 0.2221162,
+                                       0.1916888, 0.1639222, 0.1386297, 0.1156351, 0.09525016, 0.07733481,
+                                       0.06158983, 0.04775231, 0.03559115, 0.02490328, 0.0155102, 0.007255059, 0.
+ eta_levels(36:81)                   = 1.0000, 0.9946, 0.9875, 0.9789, 0.9685, 0.9562, 0.9413, 0.9238, 0.9037, 0.8813, 0.8514,
+                                       0.8210, 0.7906, 0.7602, 0.7298, 0.6812, 0.6290, 0.5796, 0.5333, 0.4901, 0.4493, 0.4109,
+                                       0.3746, 0.3412, 0.3098, 0.2802, 0.2524, 0.2267, 0.2028, 0.1803, 0.1593, 0.1398, 0.1219,
+                                       0.1054, 0.0904, 0.0766, 0.0645, 0.0534, 0.0433, 0.0341, 0.0259, 0.0185, 0.0118, 0.0056, 0.
 
 Horizontal interpolation options, coarse grid to fine grid.  The default is to use
 the Smolarkiewicz "SINT" method.  However, this is known to break with the 
@@ -510,6 +527,7 @@ Namelist variables for controlling the adaptive time step option:
                                           also requires levsiz, paerlev, cam_abs_dim1/2 (see below)
                                      = 4, rrtmg scheme
                                        (Default values for GHG in V3.5: co2vmr=379.e-6, n2ovmr=319.e-9, ch4vmr=1774.e-9)
+                                     = 24, fast rrtmg scheme for GPU and MIC (since 3.7)
                                      = 5, Goddard longwave scheme
                                      = 7, FLG (UCLA) scheme 
                                      = 31, Earth Held-Suarez forcing
@@ -523,13 +541,15 @@ Namelist variables for controlling the adaptive time step option:
                                      = 3, cam scheme
                                           also must set levsiz, paerlev, cam_abs_dim1/2 (see below)
                                      = 4, rrtmg scheme
+                                     = 24, fast rrtmg scheme for GPU and MIC (since 3.7)
                                      = 5, Goddard shortwave scheme
                                      = 7, FLG (UCLA) scheme
                                      = 99, GFDL (Eta) longwave (semi-supported)
                                           also must use co2tf = 1 for ARW
 
  radt (max_dom)                      = 30,	; minutes between radiation physics calls
-                                           recommend 1 min per km of dx (e.g. 10 for 10 km)
+                                           recommend 1 min per km of dx (e.g. 10 for 10 km);
+                                           use the same value for all nests.                      
 
  nrads (max_dom)                     = FOR NMM: number of fundamental timesteps between 
                                                 calls to shortwave radiation; the value
@@ -744,7 +764,10 @@ Namelist variables for controlling the adaptive time step option:
                                                   1 = with cloud effect, and use cloud fraction option 1
                                                       (Xu-Randall method) 
                                                   0 = without cloud effect
-                                                  2 = with cloud effect, and use cloud fraction option 2
+                                                  2 = with cloud effect, and use cloud fraction option 2 (0/1 based
+                                                      on threshold
+                                                  3 = with cloud effect, and use cloud fraction option 3, based on
+                                                      Sundqvist et al. (1989) (since 3.7)
  swrad_scat                          = 1.       ; scattering tuning parameter (default 1. is 1.e-5 m2/kg)
                                                   (works for ra_sw_physics = 1 option only)
  surface_input_source                = 1,	; where landuse and soil category data come from:
@@ -901,6 +924,23 @@ Options for wind turbine drag parameterization:
                                                 ; 1 = The coordinate of the turbines are defined in terms of grid points
 
 
+Stochastic parameterization schemes:
+
+&stoch
+ skebs                                = 1       ; stochastic kinetic-energy backscatter scheme, 1: on
+ tot_backscat_psi                     = 1.0E-05 ; total backscattered dissipation for streamfunction; 
+                                                ; determines amplitude of streamfunction perturbations
+ tot_backscat_t                       = 1.0E-06 ; total backscattered dissipation for potential temperature 
+ ztau_psi                             = 10800.0 ; decorrelation time scale of noise for streamfunction perturbations
+ rand_perturb                         = 1       ; generate array with random perturbations for user determined use, 1: on
+ gridpt_stddev_rand_pert              = 0.03    ; standard deviation of random perturbations at each gridpoint  
+                                                ; determines amplitude of random perturbations 
+ stddev_cutoff_rand_pert              = 3.0     ; cutoff tails of pdf above this threshold standard deviation
+ lengthscale_rand_pert                = 500000.0 ; correlation length scale in meters
+ timescale_rand_pert                  = 21600.0 ; decorrelation time scale in s
+ nens                                 = 1       ; creates different seed for random number streams in either stochastic scheme
+                                                ; must be different for each member in ensemble forecasts 
+
 Options for stochastic kinetic-energy backscatter scheme:
 
  stoch_force_opt (max_dom)          = 0,        : No stochastic parameterization
@@ -927,6 +967,11 @@ Options for stochastic kinetic-energy backscatter scheme:
  lmaxforc                           = 1000000   ; max. forcing wavenumber in lat. for psi perturb
  kmaxforct                          = 1000000   ; max. forcing wavenumber in lon. for theta perturb
  lmaxforct                          = 1000000   ; max. forcing wavenumber in lat. for theta perturb
+ perturb_chem_bdy                               ; Options for perturbing lateral boundaries of chemical tracers:
+                                                  0 = off; 1 = on with RAND_PERTURB pattern
+ perturb_bdy                        = 0         ; No boundary perturbations
+                                      1         ; Use SKEBS pattern for boundary perturbations
+                                      2         ; Use other user-provided pattern for boundary perturbations
 
 Options for use with the Noah-MP Land Surface Model:
 
@@ -937,7 +982,6 @@ Options for use with the Noah-MP Land Surface Model:
                                                 ;    3 = Off (LAI from table; FVEG calculated)
                                                 ;    4 = Off (LAI from table; FVEG = maximum veg. fraction)
                          			;    5 = On  (LAI predicted;  FVEG = maximum veg. fraction)
-						;    6 = Off (LAI from input; FVEG = maximum veg. fraction)
  opt_crs                            = 1,        ; Noah-MP Stomatal Resistance option:
                                                 ;    1 = Ball-Berry; 2 = Jarvis
  opt_sfc                            = 1         ; Noah-MP surface layer drag coefficient calculation
@@ -1149,8 +1193,13 @@ The following are for observation nudging:
                                                       not for real-data cases)
                                                   3 = with w-Rayleigh damping (dampcoef inverse time scale [1/s] e.g. .05; 
                                                       for real-data cases)
- use_theta_m                         = .false.  ; true: use theta_m=theta(1+1.61Qv)
-                                                  false: use dry theta in dynamics
+ use_theta_m                         = 0        ; 1: use theta_m=theta(1+1.61Qv)
+                                                  0: use dry theta in dynamics
+ use_q_diabatic                      = 0        ; whether to include QV and QC tendencies in advection (new in 3.7)
+                                                  0 = default, old behavior
+                                                  1 = include QV and QC tendencies - this helps to produce correct solution
+                                                      in an idealized 'moist benchmark' test case (Bryan, 2014).
+                                                      In real data testing, time step needs to be reduce to maintain stable solution
  c_s                                 = 0.25     ; Smagorinsky coeff
  c_k                                 = 0.15     ; TKE coeff
  diff_6th_opt                        = 0,       ; 6th-order numerical diffusion
@@ -1242,6 +1291,8 @@ The following are for observation nudging:
  spec_exp                            = 0.       ; exponential multiplier for relaxation zone ramp for specified=.t.
                                                   (0.=linear ramp default, e.g. 0.33=~3*dx exp decay factor)
  constant_bc                         = .false.  ; constant boundary condition used with DFI
+ spec_bdy_final_mu                   = 0,       ; whether to call spec_bdy_final for mu (since 3.7): 
+                                                  = 0, no call; = 1: call (this may cause different restart results)
 
  periodic_x (max_dom)                = .false., ; periodic boundary conditions in x direction
  symmetric_xs (max_dom)              = .false., ; symmetric boundary conditions at x start (west)
@@ -1256,9 +1307,6 @@ The following are for observation nudging:
  nested (max_dom)                    = .false., ; nested boundary conditions (must be used for nests)
  polar                               = .false., ; polar boundary condition
                                                   (v=0 at polarward-most v-point)
- perturb_bdy                         = 0        ; No boundary perturbations
-                                       1        ; Use SKEBS pattern for boundary perturbations
-                                       2        ; Use other user-provided pattern for boundary perturbations
  have_bcs_moist                      = .false., ; model run after ndown only: do not use microphysics variables in bdy file
                                      = .true. , ; use microphysics variables in bdy file
  have_bcs_scalar                     = .false., ; model run after ndown only: do not use scalar variables in bdy file

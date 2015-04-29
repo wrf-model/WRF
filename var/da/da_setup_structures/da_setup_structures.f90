@@ -66,7 +66,7 @@ module da_setup_structures
       use_seviriobs, jds_int, jde_int, anal_type_hybrid_dual_res 
 
    use da_obs, only : da_fill_obs_structures, da_store_obs_grid_info, da_store_obs_grid_info_rad, &
-                      da_fill_obs_structures_rain,da_set_obs_missing,da_set_3d_obs_missing
+                      da_fill_obs_structures_rain, da_fill_obs_structures_radar, da_set_obs_missing,da_set_3d_obs_missing
    use da_obs_io, only : da_read_obs_bufr,da_read_obs_radar, &
       da_scan_obs_radar,da_scan_obs_ascii,da_read_obs_ascii, &
       da_read_obs_bufrgpsro, da_scan_obs_rain, da_read_obs_rain
@@ -122,6 +122,7 @@ contains
 #include "da_setup_obs_structures_bufr.inc"
 #include "da_setup_obs_structures_madis.inc"
 #include "da_setup_obs_structures_rain.inc"
+#include "da_setup_obs_structures_radar.inc"
 #include "da_setup_obs_interp_wts.inc"
 #include "da_setup_runconstants.inc"
 #include "da_cloud_model.inc"

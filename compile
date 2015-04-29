@@ -61,6 +61,16 @@ foreach a ( $argv )
          if ( ! $?WRF_NMM_CORE ) setenv WRF_NMM_CORE 1
       endif
     endif
+    set ZAP = .foofoo
+    if      ( ( "$a" ==  "nmm_real" ) || ( "$a" ==  "nmm_nest" ) || ( "$a" ==  "nmm_hwrf" ) ) then
+       set ZAP = ( main/wrf.exe main/real_nmm.exe )
+    else if ( `echo $a | cut -c 1-4` == "nmm_" ) then
+       set ZAP = ( main/wrf.exe main/ideal_nmm.exe )
+    else if   ( "$a" ==  "em_real" ) then
+       set ZAP = ( main/wrf.exe main/real.exe main/ndown.exe main/tc.exe )
+    else if   ( `echo $a | cut -c 1-3` == "em_" ) then
+       set ZAP = ( main/wrf.exe main/ideal.exe )
+    endif
     if ( "$a" == "-j" ) then
       shift argv
       setenv J "-j $argv[1]"
@@ -437,6 +447,7 @@ else
     echo not setting parallel make
   endif
 
+  /bin/rm -f $ZAP >& /dev/null
   make $arglist A2DCASE="$A2DCASE" WRF_SRC_ROOT_DIR="$WRF_SRC_ROOT_DIR"
 
 endif

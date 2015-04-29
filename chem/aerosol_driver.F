@@ -206,7 +206,7 @@
 !
    cps_select: SELECT CASE(config_flags%chem_opt)
 
-   CASE (GOCART_SIMPLE,GOCARTRACM_KPP,GOCARTRADM2_KPP,GOCARTRADM2,MOZCART_KPP)
+   CASE (GOCART_SIMPLE,GOCARTRACM_KPP,GOCARTRADM2,MOZCART_KPP)
       call gocart_aerosols_driver(ktauc,dtstepc,config_flags,t_phy,moist,  &
          chem,rho_phy,dz8w,p8w,dx,g,         &
          ids,ide, jds,jde, kds,kde,                                        &
@@ -276,7 +276,7 @@
                its,ite, jts,jte, kts,kte                                )
 
    CASE (CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_KPP, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, &
-         CBMZ_MOSAIC_8BIN_AQ, CBMZ_MOSAIC_4BIN_VBS2_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP, &
+         CBMZ_MOSAIC_8BIN_AQ, SAPRC99_MOSAIC_4BIN_VBS2_KPP, &
          MOZART_MOSAIC_4BIN_KPP, MOZART_MOSAIC_4BIN_AQ_KPP, &
          SAPRC99_MOSAIC_8BIN_VBS2_AQ_KPP, SAPRC99_MOSAIC_8BIN_VBS2_KPP, & !BSINGH  Added "SAPRC99_MOSAIC_8BIN_VBS2_AQ_KPP" and "SAPRC99_MOSAIC_8BIN_VBS2_KPP"
          CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ)
@@ -466,7 +466,7 @@
 !
    sum_pm_select: SELECT CASE(config_flags%chem_opt)
 
-   CASE (GOCART_SIMPLE,GOCARTRACM_KPP,GOCARTRADM2_KPP,GOCARTRADM2,MOZCART_KPP)
+   CASE (GOCART_SIMPLE,GOCARTRACM_KPP,GOCARTRADM2,MOZCART_KPP)
        CALL wrf_debug(15,'sum_pm_driver: calling sum_pm_gocart')
        CALL sum_pm_gocart (                                            &
             alt, chem,pm2_5_dry, pm2_5_dry_ec, pm10,                   &
@@ -512,7 +512,7 @@
             ims,ime, jms,jme, kms,kme,                                 &
             its,ite, jts,jte, kts,kte                                  )
 
-   CASE (CBMZ_MOSAIC_4BIN_VBS2_KPP, SAPRC99_MOSAIC_4BIN_VBS2_KPP)
+   CASE (SAPRC99_MOSAIC_4BIN_VBS2_KPP)
 
        CALL wrf_debug(15,'sum_pm_driver: calling sum_pm_mosaic_vbs2')
        call sum_pm_mosaic_vbs2 (                                       &

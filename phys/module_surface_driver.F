@@ -261,7 +261,7 @@ CONTAINS
      &          ,G_URB2D_mosaic,RN_URB2D_mosaic                       &  !danli mosaic 
      &          ,TS_URB2D_mosaic                                      &  !danli mosaic 
      &          ,TS_RUL2D_mosaic                                      &  !danli mosaic     
-     &          ,ZOLOUT                                               &  !ckay
+     &          ,ZOL                                                  &  !ckay
      &                                                             )
               
 #if ( ! NMM_CORE == 1 )
@@ -995,7 +995,7 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(INOUT)::   snowfallac !  density of snowfall
 
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(OUT), OPTIONAL  ::   NOAHRES
-   REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT), OPTIONAL  ::   ZOLOUT
+   REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)          ::   ZOL
 
    INTEGER, INTENT(IN) :: MAXPATCH, inest
 
@@ -1083,8 +1083,6 @@ CONTAINS
 
    REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ) ::v_phytmp
    REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ) ::u_phytmp
-
-   REAL,       DIMENSION( ims:ime, jms:jme )          ::  ZOL
 
    REAL,       DIMENSION( ims:ime, jms:jme )          ::          &
                                                              QGH, &
@@ -1352,7 +1350,6 @@ CONTAINS
         ENDDO
       ENDDO
       DO i = i_start(ij),i_end(ij)
-         ZOL(i,j) = 0.
          QGH(i,j) = 0.
          CHS(i,j) = 0.
          CPM(i,j) = 0.
@@ -3787,19 +3784,6 @@ CONTAINS
        !$OMP END PARALLEL DO
 
        ENDIF
-     ENDIF
-
-     IF ( PRESENT( ZOLOUT ) ) THEN
-       !$OMP PARALLEL DO   &
-       !$OMP PRIVATE ( ij, i, j, k )
-       DO ij = 1 , num_tiles
-         DO j=j_start(ij),j_end(ij)
-         DO i=i_start(ij),i_end(ij)
-            ZOLOUT(i,j) = ZOL(i,j)
-         ENDDO
-         ENDDO
-       ENDDO
-       !$OMP END PARALLEL DO
      ENDIF
 
    ENDIF
@@ -6434,13 +6418,16 @@ HFX_SEA, LH_SEA, QFX_SEA, QGH_SEA, QSFC_SEA, TSK_SEA,  &
      XXLAT=XLAT1*DEGRAD
 
 ! RETURN IF NIGHT
-         IF(CSZA.LE.1.E-9) return 
+         IF(CSZA.LE.1.E-4) return 
         
-!  Parameterize diffuse fraction of global solar radiation as a function of the ratio between TOA radiation and surface global radiation
+!  Parameterize diffuse fraction of global solar radiation as a function of the ratio 
+!    between TOA radiation and surface global radiation
 !             diffuse_frac = min(1.,1./(max(0.1,2.1-2.8*log(log(csza*solcon/max(SWDOWN_IN,1.e-3))))))
               diffuse_frac = diffuse_frac_in
-        if ((slope.eq.0).or.(diffuse_frac.eq.1).or.(csza.lt.1.e-2)) then  ! no topographic effects when all radiation diffuse or sun too close to horizon
+        if ((slope.eq.0).or.(diffuse_frac.eq.1).or.(csza.le.1.e-4)) then
+!  no topographic effects when all radiation diffuse or sun too close to horizon
           corr_fac = 1
+          if(shadow.eq.1) corr_fac = diffuse_frac
           goto 140
         endif
 
@@ -6455,7 +6442,8 @@ HFX_SEA, LH_SEA, QFX_SEA, QGH_SEA, QSFC_SEA, TSK_SEA,  &
 ! Topographic shading
         if (shadow.eq.1) csza_slp = 0
 
-! Correction factor for sloping topography; the diffuse fraction of solar radiation is assumed to be unaffected by the slope
+! Correction factor for sloping topography; the diffuse fraction of solar radiation 
+!   is assumed to be unaffected by the slope
         corr_fac = diffuse_frac + (1-diffuse_frac)*csza_slp/csza
 
  140        continue

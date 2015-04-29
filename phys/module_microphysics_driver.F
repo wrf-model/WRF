@@ -1002,6 +1002,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 
          CALL mp_milbrandt2mom_driver(                   &
                      ITIMESTEP=itimestep,                &
+                     p8w=p8w,                              &
                      TH=th,                              &
                      QV=qv_curr,                         &
                      QC=qc_curr,                         &
@@ -1558,12 +1559,14 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,RAIN=rainnc ,RAINNCV=rainncv                      &
                  ,SNOW=snownc ,SNOWNCV=snowncv                      &
                  ,SR=sr                                             &
+# ifndef _ACCEL
                  ,has_reqc=has_reqc                                 &  ! for radiation +
                  ,has_reqi=has_reqi                                 &
                  ,has_reqs=has_reqs                                 &
                  ,re_cloud=re_cloud                                 &
                  ,re_ice=re_ice                                     &
                  ,re_snow=re_snow                                   &  ! for radiation -  
+# endif
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
@@ -1596,17 +1599,17 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,RAIN=rainnc ,RAINNCV=rainncv                      &
                  ,SNOW=snownc ,SNOWNCV=snowncv                      &
                  ,SR=sr                                             &
-#ifndef _ACCEL
+# ifndef _ACCEL
                  ,REFL_10CM=refl_10cm                               &  ! added for radar reflectivity
                  ,diagflag=diagflag                                 &  ! added for radar reflectivity
                  ,do_radar_ref=do_radar_ref                         &  ! added for radar reflectivity
-#endif
                  ,has_reqc=has_reqc                                 &  ! for radiation +
                  ,has_reqi=has_reqi                                 &
                  ,has_reqs=has_reqs                                 &
                  ,re_cloud=re_cloud                                 &
                  ,re_ice=re_ice                                     &
                  ,re_snow=re_snow                                   &  ! for radiation -  
+# endif
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &

@@ -6282,7 +6282,7 @@ SUBROUTINE theta_to_thetam ( t_1 , moist_old ,                &
 
    !  First time step, there is no OLD moisture.
 
-   IF ( itimestep .EQ. 1 ) THEN
+   IF ( ( itimestep .EQ. 1 ) .AND. ( rk_step .EQ. 1 ) ) THEN
       DO j = jts , MIN(jte,jde-1)
          DO k = kts , kte-1
             DO i = its , MIN(ite,ide-1)

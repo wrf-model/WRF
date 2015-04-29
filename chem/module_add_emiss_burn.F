@@ -230,7 +230,7 @@ CONTAINS
         enddo
         enddo
         enddo
-      CASE (GOCARTRACM_KPP,GOCARTRADM2_KPP,GOCARTRADM2)
+      CASE (GOCARTRACM_KPP,GOCARTRADM2)
           do j=jts,jte
           do i=its,ite
            do k=kts,kte

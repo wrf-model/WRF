@@ -562,8 +562,8 @@ state  real   grnflx    ij    dyn_nmm   1    -     irh023      "GRNFLX"    "Deep
 state  real   pctsno    ij    dyn_nmm   1    -     irh023
 state  real   soiltb    ij    dyn_nmm   1    -     i01rh023d=(DownNear) "SOILTB"    "Deep ground soil temperature"     "K"
 state  real   vegfrc    ij    dyn_nmm   1    -     i014rh023d=(DownNear) "VEGFRC"    "Vegetation fraction"              ""
-state  real   shdmin    ij    dyn_nmm   1    -     -
-state  real   shdmax    ij    dyn_nmm   1    -     -
+state  real   shdmax    ij    dyn_nmm   1    -     ird=(DownNear)        "SHDMAX"        "ANNUAL MAX VEG FRACTION" ""
+state  real   shdmin    ij    dyn_nmm   1    -     ird=(DownNear)        "SHDMIN"        "ANNUAL MIN VEG FRACTION" ""
 state  real   sh2o      ilj   dyn_nmm   1    Z     irh023d=(DownNearIKJ)   "SH2O"      "Unfrozen soil moisture volume fraction"  ""
 state  real   smc       ilj   dyn_nmm   1    Z     irh023d=(DownNearIKJ)   "SMC"       "Soil moisture volume fraction"    ""
 state  real   stc       ilj   dyn_nmm   1    Z     irh023d=(DownNearIKJ)   "STC"       "Soil temperature"                 "K"

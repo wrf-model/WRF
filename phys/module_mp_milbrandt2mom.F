@@ -11,21 +11,20 @@
 !  updates to the code (before the next offical WRF release) please contact     !
 !  Jason Milbrandt (Environment Canada) at jason.milbrandt@ec.gc.ca             !
 !                                                                               !
-!  Last modified:  2014-03-19                                                   !
+!_______________________________________________________________________________!
+!                                                                               !
+!  Package version:   2.25.2_beta_04   (internal bookkeeping)                   !
+!  Last modified:     2015-02-11                                                !
 !_______________________________________________________________________________!
 
-module my_fncs_mod
+MODULE my2_mod
 
-!==============================================================================!
-!  The following functions are used by the schemes in the multimoment package. !
-!==============================================================================!
+ private
+ public  :: mp_milbrandt2mom_main
+ private :: NccnFNC,SxFNC,gamma,gser,gammln,gammp,cfg,gamminc,polysvp,qsat,check_values
+ private :: sedi_wrapper_2,sedi_1D,count_columns,des_OF_Ds,Dm_x,iLAMDA_x,N_Cooper,Nos_Thompson
 
-   implicit none
-
-   private
-   public  :: NccnFNC,SxFNC,gamma,gser,gammln,gammp,cfg,gamminc,polysvp,qsat
-
-   contains
+ CONTAINS
 
 !==============================================================================!
 
@@ -190,13 +189,8 @@ module my_fncs_mod
   gammadp=tmp+log(stp*ser/x)
   gammadp= exp(gammadp)
 
-#if (DWORDSIZE == 8 && RWORDSIZE == 8)
-  gamma  =      gammadp
-#elif (DWORDSIZE == 8 && RWORDSIZE == 4)
+!!GEM:
   gamma  = sngl(gammadp)
-#else
-     This is a temporary hack assuming double precision is 8 bytes.
-#endif
 
  END FUNCTION gamma
 !======================================================================!
@@ -218,7 +212,6 @@ module my_fncs_mod
 
  gln=gammln(a)
  if(x.le.0.)then
-    if(x.lt.0.) call wrf_error_fatal ( 'WARNING: x <0 in gser' )
     gamser=0.
     return
  endif
@@ -231,7 +224,6 @@ module my_fncs_mod
     summ=summ+de1
     if(abs(de1).lt.abs(summ)*eps) goto 1
  enddo
- call wrf_error_fatal ( 'Warning: a too large, itmax too small in gser')
 1 gamser=summ*exp(-x+a*log(x)-gln)
  return
 
@@ -266,13 +258,9 @@ END SUBROUTINE gser
      y=y+1.d0
      ser=ser+cof(j)/y
   enddo
-#if (DWORDSIZE == 8 && RWORDSIZE == 8)
-  gammln=       tmp+log(stp*ser/x)
-#elif (DWORDSIZE == 8 && RWORDSIZE == 4)
+
+!! GEM:
   gammln= sngl( tmp+log(stp*ser/x)  )
-#else
-     This is a temporary hack assuming double precision is 8 bytes.
-#endif
 
  END FUNCTION gammln
 !======================================================================!
@@ -287,7 +275,6 @@ END SUBROUTINE gser
 
  real :: a,x,gammcf,gamser,gln
 
- if(x.lt.0..or.a.le.0.) call wrf_error_fatal ( 'warning : bad arguments in gammq' )
  if(x.lt.a+1.)then
     call gser(gamser,a,x,gln)
     gammp=gamser
@@ -333,7 +320,6 @@ END SUBROUTINE gser
    h=h*de1
    if(abs(de1-1.).lt.eps) goto 1
  enddo
- call wrf_error_fatal ( 'Warning: a too large, itmax too small in gcf')
 1 gammcf=exp(-x+a*log(x)-gln)*h
  return
 
@@ -446,376 +432,182 @@ END SUBROUTINE cfg
 
   end function qsat
 
-!___________________________________________________________________________________
+!==============================================================================!
+ subroutine check_values(Qv,T,Qc,Qr,Qi,Qn,Qg,Qh,Nc,Nr,Ny,Nn,Ng,Nh,epsQ,epsN,     &
+                         check_consistency,force_abort,source_ind)
 
-end module my_fncs_mod
-
-!________________________________________________________________________________________!
-
-module my_sedi_mod
-
-!================================================================================!
-!  The following subroutines are used by the schemes in the multimoment package. !
-!================================================================================!
+!-----------------------------------------------------------------------------
+! Checks current values of prognotic variables for reasonable values and
+! stops and prints values if they are out of specified allowable ranges.
+!
+! 'trapAll = 1' means include trap for inconsistency in hydrometeor moments;
+! otherwise, only trap for Q, T, and negative Qx, Nx.  This option is here
+! to allow for Q<epsQ.and.N>epsN or Q>epsQ.and.N<epsN which can be produced
+! at the leading edges due to sedimentation and whose values are accpetable
+! since Dmax is imposed in SEDI (so one does not necessarily want to trap
+! for inconsistency after sedimentation has been called).
+!
+! The value 'source_ind' indicates the approximate line number in 'my2_main'
+! from where 'check_values' was called before it resulted in a trap.
+!
+! 2013-06-21
+!-----------------------------------------------------------------------------
 
   implicit none
 
-  private
-  public :: compute_sublevels,sedi_wrapper,sedi_1D,count_columns
+ !Calling parameters:
+  real, dimension(:,:), intent(in) :: Qv,T,Qc,Qr,Qi,Qn,Qg,Qh,Nc,Nr,Ny,Nn,Ng,Nh
+  real, intent(in)                 :: epsQ,epsN
+  integer,              intent(in) :: source_ind
+  logical,              intent(in) :: force_abort         !.TRUE. = forces abort if value violation is detected
+  logical,              intent(in) :: check_consistency   !.TRUE. = check for sign consistency between Qx and Nx
 
-  contains
+ !Local variables:
+  real, parameter :: T_low  = 173.
+  real, parameter :: T_high = 323.
+  real, parameter :: Q_high = 1.e-1
+  real, parameter :: N_high = 1.e+20
+  real            :: x_low
+  integer         :: i,k,ni,nk
+  logical         :: trap
+
+  if (source_ind == 100) then
+     x_low = -1.e+30          !for call at beginning of main
+  else
+     x_low = 0.
+  endif
+
+  ni = size(Qv,dim=1)
+  nk = size(Qv,dim=2)
+
+  trap = .false.
+  do k = 1,nk
+     do i = 1,ni
+
+        if (.not.(T(i,k)>T_low .and. T(i,k)<T_high)) then
+           print*,'** WARNING IN MICRO **'
+           print*,'** src,i,k,T: ',source_ind,i,k,T(i,k)
+           trap = .true.
+        endif
+        if (.not.(Qv(i,k)>=0. .and. Qv(i,k)<Q_high)) then
+           print*,'** WARNING IN MICRO **'
+           print*,'** src,i,k,Qv (HU): ',source_ind,i,k,Qv(i,k)
+        endif
+        !-- NAN check:
+        if (.not.(Qc(i,k)>=x_low .and. Qc(i,k)<Q_high .and.                               &
+                  Qr(i,k)>=x_low .and. Qr(i,k)<Q_high .and.                               &
+                  Qi(i,k)>=x_low .and. Qi(i,k)<Q_high .and.                               &
+                  Qn(i,k)>=x_low .and. Qn(i,k)<Q_high .and.                               &
+                  Qg(i,k)>=x_low .and. Qg(i,k)<Q_high .and.                               &
+                  Qh(i,k)>=x_low .and. Qh(i,k)<Q_high  )) then
+           print*,'** WARNING IN MICRO **'
+           print*, '** src,i,k,Qc,Qr,Qi,Qn,Qg,Qh: ',source_ind,i,k,Qc(i,k),Qr(i,k),       &
+                   Qi(i,k),Qn(i,k),Qg(i,k),Qh(i,k)  
+           trap = .true.
+        endif
+        if (.not.(Nc(i,k)>=x_low .and. Nc(i,k)<N_high .and.                               &
+                  Nr(i,k)>=x_low .and. Nr(i,k)<N_high .and.                               &
+                  Ny(i,k)>=x_low .and. Ny(i,k)<N_high .and.                               &
+                  Nn(i,k)>=x_low .and. Nn(i,k)<N_high .and.                               &
+                  Ng(i,k)>=x_low .and. Ng(i,k)<N_high .and.                               &
+                  Nh(i,k)>=x_low .and. Nh(i,k)<N_high  )) then
+           print*,'** WARNING IN MICRO **'
+           print*, '** src,i,k,Nc,Nr,Ny,Nn,Ng,Nh: ',source_ind,i,k,Nc(i,k),Nr(i,k),       &
+                  Ny(i,k),Nn(i,k),Ng(i,k),Nh(i,k)
+           trap = .true.
+        endif
+        !==
+        if (check_consistency) then
+           if ((Qc(i,k)>epsQ.and.Nc(i,k)<epsN) .or. (Qc(i,k)<epsQ.and.Nc(i,k)>epsN)) then
+              print*,'** WARNING IN MICRO **'
+              print*, '** src,i,k,Qc,Nc: ',source_ind,i,k,Qc(i,k),Nc(i,k)
+              trap = .true.
+           endif
+           if ((Qr(i,k)>epsQ.and.Nr(i,k)<epsN) .or. (Qr(i,k)<epsQ.and.Nr(i,k)>epsN)) then
+              print*,'** WARNING IN MICRO **'
+              print*, '** src,i,k,Qr,Nr: ',source_ind,i,k,Qr(i,k),Nr(i,k)
+              trap = .true.
+           endif
+           if ((Qi(i,k)>epsQ.and.Ny(i,k)<epsN) .or. (Qi(i,k)<epsQ.and.Ny(i,k)>epsN)) then
+              print*,'** WARNING IN MICRO **'
+              print*, '** src,i,k,Qi,Ny: ',source_ind,i,k,Qi(i,k),Ny(i,k)
+              trap = .true.
+           endif
+           if ((Qn(i,k)>epsQ.and.Nn(i,k)<epsN) .or. (Qn(i,k)<epsQ.and.Nn(i,k)>epsN)) then
+              print*,'** WARNING IN MICRO **'
+              print*, '** src,i,k,Qn,Nn: ',source_ind,i,k,Qn(i,k),Nn(i,k)
+              trap = .true.
+           endif
+           if ((Qg(i,k)>epsQ.and.Ng(i,k)<epsN) .or. (Qg(i,k)<epsQ.and.Ng(i,k)>epsN)) then
+              print*,'** WARNING IN MICRO **'
+              print*, '** src,i,k,Qg,Ng: ',source_ind,i,k,Qg(i,k),Ng(i,k)
+              trap = .true.
+           endif
+           if ((Qh(i,k)>epsQ.and.Nh(i,k)<epsN) .or. (Qh(i,k)<epsQ.and.Nh(i,k)>epsN)) then
+              print*,'** WARNING IN MICRO **'
+              print*, '** src,i,k,Qh,Nh: ',source_ind,i,k,Qh(i,k),Nh(i,k)
+              trap = .true.
+           endif
+        endif !if (check_consistency)
+     enddo
+  enddo
+
+  if (trap .and. force_abort) then
+     print*,'** DEBUG TRAP IN MICRO, s/r CHECK_VALUES -- source: ',source_ind
+     if (source_ind/=100) stop
+  endif
+
+ end subroutine check_values
+
 
 !=====================================================================================!
- SUBROUTINE compute_sublevels(ktop,kbot,kdir,nk,nk_skip,nk_sub,kskip,kfull,iint)
+  SUBROUTINE sedi_wrapper_2(QX,NX,cat,epsQ,epsQ_sedi,epsN,dmx,ni,VxMax,DxMax,dt,     &
+                massFlux_bot,kdir,kbot,ktop_sedi,GRAV,zheight,nk,DE,iDE,iDP,         &
+                DZ,iDZ,gamfact,kount,afx_in,bfx_in,cmx_in,ckQx1_in,ckQx2_in,ckQx4_in)
 
 !-------------------------------------------------------------------------------------!
-! Accepts array of levels to be skipped (possibly) for sedimentation; computes and
-! returns array of full level indices in "sub-level space" (kfull) plus array 'iint'
-! used in s/r 'sedi_wrapper' to interpolate sub-levels to intermediate full levels
-! after sedimentation is computed by 'sedi_1D'.
+!  Wrapper for s/r SEDI, for computation on all vertical levels.  Called from MY2_MAIN.
 !-------------------------------------------------------------------------------------!
-
-implicit none
-
-!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -!
-! ARGUMENTS:      DESCRIPTIONS:
-!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -!
-! -- INPUT: --
-!
-!  ktop           index of top level
-!  kbot           index of bottom level
-!  kdir           -1 if kbot = nk (GEM); 1 if kbot = 1 (WRF)
-!  nk             number of full levels
-!  nk_skip        number of levels skipped
-!  nk_sub         number of sub levels (used for sedimentation)
-!  kskip          array of level indices to skip for sedimentation
-!
-! -- OUTPUT: --
-!
-!  kfull          array of indices of full level
-!  iint           array of level indices at skipped level, level above, and level below
-!
-!  Note:  Currently hard-coded for GEM levels; eventually need to generalize
-!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -!
-
-!CALLING PARAMETERS:
- integer,                       intent(in)  :: ktop,kbot,kdir,nk,nk_skip,nk_sub
- integer, dimension(nk_skip),   intent(in)  :: kskip
- integer, dimension(nk_sub),    intent(out) :: kfull
- integer, dimension(nk_skip,3), intent(out) :: iint
-
- !LOCAL VARIABLES:
- logical :: skip_this_one
- integer :: k1,k2,k3
-!---
-
- !Construct 'kfull':
- kfull = 0
- k3 = 1
- do k1=1,nk
-    skip_this_one = .false.
-    do k2 = 1,nk_skip
-      if (k1==kskip(k2)) then     !if actual levels to skip are supplied
-!     if (k1==nk-kskip(k2)) then  !if levels from the bottom to skip are supplied
-         skip_this_one = .true.
-         exit
-      endif
-    enddo
-    if (.not. skip_this_one) then
-       kfull(k3) = k1
-       k3 = k3 + 1
-    endif
- enddo
-
- !Construct 'iint':
- do k1 = 1,nk_skip
-    iint(k1,1) = kskip(k1)
-    do k2 = 1,nk_sub
-       if (kfull(k2)>kskip(k1)) exit
-    enddo
-    iint(k1,2) = kfull(k2-1)
-    iint(k1,3) = kfull(k2)
- enddo
-
-END SUBROUTINE compute_sublevels
-
-!=====================================================================================!
- SUBROUTINE sedi_wrapper(QX,NX,cat,epsQ,epsQ_sedi,epsN,dmx,ni,nk_sub,VxMax,DxMax,dt,     &
-                massFlux_bot,kdir,kbot,ktop_sedi,GRAV,nk_skip,kfull,iint,DE_sub,iDE_sub, &
-                iDP_sub,DZ_sub,iDZ_sub,gamfact_sub,zheight,nk,DE,iDE,iDP,DZ,iDZ,gamfact, &
-                kskip1,kount,afx_in,bfx_in,cmx_in,ckQx1_in,ckQx2_in,ckQx4_in,BX,epsB)
-
-!-------------------------------------------------------------------------------------!
-!  Wrapper for s/r SEDI_main_2.  Called from MY2_MAIN.  Reduces the number of levels,
-!  calls SEDI_main_2, then interpolates updated QX,NX back to full levels before
-!  passing back.
-!-------------------------------------------------------------------------------------!
-
-! use my2_fncs_mod
-  use my_fncs_mod   !GEM
 
   implicit none
 
 ! PASSING PARAMETERS:
-  real, dimension(:,:), intent(inout),optional :: BX
   real, dimension(:,:), intent(inout) :: QX,NX
   real, dimension(:),   intent(out)   :: massFlux_bot
-  real, dimension(:,:), intent(in)    :: DE_sub,iDE_sub,iDP_sub,DZ_sub,iDZ_sub,          &
-                                         gamfact_sub,zheight, DE,iDE,iDP,DZ,iDZ,gamfact
+  real, dimension(:,:), intent(in)    :: zheight, DE,iDE,iDP,DZ,iDZ,gamfact
   real, intent(in)                    :: epsQ,epsQ_sedi,epsN,VxMax,dmx,DxMax,dt,GRAV
-  real, intent(in), optional          :: afx_in,bfx_in,cmx_in,ckQx1_in,ckQx2_in,         &
-                                         ckQx4_in,epsB
-  integer, dimension(:), intent(in)   :: ktop_sedi,kfull
-  integer, intent(in)                 :: ni,nk_sub,cat,kbot,kdir,nk_skip,nk,kskip1,kount
-  integer, dimension(:,:), intent(in) :: iint
+  real, intent(in), optional          :: afx_in,bfx_in,cmx_in,ckQx1_in,ckQx2_in,ckQx4_in
+  integer, dimension(:), intent(in)   :: ktop_sedi
+  integer, intent(in)                 :: ni,cat,kbot,kdir,nk,kount
 
 ! LOCAL VARIABLES:
-  real, dimension(:,:), allocatable   :: QX_sub,NX_sub,BX_sub
-  real                                :: i_Zrun
   integer, dimension(size(QX,dim=1))  :: activeColumn,ktop
   integer                             :: counter
-  integer                             :: status
-  integer                             :: a,i,k,i_sub,k_sub
-  logical                             :: sediOnFull,found_blank,found_Q
+  integer                             :: a,i,k
 
-real :: tmp1,tmp2
-
-!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -!
-! ARGUMENTS:      DESCRIPTIONS:
-!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -!
-!
-! X (or x) in variables/parameters denots hydrometeor category x, where x = r,i,s,g,h
-! for rain, ice, snow, graupel, and hail, respectively.
-!
-! -- INPUT: --
-!
-! ktop_sedi       array of k-indices of max height to consider sedi (in each column)
-! ni              number of columns in slab
-! nk              number of vertical levels
-! kskip1          index of highest level to be skipped for sedimentation (0 = full levels only)
-! {x}_sub         arrays on sub-levels for which sedimentaion is computed
-! DZ              height difference between level k and k+kdir (below) [m]
-! DP              pressure difference between level k and k+kdir (below) [Pa]
-! DE              air density [kg m-3]
-! gamfact         air density correction factor for fall speed
-! epsQ            minimum allowable value of QX  [kg m-3]
-! epsQ_sedi       minimum value of QX to compute sedimentation [kg m-3]
-! epsN            minimum allowable value of NX [m-3]
-! zheight         height above surface at level k [m]
-! VxMax           maximum allowable fall speed for hydrometeor category x [m s-1]
-! afx, bfx        fall speed parameters for hydrometeor category x
-! cmx, dmx        mass-diameter parameters for hydrometeor category x
-! ckQx[1,2,4]     precomputed expressions related to gamma functions for category x
-! DxMax           maximum allowable mean-mass diameter for category x [m]
-! dt              dynamical time step of model [s]
-! GRAV            gravitational constant [m s-2]
-!
-! -- OUTPUT: --
-!
-! massFlux_bot    mass flux at lowest level (for compute sedimentation rate) [kg s-1]
-!
-! -- INPUT/OUTPUT: --
-!
-! QX, NX          mixing ratio and number concentration of category X
-!
-!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -!
-! LOCAL:          DESCRIPTIONS:
-!
-! QX_sub,NX_sub   QX,NX on active columns and sublevels to treat sedimentation
-! i_Zrun          denominator of height slope for interpolation back to full levels
-! activeColumn    array of i-indices for columns to treat sedimentation (with QX>epsQ_sedi)
-! ktop            array of k-indices with highest level to treat sedimentation
-! counter         number of columns to treat sedimentation
-! status          for allocate/deallocate statements (0 for success)
-!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -!
-
-!-------------------------------------------------------------------------------------!
 
    massFlux_bot = 0.
 
-  !Determine for which columns sedimentation should be computed:
-  ! (returns the number of columns with non-negible hydrometeor content [counter], the
-  !  array of i-points to treat [activeColumn], and the max. height [plus one level higher]
-  !  containing non-neglible content in that column)
-   ktop = ktop_sedi  !(i-array)  - for complete column, ktop(:)=1
+   ktop = ktop_sedi  !(i-array)  - for complete column, ktop(:)=1 (GEM) or =nk (WRF)
    call count_columns(QX,ni,epsQ_sedi,counter,activeColumn,kdir,kbot,ktop)
-!   ni_sub = counter !ni of columns to process for sedi
 
    DO a = 1,counter
       i= activeColumn(a)
      !From here, all sedi calcs are done for each column i
 
-     sediOnFull = .true. !WRF
-! !      !--- determine FULL or SUB:
-! !       if (kskip1==0) then
-! !          sediOnFull  = .true.
-! !       else
-! !          sediOnFull  = .false.
-! !         !NOTE:  Rather than using kskip1, base this on 2 or 3 levels higher (see notes 2013-04-25)
-! !          found_blank = QX(i,kskip1-5)<=epsQ
-! !          found_Q     = QX(i,kskip1-5)>epsQ
-! !          do k=kskip1+1-5,nk
-! !             if (.not. found_blank) found_blank = (QX(i,k)<=epsQ)
-! !             if (.not. found_Q)     found_Q     = (QX(i,k)>epsQ)
-! !             if (found_blank .and. found_Q) then
-! !                sediOnFull = .true.
-! !                go to 66 !exit
-! !             endif
-! !          enddo
-! ! 66       continue
-! !       endif
-!===
-
-! !       if (sediOnFull) then
-! !       !perform sedimentation on full set of levels:
-
-! !         if (present(BX)) then
-! !          call sedi_1D(QX(i,:),NX(i,:),cat,DE(i,:),iDE(i,:),iDP(i,:),gamfact(i,:),epsQ,   &
-! ! !            epsN,dmx,VxMax,DxMax,dt,DZ(i,:),iDZ(i,:),massFlux_bot(i),kdir,nk,ktop(i),GRAV,BX1d=BX(i,:),epsB=epsB)
-! !              epsN,dmx,VxMax,DxMax,dt,DZ(i,:),iDZ(i,:),massFlux_bot(i),kdir,kbot,ktop(i), &
-! !              GRAV,BX1d=BX(i,:),epsB=epsB)
-! !         else
-         call sedi_1D(QX(i,:),NX(i,:),cat,DE(i,:),iDE(i,:),iDP(i,:),gamfact(i,:),epsQ,   &
-!            epsN,dmx,VxMax,DxMax,dt,DZ(i,:),iDZ(i,:),massFlux_bot(i),kdir,nk,ktop(i),GRAV,afx_in=afx_in,bfx_in=bfx_in,cmx_in=cmx_in,ckQx1_in=ckQx1_in,ckQx2_in=ckQx2_in,ckQx4_in=ckQx4_in)
-             epsN,dmx,VxMax,DxMax,dt,DZ(i,:),iDZ(i,:),massFlux_bot(i),kdir,kbot,ktop(i), &
-             GRAV,afx_in=afx_in,bfx_in=bfx_in,cmx_in=cmx_in,ckQx1_in=ckQx1_in,ckQx2_in=  &
-             ckQx2_in,ckQx4_in=ckQx4_in)
-! !         endif
-
-! !       else
-! !       !perform sedimentation on sub-levels only:
-! !
-! !          allocate ( QX_sub( ni,nk_sub), STAT=status )
-! !          allocate ( NX_sub( ni,nk_sub), STAT=status )
-! !
-! !          do k_sub = 1,nk_sub
-! !             k= kfull(k_sub)
-! !             QX_sub(:,k_sub) = QX(:,k)
-! !             NX_sub(:,k_sub) = NX(:,k)
-! !          enddo
-! !         !
-! !          if (present(BX)) then
-! !             allocate ( BX_sub( ni,nk_sub), STAT=status )
-! !             do k_sub = 1,nk_sub
-! !                k= kfull(k_sub)
-! !                BX_sub(:,k_sub) = BX(:,k)
-! !             enddo
-! !          endif
-! !
-! !         if (present(BX)) then
-! !          call sedi_1D(QX_sub(i,:),NX_sub(i,:),cat,DE_sub(i,:),iDE_sub(i,:),iDP_sub(i,:), &
-! !                       gamfact_sub(i,:),epsQ,epsN,dmx,VxMax,DxMax,dt,DZ_sub(i,:),         &
-! !                       iDZ_sub(i,:),massFlux_bot(i),kdir,nk_sub,ktop(i),GRAV,             &
-! !                       BX1d=BX_sub(i,:),epsB=epsB)
-! !         else
-! !          call sedi_1D(QX_sub(i,:),NX_sub(i,:),cat,DE_sub(i,:),iDE_sub(i,:),iDP_sub(i,:), &
-! !                       gamfact_sub(i,:),epsQ,epsN,dmx,VxMax,DxMax,dt,DZ_sub(i,:),         &
-! !                       iDZ_sub(i,:),massFlux_bot(i),kdir,nk_sub,ktop(i),GRAV,             &
-! !                       afx_in=afx_in,bfx_in=bfx_in,cmx_in=cmx_in,ckQx1_in=ckQx1_in,       &
-! !                       ckQx2_in=ckQx2_in,ckQx4_in=ckQx4_in)
-! !         endif
-! !
-! !      !interpolate  {VAR}_sub to {VAR}:
-! !
-! !         !- common levels:
-! !          do k_sub = 1,nk_sub
-! !             k= kfull(k_sub)
-! !             QX(i,k) = QX_sub(i,k_sub)
-! !             NX(i,k) = NX_sub(i,k_sub)
-! !          enddo
-! !         !
-! !          if (present(BX)) then
-! !             do k_sub = 1,nk_sub
-! !                k= kfull(k_sub)
-! !                BX(i,k) = BX_sub(i,k_sub)
-! !             enddo
-! !          endif
-! !         !=
-! !
-! !         !- interpolated levels:
-! !          do k = 1,nk_skip
-! !             i_Zrun = 1./(zheight(i,iint(k,2))-zheight(i,iint(k,3)))
-! !             QX(i,iint(k,1))= QX(i,iint(k,3))+(zheight(i,iint(k,1))-zheight(i,iint(k,3)))* &
-! !                              ( (QX(i,iint(k,2))-QX(i,iint(k,3)))*i_Zrun )
-! !             NX(i,iint(k,1))= NX(i,iint(k,3))+(zheight(i,iint(k,1))-zheight(i,iint(k,3)))* &
-! !                              ( (NX(i,iint(k,2))-NX(i,iint(k,3)))*i_Zrun )
-! !          enddo
-! !         !
-! !          if (present(BX)) then
-! !            do k = 1,nk_skip
-! !               i_Zrun = 1./(zheight(i,iint(k,2))-zheight(i,iint(k,3)))
-! !               BX(i,iint(k,1))=BX(i,iint(k,3))+(zheight(i,iint(k,1))-zheight(i,iint(k,3)))*&
-! !                                ( (BX(i,iint(k,2))-BX(i,iint(k,3)))*i_Zrun )
-! !            enddo
-! !          endif
-! !         !=
-! !
-! !          deallocate ( QX_sub, STAT=status )
-! !          deallocate ( NX_sub, STAT=status )
-! !          if (present(BX)) deallocate ( BX_sub, STAT=status )
-! !
-! !       endif  !if (sediOnFull)
+      call sedi_1D(QX(i,:),NX(i,:),cat,DE(i,:),iDE(i,:),iDP(i,:),gamfact(i,:),epsQ,epsN,  &
+                   dmx,VxMax,DxMax,dt,DZ(i,:),iDZ(i,:),massFlux_bot(i),kdir,kbot,ktop(i), &
+                   GRAV,afx_in=afx_in,bfx_in=bfx_in,cmx_in=cmx_in,ckQx1_in=ckQx1_in,      &
+                   ckQx2_in=ckQx2_in,ckQx4_in=ckQx4_in)
 
    ENDDO  !a-loop
 
- END SUBROUTINE sedi_wrapper
+ END SUBROUTINE sedi_wrapper_2
 
 !=====================================================================================!
- SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,DxMax,  &
-                    dt,DZ1d,iDZ1d,massFlux_bot,kdir,kbot,ktop,GRAV,afx_in,bfx_in,cmx_in, &
+SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,DxMax,    &
+                    dt,DZ1d,iDZ1d,massFlux_bot,kdir,kbot,ktop,GRAV,afx_in,bfx_in,cmx_in,  &
                     ckQx1_in,ckQx2_in,ckQx4_in,BX1d,epsB)
-
-!-------------------------------------------------------------------------------------!
-!  Performs 2-moment sedimentation on a single column for hydrometeor categories whose
-!  fall velocity equation is V(D) = gamfact * afx * D^bfx.
-!  Sub-time stepping for numerical stability is determined locally.
-!-------------------------------------------------------------------------------------!
-
-!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -!
-! ARGUMENTS:      DESCRIPTIONS:
-!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -!
-!
-! X (or x) in variables/parameters denots hydrometeor category x, where x = r,i,s,g,h
-! for rain, ice, snow, graupel, and hail, respectively.
-!
-! -- INPUT: --
-!
-! cat          hydrometeor category (value of 1,2,3,4,5 for x=r,i,s,g,h, respectively)
-! DE           air density
-! iDE          1./DE
-! iDP          1./(pressure difference beween level k and level above)
-! gamfact      air density correction factor
-! epsQ         minimum allowable mixing ratio
-! epsN         minimum allowable number concentration
-! afx          fall velocity parameter (coefficient)
-! bfx          fall velocity parameter (exponent)
-! cmx          mass-diameter parameter (coefficient)
-! dmx          mass-diameter parameter (exponent)
-! ckQx1        size distribution term [function of GAMMA(...)]
-! ckQx2        size distribution term [function of GAMMA(...)]
-! ckQx4        size distribution term [function of GAMMA(...)]
-! VxMax        maximum mass-weighted fall velocity (for category X)
-! DxMax        maximum mean-mass diameter (for category x)
-! dt           model tim step
-! DZ           vertical grid spacing between level k and level below
-! iDZ          1./DZ
-! kdir         vertical leveling increment, (GEM: kdir=-1;  WRF: kdir=1)
-! kbot         k index of bottom level      (GEM: kbot=nk;  WRF: kbot=1)
-! GRAV         gravitational constant
-!
-! -- OUTPUT: --
-!
-! massFlux_bot mass flux (at lowest model level)
-!
-! -- INPUT/OUTPUT: --
-!
-! QX           hydrometeor mixing ratio
-! NX           hydrometeor total number concentration
-!
-!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -!
-
-! use my2_fncs_mod
-  use my_fncs_mod   !GEM
 
   implicit none
 
@@ -852,7 +644,7 @@ real :: tmp1,tmp2
    BX_present = present(BX1d)
 
   !for rain, ice, snow, hail:
-   if (.not. (cat==4 .and. BX_present)) then
+! !    if (.not. (cat==4 .and. BX_present)) then
       afx   = afx_in
       bfx   = bfx_in
       cmx   = cmx_in
@@ -861,7 +653,7 @@ real :: tmp1,tmp2
       ckQx2 = ckQx2_in
       ckQx4 = ckQx4_in
       ratio_Vn2Vq  = ckQx2/ckQx1
-   endif
+! !    endif
 
    massFlux_bot = 0.
    iDxMax = 1./DxMax
@@ -872,38 +664,19 @@ real :: tmp1,tmp2
    VnMax  = 0.
    VVQ(:) = 0.
 
-! !    if (cat==4 .and. BX_present) then
-! !     !for graupel:
-! !       do k= kbot,ktop,kdir
-! !          QxPresent =  (QX1d(k)>epsQ .and. NX1d(k)>epsN .and. BX1d(k)>epsB)
-! !          if (QxPresent) then
-! !             call compute_graupel_parameters(2,QX1d(k),NX1d(k),BX1d(k),epsQ,epsN,epsB,    &
-! !                          DE1d(k),PIov6,thrd,dmx,alpha_x,iLAMx,afx,bfx,cmx,icmx,ckQx1,    &
-! !                          ckQx2,ckQx4)
-! !             ratio_Vn2Vq  = ckQx2/ckQx1
-! !             VVQ(k)       = VV_Qg()
-! !          endif
-! !       enddo
-! !    else
-! !     !for rain, ice, snow, hail:
       do k= kbot,ktop,kdir
          QxPresent =  (QX1d(k)>epsQ .and. NX1d(k)>epsN)
          if (QxPresent) VVQ(k)= VV_Q()
       enddo
-! !    endif
 
    Vxmaxx= min( VxMax, maxval(VVQ(:)))
    if (kdir==1) then
-      dzMIN = minval(DZ1d(ktop-kdir:kbot))  !WRF (to be tested)
+      dzMIN = minval(DZ1d)  !WRF (to be tested)
    else
       dzMIN = minval(DZ1d(ktop:kbot+kdir))  !GEM
    endif
    npassx= max(1, nint( dt*Vxmaxx/(CoMAX*dzMIN) ))
 
-!test:
-!  if (cat==4 .or. cat==5) npassx= max(1, nint( dt*Vxmaxx/(0.5*CoMAX*dzMIN) ))
-!  if (cat==4 .or. cat==5) npassx= npassx + 2
-!  if (cat==4            ) npassx= max(4, nint( dt*Vxmaxx/(0.5*CoMAX*dzMIN) ))
 
    dtx   = dt/float(npassx)
 
@@ -911,45 +684,6 @@ real :: tmp1,tmp2
    DO nnn= 1,npassx
 
       firstPass = (nnn==1)
-
-! !      if (cat==4 .and. BX_present) then
-! !
-! !     !for graupel:
-! !       do k= kbot,ktop,kdir
-! !          QxPresent  = (QX1d(k)>epsQ .and. NX1d(k)>epsN .and. BX1d(k)>epsB)
-! !          if (QxPresent) then
-! !             if (firstPass) then     !to avoid re-computing VVQ on first pass
-! !                VVQ(k)= -VVQ(k)
-! !             else
-! !                call compute_graupel_parameters(3,QX1d(k),NX1d(k),BX1d(k),epsQ,epsN,epsB, &
-! !                             DE1d(k),PIov6,thrd,dmx,alpha_x,iLAMx,afx,bfx,cmx,icmx,ckQx1, &
-! !                             ckQx2,ckQx4)
-! !                ratio_Vn2Vq  = ckQx2/ckQx1
-! !                VVQ(k)       = -VV_Qg()
-! !             endif
-! !             !--
-! ! !           !to control excessive size-sorting for graupel:
-! ! !           !  note: with constant alpha_g=3, there appears to be no need for extra
-! ! !           !        control of size-sorting.  (commented code is left as a placeholder)
-! ! !           tmp1 = (icmx*QX1d(k)/NX1d(k))**thrd   !Dmg
-! ! !           tmp2 = min(50., 0.5*(1000.*tmp1))     !mu = const*Dmg [mm]
-! ! !           ratio_Vn2Vq = ((3.+tmp2)*(2.+tmp2)*(1.+tmp2))/((3.+bfx+tmp2)*             &
-! ! !                          (2.+bfx+tmp2)*(1.+bfx+tmp2))
-! !             !==
-! !             VVN(k) = VVQ(k)*ratio_Vn2Vq
-! !             VqMax  = max(VxMAX,-VVQ(k))
-! !             VnMax  = max(VxMAX,-VVN(k))
-! !          else
-! !             VVQ(k) = 0.
-! !             VVN(k) = 0.
-! !             VqMax  = 0.
-! !             VnMax  = 0.
-! !          endif
-! !       enddo  !k-loop
-! !
-! !      else
-! !
-! !     !for rain, ice, snow, hail:
       do k= kbot,ktop,kdir
          QxPresent  = (QX1d(k)>epsQ .and. NX1d(k)>epsN)
          if (QxPresent) then
@@ -958,15 +692,15 @@ real :: tmp1,tmp2
             else
                VVQ(k)= -VV_Q()
             endif
-!!*** TUNING FOR HAIL ***
-!             if (cat==5) then
-!               !to control excessive size-sorting for hail:
-!                tmp1 = (icmx*QX1d(k)/NX1d(k))**thrd   !Dmh
-!                tmp2 = min(50., 0.1*(1000.*tmp1))     !mu = const*Dmh [mm]
-!                ratio_Vn2Vq = ((3.+tmp2)*(2.+tmp2)*(1.+tmp2))/((3.+bfx+tmp2)*             &
-!                               (2.+bfx+tmp2)*(1.+bfx+tmp2))
-!             endif
-!!***
+           !--
+           !control excessive size-sorting for hail:
+            if (cat==5) then
+               tmp1 = (icmx*QX1d(k)/NX1d(k))**thrd   !Dmh
+               tmp2 = min(50., 0.1*(1000.*tmp1))     !mu = const*Dmh [mm]
+               ratio_Vn2Vq = ((3.+tmp2)*(2.+tmp2)*(1.+tmp2))/((3.+bfx+tmp2)*             &
+                              (2.+bfx+tmp2)*(1.+bfx+tmp2))
+            endif
+           !==
             VVN(k) = VVQ(k)*ratio_Vn2Vq
             VqMax  = max(VxMAX,-VVQ(k))
             VnMax  = max(VxMAX,-VVN(k))
@@ -978,20 +712,7 @@ real :: tmp1,tmp2
          endif
       enddo  !k-loop
 
-! !      endif
-
-      !sum instantaneous surface mass flux at each split step: (for division later)
       massFlux_bot= massFlux_bot - VVQ(kbot)*DE1d(kbot)*QX1d(kbot)
-     !-- Perform single split sedimentation step (Eulerian FIT-BIS):
-     !     note: VVQ and VVN are negative (downward)
-!   !p-coordinates:
-!      do k= kbot,ktop,kdir
-!        QX1d(k)= QX1d(k) + dtx*GRAV*iDP1d(k+kdir)*(-DE1d(k+kdir)*QX1d(k+kdir)*  &
-!                           VVQ(k+kdir)+DE1d(k)*QX1d(k)*VVQ(k))
-!        NX1d(k)= NX1d(k) + dtx*GRAV*iDP1d(k+kdir)*DE1d(k)*(-NX1d(k+kdir)*       &
-!                           VVN(k+kdir)+ NX1d(k)*VVN(k))
-!     enddo
-    !z-coordinates:
       do k= kbot,ktop,kdir
          QX1d(k)= QX1d(k) + dtx*iDE1d(k)*(-DE1d(k+kdir)*QX1d(k+kdir)*VVQ(k+kdir) +       &
                             DE1d(k)*QX1d(k)*VVQ(k))*iDZ1d(k+kdir)
@@ -1113,20 +834,7 @@ real :: tmp1,tmp2
    enddo
 
  END SUBROUTINE count_columns
-!=====================================================================================!
-
-end module my_sedi_mod
-
-!________________________________________________________________________________________!
-
-module my_dmom_mod
-
-  implicit none
-
-  private
-  public :: mp_milbrandt2mom_main
-
-  contains
+!=======================================================================================!
 
 !_______________________________________________________________________________________!
 
@@ -1134,14 +842,6 @@ module my_dmom_mod
      sigma,RT_rn1,RT_rn2,RT_fr1,RT_fr2,RT_sn1,RT_sn2,RT_sn3,RT_pe1,RT_pe2,RT_peL,RT_snd,  &
      dt,NI,NK,J,KOUNT,CCNtype,precipDiag_ON,sedi_ON,warmphase_ON,autoconv_ON,icephase_ON, &
      snow_ON,Dm_c,Dm_r,Dm_i,Dm_s,Dm_g,Dm_h,ZET,ZEC,SS,nk_bottom)
-
-
-  use my_fncs_mod
-  use my_sedi_mod
-!--WRF:
-    use module_model_constants, ONLY: CPD => cp, CPV => cpv, RGASD => r_d, RGASV => r_v, &
-        EPS1 => EP_2, DELTA => EP_1, CAPPA => rcp, GRAV => g, CHLC => XLV, CHLF => XLF
-!==
 
   implicit none
 
@@ -1162,9 +862,6 @@ module my_dmom_mod
 !                                                                                       !
 !                    Milbrandt-Yau Multimoment Bulk Microphysics Scheme                 !
 !                              - double-moment version   -                              !
-!_______________________________________________________________________________________!
-!  Package version:   2.25.0      (internal bookkeeping)                                !
-!  Last modified  :   2014-03                                                           !
 !_______________________________________________________________________________________!
 !
 !  Author:
@@ -1283,8 +980,7 @@ module my_dmom_mod
 !LOCAL VARIABLES:
 
  !Variables to count active grid points:
-  logical :: log1,log2,log3,log4,doneK,rainPresent,calcDiag,CB_found,ML_found,      &
-             SN_found
+  logical :: log1,log2,log3,log4,doneK,rainPresent,calcDiag
   logical, dimension(size(QC,dim=1),size(QC,dim=2)) :: activePoint
   integer, dimension(size(QC,dim=1)) :: ktop_sedi
   integer :: i,k,niter,ll,start,kskip_1,ktop,kbot,kdir
@@ -1371,10 +1067,6 @@ module my_dmom_mod
   real, parameter :: iLAMmin1= 1.e-6  !min. iLAMx (prevents underflow in Nox and VENTx calcs)
   real, parameter :: iLAMmin2= 1.e-10 !min. iLAMx (prevents underflow in Nox and VENTx calcs)
   real, parameter :: eps   = 1.e-32
-  real, parameter :: k1    = 0.001
-  real, parameter :: k2    = 0.0005
-  real, parameter :: k3    = 2.54
-  real, parameter :: CPW   = 4218., CPI=2093.
 
   real, parameter :: deg   =  400., mgo= 1.6e-10
   real, parameter :: deh   =  900.
@@ -1391,9 +1083,10 @@ module my_dmom_mod
   real, parameter :: DrMax=  5.e-3,   VrMax= 16.,   epsQr_sedi= 1.e-8
   real, parameter :: DiMax=  5.e-3,   ViMax=  2.,   epsQi_sedi= 1.e-10
   real, parameter :: DsMax=  5.e-3,   VsMax=  4.,   epsQs_sedi= 1.e-8
-  real, parameter :: DgMax=  5.e-3,   VgMax=  6.,   epsQg_sedi= 1.e-8
+  real, parameter :: DgMax=  2.e-3,   VgMax=  6.,   epsQg_sedi= 1.e-8
   real, parameter :: DhMax= 80.e-3,   VhMax= 25.,   epsQh_sedi= 1.e-10
 
+  real, parameter :: CPW     = 4218.              ![J kg-1 K-1] specific heat capacity of water
   real, parameter :: DEo     = 1.225              ![kg m-3] reference air density
   real, parameter :: thrd    = 1./3.
   real, parameter :: sixth   = 0.5*thrd
@@ -1427,27 +1120,20 @@ module my_dmom_mod
   real, parameter :: Fv_Dsmin    = 125.e-6        ![m] min snow size to compute volume flux
   real, parameter :: Fv_Dsmax    = 0.008          ![m] max snow size to compute volume flux
   real, parameter :: Ni_max      = 1.e+7          ![m-3] max ice crystal concentration
+  real, parameter :: satw_peak   = 1.01           !assumed max. peak saturation w.r.t. water (for calc of Simax)
 
 !------------------------------------------------------------------------------!
 !-- For GEM:
 !#include "consphy.cdk"
 
-!-- For WRF:
-!#include "consphy.cdk"
-! real, parameter :: CPD      =.100546e+4         !J K-1 kg-1; specific heat of dry air
-! real, parameter :: CPV      =.186946e+4         !J K-1 kg-1; specific heat of water vapour
-! real, parameter :: RGASD    =.28705e+3          !J K-1 kg-1; gas constant for dry air
-! real, parameter :: RGASV    =.46151e+3          !J K-1 kg-1; gas constant for water vapour
+!-- For WRF + kin_1d + kin_2d:
+  real, parameter :: CPI      =.21153e+4          !J kg-1 K-1; specific heat capacity of ice
   real, parameter :: TRPL     =.27316e+3          !K; triple point of water
   real, parameter :: TCDK     =.27315e+3          !conversion from kelvin to celsius
   real, parameter :: RAUW     =.1e+4              !density of liquid H2O
-! real, parameter :: EPS1     =.62194800221014    !RGASD/RGASV
   real, parameter :: EPS2     =.3780199778986     !1 - EPS1
-! real, parameter :: DELTA    =.6077686814144     !1/EPS1 - 1
-! real, parameter :: CAPPA    =.28549121795       !RGASD/CPD
   real, parameter :: TGL      =.27316e+3          !K; ice temperature in the atmosphere
   real, parameter :: CONSOL   =.1367e+4           !W m-2; solar constant
-! real, parameter :: GRAV     =.980616e+1         !M s-2; gravitational acceleration
   real, parameter :: RAYT     =.637122e+7         !M; mean radius of the earth
   real, parameter :: STEFAN   =.566948e-7         !J m-2 s-1 K-4; Stefan-Boltzmann constant
   real, parameter :: PI       =.314159265359e+1   !PI constant = ACOS(-1)
@@ -1456,8 +1142,18 @@ module my_dmom_mod
   real, parameter :: STLO     =.6628486583943e-3  !K s2 m-2; Schuman-Newell Lapse Rate
   real, parameter :: KARMAN   =.35                !Von Karman constant
   real, parameter :: RIC      =.2                 !Critical Richardson number
-! real, parameter :: CHLC     =.2501e+7           !J kg-1; latent heat of condensation
-! real, parameter :: CHLF     =.334e+6            !J kg-1; latent heat of fusion
+!-- For kin_1d + kin_2d (exclude from WRF):
+  real, parameter :: CHLC     =.2501e+7           !J kg-1; latent heat of condensation
+  real, parameter :: CHLF     =.334e+6            !J kg-1; latent heat of fusion
+  real, parameter :: CPD      =.100546e+4         !J K-1 kg-1; specific heat of dry air
+  real, parameter :: CPV      =.186946e+4         !J K-1 kg-1; specific heat of water vapour
+  real, parameter :: RGASD    =.28705e+3          !J K-1 kg-1; gas constant for dry air
+  real, parameter :: RGASV    =.46151e+3          !J K-1 kg-1; gas constant for water vapour
+  real, parameter :: EPS1     =.62194800221014    !RGASD/RGASV
+  real, parameter :: DELTA    =.6077686814144     !1/EPS1 - 1
+  real, parameter :: CAPPA    =.28549121795       !RGASD/CPD
+  real, parameter :: GRAV     =.980616e+1         !M s-2; gravitational acceleration
+!==
 !------------------------------------------------------------------------------!
 
   ! Constants used for contact ice nucleation:
@@ -1469,6 +1165,8 @@ module my_dmom_mod
   real, parameter :: KAPa   = 5.39e5     !aerosol thermal conductivity
 
  !Test switches:
+  logical, parameter :: DEBUG_ON      = .false.  !.true. to switch on debugging checks/traps throughout code
+  logical, parameter :: DEBUG_abort   = .true.  !.true. will result in forced abort in s/r 'check_values'
   logical, parameter :: iceDep_ON     = .true.  !.false. to suppress depositional growth of ice
   logical, parameter :: grpl_ON       = .true.  !.false. to suppress graupel initiation
   logical, parameter :: hail_ON       = .true.  !.false. to suppress hail initiation
@@ -1482,12 +1180,14 @@ module my_dmom_mod
   real, dimension(size(QC,dim=1))                :: fluxM_r,fluxM_i,fluxM_s,fluxM_g,     &
         fluxM_h,dum
   integer, dimension(size(QC,dim=1))             :: activeColumn
-  integer                                        :: k_sub,nk_sub,nk_skip
-  integer                                        :: status  !for allocate/deallocate statements (0 for success)
-  integer, allocatable, dimension(:)             :: kfull,kskip
-  integer, allocatable, dimension(:,:)           :: iint
-  real, dimension(:,:), allocatable              :: DE_sub,iDE_sub,iDP_sub,pres_sub,     &
-        DZ_sub,zheight_sub,iDZ_sub,gamfact_sub
+
+ !-- for use with sedimentation on subset of levels:
+ !integer                                        :: k_sub,nk_sub,nk_skip
+ !integer                                        :: status  !for allocate/deallocate statements (0 for success)
+ !integer, allocatable, dimension(:)             :: kfull,kskip
+ !integer, allocatable, dimension(:,:)           :: iint
+ !real, dimension(:,:), allocatable              :: DE_sub,iDE_sub,iDP_sub,pres_sub,     &
+ !==                                                DZ_sub,zheight_sub,iDZ_sub,gamfact_sub
 
 
   !==================================================================================!
@@ -1495,6 +1195,10 @@ module my_dmom_mod
   !----------------------------------------------------------------------------------!
   !                      PART 1:   Prelimiary Calculations                           !
   !----------------------------------------------------------------------------------!
+
+  !Switch on here later, once it is certain that calling routine is not supposed to
+  !pass negative values of tracers.
+  if (DEBUG_ON) call check_values(Q,T,QC,QR,QI,QN,QG,QH,NC,NR,NY,NN,NG,NH,epsQ,epsN,.false.,DEBUG_abort,100)
 
   if (nk_BOTTOM) then
 !    !GEM / kin_1d:
@@ -1507,19 +1211,6 @@ module my_dmom_mod
      kbot  = 1          !k of bottom level
      kdir  = 1          !direction of vertical leveling (k: 1=bottom, nk=top)
   endif
-
-!!-------- Specify levels to skip for sedimentation: -----!
-!       User-specified  (assuming nk=bottom)
-! !-- L(general), full levels
-     nk_skip = 0
-     allocate ( kskip(nk_skip), STAT=status  )
-     kskip   = 0
-! !-- L57, subset 2
-! nk_skip = 8
-! allocate ( kskip(nk_skip), STAT=status  )
-! kskip   = (/ 45, 47, 49,50, 52,53,55,56 /)
-!!========================================================!
-
 
   do k= kbot,ktop,kdir
      pres(:,k)= PS(:)*sigma(:,k)               !air pressure [Pa]
@@ -1748,6 +1439,7 @@ module my_dmom_mod
 !####
 
 !=======================================================================================!
+!  if (DEBUG_ON) call check_values(Q,T,QC,QR,QI,QN,QG,QH,NC,NR,NY,NN,NG,NH,epsQ,epsN,.false.,DEBUG_abort,200)
 
 !--- Ensure consistency between moments:
   do k= kbot,ktop,kdir
@@ -1757,16 +1449,19 @@ module my_dmom_mod
         tmp2 = QSI(i,k)/max(Q(i,k),1.e-20)   !saturation w.r.t. ice
        !NOTE: Hydrometeor (Qx,Nx) is clipped if Qx is tiny or if Qx is small
        !      and is expected to completely evaporate/sublimate in one time step
-       !      anyway.
+       !      anyway.  (To avoid creating mass from a parallel universe, only
+       !      positive Qx values are added to water vapor upon clipping.)
        !   ** RH thresholds for clipping need to be tuned (especially for graupel
        !      and hail, for which it may be preferable to reduce threshold)
+
 
        !cloud:
         if (QC(i,k)>epsQ .and. NC(i,k)<epsN) then
            NC(i,k) = N_c_SM
         elseif (QC(i,k)<=epsQ .or. (QC(i,k)<epsQ2 .and. tmp1<0.90)) then
-           Q(i,k)  = Q(i,k) + QC(i,k)
-           T(i,k)  = T(i,k) - LCP*QC(i,k)
+           tmp3    = max(0., QC(i,k))
+           Q(i,k)  = Q(i,k) + tmp3
+           T(i,k)  = T(i,k) - LCP*tmp3
            QC(i,k) = 0.
            NC(i,k) = 0.
         endif
@@ -1776,18 +1471,21 @@ module my_dmom_mod
            NR(i,k) = (No_r_SM*GR31)**(3./(4.+alpha_r))*(GR31*iGR34*DE(i,k)*QR(i,k)*      &
                      icmr)**((1.+alpha_r)/(4.+alpha_r))
         elseif (QR(i,k)<=epsQ .or. (QR(i,k)<epsQ2 .and. tmp1<0.90)) then
-           Q(i,k)  = Q(i,k) + QR(i,k)
-           T(i,k)  = T(i,k) - LCP*QR(i,k)
+           tmp3    = max(0., QR(i,k))
+           Q(i,k)  = Q(i,k) + tmp3
+           T(i,k)  = T(i,k) - LCP*tmp3
            QR(i,k) = 0.
            NR(i,k) = 0.
         endif
 
         !ice:
         if (QI(i,k)>epsQ .and. NY(i,k)<epsN) then
-           NY(i,k) = N_Cooper(TRPL,T(i,k))
+    !       NY(i,k) = N_Cooper(TRPL,T(i,k))
+           NY(i,k) = max(2.*epsN, N_Cooper(TRPL,T(i,k)) )
         elseif (QI(i,k)<=epsQ .or. (QI(i,k)<epsQ2 .and. tmp2<0.80)) then
-           Q(i,k)  = Q(i,k) + QI(i,k)
-           T(i,k)  = T(i,k) - LSP*QI(i,k)
+           tmp3    = max(0., QI(i,k))
+           Q(i,k)  = Q(i,k) + tmp3
+           T(i,k)  = T(i,k) - LSP*tmp3
            QI(i,k) = 0.
            NY(i,k) = 0.
         endif
@@ -1798,8 +1496,9 @@ module my_dmom_mod
            NN(i,k) = (No_s*GS31)**(dms*icexs2)*(GS31*iGS40*icms*DE(i,k)*QN(i,k))**       &
                      ((1.+alpha_s)*icexs2)
         elseif (QN(i,k)<=epsQ .or. (QN(i,k)<epsQ2 .and. tmp2<0.80)) then
-           Q(i,k)  = Q(i,k) + QN(i,k)
-           T(i,k)  = T(i,k) - LSP*QN(i,k)
+           tmp3    = max(0., QN(i,k))
+           Q(i,k)  = Q(i,k) + tmp3
+           T(i,k)  = T(i,k) - LSP*tmp3
            QN(i,k) = 0.
            NN(i,k) = 0.
         endif
@@ -1809,8 +1508,9 @@ module my_dmom_mod
            NG(i,k) = (No_g_SM*GG31)**(3./(4.+alpha_g))*(GG31*iGG34*DE(i,k)*QG(i,k)*      &
                      icmg)**((1.+alpha_g)/(4.+alpha_g))
         elseif (QG(i,k)<=epsQ .or. (QG(i,k)<epsQ2 .and. tmp2<0.80)) then
-           Q(i,k)  = Q(i,k) + QG(i,k)
-           T(i,k)  = T(i,k) - LSP*QG(i,k)
+           tmp3    = max(0., QG(i,k))
+           Q(i,k)  = Q(i,k) + tmp3
+           T(i,k)  = T(i,k) - LSP*tmp3
            QG(i,k) = 0.
            NG(i,k) = 0.
         endif
@@ -1820,8 +1520,9 @@ module my_dmom_mod
            NH(i,k) = (No_h_SM*GH31)**(3./(4.+alpha_h))*(GH31*iGH34*DE(i,k)*QH(i,k)*      &
                      icmh)**((1.+alpha_h)/(4.+alpha_h))
         elseif (QH(i,k)<=epsQ .or. (QH(i,k)<epsQ2 .and. tmp2<0.80)) then
-           Q(i,k)  = Q(i,k) + QH(i,k)
-           T(i,k)  = T(i,k) - LSP*QH(i,k)
+           tmp3    = max(0., QH(i,k))
+           Q(i,k)  = Q(i,k) + tmp3
+           T(i,k)  = T(i,k) - LSP*tmp3
            QH(i,k) = 0.
            NH(i,k) = 0.
         endif
@@ -1829,6 +1530,8 @@ module my_dmom_mod
      enddo !i-loop
   enddo    !k-loop
 !===
+
+  if (DEBUG_ON) call check_values(Q,T,QC,QR,QI,QN,QG,QH,NC,NR,NY,NN,NG,NH,epsQ,epsN,.true.,DEBUG_abort,300)
 
 !Temporarily store arrays at time (t*) in order to compute warm-rain coalescence
 ! equations (Part 3a):
@@ -1846,13 +1549,13 @@ module my_dmom_mod
  !Pressure difference between levels (used for sedimentation)
   iDP(:,kbot) = 1./(PS(:)-pres(:,kbot))
   do k = kbot+kdir,ktop,kdir
-     iDP(:,k) = 1./(pres(:,k-kdir)-pres(:,k))
+    iDP(:,k) = 1./(pres(:,k-kdir)-pres(:,k))
   enddo
 
  !Compute thickness of layers for sedimentation calculation: (optional use if height coordiates)
  ! note - from 'cldoptx4.ftn':  dz(i,k)= dp(i,k)/aird(i,k)*rec_grav
   iDZ = DE*GRAV*iDP
-  DZ  = 1./iDZ
+  DZ  = 1./iDZ  
 
  !Compute height above surface (zheight) and height above lowest prog level (zz):
   zheight(:,kbot)= DZ(:,kbot)
@@ -1877,6 +1580,8 @@ module my_dmom_mod
   !----------------------------------------------------------------------------------!
   !                 End of Preliminary Calculation section (Part 1)                  !
   !----------------------------------------------------------------------------------!
+
+  if (DEBUG_ON) call check_values(Q,T,QC,QR,QI,QN,QG,QH,NC,NR,NY,NN,NG,NH,epsQ,epsN,.true.,DEBUG_abort,400)
 
   !----------------------------------------------------------------------------------!
   !                      PART 2: Cold Microphysics Processes                         !
@@ -1907,9 +1612,10 @@ module my_dmom_mod
       IF (activePoint(i,k)) THEN
 
        Tc= T(i,k)-TRPL
-       if (Tc<-120. .or. Tc>50.)   &
-        print*, '***WARNING*** -- In MICROPHYSICS --  Ambient Temp.(C):',Tc
-!      Cdiff = (2.2157e-5+0.0155e-5*Tc)*1.e5/(sigma(i,k)*HPS(i))
+       if (Tc<-120. .or. Tc>50.) then
+          print*, '***WARNING*** -- In MICROPHYSICS --  Ambient Temp.(C),step,i,k:',Tc,kount,i,k
+         !stop
+       endif
        Cdiff = (2.2157e-5+0.0155e-5*Tc)*1.e5/pres(i,k)
        MUdyn = 1.72e-5*(393./(T(i,k)+120.))*(T(i,k)/TRPL)**1.5 !RYp.102
        MUkin = MUdyn*iDE(i,k)
@@ -2147,7 +1853,7 @@ module my_dmom_mod
           endif
 
           !snow: (i.e. self-collection [aggregation])
-          NCLss= dt*0.93952*Ess*(DE(i,k)*(QN(i,k)))**((2.+bfs)*thrd)*(NN(i,k))**    &
+          NCLss= dt*0.93952*Ess*(DE(i,k)*(QN(i,k)))**((2.+bfs)*thrd)*(NN(i,k))**         &
                    ((4.-bfs)*thrd)
             !Note: 0.91226 = I(bfs)*afs*PI^((1-bfs)/3)*des^((-2-bfs)/3); I(bfs=0.41)=1138
             !      0.93952 = I(bfs)*afs*PI^((1-bfs)/3)*des^((-2-bfs)/3); I(bfs=0.42)=1172
@@ -2170,11 +1876,11 @@ module my_dmom_mod
              Kstoke = max(1.5,min(10.,Kstoke))
              Ecg    = 0.55*log10(2.51*Kstoke)
 
-             QCLcg= dt*gam*afg*cmr*Ecg*PIov4*iDE(i,k)*(NC(i,k)*NG(i,k))*iGC5*iGG31*    &
+             QCLcg= dt*gam*afg*cmr*Ecg*PIov4*iDE(i,k)*(NC(i,k)*NG(i,k))*iGC5*iGG31*      &
                     (GC13*GG13*iLAMc3*iLAMgB2+ 2.*GC14*GG12*iLAMc4*iLAMgB1+GC15*GG11*    &
                     iLAMc5*iLAMgB0)
 
-             NCLcg= dt*gam*afg*PIov4*Ecg*(NC(i,k)*NG(i,k))*iGC5*iGG31*(GC5*GG13*       &
+             NCLcg= dt*gam*afg*PIov4*Ecg*(NC(i,k)*NG(i,k))*iGC5*iGG31*(GC5*GG13*         &
                     iLAMgB2+2.*GC11*GG12*iLAMc*iLAMgB1+GC12*GG11*iLAMc2*iLAMgB0)
 
              QCLcg= min(QCLcg, (QC(i,k)))
@@ -2188,9 +1894,9 @@ module my_dmom_mod
              tmp1= vg0-vi0
              tmp3= sqrt(tmp1*tmp1+0.04*vg0*vi0)
 
-             QCLig= dt*cmi*iDE(i,k)*PI*6.*Eig*(NY(i,k)*NG(i,k))*tmp3*iGI31*iGG31*(0.5* &
+             QCLig= dt*cmi*iDE(i,k)*PI*6.*Eig*(NY(i,k)*NG(i,k))*tmp3*iGI31*iGG31*(0.5*   &
                     iLAMg2*iLAMi3+2.*iLAMg*iLAMi4+5.*iLAMi5)
-             NCLig= dt*PIov4*Eig*(NY(i,k)*NG(i,k))*GI31*GG31*tmp3*(GI33*GG31*iLAMi2+   &
+             NCLig= dt*PIov4*Eig*(NY(i,k)*NG(i,k))*GI31*GG31*tmp3*(GI33*GG31*iLAMi2+     &
                     2.*GI32*GG32*iLAMi*iLAMg+GI31*GG33*iLAMg2)
 
              QCLig= min(QCLig, (QI(i,k)))
@@ -2228,11 +1934,11 @@ module my_dmom_mod
           if (QC(i,k)>epsQ) then
              Ech  = exp(-8.68e-7*Dc**(-1.6)*Dh)    !Ziegler (1985) A24
 
-             QCLch= dt*gam*afh*cmr*Ech*PIov4*iDE(i,k)*(NC(i,k)*NH(i,k))*iGC5*iGH31*    &
+             QCLch= dt*gam*afh*cmr*Ech*PIov4*iDE(i,k)*(NC(i,k)*NH(i,k))*iGC5*iGH31*      &
                     (GC13*GH13*iLAMc3*iLAMhB2+2.*GC14*GH12*iLAMc4*iLAMhB1+GC15*GH11*     &
                     iLAMc5*iLAMhB0)
 
-             NCLch= dt*gam*afh*PIov4*Ech*(NC(i,k)*NH(i,k))*iGC5*iGH31*(GC5*GH13*       &
+             NCLch= dt*gam*afh*PIov4*Ech*(NC(i,k)*NH(i,k))*iGC5*iGH31*(GC5*GH13*         &
                     iLAMhB2+2.*GC11*GH12*iLAMc*iLAMhB1+GC12*GH11*iLAMc2*iLAMhB0)
 
              QCLch= min(QCLch, QC(i,k))
@@ -2245,10 +1951,10 @@ module my_dmom_mod
           if (QR(i,k)>epsQ) then
              tmp1= vh0-vr0
              tmp3= sqrt(tmp1*tmp1+0.04*vh0*vr0)
-             QCLrh= dt*cmr*Erh*PIov4*iDE(i,k)*(NH(i,k)*NR(i,k))*iGR31*iGH31*tmp3*      &
+             QCLrh= dt*cmr*Erh*PIov4*iDE(i,k)*(NH(i,k)*NR(i,k))*iGR31*iGH31*tmp3*        &
                     (GR36*GH31*iLAMr5+2.*GR35*GH32*iLAMr4*iLAMh+GR34*GH33*iLAMr3*iLAMh2)
 
-             NCLrh= dt*PIov4*Erh*(NH(i,k)*NR(i,k))*iGR31*iGH31*tmp3*(GR33*GH31*        &
+             NCLrh= dt*PIov4*Erh*(NH(i,k)*NR(i,k))*iGR31*iGH31*tmp3*(GR33*GH31*          &
                     iLAMr2+2.*GR32*GH32*iLAMr*iLAMh+GR31*GH33*iLAMh2)
 
              QCLrh= min(QCLrh, QR(i,k))
@@ -2262,10 +1968,10 @@ module my_dmom_mod
              tmp1 = vh0-vi0
              tmp3 = sqrt(tmp1*tmp1+0.04*vh0*vi0)
 
-             QCLih= dt*cmi*iDE(i,k)*PI*6.*Eih*(NY(i,k)*NH(i,k))*tmp3*iGI31*iGH31*(0.5* &
+             QCLih= dt*cmi*iDE(i,k)*PI*6.*Eih*(NY(i,k)*NH(i,k))*tmp3*iGI31*iGH31*(0.5*   &
                     iLAMh2*iLAMi3+2.*iLAMh*iLAMi4+5.*iLAMi5)
 
-             NCLih= dt*PIov4*Eih*(NY(i,k)*NH(i,k))*GI31*GH31*tmp3*(GI33*GH31*iLAMi2+   &
+             NCLih= dt*PIov4*Eih*(NY(i,k)*NH(i,k))*GI31*GH31*tmp3*(GI33*GH31*iLAMi2+     &
                     2.*GI32*GH32*iLAMi*iLAMh+GI31*GH33*iLAMh2)
 
              QCLih= min(QCLih, QI(i,k))
@@ -2282,16 +1988,16 @@ module my_dmom_mod
 
              if (snowSpherical) then
                !hardcoded for dms=3:
-                QCLsh= dt*cms*iDE(i,k)*PI*6.*Esh*(NN(i,k)*NH(i,k))*tmp3*iGS31*iGH31*  &
+                QCLsh= dt*cms*iDE(i,k)*PI*6.*Esh*(NN(i,k)*NH(i,k))*tmp3*iGS31*iGH31*     &
                        (0.5*iLAMh2*iLAMs2*iLAMs+2.*iLAMh*tmp4+5.*tmp4*iLAMs)
              else
                !hardcoded for dms=2:
-                QCLsh= dt*cms*iDE(i,k)*PI*0.25*Esh*tmp3*NN(i,k)*NH(i,k)*iGS31*iGH31*  &
-                       (GH33*GS33*iLAMh**2.*iLAMs**2. + 2.*GH32*GS34*iLAMh*iLAMs**3. +  &
+                QCLsh= dt*cms*iDE(i,k)*PI*0.25*Esh*tmp3*NN(i,k)*NH(i,k)*iGS31*iGH31*     &
+                       (GH33*GS33*iLAMh**2.*iLAMs**2. + 2.*GH32*GS34*iLAMh*iLAMs**3. +   &
                         GH31*GS35*iLAMs**4.)
              endif
 
-             NCLsh= dt*PIov4*Esh*(NN(i,k)*NH(i,k))*GS31*GH31*tmp3*(GS33*GH31*iLAMs2+  &
+             NCLsh= dt*PIov4*Esh*(NN(i,k)*NH(i,k))*GS31*GH31*tmp3*(GS33*GH31*iLAMs2+     &
                     2.*GS32*GH32*iLAMs*iLAMh+GS31*GH33*iLAMh2)
 
              QCLsh= min(QCLsh, (QN(i,k)))
@@ -2432,7 +2138,11 @@ module my_dmom_mod
           if (primIceNucl==1) then
 
              NuDEPSOR= 0.;   NuCONT= 0.
-             Simax   = min(Si, SxFNC(WZ(i,k),Tc,pres(i,k),QSW(i,k),QSI(i,k),CCNtype,2))
+             if (QSI(i,k)>1.e-20) then
+                Simax = min(Si, satw_peak*QSW(i,k)/QSI(i,k))
+             else
+                Simax = 0.
+             endif
              tmp1    = T(i,k)-7.66
              NNUmax  = max(0., DE(i,k)/mio*(Q(i,k)-QSI(i,k))/(1.+ck6*(QSI(i,k)/(tmp1*    &
                        tmp1))))
@@ -2441,11 +2151,15 @@ module my_dmom_mod
                 NuDEPSOR= max(0., 1.e3*exp(12.96*(Simax-1.)-0.639)-(NY(i,k))) !Meyers(1992)
              endif
              !Contact nucleation:
-             if (QC(i,k)>epsQ .and. Tc<-2.) then
+             if (QC(i,k)>epsQ .and. Tc<-2. .and. WZ(i,k)>0.001) then
                 GG     =  1.*idew/(RGASV*(T(i,k))/((QSW(i,k)*pres(i,k))/EPS1)/          &
                             Cdiff+CHLC/Ka/(T(i,k))*(CHLC/RGASV/(T(i,k))-1.))  !CP00a
                 Swmax  =  SxFNC(WZ(i,k),Tc,pres(i,k),QSW(i,k),QSI(i,k),CCNtype,1)
-                ssat   =  min((Q(i,k)/QSW(i,k)), Swmax) -1.
+                if (QSW(i,k)>1.e-20) then
+                   ssat=  min((Q(i,k)/QSW(i,k)), Swmax) -1.
+                else
+                   ssat= 0.
+                endif
                 Tcc    =  Tc + GG*ssat*CHLC/Kdiff                            !C86_eqn64
                 Na     =  exp(4.11-0.262*Tcc)                                !W95_eqn60/M92_2.6
                 Kn     =  LAMa0*(T(i,k))*p0/(T0*pres(i,k)*Ra)               !W95_eqn59
@@ -2511,7 +2225,8 @@ module my_dmom_mod
                !estimate ice PSD after VDvi (if there were no CNis):
                 tmp1   = QI(i,k) + QVDvi
                 tmp2   = NY(i,k) + NVDvi
-                iLAMi  = max( iLAMmin2, iLAMDA_x(DE(i,k),tmp1,1./tmp2,icexi9,thrd) )
+                tmp3   = 1./tmp2
+                iLAMi  = max( iLAMmin2, iLAMDA_x(DE(i,k),tmp1,tmp3,icexi9,thrd) )
                 No_i   = tmp2*iGI31/iLAMi    !optimized for alpha_i=0
                !compute number and mass of ice converted to snow as the integral from
                ! Dso to INF of Ni(D)dD and m(D)Ni(D)dD, respectively:
@@ -2535,14 +2250,14 @@ module my_dmom_mod
                 tmp1 = vr0-vi0
                 tmp3 = sqrt(tmp1*tmp1+0.04*vr0*vi0)
 
-                QCLir= dt*cmi*Eri*PIov4*iDE(i,k)*(NR(i,k)*NY(i,k))*iGI31*iGR31*tmp3*   &
+                QCLir= dt*cmi*Eri*PIov4*iDE(i,k)*(NR(i,k)*NY(i,k))*iGI31*iGR31*tmp3*     &
                        (GI36*GR31*iLAMi5+2.*GI35*GR32*iLAMi4*iLAMr+GI34*GR33*iLAMi3*     &
                        iLAMr2)
 
-                NCLri= dt*PIov4*Eri*(NR(i,k)*NY(i,k))*iGI31*iGR31*tmp3*(GI33*GR31*     &
+                NCLri= dt*PIov4*Eri*(NR(i,k)*NY(i,k))*iGI31*iGR31*tmp3*(GI33*GR31*       &
                        iLAMi2+2.*GI32*GR32*iLAMi*iLAMr+GI31*GR33*iLAMr2)
 
-                QCLri= dt*cmr*Eri*PIov4*iDE(i,k)*(NY(i,k)*NR(i,k))*iGR31*iGI31*tmp3*   &
+                QCLri= dt*cmr*Eri*PIov4*iDE(i,k)*(NY(i,k)*NR(i,k))*iGR31*iGI31*tmp3*     &
                        (GR36*GI31 *iLAMr5+2.*GR35*GI32*iLAMr4*iLAMi+GR34*GI33*iLAMr3*    &
                        iLAMi2)
 
@@ -2628,21 +2343,21 @@ module my_dmom_mod
                 tmp2 = sqrt(tmp1*tmp1+0.04*vs0*vr0)
                 tmp6 = iLAMs2*iLAMs2*iLAMs
 
-                QCLrs= dt*cmr*Ers*PIov4*iDE(i,k)*NN(i,k)*NR(i,k)*iGR31*iGS31*tmp2*     &
+                QCLrs= dt*cmr*Ers*PIov4*iDE(i,k)*NN(i,k)*NR(i,k)*iGR31*iGS31*tmp2*       &
                        (GR36*GS31*iLAMr5+2.*GR35*GS32*iLAMr4*iLAMs+GR34*GS33*iLAMr3*     &
                        iLAMs2)
 
-                NCLrs= dt*0.25e0*PI*Ers*(NN(i,k)*NR(i,k))*iGR31*iGS31*tmp2*(GR33*      &
+                NCLrs= dt*0.25e0*PI*Ers*(NN(i,k)*NR(i,k))*iGR31*iGS31*tmp2*(GR33*        &
                        GS31*iLAMr2+2.*GR32*GS32*iLAMr*iLAMs+GR31*GS33*iLAMs2)
 
                 if (snowSpherical) then
                   !hardcoded for dms=3:
-                   QCLsr= dt*cms*Ers*PIov4*iDE(i,k)*(NR(i,k)*NN(i,k))*iGS31*iGR31*     &
+                   QCLsr= dt*cms*Ers*PIov4*iDE(i,k)*(NR(i,k)*NN(i,k))*iGS31*iGR31*       &
                           tmp2*(GS36*GR31*tmp6+2.*GS35*GR32*iLAMs2*iLAMs2*iLAMr+GS34*    &
                           GR33*iLAMs2*iLAMs*iLAMr2)
                 else
                   !hardcoded for dms=2:
-                   QCLsr= dt*cms*iDE(i,k)*PI*0.25*ERS*tmp2*NN(i,k)*NR(i,k)*iGS31*      &
+                   QCLsr= dt*cms*iDE(i,k)*PI*0.25*ERS*tmp2*NN(i,k)*NR(i,k)*iGS31*        &
                           iGR31*(GR33*GS33*iLAMr**2.*iLAMs**2. + 2.*GR32*GS34*iLAMr*     &
                           iLAMs**3. +GR31*GS35*iLAMs**4.)
                 endif
@@ -2666,6 +2381,7 @@ module my_dmom_mod
                    endif
                 endif
                 if (.not. grpl_ON) Dsrg=0.
+
              else
                 QCLrs= 0.;   QCLsr= 0.;   NCLrs= 0.;   NCLsr= 0.
              endif
@@ -2679,13 +2395,16 @@ module my_dmom_mod
           !------------!
           !  GRAUPEL:  !
           !------------!
-          IF (QG(i,k)>epsQ) THEN
+          IF (QG(i,k)>epsQ .and. NG(i,k)>epsN) THEN
 
            !Conversion to hail:    (D_sll given by S-L limit)
              if ( (QCLcg+QCLrg)>0. .and. hail_ON ) then
 !               D_sll = 0.01*(exp(min(20.,-Tc/(1.1e4*DE(i,k)*(QC(i,k)+QR(i,k))-1.3e3*DE(i,k)*QI(i,k)+1.)))-1.)
 !               D_sll = 2.0*D_sll !correction factor [error Ziegler (1985), as per Young (1993)]
-                D_sll = 2.*0.01*(exp(min(20.,-Tc/(1.1e4*DE(i,k)*(QC(i,k)+QR(i,k)) + 1.)))-1.)
+!               D_sll = 2.*0.01*(exp(min(20.,-Tc/(1.1e4*DE(i,k)*(QC(i,k)+QR(i,k)) + 1.)))-1.)
+                tmp1  = 1.1e4*DE(i,k)*(QC(i,k)+QR(i,k)) + 1.
+                tmp1  = max(1.,tmp1)  !to prevent div-by-zero
+                D_sll = 2.*0.01*(exp(min(20.,-Tc/tmp1))-1.)
                 D_sll = min(1., max(0.0001,D_sll))    !smallest D_sll=0.1mm; largest=1m
                 tmp1  = iLAMg !hold value
                 tmp2  = No_g  !hold value
@@ -2714,7 +2433,8 @@ module my_dmom_mod
              endif
 
           !3-component freezing (collisions with rain):
-             if (QR(i,k)>epsQ) then
+!            if (QR(i,k)>epsQ) then
+             if (QR(i,k)>epsQ .and. Tc<-5.) then
                 tmp1 = vg0-vr0
                 tmp2 = sqrt(tmp1*tmp1 + 0.04*vg0*vr0)
                 tmp8 = iLAMg2*iLAMg      ! iLAMg**3
@@ -2726,14 +2446,14 @@ module my_dmom_mod
                 Kstoke = max(1.5,min(10.,Kstoke))
                 Erg    = 0.55*log10(2.51*Kstoke)
 
-                QCLrg= dt*cmr*Erg*PIov4*iDE(i,k)*(NG(i,k)*NR(i,k))*iGR31*iGG31*tmp2*   &
+                QCLrg= dt*cmr*Erg*PIov4*iDE(i,k)*(NG(i,k)*NR(i,k))*iGR31*iGG31*tmp2*     &
                        (GR36*GG31*iLAMr5+2.*GR35*GG32*iLAMr4*iLAMg+GR34*GG33*iLAMr3*     &
                        iLAMg2)
 
-                NCLrg= dt*PIov4*Erg*(NG(i,k)*NR(i,k))*iGR31*iGG31*tmp2*(GR33*GG31*     &
+                NCLrg= dt*PIov4*Erg*(NG(i,k)*NR(i,k))*iGR31*iGG31*tmp2*(GR33*GG31*       &
                        iLAMr2+2.*GR32*GG32*iLAMr*iLAMg+GR31*GG33*iLAMg2)
 
-                QCLgr= dt*cmg*Erg*PIov4*iDE(i,k)*(NR(i,k)*NG(i,k))*iGG31*iGR31*tmp2*   &
+                QCLgr= dt*cmg*Erg*PIov4*iDE(i,k)*(NR(i,k)*NG(i,k))*iGG31*iGR31*tmp2*     &
                        (GG36*GR31*tmp10+2.*GG35*GR32*tmp9*iLAMr+GG34*GR33*tmp8*iLAMr2)
 
                !(note: For explicit eqns, NCLgr= NCLrg)
@@ -2784,6 +2504,58 @@ module my_dmom_mod
 
        ENDIF  ! ( if Tc<0C Block )
 
+     !----- Prevent mass transfer from accretion during melting:  ---!
+     ! (only if exepcted NX (X=s,g,h) < 0 after source/sinks added)
+     ! The purpose is to prevent mass tranfer from cloud to X and then
+     ! to vapor (during "prevent overdepletion" code) if all of X
+     ! would otherwise be completely depleted (e.g. due to melting).
+
+      !estimate NN after S/S:
+       tmp1= NN(i,k) +NsCNis -NVDvs -NCNsg -NMLsr -NCLss -NCLsr -NCLsh +NCLsrs
+       if (tmp1<epsN) then
+          QCLcs = 0.
+          NCLcs = 0.
+          QCLrs = 0.
+          NCLrs = 0.
+          if (Dsrs==1.) then
+             QCLrs = 0.
+             QCLsr = 0.
+           endif
+        endif
+      !estimate NG after S/S:
+       tmp2= NG(i,k) +NCNsg -NCLgr -NVDvg -NMLgr +NCLirg +NCLsrg +NCLgrg -NgCNgh
+       if (tmp2<epsN) then
+          QCLcg = 0.
+          NCLcg = 0.
+          QCLrg = 0.
+          NCLrg = 0.
+          if (Dirg==1.) then
+             QCLri = 0.
+             QCLir = 0.
+          endif
+          if (Dsrg==1.) then
+             QCLrs = 0.
+             QCLsr = 0.
+          endif
+       endif
+      !estimate NH after S/S:
+       tmp3= NH(i,k) +NhFZrh +NhCNgh -NMLhr -NVDvh +NCLirh +NCLsrh +NCLgrh
+       if (tmp3<epsN) then
+          QCLch = 0.
+          NCLch = 0.
+          QCLrh = 0.
+          NCLrh = 0.
+          if (Dirh==1.) then
+             QCLri = 0.
+             QCLir = 0.
+          endif
+          if (Dsrh==1.) then
+             QCLrs = 0.
+             QCLsr = 0.
+          endif
+       endif
+     !=====
+
      !------------  End of source/sink term calculation  -------------!
 
      !-- Adjustment of source/sink terms to prevent  overdepletion: --!
@@ -2825,7 +2597,7 @@ module my_dmom_mod
           if(sink>sour) then
              ratio= sour/sink
              QCLrg= ratio*QCLrg;   QCLri= ratio*QCLri;   NCLri= ratio*NCLri
-             QCLrs= ratio*QCLrs;   NCLrs= ratio*NCLrs;   QCLrg= ratio*QCLrg
+             QCLrs= ratio*QCLrs;   NCLrs= ratio*NCLrs
              NCLrg= ratio*NCLrg;   QCLrh= ratio*QCLrh;   NCLrh= ratio*NCLrh
              QFZrh= ratio*QFZrh;   NrFZrh=ratio*NrFZrh;  NhFZrh=ratio*NhFZrh
              if (ratio==0.) then
@@ -2886,7 +2658,7 @@ module my_dmom_mod
           endif
 
           !  (7) Hail:
-          source= QH(i,k)+dim(QVDvh,0.)+QCLch+QCLrh+Dirh*(QCLri+QCLir)+QCLih+QCLsh+    &
+          source= QH(i,k)+dim(QVDvh,0.)+QCLch+QCLrh+Dirh*(QCLri+QCLir)+QCLih+QCLsh+      &
                   Dsrh*(QCLrs+QCLsr)+QCNgh+Dgrh*(QCLrg+QCLgr)+QFZrh
           sink  = dim(-QVDvh,0.)+QMLhr
           sour  = max(source,0.)
@@ -2930,7 +2702,7 @@ module my_dmom_mod
        !========================================================================!
 
       !Diagnostic S/S terms:  (to facilitate output of 3D variables for diagnostics)
-      !SS01(i,k)= QVDvs*idt  (e.g., for depositional growth rate of snow, kg kg-1 s-1)
+      !e.g. SS(i,k,1)= QVDvs*idt  (for depositional growth rate of snow, kg kg-1 s-1)
 
        ! Q-Source/Sink Terms:
        Q(i,k) = Q(i,k)  -QNUvi -QVDvi -QVDvs -QVDvg -QVDvh
@@ -2986,7 +2758,8 @@ module my_dmom_mod
 
         !ice:
          if (QI(i,k)>epsQ .and. NY(i,k)<epsN) then
-            NY(i,k)= N_Cooper(TRPL,T(i,k))
+         !   NY(i,k)= N_Cooper(TRPL,T(i,k))
+           NY(i,k) = max(2.*epsN, N_Cooper(TRPL,T(i,k)) )
          elseif (QI(i,k)<=epsQ) then
             Q(i,k)  = Q(i,k) + QI(i,k)
             T(i,k)  = T(i,k) - LSP*QI(i,k)
@@ -3029,7 +2802,8 @@ module my_dmom_mod
          endif
          if (QH(i,k)>epsQ .and. NH(i,k)>epsN) then
           !transfer small hail to graupel:
-            Dh = Dm_x(DE(i,k),QH(i,k),1./NH(i,k),icmh,thrd)
+            tmp1 = 1./NH(i,k)
+            Dh   = Dm_x(DE(i,k),QH(i,k),tmp1,icmh,thrd)
             if (Dh < Dh_min) then
                QG(i,k) = QG(i,k) + QH(i,k)
                NG(i,k) = NG(i,k) + NH(i,k)
@@ -3041,6 +2815,14 @@ module my_dmom_mod
          Q(i,k)= max(Q(i,k),0.)
          NY(i,k)= min(NY(i,k), Ni_max)
 
+!-----
+  if ( T(i,k)<173. .or. T(i,k)>323.) then                            !** DEBUG **
+     print*, '** STOPPING IN MICROPHYSICS: (Part 2, end) **'         !** DEBUG **
+     print*, '** i,k,T [K]: ',i,k,T(i,k)                             !** DEBUG **
+     stop                                                            !** DEBUG **
+  endif                                                              !** DEBUG **
+!=====
+
       ENDIF  !if (activePoint)
     ENDDO
   ENDDO
@@ -3048,6 +2830,8 @@ module my_dmom_mod
   !----------------------------------------------------------------------------------!
   !                    End of ice phase microphysics (Part 2)                        !
   !----------------------------------------------------------------------------------!
+
+  if (DEBUG_ON) call check_values(Q,T,QC,QR,QI,QN,QG,QH,NC,NR,NY,NN,NG,NH,epsQ,epsN,.true.,DEBUG_abort,450)
 
   !----------------------------------------------------------------------------------!
   !                       PART 3: Warm Microphysics Processes                        !
@@ -3072,7 +2856,8 @@ module my_dmom_mod
         rainPresent= (QR_in(i,k)>epsQ .and. NR_in(i,k)>epsN)
 
         if (QC_in(i,k)>epsQ .and. NC_in(i,k)>epsN) then
-           iLAMc = iLAMDA_x(DE(i,k),QC_in(i,k),1./NC_in(i,k),icexc9,thrd)
+           iNC = 1./NC_in(i,k)
+           iLAMc = iLAMDA_x(DE(i,k),QC_in(i,k),iNC,icexc9,thrd)
            iLAMc3= iLAMc*iLAMc*iLAMc
            iLAMc6= iLAMc3*iLAMc3
            Dc    = iLAMc*(GC2*iGC1)**thrd
@@ -3082,17 +2867,21 @@ module my_dmom_mod
         endif
 
         if (rainPresent) then
-           Dr = Dm_x(DE(i,k),QR_in(i,k),1./NR_in(i,k),icmr,thrd)
-          !Drop-size limiter [prevents initially large drops from melted hail]
+           iNR = 1./NR_in(i,k)
+           Dr = Dm_x(DE(i,k),QR_in(i,k),iNR,icmr,thrd)
+
+          !Drop-size limiter [prevents initially large drops]
             if (Dr>3.e-3) then
-              tmp1    = (Dr-3.e-3);  tmp2= (Dr/DrMAX); tmp3= tmp2*tmp2*tmp2
+              tmp1 = (Dr-3.e-3)
+              tmp2 = (Dr/DrMAX)
+              tmp3 = tmp2*tmp2*tmp2
               NR_in(i,k)= NR_in(i,k)*max((1.+2.e4*tmp1*tmp1),tmp3)
-              tmp1    = DE(i,k)*QR_in(i,k)*icmr
-              Dr      = (tmp1/NR_in(i,k))**thrd
+              iNR  = 1./NR_in(i,k)
+              Dr   = Dm_x(DE(i,k),QR_in(i,k),iNR,icmr,thrd)
            endif
-           iLAMr = iLAMDA_x(DE(i,k),QR(i,k),1./NR(i,k),icexr9,thrd)
-           iLAMr3= iLAMr*iLAMr*iLAMr
-           iLAMr6= iLAMr3*iLAMr3
+           iLAMr  = iLAMDA_x(DE(i,k),QR_in(i,k),iNR,icexr9,thrd)
+           iLAMr3 = iLAMr*iLAMr*iLAMr
+           iLAMr6 = iLAMr3*iLAMr3
         endif
 
         !  Autoconversion:
@@ -3182,7 +2971,8 @@ module my_dmom_mod
         NR(i,k)= max(0., NR(i,k)+( CCAUTR-CRSCOR)*dt )
 
         if (QR(i,k)>epsQ .and. NR(i,k)>epsN) then
-           Dr = Dm_x(DE(i,k),QR(i,k),1./NR(i,k),icmr,thrd)
+           iNR = 1./NR(i,k)
+           Dr  = Dm_x(DE(i,k),QR(i,k),iNR,icmr,thrd)
            if (Dr>3.e-3) then
               tmp1= (Dr-3.e-3);   tmp2= tmp1*tmp1
               tmp3= (Dr/DrMAX);   tmp4= tmp3*tmp3*tmp3
@@ -3200,8 +2990,12 @@ module my_dmom_mod
   ! Part 3b - Condensation/Evaporation:
 
         QSW(i,k) = qsat(T(i,k),pres(i,k),0)              !Flatau formulation
-        ssat    = Q(i,k)/QSW(i,k)-1.                     !supersaturation ratio
-        X       = Q(i,k)-QSW(i,k)                        !saturation exesss (deficit)
+        if (QSW(i,k)>1.e-20) then
+           ssat = Q(i,k)/QSW(i,k)-1.                     !supersaturation ratio
+        else
+           ssat = 0.
+        endif
+        X       = Q(i,k)-QSW(i,k)                        !saturation excess (deficit)
         !adjustment for latent heating during cond/evap
 !       X       = X/(1.+ck5*QSW(i,k)/(T(i,k)-35.86)**2)                                   !orig (KY97)
         X       = X / ( 1.+ ((3.1484e6-2370.*T(i,k))**2 * QSW(i,k))/( (1005.*(1.+       & !morr2mom
@@ -3210,29 +3004,35 @@ module my_dmom_mod
         QC(i,k) = QC(i,k) + X
         Q(i,k)  = Q(i,k)  - X
         T(i,k)  = T(i,k)  + LCP*X
-        if (ssat>0. .and. WZ(i,k)>0.001) then
-           ! Nucleation of cloud droplets:
-           !   note: WZ threshold of 1 mm/s is to overflow problem in NccnFNC, which
-           !         uses a polynomial approximation that is invalid for tiny WZ.
-          !NC(i,k)= max(NC(i,k),NccnFNC(WZ(i,k),T(i,k),HPS(i)*sigma(i,k),CCNtype))
-           NC(i,k) = max(NC(i,k), NccnFNC(WZ(i,k),T(i,k),pres(i,k),CCNtype))
-        else
-           NC(i,k) = max(0., NC(i,k) + X*NC(i,k)/max(QC(i,k),epsQ) ) !(dNc/dt)|evap
-        endif
-        !ensure consistency for cloud:
-        if (QC(i,k)>epsQ .and. NC(i,k)<epsN) NC(i,k)= N_c_SM
 
+        if (X>0.) then
+          !nucleation of cloud droplets:
+           if (WZ(i,k)>0.001) then
+              !condensation and non-negligible upward motion:
+               !note: WZ threshold of 1 mm/s is to overflow problem in NccnFNC, which
+               !      uses a polynomial approximation that is invalid for tiny WZ.
+              NC(i,k) = max(NC(i,k), NccnFNC(WZ(i,k),T(i,k),pres(i,k),CCNtype))
+           else
+             !condensation and negible or downward vertical motion:
+              NC(i,k) = max(NC(i,k), N_c_SM)
+           endif
+        else
+           if (QC(i,k)>epsQ) then
+              !partial evaporation of cloud droplets:
+              NC(i,k) = max(0., NC(i,k) + X*NC(i,k)/max(QC(i,k),epsQ) ) !(dNc/dt)|evap
+           else
+              NC(i,k) = 0.
+           endif
+        endif
+        if (QC(i,k)>epsQ .and. NC(i,k)<epsN) NC(i,k)= N_c_SM !prevents non-zero_Q & zero_N
 
        !rain evaporation:
-!-- new (my-2.25.0):
        !saturation adjustment:
         QSW(i,k) = qsat(T(i,k),pres(i,k),0)              !Flatau formulation
-        if (Q(i,k)<QSW(i,k) .and. QR(i,k)>epsQ) then
-
-           ssat     = Q(i,k)/QSW(i,k)-1.
+        if (Q(i,k)<QSW(i,k) .and. QR(i,k)>epsQ .and. NR(i,k)>epsN) then
+           ssat    = Q(i,k)/QSW(i,k)-1.
            Tc      = T(i,k)-TRPL
            Cdiff   = max(1.62e-5, (2.2157e-5 + 0.0155e-5*Tc)) *1.e5/pres(i,k)
-          !Cdiff   = max(1.62e-5, (2.2157e-5 + 0.0155e-5*Tc)) *1.e5/pres(i,k)
            MUdyn   = max(1.51e-5, (1.7153e-5 + 0.0050e-5*Tc))
            Ka      = max(2.07e-2, (2.3971e-2 + 0.0078e-2*Tc))
            MUkin   = MUdyn*iDE(i,k)
@@ -3246,7 +3046,8 @@ module my_dmom_mod
            DE(i,k)  = pres(i,k)/(RGASD*T(i,k))        !recompute air density (with updated T)
            iDE(i,k) = 1./DE(i,k)
            gam      = sqrt(DEo*iDE(i,k))
-           iLAMr    = iLAMDA_x(DE(i,k),QR(i,k),1./NR(i,k),icexr9,thrd)
+           tmp1     = 1./NR(i,k)
+           iLAMr    = iLAMDA_x(DE(i,k),QR(i,k),tmp1,icexr9,thrd)
            LAMr     = 1./iLAMr
           !note: The following coding of 'No_r=...' prevents overflow:
           !No_r     = NR(i,k)*LAMr**(1.+alpha_r))*iGR31
@@ -3267,8 +3068,7 @@ module my_dmom_mod
               QR(i,k) = 0.
               NR(i,k) = 0.
            endif
-
-         endif
+        endif
 
        !homogeneous freezing of cloud:
         Tc = T(i,k) - TRPL
@@ -3307,7 +3107,8 @@ module my_dmom_mod
            endif
 
            if (QI(i,k)>epsQ .and. NY(i,k)<epsN) then
-              NY(i,k)= N_Cooper(TRPL,T(i,k))
+           !   NY(i,k)= N_Cooper(TRPL,T(i,k))
+           NY(i,k) = max(2.*epsN, N_Cooper(TRPL,T(i,k)) )
            elseif (QI(i,k)<=epsQ) then
               Q(i,k)  = Q(i,k) + QI(i,k)
               T(i,k)  = T(i,k) - LSP*QI(i,k)
@@ -3328,6 +3129,8 @@ module my_dmom_mod
   !                    End of warm-phase microphysics (Part 3)                       !
   !----------------------------------------------------------------------------------!
 
+  if (DEBUG_ON) call check_values(Q,T,QC,QR,QI,QN,QG,QH,NC,NR,NY,NN,NG,NH,epsQ,epsN,.true.,DEBUG_abort,500)
+
   !----------------------------------------------------------------------------------!
   !                            PART 4:  Sedimentation                                !
   !----------------------------------------------------------------------------------!
@@ -3338,45 +3141,51 @@ module my_dmom_mod
    RT_rn1 = 0.;  RT_rn2 = 0.;  RT_fr1 = 0.;  RT_fr2 = 0.;  RT_sn1 = 0.
    RT_sn2 = 0.;  RT_sn3 = 0.;  RT_pe1 = 0.;  RT_pe2 = 0.;  RT_peL = 0.
 
-    call sedi_wrapper(QR,NR,1,epsQ,epsQr_sedi,epsN,dmr,ni,nk_sub,VrMax,DrMax,dt,fluxM_r, &
-                      kdir,kbot,ktop_sedi,GRAV,nk_skip,kfull,iint,DE_sub,iDE_sub,iDP_sub,&
-                      DZ_sub,iDZ_sub,gamfact_sub,zheight,nk,DE,iDE,iDP,DZ,iDZ,gamfact,   &
-                      kskip_1,kount,afr,bfr,cmr,ckQr1,ckQr2,icexr9)
+!---- For sedimentation on all levels:
+    call sedi_wrapper_2(QR,NR,1,epsQ,epsQr_sedi,epsN,dmr,ni,VrMax,DrMax,dt,fluxM_r,kdir, &
+                        kbot,ktop_sedi,GRAV,zheight,nk,DE,iDE,iDP,DZ,iDZ,gamfact,kount,  &
+                        afr,bfr,cmr,ckQr1,ckQr2,icexr9)
+  if (DEBUG_ON) call check_values(Q,T,QC,QR,QI,QN,QG,QH,NC,NR,NY,NN,NG,NH,epsQ,epsN,.false.,DEBUG_abort,610)
 
-    call sedi_wrapper(QI,NY,2,epsQ,epsQi_sedi,epsN,dmi,ni,nk_sub,ViMax,DiMax,dt,fluxM_i, &
-                      kdir,kbot,ktop_sedi,GRAV,nk_skip,kfull,iint,DE_sub,iDE_sub,iDP_sub,&
-                      DZ_sub,iDZ_sub,gamfact_sub,zheight,nk,DE,iDE,iDP,DZ,iDZ,gamfact,   &
-                      kskip_1,kount,afi,bfi,cmi,ckQi1,ckQi2,ckQi4)
+    call sedi_wrapper_2(QI,NY,2,epsQ,epsQi_sedi,epsN,dmi,ni,ViMax,DiMax,dt,fluxM_i,kdir, &
+                        kbot,ktop_sedi,GRAV,zheight,nk,DE,iDE,iDP,DZ,iDZ,gamfact,kount,  &
+                        afi,bfi,cmi,ckQi1,ckQi2,ckQi4)
 
-    call sedi_wrapper(QN,NN,3,epsQ,epsQs_sedi,epsN,dms,ni,nk_sub,VsMax,DsMax,dt,fluxM_s, &
-                      kdir,kbot,ktop_sedi,GRAV,nk_skip,kfull,iint,DE_sub,iDE_sub,iDP_sub,&
-                      DZ_sub,iDZ_sub,gamfact_sub,zheight,nk,DE,iDE,iDP,DZ,iDZ,gamfact,   &
-                      kskip_1,kount,afs,bfs,cms,ckQs1,ckQs2,iGS20)
+  if (DEBUG_ON) call check_values(Q,T,QC,QR,QI,QN,QG,QH,NC,NR,NY,NN,NG,NH,epsQ,epsN,.false.,DEBUG_abort,620)
 
-    call sedi_wrapper(QG,NG,4,epsQ,epsQg_sedi,epsN,dmg,ni,nk_sub,VgMax,DgMax,dt,fluxM_g, &
-                      kdir,kbot,ktop_sedi,GRAV,nk_skip,kfull,iint,DE_sub,iDE_sub,iDP_sub,&
-                      DZ_sub,iDZ_sub,gamfact_sub,zheight,nk,DE,iDE,iDP,DZ,iDZ,gamfact,   &
-                      kskip_1,kount,afg,bfg,cmg,ckQg1,ckQg2,ckQg4)
+    call sedi_wrapper_2(QN,NN,3,epsQ,epsQs_sedi,epsN,dms,ni,VsMax,DsMax,dt,fluxM_s,kdir, &
+                        kbot,ktop_sedi,GRAV,zheight,nk,DE,iDE,iDP,DZ,iDZ,gamfact,kount,  &
+                        afs,bfs,cms,ckQs1,ckQs2,iGS20)
 
-    call sedi_wrapper(QH,NH,5,epsQ,epsQh_sedi,epsN,dmh,ni,nk_sub,VhMax,DhMax,dt,fluxM_h, &
-                      kdir,kbot,ktop_sedi,GRAV,nk_skip,kfull,iint,DE_sub,iDE_sub,iDP_sub,&
-                      DZ_sub,iDZ_sub,gamfact_sub,zheight,nk,DE,iDE,iDP,DZ,iDZ,gamfact,   &
-                      kskip_1,kount,afh,bfh,cmh,ckQh1,ckQh2,ckQh4)
+  if (DEBUG_ON) call check_values(Q,T,QC,QR,QI,QN,QG,QH,NC,NR,NY,NN,NG,NH,epsQ,epsN,.false.,DEBUG_abort,630)
+
+    call sedi_wrapper_2(QG,NG,4,epsQ,epsQg_sedi,epsN,dmg,ni,VgMax,DgMax,dt,fluxM_g,kdir, &
+                        kbot,ktop_sedi,GRAV,zheight,nk,DE,iDE,iDP,DZ,iDZ,gamfact,kount,  &
+                        afg,bfg,cmg,ckQg1,ckQg2,ckQg4)
+
+  if (DEBUG_ON) call check_values(Q,T,QC,QR,QI,QN,QG,QH,NC,NR,NY,NN,NG,NH,epsQ,epsN,.false.,DEBUG_abort,640)
+
+    call sedi_wrapper_2(QH,NH,5,epsQ,epsQh_sedi,epsN,dmh,ni,VhMax,DhMax,dt,fluxM_h,kdir, &
+                        kbot,ktop_sedi,GRAV,zheight,nk,DE,iDE,iDP,DZ,iDZ,gamfact,kount,  &
+                        afh,bfh,cmh,ckQh1,ckQh2,ckQh4)
+!====
+
+
+  if (DEBUG_ON) call check_values(Q,T,QC,QR,QI,QN,QG,QH,NC,NR,NY,NN,NG,NH,epsQ,epsN,.false.,DEBUG_abort,650)
 
 !---  Impose constraints on size distribution parameters ---!
-   do k= ktop,kbot,-kdir
+    do k= ktop,kbot,-kdir
       do i= 1,ni
-
        !snow:
          if (QN(i,k)>epsQ .and. NN(i,k)>epsN) then
-
          !Impose No_s max for snow: (assumes alpha_s=0.)
-            iLAMs  = max( iLAMmin2, iLAMDA_x(DE(i,k),QN(i,k), 1./NN(i,k),iGS20,idms) )
+            tmp1   = 1./NN(i,k)
+            iLAMs  = max( iLAMmin2, iLAMDA_x(DE(i,k),QN(i,k),tmp1,iGS20,idms) )
             tmp1   = min(NN(i,k)/iLAMs,No_s_max)                 !min. No_s
             NN(i,k)= tmp1**(dms/(1.+dms))*(iGS20*DE(i,k)*QN(i,k))**(1./(1.+dms)) !impose Nos_max
-
          !Impose LAMDAs_min (by increasing LAMDAs if it is below LAMDAs_min2 [2xLAMDAs_min])
-            iLAMs  = max( iLAMmin2, iLAMDA_x(DE(i,k),QN(i,k),1./NN(i,k),iGS20,idms) )
+            tmp1   = 1./NN(i,k)
+            iLAMs  = max( iLAMmin2, iLAMDA_x(DE(i,k),QN(i,k),tmp1,iGS20,idms) )
             tmp2   = 1./iLAMs                                   !LAMs before adjustment
            !adjust value of lamdas_min to be applied:
            !  This adjusts for multiple corrections (each time step).  The factor 0.6 was obtained by
@@ -3387,18 +3196,19 @@ module my_dmom_mod
             tmp3   = max(tmp3, lamdas_min)                      !final correction
             NN(i,k)= NN(i,k)*(tmp3*iLAMs)**dms                  !re-compute NN after LAMs adjustment
          endif
-
-      enddo !i-loop
-   enddo !k-loop
+       enddo !i-loop
+    enddo !k-loop
 !===
 
   !Compute melted (liquid-equivalent) volume fluxes [m3 (liquid) m-2 (sfc area) s-1]:
   !  (note: For other precipitation schemes in RPN-CMC physics, this is computed in 'vkuocon6.ftn')
-   RT_rn1 = fluxM_r *idew
-   RT_sn1 = fluxM_i *idew
-   RT_sn2 = fluxM_s *idew
-   RT_sn3 = fluxM_g *idew
-   RT_pe1 = fluxM_h *idew
+  RT_rn1 = fluxM_r *idew
+  RT_sn1 = fluxM_i *idew
+  RT_sn2 = fluxM_s *idew
+  RT_sn3 = fluxM_g *idew
+  RT_pe1 = fluxM_h *idew
+
+  if (DEBUG_ON) call check_values(Q,T,QC,QR,QI,QN,QG,QH,NC,NR,NY,NN,NG,NH,epsQ,epsN,.false.,DEBUG_abort,700)
 
 !----
   !Compute sum of solid (unmelted) volume fluxes [m3 (bulk hydrometeor) m-2 (sfc area) s-1]:
@@ -3422,10 +3232,11 @@ module my_dmom_mod
          !       integral and Fv_x=Fm_x/dex
          !       Optimized for alpha_s = 0.
       if (QN(i,nk)>epsQ .and. NN(i,nk)>epsN .and. fluxM_s(i)>0.) then
-         tmp1= 1./iLAMDA_x(DE(i,nk),QN(i,nk),1./NN(i,nk),iGS20,idms) !LAMDA_s
-         fluxV_s= fluxM_s(i)*rfact_FvFm*tmp1**(dms-3.)
+         tmp2    = 1./NN(i,nk)
+         tmp1    = 1./iLAMDA_x(DE(i,nk),QN(i,nk),tmp2,iGS20,idms) !LAMDA_s
+         fluxV_s = fluxM_s(i)*rfact_FvFm*tmp1**(dms-3.)
       else
-         fluxV_s=0.
+         fluxV_s = 0.
       endif
 
      !total solid unmelted volume flux, before accounting for partial melting:
@@ -3508,8 +3319,9 @@ module my_dmom_mod
 
       !large hail:
          if (QH(i,kbot)>epsQ) then
-            N_h= NH(i,kbot)
-            Dm_h(i,kbot)= Dm_x(DE(i,kbot),QH(i,kbot),1./N_h,icmh,thrd)
+            N_h  = NH(i,kbot)
+            tmp1 = 1./N_h
+            Dm_h(i,kbot)= Dm_x(DE(i,kbot),QH(i,kbot),tmp1,icmh,thrd)
             if (DM_h(i,kbot)>Dh_large) RT_peL(i)= RT_pe2(i)
             !note: large hail (RT_peL) is a subset of the total hail (RT_pe2)
          endif
@@ -3527,13 +3339,44 @@ module my_dmom_mod
  !                     End of sedimentation calculations (Part 4)                    !
  !-----------------------------------------------------------------------------------!
 
+  if (DEBUG_ON) call check_values(Q,T,QC,QR,QI,QN,QG,QH,NC,NR,NY,NN,NG,NH,epsQ,epsN,.false.,DEBUG_abort,800)
 
  !===================================================================================!
  !                             End of microphysics scheme                            !
  !===================================================================================!
 
  !-----------------------------------------------------------------------------------!
- !                    Calculation of diagnostic output variables:                    !
+ !                    Calculation of diagnostic variables:                           !
+
+ !Compute effective radii for cloud and ice (to be passed to radiation scheme):
+ !  - based of definition, r_eff = M_r(3)/M_r(2) = 0.5*M_D(3)/M_D(2),
+ !    where the pth moment w.r.t. diameter, M_D(p), is given by MY2005a, eqn (2)
+  do k = kbot,ktop,kdir
+     do i = 1,ni
+
+      !cloud:
+        if (QC(i,k)>epsQ .and. NC(i,k)>epsN) then
+          !hardcoded for alpha_c = 1. and mu_c = 3.
+           iNC   = 1./NC(i,k)
+           iLAMc = iLAMDA_x(DE(i,k),QC(i,k),iNC,icexc9,thrd)
+        !   reff_c(i,k) = 0.664639*iLAMc
+        else
+        !   reff_c(i,k) = 0.
+        endif
+
+      !ice:
+        if (QI(i,k)>epsQ .and. NY(i,k)>epsN) then
+          !hardcoded for alpha_i = 0. and mu_i = 1.
+           iNY   = 1./NY(i,k)
+           iLAMi = max( iLAMmin2, iLAMDA_x(DE(i,k),QI(i,k),iNY,icexi9,thrd) )
+        !   reff_i(i,k) = 1.5*iLAMi
+        else
+        !   reff_i(i,k) = 0.
+        endif
+
+     enddo
+  enddo
+
 
   IF (calcDiag) THEN
 
@@ -3590,12 +3433,30 @@ module my_dmom_mod
          !Mean-mass diameters:  (units of [m])
            Dm_c(i,k)= 0.;   Dm_r(i,k)= 0.;   Dm_i(i,k)= 0.
            Dm_s(i,k)= 0.;   Dm_g(i,k)= 0.;   Dm_h(i,k)= 0.
-           if(QC(i,k)>epsQ.and.N_c>epsN) Dm_c(i,k)=Dm_x(DE(i,k),QC(i,k),1./N_c,icmr,thrd)
-           if(QR(i,k)>epsQ.and.N_r>epsN) Dm_r(i,k)=Dm_x(DE(i,k),QR(i,k),1./N_r,icmr,thrd)
-           if(QI(i,k)>epsQ.and.N_i>epsN) Dm_i(i,k)=Dm_x(DE(i,k),QI(i,k),1./N_i,icmi,thrd)
-           if(QN(i,k)>epsQ.and.N_s>epsN) Dm_s(i,k)=Dm_x(DE(i,k),QN(i,k),1./N_s,icms,idms)
-           if(QG(i,k)>epsQ.and.N_g>epsN) Dm_g(i,k)=Dm_x(DE(i,k),QG(i,k),1./N_g,icmg,thrd)
-           if(QH(i,k)>epsQ.and.N_h>epsN) Dm_h(i,k)=Dm_x(DE(i,k),QH(i,k),1./N_h,icmh,thrd)
+           if (QC(i,k)>epsQ.and.N_c>epsN) then
+              tmp1      = 1./N_c
+              Dm_c(i,k) = Dm_x(DE(i,k),QC(i,k),tmp1,icmr,thrd)
+           endif
+           if (QR(i,k)>epsQ.and.N_r>epsN) then
+              tmp1      = 1./N_r
+              Dm_r(i,k) = Dm_x(DE(i,k),QR(i,k),tmp1,icmr,thrd)
+           endif
+           if (QI(i,k)>epsQ.and.N_i>epsN) then
+              tmp1      = 1./N_i
+              Dm_i(i,k) = Dm_x(DE(i,k),QI(i,k),tmp1,icmi,thrd)
+           endif
+           if (QN(i,k)>epsQ.and.N_s>epsN) then
+              tmp1      = 1./N_s
+              Dm_s(i,k) = Dm_x(DE(i,k),QN(i,k),tmp1,icms,idms)
+           endif
+           if (QG(i,k)>epsQ.and.N_g>epsN) then
+              tmp1      = 1./N_g
+              Dm_g(i,k) = Dm_x(DE(i,k),QG(i,k),tmp1,icmg,thrd)
+           endif
+           if (QH(i,k)>epsQ.and.N_h>epsN) then
+              tmp1      = 1./N_h
+              Dm_h(i,k) = Dm_x(DE(i,k),QH(i,k),tmp1,icmh,thrd)
+           endif
 
         enddo  !i-loop
      enddo     !k-loop
@@ -3619,9 +3480,11 @@ module my_dmom_mod
 !   QG = max(QG, 0.);   NG = max(NG, 0.)
 !   QH = max(QH, 0.);   NH = max(NH, 0.)
 
- !-----------------------------------------------------------------------------------!
-END SUBROUTINE mp_milbrandt2mom_main
- !___________________________________________________________________________________!
+  if (DEBUG_ON) call check_values(Q,T,QC,QR,QI,QN,QG,QH,NC,NR,NY,NN,NG,NH,epsQ,epsN,.false.,DEBUG_abort,900)
+
+ END SUBROUTINE mp_milbrandt2mom_main
+
+!___________________________________________________________________________________!
 
    real function des_OF_Ds(Ds_local,desMax_local,eds_local,fds_local)
    !Computes density of equivalent-volume snow particle based on (pi/6*des)*Ds^3 = cms*Ds^dms
@@ -3663,14 +3526,14 @@ END SUBROUTINE mp_milbrandt2mom_main
 
 !===================================================================================================!
 
-END MODULE my_dmom_mod
+END MODULE my2_mod
 
 !________________________________________________________________________________________!
 
  MODULE module_mp_milbrandt2mom
 
       use module_wrf_error
-      use my_dmom_mod
+      use my2_mod, ONLY: mp_milbrandt2mom_main
 
       implicit none
 
@@ -3694,7 +3557,7 @@ END MODULE my_dmom_mod
 
 
       SUBROUTINE mp_milbrandt2mom_driver(qv, qc, qr, qi, qs, qg, qh, nc, nr, ni, ns, ng,  &
-                              nh, th, pii, p, w, dz, dt_in, itimestep,                    &
+                              nh, th, pii, p, w, dz, dt_in, itimestep, p8w,               & 
                               RAINNC, RAINNCV, SNOWNC, SNOWNCV, GRPLNC, GRPLNCV,          &
                               HAILNC, HAILNCV, SR, Zet,                                   &
                               ids,ide, jds,jde, kds,kde,                                  &  ! domain dims
@@ -3711,6 +3574,7 @@ END MODULE my_dmom_mod
                             qv,qc,qr,qi,qs,qg,qh,nc,nr,ni,ns,ng,nh,th,Zet
       real, dimension(ims:ime, kms:kme, jms:jme), intent(in)::                           &
                             pii,p,w,dz
+      real, dimension(ims:ime, kms:kme, jms:jme), intent(in):: p8w                                  
       real, dimension(ims:ime, jms:jme), intent(inout)::                                 &
                             RAINNC,RAINNCV,SNOWNC,SNOWNCV,GRPLNC,GRPLNCV,HAILNC,HAILNCV, &
                             SR
@@ -3738,6 +3602,8 @@ END MODULE my_dmom_mod
       real, parameter    :: ms2mmh    = 3.6e+6   !conversion factor for precipitation rates
       logical, parameter :: nk_BOTTOM = .false.  !.F. for k=1 at bottom level (WRF)
 
+      real, parameter    :: statfreq  = 300.     !frequency (seconds) to output block stats
+
 !+---+
       i2d_max  = ite-its+1
       k2d_max  = kte-kts+1
@@ -3762,17 +3628,33 @@ END MODULE my_dmom_mod
       HAILNCV(its:ite,jts:jte) = 0.
       SR(its:ite,jts:jte)      = 0.
 
+      !--run-time stats:
+!       if (mod(itimestep*dt,statfreq)==0.) then
+!           t3d = th*pii
+!           print*, 'Bloc Stats -- BEFORE micro call (my-2.25.1_b11)'
+!           write(6,'(a8,7e15.5)') 'Max qx: ',maxval(qc(its:ite,kts:kte,jts:jte)),maxval(qr(its:ite,kts:kte,jts:jte)),maxval(qi(its:ite,kts:kte,jts:jte)), &
+!                                             maxval(qs(its:ite,kts:kte,jts:jte)),maxval(qg(its:ite,kts:kte,jts:jte)),maxval(qh(its:ite,kts:kte,jts:jte))
+!           write(6,'(a8,6e15.5)') 'Max Nx: ',maxval(nc(its:ite,kts:kte,jts:jte)),maxval(nr(its:ite,kts:kte,jts:jte)),maxval(ni(its:ite,kts:kte,jts:jte)), &
+!                                             maxval(ns(its:ite,kts:kte,jts:jte)),maxval(ng(its:ite,kts:kte,jts:jte)),maxval(nh(its:ite,kts:kte,jts:jte))
+!           write(6,'(a8,7e15.5)') 'Min qx: ',minval(qc(its:ite,kts:kte,jts:jte)),minval(qr(its:ite,kts:kte,jts:jte)),minval(qi(its:ite,kts:kte,jts:jte)), &
+!                                             minval(qs(its:ite,kts:kte,jts:jte)),minval(qg(its:ite,kts:kte,jts:jte)),minval(qh(its:ite,kts:kte,jts:jte))
+!           write(6,'(a8,6e15.5)') 'Min Nx: ',minval(nc(its:ite,kts:kte,jts:jte)),minval(nr(its:ite,kts:kte,jts:jte)),minval(ni(its:ite,kts:kte,jts:jte)), &
+!                                             minval(ns(its:ite,kts:kte,jts:jte)),minval(ng(its:ite,kts:kte,jts:jte)),minval(nh(its:ite,kts:kte,jts:jte))
+!           write(6,'(a8,6e15.5)') 'W,T,qv: ',minval( w(its:ite,kts:kte,jts:jte)),maxval( w(its:ite,kts:kte,jts:jte)),minval(t3d(its:ite,kts:kte,jts:jte)),&
+!                                             maxval(t3d(its:ite,kts:kte,jts:jte)),minval(qv(its:ite,kts:kte,jts:jte)),maxval(qv(its:ite,kts:kte,jts:jte))
+!       endif
+      
       do j = jts, jte
 
          t2d(:,:) = th(its:ite,kts:kte,j)*pii(its:ite,kts:kte,j)
          p2d(:,:) = p(its:ite,kts:kte,j)
-         p_sfc(:) = p2d(:,k2d_max)
+      !   p_sfc(:) = p2d(:,k2d_max)
+         p_sfc(:) = p8w(its:ite,kms, j)  
 
          do i = its, ite
             i2d = i-its+1
             sigma2d(i2d,:) = p2d(i2d,:)/p_sfc(i2d)
          enddo
-
          call mp_milbrandt2mom_main(w(its:ite,kts:kte,j),t2d,qv(its:ite,kts:kte,j), &
                qc(its:ite,kts:kte,j),qr(its:ite,kts:kte,j),qi(its:ite,kts:kte,j),   &
                qs(its:ite,kts:kte,j),qg(its:ite,kts:kte,j),qh(its:ite,kts:kte,j),   &
@@ -3792,15 +3674,31 @@ END MODULE my_dmom_mod
          HAILNCV(its:ite,j) = (rt_pe1(:) + rt_pe2(:))*ms2mmstp
          GRPLNCV(its:ite,j) = rt_sn3(:)*ms2mmstp
 
-! test
-
          RAINNC(its:ite,j)  = RAINNC(its:ite,j) + RAINNCV(its:ite,j)
          SNOWNC(its:ite,j)  = SNOWNC(its:ite,j) + SNOWNCV(its:ite,j)
          HAILNC(its:ite,j)  = HAILNC(its:ite,j) + HAILNCV(its:ite,j)
          GRPLNC(its:ite,j)  = GRPLNC(its:ite,j) + GRPLNCV(its:ite,j)
          SR(its:ite,j)      = (SNOWNCV(its:ite,j)+HAILNCV(its:ite,j)+GRPLNCV(its:ite,j))/(RAINNCV(its:ite,j)+1.e-12)
 
+
       enddo !j_loop
+
+      !--run-time stats:
+!       if (mod(itimestep*dt,statfreq)==0.) then
+!          t3d = th*pii
+!          print*, 'Bloc Stats -- AFTER micro call; my_2.25.1-b11)'
+!          write(6,'(a8,7e15.5)') 'Max qx: ',maxval(qc(its:ite,kts:kte,jts:jte)),maxval(qr(its:ite,kts:kte,jts:jte)),maxval(qi(its:ite,kts:kte,jts:jte)), &
+!                                            maxval(qs(its:ite,kts:kte,jts:jte)),maxval(qg(its:ite,kts:kte,jts:jte)),maxval(qh(its:ite,kts:kte,jts:jte))
+!          write(6,'(a8,6e15.5)') 'Max Nx: ',maxval(nc(its:ite,kts:kte,jts:jte)),maxval(nr(its:ite,kts:kte,jts:jte)),maxval(ni(its:ite,kts:kte,jts:jte)), &
+!                                            maxval(ns(its:ite,kts:kte,jts:jte)),maxval(ng(its:ite,kts:kte,jts:jte)),maxval(nh(its:ite,kts:kte,jts:jte))
+!          write(6,'(a8,7e15.5)') 'Min qx: ',minval(qc(its:ite,kts:kte,jts:jte)),minval(qr(its:ite,kts:kte,jts:jte)),minval(qi(its:ite,kts:kte,jts:jte)), &
+!                                            minval(qs(its:ite,kts:kte,jts:jte)),minval(qg(its:ite,kts:kte,jts:jte)),minval(qh(its:ite,kts:kte,jts:jte))
+!          write(6,'(a8,6e15.5)') 'Min Nx: ',minval(nc(its:ite,kts:kte,jts:jte)),minval(nr(its:ite,kts:kte,jts:jte)),minval(ni(its:ite,kts:kte,jts:jte)), &
+!                                            minval(ns(its:ite,kts:kte,jts:jte)),minval(ng(its:ite,kts:kte,jts:jte)),minval(nh(its:ite,kts:kte,jts:jte))
+!          write(6,'(a8,6e15.5)') 'W,T,qv: ',minval( w(its:ite,kts:kte,jts:jte)),maxval( w(its:ite,kts:kte,jts:jte)),minval(t3d(its:ite,kts:kte,jts:jte)),&
+!                                            maxval(t3d(its:ite,kts:kte,jts:jte)),minval(qv(its:ite,kts:kte,jts:jte)),maxval(qv(its:ite,kts:kte,jts:jte))
+!          write(6,'(a8,2e15.5)') 'Zet   : ',maxval(Zet(its:ite,kts:kte,jts:jte))
+!       endif
 
       END SUBROUTINE mp_milbrandt2mom_driver
 

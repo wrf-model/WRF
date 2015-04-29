@@ -1608,7 +1608,7 @@ endif
 !
 !       print *,'calculating initial pm'
         select case (config_flags%chem_opt)
-        case (GOCART_SIMPLE,GOCARTRACM_KPP,GOCARTRADM2,GOCARTRADM2_KPP)
+        case (GOCART_SIMPLE,GOCARTRACM_KPP,GOCARTRADM2)
            call sum_pm_gocart (                                             &
                 grid%alt, chem, grid%pm2_5_dry, grid%pm2_5_dry_ec,grid%pm10,&
                 ids,ide, jds,jde, kds,kde,                                  &

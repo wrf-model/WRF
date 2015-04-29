@@ -14,9 +14,9 @@
 !  --------------------------------------------------------------------------
 
 ! Uncomment to use GPU, or comment to use CPU
-!#define _CUDA
+!#define _ACCEL
 
-#ifdef _CUDA
+#ifdef _ACCEL
 #define _gpudev  ,device
 #define _gpudeva ,device,allocatable
 #define _gpudevanp ,device,allocatable
@@ -38,7 +38,7 @@
 #define _cpusnp  
 #endif
 
-#ifdef _CUDA
+#ifdef _ACCEL
 #define dbreg(x) call dbal(x)
 #define dbcop(x,y) call dbcp(x, cpointer);call c_f_pointer( cpointer, y, shape(x)) 
 #define dbcopnp(x,y,t,u) call dbcp(x, cpointer);call c_f_pointer( cpointer, y, shape(x)) 
@@ -59,7 +59,7 @@
 !! !#define _memdiag
 
 module memory
-#ifdef _CUDA
+#ifdef _ACCEL
 
 
 use iso_c_binding
@@ -154,7 +154,7 @@ subroutine ddbxegr( a, x, y , pt)
 end subroutine
 
 subroutine dflush()
-#ifdef _CUDA
+#ifdef _ACCEL
     allocate( ddar( ddsizec + 1 ) )
 #endif
     
@@ -163,7 +163,7 @@ subroutine dflush()
 end subroutine
 
 subroutine dclean()
-#ifdef _CUDA
+#ifdef _ACCEL
     deallocate( ddar )
 #endif
     ddindex = 0
@@ -320,7 +320,7 @@ subroutine dbflushrg()
 #ifdef _memdiag        
         print *, dlist(i)%size
 #endif
-#ifdef _CUDA
+#ifdef _ACCEL
         allocate( dlist(i)%ar( dlist(i)%size + 2 ))
 #endif
         dlist(i)%loc = c_devloc( dlist(i)%ar(1) )
@@ -448,7 +448,7 @@ subroutine dbclean
         dlist(i)%size=0
         clist(i)%size=0
 
-#ifdef _CUDA
+#ifdef _ACCEL
         deallocate( dlist(i)%ar )
 #endif
     end do
@@ -2919,7 +2919,7 @@ end module
       real _gpucon :: preflogd(59)
       real _gpucon :: trefd(59)
 
-#ifndef _CUDA
+#ifndef _ACCEL
 # define chi_mlsd chi_mls
 # define preflogd preflog
 # define trefd tref
@@ -3565,31 +3565,20 @@ contains
       use rrlw_con_f, only: grav
       use rrlw_wvn_f, only: ngb
       use rrlw_vsn_f
-! For GSFC, not needed for WRF
-!      use WaterDistributionMod, only: n1, n2, tabulate_xcw_beta, tabulate_xcw_gamma
 
-#ifdef _CUDA
+#ifdef _ACCEL
       use cudafor
       use cudadevice
 #endif
 
       implicit none
 
-! For GSFC, not needed for WRF
-!      real , dimension(n1,n2) :: XCW
-!      real  _gpudev, allocatable :: pmidd(:, :),xcwd(:,:)
-
-#ifdef _CUDA
+#ifdef _ACCEL
       real  _gpudev, allocatable :: pmidd(:, :)
       real  _gpudev, allocatable :: cldfracd(:,:), clwpd(:,:), ciwpd(:,:), cswpd(:,:), taucd(:,:,:)
 
 !$OMP THREADPRIVATE(pmidd,cldfracd,clwpd,ciwpd,cswpd,taucd)
 #endif
-
-! For GSFC, not needed for WRF
-!      real  _gpudev, allocatable :: alphad(:,:), rcorrd(:,:)
-!      integer  _gpudev, allocatable :: cloudFlagd(:,:)
-
 
 ! public interfaces/functions/subroutines
       !public :: mcica_subcol_lwg, generate_stochastic_cloudsg 
@@ -3601,9 +3590,7 @@ contains
 !------------------------------------------------------------------
 
       subroutine mcica_subcol_lwg(colstart, ncol, nlay, icld, permuteseed, irng,       &
-! For GSFC, not needed for WRF
-!                       ciwpmcl, clwpmcl, cswpmcl, taucmcl, cloudFlag, cloudMH, cloudHH, zmd, inhm)
-#ifndef _CUDA
+#ifndef _ACCEL
                        pmidd,clwpd,ciwpd,cswpd,taucd, &
 #endif
                        play, cldfrac, ciwp, clwp, cswp, tauc, ngbd, cldfmcl, &
@@ -3655,16 +3642,11 @@ contains
                                                       !    Dimensions: (ngptlw,ncol,nlay)
 !      integer , intent(out) :: cloudFlag(:,:)
       
-#ifndef _CUDA
+#ifndef _ACCEL
 ! were module data but changed to arguments because not thread-safe
       real  :: pmidd(:, :)
       real  :: clwpd(:,:), ciwpd(:,:), cswpd(:,:), taucd(:,:,:)
 #endif
-
-! For GSFC, not needed for WRF
-!      real  _gpudev, intent(in) :: zmd(:,:)  ! Height of midpoints (above surface)
-                                                      !    Dimensions: (ncol,nlay)
-!      integer , intent(in)  :: inhm
 
 ! ----- Local -----
 
@@ -3673,15 +3655,10 @@ contains
       integer  :: ilev                        ! loop index
 
       real  :: pmid(ncol, nlay)               ! layer pressures (Pa) 
-! For GSFC, not needed for WRF
-!      real  :: alpha(ncol, nlay), rcorr(ncol, nlay)
-#ifdef _CUDA
+#ifdef _ACCEL
       type(dim3) :: dimGrid, dimBlock
 #endif
       integer, save :: counter = 0
-! For GSFC, not needed for WRF
-!      real , parameter  :: Zo = 2000.         ! length scale (m) 
-!      real , parameter  :: Zc = 1000.         ! length scale (m) 
       integer :: i,j,k,tk
       real :: t1, t2
   
@@ -3706,44 +3683,19 @@ contains
 ! Pass particle sizes to new arrays, no subcolumns for these properties yet
 ! Convert pressures from mb to Pa
 
-#ifdef  _CUDA
-! JM Not sure we wouldn't want to handle the CUDA path the same way as the #else part, but ask AER first
-      pmid(:ncol,:nlay) = play(:ncol,:nlay)*1.e2
+#ifdef  _ACCEL
+      pmid(1:ncol,:nlay) = play(colstart:colstart+ncol-1,:nlay)*1.e2
 #else
       pmidd(1:ncol,:nlay) = play(colstart:colstart+ncol-1,:nlay)*1.e2
 #endif
 
-! For GSFC, not needed for WRF
-!         if     (inhm == 1) then
-!            call tabulate_xcw_beta(xcw)
-!         elseif (inhm == 2) then
-!            call tabulate_xcw_gamma(xcw)
-!         endif
-
-#ifdef _CUDA
+#ifdef _ACCEL
       allocate( pmidd(ncol, nlay), cldfracd(ncol, mxlay+1))
       allocate( clwpd(ncol, mxlay+1), ciwpd(ncol, mxlay+1), cswpd(ncol, mxlay+1))
       allocate( taucd(ncol, nbndlw, mxlay))
-! For GSFC, not needed for WRF
-!      allocate( xcwd( n1, n2))
-!      allocate( alphad( ncol, nlay), rcorrd(ncol, nlay))
-!      allocate( cloudFlagd( ncol, 4))
 #endif
 
-!      ! compute alpha and rcorr
-        
-!!      !$acc kernels 
-!      do j = 1, ncol
-!        alphad(j, 1) = 0.0
-!        rcorrd(j, 1) = 0.0
-!        do i = 2, nlay
-!             alphad(j,i) = exp( -( zmd (j, i) -  zmd (j, i-1)) / Zo)
-!             rcorrd(j,i) = exp( -( zmd (j, i) -  zmd (j, i-1)) / Zc)
-!        end do
-!      end do
-!!      !$acc end kernels
-
-#ifdef _CUDA
+#ifdef _ACCEL
       pmidd = pmid
     
       cldfracd = cldfrac
@@ -3752,87 +3704,15 @@ contains
       cswpd = cswp
       taucd = tauc
 #endif
-! For GSFC, not needed for WRF
-!      xcwd = xcw
 
       end subroutine mcica_subcol_lwg
 
-!      subroutine mcica_cldc(ncol, icld, nlay, cloudmh, cloudhh, cloudflag, cldfmcl)
-!
-!      integer :: i,j,k,tk
-!      integer , parameter :: nsubclw = ngptlw ! number of sub-columns (g-point intervals)
-!      integer , intent(in) :: ncol            ! number of columns
-!      integer , intent(in) :: nlay            ! number of model layers
-!      integer , intent(in) :: cloudMH, cloudHH
-!      integer , intent(out) :: cloudFlag(:,:)
-!      integer , intent(in) :: icld
-!      real  _gpudev, intent(in) :: cldfmcl(:,:,:)    ! cloud fraction [mcica]
-!      if (icld.eq.0) return                                             
-!
-!
-!      !$acc kernels
-!      do i = 1, ncol
-!        cloudFlagd(i,1)=0        
-!        cloudFlagd(i,2)=0
-!        cloudFlagd(i,3)=0
-!        cloudFlagd(i,4)=0
-!       
-!        do j = 1, nsubclw
-!            tk=0
-!            do k = 1, nlay
-!                 if (cldfmcl(i,j,k) > 0.5) then 
-!                    tk=1
-!                 end if
-!            end do
-!            if (tk .eq. 0) then 
-!                cloudFlagd(i,1) = cloudFlagd(i,1)+1
-!            end if
-!            tk=0
-!            do k = cloudHH, nlay
-!                 if (cldfmcl(i,j,k) > 0.5) then 
-!                    tk=1
-!                 end if
-!            end do
-!            if (tk .eq. 0) then 
-!                cloudFlagd(i,2) = cloudFlagd(i,2)+1
-!            end if
-!              tk=0
-!            do k = cloudMH, cloudHH+1
-!                 if (cldfmcl(i,j,k) > 0.5) then 
-!                    tk=1
-!                 end if
-!            end do
-!            if (tk .eq. 0) then 
-!                cloudFlagd(i,3) = cloudFlagd(i,3)+1
-!            end if
-!              tk=0
-!            do k = 1, cloudMH+1
-!                 if (cldfmcl(i,j,k) > 0.5) then 
-!                    tk=1
-!                 end if
-!            end do
-!            if (tk .eq. 0) then 
-!                cloudFlagd(i,4) = cloudFlagd(i,4)+1
-!            end if 
-!        end do
-!      end do
-!      !$acc end kernels
-   
-!      cloudFlag = cloudFlagd
-!     
-!      deallocate( clwpd, ciwpd, cswpd, taucd, xcwd, cloudFlagd)
-!      deallocate( alphad, rcorrd)
-!
-!      end subroutine mcica_cldc
-
 !-------------------------------------------------------------------------------------------------
        _gpuker subroutine generate_stochastic_cloudsg(ncol, nlay, icld, ngbd, &
-#ifndef _CUDA
+#ifndef _ACCEL
                                  pmidd,cldfracd,clwpd,ciwpd,cswpd,taucd,changeSeed, &
 #endif
                                  cld_stoch, clwp_stoch, ciwp_stoch, cswp_stoch, &
-! For GSFC, not needed for WRF
-!                                 tauc_stoch, ih, zm) 
                                  tauc_stoch) 
 !-------------------------------------------------------------------------------------------------
 
@@ -3899,7 +3779,7 @@ contains
   
        integer  _gpudev, intent(in) :: ngbd(:)
 
-#ifndef _CUDA
+#ifndef _ACCEL
 ! were module data but changed to arguments because not thread-safe
       real  :: pmidd(:, :)
       real  :: cldfracd(:,:), clwpd(:,:), ciwpd(:,:), cswpd(:,:), taucd(:,:,:)
@@ -3929,11 +3809,7 @@ contains
 !      real , intent(out) :: asmc_stoch(:,:,:)! subcolumn in-cloud asymmetry parameter
                                                       !    Dimensions: (ngptlw,ncol,nlay)
                                                       !   inactive - for future expansion
-! For GSFC, not needed for WRF
-!      real  _gpudev, intent(in) :: zm(:,:)  ! Height of midpoints (above surface)
-                                                      !    Dimensions: (ncol,nlay)
      
-!      integer , value, intent(in) :: ih      
       !integer, value, intent(in) :: counter
    
        
@@ -3944,8 +3820,6 @@ contains
      
        real  :: CDF3(mxlay)      ! random numbers
 
-! For GSFC, not needed for WRF
-!       integer  :: inhm_ 
        real  :: cfs
        integer, parameter :: nsubcol = 140
        
@@ -3954,7 +3828,7 @@ contains
 !      real , parameter :: qmin   = 1.0e-10    ! min cloud water and cloud ice (not used)
 
 ! Variables related to random number and seed 
-#ifdef _CUDA
+#ifdef _ACCEL
       real  :: CDF(mxlay), CDF2(mxlay)      ! random numbers
       integer  :: seed1, seed2, seed3, seed4 ! seed to create random number (kissvec)
       real  :: rand_num      ! random number (kissvec)
@@ -3976,18 +3850,19 @@ contains
       integer  :: m, k, n1, kiss
 
       m(k, n1) = ieor (k, ishft (k, n1) )
-#ifdef _CUDA
+#ifdef _ACCEL
       iplon = (blockidx%x-1) * blockdim%x + threadidx%x
       gp = (blockidx%y-1) * blockdim%y + threadidx%y
 
 !------------------------------------------------------------------------------------------ 
      !   print *, "ppp ", iplon, gp
       if (iplon <= ncol .and. gp <= nsubcol) then
+# define ILOOP_S_CPU
+# define ILOOP_E_CPU
 #else
-!      do iplon = 1, ncol
+# define ILOOP_S_CPU do iplon = 1, ncol
+# define ILOOP_E_CPU enddo
 #endif
-
-
 
 
 ! ----- Create seed  --------
@@ -3996,7 +3871,7 @@ contains
    
 ! For kissvec, create a seed that depends on the state of the columns. Maybe not the best way, but it works.  
 ! Must use pmid from bottom four layers. 
-#ifdef _CUDA
+#ifdef _ACCEL
            seed1 = (pmidd(iplon,1) - int(pmidd(iplon,1)))  * 1000000000 + (gp) * 11 
            seed3 = (pmidd(iplon,3) - int(pmidd(iplon,3)))  * 1000000000 + (gp) * 13 
            seed2 = seed1 + gp
@@ -4032,16 +3907,16 @@ contains
 
        select case (icld)
 
-#ifdef _CUDA
+#ifdef _ACCEL
 ! Random overlap
        case(1) 
 
-#if 0
+# if 0
            do ilev = 1,nlay
              call kissvec(seed1, seed2, seed3, seed4, rand_num)
              CDF(iplon,ilev) = rand_num
            end do
-#endif
+# endif
         
 
 ! Maximum-Random overlap
@@ -4070,39 +3945,17 @@ contains
            end do
 
 
-! For GSFC, not needed for WRF
-! Exponential overlap: weighting between maximum and random overlap increases
-! with the distance.
-!       case(4)
-!
-!           do ilev = 1,nlay
-!              call kissvec(seed1, seed2, seed3, seed4, rand_num)
-!              CDF(ilev) = rand_num
-!              call kissvec(seed1, seed2, seed3, seed4, rand_num)
-!              CDF2(ilev) = rand_num
-!              call kissvec(seed1, seed2, seed3, seed4, rand_num)
-!              CDF3(ilev) = rand_num 
-!           end do
-!
-!           do ilev = 2,nlay
-!
-!              if (CDF2(ilev) < alphad(iplon,ilev)) then
-!                CDF(ilev) = CDF(ilev-1)
-!              end if
-!           
-!           end do
-
        end select 
 #else
 ! Random overlap
        case(1)
 
-#if 0
+# if 0
            do ilev = 1,nlay
              call kissvec(seed1, seed2, seed3, seed4, rand_num)
              CDF(iplon,ilev) = rand_num
            end do
-#else
+# else
    CALL wrf_error_fatal("icld == 1 not supported: module_ra_rrtmg_lwf.F")
 #endif
 
@@ -4110,7 +3963,7 @@ contains
        case(2)
    
            do ilev = 1,nlay
-    do iplon = 1, ncol
+            ILOOP_S_CPU
 !             call kissvec(seed1(iplon), seed2(iplon), seed3(iplon), seed4(iplon), rand_num(iplon))
              seed1(iplon) = 69069 * seed1(iplon) + 1327217885
              seed2(iplon) = m (m (m (seed2(iplon), 13), - 17), 5)
@@ -4118,24 +3971,24 @@ contains
              seed4(iplon) = 30903 * iand (seed4(iplon), 65535) + ishft (seed4(iplon), - 16)
              kiss = seed1(iplon) + seed2(iplon) + ishft (seed3(iplon), 16) + seed4(iplon)
              CDF(iplon,ilev) = kiss*2.328306e-10  + 0.5
-    enddo
+            ILOOP_E_CPU
            end do
       
          
            do ilev = 2,nlay
-    do iplon = 1, ncol
+            ILOOP_S_CPU
              if (CDF(iplon,ilev-1) > 1.  - cldfracd(iplon, ilev-1)) then 
                 CDF(iplon,ilev) = CDF(iplon,ilev-1)
              else
                  CDF(iplon,ilev) = CDF(iplon,ilev) * (1. - cldfracd(iplon, ilev-1))
              end if
-    enddo
+            ILOOP_E_CPU
            end do
             
 ! Maximum overlap
        case(3)
 
-    do iplon = 1, ncol
+            ILOOP_S_CPU
 !           call kissvec(seed1(iplon), seed2(iplon), seed3(iplon), seed4(iplon), rand_num(iplon))
           seed1(iplon) = 69069 * seed1(iplon) + 1327217885
           seed2(iplon) = m (m (m (seed2(iplon), 13), - 17), 5)
@@ -4143,11 +3996,11 @@ contains
           seed4(iplon) = 30903 * iand (seed4(iplon), 65535) + ishft (seed4(iplon), - 16)
           kiss = seed1(iplon) + seed2(iplon) + ishft (seed3(iplon), 16) + seed4(iplon)
           rand_num(iplon) = kiss*2.328306e-10  + 0.5
-    enddo
+            ILOOP_E_CPU
            do ilev = 1,nlay
-    do iplon = 1, ncol
-            CDF(iplon,ilev) = rand_num(iplon)
-    enddo
+            ILOOP_S_CPU
+             CDF(iplon,ilev) = rand_num(iplon)
+            ILOOP_E_CPU
            end do
 
        end select 
@@ -4156,10 +4009,10 @@ contains
       n = ngbd(gp)
 
       do ilev = 1,nlay
-    do iplon = 1, ncol
+       ILOOP_S_CPU
         cfs = cldfracd(iplon, ilev)
          !  do gp = 1, nsubcol
-#ifdef _CUDA
+#ifdef _ACCEL
                if (CDF(ilev) >=1.  - cfs) then
 #else
                if (CDF(iplon,ilev) >=1.  - cfs) then
@@ -4182,10 +4035,10 @@ contains
 !                  asmc_stoch(isubcol,i,ilev) = 1. 
                endif
            
-   enddo
+       ILOOP_E_CPU
       enddo
 
-#ifdef _CUDA
+#ifdef _ACCEL
       endif
 #else
       end do
@@ -4252,12 +4105,12 @@ contains
 !      use rrlw_wvn_f, only: ngb
       use rrlw_vsn_f, only: hvrclc, hnamclc
 
-#ifdef _CUDA
+#ifdef _ACCEL
           use cudafor
 #endif
       implicit none
 
-#ifdef _CUDA
+#ifdef _ACCEL
 ! (dmb 2012) I moved most GPU variables so that they are module level variables.
 ! PGI Fortran seems to sometimes have trouble passing arrays into kernels correctly.
 ! Using module level variables bypasses this issue and allows for cleaner code.
@@ -4302,7 +4155,7 @@ contains
 
 ! ------------------------------------------------------------------------------
       _gpuker subroutine cldprmcg(ncol, nlayers,                                           &
-#ifndef _CUDA
+#ifndef _ACCEL
                 inflagd,iceflagd,liqflagd,ciwpmcd,clwpmcd,cswpmcd,relqmcd,reicmcd,resnmcd, &
                 absice0d,absice1d,absice2d,absice3d,absliq1d,                              &
 #endif
@@ -4316,7 +4169,7 @@ contains
       integer, value, intent(in) :: ncol              ! total number of columns
       integer, value, intent(in) :: nlayers           ! total number of layers
 
-#ifndef _CUDA
+#ifndef _ACCEL
 # define ncol CHNK
 #endif
       
@@ -4333,7 +4186,7 @@ contains
 
       integer , intent(out) :: ncbands(:)     ! number of cloud spectral bands
 
-#ifndef _CUDA
+#ifndef _ACCEL
 !changed to arguments for thread safety on CPU
       integer  :: inflagd(:), iceflagd(:), liqflagd(:)
 
@@ -4445,7 +4298,7 @@ contains
 ! function is called once per each thread, and each thread has a unique combination of 
 ! column, layer, and g-point.  
 
-#ifdef _CUDA
+#ifdef _ACCEL
     iplon = (blockidx%x-1) * blockdim%x + threadidx%x
         lay = (blockidx%y-1) * blockdim%y + threadidx%y
     ig = (blockidx%z-1) * blockdim%z + threadidx%z
@@ -4537,7 +4390,7 @@ contains
                if (cswpmcd(iplon,ig,lay).gt.0.0 .and. iceflagd(iplon) .eq. 5) then
                   radsno = resnmcd(iplon,lay)
 
-#ifndef _CUDA
+#ifndef _ACCEL
                   if (radsno .lt. 5.0 .or. radsno .gt. 140.0) then
                          write(errmess,'(A,i5,i5,i5,f8.2,f8.2)' )         &
                'ERROR: SNOW GENERALIZED EFFECTIVE SIZE OUT OF BOUNDS'   &
@@ -4584,7 +4437,7 @@ contains
             endif
           endif
 
-#ifdef _CUDA
+#ifdef _ACCEL
     endif
 #else
         end do
@@ -4594,7 +4447,7 @@ contains
 
       end subroutine cldprmcg
 
-#ifndef _CUDA
+#ifndef _ACCEL
 # undef ncol
 #endif
 
@@ -4603,7 +4456,7 @@ contains
       subroutine allocateGPUcldprmcg(ncol, nlay, ngptlw)
 
          integer , intent(in) :: nlay, ngptlw, ncol
-#ifdef _CUDA
+#ifdef _ACCEL
          allocate( inflagd(ncol), iceflagd(ncol), liqflagd(ncol))
          allocate( relqmcd(ncol, nlay+1), reicmcd(ncol, nlay+1))
          allocate( resnmcd(ncol, nlay+1))
@@ -4618,7 +4471,7 @@ contains
       ! (dmb 2012) This subroutine deallocates any GPU arrays.
       subroutine deallocateGPUcldprmcg()
 
-#ifdef _CUDA
+#ifdef _ACCEL
          deallocate( inflagd, iceflagd, liqflagd)
          deallocate( relqmcd, reicmcd, resnmcd)
 
@@ -4642,7 +4495,7 @@ contains
          real , dimension(:,:) :: absice3
          real , dimension(:,:) :: absliq1
       
-#ifdef _CUDA
+#ifdef _ACCEL
          inflagd = inflag
          iceflagd = iceflag
          liqflagd = liqflag
@@ -4689,23 +4542,23 @@ contains
 ! (jm 2014) not sure why the GPU version defines ntbl 2x instead of using it 
 ! from rrlw_tbl, but will leave it alone for now. However, it is an error when
 ! compiling for CPU, at least with the Intel compiler.  Says it's defined twice.
-#ifdef _CUDA
+#ifdef _ACCEL
       use rrlw_tbl_f, only: bpade, tblint, tau_tbl, exp_tbl, tfn_tbl
 #else
       use rrlw_tbl_f, only: bpade, tblint, tau_tbl, exp_tbl, tfn_tbl, ntbl
 #endif
 
-#ifdef _CUDA
+#ifdef _ACCEL
       use cudafor
 #endif      
     
       implicit none 
       
-#ifdef _CUDA
+#ifdef _ACCEL
 ! (jm 2014) see comment above)
       integer(kind=4), parameter :: ntbl = 10000
 #endif
-#ifdef _CUDA
+#ifdef _ACCEL
       integer  _gpucon :: ngsd(nbndlw)      
 
 ! (dmb 2012) I moved most GPU variables so that they are module level variables.
@@ -4821,7 +4674,7 @@ contains
    ! ----- Local -----
 ! Declarations for radiative transfer
 
-#ifndef _CUDA
+#ifndef _ACCEL
 # define IDIM (ncol)
 # define IDIM1 ncol,
 #else
@@ -4839,7 +4692,7 @@ contains
       real  :: uclfl( IDIM1 0:mxlay)
       real  :: dclfl( IDIM1 0:mxlay)
 
-#ifndef _CUDA
+#ifndef _ACCEL
 # define atot(X)     ATOT(iplon,X)
 # define atrans(X) ATRANS(iplon,X)
 # define bbugas(X) BBUGAS(iplon,X)
@@ -4948,18 +4801,14 @@ contains
       real :: bbb
 
 ! (dmb 2012) Here we compute the index for the column and band dimensions
-#ifdef _CUDA
+#ifdef _ACCEL
    iplon = (blockidx%x-1) * blockdim%x + threadidx%x
    igc = (blockidx%y-1) * blockdim%y + threadidx%y
 ! (dmb 2012) Make sure that the column and bands are within the proper ranges
    if (iplon <= ncol .and. igc<=140) then
 
-# define ILOOP_S_CPU 
-# define ILOOP_E_CPU 
     
 #else
-# define ILOOP_S_CPU do iplon = 1, ncol
-# define ILOOP_E_CPU enddo
       do igc = 1, 140 
 # define secdiff   SECDIFF(iplon)
 #endif
@@ -5011,7 +4860,7 @@ contains
 
 ! Downward radiative transfer loop.  
 
-# ifndef _CUDA
+# ifndef _ACCEL
 #  define radld   RADLD(iplon)
 #  define radclrd RADCLRD(iplon)
 #  define iclddn  ICLDDN(iplon)
@@ -5036,7 +4885,7 @@ contains
                   efclfracs = absclds * cldfmcd(iplon, igc,lev)
                   odtot = odepth + odclds
                 
-#ifdef _CUDA
+#ifdef _ACCEL
                   tblind = odepth/(bpaded+odepth)
                   itgas = tblint*tblind+0.5 
                   bbb = itgas / float(tblint)
@@ -5094,7 +4943,7 @@ contains
 !  Clear layer
                else
 
-#ifdef _CUDA
+#ifdef _ACCEL
                   tblind = odepth/(bpaded+odepth)
                   itr = tblint*tblind+0.5 
 ! (dmb 2012) Compute the atrans and related values on the fly instead
@@ -5170,7 +5019,7 @@ contains
 !  Note: The emissivity is applied to plankbnd and dplankbnd_dt when 
 !  they are defined in subroutine setcoef. 
 
-# ifndef _CUDA
+# ifndef _ACCEL
 #  define radlu         RADLU(iplon)
 #  define radclru       RADCLRU(iplon)
 #  define d_radlu_dt    D_RADLU_DT(iplon)
@@ -5240,7 +5089,7 @@ contains
        ILOOP_E_CPU
           end do
 
-#ifdef _CUDA
+#ifdef _ACCEL
       endif
 #else
       end do   ! igc loop
@@ -5268,7 +5117,7 @@ contains
 ! (dmb 2012) compute the column and layer indices from the grid and block 
 ! configurations. 
 
-#ifdef _CUDA
+#ifdef _ACCEL
       iplon = (blockidx%x-1) * blockdim%x + threadidx%x
       ilay = (blockidx%y-1) * blockdim%y + threadidx%y - 1
        
@@ -5300,7 +5149,7 @@ contains
 
           end if
 
-#ifdef _CUDA
+#ifdef _ACCEL
       end if
 #else
         end do
@@ -5322,7 +5171,7 @@ contains
       real :: t2
       integer :: iplon, ilay
 
-#ifdef _CUDA        
+#ifdef _ACCEL        
       iplon = (blockidx%x-1) * blockdim%x + threadidx%x
       ilay = (blockidx%y-1) * blockdim%y + threadidx%y - 1
 
@@ -5338,7 +5187,7 @@ contains
           htrcd(iplon, ilay) = heatfacd * ((totuclfld(iplon, ilay) - totdclfld(iplon, ilay)) &
                  - (totuclfld(iplon, ilay+1) - totdclfld(iplon, ilay+1)))/t2
 
-#ifdef _CUDA
+#ifdef _ACCEL
       end if
 #else
         end do
@@ -5356,7 +5205,7 @@ contains
       real , intent(in) :: taut(:,:,:)  
       real , intent(in) :: pwvcm(:)
 
-#ifdef CUDA
+#ifdef _ACCEL
       pzd = pz
       pwvcmd = pwvcm
       idrvd = idrv
@@ -5375,7 +5224,7 @@ contains
       integer , intent(in) :: ncol, nlay, ngptlw, drvf
 integer,external :: omp_get_thread_num
 
-#ifdef _CUDA
+#ifdef _ACCEL
       allocate( taucmcd(ncol, ngptlw, nlay+1))
       allocate( pzd(ncol, 0:nlay+1))
       allocate( pwvcmd(ncol))
@@ -5416,7 +5265,7 @@ integer,external :: omp_get_thread_num
 
       integer , intent(in) :: drvf
           
-#ifdef _CUDA
+#ifdef _ACCEL
       deallocate( taucmcd)
       deallocate( pzd)
       deallocate( pwvcmd)
@@ -5476,13 +5325,13 @@ integer,external :: omp_get_thread_num
       use rrlw_ref_f
       use memory
  
-#ifdef _CUDA
+#ifdef _ACCEL
       use cudafor
 #endif
 
       implicit none
 
-#ifdef _CUDA
+#ifdef _ACCEL
 ! (dmb 2012) There are a lot of GPU module level variables in this module
 ! The parameter list for the taumol subroutines have been reduced for 
 ! efficiency and readability.
@@ -5539,7 +5388,7 @@ integer,external :: omp_get_thread_num
 
       contains
 
-#ifndef _CUDA
+#ifndef _ACCEL
 !defines for taugb functions
 
 # define absad absa
@@ -5621,7 +5470,7 @@ integer,external :: omp_get_thread_num
 ! Local 
       integer  :: iplon
 
-#ifdef _CUDA
+#ifdef _ACCEL
       iplon = (blockidx%x-1) * blockdim%x + threadidx%x
       lay = (blockidx%y-1) * blockdim%y + threadidx%y
       if (iplon <= ncol .and. lay <= nlayers) then
@@ -5696,7 +5545,7 @@ integer,external :: omp_get_thread_num
          enddo
       endif
 
-#ifdef _CUDA
+#ifdef _ACCEL
       endif
 #else
       end do
@@ -5734,7 +5583,7 @@ integer,external :: omp_get_thread_num
       integer , value, intent(in) :: ncol, nlayers
       integer  :: iplon
 
-#ifdef _CUDA
+#ifdef _ACCEL
       iplon = (blockidx%x-1) * blockdim%x + threadidx%x
       lay = (blockidx%y-1) * blockdim%y + threadidx%y
       if (iplon <= ncol .and. lay <= nlayers) then
@@ -5786,7 +5635,7 @@ integer,external :: omp_get_thread_num
          enddo
       endif
       
-#ifdef _CUDA
+#ifdef _ACCEL
       endif
 #else
       end do
@@ -5835,7 +5684,7 @@ integer,external :: omp_get_thread_num
       integer , value, intent(in) :: ncol, nlayers
       integer  :: iplon
 
-#ifdef _CUDA
+#ifdef _ACCEL
       iplon = (blockidx%x-1) * blockdim%x + threadidx%x
       lay = (blockidx%y-1) * blockdim%y + threadidx%y
       if (iplon <= ncol .and. lay <= nlayers) then
@@ -6123,7 +5972,7 @@ integer,external :: omp_get_thread_num
          enddo
       endif
 
-#ifdef _CUDA
+#ifdef _ACCEL
       endif
 #else
       end do
@@ -6170,7 +6019,7 @@ integer,external :: omp_get_thread_num
       integer , value, intent(in) :: ncol, nlayers
       integer  :: iplon
 
-#ifdef _CUDA
+#ifdef _ACCEL
         iplon = (blockidx%x-1) * blockdim%x + threadidx%x
       lay = (blockidx%y-1) * blockdim%y + threadidx%y
       if (iplon <= ncol .and. lay <= nlayers) then
@@ -6405,7 +6254,7 @@ integer,external :: omp_get_thread_num
 
       endif
 
-#ifdef _CUDA
+#ifdef _ACCEL
       endif
 #else
       end do
@@ -6453,7 +6302,7 @@ integer,external :: omp_get_thread_num
       integer , value, intent(in) :: ncol, nlayers
       integer  :: iplon
 
-#ifdef _CUDA
+#ifdef _ACCEL
       iplon = (blockidx%x-1) * blockdim%x + threadidx%x
       lay = (blockidx%y-1) * blockdim%y + threadidx%y
       if (iplon <= ncol .and. lay <= nlayers) then
@@ -6702,7 +6551,7 @@ integer,external :: omp_get_thread_num
          enddo
       endif
 
-#ifdef _CUDA
+#ifdef _ACCEL
       endif
 #else
       end do
@@ -6740,7 +6589,7 @@ integer,external :: omp_get_thread_num
       real  _gpudev :: taug(:,:,:)
       real  _gpudev :: fracsd(:,:,:)
      
-#ifdef _CUDA
+#ifdef _ACCEL
         iplon = (blockidx%x-1) * blockdim%x + threadidx%x
       lay = (blockidx%y-1) * blockdim%y + threadidx%y
       if (iplon <= ncol .and. lay <= nlayers) then
@@ -6805,7 +6654,7 @@ integer,external :: omp_get_thread_num
          enddo
       endif
 
-#ifdef _CUDA
+#ifdef _ACCEL
       endif
 #else
       end do
@@ -6854,7 +6703,7 @@ integer,external :: omp_get_thread_num
       integer , value, intent(in) :: ncol, nlayers
       integer  :: iplon
 
-#ifdef _CUDA
+#ifdef _ACCEL
       iplon = (blockidx%x-1) * blockdim%x + threadidx%x
       lay = (blockidx%y-1) * blockdim%y + threadidx%y
       if (iplon <= ncol .and. lay <= nlayers) then
@@ -7097,7 +6946,7 @@ integer,external :: omp_get_thread_num
 
       endif
 
-#ifdef _CUDA
+#ifdef _ACCEL
       endif
 #else
       end do
@@ -7136,7 +6985,7 @@ integer,external :: omp_get_thread_num
       integer , value, intent(in) :: ncol, nlayers
       integer  :: iplon
 
-#ifdef _CUDA
+#ifdef _ACCEL
       iplon = (blockidx%x-1) * blockdim%x + threadidx%x
       lay = (blockidx%y-1) * blockdim%y + threadidx%y
       if (iplon <= ncol .and. lay <= nlayers) then
@@ -7237,7 +7086,7 @@ integer,external :: omp_get_thread_num
          enddo
       endif
 
-#ifdef _CUDA
+#ifdef _ACCEL
       endif
 #else
       end do
@@ -7285,7 +7134,7 @@ integer,external :: omp_get_thread_num
       integer , value, intent(in) :: ncol, nlayers
       integer  :: iplon
 
-#ifdef _CUDA
+#ifdef _ACCEL
         iplon = (blockidx%x-1) * blockdim%x + threadidx%x
       lay = (blockidx%y-1) * blockdim%y + threadidx%y
       if (iplon <= ncol .and. lay <= nlayers) then
@@ -7517,7 +7366,7 @@ integer,external :: omp_get_thread_num
          enddo
       endif
 
-#ifdef _CUDA
+#ifdef _ACCEL
       endif
 #else
       end do
@@ -7552,7 +7401,7 @@ integer,external :: omp_get_thread_num
       integer , value, intent(in) :: ncol, nlayers
       integer  :: iplon
 
-#ifdef _CUDA
+#ifdef _ACCEL
       iplon = (blockidx%x-1) * blockdim%x + threadidx%x
       lay = (blockidx%y-1) * blockdim%y + threadidx%y
       if (iplon <= ncol .and. lay <= nlayers) then
@@ -7603,7 +7452,7 @@ integer,external :: omp_get_thread_num
          enddo
       end if
 
-#ifdef _CUDA
+#ifdef _ACCEL
       endif
 #else
       end do
@@ -7638,7 +7487,7 @@ integer,external :: omp_get_thread_num
       integer , value, intent(in) :: ncol, nlayers
       integer  :: iplon
 
-#ifdef _CUDA
+#ifdef _ACCEL
       iplon = (blockidx%x-1) * blockdim%x + threadidx%x
       lay = (blockidx%y-1) * blockdim%y + threadidx%y
       if (iplon <= ncol .and. lay <= nlayers) then
@@ -7700,7 +7549,7 @@ integer,external :: omp_get_thread_num
          enddo
       endif
 
-#ifdef _CUDA
+#ifdef _ACCEL
       endif
 #else
       end do
@@ -7745,7 +7594,7 @@ integer,external :: omp_get_thread_num
       integer , value, intent(in) :: ncol, nlayers
       integer  :: iplon
 
-#ifdef _CUDA
+#ifdef _ACCEL
       iplon = (blockidx%x-1) * blockdim%x + threadidx%x
       lay = (blockidx%y-1) * blockdim%y + threadidx%y
       if (iplon <= ncol .and. lay <= nlayers) then
@@ -7922,7 +7771,7 @@ integer,external :: omp_get_thread_num
          enddo
       endif
 
-#ifdef _CUDA
+#ifdef _ACCEL
       endif
 #else
       end do
@@ -7970,7 +7819,7 @@ integer,external :: omp_get_thread_num
       integer , value, intent(in) :: ncol, nlayers
       integer  :: iplon
 
-#ifdef _CUDA
+#ifdef _ACCEL
       iplon = (blockidx%x-1) * blockdim%x + threadidx%x
       lay = (blockidx%y-1) * blockdim%y + threadidx%y
       if (iplon <= ncol .and. lay <= nlayers) then
@@ -8199,7 +8048,7 @@ integer,external :: omp_get_thread_num
          enddo
       endif
 
-#ifdef _CUDA
+#ifdef _ACCEL
       endif
 #else
       end do
@@ -8234,7 +8083,7 @@ integer,external :: omp_get_thread_num
       integer , value, intent(in) :: ncol, nlayers
       integer  :: iplon
 
-#ifdef _CUDA
+#ifdef _ACCEL
       iplon = (blockidx%x-1) * blockdim%x + threadidx%x
       lay = (blockidx%y-1) * blockdim%y + threadidx%y
       if (iplon <= ncol .and. lay <= nlayers) then
@@ -8278,7 +8127,7 @@ integer,external :: omp_get_thread_num
          enddo
       endif
 
-#ifdef _CUDA
+#ifdef _ACCEL
       endif
 #else
       end do
@@ -8325,7 +8174,7 @@ integer,external :: omp_get_thread_num
       integer , value, intent(in) :: ncol, nlayers
       integer  :: iplon
 
-#ifdef _CUDA
+#ifdef _ACCEL
       iplon = (blockidx%x-1) * blockdim%x + threadidx%x
       lay = (blockidx%y-1) * blockdim%y + threadidx%y
       if (iplon <= ncol .and. lay <= nlayers) then
@@ -8522,7 +8371,7 @@ integer,external :: omp_get_thread_num
          enddo
       endif
 
-#ifdef _CUDA
+#ifdef _ACCEL
       endif
 #else
       end do
@@ -8567,7 +8416,7 @@ integer,external :: omp_get_thread_num
       integer , value, intent(in) :: ncol, nlayers
       integer  :: iplon
 
-#ifdef _CUDA
+#ifdef _ACCEL
       iplon = (blockidx%x-1) * blockdim%x + threadidx%x
       lay = (blockidx%y-1) * blockdim%y + threadidx%y
       if (iplon <= ncol .and. lay <= nlayers) then
@@ -8748,7 +8597,7 @@ integer,external :: omp_get_thread_num
          enddo
       endif
 
-#ifdef _CUDA
+#ifdef _ACCEL
       endif
 #else
       end do
@@ -8769,7 +8618,7 @@ integer,external :: omp_get_thread_num
       integer  :: iplon, lay, ig
       real  _gpudev :: taug(:,:,:)
      
-#ifdef _CUDA     
+#ifdef _ACCEL     
       iplon = (blockidx%x-1) * blockdim%x + threadidx%x
       lay = (blockidx%y-1) * blockdim%y + threadidx%y
       ig = (blockidx%z-1) * blockdim%z + threadidx%z
@@ -8782,7 +8631,7 @@ integer,external :: omp_get_thread_num
 
         taug(iplon, lay, ig) = taug(iplon, lay, ig) + tauaa(iplon, lay, ngbd(ig))
 
-#ifdef _CUDA
+#ifdef _ACCEL
       endif
 #else
       end do
@@ -8950,10 +8799,10 @@ integer,external :: omp_get_thread_num
       integer :: i,j,err
       real :: t1, t2
 
-#ifdef _CUDA
+#ifdef _ACCEL
       type(dim3) :: dimGrid, dimBlock
 #endif
-#ifdef _CUDA
+#ifdef _ACCEL
       !dimGrid = dim3( (ncol + 127) / 128, 1, 1)
           !dimBlock = dim3( 128,1,1)
 
@@ -9034,7 +8883,7 @@ integer,external :: omp_get_thread_num
 #include "taug_cpu_args.h"
                            )
 
-#ifdef _CUDA
+#ifdef _ACCEL
       dimGrid = dim3( (ncol+ 255) / 256, nlayers, ngptlw )
       dimBlock = dim3( 256, 1, 1)
 #endif
@@ -9047,7 +8896,7 @@ integer,external :: omp_get_thread_num
 
       end subroutine taumolg
 
-#ifndef _CUDA
+#ifndef _ACCEL
 ! undefines for taug functions
 # undef absad
 # undef absbd
@@ -9094,7 +8943,7 @@ integer,external :: omp_get_thread_num
 #endif
 
 
-!#ifndef _CUDA
+!#ifndef _ACCEL
 #  undef ncol
 !#endif
 
@@ -9105,7 +8954,7 @@ integer,external :: omp_get_thread_num
       integer , intent(in) :: nlayers
       integer , intent(in) :: npart
       integer :: i
-#ifdef _CUDA
+#ifdef _ACCEL
       sreg( wx1 , ncol, nlayers )
       sreg( wx2 , ncol, nlayers )
       sreg( wx3 , ncol, nlayers )
@@ -9149,9 +8998,9 @@ integer,external :: omp_get_thread_num
       sreg( rat_n2oco2_1 , ncol, nlayers )
       sreg( rat_o3co2 , ncol, nlayers )
       sreg( rat_o3co2_1 , ncol, nlayers )
-#ifdef _CUDA
+
       call dflush()
-#endif
+
       allocate( pavel( ncol, nlayers ))
       dreg( wx1 , ncol, nlayers )
       dreg( wx2 , ncol, nlayers )
@@ -9211,7 +9060,7 @@ integer,external :: omp_get_thread_num
 ! (dmb 2012) Perform the necessary cleanup of the GPU arrays
       subroutine deallocateGPUTaumol()
 
-#ifdef _CUDA
+#ifdef _ACCEL
       call dbclean
       call dclean
       deallocate( pavel)
@@ -9233,7 +9082,7 @@ integer,external :: omp_get_thread_num
       real , intent(in) :: colh2oc(:,:), colco2c(:,:), colo3c(:,:), coln2oc(:,:), &
                                      colch4c(:,:), colo2c(:,:), px1(:,:), px2(:,:), px3(:,:), px4(:,:)
 
-#ifdef _CUDA
+#ifdef _ACCEL
       if (npart > 1) then
         colh2o(1:pncol, :) = colh2oc( colstart:(colstart+pncol-1), 1:nlayers)
         colco2(1:pncol, :) = colco2c( colstart:(colstart+pncol-1), 1:nlayers)
@@ -9296,7 +9145,7 @@ integer,external :: omp_get_thread_num
                                                       !    Dimensions: (ncol,nlayers,ngptlw)
       integer, intent(in)      :: pncol, colstart, nlay, npart
      
-#ifdef _CUDA
+#ifdef _ACCEL
       call reg1
       call reg2
       call reg3
@@ -9365,7 +9214,7 @@ integer,external :: omp_get_thread_num
    
       implicit none
 
-#ifdef _CUDA
+#ifdef _ACCEL
       real  _gpudev, allocatable :: taveld(:,:)          ! layer temperatures (K)
                                                          !    Dimensions: (ncol,nlayers)
       real  _gpudev, allocatable :: tzd(:,:)             ! level (interface) temperatures (K)
@@ -9390,7 +9239,7 @@ integer,external :: omp_get_thread_num
 
          integer, intent(in) :: ncol
          integer, intent(in) :: nlayers
-#ifdef _CUDA
+#ifdef _ACCEL
          allocate( taveld( ncol, nlayers) )
          allocate( tzd( ncol, 0:nlayers) )
          allocate( tboundd( ncol ))
@@ -9402,7 +9251,7 @@ integer,external :: omp_get_thread_num
 ! (dmb 2012) This subroutine deallocates the GPU arrays
       subroutine deallocateGPUSetCoef( )
 
-#ifdef _CUDA
+#ifdef _ACCEL
          deallocate( taveld )
          deallocate( tzd )
          deallocate( tboundd)
@@ -9414,7 +9263,7 @@ integer,external :: omp_get_thread_num
 ! (dmb 2012) Copy the needed reference data from the CPU to the GPU
       subroutine copyGPUSetCoef()
 
-#ifdef _CUDA
+#ifdef _ACCEL
          totplnkd = totplnk
          totplk16d = totplk16
          totplnkderivd = totplnkderiv
@@ -9427,7 +9276,7 @@ integer,external :: omp_get_thread_num
       _gpuker subroutine setcoefg(ncol, nlayers, istart                       &
 # include "rrtmg_lw_cpu_args.h"
 # include "taug_cpu_args.h"
-#ifndef _CUDA
+#ifndef _ACCEL
    ,taveld,tzd,tboundd,wbroadd,totplnkd,totplk16d,totplnkderivd,totplk16derivd &
 #endif
                                  )
@@ -9439,7 +9288,7 @@ integer,external :: omp_get_thread_num
 !  for each band at the level and layer temperatures.
 
 ! ------- Declarations -------
-#ifndef _CUDA
+#ifndef _ACCEL
 # include "rrtmg_lw_cpu_defs.h"
 # include "taug_cpu_defs.h"
       real  :: taveld(CHNK,nlayers+1)       ! layer temperatures (K)
@@ -9474,7 +9323,7 @@ integer,external :: omp_get_thread_num
       integer  :: iplon
       real  :: wv, lcoldry
 
-#ifdef _CUDA
+#ifdef _ACCEL
       iplon = (blockidx%x-1) * blockdim%x + threadidx%x
       if (iplon <= ncol) then
 #else
@@ -9747,7 +9596,7 @@ integer,external :: omp_get_thread_num
 ! End layer loop
         enddo
 
-#ifdef _CUDA
+#ifdef _ACCEL
       endif
 #else
       end do
@@ -14024,7 +13873,7 @@ integer,external :: omp_get_thread_num
 !  --------------------------------------------------------------------------
 !
 
-#ifdef _CUDA
+#ifdef _ACCEL
       use cudafor
 #endif
 
@@ -14044,7 +13893,7 @@ integer,external :: omp_get_thread_num
 
       implicit none
 
-#ifdef _CUDA
+#ifdef _ACCEL
       integer  _gpudev, allocatable :: ngbd(:)
       integer, allocatable _gpudev :: ncbandsd(:)
       integer, allocatable _gpudev :: icbd(:)
@@ -14069,10 +13918,6 @@ integer,external :: omp_get_thread_num
              tauaer  , &
              uflx    ,dflx    ,hr      ,uflxc   ,dflxc   ,hrc , &
              duflx_dt,duflxc_dt)
-! For GSFC, not needed for WRF
-!             tauaer  ,zm      ,cloudMH, cloudHH, &
-!             uflx    ,dflx    ,hr      ,uflxc   ,dflxc   ,hrc , &
-!             duflx_dt,duflxc_dt, cloudFlag)
 ! -------- Description --------
 
 ! This program is the driver subroutine for RRTMG_LW, the AER LW radiation 
@@ -14266,8 +14111,6 @@ integer,external :: omp_get_thread_num
       real , intent(in) :: tauaer(:,:,:)              ! aerosol optical depth
                                                       !   at mid-point of LW spectral bands
                                                       !    Dimensions: (ncol,nlay,nbndlw)
-! For GSFC, not needed for WRF
-!      real , intent(in) :: zm(:, :)                   ! Layer height above surface (m)
 
 ! ----- Output -----
 
@@ -14308,7 +14151,7 @@ integer,external :: omp_get_thread_num
 integer,external :: omp_get_thread_num
 
       ! Cuda device information
-#ifdef _CUDA
+#ifdef _ACCEL
       type(cudadeviceprop) :: prop
 #endif
       ! store the available device global and constant memory
@@ -14317,7 +14160,7 @@ integer,external :: omp_get_thread_num
       real t1,t2
 
 !jm write(0,*)__FILE__,__LINE__,omp_get_thread_num()
-#ifdef _CUDA
+#ifdef _ACCEL
  
       err = cudaGetDeviceProperties( prop, 0)
       gmem = prop%totalGlobalMem
@@ -14331,7 +14174,7 @@ integer,external :: omp_get_thread_num
 ! determine the minimum GPU memory
 ! force the GPUFlag off if there are no devices available
       
-#ifdef _CUDA
+#ifdef _ACCEL
       minmem = gmem        
 #else
 
@@ -14345,7 +14188,7 @@ integer,external :: omp_get_thread_num
 #endif
 !      print *, "available working memory is ", int(minmem / (1024*1024)) , " MB"
     
-#ifdef _CUDA
+#ifdef _ACCEL
 ! use the available memory to determine the minumum number 
 ! of steps that will be required.
 ! We use 1500 profiles per available GB as a conservative 
@@ -14357,26 +14200,18 @@ integer,external :: omp_get_thread_num
       if (cn < 500) then 
         cn = 500 
       end if
-! mji - used 2048 for Northeast grid (4380 columns)
-! mji - used 4096 for CONUS grid (33750 columns)
-!      cn = 2
-!      cn = 256
-!      cn = 512
-!      cn = 1024
-!      cn = 2048
-      cn = 4096
+! Set number of columns per partition to be no larger than total number of columns
+      if (cn > ncol) then 
+        cn = ncol
+      end if
 #else
-cn = CHNK
+      cn = CHNK
 #endif
 !
-! mji - Reduce number of columns per partition by number of CPU processors for dmpar
-! mji - Running WRF in dmpar with 8 processors
-!      cn = cn / 8
-
-      print *, "Number of columns is                          ", ncol
-      print *, "Number of columns per partition (rrtmg_lw) is ", cn
+      print *, "RRTMG_LWF: Number of columns is               ", ncol
+      print *, "RRTMG_LWF: Number of columns per partition is ", cn
       ns = ceiling( real(ncol) / real(cn) )
-      print *, "Number of partitions is                       ", ns
+      print *, "RRTMG_LWF: Number of partitions is            ", ns
 
 ! mji - time      
       call cpu_time(t1)
@@ -14391,6 +14226,7 @@ cn = CHNK
 
 
 
+!write(0,*)__FILE__,__LINE__,i
       call rrtmg_lw_part &
             (ns, ncol, (i-1)*cn + 1, min(cn, ncol - (i-1)*cn), &
              nlay    ,icld    ,idrv,&
@@ -14402,16 +14238,14 @@ cn = CHNK
              tauaer  , &
              uflx    ,dflx    ,hr      ,uflxc   ,dflxc,  hrc, &
              duflx_dt,duflxc_dt)    
-! For GSFC, not needed for WRF
-!             tauaer  , zm, cloudMH, cloudHH, &
-!             uflx    ,dflx    ,hr      ,uflxc   ,dflxc,  hrc, &
-!             duflx_dt,duflxc_dt,cloudFlag)    
+!write(0,*)__FILE__,__LINE__,i,'uflx ',uflx(10,10)
+!write(0,*)__FILE__,__LINE__,i,'dflx ',dflx(10,10)
       end do  
       
 ! mji - time      
       call cpu_time(t2)
       print *, "------------------------------------------------"
-      print *, "TOTAL RRTMG_LW RUN TIME IS   ", t2-t1
+      print *, "TOTAL RRTMG_LWF RUN TIME IS   ", t2-t1
       print *, "------------------------------------------------"
 
       end subroutine
@@ -14427,13 +14261,7 @@ cn = CHNK
              tauaer  , &
              uflx    ,dflx    ,hr      ,uflxc   ,dflxc,  hrc, &
              duflx_dt,duflxc_dt)
-! For GSFC, not needed for WRF
-!             tauaer  , zm, cloudMH, cloudHH, &
-!             uflx    ,dflx    ,hr      ,uflxc   ,dflxc,  hrc, &
-!             duflx_dt,duflxc_dt,cloudFlag)
-
    
-!      use gpu_mcica_subcol_gen_lw, only: mcica_subcol_lwg, mcica_cldc, generate_stochastic_cloudsg
       use gpu_mcica_subcol_gen_lw, only: mcica_subcol_lwg, generate_stochastic_cloudsg
    
       use parrrtm_f, only : nbndlw, ngptlw, maxxsec, mxmol, mxlay, nbndlw, nmol
@@ -14497,7 +14325,6 @@ cn = CHNK
       integer , intent(in) :: iceflglw                ! Flag for ice particle specification
       integer , intent(in) :: liqflglw                ! Flag for liquid droplet specification
 
-!      integer , intent(in) :: cloudMH, cloudHH        ! cloud layer heights for cloudFlag
       real , intent(in) :: cldfrac(:,:)               ! Cloud fraction
                                                       !    Dimensions: (ngptlw,ncol,nlay)
       real , intent(in) :: ciwp(:,:)                  ! In-cloud ice water path (g/m2)
@@ -14528,13 +14355,11 @@ cn = CHNK
       real , intent(in) :: tauaer(:,:,:)              ! aerosol optical depth
                                                       !   at mid-point of LW spectral bands
                                                       !    Dimensions: (ncol,nlay,nbndlw)
-! For GSFC, not needed for WRF
-!      real , intent(in) :: zm(:, :)                   ! Layer height above surface (m)
 
       integer , intent(in) :: pncol
       integer , intent(in) :: colstart
 
-#ifndef _CUDA
+#ifndef _ACCEL
 # define pncol CHNK
 #endif
       
@@ -14563,7 +14388,7 @@ cn = CHNK
                                                       ! with respect to surface temperature
                                                       !    Dimensions: (ncol,nlay)
 !      integer , intent(out), optional :: cloudFlag(:,:)
-#ifdef _CUDA
+#ifdef _ACCEL
       real  _gpudeva :: cldfmcd(:,:,:)                ! layer cloud fraction [mcica]
                                                       !    Dimensions: (ngptlw,nlayers)
 #else
@@ -14573,7 +14398,7 @@ cn = CHNK
 
 ! ----- Local -----
 
-#ifndef _CUDA
+#ifndef _ACCEL
       integer  ncol_,nlayers_,nbndlw_,ngptlw_      ! for passing through argument list
       integer  ncol__,nlayers__,nbndlw__,ngptlw__  ! for passing through argument list
 ! here is where the previously allocatable things are made local variables
@@ -14770,9 +14595,6 @@ cn = CHNK
                                                       !    Dimensions: (ncol,nlay,nbndlw)
 
 
-! For GSFC, not needed for WRF
-!      real  :: zmp(pncol, mxlay+1)
-  
       integer :: permuteseed  ! this is set, below
       integer  :: icb(16)
          
@@ -14782,7 +14604,7 @@ cn = CHNK
       ! cuda return code
           integer :: ierr
       ! cuda thread and grid block dimensions
-#ifdef _CUDA
+#ifdef _ACCEL
       type(dim3) :: dimGrid, dimBlock
 #endif
       
@@ -14811,18 +14633,19 @@ cn = CHNK
       real , parameter :: amdo2 = 0.905140  ! Molecular weight of dry air / oxygen
       real , parameter :: amdc1 = 0.210852  ! Molecular weight of dry air / CFC11
       real , parameter :: amdc2 = 0.239546  ! Molecular weight of dry air / CFC12
-! For GSFC, not needed for WRF
-!      real  _gpudeva ::  zmd(:,:)
       real  :: amm, amttl, wvttl, wvsh, summol  
       integer  :: isp, l, ix, n, imol, ib   ! Loop indices
       integer, save :: counter =0
       real  :: btemp
+!real  :: gwiff1,gwiff2,gwiff3,gwiff4
+!integer :: ilay, iplon, igp
 !      integer  :: cloudFlagq(pncol, 4)
       integer _gpudev :: pncold, nlayd, icldd
 integer,external :: omp_get_thread_num
 
 !
-#ifndef _CUDA
+!write(0,*)__FILE__,__LINE__
+#ifndef _ACCEL
 # undef pncol
       ncol_  = pncol ; nlayers_  = nlay ; nbndlw_  = nbndlw ; ngptlw_  = ngptlw ! for passing through argument list
       ncol__ = pncol ; nlayers__ = nlay ; nbndlw__ = nbndlw ; ngptlw__ = ngptlw ! for passing through argument list
@@ -14848,27 +14671,26 @@ integer,external :: omp_get_thread_num
       relq(1:pncol,1:nlay) = rel(colstart:(colstart+pncol-1), 1:nlay)
       resq(1:pncol,1:nlay) = res(colstart:(colstart+pncol-1), 1:nlay)
       taucq(1:pncol,1:nbndlw,1:nlay) = tauc(colstart:(colstart+pncol-1), 1:nbndlw, 1:nlay)
-! ** mji *** tauaq dimensions?
       tauaq(1:pncol,1:nlay,1:nbndlw) = tauaer(colstart:(colstart+pncol-1), 1:nlay, 1:nbndlw)
-! For GSFC, not needed for WRF
-!      zmp(:,1:nlay) = zm(colstart:(colstart+pncol-1), 1:nlay)
   
-#ifdef _CUDA
+#ifdef _ACCEL
       allocate( cldfmcd(pncol, ngptlw, nlay+1))
       allocate( ngbd(140) )
 #endif
            
 
-#ifndef _CUDA
+#ifndef _ACCEL
 #  define pncol CHNK
 #endif
-#ifdef _CUDA
+#ifdef _ACCEL
       allocate( icbd(16))
       allocate( ncbandsd(pncol))
       allocate( icldlyr(pncol, nlay+1))
    
+!write(0,*)__FILE__,__LINE__
       call allocateGPUcldprmcg(pncol, nlay, ngptlw)
       call allocateGPUrtrnmcg(pncol, nlay, ngptlw, idrv)
+!write(0,*)__FILE__,__LINE__
   
       ngbd = ngb
       ngsd = ngs
@@ -14920,21 +14742,23 @@ integer,external :: omp_get_thread_num
       nlayers = nlay
 
 
+!write(0,*)__FILE__,__LINE__
       call allocateGPUTaumol( pncol, nlayers, npart)
+!write(0,*)__FILE__,__LINE__
 
-#ifdef _CUDA
+#ifdef _ACCEL
       allocate( fracsd( pncol, nlayers+1, ngptlw ))
       allocate( taug( pncol, nlayers+1, ngptlw ))
-! For GSFC, not needed for WRF
-!      allocate( zmd(pncol, mxlay+1))
 #endif
+!write(0,*)__FILE__,__LINE__
       tbound = tsfc(colstart:(colstart+pncol-1))
       pz(:,0:nlay) = plev(colstart:(colstart+pncol-1),0:nlay)
       tz(:,0:nlay) = tlev(colstart:(colstart+pncol-1),0:nlay)
       pavel(:,1:nlay) = play(colstart:(colstart+pncol-1),1:nlay)
       tavel(:,1:nlay) = tlay(colstart:(colstart+pncol-1),1:nlay)
+!write(0,*)__FILE__,__LINE__
       
-#ifdef _CUDA
+#ifdef _ACCEL
       call copyGPUTaumolMol( colstart, pncol, nlayers, h2ovmr, co2vmr, o3vmr, n2ovmr, ch4vmr, &
                              o2vmr, ccl4vmr, cfc11vmr, cfc12vmr, cfc22vmr, npart)
 #else
@@ -14957,39 +14781,37 @@ integer,external :: omp_get_thread_num
       endif
 #endif
 
-#ifndef _CUDA
+#ifndef _ACCEL
 #  undef pncol
 #endif
 
-! For GSFC, not needed for WRF
-!      zmd = zmp
-      
+!write(0,*)__FILE__,__LINE__
       permuteseed=150 ! if you change this, change value in module_ra_rrtmg_lw.F
       call mcica_subcol_lwg(colstart, pncol, nlay, icld, counter, permuteseed,            &
-#ifndef _CUDA
+#ifndef _ACCEL
                             pmid,clwp,ciwp,cswp,tauc,                                     &
 #endif
                             play, cldfracq, ciwpq,                                        &
                             clwpq, cswpq, taucq,ngbd, cldfmcd, ciwpmcd, clwpmcd, cswpmcd, & 
-! For GSFC, not needed for WRF
-!                             taucmcd,  cloudFlagq, cloudMH, cloudHH, zmd, 1)
                              taucmcd)
+!write(0,*)__FILE__,__LINE__
 !jm write(0,*)__FILE__,__LINE__,omp_get_thread_num()
 
 !  Generate the stochastic subcolumns of cloud optical properties for the longwave;
-#ifdef _CUDA
+#ifdef _ACCEL
       dimGrid = dim3( (ncol+255)/256,(140+1)/2, 1)
       dimBlock = dim3( 256,2,1)
 #endif
       if (icld > 0) then
+!write(0,*)__FILE__,__LINE__
          call generate_stochastic_cloudsg _gpuchv (pncold, nlayd, icldd, ngbd, &
-#ifndef _CUDA
+#ifndef _ACCEL
                                pmid,cldfracq,clwpq,ciwpq,cswpq,taucq,permuteseed,  &
 #endif
-! For GSFC, not needed for WRF
-!                               ngbd, cldfmcd, clwpmcd, ciwpmcd, taucmcd, 1, zmd)
                                cldfmcd, clwpmcd, ciwpmcd, cswpmcd, taucmcd)
+!write(0,*)__FILE__,__LINE__
       end if
+!write(0,*)__FILE__,__LINE__
 
 !jm write(0,*)__FILE__,__LINE__,omp_get_thread_num()
       do iplon = 1, pncol
@@ -15028,12 +14850,8 @@ integer,external :: omp_get_thread_num
         endif
       enddo
 
-#ifdef _CUDA
-! For GSFC, not needed for WRF
-!      call mcica_cldc(pncol, icld, nlay, cloudmh, cloudhh, cloudflagq, cldfmcd)
-!      cloudFlag(colstart:(colstart+pncol-1), :) = cloudFlagq
-!      deallocate(zmd)
-! Moved here from mcica_cldc
+!write(0,*)__FILE__,__LINE__
+#ifdef _ACCEL
       deallocate( pmidd, cldfracd)
       deallocate( clwpd, ciwpd, cswpd, taucd)
 
@@ -15070,13 +14888,15 @@ integer,external :: omp_get_thread_num
 
       icldlyr = 0.0
 
-#ifdef _CUDA
+#ifdef _ACCEL
 ! (dmb 2012) Allocate the arrays for the SetCoef and Taumol kernels
       call allocateGPUSetCoef( pncol, nlayers)
       
 ! (dmb 2012) Copy the needed data of to the GPU for the SetCoef and Taumol kernels
 
+!write(0,*)__FILE__,__LINE__
       call copyGPUTaumol( pavel, wx, coldry, tauaer, pncol, colstart, nlay , npart)
+!write(0,*)__FILE__,__LINE__
 
       call copyGPUSetCoef( )
 ! (dmb 2012) Copy over additional common arrays 
@@ -15111,22 +14931,24 @@ integer,external :: omp_get_thread_num
 ! on the GPU.  I decided to keep the block dimensions to 16x16 to coincide with
 ! coalesced memory access when I am able to parition the profiles to multiples
 ! of 32.
-#ifdef _CUDA
+#ifdef _ACCEL
       dimGrid = dim3( (pncol+255)/256,(nlayers)/1, ngptlw)
       dimBlock = dim3( 256,1,1)
 #endif
 !     clwpmcd = 0
 !     clwpmcd = clwpmc
 ! (dmb 2012) Call the cldprmcg kernel
+!write(0,*)__FILE__,__LINE__
       call cldprmcg _gpuchv (pncol, nlayers,                                      &
-#ifndef _CUDA
+#ifndef _ACCEL
                 inflag,iceflag,liqflag,ciwpmcd,clwpmcd,cswpmcd,relqmcd,reicmcd,resnmcd, &
                 absice0,absice1,absice2,absice3,absliq1,                          &
 #endif
                              cldfmcd, taucmcd,  ngbd, icbd, ncbandsd, icldlyr)
 
+!write(0,*)__FILE__,__LINE__
 ! synchronize the GPU with the CPU before taking timing results or passing data back to the CPU
-#ifdef _CUDA    
+#ifdef _ACCEL    
       ierr = cudaThreadSynchronize() 
 #endif
    
@@ -15137,17 +14959,18 @@ integer,external :: omp_get_thread_num
 ! by interpolating data from stored reference atmospheres. 
 
 ! (dmb 2012) Initialize the grid and block dimensions and call the setcoefg kernel
-#ifdef _CUDA
+#ifdef _ACCEL
       dimGrid = dim3( (pncol+255)/256,1, 1)
       dimBlock = dim3( 256,1,1)
 #endif
       call setcoefg _gpuchv (pncol, nlayers, istart                    &
 # include "rrtmg_lw_cpu_args.h"
 # include "taug_cpu_args.h"
-#ifndef _CUDA
+#ifndef _ACCEL
    ,tavel,tz,tbound,wbroadd,totplnk,totplk16,totplnkderiv,totplk16deriv &
 #endif
                             )
+!write(0,*)__FILE__,__LINE__
 
 ! (dmb 2012) end if GPU flag 
 
@@ -15166,11 +14989,11 @@ integer,external :: omp_get_thread_num
 ! For McICA, RTRNMC is called for clear and cloudy calculations.
 
    
-#ifdef _CUDA
+#ifdef _ACCEL
       ierr = cudaThreadSynchronize()
 #endif 
    
-#ifdef _CUDA    
+#ifdef _ACCEL    
       dimGrid = dim3( (pncol+255)/256, 70, 1)
       dimBlock = dim3( 256,2,1)
 #endif    
@@ -15179,7 +15002,7 @@ integer,external :: omp_get_thread_num
 #include "rrtmg_lw_cpu_args.h"
                     ,ngbd, icldlyr, taug, fracsd, cldfmcd)
 
-#ifdef _CUDA
+#ifdef _ACCEL
       ierr = cudaThreadSynchronize() 
 #endif
 
@@ -15194,7 +15017,7 @@ integer,external :: omp_get_thread_num
       dtotuflux_dtd = 0.0
       dtotuclfl_dtd = 0.0
 
-#ifdef CUDA
+#ifdef _ACCEL
       dimGrid = dim3( (pncol+255)/256,nlayers+1,1)
       dimBlock = dim3( 256, 1, 1)
 #endif
@@ -15205,15 +15028,27 @@ integer,external :: omp_get_thread_num
 !enddo
 !ierr = 0
 !!zap
+      uflx(colstart:(colstart+pncol-1), 1:(nlayers+1)) = totufluxd(1:pncol,1:(nlayers+1))
+!write(0,*)__FILE__,__LINE__,i,'uflx ',uflx(10,10)
+      dflx(colstart:(colstart+pncol-1), 1:(nlayers+1)) = totdfluxd(1:pncol,1:(nlayers+1))
+!write(0,*)__FILE__,__LINE__,i,'dflx ',dflx(10,10)
+
+!write(0,*)__FILE__,__LINE__
 
 ! (dmb 2012) Here we integrate across the g-point fluxes to arrive at total fluxes
 ! This functionality was factored out of the original rtrnmc routine so that I could
 ! parallelize across multiple dimensions.
+!write(0,*)__FILE__,__LINE__,i,'totufluxd  ',totufluxd(10,10)
+!write(0,*)__FILE__,__LINE__,i,'totdfluxd  ',totdfluxd(10,10)
       call rtrnadd _gpuchv (pncol, nlayers, ngptlw, idrv &
 #include "rrtmg_lw_cpu_args.h"
                            )
+      uflx(colstart:(colstart+pncol-1), 1:(nlayers+1)) = totufluxd(1:pncol,1:(nlayers+1))
+!write(0,*)__FILE__,__LINE__,'uflx ',uflx(10,10)
+      dflx(colstart:(colstart+pncol-1), 1:(nlayers+1)) = totdfluxd(1:pncol,1:(nlayers+1))
+!write(0,*)__FILE__,__LINE__,'dflx ',dflx(10,10)
 
-#ifdef _CUDA
+#ifdef _ACCEL
       ierr = cudaThreadSynchronize() 
       dimGrid = dim3( (pncol+255)/256,nlayers,1)
 #endif
@@ -15223,13 +15058,17 @@ integer,external :: omp_get_thread_num
       call rtrnheatrates _gpuchv (pncol, nlayers &
 #include "rrtmg_lw_cpu_args.h"
                                  )    
-#ifdef CUDA
+#ifdef _ACCEL
       ierr = cudaThreadSynchronize() 
 #endif    
 
 ! copy the partition data back to the CPU
+!write(0,*)__FILE__,__LINE__,i,'totufluxd  ',totufluxd(10,10)
+!write(0,*)__FILE__,__LINE__,i,'totdfluxd  ',totdfluxd(10,10)
       uflx(colstart:(colstart+pncol-1), 1:(nlayers+1)) = totufluxd(1:pncol,1:(nlayers+1))
+!write(0,*)__FILE__,__LINE__,i,'uflx ',uflx(10,10)
       dflx(colstart:(colstart+pncol-1), 1:(nlayers+1)) = totdfluxd(1:pncol,1:(nlayers+1))
+!write(0,*)__FILE__,__LINE__,i,'dflx ',dflx(10,10)
       uflxc(colstart:(colstart+pncol-1), 1:(nlayers+1)) = totuclfld(1:pncol,1:(nlayers+1))
       dflxc(colstart:(colstart+pncol-1), 1:(nlayers+1)) = totdclfld(1:pncol,1:(nlayers+1))
       hr(colstart:(colstart+pncol-1), 1:(nlayers+1)) = htrd(1:pncol,1:(nlayers+1))
@@ -15246,7 +15085,7 @@ integer,external :: omp_get_thread_num
 
 !  Transfer up and down fluxes and heating rate to output arrays.
 !  Vertical indexing goes from bottom to top; reverse here for GCM if necessary.
-#ifdef _CUDA
+#ifdef _ACCEL
       deallocate( cldfmcd)
       deallocate( icbd)
       deallocate( ncbandsd)
@@ -15285,11 +15124,12 @@ integer,external :: omp_get_thread_num
 # undef fracsd
 #endif
  
+!write(0,*)__FILE__,__LINE__
       end subroutine rrtmg_lw_part
 
       end module rrtmg_lw_rad_f
 
-#ifndef _CUDA
+#ifndef _ACCEL
 # undef pncol
 # undef pncold
 #endif
@@ -15723,6 +15563,7 @@ integer,external :: omp_get_thread_num
       ENDIF
 #endif
 
+!write(0,*)__FILE__,__LINE__
 
 !-----CALCULATE LONG WAVE RADIATION
 !                                                              
@@ -15737,9 +15578,9 @@ integer,external :: omp_get_thread_num
 
    IF ( wrf_dm_on_monitor() ) THEN
      WRITE(message,*)'CAM-CLWRF interpolated values______ year:',yr,' julian day:',julian
-     call wrf_debug( 1, message)
+     call wrf_debug( 100, message)
      WRITE(message,*)'  CAM-CLWRF co2vmr: ',co2,' n2ovmr:',n2o,' ch4vmr:',ch4,' cfc11vmr:',cfc11,' cfc12vmr:',cfc12
-     call wrf_debug( 1, message)
+     call wrf_debug( 100, message)
    ENDIF
 
 #endif
@@ -15921,12 +15762,6 @@ integer,external :: omp_get_thread_num
          inflglw = 2
          iceflglw = 3
          liqflglw = 1
-
-! For GSFC, not needed for WRF
-! To use icld=4 option (currently inactive), must fill zm here with model layer heights above surface (m)
-!         do k = kts,nlayers
-!            zm(icol,k) = 0.
-!         end do
 
 !Mukul change the flags here with reference to the new effective cloud/ice/snow radius
          IF (ICLOUD .ne. 0) THEN
@@ -16396,7 +16231,6 @@ integer,external :: omp_get_thread_num
 ! mji - mcica sub-column generator called inside rrtmg_lw for gpu
 !         iplon = 1
 !         irng = 0
-
 ! Sub-column generator for McICA
 !         call mcica_subcol_lw(iplon, ncol, nlay, icld, permuteseed, irng, play, &
 !                       cldfrac, ciwpth, clwpth, cswpth, rei, rel, res, taucld, cldfmcl, &
@@ -16478,6 +16312,7 @@ integer,external :: omp_get_thread_num
 !write(0,*)'zap before rrtmg_lw duflx_dt ',duflx_dt
 !write(0,*)'zap before rrtmg_lw duflxc_dt ',duflxc_dt
 
+!write(0,*)__FILE__,__LINE__
 ! Call RRTMG longwave radiation model for full grid for gpu
          call rrtmg_lw &
             (ncol    ,nlay    ,icld    ,idrv    , &
@@ -16486,11 +16321,12 @@ integer,external :: omp_get_thread_num
              cfc11vmr,cfc12vmr,cfc22vmr,ccl4vmr ,emis    , &
              inflglw ,iceflglw,liqflglw,cldfrac , &
              taucld  ,ciwpth  ,clwpth  ,cswpth  ,rei  ,rel ,res , &
-! For GSFC, not needed for WRF
-!             tauaer  ,zm      , &
              tauaer  , &
              uflx    ,dflx    ,hr      ,uflxc   ,dflxc,  hrc, &
              duflx_dt,duflxc_dt)
+!write(0,*)__FILE__,__LINE__,'h2ovmr ',h2ovmr(10,10)
+!write(0,*)__FILE__,__LINE__,'uflx ',uflx(10,10)
+!write(0,*)__FILE__,__LINE__,'dflx ',dflx(10,10)
 
 ! Output downard surface flux, and outgoing longwave flux and cloud forcing 
 ! at the top of atmosphere (W/m2)
@@ -16544,15 +16380,6 @@ integer,external :: omp_get_thread_num
 !
       end do i_loop2
    end do j_loop2                                           
-
-! mji - write
-!      do j=jts,jte
-!      write(62,995) (olr(i,j),i=its,ite)
-!      enddo
-!      do j=jts,jte
-!      write(62,995) (glw(i,j),i=its,ite)
-!      enddo
-! 995  format(1p6e12.5)
 
 !-------------------------------------------------------------------
 

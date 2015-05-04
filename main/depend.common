@@ -360,6 +360,10 @@ module_mp_thompson.o : ../frame/module_wrf_error.o \
 module_mp_nssl_2mom.o : ../frame/module_wrf_error.o \
 		../share/module_model_constants.o
 
+module_mp_fast_sbm.o : module_mp_radar.o
+
+module_mp_full_sbm.o : module_mp_radar.o
+
 module_mp_cammgmp_driver.o : module_cam_mp_microp_aero.o \
 		module_cam_constituents.o \
 		module_cam_shr_kind_mod.o \
@@ -606,6 +610,7 @@ module_cumulus_driver.o: \
 		module_cu_osas.o \
 		module_cu_camzm_driver.o \
 		module_cu_tiedtke.o \
+		module_cu_ntiedtke.o \
 		module_cu_kfcup.o \
 		../frame/module_state_description.o \
 		../frame/module_configure.o \

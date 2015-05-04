@@ -49,7 +49,7 @@
     CHARACTER*19  new_date
     CHARACTER*24  base_date
     CHARACTER*80  fname
-    CHARACTER*80  dname, memord
+    CHARACTER*80  dname, memord, sim_type
     LOGICAL dryrun
     INTEGER idt
     INTEGER itmp
@@ -93,8 +93,7 @@
     !  Local variables: are we are using the correct hypsometric option for ARW ideal cases.
 
     CHARACTER (LEN=80) :: input_name
-    LOGICAL :: this_is_an_ideal_run
-    INTEGER :: loop, hypsometric_opt
+    INTEGER :: loop, hypsometric_opt, icount
 
     CHARACTER (LEN=256) :: a_message
 
@@ -140,27 +139,6 @@
 #if ( ( EM_CORE == 1 ) && ( DA_CORE != 1 ) )
       IF ( switch .EQ. boundary_only ) THEN
          grid%just_read_boundary = .true.
-      END IF
-
-      IF ( ( switch .EQ. input_only ) .OR. ( switch .EQ. restart_only ) ) THEN
-
-        !  Make sure for ARW ideal cases that the hypsometric option, the
-        !  way that we integrate the heigh field, is set to 1.  This is the
-        !  method that is used in all of the "ideal" programs to get the
-        !  base-state height (phb).
-
-        CALL wrf_get_dom_ti_char ( fid , 'START_DATE' , input_name , ierr )
-        grid%this_is_an_ideal_run = INDEX(TRIM(input_name) , '0001-' ) .NE. 0
-
-        IF ( grid%this_is_an_ideal_run ) THEN
-          grid%hypsometric_opt = 1
-          config_flags%hypsometric_opt = 1
-	  DO loop = 1 , grid%max_dom
-            CALL nl_set_hypsometric_opt ( loop , 1 ) 
-          END DO
-          WRITE(wrf_err_message,*)'Ideal cases do not support the hypsometric option.'
-          CALL wrf_debug( 0 , wrf_err_message )
-        END IF
       END IF
 #endif
 
@@ -365,25 +343,6 @@
 
 #if (EM_CORE == 1)
 
-       IF ( ( switch .EQ. input_only ) .AND. ( config_flags%io_form_input .EQ. 2 ) ) THEN
-
-        !  For backward compatibility.  If we do not find the hypsometric_opt defined
-        !  in the input data, this is pre version 3.4.  Most likely, the hypsometric_opt
-        !  was the default value, 1.  
-
-        hypsometric_opt = -1
-        CALL wrf_get_dom_ti_integer ( fid , 'HYPSOMETRIC_OPT' , hypsometric_opt , 1 , icnt , ierr )
-        IF ( ( hypsometric_opt .NE. 1 ) .AND. ( hypsometric_opt .NE. 2 ) ) THEN
-          grid%hypsometric_opt = 1
-          config_flags%hypsometric_opt = 1
-	  DO loop = 1 , grid%max_dom
-            CALL nl_set_hypsometric_opt ( loop , 1 ) 
-          END DO
-          WRITE(wrf_err_message,*)'Resetting the hypsometric_opt from default value of 2 to 1'
-          CALL wrf_debug( 0 , wrf_err_message )
-        END IF
-       END IF
-
        !  Test to make sure that the grid distances are the right size.
 
        CALL wrf_get_dom_ti_real ( fid , 'DX' ,  dx_compare , 1 , icnt , ierr )
@@ -543,18 +502,36 @@
     grid%map_proj = config_flags%map_proj
 
     CALL wrf_get_dom_ti_char ( fid , 'MMINLU', mminlu , ierr )
-    IF ( ierr .NE. 0 ) THEN
-      WRITE(wrf_err_message,*)'MMINLU error on input'
-      mminlu = " "
-      CALL wrf_debug ( 0 , wrf_err_message )
-    ELSE IF ( ( ( mminlu(1:1) .GE. "A" ) .AND. ( mminlu(1:1) .LE. "Z" ) ) .OR. &
-              ( ( mminlu(1:1) .GE. "a" ) .AND. ( mminlu(1:1) .LE. "z" ) ) .OR. &
-              ( ( mminlu(1:1) .GE. "0" ) .AND. ( mminlu(1:1) .LE. "9" ) ) ) THEN
-       ! no-op, the mminlu field is probably OK
-    ELSE IF ( mminlu(1:1) .EQ. " " ) THEN
-       mminlu = " "
-    ELSE
-       mminlu = " "
+#if ( ( EM_CORE == 1 ) && ( DA_CORE != 1 ) )
+    IF ( ( ( switch .EQ. input_only ) .OR. ( switch .EQ. restart_only ) ) .AND. &
+         ( ( config_flags%io_form_input .EQ.  2 ) .OR. &
+           ( config_flags%io_form_input .EQ. 11 ) ) ) THEN
+      CALL wrf_get_dom_ti_char ( fid , 'SIMULATION_INITIALIZATION_TYPE', sim_type , icnt )
+      IF ( TRIM(sim_type) .NE. "IDEALIZED DATA" ) THEN
+        IF ( ierr .NE. 0 ) THEN
+          WRITE(wrf_err_message,*)'MMINLU error on input'
+          mminlu = " "
+          CALL wrf_debug ( 0 , wrf_err_message )
+        END IF
+      END IF
+    ELSE IF ( ( switch .EQ. input_only ) .OR. ( switch .EQ. restart_only ) ) THEN
+      IF ( ierr .NE. 0 ) THEN
+        WRITE(wrf_err_message,*)'MMINLU error on input'
+        mminlu = " "
+        CALL wrf_debug ( 0 , wrf_err_message )
+      END IF
+    END IF
+#endif
+    IF ( ierr .EQ. 0 ) THEN
+      IF ( ( ( mminlu(1:1) .GE. "A" ) .AND. ( mminlu(1:1) .LE. "Z" ) ) .OR. &
+                ( ( mminlu(1:1) .GE. "a" ) .AND. ( mminlu(1:1) .LE. "z" ) ) .OR. &
+                ( ( mminlu(1:1) .GE. "0" ) .AND. ( mminlu(1:1) .LE. "9" ) ) ) THEN
+         ! no-op, the mminlu field is probably OK
+      ELSE IF ( mminlu(1:1) .EQ. " " ) THEN
+         mminlu = " "
+      ELSE
+         mminlu = " "
+      END IF
     END IF
     call wrf_debug( 1 , "mminlu = '" // TRIM(mminlu) // "'")
     if (index(mminlu, char(0)) > 0) mminlu(index(mminlu, char(0)):) = " "
@@ -837,9 +814,75 @@
              call wrf_message(wrf_err_message)
              call wrf_error_fatal("Mismatch between namelist and global attribute HYPSOMETRIC_OPT")
           END IF
+       ELSE
+          ! For WRFDA backward compatibility.  If hypsometric_opt is not defined in the fg file, it is
+          ! pre-version 3.4 WRF input data.  For older versions, hypsometric_opt should be 1.
+          hypsometric_opt = -1
+          CALL wrf_get_dom_ti_integer ( fid , 'HYPSOMETRIC_OPT' , hypsometric_opt, 1 , icnt , ierr )
+          IF ( ( hypsometric_opt .NE. 1 ) .AND. ( hypsometric_opt .NE. 2 ) ) THEN
+             grid%hypsometric_opt = 1
+             config_flags%hypsometric_opt = 1
+             DO loop = 1 , grid%max_dom
+                CALL nl_set_hypsometric_opt ( loop , 1 )
+             END DO
+             WRITE(wrf_err_message,*)'Background (fg) file appears to be from earlier than WRF V3.4;'
+             call wrf_message(wrf_err_message)
+             WRITE(wrf_err_message,*)'Resetting the hypsometric_opt from default value of 2 to 1'
+             CALL wrf_message(wrf_err_message)
+          END IF
+
        END IF
     END IF
 
+#endif
+
+#if ( ( EM_CORE == 1 ) && ( DA_CORE != 1 ) )
+      IF ( ( switch .EQ. input_only ) .OR. ( switch .EQ. restart_only ) ) THEN
+
+        !  Make sure for ARW ideal cases that the hypsometric option, the
+        !  way that we integrate the height field, is set to 1.  This is the
+        !  method that is used in all of the "ideal" programs to get the
+        !  base-state height (phb).
+
+        CALL wrf_get_dom_ti_char ( fid , 'SIMULATION_INITIALIZATION_TYPE', sim_type , ierr )
+        IF      ( TRIM(sim_type) .EQ. "IDEALIZED DATA" ) THEN
+           grid%this_is_an_ideal_run = .TRUE.
+        ELSE IF ( TRIM(sim_type) .EQ. "REAL-DATA CASE" ) THEN
+           grid%this_is_an_ideal_run = .FALSE.
+        ELSE IF ( ierr .NE. 0 ) THEN
+           CALL wrf_get_dom_ti_char ( fid , 'START_DATE' , input_name , ierr )
+           grid%this_is_an_ideal_run = INDEX(TRIM(input_name) , '0001-' ) .NE. 0
+        END IF
+
+        IF ( grid%this_is_an_ideal_run ) THEN
+          grid%hypsometric_opt = 1
+          config_flags%hypsometric_opt = 1
+	  DO loop = 1 , grid%max_dom
+            CALL nl_set_hypsometric_opt ( loop , 1 ) 
+          END DO
+          WRITE(wrf_err_message,*)'NOTE:  Ideal cases always use hypsometric_opt=1, regardless of namelist setting'
+          CALL wrf_debug( 1 , wrf_err_message )
+        END IF
+      END IF
+
+       IF ( ( switch .EQ. input_only ) .AND. ( config_flags%io_form_input .EQ. 2 ) ) THEN
+
+        !  For backward compatibility.  If we do not find the hypsometric_opt defined
+        !  in the input data, this is pre version 3.4.  Most likely, the hypsometric_opt
+        !  was the default value, 1.  
+
+        hypsometric_opt = -1
+        CALL wrf_get_dom_ti_integer ( fid , 'HYPSOMETRIC_OPT' , hypsometric_opt , 1 , icnt , ierr )
+        IF ( ( hypsometric_opt .NE. 1 ) .AND. ( hypsometric_opt .NE. 2 ) ) THEN
+          grid%hypsometric_opt = 1
+          config_flags%hypsometric_opt = 1
+	  DO loop = 1 , grid%max_dom
+            CALL nl_set_hypsometric_opt ( loop , 1 ) 
+          END DO
+          WRITE(wrf_err_message,*)'Resetting the hypsometric_opt from default value of 2 to 1'
+          CALL wrf_debug( 0 , wrf_err_message )
+        END IF
+       END IF
 #endif
 
     ENDIF check_if_dryrun
@@ -927,37 +970,57 @@
           write(wrf_err_message, '(4a)') "WRF restart, LBC starts at ", &
                                      & trim(current_date), " and restart starts at ", trim(currtimestr)
           CALL wrf_debug( 0 , wrf_err_message )
+          CALL wrf_get_dom_td_char ( fid , 'THISBDYTIME' ,  current_date(1:19), this_datestr , ierr )
+          CALL wrf_atotime( this_datestr(1:19), grid%this_bdy_time )
+          CALL wrf_get_dom_td_char ( fid , 'NEXTBDYTIME' ,  current_date(1:19), next_datestr , ierr )
+          CALL wrf_atotime( next_datestr(1:19), grid%next_bdy_time )
+         
+          WRITE ( wrf_err_message , * ) 'LBC for restart: Starting valid date = ',this_datestr(1:19),', Ending valid date = ',next_datestr(1:19)
+          CALL wrf_message( TRIM(wrf_err_message) )
+          WRITE ( wrf_err_message , * ) 'LBC for restart: Restart time            = ',trim(currtimestr)
+          CALL wrf_message( TRIM(wrf_err_message) )
 
-          !  While the lateral BC time is less than the restart time, advance forward to the next LBC time.
+          IF ( ( grid%this_bdy_time .LE. currentTime ) .AND. ( grid%next_bdy_time .GT. currentTime ) ) THEN
+              WRITE ( wrf_err_message , * ) 'LBC for restart: Found the correct bounding LBC time periods'
+              CALL wrf_message( TRIM(wrf_err_message) )
+          ELSE
 
-          DO WHILE (time .lt. currentTime)
-              CALL wrf_get_next_time(fid, current_date , ierr)
-              CALL wrf_atotime(current_date(1:19), time)
-              WRITE(wrf_err_message,*) 'Advancing LBC file: wrf_get_next_time current_date: ',&
-                                      & current_date(1:19),' Status = ',ierr
-              IF ( ierr .EQ. 0 ) THEN
-                 CALL wrf_debug ( 0 , TRIM(wrf_err_message ) )
-              ELSE
-                 CALL wrf_error_fatal ( 'Cannot find a valid time to start the LBC during this restart' )
-              END IF
-          END DO
+              WRITE ( wrf_err_message , * ) 'LBC for restart: Looking for a bounding time'
+              CALL wrf_message( TRIM(wrf_err_message) )
 
-          !  Now the LBC time either matches or is beyond the restart time.  If it matches, we are at the
-          !  right time.  If we have gone too far, then back up one time period, and we are good to go.
+              !  While the lateral BC time is less than the restart time, advance forward to the next LBC time.
 
-          IF ( time .eq. currentTime ) THEN
-              CALL wrf_debug ( 0 , 'Found correct time, LBC matches the restart interval.' )
-          ELSE IF ( time .gt. currentTime ) THEN
-              CALL wrf_debug ( 0 , 'Went one LBC interval too far, backing up for restart.' )
-              CALL wrf_get_previous_time(fid, current_date , ierr)
-              IF ( ierr .EQ. 0 ) THEN
-                 CALL wrf_atotime(current_date(1:19), time)
-                 WRITE(wrf_err_message,*) 'LBC: wrf_get_prev_time current_date: ',&
-                                         & current_date(1:19),' Status = ',ierr
-                 CALL wrf_debug ( 0 , TRIM(wrf_err_message ) )
-                 CALL wrf_debug ( 0 , 'LBC is now correctly positioned for requested restart time' )
-              ELSE
-                 CALL wrf_error_fatal ( 'Problems backing up in the LBC file to find startig location for restart' )
+              icount = 0
+              DO WHILE ( ( currentTime .GE. grid%next_bdy_time ) .AND. ( icount < 10000 ) ) 
+                  CALL wrf_get_next_time(fid, current_date , ierr)
+                  IF ( ierr .NE. 0 ) THEN
+                     CALL wrf_error_fatal ( 'Cannot find a valid time to start the LBC during this restart, likely ran out of time periods to test' )
+                  END IF
+                  CALL wrf_get_dom_td_char ( fid , 'THISBDYTIME' ,  current_date(1:19), this_datestr , ierr )
+                  CALL wrf_get_dom_td_char ( fid , 'NEXTBDYTIME' ,  current_date(1:19), next_datestr , ierr )
+                  CALL wrf_atotime( next_datestr(1:19), grid%next_bdy_time )
+                  WRITE ( wrf_err_message , * ) 'LBC for restart: Starting valid date = ',this_datestr(1:19),', Ending valid date = ',next_datestr(1:19)
+                  CALL wrf_message( TRIM(wrf_err_message) )
+                  icount = icount + 1
+              END DO
+             
+              !  Now the LBC time either matches or is beyond the restart time.  If it matches, we are at the
+              !  right time.  If we have gone too far, then back up one time period, and we are good to go.
+
+              IF ( time .eq. currentTime ) THEN
+                  CALL wrf_debug ( 0 , 'Found correct time, LBC matches the restart interval.' )
+              ELSE IF ( time .gt. currentTime ) THEN
+                  CALL wrf_debug ( 0 , 'Went one LBC interval too far, backing up for restart.' )
+                  CALL wrf_get_previous_time(fid, current_date , ierr)
+                  IF ( ierr .EQ. 0 ) THEN
+                     CALL wrf_atotime(current_date(1:19), time)
+                     WRITE(wrf_err_message,*) 'LBC: wrf_get_prev_time current_date: ',&
+                                             & current_date(1:19),' Status = ',ierr
+                     CALL wrf_debug ( 0 , TRIM(wrf_err_message ) )
+                     CALL wrf_debug ( 0 , 'LBC is now correctly positioned for requested restart time' )
+                  ELSE
+                     CALL wrf_error_fatal ( 'Problems backing up in the LBC file to find startig location for restart' )
+                  END IF
               END IF
           END IF
 
@@ -965,6 +1028,8 @@
           CALL wrf_atotime( this_datestr(1:19), grid%this_bdy_time )
           CALL wrf_get_dom_td_char ( fid , 'NEXTBDYTIME' ,  current_date(1:19), next_datestr , ierr )
           CALL wrf_atotime( next_datestr(1:19), grid%next_bdy_time )
+          WRITE ( wrf_err_message , * ) 'LBC for restart: Found the correct bounding LBC time periods for restart time = ',trim(currtimestr)
+          CALL wrf_message ( TRIM(wrf_err_message) )
 
        ELSE IF ( .NOT. config_flags%restart ) THEN
           CALL domain_clock_get( grid, current_time=currentTime )
@@ -976,7 +1041,7 @@
 #if (DA_CORE != 1)
        IF( currentTime .GE. grid%next_bdy_time ) THEN
           IF ( wrf_dm_on_monitor() ) THEN
-             write(a_message,*) 'THIS TIME ',this_datestr(1:19),'NEXT TIME ',next_datestr(1:19)
+             write(a_message,*) 'THIS TIME ',this_datestr(1:19),', NEXT TIME ',next_datestr(1:19)
              CALL wrf_message ( a_message ) 
           END IF
           RETURN

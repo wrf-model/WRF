@@ -177,6 +177,7 @@ CONTAINS
    !  5. Grell 3D ensemble scheme
    !  6. Modified Tiedtke scheme (Zhang and Wang 2010)
    ! 14. New simplified Arakawa-Schubert scheme (NCEP, YSU)
+   ! 16. New Tiedtke scheme (Bechtold et al. 2004, 2008, 2014)
    !
 !----------------------------------------------------------------------
    IMPLICIT NONE

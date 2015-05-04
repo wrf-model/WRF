@@ -686,6 +686,7 @@ SUBROUTINE assemble_output ( grid , config_flags , loop , time_loop_max )
    INTEGER , SAVE :: id, id2,  id4 
    CHARACTER (LEN=80) :: inpname , bdyname
    CHARACTER(LEN= 4) :: loop_char
+   CHARACTER (LEN=256) :: message
 character *19 :: temp19
 character *24 :: temp24 , temp24b
 
@@ -728,6 +729,18 @@ real::t1,t2
    interval_seconds = model_config_rec%interval_seconds
    sst_update = model_config_rec%sst_update
    grid_fdda = model_config_rec%grid_fdda(grid%id)
+
+   !  Domain check.  We cannot decompose the domain into pieces that are
+   !  too small to manufacture the lateral boundary conditions.
+
+   IF ( ( ipe-ips+2 .LE. spec_bdy_width ) .OR. &
+        ( jpe-jps+2 .LE. spec_bdy_width ) ) THEN
+     CALL wrf_message( 'The "width" of the lateral boundary conditions must be entirely contained within')
+     CALL wrf_message( 'the decomposed patch.                                                    ')
+     WRITE(message,fmt='("ips=",i4,", ipe=",i4,", jps=",i4,", jpe=",i4,", spec_bdy_width=",i2)') ips,ipe,jps,jpe,spec_bdy_width
+     CALL wrf_message( message )
+     CALL wrf_error_fatal( 'Submit the real program again with fewer processors ')
+   END IF
 
 
    IF ( loop .EQ. 1 ) THEN
@@ -782,6 +795,8 @@ real::t1,t2
       END IF
 
       !  Open the wrfinput file.  From this program, this is an *output* file.
+
+      grid%this_is_an_ideal_run = .FALSE.
 
       CALL construct_filename1( inpname , 'wrfinput' , grid%id , 2 )
       CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_input , "DATASET=INPUT", ierr )

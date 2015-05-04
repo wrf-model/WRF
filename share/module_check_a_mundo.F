@@ -55,7 +55,6 @@
 #else
    model_config_rec % wrf_hydro = 0
 #endif
-
 #if ( NMM_NEST == 1 )
 ! Ensure that minimum NMM coral distances are supplied for all domains.
    do i=1,model_config_rec%max_dom
@@ -70,8 +69,56 @@
     enddo
 #endif
 
+!-----------------------------------------------------------------------
+! A known problem with halos.  Users with moving nests and a number of
+! eta levels above 55 get a model crash due to bug in gen_comms.c.
+! The auto-generated halo code uses K grid dimensions in halos for
+! non-K vertical coordinate variables (such as OZMIXM).  This is NOT
+! limited to moving nests: all halos are wrong for such variables.
+! However, generally, variables with non-K vertical coordinates only
+! have halos before a nest move.  WRF-NMM has a partial workaround,
+! WRF-ARW does not.  As a kludge, we abort WRF-ARW when users try to
+! use more that 55 vertical levels with a moving nest.
+#if (EM_CORE==1)
+#if (defined MOVE_NESTS) && (defined VORTEX_CENTER)
+      IF ( ( model_config_rec % max_dom  .GT.  1 ) .AND. &
+           ( model_config_rec %e_vert(1) .GT. 55 ) ) THEN
+         wrf_err_message = '--- ERROR: Known problem.  Moving nests need e_vert .LE. 55'
+         CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
+      END IF
+#endif
+#endif
+!-----------------------------------------------------------------------
 
 #if (EM_CORE == 1)
+!-----------------------------------------------------------------------
+! There are restrictions for the use_theta_m option:
+! 1. The option to include moist theta in the WRF solver only works with a single domain.
+! 2. The option may not be used in conjunction with damp_opt=2.
+! 3. The option may not be used with rad_nudge.
+!-----------------------------------------------------------------------
+
+      IF ( ( model_config_rec % max_dom     .GT. 1 ) .AND. &
+           ( model_config_rec % use_theta_m .EQ. 1 ) ) THEN
+         wrf_err_message = '--- ERROR: The use_theta_m option is only available for single domain cases' 
+         CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
+      END IF
+
+      IF ( ( model_config_rec % use_theta_m .EQ. 1 ) .AND. &
+           ( model_config_rec % damp_opt    .EQ. 2 ) ) THEN
+         CALL wrf_message ( "The use_theta_m option may not be paired with damp_opt=2." )
+         wrf_err_message = '--- ERROR: Either turn off use_theta_m, or select a different damp_opt option'
+         CALL wrf_error_fatal ( TRIM(wrf_err_message) )
+      END IF
+
+      IF ( ( model_config_rec % use_theta_m .EQ. 1 ) .AND. &
+           ( model_config_rec % rad_nudge   .EQ. 1 ) ) THEN
+         CALL wrf_message ( "The use_theta_m option may not be paired with rad_nudge=1." )
+         wrf_err_message = '--- ERROR: Either turn off use_theta_m, or turn off the rad_nudge option'
+         CALL wrf_error_fatal ( TRIM(wrf_err_message) )
+      END IF
+
+
 !-----------------------------------------------------------------------
 ! Check that all values of diff_opt and km_opt are filled in.  A flag
 ! value of "-1" from the nml file means that this column (domain) is not
@@ -329,26 +376,23 @@
 
 #endif
 
-#if (EM_CORE == 1)
+#if (NMM_CORE == 1) || (HWRF == 1)
+!-----------------------------------------------------------------------
+!           Check that NOAH-MP LSM is not allowed for WRF-NMM run 
+!-----------------------------------------------------------------------
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec%sf_surface_physics(i) == NOAHMPSCHEME ) THEN
+            WRITE(wrf_err_message, '(" --- ERROR:   Noah-MP LSM scheme (sf_surface_physics==", I2, ")")') NOAHMPSCHEME
+            CALL wrf_message ( TRIM ( wrf_err_message ) )
+            WRITE(wrf_err_message, '("              does not work with NMM ")')
+            CALL wrf_message ( TRIM ( wrf_err_message ) )
+            WRITE(wrf_err_message, '("Select a different LSM scheme ")')
+            CALL wrf_error_fatal ( TRIM ( wrf_err_message ) )
+         END IF
+      END DO
+#endif
 
-!-----------------------------------------------------------------------
-!!!!!!  THIS FEATURE IS CURRENTLY NOT WORKING - FIELDS WILL ALWAYS BE FULL 3D ARRAYS !!!!!
-!-----------------------------------------------------------------------
-!! Random fields are by default thin 3D arrays (:,1,:).
-!! If random fields have vertical structures (stoch_vertstruc_opt .ne. 0)
-!! make them full 3D array arrays
-!-----------------------------------------------------------------------
-    DO i = 1, model_config_rec % max_dom
-          IF ( model_config_rec % stoch_vertstruc_opt(i) .ne. 99)  then
-             model_config_rec % num_stoch_levels = model_config_rec %e_vert(1)
-          ENDIF
-          IF ( model_config_rec % sppt_vertstruc(i) .ne. 99)  then
-             model_config_rec % num_stoch_levels = model_config_rec %e_vert(1)
-          ENDIF
-          IF ( model_config_rec % rand_pert_vertstruc(i) .ne. 99)  then
-             model_config_rec % num_stoch_levels = model_config_rec %e_vert(1)
-          ENDIF
-    ENDDO
+#if (EM_CORE == 1)
 
 !-----------------------------------------------------------------------
 ! Check if any stochastic perturbation scheme is turned on in any domain,
@@ -385,7 +429,7 @@
    ENDDO
    DO i = 1, model_config_rec % max_dom
          IF ( model_config_rec % stoch_vertstruc_opt(i) ==1 )  then
-           model_config_rec % skebs_vertstruc(i)=1    ! parameter stoch_vertstruc_opt is being replaced with skebs_vertstruc
+           model_config_rec % skebs_vertstruc=1       ! parameter stoch_vertstruc_opt is being replaced with skebs_vertstruc
                                                       ! stoch_vertstruc_opt is obsolete starting with V3.7
            wrf_err_message = '--- WARNING: the namelist parameter "stoch_vertstruc_opt" is obsolete.'
            CALL wrf_message ( wrf_err_message )
@@ -393,6 +437,7 @@
            CALL wrf_message ( wrf_err_message )
          endif
    ENDDO
+
    DO i = 1, model_config_rec % max_dom
          IF ( model_config_rec % stoch_force_opt(i) ==1 )  then
            model_config_rec % skebs(i)=1    ! parameter stoch_forc_opt is being replaced with skebs;
@@ -408,6 +453,21 @@
            model_config_rec % skebs_on=1
          endif
    ENDDO
+
+!-----------------------------------------------------------------------
+! Random fields are by default thin 3D arrays (:,1,:).
+! If random fields have vertical structures (stoch_vertstruc_opt .ne. 0)
+! make them full 3D array arrays
+!-----------------------------------------------------------------------
+   IF ( model_config_rec % skebs_vertstruc     .ne. 99 )  then
+      model_config_rec % num_stoch_levels = model_config_rec %e_vert(1)
+   ENDIF
+   IF ( model_config_rec % sppt_vertstruc      .ne. 99 )  then
+      model_config_rec % num_stoch_levels = model_config_rec %e_vert(1)
+   ENDIF
+   IF ( model_config_rec % rand_pert_vertstruc .ne. 99 )  then
+      model_config_rec % num_stoch_levels = model_config_rec %e_vert(1)
+   ENDIF
 
 !--------------------------------------------------------------------------------
 ! Check if boundary perturbations is turned on and set to '1' (perturb_bdy=1).
@@ -506,6 +566,23 @@
             model_config_rec%icloud = 1
          END IF
       ENDDO
+
+!-----------------------------------------------------------------------
+! cu_physics = 10 (Cumulus-potential KF) does not work in 3.7 yet 
+!-----------------------------------------------------------------------
+
+      oops = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec%cu_physics(i) .EQ. KFCUPSCHEME ) THEN
+            oops = oops + 1
+         END IF
+      ENDDO      ! Loop over domains
+      IF ( oops .GT. 0 ) THEN
+         wrf_err_message = '--- ERROR: cu_physics = 10 is not available in 3.7 '
+         CALL wrf_message ( wrf_err_message )
+         wrf_err_message = '--- Please select another cu_physics option '
+         CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
+      END IF
 
 #endif
 
@@ -1053,10 +1130,14 @@
 !  than RRTMG_LWSCHEME and RRTMG_SWSCHEME.
 !-----------------------------------------------------------------------
 
-      IF ( ( model_config_rec % ra_lw_physics(1) .NE. RRTMG_LWSCHEME )  .OR. &
-           ( model_config_rec % ra_sw_physics(1) .NE. RRTMG_SWSCHEME )  .OR. &
-           ( model_config_rec % ra_lw_physics(1) .NE. RRTMG_LWSCHEME_FAST )  .OR. &
-           ( model_config_rec % ra_sw_physics(1) .NE. RRTMG_SWSCHEME_FAST )  ) THEN
+      IF ( ( model_config_rec % ra_lw_physics(1) .EQ. RRTMG_LWSCHEME )  .OR. &
+           ( model_config_rec % ra_sw_physics(1) .EQ. RRTMG_SWSCHEME )  .OR. &
+           ( model_config_rec % ra_lw_physics(1) .EQ. RRTMG_LWSCHEME_FAST )  .OR. &
+           ( model_config_rec % ra_sw_physics(1) .EQ. RRTMG_SWSCHEME_FAST )  ) THEN
+         wrf_err_message = '--- NOTE: RRTMG radiation is used, namelist ' // &
+                           'value for o3input (ozone input) is used '
+!        CALL wrf_message ( wrf_err_message )
+      ELSE
          model_config_rec % o3input = 0
          wrf_err_message = '--- NOTE: RRTMG radiation is not used, setting:  ' // &
                            'o3input=0 to avoid data pre-processing'

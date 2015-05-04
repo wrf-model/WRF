@@ -24,6 +24,7 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
    character*256 :: timestr, timestr1
 
    real, dimension(:,:,:), allocatable :: hr_rainc, hr_rainnc
+   real, dimension(:,:),   allocatable :: savegridrainc, savegridrainnc
    integer            :: fgat_rain
 
    if (trace_use) call da_trace_entry("da_get_innov_vector") 
@@ -54,6 +55,10 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
       allocate (hr_rainnc(ims:ime,jms:jme,1:num_fgat_time))
       hr_rainc =0.0
       hr_rainnc=0.0
+      allocate (savegridrainc (ims:ime,jms:jme))
+      allocate (savegridrainnc (ims:ime,jms:jme))
+      savegridrainc  =0.0
+      savegridrainnc =0.0
 
       call domain_clock_get (grid, stop_timestr=timestr1)
       call domain_clock_set( grid, current_timestr=timestr1 )
@@ -65,7 +70,7 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
          call domain_clock_get( grid, current_timestr=timestr )
          call da_read_basicstates ( xbx, grid, config_flags, timestr ) 
          if ( fgat_rain_flags(n) ) then
-            call da_get_hr_rain (fgat_rain, grid, hr_rainc, hr_rainnc) 
+            call da_get_hr_rain (fgat_rain, grid, hr_rainc, hr_rainnc, savegridrainc, savegridrainnc)
             fgat_rain = fgat_rain - 1
          end if
          if (n > 1) call domain_clockadvance (grid)
@@ -194,6 +199,8 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
    if ( use_rainobs .and. num_fgat_time > 1 .and. var4d) then
       deallocate (hr_rainc )
       deallocate (hr_rainnc)
+      deallocate (savegridrainc)
+      deallocate (savegridrainnc)
    endif
 
    ! For FGAT , we need to restore the the field of the analysis time at this point

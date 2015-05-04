@@ -28,6 +28,10 @@ MODULE module_cu_mskf
 ! Herwehe et al., 2014: Increasing the credibility of regional climate simulations 
 !     by introducing subgrid-scale cloud-radiation interactions. JGR, 119,
 !     5317-5330, doi:10.1002/2014JD021504.
+!
+! Zheng et al., 2015: Improving High-Resolution Weather Forecasts using the
+!     Weather Research and Forecasting (WRF) Model with an Updated Kain-Fritsch
+!     Scheme. Revision - Mon. Wea. Rev.
 !ckay
 !--------------------------------------------------------------------
 ! Lookup table variables:
@@ -1143,8 +1147,6 @@ updraft:    DO NK=K,KL-1
               CALL CONDLOAD(QLIQ(NK1),QICE(NK1),WTW,DZZ,BOTERM,ENTERM,      &
                    RATE_kay,QNEWLQ,QNEWIC,QLQOUT(NK1),QICOUT(NK1),G)
 
-!ckay         CALL CONDLOAD(QLIQ(NK1),QICE(NK1),WTW,DZZ,BOTERM,ENTERM,      &
-!ckay                   RATE,QNEWLQ,QNEWIC,QLQOUT(NK1),QICOUT(NK1),G)
 !
 !...IF VERT VELOCITY IS LESS THAN ZERO, EXIT THE UPDRAFT LOOP AND,
 !...IF CLOUD IS TALL ENOUGH, FINALIZE UPDRAFT CALCULATIONS...
@@ -1591,16 +1593,12 @@ updraft:    DO NK=K,KL-1
 !...for ETA model, DX is a function of location...
         TIMEC=DX/VCONV
         TADVEC=TIMEC
-!       TIMEC=AMAX1(1800.,TIMEC)         ! 30 minutes  >= TIMEC <= 60 minutes
-!       TIMEC=AMIN1(3600.,TIMEC)
-!       IF(ISHALL.EQ.1)TIMEC=2400.       ! shallow convection TIMEC = 40 minutes
-!       NIC=NINT(TIMEC/DT)
-!       TIMEC=FLOAT(NIC)*DT
 !
 !ckay
 !new dynTau based on subcloud layer scales : note Z0(KPBL)=altitude of source layer
 
-         TIMEC = CLDHGT(LC)*Scale_Fac
+         TIMEC = Amax1(CHMIN,CLDHGT(LC))
+         TIMEC = TIMEC*Scale_Fac
 
 !ckay SCLvel = SubCloudLayerVELOCITY = Wsb
          SCLvel = WSTAR(I,J)**3
@@ -1626,6 +1624,7 @@ updraft:    DO NK=K,KL-1
          TIMEC = TIMEC/((0.03*SCLvel*ABE)**0.3333)
 
 !ckay: this dynTau is good for the Deep as well as Shallow Cu clouds
+        TIMEC = AMAX1(DT, TIMEC)
 
          NIC=NINT(TIMEC/DT)
          TIMEC=FLOAT(NIC)*DT

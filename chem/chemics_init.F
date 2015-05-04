@@ -154,8 +154,6 @@ call wrf_message("**************************************************************
    chem_select: SELECT CASE(config_flags%chem_opt)
      CASE (GOCART_SIMPLE)
        CALL wrf_debug(15,'calling only gocart aerosols driver from chem_driver')
-     CASE (GOCARTRADM2_KPP)
-       CALL wrf_debug(15,'calling gocart and radmkpp driver from chem_driver')
      CASE (GOCARTRADM2)
        CALL wrf_debug(15,'calling gocart and radm driver from chem_driver')
      CASE (GOCARTRACM_KPP)
@@ -188,10 +186,6 @@ call wrf_message("**************************************************************
        CALL wrf_debug(15,'calling SAPRC99_MOSAIC_8BIN_VBS2_AQ_KPP from chem_driver')
        call wrf_message("WARNING: SAPRC99_MOSAIC_8BIN_VBS2_AQ_KPP chemistry option is highly experimental and not recommended for use.")
        !BSINGH -ENDS
-     CASE (CBMZ_MOSAIC_4BIN_VBS2_KPP )
-       CALL wrf_debug(15,'calling CBMZ_MOSAIC_4BIN_VBS2_4BIN from chem_driver')
-       call wrf_message("WARNING: CBMZ_MOSAIC_4BIN_VBS2_4BIN chemistry option is highly experimental and not recommended for use.")
-!jdf   call wrf_error_fatal("WARNING: CBMZ_MOSAIC_4BIN_VBS2_4BIN chemistry option is useable but does not fully pass regtesting. It is recommended that you contact Jerome.Fast@pnl.gov for information regarding this option.")
      CASE (MOZART_MOSAIC_4BIN_KPP )
        CALL wrf_debug(15,'calling MOZART_MOSAIC_4BIN_KPP from chem_driver')
      CASE (MOZART_MOSAIC_4BIN_AQ_KPP )
@@ -629,7 +623,7 @@ end if
              enddo
           enddo
         endif
-     CASE (RADM2_KPP,RADM2SORG_KPP,GOCARTRADM2,GOCARTRADM2_KPP,SAPRC99_KPP)
+     CASE (RADM2_KPP,RADM2SORG_KPP,GOCARTRADM2,SAPRC99_KPP)
         if(config_flags%chem_in_opt == 0 )then
           do j=jts,jte
              do k=kts,kte
@@ -837,7 +831,7 @@ end if
 
 
 
-        CASE (CBMZ_MOSAIC_4BIN_VBS2_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP)
+        CASE (SAPRC99_MOSAIC_4BIN_VBS2_KPP)
         if(config_flags%chem_in_opt == 0 )then
                    grid%vbs_nbin(1)=2
           do j=jts,jte
@@ -1565,7 +1559,7 @@ ENDIF ghg_block
             enddo
           endif
         endif
-     CASE (GOCARTRACM_KPP,GOCARTRADM2,GOCARTRADM2_KPP)
+     CASE (GOCARTRACM_KPP,GOCARTRADM2)
        CALL wrf_debug(15,'call GOCARTRACM_KPP chem/aerosols initialization')
         ch_dust(:,:)=0.8D-9
         ch_ss(:,:)=1.
@@ -1778,7 +1772,7 @@ ENDIF ghg_block
        endif
      CASE (CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_KPP, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, &
            CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ, &
-           CBMZ_MOSAIC_4BIN_VBS2_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP, &
+           SAPRC99_MOSAIC_4BIN_VBS2_KPP, &
            MOZART_MOSAIC_4BIN_KPP,MOZART_MOSAIC_4BIN_AQ_KPP, &
            CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP,SAPRC99_MOSAIC_8BIN_VBS2_AQ_KPP, &  !BSINGH(12/03/2013): Added SAPRC 8 bin
            SAPRC99_MOSAIC_8BIN_VBS2_KPP) !BSINGH(04/03/2014): Added SAPRC 8 bin non-aq
@@ -2020,7 +2014,7 @@ subroutine print_chem_species_index( chem_opt )
 ! Gas species...
 !
   select case (chem_opt)
-  case (RADM2, RADM2SORG, RADM2SORG_AQ, RADM2SORG_AQCHEM, RADM2_KPP, RADM2SORG_KPP, GOCARTRADM2,GOCARTRADM2_KPP)
+  case (RADM2, RADM2SORG, RADM2SORG_AQ, RADM2SORG_AQCHEM, RADM2_KPP, RADM2SORG_KPP, GOCARTRADM2)
      print*,p_so2,"so2"
      print*,p_sulf,"sulf"
      print*,p_no2,"no2"
@@ -2343,7 +2337,7 @@ subroutine print_chem_species_index( chem_opt )
      end select
   end select
   
-  case (CBMZ_MOSAIC_KPP, CBMZ_MOSAIC_4BIN_VBS2_KPP)
+  case (CBMZ_MOSAIC_KPP)
     print*,p_so2,"so2"
      print*,p_sulf,"sulf"
      print*,p_no2,"no2"

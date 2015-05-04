@@ -16,7 +16,7 @@ module module_stoch
 !
 ! Berner, J.,  S.-Y. Ha, J. P. Hacker, A. Fournier and C. Snyder 2011:
 ! "Model uncertainty in a mesoscale ensemble prediction system: Stochastic 
-! versus multi-physics representations",  2011, Mon. Wea. Rev., 139, 1972—1995
+! versus multi-physics representations",  2011, Mon. Wea. Rev., 139, 1972-1995
 ! http://journals.ametsoc.org/doi/abs/10.1175/2010MWR3595.1
 !
 ! Features: 
@@ -90,6 +90,172 @@ module module_stoch
 !=======================================================================
 contains
 !=======================================================================
+!     ------------------------------------------------------------------
+! This subroutine drives the initialization of the stochastic schemes  
+
+    SUBROUTINE INITIALIZE_STOCH  (grid, config_flags,          &
+                          first_trip_for_this_domain,          & 
+                          ips, ipe, jps, jpe, kps, kpe,        &
+                          ids, ide, jds, jde, kds, kde,        &
+                          ims, ime, jms, jme, kms, kme,        &
+                          its, ite, jts, jte, kts, kte,        & 
+                          imsx, imex, jmsx, jmex, kmsx, kmex,  &
+                          ipsx, ipex, jpsx, jpex, kpsx, kpex,  &
+                          imsy, imey, jmsy, jmey, kmsy, kmey,  &
+                          ipsy, ipey, jpsy, jpey, kpsy, kpey   )
+
+
+    USE module_configure
+    USE module_domain, ONLY : domain
+#ifdef DM_PARALLEL
+    USE module_dm, ONLY : local_communicator, mytask, ntasks, ntasks_x, ntasks_y, local_communicator_periodic, &
+                          wrf_dm_maxval, wrf_err_message, local_communicator_x, local_communicator_y, data_order_xzy
+#endif
+
+      IMPLICIT NONE
+
+      TYPE (grid_config_rec_type)            :: config_flags
+      TYPE ( domain ), INTENT(INOUT)         :: grid
+
+      INTEGER , INTENT(IN)     ::               ids, ide, jds, jde, kds, kde, &
+                                                ims, ime, jms, jme, kms, kme, &
+                                                ips, ipe, jps, jpe, kps, kpe, & 
+                                                its, ite, jts, jte, kts, kte
+      INTEGER , INTENT(IN)     ::               imsx,imex,jmsx,jmex,kmsx,kmex, &
+                                                ipsx,ipex,jpsx,jpex,kpsx,kpex, &
+                                                imsy,imey,jmsy,jmey,kmsy,kmey, &
+                                                ipsy,ipey,jpsy,jpey,kpsy,kpey
+
+      LOGICAL                  ::               first_trip_for_this_domain
+      INTEGER                  ::               K 
+
+
+   IF ( first_trip_for_this_domain ) THEN
+     grid%did_stoch = .FALSE.
+   END IF
+
+   IF ((( grid%id == 1) .AND. (.NOT. grid%did_stoch)) .AND. &
+       (( grid%skebs_on== 1) .OR.( grid%sppt_on== 1) .OR. ( grid%rand_perturb_on== 1))) THEN 
+
+     grid%did_stoch = .TRUE.
+
+     IF (grid%skebs_on==1) then
+
+! Initialize SKEBS
+!    Initialize streamfunction (1)
+     if (.not.config_flags%restart) then 
+         call rand_seed (config_flags, grid%ISEED_SKEBS, grid%iseedarr_skebs , kms, kme)
+     endif
+     call SETUP_RAND_PERTURB('W',                                         &
+                       grid%skebs_vertstruc,config_flags%restart,         &
+                       grid%SPSTREAM_AMP,                                 &
+                       grid%SPSTREAMFORCS,grid%SPSTREAMFORCC,grid%ALPH_PSI,&
+                       grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPUV,     &
+                       grid%KMINFORCT,grid%KMAXFORCT,                     &
+                       grid%LMINFORCT,grid%LMAXFORCT,                     &
+                       grid%KMAXFORCTH,grid%LMAXFORCTH,                   &
+                       grid%time_step,grid%DX,grid%DY,                    &
+                       grid%gridpt_stddev_sppt,                           &
+                       grid%lengthscale_sppt,                             &
+                       grid%timescale_sppt,                               &
+                       grid%TOT_BACKSCAT_PSI,grid%ZTAU_PSI,               &
+                       grid%REXPONENT_PSI,                                &
+                       ids, ide, jds, jde, kds, kde,                      &
+                       ims, ime, jms, jme, kms, kme,                      &
+                       its, ite, jts, jte, kts, kte                       )
+!    Initialize potential temperature (2)
+     call SETUP_RAND_PERTURB('T',                                         &
+                       grid%skebs_vertstruc,config_flags%restart,     &
+                       grid%SPT_AMP,                                      &
+                       grid%SPTFORCS,grid%SPTFORCC,grid%ALPH_T,           &
+                       grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPT,     &
+                       grid%KMINFORCT,grid%KMAXFORCT,                     &
+                       grid%LMINFORCT,grid%LMAXFORCT,                     &
+                       grid%KMAXFORCTH,grid%LMAXFORCTH,                   &
+                       grid%time_step,grid%DX,grid%DY,                    &
+                       grid%gridpt_stddev_sppt,                           &
+                       grid%lengthscale_sppt,                             &
+                       grid%timescale_sppt,                               &
+                       grid%TOT_BACKSCAT_T,grid%ZTAU_T,                   &
+                       grid%REXPONENT_T,                                  &
+                       ids, ide, jds, jde, kds, kde,                      &
+                       ims, ime, jms, jme, kms, kme,                      &
+                       its, ite, jts, jte, kts, kte                       )
+     ENDIF
+
+IF (grid%sppt_on==1) then
+! Initialize SPPT (3)
+     if (.not.config_flags%restart) then ! set random number seed (else iseedarray is read in from restart files)
+         call rand_seed (config_flags, grid%ISEED_SPPT, grid%iseedarr_sppt  , kms, kme)
+     endif
+     call SETUP_RAND_PERTURB('P',                                         &
+                       grid%sppt_vertstruc,config_flags%restart,          &
+                       grid%SPPT_AMP,                                     &
+                       grid%SPPTFORCC,grid%SPPTFORCS,grid%ALPH_SPPT,      &
+                       grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPT,     &
+                       grid%KMINFORCT,grid%KMAXFORCT,                     &
+                       grid%LMINFORCT,grid%LMAXFORCT,                     &
+                       grid%KMAXFORCTH,grid%LMAXFORCTH,                   &
+                       grid%time_step,grid%DX,grid%DY,                    &
+                       grid%gridpt_stddev_sppt,                           &
+                       grid%lengthscale_sppt,                             &
+                       grid%timescale_sppt,                               &
+                       grid%TOT_BACKSCAT_PSI,grid%ZTAU_PSI,               &
+                       grid%REXPONENT_PSI,                                &
+                       ids, ide, jds, jde, kds, kde,                      &
+                       ims, ime, jms, jme, kms, kme,                      &
+                       its, ite, jts, jte, kts, kte                       )
+     ENDIF
+
+! Initialize RAND_PERTURB (4)
+     IF (grid%rand_perturb_on==1) then
+     if (.not.config_flags%restart) then ! set random number seed (else iseedarray is read in from restart files)
+         call rand_seed (config_flags, grid%ISEED_RAND_PERT, grid%iseedarr_rand_pert  , kms, kme)
+     endif
+     call SETUP_RAND_PERTURB('R',                                         &
+                       grid%rand_pert_vertstruc,config_flags%restart,     &
+                       grid%SP_AMP,                                       &
+                       grid%SPFORCC,grid%SPFORCS,grid%ALPH_RAND,          &
+                       grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPT,     &
+                       grid%KMINFORCT,grid%KMAXFORCT,                     &
+                       grid%LMINFORCT,grid%LMAXFORCT,                     &
+                       grid%KMAXFORCTH,grid%LMAXFORCTH,                   &
+                       grid%time_step,grid%DX,grid%DY,                    &
+                       grid%gridpt_stddev_rand_pert,                      &
+                       grid%lengthscale_rand_pert,                        &
+                       grid%timescale_rand_pert,                          &
+                       grid%TOT_BACKSCAT_PSI,grid%ZTAU_PSI,               &
+                       grid%REXPONENT_PSI,                                &
+                       ids, ide, jds, jde, kds, kde,                      &
+                       ims, ime, jms, jme, kms, kme,                      &
+                       its, ite, jts, jte, kts, kte                       )
+
+     if (.not.config_flags%restart) then ! spin up 
+        do k = 1,10
+           CALL RAND_PERT_UPDATE(grid,'R',                                     &
+                           grid%SPFORCS,grid%SPFORCC,                          &
+                           grid%SP_AMP,grid%ALPH_RAND,                         &
+                           ips, ipe, jps, jpe, kps, kpe,                       &
+                           ids, ide, jds, jde, kds, kde,                       &
+                           ims, ime, jms, jme, kms, kme,                       &
+                           kts, kte,                                           &
+                           imsx,imex,jmsx,jmex,kmsx,kmex,                      &
+                           ipsx,ipex,jpsx,jpex,kpsx,kpex,                      &
+                           imsy,imey,jmsy,jmey,kmsy,kmey,                      &
+                           ipsy,ipey,jpsy,jpey,kpsy,kpey,                      &
+                           grid%num_stoch_levels,grid%num_stoch_levels,        &
+                           grid%num_stoch_levels,grid%num_stoch_levels,        &
+                           config_flags%restart, grid%iseedarr_rand_pert,      &
+                           grid%DX,grid%DY,grid%rand_pert_vertstruc,           &
+                           grid%RAND_PERT,                                     &
+                           grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPT       )
+         enddo
+       ENDIF !rand_perturb_on
+     ENDIF
+
+     ENDIF ! skebs or sppt or rand_perturb
+ 
+     END SUBROUTINE INITIALIZE_STOCH       
 
 !     ------------------------------------------------------------------
 !!******** INITIALIZE STOCHASTIC SCHEMES   ****************************
@@ -242,7 +408,7 @@ contains
       WRITE(*,'(''                                               '')')
       WRITE(*,'('' =============================================='')')
       WRITE(*,'('' >> Initializing Stochastically Perturbed Physics Tendency scheme << '')')
-      WRITE(*,'('' skebs_vertstruc                             '',I10)') skebs_vertstruc
+      WRITE(*,'('' sppt_vertstruc                              '',I10)') skebs_vertstruc
       WRITE(*,'('' Time step: itime_step='',I10)') itime_step
       WRITE(*,'('' Decorrelation time of noise, Tau ='',E12.5)') tau_rand_perturb
       WRITE(*,'('' Autoregressive parameter Phi ='',E12.5)') phi
@@ -258,7 +424,7 @@ contains
       WRITE(*,'(''                                               '')')
       WRITE(*,'('' =============================================='')')
       WRITE(*,'('' >> Initializing random pertubations << '')')
-      WRITE(*,'('' skebs_vertstruc                             '',I10)') skebs_vertstruc
+      WRITE(*,'('' rand_pert_vertstruc                         '',I10)') skebs_vertstruc
       WRITE(*,'('' Time step: itime_step='',I10)') itime_step
       WRITE(*,'('' Decorrelation time of noise, Tau ='',E12.5)') tau_rand_perturb
       WRITE(*,'('' Autoregressive parameter Phi ='',E12.5)') phi
@@ -852,12 +1018,12 @@ contains
 #else
         call do_fftback_along_x(grid%RAND_REAL,grid%RAND_IMAG,                          &
                               ids,ide,jds,jde,                                          & 
-                              imsx,imex,jmsx,jmex,kmsx,min(kmex,grid%num_stoch_levels), & 
-                              ipsx,ipex,jpsx,jpex,kpsx,min(kpex,grid%num_stoch_levels))   
+                              ims,ime,jms,jme,kms,min(kme,grid%num_stoch_levels),       & 
+                              ips,ipe,jps,jpe,kps,min(kpe,grid%num_stoch_levels))   
         call do_fftback_along_y(grid%RAND_REAL,grid%RAND_IMAG,                          & 
                               ids,ide,jds,jde,                                          & 
-                              imsy,imey,jmsy,jmey,kmsy,min(kmey,grid%num_stoch_levels), & 
-                              ipsy,ipey,jpsy,jpey,kpsy,min(kpey,grid%num_stoch_levels))
+                              ims,ime,jms,jme,kms,min(kme,grid%num_stoch_levels),       & 
+                              ips,ipe,jps,jpe,kps,min(kpe,grid%num_stoch_levels))
 #endif
 
 
@@ -1056,12 +1222,17 @@ contains
 
 ! Local
       integer*8          :: fctime
+      integer            :: i 
 
       fctime = config_flags%start_year * ( config_flags%start_month*100+config_flags%start_day) + config_flags%start_hour
 
       iseedarr=0.0
-      iseedarr(1)= iseed1+config_flags%nens*1000000
-      iseedarr(2)= mod(fctime+iseed1*1000000,2)
+      do i = kms,kme-3,4
+         iseedarr(i  )= iseed1+config_flags%nens*1000000
+         iseedarr(i+1)= mod(fctime+iseed1*1000000,19211)
+         iseedarr(i+2)= mod(fctime+iseed1*1000000,71209)
+         iseedarr(i+3)= mod(fctime+iseed1*1000000,11279)
+      enddo
 
       end SUBROUTINE rand_seed
 !     ------------------------------------------------------------------

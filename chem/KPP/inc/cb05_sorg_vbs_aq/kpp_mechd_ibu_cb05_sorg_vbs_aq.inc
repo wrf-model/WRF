@@ -81,21 +81,21 @@ itype = 1
            if (l.gt.1) PMNUM ( 3 ) = PMNUM ( 3 ) &
                                         + max ( chem(i,k,j,l), CMIN)
            l = lptr_anth_aer(1,itype,iphase)
-           if (l.gt.1) PMNUM ( 3 ) = PMNUM ( 3 ) &
+           if (l.gt.1) PMCONC ( 3 ) = PMCONC ( 3 ) &
                                         + max ( chem(i,k,j,l), CMIN)
            l = lptr_seas_aer(1,itype,iphase)
-           if (l.gt.1) PMNUM ( 3 ) = PMNUM ( 3 ) &
+           if (l.gt.1) PMCONC ( 3 ) = PMCONC ( 3 ) &
                                         + max ( chem(i,k,j,l), CMIN)
            l = lptr_soil_aer(1,itype,iphase)
-           if (l.gt.1) PMNUM ( 3 ) = PMNUM ( 3 ) &
+           if (l.gt.1) PMCONC ( 3 ) = PMCONC ( 3 ) &
                                         + max ( chem(i,k,j,l), CMIN)
 !     end do
 !  DRAT = ( DPUP / DPLOW ) ** ( 1.0 / REAL ( NASECT, KIND=sp) )
   DO INASEC = 1, NASECT
-     PMCONC ( INASEC ) = MAX(PMCONC(INASEC),CMIN)
-     PMNUM ( INASEC ) = MAX(PMNUM(INASEC),CMIN)
-     DPCTR ( INASEC ) = MAX(PMDGMIN,(PMCONC(INASEC)/DENSP   &
-                        /PMNUM(INASEC)*1.0E+6               &
+     PMCONC ( INASEC ) = MAX(PMCONC(INASEC)*rho_phy(i,k,j),CMIN)
+     PMNUM ( INASEC ) = MAX(PMNUM(INASEC)*rho_phy(i,k,j),CMIN)
+     DPCTR ( INASEC ) = MAX(PMDGMIN,(6.0*PMCONC(INASEC)/DENSP   &
+                        /PMNUM(INASEC)/PI*1.0E+6               &
                         /exp(4.5*(log(PMSG(INASEC)))**2.0))   &
                         **(1.0/3.0))
 !     DPCTR ( INASEC ) = ( 6.0 * ( PMCONC( INASEC ) / DENSP &

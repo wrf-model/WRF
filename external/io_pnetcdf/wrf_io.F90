@@ -1250,9 +1250,11 @@ SUBROUTINE ext_pnc_open_for_write_begin(FileName,Comm,IOComm,SysDepInfo,DataHand
   CALL mpi_info_set(info,"romio_ds_read","disable", ierr) ; write(0,*)'mpi_info_set read returns ',ierr
 # endif
 
-  write(newFileName, fmt="(2a)") FileName, ".nc"
+
+! Remove the dash/underscore change to filenames for pnetcdf...
+  write(newFileName, fmt="(a)") FileName
   do i = 1, len_trim(newFileName)
-     if(newFileName(i:i) == '-') newFileName(i:i) = '_'
+!     if(newFileName(i:i) == '-') newFileName(i:i) = '_'
      if(newFileName(i:i) == ':') newFileName(i:i) = '_'
   enddo
   stat = NFMPI_CREATE(Comm, newFileName, IOR(NF_CLOBBER, NF_64BIT_OFFSET), info, DH%NCID)

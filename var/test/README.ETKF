@@ -23,7 +23,7 @@ b. Running The ETKF System
 
 A set of initial ensemble members must be prepared before the ETKF application can be started; this ensemble 
 can be obtained from previous ensemble forecast. A tutorial case with a test ensemble can be found at 
-http://www.mmm.ucar.edu/wrf/users/wrfda/download/wrfda_hybrid_etkf_testdata.tar.gz. In this example, the 
+http://www2.mmm.ucar.edu/wrf/users/wrfda/download/wrfda_hybrid_etkf_testdata.tar.gz. In this example, the 
 ensemble forecasts were initialized at 2006102712 and valid 2006102800. ETKF will be performed using the 
 ensemble valid 2006102800 as input. Once you have the initial ensemble, the ensemble perturbations can be 
 updated by following the steps below:

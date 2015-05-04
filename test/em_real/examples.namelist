@@ -416,6 +416,32 @@ Price, J. F., T. B. Sanford, and G. Z. Forristal, 1994: Forced stage response to
  traj_opt                            = 1,
 
 
+** Vertical nesting
+
+The WRF model now supports vertical nesting for a coincident (online)
+model simulation (during a single model run, differing numbers of
+vertical levels may be used per domain).  This is activated with a switch
+to turn on the option (vert_refine_method).  The namelist array eta_levels
+is manually filled in for each domain.  Below is an example for two 
+domains.  
+
+NOTE: The user is restricted to either the RRTM or RRTMG radiation schemes.
+
+ &domains
+ max_dom                             = 2,
+ e_vert                              = 35,    45,
+ eta_levels(1:35)                    = 1., 0.993, 0.983, 0.97, 0.954, 0.934, 0.909, 0.88, 0.8406663, 0.8013327, 
+                                       0.761999, 0.7226653, 0.6525755, 0.5877361, 0.5278192, 0.472514, 
+                                       0.4215262, 0.3745775, 0.3314044, 0.2917579, 0.2554026, 0.2221162, 
+                                       0.1916888, 0.1639222, 0.1386297, 0.1156351, 0.09525016, 0.07733481, 
+                                       0.06158983, 0.04775231, 0.03559115, 0.02490328, 0.0155102, 0.007255059, 0.
+ eta_levels(36:81)                   = 1.0000, 0.9946, 0.9875, 0.9789, 0.9685, 0.9562, 0.9413, 0.9238, 0.9037, 0.8813, 0.8514,
+                                       0.8210, 0.7906, 0.7602, 0.7298, 0.6812, 0.6290, 0.5796, 0.5333, 0.4901, 0.4493, 0.4109,
+                                       0.3746, 0.3412, 0.3098, 0.2802, 0.2524, 0.2267, 0.2028, 0.1803, 0.1593, 0.1398, 0.1219,
+                                       0.1054, 0.0904, 0.0766, 0.0645, 0.0534, 0.0433, 0.0341, 0.0259, 0.0185, 0.0118, 0.0056, 0.    
+ vert_refine_method                  = 0,     2,
+
+
 
 ** Tropopause data level of max winds data, for program real.exe only
 
@@ -473,4 +499,9 @@ specifics of the wind turbine type: wind-turbine-1.tbl
 
 The location of wind turbines are specified as lat lon, and 
 the turbine type: windturbines.txt
+
+** Using stochastic schemes
+&stoch
+ skebs              = 1, 1, 1, 
+ rand_perturb       = 1, 1, 1, 
 

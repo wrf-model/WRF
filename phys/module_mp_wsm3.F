@@ -229,8 +229,11 @@ CONTAINS
 !  Implemented by Song-You Hong (Yonsei Univ.) and Jimy Dudhia (NCAR)
 !             Summer 2003
 !
-!  History :  semi-lagrangian scheme sedimentation(JH), and clean up
-!             Hong, August 2009
+!  further modifications :
+!        semi-lagrangian sedimentation (JH,2010),hong, aug 2009
+!        ==> higher accuracy and efficient at lower resolutions
+!        effective radius of hydrometeors, bae from kiaps, jan 2015
+!        ==> consistency in solar insolation of rrtmg radiation
 !
 !  Reference) Hong, Dudhia, Chen (HDC, 2004) Mon. Wea. Rev.
 !             Dudhia (D89, 1989) J. Atmos. Sci.

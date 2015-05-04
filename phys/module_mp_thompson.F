@@ -36,7 +36,8 @@
 !.. Remaining values should probably be left alone.
 !..
 !..Author: Greg Thompson, NCAR-RAL, gthompsn@ucar.edu, 303-497-2805
-!..Last modified: 12 Dec 2014   Aerosol additions to v3.5.1 code 9/2013
+!..Last modified: 11 Feb 2015   Aerosol additions to v3.5.1 code 9/2013
+!..                 Cloud fraction additions 11/2014 part of pre-v3.7
 !+---+-----------------------------------------------------------------+
 !wrft:model_layer:physics
 !+---+-----------------------------------------------------------------+
@@ -538,9 +539,9 @@
             nwfa2d(i,j) = nwfa2d(i,j)*h_01 * 1.E6
          enddo
          enddo
-      else
-         write(mp_debug,*) '   sample (lower-left) aerosol surface flux emission rate: ', nwfa2d(1,1)
-         CALL wrf_debug(100, mp_debug)
+!     else
+!        write(mp_debug,*) '   sample (lower-left) aerosol surface flux emission rate: ', nwfa2d(1,1)
+!        CALL wrf_debug(100, mp_debug)
       endif
 
       endif
@@ -1323,16 +1324,16 @@
 
          IF (has_reqc.ne.0 .and. has_reqi.ne.0 .and. has_reqs.ne.0) THEN
           do k = kts, kte
-             re_qc1d(k) = 2.49E-6
-             re_qi1d(k) = 9.99E-6
-             re_qs1d(k) = 9.99E-6
+             re_qc1d(k) = 2.51E-6
+             re_qi1d(k) = 10.01E-6
+             re_qs1d(k) = 10.01E-6
           enddo
           call calc_effectRad (t1d, p1d, qv1d, qc1d, nc1d, qi1d, ni1d, qs1d,  &
                       re_qc1d, re_qi1d, re_qs1d, kts, kte)
           do k = kts, kte
-             re_cloud(i,k,j) = MAX(2.49E-6, MIN(re_qc1d(k), 50.E-6))
-             re_ice(i,k,j)   = MAX(9.99E-6, MIN(re_qi1d(k), 125.E-6))
-             re_snow(i,k,j)  = MAX(9.99E-6, MIN(re_qs1d(k), 999.E-6))
+             re_cloud(i,k,j) = MAX( 2.51E-6, MIN(re_qc1d(k), 50.E-6))
+             re_ice(i,k,j)   = MAX(10.01E-6, MIN(re_qi1d(k), 125.E-6))
+             re_snow(i,k,j)  = MAX(10.01E-6, MIN(re_qs1d(k), 999.E-6))
           enddo
          ENDIF
 
@@ -1474,8 +1475,8 @@
       LOGICAL:: melti, no_micro
       LOGICAL, DIMENSION(kts:kte):: L_qc, L_qi, L_qr, L_qs, L_qg
       LOGICAL:: debug_flag
-      INTEGER:: nu_c
       CHARACTER*256:: mp_debug
+      INTEGER:: nu_c
 
 !+---+
 
@@ -2305,9 +2306,8 @@
 
 !..Freezing of aqueous aerosols based on Koop et al (2001, Nature)
           xni = smo0(k)+ni(k) + (pni_rfz(k)+pni_wfz(k)+pni_inu(k))*dtsave
-          if (is_aerosol_aware .AND. homogIce .AND. (xni.le.100.)       &
-     &                .AND. (pni_inu(k).lt.eps) .AND. (temp(k).lt.238)  &
-     &                .AND. (ssati(k).ge.0.4) ) then
+          if (is_aerosol_aware .AND. homogIce .AND. (xni.le.500.E3)     &
+     &                .AND.(temp(k).lt.238).AND.(ssati(k).ge.0.4) ) then
             xnc = iceKoop(temp(k),qv(k),qvs(k),nwfa(k), dtsave)
             pni_iha(k) = xnc*odts
             pri_iha(k) = MIN(DBLE(rate_max), xm0i*0.1*pni_iha(k))
@@ -4836,6 +4836,7 @@
       REAL, PARAMETER:: bbp     = 0.
       REAL, PARAMETER:: y1p     = -35.
       REAL, PARAMETER:: y2p     = -25.
+      REAL, PARAMETER:: rho_not0 = 101325./(287.05*273.15)
 
 !+---+
 
@@ -4870,11 +4871,12 @@
          endif
          mux = hx*p_alpha*n_in*rho
          xni = mux*((6700.*nifa)-200.)/((6700.*5.E5)-200.)
-      elseif (satw.ge.0.985) then
-         nifa_cc = nifa*RHO_NOT*1.E-6
-         xni = (5.94e-5*(-tempc)**3.33)                                 &
-                    * (nifa_cc**((-0.0264*(tempc))+0.0033))
-         xni = xni*rho/RHO_NOT * 1000.
+      elseif (satw.ge.0.985 .and. tempc.gt.HGFR-273.15) then
+         nifa_cc = nifa*RHO_NOT0*1.E-6/rho
+         xni  = 3.*nifa_cc**(1.25)*exp((0.46*(-tempc))-11.6)             !  [DeMott, 2015]
+!        xni = (5.94e-5*(-tempc)**3.33)                                 &
+!                   * (nifa_cc**((-0.0264*(tempc))+0.0033))
+         xni = xni*rho/RHO_NOT0 * 1000.
       endif
 
       iceDeMott = MAX(0., xni)
@@ -4906,7 +4908,7 @@
       J_rate     = 0.01*(10.**log_J_rate)                                ! cm-3 s-1
       prob_h     = MIN(1.-exp(-J_rate*ar_volume*DT), 1.)
       if (prob_h .gt. 0.) then
-         xni     = MIN(prob_h*naero, 250.E3)
+         xni     = MIN(prob_h*naero, 1000.E3)
       endif
 
       iceKoop = MAX(0.0, xni)
@@ -5008,7 +5010,7 @@
             inu_c = MIN(15, NINT(1000.E6/nc(k)) + 2)
          endif
          lamc = (nc(k)*am_r*g_ratio(inu_c)/rc(k))**obmr
-         re_qc1d(k) = MAX(2.49E-6, MIN(SNGL(0.5D0 * DBLE(3.+inu_c)/lamc), 50.E-6))
+         re_qc1d(k) = MAX(2.51E-6, MIN(SNGL(0.5D0 * DBLE(3.+inu_c)/lamc), 50.E-6))
       enddo
       endif
 
@@ -5016,7 +5018,7 @@
       do k = kts, kte
          if (ri(k).le.R1 .or. ni(k).le.R2) CYCLE
          lami = (am_i*cig(2)*oig1*ni(k)/ri(k))**obmi
-         re_qi1d(k) = MAX(9.99E-6, MIN(SNGL(0.5D0 * DBLE(3.+mu_i)/lami), 125.E-6))
+         re_qi1d(k) = MAX(10.01E-6, MIN(SNGL(0.5D0 * DBLE(3.+mu_i)/lami), 125.E-6))
       enddo
       endif
 
@@ -5056,7 +5058,7 @@
      &        + sb(7)*tc0*tc0*cse(1) + sb(8)*tc0*cse(1)*cse(1) &
      &        + sb(9)*tc0*tc0*tc0 + sb(10)*cse(1)*cse(1)*cse(1)
          smoc = a_ * smo2**b_
-         re_qs1d(k) = MAX(9.99E-6, MIN(0.5*(smoc/smob), 999.E-6))
+         re_qs1d(k) = MAX(10.E-6, MIN(0.5*(smoc/smob), 999.E-6))
       enddo
       endif
 

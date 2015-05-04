@@ -1,27 +1,5 @@
 #makefile to build a wrf_io with pnetCDF
 
-FCOPTIM         = -O3
-FCNOOPT         = -O0 -fno-inline -fno-ip
-FCDEBUG         = # -g $(FCNOOPT) -traceback # -fpe0 -check all -ftrapuv -unroll0 -u
-FORMAT_FIXED    = -FI
-FORMAT_FREE     = -FR
-FCSUFFIX        =
-BYTESWAPIO      = -convert big_endian
-FCBASEOPTS_NO_G = -ip -fp-model precise -w -ftz -align all -fno-alias $(FORMAT_FREE) $(BYTESWAPIO)
-FCBASEOPTS      = $(FCBASEOPTS_NO_G) $(FCDEBUG)
-FCFLAGS         = $(FCOPTIM) $(FCBASEOPTS)
-
-NETCDFPATH     = /glade/p/work/huangwei/lib/pnetcdf/1.3.1
-TRADFLAG        = -traditional
-CPP             = /lib/cpp -P
-AR              = ar
-ARFLAGS         = ru
-M4              = m4
-RANLIB          = ranlib
-DM_FC           = mpiifort
-FC              = $(DM_FC)
-FFLAGS		= $(FCDEBUG) $(FCBASEOPTS)
-
 OBJSL   = wrf_io.o field_routines.o module_wrfsi_static.o
 OBJS    = $(OBJSL)
 CODE    = ext_pnc_get_dom_ti.code \

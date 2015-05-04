@@ -1417,8 +1417,8 @@ CONTAINS
                   IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme,&
                   ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte,&
                   LWUPFLX=LWUPFLX,LWUPFLXC=LWUPFLXC,                &
-                  LWDNFLX=LWDNFLX,LWDNFLXC=LWDNFLXC                 &
-                                                                    )
+                  LWDNFLX=LWDNFLX,LWDNFLXC=LWDNFLXC,                &
+                  mp_physics=mp_physics                             )
 
         CASE (RRTMG_LWSCHEME_FAST)
              CALL wrf_debug (100, 'CALL rrtmg_lw')
@@ -1467,7 +1467,6 @@ CONTAINS
 !ccc Added for time-varying trace gases.
                   YR=YR,JULIAN=JULIAN,                              &
 !ccc
-                  mp_physics=mp_physics,                            &
                   IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde,&
                   IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme,&
                   ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte,&
@@ -1828,7 +1827,7 @@ CONTAINS
                      ssaaer3d_sw=ssaaer_sw,                             & ! jararias 2013/11
                      asyaer3d_sw=asyaer_sw,                             & ! jararias 2013/11
                      swddir=swddir,swddni=swddni,swddif=swddif,         & ! jararias 2013/08/10
-                     xcoszen=coszen,julian=julian                       ) ! jararias 2013/08/14
+                     xcoszen=coszen,julian=julian,mp_physics=mp_physics ) ! jararias 2013/08/14
 
              DO j=jts,jte
              DO k=kts,kte
@@ -1888,7 +1887,6 @@ CONTAINS
                      progn=progn,                                      &
 #endif
                      QNDROP3D=qndrop,F_QNDROP=f_qndrop,                &
-                     mp_physics=mp_physics,                            &
                      IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde,&
                      IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme,&
                      ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte,&

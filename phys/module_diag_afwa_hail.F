@@ -124,7 +124,11 @@ CONTAINS
     INTEGER i, j, k, IFOUT, ind(1)
     CHARACTER*256 :: message
 
-    secdel = 1.0 !0.2
+    ! Increasing internal time step from 1 to 5 seconds does not appear
+    ! to hinder the final output but does cut down on the processing
+    ! load by quite a bit according to RAS. -GAC 20150311
+    !secdel = 1.0 !0.2
+    secdel = 5.0
     g=9.81
     r_d = 287.
             

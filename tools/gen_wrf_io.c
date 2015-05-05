@@ -230,12 +230,7 @@ if ( sw_new_bdys && ! sw_new_with_old_bdys ) { /* 20070207 */
             } else {
               fprintf(fp,"                       WRF_%s             , &  ! FieldType \n" , p->members->type->name ) ;
             }
-#ifdef PIO
 fprintf(fp,"          grid , &  ! grid\n") ;
-#else
-fprintf(fp,"          grid%%communicator  , &  ! Comm\n") ;
-fprintf(fp,"          grid%%iocommunicator  , &  ! Comm\n") ;
-#endif
 fprintf(fp,"          grid%%domdesc       , &  ! Comm\n") ;
 fprintf(fp,"          grid%%bdy_mask       , &  ! bdy_mask\n") ;
             if ( sw_io == GEN_OUTPUT ) {
@@ -416,12 +411,7 @@ fprintf(fp, "ENDDO\n") ;
             } else {
               fprintf(fp,"                       WRF_%s             , &  ! FieldType \n" , p->type->name ) ;
             }
-#ifdef PIO
             fprintf(fp,"                       grid , &  ! grid\n") ;
-#else
-            fprintf(fp,"                       grid%%communicator , &  ! Comm\n") ;
-            fprintf(fp,"                       grid%%iocommunicator , &  ! Comm\n") ;
-#endif
             fprintf(fp,"                       grid%%domdesc      , &  ! Comm\n") ;
             fprintf(fp,"                       grid%%bdy_mask     , &  ! bdy_mask\n" ) ;
             fprintf(fp,"                       '%s'               , &  ! MemoryOrder\n",memord ) ;
@@ -470,12 +460,7 @@ fprintf(fp, "ENDDO\n") ;
             } else {
               fprintf(fp,"                       WRF_%s             , &  ! FieldType \n" , p->type->name ) ;
             }
-#ifdef PIO
             fprintf(fp,"                       grid , &  ! grid\n") ;
-#else
-            fprintf(fp,"                       grid%%communicator , &  ! Comm\n") ;
-            fprintf(fp,"                       grid%%iocommunicator , &  ! Comm\n") ;
-#endif
             fprintf(fp,"                       grid%%domdesc      , &  ! Comm\n") ;
             fprintf(fp,"                       grid%%bdy_mask     , &  ! bdy_mask\n" ) ;
             fprintf(fp,"                       dryrun             , &  ! flag\n" ) ;

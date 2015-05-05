@@ -978,9 +978,11 @@ CONTAINS
  REAL, DIMENSION (2,2,2) :: RADFAC
 
  INTEGER, DIMENSION (24) :: IVUSGS
+ INTEGER, DIMENSION (20) :: IVMODIS
  REAL, DIMENSION (13)    :: TD_DEPTH
  INTEGER :: sw_physics  !choice of SW radiation scheme
  CHARACTER(LEN=*), INTENT(IN ) :: MMINLU  !type of landuse/vegetation map
+ CHARACTER*256 :: message
 !snow
  REAL, DIMENSION (N2)     :: SS,SSO,POROSITY,H,HO,BI,BIO,DZ,DZO,BW,BWO,BL
  REAL, DIMENSION (N2)     :: BLO,TSSN,TSSNO,W,WO,WF,FI,FIO, FL,FLO,DMLT
@@ -994,16 +996,24 @@ CONTAINS
       DATA TD_DEPTH/1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.0, 1.0, 1.0     &
      &                                     , 0.5, 0.5, 1.5, 1.5/
 !
-! Check vegetation/landuse map choice
-! If using USGS, translate to SSIB types (IVUSGS)
+! Check vegetation/land use map choice
+! USGS-SSIB vegetation type conversion
      DATA IVUSGS / 7, 12, 12, 12, 12, 12,  7,  9,            &
                    8,  6,  2,  5,  1,  4,  3,  0,            &
                   10,  3, 11, 10, 10, 10, 10, 13/
-
+! MODIS-SSIB vegetation type conversion  (fds Jan/2015)
+     DATA IVMODIS / 4,  1,  5,  2,  3,  8,  9,  6,           &
+                    6,  7,  7, 12, 11, 12, 13, 11,           &
+                    0, 10, 10, 10/
+! Converts vegetation/land use types  
   IF(MMINLU.EQ.'SSIB') THEN
       ITYPE=IVGTYP
   ELSEIF(MMINLU.EQ.'USGS') THEN
       ITYPE=IVUSGS(IVGTYP)
+  ELSEIF(MMINLU.EQ.'MODIS') THEN
+      ITYPE=IVMODIS(IVGTYP)
+  ELSE IF (MMINLU .EQ. 'MODIFIED_IGBP_MODIS_NOAH') THEN
+      ITYPE=IVMODIS(IVGTYP)
   ELSE
      CALL wrf_error_fatal ( 'SSIB LSM only works with SSIB or USGS vegetation (landuse) map' )
   ENDIF
@@ -1200,9 +1210,19 @@ CONTAINS
                  RSTPAR, CTLPA)
 !     
       RSTUN = RST(1)
+
+!***************************************************************************************
+! For water balance check later
+      TOTWB = WWW(1) * POROS * ZDEPTH(1)                                  &
+            + WWW(2) * POROS * ZDEPTH(2)                                  &
+            + WWW(3) * POROS * ZDEPTH(3)                                  &
+            + CAPAC(1) + CAPAC(2)
+!***************************************************************************************
+!
       CALL INTERCS (DTT,VCOVER,ZLT,TM,TC,TGS,CAPAC,WWW,PPC,PPL,           &
                     ROFF,ZDEPTH,POROS,CCX,CG,SATCO,SATCAP,SPWET,          &
                  EXTK,ISNOW,P0,CSOIL,dzsoil,CHISL,SMELT)
+!
       CALL SET0(TSSNO,BWO,BLO,BIO,HO,FLO,FIO,WO,DZO,                      &
                       SSO,CTO,BTO,DMLTO,WF,DHP)
 !                                                                       
@@ -1286,6 +1306,28 @@ CONTAINS
       END IF
       ROFF=ROFF+SNROFF
 !
+!***************************************************************************************
+! Check water and energy balances (fds Jan/2015)
+      ENDWB = WWW(1) * POROS * ZDEPTH(1)        &
+            + WWW(2) * POROS * ZDEPTH(2)        &
+            + WWW(3) * POROS * ZDEPTH(3)        &
+            + CAPAC(1) + CAPAC(2) - (PPC+PPL)/1000. + ETMASS/1000. + ROFF
+      ERRW = TOTWB - ENDWB
+      IF(ABS(ERRW) .GT. 0.0001) THEN
+         WRITE(message,*) 'SSIB WATER BALANCE WARNING: ',ERRW
+         CALL wrf_message ( message )
+      ENDIF
+!
+      ZLHS = RADT(1) + RADT(2) - CHF - SHF
+      ZRHS = HFLUX + (ECT + ECI + EGT + EGI + EGS)/DTT
+      ERRH = ZLHS - ZRHS
+      IF(ABS(ERRH) .GT. 1.) THEN
+         WRITE(message,*) 'SSIB ENERGY BALANCE WARNING: ',ERRH
+         CALL wrf_message ( message )
+      ENDIF
+!***************************************************************************************
+
+
 !------------------------------------------------------------------------
       SOILM=(WWW(1)*ZDEPTH(1)+WWW(2)*ZDEPTH(2)+WWW(3)*ZDEPTH(3))*POROS
 !------------------------------------------------------------------------

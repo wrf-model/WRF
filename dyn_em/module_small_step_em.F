@@ -22,7 +22,7 @@ SUBROUTINE small_step_prep( u_1, u_2, v_1, v_2, w_1, w_2, &
                             u_save, v_save, w_save,       &
                             t_save, ph_save, mu_save,     &
                             ww, ww_save,                  &
-                            dnw, c2a, pb, p, alt,         &
+                            c2a, pb, p, alt,              &
                             msfux, msfuy, msfvx,          &
                             msfvx_inv,                    &
                             msfvy, msftx, msfty,          &
@@ -88,8 +88,6 @@ SUBROUTINE small_step_prep( u_1, u_2, v_1, v_2, w_1, w_2, &
                                                                mudf
 
   REAL, DIMENSION(ims:ime, jms:jme)         , INTENT(  OUT) :: mu_save
-
-  REAL, DIMENSION(kms:kme, jms:jme)         , INTENT(IN   ) :: dnw
 
   REAL, INTENT(IN) :: rdx,rdy
 

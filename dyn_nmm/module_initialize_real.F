@@ -162,6 +162,8 @@ CONTAINS
 
         INTEGER:: KHH,KVH,JAM,JA, IHL, IHH, L
         INTEGER:: II,JJ,ISRCH,ISUM,ITER,Ilook,Jlook
+        REAL                     :: NDLMD,NDPHD,NWBD,NSBD
+        INTEGER                  :: NIDE,NJDE
 
         REAL, PARAMETER:: DTR=0.01745329
         REAL, PARAMETER:: W_NMM=0.08
@@ -195,9 +197,6 @@ CONTAINS
 !   gopal's doing for ocean coupling
 !============================================================================
 
- REAL, DIMENSION(:,:),    ALLOCATABLE :: NHLAT,NHLON,NVLAT,NVLON,HRES_SM
- REAL                                 :: NDLMD,NDPHD,NWBD,NSBD
- INTEGER                              :: NIDE,NJDE,ILOC,JLOC
 
       INTEGER fid, ierr, nprocs
       CHARACTER*255 f65name, SysString
@@ -2030,81 +2029,28 @@ CONTAINS
      NDPHD=grid%dphd/3.
      NIDE=3*(IDE-1)-2
      NJDE=3*(JDE-1)-2
-     ILOC=1
-     JLOC=1
      NWBD= WBD  ! + (ILOC -1)*2.*grid%dlmd + MOD(JLOC+1,2)*grid%dlmd
      NSBD= SBD  ! + (JLOC -1)*grid%dphd
 
-     ALLOCATE (NHLAT(NIDE,NJDE))
-     ALLOCATE (NHLON(NIDE,NJDE))
-     ALLOCATE (NVLAT(NIDE,NJDE))
-     ALLOCATE (NVLON(NIDE,NJDE))
-     ALLOCATE (HRES_SM(NIDE,NJDE))
 
+
+
+#ifdef HWRF     
+    CALL EARTH_LATLON ( grid%HLAT,grid%HLON,grid%VLAT,grid%VLON,  & !output
+                        grid%DLMD,grid%DPHD,WBD,SBD,    & !inputs 
+                        tph0d,tlm0d,             &
+                        IDS,IDE,JDS,JDE,KDS,KDE, &
+                        IMS,IME,JMS,JME,KMS,KME, &
+                        ITS,ITE,JTS,JTE,KTS,KTE  )
 #if defined(DM_PARALLEL)
-       if(wrf_dm_on_monitor()) then
-          ! Only the monitor process does the actual work (kinda
-          ! stupid; should be parallelized, but it's better than
-          ! writing garbage like it did before with >1 process)
-
-          ! Get high-res lat & lon:
-     CALL EARTH_LATLON_hwrf (  NHLAT,NHLON,NVLAT,NVLON,  &    ! rotated lat,lon at H and V points
-                          NDLMD,NDPHD,NWBD,NSBD,    &
-                          tph0d,tlm0d,              &
-                          1,NIDE,1,NJDE,1,1,        &
-                          1,NIDE,1,NJDE,1,1,        &
-                          1,NIDE,1,NJDE,1,1         )
-
-          ! Interpolate landmask to high-res grid:
-          CALL G2T2H_hwrf ( SM_G,HRES_SM,   & ! output grid index and weights
-                  NHLAT,NHLON,                 & ! target (hres) input lat lon in degrees
-                  grid%DLMD,grid%DPHD,WBD,SBD,           & ! parent res, west and south boundaries
-                  tph0d,tlm0d,                 & ! parent central lat,lon, all in degrees
-               IDE,JDE,IDS,IDE,JDS,JDE,     & ! parent imax and jmax, ime,jme
-                  1,NIDE,1,NJDE,1,1,           &
-                  1,NIDE,1,NJDE,1,1,           &
-                  1,NIDE,1,NJDE,1,1            )
-
-          ! We're done with the low-res sm grid now:
-          deallocate(SM_G)
-
-          ! Write out high-res grid for coupler:
-         WRITE(65)NHLAT(1:NIDE,1:NJDE)
-         WRITE(65)NHLON(1:NIDE,1:NJDE)
-         WRITE(65)NVLAT(1:NIDE,1:NJDE)
-         WRITE(65)NVLON(1:NIDE,1:NJDE)
-         WRITE(65)HRES_SM(1:NIDE,1:NJDE)
-      endif
-#else
-       ! This code is the same as above, but for the non-mpi version:
-       CALL EARTH_LATLON_hwrf (  NHLAT,NHLON,NVLAT,NVLON,  &    ! rotated lat,lon at H and V points
-            NDLMD,NDPHD,NWBD,NSBD,    &
-            tph0d,tlm0d,              &
-            1,NIDE,1,NJDE,1,1,        &
-            1,NIDE,1,NJDE,1,1,        &
-            1,NIDE,1,NJDE,1,1         )
-       CALL G2T2H_hwrf ( grid%SM,HRES_SM,                  & ! output grid index and weights
-            NHLAT,NHLON,                 & ! target (hres) input lat lon in degrees
-            grid%DLMD,grid%DPHD,WBD,SBD,           & ! parent res, west and south boundaries
-            tph0d,tlm0d,                 & ! parent central lat,lon, all in degrees
-            IDE,JDE,IMS,IME,JMS,JME,     & ! parent imax and jmax, ime,jme
-            1,NIDE,1,NJDE,1,1,           &
-            1,NIDE,1,NJDE,1,1,           &
-            1,NIDE,1,NJDE,1,1            )
-
-         WRITE(65)NHLAT(1:NIDE,1:NJDE)
-         WRITE(65)NHLON(1:NIDE,1:NJDE)
-         WRITE(65)NVLAT(1:NIDE,1:NJDE)
-         WRITE(65)NVLON(1:NIDE,1:NJDE)
-         WRITE(65)HRES_SM(1:NIDE,1:NJDE)
+       master65: if(wrf_dm_on_monitor()) then
 #endif
-
-     DEALLOCATE (NHLAT)
-     DEALLOCATE (NHLON)
-     DEALLOCATE (NVLAT)
-     DEALLOCATE (NVLON)
-     DEALLOCATE (HRES_SM)
-
+          call make_coupler_fort65(grid,NDLMD,NDPHD,NWBD,NSBD,&
+               NIDE,NJDE,IDE-1,JDE-1,tph0d,tlm0d)
+#if defined(DM_PARALLEL)
+       endif master65
+#endif
+#endif
      endif                 !Kwon's doing
 
 !==================================================================================
@@ -2117,6 +2063,156 @@ CONTAINS
       RETURN
 
    END SUBROUTINE init_domain_nmm
+
+  real function greatarc(lat1,lon1,lat2,lon2)
+    ! greatarc -- gets the great arc distance (along-Earth distance)
+    !       between two points.  The earth radius used in the
+    !       calculation is the average of the radius at the two
+    !       points.
+    !     lat1,lon1 -- the first point's latitude
+    !     lat2,lon2 -- the second point's latitude
+    !     returns -- the distance in meters. 
+    implicit none
+    real, parameter :: Requator   = 6378137.0000
+    real, parameter :: pi      = 3.141592653589793238
+    real, parameter :: flattening = 1/298.257223563
+    real, parameter :: DEGRAD  = pi/180
+    real, intent(in) :: lat1,lon1, lat2,lon2
+    real :: rlat1,rlon1, rlat2,rlon2
+    real :: Rearth1,Rearth2
+    real, parameter :: deg2rad=DEGRAD
+    real, parameter :: flattening_inv=1/flattening
+
+    rlat1=lat1*deg2rad  ;  rlon1=lon1*deg2rad
+    rlat2=lat2*deg2rad  ;  rlon2=lon2*deg2rad
+
+    Rearth1=Requator*(1-sin(rlat1)**2/flattening_inv)
+    Rearth2=Requator*(1-sin(rlat2)**2/flattening_inv)
+
+    greatarc=(Rearth1+Rearth2)*asin(min(1.0,sqrt( &
+         sin((rlat1-rlat2)/2)**2+ &
+         cos(rlat1)*cos(rlat2)*sin((rlon1-rlon2)/2)**2)))
+  end function greatarc
+
+   SUBROUTINE make_coupler_fort65(grid,&
+        NDLMD,NDPHD,NWBD,NSBD,&
+        NIDE,NJDE,PIDE,PJDE,tph0d,tlm0d)
+     implicit none
+     type(domain), intent(in) :: grid
+     REAL, DIMENSION(:,:),    ALLOCATABLE :: NHLAT,NHLON,NVLAT,NVLON,HRES_SM,&
+          HBWGT1, HBWGT2, HBWGT3, HBWGT4
+     INTEGER, DIMENSION(:,:), ALLOCATABLE :: IIH, JJH, HNEAR_I,HNEAR_J,CENFLAG
+     REAL, INTENT(IN)                     :: NDLMD,NDPHD,NWBD,NSBD,tph0d,tlm0d
+     INTEGER, INTENT(IN)                  :: NIDE,NJDE,PIDE,PJDE
+     INTEGER :: ci,cj, ni,nj, bad
+     character(len=255) :: message
+     INTEGER :: count, bigcount, noncount
+     REAL :: dlon, mindist,maxdist,dist,maxweight
+
+     allocate(NHLAT(nide,njde),NHLON(nide,njde),NVLAT(nide,njde))
+     allocate(NVLON(nide,njde),HRES_SM(nide,njde))
+     allocate(IIH(nide,njde),JJH(nide,njde),HBWGT1(nide,njde))
+     allocate(HBWGT2(nide,njde),HBWGT3(nide,njde),HBWGT4(nide,njde))
+     allocate(HNEAR_I(nide,njde),HNEAR_J(nide,njde),CENFLAG(nide,njde))
+
+     CALL EARTH_LATLON (  NHLAT,NHLON,NVLAT,NVLON,  & ! rotated lat,lon at H&V
+                          NDLMD,NDPHD,NWBD,NSBD,    & ! resolution & SW corner
+                          tph0d,tlm0d,              & ! projection center
+                          1,NIDE+1,1,NJDE+1,1,1,    & ! WRF domain size
+                          1,NIDE,1,NJDE,1,1,        & ! memory size
+                          1,NIDE,1,NJDE,1,1         ) ! patch size
+
+     HBWGT1=999
+     HBWGT2=999
+     HBWGT3=999
+     HBWGT4=999
+     CALL G2T2H_new(   IIH,JJH,       & ! output grid index in parent grid
+                       HBWGT1,HBWGT2, & ! output weights in terms of
+                       HBWGT3,HBWGT4, & ! parent grid
+                       1,1,      & ! nest start I, J in parent domain
+                       3,        & ! Ratio of parent and child grid (
+                                   ! always = 3 for NMM)
+                       1,NIDE+1,1,NJDE+1,1,1,    & ! WRF domain size
+                       1,NIDE,1,NJDE,1,1,        & ! memory size
+                       1,NIDE,1,NJDE,1,1         ) ! patch size
+
+     call INIT_HNEAR(IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,HNEAR_I,HNEAR_J,&
+                       1,NIDE+1,1,NJDE+1,1,1,    & ! WRF domain size
+                       1,NIDE,1,NJDE,1,1,        & ! memory size
+                       1,NIDE,1,NJDE,1,1         ) ! patch size
+
+     ! Land sea mask nearest neighbor interpolation:
+     bad=0
+     maxdist=-1e9
+     mindist=1e9
+     noncount=0
+     bigcount=0
+     count=0
+     do nj=1,njde
+        do ni=1,nide
+           ci=HNEAR_I(ni,nj)
+           cj=HNEAR_J(ni,nj)
+           if(ci<1 .or. ci>pide .or. cj<1 .or. cj>pjde) then
+33            format('ERROR: Invalid HNEAR nest ',I0,',',I0,' parent ',&
+                   I0,',',I0,' outside parent bounds ',I0,',',I0)
+              write(message,33) ni,nj,ci,cj,pide,pjde
+              call wrf_message(trim(message))
+              bad=bad+1
+           endif
+           HRES_SM(ni,nj)=grid%SM(ci,cj)
+           maxweight=max(HBWGT1(ni,nj),HBWGT2(ni,nj),HBWGT3(ni,nj),HBWGT4(ni,nj))
+           if(maxweight>0.9999 .and. maxweight<1.03) then
+              cenflag(ni,nj)=1
+              dist=greatarc(grid%HLAT(ci,cj),grid%HLON(ci,cj),&
+                   NHLAT(ni,nj),NHLON(ni,nj))
+              if(dist>100) then
+                 bigcount=bigcount+1
+              endif
+              mindist=min(dist,mindist)
+              maxdist=max(dist,maxdist)
+              count=count+1
+           elseif(maxweight>=1.03) then
+              call wrf_error_fatal('Big weights.')
+           elseif(maxweight<0.03) then
+              call wrf_error_fatal('Zero weights.')
+           else
+              noncount=noncount+1
+              cenflag(ni,nj)=0
+           endif
+!             dlon=mod(3600.+180.+NHLON(ni,nj)-grid%HLON(ci,cj),360.)-180
+!            if(dlon<0.004 .and. dlon>1e-3) then
+! 44            format('Big nest-parent longitude difference: lat,lon at ',&
+!                    'Parent ',I0,',',I0,' ',F0.7,',',F0.7, &
+!                    ' Nest ',I0,',',I0,' ',F0.7,',',F0.7)
+!               write(message,44) ci,cj,grid%HLAT(ci,cj),grid%HLON(ci,cj), &
+!                                 ni,nj,NHLAT(ni,nj),NHLON(ni,nj)
+!               call wrf_message(trim(message))
+!               !bad=bad+1
+!            endif
+        enddo
+     enddo
+48   format('Dist min=',F0.7,' max=',F0.7,' count of >100m = ',I0,'/',I0,' skipping ',I0)
+     write(message,48) mindist,maxdist,bigcount,count,noncount
+     call wrf_message(message)
+     if(bad>0) then
+55      format('Errors in coupler prep (bad count = ',I0,').  Aborting.')
+        write(message,55) bad
+        call wrf_error_fatal(message)
+     endif
+     
+     WRITE(65)NHLAT(1:NIDE,1:NJDE)
+     WRITE(65)NHLON(1:NIDE,1:NJDE)
+     WRITE(65)NVLAT(1:NIDE,1:NJDE)
+     WRITE(65)NVLON(1:NIDE,1:NJDE)
+     WRITE(65)HRES_SM(1:NIDE,1:NJDE)
+     !WRITE(65)HNEAR_I(1:NIDE,1:NJDE)
+     !WRITE(65)HNEAR_J(1:NIDE,1:NJDE)
+     !WRITE(65)CENFLAG(1:NIDE,1:NJDE)
+
+     deallocate(NHLAT,NHLON,NVLAT,NVLON,HRES_SM,IIH,JJH)
+     deallocate(HBWGT1,HBWGT2,HBWGT3,HBWGT4,HNEAR_I,HNEAR_J)
+
+   END SUBROUTINE make_coupler_fort65
 
 !------------------------------------------------------
 
@@ -4582,657 +4678,4 @@ CONTAINS
 
 !---------------------------------------------------------------------
 
-#ifdef HWRF
-! compute earth lat-lons for before interpolations. This is gopal's doing for ocean coupling
-!============================================================================================
-
-SUBROUTINE EARTH_LATLON_hwrf ( HLAT,HLON,VLAT,VLON,     & !Earth lat,lon at H and V points
-                          DLMD1,DPHD1,WBD1,SBD1,   & !input res,west & south boundaries,
-                          CENTRAL_LAT,CENTRAL_LON, & ! central lat,lon, all in degrees
-                          IDS,IDE,JDS,JDE,KDS,KDE, &
-                          IMS,IME,JMS,JME,KMS,KME, &
-                          ITS,ITE,JTS,JTE,KTS,KTE  )
-!============================================================================
-!
- IMPLICIT NONE
- INTEGER,    INTENT(IN   )                            :: IDS,IDE,JDS,JDE,KDS,KDE
- INTEGER,    INTENT(IN   )                            :: IMS,IME,JMS,JME,KMS,KME
- INTEGER,    INTENT(IN   )                            :: ITS,ITE,JTS,JTE,KTS,KTE
- REAL,       INTENT(IN   )                            :: DLMD1,DPHD1,WBD1,SBD1
- REAL,       INTENT(IN   )                            :: CENTRAL_LAT,CENTRAL_LON
- REAL, DIMENSION(IMS:IME,JMS:JME), INTENT(OUT)        :: HLAT,HLON,VLAT,VLON
-
-! local
-
- INTEGER,PARAMETER                           :: KNUM=SELECTED_REAL_KIND(13)
- INTEGER                                     :: I,J
- REAL(KIND=KNUM)                             :: WB,SB,DLM,DPH,TPH0,STPH0,CTPH0
- REAL(KIND=KNUM)                             :: TDLM,TDPH,TLMH,TLMV,TLMH0,TLMV0,TPHH,TPHV,DTR
- REAL(KIND=KNUM)                             :: STPH,CTPH,STPV,CTPV,PI_2
- REAL(KIND=KNUM)                             :: SPHH,CLMH,FACTH,SPHV,CLMV,FACTV
- REAL(KIND=KNUM), DIMENSION(IMS:IME,JMS:JME) :: GLATH,GLONH,GLATV,GLONV
-!-------------------------------------------------------------------------
-
-!
-      PI_2 = ACOS(0.)
-      DTR  = PI_2/90.
-      WB   = WBD1 * DTR                 ! WB:   western boundary in radians
-      SB   = SBD1 * DTR                 ! SB:   southern boundary in radians
-      DLM  = DLMD1 * DTR                ! DLM:  dlamda in radians
-      DPH  = DPHD1 * DTR                ! DPH:  dphi   in radians
-      TDLM = DLM + DLM                  ! TDLM: 2.0*dlamda
-      TDPH = DPH + DPH                  ! TDPH: 2.0*DPH
-
-!     For earth lat lon only
-
-      TPH0  = CENTRAL_LAT*DTR                ! TPH0: central lat in radians
-      STPH0 = SIN(TPH0)
-      CTPH0 = COS(TPH0)
-
-      DO J = JTS,MIN(JTE,JDE) !-1)                 ! H./    This loop takes care of zig-zag
-!                                               !   \.H  starting points along j
-         TLMH0 = WB - TDLM + MOD(J+1,2) * DLM   !  ./    TLMH (rotated lats at H points)
-         TLMV0 = WB - TDLM + MOD(J,2) * DLM     !  H     (//ly for V points)
-         TPHH = SB + (J-1)*DPH                  !   TPHH (rotated lons at H points) are simple trans.
-         TPHV = TPHH                            !   TPHV (rotated lons at V points) are simple trans.
-         STPH = SIN(TPHH)
-         CTPH = COS(TPHH)
-         STPV = SIN(TPHV)
-         CTPV = COS(TPHV)
-
-                                                              !   .H
-         DO I = ITS,MIN(ITE,IDE) !-1)                         !  /
-           TLMH = TLMH0 + I*TDLM                              !  \.H   .U   .H
-!                                                             !H./ ----><----
-           SPHH = CTPH0 * STPH + STPH0 * CTPH * COS(TLMH)     !     DLM + DLM
-           GLATH(I,J)=ASIN(SPHH)                              ! GLATH: Earth Lat in radians
-           CLMH = CTPH*COS(TLMH)/(COS(GLATH(I,J))*CTPH0) &
-                - TAN(GLATH(I,J))*TAN(TPH0)
-           IF(CLMH .GT. 1.) CLMH = 1.0
-           IF(CLMH .LT. -1.) CLMH = -1.0
-           FACTH = 1.
-           IF(TLMH .GT. 0.) FACTH = -1.
-           GLONH(I,J) = -CENTRAL_LON*DTR + FACTH*ACOS(CLMH)
-
-         ENDDO
-
-         DO I = ITS,MIN(ITE,IDE) !-1)
-           TLMV = TLMV0 + I*TDLM
-           SPHV = CTPH0 * STPV + STPH0 * CTPV * COS(TLMV)
-           GLATV(I,J) = ASIN(SPHV)
-           CLMV = CTPV*COS(TLMV)/(COS(GLATV(I,J))*CTPH0) &
-                - TAN(GLATV(I,J))*TAN(TPH0)
-           IF(CLMV .GT. 1.) CLMV = 1.
-           IF(CLMV .LT. -1.) CLMV = -1.
-           FACTV = 1.
-           IF(TLMV .GT. 0.) FACTV = -1.
-           GLONV(I,J) = -CENTRAL_LON*DTR + FACTV*ACOS(CLMV)
-
-         ENDDO
-
-      ENDDO
-
-!     Conversion to degrees (may not be required, eventually)
-
-      DO J = JTS, MIN(JTE,JDE)  !-1)
-       DO I = ITS, MIN(ITE,IDE) !-1)
-          HLAT(I,J) = GLATH(I,J) / DTR
-          HLON(I,J)= -GLONH(I,J)/DTR
-          IF(HLON(I,J) .GT. 180.) HLON(I,J) = HLON(I,J)  - 360.
-          IF(HLON(I,J) .LT. -180.) HLON(I,J) = HLON(I,J) + 360.
-!
-          VLAT(I,J) = GLATV(I,J) / DTR
-          VLON(I,J) = -GLONV(I,J) / DTR
-          IF(VLON(I,J) .GT. 180.) VLON(I,J) = VLON(I,J)  - 360.
-          IF(VLON(I,J) .LT. -180.) VLON(I,J) = VLON(I,J) + 360.
-
-       ENDDO
-      ENDDO
-
-END SUBROUTINE EARTH_LATLON_hwrf
-
-  SUBROUTINE G2T2H_hwrf( SM,HRES_SM,                          & ! output grid index and weights
-                    HLAT,HLON,                           & ! target (nest) input lat lon in degrees
-                    DLMD1,DPHD1,WBD1,SBD1,               & ! parent res, west and south boundaries
-                    CENTRAL_LAT,CENTRAL_LON,             & ! parent central lat,lon, all in degrees
-                    P_IDE,P_JDE,P_IMS,P_IME,P_JMS,P_JME, & ! parent imax and jmax
-                    IDS,IDE,JDS,JDE,KDS,KDE,             & ! target (nest) dIMEnsions
-                    IMS,IME,JMS,JME,KMS,KME,             &
-                    ITS,ITE,JTS,JTE,KTS,KTE              )
-
-!
-!***  Tom Black   - Initial Version
-!***  Gopal       - Revised Version for WRF (includes coincident grid points)
-!***
-!***  GIVEN PARENT CENTRAL LAT-LONS, RESOLUTION AND WESTERN AND SOUTHERN BOUNDARY,
-!***  AND THE NESTED GRID LAT-LONS AT H POINTS, THIS ROUTINE FIRST LOCATES THE
-!***  INDICES,IIH,JJH, OF THE PARENT DOMAIN'S H POINTS THAT LIES CLOSEST TO THE
-!***  h POINTS OF THE NESTED DOMAIN
-!
-!============================================================================
-!
- IMPLICIT NONE
- INTEGER,    INTENT(IN   )                            :: IDS,IDE,JDS,JDE,KDS,KDE
- INTEGER,    INTENT(IN   )                            :: IMS,IME,JMS,JME,KMS,KME
- INTEGER,    INTENT(IN   )                            :: ITS,ITE,JTS,JTE,KTS,KTE
- INTEGER,    INTENT(IN   )                            :: P_IDE,P_JDE,P_IMS,P_IME,P_JMS,P_JME
- REAL,       INTENT(IN   )                            :: DLMD1,DPHD1,WBD1,SBD1
- REAL,       INTENT(IN   )                            :: CENTRAL_LAT,CENTRAL_LON
- REAL,    DIMENSION(P_IMS:P_IME,P_JMS:P_JME), INTENT(IN)   :: SM
- REAL,    DIMENSION(IMS:IME,JMS:JME),    INTENT(IN)   :: HLAT,HLON
- REAL,    DIMENSION(IMS:IME,JMS:JME),    INTENT(OUT)  :: HRES_SM
-
-! local
-
- INTEGER,PARAMETER :: KNUM=SELECTED_REAL_KIND(13)
- INTEGER           :: IMT,JMT,N2R,MK,K,I,J,DSLP0,DSLOPE,N
- INTEGER           :: NROW,NCOL,KROWS
- REAL(KIND=KNUM)   :: X,Y,Z,TLAT,TLON
- REAL(KIND=KNUM)   :: PI_2,D2R,R2D,GLAT,GLON,DPH,DLM,TPH0,TLM0,WB,SB
- REAL(KIND=KNUM)   :: ROW,COL,SLP0,TLATHC,TLONHC,DENOM,SLOPE
- REAL(KIND=KNUM)   :: TLAT1,TLAT2,TLON1,TLON2,DLM1,DLM2,DLM3,DLM4,D1,D2
- REAL(KIND=KNUM)   :: DLA1,DLA2,DLA3,DLA4,S1,R1,DS1,AN1,AN2,AN3                    ! Q
- REAL(KIND=KNUM)   :: DL1,DL2,DL3,DL4,DL1I,DL2I,DL3I,DL4I,SUMDL,TLONO,TLATO
- REAL(KIND=KNUM)   :: DTEMP
- REAL   , DIMENSION(IMS:IME,JMS:JME)    :: TLATHX,TLONHX
- INTEGER, DIMENSION(IMS:IME,JMS:JME)    :: KOUTB
- REAL     SUM,AMAXVAL
- REAL,    DIMENSION (4, ims:ime, jms:jme ) :: NBWGT
- LOGICAL  FLIP
- REAL,    DIMENSION(IMS:IME,JMS:JME)  :: HBWGT1,HBWGT2,HBWGT3,HBWGT4
- INTEGER, DIMENSION(IMS:IME,JMS:JME)  :: IIH,JJH
-!-------------------------------------------------------------------------------
-
-  IMT=2*P_IDE-2             ! parent i dIMEnsions
-  JMT=P_JDE/2               ! parent j dIMEnsions
-  PI_2=ACOS(0.)
-  D2R=PI_2/90.
-  R2D=1./D2R
-  DPH=DPHD1*D2R
-  DLM=DLMD1*D2R
-  TPH0= CENTRAL_LAT*D2R
-  TLM0=-CENTRAL_LON*D2R        ! NOTE THE MINUS HERE
-  WB=WBD1*D2R                   ! CONVERT NESTED GRID H POINTS FROM GEODETIC
-  SB=SBD1*D2R
-  SLP0=DPHD1/DLMD1
-  DSLP0=NINT(R2D*ATAN(SLP0))
-  DS1=SQRT(DPH*DPH+DLM*DLM)    ! Q
-  AN1=ASIN(DLM/DS1)
-  AN2=ASIN(DPH/DS1)
-
-
-  DO J =  JTS,MIN(JTE,JDE)  !-1)
-    DO I = ITS,MIN(ITE,IDE) !-1)
-
-!***
-!***  LOCATE TARGET h POINTS (HLAT AND HLON) ON THE PARENT DOMAIN AND
-!***  DETERMINE THE INDICES IN TERMS OF THE PARENT DOMAIN. FIRST
-!***  CONVERT NESTED GRID h POINTS FROM GEODETIC TO TRANSFORMED
-!***  COORDINATE ON THE PARENT GRID
-!
-
-      GLAT=HLAT(I,J)*D2R
-      GLON= (360. - HLON(I,J))*D2R
-      X=COS(TPH0)*COS(GLAT)*COS(GLON-TLM0)+SIN(TPH0)*SIN(GLAT)
-      Y=-COS(GLAT)*SIN(GLON-TLM0)
-      Z=COS(TPH0)*SIN(GLAT)-SIN(TPH0)*COS(GLAT)*COS(GLON-TLM0)
-      TLAT=R2D*ATAN(Z/SQRT(X*X+Y*Y))
-      TLON=R2D*ATAN(Y/X)
-
-!    
-      ROW=TLAT/DPHD1+JMT         ! JMT IS THE CENTRAL ROW OF THE PARENT DOMAIN
-      COL=TLON/DLMD1+P_IDE-1     ! (P_IDE-1) IS THE CENTRAL COLUMN OF THE PARENT DOMAIN
-      NROW=INT(ROW + 0.001)     ! ROUND-OFF IS AVOIDED WITHOUT USING NINT ON PURPOSE
-      NCOL=INT(COL + 0.001)
-      TLAT=TLAT*D2R
-      TLON=TLON*D2R
-
-!      WRITE(60,*)'============================================================'
-!      WRITE(60,*)'              ','i=',i,'j=',j
-!*** 
-!***
-!***  FIRST CONSIDER THE SITUATION WHERE THE POINT h IS AT
-!***
-!***              V      H
-!***
-!***
-!***                 h
-!***              H      V
-!***
-!***  THEN LOCATE THE NEAREST H POINT ON THE PARENT GRID
-!***
-      IF(MOD(NROW,2).EQ.1.AND.MOD(NCOL,2).EQ.1.OR.     &
-         MOD(NROW,2).EQ.0.AND.MOD(NCOL,2).EQ.0)THEN
-           TLAT1=(NROW-JMT)*DPH
-           TLAT2=TLAT1+DPH
-           TLON1=(NCOL-(P_IDE-1))*DLM
-           TLON2=TLON1+DLM
-           DLM1=TLON-TLON1
-           DLM2=TLON-TLON2
-!           D1=ACOS(COS(TLAT)*COS(TLAT1)*COS(DLM1)+SIN(TLAT)*SIN(TLAT1))
-!           D2=ACOS(COS(TLAT)*COS(TLAT2)*COS(DLM2)+SIN(TLAT)*SIN(TLAT2))
-           DTEMP=MIN(1.0_KNUM,COS(TLAT)*COS(TLAT1)*COS(DLM1)+SIN(TLAT)*SIN(TLAT1))
-           D1=ACOS(DTEMP)
-           DTEMP=MIN(1.0_KNUM,COS(TLAT)*COS(TLAT2)*COS(DLM2)+SIN(TLAT)*SIN(TLAT2))
-           D2=ACOS(DTEMP)
-            IF(D1.GT.D2)THEN
-             NROW=NROW+1                    ! FIND THE NEAREST H ROW
-             NCOL=NCOL+1                    ! FIND THE NEAREST H COLUMN
-            ENDIF
-!            WRITE(60,*)'NEAREST PARENT IS:','col=',COL,'row=',ROW,'ncol=',NCOL,'nrow=',NROW
-      ELSE
-!***
-!***  NOW CONSIDER THE SITUATION WHERE THE POINT h IS AT
-!***
-!***              H      V
-!***
-!***
-!***                 h
-!***              V      H
-!***
-!***  THEN LOCATE THE NEAREST H POINT ON THE PARENT GRID
-!***
-!***
-           TLAT1=(NROW+1-JMT)*DPH
-           TLAT2=TLAT1-DPH
-           TLON1=(NCOL-(P_IDE-1))*DLM
-           TLON2=TLON1+DLM
-           DLM1=TLON-TLON1
-           DLM2=TLON-TLON2
-!           D1=ACOS(COS(TLAT)*COS(TLAT1)*COS(DLM1)+SIN(TLAT)*SIN(TLAT1))
-!           D2=ACOS(COS(TLAT)*COS(TLAT2)*COS(DLM2)+SIN(TLAT)*SIN(TLAT2))
-           DTEMP=MIN(1.0_KNUM,COS(TLAT)*COS(TLAT1)*COS(DLM1)+SIN(TLAT)*SIN(TLAT1))
-           D1=ACOS(DTEMP)
-           DTEMP=MIN(1.0_KNUM,COS(TLAT)*COS(TLAT2)*COS(DLM2)+SIN(TLAT)*SIN(TLAT2))
-           D2=ACOS(DTEMP)
-             IF(D1.LT.D2)THEN
-              NROW=NROW+1                    ! FIND THE NEAREST H ROW
-             ELSE
-              NCOL=NCOL+1                    ! FIND THE NEAREST H COLUMN
-             ENDIF
-!             WRITE(60,*)'NEAREST PARENT IS:','col=',COL,'row=',ROW,'ncol=',NCOL,'nrow=',NROW
-      ENDIF
-
-      KROWS=((NROW-1)/2)*IMT
-      IF(MOD(NROW,2).EQ.1)THEN
-        K=KROWS+(NCOL+1)/2
-      ELSE
-        K=KROWS+P_IDE-1+NCOL/2
-      ENDIF
-
-!***
-!***  WE NOW KNOW THAT THE INNER GRID POINT IN QUESTION IS
-!***  NEAREST TO THE CENTER K AS SEEN BELOW.  WE MUST FIND
-!***  WHICH OF THE FOUR H-BOXES (OF WHICH THIS H POINT IS
-!***  A VERTEX) SURROUNDS THE INNER GRID h POINT IN QUESTION.
-!***
-!**
-!***                  H
-!***
-!***
-!***
-!***            H     V     H
-!***
-!***
-!***               h
-!***      H     V     H     V     H
-!***
-!***
-!***
-!***            H     V     H
-!***
-!***
-!***
-!***                  H
-!***
-!***
-!***  FIND THE SLOPE OF THE LINE CONNECTING h AND THE CENTER H.
-!***
-    N2R=K/IMT
-    MK=MOD(K,IMT)
-!
-    IF(MK.EQ.0)THEN
-      TLATHC=SB+(2*N2R-1)*DPH
-    ELSE
-      TLATHC=SB+(2*N2R+(MK-1)/(P_IDE-1))*DPH
-    ENDIF
-!
-    IF(MK.LE.(P_IDE-1))THEN
-      TLONHC=WB+2*(MK-1)*DLM
-    ELSE
-      TLONHC=WB+(2*(MK-(P_IDE-1))-1)*DLM
-    ENDIF
- 
-!
-!***  EXECUTE CAUTION IF YOU NEED TO CHANGE THESE CONDITIONS. SINCE WE ARE
-!***  DEALING WITH SLOPES TO GENERATE DIAMOND SHAPE H BOXES, WE NEED TO BE
-!***  CAREFUL HERE
-!
-
-    IF(ABS(TLON-TLONHC) .LE. 1.E-4)TLONHC=TLON
-    IF(ABS(TLAT-TLATHC) .LE. 1.E-4)TLATHC=TLAT
-    DENOM=(TLON-TLONHC)
-!
-!***
-!***STORE THE LOCATION OF THE WESTERNMOST VERTEX OF THE H-BOX ON
-!***THE OUTER GRID THAT SURROUNDS THE h POINT ON THE INNER GRID.
-!***
-!*** COINCIDENT CONDITIONS
-
-    IF(DENOM.EQ.0.0)THEN
-
-      IF(TLATHC.EQ.TLAT)THEN
-        KOUTB(I,J)=K
-        IIH(I,J) = NCOL
-        JJH(I,J) = NROW
-        TLATHX(I,J)=TLATHC
-        TLONHX(I,J)=TLONHC
-        HBWGT1(I,J)=1.0
-        HBWGT2(I,J)=0.0
-        HBWGT3(I,J)=0.0
-        HBWGT4(I,J)=0.0
-!        WRITE(60,*)'TRIVIAL SOLUTION'
-      ELSE                                      ! SAME LONGITUDE BUT DIFFERENT LATS
-!
-         IF(TLATHC .GT. TLAT)THEN      ! NESTED POINT SOUTH OF PARENT
-          KOUTB(I,J)=K-(P_IDE-1)
-          IIH(I,J) = NCOL-1
-          JJH(I,J) = NROW-1
-          TLATHX(I,J)=TLATHC-DPH
-          TLONHX(I,J)=TLONHC-DLM
-!          WRITE(60,*)'VANISHING SLOPE, -ve: TLATHC-DPH, TLONHC-DLM'
-         ELSE                                   ! NESTED POINT NORTH OF PARENT
-          KOUTB(I,J)=K+(P_IDE-1)-1
-          IIH(I,J) = NCOL-1
-          JJH(I,J) = NROW+1
-          TLATHX(I,J)=TLATHC+DPH
-          TLONHX(I,J)=TLONHC-DLM
-!          WRITE(60,*)'VANISHING SLOPE, +ve: TLATHC+DPH, TLONHC-DLM'
-         ENDIF
-!***
-!***
-!***                  4
-!***
-!***                  h
-!***             1         2
-!***
-!***                  3
-!***  DL 1-4 ARE THE ANGULAR DISTANCES FROM h TO EACH VERTEX
-
-       TLATO=TLATHX(I,J)
-       TLONO=TLONHX(I,J)
-       DLM1=TLON-TLONO
-       DLA1=TLAT-TLATO                                               ! Q
-!      DL1=ACOS(COS(TLAT)*COS(TLATO)*COS(DLM1)+SIN(TLAT)*SIN(TLATO)) ! Q
-       DL1=SQRT(DLM1*DLM1+DLA1*DLA1)                                 ! Q
-!
-       TLATO=TLATHX(I,J)
-       TLONO=TLONHX(I,J)+2.*DLM
-       DLM2=TLON-TLONO
-       DLA2=TLAT-TLATO                                               ! Q
-!      DL2=ACOS(COS(TLAT)*COS(TLATO)*COS(DLM2)+SIN(TLAT)*SIN(TLATO)) ! Q
-       DL2=SQRT(DLM2*DLM2+DLA2*DLA2)                                 ! Q
-!
-       TLATO=TLATHX(I,J)-DPH
-       TLONO=TLONHX(I,J)+DLM
-       DLM3=TLON-TLONO
-       DLA3=TLAT-TLATO                                               ! Q
-!      DL3=ACOS(COS(TLAT)*COS(TLATO)*COS(DLM3)+SIN(TLAT)*SIN(TLATO)) ! Q
-       DL3=SQRT(DLM3*DLM3+DLA3*DLA3)                                 ! Q
-
-       TLATO=TLATHX(I,J)+DPH
-       TLONO=TLONHX(I,J)+DLM
-       DLM4=TLON-TLONO
-       DLA4=TLAT-TLATO                                               ! Q
-!      DL4=ACOS(COS(TLAT)*COS(TLATO)*COS(DLM4)+SIN(TLAT)*SIN(TLATO)) ! Q
-       DL4=SQRT(DLM4*DLM4+DLA4*DLA4)                                 ! Q
-
-
-!      THE BILINEAR WEIGHTS
-!***
-!***
-       AN3=ATAN2(DLA1,DLM1)                                          ! Q
-       R1=DL1*SIN(AN2-AN3)/SIN(2.*AN1)
-       S1=DL1*SIN(2.*PI_2-2*AN1-AN2+AN3)/SIN(2.*AN1)
-       R1=R1/DS1
-       S1=S1/DS1
-       DL1I=(1.-R1)*(1.-S1)
-       DL2I=R1*S1
-       DL3I=R1*(1.-S1)
-       DL4I=(1.-R1)*S1
-!
-       HBWGT1(I,J)=DL1I
-       HBWGT2(I,J)=DL2I
-       HBWGT3(I,J)=DL3I
-       HBWGT4(I,J)=DL4I
-!
-      ENDIF
-
-    ELSE
-!
-!*** NON-COINCIDENT POINTS
-!
-      SLOPE=(TLAT-TLATHC)/DENOM
-      DSLOPE=NINT(R2D*ATAN(SLOPE))
-
-      IF(DSLOPE.LE.DSLP0.AND.DSLOPE.GE.-DSLP0)THEN
-        IF(TLON.GT.TLONHC)THEN
-!          IF(TLONHC.GE.-WB-DLM)CALL wrf_error_fatal("1H:NESTED DOMAIN TOO CLOSE TO THE BOUNDARY OF PARENT")
-          KOUTB(I,J)=K
-          IIH(I,J) = NCOL
-          JJH(I,J) = NROW
-          TLATHX(I,J)=TLATHC
-          TLONHX(I,J)=TLONHC
-!          WRITE(60,*)'HERE WE GO1: TLATHC, TLONHC'
-        ELSE
-!          IF(TLONHC.LE.WB+DLM)CALL wrf_error_fatal("2H:NESTED DOMAIN TOO CLOSE TO THE BOUNDARY OF PARENT")
-          KOUTB(I,J)=K-1
-          IIH(I,J) = NCOL-2
-          JJH(I,J) = NROW
-          TLATHX(I,J)=TLATHC
-          TLONHX(I,J)=TLONHC -2.*DLM
-!          WRITE(60,*)'HERE WE GO2: TLATHC, TLONHC -2.*DLM'
-        ENDIF
-
-!
-      ELSEIF(DSLOPE.GT.DSLP0)THEN
-        IF(TLON.GT.TLONHC)THEN
-!          IF(TLATHC.GE.-SB-DPH)CALL wrf_error_fatal("3H:NESTED DOMAIN TOO CLOSE TO THE BOUNDARY OF PARENT")
-          KOUTB(I,J)=K+(P_IDE-1)-1
-          IIH(I,J) = NCOL-1
-          JJH(I,J) = NROW+1
-          TLATHX(I,J)=TLATHC+DPH
-          TLONHX(I,J)=TLONHC-DLM
-!          WRITE(60,*)'HERE WE GO3:  TLATHC+DPH, TLONHC-DLM'
-        ELSE
-!          IF(TLATHC.LE.SB+DPH)CALL wrf_error_fatal("4H:NESTED DOMAIN TOO CLOSE TO THE BOUNDARY OF PARENT")
-          KOUTB(I,J)=K-(P_IDE-1)
-          IIH(I,J) = NCOL-1
-          JJH(I,J) = NROW-1
-          TLATHX(I,J)=TLATHC-DPH
-          TLONHX(I,J)=TLONHC-DLM
-!          WRITE(60,*)'HERE WE GO4:  TLATHC-DPH, TLONHC-DLM'
-        ENDIF
-
-!
-      ELSEIF(DSLOPE.LT.-DSLP0)THEN
-        IF(TLON.GT.TLONHC)THEN
-!          IF(TLATHC.LE.SB+DPH)CALL wrf_error_fatal("5H:NESTED DOMAIN TOO CLOSE TO THE BOUNDARY OF PARENT")
-          KOUTB(I,J)=K-(P_IDE-1)
-          IIH(I,J) = NCOL-1
-          JJH(I,J) = NROW-1
-          TLATHX(I,J)=TLATHC-DPH
-          TLONHX(I,J)=TLONHC-DLM
-!          WRITE(60,*)'HERE WE GO5:  TLATHC-DPH, TLONHC-DLM'
-        ELSE
-!          IF(TLATHC.GE.-SB-DPH)CALL wrf_error_fatal("6H:NESTED DOMAIN TOO CLOSE TO THE BOUNDARY OF PARENT")
-          KOUTB(I,J)=K+(P_IDE-1)-1
-          IIH(I,J) = NCOL-1
-          JJH(I,J) = NROW+1
-          TLATHX(I,J)=TLATHC+DPH
-          TLONHX(I,J)=TLONHC-DLM
-!          WRITE(60,*)'HERE WE GO6: TLATHC+DPH,  TLONHC-DLM'
-        ENDIF
-      ENDIF
-
-!
-!***  NOW WE WILL MOVE AS FOLLOWS:
-!***
-!***
-!***                      4
-!***
-!***
-!*** 
-!***                   h
-!***             1                 2
-!***
-!***
-!***
-!***
-!***                      3
-!***
-!***
-!***
-!***  DL 1-4 ARE THE ANGULAR DISTANCES FROM h TO EACH VERTEX
-
-      TLATO=TLATHX(I,J)
-      TLONO=TLONHX(I,J)
-      DLM1=TLON-TLONO
-      DLA1=TLAT-TLATO                                               ! Q
-!     DL1=ACOS(COS(TLAT)*COS(TLATO)*COS(DLM1)+SIN(TLAT)*SIN(TLATO)) ! Q
-      DL1=SQRT(DLM1*DLM1+DLA1*DLA1)                                 ! Q
-!
-      TLATO=TLATHX(I,J)                                             ! redundant computations
-      TLONO=TLONHX(I,J)+2.*DLM
-      DLM2=TLON-TLONO
-      DLA2=TLAT-TLATO                                               ! Q
-!     DL2=ACOS(COS(TLAT)*COS(TLATO)*COS(DLM2)+SIN(TLAT)*SIN(TLATO)) ! Q
-      DL2=SQRT(DLM2*DLM2+DLA2*DLA2)                                 ! Q
-!
-      TLATO=TLATHX(I,J)-DPH
-      TLONO=TLONHX(I,J)+DLM
-      DLM3=TLON-TLONO
-      DLA3=TLAT-TLATO                                               ! Q
-!     DL3=ACOS(COS(TLAT)*COS(TLATO)*COS(DLM3)+SIN(TLAT)*SIN(TLATO)) ! Q
-      DL3=SQRT(DLM3*DLM3+DLA3*DLA3)                                 ! Q
-!
-      TLATO=TLATHX(I,J)+DPH
-      TLONO=TLONHX(I,J)+DLM
-      DLM4=TLON-TLONO
-      DLA4=TLAT-TLATO                                               ! Q
-!     DL4=ACOS(COS(TLAT)*COS(TLATO)*COS(DLM4)+SIN(TLAT)*SIN(TLATO)) ! Q
-      DL4=SQRT(DLM4*DLM4+DLA4*DLA4)                                 ! Q
-
-!     THE BILINEAR WEIGHTS
-!***
-      AN3=ATAN2(DLA1,DLM1)                                          ! Q
-      R1=DL1*SIN(AN2-AN3)/SIN(2.*AN1)
-      S1=DL1*SIN(2.*PI_2-2*AN1-AN2+AN3)/SIN(2.*AN1)
-      R1=R1/DS1
-      S1=S1/DS1
-      DL1I=(1.-R1)*(1.-S1)
-      DL2I=R1*S1
-      DL3I=R1*(1.-S1)
-      DL4I=(1.-R1)*S1
-!
-      HBWGT1(I,J)=DL1I
-      HBWGT2(I,J)=DL2I
-      HBWGT3(I,J)=DL3I
-      HBWGT4(I,J)=DL4I
-!
-    ENDIF
-!
-!***  FINALLY STORE IIH IN TERMS OF E-GRID INDEX
-!
-      IIH(I,J)=NINT(0.5*IIH(I,J))
-
-   ENDDO
-  ENDDO
-
-!
-!*** EXTENSION TO NEAREST NEIGHBOR
-!
-     DO J =  JTS,MIN(JTE,JDE) !-1)
-      DO I = ITS,MIN(ITE,IDE) !-1)
-         NBWGT(1,I,J)=HBWGT1(I,J)
-         NBWGT(2,I,J)=HBWGT2(I,J)
-         NBWGT(3,I,J)=HBWGT3(I,J)
-         NBWGT(4,I,J)=HBWGT4(I,J)
-      ENDDO
-     ENDDO
-
-     DO J =  JTS,MIN(JTE,JDE) !-1)
-      DO I = ITS,MIN(ITE,IDE) !-1)
-       AMAXVAL=0.
-          DO N=1,4
-            AMAXVAL=amax1(NBWGT(N,I,J),AMAXVAL)
-          ENDDO
-!
-          FLIP=.TRUE.
-          SUM=0.0
-          DO N=1,4
-             IF(AMAXVAL .EQ. NBWGT(N,I,J) .AND. FLIP)THEN
-               NBWGT(N,I,J)=1.0
-               FLIP=.FALSE.
-             ELSE
-               NBWGT(N,I,J)=0.0
-             ENDIF
-             SUM=SUM+NBWGT(N,I,J)
-             IF(SUM .GT. 1.0)CALL wrf_error_fatal ( "horizontal interp error - interp_hnear_nmm" )
-          ENDDO
-
-
-          IF((NBWGT(1,I,J)+NBWGT(2,I,J)+NBWGT(3,I,J)+NBWGT(4,I,J)) .NE. 1)THEN
-            WRITE(0,*)'------------------------------------------------------------------------'
-            WRITE(0,*)'FATAL: SOMETHING IS WRONG WITH THE WEIGHTS IN module_initialize_real.F'
-            WRITE(0,*)'------------------------------------------------------------------------'
-            STOP
-          ENDIF
-
-!       WRITE(66,*)I,J,NBWGT(1,I,J),NBWGT(2,I,J),NBWGT(3,I,J),NBWGT(4,I,J)
-
-      ENDDO
-     ENDDO
-
-
-     DO J=MAX(3,JTS),MIN(JTE,JDE)  !-1)
-      DO I=MAX(3,ITS),MIN(ITE,IDE) !-1)
-            IF(MOD(JJH(I,J),2) .NE. 0)THEN    ! 1,3,5,7
-                HRES_SM(I,J) = NBWGT(1,I,J)*SM(IIH(I,J),JJH(I,J)  )    &
-                             + NBWGT(2,I,J)*SM(IIH(I,J)+1, JJH(I,J)  )    &
-                             + NBWGT(3,I,J)*SM(IIH(I,J),   JJH(I,J)-1)    &
-                             + NBWGT(4,I,J)*SM(IIH(I,J),   JJH(I,J)+1)
-!                WRITE(68,*)I,J,SM(IIH(I,J),JJH(I,J)),SM(IIH(I,J)+1, JJH(I,J)), &
-!                               SM(IIH(I,J),   JJH(I,J)-1),SM(IIH(I,J), JJH(I,J)+1),HRES_SM(I,J)
-            ELSE
-                HRES_SM(I,J) = NBWGT(1,I,J)*SM(IIH(I,J),   JJH(I,J)  )  &
-                             + NBWGT(2,I,J)*SM(IIH(I,J)+1, JJH(I,J)  )  &
-                             + NBWGT(3,I,J)*SM(IIH(I,J)+1, JJH(I,J)-1)  &
-                             + NBWGT(4,I,J)*SM(IIH(I,J)+1, JJH(I,J)+1)
-
-!                WRITE(68,*)I,J,SM(IIH(I,J),JJH(I,J)),SM(IIH(I,J)+1, JJH(I,J)), &
-!                               SM(IIH(I,J)+1, JJH(I,J)-1),SM(IIH(I,J)+1, JJH(I,J)+1),HRES_SM(I,J)
-
-            ENDIF
-
-      ENDDO
-     ENDDO
-!    Boundary treatment in J direction
-     DO J=MAX(3,JTS),MIN(JTE,JDE)
-       HRES_SM(2,J)=HRES_SM(3,J)
-       HRES_SM(1,J)=HRES_SM(2,J)
-     END DO
-!    Boundary treatment in J direction and 4 corners
-     DO I=ITS,MIN(ITE,IDE) 
-       HRES_SM(I,2)=HRES_SM(I,3)
-       HRES_SM(I,1)=HRES_SM(I,2)
-     END DO
-
-
-  RETURN
-  END SUBROUTINE G2T2H_hwrf
-!========================================================================================
-! end gopal's doing for ocean coupling
-!============================================================================================
-#endif
 END MODULE module_initialize_real

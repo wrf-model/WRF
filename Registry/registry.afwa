@@ -21,6 +21,7 @@ rconfig   integer afwa_buoy_opt           namelist,afwa         max_domains    0
 rconfig   integer afwa_hailcast_opt       namelist,afwa         max_domains    0       rh    "afwa_hailcast_opt"        "AFWA Diagnostic: Hailcast option, 1: on"                                       ""
 rconfig   real    afwa_ptype_ccn_tmp      namelist,afwa         1          264.15      h     "afwa_ptype_ccn_tmp"       "AFWA Diagnostic: CCN temperature for precipitation type calculation"           "K"
 rconfig   real    afwa_ptype_tot_melt     namelist,afwa         1            50.0      h     "afwa_ptype_tot_melt"      "AFWA Diagnostic: Total melting energy for precipitation type calculation"      "J kg-1"
+rconfig   integer afwa_bad_data_check     namelist,afwa         1              0       r     "afwa_bad_data_check"      "AFWA Diagnostic: Stop model when bogus data is found (eg U>300m/s), 1: on"    ""
 
 #  These variables are for the AFWA diagnostics package.
 
@@ -58,7 +59,7 @@ state    real   AFWA_LLTURBLGT   ij     misc        1         -      rh02       
 state    real   AFWA_LLTURBMDT   ij     misc        1         -      rh02       "AFWA_LLTURBMDT"  "AFWA Diagnostic: Prob of MDT Low-level Turb"   "%"
 state    real   AFWA_LLTURBSVR   ij     misc        1         -      rh02       "AFWA_LLTURBSVR"  "AFWA Diagnostic: Prob of SVR Low-level Turb"   "%"
 state    real   AFWA_PRECIP      ij     misc        1         -      r          "AFWA_PRECIP"     "AFWA Diagnostic: Precipitation bucket"         "mm"
-state    real   AFWA_TOTPRECIP  ij      misc        1         -      rh02       "AFWA_TOTPRECIP"  "AFWA Diagnostic: Total simulation precip"      "mm"            "mm"
+state    real   AFWA_TOTPRECIP  ij      misc        1         -      rh02       "AFWA_TOTPRECIP"  "AFWA Diagnostic: Total simulation precip"      "mm" 
 state    real   AFWA_RAIN        ij     misc        1         -      rh02       "AFWA_RAIN"       "AFWA Diagnostic: Rain fall"                    "mm"
 state    real   AFWA_SNOW        ij     misc        1         -      rh02       "AFWA_SNOW"       "AFWA Diagnostic: Liq Equiv Snow fall"          "mm"
 state    real   AFWA_ICE         ij     misc        1         -      rh02       "AFWA_ICE"        "AFWA Diagnostic: Ice fall"                     "mm"

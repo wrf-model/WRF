@@ -34,6 +34,7 @@
   USE module_ctrans_grell
   USE module_data_soa_vbs, only: ldrog_vbs
   USE module_dust_load
+  USE module_chem_cup, only: chem_cup_driver !BSINGH - For WRFCuP scheme
   USE module_dry_dep_driver
   USE module_emissions_driver
   USE module_input_tracer, only: set_tracer
@@ -57,26 +58,55 @@
 
   !BSINGH(PNNL)- Lahey compiler forces to declare the following interface
   interface
-     SUBROUTINE sum_pm_driver ( config_flags,                            &
-          alt, chem, h2oaj, h2oai,                                   &
-          pm2_5_dry, pm2_5_water, pm2_5_dry_ec, pm10,                &
+     SUBROUTINE sum_pm_driver ( config_flags,                       &
+          alt, chem, h2oaj, h2oai,                                  &
+          pm2_5_dry, pm2_5_water, pm2_5_dry_ec, pm10,               &
           tsoa,asoa,bsoa,                                             &
           hoa_a01,hoa_a02,hoa_a03,hoa_a04,                          &
+          hoa_a05,hoa_a06,hoa_a07,hoa_a08,                          & !BSINGH Added 4 more bins for each species for SAPRC 8 bin version
           bboa_a01,bboa_a02,bboa_a03,bboa_a04,                      &
+          bboa_a05,bboa_a06,bboa_a07,bboa_a08,                      &
           soa_a01,soa_a02,soa_a03,soa_a04,                          &
+          soa_a05,soa_a06,soa_a07,soa_a08,                          &
           bbsoa_a01,bbsoa_a02,bbsoa_a03,bbsoa_a04,                  &
+          bbsoa_a05,bbsoa_a06,bbsoa_a07,bbsoa_a08,                  &
           hsoa_a01,hsoa_a02,hsoa_a03,hsoa_a04,                      &
+          hsoa_a05,hsoa_a06,hsoa_a07,hsoa_a08,                      &
           biog_a01,biog_a02,biog_a03,biog_a04,                      &
-          asmpsoa_a01,asmpsoa_a02,asmpsoa_a03,asmpsoa_a04,              &
+          biog_a05,biog_a06,biog_a07,biog_a08,                      &
+          asmpsoa_a01,asmpsoa_a02,asmpsoa_a03,asmpsoa_a04,          &
           arosoa_a01,arosoa_a02,arosoa_a03,arosoa_a04,              &
+          arosoa_a05,arosoa_a06,arosoa_a07,arosoa_a08,              &
           totoa_a01,totoa_a02,totoa_a03,totoa_a04,                  &
+          totoa_a05,totoa_a06,totoa_a07,totoa_a08,                  & 
           hsoa_c,hsoa_o,bbsoa_c,bbsoa_o,                            &
           biog_v1,biog_v2,biog_v3,biog_v4,                          &
           ant_v1,ant_v2,ant_v3,ant_v4,                              &
-          smpa_v1,smpbb_v1,                              &
+          smpa_v1,smpbb_v1,                                         &
+          !BSINGH - Added cw aerosols(for VBS)
+          hoa_cw01,    hoa_cw02,    hoa_cw03,    hoa_cw04,          &
+          hoa_cw05,    hoa_cw06,    hoa_cw07,    hoa_cw08,          &
+          bboa_cw01,   bboa_cw02,   bboa_cw03,   bboa_cw04,         &
+          bboa_cw05,   bboa_cw06,   bboa_cw07,   bboa_cw08,         &
+          soa_cw01,    soa_cw02,    soa_cw03,    soa_cw04,          &
+          soa_cw05,    soa_cw06,    soa_cw07,    soa_cw08,          &
+          bbsoa_cw01,  bbsoa_cw02,  bbsoa_cw03,  bbsoa_cw04,        &
+          bbsoa_cw05,  bbsoa_cw06,  bbsoa_cw07,  bbsoa_cw08,        &
+          biog_cw01,   biog_cw02,   biog_cw03,   biog_cw04,         &
+          biog_cw05,   biog_cw06,   biog_cw07,   biog_cw08,         &
+          hsoa_cw01,   hsoa_cw02,   hsoa_cw03,   hsoa_cw04,         &
+          hsoa_cw05,   hsoa_cw06,   hsoa_cw07,   hsoa_cw08,         &
+          arosoa_cw01, arosoa_cw02, arosoa_cw03, arosoa_cw04,       &
+          arosoa_cw05, arosoa_cw06, arosoa_cw07, arosoa_cw08,       &
+          totoa_cw01,  totoa_cw02,  totoa_cw03,  totoa_cw04,        &
+          totoa_cw05,  totoa_cw06,  totoa_cw07,  totoa_cw08,        &        
+          hsoa_cw_c,   hsoa_cw_o,   bbsoa_cw_c,  bbsoa_cw_o,        &
+          biog_cw_v1,                                               &
+          ant_cw_v1,                                                &
+          !BSINGH -ENDS
           ids,ide, jds,jde, kds,kde,                                &
           ims,ime, jms,jme, kms,kme,                                &
-          its,ite, jts,jte, kts,kte                                  )
+          its,ite, jts,jte, kts,kte                                 )
        
        
        USE module_configure
@@ -102,24 +132,53 @@
             OPTIONAL,                                                     &
             INTENT(IN ) :: h2oaj,h2oai
        
-       REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                       &
-            OPTIONAL,                                                     &
-            INTENT(OUT) :: pm2_5_dry,pm2_5_water,pm2_5_dry_ec,pm10,       &
+       REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
+            OPTIONAL,                                                 &
+            INTENT(OUT) :: pm2_5_dry,pm2_5_water,pm2_5_dry_ec,pm10,   &
             tsoa,asoa,bsoa,                                           &
             hoa_a01,hoa_a02,hoa_a03,hoa_a04,                          &
+            hoa_a05,hoa_a06,hoa_a07,hoa_a08,                          &!BSINGH Added 4 more bins for each species for SAPRC 8 bin version             
             bboa_a01,bboa_a02,bboa_a03,bboa_a04,                      &
+            bboa_a05,bboa_a06,bboa_a07,bboa_a08,                      &     
             soa_a01,soa_a02,soa_a03,soa_a04,                          &
+            soa_a05,soa_a06,soa_a07,soa_a08,                          &        
             bbsoa_a01,bbsoa_a02,bbsoa_a03,bbsoa_a04,                  &
+            bbsoa_a05,bbsoa_a06,bbsoa_a07,bbsoa_a08,                  &     
             hsoa_a01,hsoa_a02,hsoa_a03,hsoa_a04,                      &
+            hsoa_a05,hsoa_a06,hsoa_a07,hsoa_a08,                      &       
             biog_a01,biog_a02,biog_a03,biog_a04,                      &
+            biog_a05,biog_a06,biog_a07,biog_a08,                      &       
             arosoa_a01,arosoa_a02,arosoa_a03,arosoa_a04,              &
+            arosoa_a05,arosoa_a06,arosoa_a07,arosoa_a08,              &             
             totoa_a01,totoa_a02,totoa_a03,totoa_a04,                  &
+            totoa_a05,totoa_a06,totoa_a07,totoa_a08,                  &    
             hsoa_c,hsoa_o,bbsoa_c,bbsoa_o,                            &
             biog_v1,biog_v2,biog_v3,biog_v4,                          &
-            ant_v1,ant_v2,ant_v3,ant_v4,                         &
-            smpa_v1,                          &
-            smpbb_v1,                          &
-            asmpsoa_a01,asmpsoa_a02,asmpsoa_a03,asmpsoa_a04
+            ant_v1,ant_v2,ant_v3,ant_v4,                              &
+            smpa_v1,                                                  &
+            smpbb_v1,                                                 &
+            asmpsoa_a01,asmpsoa_a02,asmpsoa_a03,asmpsoa_a04,          &!BSINGH - Not adding 5-8 bins for asmpsoa, as it is not req. for 8 bin SAPRC
+            !BSINGH - Added cw aerosols(for VBS)
+            hoa_cw01,    hoa_cw02,    hoa_cw03,    hoa_cw04,          &
+            hoa_cw05,    hoa_cw06,    hoa_cw07,    hoa_cw08,          &
+            bboa_cw01,   bboa_cw02,   bboa_cw03,   bboa_cw04,         &
+            bboa_cw05,   bboa_cw06,   bboa_cw07,   bboa_cw08,         &
+            soa_cw01,    soa_cw02,    soa_cw03,    soa_cw04,          &
+            soa_cw05,    soa_cw06,    soa_cw07,    soa_cw08,          &
+            bbsoa_cw01,  bbsoa_cw02,  bbsoa_cw03,  bbsoa_cw04,        &
+            bbsoa_cw05,  bbsoa_cw06,  bbsoa_cw07,  bbsoa_cw08,        &
+            biog_cw01,   biog_cw02,   biog_cw03,   biog_cw04,         &
+            biog_cw05,   biog_cw06,   biog_cw07,   biog_cw08,         &
+            hsoa_cw01,   hsoa_cw02,   hsoa_cw03,   hsoa_cw04,         &
+            hsoa_cw05,   hsoa_cw06,   hsoa_cw07,   hsoa_cw08,         &
+            arosoa_cw01, arosoa_cw02, arosoa_cw03, arosoa_cw04,       &
+            arosoa_cw05, arosoa_cw06, arosoa_cw07, arosoa_cw08,       &
+            totoa_cw01,  totoa_cw02,  totoa_cw03,  totoa_cw04,        &
+            totoa_cw05,  totoa_cw06,  totoa_cw07,  totoa_cw08,        &        
+            hsoa_cw_c,   hsoa_cw_o,   bbsoa_cw_c,  bbsoa_cw_o,        &
+            biog_cw_v1,                                               &
+            ant_cw_v1                                                 
+             !BSINGH -ENDS
        
        
        TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
@@ -422,17 +481,11 @@
      CASE (GOCARTRACM_KPP)
        CALL wrf_debug(15,'calling gocart and racm driver from chem_driver')
        haveaer = .false.
-     CASE (GOCARTRADM2_KPP)
-       CALL wrf_debug(15,'calling gocart and radmkpp driver from chem_driver')
-       haveaer = .false.
      CASE (GOCARTRADM2)
        CALL wrf_debug(15,'calling gocart and radm driver from chem_driver')
        haveaer = .false.
      CASE (SAPRC99_KPP)
        CALL wrf_debug(15,'calling saprc99_kpp from chem_driver')
-       haveaer = .false.
-     CASE (CBMZ_MOSAIC_4BIN_VBS2_KPP)
-       CALL wrf_debug(15,'calling cbmz_mosaic_4bin_vbs2_kpp from chem_driver')
        haveaer = .false.
      CASE (SAPRC99_MOSAIC_4BIN_VBS2_KPP)
        CALL wrf_debug(15,'calling saprc99_mosaic_4bin_vbs2_kpp from chem_driver')
@@ -443,6 +496,14 @@
      CASE (MOZART_MOSAIC_4BIN_AQ_KPP)
        CALL wrf_debug(15,'calling mozart_mosaic_4bin_aq_kpp from chem_driver')
        haveaer = .true.
+       !BSINGH -  Added case statement for SAPRC 8 bin
+     CASE (SAPRC99_MOSAIC_8BIN_VBS2_AQ_KPP)
+       CALL wrf_debug(15,'calling saprc99_mosaic_8bin_vbs2_aq_kpp from chem_driver')
+       haveaer = .false.
+     CASE (SAPRC99_MOSAIC_8BIN_VBS2_KPP) !BSINGH(04/04/2014)
+       CALL wrf_debug(15,'calling saprc99_mosaic_8bin_vbs2_kpp from chem_driver')
+       haveaer = .false.
+       !BSINGH - ENDS
      CASE (CBMZSORG)
        CALL wrf_debug(15,'calling cbmzsorg aerosols from chem_driver')
        haveaer = .true.
@@ -579,7 +640,8 @@
          enddo
 
 ! Special treatment of CH4 in SAPRC99
-      case (CBMZ_MOSAIC_4BIN_VBS2_KPP, SAPRC99_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP)
+      case (SAPRC99_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP, &
+           SAPRC99_MOSAIC_8BIN_VBS2_AQ_KPP,SAPRC99_MOSAIC_8BIN_VBS2_KPP) !BSINGH -  Added for SAPRC 8 bin and non-aq on (04/04/2014)
          CALL wrf_debug ( 15 , ' fixing ch4 conc using co conc' )
          do j=jps,jpe
             do k=kps,kpe
@@ -793,6 +855,7 @@
               grid%bscoef1,grid%bscoef2,grid%bscoef3,grid%bscoef4,                    &
               grid%l2aer,grid%l3aer,grid%l4aer,grid%l5aer,grid%l6aer,grid%l7aer,      &
               grid%totoa_a01,grid%totoa_a02,grid%totoa_a03,grid%totoa_a04,            &
+              grid%totoa_a05,grid%totoa_a06,grid%totoa_a07,grid%totoa_a08,            &
               grid%extaerlw1,grid%extaerlw2,grid%extaerlw3,grid%extaerlw4,grid%extaerlw5, &
               grid%extaerlw6,grid%extaerlw7,grid%extaerlw8,grid%extaerlw9,grid%extaerlw10, &
               grid%extaerlw11,grid%extaerlw12,grid%extaerlw13,grid%extaerlw14,grid%extaerlw15, &
@@ -971,7 +1034,8 @@
 !   convective transport/wet deposition
 !
 !
-     if( config_flags%cu_physics>0 .and. config_flags%chem_conv_tr>0)then
+      if( config_flags%cu_physics>0 .and. config_flags%chem_conv_tr>0 &
+           .and. config_flags%cu_physics/=kfcupscheme ) then            !BSINGH - For WRFCuP scheme
         call wrf_debug(15,'calling conv transport for chemical species')
         if(config_flags%chem_opt >0 )then
         ! save old concentrations for convective tendencies
@@ -1089,8 +1153,8 @@
 
 #if ( WRF_KPP == 1 )
 
-         if( config_flags%chem_opt == CBMZ_MOSAIC_4BIN_VBS2_KPP .or. &
-             config_flags%chem_opt == SAPRC99_MOSAIC_4BIN_VBS2_KPP ) then
+         if( config_flags%chem_opt == SAPRC99_MOSAIC_4BIN_VBS2_KPP.or. &
+              config_flags%chem_opt ==SAPRC99_MOSAIC_8BIN_VBS2_AQ_KPP ) then
           do k=kts,kte
            do i=its,ite
             do j=jts,jte
@@ -1261,6 +1325,71 @@ if ( cam_mam_aerosols ) &
                 its,ite, jts,jte, kts,kte                 )
            
         endif
+        !BSINGH - For WRFCuP scheme
+        
+        !
+        !   now do convective cloud processing for cup cumulus scheme
+        !
+        !   issues for future work
+        !      convective cloud processing should be done at same place (in the code)
+        !         and same time frequency for cup and grell schemes,
+        !         but doing it here is ok for initial testing
+        !      there should be a "convchem_driver" or "ctrans_driver" routine
+        !         to interface to the various options
+        !
+        if( config_flags%chem_conv_tr>0 .and. &
+             config_flags%cu_physics==kfcupscheme ) then
+           
+           call chem_cup_driver(                                                        &
+                grid%id, ktau, grid%ktauc, grid%dt, dtstepc, config_flags,              &
+                t_phy, p_phy, rho, rri, dz8w, zmid, z_at_w,                             &
+#if (NMM_CORE == 1)
+                moist_trans, grid%cldfra, grid%ph_no2,                                  &
+#endif
+#if (EM_CORE == 1)
+                moist, grid%cldfra, grid%ph_no2,                                        &
+#endif
+                chem, grid%chem_cupflag,                                                &
+                grid%cupflag, grid%shall, grid%tcloud_cup, grid%nca, grid%wact_cup,     &
+                grid%cldfra_cup, grid%updfra_cup, grid%qc_ic_cup, grid%qc_iu_cup,       &
+                grid%mfup_cup, grid%mfup_ent_cup, grid%mfdn_cup, grid%mfdn_ent_cup,     &
+                grid%fcvt_qc_to_pr_cup, grid%fcvt_qc_to_qi_cup, grid%fcvt_qi_to_pr_cup, &
+                !BSINGH(12/03/2013): Commenting out *_ams_* variables and replacing them with 
+                !*_ic_cup* variables
+                !grid%so4_a_ams_ic_cup, grid%so4_cw_ams_ic_cup,                         &
+                !grid%nh4_a_ams_ic_cup, grid%nh4_cw_ams_ic_cup,                         &
+                !grid%no3_a_ams_ic_cup, grid%no3_cw_ams_ic_cup,                         &
+                !grid%oa_a_ams_ic_cup,  grid%oa_cw_ams_ic_cup,                          &
+                grid%co_a_ic_cup,       grid%hno3_a_ic_cup,                             &
+                grid%so4_a_1to4_ic_cup, grid%so4_cw_1to4_ic_cup,                        &
+                grid%nh4_a_1to4_ic_cup, grid%nh4_cw_1to4_ic_cup,                        &
+                grid%no3_a_1to4_ic_cup, grid%no3_cw_1to4_ic_cup,                        &
+                grid%oa_a_1to4_ic_cup,  grid%oa_cw_1to4_ic_cup,                         &
+                grid%oin_a_1to4_ic_cup, grid%oin_cw_1to4_ic_cup,                        &
+                grid%bc_a_1to4_ic_cup,  grid%bc_cw_1to4_ic_cup,                         &
+                grid%na_a_1to4_ic_cup,  grid%na_cw_1to4_ic_cup,                         &
+                grid%cl_a_1to4_ic_cup,  grid%cl_cw_1to4_ic_cup,                         &
+                grid%water_1to4_ic_cup,                                                 &
+                grid%so4_a_5to6_ic_cup, grid%so4_cw_5to6_ic_cup,                        &
+                grid%nh4_a_5to6_ic_cup, grid%nh4_cw_5to6_ic_cup,                        &
+                grid%no3_a_5to6_ic_cup, grid%no3_cw_5to6_ic_cup,                        &
+                grid%oa_a_5to6_ic_cup,  grid%oa_cw_5to6_ic_cup,                         &
+                grid%oin_a_5to6_ic_cup, grid%oin_cw_5to6_ic_cup,                        &
+                grid%bc_a_5to6_ic_cup,  grid%bc_cw_5to6_ic_cup,                         &
+                grid%na_a_5to6_ic_cup,  grid%na_cw_5to6_ic_cup,                         &
+                grid%cl_a_5to6_ic_cup,  grid%cl_cw_5to6_ic_cup,                         &
+                grid%water_5to6_ic_cup,                                                 & 
+                ids,ide, jds,jde, kds,kde,                                              &
+                ims,ime, jms,jme, kms,kme,                                              &
+                its,ite, jts,jte, kts,kte                                               )
+           
+        else
+           grid%chem_cupflag = 0
+        endif
+        
+        
+        !BSINGH - Ends
+        
         
 
 !
@@ -1409,21 +1538,50 @@ end if !Chemistry time step check
            grid%pm2_5_dry, grid%pm2_5_water, grid%pm2_5_dry_ec, grid%pm10,            &
            grid%tsoa,grid%asoa,grid%bsoa,                                             &
            grid%hoa_a01,grid%hoa_a02,grid%hoa_a03,grid%hoa_a04,                       &
+           grid%hoa_a05,     grid%hoa_a06,     grid%hoa_a07,      grid%hoa_a08,       & !BSINGH(12/03/2013) Added 4 more bins for each species for SAPRC 8 bin version
            grid%bboa_a01,grid%bboa_a02,grid%bboa_a03,grid%bboa_a04,                   &
+           grid%bboa_a05,    grid%bboa_a06,    grid%bboa_a07,     grid%bboa_a08,      &
            grid%soa_a01,grid%soa_a02,grid%soa_a03,grid%soa_a04,                       &
+           grid%soa_a05,     grid%soa_a06,     grid%soa_a07,      grid%soa_a08,       &
            grid%bbsoa_a01,grid%bbsoa_a02,grid%bbsoa_a03,grid%bbsoa_a04,               &
+           grid%bbsoa_a05,   grid%bbsoa_a06,   grid%bbsoa_a07,    grid%bbsoa_a08,     &
            grid%hsoa_a01,grid%hsoa_a02,grid%hsoa_a03,grid%hsoa_a04,                   &
+           grid%hsoa_a05,    grid%hsoa_a06,    grid%hsoa_a07,     grid%hsoa_a08,      &
            grid%biog_a01,grid%biog_a02,grid%biog_a03,grid%biog_a04,                   &
+           grid%biog_a05,    grid%biog_a06,    grid%biog_a07,     grid%biog_a08,      &
            grid%asmpsoa_a01,grid%asmpsoa_a02,grid%asmpsoa_a03,grid%asmpsoa_a04,       &
            grid%arosoa_a01,grid%arosoa_a02,grid%arosoa_a03,grid%arosoa_a04,           &
+           grid%arosoa_a05,  grid%arosoa_a06,  grid%arosoa_a07,   grid%arosoa_a08,    &
            grid%totoa_a01,grid%totoa_a02,grid%totoa_a03,grid%totoa_a04,               &
+           grid%totoa_a05,   grid%totoa_a06,   grid%totoa_a07,    grid%totoa_a08,     &
            grid%hsoa_c,grid%hsoa_o,grid%bbsoa_c,grid%bbsoa_o,                         &
            grid%biog_v1,grid%biog_v2,grid%biog_v3,grid%biog_v4,                       &
            grid%ant_v1,grid%ant_v2,grid%ant_v3,grid%ant_v4,                           &
            grid%smpa_v1,grid%smpbb_v1,                                                &
-           ids,ide, jds,jde, kds,kde,                                                 &
-           ims,ime, jms,jme, kms,kme,                                                 &
-           its,ite, jts,jte, kts,kte                                                  )
+            !BSINGH(12/03/2013) - Added cw aerosols(for VBS)
+           grid%hoa_cw01,    grid%hoa_cw02,    grid%hoa_cw03,    grid%hoa_cw04,       &
+           grid%hoa_cw05,    grid%hoa_cw06,    grid%hoa_cw07,    grid%hoa_cw08,       &
+           grid%bboa_cw01,   grid%bboa_cw02,   grid%bboa_cw03,   grid%bboa_cw04,      &
+           grid%bboa_cw05,   grid%bboa_cw06,   grid%bboa_cw07,   grid%bboa_cw08,      &
+           grid%soa_cw01,    grid%soa_cw02,    grid%soa_cw03,    grid%soa_cw04,       &
+           grid%soa_cw05,    grid%soa_cw06,    grid%soa_cw07,    grid%soa_cw08,       &
+           grid%bbsoa_cw01,  grid%bbsoa_cw02,  grid%bbsoa_cw03,  grid%bbsoa_cw04,     &
+           grid%bbsoa_cw05,  grid%bbsoa_cw06,  grid%bbsoa_cw07,  grid%bbsoa_cw08,     &
+           grid%biog_cw01,   grid%biog_cw02,   grid%biog_cw03,   grid%biog_cw04,      &
+           grid%biog_cw05,   grid%biog_cw06,   grid%biog_cw07,   grid%biog_cw08,      &
+           grid%hsoa_cw01,   grid%hsoa_cw02,   grid%hsoa_cw03,   grid%hsoa_cw04,      &
+           grid%hsoa_cw05,   grid%hsoa_cw06,   grid%hsoa_cw07,   grid%hsoa_cw08,      &
+           grid%arosoa_cw01, grid%arosoa_cw02, grid%arosoa_cw03, grid%arosoa_cw04,    &
+           grid%arosoa_cw05, grid%arosoa_cw06, grid%arosoa_cw07, grid%arosoa_cw08,    &
+           grid%totoa_cw01,  grid%totoa_cw02,  grid%totoa_cw03,  grid%totoa_cw04,     &
+           grid%totoa_cw05,  grid%totoa_cw06,  grid%totoa_cw07,  grid%totoa_cw08,     &        
+           grid%hsoa_cw_c,   grid%hsoa_cw_o,   grid%bbsoa_cw_c,  grid%bbsoa_cw_o,     &
+           grid%biog_cw_v1,                                                           &
+           grid%ant_cw_v1,                                                            &
+           !BSINGH(12/03/2013) -ENDS
+             ids,ide, jds,jde, kds,kde,                                               &
+             ims,ime, jms,jme, kms,kme,                                               &
+             its,ite, jts,jte, kts,kte             )
              
      call dust_load_driver ( config_flags,                                            &
            rri, chem, dz8w, grid%dustload_1, grid%dustload_2, grid%dustload_3,        &

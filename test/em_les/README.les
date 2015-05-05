@@ -40,3 +40,14 @@ the u and v equations for LESs with non-zero geostrophic wind.
 Note, parameterization constants, c_s and c_k in this namelist are
 different from the defaults and are the ones recommended to use with LES.
 
+=========================================================================
+Shallow convection case (added in V3.7)
+Copy namelist.input_shalconv to namelist.input
+Copy input_sounding_shalconv to input_sounding
+Re-run ideal.exe
+As LES case but larger domain (100x100), top still at 2 km.
+Differences are sounding 10 K cooler, geostrophic u-wind 10 m/s, isfflx=1 using
+input_sounding's surface theta = 295 K as SST, water surface, monotonic
+moist and scalar advection, mp_physics =6, no other physics except sf_sfclay_physics=1.
+This produces a shallow cloud layer capped by a strong inversion that
+grows in response to warmer SST.

@@ -230,6 +230,7 @@ PROGRAM ideal
          END IF
 #endif
 
+   grid%this_is_an_ideal_run = .TRUE.
    CALL med_initialdata_output( head_grid , config_flags )
 
    CALL       wrf_debug (   0 , 'wrf: SUCCESS COMPLETE IDEAL INIT' )

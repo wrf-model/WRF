@@ -15,7 +15,8 @@ module da_setup_structures
       analysis_date,coarse_ix,coarse_ds,map_projection,coarse_jy, c2,dsm,phic, &
       pole, cone_factor, start_x,base_pres,ptop,psi1,start_y, base_lapse,base_temp,truelat2_3dv, &
       truelat1_3dv,xlonc,t0,num_fft_factors,pi,print_detail_spectral, global, print_detail_obs, &
-      use_radar_rf, num_ob_indexes,kts, kte, time_window_max, time_window_min, &
+      use_radar_rf, use_radar_rhv, use_radar_rqv, use_3dvar_phy, &
+      num_ob_indexes,kts, kte, time_window_max, time_window_min, &
       max_fgat_time, num_fgat_time, dt_cloud_model, &
       use_ssmiretrievalobs,use_radarobs,use_ssmitbobs,use_qscatobs, num_procs, use_rainobs, &
       num_pseudo, missing, ob_format, ob_format_bufr,ob_format_ascii, ob_format_madis, ob_format_gpsro, &
@@ -31,11 +32,14 @@ module da_setup_structures
       lat_stats_option,alpha_std_dev,sigma_alpha,alpha_corr_scale, &
       len_scaling1, len_scaling2, len_scaling3, len_scaling4, len_scaling5,&
       len_scaling6, len_scaling7, len_scaling8, len_scaling9, &
+      len_scaling10, len_scaling11, &
       max_vert_var1, max_vert_var2, max_vert_var3, max_vert_var4, max_vert_var5, &
-      max_vert_var6, max_vert_var7, max_vert_var8, max_vert_var9, max_vert_var_alpha, &
+      max_vert_var6, max_vert_var7, max_vert_var8, max_vert_var9, max_vert_var10,&
+      max_vert_var11, max_vert_var_alpha, &
       print_detail_be, test_statistics, do_normalize, use_rf, &
       var_scaling1, var_scaling2, var_scaling3, var_scaling4, &
-      var_scaling5, var_scaling6, var_scaling7, var_scaling8, var_scaling9, &
+      var_scaling5, var_scaling6, var_scaling7, var_scaling8, &
+      var_scaling9, var_scaling10, var_scaling11,&
       vert_corr,max_vert_var5,power_truncation,alpha_truncation, &
       print_detail_regression,gas_constant, use_airsretobs, &
       filename_len, use_ssmisobs, gravity, t_triple, use_hirs4obs, use_mhsobs, &
@@ -59,10 +63,10 @@ module da_setup_structures
       psi_chi_factor, psi_t_factor, psi_ps_factor, psi_rh_factor, &
       chi_u_t_factor, chi_u_ps_factor,chi_u_rh_factor, t_u_rh_factor, ps_u_rh_factor, &
       interpolate_stats, be_eta, thin_rainobs, fgat_rain_flags, use_iasiobs, &
-      use_seviriobs,jds_int,jde_int,anal_type_hybrid_dual_res 
+      use_seviriobs, jds_int, jde_int, anal_type_hybrid_dual_res 
 
    use da_obs, only : da_fill_obs_structures, da_store_obs_grid_info, da_store_obs_grid_info_rad, &
-                      da_fill_obs_structures_rain,da_set_obs_missing,da_set_3d_obs_missing
+                      da_fill_obs_structures_rain, da_fill_obs_structures_radar, da_set_obs_missing,da_set_3d_obs_missing
    use da_obs_io, only : da_read_obs_bufr,da_read_obs_radar, &
       da_scan_obs_radar,da_scan_obs_ascii,da_read_obs_ascii, &
       da_read_obs_bufrgpsro, da_scan_obs_rain, da_read_obs_rain
@@ -118,6 +122,7 @@ contains
 #include "da_setup_obs_structures_bufr.inc"
 #include "da_setup_obs_structures_madis.inc"
 #include "da_setup_obs_structures_rain.inc"
+#include "da_setup_obs_structures_radar.inc"
 #include "da_setup_obs_interp_wts.inc"
 #include "da_setup_runconstants.inc"
 #include "da_cloud_model.inc"

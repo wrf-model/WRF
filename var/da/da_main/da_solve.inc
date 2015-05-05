@@ -68,8 +68,10 @@
       call nl_get_iso_temp   ( 1 , iso_temp )
       if ( iso_temp .NE. grid%tiso ) THEN
          write(unit=message(1),fmt='(A)') &
-           'da_solve: namelist iso_temp does not equal iso_temp from fg. Reset namelist value and rerun'
-         call da_error(__FILE__,__LINE__,message(1:1))
+           'Namelist iso_temp does not equal iso_temp from fg. Reset namelist value and rerun.'
+         write(unit=message(2),fmt='(A,F10.5)')'Namelist iso_temp   = ',iso_temp
+         write(unit=message(3),fmt='(A,F10.5)')'Background iso_temp = ',grid%tiso
+         call da_error(__FILE__,__LINE__,message(1:3))
       end if
       call nl_get_base_pres_strat  ( 1, base_pres_strat )
       call nl_get_base_lapse_strat ( 1, base_lapse_strat )
@@ -191,6 +193,14 @@
       write(unit=stdout,fmt='(a)') &
          ' Resetting ntmax = 0 for analysis_type = randomcv' 
    end if
+
+#ifdef CLOUD_CV
+   if ( cv_options == 3 ) then
+      write(unit=message(1),fmt='(A,I3)') &
+         'cloud_cv does NOT work with cv_options = ', cv_options
+      call da_error(__FILE__,__LINE__,message(1:1))
+   end if
+#endif
 
    !---------------------------------------------------------------------------
    ! [2.0] Initialise wrfvar parameters:
@@ -546,7 +556,7 @@
       end if
 
 ! Re-scale the variances and the scale-length for outer-loop > 1:
-      if (it > 1 .and. cv_options == 5) then
+      if (it > 1 .and. (cv_options == 5 .or. cv_options == 7)) then
          print '(/10X,"===> Re-set BE SCALINGS for outer-loop=",i2)', it
          call  da_scale_background_errors ( be, it )
       else if (it > 1 .and. cv_options == 3) then

@@ -7,23 +7,32 @@
 !    j.morcrette                    1992
 !--------------------------------------------    
 !    modifications
-!    y. wang        iprc            2001
-!    c. zhang                       2010-2014
+!    C. zhang & Yuqing Wang         2011-2014
 !
-!   taken from the IPRC IRAM - yuqing wang, university of hawaii
-!   & Regcm4.4 - ICTP
-!   added by chunxi zhang and yuqing wang to wrf3.2, may 2010
-!   modified by chunxi zhang, 2012 - 2014
-!   refenrence: tiedtke (1989, mwr, 117, 1779-1800)
-!               nordeng, t.e., (1995), cape closure and organized entrainment/detrainment
-!               yuqing wang et al. (2003,j. climate, 16, 1721-1738) for improvements 
-!                                                  for cloud top detrainment 
-!                       (2004, mon. wea. rev., 132, 274-296), improvements for pbl clouds
-!                       (2007, mon. wea. rev., 135, 567-585), diurnal cycle of precipitation
-!               ifs documentation - cy33r1, cy37r2, cy38r1, cy40r1    
-!   this scheme is on testing
+!   modified from IPRC IRAM - yuqing wang, university of hawaii
+!               & ICTP REGCM4.4
+!
+!   this scheme is experimental. There are many updates to the old Tiedtke scheme (cu_physics=6)
+!   update notes:
+!        the new Tiedtke scheme is similar to the Tiedtke scheme used in REGCM4 and ECMWF cy40r1.
+!        the major differences to the old Tiedtke (cu_physics=6) scheme are,
+!        (a) New trigger functions for deep and shallow convections (Jakob and Siebesma 2003;
+!            Bechtold et al. 2004, 2008, 2014).
+!        (b) Non-equilibrium situations are considered in the closure for deep convection
+!            (Bechtold et al. 2014).
+!        (c) New convection time scale for the deep convection closure (Bechtold et al. 2008).
+!        (d) New entrainment and detrainment rates for all convection types (Bechtold et al. 2008).
+!        (e) New formula for the conversion from cloud water/ice to rain/snow (Sundqvist 1978).
+!        (f) Different way to include cloud scale pressure gradients (Gregory et al. 1997;
+!            Wu and Yanai 1994)
+!
+!   other refenrence: tiedtke (1989, mwr, 117, 1779-1800)
+!                     IFS documentation - cy33r1, cy37r2, cy38r1, cy40r1
+!
 !###########################################################
+
 module module_cu_ntiedtke
+
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
      use module_model_constants, only:rd=>r_d, rv=>r_v, &
    &       cpd=>cp, alv=>xlv, als=>xls, alf=>xlf, epsl=>epsilon, g              
@@ -752,7 +761,7 @@ contains
       integer  jl,jk,ik
       integer  ikb,ikt,icum,itopm2
       real     ztmst,ztau,zerate,zderate,zmfa
-      real     zmfs(klon),pmean(klon),zlon
+      real     zmfs(klon),pmean(klev),zlon
       real     zduten,zdvten,ztdis,pgf_u,pgf_v
 !-------------------------------------------
 !     1.    specify constants and parameters
@@ -1014,7 +1023,6 @@ contains
 !---------------------------------------------------------
          if(ldcum(jl) .and. ktype(jl) .eq. 3 ) then
             zmfub1(jl) = zmfub(jl)
-            zmfub1(jl) = min(zmfub1(jl),zmfmax)
          end if
 
        end do
@@ -1023,7 +1031,7 @@ contains
 !---------------------------------------------------------
        do jk=1,klev
        do jl=1,klon
-        if(loddraf(jl) .and. (ktype(jl) == 1 .or. ktype(jl) == 2) ) then
+        if( ldcum(jl) ) then
            zfac=zmfub1(jl)/max(zmfub(jl),cmfcmin)
            pmfd(jl,jk)=pmfd(jl,jk)*zfac
            zmfds(jl,jk)=zmfds(jl,jk)*zfac
@@ -2163,6 +2171,7 @@ contains
             pmfuq(jl,jk+1) = pmfuq(jl,jk+1)*zfac
             pmfub(jl) = zmfmax
           end if
+          pmfub(jl)=min(pmfub(jl),zmfmax)
         end if
       end do
 

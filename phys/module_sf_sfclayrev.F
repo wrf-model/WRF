@@ -6,7 +6,7 @@ MODULE module_sf_sfclayrev
  REAL    , PARAMETER ::  CZO=0.0185
  REAL    , PARAMETER ::  OZO=1.59E-5
 
- REAL,   DIMENSION(0:1000 ),SAVE          :: PSIMTB,PSIHTB
+ REAL,   DIMENSION(0:1000 ),SAVE :: psim_stab,psim_unstab,psih_stab,psih_unstab
 
 CONTAINS
 
@@ -27,6 +27,12 @@ CONTAINS
                      ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,scm_force_flux           )
 !-------------------------------------------------------------------
       IMPLICIT NONE
+!-------------------------------------------------------------------
+!   Changes in V3.7 over water surfaces:
+!          1. for ZNT/Cd, replacing constant OZO with 0.11*1.5E-5/UST(I)
+!             the COARE 3.5 (Edson et al. 2013) formulation is also available
+!          2. for VCONV, reducing magnitude by half
+!          3. for Ck, replacing Carlson-Boland with COARE 3
 !-------------------------------------------------------------------
 !-- U3D         3D u-velocity interpolated to theta points (m/s)
 !-- V3D         3D v-velocity interpolated to theta points (m/s)
@@ -173,13 +179,14 @@ CONTAINS
       REAL,     DIMENSION( ims:ime, jms:jme )                    , &
                 INTENT(INOUT)   ::                                 &
                                                               QGH
-
-
                                     
       REAL,     INTENT(IN   )               ::   CP,G,ROVCP,R,XLV,DX
  
       REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme )              , &
-                INTENT(OUT)     ::              ck,cka,cd,cda,ustm
+                INTENT(OUT)     ::                  ck,cka,cd,cda
+
+      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme )              , &
+                INTENT(INOUT)   ::                           USTM
 
       INTEGER,  OPTIONAL,  INTENT(IN )   ::     ISFTCFLX, IZ0TLND
       INTEGER,  OPTIONAL,  INTENT(IN )   ::     SCM_FORCE_FLUX
@@ -324,7 +331,9 @@ CONTAINS
                                                               T1D
  
       REAL, OPTIONAL, DIMENSION( ims:ime )                       , &
-                INTENT(OUT)     ::              ck,cka,cd,cda,ustm
+                INTENT(OUT)     ::                  ck,cka,cd,cda
+      REAL, OPTIONAL, DIMENSION( ims:ime )                       , &
+                INTENT(INOUT)   ::                           USTM
 
       INTEGER,  OPTIONAL,  INTENT(IN )   ::     ISFTCFLX, IZ0TLND
       INTEGER,  OPTIONAL,  INTENT(IN )   ::     SCM_FORCE_FLUX
@@ -365,8 +374,10 @@ CONTAINS
 !
 ! .... paj ...
 !
-      REAL    :: zolri,zolri2,zolzz,zol0
-      REAL    :: psih_stable,psim_stable,psih_unstable,psim_unstable
+      REAL    :: zolzz,zol0
+!     REAL    :: zolri,zolri2
+!     REAL    :: psih_stable,psim_stable,psih_unstable,psim_unstable
+!     REAL    :: psih_stable_full,psim_stable_full,psih_unstable_full,psim_unstable_full
       REAL    :: zl2,zl10,z0t
       REAL,     DIMENSION( its:ite )        ::         pq,pq2,pq10
 
@@ -485,7 +496,7 @@ CONTAINS
         TSKV=THGB(I)*(1.+EP1*QSFC(I))                     
         DTHVDZ=(THVX(I)-TSKV)                                                 
 !  Convective velocity scale Vc and subgrid-scale velocity Vsg
-!  following Beljaars (1995, QJRMS) and Mahrt and Sun (1995, MWR)
+!  following Beljaars (1994, QJRMS) and Mahrt and Sun (1995, MWR)
 !                                ... HONG Aug. 2001
 !
 !       VCONV = 0.25*sqrt(g/tskv*pblh(i)*dthvm)
@@ -500,7 +511,9 @@ CONTAINS
         ELSE
           DTHVM=0.
         ENDIF
-        VCONV = 2.*SQRT(DTHVM)
+!       VCONV = 2.*SQRT(DTHVM)
+! V3.7: reducing contribution in calm conditions
+        VCONV = SQRT(DTHVM)
         endif
 ! Mahrt and Sun low-res correction
         VSGD = 0.32 * (max(dx/5000.-1.,0.))**.33
@@ -684,6 +697,24 @@ CONTAINS
 
 ! AHW: mods to compute ck, cd
         PSIQ10=ALOG(KARMAN*UST(I)*10./XKA+10./ZL)-pq10(I)
+
+! V3.7: using Fairall 2003 to compute z0q and z0t over water:
+!       adapted from module_sf_mynn.F
+        IF ( (XLAND(I)-1.5).GE.0. ) THEN
+              VISC=(1.32+0.009*(SCR3(I)-273.15))*1.E-5
+              RESTAR=UST(I)*ZNT(I)/VISC
+              Z0T = (5.5e-5)*(RESTAR**(-0.60))
+              Z0T = MIN(Z0T,1.0e-4)
+              Z0T = MAX(Z0T,2.0e-9)
+              Z0Q = Z0T
+
+              PSIQ=max(ALOG((ZA(I)+Z0Q)/Z0Q)-PSIH(I), 2.)
+              PSIT=max(ALOG((ZA(I)+Z0T)/Z0T)-PSIH(I), 2.)
+              PSIQ2=max(ALOG((2.+Z0Q)/Z0Q)-PSIH2(I), 2.)
+              PSIT2=max(ALOG((2.+Z0T)/Z0T)-PSIH2(I), 2.)
+              PSIQ10=max(ALOG((10.+Z0Q)/Z0Q)-PSIH10(I), 2.)
+        ENDIF
+
         IF ( PRESENT(ISFTCFLX) ) THEN
            IF ( ISFTCFLX.EQ.1 .AND. (XLAND(I)-1.5).GE.0. ) THEN
 ! v3.1
@@ -891,7 +922,13 @@ CONTAINS
                                                                                  
       DO 360 I=its,ite
         IF((XLAND(I)-1.5).GE.0)THEN                                            
-          ZNT(I)=CZO*UST(I)*UST(I)/G+OZO                                   
+!         ZNT(I)=CZO*UST(I)*UST(I)/G+OZO                                   
+! Since V3.7 (ref: EC Physics document for Cy36r1)
+          ZNT(I)=CZO*UST(I)*UST(I)/G+0.11*1.5E-5/UST(I)
+! COARE 3.5 (Edson et al. 2013)
+!         CZC = 0.0017*WSPD(I)-0.005
+!         CZC = min(CZC,0.028)
+!         ZNT(I)=CZC*UST(I)*UST(I)/G+0.11*1.5E-5/UST(I)
 ! AHW: change roughness length, and hence the drag coefficients Ck and Cd
           IF ( PRESENT(ISFTCFLX) ) THEN
              IF ( ISFTCFLX.NE.0 ) THEN
@@ -999,65 +1036,54 @@ CONTAINS
    END SUBROUTINE SFCLAYREV1D
 
 !====================================================================
-   SUBROUTINE sfclayrevinit( allowed_to_read )         
+   SUBROUTINE sfclayrevinit
 
-!   LOGICAL , INTENT(IN)      ::      allowed_to_read
-!   INTEGER                   ::      N
-!   REAL                      ::      ZOLN,X,Y
+    INTEGER                   ::      N
+    REAL                      ::      zolf
 
-!   DO N=0,1000
-!      ZOLN=-FLOAT(N)*0.1
-!      X=(1-16.*ZOLN)**0.25
-!      PSIMTB(N)=2*ALOG(0.5*(1+X))+ALOG(0.5*(1+X*X))- &
-!                2.*ATAN(X)+2.*ATAN(1.)
-!      Y=(1-16*ZOLN)**0.5
-!      PSIHTB(N)=2*ALOG(0.5*(1+Y))
-!   ENDDO
+    DO N=0,1000
+! stable function tables
+       zolf = float(n)*0.01
+       psim_stab(n)=psim_stable_full(zolf)
+       psih_stab(n)=psih_stable_full(zolf)
+ 
+! unstable function tables
+       zolf = -float(n)*0.01
+       psim_unstab(n)=psim_unstable_full(zolf)
+       psih_unstab(n)=psih_unstable_full(zolf)
+
+    ENDDO
 
    END SUBROUTINE sfclayrevinit
 
-!-------------------------------------------------------------------          
-
-END MODULE module_sf_sfclayrev
-
-!
-! ----------------------------------------------------------
-!
       function zolri(ri,z,z0)
 !
-      real right,left,midpoint
-!
       if (ri.lt.0.)then
-      left=-1200.
-      right=0.
+        x1=-5.
+        x2=0.
       else
-      left=0.
-      right=20000.
+        x1=0.
+        x2=5.
       endif
 !
-      Do While (abs(right - left) > 0.01)
-      midpoint=(right+left)/2.
-      a=zolri2(left,ri,z,z0)
-      b=zolri2(midpoint,ri,z,z0)
-      c=zolri2(right,ri,z,z0)
-!
-      if ((a * b) < 0) then
-      right = midpoint
+      fx1=zolri2(x1,ri,z,z0)
+      fx2=zolri2(x2,ri,z,z0)
+      Do While (abs(x1 - x2) > 0.01)
+      if(abs(fx2).lt.abs(fx1))then
+        x1=x1-fx1/(fx2-fx1)*(x2-x1)
+        fx1=zolri2(x1,ri,z,z0)
+        zolri=x1
       else
-            if ((c * b) < 0) then
-            left = midpoint
-            else
-            goto 11
-            endif
+        x2=x2-fx2/(fx2-fx1)*(x2-x1)
+        fx2=zolri2(x2,ri,z,z0)
+        zolri=x2
       endif
 !
       enddo
- 11   continue
 !
-      zolri=midpoint
 
       return
-      end
+      end function
 
 !
 ! -----------------------------------------------------------------------
@@ -1078,43 +1104,103 @@ END MODULE module_sf_sfclayrev
       zolri2=zol2*psih2/psix2**2-ri2
 !
       return
-      end
+      end function
 !
 ! ... integrated similarity functions ...
 !
-      function psim_stable(zolf)
-        psim_stable=-6.1*log(zolf+(1+zolf**2.5)**(1./2.5))
+      function psim_stable_full(zolf)
+        psim_stable_full=-6.1*log(zolf+(1+zolf**2.5)**(1./2.5))
       return
-      end
+      end function
 
-      function psih_stable(zolf)
-        psih_stable=-5.3*log(zolf+(1+zolf**1.1)**(1./1.1))
+      function psih_stable_full(zolf)
+        psih_stable_full=-5.3*log(zolf+(1+zolf**1.1)**(1./1.1))
       return
-      end
+      end function
       
-      function psim_unstable(zolf)
+      function psim_unstable_full(zolf)
         x=(1.-16.*zolf)**.25
         psimk=2*ALOG(0.5*(1+X))+ALOG(0.5*(1+X*X))-2.*ATAN(X)+2.*ATAN(1.)
 !
         ym=(1.-10.*zolf)**0.33
         psimc=(3./2.)*log((ym**2.+ym+1.)/3.)-sqrt(3.)*ATAN((2.*ym+1)/sqrt(3.))+4.*ATAN(1.)/sqrt(3.)
 !
-        psim_unstable=(psimk+zolf**2*(psimc))/(1+zolf**2.)
+        psim_unstable_full=(psimk+zolf**2*(psimc))/(1+zolf**2.)
 
       return
-      end
+      end function
 
-      function psih_unstable(zolf)
+      function psih_unstable_full(zolf)
         y=(1.-16.*zolf)**.5
         psihk=2.*log((1+y)/2.)
 !
         yh=(1.-34.*zolf)**0.33
         psihc=(3./2.)*log((yh**2.+yh+1.)/3.)-sqrt(3.)*ATAN((2.*yh+1)/sqrt(3.))+4.*ATAN(1.)/sqrt(3.)
 !
-        psih_unstable=(psihk+zolf**2*(psihc))/(1+zolf**2.)
+        psih_unstable_full=(psihk+zolf**2*(psihc))/(1+zolf**2.)
 
       return
-      end
+      end function
 
+! look-up table functions
+      function psim_stable(zolf)
+      integer :: nzol
+      real    :: rzol
+        nzol = int(zolf*100.)
+        rzol = zolf*100. - nzol
+        if(nzol+1 .le. 1000)then
+           psim_stable = psim_stab(nzol) + rzol*(psim_stab(nzol+1)-psim_stab(nzol))
+        else
+           psim_stable = psim_stable_full(zolf)
+        endif
+      return
+      end function
+
+      function psih_stable(zolf)
+      integer :: nzol
+      real    :: rzol
+        nzol = int(zolf*100.)
+        rzol = zolf*100. - nzol
+        if(nzol+1 .le. 1000)then
+           psih_stable = psih_stab(nzol) + rzol*(psih_stab(nzol+1)-psih_stab(nzol))
+        else
+           psih_stable = psih_stable_full(zolf)
+        endif
+      return
+      end function
+      
+      function psim_unstable(zolf)
+      integer :: nzol
+      real    :: rzol
+        nzol = int(-zolf*100.)
+        rzol = -zolf*100. - nzol
+        if(nzol+1 .le. 1000)then
+           psim_unstable = psim_unstab(nzol) + rzol*(psim_unstab(nzol+1)-psim_unstab(nzol))
+        else
+           psim_unstable = psim_unstable_full(zolf)
+        endif
+      return
+      end function
+
+      function psih_unstable(zolf)
+      integer :: nzol
+      real    :: rzol
+        nzol = int(-zolf*100.)
+        rzol = -zolf*100. - nzol
+        if(nzol+1 .le. 1000)then
+           psih_unstable = psih_unstab(nzol) + rzol*(psih_unstab(nzol+1)-psih_unstab(nzol))
+        else
+           psih_unstable = psih_unstable_full(zolf)
+        endif
+      return
+      end function
+
+!-------------------------------------------------------------------          
+
+END MODULE module_sf_sfclayrev
+
+!
+! ----------------------------------------------------------
+!
 
 

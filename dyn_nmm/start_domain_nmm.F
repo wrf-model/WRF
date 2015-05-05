@@ -63,6 +63,7 @@
 !----------------------------------------------------------------------
 !
 #ifdef HWRF
+      USE MODULE_CLEAR_HALOS, only: clear_ij_halos
       USE MODULE_STATS_FOR_MOVE, only: vorttrak_init
       USE MODULE_SWATH, only: init_swath
 #endif
@@ -267,6 +268,7 @@
       call start_timing
 
 #ifdef HWRF
+      call clear_ij_halos(grid,config_flags%halo_debug)
       if(grid%id==3) then
          grid%force_sst=1
       else
@@ -577,6 +579,22 @@
 #  include <HALO_NMM_INIT_39.inc>
 #endif
 !
+      if((allowed_to_read .and. .not. restrt) .or. anal) then
+         call wrf_message("Fill REFL_10CM with -35 dBZ")
+         if(size(grid%refl_10cm,1)*size(grid%refl_10cm,3)>1) then
+            do J=JPS,JPE
+               do K=KPS,KPE
+                  do I=IPS,IPE
+                     grid%refl_10cm(i,k,j)=-35.0
+                  enddo
+               enddo
+               do I=IPS,IPE
+                  grid%refd_max(i,j)=-35.0
+               enddo
+            enddo
+         endif
+      endif
+         
       DO J=MYJS_P4,MYJE_P4
         grid%iheg(J)=MOD(J+1,2)
         grid%ihwg(J)=grid%iheg(J)-1
@@ -785,7 +803,7 @@
 !***
 !***  INITIALIZE CLOUD FIELDS
 !***
-      IF (MAXVAL(grid%cwm) .gt. 0. .and. MAXVAL(grid%cwm) .lt. 1.) then
+      IF (MAXVAL(grid%cwm(ips:ipe,jps:jpe,:)) .gt. 0. .and. MAXVAL(grid%cwm(ips:ipe,jps:jpe,:)) .lt. 1.) then
         CALL wrf_message('appear to have grid%cwm values...do not zero')
       ELSE
         IF(allowed_to_read)THEN       ! This is gopal's inclusion for moving nest
@@ -858,7 +876,7 @@
 !***
 !***EROGERS: add check for realistic values of grid%q2
 !
-      IF (MAXVAL(grid%q2) .gt. epsq2 .and. MAXVAL(grid%q2) .lt. 200.) then
+      IF (MAXVAL(grid%q2(ips:ipe,jps:jpe,:)) .gt. epsq2 .and. MAXVAL(grid%q2(ips:ipe,jps:jpe,:)) .lt. 200.) then
         CALL wrf_message('appear to have grid%q2 values...do not zero')
       ELSE
       IF(allowed_to_read)THEN       ! This is gopal's inclusion for moving nest
@@ -1954,6 +1972,11 @@
 !
 !***  Always define the quantity grid%z0base
                                                                                                                                               
+4041  format('Bounds: ip=',I0,',',I0,' jp=',I0,',',I0,' myi=',I0,',',I0,&
+             ' myj=',I0,',',I0)
+      write(message,4041) ips,ipe,jps,jpe,myis,myie,myjs,myje
+      call wrf_message(message)
+
       IF(.NOT.RESTRT)THEN
         DO J=MYJS,MYJE
         DO I=MYIS,MYIE
@@ -2079,7 +2102,7 @@
      &                WTXY=grid%WTXY, LFMASSXY=grid%LFMASSXY, RTMASSXY=grid%RTMASSXY,    & ! Optional Noah-MP
      &                STMASSXY=grid%STMASSXY, WOODXY=grid%WOODXY,                        & ! Optional Noah-MP
      &                STBLCPXY=grid%STBLCPXY, FASTCPXY=grid%FASTCPXY,                    & ! Optional Noah-MP
-     &                XSAIXY=grid%XSAIXY,                                                & ! Optional Noah-MP
+     &                XSAIXY=grid%XSAIXY,LAI=grid%LAI,                                   & ! Optional Noah-MP
      &                T2MVXY=grid%T2MVXY, T2MBXY=grid%T2MBXY, CHSTARXY=grid%CHSTARXY,    & ! Optional Noah-MP
      &                smoiseq=grid%smoiseq, smcwtdxy=grid%smcwtdxy, rechxy=grid%rechxy,   &
      &                deeprechxy=grid%deeprechxy,                                         &
@@ -2191,7 +2214,7 @@
 ! array (if any hydrometeors found and non-zero from initialization     
 ! package).  Then, determine fractions ice and rain from species.       
      
-        IF (.not. (MAXVAL(grid%cwm).gt.0. .and. MAXVAL(grid%cwm).lt.1.) ) then    
+        IF (.not. (MAXVAL(grid%cwm(ips:ipe,jps:jpe,:)).gt.0. .and. MAXVAL(grid%cwm(ips:ipe,jps:jpe,:)).lt.1.) ) then    
           do i_m = 2, num_moist
           if (i_m.ne.p_qv) &
      &       CALL wrf_message(' summing moist(:,:,:,i_m) into cwm array')
@@ -2206,9 +2229,11 @@
           enddo
           enddo
 
-          IF (.not. ( (maxval(grid%f_ice)+maxval(grid%f_rain)) .gt. EPSQ) ) THEN
+          IF (size(grid%f_ice)>1 .and. size(grid%f_rain)>1) then
+           IF( .not. ( (maxval(grid%f_ice(ips:ipe,:,jps:jpe)) &
+               +maxval(grid%f_rain(ips:ipe,:,jps:jpe))) .gt. EPSQ) ) THEN
             ETAMP_Regional=.FALSE.    !-- Regional NAM or HRW (Ferrier) microphysics
-            if (model_config_rec%mp_physics(grid%id).EQ.ETAMPOLD .OR.          &
+            if (model_config_rec%mp_physics(grid%id).EQ.ETAMP_HR .OR.          &
      &          model_config_rec%mp_physics(grid%id).EQ.ETAMPNEW )             &
      &          ETAMP_Regional=.TRUE.
             CALL wrf_message(' computing grid%f_ice')
@@ -2259,13 +2284,14 @@
             enddo
             enddo
             enddo
-         endif
+           endif
+           ENDIF
           ENDIF
         ENDIF
 ! End addition by Greg Thompson
 
         if(size(grid%f_ice)>1) then
-           IF (maxval(grid%f_ice) .gt. 0.) THEN
+           IF (maxval(grid%f_ice(ips:ipe,:,jps:jpe)) .gt. 0.) THEN
               do J=JMS,JME
                  do K=KMS,KME
                     do I=IMS,IME
@@ -2277,7 +2303,7 @@
         endif
 
         if(size(grid%f_rain)>1) then
-           IF (maxval(grid%f_rain) .gt. 0.) THEN
+           IF (maxval(grid%f_rain(ips:ipe,:,jps:jpe)) .gt. 0.) THEN
               do J=JMS,JME
                  do K=KMS,KME
                     do I=IMS,IME
@@ -2289,7 +2315,7 @@
         endif
 
         if(size(grid%f_rimef)>1) then
-           IF (maxval(grid%f_rimef) .gt. 0.) THEN
+           IF (maxval(grid%f_rimef(ips:ipe,:,jps:jpe)) .gt. 0.) THEN
               do J=JMS,JME
                  do K=KMS,KME
                     do I=IMS,IME
@@ -2303,7 +2329,7 @@
 !
       IF (.NOT. RESTRT) THEN
   !-- Replace albedos if original albedos are nonzero
-        IF(MAXVAL(ALBEDO_DUM)>0.)THEN
+        IF(MAXVAL(ALBEDO_DUM(ips:ipe,jps:jpe))>0.)THEN
           DO J=JMS,JME
           DO I=IMS,IME
             grid%albedo(I,J)=ALBEDO_DUM(I,J)
@@ -2318,8 +2344,8 @@
 #else
       IF(.NOT.RESTRT)THEN
 #endif
-        DO J=JMS,JME
-        DO I=IMS,IME
+        DO J=jps,min(jpe,jde-1)
+        DO I=ips,min(ipe,ide-1)
           grid%aprec(I,J)=RAINNC(I,J)*1.E-3
           grid%cuprec(I,J)=grid%raincv(I,J)*1.E-3
         ENDDO

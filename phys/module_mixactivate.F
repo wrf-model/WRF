@@ -11,7 +11,7 @@
 
 MODULE module_mixactivate
 PRIVATE
-PUBLIC prescribe_aerosol_mixactivate, mixactivate
+PUBLIC prescribe_aerosol_mixactivate, mixactivate, activate !BSINGH - added 'activate' for WRFCuP scheme
 CONTAINS
 
 
@@ -24,12 +24,12 @@ CONTAINS
 		ccn_conc, chem_opt,                                   & ! RAS
 		rho_phy, th_phy, pi_phy, w, cldfra, cldfra_old,       &
 		z, dz8w, p_at_w, t_at_w, exch_h,                      &
-        qv, qc, qi, qndrop3d,                                 &
+        qv, qc, qi, qndrop3d,                                &
         nsource,                                              &
 		ids,ide, jds,jde, kds,kde,                            &
 		ims,ime, jms,jme, kms,kme,                            &
 		its,ite, jts,jte, kts,kte,                            &
-		f_qc, f_qi                                            )
+		f_qc, f_qi, cn                                        )
 
 !        USE module_configure
 
@@ -60,6 +60,10 @@ CONTAINS
 	real, intent(in),   &
 		dimension( ims:ime, kms:kme, jms:jme ) :: &
 		qv, qc, qi
+
+	real, intent(inout), optional,  &
+		dimension( ims:ime, kms:kme, jms:jme ) :: &
+		cn ! single-size CCN concentration
 
 	real, intent(inout),   &
 		dimension( ims:ime, kms:kme, jms:jme ) :: &
@@ -142,14 +146,19 @@ CONTAINS
        do m=1,nsize_aer(n)
           ptr=ptr+1
           numptr_aer( m, n, p )=ptr
-	  if(p.eq.ai_phase)then
-	     chem(its:ite,kts:kte,jts:jte,ptr)=naer
-	  else
-	     chem(its:ite,kts:kte,jts:jte,ptr)=0.
-	  endif
-	end do ! size
-	end do ! type
-	end do ! phase
+        
+        if(p.eq.ai_phase)then
+         IF ( present( cn ) ) THEN
+            chem(its:ite,kts:kte,jts:jte,ptr) = cn(its:ite,kts:kte,jts:jte)
+          ELSE  ! ERM: use qndrop3d as a proxy for number of activated CCN
+            chem(its:ite,kts:kte,jts:jte,ptr) = Max(0.0, naer-qndrop3d(its:ite,kts:kte,jts:jte) )
+          ENDIF
+        else
+           chem(its:ite,kts:kte,jts:jte,ptr)=0.
+        endif
+      end do ! size
+      end do ! type
+      end do ! phase
        do p=1,maxd_aphase
        do n=1,ntype_aer
        do m=1,nsize_aer(n)
@@ -164,12 +173,18 @@ CONTAINS
 ! 1.e6 factor converts g to ug
 	     maer= 1.0e6 * naer * dens_aer(l,n) * ( (3.1416/6.) *   &
                  (dgnum_aer(m,n)**3) * exp( 4.5*((log(sigmag_aer(m,n)))**2) ) )
-	     if(p.eq.ai_phase)then
-	        chem(its:ite,kts:kte,jts:jte,ptr)=maer
-	     else
-	        chem(its:ite,kts:kte,jts:jte,ptr)=0.
-	     endif
-	  end do
+           if(p.eq.ai_phase)then
+            IF ( present( cn ) ) THEN
+              chem(its:ite,kts:kte,jts:jte,ptr) = 1.0e6 * cn(its:ite,kts:kte,jts:jte)* dens_aer(l,n) * ( (3.1416/6.) *   &
+                 (dgnum_aer(m,n)**3) * exp( 4.5*((log(sigmag_aer(m,n)))**2) ) )
+            ELSE ! ERM: use qndrop3d as a proxy for number of activated CCN
+              chem(its:ite,kts:kte,jts:jte,ptr) = 1.0e6 * Max(0.0, naer -qndrop3d(its:ite,kts:kte,jts:jte))* &
+                  dens_aer(l,n) * ( (3.1416/6.) *(dgnum_aer(m,n)**3) * exp( 4.5*((log(sigmag_aer(m,n)))**2) ) )
+            ENDIF
+           else
+              chem(its:ite,kts:kte,jts:jte,ptr)=0.
+           endif
+        end do
 	end do ! size
 	end do ! type
 	end do ! phase
@@ -205,6 +220,11 @@ CONTAINS
             grid_id, ktau, dtstep, &
             F_QC=f_qc, F_QI=f_qi                              )
 
+
+       ! ERM : If CCN field was passed in, then copy back the new field, which is the first
+       IF ( present( cn ) ) THEN
+         cn(its:ite,kts:kte,jts:jte) = Max(0.0, chem(its:ite,kts:kte,jts:jte,1))
+       ENDIF
 
       end subroutine prescribe_aerosol_mixactivate
 
@@ -1349,7 +1369,7 @@ OLD_CLOUD_NSUBMIX_LOOP: do nsub=1,nsubmix
                       msectional, maxd_atype, ntype_aer, maxd_asize, nsize_aer,    &
                       na, volc, dlo_sect,dhi_sect,sigman, hygro, &
                       fn, fs, fm, fluxn, fluxs, fluxm, flux_fullact, &
-                      grid_id, ktau, ii, jj, kk )
+                      grid_id, ktau, ii, jj, kk,smax_prescribed )!BSINGH - Added smax_prescribed for WRFCuP
 
 !      calculates number, surface, and mass fraction of aerosols activated as CCN
 !      calculates flux of cloud droplets, surface area, and aerosol mass into cloud
@@ -1391,6 +1411,7 @@ OLD_CLOUD_NSUBMIX_LOOP: do nsub=1,nsubmix
       real,intent(in) :: volc(maxd_asize,maxd_atype)   ! total aerosol volume  concentration (m3/m3)
       real,intent(in) :: dlo_sect( maxd_asize, maxd_atype ), &  ! minimum size of section (cm)
            dhi_sect( maxd_asize, maxd_atype )     ! maximum size of section (cm)
+      real,intent(in),optional :: smax_prescribed  ! prescribed max. supersaturation for secondary activation !BSINGH - Added for WRFCuP
 
 !      output
 
@@ -1539,6 +1560,26 @@ OLD_CLOUD_NSUBMIX_LOOP: do nsub=1,nsubmix
       else
          isectional = 0
       endif
+      !BSINGH - For WRFCuP
+      if ( present( smax_prescribed ) ) then
+         if (smax_prescribed <= 0.0) then
+            do n=1,ntype_aer
+               do m=1,nsize_aer(n)
+                  fluxn(m,n)=0.
+                  fn(m,n)=0.
+                  fluxs(m,n)=0.
+                  fs(m,n)=0.
+                  fluxm(m,n)=0.
+                  fm(m,n)=0.
+               end do
+            end do
+            flux_fullact=0.
+            return
+         end if
+      end if
+      
+      !BSINGH - ENDS
+
 
       do n=1,ntype_aer
 !         print *,'ntype_aer,n,nsize_aer(n)=',ntype_aer,n,nsize_aer(n)
@@ -1926,8 +1967,16 @@ OLD_CLOUD_NSUBMIX_LOOP: do nsub=1,nsubmix
                     eta(1,n)=1.e10
                  endif
               enddo
-              call maxsat(zeta,eta,maxd_atype,ntype_aer, &
-                   maxd_asize,(/1/),gmsm,gmlnsig,f1,smax)
+              !BSINGH - For WRFCuP scheme
+              ! use smax_prescribed if it is present; otherwise get smax from subr maxsat
+              if ( present( smax_prescribed ) ) then
+                 smax = smax_prescribed
+              else
+                 !BSINGH -ENDS
+                 
+                 call maxsat(zeta,eta,maxd_atype,ntype_aer, &
+                      maxd_asize,(/1/),gmsm,gmlnsig,f1,smax)
+              endif
               lnsmax=log(smax)
               x=2*(log(gmsm(1))-lnsmax)/(3*sq2*gmlnsig(1))
               fnew=0.5*(1.-ERF_ALT(x))
@@ -1939,9 +1988,14 @@ OLD_CLOUD_NSUBMIX_LOOP: do nsub=1,nsubmix
                  eta(m,n)=etafactor1*etafactor2(m,n)
               enddo
               enddo
-
-              call maxsat(zeta,eta,maxd_atype,ntype_aer, &
-                   maxd_asize,nsize_aer,sm,alnsign,f1,smax)
+              !BSINGH - For WRFCuP scheme
+              if ( present( smax_prescribed ) ) then
+                 smax = smax_prescribed
+              else
+                 !BSINGH -ENDS
+                 call maxsat(zeta,eta,maxd_atype,ntype_aer, &
+                      maxd_asize,nsize_aer,sm,alnsign,f1,smax)
+              endif
 !             write(6,*)'w,smax=',w,smax
 
               lnsmax=log(smax)
@@ -2303,8 +2357,15 @@ OLD_CLOUD_NSUBMIX_LOOP: do nsub=1,nsubmix
                  eta(1,n)=1.e10
               endif
               end do
-               call maxsat(zeta,eta,maxd_atype,ntype_aer, &
-                    maxd_asize,(/1/),gmsm,gmlnsig,f1,smax)
+              !BSINGH - For WRFCuP
+              ! use smax_prescribed if it is present; otherwise get smax from subr maxsat
+              if ( present( smax_prescribed ) ) then
+                 smax = smax_prescribed
+              else
+                 !BSINGH -ENDS
+                 call maxsat(zeta,eta,maxd_atype,ntype_aer, &
+                      maxd_asize,(/1/),gmsm,gmlnsig,f1,smax)
+              endif
 
             else
 
@@ -2317,9 +2378,16 @@ OLD_CLOUD_NSUBMIX_LOOP: do nsub=1,nsubmix
                  endif
               end do
               end do
-
-              call maxsat(zeta,eta,maxd_atype,ntype_aer, &
-                   maxd_asize,nsize_aer,sm,alnsign,f1,smax)
+              !BSINGH - For WRFCuP
+              ! use smax_prescribed if it is present; otherwise get smax from subr maxsat
+              if ( present( smax_prescribed ) ) then
+                 smax = smax_prescribed
+              else
+                 !BSINGH -ENDS
+                 
+                 call maxsat(zeta,eta,maxd_atype,ntype_aer, &
+                      maxd_asize,nsize_aer,sm,alnsign,f1,smax)
+              endif
 
             endif
 

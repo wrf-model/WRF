@@ -42,5 +42,5 @@ package  tg_none         tg_option==0   -   -
 package  tg_emc2014spc   tg_option==1   -   state:tg_max_m10wind,tg_max_wwind,tg_min_wwind,tg_max_zhel_25,tg_min_zhel_25,tg_max_zhel_03,tg_min_zhel_03,tg_interval_start,tg_interval_end,tg_duration,tg_total_precip,tlow,zlow,tg_updhel03,tg_updhel25,tg_max_updhel03,tg_max_updhel25
 #--------------------------------- halos ---------------------------------
 # Before forcing:
-halo HALO_NMM_TORNADO dyn_nmm 24:tg_max_m10wind,tg_max_wwind,tg_min_wwind,tg_max_zhel_25,tg_min_zhel_25,tg_max_zhel_03,tg_min_zhel_03,tg_total_precip,tg_updhel03,tg_updhel25,tg_max_updhel03,tg_max_updhel25
+#halo HALO_NMM_TORNADO dyn_nmm 24:tg_max_m10wind,tg_max_wwind,tg_min_wwind,tg_max_zhel_25,tg_min_zhel_25,tg_max_zhel_03,tg_min_zhel_03,tg_total_precip,tg_updhel03,tg_updhel25,tg_max_updhel03,tg_max_updhel25
 # ------------------ end of tornado genesis parameters -------------------

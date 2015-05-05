@@ -70,12 +70,13 @@ subroutine da_setup_obs_structures_ascii( ob, iv, grid )
 
       allocate(thinning_grid_conv(num_ob_indexes))
       do n = 1, num_ob_indexes
-       if( n == radar .or. n == airep .or. n == tamdar ) then
-         thin_3d=.true.
-         call make3grids (n,thin_mesh_conv(n), thin_3d)
-        else
-         call make3grids (n,thin_mesh_conv(n))
-        end if 
+         if (n == radar) cycle
+         if( n == airep .or. n == tamdar ) then
+            thin_3d=.true.
+            call make3grids (n,thin_mesh_conv(n), thin_3d)
+         else
+            call make3grids (n,thin_mesh_conv(n))
+         end if 
       end do
    end if
 
@@ -138,12 +139,6 @@ subroutine da_setup_obs_structures_ascii( ob, iv, grid )
             call da_scan_obs_ssmi (iv, filename)
          end if
 
-         if (use_radarobs) then
-            ! scan radar observation file
-            write(filename(1:10), fmt='(a, i2.2, a)') 'ob', n,'.radar'
-            call da_scan_obs_radar(iv, filename, grid)
-         end if
-
          iv%info(:)%plocal(n) = iv%info(:)%nlocal
          iv%info(:)%ptotal(n) = iv%info(:)%ntotal
       end do
@@ -157,11 +152,8 @@ subroutine da_setup_obs_structures_ascii( ob, iv, grid )
          call da_scan_obs_ssmi(iv, 'ob.ssmi')
       end if
 
-      ! scan main body of radar observation file
-      if (use_radarobs) then
-         call da_scan_obs_radar(iv, 'ob.radar', grid)
-      end if
       do i=1,num_ob_indexes
+         if (i == radar) cycle
          iv%info(i)%plocal(iv%time) = iv%info(i)%nlocal
          iv%info(i)%ptotal(iv%time) = iv%info(i)%ntotal
       end do
@@ -189,32 +181,24 @@ subroutine da_setup_obs_structures_ascii( ob, iv, grid )
             call da_read_obs_ssmi (iv, filename)
          end if
 
-         if (use_radarobs) then
-            ! read radar observation file
-            write(filename(1:10), fmt='(a, i2.2, a)') 'ob', n,'.radar'
-            call da_read_obs_radar(iv, filename, grid)
-         end if
-
-         iv%info(:)%thin_ptotal(n) = iv%info(:)%thin_ntotal
-         iv%info(:)%thin_plocal(n) = iv%info(:)%thin_nlocal
+         do i=1,num_ob_indexes
+            if (i == radar) cycle
+            iv%info(i)%thin_ptotal(n) = iv%info(i)%thin_ntotal
+            iv%info(i)%thin_plocal(n) = iv%info(i)%thin_nlocal
+         end do
       end do
    else
       iv%time = 1
 
       call da_read_obs_ascii(iv, 'ob.ascii', uvq_direct, grid)
-      do i=1,num_ob_indexes
-      end do
 
       if (use_ssmiretrievalobs .or. use_ssmitbobs) then
          ! read ssmi observation file
          call da_read_obs_ssmi (iv, 'ob.ssmi')
       end if
 
-      if (use_radarobs) then
-         ! read radar observation file
-         call da_read_obs_radar(iv, 'ob.radar', grid)
-      end if
       do i=1,num_ob_indexes
+         if (i == radar) cycle
          iv%info(i)%thin_ptotal(iv%time) = iv%info(i)%thin_ntotal
          iv%info(i)%thin_plocal(iv%time) = iv%info(i)%thin_nlocal
       end do
@@ -224,58 +208,24 @@ subroutine da_setup_obs_structures_ascii( ob, iv, grid )
       call da_read_obs_bufrgpsro(iv)
    end if
 
-   ! Calculate DT for RF DA
-
-   if (use_radarobs .and. use_radar_rf) then
-      if (.not. DT_cloud_model) then
-         do j = jts,jte
-            do i = its, ite
-               do k = kts, kte
-                   grid%xb%delt(i,j,k) = 0.0
-               end do
-            end do
-        end do
-
-        do n = 1, iv%info(radar)%nlocal
-           do i=int(iv%info(radar)%i(1,n)), int(iv%info(radar)%i(1,n))+1
-              do j=int(iv%info(radar)%j(1,n)), int(iv%info(radar)%j(1,n))+1
-                 do k=kts, kte
-                    grid%xb%delt(i,j,k) = 1800.0
-                    grid%xb%qrn(i,j,k) = amax1(5.0E-5, grid%xb%qrn(i,j,k))
-                    grid%xb%qcw(i,j,k) = amax1(5.0E-12, grid%xb%qcw(i,j,k))
-                  end do
-                  ! do k=kts, kte
-                  !    v_h(k)=grid%xb%h(i,j  ,k)
-                  ! end do
-                  ! do k = 1, iv%info(radar)%levels(n)
-                  !    call zk(iv%radar(n)%height(k), v_h, zkk)
-                  !    grid%xb%delt(i,j,int(zkk))=1800.0
-                  !    grid%xb%delt(i,j,int(zkk)+1)=1800.0
-                  ! end do
-               end do
-            end do
-         end do
-      end if
-   end if
-
    !--------------------------------------------------------------------------
    ! [2.5] Set all thinned obs missing  
    !--------------------------------------------------------------------------
     if ( thin_conv_ascii ) then
-     do i = 1, num_ob_indexes
-
-        if ( iv%info(i)%ntotal > 0 ) then
-            if ( iv%info(i)%nlocal > 0 ) then
-               if ( ANY(iv%info(i)%thinned(:,:)) ) then
-                  if( i == radar .or. i == airep .or. i==tamdar ) then
-                  call da_set_3d_obs_missing(iv,i)  ! assign missing values level-by-level if thinned=true data
-                  else
-                  call da_set_obs_missing(iv,i)  ! assign missing values to those thinned=true data
-                  end if
-               end if
-            end if
-        end if
-     end do
+       do i = 1, num_ob_indexes
+          if (i == radar) cycle
+          if ( iv%info(i)%ntotal > 0 ) then
+             if ( iv%info(i)%nlocal > 0 ) then
+                if ( ANY(iv%info(i)%thinned(:,:)) ) then
+                   if( i == airep .or. i==tamdar ) then
+                      call da_set_3d_obs_missing(iv,i)  ! assign missing values level-by-level if thinned=true data
+                   else
+                      call da_set_obs_missing(iv,i)  ! assign missing values to those thinned=true data
+                   end if
+                end if
+             end if
+          end if
+       end do
     end if ! thin_conv_ascii
   
    !--------------------------------------------------------------------------
@@ -283,9 +233,9 @@ subroutine da_setup_obs_structures_ascii( ob, iv, grid )
    !--------------------------------------------------------------------------
 
    if (uvq_direct) then
-     call da_fill_obs_structures(iv, ob, uvq_direct)
+      call da_fill_obs_structures(iv, ob, uvq_direct)
    else
-     call da_fill_obs_structures(iv, ob)
+      call da_fill_obs_structures(iv, ob)
    endif
 
 
@@ -294,11 +244,12 @@ subroutine da_setup_obs_structures_ascii( ob, iv, grid )
 
    if ( thin_conv_ascii ) then
       do n = 1, num_ob_indexes
-         if( n==radar .or. n == airep .or. n==tamdar ) then
-         thin_3d=.true.
-         call destroygrids_conv (n, thin_3d)
+         if (n == radar) cycle
+         if( n == airep .or. n==tamdar ) then
+            thin_3d=.true.
+            call destroygrids_conv (n, thin_3d)
          else
-         call destroygrids_conv (n)
+            call destroygrids_conv (n)
          end if
       end do
       deallocate(thinning_grid_conv)

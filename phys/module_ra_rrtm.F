@@ -1862,9 +1862,9 @@ CONTAINS
  
   IF ( wrf_dm_on_monitor() ) THEN
      WRITE(message,*)'CAM-CLWRF interpolated values______ year:',yr,' julian day:',julian
-     call wrf_debug( 1, message)
+     call wrf_debug( 100, message)
      WRITE(message,*)'  CAM-CLWRF co2vmr: ',co2vmr,' n2ovmr:',n2ovmr,' ch4vmr:',ch4vmr
-     call wrf_debug( 1, message)
+     call wrf_debug( 100, message)
    ENDIF
 
 
@@ -6464,23 +6464,18 @@ CONTAINS
             RADLD(IPR) = RADLD(IPR) + (BBD - RADLD(IPR)) *     & 
                          ABSS(INDEX)                                             
             DRAD = DRAD + RADLD(IPR)                                             
- 2100    CONTINUE                                                                
 !     Set clear sky stream to total sky stream as long as layers                 
 !     remain clear.  Streams diverge when a cloud is reached.                    
             IF (ICLDDN.EQ.1) THEN                                                
-         DO 2200 IPR = 1, NGPT                                                   
                RADCLRD(IPR) = RADCLRD(IPR) + (BBD - RADCLRD(IPR)) *   & 
                               ABSS(INDEX)                                        
                CLRDRAD = CLRDRAD + RADCLRD(IPR)                                  
- 2200    CONTINUE                                                                
             ELSE                                                                 
-         DO 2300 IPR = 1, NGPT                                                   
                RADCLRD(IPR) = RADLD(IPR)                                         
                CLRDRAD = DRAD                                                    
- 2300    CONTINUE                                                                
             ENDIF                                                                
                                                                                  
-! 2100    CONTINUE                                                               
+ 2100    CONTINUE                                                               
                                                                                  
          ENDIF                                                                   
                                                                                  

@@ -40,7 +40,7 @@ module wrf_data
   integer                , parameter      :: WARN             = 1
   integer                , parameter      :: WrfDataHandleMax = 99
   integer                , parameter      :: MaxDims          = 2000 ! = NF_MAX_VARS
-#ifdef WRF_CHEM
+#if(WRF_CHEM == 1)
   integer                , parameter      :: MaxVars          = 8000
 #else
   integer                , parameter      :: MaxVars          = 3000
@@ -1056,7 +1056,7 @@ subroutine ext_ncd_open_for_read_begin( FileName, Comm, IOComm, SysDepInfo, Data
   integer                                :: open_mode
 #endif
 
-  call upgrade_filename(FileName)
+  !call upgrade_filename(FileName)
 
   if(WrfIOnotInitialized) then
     Status = WRF_IO_NOT_INITIALIZED 
@@ -1196,7 +1196,7 @@ subroutine ext_ncd_open_for_update( FileName, Comm, IOComm, SysDepInfo, DataHand
   integer                                :: open_mode
 #endif
 
-  call upgrade_filename(FileName)
+  !call upgrade_filename(FileName)
 
   if(WrfIOnotInitialized) then
     Status = WRF_IO_NOT_INITIALIZED 
@@ -1330,7 +1330,7 @@ SUBROUTINE ext_ncd_open_for_write_begin(FileName,Comm,IOComm,SysDepInfo,DataHand
                                        cache_preemption = 100
 #endif
 
-  call upgrade_filename(FileName)
+  !call upgrade_filename(FileName)
 
   if(WrfIOnotInitialized) then
     Status = WRF_IO_NOT_INITIALIZED 
@@ -3047,7 +3047,7 @@ subroutine ext_ncd_inquire_opened( DataHandle, FileName , FileStatus, Status )
   integer               ,intent(out)    :: Status
   type(wrf_data_handle) ,pointer        :: DH
 
-  call upgrade_filename(FileName)
+  !call upgrade_filename(FileName)
 
   call GetDH(DataHandle,DH,Status)
   if(Status /= WRF_NO_ERR) then

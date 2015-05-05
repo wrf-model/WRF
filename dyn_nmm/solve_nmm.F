@@ -285,10 +285,15 @@
 !
 ! Set diagnostic flag value at history output time
 !-----------------------------------------------------------------------------
-    diag_flag = .false.
-    if ( Is_alarm_tstep_nphs(grid%domain_clock, grid%alarms(HISTORY_ALARM), grid%nphs) ) then
-       diag_flag = .true.
-    endif
+
+      diag_flag = &
+           is_alarm_tstep_nphs(grid%domain_clock, grid%alarms(HISTORY_ALARM), grid%nphs) &
+           .or. &
+           is_alarm_tstep_nphs(grid%domain_clock, grid%alarms(AUXHIST1_ALARM), grid%nphs) &
+           .or. &
+           is_alarm_tstep_nphs(grid%domain_clock, grid%alarms(AUXHIST2_ALARM), grid%nphs) &
+           .or. &
+           is_alarm_tstep_nphs(grid%domain_clock, grid%alarms(AUXHIST3_ALARM), grid%nphs)
 
 !
 !-----------------------------------------------------------------------
@@ -334,7 +339,7 @@
       ETAMP_PHYSICS=.FALSE.
 !
       IF (CONFIG_FLAGS%MP_PHYSICS == ETAMPNEW .OR.                 &
-     &    CONFIG_FLAGS%MP_PHYSICS == ETAMPOLD .OR.                 &
+     &    CONFIG_FLAGS%MP_PHYSICS == ETAMP_HR .OR.                 &
      &    CONFIG_FLAGS%MP_PHYSICS == ETAMP_HWRF ) THEN
 !
          ETAMP_PHYSICS=.TRUE.
@@ -504,8 +509,8 @@
 !
 !***  APPROXIMATE GRIDPOINT SPACING (METERS)
 !
-      JC=JMS+(JME-JMS)/2
-      GPS=SQRT(grid%dx_nmm(IMS,JC)**2+grid%dy_nmm**2)
+      JC=jps+(jpe-jps)/2
+      GPS=SQRT(grid%dx_nmm(ips,JC)**2+grid%dy_nmm**2)
 !
 !***  TIMESTEPS PER HOUR
 !
@@ -819,6 +824,10 @@
 !
       btimx=now_time()
 !
+      call check_grid(grid,config_flags,'before PDTE', &
+            ids,ide,jds,jde,kds,kde, &
+            ims,ime,jms,jme,kms,kme, &
+            its,ite,jts,jte,kts,kte)
       CALL PDTE(                                                        &
 #ifdef DM_PARALLEL
      &            GRID,MYPE,MPI_COMM_COMP,                              &
@@ -858,6 +867,10 @@
 !     exch_tim_max=exch_tim_max+et_max
       btimx=now_time()
 !
+      call check_grid(grid,config_flags,'before ADVE', &
+            ids,ide,jds,jde,kds,kde, &
+            ims,ime,jms,jme,kms,kme, &
+            its,ite,jts,jte,kts,kte)
       CALL ADVE(grid%ntsd,GRID%DT,grid%deta1,grid%deta2,grid%pdtop                          &
      &         ,grid%curv,grid%f,grid%fad,grid%f4d,grid%em_loc,grid%emt_loc,grid%en,grid%ent,grid%dx_nmm,grid%dy_nmm      &
      &         ,grid%hbm2,grid%vbm2                                               &
@@ -933,6 +946,10 @@
 #ifdef DM_PARALLEL
 #    include "HALO_TRACERS.inc"
 #endif
+      call check_grid(grid,config_flags,'before ADV2', &
+            ids,ide,jds,jde,kds,kde, &
+            ims,ime,jms,jme,kms,kme, &
+            its,ite,jts,jte,kts,kte)
           CALL ADV2                &
           (grid%upstrm                  &
           ,MYPE,PARAM_FIRST_SCALAR,NUM_SZJ &
@@ -958,6 +975,10 @@
 #ifdef DM_PARALLEL
 #    include "HALO_TRACERS.inc"
 #endif
+      call check_grid(grid,config_flags,'before MONO', &
+            ids,ide,jds,jde,kds,kde, &
+            ims,ime,jms,jme,kms,kme, &
+            its,ite,jts,jte,kts,kte)
           CALL MONO &
           (         &
 #if defined(DM_PARALLEL)
@@ -1085,6 +1106,10 @@
 !
       btimx=now_time()
 !
+      call check_grid(grid,config_flags,'before VTOA', &
+            ids,ide,jds,jde,kds,kde, &
+            ims,ime,jms,jme,kms,kme, &
+            its,ite,jts,jte,kts,kte)
       CALL VTOA(                                                        &
      &          grid%ntsd,GRID%DT,grid%pt,grid%eta2                                    &
      &         ,grid%hbm2,grid%ef4t                                               &
@@ -1106,6 +1131,10 @@
 
 
 
+      call check_grid(grid,config_flags,'before VADZ', &
+            ids,ide,jds,jde,kds,kde, &
+            ims,ime,jms,jme,kms,kme, &
+            its,ite,jts,jte,kts,kte)
       CALL VADZ(grid%ntsd,GRID%DT,grid%fis,GRID%SIGMA,grid%dfl,grid%hbm2                    &
      &         ,grid%deta1,grid%deta2,grid%pdtop                                       &
      &         ,grid%pint,grid%pdsl,grid%pdslo,grid%petdt                                   &
@@ -1141,6 +1170,10 @@
 !
       btimx=now_time()
 !
+      call check_grid(grid,config_flags,'before HADZ', &
+            ids,ide,jds,jde,kds,kde, &
+            ims,ime,jms,jme,kms,kme, &
+            its,ite,jts,jte,kts,kte)
       CALL HADZ(grid%ntsd,GRID%DT,grid%hydro,grid%hbm2,grid%deta1,grid%deta2,grid%pdtop               &
      &         ,grid%dx_nmm,grid%dy_nmm,grid%fad                                       &
      &         ,grid%few,grid%fns,grid%fne,grid%fse                                         &
@@ -1176,6 +1209,10 @@
 !
       btimx=now_time()
 !
+      call check_grid(grid,config_flags,'before EPS', &
+            ids,ide,jds,jde,kds,kde, &
+            ims,ime,jms,jme,kms,kme, &
+            its,ite,jts,jte,kts,kte)
 
       CALL EPS(grid%ntsd,GRID%DT,grid%hydro,grid%dx_nmm,grid%dy_nmm,grid%fad                     &
      &        ,grid%aeta1,grid%deta1,grid%deta2,grid%pdtop,grid%pt                                     &
@@ -1201,6 +1238,10 @@
 !***  VERTICAL ADVECTION OF grid%q, TKE, AND CLOUD WATER
 !-----------------------------------------------------------------------
 !
+      call check_grid(grid,config_flags,'before VAD2', &
+            ids,ide,jds,jde,kds,kde, &
+            ims,ime,jms,jme,kms,kme, &
+            its,ite,jts,jte,kts,kte)
       IF(MOD(grid%ntsd,GRID%IDTAD)==0)THEN
         btimx=now_time()
 !
@@ -1304,6 +1345,10 @@
         btimx=now_time()
 !
 !-----------------------------------------------------------------------
+      call check_grid(grid,config_flags,'before HAD2', &
+            ids,ide,jds,jde,kds,kde, &
+            ims,ime,jms,jme,kms,kme, &
+            its,ite,jts,jte,kts,kte)
         had2_micro_check: IF (ETAMP_PHYSICS) THEN
 !-----------------------------------------------------------------------
 !
@@ -1482,6 +1527,10 @@
 !emc_2010_bugfix_h50
 #endif
 
+      call check_grid(grid,config_flags,'before RADIATION', &
+            ids,ide,jds,jde,kds,kde, &
+            ims,ime,jms,jme,kms,kme, &
+            its,ite,jts,jte,kts,kte)
       IF(MOD(NTSD_rad,GRID%NRADS)==0.OR.                               &
      &   MOD(NTSD_rad,GRID%NRADL)==0)THEN
 !
@@ -1526,11 +1575,25 @@
      &                ,IMS,IME,JMS,JME,KMS,KME                         &
      &                ,ITS,ITE,JTS,JTE,KTS,KTE)
 !
-        DO J=JMS,JME
-        DO I=IMS,IME
+        DO J=jts,min(jde-1,jte)
+        DO I=its,min(ide-1,ite)
           grid%gsw(I,J)=grid%rswin(I,J)-grid%rswout(I,J)
         ENDDO
         ENDDO
+#ifdef NMM_FIND_LOAD_IMBALANCE
+      call blockf(loadimbal_tim,'after rad')
+#endif
+      btimx=now_time()
+!-----------------
+#ifdef DM_PARALLEL
+#    include "HALO_NMM_RAD.inc"
+#endif
+!-----------------
+      exch_tim=exch_tim+now_time()-btimx
+#ifdef NMM_FIND_LOAD_IMBALANCE
+      call blockf(loadimbal_tim,'after rad halo')
+#endif
+
 !
 !                            ***  NOTE  ***
 ! grid%rlwin/grid%rswin  - downward longwave/shortwave at the surface (formerly TOTLWDN/TOTSWDN)
@@ -1550,6 +1613,10 @@
 !     the time passed into the zenith angle code consistently between
 !     RDTEMP and RADIATION.
 
+      call check_grid(grid,config_flags,'before RDTEMP', &
+            ids,ide,jds,jde,kds,kde, &
+            ims,ime,jms,jme,kms,kme, &
+            its,ite,jts,jte,kts,kte)
       CALL RDTEMP(grid%ntsd,GRID%DT,GRID%JULDAY,GRID%JULYR                  &
      &           ,GRID%XTIME,IHRST,grid%glat,grid%glon                           &
      &           ,grid%czen,grid%czmean,grid%t,grid%rswtt,grid%rlwtt,grid%hbm2                       &
@@ -1593,6 +1660,10 @@
      &                     ,ITS,ITE,JTS,JTE,KTS,KTE)
         ENDIF
 !
+        call check_grid(grid,config_flags,'before TURBL', &
+            ids,ide,jds,jde,kds,kde, &
+            ims,ime,jms,jme,kms,kme, &
+            its,ite,jts,jte,kts,kte)
         CALL TURBL(grid%ntsd,GRID%DT,GRID%NPHS,RESTRT                       &
      &            ,N_MOIST,GRID%NUM_SOIL_LAYERS,grid%sldpth,grid%dzsoil          &
      &            ,grid%deta1,grid%deta2,grid%aeta1,grid%aeta2,grid%eta1,grid%eta2,grid%pdtop,grid%pt          &
@@ -1675,7 +1746,7 @@
 ! Coupling insertion:->
       btimx=now_time()
       call ATM_DOFLUXES(grid%twbs,grid%qwbs,grid%rlwin,grid%rswin,grid%radot,grid%rswout, &
-      grid%taux,grid%tauy,grid%pint(:,:,1),grid%prec,grid%u10,grid%v10)
+      grid%taux,grid%tauy,grid%pint,grid%prec,grid%u10,grid%v10)
       flux_tim=flux_tim+now_time()-btimx
 !<-:Coupling insertion
 !
@@ -1752,6 +1823,10 @@
         ICLTEND=-1
         btimx=now_time()
 ! 
+        call check_grid(grid,config_flags,'before CLTEND', &
+            ids,ide,jds,jde,kds,kde, &
+            ims,ime,jms,jme,kms,kme, &
+            its,ite,jts,jte,kts,kte)
         CALL CLTEND(ICLTEND,GRID%NPHS,grid%t,grid%t_old,grid%t_adj                    &
      &             ,IDS,IDF,JDS,JDF,KDS,KDE                            &
      &             ,IMS,IME,JMS,JME,KMS,KME                            &
@@ -1824,6 +1899,10 @@
 !----------------------------------------------------------------------
        call wrf_message('call cucnvc')
        call start_timing
+        call check_grid(grid,config_flags,'before CUCNVC', &
+            ids,ide,jds,jde,kds,kde, &
+            ims,ime,jms,jme,kms,kme, &
+            its,ite,jts,jte,kts,kte)
         CALL CUCNVC(grid%ntsd,GRID%DT,GRID%NCNVC,GRID%NRADS,GRID%NRADL      &
      &             ,GPS,RESTRT,grid%hydro,grid%cldefi,N_MOIST,GRID%ENSDIM        &
      &             ,MOIST                                              &
@@ -1853,6 +1932,10 @@
      &             ,IMS,IME,JMS,JME,KMS,KME                            &
      &             ,IPS,IPE,JPS,JPE,KPS,KPE                            &
      &             ,ITS,ITE,JTS,JTE,KTS,KTE)
+        call check_grid(grid,config_flags,'after CUCNVC', &
+            ids,ide,jds,jde,kds,kde, &
+            ims,ime,jms,jme,kms,kme, &
+            its,ite,jts,jte,kts,kte)
         call end_timing('cucnvc')
 !----------------------------------------------------------------------
 !
@@ -1922,6 +2005,10 @@
       IF(MOD(grid%ntsd,GRID%NPHS)==0)THEN
         btimx=now_time()
 !
+        call check_grid(grid,config_flags,'before GSMDRIVE', &
+            ids,ide,jds,jde,kds,kde, &
+            ims,ime,jms,jme,kms,kme, &
+            its,ite,jts,jte,kts,kte)
         CALL GSMDRIVE(grid%ntsd,GRID%DT,GRID%NPHS,N_MOIST                   &
      &               ,grid%dx_nmm(ITS,JC),GRID%DY,grid%sm,grid%hbm2,grid%fis               &
      &               ,grid%deta1,grid%deta2,grid%aeta1,grid%aeta2,grid%eta1,grid%eta2                &
@@ -1939,6 +2026,10 @@
      &               ,IDS,IDF,JDS,JDF,KDS,KDE                          &
      &               ,IMS,IME,JMS,JME,KMS,KME                          &
      &               ,ITS,ITE,JTS,JTE,KTS,KTE)
+        call check_grid(grid,config_flags,'after GSMDRIVE', &
+            ids,ide,jds,jde,kds,kde, &
+            ims,ime,jms,jme,kms,kme, &
+            its,ite,jts,jte,kts,kte)
 !
         gsmdrive_tim=gsmdrive_tim+now_time()-btimx
 !
@@ -2028,6 +2119,10 @@
      &          ,IMS,IME,JMS,JME,KMS,KME                               &
      &          ,ITS,ITE,JTS,JTE,KTS,KTE)
 !
+        call check_grid(grid,config_flags,'after HDIFF', &
+            ids,ide,jds,jde,kds,kde, &
+            ims,ime,jms,jme,kms,kme, &
+            its,ite,jts,jte,kts,kte)
       IF(.NOT.OPERATIONAL_PHYSICS)THEN
         DO K=KTS,KTE
         DO J=MYJS,MYJE
@@ -2070,6 +2165,10 @@
 !
       btimx=now_time()
 !
+        call check_grid(grid,config_flags,'before mass_boundary', &
+            ids,ide,jds,jde,kds,kde, &
+            ims,ime,jms,jme,kms,kme, &
+            its,ite,jts,jte,kts,kte)
       CALL MASS_BOUNDARY(GRID%ID,grid%ntsd,GRID%DT,NEST,NUNIT_NBC,NBOCO,LAST_TIME,TSPH &
      &          ,LB,grid%eta1,grid%eta2,grid%pdtop,grid%pt,grid%res                              &
      &          ,grid%PD_BXS,grid%PD_BXE,grid%PD_BYS,grid%PD_BYE,grid%T_BXS,grid%T_BXE,grid%T_BYS,grid%T_BYE    &
@@ -2085,6 +2184,10 @@
      &          ,IDS,IDF,JDS,JDF,KDS,KDE                                &
      &          ,IMS,IME,JMS,JME,KMS,KME                                &
      &          ,ITS,ITE,JTS,JTE,KTS,KTE)
+        call check_grid(grid,config_flags,'after MASS_BOUNDARY', &
+            ids,ide,jds,jde,kds,kde, &
+            ims,ime,jms,jme,kms,kme, &
+            its,ite,jts,jte,kts,kte)
 #if (NMM_NEST==1)
       if(ETAMP_PHYSICS) then
 #endif
@@ -2114,6 +2217,10 @@
               its,ite,jts,jte,kts,kte)
       endif
 #endif
+        call check_grid(grid,config_flags,'after boundaries', &
+            ids,ide,jds,jde,kds,kde, &
+            ims,ime,jms,jme,kms,kme, &
+            its,ite,jts,jte,kts,kte)
 !
       bocoh_tim=bocoh_tim+now_time()-btimx
 !     if(mod(grid%ntsd,n_print_time)==0)then
@@ -2160,6 +2267,10 @@
 !
       btimx=now_time()
 !
+      call check_grid(grid,config_flags,'before PFDHT', &
+            ids,ide,jds,jde,kds,kde, &
+            ims,ime,jms,jme,kms,kme, &
+            its,ite,jts,jte,kts,kte)
       CALL PFDHT(grid%ntsd,LAST_TIME,grid%pt,grid%deta1,grid%deta2,grid%pdtop,grid%res,grid%fis           &
      &          ,grid%hydro,GRID%SIGMA,FIRST,grid%dx_nmm,grid%dy_nmm                  &
      &          ,grid%hbm2,grid%vbm2,grid%vbm3                                        &
@@ -2170,6 +2281,10 @@
      &          ,IDS,IDF,JDS,JDF,KDS,KDE                               &
      &          ,IMS,IME,JMS,JME,KMS,KME                               &
      &          ,ITS,ITE,JTS,JTE,KTS,KTE)
+      call check_grid(grid,config_flags,'after PFDHT', &
+            ids,ide,jds,jde,kds,kde, &
+            ims,ime,jms,jme,kms,kme, &
+            its,ite,jts,jte,kts,kte)
 
 !
       pfdht_tim=pfdht_tim+now_time()-btimx
@@ -2198,6 +2313,10 @@
 !
       btimx=now_time()
 !
+      call check_grid(grid,config_flags,'before DDAMP', &
+            ids,ide,jds,jde,kds,kde, &
+            ims,ime,jms,jme,kms,kme, &
+            its,ite,jts,jte,kts,kte)
       CALL DDAMP(grid%ntsd,GRID%DT,grid%deta1,grid%deta2,grid%pdsl      &
      &          ,grid%pdtop,grid%div,grid%hbm2                          &
      &          ,grid%t,grid%u,grid%v,grid%ddmpu,grid%ddmpv             &
@@ -2205,6 +2324,10 @@
      &          ,IDS,IDF,JDS,JDF,KDS,KDE                                &
      &          ,IMS,IME,JMS,JME,KMS,KME                                &
      &          ,ITS,ITE,JTS,JTE,KTS,KTE)
+      call check_grid(grid,config_flags,'after DDAMP', &
+            ids,ide,jds,jde,kds,kde, &
+            ims,ime,jms,jme,kms,kme, &
+            its,ite,jts,jte,kts,kte)
 !
       ddamp_tim=ddamp_tim+now_time()-btimx
 !
@@ -2287,6 +2410,10 @@
    IF ( config_flags%compute_radar_ref .EQ. 1 ) THEN
    CALL wrf_debug ( 200 , ' call diagnostic_driver' )
 
+   call check_grid(grid,config_flags,'before diag o c r', &
+            ids,ide,jds,jde,kds,kde, &
+            ims,ime,jms,jme,kms,kme, &
+            its,ite,jts,jte,kts,kte)
    CALL diagnostic_output_calc_refl(                                   &
       &              DIAGFLAG=diag_flag                                &
       &             ,REFD_MAX=grid%refd_max                            &
@@ -2295,6 +2422,10 @@
       &             ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
       &             ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
       &                                                          )
+   call check_grid(grid,config_flags,'after diag o c r', &
+            ids,ide,jds,jde,kds,kde, &
+            ims,ime,jms,jme,kms,kme, &
+            its,ite,jts,jte,kts,kte)
    END IF
 
 !
@@ -2465,7 +2596,6 @@
                      ,IMS,IME,JMS,JME,KMS,KME      &
                      ,ITS,ITE,JTS,JTE,KTS,KTE      )
      ENDIF
-
 
      diag_tim=diag_tim+now_time()-btimx
    endif hwrfx_mlsp
@@ -3299,6 +3429,67 @@
 #endif
 !----------------------------------------------------------------------
       END SUBROUTINE FIELD_STATS
+
+      SUBROUTINE check_grid(grid,config_flags,where, &
+                            IDS,IDE,JDS,JDE,KDS,KDE, &
+                            IMS,IME,JMS,JME,KMS,KME, &
+                            ITS,ITE,JTS,JTE,KTS,KTE)
+        use module_domain, only : domain
+        use module_configure, only : grid_config_rec_type
+#ifndef NO_IEEE_MODULE
+        use, intrinsic :: ieee_arithmetic
+#endif
+        implicit none
+        LOGICAL ISNAN, EXTERNAL           ! NaN values detection
+        character*(*), intent(in) :: where
+        type(grid_config_rec_type),intent(in) :: config_flags
+        type(domain), intent(in) :: grid
+        INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                  &
+     &                     ,IMS,IME,JMS,JME,KMS,KME                    &
+     &                     ,ITS,ITE,JTS,JTE,KTS,KTE
+        ! - locals - !
+        character(len=255) :: message
+        integer :: i,j,k
+
+        if(config_flags%halo_debug/=2 .and. config_flags%halo_debug/=3) then
+           return
+        endif
+#ifndef NO_IEEE_MODULE
+        call wrf_debug(2,'Check for NaN')
+
+        do k=kts,kte-1
+           do j=jts,jte
+              do i=its,ite
+                 if(ieee_is_nan(grid%w(i,j,k))) then
+                    write(message,303) where,'W',i,j,k
+                    call wrf_error_fatal(message)
+                 endif
+                 if(ieee_is_nan(grid%u(i,j,k))) then
+                    write(message,303) where,'U',i,j,k
+                    call wrf_error_fatal(message)
+                 endif
+                 if(ieee_is_nan(grid%v(i,j,k))) then
+                    write(message,303) where,'V',i,j,k
+                    call wrf_error_fatal(message)
+                 endif
+                 if(ieee_is_nan(grid%t(i,j,k))) then
+                    write(message,303) where,'T',i,j,k
+                    call wrf_error_fatal(message)
+                 endif
+                 if(ieee_is_nan(grid%q(i,j,k))) then
+                    write(message,303) where,'Q',i,j,k
+                    call wrf_error_fatal(message)
+                 endif
+                 if(ieee_is_nan(grid%cwm(i,j,k))) then
+                    write(message,303) where,'CWM',i,j,k
+                    call wrf_error_fatal(message)
+                 endif
+303              format('check_grid(...,"',A,'",...): NaN at ',A,'(',I0,',',I0,',',I0,')')
+              enddo
+           enddo
+        enddo
+#endif
+      END SUBROUTINE check_grid
 !----------------------------------------------------------------------
 #if defined(NMM_FIND_LOAD_IMBALANCE)
       SUBROUTINE BLOCKF(block_tim,what)

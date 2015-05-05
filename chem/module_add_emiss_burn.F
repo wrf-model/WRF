@@ -230,7 +230,7 @@ CONTAINS
         enddo
         enddo
         enddo
-      CASE (GOCARTRACM_KPP,GOCARTRADM2_KPP,GOCARTRADM2)
+      CASE (GOCARTRACM_KPP,GOCARTRADM2)
           do j=jts,jte
           do i=its,ite
            do k=kts,kte
@@ -286,7 +286,8 @@ CONTAINS
         enddo
         enddo
         enddo
-      CASE (RADM2,RACM_KPP,RACM_MIM_KPP,SAPRC99_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP)
+      CASE (RADM2,RACM_KPP,RACM_MIM_KPP,SAPRC99_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP, &
+           SAPRC99_MOSAIC_8BIN_VBS2_AQ_KPP, SAPRC99_MOSAIC_8BIN_VBS2_KPP)!BSINGH(12/03/2013): Added SAPRC 8 bin and non-aq on (04/07/2014)
           do j=jts,jte
           do i=its,ite
            do k=kts,kte

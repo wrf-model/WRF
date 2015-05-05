@@ -580,8 +580,10 @@
 
       implicit none
 
+      real(kind=kind_sfcflux),dimension(ims:ime,jms:jme,kms:kme):: PINT
+
       real(kind=kind_sfcflux),dimension(ims:ime,jms:jme):: &
-     &TWBS,QWBS,RLWIN,RSWIN,RADOT,RSWOUT,TX,TY,PINT,PREC,U10,V10
+     &TWBS,QWBS,RLWIN,RSWIN,RADOT,RSWOUT,TX,TY,PREC,U10,V10
 !c    &TWBS,QWBS,RLWIN,RSWIN,RADOT,RSWOUT,USTAR,U10,V10,PINT,PREC
 !       Act. arg. for PINT is a 3d array - so this only is OK if
 !       Ps=Act.arg.(:,:.1) - actually, Ps=PINT(:,1,:)
@@ -607,7 +609,7 @@
 
       if (zeroSF) sf(gid)%a=0.
 
-      SWR=-RSWIN+RSWOUT          ! Check sign! here SWR is meant to be
+      SWR(its:ite,jts:jte)=-RSWIN(its:ite,jts:jte)+RSWOUT(its:ite,jts:jte)          ! Check sign! here SWR is meant to be
                                  ! positive upward
 !c     sf(gid)%a(:,:,NSF-1)=sf(gid)%a(:,:,NSF-1)-TX
 !c     sf(gid)%a(:,:,NSF)=sf(gid)%a(:,:,NSF)-TY
@@ -620,29 +622,29 @@
 !oooooooooooooooooooooooooooooo
       IF (Ocean_spec.eq.1) THEN
 !oooooooooooooooooooooooooooooo
-        sf(gid)%a(:,:,1)=sf(gid)%a(:,:,1)-TWBS-QWBS+RADOT-RLWIN
+        sf(gid)%a(its:ite,jts:jte,1)=sf(gid)%a(its:ite,jts:jte,1)-TWBS(its:ite,jts:jte)-QWBS(its:ite,jts:jte)+RADOT(its:ite,jts:jte)-RLWIN(its:ite,jts:jte)
                                        ! -TWBS (-QWBS) is supposed to
                                        ! be sensible (latent) heat flux,
                                        ! positive upward
-        sf(gid)%a(:,:,2)=sf(gid)%a(:,:,2)+SWR
-        sf(gid)%a(:,:,NSF-NSF_WM-1)=sf(gid)%a(:,:,NSF-NSF_WM-1)-TX
-        sf(gid)%a(:,:,NSF-NSF_WM)=sf(gid)%a(:,:,NSF-NSF_WM)-TY
+        sf(gid)%a(its:ite,jts:jte,2)=sf(gid)%a(its:ite,jts:jte,2)+SWR(its:ite,jts:jte)
+        sf(gid)%a(its:ite,jts:jte,NSF-NSF_WM-1)=sf(gid)%a(its:ite,jts:jte,NSF-NSF_WM-1)-TX(its:ite,jts:jte)
+        sf(gid)%a(its:ite,jts:jte,NSF-NSF_WM)=sf(gid)%a(its:ite,jts:jte,NSF-NSF_WM)-TY(its:ite,jts:jte)
                      ! <- signs for stress components are changed
 !ooooooooooooooooooooooooooooooooooo
       ELSE IF (Ocean_spec.eq.2) THEN
 !ooooooooooooooooooooooooooooooooooo
-        sf(gid)%a(:,:,1)=sf(gid)%a(:,:,1)+PREC
-        sf(gid)%a(:,:,2)=sf(gid)%a(:,:,2)-TWBS
-        sf(gid)%a(:,:,3)=sf(gid)%a(:,:,3)-QWBS
-        sf(gid)%a(:,:,4)=sf(gid)%a(:,:,4)+PINT-101300.
-        sf(gid)%a(:,:,5)=sf(gid)%a(:,:,5)-SWR-RADOT+RLWIN
-        sf(gid)%a(:,:,6)=sf(gid)%a(:,:,6)-SWR
+        sf(gid)%a(its:ite,jts:jte,1)=sf(gid)%a(its:ite,jts:jte,1)+PREC(its:ite,jts:jte)
+        sf(gid)%a(its:ite,jts:jte,2)=sf(gid)%a(its:ite,jts:jte,2)-TWBS(its:ite,jts:jte)
+        sf(gid)%a(its:ite,jts:jte,3)=sf(gid)%a(its:ite,jts:jte,3)-QWBS(its:ite,jts:jte)
+        sf(gid)%a(its:ite,jts:jte,4)=sf(gid)%a(its:ite,jts:jte,4)+PINT(its:ite,jts:jte,1)-101300.
+        sf(gid)%a(its:ite,jts:jte,5)=sf(gid)%a(its:ite,jts:jte,5)-SWR(its:ite,jts:jte)-RADOT(its:ite,jts:jte)+RLWIN(its:ite,jts:jte)
+        sf(gid)%a(its:ite,jts:jte,6)=sf(gid)%a(its:ite,jts:jte,6)-SWR(its:ite,jts:jte)
 
-        sf(gid)%a(:,:,NSF-NSF_WM-1)=sf(gid)%a(:,:,NSF-NSF_WM-1)+TX
-        sf(gid)%a(:,:,NSF-NSF_WM)=sf(gid)%a(:,:,NSF-NSF_WM)+TY
+        sf(gid)%a(its:ite,jts:jte,NSF-NSF_WM-1)=sf(gid)%a(its:ite,jts:jte,NSF-NSF_WM-1)+TX(its:ite,jts:jte)
+        sf(gid)%a(its:ite,jts:jte,NSF-NSF_WM)=sf(gid)%a(its:ite,jts:jte,NSF-NSF_WM)+TY(its:ite,jts:jte)
                      ! <- signs for stress components are NOT changed
         if (nrmSF) then
-          sf(gid)%a(:,:,1)=sf(gid)%a(:,:,1)*dtainv
+          sf(gid)%a(its:ite,jts:jte,1)=sf(gid)%a(its:ite,jts:jte,1)*dtainv
                         ! so this will be m/s; check what OM wants
         end if
 !ooooooooooo
@@ -653,8 +655,8 @@
 !wwwwwwwwwwwwwwwwwwwwwwwww
       IF (WM_id.gt.0) THEN
 !wwwwwwwwwwwwwwwwwwwwwwwww
-        sf(gid)%a(:,:,NSF-1)=sf(gid)%a(:,:,NSF-1)+U10
-        sf(gid)%a(:,:,NSF)=sf(gid)%a(:,:,NSF)+V10
+        sf(gid)%a(its:ite,jts:jte,NSF-1)=sf(gid)%a(its:ite,jts:jte,NSF-1)+U10(its:ite,jts:jte)
+        sf(gid)%a(its:ite,jts:jte,NSF)=sf(gid)%a(its:ite,jts:jte,NSF)+V10(its:ite,jts:jte)
 !wwwwwwwwwww
       END IF
 !wwwwwwwwwww

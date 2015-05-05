@@ -79,6 +79,7 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
    ilocal    = nlocal
    if ( thin_conv_ascii ) then
        do n = 1, num_ob_indexes
+          if ( n == radar ) cycle
           call cleangrids_conv(n)
        end do
    end if
@@ -1546,6 +1547,7 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
    ! thinning check
    if ( thin_conv_ascii ) then
       do n = 1, num_ob_indexes
+          if (n==radar) cycle
           allocate ( in(thinning_grid_conv(n)%itxmax) )
           allocate (out(thinning_grid_conv(n)%itxmax) )
             do i = 1, thinning_grid_conv(n)%itxmax

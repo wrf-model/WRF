@@ -28,7 +28,7 @@ subroutine da_transform_vtovv(grid, cv_size, be, cv, vv)
       ! [1.0] Fill vv arrays from 1-dimensional cv array.
       !-------------------------------------------------------------------------
 #ifdef CLOUD_CV
-      call da_cv_to_vv(cv_size, cv, (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz,  be%v6%mz, be%v7%mz,  be%v8%mz, be%v9%mz, be%alpha%mz, be%ne /), vv)
+      call da_cv_to_vv(cv_size, cv, (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz,  be%v6%mz, be%v7%mz, be%v8%mz, be%v9%mz, be%v10%mz, be%v11%mz, be%alpha%mz, be%ne /), vv)
 #else
       call da_cv_to_vv(cv_size, cv, (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz, be%alpha%mz, be%ne /), vv)
 #endif
@@ -188,9 +188,40 @@ subroutine da_transform_vtovv(grid, cv_size, be, cv, vv)
    elseif( .not. use_rf ) then
       call da_error(__FILE__,__LINE__,(/"no da_transform_through_wavelet for v9"/))
    endif
+
+   ! [2.10] Transform 10th control variable
+
+   mz = be % v10 % mz
+   if( use_rf .and. mz > 0 .and. len_scaling10(1) /= 0.0) then
+      if(cloud_cv_options == 1)then
+         vv % v10 = 0.0
+      elseif(cloud_cv_options == 2)then
+         call da_transform_through_rf(grid, mz, be % v10 % rf_alpha, be % v10 % val, vv % v10)
+      elseif(cloud_cv_options == 3)then
+         call da_transform_through_rf(grid, mz, be % v10 % rf_alpha, be % v10 % val, vv % v10, scaling)
+      endif
+   elseif( .not. use_rf ) then
+      call da_error(__FILE__,__LINE__,(/"no da_transform_through_wavelet for v10"/))
+   endif
+
+   ! [2.11] Transform 11th control variable
+
+   mz = be % v11 % mz
+   if( use_rf .and. mz > 0 .and. len_scaling11(1) /= 0.0) then
+      if(cloud_cv_options == 1)then
+         vv % v11 = 0.0
+      elseif(cloud_cv_options == 2)then
+         call da_transform_through_rf(grid, mz, be % v11 % rf_alpha, be % v11 % val, vv % v11)
+      elseif(cloud_cv_options == 3)then
+         call da_transform_through_rf(grid, mz, be % v11 % rf_alpha, be % v11 % val, vv % v11, scaling)
+      endif
+   elseif( .not. use_rf ) then
+      call da_error(__FILE__,__LINE__,(/"no da_transform_through_wavelet for v11"/))
+   endif
+
 #endif
 
-   ! [2.9] Transform alpha control variable
+   ! [2.12] Transform alpha control variable
 
    ne = be % ne
    if (ne > 0) then

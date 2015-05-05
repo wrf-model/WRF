@@ -273,7 +273,6 @@ tile_lon_loop : &
            (config_flags%chem_opt == CBMZ_BB       ) .or.          &
            (config_flags%chem_opt == CBMZ_BB_KPP   ) .or.          &
            (config_flags%chem_opt == CBMZ_MOSAIC_KPP   ) .or.      &
-           (config_flags%chem_opt == CBMZ_MOSAIC_4BIN_VBS2_KPP).or.&
            (config_flags%chem_opt == CBMZ_MOSAIC_4BIN_AQ) .or.     &
            (config_flags%chem_opt == CBMZ_MOSAIC_8BIN_AQ) .or.     &
            (config_flags%chem_opt == CBMZ_MOSAIC_4BIN) .or.        &
@@ -395,7 +394,6 @@ tile_lon_loop : &
 ! For gocartracm,radm
 !-----------------------------------------------------------
       if  ((config_flags%chem_opt == GOCARTRACM_KPP)  .OR.     &
-           (config_flags%chem_opt == GOCARTRADM2_KPP) .OR.     &
            (config_flags%chem_opt == GOCARTRADM2))   then
          do j=jts,jte
             do i=its,ite

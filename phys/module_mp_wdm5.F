@@ -82,6 +82,8 @@ CONTAINS
                  ,rain, rainncv                                    &
                  ,snow, snowncv                                    &
                  ,sr                                               &
+                 ,has_reqc, has_reqi, has_reqs                     &  ! for radiation
+                 ,re_cloud, re_ice,   re_snow                      &  ! for radiation     
                  ,refl_10cm, diagflag, do_radar_ref                &
                  ,itimestep                                        &
                  ,ids,ide, jds,jde, kds,kde                        &
@@ -108,6 +110,14 @@ CONTAINS
 !  Coded by Kyo-Sun Lim and Song-You Hong (Yonsei Univ.) Fall 2008
 !
 !  Implemented by Kyo-Sun Lim and Jimy Dudhia (NCAR) Winter 2008
+!
+!  further modifications :
+!        semi-lagrangian sedimentation (JH,2010),hong, aug 2009
+!        ==> higher accuracy and efficient at lower resolutions
+!        reflectivity computation from greg thompson, lim, jun 2011
+!        ==> only diagnostic, but with removal of too large drops
+!        effective radius of hydrometeors, bae from kiaps, jan 2015
+!        ==> consistency in solar insolation of rrtmg radiation
 !
 !  Reference) Lim and Hong (LH, 2010) Mon. Wea. Rev. 
 !             Juang and Hong (JH, 2010) Mon. Wea. Rev.
@@ -165,6 +175,16 @@ CONTAINS
         INTENT(INOUT) ::                                    rain, &
                                                          rainncv, &
                                                               sr
+! for radiation connecting
+  INTEGER, INTENT(IN)::                                           &
+                                                        has_reqc, &
+                                                        has_reqi, &
+                                                        has_reqs
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme),                     &
+        INTENT(INOUT)::                                           &
+                                                        re_cloud, &
+                                                          re_ice, &
+                                                         re_snow
 !+---+-----------------------------------------------------------------+
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT)::     &  ! GT
                                                        refl_10cm
@@ -186,6 +206,10 @@ CONTAINS
       LOGICAL, OPTIONAL, INTENT(IN) :: diagflag
       INTEGER, OPTIONAL, INTENT(IN) :: do_radar_ref
 !+---+-----------------------------------------------------------------+
+! to calculate effective radius for radiation
+  REAL, DIMENSION( kts:kte ) :: qc1d, nc1d, den1d
+  REAL, DIMENSION( kts:kte ) :: qi1d
+  REAL, DIMENSION( kts:kte ) :: re_qc, re_qi, re_qs
 
 #ifndef RUN_ON_GPU
       IF (itimestep .eq. 1) THEN
@@ -261,6 +285,31 @@ CONTAINS
             ENDDO
          endif
          ENDIF
+
+        if (has_reqc.ne.0 .and. has_reqi.ne.0 .and. has_reqs.ne.0) then
+          do i = its, ite
+            do k = kts, kte
+              re_qc(k) = 2.51E-6
+              re_qi(k) = 10.01E-6
+              re_qs(k) = 25.E-6
+
+              t1d(k)  = th(i,k,j)*pii(i,k,j)
+              den1d(k)= den(i,k,j)
+              qc1d(k) = qc(i,k,j)
+              qi1d(k) = qi(i,k,j)
+              qs1d(k) = qs(i,k,j)
+              nc1d(k) = nc(i,k,j)
+            enddo
+            call effectRad_wdm5 (t1d, qc1d, nc1d, qi1d, qs1d, den1d,     &
+                                qmin, t0c, re_qc, re_qi, re_qs,         &
+                                kts, kte, i, j)
+            do k = kts, kte
+              re_cloud(i,k,j) = MAX(2.51E-6,  MIN(re_qc(k),  50.E-6))
+              re_ice(i,k,j)   = MAX(10.01E-6, MIN(re_qi(k), 125.E-6))
+              re_snow(i,k,j)  = MAX(25.E-6,   MIN(re_qs(k), 999.E-6))
+            enddo ! k loop
+          enddo   ! i loop
+        endif     ! has_reqc, etc...
 !+---+-----------------------------------------------------------------+
 
       ENDDO
@@ -2238,5 +2287,107 @@ CONTAINS
 
       end subroutine refl10cm_wdm5
 !+---+-----------------------------------------------------------------+
+
+!-----------------------------------------------------------------------
+     subroutine effectRad_wdm5 (t, qc, nc, qi, qs, rho, qmin, t0c,        &
+                                re_qc, re_qi, re_qs, kts, kte, ii, jj)
+
+!-----------------------------------------------------------------------
+!  Compute radiation effective radii of cloud water, ice, and snow for 
+!  double-moment microphysics..
+!  These are entirely consistent with microphysics assumptions, not
+!  constant or otherwise ad hoc as is internal to most radiation
+!  schemes.  
+!  Coded and implemented by Soo Ya Bae, KIAPS, January 2015.
+!-----------------------------------------------------------------------
+     implicit none
+
+!..Sub arguments
+      integer, intent(in) :: kts, kte, ii, jj
+      real, intent(in) :: qmin
+      real, intent(in) :: t0c
+      real, dimension( kts:kte ), intent(in)::  t
+      real, dimension( kts:kte ), intent(in)::  qc
+      real, dimension( kts:kte ), intent(in)::  nc
+      real, dimension( kts:kte ), intent(in)::  qi
+      real, dimension( kts:kte ), intent(in)::  qs
+      real, dimension( kts:kte ), intent(in)::  rho
+      real, dimension( kts:kte ), intent(inout):: re_qc
+      real, dimension( kts:kte ), intent(inout):: re_qi
+      real, dimension( kts:kte ), intent(inout):: re_qs
+!..Local variables
+      integer:: i,k
+      integer :: inu_c
+      real, dimension( kts:kte ):: ni
+      real, dimension( kts:kte ):: rqc
+      real, dimension( kts:kte ):: rnc
+      real, dimension( kts:kte ):: rqi
+      real, dimension( kts:kte ):: rni
+      real, dimension( kts:kte ):: rqs
+      real :: cdm2
+      real :: temp
+      real :: supcol, n0sfac, lamdas
+      real :: diai      ! diameter of ice in m
+      double precision :: lamc
+      logical :: has_qc, has_qi, has_qs
+!..Minimum microphys values
+      real, parameter :: R1 = 1.E-12
+      real, parameter :: R2 = 1.E-6
+      real, parameter :: pi = 3.1415926536
+      real, parameter :: bm_r = 3.0
+      real, parameter :: obmr = 1.0/bm_r
+      real, parameter :: cdm  = 5./3.
+
+      has_qc = .false.
+      has_qi = .false.
+      has_qs = .false.
+
+      cdm2 = rgmma(cdm)
+
+      do k=kts,kte
+        ! for cloud
+        rqc(k) = max(R1, qc(k)*rho(k))
+        rnc(k) = max(R2, nc(k)*rho(k))
+        if (rqc(k).gt.R1 .and. rnc(k).gt.R2) has_qc = .true.
+        ! for ice
+        rqi(k) = max(R1, qi(k)*rho(k))
+        temp = (rho(k)*max(qi(k),qmin))
+        temp = sqrt(sqrt(temp*temp*temp))
+        ni(k) = min(max(5.38e7*temp,1.e3),1.e6)
+        rni(k)= max(R2, ni(k)*rho(k))
+        if (rqi(k).gt.R1 .and. rni(k).gt.R2) has_qi = .true.
+        ! for snow
+        rqs(k) = max(R1, qs(k)*rho(k))
+        if (rqs(k).gt.R1) has_qs = .true.
+      enddo
+
+      if (has_qc) then
+        do k=kts,kte
+          if (rqc(k).le.R1 .or. rnc(k).le.R2) CYCLE
+          lamc = 2.*cdm2*(pidnc*nc(k)/rqc(k))**obmr
+          re_qc(k) =  max(2.51e-6,min(sngl(1.0d0/lamc),50.e-6))
+        enddo
+      endif
+
+      if (has_qi) then
+        do k=kts,kte
+          if (rqi(k).le.R1 .or. rni(k).le.R2) CYCLE
+          diai = 11.9*sqrt(rqi(k)/ni(k))
+          re_qi(k) = max(10.01e-6,min(0.75*0.163*diai,125.e-6))
+        enddo
+      endif
+
+      if (has_qs) then
+        do k=kts,kte
+          if (rqs(k).le.R1) CYCLE
+          supcol = t0c-t(k)
+          n0sfac = max(min(exp(alpha*supcol),n0smax/n0s),1.)
+          lamdas = sqrt(sqrt(pidn0s*n0sfac/rqs(k)))
+          re_qs(k) = max(25.e-6,min(0.5*(1./lamdas),999.e-6))
+        enddo
+      endif
+
+      end subroutine effectRad_wdm5
+!-----------------------------------------------------------------------
 
 END MODULE module_mp_wdm5

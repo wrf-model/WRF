@@ -56,8 +56,48 @@
    model_config_rec % wrf_hydro = 0
 #endif
 
+#if (defined MOVE_NESTS) && (defined VORTEX_CENTER)
+!-----------------------------------------------------------------------
+! A known problem with moving nests.  Users with number of eta levels 
+! above 55 get a model crash.
+!-----------------------------------------------------------------------
+
+      IF ( ( model_config_rec % max_dom  .GT.  1 ) .AND. &
+           ( model_config_rec %e_vert(1) .GT. 55 ) ) THEN
+         wrf_err_message = '--- ERROR: Known problem.  Moving nests need e_vert .LE. 55'
+         CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
+      END IF
+#endif
 
 #if (EM_CORE == 1)
+!-----------------------------------------------------------------------
+! There are restrictions for the use_theta_m option:
+! 1. The option to include moist theta in the WRF solver only works with a single domain.
+! 2. The option may not be used in conjunction with damp_opt=2.
+! 3. The option may not be used with rad_nudge.
+!-----------------------------------------------------------------------
+
+      IF ( ( model_config_rec % max_dom     .GT. 1 ) .AND. &
+           ( model_config_rec % use_theta_m .EQ. 1 ) ) THEN
+         wrf_err_message = '--- ERROR: The use_theta_m option is only available for single domain cases' 
+         CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
+      END IF
+
+      IF ( ( model_config_rec % use_theta_m .EQ. 1 ) .AND. &
+           ( model_config_rec % damp_opt    .EQ. 2 ) ) THEN
+         CALL wrf_message ( "The use_theta_m option may not be paired with damp_opt=2." )
+         wrf_err_message = '--- ERROR: Either turn off use_theta_m, or select a different damp_opt option'
+         CALL wrf_error_fatal ( TRIM(wrf_err_message) )
+      END IF
+
+      IF ( ( model_config_rec % use_theta_m .EQ. 1 ) .AND. &
+           ( model_config_rec % rad_nudge   .EQ. 1 ) ) THEN
+         CALL wrf_message ( "The use_theta_m option may not be paired with rad_nudge=1." )
+         wrf_err_message = '--- ERROR: Either turn off use_theta_m, or turn off the rad_nudge option'
+         CALL wrf_error_fatal ( TRIM(wrf_err_message) )
+      END IF
+
+
 !-----------------------------------------------------------------------
 ! Check that all values of diff_opt and km_opt are filled in.  A flag
 ! value of "-1" from the nml file means that this column (domain) is not
@@ -96,11 +136,44 @@
 
       IF ( ( model_config_rec %   km_opt(1) .EQ. -1 ) .OR. &
            ( model_config_rec % diff_opt(1) .EQ. -1 ) ) THEN
-            wrf_err_message = 'Both km_opt and diff_opt need to be set in the namelist.input file.'
+            wrf_err_message = '--- ERROR: Both km_opt and diff_opt need to be set in the namelist.input file.'
          CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
       END IF
 #endif
 
+!-----------------------------------------------------------------------
+! Check that NSSL microphysics is not allowed for WRF-NMM run 
+!-----------------------------------------------------------------------
+#if (NMM_CORE == 1) || (HWRF == 1)
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec % mp_physics(i) == nssl_2mom .OR. &
+              model_config_rec % mp_physics(i) == nssl_2momccn .OR. & 
+              model_config_rec % mp_physics(i) == nssl_1mom .OR. & 
+              model_config_rec % mp_physics(i) == nssl_1momlfo .OR. & 
+              model_config_rec % mp_physics(i) == nssl_2momg  ) THEN 
+            wrf_err_message = '--- ERROR: NSSL scheme cannot run with WRF-NMM '
+            CALL wrf_message ( wrf_err_message )
+            wrf_err_message = '--- Fix mp_physics in namelist.input '
+            CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
+         END IF
+      ENDDO
+#endif
+
+!-----------------------------------------------------------------------
+! Check: if ETAMPNEW microphysics is selected, this has moved to option 95
+!-----------------------------------------------------------------------
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec % mp_physics(i) == etamp_hr ) THEN
+            wrf_err_message = '--- RESET: ETAMPNEW scheme is now mp_physics=95'
+            CALL wrf_message ( wrf_err_message )
+            model_config_rec % mp_physics(i) = etampnew
+         END IF
+         IF ( model_config_rec % mp_physics_dfi(i) == etamp_hr_dfi ) THEN
+            wrf_err_message = '--- RESET: ETAMPNEW_DFI scheme is now mp_physics_dfi=95'
+            CALL wrf_message ( wrf_err_message )
+            model_config_rec % mp_physics_dfi(i) = etampnew_dfi
+         END IF
+      ENDDO
 
 !-----------------------------------------------------------------------
 ! Check that all values of sf_surface_physics are the same for all domains
@@ -280,35 +353,143 @@
 
 #endif
 
-#if (EM_CORE == 1)
+#if (NMM_CORE == 1) || (HWRF == 1)
 !-----------------------------------------------------------------------
-! Check that if any stochastic perturbation scheme is turned on in any domain, 
-! if so, set grid%stoch_force_global_opt=1 
+!           Check that NOAH-MP LSM is not allowed for WRF-NMM run 
+!-----------------------------------------------------------------------
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec%sf_surface_physics(i) == NOAHMPSCHEME ) THEN
+            WRITE(wrf_err_message, '(" --- ERROR:   Noah-MP LSM scheme (sf_surface_physics==", I2, ")")') NOAHMPSCHEME
+            CALL wrf_message ( TRIM ( wrf_err_message ) )
+            WRITE(wrf_err_message, '("              does not work with NMM ")')
+            CALL wrf_message ( TRIM ( wrf_err_message ) )
+            WRITE(wrf_err_message, '("Select a different LSM scheme ")')
+            CALL wrf_error_fatal ( TRIM ( wrf_err_message ) )
+         END IF
+      END DO
+#endif
+
+#if (EM_CORE == 1)
+
+!-----------------------------------------------------------------------
+! Check if any stochastic perturbation scheme is turned on in any domain,
+! if so, set derived variable sppt_on=1 and/or rand_perturb_on and/or skebs_on=1
 !-----------------------------------------------------------------------
 
-   model_config_rec % stoch_force_global_opt=0  !also set in registry.stoch
- ! check if stochastic perturbations are turned on in any domain
    DO i = 1, model_config_rec % max_dom
-         IF ( model_config_rec % stoch_force_opt(i) .NE. 0)  then 
-           model_config_rec % stoch_force_global_opt=1 
+         IF ( model_config_rec % sppt(i) .ne. 0)  then
+           model_config_rec % sppt_on=1
+           IF (( model_config_rec%KMINFORCT .ne. 1) .or. (model_config_rec%KMAXFORCT .ne. 1000000) .or.   & 
+               ( model_config_rec%LMINFORCT .ne. 1) .or. (model_config_rec%LMAXFORCT .ne. 1000000)) then    
+               wrf_err_message = '--- Warning: the namelist parameter "kminforct" etc. are for SKEBS only'
+               CALL wrf_message ( wrf_err_message )
+               wrf_err_message = '             and should not be changed from their default value for SPPT' 
+               CALL wrf_message ( wrf_err_message )
+               wrf_err_message = '--- ERROR: If you really want to modify "kminforct" etc.,  edit module_check a_mundo.'
+               CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
+           endif
          endif
-   ENDDO 
+   ENDDO
+   DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec % rand_perturb(i) .ne. 0)  then
+           model_config_rec % rand_perturb_on=1
+           IF (( model_config_rec%KMINFORCT .ne. 1) .or. (model_config_rec%KMAXFORCT .ne. 1000000) .or.   & 
+               ( model_config_rec%LMINFORCT .ne. 1) .or. (model_config_rec%LMAXFORCT .ne. 1000000)) then    
+               wrf_err_message = '--- Warning: the namelist parameter "kminforct" etc are for SKEBS only'
+               CALL wrf_message ( wrf_err_message )
+               wrf_err_message = '             and should not be changed from their default value for RAND_PERTURB' 
+               CALL wrf_message ( wrf_err_message )
+               wrf_err_message = ' ABORT. If you really want to modify "kminforct" etc.,  edit module_check a_mundo.'
+               CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
+           endif
+         endif
+   ENDDO
+   DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec % stoch_vertstruc_opt(i) ==1 )  then
+           model_config_rec % skebs_vertstruc=1       ! parameter stoch_vertstruc_opt is being replaced with skebs_vertstruc
+                                                      ! stoch_vertstruc_opt is obsolete starting with V3.7
+           wrf_err_message = '--- WARNING: the namelist parameter "stoch_vertstruc_opt" is obsolete.'
+           CALL wrf_message ( wrf_err_message )
+           wrf_err_message = '             Please replace with namelist parameter "skebs_vertstruc" in V3.7 and later versions.'
+           CALL wrf_message ( wrf_err_message )
+         endif
+   ENDDO
+
+   DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec % stoch_force_opt(i) ==1 )  then
+           model_config_rec % skebs(i)=1    ! parameter stoch_forc_opt is being replaced with skebs;
+                                            ! stoch_vertstruc_opt is obsolete starting with V3.7
+           wrf_err_message = '--- WARNING: the namelist parameter "stoch_force_opt" is obsolete.'
+           CALL wrf_message ( wrf_err_message )
+           wrf_err_message = '             Please replace with namelist parameter "skebs" in V3.7 and later versions.'
+           CALL wrf_message ( wrf_err_message )
+         endif
+   ENDDO
+   DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec % skebs(i) .ne. 0)  then
+           model_config_rec % skebs_on=1
+         endif
+   ENDDO
+
+!-----------------------------------------------------------------------
+! Random fields are by default thin 3D arrays (:,1,:).
+! If random fields have vertical structures (stoch_vertstruc_opt .ne. 0)
+! make them full 3D array arrays
+!-----------------------------------------------------------------------
+   IF ( model_config_rec % skebs_vertstruc     .ne. 99 )  then
+      model_config_rec % num_stoch_levels = model_config_rec %e_vert(1)
+   ENDIF
+   IF ( model_config_rec % sppt_vertstruc      .ne. 99 )  then
+      model_config_rec % num_stoch_levels = model_config_rec %e_vert(1)
+   ENDIF
+   IF ( model_config_rec % rand_pert_vertstruc .ne. 99 )  then
+      model_config_rec % num_stoch_levels = model_config_rec %e_vert(1)
+   ENDIF
 
 !--------------------------------------------------------------------------------
-! KRS: 9/12/2012
 ! Check if boundary perturbations is turned on and set to '1' (perturb_bdy=1).
-! If so, make sure stoch_force_global_opt is also turned on. (stoch_force_opt=1)
+! If so, make sure skebs_on is also turned on.
 !--------------------------------------------------------------------------------
    IF ( model_config_rec % perturb_bdy .EQ. 1 ) then
-        model_config_rec % stoch_force_global_opt=1
+        model_config_rec % skebs_on=1
       wrf_err_message = '--- WARNING: perturb_bdy=1 option uses SKEBS pattern and may'
       CALL wrf_message ( wrf_err_message )
       wrf_err_message = '             increase computation time.'
       CALL wrf_message ( wrf_err_message )
    ENDIF
 
+!--------------------------------------------------------------------------------
+! Check if chemistry boundary perturbations is turned on and set to '1' (perturb_chem_bdy=1).
+! If so, make sure rand_perturb_on is also turned on.
+! perturb_chem_bdy can be turned on only if WRF_CHEM is also compiled.
+! If perturb_chem_bdy=1, then have_bcs_chem should be turned on as well.
+!--------------------------------------------------------------------------------
+
+   IF ( model_config_rec % perturb_chem_bdy .EQ. 1 ) then
+
+#if (WRF_CHEM != 1)
+      wrf_err_message = '--- ERROR: This option is only for WRF_CHEM.'
+      CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
+#endif
+
+      model_config_rec % rand_perturb_on=1
+      wrf_err_message = '--- WARNING: perturb_chem_bdy=1 option uses RAND pattern and may'
+      CALL wrf_message ( wrf_err_message )
+      wrf_err_message = '             increase computation time.'
+      CALL wrf_message ( wrf_err_message )
+
+#if (WRF_CHEM == 1)
+      IF ( .NOT. model_config_rec % have_bcs_chem(1) ) THEN
+            wrf_err_message = '--- ERROR: This perturb_chem_bdy option needs '// &
+                              'have_bcs_chem = .true. in chem.'
+            CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
+      ENDIF
+#endif
+
+   ENDIF
+
 !----------------------------------------------------------------------------
-! If trajectory option is turned off, make sure the number of trajectories is 
+! If trajectory option is turned off, make sure the number of trajectories is
 ! zero.
 !----------------------------------------------------------------------------
    IF ( ( model_config_rec%traj_opt .EQ. 0 ) .AND. &
@@ -332,6 +513,54 @@
             CALL wrf_message ( wrf_err_message )
             model_config_rec%adjust_heights = .false.
       ENDIF
+#endif
+
+#if (EM_CORE == 1)
+!-----------------------------------------------------------------------
+! cu_physics = 11 (scale-aware KF) only works with YSU PBL.
+!-----------------------------------------------------------------------
+
+      oops = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( ( model_config_rec%bl_pbl_physics(i) .NE. YSUSCHEME ) .AND. &
+              ( model_config_rec%cu_physics(i) .EQ. MSKFSCHEME ) ) THEN
+            oops = oops + 1
+         END IF
+      ENDDO      ! Loop over domains
+      IF ( oops .GT. 0 ) THEN
+         wrf_err_message = '--- ERROR: bl_pbl_physics must be set to 1 for cu_physics = 11 '
+         CALL wrf_message ( wrf_err_message )
+         wrf_err_message = '--- Fix bl_pbl_physics in namelist.input OR use another cu_physics option '
+         CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
+      END IF
+
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec%cu_physics(i) .EQ. MSKFSCHEME ) THEN
+            WRITE (wrf_err_message, FMT='(A,A)') '--- NOTE: cu_physics is 11, ', &
+                  'setting icloud = 1 and cu_rad_feedback = T'
+            CALL wrf_message ( wrf_err_message )
+            model_config_rec%cu_rad_feedback(i) = .true.
+            model_config_rec%icloud = 1
+         END IF
+      ENDDO
+
+!-----------------------------------------------------------------------
+! cu_physics = 10 (Cumulus-potential KF) does not work in 3.7 yet 
+!-----------------------------------------------------------------------
+
+      oops = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec%cu_physics(i) .EQ. KFCUPSCHEME ) THEN
+            oops = oops + 1
+         END IF
+      ENDDO      ! Loop over domains
+      IF ( oops .GT. 0 ) THEN
+         wrf_err_message = '--- ERROR: cu_physics = 10 is not available in 3.7 '
+         CALL wrf_message ( wrf_err_message )
+         wrf_err_message = '--- Please select another cu_physics option '
+         CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
+      END IF
+
 #endif
 
 !-----------------------------------------------------------------------
@@ -360,6 +589,23 @@
             CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
          END IF
       END IF
+
+!-----------------------------------------------------------------------
+! The qndropsource relies on the flag PROGN (when not running chemistry)
+! and is always allocated when running WRF Chem.
+!-----------------------------------------------------------------------
+
+#if ( (EM_CORE == 1) && (WRF_CHEM != 1) )
+      model_config_rec%alloc_qndropsource = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec%progn(i) .EQ. 1 ) THEN
+            model_config_rec%alloc_qndropsource = 1
+         END IF
+      END DO
+
+#elif (WRF_CHEM == 1) 
+      model_config_rec%alloc_qndropsource = 1
+#endif
 
 #if ((EM_CORE == 1) && (DA_CORE != 1))
 !-----------------------------------------------------------------------
@@ -459,7 +705,7 @@
          END IF
       ENDDO      ! Loop over domains
       IF ( oops .GT. 0 ) THEN
-         wrf_err_message = 'bl_pbl_physics /= 4, implies mfshconv must be 0, resetting'
+         wrf_err_message = '--- NOTE: bl_pbl_physics /= 4, implies mfshconv must be 0, resetting'
          CALL wrf_message ( wrf_err_message )
       END IF
 
@@ -481,9 +727,33 @@
          END IF
       ENDDO      ! Loop over domains
       IF ( oops .GT. 0 ) THEN
-         wrf_err_message = 'bl_pbl_physics /= 1,5,6 implies shcu_physics cannot be 3, resetting'
+         wrf_err_message = '--- NOTE: bl_pbl_physics /= 1,5,6 implies shcu_physics cannot be 3, resetting'
          CALL wrf_message ( wrf_err_message )
       END IF
+
+!-----------------------------------------------------------------------
+!  We need to know if any of the cumulus schemes are active. This
+!  allows the model to allocate space.
+!-----------------------------------------------------------------------
+
+      model_config_rec%cu_used = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec%cu_physics(i) .NE. NOCUSCHEME ) THEN
+            model_config_rec%cu_used = 1
+         END IF
+      ENDDO
+
+!-----------------------------------------------------------------------
+!  We need to know if any of the shallow cumulus schemes are active. This
+!  allows the model to allocate space.
+!-----------------------------------------------------------------------
+
+      model_config_rec%shcu_used = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec%shcu_physics(i) .NE. NOSHCUSCHEME ) THEN
+            model_config_rec%shcu_used = 1
+         END IF
+      ENDDO
 
 !-----------------------------------------------------------------------
 !  gwd_opt = 1 only works with YSU PBL.
@@ -498,7 +768,7 @@
          END IF
       ENDDO      ! Loop over domains
       IF ( oops .GT. 0 ) THEN
-         wrf_err_message = 'bl_pbl_physics /= 1, implies gwd_opt cannot be 1, resetting'
+         wrf_err_message = '--- NOTE: bl_pbl_physics /= 1, implies gwd_opt cannot be 1, resetting'
          CALL wrf_message ( wrf_err_message )
       END IF
 
@@ -637,6 +907,7 @@
          IF ( model_config_rec%cu_diag(i) .EQ. G3TAVE ) THEN
           IF ( ( model_config_rec%cu_physics(i) .NE. GDSCHEME ) .AND. &
                ( model_config_rec%cu_physics(i) .NE. GFSCHEME ) .AND. &
+               ( model_config_rec%cu_physics(i) .NE. KFCUPSCHEME ) .AND. &
                ( model_config_rec%cu_physics(i) .NE. G3SCHEME ) ) THEN
                 wrf_err_message = '--- ERROR: Using cu_diag=1 requires use of one of the following CU schemes:'
                 CALL wrf_message ( wrf_err_message )
@@ -672,6 +943,7 @@
       DO i = 1, model_config_rec % max_dom
          IF ( ( model_config_rec%cu_physics(i) .EQ. GDSCHEME ) .OR. &
               ( model_config_rec%cu_physics(i) .EQ. GFSCHEME ) .OR. &
+              ( model_config_rec%cu_physics(i) .EQ. KFCUPSCHEME ) .OR. & 
               ( model_config_rec%cu_physics(i) .EQ. G3SCHEME ) ) THEN
             model_config_rec%cu_diag(i) = 1
          ELSE
@@ -696,6 +968,16 @@
       ENDDO      ! Loop over domains
 
 !-----------------------------------------------------------------------
+!  Need to set lagday to 150 if tmn_update is 1
+!-----------------------------------------------------------------------
+
+      IF ( model_config_rec%tmn_update .EQ. 1 .AND. &
+           model_config_rec%lagday .EQ. 1 ) THEN 
+           wrf_err_message = '--- ERROR: Using tmn_update=1 requires lagday=150 '
+           CALL wrf_error_fatal ( TRIM(wrf_err_message) )
+      END IF
+
+!-----------------------------------------------------------------------
 !  Do not allow digital filtering to be run with TEMF.
 !-----------------------------------------------------------------------
 
@@ -706,6 +988,14 @@
             CALL wrf_error_fatal ( TRIM(wrf_err_message) )
          END IF
       ENDDO      ! Loop over domains
+
+!-----------------------------------------------------------------------
+!  If this is a restart, shut off the DFI.
+!-----------------------------------------------------------------------
+
+      IF ( model_config_rec%restart ) THEN
+         model_config_rec%dfi_opt = DFI_NODFI
+      END IF
 
 !-----------------------------------------------------------------------
 !  The CLM scheme may not even be compiled, so make sure it is not allowed
@@ -742,7 +1032,7 @@
          END IF
       ENDDO      ! Loop over domains
       IF ( oops .GT. 0 ) THEN
-         wrf_err_message = 'mp_physics == 28, already has gravitational fog settling; resetting grav_settling to 0'
+         wrf_err_message = '--- NOTE: mp_physics == 28, already has gravitational fog settling; resetting grav_settling to 0'
          CALL wrf_message ( wrf_err_message )
       END IF
  
@@ -759,18 +1049,22 @@
          END IF
       ENDDO      ! Loop over domains
       IF ( oops .GT. 0 ) THEN
-         wrf_err_message = 'For mp_physics == 28 and use_aero_icbc is true, recommend to turn on scalar_pblmix'
+         wrf_err_message = '--- WARNING: For mp_physics == 28 and use_aero_icbc is true, recommend to turn on scalar_pblmix'
          CALL wrf_message ( wrf_err_message )
          wrf_err_message = 'resetting scalar_pblmix = 1'
          CALL wrf_message ( wrf_err_message )
       END IF
+
+!-----------------------------------------------------------------------
 !  Check that vertical levels are defined in a logical way.
 !-----------------------------------------------------------------------
+
       DO i = 1, model_config_rec % max_dom
         IF (model_config_rec%vert_refine_method(i) .EQ. 1) THEN
           IF (i .EQ. 1) THEN
-            wrf_err_message = '--- ERROR: vert_refine_method=1 for d01, must be 0.'
-            CALL wrf_error_fatal ( wrf_err_message )
+            wrf_err_message = '--- INFO: vert_refine_method=1 for d01, must be 0., resetting value internally'
+            CALL wrf_message ( wrf_err_message )
+            model_config_rec%vert_refine_method(i) = 0
           ELSE
             IF (MOD((model_config_rec%e_vert(i)-1),(model_config_rec%e_vert(i-1)-1)) .NE. 0) THEN
               wrf_err_message = '--- ERROR: incompatible e_vert for use with int-refinement.'
@@ -784,6 +1078,48 @@
           ENDIF
         ENDIF
       ENDDO
+
+!-----------------------------------------------------------------------
+!  Consistency checks between vertical refinement and radiation
+!  scheme selection.  For "choose any vertical levels" for the nest,
+!  only RRTM and RRTMG are eligible.
+!-----------------------------------------------------------------------
+
+      DO i = 2, model_config_rec % max_dom
+        IF (model_config_rec%vert_refine_method(i) .EQ. 2) THEN
+          IF ( ( ( model_config_rec%ra_lw_physics(i) .EQ. RRTMSCHEME          ) .OR. &
+                 ( model_config_rec%ra_lw_physics(i) .EQ. RRTMG_LWSCHEME      ) .OR. &
+                 ( model_config_rec%ra_lw_physics(i) .EQ. RRTMG_LWSCHEME_FAST ) ) .AND. &
+               ( ( model_config_rec%ra_sw_physics(i) .EQ. SWRADSCHEME         ) .OR. &
+                 ( model_config_rec%ra_sw_physics(i) .EQ. RRTMG_SWSCHEME      ) .OR. &
+                 ( model_config_rec%ra_sw_physics(i) .EQ. RRTMG_SWSCHEME_FAST ) ) ) THEN
+             !  We are OK, I just hate writing backwards / negative / convoluted if tests 
+             !  that are not easily comprehensible.
+          ELSE
+            wrf_err_message = '--- ERROR: vert_refine_method=2 only works with either RRTM or RRTMG'
+            CALL wrf_error_fatal ( wrf_err_message )
+          END IF 
+        END IF
+      END DO
+
+!-----------------------------------------------------------------------
+!  Set the namelist parameter o3input to 0 for the radiation schemes other
+!  than RRTMG_LWSCHEME and RRTMG_SWSCHEME.
+!-----------------------------------------------------------------------
+
+      IF ( ( model_config_rec % ra_lw_physics(1) .EQ. RRTMG_LWSCHEME )  .OR. &
+           ( model_config_rec % ra_sw_physics(1) .EQ. RRTMG_SWSCHEME )  .OR. &
+           ( model_config_rec % ra_lw_physics(1) .EQ. RRTMG_LWSCHEME_FAST )  .OR. &
+           ( model_config_rec % ra_sw_physics(1) .EQ. RRTMG_SWSCHEME_FAST )  ) THEN
+         wrf_err_message = '--- NOTE: RRTMG radiation is used, namelist ' // &
+                           'value for o3input (ozone input) is used '
+!        CALL wrf_message ( wrf_err_message )
+      ELSE
+         model_config_rec % o3input = 0
+         wrf_err_message = '--- NOTE: RRTMG radiation is not used, setting:  ' // &
+                           'o3input=0 to avoid data pre-processing'
+         CALL wrf_message ( wrf_err_message )
+      END IF
 
 !-----------------------------------------------------------------------
 !  Remapping namelist variables for gridded and surface fdda to aux streams 9 and 10.
@@ -831,6 +1167,39 @@
 
       END IF     
       
+#if ( (NMM_CORE != 1) && (DA_CORE != 1) )
+!-----------------------------------------------------------------------
+! If this is a WRF run with polar boundary conditions, then this is a
+! global domain. A global domain needs to have the FFT arrays allocated.
+!-----------------------------------------------------------------------
+
+      model_config_rec % fft_used = 0
+      IF ( ( model_config_rec % polar(1) ) .AND. &
+           ( model_config_rec % fft_filter_lat .LT. 90. ) ) THEN
+         model_config_rec % fft_used = 1
+      END IF
+
+!-----------------------------------------------------------------------
+! If any CAM scheme is turned on, then there are a few shared variables.
+! These need to be allocated when any CAM scheme is active.
+!-----------------------------------------------------------------------
+
+#if ( (EM_CORE == 1) && (WRF_CHEM != 1) )
+      model_config_rec % cam_used = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( ( model_config_rec % mp_physics(i)     .EQ. CAMMGMPSCHEME   ) .OR. &
+              ( model_config_rec % bl_pbl_physics(i) .EQ. CAMUWPBLSCHEME  ) .OR. &
+              ( model_config_rec % shcu_physics(i)   .EQ. CAMUWSHCUSCHEME ) ) THEN
+            model_config_rec % cam_used = 1
+         END IF
+      ENDDO
+
+#elif (WRF_CHEM == 1) 
+      model_config_rec % cam_used = 1
+#endif
+
+#endif
+      
 !-----------------------------------------------------------------------
 ! Set the namelist parameters for the CAM radiation scheme if either 
 ! ra_lw_physics = CAMLWSCHEME or ra_sw_physics = CAMSWSCHEME.  
@@ -859,6 +1228,7 @@
          IF ( ( model_config_rec % mp_physics(i) .EQ. MILBRANDT2MOM ) .OR. &
 #if (EM_CORE == 1)
               ( model_config_rec % mp_physics(i) .EQ. NSSL_2MOM     ) .OR. &
+              ( model_config_rec % mp_physics(i) .EQ. NSSL_2MOMG    ) .OR. &
               ( model_config_rec % mp_physics(i) .EQ. NSSL_2MOMCCN  ) .OR. &
               ( model_config_rec % mp_physics(i) .EQ. NSSL_1MOM     ) .OR. &
               ( model_config_rec % mp_physics(i) .EQ. NSSL_1MOMLFO  ) .OR. &

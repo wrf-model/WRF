@@ -23,7 +23,7 @@ FC              = $(DM_FC)
 
 OBJS    = wrf_data_pio.o pio_routines.o wrf_io.o field_routines.o read_bdy_routines.o module_wrfsi_static.o
 
-PIOPATH = /glade/p/work/huangwei/lib/intel
+PIOPATH = /glade/p/work/huangwei/mywrf/WRF/netcdf_links
 FFLAGS  = $(FCFLAGS) -I. -I$(PIOPATH)/include -I../ioapi_share -I../../frame -I../esmf_time_f90
 LIBS    = -L$(PIOPATH)/lib -lpio
 CPP1    = $(CPP) -P $(TRADFLAG) -DINTSPECIAL

@@ -9,6 +9,7 @@ dimspec    4       2     namelist=maxpatch                 z          subgrid
 ifdef EM_CORE=1
 
 ifdef DA_CORE=0
+dimspec    stoclev 2     namelist=num_stoch_levels         z     num_stoch_levels
 dimspec    j       3     standard_domain                   y     south_north
 dimspec    k       2     standard_domain                   z     bottom_top
 endif

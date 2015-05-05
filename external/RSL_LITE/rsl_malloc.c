@@ -241,14 +241,14 @@ RSL_FATAL(2) ;
 }
 
 rsl_free( p )
-   char * p ;
+   char **p ;
 {
-   if ( p == zero_length_storage ) return ;    /* fix from ANU */
+   if ( *p == zero_length_storage ) return ;    /* fix from ANU */
 
 #ifdef STUG
 for ( bbb = 0 ; bbb < MAXSTUG ; bbb++ ) 
 {
-   if ( stug[bbb].ddr == p ) {
+   if ( stug[bbb].ddr == *p ) {
       outy -= stug[bbb].sz ;
 /* fprintf(stderr,"- %10d.  %08x   %10d  %10d\n", bbb, stug[bbb].ddr, stug[bbb].sz, outy ) ; */
       nouty -- ;
@@ -259,11 +259,11 @@ for ( bbb = 0 ; bbb < MAXSTUG ; bbb++ )
 #endif
 
 #ifdef PADIT
-   BASE_FREE ( p-512 ) ;
+   BASE_FREE ( *p-512 ) ;
 #else
-   BASE_FREE ( p ) ;
+   BASE_FREE ( *p ) ;
 #endif
-   p = NULL ;
+   *p = NULL ;
 }
 
 #ifdef MS_SUA

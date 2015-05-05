@@ -345,9 +345,7 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
 
       SELECT CASE ( use_package(io_form_auxinput1) )
 #if defined(NETCDF) || defined(PNETCDF) || defined(PIO)
-      CASE ( IO_NETCDF )
-      CASE ( IO_PNETCDF )
-      CASE ( IO_PIO )
+      CASE ( IO_NETCDF , IO_PNETCDF , IO_PIO )
 
       !  Open the wrfinput file.
 

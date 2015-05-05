@@ -112,6 +112,7 @@
                  tauaersw,extaersw,gaersw,waersw,bscoefsw,              &
                  l2aer,l3aer,l4aer,l5aer,l6aer,l7aer,                   &
                  totoa_a01,totoa_a02,totoa_a03,totoa_a04,               &
+                 totoa_a05,totoa_a06,totoa_a07,totoa_a08,               &
                  tauaerlw,extaerlw,                                     &
                  ids,ide, jds,jde, kds,kde,                             &
                  ims,ime, jms,jme, kms,kme,                             &
@@ -139,7 +140,8 @@
 !
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                       &
          INTENT(IN ) ::  relhum,dz8w, alt, h2oai, h2oaj,               &
-                         totoa_a01, totoa_a02, totoa_a03, totoa_a04
+                         totoa_a01, totoa_a02, totoa_a03, totoa_a04,   &
+                         totoa_a05,totoa_a06,totoa_a07,totoa_a08
 
    integer nspint
    parameter ( nspint = 4 ) ! number of spectral interval shortwave bands 
@@ -257,22 +259,17 @@
           its,ite, jts,jte, kts,kte                                    )
 !    call mieaer_modal()
 !
-!   CASE (CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN  , CBMZ_MOSAIC_KPP,        &
-!         CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ,                     &
-!         CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN,                   &
-!         CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ,             &
-!         CBMZ_MOSAIC_4BIN_VBS2_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP,       &
-!         MOZART_MOSAIC_4BIN_KPP,CRI_MOSAIC_8BIN_AQ_KPP,           &
-!         CRI_MOSAIC_4BIN_AQ_KPP ) 
    CASE (CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN  , CBMZ_MOSAIC_KPP,        &
          CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ,                     &
          CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN,                   &
          CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ,             &
-         CBMZ_MOSAIC_4BIN_VBS2_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP,       &
+         SAPRC99_MOSAIC_4BIN_VBS2_KPP,                                 &
          MOZART_MOSAIC_4BIN_KPP,MOZART_MOSAIC_4BIN_AQ_KPP,   &
-         CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP ) 
+         CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP,         &
+         SAPRC99_MOSAIC_8BIN_VBS2_AQ_KPP,SAPRC99_MOSAIC_8BIN_VBS2_KPP)!BSINGH(12/05/2013): Added for SAPRC 8 bin vbs and non-aq on (04/07/2014)
      call optical_prep_sectional(nbin_o, chem, alt,                    &
           totoa_a01,totoa_a02,totoa_a03,totoa_a04,                     &
+          totoa_a05,totoa_a06,totoa_a07,totoa_a08,                     &
 !         refindx, radius_wet, number_bin,                             &
 !         radius_core, refindx_core, refindx_shell,                    &
           radius_core, radius_wet, number_bin,                             &
@@ -281,7 +278,7 @@
           ids,ide, jds,jde, kds,kde,                                   &
           ims,ime, jms,jme, kms,kme,                                   &
           its,ite, jts,jte, kts,kte                                    )
-   CASE (GOCART_SIMPLE, GOCARTRACM_KPP, GOCARTRADM2_KPP, GOCARTRADM2,  &
+   CASE (GOCART_SIMPLE, GOCARTRACM_KPP, GOCARTRADM2,  &
          MOZCART_KPP                                                   )
      call optical_prep_gocart(nbin_o, chem, alt,relhum,                &
           radius_core,radius_wet, number_bin,                          &
@@ -527,6 +524,7 @@
 !
       subroutine optical_prep_sectional(nbin_o, chem, alt,       &
         totoa_a01, totoa_a02, totoa_a03, totoa_a04,              &
+        totoa_a05,totoa_a06,totoa_a07,totoa_a08,                 &
 !       refindx, radius_wet, number_bin,                         &
 !       radius_core, refindx_core,  refindx_shell,               &
         radius_core,radius_wet, number_bin,                         &
@@ -551,7 +549,8 @@
          INTENT(IN ) ::  chem
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                       &
          INTENT(IN ) ::  alt,                                          &
-           totoa_a01, totoa_a02, totoa_a03, totoa_a04
+           totoa_a01, totoa_a02, totoa_a03, totoa_a04,                 &
+           totoa_a05,totoa_a06,totoa_a07,totoa_a08
    REAL, DIMENSION( its:ite, kts:kte, jts:jte, 1:nbin_o),              &
          INTENT(OUT ) ::                                               &
            radius_wet, number_bin, radius_core
@@ -801,6 +800,10 @@
           if (totoa_a02(i,k,j) .gt. 1.0e-12 .and. isize .eq. 2) mass_oc=totoa_a02(i,k,j)*conv1a
           if (totoa_a03(i,k,j) .gt. 1.0e-12 .and. isize .eq. 3) mass_oc=totoa_a03(i,k,j)*conv1a
           if (totoa_a04(i,k,j) .gt. 1.0e-12 .and. isize .eq. 4) mass_oc=totoa_a04(i,k,j)*conv1a
+          if (totoa_a05(i,k,j) .gt. 1.0e-12 .and. isize .eq. 5) mass_oc=totoa_a05(i,k,j)*conv1a
+          if (totoa_a06(i,k,j) .gt. 1.0e-12 .and. isize .eq. 6) mass_oc=totoa_a06(i,k,j)*conv1a
+          if (totoa_a07(i,k,j) .gt. 1.0e-12 .and. isize .eq. 7) mass_oc=totoa_a07(i,k,j)*conv1a
+          if (totoa_a08(i,k,j) .gt. 1.0e-12 .and. isize .eq. 8) mass_oc=totoa_a08(i,k,j)*conv1a
 !
           l=lptr_bc_aer(isize,itype,iphase)
           if (l .ge. p1st)  mass_bc= chem(i,k,j,l)*conv1a
@@ -1449,19 +1452,19 @@
 ! * sect02 expects input in um
 ! * pass in generic mass of 1.0 just to get a percentage distribution of mass among bins
 !
-        ss1=alog(sginin)
+        ss1=log(sginin)
         ss2=exp(ss1*ss1*36.0/8.0) 
         ss3=(sixpi*vol_ai/(num_ai*ss2))**0.3333333
         dgnum_um=amax1(dgmin,ss3)*1.0e+04
         call sect02(dgnum_um,sginin,drydens,iflag,duma,nbin_o,dlo_um,dhi_um, &
           xnum_secti,xmas_secti)
-        ss1=alog(sginia)
+        ss1=log(sginia)
         ss2=exp(ss1*ss1*36.0/8.0) 
         ss3=(sixpi*vol_aj/(num_aj*ss2))**0.3333333
         dgnum_um=amax1(dgmin,ss3)*1.0e+04
         call sect02(dgnum_um,sginia,drydens,iflag,duma,nbin_o,dlo_um,dhi_um, &
           xnum_sectj,xmas_sectj)
-        ss1=alog(sginic)
+        ss1=log(sginic)
         ss2=exp(ss1*ss1*36.0/8.0) 
         ss3=(sixpi*vol_ac/(num_ac*ss2))**0.3333333
         dgnum_um=amax1(dgmin,ss3)*1.0e+04
@@ -2598,19 +2601,19 @@
 ! * sect02 expects input in um
 ! * pass in generic mass of 1.0 just to get a percentage distribution of mass among bins
 !
-        ss1=alog(sigmag_aer(1,2))
+        ss1=log(sigmag_aer(1,2))
         ss2=exp(ss1*ss1*36.0/8.0) 
         ss3=(sixpi*vol_a2/(num_a2*ss2))**0.3333333
         dgnum_um=amax1(dgmin,ss3)*1.0e+04
         call sect02(dgnum_um,sigmag_aer(1,2),drydens,iflag,duma,nbin_o,dlo_um,dhi_um, &
           xnum_secti,xmas_secti)
-        ss1=alog(sigmag_aer(1,1))
+        ss1=log(sigmag_aer(1,1))
         ss2=exp(ss1*ss1*36.0/8.0) 
         ss3=(sixpi*vol_a1/(num_a1*ss2))**0.3333333
         dgnum_um=amax1(dgmin,ss3)*1.0e+04
         call sect02(dgnum_um,sigmag_aer(1,1),drydens,iflag,duma,nbin_o,dlo_um,dhi_um, &
           xnum_sectj,xmas_sectj)
-        ss1=alog(sigmag_aer(1,3))
+        ss1=log(sigmag_aer(1,3))
         ss2=exp(ss1*ss1*36.0/8.0) 
         ss3=(sixpi*vol_a3/(num_a3*ss2))**0.3333333
         dgnum_um=amax1(dgmin,ss3)*1.0e+04
@@ -3195,21 +3198,21 @@
 ! * sect02 expects input in um
 ! * pass in generic mass of 1.0 just to get a percentage distribution of mass among bins
 !
-!!      ss1=alog(sginin)
+!!      ss1=log(sginin)
 !!      ss2=exp(ss1*ss1*36.0/8.0) 
 !!      ss3=(sixpi*vol_ai/(num_ai*ss2))**0.3333333
 !!      dgnum_um=amax1(dgmin,ss3)*1.0e+04
         dgnum_um=dginin*1.E6
         call sect02(dgnum_um,sginin,drydens,iflag,duma,nbin_o,dlo_um,dhi_um, &
           xnum_secti,xmas_secti)
-!!      ss1=alog(sginia)
+!!      ss1=log(sginia)
 !!      ss2=exp(ss1*ss1*36.0/8.0) 
 !!      ss3=(sixpi*vol_aj/(num_aj*ss2))**0.3333333
 !!      dgnum_um=amax1(dgmin,ss3)*1.0e+04
         dgnum_um=dginia*1.E6
         call sect02(dgnum_um,sginia,drydens,iflag,duma,nbin_o,dlo_um,dhi_um, &
           xnum_sectj,xmas_sectj)
-!!      ss1=alog(sginic)
+!!      ss1=log(sginic)
 !!      ss2=exp(ss1*ss1*36.0/8.0) 
 !!      ss3=(sixpi*vol_ac/(num_ac*ss2))**0.3333333
         dgnum_um=dginic*1.E6
@@ -3689,8 +3692,8 @@
             nrefi=1
          endif
 
-         bma=0.5*alog(rmax/rmin) ! JCB
-         bpa=0.5*alog(rmax*rmin) ! JCB
+         bma=0.5*log(rmax/rmin) ! JCB
+         bpa=0.5*log(rmax*rmin) ! JCB
 
            do 120 nr=1,nrefr
            do 120 ni=1,nrefi
@@ -3805,8 +3808,8 @@
             nrefi=1
          endif
 
-         bma=0.5*alog(rmax/rmin) ! JCB
-         bpa=0.5*alog(rmax*rmin) ! JCB
+         bma=0.5*log(rmax/rmin) ! JCB
+         bpa=0.5*log(rmax*rmin) ! JCB
 
            do 121 nr=1,nrefr
            do 121 ni=1,nrefi
@@ -3852,8 +3855,8 @@
       endif !ini_fit 
 
 
-         xrmin=alog(rmin)
-         xrmax=alog(rmax)
+         xrmin=log(rmin)
+         xrmax=log(rmax)
 
 !######################################################################
 !parameterization of mie calculation for shortwave 
@@ -3914,7 +3917,7 @@
                 endif
           !ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
-                x=alog(radius_wet_col(m,klevel)) ! radius in cm
+                x=log(radius_wet_col(m,klevel)) ! radius in cm
                 crefin=swrefindx_col(m,klevel,ns)
                 refr=real(crefin)
                 refi=-imag(crefin)
@@ -4171,7 +4174,7 @@
                do m=1,nbin_a ! nbin_a is number of bins
 ! here's the size
                 sizem=radius_wet_col(m,klevel) ! radius in cm
-                x=alog(radius_wet_col(m,klevel)) ! radius in cm
+                x=log(radius_wet_col(m,klevel)) ! radius in cm
                 crefin=lwrefindx_col(m,klevel,ns)
                 refr=real(crefin)
                 refi=-imag(crefin)
@@ -4279,8 +4282,11 @@
 !!$      endif
 
       do 100 m=1,maxm
-      x(m)=alog(rs(m))
-      y(m)=alog(yin(m))
+! To prevent the log of 0 or negative values, as the code was blowing up when compile with intel
+! Added by Manish Shrivastava
+! Need to be checked
+      x(m)=log(max(rs(m),1d-20))
+      y(m)=log(max(yin(m),1d-20))
   100 continue
 
       xmin=x(1)
@@ -4325,8 +4331,8 @@
 !!$      endif
 
       do 100 m=1,maxm
-      x(m)=alog(rs(m))
-      y(m)=yin(m) ! note, no "alog" here
+      x(m)=log(rs(m))
+      y(m)=yin(m) ! note, no "log" here
   100 continue
 
       xmin=x(1)
@@ -6075,8 +6081,8 @@
         end if
 !   compute total volume and number for mode
 !       dgnum = dgnum_um*1.0e-4
-!       sx = alog( sigmag )
-!       x0 = alog( dgnum )
+!       sx = log( sigmag )
+!       x0 = log( dgnum )
 !       x3 = x0 + 3.*sx*sx
 !       dstar = dgnum * exp(1.5*sx*sx)
 !       if (iflag .le. 1) then
@@ -6098,8 +6104,8 @@
         end do
 !   compute modal "working" parameters including total num/vol/mass
         dgnum = dgnum_um*1.0e-4
-        sx = alog( sigmag )
-        x0 = alog( dgnum )
+        sx = log( sigmag )
+        x0 = log( dgnum )
         x3 = x0 + 3.*sx*sx
         dstar = dgnum * exp(1.5*sx*sx)
         if (iflag .le. 1) then
@@ -6124,8 +6130,8 @@
 !9230    format( / 'sum over all sections  ', 2(1pe13.4) )
 !9231    format(   'modal totals           ', 2(1pe13.4) )
         do n = 1, nbin
-            xlo = alog( dlo_sect(n) )
-            xhi = alog( dhi_sect(n) )
+            xlo = log( dlo_sect(n) )
+            xhi = log( dhi_sect(n) )
             tlo = (xlo - x0)/sxroot2
             thi = (xhi - x0)/sxroot2
             if (tlo .le. 0.) then

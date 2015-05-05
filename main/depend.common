@@ -147,6 +147,9 @@ module_cpl.o: \
 module_cpl_oasis3.o: module_driver_constants.o \
                      module_domain.o
 
+module_clear_halos.o: module_configure.o \
+                     module_domain.o
+
 # End of DEPENDENCIES for frame
 
 # DEPENDENCIES for phys
@@ -160,8 +163,6 @@ module_bl_gbmpbl.o: ../share/module_model_constants.o
 module_bl_boulac.o: ../share/module_model_constants.o
 
 module_bl_qnsepbl.o: ../share/module_model_constants.o
-
-module_bl_qnsepbl09.o: ../share/module_model_constants.o
 
 module_progtm.o: module_gfs_machine.o 
 
@@ -288,6 +289,13 @@ module_cam_shr_kind_mod.o:
 
 module_cu_kf.o:  ../frame/module_wrf_error.o
 
+
+module_cu_kfcup.o:  ../frame/module_wrf_error.o     \
+		../frame/module_state_description.o \
+		$(CF2)                              \
+		../share/module_model_constants.o   \
+		module_mixactivate.o
+
 module_cu_kfeta.o: ../frame/module_wrf_error.o
 
 module_cu_gd.o:
@@ -351,6 +359,10 @@ module_mp_thompson.o : ../frame/module_wrf_error.o \
 
 module_mp_nssl_2mom.o : ../frame/module_wrf_error.o \
 		../share/module_model_constants.o
+
+module_mp_fast_sbm.o : module_mp_radar.o
+
+module_mp_full_sbm.o : module_mp_radar.o
 
 module_mp_cammgmp_driver.o : module_cam_mp_microp_aero.o \
 		module_cam_constituents.o \
@@ -458,8 +470,11 @@ module_sf_ruclsm.o: ../frame/module_wrf_error.o module_data_gocart_dust.o
 module_sf_pxlsm.o: ../share/module_model_constants.o module_sf_pxlsm_data.o
 
 module_ra_rrtmg_sw.o: module_ra_rrtmg_lw.o
+module_ra_rrtmg_swf.o: module_ra_rrtmg_lwf.o
 
 module_ra_rrtmg_lw.o: ../share/module_model_constants.o \
+		 module_ra_clWRF_support.o 
+module_ra_rrtmg_lwf.o: ../share/module_model_constants.o \
 		 module_ra_clWRF_support.o 
 
 module_physics_addtendc.o: \
@@ -471,6 +486,8 @@ module_physics_addtendc.o: \
 
 module_physics_init.o : \
 		module_ra_rrtm.o		\
+		module_ra_rrtmg_lwf.o		\
+		module_ra_rrtmg_swf.o		\
 		module_ra_rrtmg_lw.o		\
 		module_ra_rrtmg_sw.o		\
 		module_ra_cam.o		\
@@ -508,7 +525,6 @@ module_physics_init.o : \
 		module_bl_acm.o			\
 		module_bl_myjpbl.o		\
 		module_bl_qnsepbl.o		\
-		module_bl_qnsepbl09.o		\
 		module_bl_mynn.o                \
 		module_bl_myjurb.o              \
 		module_bl_boulac.o              \
@@ -518,12 +534,14 @@ module_physics_init.o : \
 		module_cu_kf.o			\
 	        module_cu_g3.o                  \
 		module_cu_kfeta.o		\
+		module_cu_mskf.o		\
 		module_cu_bmj.o			\
 		module_cu_gd.o			\
 		module_cu_nsas.o		\
 		module_cu_sas.o			\
 		module_cu_osas.o		\
 		module_cu_camzm_driver.o        \
+		module_cu_kfcup.o               \
 		module_shcu_camuwshcu.o		\
                 module_shcu_grims.o             \
 		module_mp_sbu_ylin.o		\
@@ -531,7 +549,6 @@ module_physics_init.o : \
 		module_mp_wsm5.o		\
 		module_mp_wsm6.o		\
 		module_mp_etanew.o		\
-                module_mp_etaold.o              \
 		module_mp_HWRF.o		\
 		module_fdda_psufddagd.o		\
 		module_fdda_spnudging.o         \
@@ -563,7 +580,7 @@ module_microphysics_driver.o: \
 		module_mp_kessler.o  module_mp_sbu_ylin.o module_mp_lin.o \
 		module_mp_wsm3.o module_mp_wsm5.o \
 		module_mp_wsm6.o module_mp_etanew.o \
-		module_mp_etaold.o module_mp_HWRF.o  \
+		module_mp_HWRF.o  \
 		module_mp_thompson.o            \
 		module_mp_gsfcgce.o 		\
                 module_mp_morr_two_moment.o     \
@@ -593,6 +610,8 @@ module_cumulus_driver.o: \
 		module_cu_osas.o \
 		module_cu_camzm_driver.o \
 		module_cu_tiedtke.o \
+		module_cu_ntiedtke.o \
+		module_cu_kfcup.o \
 		../frame/module_state_description.o \
 		../frame/module_configure.o \
 		../frame/module_domain.o \
@@ -605,7 +624,6 @@ module_pbl_driver.o:  \
 		module_bl_myjpbl.o \
 		module_bl_myjurb.o \
 		module_bl_qnsepbl.o \
-		module_bl_qnsepbl09.o \
 		module_bl_acm.o \
 		module_bl_ysu.o \
 		module_bl_mrf.o \
@@ -634,6 +652,8 @@ module_radiation_driver.o: \
 		module_ra_rrtm.o \
 		module_ra_rrtmg_lw.o \
 		module_ra_rrtmg_sw.o \
+		module_ra_rrtmg_lwf.o \
+		module_ra_rrtmg_swf.o \
 		module_ra_cam.o \
 		module_ra_gfdleta.o \
 		module_ra_HWRF.o \
@@ -641,6 +661,7 @@ module_radiation_driver.o: \
 		module_ra_goddard.o \
                 module_ra_flg.o \
                 module_ra_aerosol.o \
+                module_mp_thompson.o \
 		../frame/module_driver_constants.o \
 		../frame/module_state_description.o \
 		../frame/module_dm.o \
@@ -835,7 +856,7 @@ solve_interface.o: solve_em.int ../frame/module_domain.o ../frame/module_configu
 		../frame/module_timing.o ../frame/module_driver_constants.o \
 		../frame/module_wrf_error.o
 
-start_domain.o: start_domain_em.int wrf_timeseries.o track_driver.o  ../frame/module_domain.o ../frame/module_configure.o
+start_domain.o: start_domain_em.int wrf_timeseries.o track_driver.o ../frame/module_domain.o ../frame/module_configure.o
 
 module_date_time.o: ../frame/module_wrf_error.o ../frame/module_configure.o \
                 module_model_constants.o
@@ -1127,23 +1148,23 @@ ndown_em.o: \
 	../dyn_em/module_big_step_utilities_em.o \
 	$(ESMF_MOD_DEPENDENCE)
 
-nup_em.o: \
-	../frame/module_machine.o \
-	../frame/module_domain.o \
-	../frame/module_streams.o \
-	../frame/module_driver_constants.o \
-	../frame/module_configure.o \
-	../frame/module_timing.o \
-	../frame/module_dm.o \
-	../frame/module_wrf_error.o \
-	../frame/module_integrate.o \
-	../share/module_bc.o \
-	../share/module_io_domain.o \
-	../share/module_get_file_names.o \
-	../share/module_soil_pre.o \
-	../dyn_em/module_initialize_real.o \
-	../dyn_em/module_big_step_utilities_em.o \
-	$(ESMF_MOD_DEPENDENCE)
+#TEMPORARILY REMOVED nup_em.o: \
+#	../frame/module_machine.o \
+#	../frame/module_domain.o \
+#	../frame/module_streams.o \
+#	../frame/module_driver_constants.o \
+#	../frame/module_configure.o \
+#	../frame/module_timing.o \
+#	../frame/module_dm.o \
+#	../frame/module_wrf_error.o \
+#	../frame/module_integrate.o \
+#	../share/module_bc.o \
+#	../share/module_io_domain.o \
+#	../share/module_get_file_names.o \
+#	../share/module_soil_pre.o \
+#	../dyn_em/module_initialize_real.o \
+#	../dyn_em/module_big_step_utilities_em.o \
+#	$(ESMF_MOD_DEPENDENCE)
 
 # this already built above :../dyn_em/module_initialize.real.o \
 real_em.o: \

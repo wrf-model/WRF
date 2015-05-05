@@ -75,7 +75,7 @@ module module_cu_tiedtke
 !     cmfctop:   relative cloud massflux at level above nonbuoyancy level
 !     -------
 !
-      parameter(cmfctop=0.26)
+      parameter(cmfctop=0.30)
 !
 !     cmfcmax:   maximum massflux value allowed for updrafts etc
 !     -------
@@ -94,7 +94,7 @@ module module_cu_tiedtke
 !
 !     cprcon:  coefficients for determining conversion from cloud water
 !
-      parameter(cprcon = 2.0e-3/g)
+      parameter(cprcon = 1.1e-3/g)
 !
 !     zdnoprc: the pressure depth below which no precipitation
 !

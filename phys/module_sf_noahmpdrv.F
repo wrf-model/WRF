@@ -19,11 +19,12 @@ CONTAINS
               IOPT_INF, IOPT_RAD,  IOPT_ALB, IOPT_SNF,IOPT_TBOT, IOPT_STC,  & ! IN : User options
                IZ0TLND,                                                     & ! IN : User options
                    T3D,     QV3D,     U_PHY,    V_PHY,   SWDOWN,      GLW,  & ! IN : Forcing
-                 P8W3D,   RAINBL,                                           & ! IN : Forcing
+		 P8W3D,PRECIP_IN,        SR,                                & ! IN : Forcing
                    TSK,      HFX,      QFX,        LH,   GRDFLX,    SMSTAV, & ! IN/OUT LSM eqv
                 SMSTOT,SFCRUNOFF, UDRUNOFF,    ALBEDO,    SNOWC,     SMOIS, & ! IN/OUT LSM eqv
 		  SH2O,     TSLB,     SNOW,     SNOWH,   CANWAT,    ACSNOM, & ! IN/OUT LSM eqv
 		ACSNOW,    EMISS,     QSFC,                                 & ! IN/OUT LSM eqv
+ 		    Z0,      ZNT,                                           & ! IN/OUT LSM eqv
                ISNOWXY,     TVXY,     TGXY,  CANICEXY, CANLIQXY,     EAHXY, & ! IN/OUT Noah MP only
 	         TAHXY,     CMXY,     CHXY,    FWETXY, SNEQVOXY,  ALBOLDXY, & ! IN/OUT Noah MP only
                QSNOWXY, WSLAKEXY,    ZWTXY,      WAXY,     WTXY,    TSNOXY, & ! IN/OUT Noah MP only
@@ -43,7 +44,8 @@ CONTAINS
 #endif
                ids,ide,  jds,jde,  kds,kde,                    &
                ims,ime,  jms,jme,  kms,kme,                    &
-               its,ite,  jts,jte,  kts,kte                     )
+               its,ite,  jts,jte,  kts,kte,                    &
+               MP_RAINC, MP_RAINNC, MP_SHCV, MP_SNOW, MP_GRAUP, MP_HAIL     )
 !----------------------------------------------------------------
     USE NOAHMP_PARAMETERS, ONLY: TRANSFER_MP_PARAMETERS, CO2, O2, ISICE
 !----------------------------------------------------------------
@@ -90,7 +92,16 @@ CONTAINS
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ) ::  SWDOWN    ! solar down at surface [W m-2]
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ) ::  GLW       ! longwave down at surface [W m-2]
     REAL,    DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   ) ::  P8W3D     ! 3D pressure, valid at interface [Pa]
-    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ) ::  RAINBL    ! precipitation entering land model [mm]
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ) ::  PRECIP_IN ! total input precipitation [mm]
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ) ::  SR        ! frozen precipitation ratio [-]
+
+!Optional Detailed Precipitation Partitioning Inputs
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ), OPTIONAL ::  MP_RAINC  ! convective precipitation entering land model [mm] ! MB/AN : v3.7
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ), OPTIONAL ::  MP_RAINNC ! large-scale precipitation entering land model [mm]! MB/AN : v3.7
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ), OPTIONAL ::  MP_SHCV   ! shallow conv precip entering land model [mm]      ! MB/AN : v3.7
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ), OPTIONAL ::  MP_SNOW   ! snow precipitation entering land model [mm]       ! MB/AN : v3.7
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ), OPTIONAL ::  MP_GRAUP  ! graupel precipitation entering land model [mm]    ! MB/AN : v3.7
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ), OPTIONAL ::  MP_HAIL   ! hail precipitation entering land model [mm]       ! MB/AN : v3.7
 #ifdef WRF_HYDRO
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  sfcheadrt,INFXSRT,soldrain   ! for WRF-Hydro
 #endif
@@ -118,6 +129,8 @@ CONTAINS
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  ACSNOW    ! accumulated snow on grid
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  EMISS     ! surface bulk emissivity
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  QSFC      ! bulk surface specific humidity
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  Z0        ! combined z0 sent to coupled model
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  ZNT       ! combined z0 sent to coupled model
 
 ! INOUT (with no Noah LSM equivalent)
 
@@ -227,7 +240,14 @@ CONTAINS
     REAL                                :: LWDN         ! longwave down at surface [W m-2]
     REAL                                :: P_ML         ! pressure, valid at interface [Pa]
     REAL                                :: PSFC         ! surface pressure [Pa]
-    REAL                                :: PRCP         ! precipitation entering land model [mm]
+    REAL                                :: PRCP         ! total precipitation entering  [mm]         ! MB/AN : v3.7
+    REAL                                :: PRCPCONV     ! convective precipitation entering  [mm]    ! MB/AN : v3.7
+    REAL                                :: PRCPNONC     ! non-convective precipitation entering [mm] ! MB/AN : v3.7
+    REAL                                :: PRCPSHCV     ! shallow convective precip entering  [mm]   ! MB/AN : v3.7
+    REAL                                :: PRCPSNOW     ! snow entering land model [mm]              ! MB/AN : v3.7
+    REAL                                :: PRCPGRPL     ! graupel entering land model [mm]           ! MB/AN : v3.7
+    REAL                                :: PRCPHAIL     ! hail entering land model [mm]              ! MB/AN : v3.7
+    REAL                                :: PRCPOTHR     ! other precip, e.g. fog [mm]                ! MB/AN : v3.7
 
 ! INOUT (with generic LSM equivalent)
 
@@ -281,6 +301,7 @@ CONTAINS
 
 ! OUT (with no Noah LSM equivalent)
 
+    REAL                                :: Z0WRF        ! combined z0 sent to coupled model
     REAL                                :: T2MV         ! 2m temperature of vegetation part
     REAL                                :: T2MB         ! 2m temperature of bare ground part
     REAL                                :: Q2MV         ! 2m mixing ratio of vegetation part
@@ -325,6 +346,10 @@ CONTAINS
     REAL                                :: CHUC         ! under canopy exchange coefficient 
     REAL                                :: CHV2         ! veg 2m exchange coefficient 
     REAL                                :: CHB2         ! bare 2m exchange coefficient 
+  REAL   :: PAHV    !precipitation advected heat - vegetation net (W/m2)
+  REAL   :: PAHG    !precipitation advected heat - under canopy net (W/m2)
+  REAL   :: PAHB    !precipitation advected heat - bare ground net (W/m2)
+  REAL   :: PAH     !precipitation advected heat - total (W/m2)
 
 ! Intermediate terms
 
@@ -449,7 +474,30 @@ CONTAINS
        P_ML   =(P8W3D(I,KTS+1,J)+P8W3D(I,KTS,J))*0.5  ! surface pressure defined at intermediate level [Pa]
 	                                              !    consistent with temperature, mixing ratio
        PSFC   = P8W3D(I,1,J)                          ! surface pressure defined a full levels [Pa]
-       PRCP   = RAINBL(I,J)/DT                        ! timestep precipitation [mm/s]
+       PRCP   = PRECIP_IN (I,J) / DT                  ! timestep total precip rate (glacier) [mm/s]! MB: v3.7
+
+       IF (PRESENT(MP_RAINC) .AND. PRESENT(MP_RAINNC) .AND. PRESENT(MP_SHCV) .AND. &
+           PRESENT(MP_SNOW)  .AND. PRESENT(MP_GRAUP)  .AND. PRESENT(MP_HAIL)   ) THEN
+
+         PRCPCONV  = MP_RAINC (I,J)/DT                ! timestep convective precip rate [mm/s]     ! MB: v3.7
+         PRCPNONC  = MP_RAINNC(I,J)/DT                ! timestep non-convective precip rate [mm/s] ! MB: v3.7
+         PRCPSHCV  = MP_SHCV(I,J)  /DT                ! timestep shallow conv precip rate [mm/s]   ! MB: v3.7
+         PRCPSNOW  = MP_SNOW(I,J)  /DT                ! timestep snow precip rate [mm/s]           ! MB: v3.7
+         PRCPGRPL  = MP_GRAUP(I,J) /DT                ! timestep graupel precip rate [mm/s]        ! MB: v3.7
+         PRCPHAIL  = MP_HAIL(I,J)  /DT                ! timestep hail precip rate [mm/s]           ! MB: v3.7
+
+         PRCPOTHR  = PRCP - PRCPCONV - PRCPNONC - PRCPSHCV ! take care of other (fog) contained in rainbl
+	 PRCPOTHR  = MAX(0.0,PRCPOTHR)
+	 PRCPNONC  = PRCPNONC + PRCPOTHR
+         PRCPSNOW  = PRCPSNOW + SR(I,J)  * PRCPOTHR 
+       ELSE
+         PRCPCONV  = 0.
+         PRCPNONC  = PRCP
+         PRCPSHCV  = 0.
+         PRCPSNOW  = SR(I,J) * PRCP
+         PRCPGRPL  = 0.
+         PRCPHAIL  = 0.
+       ENDIF
 
 ! IN/OUT fields
 
@@ -543,7 +591,11 @@ CONTAINS
                                 FSA,     FSR,    FIRA,     FSH,    FGEV,   SSOIL, & ! OUT : 
                                TRAD,   ESOIL,   RUNSF,   RUNSB,     SAG,    SALB, & ! OUT :
                               QSNBOT,PONDING,PONDING1,PONDING2,    T2MB,    Q2MB, & ! OUT :
-			      EMISSI,  FPICE,    CHB2 )                             ! OUT :
+			      EMISSI,  FPICE,    CHB2 &                             ! OUT :
+#ifdef WRF_HYDRO
+                              , sfcheadrt(i,j)                                      &
+#endif
+                              )
 
          FSNO   = 1.0       
          TV     = undefined_value     ! Output from standard Noah-MP undefined for glacier points
@@ -600,7 +652,7 @@ CONTAINS
          CHV2   = undefined_value 
          FCEV   = undefined_value 
          FCTR   = undefined_value        
-       
+         Z0WRF  = 0.002
          QFX(I,J) = ESOIL
          LH (I,J) = FGEV
 
@@ -610,12 +662,12 @@ CONTAINS
          CALL NOAHMP_SFLX (&
             I       , J       , LAT     , YEARLEN , JULIAN  , COSZ    , & ! IN : Time/Space-related
             DT      , DX      , DZ8W1D  , NSOIL   , ZSOIL   , NSNOW   , & ! IN : Model configuration 
-            FVEG    , FVGMAX  , VEGTYP  , ICE     , IST     , & ! IN : Vegetation/Soil characteristics
-            SMCEQ   ,                                         & ! IN : Vegetation/Soil characteristics
-            IZ0TLND ,                                                   & ! IN : User options
+            FVEG    , FVGMAX  , VEGTYP  , ICE     , IST     ,           & ! IN : Vegetation/Soil characteristics
+            SMCEQ   ,                                                   & ! IN : Vegetation/Soil characteristics
             T_ML    , P_ML    , PSFC    , U_ML    , V_ML    , Q_ML    , & ! IN : Forcing
-            QC      , SWDN    , LWDN    , PRCP    , TBOT    , CO2PP   , & ! IN : Forcing
-            O2PP    , FOLN    , FICEOLD , PBLH    , Z_ML    ,           & ! IN : Forcing
+            QC      , SWDN    , LWDN    ,                               & ! IN : Forcing
+	    PRCPCONV, PRCPNONC, PRCPSHCV, PRCPSNOW, PRCPGRPL, PRCPHAIL, & ! IN : Forcing
+            TBOT    , CO2PP   , O2PP    , FOLN    , FICEOLD , Z_ML    , & ! IN : Forcing
             ALBOLD  , SNEQVO  ,                                         & ! IN/OUT : 
             STC     , SMH2O   , SMC     , TAH     , EAH     , FWET    , & ! IN/OUT : 
             CANLIQ  , CANICE  , TV      , TG      , QSFC1D  , QSNOW   , & ! IN/OUT : 
@@ -624,6 +676,7 @@ CONTAINS
             STMASS  , WOOD    , STBLCP  , FASTCP  , PLAI    , PSAI    , & ! IN/OUT : 
             CM      , CH      , TAUSS   ,                               & ! IN/OUT : 
             SMCWTD  ,DEEPRECH , RECH    ,                               & ! IN/OUT :
+            Z0WRF   ,                                                   &
             FSA     , FSR     , FIRA    , FSH     , SSOIL   , FCEV    , & ! OUT : 
             FGEV    , FCTR    , ECAN    , ETRAN   , ESOIL   , TRAD    , & ! OUT : 
             TGB     , TGV     , T2MV    , T2MB    , Q2MV    , Q2MB    , & ! OUT : 
@@ -633,7 +686,8 @@ CONTAINS
             BGAP    , WGAP    , CHV     , CHB     , EMISSI  ,           & ! OUT : 
             SHG     , SHC     , SHB     , EVG     , EVB     , GHV     , & ! OUT :
 	    GHB     , IRG     , IRC     , IRB     , TR      , EVC     , & ! OUT :
-	    CHLEAF  , CHUC    , CHV2    , CHB2    , FPICE               &
+	    CHLEAF  , CHUC    , CHV2    , CHB2    , FPICE   , PAHV    , & 
+            PAHG    , PAHB    , PAH                                     &
 #ifdef WRF_HYDRO
             , sfcheadrt(i,j)                               &
 #endif
@@ -642,12 +696,15 @@ CONTAINS
             QFX(I,J) = ECAN + ESOIL + ETRAN
             LH       (I,J)                = FCEV + FGEV + FCTR
 
+   ENDIF ! glacial split ends 
+
 #ifdef WRF_HYDRO
-            soldrain(i,j) = RUNSB*dt        !mm , underground runoff
+!AD_CHANGE: Glacier cells can produce small negative subsurface runoff for mass balance.
+!           This will crash channel routing, so only pass along positive runoff.
+            soldrain(i,j) = max(RUNSB*dt, 0.)        !mm , underground runoff
             INFXSRT(i,j) = RUNSF*dt        !mm , surface runoff
 #endif
 
-   ENDIF ! glacial split ends 
 
 ! INPUT/OUTPUT
 
@@ -706,6 +763,8 @@ CONTAINS
 
 ! OUTPUT
 
+             Z0       (I,J)                = Z0WRF
+             ZNT      (I,J)                = Z0WRF
              T2MVXY   (I,J)                = T2MV
              T2MBXY   (I,J)                = T2MB
              Q2MVXY   (I,J)                = Q2MV/(1.0 - Q2MV)  ! specific humidity to mixing ratio
@@ -769,7 +828,7 @@ CONTAINS
        canliqxy ,eahxy    ,tahxy    ,cmxy     ,chxy     ,                     &
        fwetxy   ,sneqvoxy ,alboldxy ,qsnowxy  ,wslakexy ,zwtxy    ,waxy     , &
        wtxy     ,tsnoxy   ,zsnsoxy  ,snicexy  ,snliqxy  ,lfmassxy ,rtmassxy , &
-       stmassxy ,woodxy   ,stblcpxy ,fastcpxy ,xsaixy   , &
+       stmassxy ,woodxy   ,stblcpxy ,fastcpxy ,xsaixy   ,lai      ,           &
 !jref:start
        t2mvxy   ,t2mbxy   ,chstarxy,            &
 !jref:end       
@@ -851,6 +910,7 @@ CONTAINS
     REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: stblcpxy    !stable carbon in deep soil [g/m2]
     REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: fastcpxy    !short-lived carbon, shallow soil [g/m2]
     REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: xsaixy      !stem area index
+    REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: lai         !leaf area index
 
 ! IOPT_RUN = 5 option
 
@@ -883,7 +943,7 @@ CONTAINS
     !                                                   the surface (negative)
 
     REAL                      :: BEXP, SMCMAX, PSISAT
-    REAL                      :: FK
+    REAL                      :: FK, masslai,masssai
 
     REAL, PARAMETER           :: BLIM  = 5.5
     REAL, PARAMETER           :: HLICE = 3.335E5
@@ -1028,13 +1088,32 @@ CONTAINS
                    areaxy     (I,J) = (DX * DY) / ( MSFTX(I,J) * MSFTY(I,J) )
              endif
 
-             lfmassxy   (I,J) = 50.         !
-             stmassxy   (I,J) = 50.0        !
-             rtmassxy   (I,J) = 500.0       !
-             woodxy     (I,J) = 500.0       !
-             stblcpxy   (I,J) = 1000.0      !
-             fastcpxy   (I,J) = 1000.0      !
-             xsaixy     (I,J) = 0.1         !
+           IF(IVGTYP(I,J) == ISBARREN_TABLE .OR. IVGTYP(I,J) == ISICE_TABLE .OR. &
+	      IVGTYP(I,J) == ISURBAN_TABLE  .OR. IVGTYP(I,J) == ISWATER_TABLE ) THEN
+	     
+	     lai        (I,J) = 0.0
+             xsaixy     (I,J) = 0.0
+             lfmassxy   (I,J) = 0.0
+             stmassxy   (I,J) = 0.0
+             rtmassxy   (I,J) = 0.0
+             woodxy     (I,J) = 0.0
+             stblcpxy   (I,J) = 0.0
+             fastcpxy   (I,J) = 0.0
+
+	   ELSE
+	     
+	     lai        (I,J) = max(lai(i,j),0.05)             ! at least start with 0.05 for arbitrary initialization (v3.7)
+             xsaixy     (I,J) = max(0.1*lai(I,J),0.05)         ! MB: arbitrarily initialize SAI using input LAI (v3.7)
+             masslai = 1000. / max(SLA_TABLE(IVGTYP(I,J)),1.0) ! conversion from lai to mass  (v3.7)
+             lfmassxy   (I,J) = lai(i,j)*masslai               ! use LAI to initialize (v3.7)
+             masssai = 1000. / 3.0                             ! conversion from lai to mass (v3.7)
+             stmassxy   (I,J) = xsaixy(i,j)*masssai            ! use SAI to initialize (v3.7)
+             rtmassxy   (I,J) = 500.0                          ! these are all arbitrary and probably should be
+             woodxy     (I,J) = 500.0                          ! in the table or read from initialization
+             stblcpxy   (I,J) = 1000.0                         !
+             fastcpxy   (I,J) = 1000.0                         !
+
+	   END IF
 
           enddo
        enddo

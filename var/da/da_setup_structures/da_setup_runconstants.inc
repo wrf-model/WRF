@@ -7,15 +7,15 @@ subroutine da_setup_runconstants(grid, xbx)
    implicit none
 
    type (domain),   intent(inout) :: grid                
-   type (xbx_type), intent(inout) :: xbx      ! Header & non-gridded vars.
+   type (xbx_type), intent(inout) :: xbx     ! Header & non-gridded vars.
 
-   integer, parameter       :: nrange = 60 ! Range to search for efficient FFT.
-   integer                  :: n           ! Loop counter.
+   integer, parameter       :: nrange = 120  ! Range to search for efficient FFT.
+   integer                  :: n             ! Loop counter.
 
-   integer                  :: fft_size_i  ! Efficient FFT 1st dimension.
-   integer                  :: fft_size_j  ! Efficient FFT 2nd dimension.
-   logical                  :: found_magic ! true when efficient FFT found
-   logical                  :: need_pad    ! True when need pad_i > 0
+   integer                  :: fft_size_i    ! Efficient FFT 1st dimension.
+   integer                  :: fft_size_j    ! Efficient FFT 2nd dimension.
+   logical                  :: found_magic   ! true when efficient FFT found
+   logical                  :: need_pad      ! True when need pad_i > 0
 
    integer                  :: i, j
    integer                  :: nx            ! nx + 1 = ix + pad_i
@@ -52,7 +52,7 @@ subroutine da_setup_runconstants(grid, xbx)
 
    if (.NOT. found_magic) then
      call da_error(__FILE__,__LINE__, &
-       (/"No factor found"/))
+       (/"No FFT factor found: invalid e_we value"/))
    end if
 
    allocate(xbx % trig_functs_x(1:3*fft_size_i))  
@@ -79,7 +79,7 @@ subroutine da_setup_runconstants(grid, xbx)
       
    if (.NOT. found_magic) then
      call da_error(__FILE__,__LINE__, &
-       (/"No factor found"/))
+       (/"No FFT factor found: invalid e_sn value"/))
    end if
 
    allocate(xbx % trig_functs_y(1:3*fft_size_j))  

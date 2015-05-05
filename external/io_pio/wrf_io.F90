@@ -7852,6 +7852,9 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
   integer, dimension(1,1)                      :: tmp0dint
   integer, dimension(:,:,:), allocatable       :: tmp2dint
 
+! write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+! write(unit=0, fmt='(5a)') ' Write var: <', trim(var), '>, at <', trim(DateStr), '>'
+
  !Local, possibly adjusted, copies of MemoryStart and MemoryEnd
   MemoryOrder = trim(adjustl(MemoryOrdIn))
   NullName=char(0)

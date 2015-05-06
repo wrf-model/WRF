@@ -35,9 +35,9 @@ state    real  SPPT_AMP       ij   misc   1 -   r          "SPPT_AMP"       "amp
 # 1d arrays
 state    real  VERTAMPT        k   misc   1 -   r          "VERTAMPT"       "vert. amplitude of stoch. temperature perturb." "" ""
 state    real  VERTAMPUV       k   misc   1 -   r          "VERTAMPUV"      "vert. amplitude of stoch. u,v perturb." "" ""
-state integer  ISEEDARR_RAND_PERT k   misc   1  -   r      "ISEEDARR_RAND_PERTURB"      "Array to hold seed for restart, RAND_PERT" "" ""
-state integer  ISEEDARR_SPPT      k   misc   1  -   r      "ISEEDARR_SPPT"              "Array to hold seed for restart, SPPT" "" ""
-state integer  ISEEDARR_SKEBS     k   misc   1  -   r      "ISEEDARR_SKEBS"             "Array to hold seed for restart, SKEBS" "" ""
+state integer  ISEEDARR_RAND_PERT k   misc   1  -   -      "ISEEDARR_RAND_PERTURB"      "Array to hold seed for restart, RAND_PERT" "" ""
+state integer  ISEEDARR_SPPT      k   misc   1  -   -      "ISEEDARR_SPPT"              "Array to hold seed for restart, SPPT" "" ""
+state integer  ISEEDARR_SKEBS     k   misc   1  -   -      "ISEEDARR_SKEBS"             "Array to hold seed for restart, SKEBS" "" ""
 
 # 1d arrays for FFT transpose
 state    real   RAND_REAL_xxx   i{stoclev}jx dyn_em 1 XYZ

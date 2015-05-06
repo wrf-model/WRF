@@ -51,7 +51,7 @@ wrf_io.o:               wrf_io.F90 $(CODE) wrf_data_pio.o read_bdy_routines.o fi
 			$(CPP1) -I. -I$(PIOPATH)/include -I../ioapi_share wrf_io.F90 > wrf_io.f
 			$(FC) $(FFLAGS) -c wrf_io.f
 
-module_wrfsi_static.o:  module_wrfsi_static.F90
+module_wrfsi_static.o:  module_wrfsi_static.F90 $(CODE) wrf_data_pio.o read_bdy_routines.o field_routines.o
 			$(CPP1) -I. -I$(PIOPATH)/include -I../ioapi_share module_wrfsi_static.F90 > module_wrfsi_static.f
 			$(FC) $(FFLAGS) -c module_wrfsi_static.f
 

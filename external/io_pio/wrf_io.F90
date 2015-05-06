@@ -1559,6 +1559,15 @@ subroutine ext_pio_get_dom_ti_char_arr(DataHandle,Element,Data,Status)
     write(msg,*) 'Warning READ WRITE ONLY FILE in ',__FILE__,' ','CHAR',', line', __LINE__ 
     call wrf_debug ( WARN , msg)
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_READ) then
+
+!---PIO_INTERNAL_ERROR : abort on error from any task
+!---PIO_BCAST_ERROR : broadcast an error from io_rank 0 to all tasks in comm
+!---PIO_RETURN_ERROR : do nothing - allow the user to handle it
+
+    call pio_seterrorhandling(DH%file_handle, PIO_RETURN_ERROR)
+!---call pio_seterrorhandling(DH%file_handle, PIO_BCAST_ERROR)
+!---call pio_seterrorhandling(DH%file_handle, PIO_INTERNAL_ERROR)
+
     stat = pio_inq_att(DH%file_handle, PIO_GLOBAL, Element, XType, Len)
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
@@ -1580,6 +1589,8 @@ subroutine ext_pio_get_dom_ti_char_arr(DataHandle,Element,Data,Status)
       call wrf_debug ( WARN , msg)
       return
     endif
+
+!---call pio_seterrorhandling(DH%file_handle, PIO_BCAST_ERROR)
   else
     Status = WRF_ERR_FATAL_BAD_FILE_STATUS  
     write(msg,*) 'Fatal error BAD FILE STATUS in ',__FILE__,' ','CHAR',', line', __LINE__ 

@@ -611,7 +611,7 @@ integer::oops1,oops2
             CALL wrf_error_fatal ( 'If the polar boundary condition is used, then fft_filter_lat must be set in namelist.input' )
          END IF
 
-         IF ( config_flags%map_proj .EQ. PROJ_CASSINI ) THEN
+         IF ( ( config_flags%map_proj .EQ. PROJ_CASSINI ) .AND. ( config_flags%polar ) ) THEN 
 #if 1
             dclat = 90./REAL(jde-jds) !(0.5 * 180/ny)
             DO j = jts, MIN(jte,jde-1)
@@ -771,6 +771,9 @@ integer::oops1,oops2
                                its, ite, jts, jte, 1,1 )
 #endif
 #endif
+         ELSE IF ( ( config_flags%map_proj .NE. PROJ_CASSINI ) .AND. ( config_flags%polar ) ) THEN 
+            WRITE ( a_message,* ) 'A global domain (polar = true) requires the Cassini projection'
+            CALL wrf_error_fatal ( a_message )
          END IF
 
          !  If we have any input low-res surface pressure, we store it.

@@ -827,6 +827,37 @@
          END DO
       END IF
 
+
+!-----------------------------------------------------------------------
+! If we have asked for the height-level diagnostics, make sure we can output them
+!-----------------------------------------------------------------------
+
+      IF ( model_config_rec%z_lev_diags .EQ. 1 ) THEN
+         DO i = 1, model_config_rec % max_dom
+            IF ( ( MAX ( model_config_rec%auxhist22_interval  (i) , &
+                         model_config_rec%auxhist22_interval_d(i) , &
+                         model_config_rec%auxhist22_interval_h(i) , &
+                         model_config_rec%auxhist22_interval_m(i) , &
+                         model_config_rec%auxhist22_interval_s(i) ) == 0 ) .OR. &
+                 (  model_config_rec%io_form_auxhist22 == 0 ) ) THEN
+               wrf_err_message = '--- ERROR: z_lev_diags requires auxhist22 file information'
+               CALL wrf_message ( wrf_err_message )
+               wrf_err_message = '--- ERROR: provide: auxhist22_interval (max_dom) and io_form_auxhist22'
+               CALL wrf_message ( wrf_err_message )
+               wrf_err_message = '--- Add supporting IO for stream 22 for height-level diags'
+               CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
+            END IF
+         END DO
+         DO i = 1, model_config_rec % max_dom
+            model_config_rec%z_lev_interval(i) = model_config_rec%auxhist22_interval  (i)*   60 + &
+                                                 model_config_rec%auxhist22_interval_d(i)*86400 + &
+                                                 model_config_rec%auxhist22_interval_h(i)* 3600 + &
+                                                 model_config_rec%auxhist22_interval_m(i)*   60 + &
+                                                 model_config_rec%auxhist22_interval_s(i)
+         END DO
+      END IF
+
+
 !-----------------------------------------------------------------------
 ! For nwp_diagnostics = 1, history_interval must be used.           
 !-----------------------------------------------------------------------

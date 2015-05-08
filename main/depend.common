@@ -715,6 +715,7 @@ module_diagnostics_driver.o: \
 		module_diag_misc.o 			\
 		module_diag_cl.o			\
 		module_diag_pld.o 			\
+		module_diag_zld.o 			\
 		module_diag_afwa.o 			\
 		../frame/module_comm_dm.o		\
 		../frame/module_state_description.o 	\
@@ -731,6 +732,9 @@ module_diag_cl.o: \
 		../frame/module_configure.o
 
 module_diag_pld.o: \
+		../share/module_model_constants.o
+
+module_diag_zld.o: \
 		../share/module_model_constants.o
 
 module_diag_afwa_hail.o:

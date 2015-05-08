@@ -1247,12 +1247,21 @@ subroutine da_setup_be_regional(xb, be, grid)
          call da_get_vertical_truncation(max_vert_var10,be10_eval_glo(:),be % v10)
          call da_get_vertical_truncation(max_vert_var11,be11_eval_glo(:),be % v11)
       else
-         be % v6 % mz = xb % mkz
-         be % v7 % mz = xb % mkz
-         be % v8 % mz = xb % mkz
-         be % v9 % mz = xb % mkz
-         be % v10% mz = xb % mkz
-         be % v11% mz = xb % mkz
+         if ( jb_factor > 0.0 ) then
+            be % v6  % mz = xb % mkz
+            be % v7  % mz = xb % mkz
+            be % v8  % mz = xb % mkz
+            be % v9  % mz = xb % mkz
+            be % v10 % mz = xb % mkz
+            be % v11 % mz = xb % mkz
+         else
+            be % v6  % mz = 0
+            be % v7  % mz = 0
+            be % v8  % mz = 0
+            be % v9  % mz = 0
+            be % v10 % mz = 0
+            be % v11 % mz = 0
+         end if
       endif
 #endif
       if (max_vert_var5 == 0.0) then
@@ -1401,7 +1410,7 @@ subroutine da_setup_be_regional(xb, be, grid)
    endif			! if( use_rf )
 
    ! 6.0 Perform checks on eigenvectors with be data structure:
-   if (test_statistics) then
+   if (jb_factor > 0.0 .and. test_statistics) then
       call da_check_eof_decomposition(be%v1%val_g(:), be%v1%evec_g(:,:),&
                                      be%v1%name)
       call da_check_eof_decomposition(be%v2%val_g(:), be%v2%evec_g(:,:),&
@@ -1437,7 +1446,7 @@ subroutine da_setup_be_regional(xb, be, grid)
 
       it = 1
 
-      if (max_ext_its > 1) then
+      if (max_ext_its > 1 .and. jb_factor > 0.0) then
 
           write(unit=message(1),fmt='(A,I4)') '>>> Save the variances and scale-lengths in outer-loop', it
           call da_message(message(1:1))
@@ -1503,7 +1512,7 @@ subroutine da_setup_be_regional(xb, be, grid)
 #endif
    endif
 
-   if (print_detail_be ) then
+   if (print_detail_be .and. jb_factor > 0.0) then
 
        write(be_print_unit,'("it=",i2,2x,"kz=",i3,2x,"jy=",i4,2x,"ix=",i4,2x,"ds=",e12.5)') &
                                                       it, kz, jy, ix, xb % ds
@@ -1523,14 +1532,19 @@ subroutine da_setup_be_regional(xb, be, grid)
        write(be_print_unit,'("mz=",i3,2x,"be%v11%val:"/(10e12.5))') be%v11%mz, be%v11%val(1,:)
 #endif
        write(be_print_unit,'(/"scale-length: kz=",i3)') kz
-       if (be % ne > 0) then
-          write(be_print_unit,'(/"Hybrid assimilation: number of members=",i3)') be % ne
-          write(be_print_unit,'("be%v1%rf_alpha:"/(10e12.5))') be % v1 % rf_alpha(:)
-          write(be_print_unit,'("be%v2%rf_alpha:"/(10e12.5))') be % v2 % rf_alpha(:)
-          write(be_print_unit,'("be%v3%rf_alpha:"/(10e12.5))') be % v3 % rf_alpha(:)
-          write(be_print_unit,'("be%v4%rf_alpha:"/(10e12.5))') be % v4 % rf_alpha(:)
-          write(be_print_unit,'("be%v5%rf_alpha:"/(10e12.5))') be % v5 % rf_alpha(:)
-       endif
+       write(be_print_unit,'("be%v1%rf_alpha:"/(10e12.5))') be % v1 % rf_alpha(:)
+       write(be_print_unit,'("be%v2%rf_alpha:"/(10e12.5))') be % v2 % rf_alpha(:)
+       write(be_print_unit,'("be%v3%rf_alpha:"/(10e12.5))') be % v3 % rf_alpha(:)
+       write(be_print_unit,'("be%v4%rf_alpha:"/(10e12.5))') be % v4 % rf_alpha(:)
+       write(be_print_unit,'("be%v5%rf_alpha:"/(10e12.5))') be % v5 % rf_alpha(:)
+#ifdef CLOUD_CV
+       write(be_print_unit,'("be%v6%rf_alpha:"/(10e12.5))')  be % v6 % rf_alpha(:)
+       write(be_print_unit,'("be%v7%rf_alpha:"/(10e12.5))')  be % v7 % rf_alpha(:)
+       write(be_print_unit,'("be%v8%rf_alpha:"/(10e12.5))')  be % v8 % rf_alpha(:)
+       write(be_print_unit,'("be%v9%rf_alpha:"/(10e12.5))')  be % v9 % rf_alpha(:)
+       write(be_print_unit,'("be%v10%rf_alpha:"/(10e12.5))') be % v10 % rf_alpha(:)
+       write(be_print_unit,'("be%v11%rf_alpha:"/(10e12.5))') be % v11 % rf_alpha(:)
+#endif
 
    endif
 

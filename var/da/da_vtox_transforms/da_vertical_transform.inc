@@ -114,26 +114,38 @@ subroutine da_vertical_transform(grid, string, be, vertical_wgt, vv, vp)
      elseif(cloud_cv_options == 3)then
       if (be % v6 % mz > 0) then
          vp % v6 = vv % v6
+      else
+         vp % v6 = 0.0
       end if
 
       if (be % v7 % mz > 0) then
          vp % v7 = vv % v7
+      else
+         vp % v7 = 0.0
       end if
 
       if (be % v8 % mz > 0) then
          vp % v8 = vv % v8
+      else
+         vp % v8 = 0.0
       end if
 
       if (be % v9 % mz > 0) then
          vp % v9 = vv % v9
+      else
+         vp % v9 = 0.0
       end if
 
       if (be % v10 % mz > 0) then
          vp % v10 = vv % v10
+      else
+         vp % v10 = 0.0
       end if
 
       if (be % v11 % mz > 0) then
          vp % v11 = vv % v11
+      else
+         vp % v11 = 0.0
       end if
 
      end if

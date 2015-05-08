@@ -395,6 +395,10 @@ subroutine da_analysis_stats  (grid, stats_unit)
    qrnv = 0.0
    qciv = 0.0
    qsnv = 0.0
+   qcwm = 0.0
+   qrnm = 0.0
+   qcim = 0.0
+   qsnm = 0.0
 #endif
    do k = kts, kte
       do j=jts,jte

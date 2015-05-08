@@ -240,6 +240,10 @@ time_window_min, time_window_max, map_projection , missing_flag)
 
       END IF
 
+      ! initialize the vaiable that will be used later for checking
+      ! if the pw info is read or not
+      obs(obs_num)%ground%pw%data = missing_r
+
       !  The first read is the "once only" type of information.
 
       READ ( file_num , IOSTAT = io_error , FMT = rpt_format ) &
@@ -1587,6 +1591,10 @@ SUBROUTINE read_measurements (file_num, surface, location, info, bad_data, &
       !
       !  Assign the SSMI error (AFWA only)
       !
+
+      ! initialize the variable that might be used in module_err_ncep.F90
+      ! for checking if the error is pre-assigned
+      current%meas%speed%error = missing_r
 
       READ (info % platform (4:6), '(I3)') fm
 

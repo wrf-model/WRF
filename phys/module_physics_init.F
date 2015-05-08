@@ -2906,7 +2906,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
 
       CASE (YSUSCHEME)
            if(isfc .ne. 1)CALL wrf_error_fatal &
-            ( 'module_physics_init: use sfclay scheme for this pbl option' )
+            ( 'module_physics_init: Use sf_sfclay_physics= 1 or 91 for this pbl option' )
            IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
             ( 'module_physics_init: use myj (option 2) or boulac (option 8) with BEP/BEM urban scheme' )
            CALL ysuinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,    &
@@ -2919,7 +2919,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                         its, ite, jts, jte, kts, kte          )
       CASE (SHINHONGSCHEME)
            if(isfc .ne. 1)CALL wrf_error_fatal &
-            ( 'module_physics_init: use sfclay scheme for this pbl option' )
+            ( 'module_physics_init: Use sf_sfclay_physics= 1 or 91 for this pbl option' )
            IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
             ( 'module_physics_init: use myj (option 2) or boulac (option 8) with BEP/BEM urban scheme' )
            CALL shinhonginit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,&
@@ -2932,7 +2932,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                         its, ite, jts, jte, kts, kte          )
       CASE (MRFSCHEME)
            if(isfc .ne. 1)CALL wrf_error_fatal &
-            ( 'module_physics_init: use sfclay scheme for this pbl option' )
+            ( 'module_physics_init: Use sf_sfclay_physics= 1 or 91 for this pbl option' )
            IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
             ( 'module_physics_init: use myj (option 2) or boulac (option 8) with BEP/BEM urban scheme' )
            CALL mrfinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,    &
@@ -3103,7 +3103,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
 
       CASE (GBMPBLSCHEME) 
            if(isfc .ne. 1)CALL wrf_error_fatal &
-            ( 'module_physics_init: use sfclay scheme for this pbl option' )
+            ( 'module_physics_init: Use sf_sfclay_physics= 1 or 91 for this pbl option' )
          CALL gbmpblinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,   &
                         RQCBLTEN,RQIBLTEN,P_QI,               &
                         PARAM_FIRST_SCALAR,TKE_PBL,           &

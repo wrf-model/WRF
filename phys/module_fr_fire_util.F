@@ -108,7 +108,7 @@ integer function open_text_file(filename,rw)
 implicit none
 character(len=*),intent(in):: filename,rw
 #ifdef _OPENMP
-integer, external:: OMP_GET_THREAD_NUM
+!integer, external:: OMP_GET_THREAD_NUM
 #endif
 character(len=128):: msg
 character(len=1)::act
@@ -116,9 +116,9 @@ integer::iounit,ierr
 logical::op
 
 #ifdef _OPENMP
-    if (OMP_GET_THREAD_NUM() .ne. 0)then
-       call crash('open_input_text_file: called from parallel loop')
-    endif
+!   if (OMP_GET_THREAD_NUM() .ne. 0)then
+!      call crash('open_input_text_file: called from parallel loop')
+!   endif
 #endif
 
     do iounit=19,99
@@ -1338,8 +1338,8 @@ real, intent(in),dimension(ims:ime,kms:kme,jms:jme)::a
 character(len=*)::name
 
 #ifdef _OPENMP
-external, logical:: omp_in_parallel
-external, integer:: omp_get_thread_num
+!external, logical:: omp_in_parallel
+!external, integer:: omp_get_thread_num
 #endif
 
 !*** local
@@ -1372,7 +1372,7 @@ enddo
 ! get process sum over all threads
 thread=0
 #ifdef _OPENMP
-thread=omp_get_thread_num()
+!thread=omp_get_thread_num()
 #endif
 if(thread.eq.0)psum=0
 !$OMP BARRIER

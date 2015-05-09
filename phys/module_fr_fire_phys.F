@@ -139,7 +139,7 @@ implicit none
 !*** arguments: none
 logical, external:: wrf_dm_on_monitor
 #ifdef _OPENMP
-integer, external:: OMP_GET_THREAD_NUM
+!integer, external:: OMP_GET_THREAD_NUM
 #endif
 !*** local
 integer:: i,j,k,ii,iounit
@@ -152,9 +152,9 @@ namelist /fuel_categories/ fuel_name,windrf,fgi,fueldepthm,savr, &
     fuelmce,fueldens,st,se,weight,fci_d,fct,ichap
 
 #ifdef _OPENMP
-    if (OMP_GET_THREAD_NUM() .ne. 0)then
-       call crash('init_fuel_cats: must be called from master thread')
-    endif
+!   if (OMP_GET_THREAD_NUM() .ne. 0)then
+!      call crash('init_fuel_cats: must be called from master thread')
+!   endif
 #endif
 
 IF ( wrf_dm_on_monitor() ) THEN

@@ -270,6 +270,7 @@ module module_gfs_funcphys
   real(krealfp) c1xrkap,c2xrkap,tbrkap(nxrkap)
   integer,parameter:: nxtlcl=151,nytlcl=61
   real(krealfp) c1xtlcl,c2xtlcl,c1ytlcl,c2ytlcl,tbtlcl(nxtlcl,nytlcl)
+  logical, private :: initialized=.false.
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ! Public Subprograms
   public gpvsl,fpvsl,fpvslq,fpvslx
@@ -368,6 +369,7 @@ contains
     integer jx
     real(krealfp) xj
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if(.not.initialized) call gfuncphys()
     xj=min(max(c1xpvsl+c2xpvsl*t,1._krealfp),real(nxpvsl,krealfp))
     jx=min(xj,nxpvsl-1._krealfp)
     fpvsl=tbpvsl(jx)+(xj-jx)*(tbpvsl(jx+1)-tbpvsl(jx))
@@ -412,6 +414,7 @@ contains
     integer jx
     real(krealfp) xj,dxj,fj1,fj2,fj3
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if(.not.initialized) call gfuncphys()
     xj=min(max(c1xpvsl+c2xpvsl*t,1._krealfp),real(nxpvsl,krealfp))
     jx=min(max(nint(xj),2),nxpvsl-1)
     dxj=xj-jx
@@ -466,6 +469,7 @@ contains
     real(krealfp),parameter:: xponb=-dldt/con_rv+heat/(con_rv*con_ttp)
     real(krealfp) tr
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if(.not.initialized) call gfuncphys()
     tr=con_ttp/t
     fpvslx=con_psat*(tr**xpona)*exp(xponb*(1.-tr))
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -502,6 +506,7 @@ contains
     integer jx
     real(krealfp) xmin,xmax,xinc,x,t
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if(.not.initialized) call gfuncphys()
     xmin=180.0_krealfp
     xmax=330.0_krealfp
     xinc=(xmax-xmin)/(nxpvsi-1)
@@ -555,6 +560,7 @@ contains
     integer jx
     real(krealfp) xj
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if(.not.initialized) call gfuncphys()
     xj=min(max(c1xpvsi+c2xpvsi*t,1._krealfp),real(nxpvsi,krealfp))
     jx=min(xj,nxpvsi-1._krealfp)
     fpvsi=tbpvsi(jx)+(xj-jx)*(tbpvsi(jx+1)-tbpvsi(jx))
@@ -600,6 +606,7 @@ contains
     integer jx
     real(krealfp) xj,dxj,fj1,fj2,fj3
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if(.not.initialized) call gfuncphys()
     xj=min(max(c1xpvsi+c2xpvsi*t,1._krealfp),real(nxpvsi,krealfp))
     jx=min(max(nint(xj),2),nxpvsi-1)
     dxj=xj-jx
@@ -655,6 +662,7 @@ contains
     real(krealfp),parameter:: xponb=-dldt/con_rv+heat/(con_rv*con_ttp)
     real(krealfp) tr
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if(.not.initialized) call gfuncphys()
     tr=con_ttp/t
     fpvsix=con_psat*(tr**xpona)*exp(xponb*(1.-tr))
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -691,6 +699,7 @@ contains
     integer jx
     real(krealfp) xmin,xmax,xinc,x,t
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if(.not.initialized) call gfuncphys()
     xmin=180.0_krealfp
     xmax=330.0_krealfp
     xinc=(xmax-xmin)/(nxpvs-1)
@@ -744,6 +753,7 @@ contains
     integer jx
     real(krealfp) xj
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if(.not.initialized) call gfuncphys()
     xj=min(max(c1xpvs+c2xpvs*t,1._krealfp),real(nxpvs,krealfp))
     jx=min(xj,nxpvs-1._krealfp)
     fpvs=tbpvs(jx)+(xj-jx)*(tbpvs(jx+1)-tbpvs(jx))
@@ -789,6 +799,7 @@ contains
     integer jx
     real(krealfp) xj,dxj,fj1,fj2,fj3
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if(.not.initialized) call gfuncphys()
     xj=min(max(c1xpvs+c2xpvs*t,1._krealfp),real(nxpvs,krealfp))
     jx=min(max(nint(xj),2),nxpvs-1)
     dxj=xj-jx
@@ -855,6 +866,7 @@ contains
     real(krealfp),parameter:: xponbi=-dldti/con_rv+heati/(con_rv*con_ttp)
     real(krealfp) tr,w,pvl,pvi
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if(.not.initialized) call gfuncphys()
     tr=con_ttp/t
     if(t.ge.tliq) then
       fpvsx=con_psat*(tr**xponal)*exp(xponbl*(1.-tr))
@@ -955,6 +967,7 @@ contains
     integer jx
     real(krealfp) xj
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if(.not.initialized) call gfuncphys()
     xj=min(max(c1xtdpl+c2xtdpl*pv,1._krealfp),real(nxtdpl,krealfp))
     jx=min(xj,nxtdpl-1._krealfp)
     ftdpl=tbtdpl(jx)+(xj-jx)*(tbtdpl(jx+1)-tbtdpl(jx))
@@ -1001,6 +1014,7 @@ contains
     integer jx
     real(krealfp) xj,dxj,fj1,fj2,fj3
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if(.not.initialized) call gfuncphys()
     xj=min(max(c1xtdpl+c2xtdpl*pv,1._krealfp),real(nxtdpl,krealfp))
     jx=min(max(nint(xj),2),nxtdpl-1)
     dxj=xj-jx
@@ -1049,6 +1063,7 @@ contains
     real(krealfp),intent(in):: pv
     real(krealfp) tg
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if(.not.initialized) call gfuncphys()
     tg=ftdpl(pv)
     ftdplx=ftdplxg(tg,pv)
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -1104,6 +1119,7 @@ contains
     real(krealfp) t,tr,pvt,el,dpvt,terr
     integer i
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if(.not.initialized) call gfuncphys()
     t=tg
     do i=1,100
       tr=con_ttp/t
@@ -1206,6 +1222,7 @@ contains
     integer jx
     real(krealfp) xj
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if(.not.initialized) call gfuncphys()
     xj=min(max(c1xtdpi+c2xtdpi*pv,1._krealfp),real(nxtdpi,krealfp))
     jx=min(xj,nxtdpi-1._krealfp)
     ftdpi=tbtdpi(jx)+(xj-jx)*(tbtdpi(jx+1)-tbtdpi(jx))
@@ -1253,6 +1270,7 @@ contains
     integer jx
     real(krealfp) xj,dxj,fj1,fj2,fj3
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if(.not.initialized) call gfuncphys()
     xj=min(max(c1xtdpi+c2xtdpi*pv,1._krealfp),real(nxtdpi,krealfp))
     jx=min(max(nint(xj),2),nxtdpi-1)
     dxj=xj-jx
@@ -1302,6 +1320,7 @@ contains
     real(krealfp),intent(in):: pv
     real(krealfp) tg
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if(.not.initialized) call gfuncphys()
     tg=ftdpi(pv)
     ftdpix=ftdpixg(tg,pv)
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -1358,6 +1377,7 @@ contains
     real(krealfp) t,tr,pvt,el,dpvt,terr
     integer i
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if(.not.initialized) call gfuncphys()
     t=tg
     do i=1,100
       tr=con_ttp/t
@@ -1460,6 +1480,7 @@ contains
     integer jx
     real(krealfp) xj
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if(.not.initialized) call gfuncphys()
     xj=min(max(c1xtdp+c2xtdp*pv,1._krealfp),real(nxtdp,krealfp))
     jx=min(xj,nxtdp-1._krealfp)
     ftdp=tbtdp(jx)+(xj-jx)*(tbtdp(jx+1)-tbtdp(jx))
@@ -1507,6 +1528,7 @@ contains
     integer jx
     real(krealfp) xj,dxj,fj1,fj2,fj3
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if(.not.initialized) call gfuncphys()
     xj=min(max(c1xtdp+c2xtdp*pv,1._krealfp),real(nxtdp,krealfp))
     jx=min(max(nint(xj),2),nxtdp-1)
     dxj=xj-jx
@@ -1556,6 +1578,7 @@ contains
     real(krealfp),intent(in):: pv
     real(krealfp) tg
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if(.not.initialized) call gfuncphys()
     tg=ftdp(pv)
     ftdpx=ftdpxg(tg,pv)
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -1623,6 +1646,7 @@ contains
     real(krealfp) t,tr,w,pvtl,pvti,pvt,ell,eli,el,dpvt,terr
     integer i
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if(.not.initialized) call gfuncphys()
     t=tg
     do i=1,100
       tr=con_ttp/t
@@ -1747,6 +1771,7 @@ contains
     integer jx,jy
     real(krealfp) xj,yj,ftx1,ftx2
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if(.not.initialized) call gfuncphys()
     xj=min(c1xthe+c2xthe*t,real(nxthe,krealfp))
     yj=min(c1ythe+c2ythe*pk,real(nythe,krealfp))
     if(xj.ge.1..and.yj.ge.1.) then
@@ -1804,6 +1829,7 @@ contains
     real(krealfp) ft11,ft12,ft13,ft21,ft22,ft23,ft31,ft32,ft33
     real(krealfp) ftx1,ftx2,ftx3
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if(.not.initialized) call gfuncphys()
     xj=min(c1xthe+c2xthe*t,real(nxthe,krealfp))
     yj=min(c1ythe+c2ythe*pk,real(nythe,krealfp))
     if(xj.ge.1..and.yj.ge.1.) then
@@ -1874,6 +1900,7 @@ contains
     real(krealfp),intent(in):: t,pk
     real(krealfp) p,tr,pv,pd,el,expo,expmax
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if(.not.initialized) call gfuncphys()
     p=pk**con_cpor
     tr=con_ttp/t
     pv=psatb*(tr**con_xpona)*exp(con_xponb*(1.-tr))
@@ -1990,6 +2017,7 @@ contains
     integer jx,jy
     real(krealfp) xj,yj,ftx1,ftx2,qx1,qx2
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if(.not.initialized) call gfuncphys()
     xj=min(max(c1xma+c2xma*the,1._krealfp),real(nxma,krealfp))
     yj=min(max(c1yma+c2yma*pk,1._krealfp),real(nyma,krealfp))
     jx=min(xj,nxma-1._krealfp)
@@ -2049,6 +2077,7 @@ contains
     real(krealfp) ftx1,ftx2,ftx3
     real(krealfp) q11,q12,q13,q21,q22,q23,q31,q32,q33,qx1,qx2,qx3
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if(.not.initialized) call gfuncphys()
     xj=min(max(c1xma+c2xma*the,1._krealfp),real(nxma,krealfp))
     yj=min(max(c1yma+c2yma*pk,1._krealfp),real(nyma,krealfp))
     jx=min(max(nint(xj),2),nxma-1)
@@ -2126,6 +2155,7 @@ contains
     real(krealfp),intent(out):: tma,qma
     real(krealfp) tg,qg
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if(.not.initialized) call gfuncphys()
     call stma(the,pk,tg,qg)
     call stmaxg(tg,the,pk,tma,qma)
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -2183,6 +2213,7 @@ contains
     real(krealfp) t,p,tr,pv,pd,el,expo,thet,dthet,terr
     integer i
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if(.not.initialized) call gfuncphys()
     t=tg
     p=pk**con_cpor
     do i=1,100
@@ -2289,6 +2320,7 @@ contains
     integer jx
     real(krealfp) xj
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if(.not.initialized) call gfuncphys()
     xj=min(max(c1xpkap+c2xpkap*p,1._krealfp),real(nxpkap,krealfp))
     jx=min(xj,nxpkap-1._krealfp)
     fpkap=tbpkap(jx)+(xj-jx)*(tbpkap(jx+1)-tbpkap(jx))
@@ -2336,6 +2368,7 @@ contains
     integer jx
     real(krealfp) xj,dxj,fj1,fj2,fj3
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if(.not.initialized) call gfuncphys()
     xj=min(max(c1xpkap+c2xpkap*p,1._krealfp),real(nxpkap,krealfp))
     jx=min(max(nint(xj),2),nxpkap-1)
     dxj=xj-jx
@@ -2390,6 +2423,7 @@ contains
     integer n
     real(krealfp) pkpa,fnpk,fdpk
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if(.not.initialized) call gfuncphys()
     pkpa=p*1.e-3_krealfp
     fnpk=cnpk(nnpk)
     do n=nnpk-1,0,-1
@@ -2434,6 +2468,7 @@ contains
     real(krealfp) fpkapx
     real(krealfp),intent(in):: p
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if(.not.initialized) call gfuncphys()
     fpkapx=(p/1.e5_krealfp)**con_rocp
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   end function
@@ -2468,6 +2503,7 @@ contains
     integer jx
     real(krealfp) xmin,xmax,xinc,x,p
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if(.not.initialized) call gfuncphys()
     xmin=0._krealfp
     xmax=fpkapx(110000._krealfp)
     xinc=(xmax-xmin)/(nxrkap-1)
@@ -2521,6 +2557,7 @@ contains
     integer jx
     real(krealfp) xj
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if(.not.initialized) call gfuncphys()
     xj=min(max(c1xrkap+c2xrkap*pkap,1._krealfp),real(nxrkap,krealfp))
     jx=min(xj,nxrkap-1._krealfp)
     frkap=tbrkap(jx)+(xj-jx)*(tbrkap(jx+1)-tbrkap(jx))
@@ -2567,6 +2604,7 @@ contains
     integer jx
     real(krealfp) xj,dxj,fj1,fj2,fj3
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if(.not.initialized) call gfuncphys()
     xj=min(max(c1xrkap+c2xrkap*pkap,1._krealfp),real(nxrkap,krealfp))
     jx=min(max(nint(xj),2),nxrkap-1)
     dxj=xj-jx
@@ -2608,6 +2646,7 @@ contains
     real(krealfp) frkapx
     real(krealfp),intent(in):: pkap
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if(.not.initialized) call gfuncphys()
     frkapx=pkap**(1/con_rocp)*1.e5_krealfp
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   end function
@@ -2702,6 +2741,7 @@ contains
     integer jx,jy
     real(krealfp) xj,yj,ftx1,ftx2
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if(.not.initialized) call gfuncphys()
     xj=min(max(c1xtlcl+c2xtlcl*t,1._krealfp),real(nxtlcl,krealfp))
     yj=min(max(c1ytlcl+c2ytlcl*tdpd,1._krealfp),real(nytlcl,krealfp))
     jx=min(xj,nxtlcl-1._krealfp)
@@ -2752,6 +2792,7 @@ contains
     real(krealfp) ft11,ft12,ft13,ft21,ft22,ft23,ft31,ft32,ft33
     real(krealfp) ftx1,ftx2,ftx3
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if(.not.initialized) call gfuncphys()
     xj=min(max(c1xtlcl+c2xtlcl*t,1._krealfp),real(nxtlcl,krealfp))
     yj=min(max(c1ytlcl+c2ytlcl*tdpd,1._krealfp),real(nytlcl,krealfp))
     jx=min(max(nint(xj),2),nxtlcl-1)
@@ -2812,6 +2853,7 @@ contains
     real(krealfp),parameter:: clcl1= 0.954442e+0,clcl2= 0.967772e-3,&
                                     clcl3=-0.710321e-3,clcl4=-0.270742e-5
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if(.not.initialized) call gfuncphys()
     ftlclo=t-tdpd*(clcl1+clcl2*t+tdpd*(clcl3+clcl4*t))
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   end function
@@ -2866,6 +2908,7 @@ contains
     real(krealfp) tr,pvdew,tlcl,ta,pvlcl,el,dpvlcl,terr,terrp
     integer i
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if(.not.initialized) call gfuncphys()
     tr=con_ttp/(t-tdpd)
     pvdew=con_psat*(tr**con_xpona)*exp(con_xponb*(1.-tr))
     tlcl=t-tdpd
@@ -2918,6 +2961,7 @@ contains
 !$$$
     implicit none
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    initialized=.true.
     call gpvsl
     call gpvsi
     call gpvs

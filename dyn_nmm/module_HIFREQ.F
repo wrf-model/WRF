@@ -136,8 +136,11 @@ CONTAINS
     !$$$
     !**********************************************************************
     !
+#ifdef DM_PARALLEL
+    use mpi ! , only: MPI_MAXLOC, MPI_Allreduce, MPI_Bcast, MPI_2REAL, MPI_REAL
+    USE MODULE_DM, only : wrf_dm_minloc_real, wrf_dm_maxloc_real, mytask, local_communicator
+#endif
     USE MODULE_NEST_UTIL, only : MSLP_DIAG
-    USE MODULE_DM, only : wrf_dm_minloc_real, wrf_dm_maxloc_real
 
     IMPLICIT NONE
     !
@@ -160,7 +163,8 @@ CONTAINS
     REAL                     :: MINGBL_MSLP, MAXGBL_WIND, ZDUM, PREF
     REAL                     :: CLAT,CLON,PLAT,PLON,WLAT,WLON, WREF, HAVE_CEN
     INTEGER                  :: IWIND,JWIND, IMSLP,JMSLP
-    INTEGER                  :: ICEN,JCEN,I,J,ITF,JTF
+    INTEGER                  :: ICEN,JCEN,I,J,ITF,JTF,ierr,grank,myrank
+    REAL                     :: comm(6),reduced(6),bcast(4)
 
     !----------------------------------------------------------------------
 
@@ -209,10 +213,56 @@ CONTAINS
        CLON=HLON(ICEN,JCEN)
     end if
 
+#ifdef DM_PARALLEL
     ! Get grid-wide extrema:
-    call WRF_DM_MAXLOC_REAL(have_cen,clat,clon,zdum,icen,jcen)
-    call WRF_DM_MINLOC_REAL(mingbl_mslp,plat,plon,zdum,imslp,jmslp)
-    call WRF_DM_MAXLOC_REAL(maxgbl_wind,wlat,wlon,zdum,iwind,jwind)
+    call MPI_Comm_rank(local_communicator,myrank,ierr)
+    comm(1)=have_cen
+    comm(2)=myrank
+    comm(3)=-mingbl_mslp
+    comm(4)=myrank
+    comm(5)=maxgbl_wind
+    comm(6)=myrank
+    call MPI_Allreduce(comm,reduced,3,MPI_2REAL,MPI_MAXLOC,local_communicator,ierr)
+
+    have_cen=reduced(1)
+    grank=reduced(2)
+    if(myrank==grank) then
+       bcast=(/ clat,clon,real(icen),real(jcen) /)
+    endif
+    call MPI_Bcast(bcast,4,MPI_REAL,grank,local_communicator,ierr)
+    if(myrank/=grank) then
+       clat=bcast(1)
+       clon=bcast(2)
+       icen=bcast(3)
+       jcen=bcast(4)
+    endif
+
+    mingbl_mslp=-reduced(3)
+    grank=reduced(4)
+    if(myrank==grank) then
+       bcast=(/ plat,plon,real(imslp),real(jmslp) /)
+    endif
+    call MPI_Bcast(bcast,4,MPI_REAL,grank,local_communicator,ierr)
+    if(myrank/=grank) then
+       plat=bcast(1)
+       plon=bcast(2)
+       imslp=bcast(3)
+       jmslp=bcast(4)
+    endif
+
+    maxgbl_wind=reduced(5)
+    grank=reduced(6)
+    if(myrank==grank) then
+       bcast=(/ wlat,wlon,real(iwind),real(jwind) /)
+    endif
+    call MPI_Bcast(bcast,4,MPI_REAL,grank,local_communicator,ierr)
+    if(myrank/=grank) then
+       wlat=bcast(1)
+       wlon=bcast(2)
+       iwind=bcast(3)
+       jwind=bcast(4)
+    endif
+#endif
 
     ! Monitor process writes out values.
     if(wrf_dm_on_monitor()) then

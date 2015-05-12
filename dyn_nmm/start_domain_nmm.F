@@ -874,6 +874,16 @@
         ENDDO
         ENDDO
       ENDIF
+      if(allowed_to_read .and. (anal .or. .not. restrt)) then
+         call wrf_debug(1,'Initialize DKU3D and DKT3D to 0.')
+         do j=jfs,jfe
+            do i=ifs,ife
+               grid%dku3d(i,j,:) = 0
+               grid%dkt3d(i,j,:) = 0
+            enddo
+         enddo
+      endif
+
 !***  
 !***  INITIALIZE TURBULENT KINETIC ENERGY (TKE) TO A SMALL
 !***  VALUE (EPSQ2) ABOVE GROUND.  SET TKE TO ZERO IN THE

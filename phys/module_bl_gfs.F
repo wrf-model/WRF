@@ -961,7 +961,7 @@ real(kind=kind_phys) RO(IM),xland1(IM)
 
 ! (3) only do  this IF KPBL(I) >= kLOC.  Otherwise, we are finished, with DKU as if alpha = +1
 
-          if(KPBL(I).ge.kLOC)then
+          if(KPBL(I).gt.kLOC)then
 
             xDKU = DKU(i,kLOC)     ! Km at k-level
 

@@ -2182,7 +2182,7 @@ gen_nest_packunpack ( FILE *fp , node_t * node , int dir, int down_path )
     }
     p = p1 ;
 
-    if ( nest_mask & down_path )
+    if ( nest_mask & down_path && ! ( down_path==INTERP_UP && p->no_feedback ) )
     {
           if(p->mp_var) {
             fprintf(fp,"if(interp_mp .eqv. .true.) then\n");

@@ -990,8 +990,6 @@ time_window_min, time_window_max, map_projection , missing_flag)
 
          IF ((obs (obs_num)%info%platform(1:12) .EQ. 'FM-15 METAR ' ) .AND. &
              (ASSOCIATED (obs (obs_num)%surface ) ) ) THEN
-            obs(obs_num)%ground%psfc%data = missing_r
-            obs(obs_num)%ground%psfc%qc   = missing
             if ( calc_psfc_from_QNH .and. gts_from_mmm_archive ) then
                if ( obs(obs_num)%ground%psfc%data > 0.0 .and. &
                     obs(obs_num)%info%elevation > 0.0 ) then
@@ -1007,6 +1005,9 @@ time_window_min, time_window_max, map_projection , missing_flag)
                         obs(obs_num)%ground%psfc%qc
                   end if  ! associated data
                end if  ! valid QNH and elev
+            else
+               obs(obs_num)%ground%psfc%data = missing_r
+               obs(obs_num)%ground%psfc%qc   = missing
             end if  ! calc_psfc_from_QNH and gts_from_mmm_archive
          END IF  ! metar
 

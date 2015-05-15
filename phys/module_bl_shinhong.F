@@ -422,10 +422,16 @@ contains
    implicit none
 !-------------------------------------------------------------------------------
 !
-!     the shinhongpbl (shin and hong 2015) is based on the study of shin
-!     and hong (2013). the major ingredient of the shinhongpbl is the 
-!     inclusion of scale dependency for vertical transport in convective pbl
-!     so the shinhongpbl works at gray zone resolution of convective pbl.
+!     the shinhongpbl (shin and hong 2015) is based on the les study of shin
+!     and hong (2013). the major ingredients of the shinhongpbl are
+!       1) the prescribed nonlocal heat transport profile fit to the les and 
+!       2) inclusion of explicit scale dependency functions for vertical 
+!          transport in convective pbl. 
+!     so, the shinhongpbl works at the gray zone resolution of convective pbl.
+!     note that honnert et al. (2011) first suggested explicit scale dependency
+!     function, and shin and hong (2013) further classified the function by
+!     stability (u*/w*) in convective pbl and calculated the function for 
+!     nonlocal and local transport separately.
 !     vertical mixing in the stable boundary layer and free atmosphere follows
 !     hong (2010) and hong et al. (2006), same as the ysupbl scheme.
 !
@@ -439,9 +445,9 @@ contains
 !              summer 2002
 !
 !     references:
-!
 !        shin and hong (2015) mon. wea. rev.
 !        shin and hong (2013) j. atmos. sci.
+!        honnert, masson, and couvreux (2011) j. atmos. sci.
 !        hong (2010) quart. j. roy. met. soc
 !        hong, noh, and dudhia (2006), mon. wea. rev. 
 !
@@ -1039,9 +1045,11 @@ contains
 !
    do i = its,ite
      pu1=pu(delxy,cslen(i))
+     pq1=pq(delxy,cslen(i))
      if(pblflg(i)) then
        hgamu(i) = hgamu(i)*pu1
        hgamv(i) = hgamv(i)*pu1
+       hgamq(i) = hgamq(i)*pq1
      endif
    enddo
 !
@@ -1061,7 +1069,8 @@ contains
        dqx   = min(qx(i,k+1)-qx(i,k),0.0)
        we(i) = max(bfxpbl(i)/dthvx(i),-sqrt(wm2(i)))
        hfxpbl(i) = we(i)*dthx
-       qfxpbl(i) = we(i)*dqx
+       pq1=pq(delxy,cslen(i))
+       qfxpbl(i) = we(i)*dqx*pq1
 !
        dux = ux(i,k+1)-ux(i,k)
        dvx = vx(i,k+1)-vx(i,k)
@@ -1397,6 +1406,16 @@ contains
        dsdz2     = tem1*rdz
        au(i,k)   = -dtodsd*dsdz2
        al(i,k)   = -dtodsu*dsdz2
+!
+!     scale dependency for local moisture transport
+!
+       zfacdx=0.2*hpbl(i)/zq(i,k+1)
+       delxy=sqrt(dx*dy)*max(zfacdx,1.0)
+       pq1=pq(delxy,hpbl(i))
+       if(pblflg(i).and.k.lt.kpbl(i)) then
+         au(i,k) = au(i,k)*pq1
+         al(i,k) = al(i,k)*pq1
+       endif
        ad(i,k)   = ad(i,k)-au(i,k)
        ad(i,k+1) = 1.-al(i,k)
 !      exch_hx(i,k+1) = xkzh(i,k)
@@ -1441,17 +1460,6 @@ contains
        qtend = (f3(i,k,1)-qx(i,k))*rdt
        qtnp(i,k) = qtnp(i,k)+qtend
        dqsfc(i) = dqsfc(i)+qtend*conq*del(i,k)
-     enddo
-   enddo
-!
-   delxy=sqrt(dx*dy)
-!
-   do i = its,ite
-     pq1=pq(delxy,cslen(i))
-     do k = kts,kte
-       if(pblflg(i).and.k.lt.kpbl(i)) then
-         qtnp(i,k) = qtnp(i,k)*pq1
-       endif
      enddo
    enddo
 !

@@ -1074,11 +1074,11 @@ BYTESWAPIO      =
 FCBASEOPTS_NO_G =       -w -qspill=81920 -qmaxmem=-1 $(FORMAT_FREE) $(BYTESWAPIO)  #-qflttrap=zerodivide:invalid:enable -qsigtrap -C # -qinitauto=7FF7FFFF
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =     
-TRADFLAG        =       -traditional
+TRADFLAG        =       #-traditional  # causing troubles with xl cpp on AIX, -traditional removed fom default settings
 CPP             =       /lib/cpp -P
 AR              =       ar
 ARFLAGS         =       ru
-M4              =       m4 -B 14000
+M4              =       m4 -B 20000
 RANLIB          =       ranlib
 CC_TOOLS        =       cc
 

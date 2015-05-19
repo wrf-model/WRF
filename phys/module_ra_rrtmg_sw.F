@@ -9851,18 +9851,20 @@ CONTAINS
 !jdfcz                 progn,prescribe,                           &
                        progn,                                     &
                        qndrop3d,f_qndrop,                         & !czhao
+                       mp_physics,                                & !wang 2014/12
                        ids,ide, jds,jde, kds,kde,                 & 
                        ims,ime, jms,jme, kms,kme,                 &
                        its,ite, jts,jte, kts,kte,                 &
                        swupflx, swupflxc, swdnflx, swdnflxc,      &
                        tauaer3d_sw,ssaaer3d_sw,asyaer3d_sw,       & ! jararias 2013/11
+                       use_aer3d,                                 & ! bug fix, SGT 2015/03
                        swddir, swddni, swddif,                    & ! jararias 2013/08
                        xcoszen,julian                             & ! jararias 2013/08
                                                                   )
 !------------------------------------------------------------------
    IMPLICIT NONE
 !------------------------------------------------------------------
-   LOGICAL, INTENT(IN )      ::        warm_rain
+   LOGICAL, INTENT(IN )      ::        warm_rain, use_aer3d
    LOGICAL, INTENT(IN )      ::   is_CAMMGMP_used ! Added for CAM5 RRTMG<->CAMMGMP
 !
    INTEGER, INTENT(IN )      ::        ids,ide, jds,jde, kds,kde, &
@@ -9870,6 +9872,7 @@ CONTAINS
                                        its,ite, jts,jte, kts,kte
 
    INTEGER, INTENT(IN )      ::        ICLOUD
+   INTEGER, INTENT(IN )      ::        MP_PHYSICS
 !
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme )                 , &
          INTENT(IN   ) ::                                   dz8w, &
@@ -10030,10 +10033,15 @@ CONTAINS
                                                             QC1D, &
                                                             QR1D, &
                                                             QI1D, &
+                                                           RHO1D, &
                                                             QS1D, &
                                                             QG1D, &
                                                             O31D, &
                                                           qndrop1d 
+
+!BSF: From eq. (5) on p. 2434 in McFarquhar & Heymsfield (1996)
+      real, parameter :: re_50C=1250.0/9.917, re_40C=1250.0/9.337,     &
+                         re_30C=1250.0/9.208, re_20C=1250.0/9.387
 
 ! Added local arrays for RRTMG
     integer ::                                              ncol, &
@@ -10172,7 +10180,7 @@ CONTAINS
     real, dimension(1, 1:kte-kts+1):: recloud1d, &
                                         reice1d, &
                                        resnow1d
-    real :: gliqwp, gicewp, gsnowp, gravmks
+    real :: gliqwp, gicewp, gsnowp, gravmks, tem1,tem2,tem3
 
 !
 !    REAL   ::  TSFC,GLW0,OLR0,EMISS0,FP
@@ -10263,6 +10271,7 @@ CONTAINS
                O31D(K)=O33D(I,K,J)
             ENDDO
          ELSE
+            call wrf_error_fatal('did not pass O33d') ! FIXME: REMOVE THIS LINE
             DO K=kts,kte
                O31D(K)=0.0
             ENDDO
@@ -10373,6 +10382,19 @@ CONTAINS
             ENDIF
 
          ENDIF
+!!! wang for mp option=5 or 85  (new Ferrier- Aligo or called fer_hires
+!scheme), QI3D saves
+!all!!frozen water (ice+snow)
+           IF ( mp_physics == 5 .OR. mp_physics == 85 ) THEN
+                  DO K=kts,kte
+                     qi1d(k) = qi3d(i,k,j)
+                     qs1d(k) = 0.0
+                     qc1d(k) = qc3d(i,k,j)
+                     qi1d(k) = max(0.,qi1d(k))
+                     qc1d(k) = max(0.,qc1d(k))
+                  ENDDO
+           ENDIF
+!!! wang
 
 !         EMISS0=EMISS(I,J)
 !         GLW0=0. 
@@ -10415,7 +10437,8 @@ CONTAINS
                ENDDO
             ELSE
                DO K=kts,kte
-                  recloud1D(ncol,K) = 5.0
+!                  recloud1D(ncol,K) = 5.0
+                   recloud1D(ncol,K) = 10.0  ! was 5.0
                ENDDO
             ENDIF
 
@@ -10447,7 +10470,23 @@ CONTAINS
                ENDDO
             ELSE
                DO K=kts,kte
-                  resnow1D(ncol,K) = 10.0
+                 tem2 = 25.0  !- was 10.0
+                 tem3=1.e3*rho1d(k)*qi1d(k)  !- IWC (g m^-3)
+                 if (tem3>thresh) then       !- Only when IWC>1.e-9 g m^-3
+                   tem1=t1d(k)-273.15
+                   if (tem1 < -50.0) then
+                     tem2 = re_50C*tem3**0.109
+                   elseif (tem1 < -40.0) then
+                      tem2 = re_40C*tem3**0.08
+                   elseif (tem1 < -30.0) then
+                      tem2 = re_30C*tem3**0.055
+                   else
+                      tem2 = re_20C*tem3**0.031
+                   endif
+                    tem2 = max(25.,tem2)
+                 endif
+                 reice1D(ncol,K) = min(tem2, 135.72)   !- 1.0315*reice <= 140 microns 
+!                  resnow1D(ncol,K) = 10.0
                ENDDO
             ENDIF
          ENDIF
@@ -10519,6 +10558,7 @@ CONTAINS
             ENDIF
          enddo
         else
+         call wrf_error_fatal('did not pass O33D - abort') ! FIXME: remove this line
          do k = kts, kte+1
             o3vmr(ncol,k) = o3mmr(k) * amdo
          enddo
@@ -10692,7 +10732,7 @@ CONTAINS
             reliq(ncol,k) = recloud1d(ncol,k)
          end do
       endif
-      if (iceflgsw .ge. 4) then
+      if (iceflgsw .ge. 3) then   !BSF: was .ge. 4
          do k = kts, kte
             reice(ncol,k) = reice1d(ncol,k)
          end do
@@ -10820,7 +10860,7 @@ CONTAINS
       end do
       end do
 
-      if ( present (tauaer3d_sw) ) then
+      if ( use_aer3d ) then
 ! ---- jararias 11/2012
          if ( aer_opt .eq. 2) then
             do nb=1,nbndsw

@@ -104,7 +104,7 @@ contains
 #ifdef DM_PARALLEL
     USE MODULE_COMM_DM, ONLY : HALO_NMM_MEMBRANE_INTERP_sub
     USE MODULE_DM, ONLY: ntasks_x, ntasks_y, mytask, ntasks, local_communicator
-    use module_dm, only: wrf_dm_minval_real
+    use module_dm, only: wrf_dm_minval_real, wrf_dm_maxval_integer
 #endif
 
     implicit none
@@ -122,7 +122,7 @@ contains
 
     logical :: ground_mask(ips:ipe,jps:jpe,npres)
     integer :: ground_level(ips:ipe,jps:jpe)
-    integer :: ipres,i,j,mpres,imin,jmin,k
+    integer :: ipres,i,j,mpres,imin,jmin,k,need_to_relax,imax,jmax
     real :: pmin
     character*255 :: message
 
@@ -188,19 +188,32 @@ contains
     grid%relaxmask=.true.
 
     ! Now loop over all vertical levels and relax them:
-    do ipres=1,npres
+    do ipres=npres,1,-1
+       ! In the inner regions (all but outermost row & col) set the
+       ! relaxmask to the ground_mask:
+       need_to_relax=0
+       do j=max(jps,jds+1),min(jde-2,jpe)
+          do i=max(ips,ids+1),min(ide-2,ipe)
+             grid%relaxmask(i,j)=ground_mask(i,j,ipres)
+             if(grid%relaxmask(i,j)) need_to_relax=1
+          enddo
+       enddo
+
+       ! If we do not need to relax any points, we are done.
+#ifdef DM_PARALLEL
+       call wrf_dm_maxval_integer(need_to_relax,imax,jmax)
+#endif
+       if(need_to_relax==0) then
+ 38       format('end mslp relax loop at ',I0)
+          write(message,38) ipres
+          call wrf_debug(1,message)
+          exit
+       endif
+
        ! Store Tv in relaxwork:
        do j=jps,min(jde-1,jpe)
           do i=ips,min(ide-1,ipe)
              grid%relaxwork(i,j)=presTv(i,j,ipres)
-          enddo
-       enddo
-
-       ! In the inner regions (all but outermost row & col) set the
-       ! relaxmask to the ground_mask:
-       do j=max(jps,jds+1),min(jde-2,jpe)
-          do i=max(ips,ids+1),min(ide-2,ipe)
-             grid%relaxmask(i,j)=ground_mask(i,j,ipres)
           enddo
        enddo
 

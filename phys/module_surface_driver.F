@@ -19,6 +19,8 @@ CONTAINS
      &          ,num_soil_layers,p8w,pblh,pi_phy,pshltr,fm,fhh,psih   &
 #if (NMM_CORE==1)
      &          ,psim,p_phy,q10,q2,qfx,taux,tauy,qsfc,qshltr,qz0      &
+     &          ,icoef_sf,lcurr_sf                                    & !for gfdl-sf drag
+     &          ,cd_out,ch_out                                        &
 #else
      &          ,psim,p_phy,q10,q2,qfx,qsfc,qshltr,qz0                &
 #endif
@@ -27,8 +29,8 @@ CONTAINS
      &          ,smcrel                                               &
      &          ,th10,th2,thz0,th_phy,tmn,tshltr,tsk,tslb             &
      &          ,tyr,tyra,tdly,tlag,lagday,nyear,nday,tmn_update,yr   &
-     &          ,t_phy,u10,udrunoff,ust,uz0,u_frame,u_phy,v10,vegfra  &
-     &          ,uoce,voce                                            &
+     &          ,t_phy,u10,udrunoff,ust,uz0                           &
+     &          ,u_frame,u_phy,v10,vegfra,uoce,voce                   &
      &          ,vz0,v_frame,v_phy,warm_rain,wspd,xice,xland,z,znt    &
      &          ,max_edom,cplmask                                     &
 #if (HWRF==1)
@@ -593,6 +595,8 @@ CONTAINS
 
 #if (NMM_CORE==1)
    real , intent(IN )::   SFENTH
+   INTEGER, INTENT(IN)::   ICOEF_SF
+   LOGICAL, INTENT(IN)::   LCURR_SF
 #endif
    REAL, DIMENSION( ims:ime , 1:num_soil_layers, jms:jme ), INTENT(INOUT)::   SMOIS
    REAL, DIMENSION( ims:ime , 1:num_soil_layers, jms:jme ), INTENT(INOUT)::   TSLB
@@ -639,6 +643,8 @@ CONTAINS
 #if (NMM_CORE==1)
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(OUT):: TAUX
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(OUT):: TAUY
+   REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(OUT):: cd_out
+   REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(OUT):: ch_out
 #endif
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   QSFC
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   QZ0
@@ -1090,6 +1096,7 @@ CONTAINS
                                                              CPM, &
                                                             CHS2, &
                                                             CQS2
+
 ! SSIB local variables
    REAL ZDIFF
    REAL, DIMENSION( ims:ime , jms:jme ) :: XICE_save
@@ -1354,6 +1361,10 @@ CONTAINS
          CHS(i,j) = 0.
          CPM(i,j) = 0.
          CHS2(i,j) = 0.
+#if (NMM_CORE==1)
+         Cd_out(i,j) = 0.
+         Ch_out(i,j) = 0.
+#endif
       ENDDO
     ENDDO
   ENDDO
@@ -2232,8 +2243,10 @@ CONTAINS
                    UST,PSIM,PSIH,                                         &  
                    XLAND,HFX,QFX,TAUX,TAUY,LH,GSW,GLW,TSK,FLHC,FLQC,  & ! gopal's doing for Ocean coupling
                    QGH,QSFC,U10,V10,                              &
+                   ICOEF_SF, LCURR_SF,                            &
                    GZ1OZ0,WSPD,BR,ISFFLX,                         &
                    EP_1,EP_2,KARMAN,GFDL_NTSFLG,SFENTH,           &
+                   cd_out, ch_out,                                &
                    ids,ide, jds,jde, kds,kde,                     &
                    ims,ime, jms,jme, kms,kme,                             &
                    i_start(ij),i_end(ij),j_start(ij),j_end(ij),kts,kte    )

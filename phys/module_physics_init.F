@@ -1754,9 +1754,9 @@ integer myproc
 !   note that CAM option will still do the same. 
 !   n_ozmixm: no of months; levsiz: = 59, vertical dim
 !   Read in CAM ozone data, and interpolate data to model grid
-!   Interpolation is done on domain 1 only
+!   Interpolation of aerosols is done on domain 1 only
 
-   IF ( config_flags%o3input .EQ. 2 .AND. id .EQ. 1 ) THEN
+   IF ( config_flags%o3input .EQ. 2 ) THEN
       CALL oznini(ozmixm,pin,levsiz,n_ozmixm,XLAT,                &
                      ids, ide, jds, jde, kds, kde,                  &
                      ims, ime, jms, jme, kms, kme,                  &
@@ -3519,6 +3519,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    USE module_mp_wsm5
    USE module_mp_wsm6
    USE module_mp_etanew
+   USE module_mp_fer_hires
 #if (NMM_CORE == 1)
    USE module_mp_HWRF
 #endif
@@ -3618,6 +3619,13 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                           ids, ide, jds, jde, kds, kde,           &
                           ims, ime, jms, jme, kms, kme,           &
                           its, ite, jts, jte, kts, kte            )
+     CASE (FER_MP_HIRES)
+               CALL fer_hires_init (MPDT,DT,DX,DY,LOWLYR,restart,         &
+                            allowed_to_read,                        &
+                            ids, ide, jds, jde, kds, kde,           &
+                            ims, ime, jms, jme, kms, kme,           &
+                            its, ite, jts, jte, kts, kte,           &
+                            F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY)
 #if(NMM_CORE==1)
      CASE (etamp_HWRF)
          CALL etanewinit_HWRF (MPDT,DT,DX,DY,LOWLYR,restart,           &

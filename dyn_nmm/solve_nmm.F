@@ -113,7 +113,7 @@
 !     INTEGER :: MPI_COMM_COMP,MYPE,MYPROC,NPES
       INTEGER :: MYPROC,imid,jmid
       INTEGER :: KVH,NTSD_rad,RC
-      INTEGER :: NUM_OZMIXM,NUM_AEROSOLC
+      INTEGER :: NUM_AEROSOLC
 !
       REAL :: DT_INV,FICE,FRAIN,GPS,QI,QR,QW,WC,WP
 !
@@ -339,7 +339,8 @@
       ETAMP_PHYSICS=.FALSE.
 !
       IF (CONFIG_FLAGS%MP_PHYSICS == ETAMPNEW .OR.                 &
-     &    CONFIG_FLAGS%MP_PHYSICS == ETAMP_HR .OR.                 &
+!     &    CONFIG_FLAGS%MP_PHYSICS == ETAMP_HR .OR.                 &
+     &    CONFIG_FLAGS%MP_PHYSICS == FER_MP_HIRES .OR.                 &
      &    CONFIG_FLAGS%MP_PHYSICS == ETAMP_HWRF ) THEN
 !
          ETAMP_PHYSICS=.TRUE.
@@ -709,16 +710,16 @@
 !
 !-----------------------------------------------------------------------
 !
-#ifdef DM_PARALLEL
-#    include "HALO_NMM_A.inc"
-#endif
+!zhang#ifdef DM_PARALLEL
+!zhang#    include "HALO_NMM_A.inc"
+!zhang#endif
 !
 !-----------------------------------------------------------------------
-#ifdef DM_PARALLEL
-      IF (.NOT.ETAMP_PHYSICS) THEN
-#    include "HALO_NMM_A_3.inc"
-      ENDIF
-#endif
+!zhang#ifdef DM_PARALLEL
+!zhang      IF (.NOT.ETAMP_PHYSICS) THEN
+!zhang#    include "HALO_NMM_A_3.inc"
+!zhang      ENDIF
+!zhang#endif
 !-----------------------------------------------------------------------
 !***  FIRST STEP INITIALIZATION OF PASSIVE SUBSTANCE VARIABLES
 !-----------------------------------------------------------------------
@@ -808,10 +809,11 @@
       call blockf(loadimbal_tim,'after atm_tstep_init')
 #endif
       btimx=now_time()
+!zhang try2
 !-----------------
-#ifdef DM_PARALLEL
-#    include "HALO_NMM_D.inc"
-#endif
+!zhang#ifdef DM_PARALLEL
+!zhang#    include "HALO_NMM_D.inc"
+!zhang#endif
 !-----------------
       exch_tim=exch_tim+now_time()-btimx
 #ifdef NMM_FIND_LOAD_IMBALANCE
@@ -909,9 +911,9 @@
       call blockf(loadimbal_tim,'after adve')
 #endif
           btimx=now_time()
-#ifdef DM_PARALLEL
-#    include "HALO_NMM_I.inc"
-#endif
+!zhang#ifdef DM_PARALLEL
+!zhang#    include "HALO_NMM_I.inc"
+!zhang#endif
           exch_tim=exch_tim+now_time()-btimx
 #ifdef NMM_FIND_LOAD_IMBALANCE
       call blockf(loadimbal_tim,'after halo I')
@@ -943,9 +945,9 @@
             ENDDO
           ENDDO
 !
-#ifdef DM_PARALLEL
-#    include "HALO_TRACERS.inc"
-#endif
+!zhang#ifdef DM_PARALLEL
+!zhang#    include "HALO_TRACERS.inc"
+!zhang#endif
       call check_grid(grid,config_flags,'before ADV2', &
             ids,ide,jds,jde,kds,kde, &
             ims,ime,jms,jme,kms,kme, &
@@ -972,9 +974,9 @@
           !temporary arguments
           ,grid%fne,grid%fse,grid%few,grid%fns,S1Z,TCS)
 !
-#ifdef DM_PARALLEL
-#    include "HALO_TRACERS.inc"
-#endif
+!zhang#ifdef DM_PARALLEL
+!zhang#    include "HALO_TRACERS.inc"
+!zhang#endif
       call check_grid(grid,config_flags,'before MONO', &
             ids,ide,jds,jde,kds,kde, &
             ims,ime,jms,jme,kms,kme, &
@@ -1507,7 +1509,6 @@
 !***  When allocating CAM radiation 4d arrays (ozmixm, aerosolc), 
 !***  the following two scalars are not needed.
 !
-      NUM_OZMIXM=1
       NUM_AEROSOLC=1
 !
       IF(grid%ntsd<=0)THEN
@@ -1556,7 +1557,8 @@
      &                ,grid%cfracl,grid%cfracm,grid%cfrach,grid%sigt4                      &
      &                ,grid%acfrst,grid%ncfrst,grid%acfrcv,grid%ncfrcv                     &
      &                ,grid%cuppt,grid%vegfrc,grid%sno,grid%htop,grid%hbot                      &
-     &                ,grid%z,grid%sice,NUM_AEROSOLC,NUM_OZMIXM                  &
+     &                ,grid%z,grid%sice,NUM_AEROSOLC,NUM_OZMIXM        &
+     &                ,OZMIXM,grid%PIN,grid%LEVSIZ                     &
      &                ,GRID,CONFIG_FLAGS                               &
      &                ,RTHRATEN                                        &  
      &                ,grid%re_cloud,grid%re_ice,grid%re_snow          &  ! G. Thompson
@@ -1708,6 +1710,7 @@
      &            ,GRID%DISHEAT,GRID%DKU3D,GRID%DKT3D                          &
      &            ,GRID%HPBL2D, GRID%EVAP2D, GRID%HEAT2D,GRID%RC2D               &  !S&P Kwon
      &            ,GRID%SFCHEADRT,GRID%INFXSRT,GRID%SOLDRAIN           &  !Hydrology, no-op right now
+     &            ,grid%cd_out,grid%ch_out                             &
      &            ,IDS,IDF,JDS,JDF,KDS,KDE                             &
      &            ,IMS,IME,JMS,JME,KMS,KME                             &
      &            ,IPS,IPE,JPS,JPE,KPS,KPE                             &
@@ -1800,15 +1803,15 @@
 #endif
         btimx=now_time()
 !-----------------
-#ifdef DM_PARALLEL
-#    include "HALO_NMM_J.inc"
-#endif
+!zhang#ifdef DM_PARALLEL
+!zhang#    include "HALO_NMM_J.inc"
+!zhang#endif
 !
-#ifdef DM_PARALLEL
-        IF (.NOT.ETAMP_PHYSICS) THEN
-#    include "HALO_NMM_J_3.inc"
-        ENDIF
-#endif
+!zhang#ifdef DM_PARALLEL
+!zhang        IF (.NOT.ETAMP_PHYSICS) THEN
+!zhang#    include "HALO_NMM_J_3.inc"
+!zhang        ENDIF
+!zhang#endif
 !
 !-----------------
         exch_tim=exch_tim+now_time()-btimx
@@ -2341,9 +2344,9 @@
 #endif
         btimx=now_time()
 !-----------------
-#ifdef DM_PARALLEL
-#    include "HALO_NMM_A.inc"
-#endif
+!zhang#ifdef DM_PARALLEL
+!zhang#    include "HALO_NMM_A.inc"
+!zhang#endif
 !-----------------
         exch_tim=exch_tim+now_time()-btimx
 #ifdef NMM_FIND_LOAD_IMBALANCE

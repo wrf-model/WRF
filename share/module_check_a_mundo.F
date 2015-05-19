@@ -55,18 +55,18 @@
 #else
    model_config_rec % wrf_hydro = 0
 #endif
-
-#if (defined MOVE_NESTS) && (defined VORTEX_CENTER)
-!-----------------------------------------------------------------------
-! A known problem with moving nests.  Users with number of eta levels 
-! above 55 get a model crash.
-!-----------------------------------------------------------------------
-
-      IF ( ( model_config_rec % max_dom  .GT.  1 ) .AND. &
-           ( model_config_rec %e_vert(1) .GT. 55 ) ) THEN
-         wrf_err_message = '--- ERROR: Known problem.  Moving nests need e_vert .LE. 55'
-         CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
-      END IF
+#if ( NMM_NEST == 1 )
+! Ensure that minimum NMM coral distances are supplied for all domains.
+   do i=1,model_config_rec%max_dom
+      if(model_config_rec%coral_x(i)<5) then
+         call wrf_message("Coral X distance must be at least 5 due to intermediate domain halos.")
+         model_config_rec%coral_x(i)=5
+      endif
+      if(model_config_rec%coral_y(i)<5) then
+         call wrf_message("Coral Y distance must be at least 5 due to intermediate domain halos.")
+         model_config_rec%coral_y(i)=5
+      endif
+    enddo
 #endif
 
 #if (EM_CORE == 1)
@@ -163,12 +163,14 @@
 ! Check: if ETAMPNEW microphysics is selected, this has moved to option 95
 !-----------------------------------------------------------------------
       DO i = 1, model_config_rec % max_dom
-         IF ( model_config_rec % mp_physics(i) == etamp_hr ) THEN
+      !   IF ( model_config_rec % mp_physics(i) == etamp_hr ) THEN
+         IF ( model_config_rec % mp_physics(i) == fer_mp_hires ) THEN
             wrf_err_message = '--- RESET: ETAMPNEW scheme is now mp_physics=95'
             CALL wrf_message ( wrf_err_message )
             model_config_rec % mp_physics(i) = etampnew
          END IF
-         IF ( model_config_rec % mp_physics_dfi(i) == etamp_hr_dfi ) THEN
+         ! IF ( model_config_rec % mp_physics_dfi(i) == etamp_hr_dfi ) THEN
+         IF ( model_config_rec % mp_physics_dfi(i) == fer_mp_hires_dfi ) THEN
             wrf_err_message = '--- RESET: ETAMPNEW_DFI scheme is now mp_physics_dfi=95'
             CALL wrf_message ( wrf_err_message )
             model_config_rec % mp_physics_dfi(i) = etampnew_dfi

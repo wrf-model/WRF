@@ -16,8 +16,10 @@ CONTAINS
                      UST,PSIM,PSIH,                             &   
                      XLAND,HFX,QFX,TAUX,TAUY,LH,GSW,GLW,TSK,FLHC,FLQC,    & ! gopal's doing for Ocean coupling
                      QGH,QSFC,U10,V10,                          &
+                     ICOEF_SF, LCURR_SF,                        & 
                      GZ1OZ0,WSPD,BR,ISFFLX,                     &
                      EP1,EP2,KARMAN,NTSFLG,SFENTH,              &
+                     Cd_out,Ch_out,                             &
                      ids,ide, jds,jde, kds,kde,                 &
                      ims,ime, jms,jme, kms,kme,                 &
                      its,ite, jts,jte, kts,kte                  )
@@ -90,6 +92,8 @@ CONTAINS
                                         ims,ime, jms,jme, kms,kme,      &
                                         its,ite, jts,jte, kts,kte,      &
                                         ISFFLX,NUM_SOIL_LAYERS,NTSFLG
+      INTEGER, INTENT(IN) ::            ICOEF_SF
+      LOGICAL, INTENT(IN) ::            LCURR_SF
 
       REAL,    INTENT(IN) ::                                            &
                                         CP,                             &
@@ -120,6 +124,8 @@ CONTAINS
                                         TSK,                            &
                                         BR,                             &
                                         CHS,                            &
+                                        Cd_out,                         &
+                                        Ch_out,                         &
                                         CHS2,                           &
                                         CPM,                            &
                                         CQS2,                           &
@@ -144,8 +150,7 @@ CONTAINS
 
       REAL, DIMENSION(ims:ime, jms:jme), INTENT(OUT) ::                 &
                                         U10,                            &
-                                        V10 
-
+                                        V10                            
 
 !--------------------------- LOCAL VARS ------------------------------
 
@@ -262,6 +267,8 @@ CONTAINS
    WRITE(message,*)'WITHIN THE GFDL SCHEME, NTSFLG=1 FOR GFDL SLAB  2010 UPGRADS',NTSFLG
    call wrf_debug(1,message)
 
+!!     write(0,*)'icoef_sf,lcurr_sf=',icoef_sf,lcurr_sf
+
    DO J=jts,jte
 
       DO i=its,ite
@@ -328,6 +335,7 @@ CONTAINS
 
      CALL MFLUX2(  fxh,fxe,fxmx,fxmy,cdm,rib,xxfh,zoc,mzoc,tstrc,   &    !mzoc for momentum Zo KWON
                    pspc,pkmax,wetc,slwdc,tjloc,                &
+                   icoef_sf,lcurr_sf,                          &
                    upc,vpc,tpc,rpc,dt,J,wind10,xxfh2,ntsflg,SFENTH,   &
                    ids,ide, jds,jde, kds,kde,                  &
                    ims,ime, jms,jme, kms,kme,                  &
@@ -415,12 +423,23 @@ CONTAINS
         fh2(i)         = karman*xxfh2(i)            
         ch(i)      = karman*karman/(fm(i) * fh(i))
         cm(i)      = cdm(i)
-
+        Cd_out(i,j) = cm(i)
+        Ch_out(i,j) = ch(i)
         U10(i,j)=U10M(i)
         V10(i,j)=V10M(i)
         BR(i,j)=rib(i)
         CHS(I,J)=CH(I)*wspd (i,j)
         CHS2(I,J)=USTAR(I)*KARMAN/FH2(I)
+
+!!!2014-0922  cap CHS over land points
+          if (xland(i,j) .lt. 1.9) then
+            CHS(I,J)=amin1(CHS(I,J), 0.05)
+            CHS2(I,J)=amin1(CHS2(I,J), 0.05)
+            if (chs2(i,j) < 0) chs2(i,j)=1.0e-6
+          endif
+!!!
+
+
         CPM(I,J)=CP*(1.+0.8*QV3D(i,kts,j))
         esat = fpvs(t1(i))
         QGH(I,J)=ep2*esat/(1000.*ps(i)-esat)
@@ -523,6 +542,7 @@ CONTAINS
 !-------------------------------------------------------------------
        SUBROUTINE MFLUX2( fxh,fxe,fxmx,fxmy,cdm,rib,xxfh,zoc,mzoc,tstrc,       &    !mzoc KWON
                           pspc,pkmax,wetc,slwdc,tjloc,                    &
+                          icoef_sf,lcurr_sf,                              &
                           upc,vpc,tpc,rpc,dt,jfix,wind10,xxfh2,ntsflg,sfenth,    &
                           ids,ide, jds,jde, kds,kde,                      &
                           ims,ime, jms,jme, kms,kme,                      &
@@ -538,6 +558,7 @@ CONTAINS
 !
 !------------------------------------------------------------------------
 
+      USE module_sf_exchcoef
       IMPLICIT NONE
 !     use allocate_mod
 !     use module_TLDATA , ONLY : tab,table,cp,g,rgas,og 
@@ -567,6 +588,8 @@ CONTAINS
       integer,intent(in)  :: ims,ime, jms,jme, kms,kme
       integer,intent(in)  :: its,ite, jts,jte, kts,kte
       integer,intent(in)  :: jfix,ntsflg
+      integer,intent(in)  :: icoef_sf
+      logical,intent(in)  :: lcurr_sf
 
       real, intent (out), dimension (ims :ime ) :: fxh
       real, intent (out), dimension (ims :ime ) :: fxe
@@ -691,7 +714,7 @@ CONTAINS
       real :: shfx,sigt4,reflect
       real :: cor1,cor2,szetho,zal2gh,cons_p000001,cons_7,vis,ustar,restar,rat
       real :: wndm,ckg
-      real :: yz,y1,y2,y3,y4,windmks,znott,znotm
+      real :: windmks,znott,znotm
       integer:: i,j,ii,iq,nnest,icnt,ngd,ip
 
 !-----------------------------------------------------------------------
@@ -815,11 +838,6 @@ CONTAINS
 !        cor1 = 0.
 !        cor2 = 0.
 !
-       yz=           -0.0001344
-       y1=            3.015e-05 
-       y2=            1.517e-06 
-       y3=           -3.567e-08
-       y4=            2.046e-10
 
       do i = its,ite
         z10(i) = 1000.
@@ -847,32 +865,21 @@ CONTAINS
         else
           ecof(i) = wetc(i)
           land(i) = 0.0
-          zot (i) = zoc(i)
-!  now use 2 regime fit for znot thermal
           windmks=wind(i)*.01
-          znott=0.2375*exp(-0.5250*windmks) + 0.0025*exp(-0.0211*windmks)
-          znott=0.01*znott
-!  go back to moon et al for below 7m/s
-          if(windmks.le. 7.)                         &
-          znott = (0.0185/9.8*(7.59e-8*wind(i)**2+   &
-                                  2.46e-4*wind(i))**2)
-! back to cgs
-          zot (i) = 100.*znott
-!   end of kwon correction....
-!     in hwrf, thermal znot(zot) is passed as argument zoc
-!     in hwrf, momentum znot is recalculated internally
-              zoc(i)=-(0.0185/9.8*(7.59e-8*wind(i)**2+   &
-                                  2.46e-4*wind(i))**2)*100.
-            if(wind(i).ge.1250.0)   &
-             zoc(i)=-(.000739793 * wind(i) -0.58)/10
-        if(wind(i).ge.3000.)   then
-        windmks=wind(i)*.01
-!       kwon znotm
-        znotm   = yz   +windmks*y1   +windmks**2*y2   +windmks**3*y3   +windmks**4*y4 !powell 2003
-!       back to cgs
-        zoc(i)  = 100.*znotm
+          if ( icoef_sf .EQ. 1) then
+             call  znot_m_v1(windmks,znotm)
+             call  znot_t_v1(windmks,znott)
+          else if ( icoef_sf .EQ. 0 ) then
+             call  znot_m_v0(windmks,znotm)
+             call  znot_t_v0(windmks,znott)
+          else
+             call  znot_m_v1(windmks,znotm)
+             call  znot_t_v2(windmks,znott)
+          endif
+          zoc(i)  = -100.*znotm
+          zot(i) =  -100* znott
         endif
-        endif
+
 
 !------------------------------------------------------------------------
 !     where necessary modify zo values over ocean.
@@ -928,8 +935,8 @@ CONTAINS
         tab1 (i) = tstar(i) - 153.16
         it   (i) = IFIX(tab1(i))
         tab2 (i) = tab1(i) - FLOAT(it(i))
-        t1   (i) = tab(it(i) + 1)
-        t2   (i) = table(it(i) + 1)
+        t1   (i) = tab(min(223,max(1,it(i) + 1)))
+        t2   (i) = table(min(223,max(1,it(i) + 1)))
         estso(i) = t1(i) + tab2(i)*t2(i)
          psps1 = (pss(i) - estso(i))
           if(psps1 .EQ. 0.0)then
@@ -1492,8 +1499,8 @@ CONTAINS
           tab1  (i) = tsp(i) - 153.16
           it    (i) = IFIX(tab1(i))
           tab2  (i) = tab1(i) - FLOAT(it(i))
-          t1    (i) = tab(it(i) + 1)
-          t2    (i) = table(it(i) + 1)
+          t1    (i) = tab(min(223,max(1,it(i) + 1)))
+          t2    (i) = table(min(223,max(1,it(i) + 1)))
           estsop(i) = t1(i) + tab2(i)*t2(i)
              psps2 = (pssp(i) - estsop(i))
              if(psps2 .EQ. 0.0)then

@@ -23,7 +23,9 @@ MODULE module_ra_cam_support
       integer :: idxBCPHI
       integer :: idxBG  
       integer :: idxVOLC
-
+      real, pointer :: ozmixin_save(:,:,:,:), lat_ozone_save(:), plev_ozone_save(:)
+      integer :: levsiz_ozone_save=-1
+      logical :: have_ozone=.false.
   integer :: mxaerl                            ! Maximum level of background aerosol
 
 ! indices to sections of array that represent
@@ -3456,6 +3458,8 @@ subroutine oznini(ozmixm,pin,levsiz,num_months,XLAT,                &
 ! It should be replaced by monthly climatology that varies latitudinally and vertically
 !
 
+  use mpi
+  use module_dm, only: local_communicator
       IMPLICIT NONE
 
    INTEGER,      INTENT(IN   )    ::   ids,ide, jds,jde, kds,kde, &
@@ -3474,20 +3478,32 @@ subroutine oznini(ozmixm,pin,levsiz,num_months,XLAT,                &
 ! Local
    INTEGER, PARAMETER :: latsiz = 64
    INTEGER, PARAMETER :: lonsiz = 1
-   INTEGER :: i, j, k, itf, jtf, ktf, m, pin_unit, lat_unit, oz_unit
+   INTEGER :: i, j, k, itf, jtf, ktf, m, pin_unit, lat_unit, oz_unit, ierr
    REAL    :: interp_pt
-   CHARACTER*256 :: message
+   CHARACTER*255 :: message
+   real, pointer :: ozmixin(:,:,:,:), lat_ozone(:), plev(:)
+!   REAL, DIMENSION( lonsiz, levsiz, latsiz, num_months )    ::   &
+!                                                            OZMIXIN
 
-   REAL,  DIMENSION( lonsiz, levsiz, latsiz, num_months )    ::   &
-                                                            OZMIXIN
-
-   REAL,  DIMENSION(latsiz)                ::             lat_ozone
+   logical, external :: wrf_dm_on_monitor
 
    jtf=min0(jte,jde-1)
    ktf=min0(kte,kde-1)
    itf=min0(ite,ide-1)
 
-
+   if_have_ozone: if(.not.have_ozone) then
+    call wrf_debug(1,'Do not have ozone.  Must read it in.')
+    ! Allocate and set local aliases:
+    levsiz_ozone_save=levsiz
+    allocate(plev_ozone_save(levsiz),lat_ozone_save(latsiz))
+    allocate(ozmixin_save(lonsiz, levsiz, latsiz, num_months))
+    plev=>plev_ozone_save
+    lat_ozone=>lat_ozone_save
+    ozmixin=>ozmixin_save
+#ifdef DM_PARALLEL
+    if_master: if(wrf_dm_on_monitor()) then
+    call wrf_debug(1,'Master rank reads ozone.')
+#endif
 !-- read in ozone pressure data
 
      WRITE(message,*)'num_months = ',num_months
@@ -3496,13 +3512,14 @@ subroutine oznini(ozmixm,pin,levsiz,num_months,XLAT,                &
       pin_unit = 27
         OPEN(pin_unit, FILE='ozone_plev.formatted',FORM='FORMATTED',STATUS='OLD')
         do k = 1,levsiz
-        READ (pin_unit,*)pin(k)
+        READ (pin_unit,*)plev(k)
         end do
       close(27)
 
       do k=1,levsiz
-        pin(k) = pin(k)*100.
+         plev(k) = plev(k)*100.
       end do
+      pin=plev ! copy to grid array
 
 !-- read in ozone lat data
 
@@ -3529,7 +3546,31 @@ subroutine oznini(ozmixm,pin,levsiz,num_months,XLAT,                &
       enddo
       enddo
       close(29)
-
+#ifdef DM_PARALLEL
+     endif if_master
+     call wrf_debug(1,"Broadcast ozone to other ranks.")
+     call MPI_Bcast(ozmixin,size(ozmixin),MPI_REAL,0,local_communicator,ierr)
+     call MPI_Bcast(pin,size(pin),MPI_REAL,0,local_communicator,ierr)
+     plev=pin
+     call MPI_Bcast(lat_ozone,size(lat_ozone),MPI_REAL,0,local_communicator,ierr)
+#endif
+   else ! already read in ozone data
+    ! Make sure, first:
+    if(levsiz/=levsiz_ozone_save) then
+3081   format('Logic error in caller: levsiz=',I0,' but prior call used ',I0,'.')
+       write(message,3081) levsiz,levsiz_ozone_save
+       call wrf_error_fatal(message)
+    endif
+    if(.not.(associated(plev_ozone_save) .and. &
+             associated(lat_ozone_save) .and. &
+             associated(ozmixin_save))) then
+       call wrf_error_fatal('Ozone save arrays are not allocated.')
+    endif
+    ! Recover the pointers to allocated data:
+    plev=>plev_ozone_save
+    lat_ozone=>lat_ozone_save
+    ozmixin=>ozmixin_save
+   endif if_have_ozone
 
 !-- latitudinally interpolate ozone data (and extend longitudinally)
 !-- using function lin_interpol2(x, f, y) result(g)

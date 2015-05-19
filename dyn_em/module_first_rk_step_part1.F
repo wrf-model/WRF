@@ -390,7 +390,8 @@ BENCH_START(rad_driver_tim)
      &         ,slope_rad=config_flags%slope_rad,topo_shading=config_flags%topo_shading     &
      &         ,shadowmask=grid%shadowmask,ht=grid%ht,dx=grid%dx,dy=grid%dy &           
      &         ,diffuse_frac=grid%diffuse_frac &           
-     &         ,IS_CAMMGMP_USED = grid%is_CAMMGMP_used    )
+     &         ,IS_CAMMGMP_USED = grid%is_CAMMGMP_used    &
+     &         ,MP_PHYSICS=CONFIG_FLAGS%MP_PHYSICS )
 
 BENCH_END(rad_driver_tim)
 

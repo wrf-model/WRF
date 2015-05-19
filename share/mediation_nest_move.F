@@ -1224,6 +1224,7 @@ LOGICAL FUNCTION direction_of_move2 ( parent , grid , move_cd_x, move_cd_y )
    real :: dx,dy,kid_ic,kid_jc,my_ic,my_jc,pgr,pgrn,hr,two_dt,when,before,after
    real, parameter :: pmult=1.35
    integer :: inew,jnew,coral_x,coral_y
+   integer :: min_coral_x, min_coral_y
    logical :: abort
 
 ! PURPOSE: DECIDE THE DIRECTION OF MOVE
@@ -1250,7 +1251,13 @@ LOGICAL FUNCTION direction_of_move2 ( parent , grid , move_cd_x, move_cd_y )
 ! MODIFIED: SAM TRAHAN, April 1, 2011 to add vortex_tracker, and the
 !         nest-following vortex tracker (option 2)
 
-
+   if(grid%id==1) then
+      min_coral_x=7
+      min_coral_y=12
+   else
+      min_coral_x=5
+      min_coral_y=5
+   endif
 
    abort=.false. ! will be set to .true. if any safety checks fail
 
@@ -1287,8 +1294,8 @@ LOGICAL FUNCTION direction_of_move2 ( parent , grid , move_cd_x, move_cd_y )
 
    !  SWITCH OFF NEST MOTION IF TOO CLOSE TO ANY OF THE BOUNDARIES
 
-   coral_x = max(5,grid%coral_x)
-   coral_y = max(5,grid%coral_y)
+   coral_x = max(min_coral_x,grid%coral_x)
+   coral_y = max(min_coral_y,grid%coral_y)
 
    coral_dist=(grid%ed31+grid%parent_grid_ratio-1)/grid%parent_grid_ratio
    IF(grid%i_parent_start .le. coral_x) then
@@ -1464,22 +1471,24 @@ LOGICAL FUNCTION direction_of_move2 ( parent , grid , move_cd_x, move_cd_y )
         jnew=kid%j_parent_start-move_cd_y*kid%parent_grid_ratio
         
         coral_dist=(kid%ed31+kid%parent_grid_ratio-1)/kid%parent_grid_ratio
-        IF(inew <= 5)THEN  
+        coral_x = max(min_coral_x,grid%coral_x)
+        coral_y = max(min_coral_y,grid%coral_y)
+        IF(inew <= coral_x)THEN  
            abort=.true.
            write(mess,'("d",I0,": cannot move: nest d",I0," would be too close to -X bdy")') grid%id,kid%id
            call wrf_message(mess)
-        ELSEIF((inew+coral_dist) >= grid%ed31 - 5) THEN
+        ELSEIF((inew+coral_dist) >= grid%ed31 - coral_x) THEN
            abort=.true.
            write(mess,'("d",I0,": cannot move: nest d",I0," would be too close to +X bdy")') grid%id,kid%id
            call wrf_message(mess)
         ENDIF
 
         coral_dist=(kid%ed32+kid%parent_grid_ratio-1)/kid%parent_grid_ratio
-        IF(jnew .le. 5)THEN
+        IF(jnew .le. coral_y)THEN
            abort=.true.
            write(mess,'("d",I0,": cannot move: nest d",I0," would be too close to -Y bdy")') grid%id,kid%id
            call wrf_message(mess)
-        ELSEIF((jnew+coral_dist) .ge. grid%ed32 - 5) THEN
+        ELSEIF((jnew+coral_dist) .ge. grid%ed32 - coral_y) THEN
            abort=.true.
            write(mess,'("d",I0,": cannot move: nest d",I0," would be too close to +Y bdy")') grid%id,kid%id
            call wrf_message(mess)

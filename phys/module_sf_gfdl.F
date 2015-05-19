@@ -1499,8 +1499,8 @@ CONTAINS
           tab1  (i) = tsp(i) - 153.16
           it    (i) = IFIX(tab1(i))
           tab2  (i) = tab1(i) - FLOAT(it(i))
-          t1    (i) = tab(it(i) + 1)
-          t2    (i) = table(it(i) + 1)
+          t1    (i) = tab(min(223,max(1,it(i) + 1)))
+          t2    (i) = table(min(223,max(1,it(i) + 1)))
           estsop(i) = t1(i) + tab2(i)*t2(i)
              psps2 = (pssp(i) - estsop(i))
              if(psps2 .EQ. 0.0)then

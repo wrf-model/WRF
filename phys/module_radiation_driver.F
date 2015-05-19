@@ -663,7 +663,7 @@ CONTAINS
    INTEGER ::    i,j,k,its,ite,jts,jte,ij
    INTEGER ::    STEPABS
    LOGICAL ::    gfdl_lw,gfdl_sw
-   LOGICAL ::    doabsems
+   LOGICAL ::    doabsems, use_aer3d
    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
    INTEGER ::    s
 
@@ -698,7 +698,7 @@ CONTAINS
 
 
 #ifdef HWRF
-   CHARACTER(len=265) :: wrf_err_message
+   CHARACTER(len=255) :: wrf_err_message
 #endif
 
    ! This allows radiation schemes (mainly HWRF) to correctly
@@ -709,6 +709,42 @@ CONTAINS
    else
       expl_conv=.true. ! backward compatibility for ARW
    endif
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! FIXME: REMOVE THIS SECTION
+   if(.not. present(o3rad)) then
+      call wrf_error_fatal('O3RAD is missing')
+   endif
+   if(levsiz/=59) then
+38    format('levsiz=',I0,' is not 59')
+      write(wrf_err_message,38) levsiz
+      call wrf_error_fatal(wrf_err_message)
+   endif
+   if(n_ozmixm<12) then
+37    format('n_ozmixm=',I0,'<12')
+      write(wrf_err_message,37) n_ozmixm
+      call wrf_error_fatal(wrf_err_message)
+   endif
+   if(o3input/=2) then
+3666  format('o3input=',I0,' but should be 2')
+      write(wrf_err_message,3666) o3input
+      call wrf_error_fatal(wrf_err_message)
+   endif
+   if(size(pin,1)<2) then
+      call wrf_error_fatal('PIN is scalar.')
+   endif
+   if(size(ozmixm,2)/=59) then
+3014  format('size(ozmixm,2)=',I0,' instead of 59')
+      write(wrf_err_message,3014) size(ozmixm,2)
+      call wrf_error_fatal(wrf_err_message)
+   endif
+   if(size(ozmixm,4)/=13) then
+1103  format('size(ozmixm,4)=',I0,' instead of 13')
+      write(wrf_err_message,1103) size(ozmixm,4)
+      call wrf_error_fatal(wrf_err_message)
+   endif
+! END OF STUFF TO REMOVE
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
    IF ( ICLOUD == 3 ) THEN
       IF (PRESENT(dxkm)) then
@@ -837,38 +873,27 @@ CONTAINS
    gfdl_sw = .false.
 
 ! Allocate aerosol arrays used by aer_opt = 2 option
-   IF ( PRESENT( AOD5502D ) ) THEN
+   use_aer3d=.false.
+   IF ( PRESENT( AOD5502D ) .and. aer_opt==2 ) THEN
      ! jararias, 2013/11
-     IF ( aer_opt .EQ. 2 ) THEN
-        swrad_aerosol_select: select case(sw_physics)
-
-           case(GODDARDSWSCHEME)
-              allocate(tauaer_sw(ims:ime, kms:kme, jms:jme, 1:11))
-              allocate(ssaaer_sw(ims:ime, kms:kme, jms:jme, 1:11))
-              allocate(asyaer_sw(ims:ime, kms:kme, jms:jme, 1:11))
-
-           case(RRTMG_SWSCHEME,RRTMG_SWSCHEME_FAST)
-              allocate(tauaer_sw(ims:ime, kms:kme, jms:jme, 1:14))
-              allocate(ssaaer_sw(ims:ime, kms:kme, jms:jme, 1:14))
-              allocate(asyaer_sw(ims:ime, kms:kme, jms:jme, 1:14))
-
-        end select swrad_aerosol_select
-     ELSE
-        swrad_aerosol_select_stub: select case(sw_physics)
-
-           case(GODDARDSWSCHEME)
-              allocate(tauaer_sw(1, 1, 1, 1))
-              allocate(ssaaer_sw(1, 1, 1, 1))
-              allocate(asyaer_sw(1, 1, 1, 1))
-
-           case(RRTMG_SWSCHEME,RRTMG_SWSCHEME_FAST)
-              allocate(tauaer_sw(1, 1, 1, 1))
-              allocate(ssaaer_sw(1, 1, 1, 1))
-              allocate(asyaer_sw(1, 1, 1, 1))
-
-        end select swrad_aerosol_select_stub
-     ENDIF
+      swrad_aerosol_select: select case(sw_physics)
+      case(GODDARDSWSCHEME)
+         use_aer3d=.true.
+         allocate(tauaer_sw(ims:ime, kms:kme, jms:jme, 1:11))
+         allocate(ssaaer_sw(ims:ime, kms:kme, jms:jme, 1:11))
+         allocate(asyaer_sw(ims:ime, kms:kme, jms:jme, 1:11))
+         
+      case(RRTMG_SWSCHEME,RRTMG_SWSCHEME_FAST)
+         use_aer3d=.true.
+         allocate(tauaer_sw(ims:ime, kms:kme, jms:jme, 1:14))
+         allocate(ssaaer_sw(ims:ime, kms:kme, jms:jme, 1:14))
+         allocate(asyaer_sw(ims:ime, kms:kme, jms:jme, 1:14))
+      end select swrad_aerosol_select
    ENDIF
+   ! Stubs to ensure these variables are not passed in unallocated:
+   if(.not.allocated(tauaer_sw)) allocate(tauaer_sw(1, 1, 1, 1))
+   if(.not.allocated(ssaaer_sw)) allocate(ssaaer_sw(1, 1, 1, 1))
+   if(.not.allocated(asyaer_sw)) allocate(asyaer_sw(1, 1, 1, 1))
 
 !---------------
 ! Calculate constant for short wave radiation
@@ -1142,7 +1167,9 @@ CONTAINS
 ! ww: Interpolating climatological ozone and aerosol to model time and levels
 !     Adapted from camrad code
      IF ( PRESENT( O3RAD ) ) THEN
-     IF ( o3input .EQ. 2 .AND. id .EQ. 1 ) THEN
+        call wrf_debug(1,'Have o3rad')
+     IF ( o3input .EQ. 2) THEN
+        call wrf_debug(1,'o3input is 2')
 !       ! Find the current month (adapted from Cavallo)
 !       CALL cam_time_interp( ozmixm, pin, levsiz, date_str, &
 !                             ids , ide , jds , jde , kds , kde , &
@@ -1160,7 +1187,11 @@ CONTAINS
                               ids , ide , jds , jde , kds , kde ,     &
                               ims , ime , jms , jme , kms , kme ,     &
                               its , ite , jts , jte , kts , kte )
+     ELSE
+        CALL WRF_ERROR_FATAL('o3input is not 2')
      ENDIF
+     ELSE
+        CALL WRF_ERROR_FATAL('do not have o3rad')
      ENDIF
 
      IF ( PRESENT( AEROD ) ) THEN
@@ -1241,6 +1272,7 @@ CONTAINS
                     ,f_qi=f_qi,f_qs=f_qs,f_qg=f_qg                     &
                     ,erbe_out=erbe_out                                 & !optional
                     ,aer_opt=aer_opt                                   &
+                    ,use_aer3d=.false.                                 &
                                                                        )
 
         CASE (GFDLLWSCHEME)
@@ -1558,9 +1590,8 @@ CONTAINS
           ENDIF
      ENDIF       
 
-     IF ( PRESENT( AOD5502D ) ) THEN
+     IF ( PRESENT( AOD5502D ) .and. aer_opt==2 ) THEN
      ! jararias, 2013/11
-     IF ( aer_opt .EQ. 2 ) THEN
      swrad_aerosol_select2: select case(sw_physics)
         case(GODDARDSWSCHEME)
            call wrf_debug(100, 'call calc_aerosol_goddard_sw')
@@ -1594,7 +1625,6 @@ CONTAINS
 
         case default
      end select swrad_aerosol_select2
-     ENDIF
      ENDIF
 
      swrad_select: SELECT CASE(sw_physics)
@@ -1703,6 +1733,7 @@ CONTAINS
                     ,ssaaer3d_sw=ssaaer_sw                             & ! jararias, 2013/11
                     ,asyaer3d_sw=asyaer_sw                             & ! jararias, 2012/11
                     ,aer_opt=aer_opt                                   &
+                    ,use_aer3d=use_aer3d                               & ! bug fix, SGT 2015/03
                                                                        )
 
         CASE (CAMSWSCHEME)
@@ -1826,6 +1857,7 @@ CONTAINS
                      tauaer3d_sw=tauaer_sw,                             & ! jararias 2013/11
                      ssaaer3d_sw=ssaaer_sw,                             & ! jararias 2013/11
                      asyaer3d_sw=asyaer_sw,                             & ! jararias 2013/11
+                     use_aer3d=use_aer3d,                               & ! bug fix, SGT 2015/03
                      swddir=swddir,swddni=swddni,swddif=swddif,         & ! jararias 2013/08/10
                      xcoszen=coszen,julian=julian,mp_physics=mp_physics ) ! jararias 2013/08/14
 
@@ -1895,6 +1927,7 @@ CONTAINS
                      tauaer3d_sw=tauaer_sw,                             & ! jararias 2013/11
                      ssaaer3d_sw=ssaaer_sw,                             & ! jararias 2013/11
                      asyaer3d_sw=asyaer_sw,                             & ! jararias 2013/11
+                     use_aer3d=use_aer3d,                               & ! bug fix, SGT 2015/03
                      swddir=swddir,swddni=swddni,swddif=swddif,         & ! jararias 2013/08/10
                      xcoszen=coszen,julian=julian                       ) ! jararias 2013/08/14
 

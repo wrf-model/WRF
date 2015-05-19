@@ -237,7 +237,7 @@
       integer :: i_t=096,j_t=195,n_t=11
       integer :: i_u=49,j_u=475,n_u=07
       integer :: i_v=49,j_v=475,n_v=07
-      integer :: num_ozmixm, num_aerosolc
+      integer :: num_aerosolc
       real :: cen_lat,cen_lon,dtphs   ! GWD
       integer :: num_urban_layers,num_urban_hi
 !Rogers GMT
@@ -2008,7 +2008,6 @@
       ENDIF
 !
 ! when allocating CAM radiation 4d arrays (ozmixm, aerosolc) these are not needed
-      num_ozmixm=1
       num_aerosolc=1
 
 ! Set GMT, JULDAY, and JULYR outside of phy_init because it is no longer 
@@ -2131,7 +2130,8 @@
      &                lakedepth_default=config_flags%lakedepth_default, lake_min_elev=config_flags%lake_min_elev, lake_depth=grid%lake_depth,               & !lake
      &                lake_depth_flag=grid%LAKE_DEPTH_FLAG, use_lakedepth=grid%use_lakedepth,                                                      & !lake
      &                sf_surface_mosaic=config_flags%sf_surface_mosaic, mosaic_cat=config_flags%mosaic_cat, nlcat=1,     & ! Noah tiling
-     &                MAXPATCH=1,ccn_conc=config_flags%ccn_conc & ! CLM
+     &                MAXPATCH=1,ccn_conc=config_flags%ccn_conc, & ! CLM
+     &                pin=grid%pin,ozmixm=grid%ozmixm &
      &                )
 
 #ifdef HWRF

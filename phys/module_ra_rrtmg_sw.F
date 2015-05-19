@@ -9857,13 +9857,14 @@ CONTAINS
                        its,ite, jts,jte, kts,kte,                 &
                        swupflx, swupflxc, swdnflx, swdnflxc,      &
                        tauaer3d_sw,ssaaer3d_sw,asyaer3d_sw,       & ! jararias 2013/11
+                       use_aer3d,                                 & ! bug fix, SGT 2015/03
                        swddir, swddni, swddif,                    & ! jararias 2013/08
                        xcoszen,julian                             & ! jararias 2013/08
                                                                   )
 !------------------------------------------------------------------
    IMPLICIT NONE
 !------------------------------------------------------------------
-   LOGICAL, INTENT(IN )      ::        warm_rain
+   LOGICAL, INTENT(IN )      ::        warm_rain, use_aer3d
    LOGICAL, INTENT(IN )      ::   is_CAMMGMP_used ! Added for CAM5 RRTMG<->CAMMGMP
 !
    INTEGER, INTENT(IN )      ::        ids,ide, jds,jde, kds,kde, &
@@ -10270,6 +10271,7 @@ CONTAINS
                O31D(K)=O33D(I,K,J)
             ENDDO
          ELSE
+            call wrf_error_fatal('did not pass O33d') ! FIXME: REMOVE THIS LINE
             DO K=kts,kte
                O31D(K)=0.0
             ENDDO
@@ -10556,6 +10558,7 @@ CONTAINS
             ENDIF
          enddo
         else
+         call wrf_error_fatal('did not pass O33D - abort') ! FIXME: remove this line
          do k = kts, kte+1
             o3vmr(ncol,k) = o3mmr(k) * amdo
          enddo
@@ -10857,7 +10860,7 @@ CONTAINS
       end do
       end do
 
-      if ( present (tauaer3d_sw) ) then
+      if ( use_aer3d ) then
 ! ---- jararias 11/2012
          if ( aer_opt .eq. 2) then
             do nb=1,nbndsw

@@ -10231,6 +10231,7 @@ CONTAINS
 
 ! longitude loop
      i_loop: do i = its,ite
+         rho1d(kts:kte)=rho3d(i,kts:kte,j) ! BUG FIX (SGT): this was uninitialized
 !
 ! Do shortwave by default, deactivate below if sun below horizon
          dorrsw = .true.

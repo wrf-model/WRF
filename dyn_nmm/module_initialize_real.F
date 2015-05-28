@@ -2032,8 +2032,8 @@ CONTAINS
      NWBD= WBD  ! + (ILOC -1)*2.*grid%dlmd + MOD(JLOC+1,2)*grid%dlmd
      NSBD= SBD  ! + (JLOC -1)*grid%dphd
 
-
-
+     grid%sbd0=sbd
+     grid%wbd0=wbd
 
 #ifdef HWRF     
     CALL EARTH_LATLON ( grid%HLAT,grid%HLON,grid%VLAT,grid%VLON,  & !output

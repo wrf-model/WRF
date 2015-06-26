@@ -59,6 +59,10 @@
 
    USE module_cam_mam_wetscav, only:wetscav_cam_mam_driver_init
    USE module_cam_support, only: numgas_mam, gas_pcnst_modal_aero,gas_pcnst_modal_aero_pos !BSINGH - Fix for non-MAM simulations
+
+!!! TUCCELLA (BUG)
+   USE module_prep_wetscav_sorgam, only: aerosols_sorgam_init_aercld_ptrs, aerosols_soa_vbs_init_aercld_ptrs 
+
    IMPLICIT NONE
 
    real  , intent(in) :: bioemdt,photdt,chemdt,dt,gmt
@@ -213,6 +217,12 @@ call wrf_message("**************************************************************
        CALL wrf_debug(15,'calling RACM/MADE/SORGAM with AQCHEM chemistry from chem_driver')
        call wrf_message("WARNING: RACM_ESRLSORG_AQCHEM_KPP chemistry option is highly experimental and not recommended for use.")
 !      call wrf_error_fatal("ERROR: experimental option selected, please contact wrfchemhelp for assistance")
+!!! TUCCELLA
+     CASE (RACM_SOA_VBS_AQCHEM_KPP )
+       numgas_mam = numgas
+       CALL wrf_debug(15,'calling RACM/MADE/SOA-VBS with AQCHEM chemistry from chem_driver')
+       call wrf_message("WARNING: RACM_SOA_VBS_AQCHEM_KPP chemistry option is highly experimental and not recommended for use.")
+!      call wrf_error_fatal("ERROR: experimental option selected, please contact wrfchemhelp for assistance")
      CASE (CO2_TRACER, GHG_TRACER )
        call wrf_message("WARNING: Users interested in the GHG options should check the comments/references in header of module_ghg_fluxes")
      CASE (CBMZ_CAM_MAM3_NOAQ)
@@ -267,6 +277,7 @@ call wrf_message("**************************************************************
                               its, ite, jts, jte, kts )
    endif
 
+!!! TUCCELLA
    if ( config_flags%wetscav_onoff == 1 ) then
 
      if( config_flags%chem_opt /= MOZART_KPP .and. &
@@ -279,10 +290,11 @@ call wrf_message("**************************************************************
             ( config_flags%chem_opt == 131 ) .OR. ( config_flags%chem_opt == 132 ) .OR. &
             ( config_flags%chem_opt == 503 .OR. config_flags%chem_opt == 504) .OR. &
             ( config_flags%chem_opt == 203).OR.                                    & !BSINGH(12/17/2013): Added for SAPRC 8 bin vbs
-            ( config_flags%chem_opt == 601 .OR. config_flags%chem_opt == 611)  ) then
+            ( config_flags%chem_opt == 601 .OR. config_flags%chem_opt == 611) .OR. &
+              (config_flags%chem_opt == 109) ) then
          call wrf_debug( 15, 'Chemics_init: Wet scavenging turned on' )
        else
-         call wrf_error_fatal("ERROR: wet scavenging option requires chem_opt = 8 through 13 or 31 to 36 or 41 to 42 or 503 or 504 or 601 or 611 to function.")
+         call wrf_error_fatal("ERROR: wet scavenging option requires chem_opt = 8 through 13 or 31 to 36 or 41 to 42 or 109 or 503 or 504 or 601 or 611 to function.")
        endif
        if ( config_flags%mp_physics /= 2 .and. config_flags%mp_physics /= 10 .and. config_flags%mp_physics /= 11  &
             .and. config_flags%mp_physics /= 17 .and. config_flags%mp_physics /= 18 .and. config_flags%mp_physics /= 22) then
@@ -300,6 +312,7 @@ call wrf_message("**************************************************************
      endif
    endif
 
+!!! TUCCELLA
    if ( config_flags%cldchem_onoff == 1 ) then
       if(  ( config_flags%chem_opt >= 8 .AND. config_flags%chem_opt <= 13)    .OR. &
            ( config_flags%chem_opt >= 31 .AND. config_flags%chem_opt <= 36)   .OR. &
@@ -307,10 +320,11 @@ call wrf_message("**************************************************************
            ( config_flags%chem_opt >= 41 .AND. config_flags%chem_opt <= 43)  .OR. &
            ( config_flags%chem_opt == 203).OR.                                    &
            ( config_flags%chem_opt == 131 ) .OR. ( config_flags%chem_opt == 132 ) .OR. &
-           ( config_flags%chem_opt >= 601 .AND. config_flags%chem_opt <= 611) ) then
+           ( config_flags%chem_opt >= 601 .AND. config_flags%chem_opt <= 611)  .OR. &
+             config_flags%chem_opt == 109 .OR. config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP ) then
            call wrf_debug( 15, 'Chemics_init: Cloud chemistry turned on' )
       else
-        call wrf_error_fatal("ERROR: cloud chemistry option requires chem_opt = 8 through 13 or 31 to 36 or 41 to 43 to function.")
+        call wrf_error_fatal("ERROR: cloud chemistry option requires chem_opt = 8 through 13 or 31 to 36 or 41 to 43 or 109 to function.")
       endif
        if ( config_flags%mp_physics /= 2 .and. config_flags%mp_physics /= 10 .and. config_flags%mp_physics /= 11  &
             .and. config_flags%mp_physics /= 17 .and. config_flags%mp_physics /= 18 .and. config_flags%mp_physics /= 22 ) then
@@ -601,10 +615,11 @@ end if
              call wrf_error_fatal("The number of chemistry species has changed between nests. Are you trying to mix chem_opt settings between nests? Shame on you!")
      end if
 
+!!! TUCCELLA
    if( .NOT. config_flags%restart ) then
    kpp_select: SELECT CASE(config_flags%chem_opt)
      CASE (GOCARTRACM_KPP,RACM_KPP,RACMPM_KPP,RACMSORG_KPP,RACM_MIM_KPP,RACM_ESRLSORG_KPP, &
-           RACMSORG_AQCHEM_KPP,RACM_ESRLSORG_AQCHEM_KPP,RACM_SOA_VBS_KPP)
+           RACMSORG_AQCHEM_KPP,RACM_ESRLSORG_AQCHEM_KPP)
         if(config_flags%chem_in_opt == 0 )then
           do j=jts,jte
              do k=kts,kte
@@ -1675,6 +1690,12 @@ ENDIF ghg_block
                ids,ide, jds,jde, kds,kde,                            &
                ims,ime, jms,jme, kms,kme,                            &
                its,ite, jts,jte, kts,kte, config_flags               )
+
+!!!TUCCELLA (BUG, before it was called in module_aerosols_sorgam.F)
+       ! initialize pointers used by aerosol-cloud-interaction routines
+        call aerosols_sorgam_init_aercld_ptrs( &
+           num_chem, is_aerosol, config_flags )
+
 !...Convert aerosols to mixing ratio
         if( .NOT. config_flags%restart ) then
         if(config_flags%chem_in_opt == 0 .and. num_chem.gt.numgas)then
@@ -1692,7 +1713,7 @@ ENDIF ghg_block
         endif
         chem(its:ite,kts:min(kte,kde-1),jts:jte,:)=max(chem(its:ite,kts:min(kte,kde-1),jts:jte,:),epsilc)
 !
-    CASE (CB05_SORG_VBS_AQ_KPP)
+    CASE (RACM_SOA_VBS_AQCHEM_KPP,CB05_SORG_VBS_AQ_KPP)
        CALL wrf_debug(15,'call MADE/SOA_VBS aerosols initialization')
 
        call aerosols_sorgam_vbs_init(chem,convfac,z_at_w,                &
@@ -1728,6 +1749,12 @@ ENDIF ghg_block
                ids,ide, jds,jde, kds,kde,                            &
                ims,ime, jms,jme, kms,kme,                            &
                its,ite, jts,jte, kts,kte, config_flags               )
+
+!!!TUCCELLA (BUG, before it was called in module_aerosols_soa_vbs.F)
+       ! initialize pointers used by aerosol-cloud-interaction routines
+        call aerosols_soa_vbs_init_aercld_ptrs( &
+           num_chem, is_aerosol, config_flags )
+
 !...Convert aerosols to mixing ratio
         if( .NOT. config_flags%restart ) then
         if(config_flags%chem_in_opt == 0 .and. num_chem.gt.numgas)then
@@ -1790,9 +1817,10 @@ ENDIF ghg_block
 
    END SELECT aer_select
 
+!!! TUCCELLA
    progn_sanity_check : SELECT CASE(config_flags%chem_opt)
    CASE (RADM2SORG_AQ, RADM2SORG_AQCHEM, RACMSORG_AQ, RACMSORG_AQCHEM_KPP, RACM_ESRLSORG_AQCHEM_KPP, &
-         CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, CBMZ_MOSAIC_DMS_4BIN_AQ, &
+         RACM_SOA_VBS_AQCHEM_KPP, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, CBMZ_MOSAIC_DMS_4BIN_AQ, &
          CBMZ_MOSAIC_DMS_8BIN_AQ,CBMZSORG_AQ,CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP, &
          MOZART_MOSAIC_4BIN_AQ_KPP,SAPRC99_MOSAIC_8BIN_VBS2_AQ_KPP,   &
          CB05_SORG_AQ_KPP, CB05_SORG_VBS_AQ_KPP)
@@ -2056,8 +2084,9 @@ subroutine print_chem_species_index( chem_opt )
      print*,p_iso,"iso"
      print*,p_ho,"ho"
      print*,p_ho2,"ho2"
+!!! TUCCELLA
   case (RACMSORG_AQ, RACMSORG_AQCHEM_KPP, RACM_ESRLSORG_AQCHEM_KPP, RACM_KPP, RACMPM_KPP, RACMSORG_KPP, &
-        RACM_ESRLSORG_KPP,RACM_SOA_VBS_KPP)
+        RACM_ESRLSORG_KPP,RACM_SOA_VBS_KPP,RACM_SOA_VBS_AQCHEM_KPP)
      print*,p_so2,"so2"
      print*,p_sulf,"sulf"
      print*,p_no2,"no2"
@@ -3279,6 +3308,83 @@ subroutine print_chem_species_index( chem_opt )
      print*,p_nu0,"nu0"
      print*,p_ac0,"ac0"
      print*,p_corn,"corn"
+!!! TUCCELLA
+case (RACM_SOA_VBS_AQCHEM_KPP)
+     print*,p_so4aj,"so4aj"
+     print*,p_so4ai,"so4ai"
+     print*,p_nh4aj,"nh4aj"
+     print*,p_nh4ai,"nh4ai"
+     print*,p_no3aj,"no3aj"
+     print*,p_no3ai,"no3ai"
+
+     print*,p_asoa1j,"asoa1j"
+     print*,p_asoa1i,"asoa1i"
+     print*,p_asoa2j,"asoa2j"
+     print*,p_asoa2i,"asoa2i"
+     print*,p_asoa3j,"asoa3j"
+     print*,p_asoa3i,"asoa3i"
+     print*,p_asoa4j,"asoa4j"
+     print*,p_asoa4i,"asoa4i"
+
+     print*,p_bsoa1j,"bsoa1j"
+     print*,p_bsoa1i,"bsoa1i"
+     print*,p_bsoa2j,"bsoa2j"
+     print*,p_bsoa2i,"bsoa2i"
+     print*,p_bsoa3j,"bsoa3j"
+     print*,p_bsoa3i,"bsoa3i"
+     print*,p_bsoa4j,"bsoa4j"
+     print*,p_bsoa4i,"bsoa4i"
+
+     print*,p_orgpaj,"orgpaj"
+     print*,p_orgpai,"orgpai"
+     print*,p_ecj,"ecj"
+     print*,p_eci,"eci"
+     print*,p_p25j,"p25j"
+     print*,p_p25i,"p25i"
+     print*,p_antha,"antha"
+     print*,p_seas,"seas"
+     print*,p_soila,"soila"
+     print*,p_nu0,"nu0"
+     print*,p_ac0,"ac0"
+     print*,p_corn,"corn"
+
+     print*,p_so4acwj,"so4acwj"
+     print*,p_so4acwi,"so4acwi"
+     print*,p_nh4acwj,"nh4acwj"
+     print*,p_nh4acwi,"nh4acwi"
+     print*,p_no3acwj,"no3acwj"
+     print*,p_no3acwi,"no3acwi"
+
+     print*,p_asoa1cwj,"asoa1cwj"
+     print*,p_asoa1cwi,"asoa1cwi"
+     print*,p_asoa2cwj,"asoa2cwj"
+     print*,p_asoa2cwi,"asoa2cwi"
+     print*,p_asoa3cwj,"asoa3cwj"
+     print*,p_asoa3cwi,"asoa3cwi"
+     print*,p_asoa4cwj,"asoa4cwj"
+     print*,p_asoa4cwi,"asoa4cwi"
+
+     print*,p_bsoa1cwj,"bsoa1cwj"
+     print*,p_bsoa1cwi,"bsoa1cwi"
+     print*,p_bsoa2cwj,"bsoa2cwj"
+     print*,p_bsoa2cwi,"bsoa2cwi"
+     print*,p_bsoa3cwj,"bsoa3cwj"
+     print*,p_bsoa3cwi,"bsoa3cwi"
+     print*,p_bsoa4cwj,"bsoa4cwj"
+     print*,p_bsoa4cwi,"bsoa4cwi"
+
+     print*,p_orgpacwj,"orgpacwj"
+     print*,p_orgpacwi,"orgpacwi"
+     print*,p_eccwj,"eccwj"
+     print*,p_eccwi,"eccwi"
+     print*,p_p25cwj,"p25cwj"
+     print*,p_p25cwi,"p25cwi"
+     print*,p_anthacw,"anthacw"
+     print*,p_seascw,"seascw"
+     print*,p_soilacw,"soilacw"
+     print*,p_nu0cw,"nu0cw"
+     print*,p_ac0cw,"ac0cw"
+     print*,p_corncw,"corncw"
 end select
 end subroutine print_chem_species_index
 #endif

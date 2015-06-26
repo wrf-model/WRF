@@ -334,8 +334,9 @@ tile_lon_loop : &
             end do
          end do
       end if
-!
-     if  (config_flags%chem_opt == RACM_SOA_VBS_KPP)   then
+!!!!TUCCELLA
+     if  (config_flags%chem_opt == RACM_SOA_VBS_KPP .OR.           &
+          config_flags%chem_opt == RACM_SOA_VBS_AQCHEM_KPP) then
          do j=jts,jte
             do i=its,ite
                ddvel(i,j,p_cvasoa1) = dep_vap*ddvel(i,j,p_hno3)

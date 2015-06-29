@@ -55,7 +55,7 @@
 #else
    model_config_rec % wrf_hydro = 0
 #endif
-#if ( NMM_NEST == 1 )
+#if (NMM_CORE == 1) && (NMM_NEST == 1)
 ! Ensure that minimum NMM coral distances are supplied for all domains.
    do i=1,model_config_rec%max_dom
       if(model_config_rec%coral_x(i)<5) then
@@ -1087,6 +1087,15 @@
       END DO
 
 !-----------------------------------------------------------------------
+!  Remapping namelist variables for gridded and surface fdda to aux streams 9 and 10.
+!  Relocated here so that the remappings are after checking the namelist for inconsistencies.
+!-----------------------------------------------------------------------
+
+#     include "../dyn_em/namelist_remappings_em.h"
+
+#endif
+
+!-----------------------------------------------------------------------
 !  Set the namelist parameter o3input to 0 for the radiation schemes other
 !  than RRTMG_LWSCHEME and RRTMG_SWSCHEME.
 !-----------------------------------------------------------------------
@@ -1104,15 +1113,6 @@
                            'o3input=0 to avoid data pre-processing'
          CALL wrf_message ( wrf_err_message )
       END IF
-
-!-----------------------------------------------------------------------
-!  Remapping namelist variables for gridded and surface fdda to aux streams 9 and 10.
-!  Relocated here so that the remappings are after checking the namelist for inconsistencies.
-!-----------------------------------------------------------------------
-
-#     include "../dyn_em/namelist_remappings_em.h"
-
-#endif
 
    END SUBROUTINE 
 

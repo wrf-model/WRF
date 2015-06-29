@@ -3458,8 +3458,10 @@ subroutine oznini(ozmixm,pin,levsiz,num_months,XLAT,                &
 ! It should be replaced by monthly climatology that varies latitudinally and vertically
 !
 
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
   use mpi
   use module_dm, only: local_communicator
+#endif
       IMPLICIT NONE
 
    INTEGER,      INTENT(IN   )    ::   ids,ide, jds,jde, kds,kde, &
@@ -3500,7 +3502,7 @@ subroutine oznini(ozmixm,pin,levsiz,num_months,XLAT,                &
     plev=>plev_ozone_save
     lat_ozone=>lat_ozone_save
     ozmixin=>ozmixin_save
-#ifdef DM_PARALLEL
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
     if_master: if(wrf_dm_on_monitor()) then
     call wrf_debug(1,'Master rank reads ozone.')
 #endif
@@ -3546,7 +3548,7 @@ subroutine oznini(ozmixm,pin,levsiz,num_months,XLAT,                &
       enddo
       enddo
       close(29)
-#ifdef DM_PARALLEL
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
      endif if_master
      call wrf_debug(1,"Broadcast ozone to other ranks.")
      call MPI_Bcast(ozmixin,size(ozmixin),MPI_REAL,0,local_communicator,ierr)

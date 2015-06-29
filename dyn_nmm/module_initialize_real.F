@@ -2088,6 +2088,7 @@ CONTAINS
          cos(rlat1)*cos(rlat2)*sin((rlon1-rlon2)/2)**2)))
   end function greatarc
 
+#ifdef HWRF    
    SUBROUTINE make_coupler_fort65(grid,&
         NDLMD,NDPHD,NWBD,NSBD,&
         NIDE,NJDE,PIFE,PJFE,tph0d,tlm0d)
@@ -2258,6 +2259,7 @@ CONTAINS
      call MPI_Barrier(local_communicator,ierr)
      call wrf_debug(1,"Master rejoined everyone.")
    END SUBROUTINE make_coupler_fort65
+#endif
 
 !------------------------------------------------------
 

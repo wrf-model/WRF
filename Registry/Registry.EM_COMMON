@@ -2522,7 +2522,7 @@ package   kesslerscheme   mp_physics==1                -             moist:qv,qc
 package   linscheme       mp_physics==2                -             moist:qv,qc,qr,qi,qs,qg
 package   wsm3scheme      mp_physics==3                -             moist:qv,qc,qr;state:re_cloud,re_ice,re_snow
 package   wsm5scheme      mp_physics==4                -             moist:qv,qc,qr,qi,qs;state:re_cloud,re_ice,re_snow
-package   etamp_hr        mp_physics==5                -             moist:qv,qc,qr,qs;scalar:qt;state:f_ice_phy,f_rain_phy,f_rimef_phy
+package   fer_mp_hires    mp_physics==5                -             moist:qv,qc,qr,qi,qs;state:f_ice,f_rain,f_rimef
 package   wsm6scheme      mp_physics==6                -             moist:qv,qc,qr,qi,qs,qg;state:re_cloud,re_ice,re_snow
 package   gsfcgcescheme   mp_physics==7                -             moist:qv,qc,qr,qi,qs,qg
 package   thompson        mp_physics==8                -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr;state:re_cloud,re_ice,re_snow

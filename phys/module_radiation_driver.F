@@ -1132,7 +1132,7 @@ CONTAINS
 !     Adapted from camrad code
      IF ( PRESENT( O3RAD ) ) THEN
         call wrf_debug(1,'Have o3rad')
-     IF ( o3input .EQ. 2 .AND. id .EQ. 1 ) THEN
+     IF ( o3input .EQ. 2 ) THEN
 !       ! Find the current month (adapted from Cavallo)
 !       CALL cam_time_interp( ozmixm, pin, levsiz, date_str, &
 !                             ids , ide , jds , jde , kds , kde , &

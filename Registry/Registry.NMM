@@ -1461,19 +1461,19 @@ rconfig   real h_diff                     namelist,physics      max_domains  0.1
 
 # cam radiation variables
 state  real    -       i{ls}jf ozmixm      1    -   -     -
-state  real   mth01    i{ls}jf ozmixm      1    -   h     "OZMIXMTH01"  "Month 1 CAM ozone mixing ratio"
-state  real   mth02    i{ls}jf ozmixm      1    -   h     "OZMIXMTH02"  "Month 2 CAM ozone mixing ratio"
-state  real   mth03    i{ls}jf ozmixm      1    -   h     "OZMIXMTH03"  "Month 3 CAM ozone mixing ratio"
-state  real   mth04    i{ls}jf ozmixm      1    -   h     "OZMIXMTH04"  "Month 4 CAM ozone mixing ratio"
-state  real   mth05    i{ls}jf ozmixm      1    -   h     "OZMIXMTH05"  "Month 5 CAM ozone mixing ratio"
-state  real   mth06    i{ls}jf ozmixm      1    -   h     "OZMIXMTH06"  "Month 6 CAM ozone mixing ratio"
-state  real   mth07    i{ls}jf ozmixm      1    -   h     "OZMIXMTH07"  "Month 7 CAM ozone mixing ratio"
-state  real   mth08    i{ls}jf ozmixm      1    -   h     "OZMIXMTH08"  "Month 8 CAM ozone mixing ratio"
-state  real   mth09    i{ls}jf ozmixm      1    -   h     "OZMIXMTH09"  "Month 9 CAM ozone mixing ratio"
-state  real   mth10    i{ls}jf ozmixm      1    -   h     "OZMIXMTH10"  "Month 10 CAM ozone mixing ratio"
-state  real   mth11    i{ls}jf ozmixm      1    -   h     "OZMIXMTH11"  "Month 11 CAM ozone mixing ratio"
-state  real   mth12    i{ls}jf ozmixm      1    -   h     "OZMIXMTH12"  "Month 12 CAM ozone mixing ratio"
-state  real   pin       {ls}     misc      1    -   h      "PIN"             "PRESSURE LEVEL OF OZONE MIXING RATIO"  "millibar"
+state  real   mth01    i{ls}jf ozmixm      1    -   -     "OZMIXMTH01"  "Month 1 CAM ozone mixing ratio"
+state  real   mth02    i{ls}jf ozmixm      1    -   -     "OZMIXMTH02"  "Month 2 CAM ozone mixing ratio"
+state  real   mth03    i{ls}jf ozmixm      1    -   -     "OZMIXMTH03"  "Month 3 CAM ozone mixing ratio"
+state  real   mth04    i{ls}jf ozmixm      1    -   -     "OZMIXMTH04"  "Month 4 CAM ozone mixing ratio"
+state  real   mth05    i{ls}jf ozmixm      1    -   -     "OZMIXMTH05"  "Month 5 CAM ozone mixing ratio"
+state  real   mth06    i{ls}jf ozmixm      1    -   -     "OZMIXMTH06"  "Month 6 CAM ozone mixing ratio"
+state  real   mth07    i{ls}jf ozmixm      1    -   -     "OZMIXMTH07"  "Month 7 CAM ozone mixing ratio"
+state  real   mth08    i{ls}jf ozmixm      1    -   -     "OZMIXMTH08"  "Month 8 CAM ozone mixing ratio"
+state  real   mth09    i{ls}jf ozmixm      1    -   -     "OZMIXMTH09"  "Month 9 CAM ozone mixing ratio"
+state  real   mth10    i{ls}jf ozmixm      1    -   -     "OZMIXMTH10"  "Month 10 CAM ozone mixing ratio"
+state  real   mth11    i{ls}jf ozmixm      1    -   -     "OZMIXMTH11"  "Month 11 CAM ozone mixing ratio"
+state  real   mth12    i{ls}jf ozmixm      1    -   -     "OZMIXMTH12"  "Month 12 CAM ozone mixing ratio"
+state  real   pin       {ls}     misc      1    -   -      "PIN"             "PRESSURE LEVEL OF OZONE MIXING RATIO"  "millibar"
 
 # new rad variables
 state    real   o3rad           ikj     misc        1         -      irh      "o3rad"    "RADIATION 3D OZONE" "ppmv"

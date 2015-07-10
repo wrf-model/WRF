@@ -1191,7 +1191,7 @@ The following are for observation nudging:
                                                       (dampcoef nondimensional ~0.01-0.1)
                                                   2 = with Rayleigh  damping (dampcoef inverse time scale [1/s] e.g. .003; idealized case only
                                                       not for real-data cases)
-                                                  3 = with w-Rayleigh damping (dampcoef inverse time scale [1/s] e.g. .05; 
+                                                  3 = with w-Rayleigh damping (dampcoef inverse time scale [1/s] e.g. .2; 
                                                       for real-data cases)
  use_theta_m                         = 0        ; 1: use theta_m=theta(1+1.61Qv)
                                                   0: use dry theta in dynamics

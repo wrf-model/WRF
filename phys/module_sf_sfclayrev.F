@@ -1090,6 +1090,8 @@ CONTAINS
 !
       function zolri2(zol2,ri2,z,z0)
 !
+      if(zol2*ri2 .lt. 0.)zol2=0.  ! limit zol2 - must be same sign as ri2
+!
       zol20=zol2*z0/z ! z0/L
       zol3=zol2+zol20 ! (z+z0)/L
 !

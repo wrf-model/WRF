@@ -1997,6 +1997,7 @@ SUBROUTINE open_aux_u ( grid , config_flags, stream, alarm_id, &
    EXTERNAL                                       insub
    INTEGER ,                     INTENT(OUT)   :: ierr
   ! Local
+   INTEGER                                :: stream_l
    CHARACTER*80                           :: fname, n2
    CHARACTER (LEN=256)                    :: message
    CHARACTER*80                           :: timestr
@@ -2019,14 +2020,11 @@ SUBROUTINE open_aux_u ( grid , config_flags, stream, alarm_id, &
      ENDIF
      CALL construct_filename2a ( fname , auxinput_inname, &
                                  grid%id , 2 , timestr )
-     IF      ( stream-first_input .EQ. 10 ) THEN
-       WRITE(n2,'("DATASET=AUXINPUT10")')
-     ELSE IF ( stream-first_input .EQ. 11 ) THEN
-       WRITE(n2,'("DATASET=AUXINPUT11")')
-     ELSE IF ( stream-first_input .GE. 10 ) THEN
-       WRITE(n2,'("DATASET=AUXINPUT",I2)')stream-first_input
+     stream_l = stream-auxinput1_only+1
+     IF (stream_l .GE. 10) THEN
+       WRITE(n2,'("DATASET=AUXINPUT",I2)')stream_l
      ELSE
-       WRITE(n2,'("DATASET=AUXINPUT",I1)')stream-first_input
+       WRITE(n2,'("DATASET=AUXINPUT",I1)')stream_l
      ENDIF
      WRITE ( message , '("open_aux_u : opening ",A," for reading. DATASET ",A)') TRIM ( fname ),TRIM(n2)
      CALL wrf_debug( 1, message )
@@ -2071,6 +2069,7 @@ SUBROUTINE open_hist_w ( grid , config_flags, stream, alarm_id, &
    INTEGER ,                     INTENT(OUT)   :: ierr
   ! Local
    INTEGER                                :: len_n2
+   INTEGER                                :: stream_l
    CHARACTER (LEN=256)                    :: message
    CHARACTER*80                           :: timestr
    TYPE(WRFU_Time)                        :: ST,CT
@@ -2093,12 +2092,13 @@ SUBROUTINE open_hist_w ( grid , config_flags, stream, alarm_id, &
    ENDIF
    CALL construct_filename2a ( fname , hist_outname, &
                                grid%id , 2 , timestr )
-   IF ( stream-first_history .EQ. history_only ) THEN
+   stream_l = stream-auxhist1_only+1
+   IF ( stream .EQ. history_only ) THEN
      WRITE(n2,'("DATASET=HISTORY")')
-   ELSE IF ( stream-first_history .GE. 10 ) THEN
-     WRITE(n2,'("DATASET=AUXHIST",I2)')stream-first_history
+   ELSE IF ( stream_l .GE. 10 ) THEN
+     WRITE(n2,'("DATASET=AUXHIST",I2)')stream_l
    ELSE
-     WRITE(n2,'("DATASET=AUXHIST",I1)')stream-first_history
+     WRITE(n2,'("DATASET=AUXHIST",I1)')stream_l
    ENDIF
    IF ( oid .eq. 0 ) THEN
      WRITE ( message , '("open_hist_w : opening ",A," for writing. ")') TRIM ( fname )

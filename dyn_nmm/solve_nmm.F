@@ -945,9 +945,9 @@
             ENDDO
           ENDDO
 !
-!zhang#ifdef DM_PARALLEL
-!zhang#    include "HALO_TRACERS.inc"
-!zhang#endif
+#ifdef DM_PARALLEL
+#    include "HALO_TRACERS.inc"
+#endif
       call check_grid(grid,config_flags,'before ADV2', &
             ids,ide,jds,jde,kds,kde, &
             ims,ime,jms,jme,kms,kme, &
@@ -974,9 +974,9 @@
           !temporary arguments
           ,grid%fne,grid%fse,grid%few,grid%fns,S1Z,TCS)
 !
-!zhang#ifdef DM_PARALLEL
-!zhang#    include "HALO_TRACERS.inc"
-!zhang#endif
+#ifdef DM_PARALLEL
+#    include "HALO_TRACERS.inc"
+#endif
       call check_grid(grid,config_flags,'before MONO', &
             ids,ide,jds,jde,kds,kde, &
             ims,ime,jms,jme,kms,kme, &

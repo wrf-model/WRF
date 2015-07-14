@@ -1803,15 +1803,15 @@
 #endif
         btimx=now_time()
 !-----------------
-!zhang#ifdef DM_PARALLEL
-!zhang#    include "HALO_NMM_J.inc"
-!zhang#endif
+#ifdef DM_PARALLEL
+#    include "HALO_NMM_J.inc"
+#endif
 !
-!zhang#ifdef DM_PARALLEL
-!zhang        IF (.NOT.ETAMP_PHYSICS) THEN
-!zhang#    include "HALO_NMM_J_3.inc"
-!zhang        ENDIF
-!zhang#endif
+#ifdef DM_PARALLEL
+        IF (.NOT.ETAMP_PHYSICS) THEN
+#    include "HALO_NMM_J_3.inc"
+        ENDIF
+#endif
 !
 !-----------------
         exch_tim=exch_tim+now_time()-btimx

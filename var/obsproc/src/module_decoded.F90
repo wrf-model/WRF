@@ -240,6 +240,10 @@ time_window_min, time_window_max, map_projection , missing_flag)
 
       END IF
 
+      ! initialize the vaiable that will be used later for checking
+      ! if the pw info is read or not
+      obs(obs_num)%ground%pw%data = missing_r
+
       !  The first read is the "once only" type of information.
 
       READ ( file_num , IOSTAT = io_error , FMT = rpt_format ) &
@@ -986,8 +990,6 @@ time_window_min, time_window_max, map_projection , missing_flag)
 
          IF ((obs (obs_num)%info%platform(1:12) .EQ. 'FM-15 METAR ' ) .AND. &
              (ASSOCIATED (obs (obs_num)%surface ) ) ) THEN
-            obs(obs_num)%ground%psfc%data = missing_r
-            obs(obs_num)%ground%psfc%qc   = missing
             if ( calc_psfc_from_QNH .and. gts_from_mmm_archive ) then
                if ( obs(obs_num)%ground%psfc%data > 0.0 .and. &
                     obs(obs_num)%info%elevation > 0.0 ) then
@@ -1003,6 +1005,9 @@ time_window_min, time_window_max, map_projection , missing_flag)
                         obs(obs_num)%ground%psfc%qc
                   end if  ! associated data
                end if  ! valid QNH and elev
+            else
+               obs(obs_num)%ground%psfc%data = missing_r
+               obs(obs_num)%ground%psfc%qc   = missing
             end if  ! calc_psfc_from_QNH and gts_from_mmm_archive
          END IF  ! metar
 
@@ -1587,6 +1592,10 @@ SUBROUTINE read_measurements (file_num, surface, location, info, bad_data, &
       !
       !  Assign the SSMI error (AFWA only)
       !
+
+      ! initialize the variable that might be used in module_err_ncep.F90
+      ! for checking if the error is pre-assigned
+      current%meas%speed%error = missing_r
 
       READ (info % platform (4:6), '(I3)') fm
 

@@ -1,4 +1,4 @@
-subroutine da_stage0_initialize(input_file, var, dim1, dim2, dim3, ds)
+subroutine da_stage0_initialize(input_file, var, dim1, dim2, dim3, ds, mp_physics)
 
    !-----------------------------------------------------------------------
    ! Purpose: TBD
@@ -14,6 +14,7 @@ subroutine da_stage0_initialize(input_file, var, dim1, dim2, dim3, ds)
    integer, intent(out)           :: dim2             ! Dimensions of field. 
    integer, intent(out)           :: dim3             ! Dimensions of field. 
    real, intent(out)              :: ds               ! Grid resolution.
+   integer, intent(out), optional :: mp_physics       ! microphysics option
 
    character (len=80)             :: att_name         ! Attribute name.
    integer                        :: i                ! Loop counters.
@@ -65,6 +66,13 @@ subroutine da_stage0_initialize(input_file, var, dim1, dim2, dim3, ds)
    rcode = NF_GET_ATT_real(cdfid, nf_global, att_name, value_real)
    ds = value_real(1)
    deallocate(value_real)
+
+   ! get MP_PHYSICS option
+   if ( present(mp_physics) ) then
+      mp_physics = 0 !initialize
+      ! get mp_physics from the global attribute
+      rcode = NF_GET_ATT_int(cdfid, nf_global, 'MP_PHYSICS', mp_physics)
+   end if
 
    rcode = nf_close(cdfid)
 

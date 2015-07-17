@@ -36,17 +36,16 @@ CONTAINS
       !  Pick up the number of members for each of the 4d arrays - for declaration purposes.
 
       USE module_state_description, ONLY: num_moist, num_chem, num_tracer, num_scalar, &
+                                          SKIP_PRESS_DIAGS, SKIP_Z_DIAGS,              &
                                           P_QG, P_QH, P_QV,                            &
                                           P_QNG, P_QH, P_QNH, P_QR, P_QNR,             &
-                                          SKIP_PRESS_DIAGS,                            &
                      KESSLERSCHEME, LINSCHEME, SBU_YLINSCHEME, WSM3SCHEME, WSM5SCHEME, &
                      WSM6SCHEME, ETAMPNEW, THOMPSON, THOMPSONAERO,                     &
                      MORR_TWO_MOMENT, GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME,           &
                      NSSL_2MOM, NSSL_2MOMCCN, NSSL_1MOM, NSSL_1MOMLFO,                 &
                      MILBRANDT2MOM , CAMMGMPSCHEME, FAST_KHAIN_LYNN, FULL_KHAIN_LYNN    !,MILBRANDT3MOM, NSSL_3MOM, MORR_MILB_P3
 
-      USE module_driver_constants, ONLY: max_plevs
-
+      USE module_driver_constants, ONLY: max_plevs, max_zlevs
 
       !  From where we preferably are pulling g, Cp, etc.
 
@@ -73,6 +72,7 @@ CONTAINS
       USE module_diag_misc, ONLY : diagnostic_output_calc
       USE module_diag_cl, ONLY : clwrf_output_calc
       USE module_diag_pld, ONLY : pld
+      USE module_diag_zld, ONLY : zld
       USE module_diag_afwa, ONLY : afwa_diagnostics_driver
 
 
@@ -849,6 +849,78 @@ CONTAINS
             !$OMP END PARALLEL DO
          END IF TIME_TO_DO_PL_DIAGS
       END IF PL_DIAGNOSTICS
+
+
+
+
+
+      !  Height level and AGL diagnostics.
+
+
+      ZL_DIAGNOSTICS : IF ( config_flags%z_lev_diags .NE. SKIP_Z_DIAGS ) THEN
+
+      !  Process the diags if this is the correct time step OR
+      !  if this is an adaptive timestep forecast.
+
+         TIME_TO_DO_ZL_DIAGS : IF ( ( ( MOD(NINT(curr_secs2+grid%dt),NINT(config_flags%z_lev_interval)) .EQ. 0 ) ) .OR. &
+               ( config_flags%use_adaptive_time_step ) ) THEN
+
+            !$OMP PARALLEL DO   &
+            !$OMP PRIVATE ( ij )
+            DO ij = 1 , grid%num_tiles
+
+               CALL wrf_debug ( 100 , '--> CALL DIAGNOSTICS PACKAGE: HEIGHT LEVEL AND AGL DIAGNOSTICS' )
+
+               CALL zld (                                                   &
+               !  Input data for computing
+                       U=grid%u_2                                           &
+                      ,V=grid%v_2                                           &
+                      ,W=grid%w_2                                           &
+                      ,t=grid%t_2                                           &
+                      ,qv=moist(:,:,:,P_QV)                                 &
+                      ,zp=grid%ph_2                                         &
+                      ,zb=grid%phb                                          &
+                      ,pp=grid%p                                            &
+                      ,pb=grid%pb                                           &
+                      ,p=grid%p_hyd                                         &
+                      ,pw=grid%p_hyd_w                                      &
+               !  Map factors, coriolis for diags
+                      ,msfux=grid%msfux                                     &
+                      ,msfuy=grid%msfuy                                     &
+                      ,msfvx=grid%msfvx                                     &
+                      ,msfvy=grid%msfvy                                     &
+                      ,msftx=grid%msftx                                     &
+                      ,msfty=grid%msfty                                     &
+                      ,f=grid%f                                             &
+                      ,e=grid%e                                             &
+                      ,ht=grid%ht                                           &
+               !  Namelist info
+                      ,use_tot_or_hyd_p=config_flags%use_tot_or_hyd_p       &
+                      ,extrap_below_grnd=config_flags%extrap_below_grnd     &
+                      ,missing=config_flags%z_lev_missing                   &
+               !  The diagnostics, mostly output variables
+                      ,num_z_levels=config_flags%num_z_levels               &
+                      ,max_z_levels=max_zlevs                               &
+                      ,z_levels=model_config_rec%z_levels                   &
+                      ,z_zl  = grid%z_zl                                    &
+                      ,u_zl  = grid%u_zl                                    &
+                      ,v_zl  = grid%v_zl                                    &
+                      ,t_zl  = grid%t_zl                                    &
+                      ,rh_zl = grid%rh_zl                                   &
+                      ,ght_zl= grid%ght_zl                                  &
+                      ,s_zl  = grid%s_zl                                    &
+                      ,td_zl = grid%td_zl                                   &
+                      ,q_zl = grid%q_zl                                     &
+               !  Dimension arguments
+                      ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde    &
+                      ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme    &
+                      ,ITS=grid%i_start(ij),ITE=grid%i_end(ij)              &
+                      ,JTS=grid%j_start(ij),JTE=grid%j_end(ij)              &
+                      ,KTS=k_start,KTE=k_end+1                              )
+            END DO
+            !$OMP END PARALLEL DO
+         END IF TIME_TO_DO_ZL_DIAGS
+      END IF ZL_DIAGNOSTICS
 
 
 

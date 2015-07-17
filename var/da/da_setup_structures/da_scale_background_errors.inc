@@ -11,6 +11,8 @@ subroutine da_scale_background_errors ( be, it )
    integer                     :: be_rf_unit, be_print_unit
    integer  :: i, ix, jy, kz, v1_mz, v2_mz, v3_mz, v4_mz, v5_mz
    real     :: ds
+
+   if ( jb_factor <= 0.0 ) return
 !
 ! Rewind the unit:
     be_rf_unit    = unit_end + 1

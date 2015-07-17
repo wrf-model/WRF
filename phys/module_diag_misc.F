@@ -250,6 +250,7 @@ CONTAINS
    REAL :: depth
 
       DOUBLE PRECISION:: hail_max
+      REAL:: hail_max_sp
       DOUBLE PRECISION, PARAMETER:: thresh_conc = 0.01d0                 ! number conc. of graupel/hail per cubic meter
       LOGICAL:: scheme_has_graupel
       INTEGER, PARAMETER:: ngbins=50
@@ -987,10 +988,11 @@ CONTAINS
             WRITE(outstring,*) 'GT-Debug-Hail, ', hail_max*1000.
             CALL wrf_debug (350, TRIM(outstring))
            endif
+           hail_max_sp = hail_max
            if (k.eq.kms) then
-              hail_maxk1(i,j) = MAX(hail_maxk1(i,j), hail_max)
+              hail_maxk1(i,j) = MAX(hail_maxk1(i,j), hail_max_sp)
            endif
-           hail_max2d(i,j) = MAX(hail_max2d(i,j), hail_max)
+           hail_max2d(i,j) = MAX(hail_max2d(i,j), hail_max_sp)
         ENDDO
         ENDDO
         ENDDO

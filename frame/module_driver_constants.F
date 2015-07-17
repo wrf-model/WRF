@@ -62,6 +62,10 @@ MODULE module_driver_constants
 
    INTEGER , PARAMETER :: max_plevs       =   100
 
+   !  The maximum number of height levels to interpolate to, for diagnostics
+
+   INTEGER , PARAMETER :: max_zlevs       =   100
+
    !  The maximum number of trackchem
 
    INTEGER , PARAMETER :: max_trackchem   =   100

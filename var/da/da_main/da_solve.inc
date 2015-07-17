@@ -449,6 +449,14 @@
       be % v3 % mz = 0
       be % v4 % mz = 0
       be % v5 % mz = 0
+#ifdef CLOUD_CV
+      be % v6  % mz = 0
+      be % v7  % mz = 0
+      be % v8  % mz = 0
+      be % v9  % mz = 0
+      be % v10 % mz = 0
+      be % v11 % mz = 0
+#endif
    end if
 
     ! overwrite variables defined in da_setup_cv.inc set in the call to da_setup_background_errors

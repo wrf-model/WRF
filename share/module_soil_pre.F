@@ -1355,7 +1355,6 @@ cycle
 
       IF (num_soil_layers.NE.1)THEN
          DO j=jts,jtf
-            IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
             DO l=1,num_soil_layers
                DO i=its,itf
                  tslb(i,l,j)=( tsk(i,j)*(zs(num_soil_layers)-zs(l)) + tmn(i,j)*(zs(l)-zs(1)) ) / &
@@ -1783,7 +1782,6 @@ cycle
       DO j=jts,jtf
          DO l=1,num_soil_layers
             DO i=its,itf
-               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                if (xland(i,j) .lt. 1.5) then
                smois(i,1,j)=0.30
                smois(i,2,j)=0.30

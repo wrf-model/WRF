@@ -828,6 +828,37 @@
          END DO
       END IF
 
+
+!-----------------------------------------------------------------------
+! If we have asked for the height-level diagnostics, make sure we can output them
+!-----------------------------------------------------------------------
+
+      IF ( model_config_rec%z_lev_diags .EQ. 1 ) THEN
+         DO i = 1, model_config_rec % max_dom
+            IF ( ( MAX ( model_config_rec%auxhist22_interval  (i) , &
+                         model_config_rec%auxhist22_interval_d(i) , &
+                         model_config_rec%auxhist22_interval_h(i) , &
+                         model_config_rec%auxhist22_interval_m(i) , &
+                         model_config_rec%auxhist22_interval_s(i) ) == 0 ) .OR. &
+                 (  model_config_rec%io_form_auxhist22 == 0 ) ) THEN
+               wrf_err_message = '--- ERROR: z_lev_diags requires auxhist22 file information'
+               CALL wrf_message ( wrf_err_message )
+               wrf_err_message = '--- ERROR: provide: auxhist22_interval (max_dom) and io_form_auxhist22'
+               CALL wrf_message ( wrf_err_message )
+               wrf_err_message = '--- Add supporting IO for stream 22 for height-level diags'
+               CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
+            END IF
+         END DO
+         DO i = 1, model_config_rec % max_dom
+            model_config_rec%z_lev_interval(i) = model_config_rec%auxhist22_interval  (i)*   60 + &
+                                                 model_config_rec%auxhist22_interval_d(i)*86400 + &
+                                                 model_config_rec%auxhist22_interval_h(i)* 3600 + &
+                                                 model_config_rec%auxhist22_interval_m(i)*   60 + &
+                                                 model_config_rec%auxhist22_interval_s(i)
+         END DO
+      END IF
+
+
 !-----------------------------------------------------------------------
 ! For nwp_diagnostics = 1, history_interval must be used.           
 !-----------------------------------------------------------------------
@@ -1108,10 +1139,14 @@
 !  than RRTMG_LWSCHEME and RRTMG_SWSCHEME.
 !-----------------------------------------------------------------------
 
-      IF ( ( model_config_rec % ra_lw_physics(1) .NE. RRTMG_LWSCHEME )  .OR. &
-           ( model_config_rec % ra_sw_physics(1) .NE. RRTMG_SWSCHEME )  .OR. &
-           ( model_config_rec % ra_lw_physics(1) .NE. RRTMG_LWSCHEME_FAST )  .OR. &
-           ( model_config_rec % ra_sw_physics(1) .NE. RRTMG_SWSCHEME_FAST )  ) THEN
+      IF ( ( model_config_rec % ra_lw_physics(1) .EQ. RRTMG_LWSCHEME )  .OR. &
+           ( model_config_rec % ra_sw_physics(1) .EQ. RRTMG_SWSCHEME )  .OR. &
+           ( model_config_rec % ra_lw_physics(1) .EQ. RRTMG_LWSCHEME_FAST )  .OR. &
+           ( model_config_rec % ra_sw_physics(1) .EQ. RRTMG_SWSCHEME_FAST )  ) THEN
+         wrf_err_message = '--- NOTE: RRTMG radiation is used, namelist ' // &
+                           'value for o3input (ozone input) is used '
+!        CALL wrf_message ( wrf_err_message )
+      ELSE
          model_config_rec % o3input = 0
          wrf_err_message = '--- NOTE: RRTMG radiation is not used, setting:  ' // &
                            'o3input=0 to avoid data pre-processing'

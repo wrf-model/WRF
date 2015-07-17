@@ -662,7 +662,7 @@ IF ( config_flags%check_TL .or. config_flags%check_AD ) THEN
    CALL wrf_message(TRIM(wrf_err_message))
 
    CALL restore_grid ( head_grid )
-   CALL copy_s_to_g_adjtest ( head_grid, 0.1 )
+   CALL copy_s_to_g_adjtest ( head_grid, 0.01 )
 
    CALL copy_g_to_b_adjtest ( head_grid )
 

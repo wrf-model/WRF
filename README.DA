@@ -23,13 +23,37 @@ WRFDA, including infringement actions.
 This is the main directory for the WRFDA Version 3 source code release.
 ======================================
 
+V3.7 Release Notes :
+-------------------
+
+Version 3.7 was released on April 20, 2015.
+
+  For more information on WRFDA, visit the WRFDA Users home page
+  http://www2.mmm.ucar.edu/wrf/users/wrfda/index.html
+
+  New features:
+
+    -New background error option: CV7 (cv_options = 7)
+    -Radar assimilation has been updated: new options have been added for reflectivity assimilation
+    -A new mp_physics option is available for WRFPLUS in 4DVAR runs
+
+  Updated features:
+
+    -WRFDA can now use WRF files with the "lat-lon" (cylindrical equidistant) map projection. This 
+     does not include global WRF files.
+    -Updated libraries:
+        -RTTOV interface is now for RTTOV Version 11.1 or 11.2
+    -Bug fixes and performance improvements
+    -WRFPLUS has been upgraded to V3.7.
+======================================
+
 V3.6.1 Release Notes :
 -------------------
 
 Version 3.6.1 was released on August 14, 2014.
 
   For more information about WRFDA, visit the WRFDA Users home page
-  http://www.mmm.ucar.edu/wrf/users/wrfda/index.html
+  http://www2.mmm.ucar.edu/wrf/users/wrfda/index.html
 
   Updated features:
 
@@ -42,7 +66,7 @@ Version 3.6.1 was released on August 14, 2014.
         - Many other minor problems
     - WRFPLUS has been upgraded to V3.6.1
 
-See http://www.mmm.ucar.edu/wrf/users/wrfda/updates-3.6.1.html for a full list of updates
+See http://www2.mmm.ucar.edu/wrf/users/wrfda/updates-3.6.1.html for a full list of updates
 
 ======================================
 V3.6 Release Notes :
@@ -51,7 +75,7 @@ V3.6 Release Notes :
 Version 3.6 was released on April 18, 2014.
 
   For more information on WRFDA, visit the WRFDA Users home page
-  http://www.mmm.ucar.edu/wrf/users/wrfda/index.html
+  http://www2.mmm.ucar.edu/wrf/users/wrfda/index.html
 
   New features:
 
@@ -81,7 +105,7 @@ V3.5.1 Release Notes :
 Version 3.5.1 is released on September 23, 2013.
 
   For more information on WRFDA, visit the WRFDA Users home page
-  http://www.mmm.ucar.edu/wrf/users/wrfda/index.html
+  http://www2.mmm.ucar.edu/wrf/users/wrfda/index.html
 
 
   The following bugs have been fixed:
@@ -100,7 +124,7 @@ V3.5 Release Notes :
 Version 3.5 is released on April 18. 2013.
 
   For more information on WRFDA, visit the WRFDA Users home page
-  http://www.mmm.ucar.edu/wrf/users/wrfda/index.html
+  http://www2.mmm.ucar.edu/wrf/users/wrfda/index.html
 
   New features:
 
@@ -128,7 +152,7 @@ V3.4.1 Release Notes :
 Version 3.4.1 is released on August 16, 2012.
 
 - For more information on WRFDA, visit the WRFDA Users home page
-  http://www.mmm.ucar.edu/wrf/users/wrfda/index.html
+  http://www2.mmm.ucar.edu/wrf/users/wrfda/index.html
 
 - WRFDA registry files have been reconstructed.
   Default namelist settings are now in registry.var file.
@@ -243,7 +267,7 @@ V3.1 Release Notes:
 Version 3.1 is released on April 9, 2009.
 
 - For more information on WRFDA, visit the new WRFDA Users home page
-  http://www.mmm.ucar.edu/wrf/users/wrfda/index.html
+  http://www2.mmm.ucar.edu/wrf/users/wrfda/index.html
   and read the online User's Gudie.
 
 - 4DVAR and radiance data assimilation capabilities are included in V3.1.
@@ -278,7 +302,7 @@ Version 3.1 is released on April 9, 2009.
 
 - Most of the scripts under WRFDA/var/scripts are removed from the main source
   code tar file. They can still be downloaded separately.
-  See http://www.mmm.ucar.edu/wrf/users/wrfda/download/tools.html
+  See http://www2.mmm.ucar.edu/wrf/users/wrfda/download/tools.html
 
 For questions, send mail to wrfhelp@ucar.edu
 

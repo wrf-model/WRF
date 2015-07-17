@@ -350,7 +350,9 @@ between selected output times (e.g. daily) in auxhist3
  frames_per_auxhist3     = 1
  /
 
-** for pressure-level (and some surface) diagnostics, output is on stream 23
+
+** for pressure-level (and some surface) diagnostics, output is on stream 23,
+where the listed pressure levels are in Pa
 
  &time_control
  io_form_auxhist23                   =  2,
@@ -364,6 +366,23 @@ between selected output times (e.g. daily) in auxhist3
  num_press_levels                    = 4
  press_levels                        = 85000, 70000, 50000, 25000
  use_tot_or_hyd_p                    = 2
+ /
+
+
+** for height-level diagnostics, output is on stream 22 (negative values
+for z_levels means AGL, so -500 is 500 m AGL, and 10000 is 10 km).
+
+ &time_control
+ io_form_auxhist22                   =  2,
+ auxhist22_interval                  = 30,   30,    30,
+ frames_per_auxhist22                =  1,    1,     1, 
+ auxhist22_outname                   = "ZLEVS_d<domain>_<date>"
+ /
+
+ &diags
+ z_lev_diags                         = 1
+ num_z_levels                        = 2
+ z_levels                            = -500, 10000
  /
 
 

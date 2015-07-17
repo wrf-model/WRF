@@ -1574,11 +1574,11 @@ SUBSET: &
         if (cfm(fm) .eq. 'SPSSMI') then
           r8arr(1:11,1) = bufrlib_missing
           r8arr(1,1) = 6.
-          r8arr(2,1) = obs (loop_index) % ground  % pw   % data
+          r8arr(2,1) = 10.0*obs (loop_index) % ground  % pw  % data  !cm to mm
           r8arr(3,1) = qz (obs (loop_index) % ground  % pw   % qc)
           r8arr(4,1) = 1
           r8arr(5,1) = 100
-          r8arr(6,1) = obs (loop_index) % ground  % pw   % error
+          r8arr(6,1) = 10.0*obs (loop_index) % ground  % pw  % error !cm to mm
 	  if (vld) then
             call assignv( obs (loop_index) % surface % meas % speed % data, &
               r8arr(7,1) )                        ! FFO

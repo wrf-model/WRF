@@ -304,8 +304,7 @@ END IF
                              iv % radar(n) % rgr(k) % qc = 0
                         end if  ! temp
                      end if  ! it=1
-!                     iv % radar(n) % rsn(k) % qc = -5  ! wenxue
-!                     iv % radar(n) % rgr(k) % qc = -5 ! wenxue
+
                      if (iv % radar(n) % rrn(k) % qc >= obs_qc_pointer) then
                         ! x=b**y; y=logb(x)
                         iv % radar(n) % rrn(k) % inv = iv % radar(n) % rrno(k) - model_qrn(k,n)
@@ -345,18 +344,12 @@ END IF
                if (abs(iv % radar(n) % rf(k) % qc - missing_data) > 1) then
                   if (abs(ob % radar(n) % rf(k) - missing_r) > 1.0 .AND. &
                        iv % radar(n) % rf(k) % qc >= obs_qc_pointer) then
-                     zr=iv%radar(n)%height(k) - iv%radar(n)%stn_loc%elv
-                     if ( ob % radar(n) % rf(k) .lt. 30.0 .or. zr.lt.1500)then
+                     if ( ob % radar(n) % rf(k) .lt. 30.0 .or. iv%radar(n)%model_p(k).gt.80000.0 )then
                         iv % radar(n) % rqv(k) % qc = -5
                      else
                         iv % radar(n) % rqv(k) % qc = 0
                      end if
-                     if (iv % radar(n) % rqv(k) % qc >= obs_qc_pointer) then
-                        if (ob % radar(n) % rf(k) >= 30.0 .and. ob % radar(n) % rf(k) < 40.0) then
-                           iv % radar(n) % rqvo(k)= 0.8*model_qs(k,n)
-                        else if (ob % radar(n) % rf(k) >= 40.0 .and. ob % radar(n) % rf(k) < 50.0) then
-                           iv % radar(n) % rqvo(k)= 0.9*model_qs(k,n)
-                        end if
+                     if (iv % radar(n) % rqv(k) % qc >= obs_qc_pointer) then                        
                         iv % radar(n) % rqv(k) % inv = iv % radar(n) % rqvo(k) - model_qv(k,n)
                         ! iv % radar(n) % rqv(k) % inv must be >= 0.0
                         iv % radar(n) % rqv(k) % inv = amax1(0.0,iv % radar(n) % rqv(k) % inv )
@@ -364,12 +357,6 @@ END IF
                      end if
                   end if ! obs qc and mising
                end if  ! iv qc and missing
-               if ( ob % radar(n) % rf(k) < -100) then
-                  iv % radar(n) % rqvo(k)= amax1(0.85*model_qv(k,n),0.85*model_qs(k,n))
-                  iv % radar(n) % rqv(k) % inv = iv % radar(n) % rqvo(k) - model_qv(k,n)
-                  iv % radar(n) % rqv(k) % inv = amin1(0.0,iv % radar(n) % rqv(k) % inv )
-                  iv % radar(n) % rqv(k) % error = amax1(0.001,0.20*iv % radar(n) % rqvo(k))
-               end if
             end if  ! use rqv
 
          end if  ! not surface or model lid

@@ -23,11 +23,9 @@ Description of WRFDA namelist variables
   check_max_iv_print      = .true.  ; obsolete (only used by Radar)
 /
 &wrfvar2
-  analysis_accu           = 900     ; second, if time difference between namelist setting
+  analysis_accu           = 900     ; seconds, if time difference between namelist setting
                                     ; (analysis_date) and date info read in from first guess
-                                    ; is larger than analysis_accu, WRFr will issue a
-                                    ; warning message ("=======> Wrong xb time found???"), 
-                                    ; but won't abort.
+                                    ; is larger than analysis_accu, WRFDA will abort
   calc_w_increment        = .false. ; .true.: the increment of the vertical velocity w will be 
                                     ;         diagnosed based on the increments of other fields.
                                     ;         If use_radarobs=.true., the w increments are always
@@ -76,9 +74,9 @@ Description of WRFDA namelist variables
   use_gpspwobs            = .true.
   use_gpsrefobs           = .true.
   use_qscatobs            = .true.
-  use_radarobs            = .false.  ; .true.: Assimilate radar data; see User's Guide for more information
-  use_radar_rv            = .false.  ; Assimilate radar velocity observations
-  use_radar_rf            = .false.  ; Assimilate radar reflectivity using original reflectivity operator (total mixing ratio)
+  use_radarobs            = .false.  ; .true.: Assimilate radar data; see User's Guide for more information
+  use_radar_rv            = .false.  ; Assimilate radar velocity observations
+  use_radar_rf            = .false.  ; Assimilate radar reflectivity using original reflectivity operator (total mixing ratio)
   use_radar_rqv           = .false.  ; Assimilate radar reflectivity using estimated humidity from radar reflectivity
   use_radar_rhv           = .false.  ; Assimilate radar reflectivity using rainwater and ice mixing ratios
   use_3dvar_phy           = .true.   ; Partition hydrometeors via the moist explicit scheme (warm rain process)
@@ -99,11 +97,10 @@ Description of WRFDA namelist variables
   use_amsubobs            = .false.  ; .true.: to read in data from amsub.bufr
   use_airsobs             = .false.  ; .true.: to read in data from airs.bufr
   use_eos_amsuaobs        = .false.  ; .true.: to read in EOS AMSUA data from airs.bufr
-  use_hsbobs              = .false.  ; .true.: to read in data from hsb.bufr
   use_ssmisobs            = .false.  ; .true.: to read in data from ssmis.bufr
   use_atmsobs             = .false.  ; .true.: to read in data from atms.bufr
-  use_iasisobs            = .false.  ; .true.: to read in data from iasi.bufr
-  use_sevirisobs          = .false.  ; .true.: to read in data from seviri.bufr
+  use_iasiobs             = .false.  ; .true.: to read in data from iasi.bufr
+  use_seviriobs           = .false.  ; .true.: to read in data from seviri.bufr
   use_obs_errfac          = .false.  ; .true.: apply obs error tuning factors if errfac.dat is available
                                      ; for conventional data only
 /
@@ -124,11 +121,11 @@ Description of WRFDA namelist variables
   max_error_rv            = 5.0      ; maximum check_max_iv error check factor for radar radial velocity
   max_error_rf            = 5.0      ; maximum check_max_iv error check factor for radar reflectivity
   max_error_rain          = 5.0      ; maximum check_max_iv error check factor for precipitation 
-  max_omb_sp              = 14.0     ; Max absolute value of innovation for wind speed obs in m/s; if 
+  max_omb_spd             = 14.0     ; Max absolute value of innovation for wind speed obs in m/s; if 
                                      ; innov. is greater than this value it will be set to zero
   max_omb_dir             = 135.0    ; Max absolute value of innovation for wind direction obs in degrees; 
                                      ; if innov. is greater than this value it will be set to zero
-  max_error_sp            = 5.0      ; maximum check_max_iv error check factor for wind speed
+  max_error_spd           = 5.0      ; maximum check_max_iv error check factor for wind speed
   max_error_dir           = 5.0      ; maximum check_max_iv error check factor for wind direction
 
 /
@@ -367,12 +364,10 @@ Description of WRFDA namelist variables
 &wrfvar18   ; needs to set &wrfvar21 and &wrfvar22 as well if ob_format=1 and/or radiances are used.
   analysis_date           = "2002-08-03_00:00:00.0000"   ; specify the analysis time. It should be 
                                                          ; consistent with the first guess time.
-                                                         ; However, if time difference between 
-                                                         ; analysis_date and date info read in from 
-                                                         ; first guess is larger than analysis_accu, 
-                                                         ; WRFDA will issue a warning message 
-                                                         ; ("=======> Wrong xb time found???"),
-                                                         ; but won't abort.
+                                                         ; If time difference between analysis_date
+                                                         ; and date info read in from first guess 
+                                                         ; is larger than analysis_accu, WRFDA will 
+                                                         ; abort.
 /
 &wrfvar19   ; needs to be set together with &wrfvar15
   pseudo_var              = "t"   ; set the pseudo ob variable

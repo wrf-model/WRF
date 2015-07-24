@@ -2279,7 +2279,7 @@ SUBROUTINE horizontal_pressure_gradient( ru_tend,rv_tend,                &
                      (ph (i,k+1,j)-ph (i,k+1,j-1) + ph(i,k,j)-ph(i,k,j-1))  &
                     +(alt(i,k  ,j)+alt(i,k  ,j-1))*(p (i,k,j)-p (i,k,j-1))  &
                     +(al (i,k  ,j)+al (i,k  ,j-1))*(pb(i,k,j)-pb(i,k,j-1)) )
-            rv_tend(i,k,j) = rv_tend(i,k,j)-cqv(i,k,j)*dpy
+            rv_tend(i,k,j) = rv_tend(i,k,j)-dpy
           END DO
         END DO
 
@@ -2355,7 +2355,7 @@ SUBROUTINE horizontal_pressure_gradient( ru_tend,rv_tend,                &
                         (ph (i,k+1,j)-ph (i-1,k+1,j) + ph(i,k,j)-ph(i-1,k,j))  &
                        +(alt(i,k  ,j)+alt(i-1,k  ,j))*(p (i,k,j)-p (i-1,k,j))  &
                        +(al (i,k  ,j)+al (i-1,k  ,j))*(pb(i,k,j)-pb(i-1,k,j)) )
-            ru_tend(i,k,j) = ru_tend(i,k,j)-cqu(i,k,j)*dpx
+            ru_tend(i,k,j) = ru_tend(i,k,j)-dpx
           END DO
         END DO
 

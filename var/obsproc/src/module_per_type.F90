@@ -143,9 +143,9 @@ SUBROUTINE print_per_type (title, caption,iend)
    !  Format
 
    IF (iend .LT. 8) THEN 
-   WRITE (fmt_obs,'(A,I1,A)') "(A,",iend+1,"(I6,2X))"
+   WRITE (fmt_obs,'(A,I1,A)') "(A,",iend+1,"(I7,1X))"
    ELSE
-   WRITE (fmt_obs,'(A,I2,A)') "(A,",iend+1,"(I6,2X))"
+   WRITE (fmt_obs,'(A,I2,A)') "(A,",iend+1,"(I7,1X))"
    ENDIF
 
    ! Print title
@@ -154,7 +154,7 @@ SUBROUTINE print_per_type (title, caption,iend)
 '------------------------------------------------------------------------------'
    WRITE (UNIT = 0, FMT = '(A,/)') TRIM (title)
 
-   WRITE (UNIT = 0, FMT = '(14X,A7)',ADVANCE='no') caption (1:7)
+   WRITE (UNIT = 0, FMT = '(15X,A7)',ADVANCE='no') caption (1:7)
 
    DO i = 1, iend
       WRITE (UNIT = 0, FMT = '(1X,A7)',ADVANCE='no') caption (7*i+1:7*(i+1))

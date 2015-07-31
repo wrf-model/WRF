@@ -2061,8 +2061,9 @@ CONTAINS
      IF ( PRESENT( diffuse_frac ) ) THEN 
          DO j=jts,jte
          DO i=its,ite
-           if (coszen(i,j).gt.1e-3) then
+           if (swdown(i,j).gt.0.001) then
               diffuse_frac(i,j) = swddif(i,j)/swdown(i,j)
+              diffuse_frac(i,j) = min(diffuse_frac(i,j),1.0)
            else
               diffuse_frac(i,j) = 0.
            endif

@@ -6358,8 +6358,7 @@ SUBROUTINE A_HORIZONTAL_PRESSURE_GRADIENT(ru_tend, ru_tendb, rv_tend, &
     IF (branch .EQ. 0) THEN
       DO k=ktf,1,-1
         DO i=itf,i_start,-1
-          cqub(i, k, j) = cqub(i, k, j) - dpx*ru_tendb(i, k, j)
-          dpxb = -(cqu(i, k, j)*ru_tendb(i, k, j))
+          dpxb = -(ru_tendb(i, k, j))
           CALL POPREAL8(dpx)
           temp10 = pb(i, k, j) - pb(i-1, k, j)
           temp9 = p(i, k, j) - p(i-1, k, j)
@@ -6469,8 +6468,7 @@ SUBROUTINE A_HORIZONTAL_PRESSURE_GRADIENT(ru_tend, ru_tendb, rv_tend, &
         CALL POPINTEGER4(ad_from3)
         CALL POPINTEGER4(ad_to5)
         DO i=ad_to5,ad_from3,-1
-          cqvb(i, k, j) = cqvb(i, k, j) - dpy*rv_tendb(i, k, j)
-          dpyb = -(cqv(i, k, j)*rv_tendb(i, k, j))
+          dpyb = -(rv_tendb(i, k, j))
           CALL POPREAL8(dpy)
           temp4 = pb(i, k, j) - pb(i, k, j-1)
           temp3 = p(i, k, j) - p(i, k, j-1)

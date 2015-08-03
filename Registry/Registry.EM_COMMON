@@ -1338,7 +1338,7 @@ state    real  SWDOWNC          ij      misc        1         -      -        "S
 state    real  GSW              ij      misc        1         -      rd       "GSW"                   "NET SHORT WAVE FLUX AT GROUND SURFACE"           "W m-2"      
 state    real  GLW              ij      misc        1         -      rhd      "GLW"                   "DOWNWARD LONG WAVE FLUX AT GROUND SURFACE"            "W m-2"      
 state    real  SWNORM           ij      misc        1         -      rhd      "SWNORM"                "NORMAL SHORT WAVE FLUX AT GROUND SURFACE (SLOPE-DEPENDENT)"           "W m-2"
-state    real  diffuse_frac     ij      misc        1         -      rhd      "DIFFUSE_FRAC"          "DIFFUSE FRACTION OF SURFACE SHORTWAVE IRRADIANCE"       ""
+state    real  diffuse_frac     ij      misc        1         -      rd       "DIFFUSE_FRAC"          "DIFFUSE FRACTION OF SURFACE SHORTWAVE IRRADIANCE"       ""
 # WRF-Solar
 state   real    swddir       ij     misc         1         -     rd     "SWDDIR"     "Shortwave surface downward direct irradiance" "W m-2" ""
 state   real    swddni       ij     misc         1         -     rd     "SWDDNI"     "Shortwave surface downward direct normal irradiance" "W m-2" ""

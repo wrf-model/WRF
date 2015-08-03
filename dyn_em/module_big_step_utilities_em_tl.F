@@ -2697,9 +2697,8 @@ SUBROUTINE G_HORIZONTAL_PRESSURE_GRADIENT(ru_tend, ru_tendd, rv_tend, &
 &            ph(i, k+1, j-1)+ph(i, k, j)-ph(i, k, j-1)+(alt(i, k, j)+alt(&
 &            i, k, j-1))*(p(i, k, j)-p(i, k, j-1))+(al(i, k, j)+al(i, k, &
 &            j-1))*(pb(i, k, j)-pb(i, k, j-1)))
-          rv_tendd(i, k, j) = rv_tendd(i, k, j) - cqvd(i, k, j)*dpy - &
-&            cqv(i, k, j)*dpyd
-          rv_tend(i, k, j) = rv_tend(i, k, j) - cqv(i, k, j)*dpy
+          rv_tendd(i, k, j) = rv_tendd(i, k, j) - dpyd
+          rv_tend(i, k, j) = rv_tend(i, k, j) - dpy
         END DO
       END DO
     END IF
@@ -2801,9 +2800,8 @@ SUBROUTINE G_HORIZONTAL_PRESSURE_GRADIENT(ru_tend, ru_tendd, rv_tend, &
 &            ph(i-1, k+1, j)+ph(i, k, j)-ph(i-1, k, j)+(alt(i, k, j)+alt(&
 &            i-1, k, j))*(p(i, k, j)-p(i-1, k, j))+(al(i, k, j)+al(i-1, k&
 &            , j))*(pb(i, k, j)-pb(i-1, k, j)))
-          ru_tendd(i, k, j) = ru_tendd(i, k, j) - cqud(i, k, j)*dpx - &
-&            cqu(i, k, j)*dpxd
-          ru_tend(i, k, j) = ru_tend(i, k, j) - cqu(i, k, j)*dpx
+          ru_tendd(i, k, j) = ru_tendd(i, k, j) - dpxd
+          ru_tend(i, k, j) = ru_tend(i, k, j) - dpx
         END DO
       END DO
     END IF

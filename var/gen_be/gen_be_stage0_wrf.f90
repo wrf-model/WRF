@@ -286,10 +286,8 @@ program gen_be_stage0_wrf
             ! For cv_options == 7, u is stored in psi, v is stored in chi
             do j = 1, dim2
                do i = 1, dim1
-                  psi(i,j,k) = 0.25 * ( u(i,j) + u(i+1,j) + &
-                               u(i,j+1) + u(i+1,j+1) )
-                  chi(i,j,k) = 0.25 * ( v(i,j) + v(i+1,j) + &
-                               v(i,j+1) + v(i+1,j+1) )
+                  psi(i,j,k) = 0.5 * ( u(i,j) + u(i+1,j) )
+                  chi(i,j,k) = 0.5 * ( v(i,j) + v(i,j+1) )
                end do
             end do
          else

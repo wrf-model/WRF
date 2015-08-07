@@ -224,7 +224,7 @@
 #endif
       LOGICAL :: E_BDY,N_BDY,S_BDY,W_BDY,WARM_RAIN,ADV_MOIST_COND
       LOGICAL :: START_OF_SIMULATION
-      LOGICAL :: LRESTART
+      LOGICAL :: LRESTART, nestmove
       LOGICAL :: ETAMP_Regional, ICE1_indx, ICE2_indx
       LOGICAL :: IS_CAMMGMP_USED=.FALSE.
 
@@ -304,6 +304,7 @@
 !
         RESTRT=config_flags%restart
         ANAL=config_flags%analysis                
+        nestmove=RESTRT .and. .not. allowed_to_read
 
 #ifdef HWRF
 ! Sam's doing for hour 0 & 6 nest movement safeguards
@@ -1627,9 +1628,14 @@
       IF((.NOT.RESTRT.OR.NEST).AND. allowed_to_read)THEN ! This is gopal's inclusion for moving nest
         DO K=KPS,KPE
           DO J=JFS,JFE
-          DO I=IFS,IFE
-            grid%dwdt(I,J,K)=1.
-          ENDDO
+             if(.not. nestmove .or. j<7 .or. j+6>jfe) then
+                DO I=IFS,IFE
+                   grid%dwdt(I,J,K)=1.
+                ENDDO
+             else
+                grid%dwdt(1:3,j,k)=1.
+                grid%dwdt(ife-2:ife,j,k)=1.
+             endif
           ENDDO
         ENDDO
       ENDIF
@@ -1670,16 +1676,35 @@
 #else
       IF(.NOT.RESTRT.OR.NEST)THEN
 #endif
+#ifdef IDEAL_NMM_TC
+        do k=kps,kpe
+          do j=jfs,jfe
+           do i=ifs,ife
+             grid%f(I,J)=0.5*GRID%DT*3.15656e-5 ! IDEAL CASE 0.5*DT*f (and not f!)
+           enddo
+          enddo
+        enddo
+#endif
+        if(nestmove) then
+           call wrf_message('Start_domain_nmm called for a nest move.')
+        endif
+
         DO K=KPS,KPE
         DO J=JFS,JFE
-        DO I=IFS,IFE
-          grid%pint(I,J,K)=grid%eta1(K)*grid%pdtop+grid%eta2(K)*grid%pdsl(I,J)+grid%pt
-          grid%z(I,J,K)=grid%pint(I,J,K)
-          grid%w(I,J,K)=0.
-#ifdef IDEAL_NMM_TC
-             grid%f(I,J)=0.5*GRID%DT*3.15656e-5 ! IDEAL CASE 0.5*DT*f (and not f!)
-#endif
-        ENDDO
+           if(.not.nestmove .or. j<7 .or. j+6>=jfe) then
+              DO I=IFS,IFE
+                 grid%pint(I,J,K)=grid%eta1(K)*grid%pdtop+grid%eta2(K)*grid%pdsl(I,J)+grid%pt
+                 grid%z(I,J,K)=grid%pint(I,J,K)
+                 grid%w(I,J,K)=0.
+              ENDDO
+           else
+              grid%pint(1:3,J,K)=grid%eta1(K)*grid%pdtop+grid%eta2(K)*grid%pdsl(I,J)+grid%pt
+              grid%z(1:3,J,K)=grid%pint(I,J,K)
+              grid%w(1:3,J,K)=0.
+              grid%pint(ife-2:ife,J,K)=grid%eta1(K)*grid%pdtop+grid%eta2(K)*grid%pdsl(I,J)+grid%pt
+              grid%z(ife-2:ife,J,K)=grid%pint(I,J,K)
+              grid%w(ife-2:ife,J,K)=0.
+           endif
         ENDDO
         ENDDO
       ENDIF

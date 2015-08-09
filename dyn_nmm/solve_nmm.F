@@ -2637,14 +2637,14 @@
 !
 !--------------------------------------------------------------------------------------------------------------
 !
-     IF(mod(grid%NTSD,grid%ntornado)==0) then
+     IF(grid%ntornado>0 .and. mod(grid%NTSD,grid%ntornado)==0) then
         btimx=now_time()
         CALL CALC_TORNADO_GENESIS(GRID,CONFIG_FLAGS)
         tornado_tim=tornado_tim+now_time()-btimx
      ENDIF
 
 #ifdef HWRF
-     IF(mod(grid%NTSD,grid%ntornado)==0) then
+     IF(grid%ntornado==0 .or. mod(grid%NTSD,grid%ntornado)==0) then
       have_best: if(size(grid%best_mslp)>1) then
          have_membrane: if(size(grid%membrane_mslp)>1) then
             call CALC_BEST_MSLP(grid%best_mslp,grid%mslp, &

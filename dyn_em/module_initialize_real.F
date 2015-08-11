@@ -5364,7 +5364,7 @@ print *,'p target= ',target_x
          !  and shift the range one index, then get an average.
 
          IF ( n .EQ. 9 ) THEN
-            CALL cubic_spline (all_dim, all_x, all_y, P2)
+            CALL cubic_spline (all_dim-1, all_x, all_y, P2)
 !
 ! Find the value of function f(x)
 !
@@ -5442,22 +5442,17 @@ print *,'p target= ',target_x
       !
       INTEGER :: I
       INTEGER, INTENT (IN) :: N
-      REAL, INTENT (IN), DIMENSION (N):: XI, FI
-      REAL, INTENT (OUT), DIMENSION (N):: P2
+      REAL, INTENT (IN), DIMENSION (N+1):: XI, FI
+      REAL, INTENT (OUT), DIMENSION (N+1):: P2
       REAL, DIMENSION (N):: G, H
       REAL, DIMENSION (N-1):: D, B, C
 !
 ! Assign the intervals and function differences
 !
-  DO I = 1, N-1
+  DO I = 1, N
     H(I) = XI(I+1) - XI(I)
     G(I) = FI(I+1) - FI(I)
   END DO
-!
-! The top vertical derivative is zero
-!
-  H(N) = H(N-1)
-  G(N) = 0
 !
 ! Evaluate the coefficient matrix elements
   DO I = 1, N-1
@@ -5470,6 +5465,7 @@ print *,'p target= ',target_x
 !
   CALL TRIDIAGONAL_LINEAR_EQ (N-1, D, C, C, B, G)
   P2(1) = 0
+  P2(N+1) = 0
   DO I = 2, N
     P2(I) = G(I-1)
   END DO

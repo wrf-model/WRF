@@ -176,8 +176,36 @@ integer::oops1,oops2
                                 ipsy, ipey, jpsy, jpey, kpsy, kpey )
       its = ips ; ite = ipe ; jts = jps ; jte = jpe ; kts = kps ; kte = kpe
 
-
       CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
+
+      !  Would the user prefer to forego the use of the level of max winds, or the
+      !  tropopause level data?  This is an option the user may select.  While the
+      !  additional data is able to provide good information (such as a better 
+      !  resolution of the jet, a better kink for the tropopause), there are 
+      !  horizontal gradients that are introduced.  Near a boundary, these gradients 
+      !  would be permanent (due to their inclusion in the LBC file).  To turn "off" 
+      !  the use of the max wind/trop data, set the flags for those levels to zero.
+
+      flag_pmaxw   = 0 
+      flag_pmaxwnn = 0 
+      flag_ptrop   = 0 
+      flag_ptropnn = 0 
+      IF ( ( config_flags%use_maxw_level .EQ. 0 ) .AND. &
+           ( ( flag_tmaxw .EQ. 1 ) .OR. ( flag_umaxw .EQ. 1 ) .OR. ( flag_vmaxw .EQ. 1 ) .OR. ( flag_hgtmaxw .EQ. 1 ) ) ) THEN
+         flag_tmaxw   = 0 
+         flag_umaxw   = 0 
+         flag_vmaxw   = 0 
+         flag_hgtmaxw = 0 
+         CALL wrf_debug ( 0 , 'Turning off use of MAX WIND level data in vertical interpolation' )
+      END IF
+      IF ( ( config_flags%use_trop_level .EQ. 0 ) .AND. &
+           ( ( flag_ttrop .EQ. 1 ) .OR. ( flag_utrop .EQ. 1 ) .OR. ( flag_vtrop .EQ. 1 ) .OR. ( flag_hgttrop .EQ. 1 ) ) ) THEN
+         flag_ttrop   = 0 
+         flag_utrop   = 0 
+         flag_vtrop   = 0 
+         flag_hgttrop = 0 
+         CALL wrf_debug ( 0 , 'Turning off use of TROPOPAUSE level data in vertical interpolation' )
+      END IF
 
       !   Lake Mask and depth assignment
 
@@ -1503,6 +1531,7 @@ integer::oops1,oops2
 
             CALL vert_interp ( grid%ght_gc , grid%pd_gc , grid%ph0 , grid%pb , &
                                grid%hgtmaxw , grid%hgttrop , grid%pmaxw , grid%ptrop , &
+                               grid%pmaxwnn , grid%ptropnn , &
                                flag_hgtmaxw , flag_hgttrop , &
                                config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                                config_flags%maxw_above_this_level , &
@@ -1557,6 +1586,7 @@ integer::oops1,oops2
 
          CALL vert_interp ( grid%rh_gc , grid%pd_gc , grid%u_1 , grid%pb , &
                             grid%hgtmaxw , grid%hgttrop , grid%pmaxw , grid%ptrop , &
+                            grid%pmaxwnn , grid%ptropnn , &
                             0 , 0 , &
                             config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                             config_flags%maxw_above_this_level , &
@@ -1593,6 +1623,7 @@ integer::oops1,oops2
          interp_type = 2
          CALL vert_interp ( grid%t_gc , grid%pd_gc , grid%t_2               , grid%pb , &
                             grid%tmaxw , grid%ttrop , grid%pmaxw , grid%ptrop , &
+                            grid%pmaxwnn , grid%ptropnn , &
                             flag_tmaxw , flag_ttrop , &
                             config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                             config_flags%maxw_above_this_level , &
@@ -1610,6 +1641,7 @@ integer::oops1,oops2
          interp_type = 1
          CALL vert_interp ( grid%p_gc , grid%pd_gc , grid%p               , grid%pb , &
                             grid%pmaxw , grid%ptrop , grid%pmaxw , grid%ptrop , &
+                            grid%pmaxwnn , grid%ptropnn , &
                             flag_pmaxw , flag_ptrop , &
                             config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                             config_flags%maxw_above_this_level , &
@@ -1673,6 +1705,7 @@ integer::oops1,oops2
                IF ( im .EQ. P_QR ) THEN
                   CALL vert_interp ( grid%qr_gc , grid%pd_gc , moist(:,:,:,P_QR) , grid%pb , &
                                      grid%hgtmaxw , grid%hgttrop , grid%pmaxw , grid%ptrop , &
+                                     grid%pmaxwnn , grid%ptropnn , &
                                      0 , 0 , &
                                      config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                                      config_flags%maxw_above_this_level , &
@@ -1702,6 +1735,7 @@ integer::oops1,oops2
                   END IF
                   CALL vert_interp ( grid%qc_gc , grid%pd_gc , moist(:,:,:,P_QC) , grid%pb , &
                                      grid%hgtmaxw , grid%hgttrop , grid%pmaxw , grid%ptrop , &
+                                     grid%pmaxwnn , grid%ptropnn , &
                                      0 , 0 , &
                                      config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                                      config_flags%maxw_above_this_level , &
@@ -1731,6 +1765,7 @@ integer::oops1,oops2
                   END IF
                   CALL vert_interp ( grid%qi_gc , grid%pd_gc , moist(:,:,:,P_QI) , grid%pb , &
                                      grid%hgtmaxw , grid%hgttrop , grid%pmaxw , grid%ptrop , &
+                                     grid%pmaxwnn , grid%ptropnn , &
                                      0 , 0 , &
                                      config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                                      config_flags%maxw_above_this_level , &
@@ -1750,6 +1785,7 @@ integer::oops1,oops2
                IF ( im .EQ. P_QS ) THEN
                   CALL vert_interp ( grid%qs_gc , grid%pd_gc , moist(:,:,:,P_QS) , grid%pb , &
                                      grid%hgtmaxw , grid%hgttrop , grid%pmaxw , grid%ptrop , &
+                                     grid%pmaxwnn , grid%ptropnn , &
                                      0 , 0 , &
                                      config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                                      config_flags%maxw_above_this_level , &
@@ -1769,6 +1805,7 @@ integer::oops1,oops2
                IF ( im .EQ. P_QG ) THEN
                   CALL vert_interp ( grid%qg_gc , grid%pd_gc , moist(:,:,:,P_QG) , grid%pb , &
                                      grid%hgtmaxw , grid%hgttrop , grid%pmaxw , grid%ptrop , &
+                                     grid%pmaxwnn , grid%ptropnn , &
                                      0 , 0 , &
                                      config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                                      config_flags%maxw_above_this_level , &
@@ -1788,6 +1825,7 @@ integer::oops1,oops2
                IF ( im .EQ. P_QH ) THEN
                   CALL vert_interp ( grid%qh_gc , grid%pd_gc , moist(:,:,:,P_QH) , grid%pb , &
                                      grid%hgtmaxw , grid%hgttrop , grid%pmaxw , grid%ptrop , &
+                                     grid%pmaxwnn , grid%ptropnn , &
                                      0 , 0 , &
                                      config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                                      config_flags%maxw_above_this_level , &
@@ -1807,6 +1845,7 @@ integer::oops1,oops2
                IF ( im .EQ. P_QNI ) THEN
                   CALL vert_interp ( grid%qni_gc , grid%pd_gc , scalar(:,:,:,P_QNI) , grid%pb , &
                                      grid%hgtmaxw , grid%hgttrop , grid%pmaxw , grid%ptrop , &
+                                     grid%pmaxwnn , grid%ptropnn , &
                                      0 , 0 , &
                                      config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                                      config_flags%maxw_above_this_level , &
@@ -1826,6 +1865,7 @@ integer::oops1,oops2
                IF ( im .EQ. P_QNR ) THEN
                   CALL vert_interp ( grid%qnr_gc , grid%pd_gc , scalar(:,:,:,P_QNR) , grid%pb , &
                                      grid%hgtmaxw , grid%hgttrop , grid%pmaxw , grid%ptrop , &
+                                     grid%pmaxwnn , grid%ptropnn , &
                                      0 , 0 , &
                                      config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                                      config_flags%maxw_above_this_level , &
@@ -1851,6 +1891,7 @@ integer::oops1,oops2
 !HRRR - aerosol input from WPS
                   CALL vert_interp ( grid%qnwfa_gc , grid%pd_gc , scalar(:,:,:,P_QNWFA) , grid%pb , &
                                      grid%hgtmaxw , grid%hgttrop , grid%pmaxw , grid%ptrop , &
+                                     grid%pmaxwnn , grid%ptropnn , &
                                      0 , 0 , &
                                      config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                                      config_flags%maxw_above_this_level , &
@@ -1865,6 +1906,7 @@ integer::oops1,oops2
                 else
                   CALL vert_interp ( grid%QNWFA_now , grid%pd_gc , scalar(:,:,:,P_QNWFA) , grid%pb , &
                                      grid%hgtmaxw , grid%hgttrop , grid%pmaxw , grid%ptrop , &
+                                     grid%pmaxwnn , grid%ptropnn , &
                                      0 , 0 , &
                                      config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                                      config_flags%maxw_above_this_level , &
@@ -1900,6 +1942,7 @@ integer::oops1,oops2
 ! HRRR - aerosol input from WPS
                   CALL vert_interp ( grid%qnifa_gc , grid%pd_gc , scalar(:,:,:,P_QNIFA) , grid%pb , &
                                      grid%hgtmaxw , grid%hgttrop , grid%pmaxw , grid%ptrop , &
+                                     grid%pmaxwnn , grid%ptropnn , &
                                      0 , 0 , &
                                      config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                                      config_flags%maxw_above_this_level , &
@@ -1914,6 +1957,7 @@ integer::oops1,oops2
                 else
                   CALL vert_interp ( grid%QNIFA_now , grid%pd_gc , scalar(:,:,:,P_QNIFA) , grid%pb , &
                                      grid%hgtmaxw , grid%hgttrop , grid%pmaxw , grid%ptrop , &
+                                     grid%pmaxwnn , grid%ptropnn , &
                                      0 , 0 , &
                                      config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                                      config_flags%maxw_above_this_level , &
@@ -1972,6 +2016,7 @@ integer::oops1,oops2
 
          CALL vert_interp ( grid%u_gc , grid%pd_gc , grid%u_2               , grid%pb , &
                             grid%umaxw , grid%utrop , grid%pmaxw , grid%ptrop , &
+                            grid%pmaxwnn , grid%ptropnn , &
                             flag_umaxw , flag_utrop , &
                             config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                             config_flags%maxw_above_this_level , &
@@ -1985,6 +2030,7 @@ integer::oops1,oops2
 
          CALL vert_interp ( grid%v_gc , grid%pd_gc , grid%v_2               , grid%pb , &
                             grid%vmaxw , grid%vtrop , grid%pmaxw , grid%ptrop , &
+                            grid%pmaxwnn , grid%ptropnn , &
                             flag_vmaxw , flag_vtrop , &
                             config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                             config_flags%maxw_above_this_level , &
@@ -3959,15 +4005,18 @@ program vint
 
    real , dimension(1:ij,kgen,1:ij) :: fo , po
    real , dimension(1:ij,1:keta,1:ij) :: fn_calc , fn_interp , pn
+   real , dimension(1:ij,1:ij) :: not_required_2d_1, not_required_2d_2, &
+                                  not_required_2d_3, not_required_2d_4
 
    integer, parameter :: interp_type             = 1 ! 2
+   integer, parameter :: extrap_type             = 2 ! 1
 !  integer, parameter :: lagrange_order          = 2 ! 1
    integer            :: lagrange_order
    logical, parameter :: lowest_lev_from_sfc     = .FALSE. ! .TRUE.
-   logical, parameter :: use_levels_below_ground = .FALSE. ! .TRUE.
-   logical, parameter :: use_surface             = .FALSE. ! .TRUE.
+   logical, parameter :: use_levels_below_ground = .TRUE. ! .FALSE. ! .TRUE.
+   logical, parameter :: use_surface             = .TRUE. ! .FALSE. ! .TRUE.
    real   , parameter :: zap_close_levels        = 500. ! 100.
-   integer, parameter :: force_sfc_in_vinterp    = 0 ! 6
+   integer, parameter :: force_sfc_in_vinterp    = 6 ! 0 ! 6
 
    integer :: k
 
@@ -3982,7 +4031,7 @@ program vint
    print *,'UNIT TEST FOR VERTICAL INTERPOLATION'
    print *,'------------------------------------'
    print *,' '
-   do lagrange_order = 1 , 2
+   do lagrange_order = 1 , 9 , 8
       print *,' '
       print *,'------------------------------------'
       print *,'Lagrange Order = ',lagrange_order
@@ -4006,8 +4055,11 @@ program vint
       print *,' '
 
       call vert_interp ( fo , po , fn_interp , pn , &
+                         not_required_2d_1, not_required_2d_2, &
+                         not_required_2d_3, not_required_2d_4, &
+                         0 , 0, 5000., 5000., 30000., &
                          generic , 'T' , &
-                         interp_type , lagrange_order , &
+                         interp_type , lagrange_order , extrap_type , &
                          lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
                          zap_close_levels , force_sfc_in_vinterp , &
                          ids , ide , jds , jde , kds , kde , &
@@ -4026,26 +4078,6 @@ program vint
          k,pn(2,k,2),fn_calc(2,k,2),fn_interp(2,k,2),fn_calc(2,k,2)-fn_interp(2,k,2)
       end do
 
-      call vert_interp_old ( fo , po , fn_interp , pn , &
-                         generic , 'T' , &
-                         interp_type , lagrange_order , &
-                         lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
-                         zap_close_levels , force_sfc_in_vinterp , &
-                         ids , ide , jds , jde , kds , kde , &
-                         ims , ime , jms , jme , kms , kme , &
-                         its , ite , jts , jte , kts , kte )
-
-      print *,'Linear Interpolator'
-      print *,'------------------------------------'
-      print *,' '
-      print *,'Level  Pressure      Field           Field         Field'
-      print *,'         (Pa)        Calc            Interp        Diff'
-      print *,'------------------------------------'
-      print *,' '
-      do k = kts , kte-1
-      write (*,fmt='(i2,2x,f12.3,1x,3(g15.7))' ) &
-         k,pn(2,k,2),fn_calc(2,k,2),fn_interp(2,k,2),fn_calc(2,k,2)-fn_interp(2,k,2)
-      end do
    end do
 
 end program vint
@@ -4153,12 +4185,20 @@ subroutine fillitup ( fo , po , fn , pn , &
 
 end subroutine fillitup
 
+function skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) 
+   logical :: skip_middle_points_t
+   integer :: ids , ide , jds , jde , i , j , em_width
+   logical :: hold_ups
+   skip_middle_points_t = .false.
+end function skip_middle_points_t
+
 #endif
 
 !---------------------------------------------------------------------
 
    SUBROUTINE vert_interp ( fo , po , fnew , pnu , &
                             fo_maxw , fo_trop , po_maxw , po_trop , &
+                            po_maxwnn , po_tropnn , &
                             flag_maxw , flag_trop , &
                             maxw_horiz_pres_diff , trop_horiz_pres_diff , &
                             maxw_above_this_level , &
@@ -4190,6 +4230,7 @@ end subroutine fillitup
 
       REAL , DIMENSION(ims:ime,generic,jms:jme) , INTENT(IN)     :: fo , po
       REAL , DIMENSION(ims:ime,jms:jme)         , INTENT(IN)     :: fo_maxw , fo_trop , po_maxw , po_trop
+      REAL , DIMENSION(ims:ime,jms:jme)         , INTENT(IN)     :: po_maxwnn , po_tropnn
       REAL , DIMENSION(ims:ime,kms:kme,jms:jme) , INTENT(IN)     :: pnu
       REAL , DIMENSION(ims:ime,kms:kme,jms:jme) , INTENT(OUT)    :: fnew
 
@@ -4218,6 +4259,16 @@ end subroutine fillitup
       LOGICAL :: any_valid_points
       INTEGER :: i_valid , j_valid
       LOGICAL :: flip_data_required
+#ifdef VERT_UNIT
+      LOGICAL, EXTERNAL :: skip_middle_points_t
+      INTEGER :: em_width
+      LOGICAL :: hold_ups
+#endif
+
+      !  Vertical interpolation of the extra levels from metgrid: max wind and tropopause
+
+      LOGICAL :: ok_data
+      INTEGER :: ii, jj
 
       zap_close_extra_levels = 500
 
@@ -4722,56 +4773,78 @@ end subroutine fillitup
             !  If we have additional levels (for example, some arrays have a "level of max winds"
             !  or a "level of the tropopause"), we insert them here.
 
-            IF ( ( flag_maxw .EQ. 1 ) .AND. ( porig_maxw(i,j) .LE. maxw_above_this_level ) .AND. &
-                 ( ( ( ABS(porig_maxw(MIN(i+1,    ide  ),j                 )-porig_maxw(MAX(i-1,ids),j           )) .LT.  2*maxw_horiz_pres_diff ) .AND. ( var_type .EQ. 'U' ) ) .OR. &
-                   ( ( ABS(porig_maxw(i                 ,MIN(j+1,    jde-1))-porig_maxw(i           ,MAX(j-1,jds))) .LT.  2*maxw_horiz_pres_diff ) .AND. ( var_type .EQ. 'U' ) ) .OR. &
-                   ( ( ABS(porig_maxw(MIN(i+1,    ide-1),j                 )-porig_maxw(MAX(i-1,ids),j           )) .LT.  2*maxw_horiz_pres_diff ) .AND. ( var_type .EQ. 'V' ) ) .OR. &
-                   ( ( ABS(porig_maxw(i                 ,MIN(j+1,    jde  ))-porig_maxw(i           ,MAX(j-1,jds))) .LT.  2*maxw_horiz_pres_diff ) .AND. ( var_type .EQ. 'V' ) ) .OR. &
-                   ( ( ABS(porig_maxw(MIN(i+1,    ide-1),j                 )-porig_maxw(MAX(i-1,ids),j           )) .LT.  2*maxw_horiz_pres_diff ) .AND. ( var_type .EQ. 'T' ) ) .OR. &
-                   ( ( ABS(porig_maxw(i                 ,MIN(j+1,    jde-1))-porig_maxw(i           ,MAX(j-1,jds))) .LT.  2*maxw_horiz_pres_diff ) .AND. ( var_type .EQ. 'T' ) ) .OR. &
-                   ( ( ABS(porig_maxw(MIN(i+1,    ide-1),j                 )-porig_maxw(MAX(i-1,ids),j           )) .LT.  2*maxw_horiz_pres_diff ) .AND. ( var_type .EQ. 'Z' ) ) .OR. &
-                   ( ( ABS(porig_maxw(i                 ,MIN(j+1,    jde-1))-porig_maxw(i           ,MAX(j-1,jds))) .LT.  2*maxw_horiz_pres_diff ) .AND. ( var_type .EQ. 'Z' ) ) ) ) THEN
-               insert_maxw : DO ko = kinterp_start , kinterp_end-1
-                  IF ( ( ( ( ordered_porig(ko)-porig_maxw(i,j) ) * ( ordered_porig(ko+1)-porig_maxw(i,j) ) ) .LT. 0 ) .AND. &
-                       ( ( ABS(ordered_porig(ko  )-porig_maxw(i,j)) .GT. zap_close_extra_levels ) .AND. &
-                         ( ABS(ordered_porig(ko+1)-porig_maxw(i,j)) .GT. zap_close_extra_levels ) ) ) THEN
-                     DO kcount = kinterp_end , ko+1 , -1
-                        ordered_porig(kcount+1) = ordered_porig(kcount)
-                        ordered_forig(kcount+1) = ordered_forig(kcount)
-                     END DO
-                     ordered_porig(ko+1) = porig_maxw(i,j)
-                     ordered_forig(ko+1) = fo_maxw(i,j)
-                     kinterp_end = kinterp_end + 1
-                     EXIT insert_maxw
-                  END IF
-               END DO insert_maxw
-            END IF
- 
-            IF ( ( flag_trop .EQ. 1 ) .AND. &
-                 ( ( ( ABS(porig_trop(MIN(i+1,    ide  ),j                 )-porig_trop(MAX(i-1,ids),j           )) .LT.  2*trop_horiz_pres_diff ) .AND. ( var_type .EQ. 'U' ) ) .OR. &
-                   ( ( ABS(porig_trop(i                 ,MIN(j+1,    jde-1))-porig_trop(i           ,MAX(j-1,jds))) .LT.  2*trop_horiz_pres_diff ) .AND. ( var_type .EQ. 'U' ) ) .OR. &
-                   ( ( ABS(porig_trop(MIN(i+1,    ide-1),j                 )-porig_trop(MAX(i-1,ids),j           )) .LT.  2*trop_horiz_pres_diff ) .AND. ( var_type .EQ. 'V' ) ) .OR. &
-                   ( ( ABS(porig_trop(i                 ,MIN(j+1,    jde  ))-porig_trop(i           ,MAX(j-1,jds))) .LT.  2*trop_horiz_pres_diff ) .AND. ( var_type .EQ. 'V' ) ) .OR. &
-                   ( ( ABS(porig_trop(MIN(i+1,    ide-1),j                 )-porig_trop(MAX(i-1,ids),j           )) .LT.  2*trop_horiz_pres_diff ) .AND. ( var_type .EQ. 'T' ) ) .OR. &
-                   ( ( ABS(porig_trop(i                 ,MIN(j+1,    jde-1))-porig_trop(i           ,MAX(j-1,jds))) .LT.  2*trop_horiz_pres_diff ) .AND. ( var_type .EQ. 'T' ) ) .OR. &
-                   ( ( ABS(porig_trop(MIN(i+1,    ide-1),j                 )-porig_trop(MAX(i-1,ids),j           )) .LT.  2*trop_horiz_pres_diff ) .AND. ( var_type .EQ. 'Z' ) ) .OR. &
-                   ( ( ABS(porig_trop(i                 ,MIN(j+1,    jde-1))-porig_trop(i           ,MAX(j-1,jds))) .LT.  2*trop_horiz_pres_diff ) .AND. ( var_type .EQ. 'Z' ) ) ) ) THEN
-               insert_trop : DO ko = kinterp_start , kinterp_end-1
-                  IF ( ( ( ( ordered_porig(ko)-porig_trop(i,j) ) * ( ordered_porig(ko+1)-porig_trop(i,j) ) ) .LT. 0 ) .AND. &
-                       ( ( ABS(ordered_porig(ko  )-porig_trop(i,j)) .GT. zap_close_extra_levels ) .AND. &
-                         ( ABS(ordered_porig(ko+1)-porig_trop(i,j)) .GT. zap_close_extra_levels ) ) ) THEN
-                     DO kcount = kinterp_end , ko+1 , -1
-                        ordered_porig(kcount+1) = ordered_porig(kcount)
-                        ordered_forig(kcount+1) = ordered_forig(kcount)
-                     END DO
-                     ordered_porig(ko+1) = porig_trop(i,j)
-                     ordered_forig(ko+1) = fo_trop(i,j)
-                     kinterp_end = kinterp_end + 1
-                     EXIT insert_trop
-                  END IF
-               END DO insert_trop
+            IF ( ( flag_maxw .EQ. 1 ) .AND. ( porig_maxw(i,j) .LE. maxw_above_this_level ) ) then
+               ok_data = .TRUE.
+               DO jj = -2, 2
+               DO ii = -2, 2
+                  ok_data = ok_data .AND. &
+                  ( ABS(po_maxwnn(MAX(MIN(i+ii,iend+2,ide-1),istart-2,ids),MAX(MIN(j+jj,jend+2,jde-1),jstart-2,jds))-porig_maxw(i,j)) &
+                  .LT. maxw_horiz_pres_diff )
+               END DO
+               END DO
+               IF ( ok_data) THEN
+                  insert_maxw : DO ko = kinterp_start , kinterp_end-1
+                     IF ( ( ( ordered_porig(ko)-porig_maxw(i,j) ) * ( ordered_porig(ko+1)-porig_maxw(i,j) ) ) .LT. 0 ) THEN
+                        IF ( ( ABS(ordered_porig(ko  )-porig_maxw(i,j)) .GT. zap_close_extra_levels ) .AND. &
+                             ( ABS(ordered_porig(ko+1)-porig_maxw(i,j)) .GT. zap_close_extra_levels ) ) THEN
+                           DO kcount = kinterp_end , ko+1 , -1
+                              ordered_porig(kcount+1) = ordered_porig(kcount)
+                              ordered_forig(kcount+1) = ordered_forig(kcount)
+                           END DO
+                           ordered_porig(ko+1) = porig_maxw(i,j)
+                           ordered_forig(ko+1) = fo_maxw(i,j)
+                           kinterp_end = kinterp_end + 1
+                           EXIT insert_maxw
+                        ELSE IF ( ABS(ordered_porig(ko  )-porig_maxw(i,j)) .LE. zap_close_extra_levels ) THEN
+                           ordered_porig(ko) = porig_maxw(i,j)
+                           ordered_forig(ko) = fo_maxw(i,j)
+                           EXIT insert_maxw
+                        ELSE IF ( ABS(ordered_porig(ko+1)-porig_maxw(i,j)) .LE. zap_close_extra_levels ) THEN
+                           ordered_porig(ko+1) = porig_maxw(i,j)
+                           ordered_forig(ko+1) = fo_maxw(i,j)
+                           EXIT insert_maxw
+                        END IF
+                     END IF
+                  END DO insert_maxw
+               END IF
             END IF
 
+            IF ( flag_trop .EQ. 1 ) THEN
+               ok_data = .TRUE.
+               DO jj = -2, 2
+               DO ii = -2, 2
+                  ok_data = ok_data .AND. &
+                  ( ABS(po_tropnn(MAX(MIN(i+ii,iend+2,ide-1),istart-2,ids),MAX(MIN(j+jj,jend+2,jde-1),jstart-2,jds))-porig_trop(i,j)) &
+                  .LT. trop_horiz_pres_diff )
+               END DO
+               END DO
+               IF ( ok_data) THEN
+                  insert_trop : DO ko = kinterp_start , kinterp_end-1
+                     IF ( ( ( ordered_porig(ko)-porig_trop(i,j) ) * ( ordered_porig(ko+1)-porig_trop(i,j) ) ) .LT. 0 ) THEN
+                        IF ( ( ABS(ordered_porig(ko  )-porig_trop(i,j)) .GT. zap_close_extra_levels ) .AND. &
+                             ( ABS(ordered_porig(ko+1)-porig_trop(i,j)) .GT. zap_close_extra_levels ) ) THEN
+                           DO kcount = kinterp_end , ko+1 , -1
+                              ordered_porig(kcount+1) = ordered_porig(kcount)
+                              ordered_forig(kcount+1) = ordered_forig(kcount)
+                           END DO
+                           ordered_porig(ko+1) = porig_trop(i,j)
+                           ordered_forig(ko+1) = fo_trop(i,j)
+                           kinterp_end = kinterp_end + 1
+                           EXIT insert_trop
+                        ELSE IF ( ABS(ordered_porig(ko  )-porig_trop(i,j)) .LE. zap_close_extra_levels ) THEN
+                           ordered_porig(ko) = porig_trop(i,j)
+                           ordered_forig(ko) = fo_trop(i,j)
+                           EXIT insert_trop
+                        ELSE IF ( ABS(ordered_porig(ko+1)-porig_trop(i,j)) .LE. zap_close_extra_levels ) THEN
+                           ordered_porig(ko+1) = porig_trop(i,j)
+                           ordered_forig(ko+1) = fo_trop(i,j)
+                           EXIT insert_trop
+                        END IF
+                     END IF
+                  END DO insert_trop
+               END IF
+            END IF
+ 
             !  The polynomials are either in pressure or LOG(pressure).
 
             IF ( interp_type .EQ. 1 ) THEN
@@ -4807,401 +4880,6 @@ end subroutine fillitup
       END DO
 
    END SUBROUTINE vert_interp
-
-!---------------------------------------------------------------------
-
-   SUBROUTINE vert_interp_old ( forig , po , fnew , pnu , &
-                            generic , var_type , &
-                            interp_type , lagrange_order , extrap_type , &
-                            lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
-                            zap_close_levels , force_sfc_in_vinterp , &
-                            ids , ide , jds , jde , kds , kde , &
-                            ims , ime , jms , jme , kms , kme , &
-                            its , ite , jts , jte , kts , kte )
-
-   !  Vertically interpolate the new field.  The original field on the original
-   !  pressure levels is provided, and the new pressure surfaces to interpolate to.
-
-      IMPLICIT NONE
-
-      INTEGER , INTENT(IN)        :: interp_type , lagrange_order , extrap_type
-      LOGICAL , INTENT(IN)        :: lowest_lev_from_sfc , use_levels_below_ground , use_surface
-      REAL    , INTENT(IN)        :: zap_close_levels
-      INTEGER , INTENT(IN)        :: force_sfc_in_vinterp
-      INTEGER , INTENT(IN)        :: ids , ide , jds , jde , kds , kde , &
-                                     ims , ime , jms , jme , kms , kme , &
-                                     its , ite , jts , jte , kts , kte
-      INTEGER , INTENT(IN)        :: generic
-
-      CHARACTER (LEN=1) :: var_type
-
-      REAL , DIMENSION(ims:ime,generic,jms:jme) , INTENT(IN)     :: forig , po
-      REAL , DIMENSION(ims:ime,kms:kme,jms:jme) , INTENT(IN)     :: pnu
-      REAL , DIMENSION(ims:ime,kms:kme,jms:jme) , INTENT(OUT)    :: fnew
-
-      REAL , DIMENSION(ims:ime,generic,jms:jme)                  :: porig
-      REAL , DIMENSION(ims:ime,kms:kme,jms:jme)                  :: pnew
-
-      !  Local vars
-
-      INTEGER :: i , j , k , ko , kn , k1 , k2 , ko_1 , ko_2
-      INTEGER :: istart , iend , jstart , jend , kstart , kend
-      INTEGER , DIMENSION(ims:ime,kms:kme        )               :: k_above , k_below
-      INTEGER , DIMENSION(ims:ime                )               :: ks
-      INTEGER , DIMENSION(ims:ime                )               :: ko_above_sfc
-
-      LOGICAL :: any_below_ground
-
-      REAL :: p1 , p2 , pn
-integer vert_extrap
-vert_extrap = 0
-
-      !  Horiontal loop bounds for different variable types.
-
-      IF      ( var_type .EQ. 'U' ) THEN
-         istart = its
-         iend   = ite
-         jstart = jts
-         jend   = MIN(jde-1,jte)
-         kstart = kts
-         kend   = kte-1
-         DO j = jstart,jend
-            DO k = 1,generic
-               DO i = MAX(ids+1,its) , MIN(ide-1,ite)
-                  porig(i,k,j) = ( po(i,k,j) + po(i-1,k,j) ) * 0.5
-               END DO
-            END DO
-            IF ( ids .EQ. its ) THEN
-               DO k = 1,generic
-                  porig(its,k,j) =  po(its,k,j)
-               END DO
-            END IF
-            IF ( ide .EQ. ite ) THEN
-               DO k = 1,generic
-                  porig(ite,k,j) =  po(ite-1,k,j)
-               END DO
-            END IF
-
-            DO k = kstart,kend
-               DO i = MAX(ids+1,its) , MIN(ide-1,ite)
-                  pnew(i,k,j) = ( pnu(i,k,j) + pnu(i-1,k,j) ) * 0.5
-               END DO
-            END DO
-            IF ( ids .EQ. its ) THEN
-               DO k = kstart,kend
-                  pnew(its,k,j) =  pnu(its,k,j)
-               END DO
-            END IF
-            IF ( ide .EQ. ite ) THEN
-               DO k = kstart,kend
-                  pnew(ite,k,j) =  pnu(ite-1,k,j)
-               END DO
-            END IF
-         END DO
-      ELSE IF ( var_type .EQ. 'V' ) THEN
-         istart = its
-         iend   = MIN(ide-1,ite)
-         jstart = jts
-         jend   = jte
-         kstart = kts
-         kend   = kte-1
-         DO i = istart,iend
-            DO k = 1,generic
-               DO j = MAX(jds+1,jts) , MIN(jde-1,jte)
-                  porig(i,k,j) = ( po(i,k,j) + po(i,k,j-1) ) * 0.5
-               END DO
-            END DO
-            IF ( jds .EQ. jts ) THEN
-               DO k = 1,generic
-                  porig(i,k,jts) =  po(i,k,jts)
-               END DO
-            END IF
-            IF ( jde .EQ. jte ) THEN
-               DO k = 1,generic
-                  porig(i,k,jte) =  po(i,k,jte-1)
-               END DO
-            END IF
-
-            DO k = kstart,kend
-               DO j = MAX(jds+1,jts) , MIN(jde-1,jte)
-                  pnew(i,k,j) = ( pnu(i,k,j) + pnu(i,k,j-1) ) * 0.5
-               END DO
-            END DO
-            IF ( jds .EQ. jts ) THEN
-               DO k = kstart,kend
-                  pnew(i,k,jts) =  pnu(i,k,jts)
-               END DO
-            END IF
-            IF ( jde .EQ. jte ) THEN
-              DO k = kstart,kend
-                  pnew(i,k,jte) =  pnu(i,k,jte-1)
-               END DO
-            END IF
-         END DO
-      ELSE IF ( ( var_type .EQ. 'W' ) .OR.  ( var_type .EQ. 'Z' ) ) THEN
-         istart = its
-         iend   = MIN(ide-1,ite)
-         jstart = jts
-         jend   = MIN(jde-1,jte)
-         kstart = kts
-         kend   = kte
-         DO j = jstart,jend
-            DO k = 1,generic
-               DO i = istart,iend
-                  porig(i,k,j) = po(i,k,j)
-               END DO
-            END DO
-
-            DO k = kstart,kend
-               DO i = istart,iend
-                  pnew(i,k,j) = pnu(i,k,j)
-               END DO
-            END DO
-         END DO
-      ELSE IF ( ( var_type .EQ. 'T' ) .OR. ( var_type .EQ. 'Q' ) ) THEN
-         istart = its
-         iend   = MIN(ide-1,ite)
-         jstart = jts
-         jend   = MIN(jde-1,jte)
-         kstart = kts
-         kend   = kte-1
-         DO j = jstart,jend
-            DO k = 1,generic
-               DO i = istart,iend
-                  porig(i,k,j) = po(i,k,j)
-               END DO
-            END DO
-
-            DO k = kstart,kend
-               DO i = istart,iend
-                  pnew(i,k,j) = pnu(i,k,j)
-               END DO
-            END DO
-         END DO
-      ELSE
-         istart = its
-         iend   = MIN(ide-1,ite)
-         jstart = jts
-         jend   = MIN(jde-1,jte)
-         kstart = kts
-         kend   = kte-1
-         DO j = jstart,jend
-            DO k = 1,generic
-               DO i = istart,iend
-                  porig(i,k,j) = po(i,k,j)
-               END DO
-            END DO
-
-            DO k = kstart,kend
-               DO i = istart,iend
-                  pnew(i,k,j) = pnu(i,k,j)
-               END DO
-            END DO
-         END DO
-      END IF
-
-      DO j = jstart , jend
-
-         !  Skip all of the levels below ground in the original data based upon the surface pressure.
-         !  The ko_above_sfc is the index in the pressure array that is above the surface.  If there
-         !  are no levels underground, this is index = 2.  The remaining levels are eligible for use
-         !  in the vertical interpolation.
-
-         DO i = istart , iend
-            ko_above_sfc(i) = -1
-         END DO
-         DO ko = kstart+1 , kend
-            DO i = istart , iend
-               IF ( ko_above_sfc(i) .EQ. -1 ) THEN
-                  IF ( porig(i,1,j) .GT. porig(i,ko,j) ) THEN
-                     ko_above_sfc(i) = ko
-                  END IF
-               END IF
-            END DO
-         END DO
-
-         !  Initialize interpolation location.  These are the levels in the original pressure
-         !  data that are physically below and above the targeted new pressure level.
-
-         DO kn = kts , kte
-            DO i = its , ite
-               k_above(i,kn) = -1
-               k_below(i,kn) = -2
-            END DO
-         END DO
-
-         !  Starting location is no lower than previous found location.  This is for O(n logn)
-         !  and not O(n^2), where n is the number of vertical levels to search.
-
-         DO i = its , ite
-            ks(i) = 1
-         END DO
-
-         !  Find trapping layer for interpolation.  The kn index runs through all of the "new"
-         !  levels of data.
-
-         DO kn = kstart , kend
-
-            DO i = istart , iend
-
-               !  For each "new" level (kn), we search to find the trapping levels in the "orig"
-               !  data.  Most of the time, the "new" levels are the eta surfaces, and the "orig"
-               !  levels are the input pressure levels.
-
-               found_trap_above : DO ko = ks(i) , generic-1
-
-                  !  Because we can have levels in the interpolation that are not valid,
-                  !  let's toss out any candidate orig pressure values that are below ground
-                  !  based on the surface pressure.  If the level =1, then this IS the surface
-                  !  level, so we HAVE to keep that one, but maybe not the ones above.  If the
-                  !  level (ks) is NOT=1, then we have to just CYCLE our loop to find a legit
-                  !  below-pressure value.  If we are not below ground, then we choose two
-                  !  neighboring levels to test whether they surround the new pressure level.
-
-                  !  The input trapping levels that we are trying is the surface and the first valid
-                  !  level above the surface.
-
-                  IF      ( ( ko .LT. ko_above_sfc(i) ) .AND. ( ko .EQ. 1 ) ) THEN
-                     ko_1 = ko
-                     ko_2 = ko_above_sfc(i)
-
-                  !  The "below" level is underground, cycle until we get to a valid pressure
-                  !  above ground.
-
-                  ELSE IF ( ( ko .LT. ko_above_sfc(i) ) .AND. ( ko .NE. 1 ) ) THEN
-                     CYCLE found_trap_above
-
-                  !  The "below" level is above the surface, so we are in the clear to test these
-                  !  two levels out.
-
-                  ELSE
-                     ko_1 = ko
-                     ko_2 = ko+1
-
-                  END IF
-
-                  !  The test of the candidate levels: "below" has to have a larger pressure, and
-                  !  "above" has to have a smaller pressure.
-
-                  !  OK, we found the correct two surrounding levels.  The locations are saved for use in the
-                  !  interpolation.
-
-                  IF      ( ( porig(i,ko_1,j) .GE. pnew(i,kn,j) ) .AND. &
-                            ( porig(i,ko_2,j) .LT. pnew(i,kn,j) ) ) THEN
-                     k_above(i,kn) = ko_2
-                     k_below(i,kn) = ko_1
-                     ks(i) = ko_1
-                     EXIT found_trap_above
-
-                  !  What do we do is we need to extrapolate the data underground?  This happens when the
-                  !  lowest pressure that we have is physically "above" the new target pressure.  Our
-                  !  actions depend on the type of variable we are interpolating.
-
-                  ELSE IF   ( porig(i,1,j) .LT. pnew(i,kn,j) ) THEN
-
-                     !  For horizontal winds and moisture, we keep a constant value under ground.
-
-                     IF      ( ( var_type .EQ. 'U' ) .OR. &
-                               ( var_type .EQ. 'V' ) .OR. &
-                               ( var_type .EQ. 'Q' ) ) THEN
-                        k_above(i,kn) = 1
-                        ks(i) = 1
-
-                     !  For temperature and height, we extrapolate the data.  Hopefully, we are not
-                     !  extrapolating too far.  For pressure level input, the eta levels are always
-                     !  contained within the surface to p_top levels, so no extrapolation is ever
-                     !  required.
-
-                     ELSE IF ( ( var_type .EQ. 'Z' ) .OR. &
-                               ( var_type .EQ. 'T' ) ) THEN
-                        k_above(i,kn) = ko_above_sfc(i)
-                        k_below(i,kn) = 1
-                        ks(i) = 1
-
-                     !  Just a catch all right now.
-
-                     ELSE
-                        k_above(i,kn) = 1
-                        ks(i) = 1
-                     END IF
-
-                     EXIT found_trap_above
-
-                  !  The other extrapolation that might be required is when we are going above the
-                  !  top level of the input data.  Usually this means we chose a P_PTOP value that
-                  !  was inappropriate, and we should stop and let someone fix this mess.
-
-                  ELSE IF   ( porig(i,generic,j) .GT. pnew(i,kn,j) ) THEN
-                     print *,'data is too high, try a lower p_top'
-                     print *,'pnew=',pnew(i,kn,j)
-                     print *,'porig=',porig(i,:,j)
-                     CALL wrf_error_fatal ('requested p_top is higher than input data, lower p_top')
-
-                  END IF
-               END DO found_trap_above
-            END DO
-         END DO
-
-         !  Linear vertical interpolation.
-
-         DO kn = kstart , kend
-            DO i = istart , iend
-               IF ( k_above(i,kn) .EQ. 1 ) THEN
-                  fnew(i,kn,j) = forig(i,1,j)
-               ELSE
-                  k2 = MAX ( k_above(i,kn) , 2)
-                  k1 = MAX ( k_below(i,kn) , 1)
-                  IF ( k1 .EQ. k2 ) THEN
-                     CALL wrf_error_fatal ( 'identical values in the interp, bad for divisions' )
-                  END IF
-                  IF      ( interp_type .EQ. 1 ) THEN
-                     p1 = porig(i,k1,j)
-                     p2 = porig(i,k2,j)
-                     pn = pnew(i,kn,j)
-                  ELSE IF ( interp_type .EQ. 2 ) THEN
-                     p1 = ALOG(porig(i,k1,j))
-                     p2 = ALOG(porig(i,k2,j))
-                     pn = ALOG(pnew(i,kn,j))
-                  END IF
-                  IF ( ( p1-pn) * (p2-pn) > 0. ) THEN
-!                    CALL wrf_error_fatal ( 'both trapping pressures are on the same side of the new pressure' )
-!                    CALL wrf_debug ( 0 , 'both trapping pressures are on the same side of the new pressure' )
-vert_extrap = vert_extrap + 1
-                  END IF
-                  fnew(i,kn,j) = ( forig(i,k1,j) * ( p2 - pn )   + &
-                                   forig(i,k2,j) * ( pn - p1 ) ) / &
-                                   ( p2 - p1 )
-               END IF
-            END DO
-         END DO
-
-         search_below_ground : DO kn = kstart , kend
-            any_below_ground = .FALSE.
-            DO i = istart , iend
-               IF ( k_above(i,kn) .EQ. 1 ) THEN
-                  fnew(i,kn,j) = forig(i,1,j)
-                  any_below_ground = .TRUE.
-               END IF
-            END DO
-            IF ( .NOT. any_below_ground ) THEN
-               EXIT search_below_ground
-            END IF
-         END DO search_below_ground
-
-         !  There may have been a request to have the surface data from the input field
-         !  to be assigned as to the lowest eta level.  This assumes thin layers (usually
-         !  the isobaric original field has the surface from 2-m T and RH, and 10-m U and V).
-
-         DO i = istart , iend
-            IF ( lowest_lev_from_sfc ) THEN
-               fnew(i,1,j) = forig(i,ko_above_sfc(i),j)
-            END IF
-         END DO
-
-      END DO
-print *,'VERT EXTRAP = ', vert_extrap
-
-   END SUBROUTINE vert_interp_old
 
 !---------------------------------------------------------------------
 
@@ -5248,7 +4926,11 @@ print *,'VERT EXTRAP = ', vert_extrap
 
       REAL :: temp_1 , temp_2 , temp_3 , temp_y
       REAL :: depth_of_extrap_in_p , avg_of_extrap_p , temp_extrap_starting_point , dhdp , dh , dt
+#ifdef VERT_UNIT
+      REAL , PARAMETER :: RovCp      = 0.287
+#else
       REAL , PARAMETER :: RovCp      = rcp
+#endif
       REAL , PARAMETER :: CRC_const1 = 11880.516      ! m
       REAL , PARAMETER :: CRC_const2 =     0.1902632  !
       REAL , PARAMETER :: CRC_const3 =     0.0065     ! K/km
@@ -5364,7 +5046,7 @@ print *,'p target= ',target_x
          !  and shift the range one index, then get an average.
 
          IF ( n .EQ. 9 ) THEN
-            CALL cubic_spline (all_dim, all_x, all_y, P2)
+            CALL cubic_spline (all_dim-1, all_x, all_y, P2)
 !
 ! Find the value of function f(x)
 !
@@ -5442,22 +5124,17 @@ print *,'p target= ',target_x
       !
       INTEGER :: I
       INTEGER, INTENT (IN) :: N
-      REAL, INTENT (IN), DIMENSION (N):: XI, FI
-      REAL, INTENT (OUT), DIMENSION (N):: P2
+      REAL, INTENT (IN), DIMENSION (N+1):: XI, FI
+      REAL, INTENT (OUT), DIMENSION (N+1):: P2
       REAL, DIMENSION (N):: G, H
       REAL, DIMENSION (N-1):: D, B, C
 !
 ! Assign the intervals and function differences
 !
-  DO I = 1, N-1
+  DO I = 1, N
     H(I) = XI(I+1) - XI(I)
     G(I) = FI(I+1) - FI(I)
   END DO
-!
-! The top vertical derivative is zero
-!
-  H(N) = H(N-1)
-  G(N) = 0
 !
 ! Evaluate the coefficient matrix elements
   DO I = 1, N-1
@@ -5470,6 +5147,7 @@ print *,'p target= ',target_x
 !
   CALL TRIDIAGONAL_LINEAR_EQ (N-1, D, C, C, B, G)
   P2(1) = 0
+  P2(N+1) = 0
   DO I = 2, N
     P2(I) = G(I-1)
   END DO

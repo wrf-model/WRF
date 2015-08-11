@@ -953,7 +953,7 @@ CONTAINS
 ! ABOVE FREEZING BLOCK
 ! ----------------------------------------------------------------------
     ELSE
-       T1 = TFREEZ * SNCOVR ** SNOEXP + T12 * (1.0- SNCOVR ** SNOEXP)
+       T1 = TFREEZ 
        SSOIL = DF1 * (T1- STC (1)) / DTOT
 
 ! ----------------------------------------------------------------------

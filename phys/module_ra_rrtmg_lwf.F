@@ -3640,8 +3640,7 @@ contains
                                                       !    Dimensions: (ngptlw,ncol,nlay)
       real  _gpudev, intent(out) :: taucmcl(:,:,:)    ! in-cloud optical depth [mcica]
                                                       !    Dimensions: (ngptlw,ncol,nlay)
-!      integer , intent(out) :: cloudFlag(:,:)
-      
+
 #ifndef _ACCEL
 ! were module data but changed to arguments because not thread-safe
       real  :: pmidd(:, :)
@@ -4382,11 +4381,9 @@ contains
                       absice3d(index,ib) + fint * &
                       (absice3d(index+1,ib) - (absice3d(index,ib)))
                   abscosno = 0.0 
-   
                endif
                   
 !..Incorporate additional effects due to snow.
-!STOPPED HERE
                if (cswpmcd(iplon,ig,lay).gt.0.0 .and. iceflagd(iplon) .eq. 5) then
                   radsno = resnmcd(iplon,lay)
 
@@ -4414,7 +4411,12 @@ contains
                endif
 
 ! Calculation of absorption coefficients due to water clouds.
-              if (liqflagd(iplon) .eq. 1) then
+!jm              if (liqflagd(iplon) .eq. 1) then
+               if (clwpmcd(iplon,ig,lay) .eq. 0.0) then
+                 abscoliq = 0.0
+               else if (liqflagd(iplon) .eq. 0) then
+                 abscoliq = absliq0
+               else if (liqflagd(iplon) .eq. 1) then
                  radliq = relqmcd(iplon, lay)
                  index = int(radliq - 1.5 )
 ! mji - temporary fix to prevent out of range subscripts
@@ -5033,9 +5035,6 @@ contains
          radlu = rad0 + reflect * radld
          radclru = rad0 + reflect * radclrd
 
-
-
-
 ! Upward radiative transfer loop.
          gurad(iplon, igc, 0) = gurad(iplon, igc, 0) + radlu 
          gclrurad(iplon, igc, 0) = gclrurad(iplon, igc, 0) + radclru
@@ -5161,12 +5160,75 @@ contains
 ! (dmb 2012) This kernel computes the heating rates separately.  It is parallelized across the 
 ! columnn and layer dimensions.
       _gpuker subroutine rtrnheatrates(ncol, nlay &
-#include "rrtmg_lw_cpu_args.h"
+#ifndef _ACCEL
+         ,ncol_,nlayers_,nbndlw_,ngptlw_                                                          &
+         ,taucmcd,pzd,pwvcmd,semissd,planklayd,planklevd,plankbndd,gurad,gdrad,gclrurad,gclrdrad  &
+         ,gdtotuflux_dtd,gdtotuclfl_dtd,idrvd,bpaded,heatfacd,fluxfacd,a0d,a1d,a2d                &
+         ,delwaved,totufluxd,totdfluxd,fnetd,htrd,totuclfld,totdclfld,fnetcd,htrcd,dtotuflux_dtd  &
+         ,dtotuclfl_dtd,dplankbnd_dtd                                                             &
+#endif
                                       )
 
       integer, intent(in), value :: ncol
       integer, intent(in), value :: nlay
-#include "rrtmg_lw_cpu_defs.h"
+#ifndef _ACCEL
+      integer :: ncol_,nlayers_,nbndlw_,ngptlw_
+! changed to arguments for thread safety
+# ifndef ncol_
+#   define ncol_ CHNK
+# endif
+      integer  :: ngsd(nbndlw)      
+
+! Atmosphere
+      real :: taucmcd(ncol_, ngptlw_, nlayers_+1)
+   
+      real , dimension(ncol_, 0:nlayers_+1) :: pzd      ! level (interface) pressures (hPa, mb)
+                                                        !    Dimensions: (ncol,0:nlayers)
+      real , dimension(ncol_) :: pwvcmd                 ! precipitable water vapor (cm)
+                                                        !    Dimensions: (ncol)
+      real , dimension(ncol_,nbndlw_) :: semissd        ! lw surface emissivity
+                                                        !    Dimensions: (ncol,nbndlw)
+      real , dimension(ncol_,nlayers_+1,nbndlw_) :: planklayd    ! 
+                                                        !    Dimensions: (ncol,nlayers+1,nbndlw)
+      real , dimension(ncol_,0:nlayers_+1,nbndlw_) :: planklevd    ! 
+                                                        !    Dimensions: (ncol,0:nlayers+1,nbndlw)
+      real, dimension(ncol_,nbndlw_) :: plankbndd       ! 
+                                                        !    Dimensions: (ncol,nbndlw)
+   
+      real :: gurad(ncol_,ngptlw_,0:nlayers_+1)         ! upward longwave flux (w/m2)
+      real :: gdrad(ncol_,ngptlw_,0:nlayers_+1)         ! downward longwave flux (w/m2)
+      real :: gclrurad(ncol_,ngptlw_,0:nlayers_+1)      ! clear sky upward longwave flux (w/m2)
+      real :: gclrdrad(ncol_,ngptlw_,0:nlayers_+1)      ! clear sky downward longwave flux (w/m2)
+
+      real  :: gdtotuflux_dtd(ncol_, ngptlw_, 0:nlayers_+1) ! change in upward longwave flux (w/m1/k)
+                                     ! with respect to surface temperature
+
+      real  :: gdtotuclfl_dtd(ncol_, ngptlw_, 0:nlayers_+1) ! change in clear sky upward longwave flux (w/m2/k)
+                                     ! with respect to surface temperature
+
+! Clouds
+      integer  :: idrvd                       ! flag for calculation of dF/dt from 
+                                                      ! Planck derivative [0=off, 1=on]
+      real  :: bpaded
+      real  :: heatfacd
+      real  :: fluxfacd
+      real  :: a0d(nbndlw_), a1d(nbndlw_), a2d(nbndlw_)
+      real  :: delwaved(nbndlw_)
+      real :: totufluxd(ncol_, 0:nlayers_+1)     ! upward longwave flux (w/m2)
+      real :: totdfluxd(ncol_, 0:nlayers_+1)     ! downward longwave flux (w/m2)
+      real :: fnetd(ncol_, 0:nlayers_+1)         ! net longwave flux (w/m2)
+      real :: htrd(ncol_, 0:nlayers_+1)          ! longwave heating rate (k/day)
+      real :: totuclfld(ncol_, 0:nlayers_+1)     ! clear sky upward longwave flux (w/m2)
+      real :: totdclfld(ncol_, 0:nlayers_+1)     ! clear sky downward longwave flux (w/m2)
+      real :: fnetcd(ncol_, 0:nlayers_+1)        ! clear sky net longwave flux (w/m2)
+      real :: htrcd(ncol_, 0:nlayers_+1)         ! clear sky longwave heating rate (k/day)
+      real :: dtotuflux_dtd(ncol_, 0:nlayers_+1) ! change in upward longwave flux (w/m2/k)
+                                                       ! with respect to surface temperature
+      real :: dtotuclfl_dtd(ncol_, 0:nlayers_+1) ! change in clear sky upward longwave flux (w/m2/k)
+                                                       ! with respect to surface temperature
+      real :: dplankbnd_dtd(ncol_,nbndlw_) 
+# undef ncol_
+#endif
       
       real :: t2
       integer :: iplon, ilay
@@ -13904,6 +13966,7 @@ integer,external :: omp_get_thread_num
 #endif
    
       real :: timings(10)
+      INTEGER, PARAMETER :: debug_level_lwf=100
 
 !------------------------------------------------------------------
       contains
@@ -14149,6 +14212,7 @@ integer,external :: omp_get_thread_num
     
       integer :: numThreads
 integer,external :: omp_get_thread_num
+      CHARACTER(LEN=256) :: message
 
       ! Cuda device information
 #ifdef _ACCEL
@@ -14208,10 +14272,13 @@ integer,external :: omp_get_thread_num
       cn = CHNK
 #endif
 !
-      print *, "RRTMG_LWF: Number of columns is               ", ncol
-      print *, "RRTMG_LWF: Number of columns per partition is ", cn
+      WRITE(message,*)'RRTMG_LWF: Number of columns is               ',ncol
+      call wrf_debug( debug_level_lwf, message)
+      WRITE(message,*)'RRTMG_LWF: Number of columns per partition is ',cn
+      call wrf_debug( debug_level_lwf, message)
       ns = ceiling( real(ncol) / real(cn) )
-      print *, "RRTMG_LWF: Number of partitions is            ", ns
+      WRITE(message,*)'RRTMG_LWF: Number of partitions is            ',ns
+      call wrf_debug( debug_level_lwf, message)
 
 ! mji - time      
       call cpu_time(t1)
@@ -14226,7 +14293,6 @@ integer,external :: omp_get_thread_num
 
 
 
-!write(0,*)__FILE__,__LINE__,i
       call rrtmg_lw_part &
             (ns, ncol, (i-1)*cn + 1, min(cn, ncol - (i-1)*cn), &
              nlay    ,icld    ,idrv,&
@@ -14238,15 +14304,16 @@ integer,external :: omp_get_thread_num
              tauaer  , &
              uflx    ,dflx    ,hr      ,uflxc   ,dflxc,  hrc, &
              duflx_dt,duflxc_dt)    
-!write(0,*)__FILE__,__LINE__,i,'uflx ',uflx(10,10)
-!write(0,*)__FILE__,__LINE__,i,'dflx ',dflx(10,10)
       end do  
       
 ! mji - time      
       call cpu_time(t2)
-      print *, "------------------------------------------------"
-      print *, "TOTAL RRTMG_LWF RUN TIME IS   ", t2-t1
-      print *, "------------------------------------------------"
+      WRITE(message,*)'------------------------------------------------'
+      call wrf_debug( debug_level_lwf, message)
+      WRITE(message,*)'TOTAL RRTMG_LWF RUN TIME IS   ', t2-t1
+      call wrf_debug( debug_level_lwf, message)
+      WRITE(message,*)'------------------------------------------------'
+      call wrf_debug( debug_level_lwf, message)
 
       end subroutine
 
@@ -14644,7 +14711,6 @@ integer,external :: omp_get_thread_num
 integer,external :: omp_get_thread_num
 
 !
-!write(0,*)__FILE__,__LINE__
 #ifndef _ACCEL
 # undef pncol
       ncol_  = pncol ; nlayers_  = nlay ; nbndlw_  = nbndlw ; ngptlw_  = ngptlw ! for passing through argument list
@@ -14687,10 +14753,8 @@ integer,external :: omp_get_thread_num
       allocate( ncbandsd(pncol))
       allocate( icldlyr(pncol, nlay+1))
    
-!write(0,*)__FILE__,__LINE__
       call allocateGPUcldprmcg(pncol, nlay, ngptlw)
       call allocateGPUrtrnmcg(pncol, nlay, ngptlw, idrv)
-!write(0,*)__FILE__,__LINE__
   
       ngbd = ngb
       ngsd = ngs
@@ -14742,21 +14806,17 @@ integer,external :: omp_get_thread_num
       nlayers = nlay
 
 
-!write(0,*)__FILE__,__LINE__
       call allocateGPUTaumol( pncol, nlayers, npart)
-!write(0,*)__FILE__,__LINE__
 
 #ifdef _ACCEL
       allocate( fracsd( pncol, nlayers+1, ngptlw ))
       allocate( taug( pncol, nlayers+1, ngptlw ))
 #endif
-!write(0,*)__FILE__,__LINE__
       tbound = tsfc(colstart:(colstart+pncol-1))
       pz(:,0:nlay) = plev(colstart:(colstart+pncol-1),0:nlay)
       tz(:,0:nlay) = tlev(colstart:(colstart+pncol-1),0:nlay)
       pavel(:,1:nlay) = play(colstart:(colstart+pncol-1),1:nlay)
       tavel(:,1:nlay) = tlay(colstart:(colstart+pncol-1),1:nlay)
-!write(0,*)__FILE__,__LINE__
       
 #ifdef _ACCEL
       call copyGPUTaumolMol( colstart, pncol, nlayers, h2ovmr, co2vmr, o3vmr, n2ovmr, ch4vmr, &
@@ -14785,7 +14845,6 @@ integer,external :: omp_get_thread_num
 #  undef pncol
 #endif
 
-!write(0,*)__FILE__,__LINE__
       permuteseed=150 ! if you change this, change value in module_ra_rrtmg_lw.F
       call mcica_subcol_lwg(colstart, pncol, nlay, icld, counter, permuteseed,            &
 #ifndef _ACCEL
@@ -14793,8 +14852,9 @@ integer,external :: omp_get_thread_num
 #endif
                             play, cldfracq, ciwpq,                                        &
                             clwpq, cswpq, taucq,ngbd, cldfmcd, ciwpmcd, clwpmcd, cswpmcd, & 
-                             taucmcd)
-!write(0,*)__FILE__,__LINE__
+                            taucmcd)
+
+
 !jm write(0,*)__FILE__,__LINE__,omp_get_thread_num()
 
 !  Generate the stochastic subcolumns of cloud optical properties for the longwave;
@@ -14803,15 +14863,12 @@ integer,external :: omp_get_thread_num
       dimBlock = dim3( 256,2,1)
 #endif
       if (icld > 0) then
-!write(0,*)__FILE__,__LINE__
          call generate_stochastic_cloudsg _gpuchv (pncold, nlayd, icldd, ngbd, &
 #ifndef _ACCEL
                                pmid,cldfracq,clwpq,ciwpq,cswpq,taucq,permuteseed,  &
 #endif
                                cldfmcd, clwpmcd, ciwpmcd, cswpmcd, taucmcd)
-!write(0,*)__FILE__,__LINE__
       end if
-!write(0,*)__FILE__,__LINE__
 
 !jm write(0,*)__FILE__,__LINE__,omp_get_thread_num()
       do iplon = 1, pncol
@@ -14846,11 +14903,10 @@ integer,external :: omp_get_thread_num
 
 ! Move incoming GCM cloud arrays to RRTMG cloud arrays.
 ! For GCM input, incoming reicmcl is defined based on selected ice parameterization (inflglw)
-   
+
         endif
       enddo
 
-!write(0,*)__FILE__,__LINE__
 #ifdef _ACCEL
       deallocate( pmidd, cldfracd)
       deallocate( clwpd, ciwpd, cswpd, taucd)
@@ -14894,9 +14950,7 @@ integer,external :: omp_get_thread_num
       
 ! (dmb 2012) Copy the needed data of to the GPU for the SetCoef and Taumol kernels
 
-!write(0,*)__FILE__,__LINE__
       call copyGPUTaumol( pavel, wx, coldry, tauaer, pncol, colstart, nlay , npart)
-!write(0,*)__FILE__,__LINE__
 
       call copyGPUSetCoef( )
 ! (dmb 2012) Copy over additional common arrays 
@@ -14938,15 +14992,13 @@ integer,external :: omp_get_thread_num
 !     clwpmcd = 0
 !     clwpmcd = clwpmc
 ! (dmb 2012) Call the cldprmcg kernel
-!write(0,*)__FILE__,__LINE__
       call cldprmcg _gpuchv (pncol, nlayers,                                      &
 #ifndef _ACCEL
                 inflag,iceflag,liqflag,ciwpmcd,clwpmcd,cswpmcd,relqmcd,reicmcd,resnmcd, &
-                absice0,absice1,absice2,absice3,absliq1,                          &
+                absice0,absice1,absice2,absice3,absliq1,                                &
 #endif
-                             cldfmcd, taucmcd,  ngbd, icbd, ncbandsd, icldlyr)
+                cldfmcd, taucmcd,  ngbd, icbd, ncbandsd, icldlyr)
 
-!write(0,*)__FILE__,__LINE__
 ! synchronize the GPU with the CPU before taking timing results or passing data back to the CPU
 #ifdef _ACCEL    
       ierr = cudaThreadSynchronize() 
@@ -14970,7 +15022,6 @@ integer,external :: omp_get_thread_num
    ,tavel,tz,tbound,wbroadd,totplnk,totplk16,totplnkderiv,totplk16deriv &
 #endif
                             )
-!write(0,*)__FILE__,__LINE__
 
 ! (dmb 2012) end if GPU flag 
 
@@ -14979,7 +15030,16 @@ integer,external :: omp_get_thread_num
 
 ! (dmb 2012) Call the taumolg subroutine.  This subroutine calls all of the individal taumol kernels.     
       call taumolg(1, pncol,nlayers, ngbd, taug, fracsd &
-# include "taug_cpu_args.h"
+!# include "taug_cpu_args.h"
+#ifndef _ACCEL
+                    ,ncol__,nlayers__,nbndlw__,ngptlw__                                             &
+                    ,pavel,wx1,wx2,wx3,wx4,coldry,laytrop,jp,jt,jt1,colh2o,colco2,colo3,coln2o  &
+                    ,colco,colch4,colo2,colbrd,indself,indfor,selffac,selffrac,forfac,forfrac   &
+                    ,indminor,minorfrac,scaleminor,scaleminorn2,fac00,fac01,fac10,fac11         &
+                    ,rat_h2oco2,rat_h2oco2_1,rat_h2oo3,rat_h2oo3_1,rat_h2on2o,rat_h2on2o_1      &
+                    ,rat_h2och4,rat_h2och4_1,rat_n2oco2,rat_n2oco2_1,rat_o3co2,rat_o3co2_1      &
+                    ,tauaa,nspad,nspbd,oneminusd                                                &
+#endif
                   )
    
 ! Call the radiative transfer routine.
@@ -14999,7 +15059,13 @@ integer,external :: omp_get_thread_num
 #endif    
 
       call rtrnmcg _gpuchv (pncol,nlayers, istart, iend, iout  &
-#include "rrtmg_lw_cpu_args.h"
+#ifndef _ACCEL
+         ,ncol_,nlayers_,nbndlw_,ngptlw_                                                          &
+         ,taucmcd,pzd,pwvcmd,semissd,planklayd,planklevd,plankbndd,gurad,gdrad,gclrurad,gclrdrad  &
+         ,gdtotuflux_dtd,gdtotuclfl_dtd,idrvd,bpaded,heatfacd,fluxfacd,a0d,a1d,a2d                &
+         ,delwaved,totufluxd,totdfluxd,fnetd,htrd,totuclfld,totdclfld,fnetcd,htrcd,dtotuflux_dtd  &
+         ,dtotuclfl_dtd,dplankbnd_dtd                                                             &
+#endif
                     ,ngbd, icldlyr, taug, fracsd, cldfmcd)
 
 #ifdef _ACCEL
@@ -15022,62 +15088,58 @@ integer,external :: omp_get_thread_num
       dimBlock = dim3( 256, 1, 1)
 #endif
 
-!!zap
-!do ierr = 1, ngptlw
-!write(0,*)'gurad before rtrnadd',gurad(5,ierr,1)
-!enddo
-!ierr = 0
-!!zap
-      uflx(colstart:(colstart+pncol-1), 1:(nlayers+1)) = totufluxd(1:pncol,1:(nlayers+1))
-!write(0,*)__FILE__,__LINE__,i,'uflx ',uflx(10,10)
-      dflx(colstart:(colstart+pncol-1), 1:(nlayers+1)) = totdfluxd(1:pncol,1:(nlayers+1))
-!write(0,*)__FILE__,__LINE__,i,'dflx ',dflx(10,10)
-
-!write(0,*)__FILE__,__LINE__
+      uflx(colstart:(colstart+pncol-1), 1:(nlayers+1)) = totufluxd(1:pncol,0:(nlayers))
+      dflx(colstart:(colstart+pncol-1), 1:(nlayers+1)) = totdfluxd(1:pncol,0:(nlayers))
 
 ! (dmb 2012) Here we integrate across the g-point fluxes to arrive at total fluxes
 ! This functionality was factored out of the original rtrnmc routine so that I could
 ! parallelize across multiple dimensions.
-!write(0,*)__FILE__,__LINE__,i,'totufluxd  ',totufluxd(10,10)
-!write(0,*)__FILE__,__LINE__,i,'totdfluxd  ',totdfluxd(10,10)
       call rtrnadd _gpuchv (pncol, nlayers, ngptlw, idrv &
-#include "rrtmg_lw_cpu_args.h"
+#ifndef _ACCEL
+         ,ncol_,nlayers_,nbndlw_,ngptlw_                                                          &
+         ,taucmcd,pzd,pwvcmd,semissd,planklayd,planklevd,plankbndd,gurad,gdrad,gclrurad,gclrdrad  &
+         ,gdtotuflux_dtd,gdtotuclfl_dtd,idrvd,bpaded,heatfacd,fluxfacd,a0d,a1d,a2d                &
+         ,delwaved,totufluxd,totdfluxd,fnetd,htrd,totuclfld,totdclfld,fnetcd,htrcd,dtotuflux_dtd  &
+         ,dtotuclfl_dtd,dplankbnd_dtd                                                             &
+#endif
                            )
-      uflx(colstart:(colstart+pncol-1), 1:(nlayers+1)) = totufluxd(1:pncol,1:(nlayers+1))
-!write(0,*)__FILE__,__LINE__,'uflx ',uflx(10,10)
-      dflx(colstart:(colstart+pncol-1), 1:(nlayers+1)) = totdfluxd(1:pncol,1:(nlayers+1))
-!write(0,*)__FILE__,__LINE__,'dflx ',dflx(10,10)
-
 #ifdef _ACCEL
-      ierr = cudaThreadSynchronize() 
+      ierr = cudaThreadSynchronize()
       dimGrid = dim3( (pncol+255)/256,nlayers,1)
 #endif
 
-!jm write(0,*)__FILE__,__LINE__,omp_get_thread_num()
+      uflx(colstart:(colstart+pncol-1), 1:(nlayers+1)) = totufluxd(1:pncol,0:(nlayers))
+      dflx(colstart:(colstart+pncol-1), 1:(nlayers+1)) = totdfluxd(1:pncol,0:(nlayers))
+
 ! (dmb 2012) Calculate the heating rates.
       call rtrnheatrates _gpuchv (pncol, nlayers &
-#include "rrtmg_lw_cpu_args.h"
+#ifndef _ACCEL
+         ,ncol_,nlayers_,nbndlw_,ngptlw_                                                          &
+         ,taucmcd,pzd,pwvcmd,semissd,planklayd,planklevd,plankbndd,gurad,gdrad,gclrurad,gclrdrad  &
+         ,gdtotuflux_dtd,gdtotuclfl_dtd,idrvd,bpaded,heatfacd,fluxfacd,a0d,a1d,a2d                &
+         ,delwaved,totufluxd,totdfluxd,fnetd,htrd,totuclfld,totdclfld,fnetcd,htrcd,dtotuflux_dtd  &
+         ,dtotuclfl_dtd,dplankbnd_dtd                                                             &
+#endif
                                  )    
 #ifdef _ACCEL
       ierr = cudaThreadSynchronize() 
 #endif    
 
 ! copy the partition data back to the CPU
-!write(0,*)__FILE__,__LINE__,i,'totufluxd  ',totufluxd(10,10)
-!write(0,*)__FILE__,__LINE__,i,'totdfluxd  ',totdfluxd(10,10)
-      uflx(colstart:(colstart+pncol-1), 1:(nlayers+1)) = totufluxd(1:pncol,1:(nlayers+1))
-!write(0,*)__FILE__,__LINE__,i,'uflx ',uflx(10,10)
-      dflx(colstart:(colstart+pncol-1), 1:(nlayers+1)) = totdfluxd(1:pncol,1:(nlayers+1))
-!write(0,*)__FILE__,__LINE__,i,'dflx ',dflx(10,10)
-      uflxc(colstart:(colstart+pncol-1), 1:(nlayers+1)) = totuclfld(1:pncol,1:(nlayers+1))
-      dflxc(colstart:(colstart+pncol-1), 1:(nlayers+1)) = totdclfld(1:pncol,1:(nlayers+1))
-      hr(colstart:(colstart+pncol-1), 1:(nlayers+1)) = htrd(1:pncol,1:(nlayers+1))
-      hrc(colstart:(colstart+pncol-1), 1:(nlayers+1)) = htrcd(1:pncol,1:(nlayers+1))
+#if 0
+!these are redundant with the copies before the call to rtrnheatrates, above
+      uflx(colstart:(colstart+pncol-1), 1:(nlayers+1)) = totufluxd(1:pncol,0:(nlayers))
+      dflx(colstart:(colstart+pncol-1), 1:(nlayers+1)) = totdfluxd(1:pncol,0:(nlayers))
+#endif
+      uflxc(colstart:(colstart+pncol-1), 1:(nlayers+1)) = totuclfld(1:pncol,0:(nlayers))
+      dflxc(colstart:(colstart+pncol-1), 1:(nlayers+1)) = totdclfld(1:pncol,0:(nlayers))
+      hr(colstart:(colstart+pncol-1), 1:(nlayers+1)) = htrd(1:pncol,0:(nlayers))
+      hrc(colstart:(colstart+pncol-1), 1:(nlayers+1)) = htrcd(1:pncol,0:(nlayers))
 
       if (idrv .eq. 1) then
 
-         duflx_dt(colstart:(colstart+pncol-1), 1:(nlayers+1)) = dtotuflux_dtd(1:pncol,1:(nlayers+1))
-         duflxc_dt(colstart:(colstart+pncol-1), 1:(nlayers+1)) = dtotuclfl_dtd(1:pncol,1:(nlayers+1))
+         duflx_dt(colstart:(colstart+pncol-1), 1:(nlayers+1)) = dtotuflux_dtd(1:pncol,0:(nlayers))
+         duflxc_dt(colstart:(colstart+pncol-1), 1:(nlayers+1)) = dtotuclfl_dtd(1:pncol,0:(nlayers))
  
       end if
 
@@ -15124,7 +15186,6 @@ integer,external :: omp_get_thread_num
 # undef fracsd
 #endif
  
-!write(0,*)__FILE__,__LINE__
       end subroutine rrtmg_lw_part
 
       end module rrtmg_lw_rad_f
@@ -15168,8 +15229,8 @@ integer,external :: omp_get_thread_num
     !
       save retab
     ! For buffer layer adjustment.  Steven Cavallo, Dec 2010.
-      integer , save    :: nlayers    
-      real, PARAMETER :: deltap = 4.  ! Pressure interval for buffer layer in mb
+      INTEGER , SAVE    :: nlayers    
+      REAL, PARAMETER :: deltap = 4.  ! Pressure interval for buffer layer in mb
     
       CONTAINS
 
@@ -15563,7 +15624,6 @@ integer,external :: omp_get_thread_num
       ENDIF
 #endif
 
-!write(0,*)__FILE__,__LINE__
 
 !-----CALCULATE LONG WAVE RADIATION
 !                                                              
@@ -15797,12 +15857,13 @@ integer,external :: omp_get_thread_num
                iceflglw = 4
                DO K=kts,kte
                   reice1D(icol,K) = MAX(10., re_ice(I,K,J)*1.E6)
-                  if (recloud1D(icol,K).LE.2.5.AND.cldfra3d(i,k,j).gt.0. &
-     &                            .AND. (XLAND(I,J)-1.5).GT.0.) then     !--- Ocean
-                     recloud1D(icol,K) = 10.5
-                  elseif(recloud1D(icol,K).LE.2.5.AND.cldfra3d(i,k,j).gt.0. &
-     &                            .AND. (XLAND(I,J)-1.5).LT.0.) then     !--- Land
-                     recloud1D(icol,K) = 7.5
+                  if (reice1D(icol,K).LE.10..AND.cldfra3d(i,k,j).gt.0.) then
+                     idx_rei = int(t3d(i,k,j)-179.)
+                     idx_rei = min(max(idx_rei,1),75)
+                     corr = t3d(i,k,j) - int(t3d(i,k,j))
+                     reice1D(icol,K) = retab(idx_rei)*(1.-corr) +       &
+     &                                 retab(idx_rei+1)*corr
+                     reice1D(icol,K) = MAX(reice1D(icol,K), 10.0)
                   endif
                ENDDO
             ELSE
@@ -16309,10 +16370,7 @@ integer,external :: omp_get_thread_num
 !
       end do i_loop
    end do j_loop                                           
-!write(0,*)'zap before rrtmg_lw duflx_dt ',duflx_dt
-!write(0,*)'zap before rrtmg_lw duflxc_dt ',duflxc_dt
 
-!write(0,*)__FILE__,__LINE__
 ! Call RRTMG longwave radiation model for full grid for gpu
          call rrtmg_lw &
             (ncol    ,nlay    ,icld    ,idrv    , &
@@ -16324,9 +16382,6 @@ integer,external :: omp_get_thread_num
              tauaer  , &
              uflx    ,dflx    ,hr      ,uflxc   ,dflxc,  hrc, &
              duflx_dt,duflxc_dt)
-!write(0,*)__FILE__,__LINE__,'h2ovmr ',h2ovmr(10,10)
-!write(0,*)__FILE__,__LINE__,'uflx ',uflx(10,10)
-!write(0,*)__FILE__,__LINE__,'dflx ',dflx(10,10)
 
 ! Output downard surface flux, and outgoing longwave flux and cloud forcing 
 ! at the top of atmosphere (W/m2)

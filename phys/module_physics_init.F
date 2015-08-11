@@ -3619,7 +3619,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                           ids, ide, jds, jde, kds, kde,           &
                           ims, ime, jms, jme, kms, kme,           &
                           its, ite, jts, jte, kts, kte            )
-     CASE (FER_MP_HIRES)
+     CASE (FER_MP_HIRES,FER_MP_HIRES_ADVECT)
                CALL fer_hires_init (MPDT,DT,DX,DY,LOWLYR,restart,         &
                             allowed_to_read,                        &
                             ids, ide, jds, jde, kds, kde,           &

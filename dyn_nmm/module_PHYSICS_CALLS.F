@@ -3012,7 +3012,7 @@
 !***  TRANSPOSE THE MOIST ARRAY (IJK) FOR THE PHYSICS (IKJ).
 !-----------------------------------------------------------------------
 !
-      DO N=1,N_MOIST
+      DO N=2,N_MOIST
 !$omp parallel do                                                       &
 !$omp& private(i,j,k)
         DO K=KMS,KME
@@ -3042,7 +3042,7 @@
      &    CONFIG_FLAGS%MP_PHYSICS==ETAMP_HWRF) QT_PRESENT=.TRUE.
 !
       micro_check1: IF(.NOT.QT_PRESENT) THEN
-        DO N=1,N_SCALAR
+        DO N=2,N_SCALAR
 !$omp parallel do                                                       &
 !$omp& private(i,j,k)
           DO K=KMS,KME
@@ -3144,6 +3144,7 @@
      &                 ,QG_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QG),F_QG=F_QG &
      &                 ,QNI_CURR=SCALAR_TRANS(IMS,KMS,JMS,P_QNI),F_QNI=F_QNI  &
      &                 ,QNR_CURR=SCALAR_TRANS(IMS,KMS,JMS,P_QNR),F_QNR=F_QNR  &
+     &                 ,QRIMEF_CURR=SCALAR_TRANS(IMS,KMS,JMS,P_QRIMEF),F_QRIMEF=F_QRIMEF &
      &                 ,QT_CURR=CWM_PHY,F_QT=QT_PRESENT                 &
      &                 ,MP_RESTART_STATE=MP_RESTART_STATE               &
      &                 ,TBPVS_STATE=TBPVS_STATE                         &
@@ -3240,7 +3241,7 @@
 !***  REFILL THE MOIST ARRAY.
 !-----------------------------------------------------------------------
 !
-      DO N=1,N_MOIST
+      DO N=2,N_MOIST
 !$omp parallel do                                                       &
 !$omp& private(i,j,k)
         DO J=JMS,JME
@@ -3255,7 +3256,7 @@
 !-----------------------------------------------------------------------
 !
       micro_check2: IF (.NOT.QT_PRESENT) THEN
-        DO N=1,N_SCALAR
+        DO N=2,N_SCALAR
 !$omp parallel do                                                       &
 !$omp& private(i,j,k)
           DO J=JMS,JME

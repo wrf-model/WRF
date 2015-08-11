@@ -37,6 +37,7 @@ MODULE module_optional_input
 
    INTEGER :: flag_hgtmaxw  , flag_pmaxw    , flag_tmaxw    , flag_umaxw    , flag_vmaxw     , &
               flag_hgttrop  , flag_ptrop    , flag_ttrop    , flag_utrop    , flag_vtrop
+   INTEGER :: flag_pmaxwnn  , flag_ptropnn
    INTEGER :: flag_extra_levels
 
    INTEGER                  :: num_soil_levels_input
@@ -509,11 +510,13 @@ USE module_io_domain
 
       flag_hgtmaxw  = 0 
       flag_pmaxw    = 0 
+      flag_pmaxwnn  = 0 
       flag_tmaxw    = 0 
       flag_umaxw    = 0 
       flag_vmaxw    = 0 
       flag_hgttrop  = 0 
       flag_ptrop    = 0 
+      flag_ptropnn  = 0 
       flag_ttrop    = 0 
       flag_utrop    = 0 
       flag_vtrop    = 0 
@@ -528,6 +531,11 @@ USE module_io_domain
       CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
       IF ( ierr .EQ. 0 ) THEN
          flag_pmaxw    = itmp
+      END IF
+      flag_name(1:8) = 'PMAXWNN '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_pmaxwnn  = itmp
       END IF
       flag_name(1:8) = 'TMAXW   '
       CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
@@ -554,6 +562,11 @@ USE module_io_domain
       IF ( ierr .EQ. 0 ) THEN
          flag_ptrop    = itmp
       END IF
+      flag_name(1:8) = 'PTROPNN '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_ptropnn  = itmp
+      END IF
       flag_name(1:8) = 'TTROP   '
       CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
       IF ( ierr .EQ. 0 ) THEN
@@ -568,6 +581,26 @@ USE module_io_domain
       CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
       IF ( ierr .EQ. 0 ) THEN
          flag_vtrop    = itmp
+      END IF
+
+      !  Newer versions of WPS supply a nearest-neighbor version of pressure and a
+      !  pressure that is suitable for interpolation.  If the nearest neighbor is 
+      !  missing, all fields are set to unavailable.
+
+      IF ( flag_pmaxwnn .EQ. 0 ) THEN
+         flag_hgtmaxw  = 0 
+         flag_pmaxw    = 0 
+         flag_tmaxw    = 0 
+         flag_umaxw    = 0 
+         flag_vmaxw    = 0 
+      END IF
+
+      IF ( flag_ptropnn .EQ. 0 ) THEN
+         flag_hgttrop  = 0 
+         flag_ptrop    = 0 
+         flag_ttrop    = 0 
+         flag_utrop    = 0 
+         flag_vtrop    = 0 
       END IF
 
       flag_extra_levels = flag_hgtmaxw*flag_pmaxw*flag_tmaxw*flag_umaxw*flag_vmaxw* &

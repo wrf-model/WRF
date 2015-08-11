@@ -160,7 +160,9 @@ state    real   min_p          ij       dyn_em      1        -     i0d  "MIN_P" 
 state    real   hgtmaxw        ij       dyn_em      1        -     i1  "HGTMAXW"    "Height of the max wind speed"       "m"
 state    real   hgttrop        ij       dyn_em      1        -     i1  "HGTTROP"    "Height of the tropopause"           "m"
 state    real   pmaxw          ij       dyn_em      1        -     i1  "PMAXW"      "Pressure of the max wind speed"     "Pa"
+state    real   pmaxwnn        ij       dyn_em      1        -     i1  "PMAXWNN"    "PMAXW, nearest neighbor interp"     "Pa"
 state    real   ptrop          ij       dyn_em      1        -     i1  "PTROP"      "Pressure of the tropopause"         "Pa"
+state    real   ptropnn        ij       dyn_em      1        -     i1  "PTROPNN"    "PTROP, nearest neighbor interp      "Pa"
 state    real   tmaxw          ij       dyn_em      1        -     i1  "TMAXW"      "Temperature of the max wind speed"  "K"
 state    real   ttrop          ij       dyn_em      1        -     i1  "TTROP"      "Temperature of the tropopause"      "K"
 state    real   umaxw          ij       dyn_em      1        X     i1  "UMAXW"      "U-component of the max wind speed"  "m s-1"
@@ -1962,6 +1964,8 @@ rconfig   real    zap_close_levels        namelist,domains	1              500   
 rconfig   real    maxw_horiz_pres_diff    namelist,domains	1              5000    irh    "maxw_horiz_pres_diff"   "pressure limit (Pa), when horiz diff exceeded do not use max_wind level in real"
 rconfig   real    trop_horiz_pres_diff    namelist,domains	1              5000    irh    "trop_horiz_pres_diff"   "pressure limit (Pa), when horiz diff exceeded do not use tropopause level in real"
 rconfig   real    maxw_above_this_level   namelist,domains	1              30000   irh    "maxw_above_this_level"  "pressure limit (Pa), only use the max_wind data at or above this level"
+rconfig   integer use_maxw_level          namelist,domains	1              0       irh    "use_maxw_level"         "0=no/1=yes: in real, use the input metgrid U, V, T, GHT at the level of max wind speed"
+rconfig   integer use_trop_level          namelist,domains	1              0       irh    "use_trop_level"         "0=no/1=yes: in real, use the input metgrid U, V, T, GHT at the tropopause level"
 rconfig   logical sfcp_to_sfcp            namelist,domains	1              .false. irh    "sfcp_to_sfcp"   "T/F use incoming sfc pres to compute new sfc pres"      "flag"
 rconfig   logical adjust_heights          namelist,domains	1              .false. irh    "adjust_heights"   "T/F adjust pressure level input to match 500 mb height"      "flag"
 rconfig   logical smooth_cg_topo          namelist,domains	1              .false. irh    "smooth_cg_topo"   "T/F smooth CG topo on boundarries" "flag"
@@ -2808,7 +2812,7 @@ halo      HALO_EM_INIT_3 dyn_em 48:ph0,php,t_init,mub,mu0,p,al,alt,alb
 halo      HALO_EM_INIT_4 dyn_em 48:pb,h_diabatic,qv_diabatic,qc_diabatic,msftx,msfty,msfux,msfuy,msfvx,msfvy,msfvx_inv,f,e,sina,cosa,ht,potevp,snopcx,soiltb,xlat,xlong,xlat_u,xlat_v,xlong_u,xlong_v,clat
 halo      HALO_EM_INIT_5 dyn_em 48:moist,chem,scalar,tracer
 halo      HALO_EM_INIT_6 dyn_em 48:om_tmp,om_s,om_u,om_v,om_depth,om_tini,om_sini,om_lat,om_lon,om_ml
-halo      HALO_EM_VINTERP_UV_1 dyn_em 24:pd_gc,pb,pmaxw,ptrop
+halo      HALO_EM_VINTERP_UV_1 dyn_em 48:pd_gc,pb,pmaxw,ptrop,pmaxwnn,ptropnn
 halo      HALO_EM_A dyn_em  8:ru,rv,rw,ww,php,alt,al,p,muu,muv,mut
 halo      HALO_EM_PHYS_A  dyn_em 4:u_2,v_2
 halo      HALO_EM_PHYS_PBL dyn_em        4:rublten,rvblten

@@ -474,22 +474,18 @@ inforamtion is ignored.  The default is 300 hPa.  The user may also
 select the level that when exceeded the trop and maxw fields are ignored
 (due to the horizontal pressure difference detecting a user-defined
 discontinuity, and the metgrid horizontal interpolation across the 
-discontinuity would be suspect).  
+discontinuity would be suspect).  By default, this option is turned off.
+The user may choose to individually activate the vertical interpolation of
+either the level of max winds .OR. the tropopause level.
 
-Default (all units Pa):
+Default (all pressure units Pa):
  &domains
  maxw_horiz_pres_diff                = 5000
  trop_horiz_pres_diff                = 5000
  maxw_above_this_level               = 30000
+ use_maxw_level                      = 0 (0=do not use level, 1 = use level)
+ use_trop_level                      = 0 (0=do not use level, 1 = use level)
 
-To test the sensitivity, a user may shut off the usage of the new data 
-by making the minimum acceptable vertical level for max winds ABOVE anything 
-physically possible inside of real, and also by setting the horizontal 
-pressure difference SMALLER than anything possible.
- &domains
- maxw_horiz_pres_diff                = -1
- trop_horiz_pres_diff                = -1
- maxw_above_this_level               = 1
 
 
 

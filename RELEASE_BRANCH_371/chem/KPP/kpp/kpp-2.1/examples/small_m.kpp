@@ -1,0 +1,6 @@
+#MODEL      small_strato
+#INTEGRATOR none 
+#LANGUAGE   Matlab
+#DRIVER     general
+#HESSIAN    on
+#STOICMAT   on

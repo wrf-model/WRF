@@ -1,0 +1,187 @@
+ &time_control
+ run_days                            = 0,
+ run_hours                           = 0,
+ run_minutes                         = 60,
+ run_seconds                         = 0,
+ start_year                          = 2006, 0001, 0001,
+ start_month                         = 01,   01,   01,
+ start_day                           = 01,   01,   01,
+ start_hour                          = 09,   01,   00,
+ start_minute                        = 00,   01,   01,
+ start_second                        = 00,   00,   00,
+ end_year                            = 2006, 0001, 0001,
+ end_month                           = 01,   01,   01,
+ end_day                             = 01,   01,   01,
+ end_hour                            = 10,   00,   00,
+ end_minute                          = 00,    0,   0,
+ end_second                          = 0,    00,   00,
+ history_interval_s                  = 120,  30,   30,
+ frames_per_outfile                  = 1,     1,    1,
+ restart                             = .false.,
+ restart_interval                    = 120  
+ io_form_history                     = 2
+ io_form_restart                     = 2
+ io_form_input                       = 2
+ io_form_boundary                    = 2
+ debug_level                         = 1
+/
+
+ &domains
+ time_step                           = 0,
+ time_step_fract_num                 = 1,
+ time_step_fract_den                 = 2,
+ max_dom                             = 1,
+ s_we                                = 1,     1,     1,
+ e_we                                = 43,    43,    43,
+ s_sn                                = 1,     1,     1,
+ e_sn                                = 43,    43,    43,
+ s_vert                              = 1,     1,     1,
+ e_vert                              = 41,    41,    41,
+ dx                                  = 50,    30,    10,
+ dy                                  = 50,    30,    10,
+ ztop                                = 4500, 1500, 1500,
+ grid_id                             = 1,     2,     3,
+ parent_id                           = 0,     1,     2,
+ i_parent_start                      = 0,     1,    1,
+ j_parent_start                      = 0,     1,    1,
+ parent_grid_ratio                   = 1,     2,     3,
+ parent_time_step_ratio              = 1,     2,     3,
+ feedback                            = 1,
+ smooth_option                       = 0
+ sr_x                                = 10,     0,     0
+ sr_y                                = 10,     0,     0
+/
+
+ &physics
+ mp_physics                          = 0,     0,     0,
+ ra_lw_physics                       = 0,     0,     0,
+ ra_sw_physics                       = 0,     0,     0,
+ radt                                = 30,    30,    30,
+ sf_sfclay_physics                   = 0,     0,     0,
+ sf_surface_physics                  = 0,     0,     0,
+ bl_pbl_physics                      = 0,     0,     0,
+ bldt                                = 0,     0,     0,
+ cu_physics                          = 0,     0,     0,
+ cudt                                = 0,     0,     0,
+ isfflx                              = 1,
+ ifsnow                              = 0,
+ icloud                              = 0,
+ num_soil_layers                     = 5,
+ mp_zero_out                         = 0,
+ /
+
+ &fdda
+ /
+
+ &dynamics
+ rk_ord                              = 3,
+ diff_opt                            = 2,      2,      2,
+ km_opt                              = 2,      2,      2,
+ damp_opt                            = 2 ,
+ zdamp                               = 800.,  5000.,  5000.,
+ dampcoef                            = 0.2,    0.2,    0.2
+ khdif                               = 0.05,   0.05,   0.05,
+ kvdif                               = 0.05,   0.05,   0.05,
+ smdiv                               = 0.1,    0.1,    0.1,
+ emdiv                               = 0.01,   0.01,   0.01,
+ epssm                               = 0.1,    0.1,    0.1
+ mix_full_fields                     = .true., .true., .true.,
+ non_hydrostatic                     = .true., .true., .true.,
+ h_mom_adv_order                     = 5,      5,      5,
+ v_mom_adv_order                     = 3,      3,      3,
+ h_sca_adv_order                     = 5,      5,      5,
+ v_sca_adv_order                     = 3,      3,      3,
+ time_step_sound                     = 20,     20,     20,
+ moist_adv_opt                       = 1,      1,      1,
+ scalar_adv_opt                      = 1,      1,      1,
+ /
+
+ &bdy_control
+ periodic_x                          = .false.,.false.,.false.,
+ symmetric_xs                        = .false.,.false.,.false.,
+ symmetric_xe                        = .false.,.false.,.false.,
+ open_xs                             = .true., .false.,.false.,
+ open_xe                             = .true., .false.,.false.,
+ periodic_y                          = .false.,.false.,.false.,
+ symmetric_ys                        = .false.,.false.,.false.,
+ symmetric_ye                        = .false.,.false.,.false.,
+ open_ys                             = .true., .false.,.false.,
+ open_ye                             = .true., .false.,.false.,
+ nested                              = .false., .true., .true.,
+ /
+
+ &grib2
+ /
+
+ &namelist_quilt
+ nio_tasks_per_group = 0,
+ nio_groups = 1,
+ /
+
+ &fire ! be sure to set sr_x,sr_y in domains-namelist (to set refinement in x,y)
+ ifire              = 2,               ! integer, = 0: no fire, 2=turn on fire model
+ fire_fuel_read     = 0,               ! integer, -1: from WPS, 0= use fire_fuel_cat, 1= by altitude, 2=from file input_fc
+ fire_fuel_cat      = 3,               ! integer, fuel category if constant
+! ignition 
+ fire_num_ignitions = 2,               ! integer, only the first fire_num_ignition used, up to 5 allowed
+ fire_ignition_ros1 =   0.05,          ! rate of spread during ignition, m/s  
+ fire_ignition_start_x1 = 1075,        ! start points of ignition lines, in m from lower left corner
+ fire_ignition_start_y1 =  900,        ! start points of ignition lines, in m from lower left corner
+ fire_ignition_end_x1 =   1075,        ! end points of ignition lines, in m from lower left corner
+ fire_ignition_end_y1 =   1100,        ! end points of ignition lines, in m from lower left corner
+ fire_ignition_radius1 =    20,        ! all within this radius will ignite, > fire mesh step
+ fire_ignition_start_time1 = 180,      ! sec for ignition from the start
+ fire_ignition_end_time1  = 190,       ! sec for ignition from the start
+ fire_ignition_ros2 =   0.05,          ! rate of spread during ignition, m/s  
+ fire_ignition_start_x2 =  800,        ! start points of ignition lines, in m from lower left corner
+ fire_ignition_start_y2 = 1500,        ! start points of ignition lines, in m from lower left corner
+ fire_ignition_end_x2 =    800,        ! end points of ignition lines, in m from lower left corner
+ fire_ignition_end_y2 =   1500,        ! end points of ignition lines, in m from lower left corner
+ fire_ignition_radius2 =    20,        ! all within this radius will ignite, > fire mesh step
+ fire_ignition_start_time2 =600,       ! sec for ignition from the start! end ignition for sfire
+ fire_ignition_end_time2  = 720,       ! sec for ignition from the start! end ignition for sfire
+ fire_wind_height = 1.,                ! height to interpolate winds to for calculating fire spread rate 
+!
+! verbosity
+ fire_print_msg     = 1,        ! 1 print fire debugging messages
+ fire_print_file    = 0,        ! 1 write files for matlab
+!
+! experiments
+!
+ fire_const_time = -1.,         ! (s) if >0, time from start to stop fire evolution and keep heat output constant
+ fire_const_grnhfx = -1,        ! (W/s) if both >=0, use this flux (meant to be used when fire_const_time=ignition time) 
+ fire_const_grnqfx = -1,        ! (W/s) if both >=0, use this flux (meant to be used when fire_const_time=ignition time) 
+ fire_test_steps=0,             ! >0 = on first call, do specified number of steps and terminate (testing only)
+ fire_mountain_type=0,          ! in ideal: 0=none, 1= hill, 2=EW ridge, 3=NS ridge
+ fire_mountain_height=500.,     ! (m) ideal mountain height
+ fire_mountain_start_x=1000.,   ! (m) coord of start of the mountain from lower left corder (just like ignition)
+ fire_mountain_start_y=1100.,   ! (m) coord of start of the mountain from lower left corder (just like ignition)
+ fire_mountain_end_x=1500.,     ! (m) coord of end of the mountain from lower left corder (just like ignition)
+ fire_mountain_end_y=1400.,     ! (m) coord of end of the mountain from lower left corder (just like ignition)
+ fire_topo_from_atm=1,          ! 0 = fire mesh topo set from fine-res data, 1 = populate by interpolating from atmosphere
+ delt_perturbation = 0.0,       ! Temperature perturbation for creating cold (negative) / warm (positive) bubble [K], 0 turns it off
+ !xrad_perturbation = 10000.0,   ! Horizontal radius of the bubble in E-W direction [m]
+ !yrad_perturbation = 10000.0,   ! Horizontal radius of the bubble in N-S direction [m]
+ !zrad_perturbation = 1500.0,    ! Vertical radius of the bubble [m]
+ !hght_perturbation = 1500.0,    ! Perturbation height - height at which the warm/cold bubble will be suspended [m]
+!
+! stretched grid variables
+! 
+ stretch_grd = .true.,
+ stretch_hyp = .true.,
+ z_grd_scale = 2.35
+!
+! method switches for developers only, do not change!
+!
+ fire_boundary_guard = -1,      ! integer, number of cells to stop when fire close to the domain boundary, -1 turn off
+ fire_fuel_left_irl=2,          ! refinement to integrate fuel_left, must be even
+ fire_fuel_left_jrl=2,          ! refinement to integrate fuel_left, must be even
+ fire_atm_feedback=1.0,         ! real, multiplier for heat fluxes, 1.=normal, 0.=turn off two-way coupling 
+ fire_back_weight=0.5,          ! RK timestepping coefficient, 0=forward, 0.5=Heun
+ fire_grows_only=1,             ! if >0 level set function cannot increase = fire can only grow
+ fire_viscosity=0.4,              ! artificial viscosity in level set method (max 1, needed with fire_upwinding=0)
+ fire_upwinding=3,              ! 0=none, 1=standard, 2=godunov, 3=eno, 4=sethian
+ fire_fuel_left_method=1,        ! for now, use 1 only
+ fire_lfn_ext_up=1.0,           ! 0.=extend level set function at boundary by reflection, 1.=always up
+ fire_advection=0,              ! 0 = cawfe, 1 = use abs speed/slope in spread rate, then project on normal to fireline
+/

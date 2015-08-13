@@ -1,0 +1,107 @@
+#!/usr/bin/perl
+
+  if(! defined($ENV{NETCDF_INC})){
+     if(defined($ENV{NETCDF})) {
+       $tt = `echo "NETCDF_INC = \${NETCDF}/include" > macros.tmp` ; 
+     } else {
+        print"Error: environment variable NETCDF_INC not defined. \n";
+        exit(0);
+     }
+   }
+
+  ${NETCDF_LIB} = $ENV{NETCDF_LIB};
+  if(! defined($ENV{NETCDF_LIB})){
+     if(defined($ENV{NETCDF})) {
+       $tt = `echo "NETCDF_LIB = \${NETCDF}/lib" >> macros.tmp` ; 
+       ${NETCDF_LIB} = $ENV{NETCDF}."/lib";
+     } else {
+       print"Error: environment variable NETCDF_LIB not defined. \n";
+       exit(0);
+     }
+  }
+  
+  if(! -e "${NETCDF_LIB}/libnetcdff.a"){
+    $tt = `echo "NETCDFLIB       =       -L${NETCDF_LIB} -lnetcdf" >> macros.tmp `;
+  }
+
+  if(-e macros) {system (rm -f macros);}
+#  if(-e Makefile) {system "rm -f Makefile" ;}
+
+#  system("cp arc/Makefile ."); 
+
+  if($#ARGV == 0) {
+     $response = shift(@ARGV) ;
+     print("Configure hydro: $response \n");
+  }else {
+     print "Please select from following supported options. \n\n";
+
+     print "   1. Linux PGI compiler sequential \n";
+     print "   2. Linux PGI compiler dmpar \n";
+     print "   3. IBM AIX compiler sequential, xlf90_r\n";
+     print "   4. IBM AIX compiler dmpar \n";
+     print "   5. Linux gfort compiler sequential \n";
+     print "   6. Linux gfort compiler dmpar      \n";
+     print "   7. Linux ifort compiler sequential \n";
+     print "   8. Linux ifort compiler dmpar      \n";
+     print "   0. exit only \n";
+
+     printf "\nEnter selection [%d-%d] : ",1,5 ;
+
+     $response = <STDIN> ;
+     chop($response);
+  }
+
+  use Switch;
+  switch ($response) {
+     case 1 { 
+              # sequential linux 
+              system "cp arc/macros.seq.linux macros"; 
+              system "cp arc/Makefile.seq Makefile.comm"; 
+            }
+
+     case 2 {
+              # mpp linux 
+              system "cp arc/macros.mpp.linux macros"; 
+              system "cp arc/Makefile.mpp Makefile.comm"; 
+            }
+
+     case 3 {
+              # sequential IBM AIX
+              system "cp arc/macros.seq.IBM.xlf90_r macros"; 
+              system "cp arc/Makefile.seq Makefile.comm"; 
+            }
+
+     case 4 {
+              # mpp IBM AIX
+              system "cp arc/macros.mpp.IBM.xlf90_r macros"; 
+              system "cp arc/Makefile.mpp Makefile.comm"; 
+            }
+
+     case 5 {
+              # GFORTRAN only                         
+              system "cp arc/macros.seq.gfort macros"; 
+              system "cp arc/Makefile.seq Makefile.comm"; 
+            }
+
+      case 6 {
+               # GFORTRAN dmpar only                         
+               system "cp arc/macros.mpp.gfort macros"; 
+               system "cp arc/Makefile.mpp Makefile.comm"; 
+             }
+      case 7 {
+               # ifort sequential                            
+               system "cp arc/macros.seq.ifort macros"; 
+               system "cp arc/Makefile.seq Makefile.comm"; 
+             }
+      case 8 {
+               # ifort    dmpar only                         
+               system "cp arc/macros.mpp.ifort macros"; 
+               system "cp arc/Makefile.mpp Makefile.comm"; 
+             }
+
+     else   {print "no selection $response\n"; last} 
+  }
+  if(! (-e lib)) {mkdir lib;}
+  if(! (-e mod)) {mkdir mod;}
+  if(-e "macros.tmp")  { system("cat macros macros.tmp > macros.a; rm -f macros.tmp; mv macros.a macros");}
+  if((-d "LandModel") ) {system "cat macros LandModel/user_build_options.bak  > LandModel/user_build_options";}

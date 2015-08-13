@@ -1,0 +1,813 @@
+Updated for Version 3.1 release.  Mar 17 2009
+
+1, rename 3dvar_obs.F90 to obsproc.F90.
+2, rename 3dvar_obs.exe to obsproc.exe.
+3, rename namelist.3dvar_obs.wrfvar-tut to namelist.obsproc.wrfvar-tut.
+4, remove some unnecessary files only for development team internal use only.
+5, update README and README.namelist
+
+Updated Makefile to support more compilers.  Mar 5 2009
+
+1, to compile, add compiler choice in the make command line, for example,
+   make FC="pgf90"
+   make FC="ifort"     # for Linux only
+   make FC="gfortran"  # for Linux only
+   make FC="g95"       # for Mac only
+
+Updated by Y.-R. Guo, 7 May 2008
+
+1, To correct the "0 obs" ascii output file writing
+
+   Modified:
+       src/module_write.F90
+
+Updated by Y.-R. Guo, 28 March 2008
+
+1, Improve the printing, change "print *," to be "write(0,"
+
+   Modified:
+       src/module_map_utils.F90
+       src/module_decoded.F90
+       src/module_err_afwa.F90
+
+2, Plot only one set of the obs distribution maps
+
+   Modified
+       MAP_plot/Dir_map/Map.F
+       MAP_plot/Dir_map/plstn1.F
+
+3, Added the function to write out the obs files for use of 
+   3DVAR, FGAT, and 4DVAR
+
+   For 3DVAR, the obs within slot [time_window_min, time_window_max)
+              are outputted. no time duplicate obs;
+.
+   For FGAT,  the obs files for multiple time slots are outputted.
+              each of the time slots has the closed low bound and 
+              opened upper bound. Within the whole time window, no time-
+              duplicate obs allowed;
+
+   For 4DVAR, same as FGAT but there may be time-duplicate obs within 
+              the whole time window. Within each of time slots,however,
+              no time-duplicate obs allowed. 
+
+   * The opened upper-bound is important for the cycling run to avoid the
+     duplicated usage of the observations in the different cycles.
+
+   * The number of time-slots before and after analysis time could be 
+     different (i.e.asymetric). However, the number of the time-slots
+     before the analysis time MUST BE >= 1 for FGAT or 4DVAR.
+
+   * Currently the lengths for all of the time-slots are considered to be 
+     same. 
+
+   * Note: the current MAX_OB_RANGE in scripts is ONLY allowed to be integer 
+     (hours), and the entir time window = 2 * MAX_OB_RANGE, must be the even 
+     numbers (hours). So for 6-h cycling run (MAX_OB_RANGE=3), the time window 
+     for obsproc is correct, but for a 3-h cycling run, the time window for 
+     obsproc will not be correct. 
+
+   Modified
+       src/3dvar_obs.F90
+       src/module_namelist.F90
+       src/module_write.F90
+       src/module_duplicate.F90
+
+4, Introduced the switches to control the specific types of obs in
+   the obs_gts (ASCII) files. This is mostly for testing purpose.
+
+   Modified
+       src/3dvar_obs.F90
+       src/module_namelist.F90
+   
+Updated by Y.-R. Guo, 31 January 2008
+
+1) Bug fix in module_recoverh.F90 -->
+              SUBROUTINE recover_h_from_ptq(P,T,Q,HGT,KXS,K_START,K_TOP)
+
+   it must be processed separately when k >= kxs under k_start == 0.
+
+2) Add the limitation on iproj setting in module_namelist.F90
+
+   modified codes:
+  
+       src/module_namelist.F90
+       src/module_recoverh.F90
+   and README
+ 
+Updated by Y.-R. Guo, 10 May 2007
+
+1) To make the namelist variables in record6 more understandable:
+
+   ps0 --> base_pres
+   ts0 --> base_temp
+   tlp --> base_lapse
+
+   and 
+
+   pis0 --> base_tropo_pres
+   tis0 --> base_start_temp.
+
+2) To maintain the backward compatible, users could 
+
+   either set 
+
+     a set of variable names: ts0,  ps0, tlp, and tis0, pis0 
+
+   or set 
+
+     a set of variable names: base_temp, base_pres, base_lapse, and 
+                              base_start_temp.base_tropo_pres 
+
+   Both of the settings are giving the exactly same results.
+
+3) Note: In most cases, pis0, tis0 or base_start_temp, base_tropo_pres.
+   do not need to set in namelist file. The default values are OK.
+
+4) Modified subroutines
+
+     src/module_mm5.F90
+     src/module_namelist.F90
+     src/module_write.F90
+
+     README
+     README.namelist
+     namelist.3dvar_obs.sample1
+     namelist.3dvar_obs.wrfvar-tut
+
+Updated by Y.-R. Guo, 12 April 2007
+
+Modified the functions Ref_height and Ref_pres in order to consider
+the more accurate reference state in stratosphere. 
+
+  The tropopause pressure (default=20000.0 Pa) and the isothermal 
+  temperature above tropopause (default = 215 K) are introduced into 
+  the "namelist.3dvar_obs" file.
+
+As the model top level became high and high, 1000 Pa, even 100 Pa,
+the accurate reference state must be provided in the OBSPROC to
+do the gross quality control, recover the pressure or height, etc.
+
+The codes are modified"
+
+   3DVAR_OBSPROC/src/3dvar_obs.F90
+   3DVAR_OBSPROC/src/module_mm5.F90
+   3DVAR_OBSPROC/src/module_namelist.F90
+   3DVAR_OBSPROC/src/module_write.F90
+
+Updated by Y.-R. Guo, 22 March 2007
+
+Jim Bresch found the variable, m_miss, not initiated to be zero in 
+
+   3DVAR_OBSPROC/src/module_decoded.F90
+
+Added "m_miss = 0" in this code.
+
+Updated by Y.-R. Guo, 5 February 2007
+
+To move the elevation missing check after the domain and time-window screen
+in 3DVAR_OBSPROC/src/module_decoded.F90, and the printing stuff reduced.
+
+Updated by Y.-R. Guo, 1 February 2007
+
+1, Removed the line:
+
+   $(RANLIB) $(LIBDIR)$(FDVARLIB)
+
+   in MAP_plot/Dir_map/Makefile and MAP_plot/Dir_map/Skewt/Makefile 
+
+   The Error in compiling Map.exe will disappeared.
+
+2, Modified the MAP_plot/configure.user.ibm
+
+   A -O2 option added to FCFLAGS. Otherwise, Map.exe does not work properly
+   in bluevista. (This is happened in compiling the wrfvar code too). 
+
+Updated by Y.-R. Guo, 20 January 2007
+
+Hui-Chuan encountered the segmentation error with 2007010418 and
+  2007010812 obs (Jim Brsch) data in check_duplicate_loc.
+
+The code is rather complicated during the check duplication and data merging
+together. I found that the logic is not correct when the "first" coming
+report has a "0 level data record". Because the code is used the pointer/link
+structure, it takes me 3 days to fix the module:
+
+         module_obs_merge.F90
+
+Updated by Y.-R. Guo, 28 November 2006
+
+1, g95 compiler in Mac is added:
+
+     mak mac_g95
+
+2, Remove the redundant codes
+
+   subroutine local in module_qc.F90
+
+   AA = (PMAX - PMSL) / LOG (NTOP/NBOT) in module_err_afwa.F90
+
+3, Added the AIRS plotting to MAP_plot
+
+Updated by Y.-R. Guo, 10 November 2006
+
+1, Added the GPS RO excess phase processing (GPSEP)
+
+   GPS RO Refractivity observation error specification is updated (Chen and Kuo
+   2005).
+
+   The GPS RO little_r file is from the bufr decoder program. The data
+   contain the height, lat, lon, impact parameter, azimuth angle, bending 
+   angle, refractivity.
+
+2, Reviewed the AIRS data processing
+
+   p-h gross check should be done, not skept over by Rizvi's mod.
+
+3, Note that AIRS and GPSEP are not includeed in prebufr output data yet.
+   More work needed for this.
+
+Modifications:
+
+	M README
+	M namelist.3dvar_obs.wrfvar-tut
+	M src/3dvar_obs.F90
+	M src/fm_decoder.F90
+	M src/module_complete.F90
+	M src/module_decoded.F90
+	M src/module_diagnostics.F90
+	M src/module_duplicate.F90
+	M src/module_err_afwa.F90
+	M src/module_err_ncep.F90
+	M src/module_per_type.F90
+	M src/module_qc.F90
+	M src/module_recoverh.F90
+	M src/module_recoverp.F90
+	M src/module_sort.F90
+	M src/module_write.F90
+	M src/platform_interface.inc
+	M src/sort_platform.F90
+
+Updated by Y.=R. Guo, 29 September 2006
+
+1, Added the system library SYSLIB=-lSystemStubs for Mac xlf.
+2, Mercator map projection bug fix.
+
+Updated by Y.-R. Guo, 27 April 2006
+
+  Added the directory: kmabufr_to_littler, in which the kma bufr format
+  observations are converted to the little_r format observations.
+
+Updated by Y.-R. Guo, 13 April 2006
+
+  Incorporated the Jim Bresch's changes in preparing the release to KMA.
+
+  3DVAR_OBSPROC/Makefile
+  3DVAR_OBSPROC/lib/cwordsh/README_cwordsh
+  3DVAR_OBSPROC/lib/cwordsh/Makefile
+  3DVAR_OBSPROC/lib/cwordsh/cwordsh.f
+  3DVAR_OBSPROC/lib/cwordsh/cwordsh.sh
+  3DVAR_OBSPROC/lib/Makefile
+  3DVAR_OBSPROC/lib/ncep/Makefile
+  3DVAR_OBSPROC/src/module_decoded.F90
+
+  3DVAR_OBSPROC/MAP_plot/Map.csh
+  3DVAR_OBSPROC/README
+
+Updated by Y.-R. Guo, 6 March 2006
+
+  1, This version of 3DVAR_OBSPROC code included the prebufr OBS
+     file output (see README.namelist), special for KMA 2005 project.
+
+     What are changed by Jim Bresch and Jim Drake? see below:
+
+     Updated by Jim Bresch, 1 February 2006
+     --------------------------------------
+
+     Completed prepbufr code. Added NCEP's bufrlib to the directory.
+     Numerous changes to source code and Makefiles.
+
+     Updated by Jim Drake, 20 Oct 2005
+     ---------------------------------
+
+     Modified to add PREPBUFR processing of surface observation types:
+
+	3DVAR_OBSPROC/README
+	3DVAR_OBSPROC/README.namelist
+	3DVAR_OBSPROC/Makefile     (for faster builds)
+	3DVAR_OBSPROC/little_r     (only FM-13 and FM-15 because that's
+                                    all AFWA puts out right now. Tested
+                                    with FM-12 and FM-18 too).
+	3DVAR_OBSPROC/namelist.3dvar_obs
+	3DVAR_OBSPROC/src/Makefile (for faster builds)
+	3DVAR_OBSPROC/src/3dvar_obs.F90
+	3DVAR_OBSPROC/src/module_write.F90
+
+    For architectures other than IBM the macro LDFLAGS will need adjusting, and
+    the macro LOCAL_LIBRARIES needs to be pointed at the BUFRLIB library, (cf.
+    3DVAR_OBSPROC/Makefile).
+
+    On AFWA IBM's, set the environment variable OBJECT_MODE to 64 in order to
+    build.
+
+    3DVAR_OBSPROC puts out a warning for some deficiency in some of the 
+    observations as they are read in that I haven't pursued.
+
+  2,In general, this version of 3DVAR_OBSPROC code can be applied to write out
+    both the ASCII and prebufr 3dvar_OBS files. Only restriction is the number
+    of vertical levels to 190. If users expect the number of vertical levels 
+    > 190, such as GPS Ref from COSMIC/CDDAC, you should use a earlier version
+    of 3DVAR_OBSPROC code obtained by
+
+      cvs -d bay-mmm:/data3/mp/wrfvar co -r V2_11 3DVAR_OBSPROC
+
+Updated by Y.-R. Guo, 20 February 2006
+
+  AFWA found a "STOP" problem with SOUND data in Sub. reorder in 
+  module module_recoverh.F90 because the pressure is missing at
+  some levels. The problem is existed in module module_recoverp.F90
+  that at certain bottom levels, the pressure was not retrieved.
+  Two modules are modified.
+
+Updated by Y.-R. Guo, 2 February 2006
+
+  Jim Bresch found that all sea surface wind speed from SSMI became missing.
+  However, I checked the old file: t1a_obs_ssmi_retrieval.02110418.3dvar,
+  the wind speed is OK. This was caused by "meaningless wind check" added
+  on 04/27/2004. Actually, for SSMI, this check should be skept over.
+
+  Also I found the the quality index for SSMI PW became "4" --- error 
+  specified. It may be better to keep it to be "0" as before.
+
+   Updated by Y.-R. Guo, 17 January 2006
+
+   1, with CWB 2003090312Z obs data: PILOT --> FM-32, ID=48698, 
+      1.370, 103.980, the "dead-loop" occurred in module_recoverh.F90
+
+      The bugs in re-assign the negative values to the HGT%qc in
+      subroutine recover_h_from_ptq are found:
+
+       HGT(k-1)%qc   = - HGT(k-1)%qc
+
+      should be
+
+       if (HGT(k-1)%qc>0) HGT(k-1)%qc   = - HGT(k-1)%qc
+
+   Updated by Y.-R. Guo, 25 October 2005
+
+   1, CWB (Hi-Chuan Lin) found the dead-loop with the data 
+      pilot2005081800.problem.r in module_recoverh.F90.
+
+      The bug corrected in module: pilot2005081800.problem.r
+
+   2, Occasionally found 3DVAR_OBSPROC is not working properly 
+      in MMM Dec alpha machine.
+
+
+   3, For AMD Opteron Processor 848 (x86_64), the module: module_sort.F90
+      must have a statement such as:
+
+      write(1001,'("In  RECURSIVE SUBROUTINE merge_sort: high and low:",2i10)') high, low
+
+  modified code:
+
+    module_diagnostics.F90
+    module_err_afwa.F90
+
+    module_recoverp.F90 --- to guarantee the pressure is 
+                            retrieved at all levels.
+    module_recoverh.F90 --- the "STOP" statement commented, 
+                            instead, if the "STOP" condition
+                            happened, that SOUND will be discarded.    
+    module_sort.F90     --- special for AMD Opteron
+
+
+Updated by Y.-R. Guo, 23 September 2005
+
+1, For Mercator projection (Hurrican Rita), 3DVAR_OBSPROC/src/map_utils 
+   should be corrected to obtain the correct (x,y) from lat/lon;
+
+2, When the projection is "LC" with TRUELAT1=TRUELAT2 and "ME", plotting 
+   MAP is not working properly. 3DVAR_OBSPROC/MAP_plot/Dir_map/setup.F is 
+   modified.
+
+Modified:
+        3DVAR_OBSPROC/src/map_utils.F90
+        3DVAR_OBSPROC/MAP_plot/Dir_map/setup.F
+ 
+Updated by Yong-Run Guo, 31 May 2005
+
+To make the 3DVAR_OBSPROC working in Mac G5.
+
+Modified:
+
+	3DVAR_OBSPROC/README
+	3DVAR_OBSPROC/Makefile
+	3DVAR_OBSPROC/MAP_plot/Makefile
+
+Added:
+
+	3DVAR_OBSPROC/MAP_plot/configure.user.mac
+	3DVAR_OBSPROC/MAP_plot/mac_Makefile1
+	3DVAR_OBSPROC/MAP_plot/mac_Makefile2
+
+Updated by Yong-Run Guo, 22 April 2005
+
+Rizvi added code to module_decoded.F90 for MODIS obs: "FM-88 MODIS".
+Also file: namelist.3dvar_obs.AMPS is updated.
+
+Updated by Yong-Run Guo, 3 February, 2005
+
+1, For application to the Polar Stereographic map projection, the
+   calculation of (i,j) from latlon or latlon from (i,j) are different
+   from the Lambert Conformal projection.
+
+   In Lambert projection, it is always (1,1) from the (lat1,lon1),
+      no matter what knowni, knowj given. So if (lat1,lon1) were
+      assigned by the cen_lat and cen_lon, the computed (i,j) must
+      have the correction with the knowi and knowj.
+
+   In PolarStereographic projection, when (lat1,lon1)=(cen_lat,cen_lon),
+      the (i,j) = (knowi,knowj).
+
+          module_map_utils.F90
+
+2, Conversion of the WRF domain configuration to MM5 domain configuration
+
+          module_namelist.F90
+
+3, For projection 'ST', it is always confac = 0.0, not need to call lccone.
+   in MAP_plot/Dir_map/plots.F. Otherwise, there is a floating point error 
+   when abs(fsplat)=90.0 
+
+          MAP_plot/Dir_map/plots.F
+ 
+Updated by Yong-Run Guo, January 11, 2005
+
+1, For correctly computing the model coordinates, especially with 
+   lat=-90.0 when truelat1>0 or 90.0 when truelat1<0.
+
+          module_namelist.F90
+	  module_decoded.F90
+
+2, One more data type: Bogus soundings for tropical cyclone is added
+
+   FM=135 and platform='BOGUS'
+
+	  module_per_type.F90
+	  module_complete.F90
+	  module_duplicate.F90
+	  module_qc.F90
+	  module_write.F90
+	  platform_interface.inc
+	  fm_decoder.F90
+	  module_decoded.F90
+	  3dvar_obs.F90
+	  sort_platform.F90
+
+   U/V errors (m/s) are specified in the fields u%data.v%data in little_r file.
+   SLP error (Pa) is specified in the field psfc%data in little_r file.
+
+          module_err_afwa.F90
+
+   In order to keep the data (U,V)=0.0 at the center of Typhoon, the 
+   'diagnostics_wind' procedure is skept over.
+
+          module_diagnostics.F90
+
+------------------------------------------------------------------------------
+Updated by Yong-Run Guo, November 11, 2004
+
+1, Added the WRF application option (fg_format='WRF') and  the module:
+      module_map_utils.F90
+   for model coordinate (X,Y) calculation.
+
+2, Removed those GPS related modules:
+      module_gpspw.F90
+      module_gpspw_caa.F9
+      module_gpspw_gst.F90
+   because they are never used in the program
+
+3, The file namelist.3dvar_obs is changed (see README.namelist).
+
+-----------------------------------------------------------------------------
+
+Updated by Yong-Run Guo, September 2, 2004
+
+1, Indian visitors found that time duplicate check is not working properly,
+   not retaining the observation closest to the analysis time. Rizvi 
+   worked with them to correct the "module_duplicate.F90". Y.-R. Guo 
+   reveiwed it, and included the GPS Ref. in this module.
+
+2, SHU-YA CHEN, Central University, Taiwan, found compiling failed in
+   PC Linux with cpp flag -DBKG. Y.-R. Guo corrected the bug in setup.F90.
+   There is no problem without cpp flag -DBKG, so not affect AFWA, KMA. 
+
+3, Code changed
+ 
+     src/module_duplicate.F90
+     src/setup.F90
+     src/3dvar_obs.F90
+
+-----------------------------------------------------------------------------
+Updated by Yong-Run Guo, July 29, 2004
+
+Problem:  With AFWA obs data file:" 04072306.3DVAR", the job stopped.
+
+Fix    : 1) To commented the STOP in 3DVAR_OBSPROC/src/error_handler.F90;
+         2) To discarded the OBS with the fatal errors, if any, in
+            3DVAR_OBSPROC/src/module_qc.F90;
+         3) To add the hydrostatic check for the reported height in
+            3DVAR_OBSPROC/src/module_recoverh.F90:
+
+            If (abs(Hd - Ho) > 0.10*Hd), use Hd to replace the Ho.
+            where Hd is the computed height from the (P,T,q) based
+            on the hydrostatic equation. Ho is the reported height.
+
+----------------------------------------------------------------------------
+Updated by Yong-Run Guo, July 21, 2004
+
+ I, Main points in this update
+
+  1, The GPS Refeacrivity is included. The Refractivity N has the 
+     WMO code = 116, and the field 'dew_point' is used to store the 
+     refrectivity N. This will minimize the code changes. Currently,
+     only the local OBS operator is used in 3DVAR, so N is the only
+     observation data. 
+
+     The observation errors are assigned as
+
+        error = nbot*exp ( (pres-pmsl)/aa )
+
+     where nbot = 10, ntop = 3, pmax = 1000, pmls = 100000, 
+         aa = (pmax-pmls) / log(ntop/nbot), and pres is the pressure
+         at the observed level.
+
+     Reference
+     
+     Huang, C.-Y., Y.-H. Kuo, S.-H. Chen, and F. Vandenberghe, 2004:
+       Improvements in Typhoon Forecasting with Assimilated GPS Occultation
+       Refractivity. (Submitted to Mon. Wea. Rev.)
+
+  2, For KMA Global unified 3DVAR system, one more namelist vaviable added:
+
+     &record4
+      domain_check_h           = .false.,
+
+      domain_check_h=.false. -- ignore the outside domain check 
+                                for global 3DVAR.
+      domain_check_h=.true.  -- do the outside domain check for regional 3DVAR.
+
+     Note: when running for Global OBS processing, you MUST delete the
+           option  -DBKG in Makefile and use the namelist.3dvar_obs.template1
+           because there is no Background file available.
+
+  3, Modified the 'above_top` check by using 'ptop' instead of hlid
+
+     &record4
+      remove_above_lid         = .true.,
+
+      remove_above_lid=.false. -- keep the data at all the levels. 
+      remove_above_lid=.true.  -- discard the data at the levels above ptop.
+
+  4, In order to plot a global coverage map background, one more value, 0,
+     in addition to 1 (LAMBERT), 2 (POLAR), 3 (MECATOR), is effective for 
+     namelist variable
+
+     &record7
+      IPROJ    =   0,
+
+     This is Cylindrical Equidistance map projection for plotting the
+     distribution of the Global observations.
+ 
+     Note that for a global map, always set 
+
+     &record8
+      IDD      =   1,
+      MAXNES   =   1,
+      NESTIX   =      181,
+      NESTJX   =      361,
+      DIS      =    110.0,
+
+II, Bug fix
+ 
+  1, A bug fixed in src/module_map.F90 and MAP_plot/Dir_map/llxy.F.
+ 
+     When usimg Mecator map projection and the domain across the date line,
+     the (x,y) was computed increectly.
+
+  2, A bug fixed in src/module_recoverh.F90
+
+     When a multiple-level OBS with the height missing at the bottom
+     levels, the heights recovered at those levels are incorrect. This
+     bug sometime caused the program Preprocessor stopped, but not 
+     affect the 3DVAR.
+
+III, Code changed
+
+     src/3dvar_obs.F90
+     src/fm_decoder.F90
+     src/module_complete.F90
+     src/module_decoded.F90
+     src/module_diagnostics.F90
+     src/module_duplicate.F90
+     src/module_err_afwa.F90
+     src/module_err_ncep.F90
+     src/module_map.F90
+     src/module_mm5.F90
+     src/module_namelist.F90
+     src/module_per_type.F90
+     src/module_qc.F90
+     src/module_recoverh.F90
+     src/module_write.F90
+     src/platform_interface.inc
+     src/setup.F90
+     src/sort_platform.F
+
+     MAP_plot/Dir_map/DA_Constants.f90
+     MAP_plot/Dir_map/DA_Define_Structures.f90
+     MAP_plot/Dir_map/DA_Read_Obs.inc
+     MAP_plot/Dir_map/DA_Read_Obs_Info.inc
+     MAP_plot/Dir_map/Map.F
+     MAP_plot/Dir_map/llxy.F
+     MAP_plot/Dir_map/plstn1.F
+     MAP_plot/Dir_map/setup.F
+----------------------------------------------------------------------------   
+
+VERSION 1_3_0 3dvar_obs PROGRAM
+(Updated by Yong-Run Guo, June 4, 2003)
+
+This is the main directory of the "3dvar_obs" observation processing program 
+of the MM5 3D-VAR data assimilation system (3dvar_1_3_0 and after)
+
+Everything a user needs to run the 3dvar_obs program is contained in this 
+directory.
+
+For questions, please send emails to mesouser@ucar.edu
+
+For detailed documentation about 3dvar_obs programs, please read below 
+and file "README.namelist" in this directory.
+
+For more information on the MM5 3D-VAR data assimilation system, please see
+
+http://www.mmm.ucar.edu/mm53dvar/docs/
+
+For details on the 3dvar_obs input data format, please see
+
+http://www.mmm.ucar.edu/mm53dvar/3dvar_tutorial_presentations.htm
+
+-------------------------------------------------------------------------------
+
+What is in 3dvar_obs?
+
+3dvar_obs process decoded observations in LITTLE_R format, such as the ouput 
+of the MM5 "gts_decoder" or the "fetch.csh" utilities for inputing into
+the MM5 3DVAR system. 
+
+The basic operations performed by 3dvar_obs are:
+
+1) Remove the observations outside the time range and domain (horizontal 
+   and top).
+
+2) Re-order and merge the duplicate (time and location) data reports. 
+
+3) Retrieve the pressure or height based on the observed information with
+   the hydrostatic assumption.
+
+4) Check the vertical consistency and super adiabatic for multi-level 
+   observations.
+
+5) Estimate observational error based on the pre-specified error file.
+
+6) Write out at the 3DVAR input format.
+
+7) Plot the distribution for each type of observations.
+
+-------------------------------------------------------------------------------
+
+3dvar_obs is a Fortran 90 program, and requires Fortran 90 compiler.
+
+At the moment, 3dvar_obs is working only for Dec_alpha, IBM, SGI, NEC 
+and Fujitsu with their native compilers, and PC running Linux using 
+Portland Group Fortran 90 compiler. If your machine isn't one of the 
+ones supported or the compiler isn't the native one from the vendor, 
+you need to edit the Makefile. For CRAY, SUN, and HP, we did not do 
+fully testing of this program although Makefile included the MACRO 
+for these machines.
+
+---------------------------------------------------------------
+
+To compile 3dvar_obs:
+
+- Type 'make' in the 3DVAR_OBS directory to complie;
+
+- When make is successful, executable 3dvar_obs.exe will be created in this
+  directory.
+
+---------------------------------------------------------------
+
+To run 3dvar_obs:
+
+To create a namelist.3dvar_obs by edit the file namelist.3dvar_obs.sample
+(README.namelist for details), and type 
+
+    3dvar_obs.exe >& 3dvar_obs.out
+
+to execute the program.
+
+Required input files for 3dvar_obs are:
+
+ 1) First guess file (MMINPUT/MMOUT)**,
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      ****** Note Note Note Note Note Note Note Note Note Note ****** 
+             -------------------------------------------------
+         The first guess MUST BE MM5V3 input format because the code 
+       was origigally developed for MM5 3DVAR. If you want to apply 
+       this OBS preprocessor for WRF 3DVAR, you must choose another 
+       option "not usingthe first guess" described below.
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+ 2) A decoded observation file,
+ 3) An observational error file (obserr.txt provided in this directory)
+ 4) Namelist file: namelist.3dvar_obs
+
+ ** Note that there is an option to run 3DVAR OBSPROC not using the 
+    first guess (MMINPU/MMOUT) as input. In this case,
+
+    1) you need to modify the 3DVAR_OBSPROC/Makefile by deleting -DBKG 
+       from CPPFLAGS, and re-compile the executable with make;
+    2) Use another sample namelist file: namelist.3dvar_obs.sample1 as 
+       the namelist.3dvar_obs, and edit it to provide some MM5 parameter 
+       related to the reference state and the domain configuration.  
+       These parameters can be found in the MM5 INTERPF namelist and MM5 
+       TERRAIN namelist.
+
+    This option gives users a flexible choice to specify any domain
+    settings, not necessary related to the MMINPUT/MMOUT. 
+
+The output files from 3dvar_obs are:
+
+1) File "obs_gts.3dvar" is the obsevation data file input to 3dvar.
+
+2) File "obs_ssmi_retrieval.3dvar" is generated only when SSMI data 
+   are present in the input file.
+
+3) Several diagnostic files (*.diag), and with these files users can
+   know the troubles happened at which observations. 
+
+4) The observational error profiles (*.txt)
+
+5) In the printing file: 3dvar_obs.out, the flow of executions is shown
+   step by step. Users can look at this file to monitor the program
+   execution.
+-------------------------------------------------------------------------------
+
+To get the plots of the observation distribution
+
+    After the observation data files: obs_gts.3dvar and/or 
+  obs_ssmi_retrieval.3dvar produced, there is a utility to plot 
+  the observation distribution for each type of observations.
+
+  ** NCAR GRAPHICS library should ne installed in computer system.
+
+  1) cd MAP_plot;
+  2) Modify the shell script Map.csh, set the time window and OBS filename:
+
+     set TIME_WINDOW_MIN = '1999081911'
+     set TIME_ANALYSIS   = '1999081912'
+     set TIME_WINDOW_MAX = '1999081913'
+
+     set OBSDATA  = ../obs_gts.3dvar
+
+  3) Type
+
+     Map.csh
+
+  4) When job completed, you'll have
+
+    a gmeta file         :  gmeta.ccyymmddhh, and 
+    a printed output file:  Map.out.ccyymmddhh 
+    
+    This gmeta file displayed the OBS distribution for each type of
+    observations within the analysis domain in the time window. A quick
+    glance at these plots will make you more comfortable to go ahead 
+    with 3DVAR.
+
+  ** There are several plotting subroutines under the directory Dir_map.
+     With minor modifications, it is easy to plot the observed parameters:
+     pressure, temperature, wind, etc.
+ 
+----------------------------------------------------------------------------
+
+To clean the directory obsproc
+
+     make clean
+
+   will clean the directory obsproc and its sub-directory. Be sure
+   to keep the files: obs_gts.3dvar, etc. before cleaning.
+
+
+
+     
+  

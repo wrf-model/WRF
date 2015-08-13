@@ -1,0 +1,26 @@
+
+The purpose of this case is to demonstrate an idealized convective-radiative
+equilibrium 3d run driven by the SST. Run for weeks to months, this develops
+a steady-state convection in a weak wind background typical of the tropics
+with a grid size small enough (1 km) to resolve individual updrafts.
+The test case domain and run length are small compared to typical runs and
+serve only as a demonstration.
+
+The initialization makes use of the full physics initialization in the
+sea-breeze case but, new in V3.7, the SST can be specified in input_sounding
+via the surface temperature in the first line and the surface is all-ocean
+by default. There is a small Coriolis force of 2.5e-5 and a random low-level
+temperature perturbation to initiate the convection.
+
+The input sounding has u=5 m/s, and SST=300 K with a moist profile to support
+convection.
+pert_coriolis is true so the input_sounding wind is taken to be geostrophically
+balanced.
+Use the run_me_first.csh script to copy necessary data files for radiation.
+
+This setup is for a 3D case with 101x101 grid points, dx=1 km, and 35 eta levels. 
+The top is at 30 km. The physics choices are WSM6 microphysics, RRTMG radiation,
+the 5-layer slab model (inactive due to water surface), and YSU PBL scheme.
+There are periodic boundaries and w-Rayleigh damping at the top.
+Buckets are turned on for rainfall and radiation budgets because this is designed
+to be a long run that may be a month or more to obtain equilibrium.

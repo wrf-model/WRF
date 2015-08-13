@@ -1,0 +1,177 @@
+!*------------------------------------------------------------------------------
+!*  Standard Disclaimer
+!*
+!*  Forecast Systems Laboratory
+!*  NOAA/OAR/ERL/FSL
+!*  325 Broadway
+!*  Boulder, CO     80303
+!*
+!*  AVIATION DIVISION
+!*  ADVANCED COMPUTING BRANCH
+!*  SMS/NNT Version: 2.0.0 
+!*
+!*  This software and its documentation are in the public domain and
+!*  are furnished "as is".  The United States government, its 
+!*  instrumentalities, officers, employees, and agents make no 
+!*  warranty, express or implied, as to the usefulness of the software 
+!*  and documentation for any purpose.  They assume no 
+!*  responsibility (1) for the use of the software and documentation; 
+!*  or (2) to provide technical support to users.
+!* 
+!*  Permission to use, copy, modify, and distribute this software is
+!*  hereby granted, provided that this disclaimer notice appears in 
+!*  all copies.  All modifications to this software must be clearly
+!*  documented, and are solely the responsibility of the agent making
+!*  the modification.  If significant modifications or enhancements
+!*  are made to this software, the SMS Development team
+!*  (sms-info@fsl.noaa.gov) should be notified.
+!*
+!*----------------------------------------------------------------------------
+!*
+!*  WRF NetCDF I/O
+!   Author:  Jacques Middlecoff jacquesm@fsl.noaa.gov
+!*  Date:    October 6, 2000
+!*
+!*----------------------------------------------------------------------------
+
+  use wrf_data_pnc
+  use ext_pnc_support_routines
+  implicit none
+  include 'wrf_status_codes.h'
+#  include "pnetcdf.inc"
+  integer               ,intent(in)     :: DataHandle
+  character*(*)         ,intent(in)     :: Element
+  character*(*)         ,intent(in)     :: Var
+  TYPE_DATA
+  TYPE_COUNT
+  TYPE_OUTCOUNT
+  integer               ,intent(out)    :: Status
+  type(wrf_data_handle) ,pointer        :: DH
+  integer                               :: XLen
+  integer(KIND=MPI_OFFSET_KIND)         :: XLen_offset
+  TYPE_BUFFER
+  character (VarNameLen)                :: VarName
+  integer                               :: stat
+  integer                               :: NVar
+  integer                               :: XType
+
+  if(Count <= 0) then
+    Status = WRF_WARN_ZERO_LENGTH_GET  
+    write(msg,*) &
+'Warning ZERO LENGTH GET in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__
+    call wrf_debug ( WARN , msg)
+    return
+  endif
+  VarName = Var
+  call GetDH(DataHandle,DH,Status)
+  if(Status /= WRF_NO_ERR) then
+    write(msg,*) &
+'Warning Status = ',Status,' in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__
+    call wrf_debug ( WARN , msg)
+    return
+  endif
+  if(DH%FileStatus == WRF_FILE_NOT_OPENED) then
+    Status = WRF_WARN_FILE_NOT_OPENED  
+    write(msg,*) &
+'Warning FILE NOT OPENED in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__
+    call wrf_debug ( WARN , msg)
+  elseif(DH%FileStatus == WRF_FILE_OPENED_NOT_COMMITTED) then
+    Status = WRF_WARN_DRYRUN_READ  
+    write(msg,*) &
+'Warning DRYRUN READ in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__
+    call wrf_debug ( WARN , msg)
+  elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_WRITE) then
+    Status = WRF_WARN_READ_WONLY_FILE 
+    write(msg,*) &
+'Warning READ WONLY FILE in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__
+    call wrf_debug ( WARN , msg)
+  elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_READ) then
+    do NVar=1,DH%NumVars
+      if(DH%VarNames(NVar) == VarName) then
+        exit
+      elseif(NVar == DH%NumVars) then
+        Status = WRF_WARN_VAR_NF  
+        write(msg,*) &
+'Warning VARIABLE NOT FOUND in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__ 
+        call wrf_debug ( WARN , msg)
+        return
+      endif
+    enddo
+    XLen_offset = i2offset(XLen)
+    stat = NFMPI_INQ_ATT(DH%NCID,DH%VarIDs(NVar),trim(Element),XType,XLen_offset)
+    XLen = XLen_offset
+    call netcdf_err(stat,Status)
+    if(Status /= WRF_NO_ERR) then
+      write(msg,*) &
+'NetCDF error in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__,' Element ',Element
+      call wrf_debug ( WARN , msg)
+    endif
+    if ( NF_TYPE == NF_DOUBLE .OR. NF_TYPE == NF_FLOAT ) then
+      if( .NOT. ( XType==NF_FLOAT .OR. XType==NF_DOUBLE) ) then
+        Status = WRF_WARN_TYPE_MISMATCH  
+        write(msg,*) &
+'Warning TYPE MISMATCH in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__
+        call wrf_debug ( WARN , msg)
+        return
+      endif
+    else
+      if(XType /= NF_TYPE) then
+        Status = WRF_WARN_TYPE_MISMATCH  
+        write(msg,*) &
+'Warning TYPE MISMATCH in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__
+        call wrf_debug ( WARN , msg)
+        return
+      endif
+    endif
+#ifndef CHAR_TYPE
+    allocate(Buffer(XLen), STAT=stat)
+    if(stat/= 0) then
+      Status = WRF_ERR_FATAL_ALLOCATION_ERROR 
+      write(msg,*) &
+'Fatal ALLOCATION ERROR in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__
+      call wrf_debug ( FATAL , msg)
+      return
+    endif
+    stat = NF_ROUTINE(DH%NCID,DH%VarIDs(NVar),trim(Element), Buffer )
+#else
+    if(XLen > len(Data)) then
+      Status = WRF_WARN_CHARSTR_GT_LENDATA   
+      write(msg,*) &
+'Warning LEN CHAR STRING > LEN DATA in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__
+      call wrf_debug ( WARN , msg)
+      return
+    endif
+    stat = NF_ROUTINE(DH%NCID,DH%VarIDs(NVar),trim(Element), Data )
+#endif
+    call netcdf_err(stat,Status)
+    if(Status /= WRF_NO_ERR) then
+      write(msg,*) &
+'NetCDF error in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__,' Element ',Element
+      call wrf_debug ( WARN , msg)
+    endif
+    COPY
+#ifndef CHAR_TYPE
+    deallocate(Buffer, STAT=stat)
+    if(stat/= 0) then
+      Status = WRF_ERR_FATAL_DEALLOCATION_ERR  
+      write(msg,*) &
+'Fatal DEALLOCATION ERROR in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__
+      call wrf_debug ( FATAL , msg)
+      return
+    endif
+    if(XLen > Count) then
+      OutCount = Count
+      Status   = WRF_WARN_MORE_DATA_IN_FILE  
+    else
+      OutCount = XLen
+      Status   = WRF_NO_ERR
+    endif
+#endif
+  else
+    Status = WRF_ERR_FATAL_BAD_FILE_STATUS  
+    write(msg,*) &
+'Fatal error BAD FILE STATUS in ',__FILE__,' ',ROUTINE_TYPE,', line', __LINE__ 
+    call wrf_debug ( FATAL , msg)
+    return
+  endif
+  return

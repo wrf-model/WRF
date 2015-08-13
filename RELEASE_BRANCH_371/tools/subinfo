@@ -1,0 +1,223 @@
+#!/bin/perl
+
+$dbdir = "tools/code_dbase" ;
+
+if ( ! opendir( TOOLDIR, "tools") )  {
+  print "\nMust be in top level WRF directory\n" ;
+  exit ;
+}
+closedir TOOLDIR ;
+
+$gofast=0 ;
+if ( ( scalar @ARGV  < 1 ) || ( scalar @ARGV > 2 ) )  {
+  print "usage: subinfo routinename \n" ;
+  print "       subinfo rebuild \n" ;
+  exit ;
+}
+if ( ( scalar @ARGV == 2 ) ) { $gofast = 1 ; }  # don't bother with links for argument lists
+
+if ( ! open( XXX, "$dbdir/calls" ) || $ARGV[0] eq "rebuild" )
+{
+  print "Building code database ... please wait.\n" ;
+  system( "cd tools/CodeBase ; make" ) ;
+  open P, "tools/build_codebase |&" ; while (<P>) { print ; } close P ;
+  system( "ln -sf tools/subinfo ." ) ;
+  system( "ln -sf tools/wrfvar ." ) ;
+  if ( $ARGV[0] eq "rebuild" ) { exit ; }
+}
+close XXX ;
+
+
+$rout1 = lc $ARGV[0] ;
+$rout = $rout1 ;
+#print $vname,"\n" ;
+#print $rout,"\n" ;
+
+$routfile = $dbdir."/".$rout ;
+
+if ( ! ( open( ROUT, "< $routfile" )) ) {
+  print "$rout is not a known subprogram. \n" ;
+  open P, "/bin/ls -1 $dbdir/\*$rout\* | " ;
+  print "Perhaps you mean:\n" ;
+  while (<P>) {
+    s/.*\/// ;
+    if ( substr( $_, 0, 3 ) eq "lm_" ) { next ; }
+    if ( $_ =~ "not found" ) { break ; }
+    print "  $_" ;
+  }
+  exit ;
+}
+
+#open ROUT, "< $routfile" or { print "$rout is not a known subprogram. Perhaps you mean:\n" ; }
+#  system( "/bin/ls -1 $dbdir/\*$rout\*" ) ;
+#  die ;
+
+while ( <ROUT> ) {
+  @t = split ' ' ; 
+  if ( $t[0] eq sourcefile ) {
+    $sourcefile = $t[1] ;
+  }
+  if ( $t[0] eq subprogram ) {
+    if ( $t[1] eq "function" ) {
+      $subprog = $t[2]." ".$t[1] ;
+    } else {
+      $subprog = $t[1] ;
+    }
+  }
+}
+close ROUT ;
+
+print "<html>\n" ;
+print "<title> ",ucfirst $subprog," : ",uc $rout1," </title>\n" ;
+print "<body>\n" ;
+print "<h1> ",ucfirst $subprog," : ",uc $rout1," </h1> \n" ;
+
+# see if there is a 'big-f' file...
+$refer_to = $sourcefile ;
+$tail =  substr( $sourcefile, length( $sourcefile ) - 2 ) ;
+if ( "$tail" eq ".f" ) {
+   $refer_to = substr( $sourcefile, 0, length( $sourcefile ) - 2 ) . ".F" ;
+   if ( ! ( open( EXISTNCE, "< $refer_to" )) ) {
+      $refer_to = $sourcefile ;
+   }
+   else { close EXISTNCE ; }
+}
+
+#print "<b> Defined in: </b> <a href=\"../../$refer_to\"> $refer_to </a> <p> <p>\n" ;
+# have it point to the wrf code browser instead
+$rout1_uc = uc $rout1 ;
+print "<b> Defined in: </b> <a href=\"../../../wrfbrowser/html_code/${refer_to}.html#$rout1_uc\"> $refer_to </a> <p> <p>\n" ;
+
+if ( open (DESC, "< ${routfile}_descrip" ) ) {
+  print "<b> Description: </b><p>\n" ;
+  while ( <DESC> ) {
+    print ;
+  }
+  print "<p>\n" ;
+  close DESC ;
+}
+
+
+print "<b> Called by : </b> <p> <p>\n" ;
+print "<pre>\n" ;
+@sysargs = ( "tools/subinfo_calls", 0, "$rout" ) ;
+open BBB , "tools/subinfo_calls 0 $rout | " ;
+while ( <BBB> ) { print ; }
+close BBB ;
+print "</pre>\n" ;
+
+$first=1 ;
+$use_entry = 0 ;
+open ROUT, "< $routfile" or die "can not open $routfile" ;
+while ( <ROUT> ) {
+  @t = split ' ' ; 
+  if ( $t[0] eq "use" ) {
+    if ( $first == 1 ) {
+      print "<b> Uses: </b> <p> <p>\n<pre>\n" ;
+      $use_entry = 1 ;
+      $first = 0 ;
+    }
+    printf("  %-30s    ",uc $t[1] ) ;
+    open P,"/bin/ls */*.F | grep -w $t[1] |" ;
+    while( <P> ) {
+      chop ;
+#      printf("(<a href=\"../../%s\">%s</a>)\n", $_, $_ ) ;
+      printf("(<a href=\"../../../wrfbrowser/html_code/%s.html#%s\">%s</a>)\n", $_, uc $t[1], $_ ) ;
+    }
+    close P ;
+  }
+}
+if ( $use_entry == 1 ) { print "</pre>\n" ; }
+close ROUT ;
+
+print "<b> Arguments: </b> <p> <p>\n" ;
+print "<pre>\n" ;
+
+open ROUT, "< $routfile" or die "can not open $routfile" ;
+$i = 1 ;
+while ( <ROUT> ) {
+  @t = split ' ' ; 
+  if ( $t[0] eq arg && $t[9] eq dummyarg ) {
+    printf("%3d.",$i++) ;
+    $vfile = "$dbdir/vv_" . $rout1 . "_" . $t[3] . ".html" ;
+    if ( $gofast == 0 ) {
+      system ( "echo '<html><pre>' > $vfile ; tools/wrfvar $t[3] $rout1 >> $vfile ; echo '</pre></html>' >> $vfile"  ) ;
+    }
+    $intent = "INTENT( ".uc $t[7]." )" ;
+    if ( $t[11] ne "" ) {
+       $dims = "DIMENSION( ".$t[11]." )" ;
+       $vfile = "vv_" . $rout1 . "_" . $t[3] . ".html" ;
+       printf(" <a href=\"%s\">%-12s</a> :: %-8s, %-16s, %s\n",$vfile,$t[3], uc $t[5], $intent, $dims ) ;
+    } else {
+       $vfile = "vv_" . $rout1 . "_" . $t[3] . ".html" ;
+       printf(" <a href=\"%s\">%-12s</a> :: %-8s, %-16s\n",$vfile,$t[3], uc $t[5], $intent ) ;
+    }
+  }
+}
+close ROUT ;
+print "</pre>\n" ;
+
+$first = 1 ;
+open CALLEES, "< $dbdir/calls" or die " cannot open $dbdir/calls " ;
+while ( <CALLEES> ) { 
+   @t = split ' ' ;
+   if ( $t[0] eq lc $rout && $t[1] eq calls && ! ($t[2] =~ add_msg) && !($t[2] =~ reset_msgs) && !($t[2] =~ stencil) && !($t[2] =~ wrf_debug) 
+        && (substr($t[2],0,4) ne "get_") )  {
+     if ( $first == 1 ) {
+       print "<b>",uc $rout," calls : </b> <p> <p>\n" ;
+#       print "<pre>\n" ;
+       print "<table>\n" ;
+       $first = 2 ;
+     }
+     open C ,"< $dbdir/$t[2]" ;
+     while ( <C> ) {
+       @u = split ' ' ;
+       if ( $u[0] eq sourcefile ) { $sf = $u[1] ; break ; }
+     }
+     close C ;
+     # see if there is a 'big-f' file...
+     $refer_to = $sf ;
+     $tail =  substr( $sf, length( $sf ) - 2 ) ;
+     if ( "$tail" eq ".f" ) {
+        $refer_to = substr( $sf, 0, length( $sf ) - 2 ) . ".F" ;
+        if ( ! ( open( EXISTNCE, "< $refer_to" )) ) {
+           $refer_to = $sf ;
+        }
+        else { close EXISTNCE ; }
+     }
+     $sf = $refer_to ;
+     printf("<tr><td><a href=\"%s\.html\">%30s</a></td><td>(<a href=\"../../%s\">%s</a>)</td></tr>\n",$t[2], $t[2],$sf,$sf) ;
+   }
+}
+if ( $first == 2 ) {
+  print "</table>\n" ;
+}
+
+
+
+print "</html>\n" ;
+
+exit
+
+#if ( $found_var == 0 ) {
+#  print uc $vname , "is not an argument to ${rout1}.  May be local or use-associated.\n" ;
+#  print ucfirst $rout1," has $nargs_rout arguments.\n" ;
+#  close ROUT ;
+#  open ROUT, "< $routfile" or die "can not open $routfile" ;
+#  while ( <ROUT> )
+#  {
+#    s/^  *// ;
+#    s/  */ /g ;
+#    @t = split ' ' ;
+#    if ( $t[0] eq "arg" ) {
+#      $i = $t[1] + 1 ;
+#      printf("%3d. ",$i) ;
+#      print uc $t[3]," of type ", uc $t[5],", intent ",uc $t[7],"\n" ;
+#    }
+#  }
+#  close ROUT ;
+#}
+
+
+
+

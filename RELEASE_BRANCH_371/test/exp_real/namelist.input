@@ -1,0 +1,114 @@
+ &namelist_01
+ time_step                       = 450,
+ time_step_fract_num			= 0,
+ time_step_fract_den			= 1,
+ restart                             = .false.,
+ max_dom                             = 1,
+ rk_ord                              = 3,
+ diff_opt                            = 0,      0,      0,
+ km_opt                              = 1,      1,      1,
+ damp_opt                            = 0,
+ isfflx                              = 1,
+ ifsnow                              = 0,
+ icloud                              = 1,
+ num_soil_layers                     = 5,
+ spec_bdy_width                      = 5,
+ spec_zone                           = 1,
+ relax_zone                          = 4,
+ tile_sz_x                           = 0,
+ tile_sz_y                           = 0,
+ numtiles                            = 1,
+ debug_level                         = 0 /
+
+ &namelist_02
+ run_days		    	     = 0,
+ run_hours                           = 2,
+ run_minutes                         = 0,
+ run_seconds                         = 0,
+ start_year                          = 1993
+ start_month                         = 03
+ start_day                           = 13
+ start_hour                          = 00
+ start_minute                        = 00,
+ start_second                        = 00,
+ end_year                            = 1993
+ end_month                           = 03
+ end_day                             = 13
+ end_hour                            = 12
+ end_minute                          = 00,
+ end_second                          = 00,
+ interval_seconds                    = 21600
+ grid_id                             = 1,
+ s_we                                = 1,
+ e_we                                = 41,
+ s_sn                                = 1,
+ e_sn                                = 35,
+ s_vert                              = 1,
+ e_vert                              = 28,
+ history_interval			= 5,
+ restart_interval			= 244,
+ frames_per_outfile			= 1,
+ time_step_sound			= 4 /
+
+
+ &namelist_03
+ dx                                  = 90000,
+ dy                                  = 90000,
+ ztop                                = 17558.2
+ zdamp                               = 5000.,
+ dampcoef                            = 0.01,
+ non_hydrostatic                     = .true.,
+ smdiv                               = 0.1,
+ emdiv                               = 0.01,
+ epssm                               = .1,
+ khdif                               = 0,
+ kvdif                               = 0,
+ radt                                = 30,
+ bldt                                = 0,
+ cudt                                = 5,
+ julyr                               = 0,
+ julday                              = 1,
+ gmt                                 = 0. /
+
+ &namelist_04
+ periodic_x                          = .false.,
+ symmetric_xs                        = .false.,
+ symmetric_xe                        = .false.,
+ open_xs                             = .true.,
+ open_xe                             = .true.,
+ periodic_y                          = .false.,
+ symmetric_ys                        = .false.,
+ symmetric_ye                        = .false.,
+ open_ys                             = .true.,
+ open_ye                             = .true.,
+ nested                              = .false.,
+ specified                           = .false.,
+ top_radiation                       = .false.,
+ chem_opt                            = 0,
+ mp_physics                          = 3,
+ ra_lw_physics                       = 1,
+ ra_sw_physics                       = 1,
+ sf_sfclay_physics                   = 1,
+ sf_surface_physics                  = 1,
+ bl_pbl_physics                      = 1,
+ cu_physics                          = 1,
+ h_mom_adv_order                     = 5,
+ v_mom_adv_order                     = 3,
+ h_sca_adv_order                     = 5,
+ v_sca_adv_order                     = 3,
+ io_form_history                     = 2,
+ io_form_restart                     = 2,
+ io_form_input                       = 2,
+ io_form_boundary                    = 2 /
+
+ &namelist_05
+ real_data_init_type                 = 1 /
+
+ &grib2
+ /
+
+ &namelist_quilt
+ nio_tasks_per_group = 0,
+ nio_groups = 1,
+ /
+

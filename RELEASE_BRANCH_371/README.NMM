@@ -1,0 +1,292 @@
+
+WRF-NMM Model Version 3.2 (March 31, 2010)
+
+----------------------------
+WRF-NMM PUBLIC DOMAIN NOTICE
+----------------------------
+
+WRF-NMM was developed at National Centers for
+Environmental Prediction (NCEP), which is part of
+NOAA's National Weather Service.  As a government
+entity, NCEP makes no proprietary claims, either
+statutory or otherwise, to this version and release of
+WRF-NMM and consider WRF-NMM to be in the public
+domain for use by any person or entity for any purpose
+without any fee or charge. NCEP requests that any WRF
+user include this notice on any partial or full copies
+of WRF-NMM. WRF-NMM is provided on an "AS IS" basis
+and any warranties, either express or implied,
+including but not limited to implied warranties of
+non-infringement, originality, merchantability and
+fitness for a particular purpose, are disclaimed. In
+no event shall NOAA, NWS or NCEP be liable for any
+damages, whatsoever, whether direct, indirect,
+consequential or special, that arise out of or in
+connection with the access, use or performance of
+WRF-NMM, including infringement actions.
+
+================================================
+
+V3 Release Notes:
+-----------------
+
+This is the main directory for the WRF Version 3 source code release.
+
+- For directions on compiling WRF for NMM, see below or the 
+  WRF-NMM Users' Web page (http://www.dtcenter.org/wrf-nmm/users/)
+- Read the README.namelist file in the run/ directory (or on 
+  the WRF-NMM Users' page), and make changes carefully.
+
+For questions, send mail to wrfhelp@ucar.edu
+
+Release Notes:
+-------------------
+
+Version 3.2 is released on March 31, 2010.
+
+- For more information on WRF V3.2 release, visit WRF-NMM Users home page
+  http://www.dtcenter.org/wrf-nmm/users/, and read the online User's Guide.
+- WRF V3 executable will work with V3.1 wrfinput/wrfbdy.  As 
+  always, rerunning the new programs is recommended.
+
+The Online User's Guide has also been updated.
+================================================
+
+The ./compile script at the top level allows for easy selection of 
+NMM and ARW cores of WRF at compile time. 
+
+   - Specify your WRF-NMM option by setting the appropriate environment variable:
+
+         setenv WRF_NMM_CORE 1
+           setenv WRF_NMM_NEST 1 (if nesting capability is desired)
+         setenv HWRF 1 (if HWRF coupling/physics are desired)
+
+   - The Registry files for NMM and ARW are not integrated
+     yet. There are separate versions:
+
+         Registry/Registry.NMM         <-- for NMM
+	   Registry/Registry.NMM_NEST    <-- for NMM with nesting
+         Registry/Registry.EM          <-- for ARW (formerly known as Eulerian Mass)
+
+
+How to configure, compile and run?
+----------------------------------
+
+- In WRFV3 directory, type:
+
+   configure
+
+  this will create a configure.wrf file that has appropriate compile 
+  options for the supported computers. Edit your configure.wrf file as needed.
+
+  Note: WRF requires netCDF library. If your netCDF library is installed in
+        some odd directory, set environment variable NETCDF before you type
+        'configure'. For example: 
+
+        setenv NETCDF /usr/local/lib32/r4i4
+
+- Type: 
+        compile nmm_real
+       
+- If sucessful, this command will create nmm_real.exe and wrf.exe
+  in directory main/, and the appropriate executables will be linked into
+  the run directories under test/nmm_real, or run/.
+
+- cd to the appropriate test or run directory to run "nmm_real.exe" and "wrf.exe".
+
+- Place files from WPS (met_nmm.*, geo_nmm_nest*)
+  in the appropriate directory, type
+
+  real_nmm.exe
+
+  to produce wrfbdy_d01 and wrfinput_d01. Then type
+
+  wrf.exe
+
+  to run.
+
+- If you use mpich, type
+
+  mpirun -np number-of-processors wrf.exe
+
+=============================================================================
+
+What is in WRF-NMM V3.2?
+
+* Dynamics:
+
+  - The WRF-NMM model is a fully compressible, non-hydrostatic model with a
+    hydrostatic option.
+
+  - Supports One-way and two-way static and moving nests.
+
+  - The terrain following hybrid pressure sigma vertical coordinate is used.
+
+  - The grid staggering is the Arakawa E-grid.
+
+  - The same time step is used for all terms.
+
+  - Time stepping:
+     - Horizontally propagating fast-waves: Forward-backward scheme
+     - Veryically propagating sound waves: Implicit scheme
+
+  - Advection (time):
+     T,U,V:
+      - Horizontal: The Adams-Bashforth scheme
+      - Vertical:   The Crank-Nicholson scheme
+     TKE, water species: Forward, flux-corrected (called every two timesteps)/Eulerian, Adams-Bashforth
+     and Crank-Nicholson with monotonization.
+
+  - Advection (space):
+     T,U,V:
+      - Horizontal: Energy and enstrophy conserving,
+        quadratic conservative,second order
+
+      - Vertical: Quadratic conservative,second order, implicit
+
+      - Tracers (water species and TKE): upstream, positive definite, conservative antifiltering
+        gradient restoration, optional, see next bullet.
+
+      - Tracers (water species, TKE, and test tracer rrw): Eulerian with monotonization, coupled with
+        continuity equation, conservative, positive definite, monotone, optional.  To turn on/off, set
+        the logical switch "euler" in solve_nmm.F to .true./.false.  The monotonization parameter
+        steep in subroutine mono should be in the range 0.96-1.0.  For most natural tracers steep=1.
+        should be adequate.  Smaller values of steep are recommended for idealizaed tests with very
+        steep gradients.  This option is available only with Ferrier microphysics.
+
+  - Horizontal diffusion: Forward, second order "Smagorinsky-type"
+
+  - Vertical Diffusion:
+     See "Free atmosphere turbulence above surface layer" section
+     in "Physics" section given in below.
+
+  - Added a new highly-conservative passive advection scheme to v3.2
+
+Added Operational Hurricane WRF (HWRF) components to v3.2. These enhancements include:
+     - Vortex following moving nest for NMM
+     - Ocean coupling (with POM)
+     - Changes in diffusion coefficients
+     - Modifications/additions to physics schemes (tuned for the tropics)
+         - Updated existing SAS cumulus scheme
+         - Updated existing GFS boundary layer scheme
+         - Added new HWRF microphysics scheme         - Added new HWRF radiation scheme
+     Please see the WRF for Hurricanes webpage for more details:
+         http://www.dtcenter.org/HurrWRF/users
+
+
+* Physics:
+
+  - Explicit Microphysics: WRF Single Moment 5 and 6 class /
+    Ferrier (Used operationally at NCEP.) / Thompson [a new version in 3.1] 
+    / HWRF microphysics: (Used operationally at NCEP for HWRF)
+
+  - Cumulus parameterization: Kain-Fritsch with shallow convection /
+    Betts-Miller-Janjic (Used operationally at NCEP.)/ Grell-Devenyi ensemble
+    / Simplified Arakawa-Schubert (Used operationally at NCEP for HWRF)
+
+  - Free atmosphere turbulence above surface layer: Mellor-Yamada-Janjic (Used operationally at NCEP.)
+
+  - Planetary boundary layer: YSU /  Mellor-Yamada-Janjic (Used operationally at NCEP.) 
+    / NCEP Global Forecast System scheme (Used operationally at NCEP for HWRF)
+    / GFS / Quasi-Normal Scale Elimination
+
+  - Surface layer: Similarity theory scheme with viscous sublayers
+    over both solid surfaces and water points (Janjic - Used operatinally at NCEP).
+    / GFS / YSU / Quasi-Normal Scale Elimination / GFDL surface layer (Used operationally at NCEP for HWRF)
+
+  - Soil model: Noah land-surface model (4-level - Used operationally at NCEP) /
+    RUC LSM (6-level) / GFDL slab model (Used operationally at NCEP for HWRF)
+
+  - Radiation:
+    - Longwave radiation: GFDL Scheme  (Fels-Schwarzkopf) (Used 
+      operationally at NCEP.) / Modified GFDL scheme (Used operationally 
+      at NCEP for HWRF) / RRTM
+    - Shortwave radiation: GFDL-scheme (Lacis-Hansen) (Used operationally 
+      at NCEP.) / Modified GFDL shortwave (Used operationally at NCEP 
+      for HWRF)/ Dudhia
+
+  - Gravity wave drag with mountain wave blocking (Alpert; Kim and Arakawa)
+  
+  - Sea Surface temperature updates during long simulations
+
+* WRF Software:
+
+  - Hierarchical software architecture that insulates scientific code
+    (Model Layer) from computer architecture (Driver Layer)
+  -  Multi-level parallelism supporting distributed-memory (MPI)
+  -  Active data registry: defines and manages model state fields, I/O,
+    nesting, configuration, and numerous other aspects of WRF through a single file,
+    called the Registry
+  - Two-way nesting:
+      Easy to extend: forcing and feedback of new fields specified by
+        editing a single table in the Registry
+      Efficient: 5-8% overhead on 64 processes of IBM
+  - Enhanced I/O options:
+      NetCDF and Parallel HDF5 formats
+      Nine auxiliary input and history output streams separately controllable through the
+       namelist
+      Output file names and time-stamps specifiable through namelist
+  -  Efficient execution on a range of computing platforms:
+      IBM SP systems, (e.g. NCAR "bluevista","blueice","bluefire" Power5-based system)
+      IBM Blue Gene
+      SGI Origin and Altix
+      Linux/Intel
+         IA64 MPP (HP Superdome, SGI Altix, NCSA Teragrid systems)
+         IA64 SMP
+         x86_64 (e.g. TACC's "Ranger", NOAA/GSD "wJet" )
+         PGI, Intel, Pathscale, gfortran, g95 compilers supported
+      Sun Solaris (single threaded and SMP)
+      Cray X1, X1e (vector), XT3/4 (Opteron)
+      Mac Intel/ppc, PGI/ifort/g95
+      NEC SX/8
+      HP-UX
+      Fujitsu VPP 5000
+  - RSL_LITE: communication layer, scalable to very large domains, supports nesting.
+  - I/O: NetCDF, parallel NetCDF (Argonne), HDF5, GRIB, raw binary, Quilting (asynchronous I/O)
+, MCEL (coupling)
+  - ESMF Time Management, including exact arithmetic for fractional
+    time steps (no drift).
+  - ESMF integration - WRF can be run as an ESMF component.
+  -  Improved documentation, both on-line (web based browsing tools) and in-line
+ 
+    (Model Layer) from computer architecture (Driver Layer)
+  - Multi-level parallelism supporting shared-memory (OpenMP), distributed-memory (MPI), 
+    and hybrid share/distributed modes of execution
+  - Serial compilation can be used for single-domain runs but not for runs with
+    nesting at this time.
+  - Active data registry: defines and manages model state fields, I/O,
+    configuration, and numerous other aspects of WRF through a single file, 
+    called the Registry
+  - Enhanced I/O options:
+      NetCDF and Parallel HDF5 formats
+      Five auxiliary history output streams separately controllable through the namelist
+      Output file names and time-stamps specifiable through namelist
+
+  - Testing: Various regression tests are performed on HP/Compaq systems at
+    NCAR/MMM whenever a change is introduced into WRF cores. 
+
+  - Efficient execution on a range of computing platforms:
+      IBM SP systems, (e.g. NCAR "bluevista","blueice" and NCEP's "blue", Power4-based system)
+      HP/Compaq Alpha/OSF workstation, SMP, and MPP systems (e.g. Pittsburgh 
+         Supercomputing Center TCS)
+      SGI Origin and Altix
+      Linux/Intel
+         IA64 MPP (HP Superdome, SGI Altix, NCSA Teragrid systems)
+         IA64 SMP
+         Pentium 3/4 SMP and SMP clusters (NOAA/FSL iJet system)
+      PGI and Intel compilers supported
+      Alpha Linux (NOAA/FSL Jet system)
+      Sun Solaris (single threaded and SMP)
+      Cray X1
+      HP-UX
+      Other ports under development:
+         NEC SX/6
+         Fujitsu VPP 5000
+  - RSL_LITE: communication layer, scalable to very
+    large domains 
+  - ESMF Time Management, including exact arithmetic for fractional
+    time steps (no drift); model start, stop, run length and I/O frequencies are
+    now specified as times and time intervals 
+  - Improved documentation, both on-line (web based browsing tools) and in-line
+
+--------------------------------------------------------------------------

@@ -1,0 +1,114 @@
+
+#<Table>  <Dim> <Order> <How defined>                <Coord-axis>  <Dimname in Datasets>
+
+dimspec    i       1     standard_domain                   x          west_east
+dimspec    4       2     namelist=maxpatch                 z          subgrid
+
+# Specific dimensional order for EM and NMM
+
+ifdef EM_CORE=1
+
+ifdef DA_CORE=0
+dimspec    stoclev 2     namelist=num_stoch_levels         z     num_stoch_levels
+dimspec    j       3     standard_domain                   y     south_north
+dimspec    k       2     standard_domain                   z     bottom_top
+endif
+
+ifdef DA_CORE=1
+dimspec    j       2     standard_domain                   y     south_north
+dimspec    k       3     standard_domain                   z     bottom_top
+dimspec    9       4     namelist=ensdim_alpha             c     alpha ensemble dimension
+endif
+
+dimspec    ncpldom 2     namelist=num_ext_model_couple_dom z     num_ext_model_couple_dom
+dimspec    lin     2     namelist=num_metgrid_soil_levels  z     num_metgrid_soil_levels
+dimspec    |       2     namelist=num_force_layers         z     force_layers
+dimspec    ndfi    1     namelist=dfi_time_dim             c     dfi time dimension
+dimspec    obs     -     namelist=max_obs                  c     max_obs
+dimspec    h       -     namelist=nobs_err_flds            c     nobs_err_flds
+dimspec    nndgvar -     namelist=nobs_ndg_vars            c     nobs_ndg_vars
+dimspec    [       -     namelist=obs_prt_max              c     obs_prt_max
+dimspec    obsstid -     constant=40                       c     obs station id names
+dimspec    &       2     namelist=lagday                   z     lagday
+endif
+
+
+ifdef NMM_CORE=1
+dimspec    ndfi    1     namelist=dfi_time_dim             c     dfi time dimension
+dimspec    j       2     standard_domain                   y     south_north
+dimspec    k       3     standard_domain                   z     bottom_top
+#definitions for NMM slab arrays
+dimspec    q       -     constant=2600                     c     # a little crude right now
+dimspec    r       -     constant=2000                     c     # a little crude right now
+dimspec    z       -     constant=(-3:3)                   c
+dimspec    n       -     constant=(0:6)                    c
+ifdef HWRF=1
+dimspec    otrak   -     namelist=num_old_fixes            c     old_fixes
+endif
+endif
+
+dimspec    snly    2     namelist=num_snow_layers          z     snow_layers
+dimspec    l       2     namelist=num_soil_layers          z     soil_layers
+dimspec    snsl    2     namelist=num_snso_layers          z     snso_layers
+dimspec    ulay    2     namelist=num_urban_layers         z     urban_layers
+dimspec    mocat   2     namelist=mosaic_cat               z     mosaic categories  # danli
+dimspec    mocat2  2     namelist=mosaic_cat_soil          z     mosaic categories * soil layers  # danli
+dimspec    uhi     2     namelist=num_urban_hi             z     urban_vertical_layers
+dimspec    udr     2     constant=4                        z     urban_wind_directions
+dimspec    urb     2     constant=132                      z     num_urb_params
+dimspec    u       2     namelist=num_land_cat             z     land_cat
+dimspec    s       2     namelist=num_soil_cat             z     soil_cat
+dimspec    p       -     constant=7501                     c     microphysics_rstrt_state
+dimspec    w       -     namelist=spec_bdy_width           c     spec_bdy_width
+dimspec    e       3     namelist=ensdim                   z     ensemble dimension
+dimspec    g       2     namelist=num_metgrid_levels       z     num_metgrid_levels
+dimspec    m       2     constant=12                       z     months_per_year
+dimspec    a       -     namelist=cam_abs_dim1             c     cam_abs_dim1
+dimspec    c       -     namelist=cam_abs_dim2             z     cam_abs_dim2
+dimspec    ls      2     namelist=levsiz                   z     levsiz
+dimspec    d       2     namelist=paerlev                  z     paerlev
+dimspec    lsa     2     namelist=alevsiz                  z     alevsiz
+dimspec    ty      -     namelist=no_src_types             c     no_src_types
+dimspec    ?       -     namelist=ts_buf_size              c     ts_buf_size
+dimspec    !       -     namelist=max_ts_locs              c     max_ts_locs
+dimspec    v       -     constant=1                        z     one
+dimspec    =       -     constant=4                        c     num_bands
+dimspec    lake_ssl  2   constant=15                       z     snow_and_soil_levels
+dimspec    lake_intl 2   constant=16                       z     interface_levels
+dimspec    lake_sll  2   constant=10                       z     soil_levels_or_lake_levels
+
+# Dimensions required only for Chemistry
+
+ifdef BUILD_CHEM=1
+dimspec    o       3     namelist=ne_area                  z     bio_emissions_dimension
+dimspec    +       2     namelist=kemit                    z     emissions_zdim
+dimspec    nm      2     namelist=nmegan                   z     megan_species
+dimspec    ndv     3     namelist=ndepvel                  z     deposition_velocity_species
+dimspec    kdv     2     namelist=kdepvel                  z     deposition_velocity_vert_levels
+dimspec    dust    2     namelist=kfuture                  z     klevs_for_dust
+dimspec    ]       2     namelist=kfire                    z     klevs_for_fire
+dimspec    %       2     namelist=kdvel                    z     klevs_for_dvel
+dimspec    airc    2     namelist=kemit_aircraft           z     ac_emissions_zdim
+dimspec    .       3     namelist=erosion_dim              z     dust_erosion_dimension
+dimspec    ^       2     constant=46                       z     eightday_dimension
+
+# Dimensions for the GHG options
+dimspec    ghgv    -     constant=8                        z     vprm_vgcls
+dimspec    ghgt    1     constant=14                       z     termite_vgcls
+
+dimspec    tc      -     namelist=track_chem_num           c     track_chem_num
+dimspec    tr      -     namelist=track_rad_num            c     track_rad_num
+dimspec    tt      -     namelist=track_tuv_num            c     track_tuv_num
+dimspec    tz      -     namelist=track_tuv_lev            c     track_tuv_lev
+dimspec   nmode    4     namelist=cam_mam_mode             c     cam_mam_mode
+dimspec   nspecmam 4     namelist=cam_mam_nspec            c     cam_mam_nspec
+endif
+dimspec    tl      -     namelist=track_loc_in             c     track_loc_in
+
+ifdef EM_CORE=1
+# Number of trajectories
+dimspec   ntraj    1     namelist=num_traj                 z     num_traj
+
+# Number of ocean levels
+dimspec    nocnl  2     namelist=ocean_levels              z     ocean_layer
+endif

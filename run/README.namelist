@@ -1357,6 +1357,10 @@ The following are for observation nudging:
                                                   Only 40 for jpeg2000 or 41 for PNG are supported
 
 
+By default the pressure and height level data goes into stream 23 and 22, respectively. Using
+the vertical interpolation options requires the user to define an io_form and interval for
+the requested stream.  See examples.namelist.
+
  &diags:
  p_lev_diags                         = 1,       ; Vertically interpolate diagnostics to p-levels
                                                   0=NO, 1=YES
@@ -1368,6 +1372,12 @@ The following are for observation nudging:
                                                   (p_hyd).  The p_hyd option is the default and less noisy.  Total
                                                   pressure is consistent with what is done in various post-proc
                                                   packages.
+ z_lev_diags                         = 0,       ; Vertically interpolate diagnostics to z-levels
+                                                  0=NO, 1=YES
+ num_z_levels                        = 2,       ; Number of height levels to interpolate to
+ z_levels                            = 0,       ; List of height values (m) to interpolate data to. 
+                                                ;   Positive numbers are for height above mean sea level (i.e. a flight level)
+                                                ;   Negative numbers are for levels above ground
  /
 
 AFWA diagnostics:

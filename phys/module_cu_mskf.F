@@ -993,7 +993,15 @@ usl:   DO
 !         IF(ISHALL.EQ.1)IPRNT=.TRUE.
 !         IPRNT=.TRUE.
 !         IF(TLCL+DTLCL.GT.TENV)GOTO 45
- 
+
+           IF(TLCL+DTLCL.LT.TENV)THEN
+!
+! Parcel not buoyant, CYCLE back to start of trigger and evaluate next potential
+! USL...
+!
+            CYCLE usl
+!
+          ELSE                            ! Parcel is buoyant, determine updraft
 !     
 !...CONVECTIVE TRIGGERING CRITERIA HAS BEEN SATISFIED...COMPUTE
 !...EQUIVALENT POTENTIAL TEMPERATURE
@@ -1434,6 +1442,7 @@ updraft:    DO NK=K,KL-1
                 ENDDO
               ENDIF
             ENDIF
+          ENDIF  ! for trigger
         END DO usl
     IF(ISHALL.EQ.1)THEN
       KSTART=MAX0(KPBL,KLCL)

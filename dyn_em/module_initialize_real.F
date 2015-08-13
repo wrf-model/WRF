@@ -4006,7 +4006,8 @@ program vint
    real , dimension(1:ij,kgen,1:ij) :: fo , po
    real , dimension(1:ij,1:keta,1:ij) :: fn_calc , fn_interp , pn
    real , dimension(1:ij,1:ij) :: not_required_2d_1, not_required_2d_2, &
-                                  not_required_2d_3, not_required_2d_4
+                                  not_required_2d_3, not_required_2d_4, &
+                                  not_required_2d_5, not_required_2d_6
 
    integer, parameter :: interp_type             = 1 ! 2
    integer, parameter :: extrap_type             = 2 ! 1
@@ -4057,6 +4058,7 @@ program vint
       call vert_interp ( fo , po , fn_interp , pn , &
                          not_required_2d_1, not_required_2d_2, &
                          not_required_2d_3, not_required_2d_4, &
+                         not_required_2d_5, not_required_2d_6, &
                          0 , 0, 5000., 5000., 30000., &
                          generic , 'T' , &
                          interp_type , lagrange_order , extrap_type , &

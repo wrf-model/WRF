@@ -139,9 +139,12 @@ CONTAINS
    CHARACTER (LEN=1024)                      :: message
    INTEGER, INTENT(INOUT)                    :: nsteps
    LOGICAL                                   :: is_restart
+! local vars
+   REAL                                      :: t273
 
 !-----------------------------------------------------------------
-! Compute minutes from reference times clwrfH
+
+   t273  = 273.
 
 ! Initialize [var] values
 ! SET START AND END POINTS FOR TILES
@@ -154,12 +157,13 @@ CONTAINS
       IF  ( wrf_dm_on_monitor() ) THEN
           CALL wrf_debug(0, 'Re-initializing accumulation arrays')
       ENDIF
+      nsteps = 1
       DO j = j_start(ij), j_end(ij)
         DO i = i_start(ij), i_end(ij)
-          t2clmin(i,j)=t2(i,j)
-          t2clmax(i,j)=t2(i,j)
-          t2clmean(i,j)=t2(i,j)
-          t2clstd(i,j)=t2(i,j)*t2(i,j)
+          t2clmin(i,j)=t2(i,j)-t273
+          t2clmax(i,j)=t2(i,j)-t273
+          t2clmean(i,j)=t2(i,j)-t273
+          t2clstd(i,j)=(t2(i,j)-t273)*(t2(i,j)-t273)
           q2clmin(i,j)=q2(i,j)
           q2clmax(i,j)=q2(i,j)
           q2clmean(i,j)=q2(i,j)
@@ -177,25 +181,19 @@ CONTAINS
           rainncclmean(i,j)=rainncv(i,j)/dt
           raincclstd(i,j)=(raincv(i,j)/dt)*(raincv(i,j)/dt)
           rainncclstd(i,j)=(rainncv(i,j)/dt)*(rainncv(i,j)/dt)
-          skintempclmin(i,j)=skintemp(i,j)
-          skintempclmax(i,j)=skintemp(i,j)
-          skintempclmean(i,j)=skintemp(i,j)
-          skintempclstd(i,j)=skintemp(i,j)*skintemp(i,j)
-!         nsteps=0
+          skintempclmin(i,j)=skintemp(i,j)-t273
+          skintempclmax(i,j)=skintemp(i,j)-t273
+          skintempclmean(i,j)=skintemp(i,j)-t273
+          skintempclstd(i,j)=(skintemp(i,j)-t273)*(skintemp(i,j)-t273)
         ENDDO
       ENDDO
-  ENDDO
+    ENDDO
 !    nsteps=clwrfH*60./dt
   ELSE
     xtimep = xtime + dt/60.   ! value at end of timestep for time info
     nsteps=nsteps+1
-!   nsteps=clwrfH*60./dt
-!      DO j = j_start(ij), j_end(ij)
-!        DO i = i_start(ij), i_end(ij)
-!     DO j = jps, jpe
-!       DO i = ips, ipe
 ! Temperature
-          CALL varstatistics(t2,xtimep,ime-ims+1,jme-jms+1,t2clmin,t2clmax,   &
+          CALL varstatistics(t2-t273,xtimep,ime-ims+1,jme-jms+1,t2clmin,t2clmax,   &
             tt2clmin,tt2clmax,t2clmean,t2clstd)
 ! Water vapor mixing ratio
           CALL varstatistics(q2,xtimep,ime-ims+1,jme-jms+1,q2clmin,q2clmax,   &
@@ -210,7 +208,7 @@ CONTAINS
           CALL varstatisticsMAX(rainncv/dt,xtimep,ime-ims+1,jme-jms+1,        &
             rainncclmax,trainncclmax,rainncclmean,rainncclstd)
 ! Skin Temperature 
-          CALL varstatistics(skintemp,xtimep,ime-ims+1,jme-jms+1,skintempclmin,&
+          CALL varstatistics(skintemp-t273,xtimep,ime-ims+1,jme-jms+1,skintempclmin,&
             skintempclmax,tskintempclmin,tskintempclmax,skintempclmean,       &
             skintempclstd)
 
@@ -221,8 +219,13 @@ CONTAINS
                PRINT *,'nsteps=',nsteps,' xtime:', xtime,' clwrfH:',clwrfH
                t2clmean=t2clmean/nsteps
                t2clstd=SQRT(t2clstd/nsteps-t2clmean**2.)
+               t2clmean=t2clmean+t273
+               t2clmin=t2clmin+t273
+               t2clmax=t2clmax+t273
                q2clmean=q2clmean/nsteps
-               q2clstd=SQRT(q2clstd/nsteps-q2clmean**2.)
+               q2clstd=q2clstd/nsteps-q2clmean*q2clmean
+               q2clstd=MAX(q2clstd,0.)
+               q2clstd=SQRT(q2clstd)
                u10clmean=u10clmean/nsteps
                v10clmean=v10clmean/nsteps
                spduv10clmean=spduv10clmean/nsteps
@@ -235,8 +238,12 @@ CONTAINS
                raincclstd=SQRT(raincclstd/nsteps-raincclmean**2.)
                rainncclstd=SQRT(rainncclstd/nsteps-rainncclmean**2.)
                skintempclmean=skintempclmean/nsteps
-               skintempclstd=SQRT(skintempclstd/nsteps-skintempclmean**2.)
-               nsteps = 0
+               skintempclstd=skintempclstd/nsteps-skintempclmean*skintempclmean
+               skintempclstd=MAX(skintempclstd,0.)
+               skintempclstd=SQRT(skintempclstd)
+               skintempclmean=skintempclmean+t273
+               skintempclmin=skintempclmin+t273
+               skintempclmax=skintempclmax+t273
              IF  ( wrf_dm_on_monitor() ) THEN
                DO ij = 1 , num_tiles
                idp = i_start(ij)+(i_end(ij)-i_start(ij))/2

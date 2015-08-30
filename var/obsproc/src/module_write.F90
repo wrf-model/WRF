@@ -1033,7 +1033,7 @@ levels:&
 ! 5.  PRINT DIAGNOSTIC
 ! =====================
  
-      WRITE (0, '(/,A,I7,A,A)') &
+      WRITE (0, '(/,A,I8,A,A)') &
      'Wrote ',nwrites,' lines of data in file: ',TRIM (filename) 
       WRITE (0, '(A)') ' ' 
 

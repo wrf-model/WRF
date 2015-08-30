@@ -343,7 +343,7 @@ count_after:&
    nairss  (icor) = nairsb  - nairsa 
    nothers (icor) = notherb - nothera
 
-   WRITE (UNIT = 0 , FMT = '(A,I5,A,/)' ) &
+   WRITE (UNIT = 0 , FMT = '(A,I7,A,/)' ) &
   "Found ",total_dups," location duplicate stations that have been merged."
 
    IF (print_duplicate) CLOSE (iunit)
@@ -694,7 +694,7 @@ time_different: IF (abs(itfirst) .LT. abs(itsecond)) THEN
 
    total_valid = total_valid + 1
 
-   WRITE (UNIT = 0 , FMT = '(A,I5,A,/)' ) &
+   WRITE (UNIT = 0 , FMT = '(A,I7,A,/)' ) &
   "Found ",total_dups," time duplicate stations that have been removed."
 
 END SUBROUTINE check_duplicate_time

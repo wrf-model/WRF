@@ -1717,13 +1717,13 @@ upper_level: DO WHILE (ASSOCIATED (current))
 ! ====================
  
       WRITE (UNIT = 0 , FMT = '(A)' ) ' '
-      WRITE (UNIT = 0 , FMT = '(A,I6,A,I6,A)' ) &
+      WRITE (UNIT = 0 , FMT = '(A,I7,A,I7,A)' ) &
      "Number of processed stations:           ",nvalids,&
      " = ",nlevels," levels."
-      WRITE (UNIT = 0 , FMT = '(A,I6,A,I6,A)' ) &
+      WRITE (UNIT = 0 , FMT = '(A,I7,A,I7,A)' ) &
      "Number of processed surface stations:   ",nsurfaces,&
      " = ",nsurfaces," surface levels."
-      WRITE (UNIT = 0 , FMT = '(A,I6,A,I6,A,/)' ) &
+      WRITE (UNIT = 0 , FMT = '(A,I7,A,I7,A,/)' ) &
      "Number of processed upper-air stations: ",nsoundings,&
      " = ",nlevels-nsurfaces," upper-air levels."
 

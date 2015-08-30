@@ -779,7 +779,7 @@ Namelist variables for controlling the adaptive time step option:
  num_soil_layers                     = 5,	; number of soil layers in land surface model
                                                   = 5: thermal diffusion scheme
                                                   = 4: Noah landsurface model
-                                                  = 6: RUC landsurface model
+                                                  = 6 or 9: RUC landsurface model
                                                   = 10: CLM4 landsurface model
                                                   = 2: Pleim-Xu landsurface model
                                                   = 3: SSiB landsurface model

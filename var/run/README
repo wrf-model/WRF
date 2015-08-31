@@ -7,7 +7,7 @@ radiance_info/*.info
   Currently, only the 4th and 6th columns in each file are actually used.
   4th column info: 1: use
                   -1: not use
-  6th colum info: observation errors in K
+  6th column info: observation errors in K
 
 VARBC.in
   Template input file for radiance Variational Bias Correction.

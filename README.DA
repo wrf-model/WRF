@@ -23,6 +23,29 @@ WRFDA, including infringement actions.
 This is the main directory for the WRFDA Version 3 source code release.
 ======================================
 
+V3.7.1 Release Notes :
+-------------------
+
+Version 3.7.1 was released on August 14, 2015.
+
+  For more information about WRFDA, visit the WRFDA Users home page
+  http://www2.mmm.ucar.edu/wrf/users/wrfda/index.html
+
+  Updated features:
+
+    - A number of issues have been fixed for this release, including:
+        - A fix for the new radar option "use_radar_rqv"
+        - A fix for crashes and/or incorrect results for 4DVAR when assimilating radiance data with 
+          RTTOV with the option "rttov_emis_atlas_ir=1"
+        - Fixing display problems in OBSPROC for large numbers of observations
+        - Avoiding problems in OBSPROC with default observation error values
+        - An incorrect interpolation of U and V in new CV7 option in GEN_BE has been fixed
+    - WRFPLUS has been upgraded to V3.7.1
+
+See http://www2.mmm.ucar.edu/wrf/users/wrfda/updates-3.7.1.html for a full list of updates
+
+======================================
+
 V3.7 Release Notes :
 -------------------
 

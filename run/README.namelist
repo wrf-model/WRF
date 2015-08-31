@@ -239,6 +239,9 @@ Namelist variables specifically for the WPS input for real:
                                                 ; level of max wind information in real.  With a value of 300 hPa, then
                                                 ; a max wind value at 500 hPa will be ignored.
                                                 ; ARW real only.
+ use_maxw_level                                 ; 0=do not use max wind speed level in vertical interpolation inside
+                                                ; of the ARW real program, 1 = use level
+ use_trop_level                                 ; as above, with tropopause level data
  sfcp_to_sfcp                        = .false.  ; Optional method to compute model's surface pressure when incoming
                                                 ; data only has surface pressure and terrain, but not SLP
  smooth_cg_topo	                     = .false.  ; Smooth the outer rows and columns of domain 1's topography w.r.t.

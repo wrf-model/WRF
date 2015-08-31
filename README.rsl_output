@@ -12,7 +12,7 @@ Include -DNCEP_DEBUG_MULTIDIR in CFLAGS of configure.wrf to have the rsl.output 
 files in separate task numbered directories.  All of these directories will be in a single TASKOUTPUT directory under
 the run directory, i.e.,  <rundirectory>/TASKOUTPUT/0000/rsl.error.0000 .
 
-Include -DNCEP_DEBUG_GLOBALSTDOUT in CFLAGS of configure.wrf to have all rsl.error and rsl.out information written to
+Include -DNCEP_DEBUG_MULTIDIR -DNCEP_DEBUG_GLOBALSTDOUT in CFLAGS of configure.wrf to have all rsl.error and rsl.out information written to
 the global stderr and stdout for the job (2 files).
 
 If you do not include either flag, the default is to have the rsl output/error data written to separate files in the

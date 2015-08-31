@@ -20,7 +20,7 @@ CONTAINS
                                 its,ite, jts,jte, kts,kte                     )
 
 ! ----------------------------------------------------------------------
-  USE NOAHMP_PARAMETERS, ONLY: BEXP, DKSAT, SMCMAX, PSISAT, SMCWLT    ! SOIL DEPENDENT
+  USE NOAHMP_TABLES, ONLY: BEXP_TABLE, DKSAT_TABLE, SMCMAX_TABLE,PSISAT_TABLE, SMCWLT_TABLE
 ! ----------------------------------------------------------------------
   IMPLICIT NONE
 ! ----------------------------------------------------------------------
@@ -85,6 +85,8 @@ CONTAINS
                                                 ,WPLUS,WMINUS
   REAL,      DIMENSION( ims:ime, jms:jme )    :: QLAT
   INTEGER,   DIMENSION( ims:ime, jms:jme )    :: LANDMASK !-1 for water (ice or no ice) and glacial areas, 1 for land where the LSM does its soil moisture calculations.
+  
+  REAL :: BEXP,DKSAT,PSISAT,SMCMAX,SMCWLT
 
     DELTAT = WTDDT * 60. !timestep in seconds for this calculation
 
@@ -132,6 +134,12 @@ CALL LATERALFLOW(ISLTYP,WTD,QLAT,FDEPTH,TOPO,LANDMASK,DELTAT,AREA       &
     DO J=jts,jte
        DO I=its,ite
           IF(LANDMASK(I,J).GT.0)THEN
+
+            BEXP   = BEXP_TABLE   (ISLTYP(I,J))
+            DKSAT  = DKSAT_TABLE  (ISLTYP(I,J))
+            PSISAT = PSISAT_TABLE (ISLTYP(I,J))
+            SMCMAX = SMCMAX_TABLE (ISLTYP(I,J))
+            SMCWLT = SMCWLT_TABLE (ISLTYP(I,J))
 
              IF(IVGTYP(I,J)==ISURBAN)THEN
                  SMCMAX = 0.45
@@ -198,7 +206,7 @@ END  SUBROUTINE WTABLE_mmf_noahmp
                            ,ims,ime,jms,jme,kms,kme                      &
                            ,its,ite,jts,jte,kts,kte                      )
 ! ----------------------------------------------------------------------
-  USE NOAHMP_SOIL_PARAMETERS, ONLY : DKSAT_TABLE
+  USE NOAHMP_TABLES, ONLY : DKSAT_TABLE
 ! ----------------------------------------------------------------------
   IMPLICIT NONE
 ! ----------------------------------------------------------------------

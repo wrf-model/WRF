@@ -1,8 +1,8 @@
-&noah_mp_usgs_veg_categories
+&noahmp_usgs_veg_categories
  VEG_DATASET_DESCRIPTION = "USGS"
  NVEG = 27
 /
-&noah_mp_usgs_parameters
+&noahmp_usgs_parameters
  ! NVEG = 27
  !  1: Urban and Built-Up Land
  !  2: Dryland Cropland and Pasture
@@ -144,12 +144,12 @@
  EPS5   =   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
 /
 
-&noah_mp_modis_veg_categories
+&noahmp_modis_veg_categories
  VEG_DATASET_DESCRIPTION = "modified igbp modis noah"
  NVEG = 20
 /
 
-&noah_mp_modis_parameters
+&noahmp_modis_parameters
 ! 1          'Evergreen Needleleaf Forest'                       -> USGS 14
 ! 2,         'Evergreen Broadleaf Forest'                        -> USGS 13
 ! 3,         'Deciduous Needleleaf Forest'                       -> USGS 12
@@ -284,7 +284,7 @@
 
 /
 
-&noah_mp_rad_parameters
+&noahmp_rad_parameters
  !------------------------------------------------------------------------------
  !                1       2       3       4       5       6       7       8     soil color index for soil albedo
  !------------------------------------------------------------------------------
@@ -298,5 +298,26 @@
  BETADS     =   0.5                                                            ! two-stream parameter betad for snow
  BETAIS     =   0.5                                                            ! two-stream parameter betaI for snow
  EG         =   0.97,   0.98                                                   ! emissivity soil surface 1-soil;2-lake
+
+/
+
+&noahmp_global_parameters
+
+! atmospheric constituants
+
+  CO2    = 395.e-06     !co2 partial pressure
+  O2     = 0.209        !o2 partial pressure
+
+! runoff parameters used for SIMTOP and SIMGM:
+
+  TIMEAN = 10.5         !gridcell mean topgraphic index (global mean)
+  FSATMX = 0.38         !maximum surface saturated fraction (global mean)
+
+! adjustable parameters for snow processes
+
+  Z0SNO  = 0.002        !snow surface roughness length (m) (0.002)
+  SSI    = 0.03         !liquid water holding capacity for snowpack (m3/m3) (0.03)
+  SWEMX  = 1.00         !new snow mass to fully cover old snow (mm)
+                        !equivalent to 10mm depth (density = 100 kg/m3)
 
 /

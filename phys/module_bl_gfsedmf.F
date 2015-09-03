@@ -436,9 +436,6 @@ CONTAINS
       DKU3D(I,J,K) = DKU(I,K)
       DKT3D(I,J,K) = DKT(I,K)
      ENDDO
-      dku3d(i,j,kte)=zol(i)
-      dku3d(i,j,kte-1)=RBSOIL(i)
-      dku3d(i,j,kte-2)=zorl(i)
 
      ENDDO
 #endif
@@ -1442,7 +1439,8 @@ CONTAINS
          tem2  = 0.5 * (tem1+diss(i,1)) 
          tem2  = max(tem2, 0.)
          ttend = tem2 / cp
-         tau(i,1) = tau(i,1)+0.5*ttend
+!         tau(i,1) = tau(i,1)+0.5*ttend
+         tau(i,1) = tau(i,1)+0.7*ttend
       enddo
 !
 !     add dissipative heating above the first model layer
@@ -1452,7 +1450,8 @@ CONTAINS
           tem = 0.5 * (diss(i,k-1)+diss(i,k))
           tem  = max(tem, 0.)
           ttend = tem / cp
-          tau(i,k) = tau(i,k) + 0.5*ttend
+!          tau(i,k) = tau(i,k) + 0.5*ttend
+          tau(i,k) = tau(i,k) + 0.7*ttend
         enddo
       enddo
 !

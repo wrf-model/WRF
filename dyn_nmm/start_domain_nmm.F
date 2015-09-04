@@ -13,10 +13,10 @@
           character*255 :: message
 
           real :: dt
-          integer :: nphs,movemin
+          integer :: nphs,ntrack
           if(model_config_rec%max_dom>=2) then
              ! Normally, in an HWRF simulation, domain 2 has
-             ! dt*nphs*movemin = coupling timestep
+             ! dt*nphs*ntrack = coupling timestep
              ! So if there is a domain 2, we'll use that to
              ! guess the coupling timestep.
              if(gridid==1) then
@@ -25,7 +25,7 @@
                 ! 2 still has its dt set to the internal WRF default of 2.
                 ! To get domain 2's correct dt, we get domain 1's dt and
                 ! divide by 3
-                call wrf_message('Guessing coupling timestep from d01''s dt/3 and d02''s nphs and movemin...')
+                call wrf_message('Guessing coupling timestep from d01''s dt/3 and d02''s nphs and ntrack...')
                 call model_to_grid_config_rec(1,model_config_rec,config_flags)
                 dt=config_flags%dt/3
                 call model_to_grid_config_rec(2,model_config_rec,config_flags)
@@ -42,11 +42,11 @@
              dt=config_flags%dt
           endif
           nphs=config_flags%nphs
-          movemin=config_flags%movemin
+          ntrack=config_flags%ntrack
 
-          dtc = dt*nphs*movemin
-388       format("dtc=dt*nphs*movemin = ",F0.3,"=",F0.3,"*",I0,"*",I0)
-          write(message,388) dtc,dt,nphs,movemin
+          dtc = dt*nphs*ntrack
+388       format("dtc=dt*nphs*ntrack = ",F0.3,"=",F0.3,"*",I0,"*",I0)
+          write(message,388) dtc,dt,nphs,ntrack
           call wrf_message(message)
         END SUBROUTINE GUESS_COUPLING_TIMESTEP
 #endif

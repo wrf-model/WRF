@@ -223,6 +223,25 @@ BYTE_BCAST ( char * buf, int * size, int * Fcomm )
 #endif
 }
 
+BYTE_BCAST_FROM_ROOT ( char * buf, int * size, int *root , int * Fcomm )
+{
+#ifndef STUBMPI
+    MPI_Comm *comm, dummy_comm ;
+
+    comm = &dummy_comm ;
+    *comm = MPI_Comm_f2c( *Fcomm ) ;
+# ifdef crayx1
+    if (*size % sizeof(int) == 0) {
+       MPI_Bcast ( buf, *size/sizeof(int), MPI_INT, *root, *comm ) ;
+    } else {
+       MPI_Bcast ( buf, *size, MPI_BYTE, *root, *comm ) ;
+    }
+# else
+    MPI_Bcast ( buf, *size, MPI_BYTE, *root, *comm ) ;
+# endif
+#endif
+}
+
 static int yp_curs, ym_curs, xp_curs, xm_curs ;
 static int yp_curs_recv, ym_curs_recv, xp_curs_recv, xm_curs_recv ;
 

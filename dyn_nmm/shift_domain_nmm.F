@@ -30,8 +30,7 @@ SUBROUTINE shift_domain_nmm ( grid , disp_x, disp_y &
    !  Definitions of dummy arguments to solve
 #include <dummy_new_decl.inc>
 
-!#define COPY_IN
-!#include <scalar_derefs.inc>
+IF ( grid%active_this_task ) THEN
 
 #ifdef DM_PARALLEL
 #      include <data_calls.inc>
@@ -180,7 +179,8 @@ SUBROUTINE shift_domain_nmm ( grid , disp_x, disp_y &
    enddo
 #endif
 
-!#define COPY_OUT
-!#include <scalar_derefs.inc>
+ENDIF
+
+   RETURN
 
 END SUBROUTINE shift_domain_nmm

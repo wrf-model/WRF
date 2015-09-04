@@ -3063,7 +3063,7 @@ CONTAINS
 !.. a reasonable value of LWP or IWP that might be contained in that depth,
 !.. unless existing LWC/IWC is already there.
 
-      subroutine find_cloudLayers(qvs1d, cfr1d, T1d, P1d, R1d,          &
+      SUBROUTINE find_cloudLayers(qvs1d, cfr1d, T1d, P1d, R1d,          &
      &                            debugfl, qc1d, qi1d, qs1d, kts,kte)
 !
       IMPLICIT NONE
@@ -3234,7 +3234,7 @@ CONTAINS
 
 !+---+-----------------------------------------------------------------+
 
-      subroutine adjust_cloudIce(cfr,qi,qs,qvs, T,Rho,dz, k1,k2,kts,kte)
+      SUBROUTINE adjust_cloudIce(cfr,qi,qs,qvs, T,Rho,dz, k1,k2,kts,kte)
 !
       IMPLICIT NONE
 !
@@ -3267,7 +3267,7 @@ CONTAINS
 
 !+---+-----------------------------------------------------------------+
 
-      subroutine adjust_cloudH2O(cfr, qc, qvs, T,Rho,dz, k1,k2,kts,kte)
+      SUBROUTINE adjust_cloudH2O(cfr, qc, qvs, T,Rho,dz, k1,k2,kts,kte)
 !
       IMPLICIT NONE
 !
@@ -3304,7 +3304,7 @@ CONTAINS
 !..Do not alter any grid-explicitly resolved hydrometeors, rather only
 !.. the supposed amounts due to the cloud fraction scheme.
 
-      subroutine adjust_cloudFinal(cfr, qc, qi, Rho,dz, kts,kte,k_tropo)
+      SUBROUTINE adjust_cloudFinal(cfr, qc, qi, Rho,dz, kts,kte,k_tropo)
 !
       IMPLICIT NONE
 !

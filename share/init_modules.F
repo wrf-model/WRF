@@ -14,12 +14,17 @@ SUBROUTINE init_modules( phase )
  USE module_io                  , ONLY : init_module_io
 #ifdef DM_PARALLEL
  USE module_wrf_quilt           , ONLY : init_module_wrf_quilt
- USE module_dm                  , ONLY : init_module_dm, split_communicator
+ USE module_dm                  , ONLY : init_module_dm, split_communicator,hwrf_coupler_init
 #endif
 #ifdef INTIO
  USE module_ext_internal        , ONLY : init_module_ext_internal
 #endif
  USE module_wrf_error           , ONLY : init_module_wrf_error
+
+#if ( DA_CORE != 1 )
+   USE module_cpl, ONLY : coupler_on, cpl_init
+#endif
+
 
 ! <DESCRIPTION>
 ! This routine USES the modules in WRF and then calls the init routines
@@ -50,6 +55,8 @@ SUBROUTINE init_modules( phase )
 
  INTEGER, INTENT(IN) :: phase    ! phase==1 means return after MPI_INIT()
                                  ! phase==2 means resume after MPI_INIT()
+integer mpi_comm_here,myrank_,ntasks_,ierr_
+
 IF ( phase == 1 ) THEN
  CALL init_module_bc
  CALL init_module_configure
@@ -62,11 +69,21 @@ IF ( phase == 1 ) THEN
  CALL init_module_ext_internal  !! must be called before quilt
 #endif
 #ifdef DM_PARALLEL
- CALL split_communicator
+!CALL disable_quilting
+
+#ifdef HWRF 
+! jm 20150807
+! jm this was moved to here so that the coupler can divide up the tasks before the model starts doing it for quilting, nesting etc.
+! jm the idea is that the atmosphere will see only the communicator with the tasks it is supposed to use for that stuff
+! jm hwrf_coupler_init is defined in external/RSL_LITE/module_dm.F
+ CALL hwrf_coupler_init
+#endif
+
  CALL init_module_wrf_quilt    !! this *must* be called before init_module_dm
 
  ! We must never reach this line or phase 2 in an I/O server.
 
+ CALL split_communicator
  CALL init_module_dm
 #endif
 ELSE

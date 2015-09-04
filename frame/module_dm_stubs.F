@@ -354,4 +354,9 @@ SUBROUTINE wrf_global_to_patch_LOGICAL (globbuf,buf,domdesc,ndim,&
    RETURN
 END SUBROUTINE wrf_global_to_patch_LOGICAL
 
+#ifdef HWRF
+   SUBROUTINE hwrf_coupler_init
+   END SUBROUTINE hwrf_coupler_init
+#endif
+
 

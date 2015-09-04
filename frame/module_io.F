@@ -419,10 +419,10 @@ SUBROUTINE wrf_open_for_write_begin( FileName , grid, SysDepInfo, &
   ELSE ! use_output_servers_for(io_form)
     IF ( io_form .GT. 0 ) THEN
       IF ( ncd_nofill ) THEN
-        CALL wrf_quilt_open_for_write_begin ( FileName , Comm_compute, Comm_io, TRIM(SysDepInfo) // ",NOFILL=.TRUE.", &
+        CALL wrf_quilt_open_for_write_begin ( FileName , grid%id, Comm_compute, Comm_io, TRIM(SysDepInfo) // ",NOFILL=.TRUE.", &
                                               Hndl , io_form, Status )
       ELSE
-        CALL wrf_quilt_open_for_write_begin ( FileName , Comm_compute, Comm_io, SysDepInfo, &
+        CALL wrf_quilt_open_for_write_begin ( FileName , grid%id, Comm_compute, Comm_io, SysDepInfo, &
                                               Hndl , io_form, Status )
       ENDIF
     ENDIF

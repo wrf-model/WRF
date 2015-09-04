@@ -306,7 +306,7 @@ contains
 
 #if ( NMM_NEST == 1 )
 #ifdef HWRF
-    MOVEFREQ=grid%movemin*grid%nphs
+    MOVEFREQ=grid%ntrack*grid%nphs
     vortex_tracker=grid%vortex_tracker
 #else
     MOVEFREQ=grid%nphs
@@ -365,7 +365,7 @@ contains
             ,grid%sm							  &
 #ifdef HWRF
             ,GRID%RESTART,grid%NTIME0                                     &
-            ,GRID%MOVED,grid%MVNEST,grid%ntsd,GRID%NPHS,GRID%MOVEMIN      &
+            ,GRID%MOVED,grid%MVNEST,grid%ntsd,GRID%NPHS,GRID%NTRACK      &
 #else
             ,GRID%MOVED,grid%MVNEST,grid%ntsd,GRID%NPHS                   &
 #endif

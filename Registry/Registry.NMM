@@ -165,8 +165,8 @@ endif
 # Nest motion safeguard: don't let nest get close to parent boundary.
 # Default values are lowest possible - anything lower would read
 # outside of memory in intermediate domain.
-rconfig integer coral_x     namelist,domains     max_domains    5   h "coral_x" "Minimum parent gridpoints on each side of nest in X direction." ""
-rconfig integer coral_y     namelist,domains     max_domains    5   h "coral_y" "Minimum parent gridpoints on each side of nest in Y direction." ""
+rconfig integer corral_x     namelist,domains     max_domains    5   h "corral_x" "Minimum parent gridpoints on each side of nest in X direction." ""
+rconfig integer corral_y     namelist,domains     max_domains    5   h "corral_y" "Minimum parent gridpoints on each side of nest in Y direction." ""
 
 #
 # For the moving nest. This is gopal's doing
@@ -1162,7 +1162,7 @@ state   real    power          ij       misc      1         -     irh       "Pow
 # State for derived time quantities.  
 #for HWRF: add to restart
 state   integer itimestep      -        -          -         -     rh         "itimestep"             ""         ""      
-state   real    xtime          -        -          -         -     h0123         "xtime"                 "minutes since simulation start"         ""      
+state   real    xtime          -        -          -         -     h0123     "xtime"                 "minutes since simulation start"         ""      
 state   real    julian         -        -          -         -     -         "julian"                "day of year, 0.0 at 0Z on 1 Jan."         "days"
 
 # input file descriptor for lbcs on parent domain                                               
@@ -1303,6 +1303,8 @@ rconfig   integer   max_ts_locs     namelist,domains    1                5      
 rconfig   integer   num_moves       namelist,domains    1                0
 rconfig   integer   vortex_interval namelist,domains    max_domains      15  -  "" "" "minutes"
 rconfig   integer   corral_dist     namelist,domains    max_domains      8
+#for HWRF -- set to true for one storm, false for > 1 this gets inferred from the way the nests are configured in frame/module_domain.F
+rconfig   logical   multi_storm     derived             1              .true.
 rconfig   integer   move_id         namelist,domains    max_moves        0
 rconfig   integer   move_interval   namelist,domains    max_moves        999999999
 rconfig   integer   move_cd_x       namelist,domains    max_moves        0
@@ -1479,9 +1481,9 @@ state  real   pin       {ls}     misc      1    -   -      "PIN"             "PR
 state    real   o3rad           ikj     misc        1         -      irh      "o3rad"    "RADIATION 3D OZONE" "ppmv"
 
 ifdef HWRF=1
-rconfig   integer movemin                 namelist,physics      max_domains  10       irh    "movemin" "nest movement timestep (multiples of nphs)"
+rconfig   integer ntrack                 namelist,physics      max_domains  10       irh    "ntrack" "nest movement timestep (multiples of nphs)"
 endif
-rconfig   integer movemin                 namelist,physics      max_domains  0       irh    "movemin" "nest movement timestep (multiples of nphs)"
+rconfig   integer ntrack                 namelist,physics      max_domains  0       irh    "ntrack" "nest movement timestep (multiples of nphs)"
 
 rconfig   integer num_snso_layers         namelist,physics      1             7       irh    "num_snso_layers"               ""      ""
 rconfig   integer num_snow_layers         namelist,physics   1             3       irh    "num_snow_layers"               ""      ""
@@ -1677,7 +1679,7 @@ package   rrtmg_lwscheme_fast  ra_lw_physics==24     -             -
 package   goddardlwscheme  ra_lw_physics==5          -             -
 package   flglwscheme   ra_lw_physics==7             -             -
 package   gfdllwscheme  ra_lw_physics==99            -             -
-package   hwrflwscheme  ra_lw_physics==98            -             -
+package   hwrflwscheme  ra_lw_physics==98            -             state:o3rad
 
 package   swradscheme   ra_sw_physics==1             -             -
 package   gsfcswscheme  ra_sw_physics==2             -             -
@@ -1687,7 +1689,7 @@ package   rrtmg_swscheme_fast  ra_sw_physics==24     -             -
 package   goddardswscheme  ra_sw_physics==5          -             -
 package   flgswscheme   ra_sw_physics==7             -             -
 package   gfdlswscheme  ra_sw_physics==99            -             -
-package   hwrfswscheme  ra_sw_physics==98
+package   hwrfswscheme  ra_sw_physics==98            -             state:o3rad
 package   heldsuarez    ra_lw_physics==31            -             -
 
 package   sfclayscheme   sf_sfclay_physics==91       -             -

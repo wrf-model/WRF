@@ -186,9 +186,11 @@ int print_decl( FILE * fp , node_t *p, char * communicator,
 int print_body( FILE * fp, char * commname )
   {
   fprintf(fp,"  \n") ;
+  fprintf(fp,"CALL push_communicators_for_domain( grid%%id )\n") ;
   fprintf(fp,"#ifdef DM_PARALLEL\n") ;
   fprintf(fp,"#include \"%s_inline.inc\"\n",commname) ;
   fprintf(fp,"#endif\n") ;
+  fprintf(fp,"CALL pop_communicators_for_domain\n") ;
   fprintf(fp,"  \n") ;
   fprintf(fp,"  END SUBROUTINE %s_sub\n",commname) ;
   return 0; /* SamT: bug fix: return a value */
@@ -2009,6 +2011,7 @@ gen_nest_pack ( char * dirname )
   int down_path[] = { INTERP_DOWN , FORCE_DOWN , INTERP_UP } ;
   int ipath ;
   char ** fnp ; char * fn ;
+  char * parent ;
   char * shw_str ;
   char fname[NAMELEN] ;
   node_t *node, *p, *dim ;
@@ -2044,6 +2047,8 @@ gen_nest_pack ( char * dirname )
 #else
       count_fields ( node , &d2 , &d3 , fourd_names, down_path[ipath] ,0,0) ;
 #endif
+      parent= "" ;
+      if ( !strcmp(fn,"nest_feedbackup_pack.inc") ) parent="parent_" ; 
 
       if ( d2 + d3 > 0 ) {
         if ( down_path[ipath] == INTERP_UP )
@@ -2065,13 +2070,18 @@ gen_nest_pack ( char * dirname )
                 d3_mp,fourd_names_mp,d2_mp);
 #endif
 
-        fprintf(fp,"CALL %s( local_communicator, msize*RWORDSIZE                               &\n",info_name ) ;
+//        fprintf(fp,"CALL %s( local_communicator, msize*RWORDSIZE                               &\n",info_name ) ;
+        fprintf(fp,"CALL %s( msize*RWORDSIZE                               &\n",info_name ) ;
         fprintf(fp,"                        ,cips,cipe,cjps,cjpe                               &\n") ;
 if (sw) fprintf(fp,"                        ,iids,iide,ijds,ijde                               &\n") ;
         fprintf(fp,"                        ,nids,nide,njds,njde                               &\n") ;
 if (sw) fprintf(fp,"                        ,pgr , sw                                          &\n") ;
-        fprintf(fp,"                        ,ntasks_x,ntasks_y                                 &\n") ; 
-        fprintf(fp,"                        ,thisdomain_max_halo_width                                  &\n") ;
+        fprintf(fp,"                        ,nest_task_offsets(ngrid%%id)                      &\n") ;
+        fprintf(fp,"                        ,nest_pes_x(%sgrid%%id)                            &\n",parent) ;
+        fprintf(fp,"                        ,nest_pes_y(%sgrid%%id)                            &\n",parent) ; 
+        fprintf(fp,"                        ,nest_pes_x(intermediate_grid%%id)                 &\n") ;
+        fprintf(fp,"                        ,nest_pes_y(intermediate_grid%%id)                 &\n") ; 
+        fprintf(fp,"                        ,thisdomain_max_halo_width                         &\n") ;
         fprintf(fp,"                        ,icoord,jcoord                                     &\n") ;
         fprintf(fp,"                        ,idim_cd,jdim_cd                                   &\n") ;
         fprintf(fp,"                        ,pig,pjg,retval )\n") ;
@@ -2080,13 +2090,18 @@ if (sw) fprintf(fp,"                        ,pgr , sw                           
   
         gen_nest_packunpack ( fp , Domain.fields, PACKIT, down_path[ipath] ) ;
 
-        fprintf(fp,"CALL %s( local_communicator, msize*RWORDSIZE                               &\n",info_name ) ;
+//        fprintf(fp,"CALL %s( local_communicator, msize*RWORDSIZE                               &\n",info_name ) ;
+        fprintf(fp,"CALL %s( msize*RWORDSIZE                               &\n",info_name ) ;
         fprintf(fp,"                        ,cips,cipe,cjps,cjpe                               &\n") ;
 if (sw) fprintf(fp,"                        ,iids,iide,ijds,ijde                               &\n") ;
         fprintf(fp,"                        ,nids,nide,njds,njde                               &\n") ;
 if (sw) fprintf(fp,"                        ,pgr , sw                                          &\n") ;
-        fprintf(fp,"                        ,ntasks_x,ntasks_y                                 &\n") ; 
-        fprintf(fp,"                        ,thisdomain_max_halo_width                                  &\n") ;
+        fprintf(fp,"                        ,nest_task_offsets(ngrid%%id)                      &\n") ;
+        fprintf(fp,"                        ,nest_pes_x(%sgrid%%id)                            &\n",parent) ;
+        fprintf(fp,"                        ,nest_pes_y(%sgrid%%id)                            &\n",parent) ; 
+        fprintf(fp,"                        ,nest_pes_x(intermediate_grid%%id)                 &\n") ;
+        fprintf(fp,"                        ,nest_pes_y(intermediate_grid%%id)                 &\n") ; 
+        fprintf(fp,"                        ,thisdomain_max_halo_width                         &\n") ;
         fprintf(fp,"                        ,icoord,jcoord                                     &\n") ;
         fprintf(fp,"                        ,idim_cd,jdim_cd                                   &\n") ;
         fprintf(fp,"                        ,pig,pjg,retval )\n") ;

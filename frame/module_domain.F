@@ -517,7 +517,7 @@ CONTAINS
    RETURN
    END SUBROUTINE wrf_patch_domain
 !
-   SUBROUTINE alloc_and_configure_domain ( domain_id , grid , parent, kid )
+   SUBROUTINE alloc_and_configure_domain ( domain_id , active_this_task, grid , parent, kid )
 
 !<DESCRIPTION>
 ! This subroutine is used to allocate a domain data structure of
@@ -563,10 +563,11 @@ CONTAINS
 
       !  Input data.
 
-      INTEGER , INTENT(IN)                           :: domain_id
-      TYPE( domain ) , POINTER                       :: grid
-      TYPE( domain ) , POINTER                       :: parent
-      INTEGER , INTENT(IN)                           :: kid    ! which kid of parent am I?
+      INTEGER , INTENT(IN)            :: domain_id
+      LOGICAL , OPTIONAL, INTENT(IN)  :: active_this_task ! false if domain is being handled by other MPI tasks
+      TYPE( domain ) , POINTER        :: grid
+      TYPE( domain ) , POINTER        :: parent
+      INTEGER , INTENT(IN)            :: kid    ! which kid of parent am I?
 
       !  Local data.
       INTEGER                     :: sd1 , ed1 , sp1 , ep1 , sm1 , em1
@@ -586,7 +587,13 @@ CONTAINS
       INTEGER                     :: parent_id , parent_domdesc , new_domdesc
       INTEGER                     :: bdyzone_x , bdyzone_y
       INTEGER                     :: nx, ny
+      LOGICAL :: active
 
+! 
+      active = .TRUE.
+      IF ( PRESENT( active_this_task ) ) THEN
+         active = active_this_task
+      ENDIF
 
 ! This next step uses information that is listed in the registry as namelist_derived
 ! to properly size the domain and the patches; this in turn is stored in the new_grid
@@ -724,6 +731,12 @@ CONTAINS
          parent%nests(kid)%ptr => new_grid
          new_grid%child_of_parent(1) = kid    ! note assumption that nest can have only 1 parent
          parent%num_nests = parent%num_nests + 1
+!jm 20150810, this replaces the compile-time logic associated with the CPP constant HRD_MULTIPLE_STORMS
+! used in solve_nmm of the HWRF version to decide whether or not to call the coupler.  If there is more than
+! one nest to a parent then that implies there are multiple storms, so we turn off the coupling.
+         IF ( parent%num_nests .GT. 1 ) THEN
+           CALL nl_set_multi_storm(1,.FALSE.)
+         ENDIF
       END IF
       new_grid%id = domain_id                 ! this needs to be assigned prior to calling wrf_patch_domain
 
@@ -758,7 +771,13 @@ CONTAINS
       new_grid%last_step_updated = -1
 #endif
 
-      CALL alloc_space_field ( new_grid, domain_id , 3 , 3 , .FALSE. ,      &
+!      IF (active) THEN
+        ! only allocate state if this set of tasks actually computes that domain, jm 20140822
+      new_grid%active_this_task = active
+!debug write(0,*)__FILE__,__LINE__,'new_grid%id ',new_grid%id
+!debug write(0,*)__FILE__,__LINE__,'new_grid%active_this_task ',new_grid%active_this_task
+!debug write(0,*)__FILE__,__LINE__,'new_grid%is_intermediate ',new_grid%is_intermediate
+      CALL alloc_space_field ( new_grid, domain_id , 3 , 3 , .FALSE. , active,     &
                                sd1, ed1, sd2, ed2, sd3, ed3,       &
                                sm1,  em1,  sm2,  em2,  sm3,  em3,  &
                                sp1,  ep1,  sp2,  ep2,  sp3,  ep3,  &
@@ -767,6 +786,10 @@ CONTAINS
                                sm1x, em1x, sm2x, em2x, sm3x, em3x, &   ! x-xpose
                                sm1y, em1y, sm2y, em2y, sm3y, em3y  &   ! y-xpose
       )
+!      ELSE
+!        WRITE (wrf_err_message,*)"Not allocating storage for domain ",domain_id," on this set of tasks"
+!        CALL wrf_message(TRIM(wrf_err_message))
+!      ENDIF
 #if MOVE_NESTS
 !set these here, after alloc_space_field, which initializes vc_i, vc_j to zero
       new_grid%xi = -1.0
@@ -913,47 +936,58 @@ CONTAINS
 ! properly assigned to the new_grid record
 
       grid => new_grid
-
+!debug write(0,*)__FILE__,__LINE__,'grid%mvnest ',grid%mvnest
+ 
+!debug write(0,*)__FILE__,__LINE__,'grid%mvnest ',grid%mvnest
+      IF ( grid%active_this_task ) THEN
 ! Allocate storage for time series metadata
-      ALLOCATE( grid%lattsloc( grid%max_ts_locs ) )
-      ALLOCATE( grid%lontsloc( grid%max_ts_locs ) )
-      ALLOCATE( grid%nametsloc( grid%max_ts_locs ) )
-      ALLOCATE( grid%desctsloc( grid%max_ts_locs ) )
-      ALLOCATE( grid%itsloc( grid%max_ts_locs ) )
-      ALLOCATE( grid%jtsloc( grid%max_ts_locs ) )
-      ALLOCATE( grid%id_tsloc( grid%max_ts_locs ) )
-      ALLOCATE( grid%ts_filename( grid%max_ts_locs ) )
-      grid%ntsloc        = 0
-      grid%ntsloc_domain = 0
+        ALLOCATE( grid%lattsloc( grid%max_ts_locs ) )
+        ALLOCATE( grid%lontsloc( grid%max_ts_locs ) )
+        ALLOCATE( grid%nametsloc( grid%max_ts_locs ) )
+        ALLOCATE( grid%desctsloc( grid%max_ts_locs ) )
+        ALLOCATE( grid%itsloc( grid%max_ts_locs ) )
+        ALLOCATE( grid%jtsloc( grid%max_ts_locs ) )
+        ALLOCATE( grid%id_tsloc( grid%max_ts_locs ) )
+        ALLOCATE( grid%ts_filename( grid%max_ts_locs ) )
+        grid%ntsloc        = 0
+        grid%ntsloc_domain = 0
 
 #if (EM_CORE == 1)
 ! Allocate storage for track metadata
-      ALLOCATE( grid%track_time_in( grid%track_loc_in ) )
-      ALLOCATE( grid%track_lat_in( grid%track_loc_in ) )
-      ALLOCATE( grid%track_lon_in( grid%track_loc_in ) )
-
-      ALLOCATE( grid%track_time_domain( grid%track_loc_in ) )
-      ALLOCATE( grid%track_lat_domain( grid%track_loc_in ) )
-      ALLOCATE( grid%track_lon_domain( grid%track_loc_in ) )
-      ALLOCATE( grid%track_i( grid%track_loc_in ) )
-      ALLOCATE( grid%track_j( grid%track_loc_in ) )
-
+        ALLOCATE( grid%track_time_in( grid%track_loc_in ) )
+        ALLOCATE( grid%track_lat_in( grid%track_loc_in ) )
+        ALLOCATE( grid%track_lon_in( grid%track_loc_in ) )
+  
+        ALLOCATE( grid%track_time_domain( grid%track_loc_in ) )
+        ALLOCATE( grid%track_lat_domain( grid%track_loc_in ) )
+        ALLOCATE( grid%track_lon_domain( grid%track_loc_in ) )
+        ALLOCATE( grid%track_i( grid%track_loc_in ) )
+        ALLOCATE( grid%track_j( grid%track_loc_in ) )
       grid%track_loc        = 0
       grid%track_loc_domain = 0
       grid%track_have_calculated = .FALSE.
       grid%track_have_input      = .FALSE.
 #endif
+      ELSE
+        WRITE (wrf_err_message,*)"Not allocating time series storage for domain ",domain_id," on this set of tasks"
+        CALL wrf_message(TRIM(wrf_err_message))
+      ENDIF
+!debug write(0,*)__FILE__,__LINE__,'grid%mvnest ',grid%mvnest
 #ifdef DM_PARALLEL
-      CALL wrf_get_dm_communicator ( grid%communicator )
+      CALL wrf_get_dm_communicator_for_id( grid%id, grid%communicator )
       CALL wrf_dm_define_comms( grid )
 #endif
 
 #if ( NMM_CORE==1 )
-      grid%interp_mp = .not. ( size(grid%f_ice)>1 .or. size(grid%f_rain)>1 .or. size(grid%f_rimef)>1 )
+!      grid%interp_mp = .not. ( size(grid%f_ice)>1 .or. size(grid%f_rain)>1 .or. size(grid%f_rimef)>1 )
+      grid%interp_mp = .not. (in_use_for_config(grid%id,'f_ice')   .or.&
+                              in_use_for_config(grid%id,'f_rain')  .or. & 
+                              in_use_for_config(grid%id,'f_rimef') )
 #else
       grid%interp_mp = .true.
 #endif
 
+!debug write(0,*)__FILE__,__LINE__,'grid%mvnest ',grid%mvnest
    END SUBROUTINE alloc_and_configure_domain
 
    SUBROUTINE get_fieldstr(ix,c,instr,outstr,noutstr,noerr)
@@ -1251,7 +1285,7 @@ CONTAINS
 !  below this top-level of data allocation and management (in the solve routine
 !  and below).
 
-   SUBROUTINE alloc_space_field ( grid,   id, setinitval_in ,  tl_in , inter_domain_in ,   &
+   SUBROUTINE alloc_space_field ( grid,   id, setinitval_in ,  tl_in , inter_domain_in , okay_to_alloc_in,  &
                                   sd31, ed31, sd32, ed32, sd33, ed33, &
                                   sm31 , em31 , sm32 , em32 , sm33 , em33 , &
                                   sp31 , ep31 , sp32 , ep32 , sp33 , ep33 , &
@@ -1294,7 +1328,7 @@ CONTAINS
   
       ! true if the allocation is for an intermediate domain (for nesting); only certain fields allocated
       ! false otherwise (all allocated, modulo tl above)
-      LOGICAL , INTENT(IN)            :: inter_domain_in
+      LOGICAL , INTENT(IN)            :: inter_domain_in, okay_to_alloc_in
 
       ! Local
       INTEGER(KIND=8)  num_bytes_allocated
@@ -1318,7 +1352,7 @@ CONTAINS
       num_bytes_allocated = 0 
 
       ! now separate modules to reduce the size of module_domain that the compiler sees
-      CALL alloc_space_field_core_0 ( grid,   id, setinitval_in ,  tl_in , inter_domain_in , num_bytes_allocated , &
+      CALL alloc_space_field_core_0 ( grid,   id, setinitval_in ,  tl_in , inter_domain_in , okay_to_alloc_in, num_bytes_allocated , &
                                     sd31, ed31, sd32, ed32, sd33, ed33, &
                                     sm31 , em31 , sm32 , em32 , sm33 , em33 , &
                                     sp31 , ep31 , sp32 , ep32 , sp33 , ep33 , &
@@ -1326,7 +1360,7 @@ CONTAINS
                                     sp31y, ep31y, sp32y, ep32y, sp33y, ep33y, &
                                     sm31x, em31x, sm32x, em32x, sm33x, em33x, &
                                     sm31y, em31y, sm32y, em32y, sm33y, em33y )
-      CALL alloc_space_field_core_1 ( grid,   id, setinitval_in ,  tl_in , inter_domain_in , num_bytes_allocated ,  &
+      CALL alloc_space_field_core_1 ( grid,   id, setinitval_in ,  tl_in , inter_domain_in , okay_to_alloc_in, num_bytes_allocated ,  &
                                     sd31, ed31, sd32, ed32, sd33, ed33, &
                                     sm31 , em31 , sm32 , em32 , sm33 , em33 , &
                                     sp31 , ep31 , sp32 , ep32 , sp33 , ep33 , &
@@ -1334,7 +1368,7 @@ CONTAINS
                                     sp31y, ep31y, sp32y, ep32y, sp33y, ep33y, &
                                     sm31x, em31x, sm32x, em32x, sm33x, em33x, &
                                     sm31y, em31y, sm32y, em32y, sm33y, em33y )
-      CALL alloc_space_field_core_2 ( grid,   id, setinitval_in ,  tl_in , inter_domain_in , num_bytes_allocated ,  &
+      CALL alloc_space_field_core_2 ( grid,   id, setinitval_in ,  tl_in , inter_domain_in , okay_to_alloc_in, num_bytes_allocated ,  &
                                     sd31, ed31, sd32, ed32, sd33, ed33, &
                                     sm31 , em31 , sm32 , em32 , sm33 , em33 , &
                                     sp31 , ep31 , sp32 , ep32 , sp33 , ep33 , &
@@ -1342,7 +1376,7 @@ CONTAINS
                                     sp31y, ep31y, sp32y, ep32y, sp33y, ep33y, &
                                     sm31x, em31x, sm32x, em32x, sm33x, em33x, &
                                     sm31y, em31y, sm32y, em32y, sm33y, em33y )
-      CALL alloc_space_field_core_3 ( grid,   id, setinitval_in ,  tl_in , inter_domain_in , num_bytes_allocated ,  &
+      CALL alloc_space_field_core_3 ( grid,   id, setinitval_in ,  tl_in , inter_domain_in , okay_to_alloc_in, num_bytes_allocated ,  &
                                     sd31, ed31, sd32, ed32, sd33, ed33, &
                                     sm31 , em31 , sm32 , em32 , sm33 , em33 , &
                                     sp31 , ep31 , sp32 , ep32 , sp33 , ep33 , &
@@ -1350,7 +1384,7 @@ CONTAINS
                                     sp31y, ep31y, sp32y, ep32y, sp33y, ep33y, &
                                     sm31x, em31x, sm32x, em32x, sm33x, em33x, &
                                     sm31y, em31y, sm32y, em32y, sm33y, em33y )
-      CALL alloc_space_field_core_4 ( grid,   id, setinitval_in ,  tl_in , inter_domain_in , num_bytes_allocated ,  &
+      CALL alloc_space_field_core_4 ( grid,   id, setinitval_in ,  tl_in , inter_domain_in , okay_to_alloc_in, num_bytes_allocated ,  &
                                     sd31, ed31, sd32, ed32, sd33, ed33, &
                                     sm31 , em31 , sm32 , em32 , sm33 , em33 , &
                                     sp31 , ep31 , sp32 , ep32 , sp33 , ep33 , &
@@ -1358,7 +1392,7 @@ CONTAINS
                                     sp31y, ep31y, sp32y, ep32y, sp33y, ep33y, &
                                     sm31x, em31x, sm32x, em32x, sm33x, em33x, &
                                     sm31y, em31y, sm32y, em32y, sm33y, em33y )
-      CALL alloc_space_field_core_5 ( grid,   id, setinitval_in ,  tl_in , inter_domain_in , num_bytes_allocated ,  &
+      CALL alloc_space_field_core_5 ( grid,   id, setinitval_in ,  tl_in , inter_domain_in , okay_to_alloc_in, num_bytes_allocated ,  &
                                     sd31, ed31, sd32, ed32, sd33, ed33, &
                                     sm31 , em31 , sm32 , em32 , sm33 , em33 , &
                                     sp31 , ep31 , sp32 , ep32 , sp33 , ep33 , &
@@ -1366,7 +1400,7 @@ CONTAINS
                                     sp31y, ep31y, sp32y, ep32y, sp33y, ep33y, &
                                     sm31x, em31x, sm32x, em32x, sm33x, em33x, &
                                     sm31y, em31y, sm32y, em32y, sm33y, em33y )
-      CALL alloc_space_field_core_6 ( grid,   id, setinitval_in ,  tl_in , inter_domain_in , num_bytes_allocated ,  &
+      CALL alloc_space_field_core_6 ( grid,   id, setinitval_in ,  tl_in , inter_domain_in , okay_to_alloc_in, num_bytes_allocated ,  &
                                     sd31, ed31, sd32, ed32, sd33, ed33, &
                                     sm31 , em31 , sm32 , em32 , sm33 , em33 , &
                                     sp31 , ep31 , sp32 , ep32 , sp33 , ep33 , &
@@ -1374,7 +1408,7 @@ CONTAINS
                                     sp31y, ep31y, sp32y, ep32y, sp33y, ep33y, &
                                     sm31x, em31x, sm32x, em32x, sm33x, em33x, &
                                     sm31y, em31y, sm32y, em32y, sm33y, em33y )
-      CALL alloc_space_field_core_7 ( grid,   id, setinitval_in ,  tl_in , inter_domain_in , num_bytes_allocated ,  &
+      CALL alloc_space_field_core_7 ( grid,   id, setinitval_in ,  tl_in , inter_domain_in , okay_to_alloc_in, num_bytes_allocated ,  &
                                     sd31, ed31, sd32, ed32, sd33, ed33, &
                                     sm31 , em31 , sm32 , em32 , sm33 , em33 , &
                                     sp31 , ep31 , sp32 , ep32 , sp33 , ep33 , &
@@ -1382,7 +1416,7 @@ CONTAINS
                                     sp31y, ep31y, sp32y, ep32y, sp33y, ep33y, &
                                     sm31x, em31x, sm32x, em32x, sm33x, em33x, &
                                     sm31y, em31y, sm32y, em32y, sm33y, em33y )
-      CALL alloc_space_field_core_8 ( grid,   id, setinitval_in ,  tl_in , inter_domain_in , num_bytes_allocated ,  &
+      CALL alloc_space_field_core_8 ( grid,   id, setinitval_in ,  tl_in , inter_domain_in , okay_to_alloc_in, num_bytes_allocated ,  &
                                     sd31, ed31, sd32, ed32, sd33, ed33, &
                                     sm31 , em31 , sm32 , em32 , sm33 , em33 , &
                                     sp31 , ep31 , sp32 , ep32 , sp33 , ep33 , &
@@ -1390,7 +1424,7 @@ CONTAINS
                                     sp31y, ep31y, sp32y, ep32y, sp33y, ep33y, &
                                     sm31x, em31x, sm32x, em32x, sm33x, em33x, &
                                     sm31y, em31y, sm32y, em32y, sm33y, em33y )
-      CALL alloc_space_field_core_9 ( grid,   id, setinitval_in ,  tl_in , inter_domain_in , num_bytes_allocated ,  &
+      CALL alloc_space_field_core_9 ( grid,   id, setinitval_in ,  tl_in , inter_domain_in , okay_to_alloc_in, num_bytes_allocated ,  &
                                     sd31, ed31, sd32, ed32, sd33, ed33, &
                                     sm31 , em31 , sm32 , em32 , sm33 , em33 , &
                                     sp31 , ep31 , sp32 , ep32 , sp33 , ep33 , &
@@ -1444,7 +1478,7 @@ CONTAINS
    ! If they were already allocated with the requested dimensions, then
    ! ensure_space_field does nothing.
 
-   SUBROUTINE ensure_space_field ( grid,   id, setinitval_in ,  tl_in , inter_domain_in ,   &
+   SUBROUTINE ensure_space_field ( grid,   id, setinitval_in ,  tl_in , inter_domain_in , okay_to_alloc_in,  &
                                   sd31, ed31, sd32, ed32, sd33, ed33, &
                                   sm31 , em31 , sm32 , em32 , sm33 , em33 , &
                                   sp31 , ep31 , sp32 , ep32 , sp33 , ep33 , &
@@ -1476,7 +1510,7 @@ CONTAINS
   
       ! true if the allocation is for an intermediate domain (for nesting); only certain fields allocated
       ! false otherwise (all allocated, modulo tl above)
-      LOGICAL , INTENT(IN)            :: inter_domain_in
+      LOGICAL , INTENT(IN)            :: inter_domain_in, okay_to_alloc_in
       LOGICAL                         :: size_changed
 
       size_changed=         .not. ( &
@@ -1498,11 +1532,26 @@ CONTAINS
             call wrf_debug(1,'ensure_space_field: calling alloc_space_field because a grid was not allocated.')
          else
             if(size_changed) &
+
+write(0,"('grid%id  ',i9,l)")grid%id,grid%is_intermediate
+write(0,"('d31  ',4i9)")grid%alloced_sd31 , sd31 , grid%alloced_ed31 , ed31
+write(0,"('d32  ',4i9)")grid%alloced_sd32 , sd32 , grid%alloced_ed32 , ed32
+write(0,"('d33  ',4i9)")grid%alloced_sd33 , sd33 , grid%alloced_ed33 , ed33
+write(0,"('m31  ',4i9)")grid%alloced_sm31 , sm31 , grid%alloced_em31 , em31
+write(0,"('m32  ',4i9)")grid%alloced_sm32 , sm32 , grid%alloced_em32 , em32
+write(0,"('m33  ',4i9)")grid%alloced_sm33 , sm33 , grid%alloced_em33 , em33
+write(0,"('mx31 ',4i9)")grid%alloced_sm31x , sm31x , grid%alloced_em31x , em31x
+write(0,"('mx32 ',4i9)")grid%alloced_sm32x , sm32x , grid%alloced_em32x , em32x
+write(0,"('mx33 ',4i9)")grid%alloced_sm33x , sm33x , grid%alloced_em33x , em33x
+write(0,"('my31 ',4i9)")grid%alloced_sm31y , sm31y , grid%alloced_em31y , em31y
+write(0,"('my32 ',4i9)")grid%alloced_sm32y , sm32y , grid%alloced_em32y , em32y
+write(0,"('my33 ',4i9)")grid%alloced_sm33y , sm33y , grid%alloced_em33y , em33y
+
                  call wrf_debug(1,'ensure_space_field: deallocating and reallocating a grid because grid size changed.')
          end if
          if(grid%allocated) &
               call dealloc_space_field( grid )
-         call alloc_space_field ( grid,   id, setinitval_in ,  tl_in , inter_domain_in ,   &
+         call alloc_space_field ( grid,   id, setinitval_in ,  tl_in , inter_domain_in , okay_to_alloc_in,  &
                                   sd31, ed31, sd32, ed32, sd33, ed33, &
                                   sm31 , em31 , sm32 , em32 , sm33 , em33 , &
                                   sp31 , ep31 , sp32 , ep32 , sp33 , ep33 , &

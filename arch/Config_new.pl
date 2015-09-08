@@ -36,7 +36,8 @@ $sw_coamps_core = "-DCOAMPS_CORE=\$\(WRF_COAMPS_CORE\)" ;
 $sw_dmparallel = "" ;
 $sw_ompparallel = "" ;
 $sw_stubmpi = "" ;
-$sw_usenetcdff = "" ;    # for 3.6.2 and greater, the fortran bindings might be in a separate lib file
+$sw_usenetcdff = "" ;    # UNIDATA switches around library names a bit
+$sw_usenetcdf = "" ;    
 $sw_time = "" ;          # name of a timer to time fortran compiles, e.g. timex or time
 $sw_ifort_r8 = 0 ;
 $sw_hdf5 = "-lhdf5 -lhdf5_hl";
@@ -107,6 +108,10 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
   if ( substr( $ARGV[0], 1, 11 ) eq "USENETCDFF=" )
   {
     $sw_usenetcdff = substr( $ARGV[0], 12 ) ;
+  }
+  if ( substr( $ARGV[0], 1, 10 ) eq "USENETCDF=" )
+  {
+    $sw_usenetcdf = substr( $ARGV[0], 11 ) ;
   }
   if ( substr( $ARGV[0], 1, 5 ) eq "time=" )
   {
@@ -444,9 +449,9 @@ while ( <CONFIGURE_DEFAULTS> )
         if ( $ENV{NETCDF_LDFLAGS} ) {
           $_ =~ s:CONFIGURE_NETCDF_LIB_PATH:\$\(WRF_SRC_ROOT_DIR\)/external/io_netcdf/libwrfio_nf.a $ENV{NETCDF_LDFLAGS} : ;
         } elsif ( $sw_os eq "Interix" ) {
-	  $_ =~ s:CONFIGURE_NETCDF_LIB_PATH:\$\(WRF_SRC_ROOT_DIR\)/external/io_netcdf/libwrfio_nf.a -L$sw_netcdf_path/lib $sw_usenetcdff -lnetcdf : ;
+	  $_ =~ s:CONFIGURE_NETCDF_LIB_PATH:\$\(WRF_SRC_ROOT_DIR\)/external/io_netcdf/libwrfio_nf.a -L$sw_netcdf_path/lib $sw_usenetcdff $sw_usenetcdf : ;
         } else {
-	  $_ =~ s:CONFIGURE_NETCDF_LIB_PATH:-L\$\(WRF_SRC_ROOT_DIR\)/external/io_netcdf -lwrfio_nf -L$sw_netcdf_path/lib $sw_usenetcdff -lnetcdf : ;
+	  $_ =~ s:CONFIGURE_NETCDF_LIB_PATH:-L\$\(WRF_SRC_ROOT_DIR\)/external/io_netcdf -lwrfio_nf -L$sw_netcdf_path/lib $sw_usenetcdff $sw_usenetcdf : ;
         }
 	 }
     else                   

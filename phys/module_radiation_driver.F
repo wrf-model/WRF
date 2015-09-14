@@ -2715,6 +2715,8 @@ CONTAINS
           ims,ime, jms,jme, kms,kme,                                 &
           its,ite, jts,jte, kts,kte                                  )
 !---------------------------------------------------------------------
+   use module_state_description, only: etamp_hwrf, fer_mp_hires, &
+                                       fer_mp_hires_advect
    IMPLICIT NONE
 !---------------------------------------------------------------------
    INTEGER,  INTENT(IN   )   ::           ids,ide, jds,jde, kds,kde, &
@@ -2810,7 +2812,7 @@ CONTAINS
       QVSW = EP_2 * esw / ( p_phy(i,k,j) - esw )
       QVSI = EP_2 * esi / ( p_phy(i,k,j) - esi )
 
-      IF ( PRESENT(F_QI) .and. PRESENT(F_QC) .and. PRESENT(F_QS) ) THEN
+      ifouter: IF ( PRESENT(F_QI) .and. PRESENT(F_QC) .and. PRESENT(F_QS) ) THEN
 
 ! mji - For MP options 2, 4, 6, 7, 8, etc. (qc = liquid, qi = ice, qs = snow)
          IF ( F_QI .and. F_QC .and. F_QS) THEN
@@ -2860,7 +2862,9 @@ CONTAINS
          ENDIF
 !BSF - For HWRF MP option; (qc = liquid, qi = cloud ice+snow)
 !         IF ( F_QC .and. F_QI .and. .not. F_QS ) THEN
-         IF ( mp_physics .eq. 5 .or. mp_physics .eq. 85) THEN
+         IF ( mp_physics==fer_mp_hires .or. &
+              mp_physics==fer_mp_hires_advect .or. &
+              mp_physics==etamp_hwrf) THEN
            QIMID = QI(i,k,j)     !- total ice (cloud ice + snow)
            QWMID = QC(i,k,j)     !- cloud water
            QCLD=QWMID+QIMID      !- cloud water + total ice
@@ -2874,7 +2878,7 @@ CONTAINS
       ELSE
          CLDFRA(i,k,j)=0.
 
-      ENDIF !  IF ( F_QI .and. F_QC .and. F_QS)
+      ENDIF ifouter !  IF ( F_QI .and. F_QC .and. F_QS)
 
 
       QVS_WEIGHT = (1-weight)*QVSW + weight*QVSI

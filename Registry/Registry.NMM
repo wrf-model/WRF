@@ -828,6 +828,7 @@ state   real    qvolg          ikjftb  scalar      1         m     i01hru=(UpMas
 state   real    qnwfa          ikjftb  scalar      1         m     i01hru=(UpMassIKJ:@ECopy,0.0)d=(DownMassIKJ:@ECopy,0.0)f=(BdyMassIKJ:@ECopy,0.0)       "QNWFA"            "water-friendly aerosol number con" "# kg(-1)"
 state   real    qnifa          ikjftb  scalar      1         m     i01hru=(UpMassIKJ:@ECopy,0.0)d=(DownMassIKJ:@ECopy,0.0)f=(BdyMassIKJ:@ECopy,0.0)       "QNIFA"            "ice-friendly aerosol number con"   "# kg(-1)"
 state   real    qndrop         ikjftb  scalar      1         m     i01h023ru=(UpMassIKJ:@ECopy,0.0)d=(DownMassIKJ:@ECopy,0.0)f=(BdyMassIKJ:@ECopy,0.0)       "QNDROP"        "Droplet number mixing ratio"        "# kg-1"
+state   real    qrimef         ijkftb  scalar      1         m     i01hru=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)       "QRIMEF"           "rime factor * qi" "kg kg-1"
 
 
 state   real    -              ijkftb  dfi_scalar      1         m     -   -
@@ -1518,6 +1519,7 @@ rconfig   real    c_k                     namelist,dynamics     max_domains    0
 rconfig   real    smdiv                   namelist,dynamics	max_domains    0.      h    "smdiv"         ""      ""
 rconfig   real    emdiv                   namelist,dynamics	max_domains    0.      h    "emdiv"         ""      ""
 rconfig   real    epssm                   namelist,dynamics	max_domains    .1      h    "epssm"         ""      ""
+rconfig   logical keepnh                  namelist,dynamics     max_domains  .false.   rh   "KEEPH"         "When .false., non-hydrostatic state is discarded at nest move."        ""
 rconfig   logical non_hydrostatic         namelist,dynamics	max_domains  .true.   irh  "non_hydrostatic"    ""   ""
 rconfig   integer time_step_sound         namelist,dynamics	max_domains    10      h     "time_step_sound"               ""      ""
 rconfig   integer     h_mom_adv_order     namelist,dynamics	max_domains    3       rh       "h_mom_adv_order"               ""      ""
@@ -1633,6 +1635,7 @@ package   linscheme     mp_physics==2                -             moist:qv,qc,q
 package   wsm3scheme    mp_physics==3                -             moist:qv,qc,qr;state:re_cloud,re_ice,re_snow
 package   wsm5scheme    mp_physics==4                -             moist:qv,qc,qr,qi,qs;state:re_cloud,re_ice,re_snow
 package   fer_mp_hires  mp_physics==5                -             moist:qv,qc,qr,qi,qs;state:f_ice,f_rain,f_rimef
+package   fer_mp_hires_advect  mp_physics==15        -             moist:qv,qc,qr,qi;scalar:qrimef
 package   wsm6scheme    mp_physics==6                -             moist:qv,qc,qr,qi,qs,qg;state:re_cloud,re_ice,re_snow
 package   gsfcgcescheme mp_physics==7                -             moist:qv,qc,qr,qi,qs,qg
 package   thompson      mp_physics==8                -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr;state:re_cloud,re_ice,re_snow

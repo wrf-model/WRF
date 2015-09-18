@@ -800,7 +800,7 @@ state   real    qr             ijkfbt   moist       1         m     rh023u=(UpMa
 state   real    qi             ijkfbt   moist       1         m     rh023u=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)      "QICE"             "Ice mixing ratio"              "kg kg-1"
 state   real    qs             ijkfbt   moist       1         m     rh023u=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)      "QSNOW"            "Snow mixing ratio"             "kg kg-1"
 state   real    qg             ijkfbt   moist       1         m     rh023u=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)      "QGRAUP"           "Graupel mixing ratio"          "kg kg-1"
-state   real    qh             ijkfbt   moist       1         m     rhu=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)      "QHAIL"            "Hail mixing ratio"             "kg kg-1"
+state   real    qh             ijkfbt   moist       1         m     rh023u=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)      "QHAIL"            "Hail mixing ratio"             "kg kg-1"
 
 
 state   real    -              ijkfbt   dfi_moist       1         m     -    -
@@ -818,17 +818,17 @@ state   real    dfi_qh         ijkfbt   dfi_moist       1         m     r      "
 state   real    -              ijkftb  scalar      1         m     -    -
 state   real    qni            ijkftb  scalar      1         m     i01h023ru=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)       "QNICE"              "Ice Number concentration" "# kg(-1)"
 state   real    qt             ikjftb  scalar      1         m     i01h023ru=(UpMassIKJ:@ECopy,0.0)d=(DownMassIKJ:@ECopy,0.0)f=(BdyMassIKJ:@ECopy,0.0)       "QT"               "Total condensate mixing ratio"   "kg kg-1"
-state   real    qns            ijkftb  scalar      1         m     i01hru=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)       "QNSNOW"              "Snow Number concentration" "# kg(-1)"
+state   real    qns            ijkftb  scalar      1         m     i01h023ru=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)       "QNSNOW"              "Snow Number concentration" "# kg(-1)"
 state   real    qnr            ijkftb  scalar      1         m     i01h023ru=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)       "QNRAIN"              "Rain Number concentration" "# kg(-1)"
-state   real    qng            ijkftb  scalar      1         m     i01hru=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)       "QNGRAUP"              "Graupel Number concentration" "# kg(-1)"
-state   real    qnh            ijkftb  scalar      1         m     i01hru=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)       "QNHAIL"            "Hail Number concentration" "# kg(-1)"
-state   real    qnn            ijkftb  scalar      1         m     i01hru=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)       "QNCCN"            "CCN Number concentration" "# kg(-1)"
-state   real    qnc            ijkftb  scalar      1         m     i01hru=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)       "QNCLOUD"          "cloud water Number concentration" "# kg(-1)"
-state   real    qvolg          ikjftb  scalar      1         m     i01hru=(UpMassIKJ:@ECopy,0.0)d=(DownMassIKJ:@ECopy,0.0)f=(BdyMassIKJ:@ECopy,0.0)       "QVGRAUPEL"        "Graupel Particle Volume" "m(3) kg(-1)"
-state   real    qnwfa          ikjftb  scalar      1         m     i01hru=(UpMassIKJ:@ECopy,0.0)d=(DownMassIKJ:@ECopy,0.0)f=(BdyMassIKJ:@ECopy,0.0)       "QNWFA"            "water-friendly aerosol number con" "# kg(-1)"
-state   real    qnifa          ikjftb  scalar      1         m     i01hru=(UpMassIKJ:@ECopy,0.0)d=(DownMassIKJ:@ECopy,0.0)f=(BdyMassIKJ:@ECopy,0.0)       "QNIFA"            "ice-friendly aerosol number con"   "# kg(-1)"
+state   real    qng            ijkftb  scalar      1         m     i01h023ru=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)       "QNGRAUP"              "Graupel Number concentration" "# kg(-1)"
+state   real    qnh            ijkftb  scalar      1         m     i01h023ru=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)       "QNHAIL"            "Hail Number concentration" "# kg(-1)"
+state   real    qnn            ijkftb  scalar      1         m     i01h023ru=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)       "QNCCN"            "CCN Number concentration" "# kg(-1)"
+state   real    qnc            ijkftb  scalar      1         m     i01h023ru=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)       "QNCLOUD"          "cloud water Number concentration" "# kg(-1)"
+state   real    qvolg          ikjftb  scalar      1         m     i01h023ru=(UpMassIKJ:@ECopy,0.0)d=(DownMassIKJ:@ECopy,0.0)f=(BdyMassIKJ:@ECopy,0.0)       "QVGRAUPEL"        "Graupel Particle Volume" "m(3) kg(-1)"
+state   real    qnwfa          ikjftb  scalar      1         m     i01h023ru=(UpMassIKJ:@ECopy,0.0)d=(DownMassIKJ:@ECopy,0.0)f=(BdyMassIKJ:@ECopy,0.0)       "QNWFA"            "water-friendly aerosol number con" "# kg(-1)"
+state   real    qnifa          ikjftb  scalar      1         m     i01h023ru=(UpMassIKJ:@ECopy,0.0)d=(DownMassIKJ:@ECopy,0.0)f=(BdyMassIKJ:@ECopy,0.0)       "QNIFA"            "ice-friendly aerosol number con"   "# kg(-1)"
 state   real    qndrop         ikjftb  scalar      1         m     i01h023ru=(UpMassIKJ:@ECopy,0.0)d=(DownMassIKJ:@ECopy,0.0)f=(BdyMassIKJ:@ECopy,0.0)       "QNDROP"        "Droplet number mixing ratio"        "# kg-1"
-state   real    qrimef         ijkftb  scalar      1         m     i01hru=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)       "QRIMEF"           "rime factor * qi" "kg kg-1"
+state   real    qrimef         ijkftb  scalar      1         m     i01h023ru=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)       "QRIMEF"           "rime factor * qi" "kg kg-1"
 
 
 state   real    -              ijkftb  dfi_scalar      1         m     -   -

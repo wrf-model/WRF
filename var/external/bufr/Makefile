@@ -15,11 +15,11 @@ library:$(OBJ)
 	$(CC) -o $@ -c $(CFLAGS) -DUNDERSCORE $*.c
 
 .f.o:
-	$(FC) -c $(FFLAGS) $< 
+	$(FC) -c $(FCFLAGS) $(FORMAT_FIXED) $< 
 
 .for.o:
 	./preproc.sh $*.for
-	$(FC) -c $(FFLAGS) $*.f
+	$(FC) -c $(FCFLAGS) $(FORMAT_FIXED) $*.f
 
 clean:
 	rm -f $(OBJ) $(TARGET) irev.f wrdlen.f

@@ -1801,8 +1801,8 @@ SUBROUTINE dealloc_meas ( head )
                                              , temp
    INTEGER                                  :: status
 
-   !  Start at the head, kill everything that is pointed to.  After no longer 
-   !  associated, deallocate the head.
+   !  Start at the head, kill everything that is pointed to.  After the list is
+   !  fully deallocated, disassociate the head pointer.
 
    IF ( ASSOCIATED ( head ) ) THEN
 
@@ -1818,10 +1818,9 @@ SUBROUTINE dealloc_meas ( head )
          END IF
       END DO list_loop
 
+      NULLIFY ( head )
    END IF
 
-!  NULLIFY ( head ) 
-  
 END SUBROUTINE dealloc_meas
 
 !

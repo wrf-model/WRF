@@ -1,0 +1,56 @@
+The average_be utility may be used to interpolate global background error 
+statistics to any regional domain. Average_be takes as input the global 
+background error files (there will exist as many of these files as there are 
+latitude bins, each file named be.dat.N, with N the bin number) and a first-
+guess, i.e., wrfinput, file for the regional domain. The first-guess file 
+provides the interpolation routines with information on the geographic 
+location of the domain, which is used in the horizontal interpolation; also, 
+the first-guess file provides information required for vertical interpolation, 
+namely, the mean surface pressure, model top pressure, and eta values of each 
+vertical level. Since the global background error statistics are regarded as 
+relatively invariant, the eta values and model top pressure of the global 
+forecasts used in to compute the global statistics are hardwired into the 
+source code, but maybe changed should the need arise. After running the 
+software, a regional BE file is produced; this BE file may then be used with 
+WRF-Var for the regional domain in question.
+
+
+Building the software
+
+The BE interpolation software is built using the UNIX make utility. In order to
+compile the software, the user must first edit the Makefile in the code 
+directory; the following variables must be set:
+
+*     FC - the Fortran compiler to be used
+*     CPP - the full path of the C preprocessor for use in pre-processing 
+            source files
+*     FCFLAGS - flags to pass to the Fortran compiler; these should include a 
+            flag to specify that Fortran files are written using 'free form', a
+            flag to specify 8-byte real values as the default, and a flag, if 
+            applicable, to cause unformatted reads and writes to use big-endian
+            byte order
+*     LDFLAGS - any additional flags that should be passed to the compiler when
+            linking the final executable
+
+After editing the above-mentioned variables at the top of the Makefile, the 
+user may simply type 'make' on the command line in the source code directory; 
+the resulting executable, average_be.exe, is the program for interpolating BE 
+statistics.
+
+
+Running the software
+
+The average_be utility reads two parameters from a Fortran namelist contained 
+in the file namelist.average_be. This namelist, &nl_average_be, contains the 
+following variables:
+
+*     nbins - an integer specifying the number of latitude bins in the global 
+            statistics; there should exist files be.dat.N, where 1 ¡Ø N ¡Ø nbins,
+            and each be.dat.N file contains global BE statistics for the N-th 
+            latitude bin; bins are numbered from south to north
+*     fg_file_name - the path of the WRF first-guess file of the regional domain
+
+Having edited namelist.average_be, the user may execute the average_be.exe 
+program to produce a regional background error file, named be.dat, in the 
+current working directory. This be.dat file may then be used with WRF-Var for 
+the regional domain in question.

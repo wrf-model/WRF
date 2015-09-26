@@ -1,0 +1,17 @@
+# Makefile 
+
+all:
+	(make -f Makefile.comm BASIC)
+
+BASIC:
+	(cd MPP     ; make -f Makefile)
+	(cd Data_Rec     ; make -f Makefile)
+	(cd Routing; make -f Makefile)
+	(cd HYDRO_drv;   make -f Makefile)
+
+clean:
+	(cd Data_Rec; make -f Makefile clean)
+	(cd HYDRO_drv; make -f Makefile clean)
+	(cd MPP; make -f Makefile clean)
+	(cd Routing;    make -f Makefile clean)
+	(rm -f lib/*.a */*.mod */*.o CPL/*/*.o CPL/*/*.mod)

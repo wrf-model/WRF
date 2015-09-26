@@ -1,0 +1,30 @@
+#include atoms_red
+#include saprc99_mosaic_4bin_vbs2.spc
+#include saprc99_mosaic_4bin_vbs2.eqn
+
+
+
+#INLINE F90_RATES
+!__________________________________________________
+
+    REAL(KIND=dp) FUNCTION Keff ( A0,B0,C0, TEMP,X1,X2,y1,y2 )
+    REAL(KIND=dp),INTENT(IN) :: X1,X2,y1,y2
+    REAL(KIND=dp),INTENT(IN) :: TEMP
+    REAL(KIND=dp),INTENT(IN):: A0,B0,C0
+    Keff = A0 * EXP(- B0 /TEMP ) &
+      *(TEMP/300._dp)**C0*(y1*X1/(X1 + X2 + 1.0e-35) &
+       +y2*(1-X1/(X1 + X2 + 1.0e-35)))
+    END FUNCTION Keff
+!__________________________________________________
+
+    REAL(KIND=dp) FUNCTION Keff2 ( C0,X1,X2,y1,y2 )
+    REAL(KIND=dp),INTENT(IN) :: X1,X2,y1,y2
+    REAL(KIND=dp),INTENT(IN):: C0
+    Keff2 = C0*(y1*X1/(X1 + X2 + 1.0e-35) &
+       +y2*(1-X1/(X1 + X2 + 1.0e-35 )))
+    END FUNCTION Keff2
+!__________________________________________________
+#ENDINLINE
+
+
+

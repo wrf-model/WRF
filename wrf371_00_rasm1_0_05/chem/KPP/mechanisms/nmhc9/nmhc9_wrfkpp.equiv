@@ -1,0 +1,10 @@
+! use this file for species that have different
+! names in WRF and KPP
+!
+! currently case sensitive !
+!
+! left column     right column
+! name in WRF     name in KPP
+OP1               MeOOH
+ISOPR             ISOP
+HO                OH

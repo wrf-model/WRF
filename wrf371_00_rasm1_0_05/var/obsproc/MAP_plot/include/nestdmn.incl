@@ -1,0 +1,13 @@
+!    CONTENT:   THE INFORMATION ON THE MODEL DOMAIN SPECIFICATIONS. 
+!    USED IN:   TERRAIN,  ANAL2,  CRTER,  PLTTER,  SETUP,  TERDRV.   
+!    
+      INTEGER    MAXNES, MIX, MJX
+      INTEGER    NESTIX(100),  NESTJX(100), IRATIO(100),                        &
+     &            NESTI(100),   NESTJ(100), NRATIO(100),                        &
+     &            NUMC(100),   NTYPE(100), NSTTYP(100)
+      REAL       XNORTH(100),   XEAST(100),  XWEST(100),                        &
+     &           XSOUTH(100),     RID(100),    DIS(100)
+      CHARACTER*6 TERNAM(100)   
+      COMMON /NESTDMN/ NESTIX, NESTJX,  NESTI, NESTJ,   DIS, IRATIO,            &
+     &                 NRATIO, XNORTH,  XEAST,XSOUTH, XWEST, RID,               &
+     &                  NUMC,TERNAM, NTYPE, MAXNES,MIX,MJX,NSTTYP

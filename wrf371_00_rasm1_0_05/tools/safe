@@ -1,0 +1,12 @@
+#!/bin/csh
+
+# reverse the effect of danger
+
+if ( ! -d  tools ) then
+ echo 'must be run in top level dir'
+endif
+
+foreach f ( */Makefile.saved )
+  /bin/mv $f $f:r
+end
+

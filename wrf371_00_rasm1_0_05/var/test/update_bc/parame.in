@@ -1,0 +1,13 @@
+&control_param
+da_file            = './wrfvar_output'
+da_file_02         = './ana02'
+wrf_bdy_file       = './wrfbdy_d01'
+wrf_input          = './wrfinput_d01'
+domain_id          = 1
+cycling = .true. 
+debug   = .true.
+low_bdy_only = .false.             
+update_lsm = .true. 
+var4d_lbc = .false.
+/
+

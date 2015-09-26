@@ -1,0 +1,49 @@
+#!/bin/csh
+
+if ( ( ${#argv} != 2 ) && ( ${#argv} != 3 ) ) then
+	echo usage: diffwrf gribfile1 gribfile2 <wgrib_exe_dir>
+	exit ( 1 )
+endif
+
+set file1 = $1
+set file2 = $2
+set dir   = $3
+
+if ( -e fort.88 ) rm fort.88 
+if ( -e fort.98 ) rm fort.98 
+
+if ( -e outfile1 ) rm outfile1
+if ( -e outfile2 ) rm outfile2
+
+if ( ( ! -e $file1 ) || ( ! -e $file2 ) ) then
+	touch fort.88
+	exit ( 0 ) 
+endif
+
+if      ( ${#argv} == 2 ) then
+	if ( ! -e ../../external/io_grib1/wgrib.exe ) then
+		touch fort.88
+		exit ( 0 ) 
+	endif
+	../../external/io_grib1/wgrib.exe -s $file1 | ../../external/io_grib1/wgrib.exe -s -i -o outfile1 $file1 >& /dev/null
+	../../external/io_grib1/wgrib.exe -s $file2 | ../../external/io_grib1/wgrib.exe -s -i -o outfile2 $file2 >& /dev/null
+else if ( ${#argv} == 3 ) then
+	if ( ! -e ${dir}/wgrib.exe ) then
+		touch fort.88
+		exit ( 0 ) 
+	endif
+	${dir}/wgrib.exe -s $file1 | ${dir}/wgrib.exe -s -i -o outfile1 $file1 >& /dev/null
+	${dir}/wgrib.exe -s $file2 | ${dir}/wgrib.exe -s -i -o outfile2 $file2 >& /dev/null
+endif
+
+cmp outfile1 outfile2
+
+set ok = $status
+
+if ( $ok == 0 ) then
+
+else
+	touch fort.88
+endif
+
+exit ( 0 ) 

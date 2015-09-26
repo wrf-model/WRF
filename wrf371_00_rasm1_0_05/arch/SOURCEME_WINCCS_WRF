@@ -1,0 +1,34 @@
+#setenv PGI "/dev/fs/C/Program Files/PGI"
+#setenv INCLUDE "/dev/fs/C/Program Files/Microsoft Platform SDK for Windows Server 2003 R2/Include/crt;/dev
+
+setenv TMPDIR /tmp
+setenv PGI "c:\Program Files\PGI"
+setenv INCLUDE "c:\Program Files\Microsoft Platform SDK for Windows Server 2003 R2\Include\crt;c:\Program Files\Microsoft Platform SDK\Include"
+setenv LIB "c:\Program Files\Microsoft Platform SDK for Windows Server 2003 R2\Lib\AMD64"
+set path=(/dev/fs/C/Program\ Files/PGI/win64/7.0-5/bin /dev/fs/C/Program\ Files/Microsoft\ Platform\ SDK\ for\ Windows\ Server\ 2003\ R2/Bin/win64/x86/AMD64 /dev/fs/C/Program\ Files/PGI/Microsoft\ Open\ Tools\ 8/bin/amd64 $path .)
+
+setenv FC pgf90.exe
+setenv F77 pgf90.exe
+setenv CC pgcc.exe
+
+setenv NETCDFMASTER '/dev/fs/C/Documents and Settings/michalak/netcdf'
+setenv SCRATCHDIR "/dev/fs/C/scratch/$USER"
+setenv NETCDF "c:/scratch/$USER/netcdf"
+
+if ( ! -d $SCRATCHDIR ) then
+   mkdir -p $SCRATCHDIR
+endif
+
+( cd "$NETCDFMASTER/.." ; tar cf - ./netcdf | ( cd "$SCRATCHDIR" ; tar xvf - ; cp netcdf/lib/libnetcdf.a netcdf/lib/libnetcdf.lib ) )
+
+exit
+
+echo "   "
+echo " SOURCEME_WINCCS_WRF"
+echo "   "
+echo " To build NetCDF on WinCCS x86-64..."
+echo "   Untar WINCCS_WRF.tar in this directory."
+echo "   ./candlink.csh"
+echo "   "
+echo "   "
+

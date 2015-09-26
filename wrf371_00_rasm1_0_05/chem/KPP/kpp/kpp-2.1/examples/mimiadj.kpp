@@ -1,0 +1,6 @@
+#MODEL      saprc99
+#INTEGRATOR rosenbrock_symmetric 
+#LANGUAGE   Fortran90 
+#DRIVER     general_complete
+#HESSIAN    on
+#STOICMAT   on

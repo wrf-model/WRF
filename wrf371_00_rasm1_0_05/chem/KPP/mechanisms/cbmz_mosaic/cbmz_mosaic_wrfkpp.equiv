@@ -1,0 +1,25 @@
+! use this file for species that have different
+! names in WRF and KPP
+!
+! currently case sensitive !
+!
+! left column     right column
+! name in WRF     name in KPP
+HO                OH
+SULF              H2SO4
+ETH  	          C2H6
+ALD  	          ALD2
+KET  	          AONE
+OL2  	          C2H4
+OLT  	          OLET
+OLI  	          OLEI
+CSL  	          CRES
+ISO               ISOP
+OP1               CH3OOH
+OP2               ETHOOH
+ORA1              HCOOH
+ORA2              RCOOH
+C2H5OH            ANOL
+OP3               ROOH
+
+

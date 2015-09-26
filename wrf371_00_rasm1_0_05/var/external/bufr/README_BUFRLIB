@@ -1,0 +1,55 @@
+This file explains how to compile the NCEP BUFRLIB software, which is
+described in detail at http://www.nco.ncep.noaa.gov/sib/decoders/BUFRLIB/,
+and whose usage is governed by the terms and conditions of the disclaimer
+http://www.nws.noaa.gov/disclaimer.html
+
+The NCEP BUFRLIB software has been compiled and tested across a wide variety
+of UNIX platforms, including AIX, HP-UX, IRIX, SunOS and Linux; thus, it
+should port with minimal difficulty to any UNIX system by following the steps
+below:
+
+1)  Define two environment variables on the local machine:
+
+	$FC to point to the local FORTRAN compiler
+
+	$CC to point to the local C compiler
+
+2)  Run the script "preproc.sh" to pre-process all of the "*.F" files on the
+    local machine.  Once this is done, each such file should now have a "*.f"
+    counterpart.
+
+    Note that on some systems, most notably Linux, it may be necessary to
+    include the "-traditional-cpp" option when calling the cpp program from
+    within "preproc.sh".  If problems are encountered during the following
+    compile step relating to misaligned white space in some of the source
+    files, try editing a copy of "preproc.sh" to add the "-traditional-cpp"
+    option in the call to cpp, then repeat steps 2) and 3) again to see if
+    that solves the problem.
+
+3)  The source code itself can normally be compiled using:
+
+	$FC -c *.f
+
+	$CC -c *.c
+
+    However, note that the option "-DUNDERSCORE" should be added to the second
+    of these two commands if the local FORTRAN compiler appends an underscore
+    character to subprogram names in its object namespace.  In such cases,
+    specifying "-DUNDERSCORE" to the C compiler will append a matching
+    underscore character to any C references to the same subprogram names,
+    thereby allowing the linker to correctly resolve such references across the
+    C <-> FORTRAN interface at link time.
+
+    In addition, note that the option "-fno-second-underscore" is normally
+    required to be added to the first of the above commands whenever $FC points
+    to the GNU g77 or gfortran compilers.
+
+4)  Once compilation has been successfully completed, it is then recommended to
+    assemble all of the compiled object files into a single archive library via:
+
+        ar crv $BUFRLIB *.o
+
+    where $BUFRLIB points to the desired pathname for the BUFRLIB archive
+    library on the local machine.  This archive library can then be easily
+    linked whenever the user's application program is subsequently compiled on
+    the same local system.

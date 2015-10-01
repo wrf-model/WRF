@@ -1287,6 +1287,11 @@ state    real  MASS_FLUX        ij      misc        1         -      r        "M
 state    real  cldfra_dp        ikj     misc        1         -      r         "CLDFRA_DP"             "DEEP CONVECTIVE CLOUD FRACTION FROM KF"  ""
 state    real  cldfra_sh        ikj     misc        1         -      r         "CLDFRA_SH"             "SHALLOW CONVECTIVE CLOUD FRACTION FROM KF"  ""
 state    real  w_up             ikj     misc        1         -      rdu      "W_UP"                  "EFFECTIVE SUBGRID VELOCITY FROM KF"  "m s-1"
+state    real  udr_kf           ikj     misc        1         -      rhdu    "UDR_KF"                "UPDRAFT DETRAINMENT RATE FROM KF"  "kg s-1"
+state    real  ddr_kf           ikj     misc        1         -      rhdu    "DDR_KF"                "DOWNDRAFT DETRAINMENT RATE FROM KF"  "kg s-1"
+state    real  uer_kf           ikj     misc        1         -      rhdu    "UER_KF"                "UPDRAFT ENTRAINMENT RATE FROM KF"  "kg s-1"
+state    real  der_kf           ikj     misc        1         -      rhdu    "DER_KF"                "DOWNDRAFT ENTRAINMENT RATE FROM KF"  "kg s-1"
+state    real  timec_kf         ij      misc        1         -      rhdu    "TIMEC_KF"              "CONVECTIVE TIMESCALE FROM MSKF"  "s"
 state    real  apr_gr           ij      misc        1         -      r       "APR_GR"                "PRECIP FROM CLOSURE OLD_GRELL"   "mm hour-1"
 state    real  apr_w            ij      misc        1         -      r       "APR_W"                 "PRECIP FROM CLOSURE W"           "mm hour-1"
 state    real  apr_mc           ij      misc        1         -      r       "APR_MC"                "PRECIP FROM CLOSURE KRISH MV"    "mm hour-1"
@@ -2101,6 +2106,7 @@ rconfig   real    BLDT                    namelist,physics      max_domains    0
 rconfig   integer cu_physics              namelist,physics      max_domains    0       rh   "cu_physics"    ""      ""
 rconfig   integer shcu_physics            namelist,physics      max_domains    0       rh   "shcu_physics"  ""      ""
 rconfig   integer cu_diag                 namelist,physics      max_domains    0       rh   "cu_diag"       "additional t-averaged stuff for cuphys"      ""
+rconfig   integer kf_edrates              namelist,physics      max_domains    0       rh   "kf_edrates"           "output entrainment/detrainment rates and convective timescale for KF schemes"      ""
 rconfig   integer kfeta_trigger           namelist,physics	1              1       rh   "KFETA Trigger function"    ""    ""
 rconfig   integer nsas_dx_factor          namelist,physics	1              0       rh   "NSAS DX-dependent option"    ""    ""
 rconfig   real    CUDT                    namelist,physics	max_domains    0       h    "CUDT"          ""      ""
@@ -2653,6 +2659,8 @@ package   meso_sas       cu_physics==85              -             -
 package   kfscheme       cu_physics==99              -             state:w0avg
 
 package   g3tave         cu_diag==1                  -             state:GD_CLOUD,GD_CLOUD2,GD_CLDFR,GD_CLOUD_A,GD_CLOUD2_A,kbcon_deep,ktop_deep,k22_deep
+
+package   kfedrates      kf_edrates==1               -             state:udr_kf,ddr_kf,uer_kf,der_kf,timec_kf
 
 package   no_cu_used     cu_used==0                  -             -
 package   any_cu_used    cu_used==1                  -             state:rucuten,rvcuten,rthcuten,rqvcuten,rqrcuten,rqccuten,rqscuten,rqicuten,rqcncuten,rqincuten

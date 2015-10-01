@@ -1072,6 +1072,9 @@ endif
                       config_flags%nssl_rho_qs                                &
                       ,grid%RQCNCUTEN, grid%RQINCUTEN,grid%rliq             &      !mchen add for cammpmg
                       ,grid%cldfra_dp,grid%cldfra_sh                        & ! ckay for subgrid cloud
+                      ,grid%udr_kf,grid%ddr_kf                              & ! kf_edrates
+                      ,grid%uer_kf,grid%der_kf,grid%timec_kf                &
+                      ,config_flags%kf_edrates                              &
                       ,grid%te_temf,grid%cf3d_temf,grid%wm_temf        & ! WA
                       ,grid%massflux_EDKF, grid%entr_EDKF, grid%detr_EDKF                & 
                       ,grid%thl_up,grid%thv_up,grid%rt_up                                &

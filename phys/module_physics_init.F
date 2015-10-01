@@ -196,6 +196,8 @@ CONTAINS
                          RQCNCUTEN, RQINCUTEN,                   &
                          rliq,                                   &  !BSINGH:01/31/2013 - Added rliq and is_CAMMGMP_used for CAM5 physics
                          cldfra_dp,cldfra_sh                     & !ckay for subgrid cloud
+                         ,udr_kf,ddr_kf,uer_kf,der_kf            & !kf_edrates
+                         ,timec_kf,kf_edrates                    &
                          ,te_temf                                & ! WA 12/21/09
                          ,cf3d_temf                              & ! WA 9/27/10
                          ,wm_temf                                & ! WA 2/22/11
@@ -327,6 +329,14 @@ CONTAINS
 
    REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , OPTIONAL, INTENT(INOUT) :: & ! ckay for subgrid cloud
              cldfra_dp, cldfra_sh
+
+   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , OPTIONAL, INTENT(INOUT) :: & !kf_edrates
+             udr_kf, ddr_kf, uer_kf, der_kf
+
+   REAL,     DIMENSION( ims:ime , jms:jme ) , OPTIONAL, INTENT(INOUT) ::           &
+             timec_kf
+
+   INTEGER , OPTIONAL, INTENT(IN) :: kf_edrates
 
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT) ::         &
              GSW,ALBEDO,ALBBCK,GLW,EMISS,EMBCK                          !EMBCK new

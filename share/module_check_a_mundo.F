@@ -949,6 +949,28 @@
           END IF
          END IF
        END DO
+
+!-----------------------------------------------------------------------
+! The namelist flag kf_edrates=1 must have one of the three KF cumulus parameterizations
+! turned on.  All other cumulus parameterizations need to have kf_edrates=0
+!-----------------------------------------------------------------------
+ 
+       DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec%kf_edrates(i) .EQ. KFEDRATES ) THEN
+          IF ( ( model_config_rec%cu_physics(i) .NE. KFETASCHEME ) .AND. &
+               ( model_config_rec%cu_physics(i) .NE. MSKFSCHEME ) .AND. &
+               ( model_config_rec%cu_physics(i) .NE. KFSCHEME ) ) THEN
+                wrf_err_message = '--- ERROR: Using kf_edrates=1 requires use of one of the following KF schemes:'
+                CALL wrf_message ( wrf_err_message )
+                wrf_err_message = '---          Kain-Fritsch (cu_physics=1)' 
+                CALL wrf_message ( wrf_err_message )
+                wrf_err_message = '---          Multi-scale Kain-Fritsch (cu_physics=11)' 
+                CALL wrf_message ( wrf_err_message )
+                wrf_err_message = '---          old Kain-Fritsch (cu_physics=99)' 
+                CALL wrf_error_fatal ( wrf_err_message )
+          END IF
+         END IF
+       END DO
  
 !-----------------------------------------------------------------------
 ! Test to see if we allocate space for the time series.

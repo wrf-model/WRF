@@ -1133,6 +1133,36 @@
         END IF
       END DO
 
+#if (EM_CORE == 1)
+!-----------------------------------------------------------------------
+!  For the real program (ARW only), check that the vertical interpolation options
+!  selected by the user are consistent.
+!  1. If the user has turned-off using the surface level, do not allow the force
+!     option to select how many layers the surface is to be used through.
+!  2. If the user has turned-off using the surface level, do not allow the 
+!     lowest level from surface option to be activated.
+!-----------------------------------------------------------------------
+
+      IF ( model_config_rec % use_wps_input ) THEN
+         IF ( ( .NOT. model_config_rec % use_surface )  .AND. &
+              ( model_config_rec % force_sfc_in_vinterp .GT. 0 ) ) THEN
+            wrf_err_message = '--- NOTE: Inconsistent vertical interpolation settings in program real.'
+            CALL wrf_message ( wrf_err_message )
+            wrf_err_message = '--- NOTE: With use_surface=F, automatically setting force_sfc_in_vinterp=0.'
+            CALL wrf_message ( wrf_err_message )
+            model_config_rec % force_sfc_in_vinterp = 0
+         END IF
+         IF ( ( .NOT. model_config_rec % use_surface )  .AND. &
+              ( model_config_rec % lowest_lev_from_sfc ) ) THEN
+            wrf_err_message = '--- NOTE: Inconsistent vertical interpolation settings in program real.'
+            CALL wrf_message ( wrf_err_message )
+            wrf_err_message = '--- NOTE: With use_surface=F, automatically setting lowest_lev_from_sfc=F.'
+            CALL wrf_message ( wrf_err_message )
+            model_config_rec % lowest_lev_from_sfc = .FALSE.
+         END IF
+      END IF
+#endif
+
 !-----------------------------------------------------------------------
 !  Set the namelist parameter o3input to 0 for the radiation schemes other
 !  than RRTMG_LWSCHEME and RRTMG_SWSCHEME.

@@ -128,6 +128,13 @@ real::t1,t2
 #else
    CALL initial_config
 #endif
+
+   !  There are variables in the Registry that are only required for the real
+   !  program, fields that come from the WPS package.  We define the run-time
+   !  flag that says to allocate space for these input-from-WPS-only arrays.
+
+   CALL nl_set_use_wps_input ( 1 , REALONLY )
+
    CALL check_nml_consistency
    CALL set_physics_rconfigs
 
@@ -135,12 +142,6 @@ real::t1,t2
    CALL set_wrf_debug_level ( debug_level )
 
    CALL  wrf_message ( program_name )
-
-   !  There are variables in the Registry that are only required for the real
-   !  program, fields that come from the WPS package.  We define the run-time
-   !  flag that says to allocate space for these input-from-WPS-only arrays.
-
-   CALL nl_set_use_wps_input ( 1 , REALONLY )
 
    !  Allocate the space for the mother of all domains.
 

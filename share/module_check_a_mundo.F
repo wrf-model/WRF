@@ -1143,7 +1143,7 @@
 !     lowest level from surface option to be activated.
 !-----------------------------------------------------------------------
 
-      IF ( model_config_rec % use_wps_input ) THEN
+      IF ( model_config_rec % use_wps_input .EQ. 1 ) THEN
          IF ( ( .NOT. model_config_rec % use_surface )  .AND. &
               ( model_config_rec % force_sfc_in_vinterp .GT. 0 ) ) THEN
             wrf_err_message = '--- NOTE: Inconsistent vertical interpolation settings in program real.'

@@ -339,7 +339,7 @@
       ETAMP_PHYSICS=.FALSE.
 !
       IF (CONFIG_FLAGS%MP_PHYSICS == ETAMPNEW .OR.                 &
-     &    CONFIG_FLAGS%MP_PHYSICS == ETAMP_HR .OR.                 &
+     &    CONFIG_FLAGS%MP_PHYSICS == FER_MP_HIRES .OR.                 &
      &    CONFIG_FLAGS%MP_PHYSICS == ETAMP_HWRF ) THEN
 !
          ETAMP_PHYSICS=.TRUE.

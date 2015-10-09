@@ -1530,7 +1530,7 @@
 !
       ETAMP_Regional=.FALSE.
       IF (CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW .OR.                        &
-     &    CONFIG_FLAGS%MP_PHYSICS==ETAMP_HR) ETAMP_Regional=.TRUE.
+     &    CONFIG_FLAGS%MP_PHYSICS==FER_MP_HIRES) ETAMP_Regional=.TRUE.
 !
       IF(ETAMP_Regional) THEN
 !-- Logical FQ_I and index PQ_I are set to values associated with snow
@@ -2800,7 +2800,7 @@
 !
       ETAMP_Regional=.FALSE.
       IF (CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW .OR.                        &
-     &    CONFIG_FLAGS%MP_PHYSICS==ETAMP_HR) ETAMP_Regional=.TRUE.
+     &    CONFIG_FLAGS%MP_PHYSICS==FER_MP_HIRES) ETAMP_Regional=.TRUE.
 !
 !$omp parallel do                                                       &
 !$omp& private(dqdt,dtdt,i,iendx,j,k,tchange)
@@ -3024,7 +3024,7 @@
 !
       QT_PRESENT=.FALSE.
       IF (CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW .OR.                        &
-     &    CONFIG_FLAGS%MP_PHYSICS==ETAMP_HR .OR.                        &
+     &    CONFIG_FLAGS%MP_PHYSICS==FER_MP_HIRES .OR.                        &
      &    CONFIG_FLAGS%MP_PHYSICS==ETAMP_HWRF) QT_PRESENT=.TRUE.
 !
       micro_check1: IF(.NOT.QT_PRESENT) THEN

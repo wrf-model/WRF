@@ -816,15 +816,19 @@ IF (grid%sppt_on==1) then
 !  Calculate any variables that were not set
 
       if (grid%starting_time_step == -1) then
-         grid%starting_time_step = NINT(6 * MIN(grid%dx,grid%dy) / 1000)
+         grid%starting_time_step = NINT(4 * MIN(grid%dx,grid%dy) / 1000)
       endif
 
+      grid%time_step = grid%starting_time_step
+      config_flags%time_step = grid%starting_time_step
+      model_config_rec%time_step = grid%starting_time_step
+
       if (grid%max_time_step == -1) then
-         grid%max_time_step = 3*grid%starting_time_step
+         grid%max_time_step = NINT(8 * MIN(grid%dx,grid%dy) / 1000)
       endif
 
       if (grid%min_time_step == -1) then
-         grid%min_time_step = 0.5*grid%starting_time_step
+         grid%min_time_step = NINT(3 * MIN(grid%dx,grid%dy) / 1000)
       endif
 
 !     Set a starting timestep.

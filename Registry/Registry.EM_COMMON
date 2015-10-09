@@ -1917,7 +1917,7 @@ rconfig   integer dfi_bckstop_minute     namelist,dfi_control   1      00     rh
 rconfig   integer dfi_bckstop_second     namelist,dfi_control   1      00     rh   "dfi_bckstop_second"       "2 DIGIT SECOND OF THE MINUTE OF END OF DFI" "SECONDS"
 
 # Domains
-rconfig   integer time_step               namelist,domains	1             -       ih   "time_step"     
+rconfig   integer time_step               namelist,domains	1            -1       ih   "time_step"     
 rconfig   integer time_step_fract_num     namelist,domains	1             0       ih   "time_step_fract_num"     
 rconfig   integer time_step_fract_den     namelist,domains	1             1       ih   "time_step_fract_den"     
 rconfig   integer time_step_dfi           namelist,domains      1             -       ih   "time_step_dfi"

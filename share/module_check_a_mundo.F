@@ -98,6 +98,8 @@
       END IF
 
 
+
+
 !-----------------------------------------------------------------------
 ! Check that all values of diff_opt and km_opt are filled in.  A flag
 ! value of "-1" from the nml file means that this column (domain) is not
@@ -244,6 +246,18 @@
          END IF
       ENDDO
 
+
+!------------------------------------------------------------------------------
+! Check that a value for time_step is given, and is not just set to default (-1)
+!------------------------------------------------------------------------------
+
+         IF ( ( model_config_rec % use_wps_input == 0 ) .AND. &
+              ( model_config_rec % time_step .EQ. -1 ) ) THEN
+
+            wrf_err_message = '--- ERROR: Known problem.  time_step must be set to a positive integer'
+                CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
+
+         END IF
 
 !-----------------------------------------------------------------------
 ! Check that all values of bl_pbl_physics are the same for all domains
@@ -1191,6 +1205,8 @@
 
 #endif
 
+
+
    END SUBROUTINE 
 
 !=======================================================================
@@ -1344,6 +1360,7 @@
       CALL wrf_message ( wrf_err_message )
 
    END SUBROUTINE set_physics_rconfigs
+
 
 !=======================================================================
 

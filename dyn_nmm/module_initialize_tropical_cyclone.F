@@ -5707,6 +5707,10 @@ INTEGER, INTENT(IN):: ids,ide,jds,jde,kds,kde, &
       do 20 j=2,lq-1
   20  tem(j,i)=wk(j,i)
 !
+      !Gopal's doing on June 17th, 2015. The line below was erroneously removed from the code.
+      if(anorm.gt.err) goto 2
+      write(6,*) nt,anorm,err
+!
       do i=1,lp
       do j=1,lq
       xx(j,i)=tem(j,i)

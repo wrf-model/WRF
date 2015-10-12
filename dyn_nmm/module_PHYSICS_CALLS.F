@@ -755,6 +755,7 @@
      &                ,DISHEAT,DKU3D,DKT3D                              &
      &                ,HPBL2D, EVAP2D, HEAT2D,RC2D                      &  !Kwon S&P
      &                ,SFCHEADRT,INFXSRT,SOLDRAIN                       &  !Hydrology, no-op right now
+     &                ,cd_out,ch_out                                    &
      &                ,IDS,IDE,JDS,JDE,KDS,KDE                          &
      &                ,IMS,IME,JMS,JME,KMS,KME                          &
      &                ,IPS,IPE,JPS,JPE,KPS,KPE                          &
@@ -890,6 +891,7 @@
                                                     ,SOILTB,TWBS
 !
 
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: cd_out,ch_out
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: taux, tauy
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(IN) :: PINT
 !
@@ -1374,7 +1376,11 @@
      &          ,NUM_SOIL_LAYERS=NSOIL,P8W=P8W                          &
      &          ,PBLH=PBLH,PI_PHY=PI_PHY,PSHLTR=PSHLTR,PSIH=PSIH        &
      &          ,PSIM=PSIM,P_PHY=P_PHY,Q10=Q10,Q2=Q2X,QFX=QWBS,TAUX=TAUX,TAUY=TAUY,QSFC=QS  &
-     &          ,QSHLTR=QSHLTR,QZ0=QZ0,RAINCV=RAIN                      &
+     &          ,QSHLTR=QSHLTR,QZ0=QZ0                                  &
+     &          ,ICOEF_SF=CONFIG_FLAGS%ICOEF_SF                         &
+     &          ,LCURR_SF=CONFIG_FLAGS%LCURR_SF                         &!for gfdl-sf drag
+     &          ,cd_out=grid%cd_out,ch_out=grid%ch_out                  &
+     &          ,RAINCV=RAIN                                            &
      &          ,RHO=RR,SFCEVP=SFCEVPX,SFCEXC=SFCEXC,SFCRUNOFF=SSROFF   &
      &          ,SMOIS=SMC,SMSTAV=SMSTAV,SMSTOT=SMSTOT,SNOALB=MXSNAL    &
      &          ,SNOW=SNOW,SNOWC=SNOWC,SNOWH=SNOWH,STEPBL=NPHS          &

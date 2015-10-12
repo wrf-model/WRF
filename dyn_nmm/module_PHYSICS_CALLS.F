@@ -46,8 +46,8 @@
      &                    ,CFRACL,CFRACM,CFRACH,SIGT4                   &
      &                    ,ACFRST,NCFRST,ACFRCV,NCFRCV                  &
      &                    ,CUPPT,VEGFRC,SNOW,HTOP,HBOT                  &
-     &                    ,Z,SICE,NUM_AEROSOLC,NUM_OZMIXM               &
-     &                    ,GRID,CONFIG_FLAGS                            &
+     &                    ,Z,SICE,NUM_AEROSOLC,NUM_OZMIXM,OZMIXM,PIN    &
+     &                    ,LEVSIZ,GRID,CONFIG_FLAGS                     &
      &                    ,RTHRATEN                                     &
      &                    ,re_cloud,re_ice,re_snow                      & ! G. Thompson
      &                    ,has_reqc,has_reqi,has_reqs                   & ! G. Thompson
@@ -101,7 +101,8 @@
      &                     ,ITS,ITE,JTS,JTE,KTS,KTE                     &
      &                     ,IHRST,JULDAY,JULYR                          &
      &                     ,N_MOIST,NPHS,NRADL,NRADS,NTSD               &
-     &                     ,NUM_AEROSOLC,NUM_OZMIXM
+     &                     ,NUM_AEROSOLC,NUM_OZMIXM,LEVSIZ
+      REAL, INTENT(IN) :: OZMIXM(ims:ime,LEVSIZ,jms:jme,num_ozmixm), PIN(LEVSIZ)
 !
       INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: NCFRCV,NCFRST
 !
@@ -213,6 +214,8 @@
       LOGICAL :: WARM_RAIN
       LOGICAL :: IS_CAMMGMP_USED=.FALSE.
 
+      REAL :: DXKM, DYKM
+
 !
 !-----------------------------------------------------------------------
 !***********************************************************************
@@ -233,6 +236,9 @@
 !-----------------------------------------------------------------------
 !
       CAPA=R_D/CP
+
+      DXKM=grid%dlmd*0.01745329*6371200. ! numbers from module_initialize_real.F
+      DYKM=grid%dy_nmm
 !
 !-----------------------------------------------------------------------
 !
@@ -243,8 +249,6 @@
 !
         PDSL(I,J)=PD(I,J)*RES(I,J)
         P8W(I,KTE+1,J)=PT
-        XLAT(I,J)=GLAT(I,J)/DEGRAD
-        XLON(I,J)=GLON(I,J)/DEGRAD
         XLAND(I,J)=SM(I,J)+1.
         PSFC=PD(I,J)+PDTOP+PT
         REXNSFC(I,J)=(PSFC*1.E-5)**CAPA
@@ -374,6 +378,8 @@
      &                 ,ITIMESTEP=NTSD,DT=DT                            &
      &                 ,ICLOUD_CU=config_flags%ICLOUD_CU                &
      &                 ,QC_CU=GRID%QC_CU,QI_CU=GRID%QI_CU               &
+     &                 ,DX=DXKM,DY=DYKM          &
+     &                 ,DXKM=dxkm                                       &
 ! WRF-Solar variables
                        ,swint_opt=config_flags%swint_opt                &   
      &       ,SWDDIR=grid%swddir,SWDDNI=grid%swddni,SWDDIF=grid%swddif     & ! jararias
@@ -392,7 +398,7 @@
      &                 ,RTHRATEN=RTHRATEN                               &
      &                 ,CEN_LAT=grid%cen_lat                            &
      &                 ,GLW=TOTLWDN,GSW=SWNETDN,SWDOWN=TOTSWDN          &
-     &                 ,XLAT=XLAT,XLONG=XLON,ALBEDO=ALBEDO,EMISS=EPSR   &
+     &                 ,XLAT=grid%HLAT,XLONG=grid%HLON,ALBEDO=ALBEDO,EMISS=EPSR   &
      &                 ,XICE=SICE,XLAND=XLAND,Z=Z,TSK=TSFC              &
      &                 ,N_AEROSOLC=NUM_AEROSOLC,PAERLEV=GRID%PAERLEV    &
      &                 ,ID=grid%id                                      &
@@ -400,7 +406,8 @@
      &                 ,CAM_ABS_DIM2=GRID%CAM_ABS_DIM2                  &
      &                 ,CAM_ABS_FREQ_S=GRID%CAM_ABS_FREQ_S              &
      &                 ,ALEVSIZ=grid%alevsiz,no_src_types=grid%no_src_types   &
-     &                 ,LEVSIZ=GRID%LEVSIZ,N_OZMIXM=NUM_OZMIXM          &
+     &                 ,LEVSIZ=LEVSIZ,N_OZMIXM=NUM_OZMIXM               &
+     &                 ,OZMIXM=OZMIXM,PIN=PIN                           &
      &                 ,HTOP=HTOP,HBOT=HBOT,CUPPT=CUPPTR                &
      &                 ,HTOPR=HTOPR,HBOTR=HBOTR                         &
      &                 ,VEGFRA=VEGFRC,SNOW=SNOW                         &
@@ -462,7 +469,7 @@
      &                 ,ACFRCV=ACFRCV,NCFRCV=NCFRCV                     &
      &                 ,F_ICE_PHY=F_ICE,F_RAIN_PHY=F_RAIN               &
      &                 ,LWCF=LWCF,SWCF=SWCF                             &
-     &                 ,O3INPUT=config_flags%O3INPUT,AER_OPT=config_flags%AER_OPT  &
+     & ,O3INPUT=config_flags%O3INPUT,AER_OPT=config_flags%AER_OPT,O3RAD=grid%o3rad  &
      &                 ,SF_SURFACE_PHYSICS=CONFIG_FLAGS%SF_SURFACE_PHYSICS &
      &                 ,QV=MOIST_TRANS(IMS,KMS,JMS,P_QV),F_QV=F_QV      &
      &                 ,QC=MOIST_TRANS(IMS,KMS,JMS,P_QC),F_QC=F_QC      &
@@ -471,7 +478,8 @@
      &                 ,QS=MOIST_TRANS(IMS,KMS,JMS,P_QS),F_QS=F_QS      &
      &                 ,QG=MOIST_TRANS(IMS,KMS,JMS,P_QG),F_QG=F_QG      &
      &                 ,IS_CAMMGMP_USED=IS_CAMMGMP_USED                 &
-     &                 ,EXPLICIT_CONVECTION=config_flags%cu_physics==0)
+     &                 ,EXPLICIT_CONVECTION=config_flags%cu_physics==0  &
+     &                 ,MP_PHYSICS=CONFIG_FLAGS%MP_PHYSICS)
 
 
 !
@@ -1479,7 +1487,8 @@
      &        ,  chv2xy=grid%chv2xy   ,  chb2xy=grid%chb2xy , chstarxy=grid%chstarxy &                       
      &        ,  smoiseq=grid%smoiseq, smcwtdxy=grid%smcwtdxy, rechxy=grid%rechxy    &                       
      &        ,  deeprechxy=grid%deeprechxy                                          &                       
-     &        ,coszen=grid%czen,xlat_urb2d=grid%xlat                                 &
+     &        ,coszen=grid%czen,xlat_urb2d=grid%hlat                                 &
+
 ! mosaic tiling for Noah
      &        ,sf_surface_mosaic=config_flags%sf_surface_mosaic,  mosaic_cat=config_flags%mosaic_cat      &
 ! lake module

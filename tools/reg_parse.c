@@ -291,7 +291,6 @@ pre_parse( char * dir, FILE * infile, FILE * outfile )
           continue ;
         }
     }
-normal:
     /* otherwise output the line as is */
     fprintf(outfile,"%s\n",parseline_save) ;
     parseline[0] = '\0' ;  /* reset parseline */
@@ -306,7 +305,7 @@ reg_parse( FILE * infile )
   char inln[7000], parseline[7000] ;
   char *p, *q ;
   char *tokens[MAXTOKENS], *toktmp[MAXTOKENS] ; 
-  int i, ii ;
+  int i, ii, idim ;
   int defining_state_field, defining_rconfig_field, defining_i1_field ;
 
   parseline[0] = '\0' ;
@@ -453,6 +452,7 @@ reg_parse( FILE * infile )
 
       field_struct->stag_x = 0 ; field_struct->stag_y = 0 ; field_struct->stag_z = 0 ;
       field_struct->mp_var = 0 ; field_struct->nmm_v_grid=0 ; field_struct->full_feedback = 0;
+      field_struct->no_feedback = 0;
       for ( i = 0 ; i < strlen(tokens[FIELD_STAG]) ; i++ )
       {
 	if ( tolower(tokens[FIELD_STAG][i]) == 'x' || sw_all_x_staggered ) field_struct->stag_x = 1 ;
@@ -464,6 +464,8 @@ reg_parse( FILE * infile )
           field_struct->mp_var = 1;
         if ( tolower(tokens[FIELD_STAG][i]) == 'f' )
           field_struct->full_feedback = 1;
+        if ( tolower(tokens[FIELD_STAG][i]) == 'n' )
+          field_struct->no_feedback = 1;
       }
 
       field_struct->restart  = 0 ; field_struct->boundary  = 0 ;
@@ -639,12 +641,12 @@ reg_parse( FILE * infile )
 #endif
 			       }
 #if NMM_CORE==1
-                               if(dims_ikj_inner(field_struct) && !strcasestr(fcn_name,"ikj")) {
+                               if(dims_ikj_inner(field_struct) && !strcasestr(fcn_name,"ikj") && !strcasestr(fcn_name,"nointerp")) {
                                  fprintf(stderr,"ERROR: %s %c %s: you must use IKJ interpolators for IKJ arrays.\n",
                                          tokens[FIELD_SYM],x,fcn_name);
                                  exit(1);
                                }
-                               if(dims_ij_inner(field_struct) && strcasestr(fcn_name,"ikj")) {
+                               if(dims_ij_inner(field_struct) && strcasestr(fcn_name,"ikj") && !strcasestr(fcn_name,"nointerp")) {
                                  fprintf(stderr,"ERROR: %s %c %s: you cannot use IKJ interpolators for IJ arrays.\n",
                                          tokens[FIELD_SYM],x,fcn_name);
                                  exit(1);

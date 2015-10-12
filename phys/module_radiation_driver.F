@@ -134,6 +134,7 @@ CONTAINS
               ,aer_asy_opt, aer_asy_val                                   &
               ,aod5502d, angexp2d, aerssa2d, aerasy2d                     &
               ,aod5503d                                                   &
+              ,mp_physics                                                 &
                                                                           )
 
 
@@ -355,7 +356,7 @@ CONTAINS
                                                          kts,kte, &
                                        num_tiles
 
-   INTEGER, INTENT(IN)            :: lw_physics, sw_physics
+   INTEGER, INTENT(IN)            :: lw_physics, sw_physics, mp_physics
    INTEGER, INTENT(IN)            :: o3input, aer_opt
    INTEGER, INTENT(IN)            :: id
    integer, intent(in)            :: swint_opt
@@ -697,7 +698,7 @@ CONTAINS
 
 
 #ifdef HWRF
-   CHARACTER(len=265) :: wrf_err_message
+   CHARACTER(len=255) :: wrf_err_message
 #endif
 
    ! This allows radiation schemes (mainly HWRF) to correctly
@@ -1040,6 +1041,7 @@ CONTAINS
         CALL cal_cldfra1(CLDFRA,qv,qc,qi,qs,               &
                    F_QV,F_QC,F_QI,F_QS,t,p,                &
                    F_ICE_PHY,F_RAIN_PHY,                   &
+                   mp_physics,                             &
                    ids,ide, jds,jde, kds,kde,              &
                    ims,ime, jms,jme, kms,kme,              &
                    its,ite, jts,jte, kts,kte               )
@@ -1142,7 +1144,12 @@ CONTAINS
 ! ww: Interpolating climatological ozone and aerosol to model time and levels
 !     Adapted from camrad code
      IF ( PRESENT( O3RAD ) ) THEN
+        call wrf_debug(1,'Have o3rad')
+#if (EM_CORE==1)
      IF ( o3input .EQ. 2 .AND. id .EQ. 1 ) THEN
+#else
+     IF ( o3input .EQ. 2 ) THEN
+#endif
 !       ! Find the current month (adapted from Cavallo)
 !       CALL cam_time_interp( ozmixm, pin, levsiz, date_str, &
 !                             ids , ide , jds , jde , kds , kde , &
@@ -1417,8 +1424,8 @@ CONTAINS
                   IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme,&
                   ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte,&
                   LWUPFLX=LWUPFLX,LWUPFLXC=LWUPFLXC,                &
-                  LWDNFLX=LWDNFLX,LWDNFLXC=LWDNFLXC                 &
-                                                                    )
+                  LWDNFLX=LWDNFLX,LWDNFLXC=LWDNFLXC,                &
+                  mp_physics=mp_physics                             )
 
         CASE (RRTMG_LWSCHEME_FAST)
              CALL wrf_debug (100, 'CALL rrtmg_lw')
@@ -1827,7 +1834,7 @@ CONTAINS
                      ssaaer3d_sw=ssaaer_sw,                             & ! jararias 2013/11
                      asyaer3d_sw=asyaer_sw,                             & ! jararias 2013/11
                      swddir=swddir,swddni=swddni,swddif=swddif,         & ! jararias 2013/08/10
-                     xcoszen=coszen,julian=julian                       ) ! jararias 2013/08/14
+                     xcoszen=coszen,julian=julian,mp_physics=mp_physics ) ! jararias 2013/08/14
 
              DO j=jts,jte
              DO k=kts,kte
@@ -2719,9 +2726,16 @@ CONTAINS
    SUBROUTINE cal_cldfra1(CLDFRA, QV, QC, QI, QS,                     &
                          F_QV, F_QC, F_QI, F_QS, t_phy, p_phy,       &
                          F_ICE_PHY,F_RAIN_PHY,                       &
+                         mp_physics,                                 &
           ids,ide, jds,jde, kds,kde,                                 &
           ims,ime, jms,jme, kms,kme,                                 &
           its,ite, jts,jte, kts,kte                                  )
+
+#if (HWRF == 1)
+   USE module_state_description, ONLY : FER_MP_HIRES, ETAMP_HWRF 
+#else
+   USE module_state_description, ONLY : FER_MP_HIRES
+#endif
 !---------------------------------------------------------------------
    IMPLICIT NONE
 !---------------------------------------------------------------------
@@ -2751,6 +2765,7 @@ CONTAINS
                                                          F_RAIN_PHY
 
    LOGICAL,OPTIONAL,INTENT(IN) :: F_QC,F_QI,F_QV,F_QS
+   INTEGER :: mp_physics
 
 !  REAL thresh
    INTEGER:: i,j,k
@@ -2863,6 +2878,23 @@ CONTAINS
               weight = 0.
            ELSE
               weight = F_ICE_PHY(i,k,j)
+           ENDIF
+         ENDIF
+!BSF - For HWRF MP option; (qc = liquid, qi = cloud ice+snow)
+!         IF ( F_QC .and. F_QI .and. .not. F_QS ) THEN
+#if (HWRF == 1)
+         IF ( mp_physics .eq. FER_MP_HIRES .or. mp_physics .eq. ETAMP_HWRF) THEN
+#else
+         IF ( mp_physics .eq. FER_MP_HIRES ) THEN
+#endif
+           QIMID = QI(i,k,j)     !- total ice (cloud ice + snow)
+           QWMID = QC(i,k,j)     !- cloud water
+           QCLD=QWMID+QIMID      !- cloud water + total ice
+           IF (QCLD .LT. QCLDMIN) THEN
+              weight = 0.
+           ELSE
+              weight = QIMID/QCLD
+              if (tc<-40.) weight=1.
            ENDIF
          ENDIF
 

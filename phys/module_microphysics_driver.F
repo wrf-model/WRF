@@ -59,7 +59,7 @@ SUBROUTINE microphysics_driver(                                          &
                       ,f_qic_effr,f_qip_effr,f_qid_effr                  &                 
                       ,qrcuten, qscuten, qicuten, mu                     &
                       ,qt_curr,f_qt                                      &
-                      ,mp_restart_state,tbpvs_state,tbpvs0_state         & ! for etampnew or etamp_hr
+                      ,mp_restart_state,tbpvs_state,tbpvs0_state         & ! for etampnew or fer_mp_hires
                       ,hail,ice2                                         & ! for mp_gsfcgce
 !                     ,ccntype                                           & ! for mp_milbrandt2mom
                       ,u,v,w,z                                          &   

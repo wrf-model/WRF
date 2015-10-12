@@ -63,8 +63,13 @@ SUBROUTINE calc_ts_locations( grid )
    
       IF (ips <= 1 .AND. 1 <= ipe .AND. &
           jps <= 1 .AND. 1 <= jpe) THEN
+#if(NMM_CORE==1)
+         known_lat = grid%hlat(1,1)
+         known_lon = grid%hlon(1,1)
+#else
          known_lat = grid%xlat(1,1)
          known_lon = grid%xlong(1,1)
+#endif
       ELSE
          known_lat = 9999.
          known_lon = 9999.
@@ -180,8 +185,13 @@ SUBROUTINE calc_ts_locations( grid )
                ts_xlong = 1.E30
                ts_hgt   = 1.E30
             ELSE
+#if(NMM_CORE==1)
+               ts_xlat  = grid%hlat(grid%itsloc(k),grid%jtsloc(k))
+               ts_xlong = grid%hlon(grid%itsloc(k),grid%jtsloc(k))
+#else
                ts_xlat  = grid%xlat(grid%itsloc(k),grid%jtsloc(k))
                ts_xlong = grid%xlong(grid%itsloc(k),grid%jtsloc(k))
+#endif
 #if (EM_CORE == 1)
                ts_hgt   = grid%ht(grid%itsloc(k),grid%jtsloc(k))
 #endif

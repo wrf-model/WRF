@@ -162,6 +162,11 @@ ifdef HWRF=1
 include registry.tracker
 endif
 
+# Nest motion safeguard: don't let nest get close to parent boundary.
+# Default values are lowest possible - anything lower would read
+# outside of memory in intermediate domain.
+rconfig integer coral_x     namelist,domains     max_domains    5   h "coral_x" "Minimum parent gridpoints on each side of nest in X direction." ""
+rconfig integer coral_y     namelist,domains     max_domains    5   h "coral_y" "Minimum parent gridpoints on each side of nest in Y direction." ""
 
 #
 # For the moving nest. This is gopal's doing
@@ -427,6 +432,9 @@ state  real   AKMS_OUT  ij    dyn_nmm   1    -     rh023       "AKMS_OUT"  "Outp
 #
 # module_PHYS
 #
+state  real   cd_out    ij    dyn_nmm   1    -     rh023       "CD_OUT"  "sfc exch coeff for momentum"        "m2 s-1"
+state  real   ch_out    ij    dyn_nmm   1    -     rh023       "CH_OUT"  "sfc exch coeff for heat"            "m2 s-1"
+
 state  real   albase    ij    dyn_nmm   1    -     i01rh023d=(DownCopy) "ALBASE"    "Base albedo"            ""
 state  real   albedo    ij    dyn_nmm   1    -     irh023      "ALBEDO"    "Dynamic albedo"         ""
 state  real   cnvbot    ij    dyn_nmm   1    -     irh023      "CNVBOT"    "Lowest convec cloud bottom lyr between outputs"  ""
@@ -602,7 +610,7 @@ state  real   dwdtmx    ij    dyn_nmm   1    -     -        "DWDTMX"    "Maximum
 state  real   baro      ij    dyn_nmm   1    -     -        "BARO"      "external mode vvel"           "m s-1"
 state  real   dwdt      ijk   dyn_nmm   1    -     rd=(DownCopy) "DWDT"      "dwdt and 1+(dwdt)/g"              "m s-2"
 state  real   pdwdt     ijk   dyn_nmm   1    -     r
-state  real   pint      ijk   dyn_nmm   1    Z     irh023d=(DownCopy)u=(NoInterp)f=(NoInterp)       "PINT"      "Model layer interface pressure"   "Pa"
+state  real   pint      ijk   dyn_nmm   1    Zn    irh023d=(DownCopy)u=(NoInterp)f=(NoInterp)       "PINT"      "Model layer interface pressure"   "Pa"
 state  real   w         ijk   dyn_nmm   1    Z     rd=(DownCopy)       "W_nonhydro"         "Vertical velocity (non-hydrostatic component only)"                "m s-1"
 state  real   w_tot     ijk   dyn_nmm   1    Z     h023d=(DownCopy)       "W"         "Vertical velocity"                "m s-1"
 state  real   z         ijk   dyn_nmm   1    Z     hd=(DownCopy)        "Z"         "Distance from ground"             "m"
@@ -912,8 +920,6 @@ state    real   lake_depth       ij     misc        1         -     rd=(interp_m
 # variables added for CHEMISTRY compatibility with ARW core - kludge
 #################################################################
 state    real   GSW             ij     misc        1         -      -       ""                 ""
-state    real   XLAT            ij     misc        1         -      -       ""                 ""
-state    real   XLONG           ij     misc        1         -      -       ""                 ""
 state    real   XLAND           ij     misc        1         -      -       ""                 ""
 state    real   RAINCV          ij     misc        1         -      -       ""                 ""
 
@@ -1156,7 +1162,7 @@ state   real    power          ij       misc      1         -     irh       "Pow
 # State for derived time quantities.  
 #for HWRF: add to restart
 state   integer itimestep      -        -          -         -     rh         "itimestep"             ""         ""      
-state   real    xtime          -        -          -         -     h         "xtime"                 "minutes since simulation start"         ""      
+state   real    xtime          -        -          -         -     h0123         "xtime"                 "minutes since simulation start"         ""      
 state   real    julian         -        -          -         -     -         "julian"                "day of year, 0.0 at 0Z on 1 Jan."         "days"
 
 # input file descriptor for lbcs on parent domain                                               
@@ -1444,11 +1450,30 @@ rconfig   integer cam_abs_dim1            namelist,physics      1             1 
 rconfig   integer cam_abs_dim2            namelist,physics      1             1       -      "cam_abs_dim2" "dimension for abstot in CAM radiation"  ""
 rconfig   integer no_src_types            namelist,physics      1             1       -      "no_src_types" "Number of aerosoal types from EC (6)"  ""
 rconfig   integer alevsiz                 namelist,physics      1             1       -      "alevsiz" "Number of aerosoal optical depth data levels from EC (12)"  ""
-rconfig   integer o3input                 namelist,physics      1             0       -      "o3input"      "ozone input option for radiation"      ""
+rconfig   integer o3input                 namelist,physics      1             2       -      "o3input"      "ozone input option for radiation"      ""
 rconfig   integer aer_opt                 namelist,physics      1             0       -      "aer_opt"      "aerosol input option for radiation"      ""
 rconfig   logical cu_rad_feedback         namelist,physics      max_domains  .false.  -      "feedback of cumulus cloud to radiation"
 rconfig   integer ICLOUD_CU               derived               1             0        -     "ICLOUD_CU"                     ""      ""
 rconfig   real h_diff                     namelist,physics      max_domains  0.1      irh    "nmm input 9"
+
+# cam radiation variables
+state  real    -       i{ls}jf ozmixm      1    -   -     -
+state  real   mth01    i{ls}jf ozmixm      1    -   -     "OZMIXMTH01"  "Month 1 CAM ozone mixing ratio"
+state  real   mth02    i{ls}jf ozmixm      1    -   -     "OZMIXMTH02"  "Month 2 CAM ozone mixing ratio"
+state  real   mth03    i{ls}jf ozmixm      1    -   -     "OZMIXMTH03"  "Month 3 CAM ozone mixing ratio"
+state  real   mth04    i{ls}jf ozmixm      1    -   -     "OZMIXMTH04"  "Month 4 CAM ozone mixing ratio"
+state  real   mth05    i{ls}jf ozmixm      1    -   -     "OZMIXMTH05"  "Month 5 CAM ozone mixing ratio"
+state  real   mth06    i{ls}jf ozmixm      1    -   -     "OZMIXMTH06"  "Month 6 CAM ozone mixing ratio"
+state  real   mth07    i{ls}jf ozmixm      1    -   -     "OZMIXMTH07"  "Month 7 CAM ozone mixing ratio"
+state  real   mth08    i{ls}jf ozmixm      1    -   -     "OZMIXMTH08"  "Month 8 CAM ozone mixing ratio"
+state  real   mth09    i{ls}jf ozmixm      1    -   -     "OZMIXMTH09"  "Month 9 CAM ozone mixing ratio"
+state  real   mth10    i{ls}jf ozmixm      1    -   -     "OZMIXMTH10"  "Month 10 CAM ozone mixing ratio"
+state  real   mth11    i{ls}jf ozmixm      1    -   -     "OZMIXMTH11"  "Month 11 CAM ozone mixing ratio"
+state  real   mth12    i{ls}jf ozmixm      1    -   -     "OZMIXMTH12"  "Month 12 CAM ozone mixing ratio"
+state  real   pin       {ls}     misc      1    -   -      "PIN"             "PRESSURE LEVEL OF OZONE MIXING RATIO"  "millibar"
+
+# new rad variables
+state    real   o3rad           ikj     misc        1         -      irh      "o3rad"    "RADIATION 3D OZONE" "ppmv"
 
 ifdef HWRF=1
 rconfig   integer movemin                 namelist,physics      max_domains  10       irh    "movemin" "nest movement timestep (multiples of nphs)"
@@ -1603,7 +1628,7 @@ package   kesslerscheme mp_physics==1                -             moist:qv,qc,q
 package   linscheme     mp_physics==2                -             moist:qv,qc,qr,qi,qs,qg
 package   wsm3scheme    mp_physics==3                -             moist:qv,qc,qr;state:re_cloud,re_ice,re_snow
 package   wsm5scheme    mp_physics==4                -             moist:qv,qc,qr,qi,qs;state:re_cloud,re_ice,re_snow
-package   fer_mp_hires  mp_physics==5                -             moist:qv,qc,qr,qs;state:f_ice,f_rain,f_rimef
+package   fer_mp_hires  mp_physics==5                -             moist:qv,qc,qr,qi,qs;state:f_ice,f_rain,f_rimef
 package   wsm6scheme    mp_physics==6                -             moist:qv,qc,qr,qi,qs,qg;state:re_cloud,re_ice,re_snow
 package   gsfcgcescheme mp_physics==7                -             moist:qv,qc,qr,qi,qs,qg
 package   thompson      mp_physics==8                -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr;state:re_cloud,re_ice,re_snow
@@ -1628,7 +1653,7 @@ package   kesslerscheme_dfi mp_physics_dfi==1        -             dfi_moist:dfi
 package   linscheme_dfi     mp_physics_dfi==2        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg
 package   wsm3scheme_dfi    mp_physics_dfi==3        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
 package   wsm5scheme_dfi    mp_physics_dfi==4        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
-package   fer_mp_hires_dfi  mp_physics_dfi==5        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qs
+package   fer_mp_hires_dfi  mp_physics_dfi==5        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs
 package   wsm6scheme_dfi    mp_physics_dfi==6        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
 package   gsfcgcescheme_dfi mp_physics_dfi==7        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg
 package   thompson_dfi      mp_physics_dfi==8        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni,dfi_qnr;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
@@ -1644,8 +1669,8 @@ package   etampnew_dfi      mp_physics_dfi==95       -             dfi_moist:dfi
 # package   progndrop     progn==1                     -             scalar:qndrop;dfi_scalar:dfi_qndrop
 
 package   rrtmscheme    ra_lw_physics==1             -             -
-package   camlwscheme   ra_lw_physics==3             -             state:acswupt,acswuptc,acswdnt,acswdntc,acswupb,acswupbc,acswdnb,acswdnbc,aclwupt,aclwuptc,aclwdnt,aclwdntc,aclwupb,aclwupbc,aclwdnb,aclwdnbc,swupt,swuptc,swdnt,swdntc,swupb,swupbc,swdnb,swdnbc,lwupt,lwuptc,lwdnt,lwdntc,lwupb,lwupbc,lwdnb,lwdnbc
-package   rrtmg_lwscheme  ra_lw_physics==4           -             state:aclwupt,aclwuptc,aclwdnt,aclwdntc,aclwupb,aclwupbc,aclwdnb,aclwdnbc,lwupt,lwuptc,lwdnt,lwdntc,lwupb,lwupbc,lwdnb,lwdnbc
+package   camlwscheme   ra_lw_physics==3             -             ozmixm:mth01,mth02,mth03,mth04,mth05,mth06,mth07,mth08,mth09,mth10,mth11,mth12;state:acswupt,acswuptc,acswdnt,acswdntc,acswupb,acswupbc,acswdnb,acswdnbc,aclwupt,aclwuptc,aclwdnt,aclwdntc,aclwupb,aclwupbc,aclwdnb,aclwdnbc,swupt,swuptc,swdnt,swdntc,swupb,swupbc,swdnb,swdnbc,lwupt,lwuptc,lwdnt,lwdntc,lwupb,lwupbc,lwdnb,lwdnbc,o3rad
+package   rrtmg_lwscheme  ra_lw_physics==4           -             ozmixm:mth01,mth02,mth03,mth04,mth05,mth06,mth07,mth08,mth09,mth10,mth11,mth12;state:aclwupt,aclwuptc,aclwdnt,aclwdntc,aclwupb,aclwupbc,aclwdnb,aclwdnbc,lwupt,lwuptc,lwdnt,lwdntc,lwupb,lwupbc,lwdnb,lwdnbc,o3rad
 package   rrtmg_lwscheme_fast  ra_lw_physics==24     -             -
 package   goddardlwscheme  ra_lw_physics==5          -             -
 package   flglwscheme   ra_lw_physics==7             -             -
@@ -1654,8 +1679,8 @@ package   hwrflwscheme  ra_lw_physics==98            -             -
 
 package   swradscheme   ra_sw_physics==1             -             -
 package   gsfcswscheme  ra_sw_physics==2             -             -
-package   camswscheme   ra_sw_physics==3             -             state:acswupt,acswuptc,acswdnt,acswdntc,acswupb,acswupbc,acswdnb,acswdnbc,aclwupt,aclwuptc,aclwdnt,aclwdntc,aclwupb,aclwupbc,aclwdnb,aclwdnbc,swupt,swuptc,swdnt,swdntc,swupb,swupbc,swdnb,swdnbc,lwupt,lwuptc,lwdnt,lwdntc,lwupb,lwupbc,lwdnb,lwdnbc
-package   rrtmg_swscheme  ra_sw_physics==4           -             state:acswupt,acswuptc,acswdnt,acswdntc,acswupb,acswupbc,acswdnb,acswdnbc,swupt,swuptc,swdnt,swdntc,swupb,swupbc,swdnb,swdnbc
+package   camswscheme   ra_sw_physics==3             -             ozmixm:mth01,mth02,mth03,mth04,mth05,mth06,mth07,mth08,mth09,mth10,mth11,mth12;state:acswupt,acswuptc,acswdnt,acswdntc,acswupb,acswupbc,acswdnb,acswdnbc,aclwupt,aclwuptc,aclwdnt,aclwdntc,aclwupb,aclwupbc,aclwdnb,aclwdnbc,swupt,swuptc,swdnt,swdntc,swupb,swupbc,swdnb,swdnbc,lwupt,lwuptc,lwdnt,lwdntc,lwupb,lwupbc,lwdnb,lwdnbc,o3rad
+package   rrtmg_swscheme  ra_sw_physics==4           -             ozmixm:mth01,mth02,mth03,mth04,mth05,mth06,mth07,mth08,mth09,mth10,mth11,mth12;state:acswupt,acswuptc,acswdnt,acswdntc,acswupb,acswupbc,acswdnb,acswdnbc,swupt,swuptc,swdnt,swdntc,swupb,swupbc,swdnb,swdnbc,o3rad
 package   rrtmg_swscheme_fast  ra_sw_physics==24     -             -
 package   goddardswscheme  ra_sw_physics==5          -             -
 package   flgswscheme   ra_sw_physics==7             -             -
@@ -1865,7 +1890,7 @@ halo HALO_NMM_VT4_NOISE dyn_nmm 8:mslp_noisy
 endif
 
 halo HALO_NMM_INTERP_INFO dyn_nmm 8:pd,iinfo,winfo,pint
-halo HALO_NMM_INT_UP dyn_nmm 8:pd,fis,hres_fis,sm
+halo HALO_NMM_INT_UP dyn_nmm 120:pd,fis,hres_fis,sm
 
 halo HALO_NMM_MEMBRANE_RELAX dyn_nmm 8:relaxwork
 halo HALO_NMM_MEMBRANE_MASK dyn_nmm 8:relaximask

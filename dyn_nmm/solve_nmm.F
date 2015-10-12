@@ -709,16 +709,16 @@
 !
 !-----------------------------------------------------------------------
 !
-#ifdef DM_PARALLEL
-#    include "HALO_NMM_A.inc"
-#endif
+!!#ifdef DM_PARALLEL
+!!#    include "HALO_NMM_A.inc"
+!!#endif
 !
 !-----------------------------------------------------------------------
-#ifdef DM_PARALLEL
-      IF (.NOT.ETAMP_PHYSICS) THEN
-#    include "HALO_NMM_A_3.inc"
-      ENDIF
-#endif
+!!#ifdef DM_PARALLEL
+!!      IF (.NOT.ETAMP_PHYSICS) THEN
+!!#    include "HALO_NMM_A_3.inc"
+!!      ENDIF
+!!#endif
 !-----------------------------------------------------------------------
 !***  FIRST STEP INITIALIZATION OF PASSIVE SUBSTANCE VARIABLES
 !-----------------------------------------------------------------------
@@ -809,9 +809,9 @@
 #endif
       btimx=now_time()
 !-----------------
-#ifdef DM_PARALLEL
-#    include "HALO_NMM_D.inc"
-#endif
+!!#ifdef DM_PARALLEL
+!!#    include "HALO_NMM_D.inc"
+!!#endif
 !-----------------
       exch_tim=exch_tim+now_time()-btimx
 #ifdef NMM_FIND_LOAD_IMBALANCE
@@ -909,9 +909,9 @@
       call blockf(loadimbal_tim,'after adve')
 #endif
           btimx=now_time()
-#ifdef DM_PARALLEL
-#    include "HALO_NMM_I.inc"
-#endif
+!!#ifdef DM_PARALLEL
+!!#    include "HALO_NMM_I.inc"
+!!#endif
           exch_tim=exch_tim+now_time()-btimx
 #ifdef NMM_FIND_LOAD_IMBALANCE
       call blockf(loadimbal_tim,'after halo I')
@@ -2343,9 +2343,9 @@
 #endif
         btimx=now_time()
 !-----------------
-#ifdef DM_PARALLEL
-#    include "HALO_NMM_A.inc"
-#endif
+!!#ifdef DM_PARALLEL
+!!#    include "HALO_NMM_A.inc"
+!!#endif
 !-----------------
         exch_tim=exch_tim+now_time()-btimx
 #ifdef NMM_FIND_LOAD_IMBALANCE

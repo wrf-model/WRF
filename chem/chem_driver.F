@@ -475,6 +475,10 @@
      CASE (RACM_SOA_VBS_KPP)
        CALL wrf_debug(15,'calling racm_soa_vbs_kpp aerosols driver from chem_driver')
        haveaer = .false.
+!!! TUCCELLA
+     CASE (RACM_SOA_VBS_AQCHEM_KPP)
+       CALL wrf_debug(15,'calling racm_soa_vbs_aqchem_kpp aerosols driver from chem_driver')
+       haveaer = .false.
      CASE (GOCART_SIMPLE)
        CALL wrf_debug(15,'calling only gocart aerosols driver from chem_driver')
        haveaer = .false.
@@ -627,8 +631,10 @@
          enddo
       enddo
       select case (config_flags%chem_opt)
+!!! TUCCELLA
       case (RADM2SORG, RADM2SORG_AQ, RADM2SORG_AQCHEM, RADM2SORG_KPP, &
-            RACM_ESRLSORG_KPP,RACMSORG_AQ,RACMSORG_KPP, RACMSORG_AQCHEM_KPP, RACM_ESRLSORG_AQCHEM_KPP, RACM_SOA_VBS_KPP)
+            RACM_ESRLSORG_KPP,RACMSORG_AQ,RACMSORG_KPP, RACMSORG_AQCHEM_KPP, RACM_ESRLSORG_AQCHEM_KPP, &
+            RACM_SOA_VBS_KPP,RACM_SOA_VBS_AQCHEM_KPP)
          do j=jps,jpe
             do k=kps,kpe
                do i=ips,ipe

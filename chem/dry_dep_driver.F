@@ -48,7 +48,7 @@ CONTAINS
   USE module_gocart_drydep
   USE module_mosaic_drydep, only:  mosaic_drydep_driver
   USE module_mixactivate_wrappers, only: mosaic_mixactivate, sorgam_mixactivate, &
-                                         sorgam_vbs_mixactivate
+                                         sorgam_vbs_mixactivate, soa_vbs_mixactivate
   USE module_aer_drydep
   USE module_aerosols_soa_vbs, only: soa_vbs_depdriver
 
@@ -462,8 +462,9 @@ CONTAINS
 
        idrydep_onoff = 1
        aer_mech_id_select: SELECT CASE(config_flags%chem_opt)
+!!! TUCCELLA
           CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_AQCHEM,RADM2SORG_KPP, &
-                RACM_ESRLSORG_KPP,RACM_SOA_VBS_KPP, &
+                RACM_ESRLSORG_KPP,RACM_SOA_VBS_KPP,RACM_SOA_VBS_AQCHEM_KPP, &
                 CBMZSORG,CBMZSORG_AQ, &
                 CB05_SORG_AQ_KPP,CB05_SORG_VBS_AQ_KPP)
              aer_mech_id = 1
@@ -563,7 +564,8 @@ CONTAINS
                ids,ide, jds,jde, kds,kde,                               &
                ims,ime, jms,jme, kms,kme,                               &
                its,ite, jts,jte, kts,kte                                )
-     CASE ( RACM_SOA_VBS_KPP )
+!!! TUCCELLA
+     CASE ( RACM_SOA_VBS_KPP,RACM_SOA_VBS_AQCHEM_KPP )
        CALL wrf_debug(15,'DOING DRY DEP VELOCITIES FOR SOA_VBS AEROSOLS')
        call soa_vbs_depdriver (id,config_flags,ktau,dtstep,             &
                ust,t_phy,moist,p8w,t8w,rmol,znt,pbl,                    &
@@ -728,9 +730,10 @@ CONTAINS
 
          mix_select: SELECT CASE(config_flags%chem_opt)
          CASE (RADM2SORG_AQ, RADM2SORG_AQCHEM, RACMSORG_AQ, RACMSORG_AQCHEM_KPP, RACM_ESRLSORG_AQCHEM_KPP, CBMZ_MOSAIC_4BIN_AQ, &
-              CBMZ_MOSAIC_8BIN_AQ, CBMZSORG_AQ, CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ, &
-              MOZART_MOSAIC_4BIN_AQ_KPP, &
-              CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP, SAPRC99_MOSAIC_8BIN_VBS2_AQ_KPP, &
+              CBMZ_MOSAIC_8BIN_AQ, CBMZSORG_AQ, CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, CBMZ_MOSAIC_DMS_4BIN_AQ,  &
+              CBMZ_MOSAIC_DMS_8BIN_AQ, CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP,     &
+              MOZART_MOSAIC_4BIN_AQ_KPP, RACM_SOA_VBS_AQCHEM_KPP,                          &
+              SAPRC99_MOSAIC_8BIN_VBS2_AQ_KPP,                                             &
               CB05_SORG_AQ_KPP, CB05_SORG_VBS_AQ_KPP)
             if(.not.is_aerosol(nv))then ! mix gases not aerosol
                call vertmx(dtstep,pblst,ekmfull,dryrho_1d, &
@@ -1061,6 +1064,18 @@ CONTAINS
 		ids,ide, jds,jde, kds,kde,                        &
 		ims,ime, jms,jme, kms,kme,                        &
 		its,ite, jts,jte, kts,kte                         )
+   CASE (RACM_SOA_VBS_KPP,RACM_SOA_VBS_AQCHEM_KPP)
+      CALL wrf_debug(15,'call mixactivate for soa-vbs aerosol')
+      call soa_vbs_mixactivate (                        &
+                id, ktau, dtstep, config_flags, idrydep_onoff,   &
+                dryrho_phy, t_phy, w, cldfra, cldfra_old, &
+                ddvel, z, dz8w, p8w, t8w, exch_h,         &
+                moist(ims,kms,jms,P_QV), moist(ims,kms,jms,P_QC),moist(ims,kms,jms,P_QI), &
+        scalar(ims,kms,jms,P_QNDROP), f_qc, f_qi, chem, &
+        ccn1, ccn2, ccn3, ccn4, ccn5, ccn6, nsource,       &
+                ids,ide, jds,jde, kds,kde,                        &
+                ims,ime, jms,jme, kms,kme,                        &
+                its,ite, jts,jte, kts,kte                         ) 
    CASE (CB05_SORG_VBS_AQ_KPP)
       CALL wrf_debug(15,'call mixactivate for sorgam_vbs aerosol')
       call sorgam_vbs_mixactivate (                        &
@@ -1351,8 +1366,9 @@ CONTAINS
    IF((config_flags%dust_opt .EQ. 1) .OR. (config_flags%dust_opt .GE. 3) .OR. &
       (config_flags%seas_opt .GE. 1) ) THEN
    settling_select: SELECT CASE(config_flags%chem_opt)
+!!! TUCCELLA
    CASE (DUST,GOCART_SIMPLE,GOCARTRACM_KPP,MOZCART_KPP,RADM2SORG,RADM2SORG_AQ, &
-         RADM2SORG_AQCHEM,RACMSORG_AQCHEM_KPP,RACM_ESRLSORG_AQCHEM_KPP)
+         RADM2SORG_AQCHEM,RACMSORG_AQCHEM_KPP,RACM_ESRLSORG_AQCHEM_KPP,RACM_SOA_VBS_AQCHEM_KPP)
        CALL wrf_debug(15,'call gocart settling routine')
          call gocart_settling_driver(dtstep,config_flags,t_phy,moist,  &
          chem,rho_phy,dz8w,p8w,p_phy,         &

@@ -1,5 +1,6 @@
 ======================================================================================
-Please read through this README.basics to get some basic ideas on running WRFDA-3DVar.
+ For a more complete and up-to-date guide to using WRFDA, see the User's Guide:
+ http://www2.mmm.ucar.edu/wrf/users/wrfda/usersguide.html
 ======================================================================================
 
 Setup and Run - with conventional data
@@ -48,7 +49,7 @@ update_lsm = .false.  (.true.: the LSM predicted variables:
 var4d_lbc = .false.   (.true.: use lateral boundary control in 4DVar)
 /
 ln -sf WRFDA/var/build/da_update_bc.exe ./da_update_bc.exe
-./da_updatebc.exe
+./da_update_bc.exe
 
 Extra notes regarding to da_update_bc:
  

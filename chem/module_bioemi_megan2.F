@@ -454,7 +454,7 @@ CONTAINS
        ! get p_of_megan2racm(:), p_of_racm(:), and racm_per_megan(:)
        CALL get_megan2racm_table
 
-    CASE (RACM_SOA_VBS_KPP)
+    CASE (RACM_SOA_VBS_KPP,RACM_SOA_VBS_AQCHEM_KPP)
 
         !get p_of_megan2racm(:), p_of_racm(:), and racm_per_megan(:)
         CALL get_megan2racmSOA_table
@@ -1137,7 +1137,7 @@ is_mozm_species : &
 
              END DO
 
-          CASE (CB05_SORG_AQ_KPP)
+          CASE (RACM_SOA_VBS_AQCHEM_KPP,CB05_SORG_AQ_KPP)
 
              DO icount = 1, n_megan2cb05
                 IF ( p_of_cb05 (icount) .NE. non_react ) THEN

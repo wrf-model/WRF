@@ -121,6 +121,7 @@ MODULES =                                 \
         module_plumerise1.o               \
         module_mosaic_drydep.o            \
         module_wetscav_driver.o           \
+        module_prep_wetscav_sorgam.o      \
         module_input_chem_bioemiss.o      \
         module_input_dust_errosion.o      \
         module_input_gocart_dms.o         \

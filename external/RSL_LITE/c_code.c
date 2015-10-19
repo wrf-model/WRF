@@ -15,6 +15,9 @@
 #ifdef _WIN32
 #include <Winsock2.h>
 #endif
+#ifdef NCEP_DEBUG_MULTIDIR
+// #  include <errno.h>
+#endif
 
 #define STANDARD_ERROR 2
 

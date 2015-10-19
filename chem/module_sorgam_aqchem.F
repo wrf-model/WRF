@@ -169,9 +169,10 @@ module module_sorgam_aqchem
        p_mepx, &
        p_pacd, &
        CB05_SORG_AQ_KPP
-    
-    use module_data_sorgam, only: cw_phase, nphase_aer
-    
+
+!!! TUCCELLA    
+    !use module_data_sorgam, only: cw_phase, nphase_aer
+
     implicit none
     
     !
@@ -249,6 +250,9 @@ module module_sorgam_aqchem
     real :: alfa2 ! Scavenging coeffficient for Aitken aerosol surface area
     real :: alfa3 ! Scavenging coeffficient for Aitken aerosol mass
 
+    !!!! TUCCELLA 
+    ! For cw phase
+    integer :: cw_phase, nphase_aer
     !
     ! Other local variables
     !
@@ -256,8 +260,17 @@ module module_sorgam_aqchem
     integer :: it, jt, kt
     
     real :: conv_factor
-    
+   
+!!! TUCCELLA 
     ! Check that cw_phase is active
+    
+    !!! Get cw_phase and nphase_aer
+    IF (config_flags%chem_opt==109) THEN
+       CALL get_cwphase_soa_vbs(config_flags,cw_phase,nphase_aer)
+    ELSE
+       CALL get_cwphase_sorgam(config_flags,cw_phase,nphase_aer)
+    END IF
+
     if ((cw_phase .le. 0) .or. (cw_phase .gt. nphase_aer)) then
       write(*,*) '*** module_sorgam_aqchem - cw_phase not active'
       return
@@ -479,5 +492,40 @@ module module_sorgam_aqchem
     enddo
     
 	end subroutine sorgam_aqchem_driver
-  
+
+!!! TUCCELLA
+        subroutine get_cwphase_sorgam(config_flags,cw,nphase)
+
+        use module_data_sorgam, only: cw_phase, nphase_aer
+        use module_configure, only: grid_config_rec_type
+
+        implicit none
+
+        ! Configuration and control parameters:
+        type(grid_config_rec_type), intent(in) :: config_flags
+        ! Out paramaeters for cw_phase
+        integer, intent(out) :: cw,nphase
+
+        cw = cw_phase
+        nphase = nphase_aer
+
+        end subroutine get_cwphase_sorgam
+
+
+        subroutine get_cwphase_soa_vbs(config_flags,cw,nphase)
+
+        use module_data_soa_vbs, only: cw_phase, nphase_aer
+        use module_configure, only: grid_config_rec_type
+
+        implicit none
+
+        ! Configuration and control parameters:
+        type(grid_config_rec_type), intent(in) :: config_flags
+        ! Out paramaeters for cw_phase
+        integer, intent(out) :: cw,nphase
+
+        cw = cw_phase
+        nphase = nphase_aer
+
+        end subroutine get_cwphase_soa_vbs  
 end module module_sorgam_aqchem

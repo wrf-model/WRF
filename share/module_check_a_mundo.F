@@ -98,6 +98,8 @@
       END IF
 
 
+
+
 !-----------------------------------------------------------------------
 ! Check that all values of diff_opt and km_opt are filled in.  A flag
 ! value of "-1" from the nml file means that this column (domain) is not
@@ -244,6 +246,18 @@
          END IF
       ENDDO
 
+
+!------------------------------------------------------------------------------
+! Check that a value for time_step is given, and is not just set to default (-1)
+!------------------------------------------------------------------------------
+
+         IF ( ( model_config_rec % use_wps_input == 0 ) .AND. &
+              ( model_config_rec % time_step .EQ. -1 ) ) THEN
+
+            wrf_err_message = '--- ERROR: Known problem.  time_step must be set to a positive integer'
+                CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
+
+         END IF
 
 !-----------------------------------------------------------------------
 ! Check that all values of bl_pbl_physics are the same for all domains
@@ -1134,6 +1148,36 @@
         END IF
       END DO
 
+#if (EM_CORE == 1)
+!-----------------------------------------------------------------------
+!  For the real program (ARW only), check that the vertical interpolation options
+!  selected by the user are consistent.
+!  1. If the user has turned-off using the surface level, do not allow the force
+!     option to select how many layers the surface is to be used through.
+!  2. If the user has turned-off using the surface level, do not allow the 
+!     lowest level from surface option to be activated.
+!-----------------------------------------------------------------------
+
+      IF ( model_config_rec % use_wps_input .EQ. 1 ) THEN
+         IF ( ( .NOT. model_config_rec % use_surface )  .AND. &
+              ( model_config_rec % force_sfc_in_vinterp .GT. 0 ) ) THEN
+            wrf_err_message = '--- NOTE: Inconsistent vertical interpolation settings in program real.'
+            CALL wrf_message ( wrf_err_message )
+            wrf_err_message = '--- NOTE: With use_surface=F, automatically setting force_sfc_in_vinterp=0.'
+            CALL wrf_message ( wrf_err_message )
+            model_config_rec % force_sfc_in_vinterp = 0
+         END IF
+         IF ( ( .NOT. model_config_rec % use_surface )  .AND. &
+              ( model_config_rec % lowest_lev_from_sfc ) ) THEN
+            wrf_err_message = '--- NOTE: Inconsistent vertical interpolation settings in program real.'
+            CALL wrf_message ( wrf_err_message )
+            wrf_err_message = '--- NOTE: With use_surface=F, automatically setting lowest_lev_from_sfc=F.'
+            CALL wrf_message ( wrf_err_message )
+            model_config_rec % lowest_lev_from_sfc = .FALSE.
+         END IF
+      END IF
+#endif
+
 !-----------------------------------------------------------------------
 !  Set the namelist parameter o3input to 0 for the radiation schemes other
 !  than RRTMG_LWSCHEME and RRTMG_SWSCHEME.
@@ -1169,6 +1213,8 @@
       END IF
 
 #endif
+
+
 
    END SUBROUTINE 
 
@@ -1323,6 +1369,7 @@
       CALL wrf_message ( wrf_err_message )
 
    END SUBROUTINE set_physics_rconfigs
+
 
 !=======================================================================
 

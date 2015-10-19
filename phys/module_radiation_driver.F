@@ -834,6 +834,8 @@ CONTAINS
 
    gfdl_lw = .false.
    gfdl_sw = .false.
+   flg_lw = .false.
+   flg_sw = .false.
 
 ! Allocate aerosol arrays used by aer_opt = 2 option
    IF ( PRESENT( AOD5502D ) ) THEN
@@ -1531,7 +1533,7 @@ CONTAINS
            
      END SELECT lwrad_select    
 
-     IF (lw_physics .gt. 0 .and. .not.gfdl_lw) THEN
+     IF (lw_physics .gt. 0 .and. .not.gfdl_lw .and. .not.flg_lw) THEN
         DO j=jts,jte
         DO k=kts,kte
         DO i=its,ite
@@ -2004,7 +2006,7 @@ CONTAINS
           ENDIF
      ENDIF
 
-     IF (sw_physics .gt. 0 .and. .not.gfdl_sw) THEN
+     IF (sw_physics .gt. 0 .and. .not.gfdl_sw .and. .not.flg_sw) THEN
         DO j=jts,jte
         DO k=kts,kte
         DO i=its,ite

@@ -320,8 +320,8 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
          else
             call da_rttov_direct (inst, nchan, 1, nlevels, &
                con_vars(n:n), aux_vars(n:n), &
-               temp, temp2, temp3, emissivity((n-n1)*nchan+1:n*nchan))
-            iv%instid(inst)%emiss(:,n) = emissivity((n-n1)*nchan+1:n*nchan)%emis_out 
+               temp, temp2, temp3, emissivity((n-n1)*nchan+1:(n-n1+1)*nchan))
+            iv%instid(inst)%emiss(:,n) = emissivity((n-n1)*nchan+1:(n-n1+1)*nchan)%emis_out 
          end if
          iv%instid(inst)%tb_xb(:,n)=temp(:)
          iv%instid(inst)%rad_xb(:,n)=temp2(:)

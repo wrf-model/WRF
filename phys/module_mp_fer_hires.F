@@ -1,31 +1,72 @@
 !WRF:MODEL_MP:PHYSICS
 !
-MODULE module_mp_HWRF
+!-- Updates based on NAM changes in 2011:
+!
+! (a) Expanded rain lookup tables from 0.45 mm to 1 mm mean diameter.
+! (b) Allow cloud ice to fall (fall speeds based on 50 micron mean diameters).
+! (c) Cloud water autoconversion to rain follows Liu et al. (JAS, 2006)
+! (d) Fix to MY_GROWTH by multiplying estimates by 1.e-3
+! (e) Added integer function GET_INDEXR
+! (f) Added warning messages when unusual conditions occur, screened for
+!     5 different types of problems, such as (1) condensate in the
+!     stratosphere, (2) temperature = NaN, (3) water supersaturation at
+!     <180K, (4) too many iterations (>10) in the condensation function,
+!     and (5) too many iterations (>10) in the deposition function.  
+!
+!-- Updates based on jan19 2014 changes in the NMMB:
+!
+! (1) Ice nucleation: Fletcher (1962) replaces Meyers et al. (1992)
+! (2) Cloud ice is a simple function of the number concentration from (1), and it
+!     is no longer a fractional function of the large ice.  Thus, the FLARGE &
+!     FSMALL parameters are no longer used.
+! (3) T_ICE_init=-12 deg C provides a slight delay in the initial onset of ice.
+! (4) NLImax is a function of rime factor (RF) and temperature.  
+!    a) For RF>10, NLImax=1.e3.  Mean ice diameters can exceed the 1 mm maximum
+!       size in the tables so that NLICE=NLImax=1.e3.
+!    b) Otherwise, NLImax is 10 L-1 at 0C and increases with colder temperatures
+!       to 20 L-1 at <=-40C.  Also, NLICE can be >NLImax at the maximum ice 
+!       diameter of 1 mm.
+! (5) Can turn off ice processes by setting T_ICE & T_ICE_init to be < -100 deg C
+! (6) Modified the homogeneous freezing of cloud water when T<T_ICE.
+! (7) Reduce the fall speeds of rimed ice by making VEL_INC a function of 
+!     VrimeF**1.5 and not VrimeF**2.
+! (8) RHgrd=0.98 (98% RH) for the onset of condensation, to match what's been
+!     tested for many months in the NAMX.
+! (9) Rime factor is *never* adjusted when NLICE>NLImax.  
+! (10) Ice deposition does not change the rime factor (RF) when RF>=10 & T>T_ICE.
+! (11) Limit GAMMAS to <=1.5 (air resistance impact on ice fall speeds)
+! (12) NSImax is maximum # conc of ice crystals.  At cold temperature NSImax is
+!      calculated based on assuming 10% of total ice content is due to cloud ice.
+!
+MODULE module_mp_fer_hires
 !-----------------------------------------------------------------------
 !-- The following changes were made on 24 July 2006.
 !   (1) All known version 2.1 dependencies were removed from the 
 !       operational WRF NMM model code (search for "!HWRF")
 !   (2) Incorporated code changes from the GFDL model (search for "!GFDL")
 !-----------------------------------------------------------------------
+!
       REAL,PRIVATE,SAVE ::  ABFR, CBFR, CIACW, CIACR, C_N0r0,           &
-     &  CN0r0, CN0r_DMRmin, CN0r_DMRmax, CRACW, CRAUT, ESW0,            &
-     &  RFmax, RQR_DR1, RQR_DR2, RQR_DR3, RQR_DRmin,                    &
-     &  RQR_DRmax, RR_DRmin, RR_DR1, RR_DR2, RR_DR3, RR_DRmax
+     &  ARAUT, BRAUT, CN0r0, CN0r_DMRmin, CN0r_DMRmax, CRACW, ESW0,     &
+     &  RFmax, RQR_DRmin, RQR_DRmax, RR_DRmin, RR_DR1, RR_DR2,          &
+     &  RR_DR3, RR_DR4, RR_DR5, RR_DRmax, BETA6, PI_E
 !
       INTEGER, PRIVATE,PARAMETER :: MY_T1=1, MY_T2=35
       REAL,PRIVATE,DIMENSION(MY_T1:MY_T2),SAVE :: MY_GROWTH
 !
       REAL, PRIVATE,PARAMETER :: DMImin=.05e-3, DMImax=1.e-3,           &
-     &      DelDMI=1.e-6,XMImin=1.e6*DMImin, XMIexp=.0536  
+     &      DelDMI=1.e-6,XMImin=1.e6*DMImin,XMIexp=.0536
       INTEGER, PUBLIC,PARAMETER :: XMImax=1.e6*DMImax,                  &
      &                             MDImin=XMImin, MDImax=XMImax
       REAL, PRIVATE,DIMENSION(MDImin:MDImax) ::                         &
-     &      ACCRI,SDENS,VSNOWI,VENTI1,VENTI2
+     &      ACCRI,VSNOWI,VENTI1,VENTI2
+      REAL, PUBLIC,DIMENSION(MDImin:MDImax) :: SDENS    !-- For RRTM
 !
-      REAL, PRIVATE,PARAMETER :: DMRmin=.05e-3, DMRmax=.45e-3,          &
-     &      DelDMR=1.e-6,XMRmin=1.e6*DMRmin, XMRmax=1.e6*DMRmax
-      INTEGER, PRIVATE,PARAMETER :: MDRmin=XMRmin, MDRmax=XMRmax                   
-      REAL, PRIVATE,DIMENSION(MDRmin:MDRmax)::                          &
+      REAL, PRIVATE,PARAMETER :: DMRmin=.05e-3, DMRmax=1.0e-3,           &
+     &      DelDMR=1.e-6, XMRmin=1.e6*DMRmin, XMRmax=1.e6*DMRmax
+      INTEGER, PUBLIC,PARAMETER :: MDRmin=XMRmin, MDRmax=XMRmax
+!
+      REAL, PRIVATE,DIMENSION(MDRmin:MDRmax)::                           &
      &      ACCRR,MASSR,RRATE,VRAIN,VENTR1,VENTR2
 !
       INTEGER, PRIVATE,PARAMETER :: Nrime=40
@@ -48,10 +89,18 @@ MODULE module_mp_HWRF
 !--- CLIMIT/CLIMIT1 are lower limits for treating accumulated precipitation
      &  ,CLIMIT=10.*EPSQ, CLIMIT1=-CLIMIT                               &
      &  ,C1=1./3.                                                       &
-     &  ,DMR1=.1E-3, DMR2=.2E-3, DMR3=.32E-3                            &
-     &  ,XMR1=1.e6*DMR1, XMR2=1.e6*DMR2, XMR3=1.e6*DMR3
-      INTEGER, PARAMETER :: MDR1=XMR1, MDR2=XMR2, MDR3=XMR3
-        REAL:: WC
+     &  ,DMR1=.1E-3, DMR2=.2E-3, DMR3=.32E-3, DMR4=0.45E-3              &
+     &  ,DMR5=0.67E-3                                                   &
+     &  ,XMR1=1.e6*DMR1, XMR2=1.e6*DMR2, XMR3=1.e6*DMR3                 &
+     &  ,XMR4=1.e6*DMR4, XMR5=1.e6*DMR5
+      INTEGER, PARAMETER :: MDR1=XMR1, MDR2=XMR2, MDR3=XMR3, MDR4=XMR4  &
+     &  , MDR5=XMR5
+
+!-- Debug 20120111
+LOGICAL, SAVE :: WARN1=.TRUE.,WARN2=.TRUE.,WARN3=.TRUE.,WARN5=.TRUE.
+REAL, SAVE :: Pwarn=75.E2, QTwarn=1.E-3
+INTEGER, PARAMETER :: MAX_ITERATIONS=10
+
 !
 ! ======================================================================
 !--- Important tunable parameters that are exported to other modules
@@ -63,41 +112,35 @@ MODULE module_mp_HWRF
 !  * T_ICE - temperature (C) threshold at which all remaining liquid water
 !            is glaciated to ice
 !  * T_ICE_init - maximum temperature (C) at which ice nucleation occurs
+!
+!-- To turn off ice processes, set T_ICE & T_ICE_init to <= -100. (i.e., -100 C)
+!
 !  * NLImax - maximum number concentrations (m**-3) of large ice (snow/graupel/sleet) 
 !  * NLImin - minimum number concentrations (m**-3) of large ice (snow/graupel/sleet) 
+!  * NSImax - maximum number concentrations (m**-3) of small ice crystals
 !  * N0r0 - assumed intercept (m**-4) of rain drops if drop diameters are between 0.2 and 0.45 mm
 !  * N0rmin - minimum intercept (m**-4) for rain drops 
 !  * NCW - number concentrations of cloud droplets (m**-3)
-!  * FLARGE1, FLARGE2 - number fraction of large ice to total (large+snow) ice 
-!          at T>0C and in presence of sublimation (FLARGE1), otherwise in
-!          presence of ice saturated/supersaturated conditions
 !  * PRINT_diag - for extended model diagnostics (code currently commented out)
-!  * PRINT_err - for run-time prints when water budgets are not conserved (for debugging)
 ! ======================================================================
       REAL, PUBLIC,PARAMETER ::                                         &
 !     &  RHgrd=1.                                                        &
      &  RHgrd_in=1.                                                     &  !GFDL
      & ,RHgrd_out=0.975                                                 &  !GFDL
      & ,P_RHgrd_out=850.E2                                              &  !HWRF 6/11/2010
-     & ,T_ICE=-40.                                                      &  !GFDL
-!GFDL     & ,T_ICE=-30.                                                 &
+     & ,T_ICE=-40.                                                      &
      & ,T_ICEK=T0C+T_ICE                                                &
-     & ,T_ICE_init=-5.                                                  &
-!!changed to 20E3 2-09-2012     & ,NLImax=5.E3                                                     &
-     & ,NLImax=20.E3                                                     &
+     & ,T_ICE_init=-12.                                                 &
+     & ,NSI_max=250.E3                                                  &
      & ,NLImin=1.E3                                                     &
      & ,N0r0=8.E6                                                       &
      & ,N0rmin=1.E4                                                     &
 !!2-09-2012     & ,NCW=60.E6                                                       &  !GFDL
 !! based on Aligo's email,NCW is changed to 250E6
-     & ,NCW=250.E6                                                       &  !GFDL
+     & ,NCW=250.E6                                                         !GFDL
 !HWRF     & ,NCW=100.E6                                                 &
-     & ,FLARGE1=1.                                                      &
-     & ,FLARGE2=.2
-!      LOGICAL, PARAMETER :: PRINT_diag=.FALSE.  !GFDL
-      LOGICAL, PARAMETER :: PRINT_err=.TRUE.    !GFDL** => eventually set this to .false.
+      LOGICAL, PARAMETER :: PRINT_diag=.FALSE.  !GFDL
 !--- Other public variables passed to other routines:
-      REAL,PUBLIC,SAVE ::  QAUT0
       REAL, PUBLIC,DIMENSION(MDImin:MDImax) :: MASSI
 !
 !
@@ -105,7 +148,7 @@ MODULE module_mp_HWRF
 
 !-----------------------------------------------------------------------
 !-----------------------------------------------------------------------
-      SUBROUTINE ETAMP_NEW_HWRF (itimestep,DT,DX,DY,GID,RAINNC,RAINNCV,    & !GID
+      SUBROUTINE FER_HIRES (itimestep,DT,DX,DY,GID,RAINNC,RAINNCV,    & !GID
      &                      dz8w,rho_phy,p_phy,pi_phy,th_phy,qv,qt,   & !gopal's doing
      &                      LOWLYR,SR,                                &
      &                      F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,         &
@@ -172,12 +215,8 @@ MODULE module_mp_HWRF
       REAL,  DIMENSION(ims:ime,jms:jme):: APREC,PREC,ACPREC
       REAL,  DIMENSION(its:ite, kts:kte, jts:jte):: t_phy
 
-!jm 20150331
-! see comment below
-      REAL :: PI, DTPH
-!jm 20150331
-
       INTEGER :: I,J,K,KFLIP
+      REAL :: WC
 !
 !-----------------------------------------------------------------------
 !**********************************************************************
@@ -197,22 +236,39 @@ MODULE module_mp_HWRF
 !HWRF      TBPVS(1:NX) =TBPVS_STATE(1:NX)
 !HWRF      TBPVS0(1:NX)=TBPVS0_STATE(1:NX)
 !
-!jm 20150331
-! Temp fix problem with SAVEd variables CIACW, CIACR, CRACW, and CRAUT that
-! are inadvertantly recalculated when the etanewinit_HWRF routine, below,
-! is called for other domains.  Best solution is to move these to state (put
-! in registry) so there will be separate copies for each domain. For now,
-! just recompute each time this routine is entered.  Will be an innocuous
-! race condition (many set with same value) with threading so need to fix.
-! Temporary fix is idea of Weiguo Wang.
-     PI=ACOS(-1.)
-     DTPH=DT
-     CALL MY_GROWTH_RATES(DT)
-     CIACW=DTPH*0.25*PI*0.5*(1.E5)**C1
-     CIACR=PI*DTPH
-     CRACW=DTPH*0.25*PI*1.0
-     CRAUT=1.-EXP(-1.E-3*DTPH)
-!jm 20150331
+!----------
+!2015-03-30, recalculate some constants which may depend on phy time step
+          CALL MY_GROWTH_RATES (DT)
+
+!--- CIACW is used in calculating riming rates
+!      The assumed effective collection efficiency of cloud water rimed onto
+!      ice is =0.5 below:
+!
+        CIACW=DT*0.25*PI_E*0.5*(1.E5)**C1
+!
+!--- CIACR is used in calculating freezing of rain colliding with large ice
+!      The assumed collection efficiency is 1.0
+!
+        CIACR=PI_E*DT
+!
+!--- CRACW is used in calculating collection of cloud water by rain (an
+!      assumed collection efficiency of 1.0)
+!
+        CRACW=DT*0.25*PI_E*1.0
+!
+!-- See comments in subroutine etanewhr_init starting with variable RDIS=
+!
+        BRAUT=DT*1.1E10*BETA6/NCW
+
+!       write(*,*)'dt=',dt
+!       write(*,*)'pi_e=',pi_e
+!       write(*,*)'ciacw=',ciacw 
+!       write(*,*)'ciacr=',ciacr 
+!       write(*,*)'cracw=',cracw 
+!       write(*,*)'araut=',araut
+!       write(*,*)'braut=',braut
+!! END OF adding, 2015-03-30
+!-----------
 
       DO j = jts,jte
       DO k = kts,kte
@@ -350,8 +406,9 @@ MODULE module_mp_HWRF
 
 !-----------------------------------------------------------------------
 
-  END SUBROUTINE ETAMP_NEW_HWRF
+  END SUBROUTINE FER_HIRES
 
+!-----------------------------------------------------------------------
 !-----------------------------------------------------------------------
 
       SUBROUTINE EGCP01DRV(GID,                            & !GID gopal's doing
@@ -496,6 +553,20 @@ MODULE module_mp_HWRF
               F_RimeF(L,I,J)=1.
             ELSE
               WC_col(L)=CWM(I,J,L)
+
+!-- Debug 20120111:  TC==TC will fail if NaN
+IF (WC_col(L)>QTwarn .AND. P_col(L)<Pwarn .AND. TC==TC) THEN
+   WRITE(0,*) 'WARN4: >1 g/kg condensate in stratosphere; I,J,L,TC,P,QT=',   &
+              I,J,L,TC,.01*P_col(L),1000.*WC_col(L)
+   QTwarn=MAX(WC_col(L),10.*QTwarn)
+   Pwarn=MIN(P_col(L),0.5*Pwarn)
+ENDIF
+!-- TC/=TC will pass if TC is NaN
+IF (WARN5 .AND. TC/=TC) THEN
+   WRITE(0,*) 'WARN5: NaN temperature; I,J,L,P=',I,J,L,.01*P_col(L)
+   WARN5=.FALSE.
+ENDIF
+
             ENDIF
       !
       !--- Determine composition of condensate in terms of 
@@ -524,6 +595,7 @@ MODULE module_mp_HWRF
                 QW=QW-QR
               ENDIF
             ENDIF
+            IF (QI .LE. 0.) F_RimeF(L,I,J)=1.
             RimeF_col(L)=F_RimeF(L,I,J)
             QI_col(L)=QI
             QR_col(L)=QR
@@ -566,12 +638,13 @@ MODULE module_mp_HWRF
       !
       !--- REAL*4 array storage
       !
-            F_RimeF(L,I,J)=MAX(1., RimeF_col(L))
             IF (QI_col(L) .LE. EPSQ) THEN
               F_ice(L,I,J)=0.
               IF (T_col(L) .LT. T_ICEK) F_ice(L,I,J)=1.
+              F_RimeF(L,I,J)=1.
             ELSE
               F_ice(L,I,J)=MAX( 0., MIN(1., QI_col(L)/WC_col(L)) )
+              F_RimeF(L,I,J)=MAX(1., RimeF_col(L))
             ENDIF
             IF (QR_col(L) .LE. EPSQ) THEN
               DUM=0
@@ -624,6 +697,7 @@ MODULE module_mp_HWRF
              F_RimeF_PHY(I,KFLIP,J)=F_RimeF(L,I,J)
            ENDDO
 101     CONTINUE
+!
       END SUBROUTINE EGCP01DRV
 !
 !
@@ -649,32 +723,19 @@ MODULE module_mp_HWRF
 !       (6) Attempts to differentiate growth of large and small ice, mainly for
 !           improved transition from thin cirrus to thick, precipitating ice
 !           anvils.
-!        -> 8/22/01: This feature has been diminished by effectively adjusting to
-!           ice saturation during depositional growth at temperatures colder than
-!           -10C.  Ice sublimation is calculated more explicitly.  The logic is
-!           that sources of are either poorly understood (e.g., nucleation for NWP) 
-!           or are not represented in the Eta model (e.g., detrainment of ice from 
-!           convection).  Otherwise the model is too wet compared to the radiosonde
-!           observations based on 1 Feb - 18 March 2001 retrospective runs.  
 !       (7) Top-down integration also attempts to treat mixed-phase processes,
 !           allowing a mixture of ice and water.  Based on numerous observational
 !           studies, ice growth is based on nucleation at cloud top &
 !           subsequent growth by vapor deposition and riming as the ice particles 
-!           fall through the cloud.  Effective nucleation rates are a function
-!           of ice supersaturation following Meyers et al. (JAM, 1992).  
-!        -> 8/22/01: The simulated relative humidities were far too moist compared 
-!           to the rawinsonde observations.  This feature has been substantially 
-!           diminished, limited to a much narrower temperature range of 0 to -10C.  
+!           fall through the cloud.  Nucleation rates are a function of temperature.
 !       (8) Depositional growth of newly nucleated ice is calculated for large time
 !           steps using Fig. 8 of Miller and Young (JAS, 1979), at 1 deg intervals
 !           using their ice crystal masses calculated after 600 s of growth in water
 !           saturated conditions.  The growth rates are normalized by time step
 !           assuming 3D growth with time**1.5 following eq. (6.3) in Young (1993).
-!        -> 8/22/01: This feature has been effectively limited to 0 to -10C.  
 !       (9) Ice precipitation rates can increase due to increase in response to
 !           cloud water riming due to (a) increased density & mass of the rimed
 !           ice, and (b) increased fall speeds of rimed ice.
-!        -> 8/22/01: This feature has been effectively limited to 0 to -10C.  
 !###############################################################################
 !###############################################################################
 !
@@ -823,8 +884,8 @@ MODULE module_mp_HWRF
 !
 !------------------------------------------------------------------------- 
 !
-!--- Mean rain drop diameters varying from 50 microns (0.05 mm) to 450 microns 
-!      (0.45 mm), assuming an exponential size distribution.  
+!--- Mean rain drop diameters varying from 50 microns (0.05 mm) to 1000 microns 
+!      (1.0 mm) assuming an exponential size distribution.  
 !
 !------------------------------------------------------------------------- 
 !------- Key parameters, local variables, & important comments ---------
@@ -850,29 +911,30 @@ MODULE module_mp_HWRF
 !--- Local variables
 !-----------------------------------------------------------------------
 !
-      REAL EMAIRI, N0r, NLICE, NSmICE, RHgrd   !GFDL
-      LOGICAL CLEAR, ICE_logical, DBG_logical, RAIN_logical
+      REAL EMAIRI, N0r, NLICE, NSmICE, NInuclei, RHgrd
+      LOGICAL :: CLEAR, ICE_logical, DBG_logical, RAIN_logical,         &
+     &   LARGE_RF, HAIL
       INTEGER :: IDR,INDEX_MY,INDEXR,INDEXR1,INDEXS,IPASS,ITDX,IXRF,    &
      &           IXS,LBEF,L
 !
       REAL :: ABI,ABW,AIEVP,ARAINnew,ASNOWnew,BLDTRH,BUDGET,            &
      &        CREVP,DELI,DELR,DELT,DELV,DELW,DENOMF,                    &
      &        DENOMI,DENOMW,DENOMWI,DIDEP,                              &
-     &        DIEVP,DIFFUS,DLI,DTPH,DTRHO,DUM,DUM1,                     &
-     &        DUM2,DWV0,DWVI,DWVR,DYNVIS,ESI,ESW,FIR,FLARGE,FLIMASS,    &
+     &        DIEVP,DIFFUS,DLI,DTPH,DTRHO,DUM,DUM1,DUM2,DUM3,           &
+     &        DWV0,DWVI,DWVR,DYNVIS,ESI,ESW,FIR,FLARGE,FLIMASS,         &
      &        FSMALL,FWR,FWS,GAMMAR,GAMMAS,                             &
      &        PCOND,PIACR,PIACW,PIACWI,PIACWR,PICND,PIDEP,PIDEP_max,    &
-     &        PIEVP,PILOSS,PIMLT,PP,PRACW,PRAUT,PREVP,PRLOSS,           &
+     &        PIEVP,PILOSS,PIMLT,PINT,PP,PRACW,PRAUT,PREVP,PRLOSS,      &
      &        QI,QInew,QLICE,QR,QRnew,QSI,QSIgrd,QSInew,QSW,QSW0,       &
-     &        QSWgrd,QSWnew,QT,QTICE,QTnew,QTRAIN,QV,QW,QW0,QWnew,      &
+     &        QSWgrd,QSWnew,QT,QTICE,QTnew,QTRAIN,QV,QW,QWnew,          &
      &        RFACTOR,RHO,RIMEF,RIMEF1,RQR,RR,RRHO,SFACTOR,             &
      &        TC,TCC,TFACTOR,THERM_COND,THICK,TK,TK2,TNEW,              &
      &        TOT_ICE,TOT_ICEnew,TOT_RAIN,TOT_RAINnew,                  &
      &        VEL_INC,VENTR,VENTIL,VENTIS,VRAIN1,VRAIN2,VRIMEF,VSNOW,   &
-     &        WC,WCnew,WSgrd,WS,WSnew,WV,WVnew,WVQW,                    &
-!!     &        XLF,XLF1,XLI,XLV,XLV1,XLV2,XLIMASS,XRF,XSIMASS          
-     &        XLF,XLF1,XLI,XLV,XLV1,XLV2,XLIMASS,XRF,XSIMASS,           &
-     &        VRabove     !-- new variables          
+     &        WC,WCnew,WSgrd,WS,WSnew,WV,WVnew,                         &
+     &        XLF,XLF1,XLI,XLV,XLV1,XLV2,XLIMASS,XRF,                   &
+     &        NLImax,NSImax,QRdum,QSmICE,QLgIce,RQLICE,VCI,VRabove    !-- new variables          
+      REAL, SAVE :: Revised_LICE=1.e-3    !-- kg/m**3
 !
 !#######################################################################
 !########################## Begin Execution ############################
@@ -881,17 +943,13 @@ MODULE module_mp_HWRF
 !
       ARAIN=0.                ! Accumulated rainfall into grid box from above (kg/m**2)
       ASNOW=0.                ! Accumulated snowfall into grid box from above (kg/m**2)
-!aligo
       VRabove=0.              ! Fall speed of rain into grid box from above (m/s)
-!aligo
 !
 !-----------------------------------------------------------------------
 !------------ Loop from top (L=1) to surface (L=LSFC) ------------------
 !-----------------------------------------------------------------------
 !
-
       DO 10 L=1,LSFC
-
 !--- Skip this level and go to the next lower level if no condensate 
 !      and very low specific humidities
 !
@@ -917,12 +975,12 @@ MODULE module_mp_HWRF
 !    
 !--- This check is to determine grid-scale saturation when no condensate is present
 !    
-          ESW=1000.*FPVS0(TK)              ! Saturation vapor pressure w/r/t water
+          ESW=MIN(1000.*FPVS0(TK),0.99*PP) ! Saturation vapor pressure w/r/t water
           QSW=EPS*ESW/(PP-ESW)             ! Saturation mixing ratio w/r/t water
-          QSI = QSW                        ! Initialize variable
           WS=QSW                           ! General saturation mixing ratio (water/ice)
+          QSI=QSW                          ! Saturation mixing ratio w/r/t ice
           IF (TC .LT. 0.) THEN
-            ESI=1000.*FPVS(TK)             ! Saturation vapor pressure w/r/t ice
+            ESI=MIN(1000.*FPVS(TK),0.99*PP)  ! Saturation vapor pressure w/r/t ice
             QSI=EPS*ESI/(PP-ESI)           ! Saturation mixing ratio w/r/t water
             WS=QSI                         ! General saturation mixing ratio (water/ice)
           ENDIF
@@ -943,9 +1001,7 @@ MODULE module_mp_HWRF
             CLEAR=.FALSE.
           ELSE
             ARAIN=0.
- !aligo
             VRabove=0.
- !aligo
           ENDIF
 !
 !--- Check if any ice is falling into layer from above
@@ -1028,8 +1084,7 @@ MODULE module_mp_HWRF
           XLV1=XLV*RCP               ! Lv/Cp
           XLF1=XLF*RCP               ! Lf/Cp
           TK2=1./(TK*TK)             ! 1./TK**2
-!GFDL          XLV2=XLV*XLV*QSW*TK2/RV    ! Lv**2*Qsw/(Rv*TK**2)
-          XLV2=XLV*XLV*QSWgrd*TK2/RV    ! Lv**2*QSWgrd/(Rv*TK**2)   !GFDL
+          XLV2=XLV*XLV*QSW*TK2/RV    ! Lv**2*Qsw/(Rv*TK**2)
           DENOMW=1.+XLV2*RCP         ! Denominator term, Clausius-Clapeyron correction
 !
 !--- Basic thermodynamic quantities
@@ -1037,7 +1092,7 @@ MODULE module_mp_HWRF
 !      * THERM_COND - thermal conductivity  [ J/(m*s*K) ]
 !      * DIFFUS - diffusivity of water vapor  [ m**2/s ]
 !
-          TFACTOR=TK**1.5/(TK+120.)
+          TFACTOR=SQRT(TK*TK*TK)/(TK+120.)
           DYNVIS=1.496E-6*TFACTOR
           THERM_COND=2.116E-3*TFACTOR
           DIFFUS=8.794E-5*TK**1.81/PP
@@ -1045,7 +1100,7 @@ MODULE module_mp_HWRF
 !--- Air resistance term for the fall speed of ice following the
 !      basic research by Heymsfield, Kajikawa, others 
 !
-          GAMMAS=(1.E5/PP)**C1
+          GAMMAS=MIN(1.5, (1.E5/PP)**C1)    !-- limited to 1.5x
 !
 !--- Air resistance for rain fall speed (Beard, 1985, JAS, p.470)
 !
@@ -1064,13 +1119,18 @@ MODULE module_mp_HWRF
             QLICE=0.
             QTICE=0.
           ENDIF
+          IF (T_ICE <= -100.) THEN
+            ICE_logical=.FALSE.
+            QLICE=0.
+            QTICE=0.
+          ENDIF
 !
 !--- Determine if rain is present
 !
           RAIN_logical=.FALSE.
           IF (ARAIN.GT.CLIMIT .OR. QR.GT.EPSQ) RAIN_logical=.TRUE.
 !
-          IF (ICE_logical) THEN
+ice_test: IF (ICE_logical) THEN
 !
 !--- IMPORTANT:  Estimate time-averaged properties.
 !
@@ -1078,7 +1138,7 @@ MODULE module_mp_HWRF
 !  * FLARGE  - ratio of number of large ice to total (large & small) ice
 !  * FSMALL  - ratio of number of small ice crystals to large ice particles
 !  ->  Small ice particles are assumed to have a mean diameter of 50 microns.
-!  * XSIMASS - used for calculating small ice mixing ratio
+!  * QSmICE  - estimated mixing ratio for small cloud ice
 !---
 !  * TOT_ICE - total mass (small & large) ice before microphysics,
 !              which is the sum of the total mass of large ice in the 
@@ -1090,42 +1150,39 @@ MODULE module_mp_HWRF
 !              ice mass to the unrimed ice mass (>=1)
 !  * VrimeF  - the velocity increase due to rime factor or melting (ratio, >=1)
 !  * VSNOW   - Fall speed of rimed snow w/ air resistance correction
+!  * VCI     - Fall speed of 50-micron ice crystals w/ air resistance correction
 !  * EMAIRI  - equivalent mass of air associated layer and with fall of snow into layer
-!  * XLIMASS - used for calculating large ice mixing ratio
+!  * XLIMASS - used for debugging, associated with calculating large ice mixing ratio
 !  * FLIMASS - mass fraction of large ice
 !  * QTICE   - time-averaged mixing ratio of total ice
 !  * QLICE   - time-averaged mixing ratio of large ice
 !  * NLICE   - time-averaged number concentration of large ice
 !  * NSmICE  - number concentration of small ice crystals at current level
+!  * QSmICE  - mixing ratio of small ice crystals at current level
 !---
 !--- Assumed number fraction of large ice particles to total (large & small) 
 !    ice particles, which is based on a general impression of the literature.
 !
-            WVQW=WV+QW                ! Water vapor & cloud water
+            NInuclei=0.
+            NSmICE=0.
+            QSmICE=0. 
+            IF (TC<0.) THEN
 !
-
-
-            IF (TC.GE.0. .OR. WVQW.LT.QSIgrd) THEN
-   !
-   !--- Eliminate small ice particle contributions for melting & sublimation
-   !
-              FLARGE=FLARGE1
-            ELSE
-   !
-   !--- Enhanced number of small ice particles during depositional growth
-   !    (effective only when 0C > T >= T_ice [-10C] )
-   !
-              FLARGE=FLARGE2
-   !
-   !--- Larger number of small ice particles due to rime splintering
-   !
-              IF (TC.GE.-8. .AND. TC.LE.-3.) FLARGE=.5*FLARGE
+!--- Max # conc of small ice crystals based on 10% of total ice content
+!    or the parameter NSI_max
 !
-            ENDIF            ! End IF (TC.GE.0. .OR. WVQW.LT.QSIgrd)
-!GFDL  => turned on in GFDL code, but not here =>           FLARGE=1.0
-            FSMALL=(1.-FLARGE)/FLARGE
-            XSIMASS=RRHO*MASSI(MDImin)*FSMALL
-            IF (QI.LE.EPSQ .AND. ASNOW.LE.CLIMIT) THEN
+               NSImax=MAX(NSI_max, 0.1*RHO*QI/MASSI(MDImin) )
+!
+!-- Specify Fletcher, Cooper, Meyers, etc. here for ice nuclei concentrations
+!
+               NInuclei=MIN(0.01*EXP(-0.6*TC), NSImax)       !- Fletcher (1962)
+               IF (QI>EPSQ) THEN
+                  DUM=RRHO*MASSI(MDImin)
+                  NSmICE=MIN(NInuclei, QI/DUM)
+                  QSmICE=NSmICE*DUM
+               ENDIF         ! End IF (QI>EPSQ)
+            ENDIF            ! End IF (TC<0.)
+  init_ice: IF (QI<=EPSQ .AND. ASNOW<=CLIMIT) THEN
               INDEXS=MDImin
               TOT_ICE=0.
               PILOSS=0.
@@ -1133,124 +1190,132 @@ MODULE module_mp_HWRF
               VrimeF=1.
               VEL_INC=GAMMAS
               VSNOW=0.
+              VCI=0.
               EMAIRI=THICK
-              XLIMASS=RRHO*RimeF1*MASSI(INDEXS)
-              FLIMASS=XLIMASS/(XLIMASS+XSIMASS)
+              XLIMASS=RimeF1*MASSI(INDEXS)
+              FLIMASS=1.
               QLICE=0.
+              RQLICE=0.
               QTICE=0.
               NLICE=0.
-              NSmICE=0.
-            ELSE
+            ELSE  init_ice
    !
    !--- For T<0C mean particle size follows Houze et al. (JAS, 1979, p. 160), 
    !    converted from Fig. 5 plot of LAMDAs.  Similar set of relationships 
    !    also shown in Fig. 8 of Ryan (BAMS, 1996, p. 66).
    !
-              DUM=XMImax*EXP(.0536*TC)
+              DUM=XMImax*EXP(XMIexp*TC)
               INDEXS=MIN(MDImax, MAX(MDImin, INT(DUM) ) )
               TOT_ICE=THICK*QI+BLEND*ASNOW
               PILOSS=-TOT_ICE/THICK
               LBEF=MAX(1,L-1)
               DUM1=RimeF_col(LBEF)
               DUM2=RimeF_col(L)
-              RimeF1=(DUM2*THICK*QI+DUM1*BLEND*ASNOW)/TOT_ICE
-              RimeF1=MIN(RimeF1, RFmax)
-              DO IPASS=0,1
-                IF (RimeF1 .LE. 1.) THEN
-                  RimeF1=1.
-                  VrimeF=1.
+              QLgICE=MAX(0., QI-QSmICE)         !-- 1st-guess estimate of large ice
+              RimeF1=(DUM2*THICK*QLgICE+DUM1*BLEND*ASNOW)/TOT_ICE
+              VCI=GAMMAS*VSNOWI(MDImin)
+  vel_rime:   IF (RimeF1<=1.) THEN
+                RimeF1=1.
+                VrimeF=1.
+              ELSE   vel_rime
+!--- Prevent rime factor (RimeF1) from exceeding a maximum value (RFmax)
+                RimeF1=MIN(RimeF1, RFmax)
+                IXS=MAX(2, MIN(INDEXS/100, 9))
+                XRF=10.492*ALOG(RimeF1)
+                IXRF=MAX(0, MIN(INT(XRF), Nrime))
+                IF (IXRF .GE. Nrime) THEN
+                  VrimeF=VEL_RF(IXS,Nrime)
                 ELSE
-                  IXS=MAX(2, MIN(INDEXS/100, 9))
-                  XRF=10.492*ALOG(RimeF1)
-                  IXRF=MAX(0, MIN(INT(XRF), Nrime))
-                  IF (IXRF .GE. Nrime) THEN
-                    VrimeF=VEL_RF(IXS,Nrime)
-                  ELSE
-                    VrimeF=VEL_RF(IXS,IXRF)+(XRF-FLOAT(IXRF))*          &
-     &                    (VEL_RF(IXS,IXRF+1)-VEL_RF(IXS,IXRF))
-                  ENDIF
-                ENDIF            ! End IF (RimeF1 .LE. 1.)
-                VEL_INC=GAMMAS*VrimeF
-                VSNOW=VEL_INC*VSNOWI(INDEXS)
-!! Based on Alig's email, added on 2012-02-09
-!aligo
-                IF (TC>0.) THEN
-!-- Idea provided by Greg Thompson to smoothly increase the fall speed
-!   of melting snow
-                   DUM=MAX(VSNOW,VRabove)
-                   VEL_INC=DUM/VSNOWI(INDEXS)
-                   VSNOW=DUM
+                  VrimeF=VEL_RF(IXS,IXRF)+(XRF-FLOAT(IXRF))*            &
+     &                   (VEL_RF(IXS,IXRF+1)-VEL_RF(IXS,IXRF))
                 ENDIF
-!aligo
- 
-!!
+              ENDIF   vel_rime
+              VEL_INC=GAMMAS*VrimeF*SQRT(VrimeF)   !-- Faster rimed ice fall speeds
+!
+!-- Specify NLImax depending on presence of high density ice (rime factors >10)
+!
+              IF (RimeF1>10.) THEN
+                LARGE_RF=.TRUE.        !-- Convective precipitation (and sleet)
+                NLImax=1.E3
+              ELSE
+                LARGE_RF=.FALSE.       !-- Non-convective precipitation
+!-- NLImax slowly decreases from 10 L-1 at 0C to 5 L-1 at -40C and colder.
+                DUM=MAX(TC, T_ICE)
+                NLImax=10.E3*EXP(-0.017*DUM)
+! Based on Aligo's email, added on 2012-02-09
+!-- Idea from Greg Thompson to smoothly increase the fall speed of melting snow
+                IF (TC>0.) THEN
+                  VEL_INC=MAX(VEL_INC, VRabove/VSNOWI(INDEXS) )
+                ENDIF
+              ENDIF
+              HAIL=.FALSE.
+    two_pass: DO IPASS=1,2
+                VSNOW=VEL_INC*VSNOWI(INDEXS)
                 EMAIRI=THICK+BLDTRH*VSNOW
-                XLIMASS=RRHO*RimeF1*MASSI(INDEXS)
-                FLIMASS=XLIMASS/(XLIMASS+XSIMASS)
-                QTICE=TOT_ICE/EMAIRI
-                QLICE=FLIMASS*QTICE
-                NLICE=QLICE/XLIMASS
-                NSmICE=Fsmall*NLICE
-   !
-                IF ( (NLICE.GE.NLImin .AND. NLICE.LE.NLImax)            &
-     &                .OR. IPASS.EQ.1) THEN
-                  EXIT
-                ELSE
-        !
-        !--- Reduce excessive accumulation of ice at upper levels
-        !    associated with strong grid-resolved ascent
-        !
-        !--- Force NLICE to be between NLImin and NLImax
-        !
-                  DUM=MAX(NLImin, MIN(NLImax, NLICE) )
-            !      XLI=RHO*(QTICE/DUM-XSIMASS)/RimeF1
-!!! Bug fix 
-!!! bug fix 2012-02-08, see Aligo's email
-                  XLI=RHO*QLICE/(DUM*RimeF1)   !- QLICE is for large ice 
-                  IF (XLI .LE. MASSI(MDImin) ) THEN
-                    INDEXS=MDImin
-                  ELSE IF (XLI .LE. MASSI(450) ) THEN
-                    DLI=9.5885E5*XLI**.42066         ! DLI in microns
-                    INDEXS=MIN(MDImax, MAX(MDImin, INT(DLI) ) )
-                  ELSE IF (XLI .LE. MASSI(MDImax) ) THEN
-                    DLI=3.9751E6*XLI**.49870         ! DLI in microns
-                    INDEXS=MIN(MDImax, MAX(MDImin, INT(DLI) ) )
-                  ELSE 
-                    INDEXS=MDImax
-           !
-           !--- 8/22/01: Increase density of large ice if maximum limits 
-           !    are reached for number concentration (NLImax) and mean size 
-           !    (MDImax).  Done to increase fall out of ice.
-           !
-                    IF (DUM .GE. NLImax)                                &
-!!!     &                RimeF1=RHO*(QTICE/NLImax-XSIMASS)/MASSI(INDEXS)
-!!! bug fix 2012-02-08, see Aligo's email
-     &                   RimeF1=RHO*QLICE/(NLImax*MASSI(INDEXS))    !- QLICE is for large ice 
-                  ENDIF             ! End IF (XLI .LE. MASSI(MDImin) ) 
-!            WRITE(6,"(4(a12,g11.4,1x))") 
-!     & '{$ TC=',TC,'P=',.01*PP,'NLICE=',NLICE,'DUM=',DUM,
-!     & '{$ XLI=',XLI,'INDEXS=',FLOAT(INDEXS),'RHO=',RHO,'QTICE=',QTICE,
-!     & '{$ XSIMASS=',XSIMASS,'RimeF1=',RimeF1
-                ENDIF                  ! End IF ( (NLICE.GE.NLImin .AND. NLICE.LE.NLImax) ...
-              ENDDO                    ! End DO IPASS=0,1
-            ENDIF                      ! End IF (QI.LE.EPSQ .AND. ASNOW.LE.CLIMIT)
-          ENDIF                        ! End IF (ICE_logical)
+                QLICE=(THICK*QLgICE+BLEND*ASNOW)/EMAIRI   !-- Final estimate of large ice
+                QTICE=QLICE+QSmICE
+                FLIMASS=QLICE/QTICE
+                RQLICE=RHO*QLICE
+hail_mode:      IF (.NOT. HAIL) THEN
+                  XLIMASS=RimeF1*MASSI(INDEXS)
+                  NLICE=RQLICE/XLIMASS              !-- NLICE > NLImax
+                ELSE   hail_mode
+!-- Executed only when IPASS=2, RF>10, INDEX=1000, & NLICE=NLImax
+                  XLIMASS=RQLICE/NLICE              !-- for debugging only
+                ENDIF  hail_mode
+                IF (IPASS>=2) THEN
+                  EXIT  two_pass
+                ENDIF
+                DUM=RRHO*NLImin*MASSI(MDImin)    !-- Minimum large ice mixing ratio
+                IF (QLICE<=DUM) THEN
+                  INDEXS=MDImin
+                  RimeF1=1.
+                  CYCLE  two_pass    !-- Go to top of DO IPASS with IPASS=2
+                ENDIF
+                IF (NLICE>=NLImin .AND. NLICE<=NLImax) THEN
+                  EXIT  two_pass
+                ENDIF
+!
+!--- Force NLICE to be between NLImin and NLImax when IPASS=1
+!
+                NLICE=MAX(NLImin, MIN(NLImax, NLICE) )
+                XLI=RQLICE/(NLICE*RimeF1)
+new_size:       IF (XLI<=MASSI(MDImin) ) THEN
+                  INDEXS=MDImin
+                ELSE IF (XLI<=MASSI(450) ) THEN   new_size
+                  DLI=9.5885E5*XLI**.42066         ! DLI in microns
+                  INDEXS=MIN(MDImax, MAX(MDImin, INT(DLI) ) )
+                ELSE IF (XLI<MASSI(MDImax) ) THEN   new_size
+                  DLI=3.9751E6*XLI**.49870         ! DLI in microns
+                  INDEXS=MIN(MDImax, MAX(MDImin, INT(DLI) ) )
+                ELSE  new_size
+                  INDEXS=MDImax
+                  IF (LARGE_RF) HAIL=.TRUE.
+                  IF (PRINT_diag .AND. RQLICE>Revised_LICE) THEN
+                    WRITE(6,"(5(a12,g11.4,1x))") '{$ RimeF1=',RimeF1,   &
+     &                ' RHO*QLICE=',RQLICE,' TC=',TC,' NLICE=',NLICE,   &
+     &                ' NLICEold=',DUM2
+                    Revised_LICE=1.2*RQLICE
+                  ENDIF
+                ENDIF    new_size
+              ENDDO      two_pass
+            ENDIF        init_ice
+          ENDIF          ice_test
 !
 !----------------------------------------------------------------------
 !--------------- Calculate individual processes -----------------------
 !----------------------------------------------------------------------
 !
-!--- Cloud water autoconversion to rain and collection by rain
-!
+!--- Cloud water autoconversion to rain (PRAUT) and collection of cloud 
+!    water by precipitation ice (PIACW)
+!    
           IF (QW.GT.EPSQ .AND. TC.GE.T_ICE) THEN
-   !
-   !--- QW0 could be modified based on land/sea properties, 
-   !      presence of convection, etc.  This is why QAUT0 and CRAUT
-   !      are passed into the subroutine as externally determined
-   !      parameters.  Can be changed in the future if desired.
-   !
-            QW0=QAUT0*RRHO
-            PRAUT=MAX(0., QW-QW0)*CRAUT
+!
+!-- July 2010 version follows Liu & Daum (JAS, 2004) and Liu et al. (JAS, 2006)
+!
+            DUM=BRAUT*RHO*RHO*QW*QW*QW
+            DUM1=ARAUT*RHO*RHO*QW*QW
+            PRAUT=MIN(QW, DUM*(1.-EXP(-DUM1*DUM1)) )
             IF (QLICE .GT. EPSQ) THEN
       !
       !--- Collection of cloud water by large ice particles ("snow")
@@ -1270,20 +1335,27 @@ MODULE module_mp_HWRF
 !
 !--- Now the pretzel logic of calculating ice deposition
 !
-          IF (TC.LT.T_ICE .AND. (WV.GT.QSIgrd .OR. QW.GT.EPSQ)) THEN
+          IF (TC.LT.T_ICE .AND. (WV.GT.QSWgrd .OR. QW.GT.EPSQ)) THEN
    !
-   !--- Adjust to ice saturation at T<T_ICE (-10C) if supersaturated.
-   !    Sources of ice due to nucleation and convective detrainment are
-   !    either poorly understood, poorly resolved at typical NWP 
-   !    resolutions, or are not represented (e.g., no detrained 
-   !    condensate in BMJ Cu scheme).
+   !--- Adjust to ice saturation at T<T_ICE (-40C) if saturated w/r/t water
+   !    or if cloud water is present (homogeneous glaciation).
    !    
-            PCOND=-QW
-            DUM1=TK+XLV1*PCOND                 ! Updated (dummy) temperature (deg K)
-            DUM2=WV+QW                         ! Updated (dummy) water vapor mixing ratio
-            DUM=1000.*FPVS(DUM1)               ! Updated (dummy) saturation vapor pressure w/r/t ice
+            PIACW=QW
+            PIACWI=PIACW
+            DUM1=TK+XLF1*PIACW                 ! Updated (dummy) temperature (deg K)
+            DUM2=WV                            ! Updated (dummy) water vapor mixing ratio
+            DUM=MIN(1000.*FPVS(DUM1),0.99*PP)  ! Updated (dummy) saturation vapor pressure w/r/t ice
             DUM=RHgrd*EPS*DUM/(PP-DUM)         ! Updated (dummy) saturation mixing ratio w/r/t ice
-            IF (DUM2 .GT. DUM) PIDEP=DEPOSIT (PP, DUM1, DUM2, RHgrd)  !GFDL
+
+!-- Debug 20120111
+IF (WARN1 .AND. DUM1<XMIN) THEN
+   WRITE(0,*) 'WARN1: Water saturation T<180K; I,J,L,TC,P=',   &
+              I_index,J_index,L,DUM1-T0C,.01*PP
+   WARN1=.FALSE.
+ENDIF
+            IF (DUM2>DUM) THEN
+               PIDEP=DEPOSIT(PP,DUM1,DUM2,RHgrd,I_index,J_index,L)    !GFDL
+            ENDIF
             DWVi=0.    ! Used only for debugging
    !
           ELSE IF (TC .LT. 0.) THEN
@@ -1291,11 +1363,11 @@ MODULE module_mp_HWRF
    !--- These quantities are handy for ice deposition/sublimation
    !    PIDEP_max - max deposition or minimum sublimation to ice saturation
    !
-!GFDL            DENOMI=1.+XLS2*QSI*TK2
-!GFDL            DWVi=MIN(WVQW,QSW)-QSI
-            DENOMI=1.+XLS2*QSIgrd*TK2   !GFDL
-            DWVi=MIN(WVQW,QSWgrd)-QSIgrd   !GFDL
+            DENOMI=1.+XLS2*QSI*TK2
+            DWVi=MIN(WV,QSW)-QSIgrd
             PIDEP_max=MAX(PILOSS, DWVi/DENOMI)
+            DIDEP=0.     !-- Vapor deposition/sublimation onto existing ice
+            PINT=0.      !-- Ice initiation (part of PIDEP calculation, kg/kg)
             IF (QTICE .GT. 0.) THEN
       !
       !--- Calculate ice deposition/sublimation
@@ -1305,7 +1377,7 @@ MODULE module_mp_HWRF
       !               VENTIL, VENTIS - m**-2 ;  VENTI1 - m ;  
       !               VENTI2 - m**2/s**.5 ; DIDEP - unitless
       !
-              SFACTOR=SQRT(VEL_INC)*(RHO/(DIFFUS*DIFFUS*DYNVIS))**C2   !GFDL
+              SFACTOR=SQRT(VEL_INC)*(RHO/(DIFFUS*DIFFUS*DYNVIS))**C2
               ABI=1./(RHO*XLS3*QSI*TK2/THERM_COND+1./DIFFUS)
       !
       !--- VENTIL - Number concentration * ventilation factors for large ice
@@ -1317,50 +1389,47 @@ MODULE module_mp_HWRF
               VENTIL=(VENTI1(INDEXS)+SFACTOR*VENTI2(INDEXS))*NLICE
               VENTIS=(VENTI1(MDImin)+SFACTOR*VENTI2(MDImin))*NSmICE
               DIDEP=ABI*(VENTIL+VENTIS)*DTPH
+              IF (DIDEP>=Xratio) DIDEP=(1.-EXP(-DIDEP*DENOMI))/DENOMI
+            ENDIF   !-- IF (QTICE .GT. 0.) THEN
       !
-      !--- Account for change in water vapor supply w/ time
+      !--- WARNING: the Meyers et al. stuff is not used!
+      !--- Two modes of ice nucleation from Meyers et al. (JAM, 1992):
+      !      (1) Deposition & condensation freezing nucleation - eq. (2.4),
+      !          requires ice supersaturation
+      !      (2) Contact freezing nucleation - eq. (2.6), requires presence
+      !          of cloud water
       !
-              IF (DIDEP .GE. Xratio)then
-                DIDEP=(1.-EXP(-DIDEP*DENOMI))/DENOMI
-              endif
-              IF (DWVi .GT. 0.) THEN
-                PIDEP=MIN(DWVi*DIDEP, PIDEP_max)
-              ELSE IF (DWVi .LT. 0.) THEN
-                PIDEP=MAX(DWVi*DIDEP, PIDEP_max)
-              ENDIF
+      !--- Ice crystal growth during the physics time step is calculated using
+      !    Miller & Young (1979, JAS) and is represented by MY_GROWTH(INDEX_MY),
+      !    where INDEX_MY is tabulated air temperatures between -1 and -35 C.
+      !    The original Miller & Young (MY) calculations only went down to -30C,
+      !    so a fixed value is assumed at temperatures colder than -30C.
       !
-!GFDL            ELSE IF (WVQW.GT.QSI .AND. TC.LE.T_ICE_init) THEN
-            ELSE IF (WVQW.GT.QSIgrd .AND. TC.LE.T_ICE_init) THEN   !GFDL
+      !--- Sensitivity test using:
+      !    - Fletcher (1962) for ice initiation
+      !    - Can occur only when there is water supersaturation and T<-12C.
+      !    - Maximum cloud ice number concentration of NSImax
       !
-      !--- Ice nucleation in near water-saturated conditions.  Ice crystal
-      !    growth during time step calculated using Miller & Young (1979, JAS).
-      !--- These deposition rates could drive conditions below water saturation,
-      !    which is the basis of these calculations.  Intended to approximate
-      !    more complex & computationally intensive calculations.
-      !
+            IF (WV>QSWgrd .AND. TC<T_ICE_init .AND. NSmICE<NInuclei) THEN
               INDEX_MY=MAX(MY_T1, MIN( INT(.5-TC), MY_T2 ) )
+      !-- Only initiate small ice to get to NInuclei number concentrations
+              DUM=MAX(0., NInuclei-NSmICE)*MY_GROWTH(INDEX_MY)*RRHO
+              PINT=MAX(0., DUM)
+            ENDIF
       !
-      !--- DUM1 is the supersaturation w/r/t ice at water-saturated conditions
+      !--- Calculate PIDEP, but also account for limited water vapor supply
       !
-      !--- DUM2 is the number of ice crystals nucleated at water-saturated 
-      !    conditions based on Meyers et al. (JAM, 1992).
-      !
-      !--- Prevent unrealistically large ice initiation (limited by PIDEP_max)
-      !      if DUM2 values are increased in future experiments
-      !
-              DUM1=QSW/QSI-1.      
-              DUM2=1.E3*EXP(12.96*DUM1-.639)
-              PIDEP=MIN(PIDEP_max, DUM2*MY_GROWTH(INDEX_MY)*RRHO)
-      !
-            ENDIF       ! End IF (QTICE .GT. 0.)
+            IF (DWVi>0.) THEN
+              PIDEP=MIN(DWVI*DIDEP+PINT, PIDEP_max)
+            ELSE IF (DWVi<0.) THEN
+              PIDEP=MAX(DWVi*DIDEP, PIDEP_max)
+            ENDIF
    !
-          ENDIF         ! End IF (TC.LT.T_ICE .AND. (WV.GT.QSIgrd .OR. QW.GT.EPSQ))
+          ENDIF         ! End IF (TC.LT.T_ICE .AND. (WV.GT.QSWgrd .OR. QW.GT.EPSQ))
 !
 !------------------------------------------------------------------------
 !
 20      CONTINUE     ! Jump here if conditions for ice are not present
-
-
 !
 !------------------------------------------------------------------------
 !
@@ -1368,7 +1437,7 @@ MODULE module_mp_HWRF
 !
           IF (TC.GE.T_ICE .AND. (QW.GT.EPSQ .OR. WV.GT.QSWgrd)) THEN
             IF (PIACWI.EQ.0. .AND. PIDEP.EQ.0.) THEN
-              PCOND=CONDENSE (PP, QW, TK, WV, RHgrd)   !GFDL
+              PCOND=CONDENSE (PP, QW, TK, WV, RHgrd,I_index,J_index,L)   !GFDL
             ELSE
    !
    !--- Modify cloud condensation in response to ice processes
@@ -1400,6 +1469,7 @@ MODULE module_mp_HWRF
             PIACWI=0.
             TCC=TC+XLV1*PCOND+XLS1*PIDEP
           ENDIF
+          QSW0=0.
           IF (TC.GT.0. .AND. TCC.GT.0. .AND. ICE_logical) THEN
    !
    !--- Calculate melting and evaporation/condensation
@@ -1407,7 +1477,7 @@ MODULE module_mp_HWRF
    !               VENTIL - m**-2 ;  VENTI1 - m ;  
    !               VENTI2 - m**2/s**.5 ; CIEVP - /s
    !
-            SFACTOR=SQRT(VEL_INC)*(RHO/(DIFFUS*DIFFUS*DYNVIS))**C2   !GFDL
+            SFACTOR=SQRT(VEL_INC)*(RHO/(DIFFUS*DIFFUS*DYNVIS))**C2
             VENTIL=NLICE*(VENTI1(INDEXS)+SFACTOR*VENTI2(INDEXS))
             AIEVP=VENTIL*DIFFUS*DTPH
             IF (AIEVP .LT. Xratio) THEN
@@ -1416,11 +1486,9 @@ MODULE module_mp_HWRF
               DIEVP=1.-EXP(-AIEVP)
             ENDIF
             QSW0=EPS*ESW0/(PP-ESW0)
-!GFDL            DWV0=MIN(WV,QSW)-QSW0
-            DWV0=MIN(WV,QSWgrd)-QSW0*RHgrd   !GFDL
+            DWV0=MIN(WV,QSW)-QSW0
             DUM=QW+PCOND
-!GFDL            IF (WV.LT.QSW .AND. DUM.LE.EPSQ) THEN
-            IF (WV.LT.QSWgrd .AND. DUM.LE.EPSQ) THEN   !GFDL
+            IF (WV.LT.QSW .AND. DUM.LE.EPSQ) THEN
    !
    !--- Evaporation from melting snow (sink of snow) or shedding
    !    of water condensed onto melting snow (source of rain)
@@ -1466,7 +1534,7 @@ MODULE module_mp_HWRF
           RQR=0.
           N0r=0.
           INDEXR=MDRmin
-          INDEXR1=INDEXR    ! For debugging only
+          INDEXR1=INDEXR    !-- For debugging only
           IF (RAIN_logical) THEN
             IF (ARAIN .LE. 0.) THEN
               INDEXR=MDRmin
@@ -1479,64 +1547,8 @@ MODULE module_mp_HWRF
    !--- Rain rate normalized to a density of 1.194 kg/m**3
    !
               RR=ARAIN/(DTPH*GAMMAR)
-   !
-              IF (RR .LE. RR_DRmin) THEN
-        !
-        !--- Assume fixed mean diameter of rain (0.2 mm) for low rain rates, 
-        !      instead vary N0r with rain rate
-        !
-                INDEXR=MDRmin
-              ELSE IF (RR .LE. RR_DR1) THEN
-        !
-        !--- Best fit to mass-weighted fall speeds (V) from rain lookup tables 
-        !      for mean diameters (Dr) between 0.05 and 0.10 mm:
-        !      V(Dr)=5.6023e4*Dr**1.136, V in m/s and Dr in m
-        !      RR = PI*1000.*N0r0*5.6023e4*Dr**(4+1.136) = 1.408e15*Dr**5.136,
-        !        RR in kg/(m**2*s)
-        !      Dr (m) = 1.123e-3*RR**.1947 -> Dr (microns) = 1.123e3*RR**.1947
-        !
-                INDEXR=INT( 1.123E3*RR**.1947 + .5 )
-                INDEXR=MAX( MDRmin, MIN(INDEXR, MDR1) )
-              ELSE IF (RR .LE. RR_DR2) THEN
-        !
-        !--- Best fit to mass-weighted fall speeds (V) from rain lookup tables 
-        !      for mean diameters (Dr) between 0.10 and 0.20 mm:
-        !      V(Dr)=1.0867e4*Dr**.958, V in m/s and Dr in m
-        !      RR = PI*1000.*N0r0*1.0867e4*Dr**(4+.958) = 2.731e14*Dr**4.958,
-        !        RR in kg/(m**2*s)
-        !      Dr (m) = 1.225e-3*RR**.2017 -> Dr (microns) = 1.225e3*RR**.2017
-        !
-                INDEXR=INT( 1.225E3*RR**.2017 + .5 )
-                INDEXR=MAX( MDR1, MIN(INDEXR, MDR2) )
-              ELSE IF (RR .LE. RR_DR3) THEN
-        !
-        !--- Best fit to mass-weighted fall speeds (V) from rain lookup tables 
-        !      for mean diameters (Dr) between 0.20 and 0.32 mm:
-        !      V(Dr)=2831.*Dr**.80, V in m/s and Dr in m
-        !      RR = PI*1000.*N0r0*2831.*Dr**(4+.80) = 7.115e13*Dr**4.80, 
-        !        RR in kg/(m**2*s)
-        !      Dr (m) = 1.3006e-3*RR**.2083 -> Dr (microns) = 1.3006e3*RR**.2083
-        !
-                INDEXR=INT( 1.3006E3*RR**.2083 + .5 )
-                INDEXR=MAX( MDR2, MIN(INDEXR, MDR3) )
-              ELSE IF (RR .LE. RR_DRmax) THEN
-        !
-        !--- Best fit to mass-weighted fall speeds (V) from rain lookup tables 
-        !      for mean diameters (Dr) between 0.32 and 0.45 mm:
-        !      V(Dr)=944.8*Dr**.6636, V in m/s and Dr in m
-        !      RR = PI*1000.*N0r0*944.8*Dr**(4+.6636) = 2.3745e13*Dr**4.6636,
-        !        RR in kg/(m**2*s)
-        !      Dr (m) = 1.355e-3*RR**.2144 -> Dr (microns) = 1.355e3*RR**.2144
-        !
-                INDEXR=INT( 1.355E3*RR**.2144 + .5 )
-                INDEXR=MAX( MDR3, MIN(INDEXR, MDRmax) )
-              ELSE 
-        !
-        !--- Assume fixed mean diameter of rain (0.45 mm) for high rain rates, 
-        !      instead vary N0r with rain rate
-        !
-                INDEXR=MDRmax
-              ENDIF              ! End IF (RR .LE. RR_DRmin) etc. 
+   !--- Integer function to estimate the mean size of the raindrops in microns
+              INDEXR=GET_INDEXR(RR)
               VRAIN1=GAMMAR*VRAIN(INDEXR)
             ENDIF              ! End IF (ARAIN .LE. 0.)
             INDEXR1=INDEXR     ! For debugging only
@@ -1555,7 +1567,8 @@ MODULE module_mp_HWRF
               INDEXR=MDRmax
             ELSE
               N0r=N0r0
-              INDEXR=MAX( XMRmin, MIN(CN0r0*RQR**.25, XMRmax) )
+              DUM=SQRT(SQRT(RQR))
+              INDEXR=MAX( XMRmin, MIN(CN0r0*DUM, XMRmax) )
             ENDIF
    !
             IF (TC .LT. T_ICE) THEN
@@ -1575,7 +1588,7 @@ MODULE module_mp_HWRF
       !             N0r - m**-4 ;  VENTR1 - m**2 ;  VENTR2 - m**3/s**.5 ;
       !             CREVP - unitless
       !
-                RFACTOR=SQRT(GAMMAR)*(RHO/(DIFFUS*DIFFUS*DYNVIS))**C2   !GFDL
+                RFACTOR=SQRT(GAMMAR)*(RHO/(DIFFUS*DIFFUS*DYNVIS))**C2
                 ABW=1./(RHO*XLV2/THERM_COND+1./DIFFUS)
       !
       !--- Note that VENTR1, VENTR2 lookup tables do not include the 
@@ -1594,7 +1607,7 @@ MODULE module_mp_HWRF
                 PRACW=MIN(1.,FWR)*QW
               ENDIF           ! End IF (DWVr.LT.0. .AND. DUM.LE.EPSQ)
       !
-              IF (TC.LT.0. .AND. TCC.LT.0.) THEN
+              IF (ICE_logical .AND. TC<0. .AND. TCC<0.) THEN
          !
          !--- Biggs (1953) heteorogeneous freezing (e.g., Lin et al., 1983)
          !   - Rescaled mean drop diameter from microns (INDEXR) to mm (DUM) to prevent underflow
@@ -1613,12 +1626,12 @@ MODULE module_mp_HWRF
             !      large ice, parameterized following eq. (48) on p. 112 of 
             !      Murakami (J. Meteor. Soc. Japan, 1990)
             !
-                  DUM2=SQRT(DUM1*DUM1+.04*DUM*VSNOW)    !GFDL
+                  DUM2=SQRT(DUM1*DUM1+.04*DUM*VSNOW)
                   DUM1=5.E-12*INDEXR*INDEXR+2.E-12*INDEXR*INDEXS        &
      &                 +.5E-12*INDEXS*INDEXS
                   FIR=MIN(1., CIACR*NLICE*DUM1*DUM2)
             !
-            !--- Future?  Should COLLECTION BY SMALL ICE SHOULD BE INCLUDED???
+            !--- Future?  Should COLLECTION BY SMALL ICE BE INCLUDED???
             !
                   PIACR=MIN(PIACR+FIR*QTRAIN, QTRAIN)
                 ENDIF        ! End IF (QLICE .GT. EPSQ)
@@ -1677,15 +1690,22 @@ MODULE module_mp_HWRF
 !
 !---
 !  * TOT_ICEnew - total mass (small & large) ice after microphysics,
-!                 which is the sum of the total mass of large ice in the 
-!                 current layer and the flux of ice out of the grid box below
+!                 which is the sum of the total mass of ice in the 
+!                 layer and the flux of ice out of the grid box below
 !  * RimeF      - Rime Factor, which is the mass ratio of total (unrimed & 
 !                 rimed) ice mass to the unrimed ice mass (>=1)
 !  * QInew      - updated mixing ratio of total (large & small) ice in layer
-!      -> TOT_ICEnew=QInew*THICK+BLDTRH*QLICEnew*VSNOW
-!        -> But QLICEnew=QInew*FLIMASS, so
-!      -> TOT_ICEnew=QInew*(THICK+BLDTRH*FLIMASS*VSNOW)
-!  * ASNOWnew   - updated accumulation of snow at bottom of grid cell
+!  * QLICEnew=FLIMASS*QInew, an estimate of the updated large ice mixing ratio
+!
+!  -> TOT_ICEnew=QInew*THICK+QLICEnew*BLDTRH*VSNOW+(QInew-QLICEnew)*BLDTRH*VCI
+!               =QInew*THICK+QInew*FLIMASS*BLDTRH*VSNOW+QInew*(1.-FLIMASS)*BLDTRH*VCI
+!               =QInew*THICK+QInew*BLDTRH*(FLIMASS*VSNOW+(1.-FLIMASS)*VCI)
+!               =QInew*(THICK+BLDTRH*(FLIMASS*VSNOW+(1.-FLIMASS)*VCI))
+!  -> Rearranging this equation gives:
+!     QInew=TOT_ICEnew/(THICK+BLDTRH*(FLIMASS*VSNOW+(1.-FLIMASS)*VCI))
+!
+!  * ASNOWnew   - updated accumulation of snow and cloud ice at bottom of grid cell
+!      -> ASNOWnew=QInew*BLDTRH*(FLIMASS+VSNOW+(1.-FLIMASS)*VCI)
 !---
 !
           DELI=0.
@@ -1714,29 +1734,35 @@ MODULE module_mp_HWRF
          !--- Rime Factor, RimeF = (Total ice mass)/(Total unrimed ice mass)
          !      DUM1 - Total ice mass, rimed & unrimed
          !      DUM2 - Estimated mass of *unrimed* ice
+         !      DUM3 - Ice deposition (>0), except =0 if RF>10 & TC>=T_ICE_init
          !
-                DUM1=TOT_ICE+THICK*(PIDEP+DUM)
-                DUM2=TOT_ICE/RimeF1+THICK*PIDEP
+                IF (RimeF1>10. .AND. TC>=T_ICE) THEN
+                  DUM3=0.
+                ELSE
+                  DUM3=MAX(0., PIDEP)
+                ENDIF
+                DUM1=TOT_ICE+THICK*(DUM3+DUM)
+                DUM2=TOT_ICE/RimeF1+THICK*DUM3
                 IF (DUM2 .LE. 0.) THEN
                   RimeF=RFmax
                 ELSE
                   RimeF=MIN(RFmax, MAX(1., DUM1/DUM2) )
                 ENDIF
               ENDIF       ! End IF (DUM.LE.EPSQ .AND. PIDEP.LE.EPSQ)
-              QInew=TOT_ICEnew/(THICK+BLDTRH*FLIMASS*VSNOW)
+              DUM1=BLDTRH*(FLIMASS*VSNOW+(1.-FLIMASS)*VCI)
+              QInew=TOT_ICEnew/(THICK+DUM1)
               IF (QInew .LE. EPSQ) QInew=0.
               IF (QI.GT.0. .AND. QInew.NE.0.) THEN
                 DUM=QInew/QI
                 IF (DUM .LT. TOLER) QInew=0.
               ENDIF
-              ASNOWnew=BLDTRH*FLIMASS*VSNOW*QInew
+              ASNOWnew=QInew*DUM1
               IF (ASNOW.GT.0. .AND. ASNOWnew.NE.0.) THEN
                 DUM=ASNOWnew/ASNOW
                 IF (DUM .LT. TOLER) ASNOWnew=0.
               ENDIF
             ENDIF         ! End IF (TOT_ICEnew .LE. CLIMIT)
           ENDIF           ! End IF (ICE_logical)
-
 
 !
 !--- Update rain mixing ratios
@@ -1746,6 +1772,8 @@ MODULE module_mp_HWRF
 !                 current layer and the input flux of ice from above
 ! * VRAIN2      - time-averaged fall speed of rain in grid and below 
 !                 (with air resistance correction)
+! * QRdum       - first-guess estimate (dummy) rain mixing ratio in layer
+!                 (uses old rain fall speed estimate, VRAIN1)
 ! * QRnew       - updated rain mixing ratio in layer
 !      -> TOT_RAINnew=QRnew*(THICK+BLDTRH*VRAIN2)
 !  * ARAINnew  - updated accumulation of rain at bottom of grid cell
@@ -1764,35 +1792,27 @@ MODULE module_mp_HWRF
             ARAINnew=0.
           ELSE
    !
-   !--- 1st guess time-averaged rain rate at bottom of grid box
+   !--- 1st guess, time-averaged rain mixing ratio and rain rate
+   !    normalized to a density of 1.194 kg/m**3
    !
-            RR=TOT_RAINnew/(DTPH*GAMMAR)
+            QRdum=TOT_RAINnew/(THICK+BLDTRH*VRAIN1)
+   !
+   !--- 1st-guess estimate of rainfall through the bottom of the box
+   !
+            DUM=BLDTRH*VRAIN1*QRdum
+   !
+   !--- 1st-guess estimate of normalized rain rate
+   !
+            RR=DUM/(DTPH*GAMMAR)
    !
    !--- Use same algorithm as above for calculating mean drop diameter
    !      (IDR, in microns), which is used to estimate the time-averaged
-   !      fall speed of rain drops at the bottom of the grid layer.  This
-   !      isn't perfect, but the alternative is solving a transcendental 
-   !      equation that is numerically inefficient and nasty to program
-   !      (coded in earlier versions of GSMCOLUMN prior to 8-22-01).
+   !      fall speed of rain drops at the bottom of the grid layer.
+   !--- Integer function to estimate the mean size of the raindrops in microns
    !
-            IF (RR .LE. RR_DRmin) THEN
-              IDR=MDRmin
-            ELSE IF (RR .LE. RR_DR1) THEN
-              IDR=INT( 1.123E3*RR**.1947 + .5 )
-              IDR=MAX( MDRmin, MIN(IDR, MDR1) )
-            ELSE IF (RR .LE. RR_DR2) THEN
-              IDR=INT( 1.225E3*RR**.2017 + .5 )
-              IDR=MAX( MDR1, MIN(IDR, MDR2) )
-            ELSE IF (RR .LE. RR_DR3) THEN
-              IDR=INT( 1.3006E3*RR**.2083 + .5 )
-              IDR=MAX( MDR2, MIN(IDR, MDR3) )
-            ELSE IF (RR .LE. RR_DRmax) THEN
-              IDR=INT( 1.355E3*RR**.2144 + .5 )
-              IDR=MAX( MDR3, MIN(IDR, MDRmax) )
-            ELSE 
-              IDR=MDRmax
-            ENDIF              ! End IF (RR .LE. RR_DRmin)
+            IDR=GET_INDEXR(RR)
             VRAIN2=GAMMAR*VRAIN(IDR)
+!!            VRAIN2=.5*(VRAIN1+GAMMAR*VRAIN(IDR))   !-- time-averaged estimate
             QRnew=TOT_RAINnew/(THICK+BLDTRH*VRAIN2)
             IF (QRnew .LE. EPSQ) QRnew=0.
             IF (QR.GT.0. .AND. QRnew.NE.0.) THEN
@@ -1822,29 +1842,28 @@ MODULE module_mp_HWRF
 !
 !--- Additional check on budget preservation, accounting for truncation effects
 !
-          IF (PRINT_err) THEN
-           DBG_logical=.FALSE.
-           DUM=ABS(BUDGET)
-           IF (DUM .GT. TOLER) THEN
-             DUM=DUM/MIN(QT, QTnew)
-             IF (DUM .GT. TOLER) DBG_logical=.TRUE.
-           ENDIF
+          DBG_logical=.FALSE.
+          DUM=ABS(BUDGET)
+          IF (DUM .GT. TOLER) THEN
+            DUM=DUM/MIN(QT, QTnew)
+            IF (DUM .GT. TOLER) DBG_logical=.TRUE.
+          ENDIF
 !
 !          DUM=(RHgrd+.001)*QSInew
 !          IF ( (QWnew.GT.EPSQ) .OR. QRnew.GT.EPSQ .OR. WVnew.GT.DUM)    &
 !     &        .AND. TC.LT.T_ICE )  DBG_logical=.TRUE.
 !
 !          IF (TC.GT.5. .AND. QInew.GT.EPSQ) DBG_logical=.TRUE.
-!
-           IF (WVnew.LT.EPSQ .OR. DBG_logical) THEN
+ 
+          IF ((WVnew.LT.EPSQ .OR. DBG_logical) .AND. PRINT_diag) THEN
    !
             WRITE(6,"(/2(a,i4),2(a,i2))") '{} i=',I_index,' j=',J_index, &
      &                                    ' L=',L,' LSFC=',LSFC
    !
-            ESW=1000.*FPVS0(Tnew)
+            ESW=MIN(1000.*FPVS0(Tnew),0.99*PP)
             QSWnew=EPS*ESW/(PP-ESW)
             IF (TC.LT.0. .OR. Tnew .LT. 0.) THEN
-              ESI=1000.*FPVS(Tnew)
+              ESI=MIN(1000.*FPVS(Tnew),0.99*PP)
               QSInew=EPS*ESI/(PP-ESI)
             ELSE
               QSI=QSW
@@ -1880,11 +1899,11 @@ MODULE module_mp_HWRF
      &   'VSNOW=',VSNOW,                                                   &
      & '{} INDEXS=',FLOAT(INDEXS),'FLARGE=',FLARGE,'FSMALL=',FSMALL,       &
      &   'FLIMASS=',FLIMASS,                                               &
-     & '{} XSIMASS=',XSIMASS,'XLIMASS=',XLIMASS,'QLICE=',QLICE,            &
+     & '{} QSmICE=',QSmICE,'XLIMASS=',XLIMASS,'RQLICE=',RQLICE,            &
      &   'QTICE=',QTICE,                                                   &
      & '{} NLICE=',NLICE,'NSmICE=',NSmICE,'PILOSS=',PILOSS,                &
      &   'EMAIRI=',EMAIRI,                                                 &
-     & '{} RimeF=',RimeF                                                    
+     & '{} RimeF=',RimeF,'VCI=',VCI
    !
             IF (TOT_RAIN.GT.0. .OR. TOT_RAINnew.GT.0.)                     &
      &        WRITE(6,"(4(a12,g11.4,1x))")                                 &
@@ -1893,8 +1912,6 @@ MODULE module_mp_HWRF
      & '{} VRAIN1=',VRAIN1,'VRAIN2=',VRAIN2,'QTRAIN=',QTRAIN,'RQR=',RQR,   &
      & '{} PRLOSS=',PRLOSS,'VOLR1=',THICK+BLDTRH*VRAIN1,                   &
      &   'VOLR2=',THICK+BLDTRH*VRAIN2
-   !
-            IF (PRAUT .GT. 0.) WRITE(6,"(a12,g11.4,1x)") '{} QW0=',QW0
    !
             IF (PRACW .GT. 0.) WRITE(6,"(a12,g11.4,1x)") '{} FWR=',FWR
    !
@@ -1918,13 +1935,13 @@ MODULE module_mp_HWRF
      &   'VENTIL2=',SFACTOR*VENTI2(INDEXS),                                &
      & '{} VENTIS=',VENTIS,'DIDEP=',DIDEP
    !
-!            IF (PIDEP.GT.0. .AND. PCOND.NE.0.)                             &
-!     &        WRITE(6,"(4(a12,g11.4,1x))")                                 &
-!     & '{} DENOMW=',DENOMW,'DENOMWI=',DENOMWI,'DENOMF=',DENOMF,            &
-!     &    'DUM2=',PCOND-PIACW
+            IF (PIDEP.GT.0. .AND. PCOND.NE.0.)                             &
+     &        WRITE(6,"(4(a12,g11.4,1x))")                                 &
+     & '{} DENOMW=',DENOMW,'DENOMWI=',DENOMWI,'DENOMF=',DENOMF,            &
+     &    'DUM2=',PCOND-PIACW
    !
-!            IF (FWS .GT. 0.) WRITE(6,"(4(a12,g11.4,1x))")                  &
-!     & '{} FWS=',FWS                     
+            IF (FWS .GT. 0.) WRITE(6,"(4(a12,g11.4,1x))")                  &
+     & '{} FWS=',FWS                     
    !
             DUM=PIMLT+PICND-PIEVP
             IF (DUM.GT. 0.) WRITE(6,"(4(a12,g11.4,1x))")                   &
@@ -1932,8 +1949,7 @@ MODULE module_mp_HWRF
      &   'VENTIL2=',SFACTOR*VENTI2(INDEXS),                                &
      & '{} AIEVP=',AIEVP,'DIEVP=',DIEVP,'QSW0=',QSW0,'DWV0=',DWV0       
    !
-          ENDIF      !-- IF (WVnew.LT.EPSQ .OR. DBG_logical) THEN
-          ENDIF      !-- IF (PRINT_err) THEN
+          ENDIF
 
 !
 !-----------------------------------------------------------------------
@@ -1998,11 +2014,7 @@ MODULE module_mp_HWRF
           ASNOW=ASNOWnew                          ! Updated accumulated snow
           ARAIN=ARAINnew                          ! Updated accumulated rain
 !! 2012-02-09 Based on Aligo's email
- !aligo
           VRabove=VRAIN2                          ! Updated rain fall speed
-!aligo
-
-!!
 !
 !#######################################################################
 !
@@ -2021,7 +2033,7 @@ MODULE module_mp_HWRF
 !--------- Produces accurate calculation of cloud condensation ---------
 !#######################################################################
 !
-      REAL FUNCTION CONDENSE (PP, QW, TK, WV, RHgrd)   !GFDL
+      REAL FUNCTION CONDENSE (PP,QW,TK,WV,RHgrd,I,J,L)
 !
 !---------------------------------------------------------------------------------
 !------   The Asai (1965) algorithm takes into consideration the release of ------
@@ -2036,9 +2048,13 @@ MODULE module_mp_HWRF
      & RHLIMIT=.001, RHLIMIT1=-RHLIMIT
       REAL (KIND=HIGH_PRES) :: COND, SSAT, WCdum
 !
-      REAL,INTENT(IN) :: QW,PP,WV,TK,RHgrd   !GFDL
+      REAL,INTENT(IN) :: PP,QW,TK,WV,RHgrd   !GFDL
       REAL WVdum,Tdum,XLV2,DWV,WS,ESW,XLV1,XLV
-integer nsteps
+
+integer,INTENT(IN) :: I,J,L     !-- Debug 20120111
+integer :: niter
+real :: DWVinp,SSATinp
+
 !
 !-----------------------------------------------------------------------
 !
@@ -2050,26 +2066,42 @@ integer nsteps
       Tdum=TK
       WVdum=WV
       WCdum=QW
-      ESW=1000.*FPVS0(Tdum)                     ! Saturation vapor press w/r/t water
+      ESW=MIN(1000.*FPVS0(Tdum),0.99*PP)        ! Saturation vapor press w/r/t water
       WS=RHgrd*EPS*ESW/(PP-ESW)                 ! Saturation mixing ratio w/r/t water
       DWV=WVdum-WS                              ! Deficit grid-scale water vapor mixing ratio
       SSAT=DWV/WS                               ! Supersaturation ratio
       CONDENSE=0.
-nsteps = 0
-      DO WHILE ((SSAT.LT.RHLIMIT1 .AND. WCdum.GT.EPSQ)                  &
-     &           .OR. SSAT.GT.RHLIMIT)
-        nsteps = nsteps + 1
+
+DWVinp=DWV     !-- Debug 20120111
+SSATinp=SSAT
+
+      DO NITER=1,MAX_ITERATIONS
         COND=DWV/(1.+XLV2*WS/(Tdum*Tdum))       ! Asai (1965, J. Japan)
         COND=MAX(COND, -WCdum)                  ! Limit cloud water evaporation
         Tdum=Tdum+XLV1*COND                     ! Updated temperature
         WVdum=WVdum-COND                        ! Updated water vapor mixing ratio
         WCdum=WCdum+COND                        ! Updated cloud water mixing ratio
         CONDENSE=CONDENSE+COND                  ! Total cloud water condensation
-        ESW=1000.*FPVS0(Tdum)                   ! Updated saturation vapor press w/r/t water
+        ESW=MIN(1000.*FPVS0(Tdum),0.99*PP)      ! Updated saturation vapor press w/r/t water
         WS=RHgrd*EPS*ESW/(PP-ESW)               ! Updated saturation mixing ratio w/r/t water
         DWV=WVdum-WS                            ! Deficit grid-scale water vapor mixing ratio
         SSAT=DWV/WS                             ! Grid-scale supersaturation ratio
+        IF (SSAT>=RHLIMIT1 .AND. SSAT<=RHLIMIT) EXIT   !-- Exit if SSAT is near 0
+        IF (SSAT<RHLIMIT1 .AND. WCdum<=EPSQ) EXIT      !-- Exit if SSAT<0 & no cloud water
       ENDDO
+
+!-- Debug 20120111
+IF (NITER>MAX_ITERATIONS) THEN
+!-- Too many iterations - indicates possible numerical instability
+   IF (WARN3) THEN
+      write(0,*) 'WARN3: Too many iterations in function CONDENSE; ', &
+         ' I,J,L,TC,SSAT,QW,DWV=',I,J,L,TK-T0C,SSATinp,1000.*QW,DWVinp
+      WARN3=.FALSE.
+   ENDIF
+   SSAT=0.
+   CONDENSE=DWVinp
+ENDIF
+
 !
       END FUNCTION CONDENSE
 !
@@ -2077,7 +2109,7 @@ nsteps = 0
 !---------------- Calculate ice deposition at T<T_ICE ------------------
 !#######################################################################
 !
-      REAL FUNCTION DEPOSIT (PP, Tdum, WVdum, RHgrd)   !GFDL
+      REAL FUNCTION DEPOSIT (PP,Tdum,WVdum,RHgrd,I,J,L)
 !
 !--- Also uses the Asai (1965) algorithm, but uses a different target
 !      vapor pressure for the adjustment
@@ -2092,15 +2124,25 @@ nsteps = 0
       real,INTENT(IN) ::  PP,RHgrd   !GFDL
       real,INTENT(INOUT) ::  WVdum,Tdum
       real ESI,WS,DWV
+
+integer,INTENT(IN) :: I,J,L   !-- Debug 20120111
+integer :: niter
+real :: Tinp,DWVinp,SSATinp
+
 !
 !-----------------------------------------------------------------------
 !
-      ESI=1000.*FPVS(Tdum)                      ! Saturation vapor press w/r/t ice
+      ESI=MIN(1000.*FPVS(Tdum),0.99*PP)         ! Saturation vapor press w/r/t ice
       WS=RHgrd*EPS*ESI/(PP-ESI)                 ! Saturation mixing ratio
       DWV=WVdum-WS                              ! Deficit grid-scale water vapor mixing ratio
       SSAT=DWV/WS                               ! Supersaturation ratio
       DEPOSIT=0.
-      DO WHILE (SSAT.GT.RHLIMIT .OR. SSAT.LT.RHLIMIT1)
+
+Tinp=Tdum     !-- Debug 20120111
+DWVinp=DWV
+SSATinp=SSAT
+
+      DO NITER=1,MAX_ITERATIONS
    !
    !--- Note that XLVS2=LS*LV/(CP*RV)=LV*WS/(RV*T*T)*(LS/CP*DEP1), 
    !     where WS is the saturation mixing ratio following Clausius-
@@ -2110,13 +2152,116 @@ nsteps = 0
         Tdum=Tdum+XLS1*DEP                      ! Updated temperature
         WVdum=WVdum-DEP                         ! Updated ice mixing ratio
         DEPOSIT=DEPOSIT+DEP                     ! Total ice deposition
-        ESI=1000.*FPVS(Tdum)                    ! Updated saturation vapor press w/r/t ice
+        ESI=MIN(1000.*FPVS(Tdum),0.99*PP)       ! Updated saturation vapor press w/r/t ice
         WS=RHgrd*EPS*ESI/(PP-ESI)               ! Updated saturation mixing ratio w/r/t ice
         DWV=WVdum-WS                            ! Deficit grid-scale water vapor mixing ratio
         SSAT=DWV/WS                             ! Grid-scale supersaturation ratio
+        IF (SSAT>=RHLIMIT1 .AND. SSAT<=RHLIMIT) EXIT   !-- Exit if SSAT is near 0
       ENDDO
+
+!-- Debug 20120111
+IF (NITER>MAX_ITERATIONS) THEN
+!-- Too many iterations - indicates possible numerical instability
+   IF (WARN2) THEN
+      write(0,*) 'WARN2: Too many iterations in function DEPOSIT; ', &
+         ' I,J,L,TC,SSAT,DWV=',I,J,L,Tinp-T0C,SSATinp,DWVinp
+      WARN2=.FALSE.
+   ENDIF
+   SSAT=0.
+   DEPOSIT=DWVinp
+ENDIF
+
 !
       END FUNCTION DEPOSIT
+!
+!#######################################################################
+!--- Used to calculate the mean size of rain drops (INDEXR) in microns
+!#######################################################################
+!
+      INTEGER FUNCTION GET_INDEXR(RR)
+      IMPLICIT NONE
+      REAL, INTENT(IN) :: RR
+      IF (RR .LE. RR_DRmin) THEN
+!
+!--- Assume fixed mean diameter of rain (0.2 mm) for low rain rates, 
+!      instead vary N0r with rain rate
+!
+        GET_INDEXR=MDRmin
+      ELSE IF (RR .LE. RR_DR1) THEN
+!
+!--- Best fit to mass-weighted fall speeds (V) from rain lookup tables 
+!      for mean diameters (Dr) between 0.05 and 0.10 mm:
+!      V(Dr)=5.6023e4*Dr**1.136, V in m/s and Dr in m
+!      RR = PI*1000.*N0r0*5.6023e4*Dr**(4+1.136) = 1.408e15*Dr**5.136,
+!        RR in kg/(m**2*s)
+!      Dr (m) = 1.123e-3*RR**.1947 -> Dr (microns) = 1.123e3*RR**.1947
+!
+        GET_INDEXR=INT( 1.123E3*RR**.1947 + .5 )
+        GET_INDEXR=MAX( MDRmin, MIN(GET_INDEXR, MDR1) )
+      ELSE IF (RR .LE. RR_DR2) THEN
+!
+!--- Best fit to mass-weighted fall speeds (V) from rain lookup tables 
+!      for mean diameters (Dr) between 0.10 and 0.20 mm:
+!      V(Dr)=1.0867e4*Dr**.958, V in m/s and Dr in m
+!      RR = PI*1000.*N0r0*1.0867e4*Dr**(4+.958) = 2.731e14*Dr**4.958,
+!        RR in kg/(m**2*s)
+!      Dr (m) = 1.225e-3*RR**.2017 -> Dr (microns) = 1.225e3*RR**.2017
+!
+        GET_INDEXR=INT( 1.225E3*RR**.2017 + .5 )
+        GET_INDEXR=MAX( MDR1, MIN(GET_INDEXR, MDR2) )
+      ELSE IF (RR .LE. RR_DR3) THEN
+!
+!--- Best fit to mass-weighted fall speeds (V) from rain lookup tables 
+!      for mean diameters (Dr) between 0.20 and 0.32 mm:
+!      V(Dr)=2831.*Dr**.80, V in m/s and Dr in m
+!      RR = PI*1000.*N0r0*2831.*Dr**(4+.80) = 7.115e13*Dr**4.80, 
+!        RR in kg/(m**2*s)
+!      Dr (m) = 1.3006e-3*RR**.2083 -> Dr (microns) = 1.3006e3*RR**.2083
+!
+        GET_INDEXR=INT( 1.3006E3*RR**.2083 + .5 )
+        GET_INDEXR=MAX( MDR2, MIN(GET_INDEXR, MDR3) )
+      ELSE IF (RR .LE. RR_DR4) THEN
+!
+!--- Best fit to mass-weighted fall speeds (V) from rain lookup tables
+!      for mean diameters (Dr) between 0.32 and 0.45 mm:
+!      V(Dr)=963.0*Dr**.666, V in m/s and Dr in m
+!      RR = PI*1000.*N0r0*963.0*Dr**(4+.666) = 2.4205e13*Dr**4.666,
+!        RR in kg/(m**2*s)
+!      Dr (m) = 1.354e-3*RR**.2143 -> Dr (microns) = 1.354e3*RR**.2143
+!
+        GET_INDEXR=INT( 1.354E3*RR**.2143 + .5 )
+        GET_INDEXR=MAX( MDR3, MIN(GET_INDEXR, MDR4) )
+      ELSE IF (RR .LE. RR_DR5) THEN
+!
+!--- Best fit to mass-weighted fall speeds (V) from rain lookup tables
+!      for mean diameters (Dr) between 0.45 and 0.675 mm:
+!      V(Dr)=309.0*Dr**.5185, V in m/s and Dr in m
+!      RR = PI*1000.*N0r0*309.0*Dr**(4+.5185) = 7.766e12*Dr**4.5185,
+!        RR in kg/(m**2*s)
+!      Dr (m) = 1.404e-3*RR**.2213 -> Dr (microns) = 1.404e3*RR**.2213
+!
+        GET_INDEXR=INT( 1.404E3*RR**.2213 + .5 )
+        GET_INDEXR=MAX( MDR4, MIN(GET_INDEXR, MDR5) )
+      ELSE IF (RR .LE. RR_DRmax) THEN
+!
+!--- Best fit to mass-weighted fall speeds (V) from rain lookup tables
+!      for mean diameters (Dr) between 0.675 and 1.0 mm:
+!      V(Dr)=85.81Dr**.343, V in m/s and Dr in m
+!      RR = PI*1000.*N0r0*85.81*Dr**(4+.343) = 2.1566e12*Dr**4.343,
+!        RR in kg/(m**2*s)
+!      Dr (m) = 1.4457e-3*RR**.2303 -> Dr (microns) = 1.4457e3*RR**.2303
+!
+        GET_INDEXR=INT( 1.4457E3*RR**.2303 + .5 )
+        GET_INDEXR=MAX( MDR5, MIN(GET_INDEXR, MDRmax) )
+      ELSE 
+!
+!--- Assume fixed mean diameter of rain (1.0 mm) for high rain rates, 
+!      instead vary N0r with rain rate
+!
+        GET_INDEXR=MDRmax
+      ENDIF              ! End IF (RR .LE. RR_DRmin) etc. 
+!
+      END FUNCTION GET_INDEXR
 !
       END SUBROUTINE EGCP01COLUMN 
 
@@ -2128,13 +2273,13 @@ nsteps = 0
 ! SH 0211/2002
 
 !-----------------------------------------------------------------------
-      SUBROUTINE etanewinit_HWRF (GSMDT,DT,DELX,DELY,LOWLYR,restart,         &
-     &   F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,                              &
+      SUBROUTINE fer_hires_init (GSMDT,DT,DELX,DELY,LOWLYR,restart,         &
 !HWRF     &   MP_RESTART_STATE,TBPVS_STATE,TBPVS0_STATE,                     &
      &   ALLOWED_TO_READ,                                               &
      &   IDS,IDE,JDS,JDE,KDS,KDE,                                       &
      &   IMS,IME,JMS,JME,KMS,KME,                                       &
-     &   ITS,ITE,JTS,JTE,KTS,KTE                                       )
+     &   ITS,ITE,JTS,JTE,KTS,KTE,                                       &
+     &   F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY)
 !-----------------------------------------------------------------------
 !-------------------------------------------------------------------------------
 !---  SUBPROGRAM DOCUMENTATION BLOCK
@@ -2149,7 +2294,7 @@ nsteps = 0
 !   * Creates lookup tables for saturation vapor pressure w/r/t water & ice
 !-------------------------------------------------------------------------------
 !     
-! USAGE: CALL etanewinit FROM SUBROUTINE GSMDRIVE AT MODEL START TIME
+! USAGE: CALL fer_hires_init FROM SUBROUTINE GSMDRIVE AT MODEL START TIME
 !
 !   INPUT ARGUMENT LIST:
 !       DTPH - physics time step (s)
@@ -2220,7 +2365,7 @@ nsteps = 0
       real, INTENT(IN) ::  DELX,DELY
 !HWRF      real,DIMENSION(*), INTENT(INOUT) :: MP_RESTART_STATE
 !HWRF      real,DIMENSION(NX), INTENT(INOUT) :: TBPVS_STATE,TBPVS0_STATE
-      real,DIMENSION(ims:ime, kms:kme, jms:jme),INTENT(OUT) ::          &
+      real,DIMENSION(ims:ime, kms:kme, jms:jme),INTENT(OUT),OPTIONAL :: &
      &  F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY
       INTEGER, PARAMETER :: ITLO=-60, ITHI=40
 !     integer,DIMENSION(ITLO:ITHI,4),INTENT(INOUT) :: NSTATS
@@ -2233,7 +2378,7 @@ nsteps = 0
 !-----------------------------------------------------------------------
 !     LOCAL VARIABLES
 !-----------------------------------------------------------------------
-      REAL :: BBFR,DTPH,PI,DX,Thour_print
+      REAL :: BBFR,DTPH,DX,Thour_print,RDIS
       INTEGER :: I,IM,J,L,K,JTF,KTF,ITF
       INTEGER :: etampnew_unit1
       LOGICAL :: opened
@@ -2252,7 +2397,7 @@ nsteps = 0
       ENDDO
       ENDDO
 !    
-      IF(.NOT.RESTART .AND. ALLOWED_TO_READ) THEN    !HWRF
+      IF(.NOT.RESTART .AND. ALLOWED_TO_READ .AND. present(F_ICE_PHY)) THEN    !HWRF
         CALL wrf_debug(1,'WARNING: F_ICE_PHY,F_RAIN_PHY AND F_RIMEF_PHY IS REINITIALIZED')   !HWRF
         DO J = jts,jte
         DO K = kts,kte
@@ -2301,12 +2446,15 @@ nsteps = 0
         CALL wrf_dm_bcast_bytes ( etampnew_unit1 , IWORDSIZE )
 !
         IF ( etampnew_unit1 < 0 ) THEN
-          CALL wrf_error_fatal ( 'module_mp_hwrf: etanewinit: Can not find unused fortran unit to read in lookup table.' )
+          CALL wrf_error_fatal ( 'module_mp_fer_hires: fer_hires_init: Can not find unused fortran unit to read in lookup table.' )
         ENDIF
 !
         IF ( wrf_dm_on_monitor() ) THEN
 !!was     OPEN (UNIT=1,FILE="eta_micro_lookup.dat",FORM="UNFORMATTED")
-          OPEN(UNIT=etampnew_unit1,FILE="ETAMPNEW_DATA",                  &
+!-- Use the new, expanded tables for rain (maximum mean diameter of 1 mm rather than 0.45 mm)
+!old      OPEN(UNIT=etampnew_unit1,FILE="ETAMPNEW_DATA",                  &
+          print*,'open ETAMPNEW_DATA.expanded_rain, in fer_hires' 
+          OPEN(UNIT=etampnew_unit1,FILE="ETAMPNEW_DATA.expanded_rain",  &
      &        FORM="UNFORMATTED",STATUS="OLD",ERR=9061)
 !
           READ(etampnew_unit1) VENTR1
@@ -2342,27 +2490,26 @@ nsteps = 0
 !    saturated conditions, scaled by physics time step (lookup table)
 !
         CALL MY_GROWTH_RATES (DTPH)
-!       CALL MY_GROWTH_RATES (DTPH,MY_GROWTH)
 !
-        PI=ACOS(-1.)
+        PI_E=ACOS(-1.)
 !
 !--- Constants associated with Biggs (1953) freezing of rain, as parameterized
 !    following Lin et al. (JCAM, 1983) & Reisner et al. (1998, QJRMS).
 !
         ABFR=-0.66
         BBFR=100.
-        CBFR=20.*PI*PI*BBFR*RHOL*1.E-21
+        CBFR=20.*PI_E*PI_E*BBFR*RHOL*1.E-21
 !
 !--- CIACW is used in calculating riming rates
 !      The assumed effective collection efficiency of cloud water rimed onto
 !      ice is =0.5 below:
 !
-        CIACW=DTPH*0.25*PI*0.5*(1.E5)**C1
+        CIACW=DTPH*0.25*PI_E*0.5*(1.E5)**C1
 !
 !--- CIACR is used in calculating freezing of rain colliding with large ice
 !      The assumed collection efficiency is 1.0
 !
-        CIACR=PI*DTPH
+        CIACR=PI_E*DTPH
 !
 !--- Based on rain lookup tables for mean diameters from 0.05 to 0.45 mm
 !    * Four different functional relationships of mean drop diameter as 
@@ -2374,22 +2521,21 @@ nsteps = 0
         RR_DR1=N0r0*RRATE(MDR1)         ! RR for mean drop diameter of .10 mm
         RR_DR2=N0r0*RRATE(MDR2)         ! RR for mean drop diameter of .20 mm
         RR_DR3=N0r0*RRATE(MDR3)         ! RR for mean drop diameter of .32 mm
-        RR_DRmax=N0r0*RRATE(MDRmax)     ! RR for mean drop diameter of .45 mm
+        RR_DR4=N0r0*RRATE(MDR4)         ! RR for mean drop diameter of .45 mm
+        RR_DR5=N0r0*RRATE(MDR5)         ! RR for mean drop diameter of .675 mm
+        RR_DRmax=N0r0*RRATE(MDRmax)     ! RR for mean drop diameter of 1.0 mm
 !
         RQR_DRmin=N0r0*MASSR(MDRmin)    ! Rain content for mean drop diameter of .05 mm
-        RQR_DR1=N0r0*MASSR(MDR1)        ! Rain content for mean drop diameter of .10 mm
-        RQR_DR2=N0r0*MASSR(MDR2)        ! Rain content for mean drop diameter of .20 mm
-        RQR_DR3=N0r0*MASSR(MDR3)        ! Rain content for mean drop diameter of .32 mm
-        RQR_DRmax=N0r0*MASSR(MDRmax)    ! Rain content for mean drop diameter of .45 mm
-        C_N0r0=PI*RHOL*N0r0
-        CN0r0=1.E6/C_N0r0**.25
-        CN0r_DMRmin=1./(PI*RHOL*DMRmin**4)
-        CN0r_DMRmax=1./(PI*RHOL*DMRmax**4)
+        RQR_DRmax=N0r0*MASSR(MDRmax)    ! Rain content for mean drop diameter of 1.0 mm
+        C_N0r0=PI_E*RHOL*N0r0
+        CN0r0=1.E6/SQRT(SQRT(C_N0r0))
+        CN0r_DMRmin=1./(PI_E*RHOL*DMRmin*DMRmin*DMRmin*DMRmin)
+        CN0r_DMRmax=1./(PI_E*RHOL*DMRmax*DMRmax*DMRmax*DMRmax)
 !
 !--- CRACW is used in calculating collection of cloud water by rain (an
 !      assumed collection efficiency of 1.0)
 !
-        CRACW=DTPH*0.25*PI*1.0
+        CRACW=DTPH*0.25*PI_E*1.0
 !
         ESW0=1000.*FPVS0(T0C)     ! Saturation vapor pressure at 0C
         RFmax=1.1**Nrime          ! Maximum rime factor allowed
@@ -2401,18 +2547,18 @@ nsteps = 0
 !--- Important parameters for self collection (autoconversion) of 
 !    cloud water to rain. 
 !
-!--- CRAUT is proportional to the rate that cloud water is converted by
-!      self collection to rain (autoconversion rate)
+!-- Relative dispersion == standard deviation of droplet spectrum / mean radius
+!   (see pp 1542-1543, Liu & Daum, JAS, 2004)
+        RDIS=0.5  !-- relative dispersion of droplet spectrum
+        BETA6=( (1.+3.*RDIS*RDIS)*(1.+4.*RDIS*RDIS)*(1.+5.*RDIS*RDIS)/  &
+     &         ((1.+RDIS*RDIS)*(1.+2.*RDIS*RDIS) ) )
+!-- Kappa=1.1e10 g^-2 cm^3 s^-1 after eq. (8b) on p.1105 of Liu et al. (JAS, 2006)
+!   => More extensive units conversion than can be described here to go from
+!      eq. (13) in Liu et al. (JAS, 2006) to what's programmed below.  Note that
+!      the units used throughout the paper are in cgs units!
 !
-        CRAUT=1.-EXP(-1.E-3*DTPH)
-!
-!--- QAUT0 is the threshold cloud content for autoconversion to rain 
-!      needed for droplets to reach a diameter of 20 microns (following
-!      Manton and Cotton, 1977; Banta and Hanson, 1987, JCAM)
-!--- QAUT0=1.2567, 0.8378, or 0.4189 g/m**3 for droplet number concentrations
-!          of 300, 200, and 100 cm**-3, respectively
-!
-        QAUT0=PI*RHOL*NCW*(20.E-6)**3/6.
+        ARAUT=1.03e19/(NCW*SQRT(NCW))
+        BRAUT=DTPH*1.1E10*BETA6/NCW
 !
 !--- For calculating snow optical depths by considering bulk density of
 !      snow based on emails from Q. Fu (6/27-28/01), where optical 
@@ -2424,40 +2570,14 @@ nsteps = 0
 !  
 !    See derivation for MASSI(INDEXS), note equal to RHO*QSNOW/NSNOW
 !
-!      SDENS=1.5e3/DENS, DENS=MASSI(INDEXS)/[PI*(1.E-6*INDEXS)**3]
+!      SDENS=1.5e3/DENS, DENS=MASSI(INDEXS)/[PI_E*(1.E-6*INDEXS)**3]
 !
         DO I=MDImin,MDImax
-          SDENS(I)=PI*1.5E-15*FLOAT(I*I*I)/MASSI(I)
+          SDENS(I)=PI_E*1.5E-15*FLOAT(I*I*I)/MASSI(I)
         ENDDO
 !
         Thour_print=-DTPH/3600.
 
-! SH 0211/2002
-!       IF (PRINT_diag) THEN
-!       
-!      !-------- Total and maximum quantities
-!      !
-!         NSTATS=0      ! Microphysical statistics dealing w/ grid-point counts
-!         QMAX=0.       ! Microphysical statistics dealing w/ hydrometeor mass
-!         QTOT=0.       ! Microphysical statistics dealing w/ hydrometeor mass
-!         PRECmax=0.    ! Maximum precip rates (rain, snow) at surface (mm/h)
-!         PRECtot=0.    ! Total precipitation (rain, snow) accumulation at surface
-!       ENDIF
-
-!wrf
-!HWRF        IF(.NOT.RESTART)THEN
-!HWRF          MP_RESTART_STATE(MY_T1:MY_T2)=MY_GROWTH(MY_T1:MY_T2)
-!HWRF          MP_RESTART_STATE(MY_T2+1)=C1XPVS0
-!HWRF          MP_RESTART_STATE(MY_T2+2)=C2XPVS0
-!HWRF          MP_RESTART_STATE(MY_T2+3)=C1XPVS
-!HWRF          MP_RESTART_STATE(MY_T2+4)=C2XPVS
-!HWRF          MP_RESTART_STATE(MY_T2+5)=CIACW
-!HWRF          MP_RESTART_STATE(MY_T2+6)=CIACR
-!HWRF          MP_RESTART_STATE(MY_T2+7)=CRACW
-!HWRF          MP_RESTART_STATE(MY_T2+8)=CRAUT
-!HWRF          TBPVS_STATE(1:NX) =TBPVS(1:NX)
-!HWRF          TBPVS0_STATE(1:NX)=TBPVS0(1:NX)
-!HWRF        ENDIF
 
       ENDIF  ! Allowed_to_read
 
@@ -2472,10 +2592,9 @@ nsteps = 0
       CALL wrf_error_fatal(errmess)
 !
 !-----------------------------------------------------------------------
-      END SUBROUTINE etanewinit_HWRF
+      END SUBROUTINE fer_hires_init
 !
       SUBROUTINE MY_GROWTH_RATES (DTPH)
-!     SUBROUTINE MY_GROWTH_RATES (DTPH,MY_GROWTH)
 !
 !--- Below are tabulated values for the predicted mass of ice crystals
 !    after 600 s of growth in water saturated conditions, based on 
@@ -2509,7 +2628,7 @@ nsteps = 0
 !-----------------------------------------------------------------------
 !
       DT_ICE=(DTPH/600.)**1.5
-      MY_GROWTH=DT_ICE*MY_600
+      MY_GROWTH=DT_ICE*MY_600*1.E-3    !-- 20090714: Convert from g to kg
 !
 !-----------------------------------------------------------------------
 !
@@ -2706,4 +2825,4 @@ nsteps = 0
 !
       END FUNCTION FPVSX0
 !
-      END MODULE module_mp_HWRF
+      END MODULE module_mp_fer_hires

@@ -2032,8 +2032,8 @@ CONTAINS
      NWBD= WBD  ! + (ILOC -1)*2.*grid%dlmd + MOD(JLOC+1,2)*grid%dlmd
      NSBD= SBD  ! + (JLOC -1)*grid%dphd
 
-
-
+     grid%sbd0=sbd
+     grid%wbd0=wbd
 
 #ifdef HWRF     
     CALL EARTH_LATLON ( grid%HLAT,grid%HLON,grid%VLAT,grid%VLON,  & !output
@@ -2042,14 +2042,8 @@ CONTAINS
                         IDS,IDE,JDS,JDE,KDS,KDE, &
                         IMS,IME,JMS,JME,KMS,KME, &
                         ITS,ITE,JTS,JTE,KTS,KTE  )
-#if defined(DM_PARALLEL)
-       master65: if(wrf_dm_on_monitor()) then
-#endif
           call make_coupler_fort65(grid,NDLMD,NDPHD,NWBD,NSBD,&
                NIDE,NJDE,IDE-1,JDE-1,tph0d,tlm0d)
-#if defined(DM_PARALLEL)
-       endif master65
-#endif
 #endif
      endif                 !Kwon's doing
 
@@ -2094,20 +2088,62 @@ CONTAINS
          cos(rlat1)*cos(rlat2)*sin((rlon1-rlon2)/2)**2)))
   end function greatarc
 
+#ifdef HWRF    
    SUBROUTINE make_coupler_fort65(grid,&
         NDLMD,NDPHD,NWBD,NSBD,&
-        NIDE,NJDE,PIDE,PJDE,tph0d,tlm0d)
+        NIDE,NJDE,PIFE,PJFE,tph0d,tlm0d)
+     use mpi
+     use module_dm,only: local_communicator
      implicit none
      type(domain), intent(in) :: grid
      REAL, DIMENSION(:,:),    ALLOCATABLE :: NHLAT,NHLON,NVLAT,NVLON,HRES_SM,&
           HBWGT1, HBWGT2, HBWGT3, HBWGT4
      INTEGER, DIMENSION(:,:), ALLOCATABLE :: IIH, JJH, HNEAR_I,HNEAR_J,CENFLAG
      REAL, INTENT(IN)                     :: NDLMD,NDPHD,NWBD,NSBD,tph0d,tlm0d
-     INTEGER, INTENT(IN)                  :: NIDE,NJDE,PIDE,PJDE
+     INTEGER, INTENT(IN)                  :: NIDE,NJDE,PIFE,PJFE
      INTEGER :: ci,cj, ni,nj, bad
      character(len=255) :: message
-     INTEGER :: count, bigcount, noncount
+     INTEGER :: count, bigcount, noncount, ierr
      REAL :: dlon, mindist,maxdist,dist,maxweight
+     real, dimension(:,:,:), allocatable :: bigsm,bighlat,bighlon
+     integer :: &
+          pids, pide, pjds, pjde, pkds, pkde, &
+          pims, pime, pjms, pjme, pkms, pkme, &
+          pits, pite, pjts, pjte, pkts, pkte
+     logical, external :: wrf_dm_on_monitor
+
+     CALL get_ijk_from_grid (  grid ,              &
+          pids, pide, pjds, pjde, pkds, pkde, &
+          pims, pime, pjms, pjme, pkms, pkme, &
+          pits, pite, pjts, pjte, pkts, pkte)
+
+     if(pife/=pide-1 .or. pjfe/=pjde-1) then
+        38 format('Caller sent wrong dimensions: ',I0,'x',I0, &
+                ' instead of ',I0,'x',I0)
+        write(message,38) pife,pjfe,pide-1,pjde-1
+        call wrf_error_fatal(message)
+     endif
+     if(wrf_dm_on_monitor()) then
+        allocate(bigsm(pids:pide,pjds:pjde,1), &
+                 bighlat(pids:pide,pjds:pjde,1), &
+                 bighlon(pids:pide,pjds:pjde,1))
+     else
+        allocate(bigsm(1,1,1),bighlat(1,1,1),bighlon(1,1,1))
+     endif
+
+     call wrf_patch_to_global_real(&
+          grid%sm,bigsm,grid%domdesc,'xy','xy',&
+          pids, pide, pjds, pjde, 1, 1, &
+          pims, pime, pjms, pjme, 1, 1, &
+          pits, pite, pjts, pjte, 1, 1)
+
+     if(.not.wrf_dm_on_monitor()) then
+        call MPI_Barrier(local_communicator,ierr)
+        deallocate(bigsm,bighlat,bighlon)
+        return
+     else
+        call wrf_debug(100,'Working on fort.65 stuff.')
+     endif
 
      allocate(NHLAT(nide,njde),NHLON(nide,njde),NVLAT(nide,njde))
      allocate(NVLON(nide,njde),HRES_SM(nide,njde))
@@ -2152,18 +2188,18 @@ CONTAINS
         do ni=1,nide
            ci=HNEAR_I(ni,nj)
            cj=HNEAR_J(ni,nj)
-           if(ci<1 .or. ci>pide .or. cj<1 .or. cj>pjde) then
+           if(ci<1 .or. ci>pife .or. cj<1 .or. cj>pjfe) then
 33            format('ERROR: Invalid HNEAR nest ',I0,',',I0,' parent ',&
                    I0,',',I0,' outside parent bounds ',I0,',',I0)
-              write(message,33) ni,nj,ci,cj,pide,pjde
+              write(message,33) ni,nj,ci,cj,pife,pjfe
               call wrf_message(trim(message))
               bad=bad+1
            endif
-           HRES_SM(ni,nj)=grid%SM(ci,cj)
+           HRES_SM(ni,nj)=bigSM(ci,cj,1)
            maxweight=max(HBWGT1(ni,nj),HBWGT2(ni,nj),HBWGT3(ni,nj),HBWGT4(ni,nj))
            if(maxweight>0.9999 .and. maxweight<1.03) then
               cenflag(ni,nj)=1
-              dist=greatarc(grid%HLAT(ci,cj),grid%HLON(ci,cj),&
+              dist=greatarc(bigHLAT(ci,cj,1),bigHLON(ci,cj,1),&
                    NHLAT(ni,nj),NHLON(ni,nj))
               if(dist>100) then
                  bigcount=bigcount+1
@@ -2200,19 +2236,24 @@ CONTAINS
         call wrf_error_fatal(message)
      endif
      
+     open(file='fort.65',unit=65,form='UNFORMATTED')
      WRITE(65)NHLAT(1:NIDE,1:NJDE)
      WRITE(65)NHLON(1:NIDE,1:NJDE)
      WRITE(65)NVLAT(1:NIDE,1:NJDE)
      WRITE(65)NVLON(1:NIDE,1:NJDE)
      WRITE(65)HRES_SM(1:NIDE,1:NJDE)
+     close(65)
      !WRITE(65)HNEAR_I(1:NIDE,1:NJDE)
      !WRITE(65)HNEAR_J(1:NIDE,1:NJDE)
      !WRITE(65)CENFLAG(1:NIDE,1:NJDE)
 
      deallocate(NHLAT,NHLON,NVLAT,NVLON,HRES_SM,IIH,JJH)
      deallocate(HBWGT1,HBWGT2,HBWGT3,HBWGT4,HNEAR_I,HNEAR_J)
+     deallocate(bigsm,bighlat,bighlon)
 
+     call MPI_Barrier(local_communicator,ierr)
    END SUBROUTINE make_coupler_fort65
+#endif
 
 !------------------------------------------------------
 

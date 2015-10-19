@@ -56,7 +56,7 @@
    model_config_rec % wrf_hydro = 0
 #endif
 
-#if (defined MOVE_NESTS) && (defined VORTEX_CENTER)
+#if (defined MOVE_NESTS) && (defined VORTEX_CENTER) && (EM_CORE==1)
 !-----------------------------------------------------------------------
 ! A known problem with moving nests.  Users with number of eta levels 
 ! above 55 get a model crash.
@@ -67,6 +67,22 @@
          wrf_err_message = '--- ERROR: Known problem.  Moving nests need e_vert .LE. 55'
          CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
       END IF
+#endif
+
+#if (NMM_CORE == 1) && (NMM_NEST == 1)
+!-----------------------------------------------------------------------
+! Ensure that minimum NMM coral distances are supplied for all domains.
+!-----------------------------------------------------------------------
+   do i=1,model_config_rec%max_dom
+      if(model_config_rec%coral_x(i)<5) then
+         call wrf_message("Coral X distance must be at least 5 due to intermediate domain halos.")
+         model_config_rec%coral_x(i)=5
+      endif
+      if(model_config_rec%coral_y(i)<5) then
+         call wrf_message("Coral Y distance must be at least 5 due to intermediate domain halos.")
+         model_config_rec%coral_y(i)=5
+      endif
+    enddo
 #endif
 
 #if (EM_CORE == 1)
@@ -160,22 +176,6 @@
          END IF
       ENDDO
 #endif
-
-!-----------------------------------------------------------------------
-! Check: if ETAMPNEW microphysics is selected, this has moved to option 95
-!-----------------------------------------------------------------------
-      DO i = 1, model_config_rec % max_dom
-         IF ( model_config_rec % mp_physics(i) == etamp_hr ) THEN
-            wrf_err_message = '--- RESET: ETAMPNEW scheme is now mp_physics=95'
-            CALL wrf_message ( wrf_err_message )
-            model_config_rec % mp_physics(i) = etampnew
-         END IF
-         IF ( model_config_rec % mp_physics_dfi(i) == etamp_hr_dfi ) THEN
-            wrf_err_message = '--- RESET: ETAMPNEW_DFI scheme is now mp_physics_dfi=95'
-            CALL wrf_message ( wrf_err_message )
-            model_config_rec % mp_physics_dfi(i) = etampnew_dfi
-         END IF
-      ENDDO
 
 !-----------------------------------------------------------------------
 ! Check that all values of sf_surface_physics are the same for all domains
@@ -1148,6 +1148,15 @@
         END IF
       END DO
 
+!-----------------------------------------------------------------------
+!  Remapping namelist variables for gridded and surface fdda to aux streams 9 and 10.
+!  Relocated here so that the remappings are after checking the namelist for inconsistencies.
+!-----------------------------------------------------------------------
+
+#     include "../dyn_em/namelist_remappings_em.h"
+
+#endif
+
 #if (EM_CORE == 1)
 !-----------------------------------------------------------------------
 !  For the real program (ARW only), check that the vertical interpolation options
@@ -1178,6 +1187,16 @@
       END IF
 #endif
 
+#if (EM_CORE == 1)
+      IF ( ( model_config_rec%jcdfi_use ).AND. &
+           ( model_config_rec%jcdfi_diag .NE. 1 ) ) THEN
+         wrf_err_message = '--- ERROR: If gcdfi_use = 1, then jcdfi_io must also = 1 for that domain '
+         CALL wrf_message ( wrf_err_message )
+         wrf_err_message = '--- Change jcdfi_io in namelist.input '
+         CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
+      END IF
+#endif
+
 !-----------------------------------------------------------------------
 !  Set the namelist parameter o3input to 0 for the radiation schemes other
 !  than RRTMG_LWSCHEME and RRTMG_SWSCHEME.
@@ -1196,23 +1215,6 @@
                            'o3input=0 to avoid data pre-processing'
          CALL wrf_message ( wrf_err_message )
       END IF
-
-!-----------------------------------------------------------------------
-!  Remapping namelist variables for gridded and surface fdda to aux streams 9 and 10.
-!  Relocated here so that the remappings are after checking the namelist for inconsistencies.
-!-----------------------------------------------------------------------
-
-#     include "../dyn_em/namelist_remappings_em.h"
-
-      IF ( ( model_config_rec%jcdfi_use ).AND. &
-           ( model_config_rec%jcdfi_diag .NE. 1 ) ) THEN
-         wrf_err_message = '--- ERROR: If gcdfi_use = 1, then jcdfi_io must also = 1 for that domain '
-         CALL wrf_message ( wrf_err_message )
-         wrf_err_message = '--- Change jcdfi_io in namelist.input '
-         CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
-      END IF
-
-#endif
 
 
 

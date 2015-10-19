@@ -9802,6 +9802,11 @@ MODULE module_ra_rrtmg_sw
 
 use module_model_constants, only : cp
 USE module_wrf_error
+#if (HWRF == 1)
+USE module_state_description, ONLY : FER_MP_HIRES, ETAMP_HWRF 
+#else
+USE module_state_description, ONLY : FER_MP_HIRES
+#endif
 !USE module_dm
 
 use parrrsw, only : nbndsw, ngptsw, naerec
@@ -9851,6 +9856,7 @@ CONTAINS
 !jdfcz                 progn,prescribe,                           &
                        progn,                                     &
                        qndrop3d,f_qndrop,                         & !czhao
+                       mp_physics,                                & !wang 2014/12
                        ids,ide, jds,jde, kds,kde,                 & 
                        ims,ime, jms,jme, kms,kme,                 &
                        its,ite, jts,jte, kts,kte,                 &
@@ -9870,6 +9876,7 @@ CONTAINS
                                        its,ite, jts,jte, kts,kte
 
    INTEGER, INTENT(IN )      ::        ICLOUD
+   INTEGER, INTENT(IN )      ::        MP_PHYSICS
 !
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme )                 , &
          INTENT(IN   ) ::                                   dz8w, &
@@ -10030,10 +10037,15 @@ CONTAINS
                                                             QC1D, &
                                                             QR1D, &
                                                             QI1D, &
+                                                           RHO1D, &
                                                             QS1D, &
                                                             QG1D, &
                                                             O31D, &
                                                           qndrop1d 
+
+!BSF: From eq. (5) on p. 2434 in McFarquhar & Heymsfield (1996)
+      real, parameter :: re_50C=1250.0/9.917, re_40C=1250.0/9.337,     &
+                         re_30C=1250.0/9.208, re_20C=1250.0/9.387
 
 ! Added local arrays for RRTMG
     integer ::                                              ncol, &
@@ -10172,7 +10184,7 @@ CONTAINS
     real, dimension(1, 1:kte-kts+1):: recloud1d, &
                                         reice1d, &
                                        resnow1d
-    real :: gliqwp, gicewp, gsnowp, gravmks
+    real :: gliqwp, gicewp, gsnowp, gravmks, tem1,tem2,tem3
 
 !
 !    REAL   ::  TSFC,GLW0,OLR0,EMISS0,FP
@@ -10223,6 +10235,7 @@ CONTAINS
 
 ! longitude loop
      i_loop: do i = its,ite
+         rho1d(kts:kte)=rho3d(i,kts:kte,j) ! BUG FIX (SGT): this was uninitialized
 !
 ! Do shortwave by default, deactivate below if sun below horizon
          dorrsw = .true.
@@ -10373,7 +10386,22 @@ CONTAINS
             ENDIF
 
          ENDIF
-
+! For mp option=5 or 85  (new Ferrier- Aligo or called fer_hires
+! scheme), QI3D saves all frozen water (ice+snow)
+#if (HWRF == 1)
+           IF ( mp_physics == FER_MP_HIRES .OR. mp_physics == ETAMP_HWRF ) THEN
+#else
+           IF ( mp_physics == FER_MP_HIRES ) THEN
+#endif
+                  DO K=kts,kte
+                     qi1d(k) = qi3d(i,k,j)
+                     qs1d(k) = 0.0
+                     qc1d(k) = qc3d(i,k,j)
+                     qi1d(k) = max(0.,qi1d(k))
+                     qc1d(k) = max(0.,qc1d(k))
+                  ENDDO
+           ENDIF
+!
 !         EMISS0=EMISS(I,J)
 !         GLW0=0. 
 !         OLR0=0. 
@@ -10415,7 +10443,11 @@ CONTAINS
                ENDDO
             ELSE
                DO K=kts,kte
+#if (EM_CORE==1)
                   recloud1D(ncol,K) = 5.0
+#else
+                  recloud1D(ncol,K) = 10.0  ! was 5.0
+#endif
                ENDDO
             ENDIF
 
@@ -10447,7 +10479,26 @@ CONTAINS
                ENDDO
             ELSE
                DO K=kts,kte
+#if (EM_CORE==1) 
                   resnow1D(ncol,K) = 10.0
+#else
+                 tem2 = 25.0  !- was 10.0
+                 tem3=1.e3*rho1d(k)*qi1d(k)  !- IWC (g m^-3)
+                 if (tem3>thresh) then       !- Only when IWC>1.e-9 g m^-3
+                   tem1=t1d(k)-273.15
+                   if (tem1 < -50.0) then
+                     tem2 = re_50C*tem3**0.109
+                   elseif (tem1 < -40.0) then
+                      tem2 = re_40C*tem3**0.08
+                   elseif (tem1 < -30.0) then
+                      tem2 = re_30C*tem3**0.055
+                   else
+                      tem2 = re_20C*tem3**0.031
+                   endif
+                    tem2 = max(25.,tem2)
+                 endif
+                 reice1D(ncol,K) = min(tem2, 135.72)   !- 1.0315*reice <= 140 microns 
+#endif
                ENDDO
             ENDIF
          ENDIF
@@ -10692,7 +10743,11 @@ CONTAINS
             reliq(ncol,k) = recloud1d(ncol,k)
          end do
       endif
+#if (EM_CORE==1) 
       if (iceflgsw .ge. 4) then
+#else
+      if (iceflgsw .ge. 3) then   !BSF: was .ge. 4
+#endif
          do k = kts, kte
             reice(ncol,k) = reice1d(ncol,k)
          end do

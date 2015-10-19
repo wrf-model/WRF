@@ -49,7 +49,7 @@ SUBROUTINE A_MICROPHYSICS_DRIVER(th, thb, rho, rhob, pi_phy, pi_phyb, p&
 
    USE module_state_description, ONLY :                                  &
                      KESSLERSCHEME, LINSCHEME, SBU_YLINSCHEME, WSM3SCHEME, WSM5SCHEME    &
-                    ,WSM6SCHEME, ETAMPNEW, ETAMP_HR, THOMPSON, MORR_TWO_MOMENT     &
+                    ,WSM6SCHEME, ETAMPNEW, THOMPSON, MORR_TWO_MOMENT     &
                     ,GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME, NSSL_2MOM, NSSL_2MOMCCN  &
                     ,NSSL_1MOM,NSSL_1MOMLFO & ! ,NSSL_3MOM       &
                     ,MILBRANDT2MOM, LSCONDSCHEME, MKESSLERSCHEME, CAMMGMPSCHEME  !,MILBRANDT3MOM

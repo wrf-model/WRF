@@ -86,6 +86,7 @@ MODULES = \
 	module_mp_wsm5.o \
 	module_mp_wsm6.o \
 	module_mp_etanew.o \
+	module_mp_fer_hires.o \
 	module_mp_nconvp.o \
 	module_mp_nconvp_tl.o \
 	module_mp_nconvp_ad.o \
@@ -120,6 +121,7 @@ MODULES = \
 	module_sf_sfclay.o \
 	module_sf_sfclayrev.o \
 	module_sf_gfs.o \
+	module_sf_exchcoef.o \
 	module_sf_gfdl.o \
 	module_sf_slab.o  \
 	module_sf_noahdrv.o  \

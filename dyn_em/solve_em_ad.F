@@ -3808,7 +3808,8 @@ BENCH_END(micro_driver_tim)
 #if 0
 BENCH_START(microswap_2)
 ! for load balancing; communication to redistribute the points
-     IF ( config_flags%mp_physics .EQ. ETAMPNEW ) THEN
+      IF ( config_flags%mp_physics .EQ. ETAMPNEW .OR. &
+     &     config_flags%mp_physics .EQ. FER_MP_HIRES) THEN
 #include "SWAP_ETAMP_NEW.inc"
      ELSE IF ( config_flags%mp_physics .EQ. WSM3SCHEME ) THEN
 #include "SWAP_WSM3.inc"

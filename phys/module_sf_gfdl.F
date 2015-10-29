@@ -821,6 +821,25 @@ CONTAINS
       real,parameter :: og    = 1./g
       character*255 :: message
 !
+#if HWRF==1
+      logical :: pert_Cd            !zhang
+      integer :: ens_random_seed         !zhang
+      real*8 :: gasdev,ran1          !zhang
+      real :: rr, ens_Cdamp         !zhang
+      logical,save :: pert_Cd_local            !zhang
+      integer,save :: ens_random_seed_local         !zhang
+      real,save :: ens_Cdamp_local         !zhang
+      data ens_random_seed_local/0/
+      if ( ens_random_seed_local .eq. 0 ) then
+      CALL nl_get_pert_Cd(1,pert_Cd)
+      CALL nl_get_ens_random_seed(1,ens_random_seed)
+      CALL nl_get_ens_Cdamp(1,ens_Cdamp)
+      ens_random_seed_local=ens_random_seed
+      pert_Cd_local=pert_Cd
+      ens_Cdamp_local=ens_Cdamp
+      endif
+#endif
+
 !     character*10 routine
 !     routine = 'mflux2'
 !
@@ -1585,6 +1604,14 @@ CONTAINS
         cdm(i) = 1./(xxfm(i)*xxfm(i))
 !       print *, 'i,zot,zoc,cdm,cdm2,tsg,wind', &
 !                i, zot(i),zoc(i), cdm(i),cdm2(i), tsg(i),wind(i)
+#if HWRF==1
+! randomly perturb the Cd
+        if( pert_Cd_local ) then
+        rr=2.0*ens_Cdamp_local*ran1(ens_random_seed_local)-ens_Cdamp_local
+        cdm(i) = cdm(i) *(1.0+rr)
+        endif
+#endif
+
       enddo
 
       return

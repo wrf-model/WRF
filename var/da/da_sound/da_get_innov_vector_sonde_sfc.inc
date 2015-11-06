@@ -208,7 +208,8 @@ subroutine da_get_innov_vector_sonde_sfc( it, num_qcstat_conv,grid, ob, iv)
          end if
       end if
 
-      if (ob % sonde_sfc(n) % p > 0.0 .AND. iv % sonde_sfc(n) % p % qc >= obs_qc_pointer) then
+      !if (ob % sonde_sfc(n) % p > 0.0 .AND. iv % sonde_sfc(n) % p % qc >= obs_qc_pointer) then
+      if ( iv % sonde_sfc(n) % p % qc >= obs_qc_pointer ) then
          iv % sonde_sfc(n) % p % inv = iv%sonde_sfc(n)%p%inv - model_p(1,n)
       else
          iv % sonde_sfc(n) % p % inv = 0.0

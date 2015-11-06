@@ -211,8 +211,8 @@ subroutine da_get_innov_vector_metar(it,num_qcstat_conv, grid, ob, iv)
          end if
       end if
 
-      if (ob % metar(n) % p > 0.0 .AND. &
-         iv % metar(n) % p % qc >= obs_qc_pointer) then
+      !if (ob % metar(n) % p > 0.0 .AND. iv % metar(n) % p % qc >= obs_qc_pointer) then
+      if ( iv % metar(n) % p % qc >= obs_qc_pointer ) then
          iv % metar(n) % p % inv = iv%metar(n)%p%inv - model_p(1,n)
       else
          iv % metar(n) % p % inv = 0.0

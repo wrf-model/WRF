@@ -206,7 +206,8 @@ subroutine da_get_innov_vector_synop( it,num_qcstat_conv, grid, ob, iv)
          end if
       end if
 
-      if (ob % synop(n) % p > 0.0 .AND. iv % synop(n) % p % qc >= obs_qc_pointer) then
+      !if (ob % synop(n) % p > 0.0 .AND. iv % synop(n) % p % qc >= obs_qc_pointer) then
+      if ( iv % synop(n) % p % qc >= obs_qc_pointer ) then
          iv % synop(n) % p % inv = iv%synop(n)%p%inv - model_p(1,n)
       else
          iv % synop(n) % p % inv = 0.0

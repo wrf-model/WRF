@@ -58,6 +58,7 @@ PROGRAM main_obsproc
    USE module_complete
    USE module_thin_ob
    USE module_write
+   use module_stntbl
 !------------------------------------------------------------------------------!
    IMPLICIT NONE
 
@@ -181,6 +182,8 @@ PROGRAM main_obsproc
       INQUIRE (FILE = obs_gts_filename, EXIST = exist )
 
       IF (exist .and. LEN(TRIM(obs_gts_filename))>0) THEN
+
+         call read_msfc_table('msfc.tbl')
 
       !  Read data from input file
 

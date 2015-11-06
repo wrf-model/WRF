@@ -1647,7 +1647,7 @@ SUBROUTINE read_measurements (file_num, surface, location, info, bad_data, &
 
       ! initialize the variable that might be used in module_err_ncep.F90
       ! for checking if the error is pre-assigned
-      current%meas%speed%error = missing_r
+      current%meas%speed%error = 0.0
 
       READ (info % platform (4:6), '(I3)') fm
 

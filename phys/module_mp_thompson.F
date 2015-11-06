@@ -3256,7 +3256,8 @@
            t4_vts = Kap1*Mrat**mu_s*csg(7)*ils2**cse(7)
            vts = rhof(k)*av_s * (t1_vts+t2_vts)/(t3_vts+t4_vts)
            if (temp(k).gt. T_0) then
-            vtsk(k) = MAX(vts*vts_boost(k), vtrk(k))
+            vtsk(k) = MAX(vts*vts_boost(k),                             &
+     &                vts*((vtrk(k)-vts*vts_boost(k))/(temp(k)-T_0)))
            else
             vtsk(k) = vts*vts_boost(k)
            endif

@@ -426,14 +426,14 @@ subroutine da_write_filtered_obs(it, grid, ob, iv, &
          end if
 
          write(ounit, fmt = fmt_info)                &
-            iv%info(buoy)%platform(1),    &
-            iv%info(buoy)%date_char(1),   &
-            iv%info(buoy)%name(1),        &
+            iv%info(buoy)%platform(n),    &
+            iv%info(buoy)%date_char(n),   &
+            iv%info(buoy)%name(n),        &
             nlevels,         &
             iv%info(buoy)%lat(1,n),         &
             iv%info(buoy)%lon(1,n),         &
-            iv%info(buoy)%elv(1),         &
-            iv%info(buoy)%id(1)
+            iv%info(buoy)%elv(n),         &
+            iv%info(buoy)%id(n)
          slp_inv= iv%info(buoy)%slp(n)%inv
          slp_qc = iv%info(buoy)%slp(n)%qc
          if (iv%buoy (n)%p%qc <= fails_error_max) then

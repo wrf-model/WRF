@@ -31,6 +31,7 @@ MODULE module_decoded
 !--------------------------------------------------------------------------
 
    USE module_type
+   use module_stntbl
 
 !------------------------------------------------------------------------
 !                            FUNCTION
@@ -99,7 +100,7 @@ CONTAINS
 ! SUBROUTINE diagnostics ( new , longitude )
 ! SUBROUTINE insert_at ( surface , new , elevation )
 
-!
+!
 !-------------------------------------------------------------------------
 
 
@@ -150,6 +151,8 @@ time_window_min, time_window_max, map_projection , missing_flag)
    INTEGER                              :: nlevels, num_unknown, m_miss
    TYPE ( measurement ) , POINTER       :: current
    real :: qnh, elev
+   real :: xla, xlo
+   integer :: ipos
 !-----------------------------------------------------------------------------!
   INCLUDE 'platform_interface.inc'
 !-----------------------------------------------------------------------------!
@@ -329,6 +332,7 @@ time_window_min, time_window_max, map_projection , missing_flag)
          if ( obs(obs_num)%info%platform(1:10) == 'FM-13 SHIP' ) then
             if ( index(obs(obs_num)%location%name, 'Platform Id >>>') > 0 ) then
                obs(obs_num)%info%platform(1:10) = 'FM-18 BUOY'
+               obs(obs_num)%location%id = obs(obs_num)%location%name(17:21)
             end if
          end if
       end if
@@ -976,7 +980,51 @@ time_window_min, time_window_max, map_projection , missing_flag)
                    obs(obs_num)%valid_time%date_char,    &
                    obs(obs_num)%info % elevation
              endif
-          END IF
+
+             ! assigning elevation info for ships and buoys located in the Great
+             ! Lakes.
+             !http://www.nco.ncep.noaa.gov/pmb/codes/nwprod/decoders/decod_dcmsfc/sorc/maelev.f
+             xla = obs(obs_num)%location%latitude
+             xlo = obs(obs_num)%location%longitude
+             if ( fm .eq. 13 .or. fm .eq. 33 .or. fm .eq. 36 ) then
+                ! for ships
+                if ( ( xlo .ge. -92.5  .and. xlo .le. -84.52 )  .and.    &
+                     ( xla .ge.  46.48 .and. xla .le.  49.0 ) ) then
+                   !Ship located in Lake Superior
+                   obs(obs_num)%info % elevation = 183.
+                else if ( ( xlo .ge. -88.1 .and. xlo .le. -84.8 ) .and.  &
+                          ( xla .ge. 41.2  .and. xla .le.  46.2 ) ) then
+                   !Ship located in Lake Michigan
+                   obs(obs_num)%info % elevation = 176.
+                else if ( ( xlo .ge. -84.8 .and. xlo .le. -79.79 ) .and. &
+                          ( xla .ge. 43.0  .and. xla .le.  46.48 ) ) then
+                   !Ship located in Lake Huron or Georgian Bay
+                   obs(obs_num)%info % elevation = 176.
+                else if ( ( xlo .ge. -84.0 .and. xlo .le. -78.0 ) .and.  &
+                          ( xla .ge. 41.0  .and. xla .le.  42.9 ) ) then
+                   !Ship located in Lake Erie
+                   obs(obs_num)%info % elevation = 174.
+                else if ( ( xlo .ge. -80.0 .and. xlo .le. -76.0 ) .and.  &
+                       ( xla .ge. 43.1  .and. xla .le.  44.23 ) ) then
+                   !Ship located in Lake Ontario
+                   obs(obs_num)%info % elevation = 74.
+                end if
+             end if !end if ships
+             if ( fm .eq. 18 .and. obs(obs_num)%location%id(1:2) .eq. '45' ) then
+                ! for Great Lakes fixed buoys
+                ! get station elevation from station table if available
+                if ( use_msfc_tbl .and. num_stations_msfc > 0 ) then
+                   ipos = 0
+                   do while ( ipos < num_stations_msfc )
+                      ipos = ipos + 1
+                      if ( obs(obs_num)%location%id(1:5) == id_tbl(ipos) ) then
+                         obs(obs_num)%info % elevation = elev_tbl(ipos)
+                         exit
+                      end if
+                   end do
+                end if !table info available
+             end if ! end if buoys
+          END IF ! missing elevation
 
          END IF  ! not outside
 
@@ -988,7 +1036,8 @@ time_window_min, time_window_max, map_projection , missing_flag)
          ! in tenths of degree in the remarks section (RMK). These are
          ! decoded. JFB
 
-         IF ((obs (obs_num)%info%platform(1:12) .EQ. 'FM-15 METAR ' ) .AND. &
+         IF ((obs (obs_num)%info%platform(1:12) .EQ. 'FM-15 METAR ' .or. &
+              obs (obs_num)%info%platform(1:12) .EQ. 'FM-16 SPECI ') .AND. &
              (ASSOCIATED (obs (obs_num)%surface ) ) ) THEN
             if ( calc_psfc_from_QNH .and. gts_from_mmm_archive ) then
                if ( obs(obs_num)%ground%psfc%data > 0.0 .and. &
@@ -1027,10 +1076,13 @@ time_window_min, time_window_max, map_projection , missing_flag)
          IF ( (obs(obs_num)%info%platform(1:10) == 'FM-13 SHIP') .or. &
               (obs(obs_num)%info%platform(1:10) == 'FM-18 BUOY') ) then
             if ( ASSOCIATED(obs(obs_num)%surface) ) then
+               obs(obs_num)%surface%meas%height%data   = &
+                  obs(obs_num)%info%elevation
+               obs(obs_num)%surface%meas%height%qc     = 0
                if ( (obs(obs_num)%info%elevation == 0.0) ) then
-                  obs(obs_num)%surface%meas%height%data   = &
-                     obs(obs_num)%info%elevation
-                  obs(obs_num)%surface%meas%height%qc     = 0
+                  !obs(obs_num)%surface%meas%height%data   = &
+                  !   obs(obs_num)%info%elevation
+                  !obs(obs_num)%surface%meas%height%qc     = 0
                   obs(obs_num)%surface%meas%pressure%data = &
                      obs(obs_num)%ground%slp%data
                   obs(obs_num)%surface%meas%pressure%qc   = 0
@@ -1595,7 +1647,7 @@ SUBROUTINE read_measurements (file_num, surface, location, info, bad_data, &
 
       ! initialize the variable that might be used in module_err_ncep.F90
       ! for checking if the error is pre-assigned
-      current%meas%speed%error = missing_r
+      current%meas%speed%error = 0.0
 
       READ (info % platform (4:6), '(I3)') fm
 

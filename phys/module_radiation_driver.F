@@ -2057,15 +2057,6 @@ CONTAINS
            ENDDO
            ENDDO
         ENDIF
-        IF ( PRESENT( qs  ) .AND. ICLOUD.eq.3) THEN
-           DO j=jts,jte
-           DO k=kts,kte
-           DO i=its,ite
-             qs(i,k,j) = qs_save(i,k,j)
-           ENDDO
-           ENDDO
-           ENDDO
-        ENDIF
 
      IF ( PRESENT( diffuse_frac ) ) THEN 
          DO j=jts,jte
@@ -2101,6 +2092,28 @@ CONTAINS
          ENDDO
          ENDDO
          ENDIF
+      ENDIF
+      IF (ICLOUD == 3) THEN
+        IF (PRESENT(CLDFRA) .AND.                                       &
+            PRESENT(F_QC) .AND. PRESENT ( F_QI ) ) THEN
+           DO j = jts,jte
+           DO k = kts,kte
+           DO i = its,ite
+              qc(i,k,j) = qc_save(i,k,j)
+              qi(i,k,j) = qi_save(i,k,j)
+           ENDDO
+           ENDDO
+           ENDDO
+           IF (PRESENT(F_QS)) THEN
+              DO j = jts,jte
+              DO k = kts,kte
+              DO i = its,ite
+                 qs(i,k,j) = qs_save(i,k,j)
+              ENDDO
+              ENDDO
+              ENDDO
+           ENDIF
+        ENDIF
       ENDIF
 
       ! jararias, aug 2013, updated 2013/11

@@ -210,7 +210,8 @@ subroutine da_get_innov_vector_ships( it,num_qcstat_conv, grid, ob, iv)
          end if
       end if
 
-      if (ob % ships(n) % p > 0.0 .AND. iv % ships(n) % p % qc >= obs_qc_pointer) then
+      !if (ob % ships(n) % p > 0.0 .AND. iv % ships(n) % p % qc >= obs_qc_pointer) then
+      if ( iv % ships(n) % p % qc >= obs_qc_pointer ) then
          iv % ships(n) % p % inv = iv%ships(n)%p%inv - model_p(1,n)
       else
          iv % ships(n) % p % inv = 0.0

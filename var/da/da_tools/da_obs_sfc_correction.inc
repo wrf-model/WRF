@@ -71,19 +71,22 @@ subroutine da_obs_sfc_correction(info, sfc_obs, n, xb)
 
    ! 3.1 Compute the surface OBS pressure from mean sea level pressure
 
-   mslp = info%slp(n)%inv
-   if (abs(mslp - missing_r) > 1.0) then
-      psfc = missing_r
-      if (abs(ho - missing_r) > 1.0) then
-         if (abs(to - missing_r) > 1.0) then
-            call da_sfcprs (kts, kte, pressure, t_mdl, q_mdl, height, psfc, mslp, ho, to)
-         else
-            call da_sfcprs (kts, kte, pressure, t_mdl, q_mdl, height, psfc, mslp, ho)
+   if ( psfc_from_slp ) then
+      mslp = info%slp(n)%inv
+      if (abs(mslp - missing_r) > 1.0) then
+         psfc = missing_r
+         if (abs(ho - missing_r) > 1.0) then
+            if (abs(to - missing_r) > 1.0) then
+               call da_sfcprs (kts, kte, pressure, t_mdl, q_mdl, height, psfc, mslp, ho, to)
+            else
+               call da_sfcprs (kts, kte, pressure, t_mdl, q_mdl, height, psfc, mslp, ho)
+            end if
          end if
+         sfc_obs % p % inv = psfc
+         ! YRG: to allow assmilate the Psfc from mslp:
+         sfc_obs % p % qc  = 0
       end if
-      sfc_obs % p % inv = psfc
-      ! YRG: to allow assmilate the Psfc from mslp:
-      sfc_obs % p % qc  = 0
+      po = sfc_obs % p % inv
    end if
 
    if (sfc_obs % p % inv < 1.0) then

@@ -350,13 +350,20 @@ between selected output times (e.g. daily) in auxhist3
  frames_per_auxhist3     = 1
  /
 
-** for pressure-level (and some surface) diagnostics, output is on stream 23
+
+** for pressure-level (and some surface) diagnostics, output is on stream 23,
+where the listed pressure levels are in Pa.  For the height level interpolation,
+the unit is stream 22.
 
  &time_control
  io_form_auxhist23                   =  2,
  auxhist23_interval                  = 30,   30,    30,
  frames_per_auxhist23                =  1,    1,     1, 
  auxhist23_outname                   = "PLEVS_d<domain>_<date>"
+ io_form_auxhist22                   =  2,
+ auxhist22_interval                  = 30,   30,    30,
+ frames_per_auxhist22                =  1,    1,     1, 
+ auxhist22_outname                   = "ZLEVS_d<domain>_<date>"
  /
 
  &diags
@@ -364,6 +371,23 @@ between selected output times (e.g. daily) in auxhist3
  num_press_levels                    = 4
  press_levels                        = 85000, 70000, 50000, 25000
  use_tot_or_hyd_p                    = 2
+ /
+
+
+** for height-level diagnostics, output is on stream 22 (negative values
+for z_levels means AGL, so -500 is 500 m AGL, and 10000 is 10 km).
+
+ &time_control
+ io_form_auxhist22                   =  2,
+ auxhist22_interval                  = 30,   30,    30,
+ frames_per_auxhist22                =  1,    1,     1, 
+ auxhist22_outname                   = "ZLEVS_d<domain>_<date>"
+ /
+
+ &diags
+ z_lev_diags                         = 1
+ num_z_levels                        = 2
+ z_levels                            = -500, 10000
  /
 
 
@@ -455,22 +479,18 @@ inforamtion is ignored.  The default is 300 hPa.  The user may also
 select the level that when exceeded the trop and maxw fields are ignored
 (due to the horizontal pressure difference detecting a user-defined
 discontinuity, and the metgrid horizontal interpolation across the 
-discontinuity would be suspect).  
+discontinuity would be suspect).  By default, this option is turned off.
+The user may choose to individually activate the vertical interpolation of
+either the level of max winds .OR. the tropopause level.
 
-Default (all units Pa):
+Default (all pressure units Pa):
  &domains
  maxw_horiz_pres_diff                = 5000
  trop_horiz_pres_diff                = 5000
  maxw_above_this_level               = 30000
+ use_maxw_level                      = 0 (0=do not use level, 1 = use level)
+ use_trop_level                      = 0 (0=do not use level, 1 = use level)
 
-To test the sensitivity, a user may shut off the usage of the new data 
-by making the minimum acceptable vertical level for max winds ABOVE anything 
-physically possible inside of real, and also by setting the horizontal 
-pressure difference SMALLER than anything possible.
- &domains
- maxw_horiz_pres_diff                = -1
- trop_horiz_pres_diff                = -1
- maxw_above_this_level               = 1
 
 
 

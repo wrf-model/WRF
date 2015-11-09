@@ -138,7 +138,9 @@ implicit none
 !*** purpose: initialize fuel tables and variables by constants
 !*** arguments: none
 logical, external:: wrf_dm_on_monitor
-!$ integer, external:: OMP_GET_THREAD_NUM
+#ifdef _OPENMP
+!integer, external:: OMP_GET_THREAD_NUM
+#endif
 !*** local
 integer:: i,j,k,ii,iounit
 character(len=128):: msg
@@ -149,9 +151,11 @@ namelist /fuel_scalars/ cmbcnst,hfgl,fuelmc_g,fuelmc_c,nfuelcats,no_fuel_cat
 namelist /fuel_categories/ fuel_name,windrf,fgi,fueldepthm,savr, &
     fuelmce,fueldens,st,se,weight,fci_d,fct,ichap
 
-!$  if (OMP_GET_THREAD_NUM() .ne. 0)then
-!$     call crash('init_fuel_cats: must be called from master thread')
-!$  endif
+#ifdef _OPENMP
+!   if (OMP_GET_THREAD_NUM() .ne. 0)then
+!      call crash('init_fuel_cats: must be called from master thread')
+!   endif
+#endif
 
 IF ( wrf_dm_on_monitor() ) THEN
     ! if we are the master task, read the file

@@ -318,11 +318,12 @@ CONTAINS
 SUBROUTINE setup_gasprofile_maps(chem_opt, numgas)
   integer, intent(in) :: chem_opt, numgas
 
+!!! TUCCELLA
   select case(chem_opt)
   case (RADM2, RADM2_KPP, RADM2SORG, RADM2SORG_AQ, RADM2SORG_AQCHEM, RADM2SORG_KPP, &
         RACM_KPP, RACMPM_KPP, RACM_MIM_KPP, RACMSORG_AQ, RACMSORG_AQCHEM_KPP,       &
         RACM_ESRLSORG_AQCHEM_KPP, RACM_ESRLSORG_KPP, RACMSORG_KPP, RACM_SOA_VBS_KPP,&
-        GOCARTRACM_KPP, GOCARTRADM2,CHEM_TRACER, CHEM_TRACE2)
+        RACM_SOA_VBS_AQCHEM_KPP,GOCARTRACM_KPP, GOCARTRADM2, CHEM_TRACER, CHEM_TRACE2)
      call setup_gasprofile_map_radm_racm
 
   case (SAPRC99_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP,      &
@@ -1468,7 +1469,7 @@ END SUBROUTINE bdy_chem_value_ghg
       i_bdy_method = 0
       if ((ic .ge. p_so2) .and. (ic .le. p_ho2)) then
           i_bdy_method = 1
-
+!!! TUCCELLA
         if (config_flags%chem_opt == RACM_KPP .or.          &
             config_flags%chem_opt == GOCARTRACM_KPP .or.      &
             config_flags%chem_opt == RACMSORG_KPP .or.      &
@@ -1476,7 +1477,8 @@ END SUBROUTINE bdy_chem_value_ghg
             config_flags%chem_opt == RACM_SOA_VBS_KPP .or.      & 
             config_flags%chem_opt == RACM_MIM_KPP .or.      & 
             config_flags%chem_opt == RACMSORG_AQCHEM_KPP .or.      & 
-            config_flags%chem_opt == RACM_ESRLSORG_AQCHEM_KPP ) then
+            config_flags%chem_opt == RACM_ESRLSORG_AQCHEM_KPP .or. &
+            config_flags%chem_opt == RACM_SOA_VBS_AQCHEM_KPP  ) then
           i_bdy_method = 9
         end if
         if (config_flags%chem_opt == RACMPM_KPP ) then
@@ -2173,10 +2175,11 @@ END SUBROUTINE bdy_chem_value_ghg
      case (0)
         get_last_gas = 0
 
+!!! TUCCELLA
      case (RADM2, RADM2_KPP, RADM2SORG, RADM2SORG_AQ, RADM2SORG_AQCHEM, RADM2SORG_KPP, &
            RACM_KPP, RACMPM_KPP, RACM_MIM_KPP, RACMSORG_AQ, RACMSORG_AQCHEM_KPP,       &
            RACM_ESRLSORG_AQCHEM_KPP, RACM_ESRLSORG_KPP, RACMSORG_KPP, RACM_SOA_VBS_KPP,& 
-           GOCARTRACM_KPP,GOCARTRADM2)
+           RACM_SOA_VBS_AQCHEM_KPP,GOCARTRACM_KPP,GOCARTRADM2)
         get_last_gas = p_ho2
 
      case (SAPRC99_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP, &

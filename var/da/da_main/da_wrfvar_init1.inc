@@ -21,10 +21,8 @@ subroutine da_wrfvar_init1(no_init1)
    !
    !</DESCRIPTION>
 
-   ! FIX? keep this version so netcdf files are the same until near release
-   ! program_name = "WRFVAR "//trim(release_version)//" (COMPATIBLE WITH WRF "//trim(release_version)//") MODEL"
-   ! the above program_name is too long for the update_firstguess TITLE to work
-   program_name = "WRFVAR "//release_version
+   ! Set "program_name", which will be printed to output and netcdf metadata
+   program_name = "WRFDA "//release_version
 
    ! Initialize WRF modules:  
    ! Phase 1 returns after mpi_init() (if it is called)
@@ -55,7 +53,8 @@ subroutine da_wrfvar_init1(no_init1)
    !</DESCRIPTION>
 
    ! Don't use stdout here, too early
-   write(unit=6,fmt='(A)') "***  VARIATIONAL ANALYSIS ***"
+   write(unit=6,fmt='(/A)') "*** VARIATIONAL ANALYSIS ***"
+   write(unit=6,fmt='(A,A/)') "    ",program_name
 
 #ifdef DM_PARALLEL
    call wrf_get_dm_communicator (comm)

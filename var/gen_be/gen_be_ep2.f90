@@ -22,14 +22,15 @@ program gen_be_ep2
 
    implicit none
 
-   character (len=filename_len)   :: directory                 ! General filename stub.
-   character (len=filename_len)   :: filename                  ! General filename stub.
-   character (len=filename_len)   :: input_file                ! Input file. 
-   character (len=filename_len)   :: output_file               ! Output file. 
+   character (len=filename_len)   :: directory        ! General filename stub.
+   character (len=filename_len)   :: filename         ! General filename stub.
+   character (len=filename_len)   :: input_file       ! Input file.
+   character (len=filename_len)   :: output_file      ! Output file.
    character (len=10)    :: date                      ! Character date.
    character (len=10)    :: var                       ! Variable to search for.
    character (len=3)     :: cne                       ! Ensemble size.
    character (len=3)     :: ce                        ! Member index -> character.
+   character (len=filename_len)   :: moist_string
 
    integer, external     :: iargc
    integer               :: numarg
@@ -40,9 +41,11 @@ program gen_be_ep2
    integer               :: dim2                      ! Dimensions of grid (T points).
    integer               :: dim2s                     ! Dimensions of grid (vor/psi pts).
    integer               :: dim3                      ! Dimensions of grid (T points).
+   integer               :: mp_physics                ! microphysics option
    real                  :: member_inv                ! 1 / member.
    real                  :: ds                        ! Grid resolution.
    logical               :: remove_mean               ! Remove mean from standard fields.
+   logical               :: has_cloud, has_rain, has_ice, has_snow, has_graup
 
    real, allocatable     :: u(:,:,:)                  ! u-wind.
    real, allocatable     :: v(:,:,:)                  ! v-wind.
@@ -50,6 +53,9 @@ program gen_be_ep2
    real, allocatable     :: q(:,:,:)                  ! Specific humidity.
    real, allocatable     :: qcloud(:,:,:)             ! Cloud.
    real, allocatable     :: qrain(:,:,:)              ! Rain.
+   real, allocatable     :: qice(:,:,:)               ! ice
+   real, allocatable     :: qsnow(:,:,:)              ! snow
+   real, allocatable     :: qgraup(:,:,:)             ! graupel
    real, allocatable     :: psfc(:,:)                 ! Surface pressure.
    real, allocatable     :: u_mean(:,:,:)             ! u-wind.
    real, allocatable     :: v_mean(:,:,:)             ! v-wind.
@@ -57,6 +63,9 @@ program gen_be_ep2
    real, allocatable     :: q_mean(:,:,:)             ! Specific humidity.
    real, allocatable     :: qcloud_mean(:,:,:)        ! Cloud.
    real, allocatable     :: qrain_mean(:,:,:)         ! Rain.
+   real, allocatable     :: qice_mean(:,:,:)          ! ice
+   real, allocatable     :: qsnow_mean(:,:,:)         ! snow
+   real, allocatable     :: qgraup_mean(:,:,:)        ! graupel
    real, allocatable     :: psfc_mean(:,:)            ! Surface pressure.
    real, allocatable     :: u_mnsq(:,:,:)             ! u-wind.
    real, allocatable     :: v_mnsq(:,:,:)             ! v-wind.
@@ -64,6 +73,9 @@ program gen_be_ep2
    real, allocatable     :: q_mnsq(:,:,:)             ! Specific humidity.
    real, allocatable     :: qcloud_mnsq(:,:,:)        ! Cloud.
    real, allocatable     :: qrain_mnsq(:,:,:)         ! Rain.
+   real, allocatable     :: qice_mnsq(:,:,:)          ! ice
+   real, allocatable     :: qsnow_mnsq(:,:,:)         ! snow
+   real, allocatable     :: qgraup_mnsq(:,:,:)        ! graupel
    real, allocatable     :: psfc_mnsq(:,:)            ! Surface pressure.
 
    real, allocatable     :: utmp(:,:)                 ! u-wind.
@@ -78,7 +90,6 @@ program gen_be_ep2
 
 !---------------------------------------------------------------------------------------------
    write(6,'(/a)')' [1] Initialize information.'
-   print *, 'apm in gen_be_ep2'
 !---------------------------------------------------------------------------------------------
 
    call da_get_unit(gen_be_iunit)
@@ -110,7 +121,7 @@ program gen_be_ep2
    else
       write(6,'(a,a)')' Computing gen_be ensemble forecast files for date ', date
    end if
-   write(6,'(a)')' Perturbations are in MODEL SPACE (u, v, t, q, qcloud, qrain, ps)'
+   write(6,'(a)')' Perturbations are in MODEL SPACE (u, v, t, q, ps)'
    write(6,'(a,i4)')' Ensemble Size = ', ne
    write(6,'(a,a)')' Directory = ', trim(directory)
    write(6,'(a,a)')' Filename = ', trim(filename)
@@ -122,7 +133,7 @@ program gen_be_ep2
 !  Get grid dimensions from first T field:
    var = "T"
    input_file = trim(directory)//'/'//trim(filename)//'.e001'
-   call da_stage0_initialize( input_file, var, dim1, dim2, dim3, ds )
+   call da_stage0_initialize( input_file, var, dim1, dim2, dim3, ds, mp_physics )
    dim1s = dim1+1 ! u i dimension is 1 larger.
    dim2s = dim2+1 ! v j dimension is 1 larger.
 
@@ -131,36 +142,81 @@ program gen_be_ep2
    allocate( v(1:dim1,1:dim2,1:dim3) ) ! Note - interpolated to mass pts for output.
    allocate( temp(1:dim1,1:dim2,1:dim3) )
    allocate( q(1:dim1,1:dim2,1:dim3) )
-   allocate( qcloud(1:dim1,1:dim2,1:dim3) )
-   allocate( qrain(1:dim1,1:dim2,1:dim3) )
    allocate( psfc(1:dim1,1:dim2) )
    allocate( u_mean(1:dim1,1:dim2,1:dim3) ) ! Note - interpolated to chi pts for output.
    allocate( v_mean(1:dim1,1:dim2,1:dim3) )
    allocate( temp_mean(1:dim1,1:dim2,1:dim3) )
    allocate( q_mean(1:dim1,1:dim2,1:dim3) )
-   allocate( qcloud_mean(1:dim1,1:dim2,1:dim3) )
-   allocate( qrain_mean(1:dim1,1:dim2,1:dim3) )
    allocate( psfc_mean(1:dim1,1:dim2) )
    allocate( u_mnsq(1:dim1,1:dim2,1:dim3) ) ! Note - interpolated to chi pts for output.
    allocate( v_mnsq(1:dim1,1:dim2,1:dim3) )
    allocate( temp_mnsq(1:dim1,1:dim2,1:dim3) )
    allocate( q_mnsq(1:dim1,1:dim2,1:dim3) )
-   allocate( qcloud_mnsq(1:dim1,1:dim2,1:dim3) )
-   allocate( qrain_mnsq(1:dim1,1:dim2,1:dim3) )
    allocate( psfc_mnsq(1:dim1,1:dim2) )
+   ! cloud variables
+   has_cloud = .false.
+   has_rain  = .false.
+   has_ice   = .false.
+   has_snow  = .false.
+   has_graup = .false.
+   moist_string = ''
+   if ( mp_physics > 0 ) then
+      has_cloud = .true.
+      has_rain  = .true.
+      allocate( qcloud(1:dim1,1:dim2,1:dim3) )
+      allocate( qrain(1:dim1,1:dim2,1:dim3) )
+      allocate( qcloud_mean(1:dim1,1:dim2,1:dim3) )
+      allocate( qrain_mean(1:dim1,1:dim2,1:dim3) )
+      allocate( qcloud_mnsq(1:dim1,1:dim2,1:dim3) )
+      allocate( qrain_mnsq(1:dim1,1:dim2,1:dim3) )
+      qcloud_mean = 0.0
+      qrain_mean = 0.0
+      qcloud_mnsq = 0.0
+      qrain_mnsq = 0.0
+      moist_string = trim(moist_string)//'qcloud, qrain '
+      if ( mp_physics == 2 .or. mp_physics == 4 .or. \
+           mp_physics >= 6 ) then
+         has_ice   = .true.
+         allocate( qice(1:dim1,1:dim2,1:dim3) )
+         allocate( qice_mean(1:dim1,1:dim2,1:dim3) )
+         allocate( qice_mnsq(1:dim1,1:dim2,1:dim3) )
+         qice_mean = 0.0
+         qice_mnsq = 0.0
+         moist_string = trim(moist_string)//', qice '
+      end if
+      if ( mp_physics == 2 .or. mp_physics >= 4 ) then
+         has_snow  = .true.
+         allocate( qsnow(1:dim1,1:dim2,1:dim3) )
+         allocate( qsnow_mean(1:dim1,1:dim2,1:dim3) )
+         allocate( qsnow_mnsq(1:dim1,1:dim2,1:dim3) )
+         qsnow_mean = 0.0
+         qsnow_mnsq = 0.0
+         moist_string = trim(moist_string)//', qsnow '
+      end if
+      if ( mp_physics == 2 .or. mp_physics >= 6 ) then
+         if ( mp_physics /= 11 .and. mp_physics /= 13 .and. \
+              mp_physics /= 14 ) then
+            has_graup = .true.
+            allocate( qgraup(1:dim1,1:dim2,1:dim3) )
+            allocate( qgraup_mean(1:dim1,1:dim2,1:dim3) )
+            allocate( qgraup_mnsq(1:dim1,1:dim2,1:dim3) )
+            qgraup_mean = 0.0
+            qgraup_mnsq = 0.0
+            moist_string = trim(moist_string)//', qgraup '
+         end if
+      end if
+      write(6,'(a)')' cloud variables are '//trim(moist_string)
+   end if
+
    u_mean = 0.0
    v_mean = 0.0
    temp_mean = 0.0
    q_mean = 0.0
-   qcloud_mean = 0.0
-   qrain_mean = 0.0
    psfc_mean = 0.0
    u_mnsq = 0.0
    v_mnsq = 0.0
    temp_mnsq = 0.0
    q_mnsq = 0.0
-   qcloud_mnsq = 0.0
-   qrain_mnsq = 0.0
    psfc_mnsq = 0.0
 
 !  Temporary arrays:
@@ -203,13 +259,32 @@ program gen_be_ep2
          call da_get_field( input_file, var, 3, dim1, dim2, dim3, k, dummy )
          q(:,:,k) = dummy(:,:) / ( 1.0 + dummy(:,:) )
 
-!        Read hydrometeors (need better method to read all e.g. qsn automatically):
-         var = "QCLOUD"
-         call da_get_field( input_file, var, 3, dim1, dim2, dim3, k, dummy )
-         qcloud(:,:,k) = dummy(:,:)
-         var = "QRAIN"
-         call da_get_field( input_file, var, 3, dim1, dim2, dim3, k, dummy )
-         qrain(:,:,k) = dummy(:,:)
+!        Read hydrometeors
+         if ( has_cloud ) then
+            var = "QCLOUD"
+            call da_get_field( input_file, var, 3, dim1, dim2, dim3, k, dummy )
+            qcloud(:,:,k) = dummy(:,:)
+         end if
+         if ( has_rain ) then
+            var = "QRAIN"
+            call da_get_field( input_file, var, 3, dim1, dim2, dim3, k, dummy )
+            qrain(:,:,k) = dummy(:,:)
+         end if
+         if ( has_ice ) then
+            var = "QICE"
+            call da_get_field( input_file, var, 3, dim1, dim2, dim3, k, dummy )
+            qice(:,:,k) = dummy(:,:)
+         end if
+         if ( has_snow ) then
+            var = "QSNOW"
+            call da_get_field( input_file, var, 3, dim1, dim2, dim3, k, dummy )
+            qsnow(:,:,k) = dummy(:,:)
+         end if
+         if ( has_graup ) then
+            var = "QGRAUP"
+            call da_get_field( input_file, var, 3, dim1, dim2, dim3, k, dummy )
+            qgraup(:,:,k) = dummy(:,:)
+         end if
 
       end do
 
@@ -225,8 +300,11 @@ program gen_be_ep2
       write(gen_be_ounit)v
       write(gen_be_ounit)temp
       write(gen_be_ounit)q
-      write(gen_be_ounit)qcloud
-      write(gen_be_ounit)qrain
+      if ( has_cloud ) write(gen_be_ounit)qcloud
+      if ( has_rain )  write(gen_be_ounit)qrain
+      if ( has_ice )   write(gen_be_ounit)qice
+      if ( has_snow )  write(gen_be_ounit)qsnow
+      if ( has_graup ) write(gen_be_ounit)qgraup
       write(gen_be_ounit)psfc
       close(gen_be_ounit)
 
@@ -236,16 +314,32 @@ program gen_be_ep2
       v_mean = ( real( member-1 ) * v_mean + v ) * member_inv
       temp_mean = ( real( member-1 ) * temp_mean + temp ) * member_inv
       q_mean = ( real( member-1 ) * q_mean + q ) * member_inv
-      qcloud_mean = ( real( member-1 ) * qcloud_mean + qcloud ) * member_inv
-      qrain_mean = ( real( member-1 ) * qrain_mean + qrain ) * member_inv
       psfc_mean = ( real( member-1 ) * psfc_mean + psfc ) * member_inv
       u_mnsq = ( real( member-1 ) * u_mnsq + u * u ) * member_inv
       v_mnsq = ( real( member-1 ) * v_mnsq + v * v ) * member_inv
       temp_mnsq = ( real( member-1 ) * temp_mnsq + temp * temp ) * member_inv
       q_mnsq = ( real( member-1 ) * q_mnsq + q * q ) * member_inv
-      qcloud_mnsq = ( real( member-1 ) * qcloud_mnsq + qcloud * qcloud ) * member_inv
-      qrain_mnsq = ( real( member-1 ) * qrain_mnsq + qrain * qrain ) * member_inv
       psfc_mnsq = ( real( member-1 ) * psfc_mnsq + psfc * psfc ) * member_inv
+      if ( has_cloud ) then
+         qcloud_mean = ( real( member-1 ) * qcloud_mean + qcloud ) * member_inv
+         qcloud_mnsq = ( real( member-1 ) * qcloud_mnsq + qcloud * qcloud ) * member_inv
+      end if
+      if ( has_rain ) then
+         qrain_mean = ( real( member-1 ) * qrain_mean + qrain ) * member_inv
+         qrain_mnsq = ( real( member-1 ) * qrain_mnsq + qrain * qrain ) * member_inv
+      end if
+      if ( has_ice ) then
+         qice_mean = ( real( member-1 ) * qice_mean + qice ) * member_inv
+         qice_mnsq = ( real( member-1 ) * qice_mnsq + qice * qice ) * member_inv
+      end if
+      if ( has_snow ) then
+         qsnow_mean = ( real( member-1 ) * qsnow_mean + qsnow ) * member_inv
+         qsnow_mnsq = ( real( member-1 ) * qsnow_mnsq + qsnow * qsnow ) * member_inv
+      end if
+      if ( has_graup ) then
+         qgraup_mean = ( real( member-1 ) * qgraup_mean + qgraup ) * member_inv
+         qgraup_mnsq = ( real( member-1 ) * qgraup_mnsq + qgraup * qgraup ) * member_inv
+      end if
 
    end do
 
@@ -275,8 +369,11 @@ program gen_be_ep2
       read(gen_be_iunit)v
       read(gen_be_iunit)temp
       read(gen_be_iunit)q
-      read(gen_be_iunit)qcloud
-      read(gen_be_iunit)qrain
+      if ( has_cloud ) read(gen_be_iunit)qcloud
+      if ( has_rain )  read(gen_be_iunit)qrain
+      if ( has_ice )   read(gen_be_iunit)qice
+      if ( has_snow )  read(gen_be_iunit)qsnow
+      if ( has_graup ) read(gen_be_iunit)qgraup
       read(gen_be_iunit)psfc
       close(gen_be_iunit)
 
@@ -285,8 +382,11 @@ program gen_be_ep2
          v = v - v_mean
          temp = temp - temp_mean
          q = q - q_mean
-         qcloud = qcloud - qcloud_mean
-         qrain = qrain - qrain_mean
+         if ( has_cloud ) qcloud = qcloud - qcloud_mean
+         if ( has_rain )  qrain  = qrain  - qrain_mean
+         if ( has_ice )   qice   = qice   - qice_mean
+         if ( has_snow )  qsnow  = qsnow  - qsnow_mean
+         if ( has_graup ) qgraup = qgraup - qgraup_mean
          psfc = psfc - psfc_mean
       end if
 
@@ -316,23 +416,51 @@ program gen_be_ep2
       write(gen_be_ounit)q
       close(gen_be_ounit)
 
-      output_file = 'qcloud.e'//trim(ce) ! Output qcloud.
-      open (gen_be_ounit, file = output_file, form='unformatted')
-      write(gen_be_ounit)dim1, dim2, dim3
-      write(gen_be_ounit)qcloud
-      close(gen_be_ounit)
-
-      output_file = 'qrain.e'//trim(ce) ! Output qrain.
-      open (gen_be_ounit, file = output_file, form='unformatted')
-      write(gen_be_ounit)dim1, dim2, dim3
-      write(gen_be_ounit)qrain
-      close(gen_be_ounit)
-
       output_file = 'ps.e'//trim(ce) ! Output ps.
       open (gen_be_ounit, file = output_file, form='unformatted')
       write(gen_be_ounit)dim1, dim2, dim3
       write(gen_be_ounit)psfc
       close(gen_be_ounit)
+
+      if ( has_cloud ) then
+         output_file = 'qcloud.e'//trim(ce) ! Output qcloud.
+         open (gen_be_ounit, file = output_file, form='unformatted')
+         write(gen_be_ounit)dim1, dim2, dim3
+         write(gen_be_ounit)qcloud
+         close(gen_be_ounit)
+      end if
+
+      if ( has_rain ) then
+         output_file = 'qrain.e'//trim(ce) ! Output qrain.
+         open (gen_be_ounit, file = output_file, form='unformatted')
+         write(gen_be_ounit)dim1, dim2, dim3
+         write(gen_be_ounit)qrain
+         close(gen_be_ounit)
+      end if
+
+      if ( has_ice ) then
+         output_file = 'qice.e'//trim(ce) ! Output qice.
+         open (gen_be_ounit, file = output_file, form='unformatted')
+         write(gen_be_ounit)dim1, dim2, dim3
+         write(gen_be_ounit)qice
+         close(gen_be_ounit)
+      end if
+
+      if ( has_snow ) then
+         output_file = 'qsnow.e'//trim(ce) ! Output qsnow.
+         open (gen_be_ounit, file = output_file, form='unformatted')
+         write(gen_be_ounit)dim1, dim2, dim3
+         write(gen_be_ounit)qsnow
+         close(gen_be_ounit)
+      end if
+
+      if ( has_graup ) then
+         output_file = 'qgraup.e'//trim(ce) ! Output qgraup.
+         open (gen_be_ounit, file = output_file, form='unformatted')
+         write(gen_be_ounit)dim1, dim2, dim3
+         write(gen_be_ounit)qgraup
+         close(gen_be_ounit)
+      end if
 
    end do
 
@@ -341,9 +469,12 @@ program gen_be_ep2
    v_mnsq = sqrt( v_mnsq - v_mean * v_mean )
    temp_mnsq = sqrt( temp_mnsq - temp_mean * temp_mean )
    q_mnsq = sqrt( q_mnsq - q_mean * q_mean )
-   qcloud_mnsq = sqrt( qcloud_mnsq - qcloud_mean * qcloud_mean )
-   qrain_mnsq = sqrt( qrain_mnsq - qrain_mean * qrain_mean )
    psfc_mnsq = sqrt( psfc_mnsq - psfc_mean * psfc_mean )
+   if ( has_cloud ) qcloud_mnsq = sqrt( qcloud_mnsq - qcloud_mean * qcloud_mean )
+   if ( has_rain )  qrain_mnsq  = sqrt( qrain_mnsq - qrain_mean * qrain_mean )
+   if ( has_ice )   qice_mnsq   = sqrt( qice_mnsq - qice_mean * qice_mean )
+   if ( has_snow )  qsnow_mnsq  = sqrt( qsnow_mnsq - qsnow_mean * qsnow_mean )
+   if ( has_graup ) qgraup_mnsq = sqrt( qgraup_mnsq - qgraup_mean * qgraup_mean )
 
    output_file = 'u.mean' ! Output u.
    open (gen_be_ounit, file = output_file, form='unformatted')
@@ -393,30 +524,6 @@ program gen_be_ep2
    write(gen_be_ounit)q_mnsq
    close(gen_be_ounit)
 
-   output_file = 'qcloud.mean' ! Output qcloud.
-   open (gen_be_ounit, file = output_file, form='unformatted')
-   write(gen_be_ounit)dim1, dim2, dim3
-   write(gen_be_ounit)qcloud_mean
-   close(gen_be_ounit)
-
-   output_file = 'qcloud.stdv' ! Output qcloud.
-   open (gen_be_ounit, file = output_file, form='unformatted')
-   write(gen_be_ounit)dim1, dim2, dim3
-   write(gen_be_ounit)qcloud_mnsq
-   close(gen_be_ounit)
-
-   output_file = 'qrain.mean' ! Output qrain.
-   open (gen_be_ounit, file = output_file, form='unformatted')
-   write(gen_be_ounit)dim1, dim2, dim3
-   write(gen_be_ounit)qrain_mean
-   close(gen_be_ounit)
-
-   output_file = 'qrain.stdv' ! Output qrain.
-   open (gen_be_ounit, file = output_file, form='unformatted')
-   write(gen_be_ounit)dim1, dim2, dim3
-   write(gen_be_ounit)qrain_mnsq
-   close(gen_be_ounit)
-
    output_file = 'ps.mean' ! Output ps.
    open (gen_be_ounit, file = output_file, form='unformatted')
    write(gen_be_ounit)dim1, dim2, dim3
@@ -428,6 +535,76 @@ program gen_be_ep2
    write(gen_be_ounit)dim1, dim2, dim3
    write(gen_be_ounit)psfc_mnsq
    close(gen_be_ounit)
+
+   if ( has_cloud ) then
+      output_file = 'qcloud.mean' ! Output qcloud.
+      open (gen_be_ounit, file = output_file, form='unformatted')
+      write(gen_be_ounit)dim1, dim2, dim3
+      write(gen_be_ounit)qcloud_mean
+      close(gen_be_ounit)
+
+      output_file = 'qcloud.stdv' ! Output qcloud.
+      open (gen_be_ounit, file = output_file, form='unformatted')
+      write(gen_be_ounit)dim1, dim2, dim3
+      write(gen_be_ounit)qcloud_mnsq
+      close(gen_be_ounit)
+   end if
+
+   if ( has_rain ) then
+      output_file = 'qrain.mean' ! Output qrain.
+      open (gen_be_ounit, file = output_file, form='unformatted')
+      write(gen_be_ounit)dim1, dim2, dim3
+      write(gen_be_ounit)qrain_mean
+      close(gen_be_ounit)
+
+      output_file = 'qrain.stdv' ! Output qrain.
+      open (gen_be_ounit, file = output_file, form='unformatted')
+      write(gen_be_ounit)dim1, dim2, dim3
+      write(gen_be_ounit)qrain_mnsq
+      close(gen_be_ounit)
+   end if
+
+   if ( has_ice ) then
+      output_file = 'qice.mean' ! Output qice.
+      open (gen_be_ounit, file = output_file, form='unformatted')
+      write(gen_be_ounit)dim1, dim2, dim3
+      write(gen_be_ounit)qice_mean
+      close(gen_be_ounit)
+
+      output_file = 'qice.stdv' ! Output qice.
+      open (gen_be_ounit, file = output_file, form='unformatted')
+      write(gen_be_ounit)dim1, dim2, dim3
+      write(gen_be_ounit)qice_mnsq
+      close(gen_be_ounit)
+   end if
+
+   if ( has_snow ) then
+      output_file = 'qsnow.mean' ! Output qsnow.
+      open (gen_be_ounit, file = output_file, form='unformatted')
+      write(gen_be_ounit)dim1, dim2, dim3
+      write(gen_be_ounit)qsnow_mean
+      close(gen_be_ounit)
+
+      output_file = 'qsnow.stdv' ! Output qsnow.
+      open (gen_be_ounit, file = output_file, form='unformatted')
+      write(gen_be_ounit)dim1, dim2, dim3
+      write(gen_be_ounit)qsnow_mnsq
+      close(gen_be_ounit)
+   end if
+
+   if ( has_graup ) then
+      output_file = 'qgraup.mean' ! Output qgraup.
+      open (gen_be_ounit, file = output_file, form='unformatted')
+      write(gen_be_ounit)dim1, dim2, dim3
+      write(gen_be_ounit)qgraup_mean
+      close(gen_be_ounit)
+
+      output_file = 'qgraup.stdv' ! Output qgraup.
+      open (gen_be_ounit, file = output_file, form='unformatted')
+      write(gen_be_ounit)dim1, dim2, dim3
+      write(gen_be_ounit)qgraup_mnsq
+      close(gen_be_ounit)
+   end if
 
    call da_free_unit(gen_be_iunit)
    call da_free_unit(gen_be_ounit)

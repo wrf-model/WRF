@@ -11374,6 +11374,11 @@ MODULE module_ra_rrtmg_lw
 
 use module_model_constants, only : cp
 use module_wrf_error
+#if (HWRF == 1)
+   USE module_state_description, ONLY : FER_MP_HIRES, FER_MP_HIRES_ADVECT, ETAMP_HWRF 
+#else
+   USE module_state_description, ONLY : FER_MP_HIRES
+#endif
 !use module_dm
 
 use parrrtm, only : nbndlw, ngptlw
@@ -11963,8 +11968,14 @@ CONTAINS
 
         ENDIF
 
-!!! wang for mp option=5 or 85  (new Ferrier- Aligo or fer_hires scheme), QI3D saves all
-        IF ( mp_physics == 5 .OR. mp_physics == 85 ) THEN
+!   For mp option=5 or 85  (new Ferrier- Aligo or fer_hires scheme), QI3D saves all
+#if (HWRF == 1)
+        IF ( mp_physics == FER_MP_HIRES .OR. &
+             mp_physics == FER_MP_HIRES_ADVECT .OR. &
+             mp_physics == ETAMP_HWRF ) THEN
+#else
+        IF ( mp_physics == FER_MP_HIRES ) THEN
+#endif
                   DO K=kts,kte
                      qi1d(k) = qi3d(i,k,j)
                      qs1d(k) = 0.0
@@ -11973,7 +11984,6 @@ CONTAINS
                      qc1d(k) = max(0.,qc1d(k))
                   ENDDO
         ENDIF
-!!! wang
 
 !         EMISS0=EMISS(I,J)
 !         GLW0=0. 
@@ -12048,7 +12058,9 @@ CONTAINS
                ENDDO
             ELSE
                DO K=kts,kte
-              !    reice1D(ncol,K) = 10.0
+#if (EM_CORE==1) 
+                  reice1D(ncol,K) = 10.0
+#else
                   tem2 = 25.0  !- was 10.0
                   tem3=1.e3*rho1d(k)*qi1d(k)  !- IWC (g m^-3)
                   if (tem3>thresh) then       !- Only when IWC>1.e-9 gm^-3
@@ -12065,6 +12077,7 @@ CONTAINS
                     tem2 = max(25.,tem2)
                   endif
                   reice1D(ncol,K) = min(tem2, 135.72)   !- 1.0315*reice<= 140 microns
+#endif
                ENDDO
             ENDIF
 
@@ -12387,7 +12400,11 @@ CONTAINS
             reliq(ncol,k) = recloud1d(ncol,k)
          end do
       endif
+#if (EM_CORE==1) 
+      if (iceflglw .ge. 4) then
+#else
       if (iceflglw .ge. 3) then    !BSF: was .ge. 4
+#endif
 
          do k = kts, kte
             reice(ncol,k) = reice1d(ncol,k)

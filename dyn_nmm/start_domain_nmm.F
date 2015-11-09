@@ -2279,7 +2279,6 @@
            IF( .not. ( (maxval(grid%f_ice(ips:ipe,:,jps:jpe)) &
                +maxval(grid%f_rain(ips:ipe,:,jps:jpe))) .gt. EPSQ) ) THEN
             ETAMP_Regional=.FALSE.    !-- Regional NAM or HRW (Ferrier) microphysics
-!            if (model_config_rec%mp_physics(grid%id).EQ.ETAMP_HR .OR.          &
             if (model_config_rec%mp_physics(grid%id).EQ.FER_MP_HIRES .OR.          &
      &          model_config_rec%mp_physics(grid%id).EQ.ETAMPNEW )             &
      &          ETAMP_Regional=.TRUE.

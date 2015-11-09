@@ -4,6 +4,7 @@ MODULE module_cu_mskf
 
 !
 !ckay=Kiran Alapaty, EPA
+!CGM = Chris Marciano, NCSU
 !
 !multi-scale KF scheme
 !  (1) With diagnosed deep and shallow KF cloud fraction using
@@ -14,9 +15,6 @@ MODULE module_cu_mskf
 ! (4) Scale-dependent Fallout Rate
 ! (5) Scale-dependent Stabilization Capacity
 ! (6) Elimination of "double counting" when environment is saturated
-! (7) Estimation and feeback of updraft vertical velocities back
-!        to gridscale vertical velocities
-! (8) new Trigger function based on Bechtold method -- scale dependent
 !
 ! Alapaty et al., 2012: Introducing subgrid-scale cloud feedbacks to radiation
 !    for regional meteorological and climate modeling. GRL, V39, I24.
@@ -256,7 +254,7 @@ CONTAINS
 !
             W0AVG(I,K,J) = ( W0AVG(I,K,J) * W0AVGfctr + W0 * W0fctr ) / W0den
 !ckaywup
-            w(I,K,J)=w(I,K,J)+w_up(i,K,j)  
+!           w(I,K,J)=w(I,K,J)+w_up(i,K,j)  
 
          ENDDO
       ENDDO
@@ -741,7 +739,7 @@ CONTAINS
          capeDX = 0.1
       ELSE
          Scale_Fac = 1.0 + (log(25.E3/DX))
-         capeDX = 0.1*Scale_Fac
+         capeDX = 0.1 *SQRT(Scale_Fac)
       END IF
 !
 !****************************************************************************
@@ -962,7 +960,7 @@ usl:   DO
 ! ww: this needs to be initialized
           DTRH = 0.
 
-! Becthold 2001 trigger with my Beta parameter
+! Bechtold 2001 trigger with my Beta parameter
            DTLCL = W0AVG1D(KLCL)/Scale_Fac
            if(DTLCL.lt.0.0) then
               tempKay = -1.0
@@ -975,14 +973,31 @@ usl:   DO
            end if
 
            DTLCL = 6.0 * tempKay * DTLCL 
+!
+! old trigger
+! Stick with the old trigger for now... CGM July 2015
+!
+          IF(ZLCL.LT.2.E3)THEN        ! Kain (2004) Eq. 2
+            WKLCL=0.02*ZLCL/2.E3
+          ELSE
+            WKLCL=0.02                ! units of m/s
+          ENDIF
+          WKL=(W0AVG1D(K)+(W0AVG1D(KLCL)-W0AVG1D(K))*DLP)*DX/25.E3-WKLCL
+          IF(WKL.LT.0.0001)THEN
+            DTLCL=0.
+          ELSE
+            DTLCL=4.64*WKL**0.33      ! Kain (2004) Eq. 1
+          ENDIF
+
 
 !         IF(ISHALL.EQ.1)IPRNT=.TRUE.
 !         IPRNT=.TRUE.
 !         IF(TLCL+DTLCL.GT.TENV)GOTO 45
- 
-trigger2:  IF(TLCL+DTLCL+DTRH.LT.TENV)THEN   
+
+           IF(TLCL+DTLCL.LT.TENV)THEN
 !
-! Parcel not buoyant, CYCLE back to start of trigger and evaluate next potential USL...
+! Parcel not buoyant, CYCLE back to start of trigger and evaluate next potential
+! USL...
 !
             CYCLE usl
 !
@@ -1137,12 +1152,14 @@ updraft:    DO NK=K,KL-1
                 DZZ=DZA(NK)
               ENDIF
               ENTERM=2.*REI*WTW/UPOLD
-
-!ckay
+!
+! ckay
+! using corrected RATE_kay for Test simulation #2... CGM July 2015
+!
               IF(DX.GE.24.999E3) then
                 RATE_kay = RATE
               else
-                RATE_kay = RATE / Scale_Fac
+                RATE_kay = RATE / Scale_Fac 
                end if
               CALL CONDLOAD(QLIQ(NK1),QICE(NK1),WTW,DZZ,BOTERM,ENTERM,      &
                    RATE_kay,QNEWLQ,QNEWIC,QLQOUT(NK1),QICOUT(NK1),G)
@@ -1325,18 +1342,28 @@ updraft:    DO NK=K,KL-1
               qi_KF(I,NK,J)=QICE(NK)
             END DO
 
-!ckay: if mean env RH with respect to water is over 100% then dont allow KF
+!ckay: if mean env RH with respect to water/ice is over 100% then dont allow KF
+!ckay: added saturation w.r.to ice june 10, 2015
 ! to avoid double counting
           envRHavg = 0.0
           DO NK=K-1,LTOP+1
-           envEsat = 6.112*exp(17.67*(T0(NK)-273.16)/(243.5+T0(NK)-273.16))
+           if(T0(NK).LE.273.16) then
+             envEsat = 6.112*exp(21.87*(T0(NK)-273.16)/(T0(NK)-7.66))
+           else
+             envEsat = 6.112*exp(17.67*(T0(NK)-273.16)/(243.5+T0(NK)-273.16))
+           end if
            envEsat = envEsat * 100.0  ! to hPa
            envQsat = 0.622*envEsat/(P0(NK)-envEsat)
            envRH  = Q0(NK)/envQsat
+            if(NK.GT.K.and.envRH.LT.0.99)  then
+              envRHavg = 0.0
+              goto 2020
+            end if
             envRHavg = envRHavg + envRH
           END DO
 !ckay ; get vertically averaged envRHavg
          envRHavg = envRHavg / float(LTOP-K+1+2)
+2020     continue
 
 !     
 !...If cloud top height is less than the specified minimum for deep 
@@ -1415,7 +1442,7 @@ updraft:    DO NK=K,KL-1
                 ENDDO
               ENDIF
             ENDIF
-          ENDIF trigger2
+          ENDIF  ! for trigger
         END DO usl
     IF(ISHALL.EQ.1)THEN
       KSTART=MAX0(KPBL,KLCL)
@@ -1625,7 +1652,7 @@ updraft:    DO NK=K,KL-1
 
 !ckay: this dynTau is good for the Deep as well as Shallow Cu clouds
         TIMEC = AMAX1(DT, TIMEC)
-
+ 
          NIC=NINT(TIMEC/DT)
          TIMEC=FLOAT(NIC)*DT
 !     
@@ -2315,8 +2342,9 @@ iter:     DO NCOUNT=1,10
 !ckaywup
             DMF_new=DMF(NK)/updil
             FXM_new=FXM(NK)/dxsq
-            w_up(I,NK,J) = (UMF_new+DMF_new-FXM_new)/denSplume
-            w_up(I,NK,J) = w_up(I,NK,J)*Drag*DT/TIMEC
+!           w_up(I,NK,J) = (UMF_new+DMF_new-FXM_new)/denSplume
+!           w_up(I,NK,J) = w_up(I,NK,J)*Drag*DT/TIMEC
+           w_up(I,NK,J) = (UMF_new/denSplume)*Drag*DT/TIMEC
           ENDDO
         ELSE 
           DO NK=KLCL, LTOP
@@ -2329,8 +2357,10 @@ iter:     DO NCOUNT=1,10
 !new added downdraft impact
             DMF_new = DMF(NK)/updil
             FXM_new = FXM(NK)/dxsq
-            w_up(I,NK,J) = (UMF_new+DMF_new-FXM_new)/denSplume
-            w_up(I,NK,J) = w_up(I,NK,J)*Drag*DT/TIMEC
+!           w_up(I,NK,J) = (UMF_new+DMF_new-FXM_new)/denSplume
+!           w_up(I,NK,J) = w_up(I,NK,J)*Drag*DT/TIMEC
+           w_up(I,NK,J) = (UMF_new/denSplume)*Drag*DT/TIMEC
+
           ENDDO
         ENDIF
 !ckaywup
@@ -2628,7 +2658,7 @@ iter:     DO NCOUNT=1,10
 !
 !...IF ICE PHASE IS NOT ALLOWED, MELT ALL FROZEN HYDROMETEORS...
 !
-          IF(.NOT. F_QI .and. warm_rain)THEN
+          IF(warm_rain)THEN
 
             CPM=CP*(1.+0.887*QG(K))
             TG(K)=TG(K)-(QIG(K)+QSG(K))*RLF/CPM
@@ -2636,7 +2666,7 @@ iter:     DO NCOUNT=1,10
             DQIDT(K)=0.
             DQRDT(K)=(QRG(K)+QSG(K)-QR0(K)-QS0(K))/TIMEC
             DQSDT(K)=0.
-          ELSEIF(.NOT. F_QI .and. .not. warm_rain)THEN
+          ELSEIF(.NOT. F_QS)THEN
 !
 !...IF ICE PHASE IS ALLOWED, BUT MIXED PHASE IS NOT, MELT FROZEN HYDROMETEORS
 !...BELOW THE MELTING LEVEL, FREEZE LIQUID WATER ABOVE THE MELTING LEVEL
@@ -2651,24 +2681,23 @@ iter:     DO NCOUNT=1,10
             DQIDT(K)=0.
             DQRDT(K)=(QRG(K)+QSG(K)-QR0(K)-QS0(K))/TIMEC
             DQSDT(K)=0.
-          ELSEIF(F_QI) THEN
+          ELSEIF(F_QS) THEN
 !
 !...IF MIXED PHASE HYDROMETEORS ARE ALLOWED, FEED BACK CONVECTIVE TENDENCIES
 !...OF HYDROMETEORS DIRECTLY...
 !
             DQCDT(K)=(QLG(K)-QL0(K))/TIMEC
-            DQIDT(K)=(QIG(K)-QI0(K))/TIMEC
+            DQSDT(K)=(QSG(K)-QS0(K))/TIMEC
             DQRDT(K)=(QRG(K)-QR0(K))/TIMEC
-            IF (F_QS) THEN
-               DQSDT(K)=(QSG(K)-QS0(K))/TIMEC
+            IF (F_QI) THEN
+               DQIDT(K)=(QIG(K)-QI0(K))/TIMEC
             ELSE
-               DQIDT(K)=DQIDT(K)+(QSG(K)-QS0(K))/TIMEC
+               DQSDT(K)=DQSDT(K)+(QIG(K)-QI0(K))/TIMEC
             ENDIF
           ELSE
 !              PRINT *,'THIS COMBINATION OF IMOIST, IEXICE, IICE NOT ALLOWED!'
-              CALL wrf_error_fatal ( 'KAIN-FRITSCH, THIS COMBINATION OF IMOIST, IEXICE, IICE NOT ALLOWED' )
+              CALL wrf_error_fatal ( 'KAIN-FRITSCH, THIS MICROPHYSICS CHOICE IS NOT ALLOWED' )
           ENDIF
-
           DTDT(K)=(TG(K)-T0(K))/TIMEC
           DQDT(K)=(QG(K)-Q0(K))/TIMEC
         ENDDO

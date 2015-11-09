@@ -666,6 +666,16 @@ call wrf_debug(1,message)
                                      ids, ide-1 , jds , jde-1 , 1 , 1 , &
                                      ims, ime   , jms , jme   , 1 , 1 , &
                                      ips, ipe   , jps , jpe   , 1 , 1   )
+#if(NMM_CORE==1)
+     CALL wrf_patch_to_global_real ( grid%hlat , xlat , grid%domdesc, "z", "xy", &
+                                     ids, ide-1 , jds , jde-1 , 1 , 1 , &
+                                     ims, ime   , jms , jme   , 1 , 1 , &
+                                     ips, ipe   , jps , jpe   , 1 , 1   )
+     CALL wrf_patch_to_global_real ( grid%hlon , xlong , grid%domdesc, "z", "xy", &
+                                     ids, ide-1 , jds , jde-1 , 1 , 1 , &
+                                     ims, ime   , jms , jme   , 1 , 1 , &
+                                     ips, ipe   , jps , jpe   , 1 , 1   )
+#else
      CALL wrf_patch_to_global_real ( grid%xlat , xlat , grid%domdesc, "z", "xy", &
                                      ids, ide-1 , jds , jde-1 , 1 , 1 , &
                                      ims, ime   , jms , jme   , 1 , 1 , &
@@ -674,6 +684,7 @@ call wrf_debug(1,message)
                                      ids, ide-1 , jds , jde-1 , 1 , 1 , &
                                      ims, ime   , jms , jme   , 1 , 1 , &
                                      ips, ipe   , jps , jpe   , 1 , 1   )
+#endif
      CALL wrf_patch_to_global_real ( grid%ht , terrain , grid%domdesc, "z", "xy", &
                                      ids, ide-1 , jds , jde-1 , 1 , 1 , &
                                      ims, ime   , jms , jme   , 1 , 1 , &

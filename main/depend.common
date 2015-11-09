@@ -227,6 +227,7 @@ module_bl_fogdes.o: ../share/module_model_constants.o \
 
 module_sf_gfdl.o : \
 		module_gfs_machine.o \
+		module_sf_exchcoef.o \
 		module_gfs_funcphys.o \
 		module_gfs_physcons.o
 
@@ -550,6 +551,7 @@ module_physics_init.o : \
 		module_mp_wsm5.o		\
 		module_mp_wsm6.o		\
 		module_mp_etanew.o		\
+		module_mp_fer_hires.o 		\
 		module_mp_HWRF.o		\
 		module_fdda_psufddagd.o		\
 		module_fdda_spnudging.o         \
@@ -581,7 +583,7 @@ module_microphysics_driver.o: \
 		module_mp_kessler.o  module_mp_sbu_ylin.o module_mp_lin.o \
 		module_mp_wsm3.o module_mp_wsm5.o \
 		module_mp_wsm6.o module_mp_etanew.o \
-		module_mp_HWRF.o  \
+		module_mp_fer_hires.o module_mp_HWRF.o  \
 		module_mp_thompson.o            \
 		module_mp_gsfcgce.o 		\
                 module_mp_morr_two_moment.o     \
@@ -716,6 +718,7 @@ module_diagnostics_driver.o: \
 		module_diag_misc.o 			\
 		module_diag_cl.o			\
 		module_diag_pld.o 			\
+		module_diag_zld.o 			\
 		module_diag_afwa.o 			\
 		../frame/module_comm_dm.o		\
 		../frame/module_state_description.o 	\
@@ -732,6 +735,9 @@ module_diag_cl.o: \
 		../frame/module_configure.o
 
 module_diag_pld.o: \
+		../share/module_model_constants.o
+
+module_diag_zld.o: \
 		../share/module_model_constants.o
 
 module_diag_afwa_hail.o:

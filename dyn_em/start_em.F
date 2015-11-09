@@ -35,6 +35,7 @@
    USE module_aerosols_soa_vbs, only: sum_pm_soa_vbs
 #endif
    USE module_diag_pld, ONLY : pld
+   USE module_diag_zld, ONLY : zld
 
 !!debug
 !USE module_compute_geop
@@ -815,15 +816,19 @@ IF (grid%sppt_on==1) then
 !  Calculate any variables that were not set
 
       if (grid%starting_time_step == -1) then
-         grid%starting_time_step = NINT(6 * MIN(grid%dx,grid%dy) / 1000)
+         grid%starting_time_step = NINT(4 * MIN(grid%dx,grid%dy) / 1000)
       endif
 
+      grid%time_step = grid%starting_time_step
+      config_flags%time_step = grid%starting_time_step
+      model_config_rec%time_step = grid%starting_time_step
+
       if (grid%max_time_step == -1) then
-         grid%max_time_step = 3*grid%starting_time_step
+         grid%max_time_step = NINT(8 * MIN(grid%dx,grid%dy) / 1000)
       endif
 
       if (grid%min_time_step == -1) then
-         grid%min_time_step = 0.5*grid%starting_time_step
+         grid%min_time_step = NINT(3 * MIN(grid%dx,grid%dy) / 1000)
       endif
 
 !     Set a starting timestep.
@@ -1796,6 +1801,54 @@ DEALLOCATE(z_at_q)
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte    )
    ENDIF
 
+   IF (config_flags%z_lev_diags == Z_DIAGS ) THEN
+     CALL wrf_debug ( 200 , ' ZLD: height level and AGL diags' )
+     CALL zld (                                  &
+                 !  Input data for computing
+                  U=grid%u_2                    &
+                 ,V=grid%v_2                    &
+                 ,W=grid%w_2                    &
+                 ,t=grid%t_2                    &
+                 ,qv=moist(:,:,:,P_QV)          &
+                 ,zp=grid%ph_2                  &
+                 ,zb=grid%phb                   &
+                 ,pp=grid%p                     &
+                 ,pb=grid%pb                    &
+                 ,p=grid%p_hyd                  &
+                 ,pw=grid%p_hyd_w               &
+                 !  Map factors, coriolis for diags
+                 ,msfux=grid%msfux              &
+                 ,msfuy=grid%msfuy              &
+                 ,msfvx=grid%msfvx              &
+                 ,msfvy=grid%msfvy              &
+                 ,msftx=grid%msftx              &
+                 ,msfty=grid%msfty              &
+                 ,f=grid%f                      &
+                 ,e=grid%e                      &
+                 ,ht=grid%ht                    &
+                 !  Namelist info
+                 ,use_tot_or_hyd_p=config_flags%use_tot_or_hyd_p &
+                 ,extrap_below_grnd=config_flags%extrap_below_grnd &
+                 ,missing=config_flags%z_lev_missing &
+                 !  The diagnostics, mostly output variables
+                 ,num_z_levels=config_flags%num_z_levels &
+                 ,max_z_levels=max_zlevs    &
+                 ,z_levels=model_config_rec%z_levels &
+                 ,z_zl  = grid%z_zl             &  
+                 ,u_zl  = grid%u_zl             &  
+                 ,v_zl  = grid%v_zl             &  
+                 ,t_zl  = grid%t_zl             &  
+                 ,rh_zl = grid%rh_zl            & 
+                 ,ght_zl= grid%ght_zl           &
+                 ,s_zl  = grid%s_zl             &  
+                 ,td_zl = grid%td_zl            &
+                 ,q_zl = grid%q_zl              &
+                 !  Dimension arguments
+                 ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde    &
+                 ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme    &
+                 ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte    )
+   ENDIF
+ 
 
 !  FIRE
 if(config_flags%ifire.eq.2)then

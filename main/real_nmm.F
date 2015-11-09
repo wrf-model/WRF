@@ -114,6 +114,8 @@ PROGRAM real_data
 #else
    CALL initial_config
 #endif
+   
+   CALL nl_set_use_wps_input ( 1,1 )
 
    CALL check_nml_consistency
    CALL set_physics_rconfigs

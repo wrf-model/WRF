@@ -1221,17 +1221,18 @@ IF (grid%sppt_on==1) then
      INTEGER, DIMENSION (kms:kme), INTENT(OUT)           :: iseedarr
 
 ! Local
-      integer*8          :: fctime
+      integer*8          :: fctime, one_big
       integer            :: i 
 
       fctime = config_flags%start_year * ( config_flags%start_month*100+config_flags%start_day) + config_flags%start_hour
 
+      one_big = 1
       iseedarr=0.0
       do i = kms,kme-3,4
          iseedarr(i  )= iseed1+config_flags%nens*1000000
-         iseedarr(i+1)= mod(fctime+iseed1*1000000,19211)
-         iseedarr(i+2)= mod(fctime+iseed1*1000000,71209)
-         iseedarr(i+3)= mod(fctime+iseed1*1000000,11279)
+         iseedarr(i+1)= mod(fctime+iseed1*1000000,19211*one_big)
+         iseedarr(i+2)= mod(fctime+iseed1*1000000,71209*one_big)
+         iseedarr(i+3)= mod(fctime+iseed1*1000000,11279*one_big)
       enddo
 
       end SUBROUTINE rand_seed

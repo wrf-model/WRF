@@ -240,6 +240,10 @@ time_window_min, time_window_max, map_projection , missing_flag)
 
       END IF
 
+      ! initialize the vaiable that will be used later for checking
+      ! if the pw info is read or not
+      obs(obs_num)%ground%pw%data = missing_r
+
       !  The first read is the "once only" type of information.
 
       READ ( file_num , IOSTAT = io_error , FMT = rpt_format ) &
@@ -334,7 +338,7 @@ time_window_min, time_window_max, map_projection , missing_flag)
 ! To ignore the data type without WMO code:
 
          if (IO_error > 0 ) then  ! error reading header info
-           write(0,'("IO_ERROR=",i2,1x,i5,1x,a,2(f9.3,a),1x,a,1x,f11.3)') &
+           write(0,'("IO_ERROR=",i2,1x,i7,1x,a,2(f9.3,a),1x,a,1x,f11.3)') &
                              io_error, obs_num, obs(obs_num)%info % platform, &
                                           obs(obs_num)%location%latitude, 'N',&
                                           obs(obs_num)%location%longitude,'E ', &
@@ -383,13 +387,13 @@ time_window_min, time_window_max, map_projection , missing_flag)
       IF (IPROJ > 0) THEN
          if (truelat1 > 0.0) then
             if (obs(obs_num)%location%latitude == -90.0) then
-              write(0,'(/i6,2x,"modified the original lat =",f8.2," to -89.5"/)') &
+              write(0,'(/i7,1x,"modified the original lat =",f8.2," to -89.5"/)') &
                      obs_num, obs(obs_num)%location%latitude  
                      obs(obs_num)%location%latitude = -89.5
             endif
          else if (truelat1 < 0.0) then
             if (obs(obs_num)%location%latitude == 90.0) then
-              write(0,'(/i6,2x,"modified the original lat =",f8.2," to  89.5"/)') &
+              write(0,'(/i7,1x,"modified the original lat =",f8.2," to  89.5"/)') &
                      obs_num, obs(obs_num)%location%latitude  
                      obs(obs_num)%location%latitude =  89.5
                  endif
@@ -962,7 +966,7 @@ time_window_min, time_window_max, map_projection , missing_flag)
                 end if
              else if (fm < 39) then
                 m_miss = m_miss + 1
-                write(0,'(I5,1X,A,1X,A,1X,A,1X,A,1X,2(F8.3,A),A,1X,f11.3)')&
+                write(0,'(I7,1X,A,1X,A,1X,A,1X,A,1X,2(F8.3,A),A,1X,f11.3)')&
                    m_miss,'Missing elevation(id,name,platform,lat,lon,date,elv:',  &
                    obs(obs_num)%location%id   (1: 5),&
                    obs(obs_num)%location%name (1:20),&
@@ -986,8 +990,6 @@ time_window_min, time_window_max, map_projection , missing_flag)
 
          IF ((obs (obs_num)%info%platform(1:12) .EQ. 'FM-15 METAR ' ) .AND. &
              (ASSOCIATED (obs (obs_num)%surface ) ) ) THEN
-            obs(obs_num)%ground%psfc%data = missing_r
-            obs(obs_num)%ground%psfc%qc   = missing
             if ( calc_psfc_from_QNH .and. gts_from_mmm_archive ) then
                if ( obs(obs_num)%ground%psfc%data > 0.0 .and. &
                     obs(obs_num)%info%elevation > 0.0 ) then
@@ -1003,6 +1005,9 @@ time_window_min, time_window_max, map_projection , missing_flag)
                         obs(obs_num)%ground%psfc%qc
                   end if  ! associated data
                end if  ! valid QNH and elev
+            else
+               obs(obs_num)%ground%psfc%data = missing_r
+               obs(obs_num)%ground%psfc%qc   = missing
             end if  ! calc_psfc_from_QNH and gts_from_mmm_archive
          END IF  ! metar
 
@@ -1194,31 +1199,31 @@ time_window_min, time_window_max, map_projection , missing_flag)
    WRITE (UNIT = 0, FMT = '(A)') 'GTS OBSERVATIONS READ:'
 
    WRITE (UNIT = 0, FMT = '(A)')
-   WRITE (UNIT = 0, FMT = '(A,I6)') ' SYNOP reports:',nsynops (0)
-   WRITE (UNIT = 0, FMT = '(A,I6)') ' SHIPS reports:',nshipss (0)
-   WRITE (UNIT = 0, FMT = '(A,I6)') ' BUOYS reports:',nbuoyss (0)
-   WRITE (UNIT = 0, FMT = '(A,I6)') ' BOGUS reports:',nboguss (0)
-   WRITE (UNIT = 0, FMT = '(A,I6)') ' METAR reports:',nmetars (0)
-   WRITE (UNIT = 0, FMT = '(A,I6)') ' PILOT reports:',npilots (0)
-   WRITE (UNIT = 0, FMT = '(A,I6)') ' SOUND reports:',nsounds (0)
-   WRITE (UNIT = 0, FMT = '(A,I6)') ' AMDAR reports:',namdars (0)
-   WRITE (UNIT = 0, FMT = '(A,I6)') ' SATEM reports:',nsatems (0)
-   WRITE (UNIT = 0, FMT = '(A,I6)') ' SATOB reports:',nsatobs (0)
-   WRITE (UNIT = 0, FMT = '(A,I6)') ' GPSPW reports:',ngpspws (0)
-   WRITE (UNIT = 0, FMT = '(A,I6)') ' GPSZD reports:',ngpsztd (0)
-   WRITE (UNIT = 0, FMT = '(A,I6)') ' GPSRF reports:',ngpsref (0)
-   WRITE (UNIT = 0, FMT = '(A,I6)') ' GPSEP reports:',ngpseph (0)
-   WRITE (UNIT = 0, FMT = '(A,I6)') ' AIREP reports:',naireps (0)
-   WRITE (UNIT = 0, FMT = '(A,I6)') 'TAMDAR reports:',ntamdar (0)
-   WRITE (UNIT = 0, FMT = '(A,I6)') ' SSMT1 reports:',nssmt1s (0)
-   WRITE (UNIT = 0, FMT = '(A,I6)') ' SSMT2 reports:',nssmt2s (0)
-   WRITE (UNIT = 0, FMT = '(A,I6)') ' SSMI  reports:',nssmis  (0)
-   WRITE (UNIT = 0, FMT = '(A,I6)') ' TOVS  reports:',ntovss  (0)
-   WRITE (UNIT = 0, FMT = '(A,I6)') ' QSCAT reports:',nqscats (0)
-   WRITE (UNIT = 0, FMT = '(A,I6)') ' PROFL reports:',nprofls (0)
-   WRITE (UNIT = 0, FMT = '(A,I6)') ' AIRST reports:',nairss  (0)
-   WRITE (UNIT = 0, FMT = '(A,I6)') ' OTHER reports:',nothers (0)
-   WRITE (UNIT = 0, FMT = '(A,I6)') ' Total reports:', &
+   WRITE (UNIT = 0, FMT = '(A,I7)') ' SYNOP reports:',nsynops (0)
+   WRITE (UNIT = 0, FMT = '(A,I7)') ' SHIPS reports:',nshipss (0)
+   WRITE (UNIT = 0, FMT = '(A,I7)') ' BUOYS reports:',nbuoyss (0)
+   WRITE (UNIT = 0, FMT = '(A,I7)') ' BOGUS reports:',nboguss (0)
+   WRITE (UNIT = 0, FMT = '(A,I7)') ' METAR reports:',nmetars (0)
+   WRITE (UNIT = 0, FMT = '(A,I7)') ' PILOT reports:',npilots (0)
+   WRITE (UNIT = 0, FMT = '(A,I7)') ' SOUND reports:',nsounds (0)
+   WRITE (UNIT = 0, FMT = '(A,I7)') ' AMDAR reports:',namdars (0)
+   WRITE (UNIT = 0, FMT = '(A,I7)') ' SATEM reports:',nsatems (0)
+   WRITE (UNIT = 0, FMT = '(A,I7)') ' SATOB reports:',nsatobs (0)
+   WRITE (UNIT = 0, FMT = '(A,I7)') ' GPSPW reports:',ngpspws (0)
+   WRITE (UNIT = 0, FMT = '(A,I7)') ' GPSZD reports:',ngpsztd (0)
+   WRITE (UNIT = 0, FMT = '(A,I7)') ' GPSRF reports:',ngpsref (0)
+   WRITE (UNIT = 0, FMT = '(A,I7)') ' GPSEP reports:',ngpseph (0)
+   WRITE (UNIT = 0, FMT = '(A,I7)') ' AIREP reports:',naireps (0)
+   WRITE (UNIT = 0, FMT = '(A,I7)') 'TAMDAR reports:',ntamdar (0)
+   WRITE (UNIT = 0, FMT = '(A,I7)') ' SSMT1 reports:',nssmt1s (0)
+   WRITE (UNIT = 0, FMT = '(A,I7)') ' SSMT2 reports:',nssmt2s (0)
+   WRITE (UNIT = 0, FMT = '(A,I7)') ' SSMI  reports:',nssmis  (0)
+   WRITE (UNIT = 0, FMT = '(A,I7)') ' TOVS  reports:',ntovss  (0)
+   WRITE (UNIT = 0, FMT = '(A,I7)') ' QSCAT reports:',nqscats (0)
+   WRITE (UNIT = 0, FMT = '(A,I7)') ' PROFL reports:',nprofls (0)
+   WRITE (UNIT = 0, FMT = '(A,I7)') ' AIRST reports:',nairss  (0)
+   WRITE (UNIT = 0, FMT = '(A,I7)') ' OTHER reports:',nothers (0)
+   WRITE (UNIT = 0, FMT = '(A,I7)') ' Total reports:', &
           nsynops (0) + nshipss (0) + nmetars (0) + npilots (0) + nsounds (0)+&
           nsatems (0) + nsatobs (0) + naireps (0) +  ntamdar (0)+ ngpspws (0) + ngpsztd (0)+&
           ngpsref (0) + ngpseph (0) + &
@@ -1246,7 +1251,7 @@ time_window_min, time_window_max, map_projection , missing_flag)
 
     n_obs = obs_num
 
-    write(0,'(/"AIRCRAFT DATA: Total=",I6,"  Above cut_height=",I6)')&
+    write(0,'(/"AIRCRAFT DATA: Total=",I7,"  Above cut_height=",I7)')&
                                                      N_air, N_air_cut
 contains
 
@@ -1588,6 +1593,10 @@ SUBROUTINE read_measurements (file_num, surface, location, info, bad_data, &
       !  Assign the SSMI error (AFWA only)
       !
 
+      ! initialize the variable that might be used in module_err_ncep.F90
+      ! for checking if the error is pre-assigned
+      current%meas%speed%error = missing_r
+
       READ (info % platform (4:6), '(I3)') fm
 
       IF ((fm .EQ. 125) .AND. (current%meas%speed%qc .GT. missing)) THEN 
@@ -1792,8 +1801,8 @@ SUBROUTINE dealloc_meas ( head )
                                              , temp
    INTEGER                                  :: status
 
-   !  Start at the head, kill everything that is pointed to.  After no longer 
-   !  associated, deallocate the head.
+   !  Start at the head, kill everything that is pointed to.  After the list is
+   !  fully deallocated, disassociate the head pointer.
 
    IF ( ASSOCIATED ( head ) ) THEN
 
@@ -1809,10 +1818,9 @@ SUBROUTINE dealloc_meas ( head )
          END IF
       END DO list_loop
 
+      NULLIFY ( head )
    END IF
 
-!  NULLIFY ( head ) 
-  
 END SUBROUTINE dealloc_meas
 
 !

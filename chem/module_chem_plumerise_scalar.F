@@ -606,8 +606,9 @@ real ::  vc, g,  r,  cp,  eps,  &
          tmelt,  heatsubl,  heatfus,  heatcond, tfreeze, &
          ztopmax, wmax, rmaxtime, es, esat, heat,dt_save !ESAT_PR,
 character (len=2) :: cixx	 
+! Set threshold to be the same as dz=100., the constant grid spacing of plume grid model(meters) found in set_grid()
+    REAL :: DELZ_THRESOLD = 100. 
 
-    REAL :: DELZ_THRESOLD
     INTEGER     :: imm
 
 !  real, external:: esat_pr!

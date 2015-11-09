@@ -1,5 +1,6 @@
 !WRF:MODEL_LAYER:DYNAMICS
 !
+#if ( ! defined(ADVECT_KERNEL) )
 MODULE module_advect_em
 
   USE module_bc
@@ -5937,6 +5938,71 @@ ELSE IF (horz_order == 2 ) THEN
 END SUBROUTINE advect_w
 
 !----------------------------------------------------------------
+#else
+!  cpp -traditional -C -P -DADVECT_KERNEL module_advect_em.F > advection_kernel.f90
+!  ifort, pgfortran, gfortran advection_kernel.f90
+!  a.out
+
+MODULE advection_kernel
+
+   TYPE grid_config_rec_type
+      INTEGER :: h_sca_adv_order = 5
+      INTEGER :: v_sca_adv_order = 3
+
+      LOGICAL :: periodic_x = .false.
+      LOGICAL :: periodic_y = .false.
+
+      LOGICAL :: symmetric_xs = .false.
+      LOGICAL :: symmetric_xe = .false.
+      LOGICAL :: symmetric_ys = .false.
+      LOGICAL :: symmetric_ye = .false.
+
+      LOGICAL :: open_xs = .false.
+      LOGICAL :: open_xe = .false.
+      LOGICAL :: open_ys = .false.
+      LOGICAL :: open_ye = .false.
+
+      LOGICAL :: specified = .true.
+      LOGICAL :: nested = .false.
+      LOGICAL :: polar = .false.
+   END TYPE grid_config_rec_type
+
+   CHARACTER (LEN=256) :: wrf_err_message
+
+CONTAINS
+
+!----------------------------------------------------------------
+
+SUBROUTINE wrf_error_fatal ( message )
+   IMPLICIT NONE
+   CHARACTER(LEN=*) , INTENT(IN) :: message
+   PRINT *,'advect_scalar_pd: FATAL MESSAGE = ',TRIM(message)
+   STOP 12345
+END SUBROUTINE wrf_error_fatal
+
+!----------------------------------------------------------------
+
+SUBROUTINE init ( config_flags )
+   IMPLICIT NONE
+   TYPE (grid_config_rec_type)  :: config_flags
+   config_flags%h_sca_adv_order = 5
+   config_flags%v_sca_adv_order = 3
+   config_flags%periodic_x = .false.
+   config_flags%periodic_y = .false.
+   config_flags%symmetric_xs = .false.
+   config_flags%symmetric_xe = .false.
+   config_flags%symmetric_ys = .false.
+   config_flags%symmetric_ye = .false.
+   config_flags%open_xs = .false.
+   config_flags%open_xe = .false.
+   config_flags%open_ys = .false.
+   config_flags%open_ye = .false.
+   config_flags%specified = .true.
+   config_flags%nested = .false.
+END SUBROUTINE init
+
+!----------------------------------------------------------------
+#endif
 
 SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
                                 h_tendency, z_tendency,        & 
@@ -7716,6 +7782,195 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
   END IF
 
 END SUBROUTINE advect_scalar_pd
+#if ( defined(ADVECT_KERNEL) )
+
+!----------------------------------------------------------------
+
+END MODULE advection_kernel
+
+!================================================================
+!================================================================
+
+PROGRAM feeder
+
+   USE advection_kernel
+
+   IMPLICIT NONE
+   
+   INTEGER , PARAMETER :: MAX_SCALARS = 15
+
+   TYPE(grid_config_rec_type) :: config_flags
+
+   LOGICAL :: tenddec = .TRUE.
+
+   INTEGER :: ids, ide, jds, jde, kds, kde, &
+              ims, ime, jms, jme, kms, kme, &
+              its, ite, jts, jte, kts, kte
+
+   REAL , DIMENSION( :,:,:,: ) , ALLOCATABLE  :: field,     &
+                                               field_old
+   REAL , DIMENSION( :,:,: ) , ALLOCATABLE  :: ru,    &
+                                               rv,    &
+                                               rom
+
+   REAL , DIMENSION( :,: ), ALLOCATABLE :: mut, mub, mu_old
+
+   REAL , DIMENSION( :,:,: ), ALLOCATABLE  :: tendency
+
+   REAL , DIMENSION( :,:,: ), ALLOCATABLE  :: h_tendency, z_tendency 
+
+   REAL , DIMENSION( :,: ), ALLOCATABLE :: msfux,  &
+                                            msfuy,  &
+                                            msfvx,  &
+                                            msfvy,  &
+                                            msftx,  &
+                                            msfty
+
+   REAL , DIMENSION( : ), ALLOCATABLE :: fzm,  &
+                                  fzp,  &
+                                  rdzw, znw
+
+   REAL :: rdx,  &
+           rdy,  &
+           dt
+
+   INTEGER :: time_step, im
+
+   INTEGER :: i, j, k, loop
+
+   PRINT *,'Init dimensions'
+
+   ids =  1; ide = 90; jds =  1; jde = 90; kds =  1; kde = 50
+   ims = -5; ime = 55; jms = -5; jme = 55; kms = -5; kme = 55
+   its =  1; ite = 50; jts =  1; jte = 50; kts =  1; kte = 50
+
+
+   PRINT *,'ALLOCATE two 4d fields'
+   PRINT *,(ime-ims+1)*(kme-kms+1)*(jme-jms+1)*MAX_SCALARS
+   ALLOCATE ( field(ims:ime , kms:kme , jms:jme, MAX_SCALARS ) )
+   ALLOCATE ( field_old(ims:ime , kms:kme , jms:jme, MAX_SCALARS ) )
+
+   PRINT *,'ALLOCATE three 3d fields U, V, W'
+   PRINT *,(ime-ims+1)*(kme-kms+1)*(jme-jms+1)
+   ALLOCATE ( ru(ims:ime , kms:kme , jms:jme ) )
+   ALLOCATE ( rv(ims:ime , kms:kme , jms:jme ) )
+   ALLOCATE ( rom(ims:ime , kms:kme , jms:jme ) )
+
+   PRINT *,'ALLOCATE three 2d MU fields'
+   PRINT *,(ime-ims+1)*(jme-jms+1)
+   ALLOCATE ( mut( ims:ime , jms:jme ) )
+   ALLOCATE ( mub( ims:ime , jms:jme ) )
+   ALLOCATE ( mu_old( ims:ime , jms:jme ) )
+
+   PRINT *,'ALLOCATE three 3d tendency'
+   PRINT *,(ime-ims+1)*(kme-kms+1)*(jme-jms+1)
+   ALLOCATE ( tendency( ims:ime , kms:kme , jms:jme ) )
+   ALLOCATE ( h_tendency( ims:ime , kms:kme , jms:jme ) )
+   ALLOCATE ( z_tendency( ims:ime , kms:kme , jms:jme ) )
+
+   PRINT *,'ALLOCATE six 2d map factors'
+   PRINT *,(ime-ims+1)*(jme-jms+1)
+   ALLOCATE ( msfux( ims:ime , jms:jme ) )
+   ALLOCATE ( msfuy( ims:ime , jms:jme ) )
+   ALLOCATE ( msfvx( ims:ime , jms:jme ) )
+   ALLOCATE ( msfvy( ims:ime , jms:jme ) )
+   ALLOCATE ( msftx( ims:ime , jms:jme ) )
+   ALLOCATE ( msfty( ims:ime , jms:jme ) )
+
+   PRINT *,'ALLOCATE 1d arrays'
+   ALLOCATE ( fzm( kms:kme ) )
+   ALLOCATE ( fzp( kms:kme ) )
+   ALLOCATE ( rdzw( kms:kme ) )
+   ALLOCATE ( znw( kms:kme ) )
+
+   PRINT *,'CALL init'
+   CALL init ( config_flags)
+
+   PRINT *,'RANDOM two 3d fields'
+   CALL RANDOM_NUMBER ( field )
+   CALL RANDOM_NUMBER ( field_old )
+   field = field - 0.5
+   field_old = field_old - 0.5
+
+   PRINT *,'RANDOM three 3d tendencies'
+   CALL RANDOM_NUMBER ( tendency )
+   CALL RANDOM_NUMBER ( h_tendency )
+   CALL RANDOM_NUMBER ( z_tendency )
+   tendency = tendency - 0.5
+   h_tendency = h_tendency - 0.5
+   z_tendency = z_tendency - 0.5
+
+   PRINT *,'RANDOM three 2d MU'
+   mub =  95000
+   mut = 100000
+   CALL RANDOM_NUMBER ( mu_old )
+   mu_old = 100000 - mu_old*100
+
+   PRINT *,'RANDOM three 3d couple momentum'
+   CALL RANDOM_NUMBER ( ru )
+   CALL RANDOM_NUMBER ( rv )
+   CALL RANDOM_NUMBER ( rom )
+   DO j = jts, jte
+      DO k = kts, kte
+         DO i = its, ite
+            ru(i,k,j) = ru(i,k,j) * mut(i,j)
+            rv(i,k,j) = rv(i,k,j) * mut(i,j)
+            rom(i,k,j) = rom(i,k,j) * mut(i,j)
+         END DO
+      END DO
+   END DO
+
+   time_step = -1
+
+   msfux = 1
+   msfuy = 1
+   msfvx = 1
+   msfvy = 1
+   msftx = 1
+   msfty = 1
+
+   rdx = 1/10000.
+   rdy = 1/10000.
+
+   DO k = kts, kte
+      znw(k) = 1 - (real(k)-kts)/(real(kte)-kts)
+   END DO
+
+   DO k = kts, kte-1
+      rdzw(k) = 1./(znw(k)-znw(k+1))
+   END DO
+
+   CALL RANDOM_NUMBER ( fzm )
+   fzp = 1. - fzm 
+
+   !  Loop over advection enough times to get some meaningful timings.
+
+   DO loop = 1 , 100 
+
+      !  A representative number of times to call the advection in a time period.
+
+      PRINT *,'LOOP over scalars'
+      DO im = 1 , MAX_SCALARS
+         PRINT *,'CALL advect for loop = ',im,', of ',MAX_SCALARS,' loops'
+         CALL advect_scalar_pd       ( field(ims,kms,jms,im),              &
+                                         field_old(ims,kms,jms,im),          &
+                                         tendency(ims,kms,jms),              &
+                                         h_tendency(ims,kms,jms),            & 
+                                         z_tendency(ims,kms,jms),            & 
+                                         ru, rv, rom, mut, mub, mu_old,       &
+                                         time_step, config_flags, tenddec,   & 
+                                         msfux, msfuy, msfvx, msfvy,         &
+                                         msftx, msfty, fzm, fzp,             &
+                                         rdx, rdy, rdzw,dt,                  &
+                                         ids, ide, jds, jde, kds, kde,       &
+                                         ims, ime, jms, jme, kms, kme,       &
+                                         its, ite, jts, jte, kts, kte     )
+   
+      END DO
+   END DO
+
+END PROGRAM feeder
+#else
 
 !----------------------------------------------------------------
 
@@ -12406,3 +12661,4 @@ END SUBROUTINE advect_weno_w
 
 END MODULE module_advect_em
 
+#endif

@@ -239,6 +239,9 @@ Namelist variables specifically for the WPS input for real:
                                                 ; level of max wind information in real.  With a value of 300 hPa, then
                                                 ; a max wind value at 500 hPa will be ignored.
                                                 ; ARW real only.
+ use_maxw_level                                 ; 0=do not use max wind speed level in vertical interpolation inside
+                                                ; of the ARW real program, 1 = use level
+ use_trop_level                                 ; as above, with tropopause level data
  sfcp_to_sfcp                        = .false.  ; Optional method to compute model's surface pressure when incoming
                                                 ; data only has surface pressure and terrain, but not SLP
  smooth_cg_topo	                     = .false.  ; Smooth the outer rows and columns of domain 1's topography w.r.t.
@@ -779,7 +782,7 @@ Namelist variables for controlling the adaptive time step option:
  num_soil_layers                     = 5,	; number of soil layers in land surface model
                                                   = 5: thermal diffusion scheme
                                                   = 4: Noah landsurface model
-                                                  = 6: RUC landsurface model
+                                                  = 6 or 9: RUC landsurface model
                                                   = 10: CLM4 landsurface model
                                                   = 2: Pleim-Xu landsurface model
                                                   = 3: SSiB landsurface model
@@ -1191,7 +1194,7 @@ The following are for observation nudging:
                                                       (dampcoef nondimensional ~0.01-0.1)
                                                   2 = with Rayleigh  damping (dampcoef inverse time scale [1/s] e.g. .003; idealized case only
                                                       not for real-data cases)
-                                                  3 = with w-Rayleigh damping (dampcoef inverse time scale [1/s] e.g. .05; 
+                                                  3 = with w-Rayleigh damping (dampcoef inverse time scale [1/s] e.g. .2; 
                                                       for real-data cases)
  use_theta_m                         = 0        ; 1: use theta_m=theta(1+1.61Qv)
                                                   0: use dry theta in dynamics
@@ -1354,6 +1357,10 @@ The following are for observation nudging:
                                                   Only 40 for jpeg2000 or 41 for PNG are supported
 
 
+By default the pressure and height level data goes into stream 23 and 22, respectively. Using
+the vertical interpolation options requires the user to define an io_form and interval for
+the requested stream.  See examples.namelist.
+
  &diags:
  p_lev_diags                         = 1,       ; Vertically interpolate diagnostics to p-levels
                                                   0=NO, 1=YES
@@ -1365,6 +1372,12 @@ The following are for observation nudging:
                                                   (p_hyd).  The p_hyd option is the default and less noisy.  Total
                                                   pressure is consistent with what is done in various post-proc
                                                   packages.
+ z_lev_diags                         = 0,       ; Vertically interpolate diagnostics to z-levels
+                                                  0=NO, 1=YES
+ num_z_levels                        = 2,       ; Number of height levels to interpolate to
+ z_levels                            = 0,       ; List of height values (m) to interpolate data to. 
+                                                ;   Positive numbers are for height above mean sea level (i.e. a flight level)
+                                                ;   Negative numbers are for levels above ground
  /
 
 AFWA diagnostics:

@@ -2338,25 +2338,25 @@ print *,'column of cg pres = ',cprs
         ! WEST
                IF   ( ni .ge. nids .and. ni .lt. nids + sz ) THEN
                  bdy_txs( nj,k,ni ) = rdt*(psca(ci+shw,cj+shw,ip+1+(jp)*nri)-nfld(ni,k,nj))
-                 bdy_xs( nj,k,ni ) = psca(ci+shw,cj+shw,ip+1+(jp)*nri )
+                 bdy_xs( nj,k,ni ) = nfld(ni,k,nj)
                ENDIF
 
         ! SOUTH
                IF   ( nj .ge. njds .and. nj .lt. njds + sz ) THEN
                  bdy_tys( ni,k,nj ) = rdt*(psca(ci+shw,cj+shw,ip+1+(jp)*nri)-nfld(ni,k,nj))
-                 bdy_ys( ni,k,nj ) = psca(ci+shw,cj+shw,ip+1+(jp)*nri )
+                 bdy_ys( ni,k,nj ) = nfld(ni,k,nj)
                ENDIF
 
         ! EAST
                IF ( xstag ) THEN
                  IF   ( ni .ge. nide - sz + 1 .AND. ni .le. nide ) THEN
                    bdy_txe( nj,k,nide-ni+1 ) = rdt*(psca(ci+shw,cj+shw,ip+1+(jp)*nri)-nfld(ni,k,nj))
-                   bdy_xe( nj,k,nide-ni+1 ) = psca(ci+shw,cj+shw,ip+1+(jp)*nri )
+                   bdy_xe( nj,k,nide-ni+1 ) = nfld(ni,k,nj)
                  ENDIF
                ELSE
                  IF   ( ni .ge. nide - sz .AND. ni .le. nide-1 ) THEN
                    bdy_txe( nj,k,nide-ni ) = rdt*(psca(ci+shw,cj+shw,ip+1+(jp)*nri)-nfld(ni,k,nj))
-                   bdy_xe( nj,k,nide-ni ) = psca(ci+shw,cj+shw,ip+1+(jp)*nri )
+                   bdy_xe( nj,k,nide-ni ) = nfld(ni,k,nj)
                  ENDIF
                ENDIF
 
@@ -2364,12 +2364,12 @@ print *,'column of cg pres = ',cprs
                IF ( ystag ) THEN
                  IF   ( nj .ge. njde - sz + 1 .AND. nj .le. njde  ) THEN
                    bdy_tye( ni,k,njde-nj+1 ) = rdt*(psca(ci+shw,cj+shw,ip+1+(jp)*nri)-nfld(ni,k,nj))
-                   bdy_ye( ni,k,njde-nj+1 ) = psca(ci+shw,cj+shw,ip+1+(jp)*nri )
+                   bdy_ye( ni,k,njde-nj+1 ) = nfld(ni,k,nj)
                  ENDIF
                ELSE
                  IF   (  nj .ge. njde - sz .AND. nj .le. njde-1 ) THEN
                    bdy_tye(ni,k,njde-nj ) = rdt*(psca(ci+shw,cj+shw,ip+1+(jp)*nri)-nfld(ni,k,nj))
-                   bdy_ye( ni,k,njde-nj ) = psca(ci+shw,cj+shw,ip+1+(jp)*nri )
+                   bdy_ye( ni,k,njde-nj ) = nfld(ni,k,nj)
                  ENDIF
                ENDIF
 
@@ -2509,14 +2509,14 @@ print *,'column of cg pres = ',cprs
 
               IF ( ni .LT. nids + sz ) THEN
                   bdy_txs(nj,nk,ni) = rdt*(nfld_horiz_interp(ni,nk,nj)-nfld(ni,nk,nj))
-                  bdy_xs (nj,nk,ni) =      nfld_horiz_interp(ni,nk,nj)
+                  bdy_xs (nj,nk,ni) =      nfld(ni,nk,nj)
               END IF
 
                !  SOUTH boundary
 
                IF ( nj .LT. njds + sz ) THEN
                   bdy_tys(ni,nk,nj) = rdt*(nfld_horiz_interp(ni,nk,nj)-nfld(ni,nk,nj))
-                  bdy_ys (ni,nk,nj) =      nfld_horiz_interp(ni,nk,nj)
+                  bdy_ys (ni,nk,nj) =      nfld(ni,nk,nj)
                END IF
 
                !  EAST boundary
@@ -2524,12 +2524,12 @@ print *,'column of cg pres = ',cprs
                IF ( xstag ) THEN
                   IF ( ( ni .GE. nide - sz + 1 ) .AND. ( ni .LE. nide ) ) THEN
                      bdy_txe(nj,nk,nide-ni+1) = rdt*(nfld_horiz_interp(ni,nk,nj)-nfld(ni,nk,nj))
-                     bdy_xe (nj,nk,nide-ni+1) =      nfld_horiz_interp(ni,nk,nj)
+                     bdy_xe (nj,nk,nide-ni+1) =      nfld(ni,nk,nj)
                   END IF
                ELSE
                   IF ( ( ni .GE. nide - sz ) .AND. ( ni .LE. nide-1 ) ) THEN
                      bdy_txe(nj,nk,nide-ni  ) = rdt*(nfld_horiz_interp(ni,nk,nj)-nfld(ni,nk,nj))
-                     bdy_xe (nj,nk,nide-ni  ) =      nfld_horiz_interp(ni,nk,nj)
+                     bdy_xe (nj,nk,nide-ni  ) =      nfld(ni,nk,nj)
                   END IF
                END IF
 
@@ -2538,12 +2538,12 @@ print *,'column of cg pres = ',cprs
                IF ( ystag ) THEN
                   IF ( ( nj .GE. njde - sz + 1 ) .AND. ( nj .LE. njde  ) ) THEN
                      bdy_tye(ni,nk,njde-nj+1) = rdt*(nfld_horiz_interp(ni,nk,nj)-nfld(ni,nk,nj))
-                     bdy_ye (ni,nk,njde-nj+1) =      nfld_horiz_interp(ni,nk,nj)
+                     bdy_ye (ni,nk,njde-nj+1) =      nfld(ni,nk,nj)
                   END IF
                ELSE
                   IF ( (  nj .GE. njde - sz ) .AND. ( nj .LE. njde-1 ) ) THEN
                      bdy_tye(ni,nk,njde-nj  ) = rdt*(nfld_horiz_interp(ni,nk,nj)-nfld(ni,nk,nj))
-                     bdy_ye (ni,nk,njde-nj  ) =      nfld_horiz_interp(ni,nk,nj)
+                     bdy_ye (ni,nk,njde-nj  ) =      nfld(ni,nk,nj)
                   END IF
                END IF
 

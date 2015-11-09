@@ -225,20 +225,20 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
          ! Generate the chanprof array
          allocate(chanprof(nchanprof))
          do n = n1, n2
-            chanprof((n-1)*nchan+1:n*nchan)%prof = n
-            chanprof((n-1)*nchan+1:n*nchan)%chan = (/ (j, j=1,nchan) /)
+            chanprof((n-n1)*nchan+1:(n-n1+1)*nchan)%prof = n-n1+1
+            chanprof((n-n1)*nchan+1:(n-n1+1)*nchan)%chan = (/ (j, j=1,nchan) /)
          end do
 
-         allocate(profiles(n1:n2))
+         allocate(profiles(n2-n1+1))
          do n = n1, n2
             ! latitude, longitude, surftype are used for retreiving emis from atlas
             ! zenangle is used by MW emmisivity atlas
             ! snow_frac is used only by IR emmisivity atlas
-            profiles(n)%latitude      = iv%instid(inst)%info%lat(1,n)
-            profiles(n)%longitude     = iv%instid(inst)%info%lon(1,n)
-            profiles(n)%zenangle      = iv%instid(inst)%satzen(n)
-            profiles(n)%skin%surftype = iv%instid(inst)%surftype(n)
-            profiles(n)%snow_frac     = iv%instid(inst)%snow_frac(n)
+            profiles(n-n1+1)%latitude      = iv%instid(inst)%info%lat(1,n)
+            profiles(n-n1+1)%longitude     = iv%instid(inst)%info%lon(1,n)
+            profiles(n-n1+1)%zenangle      = iv%instid(inst)%satzen(n)
+            profiles(n-n1+1)%skin%surftype = iv%instid(inst)%surftype(n)
+            profiles(n-n1+1)%snow_frac     = iv%instid(inst)%snow_frac(n)
          end do
 
          ! Retrieve values from atlas
@@ -315,13 +315,13 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
          if ( use_rttov_kmatrix ) then
             call da_rttov_k (inst, nchan, 1, nlevels, &
                con_vars(n:n), aux_vars(n:n), &
-               temp, temp2, temp3, emissivity((n-n1)*nchan+1:n*nchan))
-            iv%instid(inst)%emiss(:,n) = emissivity((n-n1)*nchan+1:n*nchan)%emis_out
+               temp, temp2, temp3, emissivity((n-n1)*nchan+1:(n-n1+1)*nchan))
+            iv%instid(inst)%emiss(:,n) = emissivity((n-n1)*nchan+1:(n-n1+1)*nchan)%emis_out
          else
             call da_rttov_direct (inst, nchan, 1, nlevels, &
                con_vars(n:n), aux_vars(n:n), &
-               temp, temp2, temp3, emissivity((n-n1)*nchan+1:n*nchan))
-            iv%instid(inst)%emiss(:,n) = emissivity((n-n1)*nchan+1:n*nchan)%emis_out 
+               temp, temp2, temp3, emissivity((n-n1)*nchan+1:(n-n1+1)*nchan))
+            iv%instid(inst)%emiss(:,n) = emissivity((n-n1)*nchan+1:(n-n1+1)*nchan)%emis_out 
          end if
          iv%instid(inst)%tb_xb(:,n)=temp(:)
          iv%instid(inst)%rad_xb(:,n)=temp2(:)

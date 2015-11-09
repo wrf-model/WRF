@@ -342,7 +342,6 @@
       ETAMP_PHYSICS=.FALSE.
 !
       IF (CONFIG_FLAGS%MP_PHYSICS == ETAMPNEW .OR.                 &
-!     &    CONFIG_FLAGS%MP_PHYSICS == ETAMP_HR .OR.                 &
      &    CONFIG_FLAGS%MP_PHYSICS == FER_MP_HIRES .OR.                 &
      &    CONFIG_FLAGS%MP_PHYSICS == ETAMP_HWRF ) THEN
 !
@@ -713,16 +712,16 @@
 !
 !-----------------------------------------------------------------------
 !
-!zhang#ifdef DM_PARALLEL
-!zhang#    include "HALO_NMM_A.inc"
-!zhang#endif
+!!#ifdef DM_PARALLEL
+!!#    include "HALO_NMM_A.inc"
+!!#endif
 !
 !-----------------------------------------------------------------------
-!zhang#ifdef DM_PARALLEL
-!zhang      IF (.NOT.ETAMP_PHYSICS) THEN
-!zhang#    include "HALO_NMM_A_3.inc"
-!zhang      ENDIF
-!zhang#endif
+!!#ifdef DM_PARALLEL
+!!      IF (.NOT.ETAMP_PHYSICS) THEN
+!!#    include "HALO_NMM_A_3.inc"
+!!      ENDIF
+!!#endif
 !-----------------------------------------------------------------------
 !***  FIRST STEP INITIALIZATION OF PASSIVE SUBSTANCE VARIABLES
 !-----------------------------------------------------------------------
@@ -816,9 +815,9 @@
       btimx=now_time()
 !zhang try2
 !-----------------
-!zhang#ifdef DM_PARALLEL
-!zhang#    include "HALO_NMM_D.inc"
-!zhang#endif
+!!#ifdef DM_PARALLEL
+!!#    include "HALO_NMM_D.inc"
+!!#endif
 !-----------------
       exch_tim=exch_tim+now_time()-btimx
 #ifdef NMM_FIND_LOAD_IMBALANCE
@@ -916,9 +915,9 @@
       call blockf(loadimbal_tim,'after adve')
 #endif
           btimx=now_time()
-!zhang#ifdef DM_PARALLEL
-!zhang#    include "HALO_NMM_I.inc"
-!zhang#endif
+!!#ifdef DM_PARALLEL
+!!#    include "HALO_NMM_I.inc"
+!!#endif
           exch_tim=exch_tim+now_time()-btimx
 #ifdef NMM_FIND_LOAD_IMBALANCE
       call blockf(loadimbal_tim,'after halo I')
@@ -1482,6 +1481,7 @@
      &                ,grid%cuppt,grid%vegfrc,grid%sno,grid%htop,grid%hbot                      &
      &                ,grid%z,grid%sice,NUM_AEROSOLC,NUM_OZMIXM        &
      &                ,OZMIXM,grid%PIN,grid%LEVSIZ                     &
+
      &                ,GRID,CONFIG_FLAGS                               &
      &                ,RTHRATEN                                        &  
      &                ,grid%re_cloud,grid%re_ice,grid%re_snow          &  ! G. Thompson
@@ -2265,9 +2265,9 @@
 #endif
         btimx=now_time()
 !-----------------
-!zhang#ifdef DM_PARALLEL
-!zhang#    include "HALO_NMM_A.inc"
-!zhang#endif
+!!#ifdef DM_PARALLEL
+!!#    include "HALO_NMM_A.inc"
+!!#endif
 !-----------------
         exch_tim=exch_tim+now_time()-btimx
 #ifdef NMM_FIND_LOAD_IMBALANCE

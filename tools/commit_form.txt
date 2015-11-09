@@ -1,0 +1,42 @@
+TYPE: bug fix, enhancement, new feature, feature removed, no impact, text only
+
+KEYWORDS: 5 to 10 words related to commit
+
+SOURCE: Either "developer's name (affiliation)" .XOR. "internal" for a WRF Dev committee member
+
+PURPOSE: single line, usually one sentence
+
+DESCRIPTION OF CHANGES: 
+Paragraph describing problem, solution, and required changes.
+
+LIST OF MODIFIED FILES (annotated if not obvious, not required to be on a single line): 
+
+TESTS CONDUCTED (explicitly state mandatory, voluntary, and assigned tests, not required to be on a single line):
+
+
+
+
+Description of commit types:
+- "bug fix" 
+  Fixing a demonstrably incorrect portion of code
+
+- "enhancement" 
+  Changing an existing portion of the code; though the old code was not unambiguously 
+  wrong, this change presumably improves the code
+
+- "new feature" 
+  Adding a new feature to the code
+
+- "feature removed" 
+  Removing an existing feature of the code
+
+- "no impact" 
+  For display changes such as changing the "version_decl", changing variable names, 
+  improving error messages, changing quoted Registry elements, or otherwise changing what 
+  appears in the log/out/error files but not impacting history/restart output results, timing 
+  performance, or memory footprint 
+
+- "text only"
+  For README and comments, changing quoted Registry elements, white space alignment, or other 
+  changes which have no impact on program output or log files.  Additionally, any change which
+  does not impact any of the compiled code.

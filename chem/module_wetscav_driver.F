@@ -63,10 +63,16 @@ CONTAINS
    USE modal_aero_data,        only:  ntot_amode               ! For cam_mam_wetscav variables
    USE module_mozcart_wetscav, only:  wetscav_mozcart
    USE module_mosaic_wetscav, only:  wetscav_cbmz_mosaic, wetscav_mozart_mosaic
-   USE module_aerosols_sorgam, only:  wetscav_sorgam_driver
+!!! TUCCELLA (BUG, the line below is commented now)
+   !USE module_aerosols_sorgam, only:  wetscav_sorgam_driver
    USE module_aerosols_sorgam_vbs, only:  wetscav_sorgam_vbs_driver
    USE module_cam_mam_wetscav, only:  wetscav_cam_mam_driver
    USE module_cam_support,     only:  pcnst =>pcnst_runtime
+!!! TUCCELLA (BUG, the line below is commented now)
+   !USE module_aerosols_soa_vbs,         only: wetscav_soa_vbs_driver
+!!! TUCCELLA (BUG, the drivers for wet scavenging of SORGAM and VBS now are in
+!             module_prep_wetscav_sorgam.F)
+   USE module_prep_wetscav_sorgam, only: wetscav_sorgam_driver, wetscav_soa_vbs_driver
    USE module_data_mosaic_asect, only: mw_so4_aer, mw_no3_aer, mw_nh4_aer, &
                                        mw_smpa_aer, mw_smpbb_aer, mw_oc_aer, &
                                        mw_glysoa_r1_aer, mw_glysoa_r2_aer, &
@@ -291,6 +297,28 @@ REAL,  DIMENSION( ims:ime , kms:kme , jms:jme , ntot_amode ),       &
           CB05_SORG_AQ_KPP)
        CALL wrf_debug(15,'wetscav_driver calling sorgam_wetscav_driver' )
        call wetscav_sorgam_driver (id,ktau,dtstep,ktauc,config_flags,      &
+               dtstepc,alt,t_phy,p8w,t8w,p_phy,chem,rho_phy,cldfra,        &
+               qlsink,precr,preci,precs,precg, qsrflx,                     &
+               gas_aqfrac, numgas_aqfrac,                                  &
+               ids,ide, jds,jde, kds,kde,                                  &
+               ims,ime, jms,jme, kms,kme,                                  &
+               its,ite, jts,jte, kts,kte                                   )
+! not clear if the following is necessary or appropriate
+       tmp_minval = 1.0e7
+       do jj=jts,jte
+       do kk=kts,kte
+       do ii=its,ite
+          if (chem(ii,kk,jj,p_nu0) .lt. tmp_minval) then
+             chem(ii,kk,jj,p_nu0) = tmp_minval
+          endif
+       enddo
+       enddo
+       enddo
+
+!!! TUCCELLA
+     CASE ( RACM_SOA_VBS_AQCHEM_KPP )
+       CALL wrf_debug(15,'wetscav_driver calling soa_vbs_wetscav_driver' )
+       call wetscav_soa_vbs_driver (id,ktau,dtstep,ktauc,config_flags,     &
                dtstepc,alt,t_phy,p8w,t8w,p_phy,chem,rho_phy,cldfra,        &
                qlsink,precr,preci,precs,precg, qsrflx,                     &
                gas_aqfrac, numgas_aqfrac,                                  &

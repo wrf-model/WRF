@@ -32,6 +32,8 @@ subroutine da_setup_background_errors(grid, be)
             max_vert_var7 = 0
             max_vert_var8 = 0
             max_vert_var9 = 0
+            max_vert_var10 = 0
+            max_vert_var11 = 0
 #endif
       end if
       sigma_alpha = alpha_std_dev
@@ -51,6 +53,8 @@ subroutine da_setup_background_errors(grid, be)
    be % v7 % mz = 0
    be % v8 % mz = 0
    be % v9 % mz = 0
+   be % v10% mz = 0
+   be % v11% mz = 0
 #endif
    if (global) then
       call da_setup_be_global(be)

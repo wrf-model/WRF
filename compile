@@ -50,8 +50,19 @@ foreach a ( $argv )
     if ( "$a" == "all_wrfvar" ) then
       grep "DA_CORE=1" configure.wrf > /dev/null
       if ( ! $status ) then 
-         # If configuration file has DA_CORE=1 hardwired, ok to set WRF_DA_CORE to 1
-         setenv WRF_DA_CORE 1
+        # If configuration file has DA_CORE=1, set WRF_DA_CORE to 1
+        setenv WRF_DA_CORE 1
+      else
+        # If the user ran the configure script without the "wrfda" option, "./compile all_wrfvar"
+        # will fail in non-obvious ways, and some executables will be created incorrectly.
+        # Let's just quit right away to avoid the hassle.
+        echo ""
+        echo "To build WRFDA, you must run the 'configure' script with the 'wrfda' option:"
+        echo "  ./configure wrfda"
+        echo ""
+        echo "Exiting..."
+        echo ""
+        exit 1
       endif
     endif
     if ( "$a" == "nmm_real" ) then

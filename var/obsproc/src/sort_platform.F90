@@ -199,31 +199,31 @@ levels: DO WHILE (ASSOCIATED (current))
 ! =============
 
       WRITE (0, '(A)')
-      WRITE (0, '(A,I6)') ' SYNOP reports:',nsynops
-      WRITE (0, '(A,I6)') ' SHIPS reports:',nshipss
-      WRITE (0, '(A,I6)') ' BUOY  reports:',nbuoyss
-      WRITE (0, '(A,I6)') ' BUGUS reports:',nboguss
-      WRITE (0, '(A,I6)') ' METAR reports:',nmetars
-      WRITE (0, '(A,I6)') ' PILOT reports:',npilots
-      WRITE (0, '(A,I6)') ' SOUND reports:',nsounds
-      WRITE (0, '(A,I6)') ' AMDAR reports:',namdars
-      WRITE (0, '(A,I6)') ' SATEM reports:',nsatems
-      WRITE (0, '(A,I6)') ' SATOB reports:',nsatobs
-      WRITE (0, '(A,I6)') ' AIREP reports:',naireps
-      WRITE (0, '(A,I6)') 'TAMDAR reports:',ntamdar
-      WRITE (0, '(A,I6)') ' GPSPW reports:',ngpspws
-      WRITE (0, '(A,I6)') ' GPSZD reports:',ngpsztd
-      WRITE (0, '(A,I6)') ' GPSRF reports:',ngpsref
-      WRITE (0, '(A,I6)') ' GPSEP reports:',ngpseph
-      WRITE (0, '(A,I6)') ' SSMT1 reports:',nssmt1s
-      WRITE (0, '(A,I6)') ' SSMT2 reports:',nssmt2s
-      WRITE (0, '(A,I6)') ' SSMI  reports:',nssmis
-      WRITE (0, '(A,I6)') ' TOVS  reports:',ntovss
-      WRITE (0, '(A,I6)') ' QSCAT reports:',nqscats
-      WRITE (0, '(A,I6)') ' PROFL reports:',nprofls 
-      WRITE (0, '(A,I6)') ' AIRST reports:',nairss  
-      WRITE (0, '(A,I6)') ' OTHER reports:',nothers
-      WRITE (0, '(A,3(I6,A),/)') &
+      WRITE (0, '(A,I7)') ' SYNOP reports:',nsynops
+      WRITE (0, '(A,I7)') ' SHIPS reports:',nshipss
+      WRITE (0, '(A,I7)') ' BUOY  reports:',nbuoyss
+      WRITE (0, '(A,I7)') ' BUGUS reports:',nboguss
+      WRITE (0, '(A,I7)') ' METAR reports:',nmetars
+      WRITE (0, '(A,I7)') ' PILOT reports:',npilots
+      WRITE (0, '(A,I7)') ' SOUND reports:',nsounds
+      WRITE (0, '(A,I7)') ' AMDAR reports:',namdars
+      WRITE (0, '(A,I7)') ' SATEM reports:',nsatems
+      WRITE (0, '(A,I7)') ' SATOB reports:',nsatobs
+      WRITE (0, '(A,I7)') ' AIREP reports:',naireps
+      WRITE (0, '(A,I7)') 'TAMDAR reports:',ntamdar
+      WRITE (0, '(A,I7)') ' GPSPW reports:',ngpspws
+      WRITE (0, '(A,I7)') ' GPSZD reports:',ngpsztd
+      WRITE (0, '(A,I7)') ' GPSRF reports:',ngpsref
+      WRITE (0, '(A,I7)') ' GPSEP reports:',ngpseph
+      WRITE (0, '(A,I7)') ' SSMT1 reports:',nssmt1s
+      WRITE (0, '(A,I7)') ' SSMT2 reports:',nssmt2s
+      WRITE (0, '(A,I7)') ' SSMI  reports:',nssmis
+      WRITE (0, '(A,I7)') ' TOVS  reports:',ntovss
+      WRITE (0, '(A,I7)') ' QSCAT reports:',nqscats
+      WRITE (0, '(A,I7)') ' PROFL reports:',nprofls 
+      WRITE (0, '(A,I7)') ' AIRST reports:',nairss  
+      WRITE (0, '(A,I7)') ' OTHER reports:',nothers
+      WRITE (0, '(A,3(I7,A),/)') &
                           ' Total reports:',nsynops+nshipss+nmetars+&
                                             npilots+nsounds+nsatems+&
                                             nsatobs+naireps+ngpspws+&

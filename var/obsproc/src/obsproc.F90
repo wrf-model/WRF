@@ -302,11 +302,15 @@ PROGRAM main_obsproc
 
       ELSE
 
-      !  Otherwise, use ncep value as default
-          write(0,'(/A/A/)') "!!! WARNING *** WARNING *** WARNING *** WARNING !!!", &
-      "<< NO AFWA OBS ERRORS FILE (obserr.txt) AVAILABE, USE NCEP ERROR AS DEFAULT >>"
-          
-          CALL obs_err_ncep (max_number_of_obs, obs, number_of_obs)
+         WRITE (0,'(/,A,/)') "No obs err input file "//trim(obs_err_filename)//" found."
+         STOP
+
+         !starting from V3.7.1, disable the usage below
+
+         !Otherwise, use ncep value as default
+         !write(0,'(/A/A/)') "!!! WARNING *** WARNING *** WARNING *** WARNING !!!", &
+         !"<< NO AFWA OBS ERRORS FILE (obserr.txt) AVAILABE, USE NCEP ERROR AS DEFAULT >>"
+         !CALL obs_err_ncep (max_number_of_obs, obs, number_of_obs)
 
       ENDIF
 

@@ -80,8 +80,7 @@ gen_comms_serial :
 	( /bin/rm -f $(WRF_SRC_ROOT_DIR)/tools/gen_comms.c )
 
 module_dm_serial :
-	( if [ ! -e module_dm.F ] ; then /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F ; \
-          /bin/cp module_dm_warning module_dm_communicators.F ; cat module_dm_communicators_stubs.F >> module_dm_communicators.F ; fi )
+	( if [ ! -e module_dm.F ] ; then /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F ; fi )
 
 gen_comms_rsllite :
 	( if [ ! -e $(WRF_SRC_ROOT_DIR)/tools/gen_comms.c ] ; then \
@@ -90,9 +89,7 @@ gen_comms_rsllite :
 
 module_dm_rsllite :
 	( if [ ! -e module_dm.F ] ; then /bin/cp module_dm_warning module_dm.F ; \
-          cat $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/module_dm.F >> module_dm.F ; \
-          /bin/cp module_dm_warning module_dm_communicators.F ; \
-           cat $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/module_dm_communicators.F >> module_dm_communicators.F ; fi )
+          cat $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/module_dm.F >> module_dm.F ; fi )
 
 wrfio_nf : 
 	( cd $(WRF_SRC_ROOT_DIR)/external/io_netcdf ; \

@@ -362,17 +362,15 @@ IF ( grid%active_this_task .OR. nested_grid%active_this_task ) THEN
 ENDIF
 IF ( nested_grid%active_this_task ) THEN
     grid => nested_grid%intermediate_grid
-    IF ( .NOT. ( config_flags%restart .AND. nested_grid%first_force ) ) THEN
-       ! Finish transfering information from parent to intermediate
-       ! grid, then run interpolation on the intermediate domain and
-       ! compute the values for the nest boundaries.
-       CALL model_to_grid_config_rec ( nested_grid%id , model_config_rec , config_flags )
-       CALL force_domain_nmm_part2 ( grid, nested_grid, config_flags    &
+    ! Finish transfering information from parent to intermediate
+    ! grid, then run interpolation on the intermediate domain and
+    ! compute the values for the nest boundaries.
+    CALL model_to_grid_config_rec ( nested_grid%id , model_config_rec , config_flags )
+    CALL force_domain_nmm_part2 ( grid, nested_grid, config_flags    &
 !
 #         include "actual_new_args.inc"
 !
 )
-    ENDIF ! not restart and first_force
 ENDIF
 
     IF ( nested_grid%first_force ) THEN

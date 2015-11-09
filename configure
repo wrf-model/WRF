@@ -287,10 +287,16 @@ fi
 USENETCDFF=""  # see below
 if [ -n "$NETCDF" ] ; then
   echo "Will use NETCDF in dir: $NETCDF"
-# for 3.6.2 and greater there might be a second library, libnetcdff.a .  Check for this and use 
-# if available
+# Oh UNIDATA, why make it so hard ...
   if [ -f "$NETCDF/lib/libnetcdff.a" -o -f "$NETCDF/lib/libnetcdff.so" ] ; then
     USENETCDFF="-lnetcdff"
+  else
+    USENETCDFF=" "
+  fi
+  if [ -f "$NETCDF/lib/libnetcdf.a" -o -f "$NETCDF/lib/libnetcdf.so" ] ; then
+    USENETCDF="-lnetcdf"
+  else
+    USENETCDF=" "
   fi
 else
   echo "Will configure for use without NetCDF"
@@ -585,7 +591,8 @@ if test -n "$PERL" ; then
    if [ -n "$srch" ] ; then
      $PERL arch/Config_new.pl -dmparallel=$COMMLIB -ompparallel=$OMP -perl=$PERL \
           -netcdf=$NETCDF -pnetcdf=$PNETCDF -phdf5=$PHDF5 -os=$os -mach=$mach -ldflags=$ldflags \
-          -compileflags=$compileflags -opt_level=$opt_level -USENETCDFF=$USENETCDFF -time=$FORTRAN_COMPILER_TIMER \
+          -compileflags=$compileflags -opt_level=$opt_level -USENETCDFF=$USENETCDFF -USENETCDF=$USENETCDF \
+          -time=$FORTRAN_COMPILER_TIMER \
           -wrf_core=$wrf_core -gpfs=$GPFS_PATH -curl=$CURL_PATH -dep_lib_path="$DEP_LIB_PATH"
      if test ! -f configure.wrf ; then
        echo "configure.wrf not created! Exiting configure script..."

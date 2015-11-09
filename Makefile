@@ -862,13 +862,13 @@ framework :
                CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" TRADFLAG="$(TRADFLAG)" ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" \
 	       LIB_LOCAL="$(LIB_LOCAL)" \
                ESMF_MOD_DEPENDENCE="$(ESMF_MOD_DEPENDENCE)" AR="INTERNAL_BUILD_ERROR_SHOULD_NOT_NEED_AR" diffwrf; \
-          cd ../external/io_netcdf ; \
+          cd ../io_netcdf ; \
           $(MAKE) NETCDFPATH="$(NETCDFPATH)" FC="$(SFC) $(FCBASEOPTS)" RANLIB="$(RANLIB)" \
                CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" TRADFLAG="$(TRADFLAG)" ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" \
 	       LIB_LOCAL="$(LIB_LOCAL)" \
                ESMF_MOD_DEPENDENCE="$(ESMF_MOD_DEPENDENCE)" AR="INTERNAL_BUILD_ERROR_SHOULD_NOT_NEED_AR"; \
-          cd ../external/io_pio ; \
-          $(MAKE) NETCDFPATH="$(PNETCDFPATH)" FC="$(SFC) $(FCBASEOPTS)" RANLIB="$(RANLIB)" \
+          cd ../io_pio ; \
+          echo SKIPPING PIO BUILD $(MAKE) NETCDFPATH="$(PNETCDFPATH)" FC="$(SFC) $(FCBASEOPTS)" RANLIB="$(RANLIB)" \
                CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" TRADFLAG="$(TRADFLAG)" ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" \
 	       LIB_LOCAL="$(LIB_LOCAL)" \
                ESMF_MOD_DEPENDENCE="$(ESMF_MOD_DEPENDENCE)" AR="INTERNAL_BUILD_ERROR_SHOULD_NOT_NEED_AR"; \
@@ -877,15 +877,6 @@ framework :
                TRADFLAG="$(TRADFLAG)" ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" \
                ESMF_MOD_DEPENDENCE="$(ESMF_MOD_DEPENDENCE)" AR="INTERNAL_BUILD_ERROR_SHOULD_NOT_NEED_AR" diffwrf ; \
           cd ../../frame )
-
-#          cd ../external/io_netcdf ; \
-#          $(MAKE) NETCDFPATH="$(NETCDFPATH)" FC="$(SFC) $(FCBASEOPTS)" RANLIB="$(RANLIB)" \
-#               CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" TRADFLAG="$(TRADFLAG)" ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" \
-#               ESMF_MOD_DEPENDENCE="$(ESMF_MOD_DEPENDENCE)" AR="$(AR)" ARFLAGS+"$(ARFLAGS)" diffwrf; \
-#          cd ../io_int ; \
-#          $(MAKE) SFC="$(SFC) $(FCBASEOPTS)" FC="$(SFC) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP)" \
-#               TRADFLAG="$(TRADFLAG)" ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" \
-#               ESMF_MOD_DEPENDENCE="$(ESMF_MOD_DEPENDENCE)" AR="$(AR)" "$(ARFLAGS)" diffwrf ; \
 
 shared :
 	@ echo '--------------------------------------'

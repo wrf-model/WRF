@@ -2138,13 +2138,11 @@ CONTAINS
           pits, pite, pjts, pjte, 1, 1)
 
      if(.not.wrf_dm_on_monitor()) then
-        call wrf_debug(1,"Wait for master to write fort.65.")
         call MPI_Barrier(local_communicator,ierr)
-        call wrf_debug(1,"Master finished writing fort.65.  Good master.  Kind master.")
         deallocate(bigsm,bighlat,bighlon)
         return
      else
-        call wrf_debug(1,'I am the master.  Will work on fort.65 stuff.')
+        call wrf_debug(100,'Working on fort.65 stuff.')
      endif
 
      allocate(NHLAT(nide,njde),NHLON(nide,njde),NVLAT(nide,njde))
@@ -2239,7 +2237,6 @@ CONTAINS
         call wrf_error_fatal(message)
      endif
      
-     call wrf_debug(1,'Master writes.')
      open(file='fort.65',unit=65,form='UNFORMATTED')
      WRITE(65)NHLAT(1:NIDE,1:NJDE)
      WRITE(65)NHLON(1:NIDE,1:NJDE)
@@ -2255,9 +2252,7 @@ CONTAINS
      deallocate(HBWGT1,HBWGT2,HBWGT3,HBWGT4,HNEAR_I,HNEAR_J)
      deallocate(bigsm,bighlat,bighlon)
 
-     call wrf_debug(1,"Master finished writing fort.65.")
      call MPI_Barrier(local_communicator,ierr)
-     call wrf_debug(1,"Master rejoined everyone.")
    END SUBROUTINE make_coupler_fort65
 #endif
 

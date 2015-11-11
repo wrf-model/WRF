@@ -6253,6 +6253,40 @@ END SUBROUTINE set_tend
 
 !==============================================================================
 
+SUBROUTINE initialize_moist_old ( moist_old , moist , &
+                                  ids, ide, jds, jde, kds, kde ,   &
+                                  ims, ime, jms, jme, kms, kme ,   &
+                                  its, ite, jts, jte, kts, kte     )
+
+   !  For the theta_m option, the moist_old variable is uninitialized
+   !  at the beginning of EACH of the RK steps.  So, just set the 
+   !  starting value of moist_old as the final value of moist from the
+   !  previous time step.  Here "moist" is only the P_Qv index.
+
+   IMPLICIT NONE
+
+   INTEGER , INTENT(IN) ::   ids, ide, jds, jde, kds, kde ,   &
+                             ims, ime, jms, jme, kms, kme ,   &
+                             its, ite, jts, jte, kts, kte     
+   REAL    , INTENT(IN   ) , DIMENSION(ims:ime,kms:kme,jms:jme) :: moist
+   REAL    , INTENT(  OUT) , DIMENSION(ims:ime,kms:kme,jms:jme) :: moist_old
+
+   !  Local variables
+
+   INTEGER :: i , j , k
+
+   DO j = jts , MIN(jte,jde-1)
+      DO k = kts , kte-1
+         DO i = its , MIN(ite,ide-1)
+            moist_old(i,k,j) = moist(i,k,j)
+         END DO
+      END DO
+   END DO
+
+END SUBROUTINE initialize_moist_old
+
+!==============================================================================
+
 SUBROUTINE theta_to_thetam ( t_1 , moist_old ,                &
                              t_tendf  , moist_tend ,          &
                              t_2 , moist ,                    &
@@ -6279,18 +6313,6 @@ SUBROUTINE theta_to_thetam ( t_1 , moist_old ,                &
    !  Local variables
 
    INTEGER :: i , j , k
-
-   !  First time step, there is no OLD moisture.
-
-   IF ( ( itimestep .EQ. 1 ) .AND. ( rk_step .EQ. 1 ) ) THEN
-      DO j = jts , MIN(jte,jde-1)
-         DO k = kts , kte-1
-            DO i = its , MIN(ite,ide-1)
-               moist_old(i,k,j) = moist(i,k,j)
-            END DO
-         END DO
-      END DO
-   END IF
 
    !  First RK loop, this info is from the physics packages.  It is modified immediately after the
    !  call to the physics schemes, and the remains constant for the remainder of the RK loops.

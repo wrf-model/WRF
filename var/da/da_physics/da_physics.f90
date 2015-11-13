@@ -32,8 +32,11 @@ module da_physics
 
    implicit none
 
+   REAL,   DIMENSION(0:1000 ),SAVE          :: PSIMTB,PSIHTB
+
    contains
 
+#include "sfclayinit.inc"
 #include "da_prho_to_t_adj.inc"
 #include "da_prho_to_t_lin.inc"
 #include "da_uvprho_to_w_lin.inc"

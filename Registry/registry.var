@@ -79,6 +79,8 @@ state    real  A_RAINNCV        ij      misc        1         -      r        "A
 # Variables that are set at run-time to control configuration  (namelist-settable)                                              
 #                                               
 #<Table>  <Type>  <Sym>                   <How set>          <Nentries>   <Default>                                             
+rconfig   logical   update_sfcdiags         namelist,wrfvar1  1  .true.   -  "update_sfcdiags"         ""  ""
+rconfig   logical   use_wrf_sfcinfo         namelist,wrfvar1  1  .true.   -  "use_wrf_sfcinfo"         ""  ""
 rconfig   logical   use_background_errors   namelist,wrfvar1  1  .true.   -  "use_background_errors"   ""  ""
 rconfig   logical   write_increments        namelist,wrfvar1  1  .false.  -  "write_increments"        ""  ""
 rconfig   logical   var4d                   namelist,wrfvar1  1  .false.  -  "var4d"                   ""  ""

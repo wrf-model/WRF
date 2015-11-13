@@ -2,6 +2,7 @@
 
 WRFVAR_OBJS = \
    copyfile.o \
+   amsr2time_.o \
    da_blas.o \
    da_lapack.o \
    da_par_util.o \
@@ -262,6 +263,9 @@ da_join_iv_for_multi_inc.o \
 copyfile.o :
 	$(SCC) -c $(CFLAGS) $*.c
 
+amsr2time_.o :
+	$(SCC) -c $(CFLAGS) $*.c
+
 module_state_description.F : ../../Registry/$(REGISTRY)
 	(cd $(WRF_SRC_ROOT_DIR); tools/registry $(ARCHFLAGS) -DNEW_BDYS Registry/$(REGISTRY) ; cd $(WRF_SRC_ROOT_DIR)/var/build )
 	$(LN) $(WRF_SRC_ROOT_DIR)/frame/module_state_description.F .
@@ -370,9 +374,26 @@ da_wrfvar_top.o :
 	  $(FC) -c $(FCFLAGS) $(PROMOTION) $(CRTM_SRC) $(RTTOV_SRC) -I$(WRFPLUS_DIR)/main -I$(WRFPLUS_DIR)/frame -I$(WRFPLUS_DIR)/share -I$(NETCDF)/include $*.f ; \
         fi
 
+da_radiance.o :
+	$(RM) $@
+	$(SED_FTN) $*.f90 > $*.b
+	$(CPP) $(CPPFLAGS) $(OMPCPP) $(FPPFLAGS) $(RTTOV_SRC) $*.b  > $*.f
+	$(RM) $*.b
+	@ if echo $(ARCHFLAGS) | $(FGREP) 'DVAR4D'; then \
+          echo COMPILING $*.f90 for 4DVAR ; \
+          $(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl $*.f > $*.f.tmp ; \
+          mv $*.f.tmp $*.f ; \
+        fi
+	if $(FGREP) '!$$OMP' $*.f ; then \
+          if [ -n "$(OMP)" ] ; then echo COMPILING $*.f90 WITH OMP ; fi ; \
+	  $(FC) -c $(FCFLAGS) $(OMP) $(PROMOTION) $(CRTM_SRC) $(RTTOV_SRC) -I$(HDF5PATH)/include $*.f ; \
+        else \
+	if [ -n "$(OMP)" ] ; then echo COMPILING $*.f90 WITHOUT OMP ; fi ; \
+	  $(FC) -c $(FCFLAGS) $(PROMOTION) $(CRTM_SRC) $(RTTOV_SRC) -I$(HDF5PATH)/include $*.f ; \
+        fi
+
 da_radiance1.o \
 module_radiance.o \
-da_radiance.o \
 da_setup_structures.o \
 da_obs_io.o \
 da_obs.o \

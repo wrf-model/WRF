@@ -75,6 +75,9 @@ subroutine da_allocate_rad_iv (i, nchan, iv)
       allocate (iv%instid(i)%vegtyp(iv%instid(i)%num_rad))
       allocate (iv%instid(i)%soiltyp(iv%instid(i)%num_rad))
       allocate (iv%instid(i)%clwp(iv%instid(i)%num_rad))
+      if ( index(iv%instid(i)%rttovid_string, 'amsr2') > 0 ) then
+         allocate (iv%instid(i)%clw(iv%instid(i)%num_rad))
+      end if
       allocate (iv%instid(i)%ps(iv%instid(i)%num_rad))
       allocate (iv%instid(i)%tb_xb(nchan,iv%instid(i)%num_rad))
       allocate (iv%instid(i)%tb_qc(nchan,iv%instid(i)%num_rad))

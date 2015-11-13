@@ -590,7 +590,7 @@ if test -n "$PERL" ; then
    srch=`grep -i "^#ARCH.*$os" arch/configure_new.defaults | grep -i "$mach"`
    if [ -n "$srch" ] ; then
      $PERL arch/Config_new.pl -dmparallel=$COMMLIB -ompparallel=$OMP -perl=$PERL \
-          -netcdf=$NETCDF -pnetcdf=$PNETCDF -phdf5=$PHDF5 -os=$os -mach=$mach -ldflags=$ldflags \
+          -netcdf=$NETCDF -pnetcdf=$PNETCDF -hdf5=$HDF5 -phdf5=$PHDF5 -os=$os -mach=$mach -ldflags=$ldflags \
           -compileflags=$compileflags -opt_level=$opt_level -USENETCDFF=$USENETCDFF -USENETCDF=$USENETCDF \
           -time=$FORTRAN_COMPILER_TIMER \
           -wrf_core=$wrf_core -gpfs=$GPFS_PATH -curl=$CURL_PATH -dep_lib_path="$DEP_LIB_PATH"

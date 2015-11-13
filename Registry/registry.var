@@ -83,6 +83,8 @@ state    real  A_RAINNCV        ij      misc        1         -      r        "A
 # Variables that are set at run-time to control configuration  (namelist-settable)                                              
 #                                               
 #<Table>  <Type>  <Sym>                   <How set>          <Nentries>   <Default>                                             
+rconfig   logical   update_sfcdiags         namelist,wrfvar1  1  .true.   -  "update_sfcdiags"         ""  ""
+rconfig   logical   use_wrf_sfcinfo         namelist,wrfvar1  1  .true.   -  "use_wrf_sfcinfo"         ""  ""
 rconfig   logical   use_background_errors   namelist,wrfvar1  1  .true.   -  "use_background_errors"   ""  ""
 rconfig   logical   write_increments        namelist,wrfvar1  1  .false.  -  "write_increments"        ""  ""
 rconfig   logical   var4d                   namelist,wrfvar1  1  .false.  -  "var4d"                   ""  ""
@@ -180,6 +182,7 @@ rconfig   logical   use_hsbobs              namelist,wrfvar4  1  .false.  - "use
 rconfig   logical   use_ssmisobs            namelist,wrfvar4  1  .false.  - "use_ssmisobs"             ""  ""
 rconfig   logical   use_iasiobs             namelist,wrfvar4  1  .false.  - "use_iasiobs"              ""  ""
 rconfig   logical   use_seviriobs           namelist,wrfvar4  1  .false.  - "use_seviriobs"            ""  ""
+rconfig   logical   use_amsr2obs            namelist,wrfvar4  1  .false.  - "use_amsr2obs"             ""  ""
 rconfig   logical   use_kma1dvar            namelist,wrfvar4  1  .false.  - "use_kma1dvar"             ""  ""
 rconfig   logical   use_filtered_rad        namelist,wrfvar4  1  .false.  - "use_filtered_rad"         ""  ""
 rconfig   logical   use_obs_errfac          namelist,wrfvar4  1  .false.  - "use_obs_errfac"           ""  ""

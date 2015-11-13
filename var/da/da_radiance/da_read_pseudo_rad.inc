@@ -58,6 +58,9 @@ subroutine da_read_pseudo_rad (iv)
    else if (sensor_id == 21)  then
    !seviri
       nchan = 8 
+   else if (sensor_id == 63)  then
+      !amsr2
+      nchan = 14
    else
       call da_error(__FILE__,__LINE__, &
            (/"Error in setting up pseudo radiance, unknown sensor_id."/))

@@ -33,7 +33,7 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple &
    TYPE(domain) , TARGET         :: grid
 
    !  Definitions of dummy arguments to solve
-#include <dummy_new_decl.inc>
+#include "dummy_new_decl.inc"
 
    !  WRF state bcs
    TYPE (grid_config_rec_type) , INTENT(IN)          :: config_flags

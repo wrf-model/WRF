@@ -1975,7 +1975,7 @@ subroutine background(lchnk, ncol, pint, pcols, pverr, pverrp, mmr)
 !-----------------------------------------------------------------------
    implicit none
 !-----------------------------------------------------------------------
-!#include <ptrrgrid.h>
+!#include "ptrrgrid.h"
 !------------------------------Arguments--------------------------------
 !
 ! Input arguments

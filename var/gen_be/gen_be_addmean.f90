@@ -10,7 +10,7 @@ program gen_be_addmean
 !
    implicit none 
 
-#include <netcdf.inc>
+#include "netcdf.inc"
 
    integer, parameter    :: max_num_vars = 50              ! Maximum number of variables.
    integer, parameter    :: max_num_dims = 20              ! Maximum number of dimensions.

@@ -44,7 +44,7 @@ SUBROUTINE start_domain ( grid , allowed_to_read )
    IF ( model_config_rec%dyn_opt .EQ. dyn_em_tl ) THEN
       CALL g_start_domain_em( grid, allowed_to_read  &
 !
-# include <actual_new_args.inc>
+# include "actual_new_args.inc"
 !
                          )
    ELSE IF ( model_config_rec%dyn_opt .EQ. dyn_em_ad ) THEN
@@ -64,14 +64,14 @@ SUBROUTINE start_domain ( grid , allowed_to_read )
 #if (NMM_CORE == 1) 
    CALL start_domain_nmm( grid, allowed_to_read   &
 !
-# include <actual_new_args.inc>
+# include "actual_new_args.inc"
 !
                          )
 #endif
 #if (COAMPS_CORE == 1)
    CALL start_domain_coamps( grid, allowed_to_read   &
 !
-# include <actual_new_args.inc>
+# include "actual_new_args.inc"
 !
                          )
 #endif

@@ -1,6 +1,6 @@
 SUBROUTINE shift_domain_em ( grid , disp_x, disp_y &
 !
-# include <dummy_new_args.inc>
+# include "dummy_new_args.inc"
 !
                            )
    USE module_state_description
@@ -32,7 +32,7 @@ SUBROUTINE shift_domain_em ( grid , disp_x, disp_y &
        ! need to split this routine to avoid clobbering certain widely used compilers
        SUBROUTINE shift_domain_em2 ( grid , disp_x, disp_y &
 !
-# include <dummy_new_args.inc>
+# include "dummy_new_args.inc"
 !
                            )
           USE module_state_description
@@ -43,12 +43,12 @@ SUBROUTINE shift_domain_em ( grid , disp_x, disp_y &
           TYPE(domain) , POINTER                     :: grid
 
           !  Definitions of dummy arguments to solve
-#include <dummy_new_decl.inc>
+#include "dummy_new_decl.inc"
        END SUBROUTINE shift_domain_em2
    END INTERFACE
 
    !  Definitions of dummy arguments to solve
-#include <dummy_new_decl.inc>
+#include "dummy_new_decl.inc"
 
 #ifdef MOVE_NESTS
 
@@ -74,13 +74,13 @@ SUBROUTINE shift_domain_em ( grid , disp_x, disp_y &
 
 ! shift the nest domain in x
    do ii = 1,abs(disp_x)
-#include <SHIFT_HALO.inc>
+#include "SHIFT_HALO.inc"
 #include "../frame/loop_based_x_shift_code.h"
    enddo
 
    CALL shift_domain_em2 ( grid , disp_x, disp_y &
 !
-# include <dummy_new_args.inc>
+# include "dummy_new_args.inc"
 !
                            )
 
@@ -90,7 +90,7 @@ END SUBROUTINE shift_domain_em
 
 SUBROUTINE shift_domain_em2 ( grid , disp_x, disp_y &
 !
-# include <dummy_new_args.inc>
+# include "dummy_new_args.inc"
 !
                            )
    USE module_state_description
@@ -119,7 +119,7 @@ SUBROUTINE shift_domain_em2 ( grid , disp_x, disp_y &
    TYPE( fieldlist ), POINTER :: p
 
    !  Definitions of dummy arguments to solve
-#include <dummy_new_decl.inc>
+#include "dummy_new_decl.inc"
 
 #ifdef MOVE_NESTS
 
@@ -135,7 +135,7 @@ SUBROUTINE shift_domain_em2 ( grid , disp_x, disp_y &
 
 ! shift the nest domain in y
    do ii = 1,abs(disp_y)
-#include <SHIFT_HALO.inc>
+#include "SHIFT_HALO.inc"
 #include "../frame/loop_based_y_shift_code.h"
    enddo
 

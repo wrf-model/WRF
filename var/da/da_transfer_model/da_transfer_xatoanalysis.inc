@@ -28,7 +28,7 @@ subroutine da_transfer_xatoanalysis(it, xbx, grid, config_flags)
          call da_transfer_xatowrftl(grid, config_flags, filnam, timestr)
       end if
 
-      call da_transfer_xatowrf(grid)
+      call da_transfer_xatowrf(grid, config_flags)
 
       if (it < max_ext_its) then
          call da_transfer_wrftoxb(xbx, grid, config_flags)
@@ -39,7 +39,7 @@ subroutine da_transfer_xatoanalysis(it, xbx, grid, config_flags)
          "var4d is not possible with Global WRF fg_format = ",fg_format
       call da_error(__FILE__,__LINE__,message(1:1))
       else
-       call da_transfer_xatowrf(grid)
+       call da_transfer_xatowrf(grid, config_flags)
        if (it < max_ext_its)call da_transfer_wrftoxb(xbx, grid, config_flags)
       end if
    else if (fg_format == fg_format_wrf_nmm_regional) then

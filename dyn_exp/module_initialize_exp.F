@@ -24,7 +24,7 @@ CONTAINS
 
    SUBROUTINE init_domain_exp ( grid &
 !
-# include <exp_dummy_args.inc>
+# include "exp_dummy_args.inc"
 !
 )
    IMPLICIT NONE
@@ -32,7 +32,7 @@ CONTAINS
    !  Input data.
    TYPE (domain), POINTER :: grid
 
-# include <exp_dummy_decl.inc>
+# include "exp_dummy_decl.inc"
 
    TYPE (grid_config_rec_type)              :: config_flags
 
@@ -44,7 +44,7 @@ CONTAINS
                                   i, j, k
 
 #define COPY_IN
-#include <exp_scalar_derefs.inc>
+#include "exp_scalar_derefs.inc"
 
    SELECT CASE ( model_data_order )
          CASE ( DATA_ORDER_ZXY )
@@ -105,7 +105,7 @@ CONTAINS
     ENDDO
 
 #define COPY_OUT
-#include <exp_scalar_derefs.inc>
+#include "exp_scalar_derefs.inc"
 
    RETURN
 
@@ -142,7 +142,7 @@ CONTAINS
 
      CALL init_domain_exp( grid &
 !
-#include <actual_args.inc>
+#include "actual_args.inc"
 !
                         )
 

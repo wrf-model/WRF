@@ -192,7 +192,7 @@
    TYPE(domain) , TARGET          :: grid
    !
    !  Definitions of dummy arguments to solve
-# include <dummy_new_decl.inc>
+# include "dummy_new_decl.inc"
 # define NO_I1_OLD
 
    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
@@ -1179,7 +1179,7 @@ CALL kpp_mechanism_driver (chem,                                                
    moist,                                                                             &
    vdrog3, ldrog, vdrog3_vbs, ldrog_vbs,                                              &
 !
-#include <call_to_kpp_mech_drive.inc>
+#include "call_to_kpp_mech_drive.inc"
 !
    ids,ide, jds,jde, kds,kde,                                                         &
    ims,ime, jms,jme, kms,kme,                                                         &

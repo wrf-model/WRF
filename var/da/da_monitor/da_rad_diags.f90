@@ -42,6 +42,7 @@ program da_rad_diags
    integer                                :: ncid, dimid, varid
    integer, dimension(3)                  :: ishape, istart, icount
 !
+   logical                                :: amsr2
    logical                                :: isfile, prf_found, jac_found
    integer, parameter                     :: datelen1 = 10
    integer, parameter                     :: datelen2 = 19
@@ -56,6 +57,7 @@ program da_rad_diags
    integer, dimension(:), allocatable     :: ichan, npixel, iunit, scanpos, isflg
    integer, dimension(:), allocatable     :: landsea_mask, soiltyp, vegtyp
    real*4,  dimension(:), allocatable     :: lat, lon, elv, elev
+   real*4,  dimension(:), allocatable     :: ret_clw
    real*4,  dimension(:), allocatable     :: satzen, satazi, t2m, mr2m, u10, v10, ps, ts
    real*4,  dimension(:), allocatable     :: smois, tslb, snowh, vegfra, clwp
    integer, dimension(:,:), allocatable   :: tb_qc
@@ -131,6 +133,8 @@ ntime_loop: do itime = 1, ntime
 
       write(0,*) '------------------'
       write(0,*) trim(instid(iinst))
+
+      amsr2 = index(instid(iinst),'amsr2') > 0
 
       nerr = 0
       total_npixel = 0
@@ -226,6 +230,7 @@ ntime_loop: do itime = 1, ntime
             allocate (          lon(1:total_npixel) )
             allocate (       satzen(1:total_npixel) )
             allocate (       satazi(1:total_npixel) )
+            allocate (      ret_clw(1:total_npixel) ) !obs retrieved clw
             allocate (          t2m(1:total_npixel) )
             allocate (         mr2m(1:total_npixel) )
             allocate (          u10(1:total_npixel) )
@@ -240,7 +245,7 @@ ntime_loop: do itime = 1, ntime
             allocate (       vegtyp(1:total_npixel) )
             allocate (       vegfra(1:total_npixel) )
             allocate (         elev(1:total_npixel) )
-            allocate (         clwp(1:total_npixel) )
+            allocate (         clwp(1:total_npixel) ) !model/guess clwp
             allocate ( tb_obs(1:nchan,1:total_npixel) )
             allocate ( tb_bak(1:nchan,1:total_npixel) )
             allocate ( tb_inv(1:nchan,1:total_npixel) )
@@ -336,14 +341,14 @@ ntime_loop: do itime = 1, ntime
 
          npixel_loop: do ipixel = ips, ipe
 
-            read(unit=iunit(iproc),fmt='(7x,i7,2x,a19,i3,i3,f6.0,4f8.2)',iostat=ios)  &
+            read(unit=iunit(iproc),fmt='(7x,i7,2x,a19,i3,i3,f6.0,4f8.2,f8.3)',iostat=ios)  &
                n, datestr2(ipixel), scanpos(ipixel), landsea_mask(ipixel), elv(ipixel), &
-               lat(ipixel), lon(ipixel), satzen(ipixel), satazi(ipixel)
+               lat(ipixel), lon(ipixel), satzen(ipixel), satazi(ipixel), ret_clw(ipixel)
             if ( scanpos(ipixel) > 360 .or. scanpos(ipixel) == 0 ) then
                backspace(iunit(iproc))
-               read(unit=iunit(iproc),fmt='(7x,i7,2x,a19,i6,i3,f6.0,4f8.2)',iostat=ios) &
+               read(unit=iunit(iproc),fmt='(7x,i7,2x,a19,i6,i3,f6.0,4f8.2,f8.3)',iostat=ios) &
                n, datestr2(ipixel), scanpos(ipixel), landsea_mask(ipixel), elv(ipixel), &
-               lat(ipixel), lon(ipixel), satzen(ipixel), satazi(ipixel)
+               lat(ipixel), lon(ipixel), satzen(ipixel), satazi(ipixel), ret_clw(ipixel)
             end if
             read(unit=iunit(iproc),fmt='(14x,9f10.2,3i3,3f10.2)',iostat=ios)  &
                t2m(ipixel), mr2m(ipixel), u10(ipixel), v10(ipixel), ps(ipixel), ts(ipixel), &
@@ -374,7 +379,7 @@ ntime_loop: do itime = 1, ntime
                backspace(iunit(iproc))
                cycle npixel_loop
             else
-               if ( buf(1:6) == " level" ) then    ! CRTM profiles are available
+               if ( index(buf(1:6),'level') > 0 ) then    ! CRTM profiles are available
                   ilev = 0
                   do while ( ios == 0 )
                      ilev = ilev + 1
@@ -595,6 +600,9 @@ ntime_loop: do itime = 1, ntime
       ios = NF_DEF_VAR(ncid, 'vegfra',       NF_FLOAT, 1, ishape(1), varid)
       ios = NF_DEF_VAR(ncid, 'elev',         NF_FLOAT, 1, ishape(1), varid)
       ios = NF_DEF_VAR(ncid, 'clwp',         NF_FLOAT, 1, ishape(1), varid)
+      if ( amsr2 ) then
+         ios = NF_DEF_VAR(ncid, 'ret_clw',   NF_FLOAT, 1, ishape(1), varid)
+      end if
 
       ios = NF_ENDDEF(ncid)
       !
@@ -795,6 +803,10 @@ ntime_loop: do itime = 1, ntime
       ios = NF_PUT_VARA_REAL(ncid,  varid, istart(2), icount(2), elev)
       ios = NF_INQ_VARID (ncid, 'clwp', varid)
       ios = NF_PUT_VARA_REAL(ncid,  varid, istart(2), icount(2), clwp)
+      if ( amsr2 ) then
+         ios = NF_INQ_VARID (ncid, 'ret_clw', varid)
+         ios = NF_PUT_VARA_REAL(ncid,  varid, istart(2), icount(2), ret_clw)
+      end if
       !
       ios = NF_CLOSE(ncid)
 
@@ -826,6 +838,7 @@ ntime_loop: do itime = 1, ntime
       deallocate ( vegfra )
       deallocate ( elev )
       deallocate ( clwp )
+      deallocate ( ret_clw )
       deallocate ( tb_obs )
       deallocate ( tb_bak )
       deallocate ( tb_inv )

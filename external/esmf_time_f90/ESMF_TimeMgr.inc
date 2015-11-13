@@ -28,7 +28,7 @@ by both C++ and F90 compilers.
 !EOP
 #endif
 
-#include <ESMF_Macros.inc>
+#include "ESMF_Macros.inc"
 
 #define SECONDS_PER_DAY 86400_ESMF_KIND_I8
 #define SECONDS_PER_HOUR 3600_ESMF_KIND_I8

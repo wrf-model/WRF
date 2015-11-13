@@ -984,6 +984,9 @@
             deallocate (iv%instid(i)%vegfra)
             deallocate (iv%instid(i)%vegtyp)
             deallocate (iv%instid(i)%clwp)
+            if ( index(iv%instid(i)%rttovid_string,'amsr2') > 0 ) then
+               deallocate (iv%instid(i)%clw)
+            end if
             deallocate (iv%instid(i)%ps)
             deallocate (iv%instid(i)%tb_xb)
             deallocate (iv%instid(i)%tb_qc)

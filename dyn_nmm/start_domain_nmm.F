@@ -57,7 +57,7 @@
 !
       SUBROUTINE START_DOMAIN_NMM(GRID, allowed_to_read                &
 !
-#include <dummy_new_args.inc>
+#include "dummy_new_args.inc"
 !
      &           )
 !----------------------------------------------------------------------
@@ -119,7 +119,7 @@
       TYPE(DOMAIN),INTENT(INOUT) :: GRID
       LOGICAL , INTENT(IN)       :: allowed_to_read
 !
-#include <dummy_new_decl.inc>
+#include "dummy_new_decl.inc"
 !
       TYPE(GRID_CONFIG_REC_TYPE) :: CONFIG_FLAGS
 !
@@ -265,7 +265,7 @@
 !
 !----------------------------------------------------------------------
 !#define COPY_IN
-!#include <scalar_derefs.inc>
+!#include "scalar_derefs.inc"
 !----------------------------------------------------------------------
 !**********************************************************************
 !----------------------------------------------------------------------
@@ -544,45 +544,45 @@
 !     my_neb(8)=my_nw
 !
       deallocate(itemp)
-#  include <HALO_NMM_INIT_1.inc>
-#  include <HALO_NMM_INIT_2.inc>
-#  include <HALO_NMM_INIT_3.inc>
-#  include <HALO_NMM_INIT_4.inc>
-#  include <HALO_NMM_INIT_5.inc>
-#  include <HALO_NMM_INIT_6.inc>
-#  include <HALO_NMM_INIT_7.inc>
-#  include <HALO_NMM_INIT_8.inc>
-#  include <HALO_NMM_INIT_9.inc>
-#  include <HALO_NMM_INIT_10.inc>
-#  include <HALO_NMM_INIT_11.inc>
-#  include <HALO_NMM_INIT_12.inc>
-#  include <HALO_NMM_INIT_13.inc>
-#  include <HALO_NMM_INIT_14.inc>
-#  include <HALO_NMM_INIT_15.inc>
-#  include <HALO_NMM_INIT_16.inc>
-#  include <HALO_NMM_INIT_17.inc>
-#  include <HALO_NMM_INIT_18.inc>
-#  include <HALO_NMM_INIT_19.inc>
-#  include <HALO_NMM_INIT_20.inc>
-#  include <HALO_NMM_INIT_21.inc>
-#  include <HALO_NMM_INIT_22.inc>
-#  include <HALO_NMM_INIT_23.inc>
-#  include <HALO_NMM_INIT_24.inc>
-#  include <HALO_NMM_INIT_25.inc>
-#  include <HALO_NMM_INIT_26.inc>
-#  include <HALO_NMM_INIT_27.inc>
-#  include <HALO_NMM_INIT_28.inc>
-#  include <HALO_NMM_INIT_29.inc>
-#  include <HALO_NMM_INIT_30.inc>
-#  include <HALO_NMM_INIT_31.inc>
-#  include <HALO_NMM_INIT_32.inc>
-#  include <HALO_NMM_INIT_33.inc>
-#  include <HALO_NMM_INIT_34.inc>
-#  include <HALO_NMM_INIT_35.inc>
-#  include <HALO_NMM_INIT_36.inc>
-#  include <HALO_NMM_INIT_37.inc>
-#  include <HALO_NMM_INIT_38.inc>
-#  include <HALO_NMM_INIT_39.inc>
+#  include "HALO_NMM_INIT_1.inc"
+#  include "HALO_NMM_INIT_2.inc"
+#  include "HALO_NMM_INIT_3.inc"
+#  include "HALO_NMM_INIT_4.inc"
+#  include "HALO_NMM_INIT_5.inc"
+#  include "HALO_NMM_INIT_6.inc"
+#  include "HALO_NMM_INIT_7.inc"
+#  include "HALO_NMM_INIT_8.inc"
+#  include "HALO_NMM_INIT_9.inc"
+#  include "HALO_NMM_INIT_10.inc"
+#  include "HALO_NMM_INIT_11.inc"
+#  include "HALO_NMM_INIT_12.inc"
+#  include "HALO_NMM_INIT_13.inc"
+#  include "HALO_NMM_INIT_14.inc"
+#  include "HALO_NMM_INIT_15.inc"
+#  include "HALO_NMM_INIT_16.inc"
+#  include "HALO_NMM_INIT_17.inc"
+#  include "HALO_NMM_INIT_18.inc"
+#  include "HALO_NMM_INIT_19.inc"
+#  include "HALO_NMM_INIT_20.inc"
+#  include "HALO_NMM_INIT_21.inc"
+#  include "HALO_NMM_INIT_22.inc"
+#  include "HALO_NMM_INIT_23.inc"
+#  include "HALO_NMM_INIT_24.inc"
+#  include "HALO_NMM_INIT_25.inc"
+#  include "HALO_NMM_INIT_26.inc"
+#  include "HALO_NMM_INIT_27.inc"
+#  include "HALO_NMM_INIT_28.inc"
+#  include "HALO_NMM_INIT_29.inc"
+#  include "HALO_NMM_INIT_30.inc"
+#  include "HALO_NMM_INIT_31.inc"
+#  include "HALO_NMM_INIT_32.inc"
+#  include "HALO_NMM_INIT_33.inc"
+#  include "HALO_NMM_INIT_34.inc"
+#  include "HALO_NMM_INIT_35.inc"
+#  include "HALO_NMM_INIT_36.inc"
+#  include "HALO_NMM_INIT_37.inc"
+#  include "HALO_NMM_INIT_38.inc"
+#  include "HALO_NMM_INIT_39.inc"
 #endif
 !
       if((allowed_to_read .and. .not. restrt) .or. anal) then
@@ -2434,49 +2434,49 @@
 !----------------------------------------------------------------------
 
 #ifdef DM_PARALLEL
-#  include <HALO_NMM_INIT_1.inc>
-#  include <HALO_NMM_INIT_2.inc>
-#  include <HALO_NMM_INIT_3.inc>
-#  include <HALO_NMM_INIT_4.inc>
-#  include <HALO_NMM_INIT_5.inc>
-#  include <HALO_NMM_INIT_6.inc>
-#  include <HALO_NMM_INIT_7.inc>
-#  include <HALO_NMM_INIT_8.inc>
-#  include <HALO_NMM_INIT_9.inc>
-#  include <HALO_NMM_INIT_10.inc>
-#  include <HALO_NMM_INIT_11.inc>
-#  include <HALO_NMM_INIT_12.inc>
-#  include <HALO_NMM_INIT_13.inc>
-#  include <HALO_NMM_INIT_14.inc>
-#  include <HALO_NMM_INIT_15.inc>
-#  include <HALO_NMM_INIT_15B.inc>
-#  include <HALO_NMM_INIT_16.inc>
-#  include <HALO_NMM_INIT_17.inc>
-#  include <HALO_NMM_INIT_18.inc>
-#  include <HALO_NMM_INIT_19.inc>
-#  include <HALO_NMM_INIT_20.inc>
-#  include <HALO_NMM_INIT_21.inc>
-#  include <HALO_NMM_INIT_22.inc>
-#  include <HALO_NMM_INIT_23.inc>
-#  include <HALO_NMM_INIT_24.inc>
-#  include <HALO_NMM_INIT_25.inc>
-#  include <HALO_NMM_INIT_26.inc>
-#  include <HALO_NMM_INIT_27.inc>
-#  include <HALO_NMM_INIT_28.inc>
-#  include <HALO_NMM_INIT_29.inc>
-#  include <HALO_NMM_INIT_30.inc>
-#  include <HALO_NMM_INIT_31.inc>
-#  include <HALO_NMM_INIT_32.inc>
-#  include <HALO_NMM_INIT_33.inc>
-#  include <HALO_NMM_INIT_34.inc>
-#  include <HALO_NMM_INIT_35.inc>
-#  include <HALO_NMM_INIT_36.inc>
-#  include <HALO_NMM_INIT_37.inc>
-#  include <HALO_NMM_INIT_38.inc>
-#  include <HALO_NMM_INIT_39.inc>
+#  include "HALO_NMM_INIT_1.inc"
+#  include "HALO_NMM_INIT_2.inc"
+#  include "HALO_NMM_INIT_3.inc"
+#  include "HALO_NMM_INIT_4.inc"
+#  include "HALO_NMM_INIT_5.inc"
+#  include "HALO_NMM_INIT_6.inc"
+#  include "HALO_NMM_INIT_7.inc"
+#  include "HALO_NMM_INIT_8.inc"
+#  include "HALO_NMM_INIT_9.inc"
+#  include "HALO_NMM_INIT_10.inc"
+#  include "HALO_NMM_INIT_11.inc"
+#  include "HALO_NMM_INIT_12.inc"
+#  include "HALO_NMM_INIT_13.inc"
+#  include "HALO_NMM_INIT_14.inc"
+#  include "HALO_NMM_INIT_15.inc"
+#  include "HALO_NMM_INIT_15B.inc"
+#  include "HALO_NMM_INIT_16.inc"
+#  include "HALO_NMM_INIT_17.inc"
+#  include "HALO_NMM_INIT_18.inc"
+#  include "HALO_NMM_INIT_19.inc"
+#  include "HALO_NMM_INIT_20.inc"
+#  include "HALO_NMM_INIT_21.inc"
+#  include "HALO_NMM_INIT_22.inc"
+#  include "HALO_NMM_INIT_23.inc"
+#  include "HALO_NMM_INIT_24.inc"
+#  include "HALO_NMM_INIT_25.inc"
+#  include "HALO_NMM_INIT_26.inc"
+#  include "HALO_NMM_INIT_27.inc"
+#  include "HALO_NMM_INIT_28.inc"
+#  include "HALO_NMM_INIT_29.inc"
+#  include "HALO_NMM_INIT_30.inc"
+#  include "HALO_NMM_INIT_31.inc"
+#  include "HALO_NMM_INIT_32.inc"
+#  include "HALO_NMM_INIT_33.inc"
+#  include "HALO_NMM_INIT_34.inc"
+#  include "HALO_NMM_INIT_35.inc"
+#  include "HALO_NMM_INIT_36.inc"
+#  include "HALO_NMM_INIT_37.inc"
+#  include "HALO_NMM_INIT_38.inc"
+#  include "HALO_NMM_INIT_39.inc"
 #endif
 !#define COPY_OUT
-!#include <scalar_derefs.inc>
+!#include "scalar_derefs.inc"
 
    write(message,*) "Timing for start_domain on d",grid%id
    call end_timing(message)

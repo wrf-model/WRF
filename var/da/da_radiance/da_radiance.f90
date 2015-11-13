@@ -4,6 +4,10 @@ module da_radiance
    ! Purpose: module for radiance data assimilation. 
    !---------------------------------------------------------------------------
 
+#if defined(HDF5)
+   use hdf5
+#endif
+
 #if defined(RTTOV) || defined(CRTM)
 
    use module_domain, only : xb_type, domain
@@ -42,7 +46,7 @@ module da_radiance
       tovs_min_transfer,use_error_factor_rad,num_fgat_time,stdout,trace_use, &
       qc_good, qc_bad,myproc,biascorr,thinning,thinning_mesh, &
       rad_monitoring, monitor_on, kts, kte, kms,kme,&
-      use_mwtsobs, use_mwhsobs, use_atmsobs, &
+      use_mwtsobs, use_mwhsobs, use_atmsobs, use_amsr2obs, &
       use_hirs4obs, use_mhsobs,bufr_year, bufr_month,bufr_day,bufr_hour, &
       bufr_minute, bufr_second,bufr_solzen, bufr_station_height, &
       bufr_landsea_mask,bufr_solazi,tovs_end, max_tovs_input, bufr_satzen, nchan_mhs, &
@@ -114,6 +118,7 @@ contains
 #include "da_read_obs_bufrssmis.inc"
 #include "da_read_obs_bufriasi.inc"
 #include "da_read_obs_bufrseviri.inc"
+#include "da_read_obs_hdf5amsr2.inc"
 #include "da_allocate_rad_iv.inc"
 #include "da_initialize_rad_iv.inc"
 #include "da_read_kma1dvar.inc"

@@ -12,8 +12,8 @@
     USE module_model_constants
     USE module_utility
     IMPLICIT NONE
-#include <wrf_io_flags.h>
-#include <wrf_status_codes.h>
+#include "wrf_io_flags.h"
+#include "wrf_status_codes.h"
     TYPE(domain) :: grid
     TYPE(grid_config_rec_type),  INTENT(INOUT)    :: config_flags
     INTEGER, INTENT(IN) :: fid, switch

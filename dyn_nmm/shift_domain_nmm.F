@@ -1,6 +1,6 @@
 SUBROUTINE shift_domain_nmm ( grid , disp_x, disp_y &
 !
-# include <dummy_new_args.inc>
+# include "dummy_new_args.inc"
 !
                            )
    USE module_domain
@@ -28,13 +28,13 @@ SUBROUTINE shift_domain_nmm ( grid , disp_x, disp_y &
    CHARACTER(LEN=255) :: message
 
    !  Definitions of dummy arguments to solve
-#include <dummy_new_decl.inc>
+#include "dummy_new_decl.inc"
 
 !#define COPY_IN
-!#include <scalar_derefs.inc>
+!#include "scalar_derefs.inc"
 
 #ifdef DM_PARALLEL
-#      include <data_calls.inc>
+#      include "data_calls.inc"
 #endif
 
    CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
@@ -169,18 +169,18 @@ SUBROUTINE shift_domain_nmm ( grid , disp_x, disp_y &
 #ifdef DM_PARALLEL
 ! shift the nest domain in x
    do ii = 1,abs(disp_x)
-#include <../inc/SHIFT_HALO_X_HALO.inc>
-#include <../frame/loop_based_x_shift_code.h>
+#include "../inc/SHIFT_HALO_X_HALO.inc"
+#include "../frame/loop_based_x_shift_code.h"
    enddo
 
 ! shift the nest domain in y
    do ii = 1,abs(disp_y)
-#include <../inc/SHIFT_HALO_Y_HALO.inc>
-#include <../frame/loop_based_y_shift_code.h>
+#include "../inc/SHIFT_HALO_Y_HALO.inc"
+#include "../frame/loop_based_y_shift_code.h"
    enddo
 #endif
 
 !#define COPY_OUT
-!#include <scalar_derefs.inc>
+!#include "scalar_derefs.inc"
 
 END SUBROUTINE shift_domain_nmm

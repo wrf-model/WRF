@@ -45,6 +45,10 @@ CONTAINS
 !ckay
              ,cldfra_dp_KF,cldfra_sh_KF                      &
              ,qc_KF,qi_KF                                    &
+!kf_edrates
+             ,UDR_KF,DDR_KF                                  &
+             ,UER_KF,DER_KF                                  &
+             ,TIMEC_KF,KF_EDRATES                            &
                                                              )
 !
 !-------------------------------------------------------------
@@ -137,6 +141,20 @@ CONTAINS
                                                cldfra_sh_KF, &
                                                       qc_KF, &
                                                       qi_KF
+
+!kf_edrates
+   REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         , &
+          INTENT(INOUT) ::                         &
+                                                     UDR_KF, &
+                                                     DDR_KF, &
+                                                     UER_KF, &
+                                                     DER_KF
+
+   REAL,  DIMENSION( ims:ime , jms:jme )                   , &
+          INTENT(INOUT) ::                         &
+                                                   TIMEC_KF
+
+   INTEGER, INTENT(IN) ::              KF_EDRATES
 
 ! LOCAL VARS
 
@@ -401,6 +419,16 @@ CONTAINS
                qc_KF(I,k,J)=0.
                qi_KF(I,k,J)=0.
             ENDDO
+!kf_edrates
+            IF (KF_EDRATES == 1) THEN
+               DO k=kts,kte
+                  UDR_KF(I,k,J)=0.
+                  DDR_KF(I,k,J)=0.
+                  UER_KF(I,k,J)=0.
+                  DER_KF(I,k,J)=0.
+               ENDDO
+               TIMEC_KF(I,J)=0.
+            ENDIF
             RAINCV(I,J)=0.
             CUTOP(I,J)=KTS
             CUBOT(I,J)=KTE+1
@@ -441,7 +469,11 @@ CONTAINS
                  its,ite, jts,jte, kts,kte,         &
 !ckay
                  cldfra_dp_KF,cldfra_sh_KF,         &
-                 qc_KF,qi_KF                        )
+                 qc_KF,qi_KF,                       &
+!kf_edrates
+                 UDR_KF,DDR_KF,                     &
+                 UER_KF,DER_KF,                     &
+                 TIMEC_KF,KF_EDRATES                )
             IF(PRESENT(rthcuten).AND.PRESENT(rqvcuten)) THEN
               DO K=kts,kte
                  RTHCUTEN(I,K,J)=DTDT(K)/pi(I,K,J)
@@ -506,7 +538,11 @@ CONTAINS
                       its,ite, jts,jte, kts,kte,           &
 !ckay
                       cldfra_dp_KF,cldfra_sh_KF,           &
-                      qc_KF,qi_KF                          )
+                      qc_KF,qi_KF,                         &
+!kf_edrates
+                      UDR_KF,DDR_KF,                       &
+                      UER_KF,DER_KF,                       &
+                      TIMEC_KF,KF_EDRATES                  )
 !-----------------------------------------------------------
 !***** The KF scheme that is currently used in experimental runs of EMCs 
 !***** Eta model....jsk 8/00
@@ -560,6 +596,17 @@ CONTAINS
                                              cldfra_sh_KF, &
                                                     qc_KF, &
                                                     qi_KF
+!kf_edrates
+      REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),      &
+            INTENT(INOUT) ::       UDR_KF,       &
+                                             DDR_KF,       &
+                                             UER_KF,       &
+                                             DER_KF
+
+      REAL, DIMENSION( ims:ime , jms:jme ),                &
+            INTENT(INOUT) ::     TIMEC_KF
+
+      INTEGER, INTENT(IN) ::         KF_EDRATES
 
       REAL, DIMENSION( ims:ime , jms:jme ),                &
             INTENT(INOUT) ::                       RAINCV
@@ -2210,6 +2257,17 @@ iter:     DO NCOUNT=1,10
             cldfra_dp_KF(I,NK,J) = amin1(0.6,xcldfra)
           ENDDO
         ENDIF
+
+!kf_edrates
+!Save up/down entrainment/detrainment rates as 3D variables
+        IF (KF_EDRATES == 1) THEN
+           DO NK=1,LTOP
+             UDR_KF(I,NK,J)=UDR(NK)
+             DDR_KF(I,NK,J)=DDR(NK)
+             UER_KF(I,NK,J)=UER(NK)
+             DER_KF(I,NK,J)=DER(NK)
+           ENDDO
+        ENDIF
 !     
 !...COMPUTE HYDROMETEOR TENDENCIES AS IS DONE FOR T, QV...
 !     
@@ -2283,6 +2341,12 @@ iter:     DO NCOUNT=1,10
           QRG(NK)=QRPA(NK)
           QSG(NK)=QSPA(NK)
         ENDDO   
+
+!kf_edrates
+!Save convective timescale (TIMEC) as 2D variable
+        IF (KF_EDRATES == 1) THEN
+           TIMEC_KF(I,J)=TIMEC
+        ENDIF
 !
 !...CLEAN THINGS UP, CALCULATE CONVECTIVE FEEDBACK TENDENCIES FOR THIS
 !...GRID POINT...

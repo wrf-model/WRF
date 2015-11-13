@@ -25,6 +25,10 @@ CONTAINS
               ,F_QV    ,F_QC    ,F_QR    ,F_QI    ,F_QS      &
               ,RQVCUTEN,RQCCUTEN,RQRCUTEN,RQICUTEN,RQSCUTEN  &
               ,RTHCUTEN                                      &
+!kf_edrates
+              ,UDR_KF,DDR_KF                                 &
+              ,UER_KF,DER_KF                                 &
+              ,TIMEC_KF,KF_EDRATES                           &
                                                              )
 !-------------------------------------------------------------
    IMPLICIT NONE
@@ -102,7 +106,19 @@ CONTAINS
                                                   ,F_QI      &
                                                   ,F_QS
 
+!kf_edrates
+   REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         , &
+          INTENT(INOUT) ::                         &
+                                                     UDR_KF, &
+                                                     DDR_KF, &
+                                                     UER_KF, &
+                                                     DER_KF
 
+   REAL,  DIMENSION( ims:ime , jms:jme )                   , &
+          INTENT(INOUT) ::                         &
+                                                   TIMEC_KF
+
+   INTEGER, INTENT(IN) ::              KF_EDRATES
 
 ! LOCAL VARS
 
@@ -228,6 +244,16 @@ CONTAINS
                DQSDT(k)=0.      
                DTDT(k)=0.
             ENDDO
+!kf_edrates
+            IF (KF_EDRATES == 1) THEN
+               DO k=kts,kte
+                  UDR_KF(I,k,J)=0.
+                  DDR_KF(I,k,J)=0.
+                  UER_KF(I,k,J)=0.
+                  DER_KF(I,k,J)=0.
+               ENDDO
+               TIMEC_KF(I,J)=0.
+            ENDIF
             RAINCV(I,J)=0.
 	    PRATEC(I,J)=0.
 !
@@ -255,7 +281,11 @@ CONTAINS
                  warm_rain,qi_flag,qs_flag,         &
                  ids,ide, jds,jde, kds,kde,         &        
                  ims,ime, jms,jme, kms,kme,         &
-                 its,ite, jts,jte, kts,kte          )
+                 its,ite, jts,jte, kts,kte,         &
+!kf_edrates
+                 UDR_KF,DDR_KF,                     &
+                 UER_KF,DER_KF,                     &
+                 TIMEC_KF,KF_EDRATES                )
  
             IF ( PRESENT( RTHCUTEN ) .AND. PRESENT( RQVCUTEN ) ) THEN
               DO K=kts,kte
@@ -311,7 +341,11 @@ CONTAINS
                       warm_rain,qi_flag,qs_flag,           &
                       ids,ide, jds,jde, kds,kde,           & 
                       ims,ime, jms,jme, kms,kme,           &
-                      its,ite, jts,jte, kts,kte            )
+                      its,ite, jts,jte, kts,kte,           &
+!kf_edrates
+                      UDR_KF,DDR_KF,                       &
+                      UER_KF,DER_KF,                       &
+                      TIMEC_KF,KF_EDRATES                  )
 !-----------------------------------------------------------
       IMPLICIT NONE
 !-----------------------------------------------------------
@@ -351,6 +385,19 @@ CONTAINS
             INTENT(INOUT) ::                       RAINCV, &
                                                    PRATEC, &
                                                       NCA
+
+!kf_edrates
+      REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),      &
+            INTENT(INOUT) ::       UDR_KF,       &
+                                             DDR_KF,       &
+                                             UER_KF,       &
+                                             DER_KF
+
+      REAL, DIMENSION( ims:ime , jms:jme ),                &
+            INTENT(INOUT) ::     TIMEC_KF
+
+      INTEGER, INTENT(IN) ::         KF_EDRATES
+
 !
 !...DEFINE LOCAL VARIABLES...                                
 !                                                            
@@ -1738,6 +1785,18 @@ CONTAINS
 !                                                         
         GOTO 175                                         
   265   CONTINUE                                        
+
+!kf_edrates
+!Save up/down entrainment/detrainment rates as 3D variables
+        IF (KF_EDRATES == 1) THEN
+           DO NK=1,LTOP
+             UDR_KF(I,NK,J)=UDR(NK)
+             DDR_KF(I,NK,J)=DDR(NK)
+             UER_KF(I,NK,J)=UER(NK)
+             DER_KF(I,NK,J)=DER(NK)
+           ENDDO
+        ENDIF
+
 !                                                      
 !...CLEAN THINGS UP, CALCULATE CONVECTIVE FEEDBACK TENDENCIES FOR THIS    
 !...GRID POINT...                                                        
@@ -1811,6 +1870,13 @@ CONTAINS
           QRG(NK)=QRPA(NK)                                           
           QSG(NK)=QSPA(NK)                                          
   295   CONTINUE                                                  
+
+!kf_edrates
+!Save convective timescale (TIMEC) as 2D variable
+        IF (KF_EDRATES == 1) THEN
+           TIMEC_KF(I,J)=TIMEC
+        ENDIF
+
 !     WRITE(98,1080)LFS,LDB,LDT,TIMEC,NSTEP,NCOUNT,FABE,AINC     
 !                                                               
 !...SEND FINAL PARAMETERIZED VALUES TO OUTPUT FILES...         

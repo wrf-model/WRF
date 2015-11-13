@@ -1788,7 +1788,7 @@ SUBROUTINE med_latbound_in ( grid , config_flags )
 
    IMPLICIT NONE
 
-#include <wrf_status_codes.h>
+#include "wrf_status_codes.h"
 
   ! Arguments
    TYPE(domain)                               :: grid
@@ -1808,7 +1808,7 @@ integer myproc,i,j,k
    CHARACTER(LEN=80)                      :: timestr
 #endif
 
-#include <wrf_io_flags.h>
+#include "wrf_io_flags.h"
 
    CALL wrf_debug ( 200 , 'in med_latbound_in' )
 
@@ -2158,7 +2158,7 @@ SUBROUTINE med_read_wrf_chem_input ( grid , config_flags )
    CHARACTER (LEN=256)                    :: message, current_date_char, date_string
    CHARACTER (LEN=80)                     :: inpname
 
-#include <wrf_io_flags.h>
+#include "wrf_io_flags.h"
 !   IF ( grid%id .EQ. 1 ) THEN
 
       CALL domain_clock_get( grid, current_timestr=current_date_char )
@@ -2242,7 +2242,7 @@ SUBROUTINE med_read_wrf_chem_emiss ( grid , config_flags )
    CHARACTER (LEN=256)                    :: message, current_date_char, date_string
    CHARACTER (LEN=80)                     :: inpname
 
-#include <wrf_io_flags.h>
+#include "wrf_io_flags.h"
 
      CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
 
@@ -2437,7 +2437,7 @@ SUBROUTINE med_read_wrf_chem_bioemiss ( grid , config_flags )
    CHARACTER (LEN=256)                    :: message, current_date_char, date_string
    CHARACTER (LEN=80)                     :: inpname
 
-#include <wrf_io_flags.h>
+#include "wrf_io_flags.h"
 !   IF ( grid%id .EQ. 1 ) THEN
 
       CALL domain_clock_get( grid, current_timestr=current_date_char )
@@ -2501,7 +2501,7 @@ SUBROUTINE med_read_wrf_chem_emissopt4 ( grid , config_flags )
    CHARACTER (LEN=256)                    :: message, current_date_char, date_string
    CHARACTER (LEN=80)                     :: inpname
 
-#include <wrf_io_flags.h>
+#include "wrf_io_flags.h"
 !   IF ( grid%id .EQ. 1 ) THEN
 
       CALL domain_clock_get( grid, current_timestr=current_date_char )
@@ -2568,7 +2568,7 @@ SUBROUTINE med_read_wrf_chem_dms_emiss ( grid , config_flags )
    CHARACTER (LEN=256)                    :: message, current_date_char, date_string
    CHARACTER (LEN=80)                     :: inpname
 
-#include <wrf_io_flags.h>
+#include "wrf_io_flags.h"
 !   IF ( grid%id .EQ. 1 ) THEN
 
       CALL domain_clock_get( grid, current_timestr=current_date_char )
@@ -2635,7 +2635,7 @@ SUBROUTINE med_read_wrf_chem_gocart_bg ( grid , config_flags )
    CHARACTER (LEN=256)                    :: message, current_date_char, date_string
    CHARACTER (LEN=80)                     :: inpname
 
-#include <wrf_io_flags.h>
+#include "wrf_io_flags.h"
 !   IF ( grid%id .EQ. 1 ) THEN
 
       CALL domain_clock_get( grid, current_timestr=current_date_char )
@@ -2706,7 +2706,7 @@ SUBROUTINE med_read_wrf_volc_emiss ( grid , config_flags )
    CHARACTER (LEN=256)                    :: message, current_date_char, date_string
    CHARACTER (LEN=80)                     :: inpname
 
-#include <wrf_io_flags.h>
+#include "wrf_io_flags.h"
       CALL domain_clock_get( grid, current_timestr=current_date_char )
 
       CALL construct_filename1 ( inpname , 'wrfchemv' , grid%id , 2 )
@@ -2768,7 +2768,7 @@ SUBROUTINE med_read_wrf_chem_emissopt3 ( grid , config_flags )
    CHARACTER (LEN=256)                    :: message, current_date_char, date_string
    CHARACTER (LEN=80)                     :: inpname
 
-#include <wrf_io_flags.h>
+#include "wrf_io_flags.h"
 !   IF ( grid%id .EQ. 1 ) THEN
 
       CALL domain_clock_get( grid, current_timestr=current_date_char )

@@ -5,12 +5,12 @@ MODULE module_scalar_tables
   USE module_driver_constants
   USE module_state_description
   USE module_domain_type, ONLY : streamrec
-#include <scalar_tables.inc>
+#include "scalar_tables.inc"
 CONTAINS
   SUBROUTINE init_module_scalar_tables
      INTEGER i , j
      DO j = 1, max_domains
-#include <scalar_tables_init.inc>
+#include "scalar_tables_init.inc"
      END DO
   END SUBROUTINE init_module_scalar_tables
 END MODULE module_scalar_tables
@@ -28,16 +28,16 @@ MODULE module_configure
 ! integer, first_item_in_struct and the last is an integer last_item_in_struct
 ! this provides a way of converting this to a buffer for passing to and from
 ! the driver.
-#include <namelist_defines.inc>
+#include "namelist_defines.inc"
    END TYPE model_config_rec_type
 
    TYPE grid_config_rec_type
-#include <namelist_defines2.inc>
+#include "namelist_defines2.inc"
    END TYPE grid_config_rec_type
 
    TYPE(model_config_rec_type) :: model_config_rec
 
-!#include <scalar_tables.inc>
+!#include "scalar_tables.inc"
 
 ! special entries (put here but not enshrined in Registry for one reason or other)
 
@@ -102,10 +102,10 @@ CONTAINS
 
 
 ! define as temporaries
-#include <namelist_defines.inc>
+#include "namelist_defines.inc"
 
 ! Statements that specify the namelists
-#include <namelist_statements.inc>
+#include "namelist_statements.inc"
 
       OPEN ( UNIT   = nml_read_unit    ,      &
              FILE   = "namelist.input" ,      &
@@ -138,7 +138,7 @@ CONTAINS
 #endif
 
 ! Statements that set the namelist vars to default vals
-#  include <namelist_defaults.inc>
+#  include "namelist_defaults.inc"
 
 #if (DA_CORE == 1)
 ! Override the default values, because we can not assigned a arrary with different values in registry.
@@ -151,7 +151,7 @@ CONTAINS
 #endif
 
 ! Statements that read the namelist are in this file
-#  include <config_reads.inc>
+#  include "config_reads.inc"
 
 ! 2004/04/28  JM (with consensus by the group of developers)
 ! This is needed to ensure that nesting will work, since
@@ -173,7 +173,7 @@ CONTAINS
 #define SOURCE_RECORD
 #define DEST_RECORD model_config_rec %
 #define SOURCE_REC_DEX
-#include <config_assigns.inc>
+#include "config_assigns.inc"
 
 
       CLOSE ( UNIT = nml_read_unit , IOSTAT = io_status )
@@ -311,7 +311,7 @@ CONTAINS
 #define SOURCE_RECORD model_config_rec %
 #define SOURCE_REC_DEX (id_id)
 #define DEST_RECORD   grid_config_rec %
-#include <config_assigns.inc>
+#include "config_assigns.inc"
    END SUBROUTINE model_to_grid_config_rec
 
 
@@ -325,19 +325,19 @@ CONTAINS
      in_use = .TRUE.
 
      IF      ( vname(1:1) .GE. 'x' ) THEN
-#  include <in_use_for_config_xz.inc>
+#  include "in_use_for_config_xz.inc"
      ELSE IF ( vname(1:1) .GE. 't' ) THEN
-#  include <in_use_for_config_tw.inc>
+#  include "in_use_for_config_tw.inc"
      ELSE IF ( vname(1:1) .GE. 'o' ) THEN
-#  include <in_use_for_config_os.inc>
+#  include "in_use_for_config_os.inc"
      ELSE IF ( vname(1:1) .GE. 'l' ) THEN
-#  include <in_use_for_config_ln.inc>
+#  include "in_use_for_config_ln.inc"
      ELSE IF ( vname(1:1) .GE. 'g' ) THEN
-#  include <in_use_for_config_gk.inc>
+#  include "in_use_for_config_gk.inc"
      ELSE IF ( vname(1:1) .GE. 'd' ) THEN
-#  include <in_use_for_config_df.inc>
+#  include "in_use_for_config_df.inc"
      ELSE 
-#  include <in_use_for_config_ac.inc>
+#  include "in_use_for_config_ac.inc"
      ENDIF
 
      RETURN
@@ -368,8 +368,8 @@ CONTAINS
      CHARACTER*(*), INTENT(IN) :: nml_name
      INTEGER                   :: nml_error
 
-#include <namelist_defines.inc>
-#include <namelist_statements.inc>
+#include "namelist_defines.inc"
+#include "namelist_statements.inc"
 
 ! These are the variables that have been removed
      logical , DIMENSION(max_domains) :: pd_moist, pd_chem, pd_tke, pd_scalar
@@ -543,8 +543,8 @@ SUBROUTINE set_scalar_indices_from_config ( idomain , dummy2, dummy1 )
 !
 !</DESCRIPTION>
 
-#include <scalar_indices.inc>
-#include <scalar_indices_init.inc>
+#include "scalar_indices.inc"
+#include "scalar_indices_init.inc"
   RETURN
 END SUBROUTINE set_scalar_indices_from_config
 

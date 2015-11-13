@@ -1346,8 +1346,8 @@ contains
   end subroutine varsur_dealloc
 
 end module clm_varsur
-!#include <misc.h>
-!#include <preproc.h>
+!#include "misc.h"
+!#include "preproc.h"
 
 module clmtype
 
@@ -55393,8 +55393,8 @@ end subroutine CNWoodProducts
 #endif
 
 end module CNWoodProductsMod
-!#include <misc.h>
-!#include <preproc.h>
+!#include "misc.h"
+!#include "preproc.h"
 
 !-----------------------------------------------------------------------
 !BOP

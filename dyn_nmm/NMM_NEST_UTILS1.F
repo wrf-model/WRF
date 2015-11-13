@@ -3101,7 +3101,7 @@ SUBROUTINE med_init_domain_constants_nmm ( parent, nest)   !, config_flags)
    INTERFACE
      SUBROUTINE med_initialize_nest_nmm ( grid  &   
 !
-# include <dummy_new_args.inc>
+# include "dummy_new_args.inc"
 !
                            )
         USE module_domain
@@ -3109,7 +3109,7 @@ SUBROUTINE med_init_domain_constants_nmm ( parent, nest)   !, config_flags)
         USE module_timing
         IMPLICIT NONE
         TYPE(domain) , POINTER                  :: grid
-#include <dummy_new_decl.inc>
+#include "dummy_new_decl.inc"
      END SUBROUTINE med_initialize_nest_nmm 
    END INTERFACE
 
@@ -3124,7 +3124,7 @@ SUBROUTINE med_init_domain_constants_nmm ( parent, nest)   !, config_flags)
 
    CALL med_initialize_nest_nmm( grid &   
 !
-# include <actual_new_args.inc>
+# include "actual_new_args.inc"
 !
                        )
 
@@ -3132,7 +3132,7 @@ END SUBROUTINE med_init_domain_constants_nmm
 
 SUBROUTINE med_initialize_nest_nmm( grid &
 !
-# include <dummy_new_args.inc>
+# include "dummy_new_args.inc"
 !
                            )
 
@@ -3199,12 +3199,12 @@ SUBROUTINE med_initialize_nest_nmm( grid &
  CHARACTER(LEN=255) :: message
 
    !  Definitions of dummy arguments to solve
-#include <dummy_new_decl.inc>
+#include "dummy_new_decl.inc"
 
 !#define COPY_IN
-!#include <scalar_derefs.inc>
+!#include "scalar_derefs.inc"
 #ifdef DM_PARALLEL
-#      include <data_calls.inc>
+#      include "data_calls.inc"
 #endif
 
    CALL get_ijk_from_grid (  grid ,                           &

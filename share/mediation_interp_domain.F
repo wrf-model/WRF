@@ -39,7 +39,7 @@ SUBROUTINE med_interp_domain ( parent_grid , nested_grid )
          TYPE(domain), POINTER :: intermediate_grid
          TYPE(domain), POINTER :: ngrid
          TYPE (grid_config_rec_type)            :: config_flags
-#        include <dummy_new_decl.inc>
+#        include "dummy_new_decl.inc"
       END SUBROUTINE interp_domain_em_part1
 
       SUBROUTINE interp_domain_em_part2 ( grid, nested_grid, parent_grid, config_flags   &
@@ -53,7 +53,7 @@ SUBROUTINE med_interp_domain ( parent_grid , nested_grid )
          TYPE(domain), POINTER :: nested_grid
          TYPE(domain), POINTER :: parent_grid   !KAL added for vertical nesting
          TYPE (grid_config_rec_type)            :: config_flags
-#        include <dummy_new_decl.inc>
+#        include "dummy_new_decl.inc"
       END SUBROUTINE interp_domain_em_part2
 #endif
 ! ----------------------------------------------------------
@@ -75,7 +75,7 @@ SUBROUTINE med_interp_domain ( parent_grid , nested_grid )
          TYPE(domain), POINTER :: intermediate_grid
          TYPE(domain), POINTER :: ngrid
          TYPE (grid_config_rec_type)            :: config_flags
-# include <dummy_new_decl.inc>
+# include "dummy_new_decl.inc"
       END SUBROUTINE interp_domain_nmm_part1
 
       SUBROUTINE interp_domain_nmm_part2 ( grid, nested_grid, config_flags    &
@@ -88,7 +88,7 @@ SUBROUTINE med_interp_domain ( parent_grid , nested_grid )
          TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
          TYPE(domain), POINTER :: nested_grid
          TYPE (grid_config_rec_type)            :: config_flags
-# include <dummy_new_decl.inc>
+# include "dummy_new_decl.inc"
       END SUBROUTINE interp_domain_nmm_part2
 
 !=======================================================================
@@ -258,7 +258,7 @@ SUBROUTINE med_interp_domain_small ( parent_grid , nested_grid )
          TYPE(domain), POINTER :: intermediate_grid
          TYPE(domain), POINTER :: ngrid
          TYPE (grid_config_rec_type)            :: config_flags
-#        include <dummy_new_decl.inc>
+#        include "dummy_new_decl.inc"
       END SUBROUTINE interp_domain_em_small_part1
 
       SUBROUTINE interp_domain_em_small_part2 ( grid, nested_grid, config_flags   &
@@ -271,7 +271,7 @@ SUBROUTINE med_interp_domain_small ( parent_grid , nested_grid )
          TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
          TYPE(domain), POINTER :: nested_grid
          TYPE (grid_config_rec_type)            :: config_flags
-#        include <dummy_new_decl.inc>
+#        include "dummy_new_decl.inc"
       END SUBROUTINE interp_domain_em_small_part2
 #endif
    END INTERFACE

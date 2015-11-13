@@ -870,7 +870,7 @@
 !
 #ifdef DM_PARALLEL
 !          IPS=ITS;IPE=ITE;JPS=JTS;JPE=JTE;KPS=KTS;KPE=KTE
-# include <HALO_NMM_E.inc>
+# include "HALO_NMM_E.inc"
 #endif
 !-----------------------------------------------------------------------
 !

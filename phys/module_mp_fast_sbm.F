@@ -489,7 +489,7 @@ USE module_mp_radar
          KRR=0
          DO KR=p_ff8i01,p_ff8i33
           KRR=KRR+1
-          if (xland(i,j).eq.1.and.(ivgtyp(i,j).eq.19.or.ivgtyp(i,j).eq.1))then
+          if (xland(i,j).lt.1.5)then
              chem_new(I,K,J,KR)=FCCNR_CON(KRR)*FACTZ
           else
              chem_new(I,K,J,KR)=FCCNR_MAR(KRR)*FACTZ
@@ -519,7 +519,7 @@ USE module_mp_radar
          KRR=0
          DO kr=p_ff8i01,p_ff8i33
           KRR=KRR+1
-          if (xland(i,j).eq.1.and.(ivgtyp(i,j).eq.19.or.ivgtyp(i,j).eq.1))then
+          if (xland(i,j).lt.1.5)then
              chem_new(I,K,J,KR)=FCCNR_CON(KRR)*FACTZ
           else
              chem_new(I,K,J,KR)=FCCNR_MAR(KRR)*FACTZ

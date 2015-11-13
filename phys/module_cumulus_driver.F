@@ -18,6 +18,7 @@ CONTAINS
                      ,cudtacttime                                     & 
                      ,rainc,raincv,pratec,nca                         &
                      ,cldfra_dp,cldfra_sh,w_up                        & !ckay for subgrid cloud
+                     ,udr_kf,ddr_kf,uer_kf,der_kf,timec_kf,kf_edrates & !kf_edrates
                      ,QC_CU,QI_CU                                     &
                      ,z,z_at_w,dz8w,mavail,pblh,p8w,psfc,tsk          &
                      ,tke_pbl, ust                                    &
@@ -414,6 +415,18 @@ CONTAINS
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
          INTENT(INOUT)  ::                            cldfra_dp  &
                                                     , cldfra_sh
+
+!kf_edrates
+   REAL,  DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
+         INTENT(INOUT)  ::                            udr_kf     &
+                                                    , ddr_kf     &
+                                                    , uer_kf     &
+                                                    , der_kf
+
+   REAL,  DIMENSION( ims:ime , jms:jme ), INTENT(INOUT) ::        &
+          timec_kf
+
+   INTEGER, INTENT(IN   )        ::   kf_edrates
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
          INTENT(INOUT ),OPTIONAL ::                        w_up
@@ -832,6 +845,9 @@ CONTAINS
                ,RQICUTEN=rqicuten ,RQSCUTEN=rqscuten            &
                ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                   &
                ,F_QI=f_qi,F_QS=f_qs                             &
+               ,UDR_KF=udr_kf,DDR_KF=ddr_kf                     & !kf_edrates
+               ,UER_KF=uer_kf,DER_KF=der_kf                     & 
+               ,TIMEC_KF=timec_kf,KF_EDRATES=kf_edrates         & 
                                                                 )
 
      CASE (BMJSCHEME)
@@ -884,7 +900,10 @@ CONTAINS
                ,F_QI=f_qi,F_QS=f_qs                             &
                ,CLDFRA_DP_KF=cldfra_dp                          & ! ckay for sub-grid cloud
                ,CLDFRA_SH_KF=cldfra_sh                          &
-               ,QC_KF=QC_CU,QI_KF=QI_CU                         )
+               ,QC_KF=QC_CU,QI_KF=QI_CU                         &
+               ,UDR_KF=udr_kf,DDR_KF=ddr_kf                     & !kf_edrates
+               ,UER_KF=uer_kf,DER_KF=der_kf                     & 
+               ,TIMEC_KF=timec_kf,KF_EDRATES=kf_edrates         ) 
 
 #if (EM_CORE==1)
      CASE (MSKFSCHEME)
@@ -919,6 +938,9 @@ CONTAINS
                ,CLDFRA_SH_KF=cldfra_sh                          &
                ,W_UP=w_up                                       & ! ckay
                ,QC_KF=QC_CU,QI_KF=QI_CU                         &
+               ,UDR_KF=udr_kf,DDR_KF=ddr_kf                     & !kf_edrates
+               ,UER_KF=uer_kf,DER_KF=der_kf                     & 
+               ,TIMEC_KF=timec_kf,KF_EDRATES=kf_edrates         & 
                ,ZOL=zol,WSTAR=wstar,UST=ust,PBLH=pblh           )  !ckay
 #endif
 

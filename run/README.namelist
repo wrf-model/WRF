@@ -719,6 +719,7 @@ Namelist variables for controlling the adaptive time step option:
  ishallow                            = 1,   Shallow convection used with Grell 3D ensemble schemes (cu_physics = 3 or 5)
  clos_choice                         = 0,   closure choice (place holder only)
  cu_diag                             = 0,   additional t-averaged stuff for cu physics (cu_phys = 3, 5 and 93 only)
+ kf_edrates                          = 0,   Add entrainment/detrainment rates and convective timescale output variables for KF-based cumulus schemes (cu_phys = 1, 11 and 99 only)
  convtrans_avglen_m                  = 30,  averaging time for variables used by convective transport (call cu_phys options)  and radiation routines (only cu_phys=3,5 and 93) (minutes) 
  cu_rad_feedback (max_dom)           = .false.  ; sub-grid cloud effect to the optical depth in radiation
                                                   currently it works only for GF, G3, GD and KF scheme

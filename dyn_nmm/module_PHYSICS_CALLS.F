@@ -2663,6 +2663,11 @@
      &                 ,DZ8W=DZ,P8W=P8W,FORCET=TTEN,FORCEQ=QTEN         &
      &                 ,CLDEFI=CLDEFI,LOWLYR=LOWLYR,XLAND=XLAND         &
      &                 ,CU_ACT_FLAG=CU_ACT_FLAG,WARM_RAIN=WARM_RAIN     &
+! kf_edrates
+     &                 ,UDR_KF=grid%udr_kf,DDR_KF=grid%ddr_kf           &
+     &                 ,UER_KF=grid%uer_kf,DER_KF=grid%der_kf           &
+     &                 ,TIMEC_KF=grid%timec_kf                          &
+     &                 ,KF_EDRATES=config_flags%kf_edrates              &
 !Biswas
      &                 ,HFX=HFX,QFX=QFX,PBLH=PBLH                       &
      &                 ,ZNU=ZNU                                         &

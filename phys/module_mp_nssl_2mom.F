@@ -11954,13 +11954,13 @@ END SUBROUTINE nssl_2mom_driver
              qrfrzf(mgs) = frach*qrfrz(mgs)
 !             crfrzf(mgs) = Min( qrfrz(mgs)*rho0(mgs)/(xdn(mgs,lh)*vgra), crfrz(mgs) )
             IF ( ibfr .le. 1 ) THEN
-             crfrzf(mgs) = frach*Min(crfrz(mgs), dble(qrfrz(mgs)/(bfnu*1.0*vr1mm*1000.0)*rho0(mgs)) ) ! rzxh(mgs)*crfrz(mgs)
+             crfrzf(mgs) = frach*Min(dble(crfrz(mgs)), dble(qrfrz(mgs)/(bfnu*1.0*vr1mm*1000.0)*rho0(mgs)) ) ! rzxh(mgs)*crfrz(mgs)
             ELSEIF ( ibfr .eq. 5 ) THEN
-             crfrzf(mgs) = frach*Min(crfrz(mgs), dble(qrfrz(mgs)/(bfnu*vfrz*1000.0)*rho0(mgs)) )*rzxh(mgs)  !*crfrz(mgs)
+             crfrzf(mgs) = frach*Min(dble(crfrz(mgs)), dble(qrfrz(mgs)/(bfnu*vfrz*1000.0)*rho0(mgs)) )*rzxh(mgs)  !*crfrz(mgs)
             ELSEIF ( ibfr .eq. 2 ) THEN
-             crfrzf(mgs) = frach*Min(crfrz(mgs), dble(qrfrz(mgs)/(bfnu*vfrz*1000.0)*rho0(mgs)) ) ! rzxh(mgs)*crfrz(mgs)
+             crfrzf(mgs) = frach*Min(dble(crfrz(mgs)), dble(qrfrz(mgs)/(bfnu*vfrz*1000.0)*rho0(mgs)) ) ! rzxh(mgs)*crfrz(mgs)
             ELSEIF ( ibfr .eq. 6 ) THEN
-             crfrzf(mgs) = frach*Max(crfrz(mgs), dble(qrfrz(mgs)/(bfnu*9.*xv(mgs,lr)*1000.0)*rho0(mgs)) ) ! rzxh(mgs)*crfrz(mgs)
+             crfrzf(mgs) = frach*Max(dble(crfrz(mgs)), dble(qrfrz(mgs)/(bfnu*9.*xv(mgs,lr)*1000.0)*rho0(mgs)) ) ! rzxh(mgs)*crfrz(mgs)
             ELSE
              crfrzf(mgs) = frach*crfrz(mgs)
             ENDIF

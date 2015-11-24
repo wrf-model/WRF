@@ -11,6 +11,13 @@ subroutine da_uv_to_sd_lin(spd,dir,u,v,ub,vb)
    
    if (trace_use_dull) call da_trace_entry("da_uv_to_sd_lin")
 
+   if ( (ub*ub+vb*vb) == 0.0 ) then      ! Avoid division by zero
+      spd = 0.0
+      dir = 0.0
+      return
+      if (trace_use_dull) call da_trace_exit("da_uv_to_sd_lin")
+   end if
+
    if (abs(ub - 0.0) <= 0.1) ub = (ub/abs(ub))*0.1
    if (abs(vb - 0.0) <= 0.1) vb = (vb/abs(vb))*0.1
 

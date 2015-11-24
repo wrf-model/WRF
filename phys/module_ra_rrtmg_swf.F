@@ -12243,7 +12243,7 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
 
       if ( present (tauaer3d_sw) ) then
 ! ---- jararias 11/2012
-         if ( aer_opt .eq. 2) then
+         if (aer_opt .eq. 2 .or. aer_opt .eq. 3) then
             do nb=1,nbndsw
                do k=kts,kte
                   tauaer(icol,k,nb)=tauaer3d_sw(i,k,j,nb)
@@ -12352,7 +12352,7 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
       enddo
 
       IF ( PRESENT( aerod ) ) THEN
-      if ( aer_opt .eq. 0 .or. aer_opt .eq. 2 ) then
+      if ( aer_opt .eq. 0 .or. aer_opt .eq. 2 .or. aer_opt .eq. 3 ) then
          iaer = 10
          do na = 1, naerec
             do k = kts, kte+1

@@ -191,13 +191,13 @@ END IF
                  dx  *(dym * grid%xb % psac(i,j+1) + dy * grid%xb%psac(i+1,j+1)) + &
                  grid%xb % ptop
 
-      iv%radar(n)%model_p(:)   = model_p(1:iv%info(radar)%levels(n),n)
-      iv%radar(n)%model_rho(:) = model_rho(1:iv%info(radar)%levels(n),n)
-      iv%radar(n)%model_qrn(:) = model_qrn(1:iv%info(radar)%levels(n),n)
-      iv%radar(n)%model_qcl(:) = model_qcl(1:iv%info(radar)%levels(n),n)
-      iv%radar(n)%model_qci(:) = model_qci(1:iv%info(radar)%levels(n),n)
-      iv%radar(n)%model_qsn(:) = model_qsn(1:iv%info(radar)%levels(n),n)
-      iv%radar(n)%model_qgr(:) = model_qgr(1:iv%info(radar)%levels(n),n)
+      iv%radar(n)%model_p(1:iv%info(radar)%levels(n))   = model_p(1:iv%info(radar)%levels(n),n)
+      iv%radar(n)%model_rho(1:iv%info(radar)%levels(n)) = model_rho(1:iv%info(radar)%levels(n),n)
+      iv%radar(n)%model_qrn(1:iv%info(radar)%levels(n)) = model_qrn(1:iv%info(radar)%levels(n),n)
+      iv%radar(n)%model_qcl(1:iv%info(radar)%levels(n)) = model_qcl(1:iv%info(radar)%levels(n),n)
+      iv%radar(n)%model_qci(1:iv%info(radar)%levels(n)) = model_qci(1:iv%info(radar)%levels(n),n)
+      iv%radar(n)%model_qsn(1:iv%info(radar)%levels(n)) = model_qsn(1:iv%info(radar)%levels(n),n)
+      iv%radar(n)%model_qgr(1:iv%info(radar)%levels(n)) = model_qgr(1:iv%info(radar)%levels(n),n)
 
       iv%radar(n)%model_ps     = model_ps(n)
 

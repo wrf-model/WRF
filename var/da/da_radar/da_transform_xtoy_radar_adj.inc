@@ -101,8 +101,8 @@ subroutine da_transform_xtoy_radar_adj(grid, iv, jo_grad_y, jo_grad_x)
       xr = grid%xb%ds * (iv%info(radar)%x(1,n) - iv%radar(n)%stn_loc%x)
       yr = grid%xb%ds * (iv%info(radar)%y(1,n) - iv%radar(n)%stn_loc%y)
 
-      model_qrnb(1:iv%info(radar)%levels(n),n) = iv%radar(n)%model_qrn(:)
-      model_p   (1:iv%info(radar)%levels(n),n) = iv%radar(n)%model_p(:)
+      model_qrnb(1:iv%info(radar)%levels(n),n) = iv%radar(n)%model_qrn(1:iv%info(radar)%levels(n))
+      model_p   (1:iv%info(radar)%levels(n),n) = iv%radar(n)%model_p(1:iv%info(radar)%levels(n))
 
       do k = 1,iv%info(radar)%levels(n)
          if (iv % radar(n) % height_qc(k) /= below_model_surface .and.  &

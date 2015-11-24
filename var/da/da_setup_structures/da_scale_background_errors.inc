@@ -44,44 +44,53 @@ subroutine da_scale_background_errors ( be, it )
     be % v5 % val = v5_val
 !
 ! Rescale the scale-lengths and variances:
-   CALL DA_Rescale_Background_Errors( var_scaling1(it), len_scaling1(it), &
+   CALL da_rescale_background_errors( var_scaling1(it), len_scaling1(it), &
                                       ds, rf_len1, be % v1 )
 !  .........................................................    
-   CALL DA_Rescale_Background_Errors( var_scaling2(it), len_scaling2(it), &
+   CALL da_rescale_background_errors( var_scaling2(it), len_scaling2(it), &
                                       ds, rf_len2, be % v2 )
 ! ..........................................................
-   CALL DA_Rescale_Background_Errors( var_scaling3(it), len_scaling3(it), &
+   CALL da_rescale_background_errors( var_scaling3(it), len_scaling3(it), &
                                       ds, rf_len3, be % v3 )
 ! ...............................................................
-   CALL DA_Rescale_Background_Errors( var_scaling4(it), len_scaling4(it), &
+   CALL da_rescale_background_errors( var_scaling4(it), len_scaling4(it), &
                                       ds, rf_len4, be % v4 )
 ! ..............................................................
-   CALL DA_Rescale_Background_Errors( var_scaling5(it), len_scaling5(it), &
+   CALL da_rescale_background_errors( var_scaling5(it), len_scaling5(it), &
                                       ds, rf_len5, be % v5 )
 !
-! Print the variances and RF (Recursive Filter) factors rf_alpha):
+! Print the variances and RF (Recursive Filter) factors rf_alpha:
     write(unit=stdout,fmt='(/5x,"Complete the Rescale BES in outer-loop:" i2)') it
     
     if ( print_detail_be ) then
+       write(be_print_unit,'(/"============================================================")')
+       write(be_print_unit,'("For outer loop ",i2)') it
        write(be_print_unit,'("it=",i2,2x,"kz=",i3,2x,"jy=",i4,2x,"ix=",i4,2x,"ds=",e12.5)') &
                                                       it, kz, jy, ix, ds
-       write(be_print_unit,'("Loop it=",i2," val and rf, and mz:",5i5)') &
-                  it, be % v1 % mz, be % v2 % mz, be% v3 % mz, be % v4 % mz, be % v5 % mz
+       write(be_print_unit,'("Namelist options specified for this iteration:")')
+       write(be_print_unit,'("var_scaling1(it) = ",e12.5,2x,"len_scaling1(it) = "e12.5)')var_scaling1(it),len_scaling1(it)
+       write(be_print_unit,'("var_scaling2(it) = ",e12.5,2x,"len_scaling2(it) = "e12.5)')var_scaling2(it),len_scaling2(it)
+       write(be_print_unit,'("var_scaling3(it) = ",e12.5,2x,"len_scaling3(it) = "e12.5)')var_scaling3(it),len_scaling3(it)
+       write(be_print_unit,'("var_scaling4(it) = ",e12.5,2x,"len_scaling4(it) = "e12.5)')var_scaling4(it),len_scaling4(it)
+       write(be_print_unit,'("var_scaling5(it) = ",e12.5,2x,"len_scaling5(it) = "e12.5)')var_scaling5(it),len_scaling5(it)
+       write(be_print_unit,'("Background error statistics for this iteration:")')
        write(be_print_unit,'("mz=",i3,2x,"be%v1%val:"/(10e12.5))') be%v1%mz, be%v1%val(1,:)
        write(be_print_unit,'("mz=",i3,2x,"be%v2%val:"/(10e12.5))') be%v2%mz, be%v2%val(1,:)
        write(be_print_unit,'("mz=",i3,2x,"be%v3%val:"/(10e12.5))') be%v3%mz, be%v3%val(1,:)
        write(be_print_unit,'("mz=",i3,2x,"be%v4%val:"/(10e12.5))') be%v4%mz, be%v4%val(1,:)
        write(be_print_unit,'("mz=",i3,2x,"be%v5%val:"/(10e12.5))') be%v5%mz, be%v5%val(1,:)
+       write(be_print_unit,'("be%v1%rf_alpha:"/(10e12.5))') be % v1 % rf_alpha(:)
+       write(be_print_unit,'("be%v2%rf_alpha:"/(10e12.5))') be % v2 % rf_alpha(:)
+       write(be_print_unit,'("be%v3%rf_alpha:"/(10e12.5))') be % v3 % rf_alpha(:)
+       write(be_print_unit,'("be%v4%rf_alpha:"/(10e12.5))') be % v4 % rf_alpha(:)
+       write(be_print_unit,'("be%v5%rf_alpha:"/(10e12.5))') be % v5 % rf_alpha(:)
        write(be_print_unit,'(/"scale-length: kz=",i3)') kz
        do i = 1,kz 
-         if (i == 1) then
-           write(be_print_unit,'(i3,2x,5e15.5)') i, be % v1 % rf_alpha(i), &
-                be % v2 % rf_alpha(i), be % v3 % rf_alpha(i), be % v4 % rf_alpha(i), &
-                be % v5 % rf_alpha(i)
-         else
-           write(be_print_unit,'(i3,2x,5e15.5)') i, be % v1 % rf_alpha(i), &
-                be % v2 % rf_alpha(i), be % v3 % rf_alpha(i), be % v4 % rf_alpha(i)
-       endif
+          if (i == 1) then
+             write(be_print_unit,'(i3,2x,5e15.5)') i, rf_len1(i), rf_len2(i), rf_len3(i), rf_len4(i), rf_len5(i)
+          else
+             write(be_print_unit,'(i3,2x,4e15.5)') i, rf_len1(i), rf_len2(i), rf_len3(i), rf_len4(i)
+          endif
        enddo
     endif
 !
@@ -98,3 +107,4 @@ subroutine da_scale_background_errors ( be, it )
     deallocate ( rf_len5 )
 !
 end subroutine da_scale_background_errors
+

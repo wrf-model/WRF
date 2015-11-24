@@ -1513,11 +1513,17 @@ subroutine da_setup_be_regional(xb, be, grid)
    endif
 
    if (print_detail_be .and. jb_factor > 0.0) then
-
+       write(be_print_unit,'(/"============================================================")')
+       write(be_print_unit,'("For outer loop ",i2)') it
        write(be_print_unit,'("it=",i2,2x,"kz=",i3,2x,"jy=",i4,2x,"ix=",i4,2x,"ds=",e12.5)') &
                                                       it, kz, jy, ix, xb % ds
-       write(be_print_unit,'("Loop it=",i2," val and rf, and mz:",5i5)') &
-                  it, be % v1 % mz, be % v2 % mz, be% v3 % mz, be % v4 % mz, be % v5 % mz
+       write(be_print_unit,'("Namelist options specified for this iteration:")')
+       write(be_print_unit,'("var_scaling1(it) = ",e12.5,2x,"len_scaling1(it) = "e12.5)')var_scaling1(it),len_scaling1(it)
+       write(be_print_unit,'("var_scaling2(it) = ",e12.5,2x,"len_scaling2(it) = "e12.5)')var_scaling2(it),len_scaling2(it)
+       write(be_print_unit,'("var_scaling3(it) = ",e12.5,2x,"len_scaling3(it) = "e12.5)')var_scaling3(it),len_scaling3(it)
+       write(be_print_unit,'("var_scaling4(it) = ",e12.5,2x,"len_scaling4(it) = "e12.5)')var_scaling4(it),len_scaling4(it)
+       write(be_print_unit,'("var_scaling5(it) = ",e12.5,2x,"len_scaling5(it) = "e12.5)')var_scaling5(it),len_scaling5(it)
+       write(be_print_unit,'("Background error statistics for this iteration:")')
        write(be_print_unit,'("mz=",i3,2x,"be%v1%val:"/(10e12.5))') be%v1%mz, be%v1%val(1,:)
        write(be_print_unit,'("mz=",i3,2x,"be%v2%val:"/(10e12.5))') be%v2%mz, be%v2%val(1,:)
        write(be_print_unit,'("mz=",i3,2x,"be%v3%val:"/(10e12.5))') be%v3%mz, be%v3%val(1,:)
@@ -1544,6 +1550,30 @@ subroutine da_setup_be_regional(xb, be, grid)
        write(be_print_unit,'("be%v9%rf_alpha:"/(10e12.5))')  be % v9 % rf_alpha(:)
        write(be_print_unit,'("be%v10%rf_alpha:"/(10e12.5))') be % v10 % rf_alpha(:)
        write(be_print_unit,'("be%v11%rf_alpha:"/(10e12.5))') be % v11 % rf_alpha(:)
+       write(be_print_unit,'(/"scale-length: kz=",i3)') kz
+       do i = 1,kz
+          if (i == 1) then
+             write(be_print_unit,'(i3,2x,11e15.5)') i, be1_rf_lengthscale(i), be2_rf_lengthscale(i), &
+                  be3_rf_lengthscale(i), be4_rf_lengthscale(i), be5_rf_lengthscale(i), be6_rf_lengthscale(i), &
+                  be7_rf_lengthscale(i), be8_rf_lengthscale(i), be9_rf_lengthscale(i), be10_rf_lengthscale(i), &
+                  be11_rf_lengthscale(i)
+          else
+             write(be_print_unit,'(i3,2x,4e15.5,15x,6e15.5)') i, be1_rf_lengthscale(i), be2_rf_lengthscale(i), &
+                  be3_rf_lengthscale(i), be4_rf_lengthscale(i), be6_rf_lengthscale(i), be7_rf_lengthscale(i), &
+                  be8_rf_lengthscale(i), be9_rf_lengthscale(i), be10_rf_lengthscale(i), be11_rf_lengthscale(i)
+          endif
+       enddo
+#else
+       write(be_print_unit,'(/"scale-length: kz=",i3)') kz
+       do i = 1,kz
+          if (i == 1) then
+             write(be_print_unit,'(i3,2x,5e15.5)') i, be1_rf_lengthscale(i), be2_rf_lengthscale(i), &
+                  be3_rf_lengthscale(i), be4_rf_lengthscale(i), be5_rf_lengthscale(i)
+          else
+             write(be_print_unit,'(i3,2x,4e15.5)') i, be1_rf_lengthscale(i), be2_rf_lengthscale(i), &
+                  be3_rf_lengthscale(i), be4_rf_lengthscale(i)
+          endif
+       enddo
 #endif
 
    endif

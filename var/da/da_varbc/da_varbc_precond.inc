@@ -31,14 +31,18 @@
       allocate ( hessian(npredmax, npredmax) )
       allocate ( eignvec(npredmax, npredmax) )
       allocate ( eignval(npredmax)           )
-	 
+
       do k = 1, iv%instid(inst)%nchan         ! loop for channels
          npred = iv%instid(inst)%varbc(k)%npred
-         if (npred   <= 0) cycle	      ! VarBC channel only     
+         if (npred   <= 0) cycle              ! VarBC channel only     
 
          num_rad        = iv%instid(inst)%num_rad
-         num_rad_active = COUNT( (iv%instid(inst)%info%proc_domain(1,1:num_rad)) &
-	                    .AND.(iv%instid(inst)%tb_qc(k,1:num_rad) > qc_varbc_bad) )
+         if (num_rad > 0) then
+            num_rad_active = COUNT( (iv%instid(inst)%info%proc_domain(1,1:num_rad)) &
+                               .AND.(iv%instid(inst)%tb_qc(k,1:num_rad) > qc_varbc_bad) )
+         else
+            num_rad_active = 0
+         end if
          iv%instid(inst)%varbc(k)%nobs  = wrf_dm_sum_integer(num_rad_active)
 	    
          if ( satinfo(inst)%iuse(k) == 1 ) &

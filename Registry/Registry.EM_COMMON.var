@@ -128,7 +128,7 @@ state    real   Q2               ij     misc        1         -     irh0{23}du  
 state    real   T2               ij     misc        1         -     i01rh0{23}du   "T2"                   "TEMP at 2 M"       "K"
 state    real   TH2              ij     misc        1         -     irhdu     "TH2"                  "POT TEMP at 2 M"   "K"
 state    real   PSFC             ij     misc        1         -     i01rhdu   "PSFC"                 "SFC PRESSURE"      "Pa"
-state    real   QSFC             ij     misc        1         -     irh       "QSFC"                 "SPECIFIC HUMIDITY AT LOWER BOUNDARY"          "kg kg-1
+state    real   QSFC             ij     misc        1         -     irh       "QSFC"                 "SPECIFIC HUMIDITY AT LOWER BOUNDARY"          "kg kg-1"
 
 # these next 2 are for the HFSoLE/PET demo; writing these to auxhist1 output over MCEL for coupling
 # with wave model, only if compiled with -DMCELIO, JM 2003/05/29

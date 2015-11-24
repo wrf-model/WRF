@@ -58,6 +58,7 @@ subroutine da_sfc_wtq (psfc, tg, ps, ts, qs, us, vs, &
    real,    intent(in), optional :: hfx, qfx, pblh
 
    logical :: use_table = .true.
+   logical :: use_ust_wrf = .false.
    logical :: vconv_wrf
    integer :: nn, nz, n2
    real    :: rr, rz, r2
@@ -226,11 +227,13 @@ subroutine da_sfc_wtq (psfc, tg, ps, ts, qs, us, vs, &
 
    if ( present(ust_wrf) ) then
       if ( ust_wrf > 0.0 ) then
+         use_ust_wrf = .true.
          ust = ust_wrf
       end if
-   else
+   end if
+   if ( .not. use_ust_wrf ) then
+      !ust = 0.0001  !init value as in phys/module_physics_init.F
       ust = k_kar * sqrt(v2) /(gzsoz0 - psim)
-      !ust = 0.0001
    end if
 
    ! Heat flux factor
@@ -397,7 +400,7 @@ subroutine da_sfc_wtq (psfc, tg, ps, ts, qs, us, vs, &
    psit = max(gzsoz0-psih, 2.0)
    psit2 = gz2oz0 - psih2
 
-   if ( .not. present(ust_wrf) ) then
+   if ( .not. use_ust_wrf ) then
       ! re-calculate ust since psim is now available
       ust = k_kar * sqrt(v2) /(gzsoz0 - psim)
    end if

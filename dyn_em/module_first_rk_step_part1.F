@@ -298,6 +298,7 @@ BENCH_START(rad_driver_tim)
      &       ,aer_asy_opt=config_flags%aer_asy_opt,aer_asy_val=config_flags%aer_asy_val             &
      &       ,aod5502d=grid%aod5502d,angexp2d=grid%angexp2d,aerssa2d=grid%aerssa2d                  &
      &       ,aerasy2d=grid%aerasy2d,aod5503d=grid%aod5503d                                         &
+     &       ,taod5502d=grid%taod5502d,taod5503d=grid%taod5503d                                     & ! Trude
 !Optional solar variables
      &        ,DECLINX=grid%declin ,SOLCONX=grid%solcon ,COSZEN=grid%coszen ,HRANG=grid%hrang    &
      &        , CEN_LAT=grid%cen_lat                                      &
@@ -342,6 +343,8 @@ BENCH_START(rad_driver_tim)
      &        , QS=moist(ims,kms,jms,P_QS), F_QS=F_QS                     &
      &        , QG=moist(ims,kms,jms,P_QG), F_QG=F_QG                     &
      &        , QNDROP=scalar(ims,kms,jms,P_QNDROP), F_QNDROP=F_QNDROP    &
+     &        ,QNIFA=scalar(ims,kms,jms,P_QNIFA),F_QNIFA=F_QNIFA          & !Trude
+     &        ,QNWFA=scalar(ims,kms,jms,P_QNWFA),F_QNWFA=F_QNWFA          & !Trude
      &        ,ACSWUPT=grid%acswupt    ,ACSWUPTC=grid%acswuptc            &
      &        ,ACSWDNT=grid%acswdnt    ,ACSWDNTC=grid%acswdntc            &
      &        ,ACSWUPB=grid%acswupb    ,ACSWUPBC=grid%acswupbc            &

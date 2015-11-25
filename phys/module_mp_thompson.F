@@ -36,7 +36,7 @@
 !.. Remaining values should probably be left alone.
 !..
 !..Author: Greg Thompson, NCAR-RAL, gthompsn@ucar.edu, 303-497-2805
-!..Last modified: 11 Feb 2015   Aerosol additions to v3.5.1 code 9/2013
+!..Last modified: 09 Nov 2015   Aerosol additions to v3.5.1 code 9/2013
 !..                 Cloud fraction additions 11/2014 part of pre-v3.7
 !+---+-----------------------------------------------------------------+
 !wrft:model_layer:physics
@@ -1053,7 +1053,7 @@
       REAL, DIMENSION(kts:kte):: &
                           qv1d, qc1d, qi1d, qr1d, qs1d, qg1d, ni1d,     &
                           nr1d, nc1d, nwfa1d, nifa1d,                   &
-                          t1d, p1d, w1d, dz1d, dBZ
+                          t1d, p1d, w1d, dz1d, rho, dBZ
       REAL, DIMENSION(kts:kte):: re_qc1d, re_qi1d, re_qs1d
 #if ( WRF_CHEM == 1 )
       REAL, DIMENSION(kts:kte):: &
@@ -1167,9 +1167,10 @@
             nwfa1 = nwfa2d(i,j)
          else
             do k = kts, kte
-               nc1d(k) = Nt_c
-               nwfa1d(k) = 11.1E6
-               nifa1d(k) = naIN1*0.01
+               rho(k) = 0.622*p1d(k)/(R*t1d(k)*(qv1d(k)+0.622))
+               nc1d(k) = Nt_c/rho(k)
+               nwfa1d(k) = 11.1E6/rho(k)
+               nifa1d(k) = naIN1*0.01/rho(k)
             enddo
             nwfa1 = 11.1E6
          endif

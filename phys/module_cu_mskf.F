@@ -1698,7 +1698,7 @@ updraft:    DO NK=K,KL-1
          TIMEC = TIMEC/((0.03*SCLvel*ABE)**0.3333)
 
 !ckay: this dynTau is good for the Deep as well as Shallow Cu clouds
-        TIMEC = AMAX1(DT, TIMEC)
+        TIMEC = AMAX1(TADVEC, TIMEC)
  
          NIC=NINT(TIMEC/DT)
          TIMEC=FLOAT(NIC)*DT

@@ -1363,6 +1363,8 @@ state   real    angexp2d     ij     misc         1         -     i{15}r "ANGEXP2
 state   real    aerssa2d     ij     misc         1         -     i{15}r "AERSSA2D"   "Aerosol single-scattering albedo" ""
 state   real    aerasy2d     ij     misc         1         -     i{15}r "AERASY2D"   "Aerosol asymmetry factor" ""
 state   real    aod5503d     ikj    misc         1         -     r      "AOD5503D"   "3D aerosol optical depth at 550 nm" ""
+state   real    taod5503d    ikj    misc         1         -     r      "TAOD5503D"  "3D aerosol optical depth at 550 nm (MP=28)" ""
+state   real    taod5502d    ij     misc         1         -     rh     "TAOD5502D"  "2D aerosol optical depth at 550 nm (MP=28)" ""
 
 # CLWRF-WRF4G
 state    real  T2MIN            ij      misc        1         -      rh3      "T2MIN"                 "MINIMUM TEMPERATURE AT 2M HEIGHT IN DIAGNOSTIC OUTPUT INTERVAL"                      "K"
@@ -2549,7 +2551,7 @@ package   nssl_2momccn    mp_physics==18               -             moist:qv,qc
 package   nssl_1mom       mp_physics==19               -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qvolg;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg,g_qh;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg,a_qh;g_scalar:g_qvolg;a_scalar:a_qvolg
 package   nssl_1momlfo    mp_physics==21               -             moist:qv,qc,qr,qi,qs,qg;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
 package   nssl_2momg      mp_physics==22               -             moist:qv,qc,qr,qi,qs,qg;scalar:qndrop,qnr,qni,qns,qng,qvolg;state:re_cloud,re_ice,re_snow;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_scalar:a_qndrop,a_qnr,a_qni,a_qns,a_qng,a_qvolg;g_scalar:g_qndrop,g_qnr,g_qni,g_qns,g_qng,g_qvolg
-package   thompsonaero    mp_physics==28               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr,qnc,qnwfa,qnifa;state:re_cloud,re_ice,re_snow,qnwfa2d;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg;g_scalar:g_qni,g_qnr,g_qnc,g_qnwfa,g_qnifa;a_scalar:a_qni,a_qnr,a_qnc,a_qnwfa,a_qnifa
+package   thompsonaero    mp_physics==28               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr,qnc,qnwfa,qnifa;state:re_cloud,re_ice,re_snow,qnwfa2d,taod5503d,taod5502d;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg;g_scalar:g_qni,g_qnr,g_qnc,g_qnwfa,g_qnifa;a_scalar:a_qni,a_qnr,a_qnc,a_qnwfa,a_qnifa
 package   etampnew        mp_physics==95               -             moist:qv,qc,qr,qs;scalar:qt;state:f_ice_phy,f_rain_phy,f_rimef_phy;g_moist:g_qv,g_qc,g_qr,g_qs;a_moist:a_qv,a_qc,a_qr,a_qs;g_scalar:g_qt;a_scalar:a_qt
 
 package   radar_refl      compute_radar_ref==1         -             state:refl_10cm,refd_max

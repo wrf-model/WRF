@@ -509,6 +509,7 @@ BENCH_START(surf_driver_tim)
      &        ,TML=grid%tml, T0ML=grid%t0ml, HML=grid%hml, H0ML=grid%h0ml           &
      &        ,HUML=grid%huml, HVML=grid%hvml, F=grid%f                             &
      &        ,TMOML=grid%TMOML,ISWATER=iswater                                     &
+     &        ,OML_RELAXATION_TIME=grid%OML_RELAXATION_TIME                         &
      &        ,lakedepth2d=grid%lakedepth2d,    savedtke12d=grid%savedtke12d        &   
      &        ,snowdp2d=grid%snowdp2d,          h2osno2d=grid%h2osno2d              & !lake
      &        ,snl2d=grid%snl2d,                t_grnd2d=grid%t_grnd2d              &   

@@ -148,6 +148,7 @@ MODULE MODULE_SF_NOAHMPLSM
   REAL, PARAMETER :: DENICE = 917.      !density of ice (kg/m3)
 
   INTEGER, PRIVATE, PARAMETER :: MBAND = 2
+  INTEGER, PRIVATE, PARAMETER :: NSOIL = 4
 
   TYPE noahmp_parameters ! define a NoahMP parameters type
 
@@ -246,17 +247,17 @@ MODULE MODULE_SF_NOAHMPLSM
 !------------------------------------------------------------------------------------------!
 ! From the SOILPARM.TBL tables, as functions of soil category.
 !------------------------------------------------------------------------------------------!
-     REAL :: BEXP         !B parameter
-     REAL :: SMCDRY       !dry soil moisture threshold where direct evap from top
-                          !layer ends (volumetric) (not used MB: 20140718)
-     REAL :: SMCWLT       !wilting point soil moisture (volumetric)
-     REAL :: SMCREF       !reference soil moisture (field capacity) (volumetric)
-     REAL :: SMCMAX       !porosity, saturated value of soil moisture (volumetric)
-     REAL :: F1           !soil thermal diffusivity/conductivity coef (not used MB: 20140718)
-     REAL :: PSISAT       !saturated soil matric potential
-     REAL :: DKSAT        !saturated soil hydraulic conductivity
-     REAL :: DWSAT        !saturated soil hydraulic diffusivity
-     REAL :: QUARTZ       !soil quartz content
+     REAL :: BEXP(NSOIL)   !B parameter
+     REAL :: SMCDRY(NSOIL) !dry soil moisture threshold where direct evap from top
+                           !layer ends (volumetric) (not used MB: 20140718)
+     REAL :: SMCWLT(NSOIL) !wilting point soil moisture (volumetric)
+     REAL :: SMCREF(NSOIL) !reference soil moisture (field capacity) (volumetric)
+     REAL :: SMCMAX(NSOIL) !porosity, saturated value of soil moisture (volumetric)
+     REAL :: PSISAT(NSOIL) !saturated soil matric potential
+     REAL :: DKSAT(NSOIL)  !saturated soil hydraulic conductivity
+     REAL :: DWSAT(NSOIL)  !saturated soil hydraulic diffusivity
+     REAL :: QUARTZ(NSOIL) !soil quartz content
+     REAL :: F1            !soil thermal diffusivity/conductivity coef (not used MB: 20140718)
 !------------------------------------------------------------------------------------------!
 ! From the GENPARM.TBL file
 !------------------------------------------------------------------------------------------!
@@ -264,6 +265,8 @@ MODULE MODULE_SF_NOAHMPLSM
      REAL :: CSOIL       !vol. soil heat capacity [j/m3/K]
      REAL :: ZBOT        !Depth (m) of lower boundary soil temperature
      REAL :: CZIL        !Calculate roughness length of heat
+     REAL :: REFDK
+     REAL :: REFKDT
 
      REAL :: KDT         !used in compute maximum infiltration rate (in INFIL)
      REAL :: FRZX        !used in compute maximum infiltration rate (in INFIL)
@@ -1732,14 +1735,14 @@ contains
      IF(IST ==1 ) THEN
        DO IZ = 1, parameters%NROOT
           IF(OPT_BTR == 1) then                  ! Noah
-            GX    = (SH2O(IZ)-parameters%SMCWLT) / (parameters%SMCREF-parameters%SMCWLT)
+            GX    = (SH2O(IZ)-parameters%SMCWLT(IZ)) / (parameters%SMCREF(IZ)-parameters%SMCWLT(IZ))
           END IF
           IF(OPT_BTR == 2) then                  ! CLM
-            PSI   = MAX(PSIWLT,-parameters%PSISAT*(MAX(0.01,SH2O(IZ))/parameters%SMCMAX)**(-parameters%BEXP) )
-            GX    = (1.-PSI/PSIWLT)/(1.+parameters%PSISAT/PSIWLT)
+            PSI   = MAX(PSIWLT,-parameters%PSISAT(IZ)*(MAX(0.01,SH2O(IZ))/parameters%SMCMAX(IZ))**(-parameters%BEXP(IZ)) )
+            GX    = (1.-PSI/PSIWLT)/(1.+parameters%PSISAT(IZ)/PSIWLT)
           END IF
           IF(OPT_BTR == 3) then                  ! SSiB
-            PSI   = MAX(PSIWLT,-parameters%PSISAT*(MAX(0.01,SH2O(IZ))/parameters%SMCMAX)**(-parameters%BEXP) )
+            PSI   = MAX(PSIWLT,-parameters%PSISAT(IZ)*(MAX(0.01,SH2O(IZ))/parameters%SMCMAX(IZ))**(-parameters%BEXP(IZ)) )
             GX    = 1.-EXP(-5.8*(LOG(PSIWLT/PSI))) 
           END IF
        
@@ -1754,7 +1757,7 @@ contains
 
 ! soil surface resistance for ground evap.
 
-     BEVAP = MAX(0.0,SH2O(1)/parameters%SMCMAX)
+     BEVAP = MAX(0.0,SH2O(1)/parameters%SMCMAX(1))
      IF(IST == 2) THEN
        RSURF = 1.          ! avoid being divided by 0
        RHSUR = 1.0
@@ -1763,8 +1766,8 @@ contains
         ! RSURF based on Sakaguchi and Zeng, 2009
         ! taking the "residual water content" to be the wilting point, 
         ! and correcting the exponent on the D term (typo in SZ09 ?)
-        L_RSURF = (-ZSOIL(1)) * ( exp ( (1.0 - MIN(1.0,SH2O(1)/parameters%SMCMAX)) ** 5 ) - 1.0 ) / ( 2.71828 - 1.0 ) 
-        D_RSURF = 2.2E-5 * parameters%SMCMAX * parameters%SMCMAX * ( 1.0 - parameters%SMCWLT / parameters%SMCMAX ) ** (2.0+3.0/parameters%BEXP)
+        L_RSURF = (-ZSOIL(1)) * ( exp ( (1.0 - MIN(1.0,SH2O(1)/parameters%SMCMAX(1))) ** 5 ) - 1.0 ) / ( 2.71828 - 1.0 ) 
+        D_RSURF = 2.2E-5 * parameters%SMCMAX(1) * parameters%SMCMAX(1) * ( 1.0 - parameters%SMCWLT(1) / parameters%SMCMAX(1) ) ** (2.0+3.0/parameters%BEXP(1))
         RSURF = L_RSURF / D_RSURF
 
         ! Older RSURF computations:
@@ -1772,7 +1775,7 @@ contains
         !    RSURF = FSNO * 1. + (1.-FSNO)* EXP(8.25-6.0  *BEVAP) !adjusted to decrease RSURF for wet soil
 
        IF(SH2O(1) < 0.01 .and. SNOWH == 0.) RSURF = 1.E6
-       PSI   = -parameters%PSISAT*(MAX(0.01,SH2O(1))/parameters%SMCMAX)**(-parameters%BEXP)   
+       PSI   = -parameters%PSISAT(1)*(MAX(0.01,SH2O(1))/parameters%SMCMAX(1))**(-parameters%BEXP(1))   
        RHSUR = FSNO + (1.-FSNO) * EXP(PSI*GRAV/(RW*TG)) 
      END IF
 
@@ -2021,9 +2024,9 @@ contains
 
     DO  IZ = 1, NSOIL
        SICE(IZ)  = SMC(IZ) - SH2O(IZ)
-       HCPCT(IZ) = SH2O(IZ)*CWAT + (1.0-parameters%SMCMAX)*parameters%CSOIL &
-                + (parameters%SMCMAX-SMC(IZ))*CPAIR + SICE(IZ)*CICE
-       CALL TDFCND (parameters,DF(IZ), SMC(IZ), SH2O(IZ))
+       HCPCT(IZ) = SH2O(IZ)*CWAT + (1.0-parameters%SMCMAX(IZ))*parameters%CSOIL &
+                + (parameters%SMCMAX(IZ)-SMC(IZ))*CPAIR + SICE(IZ)*CICE
+       CALL TDFCND (parameters,IZ,DF(IZ), SMC(IZ), SH2O(IZ))
     END DO
        
     IF ( parameters%urban_flag ) THEN
@@ -2131,7 +2134,7 @@ contains
 
 !== begin tdfcnd ===================================================================================
 
-  SUBROUTINE TDFCND (parameters, DF, SMC, SH2O)
+  SUBROUTINE TDFCND (parameters, ISOIL, DF, SMC, SH2O)
 ! --------------------------------------------------------------------------------------------------
 ! Calculate thermal diffusivity and conductivity of the soil.
 ! Peters-Lidard approach (Peters-Lidard et al., 1998)
@@ -2141,6 +2144,7 @@ contains
 ! --------------------------------------------------------------------------------------------------
     IMPLICIT NONE
   type (noahmp_parameters), intent(in) :: parameters
+    INTEGER, INTENT(IN)    :: ISOIL  ! soil layer
     REAL, INTENT(IN)       :: SMC    ! total soil water
     REAL, INTENT(IN)       :: SH2O   ! liq. soil water
     REAL, INTENT(OUT)      :: DF     ! thermal diffusivity
@@ -2185,7 +2189,7 @@ contains
 !      POROS = SMCMAX
 ! SATURATION RATIO:
 ! PARAMETERS  W/(M.K)
-    SATRATIO = SMC / parameters%SMCMAX
+    SATRATIO = SMC / parameters%SMCMAX(ISOIL)
     THKW = 0.57
 !      IF (QUARTZ .LE. 0.2) THKO = 3.0
     THKO = 2.0
@@ -2194,19 +2198,19 @@ contains
     THKQTZ = 7.7
 
 ! UNFROZEN FRACTION (FROM 1., i.e., 100%LIQUID, TO 0. (100% FROZEN))
-    THKS = (THKQTZ ** parameters%QUARTZ)* (THKO ** (1. - parameters%QUARTZ))
+    THKS = (THKQTZ ** parameters%QUARTZ(ISOIL))* (THKO ** (1. - parameters%QUARTZ(ISOIL)))
 
 ! UNFROZEN VOLUME FOR SATURATION (POROSITY*XUNFROZ)
     XUNFROZ = SH2O / SMC
 ! SATURATED THERMAL CONDUCTIVITY
-    XU = XUNFROZ * parameters%SMCMAX
+    XU = XUNFROZ * parameters%SMCMAX(ISOIL)
 
 ! DRY DENSITY IN KG/M3
-    THKSAT = THKS ** (1. - parameters%SMCMAX)* TKICE ** (parameters%SMCMAX - XU)* THKW **   &
+    THKSAT = THKS ** (1. - parameters%SMCMAX(ISOIL))* TKICE ** (parameters%SMCMAX(ISOIL) - XU)* THKW **   &
          (XU)
 
 ! DRY THERMAL CONDUCTIVITY IN W.M-1.K-1
-    GAMMD = (1. - parameters%SMCMAX)*2700.
+    GAMMD = (1. - parameters%SMCMAX(ISOIL))*2700.
 
     THKDRY = (0.135* GAMMD+ 64.7)/ (2700. - 0.947* GAMMD)
 ! FROZEN
@@ -5177,12 +5181,12 @@ contains
          IF (OPT_FRZ == 1) THEN
             IF(STC(J) < TFRZ) THEN
                SMP = HFUS*(TFRZ-STC(J))/(GRAV*STC(J))             !(m)
-               SUPERCOOL(J) = parameters%SMCMAX*(SMP/parameters%PSISAT)**(-1./parameters%BEXP)
+               SUPERCOOL(J) = parameters%SMCMAX(J)*(SMP/parameters%PSISAT(J))**(-1./parameters%BEXP(J))
                SUPERCOOL(J) = SUPERCOOL(J)*DZSNSO(J)*1000.        !(mm)
             END IF
          END IF
          IF (OPT_FRZ == 2) THEN
-               CALL FRH2O (parameters,SUPERCOOL(J),STC(J),SMC(J),SH2O(J))
+               CALL FRH2O (parameters,J,SUPERCOOL(J),STC(J),SMC(J),SH2O(J))
                SUPERCOOL(J) = SUPERCOOL(J)*DZSNSO(J)*1000.        !(mm)
          END IF
       ENDDO
@@ -5297,7 +5301,7 @@ contains
 
 !== begin frh2o ====================================================================================
 
-  SUBROUTINE FRH2O (parameters,FREE,TKELV,SMC,SH2O)
+  SUBROUTINE FRH2O (parameters,ISOIL,FREE,TKELV,SMC,SH2O)
 
 ! ----------------------------------------------------------------------
 ! SUBROUTINE FRH2O
@@ -5328,6 +5332,7 @@ contains
 ! ----------------------------------------------------------------------
     IMPLICIT NONE
   type (noahmp_parameters), intent(in) :: parameters
+    INTEGER,INTENT(IN)   :: ISOIL
     REAL, INTENT(IN)     :: SH2O,SMC,TKELV
     REAL, INTENT(OUT)    :: FREE
     REAL                 :: BX,DENOM,DF,DSWL,FK,SWL,SWLK
@@ -5342,12 +5347,12 @@ contains
 ! SIMULATIONS SHOWED IF B > 5.5 UNFROZEN WATER CONTENT IS
 ! NON-REALISTICALLY HIGH AT VERY LOW TEMPERATURES.
 ! ----------------------------------------------------------------------
-    BX = parameters%BEXP
+    BX = parameters%BEXP(ISOIL)
 ! ----------------------------------------------------------------------
 ! INITIALIZING ITERATIONS COUNTER AND ITERATIVE SOLUTION FLAG.
 ! ----------------------------------------------------------------------
 
-    IF (parameters%BEXP >  BLIM) BX = BLIM
+    IF (parameters%BEXP(ISOIL) >  BLIM) BX = BLIM
     NLOG = 0
 
 ! ----------------------------------------------------------------------
@@ -5376,8 +5381,8 @@ contains
 1001      Continue
           IF (.NOT.( (NLOG < 10) .AND. (KCOUNT == 0)))   goto 1002
           NLOG = NLOG +1
-          DF = ALOG ( ( parameters%PSISAT * GRAV / HFUS ) * ( ( 1. + CK * SWL )**2.) * &
-               ( parameters%SMCMAX / (SMC - SWL) )** BX) - ALOG ( - (               &
+          DF = ALOG ( ( parameters%PSISAT(ISOIL) * GRAV / HFUS ) * ( ( 1. + CK * SWL )**2.) * &
+               ( parameters%SMCMAX(ISOIL) / (SMC - SWL) )** BX) - ALOG ( - (               &
                TKELV - TFRZ)/ TKELV)
           DENOM = 2. * CK / ( 1. + CK * SWL ) + BX / ( SMC - SWL )
           SWLK = SWL - DF / DENOM
@@ -5418,8 +5423,8 @@ contains
        IF (KCOUNT == 0) THEN
           write(message, '("Flerchinger used in NEW version. Iterations=", I6)') NLOG
           call wrf_message(trim(message))
-          FK = ( ( (HFUS / (GRAV * ( - parameters%PSISAT)))*                    &
-               ( (TKELV - TFRZ)/ TKELV))** ( -1/ BX))* parameters%SMCMAX
+          FK = ( ( (HFUS / (GRAV * ( - parameters%PSISAT(ISOIL))))*                    &
+               ( (TKELV - TFRZ)/ TKELV))** ( -1/ BX))* parameters%SMCMAX(ISOIL)
           IF (FK < 0.02) FK = 0.02
           FREE = MIN (FK, SMC)
 ! ----------------------------------------------------------------------
@@ -6716,7 +6721,7 @@ contains
 ! for the case when snowmelt water is too large
 
     DO K = 1,NSOIL
-       EPORE   = MAX ( 1.E-4 , ( parameters%SMCMAX - SICE(K) ) )
+       EPORE   = MAX ( 1.E-4 , ( parameters%SMCMAX(K) - SICE(K) ) )
        RSAT    = RSAT + MAX(0.,SH2O(K)-EPORE)*DZSNSO(K)  
        SH2O(K) = MIN(EPORE,SH2O(K))             
     END DO
@@ -6724,7 +6729,7 @@ contains
 !impermeable fraction due to frozen soil
 
     DO K = 1,NSOIL
-       FICE    = MIN(1.0,SICE(K)/parameters%SMCMAX)
+       FICE    = MIN(1.0,SICE(K)/parameters%SMCMAX(K))
        FCR(K)  = MAX(0.0,EXP(-A*(1.-FICE))- EXP(-A)) /  &
                         (1.0              - EXP(-A))
     END DO
@@ -6733,7 +6738,7 @@ contains
 
     SICEMAX = 0.0
     FCRMAX  = 0.0
-    SH2OMIN = parameters%SMCMAX
+    SH2OMIN = parameters%SMCMAX(1)
     DO K = 1,NSOIL
        IF (SICE(K) > SICEMAX) SICEMAX = SICE(K)
        IF (FCR(K)  > FCRMAX)  FCRMAX  = FCR(K)
@@ -6792,11 +6797,11 @@ contains
        DZTOT  = 0.
        DO K = 1,NSOIL
           DZTOT   = DZTOT  + DZSNSO(K)  
-          SMCTOT  = SMCTOT + SMC(K)*DZSNSO(K)
+          SMCTOT  = SMCTOT + SMC(K)/parameters%SMCMAX(K)*DZSNSO(K)
           IF(DZTOT >= 2.0) EXIT
        END DO
        SMCTOT = SMCTOT/DZTOT
-       FSAT   = MAX(0.01,SMCTOT/parameters%SMCMAX) ** 4.        !BATS
+       FSAT   = MAX(0.01,SMCTOT) ** 4.        !BATS
 
        IF(QINSUR > 0.) THEN
          RUNSRF = QINSUR * ((1.0-FCR(1))*FSAT+FCR(1))  
@@ -6810,7 +6815,7 @@ contains
 
     IF(OPT_INF == 1) THEN    !OPT_INF =2 may cause water imbalance
        NITER = 3
-       IF (PDDUM*DT>DZSNSO(1)*parameters%SMCMAX ) THEN
+       IF (PDDUM*DT>DZSNSO(1)*parameters%SMCMAX(1) ) THEN
           NITER = NITER*2
        END IF
     END IF                 
@@ -6928,7 +6933,7 @@ contains
 
    WD1 = 0.
    DO K = 1,NSOIL
-     WD1 = WD1 + (parameters%SMCMAX-SH2O(K)) * DZSNSO(K) ! [m]
+     WD1 = WD1 + (parameters%SMCMAX(K)-SH2O(K)) * DZSNSO(K) ! [m]
    ENDDO
 
    DZFINE = 3.0 * (-ZSOIL(NSOIL)) / NFINE  
@@ -6940,8 +6945,8 @@ contains
 
    WD2 = 0.
    DO K = 1,NFINE
-     TEMP  = 1. + (ZWT-ZFINE(K))/parameters%PSISAT
-     WD2   = WD2 + parameters%SMCMAX*(1.-TEMP**(-1./parameters%BEXP))*DZFINE
+     TEMP  = 1. + (ZWT-ZFINE(K))/parameters%PSISAT(K)
+     WD2   = WD2 + parameters%SMCMAX(K)*(1.-TEMP**(-1./parameters%BEXP(K)))*DZFINE
      IF(ABS(WD2-WD1).LE.0.01) THEN
         ZWT = ZFINE(K)
         EXIT
@@ -6993,20 +6998,20 @@ contains
 
     IF (QINSUR >  0.0) THEN
        DT1 = DT /86400.
-       SMCAV = parameters%SMCMAX - parameters%SMCWLT
+       SMCAV = parameters%SMCMAX(1) - parameters%SMCWLT(1)
 
 ! maximum infiltration rate
 
        DMAX(1)= -ZSOIL(1) * SMCAV
        DICE   = -ZSOIL(1) * SICE(1)
-       DMAX(1)= DMAX(1)* (1.0-(SH2O(1) + SICE(1) - parameters%SMCWLT)/SMCAV)
+       DMAX(1)= DMAX(1)* (1.0-(SH2O(1) + SICE(1) - parameters%SMCWLT(1))/SMCAV)
 
        DD = DMAX(1)
 
        DO K = 2,NSOIL
           DICE    = DICE + (ZSOIL(K-1) - ZSOIL(K) ) * SICE(K)
           DMAX(K) = (ZSOIL(K-1) - ZSOIL(K)) * SMCAV
-          DMAX(K) = DMAX(K) * (1.0-(SH2O(K) + SICE(K) - parameters%SMCWLT)/SMCAV)
+          DMAX(K) = DMAX(K) * (1.0-(SH2O(K) + SICE(K) - parameters%SMCWLT(K))/SMCAV)
           DD      = DD + DMAX(K)
        END DO
 
@@ -7039,7 +7044,7 @@ contains
 ! jref for urban areas
 !       IF ( parameters%urban_flag ) INFMAX == INFMAX * 0.05
 
-       CALL WDFCND2 (parameters,WDF,WCND,SH2O(1),SICEMAX)
+       CALL WDFCND2 (parameters,WDF,WCND,SH2O(1),SICEMAX,1)
        INFMAX = MAX (INFMAX,WCND)
        INFMAX = MIN (INFMAX,PX)
 
@@ -7109,7 +7114,7 @@ contains
 
     IF(OPT_INF == 1) THEN
       DO K = 1, NSOIL
-        CALL WDFCND1 (parameters,WDF(K),WCND(K),SMC(K),FCR(K))
+        CALL WDFCND1 (parameters,WDF(K),WCND(K),SMC(K),FCR(K),K)
         SMX(K) = SMC(K)
       END DO
         IF(OPT_RUN == 5)SMXWTD=SMCWTD
@@ -7117,7 +7122,7 @@ contains
 
     IF(OPT_INF == 2) THEN
       DO K = 1, NSOIL
-        CALL WDFCND2 (parameters,WDF(K),WCND(K),SH2O(K),SICEMAX)
+        CALL WDFCND2 (parameters,WDF(K),WCND(K),SH2O(K),SICEMAX,K)
         SMX(K) = SH2O(K)
       END DO
           IF(OPT_RUN == 5)SMXWTD=SMCWTD*SH2O(NSOIL)/SMC(NSOIL)  !same liquid fraction as in the bottom layer
@@ -7268,10 +7273,10 @@ contains
         DEEPRECH =  DEEPRECH + DT * QDRAIN
      ELSE
         SMCWTD = SMCWTD + DT * QDRAIN  / DZSNSO(NSOIL)
-        WPLUS        = MAX((SMCWTD-parameters%SMCMAX), 0.0) * DZSNSO(NSOIL)
+        WPLUS        = MAX((SMCWTD-parameters%SMCMAX(NSOIL)), 0.0) * DZSNSO(NSOIL)
         WMINUS       = MAX((1.E-4-SMCWTD), 0.0) * DZSNSO(NSOIL)
 
-        SMCWTD = MAX( MIN(SMCWTD,parameters%SMCMAX) , 1.E-4)
+        SMCWTD = MAX( MIN(SMCWTD,parameters%SMCMAX(NSOIL)) , 1.E-4)
         SH2O(NSOIL)    = SH2O(NSOIL) + WPLUS/DZSNSO(NSOIL)
 
 !reduce fluxes at the bottom boundaries accordingly
@@ -7282,13 +7287,13 @@ contains
   ENDIF
 
     DO K = NSOIL,2,-1
-      EPORE        = MAX ( 1.E-4 , ( parameters%SMCMAX - SICE(K) ) )
+      EPORE        = MAX ( 1.E-4 , ( parameters%SMCMAX(K) - SICE(K) ) )
       WPLUS        = MAX((SH2O(K)-EPORE), 0.0) * DZSNSO(K)
       SH2O(K)      = MIN(EPORE,SH2O(K))
       SH2O(K-1)    = SH2O(K-1) + WPLUS/DZSNSO(K-1)
     END DO
 
-    EPORE        = MAX ( 1.E-4 , ( parameters%SMCMAX - SICE(1) ) )
+    EPORE        = MAX ( 1.E-4 , ( parameters%SMCMAX(1) - SICE(1) ) )
     WPLUS        = MAX((SH2O(1)-EPORE), 0.0) * DZSNSO(1) 
     SH2O(1)      = MIN(EPORE,SH2O(1))
 
@@ -7296,7 +7301,7 @@ contains
 
 !== begin wdfcnd1 ==================================================================================
 
-  SUBROUTINE WDFCND1 (parameters,WDF,WCND,SMC,FCR)
+  SUBROUTINE WDFCND1 (parameters,WDF,WCND,SMC,FCR,ISOIL)
 ! ----------------------------------------------------------------------
 ! calculate soil water diffusivity and soil hydraulic conductivity.
 ! ----------------------------------------------------------------------
@@ -7306,6 +7311,7 @@ contains
   type (noahmp_parameters), intent(in) :: parameters
     REAL,INTENT(IN)  :: SMC
     REAL,INTENT(IN)  :: FCR
+    INTEGER,INTENT(IN)  :: ISOIL
 
 ! output
     REAL,INTENT(OUT) :: WCND
@@ -7319,22 +7325,22 @@ contains
 
 ! soil water diffusivity
 
-    FACTR = MAX(0.01, SMC/parameters%SMCMAX)
-    EXPON = parameters%BEXP + 2.0
-    WDF   = parameters%DWSAT * FACTR ** EXPON
+    FACTR = MAX(0.01, SMC/parameters%SMCMAX(ISOIL))
+    EXPON = parameters%BEXP(ISOIL) + 2.0
+    WDF   = parameters%DWSAT(ISOIL) * FACTR ** EXPON
     WDF   = WDF * (1.0 - FCR)
 
 ! hydraulic conductivity
 
-    EXPON = 2.0*parameters%BEXP + 3.0
-    WCND  = parameters%DKSAT * FACTR ** EXPON
+    EXPON = 2.0*parameters%BEXP(ISOIL) + 3.0
+    WCND  = parameters%DKSAT(ISOIL) * FACTR ** EXPON
     WCND  = WCND * (1.0 - FCR)
 
   END SUBROUTINE WDFCND1
 
 !== begin wdfcnd2 ==================================================================================
 
-  SUBROUTINE WDFCND2 (parameters,WDF,WCND,SMC,SICE)
+  SUBROUTINE WDFCND2 (parameters,WDF,WCND,SMC,SICE,ISOIL)
 ! ----------------------------------------------------------------------
 ! calculate soil water diffusivity and soil hydraulic conductivity.
 ! ----------------------------------------------------------------------
@@ -7344,6 +7350,7 @@ contains
   type (noahmp_parameters), intent(in) :: parameters
     REAL,INTENT(IN)  :: SMC
     REAL,INTENT(IN)  :: SICE
+    INTEGER,INTENT(IN)  :: ISOIL
 
 ! output
     REAL,INTENT(OUT) :: WCND
@@ -7357,19 +7364,19 @@ contains
 
 ! soil water diffusivity
 
-    FACTR = MAX(0.01, SMC/parameters%SMCMAX)
-    EXPON = parameters%BEXP + 2.0
-    WDF   = parameters%DWSAT * FACTR ** EXPON
+    FACTR = MAX(0.01, SMC/parameters%SMCMAX(ISOIL))
+    EXPON = parameters%BEXP(ISOIL) + 2.0
+    WDF   = parameters%DWSAT(ISOIL) * FACTR ** EXPON
 
     IF (SICE > 0.0) THEN
     VKWGT = 1./ (1. + (500.* SICE)**3.)
-    WDF   = VKWGT * WDF + (1.-VKWGT)*parameters%DWSAT*(0.2/parameters%SMCMAX)**EXPON
+    WDF   = VKWGT * WDF + (1.-VKWGT)*parameters%DWSAT(ISOIL)*(0.2/parameters%SMCMAX(ISOIL))**EXPON
     END IF
 
 ! hydraulic conductivity
 
-    EXPON = 2.0*parameters%BEXP + 3.0
-    WCND  = parameters%DKSAT * FACTR ** EXPON
+    EXPON = 2.0*parameters%BEXP(ISOIL) + 3.0
+    WCND  = parameters%DKSAT(ISOIL) * FACTR ** EXPON
 
   END SUBROUTINE WDFCND2
 
@@ -7453,7 +7460,7 @@ contains
       DO IZ = 1, NSOIL
          SMC(IZ)      = SH2O(IZ) + SICE(IZ)
          MLIQ(IZ)     = SH2O(IZ) * DZMM(IZ)
-         EPORE(IZ)    = MAX(0.01,parameters%SMCMAX - SICE(IZ))
+         EPORE(IZ)    = MAX(0.01,parameters%SMCMAX(IZ) - SICE(IZ))
          HK(IZ)       = 1.E3*WCND(IZ)
       ENDDO
 
@@ -7477,9 +7484,9 @@ contains
 
 ! Matric potential at the layer above the water table
 
-      S_NODE = MIN(1.0,SMC(IWT)/parameters%SMCMAX )
+      S_NODE = MIN(1.0,SMC(IWT)/parameters%SMCMAX(IWT) )
       S_NODE = MAX(S_NODE,REAL(0.01,KIND=8))
-      SMPFZ  = -parameters%PSISAT*1000.*S_NODE**(-parameters%BEXP)   ! m --> mm
+      SMPFZ  = -parameters%PSISAT(IWT)*1000.*S_NODE**(-parameters%BEXP(IWT))   ! m --> mm
       SMPFZ  = MAX(-120000.0,CMIC*SMPFZ)   
 
 ! Recharge rate qin to groundwater
@@ -7614,30 +7621,30 @@ ZSOIL0(0) = 0.
            WTDOLD=WTD
            IF(SMC(KWTD).GT.SMCEQ(KWTD))THEN
         
-               IF(SMC(KWTD).EQ.parameters%SMCMAX)THEN !wtd went to the layer above
+               IF(SMC(KWTD).EQ.parameters%SMCMAX(KWTD))THEN !wtd went to the layer above
                       WTD=ZSOIL0(IWTD)
-                      RECH=-(WTDOLD-WTD) * (parameters%SMCMAX-SMCEQ(KWTD))
+                      RECH=-(WTDOLD-WTD) * (parameters%SMCMAX(KWTD)-SMCEQ(KWTD))
                       IWTD=IWTD-1
                       KWTD=KWTD-1
                    IF(KWTD.GE.1)THEN
                       IF(SMC(KWTD).GT.SMCEQ(KWTD))THEN
                       WTDOLD=WTD
                       WTD = MIN( ( SMC(KWTD)*DZSNSO(KWTD) &
-                        - SMCEQ(KWTD)*ZSOIL0(IWTD) + parameters%SMCMAX*ZSOIL0(KWTD) ) / &
-                        ( parameters%SMCMAX-SMCEQ(KWTD) ), ZSOIL0(IWTD))
-                      RECH=RECH-(WTDOLD-WTD) * (parameters%SMCMAX-SMCEQ(KWTD))
+                        - SMCEQ(KWTD)*ZSOIL0(IWTD) + parameters%SMCMAX(KWTD)*ZSOIL0(KWTD) ) / &
+                        ( parameters%SMCMAX(KWTD)-SMCEQ(KWTD) ), ZSOIL0(IWTD))
+                      RECH=RECH-(WTDOLD-WTD) * (parameters%SMCMAX(KWTD)-SMCEQ(KWTD))
                       ENDIF
                    ENDIF
                ELSE  !wtd stays in the layer
                       WTD = MIN( ( SMC(KWTD)*DZSNSO(KWTD) &
-                        - SMCEQ(KWTD)*ZSOIL0(IWTD) + parameters%SMCMAX*ZSOIL0(KWTD) ) / &
-                        ( parameters%SMCMAX-SMCEQ(KWTD) ), ZSOIL0(IWTD))
-                      RECH=-(WTDOLD-WTD) * (parameters%SMCMAX-SMCEQ(KWTD))
+                        - SMCEQ(KWTD)*ZSOIL0(IWTD) + parameters%SMCMAX(KWTD)*ZSOIL0(KWTD) ) / &
+                        ( parameters%SMCMAX(KWTD)-SMCEQ(KWTD) ), ZSOIL0(IWTD))
+                      RECH=-(WTDOLD-WTD) * (parameters%SMCMAX(KWTD)-SMCEQ(KWTD))
                ENDIF
            
            ELSE    !wtd has gone down to the layer below
                WTD=ZSOIL0(KWTD)
-               RECH=-(WTDOLD-WTD) * (parameters%SMCMAX-SMCEQ(KWTD))
+               RECH=-(WTDOLD-WTD) * (parameters%SMCMAX(KWTD)-SMCEQ(KWTD))
                KWTD=KWTD+1
                IWTD=IWTD+1
 !wtd crossed to the layer below. Now adjust it there
@@ -7645,13 +7652,13 @@ ZSOIL0(0) = 0.
                    WTDOLD=WTD
                    IF(SMC(KWTD).GT.SMCEQ(KWTD))THEN
                    WTD = MIN( ( SMC(KWTD)*DZSNSO(KWTD) &
-                   - SMCEQ(KWTD)*ZSOIL0(IWTD) + parameters%SMCMAX*ZSOIL0(KWTD) ) / &
-                       ( parameters%SMCMAX-SMCEQ(KWTD) ) , ZSOIL0(IWTD) )
+                   - SMCEQ(KWTD)*ZSOIL0(IWTD) + parameters%SMCMAX(KWTD)*ZSOIL0(KWTD) ) / &
+                       ( parameters%SMCMAX(KWTD)-SMCEQ(KWTD) ) , ZSOIL0(IWTD) )
                    ELSE
                    WTD=ZSOIL0(KWTD)
                    ENDIF
                    RECH = RECH - (WTDOLD-WTD) * &
-                                 (parameters%SMCMAX-SMCEQ(KWTD))
+                                 (parameters%SMCMAX(KWTD)-SMCEQ(KWTD))
 
                 ELSE
                    WTDOLD=WTD
@@ -7660,38 +7667,42 @@ ZSOIL0(0) = 0.
 !                   QDRAIN = QDRAIN - 1000 * (SMCEQ(NSOIL)-SMC(NSOIL)) * DZSNSO(NSOIL) / DT
 !                   SMC(NSOIL)=SMCEQ(NSOIL)
 !adjust wtd in the ficticious layer below
-                   SMCEQDEEP = parameters%SMCMAX * ( -parameters%PSISAT / ( -parameters%PSISAT - DZSNSO(NSOIL) ) ) ** (1./parameters%BEXP)
+                   SMCEQDEEP = parameters%SMCMAX(NSOIL) * ( -parameters%PSISAT(NSOIL) / ( -parameters%PSISAT(NSOIL) - DZSNSO(NSOIL) ) ) ** (1./parameters%BEXP(NSOIL))
                    WTD = MIN( ( SMCWTD*DZSNSO(NSOIL) &
-                   - SMCEQDEEP*ZSOIL0(NSOIL) + parameters%SMCMAX*(ZSOIL0(NSOIL)-DZSNSO(NSOIL)) ) / &
-                       ( parameters%SMCMAX-SMCEQDEEP ) , ZSOIL0(NSOIL) )
+                   - SMCEQDEEP*ZSOIL0(NSOIL) + parameters%SMCMAX(NSOIL)*(ZSOIL0(NSOIL)-DZSNSO(NSOIL)) ) / &
+                       ( parameters%SMCMAX(NSOIL)-SMCEQDEEP ) , ZSOIL0(NSOIL) )
                    RECH = RECH - (WTDOLD-WTD) * &
-                                 (parameters%SMCMAX-SMCEQDEEP)
+                                 (parameters%SMCMAX(NSOIL)-SMCEQDEEP)
                 ENDIF
             
             ENDIF
         ELSEIF(WTD.GE.ZSOIL0(NSOIL)-DZSNSO(NSOIL))THEN
 !if wtd was already below the bottom of the resolved soil crust
            WTDOLD=WTD
-           SMCEQDEEP = parameters%SMCMAX * ( -parameters%PSISAT / ( -parameters%PSISAT - DZSNSO(NSOIL) ) ) ** (1./parameters%BEXP)
+           SMCEQDEEP = parameters%SMCMAX(NSOIL) * ( -parameters%PSISAT(NSOIL) / ( -parameters%PSISAT(NSOIL) - DZSNSO(NSOIL) ) ) ** (1./parameters%BEXP(NSOIL))
            IF(SMCWTD.GT.SMCEQDEEP)THEN
                WTD = MIN( ( SMCWTD*DZSNSO(NSOIL) &
-                 - SMCEQDEEP*ZSOIL0(NSOIL) + parameters%SMCMAX*(ZSOIL0(NSOIL)-DZSNSO(NSOIL)) ) / &
-                     ( parameters%SMCMAX-SMCEQDEEP ) , ZSOIL0(NSOIL) )
-               RECH = -(WTDOLD-WTD) * (parameters%SMCMAX-SMCEQDEEP)
+                 - SMCEQDEEP*ZSOIL0(NSOIL) + parameters%SMCMAX(NSOIL)*(ZSOIL0(NSOIL)-DZSNSO(NSOIL)) ) / &
+                     ( parameters%SMCMAX(NSOIL)-SMCEQDEEP ) , ZSOIL0(NSOIL) )
+               RECH = -(WTDOLD-WTD) * (parameters%SMCMAX(NSOIL)-SMCEQDEEP)
            ELSE
-               RECH = -(WTDOLD-(ZSOIL0(NSOIL)-DZSNSO(NSOIL))) * (parameters%SMCMAX-SMCEQDEEP)
+               RECH = -(WTDOLD-(ZSOIL0(NSOIL)-DZSNSO(NSOIL))) * (parameters%SMCMAX(NSOIL)-SMCEQDEEP)
                WTDOLD=ZSOIL0(NSOIL)-DZSNSO(NSOIL)
 !and now even further down
-               DZUP=(SMCEQDEEP-SMCWTD)*DZSNSO(NSOIL)/(parameters%SMCMAX-SMCEQDEEP)
+               DZUP=(SMCEQDEEP-SMCWTD)*DZSNSO(NSOIL)/(parameters%SMCMAX(NSOIL)-SMCEQDEEP)
                WTD=WTDOLD-DZUP
-               RECH = RECH - (parameters%SMCMAX-SMCEQDEEP)*DZUP
+               RECH = RECH - (parameters%SMCMAX(NSOIL)-SMCEQDEEP)*DZUP
                SMCWTD=SMCEQDEEP
            ENDIF
 
          
          ENDIF
 
-IF(IWTD.LT.NSOIL)SMCWTD=parameters%SMCMAX
+IF(IWTD.LT.NSOIL .AND. IWTD.GT.0) THEN
+  SMCWTD=parameters%SMCMAX(IWTD)
+ELSEIF(IWTD.LT.NSOIL .AND. IWTD.LE.0) THEN
+  SMCWTD=parameters%SMCMAX(1)
+END IF
 
 END  SUBROUTINE SHALLOWWATERTABLE
 
@@ -7795,7 +7806,7 @@ END  SUBROUTINE SHALLOWWATERTABLE
 
       WROOT  = 0.
       DO J=1,parameters%NROOT
-        WROOT = WROOT + SMC(J)/parameters%SMCMAX *  DZSNSO(J) / (-ZSOIL(parameters%NROOT))
+        WROOT = WROOT + SMC(J)/parameters%SMCMAX(J) *  DZSNSO(J) / (-ZSOIL(parameters%NROOT))
       ENDDO
 
   CALL CO2FLUX (parameters,NSNOW  ,NSOIL  ,VEGTYP ,IGS    ,DT     , & !in

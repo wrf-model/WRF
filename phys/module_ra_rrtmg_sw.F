@@ -9803,9 +9803,9 @@ MODULE module_ra_rrtmg_sw
 use module_model_constants, only : cp
 USE module_wrf_error
 #if (HWRF == 1)
-USE module_state_description, ONLY : FER_MP_HIRES, ETAMP_HWRF 
+USE module_state_description, ONLY : FER_MP_HIRES, FER_MP_HIRES_ADVECT, ETAMP_HWRF 
 #else
-USE module_state_description, ONLY : FER_MP_HIRES
+USE module_state_description, ONLY : FER_MP_HIRES, FER_MP_HIRES_ADVECT
 #endif
 !USE module_dm
 
@@ -10389,9 +10389,12 @@ CONTAINS
 ! For mp option=5 or 85  (new Ferrier- Aligo or called fer_hires
 ! scheme), QI3D saves all frozen water (ice+snow)
 #if (HWRF == 1)
-           IF ( mp_physics == FER_MP_HIRES .OR. mp_physics == ETAMP_HWRF ) THEN
+           IF ( mp_physics == FER_MP_HIRES .OR. &
+                mp_physics == FER_MP_HIRES_ADVECT .OR. &
+                mp_physics == ETAMP_HWRF ) THEN
 #else
-           IF ( mp_physics == FER_MP_HIRES ) THEN
+           IF ( mp_physics == FER_MP_HIRES .OR. &
+                mp_physics == FER_MP_HIRES_ADVECT) THEN
 #endif
                   DO K=kts,kte
                      qi1d(k) = qi3d(i,k,j)

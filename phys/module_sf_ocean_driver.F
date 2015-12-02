@@ -8,7 +8,7 @@ CONTAINS
    SUBROUTINE OCEAN_DRIVER(tml,t0ml,hml,h0ml,huml,hvml,ust,u_phy,v_phy, &
                       tmoml,f,g,oml_gamma,                         &
                       XLAND,HFX,LH,TSK,GSW,GLW,EMISS,              &
-                      DELTSM,STBOLT,                               &
+                      DELTSM,STBOLT,OML_RELAXATION_TIME,           &
                       ids,ide, jds,jde, kds,kde,                   &
                       ims,ime, jms,jme, kms,kme,                   &
                       its,ite, jts,jte, kts,kte,                   &
@@ -41,6 +41,8 @@ CONTAINS
 !-- HUML        ocean mixed layer u component of wind
 !-- HVML        ocean mixed layer v component of wind
 !-- OML_GAMMA   deep water lapse rate (K m-1)
+!-- OML_RELAXATION_TIME    Time scale (s) to relax TML to T0ML, H to H0,
+!                          HUML and HVML to 0; value <=0 means no relaxation
 !-- UAIR,VAIR   lowest model level wind component
 !-- UST         frictional velocity
 !-- HFX         upward heat flux at the surface (W/m^2)
@@ -82,7 +84,7 @@ CONTAINS
                                              UST, F, TMOML
 
    REAL,    INTENT(IN   )   ::     G
-   REAL,    INTENT(IN   )   ::     OML_GAMMA
+   REAL,    INTENT(IN   )   ::     OML_GAMMA, OML_RELAXATION_TIME
 
 ! LOCAL VARS
 
@@ -120,6 +122,7 @@ if ( sf_ocean_physics .eq. OMLSCHEME ) then
                           LH(i,j),GSW(i,j),GLW(i,j),TMOML(i,j),                &
                           U_PHY(i,kts,j),V_PHY(i,kts,j),UST(i,j),F(i,j),       &
                           EMISS(i,j),STBOLT,G,DELTSM,OML_GAMMA,                &
+                          OML_RELAXATION_TIME,                                 &
                           ids,ide, jds,jde, kds,kde,                           &
                           ims,ime, jms,jme, kms,kme,                           &
                           its,ite, jts,jte, kts,kte                            )

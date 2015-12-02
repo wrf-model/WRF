@@ -9,6 +9,7 @@ CONTAINS
                     HVML,TSK,HFX,                                        &
                     LH,GSW,GLW,TMOML,                                    &
                     UAIR,VAIR,UST,F,EMISS,STBOLT,G,DT,OML_GAMMA,         &
+                    OML_RELAXATION_TIME,                                 &
                     ids,ide, jds,jde, kds,kde,                           &
                     ims,ime, jms,jme, kms,kme,                           &
                     its,ite, jts,jte, kts,kte                            )
@@ -42,6 +43,8 @@ CONTAINS
 !-- F           Coriolis parameter
 !-- DT          time step (second)
 !-- G           acceleration due to gravity
+!-- OML_RELAXATION_TIME  time scale (s) to relax TML to T0ML, H to H0,
+!                        HUML and HVML to 0; value <=0 means no relaxation
 !
 !----------------------------------------------------------------
    INTEGER, INTENT(IN   )    ::      I, J
@@ -49,12 +52,12 @@ CONTAINS
                                      ims,ime, jms,jme, kms,kme, &
                                      its,ite, jts,jte, kts,kte
 
-   REAL,    INTENT(INOUT)    :: TML, H, H0, HUML, HVML, TSK
+   REAL,    INTENT(INOUT)    :: TML, H, HUML, HVML, TSK
 
-   REAL,    INTENT(IN   )    :: T0ML, HFX, LH, GSW, GLW,        &
+   REAL,    INTENT(IN   )    :: T0ML, H0, HFX, LH, GSW, GLW,        &
                                 UAIR, VAIR, UST, F, EMISS, TMOML
 
-   REAL,    INTENT(IN) :: STBOLT, G, DT, OML_GAMMA
+   REAL,    INTENT(IN) :: STBOLT, G, DT, OML_GAMMA, OML_RELAXATION_TIME
 
 ! Local
    REAL :: rhoair, rhowater, Gam, alp, BV2, A1, A2, B2, u, v, wspd, &
@@ -137,6 +140,16 @@ CONTAINS
           u=0.
           v=0.
         endif
+
+! relax TML T0ML and H to H0, HUML and HVML to 0
+
+        if (oml_relaxation_time .gt. 0.) then
+          tml = tml - (tml-t0ml)*dt/oml_relaxation_time
+          h = h - (h-h0)*dt/oml_relaxation_time
+          huml = huml - huml*dt/oml_relaxation_time
+          hvml = hvml - hvml*dt/oml_relaxation_time
+        end if
+
         tsk=tml
 !        if(h.gt.100.)print *,i,j,h,tml,' h,tml'
 

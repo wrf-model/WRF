@@ -531,6 +531,9 @@ state   real    qvolg          ikjftb  scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "QVGRAUPEL"     "Graupel Particle Volume" "m(3) kg(-1)"
 state   real    qvolh          ikjftb  scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "QVHAIL"        "Hail Particle Volume" "m(3) kg(-1)"
+state   real    qrimef         ikjftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "QRIMEF"        "rime factor * qi" "kg kg-1"
+
 
 state   real    -              ikjftb  dfi_scalar      1         -     -   -
 state   real    dfi_qndrop     ikjftb  dfi_scalar      1         -     \
@@ -2198,6 +2201,7 @@ rconfig   integer tracercall              namelist,physics      1            0  
 rconfig   real    OMDT                    namelist,physics      1            1         h     "OMDT"        "Timestep of ocean model"      "s"
 rconfig   real    oml_hml0                namelist,physics      1            50        h     "oml_hml0"    "oml initial mixed layer depth value"   "m"
 rconfig   real    oml_gamma               namelist,physics      1            0.14      h     "oml_gamma"   "oml deep water lapse rate"   "K m-1"
+rconfig   real    oml_relaxation_time     namelist,physics      1            0.        h     "oml_relaxation_time"   "Relaxation time of mixed layer ocean model back to original values"      "s"
 rconfig   integer isftcflx                namelist,physics      1            0         h     "isftcflx"    "switch to control sfc fluxes"   ""
 rconfig   integer iz0tlnd                 namelist,physics      1            0         h     "iz0tlnd"    "switch to control land thermal roughness length"   ""
 rconfig   real    shadlen                 namelist,physics      1            25000.    -     "shadow_length" "maximum length of orographic shadow" "m"
@@ -2536,6 +2540,7 @@ package   linscheme       mp_physics==2                -             moist:qv,qc
 package   wsm3scheme      mp_physics==3                -             moist:qv,qc,qr;state:re_cloud,re_ice,re_snow;g_moist:g_qv,g_qc,g_qr;a_moist:a_qv,a_qc,a_qr
 package   wsm5scheme      mp_physics==4                -             moist:qv,qc,qr,qi,qs;state:re_cloud,re_ice,re_snow;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs
 package   fer_mp_hires    mp_physics==5                -             moist:qv,qc,qr,qs;scalar:qt;state:f_ice_phy,f_rain_phy,f_rimef_phy;g_moist:g_qv,g_qc,g_qr,g_qs;g_scalar:g_qt;a_moist:a_qv,a_qc,a_qr,a_qs;a_scalar:a_qt
+package   fer_mp_hires_advect  mp_physics==15          -             moist:qv,qc,qr,qi;scalar:qrimef;g_moist:g_qv,g_qc,g_qr,g_qi;g_scalar:g_qrimef;a_moist:a_qv,a_qc,a_qr,a_qi;a_scalar:a_qrimef
 package   wsm6scheme      mp_physics==6                -             moist:qv,qc,qr,qi,qs,qg;state:re_cloud,re_ice,re_snow;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
 package   gsfcgcescheme   mp_physics==7                -             moist:qv,qc,qr,qi,qs,qg;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
 package   thompson        mp_physics==8                -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr;state:re_cloud,re_ice,re_snow;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;g_scalar:g_qni,g_qnr;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg;a_scalar:a_qni,a_qnr

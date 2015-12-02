@@ -220,6 +220,7 @@ CONTAINS
              !  Optional ocean model
      &          ,sf_ocean_physics,oml_hml0,oml_gamma                  &
      &          ,tml,t0ml,hml,h0ml,huml,hvml,f,tmoml                  &
+     &          ,oml_relaxation_time                                  &
      &          ,ustm,ck,cka,cd,cda,isftcflx,iz0tlnd                  &
      &         ,isurban, mminlu                                       &
      &          ,snotime                                              &
@@ -485,6 +486,7 @@ CONTAINS
 !-- sf_ocean_physics       whether to call ocean model from slab (1 = oml, 2=3d PWP)
 !-- oml_hml0      initial mixed layer depth (if real-data not available, default 50 m)
 !-- oml_gamma     lapse rate below mixed layer in ocean (default 0.14 K m-1)
+!-- oml_relaxation_time   time the oml will take to get back to its original state (seconds)
 !-- ck            enthalpy exchange coeff at 10 meters
 !-- cd            momentum exchange coeff at 10 meters
 !-- cka           enthalpy exchange coeff at the lowest model level
@@ -922,6 +924,7 @@ CONTAINS
    INTEGER, OPTIONAL, INTENT(IN )::   SF_OCEAN_PHYSICS
    REAL   , OPTIONAL, INTENT(IN )::   OML_HML0
    REAL   , OPTIONAL, INTENT(IN )::   OML_GAMMA
+   REAL   , OPTIONAL, INTENT(IN )::   OML_RELAXATION_TIME
 !
 !  Observation nudging
 !
@@ -3709,7 +3712,7 @@ CONTAINS
         CALL ocean_driver(tml,t0ml,hml,h0ml,huml,hvml,ust,u_phy,v_phy, &
                      tmoml,f,g,oml_gamma,                         &
                      xland,hfx,lh,tsk,gsw,glw,emiss,              &
-                     dtbl,STBOLT,                                 &
+                     dtbl,STBOLT,oml_relaxation_time,             &
                      ids,ide, jds,jde, kds,kde,                   &
                      ims,ime, jms,jme, kms,kme,                   &
                      i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte, & 

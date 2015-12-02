@@ -37,6 +37,9 @@ CONTAINS
 		 SHGXY,    SHCXY,    SHBXY,     EVGXY,    EVBXY,     GHVXY, & ! OUT Noah MP only
 		 GHBXY,    IRGXY,    IRCXY,     IRBXY,     TRXY,     EVCXY, & ! OUT Noah MP only
               CHLEAFXY,   CHUCXY,   CHV2XY,    CHB2XY,                      & ! OUT Noah MP only
+!                 BEXP_3D,SMCDRY_3D,SMCWLT_3D,SMCREF_3D,SMCMAX_3D,          & ! placeholders to activate 3D soil
+!		 DKSAT_3D,DWSAT_3D,PSISAT_3D,QUARTZ_3D,                     &
+!		 REFDK_2D,REFKDT_2D,                                        &
 #ifdef WRF_HYDRO
                sfcheadrt,INFXSRT,soldrain,                                  &
 #endif
@@ -46,6 +49,7 @@ CONTAINS
                MP_RAINC, MP_RAINNC, MP_SHCV, MP_SNOW, MP_GRAUP, MP_HAIL     )
 !----------------------------------------------------------------
     USE MODULE_SF_NOAHMPLSM
+!    USE MODULE_SF_NOAHMPLSM, only: noahmp_options, NOAHMP_SFLX, noahmp_parameters
     USE module_sf_noahmp_glacier
     USE NOAHMP_TABLES, ONLY: ISICE_TABLE, CO2_TABLE, O2_TABLE
 !----------------------------------------------------------------
@@ -105,6 +109,18 @@ CONTAINS
 #ifdef WRF_HYDRO
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  sfcheadrt,INFXSRT,soldrain   ! for WRF-Hydro
 #endif
+! placeholders for 3D soil
+!    REAL,    DIMENSION( ims:ime, 1:nsoil, jms:jme ), INTENT(IN) ::  BEXP_3D   ! C-H B exponent
+!    REAL,    DIMENSION( ims:ime, 1:nsoil, jms:jme ), INTENT(IN) ::  SMCDRY_3D ! Soil Moisture Limit: Dry
+!    REAL,    DIMENSION( ims:ime, 1:nsoil, jms:jme ), INTENT(IN) ::  SMCWLT_3D ! Soil Moisture Limit: Wilt
+!    REAL,    DIMENSION( ims:ime, 1:nsoil, jms:jme ), INTENT(IN) ::  SMCREF_3D ! Soil Moisture Limit: Reference
+!    REAL,    DIMENSION( ims:ime, 1:nsoil, jms:jme ), INTENT(IN) ::  SMCMAX_3D ! Soil Moisture Limit: Max
+!    REAL,    DIMENSION( ims:ime, 1:nsoil, jms:jme ), INTENT(IN) ::  DKSAT_3D  ! Saturated Soil Conductivity
+!    REAL,    DIMENSION( ims:ime, 1:nsoil, jms:jme ), INTENT(IN) ::  DWSAT_3D  ! Saturated Soil Diffusivity
+!    REAL,    DIMENSION( ims:ime, 1:nsoil, jms:jme ), INTENT(IN) ::  PSISAT_3D ! Saturated Matric Potential
+!    REAL,    DIMENSION( ims:ime, 1:nsoil, jms:jme ), INTENT(IN) ::  QUARTZ_3D ! Soil quartz content
+!    REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN)          ::  REFDK_2D  ! Reference Soil Conductivity
+!    REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN)          ::  REFKDT_2D ! Soil Infiltration Parameter
 
 ! INOUT (with generic LSM equivalent)
 
@@ -557,6 +573,19 @@ CONTAINS
           SOILTYP = 7
        ENDIF
 
+! placeholders for 3D soil
+!       parameters%bexp   = BEXP_3D  (I,1:NSOIL,J) ! C-H B exponent
+!       parameters%smcdry = SMCDRY_3D(I,1:NSOIL,J) ! Soil Moisture Limit: Dry
+!       parameters%smcwlt = SMCWLT_3D(I,1:NSOIL,J) ! Soil Moisture Limit: Wilt
+!       parameters%smcref = SMCREF_3D(I,1:NSOIL,J) ! Soil Moisture Limit: Reference
+!       parameters%smcmax = SMCMAX_3D(I,1:NSOIL,J) ! Soil Moisture Limit: Max
+!       parameters%dksat  = DKSAT_3D (I,1:NSOIL,J) ! Saturated Soil Conductivity
+!       parameters%dwsat  = DWSAT_3D (I,1:NSOIL,J) ! Saturated Soil Diffusivity
+!       parameters%psisat = PSISAT_3D(I,1:NSOIL,J) ! Saturated Matric Potential
+!       parameters%quartz = QUARTZ_3D(I,1:NSOIL,J) ! Soil quartz content
+!       parameters%refdk  = REFDK_2D (I,J)         ! Reference Soil Conductivity
+!       parameters%refkdt = REFKDT_2D(I,J)         ! Soil Infiltration Parameter
+
        CALL TRANSFER_MP_PARAMETERS(VEGTYP,SOILTYP,SLOPETYP,SOILCOLOR,parameters)
 ! Initialized local
 
@@ -835,7 +864,7 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,parameter
   INTEGER, INTENT(IN)    :: SLOPETYPE
   INTEGER, INTENT(IN)    :: SOILCOLOR
     
-  type (noahmp_parameters), intent(out) :: parameters
+  type (noahmp_parameters), intent(inout) :: parameters
     
   REAL    :: REFDK
   REAL    :: REFKDT
@@ -949,6 +978,8 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,parameter
     parameters%SMCMAX = SMCMAX_TABLE (SOILTYPE)
     parameters%SMCREF = SMCREF_TABLE (SOILTYPE)
     parameters%SMCWLT = SMCWLT_TABLE (SOILTYPE)
+    parameters%REFDK  = REFDK_TABLE
+    parameters%REFKDT = REFKDT_TABLE
 
 ! ----------------------------------------------------------------------
 ! Transfer GENPARM parameters
@@ -958,9 +989,7 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,parameter
     parameters%CZIL   = CZIL_TABLE
 
     FRZK   = FRZK_TABLE
-    REFDK  = REFDK_TABLE
-    REFKDT = REFKDT_TABLE
-    parameters%KDT    = REFKDT * parameters%DKSAT / REFDK
+    parameters%KDT    = parameters%REFKDT * parameters%DKSAT(1) / parameters%REFDK
     parameters%SLOPE  = SLOPE_TABLE(SLOPETYPE)
 
     IF(parameters%URBAN_FLAG)THEN  ! Hardcoding some urban parameters for soil
@@ -974,7 +1003,7 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,parameter
 ! adjust FRZK parameter to actual soil type: FRZK * FRZFACT
 
     IF(SOILTYPE /= 14) then
-      FRZFACT = (parameters%SMCMAX / parameters%SMCREF) * (0.412 / 0.468)
+      FRZFACT = (parameters%SMCMAX(1) / parameters%SMCREF(1)) * (0.412 / 0.468)
       parameters%FRZX = FRZK * FRZFACT
     END IF
 

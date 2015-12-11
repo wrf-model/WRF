@@ -24,6 +24,7 @@ $sw_rttov_inc = "" ;
 $sw_crtm_flag = "" ;
 $sw_cloudcv_flag = "" ;
 $sw_4dvar_flag = "" ;
+$sw_wrfplus_path = "" ;
 $sw_wavelet_flag = "" ;
 $WRFCHEM = 0 ;
 $sw_os = "ARCH" ;           # ARCH will match any
@@ -273,6 +274,7 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
      if ( $sw_wrf_core eq "4D_DA_CORE" )
        {
        $sw_4dvar_flag = "-DVAR4D";
+       $sw_wrfplus_path= $ENV{WRFPLUS_DIR};
        }
      if ( $ENV{WAVELET} )
        {
@@ -433,6 +435,7 @@ while ( <CONFIGURE_DEFAULTS> )
     $_ =~ s/CONFIGURE_STUBMPI/$sw_stubmpi/g ;
     $_ =~ s/CONFIGURE_NESTOPT/$sw_nest_opt/g ;
     $_ =~ s/CONFIGURE_4DVAR_FLAG/$sw_4dvar_flag/g ;
+    $_ =~ s/CONFIGURE_WRFPLUS_PATH/$sw_wrfplus_path/g ;
     $_ =~ s/CONFIGURE_CRTM_FLAG/$sw_crtm_flag/g ;
     $_ =~ s/CONFIGURE_RTTOV_FLAG/$sw_rttov_flag/g ;
     $_ =~ s/CONFIGURE_RTTOV_INC/$sw_rttov_inc/g ;

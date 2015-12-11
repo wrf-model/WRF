@@ -160,6 +160,7 @@ if $RUN_GEN_BE_STAGE2A; then
    cat > gen_be_stage2a_nl.nl << EOF
 &gen_be_stage2a_nl
     start_date = '${START_DATE}',
+    cv_options = ${NL_CV_OPTIONS},
     end_date = '${END_DATE}', 
     interval = ${INTERVAL},
     ne = ${NE},

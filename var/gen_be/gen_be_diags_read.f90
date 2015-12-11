@@ -36,7 +36,7 @@ program gen_be_diags_read
    real                :: binwidth_lat      ! Used if bin_type = 2 (degrees). !!!DALE ADD..
    real                :: binwidth_hgt      ! Used if bin_type = 2 (m). !!!DALE ADD..
    real                :: hgt_min, hgt_max  ! Used if bin_type = 2 (m).
-   real                :: scale_length_ps_u ! Scale length for scalar ps_u.
+   real                :: scale_length_ps   ! Scale length for scalar ps or ps_u
    logical             :: dummy
 
    integer, allocatable:: bin(:,:,:)        ! Bin assigned to each 3D point.
@@ -108,63 +108,69 @@ program gen_be_diags_read
    read(iunit)bin2d(1:ni,1:nj)
 
 
-   ! 1.1 Read in regression coefficients
-   allocate  (regcoeff_psi_chi(1:num_bins))
-   allocate  (regcoeff_psi_t(1:nk,1:nk,1:num_bins2d))
-   allocate  (regcoeff_psi_ps(1:nk,1:num_bins2d))
-   allocate  (regcoeff_psi_rh(1:nk,1:nk,1:num_bins2d))
-   allocate  (regcoeff_chi_u_t(1:nk,1:nk,1:num_bins2d))
-   allocate  (regcoeff_chi_u_ps(1:nk,1:num_bins2d))
-   allocate  (regcoeff_chi_u_rh(1:nk,1:nk,1:num_bins2d))
-   allocate  (regcoeff_t_u_rh(1:nk,1:nk,1:num_bins2d))
-   allocate  (regcoeff_ps_u_rh(1:nk,1:num_bins2d))
+   if ( cv_options /= 7 ) then
+      ! 1.1 Read in regression coefficients
+      allocate  (regcoeff_psi_chi(1:num_bins))
+      allocate  (regcoeff_psi_t(1:nk,1:nk,1:num_bins2d))
+      allocate  (regcoeff_psi_ps(1:nk,1:num_bins2d))
+      allocate  (regcoeff_psi_rh(1:nk,1:nk,1:num_bins2d))
+      allocate  (regcoeff_chi_u_t(1:nk,1:nk,1:num_bins2d))
+      allocate  (regcoeff_chi_u_ps(1:nk,1:num_bins2d))
+      allocate  (regcoeff_chi_u_rh(1:nk,1:nk,1:num_bins2d))
+      allocate  (regcoeff_t_u_rh(1:nk,1:nk,1:num_bins2d))
+      allocate  (regcoeff_ps_u_rh(1:nk,1:num_bins2d))
 
-   regcoeff_psi_chi = 0.
-   regcoeff_psi_t   = 0.
-   regcoeff_psi_ps  = 0.
-   regcoeff_psi_rh  = 0.
-   regcoeff_chi_u_t = 0.
-   regcoeff_chi_u_ps= 0.
-   regcoeff_chi_u_rh= 0.
-   regcoeff_t_u_rh  = 0.
-   regcoeff_ps_u_rh = 0.
+      regcoeff_psi_chi = 0.
+      regcoeff_psi_t   = 0.
+      regcoeff_psi_ps  = 0.
+      regcoeff_psi_rh  = 0.
+      regcoeff_chi_u_t = 0.
+      regcoeff_chi_u_ps= 0.
+      regcoeff_chi_u_rh= 0.
+      regcoeff_t_u_rh  = 0.
+      regcoeff_ps_u_rh = 0.
 
-   if ( cv_options == 5 ) then
-   read (iunit) regcoeff_psi_chi
-   read (iunit) regcoeff_psi_ps
-   read (iunit) regcoeff_psi_t
+      if ( cv_options == 5 ) then
+         read (iunit) regcoeff_psi_chi
+         read (iunit) regcoeff_psi_ps
+         read (iunit) regcoeff_psi_t
+      else
+         do k = 1 , 9
+            read (iunit) var80c
+            select case( trim(adjustl(var80c)) )
+            case ('regcoeff_psi_chi')
+               read (iunit) regcoeff_psi_chi
+            case ('regcoeff_psi_t')
+               read (iunit) regcoeff_psi_t
+            case ('regcoeff_psi_ps')
+               read (iunit) regcoeff_psi_ps
+            case ('regcoeff_psi_rh')
+               read (iunit) regcoeff_psi_rh
+            case ('regcoeff_chi_u_t')
+               read (iunit) regcoeff_chi_u_t
+            case ('regcoeff_chi_u_ps')
+               read (iunit) regcoeff_chi_u_ps
+            case ('regcoeff_chi_u_rh')
+               read (iunit) regcoeff_chi_u_rh
+            case ('regcoeff_t_u_rh')
+               read (iunit) regcoeff_t_u_rh
+            case ('regcoeff_ps_u_rh')
+               read (iunit) regcoeff_ps_u_rh
+            case default;
+               write(6,fmt='(A,A)')'Error in reading regression coefficients for: ',trim(adjustl(var80c))
+               stop
+            end select
+         end do
+      end if
+
+      outunit = ounit + 100
+      call da_print_be_stats_p( outunit, ni, nj, nk, num_bins, num_bins2d, &
+                    bin, bin2d, regcoeff_psi_chi,regcoeff_psi_ps,regcoeff_psi_t)     
    else
-   do k = 1 , 9
-   read (iunit) var80c
-   select case( trim(adjustl(var80c)) )
-   case ('regcoeff_psi_chi')
-   read (iunit) regcoeff_psi_chi
-   case ('regcoeff_psi_t')
-   read (iunit) regcoeff_psi_t
-   case ('regcoeff_psi_ps')
-   read (iunit) regcoeff_psi_ps
-   case ('regcoeff_psi_rh')
-   read (iunit) regcoeff_psi_rh
-   case ('regcoeff_chi_u_t')
-   read (iunit) regcoeff_chi_u_t
-   case ('regcoeff_chi_u_ps')
-   read (iunit) regcoeff_chi_u_ps
-   case ('regcoeff_chi_u_rh')
-   read (iunit) regcoeff_chi_u_rh
-   case ('regcoeff_t_u_rh')
-   read (iunit) regcoeff_t_u_rh
-   case ('regcoeff_ps_u_rh')
-   read (iunit) regcoeff_ps_u_rh
-   case default;
-      write(6,fmt='(A,A)')'Error in reading regression coefficients for: ',trim(adjustl(var80c))
-      stop
-   end select
-   end do
+      !outunit is advanced by 3 within da_print_be_stats_p; since we don't call
+      !that for cv_options=7 we need to account for it
+      outunit = ounit + 103 
    end if
-
-   outunit = ounit + 100
-   call da_print_be_stats_p( outunit, ni, nj, nk, num_bins, num_bins2d, &
-                 bin, bin2d, regcoeff_psi_chi,regcoeff_psi_ps,regcoeff_psi_t)     
 
    !----------------------------------------------------------------------------
    ! [2] Gather vertical error eigenvectors, eigenvalues.
@@ -287,17 +293,17 @@ program gen_be_diags_read
 
       allocate (scale_length(1:nk))
 
-      ! psi:
+      ! psi/u:
       read(iunit) variable
       read(iunit) scale_length
       call da_print_be_stats_h_regional( outunit, variable, nk, scale_length )
 
-      ! chi_u:
+      ! chi_u/v:
       read(iunit) variable
       read(iunit) scale_length
       call da_print_be_stats_h_regional( outunit, variable, nk, scale_length )
 
-      ! t_u:
+      ! t_u/t:
       read(iunit) variable
       read(iunit) scale_length
       call da_print_be_stats_h_regional( outunit, variable, nk, scale_length )
@@ -307,11 +313,11 @@ program gen_be_diags_read
       read(iunit) scale_length
       call da_print_be_stats_h_regional( outunit, variable, nk, scale_length )
 
-      ! ps_u:
+      ! ps_u/ps:
       read(iunit) variable
-      read(iunit) scale_length_ps_u
+      read(iunit) scale_length_ps ! This is a scalar, can be ps_u or ps depending on cv_options
       write(6,'(3a,i5)')' Scale length for variable ', trim(variable), ' in unit ', outunit
-      write(outunit,'(a,i4,1pe15.5)')trim(variable), 1, scale_length_ps_u
+      write(outunit,'(a,i4,1pe15.5)')trim(variable), 1, scale_length_ps
       outunit = outunit + 1
       write(6,*)
 

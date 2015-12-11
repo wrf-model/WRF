@@ -248,7 +248,7 @@ subroutine da_setup_be_regional(xb, be, grid)
 !
 !-----------for interpolating CV5--------------------------------------------------------------
 ! Write out the interpolated CV5 BE:
-    if (Interpolate_stats) then
+    if (interpolate_stats) then
  
 ! No matter which bin_type BE inputed, after Interpolated, the BE always
 ! became bin_type = 1 BE, i.e. the global BE.
@@ -276,213 +276,217 @@ subroutine da_setup_be_regional(xb, be, grid)
     endif
 !===========for interpolating CV5==============================================================
 !
-   ! 1.1 Read in regression coefficients
-   allocate  (regcoeff_psi_chi(1:num_bins))
-   allocate  (regcoeff_psi_t(1:nk,1:nk,1:num_bins2d))
-   allocate  (regcoeff_psi_ps(1:nk,1:num_bins2d))
-   if ( cv_options == 6 ) then
-      allocate  (regcoeff_psi_rh(1:nk,1:nk,1:num_bins2d))
-      allocate  (regcoeff_chi_u_t(1:nk,1:nk,1:num_bins2d))
-      allocate  (regcoeff_chi_u_ps(1:nk,1:num_bins2d))
-      allocate  (regcoeff_chi_u_rh(1:nk,1:nk,1:num_bins2d))
-      allocate  (regcoeff_t_u_rh(1:nk,1:nk,1:num_bins2d))
-      allocate  (regcoeff_ps_u_rh(1:nk,1:num_bins2d))
-   end if
+   if ( cv_options /= 7 ) then   ! No regression coefficients for cv_options == 7
 
-   if ( (cv_options == 5) .or. (cv_options == 7) ) then
-   read (be_unit) regcoeff_psi_chi
-   read (be_unit) regcoeff_psi_ps 
-   read (be_unit) regcoeff_psi_t
-   else
-   do i = 1 , 9
-   read (be_unit) var80c  
-   select case( trim(adjustl(var80c)) )
-   case ('regcoeff_psi_chi')
-   read (be_unit) regcoeff_psi_chi
-   case ('regcoeff_psi_t')
-   read (be_unit) regcoeff_psi_t
-   case ('regcoeff_psi_ps')
-   read (be_unit) regcoeff_psi_ps
-   case ('regcoeff_psi_rh')
-   read (be_unit) regcoeff_psi_rh
-   case ('regcoeff_chi_u_t')
-   read (be_unit) regcoeff_chi_u_t
-   case ('regcoeff_chi_u_ps')
-   read (be_unit) regcoeff_chi_u_ps
-   case ('regcoeff_chi_u_rh')
-   read (be_unit) regcoeff_chi_u_rh
-   case ('regcoeff_t_u_rh')
-   read (be_unit) regcoeff_t_u_rh
-   case ('regcoeff_ps_u_rh')
-   read (be_unit) regcoeff_ps_u_rh
-   case default;
-      message(1)=' Read problem in regression coefficients in BE file '
-      write (unit=message(2),fmt='(A,A)') ' Trying to read regression coefficients for variable: ',trim(adjustl(var80c))
-      call da_error(__FILE__,__LINE__,message(1:2))
-   end select
-   end do
-   end if
-   ! 1.2 Fill regression coeff. array for model BE, vertical dimension is kz:
-
-   allocate (be%reg_psi_chi  (1:jy,1:kz))
-   allocate (be%reg_psi_t    (1:jy,1:kz,1:kz))
-   allocate (be%reg_psi_ps   (1:jy,1:kz))
-   if ( cv_options == 6 ) then
-      allocate (be%reg_psi_rh   (1:jy,1:kz,1:kz))
-      allocate (be%reg_chi_u_t  (1:jy,1:kz,1:kz))
-      allocate (be%reg_chi_u_ps (1:jy,1:kz))
-      allocate (be%reg_chi_u_rh (1:jy,1:kz,1:kz))
-      allocate (be%reg_t_u_rh   (1:jy,1:kz,1:kz))
-      allocate (be%reg_ps_u_rh  (1:jy,1:kz))
-   end if
-!
-!-----------for interpolating CV5--------------------------------------------------------------
-   if ( interpolate_stats ) then
-      allocate (reg_psi_chi0(1:nj,1:nk))
-      allocate (reg_psi_ps0 (1:nj,1:nk))
-      allocate (reg_psi_t0  (1:nj,1:nk,1:nk))
-   end if
-!===========for interpolating CV5==============================================================
-
-   be%reg_psi_chi    = 0.
-   be%reg_psi_t      = 0.
-   be%reg_psi_ps     = 0.
-   if ( cv_options == 6 ) then
-      be%reg_psi_rh     = 0.
-      be%reg_chi_u_t    = 0.
-      be%reg_chi_u_ps   = 0.
-      be%reg_chi_u_rh   = 0.
-      be%reg_t_u_rh     = 0.
-   end if
-
-   if ( interpolate_stats ) then
-      do k=1,nk
-         do j=1,nj
-            reg_psi_chi0(j,k) = regcoeff_psi_chi(bin(1,j,k))
-            b = bin2d(1,j)
-            reg_psi_ps0(j,k)  = regcoeff_psi_ps(k,b)
-         end do
-      end do
-      do k=1,nk
-         do i=1,nk
-            do j=1,nj
-               b = bin2d(1,j)
-               reg_psi_t0(j,i,k) = regcoeff_psi_t(i,k,b)
-            end do
-         end do
-      end do
-   end if   ! if interpolate_stats
-
-   if ( .not. interpolate_stats ) then
-      do k=1,nk
-         do j=1,nj
-            be%reg_psi_chi(j,k) = psi_chi_factor * regcoeff_psi_chi(bin(1,j,k))
-            b = bin2d(1,j)
-            be%reg_psi_ps(j,k)  = psi_ps_factor  * regcoeff_psi_ps(k,b)
-         end do
-      end do
-      do k=1,nk
-         do i=1,nk
-            do j=1,nj
-               b = bin2d(1,j)
-               be%reg_psi_t(j,i,k) = psi_t_factor * regcoeff_psi_t(i,k,b)
-            end do
-         end do
-      end do
-
+      ! 1.1 Read in regression coefficients
+      allocate  (regcoeff_psi_chi(1:num_bins))
+      allocate  (regcoeff_psi_t(1:nk,1:nk,1:num_bins2d))
+      allocate  (regcoeff_psi_ps(1:nk,1:num_bins2d))
       if ( cv_options == 6 ) then
+         allocate  (regcoeff_psi_rh(1:nk,1:nk,1:num_bins2d))
+         allocate  (regcoeff_chi_u_t(1:nk,1:nk,1:num_bins2d))
+         allocate  (regcoeff_chi_u_ps(1:nk,1:num_bins2d))
+         allocate  (regcoeff_chi_u_rh(1:nk,1:nk,1:num_bins2d))
+         allocate  (regcoeff_t_u_rh(1:nk,1:nk,1:num_bins2d))
+         allocate  (regcoeff_ps_u_rh(1:nk,1:num_bins2d))
+      end if
+
+      if ( cv_options == 5 ) then
+         read (be_unit) regcoeff_psi_chi
+         read (be_unit) regcoeff_psi_ps 
+         read (be_unit) regcoeff_psi_t
+      else
+         do i = 1 , 9
+            read (be_unit) var80c  
+            select case( trim(adjustl(var80c)) )
+            case ('regcoeff_psi_chi')
+               read (be_unit) regcoeff_psi_chi
+            case ('regcoeff_psi_t')
+               read (be_unit) regcoeff_psi_t
+            case ('regcoeff_psi_ps')
+               read (be_unit) regcoeff_psi_ps
+            case ('regcoeff_psi_rh')
+               read (be_unit) regcoeff_psi_rh
+            case ('regcoeff_chi_u_t')
+               read (be_unit) regcoeff_chi_u_t
+            case ('regcoeff_chi_u_ps')
+               read (be_unit) regcoeff_chi_u_ps
+            case ('regcoeff_chi_u_rh')
+               read (be_unit) regcoeff_chi_u_rh
+            case ('regcoeff_t_u_rh')
+               read (be_unit) regcoeff_t_u_rh
+            case ('regcoeff_ps_u_rh')
+               read (be_unit) regcoeff_ps_u_rh
+            case default;
+               message(1)=' Read problem in regression coefficients in BE file '
+               write (unit=message(2),fmt='(A,A)') ' Trying to read regression coefficients for variable: ',trim(adjustl(var80c))
+               call da_error(__FILE__,__LINE__,message(1:2))
+            end select
+         end do
+      end if
+      ! 1.2 Fill regression coeff. array for model BE, vertical dimension is kz:
+
+      allocate (be%reg_psi_chi  (1:jy,1:kz))
+      allocate (be%reg_psi_t    (1:jy,1:kz,1:kz))
+      allocate (be%reg_psi_ps   (1:jy,1:kz))
+      if ( cv_options == 6 ) then
+         allocate (be%reg_psi_rh   (1:jy,1:kz,1:kz))
+         allocate (be%reg_chi_u_t  (1:jy,1:kz,1:kz))
+         allocate (be%reg_chi_u_ps (1:jy,1:kz))
+         allocate (be%reg_chi_u_rh (1:jy,1:kz,1:kz))
+         allocate (be%reg_t_u_rh   (1:jy,1:kz,1:kz))
+         allocate (be%reg_ps_u_rh  (1:jy,1:kz))
+      end if
+
+      !-----------for interpolating CV5--------------------------------------------------------------
+      if ( interpolate_stats ) then
+         allocate (reg_psi_chi0(1:nj,1:nk))
+         allocate (reg_psi_ps0 (1:nj,1:nk))
+         allocate (reg_psi_t0  (1:nj,1:nk,1:nk))
+      end if
+
+      be%reg_psi_chi    = 0.
+      be%reg_psi_t      = 0.
+      be%reg_psi_ps     = 0.
+      if ( cv_options == 6 ) then
+         be%reg_psi_rh     = 0.
+         be%reg_chi_u_t    = 0.
+         be%reg_chi_u_ps   = 0.
+         be%reg_chi_u_rh   = 0.
+         be%reg_t_u_rh     = 0.
+      end if
+
+      if ( interpolate_stats ) then
          do k=1,nk
             do j=1,nj
+               reg_psi_chi0(j,k) = regcoeff_psi_chi(bin(1,j,k))
                b = bin2d(1,j)
-               be%reg_ps_u_rh(j,k)  = ps_u_rh_factor  * regcoeff_ps_u_rh(k,b)
-               be%reg_chi_u_ps(j,k) = chi_u_ps_factor * regcoeff_chi_u_ps(k,b)
+               reg_psi_ps0(j,k)  = regcoeff_psi_ps(k,b)
             end do
          end do
          do k=1,nk
             do i=1,nk
                do j=1,nj
                   b = bin2d(1,j)
-                  be%reg_psi_rh(j,i,k)   = psi_rh_factor   * regcoeff_psi_rh(i,k,b)
-                  be%reg_chi_u_t(j,i,k)  = chi_u_t_factor  * regcoeff_chi_u_t(i,k,b)
-                  be%reg_chi_u_rh(j,i,k) = chi_u_rh_factor * regcoeff_chi_u_rh(i,k,b)
-                  be%reg_t_u_rh(j,i,k)   = t_u_rh_factor   * regcoeff_t_u_rh(i,k,b)
+                  reg_psi_t0(j,i,k) = regcoeff_psi_t(i,k,b)
                end do
             end do
          end do
-      end if   ! if cv_options 6
-   end if   ! if not interpolate_stats
-
-   deallocate (regcoeff_psi_chi)
-   deallocate (regcoeff_psi_t)
-   deallocate (regcoeff_psi_ps)
-   if ( cv_options == 6 ) then
-      deallocate (regcoeff_psi_rh)
-      deallocate (regcoeff_chi_u_t)
-      deallocate (regcoeff_chi_u_ps)
-      deallocate (regcoeff_chi_u_rh)
-      deallocate (regcoeff_t_u_rh)
-      deallocate (regcoeff_ps_u_rh)
-   end if
-   ! 1.3 Domain_averaged regression coefficients
-
-  if (.not.lat_stats_option) then
-      write (unit=message(1), fmt='(a)') ' '
-      write (unit=message(2), fmt='(3x, a)') &
-         'Using the averaged regression coefficients for unbalanced part'
-
-!-----------for interpolating CV5--------------------------------------------------------------
-      if ( interpolate_stats ) then
-         allocate (reg_psi_ps_be (1:nk))
-         allocate (reg_psi_chi_be(1:nk))
-         allocate (reg_psi_t_be  (1:nk,1:nk))
-         do k=1,nk
-            reg_psi_ps_be(k)  = sum(reg_psi_ps0 (:,k))/dble(nj)
-            reg_psi_chi_be(k) = sum(reg_psi_chi0(:,k))/dble(nj)
-         end do
-         do m=1,nk
-            do k=1,nk
-               reg_psi_t_be(k,m)=sum(reg_psi_t0(:,k,m))/dble(nj)
-            end do
-         end do
-         deallocate (reg_psi_chi0)
-         deallocate (reg_psi_ps0 )
-         deallocate (reg_psi_t0  )
       end if   ! if interpolate_stats
-!===========for interpolating CV5==============================================================
 
-      if ( (.not. interpolate_stats) .and. (bin_type /= 5) ) then
-         do k=1,kz
-             be%reg_psi_ps  (:,k) = sum(be%reg_psi_ps (:,k))/dble(jy)
-             be%reg_psi_chi (:,k) = sum(be%reg_psi_chi(:,k))/dble(jy)
-         end do
-         do m=1,kz
-            do k=1,kz
-                be%reg_psi_t (:,k,m) = sum(be%reg_psi_t(:,k,m))/dble(jy)
-             end do
-         end do
-         if ( cv_options == 6 ) then
-            do k=1,kz
-               be%reg_ps_u_rh (:,k) = sum(be%reg_ps_u_rh (:,k))/dble(jy)
-               be%reg_chi_u_ps(:,k) = sum(be%reg_chi_u_ps(:,k))/dble(jy)
+      if ( .not. interpolate_stats ) then
+         do k=1,nk
+            do j=1,nj
+               be%reg_psi_chi(j,k) = psi_chi_factor * regcoeff_psi_chi(bin(1,j,k))
+               b = bin2d(1,j)
+               be%reg_psi_ps(j,k)  = psi_ps_factor  * regcoeff_psi_ps(k,b)
             end do
-            do m=1,kz
-               do k=1,kz
-                  be%reg_psi_rh  (:,k,m) = sum(be%reg_psi_rh  (:,k,m))/dble(jy)
-                  be%reg_chi_u_t (:,k,m) = sum(be%reg_chi_u_t (:,k,m))/dble(jy)
-                  be%reg_chi_u_rh(:,k,m) = sum(be%reg_chi_u_rh(:,k,m))/dble(jy)
-                  be%reg_t_u_rh  (:,k,m) = sum(be%reg_t_u_rh  (:,k,m))/dble(jy)
+         end do
+         do k=1,nk
+            do i=1,nk
+               do j=1,nj
+                  b = bin2d(1,j)
+                  be%reg_psi_t(j,i,k) = psi_t_factor * regcoeff_psi_t(i,k,b)
+               end do
+            end do
+         end do
+
+         if ( cv_options == 6 ) then
+            do k=1,nk
+               do j=1,nj
+                  b = bin2d(1,j)
+                  be%reg_ps_u_rh(j,k)  = ps_u_rh_factor  * regcoeff_ps_u_rh(k,b)
+                  be%reg_chi_u_ps(j,k) = chi_u_ps_factor * regcoeff_chi_u_ps(k,b)
+               end do
+            end do
+            do k=1,nk
+               do i=1,nk
+                  do j=1,nj
+                     b = bin2d(1,j)
+                     be%reg_psi_rh(j,i,k)   = psi_rh_factor   * regcoeff_psi_rh(i,k,b)
+                     be%reg_chi_u_t(j,i,k)  = chi_u_t_factor  * regcoeff_chi_u_t(i,k,b)
+                     be%reg_chi_u_rh(j,i,k) = chi_u_rh_factor * regcoeff_chi_u_rh(i,k,b)
+                     be%reg_t_u_rh(j,i,k)   = t_u_rh_factor   * regcoeff_t_u_rh(i,k,b)
+                  end do
                end do
             end do
          end if   ! if cv_options 6
       end if   ! if not interpolate_stats
 
-   else
-      write (unit=message(1), fmt='(a)') ' '
-      write (unit=message(2), fmt='(3x, a)') &
-         'Using the geographically-dependent regression coefficients for unbalanced part'
-   end if
+      deallocate (regcoeff_psi_chi)
+      deallocate (regcoeff_psi_t)
+      deallocate (regcoeff_psi_ps)
+      if ( cv_options == 6 ) then
+         deallocate (regcoeff_psi_rh)
+         deallocate (regcoeff_chi_u_t)
+         deallocate (regcoeff_chi_u_ps)
+         deallocate (regcoeff_chi_u_rh)
+         deallocate (regcoeff_t_u_rh)
+         deallocate (regcoeff_ps_u_rh)
+      end if
+      ! 1.3 Domain_averaged regression coefficients
 
-   call da_message(message(1:2))
+      if (.not.lat_stats_option) then
+         write (unit=message(1), fmt='(a)') ' '
+         write (unit=message(2), fmt='(3x, a)') &
+            'Using the averaged regression coefficients for unbalanced part'
+
+         !-----------for interpolating CV5--------------------------------------------------------------
+         if ( interpolate_stats ) then
+            allocate (reg_psi_ps_be (1:nk))
+            allocate (reg_psi_chi_be(1:nk))
+            allocate (reg_psi_t_be  (1:nk,1:nk))
+            do k=1,nk
+               reg_psi_ps_be(k)  = sum(reg_psi_ps0 (:,k))/dble(nj)
+               reg_psi_chi_be(k) = sum(reg_psi_chi0(:,k))/dble(nj)
+            end do
+            do m=1,nk
+               do k=1,nk
+                  reg_psi_t_be(k,m)=sum(reg_psi_t0(:,k,m))/dble(nj)
+               end do
+            end do
+            deallocate (reg_psi_chi0)
+            deallocate (reg_psi_ps0 )
+            deallocate (reg_psi_t0  )
+         end if   ! if interpolate_stats
+         !===========for interpolating CV5==============================================================
+
+         if ( (.not. interpolate_stats) .and. (bin_type /= 5) ) then
+            do k=1,kz
+                be%reg_psi_ps  (:,k) = sum(be%reg_psi_ps (:,k))/dble(jy)
+                be%reg_psi_chi (:,k) = sum(be%reg_psi_chi(:,k))/dble(jy)
+            end do
+            do m=1,kz
+               do k=1,kz
+                   be%reg_psi_t (:,k,m) = sum(be%reg_psi_t(:,k,m))/dble(jy)
+                end do
+            end do
+            if ( cv_options == 6 ) then
+               do k=1,kz
+                  be%reg_ps_u_rh (:,k) = sum(be%reg_ps_u_rh (:,k))/dble(jy)
+                  be%reg_chi_u_ps(:,k) = sum(be%reg_chi_u_ps(:,k))/dble(jy)
+               end do
+               do m=1,kz
+                  do k=1,kz
+                     be%reg_psi_rh  (:,k,m) = sum(be%reg_psi_rh  (:,k,m))/dble(jy)
+                     be%reg_chi_u_t (:,k,m) = sum(be%reg_chi_u_t (:,k,m))/dble(jy)
+                     be%reg_chi_u_rh(:,k,m) = sum(be%reg_chi_u_rh(:,k,m))/dble(jy)
+                     be%reg_t_u_rh  (:,k,m) = sum(be%reg_t_u_rh  (:,k,m))/dble(jy)
+                  end do
+               end do
+            end if   ! if cv_options 6
+         end if   ! if not interpolate_stats
+
+      else
+         write (unit=message(1), fmt='(a)') ' '
+         write (unit=message(2), fmt='(3x, a)') &
+            'Using the geographically-dependent regression coefficients for unbalanced part'
+      end if
+
+      call da_message(message(1:2))
+
+   end if ! cv_options /= 7
+
    ! 2.0 Load the eigenvector and eigenvalue
 
    allocate (be1_eval_loc (1:nj,1:nk))
@@ -545,201 +549,198 @@ subroutine da_setup_be_regional(xb, be, grid)
 
 #ifdef CLOUD_CV
    do i = 1 , 10 
-   if (cloud_cv_options.eq.2 )then
-      read (be_unit) variable
-   else
-      if (i.le.4) then
+      if (cloud_cv_options.eq.2 )then
          read (be_unit) variable
-      elseif (i.eq.5) then
-         variable = "qcloud"
-      elseif (i.eq.6) then
-         variable = "qrain"
-      elseif (i.eq.7) then
-         variable = "qice"
-      elseif (i.eq.8) then
-         variable = "qsnow"
-      elseif (i.eq.9) then
-         variable = "qgraupel"
-      elseif (i.eq.10) then
-         variable = "z-wind"
+      else
+         if (i.le.4) then
+            read (be_unit) variable
+         elseif (i.eq.5) then
+            variable = "qcloud"
+         elseif (i.eq.6) then
+            variable = "qrain"
+         elseif (i.eq.7) then
+            variable = "qice"
+         elseif (i.eq.8) then
+            variable = "qsnow"
+         elseif (i.eq.9) then
+            variable = "qgraupel"
+         elseif (i.eq.10) then
+            variable = "z-wind"
+         end if
       end if
-   end if
 #else
    do i = 1 , 4
-   read (be_unit) variable
+      read (be_unit) variable
 #endif
-   select case( trim(adjustl(variable)) )
-   case ('psi')
-   be % v1 % name = trim(adjustl(variable))
-   read (be_unit) nk, num_bins2d
-   read (be_unit)  be1_evec_glo
-   read (be_unit)  be1_eval_glo
-   if( i == 1) then
-   allocate (evec_loc(1:nk,1:nk,1:num_bins2d))
-   allocate (eval_loc(1:nk,     1:num_bins2d))
-   end if
-   read (be_unit)  evec_loc
-   read (be_unit)  eval_loc
-   do j=1,nj
-      b = bin2d(1,j)
-      be1_evec_loc(j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
-      be1_eval_loc(j,1:nk  ) = eval_loc(1:nk,b)
-   end do
-!   write(6,*)'be1_evec_loc(10,10,10)=',be1_evec_loc(10,10,10)
-!   write(6,*)'be1_eval_loc(10,10)=',be1_eval_loc(10,10)
+      select case( trim(adjustl(variable)) )
+      case ('psi', 'u')
+         be % v1 % name = trim(adjustl(variable))
+         read (be_unit) nk, num_bins2d
+         read (be_unit)  be1_evec_glo
+         read (be_unit)  be1_eval_glo
+         if( i == 1) then
+            allocate (evec_loc(1:nk,1:nk,1:num_bins2d))
+            allocate (eval_loc(1:nk,     1:num_bins2d))
+         end if
+         read (be_unit)  evec_loc
+         read (be_unit)  eval_loc
+         do j=1,nj
+            b = bin2d(1,j)
+            be1_evec_loc(j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
+            be1_eval_loc(j,1:nk  ) = eval_loc(1:nk,b)
+         end do
 
-   case ('chi_u')
-   be % v2 % name = trim(adjustl(variable))
-   read (be_unit) nk, num_bins2d
-   read (be_unit)  be2_evec_glo
-   read (be_unit)  be2_eval_glo
-   read (be_unit)  evec_loc
-   read (be_unit)  eval_loc
-   do j=1,nj
-      b = bin2d(1,j)
-      be2_evec_loc(j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
-      be2_eval_loc(j,1:nk  ) = eval_loc(1:nk,b)
-   end do
+      case ('chi_u', 'v')
+         be % v2 % name = trim(adjustl(variable))
+         read (be_unit) nk, num_bins2d
+         read (be_unit)  be2_evec_glo
+         read (be_unit)  be2_eval_glo
+         read (be_unit)  evec_loc
+         read (be_unit)  eval_loc
+         do j=1,nj
+            b = bin2d(1,j)
+            be2_evec_loc(j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
+            be2_eval_loc(j,1:nk  ) = eval_loc(1:nk,b)
+         end do
 
-   case ('t_u')
-   be % v3 % name = trim(adjustl(variable))
-   read (be_unit) nk, num_bins2d
-   read (be_unit)  be3_evec_glo
-   read (be_unit)  be3_eval_glo
-   read (be_unit)  evec_loc
-   read (be_unit)  eval_loc
-   do j=1,nj
-      b = bin2d(1,j)
-      be3_evec_loc(j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
-      be3_eval_loc(j,1:nk  ) = eval_loc(1:nk,b)
-   end do
+      case ('t_u', 't')
+         be % v3 % name = trim(adjustl(variable))
+         read (be_unit) nk, num_bins2d
+         read (be_unit)  be3_evec_glo
+         read (be_unit)  be3_eval_glo
+         read (be_unit)  evec_loc
+         read (be_unit)  eval_loc
+         do j=1,nj
+            b = bin2d(1,j)
+            be3_evec_loc(j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
+            be3_eval_loc(j,1:nk  ) = eval_loc(1:nk,b)
+         end do
 
-   case ('rh_u' , 'rh' )
-   be % v4 % name = trim(adjustl(variable))
-   read (be_unit) nk, num_bins2d
-   read (be_unit)  be4_evec_glo
-   read (be_unit)  be4_eval_glo
-   read (be_unit)  evec_loc
-   read (be_unit)  eval_loc
-   do j=1,nj
-      b = bin2d(1,j)
-      be4_evec_loc(j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
-      be4_eval_loc(j,1:nk  ) = eval_loc(1:nk,b)
-   end do
-!   write(6,*)'be4_evec_loc(10,10,10)=',be4_evec_loc(10,10,10)
-!   write(6,*)'be4_eval_loc(10,10)=',be4_eval_loc(10,10)
+      case ('rh_u' , 'rh' )
+         be % v4 % name = trim(adjustl(variable))
+         read (be_unit) nk, num_bins2d
+         read (be_unit)  be4_evec_glo
+         read (be_unit)  be4_eval_glo
+         read (be_unit)  evec_loc
+         read (be_unit)  eval_loc
+         do j=1,nj
+            b = bin2d(1,j)
+            be4_evec_loc(j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
+            be4_eval_loc(j,1:nk  ) = eval_loc(1:nk,b)
+         end do
 
 #ifdef CLOUD_CV
 
-! qcloud  
-   case ('qcloud' )      
-   be % v6 % name = trim(adjustl(variable))
-  if(cloud_cv_options.eq.2)then
-   read (be_unit) nk, num_bins2d
-   read (be_unit)  be6_evec_glo
-   read (be_unit)  be6_eval_glo
-   read (be_unit)  evec_loc
-   read (be_unit)  eval_loc
-   do j=1,nj
-      b = bin2d(1,j)
-      be6_evec_loc(j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
-      be6_eval_loc(j,1:nk  ) = eval_loc(1:nk,b)
-   end do
-  elseif (cloud_cv_options.eq.3)then
-   be6_eval_glo=1.0e-6
-  end if 
-! qrain   
-   case ('qrain' )      
-   be % v7 % name = trim(adjustl(variable))
-  if(cloud_cv_options.eq.2)then
-   read (be_unit) nk, num_bins2d
-   read (be_unit)  be7_evec_glo
-   read (be_unit)  be7_eval_glo
-   read (be_unit)  evec_loc
-   read (be_unit)  eval_loc
-   do j=1,nj
-      b = bin2d(1,j)
-      be7_evec_loc(j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
-      be7_eval_loc(j,1:nk  ) = eval_loc(1:nk,b)
-   end do
-  elseif (cloud_cv_options.eq.3)then
-   be7_eval_glo=1.0e-6
-  end if 
-! qice    
-   case ('qice' )      
-   be % v8 % name = trim(adjustl(variable))
-  if(cloud_cv_options.eq.2)then
-   read (be_unit) nk, num_bins2d
-   read (be_unit)  be8_evec_glo
-   read (be_unit)  be8_eval_glo
-   read (be_unit)  evec_loc
-   read (be_unit)  eval_loc
-   do j=1,nj
-      b = bin2d(1,j)
-      be8_evec_loc(j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
-      be8_eval_loc(j,1:nk  ) = eval_loc(1:nk,b)
-   end do
-  elseif (cloud_cv_options.eq.3)then
-   be8_eval_glo=1.0e-6
-  end if 
-! qsnow   
-   case ('qsnow' )      
-   be % v9 % name = trim(adjustl(variable))
-  if(cloud_cv_options.eq.2)then
-   read (be_unit) nk, num_bins2d
-   read (be_unit)  be9_evec_glo
-   read (be_unit)  be9_eval_glo
-   read (be_unit)  evec_loc
-   read (be_unit)  eval_loc
-   do j=1,nj
-      b = bin2d(1,j)
-      be9_evec_loc(j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
-      be9_eval_loc(j,1:nk  ) = eval_loc(1:nk,b)
-   end do
-  elseif (cloud_cv_options.eq.3)then
-   be9_eval_glo=1.0e-6
-  end if 
-  ! qgraupel
-   case ('qgraupel' )
-   be % v10 % name = trim(adjustl(variable))
-  if(cloud_cv_options.eq.2)then
-   read (be_unit) nk, num_bins2d
-   read (be_unit)  be10_evec_glo
-   read (be_unit)  be10_eval_glo
-   read (be_unit)  evec_loc
-   read (be_unit)  eval_loc
-   do j=1,nj
-      b = bin2d(1,j)
-      be10_evec_loc(j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
-      be10_eval_loc(j,1:nk  ) = eval_loc(1:nk,b)
-   end do
-  elseif (cloud_cv_options.eq.3)then
-   be10_eval_glo=1.0e-6
-  end if
-   case ('z-wind' )
-   be % v11 % name = trim(adjustl(variable))
-  if(cloud_cv_options.eq.2)then
-   read (be_unit) nk, num_bins2d
-   read (be_unit)  be11_evec_glo
-   read (be_unit)  be11_eval_glo
-   read (be_unit)  evec_loc
-   read (be_unit)  eval_loc
-   do j=1,nj
-      b = bin2d(1,j)
-      be11_evec_loc(j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
-      be11_eval_loc(j,1:nk  ) = eval_loc(1:nk,b)
-   end do
-  elseif (cloud_cv_options.eq.3)then
-   be11_eval_glo=1.0
-  end if
+      ! qcloud  
+      case ('qcloud' )      
+         be % v6 % name = trim(adjustl(variable))
+         if(cloud_cv_options.eq.2)then
+            read (be_unit) nk, num_bins2d
+            read (be_unit)  be6_evec_glo
+            read (be_unit)  be6_eval_glo
+            read (be_unit)  evec_loc
+            read (be_unit)  eval_loc
+            do j=1,nj
+               b = bin2d(1,j)
+               be6_evec_loc(j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
+               be6_eval_loc(j,1:nk  ) = eval_loc(1:nk,b)
+            end do
+         elseif (cloud_cv_options.eq.3)then
+            be6_eval_glo=1.0e-6
+         end if 
+      ! qrain   
+      case ('qrain' )      
+         be % v7 % name = trim(adjustl(variable))
+         if(cloud_cv_options.eq.2)then
+            read (be_unit) nk, num_bins2d
+            read (be_unit)  be7_evec_glo
+            read (be_unit)  be7_eval_glo
+            read (be_unit)  evec_loc
+            read (be_unit)  eval_loc
+            do j=1,nj
+               b = bin2d(1,j)
+               be7_evec_loc(j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
+               be7_eval_loc(j,1:nk  ) = eval_loc(1:nk,b)
+            end do
+         elseif (cloud_cv_options.eq.3)then
+            be7_eval_glo=1.0e-6
+         end if 
+      ! qice    
+      case ('qice' )      
+         be % v8 % name = trim(adjustl(variable))
+         if(cloud_cv_options.eq.2)then
+            read (be_unit) nk, num_bins2d
+            read (be_unit)  be8_evec_glo
+            read (be_unit)  be8_eval_glo
+            read (be_unit)  evec_loc
+            read (be_unit)  eval_loc
+            do j=1,nj
+               b = bin2d(1,j)
+               be8_evec_loc(j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
+               be8_eval_loc(j,1:nk  ) = eval_loc(1:nk,b)
+            end do
+         elseif (cloud_cv_options.eq.3)then
+            be8_eval_glo=1.0e-6
+         end if 
+      ! qsnow   
+      case ('qsnow' )      
+         be % v9 % name = trim(adjustl(variable))
+         if(cloud_cv_options.eq.2)then
+            read (be_unit) nk, num_bins2d
+            read (be_unit)  be9_evec_glo
+            read (be_unit)  be9_eval_glo
+            read (be_unit)  evec_loc
+            read (be_unit)  eval_loc
+            do j=1,nj
+               b = bin2d(1,j)
+               be9_evec_loc(j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
+               be9_eval_loc(j,1:nk  ) = eval_loc(1:nk,b)
+            end do
+         elseif (cloud_cv_options.eq.3)then
+            be9_eval_glo=1.0e-6
+         end if 
+      ! qgraupel
+      case ('qgraupel' )
+         be % v10 % name = trim(adjustl(variable))
+         if(cloud_cv_options.eq.2)then
+            read (be_unit) nk, num_bins2d
+            read (be_unit)  be10_evec_glo
+            read (be_unit)  be10_eval_glo
+            read (be_unit)  evec_loc
+            read (be_unit)  eval_loc
+            do j=1,nj
+               b = bin2d(1,j)
+               be10_evec_loc(j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
+               be10_eval_loc(j,1:nk  ) = eval_loc(1:nk,b)
+            end do
+         elseif (cloud_cv_options.eq.3)then
+            be10_eval_glo=1.0e-6
+         end if
+      case ('z-wind' )
+         be % v11 % name = trim(adjustl(variable))
+         if(cloud_cv_options.eq.2)then
+            read (be_unit) nk, num_bins2d
+            read (be_unit)  be11_evec_glo
+            read (be_unit)  be11_eval_glo
+            read (be_unit)  evec_loc
+            read (be_unit)  eval_loc
+            do j=1,nj
+               b = bin2d(1,j)
+               be11_evec_loc(j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
+               be11_eval_loc(j,1:nk  ) = eval_loc(1:nk,b)
+            end do
+         elseif (cloud_cv_options.eq.3)then
+            be11_eval_glo=1.0
+         end if
 
 #endif
 
-   case default;
-      message(1)=' Read problem in eigen vaectors/values in BE file '
-      write (unit=message(2),fmt='(A,A)') ' Trying to read Eigenvectors for variable: ',trim(adjustl(variable))
-      call da_error(__FILE__,__LINE__,message(1:2))
-   end select
+      case default;
+         message(1)=' Read problem in eigen vectors/values in BE file '
+         write (unit=message(2),fmt='(A,A)') ' Trying to read Eigenvectors for variable: ',trim(adjustl(variable))
+         write (unit=message(3),fmt='(A)') ' Make sure you are using the correct be.dat file for your cv_options setting!'
+         call da_error(__FILE__,__LINE__,message(1:3))
+      end select
    end do
 
    deallocate (evec_loc)
@@ -756,9 +757,13 @@ subroutine da_setup_be_regional(xb, be, grid)
    read (be_unit)  be5_eval_glo
    read (be_unit)  evec_loc
    read (be_unit)  eval_loc
-   if( trim(adjustl(variable)) /= 'ps_u' ) then
+   if( (trim(adjustl(variable)) /= 'ps_u') .and. (trim(adjustl(variable)) /= 'ps') ) then
       message(1)=' Variable mismatch while transfering eigen values from BE file '
-      write (unit=message(2),fmt='(A,A)') ' Expected ps_u but got ',trim(adjustl(variable))
+      if (cv_options == 7) then
+         write (unit=message(2),fmt='(A,A)') ' Expected ps but got ',trim(adjustl(variable))
+      else
+         write (unit=message(2),fmt='(A,A)') ' Expected ps_u but got ',trim(adjustl(variable))
+      endif
       call da_error(__FILE__,__LINE__,message(1:2))
    end if
    be % v5 % name = trim(adjustl(variable))
@@ -867,13 +872,13 @@ subroutine da_setup_be_regional(xb, be, grid)
          call da_warning(__FILE__,__LINE__,message(1:1))
       end if
       select case( trim(adjustl(variable)) )
-         case ('psi')
+         case ('psi', 'u')
             read(be_unit) rfls1_be
             if (.not.interpolate_stats) be1_rf_lengthscale = rfls1_be
-         case ('chi_u')
+         case ('chi_u', 'v')
             read(be_unit) rfls2_be
             if (.not.interpolate_stats) be2_rf_lengthscale = rfls2_be
-         case ('t_u')
+         case ('t_u', 't')
             read(be_unit) rfls3_be
             if (.not.interpolate_stats) be3_rf_lengthscale = rfls3_be
          case ('rh_u' , 'rh')
@@ -934,7 +939,7 @@ subroutine da_setup_be_regional(xb, be, grid)
             end if
             if (.not.interpolate_stats) be11_rf_lengthscale = rfls11_be
 #endif
-         case ('ps_u')
+         case ('ps_u', 'ps')
             read(be_unit) be5_rf_lengthscale(1:1)
          case default;
             message(1)='Read problem in lengthscales in be.dat'
@@ -983,7 +988,8 @@ subroutine da_setup_be_regional(xb, be, grid)
   endif
 !================== for interpolating CV5 =======================================
    ! 3.3 Interpolate the CV5 BE to the model resolution
-   if (Interpolate_Stats) then
+
+   if (interpolate_stats) then
  
    ! 3.3.1 Compute the Vertical covariance matrix arrays for input CV5 BE:
  
@@ -1036,7 +1042,7 @@ subroutine da_setup_be_regional(xb, be, grid)
       allocate (reg_psi_chi(1:kz))
       allocate (reg_psi_t  (1:kz,1:kz))
    ! 3.3.2 Vertical resolution conversion from input BE(nk) to model(kz) BE:
-      call da_chg_be_Vres(kz, nk, xb%sigmah, eta_be,&
+      call da_chg_be_vres(kz, nk, xb%sigmah, eta_be,&
                         reg_psi_chi_be,reg_psi_ps_be,reg_psi_t_be, &
                         reg_psi_chi   ,reg_psi_ps   ,reg_psi_t   , &
                         covm1_be, covm2_be, covm3_be, covm4_be, &
@@ -1206,7 +1212,7 @@ subroutine da_setup_be_regional(xb, be, grid)
       ALLOCATE ( be4_evec_loc(1:jy,1:kz,1:kz) )
       ALLOCATE ( be5_evec_loc(1:jy,1:1,1:1) )
  
-   endif
+   endif ! if interpolate_stats
 
    ! 4.0 Check and get the truncated number of the vertical modes
    ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

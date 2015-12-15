@@ -1635,6 +1635,7 @@
      &            ,GRID%HPBL2D, GRID%EVAP2D, GRID%HEAT2D,GRID%RC2D               &  !S&P Kwon
      &            ,GRID%SFCHEADRT,GRID%INFXSRT,GRID%SOLDRAIN           &  !Hydrology, no-op right now
      &            ,grid%cd_out,grid%ch_out                             &
+     &            ,grid%DUBLDT,grid%DVBLDT,grid%DTHBLDT,grid%DQVBLDT   &!wang added PBL tendency output
      &            ,IDS,IDF,JDS,JDF,KDS,KDE                             &
      &            ,IMS,IME,JMS,JME,KMS,KME                             &
      &            ,IPS,IPE,JPS,JPE,KPS,KPE                             &
@@ -1847,10 +1848,13 @@
      &             ,RTHBLTEN,RQVBLTEN,RTHRATEN                         & 
 #if (NMM_CORE==1)                  
      &             ,grid%twbs,grid%qwbs                                &
-     &                 ,grid%DUCUDT, grid%DVCUDT, GRID%MOMMIX, grid%random             &
+     &                 ,grid%DUCUDT, grid%DVCUDT, GRID%MOMMIX, grid%random             & 
+     &                 ,grid%DTHCUDT,grid%DQVCUDT,grid%DQRCUDT,grid%DQCCUDT   &! wang, output CU tendency 
+     &                 ,grid%DQICUDT,grid%DQSCUDT                      &
 #endif
      &             ,grid%hpbl2d,grid%evap2d,grid%heat2d                &
      &             ,grid%dx_nmm,grid%dy_nmm                            & !wang, dx2d, dy
+     &             ,grid%sigu, grid%sigushal                           & !wang
      &             ,grid%avcnvc,grid%acutim,grid%ihe,grid%ihw          &
      &             ,GRID,CONFIG_FLAGS                                  &
      &             ,IDS,IDF,JDS,JDF,KDS,KDE                            &

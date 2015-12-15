@@ -20,6 +20,7 @@ CONTAINS
                  HPBL2D,EVAP2D,HEAT2D,                              & !Kwon for shallow convection
                  P_QI,P_FIRST_SCALAR,                               & 
                  DX2D, DY,                                          & ! Wang W for scale-aware cnv
+                 SIGU, SIGUSHAL,                                    & !updraft area, sig_u for deep and shallow cnv
                  ids,ide, jds,jde, kds,kde,                         &
                  ims,ime, jms,jme, kms,kme,                         &
                  its,ite, jts,jte, kts,kte                          )
@@ -123,6 +124,7 @@ CONTAINS
 !wang
       REAL,    INTENT(IN) ::            DY 
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: DX2D
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: SIGU,SIGUSHAL !updaft area fraction for deep and shallow cnv
 !wang
 
       REAL, OPTIONAL, INTENT(IN) :: PGCON,sas_mass_flux,shal_pgcon
@@ -197,6 +199,9 @@ CONTAINS
       REAL     (kind=kind_phys), DIMENSION(its:ite) :: garea             ! grid box area in m^2, 
                                                                          ! Wang scale-aware cnv
 
+      REAL     (kind=kind_phys), DIMENSION(its:ite) :: sigu_out,sigushal_out  !updraft area fraction for deep and shallow cnv 
+
+
       REAL     (kind=kind_phys), DIMENSION(its:ite, kts:kte+1) ::       &
                                         PRSI                            
 
@@ -240,6 +245,8 @@ CONTAINS
 
 !-----------------------------------------------------------------------
 !
+       write(0,*)' in scale-aware sas'
+
 
       if(present(shalconv)) then
          shalconv_use=shalconv
@@ -410,7 +417,8 @@ CONTAINS
           T1(i,k)=T3D(i,k,j)
           QL(i,k,1)=QI3D(i,k,j)/(1.+QI3D(i,k,j))
           QL(i,k,2)=QC3D(i,k,j)/(1.+QC3D(i,k,j))
-          PRSLK(I,K)=(PRSL(i,k)*.01)**ROVCP
+          !PRSLK(I,K)=(PRSL(i,k)*.01)**ROVCP
+          PRSLK(I,K)=(PRSL(i,k)*1.0e-5)**ROVCP   ! prsl in Pa
         ENDDO
       ENDDO
 
@@ -421,15 +429,23 @@ CONTAINS
         ENDDO
       ENDDO
 
+           write(0,*)'dx2d=',dx2d(its,jts:jts+5)
+           write(0,*)'dy=',dy
+           write(0,*)'ps=',ps(its)
+           write(0,*)'del=',del(its,kts:kts+5)
+           write(0,*)'prsl=',prsl(its,kts:kts+5)
+           write(0,*)'dot=',dot(its,kts:kts+5)
+
 !      CALL SASCNVN(IM,IM,KX,JCAP,DELT,DEL,PRSL,PS,PHIL,                  &
 !                  QL,Q1,T1,U1,V1,RCS,CLDWRK,RN,KBOT,                    &
 !                  KTOP,KCNV,SLIMSK,DOT,NCLOUD,PGCON_USE,massf)
        !! call scale-aware deep cnv,  
        !! added 2015-12-10 W Wang
        !! Note: ps, prsl,del are in Pa. dot in pa/s
+          
         CALL scale_sascnvn(IM,IM,KX,JCAP,DELT,DEL,PRSL,PS,PHIL,QL,     &   
             q1,t1,u1,v1,cldwrk,rn,kbot,ktop,kcnv,nint(slimsk),garea,       &
-            dot,ncloud,ud_mf,dd_mf,dt_mf,cnvw,cnvc)
+            dot,ncloud,ud_mf,dd_mf,dt_mf,cnvw,cnvc,sigu_out)
 !
 
       do i=its,ite
@@ -442,7 +458,7 @@ CONTAINS
         PRATEC2(I,J)=0.
       enddo
 !
-
+!
       if_shallow_conv: if(shalconv_use==1) then
 #if (NMM_CORE == 1)
          ! NMM calls the new shallow convection developed by J Han
@@ -455,7 +471,7 @@ CONTAINS
        !! added 2015-12-10 W Wang
         call scale_shalcnv(im,im,kx,delt,del,prsl,ps,phil,ql,       &
      &     q1,t1,u1,v1,rn,kbot,ktop,kcnv,nint(slimsk),garea,             &
-     &     dot,ncloud,hpbl,heat,evap,ud_mf,dt_mf,cnvw,cnvc)
+     &     dot,ncloud,hpbl,heat,evap,ud_mf,dt_mf,cnvw,cnvc,sigushal_out)
 !
       DO I=ITS,ITE
         RAINCV2(I,J)=RN(I)*1000./STEPCU
@@ -474,6 +490,13 @@ CONTAINS
 #endif
 #endif
      endif if_shallow_conv
+
+!! output updraft area fractions for deep and shallow cnv
+      do i=its,ite
+        SIGU(I,J)=SIGU_OUT(i)
+        SIGUSHAL(I,J)=SIGUSHAL_OUT(i)
+      enddo
+
 
         DO I=ITS,ITE
         RAINCV(I,J)= RAINCV1(I,J) + RAINCV2(I,J)
@@ -608,7 +631,7 @@ CONTAINS
 
       subroutine scale_sascnvn(im,ix,km,jcap,delt,delp,prslp,psp,phil,ql,  &
      &     q1,t1,u1,v1,cldwrk,rn,kbot,ktop,kcnv,islimsk,garea,             &
-     &     dot,ncloud,ud_mf,dd_mf,dt_mf,cnvw,cnvc)
+     &     dot,ncloud,ud_mf,dd_mf,dt_mf,cnvw,cnvc,xmb)
 !    &     q1,t1,u1,v1,rcs,cldwrk,rn,kbot,ktop,kcnv,islimsk,
 !    &     dot,ncloud,ud_mf,dd_mf,dt_mf,me)
 !
@@ -715,7 +738,8 @@ CONTAINS
       parameter(g=grav,asolfac=0.89)
       parameter(elocp=hvap/cp,el2orc=hvap*hvap/(rv*cp))
 !     parameter(c0l=.0015,c0s=.002,c1l=.0015,c1s=.002,d0=.07)
-      parameter(c0s=.002,c1s=.002,d0=.07)
+      !parameter(c0s=.002,c1s=.002,d0=.07)
+      parameter(c0s=.002,c1s=.002,d0=.01)
       parameter(c0l=c0s*asolfac,c1l=c1s*asolfac)
       parameter(cm=1.0,delta=fv)
       parameter(fact1=(cvap-cliq)/rv,fact2=hvap/rv-fact1*t0c)
@@ -808,6 +832,8 @@ CONTAINS
         xpwav(i)= 0.
         xpwev(i)= 0.
         vshear(i) = 0.
+
+         xmb(i)=0.0   ! initialized wang
       enddo
 !
       do i=1,im
@@ -870,7 +896,8 @@ CONTAINS
       crtlamu = 1.0e-4
       crtlamd = 1.0e-4
 !
-      cxlamu  = 1.0e-4
+      !cxlamu  = 1.0e-4
+      cxlamu  = 1.0e-3   ! 2015-12-15
       cxlamd  = 1.0e-4
       xlamde  = 1.0e-4
       xlamdd  = 1.0e-4
@@ -2852,7 +2879,7 @@ CONTAINS
 !     subroutine shalcnv(im,ix,km,jcap,delt,delp,prslp,psp,phil,ql,
       subroutine scale_shalcnv(im,ix,km,delt,delp,prslp,psp,phil,ql,      &
      &     q1,t1,u1,v1,rn,kbot,ktop,kcnv,islimsk,garea,                   &
-     &     dot,ncloud,hpbl,heat,evap,ud_mf,dt_mf,cnvw,cnvc)
+     &     dot,ncloud,hpbl,heat,evap,ud_mf,dt_mf,cnvw,cnvc,xmb)
 !    &     q1,t1,u1,v1,rcs,rn,kbot,ktop,kcnv,islimsk,
 !    &     dot,ncloud,hpbl,heat,evap,ud_mf,dt_mf,me)
 !
@@ -2948,7 +2975,8 @@ CONTAINS
       parameter(elocp=hvap/cp,                                       &
      &          el2orc=hvap*hvap/(rv*cp))
 !     parameter(c0l=0.00178,c0s=0.002,c1l=3.5e-4,c1s=5.e-4,d0=.07)
-      parameter(c0s=0.002,c1s=5.e-4,d0=.07)
+      !parameter(c0s=0.002,c1s=5.e-4,d0=.07)
+      parameter(c0s=0.002,c1s=5.e-4,d0=.01)
       parameter(c0l=c0s*asolfac,c1l=c1s*asolfac)
       parameter(cm=1.0,delta=fv)
       parameter(fact1=(cvap-cliq)/rv,fact2=hvap/rv-fact1*t0c)
@@ -3028,6 +3056,7 @@ CONTAINS
         aa1(i)  = 0.
         cina(i) = 0.
         vshear(i) = 0.
+         xmb(i)=0.0
       enddo
 !!
       totflg = .true.

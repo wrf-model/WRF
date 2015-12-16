@@ -395,8 +395,8 @@ state  real     rc2d    ij    dyn_nmm   1    -       h        "RC2D"     "critic
 state  real   dku3d    ijk    dyn_nmm   1    -      rh023      "DKU3D"     "Momentum Diffusivity" "m*m/s"
 state  real   dkt3d    ijk    dyn_nmm   1    -      rh023      "DKT3D"     "Thermal Diffusivity" "m*m/s"
 
-state  real   SIGU    ij    dyn_nmm   1    -     rh023       "SIGU"  "fractional area of deep cnv updraft"        " "
-state  real   SIGUSHAL ij    dyn_nmm   1    -     rh023       "SIGUSHAL"  "fractional area of shallow cnv updraft"        " "
+state  real   SCALEFUN  ij    dyn_nmm   1    -     rh023       "SCALEFUN"  "CNV Mass Scale function(0-1)"        " "
+state  real   SCALEFUN1 ij    dyn_nmm   1    -     rh023       "SCALEFUN1"  "CNV Mass Scale function 1(0-1)"        " "
 state  real   DTHCUDT  ijk    dyn_nmm   1    -      rh023      "DTHCUDT"     "TH tendency due to CU" "K/s"
 state  real   DQVCUDT  ijk    dyn_nmm   1    -      rh023      "DQVCUDT"     "QV tendency due to CU" "kg/kg/s"
 state  real   DQRCUDT  ijk    dyn_nmm   1    -      rh023      "DQRCUDT"     "QR tendency due to CU" "kg/kg/s"

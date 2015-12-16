@@ -1854,7 +1854,7 @@
 #endif
      &             ,grid%hpbl2d,grid%evap2d,grid%heat2d                &
      &             ,grid%dx_nmm,grid%dy_nmm                            & !wang, dx2d, dy
-     &             ,grid%sigu, grid%sigushal                           & !wang
+     &             ,grid%scalefun, grid%scalefun1                           & !wang
      &             ,grid%avcnvc,grid%acutim,grid%ihe,grid%ihw          &
      &             ,GRID,CONFIG_FLAGS                                  &
      &             ,IDS,IDF,JDS,JDF,KDS,KDE                            &

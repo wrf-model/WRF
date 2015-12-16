@@ -20,7 +20,7 @@ CONTAINS
                  HPBL2D,EVAP2D,HEAT2D,                              & !Kwon for shallow convection
                  P_QI,P_FIRST_SCALAR,                               & 
                  DX2D, DY,                                          & ! Wang W for scale-aware cnv
-                 SIGU, SIGUSHAL,                                    & !updraft area, sig_u for deep and shallow cnv
+                 SCALEFUN, SCALEFUN1,                               & !cnv scale functions
                  ids,ide, jds,jde, kds,kde,                         &
                  ims,ime, jms,jme, kms,kme,                         &
                  its,ite, jts,jte, kts,kte                          )
@@ -124,7 +124,7 @@ CONTAINS
 !wang
       REAL,    INTENT(IN) ::            DY 
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: DX2D
-      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: SIGU,SIGUSHAL !updaft area fraction for deep and shallow cnv
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: SCALEFUN,SCALEFUN1 !updaft area fraction for deep and shallow cnv
 !wang
 
       REAL, OPTIONAL, INTENT(IN) :: PGCON,sas_mass_flux,shal_pgcon
@@ -199,7 +199,7 @@ CONTAINS
       REAL     (kind=kind_phys), DIMENSION(its:ite) :: garea             ! grid box area in m^2, 
                                                                          ! Wang scale-aware cnv
 
-      REAL     (kind=kind_phys), DIMENSION(its:ite) :: sigu_out,sigushal_out  !updraft area fraction for deep and shallow cnv 
+      REAL     (kind=kind_phys), DIMENSION(its:ite) :: SCALEFUN_out,SCALEFUN1_out  !updraft area fraction for deep and shallow cnv 
 
 
       REAL     (kind=kind_phys), DIMENSION(its:ite, kts:kte+1) ::       &
@@ -445,7 +445,7 @@ CONTAINS
           
         CALL scale_sascnvn(IM,IM,KX,JCAP,DELT,DEL,PRSL,PS,PHIL,QL,     &   
             q1,t1,u1,v1,cldwrk,rn,kbot,ktop,kcnv,nint(slimsk),garea,       &
-            dot,ncloud,ud_mf,dd_mf,dt_mf,cnvw,cnvc,sigu_out)
+            dot,ncloud,ud_mf,dd_mf,dt_mf,cnvw,cnvc,SCALEFUN_out)
 !
 
       do i=its,ite
@@ -471,7 +471,7 @@ CONTAINS
        !! added 2015-12-10 W Wang
         call scale_shalcnv(im,im,kx,delt,del,prsl,ps,phil,ql,       &
      &     q1,t1,u1,v1,rn,kbot,ktop,kcnv,nint(slimsk),garea,             &
-     &     dot,ncloud,hpbl,heat,evap,ud_mf,dt_mf,cnvw,cnvc,sigushal_out)
+     &     dot,ncloud,hpbl,heat,evap,ud_mf,dt_mf,cnvw,cnvc,SCALEFUN1_out)
 !
       DO I=ITS,ITE
         RAINCV2(I,J)=RN(I)*1000./STEPCU
@@ -493,8 +493,8 @@ CONTAINS
 
 !! output updraft area fractions for deep and shallow cnv
       do i=its,ite
-        SIGU(I,J)=SIGU_OUT(i)
-        SIGUSHAL(I,J)=SIGUSHAL_OUT(i)
+        SCALEFUN(I,J)=SCALEFUN_OUT(i)
+        SCALEFUN1(I,J)=SCALEFUN1_OUT(i)
       enddo
 
 
@@ -631,7 +631,7 @@ CONTAINS
 
       subroutine scale_sascnvn(im,ix,km,jcap,delt,delp,prslp,psp,phil,ql,  &
      &     q1,t1,u1,v1,cldwrk,rn,kbot,ktop,kcnv,islimsk,garea,             &
-     &     dot,ncloud,ud_mf,dd_mf,dt_mf,cnvw,cnvc,xmb)
+     &     dot,ncloud,ud_mf,dd_mf,dt_mf,cnvw,cnvc, scaldfunc)
 !    &     q1,t1,u1,v1,rcs,cldwrk,rn,kbot,ktop,kcnv,islimsk,
 !    &     dot,ncloud,ud_mf,dd_mf,dt_mf,me)
 !
@@ -833,7 +833,7 @@ CONTAINS
         xpwev(i)= 0.
         vshear(i) = 0.
 
-         xmb(i)=0.0   ! initialized wang
+         scaldfunc(i)=-1.0   ! initialized wang
       enddo
 !
       do i=1,im
@@ -2879,7 +2879,7 @@ CONTAINS
 !     subroutine shalcnv(im,ix,km,jcap,delt,delp,prslp,psp,phil,ql,
       subroutine scale_shalcnv(im,ix,km,delt,delp,prslp,psp,phil,ql,      &
      &     q1,t1,u1,v1,rn,kbot,ktop,kcnv,islimsk,garea,                   &
-     &     dot,ncloud,hpbl,heat,evap,ud_mf,dt_mf,cnvw,cnvc,xmb)
+     &     dot,ncloud,hpbl,heat,evap,ud_mf,dt_mf,cnvw,cnvc, scaldfunc)
 !    &     q1,t1,u1,v1,rcs,rn,kbot,ktop,kcnv,islimsk,
 !    &     dot,ncloud,hpbl,heat,evap,ud_mf,dt_mf,me)
 !
@@ -3056,7 +3056,7 @@ CONTAINS
         aa1(i)  = 0.
         cina(i) = 0.
         vshear(i) = 0.
-         xmb(i)=0.0
+          scaldfunc(i)=-1.0  ! wang initialized
       enddo
 !!
       totflg = .true.

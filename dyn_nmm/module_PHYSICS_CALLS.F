@@ -2209,7 +2209,7 @@
 #endif
      &                 ,HPBL2D,EVAP2D,HEAT2D                            &     !Kwon S&P
      &                 ,DX2D,DYNMM                                      &     !WANG scale-aware sas
-     &                 ,SIGU, SIGUSHAL                                  & !updraft fraction area
+     &                 ,SCALEFUN, SCALEFUN1                             & !scale functions
      &                 ,AVCNVC,ACUTIM,IHE,IHW                           &
      &                 ,GRID,CONFIG_FLAGS                               &
      &                 ,IDS,IDE,JDS,JDE,KDS,KDE                         &
@@ -2255,10 +2255,9 @@
 
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: DX2D ! Wang scale-sware sas
       REAL,INTENT(IN) :: DYNMM                           ! Delt_Y 
-      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: SIGU,SIGUSHAL ! Wang scale-sware sas
-                                                                     ! updraft
-                                                                     ! fractional
-                                                                     ! areas
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: SCALEFUN,SCALEFUN1 ! Wang scale-sware sas
+                                                                     ! scale
+                                                                     ! functions
 
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: HPBL2D,EVAP2D,HEAT2D     !Kwon S&P
@@ -2739,7 +2738,7 @@
 #endif
      &                 ,HPBL2D=HPBL2D,EVAP2D=EVAP2D,HEAT2D=HEAT2D       &     !Kwon S&P
      &                 ,DX2D=DX2D,DYNMM=DYNMM                          &     !Wang scale-sware SAS 
-     &                 ,SIGU=SIGU, SIGUSHAL=SIGUSHAL                    &
+     &                 ,SCALEFUN=SCALEFUN, SCALEFUN1=SCALEFUN1          &
      &                 ,pgcon=config_flags%sas_pgcon                    &
      &                 ,sas_mass_flux=config_flags%sas_mass_flux        &
      &                 ,shalconv=config_flags%sas_shal_conv             &

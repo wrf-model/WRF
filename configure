@@ -390,16 +390,16 @@ if [ -n "$PNETCDF" ] ; then
 #  echo "Will configure for use without NetCDF"
 fi
 
+if [ -n "$HDF5" ] ; then
+  echo "Will use HDF5 in dir: $HDF5"
+else
+  echo "HDF5 not set in environment. Will configure WRF for use without."
+fi
+
 if [ -n "$PHDF5" ] ; then
   echo "Will use PHDF5 in dir: $PHDF5"
 else
   echo "PHDF5 not set in environment. Will configure WRF for use without."
-fi
-
-if [ "$wrf_core" = "DA_CORE" ]; then
-   if [ -n "$WRFPLUS_DIR" ] ; then
-      unset WRFPLUS_DIR
-   fi
 fi
 
 if [ "$wrf_core" = "4D_DA_CORE" ]; then
@@ -408,6 +408,11 @@ if [ "$wrf_core" = "4D_DA_CORE" ]; then
    else
       echo "WRFPLUS_DIR not set in environment. Please compile WRFPLUS and set WRFPLUS_DIR."
       exit
+   fi
+else
+   if [ -n "$WRFPLUS_DIR" ] ; then
+      echo 'Unsetting "$WRFPLUS_DIR" environment variable. Use "configure 4dvar" to configure for 4dvar compilation.'
+      unset WRFPLUS_DIR
    fi
 fi
 # Users who are cross-compiling can set environment variable 

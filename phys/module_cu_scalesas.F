@@ -757,7 +757,7 @@ CONTAINS
       real(kind=kind_phys) wc(im),         wcxmb(im)
       real(kind=kind_phys) wbar(im),       xmbeta(im)
       real(kind=kind_phys) scaldfunc(im),  awlam(im),                  &
-     &                     sigmaw(im),     sigmagf(im)
+     &                     sigmaw(im),     sigmagf(im) ,   sigmagfm(im) 
 !
 !c  cloud water
 !     real(kind=kind_phys) tvo(im,km)
@@ -2595,6 +2595,22 @@ CONTAINS
           sigmagf(i) = min(sigmagf(i), 0.7)
         endif
       enddo
+
+!--- modified Grell & Freitas' (2014) updraft fraction which uses
+!     actual entrainment rate at cloud base
+!
+      do i = 1, im
+        if(cnvflg(i)) then
+          k = kbcon(i)
+          tem = 0.2 / max(xlamue(i,k), 3.e-5)
+          tem1 = 3.14 * tem * tem
+          sigmagfm(i) = tem1 / garea(i)
+          sigmagfm(i) = max(sigmagfm(i), 0.001)
+          sigmagfm(i) = min(sigmagfm(i), 0.999)
+        endif
+      enddo
+!
+
 !
 !--- compute scale-aware function based on Arakawa & Wu (2013)
 !  using combination of updraft fractions from both 
@@ -2606,7 +2622,8 @@ CONTAINS
           if (tem < 25.) then
 !           scaldfunc(i) = (1.-sigmaw(i)) * (1.-sigmaw(i))   ! Arakawa & Wu (2013)
 !           scaldfunc(i) = (1.-sigmagf(i)) * (1.-sigmagf(i)) ! Grell & Freitas (2014)
-            scaldfunc(i) = (1.-sigmaw(i)) * (1.-sigmagf(i))  ! AW & GF
+            scaldfunc(i) = (1.-sigmagfm(i)) * (1.-sigmagfm(i)) ! modified Grell & Freitas(2014)
+!            scaldfunc(i) = (1.-sigmaw(i)) * (1.-sigmagf(i))  ! AW & GF
             scaldfunc(i) = max(min(scaldfunc(i), 1.0), 0.)
           else
             scaldfunc(i) = 1.0
@@ -2998,7 +3015,7 @@ CONTAINS
       real(kind=kind_phys) wcxmb(im)
       real(kind=kind_phys) wbar(im),       xmbeta(im)
       real(kind=kind_phys) scaldfunc(im),  awlam(im),                  &
-     &                     sigmaw(im),     sigmagf(im)
+     &                     sigmaw(im),     sigmagf(im), sigmagfm(im)
 !
 !c  cloud water
 !     real(kind=kind_phys) qlko_ktcon(im), dellal(im,km), tvo(im,km),
@@ -4143,6 +4160,22 @@ CONTAINS
           sigmagf(i) = min(sigmagf(i), 0.7)
         endif
       enddo
+
+!--- modified Grell & Freitas' (2014) updraft fraction which uses
+!     actual entrainment rate at cloud base
+!
+      do i = 1, im
+        if(cnvflg(i)) then
+          k = kbcon(i)
+          tem = 0.2 / max(xlamue(i,k), 3.e-5)
+          tem1 = 3.14 * tem * tem
+          sigmagfm(i) = tem1 / garea(i)
+          sigmagfm(i) = max(sigmagfm(i), 0.001)
+          sigmagfm(i) = min(sigmagfm(i), 0.999)
+        endif
+      enddo
+
+
 !
 !--- compute scale-aware function based on Arakawa & Wu (2013)
 !  using combination of updraft fractions from both
@@ -4155,7 +4188,8 @@ CONTAINS
           if (tem < 25.) then
 !           scaldfunc(i) = (1.-sigmaw(i)) * (1.-sigmaw(i))   ! Arakawa & Wu (2013)
 !           scaldfunc(i) = (1.-sigmagf(i)) * (1.-sigmagf(i)) ! Grell & Freitas (2014)
-            scaldfunc(i) = (1.-sigmaw(i)) * (1.-sigmagf(i))  ! AW & GF
+            scaldfunc(i) = (1.-sigmagfm(i)) * (1.-sigmagfm(i)) ! modified Grell & Freitas(2014)
+!            scaldfunc(i) = (1.-sigmaw(i)) * (1.-sigmagf(i))  ! AW & GF
             scaldfunc(i) = max(min(scaldfunc(i), 1.0), 0.)
           else
             scaldfunc(i) = 1.0

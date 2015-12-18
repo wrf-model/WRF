@@ -5,7 +5,7 @@ MODULE qf03
 ! JY Kang, 01 Dec 2008
 ! Modify the code for WRF_chem
 !
-! M. Klose, 2010-2013 Modifications
+! M. Klose, 2010-2015 Modifications
 !-----------------------------------------------------------------------------------
 ! Calculate sediment flux for multi-particle size soils as a weighted average of Q(d) 
 !           dust emission F(d) for covered and moisture soil
@@ -22,8 +22,9 @@ MODULE qf03
 !      dm:         median diameter of each particle size.                   [m]
 !      m_fract:    Weight fraction of each particle range. Sum m_fract = 1
 !      ustar:      Friciton velocity.                                       [m/s]
-!      cf:         fraction area covered by roughness elements
-!      w:          surface soil moisture contains [m^3/m^3]
+!      cf:         fraction area covered by roughness elements/vegetation cover
+!      w:          surface soil moisture content [m^3/m^3]
+!      wr:         air-dry soil moisture [m^3/m^3] from SOILPARM.TBL
 !      c:          Owen's coefficient
 !
 !      output:  
@@ -39,18 +40,20 @@ MODULE qf03
 
   CONTAINS
 
-  subroutine qf03_driver ( nmx, idst, g, rho, dt, &
-                    ustar, w, cf_in, ust_min, imod, dz_lowest, &
+  subroutine qf03_driver ( nmx, idst, g, rhop, rho, dt, &
+                    ustar, w, cf, ust_min, imod, dz_lowest, &
                     soilc, tot_soilc, domsoilc,    &
                     tc, bems, rough_cor_in, smois_cor_in, wr, &
                     d0, dd, psd_m, dpsd_m, ppsd_m, psd_f, dpsd_f, ppsd_f, imax, stype)
        
        INTEGER, INTENT(IN   )                   :: nmx, imod, idst
-       REAL, INTENT(IN  )                       :: g, dt, rho, dz_lowest, ustar
-       REAL(8), INTENT(IN   )                   :: w, cf_in
-       REAL(8), INTENT(OUT  )                   :: ust_min, rough_cor_in, smois_cor_in
-       REAL   , INTENT(INOUT), DIMENSION(nmx)   :: tc, bems
-       REAL   , INTENT(IN), DIMENSION(12)       :: wr       
+       REAL   , INTENT(IN   )                   :: g, dt, rho, dz_lowest, ustar
+       REAL(8), INTENT(IN   )                   :: w
+       REAL(8), INTENT(INOUT)                   :: cf
+       REAL(8), INTENT(  OUT)                   :: ust_min, rough_cor_in, smois_cor_in
+       REAL   , INTENT(INOUT), DIMENSION(nmx)   :: tc
+       REAL   , INTENT(  OUT), DIMENSION(nmx)   :: bems
+       REAL   , INTENT(IN   ), DIMENSION(12)    :: wr
 
 !kang [2009/01/07] soil class type
        REAL, INTENT(IN   )                      :: tot_soilc       
@@ -67,53 +70,36 @@ MODULE qf03
 !      particle-size distributions 
        real(8), dimension(imax)      :: psdm, dpsdm, ppsdm    ! minimally dispersed
        real(8), dimension(imax)      :: psdf, dpsdf, ppsdf    ! fully dispersed
-       real(8), dimension(imax)      :: psds, dpsds, ppsds    ! sediment
-       character(4) :: s_type       
-       
+       real(8), dimension(imax)      :: psds, dpsds, ppsds    ! sediment       
 
        real(8) :: smois_correc
-       integer :: i, j, n, kk, ij, index
-       real(8) :: total, qtotal, ftotal, cf
+       integer :: i, j, n, kk, ij, ffile
+       real(8) :: total, qtotal, ftotal
        real(8) :: ftotalb, ftotalp
-!
-       real(8), parameter :: calpha = 5.d0, cbeta = 1.37d0
-!
 !
        real(8), dimension(imax)   :: beta_d, beta_s  ! beta1 and beta2 used by Shao et al. (1996) dust emission
        real(8), dimension(imax)   :: ustart, q, ffq, fff
        real(8), dimension(imax,imax) :: f
 !
-       real(8), dimension(imax,imax) :: fb
-       real(8), dimension(imax,imax) :: fp
-       real(8), dimension(imax)   :: fffb, fffp
-!
        real(8), parameter :: c_lambda=0.35
        real(8) :: h, lambda
        real(8) :: ghl, fc
        real(8) :: phl
-       real(8) :: cys, u0, al0, sx, ppr, rhos, smass, omega, rys
-       real(8) :: ddm, a1, a2, a3, a3b, a3p
+       real(8) :: cys, u0, al0, rhos, smass, omega, rys
+       real(8) :: ddm, a1, a2, a3  
        real(8) :: zeta, sigma_m                      ! u*sqrt(rhos/p), bombardment coefficient
 !
        real(8) :: ustart0_out, qwhite_out, f_mb_out, f_hlys_out, pmass_out, vhlys_out
-
-       real    :: xx1,xx2,xx3,xx4
-       
-       character*2   mod
-       character*6   ss_type
-       character*80  infile
-       character*80  surf_file
-       integer ::    nmax
-
-       integer, parameter :: nbins=4
-       integer, parameter :: nkk=50
+! 
+       integer, parameter :: nbins = 5 
        real(8) :: sigma
        real, dimension(nbins)    :: dbin, fbin, cell_fbin
        integer, dimension(nbins) :: ibin
-       data dbin/2.5,5.,10.,20./    !size cut diameter (um)
-       real(8) :: rhop
+       data dbin/2.,3.6,6.,12.,20./ !size cut diameter (um) consistent with GOCART model
+       real(8), intent(in) :: rhop
        real    :: cell_ftotal
        integer :: isl, cc
+       character :: msg, soil
 !*******************************************************************************************
 !
 ! initialization
@@ -122,59 +108,34 @@ MODULE qf03
        cell_fbin(n) = 0.
        enddo
 ! 
-       DO cc = 1, 12   ! soil category
-       if (soilc(cc).eq.0.) then
-        go to 103
-       endif
-       if (cc.eq.1.or.cc.eq.2) then
-        s_type = 'sand'
-           psdm(:)=psd_m(:,1)
-           psdf(:)=psd_f(:,1)
-           dpsdm(:)=dpsd_m(:,1)
-           dpsdf(:)=dpsd_f(:,1)
-           ppsdm(:)=ppsd_m(:,1)
-           ppsdf(:)=ppsd_f(:,1)
-       elseif (cc.eq.3.or.cc.eq.4..or.cc.eq.6.or.cc.eq.8.or.cc.eq.9) then
-        s_type = 'loam'
-           psdm(:)=psd_m(:,3)
-           psdf(:)=psd_f(:,3)
-           dpsdm(:)=dpsd_m(:,3)
-           dpsdf(:)=dpsd_f(:,3)
-           ppsdm(:)=ppsd_m(:,3)
-           ppsdf(:)=ppsd_f(:,3)      
-       elseif (cc.eq.7) then
-        s_type = 'sloa'
-           psdm(:)=psd_m(:,2)
-           psdf(:)=psd_f(:,2)
-           dpsdm(:)=dpsd_m(:,2)
-           dpsdf(:)=dpsd_f(:,2)
-           ppsdm(:)=ppsd_m(:,2)
-           ppsdf(:)=ppsd_f(:,2)
-       elseif (cc.eq.5.or.cc.eq.10.or.cc.eq.11.or.cc.eq.12) then
-        s_type = 'clay'
-           psdm(:)=psd_m(:,4)
-           psdf(:)=psd_f(:,4)
-           dpsdm(:)=dpsd_m(:,4)
-           dpsdf(:)=dpsd_f(:,4)
-           ppsdm(:)=ppsd_m(:,4)
-           ppsdf(:)=ppsd_f(:,4)
-       else 
-        go to 103
-       endif       
-! 
-! 
-       rhop = 2560.d0      ! particle density [kg/m3]
-       rhos = 1000.d0      ! bulk density of soil [kg/m3] ???
+       DO cc = 1, 12  ! soil category
+           if (soilc(cc).eq.0.) then
+              go to 103
+           endif
+!        
+           psdm(:)=psd_m(:,cc)
+           psdf(:)=psd_f(:,cc)
+           dpsdm(:)=dpsd_m(:,cc)
+           dpsdf(:)=dpsd_f(:,cc)
+           ppsdm(:)=ppsd_m(:,cc)
+           ppsdf(:)=ppsd_f(:,cc)
+
+! default settings: 
+       rhos = 1000.d0      ! bulk density of soil [kg/m3] 
        phl = 30000.        ! plastic pressure [N/m2]
        cys = 0.00001       ! cys : parameter
 
        sigma = rhop/rho    ! particle-air density ratio
-       cf = cf_in/100.     ! vegetation cover
 
 !
 !-------------------
 ! frontal area index
 !-------------------
+         if (cf .gt. 0.95) then 
+            write(6,*) 'cover fraction too large, reset'
+            cf = 0.95
+         endif! as larger values lead to large lambda, which is problematic in Raupach scheme
+         
          lambda = - c_lambda*dlog( 1.d0 - cf )
          call r_c(lambda, rough_cor_in)
 
@@ -213,7 +174,7 @@ MODULE qf03
             ust_min = dmin1(ust_min, ustart(i))
             call qwhite(ustart(i), ustar, rho, g, qwhite_out)
             q(i) = qwhite_out
-            q(i) = (1.d0-cf)*q(i)            
+            q(i) = (1.d0-cf)*q(i)
          enddo
          if (cc.eq.domsoilc) then
           smois_cor_in = smois_correc
@@ -263,10 +224,13 @@ MODULE qf03
               u0 = 10*ustar
               al0 = 13.d0*3.14159d0/180.d0
               call vhlys(phl, 2, smass, al0, u0, ddm, vhlys_out)
-               omega = vhlys_out     ![m3]
+              omega = vhlys_out     ![m3]
 !               
               do j = 1, idst
                  rys = psdm(j)/psdf(j)
+                 if (rys.gt.1.) then 
+                     rys = 1.
+                 endif
                  a1 = cys*( (1.-ghl) + ghl*rys )
                  a2 = ffq(i)*g/ustar**2/smass
                  
@@ -285,7 +249,7 @@ MODULE qf03
               do i = idst+1, imax
                  fff(j) = fff(j) + f(i,j)
               enddo
-              fff(j) = (1-cf)*fff(j)              
+              fff(j) = (1.d0-cf)*fff(j)
               ftotal = ftotal + fff(j)
            enddo
 ! 
@@ -308,6 +272,9 @@ MODULE qf03
           do i = idst+1, imax
              do j = 1, idst
                 rys = psdm(j)/psdf(j)
+                if (rys .gt.1.) then
+                    rys = 1.
+                endif
                 a1 = cys*dpsdf(j)*( (1.-ghl) + ghl*rys )
                 a2 = (1.+sigma_m)
                 a3 = ffq(i)*g/ustar**2
@@ -321,7 +288,7 @@ MODULE qf03
              do i = idst+1, imax
                 fff(j) = fff(j) + f(i,j)
              enddo
-             fff(j) = (1-cf)*fff(j)             
+             fff(j) = (1.d0-cf)*fff(j)             
              ftotal = ftotal + fff(j)
           enddo
 !           
@@ -354,7 +321,7 @@ MODULE qf03
              a2 = (1.+sigma_m)
              a3 = qtotal*g/ustar**2
              fff(j) = a1*a2*a3
-             fff(j) = (1-cf)*fff(j)
+             fff(j) = (1.d0-cf)*fff(j)
              ftotal = ftotal + fff(j)
           enddo
 !           
@@ -377,20 +344,17 @@ MODULE qf03
       do n = 1, nbins
       cell_fbin(n) = cell_fbin(n) + (soilc(cc)/tot_soilc)*fbin(n)
       enddo
-      cell_ftotal = cell_ftotal + ftotal*soilc(cc)/tot_soilc
 
 103   continue  
 
       ENDDO  ! cc, soil category
-
-
+      
       do n = 1, nbins
 ! fbin : [kg/m2/s],  dz_lowest : [m],  rho : [kg/m3],  dt : [s] -> tc : [kg/kg-dryair]
          tc(n) = tc(n) + cell_fbin(n)/dz_lowest/rho*dt     ![kg/kg-dryair]
          bems(n) = cell_fbin(n)     ![kg/m2/s]
       enddo
-      tc(5) = tc(5) + cell_ftotal/dz_lowest/rho*dt    ![kg/kg-dryair]
-      bems(5) = cell_ftotal         ![kg/m2/s]
+
 
       END subroutine qf03_driver
 
@@ -436,14 +400,10 @@ MODULE qf03
       real(8), intent(in) :: ust
       real(8), intent(out) :: qwhite_out
       real(8) :: a, b
-      c = 0.5d0
+! default setting:       
+      c = 2.3d0
       a = rho/g
-!      IF (ustar.lt.ust) THEN 
-!        qwhite = 0.d0
-!      ELSE
-!        b = ust/ustar 
-!        qwhite = c*a*ustar**3.*(1.-b)*(1.+b*b)
-!      ENDIF
+
       IF (ustar.lt.ust) THEN 
         qwhite_out = 0.d0
       ELSE
@@ -488,36 +448,33 @@ MODULE qf03
 !
 ! Data based on Shao and Jung, 2000, unpublished manuscript
 ! Data invented for sand, loamy sand, sandy loam, loam, clay loam, and clay
-!                        isl=1, 2, 3, 4, 8, 12
+! Soil classes:
+! 1 sand, 2 loamy sand, 3 sandy loam, 4 loam, 5 silty loam, 6 silt, 7 sandy clay loam, 8 clay loam, 
+! 9 silty clay loam, 10 sandy clay, 11 silty clay, 12 clay
 !----------------------------------------------------------------------
       subroutine h_c (w, wr, isl, h)
 
-      real(8) :: a(12), b(12)
+      real(8) :: a(12), b(12)!, thr(12) 
       real(8), intent(in)  :: w
       real(8), intent(out) :: h
-      real, intent(in)     :: wr      
+      real, intent(in)     :: wr
       integer, intent(in)  :: isl
       character*100 :: msg  ! error message string
-      
-! NOTE: There might be an inconsistency between soil moisture parameters used in this module and 
-! the ones used in the WRF land-surface model. For Noah, RUC, and Noah MP LSM, the inconsistency has 
-! been checked and the values provided in SOILPARM.TBL are used for consistency purpose. For all 
-! other LSM options, the parameters obtained from Shao are used and the inconsistency might still 
-! occur. This might lead to unrealistic fluxes.
 
+!       data thr/0.001, 0.003, 0.037, 0.049, 0.061, 0.072, 0.084, 0.095, 0.110, 0.126, 0.141, 0.156/
       data a /21.19, 33.03, 44.87, 17.79, 20.81, 23.83, 26.84, 29.86, 27.51, 25.17, 22.82, 20.47/
-      data b / 0.68,  0.71,  0.85,  0.61,  0.66,  0.71,  0.75,  0.80,  0.75,  0.70,  0.64,  0.59/
-
+      data b / 0.68,  0.71,  0.85,  0.61,  0.66,  0.71,  0.75,  0.80,  0.75,  0.70,  0.64,  0.59/     
+      
       if ( w.lt.0. ) then
         write(msg, *) 'soil moisture correction (h_c): w = ', w, ' <  0'
         call wrf_error_fatal(msg)
 !         stop
       endif
-
+      
       if ( w.le.wr ) then
          h = 1.0
       else
-         h = sqrt( 1 + a(isl)*( w-wr )**b(isl) )
+         h = sqrt( 1 + a(isl)*( w-wr )**b(isl) )         
       endif
 
       END subroutine h_c
@@ -552,12 +509,12 @@ MODULE qf03
 !                      
 !   sig   : basal to frontal area; about 1
 !   m     : parameter less than 1; about 0.5
-!   beta  : a ratio of drag coef.; about 90.
+!   beta  : a ratio of drag coef.; about 90. ; changed to 200 (recommendation by Y. Shao based on data by Gillies et al.)
 !
       real(8) :: xc
       real(8), intent(in) :: x
       real(8), intent(out) :: r
-      real(8), parameter :: sig=1., m=0.5, beta=90.
+      real(8), parameter :: sig=1., m=0.5, beta=200.
 !
       xc = 1./(sig*m)
       IF (x.ge.xc) THEN

@@ -3,10 +3,11 @@ MODULE uoc_dust
 ! Dust emission module developed at the University of Cologne, Germany. 
 ! Dust emission schemes and framework developed by Y Shao (yshao@uni-koeln.de)
 ! Implementation into WRF and modifications by JY Kang (jy.kang@kiaps.org), 
-! M Klose (mklose@uni-koeln.de), and CL Wu (wuchenglai@mail.iap.ac.cn).
+! CL Wu (wuchenglai@mail.iap.ac.cn), and M Klose (mklose@uni-koeln.de).
 ! 
 ! For references and available schemes, see module_qf03.F
 ! Martina Klose, 29 May 2013
+! 
 !----------------------------------------------------------------------------
   USE module_data_gocart_dust
   USE qf03
@@ -35,9 +36,11 @@ MODULE uoc_dust
                                   ims,ime, jms,jme, kms,kme,               &
                                   its,ite, jts,jte, kts,kte
    INTEGER, DIMENSION( ims:ime , jms:jme ) ,                               &
-          INTENT(IN   ) ::                                 isltyp                                                     
+          INTENT(IN   ) ::                                 isltyp 
+
    REAL, DIMENSION(ims:ime,1:config_flags%num_soil_cat,jms:jme) ,          &
-          INTENT(IN   ) ::                           soil_top_cat    
+          INTENT(IN   ) ::                           soil_top_cat   
+          
    REAL,  DIMENSION( ims:ime , jms:jme, 3 ) ,                              &
           INTENT(IN   ) ::                           erod 
 
@@ -54,10 +57,10 @@ MODULE uoc_dust
          INTENT(INOUT) ::                               smois
    REAL,  DIMENSION( ims:ime , jms:jme )  ,                                &
           INTENT(IN   ) ::                            ust,                 &
-                                                   vegfra
+                                                      vegfra
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ),                        &
           INTENT(IN   ) ::                           dz8w,                 &
-                                                    rho_phy
+                                                     rho_phy         
  
   REAL, INTENT(IN   ) :: dt,g
 !
@@ -65,7 +68,7 @@ MODULE uoc_dust
 !
   integer, parameter :: imax=100              ! No. of particle size intervals for psd
   integer, parameter :: jmax=4                ! No. of log-normal distributions for constructing psd
-  integer, parameter :: stype=4               ! No. of soil texture classes
+  integer, parameter :: stype=12               ! No. of soil texture classes
   real(8), dimension(0:imax) :: d0
   real(8), dimension(imax)   :: dd 
   real(8), dimension(imax)   :: psdm, dpsdm, ppsdm
@@ -73,32 +76,39 @@ MODULE uoc_dust
   real(8), dimension(imax,stype)   :: psd_m, dpsd_m, ppsd_m
   real(8), dimension(imax,stype)   :: psd_f, dpsd_f, ppsd_f
   real(8), parameter :: dcut=20.d0            ! dust cutoff particle size
+  real(8), parameter :: rhop = 2650.d0        ! particle density [kg/m3]
   
-  integer :: nmx,i,j,k,p,idst
-  real    :: ust_grid, airden, dz_lowest
-  real, DIMENSION (5) :: tc,bems
-  real*8 :: gwet, cf
-  real*8  conver,converi
-  real*8 ust_min, rough_cor_in, smois_cor_in
+  
+  integer             :: i,j,k,p,idst
+  integer, parameter  :: nmx = 5  ! No. of dust bins
+  real                :: ust_grid, airden, dz_lowest, smc
+  real, dimension(nmx):: tc, bems
+  real(8)             :: gwet, cf
+  real(8)             :: conver,converi
+  real(8)             :: ust_min, rough_cor_in, smois_cor_in
   real, dimension(16) :: soilc
-  real tot_soilc
-  integer domsoilc
-  integer cc
-  character*1 :: tmp
-  real, dimension(12) :: thr      
+  real                :: tot_soilc
+  integer             :: domsoilc
+  integer             :: cc    
+! 
+  real(8)             :: ustart0_out, lambda, sigma
+  real(8), dimension(imax) :: ustart
+  real, dimension(12) :: thr
   data thr/0.001, 0.003, 0.037, 0.061, 0.072, 0.049, 0.084, 0.110, 0.095, 0.126, 0.141, 0.156/
-! Shao's air-dry soil moisture [m3/m3] in WRF order
-
+  
+!   character*4, dimension(12):: s_type
+!   data s_type /'sand', 'losa', 'salo', 'silo', 'silt', 'loam', 'sclo', 'sicl', 'cloa', &
+!   &            'sacl', 'silc', 'clay'/
+! saturation soil moisture from SOILPARM.TBL
 !***************************************************************************
 ! initialization
    
   conver=1.e-9
   converi=1.e9
 
-  nmx=5   !size bin
   k=kts   !in the bottom layer
   
-! calculate soil-psd once for all 4 types
+! calculate soil-psd once for all 12 types
 ! initialize
    psd_m(:,:) = 0.
    psd_f(:,:) = 0.
@@ -107,45 +117,53 @@ MODULE uoc_dust
    ppsd_m(:,:) = 0.
    ppsd_f(:,:) = 0.
 
-   do p = 1, 4
+   do p = 1, stype
+      write(6,*) p
       if (p.eq.1) then            ! sand
          call psd_create(d0, dd, psdm, dpsdm, ppsdm, imax, csandm, jmax)
          call psd_create(d0, dd, psdf, dpsdf, ppsdf, imax, csandf, jmax)
-         psd_m(:,1) = psdm(:)
-         psd_f(:,1) = psdf(:)
-         dpsd_m(:,1) = dpsdm(:)
-         dpsd_f(:,1) = dpsdf(:)
-         ppsd_m(:,1) = ppsdm(:)
-         ppsd_f(:,1) = ppsdf(:)
-      elseif (p.eq.2) then        ! sandy clay loam
-         call psd_create(d0, dd, psdm, dpsdm, ppsdm, imax, csloam, jmax)
-         call psd_create(d0, dd, psdf, dpsdf, ppsdf, imax, csloaf, jmax)
-         psd_m(:,2) = psdm(:)
-         psd_f(:,2) = psdf(:)
-         dpsd_m(:,2) = dpsdm(:)
-         dpsd_f(:,2) = dpsdf(:)
-         ppsd_m(:,2) = ppsdm(:)
-         ppsd_f(:,2) = ppsdf(:)
-      elseif (p.eq.3) then        ! loam
+      elseif (p.eq.2) then        ! loamy sand
+         call psd_create(d0, dd, psdm, dpsdm, ppsdm, imax, closam, jmax)
+         call psd_create(d0, dd, psdf, dpsdf, ppsdf, imax, closaf, jmax)
+      elseif (p.eq.3) then        ! sandy loam
+         call psd_create(d0, dd, psdm, dpsdm, ppsdm, imax, csalom, jmax)
+         call psd_create(d0, dd, psdf, dpsdf, ppsdf, imax, csalof, jmax)
+      elseif (p.eq.4) then        ! silt loam
+         call psd_create(d0, dd, psdm, dpsdm, ppsdm, imax, csilom, jmax)
+         call psd_create(d0, dd, psdf, dpsdf, ppsdf, imax, csilof, jmax)
+      elseif (p.eq.5) then        ! silt
+         call psd_create(d0, dd, psdm, dpsdm, ppsdm, imax, csiltm, jmax)
+         call psd_create(d0, dd, psdf, dpsdf, ppsdf, imax, csiltf, jmax)
+      elseif (p.eq.6) then        ! loam
          call psd_create(d0, dd, psdm, dpsdm, ppsdm, imax, cloamm, jmax)
          call psd_create(d0, dd, psdf, dpsdf, ppsdf, imax, cloamf, jmax)
-         psd_m(:,3) = psdm(:)
-         psd_f(:,3) = psdf(:)
-         dpsd_m(:,3) = dpsdm(:)
-         dpsd_f(:,3) = dpsdf(:)
-         ppsd_m(:,3) = ppsdm(:)
-         ppsd_f(:,3) = ppsdf(:)
-      else                        ! clay
+      elseif (p.eq.7) then        ! sandy clay loam
+         call psd_create(d0, dd, psdm, dpsdm, ppsdm, imax, csclom, jmax)
+         call psd_create(d0, dd, psdf, dpsdf, ppsdf, imax, csclof, jmax)
+      elseif (p.eq.8) then        ! silty clay loam
+         call psd_create(d0, dd, psdm, dpsdm, ppsdm, imax, csiclm, jmax)
+         call psd_create(d0, dd, psdf, dpsdf, ppsdf, imax, csiclf, jmax)
+      elseif (p.eq.9) then        ! clay loam
+         call psd_create(d0, dd, psdm, dpsdm, ppsdm, imax, ccloam, jmax)
+         call psd_create(d0, dd, psdf, dpsdf, ppsdf, imax, ccloaf, jmax)
+      elseif (p.eq.10) then        ! sandy clay
+         call psd_create(d0, dd, psdm, dpsdm, ppsdm, imax, csaclm, jmax)
+         call psd_create(d0, dd, psdf, dpsdf, ppsdf, imax, csaclf, jmax)
+      elseif (p.eq.11) then        ! silty clay
+         call psd_create(d0, dd, psdm, dpsdm, ppsdm, imax, csilcm, jmax)
+         call psd_create(d0, dd, psdf, dpsdf, ppsdf, imax, csilcf, jmax)         
+      elseif (p.eq.12) then        ! clay
          call psd_create(d0, dd, psdm, dpsdm, ppsdm, imax, cclaym, jmax)
-         call psd_create(d0, dd, psdf, dpsdf, ppsdf, imax, cclayf, jmax)
-         psd_m(:,4) = psdm(:)
-         psd_f(:,4) = psdf(:)
-         dpsd_m(:,4) = dpsdm(:)
-         dpsd_f(:,4) = dpsdf(:)
-         ppsd_m(:,4) = ppsdm(:)
-         ppsd_f(:,4) = ppsdf(:)
+         call psd_create(d0, dd, psdf, dpsdf, ppsdf, imax, cclayf, jmax)       
       endif
+         psd_m(:,p) = psdm(:)
+         psd_f(:,p) = psdf(:)
+         dpsd_m(:,p) = dpsdm(:)
+         dpsd_f(:,p) = dpsdf(:)
+         ppsd_m(:,p) = ppsdm(:)
+         ppsd_f(:,p) = ppsdf(:)      
    enddo  
+!    stop
 !    
 ! Before calculating dust emission, some parameters should be set.
    j = 0
@@ -159,7 +177,7 @@ MODULE uoc_dust
   do i=its,ite
 
 ! do dust over dust source area only
-    if (sum(erod(i,j,:)).gt.0.) then    !use fraction of erodible surface area as dust source indicator    
+     if (sum(erod(i,j,:)).gt.0.) then    !use fraction of erodible surface area as dust source indicator    
         tc(1)=chem(i,kts,j,p_dust_1)*conver   ![kg/kg-dryair]
         tc(2)=chem(i,kts,j,p_dust_2)*conver
         tc(3)=chem(i,kts,j,p_dust_3)*conver
@@ -172,28 +190,30 @@ MODULE uoc_dust
         dz_lowest = dz8w(i,1,j)
  
 ! for soil moisture using volumetric soil moisture (smois)
+        if (smois(i,1,j).gt.1.) then 
+           smois(i,1,j) = 1.
+           CALL wrf_message('UoC CTDE WARNING: vol. soil moisture > 1, reset')
+        endif 
+
         gwet=smois(i,1,j)
         airden=rho_phy(i,kts,j)                       ![kg/m3]
         cf=vegfra(i,j)                                ! in [%]
+        cf = cf/100.d0                                ! fraction 
 
 ! initialization
          tot_soilc=0.
-         do cc = 1, 12
-            soilc(cc) = 0.
-         enddo
+         soilc = 0.
 
-! print*, texture(i,j)         
          do cc = 1, 12 
             soilc(cc) = soil_top_cat(i,cc,j)
             tot_soilc = tot_soilc + soilc(cc)
          enddo
-
-!          domsoilc = texture(i,j)
+!
          domsoilc = isltyp(i,j)
          if (  config_flags%sf_surface_physics .eq. 3   ) then
-             DRYSMC = DRYSMC_ruc    ! RUC
+             DRYSMC = DRYSMC_ruc
          elseif (  config_flags%sf_surface_physics .eq. 4   ) then
-             DRYSMC = DRYSMC_nmp    ! Noah MP                     
+             DRYSMC = DRYSMC_nmp                       
          elseif ( config_flags%sf_surface_physics .eq. 1 .or. & 
          &        config_flags%sf_surface_physics .eq. 5 .or. & 
          &        config_flags%sf_surface_physics .eq. 7 .or. & 
@@ -201,45 +221,49 @@ MODULE uoc_dust
          &        config_flags%sf_surface_physics .eq. 0) then 
              DRYSMC(1:12) = thr             
              CALL wrf_message('UoC dust: DRYSMC reset for dust emission')
-         endif                 
+         endif           
 !------------------------------------------------------------------------
-
-         call qf03_driver( nmx, idst, g, airden, dt, &
+         call qf03_driver( nmx, idst, g, rhop, airden, dt,        &
                   ust_grid, gwet, cf, ust_min, imod, dz_lowest, &
-                  soilc, tot_soilc, domsoilc, &
-                  tc, bems, rough_cor_in, smois_cor_in, DRYSMC(1:12),    &
+                  soilc, tot_soilc, domsoilc,                   &
+                  tc, bems, rough_cor_in, smois_cor_in, DRYSMC(1:12),    & 
                   d0, dd, psd_m, dpsd_m, ppsd_m, psd_f, dpsd_f, ppsd_f, imax, stype)
-
-        chem(i,kts,j,p_dust_1)=tc(1)*converi   ![ug/kg-dryair]
-        chem(i,kts,j,p_dust_2)=tc(2)*converi
-        chem(i,kts,j,p_dust_3)=tc(3)*converi
-        chem(i,kts,j,p_dust_4)=tc(4)*converi
-        chem(i,kts,j,p_dust_5)=tc(5)*converi
+                  
+!                   
+         chem(i,kts,j,p_dust_1)=tc(1)*converi   ![ug/kg-dryair]
+         chem(i,kts,j,p_dust_2)=tc(2)*converi
+         chem(i,kts,j,p_dust_3)=tc(3)*converi
+         chem(i,kts,j,p_dust_4)=tc(4)*converi
+         chem(i,kts,j,p_dust_5)=tc(5)*converi
 ! for output diagnostics
-        emis_dust(i,1,j,p_edust1)=bems(1)*converi 
-        emis_dust(i,1,j,p_edust2)=bems(2)*converi
-        emis_dust(i,1,j,p_edust3)=bems(3)*converi 
-        emis_dust(i,1,j,p_edust4)=bems(4)*converi
-        emis_dust(i,1,j,p_edust5)=bems(5)*converi      ![kg/m2/s] -> [ug/m2/s] 
+         emis_dust(i,1,j,p_edust1)=bems(1)*converi 
+         emis_dust(i,1,j,p_edust2)=bems(2)*converi
+         emis_dust(i,1,j,p_edust3)=bems(3)*converi 
+         emis_dust(i,1,j,p_edust4)=bems(4)*converi
+         emis_dust(i,1,j,p_edust5)=bems(5)*converi      ![kg/m2/s] -> [ug/m2/s] 
+
      else   ! no dust source
          emis_dust(i,1,j,p_edust1)=0.
          emis_dust(i,1,j,p_edust2)=0.
          emis_dust(i,1,j,p_edust3)=0.
          emis_dust(i,1,j,p_edust4)=0.
          emis_dust(i,1,j,p_edust5)=0.
-         ust_min = -9999.d0
-         rough_cor_in = 1.d0
-         smois_cor_in = 1.d0
+!          if (imod .ne. 4) then
+            ust_min = -9999.d0
+            rough_cor_in = 1.d0
+            smois_cor_in = 1.d0
+!          endif
      endif !dsource/erod
 
-     ust_t_min(i,j) = ust_min
-     rough_cor(i,j) = rough_cor_in
-     smois_cor(i,j) = smois_cor_in
+        ust_t_min(i,j) = ust_min
+        rough_cor(i,j) = rough_cor_in
+        smois_cor(i,j) = smois_cor_in
   enddo ! i loop
   enddo ! j loop
 !
 
 end subroutine UoC_dust_driver
+
 
 !*****************************************************************************
       subroutine psd_create(d, dm, psd, dpsd, ppsd, imax, cmtrix, jmax)
@@ -295,7 +319,7 @@ end subroutine UoC_dust_driver
       enddo 	
 !
       do i = 1, imax
-        dm(i) = dexp( (dlog(d(i))+dlog(d(i-1)) )/2.d0 )
+        dm(i) = (d(i)-d(i-1))/dlog(d(i)/d(i-1))           ! d = delta(d) / delta(log d), because del (log d) = (del d) / d   ! mklose [17122014]
 
         pp = 0.d0
 	do j = 1, jmax
@@ -320,7 +344,7 @@ end subroutine UoC_dust_driver
 
       enddo
 !
-! Renormalisation, in case ppsd(imax) is not 1
+! Normalize in case ppsd(imax) is not 1
 !
       dpsd = dpsd/ppsd(imax)
       psd  = psd/ppsd(imax)

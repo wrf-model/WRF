@@ -49,6 +49,7 @@ MODULE module_dust_load
         dustload_3(i,j)= dustload_3(i,j) + chem(i,k,j,p_dust_3)/alt(i,k,j) * dz8w(i,k,j)
         dustload_4(i,j)= dustload_4(i,j) + chem(i,k,j,p_dust_4)/alt(i,k,j) * dz8w(i,k,j)
         dustload_5(i,j)= dustload_5(i,j) + chem(i,k,j,p_dust_5)/alt(i,k,j) * dz8w(i,k,j)
+!         if (j.eq.int(0.5*(ite-its)).and.i.eq.int(0.5*(jte-jts))) write(6,*) 'dload', chem(i,k,j,p_dust_5)
        enddo
       enddo
      enddo

@@ -208,9 +208,12 @@
    real fv
    complex aa, bb
    character*150 msg
+   integer :: uoc_flag  ! flag for UoC dust emissions
 !  save :: sizeaer,extaer,waer,gaer,tauaer,bscoef
 !  save :: l2,l3,l4,l5,l6,l7
 !----------------------------------------------------------------------------------
+   uoc_flag = 0
+   if (config_flags%dust_opt .eq. 4) uoc_flag = 1
 !
 !        write( msg, '(a, 6i4)' )	&
 !                 'jdf ', ids, ide, jds, jde, kds, kde
@@ -294,6 +297,7 @@
           radius_core,radius_wet, number_bin,                          &
           swrefindx,swrefindx_core, swrefindx_shell,                   &
           lwrefindx,lwrefindx_core, lwrefindx_shell,                   &
+          uoc_flag,                                                    & ! mklose
           ids,ide, jds,jde, kds,kde,                                   &
           ims,ime, jms,jme, kms,kme,                                   &
           its,ite, jts,jte, kts,kte                                    )
@@ -3534,6 +3538,7 @@ END subroutine optical_prep_modal_soa_vbs
           radius_core,radius_wet, number_bin,                          &
           swrefindx,swrefindx_core, swrefindx_shell,                   &
           lwrefindx,lwrefindx_core, lwrefindx_shell,                   &
+          uoc,                                                         & ! mklose
           ids,ide, jds,jde, kds,kde,                                   &
           ims,ime, jms,jme, kms,kme,                                   &
           its,ite, jts,jte, kts,kte                                    )
@@ -3641,6 +3646,11 @@ END subroutine optical_prep_modal_soa_vbs
    integer istop
    integer, save :: kcall
    data  kcall / 0 /
+   integer :: uoc
+
+  if (uoc == 1) then   ! mklose
+     den_dust(1) = 2650.   ! change dust density in first bin for UoC dust emission schemes
+  endif
 
 !
 !  real  sginin,sginia,sginic from module_data_sorgam.F

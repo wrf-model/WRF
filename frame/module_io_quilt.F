@@ -1293,6 +1293,11 @@ okay_to_w = .false.
                     CASE DEFAULT
                       Status = 0
                   END SELECT
+#ifdef CALL_SYNC_IN_IO_SERVERS
+                  call wrf_debug(1,'Call system("sync")')
+                  call system('sync')
+                  call wrf_debug(1,'Returned from sync.')
+#endif
                   ENDIF
 
 ! If desired, outputs a ready flag after quilting subroutine closes the data handle for history (wrfout) file.
@@ -2262,6 +2267,11 @@ okay_to_w = .false.
                      CASE DEFAULT
                         Status = 0
                      END SELECT
+#ifdef CALL_SYNC_IN_IO_SERVERS
+                     call wrf_debug(1,'Call system("sync")')
+                     call system('sync')
+                     call wrf_debug(1,'Returned from sync.')
+#endif
                   ENDIF
 
 ! Every I/O server handles the "open_for_write_begin" request.

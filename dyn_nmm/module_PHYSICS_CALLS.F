@@ -756,6 +756,7 @@
      &                ,HPBL2D, EVAP2D, HEAT2D,RC2D                      &  !Kwon S&P
      &                ,SFCHEADRT,INFXSRT,SOLDRAIN                       &  !Hydrology, no-op right now
      &                ,cd_out,ch_out                                    &
+     &                ,DUBLDT,DVBLDT,DTHBLDT,DQVBLDT                    & !wang added PBL tendency output
      &                ,IDS,IDE,JDS,JDE,KDS,KDE                          &
      &                ,IMS,IME,JMS,JME,KMS,KME                          &
      &                ,IPS,IPE,JPS,JPE,KPS,KPE                          &
@@ -892,6 +893,12 @@
 !
 
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: cd_out,ch_out
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT) :: &
+                                                       DTHBLDT         &
+                                                      ,DQVBLDT         &  
+                                                      ,DUBLDT          &  
+                                                      ,DVBLDT         
+
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: taux, tauy
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(IN) :: PINT
 !
@@ -1631,6 +1638,22 @@
      &               ,wstar=wstar_ysu,delta=delta_ysu                 &
      &               ,sf_urban_physics=CONFIG_FLAGS%SF_URBAN_PHYSICS)
 !
+!wang, output PBL tendency
+!
+!$omp parallel do                                                       &
+!$omp& private(i,j,k)
+      DO J=JMS,JME
+      DO K=KMS,KME
+      DO I=IMS,IME
+        DUBLDT(I,J,K)=DUDT_PHY(I,K,J)
+        DVBLDT(I,J,K)=DVDT_PHY(I,K,J)
+        DTHBLDT(I,J,K)=RTHBLTEN(I,K,J)
+        DQVBLDT(I,J,K)=RQVBLTEN(I,K,J)
+      ENDDO
+      ENDDO
+      ENDDO
+!
+
 !***  NOTE THAT THE EXCHANGE COEFFICIENTS FOR HEAT EXCH_H COMING OUT OF
 !***  PBL_DRIVER ARE DEFINED AT THE TOPS OF THE LAYERS KTS TO KTE-1
 !***  IF MODULE_BL_MYJPBL WAS INVOKED.
@@ -2181,8 +2204,12 @@
 #if (NMM_CORE==1)    
      &                 ,TWBS,QWBS                                       &
      &                 ,DUCUDT, DVCUDT, MOMMIX, store_rand               &                  
+     &                 ,DTHCUDT,DQVCUDT,DQRCUDT,DQCCUDT,DQICUDT         &!wang added output CU tendency
+     &                 ,DQSCUDT                                         &!wang added output CU tendency
 #endif
      &                 ,HPBL2D,EVAP2D,HEAT2D                            &     !Kwon S&P
+     &                 ,DX2D,DYNMM                                      &     !WANG scale-aware sas
+     &                 ,SCALEFUN, SCALEFUN1                             & !scale functions
      &                 ,AVCNVC,ACUTIM,IHE,IHW                           &
      &                 ,GRID,CONFIG_FLAGS                               &
      &                 ,IDS,IDE,JDS,JDE,KDS,KDE                         &
@@ -2225,6 +2252,13 @@
       INTEGER, DIMENSION(JMS:JME),INTENT(IN) :: IHE,IHW
 !
       INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: LPBL
+
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: DX2D ! Wang scale-sware sas
+      REAL,INTENT(IN) :: DYNMM                           ! Delt_Y 
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: SCALEFUN,SCALEFUN1 ! Wang scale-sware sas
+                                                                     ! scale
+                                                                     ! functions
+
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: HPBL2D,EVAP2D,HEAT2D     !Kwon S&P
 !`
@@ -2274,6 +2308,14 @@
 #if (NMM_CORE==1)
       REAL, INTENT(INOUT)::MOMMIX
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT):: DUCUDT, DVCUDT 
+!Wang 2015-12-14 added output tendency from CU
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT):: DTHCUDT   &
+     &                                                      , DQVCUDT   & 
+     &                                                      , DQRCUDT   & 
+     &                                                      , DQCCUDT   & 
+     &                                                      , DQICUDT   & 
+     &                                                      , DQSCUDT
+!
       REAL,DIMENSION(IDS:IDE,JDS:JDE)               :: DATA1 
       LOGICAL, EXTERNAL::wrf_dm_on_monitor
 #endif
@@ -2403,6 +2445,8 @@
      &   CONFIG_FLAGS%CU_PHYSICS==SASSCHEME)RETURN
       IF(MOD(NTSD,NCNVC)/=0.AND.                                      &
      &   CONFIG_FLAGS%CU_PHYSICS==MESO_SAS)RETURN             !Kwon
+      IF(MOD(NTSD,NCNVC)/=0.AND.                                      &
+     &   CONFIG_FLAGS%CU_PHYSICS==SCALESASSCHEME)RETURN        ! Wang
       
 !-----------------------------------------------------------------------
       NSTEP_CNV=NCNVC
@@ -2640,6 +2684,12 @@
         DO I=IMS,IME
            DUCUDT(i,j,k)=0.0
            DVCUDT(i,j,k)=0.0
+           DTHCUDT(i,j,k)=0.0
+           DQVCUDT(i,j,k)=0.0
+           DQRCUDT(i,j,k)=0.0
+           DQCCUDT(i,j,k)=0.0
+           DQICUDT(i,j,k)=0.0
+           DQSCUDT(i,j,k)=0.0
         ENDDO
         ENDDO
         ENDDO
@@ -2687,6 +2737,8 @@
                        ,store_rand=store_rand                           &
 #endif
      &                 ,HPBL2D=HPBL2D,EVAP2D=EVAP2D,HEAT2D=HEAT2D       &     !Kwon S&P
+     &                 ,DX2D=DX2D,DYNMM=DYNMM                          &     !Wang scale-sware SAS 
+     &                 ,SCALEFUN=SCALEFUN, SCALEFUN1=SCALEFUN1          &
      &                 ,pgcon=config_flags%sas_pgcon                    &
      &                 ,sas_mass_flux=config_flags%sas_mass_flux        &
      &                 ,shalconv=config_flags%sas_shal_conv             &
@@ -2703,6 +2755,23 @@
      &                 ,QS_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QS),F_QS=F_QS &
      &                 ,QG_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QG),F_QG=F_QG)
 !
+#if (NMM_CORE==1)
+!$omp parallel do                                                       &
+!$omp& private(i,j,k)
+        DO K=KMS,KME
+        DO J=JMS,JME
+        DO I=IMS,IME
+           DTHCUDT(i,j,k)=RTHCUTEN(i,k,j)
+           DQVCUDT(i,j,k)=RQVCUTEN(i,k,j)
+           DQRCUDT(i,j,k)=RQRCUTEN(i,k,j)
+           DQCCUDT(i,j,k)=RQCCUTEN(i,k,j)
+           DQICUDT(i,j,k)=RQICUTEN(i,k,j)
+           DQSCUDT(i,j,k)=RQSCUTEN(i,k,j)
+        ENDDO
+        ENDDO
+        ENDDO
+#endif
+
 !-----------------------------------------------------------------------
 !
 !***  CNVTOP/CNVBOT HOLD THE MAXIMUM VERTICAL LIMITS OF CONVECTIVE CLOUD
@@ -2839,7 +2908,7 @@
 !
           cps_select: SELECT CASE(config_flags%cu_physics)
 !
-          CASE (KFSCHEME,KFETASCHEME,GDSCHEME,SASSCHEME,MESO_SAS,OSASSCHEME,NSASSCHEME,TIEDTKESCHEME)
+          CASE (KFSCHEME,KFETASCHEME,GDSCHEME,SASSCHEME,SCALESASSCHEME,MESO_SAS,OSASSCHEME,NSASSCHEME,TIEDTKESCHEME)
             IF (ETAMP_Regional) THEN
               MOIST_TRANS(I,K,J,P_QS)=MAX(0.,MOIST_TRANS(I,K,J,P_QS)+RQICUTEN(I,K,J)*DTCNVC+RQSCUTEN(I,K,J)*DTCNVC)
             ELSE

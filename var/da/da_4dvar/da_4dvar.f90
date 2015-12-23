@@ -6,7 +6,7 @@ use da_control, only : comm, var4d_bin, var4d_lbc, trace_use_dull, num_fgat_time
 
 #ifdef VAR4D
 
-use module_io_domain, only : open_r_dataset, input_input, close_dataset, MAX_WRF_ALARMS
+use module_streams, only : MAX_WRF_ALARMS
 use module_wrf_top, only : domain, head_grid, model_config_rec, config_flags, &
              wrf_init, wrf_run, wrf_run_tl, wrf_run_ad, wrf_finalize, &
              Setup_Timekeeping, gradient_out

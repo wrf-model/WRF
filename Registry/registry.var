@@ -327,6 +327,8 @@ rconfig   logical   calculate_cg_cost_fn    namelist,wrfvar11  1  .false.  - "ca
 rconfig   logical   lat_stats_option        namelist,wrfvar11  1  .false.  - "lat_stats_option"        ""  ""  
 rconfig   integer   interp_option           namelist,wrfvar11  1  1        - "interp_option"           ""  ""
 rconfig   integer   balance_type            namelist,wrfvar12  1  1        - "balance_type"            ""  ""  
+rconfig   logical   use_wpec                namelist,wrfvar12  1  .false.  - "use_wpec"                ""  ""
+rconfig   real      wpec_factor             namelist,wrfvar12  1  0.001    - "wpec_factor"             ""  "Inverse of WPEC gamma factor"
 rconfig   integer   vert_corr               namelist,wrfvar13  1  2        - "vert_corr"               ""  ""  
 rconfig   integer   vertical_ip             namelist,wrfvar13  1  0        - "vertical_ip"             ""  ""  
 rconfig   integer   vert_evalue             namelist,wrfvar13  1  1        - "vert_evalue"             ""  ""  
@@ -500,10 +502,14 @@ halo      HALO_PSICHI_UV     dyn_em 24:vp%v1,vp%v2,vp6%v1,vp6%v2,xb%cori,xb%rho,
 halo      HALO_BAL_EQN_ADJ   dyn_em 24:xp%v1z
 halo      HALO_PSICHI_UV_ADJ dyn_em 24:xa%u,xa%v,xa%psfc
 halo      HALO_XA_A          dyn_em 4:xa%u,xa%v
+halo      HALO_WPEC          dyn_em 24:xa%grad_p_x,xa%grad_p_y
+halo      HALO_WPEC_ADJ      dyn_em 24:xa%u,xa%v,xa%geoh,xa%p
 halo      HALO_X6A_A         dyn_em 4:x6a%u,x6a%v
 halo      HALO_EM_C_TL       dyn_em 4:g_u_2,g_v_2,g_rainc,g_rainnc
 halo      HALO_XB            dyn_em 24:xb%psac,xb%rough,xb%u,xb%v,xb%w,xb%wh,xb%t,xb%p,xb%q,xb%qs,xb%qrn,xb%qcw,xb%qci,xb%qsn,xb%qgr,xb%qt,xb%rho,xb%rh,xb%h,xb%hf,xb%u10,xb%v10,xb%t2,xb%q2,xb%psfc,xb%regime,xb%ztd,xb%tpw,xb%speed,xb%tb19v,xb%tb19h,xb%tb22v,xb%tb37v,xb%tb37h,xb%tb85v,xb%tb85h,xb%ref,xb%reflog,xb%delt,xb%slp,xb%tsk,xb%smois,xb%tslb,xb%xice,xb%ivgtyp,xb%isltyp,xb%vegfra,xb%snowh,xb%snow
 halo      HALO_XA            dyn_em 24:xa%u,xa%v,xa%q,xa%p,xa%t,xa%rho,xa%rh,xa%psfc,xa%qcw,xa%qrn,xa%qci,xa%qt,xa%qsn,xa%qgr
+halo      HALO_XA_ALL        dyn_em 24:xa%u,xa%v,xa%q,xa%p,xa%t,xa%rho,xa%rh,xa%psfc,xa%qcw,xa%qrn,xa%qci,xa%qt,xa%qsn,xa%qgr,xa%geoh,xa%mu
+halo      HALO_XB_ALL        dyn_em 24:xb%u,xb%v,xb%p,xb%rho,xb%h
 halo      HALO_XA_CLOUD      dyn_em 24:xa%q,xa%t,xa%qcw,xa%qrn,xa%qci,xa%qsn,xa%qgr
 halo      HALO_SFC_XA        dyn_em 24:xa%u10,xa%v10,xa%t2,xa%q2
 halo      HALO_SSMI_XA       dyn_em 24:xa%ztd,xa%tpw,xa%speed,xa%tb19v,xa%tb19h,xa%tb22v,xa%tb37v,xa%tb37h,xa%tb85v,xa%tb85h,xa%ref
@@ -587,6 +593,8 @@ typedef xb_type real    qsn                    ijk      -         1        -    
 typedef xb_type real    qgr                    ijk      -         1        -       -
 typedef xb_type real    qt                     ijk      -         1        -       -
 typedef xb_type real    delt                   ijk      -         1        -       -
+typedef xb_type real    xb_p_x                 ijk      -         1        -       -
+typedef xb_type real    xb_p_y                 ijk      -         1        -       -
 typedef xb_type real    h                      ijk      -         1        -       -
 typedef xb_type real    hf                     ijk      -         1        -       -
 typedef xb_type real    wh                     ijk      -         1        -       -
@@ -653,9 +661,12 @@ typedef x_type real    w                      ijk      -         1        -     
 typedef x_type real    t                      ijk      -         1        -       -
 typedef x_type real    q                      ijk      -         1        -       -
 typedef x_type real    p                      ijk      -         1        -       -
+typedef x_type real    geoh                   ijk      -         1        -       -
 typedef x_type real    rh                     ijk      -         1        -       -
 typedef x_type real    rho                    ijk      -         1        -       -
 typedef x_type real    wh                     ijk      -         1        -       -
+typedef x_type real    grad_p_x               ijk      -         1        -       -
+typedef x_type real    grad_p_y               ijk      -         1        -       -
 typedef x_type real    qrn                    ijk      -         1        -       -
 typedef x_type real    qcw                    ijk      -         1        -       -
 typedef x_type real    qci                    ijk      -         1        -       -
@@ -664,6 +675,7 @@ typedef x_type real    qgr                    ijk      -         1        -     
 typedef x_type real    qt                     ijk      -         1        -       -
 typedef x_type real    tgrn                   ij       -         1        -       -
 typedef x_type real    psfc                   ij       -         1        -       -
+typedef x_type real    mu                     ij       -         1        -       -
 typedef x_type real    u10                    ij       -         1        -       -
 typedef x_type real    v10                    ij       -         1        -       -
 typedef x_type real    t2                     ij       -         1        -       -

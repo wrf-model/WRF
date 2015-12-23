@@ -50,7 +50,7 @@ subroutine da_transform_vtovv(grid, cv_size, be, cv, vv)
       call da_transform_through_wavelet(grid,mz,be%wsd(:,:,s(1):s(3)),cv(s(2):s(4)),vv%v1)
       s(2)=s(4)+1
    else
-      !print'(a,": be%v1%mz=",I0)',__FILE__,mz
+!      print'(a,": be%v1%mz=",I0)',__FILE__,mz
    endif
    if( do_normalize )call da_transform_rescale(mz,be%sd(:,:,s(1):s(3)),vv%v1)
    s(1)=s(3)+1
@@ -66,7 +66,7 @@ subroutine da_transform_vtovv(grid, cv_size, be, cv, vv)
       call da_transform_through_wavelet(grid,mz,be%wsd(:,:,s(1):s(3)),cv(s(2):s(4)),vv%v2)
       s(2)=s(4)+1
    else
-      !print'(a,": be%v2%mz=",I0)',__FILE__,mz
+!      print'(a,": be%v2%mz=",I0)',__FILE__,mz
    endif
    if( do_normalize )call da_transform_rescale(mz,be%sd(:,:,s(1):s(3)),vv%v2)
    s(1)=s(3)+1
@@ -82,7 +82,7 @@ subroutine da_transform_vtovv(grid, cv_size, be, cv, vv)
       call da_transform_through_wavelet(grid,mz,be%wsd(:,:,s(1):s(3)),cv(s(2):s(4)),vv%v3)
       s(2)=s(4)+1
    else
-      !print'(a,": be%v3%mz=",I0)',__FILE__,mz
+!      print'(a,": be%v3%mz=",I0)',__FILE__,mz
    endif
    if( do_normalize )call da_transform_rescale(mz,be%sd(:,:,s(1):s(3)),vv%v3)
    s(1)=s(3)+1
@@ -98,7 +98,7 @@ subroutine da_transform_vtovv(grid, cv_size, be, cv, vv)
       call da_transform_through_wavelet(grid,mz,be%wsd(:,:,s(1):s(3)),cv(s(2):s(4)),vv%v4)
       s(2)=s(4)+1
    else
-      !print'(a,": be%v4%mz=",I0)',__FILE__,mz
+!      print'(a,": be%v4%mz=",I0)',__FILE__,mz
    endif
    if( do_normalize )call da_transform_rescale(mz,be%sd(:,:,s(1):s(3)),vv%v4)
    s(1)=s(3)+1
@@ -114,7 +114,7 @@ subroutine da_transform_vtovv(grid, cv_size, be, cv, vv)
       call da_transform_through_wavelet(grid,mz,be%wsd(:,:,s(1):s(3)),cv(s(2):s(4)),vv%v5)
       s(2)=s(4)+1
    else
-      !print'(a,": be%v5%mz=",I0)',__FILE__,mz
+!      print'(a,": be%v5%mz=",I0)',__FILE__,mz
    endif
    if( do_normalize )call da_transform_rescale(mz,be%sd(:,:,s(1):s(3)),vv%v5)
    s(1)=s(3)+1

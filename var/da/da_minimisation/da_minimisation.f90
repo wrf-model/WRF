@@ -6,6 +6,12 @@ module da_minimisation
 
    use module_configure, only : grid_config_rec_type
    use module_dm, only : wrf_dm_sum_real, wrf_dm_sum_integer
+#ifdef DM_PARALLEL
+   use module_dm, only : local_communicator, mytask, ntasks, ntasks_x, &
+      ntasks_y, data_order_xy, data_order_xyz
+   use module_comm_dm, only : halo_wpec_sub, halo_wpec_adj_sub
+#endif
+
    use module_domain, only : domain, ep_type, vp_type, x_type, domain_clockprint, &
                              domain_clockadvance, domain_clock_get, domain_clock_set
    use module_state_description, only : dyn_em,dyn_em_tl,dyn_em_ad,p_g_qv, &
@@ -44,12 +50,14 @@ module da_minimisation
       num_procs, myproc, use_gpspwobs, use_rainobs, use_gpsztdobs, &
       use_radar_rf, use_radar_rhv,use_radar_rqv,pseudo_var, num_pseudo, &
       num_ob_indexes, num_ob_vars, npres_print, pptop, ppbot, qcstat_conv_unit, gas_constant, &
-      orthonorm_gradient, its, ite, jts, jte, kts, kte, ids, ide, jds, jde, cp, &
+      orthonorm_gradient, its, ite, jts, jte, kts, kte, ids, ide, jds, jde, kds, kde, cp, &
       use_satcv, sensitivity_option, print_detail_outerloop, adj_sens, filename_len, &
-      ims, ime, jms, jme, kms, kme, fgat_rain_flags, var4d_bin_rain, freeze_varbc
-   use da_define_structures, only : iv_type, y_type, j_type, be_type, &
+      ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe, fgat_rain_flags, var4d_bin_rain, freeze_varbc, &
+      use_wpec, wpec_factor
+   use da_define_structures, only : iv_type, y_type,  j_type, be_type, &
       xbx_type, jo_type, da_allocate_y,da_zero_x,da_zero_y,da_deallocate_y, &
       da_zero_vp_type, qhat_type
+   use da_dynamics, only : da_wpec_constraint_lin,da_wpec_constraint_adj
    use da_obs, only : da_transform_xtoy_adj,da_transform_xtoy, &
       da_add_noise_to_ob,da_random_omb_all, da_obs_sensitivity
    use da_geoamv, only : da_calculate_grady_geoamv, da_ao_stats_geoamv, &
@@ -144,7 +152,8 @@ module da_minimisation
 #if defined(RTTOV) || defined(CRTM)
    use da_varbc, only : da_varbc_tl,da_varbc_adj,da_varbc_precond,da_varbc_coldstart
 #endif
-   use da_vtox_transforms, only : da_transform_vtox,da_transform_vtox_adj,da_transform_xtoxa,da_transform_xtoxa_adj
+   use da_vtox_transforms, only : da_transform_vtox,da_transform_vtox_adj,da_transform_xtoxa,da_transform_xtoxa_adj, &
+       da_transform_xtoxa_all,da_transform_xtoxa_adj_all
    use da_wrf_interfaces, only : wrf_dm_bcast_real, wrf_get_dm_communicator
    use module_symbols_util, only : wrfu_finalize
    use da_lapack, only : dsteqr
@@ -183,6 +192,8 @@ contains
 #include "da_calculate_grady.inc"
 #include "da_transform_vtoy.inc"
 #include "da_transform_vtoy_adj.inc"
+#include "da_transform_vtod_wpec.inc"
+#include "da_transform_vtod_wpec_adj.inc"
 #include "da_adjoint_sensitivity.inc"
 #include "da_sensitivity.inc"
 #include "da_amat_mul.inc"

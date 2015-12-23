@@ -20,6 +20,7 @@ CONTAINS
 #if (NMM_CORE==1)
      &          ,psim,p_phy,q10,q2,qfx,taux,tauy,qsfc,qshltr,qz0      &
      &          ,icoef_sf,lcurr_sf                                    & !for gfdl-sf drag
+     &          ,pert_Cd, ens_random_seed, ens_Cdamp                  &
      &          ,cd_out,ch_out                                        &
 #else
      &          ,psim,p_phy,q10,q2,qfx,qsfc,qshltr,qz0                &
@@ -599,6 +600,9 @@ CONTAINS
    real , intent(IN )::   SFENTH
    INTEGER, INTENT(IN)::   ICOEF_SF
    LOGICAL, INTENT(IN)::   LCURR_SF
+   logical,intent(in),optional  :: pert_Cd
+   integer,intent(in),optional  :: ens_random_seed
+   real,intent(in),optional     :: ens_Cdamp
 #endif
    REAL, DIMENSION( ims:ime , 1:num_soil_layers, jms:jme ), INTENT(INOUT)::   SMOIS
    REAL, DIMENSION( ims:ime , 1:num_soil_layers, jms:jme ), INTENT(INOUT)::   TSLB
@@ -2247,6 +2251,7 @@ CONTAINS
                    XLAND,HFX,QFX,TAUX,TAUY,LH,GSW,GLW,TSK,FLHC,FLQC,  & ! gopal's doing for Ocean coupling
                    QGH,QSFC,U10,V10,                              &
                    ICOEF_SF, LCURR_SF,                            &
+                   pert_Cd, ens_random_seed, ens_Cdamp,           &
                    GZ1OZ0,WSPD,BR,ISFFLX,                         &
                    EP_1,EP_2,KARMAN,GFDL_NTSFLG,SFENTH,           &
                    cd_out, ch_out,                                &

@@ -1379,6 +1379,11 @@
      &          ,QSHLTR=QSHLTR,QZ0=QZ0                                  &
      &          ,ICOEF_SF=CONFIG_FLAGS%ICOEF_SF                         &
      &          ,LCURR_SF=CONFIG_FLAGS%LCURR_SF                         &!for gfdl-sf drag
+#if (HWRF==1)
+     &          ,pert_Cd=config_flags%pert_Cd                           &
+     &          ,ens_random_seed=config_flags%ens_random_seed           &
+     &          ,ens_Cdamp=config_flags%ens_Cdamp                       &
+#endif
      &          ,cd_out=grid%cd_out,ch_out=grid%ch_out                  &
      &          ,RAINCV=RAIN                                            &
      &          ,RHO=RR,SFCEVP=SFCEVPX,SFCEXC=SFCEXC,SFCRUNOFF=SSROFF   &
@@ -1620,6 +1625,9 @@
      &               ,DKU3D=DKU3D,DKT3D=DKT3D 
 #if HWRF==1
      &               ,coef_ric_l=coef_ric_l,coef_ric_s=coef_ric_s     &    !Kwon for Ric
+     &          ,pert_pbl=config_flags%pert_pbl                       &
+     &          ,ens_random_seed=config_flags%ens_random_seed         &
+     &          ,ens_pblamp=config_flags%ens_pblamp                   &
 #endif
      &               ,QV_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QV),F_QV=F_QV &
      &               ,QC_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QC),F_QC=F_QC &
@@ -2691,6 +2699,11 @@
 #if (NMM_CORE==1)
      &                 ,RUCUTEN=DUCUDT, RVCUTEN=DVCUDT, MOMMIX=MOMMIX   &
                        ,store_rand=store_rand                           &
+#if (HWRF==1)
+     &                 ,pert_sas=config_flags%pert_sas                  &
+     &                 ,ens_random_seed=config_flags%ens_random_seed    &
+     &                 ,ens_sasamp=config_flags%ens_sasamp              &
+#endif
 #endif
      &                 ,HPBL2D=HPBL2D,EVAP2D=EVAP2D,HEAT2D=HEAT2D       &     !Kwon S&P
      &                 ,pgcon=config_flags%sas_pgcon                    &

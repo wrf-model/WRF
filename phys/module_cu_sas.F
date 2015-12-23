@@ -13,6 +13,7 @@ CONTAINS
                  P_QC,                                              & 
                  MOMMIX, & ! gopal's doing
                  PGCON,sas_mass_flux,                               &
+                 pert_sas, ens_random_seed, ens_sasamp,             &
                  shalconv,shal_pgcon,                               &
                  HPBL2D,EVAP2D,HEAT2D,                              & !Kwon for shallow convection
                  P_QI,P_FIRST_SCALAR,                               & 
@@ -119,6 +120,9 @@ CONTAINS
       REAL, OPTIONAL, INTENT(IN) :: PGCON,sas_mass_flux,shal_pgcon
       INTEGER, OPTIONAL, INTENT(IN) :: shalconv
       REAL(kind=kind_phys)       :: PGCON_USE,SHAL_PGCON_USE,massf
+      logical,intent(in)  :: pert_sas
+      integer,intent(in)  :: ens_random_seed
+      real,intent(in)     :: ens_sasamp
       INTEGER :: shalconv_use
       REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) ::      &
                                         RQCCUTEN,                       &
@@ -401,9 +405,10 @@ CONTAINS
         ENDDO
       ENDDO
 
-      CALL SASCNVN(IM,IM,KX,JCAP,DELT,DEL,PRSL,PS,PHIL,                  &
+      CALL SASCNVN(IM,IM,KX,JCAP,DELT,DEL,PRSL,PS,PHIL,                 &
                   QL,Q1,T1,U1,V1,RCS,CLDWRK,RN,KBOT,                    &
-                  KTOP,KCNV,SLIMSK,DOT,NCLOUD,PGCON_USE,massf)
+                  KTOP,KCNV,SLIMSK,DOT,NCLOUD,PGCON_USE,massf,          &
+                  pert_sas, ens_random_seed, ens_sasamp)                         
 !
       do i=its,ite
         RAINCV1(I,J)=RN(I)*1000./STEPCU
@@ -2593,7 +2598,8 @@ CONTAINS
 
       subroutine sascnvn(im,ix,km,jcap,delt,del,prsl,ps,phil,ql,   & 
      &     q1,t1,u1,v1,rcs,cldwrk,rn,kbot,ktop,kcnv,slimsk,        &
-     &     dot,ncloud,pgcon,sas_mass_flux)                         
+     &     dot,ncloud,pgcon,sas_mass_flux,                         &
+     &     pert_sas, ens_random_seed, ens_sasamp)                         
 !     &     dot,ncloud,ud_mf,dd_mf,dt_mf)                         
 !    &     dot,ncloud,ud_mf,dd_mf,dt_mf,me)
 !
@@ -2652,6 +2658,9 @@ CONTAINS
      &                     ptem,    ptem1
 !
       real(kind=kind_phys), intent(in) :: pgcon
+      logical,intent(in)  :: pert_sas
+      integer,intent(in)  :: ens_random_seed
+      real,intent(in)     :: ens_sasamp
 
       integer              kb(im), kbcon(im), kbcon1(im),          &
      &                     ktcon(im), ktcon1(im),                  &
@@ -2713,25 +2722,17 @@ CONTAINS
       real(kind=kind_phys) tf, tcr, tcrf
       parameter (tf=233.16, tcr=263.16, tcrf=1.0/(tcr-tf))
 #if HWRF==1
-      logical :: pert_sas            !zhang
-      integer :: ens_random_seed         !zhang
       real*8 :: gasdev,ran1          !zhang
-      real :: rr, ens_sasamp         !zhang
+      real :: rr                     !zhang
       logical,save :: pert_sas_local            !zhang
       integer,save :: ens_random_seed_local         !zhang
       real,save :: ens_sasamp_local         !zhang
       data ens_random_seed_local/0/
-!zz      print*,'zhang in sas============='
       if ( ens_random_seed_local .eq. 0 ) then
-      CALL nl_get_pert_sas(1,pert_sas)
-      CALL nl_get_ens_random_seed(1,ens_random_seed)
-      CALL nl_get_ens_sasamp(1,ens_sasamp)
-      ens_random_seed_local=ens_random_seed
-      pert_sas_local=pert_sas
-      ens_sasamp_local=ens_sasamp
-!zz      print*,"zhang in sas one time", pert_sas_local,ens_random_seed_local,ens_sasamp_local                                         
+         ens_random_seed_local=ens_random_seed
+         pert_sas_local=pert_sas
+         ens_sasamp_local=ens_sasamp
       endif
-!zz      print*,"zhang in sas", pert_sas_local,ens_random_seed_local,ens_sasamp_local                                         
 #endif
 !
 !c-----------------------------------------------------------------------

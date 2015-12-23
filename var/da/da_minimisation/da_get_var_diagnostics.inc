@@ -211,6 +211,7 @@ subroutine da_get_var_diagnostics(it, iv, j)
       write(unit=stdout,fmt='(a,f15.5)') '   Final value of Jb           = ', j % jb
       write(unit=stdout,fmt='(a,f15.5)') '   Final value of Jc           = ', j % jc
       write(unit=stdout,fmt='(a,f15.5)') '   Final value of Je           = ', j % je
+      write(unit=stdout,fmt='(a,f15.5)') '   Final value of Jd           = ', j % jd
       write(unit=stdout,fmt='(a,f15.5)') '   Final value of Jp           = ', j % jp
       write(unit=stdout,fmt='(a,f15.5)') '   Final value of Jl           = ', j % jl
       if (num_stats_tot > 0) &

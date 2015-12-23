@@ -16,7 +16,7 @@ module da_test
 !  use mpi, only : mpi_sum
 #endif
 
-   use da_control, only : num_procs, var4d_bin, var4d_lbc                                
+   use da_control, only : num_procs, var4d_bin, var4d_lbc, check_test_unit                                
    use module_domain, only : vp_type, xb_type, x_type, ep_type, &
       domain, domain_clock_get, domain_clock_set, domain_clockprint, domain_clockadvance
    use module_state_description, only : dyn_em,dyn_em_tl,dyn_em_ad,p_a_qv

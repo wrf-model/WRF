@@ -934,6 +934,7 @@ module da_define_structures
       real             :: jb
       real             :: jc
       real             :: je
+      real             :: jd
       real             :: jp
       real             :: js
       real             :: jl

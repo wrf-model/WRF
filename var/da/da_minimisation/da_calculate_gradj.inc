@@ -39,10 +39,11 @@ subroutine da_calculate_gradj(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size
    real             :: grad_jo(cv_size)
    real             :: grad_jb(cv_size)
    real             :: grad_je(cv_size)
+   real             :: grad_jd(cv_size)
    real             :: grad_jp(cv_size)
    real             :: grad_js(cv_size)
    real             :: grad_jl(cv_size)
-   real             :: gnorm_j, gnorm_jo, gnorm_jb, gnorm_je, gnorm_jp, gnorm_js, gnorm_jl
+   real             :: gnorm_j, gnorm_jo, gnorm_jb, gnorm_je, gnorm_jd, gnorm_jp, gnorm_js, gnorm_jl
    logical          :: jcdf_flag
 
    ! Variables for VarBC background constraint
@@ -71,6 +72,7 @@ subroutine da_calculate_gradj(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size
    grad_jo = 0.0
    grad_jb = 0.0
    grad_je = 0.0
+   grad_jd = 0.0
    grad_jp = 0.0
    grad_js = 0.0
    grad_jl = 0.0
@@ -108,6 +110,26 @@ subroutine da_calculate_gradj(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size
    !-------------------------------------------------------------------------
    if (cv_size_je > 0) grad_je(je_start:je_end) = je_factor * cv(je_start:je_end)
    
+   !----------------------------------------------------------------------
+   ! [3.1] calculate grad_v (jd):
+   !----------------------------------------------------------------------
+   if (use_wpec) then
+
+      if (var4d) call da_error(__FILE__,__LINE__,(/'Cannot use 4dvar with dynamic constraint'/))
+      if (wpec_factor <= 0) call da_error(__FILE__,__LINE__,(/'"wpec_factor" for dynamic constraint must be greater than zero'/))
+
+      grid%xa%grad_p_x(:,:,:)=0.0
+      grid%xa%grad_p_y(:,:,:)=0.0
+
+      call da_transform_vtod_wpec(cv_size, be, grid%ep, cv, grid%vp, grid%vv, xbx, grid)
+
+      grid%xa%grad_p_x=(grid%xa%grad_p_x)/wpec_factor
+      grid%xa%grad_p_y=(grid%xa%grad_p_y)/wpec_factor
+
+      call da_transform_vtod_wpec_adj(cv_size, be, grid%ep, grad_jd, grid%vp, grid%vv, xbx, grid)
+
+   end if
+
    !-------------------------------------------------------------------------
    ! [4.0] calculate grad_v (jp):
    !-------------------------------------------------------------------------
@@ -155,14 +177,14 @@ subroutine da_calculate_gradj(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size
    end if
 
    !-------------------------------------------------------------------------
-   ! [6.0] calculate grad_v (jb):
+   ! [6.0] calculate grad_v (jl):
    !-------------------------------------------------------------------------
    if (cv_size_jl > 0) grad_jl(jl_start:jl_end) = cv(jl_start:jl_end)
 
    !--------------------------------------------------------------------------------------------------
-   ! [7.0] calculate grad_v (j) = grad_v (jb) + grad_v (jo) + grad_v (je) + grad_v (jp) + grad_v (js) + grad_v (jl)
+   ! [7.0] calculate grad_v (j) = grad_v (jb) + grad_v (jo) + grad_v (je) + grad_v (jd) + grad_v (jp) + grad_v (js) + grad_v (jl)
    !--------------------------------------------------------------------------------------------------   
-   grad = grad_jo + grad_jb + grad_je + grad_jp + grad_js + grad_jl
+   grad = grad_jo + grad_jb + grad_je + grad_jd + grad_jp + grad_js + grad_jl
 
    !-------------------------------------------------------------------------
    ! [8.0] write Gradient:
@@ -172,13 +194,14 @@ subroutine da_calculate_gradj(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size
       gnorm_jo = sqrt(da_dot_cv(cv_size, grad_jo, grad_jo, grid, mz))
       gnorm_jb = sqrt(da_dot_cv(cv_size, grad_jb, grad_jb, grid, mz))
       gnorm_je = sqrt(da_dot_cv(cv_size, grad_je, grad_je, grid, mz))
+      gnorm_jd = sqrt(da_dot_cv(cv_size, grad_jd, grad_jd, grid, mz))
       gnorm_jp = sqrt(da_dot_cv(cv_size, grad_jp, grad_jp, grid, mz, jp_start, jp_end))
       gnorm_js = sqrt(da_dot_cv(cv_size, grad_js, grad_js, grid, mz))
       gnorm_jl = sqrt(da_dot_cv(cv_size, grad_jl, grad_jl, grid, mz))
  
       if (rootproc) &
-         write(grad_unit,fmt='(2x,i2,1x,e10.3,2x,i4,7(1x,f10.3))') & 
-               it, eps(it), iter, gnorm_j, gnorm_jb, gnorm_jo, gnorm_je, gnorm_jp, gnorm_js, gnorm_jl
+         write(grad_unit,fmt='(2x,i2,1x,e10.3,2x,i4,8(1x,f10.3))') & 
+               it, eps(it), iter, gnorm_j, gnorm_jb, gnorm_jo, gnorm_je, gnorm_jd, gnorm_jp, gnorm_js, gnorm_jl
    end if
    if (trace_use) call da_trace_exit("da_calculate_gradj")
 

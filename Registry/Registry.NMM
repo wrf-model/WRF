@@ -825,6 +825,7 @@ state   real    qnh            ijkftb  scalar      1         m     i01hru=(UpMas
 state   real    qnn            ijkftb  scalar      1         m     i01hru=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)       "QNCCN"            "CCN Number concentration" "# kg(-1)"
 state   real    qnc            ijkftb  scalar      1         m     i01hru=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)       "QNCLOUD"          "cloud water Number concentration" "# kg(-1)"
 state   real    qvolg          ikjftb  scalar      1         m     i01hru=(UpMassIKJ:@ECopy,0.0)d=(DownMassIKJ:@ECopy,0.0)f=(BdyMassIKJ:@ECopy,0.0)       "QVGRAUPEL"        "Graupel Particle Volume" "m(3) kg(-1)"
+state   real    qvolh          ikjftb  scalar      1         m     i01hru=(UpMassIKJ:@ECopy,0.0)d=(DownMassIKJ:@ECopy,0.0)f=(BdyMassIKJ:@ECopy,0. 0)       "QVHAIL"        "Hail Particle Volume" "m(3) kg(-1)"
 state   real    qnwfa          ikjftb  scalar      1         m     i01hru=(UpMassIKJ:@ECopy,0.0)d=(DownMassIKJ:@ECopy,0.0)f=(BdyMassIKJ:@ECopy,0.0)       "QNWFA"            "water-friendly aerosol number con" "# kg(-1)"
 state   real    qnifa          ikjftb  scalar      1         m     i01hru=(UpMassIKJ:@ECopy,0.0)d=(DownMassIKJ:@ECopy,0.0)f=(BdyMassIKJ:@ECopy,0.0)       "QNIFA"            "ice-friendly aerosol number con"   "# kg(-1)"
 state   real    qndrop         ikjftb  scalar      1         m     i01h023ru=(UpMassIKJ:@ECopy,0.0)d=(DownMassIKJ:@ECopy,0.0)f=(BdyMassIKJ:@ECopy,0.0)       "QNDROP"        "Droplet number mixing ratio"        "# kg-1"
@@ -854,7 +855,6 @@ state   real    dfi_qnwfa      ikjftb  dfi_scalar      1         m     \
    rsu=(UpMassIKJ:@ECopy,0.0)d=(DownMassIKJ:@ECopy,0.0)f=(BdyMassIKJ:@ECopy,0.0)    "DFI_QNWFA"     "DFI water-friendly aerosol number con" "# kg(-1)"
 state   real    dfi_qnifa      ikjftb  dfi_scalar      1         m     \
    rsu=(UpMassIKJ:@ECopy,0.0)d=(DownMassIKJ:@ECopy,0.0)f=(BdyMassIKJ:@ECopy,0.0)    "DFI_QNIFA"     "DFI ice-friendly aerosol number con"   "# kg(-1)"
-state   real    qvolh          ikjftb  scalar      1         m     i01hru=(UpMassIKJ:@ECopy,0.0)d=(DownMassIKJ:@ECopy,0.0)f=(BdyMassIKJ:@ECopy,0. 0)       "QVHAIL"        "Hail Particle Volume" "m(3) kg(-1)"
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -1329,6 +1329,20 @@ rconfig   logical   use_prep_hybrid namelist,domains    1              .false.  
 # Physics
 rconfig   logical  force_read_thompson   namelist,physics      1           .false.
 rconfig   logical  write_thompson_tables   namelist,physics     1           .true.
+rconfig   real     nssl_cccn              namelist,physics      max_domains  0.5e9    rh       "Base CCN concentration for NSSL microphysics"  ""      ""
+rconfig   real     nssl_alphah            namelist,physics      max_domains   0       rh       "Graupel PSD shape paramter"  ""      ""
+rconfig   real     nssl_alphahl           namelist,physics      max_domains   1       rh       "Hail PSD shape paramter"  ""      ""
+rconfig   real     nssl_cnoh              namelist,physics      max_domains  4.e5     rh       "Graupel intercept paramter"  ""      ""
+rconfig   real     nssl_cnohl             namelist,physics      max_domains  4.e4     rh       "Hail intercept paramter"  ""      ""
+rconfig   real     nssl_cnor              namelist,physics      max_domains  8.e5     rh       "Rain intercept paramter"  ""      ""
+rconfig   real     nssl_cnos              namelist,physics      max_domains  3.e6     rh       "Snow intercept paramter"  ""      ""
+rconfig   real     nssl_rho_qh            namelist,physics      max_domains  500.     rh       "Graupel particle density"  ""      ""
+rconfig   real     nssl_rho_qhl           namelist,physics      max_domains  900.     rh       "Hail particle density"  ""      ""
+rconfig   real     nssl_rho_qs            namelist,physics      max_domains  100.     rh       "Snow particle density"  ""      ""
+rconfig   integer  elec_physics           namelist,physics      1            0       irh       "elec_physics"            ""      ""
+# Explicit lightning (for EM core, but here for code compatibility
+rconfig   integer  nssl_ipelec            namelist,physics      max_domains   0       rh       "Electrification selection"  ""      ""
+rconfig   integer  nssl_isaund            namelist,physics      1             12      rh       "Charge separation selection"  ""      ""
 
 #for HWRF:
 rconfig   integer     mp_physics          namelist,physics	max_domains    0       rh0123       "mp_physics"            ""      ""

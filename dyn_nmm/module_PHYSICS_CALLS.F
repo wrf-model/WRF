@@ -3161,8 +3161,17 @@
      &                 ,QI_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QI),F_QI=F_QI &
      &                 ,QS_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QS),F_QS=F_QS &
      &                 ,QG_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QG),F_QG=F_QG &
-     &                 ,QNI_CURR=SCALAR_TRANS(IMS,KMS,JMS,P_QNI),F_QNI=F_QNI  &
-     &                 ,QNR_CURR=SCALAR_TRANS(IMS,KMS,JMS,P_QNR),F_QNR=F_QNR  &
+     &                 ,QH_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QH),F_QH=F_QH &
+     &        , QNN_CURR=SCALAR_TRANS(ims,kms,jms,P_QNN), F_QNN=F_QNN          &
+     &        , QNDROP_CURR=SCALAR_TRANS(ims,kms,jms,P_QNDROP), F_QNDROP=F_QNDROP &
+     &        , QNI_CURR=SCALAR_TRANS(ims,kms,jms,P_QNI), F_QNI=F_QNI          &
+     &        , QNC_CURR=SCALAR_TRANS(ims,kms,jms,P_QNC), F_QNC=F_QNC          &
+     &        , QNR_CURR=SCALAR_TRANS(ims,kms,jms,P_QNR), F_QNR=F_QNR          &
+     &        , QNS_CURR=SCALAR_TRANS(ims,kms,jms,P_QNS), F_QNS=F_QNS          &
+     &        , QNG_CURR=SCALAR_TRANS(ims,kms,jms,P_QNG), F_QNG=F_QNG          &
+     &        , QNH_CURR=SCALAR_TRANS(ims,kms,jms,P_QNH), F_QNH=F_QNH          & ! for milbrandt2mom and nssl_2mom
+     &        , QVOLG_CURR=SCALAR_TRANS(ims,kms,jms,P_QVOLG), F_QVOLG=F_QVOLG    & ! for nssl_2mom
+     &        , QVOLH_CURR=SCALAR_TRANS(ims,kms,jms,P_QVOLH), F_QVOLH=F_QVOLH    & ! for nssl_2mom
      &                 ,QRIMEF_CURR=SCALAR_TRANS(IMS,KMS,JMS,P_QRIMEF),F_QRIMEF=F_QRIMEF &
      &                 ,QT_CURR=CWM_PHY,F_QT=QT_PRESENT                 &
      &                 ,MP_RESTART_STATE=MP_RESTART_STATE               &

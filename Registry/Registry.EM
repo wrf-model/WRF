@@ -16,6 +16,7 @@ include registry.lake
 include registry.diags
 include registry.afwa
 include registry.sbm
+include registry.elec
 include registry.bdy_perturb
 
 # added to output 5 for ESMF

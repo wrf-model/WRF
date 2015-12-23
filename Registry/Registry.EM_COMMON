@@ -1283,6 +1283,9 @@ state    real  SNOWNCV          ij      misc        1         -      r        "S
 state    real  GRAUPELNCV       ij      misc        1         -      r        "GRAUPELNCV"            "TIME-STEP NONCONVECTIVE GRAUPEL"                         "mm"
 state    real  HAILNCV          ij      misc        1         -      r        "HAILNCV"               "TIME-STEP NONCONVECTIVE HAIL"                            "mm"
 state    real    refl_10cm      ikj     dyn_em      1         -      hdu       "refl_10cm"             "Radar reflectivity (lamda = 10 cm)"  "dBZ"
+# LIGHTNING NUDGING
+state    real    ltg_dat        ij  misc    1         -     rh         "ltg_dat"                "gridded lightning data"  "Flash per xkm x xkm per LAD_INT sec"
+# END LIGHTNING NUDGING
 state    real  NCA              ij      misc        1         -      r        "NCA"                   "COUNTER OF THE CLOUD RELAXATION TIME IN KF CUMULUS SCHEME"    ""      
 state    integer  LOWLYR        ij      misc        1         -     -         "LOWLYR"                "INDEX OF LOWEST MODEL LAYER ABOVE THE GROUND IN BMJ SCHEME"   ""      
 state    real  MASS_FLUX        ij      misc        1         -      r        "MASS_FLUX"             "DOWNDRAFT MASS FLUX FOR IN GRELL CUMULUS SCHEME"  "mb hour-1"
@@ -2085,6 +2088,18 @@ rconfig   real     nssl_cnos              namelist,physics      max_domains  3.e
 rconfig   real     nssl_rho_qh            namelist,physics      max_domains  500.     rh       "Graupel particle density"  ""      ""
 rconfig   real     nssl_rho_qhl           namelist,physics      max_domains  900.     rh       "Hail particle density"  ""      ""
 rconfig   real     nssl_rho_qs            namelist,physics      max_domains  100.     rh       "Snow particle density"  ""      ""
+
+
+# Lightning Qv Nudging 
+rconfig   integer  nudge_lightning        namelist,physics      max_domains   0       rh       "flag for lightning Qv nudging"  ""      ""
+rconfig   integer  nudge_light_times      namelist,physics      max_domains   0       rh       "start time in sec (domain relative) for lightning Qv nudging"  ""      ""
+rconfig   integer  nudge_light_timee      namelist,physics      max_domains   7200    rh       "end time in sec (domain relative) for lightning Qv nudging"  ""      ""
+rconfig   integer  nudge_light_int        namelist,physics      max_domains   600     rh       "time interval in sec of input lightning data files"  ""      ""
+rconfig   character  path_to_files        namelist,physics      1             "~/WRFV3/"    rh   "path on local machine of input lightning data files"  ""      ""
+
+
+
+
 rconfig   integer     gsfcgce_hail        namelist,physics      1              0       rh       "gsfcgce select hail/graupel"  ""      ""
 rconfig   integer     gsfcgce_2ice        namelist,physics      1              0       rh       "gsfcgce select 2ice/3ice"  ""      ""
 rconfig   integer     progn               namelist,physics      max_domains    0       rh       "progn"                 ""      ""

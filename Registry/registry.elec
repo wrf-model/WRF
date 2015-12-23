@@ -1,0 +1,58 @@
+# SPACE CHARGE EXPLICIT LIGHTNING
+state   real    scr            ikjftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "SCR"       "Rain space charge mixing ratio" "# C kg(-1)"
+state   real    scw            ikjftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "SCW"       "cloud water space charge mixing ratio" "# C kg(-1)"
+state   real    sci            ikjftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "SCI"       "cloud ice space charge mixing ratio" "# C kg(-1)"
+state   real    scs            ikjftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "SCS"       "snow space charge mixing ratio" "# C kg(-1)"
+state   real    sch            ikjftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "SCH"       "graupel water space charge mixing ratio" "# C kg(-1)"
+state   real    schl           ikjftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "SCHL"       "hail water space charge mixing ratio" "# C kg(-1)"
+state   real    sciona          ikjftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "SCIONA"       "Passive net ion space charge" "# C kg(-1)"
+state   real    clnox          ikjftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "CLNOX"      "Lightning NOx concentration" "# moles kg(-1)"
+# END SPACE CHARGE EXPLICIT LIGHTNING
+
+# EXPLICIT LIGHTNING
+#
+state    real    rscghis_2d      ij   misc    1         -     irh         "rscghis_2d"             "MAX NONINDUCTIVE CHARGING 2D"     "C m-2"
+state    real    induc           ikj  misc    1         -     irh         "induc"                  "TOTAL INDUCTIVE CHARGING "     "C m-3"
+state    real    noninduc        ikj  misc    1         -     irh         "noninduc"               "TOTAL NONINDUCTIVE CHARGING"     "C m-3"
+state    real    sctot           ikj  misc    1         -     irh         "sctot"                  "Total Space Charge Density"     "C m-3"
+state    real    elecmag         ikj  misc    1         -     irh         "elecmag"                "EFIELD MAGNITUDE"     "V m-1"
+state    real    elecx           ikj  misc    1         -     irh         "elecx"                  "EFIELD X-Component"     "V m-1"
+state    real    elecy           ikj  misc    1         -     irh         "elecy"                  "EFIELD Y-Component"     "V m-1"
+state    real    elecz           ikj  misc    1         -     irh         "elecz"                  "EFIELD Z-Component"     "V m-1"
+state    real    pot             ikj  misc    1         -     irh         "pot"                    "POTENTIAL"     "V"
+state    real    light            ij  misc    1         -     irh         "light"                  "lightning flash"         "flash origin density"
+state    real    lightdens        ij  misc    1         -     irh         "lightdens"              "lightning flash density"         "flash column-1"
+state    integer lightdis         ij  misc    1         -     irh         "lightdis"               "lightning source density"     "Source column-1"
+state    real    flshi           ikj  misc    1         -     irh         "flshi"                  "Lightning init points"     "count"
+state    real    flshn           ikj  misc    1         -     irh         "flshn"                  "Negative channels"     "count"
+state    real    flshp           ikj  misc    1         -     irh         "flshp"                  "Positive channels"     "count"
+# END EXPLICIT LIGHTNING
+
+
+# Explicit lightning
+rconfig   integer  nssl_ipelec            namelist,physics      max_domains   0       rh       "Electrification selection"  ""      ""
+rconfig   integer  nssl_isaund            namelist,physics      1             12      rh       "Charge separation selection"  ""      ""
+rconfig   integer  nssl_iscreen           namelist,physics      1             0       rh       "Screening layer parameterization flag"  ""      ""
+rconfig   real     nssl_lightrad          namelist,physics      1             12000   rh       "discharge cylinder radius (m)"  ""      ""
+rconfig   integer  nssl_idischarge        namelist,physics      1             1       rh       "lightning discharge flag"  ""      ""
+rconfig   integer  nssl_ibrkd             namelist,physics      1             4       rh       "Critical Breakeven Efield profile selection"  ""      ""
+rconfig   real     nssl_ecrit             namelist,physics      1             120000  rh       "Critical Breakeven Efield magnitude for discharge (V/m) assuming height-constant Ecrit profile"  ""      ""
+rconfig   real     nssl_disfrac           namelist,physics      1             0.3     rh       "percentile of charge removed upon discharge (BLM)"  ""      ""
+# end Explicit lightning
+
+rconfig   integer  elec_physics           namelist,physics      1            0       irh       "elec_physics"            ""      ""
+
+# external WRF-ELEC package
+package   noelec             elec_physics==0             -             -
+package   eleclgt1d          elec_physics==1             -             scalar:scr,scw,sci,scs,sch,schl,sciona;state:rscghis_2d,sctot,noninduc,induc,pot,elecmag,elecx,elecy,elecz,light,lightdens,lightdis
+package   eleclgtmsz         elec_physics==2             -             scalar:scr,scw,sci,scs,sch,schl,sciona;state:rscghis_2d,sctot,noninduc,induc,pot,elecmag,elecx,elecy,elecz,light,lightdens,lightdis,flshi,flshn,flshp
+package   eleclgtmsznox      elec_physics==3             -             scalar:scr,scw,sci,scs,sch,schl,sciona,clnox;state:rscghis_2d,sctot,noninduc,induc,pot,elecmag,elecx,elecy,elecz,light,lightdens,lightdis,flshi,flshn,flshp
+

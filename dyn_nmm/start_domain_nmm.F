@@ -159,7 +159,7 @@
       INTEGER :: I_M
 !
       INTEGER :: ILPAD2,IRPAD2,JBPAD2,JTPAD2
-      INTEGER :: ITS,ITE,JTS,JTE,KTS,KTE
+      INTEGER :: ITS,ITE,JTS,JTE,KTS,KTE, nhki, nhkj
 !
       INTEGER,DIMENSION(3) :: LPTOP
 !
@@ -1625,17 +1625,24 @@
 !
 !!!!	SHOULD grid%dwdt BE REDEFINED IF RESTRT?
 
+      if(grid%nhmove<0) then
+         nhki=1
+         nhkj=1
+      elseif(grid%nhmove>0) then
+         nhki=3
+         nhkj=6
+      endif
+
       IF((.NOT.RESTRT.OR.NEST).AND. allowed_to_read)THEN ! This is gopal's inclusion for moving nest
         DO K=KPS,KPE
           DO J=JFS,JFE
-             if(.not. grid%keepnh .or. .not. nestmove &
-                    .or. j<7 .or. j+6>jfe) then
+             if(grid%nhmove==0 .or. .not. nestmove .or. j<nhkj+1 .or. j+nhkj>jfe) then
                 DO I=IFS,IFE
                    grid%dwdt(I,J,K)=1.
                 ENDDO
              else
-                grid%dwdt(1:3,j,k)=1.
-                grid%dwdt(ife-2:ife,j,k)=1.
+                grid%dwdt(1:nhki,j,k)=1.
+                grid%dwdt(ife-nhki+1:ife,j,k)=1.
              endif
           ENDDO
         ENDDO
@@ -1687,28 +1694,44 @@
         enddo
 #endif
         if(nestmove) then
-           if(.not.grid%keepnh) then
-              call wrf_message('Discarding non-hydrostatic state at nest move.  Set keepnh=T to retain the state.')
-           else
+           if(grid%nhmove==0) then
+              call wrf_message('Discarding non-hydrostatic state at nest move.  Set nhmove=-1 to retain the state everywhere or nhmove=1 to discard only at the boundaries.')
+           elseif(grid%nhmove>0) then
               call wrf_message('Retaining non-hydrostatic state at nest move except at nest boundaries.')
+           else
+              call wrf_message('Retaining non-hydrostatic state at nest move.')
            endif
+        endif
+
+        if(grid%nhmove<0) then
+           nhki=1
+           nhkj=1
+        elseif(grid%nhmove>0) then
+           nhki=3
+           nhkj=6
         endif
 
         DO K=KPS,KPE
         DO J=JFS,JFE
-           if(.not.nestmove .or. .not. grid%keepnh .or. j<7 .or. j+6>=jfe) then
+           if(grid%nhmove==0 .or. .not.nestmove .or. j<nhkj+1 .or. j+nhkj>=jfe) then
               DO I=IFS,IFE
                  grid%pint(I,J,K)=grid%eta1(K)*grid%pdtop+grid%eta2(K)*grid%pdsl(I,J)+grid%pt
                  grid%z(I,J,K)=grid%pint(I,J,K)
                  grid%w(I,J,K)=0.
               ENDDO
            else
-              grid%pint(1:3,J,K)=grid%eta1(K)*grid%pdtop+grid%eta2(K)*grid%pdsl(I,J)+grid%pt
-              grid%z(1:3,J,K)=grid%pint(I,J,K)
-              grid%w(1:3,J,K)=0.
-              grid%pint(ife-2:ife,J,K)=grid%eta1(K)*grid%pdtop+grid%eta2(K)*grid%pdsl(I,J)+grid%pt
-              grid%z(ife-2:ife,J,K)=grid%pint(I,J,K)
-              grid%w(ife-2:ife,J,K)=0.
+              ! Rotated West boundary:
+              do I=1,nhki
+                 grid%pint(I,J,K)=grid%eta1(K)*grid%pdtop+grid%eta2(K)*grid%pdsl(I,J)+grid%pt
+                 grid%z(I,J,K)=grid%pint(I,J,K)
+                 grid%w(I,J,K)=0.
+              enddo
+              ! Rotated East boundary:
+              do I=ife-nhki+1,ife
+                 grid%pint(I,J,K)=grid%eta1(K)*grid%pdtop+grid%eta2(K)*grid%pdsl(I,J)+grid%pt
+                 grid%z(I,J,K)=grid%pint(I,J,K)
+                 grid%w(I,J,K)=0.
+              enddo
            endif
         ENDDO
         ENDDO

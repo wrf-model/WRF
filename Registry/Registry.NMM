@@ -392,8 +392,22 @@ state  real   ustar     ij    dyn_nmm   1    -     irh023d=(DownNear) "USTAR"   
 state  real   z0        ij    dyn_nmm   1    -     i01rh023d=(DownNear) "Z0"   "Thermal Roughness length"                    "m"
 state  real   mz0       ij    dyn_nmm   1    -       h        "MZ0"       "momentum Roughness length"                     "m"
 state  real     rc2d    ij    dyn_nmm   1    -       h        "RC2D"     "critical Richardson number" "m"
-state  real   dku3d    ijk    dyn_nmm   1    -       h        "DKU3D"     "Momentum Diffusivity" "m*m/s"
-state  real   dkt3d    ijk    dyn_nmm   1    -       h        "DKT3D"     "Thermal Diffusivity" "m*m/s"
+state  real   dku3d    ijk    dyn_nmm   1    -      rh023      "DKU3D"     "Momentum Diffusivity" "m*m/s"
+state  real   dkt3d    ijk    dyn_nmm   1    -      rh023      "DKT3D"     "Thermal Diffusivity" "m*m/s"
+
+state  real   SCALEFUN  ij    dyn_nmm   1    -     rh023       "SCALEFUN"  "CNV Mass Scale function(0-1)"        " "
+state  real   SCALEFUN1 ij    dyn_nmm   1    -     rh023       "SCALEFUN1"  "CNV Mass Scale function 1(0-1)"        " "
+state  real   DTHCUDT  ijk    dyn_nmm   1    -      rh023      "DTHCUDT"     "TH tendency due to CU" "K/s"
+state  real   DQVCUDT  ijk    dyn_nmm   1    -      rh023      "DQVCUDT"     "QV tendency due to CU" "kg/kg/s"
+state  real   DQRCUDT  ijk    dyn_nmm   1    -      rh023      "DQRCUDT"     "QR tendency due to CU" "kg/kg/s"
+state  real   DQCCUDT  ijk    dyn_nmm   1    -      rh023      "DQCCUDT"     "QC tendency due to CU" "Kg/kg/s"
+state  real   DQICUDT  ijk    dyn_nmm   1    -      rh023      "DQICUDT"     "QI tendency due to CU" "Kg/kg/s"
+state  real   DQSCUDT  ijk    dyn_nmm   1    -      rh023      "DQSCUDT"     "QS tendency due to CU" "Kg/kg/s"
+state  real   DTHBLDT  ijk    dyn_nmm   1    -      rh023      "DTHBLDT"     "TH tendency due to PBL" "K/s"
+state  real   DQVBLDT  ijk    dyn_nmm   1    -      rh023      "DQVBLDT"     "QV tendency due to PBL" "Kg/kg/s"
+state  real   DUBLDT   ijk    dyn_nmm   1    -      rh023      "DUBLDT"     "U tendency due to PBL" "m/s/s"
+state  real   DVBLDT   ijk    dyn_nmm   1    -      rh023      "DVBLDT"     "V tendency due to PBL" "m/s/s"
+
 state  real   hpbl2d    ij    dyn_nmm   1    -     irh        "HPBL2D"     "HEIGHT OF PBL from new GFS pbl" "m"
 state  real   heat2d    ij    dyn_nmm   1    -     irh        "HEAT2D"     "" ""
 state  real   evap2d    ij    dyn_nmm   1    -     irh        "EVAP2D"     "" ""
@@ -1521,7 +1535,7 @@ rconfig   real    c_k                     namelist,dynamics     max_domains    0
 rconfig   real    smdiv                   namelist,dynamics	max_domains    0.      h    "smdiv"         ""      ""
 rconfig   real    emdiv                   namelist,dynamics	max_domains    0.      h    "emdiv"         ""      ""
 rconfig   real    epssm                   namelist,dynamics	max_domains    .1      h    "epssm"         ""      ""
-rconfig   logical keepnh                  namelist,dynamics     max_domains  .true.   rh   "KEEPH"         "When .false., non-hydrostatic state is discarded at nest move."        ""
+rconfig   integer nhmove                  namelist,dynamics     max_domains    -1   rh   "NHMOVE"         "Action when nest move: 0=discard non-hydro state -1=keep nh state everywhere 1=keep except near nest edge" ""
 rconfig   logical non_hydrostatic         namelist,dynamics	max_domains  .true.   irh  "non_hydrostatic"    ""   ""
 rconfig   integer time_step_sound         namelist,dynamics	max_domains    10      h     "time_step_sound"               ""      ""
 rconfig   integer     h_mom_adv_order     namelist,dynamics	max_domains    3       rh       "h_mom_adv_order"               ""      ""
@@ -1723,6 +1737,7 @@ package   ysuscheme      bl_pbl_physics==1           -             -
 package   myjpblscheme   bl_pbl_physics==2           -             -
 package   gfsscheme      bl_pbl_physics==3           -             state:hpbl2d,heat2d,evap2d,rc2d
 package   gfs2011scheme  bl_pbl_physics==83          -             state:hpbl2d,heat2d,evap2d
+package   gfsedmfscheme  bl_pbl_physics==93          -             state:hpbl2d,heat2d,evap2d
 package   qnsepblscheme  bl_pbl_physics==4           -             -
 package   acmpblscheme   bl_pbl_physics==7           -             -
 package   boulacscheme   bl_pbl_physics==8           -             - 
@@ -1737,6 +1752,7 @@ package   bmjscheme      cu_physics==2               -             -
 package   gdscheme       cu_physics==93              -             -
 package   sasscheme      cu_physics==84              -             state:hpbl2d,heat2d,evap2d
 package   meso_sas       cu_physics==85              -             state:hpbl2d,heat2d,evap2d
+package   scalesasscheme cu_physics==86              -             state:hpbl2d,heat2d,evap2d
 package   osasscheme     cu_physics==4               -             state:randstate1,randstate2,randstate3,randstate4,random
 package   g3scheme       cu_physics==5               -             -
 package   gfscheme       cu_physics==3               -             -

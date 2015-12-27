@@ -33,6 +33,34 @@
 !
 !-----------------------------------------------------------------------
 !***********************************************************************
+      SUBROUTINE QITEND_FER_HIRES_ADVECT(QI,QRIMEF,QITEND)
+        IMPLICIT NONE
+        REAL, INTENT(INOUT) :: QI, QRIMEF
+        REAL, INTENT(IN) :: QITEND
+        REAL :: F_RIMEF
+        real, parameter :: max_f_rimef = 60.0, min_f_rimef=1.0
+
+        ! For the advected Ferrier-Aligo, we have to handle the QRIMEF
+        ! during tendency updates.
+
+        ! Determine old rime factor from old QI and old QRIMEF:
+        IF(QI<EPSQ) THEN
+           F_RIMEF=1.
+        ELSE
+           F_RIMEF=max(min_f_rimef,min(max_f_rimef,QRIMEF/QI))
+        ENDIF
+        
+        ! Decide new QI and new QRIMEF based on QC and RQIBLTEN:
+        QI=QI+QITEND
+        IF(QI<EPSQ) THEN
+           QRIMEF=QI
+        ELSE
+           QRIMEF=QI*F_RIMEF
+        ENDIF
+      END SUBROUTINE QITEND_FER_HIRES_ADVECT
+
+!***********************************************************************
+
       SUBROUTINE RADIATION(NTSD,DT,JULDAY,JULYR,XTIME,JULIAN            &
      &                    ,IHRST,NPHS,GLAT,GLON                         &
      &                    ,NRADS,NRADL                                  &
@@ -718,7 +746,7 @@
 !***********************************************************************
 !-----------------------------------------------------------------------
       SUBROUTINE TURBL(NTSD,DT,NPHS,RESTRT                              &
-     &                ,N_MOIST,NSOIL,SLDPTH,DZSOIL                      &
+     &                ,N_MOIST,N_SCALAR,NSOIL,SLDPTH,DZSOIL             &
      &                ,DETA1,DETA2,AETA1,AETA2,ETA1,ETA2,PDTOP,PT       &
      &                ,SM,HBM2,VBM2,DX_ARRAY,DFRLG                      &
      &                ,CZEN,CZMEAN,SIGT4,RLWIN,RSWIN,RADOT              &
@@ -726,7 +754,7 @@
      &                ,PD,RES,PINT,T,Q,CWM,F_ICE,F_RAIN,SR              &
      &                ,Q2,U,V,THS,TSFC,SST,PREC,SNO                     &
      &                ,FIS,Z0,MZ0,Z0BASE,USTAR,MIXHT,PBLH,LPBL,EL_MYJ   &   !MZ0: MOMENTUM Z0 (KWON)
-     &                ,MOIST,RMOL,MOL                                   &
+     &                ,MOIST,SCALAR,RMOL,MOL                            &
      &                ,EXCH_H,EXCH_M,F,AKHS,AKMS,AKHS_OUT,AKMS_OUT      &
      &                ,THZ0,QZ0,UZ0,VZ0,QS,MAVAIL                       &
      &                ,STC,SMC,CMC,SMSTAV,SMSTOT,SSROFF,BGROFF          &
@@ -756,6 +784,7 @@
      &                ,HPBL2D, EVAP2D, HEAT2D,RC2D                      &  !Kwon S&P
      &                ,SFCHEADRT,INFXSRT,SOLDRAIN                       &  !Hydrology, no-op right now
      &                ,cd_out,ch_out                                    &
+     &                ,DUBLDT,DVBLDT,DTHBLDT,DQVBLDT                    & !wang added PBL tendency output
      &                ,IDS,IDE,JDS,JDE,KDS,KDE                          &
      &                ,IMS,IME,JMS,JME,KMS,KME                          &
      &                ,IPS,IPE,JPS,JPE,KPS,KPE                          &
@@ -805,7 +834,7 @@
      &                     ,IMS,IME,JMS,JME,KMS,KME                     &
      &                     ,IPS,IPE,JPS,JPE,KPS,KPE                     &
      &                     ,ITS,ITE,JTS,JTE,KTS,KTE                     &
-     &                     ,N_MOIST,NPHS,NSOIL,NTSD
+     &                     ,N_MOIST,NPHS,NSOIL,NTSD,N_SCALAR
 !
       INTEGER, DIMENSION(JMS:JME),INTENT(IN) :: IHE,IHW,IVE,IVW
 !
@@ -892,6 +921,12 @@
 !
 
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: cd_out,ch_out
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT) :: &
+                                                       DTHBLDT         &
+                                                      ,DQVBLDT         &  
+                                                      ,DUBLDT          &  
+                                                      ,DVBLDT         
+
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: taux, tauy
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(IN) :: PINT
 !
@@ -921,6 +956,9 @@
 !
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME,N_MOIST)                   &
      &                                           ,INTENT(INOUT) :: MOIST
+!
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME,N_SCALAR)                  &
+     &                                           ,INTENT(INOUT) :: SCALAR
 !
       LOGICAL,INTENT(IN) :: RESTRT
 !
@@ -1631,6 +1669,22 @@
      &               ,wstar=wstar_ysu,delta=delta_ysu                 &
      &               ,sf_urban_physics=CONFIG_FLAGS%SF_URBAN_PHYSICS)
 !
+!wang, output PBL tendency
+!
+!$omp parallel do                                                       &
+!$omp& private(i,j,k)
+      DO J=JMS,JME
+      DO K=KMS,KME
+      DO I=IMS,IME
+        DUBLDT(I,J,K)=DUDT_PHY(I,K,J)
+        DVBLDT(I,J,K)=DVDT_PHY(I,K,J)
+        DTHBLDT(I,J,K)=RTHBLTEN(I,K,J)
+        DQVBLDT(I,J,K)=RQVBLTEN(I,K,J)
+      ENDDO
+      ENDDO
+      ENDDO
+!
+
 !***  NOTE THAT THE EXCHANGE COEFFICIENTS FOR HEAT EXCH_H COMING OUT OF
 !***  PBL_DRIVER ARE DEFINED AT THE TOPS OF THE LAYERS KTS TO KTE-1
 !***  IF MODULE_BL_MYJPBL WAS INVOKED.
@@ -1943,7 +1997,16 @@
           MOIST(I,J,K,P_QV)=MAX(EPSQ,(MOIST(I,J,K,P_QV)+RQVBLTEN(I,K,J)*DTPHS) )
           CWM(I,J,K)=0.
 !
-          pbl_check1: IF (.NOT.ETAMP_PHYSICS) THEN
+          pbl_check1: IF(config_flags%mp_physics==fer_mp_hires_advect) then
+             ! Update QI and QRIMEF:
+             call QITEND_FER_HIRES_ADVECT( &
+                  MOIST(I,J,K,P_QI), &
+                  SCALAR(I,J,K,P_QRIMEF), &
+                  RQIBLTEN(I,K,J)*DTPHS)
+
+             ! Update QC:
+             MOIST(I,J,K,P_QC)=MAX(EPSQ,(MOIST(I,J,K,P_QC)+RQCBLTEN(I,K,J)*DTPHS) )
+          ELSEIF (.NOT.ETAMP_PHYSICS) THEN
             DO I_M=1,N_MOIST
               IF(I_M==P_QC) THEN
                 MOIST(I,J,K,I_M)=MAX(EPSQ,(MOIST(I,J,K,I_M)+RQCBLTEN(I,K,J)*DTPHS) )
@@ -1958,7 +2021,7 @@
               ENDIF
               IF(I_M/=P_QV) CWM(I,J,K)=CWM(I,J,K)+MOIST(I,J,K,I_M)
             ENDDO
-          ELSE pbl_check1
+          ELSE 
 !
 !-- Allow vertical mixing to modify cloud ice + snow for ETAMPNEW
 !
@@ -2161,8 +2224,8 @@
 !-----------------------------------------------------------------------
       SUBROUTINE CUCNVC(NTSD,DT,NCNVC,NRADS,NRADL                       &
      &                 ,GPS,RESTRT,HYDRO                                &
-     &                 ,CLDEFI,N_MOIST,ENSDIM                           &
-     &                 ,MOIST                                           &
+     &                 ,CLDEFI,N_MOIST,N_SCALAR,ENSDIM                  &
+     &                 ,MOIST,SCALAR                                    &
      &                 ,DETA1,DETA2,AETA1,AETA2,ETA1,ETA2               &
      &                 ,F_ICE,F_RAIN                                    &
 !***  Changes for other cu-schemes, most for gd scheme
@@ -2181,8 +2244,12 @@
 #if (NMM_CORE==1)    
      &                 ,TWBS,QWBS                                       &
      &                 ,DUCUDT, DVCUDT, MOMMIX, store_rand               &                  
+     &                 ,DTHCUDT,DQVCUDT,DQRCUDT,DQCCUDT,DQICUDT         &!wang added output CU tendency
+     &                 ,DQSCUDT                                         &!wang added output CU tendency
 #endif
      &                 ,HPBL2D,EVAP2D,HEAT2D                            &     !Kwon S&P
+     &                 ,DX2D,DYNMM                                      &     !WANG scale-aware sas
+     &                 ,SCALEFUN, SCALEFUN1                             & !scale functions
      &                 ,AVCNVC,ACUTIM,IHE,IHW                           &
      &                 ,GRID,CONFIG_FLAGS                               &
      &                 ,IDS,IDE,JDS,JDE,KDS,KDE                         &
@@ -2220,11 +2287,18 @@
      &                     ,IMS,IME,JMS,JME,KMS,KME                     &
      &                     ,IPS,IPE,JPS,JPE,KPS,KPE                     &
      &                     ,ITS,ITE,JTS,JTE,KTS,KTE                     &
-     &                     ,N_MOIST,NCNVC,NTSD,NRADS,NRADL
+     &                     ,N_MOIST,NCNVC,NTSD,NRADS,NRADL,N_SCALAR
 !
       INTEGER, DIMENSION(JMS:JME),INTENT(IN) :: IHE,IHW
 !
       INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: LPBL
+
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: DX2D ! Wang scale-sware sas
+      REAL,INTENT(IN) :: DYNMM                           ! Delt_Y 
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: SCALEFUN,SCALEFUN1 ! Wang scale-sware sas
+                                                                     ! scale
+                                                                     ! functions
+
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: HPBL2D,EVAP2D,HEAT2D     !Kwon S&P
 !`
@@ -2274,6 +2348,14 @@
 #if (NMM_CORE==1)
       REAL, INTENT(INOUT)::MOMMIX
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT):: DUCUDT, DVCUDT 
+!Wang 2015-12-14 added output tendency from CU
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT):: DTHCUDT   &
+     &                                                      , DQVCUDT   & 
+     &                                                      , DQRCUDT   & 
+     &                                                      , DQCCUDT   & 
+     &                                                      , DQICUDT   & 
+     &                                                      , DQSCUDT
+!
       REAL,DIMENSION(IDS:IDE,JDS:JDE)               :: DATA1 
       LOGICAL, EXTERNAL::wrf_dm_on_monitor
 #endif
@@ -2293,6 +2375,9 @@
 !
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME,N_MOIST)                   &
      &                                           ,INTENT(INOUT) :: MOIST
+!
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME,N_SCALAR)                   &
+     &                                           ,INTENT(INOUT) :: SCALAR
 !
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(INOUT) :: GD_CLOUD &
      &                                                        ,GD_CLOUD2
@@ -2403,6 +2488,8 @@
      &   CONFIG_FLAGS%CU_PHYSICS==SASSCHEME)RETURN
       IF(MOD(NTSD,NCNVC)/=0.AND.                                      &
      &   CONFIG_FLAGS%CU_PHYSICS==MESO_SAS)RETURN             !Kwon
+      IF(MOD(NTSD,NCNVC)/=0.AND.                                      &
+     &   CONFIG_FLAGS%CU_PHYSICS==SCALESASSCHEME)RETURN        ! Wang
       
 !-----------------------------------------------------------------------
       NSTEP_CNV=NCNVC
@@ -2640,6 +2727,12 @@
         DO I=IMS,IME
            DUCUDT(i,j,k)=0.0
            DVCUDT(i,j,k)=0.0
+           DTHCUDT(i,j,k)=0.0
+           DQVCUDT(i,j,k)=0.0
+           DQRCUDT(i,j,k)=0.0
+           DQCCUDT(i,j,k)=0.0
+           DQICUDT(i,j,k)=0.0
+           DQSCUDT(i,j,k)=0.0
         ENDDO
         ENDDO
         ENDDO
@@ -2687,6 +2780,8 @@
                        ,store_rand=store_rand                           &
 #endif
      &                 ,HPBL2D=HPBL2D,EVAP2D=EVAP2D,HEAT2D=HEAT2D       &     !Kwon S&P
+     &                 ,DX2D=DX2D,DYNMM=DYNMM                          &     !Wang scale-sware SAS 
+     &                 ,SCALEFUN=SCALEFUN, SCALEFUN1=SCALEFUN1          &
      &                 ,pgcon=config_flags%sas_pgcon                    &
      &                 ,sas_mass_flux=config_flags%sas_mass_flux        &
      &                 ,shalconv=config_flags%sas_shal_conv             &
@@ -2703,6 +2798,23 @@
      &                 ,QS_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QS),F_QS=F_QS &
      &                 ,QG_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QG),F_QG=F_QG)
 !
+#if (NMM_CORE==1)
+!$omp parallel do                                                       &
+!$omp& private(i,j,k)
+        DO K=KMS,KME
+        DO J=JMS,JME
+        DO I=IMS,IME
+           DTHCUDT(i,j,k)=RTHCUTEN(i,k,j)
+           DQVCUDT(i,j,k)=RQVCUTEN(i,k,j)
+           DQRCUDT(i,j,k)=RQRCUTEN(i,k,j)
+           DQCCUDT(i,j,k)=RQCCUTEN(i,k,j)
+           DQICUDT(i,j,k)=RQICUTEN(i,k,j)
+           DQSCUDT(i,j,k)=RQSCUTEN(i,k,j)
+        ENDDO
+        ENDDO
+        ENDDO
+#endif
+
 !-----------------------------------------------------------------------
 !
 !***  CNVTOP/CNVBOT HOLD THE MAXIMUM VERTICAL LIMITS OF CONVECTIVE CLOUD
@@ -2839,8 +2951,14 @@
 !
           cps_select: SELECT CASE(config_flags%cu_physics)
 !
-          CASE (KFSCHEME,KFETASCHEME,GDSCHEME,SASSCHEME,MESO_SAS,OSASSCHEME,NSASSCHEME,TIEDTKESCHEME)
-            IF (ETAMP_Regional) THEN
+          CASE (KFSCHEME,KFETASCHEME,GDSCHEME,SASSCHEME,SCALESASSCHEME,MESO_SAS,OSASSCHEME,NSASSCHEME,TIEDTKESCHEME)
+           IF(config_flags%mp_physics==fer_mp_hires_advect) THEN
+             ! Update QI and QRIMEF:
+             call QITEND_FER_HIRES_ADVECT( &
+                  MOIST_TRANS(I,K,J,P_QI), &
+                  SCALAR(I,J,K,P_QRIMEF), &
+                  RQICUTEN(I,K,J)*DTCNVC)
+            ELSEIF (ETAMP_Regional) THEN
               MOIST_TRANS(I,K,J,P_QS)=MAX(0.,MOIST_TRANS(I,K,J,P_QS)+RQICUTEN(I,K,J)*DTCNVC+RQSCUTEN(I,K,J)*DTCNVC)
             ELSE
               MOIST_TRANS(I,K,J,P_QI)=MAX(0.,MOIST_TRANS(I,K,J,P_QI)+RQICUTEN(I,K,J)*DTCNVC)

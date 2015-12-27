@@ -1591,14 +1591,14 @@
             ims,ime,jms,jme,kms,kme, &
             its,ite,jts,jte,kts,kte)
         CALL TURBL(grid%ntsd,GRID%DT,GRID%NPHS,RESTRT                       &
-     &            ,N_MOIST,GRID%NUM_SOIL_LAYERS,grid%sldpth,grid%dzsoil          &
+     &            ,N_MOIST,NUM_SCALAR,GRID%NUM_SOIL_LAYERS,grid%sldpth,grid%dzsoil          &
      &            ,grid%deta1,grid%deta2,grid%aeta1,grid%aeta2,grid%eta1,grid%eta2,grid%pdtop,grid%pt          &
      &            ,grid%sm,grid%hbm2,grid%vbm2,grid%dx_nmm,grid%dfrlg                           &
      &            ,grid%czen,grid%czmean,grid%sigt4,grid%rlwin,grid%rswin,grid%radot                 &
      &            ,grid%pd,grid%res,grid%pint,grid%t,grid%q,grid%cwm,grid%f_ice,grid%f_rain,grid%sr                 &
      &            ,grid%q2,grid%u,grid%v,grid%ths,grid%nmm_tsk,grid%sst,grid%prec,grid%sno                     &
      &            ,grid%fis,grid%z0,grid%mz0,grid%z0base,grid%ustar,grid%mixht,grid%pblh,grid%lpbl,grid%el_pbl    &   !KWON MZ0
-     &            ,MOIST,grid%rmol,grid%mol                                      &
+     &            ,MOIST,SCALAR,grid%rmol,grid%mol                                      &
      &            ,grid%exch_h,grid%exch_m,grid%f,grid%akhs,grid%akms,grid%akhs_out,grid%akms_out         &
      &            ,grid%thz0,grid%qz0,grid%uz0,grid%vz0,grid%qsh,grid%mavail                         &
      &            ,grid%stc,grid%smc,grid%cmc,grid%smstav,grid%smstot,grid%ssroff,grid%bgroff             &
@@ -1635,6 +1635,7 @@
      &            ,GRID%HPBL2D, GRID%EVAP2D, GRID%HEAT2D,GRID%RC2D               &  !S&P Kwon
      &            ,GRID%SFCHEADRT,GRID%INFXSRT,GRID%SOLDRAIN           &  !Hydrology, no-op right now
      &            ,grid%cd_out,grid%ch_out                             &
+     &            ,grid%DUBLDT,grid%DVBLDT,grid%DTHBLDT,grid%DQVBLDT   &!wang added PBL tendency output
      &            ,IDS,IDF,JDS,JDF,KDS,KDE                             &
      &            ,IMS,IME,JMS,JME,KMS,KME                             &
      &            ,IPS,IPE,JPS,JPE,KPS,KPE                             &
@@ -1828,8 +1829,8 @@
             ims,ime,jms,jme,kms,kme, &
             its,ite,jts,jte,kts,kte)
         CALL CUCNVC(grid%ntsd,GRID%DT,GRID%NCNVC,GRID%NRADS,GRID%NRADL      &
-     &             ,GPS,RESTRT,grid%hydro,grid%cldefi,N_MOIST,GRID%ENSDIM        &
-     &             ,MOIST                                              &
+     &             ,GPS,RESTRT,grid%hydro,grid%cldefi,N_MOIST,NUM_SCALAR,GRID%ENSDIM        &
+     &             ,MOIST,SCALAR                                              &
      &             ,grid%deta1,grid%deta2,grid%aeta1,grid%aeta2,grid%eta1,grid%eta2                  &
      &             ,grid%f_ice,grid%f_rain                                       &
 !***  Changes for other cu schemes, most for GD scheme
@@ -1847,9 +1848,13 @@
      &             ,RTHBLTEN,RQVBLTEN,RTHRATEN                         & 
 #if (NMM_CORE==1)                  
      &             ,grid%twbs,grid%qwbs                                &
-     &                 ,grid%DUCUDT, grid%DVCUDT, GRID%MOMMIX, grid%random             &
+     &                 ,grid%DUCUDT, grid%DVCUDT, GRID%MOMMIX, grid%random             & 
+     &                 ,grid%DTHCUDT,grid%DQVCUDT,grid%DQRCUDT,grid%DQCCUDT   &! wang, output CU tendency 
+     &                 ,grid%DQICUDT,grid%DQSCUDT                      &
 #endif
      &             ,grid%hpbl2d,grid%evap2d,grid%heat2d                &
+     &             ,grid%dx_nmm,grid%dy_nmm                            & !wang, dx2d, dy
+     &             ,grid%scalefun, grid%scalefun1                           & !wang
      &             ,grid%avcnvc,grid%acutim,grid%ihe,grid%ihw          &
      &             ,GRID,CONFIG_FLAGS                                  &
      &             ,IDS,IDF,JDS,JDF,KDS,KDE                            &

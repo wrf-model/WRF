@@ -6333,8 +6333,8 @@ SUBROUTINE theta_to_thetam ( t_1 , moist_old ,                &
    DO j = jts , MIN(jte,jde-1)
       DO k = kts , kte-1
          DO i = its , MIN(ite,ide-1)
-            t_1(i,k,j) = t_1(i,k,j) * (1. + (R_v/R_d) * moist_old(i,k,j)) + T0*(R_v/R_d)*moist_old(i,k,j)
-            t_2(i,k,j) = t_2(i,k,j) * (1. + (R_v/R_d) * moist(i,k,j)) + T0*(R_v/R_d)*moist(i,k,j)
+            t_1(i,k,j) = ( t_1(i,k,j) + T0 ) * (1. + (R_v/R_d) * moist_old(i,k,j)) - T0
+            t_2(i,k,j) = ( t_2(i,k,j) + T0 ) * (1. + (R_v/R_d) * moist(i,k,j))     - T0
          END DO
       END DO
    END DO

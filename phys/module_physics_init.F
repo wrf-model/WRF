@@ -12,7 +12,7 @@ MODULE module_physics_init
 
    USE module_state_description
    USE module_model_constants
-   USE module_configure, ONLY : grid_config_rec_type
+   USE module_configure, ONLY : grid_config_rec_type ! , p_qnn, f_qnn
 !  USE module_ssib_veg , ONLY : init_module_ssib_veg !fds (SSiB constants)
    !Local data for CAM's MG MP scheme
    integer  :: ixcldliq, ixcldice, ixnumliq, ixnumice
@@ -220,7 +220,7 @@ CONTAINS
                          ,G_URB2D_mosaic,RN_URB2D_mosaic                                                      & ! danli mosaic 
                          ,TS_URB2D_mosaic                                                                     & ! danli mosaic 
                          ,TS_RUL2D_mosaic                                                                     & ! danli mosaic
-                         ,P_QNN, F_QNN   &
+!                        ,P_QNN, F_QNN   &
                          )
 
 !-----------------------------------------------------------------
@@ -477,8 +477,8 @@ CONTAINS
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: PEXPXY
 
 !   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),  OPTIONAL,  INTENT(INOUT ) ::   qnn_curr
-   integer, optional, intent(in) :: p_qnn
-   LOGICAL, OPTIONAL, intent(in) :: f_qnn
+!  integer, optional, intent(in) :: p_qnn
+!  LOGICAL, OPTIONAL, intent(in) :: f_qnn
 
    INTEGER , OPTIONAL,  INTENT(OUT) :: STEPWTD
    REAL , OPTIONAL, INTENT(IN) :: WTDDT
@@ -996,6 +996,7 @@ integer myproc
                 its, ite, jts, jte, kts, kte                       )
    ENDIF
 
+#if 0
    IF ( f_qnn ) THEN
 ! Initialize simple ccn field
      IF ( .not. Any(scalar(:,:,:,p_qnn) > 1.0 ) ) THEN ! initialize ccn if not already done
@@ -1021,6 +1022,7 @@ integer myproc
    ENDIF
    
   ENDIF !}
+#endif
 
 !-- convert zfull and zhalf to sigma values for ra_init (Eta CO2 needs these)
 !-- zfull/zhalf may be either zeta or eta

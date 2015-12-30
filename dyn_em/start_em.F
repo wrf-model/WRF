@@ -1098,7 +1098,7 @@ endif
                       ,grid%G_URB2D_mosaic,grid%RN_URB2D_mosaic                                      & ! danli mosaic 
                       ,grid%TS_URB2D_mosaic                                                          & ! danli mosaic 
                       ,grid%TS_RUL2D_mosaic                                                          & ! danli mosaic
-                     , P_QNN=P_QNN, F_QNN=F_QNN          &
+!                    , P_QNN=P_QNN, F_QNN=F_QNN          &
                       )
        ENDIF   !tgs
 

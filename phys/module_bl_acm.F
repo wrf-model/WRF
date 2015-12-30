@@ -22,7 +22,7 @@ CONTAINS
                      PSFC,     EP1,      G,                           &
                      ROVCP,    RD,       CPD,                         &
                      PBLH,     KPBL2D,   EXCH_H, REGIME,              &
-                     GZ1OZ0,   WSPD,     PSIM, MUT,                   &
+                     GZ1OZ0,   WSPD,     PSIM, MUT, RMOL,             &
                      RUBLTEN,  RVBLTEN,  RTHBLTEN,                    &
                      RQVBLTEN, RQCBLTEN, RQIBLTEN,                    &
                      ids,ide, jds,jde, kds,kde,                       &
@@ -48,6 +48,12 @@ CONTAINS
 !     RG and JP 7/2006   - Finished WRF adaptation
 !     JP 12/2011 12/2011 - ACM2 modified so it's not dependent on first layer thickness. 
 !     JP        3/2013   - WRFChem version. Mixing of chemical species are added
+!     JP 12/2014         - Km and Kh updated. New Richardson number stability function.
+!                          Reduces day and night 2-m temperature bias.
+!     JP 12/2014         - Minimum PBL height bug caused PBLH lower than first level thickness in very stable 
+!                          conditions. Fixed so PBLH minimum is layer 1 thickness.
+!     JP 12/2015         - RMOL updated after initial calculation in the PX-SFCLAY.
+!                                                  
 !
 !**********************************************************************
 !   ARGUMENT LIST:
@@ -84,6 +90,7 @@ CONTAINS
 !-- WSPD            wind speed at lowest model level (m/s)
 !-- PSIM            similarity stability function for momentum
 !-- MUT             Total Mu : Psfc - Ptop
+!-- RMOL            inverse (1/MOL) of Monin-Obukhov length (m)  (added for v3.8)
  
 !-- ids             start index for i in domain
 !-- ide             end index for i in domain
@@ -138,7 +145,8 @@ CONTAINS
                                                           HFX, QFX, TSK,    &
                                                           PSFC, WSPD, MUT
 
-    REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) ::  PBLH, REGIME, UST
+    REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) ::  PBLH, REGIME,  &
+                                                              UST, RMOL
 
     REAL,    DIMENSION( ims:ime, kms:kme, jms:jme ),                         &
              INTENT(INOUT)   ::                         RUBLTEN, RVBLTEN,    &
@@ -235,7 +243,7 @@ CONTAINS
               ,hfx=hfx(ims,j),qfx=qfx(ims,j)                       &
               ,tg=tsk(ims,j),gz1oz0=gz1oz0(ims,j)                  &
               ,wspd=wspd(ims,j) ,klpbl=kpbl2d(ims,j)               &
-              ,mut=mut(ims,j)                                      &
+              ,mut=mut(ims,j), rmol=rmol(ims,j)                    &
               ,ep1=ep1,karman=karman                               &
               ,ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde   &
               ,ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme   &
@@ -267,7 +275,7 @@ CONTAINS
               ,cpd,g,rovcp,rd,rdt,psfcpa,ust                &
               ,pbl,exch_hx,regime,psim                      &
               ,hfx,qfx,tg,gz1oz0,wspd ,klpbl                &
-              ,mut                                          &
+              ,mut, rmol                                    &
               ,ep1,karman                                   &
               ,ids,ide, jds,jde, kds,kde   &
               ,ims,ime, jms,jme, kms,kme   &
@@ -297,7 +305,7 @@ CONTAINS
 							        qitnp
       real,     dimension( ims:ime ), intent(in   )   ::   psfcpa
       real,     dimension( ims:ime ), intent(in   )   ::   tg
-      real,     dimension( ims:ime ), intent(inout)   ::   regime
+      real,     dimension( ims:ime ), intent(inout)   ::   regime, rmol
       real,     dimension( ims:ime ), intent(in)      ::   wspd, psim, gz1oz0
       real,     dimension( ims:ime ), intent(in)      ::   hfx, qfx
       real,     dimension( ims:ime ), intent(in)      ::   mut
@@ -380,6 +388,7 @@ CONTAINS
              TSTV(I) = SIGN(1.0E-6,TSTV(I))
            ENDIF
            MOL(I)    = THV1 * UST(i)**2/(KARMAN*G*TSTV(I))
+           RMOL(I)   = 1./MOL(I)
            WST(I)    = UST(I) * (PBL(I)/(KARMAN*ABS(MOL(I)))) ** 0.333333       
            PSTAR(I)  =  MUT(I)/1000.                                     ! P* in cb 
      ENDDO

@@ -1933,7 +1933,7 @@ CONTAINS
                xland,hfx,qfx,lh,tsk,flhc,flqc,qgh,qsfc,rmol,       &
                u10,v10,                                            &
                gz1oz0,wspd,br,isfflx,dx,                           &
-               svp1,svp2,svp3,svpt0,ep_1,ep_2,karman,              &
+               svp1,svp2,svp3,svpt0,ep_1,ep_2,karman,itimestep,    &
                ids,ide, jds,jde, kds,kde,                          &
                ims,ime, jms,jme, kms,kme,                          &
                i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
@@ -3185,7 +3185,7 @@ CONTAINS
                      psfc, gsw, glw, rainbl, emiss,                  &
                      ITIMESTEP, curr_secs, num_soil_layers, DT,      &
                      anal_interval, xland, xice, albbck, albedo,     &
-                     snoalb, smois, tslb, mavail,T2, Q2,             &
+                     snoalb, smois, tslb, mavail,T2, Q2, qsfc,       &
                      zs, dzs, psih,                                  &
                      landusef,soilctop,soilcbot,vegfra, vegf_px,     &
                      isltyp,ra,rs,lai,imperv,canfra,nlcat,nscat,     &
@@ -6234,7 +6234,7 @@ HFX_SEA, LH_SEA, QFX_SEA, QGH_SEA, QSFC_SEA, TSK_SEA,  &
                      XLAND,HFX,QFX,LH,TSK_LOCAL,FLHC,FLQC,QGH,QSFC,RMOL, &
                      U10,V10,                                      &
                      GZ1OZ0,WSPD,BR,ISFFLX,DX,                     &
-                     SVP1,SVP2,SVP3,SVPT0,EP1,EP2,KARMAN,          &
+                     SVP1,SVP2,SVP3,SVPT0,EP1,EP2,KARMAN,ITIMESTEP,&
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte                     )
@@ -6292,7 +6292,7 @@ HFX_SEA, LH_SEA, QFX_SEA, QGH_SEA, QSFC_SEA, TSK_SEA,  &
                      XLAND_SEA,HFX_SEA,QFX_SEA,LH_SEA,TSK_SEA,FLHC_SEA,FLQC_SEA,QGH_SEA,QSFC_SEA,RMOL_SEA, &
                      U10_SEA,V10_SEA,                              &
                      GZ1OZ0_SEA,WSPD_SEA,BR_SEA,ISFFLX,DX,         &
-                     SVP1,SVP2,SVP3,SVPT0,EP1,EP2,KARMAN,          &
+                     SVP1,SVP2,SVP3,SVPT0,EP1,EP2,KARMAN,ITIMESTEP,&
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte                     )

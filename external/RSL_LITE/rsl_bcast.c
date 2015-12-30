@@ -131,7 +131,7 @@ static int s_putmsg = 0 ;
 #endif
 
 /* parent->nest */
-RSL_LITE_TO_CHILD_INFO ( Fcomm, msize_p,
+void RSL_LITE_TO_CHILD_INFO ( Fcomm, msize_p,
                          cips_p, cipe_p, cjps_p, cjpe_p, /* patch dims of SOURCE DOMAIN */
                          iids_p, iide_p, ijds_p, ijde_p, /* domain dims of INTERMEDIATE DOMAIN */
                          nids_p, nide_p, njds_p, njde_p, /* domain dims of CHILD DOMAIN */
@@ -262,7 +262,7 @@ RSL_LITE_TO_CHILD_INFO ( Fcomm, msize_p,
 /********************************************/
 
 /* nest->parent */
-RSL_LITE_TO_PARENT_INFO ( Fcomm, msize_p,
+void RSL_LITE_TO_PARENT_INFO ( Fcomm, msize_p,
                           nips_p, nipe_p, njps_p, njpe_p, /* patch dims of SOURCE DOMAIN (CHILD) */
                           cids_p, cide_p, cjds_p, cjde_p, /* domain dims of TARGET DOMAIN (PARENT) */
                           ntasks_x_p , ntasks_y_p ,       /* proc counts in x and y */
@@ -598,8 +598,7 @@ rsl_lite_from_peerpoint_info ( ig_p, jg_p, retval_p )
     *retval_p = 0 ;
     RSL_FREE( Recvbuf ) ;
   }
-     
-  return ;
+  
 }
 
 /********************************************/

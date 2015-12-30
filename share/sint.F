@@ -218,9 +218,9 @@
       REAL XF(ims:ime,jms:jme,NF)
       REAL XF1(ims:ime,jms:jme,NF)
 !                                                                       
-      REAL Y(ims:ime,jms:jme,-IOR:IOR),    &
-           Z(ims:ime,jms:jme,-IOR:IOR),    &
-           F(ims:ime,jms:jme,0:1)                                       
+      REAL Y(-IOR:IOR),    &
+           Z(ims:ime,-IOR:IOR),    &
+           F(0:1)                                       
 !
       INTEGER I,J,II,JJ,IIM
       INTEGER N2STAR, N2END, N1STAR, N1END
@@ -230,9 +230,9 @@
 !      PARAMETER(NONOS=1)                                                
 !      PARAMETER(N1OS=N1*NONOS+1-NONOS,N2OS=N2*NONOS+1-NONOS)            
 !                                                                       
-      REAL W(ims:ime,jms:jme),OV(ims:ime,jms:jme),UN(ims:ime,jms:jme)                     
-      REAL MXM(ims:ime,jms:jme),MN(ims:ime,jms:jme)                                 
-      REAL FL(ims:ime,jms:jme,0:1)                                            
+      REAL W,OV,UN                     
+      REAL MXM,MN                               
+      REAL FL(0:1)                                            
       REAL XIG(NF*NF), XJG(NF*NF)  ! NF is the parent to child grid refinement ratio
       integer rr
 
@@ -276,55 +276,39 @@
           DO 50 J=-IOR,IOR                                              
 
 !cdir unroll=5
-            DO 51 I=-IOR,IOR                                            
               DO 511 II=N1STAR,N1END                                    
-                Y(II,JJ,I)=XF1(II+I,JJ+J,IIM)              
-  511         CONTINUE
-   51       CONTINUE                                                    
+                Y(-2)=XF1(II-2,JJ+J,IIM)              
+                Y(-1)=XF1(II-1,JJ+J,IIM)              
+                Y(0)=XF1(II,JJ+J,IIM)              
+                Y(1)=XF1(II+1,JJ+J,IIM)              
+                Y(2)=XF1(II+2,JJ+J,IIM)              
 
-            DO 811 II=N1STAR,N1END                                      
-              FL(II,JJ,0)=DONOR(Y(II,JJ,-1),Y(II,JJ,0),XIG(IIM))        
-              FL(II,JJ,1)=DONOR(Y(II,JJ,0),Y(II,JJ,1),XIG(IIM))           
-  811         CONTINUE
-            DO 812 II=N1STAR,N1END                                      
-              W(II,JJ)=Y(II,JJ,0)-(FL(II,JJ,1)-FL(II,JJ,0))               
-  812         CONTINUE
-            DO 813 II=N1STAR,N1END                                      
-              MXM(II,JJ)=                                             &
-                       AMAX1(Y(II,JJ,-1),Y(II,JJ,0),Y(II,JJ,1),       &
-                       W(II,JJ))                                      
-              MN(II,JJ)=AMIN1(Y(II,JJ,-1),Y(II,JJ,0),Y(II,JJ,1),W(II,JJ)) 
-  813         CONTINUE
-            DO 312 II=N1STAR,N1END                                      
-              F(II,JJ,0)=                                               &
-                         TR4(Y(II,JJ,-2),Y(II,JJ,-1),Y(II,JJ,0),        &
-                         Y(II,JJ,1),XIG(IIM))                           
-              F(II,JJ,1)=                                                 &
-                       TR4(Y(II,JJ,-1),Y(II,JJ,0),Y(II,JJ,1),Y(II,JJ,2),&
+              FL(0)=DONOR(Y(-1),Y(0),XIG(IIM))        
+              FL(1)=DONOR(Y(0),Y(1),XIG(IIM))           
+              W=Y(0)-(FL(1)-FL(0))               
+              MXM=                                             &
+                       AMAX1(Y(-1),Y(0),Y(1),       &
+                       W)                                      
+              MN=AMIN1(Y(-1),Y(0),Y(1),W) 
+              F(0)=                                               &
+                   TR4(Y(-2),Y(-1),Y(0),        &
+                   Y(1),XIG(IIM))                           
+              F(1)=                                                 &
+                       TR4(Y(-1),Y(0),Y(1),Y(2),&
                        XIG(IIM))                                        
-  312         CONTINUE
-            DO 822 II=N1STAR,N1END                                      
-              F(II,JJ,0)=F(II,JJ,0)-FL(II,JJ,0)                         
-              F(II,JJ,1)=F(II,JJ,1)-FL(II,JJ,1)                           
-  822         CONTINUE
-            DO 823 II=N1STAR,N1END                                      
-              OV(II,JJ)=(MXM(II,JJ)-W(II,JJ))/(-PN(F(II,JJ,1))+         &
-                      PP(F(II,JJ,0))+EP)                              
-              UN(II,JJ)=(W(II,JJ)-MN(II,JJ))/(PP(F(II,JJ,1))-             &
-                    PN(F(II,JJ,0))+EP)                                
-  823         CONTINUE
-            DO 824 II=N1STAR,N1END                                      
-              F(II,JJ,0)=PP(F(II,JJ,0))*AMIN1(1.,OV(II,JJ))+            &
-                         PN(F(II,JJ,0))*AMIN1(1.,UN(II,JJ))             
-              F(II,JJ,1)=PP(F(II,JJ,1))*AMIN1(1.,UN(II,JJ))+            &
-                         PN(F(II,JJ,1))*AMIN1(1.,OV(II,JJ))             
-  824         CONTINUE                                                    
-            DO 825 II=N1STAR,N1END                                      
-              Y(II,JJ,0)=W(II,JJ)-(F(II,JJ,1)-F(II,JJ,0))                 
-  825         CONTINUE
-            DO 361 II=N1STAR,N1END                                      
-              Z(II,JJ,J)=Y(II,JJ,0)                                       
-  361         CONTINUE
+              F(0)=F(0)-FL(0)                         
+              F(1)=F(1)-FL(1)                           
+              OV=(MXM-W)/(-PN(F(1))+         &
+                      PP(F(0))+EP)                              
+              UN=(W-MN)/(PP(F(1))-             &
+                    PN(F(0))+EP)                                
+              F(0)=PP(F(0))*AMIN1(1.,OV)+            &
+                   PN(F(0))*AMIN1(1.,UN)             
+              F(1)=PP(F(1))*AMIN1(1.,UN)+            &
+                   PN(F(1))*AMIN1(1.,OV)             
+              Y(0)=W-(F(1)-F(0))                 
+              Z(II,J)=Y(0)                                       
+  511         CONTINUE
 !                                                                       
 !  END IF FIRST J LOOP                                                  
 !                                                                       
@@ -332,45 +316,30 @@
    50     CONTINUE                                                      
 
           DO 911 II=N1STAR,N1END                                        
-            FL(II,JJ,0)=DONOR(Z(II,JJ,-1),Z(II,JJ,0),XJG(IIM))          
-            FL(II,JJ,1)=DONOR(Z(II,JJ,0),Z(II,JJ,1),XJG(IIM))             
-  911       CONTINUE
-          DO 912 II=N1STAR,N1END                                        
-            W(II,JJ)=Z(II,JJ,0)-(FL(II,JJ,1)-FL(II,JJ,0))                 
-  912       CONTINUE
-          DO 913 II=N1STAR,N1END                                        
-            MXM(II,JJ)=AMAX1(Z(II,JJ,-1),Z(II,JJ,0),Z(II,JJ,1),W(II,JJ))
-            MN(II,JJ)=AMIN1(Z(II,JJ,-1),Z(II,JJ,0),Z(II,JJ,1),W(II,JJ))   
-  913       CONTINUE
-          DO 412 II=N1STAR,N1END                                        
-            F(II,JJ,0)=                                                 &
-                       TR4(Z(II,JJ,-2),Z(II,JJ,-1),Z(II,JJ,0),Z(II,JJ,1)&
-                       ,XJG(IIM))                                       
-            F(II,JJ,1)=                                                   &
-                       TR4(Z(II,JJ,-1),Z(II,JJ,0),Z(II,JJ,1),Z(II,JJ,2),  &
-                       XJG(IIM))                                          
-  412       CONTINUE
-          DO 922 II=N1STAR,N1END                                        
-            F(II,JJ,0)=F(II,JJ,0)-FL(II,JJ,0)                           
-            F(II,JJ,1)=F(II,JJ,1)-FL(II,JJ,1)                             
-  922       CONTINUE
-          DO 923 II=N1STAR,N1END                                        
-            OV(II,JJ)=(MXM(II,JJ)-W(II,JJ))/(-PN(F(II,JJ,1))+           &
-                      PP(F(II,JJ,0))+EP)                                
-            UN(II,JJ)=(W(II,JJ)-MN(II,JJ))/(PP(F(II,JJ,1))-PN(F(II,JJ,0))+ &
+            FL(0)=DONOR(Z(II,-1),Z(II,0),XJG(IIM))          
+            FL(1)=DONOR(Z(II,0),Z(II,1),XJG(IIM))             
+            W=Z(II,0)-(FL(1)-FL(0))                 
+            MXM=AMAX1(Z(II,-1),Z(II,0),Z(II,1),W)
+             MN=AMIN1(Z(II,-1),Z(II,0),Z(II,1),W)   
+            F(0)=                                                 &
+                 TR4(Z(II,-2),Z(II,-1),Z(II,0),Z(II,1)&
+                 ,XJG(IIM))                                       
+            F(1)=                                                   &
+                 TR4(Z(II,-1),Z(II,0),Z(II,1),Z(II,2),  &
+                 XJG(IIM))                                          
+            F(0)=F(0)-FL(0)                           
+            F(1)=F(1)-FL(1)                             
+            OV=(MXM-W)/(-PN(F(1))+           &
+               PP(F(0))+EP)                                
+            UN=(W-MN)/(PP(F(1))-PN(F(0))+ &
                     EP)                                                 
-  923       CONTINUE
-          DO 924 II=N1STAR,N1END                                        
-            F(II,JJ,0)=PP(F(II,JJ,0))*AMIN1(1.,OV(II,JJ))+PN(F(II,JJ,0))  &
-                       *AMIN1(1.,UN(II,JJ))                             
-            F(II,JJ,1)=PP(F(II,JJ,1))*AMIN1(1.,UN(II,JJ))+PN(F(II,JJ,1))  &
-                       *AMIN1(1.,OV(II,JJ))                             
-  924     CONTINUE                                                      
+            F(0)=PP(F(0))*AMIN1(1.,OV)+PN(F(0))  &
+                 *AMIN1(1.,UN)                             
+            F(1)=PP(F(1))*AMIN1(1.,UN)+PN(F(1))  &
+                       *AMIN1(1.,OV)                             
+            XF(II,JJ,IIM)=W-(F(1)-F(0))               
+  911     CONTINUE                                                      
  9000   CONTINUE                                                        
-        DO 925 JJ=N2STAR,N2END                                          
-          DO 925 II=N1STAR,N1END                                        
-            XF(II,JJ,IIM)=W(II,JJ)-(F(II,JJ,1)-F(II,JJ,0))                
-  925     CONTINUE
                                                                         
 !                                                                       
  2000 CONTINUE                                                          

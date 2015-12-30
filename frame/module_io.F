@@ -287,7 +287,7 @@ SUBROUTINE wrf_open_for_write_begin( FileName , grid, SysDepInfo, &
 #endif
 #ifdef PNETCDF
       CASE (IO_PNETCDF  )
-        WRITE(tstr,"(A,',NTASKS_X=',i10,',MYTASK_X=',i10,',LOCAL_COMMUNICATOR_X=',i10)") &
+        WRITE(tstr,"(A,',NTASKS_X=',i10,',MYTASK_X=',i10,',LOCAL_COMMUNICATOR_X=',i0)") &
               TRIM(SysDepInfo),ntasks_x,mytask_x,local_communicator_x
         j=1
         t1 = " "
@@ -303,7 +303,7 @@ SUBROUTINE wrf_open_for_write_begin( FileName , grid, SysDepInfo, &
 #endif
 #ifdef PIO
       CASE ( IO_PIO )
-        WRITE(tstr,"(A,',NTASKS_X=',i10,',MYTASK_X=',i10,',LOCAL_COMMUNICATOR_X=',i10)") &
+        WRITE(tstr,"(A,',NTASKS_X=',i10,',MYTASK_X=',i10,',LOCAL_COMMUNICATOR_X=',i0)") &
               TRIM(SysDepInfo),ntasks_x,mytask_x,local_communicator_x
         j=1
         t1 = " "

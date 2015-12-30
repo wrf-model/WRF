@@ -11,6 +11,7 @@ CONTAINS
                  ,bldtacttime                                      & 
                  ,rublten,rvblten,rthblten                         &
                  ,tsk,xland,znt                                    &
+                 ,msang,scurx,scury,lcurr_sf                       &
 #if (HWRF==1)
                  ,mznt                                             &
 #endif
@@ -368,6 +369,7 @@ CONTAINS
 !
    LOGICAL,      INTENT(IN   )    ::   warm_rain
    LOGICAL,      INTENT(IN   )    ::   is_CAMMGMP_used !BSINGH:01/31/2013: Added for CAMUWPBL
+   LOGICAL,      INTENT(IN   )    ::   lcurr_sf
 #if (NMM_CORE==1)
    LOGICAL,      INTENT(IN   )    ::   DISHEAT ! (for HWRF)
    REAL, DIMENSION( ims:ime , jms:jme ),                         &
@@ -456,7 +458,11 @@ CONTAINS
                                                           GZ1OZ0, &
                                                               BR, &
                                                                F, &
-                                                         CHKLOWQ
+                                                         CHKLOWQ, &
+                                                           SCURX, &
+                                                           SCURY, &
+                                                           MSANG
+
 !
    REAL,       DIMENSION( ims:ime, jms:jme )                    , &
                INTENT(INOUT)    ::                           TSK, &
@@ -1276,6 +1282,7 @@ CONTAINS
               ,DKU3D=DKU3D,DKT3D=DKT3D                              &
               ,coef_ric_l=coef_ric_l,coef_ric_s=coef_ric_s,xland=xland    &
 #endif
+              ,MSANG=MSANG,SCURX=SCURX,SCURY=SCURY,LCURR_SF=LCURR_SF &
               ,P_QI=p_qi,P_FIRST_SCALAR=param_first_scalar          &
               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &

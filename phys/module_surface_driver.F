@@ -19,7 +19,7 @@ CONTAINS
      &          ,num_soil_layers,p8w,pblh,pi_phy,pshltr,fm,fhh,psih   &
 #if (NMM_CORE==1)
      &          ,psim,p_phy,q10,q2,qfx,taux,tauy,qsfc,qshltr,qz0      &
-     &          ,icoef_sf,lcurr_sf                                    & !for gfdl-sf drag
+     &          ,zkmax,ribn,charn,msang,scurx,scury,icoef_sf,lcurr_sf & !for gfdl-sf drag
      &          ,cd_out,ch_out                                        &
 #else
      &          ,psim,p_phy,q10,q2,qfx,qsfc,qshltr,qz0                &
@@ -753,7 +753,8 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme ) , OPTIONAL, INTENT(INOUT)::   BLO4    ! ssib-snow
    REAL, DIMENSION( ims:ime, jms:jme ) , OPTIONAL, INTENT(INOUT)::   HO4     ! ssib-snow
 !----------------------------------------------------------
-   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   BR
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN):: CHARN, MSANG, SCURX, SCURY
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   BR, RIBN, ZKMAX
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   CHKLOWQ
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   GZ1OZ0
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   PSHLTR
@@ -2243,13 +2244,14 @@ CONTAINS
                    UST,PSIM,PSIH,                                         &  
                    XLAND,HFX,QFX,TAUX,TAUY,LH,GSW,GLW,TSK,FLHC,FLQC,  & ! gopal's doing for Ocean coupling
                    QGH,QSFC,U10,V10,                              &
-                   ICOEF_SF, LCURR_SF,                            &
-                   GZ1OZ0,WSPD,BR,ISFFLX,                         &
+                   ICOEF_SF, LCURR_SF,CHARN, MSANG, SCURX, SCURY, &
+                   GZ1OZ0,WSPD,BR,ZKMAX, ISFFLX,                  &
                    EP_1,EP_2,KARMAN,GFDL_NTSFLG,SFENTH,           &
                    cd_out, ch_out,                                &
                    ids,ide, jds,jde, kds,kde,                     &
                    ims,ime, jms,jme, kms,kme,                             &
                    i_start(ij),i_end(ij),j_start(ij),j_end(ij),kts,kte    )
+           RIBN = BR
            DO j=j_start(ij),j_end(ij)
            DO i=i_start(ij),i_end(ij)
               CHKLOWQ(I,J)= 1.0

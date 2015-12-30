@@ -2137,7 +2137,8 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
 SUBROUTINE horizontal_pressure_gradient( ru_tend,rv_tend,                &
                                          ph,alt,p,pb,al,php,cqu,cqv,     &
                                          muu,muv,mu,fnm,fnp,rdnw,        &
-                                         cf1,cf2,cf3,rdx,rdy,msfux,msfuy,&
+                                         cf1,cf2,cf3,cfn,cfn1,           &
+                                         rdx,rdy,msfux,msfuy,&
                                          msfvx,msfvy,msftx,msfty,        &
                                          config_flags, non_hydrostatic,  &
                                          top_lid,                        &
@@ -2180,7 +2181,7 @@ SUBROUTINE horizontal_pressure_gradient( ru_tend,rv_tend,                &
 
    REAL, DIMENSION( kms:kme ), INTENT(IN   ) :: rdnw, fnm, fnp
 
-   REAL,  INTENT(IN   ) :: rdx, rdy, cf1, cf2, cf3
+   REAL,  INTENT(IN   ) :: rdx, rdy, cf1, cf2, cf3, cfn, cfn1
 
    INTEGER :: i,j,k, itf, jtf, ktf, i_start, j_start
    REAL, DIMENSION( ims:ime, kms:kme ) :: dpn
@@ -2239,9 +2240,8 @@ SUBROUTINE horizontal_pressure_gradient( ru_tend,rv_tend,                &
         ENDDO
         IF (top_lid) THEN
           DO i = i_start, itf
-            dpn(i,kde) = .5*( cf1*(p(i,kde-1,j-1)+p(i,kde-1,j))   &
-                             +cf2*(p(i,kde-2,j-1)+p(i,kde-2,j))   &
-                             +cf3*(p(i,kde-3,j-1)+p(i,kde-3,j))  )
+            dpn(i,kde) = .5*( cfn *(p(i,kde-1,j-1)+p(i,kde-1,j))   &
+                             +cfn1*(p(i,kde-2,j-1)+p(i,kde-2,j)) )
           ENDDO
         ENDIF
                
@@ -2315,9 +2315,8 @@ SUBROUTINE horizontal_pressure_gradient( ru_tend,rv_tend,                &
         ENDDO
         IF (top_lid) THEN
           DO i = i_start, itf
-            dpn(i,kde) = .5*( cf1*(p(i-1,kde-1,j)+p(i,kde-1,j))   &
-                             +cf2*(p(i-1,kde-2,j)+p(i,kde-2,j))   &
-                             +cf3*(p(i-1,kde-3,j)+p(i,kde-3,j))  )
+            dpn(i,kde) = .5*( cfn *(p(i-1,kde-1,j)+p(i,kde-1,j))   &
+                             +cfn1*(p(i-1,kde-2,j)+p(i,kde-2,j)) )
           ENDDO
         ENDIF
                

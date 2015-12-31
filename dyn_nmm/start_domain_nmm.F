@@ -2169,7 +2169,7 @@
      &                nssl_rho_qs=config_flags%nssl_rho_qs,                               &
      &                nssl_ipelec=config_flags%nssl_ipelec,                               &
      &                nssl_isaund=config_flags%nssl_isaund,                               & 
-     &                P_QNN=P_QNN, F_QNN=F_QNN,                                           &
+!     &                P_QNN=P_QNN, F_QNN=F_QNN,                                           &
      &                MAXPATCH=1,ccn_conc=config_flags%ccn_conc, & ! CLM
      &                pin=grid%pin,ozmixm=grid%ozmixm &
      &                )

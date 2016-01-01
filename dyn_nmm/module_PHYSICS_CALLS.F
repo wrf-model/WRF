@@ -1401,7 +1401,7 @@
      &          ,ALBSI=albsi,ICEDEPTH=icedepth,SNOWSI=snowsi            &
      &          ,ISICE=GRID%LANDUSE_ISICE,ISWATER=GRID%ISWATER          &
      &          ,XLAND=XLAND,Z=Z,ZNT=Z0                                 &
-#ifdef HWRF
+#if ( HWRF == 1 )
      &          ,MZNT=MZ0                                               &
 #endif
      &          ,ZS=SLDPTH,CT=CT,TKE_PBL=TKE,SFENTH=SFENTH              &   !KWON
@@ -1577,7 +1577,7 @@
 !BSF &               ,RQRBLTEN=RQRBLTEN,RQSBLTEN=RQSBLTEN             & !BSF
 !BSF &               ,RQGBLTEN=RQGBLTEN                               & !BSF
      &               ,TSK=TSFC,XLAND=XLAND,ZNT=Z0                     &
-#ifdef HWRF
+#if ( HWRF == 1 )
      &               ,MZNT=MZ0                                        &
 #endif
      &               ,HT=SFCZ                                         &   !KWON
@@ -1702,7 +1702,7 @@
         ENDDO
       ENDIF
 !
-#ifdef HWRF
+#if ( HWRF == 1 )
       if(size(grid%windsq_swath)>1) then
          do j=max(jts,jds),min(jte,jde-1)
             do i=max(its,ids),min(ite,ide-1)
@@ -1822,7 +1822,7 @@
 !125   FORMAT(1X,'grid%id  module_PHYSICS.F :  gwd_opt  ',I2,2X,I2)
 
 
-#ifdef HWRF
+#if ( HWRF == 1 )
       IF (grid%gwd_opt .eq. 2 .AND. grid%id.eq.1) THEN                                        !Kwon's doing for parent only now
 #else
       IF (grid%gwd_opt .eq. 2) THEN
@@ -2762,7 +2762,7 @@
       have_tg_tp = .false.
       have_swath = .false.
       have_tg_tp = (size(grid%tg_total_precip)>1)
-#ifdef HWRF
+#if ( HWRF == 1 )
       have_swath = ( size(grid%precip_swath)>1 )
 #endif
 !$omp parallel do                                                       &
@@ -2783,7 +2783,7 @@
           if(have_tg_tp) then
              grid%tg_total_precip(i,j) = grid%tg_total_precip(i,j) + PCPCOL
           endif
-#ifdef HWRF
+#if ( HWRF == 1 )
           if(have_swath) then
              if(grid%interesting(i,j)/=0) &
                   grid%precip_swath(i,j) = grid%precip_swath(i,j) + PCPCOL
@@ -3240,7 +3240,7 @@
 !***  OUT ABOVE SINCE IT IS ONLY A LOCAL ARRAY FOR NOW.
 !-----------------------------------------------------------------------
 !
-#ifdef HWRF
+#if ( HWRF == 1 )
       have_swath = ( size(grid%precip_swath)>1 )
 #endif
       have_tg_tp = (size(grid%tg_total_precip)>1)
@@ -3256,7 +3256,7 @@
           if(have_tg_tp) then
              grid%tg_total_precip(i,j) = grid%tg_total_precip(i,j) + PCPCOL
           endif
-#ifdef HWRF
+#if ( HWRF == 1 )
           if(have_swath) then
              if(grid%interesting(i,j)/=0) &
                   grid%precip_swath(i,j) = grid%precip_swath(i,j) + PCPCOL

@@ -21,6 +21,24 @@
 #endif
       RETURN
       END
+
+#ifdef PRETEND_WRF_FOR_DMITRY
+! For Dmitry's sake for testing this code outside of WRF, these are
+! implementations of the WRF_MESSAGE and WRF_ERROR_FATAL functions.
+
+      subroutine WRF_MESSAGE(s)
+      character(*) :: s
+      print *,trim(s)
+      end subroutine WRF_MESSAGE
+
+      subroutine WRF_ERROR_FATAL(s)
+      include 'mpif.h'
+      character(*) :: s
+      print *,trim(s)
+      write(0,*) trim(s)
+      CALL MPI_ABORT(MPI_COMM_WORLD,rc,ierr)
+      end subroutine WRF_ERROR_FATAL
+#endif
 !
 !***********************************************************************
 !

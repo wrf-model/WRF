@@ -24,7 +24,7 @@ contains
                            ITS,ITE,JTS,JTE,KTS,KTE)
     USE MODULE_CONFIGURE, ONLY : grid_config_rec_type
     USE MODULE_DOMAIN, ONLY : domain
-#ifdef HWRF
+#if ( HWRF == 1 )
     USE module_tracker, only: ncep_tracker_init
 #endif
     IMPLICIT NONE
@@ -43,7 +43,7 @@ contains
     integer :: xshift ! for handling grid staggering
     integer :: i,j
     
-#ifdef HWRF
+#if ( HWRF == 1 )
     vortex_tracker=grid%vortex_tracker
     if(vortex_tracker<1 .or. vortex_tracker>7) then
 31     format('Domain ',I0,' has invalid value ',I0,' for vortex_tracker: it must be an integer from 1-7')
@@ -154,7 +154,7 @@ contains
     endif distsq
 #endif
 
-#ifdef HWRF
+#if ( HWRF == 1 )
     if(init .and. (vortex_tracker==6 .or. vortex_tracker==7) ) then
        call ncep_tracker_init(grid)
     endif
@@ -162,7 +162,7 @@ contains
 
   END SUBROUTINE VORTTRAK_INIT
 
-#ifdef HWRF
+#if ( HWRF == 1 )
   !----------------------------------------------------------------------
   !
   SUBROUTINE UPDATE_PDYN_MSLP(grid,config_flags, &
@@ -278,14 +278,14 @@ contains
     !   Mar 2013    - sam added options 5 & 6
     !   Sep 2013    - sam added option 7
     !   Feb 2014    - sam added hooks for area of interest
-#ifdef HWRF
+#if ( HWRF == 1 )
     USE module_tracker, only: ncep_tracker_center
 #endif
     USE MODULE_CONFIGURE, ONLY : grid_config_rec_type
     USE MODULE_DOMAIN, ONLY : domain,get_ijk_from_grid
     use module_membrane_mslp
 #ifdef DM_PARALLEL
-# ifdef HWRF
+# if ( HWRF == 1 )
     USE MODULE_COMM_DM, ONLY : HALO_NMM_VT4_NOISE_sub, HALO_NMM_VT4_MSLP_sub
     USE MODULE_DM, ONLY: ntasks_x, ntasks_y, mytask, ntasks, local_communicator
 # endif
@@ -305,8 +305,8 @@ contains
     !     KEEP NEST MOTION IN SINK WITH PHYSICS TIME STEPS
 
 #if ( NMM_NEST == 1 )
-#ifdef HWRF
-    MOVEFREQ=grid%movemin*grid%nphs
+#if ( HWRF == 1 )
+    MOVEFREQ=grid%ntrack*grid%nphs
     vortex_tracker=grid%vortex_tracker
 #else
     MOVEFREQ=grid%nphs
@@ -314,7 +314,7 @@ contains
 #endif
     skip_nest_motion=.false.
     IF(MOD(grid%NTSD+1,MOVEFREQ)/=0 .or. grid%id==1)THEN
-#ifdef HWRF
+#if ( HWRF == 1 )
        IF(grid%MOVED .and. grid%id/=1) then
           grid%NTIME0=grid%NTSD             !FOR UPDATING NTIM0
        ENDIF
@@ -323,7 +323,7 @@ contains
        skip_nest_motion=.true.
     ENDIF
 
-#ifdef HWRF
+#if ( HWRF == 1 )
     if(skip_nest_motion .and. ( grid%pdyn_smooth_age/=0 .or. size(grid%pdyn_smooth)<=1)) then
        ! Pdyn_smooth is up to date and it is not yet time to move the
        ! nest, so we can return now.
@@ -357,15 +357,15 @@ contains
        ! PDYN causes noise in the presence of strong vorticity variations,
        ! so it is not used by HWRF for nest tracking.
        CALL STATS_FOR_MOVE_123 (grid%XLOC_2,grid%YLOC_2                   &
-#ifdef HWRF
+#if ( HWRF == 1 )
                                 ,grid%MSLP                                &
 #else
                                 ,grid%PDYN                                &
 #endif
             ,grid%sm							  &
-#ifdef HWRF
+#if ( HWRF == 1 )
             ,GRID%RESTART,grid%NTIME0                                     &
-            ,GRID%MOVED,grid%MVNEST,grid%ntsd,GRID%NPHS,GRID%MOVEMIN      &
+            ,GRID%MOVED,grid%MVNEST,grid%ntsd,GRID%NPHS,GRID%NTRACK      &
 #else
             ,GRID%MOVED,grid%MVNEST,grid%ntsd,GRID%NPHS                   &
 #endif
@@ -374,7 +374,7 @@ contains
             ,IMS,IME,JMS,JME,KMS,KME                                      &
             ,ITS,ITE,JTS,JTE,KTS,KTE)
        RETURN
-#ifdef HWRF
+#if ( HWRF == 1 )
     elseif(vortex_tracker==6 .or. vortex_tracker==7) then
        ! Tracker #6 and #7: do whatever the inline NCEP Tracker says
        call ncep_tracker_center(grid)
@@ -485,7 +485,7 @@ contains
                            ITS,ITE,JTS,JTE,KTS,KTE
     integer :: i,j,iadd
     
-#ifdef HWRF
+#if ( HWRF == 1 )
     do j = max(jds+1,jts), min(jte,jde-2)
        iadd=mod(j,2)-1
        do i = max(ids+1,its), min(ite,ide-2)
@@ -535,7 +535,7 @@ contains
     nprint=10
 #endif
     
-#ifdef HWRF
+#if ( HWRF == 1 )
     dy2=dy_nmm*dy_nmm*4
     dp2max=dpdr*dpdr
 
@@ -609,7 +609,7 @@ contains
 #endif
   END SUBROUTINE vt4_noise_detect
 
-#ifdef HWRF
+#if ( HWRF == 1 )
   SUBROUTINE vt5_move(PDYN,distsq,searchrad,xloc,yloc,gridid,cx,cy,mvnest, &
                       IDS,IDE,JDS,JDE,KDS,KDE,                   &
                       IMS,IME,JMS,JME,KMS,KME,                   &
@@ -1129,7 +1129,7 @@ contains
   !----------------------------------------------------------------------
   !
   SUBROUTINE STATS_FOR_MOVE_123 (XLOC,YLOC,PRES,SM &
-#ifdef HWRF
+#if ( HWRF == 1 )
        ,RESTART,NTIME0                        & ! zhang's doing
        ,MOVED,MVNEST,NTSD,NPHS,CFREQ          & ! CFREQ*DT*NPHS=540s
 #else
@@ -1181,7 +1181,7 @@ contains
     INTEGER,INTENT(IN)                                    :: IDS,IDE,JDS,JDE,KDS,KDE   &
          ,IMS,IME,JMS,JME,KMS,KME   &
          ,ITS,ITE,JTS,JTE,KTS,KTE   &
-#ifdef HWRF
+#if ( HWRF == 1 )
     ,NTSD,NPHS,CFREQ
 #else
     ,NTSD,NPHS
@@ -1196,7 +1196,7 @@ contains
     !     LOCAL
 
     character*256                                         :: message
-#ifdef HWRF
+#if ( HWRF == 1 )
     !zhang's doing
     INTEGER,INTENT(INOUT)                                 :: NTIME0
     LOGICAL,INTENT(IN)                                    :: RESTART
@@ -1341,7 +1341,7 @@ contains
 
     XDIFF=ABS(XLOC - IDE/2)
     YDIFF=ABS(YLOC - JDE/2)
-#ifdef HWRF
+#if ( HWRF == 1 )
     !zhang's doing
     IF((.NOT.RESTART .AND. NTSD==0) .OR. MOVED)NTIME0=NTSD
 #else

@@ -1,5 +1,5 @@
 module module_swath   
-#ifdef HWRF
+#if ( HWRF == 1 )
 
 #ifdef DM_PARALLEL
   use module_dm, only: wrf_dm_sum_integer, local_communicator, &

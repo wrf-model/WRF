@@ -1,6 +1,6 @@
 module module_HIFREQ
 
-#ifdef HWRF
+#if ( HWRF == 1 )
   ! This module implements the high-frequency output requested by the
   ! National Hurricane Center in 2010.  The hifreq_write routine will
   ! write a file that contains max. 10m wind, min. MSLP, their locations,

@@ -19,7 +19,7 @@ SUBROUTINE med_nest_move ( parent, nest )
                                       ims , ime , jms , jme , kms , kme , &
                                       ips , ipe , jps , jpe , kps , kpe
    INTEGER ierr, fid
-#ifdef HWRF
+#if ( HWRF == 1 )
    REAL,PARAMETER           :: con_g       =9.80665e+0! gravity             (m/s2)
    REAL,PARAMETER           :: con_rd      =2.8705e+2 ! gas constant air    (J/kg/K)
    REAL                     :: TLAP,TBAR,EPSI
@@ -29,7 +29,7 @@ SUBROUTINE med_nest_move ( parent, nest )
    TYPE (grid_config_rec_type)   :: config_flags
    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
    LOGICAL, EXTERNAL :: should_not_move
-#ifdef HWRF
+#if ( HWRF == 1 )
 !XUEJIN added for HWRFx
    INTEGER                  :: k,idum1,idum2 
    INTEGER                  :: ITS,ITE,JTS,JTE,KTS,KTE
@@ -43,7 +43,7 @@ SUBROUTINE med_nest_move ( parent, nest )
         IMPLICIT NONE
         TYPE(domain) , POINTER                 :: parent , nest
      END SUBROUTINE med_interp_domain
-!#ifdef HWRFX
+!#if ( HWRF == 1 )X
 ! XUEJIN added this directive here to exclude the ARW code
 !#else
      SUBROUTINE start_domain ( grid , allowed_to_move )
@@ -89,7 +89,7 @@ SUBROUTINE med_nest_move ( parent, nest )
                                     IMS,IME,JMS,JME,KMS,KME, &
                                     IPS,IPE,JPS,JPE,KPS,KPE  )
 !
-#ifdef HWRF
+#if ( HWRF == 1 )
 !XUEJIN added for HWRFx
          USE MODULE_MODEL_CONSTANTS
 #else
@@ -134,7 +134,7 @@ SUBROUTINE med_nest_move ( parent, nest )
 #include "dummy_new_decl.inc"
      END SUBROUTINE shift_domain_nmm
 #endif
-#ifdef HWRF
+#if ( HWRF == 1 )
 ! XUEJIN added this directive here to exclude the ARW code
 #else
      LOGICAL FUNCTION time_for_move ( parent , nest , dx , dy )
@@ -145,7 +145,7 @@ SUBROUTINE med_nest_move ( parent, nest )
      END FUNCTION time_for_move
 #endif
 
-#ifdef HWRF
+#if ( HWRF == 1 )
 #if (NMM_CORE == 1 && NMM_NEST == 1)
 !     LOGICAL FUNCTION nest_roam ( parent , nest , dx , dy )  !REPLACED BY KWON
 !
@@ -160,7 +160,7 @@ SUBROUTINE med_nest_move ( parent, nest )
 #endif
 #endif
 
-#ifdef HWRF
+#if ( HWRF == 1 )
 ! XUEJIN added this directive here to exclude the ARW code
 #else
      SUBROUTINE  input_terrain_rsmas ( grid ,                  &
@@ -219,7 +219,7 @@ SUBROUTINE med_nest_move ( parent, nest )
 
 ! mask should be defined in nest domain
 
-#ifdef HWRF
+#if ( HWRF == 1 )
   check_direction_of_move: IF ( direction_of_move ( parent , nest , dx, dy ) ) THEN
 #else
   check_for_move: IF ( time_for_move ( parent , nest , dx, dy ) ) THEN
@@ -324,7 +324,7 @@ SUBROUTINE med_nest_move ( parent, nest )
                              ims, ime, jms, jme, kms, kme,    &
                              ips, ipe, jps, jpe, kps, kpe    )
 
-#ifdef HWRF
+#if ( HWRF == 1 )
 !   adjust pint & pressure depth due to height change in nest_terrain
 !     assume lapse rate of 6.1K/1km
       TLAP=6.1/(con_g*1000.)
@@ -497,7 +497,7 @@ SUBROUTINE med_nest_move ( parent, nest )
       where ( nest%imask_nostag .EQ. 1 ) nest%mu_1(:,:)  = nest%mu_2(:,:)
 #endif
 !
-#ifdef HWRF
+#if ( HWRF == 1 )
    ENDIF check_direction_of_move
 #else
    ENDIF check_for_move
@@ -1201,7 +1201,7 @@ LOGICAL FUNCTION should_not_move ( id )
   should_not_move = retval
 END FUNCTION
 
-#ifdef HWRF
+#if ( HWRF == 1 )
 LOGICAL FUNCTION direction_of_move2 ( parent , grid , move_cd_x, move_cd_y )
    USE module_domain
    USE module_configure
@@ -1213,7 +1213,7 @@ LOGICAL FUNCTION direction_of_move2 ( parent , grid , move_cd_x, move_cd_y )
    INTEGER, INTENT(OUT)      :: move_cd_x , move_cd_y
    CHARACTER*256 mess
 ! local
-   INTEGER     :: coral_dist, ikid
+   INTEGER     :: corral_dist, ikid
    INTEGER     :: dw, de, ds, dn, idum, jdum
    INTEGER     :: cids, cide, cjds, cjde, ckds, ckde, &
                   cims, cime, cjms, cjme, ckms, ckme, &
@@ -1223,8 +1223,8 @@ LOGICAL FUNCTION direction_of_move2 ( parent , grid , move_cd_x, move_cd_y )
                   nips, nipe, njps, njpe, nkps, nkpe
    real :: dx,dy,kid_ic,kid_jc,my_ic,my_jc,pgr,pgrn,hr,two_dt,when,before,after
    real, parameter :: pmult=1.35
-   integer :: inew,jnew,coral_x,coral_y
-   integer :: min_coral_x, min_coral_y
+   integer :: inew,jnew,corral_x,corral_y
+   integer :: min_corral_x, min_corral_y
    logical :: abort
 
 ! PURPOSE: DECIDE THE DIRECTION OF MOVE
@@ -1252,11 +1252,11 @@ LOGICAL FUNCTION direction_of_move2 ( parent , grid , move_cd_x, move_cd_y )
 !         nest-following vortex tracker (option 2)
 
    if(grid%id==1) then
-      min_coral_x=7
-      min_coral_y=12
+      min_corral_x=7
+      min_corral_y=12
    else
-      min_coral_x=5
-      min_coral_y=5
+      min_corral_x=5
+      min_corral_y=5
    endif
 
    abort=.false. ! will be set to .true. if any safety checks fail
@@ -1294,26 +1294,26 @@ LOGICAL FUNCTION direction_of_move2 ( parent , grid , move_cd_x, move_cd_y )
 
    !  SWITCH OFF NEST MOTION IF TOO CLOSE TO ANY OF THE BOUNDARIES
 
-   coral_x = max(min_coral_x,grid%coral_x)
-   coral_y = max(min_coral_y,grid%coral_y)
+   corral_x = max(min_corral_x,grid%corral_x)
+   corral_y = max(min_corral_y,grid%corral_y)
 
-   coral_dist=(grid%ed31+grid%parent_grid_ratio-1)/grid%parent_grid_ratio
-   IF(grid%i_parent_start .le. coral_x) then
+   corral_dist=(grid%ed31+grid%parent_grid_ratio-1)/grid%parent_grid_ratio
+   IF(grid%i_parent_start .le. corral_x) then
       abort=.true.
       write(mess,'("d",I0,": cannot move: too close to parent d",I0," -X boundary")') grid%id,parent%id
       call wrf_message(trim(mess))
-   ELSEIF((grid%i_parent_start+coral_dist) .ge. parent%ed31 - coral_x)THEN  
+   ELSEIF((grid%i_parent_start+corral_dist) .ge. parent%ed31 - corral_x)THEN  
       abort=.true.
       write(mess,'("d",I0,": cannot move: too close to parent d",I0," +X boundary")') grid%id,parent%id
       call wrf_message(trim(mess))
   ENDIF
 
-   coral_dist=(grid%ed32+grid%parent_grid_ratio-1)/grid%parent_grid_ratio
-   IF(grid%j_parent_start .le. coral_y) THEN
+   corral_dist=(grid%ed32+grid%parent_grid_ratio-1)/grid%parent_grid_ratio
+   IF(grid%j_parent_start .le. corral_y) THEN
       abort=.true.
       write(mess,'("d",I0,": cannot move: too close to parent d",I0," -Y boundary")') grid%id,parent%id
       call wrf_message(trim(mess))
-   ELSEIF((grid%j_parent_start+coral_dist) .ge. parent%ed32 - coral_y)THEN
+   ELSEIF((grid%j_parent_start+corral_dist) .ge. parent%ed32 - corral_y)THEN
       abort=.true.
       write(mess,'("d",I0,": cannot move: too close to parent d",I0," +Y boundary")') grid%id,parent%id
       call wrf_message(trim(mess))
@@ -1462,7 +1462,7 @@ LOGICAL FUNCTION direction_of_move2 ( parent , grid , move_cd_x, move_cd_y )
    endif can_move
 
    ! Abort motion if any child domain would end up within this
-   ! domain's coral distance or outside of this domain.
+   ! domain's corral distance or outside of this domain.
    nest_safety: IF ( grid%num_nests .GT. 0 .and. ( move_cd_x/=0 .or. move_cd_y/=0 ) ) THEN
      abort=.false.
      nest_loop: do ikid=1,grid%num_nests
@@ -1470,25 +1470,25 @@ LOGICAL FUNCTION direction_of_move2 ( parent , grid , move_cd_x, move_cd_y )
         inew=kid%i_parent_start-move_cd_x*kid%parent_grid_ratio
         jnew=kid%j_parent_start-move_cd_y*kid%parent_grid_ratio
         
-        coral_dist=(kid%ed31+kid%parent_grid_ratio-1)/kid%parent_grid_ratio
-        coral_x = max(min_coral_x,grid%coral_x)
-        coral_y = max(min_coral_y,grid%coral_y)
-        IF(inew <= coral_x)THEN  
+        corral_dist=(kid%ed31+kid%parent_grid_ratio-1)/kid%parent_grid_ratio
+        corral_x = max(min_corral_x,grid%corral_x)
+        corral_y = max(min_corral_y,grid%corral_y)
+        IF(inew <= corral_x)THEN  
            abort=.true.
            write(mess,'("d",I0,": cannot move: nest d",I0," would be too close to -X bdy")') grid%id,kid%id
            call wrf_message(mess)
-        ELSEIF((inew+coral_dist) >= grid%ed31 - coral_x) THEN
+        ELSEIF((inew+corral_dist) >= grid%ed31 - corral_x) THEN
            abort=.true.
            write(mess,'("d",I0,": cannot move: nest d",I0," would be too close to +X bdy")') grid%id,kid%id
            call wrf_message(mess)
         ENDIF
 
-        coral_dist=(kid%ed32+kid%parent_grid_ratio-1)/kid%parent_grid_ratio
-        IF(jnew .le. coral_y)THEN
+        corral_dist=(kid%ed32+kid%parent_grid_ratio-1)/kid%parent_grid_ratio
+        IF(jnew .le. corral_y)THEN
            abort=.true.
            write(mess,'("d",I0,": cannot move: nest d",I0," would be too close to -Y bdy")') grid%id,kid%id
            call wrf_message(mess)
-        ELSEIF((jnew+coral_dist) .ge. grid%ed32 - coral_y) THEN
+        ELSEIF((jnew+corral_dist) .ge. grid%ed32 - corral_y) THEN
            abort=.true.
            write(mess,'("d",I0,": cannot move: nest d",I0," would be too close to +Y bdy")') grid%id,kid%id
            call wrf_message(mess)
@@ -1749,3 +1749,56 @@ LOGICAL FUNCTION direction_of_move ( parent , grid , move_cd_x, move_cd_y )
    RETURN
 END FUNCTION direction_of_move
 #endif
+
+
+SUBROUTINE reconcile_nest_positions_over_tasks ( grid )
+   USE module_driver_constants, ONLY : max_nests, max_domains
+   USE module_domain, ONLY : domain, find_grid_by_id
+   USE module_utility
+   USE module_configure, ONLY : grid_config_rec_type, model_config_rec, model_to_grid_config_rec
+   USE module_state_description
+#ifdef DM_PARALLEL
+   USE module_dm, ONLY : wrf_dm_move_nest, nest_task_offsets,mpi_comm_to_kid,mpi_comm_to_mom, which_kid &
+                        ,comm_start, nest_pes_x, nest_pes_y,local_communicator
+   IMPLICIT NONE
+   TYPE(domain) , POINTER                     :: grid, result_grid
+!local
+   INTEGER kid
+   INTEGER itask
+   INTEGER max_dom, id
+   INTEGER buf(max_domains,2)
+
+   CALL nl_get_max_dom( 1 , max_dom )
+   IF ( grid%num_nests .GT. 1 ) THEN
+    IF ( grid%active_this_task ) THEN
+     DO kid = 1, max_nests
+     ! which task is active?
+       IF ( ASSOCIATED( grid%nests(kid)%ptr ) ) THEN
+          ! check to see if the starting task for the nest is within the range of tasks
+          ! of the parent's local communicator; that task should be the root of the bcast on this grid's (the parent's) communicator
+          ! since it is active in both the parent and nest and should have valid parent_start information;
+          ! otoh, if it is outside then the parent and nest are not sharing processors
+          itask = comm_start( grid%nests(kid)%ptr%id ) - comm_start( grid%id )
+          buf(:,1) = model_config_rec%i_parent_start
+          buf(:,2) = model_config_rec%j_parent_start
+          IF ( itask .GE. 0 .AND. itask .LT. nest_pes_x(grid%id)*nest_pes_y(grid%id) ) THEN
+            CALL push_communicators_for_domain(grid%id)
+            CALL BYTE_BCAST_FROM_ROOT( buf, 2*max_domains*IWORDSIZE, itask, local_communicator)
+            CALL pop_communicators_for_domain
+          ENDIF
+          DO id = 1, max_dom
+            CALL find_grid_by_id ( id, grid%nests(kid)%ptr, result_grid )
+            IF ( ASSOCIATED(result_grid) .AND. .NOT. result_grid%active_this_task ) THEN
+              model_config_rec%i_parent_start(id) = buf(id,1)
+              model_config_rec%j_parent_start(id) = buf(id,2)
+              result_grid%i_parent_start = model_config_rec%i_parent_start(id)
+              result_grid%j_parent_start = model_config_rec%j_parent_start(id)
+            ENDIF
+          ENDDO
+       END IF
+     END DO
+    ENDIF
+   ENDIF
+#endif
+END SUBROUTINE reconcile_nest_positions_over_tasks
+

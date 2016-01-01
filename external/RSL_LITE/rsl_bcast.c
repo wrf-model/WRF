@@ -55,6 +55,8 @@
 
 ***************************************************************************/
 
+#define MAX(a,b) (((a)>(b))?a:b)
+
 #define MOD_9707
 
 #ifndef MS_SUA
@@ -107,14 +109,18 @@ static int s_idim_nst ;
 static int s_jdim_nst ;
 static int s_irax_n ;
 static int s_irax_m ;
-static int s_ntasks_x ;
-static int s_ntasks_y ;
+static int s_ntasks_nest_x ;
+static int s_ntasks_nest_y ;
+static int s_ntasks_par_x ;
+static int s_ntasks_par_y ;
 static rsl_list_t **Plist ;
+static int Plist_length = 0 ;
 static int Psize[RSL_MAXPROC] ;
 static char *s_parent_msgs ;
 static int s_parent_msgs_curs ;
 static int s_remaining ;  /* number of bytes left in a parent message before
                            the next point descriptor */
+static int alltasks, offset ;
 
 /* add a field to a message outgoing for the specified child domain cell */
 /* relies on rsl_ready_bcast having been called already */
@@ -130,13 +136,41 @@ static rsl_list_t *Pptr ;
 static int s_putmsg = 0 ;
 #endif
 
+// NOTES for PARALLELNESTING
+// This routine is building a list of destination processes to send to on a communicator that .
+// It needs the minor number of tasks on the nest's MPI mesh (just pass that in)
+// Otherwise it doesn't need a communicator
+
+RSL_LITE_NESTING_RESET (
+                       )
+{
+  int j ;
+
+  for ( j = 0 ; j < RSL_MAXPROC ; j++ ) {
+    Ssizes[j] = 0 ;
+    Sdisplacements[j] = 0 ;
+    Rsizes[j] = 0 ;
+    Rdisplacements[j] = 0 ;
+  }
+  Rdisplacements[RSL_MAXPROC] = 0 ;
+  if ( Plist != NULL ) {
+    for ( j = 0 ; j < Plist_length ; j++ ) {
+      destroy_list ( &(Plist[j]), NULL ) ;
+    }
+    RSL_FREE( Plist ) ;
+    Plist = NULL ;
+  }
+}
+
 /* parent->nest */
-void RSL_LITE_TO_CHILD_INFO ( Fcomm, msize_p,
+void RSL_LITE_TO_CHILD_INFO ( msize_p,                        /* number of tasks in minor dim of nest's mesh */
                          cips_p, cipe_p, cjps_p, cjpe_p, /* patch dims of SOURCE DOMAIN */
                          iids_p, iide_p, ijds_p, ijde_p, /* domain dims of INTERMEDIATE DOMAIN */
                          nids_p, nide_p, njds_p, njde_p, /* domain dims of CHILD DOMAIN */
                          pgr_p,  shw_p ,                 /* nest ratio and stencil half width */
-                         ntasks_x_p , ntasks_y_p ,       /* proc counts in x and y */
+                         offset_p,                         /* first task of the nest in me_and_mom communicator */
+                         ntasks_par_x_p , ntasks_par_y_p ,       /* proc counts in x and y */
+                         ntasks_nest_x_p , ntasks_nest_y_p ,       /* proc counts in x and y */
                          min_subdomain ,                 /* minimum width allowed for a subdomain in a dim ON PARENT */
                          icoord_p, jcoord_p,
                          idim_cd_p, jdim_cd_p,
@@ -144,12 +178,13 @@ void RSL_LITE_TO_CHILD_INFO ( Fcomm, msize_p,
                          retval_p )
   
   int_p
-     Fcomm                            /* Fortran version of MPI communicator */
-    ,cips_p, cipe_p, cjps_p, cjpe_p   /* (i) c.d. patch dims */
-    ,iids_p, iide_p, ijds_p, ijde_p   /* (i) n.n. global dims */
+     cips_p, cipe_p, cjps_p, cjpe_p   /* (i) c.d. patch dims */
+    ,iids_p, iide_p, ijds_p, ijde_p   /* (i) n.n. global dims -- in WRF this will be intermediate domain */
     ,nids_p, nide_p, njds_p, njde_p   /* (i) n.n. global dims */
     ,pgr_p                            /* nesting ratio */
-    ,ntasks_x_p , ntasks_y_p          /* proc counts in x and y */
+    ,offset_p                         /* first task of the nest in me_and_mom communicator */
+    ,ntasks_nest_x_p , ntasks_nest_y_p          /* proc counts in x and y */
+    ,ntasks_par_x_p , ntasks_par_y_p          /* proc counts in x and y */
     ,min_subdomain
     ,icoord_p       /* i coordinate of nest in cd */
     ,jcoord_p       /* j coordinate of nest in cd */
@@ -168,20 +203,31 @@ void RSL_LITE_TO_CHILD_INFO ( Fcomm, msize_p,
   int i, j, ni, nj ;
   int coords[2] ;
   int ierr ;
-#ifndef STUBMPI
-  MPI_Comm *comm, dummy_comm ;
-
-  comm = &dummy_comm ;
-  *comm = MPI_Comm_f2c( *Fcomm ) ;
-#endif
 
   if ( Plist == NULL ) {
-    s_ntasks_x = *ntasks_x_p ;
-    s_ntasks_y = *ntasks_y_p ;
+    s_ntasks_par_x = *ntasks_par_x_p ;
+    s_ntasks_par_y = *ntasks_par_y_p ;
+    s_ntasks_nest_x = *ntasks_nest_x_p ;
+    s_ntasks_nest_y = *ntasks_nest_y_p ;
+    offset = *offset_p ;
+    alltasks = MAX( s_ntasks_nest_x*s_ntasks_nest_y + offset, s_ntasks_par_x*s_ntasks_par_y ) ;
+
+#if 0
+fprintf(stderr,"s_ntasks_par_x %d\n",s_ntasks_par_x)  ;
+fprintf(stderr,"s_ntasks_par_y %d\n",s_ntasks_par_y)  ;
+fprintf(stderr,"s_ntasks_nest_x %d\n",s_ntasks_nest_x)  ;
+fprintf(stderr,"s_ntasks_nest_y %d\n",s_ntasks_nest_y)  ;
+fprintf(stderr,"%s %d offset %d\n",__FILE__,__LINE__,offset)  ;
+fprintf(stderr,"%s %d alltasks %d\n",__FILE__,__LINE__,alltasks)  ;
+fprintf(stderr,"%s %d a %d b %d\n",__FILE__,__LINE__,s_ntasks_nest_x*s_ntasks_nest_y+offset,s_ntasks_par_x*s_ntasks_par_y)  ;
+#endif
+
     /* construct Plist */
     Sendbufsize = 0 ;
-    Plist = RSL_MALLOC( rsl_list_t * , s_ntasks_x * s_ntasks_y ) ;  /* big enough for nest points */
-    for ( j = 0 ; j < s_ntasks_x * s_ntasks_y ; j++ ) {
+    Plist = RSL_MALLOC( rsl_list_t * , alltasks ) ;  /* big enough for nest points */
+    Plist_length = alltasks ;
+   /* big enough for the mom and me communicator, which includes tasks for the parent and the nest */
+    for ( j = 0 ; j < alltasks ; j++ ) {
        Plist[j] = NULL ;
        Sdisplacements[j] = 0 ;
        Ssizes[j] = 0 ;
@@ -196,10 +242,15 @@ void RSL_LITE_TO_CHILD_INFO ( Fcomm, msize_p,
            nj = ( j - (*jcoord_p + *shw_p) ) * *pgr_p + 1 + 1 ;
 
 #ifndef STUBMPI
-	   TASK_FOR_POINT ( &ni, &nj, nids_p, nide_p, njds_p, njde_p, &s_ntasks_x, &s_ntasks_y, &Px, &Py, 
+	   TASK_FOR_POINT ( &ni, &nj, nids_p, nide_p, njds_p, njde_p, &s_ntasks_nest_x, &s_ntasks_nest_y, &Px, &Py, 
                             min_subdomain, min_subdomain, &ierr ) ;
-           coords[1] = Px ; coords[0] = Py ;
-           MPI_Cart_rank( *comm, coords, &P ) ;
+           P = Px + Py * *ntasks_nest_x_p + offset ; 
+//           coords[1] = Px ; coords[0] = Py ;
+//           MPI_Cart_rank( *comm, coords, &P ) ;
+// PARALLELNESTING
+// adjust P so that is the rank in the intercomm_to_kid communicator for this parent/nest pair
+//fprintf(stderr,"after tfp ni %d nj %d Px %d Py %d P %d ntx %d nty %d\n",ni,nj,Px,Py,P,*ntasks_nest_x_p,*ntasks_nest_y_p) ;
+
 #else
            P = 0 ;
 #endif
@@ -235,8 +286,8 @@ void RSL_LITE_TO_CHILD_INFO ( Fcomm, msize_p,
 
   while ( Pptr == NULL ) {
       Pcurs++ ;
-      while ( Pcurs < s_ntasks_x * s_ntasks_y && Plist[Pcurs] == NULL  ) Pcurs++ ;
-      if ( Pcurs < s_ntasks_x * s_ntasks_y ) {
+      while ( Pcurs < alltasks && Plist[Pcurs] == NULL  ) Pcurs++ ;
+      if ( Pcurs < alltasks ) {
         Sdisplacements[Pcurs] = Sendbufcurs ;
         Ssizes[Pcurs] = 0 ;
         Pptr = Plist[Pcurs] ;
@@ -262,20 +313,23 @@ void RSL_LITE_TO_CHILD_INFO ( Fcomm, msize_p,
 /********************************************/
 
 /* nest->parent */
-void RSL_LITE_TO_PARENT_INFO ( Fcomm, msize_p,
+void RSL_LITE_TO_PARENT_INFO ( msize_p, 
                           nips_p, nipe_p, njps_p, njpe_p, /* patch dims of SOURCE DOMAIN (CHILD) */
                           cids_p, cide_p, cjds_p, cjde_p, /* domain dims of TARGET DOMAIN (PARENT) */
-                          ntasks_x_p , ntasks_y_p ,       /* proc counts in x and y */
+                          offset_p, 
+                          ntasks_par_x_p , ntasks_par_y_p ,       /* proc counts in x and y */
+                          ntasks_nest_x_p , ntasks_nest_y_p ,       /* proc counts in x and y */
                           min_subdomain ,
                           icoord_p, jcoord_p,
                           idim_cd_p, jdim_cd_p,
                           ig_p, jg_p,
                           retval_p )
   int_p
-     Fcomm                            /* Fortran version of MPI communicator */
-    ,nips_p, nipe_p, njps_p, njpe_p   /* (i) n.d. patch dims */
+     nips_p, nipe_p, njps_p, njpe_p   /* (i) n.d. patch dims */
     ,cids_p, cide_p, cjds_p, cjde_p   /* (i) n.n. global dims */
-    ,ntasks_x_p , ntasks_y_p          /* proc counts in x and y */
+    ,offset_p
+    ,ntasks_nest_x_p , ntasks_nest_y_p          /* proc counts in x and y */
+    ,ntasks_par_x_p , ntasks_par_y_p          /* proc counts in x and y */
     ,min_subdomain
     ,icoord_p       /* i coordinate of nest in cd */
     ,jcoord_p       /* j coordinate of nest in cd */
@@ -292,20 +346,20 @@ void RSL_LITE_TO_PARENT_INFO ( Fcomm, msize_p,
   int i, j ;
   int coords[2] ;
   int ierr ;
-#ifndef STUBMPI
-  MPI_Comm *comm, dummy_comm ;
-
-  comm = &dummy_comm ;
-  *comm = MPI_Comm_f2c( *Fcomm ) ;
-#endif
 
   if ( Plist == NULL ) {
-    s_ntasks_x = *ntasks_x_p ;
-    s_ntasks_y = *ntasks_y_p ;
+    s_ntasks_nest_x = *ntasks_nest_x_p ;
+    s_ntasks_nest_y = *ntasks_nest_y_p ;
+    s_ntasks_par_x = *ntasks_par_x_p ;
+    s_ntasks_par_y = *ntasks_par_y_p ;
+    offset = *offset_p ;
+    alltasks = MAX( s_ntasks_nest_x*s_ntasks_nest_y + offset, s_ntasks_par_x*s_ntasks_par_y ) ;
+
     /* construct Plist */
     Sendbufsize = 0 ;
-    Plist = RSL_MALLOC( rsl_list_t * , s_ntasks_x * s_ntasks_y ) ;
-    for ( j = 0 ; j < s_ntasks_x * s_ntasks_y ; j++ ) {
+    Plist = RSL_MALLOC( rsl_list_t * , alltasks ) ;
+    Plist_length = alltasks ;
+    for ( j = 0 ; j < alltasks ; j++ ) {
        Plist[j] = NULL ;
        Sdisplacements[j] = 0 ;
        Ssizes[j] = 0 ;
@@ -317,10 +371,9 @@ void RSL_LITE_TO_PARENT_INFO ( Fcomm, msize_p,
       {
 	if ( ( *jcoord_p <= j && j <= *jcoord_p+*jdim_cd_p-1 ) && ( *icoord_p <= i && i <= *icoord_p+*idim_cd_p-1 ) ) {
 #ifndef STUBMPI
-	  TASK_FOR_POINT ( &i, &j, cids_p, cide_p, cjds_p, cjde_p, &s_ntasks_x, &s_ntasks_y, &Px, &Py, 
+	  TASK_FOR_POINT ( &i, &j, cids_p, cide_p, cjds_p, cjde_p, &s_ntasks_par_x, &s_ntasks_par_y, &Px, &Py, 
                            min_subdomain, min_subdomain, &ierr ) ;
-          coords[1] = Px ; coords[0] = Py ;
-          MPI_Cart_rank( *comm, coords, &P ) ;
+          P = Px + Py * *ntasks_par_x_p ;  // we are computing parent task numbers, so no offset
 #else
           P = 0 ;
 #endif
@@ -355,8 +408,8 @@ void RSL_LITE_TO_PARENT_INFO ( Fcomm, msize_p,
 
   while ( Pptr == NULL ) {
       Pcurs++ ;
-      while ( Pcurs < s_ntasks_x * s_ntasks_y && Plist[Pcurs] == NULL ) Pcurs++ ;
-      if ( Pcurs < s_ntasks_x * s_ntasks_y ) {
+      while ( Pcurs < alltasks && Plist[Pcurs] == NULL ) Pcurs++ ;
+      if ( Pcurs < alltasks ) {
         Sdisplacements[Pcurs] = Sendbufcurs ;
         Ssizes[Pcurs] = 0 ;
         Pptr = Plist[Pcurs] ;
@@ -425,7 +478,7 @@ rsl_lite_to_peerpoint_msg ( nbuf_p, buf )
   nbuf = *nbuf_p ;
 
   if ( Sendbufcurs + nbuf >= Sendbufsize ) {
-    sprintf(mess,"RSL_LITE_TO_CHILD_MSG: Sendbufcurs + nbuf (%d) would exceed Sendbufsize (%d)\n",
+    sprintf(mess,"rsl_lite_to_peerpoint_msg: Sendbufcurs + nbuf (%d) would exceed Sendbufsize (%d)\n",
            Sendbufcurs + nbuf , Sendbufsize ) ;
     RSL_TEST_ERR(1,mess) ;
   }
@@ -450,9 +503,16 @@ rsl_lite_to_peerpoint_msg ( nbuf_p, buf )
 
 /********************************************/
 
+// PARALLELNESTING NOTES
+//  what communicator should be passed and what are mytask and ntasks?
+//  I think it should be the mom_and_me communicator and the mytask and ntasks from
+//  that communicator
+//
+//  nest if it's parent->nest and the parent if it's nest->parent (we'll see)
+
 /* parent->nest */
-RSL_LITE_BCAST_MSGS ( mytask_p, ntasks_p, Fcomm )
-  int_p mytask_p, ntasks_p, Fcomm ;
+RSL_LITE_BCAST_MSGS ( mytask_p, ntasks_par_p, ntasks_nest_p, offset_p, Fcomm )
+  int_p mytask_p, ntasks_par_p, ntasks_nest_p, offset_p, Fcomm ;  /* offset is the id of the first task in the nest set */
 {
 #ifndef STUBMPI
   MPI_Comm comm ;
@@ -461,12 +521,12 @@ RSL_LITE_BCAST_MSGS ( mytask_p, ntasks_p, Fcomm )
 #else
   int comm ;
 #endif
-  rsl_lite_allgather_msgs ( mytask_p, ntasks_p, comm ) ;
+  rsl_lite_allgather_msgs ( mytask_p, ntasks_par_p, ntasks_nest_p, offset_p, comm, 0 ) ;
 }
 
 /* nest->parent */
-RSL_LITE_MERGE_MSGS ( mytask_p, ntasks_p, Fcomm )
-  int_p mytask_p, ntasks_p, Fcomm ;
+RSL_LITE_MERGE_MSGS ( mytask_p, ntasks_par_p, ntasks_nest_p, offset_p, Fcomm )
+  int_p mytask_p, ntasks_par_p, ntasks_nest_p, offset_p, Fcomm ;  /* offset is the id of the first task in the nest set */
 {
 #ifndef STUBMPI
   MPI_Comm comm ;
@@ -475,12 +535,13 @@ RSL_LITE_MERGE_MSGS ( mytask_p, ntasks_p, Fcomm )
 #else
   int comm ;
 #endif
-  rsl_lite_allgather_msgs ( mytask_p, ntasks_p, comm ) ;
+  rsl_lite_allgather_msgs ( mytask_p, ntasks_par_p, ntasks_nest_p, offset_p, comm, 1 ) ;
 }
 
 /* common code */
-rsl_lite_allgather_msgs ( mytask_p, ntasks_p, comm )
-  int_p mytask_p, ntasks_p ;
+rsl_lite_allgather_msgs ( mytask_p, ntasks_par_p, ntasks_nest_p, offset_p, comm, dir )
+  int_p mytask_p, ntasks_par_p, ntasks_nest_p, offset_p ;
+  int dir ;  /* 0 = parent to nest, otherwist nest to parent */
 #ifndef STUBMPI
   MPI_Comm comm ;
 #else
@@ -493,25 +554,37 @@ rsl_lite_allgather_msgs ( mytask_p, ntasks_p, comm )
   bcast_point_desc_t pdesc ;
   int curs ;
   int msglen, mdest, mtag ;
-  int ntasks, mytask ;
+  int ntasks_par, ntasks_nest, ntasks, mytask ;
+  int  mytask_on_comm ;
   int ii, i, j ;
   int ig, jg ;
   int *sp, *bp ;
   int rc ;
 
 #ifndef STUBMPI
-  ntasks = *ntasks_p ;
+  ntasks_par = *ntasks_par_p ;
+  ntasks_nest = *ntasks_nest_p ;
   mytask = *mytask_p ;
+  MPI_Comm_rank( comm, &mytask_on_comm ) ;
 #else
   ntasks = 1 ;
   mytask = 0 ;
+  mytask_on_comm = 0 ;
 #endif
 
-  RSL_TEST_ERR( Plist == NULL,
-    "RSL_BCAST_MSGS: rsl_to_child_info not called first" ) ;
+  if ( ( mytask_on_comm <  ntasks_par  && dir == 0 )   /* parent in parent->child */
+    || ( mytask_on_comm >= *offset_p && 
+         mytask_on_comm < *offset_p + ntasks_nest && dir == 1 )) { /* child  in child->parent */
+    RSL_TEST_ERR( Plist == NULL,
+      "rsl_lite_allgather_msgs: rsl_to_child_info or rsl_to_parent_info not called first" ) ;
+  }
 
-  RSL_TEST_ERR( ntasks == RSL_MAXPROC ,
-    "RSL_BCAST_MSGS: raise the compile time value of MAXPROC" ) ;
+#ifndef STUBMPI
+  ntasks = MAX(ntasks_par,ntasks_nest+*offset_p) ;
+#endif
+
+  RSL_TEST_ERR( ntasks >= RSL_MAXPROC ,
+    "rsl_lite_allgather_msgs: raise the compile time value of MAXPROC" ) ;
   
 #ifndef STUBMPI
   MPI_Alltoall(Ssizes,1,MPI_INT, Rsizes,1,MPI_INT,comm);
@@ -546,13 +619,15 @@ rsl_lite_allgather_msgs ( mytask_p, ntasks_p, comm )
   r = (int *)&(Recvbuf[Rbufsize + 2 * sizeof(int)]) ;
   *r = RSL_INVALID ;
 
-  RSL_FREE( Sendbuf ) ;
-
-  for ( j = 0 ; j < *ntasks_p ; j++ )  {
-    destroy_list ( &(Plist[j]), NULL ) ;
+  if ( Sendbuf != NULL ) RSL_FREE( Sendbuf ) ; 
+  if ( Plist != NULL ) {
+    for ( j = 0 ; j < Plist_length ; j++ ) { 
+      destroy_list ( &(Plist[j]), NULL ) ;
+    }
+    RSL_FREE( Plist ) ;
+    Plist = NULL ;
+    Plist_length = 0 ;
   }
-  RSL_FREE( Plist ) ;
-  Plist = NULL ;
 
 }
 

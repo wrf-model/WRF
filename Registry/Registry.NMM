@@ -165,8 +165,8 @@ endif
 # Nest motion safeguard: don't let nest get close to parent boundary.
 # Default values are lowest possible - anything lower would read
 # outside of memory in intermediate domain.
-rconfig integer coral_x     namelist,domains     max_domains    5   h "coral_x" "Minimum parent gridpoints on each side of nest in X direction." ""
-rconfig integer coral_y     namelist,domains     max_domains    5   h "coral_y" "Minimum parent gridpoints on each side of nest in Y direction." ""
+rconfig integer corral_x     namelist,domains     max_domains    5   h "corral_x" "Minimum parent gridpoints on each side of nest in X direction." ""
+rconfig integer corral_y     namelist,domains     max_domains    5   h "corral_y" "Minimum parent gridpoints on each side of nest in Y direction." ""
 
 #
 # For the moving nest. This is gopal's doing
@@ -800,7 +800,7 @@ state   real    qr             ijkfbt   moist       1         m     rh023u=(UpMa
 state   real    qi             ijkfbt   moist       1         m     rh023u=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)      "QICE"             "Ice mixing ratio"              "kg kg-1"
 state   real    qs             ijkfbt   moist       1         m     rh023u=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)      "QSNOW"            "Snow mixing ratio"             "kg kg-1"
 state   real    qg             ijkfbt   moist       1         m     rh023u=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)      "QGRAUP"           "Graupel mixing ratio"          "kg kg-1"
-state   real    qh             ijkfbt   moist       1         m     rhu=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)      "QHAIL"            "Hail mixing ratio"             "kg kg-1"
+state   real    qh             ijkfbt   moist       1         m     rh023u=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)      "QHAIL"            "Hail mixing ratio"             "kg kg-1"
 
 
 state   real    -              ijkfbt   dfi_moist       1         m     -    -
@@ -818,18 +818,18 @@ state   real    dfi_qh         ijkfbt   dfi_moist       1         m     r      "
 state   real    -              ijkftb  scalar      1         m     -    -
 state   real    qni            ijkftb  scalar      1         m     i01h023ru=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)       "QNICE"              "Ice Number concentration" "# kg(-1)"
 state   real    qt             ikjftb  scalar      1         m     i01h023ru=(UpMassIKJ:@ECopy,0.0)d=(DownMassIKJ:@ECopy,0.0)f=(BdyMassIKJ:@ECopy,0.0)       "QT"               "Total condensate mixing ratio"   "kg kg-1"
-state   real    qns            ijkftb  scalar      1         m     i01hru=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)       "QNSNOW"              "Snow Number concentration" "# kg(-1)"
+state   real    qns            ijkftb  scalar      1         m     i01h023ru=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)       "QNSNOW"              "Snow Number concentration" "# kg(-1)"
 state   real    qnr            ijkftb  scalar      1         m     i01h023ru=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)       "QNRAIN"              "Rain Number concentration" "# kg(-1)"
-state   real    qng            ijkftb  scalar      1         m     i01hru=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)       "QNGRAUP"              "Graupel Number concentration" "# kg(-1)"
-state   real    qnh            ijkftb  scalar      1         m     i01hru=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)       "QNHAIL"            "Hail Number concentration" "# kg(-1)"
-state   real    qnn            ijkftb  scalar      1         m     i01hru=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)       "QNCCN"            "CCN Number concentration" "# kg(-1)"
-state   real    qnc            ijkftb  scalar      1         m     i01hru=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)       "QNCLOUD"          "cloud water Number concentration" "# kg(-1)"
-state   real    qvolg          ikjftb  scalar      1         m     i01hru=(UpMassIKJ:@ECopy,0.0)d=(DownMassIKJ:@ECopy,0.0)f=(BdyMassIKJ:@ECopy,0.0)       "QVGRAUPEL"        "Graupel Particle Volume" "m(3) kg(-1)"
-state   real    qvolh          ikjftb  scalar      1         m     i01hru=(UpMassIKJ:@ECopy,0.0)d=(DownMassIKJ:@ECopy,0.0)f=(BdyMassIKJ:@ECopy,0. 0)       "QVHAIL"        "Hail Particle Volume" "m(3) kg(-1)"
-state   real    qnwfa          ikjftb  scalar      1         m     i01hru=(UpMassIKJ:@ECopy,0.0)d=(DownMassIKJ:@ECopy,0.0)f=(BdyMassIKJ:@ECopy,0.0)       "QNWFA"            "water-friendly aerosol number con" "# kg(-1)"
-state   real    qnifa          ikjftb  scalar      1         m     i01hru=(UpMassIKJ:@ECopy,0.0)d=(DownMassIKJ:@ECopy,0.0)f=(BdyMassIKJ:@ECopy,0.0)       "QNIFA"            "ice-friendly aerosol number con"   "# kg(-1)"
+state   real    qng            ijkftb  scalar      1         m     i01h023ru=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)       "QNGRAUP"              "Graupel Number concentration" "# kg(-1)"
+state   real    qnh            ijkftb  scalar      1         m     i01h023ru=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)       "QNHAIL"            "Hail Number concentration" "# kg(-1)"
+state   real    qnn            ijkftb  scalar      1         m     i01h023ru=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)       "QNCCN"            "CCN Number concentration" "# kg(-1)"
+state   real    qnc            ijkftb  scalar      1         m     i01h023ru=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)       "QNCLOUD"          "cloud water Number concentration" "# kg(-1)"
+state   real    qvolg          ikjftb  scalar      1         m     i01h023ru=(UpMassIKJ:@ECopy,0.0)d=(DownMassIKJ:@ECopy,0.0)f=(BdyMassIKJ:@ECopy,0.0)       "QVGRAUPEL"        "Graupel Particle Volume" "m(3) kg(-1)"
+state   real    qvolh          ikjftb  scalar      1         m     i01h023ru=(UpMassIKJ:@ECopy,0.0)d=(DownMassIKJ:@ECopy,0.0)f=(BdyMassIKJ:@ECopy,0. 0)       "QVHAIL"        "Hail Particle Volume" "m(3) kg(-1)"
+state   real    qnwfa          ikjftb  scalar      1         m     i01h023ru=(UpMassIKJ:@ECopy,0.0)d=(DownMassIKJ:@ECopy,0.0)f=(BdyMassIKJ:@ECopy,0.0)       "QNWFA"            "water-friendly aerosol number con" "# kg(-1)"
+state   real    qnifa          ikjftb  scalar      1         m     i01h023ru=(UpMassIKJ:@ECopy,0.0)d=(DownMassIKJ:@ECopy,0.0)f=(BdyMassIKJ:@ECopy,0.0)       "QNIFA"            "ice-friendly aerosol number con"   "# kg(-1)"
 state   real    qndrop         ikjftb  scalar      1         m     i01h023ru=(UpMassIKJ:@ECopy,0.0)d=(DownMassIKJ:@ECopy,0.0)f=(BdyMassIKJ:@ECopy,0.0)       "QNDROP"        "Droplet number mixing ratio"        "# kg-1"
-state   real    qrimef         ijkftb  scalar      1         m     i01hru=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)       "QRIMEF"           "rime factor * qi" "kg kg-1"
+state   real    qrimef         ijkftb  scalar      1         m     i01h023ru=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)       "QRIMEF"           "rime factor * qi" "kg kg-1"
 
 
 state   real    -              ijkftb  dfi_scalar      1         m     -   -
@@ -1168,7 +1168,7 @@ state   real    power          ij       misc      1         -     irh       "Pow
 # State for derived time quantities.  
 #for HWRF: add to restart
 state   integer itimestep      -        -          -         -     rh         "itimestep"             ""         ""      
-state   real    xtime          -        -          -         -     h0123         "xtime"                 "minutes since simulation start"         ""      
+state   real    xtime          -        -          -         -     h0123     "xtime"                 "minutes since simulation start"         ""      
 state   real    julian         -        -          -         -     -         "julian"                "day of year, 0.0 at 0Z on 1 Jan."         "days"
 
 # input file descriptor for lbcs on parent domain                                               
@@ -1309,6 +1309,9 @@ rconfig   integer   max_ts_locs     namelist,domains    1                5      
 rconfig   integer   num_moves       namelist,domains    1                0
 rconfig   integer   vortex_interval namelist,domains    max_domains      15  -  "" "" "minutes"
 rconfig   integer   corral_dist     namelist,domains    max_domains      8
+#for HWRF -- set to true for one storm, false for > 1 this gets inferred from the way the nests are configured in frame/module_domain.F
+rconfig   logical   multi_storm     derived             1              .true.
+rconfig   logical   no_ocean        namelist,domains    1              .false.  # added 20151204 jm
 rconfig   integer   move_id         namelist,domains    max_moves        0
 rconfig   integer   move_interval   namelist,domains    max_moves        999999999
 rconfig   integer   move_cd_x       namelist,domains    max_moves        0
@@ -1436,7 +1439,7 @@ endif
 rconfig   integer random_seed             namelist,physics     max_domains    0       irh    "random_seed"  "random number generator seed"
 
 rconfig   integer icoef_sf                namelist,physics     max_domains    0       irh012     3  "icoef_sf"   "Option for exchange coefficients in the surface flux scheme" ""
-rconfig   logical lcurr_sf                namelist,physics     max_domains    .false. irh012     3  "lcurr_sf"   "Option to include ocean currents in the surface flux calculations" "" 
+rconfig   logical lcurr_sf                namelist,physics     max_domains    .false. irh012     3  "lcurr_sf"   "Option to include ocean currents in the surface flux calculations" ""
 
 ifdef HWRF=1
 #added by Zhan Zhang for perturbings for SAS and PBL
@@ -1502,9 +1505,9 @@ state  real   pin       {ls}     misc      1    -   -      "PIN"             "PR
 state    real   o3rad           ikj     misc        1         -      irh      "o3rad"    "RADIATION 3D OZONE" "ppmv"
 
 ifdef HWRF=1
-rconfig   integer movemin                 namelist,physics      max_domains  10       irh    "movemin" "nest movement timestep (multiples of nphs)"
+rconfig   integer ntrack                 namelist,physics      max_domains  10       irh    "ntrack" "nest movement timestep (multiples of nphs)"
 endif
-rconfig   integer movemin                 namelist,physics      max_domains  0       irh    "movemin" "nest movement timestep (multiples of nphs)"
+rconfig   integer ntrack                 namelist,physics      max_domains  0       irh    "ntrack" "nest movement timestep (multiples of nphs)"
 
 rconfig   integer num_snso_layers         namelist,physics      1             7       irh    "num_snso_layers"               ""      ""
 rconfig   integer num_snow_layers         namelist,physics   1             3       irh    "num_snow_layers"               ""      ""
@@ -1703,7 +1706,7 @@ package   rrtmg_lwscheme_fast  ra_lw_physics==24     -             -
 package   goddardlwscheme  ra_lw_physics==5          -             -
 package   flglwscheme   ra_lw_physics==7             -             -
 package   gfdllwscheme  ra_lw_physics==99            -             -
-package   hwrflwscheme  ra_lw_physics==98            -             -
+package   hwrflwscheme  ra_lw_physics==98            -             state:o3rad
 
 package   swradscheme   ra_sw_physics==1             -             -
 package   gsfcswscheme  ra_sw_physics==2             -             -
@@ -1713,7 +1716,7 @@ package   rrtmg_swscheme_fast  ra_sw_physics==24     -             -
 package   goddardswscheme  ra_sw_physics==5          -             -
 package   flgswscheme   ra_sw_physics==7             -             -
 package   gfdlswscheme  ra_sw_physics==99            -             -
-package   hwrfswscheme  ra_sw_physics==98
+package   hwrfswscheme  ra_sw_physics==98            -             state:o3rad
 package   heldsuarez    ra_lw_physics==31            -             -
 
 package   sfclayscheme   sf_sfclay_physics==91       -             -

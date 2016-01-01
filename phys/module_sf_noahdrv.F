@@ -1680,7 +1680,7 @@ CONTAINS
      DO i = its,itf
        IF ( ISLTYP( i,j ) .LT. 1 ) THEN
          errflag = 1
-         WRITE(err_message,*)"module_sf_noahlsm.F: lsminit: out of range ISLTYP ",i,j,ISLTYP( i,j )
+         WRITE(err_message,*)"module_sf_noahdrv.F: lsminit: out of range ISLTYP ",i,j,ISLTYP( i,j )
          CALL wrf_message(err_message)
        ENDIF
        IF(.not.RDMAXALB) THEN
@@ -1689,8 +1689,13 @@ CONTAINS
      ENDDO
    ENDDO
    IF ( errflag .EQ. 1 ) THEN
-      CALL wrf_error_fatal( "module_sf_noahlsm.F: lsminit: out of range value "// &
+#if ( HWRF == 1 ) 
+      CALL wrf_message( "WARNING: message only; was fatal. module_sf_noahdrv.F: lsminit: out of range value "// &
                             "of ISLTYP. Is this field in the input?" )
+#else
+      CALL wrf_error_fatal( "module_sf_noahdrv.F: lsminit: out of range value "// &
+                            "of ISLTYP. Is this field in the input?" )
+#endif
    ENDIF
 
 ! initialize soil liquid water content SH2O

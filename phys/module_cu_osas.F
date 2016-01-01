@@ -425,7 +425,7 @@ CONTAINS
    ktf=min0(kte,kde-1)
    itf=min0(ite,ide-1)
 
-#ifdef HWRF
+#if ( HWRF == 1 )
 !zhang's doing
    IF(.not.restart .or. .not.allowed_to_read)THEN
 !end of zhang's doing

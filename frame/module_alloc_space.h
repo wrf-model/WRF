@@ -1,4 +1,4 @@
-   SUBROUTINE ROUTINENAME ( grid,   id, setinitval_in ,  tl_in , inter_domain_in , num_bytes_allocated , &
+   SUBROUTINE ROUTINENAME ( grid,   id, setinitval_in ,  tl_in , inter_domain_in , okay_to_alloc_in, num_bytes_allocated , &
                                   sd31, ed31, sd32, ed32, sd33, ed33, &
                                   sm31 , em31 , sm32 , em32 , sm33 , em33 , &
                                   sp31 , ep31 , sp32 , ep32 , sp33 , ep33 , &
@@ -35,7 +35,7 @@
  
       ! true if the allocation is for an intermediate domain (for nesting); only certain fields allocated
       ! false otherwise (all allocated, modulo tl above)
-      LOGICAL , INTENT(IN)            :: inter_domain_in
+      LOGICAL , INTENT(IN)            :: inter_domain_in, okay_to_alloc_in
 
       INTEGER(KIND=8) , INTENT(INOUT)         :: num_bytes_allocated
 
@@ -45,7 +45,7 @@
       REAL    initial_data_value
       CHARACTER (LEN=256) message
       INTEGER tl
-      LOGICAL inter_domain
+      LOGICAL inter_domain, okay_to_alloc
       INTEGER setinitval
       INTEGER sr_x, sr_y
 
@@ -131,6 +131,7 @@
 
       tl = tl_in
       inter_domain = inter_domain_in
+      okay_to_alloc = okay_to_alloc_in
 
 #if ( RWORDSIZE == 8 )
       initial_data_value = 0.

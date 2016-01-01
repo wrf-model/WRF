@@ -1,7 +1,7 @@
 module module_tracker
   implicit none
   private
-#ifdef HWRF
+#if ( HWRF == 1 )
   public :: ncep_tracker_center, ncep_tracker_init, update_tracker_post_move
 
   real, parameter :: invE=0.36787944117 ! 1/e
@@ -494,7 +494,7 @@ contains
 #endif
 
        ! Rotated east and north motion in gridpoints per second, on the combined H+V grid:
-       tracker_dt=grid%dt*grid%nphs*grid%movemin
+       tracker_dt=grid%dt*grid%nphs*grid%ntrack
        dxeast = motion_grideast * tracker_dt / fixdx
        dynorth = motion_gridnorth * tracker_dt / grid%dy_nmm
 
@@ -567,7 +567,7 @@ contains
        !print *,'line guess: n=',n
 
        if(n>1) then
-          ntsd_plus_1 = grid%ntsd + grid%movemin*grid%nphs
+          ntsd_plus_1 = grid%ntsd + grid%ntrack*grid%nphs
           mx=(xtsum-(xsum*tsum)/real(n))/(ttsum-(tsum*tsum)/real(n))
           my=(ytsum-(ysum*tsum)/real(n))/(ttsum-(tsum*tsum)/real(n))
           bx=(xsum-mx*tsum)/real(n)

@@ -21,7 +21,9 @@ MODULE module_wrf_top
    USE module_nesting
 
 #ifdef DM_PARALLEL
-   USE module_dm, ONLY : wrf_dm_initialize,wrf_get_hostid
+   USE module_dm, ONLY : wrf_dm_initialize,wrf_get_hostid,domain_active_this_task,mpi_comm_allcompute
+#else
+   USE module_dm, ONLY : domain_active_this_task
 #endif
 
    USE module_cpl, ONLY : coupler_on, cpl_finalize, cpl_defdomain
@@ -109,11 +111,12 @@ CONTAINS
      use accel_lib
 #endif
      LOGICAL, OPTIONAL, INTENT(IN) :: no_init1
-     INTEGER i, myproc, nproc, hostid, loccomm, ierr, buddcounter, mydevice
+     INTEGER i, myproc, nproc, hostid, loccomm, ierr, buddcounter, mydevice, save_comm
      INTEGER, ALLOCATABLE :: hostids(:), budds(:)
      CHARACTER*512 hostname
+     CHARACTER*512 mminlu_loc
 #ifdef _ACCEL
-     integer :: it, nt, in, devnum
+     INTEGER :: it, nt, in, devnum
 #endif
 #if defined(DM_PARALLEL) && !defined(STUBMPI) && ( defined(RUN_ON_GPU) || defined(_ACCEL))
      include "mpif.h"
@@ -165,6 +168,8 @@ CONTAINS
 !</DESCRIPTION>
 
 #ifdef DM_PARALLEL
+   CALL wrf_get_dm_communicator( save_comm )
+   CALL wrf_set_dm_communicator( mpi_comm_allcompute )
    IF ( wrf_dm_on_monitor() ) THEN
      CALL initial_config
    ENDIF
@@ -172,6 +177,7 @@ CONTAINS
    CALL wrf_dm_bcast_bytes( configbuf, nbytes )
    CALL set_config_as_buffer( configbuf, configbuflen )
    CALL wrf_dm_initialize
+   CALL wrf_set_dm_communicator( save_comm )
 #else
    CALL initial_config
 #endif
@@ -316,6 +322,7 @@ CONTAINS
    CALL       wrf_message ( program_name )
    CALL       wrf_debug ( 100 , 'wrf: calling alloc_and_configure_domain ' )
    CALL alloc_and_configure_domain ( domain_id  = 1 ,                  &
+                               active_this_task = domain_active_this_task(1), &
                                      grid       = head_grid ,          &
                                      parent     = null_domain ,        &
                                      kid        = -1                   )
@@ -328,9 +335,12 @@ CONTAINS
    CALL init_wrfio
 
 #ifdef DM_PARALLEL
+   CALL wrf_get_dm_communicator( save_comm )
+   CALL wrf_set_dm_communicator( mpi_comm_allcompute )
    CALL get_config_as_buffer( configbuf, configbuflen, nbytes )
    CALL wrf_dm_bcast_bytes( configbuf, nbytes )
    CALL set_config_as_buffer( configbuf, configbuflen )
+   CALL wrf_set_dm_communicator( save_comm )
 #endif
 
 ! #if (EM_CORE == 1)
@@ -363,6 +373,7 @@ CONTAINS
 ! 
 !</DESCRIPTION>
 
+ IF ( domain_active_this_task(1) ) THEN
    CALL med_initialdata_input( head_grid , config_flags )
 
    IF ( config_flags%write_restart_at_0h ) THEN
@@ -377,11 +388,13 @@ CONTAINS
       CALL wrf_finalize( )
 #endif
    END IF
+  ENDIF  ! domain_active_this_task
 
    ! set default values for subtimes
    head_grid%start_subtime = domain_get_start_time ( head_grid )
    head_grid%stop_subtime = domain_get_stop_time ( head_grid )
 
+ IF ( domain_active_this_task(1) ) THEN
    !  For EM (but not DA), if this is a DFI run, we can allocate some space.  We are
    !  not allowing anyting tricky for nested DFI.  If there are any nested domains,
    !  they all need to start at the same time.  Otherwise, why even do the DFI?  If
@@ -395,6 +408,7 @@ CONTAINS
 #endif
 
    IF (coupler_on) CALL cpl_defdomain( head_grid ) 
+  ENDIF  ! domain_active_this_task
 
    END SUBROUTINE wrf_init
 

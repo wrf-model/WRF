@@ -76,7 +76,8 @@ MODULE module_dm
    INTEGER nest_pes_y(max_domains)   ! set in dm_task_split
    INTEGER comms_i_am_in (max_domains)  ! list of local communicators this task is a member of
    INTEGER loc_comm(max_domains)
-   INTEGER nio_tasks_per_group(max_domains), nio_groups, poll_servers, num_io_tasks
+   LOGICAL poll_servers
+   INTEGER nio_tasks_per_group(max_domains), nio_groups, num_io_tasks
    NAMELIST /dm_task_split/ tasks_per_split, comm_start, nest_pes_x, nest_pes_y
    NAMELIST /namelist_quilt/ nio_tasks_per_group, nio_groups, poll_servers
 
@@ -1823,7 +1824,11 @@ CONTAINS
         nest_pes_x = 0    ! dimensions of communicator in X and y
         nest_pes_y = 0
         IF ( nproc_x .EQ. -1 .OR. nproc_y .EQ. -1 ) THEN
+#if ( HWRF == 1 )
+          CALL compute_mesh( ntasks_local, n_x, n_y )
+#else
           CALL compute_mesh( ntasks_local-num_io_tasks, n_x, n_y )
+#endif
         ELSE
           n_x = nproc_x
           n_y = nproc_y
@@ -2416,7 +2421,7 @@ END MODULE module_dm
 
    SUBROUTINE push_communicators_for_domain( id )
       USE module_dm
-      INTEGER, OPTIONAL, INTENT(IN) :: id   ! if specified also does an instate for grid id
+      INTEGER, INTENT(IN) :: id   ! if specified also does an instate for grid id
       IF ( communicator_stack_cursor .GE. max_domains ) CALL wrf_error_fatal("push_communicators_for_domain would excede stacksize") 
       communicator_stack_cursor = communicator_stack_cursor + 1
 
@@ -2433,9 +2438,7 @@ END MODULE module_dm
       mytask_x_stack( communicator_stack_cursor )       =    mytask_x
       mytask_y_stack( communicator_stack_cursor )       =    mytask_y
 
-      IF ( PRESENT( id ) ) THEN
-        CALL instate_communicators_for_domain( id )
-      ENDIF
+      CALL instate_communicators_for_domain( id )
    END SUBROUTINE push_communicators_for_domain
    SUBROUTINE pop_communicators_for_domain
       USE module_dm

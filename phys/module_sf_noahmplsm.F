@@ -70,6 +70,10 @@ MODULE MODULE_SF_NOAHMPLSM
                       !   3 -> off (use table LAI; calculate FVEG)
                       ! **4 -> off (use table LAI; use maximum vegetation fraction)
                       ! **5 -> on  (use maximum vegetation fraction)
+                      !   6 -> on  (use FVEG = SHDFAC from input)
+                      !   7 -> off (use input LAI; use FVEG = SHDFAC from input)
+                      !   8 -> off (use input LAI; calculate FVEG)
+                      !   9 -> off (use input LAI; use maximum vegetation fraction)
 
   INTEGER :: OPT_CRS  ! options for canopy stomatal resistance
                       ! **1 -> Ball-Berry
@@ -603,13 +607,13 @@ contains
                      LAI    , SAI    , TROOT  , ELAI    , ESAI   ,IGS)
 
 !input GVF should be consistent with LAI
-     IF(DVEG == 1) THEN
+     IF(DVEG == 1 .or. DVEG == 6 .or. DVEG == 7) THEN
         FVEG = SHDFAC
         IF(FVEG <= 0.05) FVEG = 0.05
-     ELSE IF (DVEG == 2 .or. DVEG == 3) THEN
+     ELSE IF (DVEG == 2 .or. DVEG == 3 .or. DVEG == 8) THEN
         FVEG = 1.-EXP(-0.52*(LAI+SAI))
         IF(FVEG <= 0.05) FVEG = 0.05
-     ELSE IF (DVEG == 4 .or. DVEG == 5) THEN
+     ELSE IF (DVEG == 4 .or. DVEG == 5 .or. DVEG == 9) THEN
         FVEG = SHDMAX
         IF(FVEG <= 0.05) FVEG = 0.05
      ELSE
@@ -687,7 +691,7 @@ contains
 
 ! compute carbon budgets (carbon storages and co2 & bvoc fluxes)
 
-   IF (DVEG == 2 .OR. DVEG == 5) THEN
+   IF (DVEG == 2 .OR. DVEG == 5 .OR. DVEG == 6) THEN
     CALL CARBON (parameters,NSNOW  ,NSOIL  ,VEGTYP ,DT     ,ZSOIL  , & !in
                  DZSNSO ,STC    ,SMC    ,TV     ,TG     ,PSN    , & !in
                  FOLN   ,BTRAN  ,APAR   ,FVEG   ,IGS    , & !in
@@ -936,6 +940,12 @@ contains
      LAI = WT1*parameters%LAIM(IT1) + WT2*parameters%LAIM(IT2)
      SAI = WT1*parameters%SAIM(IT1) + WT2*parameters%SAIM(IT2)
   ENDIF
+
+  IF(DVEG == 7 .or. DVEG == 8 .or. DVEG == 9) THEN
+    SAI = MAX(0.05,0.1 * LAI)  ! when reading LAI, set SAI to 10% LAI, but not below 0.05 MB: v3.8
+    IF (LAI < 0.05) SAI = 0.0  ! if LAI below minimum, make sure SAI = 0
+  ENDIF
+
   IF (SAI < 0.05) SAI = 0.0                  ! MB: SAI CHECK, change to 0.05 v3.6
   IF (LAI < 0.05 .OR. SAI == 0.0) LAI = 0.0  ! MB: LAI CHECK
 

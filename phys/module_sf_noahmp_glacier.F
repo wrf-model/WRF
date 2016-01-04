@@ -1120,7 +1120,7 @@ contains
 ! if snow on ground and TG > TFRZ: reset TG = TFRZ. reevaluate ground fluxes.
 
      SICE = SMC - SH2O
-     IF(OPT_STC == 1) THEN
+     IF(OPT_STC == 1 .or. OPT_STC == 3) THEN
      IF ((MAXVAL(SICE) > 0.0 .OR. SNOWH > 0.0) .AND. TGB > TFRZ) THEN
           TGB = TFRZ
           IRB = CIR * TGB**4 - EMG*LWDN
@@ -1496,7 +1496,7 @@ contains
         IF (K == ISNOW+1) THEN
            AI(K)    =   0.0
            CI(K)    = - DF(K)   * DDZ(K) / DENOM(K)
-           IF (OPT_STC == 1) THEN
+           IF (OPT_STC == 1 .OR. OPT_STC == 3) THEN
               BI(K) = - CI(K)
            END IF                                        
            IF (OPT_STC == 2) THEN

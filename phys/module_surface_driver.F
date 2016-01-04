@@ -73,6 +73,7 @@ CONTAINS
      &          ,smcwtdxy ,rechxy   ,deeprechxy,fdepthxy,areaxy   ,rivercondxy, riverbedxy &
      &          ,eqzwt    ,pexpxy   ,qrfxy    ,qspringxy,qslatxy  ,qrfsxy   ,qspringsxy &
      &          ,smoiseq  ,wtddt    ,stepwtd                                            &
+     &          ,opt_thcnd                                                 &
            ! Noah UA changes
      &          ,ua_phys,flx4,fvb,fbur,fgsn                                  &
 #if (EM_CORE==1)
@@ -846,6 +847,7 @@ CONTAINS
     SMCWTDXY,   RECHXY, DEEPRECHXY, FDEPTHXY,  AREAXY,  RIVERCONDXY, RIVERBEDXY,  &
     EQZWT,      PEXPXY, QRFXY,      QSPRINGXY, QSLATXY, QRFSXY,      QSPRINGSXY                         
 
+   INTEGER, INTENT(IN )::   OPT_THCND
 ! Noah UA changes
    LOGICAL, INTENT(IN) :: ua_phys
    REAL, DIMENSION(ims:ime , jms:jme), INTENT(OUT) ::  flx4,fvb,fbur,fgsn
@@ -2484,7 +2486,7 @@ CONTAINS
                 xice_threshold,                                 &
                 rdlai2d,usemonalb,                              &
                 br,                                             & !?
-                NOAHRES,                                        &
+                NOAHRES,opt_thcnd,                              &
                 NLCAT,landusef,landusef2,                       & ! danli mosaic
                 sf_surface_mosaic,mosaic_cat,mosaic_cat_index,  & ! danli mosaic 
                 TSK_mosaic,QSFC_mosaic,                         & ! danli mosaic 
@@ -2577,7 +2579,7 @@ CONTAINS
                 xice_threshold,                                 &
                 rdlai2d,usemonalb,                              &
                 br,                                             & !?
-                  NOAHRES,                                      &
+                NOAHRES,opt_thcnd,                              &
                 ua_phys,flx4,fvb,fbur,fgsn,                     &
                 ids,ide, jds,jde, kds,kde,                      &
                 ims,ime, jms,jme, kms,kme,                      &

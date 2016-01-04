@@ -47,7 +47,7 @@ CONTAINS
                   XICE_THRESHOLD,                               &
                   RDLAI2D,USEMONALB,                            &
                   RIB,                                          & !?
-                  NOAHRES,                                      &
+                  NOAHRES,opt_thcnd,                            &
 ! Noah UA changes
                   ua_phys,flx4_2d,fvb_2d,fbur_2d,fgsn_2d,       &
                   ids,ide, jds,jde, kds,kde,                    &
@@ -324,6 +324,7 @@ CONTAINS
                                                            ZNT
    REAL,    DIMENSION( ims:ime, jms:jme )                     , &
             INTENT(OUT)      ::                         NOAHRES
+   INTEGER, INTENT(IN)       ::                         OPT_THCND
 
 ! Noah UA changes
    LOGICAL,                                INTENT(IN)  :: UA_PHYS
@@ -986,7 +987,7 @@ CONTAINS
                  RIBB,                                             &
                  SMCWLT,SMCDRY,SMCREF,SMCMAX,NROOT,                &
                  sfcheadrt(i,j),                                   &    !I
-                 INFXSRT(i,j),ETPND1,AOASIS                        &    !O
+                 INFXSRT(i,j),ETPND1,OPT_THCND,AOASIS              &    !O
                  )
 
 #ifdef WRF_HYDRO
@@ -2102,7 +2103,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                   XICE_THRESHOLD,                               &
                   RDLAI2D,USEMONALB,                            &
                   RIB,                                          & !?
-                  NOAHRES,                                      &
+                  NOAHRES,OPT_THCND,                            &
                  NLCAT,landusef,landusef2,                       & ! danli mosaic
                  sf_surface_mosaic,mosaic_cat,mosaic_cat_index,  & ! danli mosaic 
                  TSK_mosaic,QSFC_mosaic,                         & ! danli mosaic 
@@ -2400,6 +2401,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                                                            ZNT
    REAL,    DIMENSION( ims:ime, jms:jme )                     , &
             INTENT(OUT)      ::                         NOAHRES
+   INTEGER,                                INTENT(IN)  :: OPT_THCND
 
 ! Noah UA changes
    LOGICAL,                                INTENT(IN)  :: UA_PHYS
@@ -3207,7 +3209,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                        RIBB,                                             &
                        SMCWLT,SMCDRY,SMCREF,SMCMAX,NROOT,                &
                        sfcheadrt(i,j),                                   &    !I
-                       INFXSRT(i,j),ETPND1,AOASIS                        &    !O
+                       INFXSRT(i,j),ETPND1,OPT_THCND,AOASIS              &    !O
                        )
       
 #ifdef WRF_HYDRO
@@ -4082,7 +4084,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                        RIBB,                                             &
                        SMCWLT,SMCDRY,SMCREF,SMCMAX,NROOT,                &
                        sfcheadrt(i,j),                                   &    !I
-                       INFXSRT(i,j),ETPND1,AOASIS                        &    !O
+                       INFXSRT(i,j),ETPND1,OPT_THCND,AOASIS              &    !O
                        )
       
 #ifdef WRF_HYDRO

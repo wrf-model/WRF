@@ -2174,6 +2174,7 @@ rconfig   logical usemonalb               namelist,physics      1            .fa
 rconfig   logical rdmaxalb                namelist,physics      1            .true.    h     "rdmaxalb"    "false set it to table values"   ""
 rconfig   logical rdlai2d                 namelist,physics      1            .false.   h     "rdlai2d"     "false set it to table values"   ""
 rconfig   logical ua_phys                 namelist,physics      1            .false.   h     "ua_phys"     "activate UA Noah changes"   ""
+rconfig   integer opt_thcnd               namelist,physics      1            1         h     "opt_thcnd" "thermal conductivity option in Noah LSM"   ""
 rconfig   integer co2tf                   namelist,physics	1            1         -    "co2tf" "GFDL radiation co2 flag" ""
 rconfig   integer ra_call_offset          namelist,physics	1            0         -    "ra_call_offset" "radiation call offset in timesteps (-1=old, 0=new offset)" ""
 rconfig   real    cam_abs_freq_s          namelist,physics      1         21600.      -      "cam_abs_freq_s" "CAM radiation frequency for clear-sky longwave calculations" "s"

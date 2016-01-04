@@ -1521,6 +1521,8 @@ state    real   lfmassxy   ij      -       1      -     i02rhd=(interp_mask_fiel
 state    real   rtmassxy   ij      -       1      -     i02rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "rtmass"     "mass of fine roots"                  "g/m2"
 state    real   stmassxy   ij      -       1      -     i02rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "stmass"     "stem mass"                           "g/m2"
 state    real   woodxy     ij      -       1      -     i02rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "wood"       "mass of wood"                        "g/m2"
+state    real   grainxy    ij      -       1      -     i02rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "grain"      "mass of grain"                       "g/m2"
+state    real   gddxy      ij      -       1      -     i02rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "gdd"        "growing degree days"                 ""
 state    real   stblcpxy   ij      -       1      -     i02rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "stblcp"     "stable carbon pool"                  "g/m2"
 state    real   fastcpxy   ij      -       1      -     i02rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "fastcp"     "short-lived carbon"                  "g/m2"
 state    real   xsaixy     ij      -       1      -     i02rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "xsai"       "stem area index"                     "-"

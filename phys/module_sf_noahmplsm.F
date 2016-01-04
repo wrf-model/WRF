@@ -159,6 +159,7 @@ MODULE MODULE_SF_NOAHMPLSM
 
   INTEGER, PRIVATE, PARAMETER :: MBAND = 2
   INTEGER, PRIVATE, PARAMETER :: NSOIL = 4
+  INTEGER, PRIVATE, PARAMETER :: NSTAGE = 8
 
   TYPE noahmp_parameters ! define a NoahMP parameters type
 
@@ -256,6 +257,49 @@ MODULE MODULE_SF_NOAHMPLSM
      REAL :: RSURF_SNOW   !surface resistance for snow(s/m)
 
 !------------------------------------------------------------------------------------------!
+! From the crop section of MPTABLE.TBL
+!------------------------------------------------------------------------------------------!
+ 
+  INTEGER :: PLTDAY           ! Planting date
+  INTEGER :: HSDAY            ! Harvest date
+     REAL :: PLANTPOP         ! Plant density [per ha] - used?
+     REAL :: IRRI             ! Irrigation strategy 0= non-irrigation 1=irrigation (no water-stress)
+     REAL :: GDDTBASE         ! Base temperature for GDD accumulation [C]
+     REAL :: GDDTCUT          ! Upper temperature for GDD accumulation [C]
+     REAL :: GDDS1            ! GDD from seeding to emergence
+     REAL :: GDDS2            ! GDD from seeding to initial vegetative 
+     REAL :: GDDS3            ! GDD from seeding to post vegetative 
+     REAL :: GDDS4            ! GDD from seeding to intial reproductive
+     REAL :: GDDS5            ! GDD from seeding to pysical maturity 
+  INTEGER :: C3C4             ! photosynthetic pathway:  1 = c3 2 = c4
+     REAL :: AREF             ! reference maximum CO2 assimulation rate 
+     REAL :: PSNRF            ! CO2 assimulation reduction factor(0-1) (caused by non-modeling part,e.g.pest,weeds)
+     REAL :: I2PAR            ! Fraction of incoming solar radiation to photosynthetically active radiation
+     REAL :: TASSIM0          ! Minimum temperature for CO2 assimulation [C]
+     REAL :: TASSIM1          ! CO2 assimulation linearly increasing until temperature reaches T1 [C]
+     REAL :: TASSIM2          ! CO2 assmilation rate remain at Aref until temperature reaches T2 [C]
+     REAL :: K                ! light extinction coefficient
+     REAL :: EPSI             ! initial light use efficiency
+     REAL :: Q10MR            ! q10 for maintainance respiration
+     REAL :: FOLN_MX          ! foliage nitrogen concentration when f(n)=1 (%)
+     REAL :: LEFREEZ          ! characteristic T for leaf freezing [K]
+     REAL :: DILE_FC(NSTAGE)  ! coeficient for temperature leaf stress death [1/s]
+     REAL :: DILE_FW(NSTAGE)  ! coeficient for water leaf stress death [1/s]
+     REAL :: FRA_GR           ! fraction of growth respiration 
+     REAL :: LF_OVRC(NSTAGE)  ! fraction of leaf turnover  [1/s]
+     REAL :: ST_OVRC(NSTAGE)  ! fraction of stem turnover  [1/s]
+     REAL :: RT_OVRC(NSTAGE)  ! fraction of root tunrover  [1/s]
+     REAL :: LFMR25           ! leaf maintenance respiration at 25C [umol CO2/m**2  /s]
+     REAL :: STMR25           ! stem maintenance respiration at 25C [umol CO2/kg bio/s]
+     REAL :: RTMR25           ! root maintenance respiration at 25C [umol CO2/kg bio/s]
+     REAL :: GRAINMR25        ! grain maintenance respiration at 25C [umol CO2/kg bio/s]
+     REAL :: LFPT(NSTAGE)     ! fraction of carbohydrate flux to leaf
+     REAL :: STPT(NSTAGE)     ! fraction of carbohydrate flux to stem
+     REAL :: RTPT(NSTAGE)     ! fraction of carbohydrate flux to root
+     REAL :: GRAINPT(NSTAGE)  ! fraction of carbohydrate flux to grain
+     REAL :: BIO2LAI          ! leaf are per living leaf biomass [m^2/kg]
+
+!------------------------------------------------------------------------------------------!
 ! From the SOILPARM.TBL tables, as functions of soil category.
 !------------------------------------------------------------------------------------------!
      REAL :: BEXP(NSOIL)   !B parameter
@@ -304,6 +348,7 @@ contains
                    ZWT     , WA      , WT      , WSLAKE  , LFMASS  , RTMASS  , & ! IN/OUT : 
                    STMASS  , WOOD    , STBLCP  , FASTCP  , LAI     , SAI     , & ! IN/OUT : 
                    CM      , CH      , TAUSS   ,                               & ! IN/OUT : 
+                   GRAIN   , GDD     ,                                         & ! IN/OUT 
                    SMCWTD  ,DEEPRECH , RECH    ,                               & ! IN/OUT :
 		   Z0WRF   , &
                    FSA     , FSR     , FIRA    , FSH     , SSOIL   , FCEV    , & ! OUT : 
@@ -536,6 +581,8 @@ contains
   REAL                        , INTENT(INOUT)    :: FASTCP !short-lived carbon, shallow soil [g/m2]
   REAL                        , INTENT(INOUT)    :: LAI    !leaf area index [-]
   REAL                        , INTENT(INOUT)    :: SAI    !stem area index [-]
+  REAL                        , INTENT(INOUT)    :: GRAIN  !grain mass [g/m2]
+  REAL                        , INTENT(INOUT)    :: GDD    !growing degree days
 
 ! outputs
   REAL                          , INTENT(OUT)    :: NEE    !net ecosys exchange (g/m2/s CO2)
@@ -620,7 +667,7 @@ contains
      ELSE IF (DVEG == 2 .or. DVEG == 3 .or. DVEG == 8) THEN
         FVEG = 1.-EXP(-0.52*(LAI+SAI))
         IF(FVEG <= 0.05) FVEG = 0.05
-     ELSE IF (DVEG == 4 .or. DVEG == 5 .or. DVEG == 9) THEN
+     ELSE IF (DVEG == 4 .or. DVEG == 5 .or. DVEG == 9 .or. DVEG == 10) THEN
         FVEG = SHDMAX
         IF(FVEG <= 0.05) FVEG = 0.05
      ELSE
@@ -707,6 +754,16 @@ contains
                  GPP    ,NPP    ,NEE    ,AUTORS ,HETERS ,TOTSC  , & !out
                  TOTLB  ,LAI    ,SAI    )                   !out
    END IF
+
+   IF (DVEG == 6) THEN !XING
+    CALL CARBON_CROP (parameters,NSNOW  ,NSOIL  ,VEGTYP ,DT     ,ZSOIL  ,JULIAN , & !in 
+                         DZSNSO ,STC    ,SMC    ,TV     ,PSN    ,FOLN   ,BTRAN  , & !in
+			 SOLDN  ,T2M    ,                                         & !in
+                         LFMASS ,RTMASS ,STMASS ,WOOD   ,STBLCP ,FASTCP ,GRAIN  , & !inout
+			 LAI    ,SAI    ,GDD    ,                                 & !inout
+                         GPP    ,NPP    ,NEE    ,AUTORS ,HETERS ,TOTSC  ,TOTLB    ) !out
+   END IF
+   
 
 ! water and energy balance check
 
@@ -953,8 +1010,8 @@ contains
     IF (LAI < 0.05) SAI = 0.0  ! if LAI below minimum, make sure SAI = 0
   ENDIF
 
-  IF (SAI < 0.05) SAI = 0.0                  ! MB: SAI CHECK, change to 0.05 v3.6
-  IF (LAI < 0.05 .OR. SAI == 0.0) LAI = 0.0  ! MB: LAI CHECK
+  IF (SAI < 0.05 .and. DVEG /= 10) SAI = 0.0                  ! MB: SAI CHECK, change to 0.05 v3.6
+  IF (LAI < 0.05 .OR. SAI == 0.0 .and. DVEG /= 10) LAI = 0.0  ! MB: LAI CHECK
 
   IF ( ( VEGTYP == parameters%iswater ) .OR. ( VEGTYP == parameters%ISBARREN ) .OR. &
        ( VEGTYP == parameters%ISICE   ) .or. ( parameters%urban_flag ) ) THEN
@@ -974,8 +1031,8 @@ contains
 
      ELAI =  LAI*(1.-FB)
      ESAI =  SAI*(1.-FB)
-     IF (ESAI < 0.05) ESAI = 0.0                   ! MB: ESAI CHECK, change to 0.05 v3.6
-     IF (ELAI < 0.05 .OR. ESAI == 0.0) ELAI = 0.0  ! MB: LAI CHECK
+     IF (ESAI < 0.05 .and. DVEG /= 10) ESAI = 0.0                   ! MB: ESAI CHECK, change to 0.05 v3.6
+     IF (ELAI < 0.05 .OR. ESAI == 0.0 .and. DVEG /= 10) ELAI = 0.0  ! MB: LAI CHECK
 
      IF (TV .GT. parameters%TMIN) THEN
          IGS = 1.
@@ -8118,6 +8175,574 @@ END  SUBROUTINE SHALLOWWATERTABLE
     
   END SUBROUTINE CO2FLUX
 
+!== begin carbon_crop ==============================================================================
+
+ SUBROUTINE CARBON_CROP (parameters,NSNOW  ,NSOIL  ,VEGTYP ,DT     ,ZSOIL  ,JULIAN , & !in
+                            DZSNSO ,STC    ,SMC    ,TV     ,PSN    ,FOLN   ,BTRAN  , & !in
+                            SOLDN  ,T2M    ,                                         & !in
+                            LFMASS ,RTMASS ,STMASS ,WOOD   ,STBLCP ,FASTCP ,GRAIN  , & !inout
+			    XLAI   ,XSAI   ,GDD    ,                                 & !inout
+                            GPP    ,NPP    ,NEE    ,AUTORS ,HETERS ,TOTSC  ,TOTLB    ) !out
+! ------------------------------------------------------------------------------------------
+! Initial crop version created by Xing Liu
+! Initial crop version added by Barlage v3.8
+
+! ------------------------------------------------------------------------------------------
+      IMPLICIT NONE
+! ------------------------------------------------------------------------------------------
+! inputs (carbon)
+
+  type (noahmp_parameters), intent(in) :: parameters
+  INTEGER                        , INTENT(IN) :: NSNOW  !number of snow layers
+  INTEGER                        , INTENT(IN) :: NSOIL  !number of soil layers
+  INTEGER                        , INTENT(IN) :: VEGTYP !vegetation type 
+  REAL                           , INTENT(IN) :: DT     !time step (s)
+  REAL, DIMENSION(       1:NSOIL), INTENT(IN) :: ZSOIL  !depth of layer-bottomfrom soil surface
+  REAL                           , INTENT(IN) :: JULIAN !Julian day of year(fractional) ( 0 <= JULIAN < YEARLEN )
+  REAL, DIMENSION(-NSNOW+1:NSOIL), INTENT(IN) :: DZSNSO !snow/soil layerthickness [m]
+  REAL, DIMENSION(-NSNOW+1:NSOIL), INTENT(IN) :: STC    !snow/soil temperature[k]
+  REAL, DIMENSION(       1:NSOIL), INTENT(IN) :: SMC    !soil moisture (ice +liq.) [m3/m3]
+  REAL                           , INTENT(IN) :: TV     !vegetation temperature(k)
+  REAL                           , INTENT(IN) :: PSN    !total leaf photosyn(umolco2/m2/s) [+]
+  REAL                           , INTENT(IN) :: FOLN   !foliage nitrogen (%)
+  REAL                           , INTENT(IN) :: BTRAN  !soil watertranspiration factor (0 to 1)
+  REAL                           , INTENT(IN) :: SOLDN  !Downward solar radiation
+  REAL                           , INTENT(IN) :: T2M    !air temperature
+
+! input & output (carbon)
+
+  REAL                        , INTENT(INOUT) :: LFMASS !leaf mass [g/m2]
+  REAL                        , INTENT(INOUT) :: RTMASS !mass of fine roots[g/m2]
+  REAL                        , INTENT(INOUT) :: STMASS !stem mass [g/m2]
+  REAL                        , INTENT(INOUT) :: WOOD   !mass of wood (incl.woody roots) [g/m2]
+  REAL                        , INTENT(INOUT) :: STBLCP !stable carbon in deepsoil [g/m2]
+  REAL                        , INTENT(INOUT) :: FASTCP !short-lived carbon inshallow soil [g/m2]
+  REAL                        , INTENT(INOUT) :: GRAIN  !mass of GRAIN [g/m2]
+  REAL                        , INTENT(INOUT) :: XLAI   !leaf area index [-]
+  REAL                        , INTENT(INOUT) :: XSAI   !stem area index [-]
+  REAL                        , INTENT(INOUT) :: GDD    !growing degree days
+
+! outout
+  REAL                          , INTENT(OUT) :: GPP    !net instantaneous assimilation [g/m2/s C]
+  REAL                          , INTENT(OUT) :: NPP    !net primary productivity [g/m2/s C]
+  REAL                          , INTENT(OUT) :: NEE    !net ecosystem exchange[g/m2/s CO2]
+  REAL                          , INTENT(OUT) :: AUTORS !net ecosystem respiration [g/m2/s C]
+  REAL                          , INTENT(OUT) :: HETERS !organic respiration[g/m2/s C]
+  REAL                          , INTENT(OUT) :: TOTSC  !total soil carbon [g/m2C]
+  REAL                          , INTENT(OUT) :: TOTLB  !total living carbon ([g/m2 C]
+
+! local variables
+
+  INTEGER :: J         !do-loop index
+  REAL    :: WROOT     !root zone soil water [-]
+  REAL    :: WSTRES    !water stress coeficient [-]  (1. for wilting )
+  INTEGER :: IPA       !Planting index
+  INTEGER :: IHA       !Havestindex(0=on,1=off)
+  INTEGER :: PGS       !Plant growth stage
+
+  REAL    :: PSNCROP 
+
+! ------------------------------------------------------------------------------------------
+   IF ( ( VEGTYP == parameters%iswater ) .OR. ( VEGTYP == parameters%ISBARREN ) .OR. &
+        ( VEGTYP == parameters%ISICE ) .or. (parameters%urban_flag) ) THEN
+      XLAI   = 0.
+      XSAI   = 0.
+      GPP    = 0.
+      NPP    = 0.
+      NEE    = 0.
+      AUTORS = 0.
+      HETERS = 0.
+      TOTSC  = 0.
+      TOTLB  = 0.
+      LFMASS = 0.
+      RTMASS = 0.
+      STMASS = 0.
+      WOOD   = 0.
+      STBLCP = 0.
+      FASTCP = 0.
+      GRAIN  = 0.
+      RETURN
+   END IF
+
+! water stress
+
+
+   WSTRES  = 1.- BTRAN
+
+   WROOT  = 0.
+   DO J=1,parameters%NROOT
+     WROOT = WROOT + SMC(J)/parameters%SMCMAX(J) *  DZSNSO(J) / (-ZSOIL(parameters%NROOT))
+   ENDDO
+
+   CALL PSN_CROP     ( parameters,                           & !in
+                       SOLDN,   XLAI,    T2M,                & !in 
+                       PSNCROP                             )   !out
+
+   CALL GROWING_GDD  (parameters,                           & !in
+                      T2M ,   DT,  JULIAN,                  & !in
+                      GDD ,                                 & !inout 
+                      IPA ,  IHA,     PGS)                    !out                        
+
+   CALL CO2FLUX_CROP (parameters,                              & !in
+                      DT     ,STC(1) ,PSN    ,TV     ,WROOT  ,WSTRES ,FOLN   , & !in
+                      IPA    ,IHA    ,PGS    ,                                 & !in XING
+                      XLAI   ,XSAI   ,LFMASS ,RTMASS ,STMASS ,                 & !inout
+                      FASTCP ,STBLCP ,WOOD   ,GRAIN  ,GDD    ,                 & !inout
+                      GPP    ,NPP    ,NEE    ,AUTORS ,HETERS ,                 & !out
+                      TOTSC  ,TOTLB  )                                           !out
+
+  END SUBROUTINE CARBON_CROP
+
+!== begin co2flux_crop =============================================================================
+
+  SUBROUTINE CO2FLUX_CROP (parameters,                                              & !in
+                           DT     ,STC    ,PSN    ,TV     ,WROOT  ,WSTRES ,FOLN   , & !in
+                           IPA    ,IHA    ,PGS    ,                                 & !in XING
+                           XLAI   ,XSAI   ,LFMASS ,RTMASS ,STMASS ,                 & !inout
+                           FASTCP ,STBLCP ,WOOD   ,GRAIN  ,GDD,                     & !inout
+                           GPP    ,NPP    ,NEE    ,AUTORS ,HETERS ,                 & !out
+                           TOTSC  ,TOTLB  )                                           !out
+! -----------------------------------------------------------------------------------------
+! The original code from RE Dickinson et al.(1998) and Guo-Yue Niu(2004),
+! modified by Xing Liu, 2014.
+! 
+! -----------------------------------------------------------------------------------------
+  IMPLICIT NONE
+! -----------------------------------------------------------------------------------------
+
+! input
+
+  type (noahmp_parameters), intent(in) :: parameters
+  REAL                           , INTENT(IN) :: DT     !time step (s)
+  REAL                           , INTENT(IN) :: STC    !soil temperature[k]
+  REAL                           , INTENT(IN) :: PSN    !total leaf photosynthesis (umolco2/m2/s)
+  REAL                           , INTENT(IN) :: TV     !leaf temperature (k)
+  REAL                           , INTENT(IN) :: WROOT  !root zone soil water
+  REAL                           , INTENT(IN) :: WSTRES !soil water stress
+  REAL                           , INTENT(IN) :: FOLN   !foliage nitrogen (%)
+  INTEGER                        , INTENT(IN) :: IPA
+  INTEGER                        , INTENT(IN) :: IHA
+  INTEGER                        , INTENT(IN) :: PGS
+
+! input and output
+
+  REAL                        , INTENT(INOUT) :: XLAI   !leaf  area index from leaf carbon [-]
+  REAL                        , INTENT(INOUT) :: XSAI   !stem area index from leaf carbon [-]
+  REAL                        , INTENT(INOUT) :: LFMASS !leaf mass [g/m2]
+  REAL                        , INTENT(INOUT) :: RTMASS !mass of fine roots [g/m2]
+  REAL                        , INTENT(INOUT) :: STMASS !stem mass [g/m2]
+  REAL                        , INTENT(INOUT) :: FASTCP !short lived carbon [g/m2]
+  REAL                        , INTENT(INOUT) :: STBLCP !stable carbon pool [g/m2]
+  REAL                        , INTENT(INOUT) :: WOOD   !mass of wood (incl. woody roots) [g/m2]
+  REAL                        , INTENT(INOUT) :: GRAIN  !mass of grain (XING) [g/m2]
+  REAL                        , INTENT(INOUT) :: GDD    !growing degree days (XING)
+
+! output
+
+  REAL                          , INTENT(OUT) :: GPP    !net instantaneous assimilation [g/m2/s]
+  REAL                          , INTENT(OUT) :: NPP    !net primary productivity [g/m2]
+  REAL                          , INTENT(OUT) :: NEE    !net ecosystem exchange (autors+heters-gpp)
+  REAL                          , INTENT(OUT) :: AUTORS !net ecosystem resp. (maintance and growth)
+  REAL                          , INTENT(OUT) :: HETERS !organic respiration
+  REAL                          , INTENT(OUT) :: TOTSC  !total soil carbon (g/m2)
+  REAL                          , INTENT(OUT) :: TOTLB  !total living carbon (g/m2)
+
+! local
+
+  REAL                   :: CFLUX    !carbon flux to atmosphere [g/m2/s]
+  REAL                   :: LFMSMN   !minimum leaf mass [g/m2]
+  REAL                   :: RSWOOD   !wood respiration [g/m2]
+  REAL                   :: RSLEAF   !leaf maintenance respiration per timestep[g/m2]
+  REAL                   :: RSROOT   !fine root respiration per time step [g/m2]
+  REAL                   :: RSGRAIN  !grain respiration [g/m2]  
+  REAL                   :: NPPL     !leaf net primary productivity [g/m2/s]
+  REAL                   :: NPPR     !root net primary productivity [g/m2/s]
+  REAL                   :: NPPW     !wood net primary productivity [g/m2/s]
+  REAL                   :: NPPS     !wood net primary productivity [g/m2/s]
+  REAL                   :: NPPG     !grain net primary productivity [g/m2/s] 
+  REAL                   :: DIELF    !death of leaf mass per time step [g/m2]
+
+  REAL                   :: ADDNPPLF !leaf assimil after resp. losses removed[g/m2]
+  REAL                   :: ADDNPPST !stem assimil after resp. losses removed[g/m2]
+  REAL                   :: CARBFX   !carbon assimilated per model step [g/m2]
+  REAL                   :: CBHYDRAFX!carbonhydrate assimilated per model step [g/m2]
+  REAL                   :: GRLEAF   !growth respiration rate for leaf [g/m2/s]
+  REAL                   :: GRROOT   !growth respiration rate for root [g/m2/s]
+  REAL                   :: GRWOOD   !growth respiration rate for wood [g/m2/s]
+  REAL                   :: GRSTEM   !growth respiration rate for stem [g/m2/s]
+  REAL                   :: GRGRAIN   !growth respiration rate for stem [g/m2/s]
+  REAL                   :: LEAFPT   !fraction of carbon allocated to leaves [-]
+  REAL                   :: LFDEL    !maximum  leaf mass  available to change[g/m2/s]
+  REAL                   :: LFTOVR   !stem turnover per time step [g/m2]
+  REAL                   :: STTOVR   !stem turnover per time step [g/m2]
+  REAL                   :: WDTOVR   !wood turnover per time step [g/m2]
+  REAL                   :: GRTOVR   !grainturnover per time step [g/m2]
+  REAL                   :: RSSOIL   !soil respiration per time step [g/m2]
+  REAL                   :: RTTOVR   !root carbon loss per time step by turnover[g/m2]
+  REAL                   :: STABLC   !decay rate of fast carbon to slow carbon[g/m2/s]
+  REAL                   :: WOODF    !calculated wood to root ratio [-]
+  REAL                   :: NONLEF   !fraction of carbon to root and wood [-]
+  REAL                   :: RESP     !leaf respiration [umol/m2/s]
+  REAL                   :: RSSTEM   !stem respiration [g/m2/s]
+
+  REAL                   :: FSW      !soil water factor for microbial respiration
+  REAL                   :: FST      !soil temperature factor for microbialrespiration
+  REAL                   :: FNF      !foliage nitrogen adjustemt to respiration(<= 1)
+  REAL                   :: TF       !temperature factor
+  REAL                   :: STDEL
+  REAL                   :: STMSMN
+  REAL                   :: SAPM     !stem area per unit mass (m2/g)
+  REAL                   :: DIEST
+! -------------------------- constants -------------------------------
+  REAL                   :: BF       !parameter for present wood allocation [-]
+  REAL                   :: RSWOODC  !wood respiration coeficient [1/s]
+  REAL                   :: STOVRC   !stem turnover coefficient [1/s]
+  REAL                   :: RSDRYC   !degree of drying that reduces soilrespiration [-]
+  REAL                   :: RTOVRC   !root turnover coefficient [1/s]
+  REAL                   :: WSTRC    !water stress coeficient [-]
+  REAL                   :: LAIMIN   !minimum leaf area index [m2/m2]
+  REAL                   :: XSAMIN   !minimum leaf area index [m2/m2]
+  REAL                   :: SC
+  REAL                   :: SD
+  REAL                   :: VEGFRAC
+  REAL                   :: TEMP
+
+! Respiration as a function of temperature
+
+  real :: r,x
+          r(x) = exp(0.08*(x-298.16))
+! ---------------------------------------------------------------------------------
+
+! constants
+    RSDRYC  = 40.0          !original was 40.0
+    RSWOODC = 3.0E-10       !
+    BF      = 0.90          !original was 0.90   ! carbon to roots
+    WSTRC   = 100.0
+    LAIMIN  = 0.05
+    XSAMIN  = 0.01
+
+    SAPM    = 3.*0.001      ! m2/kg -->m2/g
+    LFMSMN  = laimin/0.15
+    STMSMN  = xsamin/sapm
+! ---------------------------------------------------------------------------------
+
+! carbon assimilation
+! 1 mole -> 12 g carbon or 44 g CO2 or 30 g CH20
+
+     CARBFX     = PSN*12.e-6*IPA   !umol co2 /m2/ s -> g/m2/s C
+     CBHYDRAFX  = PSN*30.e-6*IPA
+
+! mainteinance respiration
+     FNF     = MIN( FOLN/MAX(1.E-06,parameters%FOLN_MX), 1.0 )
+     TF      = parameters%Q10MR**( (TV-298.16)/10. )
+     RESP    = parameters%LFMR25 * TF * FNF * XLAI  * (1.-WSTRES)  ! umol/m2/s
+     RSLEAF  = MIN(LFMASS/DT,RESP*30.e-6)                       ! g/m2/s
+     RSROOT  = parameters%RTMR25*(RTMASS*1E-3)*TF * 30.e-6         ! g/m2/s
+     RSSTEM  = parameters%STMR25*(STMASS*1E-3)*TF * 30.e-6         ! g/m2/s
+     RSGRAIN = parameters%GRAINMR25*(GRAIN*1E-3)*TF * 30.e-6       ! g/m2/s
+
+! calculate growth respiration for leaf, rtmass and grain
+
+     GRLEAF  = MAX(0.0,parameters%FRA_GR*(parameters%LFPT(PGS)*CBHYDRAFX  - RSLEAF))
+     GRSTEM  = MAX(0.0,parameters%FRA_GR*(parameters%STPT(PGS)*CBHYDRAFX  - RSSTEM))
+     GRROOT  = MAX(0.0,parameters%FRA_GR*(parameters%RTPT(PGS)*CBHYDRAFX  - RSROOT))
+     GRGRAIN = MAX(0.0,parameters%FRA_GR*(parameters%GRAINPT(PGS)*CBHYDRAFX  - RSGRAIN))
+
+! leaf turnover, stem turnover, root turnover and leaf death caused by soil
+! water and soil temperature stress
+
+     LFTOVR  = parameters%LF_OVRC(PGS)*1.E-6*LFMASS
+     RTTOVR  = parameters%RT_OVRC(PGS)*1.E-6*RTMASS
+     STTOVR  = parameters%ST_OVRC(PGS)*1.E-6*STMASS
+     SC  = EXP(-0.3*MAX(0.,TV-parameters%LEFREEZ)) * (LFMASS/120.)
+     SD  = EXP((WSTRES-1.)*WSTRC)
+     DIELF = LFMASS*1.E-6*(parameters%DILE_FW(PGS) * SD + parameters%DILE_FC(PGS)*SC)
+
+! Allocation of CBHYDRAFX to leaf, stem, root and grain at each growth stage
+
+
+     ADDNPPLF    = MAX(0.,parameters%LFPT(PGS)*CBHYDRAFX - GRLEAF-RSLEAF)
+     ADDNPPST    = MAX(0.,parameters%STPT(PGS)*CBHYDRAFX - GRSTEM-RSSTEM)
+    
+
+! avoid reducing leaf mass below its minimum value but conserve mass
+
+     LFDEL = (LFMASS - LFMSMN)/DT
+     STDEL = (STMASS - STMSMN)/DT
+     DIELF = MIN(DIELF,LFDEL+ADDNPPLF-LFTOVR)
+
+! net primary productivities
+
+     NPPL   = MAX(ADDNPPLF,-LFDEL)
+     NPPS   = MAX(ADDNPPST,-STDEL)
+     NPPR   = parameters%RTPT(PGS)*CBHYDRAFX - RSROOT - GRROOT
+     NPPG  =  parameters%GRAINPT(PGS)*CBHYDRAFX - RSGRAIN - GRGRAIN
+
+! masses of plant components
+  
+     LFMASS = LFMASS + (NPPL-LFTOVR-DIELF)*DT
+     STMASS = STMASS + (NPPS-STTOVR)*DT   ! g/m2
+     RTMASS = RTMASS + (NPPR-RTTOVR)*DT
+     GRAIN =  GRAIN + NPPG*DT 
+
+     GPP = CBHYDRAFX* 0.4 !!g/m2/s C  0.4=12/30, CH20 to C
+
+     IF(PGS==6) THEN
+       STMASS = STMASS - STMASS*(0.00005)
+       RTMASS = RTMASS - RTMASS*(0.0005)
+       GRAIN  = GRAIN + STMASS*(0.00005) + RTMASS*(0.0005) 
+     END IF
+    
+     IF(RTMASS.LT.0.0) THEN
+       RTTOVR = NPPR
+       RTMASS = 0.0
+     ENDIF
+
+     IF(GRAIN.LT.0.0) THEN
+       GRAIN = 0.0
+     ENDIF
+
+ ! soil carbon budgets
+
+     IF(PGS == 1 .OR. PGS == 2 .OR. PGS == 8) THEN
+       FASTCP=1000
+     ELSE
+       FASTCP = FASTCP + (RTTOVR+LFTOVR+STTOVR+DIELF)*DT 
+     END IF
+     FST = 2.0**( (STC-283.16)/10. )
+     FSW = WROOT / (0.20+WROOT) * 0.23 / (0.23+WROOT)
+     RSSOIL = FSW * FST * parameters%MRP* MAX(0.,FASTCP*1.E-3)*12.E-6
+
+     STABLC = 0.1*RSSOIL
+     FASTCP = FASTCP - (RSSOIL + STABLC)*DT
+     STBLCP = STBLCP + STABLC*DT
+
+!  total carbon flux
+
+     CFLUX  = - CARBFX + RSLEAF + RSROOT  + RSSTEM &
+              + RSSOIL + GRLEAF + GRROOT                  ! g/m2/s 0.4=12/30, CH20 to C
+
+! for outputs
+                                                                 !g/m2/s C
+
+     NPP   = (NPPL + NPPS+ NPPR +NPPG)*0.4      !!g/m2/s C  0.4=12/30, CH20 to C
+ 
+  
+     AUTORS = RSROOT + RSGRAIN  + RSLEAF +  &                     !g/m2/s C
+              GRLEAF + GRROOT + GRGRAIN                           !g/m2/s C
+
+     HETERS = RSSOIL                                             !g/m2/s C
+     NEE    = (AUTORS + HETERS - GPP)*44./30.                    !g/m2/s CO2
+     TOTSC  = FASTCP + STBLCP                                    !g/m2   C
+
+     TOTLB  = LFMASS + RTMASS + GRAIN         
+
+! leaf area index and stem area index
+  
+     XLAI    = MAX(LFMASS*parameters%BIO2LAI,LAIMIN)
+     XSAI    = MAX(STMASS*SAPM,XSAMIN)
+
+   
+!After harversting
+     IF(PGS == 8 ) THEN
+       LFMASS = 0.62
+       STMASS = 0
+       TOTLB  = 0
+       GPP    = 0
+       NPP    = 0
+       GRAIN  = 0
+       AUTORS = 0
+       NEE    = 0
+     END IF
+
+    IF(PGS == 1 .OR. PGS == 2 .OR. PGS == 8) THEN
+     XLAI   = 0.05
+     XSAI   = 0.05
+     LFMASS = LFMSMN
+     STMASS = STMSMN
+     RTMASS = 0
+    END IF 
+    
+END SUBROUTINE CO2FLUX_CROP
+
+!== begin growing_gdd ==============================================================================
+
+  SUBROUTINE GROWING_GDD (parameters,                         & !in
+                          T2M ,   DT, JULIAN,                 & !in
+                          GDD ,                               & !inout 
+                          IPA,   IHA,     PGS)                  !out  
+!===================================================================================================
+
+! input
+
+  type (noahmp_parameters), intent(in) :: parameters
+   REAL                     , INTENT(IN)        :: T2M     !Air temperature
+   REAL                     , INTENT(IN)        :: DT      !time step (s)
+   REAL                     , INTENT(IN)        :: JULIAN  !Julian day of year (fractional) ( 0 <= JULIAN < YEARLEN )
+
+! input and output
+
+   REAL                     , INTENT(INOUT)     :: GDD     !growing degress days
+
+! output
+
+   INTEGER                  , INTENT(OUT)       :: IPA     !Planting index index(0=off, 1=on)
+   INTEGER                  , INTENT(OUT)       :: IHA     !Havestindex(0=on,1=off) 
+   INTEGER                  , INTENT(OUT)       :: PGS     !Plant growth stage(1=S1,2=S2,3=S3)
+
+!local 
+
+   REAL                                         :: GDDDAY    !gap bewtween GDD and GDD8
+   REAL                                         :: DAYOFS2   !DAYS in stage2
+   REAL                                         :: TDIFF     !temperature difference for growing degree days calculation
+   REAL                                         :: TC
+
+   TC = T2M - 273.15
+
+!Havestindex(0=on,1=off) 
+
+   IPA = 1
+   IHA = 1
+
+!turn on/off the planting 
+ 
+   IF(JULIAN < parameters%PLTDAY)  IPA = 0
+
+!turn on/off the harvesting
+    IF(JULIAN >= parameters%HSDAY) IHA = 0
+   
+!Calculate the growing degree days
+   
+    IF(TC <  parameters%GDDTBASE) THEN
+      TDIFF = 0.0
+    ELSEIF(TC >= parameters%GDDTCUT) THEN
+      TDIFF = parameters%GDDTCUT - parameters%GDDTBASE
+    ELSE
+      TDIFF = TC - parameters%GDDTBASE
+    END IF
+
+    GDD     = (GDD + TDIFF) * IPA * IHA
+
+    GDDDAY  = GDD / (86400.0 / DT)
+
+   ! Decide corn growth stage, based on Hybrid-Maize 
+   !   PGS = 1 : Before planting
+   !   PGS = 2 : from tassel initiation to silking
+   !   PGS = 3 : from silking to effective grain filling
+   !   PGS = 4 : from effective grain filling to pysiological maturity 
+   !   PGS = 5 : GDDM=1389
+   !   PGS = 6 :
+   !   PGS = 7 :
+   !   PGS = 8 :
+   !  GDDM = 1389
+   !  GDDM = 1555
+   ! GDDSK = 0.41*GDDM +145.4+150 !from hybrid-maize 
+   ! GDDS1 = ((GDDSK-96)/38.9-4)*21
+   ! GDDS1 = 0.77*GDDSK
+   ! GDDS3 = GDDSK+170
+   ! GDDS3 = 170
+
+   IF(GDDDAY > 0.0) PGS = 2
+
+   IF(GDDDAY >= parameters%GDDS1)  PGS = 3
+
+   IF(GDDDAY >= parameters%GDDS2)  PGS = 4 
+
+   IF(GDDDAY >= parameters%GDDS3)  PGS = 5
+
+   IF(GDDDAY >= parameters%GDDS4)  PGS = 6
+
+   IF(GDDDAY >= parameters%GDDS5)  PGS = 7
+
+   IF(JULIAN >= parameters%HSDAY)  PGS = 8
+ 
+   IF(JULIAN <  parameters%PLTDAY) PGS = 1   
+
+END SUBROUTINE GROWING_GDD
+
+!== begin psn_crop =================================================================================
+
+SUBROUTINE PSN_CROP ( parameters,       & !in
+                      SOLDN, XLAI,T2M,  & !in
+                      PSNCROP        )    !out
+!===================================================================================================
+
+! input
+
+  type (noahmp_parameters), intent(in) :: parameters
+  REAL     , INTENT(IN)    :: SOLDN    ! downward solar radiation
+  REAL     , INTENT(IN)    :: XLAI     ! LAI
+  REAL     , INTENT(IN)    :: T2M      ! air temp
+  REAL     , INTENT(OUT)   :: PSNCROP  !
+
+!local
+
+  REAL                     :: PAR      ! photosynthetically active radiation (w/m2) 1 W m-2 = 0.0864 MJ m-2 day-1
+  REAL                     :: Amax     ! Maximum CO2 assimulation rate g/co2/s  
+  REAL                     :: L1       ! Three Gaussian method
+  REAL                     :: L2       ! Three Gaussian method
+  REAL                     :: L3       ! Three Gaussian method
+  REAL                     :: I1       ! Three Gaussian method
+  REAL                     :: I2       ! Three Gaussian method
+  REAL                     :: I3       ! Three Gaussian method
+  REAL                     :: A1       ! Three Gaussian method
+  REAL                     :: A2       ! Three Gaussian method
+  REAL                     :: A3       ! Three Gaussian method
+  REAL                     :: A        ! CO2 Assimulation 
+  REAL                     :: TC
+
+  TC = T2M - 273.15
+
+  PAR = parameters%I2PAR * SOLDN * 0.0036  !w to MJ m-2
+
+  IF(TC < parameters%TASSIM0) THEN
+    Amax = 1E-10
+  ELSEIF(TC >= parameters%TASSIM0 .and. TC < parameters%TASSIM1) THEN
+    Amax = (TC - parameters%TASSIM0) * parameters%Aref / (parameters%TASSIM1 - parameters%TASSIM0)
+  ELSEIF(TC >= parameters%TASSIM1 .and. TC < parameters%TASSIM2) THEN
+    Amax = parameters%Aref
+  ELSE
+    Amax= parameters%Aref - 0.2 * (T2M - parameters%TASSIM2)
+  ENDIF 
+  
+  Amax = max(amax,0.01)
+
+  IF(XLAI <= 0.05) THEN
+    L1 = 0.1127 * 0.05   !use initial LAI(0.05), avoid error
+    L2 = 0.5    * 0.05
+    L3 = 0.8873 * 0.05
+  ELSE
+    L1 = 0.1127 * XLAI
+    L2 = 0.5    * XLAI
+    L3 = 0.8873 * XLAI
+  END IF
+
+  I1 = parameters%k * PAR * exp(-parameters%k * L1)
+  I2 = parameters%k * PAR * exp(-parameters%k * L2)
+  I3 = parameters%k * PAR * exp(-parameters%k * L3)
+
+  I1 = max(I1,1E-10)
+  I2 = max(I2,1E-10)
+  I3 = max(I3,1E-10)
+
+  A1 = Amax * (1 - exp(-parameters%epsi * I1 / Amax))
+  A2 = Amax * (1 - exp(-parameters%epsi * I2 / Amax)) * 1.6
+  A3 = Amax * (1 - exp(-parameters%epsi * I3 / Amax))
+
+  IF (XLAI <= 0.05) THEN
+    A  = (A1+A2+A3) / 3.6 * 0.05
+  ELSEIF (XLAI > 0.05 .and. XLAI <= 4.0) THEN
+    A  = (A1+A2+A3) / 3.6 * XLAI
+  ELSE
+    A = (A1+A2+A3) / 3.6 * 4
+  END IF
+
+  A = A * parameters%PSNRF ! Attainable 
+
+  PSNCROP = 6.313 * A   ! (1/44) * 1000000)/3600 = 6.313
+
+END SUBROUTINE PSN_CROP
+
 !== begin bvocflux =================================================================================
 
 !  SUBROUTINE BVOCFLUX(parameters,VOCFLX,  VEGTYP,  VEGFRAC,  APAR,   TV )
@@ -8267,6 +8892,8 @@ MODULE NOAHMP_TABLES
     INTEGER, PRIVATE, PARAMETER :: MBAND = 2
     INTEGER, PRIVATE, PARAMETER :: MSC   = 8
     INTEGER, PRIVATE, PARAMETER :: MAX_SOILTYP = 30
+    INTEGER, PRIVATE, PARAMETER :: NCROP = 5
+    INTEGER, PRIVATE, PARAMETER :: NSTAGE = 8
 
 ! MPTABLE.TBL vegetation parameters
 
@@ -8377,6 +9004,53 @@ MODULE NOAHMP_TABLES
     REAL :: SSI_TABLE      !liquid water holding capacity for snowpack (m3/m3) (0.03)
     REAL :: SWEMX_TABLE    !new snow mass to fully cover old snow (mm)
     REAL :: RSURF_SNOW_TABLE    !surface resistance for snow(s/m)
+
+! MPTABLE.TBL crop parameters
+
+ INTEGER :: PLTDAY_TABLE(NCROP)         ! Planting date
+ INTEGER :: HSDAY_TABLE(NCROP)          ! Harvest date
+    REAL :: PLANTPOP_TABLE(NCROP)       ! Plant density [per ha] - used?
+    REAL :: IRRI_TABLE(NCROP)           ! Irrigation strategy 0= non-irrigation 1=irrigation (no water-stress)
+
+    REAL :: GDDTBASE_TABLE(NCROP)       ! Base temperature for GDD accumulation [C]
+    REAL :: GDDTCUT_TABLE(NCROP)        ! Upper temperature for GDD accumulation [C]
+    REAL :: GDDS1_TABLE(NCROP)          ! GDD from seeding to emergence
+    REAL :: GDDS2_TABLE(NCROP)          ! GDD from seeding to initial vegetative 
+    REAL :: GDDS3_TABLE(NCROP)          ! GDD from seeding to post vegetative 
+    REAL :: GDDS4_TABLE(NCROP)          ! GDD from seeding to intial reproductive
+    REAL :: GDDS5_TABLE(NCROP)          ! GDD from seeding to pysical maturity 
+
+ INTEGER :: C3C4_TABLE(NCROP)           ! photosynthetic pathway:  1. = c3 2. = c4
+    REAL :: AREF_TABLE(NCROP)           ! reference maximum CO2 assimulation rate 
+    REAL :: PSNRF_TABLE(NCROP)          ! CO2 assimulation reduction factor(0-1) (caused by non-modeling part,e.g.pest,weeds)
+    REAL :: I2PAR_TABLE(NCROP)          ! Fraction of incoming solar radiation to photosynthetically active radiation
+    REAL :: TASSIM0_TABLE(NCROP)        ! Minimum temperature for CO2 assimulation [C]
+    REAL :: TASSIM1_TABLE(NCROP)        ! CO2 assimulation linearly increasing until temperature reaches T1 [C]
+    REAL :: TASSIM2_TABLE(NCROP)        ! CO2 assmilation rate remain at Aref until temperature reaches T2 [C]
+    REAL :: K_TABLE(NCROP)              ! light extinction coefficient
+    REAL :: EPSI_TABLE(NCROP)           ! initial light use efficiency
+
+    REAL :: Q10MR_TABLE(NCROP)          ! q10 for maintainance respiration
+    REAL :: FOLN_MX_TABLE(NCROP)        ! foliage nitrogen concentration when f(n)=1 (%)
+    REAL :: LEFREEZ_TABLE(NCROP)        ! characteristic T for leaf freezing [K]
+
+    REAL :: DILE_FC_TABLE(NCROP,NSTAGE) ! coeficient for temperature leaf stress death [1/s]
+    REAL :: DILE_FW_TABLE(NCROP,NSTAGE) ! coeficient for water leaf stress death [1/s]
+    REAL :: FRA_GR_TABLE(NCROP)         ! fraction of growth respiration
+
+    REAL :: LF_OVRC_TABLE(NCROP,NSTAGE) ! fraction of leaf turnover  [1/s]
+    REAL :: ST_OVRC_TABLE(NCROP,NSTAGE) ! fraction of stem turnover  [1/s]
+    REAL :: RT_OVRC_TABLE(NCROP,NSTAGE) ! fraction of root tunrover  [1/s]
+    REAL :: LFMR25_TABLE(NCROP)         !  leaf maintenance respiration at 25C [umol CO2/m**2  /s]
+    REAL :: STMR25_TABLE(NCROP)         !  stem maintenance respiration at 25C [umol CO2/kg bio/s]
+    REAL :: RTMR25_TABLE(NCROP)         !  root maintenance respiration at 25C [umol CO2/kg bio/s]
+    REAL :: GRAINMR25_TABLE(NCROP)      ! grain maintenance respiration at 25C [umol CO2/kg bio/s]
+
+    REAL :: LFPT_TABLE(NCROP,NSTAGE)    ! fraction of carbohydrate flux to leaf
+    REAL :: STPT_TABLE(NCROP,NSTAGE)    ! fraction of carbohydrate flux to stem
+    REAL :: RTPT_TABLE(NCROP,NSTAGE)    ! fraction of carbohydrate flux to root
+    REAL :: GRAINPT_TABLE(NCROP,NSTAGE) ! fraction of carbohydrate flux to grain
+    REAL :: BIO2LAI_TABLE(NCROP)        ! leaf are per living leaf biomass [m^2/kg]
 
 CONTAINS
 
@@ -8773,6 +9447,224 @@ RSURF_SNOW_TABLE     = -1.E36
 RSURF_SNOW_TABLE     = RSURF_SNOW
 
   end subroutine read_mp_global_parameters
+
+  subroutine read_mp_crop_parameters()
+    implicit none
+    integer :: ierr
+
+ INTEGER, DIMENSION(NCROP) :: PLTDAY
+ INTEGER, DIMENSION(NCROP) :: HSDAY
+    REAL, DIMENSION(NCROP) :: PLANTPOP
+    REAL, DIMENSION(NCROP) :: IRRI
+    REAL, DIMENSION(NCROP) :: GDDTBASE
+    REAL, DIMENSION(NCROP) :: GDDTCUT
+    REAL, DIMENSION(NCROP) :: GDDS1
+    REAL, DIMENSION(NCROP) :: GDDS2
+    REAL, DIMENSION(NCROP) :: GDDS3
+    REAL, DIMENSION(NCROP) :: GDDS4
+    REAL, DIMENSION(NCROP) :: GDDS5
+ INTEGER, DIMENSION(NCROP) :: C3C4
+    REAL, DIMENSION(NCROP) :: AREF
+    REAL, DIMENSION(NCROP) :: PSNRF
+    REAL, DIMENSION(NCROP) :: I2PAR
+    REAL, DIMENSION(NCROP) :: TASSIM0
+    REAL, DIMENSION(NCROP) :: TASSIM1
+    REAL, DIMENSION(NCROP) :: TASSIM2
+    REAL, DIMENSION(NCROP) :: K
+    REAL, DIMENSION(NCROP) :: EPSI
+    REAL, DIMENSION(NCROP) :: Q10MR
+    REAL, DIMENSION(NCROP) :: FOLN_MX
+    REAL, DIMENSION(NCROP) :: LEFREEZ
+    REAL, DIMENSION(NCROP) :: DILE_FC_S1,DILE_FC_S2,DILE_FC_S3,DILE_FC_S4,DILE_FC_S5,DILE_FC_S6,DILE_FC_S7,DILE_FC_S8
+    REAL, DIMENSION(NCROP) :: DILE_FW_S1,DILE_FW_S2,DILE_FW_S3,DILE_FW_S4,DILE_FW_S5,DILE_FW_S6,DILE_FW_S7,DILE_FW_S8
+    REAL, DIMENSION(NCROP) :: FRA_GR
+    REAL, DIMENSION(NCROP) :: LF_OVRC_S1,LF_OVRC_S2,LF_OVRC_S3,LF_OVRC_S4,LF_OVRC_S5,LF_OVRC_S6,LF_OVRC_S7,LF_OVRC_S8
+    REAL, DIMENSION(NCROP) :: ST_OVRC_S1,ST_OVRC_S2,ST_OVRC_S3,ST_OVRC_S4,ST_OVRC_S5,ST_OVRC_S6,ST_OVRC_S7,ST_OVRC_S8
+    REAL, DIMENSION(NCROP) :: RT_OVRC_S1,RT_OVRC_S2,RT_OVRC_S3,RT_OVRC_S4,RT_OVRC_S5,RT_OVRC_S6,RT_OVRC_S7,RT_OVRC_S8
+    REAL, DIMENSION(NCROP) :: LFMR25
+    REAL, DIMENSION(NCROP) :: STMR25
+    REAL, DIMENSION(NCROP) :: RTMR25
+    REAL, DIMENSION(NCROP) :: GRAINMR25
+    REAL, DIMENSION(NCROP) :: LFPT_S1,LFPT_S2,LFPT_S3,LFPT_S4,LFPT_S5,LFPT_S6,LFPT_S7,LFPT_S8
+    REAL, DIMENSION(NCROP) :: STPT_S1,STPT_S2,STPT_S3,STPT_S4,STPT_S5,STPT_S6,STPT_S7,STPT_S8
+    REAL, DIMENSION(NCROP) :: RTPT_S1,RTPT_S2,RTPT_S3,RTPT_S4,RTPT_S5,RTPT_S6,RTPT_S7,RTPT_S8
+    REAL, DIMENSION(NCROP) :: GRAINPT_S1,GRAINPT_S2,GRAINPT_S3,GRAINPT_S4,GRAINPT_S5,GRAINPT_S6,GRAINPT_S7,GRAINPT_S8
+    REAL, DIMENSION(NCROP) :: BIO2LAI
+
+
+    NAMELIST / noahmp_crop_parameters /     PLTDAY,     HSDAY,  PLANTPOP,      IRRI,  GDDTBASE,   GDDTCUT,     GDDS1,     GDDS2, &
+                                             GDDS3,     GDDS4,     GDDS5,      C3C4,      AREF,     PSNRF,     I2PAR,   TASSIM0, &
+                                           TASSIM1,   TASSIM2,         K,      EPSI,     Q10MR,   FOLN_MX,   LEFREEZ,            &
+                                        DILE_FC_S1,DILE_FC_S2,DILE_FC_S3,DILE_FC_S4,DILE_FC_S5,DILE_FC_S6,DILE_FC_S7,DILE_FC_S8, &
+                                        DILE_FW_S1,DILE_FW_S2,DILE_FW_S3,DILE_FW_S4,DILE_FW_S5,DILE_FW_S6,DILE_FW_S7,DILE_FW_S8, &
+                                            FRA_GR,                                                                              &
+                                        LF_OVRC_S1,LF_OVRC_S2,LF_OVRC_S3,LF_OVRC_S4,LF_OVRC_S5,LF_OVRC_S6,LF_OVRC_S7,LF_OVRC_S8, &
+                                        ST_OVRC_S1,ST_OVRC_S2,ST_OVRC_S3,ST_OVRC_S4,ST_OVRC_S5,ST_OVRC_S6,ST_OVRC_S7,ST_OVRC_S8, &
+                                        RT_OVRC_S1,RT_OVRC_S2,RT_OVRC_S3,RT_OVRC_S4,RT_OVRC_S5,RT_OVRC_S6,RT_OVRC_S7,RT_OVRC_S8, &
+                                            LFMR25,    STMR25,    RTMR25, GRAINMR25,                                             &
+                                           LFPT_S1,   LFPT_S2,   LFPT_S3,   LFPT_S4,   LFPT_S5,   LFPT_S6,   LFPT_S7,   LFPT_S8, &
+                                           STPT_S1,   STPT_S2,   STPT_S3,   STPT_S4,   STPT_S5,   STPT_S6,   STPT_S7,   STPT_S8, &
+                                           RTPT_S1,   RTPT_S2,   RTPT_S3,   RTPT_S4,   RTPT_S5,   RTPT_S6,   RTPT_S7,   RTPT_S8, &
+                                        GRAINPT_S1,GRAINPT_S2,GRAINPT_S3,GRAINPT_S4,GRAINPT_S5,GRAINPT_S6,GRAINPT_S7,GRAINPT_S8, &
+                                           BIO2LAI
+
+
+    ! Initialize our variables to bad values, so that if the namelist read fails, we come to a screeching halt as soon as we try to use anything.
+       PLTDAY_TABLE     = -99999
+        HSDAY_TABLE     = -99999
+     PLANTPOP_TABLE     = -1.E36
+         IRRI_TABLE     = -1.E36
+     GDDTBASE_TABLE     = -1.E36
+      GDDTCUT_TABLE     = -1.E36
+        GDDS1_TABLE     = -1.E36
+        GDDS2_TABLE     = -1.E36
+        GDDS3_TABLE     = -1.E36
+        GDDS4_TABLE     = -1.E36
+        GDDS5_TABLE     = -1.E36
+         C3C4_TABLE     = -99999
+         AREF_TABLE     = -1.E36
+        PSNRF_TABLE     = -1.E36
+        I2PAR_TABLE     = -1.E36
+      TASSIM0_TABLE     = -1.E36
+      TASSIM1_TABLE     = -1.E36
+      TASSIM2_TABLE     = -1.E36
+            K_TABLE     = -1.E36
+         EPSI_TABLE     = -1.E36
+        Q10MR_TABLE     = -1.E36
+      FOLN_MX_TABLE     = -1.E36
+      LEFREEZ_TABLE     = -1.E36
+      DILE_FC_TABLE     = -1.E36
+      DILE_FW_TABLE     = -1.E36
+       FRA_GR_TABLE     = -1.E36
+      LF_OVRC_TABLE     = -1.E36
+      ST_OVRC_TABLE     = -1.E36
+      RT_OVRC_TABLE     = -1.E36
+       LFMR25_TABLE     = -1.E36
+       STMR25_TABLE     = -1.E36
+       RTMR25_TABLE     = -1.E36
+    GRAINMR25_TABLE     = -1.E36
+         LFPT_TABLE     = -1.E36
+         STPT_TABLE     = -1.E36
+         RTPT_TABLE     = -1.E36
+      GRAINPT_TABLE     = -1.E36
+      BIO2LAI_TABLE     = -1.E36
+
+
+    open(15, file="MPTABLE.TBL", status='old', form='formatted', action='read', iostat=ierr)
+    if (ierr /= 0) then
+       write(*,'("****** Error ******************************************************")')
+       write(*,'("Cannot find file MPTABLE.TBL")')
+       write(*,'("STOP")')
+       write(*,'("*******************************************************************")')
+       call wrf_error_fatal("STOP in Noah-MP read_mp_rad_parameters")
+    endif
+
+    read(15,noahmp_crop_parameters)
+    close(15)
+
+       PLTDAY_TABLE      = PLTDAY
+        HSDAY_TABLE      = HSDAY
+     PLANTPOP_TABLE      = PLANTPOP
+         IRRI_TABLE      = IRRI
+     GDDTBASE_TABLE      = GDDTBASE
+      GDDTCUT_TABLE      = GDDTCUT
+        GDDS1_TABLE      = GDDS1
+        GDDS2_TABLE      = GDDS2
+        GDDS3_TABLE      = GDDS3
+        GDDS4_TABLE      = GDDS4
+        GDDS5_TABLE      = GDDS5
+         C3C4_TABLE      = C3C4
+         AREF_TABLE      = AREF
+        PSNRF_TABLE      = PSNRF
+        I2PAR_TABLE      = I2PAR
+      TASSIM0_TABLE      = TASSIM0
+      TASSIM1_TABLE      = TASSIM1
+      TASSIM2_TABLE      = TASSIM2
+            K_TABLE      = K
+         EPSI_TABLE      = EPSI
+        Q10MR_TABLE      = Q10MR
+      FOLN_MX_TABLE      = FOLN_MX
+      LEFREEZ_TABLE      = LEFREEZ
+      DILE_FC_TABLE(:,1) = DILE_FC_S1
+      DILE_FC_TABLE(:,2) = DILE_FC_S2
+      DILE_FC_TABLE(:,3) = DILE_FC_S3
+      DILE_FC_TABLE(:,4) = DILE_FC_S4
+      DILE_FC_TABLE(:,5) = DILE_FC_S5
+      DILE_FC_TABLE(:,6) = DILE_FC_S6
+      DILE_FC_TABLE(:,7) = DILE_FC_S7
+      DILE_FC_TABLE(:,8) = DILE_FC_S8
+      DILE_FW_TABLE(:,1) = DILE_FW_S1
+      DILE_FW_TABLE(:,2) = DILE_FW_S2
+      DILE_FW_TABLE(:,3) = DILE_FW_S3
+      DILE_FW_TABLE(:,4) = DILE_FW_S4
+      DILE_FW_TABLE(:,5) = DILE_FW_S5
+      DILE_FW_TABLE(:,6) = DILE_FW_S6
+      DILE_FW_TABLE(:,7) = DILE_FW_S7
+      DILE_FW_TABLE(:,8) = DILE_FW_S8
+       FRA_GR_TABLE      = FRA_GR
+      LF_OVRC_TABLE(:,1) = LF_OVRC_S1
+      LF_OVRC_TABLE(:,2) = LF_OVRC_S2
+      LF_OVRC_TABLE(:,3) = LF_OVRC_S3
+      LF_OVRC_TABLE(:,4) = LF_OVRC_S4
+      LF_OVRC_TABLE(:,5) = LF_OVRC_S5
+      LF_OVRC_TABLE(:,6) = LF_OVRC_S6
+      LF_OVRC_TABLE(:,7) = LF_OVRC_S7
+      LF_OVRC_TABLE(:,8) = LF_OVRC_S8
+      ST_OVRC_TABLE(:,1) = ST_OVRC_S1
+      ST_OVRC_TABLE(:,2) = ST_OVRC_S2
+      ST_OVRC_TABLE(:,3) = ST_OVRC_S3
+      ST_OVRC_TABLE(:,4) = ST_OVRC_S4
+      ST_OVRC_TABLE(:,5) = ST_OVRC_S5
+      ST_OVRC_TABLE(:,6) = ST_OVRC_S6
+      ST_OVRC_TABLE(:,7) = ST_OVRC_S7
+      ST_OVRC_TABLE(:,8) = ST_OVRC_S8
+      RT_OVRC_TABLE(:,1) = RT_OVRC_S1
+      RT_OVRC_TABLE(:,2) = RT_OVRC_S2
+      RT_OVRC_TABLE(:,3) = RT_OVRC_S3
+      RT_OVRC_TABLE(:,4) = RT_OVRC_S4
+      RT_OVRC_TABLE(:,5) = RT_OVRC_S5
+      RT_OVRC_TABLE(:,6) = RT_OVRC_S6
+      RT_OVRC_TABLE(:,7) = RT_OVRC_S7
+      RT_OVRC_TABLE(:,8) = RT_OVRC_S8
+       LFMR25_TABLE      = LFMR25
+       STMR25_TABLE      = STMR25
+       RTMR25_TABLE      = RTMR25
+    GRAINMR25_TABLE      = GRAINMR25
+         LFPT_TABLE(:,1) = LFPT_S1
+         LFPT_TABLE(:,2) = LFPT_S2
+         LFPT_TABLE(:,3) = LFPT_S3
+         LFPT_TABLE(:,4) = LFPT_S4
+         LFPT_TABLE(:,5) = LFPT_S5
+         LFPT_TABLE(:,6) = LFPT_S6
+         LFPT_TABLE(:,7) = LFPT_S7
+         LFPT_TABLE(:,8) = LFPT_S8
+         STPT_TABLE(:,1) = STPT_S1
+         STPT_TABLE(:,2) = STPT_S2
+         STPT_TABLE(:,3) = STPT_S3
+         STPT_TABLE(:,4) = STPT_S4
+         STPT_TABLE(:,5) = STPT_S5
+         STPT_TABLE(:,6) = STPT_S6
+         STPT_TABLE(:,7) = STPT_S7
+         STPT_TABLE(:,8) = STPT_S8
+         RTPT_TABLE(:,1) = RTPT_S1
+         RTPT_TABLE(:,2) = RTPT_S2
+         RTPT_TABLE(:,3) = RTPT_S3
+         RTPT_TABLE(:,4) = RTPT_S4
+         RTPT_TABLE(:,5) = RTPT_S5
+         RTPT_TABLE(:,6) = RTPT_S6
+         RTPT_TABLE(:,7) = RTPT_S7
+         RTPT_TABLE(:,8) = RTPT_S8
+      GRAINPT_TABLE(:,1) = GRAINPT_S1
+      GRAINPT_TABLE(:,2) = GRAINPT_S2
+      GRAINPT_TABLE(:,3) = GRAINPT_S3
+      GRAINPT_TABLE(:,4) = GRAINPT_S4
+      GRAINPT_TABLE(:,5) = GRAINPT_S5
+      GRAINPT_TABLE(:,6) = GRAINPT_S6
+      GRAINPT_TABLE(:,7) = GRAINPT_S7
+      GRAINPT_TABLE(:,8) = GRAINPT_S8
+      BIO2LAI_TABLE      = BIO2LAI
+
+  end subroutine read_mp_crop_parameters
 
 END MODULE NOAHMP_TABLES
 

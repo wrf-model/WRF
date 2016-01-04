@@ -15,7 +15,7 @@ CONTAINS
 		 XLAND,     XICE,XICE_THRES,                                & ! IN : Vegetation/Soil characteristics
                  IDVEG, IOPT_CRS,  IOPT_BTR, IOPT_RUN, IOPT_SFC, IOPT_FRZ,  & ! IN : User options
               IOPT_INF, IOPT_RAD,  IOPT_ALB, IOPT_SNF,IOPT_TBOT, IOPT_STC,  & ! IN : User options
-              IOPT_GLA,  IZ0TLND,                                           & ! IN : User options
+              IOPT_GLA, IOPT_RSF,   IZ0TLND,                                & ! IN : User options
                    T3D,     QV3D,     U_PHY,    V_PHY,   SWDOWN,      GLW,  & ! IN : Forcing
 		 P8W3D,PRECIP_IN,        SR,                                & ! IN : Forcing
                    TSK,      HFX,      QFX,        LH,   GRDFLX,    SMSTAV, & ! IN/OUT LSM eqv
@@ -89,6 +89,7 @@ CONTAINS
     INTEGER,                                         INTENT(IN   ) ::  IOPT_TBOT ! lower boundary of soil temperature (1->zero-flux; 2->Noah)
     INTEGER,                                         INTENT(IN   ) ::  IOPT_STC  ! snow/soil temperature time scheme
     INTEGER,                                         INTENT(IN   ) ::  IOPT_GLA  ! glacier option (1->phase change; 2->simple)
+    INTEGER,                                         INTENT(IN   ) ::  IOPT_RSF  ! surface resistance (1->Sakaguchi/Zeng; 2->Seller; 3->mod Sellers; 4->1+snow)
     INTEGER,                                         INTENT(IN   ) ::  IZ0TLND   ! option of Chen adjustment of Czil (not used)
     REAL,    DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   ) ::  T3D       ! 3D atmospheric temperature valid at mid-levels [K]
     REAL,    DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   ) ::  QV3D      ! 3D water vapor mixing ratio [kg/kg_dry]
@@ -412,7 +413,8 @@ CONTAINS
 ! ----------------------------------------------------------------------
 
     CALL NOAHMP_OPTIONS(IDVEG  ,IOPT_CRS  ,IOPT_BTR  ,IOPT_RUN  ,IOPT_SFC  ,IOPT_FRZ , &
-                     IOPT_INF  ,IOPT_RAD  ,IOPT_ALB  ,IOPT_SNF  ,IOPT_TBOT, IOPT_STC )
+                     IOPT_INF  ,IOPT_RAD  ,IOPT_ALB  ,IOPT_SNF  ,IOPT_TBOT, IOPT_STC , &
+		     IOPT_RSF )
 
     IPRINT    =  .false.                     ! debug printout
 
@@ -956,13 +958,14 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,parameter
 ! Transfer global parameters
 !------------------------------------------------------------------------------------------!
 
-   parameters%CO2       =    CO2_TABLE
-   parameters%O2        =     O2_TABLE
-   parameters%TIMEAN    = TIMEAN_TABLE
-   parameters%FSATMX    = FSATMX_TABLE
-   parameters%Z0SNO     =  Z0SNO_TABLE
-   parameters%SSI       =    SSI_TABLE
-   parameters%SWEMX     =  SWEMX_TABLE
+   parameters%CO2        =         CO2_TABLE
+   parameters%O2         =          O2_TABLE
+   parameters%TIMEAN     =      TIMEAN_TABLE
+   parameters%FSATMX     =      FSATMX_TABLE
+   parameters%Z0SNO      =       Z0SNO_TABLE
+   parameters%SSI        =         SSI_TABLE
+   parameters%SWEMX      =       SWEMX_TABLE
+   parameters%RSURF_SNOW =  RSURF_SNOW_TABLE
 
 ! ----------------------------------------------------------------------
 !  Transfer soil parameters

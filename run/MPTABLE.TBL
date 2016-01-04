@@ -319,5 +319,6 @@
   SSI    = 0.03         !liquid water holding capacity for snowpack (m3/m3) (0.03)
   SWEMX  = 1.00         !new snow mass to fully cover old snow (mm)
                         !equivalent to 10mm depth (density = 100 kg/m3)
+  RSURF_SNOW = 50.0     !surface resistence for snow [s/m]
 
 /

@@ -764,6 +764,7 @@ endif
         CALL wrf_put_dom_ti_integer   ( fid, 'OPT_TBOT',    config_flags%opt_tbot    , 1 , ierr )
         CALL wrf_put_dom_ti_integer   ( fid, 'OPT_STC',     config_flags%opt_stc     , 1 , ierr )
         CALL wrf_put_dom_ti_integer   ( fid, 'OPT_GLA',     config_flags%opt_gla     , 1 , ierr )
+        CALL wrf_put_dom_ti_integer   ( fid, 'OPT_RSF',     config_flags%opt_rsf     , 1 , ierr )
       ENDIF
 
 

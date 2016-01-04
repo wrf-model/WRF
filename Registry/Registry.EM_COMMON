@@ -2266,6 +2266,7 @@ rconfig   integer opt_snf     namelist,noah_mp      1           1         h    "
 rconfig   integer opt_tbot    namelist,noah_mp      1           2         h    "opt_tbot" "lower boundary of soil temperature (1->zero-flux; 2->Noah)"   ""
 rconfig   integer opt_stc     namelist,noah_mp      1           1         h    "opt_stc"  "soil/snow temperature time scheme 1->semi-implicit; 2->full-implicit (original Noah)"   ""
 rconfig   integer opt_gla     namelist,noah_mp      1           1         h    "opt_gla"  "glacier treatment option 1->includes phase change; 2->slab ice (Noah)"   ""
+rconfig   integer opt_rsf     namelist,noah_mp      1           1         h    "opt_rsf"  "surface evaporation resistance option"   ""
 rconfig   real    WTDDT               namelist,physics         max_domains     30.      h     "wtddt"    "minutes between calls to lateral hydro"  ""
 
 # For WRF Hydro

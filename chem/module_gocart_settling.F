@@ -255,19 +255,9 @@ SUBROUTINE gocart_settling_driver(dt,config_flags,t_phy,moist,      &
   IF (idust == 1) growth_fac = 1.0
   IF (iseas == 1) growth_fac = 3.0
 !
-! For dust_opt = 4 (UoC dust):
-! Change dust radius according to the size cut in module_qf03.F
-! Size cut: 2.5, 5, 10, 20 [um] in diameter, so far only 4 size bins
-! chem(i,k,j,p_dust_5) is for the sum over the size bins; 
-! So update chem(i,k,j,p_dust_5) by summation of chem(i,k,j,p_dust_1)...(p_dust_4).
-! The fifth component of reff_dust is meaningless.
-!
   IF (idust == 1 .and. uoc == 1) then
-      reff(1) = 1.25D-6
-      reff(2) = 2.5D-6
-      reff(3) = 5.0D-6
-      reff(4) = 10.0D-6
-      den(1) = 2560.                                              !also, change dust density for the first size bin
+      den(1) = 2650.            ! constant density is use in UoC dust emission schemes; 
+!                               dust radii are now consistent with GOCART dust schemes.  [mklose, 03082015]
   ENDIF
 
   DO k = 1, nmx                                                   ! k for different size bins
@@ -363,17 +353,6 @@ SUBROUTINE gocart_settling_driver(dt,config_flags,t_phy,moist,      &
         ENDDO                   !n, time
       ENDDO                     !k, bin
 !
-! For UoC dust schemes, there are 4 size bins: chem(i,k,j,p_dust_5) is the sum
-!
-      IF (uoc .eq. 1) THEN
-        IF ( idust.eq.1 ) THEN 
-          DO l = 1, lmx
-             tc(i,j,l,5)=tc(i,j,l,1)+tc(i,j,l,2)+tc(i,j,l,3)+tc(i,j,l,4)
-          ENDDO
-          graset(i,j,5)=graset(i,j,1)+graset(i,j,2)+graset(i,j,3)+graset(i,j,4)
-        ENDIF
-      ENDIF
-
     ENDDO                     !i
   END DO                      !j
 !$OMP END PARALLEL DO

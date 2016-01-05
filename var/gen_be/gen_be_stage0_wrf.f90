@@ -63,6 +63,8 @@ program gen_be_stage0_wrf
    real                  :: dim12_inv_v               ! 1 / (dim1*dim2).
    real                  :: dim12_inv                 ! 1 / (dim1*dim2).
    logical               :: test_inverse              ! Test conversion by performing inverse.
+   logical               :: file_exists               ! For checking if files exist
+
 
    integer               :: ifax1(1:num_fft_factors)  ! FFT factors.
    integer               :: ifax2(1:num_fft_factors)  ! FFT factors.
@@ -566,8 +568,8 @@ program gen_be_stage0_wrf
    close(gen_be_ounit)
 
    output_file='../grid_box_area'
-   inquire(exist=test_inverse,file=output_file)
-   if( .not.test_inverse )then		! misnomer use of test_inverse:
+   inquire(exist=file_exists,file=output_file)
+   if( .not. file_exists )then
       open(gen_be_ounit,file=output_file,form='unformatted')
       write(gen_be_ounit)dim1,dim2	! e_we-s_we, e_sn-s_sn
       mapfac_m=(ds/mapfac_m)**2		! cf. da_transfer_wrftoxb.inc

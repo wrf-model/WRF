@@ -42,9 +42,11 @@ while [[ $DATE -le $END_DATE_STAGE0 ]]; do
    mkdir ${TMP_DIR}  2>/dev/null
    cd ${TMP_DIR}
 
-   for SV in psi chi t rh ps; do
-      if [[ ! -d $SV ]]; then mkdir $SV; fi
-   done
+   if [[ $NL_CV_OPTIONS == 7 ]]; then
+      for SV in u v t rh ps; do mkdir -p $SV; done
+   else
+      for SV in psi chi t rh ps; do mkdir -p $SV; done
+   fi
 
    #  Create file dates:
    export FCST_TIME=$($DAAT $DATE $FCST_RANGE1)

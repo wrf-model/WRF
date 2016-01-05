@@ -5,7 +5,7 @@ module da_dynamics
    !---------------------------------------------------------------------------
 
    use da_control, only : ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte, &
-      gamma, gravity, ids,ide,jds,jde,kds,kde, global, test_transforms, &
+      ids,ide,jds,jde,kds,kde,ips,ipe,jps,jpe,kps,kpe,gamma, gravity,global,test_transforms, &
       fg_format, fg_format_wrf_arw_regional,fg_format_wrf_nmm_regional, &
       fg_format_wrf_arw_global, fg_format_kma_global, balance_geo,balance_geocyc, &
       balance_type, balance_cyc, gravity, convert_fd2uv, trace_use
@@ -14,8 +14,7 @@ module da_dynamics
    use module_dm, only : local_communicator, &
       ntasks_x, ntasks_y, data_order_xy, mytask, &
       ntasks
-   use module_comm_dm, only : halo_2d_work_sub
-   use da_control, only : ips,ipe,jps,jpe,kps,kpe
+   use module_comm_dm, only : halo_2d_work_sub, halo_wpec_sub, halo_wpec_adj_sub
 #endif
 
    use da_define_structures, only : xbx_type
@@ -28,9 +27,9 @@ module da_dynamics
 
    contains
 
-#include "da_balance_cycloterm.inc"
 #include "da_balance_cycloterm_adj.inc"
 #include "da_balance_cycloterm_lin.inc"
+#include "da_balance_cycloterm.inc"
 #include "da_balance_equation_adj.inc"
 #include "da_balance_equation_lin.inc"
 #include "da_balance_geoterm_adj.inc"
@@ -45,6 +44,11 @@ module da_dynamics
 #include "da_w_adjustment_adj.inc"
 #include "da_uv_to_vorticity.inc"
 #include "da_wz_base.inc"           
+#include "da_wpec_constraint.inc"
+#include "da_wpec_constraint_adj.inc"
+#include "da_wpec_constraint_cycloterm.inc"
+#include "da_wpec_constraint_geoterm.inc"
+#include "da_wpec_constraint_lin.inc"
 
 end module da_dynamics
 

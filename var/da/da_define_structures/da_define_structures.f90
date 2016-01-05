@@ -937,6 +937,7 @@ module da_define_structures
       real             :: jp
       real             :: js
       real             :: jl
+      real             :: jd
       type (jo_type)   :: jo
    end type j_type
 

@@ -3591,6 +3591,13 @@
                 CALL wrf_error_fatal("Error opening qr_acr_qg.dat. Aborting because force_read_thompson is .true.")
               ENDIF
             ENDIF
+!mchen add
+         ELSE
+            INQUIRE(63,opened=lopen)
+            IF (lopen) THEN
+              CLOSE(63)
+            ENDIF
+!mchen end
           ENDIF
         ELSE
           IF( force_read_thompson ) THEN

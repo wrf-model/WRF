@@ -26,56 +26,6 @@ MODULE NOAHMP_GLACIER_GLOBALS
   REAL, PARAMETER :: DENICE = 917.      !density of ice (kg/m3)
 
 ! =====================================options for different schemes================================
-! options for dynamic vegetation: 
-! 1 -> off (use table LAI; use FVEG = SHDFAC from input)
-! 2 -> on (together with OPT_CRS = 1)
-! 3 -> off (use table LAI; calculate FVEG)
-! 4 -> off (use table LAI; use maximum vegetation fraction)
-
-  INTEGER :: DVEG    != 2   !
-
-! options for canopy stomatal resistance
-! 1-> Ball-Berry; 2->Jarvis
-
-  INTEGER :: OPT_CRS != 1    !(must 1 when DVEG = 2)
-
-! options for soil moisture factor for stomatal resistance
-! 1-> Noah (soil moisture) 
-! 2-> CLM  (matric potential)
-! 3-> SSiB (matric potential)
-
-  INTEGER :: OPT_BTR != 1    !(suggested 1)
-
-! options for runoff and groundwater
-! 1 -> TOPMODEL with groundwater (Niu et al. 2007 JGR) ;
-! 2 -> TOPMODEL with an equilibrium water table (Niu et al. 2005 JGR) ;
-! 3 -> original surface and subsurface runoff (free drainage)
-! 4 -> BATS surface and subsurface runoff (free drainage)
-
-  INTEGER :: OPT_RUN != 1    !(suggested 1)
-
-! options for surface layer drag coeff (CH & CM)
-! 1->M-O ; 2->original Noah (Chen97); 3->MYJ consistent; 4->YSU consistent. 
-
-  INTEGER :: OPT_SFC != 1    !(1 or 2 or 3 or 4)
-
-! options for supercooled liquid water (or ice fraction)
-! 1-> no iteration (Niu and Yang, 2006 JHM); 2: Koren's iteration 
-
-  INTEGER :: OPT_FRZ != 1    !(1 or 2)
-
-! options for frozen soil permeability
-! 1 -> linear effects, more permeable (Niu and Yang, 2006, JHM)
-! 2 -> nonlinear effects, less permeable (old)
-
-  INTEGER :: OPT_INF != 1    !(suggested 1)
-
-! options for radiation transfer
-! 1 -> modified two-stream (gap = F(solar angle, 3D structure ...)<1-FVEG)
-! 2 -> two-stream applied to grid-cell (gap = 0)
-! 3 -> two-stream applied to vegetated fraction (gap=1-FVEG)
-
-  INTEGER :: OPT_RAD != 1    !(suggested 1)
 
 ! options for ground snow surface albedo
 ! 1-> BATS; 2 -> CLASS
@@ -97,6 +47,11 @@ MODULE NOAHMP_GLACIER_GLOBALS
 ! 1 -> semi-implicit; 2 -> full implicit (original Noah)
 
   INTEGER :: OPT_STC != 1    !(suggested 1)
+
+! options for glacier treatment
+! 1 -> include phase change of ice; 2 -> ice treatment more like original Noah
+
+  INTEGER :: OPT_GLA != 1    !(suggested 1)
 
 ! adjustable parameters for snow processes
 
@@ -304,12 +259,17 @@ contains
      CALL WATER_GLACIER (NSNOW  ,NSOIL  ,IMELT  ,DT     ,PRCP   ,SFCTMP , & !in
                          QVAP   ,QDEW   ,FICEOLD,ZSOIL  ,                 & !in
                          ISNOW  ,SNOWH  ,SNEQV  ,SNICE  ,SNLIQ  ,STC    , & !inout
-                         DZSNSO ,SH2O   ,SICE   ,PONDING,ZSNSO  ,         & !inout
+                         DZSNSO ,SH2O   ,SICE   ,PONDING,ZSNSO  ,FSH    , & !inout
                          RUNSRF ,RUNSUB ,QSNOW  ,PONDING1       ,PONDING2,QSNBOT,FPICE &  !out
 #ifdef WRF_HYDRO
                         , sfcheadrt                     &
 #endif
                         )
+
+     IF(OPT_GLA == 2) THEN
+       EDIR = QVAP - QDEW
+       FGEV = EDIR * LATHEA
+     END IF
 
      IF(MAXVAL(SICE) < 0.0001) THEN
        WRITE(message,*) "GLACIER HAS MELTED AT:",ILOC,JLOC," ARE YOU SURE THIS SHOULD BE A GLACIER POINT?"
@@ -560,7 +520,7 @@ contains
       IF (SNOWH > 0.05 .AND. TG > TFRZ) TG = TFRZ
      END IF
 
-! Energy released or consumed by snow & frozen soil
+! Energy released or consumed by snow & ice
 
  CALL PHASECHANGE_GLACIER (NSNOW   ,NSOIL   ,ISNOW   ,DT      ,FACT    , & !in
                            DZSNSO  ,                                     & !in
@@ -1081,7 +1041,11 @@ contains
         END IF
 
         CSH = RHOAIR*CPAIR/RAHB
-        CEV = RHOAIR*CPAIR/GAMMA/(RSURF+RAWB)
+	IF(SNOWH > 0.0 .OR. OPT_GLA == 1) THEN
+          CEV = RHOAIR*CPAIR/GAMMA/(RSURF+RAWB)
+	ELSE
+	  CEV = 0.0   ! don't allow any sublimation of glacier in opt_gla=2
+	END IF
 
 ! surface fluxes and dtg
 
@@ -1120,8 +1084,8 @@ contains
 ! if snow on ground and TG > TFRZ: reset TG = TFRZ. reevaluate ground fluxes.
 
      SICE = SMC - SH2O
-     IF(OPT_STC == 1) THEN
-     IF ((MAXVAL(SICE) > 0.0 .OR. SNOWH > 0.0) .AND. TGB > TFRZ) THEN
+     IF(OPT_STC == 1 .OR. OPT_STC ==3) THEN
+     IF ((MAXVAL(SICE) > 0.0 .OR. SNOWH > 0.0) .AND. TGB > TFRZ .AND. OPT_GLA == 1) THEN
           TGB = TFRZ
           IRB = CIR * TGB**4 - EMG*LWDN
           SHB = CSH * (TGB        - SFCTMP)
@@ -1496,7 +1460,7 @@ contains
         IF (K == ISNOW+1) THEN
            AI(K)    =   0.0
            CI(K)    = - DF(K)   * DDZ(K) / DENOM(K)
-           IF (OPT_STC == 1) THEN
+           IF (OPT_STC == 1 .OR. OPT_STC == 3) THEN
               BI(K) = - CI(K)
            END IF                                        
            IF (OPT_STC == 2) THEN
@@ -1692,12 +1656,7 @@ contains
          MLIQ(J) = SNLIQ(J)
     END DO
 
-    DO J = 1, NSOIL            ! all soil layers
-         MLIQ(J) =  SH2O(J)            * DZSNSO(J) * 1000.
-         MICE(J) = (SMC(J) - SH2O(J))  * DZSNSO(J) * 1000.
-    END DO
-
-    DO J = ISNOW+1,NSOIL       ! all layers
+    DO J = ISNOW+1,0           ! all snow layers; do ice later
          IMELT(J)    = 0
          HM(J)       = 0.
          XM(J)       = 0.
@@ -1706,7 +1665,106 @@ contains
          WMASS0(J)   = MICE(J) + MLIQ(J)
     ENDDO
     
-    DO J = ISNOW+1,NSOIL
+    DO J = ISNOW+1,0
+         IF (MICE(J) > 0. .AND. STC(J) >= TFRZ) THEN  ! melting 
+             IMELT(J) = 1
+         ENDIF
+         IF (MLIQ(J) > 0. .AND. STC(J)  < TFRZ) THEN  ! freezing 
+             IMELT(J) = 2
+         ENDIF
+
+    ENDDO
+
+! Calculate the energy surplus and loss for melting and freezing
+
+    DO J = ISNOW+1,0
+         IF (IMELT(J) > 0) THEN
+             HM(J) = (STC(J)-TFRZ)/FACT(J)
+             STC(J) = TFRZ
+         ENDIF
+
+         IF (IMELT(J) == 1 .AND. HM(J) < 0.) THEN
+            HM(J) = 0.
+            IMELT(J) = 0
+         ENDIF
+         IF (IMELT(J) == 2 .AND. HM(J) > 0.) THEN
+            HM(J) = 0.
+            IMELT(J) = 0
+         ENDIF
+         XM(J) = HM(J)*DT/HFUS                           
+    ENDDO
+
+! The rate of melting and freezing for snow without a layer, opt_gla==1 treated below
+
+IF (OPT_GLA == 2) THEN 
+
+    IF (ISNOW == 0 .AND. SNEQV > 0. .AND. STC(1) >= TFRZ) THEN  
+        HM(1)    = (STC(1)-TFRZ)/FACT(1)             ! available heat
+        STC(1)   = TFRZ                              ! set T to freezing
+        XM(1)    = HM(1)*DT/HFUS                     ! total snow melt possible       
+
+        TEMP1  = SNEQV
+        SNEQV  = MAX(0.,TEMP1-XM(1))                 ! snow remaining
+        PROPOR = SNEQV/TEMP1                         ! fraction melted
+        SNOWH  = MAX(0.,PROPOR * SNOWH)              ! new snow height
+        HEATR(1)  = HM(1) - HFUS*(TEMP1-SNEQV)/DT    ! excess heat
+        IF (HEATR(1) > 0.) THEN
+              XM(1)  = HEATR(1)*DT/HFUS             
+              STC(1) = STC(1) + FACT(1)*HEATR(1)     ! re-heat ice
+        ELSE
+              XM(1) = 0.                             ! heat used up
+              HM(1) = 0.
+        ENDIF
+        QMELT   = MAX(0.,(TEMP1-SNEQV))/DT           ! melted snow rate
+        XMF     = HFUS*QMELT                         ! melted snow energy
+        PONDING = TEMP1-SNEQV                        ! melt water
+    ENDIF
+
+END IF  ! OPT_GLA == 2
+
+! The rate of melting and freezing for snow
+
+    DO J = ISNOW+1,0
+      IF (IMELT(J) > 0 .AND. ABS(HM(J)) > 0.) THEN
+
+         HEATR(J) = 0.
+         IF (XM(J) > 0.) THEN                            
+            MICE(J) = MAX(0., WICE0(J)-XM(J))
+            HEATR(J) = HM(J) - HFUS*(WICE0(J)-MICE(J))/DT
+         ELSE IF (XM(J) < 0.) THEN                      
+            MICE(J) = MIN(WMASS0(J), WICE0(J)-XM(J))  
+            HEATR(J) = HM(J) - HFUS*(WICE0(J)-MICE(J))/DT
+         ENDIF
+
+         MLIQ(J) = MAX(0.,WMASS0(J)-MICE(J))
+
+         IF (ABS(HEATR(J)) > 0.) THEN
+            STC(J) = STC(J) + FACT(J)*HEATR(J)
+            IF (MLIQ(J)*MICE(J)>0.) STC(J) = TFRZ
+         ENDIF
+
+         QMELT = QMELT + MAX(0.,(WICE0(J)-MICE(J)))/DT
+
+      ENDIF
+    ENDDO
+
+IF (OPT_GLA == 1) THEN     ! operate on the ice layers
+
+    DO J = 1, NSOIL            ! all soil layers
+         MLIQ(J) =  SH2O(J)            * DZSNSO(J) * 1000.
+         MICE(J) = (SMC(J) - SH2O(J))  * DZSNSO(J) * 1000.
+    END DO
+
+    DO J = 1,NSOIL       ! all layers
+         IMELT(J)    = 0
+         HM(J)       = 0.
+         XM(J)       = 0.
+         WICE0(J)    = MICE(J)
+         WLIQ0(J)    = MLIQ(J)
+         WMASS0(J)   = MICE(J) + MLIQ(J)
+    ENDDO
+    
+    DO J = 1,NSOIL
          IF (MICE(J) > 0. .AND. STC(J) >= TFRZ) THEN  ! melting 
              IMELT(J) = 1
          ENDIF
@@ -1724,7 +1782,7 @@ contains
 
 ! Calculate the energy surplus and loss for melting and freezing
 
-    DO J = ISNOW+1,NSOIL
+    DO J = 1,NSOIL
          IF (IMELT(J) > 0) THEN
              HM(J) = (STC(J)-TFRZ)/FACT(J)
              STC(J) = TFRZ
@@ -1763,9 +1821,9 @@ contains
         PONDING = TEMP1-SNEQV
     ENDIF
 
-! The rate of melting and freezing for snow and soil
+! The rate of melting and freezing for soil
 
-    DO J = ISNOW+1,NSOIL
+    DO J = 1,NSOIL
       IF (IMELT(J) > 0 .AND. ABS(HM(J)) > 0.) THEN
 
          HEATR(J) = 0.
@@ -1905,6 +1963,8 @@ contains
         END IF
       END DO
     END IF
+    
+END IF   ! OPT_GLA == 1
 
     DO J = ISNOW+1,0             ! snow
        SNLIQ(J) = MLIQ(J)
@@ -1912,10 +1972,14 @@ contains
     END DO
 
     DO J = 1, NSOIL              ! soil
+      IF(OPT_GLA == 1) THEN 
        SH2O(J) =  MLIQ(J)            / (1000. * DZSNSO(J))
        SH2O(J) =  MAX(0.0,MIN(1.0,SH2O(J)))
 !       SMC(J)  = (MLIQ(J) + MICE(J)) / (1000. * DZSNSO(J))
-       SMC(J)  = 1.0 
+      ELSEIF(OPT_GLA == 2) THEN 
+       SH2O(J) = 0.0             ! ice, assume all frozen...forever
+      END IF
+      SMC(J)  = 1.0 
     END DO
    
   END SUBROUTINE PHASECHANGE_GLACIER
@@ -1923,7 +1987,7 @@ contains
   SUBROUTINE WATER_GLACIER (NSNOW  ,NSOIL  ,IMELT  ,DT     ,PRCP   ,SFCTMP , & !in
                             QVAP   ,QDEW   ,FICEOLD,ZSOIL  ,                 & !in
                             ISNOW  ,SNOWH  ,SNEQV  ,SNICE  ,SNLIQ  ,STC    , & !inout
-                            DZSNSO ,SH2O   ,SICE   ,PONDING,ZSNSO  ,         & !inout
+                            DZSNSO ,SH2O   ,SICE   ,PONDING,ZSNSO  ,FSH    , & !inout
                             RUNSRF ,RUNSUB ,QSNOW  ,PONDING1 ,PONDING2,QSNBOT,FPICE     &   !out
 #ifdef WRF_HYDRO
                             , sfcheadrt                                      &
@@ -1942,8 +2006,8 @@ contains
   REAL,                            INTENT(IN)    :: DT      !main time step (s)
   REAL,                            INTENT(IN)    :: PRCP    !precipitation (mm/s)
   REAL,                            INTENT(IN)    :: SFCTMP  !surface air temperature [k]
-  REAL,                            INTENT(IN)    :: QVAP    !soil surface evaporation rate[mm/s]
-  REAL,                            INTENT(IN)    :: QDEW    !soil surface dew rate[mm/s]
+  REAL,                            INTENT(INOUT)    :: QVAP    !soil surface evaporation rate[mm/s]
+  REAL,                            INTENT(INOUT)    :: QDEW    !soil surface dew rate[mm/s]
   REAL, DIMENSION(-NSNOW+1:    0), INTENT(IN)    :: FICEOLD !ice fraction at last timestep
   REAL, DIMENSION(       1:NSOIL), INTENT(IN)    :: ZSOIL  !layer-bottom depth from soil surf (m)
 
@@ -1959,6 +2023,7 @@ contains
   REAL, DIMENSION(       1:NSOIL), INTENT(INOUT) :: SICE    !soil ice content [m3/m3]
   REAL                           , INTENT(INOUT) :: PONDING ![mm]
   REAL, DIMENSION(-NSNOW+1:NSOIL), INTENT(INOUT) :: ZSNSO   !layer-bottom depth from snow surf [m]
+  REAL                           , INTENT(INOUT) :: FSH     !total sensible heat (w/m2) [+ to atm]
 
 ! output
   REAL,                            INTENT(OUT)   :: RUNSRF  !surface runoff [mm/s] 
@@ -2044,36 +2109,16 @@ contains
 
 ! sublimation, frost, evaporation, and dew
 
-!     QSNSUB = 0.
-!     IF (SNEQV > 0.) THEN
-!       QSNSUB = MIN(QVAP, SNEQV/DT)
-!     ENDIF
-!     QSEVA = QVAP-QSNSUB
-
-!     QSNFRO = 0.
-!     IF (SNEQV > 0.) THEN
-!        QSNFRO = QDEW
-!     ENDIF
-!     QSDEW = QDEW - QSNFRO
-
      QSNSUB = QVAP  ! send total sublimation/frost to SNOWWATER and deal with it there
      QSNFRO = QDEW
 
-!     print *, 'qvap',qvap,qvap*dt
-!     print *, 'qsnsub',qsnsub,qsnsub*dt
-!     print *, 'qseva',qseva,qseva*dt
-!     print *, 'qsnfro',qsnfro,qsnfro*dt
-!     print *, 'qdew',qdew,qdew*dt
-!     print *, 'qsdew',qsdew,qsdew*dt
-!print *, 'before snowwater', sneqv,snowh,snice,snliq,sh2o,sice
      CALL SNOWWATER_GLACIER (NSNOW  ,NSOIL  ,IMELT  ,DT     ,SFCTMP , & !in
                              SNOWHIN,QSNOW  ,QSNFRO ,QSNSUB ,QRAIN  , & !in
                              FICEOLD,ZSOIL  ,                         & !in
                              ISNOW  ,SNOWH  ,SNEQV  ,SNICE  ,SNLIQ  , & !inout
                              SH2O   ,SICE   ,STC    ,DZSNSO ,ZSNSO  , & !inout
+                             FSH    ,                                 & !inout
                              QSNBOT ,SNOFLOW,PONDING1       ,PONDING2)  !out
-!print *, 'after snowwater', sneqv,snowh,snice,snliq,sh2o,sice
-!print *, 'ponding', PONDING,PONDING1,PONDING2
 
     !PONDING: melting water from snow when there is no layer
     
@@ -2089,20 +2134,29 @@ contains
       RUNSRF = RUNSRF + sfcheadrt/DT  !sfcheadrt units (mm)
 #endif
     
-    REPLACE = 0.0
-    DO ILEV = 1,NSOIL
+    IF(OPT_GLA == 1) THEN
+      REPLACE = 0.0
+      DO ILEV = 1,NSOIL
        REPLACE = REPLACE + DZSNSO(ILEV)*(SICE(ILEV) - SICE_SAVE(ILEV) + SH2O(ILEV) - SH2O_SAVE(ILEV))
-    END DO
-    REPLACE = REPLACE * 1000.0 / DT     ! convert to [mm/s]
+      END DO
+      REPLACE = REPLACE * 1000.0 / DT     ! convert to [mm/s]
     
-    SICE = MIN(1.0,SICE_SAVE)
+      SICE = MIN(1.0,SICE_SAVE)
+    ELSEIF(OPT_GLA == 2) THEN
+      SICE = 1.0
+    END IF
     SH2O = 1.0 - SICE
-!print *, 'replace', replace
     
     ! use RUNSUB as a water balancer, SNOFLOW is snow that disappears, REPLACE is
     !   water from below that replaces glacier loss
 
-    RUNSUB       = SNOFLOW + REPLACE
+    IF(OPT_GLA == 1) THEN
+      RUNSUB       = SNOFLOW + REPLACE
+    ELSEIF(OPT_GLA == 2) THEN
+      RUNSUB       = SNOFLOW
+      QVAP = QSNSUB
+      QDEW = QSNFRO
+    END IF
 
   END SUBROUTINE WATER_GLACIER
 ! ==================================================================================================
@@ -2112,6 +2166,7 @@ contains
                                 FICEOLD,ZSOIL  ,                         & !in
                                 ISNOW  ,SNOWH  ,SNEQV  ,SNICE  ,SNLIQ  , & !inout
                                 SH2O   ,SICE   ,STC    ,DZSNSO ,ZSNSO  , & !inout
+				FSH    ,                                 & !inout
                                 QSNBOT ,SNOFLOW,PONDING1       ,PONDING2)  !out
 ! ----------------------------------------------------------------------
   IMPLICIT NONE
@@ -2124,8 +2179,8 @@ contains
   REAL,                            INTENT(IN)    :: SFCTMP !surface air temperature [k]
   REAL,                            INTENT(IN)    :: SNOWHIN!snow depth increasing rate (m/s)
   REAL,                            INTENT(IN)    :: QSNOW  !snow at ground srf (mm/s) [+]
-  REAL,                            INTENT(IN)    :: QSNFRO !snow surface frost rate[mm/s]
-  REAL,                            INTENT(IN)    :: QSNSUB !snow surface sublimation rate[mm/s]
+  REAL,                            INTENT(INOUT)    :: QSNFRO !snow surface frost rate[mm/s]
+  REAL,                            INTENT(INOUT)    :: QSNSUB !snow surface sublimation rate[mm/s]
   REAL,                            INTENT(IN)    :: QRAIN  !snow surface rain rate[mm/s]
   REAL, DIMENSION(-NSNOW+1:0)    , INTENT(IN)    :: FICEOLD!ice fraction at last timestep
   REAL, DIMENSION(       1:NSOIL), INTENT(IN)    :: ZSOIL  !layer-bottom depth from soil surf (m)
@@ -2141,6 +2196,7 @@ contains
   REAL, DIMENSION(-NSNOW+1:NSOIL), INTENT(INOUT) :: STC    !snow layer temperature [k]
   REAL, DIMENSION(-NSNOW+1:NSOIL), INTENT(INOUT) :: DZSNSO !snow/soil layer thickness [m]
   REAL, DIMENSION(-NSNOW+1:NSOIL), INTENT(INOUT) :: ZSNSO  !layer-bottom depth from snow surf [m]
+  REAL                           , INTENT(INOUT) :: FSH     !total sensible heat (w/m2) [+ to atm]
 
 ! output
   REAL,                              INTENT(OUT) :: QSNBOT !melting water out of snow bottom [mm/s]
@@ -2189,7 +2245,7 @@ contains
                           QRAIN  ,                                 & !in
                           ISNOW  ,DZSNSO ,SNOWH  ,SNEQV  ,SNICE  , & !inout
                           SNLIQ  ,SH2O   ,SICE   ,STC    ,         & !inout
-			  PONDING1       ,PONDING2       ,         & !inout
+			  PONDING1       ,PONDING2       ,FSH    , & !inout
                           QSNBOT )                                   !out
 
 !to obtain equilibrium state of snow in glacier region
@@ -2749,7 +2805,7 @@ contains
                               QRAIN  ,                                 & !in
                               ISNOW  ,DZSNSO ,SNOWH  ,SNEQV  ,SNICE  , & !inout
                               SNLIQ  ,SH2O   ,SICE   ,STC    ,         & !inout
-                              PONDING1       ,PONDING2       ,         & !inout
+                              PONDING1       ,PONDING2       ,FSH    , & !inout
                               QSNBOT )                                   !out
 ! ----------------------------------------------------------------------
 ! Renew the mass of ice lens (SNICE) and liquid (SNLIQ) of the
@@ -2762,8 +2818,8 @@ contains
    INTEGER,                         INTENT(IN)    :: NSNOW  !maximum no. of snow layers[=3]
    INTEGER,                         INTENT(IN)    :: NSOIL  !No. of soil layers[=4]
    REAL,                            INTENT(IN)    :: DT     !time step
-   REAL,                            INTENT(IN)    :: QSNFRO !snow surface frost rate[mm/s]
-   REAL,                            INTENT(IN)    :: QSNSUB !snow surface sublimation rate[mm/s]
+   REAL,                            INTENT(INOUT)    :: QSNFRO !snow surface frost rate[mm/s]
+   REAL,                            INTENT(INOUT)    :: QSNSUB !snow surface sublimation rate[mm/s]
    REAL,                            INTENT(IN)    :: QRAIN  !snow surface rain rate[mm/s]
 
 ! output
@@ -2783,6 +2839,7 @@ contains
    REAL, DIMENSION(-NSNOW+1:NSOIL), INTENT(INOUT) :: STC    !snow layer temperature [k]
    REAL,                            INTENT(INOUT) :: PONDING1
    REAL,                            INTENT(INOUT) :: PONDING2
+   REAL,                            INTENT(INOUT) :: FSH     !total sensible heat (w/m2) [+ to atm]
 
 ! local variables:
 
@@ -2799,7 +2856,13 @@ contains
 !for the case when SNEQV becomes '0' after 'COMBINE'
 
    IF(SNEQV == 0.) THEN
-      SICE(1) =  SICE(1) + (QSNFRO-QSNSUB)*DT/(DZSNSO(1)*1000.)
+     IF(OPT_GLA == 1) THEN
+       SICE(1) =  SICE(1) + (QSNFRO-QSNSUB)*DT/(DZSNSO(1)*1000.)
+     ELSEIF(OPT_GLA == 2) THEN
+       FSH = FSH - (QSNFRO-QSNSUB)*HSUB
+       QSNFRO = 0.0
+       QSNSUB = 0.0
+     END IF
    END IF
 
 ! for shallow snow without a layer
@@ -2808,10 +2871,16 @@ contains
 ! to aviod this problem.
 
    IF(ISNOW == 0 .and. SNEQV > 0.) THEN
-      TEMP   = SNEQV
-      SNEQV  = SNEQV - QSNSUB*DT + QSNFRO*DT
-      PROPOR = SNEQV/TEMP
-      SNOWH  = MAX(0.,PROPOR * SNOWH)
+      IF(OPT_GLA == 1) THEN
+        TEMP   = SNEQV
+        SNEQV  = SNEQV - QSNSUB*DT + QSNFRO*DT
+        PROPOR = SNEQV/TEMP
+        SNOWH  = MAX(0.,PROPOR * SNOWH)
+      ELSEIF(OPT_GLA == 2) THEN
+        FSH = FSH - (QSNFRO-QSNSUB)*HSUB
+        QSNFRO = 0.0
+        QSNSUB = 0.0
+      END IF
 
       IF(SNEQV < 0.) THEN
          SICE(1) = SICE(1) + SNEQV/(DZSNSO(1)*1000.)
@@ -2969,41 +3038,24 @@ contains
  END SUBROUTINE ERROR_GLACIER
 ! ==================================================================================================
 
-  SUBROUTINE NOAHMP_OPTIONS_GLACIER(idveg     ,iopt_crs  ,iopt_btr  ,iopt_run  ,iopt_sfc  ,iopt_frz , & 
-                             iopt_inf  ,iopt_rad  ,iopt_alb  ,iopt_snf  ,iopt_tbot, iopt_stc )
+  SUBROUTINE NOAHMP_OPTIONS_GLACIER(iopt_alb  ,iopt_snf  ,iopt_tbot, iopt_stc, iopt_gla )
 
   IMPLICIT NONE
 
-  INTEGER,  INTENT(IN) :: idveg     !dynamic vegetation (1 -> off ; 2 -> on) with opt_crs = 1
-  INTEGER,  INTENT(IN) :: iopt_crs  !canopy stomatal resistance (1-> Ball-Berry; 2->Jarvis)
-  INTEGER,  INTENT(IN) :: iopt_btr  !soil moisture factor for stomatal resistance (1-> Noah; 2-> CLM; 3-> SSiB)
-  INTEGER,  INTENT(IN) :: iopt_run  !runoff and groundwater (1->SIMGM; 2->SIMTOP; 3->Schaake96; 4->BATS)
-  INTEGER,  INTENT(IN) :: iopt_sfc  !surface layer drag coeff (CH & CM) (1->M-O; 2->Chen97)
-  INTEGER,  INTENT(IN) :: iopt_frz  !supercooled liquid water (1-> NY06; 2->Koren99)
-  INTEGER,  INTENT(IN) :: iopt_inf  !frozen soil permeability (1-> NY06; 2->Koren99)
-  INTEGER,  INTENT(IN) :: iopt_rad  !radiation transfer (1->gap=F(3D,cosz); 2->gap=0; 3->gap=1-Fveg)
   INTEGER,  INTENT(IN) :: iopt_alb  !snow surface albedo (1->BATS; 2->CLASS)
   INTEGER,  INTENT(IN) :: iopt_snf  !rainfall & snowfall (1-Jordan91; 2->BATS; 3->Noah)
   INTEGER,  INTENT(IN) :: iopt_tbot !lower boundary of soil temperature (1->zero-flux; 2->Noah)
-
   INTEGER,  INTENT(IN) :: iopt_stc  !snow/soil temperature time scheme (only layer 1)
                                     ! 1 -> semi-implicit; 2 -> full implicit (original Noah)
+  INTEGER,  INTENT(IN) :: IOPT_GLA  ! glacier option (1->phase change; 2->simple)
 
 ! -------------------------------------------------------------------------------------------------
 
-  dveg = idveg
-  
-  opt_crs  = iopt_crs  
-  opt_btr  = iopt_btr  
-  opt_run  = iopt_run  
-  opt_sfc  = iopt_sfc  
-  opt_frz  = iopt_frz  
-  opt_inf  = iopt_inf  
-  opt_rad  = iopt_rad  
   opt_alb  = iopt_alb  
   opt_snf  = iopt_snf  
   opt_tbot = iopt_tbot 
   opt_stc  = iopt_stc
+  opt_gla  = iopt_gla
   
   end subroutine noahmp_options_glacier
  

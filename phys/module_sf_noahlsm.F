@@ -74,7 +74,7 @@ CONTAINS
                        RIBB,                                            &
                        SMCWLT,SMCDRY,SMCREF,SMCMAX,NROOT,   &
                        SFHEAD1RT,                                       &    !I
-                       INFXS1RT,ETPND1,AOASIS )                    !P
+                       INFXS1RT,ETPND1,OPT_THCND,AOASIS )                    !P
 ! ----------------------------------------------------------------------
 ! SUBROUTINE SFLX - UNIFIED NOAHLSM VERSION 1.0 JULY 2007
 ! ----------------------------------------------------------------------
@@ -118,6 +118,7 @@ CONTAINS
 !                    roughness length) will be defined by three tables
 !   LLANDUSE  (=USGS, using USGS landuse classification)
 !   LSOIL     (=STAS, using FAO/STATSGO soil texture classification)
+!   OPT_THCND option for how to treat thermal conductivity
 ! ----------------------------------------------------------------------
 ! 3. FORCING DATA (F):
 ! ----------------------------------------------------------------------
@@ -292,6 +293,7 @@ CONTAINS
 ! ----------------------------------------------------------------------
       LOGICAL, INTENT(IN) :: RDLAI2D
       LOGICAL, INTENT(IN) :: USEMONALB
+      INTEGER, INTENT(IN) :: OPT_THCND
 
       REAL, INTENT(INOUT):: SFHEAD1RT,INFXS1RT, ETPND1
 
@@ -577,7 +579,7 @@ CONTAINS
 ! OVERLYING GREEN CANOPY, ADAPTED FROM SECTION 2.1.2 OF
 ! PETERS-LIDARD ET AL. (1997, JGR, VOL 102(D4))
 ! ----------------------------------------------------------------------
-            CALL TDFCND (DF1,SMC (1),QUARTZ,SMCMAX,SH2O (1))
+            CALL TDFCND (DF1,SMC (1),QUARTZ,SMCMAX,SH2O (1),BEXP, PSISAT, SOILTYP, OPT_THCND)
 
 !urban
             IF ( VEGTYP == ISURBAN ) DF1=3.24
@@ -734,7 +736,7 @@ CONTAINS
                             RUNOFF3,EDIR,EC,ET,ETT,NROOT,RTDIS,          &
                             QUARTZ,FXEXP,CSOIL,                          &
                             BETA,DRIP,DEW,FLX1,FLX3,VEGTYP,ISURBAN,      &
-                            SFHEAD1RT,INFXS1RT,ETPND1 )
+                            SFHEAD1RT,INFXS1RT,ETPND1,SOILTYP,OPT_THCND )
             ETA_KINEMATIC = ETA
          ELSE
             CALL SNOPAC (ETP,ETA,PRCP,PRCPF,SNOWNG,SMC,SMCMAX,SMCWLT,    &
@@ -751,7 +753,7 @@ CONTAINS
                          ISURBAN,                                        &
                          VEGTYP,                                         &
                          ETPN,FLX4,UA_PHYS,                              &
-                         SFHEAD1RT,INFXS1RT,ETPND1)
+                         SFHEAD1RT,INFXS1RT,ETPND1,SOILTYP,OPT_THCND)
             ETA_KINEMATIC =  ESNOW + ETNS - 1000.0*DEW
          END IF
 
@@ -1538,7 +1540,7 @@ CONTAINS
 ! ----------------------------------------------------------------------
 
       SUBROUTINE HRT (RHSTS,STC,SMC,SMCMAX,NSOIL,ZSOIL,YY,ZZ1,          &
-                       TBOT,ZBOT,PSISAT,SH2O,DT,BEXP,                   &
+                       TBOT,ZBOT,PSISAT,SH2O,DT,BEXP,SOILTYP,OPT_THCND, &
                        F1,DF1,QUARTZ,CSOIL,AI,BI,CI,VEGTYP,ISURBAN)
 
 ! ----------------------------------------------------------------------
@@ -1550,7 +1552,8 @@ CONTAINS
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
       LOGICAL              :: ITAVG
-      INTEGER, INTENT(IN)  :: NSOIL, VEGTYP
+      INTEGER, INTENT(IN)  :: OPT_THCND
+      INTEGER, INTENT(IN)  :: NSOIL, VEGTYP, SOILTYP
       INTEGER, INTENT(IN)  :: ISURBAN
       INTEGER              :: I, K
 
@@ -1687,7 +1690,7 @@ CONTAINS
 ! ----------------------------------------------------------------------
 ! CALC THE VERTICAL SOIL TEMP GRADIENT THRU THIS LAYER
 ! ----------------------------------------------------------------------
-            CALL TDFCND (DF1N,SMC (K),QUARTZ,SMCMAX,SH2O (K))
+            CALL TDFCND (DF1N,SMC (K),QUARTZ,SMCMAX,SH2O (K),BEXP, PSISAT, SOILTYP, OPT_THCND)
 
 !urban
        IF ( VEGTYP == ISURBAN ) DF1N = 3.24
@@ -1719,7 +1722,7 @@ CONTAINS
 ! ----------------------------------------------------------------------
 ! CALC THE VERTICAL SOIL TEMP GRADIENT THRU BOTTOM LAYER.
 ! ----------------------------------------------------------------------
-            CALL TDFCND (DF1N,SMC (K),QUARTZ,SMCMAX,SH2O (K))
+            CALL TDFCND (DF1N,SMC (K),QUARTZ,SMCMAX,SH2O (K),BEXP, PSISAT, SOILTYP, OPT_THCND)
 
 
 !urban
@@ -1849,7 +1852,7 @@ CONTAINS
                          QUARTZ,FXEXP,CSOIL,                            &
                          BETA,DRIP,DEW,FLX1,FLX3,VEGTYP,ISURBAN,        &
 !DJG NDHMS/WRF-Hydro edit...
-                         SFHEAD1RT,INFXS1RT,ETPND1)
+                         SFHEAD1RT,INFXS1RT,ETPND1,SOILTYP,OPT_THCND)
 
 ! ----------------------------------------------------------------------
 ! SUBROUTINE NOPAC
@@ -1860,7 +1863,8 @@ CONTAINS
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
-      INTEGER, INTENT(IN)  :: NROOT,NSOIL,VEGTYP
+      INTEGER, INTENT(IN)  :: OPT_THCND
+      INTEGER, INTENT(IN)  :: NROOT,NSOIL,VEGTYP,SOILTYP
       INTEGER, INTENT(IN)  :: ISURBAN
       INTEGER              :: K
 
@@ -1985,7 +1989,7 @@ CONTAINS
 ! CALL SHFLX TO COMPUTE/UPDATE SOIL HEAT FLUX AND SOIL TEMPS.
 ! ----------------------------------------------------------------------
 
-      CALL TDFCND (DF1,SMC (1),QUARTZ,SMCMAX,SH2O (1))
+      CALL TDFCND (DF1,SMC (1),QUARTZ,SMCMAX,SH2O (1),BEXP, PSISAT, SOILTYP, OPT_THCND)
 
 !urban
       IF ( VEGTYP == ISURBAN ) DF1=3.24
@@ -2011,7 +2015,7 @@ CONTAINS
 !urban
       CALL SHFLX (SSOIL,STC,SMC,SMCMAX,NSOIL,T1,DT,YY,ZZ1,ZSOIL,       &
                   TBOT,ZBOT,SMCWLT,PSISAT,SH2O,BEXP,F1,DF1,            &
-                  QUARTZ,CSOIL,VEGTYP,ISURBAN)
+                  QUARTZ,CSOIL,VEGTYP,ISURBAN,SOILTYP,OPT_THCND)
 
 ! ----------------------------------------------------------------------
 ! SET FLX1 AND FLX3 (SNOPACK PHASE CHANGE HEAT FLUXES) TO ZERO SINCE
@@ -2432,7 +2436,7 @@ CONTAINS
 
       SUBROUTINE SHFLX (SSOIL,STC,SMC,SMCMAX,NSOIL,T1,DT,YY,ZZ1,ZSOIL, &
                          TBOT,ZBOT,SMCWLT,PSISAT,SH2O,BEXP,F1,DF1,     &
-                         QUARTZ,CSOIL,VEGTYP,ISURBAN)
+                         QUARTZ,CSOIL,VEGTYP,ISURBAN,SOILTYP,OPT_THCND)
 
 ! ----------------------------------------------------------------------
 ! SUBROUTINE SHFLX
@@ -2443,7 +2447,8 @@ CONTAINS
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
-      INTEGER, INTENT(IN)   :: NSOIL, VEGTYP, ISURBAN
+      INTEGER, INTENT(IN)   :: OPT_THCND
+      INTEGER, INTENT(IN)   :: NSOIL, VEGTYP, ISURBAN, SOILTYP
       INTEGER               :: I
 
       REAL, INTENT(IN)      :: BEXP,CSOIL,DF1,DT,F1,PSISAT,QUARTZ,     &
@@ -2463,8 +2468,8 @@ CONTAINS
       ! Land case
 
       CALL HRT (RHSTS,STC,SMC,SMCMAX,NSOIL,ZSOIL,YY,ZZ1,TBOT,        &
-                ZBOT,PSISAT,SH2O,DT,                                &
-                BEXP,F1,DF1,QUARTZ,CSOIL,AI,BI,CI,VEGTYP,ISURBAN)
+                ZBOT,PSISAT,SH2O,DT,BEXP,SOILTYP,OPT_THCND,               &
+                F1,DF1,QUARTZ,CSOIL,AI,BI,CI,VEGTYP,ISURBAN)
 
       CALL HSTEP (STCF,STC,RHSTS,DT,NSOIL,AI,BI,CI)
 
@@ -2839,7 +2844,7 @@ CONTAINS
                           ISURBAN,                                      &
                           VEGTYP,                                       &
                           ETPN,FLX4,UA_PHYS,                            &
-                          SFHEAD1RT,INFXS1RT,ETPND1)
+                          SFHEAD1RT,INFXS1RT,ETPND1,SOILTYP,OPT_THCND)
 
 ! ----------------------------------------------------------------------
 ! SUBROUTINE SNOPAC
@@ -2850,7 +2855,8 @@ CONTAINS
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
-      INTEGER, INTENT(IN)   :: NROOT, NSOIL,VEGTYP
+      INTEGER, INTENT(IN)   :: OPT_THCND
+      INTEGER, INTENT(IN)   :: NROOT, NSOIL,VEGTYP,SOILTYP
       INTEGER, INTENT(IN)   :: ISURBAN
       INTEGER               :: K
 !
@@ -3185,7 +3191,7 @@ CONTAINS
       T11 = T1
       CALL SHFLX (SSOIL1,STC,SMC,SMCMAX,NSOIL,T11,DT,YY,ZZ1,ZSOIL,     &
                    TBOT,ZBOT,SMCWLT,PSISAT,SH2O,BEXP,F1,DF1,           &
-                   QUARTZ,CSOIL,VEGTYP,ISURBAN)
+                   QUARTZ,CSOIL,VEGTYP,ISURBAN,SOILTYP,OPT_THCND)
 
 ! ----------------------------------------------------------------------
 ! SNOW DEPTH AND DENSITY ADJUSTMENT BASED ON SNOW COMPACTION.  YY IS
@@ -3914,7 +3920,7 @@ CONTAINS
 ! ----------------------------------------------------------------------
 
 
-      SUBROUTINE TDFCND ( DF, SMC, QZ, SMCMAX, SH2O)
+      SUBROUTINE TDFCND ( DF, SMC, QZ, SMCMAX, SH2O, BEXP, PSISAT, SOILTYP, OPT_THCND)
 
 ! ----------------------------------------------------------------------
 ! SUBROUTINE TDFCND
@@ -3926,11 +3932,12 @@ CONTAINS
 ! June 2001 CHANGES: FROZEN SOIL CONDITION.
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
-      REAL, INTENT(IN)          :: QZ,  SMC, SMCMAX, SH2O
+      INTEGER, INTENT(IN)       :: SOILTYP, OPT_THCND  
+      REAL, INTENT(IN)          :: QZ,  SMC, SMCMAX, SH2O, BEXP, PSISAT
       REAL, INTENT(OUT)         :: DF
       REAL                      :: AKE, GAMMD, THKDRY, THKICE, THKO,    &
                                    THKQTZ,THKSAT,THKS,THKW,SATRATIO,XU, &
-                                   XUNFROZ,AKEI,AKEL
+                                   XUNFROZ,AKEI,AKEL,PSIF,PF  
 
 ! ----------------------------------------------------------------------
 ! WE NOW GET QUARTZ AS AN INPUT ARGUMENT (SET IN ROUTINE REDPRM):
@@ -3961,6 +3968,9 @@ CONTAINS
 !              AND TEMPERATURES. JOURNAL OF THE ATMOSPHERIC SCIENCES,
 !              VOL. 55, PP. 1209-1224.
 ! ----------------------------------------------------------------------
+
+IF ( OPT_THCND == 1 .OR. ( OPT_THCND == 2 .AND. (SOILTYP /= 4 .AND. SOILTYP /= 3)) )THEN
+
 ! NEEDS PARAMETERS
 ! POROSITY(SOIL TYPE):
 !      POROS = SMCMAX
@@ -4016,6 +4026,22 @@ CONTAINS
 
 
       DF = AKE * (THKSAT - THKDRY) + THKDRY
+
+    ELSE
+ 
+! use the Mccumber and Pielke approach for silt loam (4), sandy loam (3)
+
+         PSIF = PSISAT*100.*(SMCMAX/(SMC))**BEXP
+!--- PSIF should be in [CM] to compute PF
+           PF=log10(abs(PSIF))
+!--- HK is for McCumber thermal conductivity
+         IF(PF.LE.5.1) THEN
+           DF=420.*EXP(-(PF+2.7))
+         ELSE
+           DF=.1744
+         END IF
+
+    ENDIF  ! for OPT_THCND OPTIONS             
 ! ----------------------------------------------------------------------
   END SUBROUTINE TDFCND
 ! ----------------------------------------------------------------------

@@ -98,6 +98,7 @@ CONTAINS
                          CHXY, FWETXY, SNEQVOXY, ALBOLDXY, QSNOWXY,       & ! Optional Noah-MP
                          WSLAKEXY, ZWTXY, WAXY, WTXY, LFMASSXY, RTMASSXY, & ! Optional Noah-MP
                          STMASSXY, WOODXY, STBLCPXY, FASTCPXY,            & ! Optional Noah-MP
+                         GRAINXY, GDDXY,                                  & ! Optional Noah-MP
                          XSAIXY, LAI,                                     & ! Optional Noah-MP
                          T2MVXY, T2MBXY, CHSTARXY ,                       & ! Optional Noah-MP
                          SMOISEQ  ,SMCWTDXY ,RECHXY, DEEPRECHXY, AREAXY,  & ! Optional Noah-MP 
@@ -455,6 +456,8 @@ CONTAINS
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: RTMASSXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: STMASSXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: WOODXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: GRAINXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: GDDXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: STBLCPXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: FASTCPXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: XSAIXY
@@ -1130,6 +1133,7 @@ integer myproc
                 CHXY, FWETXY, SNEQVOXY, ALBOLDXY, QSNOWXY,      &
                 WSLAKEXY, ZWTXY, WAXY, WTXY, LFMASSXY, RTMASSXY,&
                 STMASSXY, WOODXY, STBLCPXY, FASTCPXY,           &
+                GRAINXY, GDDXY,                                 &
                 XSAIXY, LAI,                                    &
                 SMOISEQ, SMCWTDXY, RECHXY, DEEPRECHXY, AREAXY,  &
                 WTDDT, STEPWTD, QRFSXY ,QSPRINGSXY ,QSLATXY,   &
@@ -2038,6 +2042,7 @@ integer myproc
                 CHXY, FWETXY, SNEQVOXY, ALBOLDXY, QSNOWXY,      &
                 WSLAKEXY, ZWTXY, WAXY, WTXY, LFMASSXY, RTMASSXY,&
                 STMASSXY, WOODXY, STBLCPXY, FASTCPXY,           &
+                GRAINXY, GDDXY,                                 &
                 XSAIXY, LAI,                                    &
                 SMOISEQ, SMCWTDXY, RECHXY, DEEPRECHXY, AREAXY,  &
                 WTDDT, STEPWTD,QRFSXY ,QSPRINGSXY ,QSLATXY,     &
@@ -2312,6 +2317,8 @@ integer myproc
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: RTMASSXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: STMASSXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: WOODXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: GRAINXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: GDDXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: STBLCPXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: FASTCPXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: XSAIXY
@@ -2794,6 +2801,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                      fwetxy   ,sneqvoxy ,alboldxy ,qsnowxy  ,wslakexy ,zwtxy    ,waxy     , &
                      wtxy     ,tsnoxy   ,zsnsoxy  ,snicexy  ,snliqxy  ,lfmassxy ,rtmassxy , &
                      stmassxy ,woodxy   ,stblcpxy ,fastcpxy ,xsaixy   ,lai      ,           &
+                     grainxy  ,gddxy    ,                                                   &
                      t2mvxy   ,t2mbxy   ,chstarxy ,            &
                      num_soil_layers, restart,                 &
                      allowed_to_read, iopt_run ,               &

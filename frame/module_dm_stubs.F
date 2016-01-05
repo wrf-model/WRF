@@ -1,9 +1,14 @@
 !WRF:PACKAGE:NODM
 !
 MODULE module_dm
+  USE module_driver_constants
+
+  LOGICAL intercomm_active( max_domains ), domain_active_this_task( max_domains )
 
   CONTAINS
    SUBROUTINE init_module_dm
+      intercomm_active = .TRUE.
+      domain_active_this_task = .TRUE.
    END SUBROUTINE init_module_dm
 
    REAL FUNCTION wrf_dm_max_real ( inval )
@@ -354,4 +359,23 @@ SUBROUTINE wrf_global_to_patch_LOGICAL (globbuf,buf,domdesc,ndim,&
    RETURN
 END SUBROUTINE wrf_global_to_patch_LOGICAL
 
+#if ( HWRF == 1 )
+   SUBROUTINE hwrf_coupler_init
+   END SUBROUTINE hwrf_coupler_init
+#endif
+
+   SUBROUTINE push_communicators_for_domain( id )
+      IMPLICIT NONE
+      INTEGER, OPTIONAL, INTENT(IN) :: id   ! if specified also does an instate for grid id
+   END SUBROUTINE push_communicators_for_domain
+   SUBROUTINE pop_communicators_for_domain
+   END SUBROUTINE pop_communicators_for_domain
+   SUBROUTINE instate_communicators_for_domain( id )
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: id
+   END SUBROUTINE instate_communicators_for_domain
+   SUBROUTINE store_communicators_for_domain( id )
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: id
+   END SUBROUTINE store_communicators_for_domain
 

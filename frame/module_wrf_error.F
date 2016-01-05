@@ -40,7 +40,7 @@ MODULE module_wrf_error
   ! Defaults: Non-MPI configurations and HWRF turn OFF stderr.
   !    MPI configurations other than HWRF turn ON stderr.
 
-#if defined( DM_PARALLEL ) && ! defined( STUBMPI ) && !defined(HWRF)
+#if ( HWRF != 1 )
   integer :: stderrlog=1 ! 1/T = send to write(0,...) if buffered=0
 #else
   integer :: stderrlog=0! 1/T = send to write(0,...) if buffered=0
@@ -81,31 +81,31 @@ CONTAINS
 #if defined(DM_PARALLEL)
     LOGICAL, EXTERNAL :: wrf_dm_on_monitor
 #endif
-    LOGICAL :: compute_slaves_silent
+    LOGICAL :: compute_tasks_silent
     LOGICAL :: io_servers_silent
     INTEGER :: buffer_size,iostat,stderr_logging
-    namelist /logging/ buffer_size,compute_slaves_silent, &
+    namelist /logging/ buffer_size,compute_tasks_silent, &
                        io_servers_silent,stderr_logging
 
     ! MAKE SURE THE NAMELIST DEFAULTS MATCH THE DEFAULT VALUES
     ! AT THE MODULE LEVEL
 
     ! Default: original behavior.  No buffering, all ranks talk
-    compute_slaves_silent=.false.
+    compute_tasks_silent=.false.
     io_servers_silent=.false.
     buffer_size=0
 
     ! MPI configurations default to stderr logging, except for HWRF.
     ! Non-MPI does not log to stderr.  (Note that fatal errors always
     ! are sent to both stdout and stderr regardless of config.)
-#if defined( DM_PARALLEL ) && ! defined( STUBMPI ) && !defined(HWRF)
+#if ( HWRF == 1 )
     stderr_logging=1
 #else
     stderr_logging=0
 #endif
 500 format(A)
     ! Open namelist.input using the same unit used by module_io_wrf 
-    ! since we know nobody will screw up that unit:
+    ! since we know nobody else will use that unit:
     OPEN(unit=27, file="namelist.input", form="formatted", status="old")
     READ(27,nml=logging,iostat=iostat)
     if(iostat /= 0) then
@@ -158,7 +158,7 @@ CONTAINS
           return
        endif
     endif
-    if(compute_slaves_silent) then
+    if(compute_tasks_silent) then
        if(wrf_dm_on_monitor()) then
           silence=0
        else
@@ -305,6 +305,9 @@ SUBROUTINE wrf_error_fatal3( file_str, line, str )
   CALL esmf_finalize(endflag=ESMF_END_ABORT)
 #endif
 
+#ifdef TRACEBACKQQ
+  CALL tracebackqq
+#endif
   CALL wrf_abort
 END SUBROUTINE wrf_error_fatal3
 

@@ -24,7 +24,13 @@ contains
     USE module_domain, ONLY : domain, get_ijk_from_grid
     USE module_configure, ONLY : grid_config_rec_type
     USE module_dm, ONLY : ntasks, ntasks_x, ntasks_y, itrace, local_communicator, mytask, &
-         ipe_save, jpe_save, ips_save, jps_save, get_dm_max_halo_width
+         ipe_save, jpe_save, ips_save, jps_save, get_dm_max_halo_width,                   &
+         nest_pes_x, nest_pes_y,                                                          &
+         intercomm_active, nest_task_offsets,                                             &
+         mpi_comm_to_mom, mpi_comm_to_kid, which_kid!,                                     &
+         !push_communicators_for_domain,pop_communicators_for_domain
+
+
     USE module_timing
     IMPLICIT NONE
 
@@ -32,7 +38,7 @@ contains
     TYPE(domain), POINTER :: intermediate_grid
     TYPE(domain), POINTER :: ngrid
     INTEGER nlev, msize
-    INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
+    INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k,ioffset,ierr
     INTEGER iparstrt,jparstrt,sw
     TYPE (grid_config_rec_type)            :: config_flags
     REAL xv(500)
@@ -52,12 +58,9 @@ contains
     INTEGER local_comm, myproc, nproc
     INTEGER thisdomain_max_halo_width
 
-    CALL wrf_get_dm_communicator ( local_comm )
+!    CALL wrf_get_dm_communicator ( local_comm )
     CALL wrf_get_myproc( myproc )
     CALL wrf_get_nproc( nproc )
-
-
-
 
     CALL get_ijk_from_grid (  grid ,                   &
          cids, cide, cjds, cjde, ckds, ckde,    &
@@ -84,19 +87,25 @@ contains
     nlev  = ckde - ckds + 1
 
     CALL get_dm_max_halo_width ( ngrid%id , thisdomain_max_halo_width )
+    CALL wrf_dm_nestexchange_init
 
-    msize = 5
-    CALL rsl_lite_to_child_info( local_communicator, msize*4                               &
+    IF ( grid%active_this_task ) THEN
+      msize = 5
+      CALL rsl_lite_to_child_info( msize*4                               &
          ,cips,cipe,cjps,cjpe                               &
          ,iids,iide,ijds,ijde                               &
          ,nids,nide,njds,njde                               &
          ,pgr , sw                                          &
-         ,ntasks_x,ntasks_y                                 &
-         ,thisdomain_max_halo_width                                  &
+         ,nest_task_offsets(ngrid%id)                       &
+         ,nest_pes_x(grid%id)                               &
+         ,nest_pes_y(grid%id)                               &
+         ,nest_pes_x(intermediate_grid%id)                  &
+         ,nest_pes_y(intermediate_grid%id)                  &
+         ,thisdomain_max_halo_width                         &
          ,icoord,jcoord                                     &
          ,idim_cd,jdim_cd                                   &
          ,pig,pjg,retval )
-    DO while ( retval .eq. 1 )
+      DO while ( retval .eq. 1 )
        IF ( SIZE(grid%hres_fis) .GT. 1 ) THEN ! okay for intermediate_grid too. see comment in gen_comms.c
           xv(1)=grid%hres_fis(pig,pjg)
           CALL rsl_lite_to_child_msg(4,xv)
@@ -113,29 +122,52 @@ contains
           xv(1)=grid%fis(pig,pjg)
           CALL rsl_lite_to_child_msg(4,xv)
        ENDIF
-       CALL rsl_lite_to_child_info( local_communicator, msize*4                               &
+       CALL rsl_lite_to_child_info( msize*4                               &
             ,cips,cipe,cjps,cjpe                               &
             ,iids,iide,ijds,ijde                               &
             ,nids,nide,njds,njde                               &
             ,pgr , sw                                          &
-            ,ntasks_x,ntasks_y                                 &
-            ,thisdomain_max_halo_width                                  &
+            ,nest_task_offsets(ngrid%id)                       &
+            ,nest_pes_x(grid%id)                               &
+            ,nest_pes_y(grid%id)                               &
+            ,nest_pes_x(intermediate_grid%id)                  &
+            ,nest_pes_y(intermediate_grid%id)                  &
+            ,thisdomain_max_halo_width                         &
             ,icoord,jcoord                                     &
             ,idim_cd,jdim_cd                                   &
             ,pig,pjg,retval )
-    ENDDO
+      ENDDO
+    ENDIF ! grid%active_this_task
 
-    CALL rsl_lite_bcast_msgs( myproc, nproc, local_comm )
+    IF ( intercomm_active( grid%id ) ) THEN        ! I am parent
+      local_comm = mpi_comm_to_kid( which_kid(ngrid%id), grid%id )
+      ioffset = nest_task_offsets(ngrid%id)
+    ELSE IF ( intercomm_active( ngrid%id ) ) THEN  ! I am nest
+      local_comm = mpi_comm_to_mom( ngrid%id )
+      ioffset = nest_task_offsets(ngrid%id)
+    ENDIF
+
+    IF ( grid%active_this_task .OR. ngrid%active_this_task ) THEN
+#if defined(DM_PARALLEL) && !defined(STUBMPI)
+      CALL mpi_comm_rank(local_comm,myproc,ierr)
+      CALL mpi_comm_size(local_comm,nproc,ierr)
+#endif
+      CALL rsl_lite_bcast_msgs( myproc, nest_pes_x(grid%id)*nest_pes_y(grid%id),         &
+                                          nest_pes_x(ngrid%id)*nest_pes_y(ngrid%id),       &
+                                          ioffset, local_comm )
+    ENDIF
 
     RETURN
   END SUBROUTINE parent_to_inter_part1
 
-  SUBROUTINE parent_to_inter_part2 ( grid, config_flags )
+  SUBROUTINE parent_to_inter_part2 ( grid, ngrid, config_flags )
     USE module_state_description
     USE module_domain, ONLY : domain, get_ijk_from_grid
     USE module_configure, ONLY : grid_config_rec_type
     USE module_dm, ONLY : ntasks, ntasks_x, ntasks_y, itrace, local_communicator, mytask, &
-         ipe_save, jpe_save, ips_save, jps_save, get_dm_max_halo_width
+         ipe_save, jpe_save, ips_save, jps_save, get_dm_max_halo_width!,                   &
+         !push_communicators_for_domain,pop_communicators_for_domain
+
     USE module_comm_dm, ONLY : HALO_NMM_INT_UP_sub
     IMPLICIT NONE
 
@@ -167,7 +199,7 @@ contains
          cims, cime, cjms, cjme, ckms, ckme,    &
          cips, cipe, cjps, cjpe, ckps, ckpe    )
 
-    cgrid=>grid
+IF ( ngrid%active_this_task ) THEN
     nlev  = ckde - ckds + 1 
     !write(0,*) 'IN parent_to_inter_part2'
     CALL rsl_lite_from_parent_info(pig,pjg,retval)
@@ -196,6 +228,8 @@ contains
        CALL rsl_lite_from_parent_info(pig,pjg,retval)
        !write(0,*) 'back with retval=',retval
     ENDDO
+
+
     !write(0,*) 'out of loop'
 
     CALL get_ijk_from_grid (  grid ,              &
@@ -203,10 +237,12 @@ contains
          ims, ime, jms, jme, kms, kme,    &
          ips, ipe, jps, jpe, kps, kpe    )
 
-    !write(0,*) 'call HALO_NMM_INT_UP.inc'
+    CALL push_communicators_for_domain( grid%id )
 #include "HALO_NMM_INT_UP.inc"
-    !write(0,*) 'back from HALO_NMM_INT_UP.inc'
+    CALL pop_communicators_for_domain
 
+ENDIF
+    CALL wrf_dm_nestexchange_init
     RETURN
   END SUBROUTINE parent_to_inter_part2
 #endif

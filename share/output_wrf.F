@@ -333,7 +333,7 @@
     CALL wrf_put_dom_ti_char ( fid , 'START_DATE', TRIM(start_date) , ierr )
     IF ( switch .EQ. input_only) THEN
        CALL wrf_put_dom_ti_char ( fid , 'SIMULATION_START_DATE', TRIM(start_date) , ierr )
-#ifdef HWRF
+#if ( HWRF == 1 )
     ELSE
 #else
     ELSE IF ( ( switch .EQ. restart_only ) .OR. ( switch .EQ. history_only ) ) THEN
@@ -914,7 +914,7 @@ endif
     CALL wrf_put_dom_ti_integer ( fid , 'ISOILWATER' ,  config_flags%isoilwater , 1 , ierr )
 ! added these fields for restarting of moving nests, JM
 !For HWRF: zhang 
-#if defined (HWRF)
+#if ( HWRF == 1 )
     CALL wrf_put_dom_ti_integer ( fid , 'I_PARENT_START' ,  grid%i_parent_start  , 1 , ierr )
     CALL wrf_put_dom_ti_integer ( fid , 'J_PARENT_START' ,  grid%j_parent_start  , 1 , ierr )
 #elif ! defined(EM_CORE)
@@ -1511,7 +1511,7 @@ endif
 
        IF ( switch .EQ. history_only .AND. config_flags%output_ready_flag ) THEN
           WRITE ( wrf_err_message , FMT='(I2.2)' ) grid%id
-          CALL get_nio_tasks_in_group ( nio_tasks_per_group )
+          CALL get_nio_tasks_in_group ( grid%id, nio_tasks_per_group )
           IF ( nio_tasks_per_group .EQ. 0 ) THEN
              OPEN ( UNIT   = 99 , &
                     FILE   = 'wrfoutReady_d' // wrf_err_message(1:2) // '_' // TRIM(current_date) , &

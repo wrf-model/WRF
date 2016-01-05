@@ -220,7 +220,7 @@ if ( tag == 1 )
 
 /* check for errors in memory allocation */
 
-       if ( ! p->boundary_array ) { fprintf(fp,"IF(in_use_for_config(id,'%s')",fname) ; } 
+       if ( ! p->boundary_array ) { fprintf(fp,"IF(okay_to_alloc.AND.in_use_for_config(id,'%s')",fname) ; } 
        else                       { fprintf(fp,"IF(.TRUE.") ; }
 
        if ( ! ( p->node_kind & FOURD ) && sw == 1 &&

@@ -79,6 +79,7 @@ module_integrate.o: \
 		module_configure.o \
 		../share/module_linked_lisk2.o \
 		module_cpl.o \
+                module_dm.o \
 		$(ESMF_MOD_DEPENDENCE)
 
 module_intermediate_nmm.o: \
@@ -1041,7 +1042,7 @@ dfi.o : 	../frame/module_wrf_error.o ../frame/module_configure.o \
 module_optional_input.o: module_io_wrf.o module_io_domain.o \
 		../frame/module_domain.o ../frame/module_configure.o
 
-mediation_wrfmain.o: ../frame/module_domain.o ../frame/module_configure.o \
+mediation_wrfmain.o: ../frame/module_domain.o ../frame/module_configure.o ../frame/module_dm.o \
 		../frame/module_timing.o $(ESMF_MOD_DEPENDENCE) \
 		module_bc_time_utilities.o module_io_domain.o
 

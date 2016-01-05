@@ -501,7 +501,9 @@
     CALL nl_set_map_proj ( grid%id , config_flags%map_proj )
     grid%map_proj = config_flags%map_proj
 
+    mminlu = " "
     CALL wrf_get_dom_ti_char ( fid , 'MMINLU', mminlu , ierr )
+    IF ( ierr .NE. 0 ) mminlu = " "
 #if ( ( EM_CORE == 1 ) && ( DA_CORE != 1 ) )
     IF ( ( ( switch .EQ. input_only ) .OR. ( switch .EQ. restart_only ) ) .AND. &
          ( ( config_flags%io_form_input .EQ.  2 ) .OR. &

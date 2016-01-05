@@ -813,7 +813,14 @@ integer myproc
    CALL nl_get_iswater(id,iswater)
    CALL nl_get_isice(id,isice)
    CALL nl_get_isurban(id,isurban)
-   CALL nl_get_mminlu( 1, mminlu_loc )
+!jm   CALL nl_get_mminlu( 1, mminlu_loc )
+   CALL nl_get_mminlu( id, mminlu_loc )
+#if (NMM_CORE == 1 && HWRF == 1 )
+   IF ( trim(mminlu_loc) .eq. "" ) THEN
+     CALL wrf_message('WARNING:   MMINLU NOT SET, USING USGS')
+     MMINLU_LOC = 'USGS'
+   ENDIF
+#endif
    CALL wrf_debug(100,'after nl_get_iswater, nl_get_isice, nl_get_mminlu_loc')
 !-- temporary fix by ww
    landuse_ISICE = isice
@@ -1456,6 +1463,7 @@ integer myproc
           'module_physics_init.F: LANDUSE_INIT: open failure for LANDUSE.TBL'
           CALL wrf_error_fatal ( message )
         END IF
+        REWIND(landuse_unit)
       ENDIF
 
 ! Read info from file LANDUSE.TBL
@@ -1493,6 +1501,7 @@ integer myproc
       ENDIF
       CALL wrf_dm_bcast_bytes (end_of_file, LWORDSIZE )
       IF ( .NOT. end_of_file ) THEN
+        CALL wrf_dm_bcast_bytes (lucats,  IWORDSIZE )
         CALL wrf_dm_bcast_string(lutype, 256)
         CALL wrf_dm_bcast_bytes (lucats,  IWORDSIZE )
         CALL wrf_dm_bcast_bytes (luseas,  IWORDSIZE )

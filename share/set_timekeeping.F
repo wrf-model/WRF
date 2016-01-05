@@ -13,7 +13,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
    INTEGER :: start_year,start_month,start_day,start_hour,start_minute,start_second
    INTEGER :: end_year,end_month,end_day,end_hour,end_minute,end_second
    INTEGER :: vortex_interval
-#ifdef HWRF
+#if ( HWRF == 1 )
 !zhang's doing
    real (kind=8) :: day_in_sec
    REAL :: tstart
@@ -85,7 +85,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
       CALL nl_get_start_hour(grid%id,start_hour)
       CALL nl_get_start_minute(grid%id,start_minute)
       CALL nl_get_start_second(grid%id,start_second)
-#ifdef HWRF
+#if ( HWRF == 1 )
 !zhang's doing - check with zhan before adding this bit
 !   CALL nl_get_tstart ( grid%id , tstart )
 !   CALL jdn_sec(day_in_sec,start_year,start_month,start_day,start_hour,start_minute,start_second)

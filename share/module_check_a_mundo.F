@@ -71,16 +71,16 @@
 
 #if (NMM_CORE == 1) && (NMM_NEST == 1)
 !-----------------------------------------------------------------------
-! Ensure that minimum NMM coral distances are supplied for all domains.
+! Ensure that minimum NMM corral distances are supplied for all domains.
 !-----------------------------------------------------------------------
    do i=1,model_config_rec%max_dom
-      if(model_config_rec%coral_x(i)<5) then
-         call wrf_message("Coral X distance must be at least 5 due to intermediate domain halos.")
-         model_config_rec%coral_x(i)=5
+      if(model_config_rec%corral_x(i)<5) then
+         call wrf_message("Corral X distance must be at least 5 due to intermediate domain halos.")
+         model_config_rec%corral_x(i)=5
       endif
-      if(model_config_rec%coral_y(i)<5) then
-         call wrf_message("Coral Y distance must be at least 5 due to intermediate domain halos.")
-         model_config_rec%coral_y(i)=5
+      if(model_config_rec%corral_y(i)<5) then
+         call wrf_message("Corral Y distance must be at least 5 due to intermediate domain halos.")
+         model_config_rec%corral_y(i)=5
       endif
     enddo
 #endif
@@ -88,8 +88,9 @@
 #if (EM_CORE == 1)
 !-----------------------------------------------------------------------
 ! There are restrictions for the use_theta_m option:
-! 1. The option may not be used in conjunction with damp_opt=2.
-! 2. The option may not be used with rad_nudge.
+! 1. The option to include moist theta in the WRF solver only works with a single domain.
+! 2. The option may not be used in conjunction with damp_opt=2.
+! 3. The option may not be used with rad_nudge.
 !-----------------------------------------------------------------------
 
       IF ( ( model_config_rec % use_theta_m .EQ. 1 ) .AND. &
@@ -967,7 +968,7 @@
           END IF
          END IF
        END DO
-
+ 
 !-----------------------------------------------------------------------
 ! The namelist flag kf_edrates=1 must have one of the three KF cumulus parameterizations
 ! turned on.  All other cumulus parameterizations need to have kf_edrates=0

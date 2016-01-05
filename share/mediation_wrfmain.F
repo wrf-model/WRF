@@ -173,27 +173,84 @@ SUBROUTINE med_shutdown_io ( grid , config_flags )
    USE module_io_domain
   ! Model layer
    USE module_configure
+   USE module_dm, ONLY : domain_active_this_task
 
    IMPLICIT NONE
+   INTERFACE
+     SUBROUTINE med_shutdown_io_recurse ( grid , config_flags )
+       USE module_domain
+       USE module_configure
+       TYPE (domain) , POINTER :: grid
+       TYPE (grid_config_rec_type) :: config_flags
+     END SUBROUTINE med_shutdown_io_recurse
+   END INTERFACE
 
   ! Arguments
-   TYPE(domain)                               :: grid
+   TYPE(domain), TARGET                       :: grid
    TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
   ! Local
+   TYPE(domain),POINTER                       :: grid_ptr
    CHARACTER (LEN=80)      :: message
-   INTEGER                 :: ierr
+   INTEGER                 :: id, ierr
 
-   IF ( grid%oid > 0 ) CALL close_dataset ( grid%oid , config_flags , "DATASET=HISTORY" )
    IF ( grid%lbc_fid > 0 ) CALL close_dataset ( grid%lbc_fid , config_flags , "DATASET=BOUNDARY" )
 
-! registry generated closes for auxhist streams
-#include "shutdown_closes.inc"
+   grid_ptr => grid
+   CALL med_shutdown_io_recurse ( grid_ptr , config_flags )
 
+#if ( HWRF == 1 ) 
+   DO id = 1, max_domains
+     IF( domain_active_this_task(id) ) THEN
+       CALL push_communicators_for_domain(id)
+       CALL wrf_ioexit( ierr )    ! shut down the quilt I/O
+       CALL pop_communicators_for_domain
+     ENDIF
+   ENDDO
+#else
    CALL wrf_ioexit( ierr )    ! shut down the quilt I/O
+#endif
 
    RETURN
 
 END SUBROUTINE med_shutdown_io
+
+RECURSIVE SUBROUTINE med_shutdown_io_recurse ( grid , config_flags )
+  ! Driver layer
+   USE module_domain
+   USE module_io_domain
+  ! Model layer
+   USE module_configure
+
+   IMPLICIT NONE
+
+  ! Arguments
+   TYPE(domain), POINTER                      :: grid
+   TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
+  ! Local
+   TYPE(domain), POINTER                      :: grid_ptr
+   CHARACTER (LEN=80)      :: message
+   INTEGER                 :: kid
+   INTEGER                 :: ierr
+
+   IF ( ASSOCIATED( grid ) ) THEN
+     CALL push_communicators_for_domain(grid%id)
+     IF ( grid%oid > 0 ) CALL close_dataset ( grid%oid , config_flags , "DATASET=HISTORY" )
+! registry generated closes for auxhist streams
+#    include "shutdown_closes.inc"
+     grid_ptr => grid
+     DO WHILE ( ASSOCIATED( grid_ptr ) )
+       DO kid = 1, max_nests
+         IF ( ASSOCIATED( grid_ptr%nests(kid)%ptr ) ) THEN
+           CALL med_shutdown_io_recurse ( grid_ptr%nests(kid)%ptr, config_flags )
+         ENDIF
+       ENDDO
+       grid_ptr => grid_ptr%sibling
+     ENDDO
+     CALL pop_communicators_for_domain
+   ENDIF
+   RETURN
+END SUBROUTINE med_shutdown_io_recurse
+
 
 SUBROUTINE med_add_config_info_to_grid ( grid )
 

@@ -2,7 +2,7 @@ module module_membrane_mslp
   implicit none
   private
 
-#ifdef HWRF
+#if ( HWRF == 1 )
 
   public :: make_membrane_mslp
 

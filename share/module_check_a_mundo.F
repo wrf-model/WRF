@@ -43,7 +43,7 @@
 
       LOGICAL :: exists
       LOGICAL , EXTERNAL :: wrf_dm_on_monitor
-      INTEGER :: i, oops
+      INTEGER :: i, oops, d1_value
       LOGICAL :: km_opt_already_done , diff_opt_already_done
 
 !-----------------------------------------------------------------------
@@ -315,6 +315,18 @@
             CALL wrf_message ( 'Linear vertical interpolation is recommended with input vertical resolution this coarse, changing lagrange_order to 1' )
             model_config_rec%lagrange_order = 1
             END IF
+
+!-----------------------------------------------------------------------
+! Check for domain consistency for urban options.
+!-----------------------------------------------------------------------
+
+      d1_value = model_config_rec%sf_urban_physics(1)
+      DO i = 2, model_config_rec % max_dom
+         IF ( model_config_rec%sf_urban_physics(i) /= d1_value ) THEN
+            WRITE(wrf_err_message, * ) '--- ERROR:   sf_urban_physics option must be identical in each domain'
+            CALL wrf_error_fatal ( TRIM ( wrf_err_message ) )
+         ENDIF
+      END DO
 
 !-----------------------------------------------------------------------
 ! Check for consistency in the Noah-MP options

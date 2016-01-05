@@ -12,7 +12,7 @@ MODULE module_physics_init
 
    USE module_state_description
    USE module_model_constants
-   USE module_configure, ONLY : grid_config_rec_type
+   USE module_configure, ONLY : grid_config_rec_type ! , p_qnn, f_qnn
 !  USE module_ssib_veg , ONLY : init_module_ssib_veg !fds (SSiB constants)
    !Local data for CAM's MG MP scheme
    integer  :: ixcldliq, ixcldice, ixnumliq, ixnumice

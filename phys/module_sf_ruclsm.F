@@ -7,7 +7,7 @@ MODULE module_sf_ruclsm
   USE module_wrf_error
 
 ! VEGETATION PARAMETERS
-        INTEGER :: LUCATS , BARE, NATURAL, CROP
+        INTEGER :: LUCATS , BARE, NATURAL, CROP, URBAN
         integer, PARAMETER :: NLUS=50
         CHARACTER*8 LUTYPE
         INTEGER, DIMENSION(1:NLUS) :: IFORTBL
@@ -539,8 +539,18 @@ CONTAINS
          prcpncliq = rainncv(i,j)*(1.-frzfrac(i,j))
          prcpncfr = rainncv(i,j)*frzfrac(i,j)
 !- apply the same frozen precipitation fraction to convective precip
-         prcpculiq = max(0.,(rainbl(i,j)-rainncv(i,j))*(1-frzfrac(i,j)))
+       if(frzfrac(i,j) > 0.) then
+         prcpculiq = max(0.,(rainbl(i,j)-rainncv(i,j))*(1.-frzfrac(i,j)))
          prcpcufr = max(0.,(rainbl(i,j)-rainncv(i,j))*frzfrac(i,j))
+       else
+          if(tabs < 273.) then
+            prcpcufr = max(0.,(rainbl(i,j)-rainncv(i,j)))
+            prcpculiq = 0.
+          else
+            prcpcufr = 0.
+            prcpculiq = max(0.,(rainbl(i,j)-rainncv(i,j)))
+          endif  ! tabs < 273.
+       endif  ! frzfrac > 0.
 !--- 1*e-3 is to convert from mm/s to m/s
          PRCPMS   = (prcpncliq + prcpculiq)/DT*1.e-3
          NEWSNMS  = (prcpncfr + prcpcufr)/DT*1.e-3
@@ -688,7 +698,7 @@ CONTAINS
     ENDIF
 
         CN=CFACTR_DATA   ! exponent
-        SAT=max(1.e-4,CMCMAX_DATA * LAI(I,J) * 0.01*VEGFRA(I,J)) ! canopy water saturated
+        SAT=max(1.e-4,(min(0.75,(CMCMAX_DATA * LAI(I,J) * 0.01*VEGFRA(I,J))))) ! canopy water saturated
 
 !-- definition of number of soil levels in the rooting zone
 !     IF(iforest(ivgtyp(i,j)).ne.1) THEN
@@ -701,7 +711,7 @@ CONTAINS
          meltfactor = 2.0
 
          do k=2,nzs
-         if(zsmain(k).ge.0.6) then
+         if(zsmain(k).ge.0.4) then
             NROOT=K
             goto  111
          endif
@@ -867,8 +877,8 @@ CONTAINS
          CALL SFCTMP (dt,ktau,conflx,i,j,                        &
 !--- input variables
                 nzs,nddzs,nroot,meltfactor,                      &   !added meltfactor
-                iland,isoil,xland(i,j),ivgtyp(i,j),PRCPMS,       &
-                NEWSNMS,SNWE,SNHEI,SNOWFRAC,                     &
+                iland,isoil,xland(i,j),ivgtyp(i,j),isltyp(i,j),  &
+                PRCPMS, NEWSNMS,SNWE,SNHEI,SNOWFRAC,             &
                 RHOSN,RHONEWSN,RHOSNFALL,                        &
                 snowrat,grauprat,icerat,curat,                   &
                 PATM,TABS,QVATM,QCATM,RHO,                       &
@@ -1119,7 +1129,7 @@ print * ,'Soil moisture is below wilting in mixed grassland/cropland category at
    SUBROUTINE SFCTMP (delt,ktau,conflx,i,j,                      &
 !--- input variables
                 nzs,nddzs,nroot,meltfactor,                      &
-                ILAND,ISOIL,XLAND,IVGTYP,PRCPMS,                 &
+                ILAND,ISOIL,XLAND,IVGTYP,ISLTYP,PRCPMS,          &
                 NEWSNMS,SNWE,SNHEI,SNOWFRAC,                     &
                 RHOSN,RHONEWSN,RHOSNFALL,                        &
                 snowrat,grauprat,icerat,curat,                   &
@@ -1173,7 +1183,7 @@ print * ,'Soil moisture is below wilting in mixed grassland/cropland category at
                                                            QKMS, &
                                                            TKMS
                                                              
-   INTEGER,   INTENT(IN   )  ::                          IVGTYP
+   INTEGER,   INTENT(IN   )  ::                          IVGTYP, ISLTYP
 !--- 2-D variables
    REAL                                                        , &
             INTENT(INOUT)    ::                           EMISS, &
@@ -1494,13 +1504,35 @@ print * ,'Soil moisture is below wilting in mixed grassland/cropland category at
 !-- SNOW on the ground
 !--- Land-use category should be changed to snow/ice for grid points with snow>0
          ILAND=ISICE
+!24nov15 - based on field exp on Pleasant View soccer fields
+    if(meltfactor > 1.5) then ! all veg. types, except forests
 ! SNHEI_CRIT is a threshold for fractional snow
-         SNHEI_CRIT=0.01*1.e3/rhosn
-!         SNHEI_CRIT=0.01601*1.e3/rhosn
+!         SNHEI_CRIT=0.01*1.e3/rhosn
+         SNHEI_CRIT=0.01601*1.e3/rhosn
+! Petzold - 1 cm of fresh snow overwrites effects from old snow.
+! Need to test SNHEI_CRIT_newsn=0.01
          SNHEI_CRIT_newsn=0.0005*1.e3/rhosn
-         SNOWFRAC=MIN(1.,SNHEI/SNHEI_CRIT)
-!         SNOWFRAC=MIN(1.,SNHEI/(2.*SNHEI_CRIT))
+    else  ! forests
+!24nov15
+         SNHEI_CRIT=0.02*1.e3/rhosn
+         SNHEI_CRIT_newsn=0.001*1.e3/rhosn
+    endif
 
+!         SNOWFRAC=MIN(1.,SNHEI/SNHEI_CRIT)
+         SNOWFRAC=MIN(1.,SNHEI/(2.*SNHEI_CRIT))
+!24nov15 - SNOWFRAC for urban category < 0.5 
+      if(ivgtyp == urban) snowfrac=min(0.5,snowfrac)
+      if(meltfactor > 1.5) then
+         if(isltyp > 9 .and. isltyp < 13) then
+!24nov15 clay soil types - SNOFRAC < 0.9
+           snowfrac=min(0.9,snowfrac)
+         endif
+      else
+!24nov15 - SNOWFRAC for forests < 0.75 
+         snowfrac=min(0.75,snowfrac)
+      endif
+
+!         SNOWFRAC=MIN(1.,SNHEI/(2.*SNHEI_CRIT))
        if(snowfrac < 0.3) then
 ! turn on snow "mosaic" when snowfrac < 0.3
          snow_mosaic = 1. 
@@ -3615,7 +3647,8 @@ print *, 'TSO before calling SNOWTEMP: ', tso
       print *,'RUC LSM EETA',EETA*XLVm,EETA
     ENDIF
        ENDIF
-!        S=SNFLX
+        S=SNFLX
+        sublim=eeta
 ! Energy budget
         FLTOT=RNET-HFT-XLVm*EETA-S-SNOH-x
     IF ( wrf_at_debug_level(LSMRUC_DBG_LVL) ) THEN
@@ -7045,6 +7078,9 @@ print *,'INFMAX,INFMAX1,HYDRO(1)*SOILIQW(1),-TOTLIQ', &
            READ (19,*)NATURAL
            READ (19,*)
            READ (19,*)CROP
+           READ (19,*)
+           READ (19,*)URBAN
+
         ENDIF
 
  2002   CONTINUE
@@ -7081,9 +7117,10 @@ print *,'INFMAX,INFMAX1,HYDRO(1)*SOILIQW(1),-TOTLIQ', &
       CALL wrf_dm_bcast_real    ( CMCMAX_DATA  , 1 )
       CALL wrf_dm_bcast_real    ( CFACTR_DATA  , 1 )
       CALL wrf_dm_bcast_real    ( RSMAX_DATA  , 1 )
-      CALL wrf_dm_bcast_integer ( BARE    , 1 )
-      CALL wrf_dm_bcast_integer ( NATURAL    , 1 )
-      CALL wrf_dm_bcast_integer ( CROP    , 1 )
+      CALL wrf_dm_bcast_integer ( BARE        , 1 )
+      CALL wrf_dm_bcast_integer ( NATURAL     , 1 )
+      CALL wrf_dm_bcast_integer ( CROP        , 1 )
+      CALL wrf_dm_bcast_integer ( URBAN       , 1 )
 
 !                                                                       
 !-----READ IN SOIL PROPERTIES FROM SOILPARM.TBL

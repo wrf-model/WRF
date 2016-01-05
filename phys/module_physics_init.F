@@ -192,6 +192,9 @@ CONTAINS
                          nssl_cnor, nssl_cnos,                   &
                          nssl_rho_qh, nssl_rho_qhl,              &
                          nssl_rho_qs,                             &
+! next 2 flags for Explicit lightning:
+                         nssl_ipelec,                             &
+                         nssl_isaund,                             &
    ! OPTIONAL 
                          RQCNCUTEN, RQINCUTEN,                   &
                          rliq,                                   &  !BSINGH:01/31/2013 - Added rliq and is_CAMMGMP_used for CAM5 physics
@@ -217,6 +220,7 @@ CONTAINS
                          ,G_URB2D_mosaic,RN_URB2D_mosaic                                                      & ! danli mosaic 
                          ,TS_URB2D_mosaic                                                                     & ! danli mosaic 
                          ,TS_RUL2D_mosaic                                                                     & ! danli mosaic
+!                        ,P_QNN, F_QNN   &
                          )
 
 !-----------------------------------------------------------------
@@ -472,6 +476,10 @@ CONTAINS
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: RIVERCONDXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: PEXPXY
 
+!   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),  OPTIONAL,  INTENT(INOUT ) ::   qnn_curr
+!  integer, optional, intent(in) :: p_qnn
+!  LOGICAL, OPTIONAL, intent(in) :: f_qnn
+
    INTEGER , OPTIONAL,  INTENT(OUT) :: STEPWTD
    REAL , OPTIONAL, INTENT(IN) :: WTDDT
 
@@ -661,12 +669,13 @@ CONTAINS
    TYPE(fdob_type), OPTIONAL, INTENT(INOUT) :: fdob
 #endif
    REAL, OPTIONAL, INTENT(IN) :: p00, t00, tlp   ! for obs-nudging base-state calcn
-   REAL, OPTIONAL, INTENT(IN) :: nssl_cccn, nssl_alphah, nssl_alphahl, &
+   REAL, INTENT(IN) :: nssl_cccn, nssl_alphah, nssl_alphahl, &
                          nssl_cnoh, nssl_cnohl,                  &
                          nssl_cnor, nssl_cnos,                   &
                          nssl_rho_qh, nssl_rho_qhl,              &
                          nssl_rho_qs
 
+   INTEGER, INTENT(IN) :: nssl_ipelec,nssl_isaund
 
 ! WA 12/21/09
    REAL,OPTIONAL, DIMENSION( ims:ime , kms:kme , jms:jme ) , &
@@ -828,7 +837,7 @@ integer myproc
 #endif
    CALL nl_set_icloud_cu ( id , icloud_cu )
 
-  IF(.not.restart)THEN
+  IF(.not.restart)THEN !{
 !-- initialize common variables
      !BSINGH - When all the CAM parameterizations are not executed in WRF,
      !rliq can have undefined behaviour
@@ -987,7 +996,32 @@ integer myproc
                 its, ite, jts, jte, kts, kte                       )
    ENDIF
 
-  ENDIF
+#if 0
+   IF ( f_qnn ) THEN
+! Initialize simple ccn field
+     IF ( .not. Any(scalar(:,:,:,p_qnn) > 1.0 ) ) THEN ! initialize ccn if not already done
+       DO j=jts,jtf
+         DO k=kts,ktf
+          DO i=its,itf
+           IF ( config_flags%mp_physics == wdm5scheme .or. config_flags%mp_physics == wdm6scheme ) THEN
+             scalar(i,k,j,p_qnn) = ccn_conc
+           ELSEIF ( config_flags%mp_physics == nssl_2momccn ) THEN
+#if (EM_CORE == 1)
+! for NMM, we will leave qnn=0 and use the invertccn=true in the NSSL 2-mom so that we can not worry about boundary conditions
+! That means only one value of qnn in NMM for now
+             scalar(i,k,j,p_qnn)  = nssl_cccn/1.225
+             ccn_conc =  nssl_cccn/1.225
+#endif
+           ELSE
+             scalar(i,k,j,p_qnn)  = ccn_conc
+           ENDIF
+          ENDDO
+         ENDDO
+        ENDDO
+      ENDIF
+   ENDIF
+#endif
+  ENDIF !}
 
 !-- convert zfull and zhalf to sigma values for ra_init (Eta CO2 needs these)
 !-- zfull/zhalf may be either zeta or eta
@@ -1242,6 +1276,7 @@ integer myproc
 !CAMMGMP specific variables
                 ixcldliq, ixcldice, ixnumliq, ixnumice,         &
                 nssl_cccn, nssl_alphah, nssl_alphahl,           &
+                nssl_ipelec, nssl_isaund,                       &
                          nssl_cnoh, nssl_cnohl,                  &
                          nssl_cnor, nssl_cnos,                   &
                          nssl_rho_qh, nssl_rho_qhl,              &
@@ -3527,6 +3562,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
 !CAMMGMP specific variables
                       ixcldliq, ixcldice, ixnumliq, ixnumice,     &       
                       nssl_cccn, nssl_alphah, nssl_alphahl,       &
+                      nssl_ipelec, nssl_isaund,                  &
                          nssl_cnoh, nssl_cnohl,                  &
                          nssl_cnor, nssl_cnos,                   &
                          nssl_rho_qh, nssl_rho_qhl,              &
@@ -3553,8 +3589,8 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
 !  USE module_mp_milbrandt3mom
    USE module_mp_wdm5
    USE module_mp_wdm6
-#if (EM_CORE==1)
    USE module_mp_nssl_2mom
+#if (EM_CORE==1)
    USE module_mp_cammgmp_driver, ONLY:CAMMGMP_INIT !CAM5's microphysics
 #endif
 !------------------------------------------------------------------
@@ -3570,6 +3606,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                                   nssl_cnor, nssl_cnos,                   &
                                   nssl_rho_qh, nssl_rho_qhl,              &
                                   nssl_rho_qs
+   INTEGER, INTENT(IN), OPTIONAL  :: nssl_ipelec, nssl_isaund
 
    LOGICAL , INTENT(IN)        :: start_of_simulation
    INTEGER , INTENT(IN)        :: ixcldliq, ixcldice, ixnumliq, ixnumice ! CAMMGMP specific variables
@@ -3593,6 +3630,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
 ! Local
    INTEGER :: i, j, itf, jtf
    REAL, DIMENSION(20) :: nssl_params
+   INTEGER    :: nssl_ipelec_tmp
 
    warm_rain = .false.
    adv_moist_cond = .true.
@@ -3610,6 +3648,17 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    ENDIF
    
    IF ( present( nssl_cccn ) ) THEN
+     SELECT CASE(config_flags%mp_physics)
+     CASE (NSSL_2MOM,NSSL_2MOMCCN)
+       IF ( config_flags%elec_physics > 0 ) THEN
+         nssl_ipelec_tmp = nssl_ipelec
+       ELSE
+         nssl_ipelec_tmp = 0.0
+       ENDIF
+     CASE DEFAULT
+       nssl_ipelec_tmp = 0.0
+     END SELECT
+     
      nssl_params(1)  = nssl_cccn
      nssl_params(2)  = nssl_alphah
      nssl_params(3)  = nssl_alphahl
@@ -3620,6 +3669,9 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
      nssl_params(8)  = nssl_rho_qh
      nssl_params(9)  = nssl_rho_qhl
      nssl_params(10) = nssl_rho_qs
+     nssl_params(11) = nssl_ipelec_tmp
+     nssl_params(12) = nssl_isaund
+
    ENDIF
 
    mp_select: SELECT CASE(config_flags%mp_physics)
@@ -3700,6 +3752,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
      IF(start_of_simulation.or.restart)THEN
           CALL fast_hucminit(dt)
      END IF
+#endif
      CASE (NSSL_1MOMLFO)
          CALL nssl_2mom_init(ims,ime, jms,jme, kms,kme,nssl_params,ipctmp=0,mixphase=0,ihvol=-1) ! no separate hail
      CASE (NSSL_1MOM)
@@ -3711,8 +3764,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
      CASE (NSSL_2MOMCCN)
          ccn_conc = nssl_cccn/1.225 ! set this to have correct boundary conditions
          CALL nssl_2mom_init(ims,ime, jms,jme, kms,kme,nssl_params,ipctmp=5,mixphase=0,ihvol=1)
-!     CASE (NSSL_3MOM)
-!         CALL nssl_2mom_init(ims,ime, jms,jme, kms,kme,nssl_params,ipctmp=8,mixphase=0,ihvol=1)
+#if (EM_CORE==1)
      CASE (CAMMGMPSCHEME) ! CAM5's microphysics
           CALL CAMMGMP_INIT(ixcldliq, ixcldice, ixnumliq, ixnumice &
              ,config_flags%chem_opt                          &

@@ -29,7 +29,7 @@ CONTAINS
                     ITIMESTEP,CURR_SECS,NSOIL,DT,ANAL_INTERVAL, &            
                     XLAND, XICE, ALBBCK, ALBEDO,                &
                     SNOALB, SMOIS, TSLB, MAVAIL, TA2,           &
-                    QA2, ZS,DZS, PSIH,                          &
+                    QA2, QSFC, ZS,DZS, PSIH,                          &
                     LANDUSEF,SOILCTOP,SOILCBOT,VEGFRA,VEGF_PX,  &
                     ISLTYP,RA,RS,LAI,IMPERV,CANFRA,NLCAT,NSCAT, & 
                     HFX,QFX,LH,TSK,SST,ZNT,CANWAT,              &
@@ -113,6 +113,12 @@ CONTAINS
 !                    - Impervious surface and canopy fraction data can be used if processed (otherwise 0% so no impact)
 !                      to alter surface heat capacity (See SURFPX subroutine for details) in urban areas and refine
 !                      LAI and VEGF_PX estimations (see VEGLAND subroutine).
+!
+!     JP     12/2015 - Surface water vapor mixing ratio calculation added for land surface, which is passed to PX-SFCLAY 
+!                      for use over all non-water and non-frozen surfaces.
+!                    - PAR function and impact on transpiration modified according to Echer et al.(2015). See P-X LSM documentation
+!                      for full reference. These act to reduce moisture bias near surface during PBL transition.
+!                                                   
 !--------------------------------------------------------------------------------------------------------------
 !--------------------------------------------------------------------------------------------------------------
 !   ARGUMENT LIST:
@@ -169,8 +175,12 @@ CONTAINS
 !-- RA           Aerodynamic resistence			
 !-- RS           Stomatal resistence			
 !-- LAI          Leaf area index (weighted according to fractional landuse)
+!-- ZNT          rougness length
+!-- QSFC         Sat. water vapor mixing ratio at the surface interface
+
 !-- IMPERV       Fraction (percent) of grid cell that is impervious surface (concrete/road/non-veg)
 !-- CANFRA       Fraction (percent) of grid cell that is covered with tree canopy
+
 !-- NLCAT        Number of landuse categories		
 !-- NSCAT        Number of soil categories		
 
@@ -179,7 +189,6 @@ CONTAINS
 !-- LH           net upward latent heat flux at surface (W/m^2)
 !-- TSK          surface skin temperature (K)
 !-- SST          sea surface temperature
-!-- ZNT          rougness length
 !-- CANWAT       Canopy water (mm)
 
 !-- GRDFLX       Ground heat flux
@@ -253,7 +262,7 @@ CONTAINS
    REAL,     DIMENSION(1:NSOIL), INTENT(IN)::ZS,DZS
    REAL,     DIMENSION( ims:ime , 1:NSOIL, jms:jme ),  INTENT(INOUT)   ::  SMOIS, TSLB     
 
-   REAL,     DIMENSION( ims:ime , jms:jme ), INTENT(INOUT):: RA, RS, LAI, ZNT
+   REAL,     DIMENSION( ims:ime , jms:jme ), INTENT(INOUT):: RA, RS, LAI, ZNT, QSFC
    REAL,     DIMENSION( ims:ime , jms:jme ), INTENT(OUT):: GRDFLX, TSK, TA2, QA2
 
    REAL,     DIMENSION( ims:ime , 1:NLCAT, jms:jme ), INTENT(IN):: LANDUSEF       
@@ -313,7 +322,7 @@ CONTAINS
             FWSAT,FWFC,FWWLT,FB,FCGSAT,FJP,FAS,       &
             FSEAS, T2I, HC_SNOW, SNOW_FRA,SNOWALB,    &
             QST12,ZFUNC,ZF1,ZA2,QV2, DT_FDDA,         &
-            FC2R,FC1SAT, DTPBL
+            FC2R,FC1SAT, DTPBL, RAW
 
       CHARACTER (LEN = 6) :: LAND_USE_TYPE
 
@@ -562,6 +571,8 @@ CONTAINS
 
           TSK(I,J)    = TSLB(I,1,J)     ! Skin temp set to 1 cm soil temperature in PX for now
           CANWAT(I,J) = WR * 1000.      ! convert WR back to mm for CANWAT
+          RAW = RA(I,J) + 4.503 / USTAR
+          QSFC(I,J) = QFX(I,J) * RAW / DENS1 + QV1
           
        ENDDO !  END MIAN I LOOP
       ENDDO  !  END MAIN J LOOP
@@ -1479,15 +1490,19 @@ CONTAINS
         !!!-RADIATION
         IF (RSTMIN .GT. 130.0) THEN
 !          RADL = 30.0                                            ! W/M2
-          F1MAX = 1.-0.03*LAI
+!          F1MAX = 1.-0.03*LAI
+          F1MAX = 1.-0.02*LAI    !Echer2015  Trees
         ELSE
 !          RADL = 100.0                                           ! W/M2
-          F1MAX = 1.-0.05*LAI
+!          F1MAX = 1.-0.05*LAI
+          F1MAX = 1.-0.07*LAI    !Echer2015 crops/grass
         ENDIF
 !        RADF = 1.1 * RG / (RADL * LAI)                  ! NP89 - EQN34
 !        F1   = (RSTMIN / RSMAX + RADF) / (1.0 + RADF)
-        PAR = 0.45 * RG
-        F1 = F1MAX*(2./(1.+EXP(-0.014*PAR))-1.)
+!        PAR = 0.45 * RG
+        PAR = 0.45 * RG * 4.566  ! converted from W/m2 to umoles/m2/s  (1/.219)  Echer2015
+!        F1 = F1MAX*(2./(1.+EXP(-0.014*PAR))-1.)
+        F1 = F1MAX*(1.0-exp(-0.0017*PAR))   !Echer2015
         F1 = AMAX1(F1,RSTMIN / RSMAX)
 
         !!!-SOIL MOISTURE

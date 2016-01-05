@@ -1641,8 +1641,8 @@
             lami = (am_i*cig(2)*oig1*ni(k)/ri(k))**obmi
             ilami = 1./lami
             xDi = (bm_i + mu_i + 1.) * ilami
-            if (xDi.lt. 20.E-6) then
-             lami = cie(2)/20.E-6
+            if (xDi.lt. 5.E-6) then
+             lami = cie(2)/5.E-6
              ni(k) = MIN(499.D3, cig(1)*oig2*ri(k)/am_i*lami**bm_i)
             elseif (xDi.gt. 300.E-6) then
              lami = cie(2)/300.E-6
@@ -2673,8 +2673,8 @@
            lami = (am_i*cig(2)*oig1*xni/xri)**obmi
            ilami = 1./lami
            xDi = (bm_i + mu_i + 1.) * ilami
-           if (xDi.lt. 20.E-6) then
-            lami = cie(2)/20.E-6
+           if (xDi.lt. 5.E-6) then
+            lami = cie(2)/5.E-6
             xni = MIN(499.D3, cig(1)*oig2*xri/am_i*lami**bm_i)
             niten(k) = (xni-ni1d(k)*rho(k))*odts*orho
            elseif (xDi.gt. 300.E-6) then
@@ -3256,7 +3256,7 @@
            t3_vts = Kap0*csg(1)*ils1**cse(1)
            t4_vts = Kap1*Mrat**mu_s*csg(7)*ils2**cse(7)
            vts = rhof(k)*av_s * (t1_vts+t2_vts)/(t3_vts+t4_vts)
-           if (temp(k).gt. T_0) then
+           if (temp(k).gt. (T_0+0.1)) then
             vtsk(k) = MAX(vts*vts_boost(k),                             &
      &                vts*((vtrk(k)-vts*vts_boost(k))/(temp(k)-T_0)))
            else
@@ -3505,8 +3505,8 @@
            lami = (am_i*cig(2)*oig1*ni1d(k)/qi1d(k))**obmi
            ilami = 1./lami
            xDi = (bm_i + mu_i + 1.) * ilami
-           if (xDi.lt. 20.E-6) then
-            lami = cie(2)/20.E-6
+           if (xDi.lt. 5.E-6) then
+            lami = cie(2)/5.E-6
            elseif (xDi.gt. 300.E-6) then
             lami = cie(2)/300.E-6
            endif
@@ -3591,13 +3591,11 @@
                 CALL wrf_error_fatal("Error opening qr_acr_qg.dat. Aborting because force_read_thompson is .true.")
               ENDIF
             ENDIF
-!mchen add
          ELSE
             INQUIRE(63,opened=lopen)
             IF (lopen) THEN
               CLOSE(63)
             ENDIF
-!mchen end
           ENDIF
         ELSE
           IF( force_read_thompson ) THEN

@@ -4512,7 +4512,7 @@ END SUBROUTINE aer_p_int
       END DO
 
       DO j=jts,jte
-         DO k=kts,kte-1
+         DO k=kts,kte
             DO i=its,ite
                rhoa = p_phy(i,k,j)/(287.*t_phy(i,k,j))
                t_idx = MAX(1, MIN(nint(10.999-0.0333*t_phy(i,k,j)),4))

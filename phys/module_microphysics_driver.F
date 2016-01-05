@@ -147,9 +147,7 @@ SUBROUTINE microphysics_driver(                                          &
    USE module_mp_cammgmp_driver, ONLY: CAMMGMP ! CAM5's microphysics driver
 # endif
 !  USE module_mp_milbrandt3mom
-#if (EM_CORE==1)
    USE module_mp_nssl_2mom
-#endif
 
    USE module_mp_HWRF
    USE module_mixactivate, only: prescribe_aerosol_mixactivate
@@ -965,7 +963,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
          PRESENT (MU) .AND. PRESENT (QSCUTEN).AND. &
          PRESENT (QRCUTEN) .AND. PRESENT (QICUTEN).AND. &
          PRESENT (RAINNC ) .AND. PRESENT (RAINNCV) .AND. &
-         PRESENT (Z      ) .AND.PRESENT ( W      )  ) THEN
+         PRESENT ( W      )  ) THEN
          CALL mp_morr_two_moment(                            &
                      ITIMESTEP=itimestep,                &  !*
                      TH=th,                              &  !*
@@ -1029,7 +1027,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
              PRESENT (SNOWNC ) .AND. PRESENT (SNOWNCV)   .AND. &
              PRESENT (HAILNC ) .AND. PRESENT (HAILNCV)   .AND. &
              PRESENT (GRAUPELNC).AND.PRESENT (GRAUPELNCV).AND. &
-             PRESENT (Z      ) .AND. PRESENT ( W      )  ) THEN
+             PRESENT ( W      )  ) THEN
 !            PRESENT (ccntype)                                 &
 
          CALL mp_milbrandt2mom_driver(                   &
@@ -1084,7 +1082,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 !              PRESENT (QG_CURR) .AND. PRESENT (QNG_CURR) .AND. PRESENT (QZG_CURR) .AND.  &
 !              PRESENT (QH_CURR) .AND. PRESENT (QNH_CURR) .AND. PRESENT (QZH_CURR) .AND.  &
 !              PRESENT (RAINNC ) .AND. PRESENT (RAINNCV)  .AND. &
-!              PRESENT (Z      ) .AND. PRESENT ( W      )  ) THEN
+!              PRESENT ( W      )  ) THEN
 !          CALL mp_milbrandt3mom_driver(                   &
 !                      ITIMESTEP=itimestep,                &  !*
 !                      TH=th,                              &  !*
@@ -1122,7 +1120,6 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 !            Call wrf_error_fatal( 'arguments not present for calling milbrandt3mom')
 !         ENDIF
 
-#if (EM_CORE==1)
     CASE (NSSL_1MOM)
          CALL wrf_debug(100, 'microphysics_driver: calling nssl1mom')
          IF (PRESENT (QV_CURR) .AND.                           &
@@ -1133,10 +1130,12 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
              PRESENT (QG_CURR) .AND.  &
              PRESENT (QH_CURR) .AND.  &
              PRESENT (RAINNC ) .AND. PRESENT (RAINNCV)   .AND. &
+#if (EM_CORE==1)
              PRESENT (SNOWNC ) .AND. PRESENT (SNOWNCV)   .AND. &
              PRESENT (HAILNC ) .AND. PRESENT (HAILNCV)   .AND. &
              PRESENT (GRAUPELNC).AND.PRESENT (GRAUPELNCV).AND. &
-             PRESENT (Z      ) .AND. PRESENT ( W      )  .AND. &
+#endif
+             PRESENT ( W      )  .AND. &
              PRESENT (QVOLG_CURR) ) THEN
              
 
@@ -1179,7 +1178,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                   ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte  &
                                                                     )
         ELSE
-           Call wrf_error_fatal( 'arguments not present for calling nssl_2mom')
+           Call wrf_error_fatal( 'arguments not present for calling nssl_1mom')
         ENDIF
 
 
@@ -1192,9 +1191,11 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
              PRESENT (QS_CURR) .AND.  &
              PRESENT (QG_CURR) .AND.  &
              PRESENT (RAINNC ) .AND. PRESENT (RAINNCV)   .AND. &
+#if (EM_CORE==1)
              PRESENT (SNOWNC ) .AND. PRESENT (SNOWNCV)   .AND. &
              PRESENT (GRAUPELNC).AND.PRESENT (GRAUPELNCV).AND. &
-             PRESENT (Z      ) .AND. PRESENT ( W      )  ) THEN
+#endif
+             PRESENT ( W      )  ) THEN
              
 
          CALL nssl_2mom_driver(                          &
@@ -1226,7 +1227,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                   ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte  &
                                                                     )
         ELSE
-           Call wrf_error_fatal( 'arguments not present for calling nssl_2mom')
+           Call wrf_error_fatal( 'arguments not present for calling nssl_1momlfo')
         ENDIF
 
     CASE (NSSL_2MOM)
@@ -1239,10 +1240,12 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
              PRESENT (QG_CURR) .AND. PRESENT (QNG_CURR)  .AND. &
              PRESENT (QH_CURR) .AND. PRESENT (QNH_CURR)  .AND. &
              PRESENT (RAINNC ) .AND. PRESENT (RAINNCV)   .AND. &
+#if (EM_CORE==1)
              PRESENT (SNOWNC ) .AND. PRESENT (SNOWNCV)   .AND. &
              PRESENT (HAILNC ) .AND. PRESENT (HAILNCV)   .AND. &
              PRESENT (GRAUPELNC).AND.PRESENT (GRAUPELNCV).AND. &
-             PRESENT (Z      ) .AND. PRESENT ( W      )  .AND. &
+#endif
+             PRESENT ( W      )  .AND. &
              PRESENT (QVOLG_CURR) .AND. F_QVOLG  .AND.         &
              PRESENT (QVOLH_CURR) .AND. F_QVOLH ) THEN
              
@@ -1311,10 +1314,12 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
              PRESENT (QS_CURR) .AND. PRESENT (QNS_CURR)  .AND. &
              PRESENT (QG_CURR) .AND. PRESENT (QNG_CURR)  .AND. &
              PRESENT (RAINNC ) .AND. PRESENT (RAINNCV)   .AND. &
+#if (EM_CORE==1)
              PRESENT (SNOWNC ) .AND. PRESENT (SNOWNCV)   .AND. &
              PRESENT (HAILNC ) .AND. PRESENT (HAILNCV)   .AND. &
              PRESENT (GRAUPELNC).AND.PRESENT (GRAUPELNCV).AND. &
-             PRESENT (Z      ) .AND. PRESENT ( W      )  .AND. &
+#endif
+             PRESENT ( W      )  .AND. &
              PRESENT (QVOLG_CURR) .AND. F_QVOLG  ) THEN
              
 
@@ -1367,7 +1372,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                                                                     )
 
         ELSE
-           Call wrf_error_fatal( 'arguments not present for calling nssl_2mom')
+           Call wrf_error_fatal( 'arguments not present for calling nssl_2momg')
         ENDIF
 
     CASE (NSSL_2MOMCCN)
@@ -1380,10 +1385,12 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
              PRESENT (QG_CURR) .AND. PRESENT (QNG_CURR)  .AND. &
              PRESENT (QH_CURR) .AND. PRESENT (QNH_CURR)  .AND. &
              PRESENT (RAINNC ) .AND. PRESENT (RAINNCV)   .AND. &
+#if (EM_CORE==1)
              PRESENT (SNOWNC ) .AND. PRESENT (SNOWNCV)   .AND. &
              PRESENT (HAILNC ) .AND. PRESENT (HAILNCV)   .AND. &
              PRESENT (GRAUPELNC).AND.PRESENT (GRAUPELNCV).AND. &
-             PRESENT (Z      ) .AND. PRESENT ( W      )  .AND. &
+#endif
+             PRESENT ( W      )  .AND. &
              PRESENT (QVOLG_CURR) .AND. F_QVOLG  .AND.         &
              PRESENT (QVOLH_CURR) .AND. F_QVOLH  .AND.         &
              PRESENT( QNN_CURR )                          ) THEN
@@ -1443,7 +1450,6 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
         ELSE
            Call wrf_error_fatal( 'arguments not present for calling nssl_2momccn')
         ENDIF
-#endif
 !
         CASE (GSFCGCESCHEME)
              CALL wrf_debug ( 100 , 'microphysics_driver: calling GSFCGCE' )

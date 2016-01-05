@@ -532,6 +532,31 @@ subroutine calc_aerosol_rrtmg_sw(ht,dz8w,p,t3d,qv3d,aer_type,                   
                                           rh,aer_type,aod5502d,         &
                                           aod550spc,                    &
                                           aod5503d, aod550spc3d)         ! trude
+
+          do j=jts,jte
+            do i=its,ite
+              angexp2d(i,j) = 0.0
+            enddo
+          enddo
+
+          if (present(aod5503d)) then
+            do j=jts,jte
+             do k=kts,kte
+              do i=its,ite
+                xy=0
+                xx=0
+                do nb=8,N_BANDS-3  ! bands between 0.4 and  1.0 um
+                   ! the slope of a linear regression with intercept=0 is m=E(xy)/E(x^2), where y=m*x
+                   x=log(0.5*(lower_wvl(nb)+upper_wvl(nb))/0.55)
+                   xy=xy+x*log(aod550spc3d(i,k,j,nb)/aod5503d(i,k,j))
+                   xx=xx+x*x
+                end do
+                angexp2d(i,j) = angexp2d(i,j) - (xy/(N_BANDS-3-8+1))/(xx/(N_BANDS-3-8+1))
+              enddo
+             enddo
+            enddo
+          else
+
           ! added July, 16th, 2013: angexp2d is in the wrfout when aer_angexp_opt=3. It is the average
           ! value in the spectral bands between 0.4 and 1. um
           do j=jts,jte
@@ -547,6 +572,7 @@ subroutine calc_aerosol_rrtmg_sw(ht,dz8w,p,t3d,qv3d,aer_type,                   
                 angexp2d(i,j)=-(xy/(N_BANDS-3-8+1))/(xx/(N_BANDS-3-8+1))
              end do
           end do
+          endif
 
        case default
           write(wrf_err_message,*) 'Expected aer_angexp_opt=[1,2,3]. Got',aer_angexp_opt

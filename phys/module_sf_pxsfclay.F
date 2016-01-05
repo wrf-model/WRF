@@ -25,6 +25,7 @@ CONTAINS
                      U10,V10,                                      &
                      GZ1OZ0,WSPD,BR,ISFFLX,DX,                     &
                      SVP1,SVP2,SVP3,SVPT0,EP1,EP2,KARMAN,          &
+                     itimestep,                                    &
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte                     )
@@ -45,6 +46,13 @@ CONTAINS
 !  REVISION HISTORY:
 !     A. Xiu        2/2005 - developed WRF version based on the MM5 PX LSM
 !     R. Gilliam    7/2006 - completed implementation into WRF model
+!     J. Pleim     12/2015 - Saturation WV mixing ratio was recomputed internally for all surfaces.  
+!                            Now, it's only recomputed internally at initial timestep or over water. 
+!                            Otherwise, the surface water vapor mixing ratio is read in from PXLSM where 
+!                            it is computed from the water vapor surface flux from previous time step.  
+!                            Also, The MOL calculation was modified to use the water vapor surface flux 
+!                            from previous time step to compute surface buoyancy flux.
+!
 !*********************************************************************** 
 !-------------------------------------------------------------------
 !-- U3D         3D u-velocity interpolated to theta points (m/s)
@@ -121,7 +129,7 @@ CONTAINS
                                         ims,ime, jms,jme, kms,kme, &
                                         its,ite, jts,jte, kts,kte
 !                                                               
-      INTEGER,  INTENT(IN )   ::        ISFFLX
+      INTEGER,  INTENT(IN )   ::        ISFFLX, ITIMESTEP
       REAL,     INTENT(IN )   ::        SVP1,SVP2,SVP3,SVPT0
       REAL,     INTENT(IN )   ::        EP1,EP2,KARMAN
 !
@@ -141,15 +149,15 @@ CONTAINS
                                                               TSK
       REAL,     DIMENSION( ims:ime, jms:jme )                    , &
                 INTENT(OUT  )               ::                U10, &
-                                                              V10, &
-                                                             QSFC
+                                                              V10
+                                                             
 !
       REAL,     DIMENSION( ims:ime, jms:jme )                    , &
                 INTENT(INOUT)               ::             REGIME, &
                                                               HFX, &
                                                               QFX, &
                                                                LH, &
-                                                          MOL,RMOL
+                                                        MOL,RMOL,QSFC
 !m the following 5 are change to memory size
 !
       REAL,     DIMENSION( ims:ime, jms:jme )                    , &
@@ -222,6 +230,7 @@ CONTAINS
                 QSFC(ims,j),LH(ims,j),                             &
                 GZ1OZ0(ims,j),WSPD(ims,j),BR(ims,j),ISFFLX,DX,     &
                 SVP1,SVP2,SVP3,SVPT0,EP1,EP2,KARMAN,               &
+                itimestep,                                         &
                 ids,ide, jds,jde, kds,kde,                         &
                 ims,ime, jms,jme, kms,kme,                         &
                 its,ite, jts,jte, kts,kte                          )
@@ -237,6 +246,7 @@ CONTAINS
                      U10,V10,FLHC,FLQC,QGH,                        &
                      QSFC,LH,GZ1OZ0,WSPD,BR,ISFFLX,DX,             &
                      SVP1,SVP2,SVP3,SVPT0,EP1,EP2,KARMAN,          &
+                     itimestep,                                    &
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte                     )
@@ -251,7 +261,7 @@ CONTAINS
                                         its,ite, jts,jte, kts,kte, &
                                         J
 !                                                               
-      INTEGER,  INTENT(IN )   ::        ISFFLX
+      INTEGER,  INTENT(IN )   ::        ISFFLX, ITIMESTEP
       REAL,     INTENT(IN )   ::        SVP1,SVP2,SVP3,SVPT0
       REAL,     INTENT(IN )   ::        EP1,EP2,KARMAN
 
@@ -290,11 +300,11 @@ CONTAINS
 
       REAL,     DIMENSION( ims:ime )                             , &
                 INTENT(INOUT)   ::                                 &
-                                                              QGH
+                                                              QGH,QSFC
 
       REAL,     DIMENSION( ims:ime )                             , &
                 INTENT(OUT)     ::                        U10,V10, &
-                                                          QSFC,LH
+                                                          LH
                                     
       REAL,     INTENT(IN   )                    ::   CP,G,ROVCP,XLV,DX,R
 
@@ -336,7 +346,7 @@ CONTAINS
       REAL    ::  XMOL,ZOBOL,Z10OL,ZNTOL,YNT,YOB,X1,X2
       REAL    ::  G2OZ0,G10OZ0,RA2,ZOLL
       REAL    ::  TV0,CPOT,RICRITI,AM,AH,SQLNZZ0,RBH,RBW,TSTV
-      REAL    ::  PSIH2, PSIM2, PSIH10, PSIM10, CQS
+      REAL    ::  PSIH2, PSIM2, PSIH10, PSIM10, CQS,TMPVTCON,TST,QST
 
 !-------------------------------Exicutable starts here-------------------- 
 
@@ -352,8 +362,18 @@ CONTAINS
 !-----Compute virtual potential temperature at surface
 !
       DO I=its,ite
-        E1=SVP1*EXP( SVP2*(TG(I)-SVPT0)/(TG(I)-SVP3) )                       
-        QSFC(I)=EP2*E1/(PSFC(I)-E1)
+        IF (TG(I) .LT. 273.15) THEN
+           !SATURATION VAPOR PRESSURE WRT ICE (SVP1=.6112; 10*mb)
+           E1=SVP1*EXP(4648*(1./273.15 - 1./TG(I)) - &
+           & 11.64*LOG(273.15/TG(I)) + 0.02265*(273.15 - TG(I)))
+        ELSE
+           !SATURATION VAPOR PRESSURE WRT WATER (Bolton 1980)
+           E1=SVP1*EXP( SVP2*(TG(I)-SVPT0)/(TG(I)-SVP3) )  
+        ENDIF
+!-- If water or initial timestep use saturation MR for qsfc, otherwise use from LSM
+        IF (xland(i).gt.1.5 .or. QSFC(i).le.0.0.or.itimestep.eq.1) THEN                     
+           QSFC(I)=EP2*E1/(PSFC(I)-E1)
+        ENDIF
         
 ! QGH CHANGED TO USE LOWEST-LEVEL AIR TEMP CONSISTENT WITH MYJSFC CHANGE
 ! Q2SAT = QGH IN LSM
@@ -365,9 +385,10 @@ CONTAINS
 
 !.......... compute the thetav at ground
       DO I = its, ite
-        TV0       = TG(I) * (1.0 + EP1 * QSFC(I)*MAVAIL(I))
+!        TV0       = TG(I) * (1.0 + EP1 * QSFC(I)*MAVAIL(I))
+        TV0       = TG(I) * (1.0 + EP1 * QSFC(I))
         CPOT      = (100./PSFC(I))**ROVCP 
-        TH0(I)    = TV0 * (100./PSFC(I))**ROVCP
+        TH0(I)    = TV0 * CPOT
         THETAG(I) = CPOT * TG(I)
       ENDDO
 !                                                                                
@@ -449,12 +470,22 @@ CONTAINS
 
         RA(I)  = PR0 * (GZ1OZ0(I) - PSIH(I)) / (KARMAN * UST(I))
         RBH    = 5.0 / UST(I)                ! 5/U*  ! WESELY AND HICKS (1977)
-!       ------- RB FOR WATER VAPOR =  5*(0.599/0.709)^2/3 /UST = 4.47/UST    hi               
-        RBW    = 4.47/UST(I)                                       
+!       ------- RB FOR WATER VAPOR =  5*(0.606/0.709)^2/3 /UST = 4.503/UST    hi               
+        RBW    = 4.503/UST(I)                                       
         CHS(I) = 1./(RA(I) + RBH)
         CQS    = 1./(RA(I) + RBW)
         MOL(I) = DTG * CHS(I) / UST(I)                       ! This is really TST
-        TSTV     = (THETAV1(I) - TH0(I)) * CHS(I) / UST(I) 
+!        TSTV     = (THETAV1(I) - TH0(I)) * CHS(I) / UST(I) 
+           TMPVTCON  = 1.0 + EP1 * QV1D(i)                             ! COnversion factor for virtual temperature
+!           TST    = -hfx(i)/(rhox(i)*cp*ust(i))   
+           TST = DTG * CHS(I)/UST(i)
+           QST    = -QFX(i) / (UST(i)*rhox(i))
+           IF (itimestep.eq.1) THEN
+             TSTV  = (THETAV1(I) - TH0(I)) * CHS(I) / UST(I) 
+           ELSE
+             TSTV  = TST*TMPVTCON + THETAV1(i)*EP1*QST
+           ENDIF
+
         IF (ABS(TSTV) .LT. 1.E-5)  TSTV = 1.E-5 
         MOLENGTH(I) = THETAV1(I) * UST(I) * UST(I) / (KARMAN *             &
                         G * TSTV)

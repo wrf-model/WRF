@@ -467,7 +467,8 @@ CONTAINS
 !        CALL horizontal_pressure_gradient( ru_tend,rv_tend,                  &
 !                                            ph,alt,p,pb,al,php,cqu,cqv,       &
 !                                            muu,muv,mu,fnm,fnp,rdnw,          &
-!                                            cf1,cf2,cf3,rdx,rdy,msfux,msfuy,  &
+!                                            cf1,cf2,cf3,cfn,cfn1,             &
+!                                            rdx,rdy,msfux,msfuy,              &
 !                                            msfvx,msfvy,msftx,msfty,          &
 !                                            config_flags, non_hydrostatic,    &
 !                                            top_lid,                          &
@@ -1738,7 +1739,7 @@ CONTAINS
 !!   END DO
 
 !!   CALL horizontal_pressure_gradient(ru_tend,rv_tend,ph,alt,p,pb,al,php,cqu,cqv,muu,  &
-!!   muv,mu,fnm,fnp,rdnw,cf1,cf2,cf3,rdx,rdy,msfux,msfuy,msfvx,msfvy,msftx,msfty,  &
+!!   muv,mu,fnm,fnp,rdnw,cf1,cf2,cf3,cfn,cfn1,rdx,rdy,msfux,msfuy,msfvx,msfvy,msftx,msfty,  &
 !!   config_flags,non_hydrostatic,top_lid,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,  &
 !!   its,ite,jts,jte,kts,kte)
 
@@ -1760,7 +1761,7 @@ CONTAINS
 
    CALL a_horizontal_pressure_gradient(ru_tend,a_ru_tend,rv_tend,a_rv_tend,ph,  &
    a_ph,alt,a_alt,p,a_p,pb,al,a_al,php,a_php,cqu,a_cqu,cqv,a_cqv,muu,  &
-   a_muu,muv,a_muv,mu,a_mu,fnm,fnp,rdnw,cf1,cf2,cf3,rdx,rdy,msfux,msfuy,msfvx,  &
+   a_muu,muv,a_muv,mu,a_mu,fnm,fnp,rdnw,cf1,cf2,cf3,cfn,cfn1,rdx,rdy,msfux,msfuy,msfvx,  &
 ! Revised by Ning Pan, 2010-07-30
 !   msfvy,msftx,msfty,config_flags,,,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,  &
    msfvy,msftx,msfty,config_flags,non_hydrostatic,top_lid,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,  &

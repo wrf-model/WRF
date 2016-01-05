@@ -6084,7 +6084,7 @@ END SUBROUTINE A_VPOW
 SUBROUTINE A_HORIZONTAL_PRESSURE_GRADIENT(ru_tend, ru_tendb, rv_tend, &
 &  rv_tendb, ph, phb, alt, altb, p, pb0, pb, al, alb, php, phpb, cqu, &
 &  cqub, cqv, cqvb, muu, muub, muv, muvb, mu, mub, fnm, fnp, rdnw, cf1, &
-&  cf2, cf3, rdx, rdy, msfux, msfuy, msfvx, msfvy, msftx, msfty, &
+&  cf2, cf3, cfn, cfn1, rdx, rdy, msfux, msfuy, msfvx, msfvy, msftx, msfty, &
 &  config_flags, non_hydrostatic, top_lid, ids, ide, jds, jde, kds, kde, &
 &  ims, ime, jms, jme, kms, kme, its, ite, jts, jte, kts, kte)
   IMPLICIT NONE
@@ -6104,7 +6104,7 @@ SUBROUTINE A_HORIZONTAL_PRESSURE_GRADIENT(ru_tend, ru_tendb, rv_tend, &
 &  msfuy, msfvx, msfvy, msftx, msfty
   REAL, DIMENSION(ims:ime, jms:jme) :: muub, muvb, mub
   REAL, DIMENSION(kms:kme), INTENT(IN) :: rdnw, fnm, fnp
-  REAL, INTENT(IN) :: rdx, rdy, cf1, cf2, cf3
+  REAL, INTENT(IN) :: rdx, rdy, cf1, cf2, cf3, cfn, cfn1
   INTEGER :: i, j, k, itf, jtf, ktf, i_start, j_start
   REAL, DIMENSION(ims:ime, kms:kme) :: dpn
   REAL, DIMENSION(ims:ime, kms:kme) :: dpnb
@@ -6205,9 +6205,12 @@ SUBROUTINE A_HORIZONTAL_PRESSURE_GRADIENT(ru_tend, ru_tendb, rv_tend, &
         ad_from0 = i_start
         DO i=ad_from0,itf
           CALL PUSHREAL8(dpn(i, kde))
-          dpn(i, kde) = .5*(cf1*(p(i, kde-1, j-1)+p(i, kde-1, j))+cf2*(p&
-&            (i, kde-2, j-1)+p(i, kde-2, j))+cf3*(p(i, kde-3, j-1)+p(i, &
-&            kde-3, j)))
+!commented out for bug fix, Jan 2016
+!          dpn(i, kde) = .5*(cf1*(p(i, kde-1, j-1)+p(i, kde-1, j))+cf2*(p&
+!&            (i, kde-2, j-1)+p(i, kde-2, j))+cf3*(p(i, kde-3, j-1)+p(i, &
+!&            kde-3, j)))
+           dpn(i,kde) = .5*( cfn *(p(i,kde-1,j-1)+p(i,kde-1,j))   &
+                            +cfn1*(p(i,kde-2,j-1)+p(i,kde-2,j)) )
         END DO
         CALL PUSHINTEGER4(i - 1)
         CALL PUSHINTEGER4(ad_from0)
@@ -6303,9 +6306,12 @@ SUBROUTINE A_HORIZONTAL_PRESSURE_GRADIENT(ru_tend, ru_tendb, rv_tend, &
       IF (top_lid) THEN
         DO i=i_start,itf
           CALL PUSHREAL8(dpn(i, kde))
-          dpn(i, kde) = .5*(cf1*(p(i-1, kde-1, j)+p(i, kde-1, j))+cf2*(p&
-&            (i-1, kde-2, j)+p(i, kde-2, j))+cf3*(p(i-1, kde-3, j)+p(i, &
-&            kde-3, j)))
+!commented out for bug fix, Jan 2016
+!          dpn(i, kde) = .5*(cf1*(p(i-1, kde-1, j)+p(i, kde-1, j))+cf2*(p&
+!&            (i-1, kde-2, j)+p(i, kde-2, j))+cf3*(p(i-1, kde-3, j)+p(i, &
+!&            kde-3, j)))
+           dpn(i,kde) = .5*( cfn *(p(i-1,kde-1,j)+p(i,kde-1,j))   &
+                            +cfn1*(p(i-1,kde-2,j)+p(i,kde-2,j)) )
         END DO
         CALL PUSHCONTROL1B(1)
       ELSE

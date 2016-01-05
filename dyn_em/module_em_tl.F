@@ -269,7 +269,7 @@ CONTAINS
 
  CALL g_horizontal_pressure_gradient(ru_tend,g_ru_tend,rv_tend,g_rv_tend,ph, &
  g_ph,alt,g_alt,p,g_p,pb,al,g_al,php,g_php,cqu,g_cqu,cqv,g_cqv, &
- muu,g_muu,muv,g_muv,mu,g_mu,fnm,fnp,rdnw,cf1,cf2,cf3,rdx,rdy,msfux,msfuy, &
+ muu,g_muu,muv,g_muv,mu,g_mu,fnm,fnp,rdnw,cf1,cf2,cf3,cfn,cfn1,rdx,rdy,msfux,msfuy, &
  msfvx,msfvy,msftx,msfty,config_flags,non_hydrostatic,top_lid,ids,ide,jds,jde,kds,kde, &
  ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
 

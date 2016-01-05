@@ -2559,7 +2559,7 @@ END SUBROUTINE G_VPOW
 SUBROUTINE G_HORIZONTAL_PRESSURE_GRADIENT(ru_tend, ru_tendd, rv_tend, &
 &  rv_tendd, ph, phd, alt, altd, p, pd, pb, al, ald, php, phpd, cqu, cqud&
 &  , cqv, cqvd, muu, muud, muv, muvd, mu, mud, fnm, fnp, rdnw, cf1, cf2, &
-&  cf3, rdx, rdy, msfux, msfuy, msfvx, msfvy, msftx, msfty, config_flags&
+&  cf3, cfn, cfn1,rdx, rdy, msfux, msfuy, msfvx, msfvy, msftx, msfty, config_flags&
 &  , non_hydrostatic, top_lid, ids, ide, jds, jde, kds, kde, ims, ime, &
 &  jms, jme, kms, kme, its, ite, jts, jte, kts, kte)
   IMPLICIT NONE
@@ -2580,7 +2580,7 @@ SUBROUTINE G_HORIZONTAL_PRESSURE_GRADIENT(ru_tend, ru_tendd, rv_tend, &
 &  msfuy, msfvx, msfvy, msftx, msfty
   REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN) :: muud, muvd, mud
   REAL, DIMENSION(kms:kme), INTENT(IN) :: rdnw, fnm, fnp
-  REAL, INTENT(IN) :: rdx, rdy, cf1, cf2, cf3
+  REAL, INTENT(IN) :: rdx, rdy, cf1, cf2, cf3, cfn, cfn1
   INTEGER :: i, j, k, itf, jtf, ktf, i_start, j_start
   REAL, DIMENSION(ims:ime, kms:kme) :: dpn
   REAL, DIMENSION(ims:ime, kms:kme) :: dpnd
@@ -2633,12 +2633,18 @@ SUBROUTINE G_HORIZONTAL_PRESSURE_GRADIENT(ru_tend, ru_tendd, rv_tend, &
       END DO
       IF (top_lid) THEN
         DO i=i_start,itf
-          dpnd(i, kde) = .5*(cf1*(pd(i, kde-1, j-1)+pd(i, kde-1, j))+cf2&
-&            *(pd(i, kde-2, j-1)+pd(i, kde-2, j))+cf3*(pd(i, kde-3, j-1)+&
-&            pd(i, kde-3, j)))
-          dpn(i, kde) = .5*(cf1*(p(i, kde-1, j-1)+p(i, kde-1, j))+cf2*(p&
-&            (i, kde-2, j-1)+p(i, kde-2, j))+cf3*(p(i, kde-3, j-1)+p(i, &
-&            kde-3, j)))
+!commented out for bug fix, Jan 2016
+!          dpnd(i, kde) = .5*(cf1*(pd(i, kde-1, j-1)+pd(i, kde-1, j))+cf2&
+!&            *(pd(i, kde-2, j-1)+pd(i, kde-2, j))+cf3*(pd(i, kde-3, j-1)+&
+!&            pd(i, kde-3, j)))
+!          dpn(i, kde) = .5*(cf1*(p(i, kde-1, j-1)+p(i, kde-1, j))+cf2*(p&
+!&            (i, kde-2, j-1)+p(i, kde-2, j))+cf3*(p(i, kde-3, j-1)+p(i, &
+!&            kde-3, j)))
+            dpnd(i,kde) = .5*( cfn *(pd(i,kde-1,j-1)+pd(i,kde-1,j))   &
+                              +cfn1*(pd(i,kde-2,j-1)+pd(i,kde-2,j)) )
+
+            dpn(i,kde) = .5*( cfn *(p(i,kde-1,j-1)+p(i,kde-1,j))   &
+                             +cfn1*(p(i,kde-2,j-1)+p(i,kde-2,j)) )
         END DO
       END IF
       DO k=2,ktf
@@ -2736,12 +2742,18 @@ SUBROUTINE G_HORIZONTAL_PRESSURE_GRADIENT(ru_tend, ru_tendd, rv_tend, &
       END DO
       IF (top_lid) THEN
         DO i=i_start,itf
-          dpnd(i, kde) = .5*(cf1*(pd(i-1, kde-1, j)+pd(i, kde-1, j))+cf2&
-&            *(pd(i-1, kde-2, j)+pd(i, kde-2, j))+cf3*(pd(i-1, kde-3, j)+&
-&            pd(i, kde-3, j)))
-          dpn(i, kde) = .5*(cf1*(p(i-1, kde-1, j)+p(i, kde-1, j))+cf2*(p&
-&            (i-1, kde-2, j)+p(i, kde-2, j))+cf3*(p(i-1, kde-3, j)+p(i, &
-&            kde-3, j)))
+!commented out for bug fix, Jan 2016
+!          dpnd(i, kde) = .5*(cf1*(pd(i-1, kde-1, j)+pd(i, kde-1, j))+cf2&
+!&            *(pd(i-1, kde-2, j)+pd(i, kde-2, j))+cf3*(pd(i-1, kde-3, j)+&
+!&            pd(i, kde-3, j)))
+!          dpn(i, kde) = .5*(cf1*(p(i-1, kde-1, j)+p(i, kde-1, j))+cf2*(p&
+!&            (i-1, kde-2, j)+p(i, kde-2, j))+cf3*(p(i-1, kde-3, j)+p(i, &
+!&            kde-3, j)))
+           dpnd(i,kde) = .5*( cfn *(pd(i-1,kde-1,j)+pd(i,kde-1,j))   &
+                             +cfn1*(pd(i-1,kde-2,j)+pd(i,kde-2,j)) )
+
+           dpn(i,kde) = .5*( cfn *(p(i-1,kde-1,j)+p(i,kde-1,j))   &
+                            +cfn1*(p(i-1,kde-2,j)+p(i,kde-2,j)) )
         END DO
       END IF
       DO k=2,ktf

@@ -12,7 +12,7 @@ MODULE module_physics_init
 
    USE module_state_description
    USE module_model_constants
-   USE module_configure, ONLY : grid_config_rec_type ! , p_qnn, f_qnn
+   USE module_configure, ONLY : grid_config_rec_type
 !  USE module_ssib_veg , ONLY : init_module_ssib_veg !fds (SSiB constants)
    !Local data for CAM's MG MP scheme
    integer  :: ixcldliq, ixcldice, ixnumliq, ixnumice
@@ -221,7 +221,6 @@ CONTAINS
                          ,G_URB2D_mosaic,RN_URB2D_mosaic                                                      & ! danli mosaic 
                          ,TS_URB2D_mosaic                                                                     & ! danli mosaic 
                          ,TS_RUL2D_mosaic                                                                     & ! danli mosaic
-!                        ,P_QNN, F_QNN   &
                          )
 
 !-----------------------------------------------------------------
@@ -480,8 +479,6 @@ CONTAINS
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: PEXPXY
 
 !   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),  OPTIONAL,  INTENT(INOUT ) ::   qnn_curr
-!  integer, optional, intent(in) :: p_qnn
-!  LOGICAL, OPTIONAL, intent(in) :: f_qnn
 
    INTEGER , OPTIONAL,  INTENT(OUT) :: STEPWTD
    REAL , OPTIONAL, INTENT(IN) :: WTDDT
@@ -1006,31 +1003,6 @@ integer myproc
                 its, ite, jts, jte, kts, kte                       )
    ENDIF
 
-#if 0
-   IF ( f_qnn ) THEN
-! Initialize simple ccn field
-     IF ( .not. Any(scalar(:,:,:,p_qnn) > 1.0 ) ) THEN ! initialize ccn if not already done
-       DO j=jts,jtf
-         DO k=kts,ktf
-          DO i=its,itf
-           IF ( config_flags%mp_physics == wdm5scheme .or. config_flags%mp_physics == wdm6scheme ) THEN
-             scalar(i,k,j,p_qnn) = ccn_conc
-           ELSEIF ( config_flags%mp_physics == nssl_2momccn ) THEN
-#if (EM_CORE == 1)
-! for NMM, we will leave qnn=0 and use the invertccn=true in the NSSL 2-mom so that we can not worry about boundary conditions
-! That means only one value of qnn in NMM for now
-             scalar(i,k,j,p_qnn)  = nssl_cccn/1.225
-             ccn_conc =  nssl_cccn/1.225
-#endif
-           ELSE
-             scalar(i,k,j,p_qnn)  = ccn_conc
-           ENDIF
-          ENDDO
-         ENDDO
-        ENDDO
-      ENDIF
-   ENDIF
-#endif
   ENDIF !}
 
 !-- convert zfull and zhalf to sigma values for ra_init (Eta CO2 needs these)

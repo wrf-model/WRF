@@ -118,6 +118,9 @@
 !..Need to fill special height var for setting up initial condition.  G. Thompson
    REAL, ALLOCATABLE, DIMENSION(:,:,:) :: z_at_q
 
+!  CCN for MP=18 initializatio
+   REAL :: ccn_max_val
+
    CALL get_ijk_from_grid ( grid ,                              &
                            ids, ide, jds, jde, kds, kde,        &
                            ims, ime, jms, jme, kms, kme,        &
@@ -1101,7 +1104,6 @@ endif
                       ,grid%G_URB2D_mosaic,grid%RN_URB2D_mosaic                                      & ! danli mosaic 
                       ,grid%TS_URB2D_mosaic                                                          & ! danli mosaic 
                       ,grid%TS_RUL2D_mosaic                                                          & ! danli mosaic
-!                    , P_QNN=P_QNN, F_QNN=F_QNN          &
                       )
        ENDIF   !tgs
 
@@ -1547,6 +1549,31 @@ endif
       END DO loop_3d_m
 
    ENDIF
+
+! Some initializations for the simple ccn field.
+
+   IF ( f_qnn ) THEN
+      IF ( config_flags%mp_physics == wdm5scheme .or. config_flags%mp_physics == wdm6scheme ) THEN
+         ! NO OP
+      ELSE IF ( config_flags%mp_physics == nssl_2momccn ) THEN
+         grid%ccn_conc =  config_flags%nssl_cccn/1.225
+      ELSE
+         ! NO OP
+      END IF
+      ccn_max_val = MAXVAL(scalar(its:MIN(ite,ide-1),kts:kte-1,jts:MIN(jte,jde-1),p_qnn))
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
+      ccn_max_val = wrf_dm_max_real ( ccn_max_val )
+#endif
+      IF ( ccn_max_val < 1.0 ) THEN ! initialization of ccn not already done
+         DO j=jts,MIN(jte,jde-1)
+            DO k=kts,kte
+               DO i=its,MIN(ite,ide-1)
+                  scalar(i,k,j,p_qnn) = grid%ccn_conc
+               END DO
+            END DO
+         END DO
+      END IF
+   END IF
 
    IF (num_scalar > 0) THEN
 

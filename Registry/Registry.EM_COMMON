@@ -1935,7 +1935,7 @@ rconfig   integer dfi_bckstop_second     namelist,dfi_control   1      00     rh
 rconfig   integer time_step               namelist,domains	1            -1       ih   "time_step"     
 rconfig   integer time_step_fract_num     namelist,domains	1             0       ih   "time_step_fract_num"     
 rconfig   integer time_step_fract_den     namelist,domains	1             1       ih   "time_step_fract_den"     
-rconfig   integer time_step_dfi           namelist,domains      1             -       ih   "time_step_dfi"
+rconfig   integer time_step_dfi           namelist,domains      1            -1       ih   "time_step_dfi"
 
 rconfig   integer min_time_step           namelist,domains      max_domains   -1      h    "min_time_step"
 rconfig   integer min_time_step_den       namelist,domains      max_domains    0      h    "min_time_step denominator"

@@ -928,6 +928,22 @@
       END IF
 
 !-----------------------------------------------------------------------
+! When digital filtering is turned on, if no specific time step is given to be
+! used during the digitial filtering period, then the standard WRF time
+! step is used.  If neither time steps are specified, then fatal error.
+!-----------------------------------------------------------------------
+
+      IF ( .NOT. model_config_rec%dfi_opt .EQ. DFI_NODFI ) THEN
+         IF ( model_config_rec%time_step_dfi .EQ. -1 ) THEN
+            model_config_rec%time_step_dfi = model_config_rec%time_step
+            IF ( model_config_rec%time_step_dfi .EQ. -1 ) THEN
+               wrf_err_message = '--- ERROR: DFI Timestep or standard WRF time step must be specified.'
+               CALL wrf_error_fatal ( wrf_err_message )
+            END IF
+         END IF
+      END IF
+
+!-----------------------------------------------------------------------
 ! The cu_rad_feedback namelist flag with the two Grell cumulus parameterization 
 ! schemes needs to have the namelist flag cu_diag=1
 !-----------------------------------------------------------------------

@@ -45,6 +45,15 @@
       LOGICAL , EXTERNAL :: wrf_dm_on_monitor
       INTEGER :: i, oops, d1_value
       LOGICAL :: km_opt_already_done , diff_opt_already_done
+!TWG2015
+!
+!FASDAS
+!
+      LOGICAL :: rinblw_already_done
+      INTEGER :: j
+!
+!END FASDAS
+!
 
 !-----------------------------------------------------------------------
 ! Set up the WRF Hydro namelist option to allow dynamic allocation of
@@ -149,6 +158,8 @@
             wrf_err_message = '--- ERROR: Both km_opt and diff_opt need to be set in the namelist.input file.'
          CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
       END IF
+
+
 #endif
 
 !-----------------------------------------------------------------------
@@ -631,9 +642,9 @@
 !-----------------------------------------------------------------------
 
       DO i = 1, model_config_rec % max_dom
-         IF ( ( model_config_rec%grid_sfdda(i) .EQ. 1 ).AND. &
+         IF ( ( model_config_rec%grid_sfdda(i) .GT. 0 ).AND. &
               ( model_config_rec%grid_fdda (i) .NE. 1 ) ) THEN
-            wrf_err_message = '--- ERROR: If grid_sfdda = 1, then grid_fdda must also = 1 for that domain '
+            wrf_err_message = '--- ERROR: If grid_sfdda >= 1, then grid_fdda must also = 1 for that domain '
             CALL wrf_message ( wrf_err_message )
             wrf_err_message = '--- Change grid_fdda or grid_sfdda in namelist.input '
             CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
@@ -710,6 +721,65 @@
 
       ENDDO      ! Loop over domains
 
+!-----------------------------------------------------------------------
+! If grid_sfdda = 2, we turn it into derived namelist fasdas
+!-----------------------------------------------------------------------
+
+      DO i = 1, model_config_rec % max_dom
+         model_config_rec%fasdas(i) = 0
+         IF ( model_config_rec%grid_sfdda(i) .EQ. 2 ) THEN
+            model_config_rec%fasdas(i) = 1
+         END IF
+      ENDDO
+!
+!-----------------------------------------------------------------------
+! FASDAS:  Check that rinblw is set for max_domains in the namelist if sffdda is active
+!-----------------------------------------------------------------------
+    rinblw_already_done = .FALSE.
+    DO j = 1, model_config_rec%max_dom
+    IF (model_config_rec%grid_sfdda(j) .EQ. 1 ) THEN
+      DO i = 2, model_config_rec%max_dom
+         IF ( model_config_rec%rinblw(i) .EQ. -1 ) THEN
+            model_config_rec%rinblw(i) = model_config_rec % rinblw(1)
+            IF ( .NOT. rinblw_already_done ) THEN
+               CALL wrf_message ( "Setting blank rinblw entries to domain #1 values.")
+               CALL wrf_message ( " --> The rinblw entry in the namelist.input is now max_domains." )
+            END IF
+            rinblw_already_done = .TRUE.
+         END IF
+       ENDDO
+
+!------------------------------------------------------------------------
+! Check that rinblw is not -1 if sfdda is active
+!------------------------------------------------------------------------
+       IF ( model_config_rec%rinblw(1) .EQ. -1 ) THEN
+            wrf_err_message = '--- ERROR: rinblw needs to be set in the namelist.input file.'
+            CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
+       END IF
+    END IF 
+    END DO
+
+!------------------------------------------------------------------------
+! Check to see if FASDAS is active
+!------------------------------------------------------------------------
+    DO i = 1, model_config_rec%max_dom
+     IF (model_config_rec%fasdas(i) .EQ. 1 ) THEN
+         CALL wrf_message ( "FASDAS is active. Mixed Layer fdda is inactive")
+     END IF
+
+!------------------------------------------------------------------------
+! Check to make sure sfdda is active if FASDAS is in namelist
+!------------------------------------------------------------------------
+!     IF (model_config_rec%fasdas(i) .EQ. 1 ) THEN
+!       IF (model_config_rec%grid_sfdda(i) .EQ. 0) THEN
+!        wrf_err_message = '--- ERROR: sfdda needs to be set in the namelist.input file to run FASDAS.'
+!        CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
+!       END IF
+!     END IF 
+     END DO
+!
+!END FASDAS
+!
 !-----------------------------------------------------------------------
 !  Only implement the mfshconv option if the QNSE PBL is activated.
 !-----------------------------------------------------------------------

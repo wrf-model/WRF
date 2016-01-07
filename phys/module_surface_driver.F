@@ -269,8 +269,9 @@ CONTAINS
      &          ,TS_URB2D_mosaic                                      &  !danli mosaic 
      &          ,TS_RUL2D_mosaic                                      &  !danli mosaic     
      &          ,ZOL                                                  &  !ckay
+     &          ,SDA_HFX, SDA_QFX, HFX_BOTH, QFX_BOTH, QNORM, fasdas  &  !fasdas
      &                                                             )
-              
+
 #if ( ! NMM_CORE == 1 )
    USE module_state_description, ONLY : SFCLAYSCHEME              &
                                        ,SFCLAYREVSCHEME           &
@@ -1304,6 +1305,13 @@ CONTAINS
    LOGICAL :: run_param , doing_adapt_dt , decided
    LOGICAL :: do_adapt
 !
+! FASDAS
+!
+   REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT), OPTIONAL ::   SDA_HFX,SDA_QFX,HFX_BOTH, QFX_BOTH, QNORM
+   INTEGER, INTENT(IN   )                              ::   fasdas
+! local vars
+   REAL, DIMENSION( ims:ime, jms:jme )                 ::   HFXOLD, QFXOLD
+   REAL                                                ::   HFX_KAY, QFX_KAY
 !
 !------------------------------------------------------------------
 ! Initialize local variables
@@ -2550,7 +2558,9 @@ CONTAINS
                 a_e_bep,b_u_bep,b_v_bep,                        & !O multi-layer urban
                 b_t_bep,b_q_bep,b_e_bep,dlg_bep,                & !O multi-layer urban
                 dl_u_bep,sf_bep,vl_bep                          & !O multi-layer urban
-                ,sfcheadrt,INFXSRT, soldrain)
+                ,sfcheadrt,INFXSRT, soldrain                    & !hydro
+                ,SDA_HFX, SDA_QFX, HFX_BOTH, QFX_BOTH, QNORM, fasdas    & ! fasdas
+                )
 
            ELSE
                CALL wrf_error_fatal('Lack arguments to call lsm_mosaic')
@@ -2558,6 +2568,36 @@ CONTAINS
 
 	  ELSEIF (sf_surface_mosaic == 0) THEN
 	                  
+!
+!  FASDAS
+!
+             IF( fasdas == 1 ) THEN
+               DO j=j_start(ij),j_end(ij)
+               DO i=i_start(ij),i_end(ij)
+
+!ckay2015 only do indirect nudging over land areas 
+                     IF(XLAND(i,j) .GT. 1.5) then
+                      SDA_QFX(I,J) = 0.0
+                      SDA_HFX(I,J) = 0.0
+                     END IF
+
+! TWG2015 Removed lines that update fluxes to ensure this section only defines
+! the output
+                    QFXOLD(I,J)=QFX(I,J)
+                    QFX_KAY = SDA_QFX(I,J)*RHO(I,1,J)*DZ8W(I,1,J)
+                    QFX_KAY = QFX_KAY * QNORM(I,J)
+                    QFX_BOTH(I,J)=QFX(I,J)+QFX_KAY
+
+                    HFXOLD(I,J)=HFX(I,J)
+                    HFX_KAY = SDA_HFX(I,J)*RHO(I,1,J)*CPM(I,J)*DZ8W(I,1,J)
+                    HFX_BOTH(I,J)=HFX(I,J)+HFX_KAY
+
+               ENDDO
+               ENDDO
+             END IF
+!
+!  END FASDAS
+!
                CALL lsm(dz8w,qv_curr,p8w,t_phy,tsk,                 &
                 hfx,qfx,lh,grdflx,qgh,gsw,swdown,glw,smstav,smstot,    &
                 sfcrunoff,udrunoff,ivgtyp,isltyp,isurban,isice,vegfra,        &
@@ -2623,8 +2663,15 @@ CONTAINS
                 a_e_bep,b_u_bep,b_v_bep,                        & !O multi-layer urban
                 b_t_bep,b_q_bep,b_e_bep,dlg_bep,                & !O multi-layer urban
                 dl_u_bep,sf_bep,vl_bep                          & !O multi-layer urban
-                ,sfcheadrt,INFXSRT, soldrain)
-
+                ,sfcheadrt,INFXSRT, soldrain &
+!
+!  FASDAS
+!
+                ,SDA_HFX, SDA_QFX, HFX_BOTH, QFX_BOTH, QNORM, fasdas    &
+!
+!  END FASDAS
+!
+                )
          ENDIF
 
          call seaice_noah( SEAICE_ALBEDO_OPT, SEAICE_ALBEDO_DEFAULT, SEAICE_THICKNESS_OPT, &

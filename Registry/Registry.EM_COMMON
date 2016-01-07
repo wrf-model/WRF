@@ -1776,6 +1776,15 @@ state    real  ODIS_NDG_NEW      ij         misc      1         -      i9r      
 state    real  SN_NDG_NEW        ij         misc      1         -      i9r      "SN_NDG_NEW"              "NEW Snow Water Equivalent"  "mm"
 state    real  SN_NDG_OLD        ij         misc      1         -      i9r      "SN_NDG_OLD"              "OLD Snow Water Equivalent"  "mm"
 
+#FASDAS
+state    real  SDA_HFX           ij         misc      1         -       r       "SDA_HFX"                 "THETA TENDENCY AT THE FIRST MODEL LAYER"   "K s-1"
+state    real  SDA_QFX           ij         misc      1         -       r       "SDA_QFX"                 "MOISTURE TENDENCY AT THE FIRST MODEL LAYER"   "kg kg-1 s-1"
+state    real  QNORM             ij         misc      1         -       r       "QNORM"                   "NORMALIZED QV FACTOR"   "dimless"
+state    real  HFX_BOTH          ij         misc      1         -       rh      "HFX_BOTH"                "UPWARD HEAT FLUX AT THE SURFACE"              "W m-2"
+state    real  QFX_BOTH          ij         misc      1         -       rh      "QFX_BOTH"                "UPWARD MOISTURE FLUX AT THE SURFACE"          "kg m-2 s-1"
+state    real  HFX_FDDA          ikj        misc      1         -       rh      "HFX_FDDA"                "PSEUDO RADIATIVE HEAT FLUX FROM TEMPERATURE FDDA" "W m-2"
+#
+
 # flag for nest movement
 state  logical moved            -       misc        1         -     -          
 
@@ -2305,10 +2314,13 @@ rconfig   real        gq_sfc              namelist,fdda         max_domains    0
 rconfig   real        gph                 namelist,fdda         max_domains    0       rh       "grid_fdda"            ""      ""
 rconfig   real    dtramp_min              namelist,fdda         1              0       h        "grid_fdda"            ""      ""
 rconfig   integer if_ramping              namelist,fdda         1              0       h        "grid_fdda"            ""      ""
-rconfig   real    rinblw                  namelist,fdda         1              0       h        "grid_fdda"            ""      ""
+rconfig   real    rinblw                  namelist,fdda         max_domains    0       h        "grid_fdda"            ""      ""
 rconfig   integer xwavenum                namelist,fdda         max_domains    0       rh       "grid_fdda"            "top wave number to nudge in x direction"      ""
 rconfig   integer ywavenum                namelist,fdda         max_domains    0       rh       "grid_fdda"            "top wave number to nudge in y direction"      ""
 rconfig   integer pxlsm_soil_nudge        namelist,fdda         max_domains    0       rh       "pxlsm_soil_nudge"     "nudge pxlsm soil"      ""
+
+#FASDAS
+rconfig   integer  fasdas                 derived               max_domains    0       -        "fasdas"            ""      ""
 
 #Observational Nudging
 rconfig   integer     obs_nudge_opt       namelist,fdda            max_domains    0       rh       "obs_nudge_opt"     "Obs-nudging flag for domain"          ""
@@ -2707,13 +2719,14 @@ package   fogsettling0   grav_settling==0            -             state:vdfg
 package   fogsettling1   grav_settling==1            -             state:vdfg,fgdp,dfgdp
 package   fogsettling2   grav_settling==2            -             state:vdfg,fgdp,dfgdp
 
-package   psufddagd      grid_fdda==1                -             fdda3d:u_ndg_old,v_ndg_old,t_ndg_old,q_ndg_old,ph_ndg_old,u_ndg_new,v_ndg_new,t_ndg_new,q_ndg_new,ph_ndg_new;fdda2d:mu_ndg_old,mu_ndg_new;state:rundgdten,rvndgdten,rthndgdten,rphndgdten,rqvndgdten,rmundgdten
+package   psufddagd      grid_fdda==1                -             fdda3d:u_ndg_old,v_ndg_old,t_ndg_old,q_ndg_old,ph_ndg_old,u_ndg_new,v_ndg_new,t_ndg_new,q_ndg_new,ph_ndg_new;fdda2d:mu_ndg_old,mu_ndg_new;state:rundgdten,rvndgdten,rthndgdten,rphndgdten,rqvndgdten,rmundgdten,hfx_fdda
 package   spnudging      grid_fdda==2               -              fdda3d:u_ndg_old,v_ndg_old,t_ndg_old,q_ndg_old,ph_ndg_old,u_ndg_new,v_ndg_new,t_ndg_new,q_ndg_new,ph_ndg_new;fdda2d:mu_ndg_old,mu_ndg_new;state:rundgdten,rvndgdten,rthndgdten,rphndgdten,rqvndgdten,rmundgdten,dif_analysis,dif_xxx,dif_yyy
 
-package   psusfddagd     grid_sfdda==1               -             state:u10_ndg_old,v10_ndg_old,t2_ndg_old,th2_ndg_old,q2_ndg_old,rh_ndg_old,psl_ndg_old,ps_ndg_old,u10_ndg_new,v10_ndg_new,t2_ndg_new,th2_ndg_new,q2_ndg_new,rh_ndg_new,psl_ndg_new,ps_ndg_new,tob_ndg_old,odis_ndg_old,tob_ndg_new,odis_ndg_new
-
+package   psusfddagd     grid_sfdda==1               -             state:u10_ndg_old,v10_ndg_old,t2_ndg_old,th2_ndg_old,q2_ndg_old,rh_ndg_old,psl_ndg_old,ps_ndg_old,u10_ndg_new,v10_ndg_new,t2_ndg_new,th2_ndg_new,q2_ndg_new,rh_ndg_new,psl_ndg_new,ps_ndg_new,tob_ndg_old,odis_ndg_old,tob_ndg_new,odis_ndg_new,hfx_fdda
 
 package   obsnudging     obs_nudge_opt==1           -              state:obs_savwt,fdob
+
+package   fasdas         grid_sfdda==2              -              state:u10_ndg_old,v10_ndg_old,t2_ndg_old,th2_ndg_old,q2_ndg_old,rh_ndg_old,psl_ndg_old,ps_ndg_old,u10_ndg_new,v10_ndg_new,t2_ndg_new,th2_ndg_new,q2_ndg_new,rh_ndg_new,psl_ndg_new,ps_ndg_new,tob_ndg_old,odis_ndg_old,tob_ndg_new,odis_ndg_new,sda_hfx,sda_qfx,qnorm,hfx_both,qfx_both,hfx_fdda
 
 package   aeropt1        aer_opt==1                 -              state:aerodm
 package   aeropt2        aer_opt==2                 -              state:aod5503d

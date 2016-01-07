@@ -9,6 +9,8 @@ CONTAINS
                   id,  &
                   RUNDGDTEN,RVNDGDTEN,RTHNDGDTEN,                 &
                   RPHNDGDTEN,RQVNDGDTEN,RMUNDGDTEN,               &
+                  SDA_HFX, SDA_QFX,                               & !fasdas
+                  HFX_FDDA,                                       & !fasdas
                   u_ndg_old,v_ndg_old,t_ndg_old,ph_ndg_old,       &
                   q_ndg_old,mu_ndg_old,       &
                   u_ndg_new,v_ndg_new,t_ndg_new,ph_ndg_new,       &
@@ -170,7 +172,17 @@ CONTAINS
                                                         RTHNDGDTEN, &
                                                         RPHNDGDTEN, &
                                                         RQVNDGDTEN
-
+!
+! FASDAS
+!
+   REAL,       DIMENSION( ims:ime, jms:jme ),            &
+               INTENT(INOUT)    ::                       SDA_HFX, &
+                                                         SDA_QFX
+   REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ),            &
+               INTENT(INOUT)    ::                       HFX_FDDA
+!
+! END FASDAS
+!
    REAL,       DIMENSION( ims:ime,  jms:jme ),            &
                INTENT(INOUT)    ::                      RMUNDGDTEN
 
@@ -388,6 +400,14 @@ CONTAINS
      u10_ndg_new, v10_ndg_new, t2_ndg_new, th2_ndg_new, q2_ndg_new, &
      rh_ndg_new, psl_ndg_new, ps_ndg_new, tob_ndg_new, odis_ndg_new,  &
                RUNDGDTEN,RVNDGDTEN,RTHNDGDTEN,RQVNDGDTEN,RMUNDGDTEN,&
+!
+! FASDAS
+!
+           config_flags%fasdas, SDA_HFX, SDA_QFX,           &
+           HFX_FDDA,dz8w,       &
+!
+! END FASDAS
+!
                pblh, ht, regime, znt, z, z_at_w,                             &
                ids,ide, jds,jde, kds,kde,                           &
                ims,ime, jms,jme, kms,kme,                           &

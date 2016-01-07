@@ -212,7 +212,7 @@
     CALL nl_get_dtramp_min ( 1       , dtramp_min )
     ENDIF
 
-    IF ( grid_sfdda == 1 ) THEN
+    IF ( grid_sfdda >= 1 ) THEN
     CALL nl_get_guv_sfc      ( grid%id , guv_sfc )
     CALL nl_get_gt_sfc       ( grid%id , gt_sfc )
     CALL nl_get_gq_sfc       ( grid%id , gq_sfc )
@@ -711,7 +711,7 @@ endif
         CALL wrf_put_dom_ti_real    ( fid, 'DTRAMP_MIN', dtramp_min , 1 , ierr )
       ENDIF
 
-      IF ( grid_sfdda == 1 ) THEN
+      IF ( grid_sfdda >= 1 ) THEN
         CALL wrf_put_dom_ti_real    ( fid, 'GUV_SFC', guv_sfc , 1 , ierr )
         CALL wrf_put_dom_ti_real    ( fid, 'GT_SFC', gt_sfc , 1 , ierr )
         CALL wrf_put_dom_ti_real    ( fid, 'GQ_SFC', gq_sfc , 1 , ierr )

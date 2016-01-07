@@ -811,14 +811,17 @@ BENCH_START(surf_driver_tim)
      &        ,GRDFLX_mosaic=grid%GRDFLX_mosaic,SNOTIME_mosaic=grid%SNOTIME_mosaic                      &  !danli mosaic
      &        ,TR_URB2D_mosaic=grid%TR_URB2D_mosaic,TB_URB2D_mosaic=grid%TB_URB2D_mosaic                &  !danli mosaic 
      &        ,TG_URB2D_mosaic=grid%TG_URB2D_mosaic,TC_URB2D_mosaic=grid%TC_URB2D_mosaic                &  !danli mosaic 
-     &        ,QC_URB2D_mosaic=grid%QC_URB2D_mosaic,UC_URB2D_mosaic=grid%UC_URB2D_mosaic                &  !danli mosaic                  
+     &        ,QC_URB2D_mosaic=grid%QC_URB2D_mosaic,UC_URB2D_mosaic=grid%UC_URB2D_mosaic                &  !danli mosaic
      &        ,TRL_URB3D_mosaic=grid%TRL_URB3D_mosaic,TBL_URB3D_mosaic=grid%TBL_URB3D_mosaic            &  !danli mosaic 
      &        ,TGL_URB3D_mosaic=grid%TGL_URB3D_mosaic                                                   &  !danli mosaic 
      &        ,SH_URB2D_mosaic=grid%SH_URB2D_mosaic,LH_URB2D_mosaic=grid%LH_URB2D_mosaic                &  !danli mosaic 
      &        ,G_URB2D_mosaic=grid%G_URB2D_mosaic,RN_URB2D_mosaic=grid%RN_URB2D_mosaic                  &  !danli mosaic 
      &        ,TS_URB2D_mosaic=grid%TS_URB2D_mosaic                                                     &  !danli mosaic 
-     &        ,TS_RUL2D_mosaic=grid%TS_RUL2D_mosaic                                                     &  !danli mosaic          
-     &        ,ZOL=grid%ZOL                                                              )
+     &        ,TS_RUL2D_mosaic=grid%TS_RUL2D_mosaic                                                     &  !danli mosaic
+     &        ,ZOL=grid%ZOL                                                                             &
+     &        ,SDA_HFX=grid%SDA_HFX, SDA_QFX=grid%SDA_QFX,HFX_BOTH=grid%HFX_BOTH                        &  !fasdas
+     &        ,QFX_BOTH=grid%QFX_BOTH,QNORM=grid%QNORM,fasdas=config_flags%fasdas                       &  !fasdas
+     &                                                           )
 
 #ifdef WRF_HYDRO
         if(HYDRO_dt .gt. 1 ) call wrf_drv_HYDRO(HYDRO_dt, grid,  &
@@ -969,8 +972,9 @@ BENCH_START(pbl_driver_tim)
      &        ,CHEM=chem,VD=grid%dep_vel                                 &
      &        ,NCHEM=num_chem,kdvel=config_flags%kdepvel                 &
      &        ,ndvel=config_flags%ndepvel                                &
-     &        ,NUM_VERT_MIX=grid%num_vert_mix                     &
+     &        ,NUM_VERT_MIX=grid%num_vert_mix                            &
 #endif
+     &        ,QNORM=grid%QNORM, fasdas=config_flags%fasdas              & !fasdas
      &        )
 
 BENCH_END(pbl_driver_tim)
@@ -1360,6 +1364,14 @@ BENCH_START(fdda_driver_tim)
                   RUNDGDTEN=grid%rundgdten,RVNDGDTEN=grid%rvndgdten,                &
                   RTHNDGDTEN=grid%rthndgdten,RPHNDGDTEN=grid%rphndgdten,            &
                   RQVNDGDTEN=grid%rqvndgdten,RMUNDGDTEN=grid%rmundgdten,            &
+!
+! FASDAS
+!
+                  SDA_HFX=grid%SDA_HFX, SDA_QFX=grid%SDA_QFX,      &
+                  HFX_FDDA=grid%HFX_FDDA,  & 
+!
+! END FASDAS
+!
                   u_ndg_old=fdda3d(ims,kms,jms,P_u_ndg_old),                        &
                   v_ndg_old=fdda3d(ims,kms,jms,P_v_ndg_old),                        &
                   t_ndg_old=fdda3d(ims,kms,jms,P_t_ndg_old),                        &

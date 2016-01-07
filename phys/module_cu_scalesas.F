@@ -245,7 +245,7 @@ CONTAINS
 
 !-----------------------------------------------------------------------
 !
-       write(0,*)' in scale-aware sas'
+  !     write(0,*)' in scale-aware sas'
 
 
       if(present(shalconv)) then
@@ -429,12 +429,12 @@ CONTAINS
         ENDDO
       ENDDO
 
-           write(0,*)'dx2d=',dx2d(its,jts:jts+5)
-           write(0,*)'dy=',dy
-           write(0,*)'ps=',ps(its)
-           write(0,*)'del=',del(its,kts:kts+5)
-           write(0,*)'prsl=',prsl(its,kts:kts+5)
-           write(0,*)'dot=',dot(its,kts:kts+5)
+       !    write(0,*)'dx2d=',dx2d(its,jts:jts+5)
+       !    write(0,*)'dy=',dy
+       !    write(0,*)'ps=',ps(its)
+       !    write(0,*)'del=',del(its,kts:kts+5)
+       !    write(0,*)'prsl=',prsl(its,kts:kts+5)
+       !    write(0,*)'dot=',dot(its,kts:kts+5)
 
 !      CALL SASCNVN(IM,IM,KX,JCAP,DELT,DEL,PRSL,PS,PHIL,                  &
 !                  QL,Q1,T1,U1,V1,RCS,CLDWRK,RN,KBOT,                    &
@@ -631,6 +631,7 @@ CONTAINS
 
       subroutine scale_sascnvn(im,ix,km,jcap,delt,delp,prslp,psp,phil,ql,  &
      &     q1,t1,u1,v1,cldwrk,rn,kbot,ktop,kcnv,islimsk,garea,             &
+!     &     dot,ncloud,ud_mf,dd_mf,dt_mf,cnvw,cnvc, tmpout9)
      &     dot,ncloud,ud_mf,dd_mf,dt_mf,cnvw,cnvc, scaldfunc)
 !    &     q1,t1,u1,v1,rcs,cldwrk,rn,kbot,ktop,kcnv,islimsk,
 !    &     dot,ncloud,ud_mf,dd_mf,dt_mf,me)
@@ -756,8 +757,12 @@ CONTAINS
       real(kind=kind_phys) wu2(im,km),     buo(im,km),    drag(im,km)
       real(kind=kind_phys) wc(im),         wcxmb(im)
       real(kind=kind_phys) wbar(im),       xmbeta(im)
-      real(kind=kind_phys) scaldfunc(im),  awlam(im),                  &
+      real(kind=kind_phys) scaldfunc(im),  awlam(im),  xlamx(im),       &
      &                     sigmaw(im),     sigmagf(im) ,   sigmagfm(im) 
+
+!! tmpout
+      real(kind=kind_phys) tmpout9(im)
+
 !
 !c  cloud water
 !     real(kind=kind_phys) tvo(im,km)
@@ -834,6 +839,10 @@ CONTAINS
         vshear(i) = 0.
 
          scaldfunc(i)=-1.0   ! initialized wang
+          sigmaw(i)=-1.0
+          sigmagf(i)=-1.0
+          sigmagfm(i)=-1.0
+          tmpout9(i)=-1.0
       enddo
 !
       do i=1,im
@@ -953,7 +962,7 @@ CONTAINS
         do i=1,im
           zi(i,k) = 0.5*(zo(i,k)+zo(i,k+1))
           xlamue(i,k) = clam / zi(i,k)
-          xlamue(i,k) = max(xlamue(i,k), crtlamu)
+!          xlamue(i,k) = max(xlamue(i,k), crtlamu)
         enddo
       enddo
 !c
@@ -1183,6 +1192,22 @@ CONTAINS
 !         endif
 !       enddo
 !     enddo
+
+       do i=1,im
+         if(cnvflg(i)) then
+           xlamx(i) = xlamue(i,kbcon(i))
+         endif
+       enddo
+       do k = 2, km1
+         do i=1,im
+           if(cnvflg(i).and.    &
+     &      (k.gt.kbcon(i).and.k.lt.kmax(i))) then
+               xlamue(i,k) = xlamx(i)
+           endif
+         enddo
+       enddo
+
+
 !c
 !c  specify a background (turbulent) detrainment rate for the updrafts
 !c
@@ -1190,7 +1215,8 @@ CONTAINS
         do i=1,im
           if(cnvflg(i).and.k.lt.kmax(i)) then
 !           xlamud(i,k) = xlamue(i,kbcon(i))
-            xlamud(i,k) = crtlamd
+!            xlamud(i,k) = crtlamd
+            xlamud(i,k) = xlamx(i)
           endif
         enddo
       enddo
@@ -1216,7 +1242,7 @@ CONTAINS
       do k = 2, km1
         do i=1,im
           if(cnvflg(i).and.                                             &
-     &      (k.ge.kbcon(i).and.k.lt.kmax(i))) then
+     &      (k.gt.kbcon(i).and.k.lt.kmax(i))) then
               tem = cxlamu * frh(i,k) * fent2(i,k)
               xlamue(i,k) = xlamue(i,k)*fent1(i,k) + tem
 !             tem1 = cxlamd * frh(i,k)
@@ -2601,12 +2627,16 @@ CONTAINS
 !
       do i = 1, im
         if(cnvflg(i)) then
-          k = kbcon(i)
-          tem = 0.2 / max(xlamue(i,k), 3.e-5)
+!          k = kbcon(i)
+!          tem = 0.2 / max(xlamue(i,k), 3.e-5)
+          tem = min(max(xlamx(i), 7.e-5), 3.e-4)
+             tmpout9(i)=tem
+          tem = 0.2 / tem
           tem1 = 3.14 * tem * tem
           sigmagfm(i) = tem1 / garea(i)
           sigmagfm(i) = max(sigmagfm(i), 0.001)
           sigmagfm(i) = min(sigmagfm(i), 0.999)
+
         endif
       enddo
 !
@@ -2832,7 +2862,8 @@ CONTAINS
       do k = 1, km
         do i = 1, im
           if (cnvflg(i) .and. rn(i).gt.0.) then
-            if (k.gt.kb(i).and.k.le.ktcon(i)) then
+!            if (k.gt.kb(i).and.k.le.ktcon(i)) then
+             if (k.ge.kbcon(i).and.k.le.ktcon(i)) then
               tem  = dellal(i,k) * xmb(i) * dt2
               tem1 = max(0.0, min(1.0, (tcr-t1(i,k))*tcrf))
               if (ql(i,k,2) .gt. -999.0) then
@@ -2897,6 +2928,7 @@ CONTAINS
       subroutine scale_shalcnv(im,ix,km,delt,delp,prslp,psp,phil,ql,      &
      &     q1,t1,u1,v1,rn,kbot,ktop,kcnv,islimsk,garea,                   &
      &     dot,ncloud,hpbl,heat,evap,ud_mf,dt_mf,cnvw,cnvc, scaldfunc)
+!     &     dot,ncloud,hpbl,heat,evap,ud_mf,dt_mf,cnvw,cnvc, sigmagfm)
 !    &     q1,t1,u1,v1,rcs,rn,kbot,ktop,kcnv,islimsk,
 !    &     dot,ncloud,hpbl,heat,evap,ud_mf,dt_mf,me)
 !
@@ -3074,6 +3106,9 @@ CONTAINS
         cina(i) = 0.
         vshear(i) = 0.
           scaldfunc(i)=-1.0  ! wang initialized
+          sigmaw(i)=-1.0
+          sigmagf(i)=-1.0
+          sigmagfm(i)=-1.0
       enddo
 !!
       totflg = .true.
@@ -3408,8 +3443,9 @@ CONTAINS
 !c
       do i = 1, im
         if(cnvflg(i)) then
+          xlamud(i) = xlamue(i,kbcon(i))
 !         xlamud(i) = xlamue(i,kbcon(i))
-          xlamud(i) = crtlamd
+!          xlamud(i) = crtlamd
         endif
       enddo
 !c
@@ -4166,8 +4202,11 @@ CONTAINS
 !
       do i = 1, im
         if(cnvflg(i)) then
-          k = kbcon(i)
-          tem = 0.2 / max(xlamue(i,k), 3.e-5)
+!          k = kbcon(i)
+!          tem = 0.2 / max(xlamue(i,k), 3.e-5)
+           tem = min(max(xlamue(i,kbcon(i)), 2.e-4), 6.e-4)
+           tem = 0.2 / tem
+
           tem1 = 3.14 * tem * tem
           sigmagfm(i) = tem1 / garea(i)
           sigmagfm(i) = max(sigmagfm(i), 0.001)
@@ -4381,7 +4420,8 @@ CONTAINS
       do k = 1, km1
         do i = 1, im
           if (cnvflg(i)) then
-            if (k.gt.kb(i).and.k.le.ktcon(i)) then
+!            if (k.gt.kb(i).and.k.le.ktcon(i)) then
+            if (k.ge.kbcon(i).and.k.le.ktcon(i)) then
               tem  = dellal(i,k) * xmb(i) * dt2
               tem1 = max(0.0, min(1.0, (tcr-t1(i,k))*tcrf))
               if (ql(i,k,2) .gt. -999.0) then

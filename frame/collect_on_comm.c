@@ -78,6 +78,11 @@ col_on_comm ( int * Fcomm, int * typesize ,
   displace   = (int *) malloc( ntasks * sizeof(int)) ;
   root_task = ( sw == 0 ) ? 0 : ntasks-1 ;
 
+  ierr=MPI_Barrier(*comm);
+#ifndef MS_SUA
+  if ( ierr != 0 ) fprintf(stderr,"%s %d MPI_Barrier returns %d\n",__FILE__,__LINE__,ierr ) ;
+#endif
+
   /* collect up recvcounts */
   ierr = MPI_Gather( ninbuf , 1 , MPI_INT , recvcounts , 1 , MPI_INT , root_task , *comm ) ;
 #ifndef MS_SUA

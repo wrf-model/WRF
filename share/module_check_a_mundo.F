@@ -820,6 +820,24 @@
       END IF
 
 !-----------------------------------------------------------------------
+!  bl_mynn_edmf > 0 over-rules both shcu_physics & ishallow
+!-----------------------------------------------------------------------
+
+      oops = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec%bl_mynn_edmf(i) .EQ. MYNN_STEM_EDMF .OR. &
+              model_config_rec%bl_mynn_edmf(i) .EQ. MYNN_TEMF_EDMF) THEN
+               model_config_rec%shcu_physics(i) = 0  ! maxdom
+               model_config_rec%ishallow = 0         ! not maxdom
+               oops = oops + 1
+         END IF
+      ENDDO      ! Loop over domains
+      IF ( oops .GT. 0 ) THEN
+         wrf_err_message = 'bl_mynn_edmf > 0 requires both shcu_physics=0 & ishallow=0'
+         CALL wrf_message ( wrf_err_message )
+      END IF
+
+!-----------------------------------------------------------------------
 !  We need to know if any of the cumulus schemes are active. This
 !  allows the model to allocate space.
 !-----------------------------------------------------------------------
@@ -844,19 +862,45 @@
       ENDDO
 
 !-----------------------------------------------------------------------
-!  gwd_opt = 1 only works with YSU PBL.
+!  gwd_opt = 1 only works with YSU & MYNN PBL.
 !-----------------------------------------------------------------------
 
       oops = 0
       DO i = 1, model_config_rec % max_dom
-         IF ( ( model_config_rec%bl_pbl_physics(i) .NE. YSUSCHEME ) .AND. &
-              ( model_config_rec%gwd_opt .EQ. GWDOPT ) ) THEN
-            model_config_rec%gwd_opt = 0
-            oops = oops + 1
+         IF (model_config_rec%gwd_opt == 1 ) THEN
+            IF ( (model_config_rec%bl_pbl_physics(i) .EQ. YSUSCHEME ) .OR. &
+                 (model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME2 ) .OR. &
+                 (model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME3) ) THEN
+                !NO PROBLEM
+            ELSE
+               model_config_rec%gwd_opt = 0
+               oops = oops + 1
+            END IF
          END IF
       ENDDO      ! Loop over domains
       IF ( oops .GT. 0 ) THEN
-         wrf_err_message = '--- NOTE: bl_pbl_physics /= 1, implies gwd_opt cannot be 1, resetting'
+         wrf_err_message = '--- NOTE: bl_pbl_physics /= 1,5,6 implies gwd_opt cannot be 1, resetting'
+         CALL wrf_message ( wrf_err_message )
+      END IF
+
+!-----------------------------------------------------------------------
+! Make sure bl_sgcloud is only used when MYNN is chosen.
+!-----------------------------------------------------------------------
+
+      oops = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec%bl_sgcloud(i) .eq. 1) THEN
+           IF ( model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME2 .OR. &
+                model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME3 ) THEN
+              !CORRECTLY CONFIGURED
+           ELSE
+              model_config_rec%bl_sgcloud(i) = 0
+              oops = oops + 1
+           END IF
+         END IF
+      ENDDO      ! Loop over domains
+      IF ( oops .GT. 0 ) THEN
+         wrf_err_message = 'Need MYNN PBL for bl_sgcloud = 1, resetting to 0'
          CALL wrf_message ( wrf_err_message )
       END IF
 

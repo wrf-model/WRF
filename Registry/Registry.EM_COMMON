@@ -2259,6 +2259,7 @@ rconfig   integer scalar_pblmix           namelist,physics      max_domains  0  
 rconfig   integer tracer_pblmix           namelist,physics      max_domains  1         h    "mix 4d tracer variables with pbl scheme 0=no 1=yes" ""
 rconfig   logical use_aero_icbc           namelist,physics     	1              .false. rh    "use_aero_icbc"  "Use GOCART climo 3D aerosols IC/BC data in Thompson-MP-Aero"  "logical flag"
 rconfig   logical use_rap_aero_icbc       namelist,physics      1              .false. r     "use_rap_aero_icbc"  "Use GOCART climo 3D aerosols IC/BC data in Thompson-MP-Aero from RAP"  "logical flag"
+rconfig   integer use_mp_re               namelist,physics     	1              1       h     "use_mp_re"  "use effective radii computed in some mp schemes in RRTMG"  "flag"
 
 # The following two options are hooked into various microphysics schemes to allow for ensemble perturbations of CCN and hail/graupel PSDs - GAC (AFWA)
 rconfig   real    ccn_conc                namelist,physics      1           1.0E8      h     "ccn_conc"                 "CCN concentration"                                                             "# m-3"

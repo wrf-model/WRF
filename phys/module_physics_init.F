@@ -778,6 +778,7 @@ integer myproc
    has_reqc = 0
    has_reqi = 0
    has_reqs = 0
+   IF ( config_flags%use_mp_re .EQ. 1 ) THEN
    if ((config_flags%ra_lw_physics .eq. RRTMG_LWSCHEME .or. config_flags%ra_lw_physics .eq. RRTMG_LWSCHEME_FAST) .and. &
        (config_flags%ra_sw_physics .eq. RRTMG_SWSCHEME .or. config_flags%ra_sw_physics .eq. RRTMG_SWSCHEME_FAST) .and. &
         (config_flags%mp_physics  .eq. THOMPSON .or.        &
@@ -794,6 +795,7 @@ integer myproc
       has_reqi = 1
       has_reqs = 1
    endif
+   ENDIF
 
 !-- should be from the namelist
 

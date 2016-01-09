@@ -332,6 +332,8 @@ BENCH_START(rad_driver_tim)
      &        , LRADIUS=grid%LRADIUS,IRADIUS=grid%IRADIUS                 & !BSINGH(01/22/2014)
      &        , CLDFRA_DP=grid%cldfra_dp                                  & ! ckay for subgrid cloud
      &        , CLDFRA_SH=grid%cldfra_sh                                  &
+     &        , bl_sgcloud=config_flags%bl_sgcloud                        & !JOE: subgrid BL clouds
+     &        , qc_bl=grid%qc_bl,cldfra_bl=grid%cldfra_bl                 & !JOE: subgrid bl clouds
      &        , re_cloud=grid%re_cloud, re_ice=grid%re_ice, re_snow=grid%re_snow & ! G. Thompson
      &        , has_reqc=grid%has_reqc, has_reqi=grid%has_reqi, has_reqs=grid%has_reqs & ! G. Thompson
      &        , PB=grid%pb                                                &
@@ -790,7 +792,10 @@ BENCH_START(surf_driver_tim)
      &        ,ch=grid%ch,tsq=grid%tsq,qsq=grid%qsq,cov=grid%cov          & !MYNN - MP
      &        ,Sh3d=grid%sh3d,EL_PBL=grid%el_pbl                          & !JOE- MYNN cloudpdf
      &        ,bl_mynn_cloudpdf=config_flags%bl_mynn_cloudpdf             & !JOE- MYNN cloudpdf
-     &        ,fgdp=grid%fgdp,dfgdp=grid%dfgdp,vdfg=grid%vdfg             & !Katata - fogdes                                                                                                 
+     &        ,bl_sgcloud=config_flags%bl_sgcloud                         & !JOE- subgrid cloud
+     &        ,qc_bl=grid%qc_bl,cldfra_bl=grid%cldfra_bl                  & !JOE- subgrid cloud
+     &        ,BRi=grid%bri                                               & !JOE- WFIP2
+     &        ,fgdp=grid%fgdp,dfgdp=grid%dfgdp,vdfg=grid%vdfg             & !Katata - fogdes
      &        ,grav_settling=config_flags%grav_settling                   & !Katata - fogdes
      &        ,OM_TMP=grid%om_tmp, OM_S=grid%om_s, OM_U=grid%om_u, OM_V=grid%om_v   & !cyl:3DPWP
      &        ,OM_DEPTH=grid%om_depth, OM_ML=grid%OM_ML, OM_LON=grid%om_lon         & !cyl:3DPWP
@@ -811,14 +816,17 @@ BENCH_START(surf_driver_tim)
      &        ,GRDFLX_mosaic=grid%GRDFLX_mosaic,SNOTIME_mosaic=grid%SNOTIME_mosaic                      &  !danli mosaic
      &        ,TR_URB2D_mosaic=grid%TR_URB2D_mosaic,TB_URB2D_mosaic=grid%TB_URB2D_mosaic                &  !danli mosaic 
      &        ,TG_URB2D_mosaic=grid%TG_URB2D_mosaic,TC_URB2D_mosaic=grid%TC_URB2D_mosaic                &  !danli mosaic 
-     &        ,QC_URB2D_mosaic=grid%QC_URB2D_mosaic,UC_URB2D_mosaic=grid%UC_URB2D_mosaic                &  !danli mosaic                  
+     &        ,QC_URB2D_mosaic=grid%QC_URB2D_mosaic,UC_URB2D_mosaic=grid%UC_URB2D_mosaic                &  !danli mosaic
      &        ,TRL_URB3D_mosaic=grid%TRL_URB3D_mosaic,TBL_URB3D_mosaic=grid%TBL_URB3D_mosaic            &  !danli mosaic 
      &        ,TGL_URB3D_mosaic=grid%TGL_URB3D_mosaic                                                   &  !danli mosaic 
      &        ,SH_URB2D_mosaic=grid%SH_URB2D_mosaic,LH_URB2D_mosaic=grid%LH_URB2D_mosaic                &  !danli mosaic 
      &        ,G_URB2D_mosaic=grid%G_URB2D_mosaic,RN_URB2D_mosaic=grid%RN_URB2D_mosaic                  &  !danli mosaic 
      &        ,TS_URB2D_mosaic=grid%TS_URB2D_mosaic                                                     &  !danli mosaic 
-     &        ,TS_RUL2D_mosaic=grid%TS_RUL2D_mosaic                                                     &  !danli mosaic          
-     &        ,ZOL=grid%ZOL                                                              )
+     &        ,TS_RUL2D_mosaic=grid%TS_RUL2D_mosaic                                                     &  !danli mosaic
+     &        ,ZOL=grid%ZOL                                                                             &
+     &        ,SDA_HFX=grid%SDA_HFX, SDA_QFX=grid%SDA_QFX,HFX_BOTH=grid%HFX_BOTH                        &  !fasdas
+     &        ,QFX_BOTH=grid%QFX_BOTH,QNORM=grid%QNORM,fasdas=config_flags%fasdas                       &  !fasdas
+     &                                                           )
 
 #ifdef WRF_HYDRO
         if(HYDRO_dt .gt. 1 ) call wrf_drv_HYDRO(HYDRO_dt, grid,  &
@@ -864,7 +872,7 @@ BENCH_START(pbl_driver_tim)
      &        ,TSK=grid%tsk            ,T_PHY=grid%t_phy        ,UST=grid%ust       &
      &        ,U10=grid%u10 ,UZ0=grid%uz0      ,U_FRAME=grid%u_frame    ,U_PHY=grid%u_phy   &
      &        ,V10=grid%v10 ,VZ0=grid%vz0      ,V_FRAME=grid%v_frame    ,V_PHY=grid%v_phy   &
-     &        ,UOCE=grid%uoce          ,VOCE=grid%voce                              &
+     &        ,W=grid%w_2   ,UOCE=grid%uoce    ,VOCE=grid%voce                              &
               ,T2=grid%t2 &
      &        ,WARM_RAIN=grid%warm_rain                    ,WSPD=wspd          &
      &        ,XICE=grid%xice          ,XLAND=grid%xland        ,Z=grid%z                &
@@ -929,6 +937,19 @@ BENCH_START(pbl_driver_tim)
      &        ,QSHEAR=grid%qSHEAR,QBUOY=grid%qBUOY,QDISS=grid%qDISS       &
      &        ,bl_mynn_tkebudget=config_flags%bl_mynn_tkebudget           &
      &        ,bl_mynn_cloudpdf=config_flags%bl_mynn_cloudpdf             &
+     &        ,bl_mynn_mixlength=config_flags%bl_mynn_mixlength           &
+     &        , bl_sgcloud=config_flags%bl_sgcloud                        & !JOE: subgrid cloud
+     &        , qc_bl=grid%qc_bl,cldfra_bl=grid%cldfra_bl                 & !JOE: subgrid cloud
+     &        ,bl_mynn_edmf=config_flags%bl_mynn_edmf                     & !JOE- MYNN edmf
+     &        ,bl_mynn_nup=config_flags%bl_mynn_nup                       & !JOE- MYNN edmf
+     &        ,bl_mynn_edmf_mom=config_flags%bl_mynn_edmf_mom             & !JOE- MYNN edmf
+     &        ,bl_mynn_edmf_tke=config_flags%bl_mynn_edmf_tke             & !JOE- MYNN edmf
+     &        ,bl_mynn_edmf_part=config_flags%bl_mynn_edmf_part           & !JOE- MYNN edmf
+     &        ,bl_mynn_cloudmix=config_flags%bl_mynn_cloudmix             & !JOE- MYNN cloud mixing
+     &        ,bl_mynn_mixqt=config_flags%bl_mynn_mixqt                   & !JOE- MYNN tendency method
+     &        ,edmf_a=grid%edmf_a,edmf_w=grid%edmf_w                      &
+     &        ,edmf_thl=grid%edmf_thl,edmf_qt=grid%edmf_qt                &
+     &        ,edmf_ent=grid%edmf_ent,edmf_qc=grid%edmf_qc                & !JOE- MYNN edmf
      &        ,rmol=grid%rmol, ch=grid%ch                                 &
      &        ,qcg=grid%qcg, grav_settling=config_flags%grav_settling     &
 !    &        ,K_m=grid%K_m, K_h=grid%K_h, K_q=grid%K_q                   &
@@ -974,8 +995,9 @@ BENCH_START(pbl_driver_tim)
      &        ,CHEM=chem,VD=grid%dep_vel                                 &
      &        ,NCHEM=num_chem,kdvel=config_flags%kdepvel                 &
      &        ,ndvel=config_flags%ndepvel                                &
-     &        ,NUM_VERT_MIX=grid%num_vert_mix                     &
+     &        ,NUM_VERT_MIX=grid%num_vert_mix                            &
 #endif
+     &        ,QNORM=grid%QNORM, fasdas=config_flags%fasdas              & !fasdas
      &        )
 
 BENCH_END(pbl_driver_tim)
@@ -1365,6 +1387,14 @@ BENCH_START(fdda_driver_tim)
                   RUNDGDTEN=grid%rundgdten,RVNDGDTEN=grid%rvndgdten,                &
                   RTHNDGDTEN=grid%rthndgdten,RPHNDGDTEN=grid%rphndgdten,            &
                   RQVNDGDTEN=grid%rqvndgdten,RMUNDGDTEN=grid%rmundgdten,            &
+!
+! FASDAS
+!
+                  SDA_HFX=grid%SDA_HFX, SDA_QFX=grid%SDA_QFX,      &
+                  HFX_FDDA=grid%HFX_FDDA,  & 
+!
+! END FASDAS
+!
                   u_ndg_old=fdda3d(ims,kms,jms,P_u_ndg_old),                        &
                   v_ndg_old=fdda3d(ims,kms,jms,P_v_ndg_old),                        &
                   t_ndg_old=fdda3d(ims,kms,jms,P_t_ndg_old),                        &

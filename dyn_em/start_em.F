@@ -967,6 +967,8 @@ endif
                       grid%m_ps_1,grid%m_ps_2,grid%m_hybi,aerosolc_1,aerosolc_2,&  ! Optional
                       grid%rundgdten,grid%rvndgdten,grid%rthndgdten,         &     ! Optional
                       grid%rphndgdten,grid%rqvndgdten,grid%rmundgdten,       &     ! Optional
+                      grid%SDA_HFX, grid%SDA_QFX, grid%QNORM, grid%HFX_BOTH,grid%QFX_BOTH,      &   ! fasdas
+                      grid%HFX_FDDA,                                                            &   ! fasdas
                       grid%FGDT,grid%stepfg,                        &     ! Optional
                       grid%cugd_tten,grid%cugd_ttens,grid%cugd_qvten,        &   ! Optional
                       grid%cugd_qvtens,grid%cugd_qcten,                 &   ! Optional

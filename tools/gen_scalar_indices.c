@@ -16,7 +16,7 @@
 int
 gen_scalar_indices ( char * dirname )
 {
-  FILE * fp, *fp5[7] ;
+  FILE * fp, *fp5[26] ;
   char  fname[NAMELEN], fname5[NAMELEN] ;
   char * fn = "scalar_indices.inc" ;
   char * fn2 = "scalar_tables.inc" ;
@@ -24,22 +24,17 @@ gen_scalar_indices ( char * dirname )
   char * fn4 = "scalar_indices_init.inc" ;
   int i ;
 
-  char fn5[7][NAMELEN] ;
-
-  strcpy( fn5[0], "in_use_for_config_ac.inc" ) ;   /* hashing to make the run time function being generated faster */
-  strcpy( fn5[1], "in_use_for_config_df.inc" ) ; 
-  strcpy( fn5[2], "in_use_for_config_gk.inc" ) ;
-  strcpy( fn5[3], "in_use_for_config_ln.inc" ) ;
-  strcpy( fn5[4], "in_use_for_config_os.inc" ) ;
-  strcpy( fn5[5], "in_use_for_config_tw.inc" ) ;
-  strcpy( fn5[6], "in_use_for_config_xz.inc" ) ;
+  char fn5[26][NAMELEN] ;
 
   strcpy( fname, fn ) ;
   if ( strlen(dirname) > 0 ) { sprintf(fname,"%s/%s",dirname,fn) ; }
   if ((fp = fopen( fname , "w" )) == NULL ) return(1) ;
   print_warning(fp,fname) ;
 
-  for ( i = 0 ; i < 7 ; i++ ) {
+ /* hashing to make the run time function being generated faster */
+  for ( i = 0 ; i < 26 ; i++ ) 
+  { 
+    sprintf(fn5[i],"in_use_for_config_%c.inc",'a'+i) ;
     strcpy( fname5, fn5[i] ) ;
     if ( strlen(dirname) > 0 ) { sprintf(fname5,"%s/%s",dirname,fn5[i]) ; }
     if ((fp5[i] = fopen( fname5 , "w" )) == NULL ) return(1) ;
@@ -47,7 +42,8 @@ gen_scalar_indices ( char * dirname )
   }
   gen_scalar_indices1 ( fp, fp5 ) ;
   close_the_file( fp ) ;
-  for ( i = 0 ; i < 7 ; i++ ) {
+  for ( i = 0 ; i < 26 ; i++ ) 
+  {
     close_the_file( fp5[i] ) ;
   }
 
@@ -196,14 +192,7 @@ gen_scalar_indices1 ( FILE * fp, FILE ** fp2 )
                   }
                   make_lower_case(fname)  ;
 
-                  fo = 0 ;
-                  if      ( 'x' <= fname[0] ) { fo = 6 ; }
-                  else if ( 't' <= fname[0] ) { fo = 5 ; }
-                  else if ( 'o' <= fname[0] ) { fo = 4 ; }
-                  else if ( 'l' <= fname[0] ) { fo = 3 ; }
-                  else if ( 'g' <= fname[0] ) { fo = 2 ; }
-                  else if ( 'd' <= fname[0] ) { fo = 1 ; }
-                  else                        { fo = 0 ; }
+                  fo = fname[0]-'a' ;
 
                   fprintf(fp2[fo],"IF(TRIM(vname).EQ.'%s')THEN\n",fname) ;
                   fprintf(fp2[fo],"  IF(uses.EQ.0)THEN\n");

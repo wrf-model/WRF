@@ -91,7 +91,9 @@ CONTAINS
                   a_u_bep,a_v_bep,a_t_bep,a_q_bep,              & !O multi-layer urban
                   a_e_bep,b_u_bep,b_v_bep,                      & !O multi-layer urban
                   b_t_bep,b_q_bep,b_e_bep,dlg_bep,              & !O multi-layer urban
-                  dl_u_bep,sf_bep,vl_bep,sfcheadrt,INFXSRT, soldrain      )   !O multi-layer urban         
+                  dl_u_bep,sf_bep,vl_bep,sfcheadrt,INFXSRT, soldrain      &   !O multi-layer urban         
+                 ,SDA_HFX, SDA_QFX, HFX_BOTH, QFX_BOTH, QNORM, fasdas     &   !fasdas
+                  )   !O multi-layer urban         
 
 !----------------------------------------------------------------
     IMPLICIT NONE
@@ -630,8 +632,24 @@ CONTAINS
   REAL :: APELM,APES,SFCTH2,PSFC
   real, intent(in) :: xice_threshold
   character(len=80) :: message_text
+!
+!  FASDAS
+!
+   REAL,    DIMENSION( ims:ime, jms:jme ),  OPTIONAL,                     &
+            INTENT(INOUT)  ::   SDA_HFX, SDA_QFX, HFX_BOTH, QFX_BOTH, QNORM
+   INTEGER, INTENT(IN   )  ::  fasdas
+!  local vars
+   REAL                    ::  XSDA_HFX, XSDA_QFX, XQNORM
+   REAL                    ::  HFX_PHY, QFX_PHY
+   REAL                    ::  DZQ
+   REAL                    ::  HCPCT_FASDAS
 
-
+   HFX_PHY = 0.0   ! initialize
+   QFX_PHY = 0.0
+   XQNORM  = 0.0
+!
+!  END FASDAS
+!
   FLX4  = 0.0 !BSINGH - Initialized to 0.0
   FVB   = 0.0 !BSINGH - Initialized to 0.0
   FBUR  = 0.0 !BSINGH - Initialized to 0.0
@@ -773,6 +791,7 @@ CONTAINS
           LH_RURAL(I,J)=LH(I,J)
           EMISS_RURAL(I,J)=EMISS(I,J)
           GRDFLX_RURAL(I,J)=GRDFLX(I,J)
+
         ELSE
 ! Land or sea-ice case
 
@@ -963,7 +982,21 @@ CONTAINS
     ELSEIF (ICE == 0) THEN
 
        ! Non-glacial land
-       
+!
+!  FASDAS
+!
+       IF( fasdas == 1 ) THEN
+
+         DZQ = DZ8W(I,1,J)
+         XSDA_HFX= SDA_HFX(I,J)*RHO(I,1,J)*CPM(I,J)*DZQ  ! W/m^2
+         ! TWG2015 Bugfix remove factor of 1000.0 for correct units
+         XSDA_QFX= SDA_QFX(I,J)*RHO(I,1,J)*DZQ          ! Kg/m2/s of water
+         XQNORM = QNORM(I,J)
+
+       ENDIF
+!
+!  END FASDAS
+!
        CALL SFLX (I,J,FFROZP, ISURBAN, DT,ZLVL,NSOIL,SLDPTH,       &    !C
                  LOCAL,                                            &    !L
                  LUTYPE, SLTYPE,                                   &    !CL
@@ -988,7 +1021,9 @@ CONTAINS
                  SMCWLT,SMCDRY,SMCREF,SMCMAX,NROOT,                &
                  sfcheadrt(i,j),                                   &    !I
                  INFXSRT(i,j),ETPND1,OPT_THCND,AOASIS              &    !O
+                ,XSDA_QFX, HFX_PHY, QFX_PHY, XQNORM, fasdas, HCPCT_FASDAS    &   ! fasdas
                  )
+
 
 #ifdef WRF_HYDRO
                  soldrain(i,j) = RUNOFF2*DT*1000.0
@@ -1066,6 +1101,22 @@ CONTAINS
           EMISS_RURAL(I,J) = EMISSI
 ! Noah: activate time-varying roughness length (V3.3 Feb 2011)
           ZNT(I,J)=Z0K
+!
+! FASDAS
+!
+! Update Skin Temperature
+       IF( fasdas == 1 ) THEN
+           XSDA_QFX= XSDA_QFX*ELWV*XQNORM
+
+        !TWG2015 Bugfix to multiply Heat Capacity by Soil Depth for correct
+        !units 
+
+           T1 = T1 + (XSDA_HFX-XSDA_QFX)*DT/(HCPCT_FASDAS*DZS(1))
+
+       END IF
+!
+! END FASDAS
+!
           TSK(I,J)=T1
           TSK_RURAL(I,J)=T1
           HFX(I,J)=SHEAT
@@ -2167,7 +2218,10 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                   a_u_bep,a_v_bep,a_t_bep,a_q_bep,              & !O multi-layer urban
                   a_e_bep,b_u_bep,b_v_bep,                      & !O multi-layer urban
                   b_t_bep,b_q_bep,b_e_bep,dlg_bep,              & !O multi-layer urban
-                  dl_u_bep,sf_bep,vl_bep,sfcheadrt,INFXSRT, soldrain      )   !O multi-layer urban         
+                  dl_u_bep,sf_bep,vl_bep                        & !O multi-layer urban
+                 ,sfcheadrt,INFXSRT, soldrain                   & !hydro
+                 ,SDA_HFX, SDA_QFX, HFX_BOTH, QFX_BOTH, QNORM, fasdas     &   !fasdas
+                  )
 
 !----------------------------------------------------------------
     IMPLICIT NONE
@@ -2744,7 +2798,23 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
   REAL :: APELM,APES,SFCTH2,PSFC
   real, intent(in) :: xice_threshold
   character(len=80) :: message_text
+!
+!  FASDAS: it doesn't work for mosaic, but we need the variables to call sflx
+!
+   REAL,    DIMENSION( ims:ime, jms:jme )                     , &
+            INTENT(INOUT)  ::   SDA_HFX, SDA_QFX, HFX_BOTH, QFX_BOTH, QNORM
+   INTEGER, INTENT(IN   )  ::  fasdas
+   REAL                    ::  XSDA_HFX, XSDA_QFX, XQNORM
+   REAL                    ::  HFX_PHY, QFX_PHY
+   REAL                    ::  DZQ
+   REAL                    ::  HCPCT_FASDAS
 
+   HFX_PHY = 0.0   ! initialize
+   QFX_PHY = 0.0
+   XQNORM  = 0.0
+!
+!  END FASDAS
+!
 ! MEK MAY 2007
       FDTLIW=DT/ROWLIW
 ! MEK JUL2007
@@ -3210,6 +3280,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                        SMCWLT,SMCDRY,SMCREF,SMCMAX,NROOT,                &
                        sfcheadrt(i,j),                                   &    !I
                        INFXSRT(i,j),ETPND1,OPT_THCND,AOASIS              &    !O
+                ,XSDA_QFX, HFX_PHY, QFX_PHY, XQNORM, fasdas, HCPCT_FASDAS    & ! fasdas vars
                        )
       
 #ifdef WRF_HYDRO
@@ -4085,6 +4156,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                        SMCWLT,SMCDRY,SMCREF,SMCMAX,NROOT,                &
                        sfcheadrt(i,j),                                   &    !I
                        INFXSRT(i,j),ETPND1,OPT_THCND,AOASIS              &    !O
+                ,XSDA_QFX, HFX_PHY, QFX_PHY, XQNORM, fasdas, HCPCT_FASDAS    & ! fasdas vars
                        )
       
 #ifdef WRF_HYDRO

@@ -1,6 +1,17 @@
 MODULE module_sf_noahlsm
   USE module_model_constants, only : CP, R_D, XLF, XLV, RHOWATER, STBOLT, KARMAN
 
+!ckay=KIRAN ALAPATY @ US EPA -- November 01, 2015
+!
+! Tim Glotfelty@CNSU; AJ Deng@PSU
+!modified for use with FASDAS 
+!Flux Adjusting Surface Data Assimilation System to assimilate 
+!surface layer and soil layers temperature and moisture using
+! surfance reanalsys 
+!Reference: Alapaty et al., 2008: Development of the flux-adjusting surface
+! data assimilation system for mesoscale models. JAMC, 47, 2331-2350
+!
+
 !   REAL, PARAMETER    :: CP = 1004.5
   REAL, PARAMETER      :: RD = 287.04, SIGMA = 5.67E-8,                 &
                           CPH2O = 4.218E+3,CPICE = 2.106E+3,            &
@@ -74,7 +85,10 @@ CONTAINS
                        RIBB,                                            &
                        SMCWLT,SMCDRY,SMCREF,SMCMAX,NROOT,   &
                        SFHEAD1RT,                                       &    !I
-                       INFXS1RT,ETPND1,OPT_THCND,AOASIS )                    !P
+                       INFXS1RT,ETPND1,OPT_THCND,AOASIS                 &    !P
+                      ,XSDA_QFX,HFX_PHY,QFX_PHY,XQNORM                  &    !fasdas
+                      ,fasdas,HCPCT_FASDAS                              )    !fasdas
+
 ! ----------------------------------------------------------------------
 ! SUBROUTINE SFLX - UNIFIED NOAHLSM VERSION 1.0 JULY 2007
 ! ----------------------------------------------------------------------
@@ -352,7 +366,16 @@ CONTAINS
       PARAMETER (LVH2O = 2.501E+6)
       PARAMETER (LSUBS = 2.83E+6)
       PARAMETER (R = 287.04)
-
+!
+!  FASDAS
+!
+   INTEGER, INTENT(IN   )  ::  fasdas
+   REAL,    INTENT(INOUT)  ::  XSDA_QFX, XQNORM
+   REAL,    INTENT(INOUT)  ::  HFX_PHY, QFX_PHY
+   REAL,    INTENT(  OUT)  ::  HCPCT_FASDAS
+!
+!  END FASDAS
+!
 ! ----------------------------------------------------------------------
 !   INITIALIZATION
 ! ----------------------------------------------------------------------
@@ -736,7 +759,8 @@ CONTAINS
                             RUNOFF3,EDIR,EC,ET,ETT,NROOT,RTDIS,          &
                             QUARTZ,FXEXP,CSOIL,                          &
                             BETA,DRIP,DEW,FLX1,FLX3,VEGTYP,ISURBAN,      &
-                            SFHEAD1RT,INFXS1RT,ETPND1,SOILTYP,OPT_THCND )
+                            SFHEAD1RT,INFXS1RT,ETPND1,SOILTYP,OPT_THCND  &
+                           ,XSDA_QFX,QFX_PHY,XQNORM,fasdas,HCPCT_FASDAS  ) !fasdas
             ETA_KINEMATIC = ETA
          ELSE
             CALL SNOPAC (ETP,ETA,PRCP,PRCPF,SNOWNG,SMC,SMCMAX,SMCWLT,    &
@@ -753,7 +777,8 @@ CONTAINS
                          ISURBAN,                                        &
                          VEGTYP,                                         &
                          ETPN,FLX4,UA_PHYS,                              &
-                         SFHEAD1RT,INFXS1RT,ETPND1,SOILTYP,OPT_THCND)
+                         SFHEAD1RT,INFXS1RT,ETPND1,SOILTYP,OPT_THCND     &
+                        ,QFX_PHY,fasdas,HCPCT_FASDAS                     ) !fasdas
             ETA_KINEMATIC =  ESNOW + ETNS - 1000.0*DEW
          END IF
 
@@ -768,7 +793,15 @@ CONTAINS
 
          SHEAT = - (CH * CP * SFCPRS)/ (R * T2V) * ( TH2- T1 )
          IF(UA_PHYS) SHEAT = SHEAT + FLX4   
-
+!
+! FASDAS
+!
+      IF ( fasdas == 1 ) THEN
+        HFX_PHY = SHEAT
+      ENDIF
+!
+! END FASDAS
+!
 ! ----------------------------------------------------------------------
 ! CONVERT EVAP TERMS FROM KINEMATIC (KG M-2 S-1) TO ENERGY UNITS (W M-2)
 ! ----------------------------------------------------------------------
@@ -1541,7 +1574,8 @@ CONTAINS
 
       SUBROUTINE HRT (RHSTS,STC,SMC,SMCMAX,NSOIL,ZSOIL,YY,ZZ1,          &
                        TBOT,ZBOT,PSISAT,SH2O,DT,BEXP,SOILTYP,OPT_THCND, &
-                       F1,DF1,QUARTZ,CSOIL,AI,BI,CI,VEGTYP,ISURBAN)
+                       F1,DF1,QUARTZ,CSOIL,AI,BI,CI,VEGTYP,ISURBAN      &
+                      ,HCPCT_FASDAS                                     ) !fasdas
 
 ! ----------------------------------------------------------------------
 ! SUBROUTINE HRT
@@ -1569,6 +1603,13 @@ CONTAINS
       REAL, PARAMETER      :: T0 = 273.15, CAIR = 1004.0, CICE = 2.106E6,&
                               CH2O = 4.2E6
 
+!
+! FASDAS
+!
+      REAL, INTENT(  OUT)       :: HCPCT_FASDAS
+!
+! END FASDAS
+!
 
 !urban
         IF( VEGTYP == ISURBAN ) then
@@ -1589,7 +1630,13 @@ CONTAINS
       HCPCT = SH2O (1)* CH2O + (1.0- SMCMAX)* CSOIL_LOC + (SMCMAX - SMC (1))&
        * CAIR                                                           &
               + ( SMC (1) - SH2O (1) )* CICE
-
+!
+! FASDAS
+!
+      HCPCT_FASDAS = HCPCT
+!
+! END FASDAS
+!
 ! ----------------------------------------------------------------------
 ! CALC THE MATRIX COEFFICIENTS AI, BI, AND CI FOR THE TOP LAYER
 ! ----------------------------------------------------------------------
@@ -1851,8 +1898,8 @@ CONTAINS
                          RUNOFF3,EDIR,EC,ET,ETT,NROOT,RTDIS,            &
                          QUARTZ,FXEXP,CSOIL,                            &
                          BETA,DRIP,DEW,FLX1,FLX3,VEGTYP,ISURBAN,        &
-!DJG NDHMS/WRF-Hydro edit...
-                         SFHEAD1RT,INFXS1RT,ETPND1,SOILTYP,OPT_THCND)
+                         SFHEAD1RT,INFXS1RT,ETPND1,SOILTYP,OPT_THCND    &
+                        ,XSDA_QFX,QFX_PHY,XQNORM,fasdas,HCPCT_FASDAS    ) !fasdas
 
 ! ----------------------------------------------------------------------
 ! SUBROUTINE NOPAC
@@ -1885,7 +1932,17 @@ CONTAINS
       REAL, DIMENSION(1:NSOIL) :: ET1
       REAL                 :: EC1,EDIR1,ETT1,DF1,ETA1,ETP1,PRCP1,YY,    &
                               YYNUM,ZZ1
-
+!
+! FASDAS
+!
+      REAL                       ::  XSDA_QFX, QFX_PHY, XQNORM
+      INTEGER                    ::  fasdas
+      REAL , DIMENSION(1:NSOIL)  ::  EFT(NSOIL), wetty(1:NSOIL)
+      REAL                       ::  EFDIR, EFC, EALL_now
+      REAL, INTENT(  OUT)        ::  HCPCT_FASDAS
+!
+! END FASDAS
+!
 ! ----------------------------------------------------------------------
 ! EXECUTABLE CODE BEGINS HERE:
 ! CONVERT ETP Fnd PRCP FROM KG M-2 S-1 TO M S-1 AND INITIALIZE DEW.
@@ -1896,6 +1953,13 @@ CONTAINS
 ! ----------------------------------------------------------------------
 ! INITIALIZE EVAP TERMS.
 ! ----------------------------------------------------------------------
+!
+! FASDAS
+!
+      QFX_PHY = 0.0
+!
+! END FASDAS
+!
       EDIR = 0.
       EDIR1 = 0.
       EC1 = 0.
@@ -1903,6 +1967,13 @@ CONTAINS
       DO K = 1,NSOIL
         ET(K) = 0.
         ET1(K) = 0.
+!
+! FASDAS
+!
+        wetty(K) = 1.0
+!
+! END FASDAS
+!
       END DO
       ETT = 0.
       ETT1 = 0.
@@ -1919,6 +1990,45 @@ CONTAINS
                       SMCDRY,CFACTR,                                    &
                        EDIR1,EC1,ET1,ETT1,SFCTMP,Q2,NROOT,RTDIS,FXEXP,  &
                       SFHEAD1RT,ETPND1 )
+!
+! FASDAS
+!
+      IF( fasdas == 1 ) THEN
+        DO K=1,NSOIL
+        QFX_PHY = QFX_PHY + ET1(K)   ! m/s
+! dont add moisture fluxes if soil moisture is = or > smcref
+        IF(SMC(K).GE.SMCREF.and.XSDA_QFX.gt.0.0) wetty(K)=0.0
+        END DO
+       QFX_PHY = EDIR1+EC1+QFX_PHY    ! m/s
+       EALL_now = QFX_PHY           ! m/s
+       QFX_PHY = QFX_PHY*1000.0     ! Kg/m2/s
+
+       if(EALL_now.ne.0.0) then
+       EFDIR = (EDIR1/EALL_now)*XSDA_QFX*1.0E-03*XQNORM
+       EFDIR = EFDIR * wetty(1)
+          !TWG2015 Bugfix Flip Sign to conform to Net upward Flux
+           EDIR1 = EDIR1 + EFDIR    ! new value
+       
+       EFC = (EC1/EALL_now)*XSDA_QFX*1.0E-03*XQNORM
+       !TWG2015 Bugfix Flip Sign to conform to Net upward Flux
+       EC1 = EC1 + EFC         ! new value
+
+
+       DO K=1,NSOIL
+        EFT(K) = (ET1(K)/EALL_now)*XSDA_QFX*1.0E-03*XQNORM
+        EFT(K) =  EFT(K) * wetty(K)
+        !TWG2015 Bugfix Flip Sign to conform to Net upward Flux
+        ET1(K) = ET1(K) + EFT(K) ! new value
+       END DO
+
+
+       END IF ! for non-zero eall_now
+      ELSE
+        QFX_PHY = 0.0
+      ENDIF
+!
+! END FASDAS
+!
          CALL SMFLX (SMC,NSOIL,CMC,DT,PRCP1,ZSOIL,                      &
                       SH2O,SLOPE,KDT,FRZFACT,                           &
                       SMCMAX,BEXP,SMCWLT,DKSAT,DWSAT,                   &
@@ -1945,6 +2055,43 @@ CONTAINS
 ! ----------------------------------------------------------------------
 
          PRCP1 = PRCP1+ DEW
+!
+! FASDAS
+!
+     IF( fasdas == 1 ) THEN
+       DO K=1,NSOIL
+        QFX_PHY = QFX_PHY + ET1(K)   ! m/s
+! dont add moisture fluxes if soil moisture is = or > smcref
+        IF(SMC(K).GE.SMCREF.and.XSDA_QFX.gt.0.0) wetty(K)=0.0
+       END DO
+       QFX_PHY = EDIR1+EC1+QFX_PHY    ! m/s
+        EALL_now = QFX_PHY     ! m/s
+       QFX_PHY = QFX_PHY*1000.0    ! Kg/m2/s
+
+       IF(EALL_now.ne.0.0) then
+       EFDIR = (EDIR1/EALL_now)*XSDA_QFX*1.0E-03*XQNORM
+        EFDIR =  EFDIR * wetty(1)
+          !TWG2015 Bugfix Flip Sign to conform to Net Upward Flux
+           EDIR1 = EDIR1 + EFDIR    ! new value
+
+        EFC = (EC1/EALL_now)*XSDA_QFX*1.0E-03*XQNORM
+        !TWG2015 Bugfix Flip Sign to conform to Net Upward Flux
+        EC1 = EC1+ EFC         ! new value
+
+       DO K=1,NSOIL
+        EFT(K) = (ET1(K)/EALL_now)*XSDA_QFX*1.0E-03*XQNORM
+        EFT(K) = EFT(K) * wetty(K)
+        !TWG2015 Bugfix Flip Sign to conform to Net Upward Flux
+        ET1(K) = ET1(K) + EFT(K)   ! new value
+       END DO
+
+        END IF ! for non-zero eall_now
+      ELSE
+        QFX_PHY = 0.0
+      ENDIF
+!
+! END FASDAS
+!
          CALL SMFLX (SMC,NSOIL,CMC,DT,PRCP1,ZSOIL,                      &
                       SH2O,SLOPE,KDT,FRZFACT,                           &
                       SMCMAX,BEXP,SMCWLT,DKSAT,DWSAT,                   &
@@ -2015,7 +2162,8 @@ CONTAINS
 !urban
       CALL SHFLX (SSOIL,STC,SMC,SMCMAX,NSOIL,T1,DT,YY,ZZ1,ZSOIL,       &
                   TBOT,ZBOT,SMCWLT,PSISAT,SH2O,BEXP,F1,DF1,            &
-                  QUARTZ,CSOIL,VEGTYP,ISURBAN,SOILTYP,OPT_THCND)
+                  QUARTZ,CSOIL,VEGTYP,ISURBAN,SOILTYP,OPT_THCND        &
+                 ,HCPCT_FASDAS                                         ) !fasdas
 
 ! ----------------------------------------------------------------------
 ! SET FLX1 AND FLX3 (SNOPACK PHASE CHANGE HEAT FLUXES) TO ZERO SINCE
@@ -2436,7 +2584,8 @@ CONTAINS
 
       SUBROUTINE SHFLX (SSOIL,STC,SMC,SMCMAX,NSOIL,T1,DT,YY,ZZ1,ZSOIL, &
                          TBOT,ZBOT,SMCWLT,PSISAT,SH2O,BEXP,F1,DF1,     &
-                         QUARTZ,CSOIL,VEGTYP,ISURBAN,SOILTYP,OPT_THCND)
+                         QUARTZ,CSOIL,VEGTYP,ISURBAN,SOILTYP,OPT_THCND &
+                        ,HCPCT_FASDAS                                  ) ! fasdas
 
 ! ----------------------------------------------------------------------
 ! SUBROUTINE SHFLX
@@ -2461,15 +2610,23 @@ CONTAINS
       REAL, DIMENSION(1:NSOIL)             :: AI, BI, CI, STCF,RHSTS
       REAL, PARAMETER       :: T0 = 273.15
 
+!
+! FASDAS
+!
+      REAL, INTENT(  OUT)     :: HCPCT_FASDAS
+!
+! END FASDAS
+!
 ! ----------------------------------------------------------------------
 ! HRT ROUTINE CALCS THE RIGHT HAND SIDE OF THE SOIL TEMP DIF EQN
 ! ----------------------------------------------------------------------
 
       ! Land case
 
-      CALL HRT (RHSTS,STC,SMC,SMCMAX,NSOIL,ZSOIL,YY,ZZ1,TBOT,        &
-                ZBOT,PSISAT,SH2O,DT,BEXP,SOILTYP,OPT_THCND,               &
-                F1,DF1,QUARTZ,CSOIL,AI,BI,CI,VEGTYP,ISURBAN)
+      CALL HRT (RHSTS,STC,SMC,SMCMAX,NSOIL,ZSOIL,YY,ZZ1,TBOT,     &
+                ZBOT,PSISAT,SH2O,DT,BEXP,SOILTYP,OPT_THCND,       &
+                F1,DF1,QUARTZ,CSOIL,AI,BI,CI,VEGTYP,ISURBAN       &
+               ,HCPCT_FASDAS                                      ) !fasdas
 
       CALL HSTEP (STCF,STC,RHSTS,DT,NSOIL,AI,BI,CI)
 
@@ -2844,8 +3001,8 @@ CONTAINS
                           ISURBAN,                                      &
                           VEGTYP,                                       &
                           ETPN,FLX4,UA_PHYS,                            &
-                          SFHEAD1RT,INFXS1RT,ETPND1,SOILTYP,OPT_THCND)
-
+                          SFHEAD1RT,INFXS1RT,ETPND1,SOILTYP,OPT_THCND   &
+                         ,QFX_PHY,fasdas,HCPCT_FASDAS                   ) !fasdas
 ! ----------------------------------------------------------------------
 ! SUBROUTINE SNOPAC
 ! ----------------------------------------------------------------------
@@ -2902,6 +3059,15 @@ CONTAINS
       REAL, INTENT(IN)      :: ETPN     ! UA: adjusted pot. evap. [mm/s]
       REAL                  :: ETP1N    ! UA: adjusted pot. evap. [m/s]
 
+!
+!  FASDAS
+!
+      REAL                  :: QFX_PHY
+      INTEGER               :: fasdas
+      REAL, INTENT(  OUT)   :: HCPCT_FASDAS
+!
+!  END FASDAS
+!
 ! ----------------------------------------------------------------------
 ! EXECUTABLE CODE BEGINS HERE:
 ! ----------------------------------------------------------------------
@@ -2986,6 +3152,18 @@ CONTAINS
             DO K = 1,NSOIL
                ET (K) = ET1 (K)*1000.
             END DO
+!
+! FASDAS
+!
+            if( fasdas ==  1 ) then
+              QFX_PHY = EDIR + EC
+              DO K=1,NSOIL
+                 QFX_PHY = QFX_PHY + ET(K)
+              END DO
+            endif
+!
+! END FASDAS
+!
             ETT = ETT1*1000.
             ETNS = ETNS1*1000.
 
@@ -3191,7 +3369,8 @@ CONTAINS
       T11 = T1
       CALL SHFLX (SSOIL1,STC,SMC,SMCMAX,NSOIL,T11,DT,YY,ZZ1,ZSOIL,     &
                    TBOT,ZBOT,SMCWLT,PSISAT,SH2O,BEXP,F1,DF1,           &
-                   QUARTZ,CSOIL,VEGTYP,ISURBAN,SOILTYP,OPT_THCND)
+                   QUARTZ,CSOIL,VEGTYP,ISURBAN,SOILTYP,OPT_THCND       &
+                  ,HCPCT_FASDAS                                        ) !fasdas
 
 ! ----------------------------------------------------------------------
 ! SNOW DEPTH AND DENSITY ADJUSTMENT BASED ON SNOW COMPACTION.  YY IS

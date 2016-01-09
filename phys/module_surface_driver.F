@@ -78,6 +78,7 @@ CONTAINS
      &          ,ua_phys,flx4,fvb,fbur,fgsn                                  &
 #if (EM_CORE==1)
      &          ,ch,tsq,qsq,cov,Sh3d,el_pbl,bl_mynn_cloudpdf          & ! MYNN
+     &          ,bl_sgcloud,qc_bl,cldfra_bl,bri                       & ! MYNN
      &          ,fgdp,dfgdp,vdfg,grav_settling                        & ! Katata - fog dep
 #endif
      &          ,lakedepth2d,  savedtke12d,  snowdp2d,   h2osno2d       & !lake
@@ -269,8 +270,9 @@ CONTAINS
      &          ,TS_URB2D_mosaic                                      &  !danli mosaic 
      &          ,TS_RUL2D_mosaic                                      &  !danli mosaic     
      &          ,ZOL                                                  &  !ckay
+     &          ,SDA_HFX, SDA_QFX, HFX_BOTH, QFX_BOTH, QNORM, fasdas  &  !fasdas
      &                                                             )
-              
+
 #if ( ! NMM_CORE == 1 )
    USE module_state_description, ONLY : SFCLAYSCHEME              &
                                        ,SFCLAYREVSCHEME           &
@@ -911,7 +913,7 @@ CONTAINS
 
 #if ( EM_CORE==1)
    REAL, DIMENSION( ims:ime , jms:jme ), &
-        &OPTIONAL, INTENT(INOUT   ):: ch
+        &OPTIONAL, INTENT(INOUT   ):: ch,BRi
 
 !Katata-added - extra in-output                                                                                                                                                              
    REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(INOUT):: fgdp,dfgdp,vdfg                                                                                                           
@@ -919,8 +921,9 @@ CONTAINS
 !Katata-end
 
    REAL, DIMENSION( ims:ime , kms:kme, jms:jme ), &
-        &OPTIONAL, INTENT(IN   ):: tsq,qsq,cov,Sh3d,el_pbl
-   INTEGER, OPTIONAL, INTENT(IN)                                :: bl_mynn_cloudpdf
+        &OPTIONAL, INTENT(IN   ):: tsq,qsq,cov,Sh3d,el_pbl,qc_bl,cldfra_bl
+   INTEGER, OPTIONAL, INTENT(IN)                                :: bl_mynn_cloudpdf, &
+                                                                   bl_sgcloud
 #endif
 
 
@@ -1304,6 +1307,13 @@ CONTAINS
    LOGICAL :: run_param , doing_adapt_dt , decided
    LOGICAL :: do_adapt
 !
+! FASDAS
+!
+   REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT), OPTIONAL ::   SDA_HFX,SDA_QFX,HFX_BOTH, QFX_BOTH, QNORM
+   INTEGER, INTENT(IN   )                              ::   fasdas
+! local vars
+   REAL, DIMENSION( ims:ime, jms:jme )                 ::   HFXOLD, QFXOLD
+   REAL                                                ::   HFX_KAY, QFX_KAY
 !
 !------------------------------------------------------------------
 ! Initialize local variables
@@ -2150,6 +2160,7 @@ CONTAINS
                svp1,svp2,svp3,svpt0,ep_1,ep_2,karman,              &
                &itimestep,ch,th_phy,pi_phy,qc_curr,rho,            &
                &tsq,qsq,cov,Sh3d,el_pbl,qcg,                       &
+               &bl_sgcloud,qc_bl,cldfra_bl,BRi,                    &
                XICE,SST,TSK_SEA,                                   &
                CHS2_SEA,CHS_SEA,CPM_SEA,CQS2_SEA,FLHC_SEA,FLQC_SEA,&
                HFX_SEA,LH_SEA,QFX_SEA,QGH_SEA,QSFC_SEA,ZNT_SEA,    &
@@ -2168,6 +2179,7 @@ CONTAINS
                svp1,svp2,svp3,svpt0,ep_1,ep_2,karman,              &
                &itimestep,ch,th_phy,pi_phy,qc_curr,rho,            &
                &tsq,qsq,cov,Sh3D,el_pbl,qcg,                       &
+               &bl_sgcloud,qc_bl,cldfra_bl,BRi,                    &
                ids,ide, jds,jde, kds,kde,                          &
                ims,ime, jms,jme, kms,kme,                          &
                i_start(ij),i_end(ij),j_start(ij),j_end(ij),kts,kte,&
@@ -2550,7 +2562,9 @@ CONTAINS
                 a_e_bep,b_u_bep,b_v_bep,                        & !O multi-layer urban
                 b_t_bep,b_q_bep,b_e_bep,dlg_bep,                & !O multi-layer urban
                 dl_u_bep,sf_bep,vl_bep                          & !O multi-layer urban
-                ,sfcheadrt,INFXSRT, soldrain)
+                ,sfcheadrt,INFXSRT, soldrain                    & !hydro
+                ,SDA_HFX, SDA_QFX, HFX_BOTH, QFX_BOTH, QNORM, fasdas    & ! fasdas
+                )
 
            ELSE
                CALL wrf_error_fatal('Lack arguments to call lsm_mosaic')
@@ -2558,6 +2572,36 @@ CONTAINS
 
 	  ELSEIF (sf_surface_mosaic == 0) THEN
 	                  
+!
+!  FASDAS
+!
+             IF( fasdas == 1 ) THEN
+               DO j=j_start(ij),j_end(ij)
+               DO i=i_start(ij),i_end(ij)
+
+!ckay2015 only do indirect nudging over land areas 
+                     IF(XLAND(i,j) .GT. 1.5) then
+                      SDA_QFX(I,J) = 0.0
+                      SDA_HFX(I,J) = 0.0
+                     END IF
+
+! TWG2015 Removed lines that update fluxes to ensure this section only defines
+! the output
+                    QFXOLD(I,J)=QFX(I,J)
+                    QFX_KAY = SDA_QFX(I,J)*RHO(I,1,J)*DZ8W(I,1,J)
+                    QFX_KAY = QFX_KAY * QNORM(I,J)
+                    QFX_BOTH(I,J)=QFX(I,J)+QFX_KAY
+
+                    HFXOLD(I,J)=HFX(I,J)
+                    HFX_KAY = SDA_HFX(I,J)*RHO(I,1,J)*CPM(I,J)*DZ8W(I,1,J)
+                    HFX_BOTH(I,J)=HFX(I,J)+HFX_KAY
+
+               ENDDO
+               ENDDO
+             END IF
+!
+!  END FASDAS
+!
                CALL lsm(dz8w,qv_curr,p8w,t_phy,tsk,                 &
                 hfx,qfx,lh,grdflx,qgh,gsw,swdown,glw,smstav,smstot,    &
                 sfcrunoff,udrunoff,ivgtyp,isltyp,isurban,isice,vegfra,        &
@@ -2623,8 +2667,15 @@ CONTAINS
                 a_e_bep,b_u_bep,b_v_bep,                        & !O multi-layer urban
                 b_t_bep,b_q_bep,b_e_bep,dlg_bep,                & !O multi-layer urban
                 dl_u_bep,sf_bep,vl_bep                          & !O multi-layer urban
-                ,sfcheadrt,INFXSRT, soldrain)
-
+                ,sfcheadrt,INFXSRT, soldrain &
+!
+!  FASDAS
+!
+                ,SDA_HFX, SDA_QFX, HFX_BOTH, QFX_BOTH, QNORM, fasdas    &
+!
+!  END FASDAS
+!
+                )
          ENDIF
 
          call seaice_noah( SEAICE_ALBEDO_OPT, SEAICE_ALBEDO_DEFAULT, SEAICE_THICKNESS_OPT, &
@@ -4553,6 +4604,7 @@ CONTAINS
                      SVP1,SVP2,SVP3,SVPT0,EP1,EP2,KARMAN,          &
                &itimestep,ch,th3d,pi3d,qc3d,rho,                   &
                &tsq,qsq,cov,Sh3d,el_pbl,qcg,                       &
+               &bl_sgcloud,qc_bl,cldfra_bl,BRi,                    &
 XICE,SST,TSK_SEA,                                                  &
 CHS2_SEA,CHS_SEA,CPM_SEA,CQS2_SEA,FLHC_SEA,FLQC_SEA,               &
 HFX_SEA,LH_SEA,QFX_SEA,QGH_SEA,QSFC_SEA,ZNT_SEA,                   &
@@ -4569,7 +4621,7 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
                                        ims,ime, jms,jme, kms,kme,  &
                                        its,ite, jts,jte, kts,kte
 
-     INTEGER,  INTENT(IN )   ::        ISFFLX,bl_mynn_cloudpdf
+     INTEGER,  INTENT(IN )   ::        ISFFLX,bl_mynn_cloudpdf,bl_sgcloud
      REAL,     INTENT(IN )   ::        SVP1,SVP2,SVP3,SVPT0
      REAL,     INTENT(IN )   ::        EP1,EP2,KARMAN
 
@@ -4598,7 +4650,7 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
                                                              HFX, &
                                                              QFX, &
                                                               LH, &
-                                                         MOL,RMOL,TSK
+                                                         MOL,RMOL,TSK,BRi
 
      REAL,     DIMENSION( ims:ime, jms:jme )                    , &
                INTENT(INOUT)   ::                 GZ1OZ0,WSPD,BR, &
@@ -4634,7 +4686,8 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
      REAL,     DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: ch
      REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN) ::     &
                                                              &QC3D,&
-                            &th3d,pi3d,tsq,qsq,cov,Sh3d,el_pbl
+                            &th3d,pi3d,tsq,qsq,cov,Sh3d,el_pbl,&
+                                              &qc_bl,cldfra_bl
 
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme )              , &
                INTENT(OUT)     ::                   ck,cka,cd,cda
@@ -4807,6 +4860,7 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
                SVP1,SVP2,SVP3,SVPT0,EP1,EP2,KARMAN,                &
                &itimestep,ch,th3d,pi3d,qc3d,rho,                   &
                &tsq,qsq,cov,sh3d,el_pbl,qcg,                       &
+               &bl_sgcloud,qc_bl,cldfra_bl,BRi,                    &
                ids,ide, jds,jde, kds,kde,                          &
                ims,ime, jms,jme, kms,kme,                          &
                its,ite, jts,jte, kts,kte,                          &
@@ -4893,6 +4947,7 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
                SVP1,SVP2,SVP3,SVPT0,EP1,EP2,KARMAN,                &
                &itimestep,CH_SEA,th3d,pi3d,qc3d,rho,               &
                &tsq,qsq,cov,sh3d,el_pbl,qcg,                       &
+               &bl_sgcloud,qc_bl,cldfra_bl,BRi,                    &
                ids,ide, jds,jde, kds,kde,                          &
                ims,ime, jms,jme, kms,kme,                          &
                its,ite, jts,jte, kts,kte,                          &

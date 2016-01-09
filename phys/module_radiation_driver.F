@@ -101,6 +101,7 @@ CONTAINS
               ,ICLOUD_CU                      &
               ,AER_RA_FEEDBACK                &
               ,QC_CU , QI_CU                  &
+              ,bl_sgcloud,qc_bl,cldfra_bl     & !JOE-subgrid bl clouds
               ,PM2_5_DRY, PM2_5_WATER         &
               ,PM2_5_DRY_EC                   &
               ,TAUAER300, TAUAER400 & ! jcb
@@ -429,7 +430,7 @@ CONTAINS
                                  waer300,waer400,waer600,waer999
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), OPTIONAL ,       &
-         INTENT(IN ) ::          qc_cu, qi_cu
+         INTENT(IN ) ::          qc_cu, qi_cu, qc_bl
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), OPTIONAL ,       &
          INTENT(IN ) ::  tauaerlw1,tauaerlw2,tauaerlw3,tauaerlw4, & ! czhao 
@@ -439,6 +440,7 @@ CONTAINS
 
    INTEGER, INTENT(IN) :: icloud_cu
 
+   INTEGER, INTENT(IN   ), OPTIONAL  ::   bl_sgcloud
    INTEGER, INTENT(IN   ), OPTIONAL  ::   aer_ra_feedback
 
 !jdfcz   INTEGER, OPTIONAL, INTENT(IN   )    :: progn,prescribe
@@ -601,7 +603,8 @@ CONTAINS
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  & ! ckay for sub-grid cloud fraction
          OPTIONAL,                                                &
          INTENT(INOUT) ::                              cldfra_dp, &
-                                                       cldfra_sh
+                                                       cldfra_sh, &
+                                                       cldfra_bl
 
 !..G. Thompson
    REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(IN):: re_cloud, re_ice, re_snow
@@ -681,7 +684,7 @@ CONTAINS
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qi_save,qc_save
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qs_save
 
-   REAL    ::    gridkm
+   REAL    ::    gridkm, Wice,Wh2o
 
    REAL    ::    next_rad_time, DTaccum
    LOGICAL ::    run_param , doing_adapt_dt , decided
@@ -1028,6 +1031,26 @@ CONTAINS
         ENDDO
      ENDIF
 
+! backup the incoming hydrometeors
+       IF ( PRESENT( qc ) ) THEN
+          DO j=jts,jte
+          DO k=kts,kte
+          DO i=its,ite
+             qc_save(i,k,j) = qc(i,k,j)
+          ENDDO
+          ENDDO
+          ENDDO
+       ENDIF
+       IF ( PRESENT( qi ) ) THEN
+          DO j=jts,jte
+          DO k=kts,kte
+          DO i=its,ite
+             qi_save(i,k,j) = qi(i,k,j)
+          ENDDO
+          ENDDO
+          ENDDO
+       ENDIF
+
 ! temporarily modify hydrometeors (currently only done for GD scheme and WRF-Chem)
 !
        IF ( PRESENT( qc ) .AND. PRESENT( qc_cu ) .AND. icloud_cu .EQ. 1 ) THEN
@@ -1124,6 +1147,27 @@ CONTAINS
              ENDDO
              ENDDO
           ENDIF
+        ENDIF
+
+        IF ( PRESENT ( CLDFRA_BL ) .AND.  PRESENT ( QC_BL ) ) THEN
+           IF ( bl_sgcloud > 0 ) THEN
+           CALL wrf_debug (1, 'in rad driver; use BL clouds')
+           DO j = jts,jte
+           DO i = its,ite
+           DO k = kts,kte
+               !Partition the BL clouds into water & ice according to a linear
+               !approximation of Hobbs et al. (1974). This allows us to only use
+               !one 3D array for both cloud water & ice.
+               Wice = 1. - MIN(1., MAX(0., (t(i,k,j)-254.)/15.))
+               Wh2o = 1. - Wice
+               CLDFRA(i,k,j)=MAX(CLDFRA(i,k,j),CLDFRA_BL(i,k,j))
+               CLDFRA(i,k,j)=MAX(0.0,MIN(1.0,CLDFRA(i,k,j)))
+               qc(i,k,j)=qc(i,k,j) + QC_BL(i,k,j)*Wh2o*CLDFRA_BL(i,k,j)
+               qi(i,k,j)=qi(i,k,j) + QC_BL(i,k,j)*Wice*CLDFRA_BL(i,k,j)
+           ENDDO
+           ENDDO
+           ENDDO
+           ENDIF
         ENDIF
 
         IF ( PRESENT (cldfra_mp_all) ) THEN
@@ -2169,8 +2213,8 @@ CONTAINS
         ENDIF
       ENDIF
 
-      IF ( PRESENT( qc  ) .AND. PRESENT( qc_cu ) ) THEN 
-         IF ( icloud_cu .NE. 0 ) THEN
+ ! Restore qc & qi for any model physics configuration
+      IF ( PRESENT( qc  ) ) THEN
          DO j=jts,jte
          DO k=kts,kte
          DO i=its,ite
@@ -2178,10 +2222,8 @@ CONTAINS
          ENDDO
          ENDDO
          ENDDO
-         ENDIF
       ENDIF
-      IF ( PRESENT( qi  ) .AND. PRESENT( qi_cu ) ) THEN
-         IF ( icloud_cu .NE. 0 ) THEN
+      IF ( PRESENT( qi  ) ) THEN
          DO j=jts,jte
          DO k=kts,kte
          DO i=its,ite
@@ -2189,8 +2231,8 @@ CONTAINS
          ENDDO
          ENDDO
          ENDDO
-         ENDIF
       ENDIF
+
       IF (ICLOUD == 3) THEN
         IF (PRESENT(CLDFRA) .AND.                                       &
             PRESENT(F_QC) .AND. PRESENT ( F_QI ) ) THEN

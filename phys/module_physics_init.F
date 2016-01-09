@@ -89,6 +89,8 @@ CONTAINS
                          m_ps_1,m_ps_2,m_hybi,aerosolc_1,aerosolc_2,& ! Optional
                          RUNDGDTEN,RVNDGDTEN,RTHNDGDTEN,         &    ! Optional
                          RPHNDGDTEN,RQVNDGDTEN,RMUNDGDTEN,       &    ! Optional
+                         SDA_HFX, SDA_QFX, QNORM, HFX_BOTH, QFX_BOTH, & ! fasdas
+                         HFX_FDDA,                                    & ! fasdas
                          FGDT,STEPFG,                            &    ! Optional
                          cugd_tten,cugd_ttens,cugd_qvten,        &    ! Optional
                          cugd_qvtens,cugd_qcten,                 &    ! Optional
@@ -502,6 +504,15 @@ CONTAINS
    INTEGER , OPTIONAL, INTENT(OUT) :: STEPFG
    REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , OPTIONAL, INTENT(INOUT) ::    &!BSINGH(PNNL)- should be declared inout
              RUNDGDTEN, RVNDGDTEN, RTHNDGDTEN, RPHNDGDTEN, RQVNDGDTEN
+!
+! FASDAS
+!
+   REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT), OPTIONAL ::  &
+             SDA_HFX, SDA_QFX, QNORM, HFX_BOTH, QFX_BOTH
+!  INTEGER,  INTENT(IN   )                                            ::  fasdas
+   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , OPTIONAL, INTENT(INOUT) ::    &
+             HFX_FDDA
+!
    REAL,     DIMENSION( ims:ime , jms:jme ) , OPTIONAL, INTENT(INOUT) ::    &
              RMUNDGDTEN
 
@@ -767,6 +778,7 @@ integer myproc
    has_reqc = 0
    has_reqi = 0
    has_reqs = 0
+   IF ( config_flags%use_mp_re .EQ. 1 ) THEN
    if ((config_flags%ra_lw_physics .eq. RRTMG_LWSCHEME .or. config_flags%ra_lw_physics .eq. RRTMG_LWSCHEME_FAST) .and. &
        (config_flags%ra_sw_physics .eq. RRTMG_SWSCHEME .or. config_flags%ra_sw_physics .eq. RRTMG_SWSCHEME_FAST) .and. &
         (config_flags%mp_physics  .eq. THOMPSON .or.        &
@@ -783,6 +795,7 @@ integer myproc
       has_reqi = 1
       has_reqs = 1
    endif
+   ENDIF
 
 !-- should be from the namelist
 
@@ -1275,6 +1288,8 @@ integer myproc
 
    CALL fg_init(STEPFG,FGDT,DT,id,RUNDGDTEN,RVNDGDTEN,          &
                 RTHNDGDTEN,RPHNDGDTEN,RQVNDGDTEN,RMUNDGDTEN,    &
+                SDA_HFX, SDA_QFX, QNORM, HFX_BOTH, QFX_BOTH,    & ! fasdas
+                HFX_FDDA,                                       & ! fasdas
                 config_flags,restart,                           &
                 allowed_to_read ,                               &
                 ids, ide, jds, jde, kds, kde,                   &
@@ -3772,6 +3787,8 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
 !==========================================================
    SUBROUTINE fg_init(STEPFG,FGDT,DT,id,RUNDGDTEN,RVNDGDTEN,    &
                 RTHNDGDTEN,RPHNDGDTEN,RQVNDGDTEN,RMUNDGDTEN,    &
+                SDA_HFX, SDA_QFX, QNORM, HFX_BOTH, QFX_BOTH,    & ! fasdas
+                HFX_FDDA,                                       & ! fasdas
                 config_flags,restart,                           &
                 allowed_to_read ,                               &
                 ids, ide, jds, jde, kds, kde,                   &
@@ -3801,6 +3818,17 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                                                           RTHNDGDTEN, &
                                                           RPHNDGDTEN, &
                                                           RQVNDGDTEN
+!
+! FASDAS
+!
+   REAL ,    DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT)           ::    &
+                                                             SDA_HFX, &
+                                                             SDA_QFX, &
+                                                             QNORM,HFX_BOTH,QFX_BOTH
+!  INTEGER , INTENT(IN   )                                  ::  fasdas
+   REAL ,    DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) :: &
+                                                            HFX_FDDA
+
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT) :: RMUNDGDTEN !BSINGH(PNNL)- should be declared inout
 
    LOGICAL,  INTENT(IN)           :: allowed_to_read
@@ -3818,6 +3846,8 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
 
       CASE (PSUFDDAGD)
            CALL fddagdinit(id,rundgdten,rvndgdten,rthndgdten,rqvndgdten,rmundgdten,&
+               SDA_HFX, SDA_QFX, QNORM, HFX_BOTH, QFX_BOTH, config_flags%fasdas,& ! fasdas
+               HFX_FDDA,                                                        & ! fasdas
                config_flags%run_hours, &
                config_flags%if_no_pbl_nudging_uv, &
                config_flags%if_no_pbl_nudging_t, &

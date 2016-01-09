@@ -45,6 +45,15 @@
       LOGICAL , EXTERNAL :: wrf_dm_on_monitor
       INTEGER :: i, oops, d1_value
       LOGICAL :: km_opt_already_done , diff_opt_already_done
+!TWG2015
+!
+!FASDAS
+!
+      LOGICAL :: rinblw_already_done
+      INTEGER :: j
+!
+!END FASDAS
+!
 
 !-----------------------------------------------------------------------
 ! Set up the WRF Hydro namelist option to allow dynamic allocation of
@@ -149,6 +158,8 @@
             wrf_err_message = '--- ERROR: Both km_opt and diff_opt need to be set in the namelist.input file.'
          CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
       END IF
+
+
 #endif
 
 !-----------------------------------------------------------------------
@@ -631,9 +642,9 @@
 !-----------------------------------------------------------------------
 
       DO i = 1, model_config_rec % max_dom
-         IF ( ( model_config_rec%grid_sfdda(i) .EQ. 1 ).AND. &
+         IF ( ( model_config_rec%grid_sfdda(i) .GT. 0 ).AND. &
               ( model_config_rec%grid_fdda (i) .NE. 1 ) ) THEN
-            wrf_err_message = '--- ERROR: If grid_sfdda = 1, then grid_fdda must also = 1 for that domain '
+            wrf_err_message = '--- ERROR: If grid_sfdda >= 1, then grid_fdda must also = 1 for that domain '
             CALL wrf_message ( wrf_err_message )
             wrf_err_message = '--- Change grid_fdda or grid_sfdda in namelist.input '
             CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
@@ -711,6 +722,65 @@
       ENDDO      ! Loop over domains
 
 !-----------------------------------------------------------------------
+! If grid_sfdda = 2, we turn it into derived namelist fasdas
+!-----------------------------------------------------------------------
+
+      DO i = 1, model_config_rec % max_dom
+         model_config_rec%fasdas(i) = 0
+         IF ( model_config_rec%grid_sfdda(i) .EQ. 2 ) THEN
+            model_config_rec%fasdas(i) = 1
+         END IF
+      ENDDO
+!
+!-----------------------------------------------------------------------
+! FASDAS:  Check that rinblw is set for max_domains in the namelist if sffdda is active
+!-----------------------------------------------------------------------
+    rinblw_already_done = .FALSE.
+    DO j = 1, model_config_rec%max_dom
+    IF (model_config_rec%grid_sfdda(j) .EQ. 1 ) THEN
+      DO i = 2, model_config_rec%max_dom
+         IF ( model_config_rec%rinblw(i) .EQ. -1 ) THEN
+            model_config_rec%rinblw(i) = model_config_rec % rinblw(1)
+            IF ( .NOT. rinblw_already_done ) THEN
+               CALL wrf_message ( "Setting blank rinblw entries to domain #1 values.")
+               CALL wrf_message ( " --> The rinblw entry in the namelist.input is now max_domains." )
+            END IF
+            rinblw_already_done = .TRUE.
+         END IF
+       ENDDO
+
+!------------------------------------------------------------------------
+! Check that rinblw is not -1 if sfdda is active
+!------------------------------------------------------------------------
+       IF ( model_config_rec%rinblw(1) .EQ. -1 ) THEN
+            wrf_err_message = '--- ERROR: rinblw needs to be set in the namelist.input file.'
+            CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
+       END IF
+    END IF 
+    END DO
+
+!------------------------------------------------------------------------
+! Check to see if FASDAS is active
+!------------------------------------------------------------------------
+    DO i = 1, model_config_rec%max_dom
+     IF (model_config_rec%fasdas(i) .EQ. 1 ) THEN
+         CALL wrf_message ( "FASDAS is active. Mixed Layer fdda is inactive")
+     END IF
+
+!------------------------------------------------------------------------
+! Check to make sure sfdda is active if FASDAS is in namelist
+!------------------------------------------------------------------------
+!     IF (model_config_rec%fasdas(i) .EQ. 1 ) THEN
+!       IF (model_config_rec%grid_sfdda(i) .EQ. 0) THEN
+!        wrf_err_message = '--- ERROR: sfdda needs to be set in the namelist.input file to run FASDAS.'
+!        CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
+!       END IF
+!     END IF 
+     END DO
+!
+!END FASDAS
+!
+!-----------------------------------------------------------------------
 !  Only implement the mfshconv option if the QNSE PBL is activated.
 !-----------------------------------------------------------------------
 
@@ -750,6 +820,24 @@
       END IF
 
 !-----------------------------------------------------------------------
+!  bl_mynn_edmf > 0 over-rules both shcu_physics & ishallow
+!-----------------------------------------------------------------------
+
+      oops = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec%bl_mynn_edmf(i) .EQ. MYNN_STEM_EDMF .OR. &
+              model_config_rec%bl_mynn_edmf(i) .EQ. MYNN_TEMF_EDMF) THEN
+               model_config_rec%shcu_physics(i) = 0  ! maxdom
+               model_config_rec%ishallow = 0         ! not maxdom
+               oops = oops + 1
+         END IF
+      ENDDO      ! Loop over domains
+      IF ( oops .GT. 0 ) THEN
+         wrf_err_message = 'bl_mynn_edmf > 0 requires both shcu_physics=0 & ishallow=0'
+         CALL wrf_message ( wrf_err_message )
+      END IF
+
+!-----------------------------------------------------------------------
 !  We need to know if any of the cumulus schemes are active. This
 !  allows the model to allocate space.
 !-----------------------------------------------------------------------
@@ -774,20 +862,46 @@
       ENDDO
 
 !-----------------------------------------------------------------------
-!  gwd_opt = 1 only works with YSU PBL.
+!  gwd_opt = 1 only works with YSU & MYNN PBL.
 !-----------------------------------------------------------------------
 
       oops = 0
       DO i = 1, model_config_rec % max_dom
-         IF ( ( model_config_rec%bl_pbl_physics(i) .NE. YSUSCHEME .AND. &
-                model_config_rec%bl_pbl_physics(i) .NE. SURFDRAGSCHEME ) .AND. &
-              ( model_config_rec%gwd_opt .EQ. GWDOPT ) ) THEN
-            model_config_rec%gwd_opt = 0
-            oops = oops + 1
+         IF (model_config_rec%gwd_opt == 1 ) THEN
+            IF ( (model_config_rec%bl_pbl_physics(i) .EQ. YSUSCHEME ) .OR. &
+                 (model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME2 ) .OR. &
+                 (model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME3)  .OR. &
+                 (model_config_rec%bl_pbl_physics(i) .EQ. SURFDRAGSCHEME) ) THEN
+                !NO PROBLEM
+            ELSE
+               model_config_rec%gwd_opt = 0
+               oops = oops + 1
+            END IF
          END IF
       ENDDO      ! Loop over domains
       IF ( oops .GT. 0 ) THEN
-         wrf_err_message = '--- NOTE: bl_pbl_physics /= 1, implies gwd_opt cannot be 1, resetting'
+         wrf_err_message = '--- NOTE: bl_pbl_physics /= 1,5,6 implies gwd_opt cannot be 1, resetting'
+         CALL wrf_message ( wrf_err_message )
+      END IF
+
+!-----------------------------------------------------------------------
+! Make sure bl_sgcloud is only used when MYNN is chosen.
+!-----------------------------------------------------------------------
+
+      oops = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec%bl_sgcloud(i) .eq. 1) THEN
+           IF ( model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME2 .OR. &
+                model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME3 ) THEN
+              !CORRECTLY CONFIGURED
+           ELSE
+              model_config_rec%bl_sgcloud(i) = 0
+              oops = oops + 1
+           END IF
+         END IF
+      ENDDO      ! Loop over domains
+      IF ( oops .GT. 0 ) THEN
+         wrf_err_message = 'Need MYNN PBL for bl_sgcloud = 1, resetting to 0'
          CALL wrf_message ( wrf_err_message )
       END IF
 

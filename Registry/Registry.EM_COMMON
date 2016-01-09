@@ -877,6 +877,7 @@ state   real   FH             ij     misc        1         -     -         "FH" 
 i1      real   WSPD           ij     misc        1         -     -         "WSPD"                "Wind speed"                           "m s-1"
 i1      real   GZ1OZ0         ij     misc        1         -     -         "GZ1OZ0"              "LOG OF Z1 over Z0"                     ""
 i1      real   BR             ij     misc        1         -     -         "BR"                  "Bulk Richardson"                       ""
+state   real   BRi            ij     misc        1         -     -         "BRi"                 "Bulk Richardson"                       ""
 state   real   ZOL            ij     misc        1         -     -         "ZOL"                 "z/L"                                   ""
 
 # ysupbl variables for grims shallow convection
@@ -944,7 +945,6 @@ state    real   wm_temf        ij      misc        1         -     rh        "wm
 # MYNN PBL variables
 state   real   qke_adv         ikjftb  scalar      1         -      i0rusdf=(bdy_interp:dt) "qke_adv"       "twice TKE from MYNN"      "m2 s-2"
 state   real   qke             ikj     misc        1         -      irh      "qke"               "twice TKE from MYNN"      "m2 s-2"
-#state   real   EL_MYNN         ikj     misc        1         Z      h        "el_mynn"           "MIXING LENGTH FROM MYNN"        "m"
 state   real   qSHEAR          ikj     misc        1         Z      h        "qSHEAR"            "TKE Production - shear"          "m2 s-2"
 state   real   qBUOY           ikj     misc        1         Z      h        "qBUOY"             "TKE Production - buoyancy"       "m2 s-2"
 state   real   qDISS           ikj     misc        1         Z      h        "qDISS"             "TKE dissipation"                 "m2 s-2"
@@ -958,6 +958,13 @@ state   real   ch               ij     misc        1         -      -        "ch
 #state   real   K_m             ikj     misc        1         -     -          "K_m"               "EXCHANGE COEFFICIENT for momentum "
 #state   real   K_h             ikj     misc        1         -     -          "K_h"               "EXCHANGE COEFFICIENT for heat "
 #state   real   K_q             ikj     misc        1         -     -          "K_q"               "EXCHANGE COEFFICIENT for qke "
+#MYNN-EDMF VARIABLES
+state   real   edmf_a          ikj     misc        1         -      h         "edmf_a"           "EDMF relative updraft  area - moist updrafts" "-"
+state   real   edmf_w          ikj     misc        1         -      h         "edmf_w"           "EDMF vertical velocity  - mean moist updrafts" "m s-1"
+state   real   edmf_thl        ikj     misc        1         -      h         "edmf_thl"         "EDMF thetaL  - mean moist updrafts" "K"
+state   real   edmf_qt         ikj     misc        1         -      h         "edmf_qt"          "EDMF qt  - mean moist updrafts" "kg kg-1"
+state   real   edmf_ent        ikj     misc        1         -      h         "edmf_ent"          "EDMF entrainment  - mean moist updrafts" "m-1"
+state   real   edmf_qc         ikj     misc        1         -      h         "edmf_qc"           "EDMF qc - mean moist updrafts" "kg kg-1"
 
 #FogDES variables
 state   real   fgdp             ij     misc        1         -      -        "fgdp"                "Accumulated fog deposition"    "mm"
@@ -1330,6 +1337,7 @@ state    real  GD_CLOUD_A        ikj      misc        1         -      r      "G
 state    real  GD_CLOUD2_A       ikj      misc        1         -      r      "GD_CLOUD2_A"          "taveragd cloud ice mix ratio in GD"         "kg kg-1"
 state    real  QC_CU             ikj      misc        1         -      r      "QC_CU"                "CLOUD WATER MIXING RATIO FROM A CU SCHEME"         "kg kg-1"
 state    real  QI_CU             ikj      misc        1         -      r      "QI_CU"                "CLOUD ICE MIXUNG RATIO FROM A CU SCHEME"         "kg kg-1"
+state    real  QC_BL             ikj      misc        1         -      r      "QC_BL"                "CLOUD WATER MIXING RATIO IN PBL schemes"          "kg kg-1"
 state integer  STEPAVE_COUNT     -        misc        1         -      r      "STEPAVE_COUNT"        "time steps contained in averages for convective transport" ""
 
 #
@@ -1343,6 +1351,7 @@ state    real  RTHRATENLW      ikj      misc        1         -      r        "R
 state    real  RTHRATENSW      ikj      misc        1         -      r        "RTHRATSW"              "UNCOUPLED THETA TENDENCY DUE TO SHORT WAVE RADIATION"   "K s-1"
 state    real  CLDFRA          ikj      misc        1         -      rh       "CLDFRA"                "CLOUD FRACTION"                                       ""
 state    real  CLDFRA_OLD      ikj      misc        1         -      r        "CLDFRA_OLD"            "previous time level cldfra"                           ""
+state    real  CLDFRA_BL       ikj      misc        1         -      -        "CLDFRA_BL"             "CLOUD FRACTION pbl"                                   ""
 state    real  CLDT             ij      misc        1         -      -        "CFRACT"                "TOTAL CLOUD FRACTION"                                 ""
 #state    real  CLDL             ij      misc        1         -      -        "CFRACL"                "LOW CLOUD FRACTION (ETA GREATER THAN 0.69)"           ""
 #state    real  LWP              ij      misc        1         -      -        "LWP"                   "LIQUID CLOUD WATER PATH"                              "kg m-2"
@@ -1776,6 +1785,15 @@ state    real  ODIS_NDG_NEW      ij         misc      1         -      i9r      
 state    real  SN_NDG_NEW        ij         misc      1         -      i9r      "SN_NDG_NEW"              "NEW Snow Water Equivalent"  "mm"
 state    real  SN_NDG_OLD        ij         misc      1         -      i9r      "SN_NDG_OLD"              "OLD Snow Water Equivalent"  "mm"
 
+#FASDAS
+state    real  SDA_HFX           ij         misc      1         -       r       "SDA_HFX"                 "THETA TENDENCY AT THE FIRST MODEL LAYER"   "K s-1"
+state    real  SDA_QFX           ij         misc      1         -       r       "SDA_QFX"                 "MOISTURE TENDENCY AT THE FIRST MODEL LAYER"   "kg kg-1 s-1"
+state    real  QNORM             ij         misc      1         -       r       "QNORM"                   "NORMALIZED QV FACTOR"   "dimless"
+state    real  HFX_BOTH          ij         misc      1         -       rh      "HFX_BOTH"                "UPWARD HEAT FLUX AT THE SURFACE"              "W m-2"
+state    real  QFX_BOTH          ij         misc      1         -       rh      "QFX_BOTH"                "UPWARD MOISTURE FLUX AT THE SURFACE"          "kg m-2 s-1"
+state    real  HFX_FDDA          ikj        misc      1         -       rh      "HFX_FDDA"                "PSEUDO RADIATIVE HEAT FLUX FROM TEMPERATURE FDDA" "W m-2"
+#
+
 # flag for nest movement
 state  logical moved            -       misc        1         -     -          
 
@@ -2123,6 +2141,15 @@ rconfig   integer     ysu_topdown_pblmix  namelist,physics      1              0
 rconfig   integer     shinhong_tke_diag   namelist,physics      max_domains    0       rh       "shinhong_tke_diag"             ""      ""
 rconfig   logical     bl_mynn_tkeadvect   namelist,physics      max_domains    .false.  rh      "bl_mynn_tkeadvect"             ""      ""
 rconfig   integer     bl_mynn_cloudpdf    namelist,physics      1              0       irh       "bl_mynn_cloudpdf"              ""      ""
+rconfig   integer     bl_mynn_mixlength   namelist,physics      1              1       irh       "bl_mynn_mixlength"             "0:original,1:RAP/HRRR,2:new blending&cloud mix length" ""
+rconfig   integer     bl_mynn_edmf        namelist,physics      max_domains    0       irh       "bl_mynn_edmf"                  "0:off,1:activate mass-flux in mynn"                    ""
+rconfig   integer     bl_mynn_nup         namelist,physics      max_domains    10      irh       "bl_mynn_nup"                   "# updrafts in MYNN mass-flux scheme"                   ""
+rconfig   integer     bl_mynn_edmf_mom    namelist,physics      max_domains    0       irh       "bl_mynn_edmf_mom"              "0:off,1:activate mass-flux transport of momentum"      ""
+rconfig   integer     bl_mynn_edmf_tke    namelist,physics      max_domains    0       irh       "bl_mynn_edmf_tke"              "0:off,1:activate mass-flux transport of tke"           ""
+rconfig   integer     bl_mynn_edmf_part   namelist,physics      max_domains    0       irh       "bl_mynn_edmf_part"             "0:off,1:activate areal partitioning of ed and mf"      ""
+rconfig   integer     bl_mynn_cloudmix    namelist,physics      max_domains    1       irh       "bl_mynn_cloudmix"              "0:off,1:activate mixing of all cloud species"          ""
+rconfig   integer     bl_mynn_mixqt       namelist,physics      max_domains    0       irh       "bl_mynn_mixqt"                 "0:mix moisture species separate,1: mix total water"    ""
+rconfig   integer     bl_sgcloud          namelist,physics      max_domains    0       irh       "bl_sgcloud"                    "0:no subgrid cloud-radiation coupling,1:activated"     ""
 rconfig   integer     mfshconv            namelist,physics      max_domains    1       rh       "mfshconv"         "To activate mass flux scheme with qnse, 1=true or 0=false"      ""
 rconfig   integer     sf_urban_physics    namelist,physics      max_domains    0       rh       "sf_urban_physics"     "activate urban model  0=no, 1=Noah_UCM 2=BEP_UCM"   ""
 rconfig   real    BLDT                    namelist,physics      max_domains    0       h    "BLDT"          ""      ""
@@ -2183,7 +2210,7 @@ rconfig   integer levsiz                  namelist,physics      1             1 
 rconfig   integer paerlev                 namelist,physics      1             1       -      "paerlev" "Number of aerosol data levels for CAM radiation (29)"  ""
 rconfig   integer cam_abs_dim1            namelist,physics      1             1       -      "cam_abs_dim1" "dimension for absnxt in CAM radiation"  ""
 rconfig   integer cam_abs_dim2            namelist,physics      1             1       -      "cam_abs_dim2" "dimension for abstot in CAM radiation"  ""
-rconfig   integer lagday                  namelist,physics      1             1       -      "lagday"         ""      ""
+rconfig   integer lagday                  namelist,physics      1             150     -      "lagday"         ""      ""
 rconfig   integer no_src_types            namelist,physics      1             1       -      "no_src_types" "Number of aerosoal types from EC (6)"  ""
 rconfig   integer alevsiz                 namelist,physics      1             1       -      "alevsiz" "Number of aerosoal optical depth data levels from EC (12)"  ""
 rconfig   integer o3input                 namelist,physics      1             2       -      "o3input"      "ozone input for RRTMG for CG domain: original = 0; CAM ozone = 2"      ""
@@ -2251,6 +2278,7 @@ rconfig   integer scalar_pblmix           namelist,physics      max_domains  0  
 rconfig   integer tracer_pblmix           namelist,physics      max_domains  1         h    "mix 4d tracer variables with pbl scheme 0=no 1=yes" ""
 rconfig   logical use_aero_icbc           namelist,physics     	1              .false. rh    "use_aero_icbc"  "Use GOCART climo 3D aerosols IC/BC data in Thompson-MP-Aero"  "logical flag"
 rconfig   logical use_rap_aero_icbc       namelist,physics      1              .false. r     "use_rap_aero_icbc"  "Use GOCART climo 3D aerosols IC/BC data in Thompson-MP-Aero from RAP"  "logical flag"
+rconfig   integer use_mp_re               namelist,physics     	1              1       h     "use_mp_re"  "use effective radii computed in some mp schemes in RRTMG"  "flag"
 
 # The following two options are hooked into various microphysics schemes to allow for ensemble perturbations of CCN and hail/graupel PSDs - GAC (AFWA)
 rconfig   real    ccn_conc                namelist,physics      1           1.0E8      h     "ccn_conc"                 "CCN concentration"                                                             "# m-3"
@@ -2306,10 +2334,13 @@ rconfig   real        gq_sfc              namelist,fdda         max_domains    0
 rconfig   real        gph                 namelist,fdda         max_domains    0       rh       "grid_fdda"            ""      ""
 rconfig   real    dtramp_min              namelist,fdda         1              0       h        "grid_fdda"            ""      ""
 rconfig   integer if_ramping              namelist,fdda         1              0       h        "grid_fdda"            ""      ""
-rconfig   real    rinblw                  namelist,fdda         1              0       h        "grid_fdda"            ""      ""
+rconfig   real    rinblw                  namelist,fdda         max_domains    0       h        "grid_fdda"            ""      ""
 rconfig   integer xwavenum                namelist,fdda         max_domains    0       rh       "grid_fdda"            "top wave number to nudge in x direction"      ""
 rconfig   integer ywavenum                namelist,fdda         max_domains    0       rh       "grid_fdda"            "top wave number to nudge in y direction"      ""
 rconfig   integer pxlsm_soil_nudge        namelist,fdda         max_domains    0       rh       "pxlsm_soil_nudge"     "nudge pxlsm soil"      ""
+
+#FASDAS
+rconfig   integer  fasdas                 derived               max_domains    0       -        "fasdas"            ""      ""
 
 #Observational Nudging
 rconfig   integer     obs_nudge_opt       namelist,fdda            max_domains    0       rh       "obs_nudge_opt"     "Obs-nudging flag for domain"          ""
@@ -2633,7 +2664,7 @@ package   sfclayrevscheme    sf_sfclay_physics==1        -             -
 package   myjsfcscheme       sf_sfclay_physics==2        -             state:tke_pbl
 package   gfssfcscheme       sf_sfclay_physics==3        -             -
 package   qnsesfcscheme      sf_sfclay_physics==4        -             -
-package   mynnsfcscheme      sf_sfclay_physics==5        -             state:sh3d,tsq,qsq,cov
+package   mynnsfcscheme      sf_sfclay_physics==5        -             -
 package   pxsfcscheme        sf_sfclay_physics==7        -             -
 package   temfsfcscheme      sf_sfclay_physics==10       -             state:wm_temf
 package   idealscmsfcscheme  sf_sfclay_physics==89       -             -
@@ -2668,6 +2699,9 @@ package   gbmpblscheme   bl_pbl_physics==12          -             state:exch_tk
 package   mrfscheme      bl_pbl_physics==99          -             -
 
 package   mynn_tkebudget bl_mynn_tkebudget==1        -             state:qSHEAR,qBUOY,qDISS,qWT,dqke
+package   mynn_stem_edmf bl_mynn_edmf==1            -              state:edmf_a,edmf_w,edmf_thl,edmf_qt,edmf_ent,edmf_qc
+package   mynn_temf_edmf bl_mynn_edmf==2            -              state:edmf_a,edmf_w,edmf_thl,edmf_qt,edmf_ent,edmf_qc
+package   sg_cloud       bl_sgcloud==1               -             state:cldfra_bl,qc_bl
 
 package   nocuscheme     cu_physics==0               -             -
 package   kfetascheme    cu_physics==1               -             state:w0avg
@@ -2708,13 +2742,14 @@ package   fogsettling0   grav_settling==0            -             state:vdfg
 package   fogsettling1   grav_settling==1            -             state:vdfg,fgdp,dfgdp
 package   fogsettling2   grav_settling==2            -             state:vdfg,fgdp,dfgdp
 
-package   psufddagd      grid_fdda==1                -             fdda3d:u_ndg_old,v_ndg_old,t_ndg_old,q_ndg_old,ph_ndg_old,u_ndg_new,v_ndg_new,t_ndg_new,q_ndg_new,ph_ndg_new;fdda2d:mu_ndg_old,mu_ndg_new;state:rundgdten,rvndgdten,rthndgdten,rphndgdten,rqvndgdten,rmundgdten
+package   psufddagd      grid_fdda==1                -             fdda3d:u_ndg_old,v_ndg_old,t_ndg_old,q_ndg_old,ph_ndg_old,u_ndg_new,v_ndg_new,t_ndg_new,q_ndg_new,ph_ndg_new;fdda2d:mu_ndg_old,mu_ndg_new;state:rundgdten,rvndgdten,rthndgdten,rphndgdten,rqvndgdten,rmundgdten,hfx_fdda
 package   spnudging      grid_fdda==2               -              fdda3d:u_ndg_old,v_ndg_old,t_ndg_old,q_ndg_old,ph_ndg_old,u_ndg_new,v_ndg_new,t_ndg_new,q_ndg_new,ph_ndg_new;fdda2d:mu_ndg_old,mu_ndg_new;state:rundgdten,rvndgdten,rthndgdten,rphndgdten,rqvndgdten,rmundgdten,dif_analysis,dif_xxx,dif_yyy
 
-package   psusfddagd     grid_sfdda==1               -             state:u10_ndg_old,v10_ndg_old,t2_ndg_old,th2_ndg_old,q2_ndg_old,rh_ndg_old,psl_ndg_old,ps_ndg_old,u10_ndg_new,v10_ndg_new,t2_ndg_new,th2_ndg_new,q2_ndg_new,rh_ndg_new,psl_ndg_new,ps_ndg_new,tob_ndg_old,odis_ndg_old,tob_ndg_new,odis_ndg_new
-
+package   psusfddagd     grid_sfdda==1               -             state:u10_ndg_old,v10_ndg_old,t2_ndg_old,th2_ndg_old,q2_ndg_old,rh_ndg_old,psl_ndg_old,ps_ndg_old,u10_ndg_new,v10_ndg_new,t2_ndg_new,th2_ndg_new,q2_ndg_new,rh_ndg_new,psl_ndg_new,ps_ndg_new,tob_ndg_old,odis_ndg_old,tob_ndg_new,odis_ndg_new,hfx_fdda
 
 package   obsnudging     obs_nudge_opt==1           -              state:obs_savwt,fdob
+
+package   fasdas         grid_sfdda==2              -              state:u10_ndg_old,v10_ndg_old,t2_ndg_old,th2_ndg_old,q2_ndg_old,rh_ndg_old,psl_ndg_old,ps_ndg_old,u10_ndg_new,v10_ndg_new,t2_ndg_new,th2_ndg_new,q2_ndg_new,rh_ndg_new,psl_ndg_new,ps_ndg_new,tob_ndg_old,odis_ndg_old,tob_ndg_new,odis_ndg_new,sda_hfx,sda_qfx,qnorm,hfx_both,qfx_both,hfx_fdda
 
 package   aeropt1        aer_opt==1                 -              state:aerodm
 package   aeropt2        aer_opt==2                 -              state:aod5503d

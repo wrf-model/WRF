@@ -66,7 +66,7 @@
  isfflx                              = 1,
  ifsnow                              = 0,
  icloud                              = 1,
- surface_input_source                = 1,
+ surface_input_source                = 3,
  num_soil_layers                     = 5,
  mp_zero_out                         = 0,
  /

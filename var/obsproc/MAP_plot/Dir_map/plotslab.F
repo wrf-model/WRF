@@ -1,7 +1,7 @@
       SUBROUTINE PLOTSLAB(N,MMI,MMJ,KX,SIG,WLAT,WLON,IOFF,JOFF,
      >                    XX,VAR,ND,FF,AA,SPVAL)
 C
-#     include <param1.incl>
+#     include "param1.incl"
 C
       DIMENSION XX(KX,N), SIG(KX)
       DIMENSION FF(IIMAX*JJMAX), AA(IIMAX*JJMAX), DATA(N)

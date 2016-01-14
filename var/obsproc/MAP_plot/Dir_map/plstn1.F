@@ -2,8 +2,8 @@
      >                  deltx,delty,isize,Xx1,ifr,
      >                  time_obs, time_window_min, time_window_max)
 c
-#     include <nestdmn.incl>
-#     include    <maps.incl>                                            
+#     include "nestdmn.incl"
+#     include    "maps.incl"                                            
 C                                                                  
       DIMENSION ylat(ns), ylon(ns), asta(ns), time_obs (ns)
       CHARACTER*5 ASTA                                    

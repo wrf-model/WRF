@@ -1726,10 +1726,10 @@ CONTAINS
 
 !!!!! needed to sneak-peek the registry to get parent_id 
 ! define as temporaries
-#include <namelist_defines.inc>
+#include "namelist_defines.inc"
 
 ! Statements that specify the namelists
-#include <namelist_statements.inc>
+#include "namelist_statements.inc"
 
       CALL MPI_INITIALIZED( mpi_inited, ierr )
       IF ( .NOT. mpi_inited ) THEN
@@ -5206,7 +5206,7 @@ ENDIF
       TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
       TYPE(domain), POINTER :: intermediate_grid
       TYPE(domain), POINTER :: ngrid
-#include <dummy_new_decl.inc>
+#include "dummy_new_decl.inc"
       INTEGER nlev, msize
       INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
       INTEGER iparstrt,jparstrt,sw
@@ -5308,7 +5308,7 @@ ENDIF
 !
       TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
       TYPE(domain), POINTER :: ngrid
-#include <dummy_new_decl.inc>
+#include "dummy_new_decl.inc"
       INTEGER nlev, msize
       INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
       TYPE (grid_config_rec_type)            :: config_flags
@@ -5662,7 +5662,7 @@ ENDIF
       TYPE (grid_config_rec_type) :: config_flags ! configureation flags, has vertical dim of
                                                   ! soil temp, moisture, etc., has vertical dim
                                                   ! of soil categories
-#include <dummy_new_decl.inc>
+#include "dummy_new_decl.inc"
 
       INTEGER       ::          ids, ide, jds, jde, kds, kde,    &
                                 ims, ime, jms, jme, kms, kme,    &

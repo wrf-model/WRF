@@ -7,7 +7,7 @@ module module_HYDRO_io
    use module_RT_data, only: rt_domain
 
    implicit none
-#include <netcdf.inc>
+#include "netcdf.inc"
 
      contains
         integer function get2d_real(var_name,out_buff,ix,jx,fileName)
@@ -240,7 +240,7 @@ module module_HYDRO_io
 
   subroutine get_landuse_netcdf(ncid, array, units, idim, jdim, ldim)
     implicit none
-#include <netcdf.inc>
+#include "netcdf.inc"
     integer, intent(in) :: ncid
     integer, intent(in) :: idim, jdim, ldim
     real, dimension(idim,jdim), intent(out) :: array
@@ -286,7 +286,7 @@ module module_HYDRO_io
 
   subroutine get_soilcat_netcdf(ncid, array, units, idim, jdim, ldim)
     implicit none
-#include <netcdf.inc>
+#include "netcdf.inc"
 
     integer, intent(in) :: ncid
     integer, intent(in) :: idim, jdim, ldim
@@ -332,7 +332,7 @@ module module_HYDRO_io
 
 subroutine get_greenfrac_netcdf(ncid, array3, units, idim, jdim, ldim,mm,dd)
     implicit none
-#include <netcdf.inc>
+#include "netcdf.inc"
     integer, intent(in) :: ncid,mm,dd
     integer, intent(in) :: idim, jdim, ldim
     real, dimension(idim,jdim) :: array
@@ -404,7 +404,7 @@ end subroutine get_greenfrac_netcdf
 
 subroutine get_albedo12m_netcdf(ncid, array3, units, idim, jdim, ldim,mm,dd)
     implicit none
-#include <netcdf.inc>
+#include "netcdf.inc"
     integer, intent(in) :: ncid,mm,dd
     integer, intent(in) :: idim, jdim, ldim
     real, dimension(idim,jdim) :: array
@@ -477,7 +477,7 @@ end subroutine get_albedo12m_netcdf
   subroutine get_2d_netcdf(name, ncid, array, units, idim, jdim, &
        fatal_if_error, ierr)
     implicit none
-#include <netcdf.inc>
+#include "netcdf.inc"
     character(len=*), intent(in) :: name
     integer, intent(in) :: ncid
     integer, intent(in) :: idim, jdim
@@ -527,7 +527,7 @@ end subroutine get_albedo12m_netcdf
 
       subroutine get_2d_netcdf_cows(var_name,ncid,var, &
             ix,jx,tlevel,fatal_if_error,ierr)
-#include <netcdf.inc>
+#include "netcdf.inc"
           character(len=*), intent(in) :: var_name
           integer,intent(in) ::  ncid,ix,jx,tlevel
           real, intent(out):: var(ix,jx)
@@ -577,7 +577,7 @@ end subroutine get_albedo12m_netcdf
             CH_NETLNK, channel_option, geo_finegrid_flnm)
 
          implicit none
-#include <netcdf.inc>
+#include "netcdf.inc"
         INTEGER                                      :: I,J,channel_option,iret,jj
         INTEGER, INTENT(INOUT)                       :: NLINKS, NLAKES
         INTEGER, INTENT(IN)                          :: IXRT,JXRT
@@ -833,7 +833,7 @@ end subroutine get_albedo12m_netcdf
             CHANXI, CHANYJ, CHLAT, CHLON,  &
             channel_option,LATVAL,LONVAL, &
             STRMFRXSTPTS,geo_finegrid_flnm)
-#include <netcdf.inc>
+#include "netcdf.inc"
         INTEGER, INTENT(IN)                          :: IXRT,JXRT
         INTEGER                                      :: CHANRTSWCRT, NLINKS, NLAKES
         REAL, INTENT(IN), DIMENSION(IXRT,JXRT)       :: ELRT
@@ -1540,7 +1540,7 @@ end subroutine get_albedo12m_netcdf
   subroutine READ_SIMP_GW(IX,JX,IXRT,JXRT,GWSUBBASMSK,gwbasmskfil,&
           gw_strm_msk,numbasns,ch_netrt,AGGFACTRT)
     implicit none
-#include <netcdf.inc>
+#include "netcdf.inc"
 
     integer, intent(in)                     :: IX,JX,IXRT,JXRT,AGGFACTRT
     integer, intent(in), dimension(IXRT,JXRT)  :: ch_netrt
@@ -1603,7 +1603,7 @@ end subroutine get_albedo12m_netcdf
   ! BF read the static input fields needed for the 2D GW scheme
   subroutine readGW2d(ix, jx, hc, ihead, botelv, por, ltype)
   implicit none
-#include <netcdf.inc>
+#include "netcdf.inc"
   integer, intent(in) :: ix, jx
   integer, dimension(ix,jx), intent(inout)::   ltype
   real, dimension(ix,jx), intent(inout)   ::   hc, ihead, botelv, por
@@ -1706,7 +1706,7 @@ end subroutine get_albedo12m_netcdf
 
 !output the routing variables over routing grid.
     implicit none
-#include <netcdf.inc>
+#include "netcdf.inc"
 
     integer,                                  intent(in) :: igrid
     integer,                                  intent(in) :: split_output_count
@@ -2246,7 +2246,7 @@ end subroutine get_albedo12m_netcdf
 #endif
 !output the routing variables over routing grid.
     implicit none
-#include <netcdf.inc>
+#include "netcdf.inc"
 
     integer,                                  intent(in) :: igrid
     integer,                                  intent(in) :: split_output_count
@@ -2623,7 +2623,7 @@ end subroutine get_albedo12m_netcdf
         STRMFRXSTPTS,order_to_write)
      
      implicit none
-#include <netcdf.inc>
+#include "netcdf.inc"
 !!output the routing variables over just channel
      integer,                                  intent(in) :: igrid,K
      integer,                                  intent(in) :: split_output_count
@@ -3538,7 +3538,7 @@ end subroutine mpp_output_chrt
    USE module_mpp_land
 
      implicit none
-#include <netcdf.inc>
+#include "netcdf.inc"
      integer g_ixrt,g_jxrt
      integer,                                  intent(in) :: igrid
      integer,                                  intent(in) :: split_output_count
@@ -3715,7 +3715,7 @@ end subroutine mpp_output_chrt
    USE module_mpp_land
 
     implicit none
-#include <netcdf.inc>
+#include "netcdf.inc"
 
     integer,                                  intent(in) :: igrid
     integer,                                  intent(in) :: split_output_count
@@ -3819,7 +3819,7 @@ end subroutine mpp_output_chrt
 !  channel only simulations (ie when CHANRTSWCRT = 2)
 
    implicit none
-#include <netcdf.inc>
+#include "netcdf.inc"
    ! in variable
    character(len=*) :: olddate,hgrid,indir,startdate
    character(len=256) :: filename
@@ -3865,7 +3865,7 @@ end subroutine mpp_output_chrt
 
       subroutine get2d_int(var_name,out_buff,ix,jx,fileName)
           implicit none
-#include <netcdf.inc>
+#include "netcdf.inc"
           integer :: iret,varid,ncid,ix,jx
           integer out_buff(ix,jx)
           character(len=*), intent(in) :: var_name
@@ -3899,7 +3899,7 @@ end subroutine mpp_output_chrt
          USE module_mpp_land
 
          implicit none
-#include <netcdf.inc>
+#include "netcdf.inc"
         INTEGER                                      :: channel_option, did
         INTEGER                                      :: g_IXRT,g_JXRT
         INTEGER, INTENT(INOUT)                       :: NLINKS, NLAKES, GNLINKS
@@ -3966,7 +3966,7 @@ end subroutine mpp_output_chrt
             OVROUGHRTFAC,RETDEPRTFAC)
 
         implicit none
-#include <netcdf.inc>
+#include "netcdf.inc"
         INTEGER, INTENT(IN)                          :: IXRT,JXRT,g_IXRT,g_JXRT
         REAL, INTENT(INOUT), DIMENSION(IXRT,JXRT)    :: ELRT,LKSATFAC
         REAL, INTENT(INOUT), DIMENSION(IXRT,JXRT)    :: OVROUGHRTFAC,RETDEPRTFAC
@@ -3999,7 +3999,7 @@ end subroutine mpp_output_chrt
       subroutine MPP_DEEPGW_HRLDAS(ix,jx,in_SMCMAX,&
                  global_nX, global_ny,nsoil,out_SMC,out_SH2OX)
         implicit none
-#include <netcdf.inc>
+#include "netcdf.inc"
 
         integer,  intent(in)  :: ix,global_nx,global_ny
         integer,  intent(in)  :: jx,nsoil
@@ -4038,7 +4038,7 @@ end subroutine mpp_output_chrt
             route_chan_f, geo_finegrid_flnm,OVROUGHRTFAC,RETDEPRTFAC)
 
 
-#include <netcdf.inc>
+#include "netcdf.inc"
         INTEGER, INTENT(IN) :: IXRT,JXRT
         REAL, INTENT(INOUT), DIMENSION(IXRT,JXRT) :: ELRT,LKSATFAC
         INTEGER, INTENT(INOUT), DIMENSION(IXRT,JXRT) :: CH_NETRT
@@ -4961,7 +4961,7 @@ end subroutine mpp_output_chrt
             route_chan_f, geo_finegrid_flnm,OVROUGHRTFAC,RETDEPRTFAC)
 
 
-#include <netcdf.inc>
+#include "netcdf.inc"
         INTEGER, INTENT(IN) :: IXRT,JXRT
         REAL, INTENT(INOUT), DIMENSION(IXRT,JXRT) :: ELRT,LKSATFAC
         INTEGER, INTENT(INOUT), DIMENSION(IXRT,JXRT) :: CH_NETRT
@@ -5043,7 +5043,7 @@ end subroutine mpp_output_chrt
             channel_option,LATVAL,LONVAL, &
             STRMFRXSTPTS,geo_finegrid_flnm,Link_Location)
         use module_mpp_land, only:  my_id, io_id
-#include <netcdf.inc>
+#include "netcdf.inc"
         INTEGER, INTENT(IN)                          :: IXRT,JXRT, did
         INTEGER                                      :: CHANRTSWCRT, NLINKS, NLAKES
         REAL, INTENT(IN), DIMENSION(IXRT,JXRT)       :: ELRT
@@ -5850,7 +5850,7 @@ end subroutine mpp_output_chrt
             CH_NETLNK, channel_option, geo_finegrid_flnm)
 
          implicit none
-#include <netcdf.inc>
+#include "netcdf.inc"
         INTEGER                                      :: I,J,channel_option,iret,jj, did
         INTEGER, INTENT(OUT)                       :: NLINKS
         INTEGER, INTENT(OUT), DIMENSION(IXRT,JXRT) :: CH_NETLNK  !- each node gets unique id

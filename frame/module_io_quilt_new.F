@@ -2601,10 +2601,10 @@ character*120 sysline
 
 !!!!! needed to sneak-peek the namelist to get parent_id
 ! define as temporaries
-#include <namelist_defines.inc>
+#include "namelist_defines.inc"
 
 ! Statements that specify the namelists
-#include <namelist_statements.inc>
+#include "namelist_statements.inc"
 
 !TODO:  Change this to run-time switch
 #ifdef ESMFIO

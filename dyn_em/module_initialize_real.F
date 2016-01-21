@@ -2104,6 +2104,16 @@ integer::oops1,oops2
                grid%landusef(i,grid%islake,j) = 0.
             END DO
          END DO
+         IF ( config_flags%surface_input_source .EQ. 3 ) THEN
+            DO j=jts,MIN(jde-1,jte)
+               DO i=its,MIN(ide-1,ite)
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+                  IF ( grid%lu_index(i,j) .EQ. grid%islake ) THEN
+                     grid%lu_index(i,j) = grid%iswater
+                  END IF
+               END DO
+            END DO
+         END IF
 
       END IF
 

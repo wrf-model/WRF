@@ -55,8 +55,9 @@ cudt=          0,
 isfflx=1,
 ifsnow=1,
 icloud=1,
-surface_input_source=1,
+surface_input_source=3,
 num_soil_layers=4,
+num_land_cat=24
 mp_zero_out=0,
 mp_zero_out_thresh=1.e-8,
 /

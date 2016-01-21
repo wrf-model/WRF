@@ -11,9 +11,9 @@ C  NAMELISTS /MAPBG/, /DOMAIN/, /OPTN/, /FUDGE/, AND /FUDGET/ IN THIS           
 C  SUBROUTINE. THIS SUBROUTINE HAS NO DUMMY ARGUMENTS. PLEASE SEE                SETUP.11
 C  SECTION 5.1.1 AND 5.2.1 FOR DETAILS.                                          SETUP.12
 C                                                                                SETUP.13
-# include <maps.incl>
-# include <nestdmn.incl>
-# include <namelist1.incl>
+# include "maps.incl"
+# include "nestdmn.incl"
+# include "namelist1.incl"
 C
       REAL TRUELAT0
 

@@ -18,7 +18,7 @@ c   as many as 8 times before returning.                             c
 c                                                                    c          
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc          
 C
-#     include <param1.incl>
+#     include "param1.incl"
 C
       DIMENSION A2(IMAX,JMAX),XOBS(NSTA),YOBS(NSTA),ASTA(NSTA),                 
      1          COR(IIMAX,JJMAX),SUM(IIMAX,JJMAX),NS(IIMAX,JJMAX),                    

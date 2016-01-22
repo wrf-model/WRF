@@ -1,0 +1,40 @@
+!-----------------------------------------------------------------------------
+! Amy Solomon - Feb 2015
+! RASM: radiation added
+!-----------------------------------------------------------------------------
+#ifdef CESMCOUPLED
+SUBROUTINE solve_em      ( grid , config_flags, radiation     &
+#else
+SUBROUTINE solve_em      ( grid , config_flags   &
+#endif
+!-----------------------------------------------------------------------------
+! end Solomon modification
+!-----------------------------------------------------------------------------
+!
+#include <dummy_new_args.inc>
+!
+                 )
+
+   USE module_domain
+   USE module_configure
+   USE module_driver_constants
+
+   !  Input data.
+   TYPE(domain) , INTENT(INOUT)                  :: grid
+   TYPE (grid_config_rec_type) , INTENT(IN)      :: config_flags
+
+#include <dummy_new_decl.inc>
+
+!-----------------------------------------------------------------------------
+! Amy Solomon - Feb 2015
+! RASM: radiation added
+!-----------------------------------------------------------------------------
+#ifdef CESMCOUPLED
+   logical::radiation   
+#endif
+!-----------------------------------------------------------------------------
+! end Solomon modification
+!-----------------------------------------------------------------------------
+
+END SUBROUTINE solve_em
+

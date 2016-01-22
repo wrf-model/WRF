@@ -1,0 +1,78 @@
+io_grib2
+
+Author: Todd Hutchinson
+        WSI
+        thutchinson@wsi.com
+
+28 September 2005
+
+I. Introduction
+
+io_grib2 is a WRF module that allows for input and output of WRF data in GRIB
+version 2 format.
+
+Why would anyone use GRIB2 output?  
+  Data stored in GRIB2 format is compressed using advanced compression 
+    (i.e., JPEG2000), so output files are much smaller than in other formats 
+    such as netCDF and grib version 1.  Better compression is achieved with 
+    larger grids.
+
+II. Prerequisites
+
+  In order to compile and link WRF using the grib2 format, one system library
+  is required:
+    libjasper.a:  http://www.ece.uvic.ca/~mdadams/jasper/
+
+  The library should be installed in a system accessible place (i.e., 
+       /usr/lib).  The paths to the jasper library and include files must be 
+       specified via environment variables prior to running ./configure .  
+       Please use the following environment variables:  
+         JASPERLIB  Path to jasper library files (libjasperlib.a)
+         JASPERINC  Path to jasper include files
+       Note that if these environment variables are not defined before 
+       ./configure is run, the Grib2 I/O package will not be built.  
+
+III. Running WRF with grib2 input/output
+  1. Set namelist entry or entries io_form_<x> to 10
+  2. Run WRF as you normally would, for example:
+     cd test/em_real
+     ./real.exe
+     ./wrf.exe
+
+IV. Quilting
+  If you are running WRF using MPI, you may use a seperate processor for
+    quilting just as is done with netCDF.  Simply set the namelist variable
+    nio_tasks_per_group to 1 (or more).
+
+V. Details
+  1. grib2map.tbl file
+     io_grib2 makes use of a table for encoding the WRF data into GRIB2 
+        format.  The table that io_grib2 uses is contained in the 
+        WRF run directory, and is called grib2map.tbl.  This file is read at
+        run-time by io_grib2.  Settings in this file are used to encode the 
+	corresponding parameters in the output files.  You may modify 
+	this file to suit your needs.
+
+      The format of the table is described within the file itself.
+
+VI. Comparison between file formats.  
+  1. The following table shows the file sizes and run times for netcdf, grib1, 
+     and grib2 format for a 6 hour simlation of the WRF jun11 test case.  The 
+     domain size in this case is 91x82 by 28 levels.  Data was output every 
+     3 hours (for a total of 3 output times).  The simulations were run on 
+     NCAR's bluesky system.
+
+                    |  Size (MB)  | WRF Time(m:s)
+            ------------------------------------
+            NETCDF  |   38.40     |     19:31   |
+            GRIB1   |   13.42     |     21:22   |
+            GRIB2   |    4.33     |     22:36   |
+            ------------------------------------
+
+VII. New namelist variables for Grib2 I/O:  
+  The grib2 namelist variables may be optionally used to control 
+  Grib2 I/O.  They are defined in new namelist "&grib2".  Note that the 
+  &grib2 namelist must be included in file "namelist.input" even if empty.  
+  (This annoyance is ultimately due to problems with old OSF1 Fortran90 
+  compilers.)  Information on the variables is located in the WRFV2/run
+  directory: README.namelist.

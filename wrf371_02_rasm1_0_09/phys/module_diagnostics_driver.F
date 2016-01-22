@@ -1,0 +1,969 @@
+#if (NMM_CORE == 1)
+MODULE module_diagnostics_driver
+CONTAINS
+   SUBROUTINE diagnostics_driver_stub
+   END SUBROUTINE diagnostics_driver_stub
+END MODULE module_diagnostics_driver
+#else
+!WRF:MODEL_LAYER:PHYSICS
+
+MODULE module_diagnostics_driver
+
+CONTAINS
+
+   !  This subroutine is the driver for the diagnostics packages.
+
+
+   SUBROUTINE diagnostics_driver ( grid, config_flags,                  &
+                                   moist, chem, tracer, scalar,         &
+                                   th_phy, pi_phy, p_phy, rho_phy,      & 
+                                   p8w, t8w, dz8w,                      &
+                                   curr_secs2,                          &
+                                   diag_flag,                           &
+                                   ids,  ide,  jds,  jde,  kds,  kde,   &
+                                   ims,  ime,  jms,  jme,  kms,  kme,   &
+                                   ips,  ipe,  jps,  jpe,  kps,  kpe,   &
+                                   imsx, imex, jmsx, jmex, kmsx, kmex,  &
+                                   ipsx, ipex, jpsx, jpex, kpsx, kpex,  &
+                                   imsy, imey, jmsy, jmey, kmsy, kmey,  &
+                                   ipsy, ipey, jpsy, jpey, kpsy, kpey   )
+
+
+      !=============================================================
+      !  USE Association for Generic WRF Infrastructure
+      !=============================================================
+
+      !  Pick up the number of members for each of the 4d arrays - for declaration purposes.
+
+      USE module_state_description, ONLY: num_moist, num_chem, num_tracer, num_scalar, &
+                                          SKIP_PRESS_DIAGS, SKIP_Z_DIAGS,              &
+                                          P_QG, P_QH, P_QV,                            &
+                                          P_QNG, P_QH, P_QNH, P_QR, P_QNR,             &
+                     KESSLERSCHEME, LINSCHEME, SBU_YLINSCHEME, WSM3SCHEME, WSM5SCHEME, &
+                     WSM6SCHEME, ETAMPNEW, THOMPSON, THOMPSONAERO,                     &
+                     MORR_TWO_MOMENT, GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME,           &
+                     NSSL_2MOM, NSSL_2MOMCCN, NSSL_1MOM, NSSL_1MOMLFO,                 &
+                     MILBRANDT2MOM , CAMMGMPSCHEME, FAST_KHAIN_LYNN, FULL_KHAIN_LYNN    !,MILBRANDT3MOM, NSSL_3MOM, MORR_MILB_P3
+
+      USE module_driver_constants, ONLY: max_plevs, max_zlevs
+
+      !  From where we preferably are pulling g, Cp, etc.
+
+      USE module_model_constants, ONLY: g
+
+      !  This gives us the type definition for grid (domain) and some clock information.
+
+!     USE module_domain, ONLY : domain, domain_clock_get, get_ijk_from_subgrid
+      USE module_domain, ONLY : domain ,domain_get_current_time
+
+      !  All of the information from the namelist is in config_flags.  The
+      !  type declaration for this puppy must be available.  While each domain
+      !  has a config_flags, together they are stored in model_config_rec.
+
+      USE module_configure, ONLY : grid_config_rec_type, &
+                                   model_config_rec
+
+
+      !=============================================================
+      !  USE Association for the Diagnostic Packages
+      !=============================================================
+      
+      USE module_lightning_driver, ONLY : lightning_driver      
+      USE module_diag_misc, ONLY : diagnostic_output_calc
+      USE module_diag_cl, ONLY : clwrf_output_calc
+      USE module_diag_pld, ONLY : pld
+      USE module_diag_zld, ONLY : zld
+      USE module_diag_afwa, ONLY : afwa_diagnostics_driver
+
+
+      IMPLICIT NONE
+
+
+      !=============================================================
+      !  Subroutine Arguments
+      !=============================================================
+
+      !  Arguments passed in.  All of the diagnostics are part of the grid structure, so
+      !  even though we are not changing any of the fundamental variables, we are computing
+      !  the diagnostics.  Therefore grid is INOUT.
+
+      TYPE ( domain ), INTENT(INOUT) :: grid
+
+      !  We are not changing any of the namelist settings.
+
+      TYPE ( grid_config_rec_type ), INTENT(IN) :: config_flags
+
+      !  The 4d arrays are input only, no mods to them.
+
+      REAL , DIMENSION(ims:ime,kms:kme,jms:jme,num_moist ) , INTENT(IN) :: moist
+      REAL , DIMENSION(ims:ime,kms:kme,jms:jme,num_chem  ) , INTENT(IN) :: chem
+      REAL , DIMENSION(ims:ime,kms:kme,jms:jme,num_tracer) , INTENT(IN) :: tracer
+      REAL , DIMENSION(ims:ime,kms:kme,jms:jme,num_scalar) , INTENT(IN) :: scalar
+
+      !  A few handy 3d arrays computed for the physics scheme: pressure (Pa) and
+      !  temperature (K), on both half (_phy) and full levels.
+
+      REAL , DIMENSION(ims:ime,kms:kme,jms:jme)            , INTENT(IN) :: th_phy  , &
+                                                                           p_phy   , &
+                                                                           pi_phy  , &
+                                                                           rho_phy , &
+                                                                           dz8w    , &
+                                                                           p8w     , &
+                                                                           t8w
+
+      !  Time (s) since the beginning of the restart.
+
+      REAL :: curr_secs2
+
+      !  Is this to be a history output time?  If so, compute the diagnostics.
+
+      LOGICAL :: diag_flag
+
+      !  The sundry dimensions required to keep a model running smoothly:
+      !     The first letter:
+      !        i: refers to the nominally west east direction, the inner-most (fastest)
+      !           incrementing index
+      !        j: refers to the nominally south north direction, the outer-most (slowest)
+      !           incrementing index
+      !        k: refers to the vertical direction form bottom to top, the second dimension
+      !           in all 3d arrays
+      !     The second letter: 
+      !        d: refers to the domain size, the geophysical extent of the entire domain,
+      !           not used in dimensions or looping, used to determine when we are close to
+      !           the edge of the boundary
+      !        m: refers to the memory size size, all 2d and 3d arrays from the Registry
+      !           (passed into here via the grid structure or the I1 variables [such as
+      !           p_phy, for example]) use these values for dimensioning
+      !        p: refers to the patch size, the extent over which computational loops run
+
+      INTEGER , INTENT(IN) :: ids, ide, jds, jde, kds, kde,     &
+                              ims, ime, jms, jme, kms, kme,     &
+                              ips, ipe, jps, jpe, kps, kpe
+
+      !  Hopefully unnecessary, these are the filtered dimensions.
+
+      INTEGER , INTENT(IN) :: imsx,imex,jmsx,jmex,kmsx,kmex,    &
+                              ipsx,ipex,jpsx,jpex,kpsx,kpex,    &
+                              imsy,imey,jmsy,jmey,kmsy,kmey,    &
+                              ipsy,ipey,jpsy,jpey,kpsy,kpey
+
+
+      !=============================================================
+      !  Local Variables
+      !=============================================================
+
+      !  Handy little character string for use instead of print statements.
+
+      CHARACTER (LEN=1000) :: diag_message
+
+      !  OpenMP indexing of tiles.
+
+      INTEGER :: ij
+
+      !  Vertical indexing that only goes up to the half levels.
+
+      INTEGER :: k_start, k_end
+
+
+      !=============================================================
+      !  Start of executable code
+      !=============================================================
+
+      CALL wrf_debug ( 100 , '--> TOP OF DIAGNOSTICS PACKAGE' )
+
+      !  Some routine initializations.
+
+      k_start = kps
+      k_end   = kpe-1
+
+
+
+      !  Lightning flash rate diagnostic production.
+
+      LIGHTNING: IF ( config_flags%lightning_option /= 0 ) THEN 
+         CALL wrf_debug ( 100 , '--> CALL DIAGNOSTICS PACKAGE: LIGHTNING_DRIVER' )
+         CALL lightning_driver ( &
+          ! Frequently used prognostics
+            grid%itimestep, grid%dt, grid%dx, grid%dy,         &
+            grid%xlat, grid%xlong, grid%xland, grid%ht,        &
+            grid%t_phy, p_phy, grid%rho,                       &
+            grid%u_phy, grid%v_phy, grid%w_2,                  &    
+            th_phy,     pi_phy,dz8w,                           &  
+            grid%z, moist,                                     &
+          ! Scheme specific prognostics
+            grid%ktop_deep, grid%refl_10cm,                    &
+            domain_get_current_time( grid ),                   &
+          ! Flashrate namelist inputs
+            config_flags%lightning_option,                     &
+            config_flags%lightning_dt,                         &
+            config_flags%lightning_start_seconds,              &
+            config_flags%flashrate_factor,                     &
+          ! IC:CG namelist settings
+            config_flags%iccg_method,                          &
+            config_flags%iccg_prescribed_num,                  &
+            config_flags%iccg_prescribed_den,                  &
+          ! IC:CG inputs
+            grid%iccg_in_num, grid%iccg_in_den,                &
+          ! Scheme specific namelist inputs
+            config_flags%cellcount_method,                     &
+            config_flags%cldtop_adjustment,                    &
+          ! Order dependent args for domain, mem, and tile dims 
+            ids, ide, jds, jde, kds, kde,         &
+            ims, ime, jms, jme, kms, kme,         &
+            ips, ipe, jps, jpe, kps, kpe,         &
+          ! Mandatory outputs for all quantitative schemes
+            grid%ic_flashcount, grid%ic_flashrate,          &
+            grid%cg_flashcount, grid%cg_flashrate,          &
+            grid%lpi                                        &   
+      )    
+      END IF LIGHTNING
+
+
+
+
+      !  Mostly surface values, precip, column integrated quantities.
+
+      CALL wrf_debug ( 100 , '--> CALL DIAGNOSTICS PACKAGE: NWP DIAGNOSTICS' )
+
+
+
+      mp_select: SELECT CASE(config_flags%mp_physics)
+
+        CASE (LINSCHEME, WSM6SCHEME, WDM6SCHEME, GSFCGCESCHEME, NSSL_1MOMLFO)
+
+      CALL diagnostic_output_calc(                                   &
+                 DPSDT=grid%dpsdt   ,DMUDT=grid%dmudt                &
+                ,P8W=p8w   ,PK1M=grid%pk1m                           &
+                ,MU_2=grid%mu_2  ,MU_2M=grid%mu_2m                   &
+                ,U=grid%u_2    ,V=grid%v_2                           &
+                ,TEMP=grid%t_phy                                     &
+                ,RAINCV=grid%raincv    ,RAINNCV=grid%rainncv         &
+                ,RAINC=grid%rainc    ,RAINNC=grid%rainnc             &
+                ,I_RAINC=grid%i_rainc    ,I_RAINNC=grid%i_rainnc     &
+                ,HFX=grid%hfx   ,SFCEVP=grid%sfcevp    ,LH=grid%lh   &    
+                ,DT=grid%dt      ,SBW=config_flags%spec_bdy_width    &    
+                ,XTIME=grid%xtime   ,T2=grid%t2                      &
+           ,ACSWUPT=grid%acswupt    ,ACSWUPTC=grid%acswuptc          &
+           ,ACSWDNT=grid%acswdnt    ,ACSWDNTC=grid%acswdntc          &
+           ,ACSWUPB=grid%acswupb    ,ACSWUPBC=grid%acswupbc          &
+           ,ACSWDNB=grid%acswdnb    ,ACSWDNBC=grid%acswdnbc          &
+           ,ACLWUPT=grid%aclwupt    ,ACLWUPTC=grid%aclwuptc          &
+           ,ACLWDNT=grid%aclwdnt    ,ACLWDNTC=grid%aclwdntc          &
+           ,ACLWUPB=grid%aclwupb    ,ACLWUPBC=grid%aclwupbc          &
+           ,ACLWDNB=grid%aclwdnb    ,ACLWDNBC=grid%aclwdnbc          &
+         ,I_ACSWUPT=grid%i_acswupt  ,I_ACSWUPTC=grid%i_acswuptc      &
+         ,I_ACSWDNT=grid%i_acswdnt  ,I_ACSWDNTC=grid%i_acswdntc      &
+         ,I_ACSWUPB=grid%i_acswupb  ,I_ACSWUPBC=grid%i_acswupbc      &
+         ,I_ACSWDNB=grid%i_acswdnb  ,I_ACSWDNBC=grid%i_acswdnbc      &
+         ,I_ACLWUPT=grid%i_aclwupt  ,I_ACLWUPTC=grid%i_aclwuptc      &
+         ,I_ACLWDNT=grid%i_aclwdnt  ,I_ACLWDNTC=grid%i_aclwdntc      &
+         ,I_ACLWUPB=grid%i_aclwupb  ,I_ACLWUPBC=grid%i_aclwupbc      &
+         ,I_ACLWDNB=grid%i_aclwdnb  ,I_ACLWDNBC=grid%i_aclwdnbc      &
+      ! Selection flag 
+                ,DIAG_PRINT=config_flags%diag_print                  &
+                ,BUCKET_MM=config_flags%bucket_mm                    &
+                ,BUCKET_J =config_flags%bucket_J                     &
+                ,MPHYSICS_OPT=config_flags%mp_physics                &  !  gthompsn
+                ,GSFCGCE_HAIL=config_flags%gsfcgce_hail              &  !  gthompsn
+                ,GSFCGCE_2ICE=config_flags%gsfcgce_2ice              &  !  gthompsn
+                ,MPUSE_HAIL=config_flags%hail_opt                    &  !  gthompsn
+                ,NSSL_ALPHAH=config_flags%nssl_alphah                &  !  gthompsn
+                ,NSSL_ALPHAHL=config_flags%nssl_alphahl              &  !  gthompsn
+                ,NSSL_CNOH=config_flags%nssl_cnoh                    &  !  gthompsn
+                ,NSSL_CNOHL=config_flags%nssl_cnohl                  &  !  gthompsn
+                ,NSSL_RHO_QH=config_flags%nssl_rho_qh                &  !  gthompsn
+                ,NSSL_RHO_QHL=config_flags%nssl_rho_qhl              &  !  gthompsn
+                ,SNOWNCV=grid%snowncv, SNOW_ACC_NC=grid%snow_acc_nc  &    
+                ,PREC_ACC_C=grid%prec_acc_c                          &
+                ,PREC_ACC_NC=grid%prec_acc_nc                        &
+                ,PREC_ACC_DT=config_flags%prec_acc_dt                &
+                ,CURR_SECS2=curr_secs2                               &
+                ,NWP_DIAGNOSTICS=config_flags%nwp_diagnostics        &
+                ,DIAGFLAG=diag_flag                                  &
+                ,HISTORY_INTERVAL=grid%history_interval              &
+                ,ITIMESTEP=grid%itimestep                            &
+                ,U10=grid%u10,V10=grid%v10,W=grid%w_2                &
+                ,WSPD10MAX=grid%wspd10max                            &
+                ,UP_HELI_MAX=grid%up_heli_max                        &
+                ,W_UP_MAX=grid%w_up_max,W_DN_MAX=grid%w_dn_max       &
+                ,ZNW=grid%znw,W_COLMEAN=grid%w_colmean               &
+                ,NUMCOLPTS=grid%numcolpts,W_MEAN=grid%w_mean         &
+                ,GRPL_MAX=grid%grpl_max,GRPL_COLINT=grid%grpl_colint &
+                ,REFD_MAX=grid%refd_max                              &
+                ,refl_10cm=grid%refl_10cm                            &
+                ,HAIL_MAXK1=grid%hail_maxk1,HAIL_MAX2D=grid%hail_max2d &  !  gthompsn
+                ,QG_CURR=moist(ims,kms,jms,P_QG)                     &
+                ,RHO=grid%rho,PH=grid%ph_2,PHB=grid%phb,G=g          &
+      ! Dimension arguments
+                ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde   &
+                ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme   &
+                ,IPS=ips,IPE=ipe, JPS=jps,JPE=jpe, KPS=kps,KPE=kpe   &
+                ,I_START=grid%i_start,I_END=min(grid%i_end, ide-1)   &
+                ,J_START=grid%j_start,J_END=min(grid%j_end, jde-1)   &
+                ,KTS=k_start, KTE=min(k_end,kde-1)                   &
+                ,NUM_TILES=grid%num_tiles                            &
+                                                                    )
+
+        CASE (THOMPSON, THOMPSONAERO)
+
+      CALL diagnostic_output_calc(                                   &
+                 DPSDT=grid%dpsdt   ,DMUDT=grid%dmudt                &
+                ,P8W=p8w   ,PK1M=grid%pk1m                           &
+                ,MU_2=grid%mu_2  ,MU_2M=grid%mu_2m                   &
+                ,U=grid%u_2    ,V=grid%v_2                           &
+                ,TEMP=grid%t_phy                                     &
+                ,RAINCV=grid%raincv    ,RAINNCV=grid%rainncv         &
+                ,RAINC=grid%rainc    ,RAINNC=grid%rainnc             &
+                ,I_RAINC=grid%i_rainc    ,I_RAINNC=grid%i_rainnc     &
+                ,HFX=grid%hfx   ,SFCEVP=grid%sfcevp    ,LH=grid%lh   &    
+                ,DT=grid%dt      ,SBW=config_flags%spec_bdy_width    &    
+                ,XTIME=grid%xtime   ,T2=grid%t2                      &
+           ,ACSWUPT=grid%acswupt    ,ACSWUPTC=grid%acswuptc          &
+           ,ACSWDNT=grid%acswdnt    ,ACSWDNTC=grid%acswdntc          &
+           ,ACSWUPB=grid%acswupb    ,ACSWUPBC=grid%acswupbc          &
+           ,ACSWDNB=grid%acswdnb    ,ACSWDNBC=grid%acswdnbc          &
+           ,ACLWUPT=grid%aclwupt    ,ACLWUPTC=grid%aclwuptc          &
+           ,ACLWDNT=grid%aclwdnt    ,ACLWDNTC=grid%aclwdntc          &
+           ,ACLWUPB=grid%aclwupb    ,ACLWUPBC=grid%aclwupbc          &
+           ,ACLWDNB=grid%aclwdnb    ,ACLWDNBC=grid%aclwdnbc          &
+         ,I_ACSWUPT=grid%i_acswupt  ,I_ACSWUPTC=grid%i_acswuptc      &
+         ,I_ACSWDNT=grid%i_acswdnt  ,I_ACSWDNTC=grid%i_acswdntc      &
+         ,I_ACSWUPB=grid%i_acswupb  ,I_ACSWUPBC=grid%i_acswupbc      &
+         ,I_ACSWDNB=grid%i_acswdnb  ,I_ACSWDNBC=grid%i_acswdnbc      &
+         ,I_ACLWUPT=grid%i_aclwupt  ,I_ACLWUPTC=grid%i_aclwuptc      &
+         ,I_ACLWDNT=grid%i_aclwdnt  ,I_ACLWDNTC=grid%i_aclwdntc      &
+         ,I_ACLWUPB=grid%i_aclwupb  ,I_ACLWUPBC=grid%i_aclwupbc      &
+         ,I_ACLWDNB=grid%i_aclwdnb  ,I_ACLWDNBC=grid%i_aclwdnbc      &
+      ! Selection flag 
+                ,DIAG_PRINT=config_flags%diag_print                  &
+                ,BUCKET_MM=config_flags%bucket_mm                    &
+                ,BUCKET_J =config_flags%bucket_J                     &
+                ,MPHYSICS_OPT=config_flags%mp_physics                &  !  gthompsn
+                ,GSFCGCE_HAIL=config_flags%gsfcgce_hail              &  !  gthompsn
+                ,GSFCGCE_2ICE=config_flags%gsfcgce_2ice              &  !  gthompsn
+                ,MPUSE_HAIL=config_flags%hail_opt                    &  !  gthompsn
+                ,NSSL_ALPHAH=config_flags%nssl_alphah                &  !  gthompsn
+                ,NSSL_ALPHAHL=config_flags%nssl_alphahl              &  !  gthompsn
+                ,NSSL_CNOH=config_flags%nssl_cnoh                    &  !  gthompsn
+                ,NSSL_CNOHL=config_flags%nssl_cnohl                  &  !  gthompsn
+                ,NSSL_RHO_QH=config_flags%nssl_rho_qh                &  !  gthompsn
+                ,NSSL_RHO_QHL=config_flags%nssl_rho_qhl              &  !  gthompsn
+                ,SNOWNCV=grid%snowncv, SNOW_ACC_NC=grid%snow_acc_nc  &    
+                ,PREC_ACC_C=grid%prec_acc_c                          &
+                ,PREC_ACC_NC=grid%prec_acc_nc                        &
+                ,PREC_ACC_DT=config_flags%prec_acc_dt                &
+                ,CURR_SECS2=curr_secs2                               &
+                ,NWP_DIAGNOSTICS=config_flags%nwp_diagnostics        &
+                ,DIAGFLAG=diag_flag                                  &
+                ,HISTORY_INTERVAL=grid%history_interval              &
+                ,ITIMESTEP=grid%itimestep                            &
+                ,U10=grid%u10,V10=grid%v10,W=grid%w_2                &
+                ,WSPD10MAX=grid%wspd10max                            &
+                ,UP_HELI_MAX=grid%up_heli_max                        &
+                ,W_UP_MAX=grid%w_up_max,W_DN_MAX=grid%w_dn_max       &
+                ,ZNW=grid%znw,W_COLMEAN=grid%w_colmean               &
+                ,NUMCOLPTS=grid%numcolpts,W_MEAN=grid%w_mean         &
+                ,GRPL_MAX=grid%grpl_max,GRPL_COLINT=grid%grpl_colint &
+                ,REFD_MAX=grid%refd_max                              &
+                ,refl_10cm=grid%refl_10cm                            &
+                ,HAIL_MAXK1=grid%hail_maxk1,HAIL_MAX2D=grid%hail_max2d &  !  gthompsn
+                ,QG_CURR=moist(ims,kms,jms,P_QG)                     &
+                ,QR_CURR=moist(ims,kms,jms,P_QR)                     &  !  gthompsn
+                ,NR_CURR=scalar(ims,kms,jms,P_QNR)                   &  !  gthompsn
+                ,RHO=grid%rho,PH=grid%ph_2,PHB=grid%phb,G=g          &
+      ! Dimension arguments
+                ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde   &
+                ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme   &
+                ,IPS=ips,IPE=ipe, JPS=jps,JPE=jpe, KPS=kps,KPE=kpe   &
+                ,I_START=grid%i_start,I_END=min(grid%i_end, ide-1)   &
+                ,J_START=grid%j_start,J_END=min(grid%j_end, jde-1)   &
+                ,KTS=k_start, KTE=min(k_end,kde-1)                   &
+                ,NUM_TILES=grid%num_tiles                            &
+                                                                    )
+
+        CASE (MORR_TWO_MOMENT)
+
+      CALL diagnostic_output_calc(                                   &
+                 DPSDT=grid%dpsdt   ,DMUDT=grid%dmudt                &
+                ,P8W=p8w   ,PK1M=grid%pk1m                           &
+                ,MU_2=grid%mu_2  ,MU_2M=grid%mu_2m                   &
+                ,U=grid%u_2    ,V=grid%v_2                           &
+                ,TEMP=grid%t_phy                                     &
+                ,RAINCV=grid%raincv    ,RAINNCV=grid%rainncv         &
+                ,RAINC=grid%rainc    ,RAINNC=grid%rainnc             &
+                ,I_RAINC=grid%i_rainc    ,I_RAINNC=grid%i_rainnc     &
+                ,HFX=grid%hfx   ,SFCEVP=grid%sfcevp    ,LH=grid%lh   &    
+                ,DT=grid%dt      ,SBW=config_flags%spec_bdy_width    &    
+                ,XTIME=grid%xtime   ,T2=grid%t2                      &
+           ,ACSWUPT=grid%acswupt    ,ACSWUPTC=grid%acswuptc          &
+           ,ACSWDNT=grid%acswdnt    ,ACSWDNTC=grid%acswdntc          &
+           ,ACSWUPB=grid%acswupb    ,ACSWUPBC=grid%acswupbc          &
+           ,ACSWDNB=grid%acswdnb    ,ACSWDNBC=grid%acswdnbc          &
+           ,ACLWUPT=grid%aclwupt    ,ACLWUPTC=grid%aclwuptc          &
+           ,ACLWDNT=grid%aclwdnt    ,ACLWDNTC=grid%aclwdntc          &
+           ,ACLWUPB=grid%aclwupb    ,ACLWUPBC=grid%aclwupbc          &
+           ,ACLWDNB=grid%aclwdnb    ,ACLWDNBC=grid%aclwdnbc          &
+         ,I_ACSWUPT=grid%i_acswupt  ,I_ACSWUPTC=grid%i_acswuptc      &
+         ,I_ACSWDNT=grid%i_acswdnt  ,I_ACSWDNTC=grid%i_acswdntc      &
+         ,I_ACSWUPB=grid%i_acswupb  ,I_ACSWUPBC=grid%i_acswupbc      &
+         ,I_ACSWDNB=grid%i_acswdnb  ,I_ACSWDNBC=grid%i_acswdnbc      &
+         ,I_ACLWUPT=grid%i_aclwupt  ,I_ACLWUPTC=grid%i_aclwuptc      &
+         ,I_ACLWDNT=grid%i_aclwdnt  ,I_ACLWDNTC=grid%i_aclwdntc      &
+         ,I_ACLWUPB=grid%i_aclwupb  ,I_ACLWUPBC=grid%i_aclwupbc      &
+         ,I_ACLWDNB=grid%i_aclwdnb  ,I_ACLWDNBC=grid%i_aclwdnbc      &
+      ! Selection flag 
+                ,DIAG_PRINT=config_flags%diag_print                  &
+                ,BUCKET_MM=config_flags%bucket_mm                    &
+                ,BUCKET_J =config_flags%bucket_J                     &
+                ,MPHYSICS_OPT=config_flags%mp_physics                &  !  gthompsn
+                ,GSFCGCE_HAIL=config_flags%gsfcgce_hail              &  !  gthompsn
+                ,GSFCGCE_2ICE=config_flags%gsfcgce_2ice              &  !  gthompsn
+                ,MPUSE_HAIL=config_flags%hail_opt                    &  !  gthompsn
+                ,NSSL_ALPHAH=config_flags%nssl_alphah                &  !  gthompsn
+                ,NSSL_ALPHAHL=config_flags%nssl_alphahl              &  !  gthompsn
+                ,NSSL_CNOH=config_flags%nssl_cnoh                    &  !  gthompsn
+                ,NSSL_CNOHL=config_flags%nssl_cnohl                  &  !  gthompsn
+                ,NSSL_RHO_QH=config_flags%nssl_rho_qh                &  !  gthompsn
+                ,NSSL_RHO_QHL=config_flags%nssl_rho_qhl              &  !  gthompsn
+                ,SNOWNCV=grid%snowncv, SNOW_ACC_NC=grid%snow_acc_nc  &    
+                ,PREC_ACC_C=grid%prec_acc_c                          &
+                ,PREC_ACC_NC=grid%prec_acc_nc                        &
+                ,PREC_ACC_DT=config_flags%prec_acc_dt                &
+                ,CURR_SECS2=curr_secs2                               &
+                ,NWP_DIAGNOSTICS=config_flags%nwp_diagnostics        &
+                ,DIAGFLAG=diag_flag                                  &
+                ,HISTORY_INTERVAL=grid%history_interval              &
+                ,ITIMESTEP=grid%itimestep                            &
+                ,U10=grid%u10,V10=grid%v10,W=grid%w_2                &
+                ,WSPD10MAX=grid%wspd10max                            &
+                ,UP_HELI_MAX=grid%up_heli_max                        &
+                ,W_UP_MAX=grid%w_up_max,W_DN_MAX=grid%w_dn_max       &
+                ,ZNW=grid%znw,W_COLMEAN=grid%w_colmean               &
+                ,NUMCOLPTS=grid%numcolpts,W_MEAN=grid%w_mean         &
+                ,GRPL_MAX=grid%grpl_max,GRPL_COLINT=grid%grpl_colint &
+                ,REFD_MAX=grid%refd_max                              &
+                ,refl_10cm=grid%refl_10cm                            &
+                ,HAIL_MAXK1=grid%hail_maxk1,HAIL_MAX2D=grid%hail_max2d &  !  gthompsn
+                ,QG_CURR=moist(ims,kms,jms,P_QG)                     &
+                ,NG_CURR=scalar(ims,kms,jms,P_QNG)                   &  !  gthompsn
+                ,RHO=grid%rho,PH=grid%ph_2,PHB=grid%phb,G=g          &
+      ! Dimension arguments
+                ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde   &
+                ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme   &
+                ,IPS=ips,IPE=ipe, JPS=jps,JPE=jpe, KPS=kps,KPE=kpe   &
+                ,I_START=grid%i_start,I_END=min(grid%i_end, ide-1)   &
+                ,J_START=grid%j_start,J_END=min(grid%j_end, jde-1)   &
+                ,KTS=k_start, KTE=min(k_end,kde-1)                   &
+                ,NUM_TILES=grid%num_tiles                            &
+                                                                    )
+
+        CASE (NSSL_1MOM)
+
+      CALL diagnostic_output_calc(                                   &
+                 DPSDT=grid%dpsdt   ,DMUDT=grid%dmudt                &
+                ,P8W=p8w   ,PK1M=grid%pk1m                           &
+                ,MU_2=grid%mu_2  ,MU_2M=grid%mu_2m                   &
+                ,U=grid%u_2    ,V=grid%v_2                           &
+                ,TEMP=grid%t_phy                                     &
+                ,RAINCV=grid%raincv    ,RAINNCV=grid%rainncv         &
+                ,RAINC=grid%rainc    ,RAINNC=grid%rainnc             &
+                ,I_RAINC=grid%i_rainc    ,I_RAINNC=grid%i_rainnc     &
+                ,HFX=grid%hfx   ,SFCEVP=grid%sfcevp    ,LH=grid%lh   &    
+                ,DT=grid%dt      ,SBW=config_flags%spec_bdy_width    &    
+                ,XTIME=grid%xtime   ,T2=grid%t2                      &
+           ,ACSWUPT=grid%acswupt    ,ACSWUPTC=grid%acswuptc          &
+           ,ACSWDNT=grid%acswdnt    ,ACSWDNTC=grid%acswdntc          &
+           ,ACSWUPB=grid%acswupb    ,ACSWUPBC=grid%acswupbc          &
+           ,ACSWDNB=grid%acswdnb    ,ACSWDNBC=grid%acswdnbc          &
+           ,ACLWUPT=grid%aclwupt    ,ACLWUPTC=grid%aclwuptc          &
+           ,ACLWDNT=grid%aclwdnt    ,ACLWDNTC=grid%aclwdntc          &
+           ,ACLWUPB=grid%aclwupb    ,ACLWUPBC=grid%aclwupbc          &
+           ,ACLWDNB=grid%aclwdnb    ,ACLWDNBC=grid%aclwdnbc          &
+         ,I_ACSWUPT=grid%i_acswupt  ,I_ACSWUPTC=grid%i_acswuptc      &
+         ,I_ACSWDNT=grid%i_acswdnt  ,I_ACSWDNTC=grid%i_acswdntc      &
+         ,I_ACSWUPB=grid%i_acswupb  ,I_ACSWUPBC=grid%i_acswupbc      &
+         ,I_ACSWDNB=grid%i_acswdnb  ,I_ACSWDNBC=grid%i_acswdnbc      &
+         ,I_ACLWUPT=grid%i_aclwupt  ,I_ACLWUPTC=grid%i_aclwuptc      &
+         ,I_ACLWDNT=grid%i_aclwdnt  ,I_ACLWDNTC=grid%i_aclwdntc      &
+         ,I_ACLWUPB=grid%i_aclwupb  ,I_ACLWUPBC=grid%i_aclwupbc      &
+         ,I_ACLWDNB=grid%i_aclwdnb  ,I_ACLWDNBC=grid%i_aclwdnbc      &
+      ! Selection flag 
+                ,DIAG_PRINT=config_flags%diag_print                  &
+                ,BUCKET_MM=config_flags%bucket_mm                    &
+                ,BUCKET_J =config_flags%bucket_J                     &
+                ,MPHYSICS_OPT=config_flags%mp_physics                &  !  gthompsn
+                ,GSFCGCE_HAIL=config_flags%gsfcgce_hail              &  !  gthompsn
+                ,GSFCGCE_2ICE=config_flags%gsfcgce_2ice              &  !  gthompsn
+                ,MPUSE_HAIL=config_flags%hail_opt                    &  !  gthompsn
+                ,NSSL_ALPHAH=config_flags%nssl_alphah                &  !  gthompsn
+                ,NSSL_ALPHAHL=config_flags%nssl_alphahl              &  !  gthompsn
+                ,NSSL_CNOH=config_flags%nssl_cnoh                    &  !  gthompsn
+                ,NSSL_CNOHL=config_flags%nssl_cnohl                  &  !  gthompsn
+                ,NSSL_RHO_QH=config_flags%nssl_rho_qh                &  !  gthompsn
+                ,NSSL_RHO_QHL=config_flags%nssl_rho_qhl              &  !  gthompsn
+                ,SNOWNCV=grid%snowncv, SNOW_ACC_NC=grid%snow_acc_nc  &    
+                ,PREC_ACC_C=grid%prec_acc_c                          &
+                ,PREC_ACC_NC=grid%prec_acc_nc                        &
+                ,PREC_ACC_DT=config_flags%prec_acc_dt                &
+                ,CURR_SECS2=curr_secs2                               &
+                ,NWP_DIAGNOSTICS=config_flags%nwp_diagnostics        &
+                ,DIAGFLAG=diag_flag                                  &
+                ,HISTORY_INTERVAL=grid%history_interval              &
+                ,ITIMESTEP=grid%itimestep                            &
+                ,U10=grid%u10,V10=grid%v10,W=grid%w_2                &
+                ,WSPD10MAX=grid%wspd10max                            &
+                ,UP_HELI_MAX=grid%up_heli_max                        &
+                ,W_UP_MAX=grid%w_up_max,W_DN_MAX=grid%w_dn_max       &
+                ,ZNW=grid%znw,W_COLMEAN=grid%w_colmean               &
+                ,NUMCOLPTS=grid%numcolpts,W_MEAN=grid%w_mean         &
+                ,GRPL_MAX=grid%grpl_max,GRPL_COLINT=grid%grpl_colint &
+                ,REFD_MAX=grid%refd_max                              &
+                ,refl_10cm=grid%refl_10cm                            &
+                ,HAIL_MAXK1=grid%hail_maxk1,HAIL_MAX2D=grid%hail_max2d &  !  gthompsn
+                ,QG_CURR=moist(ims,kms,jms,P_QG)                     &
+                ,QH_CURR=moist(ims,kms,jms,P_QH)                     &  !  gthompsn
+                ,RHO=grid%rho,PH=grid%ph_2,PHB=grid%phb,G=g          &
+      ! Dimension arguments
+                ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde   &
+                ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme   &
+                ,IPS=ips,IPE=ipe, JPS=jps,JPE=jpe, KPS=kps,KPE=kpe   &
+                ,I_START=grid%i_start,I_END=min(grid%i_end, ide-1)   &
+                ,J_START=grid%j_start,J_END=min(grid%j_end, jde-1)   &
+                ,KTS=k_start, KTE=min(k_end,kde-1)                   &
+                ,NUM_TILES=grid%num_tiles                            &
+                                                                    )
+
+        CASE (MILBRANDT2MOM, NSSL_2MOM, NSSL_2MOMCCN)
+
+      CALL diagnostic_output_calc(                                   &
+                 DPSDT=grid%dpsdt   ,DMUDT=grid%dmudt                &
+                ,P8W=p8w   ,PK1M=grid%pk1m                           &
+                ,MU_2=grid%mu_2  ,MU_2M=grid%mu_2m                   &
+                ,U=grid%u_2    ,V=grid%v_2                           &
+                ,TEMP=grid%t_phy                                     &
+                ,RAINCV=grid%raincv    ,RAINNCV=grid%rainncv         &
+                ,RAINC=grid%rainc    ,RAINNC=grid%rainnc             &
+                ,I_RAINC=grid%i_rainc    ,I_RAINNC=grid%i_rainnc     &
+                ,HFX=grid%hfx   ,SFCEVP=grid%sfcevp    ,LH=grid%lh   &    
+                ,DT=grid%dt      ,SBW=config_flags%spec_bdy_width    &    
+                ,XTIME=grid%xtime   ,T2=grid%t2                      &
+           ,ACSWUPT=grid%acswupt    ,ACSWUPTC=grid%acswuptc          &
+           ,ACSWDNT=grid%acswdnt    ,ACSWDNTC=grid%acswdntc          &
+           ,ACSWUPB=grid%acswupb    ,ACSWUPBC=grid%acswupbc          &
+           ,ACSWDNB=grid%acswdnb    ,ACSWDNBC=grid%acswdnbc          &
+           ,ACLWUPT=grid%aclwupt    ,ACLWUPTC=grid%aclwuptc          &
+           ,ACLWDNT=grid%aclwdnt    ,ACLWDNTC=grid%aclwdntc          &
+           ,ACLWUPB=grid%aclwupb    ,ACLWUPBC=grid%aclwupbc          &
+           ,ACLWDNB=grid%aclwdnb    ,ACLWDNBC=grid%aclwdnbc          &
+         ,I_ACSWUPT=grid%i_acswupt  ,I_ACSWUPTC=grid%i_acswuptc      &
+         ,I_ACSWDNT=grid%i_acswdnt  ,I_ACSWDNTC=grid%i_acswdntc      &
+         ,I_ACSWUPB=grid%i_acswupb  ,I_ACSWUPBC=grid%i_acswupbc      &
+         ,I_ACSWDNB=grid%i_acswdnb  ,I_ACSWDNBC=grid%i_acswdnbc      &
+         ,I_ACLWUPT=grid%i_aclwupt  ,I_ACLWUPTC=grid%i_aclwuptc      &
+         ,I_ACLWDNT=grid%i_aclwdnt  ,I_ACLWDNTC=grid%i_aclwdntc      &
+         ,I_ACLWUPB=grid%i_aclwupb  ,I_ACLWUPBC=grid%i_aclwupbc      &
+         ,I_ACLWDNB=grid%i_aclwdnb  ,I_ACLWDNBC=grid%i_aclwdnbc      &
+      ! Selection flag 
+                ,DIAG_PRINT=config_flags%diag_print                  &
+                ,BUCKET_MM=config_flags%bucket_mm                    &
+                ,BUCKET_J =config_flags%bucket_J                     &
+                ,MPHYSICS_OPT=config_flags%mp_physics                &  !  gthompsn
+                ,GSFCGCE_HAIL=config_flags%gsfcgce_hail              &  !  gthompsn
+                ,GSFCGCE_2ICE=config_flags%gsfcgce_2ice              &  !  gthompsn
+                ,MPUSE_HAIL=config_flags%hail_opt                    &  !  gthompsn
+                ,NSSL_ALPHAH=config_flags%nssl_alphah                &  !  gthompsn
+                ,NSSL_ALPHAHL=config_flags%nssl_alphahl              &  !  gthompsn
+                ,NSSL_CNOH=config_flags%nssl_cnoh                    &  !  gthompsn
+                ,NSSL_CNOHL=config_flags%nssl_cnohl                  &  !  gthompsn
+                ,NSSL_RHO_QH=config_flags%nssl_rho_qh                &  !  gthompsn
+                ,NSSL_RHO_QHL=config_flags%nssl_rho_qhl              &  !  gthompsn
+                ,SNOWNCV=grid%snowncv, SNOW_ACC_NC=grid%snow_acc_nc  &    
+                ,PREC_ACC_C=grid%prec_acc_c                          &
+                ,PREC_ACC_NC=grid%prec_acc_nc                        &
+                ,PREC_ACC_DT=config_flags%prec_acc_dt                &
+                ,CURR_SECS2=curr_secs2                               &
+                ,NWP_DIAGNOSTICS=config_flags%nwp_diagnostics        &
+                ,DIAGFLAG=diag_flag                                  &
+                ,HISTORY_INTERVAL=grid%history_interval              &
+                ,ITIMESTEP=grid%itimestep                            &
+                ,U10=grid%u10,V10=grid%v10,W=grid%w_2                &
+                ,WSPD10MAX=grid%wspd10max                            &
+                ,UP_HELI_MAX=grid%up_heli_max                        &
+                ,W_UP_MAX=grid%w_up_max,W_DN_MAX=grid%w_dn_max       &
+                ,ZNW=grid%znw,W_COLMEAN=grid%w_colmean               &
+                ,NUMCOLPTS=grid%numcolpts,W_MEAN=grid%w_mean         &
+                ,GRPL_MAX=grid%grpl_max,GRPL_COLINT=grid%grpl_colint &
+                ,REFD_MAX=grid%refd_max                              &
+                ,refl_10cm=grid%refl_10cm                            &
+                ,HAIL_MAXK1=grid%hail_maxk1,HAIL_MAX2D=grid%hail_max2d &  !  gthompsn
+                ,QG_CURR=moist(ims,kms,jms,P_QG)                     &
+                ,NG_CURR=scalar(ims,kms,jms,P_QNG)                   &  !  gthompsn
+                ,QH_CURR=moist(ims,kms,jms,P_QH)                     &  !  gthompsn
+                ,NH_CURR=scalar(ims,kms,jms,P_QNH)                   &  !  gthompsn
+                ,RHO=grid%rho,PH=grid%ph_2,PHB=grid%phb,G=g          &
+      ! Dimension arguments
+                ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde   &
+                ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme   &
+                ,IPS=ips,IPE=ipe, JPS=jps,JPE=jpe, KPS=kps,KPE=kpe   &
+                ,I_START=grid%i_start,I_END=min(grid%i_end, ide-1)   &
+                ,J_START=grid%j_start,J_END=min(grid%j_end, jde-1)   &
+                ,KTS=k_start, KTE=min(k_end,kde-1)                   &
+                ,NUM_TILES=grid%num_tiles                            &
+                                                                    )
+
+
+        !..The remaining microphysics schemes do not have graupel, but
+        !..P_QG will just be empty and the remaining NWP-diagnostics can
+        !..still be computed, so go ahead, under DEFAULT, not their own.
+
+!       CASE (KESSLERSCHEME)
+
+!       CASE (WDM5SCHEME)
+
+!       CASE (SBU_YLINSCHEME)
+
+!       CASE (ETAMPNEW)
+
+!       CASE (NSSL_3MOM)
+
+!       CASE (MILBRANDT3MOM)
+
+!       CASE (MORR_MILB_P3)
+
+!       CASE (CAMMGMPSCHEME)
+
+!       CASE (FULL_KHAIN_LYNN)
+
+!       CASE (FAST_KHAIN_LYNN)
+
+!       CASE (WSM3SCHEME)
+
+!       CASE (WSM5SCHEME)
+
+        CASE DEFAULT
+
+      CALL diagnostic_output_calc(                                   &
+                 DPSDT=grid%dpsdt   ,DMUDT=grid%dmudt                &
+                ,P8W=p8w   ,PK1M=grid%pk1m                           &
+                ,MU_2=grid%mu_2  ,MU_2M=grid%mu_2m                   &
+                ,U=grid%u_2    ,V=grid%v_2                           &
+                ,TEMP=grid%t_phy                                     &
+                ,RAINCV=grid%raincv    ,RAINNCV=grid%rainncv         &
+                ,RAINC=grid%rainc    ,RAINNC=grid%rainnc             &
+                ,I_RAINC=grid%i_rainc    ,I_RAINNC=grid%i_rainnc     &
+                ,HFX=grid%hfx   ,SFCEVP=grid%sfcevp    ,LH=grid%lh   &    
+                ,DT=grid%dt      ,SBW=config_flags%spec_bdy_width    &    
+                ,XTIME=grid%xtime   ,T2=grid%t2                      &
+           ,ACSWUPT=grid%acswupt    ,ACSWUPTC=grid%acswuptc          &
+           ,ACSWDNT=grid%acswdnt    ,ACSWDNTC=grid%acswdntc          &
+           ,ACSWUPB=grid%acswupb    ,ACSWUPBC=grid%acswupbc          &
+           ,ACSWDNB=grid%acswdnb    ,ACSWDNBC=grid%acswdnbc          &
+           ,ACLWUPT=grid%aclwupt    ,ACLWUPTC=grid%aclwuptc          &
+           ,ACLWDNT=grid%aclwdnt    ,ACLWDNTC=grid%aclwdntc          &
+           ,ACLWUPB=grid%aclwupb    ,ACLWUPBC=grid%aclwupbc          &
+           ,ACLWDNB=grid%aclwdnb    ,ACLWDNBC=grid%aclwdnbc          &
+         ,I_ACSWUPT=grid%i_acswupt  ,I_ACSWUPTC=grid%i_acswuptc      &
+         ,I_ACSWDNT=grid%i_acswdnt  ,I_ACSWDNTC=grid%i_acswdntc      &
+         ,I_ACSWUPB=grid%i_acswupb  ,I_ACSWUPBC=grid%i_acswupbc      &
+         ,I_ACSWDNB=grid%i_acswdnb  ,I_ACSWDNBC=grid%i_acswdnbc      &
+         ,I_ACLWUPT=grid%i_aclwupt  ,I_ACLWUPTC=grid%i_aclwuptc      &
+         ,I_ACLWDNT=grid%i_aclwdnt  ,I_ACLWDNTC=grid%i_aclwdntc      &
+         ,I_ACLWUPB=grid%i_aclwupb  ,I_ACLWUPBC=grid%i_aclwupbc      &
+         ,I_ACLWDNB=grid%i_aclwdnb  ,I_ACLWDNBC=grid%i_aclwdnbc      &
+      ! Selection flag 
+                ,DIAG_PRINT=config_flags%diag_print                  &
+                ,BUCKET_MM=config_flags%bucket_mm                    &
+                ,BUCKET_J =config_flags%bucket_J                     &
+                ,MPHYSICS_OPT=config_flags%mp_physics                &  !  gthompsn
+                ,GSFCGCE_HAIL=config_flags%gsfcgce_hail              &  !  gthompsn
+                ,GSFCGCE_2ICE=config_flags%gsfcgce_2ice              &  !  gthompsn
+                ,MPUSE_HAIL=config_flags%hail_opt                    &  !  gthompsn
+                ,NSSL_ALPHAH=config_flags%nssl_alphah                &  !  gthompsn
+                ,NSSL_ALPHAHL=config_flags%nssl_alphahl              &  !  gthompsn
+                ,NSSL_CNOH=config_flags%nssl_cnoh                    &  !  gthompsn
+                ,NSSL_CNOHL=config_flags%nssl_cnohl                  &  !  gthompsn
+                ,NSSL_RHO_QH=config_flags%nssl_rho_qh                &  !  gthompsn
+                ,NSSL_RHO_QHL=config_flags%nssl_rho_qhl              &  !  gthompsn
+                ,SNOWNCV=grid%snowncv, SNOW_ACC_NC=grid%snow_acc_nc  &    
+                ,PREC_ACC_C=grid%prec_acc_c                          &
+                ,PREC_ACC_NC=grid%prec_acc_nc                        &
+                ,PREC_ACC_DT=config_flags%prec_acc_dt                &
+                ,CURR_SECS2=curr_secs2                               &
+                ,NWP_DIAGNOSTICS=config_flags%nwp_diagnostics        &
+                ,DIAGFLAG=diag_flag                                  &
+                ,HISTORY_INTERVAL=grid%history_interval              &
+                ,ITIMESTEP=grid%itimestep                            &
+                ,U10=grid%u10,V10=grid%v10,W=grid%w_2                &
+                ,WSPD10MAX=grid%wspd10max                            &
+                ,UP_HELI_MAX=grid%up_heli_max                        &
+                ,W_UP_MAX=grid%w_up_max,W_DN_MAX=grid%w_dn_max       &
+                ,ZNW=grid%znw,W_COLMEAN=grid%w_colmean               &
+                ,NUMCOLPTS=grid%numcolpts,W_MEAN=grid%w_mean         &
+                ,GRPL_MAX=grid%grpl_max,GRPL_COLINT=grid%grpl_colint &
+                ,REFD_MAX=grid%refd_max                              &
+                ,refl_10cm=grid%refl_10cm                            &
+                ,HAIL_MAXK1=grid%hail_maxk1,HAIL_MAX2D=grid%hail_max2d &  !  gthompsn
+                ,QG_CURR=moist(ims,kms,jms,P_QG)                     &
+                ,RHO=grid%rho,PH=grid%ph_2,PHB=grid%phb,G=g          &
+      ! Dimension arguments
+                ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde   &
+                ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme   &
+                ,IPS=ips,IPE=ipe, JPS=jps,JPE=jpe, KPS=kps,KPE=kpe   &
+                ,I_START=grid%i_start,I_END=min(grid%i_end, ide-1)   &
+                ,J_START=grid%j_start,J_END=min(grid%j_end, jde-1)   &
+                ,KTS=k_start, KTE=min(k_end,kde-1)                   &
+                ,NUM_TILES=grid%num_tiles                            &
+                                                                    )
+
+
+
+   END SELECT mp_select
+
+
+      !  Climate-oriented diagnostic quantities.
+
+      CLIMATE_DIAGS : IF ( config_flags%output_diagnostics == 1 ) THEN
+
+         IF ( ( config_flags%auxhist3_interval == 0 ) ) THEN
+            WRITE (diag_message , * ) &
+            "CLWRF: ERROR -- error -- ERROR -- error : NO 'auxhist3_interval' has been defined in 'namelist.input'"
+            CALL wrf_error_fatal ( diag_message )
+         END IF
+
+         CALL wrf_debug ( 100 , '--> CALL DIAGNOSTICS PACKAGE: CLIMATE DIAGNOSTICS' )
+
+         CALL clwrf_output_calc(                                           &
+                     is_restart=config_flags%restart                       &
+                    ,clwrfH=config_flags%auxhist3_interval                 &
+                    ,T2=grid%t2, Q2=grid%q2, U10=grid%u10, V10=grid%v10    &
+                    ,SKINTEMP=grid%tsk                                     &
+                    ,T2CLMIN=grid%t2min, T2CLMAX=grid%t2max                &
+                    ,TT2CLMIN=grid%tt2min, TT2CLMAX=grid%tt2max            &
+                    ,T2CLMEAN=grid%t2mean, T2CLSTD=grid%t2std              &
+                    ,Q2CLMIN=grid%q2min, Q2CLMAX=grid%q2max                &
+                    ,TQ2CLMIN=grid%tq2min, TQ2CLMAX=grid%tq2max            &
+                    ,Q2CLMEAN=grid%q2mean, Q2CLSTD=grid%q2std              &
+                    ,U10CLMAX=grid%u10max, V10CLMAX=grid%v10max            &
+                    ,SPDUV10CLMAX=grid%spduv10max                          &
+                    ,TSPDUV10CLMAX=grid%tspduv10max                        &
+                    ,U10CLMEAN=grid%u10mean, V10CLMEAN=grid%v10mean        &
+                    ,SPDUV10CLMEAN=grid%spduv10mean                        &
+                    ,U10CLSTD=grid%u10std, V10CLSTD=grid%v10std            &
+                    ,SPDUV10CLSTD=grid%spduv10std                          &
+                    ,RAINCCLMAX=grid%raincvmax                             &
+                    ,RAINNCCLMAX=grid%rainncvmax                           &
+                    ,TRAINCCLMAX=grid%traincvmax                           &
+                    ,TRAINNCCLMAX=grid%trainncvmax                         &
+                    ,RAINCCLMEAN=grid%raincvmean                           &
+                    ,RAINNCCLMEAN=grid%rainncvmean                         &
+                    ,RAINCCLSTD=grid%raincvstd                             &
+                    ,RAINNCCLSTD=grid%rainncvstd                           &
+                    ,SKINTEMPCLMIN=grid%skintempmin                        &
+                    ,SKINTEMPCLMAX=grid%skintempmax                        &
+                    ,TSKINTEMPCLMIN=grid%tskintempmin                      &
+                    ,TSKINTEMPCLMAX=grid%tskintempmax                      &
+                    ,SKINTEMPCLMEAN=grid%skintempmean                      &
+                    ,SKINTEMPCLSTD=grid%skintempstd                        &
+                    ,RAINCV=grid%raincv    ,RAINNCV=grid%rainncv           &
+                    ,DT=grid%dt                                            &
+                    ,XTIME=grid%xtime,CURR_SECS2=curr_secs2                &
+                    ,NSTEPS=grid%nsteps                                    &
+         ! Dimension arguments
+                    ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde     &
+                    ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme     &
+                    ,IPS=ips,IPE=ipe, JPS=jps,JPE=jpe, KPS=kps,KPE=kpe     &
+                    ,I_START=grid%i_start,I_END=min(grid%i_end, ide-1)     &
+                    ,J_START=grid%j_start,J_END=min(grid%j_end, jde-1)     &
+                    ,KTS=k_start, KTE=k_end                                &
+                    ,NUM_TILES=grid%num_tiles                              &
+                                                                   )
+      END IF CLIMATE_DIAGS
+
+
+
+
+
+      !  Pressure level diagnostics.
+
+
+      PL_DIAGNOSTICS : IF ( config_flags%p_lev_diags .NE. SKIP_PRESS_DIAGS ) THEN
+
+      !  Process the diags if this is the correct time step OR
+      !  if this is an adaptive timestep forecast.
+
+         TIME_TO_DO_PL_DIAGS : IF ( ( ( MOD(NINT(curr_secs2+grid%dt),NINT(config_flags%p_lev_interval)) .EQ. 0 ) ) .OR. &
+               ( config_flags%use_adaptive_time_step ) ) THEN
+
+            !$OMP PARALLEL DO   &
+            !$OMP PRIVATE ( ij )
+            DO ij = 1 , grid%num_tiles
+
+               CALL wrf_debug ( 100 , '--> CALL DIAGNOSTICS PACKAGE: PRESSURE LEVEL DIAGNOSTICS' )
+
+               CALL pld (                                                   &
+               !  Input data for computing
+                       U=grid%u_2                                           &
+                      ,V=grid%v_2                                           &
+                      ,W=grid%w_2                                           &
+                      ,t=grid%t_2                                           &
+                      ,qv=moist(:,:,:,P_QV)                                 &
+                      ,zp=grid%ph_2                                         &
+                      ,zb=grid%phb                                          &
+                      ,pp=grid%p                                            &
+                      ,pb=grid%pb                                           &
+                      ,p=grid%p_hyd                                         &
+                      ,pw=grid%p_hyd_w                                      &
+               !  Map factors, coriolis for diags
+                      ,msfux=grid%msfux                                     &
+                      ,msfuy=grid%msfuy                                     &
+                      ,msfvx=grid%msfvx                                     &
+                      ,msfvy=grid%msfvy                                     &
+                      ,msftx=grid%msftx                                     &
+                      ,msfty=grid%msfty                                     &
+                      ,f=grid%f                                             &
+                      ,e=grid%e                                             &
+               !  Namelist info
+                      ,use_tot_or_hyd_p=config_flags%use_tot_or_hyd_p       &
+                      ,extrap_below_grnd=config_flags%extrap_below_grnd     &
+                      ,missing=config_flags%p_lev_missing                   &
+               !  The diagnostics, mostly output variables
+                      ,num_press_levels=config_flags%num_press_levels       &
+                      ,max_press_levels=max_plevs                           &
+                      ,press_levels=model_config_rec%press_levels           &
+                      ,p_pl  = grid%p_pl                                    &
+                      ,u_pl  = grid%u_pl                                    &
+                      ,v_pl  = grid%v_pl                                    &
+                      ,t_pl  = grid%t_pl                                    &
+                      ,rh_pl = grid%rh_pl                                   &
+                      ,ght_pl= grid%ght_pl                                  &
+                      ,s_pl  = grid%s_pl                                    &
+                      ,td_pl = grid%td_pl                                   &
+                      ,q_pl = grid%q_pl                                     &
+               !  Dimension arguments
+                      ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde    &
+                      ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme    &
+                      ,ITS=grid%i_start(ij),ITE=grid%i_end(ij)              &
+                      ,JTS=grid%j_start(ij),JTE=grid%j_end(ij)              &
+                      ,KTS=k_start,KTE=k_end+1                              )
+            END DO
+            !$OMP END PARALLEL DO
+         END IF TIME_TO_DO_PL_DIAGS
+      END IF PL_DIAGNOSTICS
+
+
+
+
+
+      !  Height level and AGL diagnostics.
+
+
+      ZL_DIAGNOSTICS : IF ( config_flags%z_lev_diags .NE. SKIP_Z_DIAGS ) THEN
+
+      !  Process the diags if this is the correct time step OR
+      !  if this is an adaptive timestep forecast.
+
+         TIME_TO_DO_ZL_DIAGS : IF ( ( ( MOD(NINT(curr_secs2+grid%dt),NINT(config_flags%z_lev_interval)) .EQ. 0 ) ) .OR. &
+               ( config_flags%use_adaptive_time_step ) ) THEN
+
+            !$OMP PARALLEL DO   &
+            !$OMP PRIVATE ( ij )
+            DO ij = 1 , grid%num_tiles
+
+               CALL wrf_debug ( 100 , '--> CALL DIAGNOSTICS PACKAGE: HEIGHT LEVEL AND AGL DIAGNOSTICS' )
+
+               CALL zld (                                                   &
+               !  Input data for computing
+                       U=grid%u_2                                           &
+                      ,V=grid%v_2                                           &
+                      ,W=grid%w_2                                           &
+                      ,t=grid%t_2                                           &
+                      ,qv=moist(:,:,:,P_QV)                                 &
+                      ,zp=grid%ph_2                                         &
+                      ,zb=grid%phb                                          &
+                      ,pp=grid%p                                            &
+                      ,pb=grid%pb                                           &
+                      ,p=grid%p_hyd                                         &
+                      ,pw=grid%p_hyd_w                                      &
+               !  Map factors, coriolis for diags
+                      ,msfux=grid%msfux                                     &
+                      ,msfuy=grid%msfuy                                     &
+                      ,msfvx=grid%msfvx                                     &
+                      ,msfvy=grid%msfvy                                     &
+                      ,msftx=grid%msftx                                     &
+                      ,msfty=grid%msfty                                     &
+                      ,f=grid%f                                             &
+                      ,e=grid%e                                             &
+                      ,ht=grid%ht                                           &
+               !  Namelist info
+                      ,use_tot_or_hyd_p=config_flags%use_tot_or_hyd_p       &
+                      ,extrap_below_grnd=config_flags%extrap_below_grnd     &
+                      ,missing=config_flags%z_lev_missing                   &
+               !  The diagnostics, mostly output variables
+                      ,num_z_levels=config_flags%num_z_levels               &
+                      ,max_z_levels=max_zlevs                               &
+                      ,z_levels=model_config_rec%z_levels                   &
+                      ,z_zl  = grid%z_zl                                    &
+                      ,u_zl  = grid%u_zl                                    &
+                      ,v_zl  = grid%v_zl                                    &
+                      ,t_zl  = grid%t_zl                                    &
+                      ,rh_zl = grid%rh_zl                                   &
+                      ,ght_zl= grid%ght_zl                                  &
+                      ,s_zl  = grid%s_zl                                    &
+                      ,td_zl = grid%td_zl                                   &
+                      ,q_zl = grid%q_zl                                     &
+               !  Dimension arguments
+                      ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde    &
+                      ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme    &
+                      ,ITS=grid%i_start(ij),ITE=grid%i_end(ij)              &
+                      ,JTS=grid%j_start(ij),JTE=grid%j_end(ij)              &
+                      ,KTS=k_start,KTE=k_end+1                              )
+            END DO
+            !$OMP END PARALLEL DO
+         END IF TIME_TO_DO_ZL_DIAGS
+      END IF ZL_DIAGNOSTICS
+
+
+
+
+      !  AFWA diagnostic package.
+
+      AFWA_DIAGS : IF ( config_flags%afwa_diag_opt == 1 ) THEN
+
+         IF ( ( config_flags%history_interval == 0 ) ) THEN
+            WRITE (diag_message , * ) &
+            "AFWA Diagnostics Error : No 'history_interval' defined in namelist"
+            CALL wrf_error_fatal ( diag_message )
+         END IF
+
+         !$OMP PARALLEL DO   &
+         !$OMP PRIVATE ( ij )
+         DO ij = 1 , grid%num_tiles
+
+            CALL wrf_debug ( 100 , '--> CALL DIAGNOSTICS PACKAGE: AFWA DIAGNOSTICS' )
+
+            CALL afwa_diagnostics_driver (   grid , config_flags              &
+                         ,moist                                               &
+                         ,scalar                                              &
+                         ,chem                                                &
+                         ,th_phy , pi_phy , p_phy                             &
+                         ,grid%u_phy , grid%v_phy                             &
+                         ,dz8w , p8w , t8w , rho_phy, grid%rho                &
+                         ,ids, ide, jds, jde, kds, kde                        &
+                         ,ims, ime, jms, jme, kms, kme                        &
+                         ,ips, ipe, jps, jpe, kps, kpe                        &
+                         ,ITS=grid%i_start(ij),ITE=grid%i_end(ij)             &
+                         ,JTS=grid%j_start(ij),JTE=grid%j_end(ij)             &
+                         ,K_START=k_start,K_END=k_end                         )
+
+            END DO
+            !$OMP END PARALLEL DO
+      ENDIF AFWA_DIAGS
+
+
+
+
+
+   END SUBROUTINE diagnostics_driver
+
+END MODULE module_diagnostics_driver
+#endif

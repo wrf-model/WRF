@@ -1,0 +1,8 @@
+Assimilation of MADIS data is not directly available through WRFDA. However, the WRFDA group 
+maintains a conversion utility "MADIS2LITTLER", which converts netCDF MADIS data into LITTLE_R 
+format for assimilation in WRFDA (or obs-nudging in WRF). You can find this utility on the web at 
+the WRFDA website:
+
+http://www2.mmm.ucar.edu/wrf/users/wrfda/download/madis.html
+
+Compilation and use instructions can be found in the README file provided in that package.

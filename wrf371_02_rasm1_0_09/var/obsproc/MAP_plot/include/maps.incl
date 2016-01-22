@@ -1,0 +1,20 @@
+!    CONTENT:   THE INFORMATION ON THE MAP BACKGROUND.         
+!    USED IN:   TERRAIN,   BNDRY,   LATLON,   LLXY,  MXMNLL,  PLTTER, 
+!                  RELP,  TERDRV,  XYOBSLL.  
+!
+      INTEGER      IXEX,    JXEX,   IOFFST,  JOFFST, ltype
+      REAL         PHIC,   XLONC,       XN,    PSI1,   POLE,                &
+     &             CONV,       A,      C2,  DISOBS(5),  XJC,                &
+     &            XCNTR,   YCNTR,   CNTRJ0,  CNTRI0,                        &
+     &            TRUELAT1, TRUELAT2, xsa,    xsb,  ysa,   ysb,             &
+     &            XCS, YCS 
+      COMMON /MAPS/    PHIC,   XLONC,       XN,    PSI1,   POLE,            &
+     &             CONV,       A,      C2,   DISOBS,    IXEX,   JXEX,       &
+     &              XJC,   XCNTR,   YCNTR,   CNTRJ0,  CNTRI0,               &
+     &           IOFFST,  JOFFST,  TRUELAT1, TRUELAT2,                      &
+     &           xsa,    xsb,  ysa,   ysb,  ltype,  plmap,                  &  
+     &            NPROJ,  PROJECT,    IPROJ                              
+      CHARACTER NPROJ(3)*6, PROJECT*2, IPROJ*6  
+      logical plmap
+!
+      COMMON /COORDINATES/ XCS(20000), YCS(20000)

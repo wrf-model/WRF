@@ -1,0 +1,6 @@
+#MODEL      saprc99
+#INTEGRATOR rosenbrock 
+#LANGUAGE   C 
+#DRIVER     general 
+#HESSIAN    on
+#STOICMAT   on

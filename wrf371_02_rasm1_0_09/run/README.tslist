@@ -1,0 +1,82 @@
+To activate time series output in WRF, a file named "tslist" must be present
+in the WRF run directory. The tslist file contains a list of locations, given
+by their latitude and longitude, along with a short description and an 
+abbreviation for each location. The first three lines in the file are 
+regarded as header information, and are ignored. The contents of an example 
+tslist file are shown below. 
+
+
+#-----------------------------------------------#
+# 24 characters for name | pfx |  LAT  |   LON  |
+#-----------------------------------------------#
+Cape Hallett              hallt -72.330  170.250 
+McMurdo Station           mcm   -77.851  166.713 
+Bogus point A             pt_a   29.718  -75.772 
+Bogus point B             pt_b   37.614  -74.650
+
+
+Given a tslist file, for each location inside a model domain (either coarse 
+or nested), below files are created:
+
+1. pfx*.dNN.TS containing the regular time series output of surface variables.
+2. pfx.dNN.UU containing a vertical profile of u wind component for each time step
+3. pfx.dNN.VV containing a vertical profile of v wind component for each time step
+4. pfx.dNN.TH containing a vertical profile of potential temperature for time step
+5. pfx.dNN.PH containing a vertical profile of geopotential height in time step
+6. pfx.dNN.QV containing a vertical profile of water vapor mixing ratio time step
+
+
+Where pfx is the specified prefix for the dd location in the tslist file, and NN is the domain ID, as given in 
+namelist.input. If locations not in any model domain are specified in the 
+tslist file, they will be simply ignored by the time series capability.
+
+The maximum number of time series locations is controlled by the namelist
+variable max_ts_locs, which may be specified in the &domains namelist. Also, 
+the number of entries in the buffers for time series output can be set with 
+the ts_buf_size variable, also found in &domains. Decreasing the size of the
+buffers will reduce the amount of memory that is allocated for time series; 
+however, smaller buffers will need to be flushed to disk more often than 
+larger buffers. Thus, it is recommended that the size of the buffer be set 
+to the maximum number of time steps for any domain in a model run. 
+
+Namelist.input variables related to to this new capability:
+
+ * max_ts_locs = maximum number of locations in 'tslist' ( default is 5)
+ * ts_buf_size = buffer size for time series output (default is 200)
+ * max_ts_level = number of model levels for time series vertical
+   profiles (default is 15)
+
+The first line in a time-series output of surface variables (pfx*.dNN.TS) looks like this:
+
+NZCM McMurdo               2  7 mcm   (-77.850, 166.710) ( 153, 207) (-77.768, 166.500)   81.8 meters
+
+Those are name of the station, grid ID, time-series ID, station lat/lon, grid indices (nearest grid point to
+the station location), grid lat/lon, elevation.
+
+The variables from the time series output are:
+
+id, ts_hour, id_tsloc, ix, iy, t, q, u, v, psfc, glw, gsw, hfx, lh, tsk, tslb(1), rainc, rainnc, clw
+id:		grid ID
+ts_hour:	forecast time in hours
+id_tsloc:	time series ID
+ix,iy:		grid location (nearest grid to the station)
+t:		2 m Temperature (K)
+q:		2 m vapor mixing ratio (kg/kg)
+u:		10 m U wind (earth-relative)
+v:		10 m V wind (earth-relative)
+psfc:		surface pressure (Pa)
+glw:		downward longwave radiation flux at the ground (W/m^2, downward is positive)
+gsw:		net shortwave radiation flux at the ground (W/m^2, downward is positive)
+hfx:		surface sensible heat flux (W/m^2, upward is positive)
+lh:		surface latent heat flux (W/m^2, upward is positive)
+tsk:		skin temperature (K)
+tslb(1):	top soil layer temperature (K)
+rainc:		rainfall from a cumulus scheme (mm)
+rainnc:		rainfall from an explicit scheme (mm)
+clw:		total column-integrated water vapor and cloud variables
+Example:
+ 2     0.033333    7  153  207     -39.49153       0.00104      -4.57959       7.21139   99064.35938     168.17384      12.06811     -41.77642       0.00001     259.18286     271.35104       0.00000       0.00000       0.00000
+
+
+Format of the files of vertical  profile:
+each line starting with the model time in hours, followed by the variable at model level 1,2,3, ... up to the highest model level of interest 

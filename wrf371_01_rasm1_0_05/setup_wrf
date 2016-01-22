@@ -1,0 +1,8 @@
+cd /glade/p/work/amy/RASM/rasm1_0_02/rasm_trunk/models/atm/wrf
+cp -f configure.wrf.garnet_wrf configure.wrf
+cp -f main/Makefile.wrf main/Makefile
+cp -f main/depend.common.wrf main/depend.common
+cp -f phys/Makefile.wrf phys/Makefile
+cp -f frame/Makefile.wrf frame/Makefile
+cp -f external/esmf_time_f90/Makefile.wrf external/esmf_time_f90/Makefile
+cp -f io_grib_share/compile_rules.mk_wrf io_grib_share/compile_rules.mk

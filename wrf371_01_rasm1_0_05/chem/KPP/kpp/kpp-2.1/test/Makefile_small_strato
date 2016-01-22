@@ -1,0 +1,160 @@
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# User: Set here the F90 compiler and options
+#       Pedefined compilers: INTEL, PGF, HPUX, LAHEY
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+COMPILER = GNU
+#COMPILER = LAHEY
+#COMPILER = INTEL
+#COMPILER = PGF
+#COMPILER = HPUX
+
+FC_GNU     = g95
+FOPT_GNU   = -cpp -O -pg -fbounds-check 
+FC_LAHEY   = lf95
+FOPT_LAHEY = -Cpp --pca
+#FOPT_LAHEY = -Cpp --chk a,e,s,u --pca --ap -O0 -g --trap
+FC_INTEL   = ifort 
+FOPT_INTEL = -cpp -O -mp -pc80 -prec_div -tpp7 -implicitnone
+FC_PGF     = pgf90
+FOPT_PGF   = -Mpreprocess -O -fast -pc 80 -Kieee
+FC_HPUX    = f90
+FOPT_HPUX  = -O -u +Oall +check=on
+
+# define FULL_ALGEBRA for non-sparse integration
+FC   = $(FC_$(COMPILER))
+FOPT = $(FOPT_$(COMPILER)) # -DFULL_ALGEBRA
+
+LIBS =
+#LIBS = -llapack -lblas
+
+# Command to create Matlab mex gateway routines 
+# Note: use $(FC) as the mex Fortran compiler
+MEX  = mex
+
+GENSRC = small_strato_Precision.f90  \
+	 small_strato_Parameters.f90     \
+	 small_strato_Global.f90  
+
+GENOBJ = small_strato_Precision.o    \
+	 small_strato_Parameters.o       \
+	 small_strato_Global.o     
+
+FUNSRC = small_strato_Function.f90 
+FUNOBJ = small_strato_Function.o 
+
+JACSRC = small_strato_JacobianSP.f90  small_strato_Jacobian.f90
+JACOBJ = small_strato_JacobianSP.o    small_strato_Jacobian.o
+
+HESSRC = small_strato_HessianSP.f90   small_strato_Hessian.f90
+HESOBJ = small_strato_HessianSP.o     small_strato_Hessian.o
+
+STMSRC = small_strato_StoichiomSP.f90 small_strato_Stoichiom.f90 
+STMOBJ = small_strato_StoichiomSP.o   small_strato_Stoichiom.o
+
+UTLSRC = small_strato_Rates.f90 small_strato_Util.f90 small_strato_Monitor.f90
+UTLOBJ = small_strato_Rates.o   small_strato_Util.o   small_strato_Monitor.o
+
+LASRC  = small_strato_LinearAlgebra.f90 
+LAOBJ  = small_strato_LinearAlgebra.o   
+
+STOCHSRC = small_strato_Stochastic.f90 
+STOCHOBJ = small_strato_Stochastic.o 
+
+MAINSRC = small_strato_Main.f90   small_strato_Initialize.f90   small_strato_Integrator.f90 small_strato_Model.f90
+MAINOBJ = small_strato_Main.o     small_strato_Initialize.o     small_strato_Integrator.o   small_strato_Model.o 
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# User: modify the line below to include only the
+#       objects needed by your application
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ALLOBJ = $(GENOBJ) $(FUNOBJ) $(JACOBJ) $(HESOBJ) $(STMOBJ) \
+	 $(UTLOBJ) $(LAOBJ)
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# User: modify the line below to include only the
+#       executables needed by your application
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+all:    exe
+
+exe:	$(ALLOBJ) $(MAINOBJ) 
+	$(FC) $(FOPT) $(ALLOBJ) $(MAINOBJ) $(LIBS) -o small_strato.exe
+
+stochastic:$(ALLOBJ) $(STOCHOBJ) $(MAINOBJ)
+	$(FC) $(FOPT) $(ALLOBJ) $(STOCHOBJ) $(MAINOBJ) $(LIBS) \
+	-o small_strato_stochastic.exe
+
+mex:    $(ALLOBJ)
+	$(MEX) FC#$(FC) -fortran -O small_strato_mex_Fun.f90     $(ALLOBJ)
+	$(MEX) FC#$(FC) -fortran -O small_strato_mex_Jac_SP.f90  $(ALLOBJ)
+	$(MEX) FC#$(FC) -fortran -O small_strato_mex_Hessian.f90 $(ALLOBJ)
+
+clean:
+	rm -f small_strato*.o small_strato*.mod \
+	small_strato*.dat small_strato.exe small_strato*.mexglx \
+	small_strato.map
+
+distclean:
+	rm -f small_strato*.o small_strato*.mod \
+	small_strato*.dat small_strato.exe small_strato.map \
+	small_strato*.f90 small_strato_*.mexglx
+
+small_strato_Precision.o: small_strato_Precision.f90 
+	$(FC) $(FOPT) -c $<
+
+small_strato_Parameters.o: small_strato_Parameters.f90 \
+	            small_strato_Precision.o
+	$(FC) $(FOPT) -c $<
+
+small_strato_Monitor.o: small_strato_Monitor.f90 \
+	             small_strato_Precision.o
+	$(FC) $(FOPT) -c $<
+
+small_strato_Global.o: small_strato_Global.f90 \
+	            small_strato_Parameters.o small_strato_Precision.o
+	$(FC) $(FOPT) -c $<
+
+small_strato_Initialize.o: small_strato_Initialize.f90  $(GENOBJ) 
+	$(FC) $(FOPT) -c $<
+
+small_strato_Function.o: small_strato_Function.f90  $(GENOBJ) 
+	$(FC) $(FOPT) -c $<
+
+small_strato_Stochastic.o: small_strato_Stochastic.f90  $(GENOBJ) 
+	$(FC) $(FOPT) -c $<
+
+small_strato_JacobianSP.o: small_strato_JacobianSP.f90 $(GENOBJ)
+	$(FC) $(FOPT) -c $<
+
+small_strato_Jacobian.o: small_strato_Jacobian.f90  $(GENOBJ) small_strato_JacobianSP.o
+	$(FC) $(FOPT) -c $<
+
+small_strato_LinearAlgebra.o: small_strato_LinearAlgebra.f90 $(GENOBJ) small_strato_JacobianSP.o
+	$(FC) $(FOPT) -c $<
+
+small_strato_Rates.o: small_strato_Rates.f90  $(GENOBJ) 
+	$(FC) $(FOPT) -c $<
+
+small_strato_HessianSP.o: small_strato_HessianSP.f90  $(GENOBJ)
+	$(FC) $(FOPT) -c $<
+
+small_strato_Hessian.o:  small_strato_Hessian.f90 $(GENOBJ) small_strato_HessianSP.o
+	$(FC) $(FOPT) -c $<
+
+small_strato_StoichiomSP.o: small_strato_StoichiomSP.f90 $(GENOBJ)
+	$(FC) $(FOPT) -c $<
+
+small_strato_Stoichiom.o: small_strato_Stoichiom.f90  $(GENOBJ) small_strato_StoichiomSP.o
+	$(FC) $(FOPT) -c $<
+
+small_strato_Util.o: small_strato_Util.f90  $(GENOBJ) small_strato_Monitor.o
+	$(FC) $(FOPT) -c $<
+
+small_strato_Main.o: small_strato_Main.f90  $(ALLOBJ) small_strato_Initialize.o small_strato_Model.o small_strato_Integrator.o
+	$(FC) $(FOPT) -c $<
+
+small_strato_Model.o: small_strato_Model.f90  $(ALLOBJ) small_strato_Integrator.o
+	$(FC) $(FOPT) -c $<
+
+small_strato_Integrator.o: small_strato_Integrator.f90  $(ALLOBJ)
+	$(FC) $(FOPT) -c $<

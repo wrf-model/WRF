@@ -1,0 +1,15 @@
+                                                           Aug 21, 2003
+                                                           W/NP11:SAG
+
+BACIO Library.
+
+This library contains Fortran 90 interface to "C"
+language I/O routines.
+
+The Fortran routines call "C" functions, which must
+follow a specific symbol naming convention used by your
+machine/loader to be linked successfully.
+If you are having trouble linking to the routines
+in this library, please make sure the appropriate 
+machine is defined in the "clib.h" file and
+recompile the library.

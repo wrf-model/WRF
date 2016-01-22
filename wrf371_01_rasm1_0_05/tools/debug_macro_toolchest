@@ -1,0 +1,42 @@
+#define IDEBUG 40
+#define JDEBUG 42
+#define KDEBUG 3
+
+#define IJKTEST i.eq.IDEBUG.and.j.eq.JDEBUG.and.k.eq.KDEBUG
+#define IJKDIM IDEBUG,KDEBUG,JDEBUG
+#define IJDIM IDEBUG,JDEBUG
+
+#define DEBUG3D(v,x) write(0,*)'v',' ','x',x ( IJKDIM )
+#define DEBUG2D(v,x) write(0,*)'v',' ','x',x ( IJDIM )
+
+#define DEBUG3DHALO(v,x) write(0,*)'v',' 1 ','x',x ( IDEBUG-1,KDEBUG,JDEBUG-1);\
+                         write(0,*)'v',' 2 ','x',x ( IDEBUG  ,KDEBUG,JDEBUG-1);\
+                         write(0,*)'v',' 3 ','x',x ( IDEBUG+1,KDEBUG,JDEBUG-1);\
+                         write(0,*)'v',' 4 ','x',x ( IDEBUG-1,KDEBUG,JDEBUG  );\
+                         write(0,*)'v',' 5 ','x',x ( IDEBUG  ,KDEBUG,JDEBUG  );\
+                         write(0,*)'v',' 6 ','x',x ( IDEBUG+1,KDEBUG,JDEBUG  );\
+                         write(0,*)'v',' 7 ','x',x ( IDEBUG-1,KDEBUG,JDEBUG+1);\
+                         write(0,*)'v',' 8 ','x',x ( IDEBUG  ,KDEBUG,JDEBUG+1);\
+                         write(0,*)'v',' 9 ','x',x ( IDEBUG+1,KDEBUG,JDEBUG+1)
+
+-------
+
+#define IDEBUG 40
+#define JDEBUG 42
+#define KDEBUG 3
+
+#define IJKTEST i.eq.IDEBUG.and.j.eq.JDEBUG.and.k.eq.KDEBUG
+#define IJKDIM IDEBUG,KDEBUG,JDEBUG
+
+#define DEBUG3D(v,x) write(0,*)'v',' ','x',x ( IJKDIM )
+
+#define DEBUG3DHALO(v,x) write(0,*)'v',' 1 ','x',x ( IDEBUG-1,KDEBUG,JDEBUG-1);\
+                         write(0,*)'v',' 2 ','x',x ( IDEBUG  ,KDEBUG,JDEBUG-1);\
+                         write(0,*)'v',' 3 ','x',x ( IDEBUG+1,KDEBUG,JDEBUG-1);\
+                         write(0,*)'v',' 4 ','x',x ( IDEBUG-1,KDEBUG,JDEBUG  );\
+                         write(0,*)'v',' 5 ','x',x ( IDEBUG  ,KDEBUG,JDEBUG  );\
+                         write(0,*)'v',' 6 ','x',x ( IDEBUG+1,KDEBUG,JDEBUG  );\
+                         write(0,*)'v',' 7 ','x',x ( IDEBUG-1,KDEBUG,JDEBUG+1);\
+                         write(0,*)'v',' 8 ','x',x ( IDEBUG  ,KDEBUG,JDEBUG+1);\
+                         write(0,*)'v',' 9 ','x',x ( IDEBUG+1,KDEBUG,JDEBUG+1)
+

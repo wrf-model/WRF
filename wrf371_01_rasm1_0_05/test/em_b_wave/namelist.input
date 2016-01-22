@@ -1,0 +1,110 @@
+ &time_control
+ run_days                            = 5,
+ run_hours                           = 0,
+ run_minutes                         = 0,
+ run_seconds                         = 0,
+ start_year                          = 0001, 0001, 0001,
+ start_month                         = 01,   01,   01,
+ start_day                           = 01,   01,   01,
+ start_hour                          = 00,   00,   00,
+ start_minute                        = 00,   00,   00,
+ start_second                        = 00,   00,   00,
+ end_year                            = 0001, 0001, 0001,
+ end_month                           = 01,   01,   01,
+ end_day                             = 05,   05,   05,
+ end_hour                            = 00,   00,   00,
+ end_minute                          = 00,   00,   00,
+ end_second                          = 00,   00,   00,
+ history_interval                    = 360,  360,  360,
+ frames_per_outfile                  = 1000, 1000, 1000,
+ restart                             = .false.,
+ restart_interval                    = 3600,
+ io_form_history                     = 2
+ io_form_restart                     = 2
+ io_form_input                       = 2
+ io_form_boundary                    = 2
+ debug_level                         = 0
+ /
+
+ &domains
+ time_step                           = 600,
+ time_step_fract_num                 = 0,
+ time_step_fract_den                 = 1,
+ max_dom                             = 1,
+ s_we                                = 1,     1,     1,
+ e_we                                = 41,    41,    41,
+ s_sn                                = 1,     1,     1,
+ e_sn                                = 81,    81,    81,
+ s_vert                              = 1,     1,     1,
+ e_vert                              = 65,    65,    65,
+ dx                                  = 100000,20000, 4000,
+ dy                                  = 100000,20000, 4000,
+ ztop                                = 16000, 16000, 16000,
+ grid_id                             = 1,     2,     3,
+ parent_id                           = 0,     1,     2,
+ i_parent_start                      = 0,     17,    17,
+ j_parent_start                      = 0,     33,    33,
+ parent_grid_ratio                   = 1,     5,     5,
+ parent_time_step_ratio              = 1,     5,     5,
+ feedback                            = 1,
+ smooth_option                       = 0
+ /
+
+ &physics
+ mp_physics                          = 0,     0,     0,
+ ra_lw_physics                       = 0,     0,     0,
+ ra_sw_physics                       = 0,     0,     0,
+ radt                                = 30,    30,    30,
+ sf_sfclay_physics                   = 0,     0,     0,
+ sf_surface_physics                  = 0,     0,     0,
+ bl_pbl_physics                      = 0,     0,     0,
+ bldt                                = 0,     0,     0,
+ cu_physics                          = 0,     0,     0,
+ cudt                                = 5,     5,     5,
+ num_soil_layers                     = 5,
+ /
+
+ &fdda
+ /
+
+ &dynamics
+ rk_ord                              = 3,
+ diff_opt                            = 1,      1,      1,
+ km_opt                              = 1,      1,      1,
+ damp_opt                            = 0,
+ zdamp                               = 4000.,  4000.,  4000.,
+ dampcoef                            = 0.01,   0.01,   0.01
+ khdif                               = 0,      0,      0,
+ kvdif                               = 0,      0,      0,
+ smdiv                               = 0.1,    0.1,    0.1,
+ emdiv                               = 0.01,   0.01,   0.01,
+ epssm                               = 0.1,    0.1,    0.1
+ time_step_sound                     = 4,      4,      4,
+ h_mom_adv_order                     = 5,      5,      5,
+ v_mom_adv_order                     = 3,      3,      3,
+ h_sca_adv_order                     = 5,      5,      5,
+ v_sca_adv_order                     = 3,      3,      3,
+ non_hydrostatic                     = .true., .true., .true.,
+ /
+
+ &bdy_control
+ periodic_x                          = .true., .false.,.false.,
+ symmetric_xs                        = .false.,.false.,.false.,
+ symmetric_xe                        = .false.,.false.,.false.,
+ open_xs                             = .false.,.false.,.false.,
+ open_xe                             = .false.,.false.,.false.,
+ periodic_y                          = .false.,.false.,.false.,
+ symmetric_ys                        = .true., .false.,.false.,
+ symmetric_ye                        = .true., .false.,.false.,
+ open_ys                             = .false.,.false.,.false.,
+ open_ye                             = .false.,.false.,.false.,
+ nested                              = .false., .true., .true.,
+ /
+
+ &grib2
+ /
+
+ &namelist_quilt
+ nio_tasks_per_group = 0,
+ nio_groups = 1,
+ /

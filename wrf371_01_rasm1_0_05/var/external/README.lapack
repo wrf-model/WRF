@@ -1,0 +1,34 @@
+
+Web site for lapack:
+http://www.netlib.org/lapack/
+
+LAPACK provides routines for solving systems of simultaneous linear equations, 
+least-squares solutions of linear systems of equations, eigenvalue problems, 
+and singular value problems. The associated matrix factorizations (LU, Cholesky, 
+QR, SVD, Schur, generalized Schur) are also provided, as are related computations 
+such as reordering of the Schur factorizations and estimating condition numbers. 
+Dense and banded matrices are handled, but not general sparse matrices. In all 
+areas, similar functionality is provided for real and complex matrices, in both 
+single and double precision.
+
+==========
+
+The files have been moved from .f files to .inc
+files (to adopt the WRFDA convention).
+
+The lapack source has been changed by the convert.f90 program, turning
+the code into free-format.  The only other modification is that the
+imbedded tabs in the source have been turned into spaces (otherwise
+convert.f90 coughs up a spleen).
+
+Web site for convert.f90:
+ftp://ftp.numerical.rl.ac.uk/pub/MandR/convert.f90
+
+!     Copyright CERN, Geneva 1991, 1997 - Copyright and any other
+!     appropriate legal protection of these computer programs
+!     and associated documentation reserved in all countries
+!     of the world.
+!     Author: Michael Metcalf  (MichaelMetcalf@compuserve.com)
+
+======================================================
+

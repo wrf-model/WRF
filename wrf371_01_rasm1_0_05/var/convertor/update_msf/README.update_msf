@@ -1,0 +1,11 @@
+The update_msf convertor adds seven new map scale factor fields 
+to wrfinput files. Beginning with revision 2653 of the WRF repository
+and revision 3321 of the WRFVar repository, map scale factors in
+both the x and y directions are required by the WRF model on 
+account of the generalizations for global domains. This convertor
+adds the required fields to wrfinput files that were created
+by versions of the code before the global changes were added.
+
+To compile: ${CC} -o update_msf.exe update_msf.c -L${NETCDF}/lib -lnetcdf -I${NETCDF}/include
+
+To run: update_msf.exe <wrfinput file>

@@ -1,0 +1,198 @@
+ETKF Data Assimilation in WRFDA
+
+The ETKF system updates the ensemble perturbations.
+
+Please refer to Bishop et al. (2001) and Wang et al. (2003) for a detailed description of the methodology. 
+
+a. Source Code
+
+Three executables are used in the ETKF system:
+
+WRFDA/var/build/gen_be_etkf.exe
+   -Used to update the ensemble perturbations
+
+WRFDA/var/build/gen_be_addmean.exe
+   -Used to combine the emsemble mean (can be updated by Hybrid)
+
+WRFDA/var/build/da_wrfvar.exe
+   -Main WRFDA executable, used to create filtered observations and prepare formatted omb files for ETKF.
+
+If one or more of these programs is missing, check your compilation log.
+
+b. Running The ETKF System
+
+A set of initial ensemble members must be prepared before the ETKF application can be started; this ensemble 
+can be obtained from previous ensemble forecast. A tutorial case with a test ensemble can be found at 
+http://www2.mmm.ucar.edu/wrf/users/wrfda/download/wrfda_hybrid_etkf_testdata.tar.gz. In this example, the 
+ensemble forecasts were initialized at 2006102712 and valid 2006102800. ETKF will be performed using the 
+ensemble valid 2006102800 as input. Once you have the initial ensemble, the ensemble perturbations can be 
+updated by following the steps below:
+
+  1)   Set an environment variable for your working directory and your data directory
+
+  > setenv WORK_DIR_ETKF your_etkf_path
+  > setenv DAT_DIR your_data_path
+  > cd $WORK_DIR_ETKF
+
+  2)   Prepare filtered observations
+
+    a)   In your ETKF working directory, make a subdirectory to prepare the filtered observations and link 
+         all the necessary files and directories as follows: 
+	 
+         > mkdir obs_filter
+         > cd obs_filter
+         > ln -fs $DAT_DIR/Hybrid/fc/2006102712/wrfout_d01_2006-10-28_00:00:00.mean ./fg  (first guess is the ensemble mean)
+         > ln -fs $WRFDA_DIR/run/LANDUSE.TBL .
+         > ln -fs $DAT_DIR/Hybrid/ob/2006102800/ob.ascii ./ob.ascii (or ob.bufr)
+         > ln -fs $DAT_DIR/Hybrid/be/be.dat ./be.dat 
+         > ln -fs $WRFDA_DIR/var/build/da_wrfvar.exe .
+         > cp $DAT_DIR/ETKF/namelist.input .
+
+    b)   Edit namelist.input, paying special attention to the following 'QC-OBS'-related settings:
+
+         &wrfvar17
+           analysis_type                       = 'QC-OBS',
+
+    c)   Execute the WRFDA file, running in QC-OBS mode
+
+         > ./da_wrfvar.exe >&! wrfda.log
+
+    d)   Check the output files. The output file lists are the same as for running WRFDA-3DVAR, and 
+         'filtered_obs_01' is a file containing the filtered observations.
+
+  3)   Prepare omb files for ETKF
+
+    a)   In your ETKF working directory, make a sub directory to prepare the omb files for each ensemble 
+         member and link all the necessary files and directories as follows:
+	 
+         > cd $WORK_DIR_ETKF
+         > mkdir -p omb/working.e001
+         > cd omb/working.e001
+         > ln -fs $DAT_DIR/Hybrid/fc/2006102712/wrfout_d01_2006-10-28_00:00:00.e001 ./fg  (first guess is the ensemble member) 
+         > ln -fs $WRFDA_DIR/run/LANDUSE.TBL .
+         > ln -fs $WORK_DIR_ETKF/obs_filter/filtered_obs_01 ./ob.ascii 
+         > ln -fs $DAT_DIR/Hybrid/be/be.dat ./be.dat 
+         > ln -fs $WRFDA_DIR/var/build/da_wrfvar.exe .
+         > cp $DAT_DIR/ETKF/namelist.input .
+
+    b)   Edit namelist.input, paying special attention to the following 'VERIFY'-related settings:
+
+         &wrfvar17
+           analysis_type                       = 'VERIFY',
+
+    c)   Execute the WRFDA file, running in VERIFY mode
+
+         > ./da_wrfvar.exe >&! wrfda.log
+
+    d)   Check the output files. Again, the output file lists are the same as for running WRFDA-3DVAR/ The 
+         'ob.etkf.0*' files contain the filtered observations.
+
+    e)   Combine the ob.etkf.0* files and add the number index in the head of ob.etkf.e0*
+
+         > cat ob.etkf.0* > ob.all
+         > wc -l ob.all > ob.etkf.e001
+         > cat ob.all >> ob.etkf.e001
+
+    f)   Likewise, prepare ob.etkf.e0* files for other ensemble members
+
+  4)   Run ETKF
+
+    a)   Copy or link the ensemble mean and forecasts and ob.etkf.e0* files to your working directory.
+         and make a directory to save the parameter files.
+         > setenv PAR_DIR_ETKF your_parameter_path
+         > cd $WORK_DIR_ETKF
+         > ln -sf $DAT_DIR/Hybrid/fc/2006102712/wrfout_d01_2006-10-28_00:00:00.mean ./etkf_input
+         > ln -sf $DAT_DIR/Hybrid/fc/2006102712/wrfout_d01_2006-10-28_00:00:00.e001 ./etkf_input.e001
+           ...
+         > ln -sf $DAT_DIR/Hybrid/fc/2006102712/wrfout_d01_2006-10-28_00:00:00.e010 ./etkf_input.e010
+
+         > ln -sf omb/working.e001/ob.etkf.e001 .
+           ...
+         > ln -sf omb/working.e010/ob.etkf.e010 .
+
+    b)   Provide template files. These files will be overwritten with the ensemble perturbations.
+
+         > cp $DAT_DIR/Hybrid/fc/2006102712/wrfout_d01_2006-10-28_00:00:00.e001 ./etkf_output.e001
+           ...
+         > cp $DAT_DIR/Hybrid/fc/2006102712/wrfout_d01_2006-10-28_00:00:00.e010 ./etkf_output.e010
+
+    c)   Copy gen_be_etkf_nl.nl (cp $DAT_DIR/ETKF/gen_be_etkf_nl.nl .) 
+         You will need to set the information in this script as follows:
+
+         &gen_be_etkf_nl
+           num_members = 10,
+           nv = 7,
+           cv = 'U', 'V', 'W', 'PH', 'T', 'QVAPOR', 'MU',
+           naccumt1 = 20,
+           naccumt2 = 20,
+           nstartaccum1 = 1,
+           nstartaccum2 = 1,
+           nout = 1,
+           tainflatinput = 1,
+           rhoinput = 1,
+           infl_fac_file = '$PAR_DIR_ETKF/inflation_factor.dat',
+           infl_let_file = '$PAR_DIR_ETKF/inflation_letkf.dat',
+           eigen_val_file = '$PAR_DIR_ETKF/eigen_value.dat',
+           inno2_val_file = '$PAR_DIR_ETKF/innovation_value.dat',
+           proj2_val_file = '$PAR_DIR_ETKF/projection_value.dat',
+           infl_fac_TRNK = .false.,
+           infl_fac_WG03 = .false.,
+           infl_fac_WG07 = .true.,
+           infl_fac_BOWL = .false.,
+           letkf_flg=.false.,
+           rand_filt = .false.,
+           rnd_seed = 2006102800,
+           rnd_nobs = 5000
+           etkf_erro_max = 20.
+           etkf_erro_min = .00001
+           etkf_inno_max = 20.
+           etkf_inno_min = .00001
+           etkf_erro_flg = .true.
+           etkf_inno_flg = .true.
+           etkf_wrfda = .false.
+
+         'num_members' is the ensemble size (number of ensemble members)
+         'nv' is the number of variables
+         'cv' is a vector of strings containing the names of variables
+         'naccumt1' and 'naccumt2' are number of previous cycles used to account for inflation and rho factor.
+         'nstartaccum1' is the cycle from which naccumt1 cycle starts.
+         'nstartaccum2' is the cycle from which naccumt2 cycle starts.
+         'nout' is the cycle index. 
+         'tainflatinput' and 'rhoinput' are prescribeld factors for inflation and rho factor.
+         'infl_let_file', 'eigen_val_file', 'inno2_val_file', and 'proj2_val_file' are files to save template parameters
+         'infl_fac_TRNK', 'infl_fac_WG03', 'nfl_fac_WG07', and 'nfl_fac_BOWL' are options for different adaptive 
+           inflation schemes.
+         'rand_filt', 'rnd_seed', and 'rnd_nobs' are options for using filtered and random observations.
+         'etkf_erro_max', 'etkf_erro_min', 'etkf_inno_max', 'etkf_inno_min', 'etkf_erro_flg', 'etkf_inno_flg', and 
+           'etkf_wrfda' are options to conduct further observation filtering. 
+
+    d)   Link gen_be_etkf.exe to your working directory and run it.
+
+         > ln -sf  $WRFDA_DIR/var/build/gen_be_etkf.exe . 
+         > ./gen_be_etkf.exe
+
+    e)   Check the output files. etkf_output.* files are updated ensemble pertubations.
+
+ 
+
+  5)   Add updated ensemble perturbations to ensemble mean get new emsemble members
+       > cd $WORK_DIR_ETKF
+
+    a)   Copy add_mean_nl.nl (cp $DAT_DIR/ETKF/add_mean_nl.nl .) 
+         You will need to set the information in this script as follows for each member:
+         &add_mean_nl
+           num_members = 10
+           cv          = 'U', 'V', 'W', 'PH', 'T', 'QVAPOR', 'MU'
+           nv          = 7
+           path        = '$WORK_DIR_ETKF'
+           file_mean   = 'etkf_input' 
+           file_pert   = 'etkf_output.e001' (for each member, etkf_output.e0*...)
+
+    b)   Run gen_add_mean.exe.
+ 
+         > ln -sf WRFDA/var/build/gen_add_mean.exe  .
+         > ./gen_add_mean.exe 
+
+    c)   Check the output files. etkf_output.e0* files are the new ensemble members.
+
+ 

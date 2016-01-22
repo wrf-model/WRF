@@ -1,0 +1,14 @@
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!                  W A R N I N G
+!!
+!!  This is a temporary version of module_dm.F
+!!  It has been compied from somewhere else
+!!  (If not DM_PARALLEL then this is module_dm_stubs.F;
+!!  otherwise, it is from one of the external package
+!!  directories.)
+!!
+!!                B E   A D V I S E D
+!!
+!!  Changes to this file are liable to be LOST.
+!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

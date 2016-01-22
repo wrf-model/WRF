@@ -1,0 +1,87 @@
+======================================================================================
+ For a more complete and up-to-date guide to using WRFDA, see the User's Guide:
+ http://www2.mmm.ucar.edu/wrf/users/wrfda/usersguide.html
+======================================================================================
+
+Setup and Run - with conventional data
+
+1) To run WRFDA-3DVar, first create a working directory, 
+   for example, WRFDA/var/test, then follow the steps below:
+
+cd WRFDA/var/test/tutorial (go to the working directory)
+
+ln -sf WRFDA/run/LANDUSE.TBL ./LANDUSE.TBL
+ln -sf $DAT_DIR/rc/2008020512/wrfinput_d01 ./fg (link first guess file as fg)
+ln -sf WRFDA/var/obsproc/obs_gts_2008-02-05_12:00:00.3DVAR ./ob.ascii (link OBSPROC processed 
+                                                                       observation file as ob.ascii)
+ln -sf $DAT_DIR/be/be.dat ./be.dat (link background error statistics as be.dat)
+ln -sf WRFDA/var/build/da_wrfvar.exe ./da_wrfvar.exe (link executable)
+
+vi namelist.input (a very basic namelist.input for running the tutorial test case is provided in
+                   WRFDA/var/test/tutorial/namelist.input.. 
+                   Only time and domain settings need to be specified for a certain case if 
+                   using default settings provided in WRFDA/Registry/registry.var. However,
+                   it is VERY IMPORTANT to make sure the settings in &physics and &dynamics record 
+                   are consistent with those in your WRF settings.)
+  *** Please see WRFDA/var/README.namelist for namelist descriptions. ***
+
+da_wrfvar.exe >& wrfda.log
+
+2) To run da_update_bc.exe, follow the steps below:
+
+cd WRFDA/var/test/update_bc  (go to the working directory)
+cp -p  $DAT_DIR/rc/2008020512/wrfbdy_d01 ./wrfbdy_d01 (IMPORTANT: make a copy of wrfbdy_d01
+                                                       as the wrf_bdy_file will be 
+                                                       overwritten by da_update_bc.exe)
+vi parame.in
+&control_param
+da_file            = './wrfvar_output'
+da_file_02         = './ana02' (use lateral boundary control in 4DVar, ignored in 3DVar)
+wrf_bdy_file       = './wrfbdy_d01'
+wrf_input          = './wrfinput_d01'
+domain_id          = 1
+debug              = .false.
+update_lateral_bdy = .true.
+update_low_bdy     = .true.
+update_lsm = .false.  (.true.: the LSM predicted variables: 
+                                  TSLB, SMOIS, SNOW, SH2O, RHOSN, CANWAT, SNOWH
+                                  will be updated based on wrf_input file)
+var4d_lbc = .false.   (.true.: use lateral boundary control in 4DVar)
+/
+ln -sf WRFDA/var/build/da_update_bc.exe ./da_update_bc.exe
+./da_update_bc.exe
+
+Extra notes regarding to da_update_bc:
+ 
+As of V3.2, some changes are made to da_update_bc and new settings in parame.in are
+introduced as follows. (The above pre-V3.2 parame.in will still work with V3.2 da_update_bc)
+
+&control_param
+ da_file            = '../tutorial/wrfvar_output'
+ wrf_bdy_file       = './wrfbdy_d01'
+ wrf_input          = '$DAT_DIR/rc/2008020512/wrfinput_d01'
+ domain_id          = 1
+ debug              = .true.
+ update_lateral_bdy = .true.
+ update_low_bdy     = .true.
+ update_lsm         = .false.
+ iswater            = 16
+/
+
+update_lateral_bdy is required only for domain 1.
+update_low_bdy is needed for all domains if running in cycling mode.
+iswater (water point index) is 16 for USGS LANDUSE and 17 for MODIS LANDUSE.
+
+It is recommended to run da_update_bc.exe with
+ update_lateral_bdy = .false.
+ update_low_bdy     = .true.
+before running WRFDA, if in cycling mode (especially if you are doing 
+radiance data assimilation and there is SEA ICE and SNOW in your domain)
+to get low-bdy updated first guess (da_file will be overwritten by da_update_bc).
+
+Then run da_update_bc.exe with
+ update_lateral_bdy = .true.
+ update_low_bdy     = .false.
+after WRFDA to get updated lateral boubdary conditions (wrf_bdy_file will be
+overwritten by da_update_bc).
+

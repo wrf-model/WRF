@@ -1,0 +1,11 @@
+#MODEL mozart_mosaic_4bin_aq
+#LANGUAGE Fortran90
+#DOUBLE ON
+#INTEGRATOR WRF_conform/rosenbrock
+#DRIVER general
+#JACOBIAN SPARSE_LU_ROW
+#HESSIAN OFF
+#STOICMAT OFF
+#WRFCONFORM
+
+

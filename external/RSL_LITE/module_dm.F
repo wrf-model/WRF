@@ -3335,19 +3335,19 @@ END
        Patch(3,1) = ps3 ; Patch(3,2) = pe3
 
        IF      ( typesize .EQ. RWORDSIZE ) THEN
-         CALL just_patch_r ( buf , locbuf , size(locbuf), &
+         CALL just_patch_r ( buf , locbuf , size(locbuf)*RWORDSIZE/typesize, &
                                    PS1, PE1, PS2, PE2, PS3, PE3 , &
                                    MS1, ME1, MS2, ME2, MS3, ME3   )
        ELSE IF ( typesize .EQ. IWORDSIZE ) THEN
-         CALL just_patch_i ( buf , locbuf , size(locbuf), &
+         CALL just_patch_i ( buf , locbuf , size(locbuf)*RWORDSIZE/typesize, &
                                    PS1, PE1, PS2, PE2, PS3, PE3 , &
                                    MS1, ME1, MS2, ME2, MS3, ME3   )
        ELSE IF ( typesize .EQ. DWORDSIZE ) THEN
-         CALL just_patch_d ( buf , locbuf , size(locbuf), &
+         CALL just_patch_d ( buf , locbuf , size(locbuf)*RWORDSIZE/typesize, &
                                    PS1, PE1, PS2, PE2, PS3, PE3 , &
                                    MS1, ME1, MS2, ME2, MS3, ME3   )
        ELSE IF ( typesize .EQ. LWORDSIZE ) THEN
-         CALL just_patch_l ( buf , locbuf , size(locbuf), &
+         CALL just_patch_l ( buf , locbuf , size(locbuf)*RWORDSIZE/typesize, &
                                    PS1, PE1, PS2, PE2, PS3, PE3 , &
                                    MS1, ME1, MS2, ME2, MS3, ME3   )
        ENDIF

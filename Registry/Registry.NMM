@@ -923,6 +923,9 @@ state    real   lake_depth       ij     misc        1         -     rd=(interp_m
 state    real   GSW             ij     misc        1         -      -       ""                 ""
 state    real   XLAND           ij     misc        1         -      -       ""                 ""
 state    real   RAINCV          ij     misc        1         -      -       ""                 ""
+state    real   RAINSH          ij     misc        1         -      -       ""                 ""
+state    real   RAINSHV         ij     misc        1         -      -       ""                 ""
+state    real   SHALL           ij     misc        1         -      -       ""                 ""
 
 
 

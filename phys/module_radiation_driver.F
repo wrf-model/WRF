@@ -44,6 +44,11 @@ CONTAINS
               ,CAM_ABS_FREQ_S                         &
               ,XTIME                                           &
               ,CURR_SECS, ADAPT_STEP_FLAG       &
+              !BSINGH - For WRFCuP scheme (optional args)
+              ,cu_physics,shallowcu_forced_ra   & !CuP, wig 1-Oct-2006
+              ,cubot,cutop,cldfra_cup           & !CuP, wig 1-Oct-2006
+              ,shall                            & !CuP, wig 4-Feb-2008
+              !BSINGH - ENDS
             ! indexes
               ,IDS,IDE, JDS,JDE, KDS,KDE          &
               ,IMS,IME, JMS,JME, KMS,KME          &
@@ -156,9 +161,7 @@ CONTAINS
 #endif
                                        ,goddardlwscheme                 & 
                                        ,goddardswscheme                 &  
-# if (EM_CORE == 1)
-                                       ,CAMMGMPSCHEME                   &
-# endif
+                                       ,KFCUPSCHEME                     & !BSINGH - Added KFCUPSCHEME for WRFCuP scheme
                                        ,FLGLWSCHEME, FLGSWSCHEME
 
    USE module_model_constants
@@ -375,6 +378,10 @@ CONTAINS
    REAL,      INTENT(IN   )       ::   cam_abs_freq_s
 
    LOGICAL,      INTENT(IN   )    ::   warm_rain
+   INTEGER,      INTENT(IN   )    ::   cu_physics                !CuP, wig 5-Oct-2006 !BSINGH - For WRFCuP scheme
+   !BSINGH - For WRFCuP scheme
+   LOGICAL, OPTIONAL, INTENT(IN)  :: shallowcu_forced_ra          !CuP, wig
+   !BSINGH -ENDS
    LOGICAL,      INTENT(IN   )    ::   is_CAMMGMP_used !BSINGH:01/31/2013: Added for CAM5 RRTMG
 
    REAL,      INTENT(IN   )       ::   RADT
@@ -411,6 +418,14 @@ CONTAINS
                                                            HTOPR, &
                                                            HBOTR, &
                                                            CUPPT
+   !BSINGH - For WRFCuP scheme
+   REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL,                 &
+        INTENT(INOUT)  ::                                         &
+                                                           cutop, & !CuP, wig 1-Oct-2006
+                                                           cubot, & !CuP, wig 1-Oct-2006
+                                                           shall    !CuP, wig 4-Feb-2008
+   !BSINGH -ENDS
+
 
    INTEGER, INTENT(IN   )  ::   julyr
 !
@@ -423,6 +438,14 @@ CONTAINS
                                                                t, &
                                                              t8w, &
                                                              rho
+
+   !BSINGH - For WRFCuP scheme
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), OPTIONAL,        &
+        INTENT(INOUT ) ::                            cldfra_cup     !CuP, wig 1-Oct-2006
+
+
+      !BSINGH -ENDS
+
 !
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), OPTIONAL ,       &
          INTENT(IN ) ::  tauaer300,tauaer400,tauaer600,tauaer999, & ! jcb
@@ -663,17 +686,17 @@ CONTAINS
    REAL                           :: p_top_dummy
 
 ! LOCAL  VAR
-
+   INTEGER, DIMENSION( ims:ime, kms:kme, jms:jme ) ::    cldfra1_flag
    REAL, DIMENSION( ims:ime, jms:jme ) ::             GLAT,GLON
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) ::    CEMISS
    REAL, DIMENSION( ims:ime, jms:jme ) ::             coszr
    REAL, DIMENSION( ims:ime, levsiz, jms:jme )  ::    ozmixt
    REAL, DIMENSION( ims:ime, alevsiz, jms:jme, 1:no_src_types )  ::    aerodt
 
-   REAL    ::    DECLIN,SOLCON,XXLAT,TLOCTM,XT24, CEN_LAT
+   REAL    ::    DECLIN,SOLCON,XXLAT,TLOCTM,XT24, CEN_LAT, cldfra_cup_mod
    INTEGER ::    i,j,k,its,ite,jts,jte,ij
    INTEGER ::    STEPABS
-   LOGICAL ::    gfdl_lw,gfdl_sw
+   LOGICAL ::    gfdl_lw,gfdl_sw, compute_cldfra_cup
    LOGICAL ::    doabsems
    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
    INTEGER ::    s
@@ -1123,7 +1146,7 @@ CONTAINS
         CALL cal_cldfra1(CLDFRA,qv,qc,qi,qs,               &
                    F_QV,F_QC,F_QI,F_QS,t,p,                &
                    F_ICE_PHY,F_RAIN_PHY,                   &
-                   mp_physics,                             &
+                   mp_physics,cldfra1_flag,                &
                    ids,ide, jds,jde, kds,kde,              &
                    ims,ime, jms,jme, kms,kme,              &
                    its,ite, jts,jte, kts,kte               )
@@ -1286,6 +1309,60 @@ CONTAINS
                               its , ite , jts , jte , kts , kte )
      ENDIF
      ENDIF
+
+     !Modify CLDFRA and QC for kfcupscheme cumulus scheme
+     if(present(cldfra_cup)) then
+        !BSINGH - overwrite cldfra with the cloud fraction computed in module_cu_kfcup.F        
+        !Force cloud fraction if cumulus triggered.
+        if( cu_physics == KFCUPSCHEME ) then
+           do j = jts,jte
+              do k = kts,kte
+                 do i = its,ite
+
+                    !Find whether to overwrite cldfra or not (ONLY if ICLOUD == 1)
+                    compute_cldfra_cup = .true. 
+                    if (icloud == 1 ) then
+                       compute_cldfra_cup = .false.     
+                       if(cldfra1_flag(i,k,j) == 1 .and. shall(i,j) .gt. 1) then
+                          CLDFRA(i,k,j)=0.
+                       elseif(cldfra1_flag(i,k,j) == 2 .and. shall(i,j) .gt. 1) then
+                          CLDFRA(i,k,j)=1.
+                       elseif(cldfra1_flag(i,k,j) == 3) then
+                          compute_cldfra_cup = .true.
+                       endif
+                    endif
+
+
+                    if(compute_cldfra_cup) then
+                       if( (int(shall(i,j)) .le.1) .and. k >= int(cubot(i,j)) .and. k <= int(cutop(i,j)) ) then  ! LD Mar232012
+                          CLDFRA(i,k,j) = cldfra_cup(i,k,j)
+                       else if( shall(i,j) .gt. 1) then       !!LD
+                          cldfra_cup(i,k,j) = 0.0
+                       end if
+                    endif
+                    if( shall(i,j) == 1 .and. k >= cubot(i,j)  .and. k <= cutop(i,j)  ) then  ! 1=Shallow Cu
+                       ! Begin: wig, 4-Feb-2008
+                       !
+                       ! Override the cloud condensate values if shallow convection triggered.
+                       ! For shallow convection, use a representative condensate value based on
+                       ! observations from CHAPS (Oklahoma area) and Florida (Blyth et al. 2005)
+                       ! or the predicted value if it is greater.
+                       qc_save(i,k,j)= qc(i,k,j)
+                       cldfra_cup_mod = cldfra_cup(i,k,j)* 1.0e-3*(1+qv(i,k,j))!modified cloud fraction
+                       qc(i,k,j) = max( 1.0e-3*cldfra_cup_mod, qc(i,k,j) )!DE+LB 2012-Feb
+
+                       ! Override the cloud fraction values calculated above if shallow
+                       ! convection triggered. For shallow convection, use a representative
+                       ! cloud fraction. In this case, the median value for shallow Cu cases
+                       ! at the ARM SGP site, 36%, Berg et al. 2008, J. Clim.
+                       if( shallowcu_forced_ra )cldfra(i,k,j) = max(0.36, cldfra(i,k,j)) ! Median shallow Cu frac at ARM SGP
+                    endif
+                 ENDDO
+              ENDDO
+           ENDDO
+        end if
+     endif
+        
 
      lwrad_select: SELECT CASE(lw_physics)
 
@@ -2794,6 +2871,7 @@ CONTAINS
           ids,ide, jds,jde, kds,kde,                                 &
           ims,ime, jms,jme, kms,kme,                                 &
           its,ite, jts,jte, kts,kte                                  )
+     USE module_state_description, ONLY : KFCUPSCHEME, KFETASCHEME       !CuP, wig 5-Oct-2006  !BSINGH - For WRFCuP scheme 
 !---------------------------------------------------------------------
    IMPLICIT NONE
 !---------------------------------------------------------------------
@@ -2808,7 +2886,6 @@ CONTAINS
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   ) ::    &
                                                                  QI, &
                                                                  QC
-
    LOGICAL,INTENT(IN) :: F_QC,F_QI
 
    REAL thresh
@@ -2863,7 +2940,6 @@ CONTAINS
         ENDDO
         ENDDO
      ENDIF
-
    END SUBROUTINE cal_cldfra2
 
 !BOP
@@ -2876,13 +2952,14 @@ CONTAINS
 !!     (see Hong et al., 1998)
 !!     (modified by Ferrier, Feb '02)
 !
-   SUBROUTINE cal_cldfra1(CLDFRA, QV, QC, QI, QS,                     &
+   SUBROUTINE cal_cldfra1(CLDFRA, QV, QC, QI, QS,                    &
                          F_QV, F_QC, F_QI, F_QS, t_phy, p_phy,       &
                          F_ICE_PHY,F_RAIN_PHY,                       &
-                         mp_physics,                                 &
+                         mp_physics, cldfra1_flag,                   &
           ids,ide, jds,jde, kds,kde,                                 &
           ims,ime, jms,jme, kms,kme,                                 &
           its,ite, jts,jte, kts,kte                                  )
+     USE module_state_description, ONLY : KFCUPSCHEME, KFETASCHEME       !wig, CuP 4-Fb-2008 !BSINGH - For WRFCuP scheme
 
 #if (HWRF == 1)
    USE module_state_description, ONLY : FER_MP_HIRES, FER_MP_HIRES_ADVECT, ETAMP_HWRF 
@@ -2897,6 +2974,7 @@ CONTAINS
                                           its,ite, jts,jte, kts,kte
 
 !
+   INTEGER, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(OUT  ) :: cldfra1_flag
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(OUT  ) ::    &
                                                              CLDFRA
 
@@ -2916,7 +2994,6 @@ CONTAINS
          INTENT(IN   ) ::                                            &
                                                           F_ICE_PHY, &
                                                          F_RAIN_PHY
-
    LOGICAL,OPTIONAL,INTENT(IN) :: F_QC,F_QI,F_QV,F_QS
    INTEGER :: mp_physics
 
@@ -3065,18 +3142,22 @@ CONTAINS
 !
 !--- Determine cloud fraction (modified from original algorithm)
 !
+      cldfra1_flag(i,k,j) = 0
       IF (QCLD .LT. QCLDMIN) THEN
 !
 !--- Assume zero cloud fraction if there is no cloud mixing ratio
 !
         CLDFRA(i,k,j)=0.
+        cldfra1_flag(i,k,j) = 1
       ELSEIF(RHUM.GE.RHGRID)THEN
 !
 !--- Assume cloud fraction of unity if near saturation and the cloud
 !    mixing ratio is at or above the minimum threshold
 !
         CLDFRA(i,k,j)=1.
+        cldfra1_flag(i,k,j) = 2
       ELSE
+         cldfra1_flag(i,k,j) = 3
 !
 !--- Adaptation of original algorithm (Randall, 1994; Zhao, 1995)
 !    modified based on assumed grid-scale saturation at RH=RHgrid.
@@ -3091,7 +3172,8 @@ CONTAINS
 !!              ARG=MAX(ARG, ARGMIN)
 !!              CLDFRA(i,k,j)=(RHUM/RHGRID)*(1.-EXP(ARG))
         IF (CLDFRA(i,k,j) .LT. .01) CLDFRA(i,k,j)=0.
-      ENDIF          !--- End IF (QCLD .LT. QCLDMIN) ...
+           
+     ENDIF          !--- End IF (QCLD .LT. QCLDMIN) ...     
     ENDDO          !--- End DO i
     ENDDO          !--- End DO k
     ENDDO          !--- End DO j

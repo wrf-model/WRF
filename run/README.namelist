@@ -703,6 +703,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 5, Grell 3D ensemble scheme
                                      = 6, Modifed Tiedtke scheme (ARW only)
                                      = 7, Zhang-McFarlane scheme from CAM5 (CESM 1_0_1)
+                                     = 10, Modified Kain-Fritsch scheme with triger function based on PDFs (ARW only)
                                      = 11, Multi-scale Kain-Fritsch scheme
                                      = 14, New GFS simplified Arakawa-Schubert scheme from YSU (ARW only)
                                      = 16, A newer Tiedtke scheme

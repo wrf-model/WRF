@@ -15,7 +15,7 @@ MODULE module_cu_kfeta
 !
 !--------------------------------------------------------------------
 ! Lookup table variables:
-      INTEGER, PARAMETER :: KFNT=250,KFNP=220
+      INTEGER, PARAMETER, PRIVATE :: KFNT=250,KFNP=220!wig, 24-Aug-2006: added private to prevent CuP conflicts !BSINGH - For WRFCuP scheme
       REAL, DIMENSION(KFNT,KFNP),PRIVATE, SAVE :: TTAB,QSTAB
       REAL, DIMENSION(KFNP),PRIVATE, SAVE :: THE0K
       REAL, DIMENSION(200),PRIVATE, SAVE :: ALU
@@ -38,6 +38,7 @@ CONTAINS
              ,EP2,SVP1,SVP2,SVP3,SVPT0                       &
              ,STEPCU,CU_ACT_FLAG,warm_rain,CUTOP,CUBOT       &
              ,QV                                             &
+             ,shall                                          & !BSINGH - For WRFCuP scheme added "shall"
             ! optionals
              ,F_QV    ,F_QC    ,F_QR    ,F_QI    ,F_QS       &
              ,RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN            &
@@ -99,6 +100,9 @@ CONTAINS
    REAL,    DIMENSION( ims:ime , jms:jme ),                  &
             INTENT(INOUT) ::                            NCA
 
+   REAL,    DIMENSION( ims:ime , jms:jme ), OPTIONAL,        &
+        INTENT(INOUT) ::                            SHALL !BSINGH -  For WRFCuP scheme
+   
    REAL, DIMENSION( ims:ime , jms:jme ),                     &
           INTENT(OUT) ::                              CUBOT, &
                                                       CUTOP    
@@ -194,6 +198,7 @@ CONTAINS
    integer :: ibegh,iendh,jbegh,jendh
    integer :: istart,iend,jstart,jend
    INTEGER :: i,j,k,NTST
+   INTEGER :: ishall !BSINGH -  For WRFCuP Scheme
    REAL    :: lastdt = -1.0
    REAL    :: W0AVGfctr, W0fctr, W0den
    
@@ -463,7 +468,7 @@ CONTAINS
                  DQDT,DQIDT,DQCDT,DQRDT,DQSDT,DTDT, &
                  RAINCV,PRATEC,NCA,                 &
                  flag_QI,flag_QS,warm_rain,         &
-                 CUTOP,CUBOT,CUDT,                  &
+                 CUTOP,CUBOT,ishall,CUDT,           & !BSINGH -  Added ishall as arg for WRFCuP
                  ids,ide, jds,jde, kds,kde,         &
                  ims,ime, jms,jme, kms,kme,         &
                  its,ite, jts,jte, kts,kte,         &
@@ -474,6 +479,9 @@ CONTAINS
                  UDR_KF,DDR_KF,                     &
                  UER_KF,DER_KF,                     &
                  TIMEC_KF,KF_EDRATES                )
+            if(present(shall))shall(i,j) = ishall !,BSINGH -  For WRFCuP scheme
+
+
             IF(PRESENT(rthcuten).AND.PRESENT(rqvcuten)) THEN
               DO K=kts,kte
                  RTHCUTEN(I,K,J)=DTDT(K)/pi(I,K,J)
@@ -532,7 +540,7 @@ CONTAINS
                       DQDT,DQIDT,DQCDT,DQRDT,DQSDT,DTDT,   &
                       RAINCV,PRATEC,NCA,                   &
                       F_QI,F_QS,warm_rain,                 &
-                      CUTOP,CUBOT,CUDT,                    &
+                      CUTOP,CUBOT,ishall,CUDT,             & !BSINGH - For WRFCuP scheme
                       ids,ide, jds,jde, kds,kde,           &
                       ims,ime, jms,jme, kms,kme,           &
                       its,ite, jts,jte, kts,kte,           &
@@ -579,6 +587,7 @@ CONTAINS
       REAL,  INTENT(IN   ) :: EP2,SVP1,SVP2,SVP3,SVPT0
 
 !
+      INTEGER, INTENT(INOUT) :: ISHALL
       REAL, DIMENSION( kts:kte ), INTENT(INOUT) ::         &
                                                      DQDT, &
                                                     DQIDT, &
@@ -694,7 +703,7 @@ CONTAINS
                  LTOPM1,LVF,KSTART,KMIN,LFS,               &
                  ND,NIC,LDB,LDT,ND1,NDK,                   &
                  NM,LMAX,NCOUNT,NOITR,                     &
-                 NSTEP,NTC,NCHM,ISHALL,NSHALL
+                 NSTEP,NTC,NCHM,NSHALL
       LOGICAL :: IPRNT
       REAL :: u00,qslcl,rhlcl,dqssdt    !jfb
       CHARACTER*1024 message
@@ -826,6 +835,11 @@ usl:   DO
                FBFRC=1.
                CYCLE usl
              ELSE
+                !BSINGH - For WRFCuP scheme
+                ! wig, 29-Aug-2006: I think this is where no convecion occurs. So, force
+                ! ishall to a flag value to indicate this for accounting purposes.
+                ishall = 2
+                !BSINGH -ENDS                
                RETURN
              ENDIF
            ENDIF      
@@ -861,6 +875,10 @@ usl:   DO
              END DO    
            ENDIF
            IF(DPTHMX.LT.DPMIN)THEN 
+              !BSINGH - For WRFCuP scheme
+              ! wig, 29-Aug-2006: Indicate no convection occurred in ishall.
+              ishall = 2
+              !BSINGH -ENDS
              RETURN
            ENDIF
            KPBL=LC+NLAYRS-1   
@@ -927,7 +945,15 @@ usl:   DO
          KLCL = NK
          IF ( ZLCL.LE.Z0(NK) )  EXIT
      END DO
-     IF ( ZLCL.GT.Z0(KL) )  RETURN
+     IF ( ZLCL.GT.Z0(KL) ) then
+        !BSINGH - For WRFCuP scheme 
+        !BSINGH - Improvised based on the following reason
+        !Before every "RETURN" statement assign ishall=2
+        ! wig, 29-Aug-2006: Indicate no convection occurred in ishall.
+        ishall = 2
+        !BSINGH -ENDS
+        RETURN
+     endif
 
           K=KLCL-1
 ! calculate DLP using Z instead of log(P)
@@ -2162,6 +2188,12 @@ iter:     DO NCOUNT=1,10
           IF(FABE.GT.1. .and. ISHALL.EQ.0)THEN
 !          WRITE(98,*)'UPDRAFT/DOWNDRAFT COUPLET INCREASES CAPE AT THIS
 !     *GRID POINT; NO CONVECTION ALLOWED!'
+             !BSINGH - For WRFCuP scheme
+             !BSINGH - Improvised based on the following reason
+             !Before every "RETURN" statement assign ishall=2
+             ! wig, 29-Aug-2006: Indicate no convection occurred in ishall.
+             ishall = 2
+             !BSINGH -ENDS
             RETURN  
           ENDIF
           IF(NCOUNT.NE.1)THEN
@@ -2216,6 +2248,13 @@ iter:     DO NCOUNT=1,10
 !...IF AINC BECOMES VERY SMALL, EFFECTS OF CONVECTION ! JSK MODS
 !...WILL BE MINIMAL SO JUST IGNORE IT...              ! JSK MODS
             IF(AINC.LT.0.05)then
+               !BSINGH - For WRFCuP scheme
+               !BSINGH - Improvised based on the following reason
+               !Before every "RETURN" statement assign ishall=2
+               ! wig, 29-Aug-2006: Indicate no convection occurred in ishall.
+               ishall = 2
+               !BSINGH -ENDS
+
               RETURN                          ! JSK MODS
             ENDIF
 !            AINC=AMAX1(AINC,0.05)                        ! JSK MODS

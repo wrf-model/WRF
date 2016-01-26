@@ -311,6 +311,13 @@ BENCH_START(rad_driver_tim)
      &        ,CAM_ABS_FREQ_S=grid%cam_abs_freq_s                         &
      &        ,XTIME=grid%xtime                                                &
               ,CURR_SECS=curr_secs, ADAPT_STEP_FLAG=adapt_step_flag       &
+!BSINGH - For WRFCuP scheme
+     &        ,CU_PHYSICS=config_flags%cu_physics                         & !CuP, wig 5-Oct-2006
+     &        ,SHALLOWCU_FORCED_RA=config_flags%shallowcu_forced_ra       & !CuP, wig
+     &        ,CUBOT=grid%cubot, CUTOP=grid%cutop                         & !CuP, wig 9-Oct-2006
+     &        ,CLDFRA_CUP=grid%cldfra_cup                                 & !CuP, wig 1-Oct-2006
+     &        ,SHALL=grid%shall                                           & !CuP, wig 4-Feb-2008
+!BSINGH - ENDS
             ! indexes
      &        ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde          &
      &        ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme          &

@@ -479,6 +479,7 @@
      &                 ,QG=MOIST_TRANS(IMS,KMS,JMS,P_QG),F_QG=F_QG      &
      &                 ,IS_CAMMGMP_USED=IS_CAMMGMP_USED                 &
      &                 ,EXPLICIT_CONVECTION=config_flags%cu_physics==0  &
+     &                 ,CU_PHYSICS=config_flags%cu_physics              &
      &                 ,MP_PHYSICS=CONFIG_FLAGS%MP_PHYSICS)
 
 
@@ -2242,7 +2243,9 @@
       INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: LPBL
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: HPBL2D,EVAP2D,HEAT2D     !Kwon S&P
-!`
+
+      REAL,DIMENSION(IMS:IME,JMS:JME)               :: SHALL
+! 
       REAL,INTENT(IN) :: DT,GPS,PDTOP,PT
 !
       REAL,INTENT(INOUT) :: ACUTIM,AVCNVC
@@ -2711,6 +2714,7 @@
      &                 ,ens_sasamp=config_flags%ens_sasamp              &
 #endif
 #endif
+     &                 ,SHALL=grid%shall                                &
      &                 ,HPBL2D=HPBL2D,EVAP2D=EVAP2D,HEAT2D=HEAT2D       &     !Kwon S&P
      &                 ,pgcon=config_flags%sas_pgcon                    &
      &                 ,sas_mass_flux=config_flags%sas_mass_flux        &

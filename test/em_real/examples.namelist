@@ -525,3 +525,15 @@ the turbine type: windturbines.txt
  skebs              = 1, 1, 1, 
  rand_perturb       = 1, 1, 1, 
 
+
+** Using kfcupscheme cu_physics (cumulus scheme option). This has been tested with
+the CAM radiation scheme and is not recommended with other radiation schemes.
+Regarding cu_rad_feedback, users want the parameterized clouds to affect radiation.  
+Turning it off is only useful as a sensitivity study to determine the importance of 
+that effect.
+
+&physics
+ cu_physics          = 10,    10,    10,
+ ra_lw_physics       = 3,     3,     3,
+ ra_sw_physics       = 3,     3,     3,
+ cu_rad_feedback     =.true.,

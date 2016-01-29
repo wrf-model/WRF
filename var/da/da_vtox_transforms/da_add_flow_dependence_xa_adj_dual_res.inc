@@ -32,7 +32,7 @@ subroutine da_add_flow_dependence_xa_adj_dual_res (ne, ep, grid, vp)
 #endif
 
 
-   ! Get coarse (ensemble) grid dimensions ( grid%intermediate_gridd)
+   ! Get coarse (ensemble) grid dimensions ( grid%intermediate_grid)
    CALL get_ijk_from_grid (  grid%intermediate_grid ,               &
                              cids, cide, cjds, cjde, ckds, ckde,    &
                              cims, cime, cjms, cjme, ckms, ckme,    &
@@ -87,9 +87,12 @@ subroutine da_add_flow_dependence_xa_adj_dual_res (ne, ep, grid, vp)
    input_p(:,1,:) = grid%xa%psfc(:,:)
 
    write (unit=message(1),fmt='(A,2I8)')' istart, jstart = ',grid%i_parent_start, grid%j_parent_start
+   call wrf_debug(2, message(1))
    write (unit=message(2),fmt='(A,4I8)')' grid%j_start(1), grid%j_end(1), jts_int, jte_int', grid%j_start(1), grid%j_end(1),jts_int,jte_int
-   write (unit=message(3),fmt='(A,2F12.5)')' min/max Input U = ',minval(input_u),maxval(input_u)
-   call da_message(message(1:3))
+   call wrf_debug(2, message(2))
+   write (unit=message(3),fmt='(A,2F12.5)')' min/max  Input U = ',minval(input_u),maxval(input_u)
+   call wrf_debug(2, message(3))
+   !call da_message(message(1:3))
 
 
 
@@ -107,23 +110,13 @@ subroutine da_add_flow_dependence_xa_adj_dual_res (ne, ep, grid, vp)
       CALL RSL_LITE_INIT_EXCH ( local_communicator, 4, 0, &
 	   rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p,   &
 	   rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p,   &
-	   25  &
-! + num_moist   &
-! + num_dfi_moist   &
-! + num_scalar   &
-! + num_dfi_scalar   &
-! + num_tracer   &
-	   , 175, RWORDSIZE, &
-	   0, 22, IWORDSIZE, &
+	   4, 1, RWORDSIZE, &
+	   0, 0, IWORDSIZE, &
 	   0, 0, DWORDSIZE, &
 	    0,  0, LWORDSIZE, &
 	    myproc, ntasks, ntasks_x, ntasks_y,   &
 	    nips, nipe, njps, njpe, nkps, MAX(1,1&
       ,nkpe&
-!     ,config_flags%num_soil_layers &
-!     ,config_flags%num_snso_layers &
-!     ,config_flags%num_snow_layers &
-!     ,config_flags%lagday &
       ))
 
 	IF ( SIZE(input_u,1)*SIZE(input_u,3) .GT. 1 ) THEN
@@ -253,23 +246,13 @@ subroutine da_add_flow_dependence_xa_adj_dual_res (ne, ep, grid, vp)
       CALL RSL_LITE_INIT_EXCH ( local_communicator, 4, 1, &
 	   rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p,   &
 	   rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p,   &
-	   25  &
-! + num_moist   &
-! + num_dfi_moist   &
-! + num_scalar   &
-! + num_dfi_scalar   &
-! + num_tracer   &
-	   , 175, RWORDSIZE, &
-	   0, 22, IWORDSIZE, &
+	   4, 1, RWORDSIZE, &
+	   0, 0, IWORDSIZE, &
 	   0, 0, DWORDSIZE, &
 	    0,  0, LWORDSIZE, &
 	    myproc, ntasks, ntasks_x, ntasks_y,   &
 	    nips, nipe, njps, njpe, nkps, MAX(1,1&
       ,nkpe&
-!     ,config_flags%num_soil_layers &
-!     ,config_flags%num_snso_layers &
-!     ,config_flags%num_snow_layers &
-!     ,config_flags%lagday &
       ))
 
 	IF ( SIZE(input_u,1)*SIZE(input_u,3) .GT. 1 ) THEN
@@ -575,7 +558,7 @@ subroutine da_add_flow_dependence_xa_adj_dual_res (ne, ep, grid, vp)
                   )
    else if ( dual_res_upscale_opt .eq. 3 ) then
 
-      call da_message((/'Using adjoint of bilinear interpolation'/))
+      !call da_message((/'Using adjoint of bilinear interpolation'/))
       do n=1,total_here
          do k = kts,kte
 	    output_u(ob_locs(n)%i  ,k,ob_locs(n)%j)   = ob_locs(n)%dym * ob_locs(n)%dxm  * input_u( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_u(ob_locs(n)%i  ,k,ob_locs(n)%j)   
@@ -614,17 +597,27 @@ subroutine da_add_flow_dependence_xa_adj_dual_res (ne, ep, grid, vp)
 
    endif
 
-   write (unit=message(1),fmt='(A,2F12.5)') ' min/max U Input = ',minval(input_u),maxval(input_u)
-   write (unit=message(2),fmt='(A,2F12.5)') ' min/max U Output = ',minval(output_u),maxval(output_u)
-   write (unit=message(3),fmt='(A,2F12.5)') ' min/max V Input = ',minval(input_v),maxval(input_v)
-   write (unit=message(4),fmt='(A,2F12.5)') ' min/max V Output = ',minval(output_v),maxval(output_v)
-   write (unit=message(5),fmt='(A,2F12.5)') ' min/max T Input = ',minval(input_t),maxval(input_t)
-   write (unit=message(6),fmt='(A,2F12.5)') ' min/max T Output = ',minval(output_t),maxval(output_t)
-   write (unit=message(7),fmt='(A,2F12.5)') ' min/max Q Input = ',minval(input_q),maxval(input_q)
-   write (unit=message(8),fmt='(A,2F12.5)') ' min/max Q Output = ',minval(output_q),maxval(output_q)
-   write (unit=message(9),fmt='(A,2F12.5)') ' min/max P Input = ',minval(input_p),maxval(input_p)
+   write (unit=message(1), fmt='(A,2F12.5)') ' min/max U  Input = ',minval(input_u),maxval(input_u)
+   call wrf_debug(2, message(1))
+   write (unit=message(2), fmt='(A,2F12.5)') ' min/max U Output = ',minval(output_u),maxval(output_u)
+   call wrf_debug(2, message(2))
+   write (unit=message(3), fmt='(A,2F12.5)') ' min/max V  Input = ',minval(input_v),maxval(input_v)
+   call wrf_debug(2, message(3))
+   write (unit=message(4), fmt='(A,2F12.5)') ' min/max V Output = ',minval(output_v),maxval(output_v)
+   call wrf_debug(2, message(4))
+   write (unit=message(5), fmt='(A,2F12.5)') ' min/max T  Input = ',minval(input_t),maxval(input_t)
+   call wrf_debug(2, message(5))
+   write (unit=message(6), fmt='(A,2F12.5)') ' min/max T Output = ',minval(output_t),maxval(output_t)
+   call wrf_debug(2, message(6))
+   write (unit=message(7), fmt='(A,2F12.5)') ' min/max Q  Input = ',minval(input_q),maxval(input_q)
+   call wrf_debug(2, message(7))
+   write (unit=message(8), fmt='(A,2F12.5)') ' min/max Q Output = ',minval(output_q),maxval(output_q)
+   call wrf_debug(2, message(8))
+   write (unit=message(9), fmt='(A,2F12.5)') ' min/max P  Input = ',minval(input_p),maxval(input_p)
+   call wrf_debug(2, message(9))
    write (unit=message(10),fmt='(A,2F12.5)') ' min/max P Output = ',minval(output_p),maxval(output_p)
-   call da_message(message(1:10))
+   call wrf_debug(2, message(10))
+   !call da_message(message(1:10))
 
     !
     ! Smooth things here if you want...call sm121 from interp_fcn.F. Input is similar to copy_fcn

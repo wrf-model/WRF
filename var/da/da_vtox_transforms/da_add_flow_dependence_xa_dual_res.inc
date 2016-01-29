@@ -36,7 +36,7 @@ subroutine da_add_flow_dependence_xa_dual_res (grid, ne,  ep, vp)
 #endif
 
 
-   ! Get coarse (ensemble) grid dimensions ( grid%intermediate_gridd)
+   ! Get coarse (ensemble) grid dimensions ( grid%intermediate_grid)
    CALL get_ijk_from_grid (  grid%intermediate_grid ,               &
                              cids, cide, cjds, cjde, ckds, ckde,    &
                              cims, cime, cjms, cjme, ckms, ckme,    &
@@ -119,23 +119,13 @@ subroutine da_add_flow_dependence_xa_dual_res (grid, ne,  ep, vp)
       CALL RSL_LITE_INIT_EXCH ( local_communicator, 4, 0, &
 	   rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p,   &
 	   rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p,   &
-	   31  &
-! + num_moist   &
-! + num_dfi_moist   &
-! + num_scalar   &
-! + num_dfi_scalar   &
-! + num_tracer   &
-	   , 189, RWORDSIZE, &
-	   0, 22, IWORDSIZE, &
+	   4, 1, RWORDSIZE, &
+	   0, 0, IWORDSIZE, &
 	   0, 0, DWORDSIZE, &
 	    0,  0, LWORDSIZE, &
 	    myproc, ntasks, ntasks_x, ntasks_y,   &
 	    cips, cipe, cjps, cjpe, ckps, MAX(1,1&
       ,ckpe &
-!     ,config_flags%num_soil_layers &
-!     ,config_flags%num_snso_layers &
-!     ,config_flags%num_snow_layers &
-!     ,config_flags%lagday &
       ))
 
       IF ( SIZE(ens_contrib_u,1)*SIZE(ens_contrib_u,3) .GT. 1 ) THEN
@@ -265,23 +255,13 @@ subroutine da_add_flow_dependence_xa_dual_res (grid, ne,  ep, vp)
       CALL RSL_LITE_INIT_EXCH ( local_communicator, 4, 1, &
 	   rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p,   &
 	   rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p,   &
-	   31  &
-! + num_moist   &
-! + num_dfi_moist   &
-! + num_scalar   &
-! + num_dfi_scalar   &
-! + num_tracer   &
-	   , 189, RWORDSIZE, &
-	   0, 22, IWORDSIZE, &
+	   4, 1, RWORDSIZE, &
+	   0, 0, IWORDSIZE, &
 	   0, 0, DWORDSIZE, &
 	    0,  0, LWORDSIZE, &
 	    myproc, ntasks, ntasks_x, ntasks_y,   &
 	    cips, cipe, cjps, cjpe, ckps, MAX(1,1&
       ,ckpe &
-!     ,config_flags%num_soil_layers &
-!     ,config_flags%num_snso_layers &
-!     ,config_flags%num_snow_layers &
-!     ,config_flags%lagday &
       ))
 
       IF ( SIZE(ens_contrib_u,1)*SIZE(ens_contrib_u,3) .GT. 1 ) THEN
@@ -508,7 +488,7 @@ subroutine da_add_flow_dependence_xa_dual_res (grid, ne,  ep, vp)
 
    else
 
-           call da_message((/"Using adjoint-based interpolation"/))
+      !call da_message((/"Using adjoint-based interpolation"/))
 
       !$OMP PARALLEL DO &
       !$OMP PRIVATE (n)

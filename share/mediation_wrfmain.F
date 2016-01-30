@@ -45,7 +45,7 @@ use module_io
    TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
   ! Local
    INTEGER                :: fid , ierr , myproc
-   CHARACTER (LEN=80)     :: inpname , rstname, timestr
+   CHARACTER (LEN=256)    :: inpname , rstname, timestr
    CHARACTER (LEN=80)     :: message
    LOGICAL                :: restart
    LOGICAL, EXTERNAL      :: wrf_dm_on_monitor

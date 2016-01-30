@@ -48,7 +48,7 @@
     Type(WRFU_Time) time, currtime, currentTime
     CHARACTER*19  new_date
     CHARACTER*24  base_date
-    CHARACTER*80  fname
+    CHARACTER*256  fname
     CHARACTER*80  dname, memord, sim_type
     LOGICAL dryrun
     INTEGER idt
@@ -92,7 +92,7 @@
 
     !  Local variables: are we are using the correct hypsometric option for ARW ideal cases.
 
-    CHARACTER (LEN=80) :: input_name
+    CHARACTER (LEN=256) :: input_name
     INTEGER :: loop, hypsometric_opt, icount
 
     CHARACTER (LEN=256) :: a_message

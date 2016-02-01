@@ -525,7 +525,7 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
   ! Local
    LOGICAL, EXTERNAL      :: wrf_dm_on_monitor
    TYPE(WRFU_Time)        :: strt_time, cur_time
-   CHARACTER * 80         :: rstname , timestr
+   CHARACTER * 256        :: rstname , timestr
    CHARACTER * 256        :: message
    INTEGER                :: fid
    INTEGER                :: ierr
@@ -1561,7 +1561,7 @@ SUBROUTINE med_analysis_in ( grid , config_flags )
 
   ! Local
    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
-   CHARACTER*80                           :: rstname , outname
+   CHARACTER*256                          :: rstname , outname
    INTEGER                                :: fid , rid
    CHARACTER (LEN=256)                    :: message
    INTEGER                                :: ierr
@@ -1641,7 +1641,7 @@ SUBROUTINE med_analysis_out ( grid , config_flags )
 
   ! Local
    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
-   CHARACTER*80                           :: rstname , outname
+   CHARACTER*256                          :: rstname , outname
    INTEGER                                :: fid , rid
    CHARACTER (LEN=256)                    :: message
    INTEGER                                :: ierr
@@ -1704,7 +1704,7 @@ RECURSIVE SUBROUTINE med_restart_out ( grid , config_flags )
 
   ! Local
    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
-   CHARACTER*80                           :: rstname , outname
+   CHARACTER*256                          :: rstname , outname
    INTEGER                                :: fid , rid, kid
    CHARACTER (LEN=256)                    :: message
    INTEGER                                :: ierr
@@ -1771,7 +1771,7 @@ SUBROUTINE med_boundary_out ( grid , config_flags )
 
   ! Local
    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
-   CHARACTER*80                           :: rstname , outname
+   CHARACTER*256                          :: rstname , outname
    INTEGER                                :: fid , rid, kid
    CHARACTER (LEN=256)                    :: message
    INTEGER                                :: ierr
@@ -1822,7 +1822,7 @@ SUBROUTINE med_restart_in ( grid , config_flags )
 
   ! Local
    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
-   CHARACTER*80                           :: rstname , outname
+   CHARACTER*256                          :: rstname , outname
    INTEGER                                :: fid , rid
    CHARACTER (LEN=256)                    :: message
    INTEGER                                :: ierr
@@ -1880,7 +1880,7 @@ SUBROUTINE med_hist_out ( grid , stream, config_flags )
    INTEGER , INTENT(IN)                       :: stream
   ! Local
    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
-   CHARACTER*80                           :: fname, n2
+   CHARACTER*256                          :: fname, n2
    CHARACTER (LEN=256)                    :: message
    INTEGER                                :: ierr
 
@@ -2023,7 +2023,7 @@ SUBROUTINE med_filter_out ( grid , config_flags )
    TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
 
    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
-   CHARACTER*80                           :: rstname , outname
+   CHARACTER*256                          :: rstname , outname
    INTEGER                                :: fid , rid
    CHARACTER (LEN=256)                    :: message
    INTEGER                                :: ierr
@@ -2088,7 +2088,7 @@ SUBROUTINE med_latbound_in ( grid , config_flags )
    INTEGER                                :: idum1 , idum2 , ierr , open_status , fid, rc
    REAL                                   :: bfrq
    CHARACTER (LEN=256)                    :: message
-   CHARACTER (LEN=80)                     :: bdyname
+   CHARACTER (LEN=256)                    :: bdyname
    Type (WRFU_Time )                      :: startTime, stopTime, currentTime
    Type (WRFU_TimeInterval )              :: stepTime
 integer myproc,i,j,k
@@ -2302,7 +2302,7 @@ SUBROUTINE open_aux_u ( grid , config_flags, stream, alarm_id, &
    INTEGER ,                     INTENT(OUT)   :: ierr
   ! Local
    INTEGER                                :: stream_l
-   CHARACTER*80                           :: fname, n2
+   CHARACTER*256                          :: fname, n2
    CHARACTER (LEN=256)                    :: message
    CHARACTER*80                           :: timestr
    TYPE(WRFU_Time)                        :: ST,CT
@@ -2460,7 +2460,7 @@ SUBROUTINE med_read_wrf_chem_input ( grid , config_flags )
    REAL                                   :: time, tupdate
    real, allocatable :: dumc0(:,:,:)
    CHARACTER (LEN=256)                    :: message, current_date_char, date_string
-   CHARACTER (LEN=80)                     :: inpname
+   CHARACTER (LEN=256)                    :: inpname
 
 #include "wrf_io_flags.h"
 !   IF ( grid%id .EQ. 1 ) THEN
@@ -2544,7 +2544,7 @@ SUBROUTINE med_read_wrf_chem_emiss ( grid , config_flags )
    REAL                                   :: time, tupdate
    real, allocatable :: dumc0(:,:,:)
    CHARACTER (LEN=256)                    :: message, current_date_char, date_string
-   CHARACTER (LEN=80)                     :: inpname
+   CHARACTER (LEN=256)                    :: inpname
 
 #include "wrf_io_flags.h"
 
@@ -2739,7 +2739,7 @@ SUBROUTINE med_read_wrf_chem_bioemiss ( grid , config_flags )
    REAL                                   :: time, tupdate
    real, allocatable :: dumc0(:,:,:)
    CHARACTER (LEN=256)                    :: message, current_date_char, date_string
-   CHARACTER (LEN=80)                     :: inpname
+   CHARACTER (LEN=256)                    :: inpname
 
 #include "wrf_io_flags.h"
 !   IF ( grid%id .EQ. 1 ) THEN
@@ -2803,7 +2803,7 @@ SUBROUTINE med_read_wrf_chem_emissopt4 ( grid , config_flags )
    REAL                                   :: time, tupdate
    real, allocatable :: dumc0(:,:,:)
    CHARACTER (LEN=256)                    :: message, current_date_char, date_string
-   CHARACTER (LEN=80)                     :: inpname
+   CHARACTER (LEN=256)                    :: inpname
 
 #include "wrf_io_flags.h"
 !   IF ( grid%id .EQ. 1 ) THEN
@@ -2870,7 +2870,7 @@ SUBROUTINE med_read_wrf_chem_dms_emiss ( grid , config_flags )
    REAL                                   :: time, tupdate
    real, allocatable :: dumc0(:,:,:)
    CHARACTER (LEN=256)                    :: message, current_date_char, date_string
-   CHARACTER (LEN=80)                     :: inpname
+   CHARACTER (LEN=256)                    :: inpname
 
 #include "wrf_io_flags.h"
 !   IF ( grid%id .EQ. 1 ) THEN
@@ -2937,7 +2937,7 @@ SUBROUTINE med_read_wrf_chem_gocart_bg ( grid , config_flags )
    REAL                                   :: time, tupdate
    real, allocatable :: dumc0(:,:,:)
    CHARACTER (LEN=256)                    :: message, current_date_char, date_string
-   CHARACTER (LEN=80)                     :: inpname
+   CHARACTER (LEN=256)                    :: inpname
 
 #include "wrf_io_flags.h"
 !   IF ( grid%id .EQ. 1 ) THEN
@@ -3008,7 +3008,7 @@ SUBROUTINE med_read_wrf_volc_emiss ( grid , config_flags )
    REAL                                   :: time, tupdate
    real, allocatable :: dumc0(:,:,:)
    CHARACTER (LEN=256)                    :: message, current_date_char, date_string
-   CHARACTER (LEN=80)                     :: inpname
+   CHARACTER (LEN=256)                    :: inpname
 
 #include "wrf_io_flags.h"
       CALL domain_clock_get( grid, current_timestr=current_date_char )
@@ -3070,7 +3070,7 @@ SUBROUTINE med_read_wrf_chem_emissopt3 ( grid , config_flags )
    REAL                                   :: time, tupdate
    real, allocatable :: dumc0(:,:,:)
    CHARACTER (LEN=256)                    :: message, current_date_char, date_string
-   CHARACTER (LEN=80)                     :: inpname
+   CHARACTER (LEN=256)                    :: inpname
 
 #include "wrf_io_flags.h"
 !   IF ( grid%id .EQ. 1 ) THEN
@@ -3135,7 +3135,7 @@ RECURSIVE SUBROUTINE med_namelist_out ( grid , config_flags )
    INTEGER                                :: nout,rc,kid
    INTEGER                                :: hr, min, sec, ms,julyr,julday
    REAL                                   :: GMT
-   CHARACTER*80                           :: prefix, outname
+   CHARACTER*256                          :: prefix, outname
    CHARACTER*80                           :: timestr
    LOGICAL                                :: exist
    LOGICAL,EXTERNAL :: wrf_dm_on_monitor

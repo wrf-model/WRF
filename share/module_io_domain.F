@@ -202,16 +202,52 @@ SUBROUTINE construct_filename2a( result , basename , fld1 , len1 , date_char )
 
   result=basename
   CALL zero_pad ( t1 , fld1 , len1 )
-  i = index( basename , '<domain>' )
-  l = len(trim(basename))
-  IF ( i .GT. 0 ) THEN
-    result = basename(1:i-1) // TRIM(t1) // basename(i+8:l)
-  ENDIF
+
+
+! The string name length 12345678  including < >   ----|
+!                        ||||||||                      |
+  i = index( result   , '<domain>' )       !   is this |
+  DO WHILE ( i .GT. 0 )                    !   value   |
+    l = len(trim(result))                  !          \/
+    result = result  (1:i-1) // TRIM(t1) // basename(i+8:l)
+     i = index( result   , '<domain>' ) 
+  END DO
+
   i = index( result , '<date>' )
-  l = len(trim(result))
-  IF ( i .GT. 0 ) THEN
+  DO WHILE ( i .GT. 0 )
+    l = len(trim(result))
     result = result(1:i-1) // TRIM(date_char) // result(i+6:l)
-  ENDIF
+    i = index( result , '<date>' )
+  END DO
+
+  i = index( result , '<year>' )
+  DO WHILE ( i .GT. 0 )
+    l = len(trim(result))
+    result = result(1:i-1) // TRIM(date_char( 1: 4)) // result(i+6:l)
+    i = index( result , '<year>' )
+  END DO
+
+  i = index( result , '<month>' )
+  DO WHILE ( i .GT. 0 )
+    l = len(trim(result))
+    result = result(1:i-1) // TRIM(date_char( 6: 7)) // result(i+7:l)
+    i = index( result , '<month>' )
+  END DO
+
+  i = index( result , '<day>' )
+  DO WHILE ( i .GT. 0 )
+    l = len(trim(result))
+    result = result(1:i-1) // TRIM(date_char( 9:10)) // result(i+5:l)
+    i = index( result , '<day>' )
+  END DO
+
+  i = index( result , '<hour>' )
+  DO WHILE ( i .GT. 0 )
+    l = len(trim(result))
+    result = result(1:i-1) // TRIM(date_char(12:13)) // result(i+6:l)
+    i = index( result , '<hour>' )
+  END DO
+
   CALL maybe_remove_colons(result)
   RETURN
 END SUBROUTINE construct_filename2a
@@ -306,17 +342,51 @@ SUBROUTINE construct_filename4a( result , basename , fld1 , len1 , date_char , i
   END IF
   l = len(trim(basename))
   result = basename(1:l) // TRIM(ext)
-  i = index( result , '<domain>' )
-  l = len(trim(result))
-  IF ( i .GT. 0 ) THEN
-    result = result(1:i-1) // TRIM(t1) // result(i+8:l)
-  ENDIF
+
+! The string name length 12345678  including < >   ----|
+!                        ||||||||                      |
+  i = index( result   , '<domain>' )       !   is this |
+  DO WHILE ( i .GT. 0 )                    !   value   |
+    l = len(trim(result  ))                !          \/
+    result = result  (1:i-1) // TRIM(t1) // result  (i+8:l)
+    i = index( result   , '<domain>' )
+  END DO
+
   i = index( result , '<date>' )
-  l = len(trim(result))
-  IF ( i .GT. 0 ) THEN
+  DO WHILE ( i .GT. 0 )
+    l = len(trim(result))
     result = result(1:i-1) // TRIM(date_char) // result(i+6:l)
-  ENDIF
-  CALL maybe_remove_colons(result)
+    i = index( result , '<date>' )
+  END DO
+
+  i = index( result , '<year>' )
+  DO WHILE ( i .GT. 0 )
+    l = len(trim(result))
+    result = result(1:i-1) // TRIM(date_char( 1: 4)) // result(i+6:l)
+    i = index( result , '<year>' )
+  END DO
+
+  i = index( result , '<month>' )
+  DO WHILE ( i .GT. 0 )
+    l = len(trim(result))
+    result = result(1:i-1) // TRIM(date_char( 6: 7)) // result(i+7:l)
+    i = index( result , '<month>' )
+  END DO
+
+  i = index( result , '<day>' )
+  DO WHILE ( i .GT. 0 )
+    l = len(trim(result))
+    result = result(1:i-1) // TRIM(date_char( 9:10)) // result(i+5:l)
+    i = index( result , '<day>' )
+  END DO
+
+  i = index( result , '<hour>' )
+  DO WHILE ( i .GT. 0 )
+    l = len(trim(result))
+    result = result(1:i-1) // TRIM(date_char(12:13)) // result(i+6:l)
+    i = index( result , '<hour>' )
+  END DO
+
   RETURN
 END SUBROUTINE construct_filename4a
 

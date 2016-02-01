@@ -1587,14 +1587,14 @@ updraft_mixratio_k_loop: &
       end if do_updraft_mixratio_calc
 
 
+      chem_dn(:,:) = 0.0_r8   !BSINGH(03/11/2015): Moved out of the if(do_dndraft) condition to avoid uninitilized chem_dn
+      zav_chem_dn(:) = 0.0_r8 !BSINGH(03/11/2015): Moved out of the if(do_dndraft) condition to avoid uninitilized zav_chem_dn
 !
 ! calculate aerosol and gas profiles in the dndraft
 !
 do_dndraft_mixratio_calc: &
       if ( do_dndraft ) then
 
-      chem_dn(:,:) = 0.0_r8
-      zav_chem_dn(:) = 0.0_r8
       tmp_mfxchem_dn = 0.0_r8
 
 dndraft_mixratio_k_loop: &

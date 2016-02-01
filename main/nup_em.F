@@ -171,7 +171,7 @@ PROGRAM nup_em
    CHARACTER (LEN=80)      :: si_inpname
    CHARACTER *19 :: temp19
    CHARACTER *24 :: temp24 , temp24b
-   CHARACTER *132 :: fname
+   CHARACTER *256 :: fname
    CHARACTER(len=24) :: start_date_hold
 
    CHARACTER (LEN=80)      :: message

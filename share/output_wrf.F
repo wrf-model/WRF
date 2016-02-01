@@ -81,7 +81,7 @@
 
     CHARACTER*80  dname, memord
     CHARACTER*256 message
-    CHARACTER*80  fname
+    CHARACTER*256  fname
     CHARACTER*80  char_junk
     CHARACTER(LEN=256) :: MMINLU
     INTEGER    ibuf(1)

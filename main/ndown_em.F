@@ -121,8 +121,8 @@ PROGRAM ndown_em
 #endif
 
    INTEGER                 :: idsi
-   CHARACTER (LEN=80)      :: inpname , outname , bdyname
-   CHARACTER (LEN=80)      :: si_inpname
+   CHARACTER (LEN=256)     :: inpname , outname , bdyname
+   CHARACTER (LEN=256)     :: si_inpname
 character *19 :: temp19
 character *24 :: temp24 , temp24b
 character(len=24) :: start_date_hold

@@ -325,7 +325,7 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
   ! Local
    INTEGER                :: time_step_begin_restart
    INTEGER                :: idsi , ierr , myproc
-   CHARACTER (LEN=80)      :: si_inpname
+   CHARACTER (LEN=256)     :: si_inpname
    CHARACTER (LEN=80)      :: message
 
    CHARACTER(LEN=19) :: start_date_char , end_date_char , current_date_char , next_date_char
@@ -685,7 +685,7 @@ SUBROUTINE assemble_output ( grid , config_flags , loop , time_loop_max )
 
    INTEGER :: id1 , interval_seconds , ierr, rc, sst_update, grid_fdda
    INTEGER , SAVE :: id, id2,  id4 
-   CHARACTER (LEN=80) :: inpname , bdyname
+   CHARACTER (LEN=256) :: inpname , bdyname
    CHARACTER(LEN= 4) :: loop_char
    CHARACTER (LEN=256) :: message
 character *19 :: temp19

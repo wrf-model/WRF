@@ -267,7 +267,7 @@ SUBROUTINE tc_med_sidata_input ( grid , config_flags, latc_loc, lonc_loc, &
 ! Declarations for the netcdf routines.
    INTEGER                ::nf_inq
 !
-   CHARACTER (LEN=80)     :: si_inpname
+   CHARACTER (LEN=256)    :: si_inpname
    CHARACTER (LEN=80)     :: message
 
    CHARACTER(LEN=19) :: start_date_char , end_date_char , current_date_char , next_date_char
@@ -536,7 +536,7 @@ SUBROUTINE assemble_output ( grid , config_flags , loop , time_loop_max,current_
 
    INTEGER :: id1 , interval_seconds , ierr, rc, sst_update, grid_fdda
    INTEGER , SAVE :: id, id2,  id4 
-   CHARACTER (LEN=80) :: tcoutname , bdyname,si_inpname
+   CHARACTER (LEN=256) :: tcoutname , bdyname,si_inpname
    CHARACTER(LEN= 4) :: loop_char
    CHARACTER(LEN=19) ::  current_date_char
    

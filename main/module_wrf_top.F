@@ -70,7 +70,7 @@ MODULE module_wrf_top
    LOGICAL , EXTERNAL      :: wrf_dm_on_monitor
 #endif
 
-   CHARACTER (LEN=80)      :: rstname
+   CHARACTER (LEN=256)     :: rstname
    CHARACTER (LEN=80)      :: message
    LOGICAL                 :: gradient_out = .FALSE.
    CHARACTER (LEN=256) , PRIVATE :: a_message

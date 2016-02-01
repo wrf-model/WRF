@@ -28,7 +28,18 @@ subroutine da_wrfvar_finalize
 !  grid => head_grid
    grid => input_grid
 
-   call dealloc_space_domain(grid%id)
+   if ( .not. anal_type_hybrid_dual_res ) then
+      call dealloc_space_domain(grid%id)
+   else
+      !=== deallocate fine grid
+      ! subroutine dealloc_space_domain checks for head_grid
+      ! when anal_type_hybrid_dual_res, input_grid is another_grid
+      ! dealloc_space_domain does not work in this case
+      call domain_destroy(grid)
+      !=== deallocate coarse grid
+      grid => ensemble_grid
+      call dealloc_space_domain(grid%id)
+   end if
 
 #ifdef VAR4D
    if ( var4d_lbc ) then

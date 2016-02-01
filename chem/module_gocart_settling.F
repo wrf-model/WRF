@@ -204,7 +204,7 @@ SUBROUTINE gocart_settling_driver(dt,config_flags,t_phy,moist,      &
 
  subroutine settling(imx,jmx,lmx,nmx,g0,dyn_visc,tc,tmp,p_mid,delz, &
                     imod,graset, grasetvel, uoc,                    & 
-                    den,reff,dt,rh,idust,iseas)
+                    den_in,reff_in,dt,rh,idust,iseas)
 
 ! ****************************************************************************
 ! *                                                                          *
@@ -226,7 +226,7 @@ SUBROUTINE gocart_settling_driver(dt,config_flags,t_phy,moist,      &
   REAL*8,  INTENT(IN) :: tmp(imx,jmx,lmx), delz(imx,jmx,lmx),  &
                          rh(imx,jmx,lmx), p_mid(imx,jmx,lmx)
 ! 
-  REAL*8                :: den(nmx), reff(nmx)
+  REAL*8, INTENT(IN)  :: den_in(nmx), reff_in(nmx)
 
   REAL*8, INTENT(INOUT) :: tc(imx,jmx,lmx,nmx)
 
@@ -234,6 +234,7 @@ SUBROUTINE gocart_settling_driver(dt,config_flags,t_phy,moist,      &
   REAL*8, INTENT(INOUT) :: graset(imx,jmx,nmx)
   REAL*8, INTENT(OUT)   :: grasetvel(imx,jmx,nmx)
   
+  REAL*8    :: den(nmx), reff(nmx)                    ! local variables here
   REAL*8    :: dt_settl(nmx), rcm(nmx), rho(nmx)
   INTEGER   :: ndt_settl(nmx)
   REAL*8    :: dzmin, vsettl, dtmax, pres, rhb, rwet(nmx), ratio_r(nmx)
@@ -251,6 +252,8 @@ SUBROUTINE gocart_settling_driver(dt,config_flags,t_phy,moist,      &
   IF ( idust.ne.1 .and. iseas.ne.1 ) RETURN
   WHERE ( tc(:,:,:,:) < 0.0 ) tc(:,:,:,:) = 1.0D-32
 
+  den = den_in  
+  reff = reff_in  
   dzmin = MINVAL(delz(:,:,:))
   IF (idust == 1) growth_fac = 1.0
   IF (iseas == 1) growth_fac = 3.0

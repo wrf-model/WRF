@@ -215,7 +215,7 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
   ! Local
    INTEGER                :: time_step_begin_restart
    INTEGER                :: idsi , ierr , myproc
-   CHARACTER (LEN=80)      :: si_inpname
+   CHARACTER (LEN=256)     :: si_inpname
    CHARACTER (LEN=132)     :: message
 
    CHARACTER(LEN=19) :: start_date_char , end_date_char , &

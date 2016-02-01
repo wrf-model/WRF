@@ -1174,7 +1174,7 @@ CONTAINS
             ims,ime, jms,jme, kms,kme,                                  &
             its,ite, jts,jte, kts,kte                                   )
       
-    CASE (SAPRC99_MOSAIC_4BIN_VBS2_KPP) !FIX FOR SAPRC07A
+    CASE (SAPRC99_MOSAIC_4BIN_VBS2_KPP, SAPRC99_MOSAIC_8BIN_VBS2_AQ_KPP) !FIX FOR SAPRC07A!BSINGH(12/11/2013): Added SAPRC 8 bin  
      if(config_flags%emiss_opt == 13 ) then
        do j=jts,jte
           do i=its,ite

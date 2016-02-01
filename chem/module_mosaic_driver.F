@@ -2109,7 +2109,260 @@
             enddo
          enddo
    enddo ! type
+   iphase = 1
+   do itype=1,ntype_aer
+         do j=jts,jmax
+            do k=kts,kmax
+               do i=its,imax
+         hoa_a05(i,k,j)= (chem(i,k,j,lptr_pcg1_f_c_aer(5,itype,iphase)) &
+                       + chem(i,k,j,lptr_pcg2_f_c_aer(5,itype,iphase)) &
+                       + chem(i,k,j,lptr_pcg1_f_o_aer(5,itype,iphase)) &
+                       + chem(i,k,j,lptr_pcg2_f_o_aer(5,itype,iphase)))
 
+          bboa_a05(i,k,j)= (chem(i,k,j,lptr_pcg1_b_c_aer(5,itype,iphase)) &
+                       + chem(i,k,j,lptr_pcg2_b_c_aer(5,itype,iphase)) &
+                       + chem(i,k,j,lptr_pcg1_b_o_aer(5,itype,iphase)) &
+                       + chem(i,k,j,lptr_pcg2_b_o_aer(5,itype,iphase)))
+
+          soa_a05(i,k,j)= (chem(i,k,j,lptr_opcg1_b_c_aer(5,itype,iphase)) &
+                       + chem(i,k,j,lptr_opcg1_b_o_aer(5,itype,iphase)) &
+                       + chem(i,k,j,lptr_opcg1_f_c_aer(5,itype,iphase)) &
+                       + chem(i,k,j,lptr_opcg1_f_o_aer(5,itype,iphase)) &
+                       + chem(i,k,j,lptr_ant1_c_aer(5,itype,iphase))    &
+                       + chem(i,k,j,lptr_ant1_o_aer(5,itype,iphase))    &
+                       + chem(i,k,j,lptr_biog1_c_aer(5,itype,iphase))    &
+                       + chem(i,k,j,lptr_biog1_o_aer(5,itype,iphase)))
+
+        arosoa_a05(i,k,j)= chem(i,k,j,lptr_ant1_o_aer(5,itype,iphase))    &
+                       + chem(i,k,j,lptr_ant1_c_aer(5,itype,iphase))
+
+
+        bbsoa_a05(i,k,j)= (chem(i,k,j,lptr_opcg1_b_c_aer(5,itype,iphase)) &
+                       + chem(i,k,j,lptr_opcg1_b_o_aer(5,itype,iphase)))
+
+        hsoa_a05(i,k,j)= ( chem(i,k,j,lptr_opcg1_f_c_aer(5,itype,iphase)) &
+                       + chem(i,k,j,lptr_opcg1_f_o_aer(5,itype,iphase)))
+
+        biog_a05(i,k,j)= (chem(i,k,j,lptr_biog1_c_aer(5,itype,iphase))    &
+                       + chem(i,k,j,lptr_biog1_o_aer(5,itype,iphase)))
+
+
+
+         totoa_a05(i,k,j)= ( chem(i,k,j,lptr_pcg1_b_c_aer(5,itype,iphase)) &
+                       + chem(i,k,j,lptr_pcg2_b_c_aer(5,itype,iphase)) &
+                       + chem(i,k,j,lptr_pcg1_b_o_aer(5,itype,iphase)) &
+                       + chem(i,k,j,lptr_pcg2_b_o_aer(5,itype,iphase)) &
+                       + chem(i,k,j,lptr_opcg1_b_c_aer(5,itype,iphase)) &
+                       + chem(i,k,j,lptr_opcg1_b_o_aer(5,itype,iphase)) &
+                       + chem(i,k,j,lptr_pcg1_f_c_aer(5,itype,iphase)) &
+                       + chem(i,k,j,lptr_pcg2_f_c_aer(5,itype,iphase)) &
+                       + chem(i,k,j,lptr_pcg1_f_o_aer(5,itype,iphase)) &
+                       + chem(i,k,j,lptr_pcg2_f_o_aer(5,itype,iphase)) &
+                       + chem(i,k,j,lptr_opcg1_f_c_aer(5,itype,iphase)) &
+                       + chem(i,k,j,lptr_opcg1_f_o_aer(5,itype,iphase)) &
+                       + chem(i,k,j,lptr_ant1_c_aer(5,itype,iphase))    &
+                       + chem(i,k,j,lptr_ant1_o_aer(5,itype,iphase))    &
+                       + chem(i,k,j,lptr_biog1_c_aer(5,itype,iphase))    &
+                       + chem(i,k,j,lptr_biog1_o_aer(5,itype,iphase))    &
+                       + chem(i,k,j,lptr_oc_aer(5,itype,iphase)))
+
+
+               enddo
+            enddo
+         enddo
+   enddo ! type
+
+
+   iphase = 1
+   do itype=1,ntype_aer
+         do j=jts,jmax
+            do k=kts,kmax
+               do i=its,imax
+         hoa_a06(i,k,j)= (chem(i,k,j,lptr_pcg1_f_c_aer(6,itype,iphase)) &
+                       + chem(i,k,j,lptr_pcg2_f_c_aer(6,itype,iphase)) &
+                       + chem(i,k,j,lptr_pcg1_f_o_aer(6,itype,iphase)) &
+                       + chem(i,k,j,lptr_pcg2_f_o_aer(6,itype,iphase)))
+
+          bboa_a06(i,k,j)= (chem(i,k,j,lptr_pcg1_b_c_aer(6,itype,iphase)) &
+                       + chem(i,k,j,lptr_pcg2_b_c_aer(6,itype,iphase)) &
+                       + chem(i,k,j,lptr_pcg1_b_o_aer(6,itype,iphase)) &
+                       + chem(i,k,j,lptr_pcg2_b_o_aer(6,itype,iphase)))
+
+          soa_a06(i,k,j)= (chem(i,k,j,lptr_opcg1_b_c_aer(6,itype,iphase)) &
+                       + chem(i,k,j,lptr_opcg1_b_o_aer(6,itype,iphase)) &
+                       + chem(i,k,j,lptr_opcg1_f_c_aer(6,itype,iphase)) &
+                       + chem(i,k,j,lptr_opcg1_f_o_aer(6,itype,iphase)) &
+                       + chem(i,k,j,lptr_ant1_c_aer(6,itype,iphase))    &
+                       + chem(i,k,j,lptr_ant1_o_aer(6,itype,iphase))    &
+                       + chem(i,k,j,lptr_biog1_c_aer(6,itype,iphase))    &
+                       + chem(i,k,j,lptr_biog1_o_aer(6,itype,iphase)))
+
+        arosoa_a06(i,k,j)= chem(i,k,j,lptr_ant1_o_aer(6,itype,iphase))    &
+                       + chem(i,k,j,lptr_ant1_c_aer(6,itype,iphase))
+
+
+        bbsoa_a06(i,k,j)= (chem(i,k,j,lptr_opcg1_b_c_aer(6,itype,iphase)) &
+                       + chem(i,k,j,lptr_opcg1_b_o_aer(6,itype,iphase)))
+
+        hsoa_a06(i,k,j)= ( chem(i,k,j,lptr_opcg1_f_c_aer(6,itype,iphase)) &
+                       + chem(i,k,j,lptr_opcg1_f_o_aer(6,itype,iphase)))
+
+        biog_a06(i,k,j)= (chem(i,k,j,lptr_biog1_c_aer(6,itype,iphase))    &
+                       + chem(i,k,j,lptr_biog1_o_aer(6,itype,iphase)))
+
+
+
+         totoa_a06(i,k,j)= ( chem(i,k,j,lptr_pcg1_b_c_aer(6,itype,iphase)) &
+                       + chem(i,k,j,lptr_pcg2_b_c_aer(6,itype,iphase)) &
+                       + chem(i,k,j,lptr_pcg1_b_o_aer(6,itype,iphase)) &
+                       + chem(i,k,j,lptr_pcg2_b_o_aer(6,itype,iphase)) &
+                       + chem(i,k,j,lptr_opcg1_b_c_aer(6,itype,iphase)) &
+                       + chem(i,k,j,lptr_opcg1_b_o_aer(6,itype,iphase)) &
+                       + chem(i,k,j,lptr_pcg1_f_c_aer(6,itype,iphase)) &
+                       + chem(i,k,j,lptr_pcg2_f_c_aer(6,itype,iphase)) &
+                       + chem(i,k,j,lptr_pcg1_f_o_aer(6,itype,iphase)) &
+                       + chem(i,k,j,lptr_pcg2_f_o_aer(6,itype,iphase)) &
+                       + chem(i,k,j,lptr_opcg1_f_c_aer(6,itype,iphase)) &
+                       + chem(i,k,j,lptr_opcg1_f_o_aer(6,itype,iphase)) &
+                       + chem(i,k,j,lptr_ant1_c_aer(6,itype,iphase))    &
+                       + chem(i,k,j,lptr_ant1_o_aer(6,itype,iphase))    &
+                       + chem(i,k,j,lptr_biog1_c_aer(6,itype,iphase))    &
+                       + chem(i,k,j,lptr_biog1_o_aer(6,itype,iphase))    &
+                       + chem(i,k,j,lptr_oc_aer(6,itype,iphase)))
+
+
+               enddo
+            enddo
+         enddo
+   enddo ! type
+
+
+   iphase = 1
+   do itype=1,ntype_aer
+         do j=jts,jmax
+            do k=kts,kmax
+               do i=its,imax
+         hoa_a07(i,k,j)= (chem(i,k,j,lptr_pcg1_f_c_aer(7,itype,iphase)) &
+                       + chem(i,k,j,lptr_pcg2_f_c_aer(7,itype,iphase)) &
+                       + chem(i,k,j,lptr_pcg1_f_o_aer(7,itype,iphase)) &
+                       + chem(i,k,j,lptr_pcg2_f_o_aer(7,itype,iphase)))
+
+          bboa_a07(i,k,j)= (chem(i,k,j,lptr_pcg1_b_c_aer(7,itype,iphase)) &
+                       + chem(i,k,j,lptr_pcg2_b_c_aer(7,itype,iphase)) &
+                       + chem(i,k,j,lptr_pcg1_b_o_aer(7,itype,iphase)) &
+                       + chem(i,k,j,lptr_pcg2_b_o_aer(7,itype,iphase)))
+
+          soa_a07(i,k,j)= (chem(i,k,j,lptr_opcg1_b_c_aer(7,itype,iphase)) &
+                       + chem(i,k,j,lptr_opcg1_b_o_aer(7,itype,iphase)) &
+                       + chem(i,k,j,lptr_opcg1_f_c_aer(7,itype,iphase)) &
+                       + chem(i,k,j,lptr_opcg1_f_o_aer(7,itype,iphase)) &
+                       + chem(i,k,j,lptr_ant1_c_aer(7,itype,iphase))    &
+                       + chem(i,k,j,lptr_ant1_o_aer(7,itype,iphase))    &
+                       + chem(i,k,j,lptr_biog1_c_aer(7,itype,iphase))    &
+                       + chem(i,k,j,lptr_biog1_o_aer(7,itype,iphase)))
+
+        arosoa_a07(i,k,j)= chem(i,k,j,lptr_ant1_o_aer(7,itype,iphase))    &
+                       + chem(i,k,j,lptr_ant1_c_aer(7,itype,iphase))
+
+
+        bbsoa_a07(i,k,j)= (chem(i,k,j,lptr_opcg1_b_c_aer(7,itype,iphase)) &
+                       + chem(i,k,j,lptr_opcg1_b_o_aer(7,itype,iphase)))
+
+        hsoa_a07(i,k,j)= ( chem(i,k,j,lptr_opcg1_f_c_aer(7,itype,iphase)) &
+                       + chem(i,k,j,lptr_opcg1_f_o_aer(7,itype,iphase)))
+
+        biog_a07(i,k,j)= (chem(i,k,j,lptr_biog1_c_aer(7,itype,iphase))    &
+                       + chem(i,k,j,lptr_biog1_o_aer(7,itype,iphase)))
+
+
+
+         totoa_a07(i,k,j)= ( chem(i,k,j,lptr_pcg1_b_c_aer(7,itype,iphase)) &
+                       + chem(i,k,j,lptr_pcg2_b_c_aer(7,itype,iphase)) &
+                       + chem(i,k,j,lptr_pcg1_b_o_aer(7,itype,iphase)) &
+                       + chem(i,k,j,lptr_pcg2_b_o_aer(7,itype,iphase)) &
+                       + chem(i,k,j,lptr_opcg1_b_c_aer(7,itype,iphase)) &
+                       + chem(i,k,j,lptr_opcg1_b_o_aer(7,itype,iphase)) &
+                       + chem(i,k,j,lptr_pcg1_f_c_aer(7,itype,iphase)) &
+                       + chem(i,k,j,lptr_pcg2_f_c_aer(7,itype,iphase)) &
+                       + chem(i,k,j,lptr_pcg1_f_o_aer(7,itype,iphase)) &
+                       + chem(i,k,j,lptr_pcg2_f_o_aer(7,itype,iphase)) &
+                       + chem(i,k,j,lptr_opcg1_f_c_aer(7,itype,iphase)) &
+                       + chem(i,k,j,lptr_opcg1_f_o_aer(7,itype,iphase)) &
+                       + chem(i,k,j,lptr_ant1_c_aer(7,itype,iphase))    &
+                       + chem(i,k,j,lptr_ant1_o_aer(7,itype,iphase))    &
+                       + chem(i,k,j,lptr_biog1_c_aer(7,itype,iphase))    &
+                       + chem(i,k,j,lptr_biog1_o_aer(7,itype,iphase))    &
+                       + chem(i,k,j,lptr_oc_aer(7,itype,iphase)))
+
+
+               enddo
+            enddo
+         enddo
+   enddo ! type
+
+
+   iphase = 1
+   do itype=1,ntype_aer
+         do j=jts,jmax
+            do k=kts,kmax
+               do i=its,imax
+         hoa_a08(i,k,j)= (chem(i,k,j,lptr_pcg1_f_c_aer(8,itype,iphase)) &
+                       + chem(i,k,j,lptr_pcg2_f_c_aer(8,itype,iphase)) &
+                       + chem(i,k,j,lptr_pcg1_f_o_aer(8,itype,iphase)) &
+                       + chem(i,k,j,lptr_pcg2_f_o_aer(8,itype,iphase)))
+
+          bboa_a08(i,k,j)= (chem(i,k,j,lptr_pcg1_b_c_aer(8,itype,iphase)) &
+                       + chem(i,k,j,lptr_pcg2_b_c_aer(8,itype,iphase)) &
+                       + chem(i,k,j,lptr_pcg1_b_o_aer(8,itype,iphase)) &
+                       + chem(i,k,j,lptr_pcg2_b_o_aer(8,itype,iphase)))
+
+          soa_a08(i,k,j)= (chem(i,k,j,lptr_opcg1_b_c_aer(8,itype,iphase)) &
+                       + chem(i,k,j,lptr_opcg1_b_o_aer(8,itype,iphase)) &
+                       + chem(i,k,j,lptr_opcg1_f_c_aer(8,itype,iphase)) &
+                       + chem(i,k,j,lptr_opcg1_f_o_aer(8,itype,iphase)) &
+                       + chem(i,k,j,lptr_ant1_c_aer(8,itype,iphase))    &
+                       + chem(i,k,j,lptr_ant1_o_aer(8,itype,iphase))    &
+                       + chem(i,k,j,lptr_biog1_c_aer(8,itype,iphase))    &
+                       + chem(i,k,j,lptr_biog1_o_aer(8,itype,iphase)))
+
+        arosoa_a08(i,k,j)= chem(i,k,j,lptr_ant1_o_aer(8,itype,iphase))    &
+                       + chem(i,k,j,lptr_ant1_c_aer(8,itype,iphase))
+
+
+        bbsoa_a08(i,k,j)= (chem(i,k,j,lptr_opcg1_b_c_aer(8,itype,iphase)) &
+                       + chem(i,k,j,lptr_opcg1_b_o_aer(8,itype,iphase)))
+
+        hsoa_a08(i,k,j)= ( chem(i,k,j,lptr_opcg1_f_c_aer(8,itype,iphase)) &
+                       + chem(i,k,j,lptr_opcg1_f_o_aer(8,itype,iphase)))
+
+        biog_a08(i,k,j)= (chem(i,k,j,lptr_biog1_c_aer(8,itype,iphase))    &
+                       + chem(i,k,j,lptr_biog1_o_aer(8,itype,iphase)))
+
+
+
+         totoa_a08(i,k,j)= ( chem(i,k,j,lptr_pcg1_b_c_aer(8,itype,iphase)) &
+                       + chem(i,k,j,lptr_pcg2_b_c_aer(8,itype,iphase)) &
+                       + chem(i,k,j,lptr_pcg1_b_o_aer(8,itype,iphase)) &
+                       + chem(i,k,j,lptr_pcg2_b_o_aer(8,itype,iphase)) &
+                       + chem(i,k,j,lptr_opcg1_b_c_aer(8,itype,iphase)) &
+                       + chem(i,k,j,lptr_opcg1_b_o_aer(8,itype,iphase)) &
+                       + chem(i,k,j,lptr_pcg1_f_c_aer(8,itype,iphase)) &
+                       + chem(i,k,j,lptr_pcg2_f_c_aer(8,itype,iphase)) &
+                       + chem(i,k,j,lptr_pcg1_f_o_aer(8,itype,iphase)) &
+                       + chem(i,k,j,lptr_pcg2_f_o_aer(8,itype,iphase)) &
+                       + chem(i,k,j,lptr_opcg1_f_c_aer(8,itype,iphase)) &
+                       + chem(i,k,j,lptr_opcg1_f_o_aer(8,itype,iphase)) &
+                       + chem(i,k,j,lptr_ant1_c_aer(8,itype,iphase))    &
+                       + chem(i,k,j,lptr_ant1_o_aer(8,itype,iphase))    &
+                       + chem(i,k,j,lptr_biog1_c_aer(8,itype,iphase))    &
+                       + chem(i,k,j,lptr_biog1_o_aer(8,itype,iphase))    &
+                       + chem(i,k,j,lptr_oc_aer(8,itype,iphase)))
+
+
+               enddo
+            enddo
+         enddo
+   enddo ! type
 
 
    end subroutine sum_vbs2

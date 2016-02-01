@@ -8517,8 +8517,9 @@
       else
         start_ind = ipcg1_b_c_g
       end if
-
-      do iv = start_ind, ngas_ioa + ngas_soa
+      !BSINGH(03/10/2015): Added 2 in the following do-loop to accomodate oh and gly species.
+      ! *IMPORTANT*:This is a TEMPORARY fix, we need a better fix for this problem.
+      do iv = start_ind, ngas_ioa + ngas_soa+2
         speed = mean_molecular_speed(t_k,mw_vol(iv))    ! cm/s
         dg(iv) = 0.1                                    ! cm^2/s (increased from 0.2 to 0.035 by Manish Shrivastava)
         freepath(iv) = 3.*dg(iv)/speed

@@ -727,9 +727,9 @@ CONTAINS
              rvblten(i,k,j)    = wind_tends(1,kflip,2)
              rthblten(i,k,j)   = stnd(1,kflip)/cpair/exner8(1,kflip)
              
-             multFrc           =  1._r8/(1._r8 - qv_curr(i,k,j))
+             multFrc           =  1._r8 + qv_curr(i,k,j)
 
-             rqvblten(i,k,j)   = cloudtnd(1,kflip,1       ) * multFrc
+             rqvblten(i,k,j)   = cloudtnd(1,kflip,1       ) * multFrc * multFrc
              rqcblten(i,k,j)   = cloudtnd(1,kflip,ixcldliq) * multFrc
              rqiblten(i,k,j)   = cloudtnd(1,kflip,ixcldice) * multFrc
              !*Important* : ixnumliq is mixed in the dropmixnuc, therefore ixnumliq is NOT mixed here (ONLY if CAMMGMP is used for mp_physics)

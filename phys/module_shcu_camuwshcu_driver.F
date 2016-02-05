@@ -416,19 +416,19 @@ SUBROUTINE camuwshcu_driver(                                  &
            rushten(i,k,j)  = utnd(1,kflip)
            rvshten(i,k,j)  = vtnd(1,kflip)
            rthshten(i,k,j) = (stnd(1,kflip)+qsten_det(1,kflip))/cpair/pi_phy(i,k,j)
-           rqvshten(i,k,j) = qhtnd(1,kflip)/(1. - qv(i,k,j))
+           rqvshten(i,k,j) = qhtnd(1,kflip)*(1. + qv(i,k,j))**2
            if( p_qc >= param_first_scalar ) &
-                rqcshten(i,k,j) = (qctnd(1,kflip)+qcten_det(1,kflip))/(1. - qv(i,k,j))
+                rqcshten(i,k,j) = (qctnd(1,kflip)+qcten_det(1,kflip))*(1. + qv(i,k,j))
            if( p_qi >= param_first_scalar ) &
-                rqishten(i,k,j) = (qitnd(1,kflip)+qiten_det(1,kflip))/(1. - qv(i,k,j))
+                rqishten(i,k,j) = (qitnd(1,kflip)+qiten_det(1,kflip))*(1. + qv(i,k,j))
 
            if( p_qnc >= param_first_scalar ) then
               call cnst_get_ind( 'NUMLIQ', m )
-              rqcnshten(i,k,j) = (tnd_tracer(1,kflip,m)+qcnten_det(1,kflip))/(1. - qv(i,k,j))
+              rqcnshten(i,k,j) = (tnd_tracer(1,kflip,m)+qcnten_det(1,kflip))*(1. + qv(i,k,j))
            endif
            if( p_qni >= param_first_scalar ) then
               call cnst_get_ind( 'NUMICE', m )
-              rqinshten(i,k,j) = (tnd_tracer(1,kflip,m)+qinten_det(1,kflip))/(1. - qv(i,k,j))
+              rqinshten(i,k,j) = (tnd_tracer(1,kflip,m)+qinten_det(1,kflip))*(1. + qv(i,k,j))
            endif
         end do !k-loop to kte              
 !PMA<

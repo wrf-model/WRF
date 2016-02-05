@@ -2039,6 +2039,43 @@ CONTAINS
       CALL instate_communicators_for_domain(1)
 
 #else
+! for serial (non-MPI) builds
+      IMPLICIT NONE
+#  if defined(_OPENMP) && defined(MPI2_THREAD_SUPPORT)
+      INTEGER thread_support_provided, thread_support_requested
+#  endif
+      INTEGER i, j, k, x, y, n_x, n_y
+      INTEGER iii
+      INTEGER dims(3)
+! for parallel nesting, 201408, jm
+      INTEGER :: id
+      INTEGER :: io_status
+      INTEGER :: domain_id,par_id,nest_id,kid_id
+
+!!!!! needed to sneak-peek the registry to get parent_id 
+! define as temporaries
+#include "namelist_defines.inc"
+
+! Statements that specify the namelists
+#include "namelist_statements.inc"
+
+      max_dom = 1
+      OPEN ( unit=27, file="namelist.input", form="formatted", status="old" )
+      READ ( UNIT = 27 , NML = domains , IOSTAT=io_status )
+      CLOSE(27)
+
+      nkids = 1
+      which_kid = 0
+      DO i = 2, max_dom
+        IF ( 1 .le. parent_id(i) .AND. parent_id(i) .LE. max_domains ) THEN
+          which_kid(i) = nkids(parent_id(i))
+          nkids(parent_id(i)) = nkids(parent_id(i)) + 1
+        ELSE
+          WRITE(wrf_err_message,*)'invalid parent id for domain ',i
+          CALL wrf_error_fatal(TRIM(wrf_err_message))
+        ENDIF
+      ENDDO
+
       intercomm_active = .TRUE.
       domain_active_this_task = .TRUE.
       ntasks_stack = 1

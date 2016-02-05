@@ -845,7 +845,8 @@ nmm_real : nmm_wrf
 io :
 	@ echo '--------------------------------------'
 	( cd tools ; $(MAKE) standard.exe )
-	( cd frame ; $(MAKE) io_only )
+	(            $(MAKE) io_only )
+	(            $(MAKE) MODULE_DIRS="$(ALL_MODULES)" toolsdir )
 	( cd frame ; $(MAKE) module_driver_constants.o pack_utils.o module_machine.o module_internal_header_util.o wrf_debug.o )
 	( cd frame ; $(AR) $(ARFLAGS) ../main/libwrflib.a module_driver_constants.o pack_utils.o module_machine.o  \
 					module_internal_header_util.o module_wrf_error.o wrf_debug.o )

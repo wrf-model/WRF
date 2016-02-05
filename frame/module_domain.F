@@ -741,6 +741,7 @@ CONTAINS
 #endif
       END IF
       new_grid%id = domain_id                 ! this needs to be assigned prior to calling wrf_patch_domain
+      new_grid%active_this_task = active
 
       CALL wrf_patch_domain( domain_id  , new_domdesc , parent, parent_id, parent_domdesc , &
 

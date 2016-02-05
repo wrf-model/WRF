@@ -254,7 +254,7 @@ CONTAINS
                                       sp3y , ep3y , sm3y , em3y , &
                                 bdx , bdy )
 
-#if ( defined(SGIALTIX) && (! defined(MOVE_NESTS) ) ) || ( defined(FUJITSU_FX10) && (! defined(MOVE_NESTS) ) )
+#if ( ( defined(SGIALTIX) || defined(FUJITSU_FX10) || defined(KEEP_INT_AROUND) ) && (! defined(MOVE_NESTS) ) )
       USE module_domain, ONLY : domain, head_grid, find_grid_by_id, alloc_space_field
 #else
       USE module_domain, ONLY : domain, head_grid, find_grid_by_id
@@ -885,10 +885,10 @@ CONTAINS
          intermediate_grid%ep33y                           = c_ep3y
 #endif
 
-#if ( defined(SGIALTIX) && (! defined(MOVE_NESTS) ) ) || ( defined(FUJITSU_FX10) && (! defined(MOVE_NESTS) ) )
+#if ( ( defined(SGIALTIX) || defined(FUJITSU_FX10) || defined(KEEP_INT_AROUND) ) && (! defined(MOVE_NESTS) ) )
          ! allocate space for the intermediate domain
 !         CALL alloc_space_field ( intermediate_grid, intermediate_grid%id , 1, 2 , .TRUE., intercomm_active( intermediate_grid%id ), &   ! use same id as nest
-         CALL alloc_space_field ( intermediate_grid, intermediate_grid%id , 1, 2 , .TRUE., nest%active_this_task, &   ! use same id as nest
+         CALL alloc_space_field ( intermediate_grid, intermediate_grid%id , 1, 2 , .TRUE., nest_grid%active_this_task, &   ! use same id as nest
                                c_sd1, c_ed1, c_sd2, c_ed2, c_sd3, c_ed3,       &
                                c_sm1,  c_em1,  c_sm2,  c_em2,  c_sm3,  c_em3,  &
                                c_sp1,  c_ep1,  c_sp2,  c_ep2,  c_sp3,  c_ep3,  &

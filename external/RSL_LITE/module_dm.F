@@ -1869,7 +1869,7 @@ CONTAINS
         ELSE
           IF ( comm_start(nest_id) .LT. comm_start(parent_id(nest_id)) ) THEN
             WRITE(wrf_err_message,&
-        "('nest domain ',i3,'comm_start (',i3,') lt parent ',i3,' comm_start (',i3,')')"),&
+        "('nest domain ',i3,'comm_start (',i3,') lt parent ',i3,' comm_start (',i3,')')") &
                    nest_id,comm_start,parent_id(nest_id),comm_start(parent_id(nest_id))
             CALL wrf_error_fatal(TRIM(wrf_err_message))
           ELSE IF ( comm_start(nest_id) .LT. &

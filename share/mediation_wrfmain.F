@@ -167,11 +167,11 @@ SUBROUTINE med_shutdown_io ( grid , config_flags )
 
    IMPLICIT NONE
    INTERFACE
-     SUBROUTINE med_shutdown_io_recurse ( grid , config_flags )
+     RECURSIVE SUBROUTINE med_shutdown_io_recurse ( grid , config_flags )
        USE module_domain
        USE module_configure
        TYPE (domain) , POINTER :: grid
-       TYPE (grid_config_rec_type) :: config_flags
+       TYPE (grid_config_rec_type), INTENT(IN) :: config_flags
      END SUBROUTINE med_shutdown_io_recurse
    END INTERFACE
 

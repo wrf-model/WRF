@@ -2626,7 +2626,7 @@ SUBROUTINE get_value_from_pairs ( varname , str , retval )
   CHARACTER*(*) ::    str
   CHARACTER*(*) ::    retval
 
-  CHARACTER (128) varstr, tstr
+  CHARACTER (256) varstr, tstr
   INTEGER i,j,n,varstrn
   LOGICAL nobreak, nobreakouter
 

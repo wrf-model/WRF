@@ -195,6 +195,8 @@ MODULE module_wrf_quilt
     SUBROUTINE setup_quilt_servers ( nio_tasks_per_group,     &
                                      mytask,                  &
                                      ntasks,                  &
+                                     nproc_x,                 &
+                                     nproc_y,                 &
                                      n_groups_arg,            &
                                      nio,                     &
                                      mpi_comm_wrld,           &
@@ -268,6 +270,7 @@ MODULE module_wrf_quilt
       INCLUDE 'mpif.h'
       INTEGER,                      INTENT(IN)  :: nio_tasks_per_group, mytask, ntasks, &
                                                    n_groups_arg, mpi_comm_wrld
+      INTEGER,                      INTENT(IN)  :: nproc_x, nproc_y
       INTEGER,  INTENT(OUT)                     :: mpi_comm_local, nio
       INTEGER, DIMENSION(100),      INTENT(OUT) :: mpi_comm_io_groups
 ! Local
@@ -352,7 +355,12 @@ MODULE module_wrf_quilt
         CALL wrf_message('Warning: reorder_mesh does not work with quilting. Disabled reorder_mesh.')
       ENDIF
       ! assign the compute tasks to the i/o tasks in full rows
-      CALL compute_mesh( ncompute_tasks, nprocx, nprocy )
+      IF ( nproc_x .NE. -1 .AND. nproc_y .NE. -1 ) THEN
+       nprocx=nproc_x
+       nprocy=nproc_y
+      ELSE
+       CALL compute_mesh( ncompute_tasks, nprocx, nprocy )
+      ENDIF
 
       nio = min(nio,nprocy)
       m = mod(nprocy,nio)  ! divide up remainder, 1 row per, until gone
@@ -2565,6 +2573,7 @@ okay_to_w = .false.
 
     SUBROUTINE init_module_wrf_quilt
       USE module_wrf_error, only: init_module_wrf_error
+      USE module_driver_constants
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
       USE module_dm, only: mpi_comm_allcompute
 #endif
@@ -2589,6 +2598,12 @@ okay_to_w = .false.
       LOGICAL mpi_inited
       LOGICAL esmf_coupling
 
+!!!!! needed to sneak-peek the namelist to get parent_id
+! define as temporaries
+# include <namelist_defines.inc>
+
+! Statements that specify the namelists
+# include <namelist_statements.inc>
 !TODO:  Change this to run-time switch
 #  ifdef ESMFIO
       esmf_coupling = .TRUE.
@@ -2613,7 +2628,7 @@ okay_to_w = .false.
       CALL wrf_get_dm_quilt_comm( mpi_comm_here )   ! jm 20151212
 
       CALL MPI_Comm_rank ( mpi_comm_here, mytask, ierr ) ;
-      CALL mpi_x_comm_size( mpi_comm_here, ntasks, ierr ) ;
+      CALL mpi_x_comm_size ( mpi_comm_here, ntasks, ierr ) ;
 
       IF ( mytask .EQ. 0 ) THEN
         OPEN ( unit=27, file="namelist.input", form="formatted", status="old" )
@@ -2623,6 +2638,13 @@ okay_to_w = .false.
         READ ( 27 , NML = namelist_quilt, IOSTAT=io_status )
         IF (io_status .NE. 0) THEN
           CALL wrf_error_fatal( "ERROR reading namelist namelist_quilt" )
+        ENDIF
+        REWIND(27)
+        nproc_x = -1
+        nproc_y = -1
+        READ ( UNIT = 27 , NML = domains , IOSTAT=io_status )
+        IF (io_status .NE. 0) THEN
+          CALL wrf_error_fatal( "ERROR reading namelist domains" )
         ENDIF
         CLOSE ( 27 )
         IF ( esmf_coupling ) THEN
@@ -2641,12 +2663,16 @@ okay_to_w = .false.
       CALL mpi_bcast( nio_tasks_per_group  , 1 , MPI_INTEGER , 0 , mpi_comm_here, ierr )
       CALL mpi_bcast( nio_groups , 1 , MPI_INTEGER , 0 , mpi_comm_here, ierr )
       CALL mpi_bcast( temp_poll , 1 , MPI_INTEGER , 0 , mpi_comm_here, ierr )
+      CALL mpi_bcast( nproc_x , 1 , MPI_INTEGER , 0 , mpi_comm_here, ierr )
+      CALL mpi_bcast( nproc_y , 1 , MPI_INTEGER , 0 , mpi_comm_here, ierr )
 
       poll_servers = (temp_poll == 1)
 
       CALL setup_quilt_servers( nio_tasks_per_group,            &
                                 mytask,               &
                                 ntasks,               &
+                                nproc_x,              &
+                                nproc_y,              &
                                 nio_groups,           &
                                 nio_tasks_in_group,   &
                                 mpi_comm_here,        &

@@ -16,7 +16,7 @@ CONTAINS
                      UST,PSIM,PSIH,                             &   
                      XLAND,HFX,QFX,TAUX,TAUY,LH,GSW,GLW,TSK,FLHC,FLQC,    & ! gopal's doing for Ocean coupling
                      QGH,QSFC,U10,V10,                          &
-                     ICOEF_SF,LCURR_SF,CHARN,MSANG,SCURX, SCURY,& 
+                     ICOEF_SF,IWAVECPL,LCURR_SF,CHARN,MSANG,SCURX, SCURY,& 
                      GZ1OZ0,WSPD,BR,ZKMAX, ISFFLX,              &
                      EP1,EP2,KARMAN,NTSFLG,SFENTH,              &
                      Cd_out,Ch_out,                             &
@@ -93,6 +93,7 @@ CONTAINS
                                         its,ite, jts,jte, kts,kte,      &
                                         ISFFLX,NUM_SOIL_LAYERS,NTSFLG
       INTEGER, INTENT(IN) ::            ICOEF_SF
+      INTEGER, INTENT(IN) ::            IWAVECPL
       LOGICAL, INTENT(IN) ::            LCURR_SF
 
       REAL,    INTENT(IN) ::                                            &
@@ -350,7 +351,7 @@ CONTAINS
 
      CALL MFLUX2(  fxh,fxe,fxmx,fxmy,cdm,rib,xxfh,zoc,mzoc,tstrc,   &    !mzoc for momentum Zo KWON
                    pspc,pkmax,wetc,slwdc,tjloc,                &
-                   icoef_sf,lcurr_sf,alpha,gamma,xcur,ycur,           &
+                   icoef_sf,iwavecpl,lcurr_sf,alpha,gamma,xcur,ycur,           &
                    upc,vpc,tpc,rpc,dt,J,wind10,xxfh2,ntsflg,SFENTH,   &
                    ids,ide, jds,jde, kds,kde,                  &
                    ims,ime, jms,jme, kms,kme,                  &
@@ -557,7 +558,7 @@ CONTAINS
 !-------------------------------------------------------------------
        SUBROUTINE MFLUX2( fxh,fxe,fxmx,fxmy,cdm,rib,xxfh,zoc,mzoc,tstrc,       &    !mzoc KWON
                           pspc,pkmax,wetc,slwdc,tjloc,                    &
-                          icoef_sf,lcurr_sf,alpha,gamma,xcur,ycur,               &
+                          icoef_sf,iwavecpl,lcurr_sf,alpha,gamma,xcur,ycur,               &
                           upc,vpc,tpc,rpc,dt,jfix,wind10,xxfh2,ntsflg,sfenth,    &
                           ids,ide, jds,jde, kds,kde,                      &
                           ims,ime, jms,jme, kms,kme,                      &
@@ -604,6 +605,7 @@ CONTAINS
       integer,intent(in)  :: its,ite, jts,jte, kts,kte
       integer,intent(in)  :: jfix,ntsflg
       integer,intent(in)  :: icoef_sf
+      integer,intent(in)  :: iwavecpl
       logical,intent(in)  :: lcurr_sf
 
       real, intent (out), dimension (ims :ime ) :: fxh
@@ -840,7 +842,6 @@ CONTAINS
       real,parameter :: og    = 1./g
       character*255 :: message
       integer :: ntstep = 0
-      logical :: lwavecpl = .true., lcurr_sf1 = .true.
 !
 #if HWRF==1
       logical :: pert_Cd            !zhang
@@ -885,7 +886,7 @@ CONTAINS
         pss(i) = pspc(i)
         tstar(i) = tstrc(i)
 
-        if ( lcurr_sf1 .and. zoc(i) .le. 0.0 ) then
+        if ( lcurr_sf .and. zoc(i) .le. 0.0 ) then
           ubot = upc(1,i)  - xcur(i) * 100.0
           vbot = vpc(1,i)  - ycur(i) * 100.0
 !          ubot = upc(1,i)
@@ -896,7 +897,7 @@ CONTAINS
         endif
         uvs1(i)= amax1( SQRT(ubot*ubot +    &
                              vbot*vbot), 100.0)
-        if ( lwavecpl .and. zoc(i) .le. 0.0 ) then
+        if ( iwavecpl .eq. 1 .and. zoc(i) .le. 0.0 ) then
           ukmax(i) = ( ubot * cos(gamma(i))  -          &
                       vbot * sin(gamma(i)) )            &
                                   * cos(gamma(i))
@@ -931,7 +932,7 @@ CONTAINS
           ecof(i) = wetc(i)
           land(i) = 0.0
           windmks=wind(i)*.01
-          if ( lwavecpl ) then
+          if ( iwavecpl .eq. 1 ) then
             if (  ntstep == 0 ) then
               call  znot_m_v1(windmks,znotm)
               zoc(i)  = -100.*znotm
@@ -1650,15 +1651,17 @@ CONTAINS
 370   continue
       do i = its,ite
 !!!
-        if ( lwavecpl .and. zoc(i) .le. 0.0 ) then
+        if ( iwavecpl .eq. 1 .and. zoc(i) .le. 0.0 ) then
           windmks = wind(i) * 0.01
           ustar = windmks / xxfm(i)
-          if ( alpha(i) .gt. 0.001 .and. alpha(i) .lt. 0.030 ) then
-            znotm = ustar*ustar*alpha(i)*og*100.0
+          !Check if Charnock parameter ratio is received in a proper range.
+          if ( alpha(i) .ge. 0.2 .and. alpha(i) .le. 5. ) then
+            call  znot_m_v1(windmks,znotm)
+            znotm = znotm*alpha(i)
           else
             call  znot_m_v1(windmks,znotm)
           endif
-            zoc(i)  = -100.*znotm
+          zoc(i)  = -100.*znotm
         endif
 !!!!
         fxh(i) = bq1(i)*(theta(i) - tsg(i))

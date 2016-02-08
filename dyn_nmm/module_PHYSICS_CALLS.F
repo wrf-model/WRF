@@ -1431,6 +1431,7 @@
      &          ,ZKMAX=ZKMAX,RIBN=RIBN                                  &
      &          ,CHARN=CHARN,MSANG=MSANG,SCURX=SCURX,SCURY=SCURY        &
      &          ,ICOEF_SF=CONFIG_FLAGS%ICOEF_SF                         &
+     &          ,IWAVECPL=CONFIG_FLAGS%IWAVECPL                         &
      &          ,LCURR_SF=CONFIG_FLAGS%LCURR_SF                         &!for gfdl-sf drag
      &          ,cd_out=grid%cd_out,ch_out=grid%ch_out
      &          ,RAINCV=RAIN                                            &
@@ -1624,8 +1625,8 @@
 !BSF &               ,RQRBLTEN=RQRBLTEN,RQSBLTEN=RQSBLTEN             & !BSF
 !BSF &               ,RQGBLTEN=RQGBLTEN                               & !BSF
      &               ,TSK=TSFC,XLAND=XLAND,ZNT=Z0                     &
-     &               ,MSANG=MSANG,SCURX=SCURX,SCURY=SCURY,LCURR_SF=CONFIG_FLAGS%LCURR_SF &
 #ifdef HWRF
+     &               ,MSANG=MSANG,SCURX=SCURX,SCURY=SCURY,IWAVECPL=CONFIG_FLAGS%IWAVECPL,LCURR_SF=CONFIG_FLAGS%LCURR_SF &
      &               ,MZNT=MZ0                                        &
 #endif
      &               ,HT=SFCZ                                         &   !KWON

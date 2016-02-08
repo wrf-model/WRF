@@ -1440,6 +1440,7 @@ endif
 rconfig   integer random_seed             namelist,physics     max_domains    0       irh    "random_seed"  "random number generator seed"
 
 rconfig   integer icoef_sf                namelist,physics     max_domains    0       irh012     3  "icoef_sf"   "Option for exchange coefficients in the surface flux scheme" ""
+rconfig   integer iwavecpl                namelist,physics     max_domains    0       irh012     3  "iwavecpl"   "Option for activate coupling to sea surface wave model" ""
 rconfig   logical lcurr_sf                namelist,physics     max_domains    .false. irh012     3  "lcurr_sf"   "Option to include ocean currents in the surface flux calculations" ""
 
 ifdef HWRF=1

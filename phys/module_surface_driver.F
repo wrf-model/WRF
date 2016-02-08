@@ -19,7 +19,7 @@ CONTAINS
      &          ,num_soil_layers,p8w,pblh,pi_phy,pshltr,fm,fhh,psih   &
 #if (NMM_CORE==1)
      &          ,psim,p_phy,q10,q2,qfx,taux,tauy,qsfc,qshltr,qz0      &
-     &          ,zkmax,ribn,charn,msang,scurx,scury,icoef_sf,lcurr_sf & !for gfdl-sf drag
+     &          ,zkmax,ribn,charn,msang,scurx,scury,icoef_sf,iwavecpl,lcurr_sf & !for gfdl-sf drag
      &          ,cd_out,ch_out                                        &
 #else
      &          ,psim,p_phy,q10,q2,qfx,qsfc,qshltr,qz0                &
@@ -596,6 +596,7 @@ CONTAINS
 #if (NMM_CORE==1)
    real , intent(IN )::   SFENTH
    INTEGER, INTENT(IN)::   ICOEF_SF
+   INTEGER, INTENT(IN)::   IWAVECPL
    LOGICAL, INTENT(IN)::   LCURR_SF
 #endif
    REAL, DIMENSION( ims:ime , 1:num_soil_layers, jms:jme ), INTENT(INOUT)::   SMOIS
@@ -753,8 +754,11 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme ) , OPTIONAL, INTENT(INOUT)::   BLO4    ! ssib-snow
    REAL, DIMENSION( ims:ime, jms:jme ) , OPTIONAL, INTENT(INOUT)::   HO4     ! ssib-snow
 !----------------------------------------------------------
-   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN):: CHARN, MSANG, SCURX, SCURY
-   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   BR, RIBN, ZKMAX
+#if (NMM_CORE==1)
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN)::    CHARN, MSANG, SCURX, SCURY
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   RIBN, ZKMAX
+#endif
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   BR
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   CHKLOWQ
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   GZ1OZ0
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   PSHLTR
@@ -2244,7 +2248,7 @@ CONTAINS
                    UST,PSIM,PSIH,                                         &  
                    XLAND,HFX,QFX,TAUX,TAUY,LH,GSW,GLW,TSK,FLHC,FLQC,  & ! gopal's doing for Ocean coupling
                    QGH,QSFC,U10,V10,                              &
-                   ICOEF_SF, LCURR_SF,CHARN, MSANG, SCURX, SCURY, &
+                   ICOEF_SF,IWAVECPL,LCURR_SF,CHARN, MSANG, SCURX, SCURY, &
                    GZ1OZ0,WSPD,BR,ZKMAX, ISFFLX,                  &
                    EP_1,EP_2,KARMAN,GFDL_NTSFLG,SFENTH,           &
                    cd_out, ch_out,                                &

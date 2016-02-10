@@ -2717,7 +2717,7 @@ character*120 sysline
         nest_pes_y = 0
         IF ( nproc_x .NE. -1 .AND. nproc_y .NE. -1 ) THEN
          n_x=nproc_x
-         nprocy=nproc_y
+         n_y=nproc_y
         ELSE
          CALL compute_mesh( ntasks-num_io_tasks, n_x, n_y )
         ENDIF

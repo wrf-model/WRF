@@ -254,7 +254,7 @@ CONTAINS
                                       sp3y , ep3y , sm3y , em3y , &
                                 bdx , bdy )
 
-#if ( defined(SGIALTIX) && (! defined(MOVE_NESTS) ) ) || ( defined(FUJITSU_FX10) && (! defined(MOVE_NESTS) ) )
+#if ( ( defined(SGIALTIX) || defined(FUJITSU_FX10) || defined(KEEP_INT_AROUND) ) && (! defined(MOVE_NESTS) ) )
       USE module_domain, ONLY : domain, head_grid, find_grid_by_id, alloc_space_field
 #else
       USE module_domain, ONLY : domain, head_grid, find_grid_by_id
@@ -885,10 +885,10 @@ CONTAINS
          intermediate_grid%ep33y                           = c_ep3y
 #endif
 
-#if ( defined(SGIALTIX) && (! defined(MOVE_NESTS) ) ) || ( defined(FUJITSU_FX10) && (! defined(MOVE_NESTS) ) )
+#if ( ( defined(SGIALTIX) || defined(FUJITSU_FX10) || defined(KEEP_INT_AROUND) ) && (! defined(MOVE_NESTS) ) )
          ! allocate space for the intermediate domain
 !         CALL alloc_space_field ( intermediate_grid, intermediate_grid%id , 1, 2 , .TRUE., intercomm_active( intermediate_grid%id ), &   ! use same id as nest
-         CALL alloc_space_field ( intermediate_grid, intermediate_grid%id , 1, 2 , .TRUE., nest%active_this_task, &   ! use same id as nest
+         CALL alloc_space_field ( intermediate_grid, intermediate_grid%id , 1, 2 , .TRUE., nest_grid%active_this_task, &   ! use same id as nest
                                c_sd1, c_ed1, c_sd2, c_ed2, c_sd3, c_ed3,       &
                                c_sm1,  c_em1,  c_sm2,  c_em2,  c_sm3,  c_em3,  &
                                c_sp1,  c_ep1,  c_sp2,  c_ep2,  c_sp3,  c_ep3,  &
@@ -1881,7 +1881,7 @@ CONTAINS
         ELSE
           IF ( comm_start(nest_id) .LT. comm_start(parent_id(nest_id)) ) THEN
             WRITE(wrf_err_message,&
-        "('nest domain ',i3,'comm_start (',i3,') lt parent ',i3,' comm_start (',i3,')')"),&
+        "('nest domain ',i3,'comm_start (',i3,') lt parent ',i3,' comm_start (',i3,')')") &
                    nest_id,comm_start,parent_id(nest_id),comm_start(parent_id(nest_id))
             CALL wrf_error_fatal(TRIM(wrf_err_message))
           ELSE IF ( comm_start(nest_id) .LT. &
@@ -2051,6 +2051,43 @@ CONTAINS
       CALL instate_communicators_for_domain(1)
 
 #else
+! for serial (non-MPI) builds
+      IMPLICIT NONE
+#  if defined(_OPENMP) && defined(MPI2_THREAD_SUPPORT)
+      INTEGER thread_support_provided, thread_support_requested
+#  endif
+      INTEGER i, j, k, x, y, n_x, n_y
+      INTEGER iii
+      INTEGER dims(3)
+! for parallel nesting, 201408, jm
+      INTEGER :: id
+      INTEGER :: io_status
+      INTEGER :: domain_id,par_id,nest_id,kid_id
+
+!!!!! needed to sneak-peek the registry to get parent_id 
+! define as temporaries
+#include "namelist_defines.inc"
+
+! Statements that specify the namelists
+#include "namelist_statements.inc"
+
+      max_dom = 1
+      OPEN ( unit=27, file="namelist.input", form="formatted", status="old" )
+      READ ( UNIT = 27 , NML = domains , IOSTAT=io_status )
+      CLOSE(27)
+
+      nkids = 1
+      which_kid = 0
+      DO i = 2, max_dom
+        IF ( 1 .le. parent_id(i) .AND. parent_id(i) .LE. max_domains ) THEN
+          which_kid(i) = nkids(parent_id(i))
+          nkids(parent_id(i)) = nkids(parent_id(i)) + 1
+        ELSE
+          WRITE(wrf_err_message,*)'invalid parent id for domain ',i
+          CALL wrf_error_fatal(TRIM(wrf_err_message))
+        ENDIF
+      ENDDO
+
       intercomm_active = .TRUE.
       domain_active_this_task = .TRUE.
       ntasks_stack = 1

@@ -2570,6 +2570,7 @@ character*120 sysline
 
     SUBROUTINE init_module_wrf_quilt
       USE module_wrf_error, only: init_module_wrf_error
+      USE module_driver_constants
       USE module_dm, ONLY : compute_mesh,nest_pes_x, nest_pes_y, domain_active_this_task
 !<DESCRIPTION>
 ! Both client (compute) and server tasks call this routine to initialize the 
@@ -2661,6 +2662,13 @@ character*120 sysline
         IF (io_status .NE. 0) THEN
           CALL wrf_error_fatal( "ERROR reading namelist namelist_quilt" )
         ENDIF
+        REWIND(27)
+        nproc_x = -1
+        nproc_y = -1
+        READ ( UNIT = 27 , NML = domains , IOSTAT=io_status )
+        IF (io_status .NE. 0) THEN
+          CALL wrf_error_fatal( "ERROR reading namelist domains" )
+        ENDIF
         CLOSE ( 27 )
         IF ( esmf_coupling ) THEN
           IF ( any ( nio_tasks_per_group > 0 ) ) THEN
@@ -2680,6 +2688,9 @@ character*120 sysline
       CALL mpi_bcast( nio_tasks_per_group  , max_domains , MPI_INTEGER , 0 , mpi_comm_here, ierr )
       CALL mpi_bcast( nio_groups , 1 , MPI_INTEGER , 0 , mpi_comm_here, ierr )
       CALL mpi_bcast( temp_poll , 1 , MPI_INTEGER , 0 , mpi_comm_here, ierr )
+      CALL mpi_bcast( nproc_x , 1 , MPI_INTEGER , 0 , mpi_comm_here, ierr )
+      CALL mpi_bcast( nproc_y , 1 , MPI_INTEGER , 0 , mpi_comm_here, ierr )
+
 ! check to make sure that if nio_tasks_per_group is non-zero for any domain it has to be non-zero for all of them
       i = MAXVAL(nio_tasks_per_group(1:max_dom))
       IF ( i .GT. 0 .AND. nio_groups .GT. 0 ) THEN
@@ -2704,7 +2715,12 @@ character*120 sysline
         comm_start = -1   ! use this to find how many communicators have actually been defined
         nest_pes_x = 0    ! dimensions of communicator in X and y
         nest_pes_y = 0
-        CALL compute_mesh( ntasks-num_io_tasks, n_x, n_y )
+        IF ( nproc_x .NE. -1 .AND. nproc_y .NE. -1 ) THEN
+         n_x=nproc_x
+         n_y=nproc_y
+        ELSE
+         CALL compute_mesh( ntasks-num_io_tasks, n_x, n_y )
+        ENDIF
         comm_start = 0   ! make it so everyone will use same communicator if the dm_task_split namelist is not specified or is empty
         nest_pes_x(1:max_dom) = n_x
         nest_pes_y(1:max_dom) = n_y

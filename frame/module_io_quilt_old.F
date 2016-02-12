@@ -2600,10 +2600,10 @@ okay_to_w = .false.
 
 !!!!! needed to sneak-peek the namelist to get parent_id
 ! define as temporaries
-# include <namelist_defines.inc>
+# include "namelist_defines.inc"
 
 ! Statements that specify the namelists
-# include <namelist_statements.inc>
+# include "namelist_statements.inc"
 !TODO:  Change this to run-time switch
 #  ifdef ESMFIO
       esmf_coupling = .TRUE.
@@ -2627,8 +2627,8 @@ okay_to_w = .false.
       ENDIF
       CALL wrf_get_dm_quilt_comm( mpi_comm_here )   ! jm 20151212
 
-      CALL MPI_Comm_rank ( mpi_comm_here, mytask, ierr ) ;
-      CALL mpi_x_comm_size ( mpi_comm_here, ntasks, ierr ) ;
+      CALL MPI_Comm_rank( mpi_comm_here, mytask, ierr ) ;
+      CALL mpi_x_comm_size( mpi_comm_here, ntasks, ierr ) ;
 
       IF ( mytask .EQ. 0 ) THEN
         OPEN ( unit=27, file="namelist.input", form="formatted", status="old" )

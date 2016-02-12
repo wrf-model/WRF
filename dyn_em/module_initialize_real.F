@@ -4389,10 +4389,10 @@ end function skip_middle_points_t
             END IF
          END DO
       ELSE IF ( ( var_type .EQ. 'W' ) .OR.  ( var_type .EQ. 'Z' ) ) THEN
-         istart = MAX(ids  ,its-1)
-         iend   = MIN(ide-1,ite+1)
-         jstart = MAX(jds  ,jts-1)
-         jend   = MIN(jde-1,jte+1)
+         istart = its
+         iend   = MIN(ide-1,ite)
+         jstart = jts
+         jend   = MIN(jde-1,jte)
          kstart = kts
          kend   = kte
          DO j = jstart,jend
@@ -4416,10 +4416,10 @@ end function skip_middle_points_t
             END DO
          END DO
       ELSE IF ( ( var_type .EQ. 'T' ) .OR. ( var_type .EQ. 'Q' ) ) THEN
-         istart = MAX(ids  ,its-1)
-         iend   = MIN(ide-1,ite+1)
-         jstart = MAX(jds  ,jts-1)
-         jend   = MIN(jde-1,jte+1)
+         istart = its
+         iend   = MIN(ide-1,ite)
+         jstart = jts
+         jend   = MIN(jde-1,jte)
          kstart = kts
          kend   = kte-1
          DO j = jstart,jend
@@ -4443,10 +4443,10 @@ end function skip_middle_points_t
             END DO
          END DO
       ELSE
-         istart = MAX(ids  ,its-1)
-         iend   = MIN(ide-1,ite+1)
-         jstart = MAX(jds  ,jts-1)
-         jend   = MIN(jde-1,jte+1)
+         istart = its
+         iend   = MIN(ide-1,ite)
+         jstart = jts
+         jend   = MIN(jde-1,jte)
          kstart = kts
          kend   = kte-1
          DO j = jstart,jend

@@ -774,7 +774,9 @@ SUBROUTINE atm_getcur(ucur,vcur)
                       
    INTEGER :: i, j
    LOGICAL :: getcur
-   
+! Further modifications needed once the add_comm option in the coupler
+! is changed.   
+   IF (wm_id <= 0)  RETURN
    IF (.NOT. phys .OR. gid > 2) RETURN
    IF (ocean_spec /= 1) CALL atm_announce('Warn: ocean currents needed',3)
    CALL atm_announce('atm_getcur entered (phys = .true.)',3)

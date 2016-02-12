@@ -18,6 +18,7 @@ subroutine da_write_iv_rad_ascii (it, ob, iv )
    character(len=filename_len)  :: filename
    character(len=7)   :: surftype
    integer            :: ndomain
+   logical            :: amsr2
 
    real, allocatable :: dtransmt(:,:), transmt_jac(:,:), transmt(:,:), lod(:,:), lod_jac(:,:)
 
@@ -47,6 +48,8 @@ subroutine da_write_iv_rad_ascii (it, ob, iv )
          allocate ( lod_jac(iv%instid(i)%nchan,iv%instid(i)%nlevels) )
       end if
 
+      amsr2 = index(iv%instid(i)%rttovid_string,'amsr2') > 0
+
       write(unit=filename, fmt='(i2.2,a,i4.4)') it,'_inv_'//trim(iv%instid(i)%rttovid_string)//'.', myproc
 
       call da_get_unit(innov_rad_unit)
@@ -60,23 +63,39 @@ subroutine da_write_iv_rad_ascii (it, ob, iv )
                         ' channel-number-of-each-pixel : ', iv%instid(i)%nchan, &
                         ' index-of-channels : '
       write(unit=innov_rad_unit,fmt='(10i5)') iv%instid(i)%ichan
-
-      write(unit=innov_rad_unit,fmt='(a)') ' pixel-info : i date scanpos landsea_mask  elv lat lon  satzen satazi'
+      if ( amsr2 ) then
+         write(unit=innov_rad_unit,fmt='(a)') ' pixel-info : i date scanpos landsea_mask  elv lat lon  satzen satazi clw'
+      else
+         write(unit=innov_rad_unit,fmt='(a)') ' pixel-info : i date scanpos landsea_mask  elv lat lon  satzen satazi'
+      end if
       write(unit=innov_rad_unit,fmt='(a)') ' grid%xb-surf-info : i t2m mr2m(ppmv) u10 v10 ps ts smois tslb snowh isflg &
                     & soiltyp vegtyp vegfra elev clwp'
       ndomain = 0
       do n =1,iv%instid(i)%num_rad
          if (iv%instid(i)%info%proc_domain(1,n)) then
             ndomain=ndomain+1
-            write(unit=innov_rad_unit,fmt='(a,i7,2x,a,i6,i3,f6.0,4f8.2)') 'INFO : ', ndomain, &
+            if ( amsr2 ) then ! write out clw
+               write(unit=innov_rad_unit,fmt='(a,i7,2x,a,i6,i3,f6.0,4f8.2,f8.3)') 'INFO : ', ndomain, &
                                 iv%instid(i)%info%date_char(n), &
-                                iv%instid(i)%scanpos(n),   &
-                                iv%instid(i)%landsea_mask(n), &
-                                iv%instid(i)%info%elv(n),  &
-                                iv%instid(i)%info%lat(1,n),  &
-                                iv%instid(i)%info%lon(1,n), &
-                                iv%instid(i)%satzen(n),    &
+                                iv%instid(i)%scanpos(n),        &
+                                iv%instid(i)%landsea_mask(n),   &
+                                iv%instid(i)%info%elv(n),       &
+                                iv%instid(i)%info%lat(1,n),     &
+                                iv%instid(i)%info%lon(1,n),     &
+                                iv%instid(i)%satzen(n),         &
+                                iv%instid(i)%satazi(n),         &
+                                iv%instid(i)%clw(n)
+            else ! no clw info
+               write(unit=innov_rad_unit,fmt='(a,i7,2x,a,i6,i3,f6.0,4f8.2)') 'INFO : ', ndomain, &
+                                iv%instid(i)%info%date_char(n), &
+                                iv%instid(i)%scanpos(n),        &
+                                iv%instid(i)%landsea_mask(n),   &
+                                iv%instid(i)%info%elv(n),       &
+                                iv%instid(i)%info%lat(1,n),     &
+                                iv%instid(i)%info%lon(1,n),     &
+                                iv%instid(i)%satzen(n),         &
                                 iv%instid(i)%satazi(n)
+            end if
             select case (iv%instid(i)%isflg(n))
             case (0) ;
                surftype = ' SEA : '

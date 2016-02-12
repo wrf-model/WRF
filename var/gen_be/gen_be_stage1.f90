@@ -32,6 +32,7 @@ program gen_be_stage1
    integer             :: bin_type                   ! Type of bin to average over.
    integer             :: num_bins                   ! Number of bins (3D fields).
    integer             :: num_bins2d                 ! Number of bins (2D fields).
+   integer             :: cv_options                 ! Control variable option
    real                :: count_inv                  ! 1 / count.
    real                :: lat_min, lat_max           ! Used if bin_type = 2 (degrees).
    real                :: binwidth_lat               ! Used if bin_type = 2 (degrees).
@@ -42,6 +43,8 @@ program gen_be_stage1
    real, allocatable   :: t_prime(:,:,:)             ! Temperature perturbation.
    real, allocatable   :: psi_prime(:,:,:)           ! Streamfunction perturbation.
    real, allocatable   :: chi_prime(:,:,:)           ! Velocity Potential perturbation.
+   real, allocatable   :: u_prime(:,:,:)             ! U-wind perturbation.
+   real, allocatable   :: v_prime(:,:,:)             ! V-wind perturbation.
    real, allocatable   :: rh_prime(:,:,:)            ! Relative Humidity Perturbation.
    real, allocatable   :: height(:,:,:)              ! Geopotential height.
    real, allocatable   :: latitude(:,:)              ! Latitude (radians)
@@ -49,12 +52,14 @@ program gen_be_stage1
    integer, allocatable:: bin2d(:,:)                 ! Bin assigned to each 2D point.
    real, allocatable   :: psi_mean(:,:,:)            ! Mean field.
    real, allocatable   :: chi_mean(:,:,:)            ! Mean field.
+   real, allocatable   :: u_mean(:,:,:)              ! Mean field.
+   real, allocatable   :: v_mean(:,:,:)              ! Mean field.
    real, allocatable   :: t_mean(:,:,:)              ! Mean field.
    real, allocatable   :: rh_mean(:,:,:)             ! Mean field.
    real, allocatable   :: ps_mean(:,:)               ! Mean field.
 
    namelist / gen_be_stage1_nl / start_date, end_date, interval, &
-                                 be_method, ne, bin_type, &
+                                 be_method, ne, bin_type, cv_options, &
                                  lat_min, lat_max, binwidth_lat, &
                                  hgt_min, hgt_max, binwidth_hgt, dat_dir
 
@@ -76,6 +81,7 @@ program gen_be_stage1
    be_method = 'NMC'
    ne = 1
    bin_type = 5         ! 0 = Every pt, 1 = x direction, 2 = latitude, ....
+   cv_options = 5
    lat_min = -90.0
    lat_max = 90.0
    binwidth_lat = 10.0
@@ -126,28 +132,42 @@ program gen_be_stage1
             write(6,'(a,3i8)')'    i, j, k dimensions are ', ni, nj, nk
             allocate( ps_prime(1:ni,1:nj) )
             allocate( t_prime(1:ni,1:nj,1:nk) )
-            allocate( psi_prime(1:ni,1:nj,1:nk) )
-            allocate( chi_prime(1:ni,1:nj,1:nk) )
+            if ( cv_options == 7 ) then
+               allocate( u_prime(1:ni,1:nj,1:nk) )
+               allocate( v_prime(1:ni,1:nj,1:nk) )
+               allocate( u_mean(1:ni,1:nj,1:nk) )
+               allocate( v_mean(1:ni,1:nj,1:nk) )
+               u_mean(:,:,:) = 0.0
+               v_mean(:,:,:) = 0.0
+            else
+               allocate( psi_prime(1:ni,1:nj,1:nk) )
+               allocate( chi_prime(1:ni,1:nj,1:nk) )
+               allocate( psi_mean(1:ni,1:nj,1:nk) )
+               allocate( chi_mean(1:ni,1:nj,1:nk) )
+               psi_mean(:,:,:) = 0.0
+               chi_mean(:,:,:) = 0.0
+            end if
             allocate( rh_prime(1:ni,1:nj,1:nk) )
             allocate( height(1:ni,1:nj,1:nk) )
             allocate( latitude(1:ni,1:nj) )
-            allocate( psi_mean(1:ni,1:nj,1:nk) )
-            allocate( chi_mean(1:ni,1:nj,1:nk) )
             allocate( t_mean(1:ni,1:nj,1:nk) )
             allocate( rh_mean(1:ni,1:nj,1:nk) )
             allocate( ps_mean(1:ni,1:nj) )
             allocate( bin(1:ni,1:nj,1:nk) )
             allocate( bin2d(1:ni,1:nj) )
-            psi_mean(:,:,:) = 0.0
-            chi_mean(:,:,:) = 0.0
             t_mean(:,:,:) = 0.0
             rh_mean(:,:,:) = 0.0
             ps_mean(:,:) = 0.0
 
          end if
 
-         read(iunit)psi_prime
-         read(iunit)chi_prime
+         if ( cv_options == 7 ) then
+            read(iunit)u_prime
+            read(iunit)v_prime
+         else
+            read(iunit)psi_prime
+            read(iunit)chi_prime
+         end if
          read(iunit)t_prime
          read(iunit)rh_prime
          read(iunit)ps_prime
@@ -166,8 +186,13 @@ program gen_be_stage1
 !        write(6,(2a)) [2] Calculate time/ensemble mean.
 !---------------------------------------------------------------------------------------------
 
-         psi_mean = ( real( count-1 ) * psi_mean + psi_prime ) * count_inv
-         chi_mean = ( real( count-1 ) * chi_mean + chi_prime ) * count_inv
+         if ( cv_options == 7 ) then
+            u_mean = ( real( count-1 ) * u_mean + u_prime ) * count_inv
+            v_mean = ( real( count-1 ) * v_mean + v_prime ) * count_inv
+         else
+            psi_mean = ( real( count-1 ) * psi_mean + psi_prime ) * count_inv
+            chi_mean = ( real( count-1 ) * chi_mean + chi_prime ) * count_inv
+         end if
          t_mean = ( real( count-1 ) * t_mean + t_prime ) * count_inv
          rh_mean = ( real( count-1 ) * rh_mean + rh_prime ) * count_inv
          ps_mean = ( real( count-1 ) * ps_mean + ps_prime ) * count_inv
@@ -201,8 +226,13 @@ program gen_be_stage1
 
          open (iunit, file = trim(filename), form='unformatted')
          read(iunit)date, ni, nj, nk
-         read(iunit)psi_prime
-         read(iunit)chi_prime
+         if ( cv_options == 7 ) then
+            read(iunit)u_prime
+            read(iunit)v_prime
+         else
+            read(iunit)psi_prime
+            read(iunit)chi_prime
+         end if
          read(iunit)t_prime
          read(iunit)rh_prime
          read(iunit)ps_prime
@@ -214,8 +244,13 @@ program gen_be_stage1
 !        write(6,(2a)) [2] Remove mean.
 !---------------------------------------------------------------------------------------------
 
-         psi_prime = psi_prime - psi_mean
-         chi_prime = chi_prime - chi_mean
+         if ( cv_options == 7 ) then
+            u_prime = u_prime - u_mean
+            v_prime = v_prime - v_mean
+         else
+            psi_prime = psi_prime - psi_mean
+            chi_prime = chi_prime - chi_mean
+         end if
          t_prime = t_prime - t_mean
          rh_prime = rh_prime - rh_mean
          ps_prime = ps_prime - ps_mean
@@ -236,23 +271,43 @@ program gen_be_stage1
          write(ounit)height
          close(ounit)
 
-!        Write psi:
-         variable = 'psi'
-         filename = trim(variable)//'/'//date(1:10)
-         filename = trim(filename)//'.'//trim(variable)//'.e'//ce
-         open (ounit, file = filename, form='unformatted')
-         write(ounit)ni, nj, nk
-         write(ounit)psi_prime
-         close(ounit)
+         if ( cv_options == 7 ) then
+!           Write u:
+            variable = 'u'
+            filename = trim(variable)//'/'//date(1:10)
+            filename = trim(filename)//'.'//trim(variable)//'.e'//ce
+            open (ounit, file = filename, form='unformatted')
+            write(ounit)ni, nj, nk
+            write(ounit)u_prime
+            close(ounit)
 
-!        Write chi:
-         variable = 'chi'
-         filename = trim(variable)//'/'//date(1:10)
-         filename = trim(filename)//'.'//trim(variable)//'.e'//ce
-         open (ounit, file = filename, form='unformatted')
-         write(ounit)ni, nj, nk
-         write(ounit)chi_prime
-         close(ounit)
+!           Write v:
+            variable = 'v'
+            filename = trim(variable)//'/'//date(1:10)
+            filename = trim(filename)//'.'//trim(variable)//'.e'//ce
+            open (ounit, file = filename, form='unformatted')
+            write(ounit)ni, nj, nk
+            write(ounit)v_prime
+            close(ounit)
+         else
+!           Write psi:
+            variable = 'psi'
+            filename = trim(variable)//'/'//date(1:10)
+            filename = trim(filename)//'.'//trim(variable)//'.e'//ce
+            open (ounit, file = filename, form='unformatted')
+            write(ounit)ni, nj, nk
+            write(ounit)psi_prime
+            close(ounit)
+
+!           Write chi:
+            variable = 'chi'
+            filename = trim(variable)//'/'//date(1:10)
+            filename = trim(filename)//'.'//trim(variable)//'.e'//ce
+            open (ounit, file = filename, form='unformatted')
+            write(ounit)ni, nj, nk
+            write(ounit)chi_prime
+            close(ounit)
+         end if
 
 !        Write T:
          variable = 't'

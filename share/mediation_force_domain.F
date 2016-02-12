@@ -50,7 +50,7 @@ SUBROUTINE med_force_domain ( parent_grid , nested_grid )
          TYPE(domain), POINTER :: intermediate_grid
          TYPE(domain), POINTER :: ngrid
          TYPE (grid_config_rec_type)            :: config_flags
-#        include <dummy_new_decl.inc>
+#        include "dummy_new_decl.inc"
       END SUBROUTINE interp_domain_em_part1
 
       SUBROUTINE force_domain_em_part2 ( grid, nested_grid, parent_grid, config_flags   &
@@ -64,7 +64,7 @@ SUBROUTINE med_force_domain ( parent_grid , nested_grid )
          TYPE(domain), POINTER :: nested_grid
 	 TYPE(domain), POINTER :: parent_grid   ! KAL added for vertical nesting
          TYPE (grid_config_rec_type)            :: config_flags
-#        include <dummy_new_decl.inc>
+#        include "dummy_new_decl.inc"
       END SUBROUTINE force_domain_em_part2
 
 ! ----------------------------------------------------------
@@ -80,7 +80,7 @@ SUBROUTINE med_force_domain ( parent_grid , nested_grid )
          TYPE(domain), INTENT(INOUT)            :: grid
          TYPE (grid_config_rec_type)            :: config_flags
          LOGICAL, INTENT(   IN) :: couple
-#        include <dummy_new_decl.inc>
+#        include "dummy_new_decl.inc"
       END SUBROUTINE couple_or_uncouple_em
 #endif
 #endif
@@ -103,7 +103,7 @@ SUBROUTINE med_force_domain ( parent_grid , nested_grid )
          TYPE(domain), POINTER :: intermediate_grid
          TYPE(domain), POINTER :: ngrid
          TYPE (grid_config_rec_type)            :: config_flags
-# include <dummy_new_decl.inc>
+# include "dummy_new_decl.inc"
       END SUBROUTINE force_domain_nmm_part1
 
       SUBROUTINE before_interp_halos_nmm(grid,config_flags &
@@ -115,7 +115,7 @@ SUBROUTINE med_force_domain ( parent_grid , nested_grid )
          USE MODULE_CONFIGURE
          TYPE(domain), POINTER :: grid
          TYPE (grid_config_rec_type)            :: config_flags
-#  include <dummy_new_decl.inc>
+#  include "dummy_new_decl.inc"
        END SUBROUTINE before_interp_halos_nmm
 
       SUBROUTINE force_domain_nmm_part2 ( grid, nested_grid, config_flags    &
@@ -129,7 +129,7 @@ SUBROUTINE med_force_domain ( parent_grid , nested_grid )
          TYPE(domain), POINTER :: nested_grid
          TYPE (grid_config_rec_type)            :: config_flags
 
-# include <dummy_new_decl.inc>
+# include "dummy_new_decl.inc"
       END SUBROUTINE force_domain_nmm_part2
 !=======================================================================
 !  End of gopal's doing.

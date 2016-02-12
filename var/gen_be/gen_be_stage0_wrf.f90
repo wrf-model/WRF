@@ -63,6 +63,8 @@ program gen_be_stage0_wrf
    real                  :: dim12_inv_v               ! 1 / (dim1*dim2).
    real                  :: dim12_inv                 ! 1 / (dim1*dim2).
    logical               :: test_inverse              ! Test conversion by performing inverse.
+   logical               :: file_exists               ! For checking if files exist
+
 
    integer               :: ifax1(1:num_fft_factors)  ! FFT factors.
    integer               :: ifax2(1:num_fft_factors)  ! FFT factors.
@@ -73,8 +75,8 @@ program gen_be_stage0_wrf
    real, allocatable     :: mapfac_u(:,:)             ! Map factor - u points.
    real, allocatable     :: mapfac_v(:,:)             ! Map factor - v points.
 
-   real, allocatable     :: u(:,:)                    ! u-wind.
-   real, allocatable     :: v(:,:)                    ! v-wind.
+   real, allocatable     :: u2d(:,:)                  ! u-wind.
+   real, allocatable     :: v2d(:,:)                  ! v-wind.
    real, allocatable     :: div(:,:)                  ! Divergence.
    real, allocatable     :: vor(:,:)                  ! Vorticity.
    real, allocatable     :: psi2d(:,:)                ! Streamfunction copy. 
@@ -92,12 +94,16 @@ program gen_be_stage0_wrf
 !  Standard fields:
    real, allocatable     :: psi(:,:,:)                ! Streamfunction.
    real, allocatable     :: chi(:,:,:)                ! Velocity Potential.
+   real, allocatable     :: u(:,:,:)               ! U-wind control variable (cv7)
+   real, allocatable     :: v(:,:,:)               ! V-wind control variable (cv7)
    real, allocatable     :: temp(:,:,:)               ! Temperature.
    real, allocatable     :: rh(:,:,:)                 ! Relative humidity.
    real, allocatable     :: psfc(:,:)                 ! Surface pressure.
    real, allocatable     :: height(:,:,:)             ! Height.
    real, allocatable     :: psi_mean(:,:,:)           ! Streamfunction.
    real, allocatable     :: chi_mean(:,:,:)           ! Velocity Potential.
+   real, allocatable     :: u_mean(:,:,:)          ! U-wind control variable (cv7)
+   real, allocatable     :: v_mean(:,:,:)          ! V-wind control variable (cv7)
    real, allocatable     :: temp_mean(:,:,:)          ! Temperature.
    real, allocatable     :: rh_mean(:,:,:)            ! Relative humidity.
    real, allocatable     :: psfc_mean(:,:)            ! Surface pressure.
@@ -207,20 +213,32 @@ program gen_be_stage0_wrf
    end if
 
 !  Allocate arrays in output fields:
-   allocate( psi(1:dim1,1:dim2,1:dim3) ) ! Note - interpolated to chi pts for output.
-   allocate( chi(1:dim1,1:dim2,1:dim3) )
+   if ( cv_options == 7 ) then
+      allocate( u(1:dim1,1:dim2,1:dim3) )
+      allocate( v(1:dim1,1:dim2,1:dim3) )
+   else
+      allocate( psi(1:dim1,1:dim2,1:dim3) ) ! Note - interpolated to chi pts for output.
+      allocate( chi(1:dim1,1:dim2,1:dim3) )
+   end if
    allocate( temp(1:dim1,1:dim2,1:dim3) )
    allocate( rh(1:dim1,1:dim2,1:dim3) )
    allocate( psfc(1:dim1,1:dim2) )
    allocate( height(1:dim1,1:dim2,1:dim3) )
 
-   allocate( psi_mean(1:dim1,1:dim2,1:dim3) ) ! Note - interpolated to chi pts for output.
-   allocate( chi_mean(1:dim1,1:dim2,1:dim3) )
+   if ( cv_options == 7 ) then
+      allocate( u_mean(1:dim1,1:dim2,1:dim3) )
+      allocate( v_mean(1:dim1,1:dim2,1:dim3) )
+      u_mean = 0.0
+      v_mean = 0.0
+   else
+      allocate( psi_mean(1:dim1,1:dim2,1:dim3) ) ! Note - interpolated to chi pts for output.
+      allocate( chi_mean(1:dim1,1:dim2,1:dim3) )
+      psi_mean = 0.0
+      chi_mean = 0.0
+   end if
    allocate( temp_mean(1:dim1,1:dim2,1:dim3) )
    allocate( rh_mean(1:dim1,1:dim2,1:dim3) )
    allocate( psfc_mean(1:dim1,1:dim2) )
-   psi_mean = 0.0
-   chi_mean = 0.0
    temp_mean = 0.0
    rh_mean = 0.0
    psfc_mean = 0.0
@@ -230,12 +248,14 @@ program gen_be_stage0_wrf
 !---------------------------------------------------------------------------------------------
 
    ! Allocate temporary arrays:
-   allocate( u(1:dim1s,1:dim2) )
-   allocate( v(1:dim1,1:dim2s) )
+   allocate( u2d(1:dim1s,1:dim2) )
+   allocate( v2d(1:dim1,1:dim2s) )
    allocate( vor(1:dim1s,1:dim2s) )
    allocate( div(1:dim1,1:dim2) )
-   allocate( psi2d(1:dim1s,1:dim2s) )
-   allocate( chi2d(1:dim1,1:dim2) )
+   if ( cv_options /= 7 ) then
+      allocate( psi2d(1:dim1s,1:dim2s) )
+      allocate( chi2d(1:dim1,1:dim2) )
+   end if
    allocate( temp2d(1:dim1,1:dim2) )
    allocate( rh2d(1:dim1,1:dim2) )
 
@@ -248,49 +268,49 @@ program gen_be_stage0_wrf
 
          ! Read u, v:
          var = "U"
-         call da_get_field( input_file, var, 3, dim1s, dim2, dim3, k, u )
+         call da_get_field( input_file, var, 3, dim1s, dim2, dim3, k, u2d )
          var = "V"
-         call da_get_field( input_file, var, 3, dim1, dim2s, dim3, k, v )
+         call da_get_field( input_file, var, 3, dim1, dim2s, dim3, k, v2d )
 
          ! Calculate vorticity (in center of mass grid on WRF's Arakawa C-grid):
          call da_uv_to_vor_c( dim1, dim2, ds, &
-                              mapfac_m, mapfac_u, mapfac_v, u, v, vor )
+                              mapfac_m, mapfac_u, mapfac_v, u2d, v2d, vor )
 
          ! Calculate divergence (at mass pts. on WRF's Arakawa C-grid):
 
          call da_uv_to_div_c( dim1, dim2, ds, &
-                              mapfac_m, mapfac_u, mapfac_v, u, v, div )
-
-         ! Calculate streamfunction and potential 
-         ! Assumes vor/div converted to Del**2 psi/chi):
-
-         if ( poisson_method == 1 ) then
-            call da_del2a_to_a( dim1s, dim2s, n1s, n2s, fft_method, ifax1s, ifax2s, &
-                                trigs1s, trigs2s, fft_coeffss, vor, psi2d )
-
-            call da_del2a_to_a( dim1, dim2, n1, n2, fft_method, ifax1, ifax2, &
-                                trigs1, trigs2, fft_coeffs, div, chi2d )
-         else if ( poisson_method == 2 ) then
-            call da_sor( dim1s, dim2s, ds, vor, psi2d )
-            call da_sor( dim1, dim2, ds, div, chi2d )
-         end if
-
-         if ( test_inverse .and. k == ktest .and. member == 1 ) then
-            call da_test_inverse( dim1, dim2, ds, mapfac_m, mapfac_u, mapfac_v, &
-                                  n1, n2, fft_method, ifax1, ifax2, trigs1, trigs2, fft_coeffs, &
-                                  n1s, n2s, ifax1s, ifax2s, trigs1s, trigs2s, fft_coeffss, &
-                                  u, v, psi2d, chi2d )
-         end if
+                              mapfac_m, mapfac_u, mapfac_v, u2d, v2d, div )
 
          if ( cv_options == 7 ) then
-            ! For cv_options == 7, u is stored in psi, v is stored in chi
+            ! For cv_options == 7, u and v are control variables rather than psi and chi
+            ! They are on Arakawa C-grid points, so they must be interpolated to A-grid
             do j = 1, dim2
                do i = 1, dim1
-                  psi(i,j,k) = 0.5 * ( u(i,j) + u(i+1,j) )
-                  chi(i,j,k) = 0.5 * ( v(i,j) + v(i,j+1) )
+                  u(i,j,k) = 0.5 * ( u2d(i,j) + u2d(i+1,j) )
+                  v(i,j,k) = 0.5 * ( v2d(i,j) + v2d(i,j+1) )
                end do
             end do
          else
+            ! Calculate streamfunction and potential (skip for cv_options == 7)
+            ! Assumes vor/div converted to Del**2 psi/chi):
+            if ( poisson_method == 1 ) then
+               call da_del2a_to_a( dim1s, dim2s, n1s, n2s, fft_method, ifax1s, ifax2s, &
+                                   trigs1s, trigs2s, fft_coeffss, vor, psi2d )
+
+               call da_del2a_to_a( dim1, dim2, n1, n2, fft_method, ifax1, ifax2, &
+                                trigs1, trigs2, fft_coeffs, div, chi2d )
+            else if ( poisson_method == 2 ) then
+               call da_sor( dim1s, dim2s, ds, vor, psi2d )
+               call da_sor( dim1, dim2, ds, div, chi2d )
+            end if
+
+            if ( test_inverse .and. k == ktest .and. member == 1 ) then
+               call da_test_inverse( dim1, dim2, ds, mapfac_m, mapfac_u, mapfac_v, &
+                                     n1, n2, fft_method, ifax1, ifax2, trigs1, trigs2, fft_coeffs, &
+                                     n1s, n2s, ifax1s, ifax2s, trigs1s, trigs2s, fft_coeffss, &
+                                     u2d, v2d, psi2d, chi2d )
+            end if
+
             ! Interpolate psi to mass pts ready for output:
             do j = 1, dim2
                do i = 1, dim1
@@ -317,8 +337,13 @@ program gen_be_stage0_wrf
       output_file = 'tmp.e'//ce  
       open (gen_be_ounit, file = output_file, form='unformatted')
       write(gen_be_ounit)date, dim1, dim2, dim3
-      write(gen_be_ounit)psi
-      write(gen_be_ounit)chi
+      if ( cv_options == 7 ) then
+         write(gen_be_ounit)u
+         write(gen_be_ounit)v
+      else
+         write(gen_be_ounit)psi
+         write(gen_be_ounit)chi
+      end if
       write(gen_be_ounit)temp
       write(gen_be_ounit)rh
       write(gen_be_ounit)psfc
@@ -329,20 +354,27 @@ program gen_be_stage0_wrf
 !     Calculate accumulating mean:
       member_inv = 1.0 / real(member)
 
-      psi_mean = ( real( member-1 ) * psi_mean + psi ) * member_inv
-      chi_mean = ( real( member-1 ) * chi_mean + chi ) * member_inv
+      if ( cv_options == 7 ) then
+         u_mean = ( real( member-1 ) * u_mean + u ) * member_inv
+         v_mean = ( real( member-1 ) * v_mean + v ) * member_inv
+      else
+         psi_mean = ( real( member-1 ) * psi_mean + psi ) * member_inv
+         chi_mean = ( real( member-1 ) * chi_mean + chi ) * member_inv
+      end if
       temp_mean = ( real( member-1 ) * temp_mean + temp ) * member_inv
       rh_mean = ( real( member-1 ) * rh_mean + rh ) * member_inv
       psfc_mean = ( real( member-1 ) * psfc_mean + psfc ) * member_inv
 
    end do
 
-   deallocate( u )
-   deallocate( v )
+   deallocate( u2d )
+   deallocate( v2d )
    deallocate( vor )
    deallocate( div )
-   deallocate( psi2d )
-   deallocate( chi2d )
+   if ( cv_options /= 7 ) then
+      deallocate( psi2d )
+      deallocate( chi2d )
+   end if
    deallocate( temp2d )
    deallocate( rh2d )
 
@@ -357,8 +389,13 @@ program gen_be_stage0_wrf
       input_file = 'tmp.e001'
       open (gen_be_iunit, file = input_file, form='unformatted')
       read(gen_be_iunit)date, dim1, dim2, dim3
-      read(gen_be_iunit)psi
-      read(gen_be_iunit)chi
+      if ( cv_options == 7 ) then
+         read(gen_be_iunit)u
+         read(gen_be_iunit)v
+      else
+         read(gen_be_iunit)psi
+         read(gen_be_iunit)chi
+      end if
       read(gen_be_iunit)temp
       read(gen_be_iunit)rh
       read(gen_be_iunit)psfc
@@ -371,8 +408,13 @@ program gen_be_stage0_wrf
       input_file = 'tmp.e002'
       open (gen_be_iunit, file = input_file, form='unformatted')
       read(gen_be_iunit)date, dim1, dim2, dim3
-      read(gen_be_iunit)psi_mean
-      read(gen_be_iunit)chi_mean
+      if ( cv_options == 7 ) then
+         read(gen_be_iunit)u_mean
+         read(gen_be_iunit)v_mean
+      else
+         read(gen_be_iunit)psi_mean
+         read(gen_be_iunit)chi_mean
+      end if
       read(gen_be_iunit)temp_mean
       read(gen_be_iunit)rh_mean
       read(gen_be_iunit)psfc_mean
@@ -381,8 +423,13 @@ program gen_be_stage0_wrf
       close(gen_be_iunit)
 
 !     Take forecast difference:
-      psi = psi - psi_mean
-      chi = chi - chi_mean
+      if ( cv_options == 7 ) then
+         u = u - u_mean
+         v = v - v_mean
+      else
+         psi = psi - psi_mean
+         chi = chi - chi_mean
+      end if
       temp = temp - temp_mean
       rh  = rh - rh_mean
       psfc = psfc - psfc_mean
@@ -391,8 +438,13 @@ program gen_be_stage0_wrf
       output_file = 'pert.'//date(1:10)//'.e001'
       open (gen_be_ounit, file = output_file, form='unformatted')
       write(gen_be_ounit)date, dim1, dim2, dim3
-      write(gen_be_ounit)psi
-      write(gen_be_ounit)chi
+      if ( cv_options == 7 ) then
+         write(gen_be_ounit)u
+         write(gen_be_ounit)v
+      else
+         write(gen_be_ounit)psi
+         write(gen_be_ounit)chi
+      end if
       write(gen_be_ounit)temp
       write(gen_be_ounit)rh
       write(gen_be_ounit)psfc
@@ -401,8 +453,13 @@ program gen_be_stage0_wrf
       close(gen_be_ounit)
 
 !     Restore mean (1 member only for NMC-method):
-      psi_mean = psi
-      chi_mean = chi
+      if ( cv_options == 7 ) then
+         u_mean = u
+         v_mean = v
+      else
+         psi_mean = psi
+         chi_mean = chi
+      end if
       temp_mean = temp
       rh_mean  = rh
       psfc_mean = psfc
@@ -418,8 +475,13 @@ program gen_be_stage0_wrf
          input_file = 'tmp.e'//ce  
          open (gen_be_iunit, file = input_file, form='unformatted')
          read(gen_be_iunit)date, dim1, dim2, dim3
-         read(gen_be_iunit)psi
-         read(gen_be_iunit)chi
+         if ( cv_options == 7 ) then
+            read(gen_be_iunit)u
+            read(gen_be_iunit)v
+         else
+            read(gen_be_iunit)psi
+            read(gen_be_iunit)chi
+         end if
          read(gen_be_iunit)temp
          read(gen_be_iunit)rh
          read(gen_be_iunit)psfc
@@ -427,8 +489,13 @@ program gen_be_stage0_wrf
          read(gen_be_iunit)xlat
          close(gen_be_iunit)
 
-         psi = psi - psi_mean
-         chi = chi - chi_mean
+         if ( cv_options == 7 ) then
+            u = u - u_mean
+            v = v - v_mean
+         else
+            psi = psi - psi_mean
+            chi = chi - chi_mean
+         end if
          temp = temp - temp_mean
          rh  = rh - rh_mean
          psfc = psfc - psfc_mean
@@ -437,8 +504,13 @@ program gen_be_stage0_wrf
          output_file = 'pert.'//date(1:10)//'.e'//ce  
          open (gen_be_ounit, file = output_file, form='unformatted')
          write(gen_be_ounit)date, dim1, dim2, dim3
-         write(gen_be_ounit)psi
-         write(gen_be_ounit)chi
+         if ( cv_options == 7 ) then
+            write(gen_be_ounit)u
+            write(gen_be_ounit)v
+         else
+            write(gen_be_ounit)psi
+            write(gen_be_ounit)chi
+         end if
          write(gen_be_ounit)temp
          write(gen_be_ounit)rh
          write(gen_be_ounit)psfc
@@ -451,17 +523,31 @@ program gen_be_stage0_wrf
 
 !  Write out mean/mean square fields:
 
-   output_file = 'psi/'//date(1:10)//'.psi.mean'
-   open (gen_be_ounit, file = output_file, form='unformatted')
-   write(gen_be_ounit)dim1, dim2, dim3
-   write(gen_be_ounit)psi_mean
-   close(gen_be_ounit)
+   if ( cv_options == 7 ) then
+      output_file = 'u/'//date(1:10)//'.u.mean'
+      open (gen_be_ounit, file = output_file, form='unformatted')
+      write(gen_be_ounit)dim1, dim2, dim3
+      write(gen_be_ounit)u_mean
+      close(gen_be_ounit)
 
-   output_file = 'chi/'//date(1:10)//'.chi.mean'
-   open (gen_be_ounit, file = output_file, form='unformatted')
-   write(gen_be_ounit)dim1, dim2, dim3
-   write(gen_be_ounit)chi_mean
-   close(gen_be_ounit)
+      output_file = 'v/'//date(1:10)//'.v.mean'
+      open (gen_be_ounit, file = output_file, form='unformatted')
+      write(gen_be_ounit)dim1, dim2, dim3
+      write(gen_be_ounit)v_mean
+      close(gen_be_ounit)
+   else
+      output_file = 'psi/'//date(1:10)//'.psi.mean'
+      open (gen_be_ounit, file = output_file, form='unformatted')
+      write(gen_be_ounit)dim1, dim2, dim3
+      write(gen_be_ounit)psi_mean
+      close(gen_be_ounit)
+
+      output_file = 'chi/'//date(1:10)//'.chi.mean'
+      open (gen_be_ounit, file = output_file, form='unformatted')
+      write(gen_be_ounit)dim1, dim2, dim3
+      write(gen_be_ounit)chi_mean
+      close(gen_be_ounit)
+   end if
 
    output_file = 't/'//date(1:10)//'.t.mean'
    open (gen_be_ounit, file = output_file, form='unformatted')
@@ -482,8 +568,8 @@ program gen_be_stage0_wrf
    close(gen_be_ounit)
 
    output_file='../grid_box_area'
-   inquire(exist=test_inverse,file=output_file)
-   if( .not.test_inverse )then		! misnomer use of test_inverse:
+   inquire(exist=file_exists,file=output_file)
+   if( .not. file_exists )then
       open(gen_be_ounit,file=output_file,form='unformatted')
       write(gen_be_ounit)dim1,dim2	! e_we-s_we, e_sn-s_sn
       mapfac_m=(ds/mapfac_m)**2		! cf. da_transfer_wrftoxb.inc
@@ -494,15 +580,22 @@ program gen_be_stage0_wrf
    endif
 
    deallocate( mapfac_m )
-   deallocate( psi )
-   deallocate( chi )
+   if ( cv_options == 7 ) then
+      deallocate( u )
+      deallocate( v )
+      deallocate( u_mean )
+      deallocate( v_mean )
+   else
+      deallocate( psi )
+      deallocate( chi )
+      deallocate( psi_mean )
+      deallocate( chi_mean )
+   end if
    deallocate( temp )
    deallocate( rh )
    deallocate( psfc )
    deallocate( height )
    deallocate( xlat )
-   deallocate( psi_mean )
-   deallocate( chi_mean )
    deallocate( temp_mean )
    deallocate( rh_mean )
    deallocate( psfc_mean )

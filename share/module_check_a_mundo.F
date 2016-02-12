@@ -43,7 +43,7 @@
 
       LOGICAL :: exists
       LOGICAL , EXTERNAL :: wrf_dm_on_monitor
-      INTEGER :: i, oops
+      INTEGER :: i, oops, d1_value
       LOGICAL :: km_opt_already_done , diff_opt_already_done
 
 !-----------------------------------------------------------------------
@@ -88,16 +88,9 @@
 #if (EM_CORE == 1)
 !-----------------------------------------------------------------------
 ! There are restrictions for the use_theta_m option:
-! 1. The option to include moist theta in the WRF solver only works with a single domain.
-! 2. The option may not be used in conjunction with damp_opt=2.
-! 3. The option may not be used with rad_nudge.
+! 1. The option may not be used in conjunction with damp_opt=2.
+! 2. The option may not be used with rad_nudge.
 !-----------------------------------------------------------------------
-
-      IF ( ( model_config_rec % max_dom     .GT. 1 ) .AND. &
-           ( model_config_rec % use_theta_m .EQ. 1 ) ) THEN
-         wrf_err_message = '--- ERROR: The use_theta_m option is only available for single domain cases' 
-         CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
-      END IF
 
       IF ( ( model_config_rec % use_theta_m .EQ. 1 ) .AND. &
            ( model_config_rec % damp_opt    .EQ. 2 ) ) THEN
@@ -112,8 +105,6 @@
          wrf_err_message = '--- ERROR: Either turn off use_theta_m, or turn off the rad_nudge option'
          CALL wrf_error_fatal ( TRIM(wrf_err_message) )
       END IF
-
-
 
 
 !-----------------------------------------------------------------------
@@ -162,14 +153,14 @@
 !-----------------------------------------------------------------------
 ! Check that NSSL microphysics is not allowed for WRF-NMM run 
 !-----------------------------------------------------------------------
-#if (NMM_CORE == 1) || (HWRF == 1)
+#if (NMM_CORE == 1) || (HWRF == 1) 
       DO i = 1, model_config_rec % max_dom
          IF ( model_config_rec % mp_physics(i) == nssl_2mom .OR. &
               model_config_rec % mp_physics(i) == nssl_2momccn .OR. & 
               model_config_rec % mp_physics(i) == nssl_1mom .OR. & 
               model_config_rec % mp_physics(i) == nssl_1momlfo .OR. & 
-              model_config_rec % mp_physics(i) == nssl_2momg  ) THEN 
-            wrf_err_message = '--- ERROR: NSSL scheme cannot run with WRF-NMM '
+              model_config_rec % mp_physics(i) == nssl_2momg ) THEN 
+            wrf_err_message = '--- ERROR: Chosen microphysics scheme cannot run with WRF-NMM '
             CALL wrf_message ( wrf_err_message )
             wrf_err_message = '--- Fix mp_physics in namelist.input '
             CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
@@ -324,6 +315,18 @@
             CALL wrf_message ( 'Linear vertical interpolation is recommended with input vertical resolution this coarse, changing lagrange_order to 1' )
             model_config_rec%lagrange_order = 1
             END IF
+
+!-----------------------------------------------------------------------
+! Check for domain consistency for urban options.
+!-----------------------------------------------------------------------
+
+      d1_value = model_config_rec%sf_urban_physics(1)
+      DO i = 2, model_config_rec % max_dom
+         IF ( model_config_rec%sf_urban_physics(i) /= d1_value ) THEN
+            WRITE(wrf_err_message, * ) '--- ERROR:   sf_urban_physics option must be identical in each domain'
+            CALL wrf_error_fatal ( TRIM ( wrf_err_message ) )
+         ENDIF
+      END DO
 
 !-----------------------------------------------------------------------
 ! Check for consistency in the Noah-MP options
@@ -959,6 +962,28 @@
                 wrf_err_message = '---          Grell (G3) CU scheme' 
                 CALL wrf_message ( wrf_err_message )
                 wrf_err_message = '---          Grell-Devenyi (GD) CU scheme' 
+                CALL wrf_error_fatal ( wrf_err_message )
+          END IF
+         END IF
+       END DO
+
+!-----------------------------------------------------------------------
+! The namelist flag kf_edrates=1 must have one of the three KF cumulus parameterizations
+! turned on.  All other cumulus parameterizations need to have kf_edrates=0
+!-----------------------------------------------------------------------
+ 
+       DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec%kf_edrates(i) .EQ. KFEDRATES ) THEN
+          IF ( ( model_config_rec%cu_physics(i) .NE. KFETASCHEME ) .AND. &
+               ( model_config_rec%cu_physics(i) .NE. MSKFSCHEME ) .AND. &
+               ( model_config_rec%cu_physics(i) .NE. KFSCHEME ) ) THEN
+                wrf_err_message = '--- ERROR: Using kf_edrates=1 requires use of one of the following KF schemes:'
+                CALL wrf_message ( wrf_err_message )
+                wrf_err_message = '---          Kain-Fritsch (cu_physics=1)' 
+                CALL wrf_message ( wrf_err_message )
+                wrf_err_message = '---          Multi-scale Kain-Fritsch (cu_physics=11)' 
+                CALL wrf_message ( wrf_err_message )
+                wrf_err_message = '---          old Kain-Fritsch (cu_physics=99)' 
                 CALL wrf_error_fatal ( wrf_err_message )
           END IF
          END IF

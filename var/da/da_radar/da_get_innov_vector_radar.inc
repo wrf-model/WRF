@@ -191,13 +191,13 @@ END IF
                  dx  *(dym * grid%xb % psac(i,j+1) + dy * grid%xb%psac(i+1,j+1)) + &
                  grid%xb % ptop
 
-      iv%radar(n)%model_p(:)   = model_p(1:iv%info(radar)%levels(n),n)
-      iv%radar(n)%model_rho(:) = model_rho(1:iv%info(radar)%levels(n),n)
-      iv%radar(n)%model_qrn(:) = model_qrn(1:iv%info(radar)%levels(n),n)
-      iv%radar(n)%model_qcl(:) = model_qcl(1:iv%info(radar)%levels(n),n)
-      iv%radar(n)%model_qci(:) = model_qci(1:iv%info(radar)%levels(n),n)
-      iv%radar(n)%model_qsn(:) = model_qsn(1:iv%info(radar)%levels(n),n)
-      iv%radar(n)%model_qgr(:) = model_qgr(1:iv%info(radar)%levels(n),n)
+      iv%radar(n)%model_p(1:iv%info(radar)%levels(n))   = model_p(1:iv%info(radar)%levels(n),n)
+      iv%radar(n)%model_rho(1:iv%info(radar)%levels(n)) = model_rho(1:iv%info(radar)%levels(n),n)
+      iv%radar(n)%model_qrn(1:iv%info(radar)%levels(n)) = model_qrn(1:iv%info(radar)%levels(n),n)
+      iv%radar(n)%model_qcl(1:iv%info(radar)%levels(n)) = model_qcl(1:iv%info(radar)%levels(n),n)
+      iv%radar(n)%model_qci(1:iv%info(radar)%levels(n)) = model_qci(1:iv%info(radar)%levels(n),n)
+      iv%radar(n)%model_qsn(1:iv%info(radar)%levels(n)) = model_qsn(1:iv%info(radar)%levels(n),n)
+      iv%radar(n)%model_qgr(1:iv%info(radar)%levels(n)) = model_qgr(1:iv%info(radar)%levels(n),n)
 
       iv%radar(n)%model_ps     = model_ps(n)
 
@@ -344,12 +344,18 @@ END IF
                if (abs(iv % radar(n) % rf(k) % qc - missing_data) > 1) then
                   if (abs(ob % radar(n) % rf(k) - missing_r) > 1.0 .AND. &
                        iv % radar(n) % rf(k) % qc >= obs_qc_pointer) then
-                     if ( ob % radar(n) % rf(k) .lt. 30.0 .or. iv%radar(n)%model_p(k).gt.80000.0 )then
+                     zr=iv%radar(n)%height(k) - iv%radar(n)%stn_loc%elv
+                     if ( ob % radar(n) % rf(k) .lt. 25.0  .or. zr.lt.1500)then 
                         iv % radar(n) % rqv(k) % qc = -5
                      else
                         iv % radar(n) % rqv(k) % qc = 0
                      end if
                      if (iv % radar(n) % rqv(k) % qc >= obs_qc_pointer) then                        
+                        if (ob % radar(n) % rf(k) >= 25.0 .and. ob % radar(n) % rf(k) < 40.0) then
+                           iv % radar(n) % rqvo(k)= 0.85*model_qs(k,n)
+                        else if (ob % radar(n) % rf(k) >= 40.0 .and. ob % radar(n) % rf(k) < 50.0) then
+                           iv % radar(n) % rqvo(k)= 0.95*model_qs(k,n)
+                        end if
                         iv % radar(n) % rqv(k) % inv = iv % radar(n) % rqvo(k) - model_qv(k,n)
                         ! iv % radar(n) % rqv(k) % inv must be >= 0.0
                         iv % radar(n) % rqv(k) % inv = amax1(0.0,iv % radar(n) % rqv(k) % inv )

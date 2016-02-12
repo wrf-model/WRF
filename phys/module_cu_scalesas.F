@@ -2920,7 +2920,7 @@ CONTAINS
       enddo
 !!
       return
-      end
+      end subroutine scale_sascnvn
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! scale aware shallow sas
 
@@ -4456,7 +4456,7 @@ CONTAINS
       enddo
 !!
       return
-      end
+      end subroutine scale_shalcnv
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       END MODULE module_cu_scalesas

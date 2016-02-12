@@ -1073,7 +1073,9 @@ endif
                       config_flags%nssl_cnoh, config_flags%nssl_cnohl,        &
                       config_flags%nssl_cnor, config_flags%nssl_cnos,         &
                       config_flags%nssl_rho_qh, config_flags%nssl_rho_qhl,    &
-                      config_flags%nssl_rho_qs                                &
+                      config_flags%nssl_rho_qs,                               &
+                      config_flags%nssl_ipelec,                               &
+                      config_flags%nssl_isaund                               & 
                       ,grid%RQCNCUTEN, grid%RQINCUTEN,grid%rliq             &      !mchen add for cammpmg
                       ,grid%cldfra_dp,grid%cldfra_sh                        & ! ckay for subgrid cloud
                       ,grid%te_temf,grid%cf3d_temf,grid%wm_temf        & ! WA
@@ -1096,6 +1098,7 @@ endif
                       ,grid%G_URB2D_mosaic,grid%RN_URB2D_mosaic                                      & ! danli mosaic 
                       ,grid%TS_URB2D_mosaic                                                          & ! danli mosaic 
                       ,grid%TS_RUL2D_mosaic                                                          & ! danli mosaic
+!                    , P_QNN=P_QNN, F_QNN=F_QNN          &
                       )
        ENDIF   !tgs
 

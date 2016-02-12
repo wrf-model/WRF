@@ -54,6 +54,7 @@ end subroutine da_trace_exit
 #include "da_print_be_stats_h_regional.inc"
 #include "da_print_be_stats_p.inc"
 #include "da_print_be_stats_v.inc"
+#include "da_readwrite_be_stage1.inc"
 #include "da_readwrite_be_stage2.inc"
 #include "da_readwrite_be_stage3.inc"
 #include "da_readwrite_be_stage4.inc"

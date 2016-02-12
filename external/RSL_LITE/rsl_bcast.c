@@ -163,7 +163,7 @@ RSL_LITE_NESTING_RESET (
 }
 
 /* parent->nest */
-RSL_LITE_TO_CHILD_INFO ( msize_p,                        /* number of tasks in minor dim of nest's mesh */
+void RSL_LITE_TO_CHILD_INFO ( msize_p,                        /* number of tasks in minor dim of nest's mesh */
                          cips_p, cipe_p, cjps_p, cjpe_p, /* patch dims of SOURCE DOMAIN */
                          iids_p, iide_p, ijds_p, ijde_p, /* domain dims of INTERMEDIATE DOMAIN */
                          nids_p, nide_p, njds_p, njde_p, /* domain dims of CHILD DOMAIN */
@@ -313,7 +313,7 @@ fprintf(stderr,"%s %d a %d b %d\n",__FILE__,__LINE__,s_ntasks_nest_x*s_ntasks_ne
 /********************************************/
 
 /* nest->parent */
-RSL_LITE_TO_PARENT_INFO ( msize_p, 
+void RSL_LITE_TO_PARENT_INFO ( msize_p, 
                           nips_p, nipe_p, njps_p, njpe_p, /* patch dims of SOURCE DOMAIN (CHILD) */
                           cids_p, cide_p, cjds_p, cjde_p, /* domain dims of TARGET DOMAIN (PARENT) */
                           offset_p, 
@@ -671,8 +671,7 @@ rsl_lite_from_peerpoint_info ( ig_p, jg_p, retval_p )
     *retval_p = 0 ;
     RSL_FREE( Recvbuf ) ;
   }
-     
-  return ;
+  
 }
 
 /********************************************/

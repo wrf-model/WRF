@@ -13,16 +13,16 @@ SUBROUTINE solve_interface ( grid )
 
    INTERFACE
 #if (EM_CORE == 1 && DA_CORE != 1)
-# include  <solve_em.int>
+# include  "solve_em.int"
 #endif
 #if (NMM_CORE == 1)
-# include  <solve_nmm.int>
+# include  "solve_nmm.int"
 #endif
 #if (COAMPS_CORE == 1)
-# include  <solve_coamps.int>
+# include  "solve_coamps.int"
 #endif
 #if (EXP_CORE == 1)
-# include  <solve_exp.int>
+# include  "solve_exp.int"
 #endif
    END INTERFACE
 
@@ -37,7 +37,7 @@ SUBROUTINE solve_interface ( grid )
 #if (EM_CORE == 1 && DA_CORE != 1)
    CALL solve_em  ( grid , config_flags  &
 !
-# include <actual_new_args.inc>
+# include "actual_new_args.inc"
 !
                )
 
@@ -46,7 +46,7 @@ SUBROUTINE solve_interface ( grid )
 
      CALL chem_driver  ( grid , config_flags  &
 !
-# include <actual_new_args.inc>
+# include "actual_new_args.inc"
 !
                )
    ENDIF
@@ -55,7 +55,7 @@ SUBROUTINE solve_interface ( grid )
 #if (NMM_CORE == 1)
    CALL solve_nmm  ( grid , config_flags   &
 !
-# include <actual_new_args.inc>
+# include "actual_new_args.inc"
 !
                )
 # if ( WRF_CHEM == 1 )
@@ -63,7 +63,7 @@ SUBROUTINE solve_interface ( grid )
 
      CALL chem_driver  ( grid , config_flags  &
 !
-# include <actual_new_args.inc>
+# include "actual_new_args.inc"
 !  
                )
    ENDIF
@@ -72,7 +72,7 @@ SUBROUTINE solve_interface ( grid )
 #if (COAMPS_CORE == 1)
    CALL solve_coamps  ( grid , config_flags   &
 !
-# include <actual_new_args.inc>
+# include "actual_new_args.inc"
 !
                )
 #endif
@@ -82,7 +82,7 @@ SUBROUTINE solve_interface ( grid )
 #if (EXP_CORE == 1)
    CALL solve_exp  ( grid              &
 !
-# include <exp_actual_args.inc>
+# include "exp_actual_args.inc"
 !
                )
 #endif

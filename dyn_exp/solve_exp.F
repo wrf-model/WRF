@@ -30,7 +30,7 @@ USE module_exp
    TYPE(domain) , TARGET          :: grid
 
    !  Definitions of dummy arguments to solve
-#include <exp_dummy_decl.inc>
+#include "exp_dummy_decl.inc"
 
    !  WRF state bcs
    TYPE (grid_config_rec_type)              :: config_flags
@@ -50,7 +50,7 @@ USE module_exp
    INTEGER                         :: idum1, idum2
 
 ! storage for tendencies and decoupled state (generated from Registry)
-#include <exp_i1_decl.inc>
+#include "exp_i1_decl.inc"
 
 #ifdef DEREF_KLUDGE
 !  see http://www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm
@@ -61,10 +61,10 @@ USE module_exp
 #include "deref_kludge.h"
 
 #define COPY_IN
-#include <exp_scalar_derefs.inc>
+#include "exp_scalar_derefs.inc"
 #ifdef DM_PARALLEL
 #    define REGISTER_I1
-#      include <exp_data_calls.inc>
+#      include "exp_data_calls.inc"
 #endif
 
    CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
@@ -146,7 +146,7 @@ USE module_exp
      !$OMP END PARALLEL DO
 
 #define COPY_OUT
-#include <exp_scalar_derefs.inc>
+#include "exp_scalar_derefs.inc"
 
    RETURN
 

@@ -118,10 +118,14 @@ else
 fi
 
 if [[ $NL_CV_OPTIONS == 6 ]]; then
-export CONTROL_VARIABLES=${CONTROL_VARIABLES:-" psi chi_u t_u rh_u ps_u "}
-export RUN_GEN_BE_STAGE2A=false
+   export CONTROL_VARIABLES=${CONTROL_VARIABLES:-" psi chi_u t_u rh_u ps_u "}
+   export RUN_GEN_BE_STAGE2A=false
+elif [[ $NL_CV_OPTIONS == 7 ]]; then
+   export CONTROL_VARIABLES=${CONTROL_VARIABLES:-" u v t rh ps "}
+   export RUN_GEN_BE_STAGE2=false
+   export RUN_GEN_BE_STAGE2A=false
 else
-export CONTROL_VARIABLES=${CONTROL_VARIABLES:-" psi chi_u t_u rh ps_u "}
+   export CONTROL_VARIABLES=${CONTROL_VARIABLES:-" psi chi_u t_u rh ps_u "}
 fi
 export DELETE_DIRS=${DELETE_DIRS:-" "}
 

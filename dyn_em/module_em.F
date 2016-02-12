@@ -519,10 +519,11 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                   ims, ime, jms, jme, kms, kme,      &
                   its, ite, jts, jte, kts, kte      )
 
-     CALL horizontal_pressure_gradient( ru_tend,rv_tend,                &
+     CALL horizontal_pressure_gradient( ru_tend,rv_tend,                 &
                                          ph,alt,p,pb,al,php,cqu,cqv,     &
                                          muu,muv,mu,fnm,fnp,rdnw,        &
-                                         cf1,cf2,cf3,rdx,rdy,msfux,msfuy,&
+                                         cf1,cf2,cf3,cfn,cfn1,           &
+                                         rdx,rdy,msfux,msfuy,            &
                                          msfvx,msfvy,msftx,msfty,        &
                                          config_flags, non_hydrostatic,  &
                                          top_lid,                        &

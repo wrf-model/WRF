@@ -9,6 +9,7 @@ select((select(STDOUT), $|=1)[0]);
 $sw_perl_path = perl ;
 $sw_netcdf_path = "" ;
 $sw_pnetcdf_path = "" ;
+$sw_hdf5_path=""; 
 $sw_phdf5_path=""; 
 $sw_jasperlib_path=""; 
 $sw_jasperinc_path=""; 
@@ -23,6 +24,7 @@ $sw_rttov_inc = "" ;
 $sw_crtm_flag = "" ;
 $sw_cloudcv_flag = "" ;
 $sw_4dvar_flag = "" ;
+$sw_wrfplus_path = "" ;
 $sw_wavelet_flag = "" ;
 $WRFCHEM = 0 ;
 $sw_os = "ARCH" ;           # ARCH will match any
@@ -88,6 +90,10 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
   if ( substr( $ARGV[0], 1, 8 ) eq "pnetcdf=" )
   {
     $sw_pnetcdf_path = substr( $ARGV[0], 9 ) ;
+  }
+  if ( substr( $ARGV[0], 1, 5 ) eq "hdf5=" )
+  {
+    $sw_hdf5_path = substr( $ARGV[0], 6 ) ;
   }
   if ( substr( $ARGV[0], 1, 6 ) eq "phdf5=" )
   {
@@ -268,6 +274,7 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
      if ( $sw_wrf_core eq "4D_DA_CORE" )
        {
        $sw_4dvar_flag = "-DVAR4D";
+       $sw_wrfplus_path= $ENV{WRFPLUS_DIR};
        }
      if ( $ENV{WAVELET} )
        {
@@ -411,6 +418,7 @@ while ( <CONFIGURE_DEFAULTS> )
     $_ =~ s/CONFIGURE_PERL_PATH/$sw_perl_path/g ;
     $_ =~ s/CONFIGURE_NETCDF_PATH/$sw_netcdf_path/g ;
     $_ =~ s/CONFIGURE_PNETCDF_PATH/$sw_pnetcdf_path/g ;
+    $_ =~ s/CONFIGURE_HDF5_PATH/$sw_hdf5_path/g ;
     $_ =~ s/CONFIGURE_PHDF5_PATH/$sw_phdf5_path/g ;
     $_ =~ s/CONFIGURE_LDFLAGS/$sw_ldflags/g ;
     $_ =~ s/CONFIGURE_COMPILEFLAGS/$sw_compileflags/g ;
@@ -427,6 +435,7 @@ while ( <CONFIGURE_DEFAULTS> )
     $_ =~ s/CONFIGURE_STUBMPI/$sw_stubmpi/g ;
     $_ =~ s/CONFIGURE_NESTOPT/$sw_nest_opt/g ;
     $_ =~ s/CONFIGURE_4DVAR_FLAG/$sw_4dvar_flag/g ;
+    $_ =~ s/CONFIGURE_WRFPLUS_PATH/$sw_wrfplus_path/g ;
     $_ =~ s/CONFIGURE_CRTM_FLAG/$sw_crtm_flag/g ;
     $_ =~ s/CONFIGURE_RTTOV_FLAG/$sw_rttov_flag/g ;
     $_ =~ s/CONFIGURE_RTTOV_INC/$sw_rttov_inc/g ;
@@ -474,6 +483,15 @@ while ( <CONFIGURE_DEFAULTS> )
 	$_ =~ s:CONFIGURE_PNETCDF_FLAG::g ;
 	$_ =~ s:CONFIGURE_PNETCDF_LIB_PATH::g ;
 	 }
+
+    if ( $sw_hdf5_path ) 
+      { $_ =~ s:CONFIGURE_HDF5_LIB_PATH:-L$sw_hdf5_path/lib -lhdf5_fortran -lhdf5 -lm -lz: ;
+        $_ =~ s:CONFIGURE_HDF5_FLAG:-DHDF5: ;
+         }
+    else
+      { $_ =~ s:CONFIGURE_HDF5_LIB_PATH::g ;
+        $_ =~ s:CONFIGURE_HDF5_FLAG::g ;
+         }
 
     if ( $sw_phdf5_path ) 
 

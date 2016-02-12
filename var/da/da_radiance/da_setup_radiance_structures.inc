@@ -190,6 +190,15 @@ subroutine da_setup_radiance_structures( grid, ob, iv )
          filename = 'seviri'
          call da_read_obs_bufrseviri ('seviri   ',iv, filename)
       end if
+      if (use_amsr2obs) then
+#if defined(HDF5)
+         write(unit=stdout,fmt='(a)') 'Reading AMSR2 data in HDF5 format'
+         call da_read_obs_hdf5amsr2 (iv, 'L1SGRTBR', 'L2SGCLWLD')
+#else
+         message(1)='To read AMSR2 data, WRFDA must be compiled with HDF5'
+         call da_error(__FILE__,__LINE__,message(1:1))
+#endif
+      end if
    end if
 
    if ( use_filtered_rad ) then

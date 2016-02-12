@@ -73,7 +73,7 @@
 ! JM, 20050819
 !
 !----------------------------
-#include <dummy_new_decl.inc>
+#include "dummy_new_decl.inc"
 !----------------------------
 !
 !***  STRUCTURE THAT CONTAINS RUN-TIME CONFIGURATION (NAMELIST) DATA FOR DOMAIN
@@ -196,7 +196,7 @@
 !
 !-----------------------------------------------------------------------
 !#define COPY_IN
-!#include <scalar_derefs.inc>
+!#include "scalar_derefs.inc"
 !-----------------------------------------------------------------------
 !
 ! TRICK PROBLEMATIC COMPILERS INTO NOT PERFORMING COPY-IN/COPY-OUT BY ADDING
@@ -2531,7 +2531,7 @@
 #endif
 
 !#define COPY_OUT
-!#include <scalar_derefs.inc>
+!#include "scalar_derefs.inc"
 #ifdef HWRF
 !-----------------------------------------------------------------------
 !*** ACCUMULATED ATMOSPHERIC MODEL FLUXES FOR DMITRYs COUPLER

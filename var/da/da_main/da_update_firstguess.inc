@@ -25,7 +25,8 @@ subroutine da_update_firstguess(grid, out_filename)
 !---------------------------------------------------------------------------
 
   use module_domain, only : get_ijk_from_grid, program_name
-  use da_control,    only : use_radarobs, use_radar_rf, use_rad, crtm_cloud 
+  use da_control,    only : use_radarobs, use_rad, crtm_cloud, &
+                            use_radar_rhv, use_radar_rqv    
   use module_state_description, only : p_qv, p_qc, p_qr, p_qi, &
                                        p_qs, p_qg
 
@@ -837,7 +838,7 @@ subroutine da_update_firstguess(grid, out_filename)
 #endif
 
 !-------------Update QCLOUD, QRAIN, QICE, QSNOW & QGROUP 
-if ( (use_radarobs .and. use_radar_rf) .or. (use_rad .and. crtm_cloud) ) then
+if ( (use_radarobs .and. use_radar_rhv) .or. (use_radarobs .and. use_radar_rqv) .or. (use_rad .and. crtm_cloud) ) then
    if (size(grid%moist,dim=4) >= 4) then         ! update QCLOUD & QRAIN
 !
 !  update QCLOUD

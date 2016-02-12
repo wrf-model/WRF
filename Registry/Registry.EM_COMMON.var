@@ -128,6 +128,7 @@ state    real   Q2               ij     misc        1         -     irh0{23}du  
 state    real   T2               ij     misc        1         -     i01rh0{23}du   "T2"                   "TEMP at 2 M"       "K"
 state    real   TH2              ij     misc        1         -     irhdu     "TH2"                  "POT TEMP at 2 M"   "K"
 state    real   PSFC             ij     misc        1         -     i01rhdu   "PSFC"                 "SFC PRESSURE"      "Pa"
+state    real   QSFC             ij     misc        1         -     irh       "QSFC"                 "SPECIFIC HUMIDITY AT LOWER BOUNDARY"          "kg kg-1"
 
 # these next 2 are for the HFSoLE/PET demo; writing these to auxhist1 output over MCEL for coupling
 # with wave model, only if compiled with -DMCELIO, JM 2003/05/29
@@ -333,6 +334,14 @@ state  integer save_topo_from_real -    dyn_em	    1         -    irh        "sa
 state    real  TMN              ij      misc        1         -     i012rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)     "TMN"   "SOIL TEMPERATURE AT LOWER BOUNDARY"           "K"
 state    real  XLAND            ij      misc        1         -     i02rhd=(interp_fcnm)u=(copy_fcnm)       "XLAND"                 "LAND MASK (1 FOR LAND, 2 FOR WATER)"          ""
 state    real  SNOWC            ij      misc        1         -     irhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)  "SNOWC"  "FLAG INDICATING SNOW COVERAGE (1 FOR SNOW COVER)"  ""
+
+state    real  ZNT              ij      misc        1         -      irh      "ZNT"                   "TIME-VARYING ROUGHNESS LENGTH"                "m"
+state    real  UST              ij      misc        1         -      irh      "UST"                   "U* IN SIMILARITY THEORY"                      "m s-1"
+state    real  MOL              ij      misc        1         -      irh      "MOL"                   "T* IN SIMILARITY THEORY"                      "K"
+state    real  PBLH             ij      misc        1         -      irh      "PBLH"                  "PBL HEIGHT"                                   "m"
+state    real  HFX              ij      misc        1         -      irh      "HFX"                   "UPWARD HEAT FLUX AT THE SURFACE"              "W m-2"
+state    real  QFX              ij      misc        1         -      irh      "QFX"                   "UPWARD MOISTURE FLUX AT THE SURFACE"          "kg m-2 s-1"
+state    real  REGIME           ij      misc        1         -      irh      "REGIME"  "FLAGS: 1=Night/Stable, 2=Mechanical Turbulent, 3=Forced Conv, 4=Free Conv" ""
 
 #
 #---------------------------------------------------------------------------------------------------------------------------------------

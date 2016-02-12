@@ -2137,7 +2137,8 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
 SUBROUTINE horizontal_pressure_gradient( ru_tend,rv_tend,                &
                                          ph,alt,p,pb,al,php,cqu,cqv,     &
                                          muu,muv,mu,fnm,fnp,rdnw,        &
-                                         cf1,cf2,cf3,rdx,rdy,msfux,msfuy,&
+                                         cf1,cf2,cf3,cfn,cfn1,           &
+                                         rdx,rdy,msfux,msfuy,&
                                          msfvx,msfvy,msftx,msfty,        &
                                          config_flags, non_hydrostatic,  &
                                          top_lid,                        &
@@ -2180,7 +2181,7 @@ SUBROUTINE horizontal_pressure_gradient( ru_tend,rv_tend,                &
 
    REAL, DIMENSION( kms:kme ), INTENT(IN   ) :: rdnw, fnm, fnp
 
-   REAL,  INTENT(IN   ) :: rdx, rdy, cf1, cf2, cf3
+   REAL,  INTENT(IN   ) :: rdx, rdy, cf1, cf2, cf3, cfn, cfn1
 
    INTEGER :: i,j,k, itf, jtf, ktf, i_start, j_start
    REAL, DIMENSION( ims:ime, kms:kme ) :: dpn
@@ -2239,9 +2240,8 @@ SUBROUTINE horizontal_pressure_gradient( ru_tend,rv_tend,                &
         ENDDO
         IF (top_lid) THEN
           DO i = i_start, itf
-            dpn(i,kde) = .5*( cf1*(p(i,kde-1,j-1)+p(i,kde-1,j))   &
-                             +cf2*(p(i,kde-2,j-1)+p(i,kde-2,j))   &
-                             +cf3*(p(i,kde-3,j-1)+p(i,kde-3,j))  )
+            dpn(i,kde) = .5*( cfn *(p(i,kde-1,j-1)+p(i,kde-1,j))   &
+                             +cfn1*(p(i,kde-2,j-1)+p(i,kde-2,j)) )
           ENDDO
         ENDIF
                
@@ -2315,9 +2315,8 @@ SUBROUTINE horizontal_pressure_gradient( ru_tend,rv_tend,                &
         ENDDO
         IF (top_lid) THEN
           DO i = i_start, itf
-            dpn(i,kde) = .5*( cf1*(p(i-1,kde-1,j)+p(i,kde-1,j))   &
-                             +cf2*(p(i-1,kde-2,j)+p(i,kde-2,j))   &
-                             +cf3*(p(i-1,kde-3,j)+p(i,kde-3,j))  )
+            dpn(i,kde) = .5*( cfn *(p(i-1,kde-1,j)+p(i,kde-1,j))   &
+                             +cfn1*(p(i-1,kde-2,j)+p(i,kde-2,j)) )
           ENDDO
         ENDIF
                
@@ -6253,6 +6252,40 @@ END SUBROUTINE set_tend
 
 !==============================================================================
 
+SUBROUTINE initialize_moist_old ( moist_old , moist , &
+                                  ids, ide, jds, jde, kds, kde ,   &
+                                  ims, ime, jms, jme, kms, kme ,   &
+                                  its, ite, jts, jte, kts, kte     )
+
+   !  For the theta_m option, the moist_old variable is uninitialized
+   !  at the beginning of EACH of the RK steps.  So, just set the 
+   !  starting value of moist_old as the final value of moist from the
+   !  previous time step.  Here "moist" is only the P_Qv index.
+
+   IMPLICIT NONE
+
+   INTEGER , INTENT(IN) ::   ids, ide, jds, jde, kds, kde ,   &
+                             ims, ime, jms, jme, kms, kme ,   &
+                             its, ite, jts, jte, kts, kte     
+   REAL    , INTENT(IN   ) , DIMENSION(ims:ime,kms:kme,jms:jme) :: moist
+   REAL    , INTENT(  OUT) , DIMENSION(ims:ime,kms:kme,jms:jme) :: moist_old
+
+   !  Local variables
+
+   INTEGER :: i , j , k
+
+   DO j = jts , MIN(jte,jde-1)
+      DO k = kts , kte-1
+         DO i = its , MIN(ite,ide-1)
+            moist_old(i,k,j) = moist(i,k,j)
+         END DO
+      END DO
+   END DO
+
+END SUBROUTINE initialize_moist_old
+
+!==============================================================================
+
 SUBROUTINE theta_to_thetam ( t_1 , moist_old ,                &
                              t_tendf  , moist_tend ,          &
                              t_2 , moist ,                    &
@@ -6280,18 +6313,6 @@ SUBROUTINE theta_to_thetam ( t_1 , moist_old ,                &
 
    INTEGER :: i , j , k
 
-   !  First time step, there is no OLD moisture.
-
-   IF ( ( itimestep .EQ. 1 ) .AND. ( rk_step .EQ. 1 ) ) THEN
-      DO j = jts , MIN(jte,jde-1)
-         DO k = kts , kte-1
-            DO i = its , MIN(ite,ide-1)
-               moist_old(i,k,j) = moist(i,k,j)
-            END DO
-         END DO
-      END DO
-   END IF
-
    !  First RK loop, this info is from the physics packages.  It is modified immediately after the
    !  call to the physics schemes, and the remains constant for the remainder of the RK loops.
 
@@ -6311,8 +6332,8 @@ SUBROUTINE theta_to_thetam ( t_1 , moist_old ,                &
    DO j = jts , MIN(jte,jde-1)
       DO k = kts , kte-1
          DO i = its , MIN(ite,ide-1)
-            t_1(i,k,j) = t_1(i,k,j) * (1. + (R_v/R_d) * moist_old(i,k,j)) + T0*(R_v/R_d)*moist_old(i,k,j)
-            t_2(i,k,j) = t_2(i,k,j) * (1. + (R_v/R_d) * moist(i,k,j)) + T0*(R_v/R_d)*moist(i,k,j)
+            t_1(i,k,j) = ( t_1(i,k,j) + T0 ) * (1. + (R_v/R_d) * moist_old(i,k,j)) - T0
+            t_2(i,k,j) = ( t_2(i,k,j) + T0 ) * (1. + (R_v/R_d) * moist(i,k,j))     - T0
          END DO
       END DO
    END DO

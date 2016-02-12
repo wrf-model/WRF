@@ -387,7 +387,7 @@ subroutine calc_aerosol_rrtmg_sw(ht,dz8w,p,t3d,qv3d,aer_type,                   
                                  aer_aod550_val, aer_angexp_val, aer_ssa_val, aer_asy_val,  &
                                  aod5502d, angexp2d, aerssa2d, aerasy2d,                    &
                                  ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte,           &
-                                 tauaer, ssaaer, asyaer                                     )
+                                 tauaer, ssaaer, asyaer, aod5503d                           )
 
     USE module_wrf_error , ONLY : wrf_err_message
     
@@ -417,9 +417,12 @@ subroutine calc_aerosol_rrtmg_sw(ht,dz8w,p,t3d,qv3d,aer_type,                   
     real, dimension(ims:ime, jms:jme), optional, intent(inout) :: aod5502d, angexp2d, aerssa2d, aerasy2d
     real, dimension(ims:ime, kms:kme, jms:jme, 1:N_BANDS), intent(inout) :: tauaer, ssaaer, asyaer
 
+    real, dimension(ims:ime, kms:kme, jms:jme), optional, intent(in) :: aod5503d   ! trude
+
     ! local variables
     real :: angexp_val,aod_rate,x,xy,xx
     real, dimension(ims:ime, jms:jme, 1:N_BANDS) :: aod550spc
+    real, dimension(ims:ime, kms:kme, jms:jme, 1:N_BANDS) :: aod550spc3d    !  trude
     real, dimension(ims:ime, kms:kme, jms:jme)   :: rh  ! relative humidity
 
     call calc_relative_humidity(p,t3d,qv3d,                 &
@@ -524,10 +527,36 @@ subroutine calc_aerosol_rrtmg_sw(ht,dz8w,p,t3d,qv3d,aer_type,                   
           write( wrf_err_message, '("aer_angexp_opt=",I1,": Angstrom exponent calculated from RH and aer_type ",I1)') &
                                      aer_angexp_opt,aer_type
           call wrf_debug(100, wrf_err_message )
-          call calc_spectral_aod_rrtmg_sw(ims,ime,jms,jme,kms,kme,  &
-                                          its,ite,jts,jte,kts,kte,  &
-                                          rh,aer_type,aod5502d,     &
-                                          aod550spc                 )
+          call calc_spectral_aod_rrtmg_sw(ims,ime,jms,jme,kms,kme,      &
+                                          its,ite,jts,jte,kts,kte,      &
+                                          rh,aer_type,aod5502d,         &
+                                          aod550spc,                    &
+                                          aod5503d, aod550spc3d)         ! trude
+
+          do j=jts,jte
+            do i=its,ite
+              angexp2d(i,j) = 0.0
+            enddo
+          enddo
+
+          if (present(aod5503d)) then
+            do j=jts,jte
+             do k=kts,kte
+              do i=its,ite
+                xy=0
+                xx=0
+                do nb=8,N_BANDS-3  ! bands between 0.4 and  1.0 um
+                   ! the slope of a linear regression with intercept=0 is m=E(xy)/E(x^2), where y=m*x
+                   x=log(0.5*(lower_wvl(nb)+upper_wvl(nb))/0.55)
+                   xy=xy+x*log(aod550spc3d(i,k,j,nb)/aod5503d(i,k,j))
+                   xx=xx+x*x
+                end do
+                angexp2d(i,j) = angexp2d(i,j) - (xy/(N_BANDS-3-8+1))/(xx/(N_BANDS-3-8+1))
+              enddo
+             enddo
+            enddo
+          else
+
           ! added July, 16th, 2013: angexp2d is in the wrfout when aer_angexp_opt=3. It is the average
           ! value in the spectral bands between 0.4 and 1. um
           do j=jts,jte
@@ -543,15 +572,31 @@ subroutine calc_aerosol_rrtmg_sw(ht,dz8w,p,t3d,qv3d,aer_type,                   
                 angexp2d(i,j)=-(xy/(N_BANDS-3-8+1))/(xx/(N_BANDS-3-8+1))
              end do
           end do
+          endif
 
        case default
           write(wrf_err_message,*) 'Expected aer_angexp_opt=[1,2,3]. Got',aer_angexp_opt
           call wrf_error_fatal(wrf_err_message)
     end select aer_angexp_opt_select
 
-    ! exponental -vertical- profile
-    call aod_profiler(ht,dz8w,aod550spc,n_bands,ims,ime,jms,jme,kms,kme, &
+!..If 3D AOD (at 550nm) was provided explicitly, then no need to assume a
+!.. vertical distribution, just use what was provided.  (Trude)
+
+      if (present(aod5503d)) then
+         do nb=1,N_BANDS
+          do j=jts,jte
+           do k=kts,kte
+            do i=its,ite
+               tauaer(i,k,j,nb) = aod550spc3d(i,k,j,nb)
+            enddo
+           enddo
+          enddo
+         enddo
+      else
+         ! exponental -vertical- profile
+         call aod_profiler(ht,dz8w,aod550spc,n_bands,ims,ime,jms,jme,kms,kme, &
                       its,ite,jts,jte,kts,kte,tauaer                     )
+      endif
 
     aer_ssa_opt_select: select case(aer_ssa_opt)
        !case(0)
@@ -961,10 +1006,12 @@ subroutine calc_spectral_asy_goddard_sw(ims,ime,jms,jme,kms,kme,  &
    end do
 end subroutine calc_spectral_asy_goddard_sw
 
-subroutine calc_spectral_aod_rrtmg_sw(ims,ime,jms,jme,kms,kme,  &
-                                      its,ite,jts,jte,kts,kte,  &
-                                      rh,aer_type,aod550,       &
-                                      tauaer                    )
+subroutine calc_spectral_aod_rrtmg_sw(ims,ime,jms,jme,kms,kme,          &
+                                      its,ite,jts,jte,kts,kte,          &
+                                      rh,aer_type,aod550,               &
+                                      tauaer,                           &
+                                      aod550_3d, tauaer3d)               ! trude
+
    implicit none
    
    ! constants
@@ -981,8 +1028,13 @@ subroutine calc_spectral_aod_rrtmg_sw(ims,ime,jms,jme,kms,kme,  &
    real, dimension(ims:ime, jms:jme),            intent(in) :: aod550    ! Total AOD at 550 nm at surface
    real, dimension(ims:ime, jms:jme, 1:N_BANDS), intent(inout) :: tauaer ! Total spectral aerosol optical depth at surface
 
+   ! ++ Trude
+   real, dimension(ims:ime, kms:kme, jms:jme), optional, intent(in) :: aod550_3d ! 3D  AOD at 550 nm 
+   real, dimension(ims:ime, kms:kme, jms:jme, 1:N_BANDS), optional, intent(inout) :: tauaer3d ! 
+   ! -- Trude
+
    ! local variables
-   integer :: i,j,k,ib,imax,imin,ii,jj
+   integer :: i,j,k,ib,imax,imin,ii,jj,kk
    real    :: rhs(N_RH),lj
    real    :: raod_lut(N_AER_TYPES,N_BANDS,N_RH)
 
@@ -1043,7 +1095,37 @@ subroutine calc_spectral_aod_rrtmg_sw(ims,ime,jms,jme,kms,kme,  &
    data (raod_lut(3,ib,8),ib=1,N_BANDS) /0.8836,0.8965,0.9073,0.9149,0.9239,0.9365,0.9448,0.9626,0.9841,1.0069, &
                                          1.0415,1.0712,1.1145,0.8741/
 
-   ! this spectral disaggregation is only at surface (k=kts)
+
+!   ++ Trude    ;  if 3D AOD, disaggreaget at all levels.
+   if (present(aod550_3d)) then
+      do j=jts,jte
+         do i=its,ite
+            !   common part of the Lagrange's interpolator
+            !   only depends on the relative humidity value
+            do kk = kts,kte
+               ii=1
+               do while ( (ii.le.N_RH) .and. (rh(i,kk,j).gt.rhs(ii)) )
+                  ii=ii+1
+               end do
+               imin=max(1,ii-N_INT_POINTS/2-1)
+               imax=min(N_RH,ii+N_INT_POINTS/2)
+
+               do ib=1,N_BANDS
+                  tauaer3d(i,kk,j,ib)=0.
+                  do jj=imin,imax
+                     lj=1.
+                     do k=imin,imax
+                        if (k.ne.jj) lj=lj*(rh(i,kk,j)-rhs(k))/(rhs(jj)-rhs(k))
+                     end do
+                     tauaer3d(i,kk,j,ib)=tauaer3d(i,kk,j,ib)+lj*raod_lut(aer_type,ib,jj)*aod550_3d(i,kk,j)
+                  end do
+               end do
+            end do
+         end do
+      end do
+    else
+! -- Trude
+
    do j=jts,jte
       do i=its,ite
          ! common part of the Lagrange's interpolator
@@ -1067,6 +1149,8 @@ subroutine calc_spectral_aod_rrtmg_sw(ims,ime,jms,jme,kms,kme,  &
          end do
       end do
    end do
+   endif
+
 end subroutine calc_spectral_aod_rrtmg_sw
 
 subroutine calc_spectral_ssa_rrtmg_sw(ims,ime,jms,jme,kms,kme,  &

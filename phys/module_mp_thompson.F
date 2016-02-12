@@ -36,7 +36,7 @@
 !.. Remaining values should probably be left alone.
 !..
 !..Author: Greg Thompson, NCAR-RAL, gthompsn@ucar.edu, 303-497-2805
-!..Last modified: 11 Feb 2015   Aerosol additions to v3.5.1 code 9/2013
+!..Last modified: 09 Nov 2015   Aerosol additions to v3.5.1 code 9/2013
 !..                 Cloud fraction additions 11/2014 part of pre-v3.7
 !+---+-----------------------------------------------------------------+
 !wrft:model_layer:physics
@@ -1053,7 +1053,7 @@
       REAL, DIMENSION(kts:kte):: &
                           qv1d, qc1d, qi1d, qr1d, qs1d, qg1d, ni1d,     &
                           nr1d, nc1d, nwfa1d, nifa1d,                   &
-                          t1d, p1d, w1d, dz1d, dBZ
+                          t1d, p1d, w1d, dz1d, rho, dBZ
       REAL, DIMENSION(kts:kte):: re_qc1d, re_qi1d, re_qs1d
 #if ( WRF_CHEM == 1 )
       REAL, DIMENSION(kts:kte):: &
@@ -1167,9 +1167,10 @@
             nwfa1 = nwfa2d(i,j)
          else
             do k = kts, kte
-               nc1d(k) = Nt_c
-               nwfa1d(k) = 11.1E6
-               nifa1d(k) = naIN1*0.01
+               rho(k) = 0.622*p1d(k)/(R*t1d(k)*(qv1d(k)+0.622))
+               nc1d(k) = Nt_c/rho(k)
+               nwfa1d(k) = 11.1E6/rho(k)
+               nifa1d(k) = naIN1*0.01/rho(k)
             enddo
             nwfa1 = 11.1E6
          endif
@@ -1640,8 +1641,8 @@
             lami = (am_i*cig(2)*oig1*ni(k)/ri(k))**obmi
             ilami = 1./lami
             xDi = (bm_i + mu_i + 1.) * ilami
-            if (xDi.lt. 20.E-6) then
-             lami = cie(2)/20.E-6
+            if (xDi.lt. 5.E-6) then
+             lami = cie(2)/5.E-6
              ni(k) = MIN(499.D3, cig(1)*oig2*ri(k)/am_i*lami**bm_i)
             elseif (xDi.gt. 300.E-6) then
              lami = cie(2)/300.E-6
@@ -2672,8 +2673,8 @@
            lami = (am_i*cig(2)*oig1*xni/xri)**obmi
            ilami = 1./lami
            xDi = (bm_i + mu_i + 1.) * ilami
-           if (xDi.lt. 20.E-6) then
-            lami = cie(2)/20.E-6
+           if (xDi.lt. 5.E-6) then
+            lami = cie(2)/5.E-6
             xni = MIN(499.D3, cig(1)*oig2*xri/am_i*lami**bm_i)
             niten(k) = (xni-ni1d(k)*rho(k))*odts*orho
            elseif (xDi.gt. 300.E-6) then
@@ -3255,8 +3256,9 @@
            t3_vts = Kap0*csg(1)*ils1**cse(1)
            t4_vts = Kap1*Mrat**mu_s*csg(7)*ils2**cse(7)
            vts = rhof(k)*av_s * (t1_vts+t2_vts)/(t3_vts+t4_vts)
-           if (temp(k).gt. T_0) then
-            vtsk(k) = MAX(vts*vts_boost(k), vtrk(k))
+           if (temp(k).gt. (T_0+0.1)) then
+            vtsk(k) = MAX(vts*vts_boost(k),                             &
+     &                vts*((vtrk(k)-vts*vts_boost(k))/(temp(k)-T_0)))
            else
             vtsk(k) = vts*vts_boost(k)
            endif
@@ -3503,8 +3505,8 @@
            lami = (am_i*cig(2)*oig1*ni1d(k)/qi1d(k))**obmi
            ilami = 1./lami
            xDi = (bm_i + mu_i + 1.) * ilami
-           if (xDi.lt. 20.E-6) then
-            lami = cie(2)/20.E-6
+           if (xDi.lt. 5.E-6) then
+            lami = cie(2)/5.E-6
            elseif (xDi.gt. 300.E-6) then
             lami = cie(2)/300.E-6
            endif
@@ -3588,6 +3590,11 @@
               IF( force_read_thompson ) THEN
                 CALL wrf_error_fatal("Error opening qr_acr_qg.dat. Aborting because force_read_thompson is .true.")
               ENDIF
+            ENDIF
+         ELSE
+            INQUIRE(63,opened=lopen)
+            IF (lopen) THEN
+              CLOSE(63)
             ENDIF
           ENDIF
         ELSE

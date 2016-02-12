@@ -1413,6 +1413,8 @@ CONTAINS
       REAL :: moist_old_bdy_tend_xs , moist_old_bdy_tend_xe
       REAL :: moist_old_bdy_tend_ys , moist_old_bdy_tend_ye
 
+      INTEGER :: i_min, i_max, j_min, j_max
+
       !  IF      (       theta_to_thetam ) THEN
       !     Convert dry potential temperature to theta_m 
       !     Defined as: theta_m = ( theta   + T0 ) * ( 1. + (R_v/R_d) Qv ) - T0
@@ -1442,6 +1444,22 @@ CONTAINS
       !  passed in, this will either be dry potential temperature or moist potential
       !  temperature.
 
+      !  The i_min, i_max for the south and north boundaries depends on if we are doing
+      !  serial, OpenMP, or MPI.  For OpenMP, we do not want any overlap between tiles that
+      !  are on the same task (either OpenMP only, or OpenMP+MPI).
+
+      IF ( its .EQ. ips ) THEN
+         i_min = ips-4
+      ELSE
+         i_min = its
+      END IF
+
+      IF ( ite .EQ. ipe ) THEN
+         i_max = ipe+4
+      ELSE
+         i_max = ite
+      END IF
+
       !  South and north lateral boundaries.  This is the i-extent of its through ite, but j only
       !  goes to within spec_bdy_width of the top and bottom (north and south) boundaries.
 
@@ -1451,7 +1469,9 @@ CONTAINS
       DO jj = MAX(jts,1) , MIN(jte,jde-1,spec_bdy_width)
          j = jj
          DO k = kts , kte-1
-            DO i = MAX(1,its-4) , MIN(ite+4,ide-1)
+!           DO i = MAX(1,its-4) , MIN(ite+4,ide-1)
+!           DO i = MAX(1,its,ips-4) , MIN(ite,ipe+4,ide-1)
+            DO i = MAX(1,i_min) , MIN(i_max,ide-1)
                mu_old_bdy_ys         =   mu_bdy_ys(i,1,j)    + mub(i,jj)
                t_old_bdy_ys          = ( t_bdy_ys(i,k,j)                                            ) / mu_old_bdy_ys
                moist_old_bdy_ys      = ( moist_bdy_ys(i,k,j)                                        ) / mu_old_bdy_ys
@@ -1479,7 +1499,9 @@ CONTAINS
       DO jj = MIN(jde-1,jte) , MAX(jde-spec_bdy_width,jts) , -1
          j = jde-jj
          DO k = kts , kte-1
-            DO i = MAX(1,its-4) , MIN(ite+4,ide-1)
+!           DO i = MAX(1,its-4) , MIN(ite+4,ide-1)
+!           DO i = MAX(1,its,ips-4) , MIN(ite,ipe+4,ide-1)
+            DO i = MAX(1,i_min) , MIN(i_max,ide-1)
                mu_old_bdy_ye         =   mu_bdy_ye(i,1,j)    + mub(i,jj)
                t_old_bdy_ye          = ( t_bdy_ye(i,k,j)                                            ) / mu_old_bdy_ye
                moist_old_bdy_ye      = ( moist_bdy_ye(i,k,j)                                        ) / mu_old_bdy_ye
@@ -1501,6 +1523,22 @@ CONTAINS
          END DO
       END DO
 
+      !  The j_min, j_max for the west and east boundaries depends on if we are doing
+      !  serial, OpenMP, or MPI.  For OpenMP, we do not want any overlap between tiles that
+      !  are on the same task (either OpenMP only, or OpenMP+MPI).
+
+      IF ( jts .EQ. jps ) THEN
+         j_min = jps-4
+      ELSE
+         j_min = jts
+      END IF
+
+      IF ( jte .EQ. jpe ) THEN
+         j_max = jpe+4
+      ELSE
+         j_max = jte
+      END IF
+
       !  West and east lateral boundaries.  This is the j-extent of jts through jte, but i only
       !  goes to within spec_bdy_width of the left and right (west and east) boundaries.
 
@@ -1510,7 +1548,9 @@ CONTAINS
       DO ii = MAX(its,1) , MIN(ite,ide-1,spec_bdy_width)
          i = ii
          DO k = kts , kte-1
-            DO j = MAX(1,jts-4) , MIN(jte+4,jde-1)
+!           DO j = MAX(1,jts-4) , MIN(jte+4,jde-1)
+!           DO j = MAX(1,jts,jps-4) , MIN(jte,jpe+4,jde-1)
+            DO j = MAX(1,j_min) , MIN(j_max,jde-1)
                mu_old_bdy_xs         =   mu_bdy_xs(j,1,i)    + mub(ii,j)
                t_old_bdy_xs          = ( t_bdy_xs(j,k,i)                                            ) / mu_old_bdy_xs
                moist_old_bdy_xs      = ( moist_bdy_xs(j,k,i)                                        ) / mu_old_bdy_xs
@@ -1538,7 +1578,9 @@ CONTAINS
       DO ii = MIN(ide-1,ite) , MAX(ide-spec_bdy_width,its) , -1
          i = ide-ii
          DO k = kts , kte-1
-            DO j = MAX(1,jts-4) , MIN(jte+4,jde-1)
+!           DO j = MAX(1,jts-4) , MIN(jte+4,jde-1)
+!           DO j = MAX(1,jts,jps-4) , MIN(jte,jpe+4,jde-1)
+            DO j = MAX(1,j_min) , MIN(j_max,jde-1)
                mu_old_bdy_xe         =   mu_bdy_xe(j,1,i)    + mub(ii,j)
                t_old_bdy_xe          = ( t_bdy_xe(j,k,i)                                            ) / mu_old_bdy_xe
                moist_old_bdy_xe      = ( moist_bdy_xe(j,k,i)                                        ) / mu_old_bdy_xe

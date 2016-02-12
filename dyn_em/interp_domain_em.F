@@ -21,7 +21,7 @@ SUBROUTINE interp_domain_em_part1 ( grid, ngrid, config_flags   &
          USE module_domain, ONLY : domain, get_ijk_from_grid
          USE module_configure, ONLY : grid_config_rec_type
          TYPE(domain), POINTER :: grid , ngrid
-#include <dummy_new_decl.inc>
+#include "dummy_new_decl.inc"
 
       INTEGER nlev
       INTEGER i,j,pig,pjg,cm,cn,nig,njg,k

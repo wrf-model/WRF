@@ -10,8 +10,8 @@ program gen_be_diags
 
    use da_control, only : do_normalize,filename_len,stderr,stdout,use_rf
    use da_tools_serial, only : da_get_unit
-   use da_gen_be, only : da_readwrite_be_stage2, da_readwrite_be_stage3, &
-      da_readwrite_be_stage4
+   use da_gen_be, only : da_readwrite_be_stage1, da_readwrite_be_stage2, da_readwrite_be_stage3, &
+                         da_readwrite_be_stage4
 
    implicit none
 
@@ -45,62 +45,115 @@ program gen_be_diags
    filename = 'be.dat'
    open (ounit, file = filename, form='unformatted')
 
-   write(6,'(/a)')' [1] Gather regression coefficients.'
+   if( cv_options == 7) then
+      write(6,'(/a)')' [1] Gather dimensions and bin information.'
+      call da_readwrite_be_stage1( ounit, nk )
 
-   call da_readwrite_be_stage2( ounit, nk )
+      write(6,'(/a)')' [2] Gather vertical error eigenvectors, eigenvalues.'
 
-   write(6,'(/a)')' [2] Gather vertical error eigenvectors, eigenvalues.'
+      variable = 'u'
+      call da_readwrite_be_stage3( ounit, nk, variable )
 
-   variable = 'psi'
-   call da_readwrite_be_stage3( ounit, nk, variable )
+      variable = 'v'
+      call da_readwrite_be_stage3( ounit, nk, variable )
 
-   variable = 'chi_u'
-   call da_readwrite_be_stage3( ounit, nk, variable )
+      variable = 't'
+      call da_readwrite_be_stage3( ounit, nk, variable )
 
-   variable = 't_u'
-   call da_readwrite_be_stage3( ounit, nk, variable )
+      variable = 'rh'
+      call da_readwrite_be_stage3( ounit, nk, variable )
 
-   variable = 'rh'
-   if( cv_options == 6) variable = 'rh_u'
-   call da_readwrite_be_stage3( ounit, nk, variable )
+      ! To keep the dimension nk for 3d fields:
+      nk_3d = nk
 
-   ! To keep the dimension nk for 3d fields:
-   nk_3d = nk
-
-   if (uh_method /= 'power') then
-      variable = 'ps_u'
-      call da_readwrite_be_stage3( ounit,  1, variable )
-   end if
-
-   if (uh_method == 'power') then
-      write(6,'(/a)')' [3] Gather horizontal error power spectra.'
-   else if (uh_method == 'scale') then
-      if( use_rf )then
-         write(6,'(/a)')' [3] Gather horizontal scale length.'
-      else
-         uh_method = 'wavelet'
+      if (uh_method /= 'power') then
+         variable = 'ps'
+         call da_readwrite_be_stage3( ounit,  1, variable )
       end if
+      if (uh_method == 'power') then
+         write(6,'(/a)')' [3] Gather horizontal error power spectra.'
+      else if (uh_method == 'scale') then
+         if( use_rf )then
+            write(6,'(/a)')' [3] Gather horizontal scale length.'
+         else
+            uh_method = 'wavelet'
+         end if
+      end if
+      if (uh_method == 'wavelet') write(6,'(/" [3] Gather horizontal wavelet std. devs.")')
+
+      ! To assign the dimension nk for 3d fields:
+      nk = nk_3d
+
+      variable = 'u'
+      call da_readwrite_be_stage4( ounit, nk, uh_method, n_smth_sl, variable )
+
+      variable = 'v'
+      call da_readwrite_be_stage4( ounit, nk, uh_method, n_smth_sl, variable )
+
+      variable = 't'
+      call da_readwrite_be_stage4( ounit, nk, uh_method, n_smth_sl, variable )
+
+      variable = 'rh'
+      call da_readwrite_be_stage4( ounit, nk, uh_method, n_smth_sl, variable )
+
+      variable = 'ps'
+      call da_readwrite_be_stage4( ounit, 1, uh_method, n_smth_sl, variable )
+   else
+      write(6,'(/a)')' [1] Gather regression coefficients.'
+      call da_readwrite_be_stage2( ounit, nk )
+
+      write(6,'(/a)')' [2] Gather vertical error eigenvectors, eigenvalues.'
+
+      variable = 'psi'
+      call da_readwrite_be_stage3( ounit, nk, variable )
+
+      variable = 'chi_u'
+      call da_readwrite_be_stage3( ounit, nk, variable )
+
+      variable = 't_u'
+      call da_readwrite_be_stage3( ounit, nk, variable )
+
+      variable = 'rh'
+      if( cv_options == 6) variable = 'rh_u'
+      call da_readwrite_be_stage3( ounit, nk, variable )
+
+      ! To keep the dimension nk for 3d fields:
+      nk_3d = nk
+
+      if (uh_method /= 'power') then
+         variable = 'ps_u'
+         call da_readwrite_be_stage3( ounit,  1, variable )
+      end if
+      if (uh_method == 'power') then
+         write(6,'(/a)')' [3] Gather horizontal error power spectra.'
+      else if (uh_method == 'scale') then
+         if( use_rf )then
+            write(6,'(/a)')' [3] Gather horizontal scale length.'
+         else
+            uh_method = 'wavelet'
+         end if
+      end if
+      if (uh_method == 'wavelet') write(6,'(/" [3] Gather horizontal wavelet std. devs.")')
+
+      ! To assign the dimension nk for 3d fields:
+      nk = nk_3d
+
+      variable = 'psi'
+      call da_readwrite_be_stage4( ounit, nk, uh_method, n_smth_sl, variable )
+
+      variable = 'chi_u'
+      call da_readwrite_be_stage4( ounit, nk, uh_method, n_smth_sl, variable )
+
+      variable = 't_u'
+      call da_readwrite_be_stage4( ounit, nk, uh_method, n_smth_sl, variable )
+
+      variable = 'rh'
+      if( cv_options == 6) variable = 'rh_u'
+      call da_readwrite_be_stage4( ounit, nk, uh_method, n_smth_sl, variable )
+
+      variable = 'ps_u'
+      call da_readwrite_be_stage4( ounit, 1, uh_method, n_smth_sl, variable )
    end if
-   if (uh_method == 'wavelet') write(6,'(/" [3] Gather horizontal wavelet std. devs.")')
-
-   ! To assign the dimension nk for 3d fields:
-   nk = nk_3d
-
-   variable = 'psi'
-   call da_readwrite_be_stage4( ounit, nk, uh_method, n_smth_sl, variable )
-
-   variable = 'chi_u'
-   call da_readwrite_be_stage4( ounit, nk, uh_method, n_smth_sl, variable )
-
-   variable = 't_u'
-   call da_readwrite_be_stage4( ounit, nk, uh_method, n_smth_sl, variable )
-
-   variable = 'rh'
-   if( cv_options == 6) variable = 'rh_u'
-   call da_readwrite_be_stage4( ounit, nk, uh_method, n_smth_sl, variable )
-
-   variable = 'ps_u'
-   call da_readwrite_be_stage4( ounit, 1, uh_method, n_smth_sl, variable )
 
    close(ounit)
 

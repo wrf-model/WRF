@@ -206,7 +206,7 @@ SUBROUTINE med_add_config_info_to_grid ( grid )
 #define SOURCE_RECORD model_config_rec %
 #define SOURCE_REC_DEX (grid%id)
 #define DEST_RECORD   grid %
-#include <config_assigns.inc>
+#include "config_assigns.inc"
 
    RETURN
 

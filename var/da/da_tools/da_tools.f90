@@ -21,7 +21,7 @@ module da_tools
       y_start_sub_domain, start_lat, delt_lat, delt_lon, start_lon, cp, &
       missing_data, surface_correction,print_detail_map, use_rad, stderr, &
       t_kelvin, trace_use_frequent, jds, jde, pptop,ppbot,npres_print, &
-      rad_to_deg, deg_to_rad, num_procs, print_detail_obs
+      rad_to_deg, deg_to_rad, num_procs, print_detail_obs, psfc_from_slp
 
 #ifdef DM_PARALLEL
 !  use mpi, only : mpi_integer

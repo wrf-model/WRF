@@ -29,8 +29,8 @@ subroutine da_transform_xtovp(grid, xb, xbx, xa, vp, be)
 
    if (trace_use) call da_trace_entry("da_transform_xtovp")
 
-   if ( cv_options == 3 ) then
-      write(unit=message(1),fmt='(A)') 'Cannot perform transform_xtovp for cv_options == 3'
+   if ( (cv_options == 3) .or. (cv_options == 7) ) then
+      write(unit=message(1),fmt='(A,I3)') 'Cannot perform transform_xtovp for cv_options == ',cv_options
       call da_error(__FILE__,__LINE__,message(1:1))
    endif
 

@@ -40,6 +40,7 @@
   USE module_input_tracer, only: set_tracer
   USE module_wetscav_driver, only: wetscav_driver
   USE module_wetdep_ls, only:wetdep_ls
+  USE module_uoc_dustwd ! Claudia, 3 April 2014  [mklose 03082015]
   USE module_input_chem_data, only: last_chem_time, &
 #if (defined(CHEM_DBG_I) && defined(CHEM_DBG_J) && defined(CHEM_DBG_K))
                                      chem_dbg,      &
@@ -192,7 +193,7 @@
    TYPE(domain) , TARGET          :: grid
    !
    !  Definitions of dummy arguments to solve
-# include <dummy_new_decl.inc>
+# include "dummy_new_decl.inc"
 # define NO_I1_OLD
 
    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
@@ -280,6 +281,7 @@
 !        emissions_driver
 !        photolysis_driver
 !        dry_dep_driver
+!        uoc_dustwd_driver
 !        grelldrvct (convective tracer transport)
 !        mechanism_driver (gases)
 !        cloud_chem_driver
@@ -1034,8 +1036,32 @@
 
       end if
 
+! cfrick - 2014 - WET DEPOSITION OF DUST FOLLOWING JUNG (2004)   -   mklose [03082015]
+        if(config_flags%dustwd_onoff>0)then
+          if(config_flags%mp_physics.ne.2 .and. config_flags%mp_physics.ne.10) then    ! mklose [03032015]
+             write(msg,*)'CHEM_DRIVER - UoC wet deposition is not yet implemented for this & 
+                          & microphysics option, mp_physics=', config_flags%mp_physics, & 
+                          & ' and dustwd_onoff=', config_flags%dustwd_onoff
+             call wrf_error_fatal( msg )
+          endif
 
-
+           call wrf_debug(15,'UoC dust wet deposition')
+           call uoc_dustwd_driver(grid%precr,chem,p_phy,t_phy,                  &
+                                  ids,ide, jds,jde, kds,kde,                    &
+                                  ims,ime, jms,jme, kms,kme,                    &
+                                  its,ite, jts,jte, kts,kte,                    &
+                                  dtstepc,                                      &
+                                  grid%dustwd_1, grid%dustwd_2,                 &
+                                  grid%dustwd_3, grid%dustwd_4,                 &
+                                  grid%dustwd_5,                                &
+                                  grid%wetdep_1, grid%wetdep_2,                 &
+                                  grid%wetdep_3, grid%wetdep_4,                 &
+                                  grid%wetdep_5,                                &
+                                  grid%dustwdload_1, grid%dustwdload_2,         &
+                                  grid%dustwdload_3, grid%dustwdload_4,         &
+                                  grid%dustwdload_5,                            &
+                                  rri, dz8w, epsilc                             )
+        endif
 !
 !   convective transport/wet deposition
 !
@@ -1179,7 +1205,7 @@ CALL kpp_mechanism_driver (chem,                                                
    moist,                                                                             &
    vdrog3, ldrog, vdrog3_vbs, ldrog_vbs,                                              &
 !
-#include <call_to_kpp_mech_drive.inc>
+#include "call_to_kpp_mech_drive.inc"
 !
    ids,ide, jds,jde, kds,kde,                                                         &
    ims,ime, jms,jme, kms,kme,                                                         &

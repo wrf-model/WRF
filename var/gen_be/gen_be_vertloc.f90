@@ -5,7 +5,6 @@ program gen_be_vertloc
    implicit none
 
    integer, parameter    :: ni = 1000 
-   integer, parameter    :: ktarget = 44
    integer, parameter    :: stdout = 6 
    character (len=3)     :: cnk                       ! vertical level 
    real*8, parameter       :: rscale = 0.1
@@ -13,6 +12,7 @@ program gen_be_vertloc
 
    integer               :: i, k, k1, m,nk,nk2
    integer               :: nm
+   integer               :: ktarget
    real*8                  :: ni1_inv
    real*8                  :: nk_inv, nk3_inv
    real*8                  :: kscale, kscale_invsq
@@ -117,6 +117,7 @@ program gen_be_vertloc
 ! Calculate B = E L E^T = U U^T [..00100..]
 !------------------------------------------------------------------------------------------------
 
+   ktarget = nk
    x(:) = 0.0
    x(ktarget) = 1.0
 

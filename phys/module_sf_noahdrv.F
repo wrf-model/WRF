@@ -823,7 +823,8 @@ CONTAINS
               DQSDT2=Q2SATI*6174./(SFCTSNO**2)
             ENDIF
 ! for snow cover fraction at 0 C, ground temp will not change, so DQSDT2 effectively zero
-            IF(T1 .GT. 273. .AND. SNOWC(I,J) .GT. 0.)DQSDT2=DQSDT2*(1.-SNOWC(I,J))
+! V3.8 add condition for SWDOWN to restrict condition to positive forcing (JD)
+            IF(T1 .GT. 273. .AND. SNOWC(I,J) .GT. 0. .AND. SWDOWN(I,J) .GT. 10.)DQSDT2=DQSDT2*(1.-SNOWC(I,J))
           ENDIF
 
           ! Land-ice or land points use the usual deep-soil temperature.

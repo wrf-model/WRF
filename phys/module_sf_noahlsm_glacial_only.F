@@ -359,7 +359,8 @@ CONTAINS
          &       SFCPRS,RCH,RR,SNEQV,SNDENS,SNOWH,ZSOIL,TBOT,   &
          &       SNOMLT,DEW,FLX1,FLX2,FLX3,ESNOW,EMISSI,RIBB)
 
-    ETA_KINEMATIC =  ESNOW
+!   ETA_KINEMATIC =  ESNOW
+    ETA_KINEMATIC =  ETP
 
 ! ----------------------------------------------------------------------
 ! Effective mixing ratio at grnd level (skin)

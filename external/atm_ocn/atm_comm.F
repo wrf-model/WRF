@@ -81,6 +81,11 @@
 
 !Controls:
       integer nunit_announce /6/, VerbLev /3/
+! To control awo couplings
+      integer ia2o /1/, &
+     &        io2a /1/, &
+     &        ia2w /1/, &
+     &        iw2a /0/
 
       SAVE
 
@@ -188,6 +193,34 @@
         call ATM_ANNOUNCE('AM is standalone: Ocean_spec=1, NSF=4'// &
      &  ' assigned (as if for POM coupling)',2)
       end if
+
+      call CMP_gnr_RECV(ia2o,1,MPI_INTEGER)
+      write(s,'(i4)') ia2o
+      call ATM_ANNOUNCE('back from CMP_INTEGER_RECV, ia2o is '//s,2)
+      call MPI_BCAST(ia2o,1,MPI_INTEGER, &
+     &component_master_rank_local,MPI_COMM_Atmos,ierr)
+      call ATM_ANNOUNCE('ATM_CMP_START: ia2o broadcast',2)
+
+      call CMP_gnr_RECV(io2a,1,MPI_INTEGER)
+      write(s,'(i4)') io2a
+      call ATM_ANNOUNCE('back from CMP_INTEGER_RECV, io2a is '//s,2)
+      call MPI_BCAST(io2a,1,MPI_INTEGER, &
+     &component_master_rank_local,MPI_COMM_Atmos,ierr)
+      call ATM_ANNOUNCE('ATM_CMP_START: io2a broadcast',2)
+
+      call CMP_gnr_RECV(ia2w,1,MPI_INTEGER)
+      write(s,'(i4)') ia2w
+      call ATM_ANNOUNCE('back from CMP_INTEGER_RECV, ia2w is '//s,2)
+      call MPI_BCAST(ia2w,1,MPI_INTEGER, &
+     &component_master_rank_local,MPI_COMM_Atmos,ierr)
+      call ATM_ANNOUNCE('ATM_CMP_START: ia2w broadcast',2)
+
+      call CMP_gnr_RECV(iw2a,1,MPI_INTEGER)
+      write(s,'(i4)') iw2a
+      call ATM_ANNOUNCE('back from CMP_INTEGER_RECV, iw2a is '//s,2)
+      call MPI_BCAST(iw2a,1,MPI_INTEGER, &
+     &component_master_rank_local,MPI_COMM_Atmos,ierr)
+      call ATM_ANNOUNCE('ATM_CMP_START: iw2a broadcast',2)
 
       if (kind_R.eq.kind_REAL) then
         MPI_kind_R=MPI_kind_REAL
@@ -566,6 +599,7 @@
       integer i,j
       real(kind=kind_SST) SST_g(ids:idf,jds:jdf)
 !C
+      IF ( io2a .LT. 1 ) RETURN
 
       IF (.not.PHYS) RETURN
 
@@ -634,6 +668,7 @@
       real dtainv
 !C
 
+      IF ( ia2o .LT. 1 .and. ia2w .LT. 1 ) RETURN
       IF (.not.PHYS) RETURN
 
       IF (gid.gt.2) RETURN
@@ -714,6 +749,7 @@
       integer n
 !C
 
+      IF ( ia2o .LT. 1 .and. ia2w .LT. 1 ) RETURN
       if (.not.PHYS) RETURN
 
       IF (gid.gt.2) RETURN
@@ -774,9 +810,8 @@ SUBROUTINE atm_getcur(ucur,vcur)
                       
    INTEGER :: i, j
    LOGICAL :: getcur
-! Further modifications needed once the add_comm option in the coupler
-! is changed.   
-   IF (wm_id <= 0)  RETURN
+
+      IF ( io2a .LT. 2 ) RETURN
    IF (.NOT. phys .OR. gid > 2) RETURN
    IF (ocean_spec /= 1) CALL atm_announce('Warn: ocean currents needed',3)
    CALL atm_announce('atm_getcur entered (phys = .true.)',3)
@@ -840,6 +875,7 @@ SUBROUTINE atm_getwstate(alpha,gamma)
    INTEGER :: i, j
    LOGICAL :: getwstate
 
+      IF ( iw2a .LT. 1 ) RETURN
    IF (wm_id <= 0)  RETURN
    IF (.NOT. phys .OR. gid > 2) RETURN
    CALL atm_announce('atm_getstate entered (phys = .true.)',3)
@@ -893,6 +929,7 @@ SUBROUTINE atm_prepwindp(ulowl, vlowl, richn, zlowl)
 
    REAL(KIND = kind_windp), DIMENSION(ims:ime,jms:jme) :: ulowl, vlowl, &
                                                           richn, zlowl
+      IF ( ia2w .LT. 1 ) RETURN
    IF (wm_id <= 0)  RETURN
    IF (.NOT. phys .OR. gid > 2) RETURN
 
@@ -932,6 +969,7 @@ SUBROUTINE atm_sendwindp
    INTEGER :: n
    REAL(KIND = kind_windp), DIMENSION(ids:idf,jds:jdf) :: field
 
+      IF ( ia2w .LT. 1 ) RETURN
    IF (wm_id <= 0)  RETURN
    IF (.NOT. phys .OR. gid > 2) RETURN
  

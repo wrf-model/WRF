@@ -41,16 +41,15 @@
 
       IMPLICIT NONE
 
-      LOGICAL :: exists
+      LOGICAL :: exists, vnest
       LOGICAL , EXTERNAL :: wrf_dm_on_monitor
-      INTEGER :: i, oops, d1_value
+      INTEGER :: i, j, oops, d1_value
       LOGICAL :: km_opt_already_done , diff_opt_already_done
 !TWG2015
 !
 !FASDAS
 !
       LOGICAL :: rinblw_already_done
-      INTEGER :: j
 !
 !END FASDAS
 !
@@ -217,12 +216,16 @@
       DO i = 2, model_config_rec % max_dom
          IF ( model_config_rec % mp_physics(i)     .NE. &
               model_config_rec % mp_physics(1) ) THEN
-            wrf_err_message = '--- ERROR: mp_physics must be equal for all domains '
+            wrf_err_message = '--- NOTE: mp_physics must be equal for all domains '
             CALL wrf_message ( wrf_err_message )
-            wrf_err_message = '--- Fix mp_physics in namelist.input '
-            CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
+            wrf_err_message = '--- NOTE:     ----> Setting all mp_physics entries to value defined in the inner most domain'
+            CALL wrf_message ( TRIM( wrf_err_message ) )
          END IF
       ENDDO
+      d1_value = model_config_rec%mp_physics(model_config_rec % max_dom)
+      DO i = 1, model_config_rec % max_dom-1
+         model_config_rec%mp_physics(i) = d1_value
+      END DO
 
 
 !-----------------------------------------------------------------------
@@ -335,9 +338,15 @@
       d1_value = model_config_rec%sf_urban_physics(1)
       DO i = 2, model_config_rec % max_dom
          IF ( model_config_rec%sf_urban_physics(i) /= d1_value ) THEN
-            WRITE(wrf_err_message, * ) '--- ERROR:   sf_urban_physics option must be identical in each domain'
-            CALL wrf_error_fatal ( TRIM ( wrf_err_message ) )
+            WRITE(wrf_err_message, * ) '--- NOTE:   sf_urban_physics option must be identical in each domain'
+            CALL wrf_message ( TRIM ( wrf_err_message ) )
+            WRITE(wrf_err_message, * ) '--- NOTE:   ----> Resetting namelist values to that defined on the inner most domain'
+            CALL wrf_message ( TRIM ( wrf_err_message ) )
          ENDIF
+      END DO
+      d1_value = model_config_rec%sf_urban_physics(model_config_rec % max_dom)
+      DO i = 1, model_config_rec % max_dom-1
+         model_config_rec%sf_urban_physics(i) = d1_value
       END DO
 
 !-----------------------------------------------------------------------

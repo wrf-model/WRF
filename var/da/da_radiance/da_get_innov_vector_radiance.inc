@@ -20,6 +20,8 @@ subroutine da_get_innov_vector_radiance (it, grid, ob, iv)
 
    integer                        :: inst
 
+   if(trace_use) call  da_trace_entry("da_get_innov_vector_radiance")
+
    iv%instid(:)%info%n1 = iv%instid(:)%info%plocal(iv%time-1) + 1
    iv%instid(:)%info%n2 = iv%instid(:)%info%plocal(iv%time)
 
@@ -86,4 +88,7 @@ subroutine da_get_innov_vector_radiance (it, grid, ob, iv)
          call da_biasprep(inst,ob,iv)
       end do
    end if
+
+   if(trace_use) call  da_trace_exit("da_get_innov_vector_radiance")
+
 end subroutine da_get_innov_vector_radiance

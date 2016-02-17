@@ -57,7 +57,7 @@ CONTAINS
 
      CALL init_domain_rk( grid &
 !
-#include <actual_new_args.inc>
+#include "actual_new_args.inc"
 !
                         )
    END SUBROUTINE init_domain
@@ -66,7 +66,7 @@ CONTAINS
 
    SUBROUTINE init_domain_rk ( grid &
 !
-# include <dummy_new_args.inc>
+# include "dummy_new_args.inc"
 !
 )
    IMPLICIT NONE
@@ -74,7 +74,7 @@ CONTAINS
    !  Input data.
    TYPE (domain), POINTER :: grid
 
-# include <dummy_new_decl.inc>
+# include "dummy_new_decl.inc"
 
    TYPE (grid_config_rec_type)              :: config_flags
 
@@ -106,7 +106,7 @@ CONTAINS
    character (len=256) :: mminlu2
    
 #ifdef DM_PARALLEL
-#    include <data_calls.inc>
+#    include "data_calls.inc"
 #endif
 
 

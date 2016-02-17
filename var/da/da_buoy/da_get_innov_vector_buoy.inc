@@ -212,7 +212,8 @@ subroutine da_get_innov_vector_buoy( it,num_qcstat_conv, grid, ob, iv)
       end if
     end if
 
-      if (ob % buoy(n) % p > 0.0 .AND. iv % buoy(n) % p % qc >= obs_qc_pointer) then
+      !if (ob % buoy(n) % p > 0.0 .AND. iv % buoy(n) % p % qc >= obs_qc_pointer) then
+      if ( iv % buoy(n) % p % qc >= obs_qc_pointer ) then
          iv % buoy(n) % p % inv = iv%buoy(n)%p%inv - model_p(1,n)
       else
          iv % buoy(n) % p % inv = 0.0

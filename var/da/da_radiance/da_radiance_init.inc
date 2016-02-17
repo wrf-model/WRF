@@ -126,6 +126,9 @@ subroutine da_radiance_init(iv,ob)
    else if ( trim( crtm_sensor_name(rtminit_sensor(n))) == 'seviri' ) then
      nchanl(n)  =  8 
      nscan(n)   = 90 
+   else if ( trim( crtm_sensor_name(rtminit_sensor(n))) == 'amsr2' ) then
+      nchanl(n)  = 14
+      nscan(n)   = 486
    else
       call da_error(__FILE__,__LINE__, &
         (/"Unrecognized instrument"/))

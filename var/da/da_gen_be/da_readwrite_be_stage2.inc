@@ -78,6 +78,7 @@ subroutine da_readwrite_be_stage2(outunit, nk)
         form='formatted', status='old', action='read')
    read(namelist_unit, gen_be_stage2_nl)
    close(namelist_unit)
+   call da_free_unit(namelist_unit)
   
    ! Read in the coefficients:
 

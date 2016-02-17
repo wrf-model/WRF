@@ -4011,7 +4011,7 @@ END
       TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
       TYPE(domain), POINTER :: ngrid
       TYPE(domain), POINTER :: pgrid         !KAL added for vertical nesting
-#include <dummy_new_decl.inc>
+#include "dummy_new_decl.inc"
       INTEGER nlev, msize
       INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
       TYPE (grid_config_rec_type)            :: config_flags
@@ -4083,7 +4083,7 @@ ENDIF
       TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
       TYPE(domain), POINTER :: intermediate_grid
       TYPE(domain), POINTER :: ngrid
-#include <dummy_new_decl.inc>
+#include "dummy_new_decl.inc"
       INTEGER nlev, msize
       INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
       INTEGER iparstrt,jparstrt,sw
@@ -4183,7 +4183,7 @@ ENDIF
       TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
       TYPE(domain), POINTER :: ngrid
       TYPE(domain), POINTER :: pgrid         !KAL added for vertical nesting
-#include <dummy_new_decl.inc>
+#include "dummy_new_decl.inc"
       INTEGER nlev, msize
       INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
       TYPE (grid_config_rec_type)            :: config_flags
@@ -4269,7 +4269,7 @@ ENDIF
       TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
       TYPE(domain), POINTER :: intermediate_grid
       TYPE(domain), POINTER :: ngrid
-#include <dummy_new_decl.inc>
+#include "dummy_new_decl.inc"
       INTEGER nlev, msize
       INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
       INTEGER iparstrt,jparstrt,sw
@@ -4455,7 +4455,7 @@ ENDIF
 !
       TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
       TYPE(domain), POINTER :: ngrid
-#include <dummy_new_decl.inc>
+#include "dummy_new_decl.inc"
       INTEGER nlev, msize
       INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
       TYPE (grid_config_rec_type)            :: config_flags
@@ -4617,7 +4617,7 @@ ENDIF
       TYPE (grid_config_rec_type) :: config_flags ! configureation flags, has vertical dim of 
                                                   ! soil temp, moisture, etc., has vertical dim
                                                   ! of soil categories
-#include <dummy_new_decl.inc>
+#include "dummy_new_decl.inc"
 
       INTEGER       ::          ids, ide, jds, jde, kds, kde,    &
                                 ims, ime, jms, jme, kms, kme,    &
@@ -4665,7 +4665,7 @@ ENDIF
 !
       TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
       TYPE(domain), POINTER :: ngrid
-#include <dummy_new_decl.inc>
+#include "dummy_new_decl.inc"
       INTEGER nlev, msize
       INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
       TYPE(domain), POINTER :: xgrid
@@ -4698,7 +4698,7 @@ ENDIF
 !
              TYPE (grid_config_rec_type)            :: config_flags
              TYPE(domain), TARGET                   :: grid
-#include <dummy_new_decl.inc>
+#include "dummy_new_decl.inc"
           END SUBROUTINE feedback_nest_prep
       END INTERFACE
 !
@@ -4784,7 +4784,7 @@ ENDIF
       TYPE(domain), POINTER :: ngrid
       TYPE(domain), POINTER :: parent_grid
 
-#include <dummy_new_decl.inc>
+#include "dummy_new_decl.inc"
       INTEGER nlev, msize
       INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
       TYPE (grid_config_rec_type)            :: config_flags
@@ -4980,7 +4980,7 @@ ENDIF
 !
       TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
       TYPE (grid_config_rec_type)            :: config_flags
-#include <dummy_new_decl.inc>
+#include "dummy_new_decl.inc"
      INTEGER :: IDS,IDE,JDS,JDE,KDS,KDE, &
                 IMS,IME,JMS,JME,KMS,KME, &
                 IPS,IPE,JPS,JPE,KPS,KPE
@@ -4994,7 +4994,7 @@ ENDIF
 #include "deref_kludge.h"
 
 !#define COPY_IN
-!#include <scalar_derefs.inc>
+!#include "scalar_derefs.inc"
 
      ! FIXME: Don't initialize these to -1; it is a waste.
      ! Initialization is only for debugging purposes.
@@ -5035,7 +5035,7 @@ ENDIF
       TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
       TYPE(domain), POINTER :: intermediate_grid
       TYPE(domain), POINTER :: ngrid
-#include <dummy_new_decl.inc>
+#include "dummy_new_decl.inc"
       INTEGER nlev, msize
       INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
       INTEGER iparstrt,jparstrt,sw
@@ -5135,7 +5135,7 @@ ENDIF
 !
       TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
       TYPE(domain), POINTER :: ngrid
-#include <dummy_new_decl.inc>
+#include "dummy_new_decl.inc"
       INTEGER nlev, msize
       INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
       TYPE (grid_config_rec_type)            :: config_flags
@@ -5268,7 +5268,7 @@ ENDIF
       TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
       TYPE(domain), POINTER :: intermediate_grid
       TYPE(domain), POINTER :: ngrid
-#include <dummy_new_decl.inc>
+#include "dummy_new_decl.inc"
       INTEGER nlev, msize
       INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
       INTEGER iparstrt,jparstrt,sw
@@ -5374,7 +5374,7 @@ ENDIF
 !
       TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
       TYPE(domain), POINTER :: ngrid,cgrid
-#include <dummy_new_decl.inc>
+#include "dummy_new_decl.inc"
       INTEGER nlev, msize
       INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
       TYPE (grid_config_rec_type)            :: config_flags
@@ -5518,7 +5518,7 @@ ENDIF
       TYPE (grid_config_rec_type) :: config_flags ! configureation flags, has vertical dim of
                                                   ! soil temp, moisture, etc., has vertical dim
                                                   ! of soil categories
-#include <dummy_new_decl.inc>
+#include "dummy_new_decl.inc"
 
       INTEGER       ::          ids, ide, jds, jde, kds, kde,    &
                                 ims, ime, jms, jme, kms, kme,    &
@@ -5570,7 +5570,7 @@ ENDIF
       TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
       TYPE(domain), POINTER :: cgrid
       TYPE(domain), POINTER :: ngrid
-#include <dummy_new_decl.inc>
+#include "dummy_new_decl.inc"
       INTEGER nlev, msize
       INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
       TYPE (grid_config_rec_type)            :: config_flags
@@ -5603,7 +5603,7 @@ integer myproc
       interp_mp=grid%interp_mp .or. ngrid%interp_mp
 
 !#define COPY_IN
-!#include <scalar_derefs.inc>
+!#include "scalar_derefs.inc"
       CALL get_ijk_from_grid (  grid ,                   &
                                 cids, cide, cjds, cjde, ckds, ckde,    &
                                 cims, cime, cjms, cjme, ckms, ckme,    &
@@ -5645,7 +5645,7 @@ integer myproc
 !
       TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
       TYPE(domain), POINTER :: ngrid
-#include <dummy_new_decl.inc>
+#include "dummy_new_decl.inc"
       INTEGER nlev, msize, i_parent_start, j_parent_start
       INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
       TYPE(domain), POINTER :: xgrid
@@ -5678,7 +5678,7 @@ integer myproc
 !
              TYPE (grid_config_rec_type)            :: config_flags
              TYPE(domain), TARGET                   :: grid
-#include <dummy_new_decl.inc>
+#include "dummy_new_decl.inc"
           END SUBROUTINE feedback_nest_prep_nmm
       END INTERFACE
 !
@@ -5788,7 +5788,7 @@ integer myproc
       TYPE(domain), POINTER :: ngrid
       TYPE(domain), POINTER :: parent_grid
 
-#include <dummy_new_decl.inc>
+#include "dummy_new_decl.inc"
       INTEGER nlev, msize
       INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
       TYPE (grid_config_rec_type)            :: config_flags

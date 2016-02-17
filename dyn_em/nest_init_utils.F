@@ -705,7 +705,7 @@ SUBROUTINE update_after_feedback_em ( grid  &
    TYPE(domain) , TARGET         :: grid
 
    !  Definitions of dummy arguments
-#include <dummy_new_decl.inc>
+#include "dummy_new_decl.inc"
 
    INTEGER                         :: ids , ide , jds , jde , kds , kde , &
                                       ims , ime , jms , jme , kms , kme , &

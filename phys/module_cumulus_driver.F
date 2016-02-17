@@ -18,6 +18,7 @@ CONTAINS
                      ,cudtacttime                                     & 
                      ,rainc,raincv,pratec,nca                         &
                      ,cldfra_dp,cldfra_sh,w_up                        & !ckay for subgrid cloud
+                     ,udr_kf,ddr_kf,uer_kf,der_kf,timec_kf,kf_edrates & !kf_edrates
                      ,QC_CU,QI_CU                                     &
                      ,z,z_at_w,dz8w,mavail,pblh,p8w,psfc,tsk          &
                      ,tke_pbl, ust                                    &
@@ -92,6 +93,8 @@ CONTAINS
                      ,ktop_deep &
                  ! Optional arguments for SAS scheme
                      ,pgcon,sas_mass_flux                             &
+                     ,pert_sas,ens_random_seed                        &
+                     ,ens_sasamp                                      &
                      ,shalconv,shal_pgcon                             &
                      ,HPBL2D,EVAP2D,HEAT2D                            &     !Kwon for SAS2010 shallow convection
                      ,DX2D, DYNMM                                     &     !Wang for scale-aware SAS
@@ -371,6 +374,9 @@ CONTAINS
    LOGICAL,      INTENT(IN   )    ::   is_CAMMGMP_used !BSINGH:01/31/2013: Added for CAMZM
 
    REAL, INTENT(IN), OPTIONAL :: pgcon,shal_pgcon,sas_mass_flux
+   logical,intent(in),optional  :: pert_sas
+   integer,intent(in),optional  :: ens_random_seed
+   real,intent(in),optional     :: ens_sasamp
    INTEGER, INTENT(IN), OPTIONAL :: shalconv
 
    INTEGER,DIMENSION( ims:ime, jms:jme ),                        &
@@ -418,6 +424,18 @@ CONTAINS
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
          INTENT(INOUT)  ::                            cldfra_dp  &
                                                     , cldfra_sh
+
+!kf_edrates
+   REAL,  DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
+         INTENT(INOUT)  ::                            udr_kf     &
+                                                    , ddr_kf     &
+                                                    , uer_kf     &
+                                                    , der_kf
+
+   REAL,  DIMENSION( ims:ime , jms:jme ), INTENT(INOUT) ::        &
+          timec_kf
+
+   INTEGER, INTENT(IN   )        ::   kf_edrates
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
          INTENT(INOUT ),OPTIONAL ::                        w_up
@@ -843,6 +861,9 @@ CONTAINS
                ,RQICUTEN=rqicuten ,RQSCUTEN=rqscuten            &
                ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                   &
                ,F_QI=f_qi,F_QS=f_qs                             &
+               ,UDR_KF=udr_kf,DDR_KF=ddr_kf                     & !kf_edrates
+               ,UER_KF=uer_kf,DER_KF=der_kf                     & 
+               ,TIMEC_KF=timec_kf,KF_EDRATES=kf_edrates         & 
                                                                 )
 
      CASE (BMJSCHEME)
@@ -895,7 +916,10 @@ CONTAINS
                ,F_QI=f_qi,F_QS=f_qs                             &
                ,CLDFRA_DP_KF=cldfra_dp                          & ! ckay for sub-grid cloud
                ,CLDFRA_SH_KF=cldfra_sh                          &
-               ,QC_KF=QC_CU,QI_KF=QI_CU                         )
+               ,QC_KF=QC_CU,QI_KF=QI_CU                         &
+               ,UDR_KF=udr_kf,DDR_KF=ddr_kf                     & !kf_edrates
+               ,UER_KF=uer_kf,DER_KF=der_kf                     & 
+               ,TIMEC_KF=timec_kf,KF_EDRATES=kf_edrates         ) 
 
 #if (EM_CORE==1)
      CASE (MSKFSCHEME)
@@ -930,6 +954,9 @@ CONTAINS
                ,CLDFRA_SH_KF=cldfra_sh                          &
                ,W_UP=w_up                                       & ! ckay
                ,QC_KF=QC_CU,QI_KF=QI_CU                         &
+               ,UDR_KF=udr_kf,DDR_KF=ddr_kf                     & !kf_edrates
+               ,UER_KF=uer_kf,DER_KF=der_kf                     & 
+               ,TIMEC_KF=timec_kf,KF_EDRATES=kf_edrates         & 
                ,ZOL=zol,WSTAR=wstar,UST=ust,PBLH=pblh           )  !ckay
 #endif
 
@@ -995,6 +1022,8 @@ CONTAINS
                ,P_QC=p_qc                                       &
                ,MOMMIX=MOMMIX  &
                ,pgcon=pgcon,sas_mass_flux=sas_mass_flux         &
+               ,pert_sas=pert_sas,ens_random_seed=ens_random_seed   &
+               ,ens_sasamp=ens_sasamp &
                ,shalconv=shalconv,shal_pgcon=shal_pgcon         &
                ,hpbl2d=hpbl2d,evap2d=evap2d,heat2d=heat2d       &
                ,P_QI=p_qi,P_FIRST_SCALAR=param_first_scalar     &

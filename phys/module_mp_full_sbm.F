@@ -580,10 +580,10 @@ USE module_mp_radar
          KRR=0
          DO KR=p_ff8i01,p_ff8i33
           KRR=KRR+1
-          if (xland(i,j).eq.1)then
-             chem_new(I,K,J,KR)=FCCNR_MAR(KRR)*FACTZ
+          if (xland(i,j).lt.1.5)then
+             chem_new(I,K,J,KR)=FCCNR_CON(KRR)*FACTZ
           else
-             chem_new(I,K,J,KR)=FCCNR_MIX(KRR)*FACTZ
+             chem_new(I,K,J,KR)=FCCNR_MAR(KRR)*FACTZ
           end if
 !         if (xlat(i,j).ge.10.and.xlat(i,j).le.30.and.zcgs(i,k,j).le.300000)then
 !            if (zcgs(i,k,j).le.25000)then
@@ -612,10 +612,10 @@ USE module_mp_radar
          KRR=0
          DO kr=p_ff8i01,p_ff8i33
           KRR=KRR+1
-          if (xland(i,j).eq.1)then
-             chem_new(I,K,J,KR)=FCCNR_MAR(KRR)*FACTZ
+          if (xland(i,j).lt.1.5)then
+             chem_new(I,K,J,KR)=FCCNR_CON(KRR)*FACTZ
           else
-             chem_new(I,K,J,KR)=FCCNR_MIX(KRR)*FACTZ
+             chem_new(I,K,J,KR)=FCCNR_MAR(KRR)*FACTZ
           end if
 !         if (xlat(i,j).ge.10.and.xlat(i,j).le.30.and.zcgs(i,k,j).le.300000)then
 !            if (zcgs(i,k,j).le.25000)then

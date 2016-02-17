@@ -1759,7 +1759,7 @@ write(0,"('my33 ',4i9)")grid%alloced_sm33y , sm33y , grid%alloced_em33y , em33y
 
       INTEGER                             ::  ierr
 
-# include <deallocs.inc>
+# include "deallocs.inc"
 
    END SUBROUTINE dealloc_space_field
 

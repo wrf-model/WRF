@@ -1318,7 +1318,7 @@ subroutine aerosol_indirect(ncol,lchnk,pcols,pver,ppcnst,landfrac,pmid,t,qm1,cld
 ! use constituents, only: ppcnst, cnst_get_ind
 ! use history, only: outfld
 
-!#include <comctl.h>
+!#include "comctl.h"
 
   integer, intent(in) :: ncol                  ! number of atmospheric columns
   integer, intent(in) :: lchnk                 ! chunk identifier
@@ -1538,7 +1538,7 @@ end subroutine aerosol_indirect
 !     use ppgrid
 !     use pmgrid
       implicit none
-!#include <crdcon.h>
+!#include "crdcon.h"
 
 !     Parameters
 !     Input

@@ -41,7 +41,11 @@
 
       npredmax       = iv%instid(inst)%varbc_info%npredmax
       num_rad        = iv%instid(inst)%num_rad
-      num_rad_domain = COUNT(iv%instid(inst)%info%proc_domain(1,1:num_rad)) ! do not count HALO
+      if (num_rad > 0) then
+         num_rad_domain = COUNT(iv%instid(inst)%info%proc_domain(1,1:num_rad)) !do not count HALO
+      else
+         num_rad_domain = 0
+      end if
       num_rad_tot    = wrf_dm_sum_integer(num_rad_domain)
       
       if (npredmax <= 0) cycle                                         !! VarBC instr only

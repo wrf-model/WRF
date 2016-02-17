@@ -32,7 +32,17 @@ mkdir -p $WORK_DIR
 cd $WORK_DIR
 
 # List of control variables:
-for SV in fullflds psi chi t rh ps; do mkdir -p $SV; done
+   if [[ $NL_CV_OPTIONS == 7 ]]; then
+      if $GLOBAL; then
+         echo "ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR "
+         echo ""
+         echo "Can not run for global with CV_OPTIONS=7"
+         exit 1
+      fi
+      for SV in fullflds u v t rh ps; do mkdir -p $SV; done
+   else
+      for SV in fullflds psi chi t rh ps; do mkdir -p $SV; done
+   fi
 
 for CV in $CONTROL_VARIABLES; do mkdir -p $CV; done
 
@@ -87,6 +97,7 @@ if $RUN_GEN_BE_STAGE1; then
     be_method = '${BE_METHOD}',
     ne = ${NE},
     bin_type = ${BIN_TYPE},
+    cv_options = ${NL_CV_OPTIONS},
     lat_min = ${LAT_MIN},
     lat_max = ${LAT_MAX},
     binwidth_lat = ${BINWIDTH_LAT},
@@ -111,6 +122,13 @@ fi
 #------------------------------------------------------------------------
 #  Run Stage 2: Calculate regression coefficients.
 #------------------------------------------------------------------------
+
+#  Do not run Stage 2 and 2a for CV_OPTIONS = 7
+if [[ $NL_CV_OPTIONS == 7 ]]; then
+   echo "---------------------------------------------------------------"
+   echo "Not running Stage 2 for CV_OPTIONS=7"
+   echo "---------------------------------------------------------------"
+fi
 
 if $RUN_GEN_BE_STAGE2; then
    echo "---------------------------------------------------------------"
@@ -146,6 +164,15 @@ fi
 #------------------------------------------------------------------------
 #  Run Stage 2a: Calculate control variable fields.
 #------------------------------------------------------------------------
+if [[ $NL_CV_OPTIONS == 7 ]]; then
+   echo "---------------------------------------------------------------"
+   echo "Not running Stage 2a for CV_OPTIONS=7"
+   echo "---------------------------------------------------------------"
+elif [[ $NL_CV_OPTIONS == 6 ]]; then
+   echo "---------------------------------------------------------------"
+   echo "Not running Stage 2a for CV_OPTIONS=6"
+   echo "---------------------------------------------------------------"
+fi
 
 if $RUN_GEN_BE_STAGE2A; then
    echo "---------------------------------------------------------------"
@@ -160,6 +187,7 @@ if $RUN_GEN_BE_STAGE2A; then
    cat > gen_be_stage2a_nl.nl << EOF
 &gen_be_stage2a_nl
     start_date = '${START_DATE}',
+    cv_options = ${NL_CV_OPTIONS},
     end_date = '${END_DATE}', 
     interval = ${INTERVAL},
     ne = ${NE},
@@ -284,7 +312,8 @@ if $RUN_GEN_BE_DIAGS; then
    uh_method = '${UH_METHOD}',
    n_smth_sl = ${N_SMTH_SL},
    use_rf = ${USE_RF},
-   do_normalize = ${DO_NORMALIZE}, /
+   do_normalize = ${DO_NORMALIZE},
+   cv_options = ${NL_CV_OPTIONS}, /
 EOF
 
    ./gen_be_diags.exe > gen_be_diags.log 2>&1
@@ -306,7 +335,8 @@ fi
 if $RUN_GEN_BE_DIAGS_READ; then
    cat > gen_be_diags_nl.nl << EOF
 &gen_be_diags_nl
-   uh_method = '${UH_METHOD}', /
+   uh_method = '${UH_METHOD}',
+   cv_options = ${NL_CV_OPTIONS}, /
 EOF
 
    ln -sf ${BUILD_DIR}/gen_be_diags_read.exe .

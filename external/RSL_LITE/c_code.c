@@ -30,7 +30,7 @@
 
 #define F_PACK
 
-RSL_LITE_ERROR_DUP1 ( int *me )
+void RSL_LITE_ERROR_DUP1 ( int *me )
 {
     int newfd,rc ;
     char filename[256] ;

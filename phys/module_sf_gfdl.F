@@ -17,6 +17,7 @@ CONTAINS
                      XLAND,HFX,QFX,TAUX,TAUY,LH,GSW,GLW,TSK,FLHC,FLQC,    & ! gopal's doing for Ocean coupling
                      QGH,QSFC,U10,V10,                          &
                      ICOEF_SF,IWAVECPL,LCURR_SF,CHARN,MSANG,SCURX, SCURY,& 
+                     pert_Cd, ens_random_seed, ens_Cdamp,       &
                      GZ1OZ0,WSPD,BR,ZKMAX, ISFFLX,              &
                      EP1,EP2,KARMAN,NTSFLG,SFENTH,              &
                      Cd_out,Ch_out,                             &
@@ -95,6 +96,9 @@ CONTAINS
       INTEGER, INTENT(IN) ::            ICOEF_SF
       INTEGER, INTENT(IN) ::            IWAVECPL
       LOGICAL, INTENT(IN) ::            LCURR_SF
+      logical,intent(in)  :: pert_Cd 
+      integer,intent(in)  :: ens_random_seed
+      real,intent(in)     :: ens_Cdamp
 
       REAL,    INTENT(IN) ::                                            &
                                         CP,                             &
@@ -352,6 +356,7 @@ CONTAINS
      CALL MFLUX2(  fxh,fxe,fxmx,fxmy,cdm,rib,xxfh,zoc,mzoc,tstrc,   &    !mzoc for momentum Zo KWON
                    pspc,pkmax,wetc,slwdc,tjloc,                &
                    icoef_sf,iwavecpl,lcurr_sf,alpha,gamma,xcur,ycur,           &
+                   pert_Cd, ens_random_seed, ens_Cdamp,        &
                    upc,vpc,tpc,rpc,dt,J,wind10,xxfh2,ntsflg,SFENTH,   &
                    ids,ide, jds,jde, kds,kde,                  &
                    ims,ime, jms,jme, kms,kme,                  &
@@ -559,6 +564,7 @@ CONTAINS
        SUBROUTINE MFLUX2( fxh,fxe,fxmx,fxmy,cdm,rib,xxfh,zoc,mzoc,tstrc,       &    !mzoc KWON
                           pspc,pkmax,wetc,slwdc,tjloc,                    &
                           icoef_sf,iwavecpl,lcurr_sf,alpha,gamma,xcur,ycur,               &
+                          pert_Cd, ens_random_seed, ens_Cdamp,            &
                           upc,vpc,tpc,rpc,dt,jfix,wind10,xxfh2,ntsflg,sfenth,    &
                           ids,ide, jds,jde, kds,kde,                      &
                           ims,ime, jms,jme, kms,kme,                      &
@@ -607,6 +613,9 @@ CONTAINS
       integer,intent(in)  :: icoef_sf
       integer,intent(in)  :: iwavecpl
       logical,intent(in)  :: lcurr_sf
+      logical,intent(in)  :: pert_Cd 
+      integer,intent(in)  :: ens_random_seed
+      real,intent(in)     :: ens_Cdamp
 
       real, intent (out), dimension (ims :ime ) :: fxh
       real, intent (out), dimension (ims :ime ) :: fxe
@@ -844,21 +853,19 @@ CONTAINS
       integer :: ntstep = 0
 !
 #if HWRF==1
-      logical :: pert_Cd            !zhang
-      integer :: ens_random_seed         !zhang
       real*8 :: gasdev,ran1          !zhang
-      real :: rr, ens_Cdamp         !zhang
+      real :: rr                     !zhang
       logical,save :: pert_Cd_local            !zhang
       integer,save :: ens_random_seed_local         !zhang
       real,save :: ens_Cdamp_local         !zhang
       data ens_random_seed_local/0/
       if ( ens_random_seed_local .eq. 0 ) then
-      CALL nl_get_pert_Cd(1,pert_Cd)
-      CALL nl_get_ens_random_seed(1,ens_random_seed)
-      CALL nl_get_ens_Cdamp(1,ens_Cdamp)
-      ens_random_seed_local=ens_random_seed
-      pert_Cd_local=pert_Cd
-      ens_Cdamp_local=ens_Cdamp
+!        CALL nl_get_pert_Cd(1,pert_Cd)
+!        CALL nl_get_ens_random_seed(1,ens_random_seed)
+!        CALL nl_get_ens_Cdamp(1,ens_Cdamp)
+         ens_random_seed_local=ens_random_seed
+         pert_Cd_local=pert_Cd
+         ens_Cdamp_local=ens_Cdamp
       endif
 #endif
 

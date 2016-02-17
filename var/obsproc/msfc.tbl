@@ -1,0 +1,418 @@
+!	This table contains elevations for Great Lakes buoys (45nnn)
+!	and locations and elevations for CMAN stations.  The entries
+!	must be sorted in increasing order based on the ASCII station
+!	identifier.
+!!
+! Log:
+! D. Kidwell/NCEP	11/97	Added log and several ids, reordered
+! R. Hollern/NCEP        7/99   Added 45151 to table                  
+! R. Hollern/NCEP        9/99   Added DRFA2 and 45154 and removed
+!                               BUSL1 from table            
+! R. Hollern/NCEP       11/99   Added AUGA2 and modified LPOI1
+! R. Hollern/NCEP       29/99   Added PILA2 to table
+! R. Hollern/NCEP        3/00   Added PTAM1, PSTP1, POLD1, PSUN1, PMAN1
+!                               to table
+! R. Hollern/NCEP        4/00   Added PMOT1 and PCLR1 to table
+! R. Hollern/NCEP        8/00   Added the Canadian buoys 45145, 45147, 45148,
+!                               45149, and 45152 to table
+! C. Caruso Magee/NCEP   8/01   Added Canadian buoy 45158 to table.      
+! C. Caruso Magee/NCEP   9/01   Added buoy 45035, 45507, and 45805 to table.    
+! C. Caruso Magee/NCEP  11/01   Added new CMAN station LSCM4 to table.          
+! C. Caruso Magee/NCEP   2/02   Added new CMAN station PMYF1 to table.          
+! C. Caruso Magee/NCEP   4/02   Added new CMAN station SPAG1 to table.          
+!                               Added buoy 45012 to table.  Corrected
+!                               elevations for lakes Michigan, Ontario, 
+!                               Huron, Georgian Bay.                    
+! C. Caruso Magee/NCEP  11/02   Added new CMAN stations ANMF1, ARPF1, EGKF1,    
+!                               HSSF1, NFBF1, PTRF1, SHPF1, TARF1, and Great
+!                               Lakes buoys 45153, 45159, and 45160 to table.
+! C. Caruso Magee/NCEP   6/03   Added new CMAN stations AMAA2 and FILA2 to      
+!                               table. 
+! C. Caruso Magee/NCEP   2/04   Added new CMAN stations BABT2, GLPT2, PCNT2,    
+!                               RSJT2, RTOT2, LKPL1, LUML1, TAML1, TRBL1, 
+!                               SGOF1, TYBG1, and LDLC3 to the table.
+! C. Caruso Magee/NCEP   3/04   Added new CMAN stations AVAN4, ACMN4, and       
+!                               BRBN4 to the table.                  
+! C. Caruso Magee/NCEP   7/04   Added new CMAN stations PTJN6, OFPN6, SOSN6,    
+!                               SCSN6, MISN6, MISC3, NCSC3, NOSC3, FWIC3, and
+!                               BHRC3 to the table.
+! C. Caruso Magee/NCEP   8/04   Added new CMAN stations MRSL1, ILDL1, SPLL1,    
+!                               SIPM6, SLPL1, CBIM2, and HPLM2 to the table.
+! C. Caruso Magee/NCEP  10/04   Added new CMAN stations SVNM4, THLO1, SKMG1,    
+!                               and SECG1 to the table.
+! C. Caruso Magee/NCEP  10/04   Added new CMAN stations MLTO3 and DMNO3 to      
+!                               the table.
+! C. Caruso Magee/NCEP  10/04   Added tide gauge stations CMTI2, HRBM4,         
+!                               LDTM4, DTLM4, RCKM4, SWPM4, PTIM4, MCGM4,
+!                               FTGM4, DULM5, GDMM5, OSGN6, and BUFN6 (which
+!                               are now sending their met obs in CMAN format)
+!                               to the table. Corrected RCKM4's stn elev from
+!                               0 m to 180 m.                                
+! C. Caruso Magee/NCEP  11/04   Added tide gauge stations FRVM3, BLTM3,         
+!                               BZBM3, PSBM1, CASM1, SDHN4, CMAN4, MTKN6,
+!                               KPTN6, BATN6, BGNN4, PHBP1, NWPR1, CPTR1,   
+!                               PTCR1, FOXR1, and QPTR1 (which are now sending
+!                               their met obs in CMAN format) to the table.
+! C. Caruso Magee/NCEP  12/04   Added new CMAN stations CHII2, FGBL1, HBCB4,    
+!                               KNSW3, LJPC1, MCYI3, MKGM4, and MLWW3 to the
+!                               table.                                     
+! C. Caruso Magee/NCEP  01/05   Added tide gauge stations ACYN4, BRHC3,         
+!                               LWSD1, NLNC3, NWHC3, and RDYD1 to the table.    
+! C. Caruso Magee/NCEP  01/05   Added tide gauge stations BLTM2, TCBM2, CAMM2,  
+!                               CHCM2, FSKM2, SLIM2, WASD2, WAHV2, KPTV2,       
+!                               RPLV2, LWTV2, CBBV2, MNPV2, SWPV2, YKTV2,       
+!                               ORIN7, BRTN7, SNSN7, FPKG1, CAPL1, and UGIL1
+!                               to the table. Corrected THRO1's long from   
+!                               from 83 deg 23.8 min to 83 deg 28.3 min W.  
+! C. Caruso Magee/NCEP  01/05   Added tide gauge stations MROS1 to the table.   
+! C. Caruso Magee/NCEP  02/05   Changed ID of Alpena, MI from ALNM4 to APNM4.   
+!                               Corrected location of CHII2, elev. of MKGM4,  
+!                               lat of THLO1.  Added tide gauge stations APCF1,
+!                               CHAV3, CWBF1, FMRF1, FRDF1, KYWF1, LTBV3,     
+!                               MCYF1, MGIP4, MYPF1, NPSF1, PCBF1, PCLF1,     
+!                               SAPF1, SJNP4, TRDF1, VAKF1, VCAF1. Removed    
+!                               obsolete stations PCLR1, PMAN1, PMOT1, POLD1,
+!                               PSTP1, PSUN1, and PTAM1 (Tampa spec. program). 
+! C. Caruso Magee/NCEP  03/05   Added tide gauge stations WAVM6, LABL1, BYGL1,  
+!                               SBPT2, GTOT2, EPTT2, MGPT2, FPTT2, MQTT2, and
+!                               PTIT2 to the table.  Added new station GSJT2
+!                               to the table as well. Changed CMAN station 
+!                               GLPT2 to tide gauge GPST2.
+! C. Caruso Magee/NCEP  03/05   Removed all tide gauge stations added since     
+!                               Oct. 04.  Removed obsolete CMAN SAUM4 (which
+!                               was replaced by SVNM4 in Oct. 04).         
+! C. Caruso Magee/NCEP  07/05   Added CMAN stations SCIS1, FRPS1, ANCF1, and    
+!                               FHPF1 to the table.                        
+! C. Caruso Magee/NCEP  08/05   Added CMAN station BGCF1 to the table.         
+! C. Caruso Magee/NCEP  10/05   Added CMAN stations AGMW3, GBLW3, NPDW3, and   
+!                               SYWW3 to the table.                        
+! C. Caruso Magee/NCEP  10/05   Added CMAN station SGRN4 to the table.        
+! C. Caruso Magee/NCEP  05/06   Added CMAN stations GSLM4 AND PLSF1 to 
+!                               the table and corrected location of SANF1.
+! C. Caruso Magee/NCEP  06/06   Added CMAN station TIBC1 to the table. 
+! C. Caruso Magee/NCEP  06/06   Added CMAN stations BSBM4, GTLM4, PCLM4,
+!                               SXHW3, and WHRI2 to the table.            
+! C. Caruso Magee/NCEP  07/06   Added CMAN stations PWAW3,  SLVM5, and  
+!                               OCPN7 to the table.                       
+! C. Caruso Magee/NCEP  07/06   Added CMAN station SPAL1 to the table. 
+! C. Caruso Magee/NCEP  08/06   Added CMAN station GRMM4 to the table. 
+! C. Caruso Magee/NCEP  08/06   Added CMAN stations MHPA1,  DPHA1, and  
+!                               MBLA1 to the table.                       
+! C. Caruso Magee/NCEP  10/06   Added CMAN stations PRTA2, EROA2, SISA2,
+!                               CDEA2, CSPA2, SDIA2, PBPA2, VMSV2, and         
+!                               GDIV2 to the table.                     
+! C. Caruso Magee/NCEP  12/06   Added CMAN stations NABM4, FPTM4, BIGM4,
+!                               OTNM4, BHRI3, and PNGW3 to the table.          
+! C. Caruso Magee/NCEP  05/07   Added CMAN station FBPS1 to the table.  
+! C. Caruso Magee/NCEP  07/07   Added NERRS stations ACXS1, ANMN6, APXF1,
+!                               BGXN3, BSLM2, CHNO3, DRSD1, ELXC1, GDXM6,      
+!                               GTXF1, HMRA2, JCRN4, JOXP4, MAXT2, NAXR1,      
+!                               NIWS1, NOXN7, OWXO1, PBFW1, RKXF1, SAXG1,      
+!                               SFXC1, TIXC1, WAXM3, WEXM1, WKXA1, and         
+!                               YRSV2 to the table.                            
+! C. Caruso Magee/NCEP  10/07   Added stations YGNN6, RPRN6, CBLO1, SMBS1,
+!                               CPXC1, GELO1, HHLO1, LCNA2, SJOM4, CLSM4,      
+!                               and GTBM4 to the table.                         
+! C. Caruso Magee/NCEP  03/08   Added stations RTAT2, SDRT2, ROLT2, PSCM4,
+!                               OLCN6, NGLT2, MLSC1, LPNM4, LMSS1, LMFS1,      
+!                               BLTA2, CLLT2, GTRM4, LPNM4, LMSS1, LMFS1,      
+! C. Caruso Magee/NCEP  04/08   Fixed typo: ROLT2 -> RLOT2.           
+! M. Mainelli/NCEP      08/08   Added stations CAMF1, CHDS1, ELFA2, FCGT2,
+!                               ILOH1, KNOH1, MCGA1, MOKH1, MTBF1, NWCL1,
+!                               NWWH1, OBLA1, OCIM2, OMHC1, OVIA2, PACF1,
+!                               PNLM6, ULAM6, WATS1, WNEM4, WPTW1  
+! J. Ator/NCEP          04/09   Added stations KGCA2, MACM4 and TCMW1
+! J. Ator/NCEP          06/11   Corrected EROA2 latitude 
+! hclin                 10/15   added a few 45xxx stations
+!
+45001           LAKE SUPERIOR                       US              00183      
+45002           LAKE MICHIGAN                       US              00177      
+45003           LAKE HURON                          US              00177      
+45004           LAKE SUPERIOR                       US              00183      
+45005           LAKE ERIE                           US              00174      
+45006           LAKE SUPERIOR                       US              00183      
+45007           LAKE MICHIGAN                       US              00177      
+45008           LAKE HURON                          US              00177      
+45010           LAKE MICHIGAN                       US              00176      
+45011           LAKE MICHIGAN                       US              00177      
+45012           LAKE ONTARIO                        US              00075      
+45013           Atwater Park                     WI US 04310 -08785 00176
+45014           Central Green Bay                WI US 04480 -08776 00176
+45023           Portage Canal                       US 04727 -08861 00183
+45024           Ludington                        MI US 04398 -08656 00176
+45025           S Entrance to Keweenaw Waterway  MI US 04697 -08840 00183
+45026           St. Joseph                       MI US 04198 -08662 00176
+45027           North of Duluth                  MN US 04686 -09193 00183
+45028           Western Lake Superior            MN US 04681 -09184 00183
+45029           Holland                          MI US 04290 -08627 00176
+45035           LAKE ONTARIO                        CN              00075      
+45132           LAKE ERIE                           CN              00174      
+45135           LAKE ONTARIO                        CN              00075      
+45136           LAKE SUPERIOR                       CN              00183      
+45137           GEORGIAN BAY                        CN              00177      
+45138           MOUTH OF ST. LAWRENCE               CN              00000      
+45139           LAKE ONTARIO                        CN              00075      
+45140           LAKE WINNEPEG SOUTH BASIN           CN              00217      
+45141           GREAT SLAVE LAKE                    CN              00156      
+45142           LAKE ERIE                           CN              00174      
+45143           SOUTHERN GEORGIAN BAY               CN              00177      
+45144           LAKE WINNEPEG                       CN              00217      
+45145           LAKE WINNEPEG NARROW                CN              00218      
+45147           LAKE ST. CLAIR                      CN              00174      
+45148           LAKE OF THE WOODS                   CN              00323      
+45149           SOUTH LAKE HURON                    CN              00176      
+45150           GREAT SLAVE LAKE                    CN              00156      
+45151           LAKE SIMCOE                         CN              00219      
+45152           LAKE NIPISSING                      CN              00195      
+45153           LAKE ONTARIO                        CN              00075      
+45154           LAKE HURON (NORTH DRUMMON BAY)      CN              00176      
+45158           HUDSON BAY                          CN              00000      
+45159           LAKE ONTARIO                        CN              00075      
+45160           LAKE ONTARIO                        CN              00075      
+45161           Muskegon                         MI US 04318 -08636 00176
+45164           Cleveland                        OH US 04173 -08169 00174
+45165           Oregon                           OH US 04170 -08326 00174
+45167           Erie                             PA US 04219 -08014 00174
+45168           South Haven                      MI US 04240 -08633 00177
+45170           Michigan City                    IN US 04176 -08697 00177
+45171           Granite Island                      US 04672 -08741 00183
+45172           Grand Marais                        US 04674 -08598 00183
+45173           Munising                            US 04657 -08657 00178
+45174           Wilmette                         IL US 04214 -08766 00176
+45175           Mackinac Straits                 MI US 04583 -08477 00176
+45507           LAKE MICHIGAN                       US              00177      
+45805           LAKE ERIE                           CN              00174      
+ABAN6           ALEXANDRIA BAY                   NY US 04433 -07593 00076      
+ACMN4           ATLANTIC CITY MARINA             NJ US 03938 -07442 00000      
+ACXS1           ACE BASIN NERR                   SC US 03256 -08045 00000      
+AGMW3           ALGOMA CITY MARINA               WI US 04461 -08743 00179      
+ALSN6           AMBROSE LS                       NY US 04046 -07383 00000      
+AMAA2           EAST AMATULI STATION LIGHT       AK US 05892 -15195 00033      
+ANCF1           ANCLOTE GULF PARK                FL US 02819 -08279 00000      
+ANMF1           ANNA MARIA                       FL US 02754 -08274 00000      
+ANMN6           HUDSON RIVER NERR                NY US 04202 -07392 00000      
+APNM4           ALPENA                           MI US 04505 -08345 00179     
+APXF1           APALACHICOLA NERR                FL US 02979 -08488 00000     
+ARPF1           ARIPEKA                          FL US 02843 -08266 00000      
+AUGA2           AUGUSTINE ISLAND                 AK US 05938 -15335 00009      
+AVAN4           AVALON                           NJ US 03909 -07472 00000      
+BABT2           BAFFIN BAY                       TX US 02730 -09742 00000      
+BGCF1           BIG CARLOS PASS                  FL US 02640 -08188 00000      
+BGXN3           GREAT BAY NERR                   NH US 04306 -07083 00003      
+BHRC3           BRIDGEPORT TERMINAL              CT US 04118 -07319 00000      
+BHRI3           BURNS HARBOR                     IN US 04139 -08709 00182      
+BIGM4           BIG BAY                          MI US 04694 -08743 00186      
+BLIA2           BLIGH REEF LT                    AK US 06084 -14688 00000      
+BLTA2           BARTLET COVE                     AK US 05845 -13589 00000      
+BRBN4           BRENT BEACH                      NJ US 03961 -07420 00000      
+BSBM4           BIG SABLE POINT                  MI US 04405 -08651 00184      
+BSLM2           CHESAPEAKE BAY NERR              MD US 03878 -07671 00000      
+BURL1           SOUTHWEST PASS                   LA US 02890 -08943 00000      
+BUZM3           BUZZARDS BAY                     MA US 04140 -07103 00000      
+CAMF1           CAMPBELL PARK                    FL US 02777 -08265 00000
+CARO3           CAPE ARAGO                       OR US 04334 -12437 00018      
+CBIM2           CHESAPEAKE BIO LAB               MD US 03832 -07645 00000      
+CBLO1           CONNEAUT BREAKWATER LIGHT        OH US 04198 -08056 00177      
+CDEA2           CAPE DECISION                    AK US 05601 -13413 00015      
+CDRF1           CEDAR KEY                        FL US 02914 -08303 00002      
+CHDS1           STROM THURMOND DAM               SC US 03366 -08220 00091
+CHII2           CHICAGO                          IL US 04200 -08750 00176      
+CHLV2           CHESAPEAKE LS                    VA US 03690 -07571 00000      
+CHNO3           SOUTH SLOUGH NERR                OR US 04335 -12433 00000      
+CLKN7           CAPE LOOKOUT                     NC US 03462 -07652 00005      
+CLLT2           CLEAR LAKE                       TX US 02956 -09507 00000      
+CLSM4           ST. CLAIR SHORES                 MI US 04247 -08288 00175      
+CPXC1           CAL POLY PIER                    CA US 03517 -12074 00000      
+CSBF1           CAPE SAN BLAS                    FL US 02967 -08536 00002      
+CSPA2           CAPE SPENCER                     AK US 05821 -13663 00025      
+DBLN6           DUNKIRK                          NY US 04249 -07935 00183      
+DESW1           DESTRUCTION ISLAND               WA US 04768 -12449 00021      
+DISW3           DEVILS ISLAND                    WI US 04708 -09073 00192      
+DMNO3           DESDEMONA SAND LIGHT             OR US 04623 -12396 00000      
+DPHA1           DAUPHIN ISLAND SEA LAB           AL US 03025 -08808 00000      
+DPIA1           DAUPHIN ISLAND                   AL US 03025 -08807 00000      
+DRFA2           DRIFT RIVER TERMINAL             AK US 06055 -15214 00016      
+DRSD1           DELAWARE NERR                    DE US 03909 -07544 00000      
+DRYF1           DRY TORTUGAS                     FL US 02464 -08286 00000      
+DSLN7           DIAMOND SHOALS                   NC US 03515 -07530 00000      
+DUCN7           DUCK PIER                        NC US 03620 -07570 00000      
+EGKF1           EGMONT KEY                       FL US 02760 -08276 00000      
+ELFA2           ELFIN COVE                       AK US 05819 -13634 00000
+ELXC1           ELKHORN SLOUGH NERR              CA US 03682 -12174 00000      
+EROA2           ELDRED ROCK                      AK US 05897 -13522 00017      
+FBIS1           FOLLY ISLAND                     SC US 03268 -07989 00003      
+FBPS1           FOLLY BEACH PIER                 SC US 03265 -07994 00000      
+FCGT2           FREEPORT                         TX US 02893 -09530 00007
+FFIA2           FIVE FINGER ISLAND               AK US 05727 -13363 00007      
+FGBL1           HIGH ISLAND BLOCK                LA US 02812 -09367 00023      
+FHPF1           FORT HOWARD PARK                 FL US 02815 -08280 00000      
+FILA2           FLAT ISLAND LIGHT                AK US 05933 -15199 00018      
+FPSN7           FRYING PAN SHOALS                NC US 03349 -07759 00000      
+FPTM4           FAIRPORT                         MI US 04537 -08639 00184      
+FRPS1           FRIPPS INLET                     SC US 03234 -08046 00000      
+FWIC3           FAYERWEATHER ISLAND              CT US 04115 -07317 00000      
+FWYF1           FOWEY ROCKS                      FL US 02559 -08010 00000      
+GBLW3           GREEN BAY ENTRANCE LIGHT         WI US 04466 -08790 00176      
+GDIL1           GRAND ISLE                       LA US 02927 -08996 00002      
+GDIV2           GOODWIN ISLAND                   VA US 03722 -07640 00000      
+GDXM6           GRAND BAY NERR                   MS US 03036 -08842 00000      
+GELO1           GENEVA ON THE LAKE               OH US 04186 -08097 00177      
+GLLN6           GALLOO ISLAND                    NY US 04389 -07645 00076      
+GRMM4           GRAND MARAIS                     MI US 04668 -08597 00186      
+GSLM4           GRAVELLY SHOALS LIGHT            MI US 04402 -08354 00179      
+GTBM4           GRAND TRAVERSE BAY OBS. SYS.     MI US 04477 -08561 00176      
+GTLM4           GRAND TRAVERSE LIGHT             MI US 04521 -08555 00176      
+GTRM4           SUPERIOR GRAND TRAVERSE BAY      MI US 04718 -08824 00190      
+GTXF1           GUANA TOLOMATO MATANZAS NERR     FL US 02966 -08122 00000      
+HBCB4           HIGHBORNE CAY BAHAMAS               BA 02472 -07683 00002      
+HHLO1           HURON LIGHT                      OH US 04140 -08255 00177      
+HMRA2           KACHEMAK BAY NERR                AK US 05960 -15142 00000      
+HPLM2           HORN POINT LAB                   MD US 03859 -07653 00000      
+HSSF1           HOMOSASSA                        FL US 02877 -08200 00000      
+ILDL1           ISLE DERNIERES                   LA US 02905 -09053 00000      
+ILOH1           HILO                             HI US 01973 -15506 00000
+IOSN3           ISLE OF SHOALS                   NH US 04297 -07062 00013      
+JCRN4           JACQUES COUSTEAU NERR            NJ US 03954 -07446 00000      
+JOXP4           JOBOS BAY NERR                      PR 01796 -06624 00000      
+KGCA2           KING COVE                        AK US 05507 -16233 00005
+KNOH1           KILO NALU OBSERVATORY            HI US 02129 -15787 00000
+KNSW3           KENOSHA                          WI US 04259 -08781 00176
+KTNF1           KEATON BEACH                     FL US 02982 -08359 00002
+LCNA2           LINCOLN ROCK                     AK US 05606 -13270 00010      
+LDLC3           NEW LONDON LEDGE                 CT US 04131 -07208 00020      
+LJPC1           SCRIPPS PIER/LA JOLLA            CA US 03287 -11726 00000      
+LKPL1           WESTERN LAKE PONTCHARTRAIN       LA US 03031 -09028 00000      
+LKWF1           LAKE WORTH                       FL US 02661 -08003 00000      
+LMFS1           LAKE MURRAY                      SC US 03411 -08127 00108      
+LMSS1           LAKE MARION                      SC US 03355 -08050 00023      
+LONF1           LONG KEY                         FL US 02484 -08086 00000      
+LPNM4           ALPENA                           MI US 04506 -08343 00179      
+LPOI1           LAKE PEND OREILLE                ID US 04806 -11650 00625      
+LSCM4           LAKE ST. CLAIR                   MI US 04240 -08270 00179      
+LUML1           LUMCON MARINE CENTER             LA US 02925 -09066 00000      
+MACM4           MACKINAW CITY                    MI US 04578 -08472 00179
+MAXT2           MISSION-ARANSAS NERR             TX US 02813 -09703 00000
+MBLA1           MIDDLE BAY LIGHT                 AL US 03044 -08801 00000
+MCGA1           COAST GUARD SECTOR MOBILE        AL US 03065 -08806 00017
+MCYI3           MICHIGAN CITY                    IN US 04173 -08693 00176
+MDRM1           MOUNT DESERT ROCK                ME US 04397 -06813 00009      
+MHPA1           MEAHER PARK                      AL US 03067 -08794 00000      
+MISC3           NORTH MIDDLE SOUND               CT US 04107 -07313 00000      
+MISM1           MATINICUS ROCK                   ME US 04378 -06886 00016      
+MISN6           SOUTH MIDDLE SOUND               NY US 04105 -07312 00000      
+MKGM4           MUSKEGON                         MI US 04323 -08634 00185      
+MLRF1           MOLASSES REEF                    FL US 02501 -08038 00000      
+MLSC1           MOSS LANDING, SOUTH HARBOR       CA US 03681 -12179 00012      
+MLTO3           MARSH ISLAND LIGHT               OR US 04621 -12362 00000
+MLWW3           MILWAUKEE                        WI US 04305 -08788 00176      
+MOKH1           MOKUOLOE                         HI US 02143 -15779 00000
+MRKA2           MIDDLE ROCK                      AK US 06108 -14666 00005      
+MRSL1           MARSH ISLAND                     LA US 02944 -09206 00000      
+MTBF1           MIDDLE TAMPA BAY                 FL US 02766 -08259 00000
+NABM4           NAUBINWAY                        MI US 04605 -08526 00178      
+NAXR1           NARRAGANSETT BAY NERR            RI US 04164 -07134 00013      
+NCSC3           NORTH CENTRAL SOUND              CT US 04110 -07315 00000      
+NFBF1           NORTHWEST FLORIDA BAY            FL US 02508 -08109 00000      
+NGLT2           PORT INGLESIDE                   TX US 02782 -09720 00000      
+NIWS1           NORTH INLET-WINYAH BAY NERR      SC US 03335 -07919 00000      
+NOSC3           NORTHERN OPEN SOUND              CT US 04112 -07316 00000      
+NOXN7           NORTH CAROLINA NERR              NC US 03416 -07785 00005      
+NPDW3           NORTHPORT PIER AT DEATHS DOOR    WI US 04529 -08698 00178      
+NWCL1           NEW CANAL                        LA US 03003 -09011 00012
+NWPO3           NEWPORT                          OR US 04461 -12407 00009      
+NWWH1           NAWILIWILI                       HI US 02195 -15936 00000
+OBLA1           MOBILE STATE DOCKS               AL US 03071 -08804 00000
+OCIM2           OCEAN CITY INLET                 MD US 03833 -07509 00000
+OCPN7           OCEAN CREST PIER                 NC US 03391 -07815 00000      
+OFPN6           OLD FIELD ISLAND                 NY US 04097 -07308 00000      
+OLCN6           OLCOTT HARBOR                    NY US 04334 -07872 00075      
+OMHC1           OAKLAND MIDDLE HARBOR            CA US 03780 -12233 00000
+OTNM4           ONTONOGAN                        MI US 04652 -08919 00186      
+OVIA2           SELDOVIA                         AK US 05944 -15172 00000
+OWXO1           OLD WOMAN CREEK NERR             OH US 04138 -08251 00175      
+PACF1           PANAMA CITY                      FL US 03015 -08567 00005
+PBFW1           PADILLA BAY NERR                 WA US 04846 -12247 00000      
+PBPA2           POINT BISHOP                     AK US 05820 -13415 00003      
+PCLM4           PORTAGE CANAL                    MI US 04728 -08853 00196      
+PCNT2           MATAGORDO BAY                    TX US 02845 -09640 00000      
+PILA2           PILOT ROCK                       AK US 05974 -14947 00032      
+PILM4           PASSAGE ISLAND                   MI US 04822 -08837 00195      
+PLSF1           PULASKI SHOAL LIGHT              FL US 02469 -08277 00000      
+PMYF1           PORT MAYACA                      FL US 02690 -08060 00018      
+PNGW3           PORT WING                        WI US 04679 -09139 00186      
+PNLM6           PASCAGOULA NOAA LAB              MS US 03036 -08857 00000
+POTA2           POTATO POINT                     AK US 06106 -14670 00007      
+PRTA2           POINT RETREAT                    AK US 05841 -13495 00030      
+PSCM4           PORT SANILAC                     MI US 04342 -08254 00190      
+PTAC1           POINT ARENA                      CA US 03896 -12374 00017      
+PTAT2           PORT ARANSAS                     TX US 02783 -09705 00000      
+PTGC1           POINT ARGUELLO                   CA US 03458 -12065 00012      
+PTJN6           PORT JEFFERSON                   NY US 04095 -07307 00000      
+PTRF1           PORT RICHEY                      FL US 02828 -08273 00000      
+PWAW3           PORT WASHINGTON                  WI US 04339 -08787 00180      
+RKXF1           ROOKERY BAY NERR                 FL US 02605 -08170 00000      
+RLOT2           ROLLOVER PASS                    TX US 02952 -09451 00000      
+ROAM4           ROCK OF AGES                     MI US 04787 -08931 00184      
+RPRN6           ROCHESTER                        NY US 04325 -07759 00075      
+RSJT2           RINCON DEL SAN JOSE              TX US 02680 -09747 00000      
+RTAT2           PORT ARANSAS                     TX US 02784 -09707 00000      
+RTOT2           RTNS OFFSHORE                    TX US 02776 -09698 00000      
+SANF1           SAND KEY                         FL US 02445 -08188 00000      
+SAUF1           ST. AUGUSTINE                    FL US 02986 -08126 00000      
+SAXG1           SAPELO ISLAND NERR               GA US 03142 -08130 00005      
+SBIO1           SOUTH BASS ISLAND                OH US 04163 -08284 00177      
+SCIS1           SOUTH CAPERS ISLAND              SC US 03286 -07971 00000      
+SCSN6           SOUTH CENTRAL SOUND              NY US 04102 -07311 00000      
+SDIA2           SOUTH DOUGLAS                    AK US 05828 -13439 00004      
+SDRT2           SEADRIFT                         TX US 02841 -09671 00000      
+SECG1           SABSOON TOWER R2                 GA US 03080 -08032 00000      
+SFXC1           SAN FRANCISCO BAY NERR           CA US 03822 -12203 00000      
+SGNW3           SHEBOYGAN                        WI US 04375 -08769 00176      
+SGOF1           TYNDALL AFB TOWER C              FL US 02941 -08486 00000      
+SGRN4           SEA GIRT                         NJ US 04012 -07403 00000      
+SHPF1           SHELL POINT                      FL US 03006 -08429 00000      
+SIPM6           SHIP ISLAND PASS                 MS US 03027 -08902 00000      
+SISA2           SISTERS ISLAND                   AK US 05817 -13526 00050      
+SISW1           SMITH ISLAND                     WA US 04832 -12284 00015      
+SJOM4           ST. JOSEPH                       MI US 04209 -08649 00182      
+SKMG1           SABSOON TOWER M2/R6              GA US 03153 -08024 00000      
+SLPL1           SALT POINT                       LA US 02952 -09156 00000      
+SLVM5           SILVER BAY                       MN US 04727 -09125 00195      
+SMBS1           SPRINGMAID PIER                  SC US 03366 -07892 00000      
+SMKF1           SOMBRERO KEY                     FL US 02463 -08111 00000      
+SOSN6           SOUTHERN OPEN SOUND              NY US 04100 -07310 00000      
+SPAG1           SAPELO ISL/SKIDAWAY_INST         GA US 03138 -08057 00000      
+SPAL1           PILOTTOWN                        LA US 02893 -08941 00000      
+SPGF1           SETTLEMENT POINT                 GB US 02669 -07900 00002      
+SPLL1           SOUTH PELTO BLOCK                LA US 02887 -09048 00000      
+SRST2           SABINE                           TX US 02967 -09405 00001      
+STDM4           STANNARD ROCK                    MI US 04718 -08722 00183      
+SUPN6           SUPERIOR SHOALS                  NY US 04447 -07580 00077      
+SVLS1           SAVANNAH LIGHT                   GA US 03195 -08068 00000      
+SVNM4           SOUTH HAVEN                      MI US 04240 -08629 00176      
+SXHW3           SAXON HARBOR                     WI US 04656 -09044 00184      
+SYWW3           YACHT WORKS SISTER BAY           WI US 04520 -08712 00179      
+TAML1           TAMBOUR BAY                      LA US 02919 -09067 00000      
+TARF1           TARPON SPRINGS                   FL US 02815 -08275 00000      
+TCMW1           TACOMA                           WA US 04727 -12242 00011
+THIN6           THOUSAND IS BRIDGE               NY US 04430 -07598 00076      
+THLO1           TOLEDO HARBOR LIGHT              OH US 04183 -08320 00174      
+TIBC1           TIBURON PIER                     CA US 03789 -12245 00000      
+TIXC1           TIJUANA RIVER NERR               CA US 03257 -11712 00000      
+TPLM2           THOMAS POINT                     MD US 03890 -07644 00000      
+TRBL1           TERREBONNE BAY                   LA US 02917 -09058 00000      
+TTIW1           TATOOSH ISLAND                   WA US 04839 -12474 00031      
+TYBG1           US NAVY TOWER R5                 GA US 03163 -07992 00000      
+ULAM6           DOCK E PORT OF PASCAGOULA        MS US 03035 -08851 00000
+VENF1           VENICE                           FL US 02707 -08245 00000      
+VMSV2           VIMS PIER                        VA US 03725 -07650 00000      
+WATS1           LAKE WATEREE                     SC US 03434 -08070 00089
+WAXM3           WAQUOIT BAY NERR                 MA US 04158 -07053 00010      
+WEXM1           WELLS NERR                       ME US 04334 -07055 00019      
+WHRI2           WAUKEGAN HARBOR                  IL US 04236 -08781 00180      
+WKXA1           WEEKS BAY NERR                   AL US 03042 -08783 00000      
+WNEM4           WEST NEEBISH                     MI US 04628 -08421 00006
+WPOW1           WEST POINT                       WA US 04766 -12244 00003      
+WPTW1           WESTPORT                         WA US 04693 -12413 00031
+YGNN6           NIAGARA COAST GUARD STA.         NY US 04326 -07906 00073      
+YRSV2           CHESAPEAKE BAY NERR              VA US 03741 -07671 00011      

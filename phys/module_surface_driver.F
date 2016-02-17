@@ -20,6 +20,7 @@ CONTAINS
 #if (NMM_CORE==1)
      &          ,psim,p_phy,q10,q2,qfx,taux,tauy,qsfc,qshltr,qz0      &
      &          ,zkmax,ribn,charn,msang,scurx,scury,icoef_sf,iwavecpl,lcurr_sf & !for gfdl-sf drag
+     &          ,pert_Cd, ens_random_seed, ens_Cdamp                  &
      &          ,cd_out,ch_out                                        &
 #else
      &          ,psim,p_phy,q10,q2,qfx,qsfc,qshltr,qz0                &
@@ -220,6 +221,7 @@ CONTAINS
              !  Optional ocean model
      &          ,sf_ocean_physics,oml_hml0,oml_gamma                  &
      &          ,tml,t0ml,hml,h0ml,huml,hvml,f,tmoml                  &
+     &          ,oml_relaxation_time                                  &
      &          ,ustm,ck,cka,cd,cda,isftcflx,iz0tlnd                  &
      &         ,isurban, mminlu                                       &
      &          ,snotime                                              &
@@ -485,6 +487,7 @@ CONTAINS
 !-- sf_ocean_physics       whether to call ocean model from slab (1 = oml, 2=3d PWP)
 !-- oml_hml0      initial mixed layer depth (if real-data not available, default 50 m)
 !-- oml_gamma     lapse rate below mixed layer in ocean (default 0.14 K m-1)
+!-- oml_relaxation_time   time the oml will take to get back to its original state (seconds)
 !-- ck            enthalpy exchange coeff at 10 meters
 !-- cd            momentum exchange coeff at 10 meters
 !-- cka           enthalpy exchange coeff at the lowest model level
@@ -598,6 +601,9 @@ CONTAINS
    INTEGER, INTENT(IN)::   ICOEF_SF
    INTEGER, INTENT(IN)::   IWAVECPL
    LOGICAL, INTENT(IN)::   LCURR_SF
+   logical,intent(in),optional  :: pert_Cd
+   integer,intent(in),optional  :: ens_random_seed
+   real,intent(in),optional     :: ens_Cdamp
 #endif
    REAL, DIMENSION( ims:ime , 1:num_soil_layers, jms:jme ), INTENT(INOUT)::   SMOIS
    REAL, DIMENSION( ims:ime , 1:num_soil_layers, jms:jme ), INTENT(INOUT)::   TSLB
@@ -927,6 +933,7 @@ CONTAINS
    INTEGER, OPTIONAL, INTENT(IN )::   SF_OCEAN_PHYSICS
    REAL   , OPTIONAL, INTENT(IN )::   OML_HML0
    REAL   , OPTIONAL, INTENT(IN )::   OML_GAMMA
+   REAL   , OPTIONAL, INTENT(IN )::   OML_RELAXATION_TIME
 !
 !  Observation nudging
 !
@@ -1931,7 +1938,7 @@ CONTAINS
                xland,hfx,qfx,lh,tsk,flhc,flqc,qgh,qsfc,rmol,       &
                u10,v10,                                            &
                gz1oz0,wspd,br,isfflx,dx,                           &
-               svp1,svp2,svp3,svpt0,ep_1,ep_2,karman,              &
+               svp1,svp2,svp3,svpt0,ep_1,ep_2,karman,itimestep,    &
                ids,ide, jds,jde, kds,kde,                          &
                ims,ime, jms,jme, kms,kme,                          &
                i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
@@ -2249,6 +2256,7 @@ CONTAINS
                    XLAND,HFX,QFX,TAUX,TAUY,LH,GSW,GLW,TSK,FLHC,FLQC,  & ! gopal's doing for Ocean coupling
                    QGH,QSFC,U10,V10,                              &
                    ICOEF_SF,IWAVECPL,LCURR_SF,CHARN, MSANG, SCURX, SCURY, &
+                   pert_Cd, ens_random_seed, ens_Cdamp,           &
                    GZ1OZ0,WSPD,BR,ZKMAX, ISFFLX,                  &
                    EP_1,EP_2,KARMAN,GFDL_NTSFLG,SFENTH,           &
                    cd_out, ch_out,                                &
@@ -3183,7 +3191,7 @@ CONTAINS
                      psfc, gsw, glw, rainbl, emiss,                  &
                      ITIMESTEP, curr_secs, num_soil_layers, DT,      &
                      anal_interval, xland, xice, albbck, albedo,     &
-                     snoalb, smois, tslb, mavail,T2, Q2,             &
+                     snoalb, smois, tslb, mavail,T2, Q2, qsfc,       &
                      zs, dzs, psih,                                  &
                      landusef,soilctop,soilcbot,vegfra, vegf_px,     &
                      isltyp,ra,rs,lai,imperv,canfra,nlcat,nscat,     &
@@ -3715,7 +3723,7 @@ CONTAINS
         CALL ocean_driver(tml,t0ml,hml,h0ml,huml,hvml,ust,u_phy,v_phy, &
                      tmoml,f,g,oml_gamma,                         &
                      xland,hfx,lh,tsk,gsw,glw,emiss,              &
-                     dtbl,STBOLT,                                 &
+                     dtbl,STBOLT,oml_relaxation_time,             &
                      ids,ide, jds,jde, kds,kde,                   &
                      ims,ime, jms,jme, kms,kme,                   &
                      i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte, & 
@@ -6232,7 +6240,7 @@ HFX_SEA, LH_SEA, QFX_SEA, QGH_SEA, QSFC_SEA, TSK_SEA,  &
                      XLAND,HFX,QFX,LH,TSK_LOCAL,FLHC,FLQC,QGH,QSFC,RMOL, &
                      U10,V10,                                      &
                      GZ1OZ0,WSPD,BR,ISFFLX,DX,                     &
-                     SVP1,SVP2,SVP3,SVPT0,EP1,EP2,KARMAN,          &
+                     SVP1,SVP2,SVP3,SVPT0,EP1,EP2,KARMAN,ITIMESTEP,&
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte                     )
@@ -6290,7 +6298,7 @@ HFX_SEA, LH_SEA, QFX_SEA, QGH_SEA, QSFC_SEA, TSK_SEA,  &
                      XLAND_SEA,HFX_SEA,QFX_SEA,LH_SEA,TSK_SEA,FLHC_SEA,FLQC_SEA,QGH_SEA,QSFC_SEA,RMOL_SEA, &
                      U10_SEA,V10_SEA,                              &
                      GZ1OZ0_SEA,WSPD_SEA,BR_SEA,ISFFLX,DX,         &
-                     SVP1,SVP2,SVP3,SVPT0,EP1,EP2,KARMAN,          &
+                     SVP1,SVP2,SVP3,SVPT0,EP1,EP2,KARMAN,ITIMESTEP,&
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte                     )

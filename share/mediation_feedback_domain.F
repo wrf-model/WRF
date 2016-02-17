@@ -55,7 +55,7 @@ SUBROUTINE med_feedback_domain ( parent_grid , nested_grid )
          TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
          TYPE(domain), POINTER :: nested_grid
          TYPE (grid_config_rec_type)            :: config_flags
-#        include <dummy_new_decl.inc>
+#        include "dummy_new_decl.inc"
       END SUBROUTINE feedback_domain_em_part1
       SUBROUTINE feedback_domain_em_part2 ( grid, intermediate_grid , nested_grid, config_flags   &
 !
@@ -68,7 +68,7 @@ SUBROUTINE med_feedback_domain ( parent_grid , nested_grid )
          TYPE(domain), POINTER :: intermediate_grid
          TYPE(domain), POINTER :: nested_grid
          TYPE (grid_config_rec_type)            :: config_flags
-#        include <dummy_new_decl.inc>
+#        include "dummy_new_decl.inc"
       END SUBROUTINE feedback_domain_em_part2
       SUBROUTINE update_after_feedback_em ( grid  &
 !
@@ -78,7 +78,7 @@ SUBROUTINE med_feedback_domain ( parent_grid , nested_grid )
          USE module_domain
          USE module_configure
          TYPE(domain), TARGET :: grid          ! name of the grid being dereferenced (must be "grid")
-#        include <dummy_new_decl.inc>
+#        include "dummy_new_decl.inc"
       END SUBROUTINE update_after_feedback_em
 #endif
 #endif
@@ -101,7 +101,7 @@ SUBROUTINE med_feedback_domain ( parent_grid , nested_grid )
          TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
          TYPE(domain), POINTER :: nested_grid
          TYPE (grid_config_rec_type)            :: config_flags
-#        include <dummy_new_decl.inc>
+#        include "dummy_new_decl.inc"
       END SUBROUTINE feedback_domain_nmm_part1
 !
       SUBROUTINE feedback_domain_nmm_part2 ( grid, intermediate_grid , nested_grid, config_flags   &
@@ -115,7 +115,7 @@ SUBROUTINE med_feedback_domain ( parent_grid , nested_grid )
          TYPE(domain), POINTER :: intermediate_grid
          TYPE(domain), POINTER :: nested_grid
          TYPE (grid_config_rec_type)            :: config_flags
-#        include <dummy_new_decl.inc>
+#        include "dummy_new_decl.inc"
 
       END SUBROUTINE feedback_domain_nmm_part2
 

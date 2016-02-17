@@ -97,16 +97,18 @@ subroutine da_deallocate_background_errors (be)
 #endif
       end if
 
-      deallocate (be % reg_psi_chi)
-      deallocate (be % reg_psi_t)
-      deallocate (be % reg_psi_ps)
-      if ( cv_options == 6 ) then
-         deallocate (be % reg_psi_rh)
-         deallocate (be % reg_chi_u_t)
-         deallocate (be % reg_chi_u_ps)
-         deallocate (be % reg_chi_u_rh)
-         deallocate (be % reg_t_u_rh)
-         deallocate (be % reg_ps_u_rh)
+      if ( cv_options /= 7 ) then
+         deallocate (be % reg_psi_chi)
+         deallocate (be % reg_psi_t)
+         deallocate (be % reg_psi_ps)
+         if ( cv_options == 6 ) then
+            deallocate (be % reg_psi_rh)
+            deallocate (be % reg_chi_u_t)
+            deallocate (be % reg_chi_u_ps)
+            deallocate (be % reg_chi_u_rh)
+            deallocate (be % reg_t_u_rh)
+            deallocate (be % reg_ps_u_rh)
+         end if
       end if
 
       ! Deallocate control variable errors (in future uncomment use these to allow 

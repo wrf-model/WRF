@@ -33,6 +33,7 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
    real, allocatable :: arrayglobal(:,:)
 
    logical:: no_ppb
+   logical :: has_znt, has_regime
 
    real, dimension(ims:ime,kms:kme) :: pf, pp
 
@@ -40,6 +41,8 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
    real   :: uu, vv
 #endif
 
+
+   call sfclayinit !for da_sfc_wtq
 
    ! If grid%pb does not existed in FG (YRG, 08/26/2010):
      ppb = sum(grid%pb*grid%pb)
@@ -641,8 +644,15 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
    !xbx % mminlu = 'USGS'
    xbx % mminlu = trim(grid%mminlu)
 
-   call da_roughness_from_lanu(19, xbx % mminlu, current_date, &
-      grid%xb % lanu, grid%xb % rough)
+   has_regime = sum(grid%regime*grid%regime) > 0.0
+   has_znt    = sum(grid%znt*grid%znt)       > 0.0
+   if ( has_znt ) then
+      grid%xb%rough = grid%znt
+   else
+      ! calculate rough only when it is not available from fg
+      call da_roughness_from_lanu(19, xbx % mminlu, current_date, &
+         grid%xb % lanu, grid%xb % rough)
+   end if
 
    !---------------------------------------------------------------------------
    ! Calculate 1/grid box areas:
@@ -684,22 +694,32 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
          uu = 0.5*(grid%xb%u(i,j,kts)+grid%xb%u(i+1,j,kts) )
          vv = 0.5*(grid%xb%v(i,j,kts)+grid%xb%v(i,j+1,kts) )
 #endif
-         call da_sfc_wtq(grid%xb%psfc(i,j), grid%xb%tgrn(i,j), &
+         if ( has_regime ) then
+            ! if fg contains valid regime info, use it
+            grid%xb%regime(i,j) = grid%regime(i,j)
+         else
+            ! xb t2/q2/u10/v10 will be coming directly from fg.
+            ! but still call da_sfc_wtq here in order to get regimes.
+            ! regimes can not be zero for sfc_assi_options=2.
+            ! regimes calculated here could be very different from WRF values
+            ! due to the lack of some input sfc info
+            call da_sfc_wtq(grid%xb%psfc(i,j), grid%xb%tgrn(i,j), &
 #ifdef A2C
-            grid%xb%p(i,j,kts), grid%xb%t(i,j,kts), grid%xb%q(i,j,kts),uu,vv, &
+               grid%xb%p(i,j,kts), grid%xb%t(i,j,kts), grid%xb%q(i,j,kts),uu,vv, &
 #else
-            grid%xb%p(i,j,kts), grid%xb%t(i,j,kts), grid%xb%q(i,j,kts), &
-            grid%xb%u(i,j,kts), grid%xb%v(i,j,kts), &
+               grid%xb%p(i,j,kts), grid%xb%t(i,j,kts), grid%xb%q(i,j,kts), &
+               grid%xb%u(i,j,kts), grid%xb%v(i,j,kts), &
 #endif
-            grid%xb%p(i,j,kts+1), grid%xb%t(i,j,kts+1), grid%xb%q(i,j,kts+1), &
-            height,  grid%xb%rough(i,j),grid%xb%xland(i,j), grid%xb%ds, & ! Modified by Eric Chiang (NOV 2010) 
-            grid%xb%u10(i,j), grid%xb%v10(i,j), grid%xb%t2(i,j), &
-            grid%xb%q2(i,j), grid%xb%regime(i,j))
-  
-            grid%xb%u10(i,j) = grid%u10(i,j)         ! Add by Eric Chiang (NOV 2010)
-            grid%xb%v10(i,j) = grid%v10(i,j)         ! Add by Eric Chiang (NOV 2010)
-            grid%xb%t2(i,j) = grid%t2(i,j)           ! Add by Eric Chiang (NOV 2010)
-            grid%xb%q2(i,j) = grid%q2(i,j)           ! Add by Eric Chiang (NOV 2010)
+               height,  grid%xb%rough(i,j),grid%xb%xland(i,j), grid%xb%ds, &
+               grid%xb%u10(i,j), grid%xb%v10(i,j), grid%xb%t2(i,j), &
+               grid%xb%q2(i,j), grid%xb%regime(i,j))
+         end if !if has_regime
+
+         ! use t2/q2/u10/v10 from fg
+         grid%xb%u10(i,j) = grid%u10(i,j)
+         grid%xb%v10(i,j) = grid%v10(i,j)
+         grid%xb%t2(i,j) = grid%t2(i,j)
+         grid%xb%q2(i,j) = grid%q2(i,j)
 
       end do
    end do

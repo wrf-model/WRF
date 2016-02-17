@@ -69,6 +69,9 @@ subroutine da_initialize_rad_iv (i, n, iv, p)
    iv%instid(i)%vegfra(n)       = 0.0
    iv%instid(i)%vegtyp(n)       = 0.0
    iv%instid(i)%clwp(n)         = 0.0
+   if ( index(iv%instid(i)%rttovid_string, 'amsr2') > 0 ) then
+      iv%instid(i)%clw(n)       = p%clw
+   end if
    iv%instid(i)%ps(n)           = 0.0
    iv%instid(i)%tb_xb(:,n)      = 0.0
    iv%instid(i)%tb_inv(:,n)     = p%tb_inv(:)

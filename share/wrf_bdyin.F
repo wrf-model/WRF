@@ -9,8 +9,8 @@ SUBROUTINE wrf_bdyin ( fid , grid , config_flags , switch , ierr )
     USE module_bc_time_utilities
     USE module_utility
     IMPLICIT NONE
-#include <wrf_io_flags.h>
-#include <wrf_status_codes.h>
+#include "wrf_io_flags.h"
+#include "wrf_status_codes.h"
     TYPE(domain) :: grid
     TYPE(grid_config_rec_type),  INTENT(INOUT)    :: config_flags
     INTEGER, INTENT(IN) :: fid
@@ -51,7 +51,7 @@ SUBROUTINE wrf_bdyin ( fid , grid , config_flags , switch , ierr )
                               ips, ipe, jps, jpe, kps, kpe    )
 
 
-#include <wrf_bdyin.inc>
+#include "wrf_bdyin.inc"
 
     RETURN
     END

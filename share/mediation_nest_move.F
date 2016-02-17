@@ -58,7 +58,7 @@ SUBROUTINE med_nest_move ( parent, nest )
 #if ( EM_CORE == 1 )
      SUBROUTINE shift_domain_em ( grid, disp_x, disp_y  &
 !
-# include <dummy_new_args.inc>
+# include "dummy_new_args.inc"
 !
                            )
         USE module_domain, ONLY : domain
@@ -66,7 +66,7 @@ SUBROUTINE med_nest_move ( parent, nest )
         IMPLICIT NONE
         INTEGER disp_x, disp_y
         TYPE(domain) , POINTER                 :: grid
-# include <dummy_new_decl.inc>
+# include "dummy_new_decl.inc"
      END SUBROUTINE shift_domain_em
 #endif
 #if ( NMM_CORE == 1 )
@@ -126,14 +126,14 @@ SUBROUTINE med_nest_move ( parent, nest )
 
      SUBROUTINE shift_domain_nmm ( grid, disp_x, disp_y &
 !
-# include <dummy_new_args.inc>
+# include "dummy_new_args.inc"
 !
                            )
         USE module_domain
         IMPLICIT NONE
         INTEGER disp_x, disp_y
         TYPE(domain) , POINTER                 :: grid
-#include <dummy_new_decl.inc>
+#include "dummy_new_decl.inc"
      END SUBROUTINE shift_domain_nmm
 #endif
 #ifdef HWRF
@@ -275,14 +275,14 @@ SUBROUTINE med_nest_move ( parent, nest )
 #if ( EM_CORE == 1 )
      CALL shift_domain_em( grid, dx, dy  &
 !
-# include <actual_new_args.inc>
+# include "actual_new_args.inc"
 !
                            )
 #endif
 #if (NMM_CORE == 1 && NMM_NEST == 1)
      CALL shift_domain_nmm( grid, dx, dy &
 !
-# include <actual_new_args.inc>
+# include "actual_new_args.inc"
 !
                           )
 #endif

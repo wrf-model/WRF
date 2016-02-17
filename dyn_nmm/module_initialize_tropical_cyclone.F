@@ -49,7 +49,7 @@ CONTAINS
 
         CALL init_domain_nmm (grid &
 !
-#include <actual_new_args.inc>
+#include "actual_new_args.inc"
 !
       )
 
@@ -59,7 +59,7 @@ CONTAINS
 !---------------------------------------------------------------------
    SUBROUTINE init_domain_nmm ( grid &
 !
-# include <dummy_new_args.inc>
+# include "dummy_new_args.inc"
 !
    )
 
@@ -71,7 +71,7 @@ CONTAINS
 !     TYPE (domain), POINTER :: grid
       TYPE (domain)          :: grid
 
-# include <dummy_new_decl.inc>
+# include "dummy_new_decl.inc"
 
 
 real      ,DIMENSION(grid%sm31:grid%em31,grid%sm32:grid%em32,1:grid%num_metgrid_levels)           :: ght_out
@@ -222,9 +222,9 @@ real      ,DIMENSION(grid%sm31:grid%em31,grid%sm32:grid%em32,1:grid%num_soil_cat
         if (ALLOCATED(TG_ALT)) DEALLOCATE(TG_ALT)
 
 !#define COPY_IN
-!#include <scalar_derefs.inc>
+!#include "scalar_derefs.inc"
 #ifdef DM_PARALLEL
-#    include <data_calls.inc>
+#    include "data_calls.inc"
 #endif
 
       SELECT CASE ( model_data_order )
@@ -2169,7 +2169,7 @@ ips=its ; ipe=ite ;  jps=jts ; jpe=jte ; kps=kts ; kpe=kte
 #endif
 
 !#define COPY_OUT
-!#include <scalar_derefs.inc>
+!#include "scalar_derefs.inc"
       RETURN
 
    END SUBROUTINE init_domain_nmm

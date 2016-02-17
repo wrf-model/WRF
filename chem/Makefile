@@ -78,6 +78,8 @@ MODULES =                                 \
         module_qf03.o                     \
         module_soilpsd.o                  \
         module_dust_load.o                \
+        module_uoc_dustwd.o               \
+        module_data_uoc_wd.o              \
         module_mosaic_addemiss.o          \
         module_mosaic_initmixrats.o       \
         module_mosaic_movesect.o          \

@@ -132,7 +132,7 @@ SUBROUTINE solve_em ( grid , config_flags  &
 
 ! storage for tendencies and decoupled state (generated from Registry)
 
-#include <i1_decl.inc>
+#include "i1_decl.inc"
 ! Previous time level of tracer arrays now defined as i1 variables;
 ! the state 4d arrays now redefined as 1-time level arrays in Registry.
 ! Benefit: save memory in nested runs, since only 1 domain is active at a
@@ -177,7 +177,7 @@ SUBROUTINE solve_em ( grid , config_flags  &
    TYPE(WRFU_TimeInterval)                    :: dtInterval, intervaltime,restartinterval
 
 ! Define benchmarking timers if -DBENCH is compiled
-#include <bench_solve_em_def.h>
+#include "bench_solve_em_def.h"
 
 !----------------------
 ! Executable statements
@@ -215,7 +215,7 @@ SUBROUTINE solve_em ( grid , config_flags  &
 !</DESCRIPTION>
 
 ! Initialize timers if compiled with -DBENCH
-#include <bench_solve_em_init.h>
+#include "bench_solve_em_init.h"
 
 !  set runge-kutta solver (2nd or 3rd order)
 
@@ -434,8 +434,46 @@ SUBROUTINE solve_em ( grid , config_flags  &
                           k_start, k_end                               )
 
        ENDIF
+
+       !  If the user has requested to optionally select the moist theta (use_theta_m==1)
+       !  switch, the first setting of the "old" value of theta_m uses the "old"
+       !  value of Qv.  The moist_old variable does not exist until after the advection
+       !  towards the end of the RK loop.  For the first time in the RK loop, we need
+       !  a reasonable value for moist_old.
+
+       IF ( ( config_flags%use_theta_m .EQ. 1 ) .AND. (P_Qv .GE. PARAM_FIRST_SCALAR) ) THEN
+         CALL initialize_moist_old ( moist_old(:,:,:,P_Qv),              &
+                            moist(:,:,:,P_Qv) ,                          &
+                            ids,ide, jds,jde, kds,kde,                   &
+                            ims,ime, jms,jme, kms,kme,                   &
+                            grid%i_start(ij), grid%i_end(ij),            &
+                            grid%j_start(ij), grid%j_end(ij),            &
+                            k_start, k_end                               )
+       END IF
      ENDDO
      !$OMP END PARALLEL DO
+
+     !  Now that we might have initialized the moist_old values for P_Qv, fill
+     !  out some halos, etc.
+     IF ( ( config_flags%use_theta_m .EQ. 1 ) .AND. (P_Qv .GE. PARAM_FIRST_SCALAR) ) THEN
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
+#  include "HALO_EM_MOIST_OLD_E_7.inc"
+#  include "PERIOD_BDY_EM_MOIST_OLD.inc"
+#endif
+       !$OMP PARALLEL DO   &
+       !$OMP PRIVATE ( ij )
+       DO ij = 1 , grid%num_tiles
+         im = P_Qv
+         CALL set_physical_bc3d( moist_old(ims,kms,jms,im), 'p', config_flags,  &
+                                 ids, ide, jds, jde, kds, kde,                  &
+                                 ims, ime, jms, jme, kms, kme,                  &
+                                 ips, ipe, jps, jpe, kps, kpe,                  &
+                                 grid%i_start(ij), grid%i_end(ij),              &
+                                 grid%j_start(ij), grid%j_end(ij),              &
+                                 k_start    , k_end                             )
+       END DO
+       !$OMP END PARALLEL DO
+     END IF
 
 !**********************************************************************
 !
@@ -765,7 +803,7 @@ BENCH_END(set_phys_bc_tim)
 #if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
 #      include "HALO_EM_THETAM.inc"
 #      include "PERIOD_EM_THETAM.inc"
-#else
+#endif
         its=ips ; ite = ipe
         jts=jps ; jte = jpe
         CALL set_physical_bc3d( grid%h_diabatic, 'p', config_flags,      &
@@ -786,7 +824,6 @@ BENCH_END(set_phys_bc_tim)
                                 ips, ipe, jps, jpe, kps, kpe,     &
                                 its, ite, jts, jte,               &
                                 k_start    , k_end                )
-#endif
      END IF
 
 !
@@ -2847,6 +2884,7 @@ BENCH_END(tracer_adv_tim)
 !************************************************************************************************************************
 ! LES_fix: convert theta_m back to theta, point 2 ! 28 January 2015
 
+
      IF ( ( config_flags%use_theta_m .EQ. 1 ) .AND. (P_Qv .GE. PARAM_FIRST_SCALAR) ) THEN
         CALL thetam_to_theta ( grid%t_1 , moist_old(ims,kms,jms,P_qv) ,  &
                                grid%t_2 , moist(ims,kms,jms,P_qv) ,      &
@@ -2854,9 +2892,23 @@ BENCH_END(tracer_adv_tim)
                                ims, ime, jms, jme, kms, kme ,            &
                                ips, ipe, jps, jpe, kps, kpe              )
 # ifdef DM_PARALLEL
-#      include "HALO_EM_THETAM.inc"
-#      include "PERIOD_EM_THETAM.inc"
+#       include "HALO_EM_THETAM.inc"
+#       include "PERIOD_EM_THETAM.inc"
 #endif
+        its=ips ; ite = ipe
+        jts=jps ; jte = jpe
+        CALL set_physical_bc3d( grid%t_1, 'p', config_flags,      &
+                                ids, ide, jds, jde, kds, kde,     &
+                                ims, ime, jms, jme, kms, kme,     &
+                                ips, ipe, jps, jpe, kps, kpe,     &
+                                its, ite, jts, jte,               &
+                                k_start    , k_end                )
+        CALL set_physical_bc3d( grid%t_2, 'p', config_flags,      &
+                                ids, ide, jds, jde, kds, kde,     &
+                                ims, ime, jms, jme, kms, kme,     &
+                                ips, ipe, jps, jpe, kps, kpe,     &
+                                its, ite, jts, jte,               &
+                                k_start    , k_end                )
      END IF
 
 ! end theta_m fix point 2
@@ -4551,7 +4603,7 @@ BENCH_END(bc_2d_tim)
    IF ( grid%id .EQ. 1 ) grid%just_read_boundary = Is_alarm_tstep(grid%domain_clock, grid%alarms(BOUNDARY_ALARM))
 
 ! Finish timers if compiled with -DBENCH.
-#include <bench_solve_em_end.h>
+#include "bench_solve_em_end.h"
 
    RETURN
 

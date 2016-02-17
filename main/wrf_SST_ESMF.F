@@ -222,8 +222,8 @@ CONTAINS
 !     stuffs the file data into the SST exportState.  
 !</DESCRIPTION>
 
-#include <wrf_status_codes.h>
-#include <wrf_io_flags.h>
+#include "wrf_status_codes.h"
+#include "wrf_io_flags.h"
 
      ! Local variables
      CHARACTER (LEN=19) :: date_string

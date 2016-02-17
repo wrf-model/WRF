@@ -18,7 +18,7 @@ program gen_be_ensmean
 
    implicit none
 
-#include <netcdf.inc>
+#include "netcdf.inc"
 
    integer, parameter    :: max_num_dims = 4          ! Maximum number of dimensions.
    integer, parameter    :: max_num_vars = 50         ! Maximum number of variables.

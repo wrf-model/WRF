@@ -9173,7 +9173,7 @@
 !           input aerosol optical depth at 0.55 microns for each aerosol type (ecaer)
 ! iaer = 10, input total aerosol optical depth, single scattering albedo 
 !            and asymmetry parameter (tauaer, ssaaer, asmaer) directly
-      if ( aer_opt .eq. 0 .or. aer_opt .eq. 2 ) then
+      if ( aer_opt.eq.0 .or. aer_opt.eq.2 .or. aer_opt.eq.3) then
       iaer = 10
       else if ( aer_opt .eq. 1 ) then
       iaer = 6
@@ -9805,7 +9805,7 @@ USE module_wrf_error
 #if (HWRF == 1)
 USE module_state_description, ONLY : FER_MP_HIRES, FER_MP_HIRES_ADVECT, ETAMP_HWRF 
 #else
-USE module_state_description, ONLY : FER_MP_HIRES
+USE module_state_description, ONLY : FER_MP_HIRES, FER_MP_HIRES_ADVECT
 #endif
 !USE module_dm
 
@@ -10395,7 +10395,8 @@ CONTAINS
                 mp_physics == FER_MP_HIRES_ADVECT .or. &
                 mp_physics == ETAMP_HWRF ) THEN
 #else
-           IF ( mp_physics == FER_MP_HIRES ) THEN
+           IF ( mp_physics == FER_MP_HIRES .OR. &
+                mp_physics == FER_MP_HIRES_ADVECT) THEN
 #endif
                   DO K=kts,kte
                      qi1d(k) = qi3d(i,k,j)
@@ -10882,7 +10883,7 @@ CONTAINS
 
       if ( use_aer3d ) then
 ! ---- jararias 11/2012
-         if ( aer_opt .eq. 2) then
+         if ( aer_opt .eq. 2 .or. aer_opt.eq.3) then
             do nb=1,nbndsw
                do k=kts,kte
                   tauaer(ncol,k,nb)=tauaer3d_sw(i,k,j,nb)

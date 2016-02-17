@@ -306,6 +306,8 @@
   integer :: iyear, itimob                                                     !obsnypatch
   integer :: errcnt
   DATA NMOVE/0/,NVOLA/61/
+  character*140 file_name_on_obs_unit, obs_domain_file_name
+  integer :: obs_domain_file_unit
 
 ! if(ieof(inest).eq.2.and.fdob%nstat.eq.0)then
 !   IF (iprt) print *,'returning from in4dob'
@@ -419,13 +421,15 @@
 ! open file if at beginning or restart
   IF(KTAU.EQ.0.OR.KTAU.EQ.KTAUR) THEN
     fdob%RTLAST=-999.
-    INQUIRE (NVOLA+INEST-1,OPENED=OPENED)
-    IF (.NOT. OPENED) THEN
+    obs_domain_file_unit = NVOLA+INEST-1
+    INQUIRE (obs_domain_file_unit,NAME=file_name_on_obs_unit,OPENED=OPENED)
+    !Build obs nudging file name (OBS_DOMAINX01 where X is the current domain number)
       ifon(inest)=1
       write(fonc(1:2),'(i2)')ifon(inest)
       if(fonc(1:1).eq.' ')fonc(1:1)='0'
-      INQUIRE (file='OBS_DOMAIN'//CHAR(INEST+ICHAR('0'))//fonc(1:2)  &
-              ,EXIST=exist)
+    obs_domain_file_name='OBS_DOMAIN'//CHAR(INEST+ICHAR('0'))//fonc(1:2)  
+    IF (.NOT. OPENED) THEN
+      INQUIRE (file=obs_domain_file_name,EXIST=exist)
       if(exist)then
         IF (iprt) THEN
           write(msg,*) 'opening first fdda obs file, fonc=',              &
@@ -434,15 +438,27 @@
           write(msg,*) 'ifon=',ifon(inest)
           call wrf_message(msg)
         ENDIF
-        OPEN(NVOLA+INEST-1,                                          &
-        FILE='OBS_DOMAIN'//CHAR(INEST+ICHAR('0'))//fonc(1:2),        &
-              FORM='FORMATTED',STATUS='OLD')
+        OPEN(obs_domain_file_unit,FILE=obs_domain_file_name,FORM='FORMATTED',STATUS='OLD')
       else
 ! no first file to open
         IF (iprt) call wrf_message("there are no fdda obs files to open")
         return
       endif
-
+    ELSE
+     !If the unit for observation nudging file is already open make sure the file
+     !name matches the expected name to ensure that some other part of WRF has
+     !not opened a file using the same unit number
+     IF(file_name_on_obs_unit .ne. obs_domain_file_name) THEN 
+      write(msg,*) 'File open on obs nudging unit (',obs_domain_file_unit,') with wrong name'
+      call wrf_message(msg)
+      write(msg,*) 'File open on obs nudging unit is named ',&
+       trim(adjustl(file_name_on_obs_unit)),' but it should be named ',&
+       trim(adjustl(obs_domain_file_name))
+      call wrf_message(msg)
+      write(msg,*) 'This likely means this unit number was opened elsewhere in WRF'
+      call wrf_message(msg)
+      call wrf_error_fatal ( 'wrf_fddaobs_in: in4dob STOP Obs nudging file name mismatch' )
+     ENDIF
     ENDIF
   ENDIF  !end if(KTAU.EQ.0.OR.KTAU.EQ.KTAUR)
 ! print *,'at jc check1'

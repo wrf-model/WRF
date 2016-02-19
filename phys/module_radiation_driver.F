@@ -727,8 +727,9 @@ CONTAINS
 ! jararias, 2013/08/10
    real :: ioh,kt,airmass,kd
    real, dimension(ims:ime,jms:jme) :: coszen_loc,hrang_loc
-! jararias 2013/11
-   real, dimension(:,:,:,:), allocatable :: tauaer_sw, ssaaer_sw, asyaer_sw
+! jararias 2013/11 but modified on 2016/2/10
+!  the following three arrays may be dimensioned by (ims,ime,kms,kme,jms,jme,aerosol_vars)
+   real, dimension(:,:,:,:), pointer :: tauaer_sw=>null(), ssaaer_sw=>null(), asyaer_sw=>null()
 
 ! Trude AOD variables
      INTEGER, PARAMETER:: taer_type = 1                                  !  rural, urban, maritime, ...
@@ -936,26 +937,8 @@ CONTAINS
            end do
          ENDDO
          !$OMP END PARALLEL DO
-      ELSEIF (F_QNWFA .AND. aer_opt.eq.3 .AND. sw_physics.eq.GODDARDSWSCHEME) THEN
-         allocate(tauaer_sw(1, 1, 1, 1))
-         allocate(ssaaer_sw(1, 1, 1, 1))
-         allocate(asyaer_sw(1, 1, 1, 1))
       ENDIF
    ENDIF
-
-   !..Allocate the dummy arrays in the event we didn't need these.
-   IF ( (.NOT. (aer_opt.EQ.2 .OR. aer_opt.EQ.3)) .AND.                  &
-               (sw_physics.eq.GODDARDSWSCHEME .OR.                      &
-                sw_physics.eq.RRTMG_SWSCHEME .OR.                       &
-                sw_physics.eq.RRTMG_SWSCHEME_FAST)) THEN
-      allocate(tauaer_sw(1, 1, 1, 1))
-      allocate(ssaaer_sw(1, 1, 1, 1))
-      allocate(asyaer_sw(1, 1, 1, 1))
-   ENDIF
-   ! Stubs to ensure these variables are not passed in unallocated:
-   if(.not.allocated(tauaer_sw)) allocate(tauaer_sw(1, 1, 1, 1))
-   if(.not.allocated(ssaaer_sw)) allocate(ssaaer_sw(1, 1, 1, 1))
-   if(.not.allocated(asyaer_sw)) allocate(asyaer_sw(1, 1, 1, 1))
 
 !---------------
 ! Calculate constant for short wave radiation
@@ -1428,6 +1411,9 @@ CONTAINS
                     ,f_qi=f_qi,f_qs=f_qs,f_qg=f_qg                     &
                     ,erbe_out=erbe_out                                 & !optional
                     ,aer_opt=aer_opt                                   &
+                    ,tauaer3d_sw=tauaer_sw                             & ! jararias, 2013/11
+                    ,ssaaer3d_sw=ssaaer_sw                             & ! jararias, 2013/11
+                    ,asyaer3d_sw=asyaer_sw                             & ! jararias, 2012/11
                                                                        )
 
         CASE (GFDLLWSCHEME)
@@ -2346,9 +2332,9 @@ CONTAINS
    ENDDO
    !$OMP END PARALLEL DO
 
-   IF ( allocated(tauaer_sw) ) deallocate(tauaer_sw)
-   IF ( allocated(ssaaer_sw) ) deallocate(ssaaer_sw)
-   IF ( allocated(asyaer_sw) ) deallocate(asyaer_sw)
+   IF ( associated(tauaer_sw) ) deallocate(tauaer_sw)
+   IF ( associated(ssaaer_sw) ) deallocate(ssaaer_sw)
+   IF ( associated(asyaer_sw) ) deallocate(asyaer_sw)
 
    ENDIF Radiation_step
 

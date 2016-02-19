@@ -876,9 +876,8 @@ state   real   FM             ij     misc        1         -     -         "FM" 
 state   real   FH             ij     misc        1         -     -         "FH"                  "INTEGRATED FUNCTION FOR HEAT"         ""
 i1      real   WSPD           ij     misc        1         -     -         "WSPD"                "Wind speed"                           "m s-1"
 i1      real   GZ1OZ0         ij     misc        1         -     -         "GZ1OZ0"              "LOG OF Z1 over Z0"                     ""
-i1      real   BR             ij     misc        1         -     -         "BR"                  "Bulk Richardson"                       ""
-state   real   BRi            ij     misc        1         -     -         "BRi"                 "Bulk Richardson"                       ""
-state   real   ZOL            ij     misc        1         -     -         "ZOL"                 "z/L"                                   ""
+state   real   BR             ij     misc        1         -     h         "BR"                  "Bulk Richardson"                       ""
+state   real   ZOL            ij     misc        1         -     h         "ZOL"                 "z/L"                                   ""
 
 # ysupbl variables for grims shallow convection
 state   real   WSTAR_YSU      ij     misc        1         -     -        "WSTAR_YSU"           "mixed-layer velocity scale from ysupbl" "m/s"
@@ -2142,13 +2141,12 @@ rconfig   logical     bl_mynn_tkeadvect   namelist,physics      max_domains    .
 rconfig   integer     bl_mynn_cloudpdf    namelist,physics      1              0       irh       "bl_mynn_cloudpdf"              ""      ""
 rconfig   integer     bl_mynn_mixlength   namelist,physics      1              1       irh       "bl_mynn_mixlength"             "0:original,1:RAP/HRRR,2:new blending&cloud mix length" ""
 rconfig   integer     bl_mynn_edmf        namelist,physics      max_domains    0       irh       "bl_mynn_edmf"                  "0:off,1:activate mass-flux in mynn"                    ""
-rconfig   integer     bl_mynn_nup         namelist,physics      max_domains    10      irh       "bl_mynn_nup"                   "# updrafts in MYNN mass-flux scheme"                   ""
 rconfig   integer     bl_mynn_edmf_mom    namelist,physics      max_domains    0       irh       "bl_mynn_edmf_mom"              "0:off,1:activate mass-flux transport of momentum"      ""
 rconfig   integer     bl_mynn_edmf_tke    namelist,physics      max_domains    0       irh       "bl_mynn_edmf_tke"              "0:off,1:activate mass-flux transport of tke"           ""
 rconfig   integer     bl_mynn_edmf_part   namelist,physics      max_domains    0       irh       "bl_mynn_edmf_part"             "0:off,1:activate areal partitioning of ed and mf"      ""
 rconfig   integer     bl_mynn_cloudmix    namelist,physics      max_domains    1       irh       "bl_mynn_cloudmix"              "0:off,1:activate mixing of all cloud species"          ""
 rconfig   integer     bl_mynn_mixqt       namelist,physics      max_domains    0       irh       "bl_mynn_mixqt"                 "0:mix moisture species separate,1: mix total water"    ""
-rconfig   integer     bl_sgcloud          namelist,physics      max_domains    0       irh       "bl_sgcloud"                    "0:no subgrid cloud-radiation coupling,1:activated"     ""
+rconfig   integer     icloud_bl           namelist,physics      max_domains    0       irh       "icloud_bl"                     "0:no subgrid cloud-radiation coupling,1:activated"     ""
 rconfig   integer     mfshconv            namelist,physics      max_domains    1       rh       "mfshconv"         "To activate mass flux scheme with qnse, 1=true or 0=false"      ""
 rconfig   integer     sf_urban_physics    namelist,physics      max_domains    0       rh       "sf_urban_physics"     "activate urban model  0=no, 1=Noah_UCM 2=BEP_UCM"   ""
 rconfig   real    BLDT                    namelist,physics      max_domains    0       h    "BLDT"          ""      ""
@@ -2700,7 +2698,7 @@ package   mrfscheme      bl_pbl_physics==99          -             -
 package   mynn_tkebudget bl_mynn_tkebudget==1        -             state:qSHEAR,qBUOY,qDISS,qWT,dqke
 package   mynn_stem_edmf bl_mynn_edmf==1            -              state:edmf_a,edmf_w,edmf_thl,edmf_qt,edmf_ent,edmf_qc
 package   mynn_temf_edmf bl_mynn_edmf==2            -              state:edmf_a,edmf_w,edmf_thl,edmf_qt,edmf_ent,edmf_qc
-package   sg_cloud       bl_sgcloud==1               -             state:cldfra_bl,qc_bl
+package   pbl_cloud      icloud_bl==1                -             state:cldfra_bl,qc_bl
 
 package   nocuscheme     cu_physics==0               -             -
 package   kfetascheme    cu_physics==1               -             state:w0avg

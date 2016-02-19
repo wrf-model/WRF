@@ -876,23 +876,23 @@
       END IF
 
 !-----------------------------------------------------------------------
-! Make sure bl_sgcloud is only used when MYNN is chosen.
+! Make sure icloud_bl is only used when MYNN is chosen.
 !-----------------------------------------------------------------------
 
       oops = 0
       DO i = 1, model_config_rec % max_dom
-         IF ( model_config_rec%bl_sgcloud(i) .eq. 1) THEN
+         IF ( model_config_rec%icloud_bl(i) .eq. 1) THEN
            IF ( model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME2 .OR. &
                 model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME3 ) THEN
               !CORRECTLY CONFIGURED
            ELSE
-              model_config_rec%bl_sgcloud(i) = 0
+              model_config_rec%icloud_bl(i) = 0
               oops = oops + 1
            END IF
          END IF
       ENDDO      ! Loop over domains
       IF ( oops .GT. 0 ) THEN
-         wrf_err_message = 'Need MYNN PBL for bl_sgcloud = 1, resetting to 0'
+         wrf_err_message = 'Need MYNN PBL for icloud_bl = 1, resetting to 0'
          CALL wrf_message ( wrf_err_message )
       END IF
 

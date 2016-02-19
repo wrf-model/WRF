@@ -568,7 +568,8 @@ CONTAINS
           nj = ( c_jds - j_parent_start ) * parent_grid_ratio + 1 + 1 ;
           ierr = 0
           DO k = c_kds, c_kde
-             CALL task_for_point ( k, nj, kds, kde, jds, jde, ntasks_x, ntasks_y, Px, Py, &
+!             CALL task_for_point ( k, nj, kds, kde, jds, jde, ntasks_x, ntasks_y, Px, Py, &
+             CALL task_for_point ( k, nj, kds, kde, jds, jde, nest_pes_x(id), nest_pes_y(id), Px, Py, &
                                    1, 1, ierr )
              IF ( Px .EQ. mytask_x ) THEN
                 c_kpex = k
@@ -588,7 +589,8 @@ CONTAINS
           ierr = 0
           DO j = c_jds, c_jde
              nj = ( j - j_parent_start ) * parent_grid_ratio + 1 + 1 ;
-             CALL task_for_point ( k, nj, kds, kde, jds, jde, ntasks_x, ntasks_y, Px, Py, &
+!             CALL task_for_point ( k, nj, kds, kde, jds, jde, ntasks_x, ntasks_y, Px, Py, &
+             CALL task_for_point ( k, nj, kds, kde, jds, jde, nest_pes_x(id), nest_pes_y(id), Px, Py, &
                                    1, 1, ierr )
              IF ( Py .EQ. mytask_y ) THEN
                 c_jpex = j
@@ -618,7 +620,8 @@ CONTAINS
           ierr = 0
           DO i = c_ids, c_ide
              ni = ( i - i_parent_start ) * parent_grid_ratio + 1 + 1 ;
-             CALL task_for_point ( ni, k, ids, ide, kds, kde, ntasks_y, ntasks_x, Py, Px, &
+!             CALL task_for_point ( ni, k, ids, ide, kds, kde, ntasks_y, ntasks_x, Py, Px, &
+             CALL task_for_point ( ni, k, ids, ide, kds, kde, nest_pes_y(id), nest_pes_x(id), Py, Px, &
                                    1, 1, ierr ) ! x and y for proc mesh reversed
              IF ( Py .EQ. mytask_y ) THEN
                 c_ipey = i
@@ -643,7 +646,8 @@ CONTAINS
              c_ipsy = c_ipsy - shw  
 #endif
            ENDIF
-           IF ( mytask_x .EQ. ntasks_x-1 ) THEN
+!           IF ( mytask_x .EQ. ntasks_x-1 ) THEN
+           IF ( mytask_x .EQ. nest_pes_x(id)-1 ) THEN
              c_ipe = c_ipe + shw
 #if (DA_CORE == 1)
              c_ipey = c_ipey + shw  
@@ -666,7 +670,8 @@ CONTAINS
               c_jpsx = c_jpsx - shw  
 #endif
            ENDIF
-           IF ( mytask_y .EQ. ntasks_y-1 ) THEN
+!           IF ( mytask_y .EQ. ntasks_y-1 ) THEN
+           IF ( mytask_y .EQ. nest_pes_y(id)-1 ) THEN
               c_jpe = c_jpe + shw
 #if (DA_CORE == 1)
               c_jpex = c_jpex + shw  
@@ -1098,7 +1103,7 @@ CONTAINS
 ! This appears redundant with the conditionals above, but we get cases with only
 ! one of the directions being set to "missing" when turning off extra processors.
 ! This may break the handling of setting only one of nproc_x or nproc_y via the namelist.
-    IF (ipex .EQ. -1 .or. jpex .EQ. -1) THEN
+    IF (jpex .EQ. -1) THEN
        ipex = -1
        ipsx = 0
        jpex = -1
@@ -1116,7 +1121,7 @@ CONTAINS
     ierr = 0
     DO i = ids, ide
 !       CALL task_for_point ( i, k, ids, ide, kds, kde, ntasks_y, ntasks_x, Py, Px, &
-       CALL task_for_point ( i, k, ids, ide, kds, kde, nest_pes_x(id), nest_pes_y(id), Py, Px, &
+       CALL task_for_point ( i, k, ids, ide, kds, kde, nest_pes_y(id), nest_pes_x(id), Py, Px, &
                              miny, minx, ierr )
        IF ( ierr .NE. 0 ) CALL wrf_error_fatal('error code returned by task_for_point in module_dm.F (g)')
        IF ( Py .EQ. mytask_y ) THEN
@@ -1146,7 +1151,8 @@ CONTAINS
                              minx, miny, ierr )
        IF ( Px .EQ. mytask_x ) THEN
           ipe = i
-          IF ( Px .EQ. ntasks_x-1 ) ipe = ipe + 1
+!          IF ( Px .EQ. ntasks_x-1 ) ipe = ipe + 1
+          IF ( Px .EQ. nest_pes_x(id)-1 ) ipe = ipe + 1
           IF ( ips .EQ. -1 ) ips = i
        ENDIF
     ENDDO
@@ -1162,7 +1168,8 @@ CONTAINS
                              minx, miny, ierr )
        IF ( Py .EQ. mytask_y ) THEN
           jpe = j
-          IF ( Py .EQ. ntasks_y-1 ) jpe = jpe + 1
+!          IF ( Py .EQ. ntasks_y-1 ) jpe = jpe + 1
+          IF ( Py .EQ. nest_pes_y(id)-1 ) jpe = jpe + 1
           IF ( jps .EQ. -1 ) jps = j
        ENDIF
     ENDDO
@@ -1177,7 +1184,8 @@ CONTAINS
           ips = ips - shw
           ipsy = ipsy - shw
        ENDIF
-       IF ( mytask_x .EQ. ntasks_x-1 ) THEN
+!       IF ( mytask_x .EQ. ntasks_x-1 ) THEN
+       IF ( mytask_x .EQ. nest_pes_x(id)-1 ) THEN
           ipe = ipe + shw
           ipey = ipey + shw
        ENDIF
@@ -1185,7 +1193,8 @@ CONTAINS
           jps = jps - shw
           jpsx = jpsx - shw
        ENDIF
-       IF ( mytask_y .EQ. ntasks_y-1 ) THEN
+!       IF ( mytask_y .EQ. ntasks_y-1 ) THEN
+       IF ( mytask_y .EQ. nest_pes_y(id)-1 ) THEN
           jpe = jpe + shw
           jpex = jpex + shw
        ENDIF
@@ -1251,6 +1260,8 @@ CONTAINS
     IF ( jpsx .EQ. 0 .AND. jpex .EQ. -1 ) THEN
       jmsx = 0
       jmex = 0
+      jpsy = 0
+      jpey = -1
     ELSE
       jpsy = jmsy
       jpey = jmey

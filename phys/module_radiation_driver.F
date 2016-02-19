@@ -703,7 +703,7 @@ CONTAINS
 
    REAL    ::    OBECL,SINOB,SXLONG,ARG,DECDEG,                  &
                  DJUL,RJUL,ECCFAC
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qi_temp,qc_temp
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qc_temp
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qi_save,qc_save
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qs_save
 
@@ -1038,7 +1038,8 @@ CONTAINS
      ENDIF
 
 ! backup the incoming hydrometeors
-       IF ( PRESENT( qc ) ) THEN
+
+     IF ( F_QC ) THEN
           DO j=jts,jte
           DO k=kts,kte
           DO i=its,ite
@@ -1046,8 +1047,8 @@ CONTAINS
           ENDDO
           ENDDO
           ENDDO
-       ENDIF
-       IF ( PRESENT( qi ) ) THEN
+     ENDIF
+     IF ( F_QI ) THEN
           DO j=jts,jte
           DO k=kts,kte
           DO i=its,ite
@@ -1055,33 +1056,10 @@ CONTAINS
           ENDDO
           ENDDO
           ENDDO
-       ENDIF
-
-! temporarily modify hydrometeors (currently only done for GD scheme and WRF-Chem)
-!
-       IF ( PRESENT( qc ) .AND. PRESENT( qc_cu ) .AND. icloud_cu .EQ. 1 ) THEN
-          DO j=jts,jte
-          DO k=kts,kte
-          DO i=its,ite
-            qc_save(i,k,j) = qc(i,k,j)
-            qc(i,k,j) = qc(i,k,j) + qc_cu(i,k,j)
-          ENDDO
-          ENDDO
-          ENDDO
-       ENDIF
-       IF ( PRESENT( qi ) .AND. PRESENT( qi_cu ) .AND. icloud_cu .EQ. 1 ) THEN
-          DO j=jts,jte
-          DO k=kts,kte
-          DO i=its,ite
-            qi_save(i,k,j) = qi(i,k,j)
-            qi(i,k,j) = qi(i,k,j) + qi_cu(i,k,j)
-          ENDDO
-          ENDDO
-          ENDDO
-       ENDIF
+     ENDIF
 
 ! Fill temporary water variable depending on micro package (tgs 25 Apr 2006)
-     if(PRESENT(qc) .and. PRESENT(F_QC)) then
+     if( F_QC ) then
         DO j=jts,jte
         DO k=kts,kte
         DO i=its,ite
@@ -1099,7 +1077,7 @@ CONTAINS
         ENDDO
      endif
 ! Remove this - to match NAM operational (affects GFDL and HWRF schemes)
-!    if(PRESENT(qr) .and. PRESENT(F_QR)) then
+!    if( F_QR ) then
 !       DO j=jts,jte
 !       DO k=kts,kte
 !       DO i=its,ite
@@ -1108,6 +1086,27 @@ CONTAINS
 !       ENDDO
 !       ENDDO
 !    endif
+!
+! temporarily modify hydrometeors (this is for GD scheme and WRF-Chem)
+!
+     IF ( F_QC .AND. icloud_cu .EQ. 1 ) THEN
+          DO j=jts,jte
+          DO k=kts,kte
+          DO i=its,ite
+             qc(i,k,j) = qc(i,k,j) + qc_cu(i,k,j)
+          ENDDO
+          ENDDO
+          ENDDO
+     ENDIF
+     IF ( F_QI .AND. icloud_cu .EQ. 1 ) THEN
+          DO j=jts,jte
+          DO k=kts,kte
+          DO i=its,ite
+             qi(i,k,j) = qi(i,k,j) + qi_cu(i,k,j)
+          ENDDO
+          ENDDO
+          ENDDO
+     ENDIF
 
 ! Choose how to compute cloud fraction (since 3.6)
 ! Initialize to zero 
@@ -1121,8 +1120,7 @@ CONTAINS
 
      IF ( ICLOUD == 1 ) THEN
 
-     IF ( PRESENT ( CLDFRA ) .AND.                           &
-          PRESENT(F_QC) .AND. PRESENT ( F_QI ) ) THEN
+     IF ( F_QC .AND. F_QI ) THEN
 ! Call to cloud fraction routine based on Randall 1994 (Hong Pan 1998)
 
         CALL wrf_debug (1, 'CALL cldfra1')
@@ -1145,9 +1143,7 @@ CONTAINS
                 CLDFRA(i,k,j)=(1.-cldfra_cu(i,k,j))*CLDFRA(i,k,j)  ! Update resolved cloud fraction for Cu punch-through
                 CLDFRA(i,k,j)=CLDFRA(i,k,j)+cldfra_cu(i,k,j)       ! New total cloud fraction
                 CLDFRA(i,k,j)=AMIN1(1.0,CLDFRA(i,k,j))
-                qc_save(i,k,j)=qc(i,k,j)
                 qc(i,k,j) = qc(i,k,j)+qc_cu(i,k,j)*cldfra_cu(i,k,j)
-                qi_save(i,k,j)=qi(i,k,j)
                 qi(i,k,j) = qi(i,k,j)+qi_cu(i,k,j)*cldfra_cu(i,k,j)
              ENDDO
              ENDDO
@@ -1196,8 +1192,7 @@ CONTAINS
  
      ELSE IF ( ICLOUD == 2 ) THEN
 
-     IF ( PRESENT ( CLDFRA ) .AND.                           &
-          PRESENT(F_QC) .AND. PRESENT ( F_QI ) ) THEN
+     IF ( F_QC .AND. F_QI ) THEN
        CALL wrf_debug (1, 'CALL cldfra2')
        CALL cal_cldfra2(CLDFRA,qc,qi,F_QC,F_QI,              &
                        ids,ide, jds,jde, kds,kde,            &
@@ -1209,31 +1204,13 @@ CONTAINS
 !..New cloud fraction scheme added by G. Thompson (2014Oct31)
 !+---+-----------------------------------------------------------------+ 
 
-      ELSEIF (ICLOUD == 3) THEN
-        IF (PRESENT(CLDFRA) .AND.                                       &
-                           PRESENT(F_QC) .AND. PRESENT ( F_QI ) ) THEN
-
-           DO j = jts,jte
-           DO k = kts,kte
-           DO i = its,ite
-              qc_save(i,k,j) = qc(i,k,j)
-              qi_save(i,k,j) = qi(i,k,j)
-           ENDDO
-           ENDDO
-           ENDDO
-           IF (PRESENT(F_QS)) THEN
+     ELSEIF (ICLOUD == 3) THEN
+        IF ( F_QC .AND. F_QI ) THEN
+           IF ( F_QS ) THEN
               DO j = jts,jte
               DO k = kts,kte
               DO i = its,ite
                  qs_save(i,k,j) = qs(i,k,j)
-              ENDDO
-              ENDDO
-              ENDDO
-           ELSE
-              DO j = jts,jte
-              DO k = kts,kte
-              DO i = its,ite
-                 qs_save(i,k,j) = 0.0
               ENDDO
               ENDDO
               ENDDO
@@ -1246,6 +1223,8 @@ CONTAINS
      &                 ims,ime, jms,jme, kms,kme,                       &
      &                 its,ite, jts,jte, kts,kte)
 
+        ELSE
+           CALL wrf_error_fatal('Can not use icloud = 3 option, missing QC or QI field.')
         ENDIF
 
      END IF
@@ -1330,7 +1309,7 @@ CONTAINS
                        ! For shallow convection, use a representative condensate value based on
                        ! observations from CHAPS (Oklahoma area) and Florida (Blyth et al. 2005)
                        ! or the predicted value if it is greater.
-                       qc_save(i,k,j)= qc(i,k,j)
+
                        cldfra_cup_mod = cldfra_cup(i,k,j)* 1.0e-3*(1+qv(i,k,j))!modified cloud fraction
                        qc(i,k,j) = max( 1.0e-3*cldfra_cup_mod, qc(i,k,j) )!DE+LB 2012-Feb
 
@@ -2252,32 +2231,8 @@ CONTAINS
          ENDDO
      ENDIF
 
-      IF (ICLOUD == 3) THEN
-        IF (PRESENT(CLDFRA) .AND.                                       &
-            PRESENT(F_QC) .AND. PRESENT ( F_QI ) ) THEN
-           CALL wrf_debug (150, 'DEBUG-GT, back to micro-only Qc and Qi')
-           DO j = jts,jte
-           DO k = kts,kte
-           DO i = its,ite
-              qc(i,k,j) = qc_save(i,k,j)
-              qi(i,k,j) = qi_save(i,k,j)
-           ENDDO
-           ENDDO
-           ENDDO
-           IF (PRESENT(F_QS)) THEN
-              DO j = jts,jte
-              DO k = kts,kte
-              DO i = its,ite
-                 qs(i,k,j) = qs_save(i,k,j)
-              ENDDO
-              ENDDO
-              ENDDO
-           ENDIF
-        ENDIF
-      ENDIF
-
  ! Restore qc & qi for any model physics configuration
-      IF ( PRESENT( qc  ) ) THEN
+      IF ( F_QC ) THEN
          DO j=jts,jte
          DO k=kts,kte
          DO i=its,ite
@@ -2286,7 +2241,7 @@ CONTAINS
          ENDDO
          ENDDO
       ENDIF
-      IF ( PRESENT( qi  ) ) THEN
+      IF ( F_QI ) THEN
          DO j=jts,jte
          DO k=kts,kte
          DO i=its,ite
@@ -2296,27 +2251,14 @@ CONTAINS
          ENDDO
       ENDIF
 
-      IF (ICLOUD == 3) THEN
-        IF (PRESENT(CLDFRA) .AND.                                       &
-            PRESENT(F_QC) .AND. PRESENT ( F_QI ) ) THEN
-           DO j = jts,jte
-           DO k = kts,kte
-           DO i = its,ite
-              qc(i,k,j) = qc_save(i,k,j)
-              qi(i,k,j) = qi_save(i,k,j)
-           ENDDO
-           ENDDO
-           ENDDO
-           IF (PRESENT(F_QS)) THEN
-              DO j = jts,jte
-              DO k = kts,kte
-              DO i = its,ite
-                 qs(i,k,j) = qs_save(i,k,j)
-              ENDDO
-              ENDDO
-              ENDDO
-           ENDIF
-        ENDIF
+      IF (ICLOUD == 3 .AND. F_QS ) THEN
+          DO j = jts,jte
+          DO k = kts,kte
+          DO i = its,ite
+             qs(i,k,j) = qs_save(i,k,j)
+          ENDDO
+          ENDDO
+          ENDDO
       ENDIF
 
       ! jararias, aug 2013, updated 2013/11

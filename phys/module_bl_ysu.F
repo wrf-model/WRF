@@ -1042,12 +1042,12 @@ contains
          prnum0 = prnum0/(1.+prfac2*karman*sfcfrac)
          prnum =  1. + (prnum0-1.)*exp(prnumfac)
          xkzh(i,k) = xkzm(i,k)/prnum
+         xkzm(i,k) = xkzm(i,k)+xkzom(i,k)
+         xkzh(i,k) = xkzh(i,k)+xkzoh(i,k)
+         xkzq(i,k) = xkzq(i,k)+xkzoh(i,k)
          xkzm(i,k) = min(xkzm(i,k),xkzmax)
-         xkzm(i,k) = max(xkzm(i,k),xkzom(i,k))
          xkzh(i,k) = min(xkzh(i,k),xkzmax)
-         xkzh(i,k) = max(xkzh(i,k),xkzoh(i,k))
          xkzq(i,k) = min(xkzq(i,k),xkzmax)
-         xkzq(i,k) = max(xkzq(i,k),xkzoh(i,k))
        endif
      enddo
    enddo

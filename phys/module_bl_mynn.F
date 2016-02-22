@@ -32,7 +32,7 @@
 !            Added output for wstar, delta, TKE_PBL, & KPBL for correct 
 !                   coupling to shcu schemes  
 ! 7. v3.8.0: Added subgrid scale cloud output for coupling to radiation
-!            schemes (activated by setting bl_sgcloud =1 in phys namelist).
+!            schemes (activated by setting icloud_bl =1 in phys namelist).
 !            Added WRF_DEBUG prints (at level 3000)
 !            Added Tripoli and Cotton (1981) correction.
 !            Added namelist option bl_mynn_cloudmix to test effect of mixing
@@ -43,7 +43,6 @@
 !                 bl_mynn_edmf_mom = 1 : activate momentum transport in MF scheme
 !                 bl_mynn_edmf_tke = 1 : activate TKE transport in MF scheme
 !                 bl_mynn_edmf_part= 1 : activate areal partitioning of ED & MF
-!                 bl_mynn_nup = 10 : 10 updrafts in StEM MF scheme (keep at 10)
 !            Added mixing length option (bl_mynn_mixlength, see notes below)
 !            Added more sophisticated saturation checks, following Thompson scheme
 !            Added new cloud PDF option (bl_mynn_cloudpdf = 2) from Chaboureau
@@ -757,12 +756,12 @@ CONTAINS
            elf = alp2 * qkw(k)/bv                  
 
          ELSE IF ( bl_mynn_mixlength .GE. 2 ) THEN ! use new elb formulation
-           tau_cloud = MIN(MAX(0.5*zi/((gtr*zi*MAX(flt,1.0e-4))**(1.0/3.0)), 200.),425.)
+           tau_cloud = MIN(MAX(0.5*zi/((gtr*zi*MAX(flt,1.0e-4))**(1.0/3.0)), 100.),300.)
            !minimize influence of surface heat flux on tau far away from the PBLH.
            wt=.5*TANH((zwk - (zi2+h1))/h2) + .5
-           tau_cloud = tau_cloud*(1.-wt) + 200.*wt        
-           elb_cloud = MIN(tau_cloud*SQRT(MIN(qtke(k),20.)), zwk)
-           elb = alp2*qkw(k)/bv
+           tau_cloud = tau_cloud*(1.-wt) + 100.*wt        
+           elb_cloud = MIN(tau_cloud*SQRT(MIN(qtke(k),16.)), zwk)
+           elb = MIN(alp2*qkw(k)/bv, zwk)
            elf = elb
            IF (zwk > zi .AND. elf > 500.) THEN
              ! COMPUTE BouLac mixing length
@@ -792,10 +791,10 @@ CONTAINS
            ! by zi, and zero is replaced by 1.0e-4 to
            ! prevent division by zero.
 
-           tau_cloud = MIN(MAX(0.5*zi/((gtr*zi*MAX(flt,1.0e-4))**(1.0/3.0)),400.),620.)
+           tau_cloud = MIN(MAX(0.5*zi/((gtr*zi*MAX(flt,1.0e-4))**(1.0/3.0)),100.),300.)
            !minimize influence of surface heat flux on tau far away from the PBLH.
            wt=.5*TANH((zwk - (zi2+h1))/h2) + .5
-           tau_cloud = tau_cloud*(1.-wt) + 200.*wt
+           tau_cloud = tau_cloud*(1.-wt) + 100.*wt
            elb_cloud = MIN(tau_cloud*SQRT(MIN(qtke(k),20.)), zwk)
            elb = elb_cloud
            elf = elb_cloud
@@ -2321,7 +2320,7 @@ CONTAINS
               ! The "-1" and "-tv0" terms are included for consistency with 
               ! the legacy vt and vq formulations (above).
        
-              !return a cloud condensate and cloud fraction for bl_sgcloud option:
+              !return a cloud condensate and cloud fraction for icloud_bl option:
               cldfra_bl1D(k) = cld(k)
               qc_bl1D(k) = ql(k)
        
@@ -3117,8 +3116,8 @@ ENDIF
        &bl_mynn_tkebudget,              & !JOE-TKE BUDGET
        &bl_mynn_cloudpdf,Sh3D,          & !JOE-cloudPDF testing
        &bl_mynn_mixlength,              & !JAYMES- mixing length options
-       &bl_sgcloud,qc_bl,cldfra_bl,     & !JOE-subgrid bl clouds
-       &bl_mynn_edmf,bl_mynn_nup,       & !JOE- edmf
+       &icloud_bl,qc_bl,cldfra_bl,      & !JOE-subgrid bl clouds
+       &bl_mynn_edmf,                   & !JOE- edmf
        &bl_mynn_edmf_mom,bl_mynn_edmf_tke, &
        &bl_mynn_edmf_part,              & !JOE- edmf
        &bl_mynn_cloudmix,bl_mynn_mixqt, & !JOE- cloud mixing methods
@@ -3138,14 +3137,13 @@ ENDIF
     INTEGER, INTENT(in) :: bl_mynn_cloudpdf
     INTEGER, INTENT(in) :: bl_mynn_mixlength
     INTEGER, INTENT(in) :: bl_mynn_edmf
-    INTEGER, INTENT(in) :: bl_mynn_nup
     LOGICAL, INTENT(IN) :: bl_mynn_tkeadvect
     INTEGER, INTENT(in) :: bl_mynn_edmf_mom
     INTEGER, INTENT(in) :: bl_mynn_edmf_tke
     INTEGER, INTENT(in) :: bl_mynn_edmf_part
     INTEGER, INTENT(in) :: bl_mynn_cloudmix
     INTEGER, INTENT(in) :: bl_mynn_mixqt
-    INTEGER, INTENT(in) :: bl_sgcloud
+    INTEGER, INTENT(in) :: icloud_bl
 
     LOGICAL, INTENT(IN) :: FLAG_QI,FLAG_QNI,FLAG_QC,FLAG_QNC
     
@@ -3591,13 +3589,12 @@ ENDIF
           IF (bl_mynn_edmf == 1) THEN
             !PRINT*,"Calling StEM Mass-Flux: i= ",i," j=",j
             CALL StEM_mf(kts,kte,delt,zw,p1,      &
-               &bl_mynn_nup,                      &
                &bl_mynn_edmf_mom,                 &
                &bl_mynn_edmf_tke,                 &
                &u1,v1,w1,th1,thl,thetav,tk1,      &
                &sqw,sqv,sqc,qke1,                 &
                &ust(i,j),flt,flq,flqv,flqc,       &
-               &PBLH(i,j),DX,                     &
+               &PBLH(i,j),DX,xland(i,j),          &
             ! now outputs - tendencies
             ! &,dth1mf,dqv1mf,dqc1mf,du1mf,dv1mf & 
             ! outputs - updraft properties
@@ -3743,7 +3740,7 @@ ENDIF
                !IF (PRESENT(qnc) .AND. FLAG_QNC) RQNCBLTEN(i,k,j)=0.
                IF (PRESENT(qni) .AND. FLAG_QNI) RQNIBLTEN(i,k,j)=0.
              ENDIF
-             IF(bl_sgcloud > 0)THEN
+             IF(icloud_bl > 0)THEN
                !make BL clouds scale aware - may already be done in mym_condensation
                qc_bl(i,k,j)=qc_bl1D(k) !*Psig_shcu(i,j)
                cldfra_bl(i,k,j)=cldfra_bl1D(k) !*Psig_shcu(i,j)
@@ -3795,7 +3792,7 @@ ENDIF
                   PRINT*," vq=",vq(k)," vt=",vt(k)," vdfg=",vdfg(i,j)
                   PRINT*," hfx=",HFX(i,j)," qfx=",QFX(i,j)
                ENDIF
-               IF (bl_sgcloud > 0) then
+               IF (icloud_bl > 0) then
                   IF( cldfra_bl(i,k,j) < 0.0 .OR. cldfra_bl(i,k,j)> 1.)THEN
                   PRINT*,"CLDFRA_BL=",cldfra_bl(i,k,j)," qc_bl=",QC_BL(i,k,j)
                   ENDIF
@@ -3841,7 +3838,7 @@ ENDIF
        &RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,          &
        &RQCBLTEN,RQIBLTEN & !,RQNIBLTEN,RQNCBLTEN       &
        &,QKE,TKE_PBL,EXCH_H                         &
-!       &,bl_sgcloud,qc_bl,cldfra_bl                 & !JOE-subgrid bl clouds 
+!       &,icloud_bl,qc_bl,cldfra_bl                 & !JOE-subgrid bl clouds 
        &,RESTART,ALLOWED_TO_READ,LEVEL              &
        &,IDS,IDE,JDS,JDE,KDS,KDE                    &
        &,IMS,IME,JMS,JME,KMS,KME                    &
@@ -3849,7 +3846,7 @@ ENDIF
 
     !---------------------------------------------------------------
     LOGICAL,INTENT(IN) :: ALLOWED_TO_READ,RESTART
-    INTEGER,INTENT(IN) :: LEVEL !,bl_sgcloud
+    INTEGER,INTENT(IN) :: LEVEL !,icloud_bl
 
     INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE,                    &
          &                IMS,IME,JMS,JME,KMS,KME,                    &
@@ -3885,8 +3882,8 @@ ENDIF
                 !QKE(i,k,j)=0.
                 TKE_PBL(i,k,j)=0.
                 EXCH_H(i,k,j)=0.
-!                if(bl_sgcloud > 0) qc_bl(i,k,j)=0.
-!                if(bl_sgcloud > 0) cldfra_bl(i,k,j)=0.
+!                if(icloud_bl > 0) qc_bl(i,k,j)=0.
+!                if(icloud_bl > 0) cldfra_bl(i,k,j)=0.
              ENDDO
           ENDDO
        ENDDO
@@ -4034,17 +4031,17 @@ ENDIF
 ! original form. Some additions include:
 !  1) scale-aware tapering as dx -> 0
 !  2) transport of TKE (extra namelist option)
-!  3) Chaboureau-Bechtold cloud fraction & coupling to radiation (when bl_sgcloud > 0)
+!  3) Chaboureau-Bechtold cloud fraction & coupling to radiation (when icloud_bl > 0)
 !  4) some extra limits for numerical stability
 ! This scheme remains under development, so consider it experimental code. 
 !
   SUBROUTINE StEM_mf(kts,kte,dt,zw,p,       &
-                 & nup,momentum_opt,        &
+                 & momentum_opt,            &
                  & tke_opt,                 &
                  & u,v,w,th,thl,thv,tk,     &
                  & qt,qv,qc,qke,            &
                  & ust,flt,flq,flqv,flqc,   &
-                 & pblh,DX,                 &
+                 & pblh,DX,landsea,         &
             ! outputs - tendencies
             !  &dth,dqv,dqc,du,dv,&
             ! outputs - updraft properties   
@@ -4062,10 +4059,10 @@ ENDIF
                  &Psig_shcu) 
 
   ! inputs:
-     INTEGER, INTENT(IN) :: KTS,KTE,NUP,momentum_opt,tke_opt
+     INTEGER, INTENT(IN) :: KTS,KTE,momentum_opt,tke_opt
      REAL,DIMENSION(KTS:KTE), INTENT(IN) :: U,V,W,TH,THL,TK,QT,QV,QC,THV,P,qke
      REAL,DIMENSION(KTS:KTE+1), INTENT(IN) :: ZW  !height at full-sigma
-     REAL, INTENT(IN) :: DT,UST,FLT,FLQ,FLQV,FLQC,PBLH,DX,Psig_shcu
+     REAL, INTENT(IN) :: DT,UST,FLT,FLQ,FLQV,FLQC,PBLH,DX,Psig_shcu,landsea
      LOGICAL, OPTIONAL :: F_QC,F_QI
 
   ! outputs - tendencies
@@ -4086,6 +4083,7 @@ ENDIF
 
      REAL,DIMENSION(KTS:KTE), INTENT(INOUT) :: qc_bl1d,cldfra_bl1d
 
+    INTEGER, PARAMETER :: NUP=10
   ! local variables
   ! updraft properties
      REAL,DIMENSION(KTS:KTE+1,1:NUP) :: UPW,UPTHL,UPQT,UPQC,UPQV,  &
@@ -4109,7 +4107,7 @@ ENDIF
   ! Suselj et al (2013, jas). Note that Suselj et al (2014,waf) use L0=200 and ENT0=0.2.
      REAL,PARAMETER :: &
          & L0=100.,&
-         & ENT0=0.2
+         & ENT0=0.1
 
   !JOE: add declaration of ERF
    REAL :: ERF
@@ -4126,7 +4124,7 @@ ENDIF
    REAL :: sigq,xl,tlk,qsat_tl,rsl,cpm,a,qmq,mf_cf,diffqt
 
    ! WA TEST 11/9/15 for consistent reduction of updraft params
-   REAL :: Csig
+   REAL :: csigma
 
 ! check the inputs
 !     print *,'dt',dt
@@ -4171,7 +4169,7 @@ ENDIF
   fltv = flt + svp1*flq
   !PRINT*," fltv=",fltv," zi=",pblh 
 
-  !Completely shut off MF scheme for strong vertical velocities.
+  !Completely shut off MF scheme for strong resolved-scale vertical velocities.
   IF(Psig_w == 0.0 .and. fltv > 0.0) fltv = -1.*fltv 
 
 ! if surface buoyancy is positive we do integration otherwise not, and make sure that 
@@ -4185,9 +4183,9 @@ ENDIF
     ENTi(kts:kte,1:Nup)=0.1
     do i=1,Nup
       do k=kts+1,kte
-       ENTf(k,i)=(ZW(k)-ZW(k-1))/L0    ! input into Poisson
-       ENTf(k,i)=MIN(ENTf(k,i),9.9) !JOE: test avoiding FPE
-       ENTf(k,i)=MAX(ENTf(k,i),0.05) !JOE: test avoiding FPE
+        ENTf(k,i)=(ZW(k)-ZW(k-1))/L0    ! input into Poisson
+        ENTf(k,i)=MIN(ENTf(k,i),9.9) !JOE: test avoiding FPE
+        ENTf(k,i)=MAX(ENTf(k,i),0.05) !JOE: test avoiding FPE
       enddo
     enddo
     ! get Poisson P(dz/L0)
@@ -4197,7 +4195,9 @@ ENDIF
       do k=kts+1,kte
         ENT(k,i)=real(ENTi(k,i))*Ent0/(ZW(k)-ZW(k-1))  !eq (13) in Suselj et al. (2013, jas)
         ! WA TEST 11/12/15 Add some small deterministic background entrainment
-        ENT(k,i) = max(ENT(k,i),0.001)
+        ENT(k,i) = max(ENT(k,i),0.0002)
+        ! JOE - increase updraft entrainment near surface
+        ENT(k,i) = max(ENT(k,i),0.006*EXP(-ZW(k)/(0.2*pblh)))
       enddo
     enddo
 
@@ -4212,9 +4212,14 @@ ENDIF
     qstar=flq/wstar
     thstar=flt/wstar
 
+    IF((landsea-1.5).GE.0)THEN
+       csigma = 0.67    ! WATER
+    ELSE
+       csigma = 1.34   ! LAND
+    ENDIF
     sigmaW =1.34*wstar*(z0/pblh)**(1./3.)*(1 - 0.8*z0/pblh)
-    sigmaQT=1.34*qstar*(z0/pblh)**(-1./3.)
-    sigmaTH=1.34*thstar*(z0/pblh)**(-1./3.)
+    sigmaQT=csigma*qstar*(z0/pblh)**(-1./3.)
+    sigmaTH=csigma*thstar*(z0/pblh)**(-1./3.)
 
     wmin=sigmaW*pwmin
     wmax=sigmaW*pwmax
@@ -4393,8 +4398,9 @@ ENDIF
             !ENDIF
             !add use of updraft area.
             mf_cf=MAX(mf_cf,edmf_a(k))
-            cldfra_bl1d(k) = MAX(cldfra_bl1d(k), mf_cf)
-            qc_bl1d(k) = MAX(qc_bl1d(k), edmf_qc(k))
+            !overwrite stratus subgrid component if mass-flux cloud exits
+            cldfra_bl1d(k) = mf_cf  !MAX(cldfra_bl1d(k), mf_cf)
+            qc_bl1d(k) = edmf_qc(k) !MAX(qc_bl1d(k), edmf_qc(k))
          ENDIF
       ELSEIF(cldfra_opt == 1) THEN
          !Randall and Xu
@@ -4425,7 +4431,7 @@ ENDIF
 !       
 ! debugging   
 !
-IF (edmf_w(1) > 2.0) THEN 
+IF (edmf_w(1) > 3.0) THEN 
 ! surface values
     print *,'flq:',flq,' fltv:',fltv
     print *,'pblh:',pblh,' wstar:',wstar
@@ -5720,7 +5726,9 @@ SUBROUTINE SCALE_AWARE(dx,PBL1,Psig_bl,Psig_shcu)
                enddo
 #endif
             end do
-            cldfra_bl1d(k) = MAX(cldfra_bl1d(k),cldfra_sum)
+            !cldfra_bl1d(k) = MAX(cldfra_bl1d(k),cldfra_sum)
+            !instead, overwrite the cld fraction associated with this shcu cloud
+            if (cldfra_sum > 0.0)cldfra_bl1d(k) = cldfra_sum
 
             IF ( wrf_at_debug_level(MYNN_DBG_LVL) ) THEN
             !   print *,"In TEMF_MF edmf_w = ", edmf_w(1:10)
@@ -5745,7 +5753,10 @@ SUBROUTINE SCALE_AWARE(dx,PBL1,Psig_bl,Psig_shcu)
                enddo
 #endif
             endif
-            qc_bl1d(k) = MAX(qc_bl1d(k),edmf_qc(k))
+            !qc_bl1d(k) = MAX(qc_bl1d(k),edmf_qc(k))
+            !instead, overwrite the cld water content associated with this shcu cloud
+            if (edmf_qc(k) > 0.0)qc_bl1d(k) = edmf_qc(k)
+
             ! Put max value so far into cfm
             if (zt(k) <= hmax) then
                cfm_temfx = max(cldfra_bl1d(k),cfm_temfx)

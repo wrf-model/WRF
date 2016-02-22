@@ -19,7 +19,7 @@ CONTAINS
                              , ph_tendf, a_ph_tendf, mu_tendf, a_mu_tendf        &
                              , tke_tend, a_tke_tend             &
                              , adapt_step_flag , curr_secs      &
-                             , psim , psih , wspd , gz1oz0 , br , chklowq &
+                             , psim , psih , wspd , gz1oz0 , chklowq &
                              , cu_act_flag , hol , th_phy , a_th_phy      &
                              , pi_phy , a_pi_phy , p_phy , a_p_phy , t_phy , a_t_phy &
                              , dz8w , a_dz8w , p8w , a_p8w , t8w , a_t8w   &
@@ -97,7 +97,6 @@ CONTAINS
     REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: psih
     REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: wspd
     REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: gz1oz0
-    REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: br
     REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: chklowq
     LOGICAL ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: cu_act_flag
     REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: hol
@@ -332,7 +331,7 @@ BENCH_START(a_pbl_driver_tim)
      &        ,BL_PBL_PHYSICS=config_flags%bl_pbl_physics                           &
      &        ,BLDT=grid%bldt, CURR_SECS=curr_secs, ADAPT_STEP_FLAG=adapt_step_flag &
      &        ,BLDTACTTIME=grid%bldtacttime                                         &
-     &        ,BR=br              ,CHKLOWQ=chklowq    ,CT=grid%ct                   &
+     &        ,BR=grid%br              ,CHKLOWQ=chklowq    ,CT=grid%ct              &
      &        ,DT=grid%dt              ,DX=grid%dx              ,DZ8W=dz8w          &
      &        ,EXCH_H=grid%exch_h     ,EXCH_M=grid%exch_m                           &
      &        ,FM=grid%fm         ,FHH=grid%fh                                      &

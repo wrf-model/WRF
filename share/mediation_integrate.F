@@ -560,11 +560,12 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
      END SUBROUTINE med_interp_domain
 
     !KAL
-     SUBROUTINE init_domain_vert_nesting ( parent, nest )
+     SUBROUTINE init_domain_vert_nesting ( parent, nest, use_baseparam_fr_nml )
     !KAL this is a driver to initialize the vertical coordinates for the nest when vertical nesting is used.
        USE module_domain, ONLY : domain
        IMPLICIT NONE
        TYPE(domain), POINTER                      :: parent, nest
+       LOGICAL                                    :: use_baseparam_fr_nml
      END SUBROUTINE init_domain_vert_nesting
 
      SUBROUTINE med_interp_domain_small ( parent , nest )
@@ -658,7 +659,7 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
 
      if (nest%e_vert /= parent%e_vert) then
          ! set up coordinate variables for nest with vertical grid refinement (1d variables in z are done later in med_interp_domain)
-       CALL init_domain_vert_nesting ( parent, nest )
+       CALL init_domain_vert_nesting ( parent, nest, config_flags%use_baseparam_fr_nml )
      endif
 
 

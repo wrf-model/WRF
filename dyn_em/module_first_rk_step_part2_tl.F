@@ -20,7 +20,7 @@ CONTAINS
                , tke_tend,g_tke_tend           &
                , adapt_step_flag , curr_secs      &
                , psim ,g_psim , psih ,g_psih , wspd ,g_wspd , &
-                 gz1oz0 ,g_gz1oz0 , br ,g_br , chklowq,g_chklowq &
+                 gz1oz0 ,g_gz1oz0 , chklowq,g_chklowq         &
                , cu_act_flag , hol ,g_hol, th_phy,g_th_phy        &
                , pi_phy ,g_pi_phy, p_phy ,g_p_phy , t_phy ,g_t_phy  &
                , dz8w ,g_dz8w , p8w ,g_p8w , t8w ,g_t8w  &
@@ -94,7 +94,6 @@ CONTAINS
     REAL,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: psih,g_psih
     REAL,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: wspd,g_wspd
     REAL,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: gz1oz0,g_gz1oz0
-    REAL,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: br,g_br
     REAL,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: chklowq,g_chklowq
     REAL,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: hol,g_hol
     LOGICAL,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)      :: cu_act_flag

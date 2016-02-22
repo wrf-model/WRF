@@ -44,9 +44,8 @@ CONTAINS
                  ,dqke,qWT,qSHEAR,qBUOY,qDISS,bl_mynn_tkebudget    & ! JOE - MYNN TKE budget
                  ,bl_mynn_cloudpdf                                 & ! JOE - cloud PDF tests
                  ,bl_mynn_mixlength                                & ! JAYMES
-                 ,bl_sgcloud,qc_bl,cldfra_bl                       & ! JOE-subgrid bl clouds
-                 ,bl_mynn_edmf,bl_mynn_nup                         & !JOE- MYNN edmf
-                 ,bl_mynn_edmf_mom,bl_mynn_edmf_tke                &
+                 ,icloud_bl,qc_bl,cldfra_bl                        & ! JOE-subgrid bl clouds
+                 ,bl_mynn_edmf,bl_mynn_edmf_mom,bl_mynn_edmf_tke   &
                  ,bl_mynn_edmf_part                                & !JOE- MYNN edmf
                  ,bl_mynn_cloudmix,bl_mynn_mixqt                   & !JOE- MYNN cloud methods
                  ,edmf_a,edmf_w,edmf_thl                           & !JOE- MYNN edmf
@@ -537,13 +536,12 @@ CONTAINS
                                      bl_mynn_cloudpdf,         &
                                      bl_mynn_mixlength,        &
                                      bl_mynn_edmf,             &
-                                     bl_mynn_nup,              &
                                      bl_mynn_edmf_mom,         &
                                      bl_mynn_edmf_tke,         &
                                      bl_mynn_edmf_part,        &
                                      bl_mynn_cloudmix,         &
                                      bl_mynn_mixqt,            &
-                                     bl_sgcloud
+                                     icloud_bl
 
 !ACF-QKE advection start
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), &
@@ -1669,10 +1667,9 @@ CONTAINS
                    &,bl_mynn_tkebudget=bl_mynn_tkebudget                 &
                    &,bl_mynn_cloudpdf=bl_mynn_cloudpdf                   &
                    &,bl_mynn_mixlength=bl_mynn_mixlength                 &
-                   &,bl_sgcloud=bl_sgcloud,qc_bl=qc_bl                   & !JOE-subgrid bl clouds
+                   &,icloud_bl=icloud_bl,qc_bl=qc_bl                   & !JOE-subgrid bl clouds
                    &,cldfra_bl=cldfra_bl                                 & !JOE-subgrid bl clouds
                    &,bl_mynn_edmf=bl_mynn_edmf                           &
-                   &,bl_mynn_nup=bl_mynn_nup                             &
                    &,bl_mynn_edmf_mom=bl_mynn_edmf_mom                   &
                    &,bl_mynn_edmf_tke=bl_mynn_edmf_tke                   &
                    &,bl_mynn_edmf_part=bl_mynn_edmf_part                 &

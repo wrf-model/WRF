@@ -19,7 +19,7 @@ CONTAINS
                              , ph_tendf, mu_tendf               &
                              , tke_tend                         &
                              , adapt_step_flag , curr_secs      &
-                             , psim , psih , wspd , gz1oz0 , br , chklowq &
+                             , psim , psih , wspd , gz1oz0 , chklowq &
                              , cu_act_flag , hol , th_phy       &
                              , pi_phy , p_phy , t_phy           &
                              , dz8w , p8w , t8w                 &
@@ -88,7 +88,6 @@ CONTAINS
     REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: psih
     REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: wspd
     REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: gz1oz0
-    REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: br
     REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: chklowq
     LOGICAL ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: cu_act_flag
     REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: hol
@@ -339,7 +338,7 @@ BENCH_START(rad_driver_tim)
      &        , LRADIUS=grid%LRADIUS,IRADIUS=grid%IRADIUS                 & !BSINGH(01/22/2014)
      &        , CLDFRA_DP=grid%cldfra_dp                                  & ! ckay for subgrid cloud
      &        , CLDFRA_SH=grid%cldfra_sh                                  &
-     &        , bl_sgcloud=config_flags%bl_sgcloud                        & !JOE: subgrid BL clouds
+     &        , icloud_bl=config_flags%icloud_bl                        & !JOE: subgrid BL clouds
      &        , qc_bl=grid%qc_bl,cldfra_bl=grid%cldfra_bl                 & !JOE: subgrid bl clouds
      &        , re_cloud=grid%re_cloud, re_ice=grid%re_ice, re_snow=grid%re_snow & ! G. Thompson
      &        , has_reqc=grid%has_reqc, has_reqi=grid%has_reqi, has_reqs=grid%has_reqs & ! G. Thompson
@@ -450,7 +449,7 @@ BENCH_START(surf_driver_tim)
      &        ,ACSNOM=grid%acsnom      ,ACSNOW=grid%acsnow      ,AKHS=grid%akhs          &
      &        ,AKMS=grid%akms          ,ALBBCK=grid%albbck      ,ALBEDO=grid%albedo      &
      &        ,EMBCK=grid%embck                                                          &
-     &        ,BR=br              ,CANWAT=grid%canwat      ,CHKLOWQ=chklowq    &
+     &        ,BR=grid%br              ,CANWAT=grid%canwat      ,CHKLOWQ=chklowq    &
      &        ,CT=grid%ct              ,DT=grid%dt         ,DX=grid%dx         &
      &        ,DZ8W=dz8w          ,DZS=grid%dzs            ,FLHC=grid%flhc          &
      &        ,FM=grid%fm         ,FHH=grid%fh                                      &
@@ -799,9 +798,8 @@ BENCH_START(surf_driver_tim)
      &        ,ch=grid%ch,tsq=grid%tsq,qsq=grid%qsq,cov=grid%cov          & !MYNN - MP
      &        ,Sh3d=grid%sh3d,EL_PBL=grid%el_pbl                          & !JOE- MYNN cloudpdf
      &        ,bl_mynn_cloudpdf=config_flags%bl_mynn_cloudpdf             & !JOE- MYNN cloudpdf
-     &        ,bl_sgcloud=config_flags%bl_sgcloud                         & !JOE- subgrid cloud
+     &        ,icloud_bl=config_flags%icloud_bl                           & !JOE- subgrid cloud
      &        ,qc_bl=grid%qc_bl,cldfra_bl=grid%cldfra_bl                  & !JOE- subgrid cloud
-     &        ,BRi=grid%bri                                               & !JOE- WFIP2
      &        ,fgdp=grid%fgdp,dfgdp=grid%dfgdp,vdfg=grid%vdfg             & !Katata - fogdes
      &        ,grav_settling=config_flags%grav_settling                   & !Katata - fogdes
      &        ,OM_TMP=grid%om_tmp, OM_S=grid%om_s, OM_U=grid%om_u, OM_V=grid%om_v   & !cyl:3DPWP
@@ -859,7 +857,7 @@ BENCH_START(pbl_driver_tim)
      &        ,WINDFARM_OPT=config_flags%windfarm_opt,power=grid%power              &
      &        ,BLDT=grid%bldt, CURR_SECS=curr_secs, ADAPT_STEP_FLAG=adapt_step_flag &
      &        ,BLDTACTTIME=grid%bldtacttime                               &  
-     &        ,BR=br              ,CHKLOWQ=chklowq    ,CT=grid%ct                   &
+     &        ,BR=grid%br         ,CHKLOWQ=chklowq    ,CT=grid%ct                   &
      &        ,DT=grid%dt         ,DX=grid%dx         ,DY=grid%dy                   &
      &        ,DZ8W=dz8w          &
      &        ,EXCH_H=grid%exch_h     ,EXCH_M=grid%exch_m                           &
@@ -945,10 +943,9 @@ BENCH_START(pbl_driver_tim)
      &        ,bl_mynn_tkebudget=config_flags%bl_mynn_tkebudget           &
      &        ,bl_mynn_cloudpdf=config_flags%bl_mynn_cloudpdf             &
      &        ,bl_mynn_mixlength=config_flags%bl_mynn_mixlength           &
-     &        , bl_sgcloud=config_flags%bl_sgcloud                        & !JOE: subgrid cloud
+     &        , icloud_bl=config_flags%icloud_bl                        & !JOE: subgrid cloud
      &        , qc_bl=grid%qc_bl,cldfra_bl=grid%cldfra_bl                 & !JOE: subgrid cloud
      &        ,bl_mynn_edmf=config_flags%bl_mynn_edmf                     & !JOE- MYNN edmf
-     &        ,bl_mynn_nup=config_flags%bl_mynn_nup                       & !JOE- MYNN edmf
      &        ,bl_mynn_edmf_mom=config_flags%bl_mynn_edmf_mom             & !JOE- MYNN edmf
      &        ,bl_mynn_edmf_tke=config_flags%bl_mynn_edmf_tke             & !JOE- MYNN edmf
      &        ,bl_mynn_edmf_part=config_flags%bl_mynn_edmf_part           & !JOE- MYNN edmf
@@ -1085,7 +1082,7 @@ BENCH_START(cu_driver_tim)
      &             ,TPERT2D=grid%tpert2d                                 &
      &             ,GSW=grid%gsw,cugd_avedx=config_flags%cugd_avedx       &
      !BSINGH - For WRFCuP scheme
-     &             ,AKPBL=grid%akpbl,BR=br, REGIME=grid%regime, T2=grid%t2, Q2=grid%q2   & !CuP, wig 3-Aug-2006
+     &             ,AKPBL=grid%akpbl,BR=grid%br, REGIME=grid%regime, T2=grid%t2, Q2=grid%q2   & !CuP, wig 3-Aug-2006
      &             ,SLOPESFC=grid%slopeSfc, SLOPEEZ=grid%slopeEZ                    & !CuP, wig 7-Aug-2006
      &             ,SIGMASFC=grid%sigmaSfc, SIGMAEZ=grid%sigmaEZ                    & !CuP, wig 7-Aug-2006
      &             ,CUPFLAG=grid%cupflag                                       & !CuP, wig 9-Oct-2006

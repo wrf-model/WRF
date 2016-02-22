@@ -9936,10 +9936,7 @@ CONTAINS
             julian      ! julian day (1-366)
    real, dimension(ims:ime,jms:jme), intent(in) :: &
             xcoszen     ! cosine of the solar zenith angle
-  real, dimension(ims:ime,kms:kme,jms:jme,nbndsw), optional,      &
-        intent(in)                                :: tauaer3d_sw, &
-                                                     ssaaer3d_sw, &
-                                                     asyaer3d_sw
+   real, dimension(:,:,:,:), pointer :: tauaer3d_sw,ssaaer3d_sw,asyaer3d_sw
 ! ------------------------ jararias end snippet -----------------
 
    REAL, INTENT(IN  )   ::                                   R,G
@@ -10878,9 +10875,8 @@ CONTAINS
       end do
       end do
 
-      if ( present (tauaer3d_sw) ) then
+      if ( associated (tauaer3d_sw) ) then
 ! ---- jararias 11/2012
-         if ( aer_opt .eq. 2 .or. aer_opt.eq.3) then
             do nb=1,nbndsw
                do k=kts,kte
                   tauaer(ncol,k,nb)=tauaer3d_sw(i,k,j,nb)
@@ -10888,7 +10884,6 @@ CONTAINS
                   asmaer(ncol,k,nb)=asyaer3d_sw(i,k,j,nb)
                end do
             end do
-         end if
       end if
 
 #if ( WRF_CHEM == 1 )

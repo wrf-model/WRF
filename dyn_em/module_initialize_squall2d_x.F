@@ -375,7 +375,7 @@ CONTAINS
 
     grid%ph_1(i,1,j) = 0.
     DO k  = 2,kte
-      grid%ph_1(i,k,j) = grid%ph_1(i,k-1,j) - (1./grid%rdnw(k-1))*(       &
+      grid%ph_1(i,k,j) = grid%ph_1(i,k-1,j) - (grid%dnw(k-1))*(       &
                    (grid%mub(i,j)+grid%mu_1(i,j))*grid%al(i,k-1,j)+ &
                     grid%mu_1(i,j)*grid%alb(i,k-1,j)  )
                                                    
@@ -428,7 +428,7 @@ CONTAINS
 !  rebalance hydrostatically
 
       DO k  = 2,kte
-        grid%ph_1(i,k,j) = grid%ph_1(i,k-1,j) - (1./grid%rdnw(k-1))*(       &
+        grid%ph_1(i,k,j) = grid%ph_1(i,k-1,j) - (grid%dnw(k-1))*(       &
                      (grid%mub(i,j)+grid%mu_1(i,j))*grid%al(i,k-1,j)+ &
                       grid%mu_1(i,j)*grid%alb(i,k-1,j)  )
                                                    

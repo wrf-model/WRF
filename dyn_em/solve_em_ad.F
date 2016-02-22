@@ -665,7 +665,7 @@ BENCH_END(set_phys_bc_tim)
                              , config_flags%use_adaptive_time_step &
                              , curr_secs                        &
                              , psim , psih , wspd , gz1oz0      &
-                             , br , chklowq                     &
+                             , chklowq                          &
                              , cu_act_flag , hol , th_phy       &
                              , pi_phy , p_phy , grid%t_phy      &
                              , dz8w , p8w , t8w                 &
@@ -708,7 +708,7 @@ BENCH_END(set_phys_bc_tim)
                              , tke_tend                         &
                              , adapt_step_flag , curr_secs      &
                              , psim , psih , wspd , gz1oz0      &
-                             , br , chklowq                     &
+                             , chklowq                          &
                              , cu_act_flag , hol , th_phy       &
                              , pi_phy , p_phy , grid%t_phy      &
                              , dz8w , p8w , t8w                 &
@@ -7450,7 +7450,9 @@ BENCH_END(adj_rk_tend_tim)
 !              , cu_act_flag , hol ,a_hol, th_phy,a_th_phy           &
 !!!!! REMOVE THE FOLLOWING 3 STATEMENTS WHEN CODING AD OF PHYSICS. Ning Pan, 2010-08-20
               , psim ,  psim , psih ,  psih , wspd ,  wspd ,        &
-                gz1oz0 ,  gz1oz0 , br ,  br , chklowq,  chklowq     &
+!201602                gz1oz0 ,  gz1oz0 , br ,  br , chklowq,  chklowq     &
+!201602: br became a state variable and was removed from the argument
+                gz1oz0 ,  gz1oz0 , chklowq,  chklowq     &
               , cu_act_flag , hol ,  hol, th_phy,a_th_phy           &
               , pi_phy ,a_pi_phy, p_phy ,a_p_phy , grid%t_phy ,grid%a_t_phy   &
               , dz8w ,a_dz8w , p8w ,a_p8w , t8w ,a_t8w             &
@@ -7482,7 +7484,7 @@ BENCH_END(adj_rk_tend_tim)
                              , config_flags%use_adaptive_time_step &
                              , curr_secs      &
                              , psim , psih , wspd , gz1oz0      &
-                             , br , chklowq                     &
+                             , chklowq                          &
                              , cu_act_flag , hol , th_phy , a_th_phy      &
                              , pi_phy , a_pi_phy, p_phy , a_p_phy, grid%t_phy , grid%a_t_phy     &
                              , dz8w , a_dz8w, p8w , a_p8w, t8w , a_t8w &

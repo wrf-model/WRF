@@ -2720,6 +2720,7 @@ ENDIF
       XXXG_URB2D(I,J)=0.
       XXXC_URB2D(I,J)=0.
 
+      IF ( sf_urban_physics == 1 ) THEN
       DRELR_URB2D(I,J) = 0.
       DRELB_URB2D(I,J) = 0.
       DRELG_URB2D(I,J) = 0.
@@ -2727,8 +2728,9 @@ ENDIF
       FLXHUMB_URB2D(I,J) = 0.
       FLXHUMG_URB2D(I,J) = 0.
       CMCR_URB2D(I,J)  = 0.
-
       TGR_URB2D(I,J)=TSURFACE0_URB(I,J)+0.
+      ENDIF
+
       TC_URB2D(I,J)=TSURFACE0_URB(I,J)+0.
       TR_URB2D(I,J)=TSURFACE0_URB(I,J)+0.
       TB_URB2D(I,J)=TSURFACE0_URB(I,J)+0.
@@ -2736,7 +2738,7 @@ ENDIF
 !
       TS_URB2D(I,J)=TSURFACE0_URB(I,J)+0.
 
-!      DO K=1,num_roof_layers
+!     DO K=1,num_roof_layers
 !     DO K=1,num_soil_layers
 !         TRL_URB3D(I,1,J)=TLAYER0_URB(I,1,J)+0.
 !         TRL_URB3D(I,2,J)=TLAYER0_URB(I,2,J)+0.
@@ -2748,6 +2750,7 @@ ENDIF
           TRL_URB3D(I,3,J)=TLAYER0_URB(I,2,J)+0.
           TRL_URB3D(I,4,J)=TLAYER0_URB(I,2,J)+(TLAYER0_URB(I,3,J)-TLAYER0_URB(I,2,J))*0.29
 
+      IF ( sf_urban_physics == 1 ) THEN
           TGRL_URB3D(I,1,J)=TLAYER0_URB(I,1,J)+0.
           TGRL_URB3D(I,2,J)=0.5*(TLAYER0_URB(I,1,J)+TLAYER0_URB(I,2,J))
           TGRL_URB3D(I,3,J)=TLAYER0_URB(I,2,J)+0.
@@ -2757,6 +2760,7 @@ ENDIF
           SMR_URB3D(I,2,J)=0.2
           SMR_URB3D(I,3,J)=0.2
           SMR_URB3D(I,4,J)=0.
+      ENDIF
 !     END DO
 
 !      DO K=1,num_wall_layers
@@ -2905,9 +2909,6 @@ ENDIF
         CHECK = 1
        END IF
        END IF
-
-
-
 
     END DO
    END DO

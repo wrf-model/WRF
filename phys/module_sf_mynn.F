@@ -39,11 +39,9 @@ MODULE module_sf_mynn
 !   SNOW/ICE only:
 !1) Added Andreas (2002) snow/ice parameterization for thermal and
 !   moisture roughness to help reduce the cool/moist bias in the arctic
-!   region.
+!   region. Also added a z0 mod for snow (Andreas et al. 2005, BLM), which
 !
-! For v3.7.1:
-!   1) added a Z0 mod for snow, analogous to Andreas (2005, BLM), which
-!      reduces z0 in stable conditions.
+! Misc:
 !   2) added a more elaborate diagnostic for u10 & V10 for high vertical resolution
 !      model configurations.
 !
@@ -94,7 +92,7 @@ CONTAINS
                      SVP1,SVP2,SVP3,SVPT0,EP1,EP2,                 &
                      KARMAN,itimestep,ch,th3d,pi3d,qc3d,rho3d,     &
                      tsq,qsq,cov,sh3d,el_pbl,qcg,                  &
-                     bl_sgcloud,qc_bl,cldfra_bl,BRi,                &
+                     icloud_bl,qc_bl,cldfra_bl,                    &
 !JOE-add output
 !                     z0zt_ratio,BulkRi,wstar,qstar,resist,logres,  &
 !JOE-end 
@@ -183,7 +181,7 @@ CONTAINS
 !-- cov         = T'q' from PBL scheme
 !-- tsq         = T'T' from PBL scheme
 !-- qsq         = q'q' from PBL scheme
-!-- bl_sgcloud  = namelist option for subgrid scale cloud/radiation feedback
+!-- icloud_bl  = namelist option for subgrid scale cloud/radiation feedback
 !-- qc_bl       = subgrid scale (bloundary layer) clouds
 !-- cldfra_bl   = subgridscale cloud fraction
 !
@@ -219,7 +217,7 @@ CONTAINS
       INTEGER,  INTENT(IN)   ::        ISFFLX
       INTEGER,  OPTIONAL,  INTENT(IN)   ::     ISFTCFLX, IZ0TLND,&
                                                 bl_mynn_cloudpdf,&
-                                                bl_sgcloud
+                                                icloud_bl
 !===================================
 ! 3D VARIABLES
 !===================================
@@ -270,8 +268,7 @@ CONTAINS
                                                                CH, &
                                                         FLHC,FLQC, &
                                                    GZ1OZ0,WSPD,BR, &
-                                                        PSIM,PSIH, &
-                                                              BRi
+                                                        PSIM,PSIH
 
 !ADDITIONAL OUTPUT
 !JOE-begin
@@ -348,7 +345,7 @@ CONTAINS
                 dummy8(k)=cov(i,k,j)
                 dummy9(k)=Sh3d(i,k,j)
                 dummy10(k)=el_pbl(i,k,j)
-                if(bl_sgcloud > 0) then
+                if(icloud_bl > 0) then
                   dummy11(k)=qc_bl(i,k,j)
                   dummy12(k)=cldfra_bl(i,k,j)
                 else
@@ -404,7 +401,7 @@ CONTAINS
                 ch(ims,j),vt1,vq1,qc1d,qcg(ims,j),                 &
                 itimestep,                                         &
 !JOE-begin additional output
-                z0zt_ratio(ims,j),BRi(ims,j),wstar(ims,j),         &
+                z0zt_ratio(ims,j),wstar(ims,j),                    &
                 qstar(ims,j),resist(ims,j),logres(ims,j),          &
 !JOE-end
                 ids,ide, jds,jde, kds,kde,                         &
@@ -431,7 +428,7 @@ CONTAINS
                      KARMAN,ch,vt1,vq1,qc1d,qcg,                   &
                      itimestep,                                    &
 !JOE-additional output
-                     zratio,BRi,wstar,qstar,resist,logres,         &
+                     zratio,wstar,qstar,resist,logres,             &
 !JOE-end
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
@@ -504,7 +501,7 @@ CONTAINS
                 INTENT(OUT)     ::              ck,cka,cd,cda,ustm
 !--------------------------------------------
 !JOE-additinal output
-      REAL,     DIMENSION( ims:ime ) ::    zratio,BRi,wstar,qstar, &
+      REAL,     DIMENSION( ims:ime ) ::        zratio,wstar,qstar, &
                                                     resist,logres
 !JOE-end
 !----------------------------------------------------------------
@@ -671,8 +668,7 @@ CONTAINS
          !SET LIMITS ACCORDING TO Li et al. (2010) Boundary-Layer Meteorol (p.158)
          BR(I)=MAX(BR(I),-20.0)
          BR(I)=MIN(BR(I),2.0)
-         BRi(I)=BR(I)  !new variable for output - BR is not a "state" variable.
-               
+                
          ! IF PREVIOUSLY UNSTABLE, DO NOT LET INTO REGIMES 1 AND 2 (STABLE)
          !if (itimestep .GT. 1) THEN
          !    IF(MOL(I).LT.0.)BR(I)=MIN(BR(I),0.0)
@@ -801,7 +797,7 @@ CONTAINS
           !CHECK FOR SNOW/ICE POINTS OVER LAND
           !IF ( ZNT(i) .LE. SNOWZ0  .AND.  TSK(I) .LE. 273.15 ) THEN
           IF ( SNOWH(i) .GE. 0.1) THEN
-             CALL Andreas_2002(ZNT(i),restar,z_t(i),z_q(i),BR(i))
+             CALL Andreas_2002(ZNT(i),visc,ust(i),z_t(i),z_q(i))
           ELSE
              IF ( PRESENT(IZ0TLND) ) THEN
                 IF ( IZ0TLND .LE. 1 .OR. IZ0TLND .EQ. 4) THEN
@@ -1631,14 +1627,15 @@ END SUBROUTINE SFCLAY1D_mynn
 
     END SUBROUTINE Yang_2008
 !--------------------------------------------------------------------
-    SUBROUTINE Andreas_2002(Z_0,Ren,Zt,Zq,BulkRi)
+    SUBROUTINE Andreas_2002(Z_0,bvisc,ustar,Zt,Zq)
 
-    !This is taken from Andreas (2002; J. of Hydromet) and Andreas (2005).
+    ! This is taken from Andreas (2002; J. of Hydromet) and 
+    ! Andreas et al. (2005; BLM).
     !
-    !This should only be used over snow/ice!
+    ! This should only be used over snow/ice!
 
        IMPLICIT NONE
-       REAL, INTENT(IN)  :: Z_0, Ren, BulkRi
+       REAL, INTENT(IN)  :: Z_0, bvisc, ustar
        REAL, INTENT(OUT) :: Zt, Zq
        REAL :: Ren2, zntsno
 
@@ -1650,16 +1647,12 @@ END SUBROUTINE SFCLAY1D_mynn
                            bq1_s=0.0,   bq1_t=-0.628, bq1_r=-0.512, &
                            bq2_s=0.0,   bq2_t=0.0,    bq2_r=-0.180
 
-!       IF (Z_0 >= SNOWZ0) THEN
-          !Force smaller roughness length in snow-covered regions
-          !for thermal roughness length calculation only. This is an
-          !analagous formula to Andreas (2005, BLM), not a function of u*.
-!          zntsno = SNOWZ0*EXP(-3.*MAX(BulkRi,0.0))
-!       ELSE
-          zntsno = Z_0
-!       ENDIF
+      !Calculate zo for snow (Andreas et al. 2005, BLM)                                                                     
+       zntsno = 0.135*bvisc/ustar + &
+               (0.035*(ustar*ustar)/9.8) * &
+               (5.*exp(-1.*(((ustar - 0.18)/0.1)*((ustar - 0.18)/0.1))) + 1.)                                                
+       Ren2 = ustar*zntsno/bvisc
 
-       Ren2 = Ren
        ! Make sure that Re is not outside of the range of validity
        ! for using their equations
        IF (Ren2 .gt. 1000.) Ren2 = 1000. 

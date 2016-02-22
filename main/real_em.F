@@ -237,9 +237,13 @@ real::t1,t2
          
          ok_so_far = .TRUE.
 
+         !DJW changed the check below so that instead of always comparing
+         !to d01 we now compare vertical levels between a grid and its parent.
+         !If 4 domains were used, this allows for vertical nesting to be enabled between grids 1 & 2 and
+         !between grids 3 & 4, but allows you to not use vertical grid nesting between grids 2 & 3.
          DO loop = 2 , model_config_rec%max_dom
-            IF ( model_config_rec%vert_refine_method(loop) .EQ. 0 ) THEN
-            IF ( model_config_rec%e_vert(loop) .NE.  model_config_rec%e_vert(1) ) THEN
+           IF (( model_config_rec%vert_refine_method(loop) .EQ. 0 ) .AND. ( model_config_rec%vert_refine_fact .EQ. 1 )) THEN
+             IF ( model_config_rec%e_vert(loop) .NE.  model_config_rec%e_vert(model_config_rec%parent_id(loop)) ) THEN
                CALL  wrf_message ( 'e_vert must be the same for each domain' )
                ok_so_far = .FALSE.
               END IF

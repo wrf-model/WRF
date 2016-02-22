@@ -14,7 +14,8 @@ module_dm.o: module_machine.o module_state_description.o module_wrf_error.o \
 		module_timing.o \
 		module_comm_nesting_dm.o \
 		module_configure.o module_comm_dm.o \
-                module_cpl.o
+		module_cpl.o \
+		../share/module_model_constants.o
 
 module_timing.o: hires_timer.o clog.o
 

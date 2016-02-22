@@ -157,9 +157,9 @@ integer::oops1,oops2
       REAL :: t_start , t_end
       REAL , ALLOCATABLE , DIMENSION(:,:) :: clat_glob
 
-      ! multiple specified sets of eta_levels
+      ! added for multiple specified sets of eta_levels with vertical grid nesting
       INTEGER :: ks, ke, id
-      LOGICAL :: vnest ! T if using vertical nesting, otherwise F
+      LOGICAL :: vnest !T if using vertical nesting with vet_refine_method=2, otherwise F
 
       INTEGER :: j_save
 
@@ -1397,22 +1397,25 @@ integer::oops1,oops2
          !  Compute the eta levels if not defined already.
 
          IF ( grid%znw(1) .NE. 1.0 ) THEN
+           !DJW Check if any of the domains are going to use vertical
+           !nesting with vert_refine_method=2. If so, set vnest as true.
            vnest = .FALSE.
            DO id=1,model_config_rec%max_dom
-             IF (model_config_rec%vert_refine_method(id) .NE. 0) THEN
+             IF (model_config_rec%vert_refine_method(id) .EQ. 2) THEN
                vnest = .TRUE.
              ENDIF
            ENDDO
-           IF (vnest) THEN
-
-            !Added code for specifying multiple domains' eta_levels.
+           !DJW If there are eta_levels defined in the namelist and at
+           !least one domain is using vertical nesting, then we need to read in
+           !the eta_levels.
+           IF ((model_config_rec%eta_levels(1) .NE. -1.0) .AND. (vnest)) THEN
+             !DJW Added code for specifying multiple domains' eta_levels.
             !First check to make sure that we've not specified more
             !eta_levels than the dimensionality of eta_levels can handle! This
-            !issue will most likely cause a break sometime before we real this
+             !issue will most likely cause a break sometime before this
             !check, however it doesn't hurt to include it. To increase max_eta,
             !go to frame/module_driver_constants.F.
-
-            CALL wrf_debug ( 0, "using vertical nesting, reading in eta_levels specified in namelist.input" )
+             CALL wrf_debug (0, "module_initialize_real: using vert_refine_method=2, reading in eta_levels from namelist.input")
             ks = 0
             DO id=1,grid%id
               ks = ks+model_config_rec%e_vert(id)
@@ -1441,22 +1444,51 @@ integer::oops1,oops2
             !Check the value of the first and last eta level for our domain,
             !then check that the vector of eta levels is only decreasing
             IF (eta_levels(1) .NE. 1.0) THEN
-              CALL wrf_error_fatal("error with specified eta_levels, first level is not 1.0")
+               CALL wrf_error_fatal("--- ERROR: the first specified eta_level is not 1.0")
             ENDIF
             IF (eta_levels(kde) .NE. 0.0) THEN
-              CALL wrf_error_fatal("error with specified eta_levels, last level is not 0.0")
+               CALL wrf_error_fatal("--- ERROR: the last specified eta_level is not 0.0")
             ENDIF
             DO k=2,kde
               IF (eta_levels(k) .GT. eta_levels(k-1)) THEN
-                CALL wrf_error_fatal("eta_levels are not uniformly decreasing from 1.0 to 0.0")
+                 CALL wrf_error_fatal("--- ERROR: specified eta_levels are not uniformly decreasing from 1.0 to 0.0")
               ENDIF
             ENDDO
-             DO k=1,kde
-               write(a_message,'(A,I3,A,F5.3)') "eta_levels(",k,")=",eta_levels(k)
-               CALL wrf_message ( a_message )
+             !DJW End of added code for specifying eta_levels
+           ELSE !We're not using vertical nesting with eta_levels defined for every domain
+             !DJW Check if we're doing vertical nesting with integer refinement.
+             vnest = .FALSE.
+             DO id=1,model_config_rec%max_dom
+               IF (model_config_rec%vert_refine_method(id) .EQ. 1) THEN
+                 vnest = .TRUE.
+               ENDIF
              ENDDO
-           ELSE !We're not using vertical nesting
+             !DJW If we're doing vertical nesting using integer refinement and
+             !we've got eta_levels specified in the namelist then make sure they are
+             !for the parent domain and nothing else.
+             IF ((vnest) .AND. (model_config_rec%eta_levels(kde+1) .NE. -1.0)) THEN
+               write(wrf_err_message,'(A)') "--- ERROR: too many eta_levels defined in namelist.input."
+               CALL wrf_error_fatal( wrf_err_message )
+             !DJW Check the value of the first and last eta level for our
+             !domain, then check that the vector of eta levels is only decreasing
+             ELSEIF ((vnest) .AND. (model_config_rec%eta_levels(1) .NE. -1.0)) THEN
+               CALL wrf_debug(0, "module_initialize_real: using vert_refine_method=1, reading in eta_levels for d01 from namelist.input")
              eta_levels(1:kde) = model_config_rec%eta_levels(1:kde)
+               IF (eta_levels(1) .NE. 1.0) THEN
+                 CALL wrf_error_fatal("--- ERROR: the first specified eta_level is not 1.0")
+               ENDIF
+               IF (eta_levels(kde) .NE. 0.0) THEN
+                 CALL wrf_error_fatal("--- ERROR: the last specified eta_level is not 0.0")
+               ENDIF
+               DO k=2,kde
+                 IF (eta_levels(k) .GT. eta_levels(k-1)) THEN
+                   CALL wrf_error_fatal("--- ERROR: specified eta_levels are not uniformly decreasing from 1.0 to 0.0")
+                 ENDIF
+               ENDDO
+             ELSE
+               !DJW original code to set eta_levels
+               eta_levels(1:kde) = model_config_rec%eta_levels(1:kde)
+             ENDIF
            ENDIF
 
             max_dz            = model_config_rec%max_dz

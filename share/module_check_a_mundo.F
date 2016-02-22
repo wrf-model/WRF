@@ -1249,24 +1249,70 @@
       END IF
 
 !-----------------------------------------------------------------------
-!  Check that vertical levels are defined in a logical way.
+!  DJW Check that we're not using ndown and vertical nesting.
 !-----------------------------------------------------------------------
+     DO i=1,model_config_rec%max_dom
+       IF ((model_config_rec%vert_refine_method(i) .NE. 0) .AND. (model_config_rec%vert_refine_fact .NE. 1)) THEN
+         write(wrf_err_message,'(A)') '--- ERROR: vert_refine_fact is ndown specific and cannot be used with vert_refine_method, and vice versa.'
+         CALL wrf_message( wrf_err_message )
+       ENDIF
+     ENDDO
 
+!-----------------------------------------------------------------------
+!  DJW Check that only one type of vertical nesting is enabled.
+!-----------------------------------------------------------------------
+     DO i=1,model_config_rec%max_dom
+       IF (model_config_rec%vert_refine_method(i) .NE. 0) THEN
+         DO j=1,model_config_rec%max_dom
+           IF ((model_config_rec%vert_refine_method(i) .NE. model_config_rec%vert_refine_method(j)) .AND. (model_config_rec%vert_refine_method(j) .NE. 0)) THEN
+             write(wrf_err_message,'(A,I1,A,I2,A,I1,A,I2,A)') '--- ERROR: vert_refine_method differs on grid ids ',model_config_rec%grid_id(i),' and ',model_config_rec%grid_id(j),'. Only one type of vertical grid nesting can be used at a time.'
+             CALL wrf_error_fatal( wrf_err_message )
+           ENDIF
+         ENDDO
+       ENDIF
+     ENDDO
+
+!-----------------------------------------------------------------------
+!  DJW Check that e_vert is the same for nested domains not using
+!  vertical nesting. Don't do this check if we're using ndown.
+!-----------------------------------------------------------------------
+      IF ((model_config_rec%max_dom .GT. 1) .AND. (model_config_rec%vert_refine_fact .EQ. 1)) THEN
+        DO i=1,model_config_rec%max_dom
+          IF (((model_config_rec%parent_id(i) .NE. 0) .AND. (model_config_rec%parent_id(i) .NE. model_config_rec%grid_id(i))) .AND. (model_config_rec%vert_refine_method(i) .EQ. 0)) THEN
+            DO j=1,model_config_rec%max_dom
+              IF ((i .NE. j) .AND. (model_config_rec%parent_id(i) .EQ. model_config_rec%grid_id(j))) THEN
+                IF (model_config_rec%e_vert(i) .NE. model_config_rec%e_vert(j)) THEN
+                  write(wrf_err_message,'(A,I2,A,I2,A)') '--- ERROR: e_vert differs on grid ids ',model_config_rec%grid_id(i),' and ',model_config_rec%grid_id(j),'. Set vert_refine_method or make e_vert consistent.'
+                  CALL wrf_error_fatal( wrf_err_message )
+                ENDIF
+              ENDIF
+            ENDDO
+          ENDIF
+        ENDDO
+      ENDIF
+
+!-----------------------------------------------------------------------
+!  Check that vertical levels are defined in a logical way.
+!  DJW Check that domains without a parent do not have vertical
+!  nesting enabled.
+!-----------------------------------------------------------------------
+      DO i=1,model_config_rec%max_dom
+        IF ((model_config_rec%parent_id(i) .EQ. 0) .OR. (model_config_rec%parent_id(i) .EQ. model_config_rec%grid_id(i))) THEN
+          IF (model_config_rec%vert_refine_method(i) .NE. 0) THEN
+            write(wrf_err_message,'(A,I1,A,I2,A)') '--- ERROR: vert_refine_method=',model_config_rec%vert_refine_method(i),' for grid_id=',model_config_rec%grid_id(i),', must be 0 for a non-nested domain.'
+            CALL wrf_error_fatal( wrf_err_message )
+          ENDIF
+        ENDIF
+      ENDDO
+
+!-----------------------------------------------------------------------
+!  DJW Check that we've got appropriate e_vert for integer refinement.
+!-----------------------------------------------------------------------
       DO i = 1, model_config_rec % max_dom
         IF (model_config_rec%vert_refine_method(i) .EQ. 1) THEN
-          IF (i .EQ. 1) THEN
-            wrf_err_message = '--- INFO: vert_refine_method=1 for d01, must be 0., resetting value internally'
-            CALL wrf_message ( wrf_err_message )
-            model_config_rec%vert_refine_method(i) = 0
-          ELSE
-            IF (MOD((model_config_rec%e_vert(i)-1),(model_config_rec%e_vert(i-1)-1)) .NE. 0) THEN
-              wrf_err_message = '--- ERROR: incompatible e_vert for use with int-refinement.'
-              CALL wrf_error_fatal ( wrf_err_message )
-            ENDIF
-          ENDIF
-        ELSEIF (model_config_rec%vert_refine_method(i) .EQ. 2) THEN
-          IF (i .EQ. 1) THEN
-            wrf_err_message = '--- ERROR: vert_refine_method=2 for d01, must be 0.'
+          j = model_config_rec%parent_id(i)
+          IF (MOD(model_config_rec%e_vert(i)-1, model_config_rec%e_vert(j)-1) .NE. 0) THEN
+            write(wrf_err_message,'(A,I2,A,I2,A)') "--- ERROR: grid_id=",i," and parent (grid_id=",j,") have incompatible e_vert's for vertical nesting with integer refinement."
             CALL wrf_error_fatal ( wrf_err_message )
           ENDIF
         ENDIF
@@ -1275,17 +1321,15 @@
 !-----------------------------------------------------------------------
 !  Consistency checks between vertical refinement and radiation
 !  scheme selection.  For "choose any vertical levels" for the nest,
-!  only RRTM and RRTMG are eligible.
+!  only RRTM is eligible.
 !-----------------------------------------------------------------------
 
       DO i = 2, model_config_rec % max_dom
-        IF (model_config_rec%vert_refine_method(i) .EQ. 2) THEN
-          IF ( ( ( model_config_rec%ra_lw_physics(i) .EQ. RRTMSCHEME          ) .OR. &
-                 ( model_config_rec%ra_lw_physics(i) .EQ. RRTMG_LWSCHEME      ) .OR. &
-                 ( model_config_rec%ra_lw_physics(i) .EQ. RRTMG_LWSCHEME_FAST ) ) .AND. &
-               ( ( model_config_rec%ra_sw_physics(i) .EQ. SWRADSCHEME         ) .OR. &
-                 ( model_config_rec%ra_sw_physics(i) .EQ. RRTMG_SWSCHEME      ) .OR. &
-                 ( model_config_rec%ra_sw_physics(i) .EQ. RRTMG_SWSCHEME_FAST ) ) ) THEN
+        IF (model_config_rec%vert_refine_method(i) .NE. 0) THEN
+          IF ( ( ( model_config_rec%ra_lw_physics(i) .EQ. 0                   ) .OR. &
+                 ( model_config_rec%ra_lw_physics(i) .EQ. RRTMSCHEME          ) ) .AND. &
+               ( ( model_config_rec%ra_sw_physics(i) .EQ. 0                   ) .OR. &
+                 ( model_config_rec%ra_sw_physics(i) .EQ. SWRADSCHEME         ) ) ) THEN
              !  We are OK, I just hate writing backwards / negative / convoluted if tests 
              !  that are not easily comprehensible.
           ELSE

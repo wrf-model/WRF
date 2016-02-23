@@ -3377,17 +3377,210 @@ endif
      
       !  Compute pressure similarly to how computed within model, with final Qv.
 
-      DO j = jts, min(jde-1,jte)
-         DO k=kts,kte-1
-            DO i = its, min(ide,ite)
-               qvf = 1.+rvovrd*moist(i,k,j,P_QV)
-               grid%p(i,k,j)=p1000mb*( (r_d*(t0+grid%t_2(i,k,j))*qvf)/                     &
-                            (p1000mb*(grid%al(i,k,j)+grid%alb(i,k,j))) )**cpovcv  &
-                            -grid%pb(i,k,j)
-               grid%p_hyd(i,k,j) = grid%p(i,k,j) + grid%pb(i,k,j)
+      !  Do a re-balance or not?  0 = NOPE
+
+      IF ( ( config_flags%rebalance .EQ. 0 ) .OR. &
+           ( ( config_flags%rebalance .EQ. 2 ) .AND.  ( config_flags%vert_refine_method .NE. 2 ) ) ) THEN 
+
+          DO j = jts, min(jde-1,jte)
+             DO k=kts,kte-1
+                DO i = its, min(ide,ite)
+                   qvf = 1.+rvovrd*moist(i,k,j,P_QV)
+                   grid%p(i,k,j)=p1000mb*( (r_d*(t0+grid%t_2(i,k,j))*qvf)/                     &
+                                (p1000mb*(grid%al(i,k,j)+grid%alb(i,k,j))) )**cpovcv  &
+                                -grid%pb(i,k,j)
+                   grid%p_hyd(i,k,j) = grid%p(i,k,j) + grid%pb(i,k,j)
+                ENDDO
+             ENDDO
+          ENDDO
+
+      ELSE ! rebalance
+
+         lev500 = 0
+         DO j = jts, min(jde-1,jte)
+            DO i = its, min(ide-1,ite)
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+
+               dpmu = 10001.
+               loop_count = 0
+
+               DO WHILE ( ( ABS(dpmu) .GT. 10. ) .AND. &
+                          ( loop_count .LT. 5 ) )
+
+                  loop_count = loop_count + 1
+
+                  !  Integrate the hydrostatic equation (from the RHS of the bigstep vertical momentum
+                  !  equation) down from the top to get the pressure perturbation.  First get the pressure
+                  !  perturbation, moisture, and inverse density (total and perturbation) at the top-most level.
+
+                  k = kte-1
+
+                  qtot=0.
+                  DO im = PARAM_FIRST_SCALAR, num_3d_m
+                    qtot = qtot + moist(i,k,j,im)
+                  ENDDO
+                  qvf2 = 1./(1.+qtot)
+                  qvf1 = qtot*qvf2
+
+                  grid%p(i,k,j) = - 0.5*(grid%mu_2(i,j)+qvf1*grid%mub(i,j))/grid%rdnw(k)/qvf2
+                  qvf = 1. + rvovrd*moist(i,k,j,P_QV)
+                  grid%alt(i,k,j) = (r_d/p1000mb)*(grid%t_2(i,k,j)+t0)*qvf&
+                                    *(((grid%p(i,k,j)+grid%pb(i,k,j))/p1000mb)**cvpm)
+                  grid%al(i,k,j) = grid%alt(i,k,j) - grid%alb(i,k,j)
+                  grid%p_hyd(i,k,j) = grid%p(i,k,j) + grid%pb(i,k,j)
+
+                  !  Now, integrate down the column to compute the pressure perturbation, and diagnose the two
+                  !  inverse density fields (total and perturbation).
+
+                  DO k=kte-2,1,-1
+                     qtot=0.
+                     DO im = PARAM_FIRST_SCALAR, num_3d_m
+                       qtot = qtot + 0.5*(moist(i,k,j,im)+moist(i,k+1,j,im))
+                     ENDDO
+                     qvf2 = 1./(1.+qtot)
+                     qvf1 = qtot*qvf2
+                     grid%p(i,k,j) = grid%p(i,k+1,j) - (grid%mu_2(i,j) + qvf1*grid%mub(i,j))/qvf2/grid%rdn(k+1)
+                     qvf = 1. + rvovrd*moist(i,k,j,P_QV)
+                     grid%alt(i,k,j) = (r_d/p1000mb)*(grid%t_2(i,k,j)+t0)*qvf* &
+                                 (((grid%p(i,k,j)+grid%pb(i,k,j))/p1000mb)**cvpm)
+                     grid%al(i,k,j) = grid%alt(i,k,j) - grid%alb(i,k,j)
+                     grid%p_hyd(i,k,j) = grid%p(i,k,j) + grid%pb(i,k,j)
+                  END DO
+
+#if 1
+                  !  This is the hydrostatic equation used in the model after the small timesteps.  In
+                  !  the model, grid%al (inverse density) is computed from the geopotential.
+
+                  IF (grid%hypsometric_opt == 1) THEN
+	       
+                     DO k  = 2,kte
+                        grid%ph_2(i,k,j) = grid%ph_2(i,k-1,j) - &
+                                      grid%dnw(k-1) * ( (grid%mub(i,j)+grid%mu_2(i,j))*grid%al(i,k-1,j) &
+                                    + grid%mu_2(i,j)*grid%alb(i,k-1,j) )
+                        grid%ph0(i,k,j) = grid%ph_2(i,k,j) + grid%phb(i,k,j)
+                     END DO
+
+                  ! Alternative hydrostatic eq.: dZ = -al*p*dLOG(p), where p is dry pressure.
+                  ! Note that al*p approximates Rd*T and dLOG(p) does z.
+                  ! Here T varies mostly linear with z, the first-order integration produces better result.
+
+                  ELSE IF (grid%hypsometric_opt == 2) THEN
+
+                     grid%ph_2(i,1,j) = grid%phb(i,1,j)
+                     DO k = 2,kte
+                        pfu = grid%mu0(i,j)*grid%znw(k)   + grid%p_top
+                        pfd = grid%mu0(i,j)*grid%znw(k-1) + grid%p_top
+                        phm = grid%mu0(i,j)*grid%znu(k-1) + grid%p_top
+                        grid%ph_2(i,k,j) = grid%ph_2(i,k-1,j) + grid%alt(i,k-1,j)*phm*LOG(pfd/pfu)
+                     END DO
+
+                     DO k = 1,kte
+                        grid%ph_2(i,k,j) = grid%ph_2(i,k,j) - grid%phb(i,k,j)
+                     END DO
+                  END IF
+#else
+                  !  Get the perturbation geopotential from the 3d height array from WPS.
+
+                  DO k  = 2,kte
+                     grid%ph_2(i,k,j) = grid%ph0(i,k,j)*g - grid%phb(i,k,j)
+                  END DO
+#endif
+
+                  !  Recompute density, simlar to what the model does.
+
+                  IF (grid%hypsometric_opt == 1) THEN
+                     DO k=kts,kte-1
+                        grid%al(i,k,j)=-1./(grid%mub(i,j)+grid%mu_2(i,j))*(grid%alb(i,k,j)*grid%mu_2(i,j)  &
+                                       +grid%rdnw(k)*(grid%ph_2(i,k+1,j)-grid%ph_2(i,k,j)))
+                     ENDDO
+                  ELSE IF (grid%hypsometric_opt == 2) THEN
+                     DO k=kts,kte-1
+                        pfu = (grid%mub(i,j)+grid%mu_2(i,j))*grid%znw(k+1)+grid%p_top
+                        pfd = (grid%mub(i,j)+grid%mu_2(i,j))*grid%znw(k)  +grid%p_top
+                        phm = (grid%mub(i,j)+grid%mu_2(i,j))*grid%znu(k)  +grid%p_top
+                        grid%al(i,k,j) = (grid%ph_2(i,k+1,j)-grid%ph_2(i,k,j)+grid%phb(i,k+1,j)-grid%phb(i,k,j)) &
+                                          /phm/LOG(pfd/pfu)-grid%alb(i,k,j)
+                     ENDDO     
+                  END IF
+        
+                  !  Compute pressure similarly to how computed within model.
+
+                  DO k=kts,kte-1
+                     qvf = 1.+rvovrd*moist(i,k,j,P_QV)
+                     grid%p(i,k,j)=p1000mb*( (r_d*(t0+grid%t_2(i,k,j))*qvf)/                     &
+                                  (p1000mb*(grid%al(i,k,j)+grid%alb(i,k,j))) )**cpovcv  &
+                                  -grid%pb(i,k,j)
+                     grid%p_hyd(i,k,j) = grid%p(i,k,j) + grid%pb(i,k,j)
+                     grid%alt(i,k,j) = grid%al(i,k,j) + grid%alb(i,k,j)
+                  ENDDO
+
+                  !  Adjust the column pressure so that the computed 500 mb height is close to the
+                  !  input value (of course, not when we are doing hybrid input).
+
+                  IF ( ( flag_metgrid .EQ. 1 ) .AND. ( i .EQ. i_valid ) .AND. ( j .EQ. j_valid ) ) THEN
+                     DO k = 1 , num_metgrid_levels
+                        IF ( ABS ( grid%p_gc(i,k,j) - 50000. ) .LT. 1. ) THEN
+                           lev500 = k
+                           EXIT
+                        END IF
+                     END DO
+                  END IF
+
+                  !  We only do the adjustment of height if we have the input data on pressure
+                  !  surfaces, and folks have asked to do this option.
+
+                  IF ( ( flag_metgrid .EQ. 1 ) .AND. &
+                       ( flag_ptheta  .EQ. 0 ) .AND. &
+                       ( config_flags%adjust_heights ) .AND. &
+                       ( lev500 .NE. 0 ) ) THEN
+
+                     DO k = 2 , kte-1
+
+                        !  Get the pressures on the full eta levels (grid%php is defined above as
+                        !  the full-lev base pressure, an easy array to use for 3d space).
+
+                        pl = grid%php(i,k  ,j) + &
+                             ( grid%p(i,k-1  ,j) * ( grid%znw(k    ) - grid%znu(k  ) ) + &
+                               grid%p(i,k    ,j) * ( grid%znu(k-1  ) - grid%znw(k  ) ) ) / &
+                             ( grid%znu(k-1  ) - grid%znu(k  ) )
+                        pu = grid%php(i,k+1,j) + &
+                             ( grid%p(i,k-1+1,j) * ( grid%znw(k  +1) - grid%znu(k+1) ) + &
+                               grid%p(i,k  +1,j) * ( grid%znu(k-1+1) - grid%znw(k+1) ) ) / &
+                             ( grid%znu(k-1+1) - grid%znu(k+1) )
+
+                        !  If these pressure levels trap 500 mb, use them to interpolate
+                        !  to the 500 mb level of the computed height.
+
+                        IF ( ( pl .GE. 50000. ) .AND. ( pu .LT. 50000. ) ) THEN
+                           zl = ( grid%ph_2(i,k  ,j) + grid%phb(i,k  ,j) ) / g
+                           zu = ( grid%ph_2(i,k+1,j) + grid%phb(i,k+1,j) ) / g
+
+                           z500 = ( zl * ( LOG(50000.) - LOG(pu    ) ) + &
+                                    zu * ( LOG(pl    ) - LOG(50000.) ) ) / &
+                                  ( LOG(pl) - LOG(pu) )
+
+                           !  Compute the difference of the 500 mb heights (computed minus input), and
+                           !  then the change in grid%mu_2.  The grid%php is still full-levels, base pressure.
+
+                           dz500 = z500 - grid%ght_gc(i,lev500,j)
+                           tvsfc = ((grid%t_2(i,1,j)+t0)*((grid%p(i,1,j)+grid%php(i,1,j))/p1000mb)**(r_d/cp)) * &
+                                   (1.+0.6*moist(i,1,j,P_QV))
+                           dpmu = ( grid%php(i,1,j) + grid%p(i,1,j) ) * EXP ( g * dz500 / ( r_d * tvsfc ) )
+                           dpmu = dpmu - ( grid%php(i,1,j) + grid%p(i,1,j) )
+                           grid%mu_2(i,j) = grid%mu_2(i,j) - dpmu
+                           EXIT
+                        END IF
+
+                     END DO
+                  ELSE
+                     dpmu = 0.
+                  END IF
+
+               END DO
+
             ENDDO
          ENDDO
-      ENDDO
+      END IF ! rebalance
 
       !  If this is data from the SI, then we probably do not have the original
       !  surface data laying around.  Note that these are all the lowest levels

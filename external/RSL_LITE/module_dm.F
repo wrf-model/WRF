@@ -4061,6 +4061,7 @@ END
                             nest_pes_x, nest_pes_y ! ,                                 &
                             !push_communicators_for_domain,pop_communicators_for_domain
       USE module_comm_nesting_dm, ONLY : halo_force_down_sub
+      USE module_model_constants
       IMPLICIT NONE
 !
       TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
@@ -4089,6 +4090,9 @@ END
       REAL, DIMENSION(pgrid%s_vert:pgrid%e_vert+1) :: alt_u_c
       REAL, DIMENSION(ngrid%s_vert:ngrid%e_vert) :: alt_w_n
       REAL, DIMENSION(ngrid%s_vert:ngrid%e_vert+1) :: alt_u_n      
+      
+      REAL, DIMENSION(:,:,:), ALLOCATABLE :: p, al
+      REAL :: pfu, pfd, phm, temp, qvf, qvf1, qvf2    
 
       !KAL change this for vertical nesting
       ! force_domain_em_part1 packs up the interpolation onto the coarse (vertical) grid
@@ -4162,12 +4166,180 @@ endif
                                 ims, ime, jms, jme, kms, kme,    &
                                 ips, ipe, jps, jpe, kps, kpe    )
 
-if (ngrid%vert_refine_method .NE. 0) then
+      !  Vertical refinement is turned on.
+
+      IF (ngrid%vert_refine_method .NE. 0) THEN
       
-!KAL added this code (the include file) for the vertical nesting
 #include "nest_forcedown_interp_vert.inc"
 
-endif
+         IF ( ngrid%this_is_an_ideal_run ) THEN 
+            IF ( SIZE( grid%t_init, 1 ) * SIZE( grid%t_init, 3 ) .GT. 1 ) THEN 
+               CALL vert_interp_vert_nesting( grid%t_init, & !CD field
+                                              ids, ide, kds, kde, jds, jde, & !CD dims
+                                              ims, ime, kms, kme, jms, jme, & !CD dims
+                                              ips, ipe, kps, MIN( (kde-1), kpe ), jps, jpe, & !CD dims
+                                              pgrid%s_vert, pgrid%e_vert, & !vertical dimension of the parent grid
+                                              pgrid%cf1, pgrid%cf2, pgrid%cf3, pgrid%cfn, pgrid%cfn1, & !coarse grid extrapolation constants
+                                              alt_u_c, alt_u_n ) !coordinates for parent and nest
+            END IF  ! Check t_init is a fully allocated 3d array.
+         END IF ! only for ideal runs
+
+
+         !  Rebalance the grid on the intermediate grid.  The intermediate grid has the horizontal 
+         !  resolution of the parent grid, but at this point has been interpolated in the vertical 
+         !  to the resolution of the nest.  The base state (phb, pb, etc) from the parent grid is 
+         !  unpacked onto the intermediate grid every time this subroutine is called.  We need the 
+         !  base state of the nest, so it is recalculated here.  
+
+         !  Additionally, we do not need to vertically interpolate the entire intermediate grid 
+         !  above, just the points that contribute to the boundary forcing.
+
+         !  Base state potential temperature and inverse density (alpha = 1/rho) from
+         !  the half eta levels and the base-profile surface pressure.  Compute 1/rho
+         !  from equation of state.  The potential temperature is a perturbation from t0.
+      
+         !  Uncouple the variables moist and t_2 that are used to calculate ph_2
+
+         DO j = jps,jpe
+            DO i = ips,ipe
+               DO k=kps,kpe-1
+                  grid%t_2(i,k,j) = grid%t_2(i,k,j)/(grid%mub(i,j) + grid%mu_2(i,j))
+                  moist(i,k,j,P_QV) = moist(i,k,j,P_QV)/(grid%mub(i,j) + grid%mu_2(i,j))
+               END DO
+            END DO
+         END DO
+    
+         DO j = jps, jpe
+            DO i = ips,ipe
+
+               DO k = 1, kpe-1
+                  grid%pb(i,k,j) = ngrid%znu(k)*grid%mub(i,j)+ngrid%p_top
+             
+                  !  If this is a real run, recalc t_init.
+   
+                  IF ( .NOT. ngrid%this_is_an_ideal_run ) THEN
+                     temp = MAX ( ngrid%tiso, ngrid%t00 + ngrid%tlp*LOG(grid%pb(i,k,j)/ngrid%p00) )
+                     IF ( grid%pb(i,k,j) .LT. ngrid%p_strat ) THEN
+                        temp = ngrid%tiso + ngrid%tlp_strat * LOG ( grid%pb(i,k,j)/ngrid%p_strat )
+                     END IF
+                     grid%t_init(i,k,j) = temp*(ngrid%p00/grid%pb(i,k,j))**(r_d/cp) - t0
+                  END IF
+                  grid%alb(i,k,j) = (r_d/p1000mb)*(grid%t_init(i,k,j)+t0)*(grid%pb(i,k,j)/p1000mb)**cvpm
+               END DO
+   
+               !  Integrate base geopotential, starting at terrain elevation.  This assures that
+               !  the base state is in exact hydrostatic balance with respect to the model equations.
+               !  This field is on full levels.
+   
+               grid%phb(i,1,j) = grid%ht(i,j) * g
+               IF (grid%hypsometric_opt == 1) THEN
+                  DO k = 2,kpe
+                     grid%phb(i,k,j) = grid%phb(i,k-1,j) - ngrid%dnw(k-1)*grid%mub(i,j)*grid%alb(i,k-1,j)
+                  END DO
+               ELSE IF (grid%hypsometric_opt == 2) THEN
+                  DO k = 2,kpe
+                     pfu = grid%mub(i,j)*ngrid%znw(k)   + ngrid%p_top
+                     pfd = grid%mub(i,j)*ngrid%znw(k-1) + ngrid%p_top
+                     phm = grid%mub(i,j)*ngrid%znu(k-1) + ngrid%p_top
+                     grid%phb(i,k,j) = grid%phb(i,k-1,j) + grid%alb(i,k-1,j)*phm*LOG(pfd/pfu)
+                  END DO
+               ELSE
+                  CALL wrf_error_fatal( 'module_dm: hypsometric_opt should be 1 or 2' )
+               END IF  ! which hypsometric option
+            END DO  ! i loop
+         END DO  ! j loop
+
+         !  Perturbation fields
+
+         ALLOCATE( p (ips:ipe, kps:kpe, jps:jpe) )
+         ALLOCATE( al(ips:ipe, kps:kpe, jps:jpe) )
+
+         DO j = jps, jpe
+            DO i = ips, ipe
+
+               !  Integrate the hydrostatic equation (from the RHS of the bigstep vertical momentum
+               !  equation) down from the top to get the pressure perturbation.  First get the pressure
+               !  perturbation, moisture, and inverse density (total and perturbation) at the top-most level.
+      
+               k = kpe-1
+      
+               qvf1 = 0.5*(moist(i,k,j,P_QV)+moist(i,k,j,P_QV))
+               qvf2 = 1./(1.+qvf1)
+               qvf1 = qvf1*qvf2
+      
+               p(i,k,j) = - 0.5*(grid%mu_2(i,j)+qvf1*grid%mub(i,j))/ngrid%rdnw(k)/qvf2
+               qvf = 1. + rvovrd*moist(i,k,j,P_QV)
+               al(i,k,j) = (r_d/p1000mb)*(grid%t_2(i,k,j)+t0)*qvf* &
+                           (((p(i,k,j)+grid%pb(i,k,j))/p1000mb)**cvpm) - grid%alb(i,k,j)
+      
+               !  Now, integrate down the column to compute the pressure perturbation, and diagnose the two
+               !  inverse density fields (total and perturbation).
+      
+               DO k=kpe-2,1,-1
+                  qvf1 = 0.5*(moist(i,k,j,P_QV)+moist(i,k+1,j,P_QV))
+                  qvf2 = 1./(1.+qvf1)
+                  qvf1 = qvf1*qvf2
+                  p(i,k,j) = p(i,k+1,j) - (grid%mu_2(i,j) + qvf1*grid%mub(i,j))/qvf2/ngrid%rdn(k+1)
+                  qvf = 1. + rvovrd*moist(i,k,j,P_QV)
+                  al(i,k,j) = (r_d/p1000mb)*(grid%t_2(i,k,j)+t0)*qvf* &
+                              (((p(i,k,j)+grid%pb(i,k,j))/p1000mb)**cvpm) - grid%alb(i,k,j)
+               END DO
+      
+               !  This is the hydrostatic equation used in the model after the small timesteps.  In
+               !  the model, grid%al (inverse density) is computed from the geopotential.
+      
+               IF (grid%hypsometric_opt == 1) THEN
+                  DO k  = 2,kpe
+                     grid%ph_2(i,k,j) = grid%ph_2(i,k-1,j) - &
+                                        ngrid%dnw(k-1) * ( (grid%mub(i,j)+grid%mu_2(i,j))*al(i,k-1,j) &
+                                        + grid%mu_2(i,j)*grid%alb(i,k-1,j) )
+                  END DO
+      
+               ! Alternative hydrostatic eq.: dZ = -al*p*dLOG(p), where p is dry pressure.
+               ! Note that al*p approximates Rd*T and dLOG(p) does z.
+               ! Here T varies mostly linear with z, the first-order integration produces better result.
+      
+               ELSE IF (grid%hypsometric_opt == 2) THEN
+      
+                  grid%ph_2(i,1,j) = grid%phb(i,1,j)
+                  DO k = 2,kpe
+                     pfu = ( grid%mub(i,j)+grid%mu_2(i,j))*ngrid%znw(k)   + ngrid%p_top
+                     pfd = ( grid%mub(i,j)+grid%mu_2(i,j))*ngrid%znw(k-1) + ngrid%p_top
+                     phm = ( grid%mub(i,j)+grid%mu_2(i,j))*ngrid%znu(k-1) + ngrid%p_top
+                     grid%ph_2(i,k,j) = grid%ph_2(i,k-1,j) + (grid%alb(i,k-1,j)+al(i,k-1,j))*phm*LOG(pfd/pfu)
+                  END DO
+      
+                  DO k = 1,kpe
+                     grid%ph_2(i,k,j) = grid%ph_2(i,k,j) - grid%phb(i,k,j)
+                  END DO
+      
+               END IF
+
+            END DO ! i loop
+         END DO ! j loop
+
+         DEALLOCATE(p)
+         DEALLOCATE(al)
+      
+         ! Couple the variables moist and t_2, and the newly calculated ph_2
+         DO j = jps, jpe
+            DO i = ips,ipe
+               DO k=kps,kpe
+               grid%ph_2(i,k,j) = grid%ph_2(i,k,j)*(grid%mub(i,j) + grid%mu_2(i,j))
+               END DO
+            END DO
+         END DO
+         DO j = jps, jpe
+            DO i = ips,ipe
+               DO k=kps,kpe-1
+               grid%t_2(i,k,j) = grid%t_2(i,k,j)*(grid%mub(i,j) + grid%mu_2(i,j))
+               moist(i,k,j,P_QV) = moist(i,k,j,P_QV)*(grid%mub(i,j) + grid%mu_2(i,j))
+               END DO
+            END DO
+         END DO
+
+
+      END IF
                                
 
 #include "HALO_FORCE_DOWN.inc"

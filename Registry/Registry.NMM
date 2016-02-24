@@ -1564,11 +1564,7 @@ rconfig   real    c_k                     namelist,dynamics     max_domains    0
 rconfig   real    smdiv                   namelist,dynamics	max_domains    0.      h    "smdiv"         ""      ""
 rconfig   real    emdiv                   namelist,dynamics	max_domains    0.      h    "emdiv"         ""      ""
 rconfig   real    epssm                   namelist,dynamics	max_domains    .1      h    "epssm"         ""      ""
-<<<<<<< .working
 rconfig   integer nhmove                  namelist,dynamics     max_domains    -1   rh   "NHMOVE"         "Action when nest move: 0=discard non-hydro state -1=keep nh state everywhere 1=keep except near nest edge" ""
-=======
-rconfig   logical keepnh                  namelist,dynamics     max_domains  .true.   rh   "KEEPNH"         "When .false., non-hydrostatic state is discarded at nest move."        ""
->>>>>>> .merge-right.r8972
 rconfig   logical non_hydrostatic         namelist,dynamics	max_domains  .true.   irh  "non_hydrostatic"    ""   ""
 rconfig   integer time_step_sound         namelist,dynamics	max_domains    10      h     "time_step_sound"               ""      ""
 rconfig   integer     h_mom_adv_order     namelist,dynamics	max_domains    3       rh       "h_mom_adv_order"               ""      ""

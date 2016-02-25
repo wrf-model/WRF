@@ -289,14 +289,14 @@ $(WRF_SRC_ROOT_DIR)/frame/pack_utils.o :
 init_modules.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
-	$(CPP) $(CPPFLAGS) $(OMPCPP) $(FPPFLAGS) $*.b  > $*.f
+	$(CPP) $(CPPFLAGS) $(OMPCPP) $(FPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
 	@ if echo $(ARCHFLAGS) | $(FGREP) 'DVAR4D'; then \
           echo COMPILING $*.F for 4DVAR ; \
-          $(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl $*.f > $*.f.tmp ; \
-          mv $*.f.tmp $*.f ; \
+          $(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl $*.f90 > $*.f.tmp ; \
+          mv $*.f.tmp $*.f90 ; \
         fi
-	$(SFC) -c $(FCFLAGS) $(PROMOTION) -I../../external/io_int $*.f
+	$(SFC) -c $(FCFLAGS) $(PROMOTION) -I../../external/io_int $*.f90
 
 da_bias_verif.o da_bias_scan.o da_bias_sele.o da_bias_airmass.o da_rad_diags.o \
 da_tune_obs_hollingsworth1.o da_tune_obs_hollingsworth2.o da_tune_obs_desroziers.o \

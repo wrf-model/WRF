@@ -2403,6 +2403,10 @@ ENDIF
    SUBROUTINE urban_var_init(ISURBAN, TSURFACE0_URB,TLAYER0_URB,TDEEP0_URB,IVGTYP,  & ! in
                              ims,ime,jms,jme,kms,kme,num_soil_layers,         & ! in
 !                             num_roof_layers,num_wall_layers,num_road_layers, & ! in
+!                              num_roof_layers,num_wall_layers,num_road_layers, & !urban
+                             LOW_DENSITY_RESIDENTIAL,                    &
+		             HIGH_DENSITY_RESIDENTIAL,                   &
+		             HIGH_INTENSITY_INDUSTRIAL,                    &
                              restart,sf_urban_physics,                     & !in
                              XXXR_URB2D,XXXB_URB2D,XXXG_URB2D,XXXC_URB2D,  & ! inout
                              TR_URB2D,TB_URB2D,TG_URB2D,TC_URB2D,QC_URB2D, & ! inout
@@ -2433,6 +2437,7 @@ ENDIF
    IMPLICIT NONE
 
    INTEGER, INTENT(IN) :: ISURBAN, sf_urban_physics
+   INTEGER, INTENT(IN) :: LOW_DENSITY_RESIDENTIAL, HIGH_DENSITY_RESIDENTIAL, HIGH_INTENSITY_INDUSTRIAL
    INTEGER, INTENT(IN) :: ims,ime,jms,jme,kms,kme,num_soil_layers
    INTEGER, INTENT(IN) :: num_urban_layers                            !multi-layer urban
    INTEGER, INTENT(IN) :: num_urban_hi                                !multi-layer urban
@@ -2585,8 +2590,8 @@ ENDIF
                SWITCH_URB=1
             ENDIF 
 
-            IF( IVGTYP(I,J) == 31) THEN
-               UTYPE_URB2D(I,J) = 3  ! low-intensity residential
+            IF( IVGTYP(I,J) == LOW_DENSITY_RESIDENTIAL) THEN
+               UTYPE_URB2D(I,J) = 1  ! low-intensity residential
                UTYPE_URB = UTYPE_URB2D(I,J)  ! low-intensity residential
                IF (HGT_URB2D(I,J)>0.) THEN
                   CONTINUE
@@ -2620,7 +2625,7 @@ ENDIF
               SWITCH_URB=1
             ENDIF
 
-           IF( IVGTYP(I,J) == 32) THEN
+           IF( IVGTYP(I,J) == HIGH_DENSITY_RESIDENTIAL) THEN
                UTYPE_URB2D(I,J) = 2  ! high-intensity
                UTYPE_URB = UTYPE_URB2D(I,J)  ! high-intensity
               IF (HGT_URB2D(I,J)>0.) THEN
@@ -2655,8 +2660,8 @@ ENDIF
               SWITCH_URB=1
             ENDIF
 
-            IF( IVGTYP(I,J) == 33) THEN
-               UTYPE_URB2D(I,J) = 1  !  Commercial/Industrial/Transportation
+            IF( IVGTYP(I,J) == HIGH_INTENSITY_INDUSTRIAL) THEN
+               UTYPE_URB2D(I,J) = 3  !  Commercial/Industrial/Transportation
                UTYPE_URB = UTYPE_URB2D(I,J)  !  Commercial/Industrial/Transportation
               IF (HGT_URB2D(I,J)>0.) THEN
                   CONTINUE

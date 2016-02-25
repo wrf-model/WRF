@@ -2151,6 +2151,7 @@ integer myproc
    USE module_sf_myjsfc
    USE module_sf_qnsesfc
    USE module_sf_noahdrv
+   USE module_sf_noahlsm, only : LOW_DENSITY_RESIDENTIAL, HIGH_DENSITY_RESIDENTIAL, HIGH_INTENSITY_INDUSTRIAL
    USE module_sf_noahmpdrv
 #ifdef WRF_USE_CLM
    USE module_sf_clm, only : clminit
@@ -2686,6 +2687,17 @@ integer myproc
 
 #endif
       CASE (LSMSCHEME)
+          
+          IF(TRIM(mminlu) .EQ. 'NLCD40')THEN
+            CALL wrf_message('Using NLCD40 for Noah, redefine urban categories ')
+            DO j=jts,jte
+            DO i=its,ite
+               IF(IVGTYP(i,j)==23) IVGTYP(i,j) = 24
+               IF(IVGTYP(i,j)==25) IVGTYP(i,j) = 24
+            ENDDO
+            ENDDO
+          ENDIF
+ 
           CALL LSMINIT(VEGFRA,SNOW,SNOWC,SNOWH,CANWAT,SMSTAV,  &
                      SMSTOT, SFCRUNOFF,UDRUNOFF,ACSNOW,        &
                      ACSNOM,IVGTYP,ISLTYP,TSLB,SMOIS,SH2O,ZS,DZS, &
@@ -2711,6 +2723,9 @@ integer myproc
                 CALL urban_var_init(ISURBAN,TSK,TSLB,TMN,IVGTYP,                     & !urban
                               ims,ime,jms,jme,kms,kme,num_soil_layers,               & !urban
 !                              num_roof_layers,num_wall_layers,num_road_layers, & !urban
+                              LOW_DENSITY_RESIDENTIAL,                       &
+                              HIGH_DENSITY_RESIDENTIAL,                      &
+                              HIGH_INTENSITY_INDUSTRIAL,                       &
                               restart,sf_urban_physics,                        & !urban
                               XXXR_URB2D,XXXB_URB2D,XXXG_URB2D,XXXC_URB2D,     & !urban
                               TR_URB2D,TB_URB2D,TG_URB2D,TC_URB2D,QC_URB2D,    & !urban

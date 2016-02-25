@@ -320,6 +320,7 @@ CONTAINS
    USE module_sf_qnsesfc
    USE module_sf_gfs
    USE module_sf_noahdrv                           ! danli mosaic, the " ,only : lsm " needs to be deleted 
+   USE module_sf_noahlsm, only : LOW_DENSITY_RESIDENTIAL, HIGH_DENSITY_RESIDENTIAL, HIGH_INTENSITY_INDUSTRIAL
    USE module_sf_noahmpdrv, only : noahmplsm
    USE module_sf_noahmp_groundwater
    USE module_sf_noah_seaice_drv
@@ -2764,8 +2765,10 @@ CONTAINS
      IF(SF_URBAN_PHYSICS.eq.1) THEN
        DO j=j_start(ij),j_end(ij)                             !urban
          DO i=i_start(ij),i_end(ij)                           !urban
-          IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == 31 .or. &  !urban
-              IVGTYP(I,J) == 32 .or. IVGTYP(I,J) == 33 ) THEN !urban
+          IF( IVGTYP(I,J) == ISURBAN .or. &
+	      IVGTYP(I,J) == LOW_DENSITY_RESIDENTIAL .or. & !urban
+              IVGTYP(I,J) == HIGH_DENSITY_RESIDENTIAL .or.&
+	      IVGTYP(I,J) == HIGH_INTENSITY_INDUSTRIAL) THEN  !urban
              U10(I,J)  = U10_URB2D(I,J)                       !urban
              V10(I,J)  = V10_URB2D(I,J)                       !urban
              PSIM(I,J) = PSIM_URB2D(I,J)                      !urban
@@ -2782,8 +2785,10 @@ CONTAINS
      IF((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.eq.3)) THEN
        DO j=j_start(ij),j_end(ij)                             !urban
          DO i=i_start(ij),i_end(ij)                           !urban
-          IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == 31 .or. &  !urban
-              IVGTYP(I,J) == 32 .or. IVGTYP(I,J) == 33 ) THEN !urban
+          IF( IVGTYP(I,J) == ISURBAN .or. &
+	      IVGTYP(I,J) == LOW_DENSITY_RESIDENTIAL .or. & !urban
+              IVGTYP(I,J) == HIGH_DENSITY_RESIDENTIAL .or. &
+	      IVGTYP(I,J) == HIGH_INTENSITY_INDUSTRIAL) THEN !urban
             T2(I,J)   = TH_PHY(i,1,j)/((1.E5/PSFC(I,J))**RCP) !urban
             TH2(I,J) = TH_PHY(i,1,j) !urban
             Q2(I,J)   = qv_curr(i,1,j)  !urban

@@ -18,11 +18,11 @@ links :
 	@ $(LN) ../external/lapack/* .
 	@ $(LN) ../../arch/*.sed .
 	@ $(LN) ../../external/esmf_time_f90/* .
-	@ $(LN) ../convertor/da_module_convert_tool/* .
-	@ $(LN) ../convertor/kma_wave2grid/* .
-	@ $(LN) ../convertor/wave2grid_kma/* .
-	@ $(LN) ../convertor/kma_netcdf/* .
-	@ $(LN) ../convertor/decode_l2_airs/* .
+#	@ $(LN) ../convertor/da_module_convert_tool/* .
+#	@ $(LN) ../convertor/kma_wave2grid/* .
+#	@ $(LN) ../convertor/wave2grid_kma/* .
+#	@ $(LN) ../convertor/kma_netcdf/* .
+#	@ $(LN) ../convertor/decode_l2_airs/* .
 	@ mv makefile.old makefile
 	@ touch links
 

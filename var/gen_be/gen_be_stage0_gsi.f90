@@ -13,7 +13,7 @@ program gen_be_stage0_gsi
 !----------------------------------------------------------------------
 
    use da_control, only : num_fft_factors, pi, stdout, stderr, &
-      filename_len, base_pres, base_temp, base_lapse
+      filename_len, base_pres, base_temp, base_lapse, nrange
    use da_gen_be, only : da_get_field, da_get_trh, &
       da_stage0_initialize
    use da_tools_serial, only : da_get_unit, da_free_unit,da_find_fft_factors, &
@@ -24,8 +24,6 @@ program gen_be_stage0_gsi
    implicit none
 
    integer :: gen_be_iunit, gen_be_ounit
-
-   integer, parameter    :: nrange = 50               ! Range to search for efficient FFT.
 
    character (len=filename_len)   :: filestub                  ! General filename stub.
    character (len=filename_len)   :: input_file                ! Input file. 

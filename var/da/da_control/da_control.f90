@@ -188,6 +188,7 @@ module da_control
    integer, parameter :: Forward_FFT     = -1 ! Grid to spectral
    integer, parameter :: Inverse_FFT     =  1 ! Spectral to grid.
    integer, parameter :: num_fft_factors = 10 ! Max number of factors.
+   integer, parameter :: nrange          =1000! Range to search for efficient FFT.
  
    ! Balance:
    integer, parameter :: balance_geo = 1      ! Geostrophic balance.

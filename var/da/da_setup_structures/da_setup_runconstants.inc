@@ -9,7 +9,6 @@ subroutine da_setup_runconstants(grid, xbx)
    type (domain),   intent(inout) :: grid                
    type (xbx_type), intent(inout) :: xbx     ! Header & non-gridded vars.
 
-   integer, parameter       :: nrange = 120  ! Range to search for efficient FFT.
    integer                  :: n             ! Loop counter.
 
    integer                  :: fft_size_i    ! Efficient FFT 1st dimension.

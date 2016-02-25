@@ -1,0 +1,167 @@
+v1.8.0.9i: 12/04 fixed typo introduced 11/04 (table 129, entry 192)
+v1.8.0.9h: 11/04 updated table ncep-129 (strange entry)
+v1.8.0.9g: 9/04 fix if (gds && GDS_Harmonic_type(gds) == 1)
+           found by Graziano Giuliani 
+v1.8.0.9f: 8/04 added ecmwf table 151
+v1.8.0.9e: 8/04 changes of CFS time ranges
+v1.8.0.9d: 7/04 fixed reanal grib table NLON -> ELON
+v1.8.0.9c: 6/04 chaged UVI defn ncep opn table
+v1.8.0.9b: 6/04 added table 132 (global reanalysis)
+v1.8.0.9a: 6/04 updated table 129,130
+v1.8.0.9: 5/04 added new time codes 132-135, changed time code 51 (clim)
+v1.8.0.8: 4/04 added -ncep_ens option
+v1.8.0.7e: 3/04 multiple user tables (fix open)
+v1.8.0.7d: 3/04 extern minute -> extern int minute
+v1.8.0.7c: 3/04 for clim (51) don't print 'anl'
+v1.8.0.7b: 2/04 update NCEP grib table 129
+v1.8.0.7a: 11/03 update NCEP grib table 131
+v1.8.0.7: 10/03 Mods fron Norwegian Meteorological Institute
+                fixed ec table 131, and enhansed ex_ext.c
+v1.8.0.6: 9/03 added time codes 128-131 (for RR)
+v1.8.0.5: 9/03 fix scan mode and change format
+v1.8.0.4: 9/03 new dwd tables and -dwdgrib option (thanks to Helmut P. Frank)
+               updated formats_update.txt for -dwdgrib option
+v1.8.0.3k: 7/03 fixed N/S vs grid wind diagnostic with -v option
+                  found by Dusan Jovic
+v1.8.0.3j: 6/03 fixed level 206 (was 205)
+v1.8.0.3i: 5/03 updated ncep table 131 
+v1.8.0.3h: 5/03 updated ncep table 131
+v1.8.0.3g: 4/03 ecmwf table 128, 140 (names from ECMWF web site), updated 131
+v1.8.0.3f: 4/03 updated ncep131, ncep130, ncep-opn
+v1.8.0.3e: 3/03 fix level 141, update tables 130 and 131
+v1.8.0.3d: 2/03 added prelim ncep grib tables 130 and 131
+v1.8.0.3c: 1/03 Reanalysis Project updates: scan mode in english, 
+    grid vs NS winds, and dusan.jovic@noaa.gov: ss2dEGRID support
+v1.8.0.3b: 1/03 minor update: changed units of CICE in NCEP tables
+v1.8.0.3a: 11/02 update ncep_opn and add ncep_129 table
+v1.8.0.3: 10/02 update levels and ncep_opn grib table
+v1.8.0.2: 10/02 check gds before grib_check, redid level 117
+v1.8.0.1: 10/02 added cptec gribtable 254
+v1.8: 4/1/02: Decode of simple packed spectral data and some cleanup of the
+     triangular grid (Luis Kornblueh, Max-Plank Institute of Meteorology)
+v1.7.4.1a 12/01: added new entry to OMB grib table (REV)
+v1.7.4.1 12/01: D. Haalman (METEO SERVICE weather research GmbH) 
+               rewrote seekgrib.c
+v1.7.4   10/01: Merged changes made by  Helmut P. Frank (DWD) to current 
+                source code.  This adds DWD tables 1, 201, 202, and 203 
+                as well as support for triangular grids based on an icosahedron
+1.7.3.6: 5/01: added fractional mb, center to levels.c
+1.7.3.5: 2/01: Handle grib files with precision greater than 31 bits
+1.7.3.4a: 9/00: check for missing grib file
+1.7.3.4: 8/00: polar stereo + lambert, always print direction increments
+1.7.3.2: 6/00: undefined direction increments set to zero on -V output
+1.7.3.1: 8/99: added new levels
+1.7.3:   5/99: updated NCEP opn grib table
+1.7.2:   5/99: fixed fictious error message with thinned grids and bitmaps
+1.7.1:   2/99: fixed error in wrtieee_header affects only -H option
+1.7.0b7: 1/99: preliminary support for NCEP ensembles
+1.7.0b6: 1/99: changed "x12 hours" format to "hr" format
+1.7.0b5: 1/99: fixed 3/6/12 hour forecast time units
+1.7.0b4 11/98: updated (128,160) and new (129,130,131,140,150,170,180)
+        ECMWF tables
+1.7.0b3 10/98: added new time units
+1.7.0b2 8/98: allow blank gribtab lines in definition, --v
+1.7.0b 8/98: added "km" to Mercator meta-data
+1.7: 7/98: fixed bitmap when nbits > 24 (theoretical bug)
+1.6.2.5 5/98: fixed -H code so that all of GDS is written
+1.6.2.4 4/98 beta: reanalysis ID code: needed for users of 1997 Reanalysis data
+1.6.2.2 2/98 beta: rotated lat long grid (10)
+1.6.2   1/98 added Arakawa E-grid meta-data
+1.6.1b  changed 03TOT to O3TOT in ncep operational table
+           note: typo originated in the original NCEP documentation
+1.6.1a  12/97 made ncep_opn the default table
+1.6.1   9/97 Added the "-d all" option
+1.6.0   9/97 non-beta version, added operational NCEP table,
+        optimized the ieee writes (2.5x faster on Cray, 20% on linux),
+        new help screen
+1.5.0b14 fix century mark: year=100 not 0
+1.5.0b13 -4yr, use 4 digit year code
+1.5.0b12 lat-long thinned grid support
+1.5.0b11 Added -H option (PDS/GDS output to binary files)
+1.5.0b10 Changed"0hr fcst" to "anl" for TR=10 and fcstlen = 0 (non-beta release)
+1.5.0b9 Thinned grids support (preliminary)
+1.5.0b8 Changed bitmap message
+1.5.0b7 -PDS -GDS work for all inventories
+1.5.0b6 Added -verf to print "verification" time, new grib2ctl for -verf
+1.5.0b5 Added Lambert Conformal, -PDS and -GDS
+1.5.0b1 Added ECMWF parameter table #128
+
+1.5.0a  wgrib failing with no GDS and constant field.  Cannot determine 
+(9/96)  the size of data without a center-dependent lookup table.
+        Set length size of data to 1.
+
+1.5.0   -v option: major changes, now an inventory
+(9/96)  -V option: added century to date code, list parameter table number,
+           added description of variable
+        Added parameter table (NCEP-128) for the ocean modeling branch of NCEP.
+        Added user-defined parameter tables.
+        Note: changes are incompatible with grib2ctl.  Get new version.
+         (old version works by changing "wgrib -v" to "wgrib -V".)
+        V1.5.0 is the first version to be parameter-table aware.  As a
+         result, wgrib will give a warning if it cannot find a matching
+         parameter table.  The warning can be eliminated by either using
+         a user-defined parameter table or by adding your table into
+         the wgrib source.  (Contact w. ebisuzaki, Wesley.Ebisuzaki@noaa.gov).
+        Built-in tables: NCEP-2, NCEP-128, ECMWF-160.
+        Much faster flt2ieee routine, changed rounding factor in flt2ieee
+         so that IEEE machines gets the correct last bit.
+        Increased NTRY to 100 to accommodate Automation div headers.
+        The 1.4.x series didn't last long (1 revision, 3/96 to 7/96).
+
+1.4.1a  Several optimizations of the grib routines for reduced CPU usage.
+(6/96)  Updated the NCEP parameter table and altered the print statement
+        for climatological fields.
+
+
+1.4 ******************************************************************
+1.4 
+1.4 BUG: Prior to v1.4, when the start of the grib message was less
+1.4  than 160 bytes from the end of the file, wgrib would not find
+1.4  the message.  This would only occur if a short grib message (< 160 bytes)
+1.4  ended the file.  Basically I had assumed that a grib message
+1.4  had to be 160+ bytes in length.  Well someone at NCEP decided
+1.4  to write 84-byte grib messages!  About the only field that
+1.4  can be described in a 84-byte message is uniform value of zero.
+1.4
+1.4  Fixed a bug in the return code, and made the code 10% faster.
+1.4
+1.4  Since this is a bug fix PLEASE upgrade to version 1.4.
+1.4  Why not? It's free!  (3/96)
+1.4
+1.4 ******************************************************************
+
+
+1.3.4h  Complaint about wgrib failing if the file has no GDS.  Since a GDS
+(2/96)  is recommended (and is in every file that I have seen) I've never 
+        included the code to create a GDS for prespecified grids.  This 
+        version is a temporary fix. It sets the array size to NX x 1.
+        [7/96: This temporary fix will have to do.  The GDS prespecified 
+        grids are center dependent.  Since I don't have the tables, nothing
+        is planned.]
+
+1.3.4f  updated ECMWF parameter table (from M. Fiorino)
+(11/95)	support for the ECMWF stream parameter
+	clean compiles using acc (SunOS) (acc is pickier than gcc -Wall)
+
+1.3.4e  writing grib files made much faster
+(11/95)
+1.3.4d  minor change in error statement format
+(9/95)
+1.3.4c  didn't check for case where number of bits = 0! in NMC bug check
+(7/95)
+1.3.4   added check for bad bds "used bits" parameter (look for NMC bug)
+(7/95)
+1.3.3:  (preliminary) ECMWF parameter table added
+(5/95)
+1.3.2:  preliminary polar stereographics map support
+(4/95)
+
+To Do:
+   decode spherical harmonics (need some examples to test on)
+   complex packing?
+
+Adding new parameter tables is pretty easy and I'm willing to add new
+parameter tables for "operational centers". (Note, the GRIB center
+identification numbers are assigned by the WMO.)
+
+

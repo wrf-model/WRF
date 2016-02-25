@@ -1,0 +1,25 @@
+      SUBROUTINE REOWV
+     1  (WDATA,QDATA,MEND1,NEND1,JEND1,MNWAV,KWMAX,KQMAX,KWW,KQQ,
+     2   KMX2 ,LAG)
+C
+Crizvi      REAL*4 WDATA(KWMAX,MNWAV), QDATA(KQMAX,MNWAV)
+      REAL      WDATA(KWMAX,MNWAV), QDATA(KQMAX,MNWAV)
+      INTEGER*4 LAG(MEND1,NEND1)
+C
+C       DGNL ---> CLMN
+C
+        L=0
+        DO 100 M=1,MEND1
+         NMAX=MIN(NEND1,JEND1+1-M)
+        DO 100 N=1,NMAX
+         L=L+1
+         LX=LAG(M,N)
+        DO 100 K=1,KMX2
+         QDATA(K+KQQ,L)=WDATA(K+KWW,LX)
+Crizvi         write(75,fmt='(3i8,e20.6)')L,LX,K,QDATA(K+KQQ,L)
+  100   CONTINUE
+C
+C
+      RETURN
+      END SUBROUTINE REOWV
+

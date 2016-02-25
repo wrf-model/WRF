@@ -1,0 +1,46 @@
+# ------------------------------------------------------------------------
+# Tornado Genesis parameters requested by NCEP SPC.  These fields
+# contain the minimum, maximum or summed value of various parameters
+# in a given time interval.  The interval and accumulations are reset
+# upon I/O of a particular stream (tg_reset_stream).  Note that the
+# "f" in the staggering column ensures full (100%) upscale feedback.
+# That, and downscale feedback, are needed to ensure correct
+# multi-domain maximum calculations.
+state  real tg_max_m10wind    ij dyn_nmm 1 f rh0123u=(UpMax)d=(DownCopy)   "TG_MAX_M10WIND" "Maximum 10m wind magnitude since last output time." "m s-1"
+state  real tg_max_wwind      ij dyn_nmm 1 f rh0123u=(UpMax)d=(DownCopy)     "TG_MAX_WWIND" "Maximum vertical wind below 400mbar since last output time" "m s-1"
+state  real tg_min_wwind      ij dyn_nmm 1 f rh0123u=(UpMax)d=(DownCopy)     "TG_MIN_WWIND" "Minimum vertical wind below 400mbar since last output time" "m s-1"
+state  real tg_max_zhel_25    ij dyn_nmm 1 f rh0123u=(UpMax)d=(DownCopy)   "TG_MAX_ZHEL_25" "Maximum helicity vertical term 2-5km above ground since last output time" "m2 s-2"
+state  real tg_min_zhel_25    ij dyn_nmm 1 f rh0123u=(UpMax)d=(DownCopy)   "TG_MIN_ZHEL_25" "Minimum helicity vertical term 2-5km above ground since last output time" "m2 s-2"
+state  real tg_max_zhel_03    ij dyn_nmm 1 f rh0123u=(UpMax)d=(DownCopy)   "TG_MAX_ZHEL_03" "Maximum helicity vertical term 0-3km above ground since last output time" "m2 s-2"
+state  real tg_min_zhel_03    ij dyn_nmm 1 f rh0123u=(UpMax)d=(DownCopy)   "TG_MIN_ZHEL_03" "Minimum helicity vertical term 0-3km above ground since last output time" "m2 s-2"
+
+
+state  real tg_updhel25         ij dyn_nmm 1 f rhu=(UpCopy)d=(DownCopy) "TG_UPDHEL_25"       "Updraft helicity 2-5km above ground since last output time"  "m2 s-2"
+state  real tg_max_updhel25     ij dyn_nmm 1 f rh0123u=(UpMax)d=(DownCopy) "TG_MAX_UPDHEL_25"   "Maximum updraft helicity 2-5km above ground since last output time"  "m2 s-2"
+state  real tg_updhel03         ij dyn_nmm 1 f rhu=(UpCopy)d=(DownCopy) "TG_UPDHEL_03"       "Updraft helicity 0-3km above ground since last output time"  "m2 s-2"
+state  real tg_max_updhel03     ij dyn_nmm 1 f rh0123u=(UpMax)d=(DownCopy) "TG_MAX_UPDHEL_03"   "Maximum updraft helicity 0-3km above ground since last output time"  "m2 s-2"
+
+
+state  real tg_total_precip   ij dyn_nmm 1 f rh0123u=(UpCopy)d=(DownCopy) "TG_TOTAL_PRECIP" "Accumulated precipitation" "m"
+state  real tg_interval_start -  dyn_nmm 1 - rh0123                     "TG_INTERVAL_START" "Start of interval, in seconds since analysis time" "s"
+state  real tg_interval_end   -  dyn_nmm 1 - rh0123                       "TG_INTERVAL_END" "End of interval, in seconds since analysis time" "s"
+state  real tg_duration       -  dyn_nmm 1 - rh0123                           "TG_DURATION" "Duration of accumulation interval in seconds" "s"
+state  integer tg_want_reset  -  dyn_nmm 1 - r                              "TG_WANT_RESET" "Flag: 1=reset tg vars on next timestep" ""
+
+# Not really tornado genesis stuff, but it is in here because it is
+# really only needed when the tornado stuff is turned on:
+state  real   tlow      ij     dyn_nmm     1      -      h1       "TLOW"      "Near-surface sensible air temperature"   "K"
+state  real   zlow      ij     dyn_nmm     1      -      h1       "ZLOW"      "Near-surface altitude"   "m"
+state  real   rotangle  ij     dyn_nmm     1      -      h1       "ROTANGLE"  "Wind rotation angle from grid to earth" "radians"
+
+# --------------------------- namelist config ----------------------------
+rconfig integer tg_reset_stream  namelist,time_control 1      0 rh0123    "TG_RESET_STREAM" "Stream number of history stream that resets Tornado Genesis products" ""
+rconfig integer tg_option        namelist,physics      1      0 rh0123          "TG_OPTION" "Tornado Genesis products flag: 1=Enable, 0=Disable" ""
+rconfig integer ntornado         namelist,physics max_domains 1 rh0123           "NTORNADO" "Number of dynamics timesteps between updates of tg_ vars" ""
+#------------------------------- tg option -------------------------------
+package  tg_none         tg_option==0   -   -
+package  tg_emc2014spc   tg_option==1   -   state:tg_max_m10wind,tg_max_wwind,tg_min_wwind,tg_max_zhel_25,tg_min_zhel_25,tg_max_zhel_03,tg_min_zhel_03,tg_interval_start,tg_interval_end,tg_duration,tg_total_precip,tlow,zlow,tg_updhel03,tg_updhel25,tg_max_updhel03,tg_max_updhel25
+#--------------------------------- halos ---------------------------------
+# Before forcing:
+#halo HALO_NMM_TORNADO dyn_nmm 24:tg_max_m10wind,tg_max_wwind,tg_min_wwind,tg_max_zhel_25,tg_min_zhel_25,tg_max_zhel_03,tg_min_zhel_03,tg_total_precip,tg_updhel03,tg_updhel25,tg_max_updhel03,tg_max_updhel25
+# ------------------ end of tornado genesis parameters -------------------

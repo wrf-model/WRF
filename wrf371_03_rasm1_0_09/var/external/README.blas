@@ -1,0 +1,50 @@
+
+Web site for blas:
+http://www.netlib.org/blas/
+
+The BLAS (Basic Linear Algebra Subprograms) are routines that provide standard 
+building blocks for performing basic vector and matrix operations. The Level 1 
+BLAS perform scalar, vector and vector-vector operations, the Level 2 BLAS perform 
+matrix-vector operations, and the Level 3 BLAS perform matrix-matrix operations. 
+Because the BLAS are efficient, portable, and widely available, they are commonly 
+used in the development of high quality linear algebra software, LAPACK for example.
+
+References:
+
+C. L. Lawson, R. J. Hanson, D. Kincaid, and F. T. Krogh, Basic Linear Algebra Subprograms 
+for FORTRAN usage, ACM Trans. Math. Soft., 5 (1979), pp. 308--323.
+J. J. Dongarra, J. Du Croz, S. Hammarling, and R. J. Hanson, An extended set of FORTRAN 
+Basic Linear Algebra Subprograms, ACM Trans. Math. Soft., 14 (1988), pp. 1--17.
+J. J. Dongarra, J. Du Croz, S. Hammarling, and R. J. Hanson, Algorithm 656: An extended 
+set of FORTRAN Basic Linear Algebra Subprograms, ACM Trans. Math. Soft., 14 (1988), pp. 18--32.
+J. J. Dongarra, J. Du Croz, I. S. Duff, and S. Hammarling, A set of Level 3 Basic Linear 
+Algebra Subprograms, ACM Trans. Math. Soft., 16 (1990), pp. 1--17.
+J. J. Dongarra, J. Du Croz, I. S. Duff, and S. Hammarling, Algorithm 679: A set of Level 
+3 Basic Linear Algebra Subprograms, ACM Trans. Math. Soft., 16 (1990), pp. 18--28.
+L. S. Blackford, J. Demmel, J. Dongarra, I. Duff, S. Hammarling, G. Henry, M. Heroux, L. 
+Kaufman, A. Lumsdaine, A. Petitet, R. Pozo, K. Remington, R. C. Whaley, An Updated Set of Basic Linear Algebra Subprograms (BLAS), ACM Trans. Math. Soft., 28-2 (2002), pp. 135--151.
+J. Dongarra, Basic Linear Algebra Subprograms Technical Forum Standard, International 
+Journal of High Performance Applications and Supercomputing, 16(1) (2002), pp. 1--111, 
+and International Journal of High Performance Applications and Supercomputing, 16(2) (2002), pp. 115--199.
+
+==========
+
+The files have been  moved from .f files to
+.inc files (to adopt the WRFDA convention).
+
+The blas source has been changed by the convert.f90 program, turning
+the code into free-format.  The only other modification is that the
+imbedded tabs in the source have been turned into spaces (otherwise
+convert.f90 coughs up a spleen).
+
+Web site for convert.f90:
+ftp://ftp.numerical.rl.ac.uk/pub/MandR/convert.f90
+
+!     Copyright CERN, Geneva 1991, 1997 - Copyright and any other
+!     appropriate legal protection of these computer programs
+!     and associated documentation reserved in all countries
+!     of the world.
+!     Author: Michael Metcalf  (MichaelMetcalf@compuserve.com)
+
+======================================================
+

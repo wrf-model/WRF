@@ -1,0 +1,78 @@
+c990408
+      SUBROUTINE FFT991(A,TRIGS,IFAX,INC,JUMP,N,LOT,ISIGN)
+C      SUBROUTINE FFT991(A,WORKX,TRIGS,IFAX,INC,JUMP,N,LOT,ISIGN)
+C      SUBROUTINE FFT991(A,WORK,TRIGS,IFAX,INC,JUMP,N,LOT,ISIGN)
+C=======================================================================
+C&&& INC=1 IS ASSUMED ***
+C&&& INPUT/OUTPUT HAS A DIMENSION OF N*LOT
+C&&& A & WORK SHOULD HAVE A DIMENSION OF JUMP*LOT
+C&&& CREATED ON JUN/21/88 BY N.SATO
+C=======================================================================
+      PARAMETER(NFFT=256)
+
+c990408
+c      DIMENSION WORKX(N, 1920)
+
+      DIMENSION A(N,LOT),WORK(JUMP,NFFT),TRIGS(N),IFAX(*)
+      DIMENSION WORK2(N*JUMP*NFFT)
+
+      IF(ISIGN .EQ. 1) GO TO 2000
+      DO L0=1,LOT,NFFT
+      LOTL=MIN(NFFT,LOT-L0+1)
+
+      DO 100 L=1,LOTL
+      DO 100 I=1,N
+      WORK(I,L)=A(I,L+L0-1)
+  100 CONTINUE
+C
+C GRID TO WAVE
+C
+C   X(0),...,X(N-1) ===> A(0),A(1),B(1),...,A(N/2-1),B(N/2-1),A(N/2)
+C
+          CALL RFFTFM (N,INC,JUMP,LOTL, WORK, TRIGS,IFAX, WORK2 )
+C
+C   A(0),A(1),B(1),... ===> A(0),B(0),A(1),B(1),...
+C
+*VOPTION NOFVAL
+      DO 200 L=1,LOTL
+      DO 200 I=3,N
+      A(I,L+L0-1)=WORK(I-1,L)
+  200 CONTINUE
+      DO 240 L=1,LOTL
+      A(1,L+L0-1)=WORK(1,L)
+      A(2,L+L0-1)=0.0
+  240 CONTINUE
+      ENDDO
+        RETURN
+C
+C  WAVE TO GRID
+C
+C    A(0),B(0),A(1),B(1),... ===> A(0),A(1),B(1),...
+C
+ 2000 CONTINUE
+      DO L0=1,LOT,NFFT
+      LOTL=MIN(NFFT,LOT-L0+1)
+
+      DO 300 L=1,LOTL
+      DO 300 I=3,N
+      WORK(I-1,L)=A(I,L+L0-1)
+  300 CONTINUE
+      DO 340 L=1,LOTL
+cnec  DO 340 L=1,LOT
+      WORK(1,L)=A(1,L+L0-1)
+      WORK(N,L)=0.0
+  340 CONTINUE
+C
+C    A(0),A(1),B(1)...A(N/2-1),B(N/2-1),A(N/2) ===> X(0)...X(N-1)
+C
+          CALL RFFTBM (N,INC,JUMP,LOTL, WORK, TRIGS,IFAX, WORK2)
+
+      DO 400 L=1,LOTL
+      DO 400 I=1,N
+      A(I,L+L0-1)=WORK(I,L)
+  400 CONTINUE
+      ENDDO
+C
+      RETURN
+      END SUBROUTINE FFT991
+

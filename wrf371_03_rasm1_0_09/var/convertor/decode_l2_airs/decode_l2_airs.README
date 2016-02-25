@@ -1,0 +1,172 @@
+Updated Feb 6, 2008
+
+(1) bug fix for V4 data decoding
+
+(2) Added V5 data decoding capability
+
+(3) The default of the decoder is to choose data quality=GOOD.
+    By adding qual_threshold.nl with the following content in the run directory,
+    &quality
+    qual_threshold = 0
+    /
+    Data quality=BEST will be used.
+
+    When qual_threshold.nl does not exist in the run directory, or 
+    qual_threshold = 1 in qual_threshold.nl, then data quality=GOOD
+    will be used.
+
+(4) For V5 data, when data are at latitudes higher than 50 degree,
+    the data will be used only when DayNightFlag of the whole
+    6-minute granule is Night.
+
+References:
+   http://disc.sci.gsfc.nasa.gov/AIRS/documentation/v5_docs/v5_docs_list.shtml
+     V5_CalVal_Status_Summary.pdf
+     V5_L2_Standard_Product_QuickStart.pdf
+     V5_L2_Quality_Control_and_Error_Estimation.pdf
+
+
+Installing the decoder
+________________________________________________________________________________
+
+The basic procedure for installing the AIRS decoder involves first building
+and installing the HDFEOS libraries, which themselves depend on other libraries,
+and then compiling the decoder itself. The following steps may be followed.
+
+
+ In order to install the HDF-EOS libraries, which are required by the AIRS 
+ decoder, the following sequence of compilations was used.
+
+ 0) Retrieve all necessary source code from the internet. This was 
+    accomplished by:
+
+       Downloading JPEG library (jpegsrc.v6b.tar.gz) from
+                         ftp://ftp.uu.net/graphics/jpeg/
+
+       Downloading ZLIB library (zlib-1.2.3.tar.gz) from
+                         http://www.zlib.net/
+
+       Downloading HDF 4.2r1 (HDF4.2r1.tar.gz) from 
+                         ftp://ftp.ncsa.uiuc.edu/HDF/HDF/HDF_Current/src/
+
+       Downloading HDF-EOS v2.14v1.00 libraries (HDF-EOS2.14v1.00.tar.Z) from
+                         http://www.hdfeos.org/software/HDFEOS_2_14_v1/
+
+ 1) Compile JPEG library. This is only necessary if libjpeg.a does not 
+    already exist on the system.
+    These steps were used to compile on a Mac running OS X. The gcc 4.0
+    compiler seems to have problems compiling C that links well with 
+    Fortran, so gcc-3.3 is used. This may not be an issue for the JPEG
+    library, but it seems to be for others.
+       > setenv CC /usr/bin/gcc-3.3
+       > ./configure
+       > make
+       > mkdir lib include
+       > mv libjpeg.a lib
+       > mv *.h include
+       > ranlib lib/libjpeg.a
+
+ 2) Compile ZLIB library. As with the JPEG library, this is only necessary
+    if libz.a is not already installed. The steps below were used on a 
+    Mac running OS X.
+       > ./configure
+       > make
+       > mkdir lib include
+       > mv libz.a lib
+       > mv *.h include
+
+ 3) Compile HDF4 libraries. The following sequence of commands was used.
+
+       > setenv CC pgcc      [OS X -- use gcc-3.3]
+       > setenv FC pgf90     [OX X -- use g95]
+       > setenv F77 pgf90    [OX X -- use g95]
+       > setenv F90 pgf90    [OX X -- use g95]
+       > cd mfhdf/fortran/config     [next 5 steps are necessary on OS X]
+       > cp ftest-linux.f ftest-apple.f      
+       > cp jackets-linux.c jackets-apple.c
+       > cp netcdf-linux.inc netcdf-apple.inc
+       > cd ../../..
+       > ./configure --with-zlib=[ path to lib/libz.a (i.e., the directory 
+                                   containing lib)] \
+                     --with-jpeg=[ path to lib/libjpeg.a ] \
+                     --prefix=`pwd`
+       [ add "-lm" to the LIBS variable in mfhdf/hdiff/Makefile ]
+       > make
+       > make install
+       > setenv HDFLIB `pwd`/lib
+       > setenv HDFINC `pwd`/include
+
+ 4) Compile HDFEOS libraries as follows.
+
+       > [change CC and F77 in bin/INSTALL-HDFEOS in the "macintosh" section; 
+          Mac OS X only]
+       > ./bin/INSTALL-HDFEOS
+       [ the script will ask for the paths to the HDF4 library and include files
+         installed above if HDFLIB and HDFINC were not set; otherwise, confirm
+         the library and include paths by pressing return]
+
+ 
+ Having compiled and installed the HDFEOS libraries, the following steps may
+ be used to build the decoder.
+
+ NOTE: The build procedure seems to have changed; the steps below need to be
+       revised before they will be useful.
+
+ 0) If using the g95 compiler, set the following environment variables
+
+    export G95_ENDIAN=BIG
+    export G95_FPU_INVALID=${G95_FPU_INVALID:-T}
+    export G95_FPU_ZERODIV=${G95_FPU_ZERODIV:-T}
+    export G95_FPU_OVERFLOW=${G95_FPU_OVERFLOW:-F}
+    export G95_FPU_UNDERFLOW=${G95_FPU_UNDERFLOW:-F}
+    export G95_FPU_INEXACT=${G95_FPU_INEXACT:-F}
+    export G95_FPU_EXCEPTIONS=${G95_FPU_EXCEPTIONS:-F}
+    export G95_UNBUFFERED_ALL=${G95_UNBUFFERED_ALL:-T}
+    export G95_MEM_INIT=${G95_MEM_INIT:-0x00}
+    export G95_MEM_MAXALLOC=${G95_MEM_MAXALLOC:-F}
+
+ 1) Set the NETCDF environment variable to the location where NETCDF is 
+    installed.
+ 
+ 2) Edit the Makefile to use the correct compilers and compiler flags; also
+    set the paths to the libraries compiled above.
+ 
+ 7) Run 'make'.
+
+
+Running the decoder
+________________________________________________________________________________
+
+The decoder expects to be given the names of the HDF-EOS-formatted AIRS L2 
+retrieval files to be processed on the command-line. Additionally, the decoder 
+will look for the file "time_window.nl", which specifies a minimum time and a 
+maximum time, outside of which profiles should be ignored; if no such file 
+exists, all profiles will be considered by the decoder. For each of the 1350 
+FOVs in an AIRS swath, levels with bad quality flags are discarded, and the 
+remaining levels are written as a profile to a little_r-formatted file named 
+soundings.little_r. Each swath contains temperature and moisture observations, 
+as well as pressures and geopotential heights at the reported levels. The 
+pressure, temperature, and moisture are used to compute a relative humidity; in 
+the little_r formatted profiles that are written, the temperature, pressure, 
+height, and RH fields are filled in. The time, in YYYYMMDDHHmmss format, is 
+computed from the time of the observation and written to the output file.
+
+
+Quality checking in the decoder
+________________________________________________________________________________
+
+As suggested in the document "AIRS/AMSU/HSB Version 4.0 Level 2 QA Quick Start",
+the Qual_Temp_Profile_* flags are used in place of the RetQAFlag. When deciding
+whether to keep a level of temperature data from an AIRS FOV, the pressure of
+the level is compared with Press_bot_mid_bndry and Pres_mid_top_bndry. Depending
+on where the pressure is in relation to these two boundaries, the quality value 
+in Qual_Temp_Profile_Top, Press_bot_mid_bndry, or Qual_Temp_Profile_Mid is used 
+as the quality flag for the level. Possible values for this quality flag are:
+0 (best quality; useful for validation statistics); 1 (good quality; not for
+validation); and 2 (poor quality). In the decoder, a level is used if its 
+quality flag is 0 or 1. For moisture data the same quality flag is used, rather 
+than Qual_H2O. This is done on account of the developmental nature of the 
+Qual_H2O flag, and at the recommendation on p. 45 of "AIRS/AMSU/HSB Version 4.0 
+Data Release User Guide". Apparently, this approach gives a dry bias (see p. 8 
+of "Level 2 QA Quick Start"). Lastly, levels below the surface are discarded, 
+regardless of the quality flag.

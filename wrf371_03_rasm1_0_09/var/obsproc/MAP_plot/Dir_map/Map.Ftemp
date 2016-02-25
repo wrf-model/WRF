@@ -1,0 +1,333 @@
+      PROGRAM MAPBKG
+C
+      USE module_typ
+      USE module_obs
+!
+      PARAMETER (IX = 67, JX = 81, KX = 31)
+#     include <param1.incl>
+C
+      COMMON /HEADER/ MIF, MRF, MIFC, MRFC  
+      INTEGER MIF(1000,20)  
+      REAL MRF(1000,20)
+      CHARACTER*80 MIFC(1000,20),MRFC(1000,20) 
+
+      INTEGER*8  MIF_8(1000,20)
+      REAL*8     MRF_8(1000,20) 
+C                    
+      CHARACTER*8 ID  
+      REAL*8 DUM3D_8(IX,JX,KX),DUM2D_8(IX,JX)
+      DIMENSION DUM3D(IX,JX,KX),DUM2D(IX,JX)  
+      LOGICAL HEAD 
+C
+      DIMENSION U(IX,JX,KX), V(IX,JX,KX), W(IX,JX,KX+1), T(IX,JX,KX), 
+     1          Q(IX,JX,KX),PP(IX,JX,KX),QC(IX,JX,KX),  QR(IX,JX,KX),  
+     1         QI(IX,JX,KX),QS(IX,JX,KX),   
+     2            PSA(IX,JX),  TG(IX,JX), RNC(IX,JX), RNN(IX,JX),   
+     3             F(IX,JX), XMF(IX,JX), DMF(IX,JX),XLAT(IX,JX),   
+     4          XLON(IX,JX),DLAT(IX,JX),DLON(IX,JX), TMN(IX,JX),  
+     5           TER(IX,JX),XLND(IX,JX),SNOW(IX,JX)  
+C
+#     include    <nestdmn.incl>
+#     include    <maps.incl>
+C
+      parameter (LVL=100, nstn=2000)
+      parameter (NUNIT1=10, NUNIT2 = 11, NUNIT = 14, spval=-999.)
+C
+      Dimension CIX(nstn), CJX(nstn), DIX(nstn), DJX(nstn)
+      DIMENSION   wlON(Nstn),wlAT(Nstn), SLP(Nstn),
+     >           Tmp_sfc(Nstn), RH_sfc(Nstn),
+     >           Tmp_p(Nstn,Lvl), RH_p(Nstn,Lvl),
+     >           Uu_p (Nstn,Lvl), Vv_p(Nstn,Lvl),
+     >           Data(Nstn)
+      DIMENSION NUM(nstn), LAT(NSTN), LON(nstn), Pres(Lvl)
+      CHARACTER STNAME(Nstn)*6, TITLE*80, VNAME*5, PLVL*26,
+     >          SYMBOL*1, NAME*8, CDFILE*32
+C
+      DIMENSION PSOBS(Nstn), PPOBS(Nstn,KX), PPK(KX),
+     >          RH(Lvl+1), TMP(Lvl+1), PRS(Lvl+1),SIG(KX),
+     >          TTOBS(KX,Nstn), RHOBS(KX,Nstn), FSG(KX),
+     >          QQOBS(KX,Nstn), RHO  (KX,Nstn)
+C
+       dimension ff(jjmax*iimax), aa(iimax*jjmax)
+C ................................................................
+      LOGICAL PPLOT(20)
+      NAMELIST /Exp_Name/MDATE
+      NAMELIST /PLTOPTN/ ND,PPLOT
+C ........................................................................
+C
+      common /conre1/ IOFFP, SPVAL0
+      IOFFP = 1
+      SPVAL0 = spval
+C
+      call opngks
+      call gopwk(9,1,3)
+      call gsclip(0)
+      CALL SETUSV('LW',2000)
+c
+      CALL SETUP
+C
+      READ(15,Exp_Name)
+      PRINT Exp_Name
+      READ(15,PLTOPTN)
+      PRINT PLTOPTN
+C
+      mmi  = nestix(nd)
+      mmj  = nestjx(nd)
+      ioff = ioffst*nratio(nd)
+      joff = joffst*nratio(nd)
+      print 3,ND,mmi,mmj,ioff,joff
+ 3        format(//5x,'<< Domain ',I2,'  Size: mmi=',I3,' mmj=',I3,
+     >         '  ioff=',I3,' joff=',I3,' >>'/)
+C
+        CALL LLXY(PHIC,XLONC,X,Y,mmi,mmj,135.)
+        PRINT *,'PHIC,XLONC:',PHIC,XLONC,'  X,Y:',X,Y
+C
+        WRITE(*,'(/''IPROJ='',A6,''  IXC='',I4,'' JXC='',I4/
+     &          ''PHIC, XLONC, XN, TRUELAT1, TRUELAT2, POLE:'',
+     &          6F10.2/''DSC, DSM, XIM11, XJM11:'',2F10.2,2I5/
+     &          ''PSI1, C2, XCNTR, YCNTR:'',4F15.4/)')
+     &          IPROJ, IXEX, JXEX, 
+     &          PHIC, XLONC, XN, TRUELAT1, TRUELAT2, POLE, 
+     &          DIS(1) , DIS(nd), NESTI(nd) , NESTJ(nd), 
+     &          PSI1, C2, XCNTR, YCNTR
+!
+C ==================================================================
+C
+      CDFILE = 'obs_gts.ascii'
+100   CONTINUE
+!
+      CALL OBS_READ_LINE (CDFILE, NUNIT, KLINES)
+      PRINT *,'KLINES =',KLINES
+!
+      CALL OBS_READ_TYPE (CDFILE, NUNIT, NOBSU, 'U       ')
+      PRINT *,'NOBSU=',NOBSU
+!
+      ALLOCATE (GU_OBS (NOBSU))
+!
+      CALL READOBS_3D (CDFILE, NUNIT, 'U       ', NOBSU, 
+     $                 GU_OBS, IMAP_OBS, ZMISS, IU)
+      PRINT *,'NOBSU,IMAP_OBS, ZMISS, IU:',NOBSU,IMAP_OBS, ZMISS, IU
+      DEALLOCATE (GU_OBS)
+!
+      stop
+!
+cc      CALL PLSTN1(mmi,mmj,Nstn,wlAT,wlON,STNAME,IC,SYMBOL,NAME,nd,
+cc     >            deltx,delty,isize,xx1,IFR)
+C
+      LV    = 1
+      ICS   = 0             ! dot/cross
+      INDEX = 1             ! 0 -- no contours
+      NDOT  = -682          ! negative contour pattern
+      LW    = 4000          ! width of lines
+c      CALL PLHMP(LV ,MMI,MMJ,IOFF,JOFF,ICS,INDEX,FINC,NDOT,LW,SPVAL,
+c     1             Nstn,wLAT,wLON,Data,NAME,NOBS,ND,FF,AA)
+C
+      READ(NUNIT,*,END=101)
+      GO TO 100
+C
+101   CONTINUE
+C
+      STOP
+C
+      DO N = 1,Nstn
+        DIX(N) = ycs(n)
+        DJX(N) = xcs(n)
+        CIX(N) = ycs(n) - .5
+        CJX(N) = xcs(n) - .5
+        PRINT 201,N,WLAT(N),WLON(N),DIX(N),DJX(N),
+     >                SLP(N),TMP_SFC(N),RH_SFC(N)
+201     FORMAT('N=',I4,' LAT,LON:',2F8.2,' DIX,DJX:',2F8.3/
+     >         'SLP=',F10.2,'  TSFC=',F10.2,'  RH=',F8.1)
+        DO L = 1,Lvl
+          PRINT 202,L,PRES(L), TMP_P(N,L), RH_P(N,L)
+202       FORMAT(I2,2X,F5.0,'MB',10X,F10.2,5X,F8.1)
+        END DO
+      END DO
+C
+      IEND = 0
+301   CONTINUE
+      CALL RDDATA(IX,JX,KX,U,V,T,Q,W,PP,QC,QR,QI,QS,PSA,TG,RNC,RNN,
+     1          F, XMF,DMF,XLAT,XLON,DLAT,DLON,TMN,TER,XLND,SNOW,
+     2          NUNIT1,.TRUE.,IEND, 0, 0,
+     3          DUM3D,DUM2D,DUM3D_8,DUM2D_8,64)
+      PRINT *,'MODEL DATA AT ',MIF(1,5)
+      IF (MIF(1,5).NE.82012300) GO TO 301
+C
+      PTOP = MRF(1,2)/10.
+      PRINT *,'PTOP=',PTOP
+      SIG(1) = 0.0
+      DO K = 1,KX
+        SIG(K) = MRF(101+K,5)
+        PRINT *,'K=',K,'  SIGMA=',SIG(K)
+      END DO
+C
+      CALL MDLOBS0(Nstn,PSOBS,CIX,CJX,PSA,IX,JX, 1, 1,'PSA ')
+      CALL MDLOBS1(Nstn, 1,Nstn,PPOBS,PSOBS,CIX,CJX,PP,PSA,
+     -                                 IX,JX,KX, 1, 'PPA ')
+C
+      DO N = 1,Nstn
+C
+        DO K = 1,KX
+          PPK(K) = PPOBS(N,K)
+        END DO
+        PS = PSOBS(N)
+C
+        DO K = 2,Lvl+1
+          TMP(K) = TMP_P(N,K-1)
+          RH (K) = RH_P (N,K-1)
+          PRS(K) = PRES (K-1)
+        END DO
+        TMP(1) = TMP_SFC(N)
+        RH (1) = RH_SFC (N)
+        PRS(1) = (PS+PTOP)*10.+PPK(KX)/PS/100.
+C
+        CALL PRS2SIG(PPK,SIG,FSG,KX,PRS,TMP,LVL+1,PS,PTOP, 1,'TTOBS ')
+        DO K = 1,KX
+          TTOBS(KX-K+1,N) = FSG(K)
+        END DO
+C
+        CALL PRS2SIG(PPK,SIG,FSG,KX,PRS,RH ,LVL+1,PS,PTOP, 0,'RHOBS ')
+        DO K = 1,KX
+          RHOBS(KX-K+1,N) = FSG(K)
+        END DO
+C
+        DO K = 1,KX
+          QQOBS(K,N) = spval
+          IF (ABS(RHOBS(K,N)-SPVAL).GT.1.E-3 .AND.
+     >        ABS(TTOBS(K,N)-SPVAL).GT.1.E-3) THEN
+            RR = RHOBS(K,N)/100.
+            TM = TTOBS(K,N) - 273.16
+            PR = (PS*SIG(K)+PTOP)*10.+PPK(K)/PS/100.
+            CALL  TTDRHQ(TM,TD,PR,RR,QQ, 4)
+            QQOBS(K,N) = QQ
+          ENDIF
+        END DO
+C
+        PRINT 311,N,wLAT(N),wLON(N),DJX(N),DIX(N)
+311     FORMAT(/'STATION ',I4,' LAT,LON:',2F10.2,'  DJX,DIX:',2F10.3)
+        DO K = 1,KX
+          PRINT 312,K,SIG(K),TTOBS(K,N),QQOBS(K,N),RHOBS(K,N)
+312       FORMAT('K=',I2,2X,'SIG=',F8.3,' TT,QQ,RH:',3E13.5)
+        END DO
+C
+      END DO
+C
+cc      GO TO 350
+C ----------------
+C -- WRITE OUT THE FILES FOR 4DVAR:
+C
+      XTIM_OBS = 720.
+      ITT = 1
+      WRITE(NUNIT2) XTIM_OBS,ITT,TTOBS,QQOBS,RHOBS
+C
+      DO I = 1,Nstn
+        WRITE (STNAME(I),'(2X,I4.4)') I
+        WRITE(NUNIT2+1,330)  Nstn,STNAME(I), wLAT(I), wLON(I), 
+     >                       DJX(I), DIX(I)
+330     FORMAT(4X,I3,4X,A6,5X,F8.3,5X,F8.3,5X,F8.2,5X,F8.2)
+      END DO
+C
+      WRITE(NUNIT2+2) XTIM_OBS, SLP, TMP_SFC, RH_SFC
+      PRINT 340
+340   FORMAT(/'SURFACE DATA:')
+      DO I = 1,NSTN
+        PRINT 341,I,SLP(I), TMP_SFC(I), RH_SFC(I)
+341     FORMAT('I=',I4,'  SLP,TMP,RH:',3F10.2)
+      END DO
+C
+C  ...............................................................
+C     
+      REWIND NUNIT2
+      REWIND NUNIT2+1
+      REWIND NUNIT2+2
+350   CONTINUE
+C ------------------
+      DO N = 1,Nstn
+        wLat(n) = SPVAL
+        wLon(n) = SPVAL
+        SLP (N) = SPVAL
+        TMP_SFC(N) = SPVAL
+         RH_SFC(N) = SPVAL
+        DO K = 1,KX
+          TTOBS(K,N) = SPVAL
+          QQOBS(K,N) = SPVAL
+          RHOBS(K,N) = SPVAL
+        END DO
+      END DO
+C
+      DO I = 1,Nstn
+        READ(NUNIT2+1,330)  Npr,STNAME(I), wLAT(I), wLON(I), 
+     >                       DJX(I), DIX(I)
+      END DO
+      READ(NUNIT2+2) XTIM_OBS, SLP, TMP_SFC, RH_SFC
+      READ(NUNIT2) XTIM_OBS,ITT,TTOBS,QQOBS,RHOBS
+C
+      GO TO 360
+C ---------------
+      DO N = 1,Nstn
+        DO K = 1,KX
+          TTOBS(K,N) = SPVAL
+          QQOBS(K,N) = SPVAL
+        END DO
+      END DO
+      DO I = 1,Nstn
+        READ(97,330)  Npr,STNAME(I), wLAT(I), wLON(I), 
+     >                       DJX(I), DIX(I)
+      END DO
+      READ(98) XTIM_OBS,ITT,TTOBS,QQOBS,RHOBS
+      READ(99) XTIM_OBS, SLP, TMP_SFC, RH_SFC
+360   CONTINUE
+C -----------------
+C
+      DO N = 1,Nstn
+        DO K = 1,KX
+          RHO(K,N) = spval
+          PS       = PSOBS(N)
+          IF (ABS(QQOBS(K,N)-SPVAL).GT.1.E-3 .AND.
+     >        ABS(TTOBS(K,N)-SPVAL).GT.1.E-3) THEN
+            QQ = QQOBS(K,N)
+            TM = TTOBS(K,N) - 273.16
+            PR = (PS*SIG(K)+PTOP)*10.+PPOBS(N,K)/PS/100.
+            CALL  TTDRHQ(TM,TD,PR,RR,QQ, 3)
+            RHO(K,N) = RR*100.
+          ENDIF
+        END DO
+      END DO
+C
+      DO N = 1,Nstn
+        PRINT 411,N,wLAT(N),wLON(N),
+     >              PSOBS(N),SLP(N),TMP_SFC(N),RH_SFC(N)
+
+411     FORMAT(/'STATION ',I4,' LAT,LON:',2F10.2,4X,
+     >          '  PS,SLP,TMP_SFC,RH_SFC:',4F10.2 )
+        DO K = 1,KX
+          PRINT 412,K,sig(K),TTOBS(K,N),QQOBS(K,N),
+     >                RHOBS(K,N),RHO(K,N),PPOBS(N,k)
+412       FORMAT('K=',I2,2X,'SIG=',F8.3,' TT,QQ,RHOBS,RHO,PP:',5E13.5)
+        END DO
+
+      END DO
+C
+      CALL PLOTSLAB(Nstn,MMI,MMJ, 1,SIG,WLAT,WLON,IOFF,JOFF,
+     >                     SLP,'SLP',ND,FF,AA,SPVAL)
+      CALL PLOTSLAB(Nstn,MMI,MMJ,KX,SIG,WLAT,WLON,IOFF,JOFF,
+     >                     TTOBS,'TMP',ND,FF,AA,SPVAL)
+      CALL PLOTSLAB(Nstn,MMI,MMJ,KX,SIG,WLAT,WLON,IOFF,JOFF,
+     >                     RHO  ,'RH ',ND,FF,AA,SPVAL)
+      CALL PLOTSLAB(Nstn,MMI,MMJ,KX,SIG,WLAT,WLON,IOFF,JOFF,
+     >                     QQOBS,'QQ ',ND,FF,AA,SPVAL)
+C
+      call gclwk(9)
+      call clsgks
+C
+      STOP 11111
+      END
+C
+
+
+
+
+
+
+
+

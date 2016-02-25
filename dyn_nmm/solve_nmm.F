@@ -118,6 +118,7 @@
       INTEGER :: NUM_AEROSOLC
 !
       REAL :: DT_INV,FICE,FRAIN,GPS,QI,QR,QW,WC,WP
+      REAL :: dwdt_damping_lev
 !
       LOGICAL :: LAST_TIME,OPERATIONAL_PHYSICS,ETAMP_PHYSICS
 !
@@ -313,6 +314,7 @@
       IDTADT=model_config_rec%IDTADT
       IDTADC=model_config_rec%IDTADC
       WP=model_config_rec%WP(grid%id)
+      dwdt_damping_lev=model_config_rec%dwdt_damping_lev(grid%id)
 !
 !-----------------------------------------------------------------------
       CALL WRF_GET_DM_COMMUNICATOR(MPI_COMM_COMP)
@@ -1191,7 +1193,7 @@
      &        ,grid%fns,grid%few,grid%fne,grid%fse                                          &
      &        ,grid%t,grid%u,grid%v,grid%w,grid%w_tot,grid%q,grid%cwm                                            &
      &        ,grid%def3d,grid%hdac,grid%baro                                              &
-     &        ,WP                                                 &
+     &        ,WP,dwdt_damping_lev                                                 &
      &        ,grid%ihe,grid%ihw,grid%ive,grid%ivw                                          &
      &        ,IDS,IDF,JDS,JDF,KDS,KDE                                  &
      &        ,IMS,IME,JMS,JME,KMS,KME                                  &

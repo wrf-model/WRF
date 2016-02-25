@@ -1593,6 +1593,8 @@ rconfig   real    codamp                  namelist,dynamics     max_domains   6.
 rconfig   real    coac                    namelist,dynamics     max_domains   1.6     irh  "coac"  "horizontal diffusion weighting factor (larger = more diffusion) " ""
 rconfig   real    slophc                  namelist,dynamics     max_domains   6.363961e-3     irh  "slophc"  "Maximum model level slope (dZ/dy) for which hor diffusion is applied" ""
 rconfig   real    wp                      namelist,dynamics     max_domains   0.    irh  "wp"  "Off-centering weight in the updating of nonhyrostatic eps"
+rconfig   real    dwdt_damping_lev        namelist,dynamics     max_domains   0.    irh  "dwdt_damping_lev"  "specify the non-hydro dw/dt damping level in stratosphere (in Pa), 0: no damping "
+
 
 rconfig   integer terrain_smoothing       namelist,dynamics     1             1     irh  "parallel_smooth" "nest_terrain smoothing method 0=none, 1=old, 2=new"
 

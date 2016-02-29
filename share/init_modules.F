@@ -15,6 +15,8 @@ SUBROUTINE init_modules( phase )
 #ifdef DM_PARALLEL
  USE module_wrf_quilt           , ONLY : init_module_wrf_quilt
  USE module_dm                  , ONLY : init_module_dm, split_communicator,hwrf_coupler_init
+#else
+ USE module_dm                  , ONLY : init_module_dm
 #endif
 #ifdef INTIO
  USE module_ext_internal        , ONLY : init_module_ext_internal
@@ -85,8 +87,8 @@ IF ( phase == 1 ) THEN
  CALL init_module_wrf_quilt    !! this *must* be called before init_module_dm
 # endif
 
- CALL init_module_dm
 #endif
+ CALL init_module_dm
 ELSE
  CALL init_module_wrf_error ! must be called after init_module_dm
 

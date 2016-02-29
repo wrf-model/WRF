@@ -39,6 +39,7 @@ AR              =      sxar
 ARFLAGS         =      ru
 M4              =      m4 -B 14000
 RANLIB          =      ls
+RLFLAGS		=	
 #ranlib
 CC_TOOLS        =      cc 
 
@@ -82,6 +83,7 @@ AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4 -B 14000
 RANLIB          =      ranlib
+RLFLAGS		=	
 CC_TOOLS        =      $(SCC) 
 
 ###########################################################
@@ -124,6 +126,7 @@ AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4 -B 14000
 RANLIB          =      ranlib
+RLFLAGS		=	
 CC_TOOLS        =      $(SCC) 
 
 ###########################################################
@@ -166,6 +169,7 @@ AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4 -B 14000
 RANLIB          =      ranlib
+RLFLAGS		=	
 CC_TOOLS        =      $(SCC) 
 
 ###########################################################
@@ -208,6 +212,7 @@ AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4 -B 14000
 RANLIB          =      ranlib
+RLFLAGS		=	
 CC_TOOLS        =      $(SCC) 
 
 ###########################################################
@@ -249,6 +254,7 @@ AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4 -B 14000
 RANLIB          =      ranlib
+RLFLAGS		=	
 CC_TOOLS        =      $(SCC) 
 
 ###########################################################
@@ -310,7 +316,7 @@ ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 FCOPTIM         =       -O3 -override-limits
 FCREDUCEDOPT	=       $(FCOPTIM)
 FCNOOPT		=       -O0 -fno-inline -no-ip
-FCDEBUG         =       # -g $(FCNOOPT) -traceback # -fpe0 -check all -ftrapuv -unroll0 -u
+FCDEBUG         =       # -g $(FCNOOPT) -traceback # -fpe0 -check noarg_temp_created,bounds,format,output_conversion,pointers,uninit -ftrapuv -unroll0 -u
 FORMAT_FIXED    =       -FI
 FORMAT_FREE     =       -FR
 FCSUFFIX        =
@@ -324,6 +330,7 @@ AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4
 RANLIB          =      ranlib
+RLFLAGS		=	
 CC_TOOLS        =      $(SCC) 
 
 ###########################################################
@@ -355,7 +362,7 @@ ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 FCOPTIM         =       -O3 $(OPTKNC)
 FCREDUCEDOPT	=       $(FCOPTIM)
 FCNOOPT		=       -O0 -fno-inline -no-ip
-FCDEBUG         =       # -g $(FCNOOPT) -traceback # -fpe0 -check all -ftrapuv -unroll0 -u
+FCDEBUG         =       # -g $(FCNOOPT) -traceback # -fpe0 -check noarg_temp_created,bounds,format,output_conversion,pointers,uninit -ftrapuv -unroll0 -u
 FORMAT_FIXED    =       -FI
 FORMAT_FREE     =       -FR
 FCSUFFIX        =
@@ -369,6 +376,7 @@ AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4
 RANLIB          =      ranlib
+RLFLAGS		=	
 CC_TOOLS        =      gcc
 
 ###########################################################
@@ -400,7 +408,7 @@ ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 FCOPTIM         =       -O3 $(OPTAVX)
 FCREDUCEDOPT	=       $(FCOPTIM)
 FCNOOPT		=       -O0 -fno-inline -no-ip
-FCDEBUG         =       # -g $(FCNOOPT) -traceback # -fpe0 -check all -ftrapuv -unroll0 -u
+FCDEBUG         =       # -g $(FCNOOPT) -traceback # -fpe0 -check noarg_temp_created,bounds,format,output_conversion,pointers,uninit -ftrapuv -unroll0 -u
 FORMAT_FIXED    =       -FI
 FORMAT_FREE     =       -FR
 FCSUFFIX        =
@@ -414,6 +422,7 @@ AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4
 RANLIB          =      ranlib
+RLFLAGS		=	
 CC_TOOLS        =      gcc
 
 ###########################################################
@@ -469,7 +478,7 @@ ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 FCOPTIM         =       -O3
 FCREDUCEDOPT	=       $(FCOPTIM)
 FCNOOPT		=       -O0 -fno-inline -no-ip
-FCDEBUG         =       # -g $(FCNOOPT) -traceback # -fpe0 -check all -ftrapuv -unroll0 -u
+FCDEBUG         =       # -g $(FCNOOPT) -traceback # -fpe0 -check noarg_temp_created,bounds,format,output_conversion,pointers,uninit -ftrapuv -unroll0 -u
 FORMAT_FIXED    =       -FI
 FORMAT_FREE     =       -FR
 FCSUFFIX        =
@@ -483,6 +492,7 @@ AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4
 RANLIB          =      ranlib
+RLFLAGS		=	
 CC_TOOLS        =      $(SCC) 
 
 ###########################################################
@@ -516,7 +526,7 @@ ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 FCOPTIM         =       -O3
 FCREDUCEDOPT	=       $(FCOPTIM)
 FCNOOPT		=       -O0 -fno-inline -no-ip
-FCDEBUG         =       # -g $(FCNOOPT) -traceback # -fpe0 -check all -ftrapuv -unroll0 -u
+FCDEBUG         =       # -g $(FCNOOPT) -traceback # -fpe0 -check noarg_temp_created,bounds,format,output_conversion,pointers,uninit -ftrapuv -unroll0 -u
 FORMAT_FIXED    =       -FI
 FORMAT_FREE     =       -FR
 FCSUFFIX        =
@@ -530,6 +540,7 @@ AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4
 RANLIB          =      ranlib
+RLFLAGS		=	
 CC_TOOLS        =      $(SCC) 
 
 ###########################################################
@@ -593,7 +604,7 @@ ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 FCOPTIM         =       -O3
 FCREDUCEDOPT	=       $(FCOPTIM)
 FCNOOPT		=       -O0 -fno-inline -no-ip
-FCDEBUG         =       # -g $(FCNOOPT) -traceback # -fpe0 -check all -ftrapuv -unroll0 -u
+FCDEBUG         =       # -g $(FCNOOPT) -traceback # -fpe0 -check noarg_temp_created,bounds,format,output_conversion,pointers,uninit -ftrapuv -unroll0 -u
 FORMAT_FIXED    =       -FI
 FORMAT_FREE     =       -FR
 FCSUFFIX        =
@@ -609,6 +620,7 @@ AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4
 RANLIB          =      ranlib
+RLFLAGS		=	
 CC_TOOLS        =      $(SCC) 
 
 ###########################################################
@@ -674,7 +686,7 @@ ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 FCOPTIM         =       -O3
 FCREDUCEDOPT	=       $(FCOPTIM)
 FCNOOPT		=       -O0 -fno-inline -no-ip
-FCDEBUG         =       # -g $(FCNOOPT) -traceback # -fpe0 -check all -ftrapuv -unroll0 -u
+FCDEBUG         =       # -g $(FCNOOPT) -traceback # -fpe0 -check noarg_temp_created,bounds,format,output_conversion,pointers,uninit -ftrapuv -unroll0 -u
 FORMAT_FIXED    =       -FI
 FORMAT_FREE     =       -FR
 FCSUFFIX        =
@@ -690,6 +702,7 @@ AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4
 RANLIB          =      ranlib
+RLFLAGS		=	
 CC_TOOLS        =      $(SCC) 
 
 ###########################################################
@@ -732,6 +745,7 @@ AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4 -B 14000
 RANLIB          =      ranlib
+RLFLAGS		=	
 CC_TOOLS        =      $(SCC) 
 
 ###########################################################
@@ -774,6 +788,7 @@ AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4 -G
 RANLIB          =      ranlib
+RLFLAGS		=	
 CC_TOOLS        =      $(SCC) 
 
 ###########################################################
@@ -816,6 +831,7 @@ AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4 -B 14000
 RANLIB          =      ranlib
+RLFLAGS		=	-c
 CC_TOOLS        =      cc
 
 ###########################################################
@@ -845,7 +861,7 @@ ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 FCOPTIM         =       -O3
 FCREDUCEDOPT	=       $(FCOPTIM)
 FCNOOPT         =       -O0 -fno-inline -no-ip
-FCDEBUG         =       # -g $(FCNOOPT) -traceback # -fpe0 -check all -ftrapuv -unroll0 -u
+FCDEBUG         =       # -g $(FCNOOPT) -traceback # -fpe0 -check noarg_temp_created,bounds,format,output_conversion,pointers,uninit -ftrapuv -unroll0 -u
 FORMAT_FIXED    =       -FI
 FORMAT_FREE     =       -FR
 FCSUFFIX        =
@@ -860,6 +876,7 @@ AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4 -B 14000
 RANLIB          =      ranlib
+RLFLAGS		=	-c
 CC_TOOLS        =      cc
 
 ###########################################################
@@ -889,7 +906,7 @@ ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 FCOPTIM         =       -O3
 FCREDUCEDOPT	=       $(FCOPTIM)
 FCNOOPT         =       -O0 -fno-inline -no-ip
-FCDEBUG         =       # -g $(FCNOOPT) -traceback # -fpe0 -check all -ftrapuv -unroll0 -u
+FCDEBUG         =       # -g $(FCNOOPT) -traceback # -fpe0 -check noarg_temp_created,bounds,format,output_conversion,pointers,uninit -ftrapuv -unroll0 -u
 FORMAT_FIXED    =       -FI
 FORMAT_FREE     =       -FR
 FCSUFFIX        =
@@ -903,6 +920,7 @@ AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4 -B 14000
 RANLIB          =      ranlib
+RLFLAGS		=	-c
 CC_TOOLS        =      cc
 
 ###########################################################
@@ -946,6 +964,7 @@ AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4 -B 14000
 RANLIB          =      ranlib -c
+RLFLAGS		=	-c
 CC_TOOLS        =      $(SCC) 
 
 ###########################################################
@@ -988,6 +1007,7 @@ AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4 -B 14000
 RANLIB          =      ranlib
+RLFLAGS		=	-c
 CC_TOOLS        =      $(SCC) 
 
 ###########################################################
@@ -1030,6 +1050,7 @@ AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4 -B 14000
 RANLIB          =      ranlib
+RLFLAGS		=	-c
 CC_TOOLS        =      clang
 
 ###########################################################
@@ -1074,6 +1095,7 @@ AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4 -B 14000
 RANLIB          =      ranlib
+RLFLAGS		=	-c
 CC_TOOLS        =      $(SCC) 
 
 ###########################################################
@@ -1121,6 +1143,7 @@ AR              =       ar
 ARFLAGS         =       ru
 M4              =       m4 -B 20000
 RANLIB          =       ranlib
+RLFLAGS		=	
 CC_TOOLS        =       cc
 
 ###########################################################
@@ -1171,6 +1194,7 @@ AR              =       ar
 ARFLAGS         =       ru
 M4              =       m4 -B 14000
 RANLIB          =       ranlib
+RLFLAGS		=	
 CC_TOOLS        =       cc
 
 ###########################################################
@@ -1232,6 +1256,7 @@ AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4 -B 14000
 RANLIB          =      ranlib
+RLFLAGS		=	
 CC_TOOLS        =      $(SCC) 
 
 ###########################################################
@@ -1278,6 +1303,7 @@ AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4
 RANLIB          =      ranlib
+RLFLAGS		=	
 CC_TOOLS        =      gcc
 
 ###########################################################
@@ -1310,7 +1336,7 @@ ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 FCOPTIM         =       -ip -O3 $(OPTAVX)
 FCREDUCEDOPT	=       $(FCOPTIM)
 FCNOOPT		=       -O0 -fno-inline -fno-ip
-FCDEBUG         =       # -g $(FCNOOPT) -traceback # -fpe0 -check all -ftrapuv -unroll0 -u
+FCDEBUG         =       # -g $(FCNOOPT) -traceback # -fpe0 -check noarg_temp_created,bounds,format,output_conversion,pointers,uninit -ftrapuv -unroll0 -u
 FORMAT_FIXED    =       -FI
 FORMAT_FREE     =       -FR
 FCSUFFIX        =
@@ -1324,6 +1350,7 @@ AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4
 RANLIB          =      ranlib
+RLFLAGS		=	
 CC_TOOLS        =      gcc
 
 ###########################################################
@@ -1366,6 +1393,7 @@ AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4
 RANLIB          =      ranlib
+RLFLAGS		=	
 CC_TOOLS        =      /usr/bin/gcc -Wall
 
 ###########################################################
@@ -1416,6 +1444,7 @@ AR              =       ar
 ARFLAGS         =       ru
 M4              =       m4 -B 14000
 RANLIB          =       ranlib
+RLFLAGS		=	
 CC_TOOLS        =       cc
 ###########################################################
 #ARCH    Linux ppc64 BG /P xlf compiler with xlc # smpar dmpar dm+sm
@@ -1462,6 +1491,7 @@ AR              =       ar
 ARFLAGS         =       ru
 M4              =       m4 -B 14000
 RANLIB          =       ranlib
+RLFLAGS		=	
 CC_TOOLS        =       cc
 ###########################################################
 #ARCH    Linux ppc64 IBM Blade Server xlf compiler with xlc # dmpar
@@ -1505,6 +1535,7 @@ AR              =       ar
 ARFLAGS         =       ru
 M4              =       m4 -B 14000
 RANLIB          =       ranlib
+RLFLAGS		=	
 CC_TOOLS        =       xlc -q64
 
 ###########################################################
@@ -1547,6 +1578,7 @@ AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4 -B 14000
 RANLIB          =      ranlib
+RLFLAGS		=	
 CC_TOOLS        =      $(SCC) 
 
 ###########################################################
@@ -1589,6 +1621,7 @@ AR              =       ar
 ARFLAGS         =       cr
 M4              =       NA
 RANLIB          =       ranlib
+RLFLAGS		=	
 CC_TOOLS        =       $(SCC) 
 
 LIB_EXTERNAL    = \
@@ -1645,6 +1678,7 @@ AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4 -B 14000
 RANLIB          =      ranlib
+RLFLAGS		=	
 CC_TOOLS        =      $(SCC) 
 
 ###########################################################
@@ -1687,6 +1721,7 @@ AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4 -B 14000
 RANLIB          =      ranlib
+RLFLAGS		=	-c
 CC_TOOLS        =      cc
 
 ###########################################################
@@ -1729,6 +1764,7 @@ AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4 -B 14000
 RANLIB          =      ranlib
+RLFLAGS		=	
 CC_TOOLS        =      $(SCC) 
 
 ###########################################################
@@ -1757,7 +1793,7 @@ ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 FCOPTIM         =       -O3
 FCREDUCEDOPT	=       $(FCOPTIM)
 FCNOOPT		=       -O0 -fno-inline -no-ip
-FCDEBUG         =       # -g $(FCNOOPT) -traceback # -fpe0 -check all -ftrapuv -unroll0 -u
+FCDEBUG         =       # -g $(FCNOOPT) -traceback # -fpe0 -check noarg_temp_created,bounds,format,output_conversion,pointers,uninit -ftrapuv -unroll0 -u
 FORMAT_FIXED    =       -FI
 FORMAT_FREE     =       -FR
 FCSUFFIX        =
@@ -1771,6 +1807,7 @@ AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4
 RANLIB          =      ranlib
+RLFLAGS		=	
 CC_TOOLS        =      $(SCC) 
 
 ###########################################################
@@ -1799,7 +1836,7 @@ ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 FCOPTIM         =       -O3
 FCREDUCEDOPT	=       $(FCOPTIM)
 FCNOOPT		=       -O0 -fno-inline -no-ip
-FCDEBUG         =       # -g $(FCNOOPT) -traceback # -fpe0 -check all -ftrapuv -unroll0 -u
+FCDEBUG         =       # -g $(FCNOOPT) -traceback # -fpe0 -check noarg_temp_created,bounds,format,output_conversion,pointers,uninit -ftrapuv -unroll0 -u
 FORMAT_FIXED    =       -FI
 FORMAT_FREE     =       -FR
 FCSUFFIX        =
@@ -1813,6 +1850,7 @@ AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4
 RANLIB          =      ranlib
+RLFLAGS		=	
 CC_TOOLS        =      $(SCC) 
 
 

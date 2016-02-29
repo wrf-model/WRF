@@ -3,7 +3,6 @@
 LN      =       ln -sf
 MAKE    =       make -i -r
 RM      =       rm -f
-RLFLAGS	=	-c
 
 MODULES =  module_wrf_top.F
 

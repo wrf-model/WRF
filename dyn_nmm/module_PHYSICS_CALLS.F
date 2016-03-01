@@ -1085,7 +1085,13 @@
       IFNDALBSI = 0
       IFNDSNOWSI = 0
       IFNDICEDEPTH = 0
-      BR=0
+
+      ! BR is replaced by SF_GFDL inside SURFACE_DRIVER.  This variable
+      ! was uninitialized.  The variable RIBN or RCHNO in the Registry
+      ! are retained accross timesteps.  This is a bug fix to avoid junk
+      ! data in RCHNO at the I=IDE and J=JDE locations.
+      BR=10
+
       SEAICE_ALBEDO_DEFAULT = CONFIG_FLAGS%SEAICE_ALBEDO_DEFAULT
       SEAICE_THICKNESS_OPT = CONFIG_FLAGS%SEAICE_THICKNESS_OPT
       SEAICE_THICKNESS_DEFAULT = CONFIG_FLAGS%SEAICE_THICKNESS_DEFAULT

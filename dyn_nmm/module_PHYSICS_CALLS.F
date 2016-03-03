@@ -932,7 +932,7 @@
                                                       ,DUBLDT          &  
                                                       ,DVBLDT         
 
-      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: taux, tauy
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: taux, tauy
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: zkmax, ribn
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: charn, msang
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(IN) :: PINT

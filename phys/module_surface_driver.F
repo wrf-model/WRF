@@ -648,10 +648,10 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   Q2
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   QFX
 #if (NMM_CORE==1)
-   REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(OUT):: TAUX
-   REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(OUT):: TAUY
-   REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(OUT):: cd_out
-   REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(OUT):: ch_out
+   REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT):: TAUX
+   REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT):: TAUY
+   REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT):: cd_out
+   REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT):: ch_out
 #endif
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   QSFC
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   QZ0

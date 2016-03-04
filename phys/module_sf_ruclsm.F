@@ -508,6 +508,7 @@ CONTAINS
       print *, 'LSMRUC, I,J,xland, QFX,HFX from SFCLAY',i,j,xland(i,j), &
                   qfx(i,j),hfx(i,j)
       print *, ' GSW, GLW =',gsw(i,j),glw(i,j)
+      print *, 'SNHEI=',snhei
       print *, 'SOILT, TSO start of time step =',soilt(i,j),(tso(i,k,j),k=1,nsl)
       print *, 'SOILMOIS start of time step =',(soilmois(i,k,j),k=1,nsl)
       print *, 'SMFROZEN start of time step =',(smfr3d(i,k,j),k=1,nsl)
@@ -1505,35 +1506,36 @@ print * ,'Soil moisture is below wilting in mixed grassland/cropland category at
 !--- Land-use category should be changed to snow/ice for grid points with snow>0
          ILAND=ISICE
 !24nov15 - based on field exp on Pleasant View soccer fields
-    if(meltfactor > 1.5) then ! all veg. types, except forests
+!    if(meltfactor > 1.5) then ! all veg. types, except forests
 ! SNHEI_CRIT is a threshold for fractional snow
 !         SNHEI_CRIT=0.01*1.e3/rhosn
          SNHEI_CRIT=0.01601*1.e3/rhosn
 ! Petzold - 1 cm of fresh snow overwrites effects from old snow.
 ! Need to test SNHEI_CRIT_newsn=0.01
+!         SNHEI_CRIT_newsn=0.01
          SNHEI_CRIT_newsn=0.0005*1.e3/rhosn
-    else  ! forests
+!    else  ! forests
 !24nov15
-         SNHEI_CRIT=0.02*1.e3/rhosn
-         SNHEI_CRIT_newsn=0.001*1.e3/rhosn
-    endif
+!         SNHEI_CRIT=0.02*1.e3/rhosn
+!         SNHEI_CRIT_newsn=0.001*1.e3/rhosn
+!    endif
 
 !         SNOWFRAC=MIN(1.,SNHEI/SNHEI_CRIT)
          SNOWFRAC=MIN(1.,SNHEI/(2.*SNHEI_CRIT))
 !24nov15 - SNOWFRAC for urban category < 0.5 
-      if(ivgtyp == urban) snowfrac=min(0.5,snowfrac)
-      if(meltfactor > 1.5) then
-         if(isltyp > 9 .and. isltyp < 13) then
+      if(ivgtyp == urban) snowfrac=min(0.7,snowfrac)
+!      if(meltfactor > 1.5) then
+!         if(isltyp > 9 .and. isltyp < 13) then
 !24nov15 clay soil types - SNOFRAC < 0.9
-           snowfrac=min(0.9,snowfrac)
-         endif
-      else
+!           snowfrac=min(0.9,snowfrac)
+!         endif
+!      else
 !24nov15 - SNOWFRAC for forests < 0.75 
-         snowfrac=min(0.75,snowfrac)
-      endif
+!         snowfrac=min(0.85,snowfrac)
+!      endif
 
 !         SNOWFRAC=MIN(1.,SNHEI/(2.*SNHEI_CRIT))
-       if(snowfrac < 0.3) then
+       if(snowfrac < 0.3 .and. tabs > 275.) then
 ! turn on snow "mosaic" when snowfrac < 0.3
          snow_mosaic = 1. 
        endif
@@ -1607,7 +1609,7 @@ print * ,'Soil moisture is below wilting in mixed grassland/cropland category at
 !-- albedo of temperatures below -10C.
      if(albsn.lt.0.4 .or. keep_snow_albedo==1) then
         ALB=ALBsn
-!        ALBsn=max(0.4,alb_snow)
+!        ALB=max(0.4,alb_snow)
       else
 !-- change albedo when no fresh snow and snow albedo is higher than 0.5
         ALB = MIN(ALBSN,MAX(ALBSN - 0.1*(soilt - 263.15)/       &
@@ -1899,8 +1901,8 @@ print * ,'Soil moisture is below wilting in mixed grassland/cropland category at
           dew = dews*(1.-snowfrac) + dew*snowfrac
           soilt = soilts*(1.-snowfrac) + soilt*snowfrac
           qvg = qvgs*(1.-snowfrac) + qvg*snowfrac
-          qsg = qsgs*(1.-snowfrac) + qsgs*snowfrac
-          qcg = qcgs*(1.-snowfrac) + qcgs*snowfrac
+          qsg = qsgs*(1.-snowfrac) + qsg*snowfrac
+          qcg = qcgs*(1.-snowfrac) + qcg*snowfrac
           edir1 = edir1s*(1.-snowfrac) + edir1*snowfrac
           ec1 = ec1s*(1.-snowfrac) + ec1*snowfrac
           cst = csts*(1.-snowfrac) + cst*snowfrac
@@ -1909,7 +1911,7 @@ print * ,'Soil moisture is below wilting in mixed grassland/cropland category at
           qfx = qfxs*(1.-snowfrac) + qfx*snowfrac
           hfx = hfxs*(1.-snowfrac) + hfx*snowfrac
           s = ss*(1.-snowfrac) + s*snowfrac
-          evapl = evapls*(1.-snowfrac) + evapl*snowfrac
+          evapl = evapls*(1.-snowfrac)
           sublim = sublim*snowfrac
           prcpl = prcpls*(1.-snowfrac) + prcpl*snowfrac
           fltot = fltots*(1.-snowfrac) + fltot*snowfrac
@@ -1939,6 +1941,7 @@ print * ,'Soil moisture is below wilting in mixed grassland/cropland category at
     IF ( wrf_at_debug_level(LSMRUC_DBG_LVL) ) THEN
       print *,' Ground flux combined', i,j, s
       print *,'SOILT combined on land', soilt
+      print *,'TS combined on land', ts1d
     ENDIF
        else
 ! SEA ICE
@@ -1952,13 +1955,13 @@ print * ,'Soil moisture is below wilting in mixed grassland/cropland category at
           dew = dews*(1.-snowfrac) + dew*snowfrac
           soilt = soilts*(1.-snowfrac) + soilt*snowfrac
           qvg = qvgs*(1.-snowfrac) + qvg*snowfrac
-          qsg = qsgs*(1.-snowfrac) + qsgs*snowfrac
-          qcg = qcgs*(1.-snowfrac) + qcgs*snowfrac
+          qsg = qsgs*(1.-snowfrac) + qsg*snowfrac
+          qcg = qcgs*(1.-snowfrac) + qcg*snowfrac
           eeta = eetas*(1.-snowfrac) + eeta*snowfrac
           qfx = qfxs*(1.-snowfrac) + qfx*snowfrac
           hfx = hfxs*(1.-snowfrac) + hfx*snowfrac
           s = ss*(1.-snowfrac) + s*snowfrac
-          evapl = evapls*(1.-snowfrac) + evapl*snowfrac
+          sublim = eeta
           prcpl = prcpls*(1.-snowfrac) + prcpl*snowfrac
           fltot = fltots*(1.-snowfrac) + fltot*snowfrac
 !alb
@@ -2665,8 +2668,8 @@ print * ,'Soil moisture is below wilting in mixed grassland/cropland category at
     IF ( wrf_at_debug_level(LSMRUC_DBG_LVL) ) THEN
 !    IF(i.eq.440.and.j.eq.180 .or. qfx.gt.1000..or.i.eq.417.and.j.eq.540) then
        print *,'SOIL - FLTOT,RNET,HFT,QFX,S,X=',i,j,FLTOT,RNET,HFT,XLV*EETA,s,x
-       print *,'edir1,ec1,ett1,mavail,qkms,qvatm,qvg,qsg,cmc2ms*ras,vegfrac',&
-                edir1,ec1,ett1,mavail,qkms,qvatm,qvg,qsg,cmc2ms*ras,vegfrac
+       print *,'edir1,ec1,ett1,mavail,qkms,qvatm,qvg,qsg,vegfrac',&
+                edir1,ec1,ett1,mavail,qkms,qvatm,qvg,qsg,vegfrac
     ENDIF
     if(detal(1) .ne. 0.) then
 ! SMF - energy of phase change in the first soil layer
@@ -3207,7 +3210,7 @@ print * ,'Soil moisture is below wilting in mixed grassland/cropland category at
 
 !save SOILT and QVG
        soiltold=soilt
-       qgold=qsg
+       qgold=qvg
 
        x=0.
 
@@ -3595,7 +3598,7 @@ print *, 'TSO before calling SNOWTEMP: ', tso
       print *,'abs temp HFX',hft
     ENDIF
         Q1 = - FQ*RAS* (QVATM - QSG)
-
+        CMC2MS=0.
         IF (Q1.LT.0.) THEN
 ! ---  condensation
         EDIR1=0.
@@ -3648,13 +3651,14 @@ print *, 'TSO before calling SNOWTEMP: ', tso
     ENDIF
        ENDIF
         S=SNFLX
-        sublim=eeta
+!        sublim=eeta
+        sublim=EDIR1*1.E3
 ! Energy budget
         FLTOT=RNET-HFT-XLVm*EETA-S-SNOH-x
     IF ( wrf_at_debug_level(LSMRUC_DBG_LVL) ) THEN
        print *,'SNOWSOIL - FLTOT,RNET,HFT,QFX,S,SNOH,X=',FLTOT,RNET,HFT,XLVm*EETA,s,SNOH,X
-       print *,'edir1,ec1,ett1,mavail,qkms,qvatm,qvg,qsg,cmc2ms*ras,vegfrac,beta',&
-                edir1,ec1,ett1,mavail,qkms,qvatm,qvg,qsg,cmc2ms*ras,vegfrac,beta
+       print *,'edir1,ec1,ett1,mavail,qkms,qvatm,qvg,qsg,vegfrac,beta',&
+                edir1,ec1,ett1,mavail,qkms,qvatm,qvg,qsg,vegfrac,beta
     ENDIF
 
  222     CONTINUE
@@ -4248,8 +4252,8 @@ print *, 'TSO before calling SNOWTEMP: ', tso
                     (SMELT+BETA*EPOT*RAS)*DELT                        &
 !                    (SMELT+BETA*EPOT*RAS)*DELT*snowfrac               &
                                          ) )
-
-!        soilt=soiltfrac
+!!!!
+        soilt=soiltfrac
 !--- If there is no snow melting then just evaporation
 !--- or condensation changes SNWE
       ELSE
@@ -4403,7 +4407,7 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
           tsnav=soilt-273.15
           emiss=0.98
           znt=0.011
-          alb=0.65
+          alb=0.55
          ENDIF
 
 !------------------------------------------------------------------------
@@ -4599,7 +4603,10 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
 !--- THE HEAT BALANCE EQUATION (Smirnova et al., 1996, EQ. 21,26)
 
         RHCS=CAP(1)
-        fex=1.5
+! fex > 1. - reduces direct evaporation, and makes surface forecast drier
+!       and warmer
+!        fex=1.5
+        fex=1.
         H=MAVAIL**fex
 !        IF(DEW.NE.0.)THEN
 !          DRYCAN=0.
@@ -4951,7 +4958,7 @@ print *, 'SNOWTEMP: SNHEI,SNTH,SOILT1: ',SNHEI,SNTH,SOILT1,soilt
           NZS1=NZS-1
           NZS2=NZS-2
 
-        QGOLD=QSG
+        QGOLD=QVG
         DZSTOP=1./(ZSMAIN(2)-ZSMAIN(1))
 
 !******************************************************************************
@@ -5011,7 +5018,7 @@ print *, 'SNOWTEMP: SNHEI,SNTH,SOILT1: ',SNHEI,SNTH,SOILT1,soilt
          ilnb=2
          snprim=deltsn
          tsob=soilt1
-         XSN = DELT/2./(0.5*SNHEI)
+         XSN = DELT/2./(0.5*deltsn)
          XSN1= DELT/2./(zshalf(2)+0.5*(SNHEI-DELTSN))
          DDZSN = XSN / DELTSN
          DDZSN1 = XSN1 / (SNHEI-DELTSN)
@@ -5118,6 +5125,9 @@ print *, 'SNOWTEMP: SNHEI,SNTH,SOILT1: ',SNHEI,SNTH,SOILT1,soilt
                  snprim
          R22SN = snprim*snprim*0.5                                   &
                  /((fsn*THDIFSN+fso*THDIF(1))*delt)
+    IF ( wrf_at_debug_level(LSMRUC_DBG_LVL) ) THEN
+       print *,' Combined  D9SN,R22SN,D1SN,D2SN: ',D9SN,R22SN,D1SN,D2SN
+    ENDIF
       ENDIF
       IF(SNHEI.eq.0.)then
 !--- all snow is sublimated
@@ -5279,6 +5289,7 @@ print *, 'SNOWTEMP: SNHEI,SNTH,SOILT1: ',SNHEI,SNTH,SOILT1,soilt
         nmelt = 1
         soiltfrac=snowfrac*273.15+(1.-snowfrac)*SOILT
         QSG=min(QSG, QSN(soiltfrac,TBQ)/PP)
+        qvg=qsg
         T3      = STBOLT*TN*TN*TN
         UPFLUX  = T3 * 0.5*(TN + SOILTfrac)
         XINET   = EMISS*(GLW-UPFLUX)
@@ -5329,11 +5340,11 @@ print *, 'SNOWTEMP: SNHEI,SNTH,SOILT1: ',SNHEI,SNTH,SOILT1,soilt
 
 !
          X= (R21+D9SN*R22SN)*(soiltfrac-TN) +                        &
-            XLVM*R210*(QSG-QGOLD)
+            XLVM*R210*(QVG-QGOLD)
     IF ( wrf_at_debug_level(LSMRUC_DBG_LVL) ) THEN
       print *,'SNOWTEMP storage ',i,j,x
-      print *,'R21,D9sn,r22sn,soiltfrac,tn,qsg,qgold,snprim', &
-              R21,D9sn,r22sn,soiltfrac,tn,qsg,qgold,snprim
+      print *,'R21,D9sn,r22sn,soiltfrac,tn,qsg,qvg,qgold,snprim', &
+              R21,D9sn,r22sn,soiltfrac,tn,qsg,qvg,qgold,snprim
     ENDIF
 
 !-- SNOH is energy flux of snow phase change

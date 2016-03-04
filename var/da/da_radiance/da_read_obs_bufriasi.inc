@@ -5,14 +5,6 @@ subroutine da_read_obs_bufriasi (obstype,iv,infile)
 
   implicit none
 
-  real(r_kind)     :: POinT001 =   0.001_r_kind
-  real(r_kind)     :: POinT01  =   0.01_r_kind
-  real(r_kind)     :: TEN      =  10.0_r_kind
-  real(r_kind)     :: R45      =  45.0_r_kind
-  real(r_kind)     :: R60      =  60.0_r_kind
-  real(r_kind)     :: R90      =  90.0_r_kind
-  real(r_kind)     :: R180     = 180.0_r_kind
-  real(r_kind)     :: R360     = 360.0_r_kind  
 
   character(9)      ,  intent (in)  :: obstype
   character(100)    ,  intent (in)  :: infile
@@ -23,97 +15,90 @@ subroutine da_read_obs_bufriasi (obstype,iv,infile)
   type(info_type)                :: info
   type(model_loc_type)           :: loc 
   type(model_loc_type)           :: loc_fov  
+
+! Subroutine constants
+  real(r_kind)                   :: ten      =  10.0_r_kind
+  real(r_kind)                   :: r90      =  90.0_r_kind
+  real(r_kind)                   :: r360     = 360.0_r_kind
+
 ! Number of channels for sensors in BUFR
-  integer(i_kind),parameter :: nchan = 616        !--- 616 subset ch out of 8078 ch for AIRS
-  integer(i_kind),parameter :: n_totchan  = 616
-  integer(i_kind),parameter :: maxinfo    =  33
-  integer(i_kind)  :: inst,platform_id,satellite_id,sensor_id
-  integer(i_kind), allocatable :: ptotal(:), nread(:)
-  real(r_kind)    :: crit
-  integer(i_kind)   :: ifgat, iout, iobs
-  logical           :: outside, outside_all, iuse,outside_fov
+  integer(i_kind),parameter      :: nchan = 616        !--- 616 subset ch out of 8078 ch for AIRS
+  integer(i_kind),parameter      :: n_totchan  = 616
+  integer(i_kind),parameter      :: maxinfo    =  33
+  integer(i_kind)                :: inst,platform_id,satellite_id,sensor_id
+  integer(i_kind), allocatable   :: ptotal(:), nread(:)
+  real(r_kind)                   :: crit
+  integer(i_kind)                :: ifgat, iout, iobs
+  logical                        :: outside, outside_all, iuse
+
+! BUFR functions
+  integer(i_kind)   :: ireadsb,ireadmg
+
 ! Variables for BUFR IO    
-  real(r_double),dimension(5)  :: linele
-  real(r_double),dimension(14) :: allspot
+  real(r_double),dimension(5)           :: linele
+  real(r_double),dimension(14)          :: allspot
   real(r_double),dimension(2,n_totchan) :: allchan
-  real(r_double),dimension(3,10):: cscale
-  real(r_double),dimension(6):: cloud_frac
-  integer          ::numbufr,ibufr,jj  
-  logical :: found, head_found 
+  real(r_double),dimension(3,10)        :: cscale
+  real(r_double),dimension(6)           :: cloud_frac
+  integer           :: numbufr,ibufr  
+  logical           :: found, head_found 
   real(r_kind)      :: step, start,step_adjust
   character(len=8)  :: subset
   character(len=4)  :: senname
   character(len=80) :: allspotlist
-  integer(i_kind)   :: nchanlr,jstart
-  integer(i_kind)   :: iret,ireadsb,ireadmg,irec,isub,next
-  integer(i_kind)   :: size,size_tmp
+  integer(i_kind)   :: jstart
+  integer(i_kind)   :: iret
   character(10)     :: date
+
 ! Work variables for time
   integer(i_kind)   :: idate, im, iy, idd, ihh
   integer(i_kind)   :: idate5(6)
-  real(r_kind)      :: sstime, tdiff, t4dv
-  integer(i_kind)   :: nmind
 
 ! Other work variables
-  real(r_kind)     :: clr_amt,piece
-  real(r_kind)     :: dlon, dlat
-  real(r_kind)     :: dlon_earth,dlat_earth,dlon_earth_deg,dlat_earth_deg
-  real(r_kind)     :: lza, lzaest,sat_height_ratio
-  real(r_kind)     :: pred, crit1, dist1
-  real(r_kind)     :: sat_zenang
-  real(r_kind)     :: radi
-  real(r_kind)     :: tsavg,vty,vfr,sty,stp,sm,sn,zz,ff10,sfcr
-  real(r_kind),dimension(0:4) :: rlndsea
-  real(r_kind),dimension(0:3) :: sfcpct
-  real(r_kind),dimension(0:3) :: ts
-  real(r_kind),dimension(10) :: sscale
-  real(r_kind),dimension(n_totchan) :: temperature
-  real(r_kind),allocatable,dimension(:):: data_all
-  real(r_kind) disterr,disterrmax,rlon00,rlat00,Effective_Temperature
+  real(r_kind)                          :: piece
+  real(r_kind)                          :: dlon_earth,dlat_earth
+  real(r_kind)                          :: lza, lzaest,sat_height_ratio
+  real(r_kind)                          :: sat_zenang
+  real(r_kind)                          :: radi
+  real(r_kind),dimension(10)            :: sscale
+  real(r_kind),dimension(n_totchan)     :: temperature
+  real(r_kind),allocatable,dimension(:) :: data_all
+  real(r_kind)                          :: Effective_Temperature
 
-  logical          :: assim,valid
   logical          :: iasi
-  logical          :: data_on_edges,luse
   integer(i_kind)  :: nreal, ksatid
-  integer(i_kind)  :: ifov, instr, iscn, ioff, ilat, ilon, sensorindex
+  integer(i_kind)  :: ifov, iscn
   integer(i_kind)  :: num_iasi_file
   integer(i_kind)  :: num_iasi_local, num_iasi_global, num_iasi_used, num_iasi_thinned 
-  integer(i_kind) :: num_iasi_used_tmp  
+  integer(i_kind)  :: num_iasi_used_tmp  
   integer(i_kind)  :: i, j, l, iskip, ifovn, bad_line
   integer(i_kind)  :: itx, k, nele, itt, n
-  integer(i_kind):: iexponent
-  integer(i_kind):: idomsfc
-  integer(i_kind):: ntest
-  integer(i_kind):: error_status
-  character(len=20),dimension(1):: sensorlist
-  integer(i_kind) :: num_bufr(7)
+  integer(i_kind)  :: iexponent
+  integer(i_kind)  :: num_bufr(7)
   integer          :: iost, lnbufr 
-  character(20)    ::filename  
-  real , allocatable :: in(:), out(:)
+  character(20)    :: filename  
+  real,allocatable :: in(:), out(:)
+
 ! Set standard parameters
-  integer(i_kind),parameter:: ichan=-999  ! fov-based surface code is not channel specific for iasi 
-  real(r_kind),parameter:: expansion=one         ! exansion factor for fov-based location code.                                                 ! use one for ir sensors.
-  real(r_kind),parameter:: tbmin  = 50._r_kind
-  real(r_kind),parameter:: tbmax  = 550._r_kind
-  real(r_kind),parameter:: earth_radius = 6371000._r_kind
+  integer(i_kind),parameter :: ichan=-999  ! fov-based surface code is not channel specific for iasi 
+  real(r_kind),parameter    :: expansion=one         ! exansion factor for fov-based location code.                                                 ! use one for ir sensors.
+  real(r_kind),parameter    :: tbmin  = 50._r_kind
+  real(r_kind),parameter    :: tbmax  = 550._r_kind
+  real(r_kind),parameter    :: earth_radius = 6371000._r_kind
   
+
    if (trace_use) call da_trace_entry("da_read_obs_bufriasi")
 !  0.0  Initialize variables
 !-----------------------------------
   platform_id  = 10   ! metop series
   sensor_id = 16 !iasi
-  disterrmax=zero
-  ntest=0
   nreal  = maxinfo
   iasi=      obstype == 'iasi'
-  ilon=3
-  ilat=4
   bad_line=-1
   step  = 3.334
   start = -48.33
   step_adjust = 0.625_r_kind
   senname = 'IASI'
-  nchanlr = nchan
   allspotlist= &
    'SIID YEAR MNTH DAYS HOUR MINU SECO CLATH CLONH SAZA BEARAZ SOZA SOLAZI SAID'
   num_bufr(:)=0
@@ -163,7 +148,7 @@ subroutine da_read_obs_bufriasi (obstype,iv,infile)
    if (iost /= 0) then
       call da_warning(__FILE__,__LINE__, &
          (/"Cannot open file "//infile/))
-      if (trace_use) call da_trace_exit("da_read_obs_bufrtovs")
+      if (trace_use) call da_trace_exit("da_read_obs_bufriasi")
       return
    end if
 
@@ -175,7 +160,6 @@ subroutine da_read_obs_bufriasi (obstype,iv,infile)
    im=0
    idd=0
    ihh=0
-   sensorindex=1  
    write(unit=date,fmt='( i10)') idate
    read(unit=date,fmt='(i4,3i2)') iy,im,idd,ihh
    write(unit=stdout,fmt='(a,4i4,2x,a)') &
@@ -233,8 +217,8 @@ subroutine da_read_obs_bufriasi (obstype,iv,infile)
 !    Check observing position
          info%lat  =  allspot(8)  ! latitude
          info%lon  =  allspot(9)  ! longitude)
-         if( abs(info%lat) > R90  .or. abs(info%lon) > R360 .or. &
-         (abs(info%lat) == R90 .and. info%lon /= ZERO) )then
+         if( abs(info%lat) > r90  .or. abs(info%lon) > r360 .or. &
+         (abs(info%lat) == r90 .and. info%lon /= zero) )then
          write(unit=stdout,fmt=*) &
          'READ_IASI:  ### ERROR IN READING ', senname, ' BUFR DATA:', &
                ' STRANGE OBS POINT (LAT,LON):', info%lat, info%lon

@@ -251,7 +251,7 @@ CONTAINS
 
       DOUBLE PRECISION:: hail_max
       REAL:: hail_max_sp
-      DOUBLE PRECISION, PARAMETER:: thresh_conc = 0.0001d0                 ! number conc. of graupel/hail per cubic meter
+      DOUBLE PRECISION, PARAMETER:: thresh_conc = 0.001d0                  ! number conc. of graupel/hail per cubic meter
       LOGICAL:: scheme_has_graupel
       INTEGER, PARAMETER:: ngbins=50
       DOUBLE PRECISION, DIMENSION(ngbins+1):: xxDx

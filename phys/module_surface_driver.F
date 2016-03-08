@@ -1110,6 +1110,7 @@ CONTAINS
    REAL,       DIMENSION( ims:ime, jms:jme )          ::          &
                                                              QGH, &
                                                              CHS, &
+                                                             CQS, &
                                                              CPM, &
                                                             CHS2, &
                                                             CQS2
@@ -3201,13 +3202,20 @@ CONTAINS
               endif
            ENDIF
 
-          CALL SFCDIAGS_RUCLSM(HFX,QFX,TSK,QSFC,CHS,CHS2,CQS2,T2,TH2,Q2,      &
-                     T_PHY,QV_CURR,RHO,P_PHY,                            &
-                     CP,R_d,RCP,                                         &
-                     ids,ide, jds,jde, kds,kde,                          &
-                     ims,ime, jms,jme, kms,kme,                          &
-                     i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
+! Compute CHS and CQS that will be used in 2-m diagnostics
+            DO j=j_start(ij),j_end(ij)
+               DO i=i_start(ij),i_end(ij)
+                     cqs(i,j)=flqc(i,j)/(mavail(i,j)*rho(i,kts,j))
+                     chs(i,j)=flhc(i,j)/(cpm(i,j)*rho(i,kts,j) )
+               ENDDO
+            ENDDO
 
+          CALL SFCDIAGS_RUCLSM(HFX,QFX,TSK,QSFC,CQS,CQS2,CHS,CHS2,T2,TH2,Q2,  &
+                     T_PHY,QV_CURR,RHO,P_PHY,PSFC,                            &
+                     CP,R_d,RCP,                                              &
+                     ids,ide, jds,jde, kds,kde,                               &
+                     ims,ime, jms,jme, kms,kme,                               &
+                     i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte   )
 
        ELSE
          CALL wrf_error_fatal('Lacking arguments for RUCLSM in surface driver')

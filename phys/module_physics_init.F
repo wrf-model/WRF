@@ -2796,6 +2796,10 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
 !
 
       CASE (NOAHMPSCHEME)
+          IF ( TRIM(mminlu) .EQ. 'NLCD40' ) THEN
+             CALL wrf_error_fatal ( 'NoahMP does not work with NLCD data. Stop.' )
+          ENDIF
+
           CALL NOAHMP_INIT(MMINLU, SNOW,SNOWH,CANWAT,ISLTYP,IVGTYP,                 &
                      TSLB,SMOIS,SH2O,DZS, FNDSOILW, FNDSNOWH,          &
                      TSK,isnowxy  ,tvxy     ,tgxy     ,canicexy ,TMN,XICE,                  &
@@ -2861,12 +2865,19 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
           if(config_flags%ra_sw_physics .eq. 2 .or. config_flags%ra_sw_physics .gt. 4)CALL wrf_error_fatal &
            ( 'module_physics_init: SSiB only works with rrtm, cam scheme or rrtmg scheme (sw_phys=1,3,4)' )
 ! End of Adding radiation scheme 4 (RRTMg) for SSiB, By Zhenxin 2011-06-20 **************
+          IF ( TRIM(mminlu) .EQ. 'NLCD40' ) THEN
+             CALL wrf_error_fatal ( 'SSIB does not work with NLCD data. Stop.' )
+          ENDIF
 !--------------------------------------------------------------
 ! CLM Init Coupling
       CASE (CLMSCHEME)
         IF ((SF_URBAN_PHYSICS.eq.1).OR.(SF_URBAN_PHYSICS.EQ.2).OR.(SF_URBAN_PHYSICS.EQ.3)) THEN
                 CALL wrf_error_fatal ( 'CLM DOES NOT WORK WITH URBAN SCHEME' ) 
         ENDIF
+        IF ( TRIM(mminlu) .EQ. 'NLCD40' ) THEN
+           CALL wrf_error_fatal ( 'CLM does not work with NLCD input. Stop' )
+        ENDIF
+
 #ifdef WRF_USE_CLM
         IF(PRESENT(numc))THEN
         ! added by Jiming Jin 10/14/2012 ; modified to use MODIS data 3/6/2014

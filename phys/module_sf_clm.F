@@ -3915,6 +3915,7 @@ CONTAINS
 
   USE module_date_time
   USE module_sf_urban, only: urban
+  USE module_sf_noahlsm, only: low_density_residential, high_density_residential, high_intensity_industrial
   USE module_ra_gfdleta,  only: cal_mon_day
   USE module_configure
 
@@ -5120,9 +5121,8 @@ CONTAINS
 !--------------------------------------
 ! Input variables lsm --> urban
 
-
-          IF( IVGTYP(I,J) == 1 .or. IVGTYP(I,J) == 31 .or. &
-              IVGTYP(I,J) == 32 .or. IVGTYP(I,J) == 33 ) THEN
+          IF( IVGTYP(I,J) == 1 .or. IVGTYP(I,J) == low_density_residential .or. &
+              IVGTYP(I,J) == high_density_residential .or. IVGTYP(I,J) == high_intensity_industrial ) THEN
 
 ! Call urban
       forc_sols_buf  = swd_buf*0.35

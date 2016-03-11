@@ -1198,7 +1198,7 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,parameter
 
     INTEGER                   :: errflag, i,j,itf,jtf,ns
 
-    character(len=80) :: err_message
+    character(len=240) :: err_message
     character(len=4)  :: MMINSL
     character(len=*), intent(in) :: MMINLU
     MMINSL='STAS'
@@ -1225,6 +1225,23 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,parameter
              ENDDO
           ENDDO
        ENDIF
+
+
+       ! Check if snow/snowh are consistent and cap SWE at 2000mm;
+       !  the Noah-MP code does it internally but if we don't do it here, problems ensue
+       DO J = jts,jtf
+          DO I = its,itf
+             IF ( SNOW(i,j) > 0. .AND. SNOWH(i,j) == 0. .OR. SNOWH(i,j) > 0. .AND. SNOW(i,j) == 0.) THEN
+               WRITE(err_message,*)"problem with initial snow fields: snow/snowh>0 while snowh/snow=0 at i,j" &
+                                     ,i,j,snow(i,j),snowh(i,j)
+               CALL wrf_message(err_message)
+             ENDIF
+             IF ( SNOW( i,j ) > 2000. ) THEN
+               SNOWH(I,J) = SNOWH(I,J) * 2000. / SNOW(I,J)      ! SNOW in mm and SNOWH in m
+               SNOW (I,J) = 2000.                               ! cap SNOW at 2000, maintain density
+             ENDIF
+          ENDDO
+       ENDDO
 
        errflag = 0
        DO j = jts,jtf

@@ -54,10 +54,18 @@ subroutine da_wrfvar_init2
       global = .false.
    end if
 
-   if ( hybrid_dual_res .and. ensdim_alpha.ge.1 ) then
-      anal_type_hybrid_dual_res = .true.
-   else
-      anal_type_hybrid_dual_res = .false.
+   anal_type_hybrid_dual_res = .false.
+   if ( hybrid_dual_res ) then
+      if ( ensdim_alpha >= 1 ) then
+         if ( max_dom /= 2 ) then
+            call da_error(__FILE__,__LINE__, (/'max_dom has to be 2 for hybrid_dual_res application'/))
+         end if
+         anal_type_hybrid_dual_res = .true.
+      else
+         write(unit=message(1),fmt='(A,2(I4))') "ensdim_alpha has to be non-zero for hybrid_dual_res application, resetting hybrid_dual_res=.false."
+         call da_warning(__FILE__,__LINE__,message(1:1))
+         anal_type_hybrid_dual_res = .false.
+      end if
    endif
 
    if ( anal_type_hybrid_dual_res ) then
@@ -89,7 +97,7 @@ subroutine da_wrfvar_init2
 
 !  if (max_dom > 1 ) then 
    if (max_dom > 1 .and. ( .not. anal_type_hybrid_dual_res) ) then
-      call da_error(__FILE__,__LINE__, (/'nesting not available for wrfvar'/))
+      call da_error(__FILE__,__LINE__, (/'WRFDA does not handle nests (max_domain > 1)'/))
    end if
 
    !<DESCRIPTION>
@@ -131,12 +139,13 @@ subroutine da_wrfvar_init2
    call setup_timekeeping (head_grid) 
 
    if ( anal_type_hybrid_dual_res ) then
-      inquire(file=input_file_ens, exist=isfile)
+      ! input_file_ens is 'fg_ens', set in da_control.f90
+      inquire(file=trim(input_file_ens), exist=isfile)
       if ( .not. isfile ) then
-         write(unit=message(1),fmt='(a)') 'File ',input_file_ens,' is missing.'
+         write(unit=message(1),fmt='(a,a,a)') 'File ',trim(input_file_ens),' (low-resolution ensemble file) is missing.'
          call da_error(__FILE__,__LINE__,message(1:1))
       endif
-      call da_med_initialdata_input (head_grid, config_flags, 'fg_ens')
+      call da_med_initialdata_input (head_grid, config_flags, trim(input_file_ens))
       parent_grid => head_grid
       call alloc_and_configure_domain (domain_id=2, grid=another_grid, parent=parent_grid, kid=1)
       call model_to_grid_config_rec (another_grid%id, model_config_rec, config_flags)

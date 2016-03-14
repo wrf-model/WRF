@@ -54,6 +54,12 @@ subroutine da_setup_firstguess(xbx, grid, config_flags, ens )
    if ((fg_format==fg_format_wrf_arw_regional) .or. &
       (fg_format==fg_format_wrf_arw_global  ) ) then
       call da_setup_firstguess_wrf(xbx, grid, config_flags,ens)
+      ! when ens=.true., da_setup_firstguess(_wrf) is called solely for map_info,
+      ! the rest of the code should be skipped
+      if ( ens ) then
+         if (trace_use) call da_trace_exit("da_setup_firstguess")
+         return
+      end if
    else if (fg_format == fg_format_wrf_nmm_regional ) then
       call da_setup_firstguess_wrf_nmm_regional(xbx, grid)
    else if (fg_format == fg_format_kma_global) then

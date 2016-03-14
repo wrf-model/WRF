@@ -2,6 +2,8 @@ include ../../configure.wrf
 
 all_wrfvar: wrfvar be da_utils
 
+gen_be: be
+
 setup : depend
 
 # preserve this makefile from overwriting

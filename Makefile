@@ -129,6 +129,14 @@ all_wrfvar :
 	@echo "build started:   $(START_OF_COMPILE)"
 	@echo "build completed:" `date`
 
+gen_be :
+	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" ext
+	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" toolsdir
+	( cd var/build; make depend; $(MAKE) $(J) gen_be )
+	@echo "build started:   $(START_OF_COMPILE)"
+	@echo "build completed:" `date`
+
+
 ### 3.a.  rules to build the framework and then the experimental core
 
 exp_wrf : configcheck

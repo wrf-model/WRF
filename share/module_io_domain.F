@@ -386,6 +386,7 @@ SUBROUTINE construct_filename4a( result , basename , fld1 , len1 , date_char , i
     result = result(1:i-1) // TRIM(date_char(12:13)) // result(i+6:l)
     i = index( result , '<hour>' )
   END DO
+  CALL maybe_remove_colons(result)
 
   RETURN
 END SUBROUTINE construct_filename4a

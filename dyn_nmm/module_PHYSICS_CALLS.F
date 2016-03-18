@@ -2281,6 +2281,7 @@
      &                 ,HPBL2D,EVAP2D,HEAT2D                            &     !Kwon S&P
      &                 ,DX2D,DYNMM                                      &     !WANG scale-aware sas
      &                 ,SCALEFUN, SCALEFUN1                             & !scale functions
+     &                 ,SIGMU, SIGMU1                                   & !updraft fraction
      &                 ,AVCNVC,ACUTIM,IHE,IHW                           &
      &                 ,GRID,CONFIG_FLAGS                               &
      &                 ,IDS,IDE,JDS,JDE,KDS,KDE                         &
@@ -2329,6 +2330,7 @@
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: SCALEFUN,SCALEFUN1 ! Wang scale-sware sas
                                                                      ! scale
                                                                      ! functions
+       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: SIGMU,SIGMU1 ! Wang, updraft fractional area
 
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: HPBL2D,EVAP2D,HEAT2D     !Kwon S&P
@@ -2822,7 +2824,8 @@
 #endif
      &                 ,HPBL2D=HPBL2D,EVAP2D=EVAP2D,HEAT2D=HEAT2D       &     !Kwon S&P
      &                 ,DX2D=DX2D,DYNMM=DYNMM                          &     !Wang scale-sware SAS 
-     &                 ,SCALEFUN=SCALEFUN, SCALEFUN1=SCALEFUN1          &
+     &                 ,SCALEFUN=SCALEFUN, SCALEFUN1=SCALEFUN1          &    ! scale function
+     &                 ,SIGMU=SIGMU, SIGMU1=SIGMU1                      &    ! updraft fraction
      &                 ,pgcon=config_flags%sas_pgcon                    &
      &                 ,sas_mass_flux=config_flags%sas_mass_flux        &
      &                 ,shalconv=config_flags%sas_shal_conv             &

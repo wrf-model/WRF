@@ -4008,10 +4008,14 @@ CONTAINS
  310  CONTINUE
 !
       CU=1./CUI
-      CT=1./CTI
+!     CT=1./CTI   !Correction 3/8/16
       USTAR =UM*CU
       RAF = CTI / USTAR
-      IF (RAF.LT.0.80) RAF = 0.80
+      IF (RAF.LT.0.80) THEN
+         RAF = 0.80
+         CTI = RAF*USTAR
+      ENDIF
+      CT = 1./CTI !Correction 3/8/16
 !
       RA  = RAF
 !

@@ -71,6 +71,11 @@
 !   Bug fix in snow fall speeds
 !   Further fix in snow reflectivity
 !   Use diameter of maximum mass rather than mean diamter when checking maximum size
+!   Helped performance in sedimentation with flag "do_accurate_sedimentation" to control recalculation of fall speeds when
+!       more than one sub-time step is needed (often happens with large time steps and small dz near the ground):
+!        = .true. : recalculates fall speed after each substep (more accurate)
+!        = .false. : (default) reuses fall speeds calculated on the first substep (typical for most schemes), theoretically could cause an occasional glitch, but none seen in practice
+!   Increased maximum mean droplet radius from 40 to 60 microns, which alleviates spurious number concentration increases at low CCN concentration.
 !
 !---------------------------------------------------------------------
 
@@ -150,6 +155,9 @@ MODULE module_mp_nssl_2mom
   integer, private :: itfall = 0
   integer, private :: iscfall = 1
   integer, private :: irfall = -1
+  logical, private :: do_accurate_sedimentation = .false. ! if true, recalculate fall speeds on sub time steps; (more expensive)
+                                                         ! if false, reuse fall speeds on multiple steps (can have a noticeable speedup)
+                                                         ! Mainly is an issue for small dz near the surface. 
   integer, private :: infall = 4   ! 0 -> uses number-wgt for N; NO correction applied (results in excessive size sorting)
                           ! 1 -> uses mass-weighted fallspeed for N ALWAYS
                           ! 2 -> uses number-wgt for N and mass-weighted correction for N (Method II in Mansell, 2010 JAS)
@@ -632,7 +640,7 @@ MODULE module_mp_nssl_2mom
       real, private :: dhmn = dhmn0, dhmx = -1.
 
       real, parameter :: cwradn = 2.5e-6, xcradmn = cwradn    ! minimum radius
-      real, parameter :: cwradx = 40.e-6, xcradmx = cwradx    ! maximum radius
+      real, parameter :: cwradx = 60.e-6, xcradmx = cwradx    ! maximum radius
       real, parameter :: cwc1 = 6.0/(pi*1000.)
 
 !      parameter( xvcmn=4.188e-18 )   ! mks  min volume = 3 micron radius
@@ -2892,7 +2900,7 @@ END SUBROUTINE nssl_2mom_driver
 
       DO n = 1,ndfall
 
-      IF ( n .ge. 2 ) THEN
+      IF ( do_accurate_sedimentation .and. n .ge. 2 ) THEN
 !
 !  zero the precip flux arrays (2d)
 !

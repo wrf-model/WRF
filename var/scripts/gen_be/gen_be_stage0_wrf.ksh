@@ -56,7 +56,11 @@ while [[ $DATE -le $END_DATE_STAGE0 ]]; do
    export MM=$(echo $FCST_TIME | cut -c5-6)
    export DD=$(echo $FCST_TIME | cut -c7-8)
    export HH=$(echo $FCST_TIME | cut -c9-10)
-   export FILE_DATE=${YYYY}-${MM}-${DD}_${HH}:00:00
+      if $NOCOLONS; then
+         export FILE_DATE=${YYYY}-${MM}-${DD}_${HH}_00_00
+      else
+         export FILE_DATE=${YYYY}-${MM}-${DD}_${HH}:00:00
+      fi
    export FILE=${FC_DIR}/${DATE}/wrfout_d${DOMAIN}_${FILE_DATE}
    export FILE1=wrfout_d${DOMAIN}_${FILE_DATE}
    export NEXT_DATE=$($DAAT $DATE $INTERVAL)

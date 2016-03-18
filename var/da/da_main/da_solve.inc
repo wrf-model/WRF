@@ -693,7 +693,7 @@
          if (test_gradient) then
             call da_allocate_y (iv, re)
             call da_allocate_y (iv, y)
-            call da_check_gradient (grid, config_flags, cv_size, xhat, cvt, 1.0e-18, 17, &
+            call da_check_gradient (grid, config_flags, cv_size, xhat, cvt, 1.0e-10, 8, &
                  xbx, be, iv, y, re, j)
             call da_deallocate_y (re)
             call da_deallocate_y (y)

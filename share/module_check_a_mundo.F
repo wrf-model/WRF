@@ -68,22 +68,6 @@
    model_config_rec % wrf_hydro = 0
 #endif
 
-#if (defined MOVE_NESTS) && (defined VORTEX_CENTER) && (EM_CORE==1)
-!-----------------------------------------------------------------------
-! A known problem with moving nests.  Users with number of eta levels 
-! above 55 get a model crash.
-!-----------------------------------------------------------------------
-
-      IF ( ( model_config_rec % max_dom  .GT.  1 ) .AND. &
-           ( model_config_rec %e_vert(1) .GT. 55 ) ) THEN
-         wrf_err_message = '--- ERROR: Known problem.  Moving nests need e_vert .LE. 55'
-     !    CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
-         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
-         fatal_error = .true.
-         count_fatal_error = count_fatal_error + 1
-      END IF
-#endif
-
 #if (NMM_CORE == 1) && (NMM_NEST == 1)
 !-----------------------------------------------------------------------
 ! Ensure that minimum NMM corral distances are supplied for all domains.

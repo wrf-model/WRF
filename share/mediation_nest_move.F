@@ -1068,12 +1068,12 @@ USE module_timing
 
      IF ( par%id .EQ. 1 ) THEN
          IF ( would_move_x .NE. 0 .AND. move_cd_x .NE. 0 ) THEN
-           CALL wrf_message('MOAD can not move. Cancelling nest move in X')
+           CALL wrf_debug(1,'MOAD can not move. Cancelling nest move in X')
            if ( grid%num_nests .eq. 0 ) grid%vc_i = grid%vc_i + move_cd_x * pgr  ! cancel effect of move
            move_cd_x = 0
          ENDIF
          IF ( would_move_y .NE. 0 .AND. move_cd_y .NE. 0 ) THEN
-           CALL wrf_message('MOAD can not move. Cancelling nest move in Y')
+           CALL wrf_debug(1,'MOAD can not move. Cancelling nest move in Y')
            if ( grid%num_nests .eq. 0 ) grid%vc_j = grid%vc_j + move_cd_y * pgr  ! cancel effect of move
            move_cd_y = 0
          ENDIF

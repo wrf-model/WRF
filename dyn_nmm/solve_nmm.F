@@ -29,7 +29,7 @@
       USE MODULE_COMM_DM
 #endif
 #ifdef HWRF
-      USE MODULE_SWATH,                 ONLY : UPDATE_INTEREST
+      USE MODULE_SWATH,                 ONLY : UPDATE_INTEREST, SUSTAINED_WIND
       USE MODULE_HIFREQ,                ONLY: HIFREQ_WRITE, HIFREQ_OPEN
 #endif
       USE MODULE_TORNADO_GENESIS,       ONLY: CALC_TORNADO_GENESIS, RESET_TORNADO_GENESIS
@@ -1577,7 +1577,7 @@
 !***  TURBULENT PROCESSES 
 !----------------------------------------------------------------------
 !
-      IF(MOD(grid%ntsd,GRID%NPHS)==0)THEN
+      turbl_time: IF(MOD(grid%ntsd,GRID%NPHS)==0)THEN
 !
         btimx=now_time()
 !
@@ -1654,6 +1654,9 @@
 !                     ***  NOTE  ***
 !
         turbl_tim=turbl_tim+now_time()-btimx
+        btimx=now_time()
+        call sustained_wind(grid,config_flags,ips,ipe,jps,jpe,.true.)
+        diag_tim=diag_tim+now_time()-btimx
 #ifdef HWRF
 !------------------------------------------------------------------------------
 !*** ATMOSPHERIC MODEL OUTPUTS FROM PARENT AND NESTED GRID FOR DMITRYs COUPLER
@@ -1685,12 +1688,11 @@
         flux_tim=flux_tim+now_time()-btimx
 !<-:Coupling insertion
 !
-
+      ENDIF
         IF(GRID%ID .EQ. 1 .AND. MOD(grid%ntsd,grid%NPHS)==0)THEN
           btimx=now_time()
           flux_tim=flux_tim+now_time()-btimx
         ENDIF
-      ENDIF
 #endif
 !
 #ifdef NMM_FIND_LOAD_IMBALANCE
@@ -1767,7 +1769,11 @@
      &             ,ITS,ITE,JTS,JTE,KTS,KTE)
 !
         cltend_tim=cltend_tim+now_time()-btimx
-     ENDIF
+     ELSE
+        btimx=now_time()
+        call sustained_wind(grid,config_flags,ips,ipe,jps,jpe,.false.)
+        diag_tim=diag_tim+now_time()-btimx
+     ENDIF turbl_time
 !
 !----------------------------------------------------------------------
 !***  CONVECTIVE PRECIPITATION
@@ -2759,7 +2765,7 @@
 !----------------------------------------------------------------------
 !!!!  DO 500 K=KTS,KTE+KK     !Unflipped
 !!!!  DO 500 K=KTE+KK,KTS,-1
-      DO 500 K=KDE-1,KDS,-1   !Write LM layers top down for checking
+      write_layers: DO K=KDE-1,KDS,-1   !Write LM layers top down for checking
 !----------------------------------------------------------------------
 !
 #if defined(DM_PARALLEL) && !defined(STUBMPI)
@@ -2852,7 +2858,7 @@
 
 !
 !----------------------------------------------------------------------
-  500 CONTINUE
+      ENDDO write_layers
 !
       IF(MYPE==0)CLOSE(IUNIT)
 !----------------------------------------------------------------------
@@ -2949,7 +2955,7 @@
 !----------------------------------------------------------------------
 !!!!  DO 500 K=KTS,KTE+KK     !Unflipped
 !!!!  DO 500 K=KTE+KK,KTS,-1
-      DO 500 K=KDE-1,KDS,-1   !Write LM layers top down for checking
+      write_layers: DO K=KDE-1,KDS,-1   !Write LM layers top down for checking
 !----------------------------------------------------------------------
 !
 #if defined(DM_PARALLEL) && !defined(STUBMPI)
@@ -3041,7 +3047,7 @@
 #endif
 !
 !----------------------------------------------------------------------
-  500 CONTINUE
+      ENDDO write_layers
 !
       IF(MYPE==0)CLOSE(IUNIT)
 !----------------------------------------------------------------------

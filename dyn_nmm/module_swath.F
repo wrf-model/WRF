@@ -12,15 +12,16 @@ module module_swath
 
   private
 
-  public :: update_interest, init_swath
+  public :: update_interest, init_swath, sustained_wind
 
 contains
 
-  subroutine init_swath(grid,config_flags,init)
+  subroutine init_swath(grid,config_flags,init,reinit)
     USE MODULE_CONFIGURE, ONLY : grid_config_rec_type
     type(domain), intent(inout) :: grid
     type(grid_config_rec_type), intent(in) :: config_flags
-    logical, intent(in) :: init ! .true. = first initialization in wrf.exe
+    logical, intent(in) :: init ! .true. = first initialization in wrf.exe, non-restart run
+    logical, intent(in) :: reinit ! .true. = first initialization in this execution of wrf.exe (may be restart)
     character*255 :: message
     if(init) then
 3088   format('Grid ',I0,' is resetting swath data.')
@@ -29,8 +30,105 @@ contains
        if(size(grid%interesting)>1)   grid%interesting=0
        if(size(grid%precip_swath)>1)  grid%precip_swath=0
        if(size(grid%windsq_swath)>1)  grid%windsq_swath=0
+       if(size(grid%suswind)>1)       grid%suswind=0
+       if(size(grid%suswind_swath)>1) grid%suswind_swath=0
+       if(size(grid%wind10_ratio)>1)  grid%wind10_ratio=1
+       grid%suswind_time=0
+    endif
+    if(reinit) then
+3000   format('Grid ',I0,' is resetting wind sustainment timer.')
+       write(message,3000) grid%id
+       call wrf_message(message)
+       grid%suswind_time=0
     endif
   end subroutine init_swath
+
+  subroutine sustained_wind(grid,config_flags,ips,ipe,jps,jpe,turbl_step)
+    USE MODULE_CONFIGURE, ONLY : grid_config_rec_type
+    type(domain), intent(inout) :: grid
+    type(grid_config_rec_type), intent(in) :: config_flags
+    integer, intent(in) :: ips,ipe,jps,jpe
+    logical, intent(in) :: turbl_step ! .true. = PBL and surface layer just called
+    integer :: i,j
+    real :: windsq, wind10sq, maxsus,minsus
+    if(size(grid%wind10_ratio)<=1) return
+
+    update_sustained: if(turbl_step) then
+       ! Update ratio of wind and use 10m wind to update sustained
+       ! wind calculation
+       !write(0,*) 'Update wind10_ratio and sustain wind with 10m wind.'
+       maxsus=-999
+       minsus=999
+       do j=jps,jpe
+          do i=ips,ipe
+             windsq=grid%u(i,j,1)*grid%u(i,j,1) + grid%v(i,j,1)*grid%v(i,j,1)
+             wind10sq=grid%u10(i,j)*grid%u10(i,j) + grid%v10(i,j)*grid%v10(i,j)
+             if(wind10sq<1e-12) then
+                grid%wind10_ratio(i,j)=1.0
+             else
+                grid%wind10_ratio(i,j)=sqrt(windsq/wind10sq)
+             endif
+             if(grid%suswind_time>1e-5 .and. grid%suswind(i,j)>1e-3) then
+                grid%suswind(i,j)=min(grid%suswind(i,j),sqrt(wind10sq))
+             else
+                grid%suswind(i,j)=wind10sq
+             endif
+             maxsus=max(grid%suswind(i,j),maxsus)
+             minsus=min(grid%suswind(i,j),minsus)
+          enddo
+       enddo
+       !write(0,*) 'suswind range:',maxsus,minsus
+    else
+       ! Use lowest model level wind adjusted by previous TURBL step
+       ! wind ratio to update sustained wind calculation.
+       !write(0,*) 'Update sustain wind with lowest model level wind and wind10_ratio.'
+       maxsus=-999
+       minsus=999
+       do j=jps,jpe
+          do i=ips,ipe
+             windsq=grid%u(i,j,1)*grid%u(i,j,1) + grid%v(i,j,1)*grid%v(i,j,1)
+             if(grid%wind10_ratio(i,j)>1e-3) then
+                wind10sq=windsq/grid%wind10_ratio(i,j)
+             else
+                wind10sq=windsq
+             endif
+             if(grid%suswind_time>1e-5 .and. grid%suswind(i,j)>1e-3) then
+                grid%suswind(i,j)=min(grid%suswind(i,j),sqrt(wind10sq))
+             else
+                grid%suswind(i,j)=wind10sq
+             endif
+             maxsus=max(grid%suswind(i,j),maxsus)
+             minsus=min(grid%suswind(i,j),minsus)
+          enddo
+       enddo
+       !write(0,*) 'suswind range:',maxsus,minsus
+    end if update_sustained
+
+    ! Update wind sustainment time and maximum sustained wind swath:
+    grid%suswind_time = grid%suswind_time + grid%dt
+
+    !write(0,*) 'add to suswind_time: ',grid%dt
+
+    ! FIXME: grid%suswind_accum_time
+    update_swath: if(grid%suswind_time>60.0) then
+       !write(0,*) 'update suswind_swath with max of itself and suswind'
+       maxsus=-999
+       minsus=999
+       do j=jps,jpe
+          do i=ips,ipe
+             grid%suswind_swath(i,j)=max(grid%suswind(i,j),grid%suswind_swath(i,j))
+             wind10sq=grid%u10(i,j)*grid%u10(i,j) + grid%v10(i,j)*grid%v10(i,j)
+             grid%suswind(i,j)=sqrt(wind10sq)
+             maxsus=max(grid%suswind(i,j),maxsus)
+             minsus=min(grid%suswind(i,j),minsus)
+          enddo
+       enddo
+       grid%suswind_time=0
+       !write(0,*) 'suswind_swath range:',maxsus,minsus
+    else
+       !write(0,*) 'Not yet time to sustain: ',grid%suswind_time
+    endif update_swath
+  end subroutine sustained_wind
 
   function dx_at(grid, i,j,  ips,ipe,jps,jpe) result(dx)
     include 'mpif.h'

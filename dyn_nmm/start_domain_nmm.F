@@ -704,7 +704,8 @@
                             IMS,IME,JMS,JME,KMS,KME, &
                             ITS,ITE,JTS,JTE,KTS,KTE)
          call init_swath(grid, config_flags, &
-              (allowed_to_read .and. .not. restrt) )
+              (allowed_to_read .and. .not. restrt),&
+              allowed_to_read)
     ENDIF
     IF(ANAL .or. allowed_to_read) THEN
        grid%update_interest=.true.

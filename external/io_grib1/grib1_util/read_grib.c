@@ -44,11 +44,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <limits.h>
-#ifdef MACOS
-#include "/usr/include/time.h"
-#else
 #include <time.h>
-#endif
 #include "cfortran.h"
 #include "gribfuncs.h"
 #include "gribsize.incl"

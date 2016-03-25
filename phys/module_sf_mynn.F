@@ -230,7 +230,8 @@ CONTAINS
                                                           U3D,V3D, &
                           RHO3D,th3d,pi3d,tsq,qsq,cov,sh3d,el_pbl
 
-      REAL,     DIMENSION( ims:ime, kms:kme, jms:jme ) :: qc_bl,cldfra_bl
+      REAL,     DIMENSION( ims:ime, kms:kme, jms:jme ) ::   qc_bl, &
+                                                        cldfra_bl
 !===================================
 ! 2D VARIABLES
 !===================================
@@ -290,8 +291,9 @@ CONTAINS
 
       ! VARIABLE FOR PASSING TO MYM_CONDENSATION
       REAL,     DIMENSION(kts:kts+1 ) :: dummy1,dummy2,dummy3,dummy4, &
-                                         dummy5,dummy6,dummy7,dummy8,&
-                                         dummy9,dummy10,dummy11,dummy12
+                                         dummy5,dummy6,dummy7,dummy8, &
+                                         dummy9,dummy10,dummy11,      &
+                                         dummy12,dummy13
 
       REAL,     DIMENSION( its:ite ) ::  vt1,vq1
       REAL,     DIMENSION(kts:kts+1) ::  thl, qw, vt, vq
@@ -352,6 +354,7 @@ CONTAINS
                   dummy11(k)=0.0
                   dummy12(k)=0.0
                 endif
+                dummy13(k)=0.0
               ENDDO
 
               ! NOTE: The last grid number is kts+1 instead of kte.
@@ -362,6 +365,7 @@ CONTAINS
                    &            dummy10,bl_mynn_cloudpdf,&
                    &            dummy11,dummy12,        &
                    &            PBLH(i,j),HFX(i,j),     &
+                   &            dummy13,                &
                    &            vt(kts:kts+1), vq(kts:kts+1))
 
 !              ! NOTE: The last grid number is kts+1 instead of kte.
@@ -1602,6 +1606,7 @@ END SUBROUTINE SFCLAY1D_mynn
        REAL, INTENT(IN)  :: Z_0, Ren, ustar, tstar, qst, visc, landsea
        REAL              :: ht,     &! roughness height at critical Reynolds number
                             tstar2, &! bounded T*, forced to be non-positive
+                            qstar2, &! bounded q*, forced to be non-positive
                             Z_02,   &! bounded Z_0 for variable Renc2 calc
                             Renc2    ! variable Renc, function of Z_0
        REAL, INTENT(OUT) :: Zt,Zq
@@ -1615,10 +1620,11 @@ END SUBROUTINE SFCLAY1D_mynn
        Renc2= b + m*log(Z_02)
        ht     = Renc2*visc/MAX(ustar,0.01)
        tstar2 = MIN(tstar, 0.0)
+       qstar2 = MIN(qst,0.0)
 
        Zt     = ht * EXP(-beta*(ustar**0.5)*(ABS(tstar2)**1.0))
-       !Zq     = ht * EXP(-beta*(ustar**0.5)*(ABS(qst)**1.0))
-       Zq     = Zt
+       Zq     = ht * EXP(-beta*(ustar**0.5)*(ABS(qstar2)**1.0))
+       !Zq     = Zt
 
        Zt = MIN(Zt, Z_0/2.0)
        Zq = MIN(Zq, Z_0/2.0)

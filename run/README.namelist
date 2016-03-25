@@ -682,8 +682,36 @@ Namelist variables for controlling the adaptive time step option:
                                      = 1, turn on topographic surface wind correction from Jimenez 
                                        (YSU PBL only, and require extra input from geogrid)
                                      = 2, turn on topographic surface wind correction from Mass (YSU PBL only)
+
  bl_mynn_tkebudget (max_dom)         = 0, default off; = 1 adds MYNN tke budget terms to output
  bl_mynn_tkeadvect (max_dom)         = .false., default off; = .true. do MYNN tke advection
+ icloud_bl                           option to couple the subgrid-scale clouds from the PBL scheme (MYNN only) 
+                                     to radiation schemes 
+                                     0: no coupling; 1: activate coupling to radiation (default)
+ bl_mynn_cloudmix                    option to activate mixing of qc and qi in MYNN
+                                     0: no mixing of qc & qi; 1: mixing activated (default). 
+                                       Note qnc and qni are mixed when scalar_pblmix =1.
+ bl_mynn_mixlength                   option to change mixing length formulation in MYNN
+                                     0:original as in Nakanishi and Niino 2009 (default), 
+                                     1:RAP/HRRR (default, including BouLac in free atmosphere), 
+                                     2:experimental (includes cloud-specific mixing length and a scale-aware mixing 
+                                       length, following Ito et al. 2015, BLM). Option 2 has been well tested with 
+                                       the edmf options.
+ bl_mynn_cloudpdf                    option to switch to different cloud PDFs to represent subgrid clouds
+                                     0: original (Sommeria and Deardorf 1977); 
+                                     1: Kuwano et al 2010?, similar to option 0, but uses resolved scale gradients 
+                                        as opposed to higher order moments ; 
+                                     2: from Chaboureau and Bechtold (2002, JAS, with mods, default) 
+ bl_mynn_edmf                        option to activate mass-flux scheme in MYNN 
+                                     1: for StEM; 2: for TEMF; default =0, just regular MYNN. 
+                                     Related (hidden) options: 
+ bl_mynn_edmf_mom                    option to activate momentum transport in MYNN mass-flux scheme 
+                                     (assuming bl_mynn_edmf > 0)
+                                     0: no momentum transport; 1: momentum transport activated (default)
+ bl_mynn_edmf_tke                    option to activate TKE transport in MYNN mass-flux scheme 
+                                     (assuming bl_mynn_edmf > 0)
+                                     0: no TKE transport (default);1: activate TKE transport
+
  scalar_pblmix (max_dom)             = 1 ; mix scalar fields consistent with PBL option (exch_h)
  tracer_pblmix (max_dom)             = 1 ; mix tracer fields consistent with PBL option (exch_h)
  shinhong_tke_diag (max_dom)         = 0 ; diagnostic TKE and mixing length from Shin-Hong PBL

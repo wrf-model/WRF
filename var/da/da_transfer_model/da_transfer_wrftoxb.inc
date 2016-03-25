@@ -288,7 +288,8 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
 
    !$OMP PARALLEL DO &
    !$OMP PRIVATE ( ij, i, j, k, cvpm, cpovcv, ppb, temp, ttb ) &
-   !$OMP PRIVATE ( albn, qvf1, aln, theta )
+   !$OMP PRIVATE ( albn, qvf1, aln, theta ) &
+   !$OMP PRIVATE ( p_surf, pfu, pfd, phm )
    do ij = 1 , grid%num_tiles
 
    do j=grid%j_start(ij), grid%j_end(ij)
@@ -667,7 +668,11 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
    end if
 
    !$OMP PARALLEL DO &
+#ifndef A2C
    !$OMP PRIVATE ( ij, i, j, tmpvar, height, message )
+#else
+   !$OMP PRIVATE ( ij, i, j, tmpvar, height, message, uu, vv )
+#endif
    do ij = 1 , grid%num_tiles
 
    do j=grid%j_start(ij),grid%j_end(ij)

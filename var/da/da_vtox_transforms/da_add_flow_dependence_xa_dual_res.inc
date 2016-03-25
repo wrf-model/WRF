@@ -491,7 +491,7 @@ subroutine da_add_flow_dependence_xa_dual_res (grid, ne,  ep, vp)
       !call da_message((/"Using adjoint-based interpolation"/))
 
       !$OMP PARALLEL DO &
-      !$OMP PRIVATE (n)
+      !$OMP PRIVATE (n,k)
       do n=1,total_here
 	 do k = kts, kte
 

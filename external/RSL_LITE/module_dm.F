@@ -830,6 +830,9 @@ CONTAINS
          intermediate_grid%num_parents = 1
          intermediate_grid%max_tiles   = 0
          intermediate_grid%num_tiles_spec   = 0
+#if ( EM_CORE == 1 && DA_CORE != 1 )
+         intermediate_grid%active_this_task = .true.
+#endif
          CALL find_grid_by_id ( id, head_grid, nest_grid )
 
          nest_grid%intermediate_grid => intermediate_grid  ! nest grid now has a pointer to this baby

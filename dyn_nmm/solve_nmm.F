@@ -150,7 +150,7 @@
      &,            cucnvc_tim,gsmdrive_tim,hdiff_tim,bocoh_tim          &
      &,            pfdht_tim,ddamp_tim,bocov_tim,uv_htov_tim,sum_tim    &
 #ifdef HWRF
-     &,            sst_tim,flux_tim,hifreq_tim                          &
+     &,            sst_tim,flux_tim,hifreq_tim,wav_tim,cplstep_tim      &
 #endif
      &,            diag_tim,adjppt_tim,tornado_tim                      
 
@@ -163,6 +163,7 @@
       real,save :: exch_tim_max
       real :: ttim,btimx
       real :: et_max,this_tim
+      double precision :: fhr
       integer :: n_print_time
 !
 !-----------------------------------------------------------------------
@@ -182,6 +183,7 @@
       INTEGER :: IDTADT 
       INTEGER :: IDTADC
       INTEGER :: KS                                                        ! species index in 4d tracer array
+      INTEGER :: istat_perf                                                        ! species index in 4d tracer array
 !
       REAL,SAVE :: SUMDRRW
 !
@@ -304,8 +306,7 @@
 !
 !!!!! IF(WRF_DM_ON_MONITOR() )THEN
         WRITE(MESSAGE,125)grid%id,grid%ntsd,grid%ntsd*GRID%DT/3600.
-  125   FORMAT(' SOLVE_NMM: ',I3,' TIMESTEP IS ',I5,'   TIME IS ',F7.3,' HOURS')
-        CALL WRF_MESSAGE(TRIM(MESSAGE))
+  125   FORMAT(' SOLVE_NMM: ',I3,' TIMESTEP IS ',I0,'   TIME IS ',F7.3,' HOURS')
 !!!!  ENDIF
 !
 !-----------------------------------------------------------------------
@@ -471,6 +472,8 @@
         tornado_tim=0.
 #ifdef HWRF
         sst_tim=0.
+        cplstep_tim=0.
+        wav_tim=0.
         flux_tim=0.
         hifreq_tim=0.
 #endif
@@ -801,7 +804,7 @@
                          grid%HLON,grid%HLAT,grid%VLON,grid%VLAT,grid%sm,                   &
                          grid%i_parent_start,grid%j_parent_start,  &
                          grid%guessdtc,grid%dtc)
-        sst_tim=sst_tim+now_time()-btimx
+        cplstep_tim=cplstep_tim+now_time()-btimx
       ENDIF
 !<-:coupling insertion
 !
@@ -1567,9 +1570,11 @@
 ! Coupling insertion:->
         btimx=now_time()
         CALL ATM_GETSST(grid%sst,grid%sm)
+        sst_tim=sst_tim+now_time()-btimx
+        btimx=now_time()
         CALL atm_getcur(grid%scurx, grid%scury)    !BT
         CALL atm_getwstate(grid%charn,grid%msang)  !BT
-        sst_tim=sst_tim+now_time()-btimx
+        wav_tim=wav_tim+now_time()-btimx
 !<-:Coupling insertion
       ENDIF
 #endif
@@ -1837,8 +1842,6 @@
        ENDIF
 !
 !----------------------------------------------------------------------
-       call wrf_message('call cucnvc')
-       call start_timing
         call check_grid(grid,config_flags,'before CUCNVC', &
             ids,ide,jds,jde,kds,kde, &
             ims,ime,jms,jme,kms,kme, &
@@ -1881,7 +1884,6 @@
             ids,ide,jds,jde,kds,kde, &
             ims,ime,jms,jme,kms,kme, &
             its,ite,jts,jte,kts,kte)
-        call end_timing('cucnvc')
 !----------------------------------------------------------------------
 !
         cucnvc_tim=cucnvc_tim+now_time()-btimx
@@ -2406,7 +2408,7 @@
              pfdht_tim + ddamp_tim + bocov_tim + uv_htov_tim + diag_tim +  &
              tornado_tim
 #ifdef HWRF
-        sum_tim = sum_tim + sst_tim + flux_tim + hifreq_tim
+        sum_tim = sum_tim + sst_tim + flux_tim + hifreq_tim + wav_tim + cplstep_tim
 #endif
 #if defined(NMM_FIND_LOAD_IMBALANCE)
         sum_tim=sum_tim + loadimbal_tim + previmbal_tim
@@ -2470,6 +2472,10 @@
         call wrf_message(trim(message))
 #ifdef HWRF
         write(message,17)' sst_tim=',sst_tim,' pct=',sst_tim/sum_tim*100.
+        call wrf_message(trim(message))
+        write(message,17)' cplstep_tim=',cplstep_tim,' pct=',cplstep_tim/sum_tim*100.
+        call wrf_message(trim(message))
+        write(message,17)' wav_tim=',wav_tim,' pct=',wav_tim/sum_tim*100.
         call wrf_message(trim(message))
         write(message,17)' flux_tim=',flux_tim,' pct=',flux_tim/sum_tim*100.
         call wrf_message(trim(message))

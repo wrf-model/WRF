@@ -407,7 +407,6 @@
           lsltp=l
         enddo
 !
-      print*, "zhang level of stratsphere, lsltp==", lsltp, KTE
       DO l=lsltp,KTE
        DO J=MYJS2_P1,MYJE2_P1
         DO I=MYIS1_P1,MYIE1_P1

@@ -2,14 +2,18 @@
 SUBROUTINE med_nest_move ( parent, nest )
   ! Driver layer
    USE module_domain, ONLY : domain, get_ijk_from_grid, adjust_domain_dims_for_move
+   USE module_driver_constants, ONLY : max_nests
    USE module_utility
    USE module_timing
    USE module_configure, ONLY : grid_config_rec_type, model_config_rec, model_to_grid_config_rec
    USE module_state_description
 !   USE module_io_domain
-   USE module_dm, ONLY : wrf_dm_move_nest
+#if defined(DM_PARALLEL) && ! defined(STUBMPI)
+   USE module_dm, ONLY : wrf_dm_move_nest,nest_task_offsets,mpi_comm_to_kid,mpi_comm_to_mom, which_kid
+#endif
+   IMPLICIT NONE
    TYPE(domain) , POINTER                     :: parent, nest, grid
-   INTEGER dx, dy       ! number of parent domain points to move
+   INTEGER dx, dy, origdy       ! number of parent domain points to move
 #ifdef MOVE_NESTS
   ! Local 
    CHARACTER*256 mess
@@ -18,7 +22,7 @@ SUBROUTINE med_nest_move ( parent, nest )
    INTEGER                         :: ids , ide , jds , jde , kds , kde , &
                                       ims , ime , jms , jme , kms , kme , &
                                       ips , ipe , jps , jpe , kps , kpe
-   INTEGER ierr, fid
+   INTEGER ierr, fid, comzilla, kid
 #if ( HWRF == 1 )
    REAL,PARAMETER           :: con_g       =9.80665e+0! gravity             (m/s2)
    REAL,PARAMETER           :: con_rd      =2.8705e+2 ! gas constant air    (J/kg/K)
@@ -234,8 +238,9 @@ SUBROUTINE med_nest_move ( parent, nest )
 #endif
 #if (NMM_CORE == 1 && NMM_NEST == 1)
      IF(MOD(dy,2) .NE. 0)THEN
+       origdy = dy
        dy=dy+sign(1,dy)
-       WRITE(mess,*)'WARNING: DY REDEFINED FOR THE NMM CORE AND RE-SET TO MASS POINT dy=',dy
+       WRITE(mess,*)'WARNING: DY REDEFINED FOR THE NMM CORE AND RE-SET FROM ',origdy,' TO MASS POINT dy=',dy
        call wrf_debug(1,mess)
      ENDIF
 
@@ -286,15 +291,30 @@ SUBROUTINE med_nest_move ( parent, nest )
      py = grid%parent_grid_ratio*dy
 
      grid%i_parent_start = grid%i_parent_start + px / grid%parent_grid_ratio 
-     CALL nl_set_i_parent_start( grid%id, grid%i_parent_start )
      grid%j_parent_start = grid%j_parent_start + py / grid%parent_grid_ratio
+
+#if defined(DM_PARALLEL) && ! defined(STUBMPI)
+     IF ( (parent%active_this_task .OR. grid%active_this_task) ) THEN
+       IF ( parent%active_this_task ) THEN
+         comzilla = mpi_comm_to_kid( which_kid( grid%id ) , parent%id )
+       ELSE
+         comzilla = mpi_comm_to_mom( grid%id )
+       ENDIF
+       CALL BYTE_BCAST_FROM_ROOT( grid%i_parent_start, IWORDSIZE, nest_task_offsets(nest%id), comzilla )  !
+       CALL BYTE_BCAST_FROM_ROOT( grid%j_parent_start, IWORDSIZE, nest_task_offsets(nest%id), comzilla )  !
+     ENDIF
+
+     CALL nl_set_i_parent_start( grid%id, grid%i_parent_start )
      CALL nl_set_j_parent_start( grid%id, grid%j_parent_start )
 
+     CALL push_communicators_for_domain(grid%id)
      IF ( wrf_dm_on_monitor() ) THEN
        write(mess,*)  &
          'Grid ',grid%id,' New SW corner (in parent x and y):',grid%i_parent_start, grid%j_parent_start
        CALL wrf_message(TRIM(mess))
      ENDIF
+     CALL pop_communicators_for_domain(grid%id)
+#endif
 
 #if (NMM_CORE == 1 && NMM_NEST == 1)
 
@@ -324,6 +344,7 @@ SUBROUTINE med_nest_move ( parent, nest )
                              ims, ime, jms, jme, kms, kme,    &
                              ips, ipe, jps, jpe, kps, kpe    )
 
+    IF ( nest%active_this_task ) THEN
 #if ( HWRF == 1 )
 !   adjust pint & pressure depth due to height change in nest_terrain
 !     assume lapse rate of 6.1K/1km
@@ -351,6 +372,7 @@ SUBROUTINE med_nest_move ( parent, nest )
        nest%fis(I,J)=nest%hres_fis(I,J)
      ENDDO
     ENDDO
+    ENDIF
 
 !
 !  De-reference dimension information stored in the grid data structure.
@@ -399,6 +421,7 @@ SUBROUTINE med_nest_move ( parent, nest )
      CALL nl_get_input_from_hires( nest%id , input_from_hires ) 
      IF ( input_from_hires ) THEN
 
+       IF ( nest%active_this_task ) THEN
 ! store horizontally interpolated terrain in temp location
        CALL  copy_3d_field ( nest%ht_fine , nest%ht , &
                              ids , ide , jds , jde , 1   , 1   , &
@@ -430,6 +453,7 @@ SUBROUTINE med_nest_move ( parent, nest )
                              ids , ide , jds , jde , kds , kde , &
                              ims , ime , jms , jme , kms , kme , &
                              ips , ipe , jps , jpe , kps , kpe )
+       ENDIF
 !
        CALL model_to_grid_config_rec ( parent%id , model_config_rec , config_flags )
 
@@ -475,7 +499,15 @@ SUBROUTINE med_nest_move ( parent, nest )
 #if ( EM_CORE == 1 )
      nest%press_adj = .FALSE.
 #endif
-     CALL start_domain ( nest , .FALSE. )
+
+#if defined(DM_PARALLEL) && ! defined(STUBMPI)
+
+     IF ( nest%active_this_task ) THEN
+       CALL push_communicators_for_domain(nest%id)
+       CALL start_domain ( nest , .FALSE. )
+       CALL pop_communicators_for_domain
+     ENDIF
+#endif
      config_flags%restart = saved_restart_value
      grid%restart = saved_restart_value
      CALL nl_set_restart ( 1,  saved_restart_value )
@@ -486,6 +518,7 @@ SUBROUTINE med_nest_move ( parent, nest )
 ! this should be registry generated.
 !
 #if ( EM_CORE == 1 )
+     IF ( nest%active_this_task ) THEN
       do k = kms,kme
         where ( nest%imask_xstag  .EQ. 1 ) nest%u_1(:,k,:)   = nest%u_2(:,k,:)
         where ( nest%imask_ystag  .EQ. 1 ) nest%v_1(:,k,:)   = nest%v_2(:,k,:)
@@ -495,6 +528,7 @@ SUBROUTINE med_nest_move ( parent, nest )
         where ( nest%imask_nostag .EQ. 1 ) nest%tke_1(:,k,:) = nest%tke_2(:,k,:)
       enddo
       where ( nest%imask_nostag .EQ. 1 ) nest%mu_1(:,:)  = nest%mu_2(:,:)
+     ENDIF
 #endif
 !
 #if ( HWRF == 1 )
@@ -1068,12 +1102,12 @@ USE module_timing
 
      IF ( par%id .EQ. 1 ) THEN
          IF ( would_move_x .NE. 0 .AND. move_cd_x .NE. 0 ) THEN
-           CALL wrf_debug(1,'MOAD can not move. Cancelling nest move in X')
+           CALL wrf_message('MOAD can not move. Cancelling nest move in X')
            if ( grid%num_nests .eq. 0 ) grid%vc_i = grid%vc_i + move_cd_x * pgr  ! cancel effect of move
            move_cd_x = 0
          ENDIF
          IF ( would_move_y .NE. 0 .AND. move_cd_y .NE. 0 ) THEN
-           CALL wrf_debug(1,'MOAD can not move. Cancelling nest move in Y')
+           CALL wrf_message('MOAD can not move. Cancelling nest move in Y')
            if ( grid%num_nests .eq. 0 ) grid%vc_j = grid%vc_j + move_cd_y * pgr  ! cancel effect of move
            move_cd_y = 0
          ENDIF
@@ -1135,8 +1169,9 @@ USE module_timing
          CALL wrf_dm_move_nest ( grid , grid%nests(kid)%ptr%intermediate_grid , -move_cd_x*pgr, -move_cd_y*pgr )
          CALL adjust_domain_dims_for_move( grid%nests(kid)%ptr%intermediate_grid , -move_cd_x*pgr, -move_cd_y*pgr )
          grid%nests(kid)%ptr%i_parent_start = grid%nests(kid)%ptr%i_parent_start - move_cd_x*pgr
-         CALL nl_set_i_parent_start( grid%nests(kid)%ptr%id, grid%nests(kid)%ptr%i_parent_start )
          grid%nests(kid)%ptr%j_parent_start = grid%nests(kid)%ptr%j_parent_start - move_cd_y*pgr
+
+         CALL nl_set_i_parent_start( grid%nests(kid)%ptr%id, grid%nests(kid)%ptr%i_parent_start )
          CALL nl_set_j_parent_start( grid%nests(kid)%ptr%id, grid%nests(kid)%ptr%j_parent_start )
 
        ENDIF
@@ -1223,9 +1258,9 @@ LOGICAL FUNCTION direction_of_move2 ( parent , grid , move_cd_x, move_cd_y )
                   nips, nipe, njps, njpe, nkps, nkpe
    real :: dx,dy,kid_ic,kid_jc,my_ic,my_jc,pgr,pgrn,hr,two_dt,when,before,after
    real, parameter :: pmult=1.35
-   integer :: inew,jnew,corral_x,corral_y
-   integer :: min_corral_x, min_corral_y
-   logical :: abort
+   integer :: inew,jnew,ierr,comzilla,itmp_pos,itmp_neg
+   integer :: corral_x, corral_y, min_corral_x, min_corral_y
+   logical :: abort,mvnest_l
 
 ! PURPOSE: DECIDE THE DIRECTION OF MOVE
 !    Three modes:
@@ -1260,9 +1295,6 @@ LOGICAL FUNCTION direction_of_move2 ( parent , grid , move_cd_x, move_cd_y )
    endif
 
    abort=.false. ! will be set to .true. if any safety checks fail
-
-
-
    ! INITIALIZE NEST MOTION TO DISABLED
    move_cd_x=0
    move_cd_y=0
@@ -1321,6 +1353,20 @@ LOGICAL FUNCTION direction_of_move2 ( parent , grid , move_cd_x, move_cd_y )
    !
    !  DETERMINE AUTOMATICALLY THE DIRECTION OF GRID MOTION
    !
+
+   IF ( .NOT. grid%active_this_task ) grid%mvnest = .FALSE.   ! prevent inactive grids from turning on movement
+   IF ( (parent%active_this_task .OR. grid%active_this_task) ) THEN
+     IF ( parent%active_this_task ) THEN
+       comzilla = mpi_comm_to_kid( which_kid( grid%id ) , parent%id )
+     ELSE
+       comzilla = mpi_comm_to_mom( grid%id )
+     ENDIF
+     CALL MPI_Allreduce( grid%mvnest , mvnest_l, 1, MPI_LOGICAL, MPI_LOR, comzilla, ierr )
+     grid%mvnest = mvnest_l
+   ENDIF
+
+   CALL push_communicators_for_domain(grid%id)
+
    can_move: if(grid%num_moves.eq.-99 .and. grid%mvnest .and. .not. abort) then
 
       if(wrf_dm_on_monitor() .and. .not. abort) then
@@ -1507,6 +1553,31 @@ LOGICAL FUNCTION direction_of_move2 ( parent , grid , move_cd_x, move_cd_y )
      call wrf_message(mess)
   endif
   
+  IF ( .NOT. grid%active_this_task ) THEN
+    grid%mvnest = .FALSE.   ! prevent inactive grids from turning on movement
+    grid%move_cd_x = 0
+    grid%move_cd_y = 0
+  ENDIF
+ 
+  IF ( (parent%active_this_task .OR. grid%active_this_task) ) THEN
+    CALL MPI_Allreduce( grid%mvnest , mvnest_l, 1, MPI_LOGICAL, MPI_LOR, comzilla, ierr )
+    grid%mvnest = mvnest_l
+    CALL MPI_Allreduce( move_cd_x , itmp_pos, 1, MPI_INTEGER, MPI_MAX, comzilla, ierr )
+    CALL MPI_Allreduce( move_cd_x , itmp_neg, 1, MPI_INTEGER, MPI_MIN, comzilla, ierr )
+    IF ( itmp_pos .NE. 0 ) THEN
+      move_cd_x = itmp_pos
+    ELSE 
+      move_cd_x = itmp_neg
+    ENDIF
+    CALL MPI_Allreduce( move_cd_y , itmp_pos, 1, MPI_INTEGER, MPI_MAX, comzilla, ierr )
+    CALL MPI_Allreduce( move_cd_y , itmp_neg, 1, MPI_INTEGER, MPI_MIN, comzilla, ierr )
+    IF ( itmp_pos .NE. 0 ) THEN
+      move_cd_y = itmp_pos
+    ELSE 
+      move_cd_y = itmp_neg
+    ENDIF
+  ENDIF
+
   if(move_cd_x/=0 .or. move_cd_y/=0) then
      direction_of_move2 = .true.
      grid%moved = .true.
@@ -1516,6 +1587,8 @@ LOGICAL FUNCTION direction_of_move2 ( parent , grid , move_cd_x, move_cd_y )
         ! other vortex trackers set NTIME0 in STATS_FOR_MOVE
      endif
   endif
+
+   CALL pop_communicators_for_domain(grid%id)
   
   RETURN
 
@@ -1545,9 +1618,11 @@ LOGICAL FUNCTION direction_of_move ( parent , grid , move_cd_x, move_cd_y )
                   nids, nide, njds, njde, nkds, nkde, &
                   nims, nime, njms, njme, nkms, nkme, &
                   nips, nipe, njps, njpe, nkps, nkpe
-      INTEGER                          :: IDS,IDE,JDS,JDE,KDS,KDE
-      INTEGER                          :: IMS,IME,JMS,JME,KMS,KME
-      INTEGER                          :: ITS,ITE,JTS,JTE,KTS,KTE
+   INTEGER                          :: IDS,IDE,JDS,JDE,KDS,KDE
+   INTEGER                          :: IMS,IME,JMS,JME,KMS,KME
+   INTEGER                          :: ITS,ITE,JTS,JTE,KTS,KTE
+   INTEGER                          :: IpS,IpE,JpS,JpE,KpS,KpE
+   INTEGER comzilla
    character*255 :: message
 ! interface
    INTERFACE
@@ -1619,6 +1694,21 @@ LOGICAL FUNCTION direction_of_move ( parent , grid , move_cd_x, move_cd_y )
 
    direction_of_move = direction_of_move2 ( parent , grid , move_cd_x, move_cd_y )
 
+! any nest grid needs to know if grid is moving
+   IF ( grid%id .GT. 1 .AND. grid%num_nests .GT. 0 ) THEN
+     IF ( (.NOT. (grid%active_this_task .AND. grid%nests(kid)%ptr%active_this_task) ) .AND. &
+                 (grid%active_this_task .OR.  grid%nests(kid)%ptr%active_this_task) ) THEN
+       IF ( grid%active_this_task ) THEN
+         comzilla = mpi_comm_to_kid( kid , grid%id )
+       ELSE
+         comzilla = mpi_comm_to_mom( grid%nests(kid)%ptr%id )
+       ENDIF
+       CALL BYTE_BCAST( move_cd_x, IWORDSIZE, comzilla )  !
+       CALL BYTE_BCAST( move_cd_y, IWORDSIZE, comzilla )  !
+     ENDIF
+     direction_of_move = ( move_cd_x .NE. 0 ) .OR. ( move_cd_y .NE. 0 )
+   ENDIF
+
    if(grid%vortex_tracker == 1) then
       return ! Old HWRF tracker has nothing more to do.
    endif
@@ -1653,13 +1743,26 @@ LOGICAL FUNCTION direction_of_move ( parent , grid , move_cd_x, move_cd_y )
                cims, cime, cjms, cjme, ckms, ckme, &
                cips, cipe, cjps, cjpe, ckps, ckpe  )
           CALL nl_get_parent_grid_ratio ( grid%nests(kid)%ptr%id , pgr )
+          ! need to adjust the intermediate domain of the nest in relation to this
+          ! domain since we're moving
+          IF(MOD(move_cd_y,2) .NE. 0)THEN
+            move_cd_y=move_cd_y+sign(1,move_cd_y)
+             WRITE(message,*)'WARNING: move_cd_y REDEFINED FOR THE NMM CORE AND RE-SET TO MASS POINT move_cd_y=',move_cd_y
+             call wrf_debug(1,message)
+          ENDIF
 
-         ! need to adjust the intermediate domain of the nest in relation to this
-         ! domain since we're moving
-         IF(MOD(move_cd_y,2) .NE. 0)THEN
-           move_cd_y=move_cd_y+sign(1,move_cd_y)
-            WRITE(message,*)'WARNING: move_cd_y REDEFINED FOR THE NMM CORE AND RE-SET TO MASS POINT move_cd_y=',move_cd_y
-            call wrf_debug(1,message)
+         IF (grid%active_this_task .OR.  grid%nests(kid)%ptr%active_this_task ) THEN
+           IF ( grid%active_this_task ) THEN
+             comzilla = mpi_comm_to_kid( kid , grid%id )
+           ELSE
+             comzilla = mpi_comm_to_mom( grid%nests(kid)%ptr%id )
+           ENDIF
+
+           CALL BYTE_BCAST( grid%nests(kid)%ptr%i_parent_start, IWORDSIZE, comzilla )  !
+           CALL BYTE_BCAST( grid%nests(kid)%ptr%j_parent_start, IWORDSIZE, comzilla )  !
+           CALL BYTE_BCAST( move_cd_x, IWORDSIZE, comzilla )  !
+           CALL BYTE_BCAST( move_cd_y, IWORDSIZE, comzilla )  !
+
          ENDIF
 
          CALL wrf_dm_move_nest ( grid , grid%nests(kid)%ptr%intermediate_grid , -move_cd_x*pgr, -move_cd_y*pgr )
@@ -1667,56 +1770,60 @@ LOGICAL FUNCTION direction_of_move ( parent , grid , move_cd_x, move_cd_y )
          grid%nests(kid)%ptr%i_parent_start = grid%nests(kid)%ptr%i_parent_start - move_cd_x*pgr
          write(message,*)'grid%nests(kid)%ptr%i_parent_start =',grid%nests(kid)%ptr%i_parent_start,grid%nests(kid)%ptr%id
          call wrf_debug(1,message)
-         CALL nl_set_i_parent_start( grid%nests(kid)%ptr%id, grid%nests(kid)%ptr%i_parent_start )
+
          grid%nests(kid)%ptr%j_parent_start = grid%nests(kid)%ptr%j_parent_start - move_cd_y*pgr
          write(message,*)'grid%nests(kid)%ptr%j_parent_start =',grid%nests(kid)%ptr%j_parent_start,grid%nests(kid)%ptr%id
          call wrf_debug(1,message)
+
+         CALL nl_set_i_parent_start( grid%nests(kid)%ptr%id, grid%nests(kid)%ptr%i_parent_start )
          CALL nl_set_j_parent_start( grid%nests(kid)%ptr%id, grid%nests(kid)%ptr%j_parent_start )
-         IDS = grid%nests(kid)%ptr%sd31
-         IDE = grid%nests(kid)%ptr%ed31
-         JDS = grid%nests(kid)%ptr%sd32
-         JDE = grid%nests(kid)%ptr%ed32
-         KDS = grid%nests(kid)%ptr%sd33
-         KDE = grid%nests(kid)%ptr%ed33
 
-         IMS = grid%nests(kid)%ptr%sm31
-         IME = grid%nests(kid)%ptr%em31
-         JMS = grid%nests(kid)%ptr%sm32
-         JME = grid%nests(kid)%ptr%em32
-         KMS = grid%nests(kid)%ptr%sm33
-         KME = grid%nests(kid)%ptr%em33
+         IF ( grid%nests(kid)%ptr%active_this_task ) THEN
+          IDS = grid%nests(kid)%ptr%sd31
+          IDE = grid%nests(kid)%ptr%ed31
+          JDS = grid%nests(kid)%ptr%sd32
+          JDE = grid%nests(kid)%ptr%ed32
+          KDS = grid%nests(kid)%ptr%sd33
+          KDE = grid%nests(kid)%ptr%ed33
 
-         ITS  = grid%nests(kid)%ptr%sp31
-         ITE  = grid%nests(kid)%ptr%ep31
-         JTS  = grid%nests(kid)%ptr%sp32
-         JTE  = grid%nests(kid)%ptr%ep32
-         KTS  = grid%nests(kid)%ptr%sp33
-         KTE  = grid%nests(kid)%ptr%ep33
+          IMS = grid%nests(kid)%ptr%sm31
+          IME = grid%nests(kid)%ptr%em31
+          JMS = grid%nests(kid)%ptr%sm32
+          JME = grid%nests(kid)%ptr%em32
+          KMS = grid%nests(kid)%ptr%sm33
+          KME = grid%nests(kid)%ptr%em33
 
-         CALL G2T2H_new(    grid%nests(kid)%ptr%IIH,grid%nests(kid)%ptr%JJH,                            & ! output grid index in parent grid
-                       grid%nests(kid)%ptr%HBWGT1,grid%nests(kid)%ptr%HBWGT2,                      & ! output weights in terms of parent grid
-                       grid%nests(kid)%ptr%HBWGT3,grid%nests(kid)%ptr%HBWGT4,                      &
-                       grid%nests(kid)%ptr%I_PARENT_START,grid%nests(kid)%ptr%J_PARENT_START,      & ! nest start I, J in parent domain
-                       3,                              & ! Ratio of parent and child grid ( always = 3 for NMM)
-                       IDS,IDE,JDS,JDE,KDS,KDE,            & ! target (nest) dimensions
-                       IMS,IME,JMS,JME,KMS,KME,            &
-                       ITS,ITE,JTS,JTE,KTS,KTE      )
-         CALL G2T2V_new(    grid%nests(kid)%ptr%IIV,grid%nests(kid)%ptr%JJV,                            & ! output grid index in parent grid
-                       grid%nests(kid)%ptr%VBWGT1,grid%nests(kid)%ptr%VBWGT2,                      & ! output weights in terms of parent grid
-                       grid%nests(kid)%ptr%VBWGT3,grid%nests(kid)%ptr%VBWGT4,                      &
-                       grid%nests(kid)%ptr%I_PARENT_START,grid%nests(kid)%ptr%J_PARENT_START,      & ! nest start I, J in parent domain
-                       3,                              & ! Ratio of parent and child grid ( always = 3 for NMM)
-                       IDS,IDE,JDS,JDE,KDS,KDE,            & ! target (nest) dimensions
-                       IMS,IME,JMS,JME,KMS,KME,            &
-                       ITS,ITE,JTS,JTE,KTS,KTE      )
+          ITS  = grid%nests(kid)%ptr%sp31
+          ITE  = grid%nests(kid)%ptr%ep31
+          JTS  = grid%nests(kid)%ptr%sp32
+          JTE  = grid%nests(kid)%ptr%ep32
+          KTS  = grid%nests(kid)%ptr%sp33
+          KTE  = grid%nests(kid)%ptr%ep33
 
-         CALL init_hnear(    grid%nests(kid)%ptr%IIH,grid%nests(kid)%ptr%JJH,                            & ! output grid index in parent grid
-                       grid%nests(kid)%ptr%HBWGT1,grid%nests(kid)%ptr%HBWGT2,                      & ! output weights in terms of parent grid
-                       grid%nests(kid)%ptr%HBWGT3,grid%nests(kid)%ptr%HBWGT4,                      &
-                       grid%nests(kid)%ptr%hnear_i,grid%nests(kid)%ptr%hnear_j,                    &
-                       IDS,IDE,JDS,JDE,KDS,KDE,            & ! target (nest) dimensions
-                       IMS,IME,JMS,JME,KMS,KME,            &
-                       ITS,ITE,JTS,JTE,KTS,KTE      )
+          CALL G2T2H_new(    grid%nests(kid)%ptr%IIH,grid%nests(kid)%ptr%JJH,                            & ! output grid index in parent grid
+                        grid%nests(kid)%ptr%HBWGT1,grid%nests(kid)%ptr%HBWGT2,                      & ! output weights in terms of parent grid
+                        grid%nests(kid)%ptr%HBWGT3,grid%nests(kid)%ptr%HBWGT4,                      &
+                        grid%nests(kid)%ptr%I_PARENT_START,grid%nests(kid)%ptr%J_PARENT_START,      & ! nest start I, J in parent domain
+                        3,                              & ! Ratio of parent and child grid ( always = 3 for NMM)
+                        IDS,IDE,JDS,JDE,KDS,KDE,            & ! target (nest) dimensions
+                        IMS,IME,JMS,JME,KMS,KME,            &
+                        ITS,ITE,JTS,JTE,KTS,KTE      )
+          CALL G2T2V_new(    grid%nests(kid)%ptr%IIV,grid%nests(kid)%ptr%JJV,                            & ! output grid index in parent grid
+                        grid%nests(kid)%ptr%VBWGT1,grid%nests(kid)%ptr%VBWGT2,                      & ! output weights in terms of parent grid
+                        grid%nests(kid)%ptr%VBWGT3,grid%nests(kid)%ptr%VBWGT4,                      &
+                        grid%nests(kid)%ptr%I_PARENT_START,grid%nests(kid)%ptr%J_PARENT_START,      & ! nest start I, J in parent domain
+                        3,                              & ! Ratio of parent and child grid ( always = 3 for NMM)
+                        IDS,IDE,JDS,JDE,KDS,KDE,            & ! target (nest) dimensions
+                        IMS,IME,JMS,JME,KMS,KME,            &
+                        ITS,ITE,JTS,JTE,KTS,KTE      )
+          CALL init_hnear(    grid%nests(kid)%ptr%IIH,grid%nests(kid)%ptr%JJH,                            & ! output grid index in parent grid
+                        grid%nests(kid)%ptr%HBWGT1,grid%nests(kid)%ptr%HBWGT2,                      & ! output weights in terms of parent grid
+                        grid%nests(kid)%ptr%HBWGT3,grid%nests(kid)%ptr%HBWGT4,                      &
+                        grid%nests(kid)%ptr%hnear_i,grid%nests(kid)%ptr%hnear_j,                    &
+                        IDS,IDE,JDS,JDE,KDS,KDE,            & ! target (nest) dimensions
+                        IMS,IME,JMS,JME,KMS,KME,            &
+                        ITS,ITE,JTS,JTE,KTS,KTE      )
+         ENDIF
 
        ENDIF no_nests
        if(grid%vortex_tracker == 6 .or. grid%vortex_tracker == 7) then

@@ -942,12 +942,12 @@
 
       oops = 0
       DO i = 1, model_config_rec % max_dom
-         IF ( model_config_rec%icloud_bl(i) .eq. 1) THEN
+         IF ( model_config_rec%icloud_bl .eq. 1) THEN
            IF ( model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME2 .OR. &
                 model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME3 ) THEN
               !CORRECTLY CONFIGURED
            ELSE
-              model_config_rec%icloud_bl(i) = 0
+              model_config_rec%icloud_bl = 0
               oops = oops + 1
            END IF
          END IF

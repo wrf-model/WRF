@@ -1160,12 +1160,12 @@ CONTAINS
                !Partition the BL clouds into water & ice according to a linear
                !approximation of Hobbs et al. (1974). This allows us to only use
                !one 3D array for both cloud water & ice.
-               Wice = 1. - MIN(1., MAX(0., (t(i,k,j)-254.)/15.))
-               Wh2o = 1. - Wice
+!              Wice = 1. - MIN(1., MAX(0., (t(i,k,j)-254.)/15.))
+!              Wh2o = 1. - Wice
                CLDFRA(i,k,j)=MAX(CLDFRA(i,k,j),CLDFRA_BL(i,k,j))
                CLDFRA(i,k,j)=MAX(0.0,MIN(1.0,CLDFRA(i,k,j)))
-               qc(i,k,j)=qc(i,k,j) + QC_BL(i,k,j)*Wh2o*CLDFRA_BL(i,k,j)
-               qi(i,k,j)=qi(i,k,j) + QC_BL(i,k,j)*Wice*CLDFRA_BL(i,k,j)
+               qc(i,k,j)=qc(i,k,j) + QC_BL(i,k,j)*(MIN(1., MAX(0., (t(i,k,j)-254.)/15.)))*CLDFRA_BL(i,k,j)
+               qi(i,k,j)=qi(i,k,j) + QC_BL(i,k,j)*(1. - MIN(1., MAX(0., (t(i,k,j)-254.)/15.)))*CLDFRA_BL(i,k,j)
            ENDDO
            ENDDO
            ENDDO

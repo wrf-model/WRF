@@ -76,6 +76,7 @@
 !        = .true. : recalculates fall speed after each substep (more accurate)
 !        = .false. : (default) reuses fall speeds calculated on the first substep (typical for most schemes), theoretically could cause an occasional glitch, but none seen in practice
 !   Increased maximum mean droplet radius from 40 to 60 microns, which alleviates spurious number concentration increases at low CCN concentration.
+!   Removed a duplicate factor from hail reflectivity that was causing a loss of about 6 dBZ (since WRF 3.5).
 !
 !---------------------------------------------------------------------
 
@@ -6510,7 +6511,7 @@ END SUBROUTINE nssl_2mom_driver
              g1 = (6.0 + alphahl)*(5.0 + alphahl)*(4.0 + alphahl)/((3.0 + alphahl)*(2.0 + alphahl)*(1.0 + alphahl))
              zx = g1*db(ix,jy,kz)**2*( 0.224*an(ix,jy,kz,lhl) + 0.776*qxw)*an(ix,jy,kz,lhl)/chl
 !             zx = g1*(db(ix,jy,kz)*an(ix,jy,kz,lhl))**2/chl
-             ze = 0.224*1.e18*zx*(6./(pi*1000.))**2
+             ze = 1.e18*zx*(6./(pi*1000.))**2 ! 3/28/2016 removed extra factor of 0.224
              dtmp(ix,kz) = dtmp(ix,kz) + ze
              dtmphl = ze
              

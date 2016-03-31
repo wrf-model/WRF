@@ -1,3 +1,23 @@
+!  Program Name:
+!  Author(s)/Contact(s):
+!  Abstract:
+!  History Log:
+! 
+!  Usage:
+!  Parameters: <Specify typical arguments passed>
+!  Input Files:
+!        <list file names and briefly describe the data they include>
+!  Output Files:
+!        <list file names and briefly describe the information they include>
+! 
+!  Condition codes:
+!        <list exit condition or error codes returned >
+!        If appropriate, descriptive troubleshooting instructions or
+!        likely causes for failures could be mentioned here with the
+!        appropriate error code
+! 
+!  User controllable options: <if applicable>
+
 module module_HYDRO_utils
   use module_RT_data, only: rt_domain
   use module_namelist, only: nlst_rt
@@ -6,6 +26,7 @@ module module_HYDRO_utils
            decompose_data_real, write_io_real, MPP_LAND_COM_REAL, &
            write_io_int, mpp_land_bcast_real, global_rt_nx, global_rt_ny, &
            decompose_rt_real, write_io_rt_real
+     use MODULE_mpp_GWBUCKET, only: gw_decompose_real
 #endif
 
 
@@ -26,7 +47,7 @@ contains
           iret = nf_open(trim(fileName), NF_NOWRITE, ncid)
           if (iret .ne. 0) then
 #ifdef HYDRO_D
-            print*,"failed to open the netcdf file: ",trim(fileName)
+            print*,"Failed to open the netcdf file: ",trim(fileName)
 #endif
             out_buff = -9999.
             return
@@ -327,7 +348,7 @@ contains
    subroutine get_basn_area(did)
       implicit none
       integer :: did, ix,jx, k
-      real :: basns_area(rt_domain(did)%numbasns)
+      real :: basns_area(rt_domain(did)%gnumbasns)
 #ifdef MPP_LAND
       integer :: mask(global_nx, global_ny) 
       real :: dist_lsm(global_nx, global_ny,9) 
@@ -351,11 +372,14 @@ contains
 
 #ifdef MPP_LAND
       if(my_id .eq. IO_id) then
-#endif
-         call get_area_g(rt_domain(did)%basns_area,mask, rt_domain(did)%numbasns,ix,jx,dist_lsm)
-#ifdef MPP_LAND
+         call get_area_g(basns_area,mask, rt_domain(did)%gnumbasns,ix,jx,dist_lsm)
       end if
-      call mpp_land_bcast_real(rt_domain(did)%numbasns,rt_domain(did)%basns_area)
+!      call mpp_land_bcast_real(rt_domain(did)%numbasns,rt_domain(did)%basns_area)
+
+      call gw_decompose_real(rt_domain(did)%gnumbasns, rt_domain(did)%numbasns, &
+           rt_domain(did)%basnsInd, basns_area,rt_domain(did)%basns_area)
+#else
+      call get_area_g(rt_domain(did)%basns_area,mask, rt_domain(did)%gnumbasns,ix,jx,dist_lsm)
 #endif
    end subroutine get_basn_area
 
@@ -382,27 +406,6 @@ contains
       end do
    end subroutine get_area_g
 
-   subroutine get_basn_area_tmp(did)
-      integer :: did
-      integer :: i,j, n
-      integer :: count(rt_domain(did)%numbasns)
-      rt_domain(did)%basns_area = 0
-      count = 0
-      do  j = 1, rt_domain(did)%jx
-        do  i = 1, rt_domain(did)%ix
-           n = rt_domain(did)%GWSUBBASMSK(i,j)
-           if(n .gt. 0) then
-              rt_domain(did)%basns_area(n) = rt_domain(did)%basns_area(n)+rt_domain(did)%dist_lsm(i,j,9)
-              count(n) = count(n) + 1
-           endif
-        end do
-      end do
-      do i = 1, rt_domain(did)%numbasns
-         if(count(i) .gt. 0) then
-             rt_domain(did)%basns_area(i) = rt_domain(did)%basns_area(i) / count(i) 
-         end if
-      end do
-   end subroutine get_basn_area_tmp
 
    subroutine get_node_area(did)
        integer :: did

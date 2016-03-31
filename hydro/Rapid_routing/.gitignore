@@ -1,0 +1,24 @@
+#*******************************************************************************
+#.gitignore
+#*******************************************************************************
+
+#Purpose:
+#The git program is informed here to ignore the following files while performing 
+#its distributed revision control and source code management. 
+#Author:
+#Cedric H. David, 2014
+
+
+#*******************************************************************************
+#List of files that git will ignore
+#*******************************************************************************
+
+#-------------------------------------------------------------------------------
+#Initial releases of RAPID included batch submission scripts for supercomputers
+#-------------------------------------------------------------------------------
+job_*
+
+#-------------------------------------------------------------------------------
+#Legacy name for BSD 3-clause license of RAPID between 20120831 - 20131113 
+#-------------------------------------------------------------------------------
+rapid_license.txt

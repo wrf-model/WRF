@@ -52,7 +52,7 @@ include decode_l2_airs.make
 libwrfvar.a : $(WRFVAR_OBJS)
 	rm -f libwrfvar.a
 	$(AR) $(ARFLAGS) libwrfvar.a $(WRFVAR_OBJS)
-	$(RANLIB) libwrfvar.a
+	$(RANLIB) $(RLFLAGS) libwrfvar.a
 
 .f90.o:
 	$(RM) $@

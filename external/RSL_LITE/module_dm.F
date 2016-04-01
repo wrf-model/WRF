@@ -227,6 +227,8 @@ CONTAINS
 #endif
       CALL nl_set_nproc_x ( 1, ntasks_x )
       CALL nl_set_nproc_y ( 1, ntasks_y )
+      WRITE( wrf_err_message , * )'Ntasks in X ',ntasks_x,', ntasks in Y ',ntasks_y
+      CALL wrf_message( wrf_err_message )
       RETURN
    END SUBROUTINE wrf_dm_initialize
 

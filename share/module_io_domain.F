@@ -204,13 +204,13 @@ SUBROUTINE construct_filename2a( result , basename , fld1 , len1 , date_char )
   CALL zero_pad ( t1 , fld1 , len1 )
 
 
-! The string name length 12345678  including < >   ----|
-!                        ||||||||                      |
-  i = index( result   , '<domain>' )       !   is this |
-  DO WHILE ( i .GT. 0 )                    !   value   |
-    l = len(trim(result))                  !          \/
-    result = result  (1:i-1) // TRIM(t1) // basename(i+8:l)
-     i = index( result   , '<domain>' ) 
+! The string name length 12345678  including < > ----|
+!                        ||||||||                    |
+  i = index( result   , '<domain>' )       ! is this |
+  DO WHILE ( i .GT. 0 )                    ! value   |
+    l = len(trim(result))                  !        \/
+    result = result  (1:i-1) // TRIM(t1) // result(i+8:l)
+    i = index( result   , '<domain>' ) 
   END DO
 
   i = index( result , '<date>' )

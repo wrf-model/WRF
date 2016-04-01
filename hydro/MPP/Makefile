@@ -5,22 +5,35 @@
 
 include ../macros
 
-OBJS =  CPL_WRF.o mpp_land.o 
+OBJS =  CPL_WRF.o mpp_land.o module_mpp_ReachLS.o module_mpp_GWBUCKET.o
 
 all:	$(OBJS)
 mpp_land.o: mpp_land.F
 	@echo ""
 	$(RMD) $(*).o $(*).mod $(*).stb *~
-	$(COMPILER90) $(F90FLAGS) -c $(*).F
+	$(COMPILER90) $(F90FLAGS) $(LDFLAGS) -c $(*).F
 	ar -r ../lib/libHYDRO.a $(@)
 
 CPL_WRF.o: CPL_WRF.F
 	@echo ""
 	$(RMD) $(*).o $(*).mod $(*).stb *~ *.f
 	$(CPP) $(CPPFLAGS) -I$(NETCDFINC) $(*).F > $(*).f
-	$(COMPILER90) -o $(@) $(F90FLAGS) $(MODFLAG) $(*).f
+	$(COMPILER90) -o $(@) $(F90FLAGS) $(LDFLAGS) $(MODFLAG) $(*).f
         
-	$(COMPILER90) $(F90FLAGS)  -c $(*).F
+	$(COMPILER90) $(F90FLAGS) $(LDFLAGS) -c $(*).F
 	ar -r ../lib/libHYDRO.a $(@)
+
+module_mpp_ReachLS.o: module_mpp_ReachLS.F
+	@echo ""
+	$(RMD) $(*).o $(*).mod $(*).stb *~
+	$(COMPILER90) $(F90FLAGS) $(LDFLAGS) -c $(*).F
+	ar -r ../lib/libHYDRO.a $(@)
+
+module_mpp_GWBUCKET.o: module_mpp_GWBUCKET.F
+	@echo ""
+	$(RMD) $(*).o $(*).mod $(*).stb *~
+	$(COMPILER90) $(F90FLAGS) $(LDFLAGS) -c $(*).F
+	ar -r ../lib/libHYDRO.a $(@)
+
 clean:
 	$(RMD) *.o *.mod *.stb *~

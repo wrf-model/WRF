@@ -118,7 +118,7 @@ MODULE uoc_dust
    ppsd_f(:,:) = 0.
 
    do p = 1, stype
-      write(6,*) p
+!     write(6,*) p
       if (p.eq.1) then            ! sand
          call psd_create(d0, dd, psdm, dpsdm, ppsdm, imax, csandm, jmax)
          call psd_create(d0, dd, psdf, dpsdf, ppsdf, imax, csandf, jmax)

@@ -71,7 +71,7 @@ contains
              if(grid%suswind_time>1e-5 .and. grid%suswind(i,j)>1e-3) then
                 grid%suswind(i,j)=min(grid%suswind(i,j),sqrt(wind10sq))
              else
-                grid%suswind(i,j)=wind10sq
+                grid%suswind(i,j)=sqrt(wind10sq)
              endif
              maxsus=max(grid%suswind(i,j),maxsus)
              minsus=min(grid%suswind(i,j),minsus)
@@ -95,7 +95,7 @@ contains
              if(grid%suswind_time>1e-5 .and. grid%suswind(i,j)>1e-3) then
                 grid%suswind(i,j)=min(grid%suswind(i,j),sqrt(wind10sq))
              else
-                grid%suswind(i,j)=wind10sq
+                grid%suswind(i,j)=sqrt(wind10sq)
              endif
              maxsus=max(grid%suswind(i,j),maxsus)
              minsus=min(grid%suswind(i,j),minsus)
@@ -116,7 +116,9 @@ contains
        minsus=999
        do j=jps,jpe
           do i=ips,ipe
-             grid%suswind_swath(i,j)=max(grid%suswind(i,j),grid%suswind_swath(i,j))
+             if(grid%interesting(i,j)/=0) then
+                grid%suswind_swath(i,j)=max(grid%suswind(i,j),grid%suswind_swath(i,j))
+             endif
              wind10sq=grid%u10(i,j)*grid%u10(i,j) + grid%v10(i,j)*grid%v10(i,j)
              grid%suswind(i,j)=sqrt(wind10sq)
              maxsus=max(grid%suswind(i,j),maxsus)

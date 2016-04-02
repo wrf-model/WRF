@@ -6,6 +6,7 @@
 # Note that the {otrak} dimension is declared in registry.dimspec
 
 state  integer interesting     ij dyn_nmm    1     -    rh  "interesting" "Bitmask for area of interest flags (0=not in area of interest)" ""
+state  real    cuprecip_swath  ij dyn_nmm    1     -    rh01u=(UpMax)d=(DownCopy)  "cuprecip_swath" "Accumulated convective precip in area of interest" "m"
 state  real    precip_swath    ij dyn_nmm    1     -    rh01u=(UpMax)d=(DownCopy)  "precip_swath" "Accumulated total precip in area of interest" "m"
 state  real    windsq_swath    ij dyn_nmm    1     -    rh01u=(UpMax)d=(DownCopy)  "windsq_swath" "Accumulated maximum square of wind magnitude in area of interest" "m2 s-2"
 state  real    suswind_time    -  dyn_nmm    1     -    r                          "suswind_time"  "Time over which suswind has been accumulated so far." "s"
@@ -26,7 +27,7 @@ rconfig integer interest_storms    namelist,physics max_domains   1 irh01 "inter
 rconfig integer swath_mode         namelist,physics -   2 irh01 "swath_mode"    "2=2016 HWRF, 1=2015 HWRF, 0=disable" ""
 
 package   vt_swath swath_mode==1  -  state:interesting,precip_swath,windsq_swath
-package   vt_swath_2016 swath_mode==2  -  state:interesting,precip_swath,windsq_swath,suswind_swath,suswind,wind10_ratio
+package   vt_swath_2016 swath_mode==2  -  state:interesting,precip_swath,windsq_swath,suswind_swath,suswind,wind10_ratio,cuprecip_swath
 
 halo HALO_NMM_SWATH dyn_nmm 24:precip_swath,windsq_swath
 

@@ -175,7 +175,7 @@ rconfig integer corral_y     namelist,domains     max_domains    5   h "corral_y
 state  real   pdyn       ij     dyn_nmm     1      -    rh  "PDYN"  "Dynamic pressure at mean sea level" 
 state  real   mslp       ij     dyn_nmm     1      -    rh  "MSLP"  "Shuell Mean Sea Level Pressure" "Pa"
 ifdef HWRF=1
-state  real   best_mslp  ij     dyn_nmm     1      -    rh0123  "BEST_MSLP"  "Best Mean Sea Level Pressure (Shuell or Membrane)" "Pa"
+state  real   best_mslp  ij     dyn_nmm     1      -    rh0123d=(DownCopy)  "BEST_MSLP"  "Best Mean Sea Level Pressure (Shuell or Membrane)" "Pa"
 endif
 state  real   sqws       ij     dyn_nmm     1      -    r  "SQWS"  "SQUARE OF WIND SPEED AT LEVEL 10"
 state integer xloc         -    dyn_nmm     2      -    r  "XLOC"  "I-LOCATION OF MINIMUM DYNAMIC PRESSURE"
@@ -391,14 +391,14 @@ state  real   mixht     ij    dyn_nmm   1    -     rh        "MIXHT"            
 state  real   ustar     ij    dyn_nmm   1    -     irh023d=(DownNear) "USTAR"    "Friction velocity"                    "m s-1"
 state  real   z0        ij    dyn_nmm   1    -     i01rh023d=(DownNear) "Z0"   "Thermal Roughness length"                    "m"
 state  real   mz0       ij    dyn_nmm   1    -       h        "MZ0"       "momentum Roughness length"                     "m"
-state  real   scurx     ij    dyn_nmm   1    -     irh0123d=(DownNear)f=(force_sst_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,FORCE_SST)      "SCURX"       "Surface Currents(X)"                    "m s-1"
-state  real   scury     ij    dyn_nmm   1    -     irh0123d=(DownNear)f=(force_sst_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,FORCE_SST)      "SCURY"       "Surface Currents(Y)"                     "m s-1"
-state  real   charn     ij    dyn_nmm   1    -     irh0123d=(DownNear)f=(force_sst_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,FORCE_SST)      "CHARN"       "Charnock Coeff"                    " "
-state  real   msang     ij    dyn_nmm   1    -     irh0123d=(DownNear)f=(force_sst_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,FORCE_SST)      "MSANG"       "Wind/Stress Angle"                    "Radian"
-state  real   rchno     ij    dyn_nmm   1    -     irh0123      "RCHNO"       "Richardson number"                    " "
-state  real   zsig1     ij    dyn_nmm   1    -     irh0123      "ZSIG1"       "Height of lowest model level"                "m"
-state  real   ulowl     ij    dyn_nmm   1    -     irh0123      "ULOWL"       "U at Lowest Level"         "m s-1"
-state  real   vlowl     ij    dyn_nmm   1    -     irh0123      "VLOWL"       "V at Lowest Level"         "m s-1"
+state  real   scurx     ij    dyn_nmm   1    -     irh023d=(DownNear)f=(force_sst_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,FORCE_SST)      "SCURX"       "Surface Currents(X)"                    "m s-1"
+state  real   scury     ij    dyn_nmm   1    -     irh023d=(DownNear)f=(force_sst_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,FORCE_SST)      "SCURY"       "Surface Currents(Y)"                     "m s-1"
+state  real   charn     ij    dyn_nmm   1    -     irh023d=(DownNear)f=(force_sst_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,FORCE_SST)      "CHARN"       "Charnock Coeff"                    " "
+state  real   msang     ij    dyn_nmm   1    -     irh023d=(DownNear)f=(force_sst_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,FORCE_SST)      "MSANG"       "Wind/Stress Angle"                    "Radian"
+state  real   rchno     ij    dyn_nmm   1    -     irh023      "RCHNO"       "Richardson number"                    " "
+state  real   zsig1     ij    dyn_nmm   1    -     irh023      "ZSIG1"       "Height of lowest model level"                "m"
+state  real   ulowl     ij    dyn_nmm   1    -     irh023      "ULOWL"       "U at Lowest Level"         "m s-1"
+state  real   vlowl     ij    dyn_nmm   1    -     irh023      "VLOWL"       "V at Lowest Level"         "m s-1"
 state  real     rc2d    ij    dyn_nmm   1    -       h        "RC2D"     "critical Richardson number" "m"
 state  real   dku3d    ijk    dyn_nmm   1    -      rh023      "DKU3D"     "Momentum Diffusivity" "m*m/s"
 state  real   dkt3d    ijk    dyn_nmm   1    -      rh023      "DKT3D"     "Thermal Diffusivity" "m*m/s"
@@ -427,12 +427,12 @@ state  real   mavail    ij    dyn_nmm   1    -     i
 state  real   qsh       ij    dyn_nmm   1    -     irh023d=(DownCopy) "QS"       "Surface specific humidity"            "kg kg-1"
 state  real   twbs      ij    dyn_nmm   1    -     irh0123      "TWBS"     "Instantaneous sensible heat flux"     "W m-2"
 state  real   qwbs      ij    dyn_nmm   1    -     irh0123      "QWBS"     "Instantaneous latent heat flux"       "W m-2"
-state  real   taux      ij    dyn_nmm   1    -     irh0123      "TAUX"     "Instantaneous stress along X direction in KG/M/S^2" 
-state  real   tauy      ij    dyn_nmm   1    -     irh0123      "TAUY"     "Instantaneous stress along Y direction in KG/M/S^2" 
+state  real   taux      ij    dyn_nmm   1    -     irh0123d=(DownCopy)      "TAUX"     "Instantaneous stress along X direction in KG/M/S^2" 
+state  real   tauy      ij    dyn_nmm   1    -     irh0123d=(DownCopy)      "TAUY"     "Instantaneous stress along Y direction in KG/M/S^2" 
 state  real   prec      ij    dyn_nmm   1    -     rh023       "PREC"     "Precipitation in physics timestep"    "m"
 state  real   aprec     ij    dyn_nmm   1    -     rh
 state  real   acprec    ij    dyn_nmm   1    -     rh0123d=(DownCopy) "ACPREC"   "Accumulatedtotal precipitation"      "m"
-state  real   cuprec    ij    dyn_nmm   1    -     rh023       "CUPREC"   "Accumulated convective precipitation" "m"
+state  real   cuprec    ij    dyn_nmm   1    -     rh0123d=(DownCopy) "CUPREC"   "Accumulated convective precipitation" "m"
 state  real   lspa      ij    dyn_nmm   1    -     h023        "LSPA"     "Land Surface Precipitation Accumulation"   "kg m-2"
 state  real   ddata     ij    dyn_nmm   1    -     -        "DDATA"    "Observed precip to each physics timestep"  "kg m-2"
 state  real   accliq    ij    dyn_nmm   1    -     r
@@ -456,8 +456,8 @@ state  real   AKMS_OUT  ij    dyn_nmm   1    -     rh023       "AKMS_OUT"  "Outp
 #
 # module_PHYS
 #
-state  real   cd_out    ij    dyn_nmm   1    -     rh0123       "CD10"  "sfc exch coeff for momentum at 10m"        "m2 s-1"
-state  real   ch_out    ij    dyn_nmm   1    -     rh0123       "CH10"  "sfc exch coeff for heat at 10m"            "m2 s-1"
+state  real   cd_out    ij    dyn_nmm   1    -     rh0123d=(DownCopy)       "CD10"  "sfc exch coeff for momentum at 10m"        "m2 s-1"
+state  real   ch_out    ij    dyn_nmm   1    -     rh0123d=(DownCopy)       "CH10"  "sfc exch coeff for heat at 10m"            "m2 s-1"
 
 state  real   albase    ij    dyn_nmm   1    -     i01rh023d=(DownCopy) "ALBASE"    "Base albedo"            ""
 state  real   albedo    ij    dyn_nmm   1    -     irh023      "ALBEDO"    "Dynamic albedo"         ""

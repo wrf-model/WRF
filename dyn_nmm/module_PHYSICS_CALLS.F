@@ -2922,8 +2922,12 @@
           endif
 #ifdef HWRF
           if(have_swath) then
-             if(grid%interesting(i,j)/=0) &
-                  grid%precip_swath(i,j) = grid%precip_swath(i,j) + PCPCOL
+             if(grid%interesting(i,j)/=0) then
+                grid%precip_swath(i,j) = grid%precip_swath(i,j) + PCPCOL
+                if(size(grid%cuprecip_swath)>0) then
+                   grid%cuprecip_swath(i,j) = grid%cuprecip_swath(i,j) + PCPCOL
+                endif
+             endif
           endif
 #endif
 !

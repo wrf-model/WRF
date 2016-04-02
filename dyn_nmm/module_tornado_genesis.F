@@ -306,7 +306,7 @@ contains
     do j=jstart,jend
        do i=istart,iend
           kloop: do k=kds+1,kde-1
-             if(grid%pint(i,j,k)<wwind_cutoff) exit kloop
+             if(grid%pint(i,j,1)-grid%pint(i,j,k)<wwind_cutoff) exit kloop
              w=grid%w(i,j,k)
              grid%tg_min_wwind(i,j)=min(grid%tg_min_wwind(i,j),w)
              minminw=min(minminw,grid%tg_min_wwind(i,j))

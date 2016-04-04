@@ -780,15 +780,15 @@ Namelist variables for controlling the adaptive time step option:
  nsas_dx_factor                      = 0, default option
                                      = 1, NSAS grid-distance dependent option (new in 3.6)
  For KF-CuP scheme:
- shallowcu_forced_ra(max_dom)        force radiative impact of shallow Cu from KF and KF-CuP
-                                     = .true., default option
- numbins(max_dom)                    number of bins to use in the CuP PDF
- thBinSize(max_dom)                  bin size of theta bins of PDF
- rBinSize(max_dom)                   bin size of mixing ratio bins of PDF
- minDeepFreq(max_dom)                Minimum frequency required for deep convection
- minShallowFreq(max_dom)             Minimum frequency required for shallow convection
- shcu_aerosols_opt(max_dom)          whether aerosols in shcu:  0=none, 1=prescribed, 2=prognostic, 
-                                     10=prognostic and do aerosol processing
+ shallowcu_forced_ra(max_dom)        radiative impact of shallow Cu by a prescribed maximum cloud fraction from KF-CuP
+                                     = .false., option off, default
+                                     = .true., radiative impact of shallow cu with a cloud fraction value of 0.36
+ numbins(max_dom)                    number of bins to use in the CuP PDF (21 is a recommended value)
+ thBinSize(max_dom)                  bin size of theta bins of PDF (0.01 K)
+ rBinSize(max_dom)                   bin size of mixing ratio bins of PDF (1.0e-4 kg/kg)
+ minDeepFreq(max_dom)                Minimum frequency required for deep convection (0.333)
+ minShallowFreq(max_dom)             Minimum frequency required for shallow convection (1.0e-2)
+ shcu_aerosols_opt(max_dom)          whether aerosols in shcu:  0=none, 2=prognostic (run with WRF-Chem), 
 
  ncnvc (max_dom)                     = FOR NMM: number of fundamental timesteps between
                                                 calls to convection; the value is set in Registry.NMM

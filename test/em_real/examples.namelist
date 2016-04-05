@@ -360,10 +360,6 @@ the unit is stream 22.
  auxhist23_interval                  = 30,   30,    30,
  frames_per_auxhist23                =  1,    1,     1, 
  auxhist23_outname                   = "PLEVS_d<domain>_<date>"
- io_form_auxhist22                   =  2,
- auxhist22_interval                  = 30,   30,    30,
- frames_per_auxhist22                =  1,    1,     1, 
- auxhist22_outname                   = "ZLEVS_d<domain>_<date>"
  /
 
  &diags

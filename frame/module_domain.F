@@ -1533,19 +1533,19 @@ CONTAINS
          else
             if(size_changed) &
 
-write(0,"('grid%id  ',i9,l)")grid%id,grid%is_intermediate
-write(0,"('d31  ',4i9)")grid%alloced_sd31 , sd31 , grid%alloced_ed31 , ed31
-write(0,"('d32  ',4i9)")grid%alloced_sd32 , sd32 , grid%alloced_ed32 , ed32
-write(0,"('d33  ',4i9)")grid%alloced_sd33 , sd33 , grid%alloced_ed33 , ed33
-write(0,"('m31  ',4i9)")grid%alloced_sm31 , sm31 , grid%alloced_em31 , em31
-write(0,"('m32  ',4i9)")grid%alloced_sm32 , sm32 , grid%alloced_em32 , em32
-write(0,"('m33  ',4i9)")grid%alloced_sm33 , sm33 , grid%alloced_em33 , em33
-write(0,"('mx31 ',4i9)")grid%alloced_sm31x , sm31x , grid%alloced_em31x , em31x
-write(0,"('mx32 ',4i9)")grid%alloced_sm32x , sm32x , grid%alloced_em32x , em32x
-write(0,"('mx33 ',4i9)")grid%alloced_sm33x , sm33x , grid%alloced_em33x , em33x
-write(0,"('my31 ',4i9)")grid%alloced_sm31y , sm31y , grid%alloced_em31y , em31y
-write(0,"('my32 ',4i9)")grid%alloced_sm32y , sm32y , grid%alloced_em32y , em32y
-write(0,"('my33 ',4i9)")grid%alloced_sm33y , sm33y , grid%alloced_em33y , em33y
+! write(0,"('grid%id  ',i9,l)")grid%id,grid%is_intermediate
+! write(0,"('d31  ',4i9)")grid%alloced_sd31 , sd31 , grid%alloced_ed31 , ed31
+! write(0,"('d32  ',4i9)")grid%alloced_sd32 , sd32 , grid%alloced_ed32 , ed32
+! write(0,"('d33  ',4i9)")grid%alloced_sd33 , sd33 , grid%alloced_ed33 , ed33
+! write(0,"('m31  ',4i9)")grid%alloced_sm31 , sm31 , grid%alloced_em31 , em31
+! write(0,"('m32  ',4i9)")grid%alloced_sm32 , sm32 , grid%alloced_em32 , em32
+! write(0,"('m33  ',4i9)")grid%alloced_sm33 , sm33 , grid%alloced_em33 , em33
+! write(0,"('mx31 ',4i9)")grid%alloced_sm31x , sm31x , grid%alloced_em31x , em31x
+! write(0,"('mx32 ',4i9)")grid%alloced_sm32x , sm32x , grid%alloced_em32x , em32x
+! write(0,"('mx33 ',4i9)")grid%alloced_sm33x , sm33x , grid%alloced_em33x , em33x
+! write(0,"('my31 ',4i9)")grid%alloced_sm31y , sm31y , grid%alloced_em31y , em31y
+! write(0,"('my32 ',4i9)")grid%alloced_sm32y , sm32y , grid%alloced_em32y , em32y
+! write(0,"('my33 ',4i9)")grid%alloced_sm33y , sm33y , grid%alloced_em33y , em33y
 
                  call wrf_debug(1,'ensure_space_field: deallocating and reallocating a grid because grid size changed.')
          end if

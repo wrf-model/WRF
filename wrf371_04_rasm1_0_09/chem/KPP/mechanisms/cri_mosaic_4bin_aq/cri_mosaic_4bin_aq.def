@@ -1,0 +1,171 @@
+#include atoms_red
+#include ./cri_mosaic_4bin_aq.spc
+#include ./cri_mosaic_4bin_aq.eqn
+
+
+
+
+#INLINE F90_RATES
+!************** SPECIAL RATE FUNCTIONS **********************
+
+REAL(KIND=dp) FUNCTION k46( TEMP, C_M )
+    REAL(KIND=dp), INTENT(IN) :: temp, c_m
+    REAL(KIND=dp) :: k0, k2, k3
+
+   k0=7.2E-15_dp * EXP(785._dp/TEMP)
+   k2=4.1E-16_dp * EXP(1440._dp/TEMP)
+   k3=1.9E-33_dp * EXP(725._dp/TEMP)  * C_M
+
+   k46=k0+k3/(1+k3/k2)
+
+!   print*,'k46=',k46
+END FUNCTION k46
+
+REAL(KIND=dp) FUNCTION k47( TEMP, C_M )
+    REAL(KIND=dp), INTENT(IN) :: temp, c_m
+    REAL(KIND=dp) :: k0, ki, fc, x, ssign, f12
+    k0 = 3.00d-31*((temp/300.0)**(-3.3))*C_M
+    ki = 1.50d-12
+    fc = 0.6
+    x = 1.0d+0
+    ssign = dsign(x,(k0-ki))
+    f12 =10**(dlog10(fc)/(1.0+(ssign*(ABS(dlog10(k0/ki)))**(2.0))))
+    k47=(k0*ki*f12)/(k0+ki)
+!    print*,'k47=',k47
+END FUNCTION k47
+
+REAL(KIND=dp) FUNCTION k48( TEMP, C_M )
+    REAL(KIND=dp), INTENT(IN) :: temp, c_m
+    REAL(KIND=dp) :: k0, ki, fc, x, ssign, f17
+    k0 = 5.00d-30*((temp/298.0)**(-1.5))*C_M
+    ki = 9.40d-12*EXP(-700.0/temp)
+    fc = (EXP(-temp/580.0) + EXP(-2320.0/temp))
+    x = 1.0d+0
+    ssign = dsign(x,(k0-ki))
+    f17=10**(dlog10(fc)/(1.0+(ssign*(ABS(dlog10(k0/ki)))**(2.0))))
+    k48=(k0*ki*f17)/(k0+ki)
+!    print*,'k48=',k48
+END FUNCTION k48
+
+      REAL(KIND=dp) FUNCTION RJPL( K0300, Q, KU300, R, M, T )
+      REAL(KIND=dp) :: k0300,q,ku300,r,m,t
+      REAL(KIND=dp) :: tt,k0,ku,k0m,kk,lgkk,e,f
+! JPL standard three body reaction rate format extended
+      TT= T / 3.D2
+      K0= K0300 * exp(-1._dp*Q*log(TT))
+      KU= KU300 * exp(-1._dp*R*log(TT))
+      K0M= K0 * M
+      KK= K0M / KU
+      LGKK=0.43429448190324926_dp * LOG(KK) ! = log10(KK)
+      E=1.D0 / ( 1.D0 + LGKK*LGKK )
+      F=exp(-0.5108256237659887_dp*E)       ! -0.51=log(0.6)
+      RJPL = F * K0M / ( 1.D0 + KK )
+!      print*,'RJPL=',RJPL
+      END FUNCTION
+!---------------------------------------------------------------------
+
+
+
+      REAL(KIND=dp) FUNCTION RALKE( K0300, Q, KU, Fc, M, T )
+      REAL(KIND=dp) :: k0300,q,m,t,Fc
+      real(KIND=dp) :: tt,k0,ku,k0m,kk,lgkk,e,f
+! special function for alkene+OH reactions
+      TT= T / 3.D2
+      K0= K0300 * exp(-1._dp*Q*log(TT))
+      K0M= K0 * M
+      KK= K0M / KU
+      LGKK=0.43429448190324926_dp * LOG(KK) ! = log10(KK)
+      E=1.D0 / ( 1.D0 + LGKK*LGKK )
+      F=exp(log(Fc)*E)
+      RALKE = F * K0M / ( 1.D0 + KK )
+!      print*,'RALKE=',RALKE
+      END FUNCTION
+
+
+	real(kind=dp) function iupac_ch3sch3(a2,b2,a3,b3,cin_o2,temp)
+		!rate calculation for CH3SCH3 + OH = CH3SCH3OO + H2O
+		! from IUPAC report (www.iupac-kinetic.ch.cam.ac.uk)
+		real(kind=dp) :: cin_o2, tr, temp
+		real(kind=dp) :: a2, b2, a3, b3
+	
+		tr = 1._dp + ARR2(a3,b3,temp)*cin_o2
+		iupac_ch3sch3 = ARR2(a2,b2,temp)*cin_o2/tr
+
+	end function iupac_ch3sch3
+    
+!---------------------------------------------------------------------
+
+!- SAN: adding standard 3-body reaction using convention of MCM & IUPAC recommendations
+! - Explicit form of TROE reactions
+!	Based on Atkinson et. al. 2004
+
+REAL(KIND=dp) FUNCTION KMT_IUPAC(k0_300K,n,kinf_300K,m,Fc,temp,cair)
+
+    INTRINSIC LOG10
+
+   	REAL(KIND=dp), INTENT(IN) :: temp      ! temperature [K]
+    REAL(KIND=dp), INTENT(IN) :: cair      ! air concentration [molecules/cm3]
+    REAL(KIND=dp), INTENT(IN) :: k0_300K   ! low pressure limit at 300 K
+    REAL(KIND=dp), INTENT(IN) :: n         ! exponent for low pressure limit
+    	!!! n.b. - remember to flip sign of exponents from IUPAC data sheets !!!
+    REAL(KIND=dp), INTENT(IN) :: kinf_300K ! high pressure limit at 300 K
+    REAL(KIND=dp), INTENT(IN) :: m         ! exponent for high pressure limit
+    REAL(KIND=dp), INTENT(IN) :: Fc        ! Approximate broadening factor
+    
+    REAL(KIND=dp) :: zt_help, k0_T, kinf_T, k_ratio, Nint, F_exp
+
+    zt_help = 300._dp/temp
+    k0_T    = k0_300K   * zt_help**(n) * cair ! k_0   at current T
+    kinf_T  = kinf_300K * zt_help**(m)        ! k_inf at current T
+    k_ratio = k0_T/kinf_T
+    Nint = 0.75_dp - 1.27_dp*LOG10(Fc)
+    ! Calculate explicit broadening factor:
+    F_exp = Fc ** (1._dp / (1._dp + ( LOG10(k_ratio) / Nint )**2._dp ) )
+        
+    KMT_IUPAC   = k0_T/(1._dp+k_ratio) * F_exp
+
+END FUNCTION KMT_IUPAC
+
+!---------------------------------------------------------------------
+
+!- SAN: Function for calculating NO + OH [+ M] 3-body reaction 
+!- Explicit form of TROE reaction with temperature dependent Fc
+
+REAL(KIND=dp) FUNCTION KMT_OH_NO(temp,cair)
+
+    INTRINSIC LOG10
+
+   	REAL(KIND=dp), INTENT(IN) :: temp      ! temperature [K]
+    REAL(KIND=dp), INTENT(IN) :: cair      ! air concentration [molecules/cm3]
+    
+    REAL(KIND=dp) :: k0_300K, n, kinf_300K, m, zt_help 
+    REAL(KIND=dp) :: k0_T, kinf_T, k_ratio, Nint, Fc, F_exp
+    
+    k0_300K = 7.4D-31						! low pressure limit at 300 K
+    n		= 2.4_dp						! exponent for low pressure limit
+    kinf_300K = 3.3D-11						! high pressure limit at 300 K
+    m		= 0.3_dp						! exponent for high pressure limit
+
+    zt_help = 300._dp/temp
+    k0_T    = k0_300K   * zt_help**(n) * cair ! k_0   at current T
+    kinf_T  = kinf_300K * zt_help**(m)        ! k_inf at current T
+    k_ratio = k0_T/kinf_T
+    
+    ! OH + NO [+ M] uses temperature dependent Fc:
+    Fc = exp(-temp / 1420._dp)
+    
+    Nint = 0.75_dp - 1.27_dp*LOG10(Fc)
+    
+    ! Calculate explicit broadening factor:
+    F_exp = Fc ** (1._dp / (1._dp + ( LOG10(k_ratio) / Nint )**2._dp ) )
+    
+    KMT_OH_NO = k0_T/(1._dp+k_ratio) * F_exp
+
+END FUNCTION KMT_OH_NO
+
+
+
+
+#ENDINLINE
+
+

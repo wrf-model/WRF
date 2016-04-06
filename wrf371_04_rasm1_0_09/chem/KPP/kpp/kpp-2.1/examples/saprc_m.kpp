@@ -1,0 +1,6 @@
+#MODEL      saprc99
+#INTEGRATOR none 
+#LANGUAGE   Matlab 
+#DRIVER     general 
+#HESSIAN    on
+#STOICMAT   on

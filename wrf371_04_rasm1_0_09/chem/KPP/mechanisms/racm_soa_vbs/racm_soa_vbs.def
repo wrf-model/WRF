@@ -1,0 +1,57 @@
+#include atoms_red
+#include ./racm_soa_vbs.spc
+#include ./racm_soa_vbs.eqn
+
+#INLINE F90_RATES
+REAL(KIND=dp) FUNCTION k45( TEMP, C_M )
+    REAL(KIND=dp), INTENT(IN) :: temp, c_m
+    REAL(KIND=dp) :: k0, k2, k3 
+
+   k0=2.4E-14_dp * EXP(460._dp/TEMP)
+   k2=2.7E-17_dp * EXP(2199._dp/TEMP)
+   k3=6.5E-34_dp * EXP(1335._dp/TEMP) * c_m
+
+   k45=k0+k3/(1+k3/k2)
+
+END FUNCTION k45
+
+REAL(kind=dp) FUNCTION k57( TEMP, C_M )
+
+    INTRINSIC LOG10
+
+    REAL(KIND=dp), INTENT(IN) :: temp      ! temperature [K]
+    REAL(KIND=dp), INTENT(IN) :: c_m       ! air concentration [molecules/cm3]
+    REAL(KIND=dp) :: k0_300Kn   ! low pressure limit at 300 K
+    REAL(KIND=dp) :: nn         ! exponent for low pressure limit
+    REAL(KIND=dp) :: kinf_300Kn ! high pressure limit at 300 K
+    REAL(KIND=dp) :: mn         ! exponent for high pressure limit
+    REAL(KIND=dp) :: zt_help, k0_T, kinf_T, k_ratio
+    REAL(KIND=dp) :: k57troe, k57cact
+
+    k0_300Kn = 5.9e-33_dp
+    nn = 1.4_dp
+    kinf_300Kn = 1.1e-12_dp
+    mn = -1.3_dp
+
+    zt_help = 300._dp/temp
+    k0_T    = k0_300Kn   * zt_help**(nn) * c_m ! k_0   at current T
+    kinf_T  = kinf_300Kn * zt_help**(mn)       ! k_inf at current T
+    k_ratio = k0_T/kinf_T
+    k57troe   = k0_T/(1._dp+k_ratio)*0.6_dp**(1._dp/(1._dp+LOG10(k_ratio)**2))
+
+    k0_300Kn = 1.5e-13_dp
+    nn = -0.6_dp
+    kinf_300Kn = 2.9e9_dp
+    mn = -6.1_dp
+
+    k0_T    = k0_300Kn   * zt_help**(nn)! k_0   at current T
+    kinf_T  = kinf_300Kn * zt_help**(mn) / c_m ! k_inf at current T
+    k_ratio = k0_T/kinf_T
+    k57cact = k0_T/(1._dp+k_ratio)*0.6_dp**(1._dp/(1._dp+LOG10(k_ratio)**2))
+
+    k57 = k57troe + k57cact 
+
+END FUNCTION k57
+
+#ENDINLINE 
+

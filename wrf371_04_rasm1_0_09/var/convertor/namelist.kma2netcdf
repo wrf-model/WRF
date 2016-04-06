@@ -1,0 +1,19 @@
+cat >! namelist.kma2netcdf << EOF
+&kma2netcdf_parm
+ JCAP =   63 ,
+ IGRD =  192 ,
+ JGRD =   97 ,
+ KGRD =  18 ,
+ KMAX =  30 ,
+ INTVL = 1 ,
+/
+
+-->  For T63 
+ JCAP =   63 ,
+ IGRD =  192 ,
+ JGRD =   97 ,
+
+-->  For T213
+ JCAP =  213 ,
+ IGRD =  428 ,
+ JGRD =  215 ,

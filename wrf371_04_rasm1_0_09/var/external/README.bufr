@@ -1,0 +1,31 @@
+
+Web site for bufr:
+http://www.nco.ncep.noaa.gov/sib/decoders/BUFRLIB/
+
+BUFR library is a Fortran/C subroutine library of encoding or decoding BUFR messages,
+developed at the National Centers for Environmental Prediction.
+
+==========
+
+The WRFDA usage of the bufr package is for reading/writing bufr
+data for usage in the prepbufr and satellite radiance data assimilation.  The files have been 
+moved from .f files to .inc files (to adopt the WRFDA convention).
+Additionally, the bufrlib.h has been modified to accomodate the convention of C <-> F on  
+different platforms. a da_bufr.f90 is used as a wrapper to include all *.inc
+
+The bufr source has been changed by the convert.f90 program, turning
+the code into free-format.  The only other modification is that the
+imbedded tabs in the source have been turned into spaces (otherwise
+convert.f90 coughs up a spleen).
+
+Web site for convert.f90:
+ftp://ftp.numerical.rl.ac.uk/pub/MandR/convert.f90
+
+!     Copyright CERN, Geneva 1991, 1997 - Copyright and any other
+!     appropriate legal protection of these computer programs
+!     and associated documentation reserved in all countries
+!     of the world.
+!     Author: Michael Metcalf  (MichaelMetcalf@compuserve.com)
+
+======================================================
+

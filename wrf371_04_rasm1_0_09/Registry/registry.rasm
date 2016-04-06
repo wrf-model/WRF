@@ -1,0 +1,147 @@
+#-----------------------------------------------------------------------------
+# Alice DuVivier, Mimi Hughes - April 2014
+# Need ice and liquid droplet sizes from coupled Morrison to radiation
+# Need number density that is now a function from Morrison
+#-----------------------------------------------------------------------------
+state    real  EFFCS           ikj      misc        1         -      rhdu     "EFFCS"                 "CLOUD DROPLET EFFECTIVE RADIUS"                   "Micron"
+state    real  EFFIS           ikj      misc        1         -      rhdu     "EFFIS"                 "CLOUD ICE EFFECTIVE RADIUS"                       "Micron"
+state    real  DRPCON          ij       misc        1         -      h        "DRPCON"                "DROPLET CONCENTRATION"                            "cm -3"
+#-----------------------------------------------------------------------------
+# end Alice DuVivier, Mimi Hughes
+#-----------------------------------------------------------------------------                                                 
+
+# RASM Statistics: output arrays of averages
+state    double  PSFCMEAN         ij      misc        1         -     rh5      "PSFC_M"              "AVERAGE SURFACE PRESSURE"                                    "Pa"
+state    double  TSKMEAN          ij      misc        1         -     rh5      "TSK_M"               "AVERAGE SURFACE SKIN TEMPERATURE"                            "K"
+state    double  TMEAN            ij      misc        1         -     rh5      "T_M"                 "AVERAGE SURFACE TEMPERATURE AT LOWEST LEVEL"                 "K"
+state    double  PMSLMEAN         ij      misc        1         -     rh5      "PMSL_M"              "AVERAGE SEA LEVEL PRESSURE"                                  "Pa"
+state    double  TMP2MEAN           ij      misc        1         -     rh5      "T2_M"                "AVERAGE TEMPERATURE AT 2M"                                   "K"
+state    double  HFXMEAN          ij      misc        1         -     rh5      "HFX_M"               "AVERAGE SENSIBLE HEAT FLUX AT THE SURFACE"                   "W m-2"
+state    double  LHMEAN           ij      misc        1         -     rh5      "LH_M"                "AVERAGE LATENT HEAT FLUX AT THE SURFACE"                     "W m-2"
+state    double  SWDNBMEAN        ij      misc        1         -     rh5      "SWDNB_M"             "AVERAGE DOWNWARD SHORT WAVE FLUX AT GROUND SURFACE"          "W m-2"      
+state    double  GLWMEAN          ij      misc        1         -     rh5      "GLW_M"               "AVERAGE DOWNWARD LONG WAVE FLUX AT GROUND SURFACE"           "W m-2"      
+state    double  LWUPBMEAN        ij      misc        1         -     rh5      "LWUPB_M"             "AVERAGE UPWELLING LONGWAVE FLUX AT BOTTOM"                   "W m-2"
+state    double  SWUPBMEAN        ij      misc        1         -     rh5      "SWUPB_M"             "AVERAGE UPWELLING SHORTWAVE FLUX AT BOTTOM"                  "W m-2"
+state    double  UMEAN            ij      misc        1         X     rh5      "U_M"                 "AVERAGE X-WIND COMPONENT"                                    "m s-1"
+state    double  VMEAN            ij      misc        1         Y     rh5      "V_M"                 "AVERAGE Y-WIND COMPONENT"                                    "m s-1"
+state    double  QVMEAN           ij      misc        1         -     rh5      "QVAPOR_M"            "AVERAGE SURFACE HUMIDITY (WATER VAPOR MIXING RATIO)"         "kg kg-1"
+state    double  SHUMMEAN         ij      misc        1         -     rh5      "SHUM_M"              "AVERAGE SPECIFIC HUMIDITY"                                   "kg kg-1"
+# RASM Statistics output: added 6/17/13 by JCR
+state    double  SWNDRMEAN        ij      misc        1         -     rh5      "SWNDR_M"             "AVERAGE DIRECT DOWNWARD NIR FLUX AT BOTTOM"                  "W m-2"
+state    double  SWNDFMEAN        ij      misc        1         -     rh5      "SWNDF_M"             "AVERAGE DIFFUSE DOWNWARD NIR FLUX AT BOTTOM"                 "W m-2"
+state    double  SWVDRMEAN        ij      misc        1         -     rh5      "SWVDR_M"             "AVERAGE DIRECT DOWNWARD VIR FLUX AT BOTTOM"                  "W m-2"
+state    double  SWVDFMEAN        ij      misc        1         -     rh5      "SWVDF_M"             "AVERAGE DIFFUSE DOWNWARD VIR FLUX AT BOTTOM"                 "W m-2"
+state    double  SWUPTMEAN        ij      misc        1         -     rh5      "SWUPT_M"             "AVERAGE UPWELLING SHORTWAVE FLUX AT TOP"                     "W m-2"
+state    double  SWDNTMEAN        ij      misc        1         -     rh5      "SWDNT_M"             "AVERAGE DOWNWELLING SHORTWAVE FLUX AT TOP"                   "W m-2"
+state    double  LWUPTMEAN        ij      misc        1         -     rh5      "LWUPT_M"             "AVERAGE UPWELLING LONGWAVE FLUX AT TOP"                      "W m-2"
+state    double  LWDNTMEAN        ij      misc        1         -     rh5      "LWDNT_M"             "AVERAGE DOWNWELLING LONGWAVE FLUX AT TOP"                    "W m-2"
+state  character OUTDATEMEAN      -       misc        -         -     -        ""                    ""
+state  integer   NSTEPSMEAN       -       misc        -         -     r        "NSTEP_M"             "NUMBER OF MEAN STEPS ACCUMULATED"
+
+# RASM: Diurnal
+state    double  PSFC_DIURN     i{dc}j      misc        1         -     rh6     "PSFC_D"         "DIURNAL AVERAGE SURFACE PRESSURE"                              "Pa"
+state    double  TSK_DIURN      i{dc}j      misc        1         -     rh6     "TSK_D"          "DIURNAL AVERAGE SURFACE SKIN TEMPERATURE"                      "K"
+state    double  T_DIURN        i{dc}j      misc        1         -     rh6     "T_D"            "DIURNAL AVERAGE SURFACE TEMPERATURE AT LOWEST LEVEL"           "K"
+state    double  T2_DIURN       i{dc}j      misc        1         -     rh6     "T2_D"           "DIURNAL AVERAGE TEMPERATURE AT 2M"                             "K"
+state    double  HFX_DIURN      i{dc}j      misc        1         -     rh6     "HFX_D"          "DIRUNUAL AVERAGE SENSIBLE HEAT FLUX AT THE SURFACE"            "W m-2"
+state    double  LH_DIURN       i{dc}j      misc        1         -     rh6     "LH_D"           "DIRUNUAL AVERAGE LATENT HEAT FLUX AT THE SURFACE"              "W m-2"
+state    double  SWDNB_DIURN    i{dc}j      misc        1         -     rh6     "SWDNB_D"        "DIRUNUAL AVERAGE DOWNWARD SHORT WAVE FLUX AT GROUND SURFACE"   "W m-2"      
+state    double  GLW_DIURN      i{dc}j      misc        1         -     rh6     "GLW_D"          "DIRUNUAL AVERAGE DOWNWARD LONG WAVE FLUX AT GROUND SURFACE"    "W m-2"      
+state    double  LWUPB_DIURN    i{dc}j      misc        1         -     rh6     "LWUPB_D"        "DIRUNUAL AVERAGE UPWELLING LONGWAVE FLUX AT BOTTOM"            "W m-2"
+state    double  SWUPB_DIURN    i{dc}j      misc        1         -     rh6     "SWUPB_D"        "DIRUNUAL AVERAGE UPWELLING SHORTWAVE FLUX AT BOTTOM"           "W m-2"
+state    double  U_DIURN        i{dc}j      misc        1         X     rh6     "U_D"            "DIRUNUAL AVERAGE X-WIND COMPONENT"                             "m s-1"
+state    double  V_DIURN        i{dc}j      misc        1         Y     rh6     "V_D"            "DIRUNUAL AVERAGE Y-WIND COMPONENT"                             "m s-1"
+state    double  QV_DIURN       i{dc}j      misc        1         -     rh6     "QVAPOR_D"       "DIRUNUAL AVERAGE SURFACE HUMIDITY (WATER VAPOR MIXING RATIO)"  "kg kg-1"
+state    double  SHUM_DIURN     i{dc}j      misc        1         -     rh6     "SHUM_D"         "DIRUNUAL AVERAGE SPECIFIC HUMIDITY"                            "kg kg-1"
+state    double  SWNDR_DIURN    i{dc}j      misc        1         -     rh6     "SWNDR_D"        "DIRUNUAL AVERAGE DIRECT DOWNWARD NIR FLUX AT BOTTOM"           "W m-2"
+state    double  SWNDF_DIURN    i{dc}j      misc        1         -     rh6     "SWNDF_D"        "DIRUNUAL AVERAGE DIFFUSE DOWNWARD NIR FLUX AT BOTTOM"          "W m-2"
+state    double  SWVDR_DIURN    i{dc}j      misc        1         -     rh6     "SWVDR_D"        "DIRUNUAL AVERAGE DIRECT DOWNWARD VIR FLUX AT BOTTOM"           "W m-2"
+state    double  SWVDF_DIURN    i{dc}j      misc        1         -     rh6     "SWVDF_D"        "DIRUNUAL AVERAGE DIFFUSE DOWNWARD VIR FLUX AT BOTTOM"          "W m-2"
+state    double  U10_DIURN      i{dc}j      misc        1         -     rh6     "U10_D"          "DIRUNUAL AVERAGE U at 10 M"                                    "m s-1"
+state    double  V10_DIURN      i{dc}j      misc        1         -     rh6     "V10_D"          "DIRUNUAL AVERAGE V at 10 M"                                    "m s-1"
+state    double  Q2_DIURN       i{dc}j      misc        1         -     rh6     "Q2_D"           "DIRUNUAL AVERAGE QV at 2 M"                                    "kg kg-1"
+state  character OUTDATE_DIURN      -       misc        -         -     -       ""               ""
+state  integer   NSTEPS_DIURN       -       misc        -         -     r       "NSTEP_D"        "NUMBER OF DIURNAL STEPS ACCUMULATED"
+
+# RASM: Diurnal variables to computer intermediate avereges
+state    double  PSFCMEAN_DTMP     ij       misc        1         -     r       "PSFC_DTM"       "DIRUNUAL TEMP AVERAGE SURFACE PRESSURE"                             "Pa"
+state    double  TSKMEAN_DTMP      ij       misc        1         -     r       "TSK_DTM"        "DIRUNUAL TEMP AVERAGE SURFACE SKIN TEMPERATURE"                     "K"
+state    double  TMEAN_DTMP        ij       misc        1         -     r       "T_DTM"          "DIRUNUAL TEMP AVERAGE SURFACE TEMPERATURE AT LOWEST LEVEL"          "K"
+state    double  TMP2MEAN_DTMP       ij       misc        1         -     r       "T2_DTM"         "DIRUNUAL TEMP AVERAGE TEMPERATURE AT 2M"                            "K"
+state    double  HFXMEAN_DTMP      ij       misc        1         -     r       "HFX_DTM"        "DIRUNUAL TEMP AVERAGE SENSIBLE HEAT FLUX AT THE SURFACE"            "W m-2"
+state    double  LHMEAN_DTMP       ij       misc        1         -     r       "LH_DTM"         "DIRUNUAL TEMP AVERAGE LATENT HEAT FLUX AT THE SURFACE"              "W m-2"
+state    double  SWDNBMEAN_DTMP    ij       misc        1         -     r       "SWDNB_DTM"      "DIRUNUAL TEMP AVERAGE DOWNWARD SHORT WAVE FLUX AT GROUND SURFACE"   "W m-2"      
+state    double  GLWMEAN_DTMP      ij       misc        1         -     r       "GLW_DTM"        "DIRUNUAL TEMP AVERAGE DOWNWARD LONG WAVE FLUX AT GROUND SURFACE"    "W m-2"      
+state    double  LWUPBMEAN_DTMP    ij       misc        1         -     r       "LWUPB_DTM"      "DIRUNUAL TEMP AVERAGE UPWELLING LONGWAVE FLUX AT BOTTOM"            "W m-2"
+state    double  SWUPBMEAN_DTMP    ij       misc        1         -     r       "SWUPB_DTM"      "DIRUNUAL TEMP AVERAGE UPWELLING SHORTWAVE FLUX AT BOTTOM"           "W m-2"
+state    double  UMEAN_DTMP        ij       misc        1         X     r       "U_DTM"          "DIRUNUAL TEMP AVERAGE X-WIND COMPONENT"                             "m s-1"
+state    double  VMEAN_DTMP        ij       misc        1         Y     r       "V_DTM"          "DIRUNUAL TEMP AVERAGE Y-WIND COMPONENT"                             "m s-1"
+state    double  QVMEAN_DTMP       ij       misc        1         -     r       "QVAPOR_DTM"     "DIRUNUAL TEMP AVERAGE SURFACE HUMIDITY (WATER VAPOR MIXING RATIO)"  "kg kg-1"
+state    double  SHUMMEAN_DTMP     ij       misc        1         -     r       "SHUM_DTM"       "DIRUNUAL TEMP AVERAGE SPECIFIC HUMIDITY"                            "kg kg-1"
+state    double  SWNDRMEAN_DTMP    ij       misc        1         -     r       "SWNDR_DTM"      "DIRUNUAL TEMP AVERAGE DIRECT DOWNWARD NIR FLUX AT BOTTOM"           "W m-2"
+state    double  SWNDFMEAN_DTMP    ij       misc        1         -     r       "SWNDF_DTM"      "DIRUNUAL TEMP AVERAGE DIFFUSE DOWNWARD NIR FLUX AT BOTTOM"          "W m-2"
+state    double  SWVDRMEAN_DTMP    ij       misc        1         -     r       "SWVDR_DTM"      "DIRUNUAL TEMP AVERAGE DIRECT DOWNWARD VIR FLUX AT BOTTOM"           "W m-2"
+state    double  SWVDFMEAN_DTMP    ij       misc        1         -     r       "SWVDF_DTM"      "DIRUNUAL TEMP AVERAGE DIFFUSE DOWNWARD VIR FLUX AT BOTTOM"          "W m-2"
+state    double  U10MEAN_DTMP      ij       misc        1         -     r       "U10_DTM"        "DIRUNUAL TEMP AVERAGE U at 10 M"                                    "m s-1"
+state    double  V10MEAN_DTMP      ij       misc        1         -     r       "V10_DTM"        "DIRUNUAL TEMP AVERAGE V at 10 M"                                    "m s-1"
+state    double  Q2MEAN_DTMP       ij       misc        1         -     r       "Q2_DTM"         "DIRUNUAL TEMP AVERAGE QV at 2 M"                                    "kg kg-1"
+state    integer NSTEPSMEAN_DIURN  -        misc        -         -     r       "NSTEP_DTM"      "NUMBER OF MEAN STEPS ACCUMULATED IN DIURNAL Calculation"
+
+#-------------------------------------------------------------------------------------------------------------------------------------
+# These solar radiation variables uesd by the coupler 
+# added by Juanxiong He
+#-------------------------------------------------------------------------------------------------------------------------------------
+ifdef CESMCOUPLED
+state    real  LWUPS           ij      misc        1         -      rh     "LWUPS"                "SURFACE UPWARD LONGWAVE RADIATION"      " W m-2"
+state    real  SWNDR           ij      misc        1         -      rh     "SWNDR"                "INSTANTANEOUS DIRECT DOWNWARD NIR FLUX AT BOTTOM"      " W m-2"
+state    real  SWVDR            ij      misc        1         -     rh     "SWVDR"                "INSTANTANEOUS DIRECT DOWNWARD VIR FLUX AT BOTTOM"      "W m-2"
+state    real  SWNDF           ij      misc        1         -      rh     "SWNDF"                 "INSTANTANEOUS DIFFUSE DOWNWARD NIR FLUX AT BOTTOM"    "W m-2"
+state    real  SWVDF            ij      misc        1         -     rh     "SWVDF"                 "INSTANTANEOUS DIFFUSE DOWNWARD VIR FLUX AT BOTTOM"    "W m-2"
+state    real  RALDIR           ij      misc        1         -      rh     "RALDIR"                "INSTANTANEOUS DIRECT NIR ALBEDO  AT BOTTOM"      ""
+state    real  RASDIR           ij      misc        1         -      rh     "RASDIR"                "INSTANTANEOUS DIRECT VIR ALBEDO  AT BOTTOM"      ""
+state    real  RALDIF           ij      misc        1         -      rh     "RALDIF"                 "INSTANTANEOUS DIFFUSE NIR ALBEDO  AT BOTTOM"    ""
+state    real  RASDIF            ij      misc        1         -     rh     "RASDIF"                 "INSTANTANEOUS DIFFUSE VIR ALBEDO  AT BOTTOM"    ""
+endif
+#-------------------------------------------------------------------------------------------------------------------------------------
+# These solar radiation variables uesd by the coupler 
+# added by Juanxiong He
+#-------------------------------------------------------------------------------------------------------------------------------------
+
+# RASM Statistics: mean diagnostics flag 
+rconfig   integer    mean_freq            namelist,time_control         1              0      -    "mean output frequency"
+rconfig   integer    mean_interval        namelist,time_control		1              0      -    "mean output interval"
+
+# RASM: Diurnal
+rconfig   integer    diurnal_cycle        namelist,time_control         1              0      -    "diurnal output mode"
+
+#-----------------------------------------------------------------------------
+# Alice DuVivier- July 2014
+# Is radiation-microphysics coupling turned on?
+#-----------------------------------------------------------------------------
+rconfig   integer rad_micro_cpl           namelist,physics      1              0       -     "rad_micro_cpl" "Coupled radiation-microphysics option"
+#-----------------------------------------------------------------------------
+# end Alice DuVivier
+#-----------------------------------------------------------------------------  
+
+#-----------------------------------------------------------------------------
+# Amy Solomon- Feb 2015
+# Switch for RASM physics changes
+#-----------------------------------------------------------------------------
+rconfig   integer rasm_physics           namelist,physics      1              0       -     "rasm_physics" "Switch for RASM physics changes"
+#-----------------------------------------------------------------------------
+# end Amy Solomon
+#-----------------------------------------------------------------------------  
+
+# RASM Statistics: different cases for mean diagnostics flag
+# RASM Statistics: added xlong,xlat,xlong_u,xlat_u,xlong_v,xlat_v -- JCR 6/03/2013
+package   mean_freq_off      mean_freq==0                  -    state:xlong,xlat,xlong_u,xlat_u,xlong_v,xlat_v,psfcmean,tskmean,tmean,pmslmean,tmp2mean,hfxmean,lhmean,swdnbmean,glwmean,lwupbmean,swupbmean,umean,vmean,qvmean,shummean,swndrmean,swndfmean,swvdrmean,swvdfmean,swuptmean,swdntmean,lwuptmean,lwdntmean
+package   mean_freq_secs     mean_freq==1                  -    state:xlong,xlat,xlong_u,xlat_u,xlong_v,xlat_v,psfcmean,tskmean,tmean,pmslmean,tmp2mean,hfxmean,lhmean,swdnbmean,glwmean,lwupbmean,swupbmean,umean,vmean,qvmean,shummean,swndrmean,swndfmean,swvdrmean,swvdfmean,swuptmean,swdntmean,lwuptmean,lwdntmean
+package   mean_freq_mins     mean_freq==2                  -    state:xlong,xlat,xlong_u,xlat_u,xlong_v,xlat_v,psfcmean,tskmean,tmean,pmslmean,tmp2mean,hfxmean,lhmean,swdnbmean,glwmean,lwupbmean,swupbmean,umean,vmean,qvmean,shummean,swndrmean,swndfmean,swvdrmean,swvdfmean,swuptmean,swdntmean,lwuptmean,lwdntmean
+package   mean_freq_hrs      mean_freq==3                  -    state:xlong,xlat,xlong_u,xlat_u,xlong_v,xlat_v,psfcmean,tskmean,tmean,pmslmean,tmp2mean,hfxmean,lhmean,swdnbmean,glwmean,lwupbmean,swupbmean,umean,vmean,qvmean,shummean,swndrmean,swndfmean,swvdrmean,swvdfmean,swuptmean,swdntmean,lwuptmean,lwdntmean
+package   mean_freq_days     mean_freq==4                  -    state:xlong,xlat,xlong_u,xlat_u,xlong_v,xlat_v,psfcmean,tskmean,tmean,pmslmean,tmp2mean,hfxmean,lhmean,swdnbmean,glwmean,lwupbmean,swupbmean,umean,vmean,qvmean,shummean,swndrmean,swndfmean,swvdrmean,swvdfmean,swuptmean,swdntmean,lwuptmean,lwdntmean
+package   mean_freq_mon      mean_freq==5                  -    state:xlong,xlat,xlong_u,xlat_u,xlong_v,xlat_v,psfcmean,tskmean,tmean,pmslmean,tmp2mean,hfxmean,lhmean,swdnbmean,glwmean,lwupbmean,swupbmean,umean,vmean,qvmean,shummean,swndrmean,swndfmean,swvdrmean,swvdfmean,swuptmean,swdntmean,lwuptmean,lwdntmean
+
+# RASM: Diurnal
+package   diurnal_cycle_off      diurnal_cycle==0          -    -
+package   diurnal_cycle_on       diurnal_cycle==1          -    state:xlong,xlat,xlong_u,xlat_u,xlong_v,xlat_v,psfc_diurn,tsk_diurn,t_diurn,t2_diurn,hfx_diurn,lh_diurn,swdnb_diurn,glw_diurn,lwupb_diurn,swupb_diurn,u_diurn,v_diurn,qv_diurn,shum_diurn,swndr_diurn,swndf_diurn,swvdr_diurn,swvdf_diurn,u10_diurn,v10_diurn,q2_diurn
+

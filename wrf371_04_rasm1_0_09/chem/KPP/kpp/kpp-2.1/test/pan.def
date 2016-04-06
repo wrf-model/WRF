@@ -1,0 +1,38 @@
+#include atoms
+#include ./pan.spc
+#include ./pan.eqn
+
+#LANGUAGE FORTRAN90
+
+#INTEGRATOR rosenbrock
+{#DRIVER kppbox}
+
+#CHECKALL
+{#LOOKATALL}
+#LOOKAT O3; O1D ;OH; HO2; H2O2; NO; NO2;
+
+{#MONITOR O3;}
+
+#INITVALUES  { default values, overwritten later in the code !}
+  CFACTOR = 2.5482E19; {vmr-to-molec/cm^3, same as in FACSIMILE}
+                            {P*6.022E23/8.31441/TEMP*1E6}
+  ALL_SPEC = 0.0E-19;
+{Variable species}
+  O3   = 30.E-9;
+  NO2  = 200.E-12;
+  HNO3 = 100.E-12;
+  H2O2 = 2.E-9;
+  CH4  = 1700.E-9;
+  CO   = 100.E-9;
+{Fixed species}
+  H2O  = 1.E-2;
+  M = 1. ;
+
+#INLINE F_INIT
+        TSTART = 0.
+        TEND = TSTART + 24.*3600. * 5.
+        DT = 20.*60.
+        TEMP = 288.
+        PRESS = 101325.               
+#ENDINLINE
+{ TEMP must fit to number above in CFACTOR!}

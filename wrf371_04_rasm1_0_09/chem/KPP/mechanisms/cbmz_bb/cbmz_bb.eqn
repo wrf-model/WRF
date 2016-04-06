@@ -1,0 +1,201 @@
+#EQUATIONS {CBMZ_BB}
+ {001:J01} NO2 + hv = NO + O3P 		 		: j(Pj_no2) ;
+ {002:J02} NO3 + hv = .89 NO2 + .89 O3P + .11 NO 	: j(Pj_no3o) ; 
+ {003:J03} HONO + hv = OH + NO 				: j(Pj_hno2) ;
+ {004:J04} HNO3 + hv = OH + NO2				: j(Pj_hno3) ;
+ {005:J05} HNO4 + hv = HO2 + NO2			: j(Pj_hno4) ; 
+ {006:J06} N2O5 + hv = NO2 + NO3  			: j(Pj_n2o5) ;
+ {007:J07} O3 + hv = O3P		   		: j(Pj_o33p) ;
+ {008:J08} O3 + hv = O1D		   		: j(Pj_o31d) ;
+ {009:J09} H2O2 + hv = 2 OH				: j(Pj_h2o2) ;
+ {010:J10} HCHO + hv = 2 HO2 + CO 			: j(Pj_ch2or) ;
+ {011:J11} HCHO + hv = CO      				: j(Pj_ch2om) ;
+ {012:J12} CH3OOH + hv = HCHO + HO2 + OH		: 0.7 * j(Pj_h2o2) ;
+ {013:J13} ETHOOH + hv = ALD2 + HO2 + OH		: 0.7 * j(Pj_h2o2) ;
+ {014:J14} ALD2 + hv = CH3O2 + HO2 + CO			: 4.6D-4 * j(Pj_no2);
+ {015:J15} AONE + hv = C2O3 + CH3O2 			: 7.8D-5 * j(Pj_no2) ;
+ {016:J16} MGLY + hv = C2O3 + CO + HO2			: 9.64 * j(Pj_ch2or);
+ {017:J17} OPEN + hv = C2O3 + CO + HO2			: 9.04 * j(Pj_ch2or) ;
+ {018:J18} ROOH + hv = OH + 0.4 XO2 + 0.74 AONE + 
+           0.3 ALD2 + 0.1 ETHP + 0.9 HO2 + 1.98 XPAR	: 0.7 * j(Pj_h2o2) ;
+ {019:J19} ONIT + hv = NO2 + 0.41 XO2 + 0.74 AONE + 
+           0.3 ALD2 + 0.1 ETHP + 0.9 HO2+ 1.98 XPAR	: 1.0D-4 * j(Pj_no2) ;
+ {020:J20} ISOPRD + hv = 0.97 C2O3 + 0.33 HO2 + 
+           0.33 CO + 0.7 CH3O2 + 0.2 HCHO + 
+           0.07 ALD2 + 0.03 AONE			: 0.025 * j(Pj_ch2om) ;
+ {021:001} O1D+M=O3P                                    : .79* ARR3(1.8D-11, -110.0_dp, TEMP) + .21* ARR3(3.2D-11, -70.0_dp, TEMP);
+ {022:002} O1D+H2O = 2 OH				: 2.2D-10 ;
+ {023:003} O3P+M{+O2} = O3                              : .21*ARR3MS(6.0D-34,2.3_dp,TEMP,C_M) ;
+ {024:004} O3P + O3 =0.42M {2O2} 			: ARR3(8.0D-12, 2060._dp, TEMP) ;
+ {025:005} O3P + NO2 = NO				: ARR3(6.5D-12, -120._dp, TEMP) ;
+ {026:006} O3P + NO2 = NO3  				: TROEMS(9.0D-32, -2.0_dp, 2.2D-11, 0.0_dp, TEMP, C_M) ;
+ {027:007} O3P + NO = NO2  				: TROEMS(9.0D-32, -1.5_dp, 3.0D-11, 0.0_dp, TEMP, C_M) ;
+ {028:008} O3 + NO = NO2				: ARR3(2.0D-12, 1400._dp, TEMP) ;
+ {029:009} O3 + NO2 = NO3				: ARR3(1.2D-13, 2450._dp, TEMP) ;
+ {030:010} O3 + OH = HO2				: ARR3(1.6D-12, 940._dp, TEMP) ;
+ {031:011} O3 + HO2 = OH				: ARR3(1.1D-14, 500._dp, TEMP) ;
+ {032:012} OH+M = HO2+H2O			        : 5.8D-7*ARR3(5.5D-12, 2000._dp, TEMP) ; 
+ {033:013} OH + NO = HONO				: TROEMS(7.0D-31 ,-2.6_dp, 3.6D-11, -0.1_dp, TEMP, C_M) ;
+ {034:014} OH + NO2 = HNO3				: TROEMS(2.5D-30 ,-4.4_dp, 1.6D-11, -1.7_dp, TEMP, C_M) ;
+ {035:015} OH + NO3 = HO2 + NO2				: 2.2D-11 ;
+ {036:016} OH + HONO = NO2				: ARR3(1.8D-11, 390._dp, TEMP) ;
+ {037:017} OH + HNO3 = NO3				: RK_HO_HNO3(TEMP, C_M) ;
+ {038:018} OH + HNO4 = NO2				: ARR3(1.3D-12, -380._dp, TEMP);
+ {039:019} OH + HO2 = H2O +0.21M			: ARR3(4.8D-11, -250._dp, TEMP) ;
+ {040:020} OH + H2O2 = HO2				: ARR3(2.9D-12, 160._dp, TEMP) ;
+ {041:021} HO2 + HO2 = H2O2				: RK_2HO2(TEMP, C_M) ;
+ {042:022} HO2 + HO2 + H2O = H2O2			: RK_2HO2_H2O(TEMP, C_M) ;
+ {043:023} HO2 + NO = OH + NO2				: ARR3(3.5D-12, -250._dp, TEMP) ;
+ {044:024} HO2 + NO2 = HNO4				: TROEMS(1.8D-31, -3.2_dp, 4.7D-12, -1.4_dp, TEMP, C_M) ;
+ {045:025} HO2 + NO2 = HONO				: 5.0D-16 ;
+ {046:026} HNO4 = HO2 + NO2				: TROEEMS(4.8D+26, 10900._dp, 1.8D-31, -3.2_dp, 4.7D-12, -1.4_dp, TEMP, C_M) ;
+ {047:027} NO3 + NO = NO2 + NO2				: ARR3(1.5D-11, -170._dp, TEMP) ;
+ {048:028} NO3 + NO2 = NO + NO2				: ARR3(4.5D-14, 1260._dp, TEMP) ;
+ {049:029} NO3 + NO2 = N2O5				: TROEMS(2.2D-30, -3.9_dp, 1.5D-12, -0.7_dp, TEMP, C_M) ;
+ {050:030} NO3 + NO3 = 2.0 NO2				: ARR3(8.5D-13, 2450._dp, TEMP) ;
+ {051:031} NO3 + HO2 = 0.3 HNO3 + .7 NO2 + .7 OH	: 3.5D-12 ;
+ {052:032} N2O5+H2O = 2.0 HNO3		        	: 2.0D-21 ; 
+ {053:033} N2O5 = NO3 + NO2				: TROEEMS(3.7D+26, 11000._dp, 2.2D-30, -3.9_dp, 1.5D-12, -0.7_dp, TEMP, C_M) ;
+ {054:034} CO + OH = HO2				: RK_CO_HO(TEMP, C_M) ;
+ {055:035} SO2 + OH = H2SO4 + HO2			: TROEMS(3.0D-31, -3.3_dp, 1.5D-12, 0.0_dp, TEMP, C_M) ;
+ {056:036} OH+CH4 = CH3O2				: TEMP**0.667 * ARR3(2.8D-14, 1575._dp, TEMP) ;
+ {057:037} C2H6 + OH = ETHP				: TEMP**2 * ARR3(1.5D-17, 492._dp, TEMP) ;
+ {058:038} PAR + OH = RO2                               : 8.1D-13 ;
+ {059:039} HCHO + OH = HO2 + CO                         : 1.0D-11 ;
+ {060:040} HCHO + NO3 = HNO3 + HO2 + CO                 : ARR3(3.4D-13, 1900._dp, TEMP) ;
+ {061:041} ALD2 + OH = C2O3                             : ARR3(5.6D-12, -270._dp, TEMP) ;
+ {062:042} ALD2 + NO3 = C2O3 + HNO3                     : ARR3(1.4D-12, 1900._dp, TEMP) ;
+ {063:043} AONE + OH = ANO2                             : TEMP**2 * ARR3(5.3D-18, 230._dp, TEMP) ;
+ {064:044} MGLY + OH = XO2 + C2O3                       : 1.7D-11 ;
+ {065:045} MGLY + NO3 = HNO3 + C2O3 + CO                : ARR3(1.4D-12, 1900._dp, TEMP) ;
+ {066:046} C2H4 + O3 = HCHO + .22 HO2 + .12 OH +
+          .24 CO {+ .24CO2} + .52 HCOOH                 : ARR3(1.2D-14, 2630._dp, TEMP) ;
+ {067:047} C2H4 + OH = XO2 + 1.56 HCHO + HO2 + .22 ALD2  : TROEMS(1.0D-28, -0.8_dp, 8.8D-12, 0.0_dp, TEMP, C_M) ;
+ {068:048} OLET + O3 = .57 HCHO + .47 ALD2 +
+           .33 OH + .26 HO2 {+ .08H2}+
+           .07 CH3O2 + .06 ETHP +
+           .03 RO2 + .13 C2O3 +
+           .04 MGLY + .03 CH3OH +
+           .06CH4 + .01C2H6 +
+           .31 CO {+ .22 CO2} +
+           .22 HCOOH + .09RCOOH +1.06 XPAR               : ARR3(4.2D-15, 1800._dp, TEMP) ;
+ {069:049} OLEI + O3 = 1.03 ALD2 +.07 AONE +
+           .6 OH + .22 HO2 +
+           .1 CH3O2 + .05 ETHP +
+           .09 RO2 + .11 ANO2 +
+           .19 C2O3 + .07 MGLY +
+           .04 CH3OH + .08 CH4 + .01C2H6 + .3 CO {+
+           .18CO2} + .16 RCOOH + 2.26 XPAR              : ARR3(8.9D-16, 392._dp, TEMP) ;
+ {070:050} OLET + OH = XO2 + HO2 + HCHO + ALD2 + XPAR   : ARR3(5.8D-12, -478._dp, TEMP) ;
+ {071:051} OLEI + OH = XO2 + HO2 + .23 AONE +
+           1.77 ALD2 +  2.23 XPAR                        : ARR3(2.9D-11, -255._dp, TEMP) ;
+ {072:052} OLET + NO3 = NAP                             : ARR3(3.1D-13, 1010._dp, TEMP) ;
+ {073:053} OLEI + NO3 = NAP                             : 2.5D-12;
+ {074:054} TOL + OH = .08 XO2 + .12 CRES +
+           .2 HO2 + .8 TO2                              : ARR3(2.1D-12, -322._dp, TEMP) ;
+ {075:055} XYL + OH  = .5 XO2 + .55 HO2 +
+           .05 CRES + .8 MGLY +
+           1.1 PAR + .45 TO2                            : ARR3(1.7D-11, -116._dp, TEMP) ;
+ {076:056} TO2 + NO  = .95 NO2 + .95 OPEN +
+          .95 HO2 + .05 ONIT                            : 8.1D-12 ;
+ {077:057} CRES + OH = .4 CRO + .6 XO2 +
+           .6 HO2 + .3 OPEN                             : 4.1D-11 ;
+ {078:058} CRES + NO3 = CRO + HNO3                      : 2.2D-11 ;
+ {079:059} CRO + NO2 = ONIT                             : 1.4D-11;
+ {080:060} OPEN + OH = XO2 + C2O3 + 2 CO +
+           2 HO2 + HCHO                                 : 3.0D-11 ;
+ {081:061} OPEN + O3 = .03 ALD2 + .62 C2O3 +
+           .7 HCHO + .69 CO +
+           .08 OH + .03 XO2  +
+           .76 HO2 + .2 MGLY                            : ARR3(5.4D-17, 500._dp, TEMP);
+ {082:062} ISOP + OH = ISOPP + .08 XO2                  : ARR3(2.6D-11, -409._dp, TEMP);
+ {083:063} ISOP + O3 = .6 HCHO + .65 ISOPRD +
+           .27 OH + .07 CO +  .39 RCOOH + 
+            .07 HO2 + .15 ALD2 +
+            .2 XO2 + .2 C2O3                            : ARR3(1.2D-14, 2013._dp, TEMP) ;
+ {084:064} ISOP + NO3 = ISOPN                           : ARR3(3.0D-12, 446._dp, TEMP) ;
+ {085:065} ISOPRD + OH = .5 C2O3 + .5 ISOPO2 + .2 XO2   : 3.3D-11 ;
+ {086:066} ISOPRD + O3 = .27 OH + .1 HO2 +
+           .11 C2O3 + .07 XO2 +
+           .05 CH3O2 + .16 CO +
+           .15 HCHO + .02 ALD2 +
+           .09 AONE + .85 MGLY +
+           .46 RCOOH                                    : 7.0D-18 ;
+ {087:067} ISOPRD + NO3 = .07 C2O3 + .07 HNO3 +
+           .64 CO + .28 HCHO +
+           .93 ONIT + .28 ALD2 +
+           .93 HO2 + .93 XO2  +
+           1.86 PAR                                     : 1.0D-15 ;
+ {088:068} ISOPP + NO = .09 ONIT + .91 NO2 +
+           .91 HO2 + .63 HCHO +
+           .91 ISOPRD + 0.18 PAR                        : 4.0D-12 ;
+ {089:069} ISOPN + NO = 1.2 NO2 + .8 ONIT +
+           .8 ALD2 + .8 HO2 +
+           .2 ISOPRD + 1.6 PAR                          : 4.0D-12 ;
+ {090:070} ISOPO2 + NO = NO2 + HO2 + .59 CO +
+           .55 ALD2 + .25 HCHO +
+           .34 MGLY + .63 AONE                          : 4.0D-12;
+ {091:071} ISOPP + HO2 = ROOH                           : ARR3(1.7D-13, -1300._dp, TEMP) ;
+ {092:072} ISOPN + HO2 = ONIT + 2 PAR                   : ARR3(1.7D-13, -1300._dp, TEMP) ;
+ {093:073} ISOPO2 + HO2 = ROOH                          : ARR3(1.7D-13, -1300._dp, TEMP) ;
+ {094:074} CH3OOH + OH = .7 CH3O2 + .3 HCHO + .3 OH     : ARR3(3.8D-12, -200._dp, TEMP) ;
+ {095:075} ETHOOH + OH = .7 ETHP + .3 ALD2 + .3 OH      : ARR3(3.8D-12, -200._dp, TEMP) ;
+ {096:076} ROOH + OH  = .77 RO2 + .19 MGLY +
+           .04 ALD2 + .23 OH + .42 XPAR                   : ARR3(3.8D-12, -200._dp, TEMP) ;
+ {097:077} ONIT + OH = NAP                               : ARR3(1.6D-11, 540._dp, TEMP) ;
+ {098:078} C2O3 + NO2 = PAN                             : TROEMS(9.7D-29, -5.6_dp, 9.3D-12, -1.5_dp, TEMP, C_M) ;
+ {099:079} PAN = C2O3 + NO2                             : TROEEMS(1.1D+28, 14000._dp, 9.7D-29, -5.6_dp, 9.3D-12, -1.5_dp, TEMP, C_M) ;
+ {100:080} CH3OH + OH = HCHO + HO2			: ARR3(6.7D-12, 600._dp, TEMP) ;
+ {101:081} CH3O2 + NO = HCHO + HO2 + NO2 		: ARR3(3.0D-12, -280._dp, TEMP) ;
+ {102:082} ETHP + NO = ALD2 + HO2 + NO2			: ARR3(2.6D-12, -365._dp, TEMP) ;
+ {103:083} RO2 + NO = .16 ONIT + .84 NO2 +
+           .34 XO2 + .62 AONE +
+           .25 ALD2 + .08 ETHP +
+           .76 HO2 + 1.68 XPAR                          : 4.0D-12 ;
+ {104:084} C2O3 + NO = NO2 + CH3O2 {+CO2}               : ARR3(5.3D-12, -360._dp, TEMP) ;
+ {105:085} ANO2 + NO = NO2 + C2O3 + HCHO                : 4.0D-12 ;
+ {106:086} NAP + NO = 1.5 NO2 + .5 HCHO +
+           .5 ALD2 + .5 ONIT +
+           .5 HO2 +  XPAR                               : 4.0D-12 ;
+ {107:087} XO2 + NO = NO2                               : 4.0D-12 ;
+
+ {108:088} CH3O2 + NO3 = HCHO + HO2 + NO2		: 1.1D-12 ;
+ {109:089} ETHP + NO3 = ALD2 + HO2 + NO2	 	: 2.5D-12 ;
+ {110:090} RO2 + NO3 = NO2 + .4 XO2 +
+           .74 AONE + .3 ALD2 +
+           .1 ETHP + .9 HO2 + 1.98 XPAR                 : 2.5D-12 ;
+ {111:091} C2O3 + NO3 = NO2 + CH3O2                     : 4.0D-12 ;
+ {112:092} ANO2 + NO3 = NO2 + C2O3 + HCHO               : 1.2D-12;
+ {113:093} NAP + NO3 = 1.5 NO2 + .5 HCHO +
+           .5 ALD2 + .5 ONIT +
+           .5 HO2 + XPAR                                : 4.0D-12 ;
+ {114:094} XO2 + NO3 = NO2                              : 2.5D-12 ;
+ {115:095} CH3O2 + HO2 = CH3OOH				: ARR3(3.8D-13, -800._dp, TEMP) ;
+ {116:096} ETHP + HO2 = ETHOOH				: ARR3(7.5D-13, -700._dp, TEMP) ;
+ {117:097} RO2 + HO2 = ROOH                             : ARR3(1.7D-13, -1300._dp, TEMP) ;
+ {118:098} C2O3 + HO2 = .4 RCOOH + .4 O3                : ARR3(4.5D-13, -1000._dp, TEMP) ;
+ {119:099} ANO2 + HO2 = ROOH                            : ARR3(1.2D-13, -1300._dp, TEMP) ;
+ {120:100} NAP + HO2 = ONIT                             : ARR3(1.7D-13, -1300._dp, TEMP) ;
+ {121:101} XO2 + HO2 = PROD                             : ARR3(1.7D-13, -1300._dp, TEMP) ;
+
+ {122:102} ANOL + OH = ALD2 + HO2			: ARR3(7.0D-12, 235._dp, TEMP) ;
+ {123:103} PAR + XPAR = PROD				: 1.0D-11 ;
+ {124:104} HCl = HCl					: 1.0 ; 
+ {125:105} NH3 = NH3					: 1.0 ; 
+ {126:106} H2SO4 = H2SO4				: 1.0 ;
+ {127:107} CH3O2 = .66 HCHO + .32 HO2 + .34 CH3OH	: peroxy(1,CH3O2,ETHP,RO2,C2O3,ANO2,NAP,ISOPP,ISOPN,ISOPO2,XO2,TEMP,C_M) ;
+ {128:108} ETHP = .8 ALD2 + .6 HO2 + .2 C2H6		: peroxy(2,CH3O2,ETHP,RO2,C2O3,ANO2,NAP,ISOPP,ISOPN,ISOPO2,XO2,TEMP,C_M) ; 
+ {129:109} RO2 = .24 XO2 + .21 ALD2 +
+           .57 AONE + .06 ETHP +
+           .54 HO2 + 1.25 XPAR                          : peroxy(3,CH3O2,ETHP,RO2,C2O3,ANO2,NAP,ISOPP,ISOPN,ISOPO2,XO2,TEMP,C_M) ;
+
+ {130:110} C2O3 = CH3O2					: peroxy(4,CH3O2,ETHP,RO2,C2O3,ANO2,NAP,ISOPP,ISOPN,ISOPO2,XO2,TEMP,C_M) ; 
+ {131:111} ANO2 = .7 C2O3 + .7 HCHO +   
+           .15 MGLY + .15 AONE				: peroxy(5,CH3O2,ETHP,RO2,C2O3,ANO2,NAP,ISOPP,ISOPN,ISOPO2,XO2,TEMP,C_M) ; 
+ {132:112} NAP = .5 NO2 + .5 HCHO + .5 ALD2 + .5 ONIT + 
+           XPAR						: peroxy(6,CH3O2,ETHP,RO2,C2O3,ANO2,NAP,ISOPP,ISOPN,ISOPO2,XO2,TEMP,C_M) ; 
+ {133:113} ISOPP = ISOPRD                               : peroxy(7,CH3O2,ETHP,RO2,C2O3,ANO2,NAP,ISOPP,ISOPN,ISOPO2,XO2,TEMP,C_M) ;
+ {134:114} ISOPN = ALD2 + ONIT + 2 PAR                  : peroxy(8,CH3O2,ETHP,RO2,C2O3,ANO2,NAP,ISOPP,ISOPN,ISOPO2,XO2,TEMP,C_M) ;
+ {135:115} ISOPO2 = .5 ALD2 + .5 AONE                   : peroxy(9,CH3O2,ETHP,RO2,C2O3,ANO2,NAP,ISOPP,ISOPN,ISOPO2,XO2,TEMP,C_M) ;
+
+ {136:116} XO2 = PROD					: peroxy(10,CH3O2,ETHP,RO2,C2O3,ANO2,NAP,ISOPP,ISOPN,ISOPO2,XO2,TEMP,C_M) ; 

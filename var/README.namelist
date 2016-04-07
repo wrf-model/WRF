@@ -5,6 +5,15 @@ Description of WRFDA namelist variables
        be defined for more than 1 value.
 
 &wrfvar1
+  update_sfcdiags         = .false. ; .false.: not updating T2/Q2/U10/V10/TH2 with WRFDA re-diagnosed values.
+                                    ;          set to .true. only when using sf_sfclay_physics=91 in WRF and
+                                    ;          the first guess file contains QSFC, ZNT, UST, MOL, PBLH, HFX,
+                                    ;          QFX, and REGIME from the WRF model.
+                                    ; .true. updating T2/Q2/U10/V10/TH2 with WRFDA re-diagnosed values.
+                                    ;        if not using sf_sfclay_physics=91 in WRF and QSFC, ZNT, UST, MOL,
+                                    ;        PBLH, HFX, QFX, and REGIME are not available in the first guess,
+                                    ;        there will be large inconsistency between WRFDA and WRF
+                                    ;        T2/Q2/U10/V10/TH2
   write_increments        = .false. ; .true.: write out a binary analysis_increment file
   var4d                   = .false. ; .true.: 4D-VAR
   var4d_bin               = 3600    ; second, Observation sub-window bin legnth for 4D-Var
@@ -222,8 +231,8 @@ Description of WRFDA namelist variables
                                       ;         program to continue are treated as fatal errors.
 /
 &wrfvar10   ; for code developers
-  test_transforms	  = .false.   ; .true.: perform adjoint tests in 4DVAR
-  test_gradient	          = .false.   ;	.true.: perform gradient test in 4DVAR
+  test_transforms         = .false.   ; .true.: perform adjoint tests
+  test_gradient           = .false.   ; .true.: perform gradient test
 /
 &wrfvar11
   cv_options_hum          = 1       ; do not change
@@ -240,10 +249,20 @@ Description of WRFDA namelist variables
                                     ; 2: surface observations will be assimilated based on surface 
                                     ;    similarity theory in PBL. Innovations are computed based 
                                     ;    on 10-m wind, 2-m temperature and 2-m moisture. 
+  psfc_from_slp           = .false. ; .false.: use reported Psfc.
+                                    ;          This is the recommened (default) option.
+                                    ; .true.: when sfc_assi_options=1, re-calculates Psfc from SLP
+                                    ;         when the observation elevation is below the lowest
+                                    ;         model level height. This is the behavior before V3.8.
   calculate_cg_cost_fn    = .false. ; .true.: Compute and write out cost function and gradient of
-                                    ;         each iteration into files called cost_fn and grad_fn.
+                                    ;         each iteration into files called cost_fn and grad_fn
+                                    ;         for diagnostic purpose.
                                     ; .false.: Only the initial and final cost functions are computed 
-                                    ;          and output.
+                                    ;          and output in cost_fn.
+                                    ;          The cost function values in rsl.out.0000 are estimates.
+                                    ; The actual cost function of each iteration is not needed for
+                                    ; minimization. For production runs, set calculate_cg_cost_fn=
+                                    ; .false. to reduce run time
   lat_stats_option        = .false. ; do not change
 /
 &wrfvar12
@@ -330,6 +349,11 @@ Description of WRFDA namelist variables
   rttov_emis_atlas_mw                 = 0        ; 0: do not use MW emissivity atlas
                                                  ; 1: use TELSEM MW emissivity atlas (recommended)
                                                  ; 2: use CNRM MW emissivity atlas
+  use_blacklist_rad                   = .true.   ; .true.: to switch off the assimiliation of known problematic
+                                                 ;         channels (up to year 2012) that are hard-coded in
+                                                 ;         var/da/da_radiance/da_blacklist_rad.inc.
+                                                 ; .false.: users need to specify proper channel selections
+                                                 ;          in the radiance_info files.
 /
 &wrfvar15   ; needs to be set together with &wrfvar19
   num_pseudo              = 0          ; set the number of pseudo ob, either 0 or 1 (single ob)

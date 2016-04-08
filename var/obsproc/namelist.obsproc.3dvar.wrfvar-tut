@@ -1,6 +1,7 @@
 &record1
  obs_gts_filename = 'obs.2008020512',
  obs_err_filename = 'obserr.txt',
+ gts_from_mmm_archive = .true.,
 /
 
 &record2
@@ -18,11 +19,12 @@
  qc_test_vert_consistency = .TRUE.,
  qc_test_convective_adj   = .TRUE.,
  qc_test_above_lid        = .TRUE.,
- remove_above_lid         = .TRUE.,
+ remove_above_lid         = .false.,
  domain_check_h           = .true.,
- Thining_SATOB            = false,
- Thining_SSMI             = false,
- Thining_QSCAT            = false,
+ Thining_SATOB            = .false.,
+ Thining_SSMI             = .false.,
+ Thining_QSCAT            = .false.,
+ calc_psfc_from_qnh       = .true.,
 /
 
 &record5

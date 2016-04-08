@@ -703,7 +703,7 @@ Namelist variables for controlling the adaptive time step option:
                                      0: no mixing of qc & qi; 1: mixing activated (default). 
                                        Note qnc and qni are mixed when scalar_pblmix =1.
  bl_mynn_mixlength                   option to change mixing length formulation in MYNN
-                                     0:original as in Nakanishi and Niino 2009 (default), 
+                                     0:original as in Nakanishi and Niino 2009, 
                                      1:RAP/HRRR (default, including BouLac in free atmosphere), 
                                      2:experimental (includes cloud-specific mixing length and a scale-aware mixing 
                                        length, following Ito et al. 2015, BLM). Option 2 has been well tested with 
@@ -745,7 +745,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 5, Grell 3D ensemble scheme
                                      = 6, Modifed Tiedtke scheme (ARW only)
                                      = 7, Zhang-McFarlane scheme from CAM5 (CESM 1_0_1)
-                                     = 10, Modified Kain-Fritsch scheme with triger function based on PDFs (ARW only)
+                                     = 10, Modified Kain-Fritsch scheme with trigger function based on PDFs (ARW only)
                                      = 11, Multi-scale Kain-Fritsch scheme
                                      = 14, New GFS simplified Arakawa-Schubert scheme from YSU (ARW only)
                                      = 16, A newer Tiedtke scheme
@@ -779,6 +779,17 @@ Namelist variables for controlling the adaptive time step option:
                                      = 3, for small grid distances (DX < 5 km)
  nsas_dx_factor                      = 0, default option
                                      = 1, NSAS grid-distance dependent option (new in 3.6)
+ For KF-CuP scheme: recommended to use with cu_rad_feedback
+ shallowcu_forced_ra(max_dom)        radiative impact of shallow Cu by a prescribed maximum cloud fraction
+                                     = .false., option off, default
+                                     = .true., radiative impact of shallow cu with a cloud fraction value of 0.36
+ numbins(max_dom)                    number of perturbations for potential temperature and mixing ratio in the CuP PDF,
+                                     should be an odd number (21 is a recommended value)
+ thBinSize(max_dom)                  bin size of potential temperature perturbation increment (0.01 K)
+ rBinSize(max_dom)                   bin size of mixing ratio perturbation increment (1.0e-4 kg/kg)
+ minDeepFreq(max_dom)                minimum frequency required before deep convection is allowed (0.333)
+ minShallowFreq(max_dom)             minimum frequency required before shallow convection is allowed (1.0e-2)
+ shcu_aerosols_opt(max_dom)          whether aerosols in shcu:  0=none, 2=prognostic (run with WRF-Chem), 
 
  ncnvc (max_dom)                     = FOR NMM: number of fundamental timesteps between
                                                 calls to convection; the value is set in Registry.NMM
@@ -1072,7 +1083,7 @@ Options for use with the Noah-MP Land Surface Model:
  opt_gla                            = 1,        ; Noah-MP glacier treatment option (new in 3.8)
                                                 ;    1 = includes phase change
                                                 ;    2 = slab ice (Noah)
- opt_gla                            = 1,        ; Noah-MP surface evaporation resistence option (new in 3.8)
+ opt_rsf                            = 1,        ; Noah-MP surface evaporation resistence option (new in 3.8)
                                                 ;    1 -> Sakaguchi and Zeng, 2009
                                                 ;    2 -> Sellers (1992)
                                                 ;    3 -> adjusted Sellers to decrease RSURF for wet soil

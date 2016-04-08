@@ -2697,7 +2697,7 @@ iter:     DO NCOUNT=1,10
         IF(TADVEC.LT.TIMEC)NIC=NINT(TADVEC/DT)
         NCA(I,J) = REAL(NIC)*DT
         IF(ISHALL.EQ.1)THEN
-           TIMEC = 2400.
+!          TIMEC = 2400.
            NCA(I,J) = CUDT*60.
            NSHALL = NSHALL+1
         ENDIF

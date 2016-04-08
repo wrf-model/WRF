@@ -54,8 +54,6 @@ time_window_min="2008-02-05_11:00:00.0000",
 &wrfvar22
 time_window_max="2008-02-05_13:00:00.0000",
 /
-&wrfvar23
-/
 &time_control
 start_year=2008,
 start_month=02,

@@ -23,6 +23,34 @@ WRFDA, including infringement actions.
 This is the main directory for the WRFDA Version 3 source code release.
 ======================================
 
+V3.8 Release Notes :
+-------------------
+
+Version 3.8 was released on April 8, 2016.
+
+  For more information about WRFDA, visit the WRFDA Users home page
+  http://www2.mmm.ucar.edu/wrf/users/wrfda/index.html
+
+  New features:
+
+    - A new observation type: AMSR2 radiance
+    - A new dynamic constraint for 3DVAR and Hybrid assimilation
+
+  Updates:
+
+    - The CV7 Background Error feature has been updated with major bug fixes
+    - Fixed problems with excessive noise in moisture field for some radar options (use_radar_rhv, use_radar_rqv)
+    - Improved assimilation of surface pressure obs for sfc_assi_options=1
+    - Improved consistency of surface diagnostics (T2, Q2, U10, and V10) between WRFDA and WRF
+    - Updated libraries:
+        - RTTOV interface now supports RTTOV Version 11.1, 11.2, or 11.3
+    - Many bug fixes and performance improvements
+    - WRFPLUS has been upgraded to V3.8 and is consistent with the released WRF version 3.8.
+
+See http://www2.mmm.ucar.edu/wrf/users/wrfda/updates-3.8.html for a full list of updates
+
+======================================
+
 V3.7.1 Release Notes :
 -------------------
 

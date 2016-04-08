@@ -17,7 +17,7 @@ SUBROUTINE med_nest_move ( parent, nest )
 #ifdef MOVE_NESTS
   ! Local 
    CHARACTER*256 mess
-   INTEGER i, j, p, parent_grid_ratio
+   INTEGER i, j, k, p, parent_grid_ratio
    INTEGER px, py       ! number and direction of nd points to move
    INTEGER                         :: ids , ide , jds , jde , kds , kde , &
                                       ims , ime , jms , jme , kms , kme , &
@@ -35,7 +35,7 @@ SUBROUTINE med_nest_move ( parent, nest )
    LOGICAL, EXTERNAL :: should_not_move
 #if ( HWRF == 1 )
 !XUEJIN added for HWRFx
-   INTEGER                  :: k,idum1,idum2 
+   INTEGER                  :: idum1,idum2 
    INTEGER                  :: ITS,ITE,JTS,JTE,KTS,KTE
 #else
 !

@@ -45,6 +45,7 @@ dimspec    n       -     constant=(0:6)                    c
 ifdef HWRF=1
 dimspec    otrak   -     namelist=num_old_fixes            c     old_fixes
 endif
+dimspec    maxkid  -     constant=100                      c     max_nest_domain_id
 endif
 
 dimspec    snly    2     namelist=num_snow_layers          z     snow_layers

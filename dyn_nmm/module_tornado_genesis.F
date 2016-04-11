@@ -96,6 +96,7 @@ contains
     grid%tg_interval_end=grid%tg_interval_start
     grid%tg_duration=0.0
     grid%tg_want_reset=0
+    grid%update_interest=.true.
   end subroutine init_tg_vars
 
   subroutine init_tornado_genesis(grid,config_flags)
@@ -306,7 +307,7 @@ contains
     do j=jstart,jend
        do i=istart,iend
           kloop: do k=kds+1,kde-1
-             if(grid%pint(i,j,1)-grid%pint(i,j,k)<wwind_cutoff) exit kloop
+             if(grid%pint(i,j,1)-grid%pint(i,j,k)>wwind_cutoff) exit kloop
              w=grid%w(i,j,k)
              grid%tg_min_wwind(i,j)=min(grid%tg_min_wwind(i,j),w)
              minminw=min(minminw,grid%tg_min_wwind(i,j))

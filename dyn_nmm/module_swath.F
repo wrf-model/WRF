@@ -12,7 +12,7 @@ module module_swath
 
   private
 
-  public :: update_interest, init_swath, sustained_wind
+  public :: update_interest, init_swath, sustained_wind, check_for_kid_move
 
 contains
 
@@ -163,7 +163,7 @@ contains
          ids,ide,jds,jde,kds,kde, &
          ims,ime,jms,jme,kms,kme, &
          ips,ipe,jps,jpe,kps,kpe  )
-    
+
     sdistsq=grid%interest_rad_storm**2*1e6
     do j=max(jps,jds),min(jpe,jde)
        do i=max(ips,ids),min(ipe,ide)
@@ -174,10 +174,12 @@ contains
     enddo
   end subroutine storm_interest
 
-  subroutine kid_scanner(parent,nest)
+  subroutine kid_scanner(parent,nest,check)
     ! Sets parent%interest to 1 within nest%intrest_rad_parent
     ! kilometers of the nest parent center.
     type(domain), intent(inout) :: parent,nest
+    logical, intent(inout), optional :: check
+
     integer :: ni1,nj1,ni2,nj2, nimid, njmid
     integer :: nims,nime,njms,njme,nkms,nkme
     integer :: nids,nide,njds,njde,nkds,nkde
@@ -222,6 +224,18 @@ contains
               I0," (ki1=",I0," kj1=",I0," ki2=",I0," kj2=",I0,")")
     endif
 
+    if(present(check)) then
+       ! Just check, do not update anything
+       if ( parent%nest_imid(nest%id) /= nimid .or. &
+            parent%nest_jmid(nest%id) /= njmid ) then
+          check=.true.
+       endif
+       return
+    else
+       parent%nest_imid(nest%id) = nimid
+       parent%nest_jmid(nest%id) = njmid
+    endif
+    
     ispan =ceiling(1e3*nest%interest_rad_parent/dx)+1
     istart=max(pids,  nimid-ispan)
     iend  =min(pide-1,nimid+ispan)
@@ -285,7 +299,7 @@ contains
     count=wrf_dm_sum_integer(count)
 #endif
 308 format('grid ',I0,': ',I0,' of ',I0,' points (',F0.2,'%) are in area of interest.')
-    write(message,308) grid%id,count,total,real(count)/total
+    write(message,308) grid%id,count,total,real(count)/total*100.0
     call wrf_debug(1,message)
   end subroutine print_interest
 
@@ -324,6 +338,25 @@ contains
     enddo
   end subroutine self_interest
 
+  logical function check_for_kid_move(grid,config_flags)
+    USE MODULE_CONFIGURE, ONLY : grid_config_rec_type
+    type(domain), intent(inout) :: grid
+    type(grid_config_rec_type), intent(in) :: config_flags
+    integer :: ikid
+    check_for_kid_move=.false.
+
+    if(config_flags%interest_kids==1) then
+       do ikid=1,grid%num_nests
+          if(associated(grid%nests(ikid)%ptr)) &
+               call kid_scanner(grid,grid%nests(ikid)%ptr,check_for_kid_move)
+       enddo
+    else
+       call wrf_debug('Not checking if kid moved since I have no kids yet.')
+    endif
+    if(check_for_kid_move) &
+         call  wrf_debug(1,'At least one of my nests moved.')
+  end function check_for_kid_move
+  
   subroutine update_interest(grid,config_flags)
     USE MODULE_CONFIGURE, ONLY : grid_config_rec_type
     type(domain), intent(inout) :: grid
@@ -331,6 +364,7 @@ contains
     integer :: max_dom, nestid, parent_id, ikid, ki0,kj0,kni,knj
     logical :: nestless
 
+    call wrf_debug(1,'Reset and recalculate area of interest.')
     grid%interesting=0
 
     likes_kids: if(config_flags%interest_kids==1) then

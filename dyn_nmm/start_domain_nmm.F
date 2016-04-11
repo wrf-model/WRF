@@ -708,6 +708,7 @@
               allowed_to_read)
     ENDIF
     IF(ANAL .or. allowed_to_read) THEN
+       call wrf_debug(1,'Request update to area of interest in start_domain_nmm.')
        grid%update_interest=.true.
     ENDIF
 ! End Sam Trahan's doing for vortex tracker initialization

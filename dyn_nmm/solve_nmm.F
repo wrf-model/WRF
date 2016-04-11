@@ -29,7 +29,7 @@
       USE MODULE_COMM_DM
 #endif
 #ifdef HWRF
-      USE MODULE_SWATH,                 ONLY : UPDATE_INTEREST, SUSTAINED_WIND
+      USE MODULE_SWATH,                 ONLY : UPDATE_INTEREST, SUSTAINED_WIND, CHECK_FOR_KID_MOVE
       USE MODULE_HIFREQ,                ONLY: HIFREQ_WRITE, HIFREQ_OPEN
 #endif
       USE MODULE_TORNADO_GENESIS,       ONLY: CALC_TORNADO_GENESIS, RESET_TORNADO_GENESIS
@@ -553,6 +553,14 @@
           grid%XLOC_1=(IDE-1)/2     ! This maneuvers the storm to the center of the nest quickly
           grid%YLOC_1=(JDE-1)/2     ! This maneuvers the storm to the center of the nest quickly
         ENDIF
+
+        ! If we have any nests, check to see if they moved so we know
+        ! if we need to update the nest-centric area of interest:
+        IF(grid%ntsd>1 .and. MOD(grid%ntsd,grid%nphs)==0) THEN
+           grid%update_interest = grid%update_interest .or. &
+                check_for_kid_move(grid,config_flags)
+        ENDIF
+
 #endif
 
       ENDIF

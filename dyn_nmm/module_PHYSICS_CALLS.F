@@ -507,6 +507,7 @@
      &                 ,QG=MOIST_TRANS(IMS,KMS,JMS,P_QG),F_QG=F_QG      &
      &                 ,IS_CAMMGMP_USED=IS_CAMMGMP_USED                 &
      &                 ,EXPLICIT_CONVECTION=config_flags%cu_physics==0  &
+     &                 ,CU_PHYSICS=config_flags%cu_physics              &
      &                 ,MP_PHYSICS=CONFIG_FLAGS%MP_PHYSICS)
 
 
@@ -980,6 +981,7 @@
 !-----------------------------------------------------------------------
       INTEGER :: I,I_M,IDUMMY,IEND,ISFFLX,ISTAT,ISTR,J,K,KOUNT_ALL      &
      &          ,LENGTH_ROW,LLIJ,LLYR,N,SST_UPDATE,SF_URBAN_PHYSICS,NUM_URBAN_LAYERS
+      INTEGER :: FASDAS
 !
       INTEGER,DIMENSION(IMS:IME,JMS:JME) :: KPBL,LOWLYR
 !
@@ -1058,6 +1060,7 @@
       ALLOCATE(MOIST_TRANS(IMS:IME,KMS:KME,JMS:JME,N_MOIST),STAT=ISTAT)
 !
       SF_URBAN_PHYSICS=CONFIG_FLAGS%SF_URBAN_PHYSICS
+      FASDAS=0
 
       if ( config_flags%bl_pbl_physics == BOULACSCHEME ) then
          call wrf_error_fatal("Cannot use BOULAC PBL with NMM")
@@ -1439,7 +1442,7 @@
      &          ,ALBSI=albsi,ICEDEPTH=icedepth,SNOWSI=snowsi            &
      &          ,ISICE=GRID%LANDUSE_ISICE,ISWATER=GRID%ISWATER          &
      &          ,XLAND=XLAND,Z=Z,ZNT=Z0                                 &
-#ifdef HWRF
+#if ( HWRF == 1 )
      &          ,MZNT=MZ0                                               &
 #endif
      &          ,ZS=SLDPTH,CT=CT,TKE_PBL=TKE,SFENTH=SFENTH              &   !KWON
@@ -1495,6 +1498,7 @@
      &        ,RDLAI2D=config_flags%rdlai2d                                   &
      &        ,usemonalb=config_flags%usemonalb                           &
      &        ,NOAHRES=grid%noahres                                       &
+     &        ,opt_thcnd=config_flags%opt_thcnd       &
 ! for Noah UA changes
      &        ,ua_phys=config_flags%ua_phys,flx4=grid%flx4,fvb=grid%fvb       &
      &        ,fbur=grid%fbur,fgsn=grid%fgsn                                  &
@@ -1508,6 +1512,7 @@
      &        ,iopt_inf=config_flags%opt_inf,   iopt_rad=config_flags%opt_rad &
      &        ,iopt_alb=config_flags%opt_alb,   iopt_snf=config_flags%opt_snf &
      &        ,iopt_tbot=config_flags%opt_tbot, iopt_stc=config_flags%opt_stc & 
+     &        ,iopt_gla=config_flags%opt_gla,   iopt_rsf=config_flags%opt_rsf & 
      &        , isnowxy=grid%isnowxy  ,    tvxy=grid%tvxy    ,    tgxy=grid%tgxy     &
      &        ,canicexy=grid%canicexy ,canliqxy=grid%canliqxy,   eahxy=grid%eahxy    &
      &        ,   tahxy=grid%tahxy    ,    cmxy=grid%cmxy    ,    chxy=grid%chxy     &
@@ -1517,6 +1522,7 @@
      &        , zsnsoxy=grid%zsnsoxy  , snicexy=grid%snicexy , snliqxy=grid%snliqxy  &
      &        ,lfmassxy=grid%lfmassxy ,rtmassxy=grid%rtmassxy,stmassxy=grid%stmassxy &
      &        ,  woodxy=grid%woodxy   ,stblcpxy=grid%stblcpxy,fastcpxy=grid%fastcpxy &
+     &        , grainxy=grid%grainxy  ,   gddxy=grid%gddxy                           &
      &        ,  xsaixy=grid%xsaixy   , taussxy=grid%taussxy                         &
      &        ,  t2mvxy=grid%t2mvxy   ,  t2mbxy=grid%t2mbxy                          &
      &        ,  q2mvxy=grid%q2mvxy   ,  q2mbxy=grid%q2mbxy                          & 
@@ -1548,7 +1554,7 @@
      &        ,tkdry3d=grid%tkdry3d,tksatu3d=grid%tksatu3d, LakeModel=grid%sf_lake_physics,  lake_min_elev=grid%lake_min_elev  &
 ! end lake module
      &        ,maxpatch=1,inest=1,history_interval=config_flags%history_interval  & !clm
-
+     &        ,fasdas=fasdas
      &                                                          )
 !
 !-----------------------------------------------------------------------
@@ -1614,7 +1620,7 @@
 !BSF &               ,RQRBLTEN=RQRBLTEN,RQSBLTEN=RQSBLTEN             & !BSF
 !BSF &               ,RQGBLTEN=RQGBLTEN                               & !BSF
      &               ,TSK=TSFC,XLAND=XLAND,ZNT=Z0                     &
-#ifdef HWRF
+#if ( HWRF == 1 )
      &               ,MZNT=MZ0                                        &
 #endif
      &               ,HT=SFCZ                                         &   !KWON
@@ -1675,6 +1681,7 @@
      &               ,HOL=HOL,sf_sfclay_physics=CONFIG_FLAGS%SF_SFCLAY_PHYSICS &
      &               ,IS_CAMMGMP_USED=IS_CAMMGMP_USED                 &
      &               ,wstar=wstar_ysu,delta=delta_ysu                 &
+     &               ,fasdas=fasdas                                   &
      &               ,sf_urban_physics=CONFIG_FLAGS%SF_URBAN_PHYSICS)
 !
 !wang, output PBL tendency
@@ -1755,7 +1762,7 @@
         ENDDO
       ENDIF
 !
-#ifdef HWRF
+#if ( HWRF == 1 )
       if(size(grid%windsq_swath)>1) then
          do j=max(jts,jds),min(jte,jde-1)
             do i=max(its,ids),min(ite,ide-1)
@@ -1875,7 +1882,7 @@
 !125   FORMAT(1X,'grid%id  module_PHYSICS.F :  gwd_opt  ',I2,2X,I2)
 
 
-#ifdef HWRF
+#if ( HWRF == 1 )
       IF (grid%gwd_opt .eq. 2 .AND. grid%id.eq.1) THEN                                        !Kwon's doing for parent only now
 #else
       IF (grid%gwd_opt .eq. 2) THEN
@@ -2309,7 +2316,9 @@
 
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: HPBL2D,EVAP2D,HEAT2D     !Kwon S&P
-!`
+
+      REAL,DIMENSION(IMS:IME,JMS:JME)               :: SHALL
+! 
       REAL,INTENT(IN) :: DT,GPS,PDTOP,PT
 !
       REAL,INTENT(INOUT) :: ACUTIM,AVCNVC
@@ -2797,6 +2806,7 @@
      &                 ,ens_sasamp=config_flags%ens_sasamp              &
 #endif
 #endif
+     &                 ,SHALL=grid%shall                                &
      &                 ,HPBL2D=HPBL2D,EVAP2D=EVAP2D,HEAT2D=HEAT2D       &     !Kwon S&P
      &                 ,DX2D=DX2D,DYNMM=DYNMM                          &     !Wang scale-sware SAS 
      &                 ,SCALEFUN=SCALEFUN, SCALEFUN1=SCALEFUN1          &
@@ -2873,7 +2883,7 @@
       have_tg_tp = .false.
       have_swath = .false.
       have_tg_tp = (size(grid%tg_total_precip)>1)
-#ifdef HWRF
+#if ( HWRF == 1 )
       have_swath = ( size(grid%precip_swath)>1 )
 #endif
 !$omp parallel do                                                       &
@@ -2894,7 +2904,7 @@
           if(have_tg_tp) then
              grid%tg_total_precip(i,j) = grid%tg_total_precip(i,j) + PCPCOL
           endif
-#ifdef HWRF
+#if ( HWRF == 1 )
           if(have_swath) then
              if(grid%interesting(i,j)/=0) &
                   grid%precip_swath(i,j) = grid%precip_swath(i,j) + PCPCOL
@@ -3357,7 +3367,7 @@
 !***  OUT ABOVE SINCE IT IS ONLY A LOCAL ARRAY FOR NOW.
 !-----------------------------------------------------------------------
 !
-#ifdef HWRF
+#if ( HWRF == 1 )
       have_swath = ( size(grid%precip_swath)>1 )
 #endif
       have_tg_tp = (size(grid%tg_total_precip)>1)
@@ -3373,7 +3383,7 @@
           if(have_tg_tp) then
              grid%tg_total_precip(i,j) = grid%tg_total_precip(i,j) + PCPCOL
           endif
-#ifdef HWRF
+#if ( HWRF == 1 )
           if(have_swath) then
              if(grid%interesting(i,j)/=0) &
                   grid%precip_swath(i,j) = grid%precip_swath(i,j) + PCPCOL

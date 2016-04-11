@@ -41,10 +41,18 @@
 
       IMPLICIT NONE
 
-      LOGICAL :: exists
+      LOGICAL :: exists, vnest
       LOGICAL , EXTERNAL :: wrf_dm_on_monitor
-      INTEGER :: i, oops, d1_value
+      INTEGER :: i, j, oops, d1_value
       LOGICAL :: km_opt_already_done , diff_opt_already_done
+!TWG2015
+!
+!FASDAS
+!
+      LOGICAL :: rinblw_already_done
+!
+!END FASDAS
+!
 
 !-----------------------------------------------------------------------
 ! Set up the WRF Hydro namelist option to allow dynamic allocation of
@@ -88,8 +96,9 @@
 #if (EM_CORE == 1)
 !-----------------------------------------------------------------------
 ! There are restrictions for the use_theta_m option:
-! 1. The option may not be used in conjunction with damp_opt=2.
-! 2. The option may not be used with rad_nudge.
+! 1. The option to include moist theta in the WRF solver only works with a single domain.
+! 2. The option may not be used in conjunction with damp_opt=2.
+! 3. The option may not be used with rad_nudge.
 !-----------------------------------------------------------------------
 
       IF ( ( model_config_rec % use_theta_m .EQ. 1 ) .AND. &
@@ -148,6 +157,8 @@
             wrf_err_message = '--- ERROR: Both km_opt and diff_opt need to be set in the namelist.input file.'
          CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
       END IF
+
+
 #endif
 
 !-----------------------------------------------------------------------
@@ -205,12 +216,16 @@
       DO i = 2, model_config_rec % max_dom
          IF ( model_config_rec % mp_physics(i)     .NE. &
               model_config_rec % mp_physics(1) ) THEN
-            wrf_err_message = '--- ERROR: mp_physics must be equal for all domains '
+            wrf_err_message = '--- NOTE: mp_physics must be equal for all domains '
             CALL wrf_message ( wrf_err_message )
-            wrf_err_message = '--- Fix mp_physics in namelist.input '
-            CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
+            wrf_err_message = '--- NOTE:     ----> Setting all mp_physics entries to value defined in the inner most domain'
+            CALL wrf_message ( TRIM( wrf_err_message ) )
          END IF
       ENDDO
+      d1_value = model_config_rec%mp_physics(model_config_rec % max_dom)
+      DO i = 1, model_config_rec % max_dom-1
+         model_config_rec%mp_physics(i) = d1_value
+      END DO
 
 
 !-----------------------------------------------------------------------
@@ -323,9 +338,15 @@
       d1_value = model_config_rec%sf_urban_physics(1)
       DO i = 2, model_config_rec % max_dom
          IF ( model_config_rec%sf_urban_physics(i) /= d1_value ) THEN
-            WRITE(wrf_err_message, * ) '--- ERROR:   sf_urban_physics option must be identical in each domain'
-            CALL wrf_error_fatal ( TRIM ( wrf_err_message ) )
+            WRITE(wrf_err_message, * ) '--- NOTE:   sf_urban_physics option must be identical in each domain'
+            CALL wrf_message ( TRIM ( wrf_err_message ) )
+            WRITE(wrf_err_message, * ) '--- NOTE:   ----> Resetting namelist values to that defined on the inner most domain'
+            CALL wrf_message ( TRIM ( wrf_err_message ) )
          ENDIF
+      END DO
+      d1_value = model_config_rec%sf_urban_physics(model_config_rec % max_dom)
+      DO i = 1, model_config_rec % max_dom-1
+         model_config_rec%sf_urban_physics(i) = d1_value
       END DO
 
 !-----------------------------------------------------------------------
@@ -561,23 +582,6 @@
          END IF
       ENDDO
 
-!-----------------------------------------------------------------------
-! cu_physics = 10 (Cumulus-potential KF) does not work in 3.7 yet 
-!-----------------------------------------------------------------------
-
-      oops = 0
-      DO i = 1, model_config_rec % max_dom
-         IF ( model_config_rec%cu_physics(i) .EQ. KFCUPSCHEME ) THEN
-            oops = oops + 1
-         END IF
-      ENDDO      ! Loop over domains
-      IF ( oops .GT. 0 ) THEN
-         wrf_err_message = '--- ERROR: cu_physics = 10 is not available in 3.7 '
-         CALL wrf_message ( wrf_err_message )
-         wrf_err_message = '--- Please select another cu_physics option '
-         CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
-      END IF
-
 #endif
 
 !-----------------------------------------------------------------------
@@ -630,9 +634,9 @@
 !-----------------------------------------------------------------------
 
       DO i = 1, model_config_rec % max_dom
-         IF ( ( model_config_rec%grid_sfdda(i) .EQ. 1 ).AND. &
+         IF ( ( model_config_rec%grid_sfdda(i) .GT. 0 ).AND. &
               ( model_config_rec%grid_fdda (i) .NE. 1 ) ) THEN
-            wrf_err_message = '--- ERROR: If grid_sfdda = 1, then grid_fdda must also = 1 for that domain '
+            wrf_err_message = '--- ERROR: If grid_sfdda >= 1, then grid_fdda must also = 1 for that domain '
             CALL wrf_message ( wrf_err_message )
             wrf_err_message = '--- Change grid_fdda or grid_sfdda in namelist.input '
             CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
@@ -710,6 +714,65 @@
       ENDDO      ! Loop over domains
 
 !-----------------------------------------------------------------------
+! If grid_sfdda = 2, we turn it into derived namelist fasdas
+!-----------------------------------------------------------------------
+
+      DO i = 1, model_config_rec % max_dom
+         model_config_rec%fasdas(i) = 0
+         IF ( model_config_rec%grid_sfdda(i) .EQ. 2 ) THEN
+            model_config_rec%fasdas(i) = 1
+         END IF
+      ENDDO
+!
+!-----------------------------------------------------------------------
+! FASDAS:  Check that rinblw is set for max_domains in the namelist if sffdda is active
+!-----------------------------------------------------------------------
+    rinblw_already_done = .FALSE.
+    DO j = 1, model_config_rec%max_dom
+    IF (model_config_rec%grid_sfdda(j) .EQ. 1 ) THEN
+      DO i = 2, model_config_rec%max_dom
+         IF ( model_config_rec%rinblw(i) .EQ. -1 ) THEN
+            model_config_rec%rinblw(i) = model_config_rec % rinblw(1)
+            IF ( .NOT. rinblw_already_done ) THEN
+               CALL wrf_message ( "Setting blank rinblw entries to domain #1 values.")
+               CALL wrf_message ( " --> The rinblw entry in the namelist.input is now max_domains." )
+            END IF
+            rinblw_already_done = .TRUE.
+         END IF
+       ENDDO
+
+!------------------------------------------------------------------------
+! Check that rinblw is not -1 if sfdda is active
+!------------------------------------------------------------------------
+       IF ( model_config_rec%rinblw(1) .EQ. -1 ) THEN
+            wrf_err_message = '--- ERROR: rinblw needs to be set in the namelist.input file.'
+            CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
+       END IF
+    END IF 
+    END DO
+
+!------------------------------------------------------------------------
+! Check to see if FASDAS is active
+!------------------------------------------------------------------------
+    DO i = 1, model_config_rec%max_dom
+     IF (model_config_rec%fasdas(i) .EQ. 1 ) THEN
+         CALL wrf_message ( "FASDAS is active. Mixed Layer fdda is inactive")
+     END IF
+
+!------------------------------------------------------------------------
+! Check to make sure sfdda is active if FASDAS is in namelist
+!------------------------------------------------------------------------
+!     IF (model_config_rec%fasdas(i) .EQ. 1 ) THEN
+!       IF (model_config_rec%grid_sfdda(i) .EQ. 0) THEN
+!        wrf_err_message = '--- ERROR: sfdda needs to be set in the namelist.input file to run FASDAS.'
+!        CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
+!       END IF
+!     END IF 
+     END DO
+!
+!END FASDAS
+!
+!-----------------------------------------------------------------------
 !  Only implement the mfshconv option if the QNSE PBL is activated.
 !-----------------------------------------------------------------------
 
@@ -749,6 +812,24 @@
       END IF
 
 !-----------------------------------------------------------------------
+!  bl_mynn_edmf > 0 over-rules both shcu_physics & ishallow
+!-----------------------------------------------------------------------
+
+      oops = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec%bl_mynn_edmf(i) .EQ. MYNN_STEM_EDMF .OR. &
+              model_config_rec%bl_mynn_edmf(i) .EQ. MYNN_TEMF_EDMF) THEN
+               model_config_rec%shcu_physics(i) = 0  ! maxdom
+               model_config_rec%ishallow = 0         ! not maxdom
+               oops = oops + 1
+         END IF
+      ENDDO      ! Loop over domains
+      IF ( oops .GT. 0 ) THEN
+         wrf_err_message = 'bl_mynn_edmf > 0 requires both shcu_physics=0 & ishallow=0'
+         CALL wrf_message ( wrf_err_message )
+      END IF
+
+!-----------------------------------------------------------------------
 !  We need to know if any of the cumulus schemes are active. This
 !  allows the model to allocate space.
 !-----------------------------------------------------------------------
@@ -773,19 +854,45 @@
       ENDDO
 
 !-----------------------------------------------------------------------
-!  gwd_opt = 1 only works with YSU PBL.
+!  gwd_opt = 1 only works with YSU & MYNN PBL.
 !-----------------------------------------------------------------------
 
       oops = 0
       DO i = 1, model_config_rec % max_dom
-         IF ( ( model_config_rec%bl_pbl_physics(i) .NE. YSUSCHEME ) .AND. &
-              ( model_config_rec%gwd_opt .EQ. GWDOPT ) ) THEN
-            model_config_rec%gwd_opt = 0
-            oops = oops + 1
+         IF (model_config_rec%gwd_opt == 1 ) THEN
+            IF ( (model_config_rec%bl_pbl_physics(i) .EQ. YSUSCHEME ) .OR. &
+                 (model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME2 ) .OR. &
+                 (model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME3) ) THEN
+                !NO PROBLEM
+            ELSE
+               model_config_rec%gwd_opt = 0
+               oops = oops + 1
+            END IF
          END IF
       ENDDO      ! Loop over domains
       IF ( oops .GT. 0 ) THEN
-         wrf_err_message = '--- NOTE: bl_pbl_physics /= 1, implies gwd_opt cannot be 1, resetting'
+         wrf_err_message = '--- NOTE: bl_pbl_physics /= 1,5,6 implies gwd_opt cannot be 1, resetting'
+         CALL wrf_message ( wrf_err_message )
+      END IF
+
+!-----------------------------------------------------------------------
+! Make sure icloud_bl is only used when MYNN is chosen.
+!-----------------------------------------------------------------------
+
+      oops = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec%icloud_bl(i) .eq. 1) THEN
+           IF ( model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME2 .OR. &
+                model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME3 ) THEN
+              !CORRECTLY CONFIGURED
+           ELSE
+              model_config_rec%icloud_bl(i) = 0
+              oops = oops + 1
+           END IF
+         END IF
+      ENDDO      ! Loop over domains
+      IF ( oops .GT. 0 ) THEN
+         wrf_err_message = 'Need MYNN PBL for icloud_bl = 1, resetting to 0'
          CALL wrf_message ( wrf_err_message )
       END IF
 
@@ -927,6 +1034,22 @@
       END IF
 
 !-----------------------------------------------------------------------
+! When digital filtering is turned on, if no specific time step is given to be
+! used during the digitial filtering period, then the standard WRF time
+! step is used.  If neither time steps are specified, then fatal error.
+!-----------------------------------------------------------------------
+
+      IF ( .NOT. model_config_rec%dfi_opt .EQ. DFI_NODFI ) THEN
+         IF ( model_config_rec%time_step_dfi .EQ. -1 ) THEN
+            model_config_rec%time_step_dfi = model_config_rec%time_step
+            IF ( model_config_rec%time_step_dfi .EQ. -1 ) THEN
+               wrf_err_message = '--- ERROR: DFI Timestep or standard WRF time step must be specified.'
+               CALL wrf_error_fatal ( wrf_err_message )
+            END IF
+         END IF
+      END IF
+
+!-----------------------------------------------------------------------
 ! The cu_rad_feedback namelist flag with the two Grell cumulus parameterization 
 ! schemes needs to have the namelist flag cu_diag=1
 !-----------------------------------------------------------------------
@@ -966,7 +1089,7 @@
           END IF
          END IF
        END DO
-
+ 
 !-----------------------------------------------------------------------
 ! The namelist flag kf_edrates=1 must have one of the three KF cumulus parameterizations
 ! turned on.  All other cumulus parameterizations need to have kf_edrates=0
@@ -1126,24 +1249,70 @@
       END IF
 
 !-----------------------------------------------------------------------
-!  Check that vertical levels are defined in a logical way.
+!  DJW Check that we're not using ndown and vertical nesting.
 !-----------------------------------------------------------------------
+     DO i=1,model_config_rec%max_dom
+       IF ((model_config_rec%vert_refine_method(i) .NE. 0) .AND. (model_config_rec%vert_refine_fact .NE. 1)) THEN
+         write(wrf_err_message,'(A)') '--- ERROR: vert_refine_fact is ndown specific and cannot be used with vert_refine_method, and vice versa.'
+         CALL wrf_message( wrf_err_message )
+       ENDIF
+     ENDDO
 
+!-----------------------------------------------------------------------
+!  DJW Check that only one type of vertical nesting is enabled.
+!-----------------------------------------------------------------------
+     DO i=1,model_config_rec%max_dom
+       IF (model_config_rec%vert_refine_method(i) .NE. 0) THEN
+         DO j=1,model_config_rec%max_dom
+           IF ((model_config_rec%vert_refine_method(i) .NE. model_config_rec%vert_refine_method(j)) .AND. (model_config_rec%vert_refine_method(j) .NE. 0)) THEN
+             write(wrf_err_message,'(A,I1,A,I2,A,I1,A,I2,A)') '--- ERROR: vert_refine_method differs on grid ids ',model_config_rec%grid_id(i),' and ',model_config_rec%grid_id(j),'. Only one type of vertical grid nesting can be used at a time.'
+             CALL wrf_error_fatal( wrf_err_message )
+           ENDIF
+         ENDDO
+       ENDIF
+     ENDDO
+
+!-----------------------------------------------------------------------
+!  DJW Check that e_vert is the same for nested domains not using
+!  vertical nesting. Don't do this check if we're using ndown.
+!-----------------------------------------------------------------------
+      IF ((model_config_rec%max_dom .GT. 1) .AND. (model_config_rec%vert_refine_fact .EQ. 1)) THEN
+        DO i=1,model_config_rec%max_dom
+          IF (((model_config_rec%parent_id(i) .NE. 0) .AND. (model_config_rec%parent_id(i) .NE. model_config_rec%grid_id(i))) .AND. (model_config_rec%vert_refine_method(i) .EQ. 0)) THEN
+            DO j=1,model_config_rec%max_dom
+              IF ((i .NE. j) .AND. (model_config_rec%parent_id(i) .EQ. model_config_rec%grid_id(j))) THEN
+                IF (model_config_rec%e_vert(i) .NE. model_config_rec%e_vert(j)) THEN
+                  write(wrf_err_message,'(A,I2,A,I2,A)') '--- ERROR: e_vert differs on grid ids ',model_config_rec%grid_id(i),' and ',model_config_rec%grid_id(j),'. Set vert_refine_method or make e_vert consistent.'
+                  CALL wrf_error_fatal( wrf_err_message )
+                ENDIF
+              ENDIF
+            ENDDO
+          ENDIF
+        ENDDO
+      ENDIF
+
+!-----------------------------------------------------------------------
+!  Check that vertical levels are defined in a logical way.
+!  DJW Check that domains without a parent do not have vertical
+!  nesting enabled.
+!-----------------------------------------------------------------------
+      DO i=1,model_config_rec%max_dom
+        IF ((model_config_rec%parent_id(i) .EQ. 0) .OR. (model_config_rec%parent_id(i) .EQ. model_config_rec%grid_id(i))) THEN
+          IF (model_config_rec%vert_refine_method(i) .NE. 0) THEN
+            write(wrf_err_message,'(A,I1,A,I2,A)') '--- ERROR: vert_refine_method=',model_config_rec%vert_refine_method(i),' for grid_id=',model_config_rec%grid_id(i),', must be 0 for a non-nested domain.'
+            CALL wrf_error_fatal( wrf_err_message )
+          ENDIF
+        ENDIF
+      ENDDO
+
+!-----------------------------------------------------------------------
+!  DJW Check that we've got appropriate e_vert for integer refinement.
+!-----------------------------------------------------------------------
       DO i = 1, model_config_rec % max_dom
         IF (model_config_rec%vert_refine_method(i) .EQ. 1) THEN
-          IF (i .EQ. 1) THEN
-            wrf_err_message = '--- INFO: vert_refine_method=1 for d01, must be 0., resetting value internally'
-            CALL wrf_message ( wrf_err_message )
-            model_config_rec%vert_refine_method(i) = 0
-          ELSE
-            IF (MOD((model_config_rec%e_vert(i)-1),(model_config_rec%e_vert(i-1)-1)) .NE. 0) THEN
-              wrf_err_message = '--- ERROR: incompatible e_vert for use with int-refinement.'
-              CALL wrf_error_fatal ( wrf_err_message )
-            ENDIF
-          ENDIF
-        ELSEIF (model_config_rec%vert_refine_method(i) .EQ. 2) THEN
-          IF (i .EQ. 1) THEN
-            wrf_err_message = '--- ERROR: vert_refine_method=2 for d01, must be 0.'
+          j = model_config_rec%parent_id(i)
+          IF (MOD(model_config_rec%e_vert(i)-1, model_config_rec%e_vert(j)-1) .NE. 0) THEN
+            write(wrf_err_message,'(A,I2,A,I2,A)') "--- ERROR: grid_id=",i," and parent (grid_id=",j,") have incompatible e_vert's for vertical nesting with integer refinement."
             CALL wrf_error_fatal ( wrf_err_message )
           ENDIF
         ENDIF
@@ -1152,17 +1321,15 @@
 !-----------------------------------------------------------------------
 !  Consistency checks between vertical refinement and radiation
 !  scheme selection.  For "choose any vertical levels" for the nest,
-!  only RRTM and RRTMG are eligible.
+!  only RRTM is eligible.
 !-----------------------------------------------------------------------
 
       DO i = 2, model_config_rec % max_dom
-        IF (model_config_rec%vert_refine_method(i) .EQ. 2) THEN
-          IF ( ( ( model_config_rec%ra_lw_physics(i) .EQ. RRTMSCHEME          ) .OR. &
-                 ( model_config_rec%ra_lw_physics(i) .EQ. RRTMG_LWSCHEME      ) .OR. &
-                 ( model_config_rec%ra_lw_physics(i) .EQ. RRTMG_LWSCHEME_FAST ) ) .AND. &
-               ( ( model_config_rec%ra_sw_physics(i) .EQ. SWRADSCHEME         ) .OR. &
-                 ( model_config_rec%ra_sw_physics(i) .EQ. RRTMG_SWSCHEME      ) .OR. &
-                 ( model_config_rec%ra_sw_physics(i) .EQ. RRTMG_SWSCHEME_FAST ) ) ) THEN
+        IF (model_config_rec%vert_refine_method(i) .NE. 0) THEN
+          IF ( ( ( model_config_rec%ra_lw_physics(i) .EQ. 0                   ) .OR. &
+                 ( model_config_rec%ra_lw_physics(i) .EQ. RRTMSCHEME          ) ) .AND. &
+               ( ( model_config_rec%ra_sw_physics(i) .EQ. 0                   ) .OR. &
+                 ( model_config_rec%ra_sw_physics(i) .EQ. SWRADSCHEME         ) ) ) THEN
              !  We are OK, I just hate writing backwards / negative / convoluted if tests 
              !  that are not easily comprehensible.
           ELSE

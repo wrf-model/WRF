@@ -65,8 +65,9 @@
  bldt                                = 0,
  cu_physics                          = 1,
  cudt                                = 5,
- surface_input_source                = 1,
+ surface_input_source                = 3,
  num_soil_layers                     = 5,
+ num_land_cat                        = 21,
  sf_urban_physics                    = 0,
  /
 

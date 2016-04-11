@@ -2505,7 +2505,7 @@ contains
 
           enddo
 
-201       format('Target domain surface height ',F0.4,'m is higher than the model top ',F0.4,'m of the source domain.  ABORTING')
+201       format('interp_T_PD_Q: Target domain surface height ',F0.4,'m is higher than the model top ',F0.4,'m of the source domain.  ABORTING')
           write(message,201) zB,znext
           call wrf_error_fatal(message)
        enddo xloop
@@ -2813,7 +2813,7 @@ contains
 
           enddo
 
-201       format('Target domain surface height ',F0.4,'m is higher than the model top ',F0.4,'m of the source domain.  ABORTING')
+201       format('interp_T_PD_Q_kpres: Target domain surface height ',F0.4,'m is higher than the model top ',F0.4,'m of the source domain.  ABORTING')
           write(message,201) zB,znext
           call wrf_error_fatal(message)
        enddo xloop

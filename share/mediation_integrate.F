@@ -44,7 +44,7 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
    INTEGER                                    :: ialarm
    INTEGER                                    :: rc
    TYPE(WRFU_Time) :: currTime, startTime
-#ifdef HWRF
+#if ( HWRF == 1 )
    INTEGER :: hr, min, sec, ms,julyr,julday
    REAL :: GMT
 #endif
@@ -171,7 +171,7 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
    CALL WRFU_ClockGet( grid%domain_clock, CurrTime=currTime, StartTime=startTime )
    IF ( ( WRFU_AlarmIsRinging( grid%alarms( RESTART_ALARM ), rc=rc ) ) .AND. &
         ( currTime .NE. startTime ) ) THEN
-#ifdef HWRF
+#if ( HWRF == 1 )
 !zhang's doing
      CALL domain_clock_get( grid, current_time=CurrTime )
      CALL WRFU_TimeGet( CurrTime, YY=julyr, dayOfYear=julday, H=hr, M=min, S=sec, MS=ms, rc=rc)
@@ -296,8 +296,10 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
    USE module_io_domain
    USE module_configure , ONLY : grid_config_rec_type
    USE module_utility
-   USE module_dm, ONLY :                                                              local_communicator, &
+#ifdef DM_PARALLEL
+   USE module_dm, ONLY : local_communicator,                                     &
                          mpi_comm_to_mom, mpi_comm_to_kid, which_kid
+#endif
   ! Model layer
 
    IMPLICIT NONE
@@ -310,7 +312,7 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
   ! Local
    LOGICAL, EXTERNAL      :: wrf_dm_on_monitor
    TYPE(WRFU_Time)        :: strt_time, cur_time
-   CHARACTER * 80         :: rstname , timestr
+   CHARACTER * 256        :: rstname , timestr
    CHARACTER * 256        :: message
    INTEGER                :: fid
    INTEGER                :: ierr
@@ -345,11 +347,12 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
      END SUBROUTINE med_interp_domain
 
     !KAL
-     SUBROUTINE init_domain_vert_nesting ( parent, nest )
+     SUBROUTINE init_domain_vert_nesting ( parent, nest, use_baseparam_fr_nml )
     !KAL this is a driver to initialize the vertical coordinates for the nest when vertical nesting is used.
        USE module_domain, ONLY : domain
        IMPLICIT NONE
        TYPE(domain), POINTER                      :: parent, nest
+       LOGICAL                                    :: use_baseparam_fr_nml
      END SUBROUTINE init_domain_vert_nesting
 
      SUBROUTINE med_interp_domain_small ( parent , nest )
@@ -443,7 +446,7 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
 
      if (nest%e_vert /= parent%e_vert) then
          ! set up coordinate variables for nest with vertical grid refinement (1d variables in z are done later in med_interp_domain)
-       CALL init_domain_vert_nesting ( parent, nest )
+       CALL init_domain_vert_nesting ( parent, nest, config_flags%use_baseparam_fr_nml )
      endif
 
 
@@ -577,9 +580,11 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
        CALL pop_communicators_for_domain
      ENDIF
 
+#if defined(DM_PARALLEL) && ! defined(STUBMPI)
      CALL push_communicators_for_domain( parent%id )
      CALL MPI_Barrier( local_communicator, ierr )     
      CALL pop_communicators_for_domain
+#endif
 
      IF ( parent%active_this_task ) THEN
      CALL push_communicators_for_domain( parent%id )
@@ -791,7 +796,7 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
 
    END INTERFACE
 
-#ifdef HWRF
+#if ( HWRF == 1 )
 !zhang's doing test
    if (config_flags%restart .or. nest%analysis) then
    nest%first_force = .true.
@@ -896,6 +901,7 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
     IF ( nest%active_this_task .AND. parent%active_this_task ) THEN
     nest%PSTD=parent%PSTD
     ENDIF
+#ifdef DM_PARALLEL
     IF ( nest%active_this_task .OR. parent%active_this_task ) THEN
       IF ( parent%active_this_task ) THEN
         CALL BYTE_BCAST( parent%PSTD, KME*RWORDSIZE, mpi_comm_to_kid( which_kid( nest%id ) , parent%id ) )
@@ -903,6 +909,7 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
         CALL BYTE_BCAST( nest%PSTD, KME*RWORDSIZE, mpi_comm_to_mom( nest%id ) )
       ENDIF
     ENDIF
+#endif
 
     IF ( nest%active_this_task ) THEN
       nest%KZMAX=KME
@@ -926,14 +933,16 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
       nest%imask_xystag = 0 
     ENDIF
 
-#ifdef HWRF
+#if ( HWRF == 1 )
    CALL med_interp_domain( parent, nest )
 #else
     CALL domain_clock_get( parent, start_time=strt_time, current_time=cur_time )
 
     IF ( .not. ( config_flags%restart .AND. strt_time .EQ. cur_time ) ) THEN
 
+write(0,*)__FILE__,__LINE__,parent%id,nest%id
      CALL med_interp_domain( parent, nest )
+write(0,*)__FILE__,__LINE__
 
     ELSE
 
@@ -971,7 +980,7 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
     ENDIF
     
 
-#ifdef HWRF
+#if ( HWRF == 1 )
 !zhang's doing: else for analysis or restart option
 
 !zhang test
@@ -1259,7 +1268,7 @@ SUBROUTINE med_last_solve_io ( grid , config_flags )
    TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
   ! Local
    INTEGER                                    :: rc
-#ifdef HWRF
+#if ( HWRF == 1 )
 !zhang's doing
    TYPE(WRFU_Time) :: CurrTime  !zhang new
    INTEGER :: hr, min, sec, ms,julyr,julday
@@ -1290,7 +1299,7 @@ SUBROUTINE med_last_solve_io ( grid , config_flags )
 
 ! - RESTART OUTPUT
    IF( WRFU_AlarmIsRinging( grid%alarms( RESTART_ALARM ), rc=rc ) ) THEN
-#ifdef HWRF
+#if ( HWRF == 1 )
 !zhang's doing
 !zhang new     CALL ESMF_TimeGet( grid%current_time, YY=julyr, dayOfYear=julday, H=hr, M=min, S=sec, MS=ms, rc=rc)
      CALL domain_clock_get( grid, current_time=CurrTime )
@@ -1314,7 +1323,7 @@ END SUBROUTINE med_last_solve_io
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-#ifdef HWRF
+#if ( HWRF == 1 )
 !==================================================================================
 !  Added for the NMM 3d var. This is simply an extension of med_restart_out.
 !  The file is simply called wrfanal***. This is gopal's doing
@@ -1338,7 +1347,7 @@ SUBROUTINE med_analysis_in ( grid , config_flags )
 
   ! Local
    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
-   CHARACTER*80                           :: rstname , outname
+   CHARACTER*256                          :: rstname , outname
    INTEGER                                :: fid , rid
    CHARACTER (LEN=256)                    :: message
    INTEGER                                :: ierr
@@ -1418,7 +1427,7 @@ SUBROUTINE med_analysis_out ( grid , config_flags )
 
   ! Local
    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
-   CHARACTER*80                           :: rstname , outname
+   CHARACTER*256                          :: rstname , outname
    INTEGER                                :: fid , rid
    CHARACTER (LEN=256)                    :: message
    INTEGER                                :: ierr
@@ -1481,7 +1490,7 @@ RECURSIVE SUBROUTINE med_restart_out ( grid , config_flags )
 
   ! Local
    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
-   CHARACTER*80                           :: rstname , outname
+   CHARACTER*256                          :: rstname , outname
    INTEGER                                :: fid , rid, kid
    CHARACTER (LEN=256)                    :: message
    INTEGER                                :: ierr
@@ -1548,7 +1557,7 @@ SUBROUTINE med_boundary_out ( grid , config_flags )
 
   ! Local
    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
-   CHARACTER*80                           :: rstname , outname
+   CHARACTER*256                          :: rstname , outname
    INTEGER                                :: fid , rid, kid
    CHARACTER (LEN=256)                    :: message
    INTEGER                                :: ierr
@@ -1579,7 +1588,7 @@ END SUBROUTINE med_boundary_out
 #endif
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-#ifdef HWRF
+#if ( HWRF == 1 )
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !zhang's doing
 SUBROUTINE med_restart_in ( grid , config_flags )
@@ -1599,7 +1608,7 @@ SUBROUTINE med_restart_in ( grid , config_flags )
 
   ! Local
    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
-   CHARACTER*80                           :: rstname , outname
+   CHARACTER*256                          :: rstname , outname
    INTEGER                                :: fid , rid
    CHARACTER (LEN=256)                    :: message
    INTEGER                                :: ierr
@@ -1657,7 +1666,7 @@ SUBROUTINE med_hist_out ( grid , stream, config_flags )
    INTEGER , INTENT(IN)                       :: stream
   ! Local
    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
-   CHARACTER*80                           :: fname, n2
+   CHARACTER*256                          :: fname, n2
    CHARACTER (LEN=256)                    :: message
    INTEGER                                :: ierr
 
@@ -1672,7 +1681,7 @@ SUBROUTINE med_hist_out ( grid , stream, config_flags )
      CALL wrf_error_fatal( message )
    ENDIF
 
-#ifdef HWRF
+#if ( HWRF == 1 )
        ! HWRF special: auxhist2 and auxhist3 are duplicates of
        ! history (0), so there is no point in outputting more than one of
        ! them at the same time.  Prefer 0 over 2, and 2 over 3:
@@ -1706,6 +1715,8 @@ SUBROUTINE med_hist_out ( grid , stream, config_flags )
    SELECT CASE( stream )
      CASE ( HISTORY_ALARM )
        IF ( grid%nframes(stream) >= config_flags%frames_per_outfile ) THEN
+write(0,*)__FILE__,__LINE__,trim(n2)
+write(0,*)__FILE__,__LINE__,' grid%id ',grid%id,' grid%oid ',grid%oid
          CALL close_dataset ( grid%oid , config_flags , n2 ) 
          grid%oid = 0
          grid%nframes(stream) = 0
@@ -1798,7 +1809,7 @@ SUBROUTINE med_filter_out ( grid , config_flags )
    TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
 
    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
-   CHARACTER*80                           :: rstname , outname
+   CHARACTER*256                          :: rstname , outname
    INTEGER                                :: fid , rid
    CHARACTER (LEN=256)                    :: message
    INTEGER                                :: ierr
@@ -1863,7 +1874,7 @@ SUBROUTINE med_latbound_in ( grid , config_flags )
    INTEGER                                :: idum1 , idum2 , ierr , open_status , fid, rc
    REAL                                   :: bfrq
    CHARACTER (LEN=256)                    :: message
-   CHARACTER (LEN=80)                     :: bdyname
+   CHARACTER (LEN=256)                    :: bdyname
    Type (WRFU_Time )                      :: startTime, stopTime, currentTime
    Type (WRFU_TimeInterval )              :: stepTime
 integer myproc,i,j,k
@@ -2061,7 +2072,7 @@ SUBROUTINE open_aux_u ( grid , config_flags, stream, alarm_id, &
    INTEGER ,                     INTENT(OUT)   :: ierr
   ! Local
    INTEGER                                :: stream_l
-   CHARACTER*80                           :: fname, n2
+   CHARACTER*256                          :: fname, n2
    CHARACTER (LEN=256)                    :: message
    CHARACTER*80                           :: timestr
    TYPE(WRFU_Time)                        :: ST,CT
@@ -2083,8 +2094,13 @@ SUBROUTINE open_aux_u ( grid , config_flags, stream, alarm_id, &
      ENDIF
      CALL construct_filename2a ( fname , auxinput_inname, &
                                  grid%id , 2 , timestr )
-     stream_l = stream-first_input
+!! CHECK THIS ONE?! LPC
+!!     stream_l = stream-first_input
+!!     IF ( stream_l .GE. 10 ) THEN
+!!=======
+     stream_l = stream-auxinput1_only+1
      IF ( stream_l .GE. 10 ) THEN
+!!>>>>>>> .merge-right.r8978
        WRITE(n2,'("DATASET=AUXINPUT",I2)')stream_l
      ELSE
        WRITE(n2,'("DATASET=AUXINPUT",I1)')stream_l
@@ -2219,7 +2235,7 @@ SUBROUTINE med_read_wrf_chem_input ( grid , config_flags )
    REAL                                   :: time, tupdate
    real, allocatable :: dumc0(:,:,:)
    CHARACTER (LEN=256)                    :: message, current_date_char, date_string
-   CHARACTER (LEN=80)                     :: inpname
+   CHARACTER (LEN=256)                    :: inpname
 
 #include "wrf_io_flags.h"
 !   IF ( grid%id .EQ. 1 ) THEN
@@ -2303,7 +2319,7 @@ SUBROUTINE med_read_wrf_chem_emiss ( grid , config_flags )
    REAL                                   :: time, tupdate
    real, allocatable :: dumc0(:,:,:)
    CHARACTER (LEN=256)                    :: message, current_date_char, date_string
-   CHARACTER (LEN=80)                     :: inpname
+   CHARACTER (LEN=256)                    :: inpname
 
 #include "wrf_io_flags.h"
 
@@ -2498,7 +2514,7 @@ SUBROUTINE med_read_wrf_chem_bioemiss ( grid , config_flags )
    REAL                                   :: time, tupdate
    real, allocatable :: dumc0(:,:,:)
    CHARACTER (LEN=256)                    :: message, current_date_char, date_string
-   CHARACTER (LEN=80)                     :: inpname
+   CHARACTER (LEN=256)                    :: inpname
 
 #include "wrf_io_flags.h"
 !   IF ( grid%id .EQ. 1 ) THEN
@@ -2562,7 +2578,7 @@ SUBROUTINE med_read_wrf_chem_emissopt4 ( grid , config_flags )
    REAL                                   :: time, tupdate
    real, allocatable :: dumc0(:,:,:)
    CHARACTER (LEN=256)                    :: message, current_date_char, date_string
-   CHARACTER (LEN=80)                     :: inpname
+   CHARACTER (LEN=256)                    :: inpname
 
 #include "wrf_io_flags.h"
 !   IF ( grid%id .EQ. 1 ) THEN
@@ -2629,7 +2645,7 @@ SUBROUTINE med_read_wrf_chem_dms_emiss ( grid , config_flags )
    REAL                                   :: time, tupdate
    real, allocatable :: dumc0(:,:,:)
    CHARACTER (LEN=256)                    :: message, current_date_char, date_string
-   CHARACTER (LEN=80)                     :: inpname
+   CHARACTER (LEN=256)                    :: inpname
 
 #include "wrf_io_flags.h"
 !   IF ( grid%id .EQ. 1 ) THEN
@@ -2696,7 +2712,7 @@ SUBROUTINE med_read_wrf_chem_gocart_bg ( grid , config_flags )
    REAL                                   :: time, tupdate
    real, allocatable :: dumc0(:,:,:)
    CHARACTER (LEN=256)                    :: message, current_date_char, date_string
-   CHARACTER (LEN=80)                     :: inpname
+   CHARACTER (LEN=256)                    :: inpname
 
 #include "wrf_io_flags.h"
 !   IF ( grid%id .EQ. 1 ) THEN
@@ -2767,7 +2783,7 @@ SUBROUTINE med_read_wrf_volc_emiss ( grid , config_flags )
    REAL                                   :: time, tupdate
    real, allocatable :: dumc0(:,:,:)
    CHARACTER (LEN=256)                    :: message, current_date_char, date_string
-   CHARACTER (LEN=80)                     :: inpname
+   CHARACTER (LEN=256)                    :: inpname
 
 #include "wrf_io_flags.h"
       CALL domain_clock_get( grid, current_timestr=current_date_char )
@@ -2829,7 +2845,7 @@ SUBROUTINE med_read_wrf_chem_emissopt3 ( grid , config_flags )
    REAL                                   :: time, tupdate
    real, allocatable :: dumc0(:,:,:)
    CHARACTER (LEN=256)                    :: message, current_date_char, date_string
-   CHARACTER (LEN=80)                     :: inpname
+   CHARACTER (LEN=256)                    :: inpname
 
 #include "wrf_io_flags.h"
 !   IF ( grid%id .EQ. 1 ) THEN
@@ -2868,7 +2884,7 @@ END SUBROUTINE med_read_wrf_chem_emissopt3
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-#ifdef HWRF
+#if ( HWRF == 1 )
 !zhang's doing for outputing restart namelist parameters
 RECURSIVE SUBROUTINE med_namelist_out ( grid , config_flags )
   ! Driver layer
@@ -2894,7 +2910,7 @@ RECURSIVE SUBROUTINE med_namelist_out ( grid , config_flags )
    INTEGER                                :: nout,rc,kid
    INTEGER                                :: hr, min, sec, ms,julyr,julday
    REAL                                   :: GMT
-   CHARACTER*80                           :: prefix, outname
+   CHARACTER*256                          :: prefix, outname
    CHARACTER*80                           :: timestr
    LOGICAL                                :: exist
    LOGICAL,EXTERNAL :: wrf_dm_on_monitor

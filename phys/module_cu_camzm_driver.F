@@ -541,7 +541,7 @@ SUBROUTINE camzm_driver(                                      &
            !Convert temperature to potential temperature and
            !specific humidity to water vapor mixing ratio
            rthcuten(i,k,j) = zmdt(i,k,j)/pi_phy(i,k,j)
-           rqvcuten(i,k,j) = zmdq(i,k,j)/(1._r8 - zmdq(i,k,j))
+           rqvcuten(i,k,j) = zmdq(i,k,j)*(1._r8 + qv(i,k,j))**2
 
            t8(1,kflip)    = t8(1,kflip) + zmdt(i,k,j)*cudts   !PMA
            qh8(1,kflip,1) = qh8(1,kflip,1) + zmdq(i,k,j)*cudts   !PMA
@@ -602,7 +602,7 @@ SUBROUTINE camzm_driver(                                      &
            rthcuten(i,k,j) = rthcuten(i,k,j) + &
                              evaptzm(i,k,j)/pi_phy(i,k,j)
            rqvcuten(i,k,j) = rqvcuten(i,k,j) + &
-                             evapqzm(i,k,j)/(1. - qv(i,k,j))
+                             evapqzm(i,k,j)*(1. + qv(i,k,j))**2
 
            t8(1,kflip)    = t8(1,kflip) + evaptzm(i,k,j)*cudts    !PMA
            qh8(1,kflip,1) = qh8(1,kflip,1) + evapqzm(i,k,j)*cudts !PMA
@@ -728,16 +728,16 @@ SUBROUTINE camzm_driver(                                      &
 
            !Convert cloud tendencies from wet to dry mix ratios
            if( present(rqccuten) ) then
-              rqccuten(i,k,j) = (cloudtnd(1,kflip,2)+qcten_det(1,kflip))/(1. - qv(i,k,j))
+              rqccuten(i,k,j) = (cloudtnd(1,kflip,2)+qcten_det(1,kflip))*(1. + qv(i,k,j))
            end if
            if( present(rqicuten) ) then
-              rqicuten(i,k,j) = (cloudtnd(1,kflip,3)+qiten_det(1,kflip))/(1. - qv(i,k,j))
+              rqicuten(i,k,j) = (cloudtnd(1,kflip,3)+qiten_det(1,kflip))*(1. + qv(i,k,j))
            end if
            if( present(rqcncuten) ) then
-              rqcncuten(i,k,j) = qcnten_det(1,kflip)/(1. - qv(i,k,j)) !BSINGH - Added the denominator following qiten_det
+              rqcncuten(i,k,j) = qcnten_det(1,kflip)*(1. + qv(i,k,j)) !BSINGH - Added the denominator following qiten_det
            end if
            if( present(rqincuten) ) then
-              rqincuten(i,k,j) = qinten_det(1,kflip)/(1. - qv(i,k,j)) !BSINGH - Added the denominator following qiten_det
+              rqincuten(i,k,j) = qinten_det(1,kflip)*(1. + qv(i,k,j)) !BSINGH - Added the denominator following qiten_det
            end if
            !Variables required by zm_conv_tend_2 call
            dp3d(i,k,j) = dp(1,kflip,lchnk)

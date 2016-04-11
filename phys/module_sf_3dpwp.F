@@ -630,11 +630,11 @@ CONTAINS
         if (udrag .lt. 100) ucon = 1./(86400*udrag)
            call absorb(i,j, ims, ime,jms,jme,okms,okme, beta1,beta2, &
                        absrb, om_depth,GSW,GLW)
-           ql = -1.*(HFX+STBOLT*om_tmp(1)**4)
+           ql = -1.*(LH+HFX+STBOLT*om_tmp(1)**4)         ! corrected V3.8
            qi = GLW+GSW
            ql = ql+absrb(1)*qi
            om_tmp(1) = om_tmp(1) + dt*ql/(om_depth(1)*ro*cpw)
-           om_s(1)=om_s(1)-om_s(1)*QFX*dt/ro/om_depth(1) ! check physical meaning.. ok!
+           om_s(1)=om_s(1)+om_s(1)*QFX*dt/ro/om_depth(1) ! corrected V3.8
            do k =  2, okme
               dz = om_depth(k)-om_depth(k-1)
               om_tmp(k) = om_tmp(k) + dt*qi*absrb(k)/(dz*ro*cpw)

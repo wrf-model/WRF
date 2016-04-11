@@ -237,9 +237,13 @@ real::t1,t2
          
          ok_so_far = .TRUE.
 
+         !DJW changed the check below so that instead of always comparing
+         !to d01 we now compare vertical levels between a grid and its parent.
+         !If 4 domains were used, this allows for vertical nesting to be enabled between grids 1 & 2 and
+         !between grids 3 & 4, but allows you to not use vertical grid nesting between grids 2 & 3.
          DO loop = 2 , model_config_rec%max_dom
-            IF ( model_config_rec%vert_refine_method(loop) .EQ. 0 ) THEN
-            IF ( model_config_rec%e_vert(loop) .NE.  model_config_rec%e_vert(1) ) THEN
+           IF (( model_config_rec%vert_refine_method(loop) .EQ. 0 ) .AND. ( model_config_rec%vert_refine_fact .EQ. 1 )) THEN
+             IF ( model_config_rec%e_vert(loop) .NE.  model_config_rec%e_vert(model_config_rec%parent_id(loop)) ) THEN
                CALL  wrf_message ( 'e_vert must be the same for each domain' )
                ok_so_far = .FALSE.
               END IF
@@ -325,7 +329,7 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
   ! Local
    INTEGER                :: time_step_begin_restart
    INTEGER                :: idsi , ierr , myproc
-   CHARACTER (LEN=80)      :: si_inpname
+   CHARACTER (LEN=256)     :: si_inpname
    CHARACTER (LEN=80)      :: message
 
    CHARACTER(LEN=19) :: start_date_char , end_date_char , current_date_char , next_date_char
@@ -685,7 +689,7 @@ SUBROUTINE assemble_output ( grid , config_flags , loop , time_loop_max )
 
    INTEGER :: id1 , interval_seconds , ierr, rc, sst_update, grid_fdda
    INTEGER , SAVE :: id, id2,  id4 
-   CHARACTER (LEN=80) :: inpname , bdyname
+   CHARACTER (LEN=256) :: inpname , bdyname
    CHARACTER(LEN= 4) :: loop_char
    CHARACTER (LEN=256) :: message
 character *19 :: temp19

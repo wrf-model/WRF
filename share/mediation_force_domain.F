@@ -8,9 +8,12 @@ SUBROUTINE med_force_domain ( parent_grid , nested_grid )
    USE module_domain
    USE module_configure
    USE module_intermediate_nmm
+#ifdef DM_PARALLEL
    USE module_dm, ONLY : intercomm_active, &
                          mpi_comm_to_kid, mpi_comm_to_mom, which_kid
-                         !push_communicators_for_domain,pop_communicators_for_domain, &
+#else
+   USE module_dm, ONLY : intercomm_active
+#endif
 
    IMPLICIT NONE
    TYPE(domain), POINTER :: parent_grid , nested_grid
@@ -138,8 +141,6 @@ SUBROUTINE med_force_domain ( parent_grid , nested_grid )
 ! ----------------------------------------------------------
 !    Interface definitions for COAMPS (placeholder)
 ! ----------------------------------------------------------
-#if (COAMPS_CORE == 1)
-#endif
    END INTERFACE
 ! ----------------------------------------------------------
 ! End of Interface blocks
@@ -156,7 +157,7 @@ SUBROUTINE med_force_domain ( parent_grid , nested_grid )
    CALL model_to_grid_config_rec ( nested_grid%id , model_config_rec , config_flags )
 
    grid => nested_grid%intermediate_grid
-#  if (defined(MOVE_NESTS) || (!defined(SGIALTIX) && (!defined(FUJITSU_FX10))))
+#  if (defined(MOVE_NESTS) || ((!defined(KEEP_INT_AROUND)) && (!defined(SGIALTIX)) && (!defined(FUJITSU_FX10))))
 !   IF ( intercomm_active(grid%id) ) THEN
      CALL alloc_space_field ( grid, grid%id , 1 , 2 ,  .TRUE. , intercomm_active(grid%id),    &
                             grid%sd31, grid%ed31, grid%sd32, grid%ed32, grid%sd33, grid%ed33, &
@@ -216,16 +217,6 @@ SUBROUTINE med_force_domain ( parent_grid , nested_grid )
      CALL BYTE_BCAST( nested_grid%dt,RWORDSIZE,mpi_comm_to_mom( nested_grid%id ) )
    ENDIF
 
-IF (nested_grid%id .eq. 2) THEN
-CALL wrf_get_myproc(myproc)
-write(100+myproc,*)grid%ep31-grid%sp31+1,grid%ep33-grid%sp33+1,grid%id,'10 w force down'
-do j=grid%sp33,grid%ep33
-do i=grid%sp31,grid%ep31
-write(100+myproc,*)grid%w_2(i,10,j)
-enddo
-enddo
-ENDIF
-
    IF ( parent_grid%active_this_task .OR. nested_grid%active_this_task ) THEN
      CALL wrf_dm_nestexchange_init
 
@@ -278,7 +269,7 @@ ENDIF
    nested_grid%dtbc = 0.
 !
    grid => nested_grid%intermediate_grid
-#  if (defined(MOVE_NESTS) || (!defined(SGIALTIX) && (!defined(FUJITSU_FX10))))
+#  if (defined(MOVE_NESTS) || ((!defined(KEEP_INT_AROUND)) && (!defined(SGIALTIX)) && (!defined(FUJITSU_FX10))))
    IF ( intercomm_active(grid%id) ) THEN
      CALL dealloc_space_field ( grid )
    ENDIF
@@ -301,7 +292,7 @@ ENDIF
 
    grid => nested_grid%intermediate_grid
 !dusan orig    CALL alloc_space_field ( grid, grid%id , 1 , 2 ,  .TRUE. ,    &
-#  if (defined(MOVE_NESTS) || (!defined(SGIALTIX) && (!defined(FUJITSU_FX10))))
+#  if (defined(MOVE_NESTS) || ((!defined(KEEP_INT_AROUND)) && (!defined(SGIALTIX)) && (!defined(FUJITSU_FX10))))
      CALL ensure_space_field &
                           ( grid, grid%id , 1 , 3 ,  .FALSE. , intercomm_active(grid%id),    &
                             grid%sd31, grid%ed31, grid%sd32, grid%ed32, grid%sd33, grid%ed33, &

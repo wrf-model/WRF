@@ -3,7 +3,7 @@
 !#define NO_UPSTREAM_ADVECTION
 !----------------------------------------------------------------------
 !
-#ifdef HWRF
+#if ( HWRF == 1 )
         SUBROUTINE GUESS_COUPLING_TIMESTEP(gridid,DTC)
           USE module_configure
           implicit none
@@ -62,13 +62,13 @@
      &           )
 !----------------------------------------------------------------------
 !
-#ifdef HWRF
+#if ( HWRF == 1 )
       USE MODULE_CLEAR_HALOS, only: clear_ij_halos
       USE MODULE_STATS_FOR_MOVE, only: vorttrak_init
       USE MODULE_SWATH, only: init_swath
 #endif
       USE MODULE_TIMING
-#ifdef HWRF
+#if ( HWRF == 1 )
       USE MODULE_HIFREQ, only : hifreq_open
 #endif
       USE MODULE_DOMAIN
@@ -170,12 +170,12 @@
 !!!   REAL :: BLDT,CWML,EXNSFC,G_INV,PLYR,PSFC,ROG,SFCZ,THSIJ,TL
       REAL :: CWML,EXNSFC,G_INV,PLYR,PSURF,ROG,SFCZ,THSIJ,TL,ZOQING
       REAL :: TEND, TEMPDX,TEMPDY
-#ifdef HWRF
+#if ( HWRF == 1 )
 !zhang's doing 
       REAL :: TSTART
 !zhang's doing ends
 #endif
-#ifdef HWRF
+#if ( HWRF == 1 )
 !     gopal's doing for the moving nest (MSLP computation)
 !-----------------------------------------------------------------------------------------------------
       REAL, PARAMETER                                       :: LAPSR=6.5E-3, GI=1./G,D608=0.608
@@ -246,7 +246,7 @@
 
       INTEGER :: interval_seconds, restart_interval
 
-#ifdef HWRF
+#if ( HWRF == 1 )
       REAL :: xshift,xfar,yfar,dfar,close2edge
       REAL :: fedge,fmid,fdiff
 #endif
@@ -273,7 +273,7 @@
 
       call start_timing
 
-#ifdef HWRF
+#if ( HWRF == 1 )
       call clear_ij_halos(grid,config_flags%halo_debug)
       if(grid%id==3) then
          grid%force_sst=1
@@ -294,7 +294,7 @@
       KTS=KPS
       KTE=KPE
 
-#ifdef HWRF
+#if ( HWRF == 1 )
       call guess_coupling_timestep(grid%id,grid%guessdtc)
       grid%dtc=0
 #endif
@@ -306,7 +306,7 @@
         ANAL=config_flags%analysis                
         nestmove=RESTRT .and. .not. allowed_to_read
 
-#ifdef HWRF
+#if ( HWRF == 1 )
 ! Sam's doing for hour 0 & 6 nest movement safeguards
         grid%nomove_freq_hr=config_flags%nomove_freq
 #endif
@@ -653,7 +653,7 @@
          endif randif
       endif
 ! Begin HWRF update for high-frequency output
-#ifdef HWRF
+#if ( HWRF == 1 )
       if(allowed_to_read .and. config_flags%high_freq) then
         if(grid%id==config_flags%high_dom) then
            ! Open HTCF LUN:
@@ -695,7 +695,7 @@
       endif
 ! End Sam Trahan's doing for Tornado Genesis (SPC) products
 
-#ifdef HWRF
+#if ( HWRF == 1 )
 ! Begin Sam Trahan's doing for vortex tracker initialization
     IF ( program_name(1:8) .NE. "REAL_NMM" ) THEN
          call VORTTRAK_INIT(grid,config_flags,       &
@@ -711,7 +711,7 @@
     ENDIF
 ! End Sam Trahan's doing for vortex tracker initialization
 #endif
-#ifdef HWRF
+#if ( HWRF == 1 )
 !zhang's doing
   IF((.NOT.RESTRT .AND. .NOT.ANAL) .OR. .NOT.allowed_to_read)THEN
 !end of zhang's doing
@@ -767,7 +767,7 @@
           APEM1=(1.E5/PM1)**CAPA
 
         IF(grid%nmm_tsk(I,J)>=200.)THEN         ! have a specific skin temp, use it
-#ifdef HWRF
+#if ( HWRF == 1 )
           grid%ths(I,J)=grid%nmm_tsk(I,J)*(1.+P608*grid%q(I,J,KTS+1))*APEM1
           TSFCK=grid%nmm_tsk(I,J)*(1.+P608*grid%q(I,J,KTS+1))
 #else
@@ -776,7 +776,7 @@
 #endif
 
 	ELSE                               ! use lowest layer as a proxy
-#ifdef HWRF
+#if ( HWRF == 1 )
           grid%ths(I,J)=grid%t(I,J,KTS)*(1.+P608*grid%q(I,J,KTS+1))*APEM1
           TSFCK=grid%t(I,J,KTS)*(1.+P608*grid%q(I,J,KTS+1))
 #else
@@ -901,7 +901,7 @@
         DO K=KPS,KPE-1
         DO J=JFS,JFE
         DO I=IFS,IFE
-#ifdef HWRF
+#if ( HWRF == 1 )
           grid%q2(I,J,K)=0.
 #else
           grid%q2(I,J,K)=grid%hbm2(I,J)*EPSQ2
@@ -913,7 +913,7 @@
         DO J=JFS,JFE
         DO I=IFS,IFE
           grid%q2(I,J,LM)    = 0.
-#ifdef HWRF
+#if ( HWRF == 1 )
           grid%q2(I,J,KTE-2)= 0.
           grid%q2(I,J,KTE-1)= 0.
 #else
@@ -976,7 +976,7 @@
 
       TSPH=3600./GRID%DT ! needed?
       grid%nphs0=GRID%NPHS
-#ifdef HWRF
+#if ( HWRF == 1 )
 !zhang's doing
       tstart = grid%TSTART
 !zhang's doing ends
@@ -1014,7 +1014,7 @@
       grid%nrdsw  = INT(grid%TRDSW *TSPH+0.5)
       grid%nrdlw  = INT(grid%TRDLW *TSPH+0.5)
       grid%nsrfc  = INT(grid%TSRFC *TSPH+0.5)
-#ifdef HWRF
+#if ( HWRF == 1 )
 !zhang's dong for analysis option:
       grid%NCNVC0  = grid%NCNVC
       grid%NPHS0   = grid%NPHS
@@ -1344,7 +1344,7 @@
 !***
 !*** SET ZERO-VALUE FOR SOME OUTPUT DIAGNOSTIC ARRAYS
 !***
-#ifdef HWRF
+#if ( HWRF == 1 )
 !zhang'sdoing       IF(NSTART.EQ.0)THEN
       IF(NSTART.EQ.0 .or. .not.allowed_to_read )THEN
 !zhang's doing ends
@@ -1495,7 +1495,7 @@
 !***
 !***  TRY A SIMPLE LINEAR INTERP TO GET 2/10 M VALUES
 !***
-#ifdef HWRF
+#if ( HWRF == 1 )
 !zhang's doing
         IF(.NOT.RESTRT .OR. .NOT.allowed_to_read) then
         grid%PDSL(I,J)=grid%PD(I,J)*grid%RES(I,J)
@@ -1524,7 +1524,7 @@
           FAC2=0.
         ENDIF
 !
-#ifdef HWRF
+#if ( HWRF == 1 )
 !zhang's doing
         IF(.NOT.RESTRT .OR. .NOT.allowed_to_read)THEN
 !end of zhang's doing
@@ -1533,7 +1533,7 @@
 #endif
           grid%th10(I,J)=FAC2*grid%ths(I,J)+FAC1*THLM
           grid%q10(I,J)=FAC2*grid%qsh(I,J)+FAC1*QLM
-#ifdef HWRF
+#if ( HWRF == 1 )
           IF(grid%sm(I,J).LT.0.5)THEN
               grid%u10(I,J)=ULM*(log(10./grid%z0(I,J))/log(DZLM/grid%z0(I,J)))      ! this is all Qingfu's doing
               grid%v10(I,J)=VLM*(log(10./grid%z0(I,J))/log(DZLM/grid%z0(I,J)))
@@ -1576,7 +1576,7 @@
             FAC2=0.2
           ENDIF
 
-#ifdef HWRF
+#if ( HWRF == 1 )
           grid%tshltr(I,J)=0.2*grid%ths(I,J)+0.8*THLM
           grid%qshltr(I,J)=0.2*grid%qsh(I,J)+0.8*QLM
 #else
@@ -1602,7 +1602,7 @@
 !***  INITIALIZE TAU-1 VALUES FOR ADAMS-BASHFORTH 
 !----------------------------------------------------------------------
 !
-#ifdef HWRF
+#if ( HWRF == 1 )
 !zhang's doing
       IF(.NOT.RESTRT .OR. .NOT.allowed_to_read)THEN !zhang's doing
 #else
@@ -1648,7 +1648,7 @@
         ENDDO
       ENDIF
 !***
-#ifdef HWRF
+#if ( HWRF == 1 )
       IF(.NOT.RESTRT .OR. .NOT.allowed_to_read) THEN !zhang's doing
 #endif
       IF(GRID%SIGMA==1)THEN
@@ -1664,7 +1664,7 @@
         ENDDO
         ENDDO
       ENDIF
-#ifdef HWRF
+#if ( HWRF == 1 )
       ENDIF !zhang's doing
 #endif
 !
@@ -1677,7 +1677,7 @@
         CALL wrf_debug( 0, TRIM(wrf_err_message) )
       WRITE( wrf_err_message, * )' grid%pdtop=',grid%pdtop,' grid%pt=',grid%pt
         CALL wrf_debug( 0, TRIM(wrf_err_message) )
-#ifdef HWRF
+#if ( HWRF == 1 )
 !zhang's doing
         IF(.NOT.RESTRT.OR.NEST .OR. .NOT.allowed_to_read)THEN
 !end of zhang's doing
@@ -1736,7 +1736,7 @@
         ENDDO
         ENDDO
       ENDIF
-#ifdef HWRF
+#if ( HWRF == 1 )
 !zhang's doing
       IF(.NOT.RESTRT.OR.NEST .OR. .NOT.allowed_to_read)THEN
 #endif
@@ -1749,11 +1749,11 @@
         ENDDO
         ENDDO
         ENDDO
-#ifdef HWRF
+#if ( HWRF == 1 )
       ENDIF    !zhang 
 #endif
 
-#ifdef HWRF
+#if ( HWRF == 1 )
       hwrfx_mslp: if(grid%vortex_tracker /= 1) then
      DO J=JFS,JFE
       DO I=IFS,IFE
@@ -1966,7 +1966,7 @@
       DO I=MYIS,MYIE
         SFCZ=grid%fis(I,J)*G_INV
         ZINT(I,KTS,J)=SFCZ
-#ifdef HWRF
+#if ( HWRF == 1 )
 !zhang's doing
         IF(.NOT.RESTRT .OR. .NOT.allowed_to_read) then
         grid%PDSL(I,J)=grid%PD(I,J)*grid%RES(I,J)
@@ -2022,7 +2022,7 @@
 !
 !-----------------------------------------------------------------------
 
-#ifdef HWRF
+#if ( HWRF == 1 )
 !zhang's doing
       if(.NOT.RESTRT .OR. .NOT.allowed_to_read)grid%LU_INDEX=grid%IVGTYP
 !end of zhang's doing
@@ -2170,6 +2170,7 @@
      &                WSLAKEXY=grid%WSLAKEXY, ZWTXY=grid%ZWTXY, WAXY=grid%WAXY,          & ! Optional Noah-MP
      &                WTXY=grid%WTXY, LFMASSXY=grid%LFMASSXY, RTMASSXY=grid%RTMASSXY,    & ! Optional Noah-MP
      &                STMASSXY=grid%STMASSXY, WOODXY=grid%WOODXY,                        & ! Optional Noah-MP
+     &                GRAINXY=grid%GRAINXY, GDDXY=grid%GDDXY,                            & ! Optional Noah-MP
      &                STBLCPXY=grid%STBLCPXY, FASTCPXY=grid%FASTCPXY,                    & ! Optional Noah-MP
      &                XSAIXY=grid%XSAIXY,LAI=grid%LAI,                                   & ! Optional Noah-MP
      &                T2MVXY=grid%T2MVXY, T2MBXY=grid%T2MBXY, CHSTARXY=grid%CHSTARXY,    & ! Optional Noah-MP
@@ -2192,12 +2193,11 @@
      &                nssl_rho_qs=config_flags%nssl_rho_qs,                               &
      &                nssl_ipelec=config_flags%nssl_ipelec,                               &
      &                nssl_isaund=config_flags%nssl_isaund,                               & 
-!     &                P_QNN=P_QNN, F_QNN=F_QNN,                                           &
      &                MAXPATCH=1,ccn_conc=config_flags%ccn_conc, & ! CLM
      &                pin=grid%pin,ozmixm=grid%ozmixm &
      &                )
 
-#ifdef HWRF
+#if ( HWRF == 1 )
 !zhang's doing
       grid%julyr_rst=grid%julyr_rst
       grid%julday_rst=grid%julday_rst
@@ -2241,7 +2241,7 @@
 
 !-----------------------------------------------------------------------
 !
-#ifdef HWRF
+#if ( HWRF == 1 )
       IF(NSTART.EQ.0 .or. .not.allowed_to_read )THEN
 #else
        IF(NSTART==0)THEN
@@ -2266,7 +2266,7 @@
 !
 !
 !mp replace F*_PHY with values defined in module_initialize_real.F?
-#ifdef HWRF
+#if ( HWRF == 1 )
       IF (.NOT. RESTRT .and. ALLOWED_TO_READ) THEN   !zhang
         moist = 0.0
         if(size(grid%f_ice)>1) grid%f_ice = grid%f_ice_phy
@@ -2417,7 +2417,7 @@
         ENDIF
       ENDIF
 
-#ifdef HWRF
+#if ( HWRF == 1 )
       if(.NOT. RESTRT .OR. .NOT.allowed_to_read) then !zhang's doing
 !zhang's doing
 #else

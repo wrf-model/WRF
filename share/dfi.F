@@ -547,7 +547,7 @@
       TYPE (domain) , POINTER :: grid
       INTEGER             :: fid, ierr
       CHARACTER (LEN=80)  :: wrf_error_message
-      CHARACTER (LEN=80)  :: rstname
+      CHARACTER (LEN=256) :: rstname
       CHARACTER (LEN=132) :: message
 
       TYPE (grid_config_rec_type) :: config_flags
@@ -580,7 +580,7 @@
       TYPE (domain) , POINTER :: grid
       INTEGER             :: fid, ierr
       CHARACTER (LEN=80)  :: wrf_error_message
-      CHARACTER (LEN=80)  :: rstname
+      CHARACTER (LEN=256) :: rstname
       CHARACTER (LEN=132) :: message
 
       TYPE (grid_config_rec_type) :: config_flags

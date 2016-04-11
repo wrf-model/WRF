@@ -4,7 +4,7 @@ PROGRAM write_decomp
 ! inspired by a code from  Edwin Spee, CWI, Amsterdam
 !
 
-#include <decomp_uses.inc> 
+#include "decomp_uses.inc" 
 
     IMPLICIT NONE
 

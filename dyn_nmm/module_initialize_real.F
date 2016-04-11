@@ -167,7 +167,7 @@ CONTAINS
 
         REAL, PARAMETER:: DTR=0.01745329
         REAL, PARAMETER:: W_NMM=0.08
-#if defined(HWRF)
+#if ( HWRF == 1 )
         REAL, PARAMETER:: DDFC=1.0
 #else
         REAL, PARAMETER:: DDFC=8.0
@@ -192,7 +192,7 @@ CONTAINS
         REAL, PARAMETER:: TG0=258.16
         REAL, PARAMETER:: TGA=30.0
     integer :: numzero,numexamined
-#ifdef HWRF
+#if ( HWRF == 1 )
 !============================================================================
 !   gopal's doing for ocean coupling
 !============================================================================
@@ -416,7 +416,7 @@ CONTAINS
      &,                            IMS,IME,JMS,JME,KMS,KME        &
      &,                            ITS,ITE,JTS,JTE,KTS,KTE )
 
-#if defined(HWRF)
+#if ( HWRF == 1 )
           if(.not. grid%use_prep_hybrid) then
 #endif
 
@@ -445,7 +445,7 @@ CONTAINS
      &,                            IMS,IME,JMS,JME,KMS,KME        &
      &,                            ITS,ITE,JTS,JTE,KTS,KTE )
 
-#if defined(HWRF)
+#if ( HWRF == 1 )
           endif
 #endif
 
@@ -495,7 +495,7 @@ CONTAINS
         if (grid%tsk_gc(I,J) .gt. 0.) then
            grid%nmm_tsk(I,J)=grid%tsk_gc(I,J)
         else
-#if defined(HWRF)
+#if ( HWRF == 1 )
                 if(grid%use_prep_hybrid) then
                    if(grid%t(I,J,1)<100) then
                       write(*,*) 'NO VALID SURFACE TEMPERATURE: I,J,TSK_GC(I,J),T(I,J,1) = ', &
@@ -506,7 +506,7 @@ CONTAINS
                 else
 #endif
            grid%nmm_tsk(I,J)=grid%t_gc(I,J,1) ! stopgap measure
-#if defined(HWRF)
+#if ( HWRF == 1 )
                 endif
 #endif
         endif
@@ -528,7 +528,7 @@ CONTAINS
         if (internal_time_loop .eq. 1) then
 
         if (eta_levels(1) .ne. 1.0) then
-#if defined(HWRF)
+#if ( HWRF == 1 )
              if(grid%use_prep_hybrid) then
                 call wrf_error_fatal('PREP_HYBRID ERROR: eta_levels is not specified, but use_prep_hybrid=.true.')
              end if
@@ -612,7 +612,7 @@ CONTAINS
        enddo
        write(message,*) 'TOTAL NEAR-ZERO FIS POINTS: ',numzero,' OF ',numexamined
        call wrf_debug(10,message)
-#if defined(HWRF)
+#if ( HWRF == 1 )
        interp_notph: if(.not. grid%use_prep_hybrid) then
 #endif
       if (.NOT. allocated(PDVP))     allocate(PDVP(IMS:IME,JMS:JME))
@@ -772,7 +772,7 @@ CONTAINS
 
       IF (ALLOCATED(QTMP)) DEALLOCATE(QTMP)
       IF (ALLOCATED(QTMP)) DEALLOCATE(QTMP2)
-#if defined(HWRF)
+#if ( HWRF == 1 )
        else ! we are using prep_hybrid
           ! Compute surface pressure:
           grid%psfc_out=grid%pdtop+grid%pd
@@ -836,12 +836,12 @@ CONTAINS
 
          endif
 
-#if defined(HWRF)
+#if ( HWRF == 1 )
        if(.not.grid%use_prep_hybrid) then
 #endif
 !  new deallocs
         DEALLOCATE(p3d_out,p3dv_out,p3dv_in)
-#if defined(HWRF)
+#if ( HWRF == 1 )
        end if
 #endif
 
@@ -1036,7 +1036,7 @@ CONTAINS
      &,                                ITS,ITE,JTS,JTE,1,1 )
 
         IF (WRF_DM_ON_MONITOR()) THEN
-#if defined(HWRF)
+#if ( HWRF == 1 )
           ! SM_G is still needed for the high-res grid
 #else
           DEALLOCATE(SM_G)
@@ -2018,7 +2018,7 @@ CONTAINS
        write(message,*)'STUFF MOVED TO REGISTRY:',grid%IDTAD,          &
      & grid%NSOIL,grid%NRADL,grid%NRADS,grid%NPHS,grid%NCNVC,grid%sigma
        CALL wrf_message( TRIM(message) )
-#ifdef HWRF
+#if ( HWRF == 1 )
 !=========================================================================================
 !   gopal's doing for ocean coupling. Produce a high resolution grid for the entire domain
 !=========================================================================================
@@ -2035,7 +2035,7 @@ CONTAINS
      grid%sbd0=sbd
      grid%wbd0=wbd
 
-#ifdef HWRF     
+#if ( HWRF == 1 )     
     CALL EARTH_LATLON ( grid%HLAT,grid%HLON,grid%VLAT,grid%VLON,  & !output
                         grid%DLMD,grid%DPHD,WBD,SBD,    & !inputs 
                         tph0d,tlm0d,             &
@@ -2088,7 +2088,7 @@ CONTAINS
          cos(rlat1)*cos(rlat2)*sin((rlon1-rlon2)/2)**2)))
   end function greatarc
 
-#ifdef HWRF
+#if ( HWRF == 1 )    
    SUBROUTINE make_coupler_fort65(grid,&
         NDLMD,NDPHD,NWBD,NSBD,&
         NIDE,NJDE,PIFE,PJFE,tph0d,tlm0d)

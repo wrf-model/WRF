@@ -9862,14 +9862,13 @@ CONTAINS
                        its,ite, jts,jte, kts,kte,                 &
                        swupflx, swupflxc, swdnflx, swdnflxc,      &
                        tauaer3d_sw,ssaaer3d_sw,asyaer3d_sw,       & ! jararias 2013/11
-                       use_aer3d,                                 & ! bug fix, SGT 2015/03
                        swddir, swddni, swddif,                    & ! jararias 2013/08
                        xcoszen,julian                             & ! jararias 2013/08
                                                                   )
 !------------------------------------------------------------------
    IMPLICIT NONE
 !------------------------------------------------------------------
-   LOGICAL, INTENT(IN )      ::        warm_rain, use_aer3d
+   LOGICAL, INTENT(IN )      ::        warm_rain
    LOGICAL, INTENT(IN )      ::   is_CAMMGMP_used ! Added for CAM5 RRTMG<->CAMMGMP
 !
    INTEGER, INTENT(IN )      ::        ids,ide, jds,jde, kds,kde, &
@@ -9937,10 +9936,7 @@ CONTAINS
             julian      ! julian day (1-366)
    real, dimension(ims:ime,jms:jme), intent(in) :: &
             xcoszen     ! cosine of the solar zenith angle
-  real, dimension(ims:ime,kms:kme,jms:jme,nbndsw), optional,      &
-        intent(in)                                :: tauaer3d_sw, &
-                                                     ssaaer3d_sw, &
-                                                     asyaer3d_sw
+   real, dimension(:,:,:,:), pointer :: tauaer3d_sw,ssaaer3d_sw,asyaer3d_sw
 ! ------------------------ jararias end snippet -----------------
 
    REAL, INTENT(IN  )   ::                                   R,G
@@ -10277,7 +10273,6 @@ CONTAINS
                O31D(K)=O33D(I,K,J)
             ENDDO
          ELSE
-            call wrf_error_fatal('did not pass O33d') ! FIXME: REMOVE THIS LINE
             DO K=kts,kte
                O31D(K)=0.0
             ENDDO
@@ -10388,11 +10383,11 @@ CONTAINS
             ENDIF
 
          ENDIF
-! For mp option=5, 15 or 85  (new Ferrier- Aligo or called fer_hires
+! For mp option=5 or 85  (new Ferrier- Aligo or called fer_hires
 ! scheme), QI3D saves all frozen water (ice+snow)
 #if (HWRF == 1)
            IF ( mp_physics == FER_MP_HIRES .OR. &
-                mp_physics == FER_MP_HIRES_ADVECT .or. &
+                mp_physics == FER_MP_HIRES_ADVECT .OR. &
                 mp_physics == ETAMP_HWRF ) THEN
 #else
            IF ( mp_physics == FER_MP_HIRES .OR. &
@@ -10460,14 +10455,14 @@ CONTAINS
                inflgsw  = 4
                iceflgsw = 4
                DO K=kts,kte
-                  reice1D(ncol,K) = MAX(10., re_ice(I,K,J)*1.E6)
-                  if (reice1D(ncol,K).LE.10..AND.cldfra3d(i,k,j).gt.0.) then
+                  reice1D(ncol,K) = MAX(5., re_ice(I,K,J)*1.E6)
+                  if (reice1D(ncol,K).LE.5..AND.cldfra3d(i,k,j).gt.0.) then
                      idx_rei = int(t3d(i,k,j)-179.)
                      idx_rei = min(max(idx_rei,1),75)
                      corr = t3d(i,k,j) - int(t3d(i,k,j))
                      reice1D(ncol,K) = retab(idx_rei)*(1.-corr) +      &
      &                                 retab(idx_rei+1)*corr
-                     reice1D(ncol,K) = MAX(reice1D(ncol,K), 10.0)
+                     reice1D(ncol,K) = MAX(reice1D(ncol,K), 5.0)
                   endif
                ENDDO
             ELSE
@@ -10575,7 +10570,6 @@ CONTAINS
             ENDIF
          enddo
         else
-         call wrf_error_fatal('did not pass O33D - abort') ! FIXME: remove this line
          do k = kts, kte+1
             o3vmr(ncol,k) = o3mmr(k) * amdo
          enddo
@@ -10881,9 +10875,8 @@ CONTAINS
       end do
       end do
 
-      if ( use_aer3d ) then
+      if ( associated (tauaer3d_sw) ) then
 ! ---- jararias 11/2012
-         if ( aer_opt .eq. 2 .or. aer_opt.eq.3) then
             do nb=1,nbndsw
                do k=kts,kte
                   tauaer(ncol,k,nb)=tauaer3d_sw(i,k,j,nb)
@@ -10891,7 +10884,6 @@ CONTAINS
                   asmaer(ncol,k,nb)=asyaer3d_sw(i,k,j,nb)
                end do
             end do
-         end if
       end if
 
 #if ( WRF_CHEM == 1 )
@@ -11087,6 +11079,7 @@ CONTAINS
             swddir(i,j)    = 0.  ! jararias 2013/08/10
             swddni(i,j)    = 0.  ! jararias 2013/08/10
             swddif(i,j)    = 0.  ! jararias 2013/08/10
+            swcf(i,j)      = 0.
 
       endif
 !

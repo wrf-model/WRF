@@ -731,14 +731,17 @@ CONTAINS
          parent%nests(kid)%ptr => new_grid
          new_grid%child_of_parent(1) = kid    ! note assumption that nest can have only 1 parent
          parent%num_nests = parent%num_nests + 1
+#if ( NMM_CORE == 1 ) 
 !jm 20150810, this replaces the compile-time logic associated with the CPP constant HRD_MULTIPLE_STORMS
 ! used in solve_nmm of the HWRF version to decide whether or not to call the coupler.  If there is more than
 ! one nest to a parent then that implies there are multiple storms, so we turn off the coupling.
          IF ( parent%num_nests .GT. 1 ) THEN
            CALL nl_set_multi_storm(1,.FALSE.)
          ENDIF
+#endif
       END IF
       new_grid%id = domain_id                 ! this needs to be assigned prior to calling wrf_patch_domain
+      new_grid%active_this_task = active
 
       CALL wrf_patch_domain( domain_id  , new_domdesc , parent, parent_id, parent_domdesc , &
 
@@ -774,9 +777,6 @@ CONTAINS
 !      IF (active) THEN
         ! only allocate state if this set of tasks actually computes that domain, jm 20140822
       new_grid%active_this_task = active
-!debug write(0,*)__FILE__,__LINE__,'new_grid%id ',new_grid%id
-!debug write(0,*)__FILE__,__LINE__,'new_grid%active_this_task ',new_grid%active_this_task
-!debug write(0,*)__FILE__,__LINE__,'new_grid%is_intermediate ',new_grid%is_intermediate
       CALL alloc_space_field ( new_grid, domain_id , 3 , 3 , .FALSE. , active,     &
                                sd1, ed1, sd2, ed2, sd3, ed3,       &
                                sm1,  em1,  sm2,  em2,  sm3,  em3,  &
@@ -963,6 +963,7 @@ CONTAINS
         ALLOCATE( grid%track_lon_domain( grid%track_loc_in ) )
         ALLOCATE( grid%track_i( grid%track_loc_in ) )
         ALLOCATE( grid%track_j( grid%track_loc_in ) )
+
       grid%track_loc        = 0
       grid%track_loc_domain = 0
       grid%track_have_calculated = .FALSE.
@@ -1341,10 +1342,6 @@ CONTAINS
 #if (NMM_CORE == 1)
       IF ( grid%id .EQ. 1 ) &
           CALL wrf_message ( 'DYNAMICS OPTION: nmm dyncore' )
-#endif
-#if (COAMPS_CORE == 1)
-        IF ( grid%id .EQ. 1 ) &
-          CALL wrf_message ( 'DYNAMICS OPTION: coamps dyncore' )
 #endif
 
       CALL set_scalar_indices_from_config( id , idum1 , idum2 )

@@ -181,6 +181,8 @@ clean:
 module_state_description.F : ../Registry/$(REGISTRY)
 		  ( cd .. ; tools/registry $(ARCHFLAGS) $(ENVCOMPDEFS) -DNEW_BDYS Registry/$(REGISTRY) ) ; 
 
+module_io_quilt.o : module_io_quilt.F module_io_quilt_new.F module_io_quilt_old.F
+
 md_calls.inc : md_calls.m4
 	if [ "$(M4)" = NA ] ; then \
 	  /bin/cp ../arch/md_calls.inc . ; \

@@ -292,11 +292,9 @@ RECURSIVE SUBROUTINE integrate ( grid )
       IF ( config_flags%grid_allowed ) THEN
          CALL domain_clockprint ( 150, grid, 'DEBUG:  top of integrate(),' )
          DO WHILE ( .NOT. domain_clockisstopsubtime(grid) )
-!            IF ( wrf_dm_on_monitor() ) THEN
 IF ( grid%active_this_task ) THEN
                CALL start_timing
-ENDIF
-!            END IF
+END IF
             CALL med_setup_step ( grid , config_flags )
             a_nest_was_opened = .false.
             ! for each nest whose time has come...
@@ -335,7 +333,9 @@ ENDIF ! active_this_task
 
             grid_ptr => grid
             DO WHILE ( ASSOCIATED( grid_ptr ) )
+#if ( NMM_CORE == 1 )
                   grid_ptr%mvnest = .FALSE.
+#endif
 IF ( grid_ptr%active_this_task ) THEN
                   CALL set_current_grid_ptr( grid_ptr )
                   CALL wrf_debug( 100 , 'module_integrate: calling solve interface ' )

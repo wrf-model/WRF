@@ -341,8 +341,10 @@ else
     set hdf5path = ( `grep "^HDF5PATH" configure.wrf | cut -d"=" -f2-` )
     if ( $hdf5path == "" ) then
        setenv HDF5_INC ""
+       unsetenv HDF5
     else
        setenv HDF5_INC "-I${hdf5path}/include"
+       setenv HDF5 1
     endif
     if ( $?CLOUD_CV ) then
        setenv CLOUD_CV_CPP "-DCLOUD_CV"

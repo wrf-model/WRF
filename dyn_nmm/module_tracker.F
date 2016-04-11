@@ -1,7 +1,7 @@
 module module_tracker
   implicit none
   private
-#ifdef HWRF
+#if ( HWRF == 1 )
   public :: ncep_tracker_center, ncep_tracker_init, update_tracker_post_move
 
   real, parameter :: invE=0.36787944117 ! 1/e

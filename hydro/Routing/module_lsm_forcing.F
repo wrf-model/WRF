@@ -6,7 +6,7 @@ module module_lsm_forcing
     use module_HYDRO_io, only: get_2d_netcdf, get_soilcat_netcdf, get2d_int
 
 implicit none
-#include <netcdf.inc>
+#include "netcdf.inc"
     integer :: i_forcing 
 character(len=19) out_date
 

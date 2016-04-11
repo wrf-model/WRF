@@ -937,6 +937,9 @@ state    real   lake_depth       ij     misc        1         -     rd=(interp_m
 state    real   GSW             ij     misc        1         -      -       ""                 ""
 state    real   XLAND           ij     misc        1         -      -       ""                 ""
 state    real   RAINCV          ij     misc        1         -      -       ""                 ""
+state    real   RAINSH          ij     misc        1         -      -       ""                 ""
+state    real   RAINSHV         ij     misc        1         -      -       ""                 ""
+state    real   SHALL           ij     misc        1         -      -       ""                 ""
 
 
 
@@ -1068,6 +1071,8 @@ rconfig   integer opt_alb     namelist,noah_mp      1            2         h    
 rconfig   integer opt_snf     namelist,noah_mp      1            1         h    "opt_snf"  "rainfall & snowfall (1-Jordan91; 2->BATS; 3->Noah)"   ""
 rconfig   integer opt_tbot    namelist,noah_mp      1            2         h    "opt_tbot" "lower boundary of soil temperature (1->zero-flux; 2->Noah)"   ""
 rconfig   integer opt_stc     namelist,noah_mp      1            1         h    "opt_stc"  "soil/snow temperature time scheme 1->semi-implicit; 2->full-implicit (original Noah)"   ""
+rconfig   integer opt_gla     namelist,noah_mp      1            1         h    "opt_gla"  "glacier treatment option 1->includes phase change; 2->slab ice (Noah)"   ""
+rconfig   integer opt_rsf     namelist,noah_mp      1            1         h    "opt_rsf"  "surface evaporation resistance option"   ""
 
 # For WRF Hydro
 rconfig   integer wrf_hydro               derived              1     0      h     "wrf_hydro"   "descrip"  "unit"
@@ -1104,6 +1109,8 @@ state    real   lfmassxy   ij      -       1      -     i02rhd=(interp_mask_land
 state    real   rtmassxy   ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "rtmass"     "mass of fine roots"  "g/m2"
 state    real   stmassxy   ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "stmass"     "stem mass" "g/m2"
 state    real   woodxy     ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "wood"       "mass of wood" "g/m2"
+state    real   grainxy    ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "grain"      "mass of grain" "g/m2"
+state    real   gddxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "gdd"        "growing degree days" ""
 state    real   stblcpxy   ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "stblcp"     "stable carbon pool"  "g/m2"
 state    real   fastcpxy   ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "fastcp"     "short-lived carbon" "g/m2"
 state    real   xsaixy     ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "xsai"       "stem area index" "-"
@@ -1325,6 +1332,7 @@ rconfig   integer   vortex_interval namelist,domains    max_domains      15  -  
 rconfig   integer   corral_dist     namelist,domains    max_domains      8
 #for HWRF -- set to true for one storm, false for > 1 this gets inferred from the way the nests are configured in frame/module_domain.F
 rconfig   logical   multi_storm     derived             1              .true.
+rconfig   logical   no_ocean        namelist,domains    1              .false.  # added 20151204 jm
 rconfig   integer   move_id         namelist,domains    max_moves        0
 rconfig   integer   move_interval   namelist,domains    max_moves        999999999
 rconfig   integer   move_cd_x       namelist,domains    max_moves        0
@@ -1431,6 +1439,7 @@ rconfig   logical usemonalb               namelist,physics      1            .tr
 rconfig   logical rdmaxalb                namelist,physics      1            .true.    h     "rdmaxalb"    "false set it to table values"   ""
 rconfig   logical rdlai2d                 namelist,physics      1            .false.   h     "rdlai2d"     "false set it to table values"   ""
 rconfig   logical ua_phys                 namelist,physics      1            .false.   h     "ua_phys"     "activate UA Noah changes"   ""
+rconfig   integer opt_thcnd               namelist,physics      1            1         h     "opt_thcnd" "thermal conductivity option in Noah LSM"   ""
 
 ifdef HWRF=1
 rconfig   integer  gwd_opt                namelist,physics    max_domains    2       irh    "gwd_opt"      "activate gravity wave drag: 0=off, 1=ARW, 2=NMM"   ""
@@ -1525,6 +1534,7 @@ rconfig   integer ntrack                 namelist,physics      max_domains  0   
 rconfig   integer num_snso_layers         namelist,physics      1             7       irh    "num_snso_layers"               ""      ""
 rconfig   integer num_snow_layers         namelist,physics   1             3       irh    "num_snow_layers"               ""      ""
 rconfig   logical use_aero_icbc           namelist,physics      1             .false. rh     "use_aero_icbc"  "Use GOCART climo 3D aerosols IC/BC data in Thompson-MP-Aero"  "logical flag"
+rconfig   integer use_mp_re               namelist,physics      1              1       h     "use_mp_re"  "use effective radii computed in some mp schemes in RRTMG"  "flag"
 
 # The following two options are hooked into various microphysics schemes to allow for ensemble perturbations of CCN and hail/graupel PSDs - GAC (AFWA)
 rconfig   real    ccn_conc                namelist,physics      1           1.0E8      h     "ccn_conc"                 "CCN concentration"                                                             "# m-3"
@@ -1555,11 +1565,7 @@ rconfig   real    c_k                     namelist,dynamics     max_domains    0
 rconfig   real    smdiv                   namelist,dynamics	max_domains    0.      h    "smdiv"         ""      ""
 rconfig   real    emdiv                   namelist,dynamics	max_domains    0.      h    "emdiv"         ""      ""
 rconfig   real    epssm                   namelist,dynamics	max_domains    .1      h    "epssm"         ""      ""
-<<<<<<< .working
 rconfig   integer nhmove                  namelist,dynamics     max_domains    -1   rh   "NHMOVE"         "Action when nest move: 0=discard non-hydro state -1=keep nh state everywhere 1=keep except near nest edge" ""
-=======
-rconfig   logical keepnh                  namelist,dynamics     max_domains  .true.   rh   "KEEPNH"         "When .false., non-hydrostatic state is discarded at nest move."        ""
->>>>>>> .merge-right.r8972
 rconfig   logical non_hydrostatic         namelist,dynamics	max_domains  .true.   irh  "non_hydrostatic"    ""   ""
 rconfig   integer time_step_sound         namelist,dynamics	max_domains    10      h     "time_step_sound"               ""      ""
 rconfig   integer     h_mom_adv_order     namelist,dynamics	max_domains    3       rh       "h_mom_adv_order"               ""      ""

@@ -22,6 +22,8 @@ MODULE module_wrf_top
 
 #ifdef DM_PARALLEL
    USE module_dm, ONLY : wrf_dm_initialize,wrf_get_hostid,domain_active_this_task,mpi_comm_allcompute
+#else
+   USE module_dm, ONLY : domain_active_this_task
 #endif
 
    USE module_cpl, ONLY : coupler_on, cpl_finalize, cpl_defdomain
@@ -52,7 +54,7 @@ MODULE module_wrf_top
    LOGICAL , EXTERNAL      :: wrf_dm_on_monitor
 #endif
 
-   CHARACTER (LEN=80)      :: rstname
+   CHARACTER (LEN=256)     :: rstname
    CHARACTER (LEN=80)      :: message
    CHARACTER (LEN=256) , PRIVATE :: a_message
 
@@ -112,9 +114,9 @@ CONTAINS
      INTEGER i, myproc, nproc, hostid, loccomm, ierr, buddcounter, mydevice, save_comm
      INTEGER, ALLOCATABLE :: hostids(:), budds(:)
      CHARACTER*512 hostname
-CHARACTER*512 mminlu_loc
+     CHARACTER*512 mminlu_loc
 #ifdef _ACCEL
-     integer :: it, nt, in, devnum
+     INTEGER :: it, nt, in, devnum
 #endif
 #if defined(DM_PARALLEL) && !defined(STUBMPI) && ( defined(RUN_ON_GPU) || defined(_ACCEL))
      include "mpif.h"

@@ -28,12 +28,13 @@ CONTAINS
                      ,hfx,qfx,cldfra,cldfra_mp_all,tpert2d            &
                      ,htop,hbot,kpbl,ht                               &
                      ,ensdim,maxiens,maxens,maxens2,maxens3           &
+                     ,shall                                           & !CuP, wig 18-Sep-2006
 #if (EM_CORE == 1)
                      !BSINGH - For WRFCuP Scheme
                      ,akpbl, br,regime,t2,q2                            & !CuP, wig 3-Aug-2006
                      ,slopeSfc, slopeEZ, sigmaSfc, sigmaEZ            & !CuP, wig 7-Aug-2006
                      ,cupflag, cldfra_cup, cldfratend_cup             & !CuP, wig 18-Sep-2006
-                     ,shall, taucloud, tactive                        & !CuP, wig 18-Sep-2006
+                     ,taucloud, tactive                               & !CuP, wig 18-Sep-2006
                      ,activeFrac                                      & !CuP, lkb 4-May-2010
                      ,tstar, lnterms, lnint                           & !CuP, wig 4-Oct-2006
                      ,numBins, thBinSize, rBinSize                    & !CUP, lkb 4-Nov-2009
@@ -381,11 +382,14 @@ CONTAINS
 
    INTEGER,DIMENSION( ims:ime, jms:jme ),                        &
            INTENT(IN ) ::                                LOWLYR
+
+   !BSINGH - For WRFCuP scheme
+   REAL,DIMENSION( ims:ime, jms:jme ),                           &
+           INTENT(INOUT) ::                               shall    !CuP, wig 18-Sep-2006
 #if (EM_CORE == 1)
    !BSINGH - For WRFCuP scheme
    REAL,DIMENSION( ims:ime, jms:jme ),                           &
-           INTENT(INOUT) ::                               shall, & !CuP, wig 18-Sep-2006
-                                                       taucloud, & !CuP, wig 1-Oct-2006
+           INTENT(INOUT) ::                            taucloud, & !CuP, wig 1-Oct-2006
                                                         tactive, & !CuP, wig 1-Oct-2006
                                                      activeFrac, & !CuP, lkb 5-May-2010
                                                      wCloudBase    !CuP, lkb 29-April-2010  
@@ -903,6 +907,7 @@ CONTAINS
                ,STEPCU=stepcu                                   &
                ,CU_ACT_FLAG=cu_act_flag ,WARM_RAIN=warm_rain    &
                ,QV=qv_curr                                      &
+               ,SHALL=shall                                     & !BSINGH - For WRFCuP scheme added "shall"
                ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
                ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &

@@ -2403,6 +2403,10 @@ ENDIF
    SUBROUTINE urban_var_init(ISURBAN, TSURFACE0_URB,TLAYER0_URB,TDEEP0_URB,IVGTYP,  & ! in
                              ims,ime,jms,jme,kms,kme,num_soil_layers,         & ! in
 !                             num_roof_layers,num_wall_layers,num_road_layers, & ! in
+!                              num_roof_layers,num_wall_layers,num_road_layers, & !urban
+                             LOW_DENSITY_RESIDENTIAL,                    &
+		             HIGH_DENSITY_RESIDENTIAL,                   &
+		             HIGH_INTENSITY_INDUSTRIAL,                    &
                              restart,sf_urban_physics,                     & !in
                              XXXR_URB2D,XXXB_URB2D,XXXG_URB2D,XXXC_URB2D,  & ! inout
                              TR_URB2D,TB_URB2D,TG_URB2D,TC_URB2D,QC_URB2D, & ! inout
@@ -2433,6 +2437,7 @@ ENDIF
    IMPLICIT NONE
 
    INTEGER, INTENT(IN) :: ISURBAN, sf_urban_physics
+   INTEGER, INTENT(IN) :: LOW_DENSITY_RESIDENTIAL, HIGH_DENSITY_RESIDENTIAL, HIGH_INTENSITY_INDUSTRIAL
    INTEGER, INTENT(IN) :: ims,ime,jms,jme,kms,kme,num_soil_layers
    INTEGER, INTENT(IN) :: num_urban_layers                            !multi-layer urban
    INTEGER, INTENT(IN) :: num_urban_hi                                !multi-layer urban
@@ -2585,8 +2590,8 @@ ENDIF
                SWITCH_URB=1
             ENDIF 
 
-            IF( IVGTYP(I,J) == 31) THEN
-               UTYPE_URB2D(I,J) = 3  ! low-intensity residential
+            IF( IVGTYP(I,J) == LOW_DENSITY_RESIDENTIAL) THEN
+               UTYPE_URB2D(I,J) = 1  ! low-intensity residential
                UTYPE_URB = UTYPE_URB2D(I,J)  ! low-intensity residential
                IF (HGT_URB2D(I,J)>0.) THEN
                   CONTINUE
@@ -2620,7 +2625,7 @@ ENDIF
               SWITCH_URB=1
             ENDIF
 
-           IF( IVGTYP(I,J) == 32) THEN
+           IF( IVGTYP(I,J) == HIGH_DENSITY_RESIDENTIAL) THEN
                UTYPE_URB2D(I,J) = 2  ! high-intensity
                UTYPE_URB = UTYPE_URB2D(I,J)  ! high-intensity
               IF (HGT_URB2D(I,J)>0.) THEN
@@ -2655,8 +2660,8 @@ ENDIF
               SWITCH_URB=1
             ENDIF
 
-            IF( IVGTYP(I,J) == 33) THEN
-               UTYPE_URB2D(I,J) = 1  !  Commercial/Industrial/Transportation
+            IF( IVGTYP(I,J) == HIGH_INTENSITY_INDUSTRIAL) THEN
+               UTYPE_URB2D(I,J) = 3  !  Commercial/Industrial/Transportation
                UTYPE_URB = UTYPE_URB2D(I,J)  !  Commercial/Industrial/Transportation
               IF (HGT_URB2D(I,J)>0.) THEN
                   CONTINUE
@@ -2720,6 +2725,7 @@ ENDIF
       XXXG_URB2D(I,J)=0.
       XXXC_URB2D(I,J)=0.
 
+      IF ( sf_urban_physics == 1 ) THEN
       DRELR_URB2D(I,J) = 0.
       DRELB_URB2D(I,J) = 0.
       DRELG_URB2D(I,J) = 0.
@@ -2727,8 +2733,9 @@ ENDIF
       FLXHUMB_URB2D(I,J) = 0.
       FLXHUMG_URB2D(I,J) = 0.
       CMCR_URB2D(I,J)  = 0.
-
       TGR_URB2D(I,J)=TSURFACE0_URB(I,J)+0.
+      ENDIF
+
       TC_URB2D(I,J)=TSURFACE0_URB(I,J)+0.
       TR_URB2D(I,J)=TSURFACE0_URB(I,J)+0.
       TB_URB2D(I,J)=TSURFACE0_URB(I,J)+0.
@@ -2736,7 +2743,7 @@ ENDIF
 !
       TS_URB2D(I,J)=TSURFACE0_URB(I,J)+0.
 
-!      DO K=1,num_roof_layers
+!     DO K=1,num_roof_layers
 !     DO K=1,num_soil_layers
 !         TRL_URB3D(I,1,J)=TLAYER0_URB(I,1,J)+0.
 !         TRL_URB3D(I,2,J)=TLAYER0_URB(I,2,J)+0.
@@ -2748,6 +2755,7 @@ ENDIF
           TRL_URB3D(I,3,J)=TLAYER0_URB(I,2,J)+0.
           TRL_URB3D(I,4,J)=TLAYER0_URB(I,2,J)+(TLAYER0_URB(I,3,J)-TLAYER0_URB(I,2,J))*0.29
 
+      IF ( sf_urban_physics == 1 ) THEN
           TGRL_URB3D(I,1,J)=TLAYER0_URB(I,1,J)+0.
           TGRL_URB3D(I,2,J)=0.5*(TLAYER0_URB(I,1,J)+TLAYER0_URB(I,2,J))
           TGRL_URB3D(I,3,J)=TLAYER0_URB(I,2,J)+0.
@@ -2757,6 +2765,7 @@ ENDIF
           SMR_URB3D(I,2,J)=0.2
           SMR_URB3D(I,3,J)=0.2
           SMR_URB3D(I,4,J)=0.
+      ENDIF
 !     END DO
 
 !      DO K=1,num_wall_layers
@@ -2905,9 +2914,6 @@ ENDIF
         CHECK = 1
        END IF
        END IF
-
-
-
 
     END DO
    END DO

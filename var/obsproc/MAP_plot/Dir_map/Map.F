@@ -9,7 +9,7 @@ C
       character (len=5), allocatable  :: IDN(:)
 !
       PARAMETER (IX = 74, JX = 92, KX = 31)
-#     include <param1.incl>
+#     include "param1.incl"
 C
       COMMON /HEADER/ MIF, MRF, MIFC, MRFC  
       INTEGER MIF(1000,20)  

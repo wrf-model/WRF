@@ -118,6 +118,9 @@
 !..Need to fill special height var for setting up initial condition.  G. Thompson
    REAL, ALLOCATABLE, DIMENSION(:,:,:) :: z_at_q
 
+!  CCN for MP=18 initializatio
+   REAL :: ccn_max_val
+
    CALL get_ijk_from_grid ( grid ,                              &
                            ids, ide, jds, jde, kds, kde,        &
                            ims, ime, jms, jme, kms, kme,        &
@@ -647,9 +650,8 @@ IF (grid%sppt_on==1) then
      ENDDO
      ENDDO
      ENDDO
-    ELSE
-! with nests, grid%t_init generally needs recomputations (since it is not interpolated)
-     IF ( .NOT. grid%this_is_an_ideal_run ) THEN
+    ELSE ! there is more than 1 domain
+     IF ( .NOT. grid%this_is_an_ideal_run ) THEN ! this is a real run
         DO j = jts,min(jte,jde-1)
         DO k = kts,kte-1
         DO i = its, min(ite,ide-1)
@@ -661,33 +663,82 @@ IF (grid%sppt_on==1) then
             ENDIF
             grid%t_init(i,k,j) = temp*(p00/grid%pb(i,k,j))**(r_d/cp) - t0
             grid%alb(i,k,j) = (r_d/p1000mb)*(grid%t_init(i,k,j)+t0)*(grid%pb(i,k,j)/p1000mb)**cvpm
+       ENDIF
+      ENDDO
+      ENDDO
+      ENDDO
+
+      IF ( ( config_flags%rebalance .EQ. 1 ) .OR. &
+           ( ( config_flags%rebalance .EQ. 2 ) .AND. ( config_flags%vert_refine_method .EQ. 2 ) ) ) THEN
+        !  Integrate base geopotential, starting at terrain elevation.  This assures that
+        !  the base state is in exact hydrostatic balance with respect to the model equations.
+        !  This field is on full levels.
+       DO j = jts,min(jte,jde-1)
+       DO i = its, min(ite,ide-1)               
+        grid%phb(i,1,j) = grid%ht(i,j) * g
+        IF ( config_flags%hypsometric_opt .EQ. 1 ) THEN
+           DO k  = 2,kte
+              grid%phb(i,k,j) = grid%phb(i,k-1,j) - grid%dnw(k-1)*grid%mub(i,j)*grid%alb(i,k-1,j)
+           END DO
+        ELSE IF ( config_flags%hypsometric_opt .EQ. 2 ) THEN
+           DO k  = 2,kte
+              pfu = grid%mub(i,j)*grid%znw(k)   + grid%p_top
+              pfd = grid%mub(i,j)*grid%znw(k-1) + grid%p_top
+              phm = grid%mub(i,j)*grid%znu(k-1) + grid%p_top
+              grid%phb(i,k,j) = grid%phb(i,k-1,j) + grid%alb(i,k-1,j)*phm*LOG(pfd/pfu)
+            END DO
           ENDIF
-        ENDDO
-        ENDDO
-        ENDDO
+       ENDDO
+       ENDDO
+       END IF
+
      ELSE
-        DO j = jts,min(jte,jde-1)
-        DO k = kts,kte-1
-        DO i = its, min(ite,ide-1)
-          IF ( grid%imask_nostag(i,j) .EQ. 1 ) THEN
-            grid%pb(i,k,j) = grid%znu(k)*grid%mub(i,j)+grid%p_top
-            grid%alb(i,k,j) = -grid%rdnw(k)*(grid%phb(i,k+1,j)-grid%phb(i,k,j))/grid%mub(i,j)
-            grid%t_init(i,k,j) = grid%alb(i,k,j)*(p1000mb/r_d)/((grid%pb(i,k,j)/p1000mb)**cvpm) - t0
-          ENDIF
-        ENDDO
-        ENDDO
-        ENDDO
-     END IF
-    ENDIF
+        IF ( config_flags%ideal_init_method .EQ. 1 ) THEN
+           DO j = jts,min(jte,jde-1)
+           DO k = kts,kte-1
+           DO i = its, min(ite,ide-1)
+             IF ( grid%imask_nostag(i,j) .EQ. 1 ) THEN
+               grid%pb(i,k,j) = grid%znu(k)*grid%mub(i,j)+grid%p_top
+               grid%alb(i,k,j) = -grid%rdnw(k)*(grid%phb(i,k+1,j)-grid%phb(i,k,j))/grid%mub(i,j)
+               grid%t_init(i,k,j) = grid%alb(i,k,j)*(p1000mb/r_d)/((grid%pb(i,k,j)/p1000mb)**cvpm) - t0
+             ENDIF
+           ENDDO
+           ENDDO
+           ENDDO
+        ELSE IF ( config_flags%ideal_init_method .EQ. 2 ) THEN
+           DO j = jts,min(jte,jde-1)
+           DO k = kts,kte-1
+           DO i = its, min(ite,ide-1)
+             IF ( grid%imask_nostag(i,j) .EQ. 1 ) THEN
+               grid%pb(i,k,j) = grid%znu(k)*grid%mub(i,j)+grid%p_top
+               grid%alb(i,k,j) = (r_d/p1000mb)*(grid%t_init(i,k,j)+t0)*(grid%pb(i,k,j)/p1000mb)**cvpm
+             ENDIF
+           ENDDO
+           ENDDO
+           ENDDO
+           !  Integrate base geopotential, starting at terrain elevation.  This assures that
+           !  the base state is in exact hydrostatic balance with respect to the model equations.
+           !  This field is on full levels.
+           DO j = jts,min(jte,jde-1)
+           DO i = its, min(ite,ide-1)
+            grid%phb(i,1,j) = grid%ht(i,j) * g 
+            DO k  = 2,kte
+              grid%phb(i,k,j) = grid%phb(i,k-1,j) - grid%dnw(k-1)*grid%mub(i,j)*grid%alb(i,k-1,j)
+            END DO
+           ENDDO
+           ENDDO
+        END IF  ! end if initialization for ideal, use method 1 or 2
+     END IF ! end if this is a real or ideal run
+    END IF ! end if there is more than 1 domain
+     
+!------base state is finished, perturbation values are recalculated below-----
 
-! Use equations from calc_p_rho_phi to derive p and al from ph: linear in log p
-!-----------------------------------------------------------------------------
-!tgs - rebalance if the model is cycled but does not run DFI
-! For HRRR application
-! Rebalance recomputes 1/rho, p, ph_2, ph0, p_hyd
+  ! For the HRRR application, we want to go through this rebalancing.  They 
+  ! have a clunky way of testig on this, but it is operational, so no need to
+  ! cause them troubles.
 
-  IF ( ( grid%dfi_opt .EQ. DFI_NODFI ) .and. config_flags%cycling ) then
-      call rebalance_driver_cycl (grid )
+  IF ( ( grid%dfi_opt .EQ. DFI_NODFI ) .and. ( config_flags%cycling ) ) THEN
+       call rebalance_driver_cycl (grid )
 
        DO j = jts,min(jte,jde-1)
        DO k = kts,kte
@@ -697,9 +748,29 @@ IF (grid%sppt_on==1) then
        ENDDO
        ENDDO
 
-!  ENDIF
+  !  Everyone else runs thorugh here.  NOTE that we might also want to call the
+  !  rebalancing ourselves for different set ups.  It does not impact HRRR, so 
+  !  it is an easy decision.
+
   ELSE
-!------------------------------------------------------------------------------
+
+     ! We request rebalancing for vertical grid nesting, or when the user asks for rebalancing.
+     ! Rebalance recomputes 1/rho, p, ph_2, ph0, p_hyd
+
+     IF ( ( config_flags%rebalance .EQ. 1 ) .OR. &
+        ( ( config_flags%rebalance .EQ. 2 ) .AND. ( config_flags%vert_refine_method .EQ. 2 ) ) ) THEN
+       call rebalance_driver_cycl (grid )
+
+       DO j = jts,min(jte,jde-1)
+       DO k = kts,kte
+       DO i = its, min(ite,ide-1)
+          grid%ph_1(i,k,j)=grid%ph_2(i,k,j)
+       ENDDO
+       ENDDO
+       ENDDO
+     END IF
+
+     ! Use equations from calc_p_rho_phi to derive p and al from ph: linear in log p
 
     IF ( config_flags%hypsometric_opt .EQ. 1 ) THEN
        DO j=jts,min(jte,jde-1)
@@ -722,7 +793,7 @@ IF (grid%sppt_on==1) then
        ENDDO
        ENDDO
        ENDDO
-    END IF
+    END IF ! which hypsometric option
     DO j=jts,min(jte,jde-1)
     DO k=kts,kte-1
     DO i=its,min(ite,ide-1)
@@ -735,8 +806,7 @@ IF (grid%sppt_on==1) then
     ENDDO
     ENDDO
     ENDDO
- ENDIF ! rebalance
-!-------------------------------------------------------------------------------------
+  ENDIF ! Various rebalancing options
 
     IF ( .NOT. grid%this_is_an_ideal_run ) THEN
        DO j=jts,min(jte,jde-1)
@@ -760,7 +830,7 @@ IF (grid%sppt_on==1) then
        ENDDO
     END IF
 
-   ENDIF
+   ENDIF ! first trip for this domain
 
    DO j=jts,min(jte,jde-1)
       DO k = kts,kte
@@ -860,7 +930,7 @@ IF (grid%sppt_on==1) then
       END IF
 
 
-   END IF
+   END IF  ! adaptive computations
 
 ! End of adaptive time step modifications
 !-----------------------------------------------------------------------------
@@ -886,12 +956,12 @@ if(config_flags%sf_surface_physics.eq.NOAHMPSCHEME.and.config_flags%opt_run.eq.5
 endif
 #endif
 
-   DO ij = 1, grid%num_tiles
-
 !tgs do not need physics initialization for backward DFI integration
     IF ( ( grid%dfi_opt .EQ. DFI_NODFI ) .or. &
           ( ( grid%dfi_stage .NE. DFI_BCK ) .and. &
           ( grid%dfi_stage .NE. DFI_STARTBCK ) ) ) THEN    !tgs, mods by tah
+
+   DO ij = 1, grid%num_tiles
 
      CALL phy_init (  grid%id , config_flags, grid%DT, grid%RESTART, grid%znw, grid%znu,   &
                       grid%p_top, grid%tsk, grid%RADT,grid%BLDT,grid%CUDT, MPDT, &
@@ -962,6 +1032,8 @@ endif
                       grid%m_ps_1,grid%m_ps_2,grid%m_hybi,aerosolc_1,aerosolc_2,&  ! Optional
                       grid%rundgdten,grid%rvndgdten,grid%rthndgdten,         &     ! Optional
                       grid%rphndgdten,grid%rqvndgdten,grid%rmundgdten,       &     ! Optional
+                      grid%SDA_HFX, grid%SDA_QFX, grid%QNORM, grid%HFX_BOTH,grid%QFX_BOTH,      &   ! fasdas
+                      grid%HFX_FDDA,                                                            &   ! fasdas
                       grid%FGDT,grid%stepfg,                        &     ! Optional
                       grid%cugd_tten,grid%cugd_ttens,grid%cugd_qvten,        &   ! Optional
                       grid%cugd_qvtens,grid%cugd_qcten,                 &   ! Optional
@@ -971,6 +1043,7 @@ endif
                       grid%CHXY, grid%FWETXY, grid%SNEQVOXY, grid%ALBOLDXY, grid%QSNOWXY,       &   ! Optional Noah-MP
                       grid%WSLAKEXY, grid%ZWTXY, grid%WAXY, grid%WTXY, grid%LFMASSXY, grid%RTMASSXY, & ! Optional Noah-MP
                       grid%STMASSXY, grid%WOODXY, grid%STBLCPXY, grid%FASTCPXY,                 &   ! Optional Noah-MP
+                      grid%GRAINXY, grid%GDDXY,                                                 &   ! Optional Noah-MP
                       grid%XSAIXY,grid%LAI,                                                     &   ! Optional Noah-MP
                       grid%T2MVXY, grid%T2MBXY, grid%CHSTARXY,                                  &   ! Optional Noah-MP
                       grid%SMOISEQ  ,grid%SMCWTDXY ,grid%RECHXY, grid%DEEPRECHXY, grid%AREAXY,  & ! Optional Noah-MP
@@ -1098,11 +1171,9 @@ endif
                       ,grid%G_URB2D_mosaic,grid%RN_URB2D_mosaic                                      & ! danli mosaic 
                       ,grid%TS_URB2D_mosaic                                                          & ! danli mosaic 
                       ,grid%TS_RUL2D_mosaic                                                          & ! danli mosaic
-!                    , P_QNN=P_QNN, F_QNN=F_QNN          &
                       )
-       ENDIF   !tgs
-
-   ENDDO
+       ENDDO ! loop of tiles for phy_init
+    ENDIF   ! no phy_init for the backwards part of the DFI
 
    CALL wrf_debug ( 100 , 'start_domain_em: After call to phy_init' )
 
@@ -1158,7 +1229,7 @@ endif
 
     call wrf_debug(100,'start_em: after calling lightning_init')
 
-   END IF
+   END IF ! restart
 
 #if 0
 #include "CYCLE_TEST.inc"
@@ -1539,6 +1610,31 @@ endif
       END DO loop_3d_m
 
    ENDIF
+
+! Some initializations for the simple ccn field.
+
+   IF ( f_qnn ) THEN
+      IF ( config_flags%mp_physics == wdm5scheme .or. config_flags%mp_physics == wdm6scheme ) THEN
+         ! NO OP
+      ELSE IF ( config_flags%mp_physics == nssl_2momccn ) THEN
+         grid%ccn_conc =  config_flags%nssl_cccn/1.225
+      ELSE
+         ! NO OP
+      END IF
+      ccn_max_val = MAXVAL(scalar(its:MIN(ite,ide-1),kts:kte-1,jts:MIN(jte,jde-1),p_qnn))
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
+      ccn_max_val = wrf_dm_max_real ( ccn_max_val )
+#endif
+      IF ( ccn_max_val < 1.0 ) THEN ! initialization of ccn not already done
+         DO j=jts,MIN(jte,jde-1)
+            DO k=kts,kte
+               DO i=its,MIN(ite,ide-1)
+                  scalar(i,k,j,p_qnn) = grid%ccn_conc
+               END DO
+            END DO
+         END DO
+      END IF
+   END IF
 
    IF (num_scalar > 0) THEN
 
@@ -2000,7 +2096,8 @@ endif
        DO j = jts, MIN(jte,jde-1)
          DO i = its, MIN(ite,ide-1)
 
-       IF (n_moist >= PARAM_FIRST_SCALAR ) THEN
+        IF (n_moist >= PARAM_FIRST_SCALAR ) THEN
+       
                !  Integrate the hydrostatic equation (from the RHS of the bigstep vertical momentum
                !  equation) down from the top to get the pressure perturbation.  First get the pressure
                !  perturbation, moisture, and inverse density (total and perturbation) at the top-most level.

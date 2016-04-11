@@ -245,13 +245,13 @@ END SUBROUTINE init_domain_constants_em
 
 !---------------------------------------------------------------------------------------------------
 
-SUBROUTINE init_domain_vert_nesting ( parent, nest)
+SUBROUTINE init_domain_vert_nesting ( parent, nest, use_baseparam_fr_nml )
 
 !KAL this is a driver to initialize the vertical coordinates for the nest when vertical nesting is used
    USE module_domain
    IMPLICIT NONE
    TYPE(domain), POINTER                      :: parent, nest
-					 
+   LOGICAL                                    :: use_baseparam_fr_nml
    !local
    REAL, DIMENSION(parent%e_vert)             :: znw_c
 
@@ -264,11 +264,12 @@ SUBROUTINE init_domain_vert_nesting ( parent, nest)
          real , dimension(k_dim_c), INTENT(IN) :: znw_c
       END SUBROUTINE vert_cor_vertical_nesting_integer
 
-      SUBROUTINE vert_cor_vertical_nesting_arbitrary(nest,znw_c,kde_c)
+      SUBROUTINE vert_cor_vertical_nesting_arbitrary(nest,znw_c,kde_c,use_baseparam_fr_nml)
           USE module_domain
           TYPE(domain), POINTER :: nest
           INTEGER, INTENT(IN   ) :: kde_c
           REAL, DIMENSION(kde_c), INTENT(IN   ) :: znw_c
+          LOGICAL, INTENT(IN   ) :: use_baseparam_fr_nml
       END SUBROUTINE vert_cor_vertical_nesting_arbitrary
       
    END INTERFACE
@@ -283,7 +284,7 @@ SUBROUTINE init_domain_vert_nesting ( parent, nest)
    if (nest%vert_refine_method .EQ. 1) then  !if you are in this subroutine there is vertical nesting- (i.e. nest%e_vert /= parent%e_vert to enter this subroutine)
       CALL vert_cor_vertical_nesting_integer(nest,znw_c,parent%e_vert)
    elseif (nest%vert_refine_method .EQ. 2) then
-      CALL vert_cor_vertical_nesting_arbitrary(nest,znw_c,parent%e_vert)
+      CALL vert_cor_vertical_nesting_arbitrary(nest,znw_c,parent%e_vert,use_baseparam_fr_nml)
    endif
 
 END SUBROUTINE init_domain_vert_nesting
@@ -355,18 +356,50 @@ END SUBROUTINE init_domain_vert_nesting
 
 !-----------------------------------------------------------------------------------------
 
-SUBROUTINE vert_cor_vertical_nesting_arbitrary(nest,znw_c,kde_c)
+SUBROUTINE vert_cor_vertical_nesting_arbitrary(nest,znw_c,kde_c,use_baseparam_fr_nml)
     USE module_domain
+    USE module_model_constants
     IMPLICIT NONE
     TYPE(domain), POINTER :: nest
     INTEGER, INTENT(IN   ) :: kde_c
     REAL, DIMENSION(kde_c), INTENT(IN   ) :: znw_c
+    LOGICAL, INTENT(IN   ) :: use_baseparam_fr_nml
     INTEGER :: k, kde_n, ks, id
     REAL :: cof1, cof2
+    REAL :: max_dz = 1000
+    REAL :: p00, t00, a, tiso, a_strat, p_strat
+    INTEGER :: ids, ide, jds, jde, kds, kde, &
+               ims, ime, jms, jme, kms, kme, &
+               its, ite, jts, jte, kts, kte
+    REAL, DIMENSION(max_eta) :: eta_levels
+
+    IF ( use_baseparam_fr_nml ) then
+      CALL nl_get_base_pres        ( 1 , p00        )
+      CALL nl_get_base_temp        ( 1 , t00        )
+      CALL nl_get_base_lapse       ( 1 , a          )
+      CALL nl_get_iso_temp         ( 1 , tiso       )
+      CALL nl_get_base_lapse_strat ( 1 , a_strat    )
+      CALL nl_get_base_pres_strat  ( 1 , p_strat    )
+      IF ((t00 .LT. 100.0) .OR. (p00 .LT. 10000.0)) THEN
+        WRITE(wrf_err_message,*) '--- ERROR: bad base state for T00 or P00 in namelist.input file'
+        CALL wrf_error_fatal(TRIM(wrf_err_message))
+      END IF
+    ELSE
+      p00     = nest%p00
+      t00     = nest%t00
+      a       = nest%tlp
+      tiso    = nest%tiso
+      a_strat = nest%tlp_strat
+      p_strat = nest%p_strat
+      IF ((t00 .LT. 100.0) .OR. (p00 .LT. 10000.0)) THEN
+        WRITE(wrf_err_message,*) '--- ERROR: did not find base state parameters in nest. Add use_baseparam_fr_nml = .true. in &dynamics and rerun'
+        CALL wrf_error_fatal(TRIM(wrf_err_message))
+      ENDIF
+    ENDIF
 
     kde_n = nest%e_vert
 
-    !DJW 140627 Added code for specifying multiple domains' eta_levels
+    !DJW Added code for specifying multiple domains' eta_levels
     IF (nest%id .NE. 1) THEN
       id = 1
       ks = 1
@@ -375,24 +408,70 @@ SUBROUTINE vert_cor_vertical_nesting_arbitrary(nest,znw_c,kde_c)
         ks = ks+model_config_rec%e_vert(id-1)
       ENDDO
     ENDIF
+    IF ((nest%this_is_an_ideal_run) .AND. (model_config_rec%eta_levels(1) .EQ. -1.0)) THEN
+      !DJW If we're running an ideal case and do not have levels set in the
+      !namelist then we set znw using constant spacing in eta
+      DO k=1,kde_n
+        CALL wrf_debug(0, "nest_init_utils: eta_levels are not specified in the namelist, setting levels with constant spacing in eta.")
+        nest%znw(k) = 1.0-(k-1)/FLOAT((kde_n-1))
+      ENDDO
+    ELSEIF (.NOT.(nest%this_is_an_ideal_run) .AND. (model_config_rec%eta_levels(1) .EQ. -1.0)) THEN
+      write(*,'(A,I2,A)') "--- WARNING: eta_levels are not specified in the namelist for grid_id=",nest%grid_id,", using WRF's default levels."
+      CALL get_ijk_from_grid( nest, &
+                              ids, ide, jds, jde, kds, kde, &
+                              ims, ime, jms, jme, kms, kme, &
+                              its, ite, jts, jte, kts, kte )
+      write(*,'(A,F10.3)') "--- USING: nest%p_top   = ",nest%p_top
+      write(*,'(A,F10.3)') "--- USING: g            = ",g
+      write(*,'(A,F10.3)') "--- USING: cvpm         = ",cvpm
+      write(*,'(A,F10.3)') "--- USING: r_d          = ",r_d
+      write(*,'(A,F10.3)') "--- USING: cp           = ",cp
+      write(*,'(A,F10.3)') "--- USING: p1000mb      = ",p1000mb
+      write(*,'(A,F10.3)') "--- USING: t0           = ",t0
+      write(*,'(A,F10.3)') "--- USING: p00          = ",p00
+      write(*,'(A,F10.3)') "--- USING: t00          = ",t00
+      write(*,'(A,F10.3)') "--- USING: a            = ",a
+      write(*,'(A,F10.3)') "--- USING: tiso         = ",tiso
+      write(*,'(A,F10.3)') "--- USING: a_strat      = ",a_strat
+      write(*,'(A,F10.3)') "--- USING: p_strat      = ",p_strat
+      CALL compute_eta ( nest%znw, &
+                         eta_levels, max_eta, max_dz, &
+                         nest%p_top, g, p00, cvpm, a, r_d, cp, &
+                         t00, p1000mb, t0, tiso, p_strat, a_strat, &
+                         ids, ide, jds, jde, kds, kde, &
+                         ims, ime, jms, jme, kms, kme, &
+                         its, ite, jts, jte, kts, kte )
+    ELSE
+      !DJW If we're in here then we are suppose to read in eta_levels
+      !from the namelist. We do so and then check to make sure they make sense
     DO k=1,kde_n
       nest%znw(k) = model_config_rec%eta_levels(ks+k-1)
-      write(*,'(A,I3,A,F5.3)') "DJW[nest_init_utils]: nest%znw(",k,") = ",nest%znw(k)
+        write(*,'(A,I3,A,F6.3)') "nest%znw(",k,") = ",nest%znw(k)
     ENDDO
     !Check the value of the first and last eta level for our domain,
     !then check that the vector of eta levels is only decreasing
     IF (nest%znw(1) .NE. 1.0) THEN
-      CALL wrf_error_fatal("error with specified eta_levels, first level is not 1.0")
+        write(wrf_err_message,'(A,I2,A)') "--- ERROR: first eta_level for grid_id=",nest%grid_id," is not 1.0. Check namelist."
+        CALL wrf_error_fatal( wrf_err_message )
     ENDIF
+      write(*,'(A,F10.3)') "--- USING: g            = ",g
+      write(*,'(A,F10.3)') "--- USING: cvpm         = ",cvpm
+      write(*,'(A,F10.3)') "--- USING: r_d          = ",r_d
+      write(*,'(A,F10.3)') "--- USING: cp           = ",cp
+      write(*,'(A,F10.3)') "--- USING: p1000mb      = ",p1000mb
+      write(*,'(A,F10.3)') "--- USING: t0           = ",t0
     IF (nest%znw(kde_n) .NE. 0.0) THEN
-      CALL wrf_error_fatal("error with specified eta_levels, last level is not 0.0")
+        write(wrf_err_message,'(A,I2,A)') "--- ERROR: last eta_level for grid_id=",nest%grid_id," is not 0.0. Check namelist."
+        CALL wrf_error_fatal( wrf_err_message )
     ENDIF
     DO k=2,kde_n
       IF (nest%znw(k) .GT. nest%znw(k-1)) THEN
-        CALL wrf_error_fatal("eta_levels are not uniformly decreasing from 1.0 to 0.0")
+          write(wrf_err_message,'(A,I2,A)') "--- ERROR: eta_level for grid_id=",nest%grid_id," are not monotonically decreasing. Check namelist."
+          CALL wrf_error_fatal( wrf_err_message )
       ENDIF
     ENDDO
-    !DJW 140627 End of added code for specifying eta_levels
+    ENDIF
+    !DJW End of added code for specifying eta_levels
 
     DO k=1,kde_n-1
       nest%dnw(k) = nest%znw(k+1)-nest%znw(k)
@@ -418,6 +497,265 @@ SUBROUTINE vert_cor_vertical_nesting_arbitrary(nest,znw_c,kde_c)
     nest%cfn1 = -.5*nest%dnw(kde_n-1)/nest%dn(kde_n-1)
 
 END SUBROUTINE vert_cor_vertical_nesting_arbitrary
+
+SUBROUTINE compute_eta ( znw , &
+                         eta_levels , max_eta , max_dz , &
+                         p_top , g , p00 , cvpm , a , r_d , cp , &
+                         t00 , p1000mb , t0 , tiso , p_strat , a_strat , &
+                         ids , ide , jds , jde , kds , kde , &
+                         ims , ime , jms , jme , kms , kme , &
+                         its , ite , jts , jte , kts , kte )
+
+      !  Compute eta levels, either using given values from the namelist (hardly
+      !  a computation, yep, I know), or assuming a constant dz above the PBL,
+      !  knowing p_top and the number of eta levels.
+
+      IMPLICIT NONE
+
+      INTEGER , INTENT(IN)        :: ids , ide , jds , jde , kds , kde , &
+                                     ims , ime , jms , jme , kms , kme , &
+                                     its , ite , jts , jte , kts , kte
+      REAL , INTENT(IN)           :: max_dz
+      REAL , INTENT(IN)           :: p_top , g , p00 , cvpm , a , r_d , cp , t00 , p1000mb , t0 , tiso
+      REAL , INTENT(IN)           :: p_strat , a_strat
+      INTEGER , INTENT(IN)        :: max_eta
+      REAL , DIMENSION (max_eta)  :: eta_levels
+
+      REAL , DIMENSION (kts:kte) , INTENT(OUT) :: znw
+
+      !  Local vars
+
+      INTEGER :: k , kk
+      REAL(KIND=8) :: mub , t_init , p_surf , pb, ztop, ztop_pbl , dz , temp
+      REAL(KIND=8) , DIMENSION(kts:kte) :: dnw
+
+      INTEGER , PARAMETER :: prac_levels = 59
+      INTEGER :: loop , loop1
+      REAL(KIND=8) , DIMENSION(prac_levels) :: znw_prac , znu_prac , dnw_prac
+      REAL(KIND=8) , DIMENSION(MAX(prac_levels,kde)) :: alb , phb
+      REAL(KIND=8) :: alb_max, t_init_max, pb_max, phb_max
+
+      CHARACTER(LEN=256) :: message
+
+      !  Compute top of the atmosphere with some silly levels.  We just want to
+      !  integrate to get a reasonable value for ztop.  We use the planned
+      !  PBL-esque
+      !  levels, and then just coarse resolution above that.  We know p_top,
+      !  and we
+      !  have the base state vars.
+
+      p_surf = p00
+
+      znw_prac = (/ 1.0000_8 , 0.9930_8 , 0.9830_8 , 0.9700_8 , 0.9540_8 , 0.9340_8 , 0.9090_8 , 0.8800_8 , &
+                    0.8500_8 , 0.8000_8 , 0.7500_8 , 0.7000_8 , 0.6500_8 , 0.6000_8 , 0.5500_8 , 0.5000_8 , &
+                    0.4500_8 , 0.4000_8 , 0.3500_8 , 0.3000_8 , 0.2500_8 , 0.2000_8 , 0.1500_8 , 0.1000_8 , &
+                    0.0800_8 , 0.0600_8 , 0.0400_8 , 0.0200_8 , &
+                    0.0150_8 , 0.0100_8 , 0.0090_8 , 0.0080_8 , 0.0070_8 , 0.0060_8 , 0.0050_8 , 0.0040_8 , &
+                    0.0035_8 , 0.0030_8 , &
+                    0.0028_8 , 0.0026_8 , 0.0024_8 , 0.0022_8 , 0.0020_8 , &
+                    0.0018_8 , 0.0016_8 , 0.0014_8 , 0.0012_8 , 0.0010_8 , &
+                    0.0009_8 , 0.0008_8 , 0.0007_8 , 0.0006_8 , 0.0005_8 , 0.0004_8 , 0.0003_8 , &
+                    0.0002_8 , 0.0001_8 , 0.00005_8, 0.0000_8 /)
+
+      DO k = 1 , prac_levels - 1
+        znu_prac(k) = ( znw_prac(k) + znw_prac(k+1) ) * 0.5_8
+        dnw_prac(k) = znw_prac(k+1) - znw_prac(k)
+      END DO
+
+      DO k = 1, prac_levels-1
+        pb = znu_prac(k)*(p_surf - p_top) + p_top
+        temp = MAX ( tiso, t00 + A*LOG(pb/p00) )
+        IF ( pb .LT. p_strat ) THEN
+          temp = tiso + A_strat*LOG(pb/p_strat)
+        END IF
+        t_init = temp*(p00/pb)**(r_d/cp) - t0
+        alb(k) = (r_d/p1000mb)*(t_init+t0)*(pb/p1000mb)**cvpm
+      END DO
+
+      !  Base state mu is defined as base state surface pressure minus p_top
+
+      mub = p_surf - p_top
+
+      !  Integrate base geopotential, starting at terrain elevation.
+
+      phb(1) = 0._8
+      DO k  = 2,prac_levels
+        phb(k) = phb(k-1) - dnw_prac(k-1)*mub*alb(k-1)
+      END DO
+
+      !  So, now we know the model top in meters.  Get the average depth above the PBL
+      !  of each of the remaining levels.  We are going for a constant delta z thickness.
+
+      ztop     = phb(prac_levels) / g
+      ztop_pbl = phb(8          ) / g
+      dz = ( ztop - ztop_pbl ) / REAL ( kde - 8 )
+
+      IF ( dz .GE. max_dz ) THEN
+        WRITE (message,FMT='("With a requested ",F7.1," Pa model top, the model lid will be about ",F7.1," m.")') p_top, ztop
+        CALL wrf_message ( message )
+        WRITE (message,FMT='("With ",I3," levels above the PBL, the level thickness will be about ",F6.1," m.")') kde-8, dz
+        CALL wrf_message ( message )
+        WRITE (message,FMT='("Thicknesses greater than ",F7.1," m are not recommended.")') max_dz
+        CALL wrf_message ( message )
+        CALL wrf_error_fatal ( 'Add more levels to namelist.input for e_vert' )
+      END IF
+
+      !  Standard levels near the surface so no one gets in trouble.
+
+      DO k = 1 , 8
+        eta_levels(k) = znw_prac(k)
+      END DO
+
+      !  Using d phb(k)/ d eta(k) = -mub * alb(k), eqn 2.9
+      !  Skamarock et al, NCAR TN 468.  Use full levels, so
+      !  use twice the thickness.
+
+      DO k = 8, kte-1-2
+
+        find_prac : DO kk = 1 , prac_levels
+          IF (znw_prac(kk) .LT. eta_levels(k) ) THEN
+            EXIT find_prac
+          END IF
+        end do find_prac
+
+        pb = 0.5*(eta_levels(k)+znw_prac(kk)) * (p_surf - p_top) + p_top
+
+        temp = MAX ( tiso, t00 + A*LOG(pb/p00) )
+        IF ( pb .LT. p_strat ) THEN
+          temp = tiso + A_strat * LOG ( pb/p_strat )
+        END IF
+!       temp =             t00 + A*LOG(pb/p00)
+        t_init = temp*(p00/pb)**(r_d/cp) - t0
+        alb(k) = (r_d/p1000mb)*(t_init+t0)*(pb/p1000mb)**cvpm
+        eta_levels(k+1) = eta_levels(k) - dz*g / ( mub*alb(k) )
+        pb = 0.5*(eta_levels(k)+eta_levels(k+1)) * (p_surf - p_top) + p_top
+
+        temp = MAX ( tiso, t00 + A*LOG(pb/p00) )
+        IF ( pb .LT. p_strat ) THEN
+          temp = tiso + A_strat * LOG ( pb/p_strat )
+        END IF
+!       temp =             t00 + A*LOG(pb/p00)
+        t_init = temp*(p00/pb)**(r_d/cp) - t0
+        alb(k) = (r_d/p1000mb)*(t_init+t0)*(pb/p1000mb)**cvpm
+        eta_levels(k+1) = eta_levels(k) - dz*g / ( mub*alb(k) )
+        pb = 0.5*(eta_levels(k)+eta_levels(k+1)) * (p_surf - p_top) + p_top
+
+        phb(k+1) = phb(k) - (eta_levels(k+1)-eta_levels(k)) * mub*alb(k)
+      END DO
+
+      alb_max = alb(kte-1-2)
+      t_init_max = t_init
+      pb_max = pb
+      phb_max = phb(kte-1)
+
+      DO k = 1 , kte-1-2
+        znw(k) = eta_levels(k)
+      END DO
+      znw(kte-2) = 0.000
+
+      !  There is some iteration.  We want the top level, ztop, to be
+      !  consistent with the delta z, and we want the half level values
+      !  to be consistent with the eta levels.  The inner loop to 10 gets
+      !  the eta levels very accurately, but has a residual at the top, due
+      !  to dz changing.  We reset dz five times, and then things seem OK.
+
+      DO loop1 = 1 , 5
+        DO loop = 1 , 10
+          DO k = 8, kte-1-2-1
+            pb = (znw(k)+znw(k+1))*0.5 * (p_surf - p_top) + p_top
+            temp = MAX ( tiso, t00 + A*LOG(pb/p00) )
+            IF ( pb .LT. p_strat ) THEN
+              temp = tiso + A_strat * LOG ( pb/p_strat )
+            END IF
+            t_init = temp*(p00/pb)**(r_d/cp) - t0
+            alb(k) = (r_d/p1000mb)*(t_init+t0)*(pb/p1000mb)**cvpm
+            znw(k+1) = znw(k) - dz*g / ( mub*alb(k) )
+          END DO
+          pb = pb_max
+          t_init = t_init_max
+          alb(kte-1-2) = alb_max
+          znw(kte-2) = znw(kte-1-2) - dz*g / ( mub*alb(kte-1-2) )
+          IF ( ( loop1 .EQ. 5 ) .AND. ( loop .EQ. 10 ) ) THEN
+            print *,'Converged znw(kte) should be about 0.0 = ',znw(kte-2)
+          END IF
+          znw(kte-2) = 0.000
+        END DO
+
+        !  Here is where we check the eta levels values we just computed.
+
+        DO k = 1, kde-1-2
+          pb = (znw(k)+znw(k+1))*0.5 * (p_surf - p_top) + p_top
+          temp = MAX ( tiso, t00 + A*LOG(pb/p00) )
+          IF ( pb .LT. p_strat ) THEN
+            temp = tiso + A_strat * LOG ( pb/p_strat )
+          END IF
+          t_init = temp*(p00/pb)**(r_d/cp) - t0
+          alb(k) = (r_d/p1000mb)*(t_init+t0)*(pb/p1000mb)**cvpm
+        END DO
+
+        phb(1) = 0.
+        DO k  = 2,kde-2
+          phb(k) = phb(k-1) - (znw(k)-znw(k-1)) * mub*alb(k-1)
+        END DO
+
+        !  Reset the model top and the dz, and iterate.
+
+        ztop = phb(kde-2)/g
+        ztop_pbl = phb(8)/g
+        dz = ( ztop - ztop_pbl ) / REAL ( (kde-2) - 8 )
+      END DO
+
+      IF ( dz .GT. max_dz ) THEN
+        print *,'z (m)            = ',phb(1)/g
+        do k = 2 ,kte-2
+          print *,'z (m) and dz (m) = ',phb(k)/g,(phb(k)-phb(k-1))/g
+        end do
+        print *,'dz (m) above fixed eta levels = ',dz
+        print *,'namelist max_dz (m) = ',max_dz
+        print *,'namelist p_top (Pa) = ',p_top
+        CALL wrf_debug ( 0, 'You need one of three things:' )
+        CALL wrf_debug ( 0, '1) More eta levels to reduce the dz: e_vert' )
+        CALL wrf_debug ( 0, '2) A lower p_top so your total height is reduced: p_top_requested')
+        CALL wrf_debug ( 0, '3) Increase the maximum allowable eta thickness: max_dz')
+        CALL wrf_debug ( 0, 'All are namelist options')
+        CALL wrf_error_fatal ( 'dz above fixed eta levels is too large')
+      END IF
+
+      !  Add those 2 levels back into the middle, just above the 8 levels
+      !  that semi define a boundary layer.  After we open up the levels,
+      !  then we just linearly interpolate in znw.  So now levels 1-8 are
+      !  specified as the fixed boundary layer levels given in this routine.
+      !  The top levels, 12 through kte are those computed.  The middle
+      !  levels 9, 10, and 11 are equi-spaced in znw, and are each 1/2 the
+      !  the znw thickness of levels 11 through 12.
+
+      DO k = kte-2 , 9 , -1
+        znw(k+2) = znw(k)
+      END DO
+
+      znw( 9) = 0.75 * znw( 8) + 0.25 * znw(12)
+      znw(10) = 0.50 * znw( 8) + 0.50 * znw(12)
+      znw(11) = 0.25 * znw( 8) + 0.75 * znw(12)
+
+      DO k = 8, kte-1
+        pb = (znw(k)+znw(k+1))*0.5 * (p_surf - p_top) + p_top
+        temp = MAX ( tiso, t00 + A*LOG(pb/p00) )
+        IF ( pb .LT. p_strat ) THEN
+          temp = tiso + A_strat * LOG ( pb/p_strat )
+        END IF
+        t_init = temp*(p00/pb)**(r_d/cp) - t0
+        alb(k) = (r_d/p1000mb)*(t_init+t0)*(pb/p1000mb)**cvpm
+        phb(k) = phb(k-1) - (znw(k)-znw(k-1)) * mub*alb(k-1)
+      END DO
+      phb(kte) = phb(kte-1) - (znw(kte)-znw(kte-1)) * mub*alb(kte-1)
+
+      k=1
+      WRITE (*,FMT='("Full level index = ",I4,"     Height = ",F7.1," m")') k,phb(1)/g
+      do k = 2 ,kte
+        WRITE (*,FMT='("Full level index = ",I4,"     Height = ",F7.1," m      Thickness = ",F6.1," m")') k,phb(k)/g,(phb(k)-phb(k-1))/g
+      end do
+
+END SUBROUTINE compute_eta
 
 !-----------------------------------------------------------------------------------------
 

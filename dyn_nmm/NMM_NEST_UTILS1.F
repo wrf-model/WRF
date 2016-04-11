@@ -136,14 +136,14 @@ SUBROUTINE med_nest_egrid_configure ( parent , nest )
 
 !   soil configuration
 
-#ifdef HWRF
+#if ( HWRF == 1 )
 !zhang 
     if ( .not.nest%analysis ) then
 #endif
     nest%sldpth  = parent%sldpth
     nest%dzsoil  = parent%dzsoil
     nest%rtdpth  = parent%rtdpth
-#ifdef HWRF 
+#if ( HWRF == 1 ) 
     endif
 #endif
 
@@ -186,7 +186,7 @@ SUBROUTINE med_nest_egrid_configure ( parent , nest )
 
    CALL nl_get_truelat1 (parent%id, parent%truelat1 )
    CALL nl_get_truelat2 (parent%id, parent%truelat2 )
-#ifdef HWRF
+#if ( HWRF == 1 )
 ! bao : to make the restart output identical at the restart initial time for stand_lon
    CALL nl_get_stand_lon (parent%id, parent%stand_lon )
 #endif
@@ -230,14 +230,14 @@ SUBROUTINE med_nest_egrid_configure ( parent , nest )
 
 #define BCAST_RARRAY(X) BYTE_BCAST( X, size(X)*RWORDSIZE, comzilla )  
 !   soil configuration
-#ifdef HWRF
+#if ( HWRF == 1 )
 !zhang 
     if ( .not.nest%analysis ) then
 #endif
       CALL BCAST_RARRAY( grid%sldpth ) !  nest%sldpth  = parent%sldpth
       CALL BCAST_RARRAY( grid%dzsoil ) !  nest%dzsoil  = parent%dzsoil
       CALL BCAST_RARRAY( grid%rtdpth ) !  nest%rtdpth  = parent%rtdpth
-#ifdef HWRF 
+#if ( HWRF == 1 ) 
     endif
 #endif
 
@@ -2862,7 +2862,7 @@ END SUBROUTINE BASE_STATE_PARENT
 
       II=9999 !67 !35 !50   !4
       JJ=9999 !31 !73 !115  !192
-#if defined(EXPENSIVE_HWRF_DEBUG_STUFF)
+#if ( HWRF == 1 )
       IF(I.eq.II.and.J.eq.JJ)THEN
         WRITE(message,*)'DEBUG in SPLINE1:HSO= ',xnew(1:nold)
         CALL wrf_debug(1,trim(message))
@@ -2947,7 +2947,7 @@ END SUBROUTINE BASE_STATE_PARENT
 
 !  debug
 
-#if defined(EXPENSIVE_HWRF_DEBUG_STUFF)
+#if ( HWRF == 1 )
       if(i.eq.ii.and.j.eq.jj)then
         write(message,*) 'DEBUG:: k1,xnew(k1),ynew(k1): ', k1,xnew(k1),ynew(k1)
         CALL wrf_debug(1,trim(message))
@@ -3401,7 +3401,7 @@ IF ( grid%active_this_task ) THEN
 !   to find where sea ice is. That's why alogirthm here is slightly different than the
 !   one used in module_initalize_real.f
 
-#ifdef HWRF
+#if ( HWRF == 1 )
 !zhang's doing: added to AVOID THIS COMPUTATION IF THE NEST IS STARTED USING ANALYSIS FILE
    IF(.not. grid%analysis)THEN
 #endif
@@ -3506,7 +3506,7 @@ IF ( grid%active_this_task ) THEN
 #endif
       ENDIF
 !
-#if defined(HWRF)
+#if ( HWRF == 1 )
       ! HWRF should not perform the check below because the nmm_tsk is
       ! update with the correct skin temperature every timestep (on both
       ! land and sea points).
@@ -3541,7 +3541,7 @@ IF ( grid%active_this_task ) THEN
         grid%sldpth(3)=0.6
         grid%sldpth(4)=1.0
 
-#ifdef HWRF
+#if ( HWRF == 1 )
 !zhang's doing: added to AVOID THIS COMPUTATION IF THE NEST IS STARTED USING ANALYSIS FILE
    ENDIF ! <------ for analysis set to false
 #endif 

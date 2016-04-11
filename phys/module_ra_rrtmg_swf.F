@@ -11233,14 +11233,13 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
                        its,ite, jts,jte, kts,kte,                 &
                        swupflx, swupflxc, swdnflx, swdnflxc,      &
                        tauaer3d_sw,ssaaer3d_sw,asyaer3d_sw,       & ! jararias 2013/11
-                       use_aer3d,                                 & ! bug fix, SGT 2015/03
                        swddir, swddni, swddif,                    & ! jararias 2013/08
                        xcoszen,julian                             & ! jararias 2013/08
                                                                   )
 !------------------------------------------------------------------
       IMPLICIT NONE
 !------------------------------------------------------------------
-   LOGICAL, INTENT(IN )      ::        warm_rain, use_aer3d
+   LOGICAL, INTENT(IN )      ::        warm_rain
    LOGICAL, INTENT(IN )      ::   is_CAMMGMP_used ! Added for CAM5 RRTMG<->CAMMGMP
 !
    INTEGER, INTENT(IN )      ::        ids,ide, jds,jde, kds,kde, &
@@ -11307,10 +11306,7 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
          julian      ! julian day (1-366)
    real, dimension(ims:ime,jms:jme), optional, intent(in) :: &
          xcoszen     ! cosine of the solar zenith angle
-   real, dimension(ims:ime,kms:kme,jms:jme,nbndsw), optional,     &
-        intent(in)                                :: tauaer3d_sw, &
-                                                     ssaaer3d_sw, &
-                                                     asyaer3d_sw
+   real, dimension(:,:,:,:), pointer :: tauaer3d_sw,ssaaer3d_sw,asyaer3d_sw
 ! ------------------------ jararias end snippet -----------------
 
 
@@ -12242,9 +12238,8 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
       end do
       end do
 
-      if ( use_aer3d ) then
+      if ( associated (tauaer3d_sw) ) then
 ! ---- jararias 11/2012
-         if (aer_opt .eq. 2 .or. aer_opt .eq. 3) then
             do nb=1,nbndsw
                do k=kts,kte
                   tauaer(icol,k,nb)=tauaer3d_sw(i,k,j,nb)
@@ -12252,7 +12247,6 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
                   asmaer(icol,k,nb)=asyaer3d_sw(i,k,j,nb)
                end do
             end do
-         end if
       end if
 
 #if ( WRF_CHEM == 1 )

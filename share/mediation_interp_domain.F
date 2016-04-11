@@ -124,10 +124,9 @@ SUBROUTINE med_interp_domain ( parent_grid , nested_grid )
 
   CALL model_to_grid_config_rec ( nested_grid%id , model_config_rec , config_flags )
   grid => nested_grid%intermediate_grid
+#  if (defined(MOVE_NESTS) || ((!defined(KEEP_INT_AROUND)) && (!defined(SGIALTIX)) && (!defined(FUJITSU_FX10))))
 
-#  if (defined(MOVE_NESTS) || (!defined(SGIALTIX) && (!defined(FUJITSU_FX10))))
-!  IF ( grid%active_this_task )) THEN
-    CALL alloc_space_field ( grid, grid%id , 1 , 2 , .TRUE. , grid%active_this_task,  &
+    CALL alloc_space_field ( grid, grid%id , 1 , 2 , .TRUE. , nested_grid%active_this_task,  &
                            grid%sd31, grid%ed31, grid%sd32, grid%ed32, grid%sd33, grid%ed33, &
                            grid%sm31,  grid%em31,  grid%sm32,  grid%em32,  grid%sm33,  grid%em33, &
                            grid%sp31,  grid%ep31,  grid%sp32,  grid%ep32,  grid%sp33,  grid%ep33, &
@@ -160,8 +159,8 @@ SUBROUTINE med_interp_domain ( parent_grid , nested_grid )
 
   grid => nested_grid%intermediate_grid
   CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
-  IF ( grid%active_this_task )) THEN
-#  if (defined(MOVE_NESTS) || (!defined(SGIALTIX) && (!defined(FUJITSU_FX10))))
+# if (defined(MOVE_NESTS) || ((!defined(KEEP_INT_AROUND)) && (!defined(SGIALTIX)) && (!defined(FUJITSU_FX10))))
+  IF ( grid%active_this_task ) THEN
   CALL dealloc_space_field ( grid )
   ENDIF
 # endif
@@ -181,8 +180,7 @@ SUBROUTINE med_interp_domain ( parent_grid , nested_grid )
   CALL wrf_dm_nestexchange_init
   CALL model_to_grid_config_rec ( nested_grid%id , model_config_rec , config_flags )
   grid => nested_grid%intermediate_grid
-
-#  if (defined(MOVE_NESTS) || (!defined(SGIALTIX) && (!defined(FUJITSU_FX10))))
+#  if (defined(MOVE_NESTS) || ((!defined(KEEP_INT_AROUND)) && (!defined(SGIALTIX)) && (!defined(FUJITSU_FX10))))
     CALL ensure_space_field &
                          ( grid, grid%id , 1 , 2 , .TRUE. , nested_grid%active_this_task,   &
                            grid%sd31, grid%ed31, grid%sd32, grid%ed32, grid%sd33, grid%ed33, &
@@ -237,7 +235,9 @@ SUBROUTINE med_interp_domain_small ( parent_grid , nested_grid )
    USE module_domain
    USE module_configure
    USE module_timing
+#if (defined(MOVE_NESTS) || ((!defined(KEEP_INT_AROUND)) && (!defined(SGIALTIX)) && (!defined(FUJITSU_FX10))))
    USE module_dm, ONLY : intercomm_active
+#endif
    IMPLICIT NONE
    TYPE(domain), POINTER :: parent_grid , nested_grid
    TYPE(domain), POINTER :: grid
@@ -285,9 +285,9 @@ SUBROUTINE med_interp_domain_small ( parent_grid , nested_grid )
 #if (EM_CORE == 1 && defined( DM_PARALLEL ))
   CALL model_to_grid_config_rec ( nested_grid%id , model_config_rec , config_flags )
   grid => nested_grid%intermediate_grid
-#  if (defined(MOVE_NESTS) || (!defined(SGIALTIX) && (!defined(FUJITSU_FX10))))
+#  if (defined(MOVE_NESTS) || ((!defined(KEEP_INT_AROUND)) && (!defined(SGIALTIX)) && (!defined(FUJITSU_FX10))))
 
-  CALL alloc_space_field ( grid, grid%id , 1 , 2 , .TRUE. , intercomm_active( grid%id ),   &
+  CALL alloc_space_field ( grid, grid%id , 1 , 2 , .TRUE. , nested_grid%active_this_task,   &
                            grid%sd31, grid%ed31, grid%sd32, grid%ed32, grid%sd33, grid%ed33, &
                            grid%sm31,  grid%em31,  grid%sm32,  grid%em32,  grid%sm33,  grid%em33, &
                            grid%sp31,  grid%ep31,  grid%sp32,  grid%ep32,  grid%sp33,  grid%ep33, &
@@ -316,7 +316,7 @@ SUBROUTINE med_interp_domain_small ( parent_grid , nested_grid )
 
   grid => nested_grid%intermediate_grid
   CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
-#  if (defined(MOVE_NESTS) || (!defined(SGIALTIX) && (!defined(FUJITSU_FX10))))
+#  if (defined(MOVE_NESTS) || ((!defined(KEEP_INT_AROUND)) && (!defined(SGIALTIX)) && (!defined(FUJITSU_FX10))))
   IF ( intercomm_active( grid%id ) ) THEN
   CALL dealloc_space_field ( grid )
   ENDIF

@@ -703,6 +703,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 5, Grell 3D ensemble scheme
                                      = 6, Modifed Tiedtke scheme (ARW only)
                                      = 7, Zhang-McFarlane scheme from CAM5 (CESM 1_0_1)
+                                     = 10, Modified Kain-Fritsch scheme with triger function based on PDFs (ARW only)
                                      = 11, Multi-scale Kain-Fritsch scheme
                                      = 14, New GFS simplified Arakawa-Schubert scheme from YSU (ARW only)
                                      = 16, A newer Tiedtke scheme
@@ -1047,7 +1048,10 @@ Options for use with the Noah-MP Land Surface Model:
  if_ramping                          = 0        ; 0= nudging ends as a step function, 1= ramping nudging down at end of period
  dtramp_min                          = 60.0     ; time (min) for ramping function, 60.0=ramping starts at last analysis time, 
                                                                                   -60.0=ramping ends at last analysis time
- grid_sfdda (max_dom)                = 0        ; surface fdda switch (1, on; 0, off)
+ grid_sfdda (max_dom)                = 0        ; surface fdda switch
+                                                  0: off; 
+                                                  1: nudging selected surface fields; 
+                                                  2: FASDAS (flux-adjusting surface data assimilation system)
  sgfdda_inname                       = "wrfsfdda_d<domain>" ; defined name for sfc nudgingi in input file (from program obsgrid) 
  sgfdda_end_h (max_dom)              = 6        ; time (in hours) to stop sfc nudging after start of forecast
  sgfdda_interval_m (max_dom)         = 180      ; time interval (in min) between sfc analysis times (must use minutes)

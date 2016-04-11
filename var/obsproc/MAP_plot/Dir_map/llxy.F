@@ -24,7 +24,7 @@ C Y VALUES THAT COME OUT OF THE SUBROUTINE LLXY ARE THE COARSE DOMAIN           
 C GRID INDICES THAT DEFINE THE STATION LOCATION.  THE TERRAIN PROGRAM            LLXY.24
 C THEN COVERTS THE X AND Y VALUES BACK TO THE NESTED DOMAIN INDICES.             LLXY.25
 C                                                                                LLXY.26
-# include <maps.incl> 
+# include "maps.incl" 
 C
       CENTRI = FLOAT(IYY + 1)/2.0
       CENTRJ = FLOAT(JXX + 1)/2.0 

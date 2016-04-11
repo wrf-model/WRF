@@ -40,7 +40,7 @@ MODULE module_wrf_error
   ! Defaults: Non-MPI configurations and HWRF turn OFF stderr.
   !    MPI configurations other than HWRF turn ON stderr.
 
-#if defined( DM_PARALLEL ) && ! defined( STUBMPI ) && !defined(HWRF)
+#if defined( DM_PARALLEL ) && ! defined( STUBMPI ) && !(HWRF == 1)
   integer :: stderrlog=1 ! 1/T = send to write(0,...) if buffered=0
 #else
   integer :: stderrlog=0! 1/T = send to write(0,...) if buffered=0
@@ -98,7 +98,7 @@ CONTAINS
     ! MPI configurations default to stderr logging, except for HWRF.
     ! Non-MPI does not log to stderr.  (Note that fatal errors always
     ! are sent to both stdout and stderr regardless of config.)
-#if defined( DM_PARALLEL ) && ! defined( STUBMPI ) && !defined(HWRF)
+#if defined( DM_PARALLEL ) && ! defined( STUBMPI ) && !(HWRF == 1)
     stderr_logging=1
 #else
     stderr_logging=0
@@ -305,6 +305,9 @@ SUBROUTINE wrf_error_fatal3( file_str, line, str )
   CALL esmf_finalize(endflag=ESMF_END_ABORT)
 #endif
 
+#ifdef TRACEBACKQQ
+  CALL tracebackqq
+#endif
   CALL wrf_abort
 END SUBROUTINE wrf_error_fatal3
 

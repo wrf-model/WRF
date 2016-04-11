@@ -14,7 +14,8 @@ module_dm.o: module_machine.o module_state_description.o module_wrf_error.o \
 		module_timing.o \
 		module_comm_nesting_dm.o \
 		module_configure.o module_comm_dm.o \
-                module_cpl.o
+		module_cpl.o \
+		../share/module_model_constants.o
 
 module_timing.o: hires_timer.o clog.o
 
@@ -173,6 +174,9 @@ module_bl_gfs.o: module_gfs_machine.o \
 module_bl_gfs2011.o: module_gfs_machine.o \
 		 module_gfs_physcons.o
 
+module_bl_gfsedmf.o: module_gfs_machine.o \
+		 module_gfs_physcons.o
+
 module_bl_mynn.o: ../share/module_model_constants.o
 
 module_cam_upper_bc.o: module_cam_shr_kind_mod.o \
@@ -310,6 +314,10 @@ module_gfs_funcphys.o: module_gfs_machine.o \
 		       module_gfs_physcons.o
 
 module_cu_sas.o: module_gfs_machine.o \
+		 module_gfs_funcphys.o \
+		 module_gfs_physcons.o
+
+module_cu_scalesas.o: module_gfs_machine.o \
 		 module_gfs_funcphys.o \
 		 module_gfs_physcons.o
 
@@ -541,6 +549,7 @@ module_physics_init.o : \
 		module_cu_gd.o			\
 		module_cu_nsas.o		\
 		module_cu_sas.o			\
+		module_cu_scalesas.o		\
 		module_cu_osas.o		\
 		module_cu_camzm_driver.o        \
 		module_cu_kfcup.o               \
@@ -610,6 +619,7 @@ module_cumulus_driver.o: \
 		module_cu_gd.o \
 		module_cu_nsas.o \
 		module_cu_sas.o \
+		module_cu_scalesas.o \
 		module_cu_osas.o \
 		module_cu_camzm_driver.o \
 		module_cu_tiedtke.o \
@@ -634,6 +644,7 @@ module_pbl_driver.o:  \
 		module_bl_camuwpbl_driver.o \
 		module_bl_gfs.o \
 		module_bl_gfs2011.o \
+		module_bl_gfsedmf.o \
 		module_bl_mynn.o \
 		module_bl_fogdes.o \
 		module_bl_gwdo.o \

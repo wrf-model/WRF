@@ -118,6 +118,8 @@ CONTAINS
 !        ==> only diagnostic, but with removal of too large drops
 !        effective radius of hydrometeors, bae from kiaps, jan 2015
 !        ==> consistency in solar insolation of rrtmg radiation
+!        bug fix in melting terms, bae from kiaps, nov 2015
+!        ==> density of air is divided, which has not been
 !
 !  Reference) Lim and Hong (LH, 2010) Mon. Wea. Rev. 
 !             Juang and Hong (JH, 2010) Mon. Wea. Rev.
@@ -813,7 +815,8 @@ CONTAINS
             psmlt(i,k) = (1.414e3*(1.496e-6 * ((t(i,k))*sqrt(t(i,k)))      &
                          /((t(i,k))+120.)/(den(i,k)))*(den(i,k)))/xlf      &
                         *(t0c-t(i,k))*pi/2.*n0sfac(i,k)                    &
-                        *(precs1*rslope2(i,k,2)+precs2*work2(i,k)*coeres)
+                        *(precs1*rslope2(i,k,2)+precs2*work2(i,k)*coeres)  &
+                        /den(i,k)
             psmlt(i,k) = min(max(psmlt(i,k)*dtcld/mstep(i),-qrs(i,k,2)     &
                           /mstep(i)),0.)
 !-------------------------------------------------------------------

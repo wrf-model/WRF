@@ -41,7 +41,7 @@ module wrf_data
   integer                , parameter      :: WrfDataHandleMax = 99
   integer                , parameter      :: MaxDims          = 2000 ! = NF_MAX_VARS
 #if(WRF_CHEM == 1)
-  integer                , parameter      :: MaxVars          = 8000
+  integer                , parameter      :: MaxVars          = 10000
 #else
   integer                , parameter      :: MaxVars          = 3000
 #endif

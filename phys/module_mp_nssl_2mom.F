@@ -56,6 +56,22 @@
 !
 ! Note: Some parameters below apply to unreleased features.
 !
+! WRF 3.8 updates:
+!   Fixed issue with reflectivity conservation for graupel melting into rain. Rain number concentrations were too low,
+!       resulting in excessive reflectivity of a couple dBZ
+!   Changed default value of iusewetgraupel to 1 (turns off diagnostic meltwater on graupel for reflectivity)
+!   Apply a 70 m/s fall speed limit for sedimentation
+!   Changed vapor ice nucleation to Meyers-Ferrier method (original scheme)
+!   New method for Bigg freezing (ibiggopt=2)
+!   Reduced snow aggregration efficiency and restricted aggregation to higher temperatures (assuming dendrites and mechanical aggregation)
+!   Increased maximum graupel-droplet collection efficiency when hail is turned off (nssl_2momg)
+!   Updates for compatibility with WRF-NMM
+!   Added calculation of hail number concentration in calcnfromq (creates number concentration from mixing ratio
+!       when starting from an analysis). And fixed error in graupel intercept
+!   Bug fix in snow fall speeds
+!   Further fix in snow reflectivity
+!   Use diameter of maximum mass rather than mean diamter when checking maximum size
+!
 !---------------------------------------------------------------------
 
 
@@ -97,7 +113,7 @@ MODULE module_mp_nssl_2mom
   integer  :: iuseferrier = 1  ! =1: use dry graupel only from Ferrier 1994; = 0: Use Smith (wet graupel)
   integer  :: idbzci      = 0
  ! new version  integer  :: iusewetgraupel = 1 ! =1 to turn on use of QHW for graupel reflectivity (only for ZVDM -- mixedphase)
-  integer  :: iusewetgraupel = 4 ! =1 to turn on use of QHW for graupel reflectivity (only for ZVDM -- mixedphase)
+  integer  :: iusewetgraupel = 1 ! =1 to turn on use of QHW for graupel reflectivity (only for ZVDM -- mixedphase)
                                  ! =2 turn on for graupel density less than 300. only 
   integer  :: iusewethail = 0 ! =1 to turn on use of QHW for graupel reflectivity (only for ZVDM -- mixedphase)
   integer  :: iusewetsnow = 1 ! =1 to turn on diagnosed bright band
@@ -270,8 +286,8 @@ MODULE module_mp_nssl_2mom
   real   , private :: ehimax = 1.0 ! Maximum collection efficiency (graupel - ice crystal)
   real   , private :: ehsmax = 0.5 ! Maximum collection efficiency (graupel - snow)
   real   , private :: ecollmx = 0.5 ! Maximum collision efficiency for graup/hail with ice; used only for charging rates
-  integer, private :: iglcnvi = 3  ! flag for riming conversion from cloud ice to rimed ice/graupel
-  integer, private :: iglcnvs = 3  ! flag for conversion from snow to rimed ice/graupel
+  integer, private :: iglcnvi = 2  ! flag for riming conversion from cloud ice to rimed ice/graupel
+  integer, private :: iglcnvs = 2  ! flag for conversion from snow to rimed ice/graupel
 
   real   , private :: rz          ! reflectivity conservation factor for graupel/rain
                          ! now calculated in icezvd_dr.F from alphah and rnu
@@ -781,6 +797,9 @@ MODULE module_mp_nssl_2mom
       IF ( ihvol == -1 ) THEN
         lhab = lhab - 1  ! turns off hail -- option for single moment, only!!
         lhl = 0
+        ehw0 = 0.75
+        iehw = 2
+        dfrz = Max( dfrz, 0.5e-3 )
       ENDIF
 
 !      IF ( ipelec > 0 ) idonic = .true.
@@ -1112,17 +1131,32 @@ MODULE module_mp_nssl_2mom
       xnu(lh) = (dnu(lh) - 2.)/3.
       xmu(lh) = dmuh/3.
 
-      rz =  ((4 + alphah)*(5 + alphah)*(6 + alphah)*(1. + xnu(lr)))/ &
+      IF ( imurain == 3 ) THEN ! rain is gamma of volume
+      rz =  ((4. + alphah)*(5. + alphah)*(6. + alphah)*(1. + xnu(lr)))/ & 
      &  ((1 + alphah)*(2 + alphah)*(3 + alphah)*(2. + xnu(lr)))
 
 !      IF ( ipconc .lt. 5 ) alphahl = alphah
+      
+      rzhl =  ((4. + alphahl)*(5. + alphahl)*(6. + alphahl)*(1. + xnu(lr)))/ & 
+     &  ((1. + alphahl)*(2. + alphahl)*(3. + alphahl)*(2. + xnu(lr)))
 
-      rzhl =  ((4 + alphahl)*(5 + alphahl)*(6 + alphahl)*(1. + xnu(lr)))/ &
-     &  ((1 + alphahl)*(2 + alphahl)*(3 + alphahl)*(2. + xnu(lr)))
+      rzs =  1. ! assume rain and snow are both gamma volume
 
+      ELSE ! rain is gamma of diameter
+      
+      rz =  ((4. + alphah)*(5. + alphah)*(6. + alphah)*(1. + alphar)*(2. + alphar)*(3. + alphar))/ & 
+     &  ((1 + alphah)*(2 + alphah)*(3 + alphah)*(4. + alphar)*(5. + alphar)*(6. + alphar))
+      
+      rzhl =  ((4. + alphahl)*(5. + alphahl)*(6. + alphahl)*(1. + alphar)*(2. + alphar)*(3. + alphar))/ & 
+     &  ((1 + alphahl)*(2 + alphahl)*(3 + alphahl)*(4. + alphar)*(5. + alphar)*(6. + alphar))
+
+      
       rzs =   & 
      &  ((1. + alphar)*(2. + alphar)*(3. + alphar)*(2. + xnu(ls)))/  &
      &  ((4. + alphar)*(5. + alphar)*(6. + alphar)*(1. + xnu(ls)))
+       
+
+      ENDIF
 
       IF ( ipconc <= 5 ) THEN 
         imltshddmr = Min(1, imltshddmr)
@@ -9339,7 +9373,7 @@ END SUBROUTINE nssl_2mom_driver
       real     q_noliqmn, q_noliqmx
       real     scsacimn, scsacimx
       
-      double precision :: dtpinv
+      real :: dtpinv
       
 !   arrays for temporary bin space
 
@@ -12501,13 +12535,13 @@ END SUBROUTINE nssl_2mom_driver
              qrfrzf(mgs) = frach*qrfrz(mgs)
 !             crfrzf(mgs) = Min( qrfrz(mgs)*rho0(mgs)/(xdn(mgs,lh)*vgra), crfrz(mgs) )
             IF ( ibfr .le. 1 ) THEN
-             crfrzf(mgs) = frach*Min(crfrz(mgs), dble(qrfrz(mgs)/(bfnu*1.0*vr1mm*1000.0)*rho0(mgs)) ) ! rzxh(mgs)*crfrz(mgs)
+             crfrzf(mgs) = frach*Min(crfrz(mgs), qrfrz(mgs)/(bfnu*1.0*vr1mm*1000.0)*rho0(mgs) ) ! rzxh(mgs)*crfrz(mgs)
             ELSEIF ( ibfr .eq. 5 ) THEN
-             crfrzf(mgs) = frach*Min(crfrz(mgs), dble(qrfrz(mgs)/(bfnu*vfrz*1000.0)*rho0(mgs)) )*rzxh(mgs)  !*crfrz(mgs)
+             crfrzf(mgs) = frach*Min(crfrz(mgs), qrfrz(mgs)/(bfnu*vfrz*1000.0)*rho0(mgs) )*rzxh(mgs)  !*crfrz(mgs)
             ELSEIF ( ibfr .eq. 2 ) THEN
-             crfrzf(mgs) = frach*Min(crfrz(mgs), dble(qrfrz(mgs)/(bfnu*vfrz*1000.0)*rho0(mgs)) ) ! rzxh(mgs)*crfrz(mgs)
+             crfrzf(mgs) = frach*Min(crfrz(mgs), qrfrz(mgs)/(bfnu*vfrz*1000.0)*rho0(mgs) ) ! rzxh(mgs)*crfrz(mgs)
             ELSEIF ( ibfr .eq. 6 ) THEN
-             crfrzf(mgs) = frach*Max(crfrz(mgs), dble(qrfrz(mgs)/(bfnu*9.*xv(mgs,lr)*1000.0)*rho0(mgs)) ) ! rzxh(mgs)*crfrz(mgs)
+             crfrzf(mgs) = frach*Max(crfrz(mgs), qrfrz(mgs)/(bfnu*9.*xv(mgs,lr)*1000.0)*rho0(mgs) ) ! rzxh(mgs)*crfrz(mgs)
             ELSE
              crfrzf(mgs) = frach*crfrz(mgs)
             ENDIF 
@@ -13603,7 +13637,7 @@ END SUBROUTINE nssl_2mom_driver
       ELSEIF ( ipconc < 4 ) THEN ! LFO
            IF ( lwsm6 ) THEN
              qimax = rhoinv(mgs)*roqimax
-             qscni(mgs) = Min(0.9d0*qx(mgs,li), Max( 0.d0, (qx(mgs,li) - qimax)*dtpinv ) )
+             qscni(mgs) = Min(0.9*qx(mgs,li), Max( 0., (qx(mgs,li) - qimax)*dtpinv ) )
            ELSE
              qscni(mgs) = 0.001*eii(mgs)*max((qx(mgs,li)-1.e-3),0.0)
              qscni(mgs) = min(qscni(mgs),qxmxd(mgs,li))

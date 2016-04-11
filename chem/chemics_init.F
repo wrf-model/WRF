@@ -254,6 +254,10 @@ call wrf_message("**************************************************************
        call wrf_message("WARNING: dust option 1 currently works only with the GOCART aerosol option.")
    endif
 
+   if ( config_flags%dust_opt == 2 ) then
+       call wrf_error_fatal("WARNING: dust option 2 currently does not function properly and has been disabled.")
+   endif
+
    if ( config_flags%seas_opt == 1 ) then
        call wrf_message("WARNING: sea salt option 1 currently works only with the GOCART aerosol option.")
    endif

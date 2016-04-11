@@ -12,7 +12,7 @@ MODULE module_physics_init
 
    USE module_state_description
    USE module_model_constants
-   USE module_configure, ONLY : grid_config_rec_type ! , p_qnn, f_qnn
+   USE module_configure, ONLY : grid_config_rec_type
 !  USE module_ssib_veg , ONLY : init_module_ssib_veg !fds (SSiB constants)
    !Local data for CAM's MG MP scheme
    integer  :: ixcldliq, ixcldice, ixnumliq, ixnumice
@@ -89,6 +89,8 @@ CONTAINS
                          m_ps_1,m_ps_2,m_hybi,aerosolc_1,aerosolc_2,& ! Optional
                          RUNDGDTEN,RVNDGDTEN,RTHNDGDTEN,         &    ! Optional
                          RPHNDGDTEN,RQVNDGDTEN,RMUNDGDTEN,       &    ! Optional
+                         SDA_HFX, SDA_QFX, QNORM, HFX_BOTH, QFX_BOTH, & ! fasdas
+                         HFX_FDDA,                                    & ! fasdas
                          FGDT,STEPFG,                            &    ! Optional
                          cugd_tten,cugd_ttens,cugd_qvten,        &    ! Optional
                          cugd_qvtens,cugd_qcten,                 &    ! Optional
@@ -98,6 +100,7 @@ CONTAINS
                          CHXY, FWETXY, SNEQVOXY, ALBOLDXY, QSNOWXY,       & ! Optional Noah-MP
                          WSLAKEXY, ZWTXY, WAXY, WTXY, LFMASSXY, RTMASSXY, & ! Optional Noah-MP
                          STMASSXY, WOODXY, STBLCPXY, FASTCPXY,            & ! Optional Noah-MP
+                         GRAINXY, GDDXY,                                  & ! Optional Noah-MP
                          XSAIXY, LAI,                                     & ! Optional Noah-MP
                          T2MVXY, T2MBXY, CHSTARXY ,                       & ! Optional Noah-MP
                          SMOISEQ  ,SMCWTDXY ,RECHXY, DEEPRECHXY, AREAXY,  & ! Optional Noah-MP 
@@ -220,7 +223,6 @@ CONTAINS
                          ,G_URB2D_mosaic,RN_URB2D_mosaic                                                      & ! danli mosaic 
                          ,TS_URB2D_mosaic                                                                     & ! danli mosaic 
                          ,TS_RUL2D_mosaic                                                                     & ! danli mosaic
-!                        ,P_QNN, F_QNN   &
                          )
 
 !-----------------------------------------------------------------
@@ -455,6 +457,8 @@ CONTAINS
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: RTMASSXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: STMASSXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: WOODXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: GRAINXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: GDDXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: STBLCPXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: FASTCPXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: XSAIXY
@@ -477,8 +481,6 @@ CONTAINS
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: PEXPXY
 
 !   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),  OPTIONAL,  INTENT(INOUT ) ::   qnn_curr
-!  integer, optional, intent(in) :: p_qnn
-!  LOGICAL, OPTIONAL, intent(in) :: f_qnn
 
    INTEGER , OPTIONAL,  INTENT(OUT) :: STEPWTD
    REAL , OPTIONAL, INTENT(IN) :: WTDDT
@@ -502,6 +504,15 @@ CONTAINS
    INTEGER , OPTIONAL, INTENT(OUT) :: STEPFG
    REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , OPTIONAL, INTENT(INOUT) ::    &!BSINGH(PNNL)- should be declared inout
              RUNDGDTEN, RVNDGDTEN, RTHNDGDTEN, RPHNDGDTEN, RQVNDGDTEN
+!
+! FASDAS
+!
+   REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT), OPTIONAL ::  &
+             SDA_HFX, SDA_QFX, QNORM, HFX_BOTH, QFX_BOTH
+!  INTEGER,  INTENT(IN   )                                            ::  fasdas
+   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , OPTIONAL, INTENT(INOUT) ::    &
+             HFX_FDDA
+!
    REAL,     DIMENSION( ims:ime , jms:jme ) , OPTIONAL, INTENT(INOUT) ::    &
              RMUNDGDTEN
 
@@ -767,6 +778,7 @@ integer myproc
    has_reqc = 0
    has_reqi = 0
    has_reqs = 0
+   IF ( config_flags%use_mp_re .EQ. 1 ) THEN
    if ((config_flags%ra_lw_physics .eq. RRTMG_LWSCHEME .or. config_flags%ra_lw_physics .eq. RRTMG_LWSCHEME_FAST) .and. &
        (config_flags%ra_sw_physics .eq. RRTMG_SWSCHEME .or. config_flags%ra_sw_physics .eq. RRTMG_SWSCHEME_FAST) .and. &
         (config_flags%mp_physics  .eq. THOMPSON .or.        &
@@ -783,6 +795,7 @@ integer myproc
       has_reqi = 1
       has_reqs = 1
    endif
+   ENDIF
 
 !-- should be from the namelist
 
@@ -815,10 +828,12 @@ integer myproc
    CALL nl_get_isurban(id,isurban)
 !jm   CALL nl_get_mminlu( 1, mminlu_loc )
    CALL nl_get_mminlu( id, mminlu_loc )
-IF ( trim(mminlu_loc) .eq. "" ) THEN
-  CALL wrf_message('WARNING:   MMINLU NOT SET, USING USGS')
-  MMINLU_LOC = 'USGS'
-ENDIF
+#if (NMM_CORE == 1 && HWRF == 1 )
+   IF ( trim(mminlu_loc) .eq. "" ) THEN
+     CALL wrf_message('WARNING:   MMINLU NOT SET, USING USGS')
+     MMINLU_LOC = 'USGS'
+   ENDIF
+#endif
    CALL wrf_debug(100,'after nl_get_iswater, nl_get_isice, nl_get_mminlu_loc')
 !-- temporary fix by ww
    landuse_ISICE = isice
@@ -1001,32 +1016,6 @@ ENDIF
                 its, ite, jts, jte, kts, kte                       )
    ENDIF
 
-#if 0
-   IF ( f_qnn ) THEN
-! Initialize simple ccn field
-     IF ( .not. Any(scalar(:,:,:,p_qnn) > 1.0 ) ) THEN ! initialize ccn if not already done
-       DO j=jts,jtf
-         DO k=kts,ktf
-          DO i=its,itf
-           IF ( config_flags%mp_physics == wdm5scheme .or. config_flags%mp_physics == wdm6scheme ) THEN
-             scalar(i,k,j,p_qnn) = ccn_conc
-           ELSEIF ( config_flags%mp_physics == nssl_2momccn ) THEN
-#if (EM_CORE == 1)
-! for NMM, we will leave qnn=0 and use the invertccn=true in the NSSL 2-mom so that we can not worry about boundary conditions
-! That means only one value of qnn in NMM for now
-             scalar(i,k,j,p_qnn)  = nssl_cccn/1.225
-             ccn_conc =  nssl_cccn/1.225
-#endif
-           ELSE
-             scalar(i,k,j,p_qnn)  = ccn_conc
-           ENDIF
-          ENDDO
-         ENDDO
-        ENDDO
-      ENDIF
-   ENDIF
-#endif
-   
   ENDIF !}
 
 !-- convert zfull and zhalf to sigma values for ra_init (Eta CO2 needs these)
@@ -1129,6 +1118,7 @@ ENDIF
                 CHXY, FWETXY, SNEQVOXY, ALBOLDXY, QSNOWXY,      &
                 WSLAKEXY, ZWTXY, WAXY, WTXY, LFMASSXY, RTMASSXY,&
                 STMASSXY, WOODXY, STBLCPXY, FASTCPXY,           &
+                GRAINXY, GDDXY,                                 &
                 XSAIXY, LAI,                                    &
                 SMOISEQ, SMCWTDXY, RECHXY, DEEPRECHXY, AREAXY,  &
                 WTDDT, STEPWTD, QRFSXY ,QSPRINGSXY ,QSLATXY,   &
@@ -1298,6 +1288,8 @@ ENDIF
 
    CALL fg_init(STEPFG,FGDT,DT,id,RUNDGDTEN,RVNDGDTEN,          &
                 RTHNDGDTEN,RPHNDGDTEN,RQVNDGDTEN,RMUNDGDTEN,    &
+                SDA_HFX, SDA_QFX, QNORM, HFX_BOTH, QFX_BOTH,    & ! fasdas
+                HFX_FDDA,                                       & ! fasdas
                 config_flags,restart,                           &
                 allowed_to_read ,                               &
                 ids, ide, jds, jde, kds, kde,                   &
@@ -2040,6 +2032,7 @@ USE module_dm, ONLY : local_communicator
                 CHXY, FWETXY, SNEQVOXY, ALBOLDXY, QSNOWXY,      &
                 WSLAKEXY, ZWTXY, WAXY, WTXY, LFMASSXY, RTMASSXY,&
                 STMASSXY, WOODXY, STBLCPXY, FASTCPXY,           &
+                GRAINXY, GDDXY,                                 &
                 XSAIXY, LAI,                                    &
                 SMOISEQ, SMCWTDXY, RECHXY, DEEPRECHXY, AREAXY,  &
                 WTDDT, STEPWTD,QRFSXY ,QSPRINGSXY ,QSLATXY,     &
@@ -2162,6 +2155,7 @@ USE module_dm, ONLY : local_communicator
    USE module_sf_myjsfc
    USE module_sf_qnsesfc
    USE module_sf_noahdrv
+   USE module_sf_noahlsm, only : LOW_DENSITY_RESIDENTIAL, HIGH_DENSITY_RESIDENTIAL, HIGH_INTENSITY_INDUSTRIAL
    USE module_sf_noahmpdrv
 #ifdef WRF_USE_CLM
    USE module_sf_clm, only : clminit
@@ -2315,6 +2309,8 @@ integer,intent(in) :: id
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: RTMASSXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: STMASSXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: WOODXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: GRAINXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: GDDXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: STBLCPXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: FASTCPXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: XSAIXY
@@ -2696,7 +2692,18 @@ integer,intent(in) :: id
 
 #endif
       CASE (LSMSCHEME)
-          CALL LSMINIT(id,VEGFRA,SNOW,SNOWC,SNOWH,CANWAT,SMSTAV,  &
+          
+          IF(TRIM(mminlu) .EQ. 'NLCD40')THEN
+            CALL wrf_message('Using NLCD40 for Noah, redefine urban categories ')
+            DO j=jts,jte
+            DO i=its,ite
+               IF(IVGTYP(i,j)==23) IVGTYP(i,j) = 24
+               IF(IVGTYP(i,j)==25) IVGTYP(i,j) = 24
+            ENDDO
+            ENDDO
+          ENDIF
+ 
+          CALL LSMINIT(VEGFRA,SNOW,SNOWC,SNOWH,CANWAT,SMSTAV,  &
                      SMSTOT, SFCRUNOFF,UDRUNOFF,ACSNOW,        &
                      ACSNOM,IVGTYP,ISLTYP,TSLB,SMOIS,SH2O,ZS,DZS, &
                      MMINLU,                                   &
@@ -2721,6 +2728,9 @@ integer,intent(in) :: id
                 CALL urban_var_init(ISURBAN,TSK,TSLB,TMN,IVGTYP,                     & !urban
                               ims,ime,jms,jme,kms,kme,num_soil_layers,               & !urban
 !                              num_roof_layers,num_wall_layers,num_road_layers, & !urban
+                              LOW_DENSITY_RESIDENTIAL,                       &
+                              HIGH_DENSITY_RESIDENTIAL,                      &
+                              HIGH_INTENSITY_INDUSTRIAL,                       &
                               restart,sf_urban_physics,                        & !urban
                               XXXR_URB2D,XXXB_URB2D,XXXG_URB2D,XXXC_URB2D,     & !urban
                               TR_URB2D,TB_URB2D,TG_URB2D,TC_URB2D,QC_URB2D,    & !urban
@@ -2790,6 +2800,10 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
 !
 
       CASE (NOAHMPSCHEME)
+          IF ( TRIM(mminlu) .EQ. 'NLCD40' ) THEN
+             CALL wrf_error_fatal ( 'NoahMP does not work with NLCD data. Stop.' )
+          ENDIF
+
           CALL NOAHMP_INIT(MMINLU, SNOW,SNOWH,CANWAT,ISLTYP,IVGTYP,                 &
                      TSLB,SMOIS,SH2O,DZS, FNDSOILW, FNDSNOWH,          &
                      TSK,isnowxy  ,tvxy     ,tgxy     ,canicexy ,TMN,XICE,                  &
@@ -2797,6 +2811,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                      fwetxy   ,sneqvoxy ,alboldxy ,qsnowxy  ,wslakexy ,zwtxy    ,waxy     , &
                      wtxy     ,tsnoxy   ,zsnsoxy  ,snicexy  ,snliqxy  ,lfmassxy ,rtmassxy , &
                      stmassxy ,woodxy   ,stblcpxy ,fastcpxy ,xsaixy   ,lai      ,           &
+                     grainxy  ,gddxy    ,                                                   &
                      t2mvxy   ,t2mbxy   ,chstarxy ,            &
                      num_soil_layers, restart,                 &
                      allowed_to_read, iopt_run ,               &
@@ -2830,7 +2845,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
              config_flags%num_land_cat .ne. 24 .and. config_flags%num_land_cat .ne. 28 .and. & ! USGS
              config_flags%num_land_cat .ne. 40 .and. config_flags%num_land_cat .ne. 50 )     & ! NLCD
           CALL wrf_error_fatal ( 'module_physics_init: PX LSM option requires USGS, MODIS, or NLCD' )
-          CALL LSMINIT(id,VEGFRA,SNOW,SNOWC,SNOWH,CANWAT,SMSTAV,  &
+          CALL LSMINIT(VEGFRA,SNOW,SNOWC,SNOWH,CANWAT,SMSTAV,  &
                      SMSTOT, SFCRUNOFF,UDRUNOFF,ACSNOW,        &
                      ACSNOM,IVGTYP,ISLTYP,TSLB,SMOIS,SH2O,ZS,DZS, &
                      MMINLU,                                   &
@@ -2854,12 +2869,19 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
           if(config_flags%ra_sw_physics .eq. 2 .or. config_flags%ra_sw_physics .gt. 4)CALL wrf_error_fatal &
            ( 'module_physics_init: SSiB only works with rrtm, cam scheme or rrtmg scheme (sw_phys=1,3,4)' )
 ! End of Adding radiation scheme 4 (RRTMg) for SSiB, By Zhenxin 2011-06-20 **************
+          IF ( TRIM(mminlu) .EQ. 'NLCD40' ) THEN
+             CALL wrf_error_fatal ( 'SSIB does not work with NLCD data. Stop.' )
+          ENDIF
 !--------------------------------------------------------------
 ! CLM Init Coupling
       CASE (CLMSCHEME)
         IF ((SF_URBAN_PHYSICS.eq.1).OR.(SF_URBAN_PHYSICS.EQ.2).OR.(SF_URBAN_PHYSICS.EQ.3)) THEN
                 CALL wrf_error_fatal ( 'CLM DOES NOT WORK WITH URBAN SCHEME' ) 
         ENDIF
+        IF ( TRIM(mminlu) .EQ. 'NLCD40' ) THEN
+           CALL wrf_error_fatal ( 'CLM does not work with NLCD input. Stop' )
+        ENDIF
+
 #ifdef WRF_USE_CLM
         IF(PRESENT(numc))THEN
         ! added by Jiming Jin 10/14/2012 ; modified to use MODIS data 3/6/2014
@@ -3533,17 +3555,6 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    STEPCU = nint(CUDT*60./DT)
    STEPCU = max(STEPCU,1)
 
-!-- initialization
-
-   IF(start_of_simulation)THEN
-     DO j=jts,jtf
-     DO i=its,itf
-        RAINC(i,j)=0.
-        RAINCV(i,j)=0.
-     ENDDO
-     ENDDO
-   ENDIF
-
 !-- independent shallow convection schemes
    shcu_select: SELECT CASE(config_flags%shcu_physics)
 
@@ -3800,6 +3811,8 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
 !==========================================================
    SUBROUTINE fg_init(STEPFG,FGDT,DT,id,RUNDGDTEN,RVNDGDTEN,    &
                 RTHNDGDTEN,RPHNDGDTEN,RQVNDGDTEN,RMUNDGDTEN,    &
+                SDA_HFX, SDA_QFX, QNORM, HFX_BOTH, QFX_BOTH,    & ! fasdas
+                HFX_FDDA,                                       & ! fasdas
                 config_flags,restart,                           &
                 allowed_to_read ,                               &
                 ids, ide, jds, jde, kds, kde,                   &
@@ -3829,6 +3842,17 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                                                           RTHNDGDTEN, &
                                                           RPHNDGDTEN, &
                                                           RQVNDGDTEN
+!
+! FASDAS
+!
+   REAL ,    DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT)           ::    &
+                                                             SDA_HFX, &
+                                                             SDA_QFX, &
+                                                             QNORM,HFX_BOTH,QFX_BOTH
+!  INTEGER , INTENT(IN   )                                  ::  fasdas
+   REAL ,    DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) :: &
+                                                            HFX_FDDA
+
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT) :: RMUNDGDTEN !BSINGH(PNNL)- should be declared inout
 
    LOGICAL,  INTENT(IN)           :: allowed_to_read
@@ -3846,6 +3870,8 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
 
       CASE (PSUFDDAGD)
            CALL fddagdinit(id,rundgdten,rvndgdten,rthndgdten,rqvndgdten,rmundgdten,&
+               SDA_HFX, SDA_QFX, QNORM, HFX_BOTH, QFX_BOTH, config_flags%fasdas,& ! fasdas
+               HFX_FDDA,                                                        & ! fasdas
                config_flags%run_hours, &
                config_flags%if_no_pbl_nudging_uv, &
                config_flags%if_no_pbl_nudging_t, &

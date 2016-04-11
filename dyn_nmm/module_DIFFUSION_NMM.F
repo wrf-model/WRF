@@ -27,7 +27,7 @@
 !***********************************************************************
       SUBROUTINE HDIFF(NTSD,DT,FIS,DY,HDAC,HDACV                        &
      &                ,HBM2,DETA1,SIGMA                                 &
-#ifdef HWRF
+#if ( HWRF == 1 )
      &                ,T,Q,U,V,Q2,Z,W,SM,SICE,h_diff                    &
 #else
      &                ,T,Q,U,V,Q2,Z,W,SM,SICE                           &
@@ -103,7 +103,7 @@
       INTEGER,INTENT(IN) :: NTSD
 !
       REAL,INTENT(IN) :: DT,DY
-#ifdef HWRF
+#if ( HWRF == 1 )
       REAL,INTENT(IN) :: H_DIFF  
 #endif
 !
@@ -148,7 +148,7 @@
 !***********************************************************************
 !-----------------------------------------------------------------------
 !
-#ifdef HWRF
+#if ( HWRF == 1 )
       SLOPHC=SLOPHT*SQRT(2.)*0.5*9.
 #else
       SLOPHC=config_flags%slophc
@@ -367,7 +367,7 @@
             T (I,J,K)=T (I,J,K)+TDIF (I,J)
             Q (I,J,K)=Q (I,J,K)+QDIF (I,J)
 !
-#ifdef HWRF
+#if ( HWRF == 1 )
             U(I,J,K)=U(I,J,K)+UDIF(I,J)*h_diff
             V(I,J,K)=V(I,J,K)+VDIF(I,J)*h_diff
 #else
@@ -449,7 +449,7 @@
 !
           DO J=MYJS2,MYJE2
           DO I=MYIS1,MYIE1
-#ifdef HWRF
+#if ( HWRF == 1 )
             U(I,J,K)=U(I,J,K)-(UNE(I,J)-UNE(I+IVW(J),J-1)               &
      &                        +USE(I,J)-USE(I+IVW(J),J+1))*HDACV(I,J)*h_diff
             V(I,J,K)=V(I,J,K)-(VNE(I,J)-VNE(I+IVW(J),J-1)               &

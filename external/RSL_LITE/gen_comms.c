@@ -2070,7 +2070,7 @@ gen_nest_pack ( char * dirname )
                 d3_mp,fourd_names_mp,d2_mp);
 #endif
 
-//        fprintf(fp,"CALL %s( local_communicator, msize*RWORDSIZE                               &\n",info_name ) ;
+/*        fprintf(fp,"CALL %s( local_communicator, msize*RWORDSIZE                               &\n",info_name ) ;  */
         fprintf(fp,"CALL %s( msize*RWORDSIZE                               &\n",info_name ) ;
         fprintf(fp,"                        ,cips,cipe,cjps,cjpe                               &\n") ;
 if (sw) fprintf(fp,"                        ,iids,iide,ijds,ijde                               &\n") ;
@@ -2090,7 +2090,7 @@ if (sw) fprintf(fp,"                        ,pgr , sw                           
   
         gen_nest_packunpack ( fp , Domain.fields, PACKIT, down_path[ipath] ) ;
 
-//        fprintf(fp,"CALL %s( local_communicator, msize*RWORDSIZE                               &\n",info_name ) ;
+/*        fprintf(fp,"CALL %s( local_communicator, msize*RWORDSIZE                               &\n",info_name ) ; */
         fprintf(fp,"CALL %s( msize*RWORDSIZE                               &\n",info_name ) ;
         fprintf(fp,"                        ,cips,cipe,cjps,cjpe                               &\n") ;
 if (sw) fprintf(fp,"                        ,iids,iide,ijds,ijde                               &\n") ;

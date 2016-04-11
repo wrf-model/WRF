@@ -48,7 +48,7 @@
     Type(WRFU_Time) time, currtime, currentTime
     CHARACTER*19  new_date
     CHARACTER*24  base_date
-    CHARACTER*80  fname
+    CHARACTER*256  fname
     CHARACTER*80  dname, memord, sim_type
     LOGICAL dryrun
     INTEGER idt
@@ -92,7 +92,7 @@
 
     !  Local variables: are we are using the correct hypsometric option for ARW ideal cases.
 
-    CHARACTER (LEN=80) :: input_name
+    CHARACTER (LEN=256) :: input_name
     INTEGER :: loop, hypsometric_opt, icount
 
     CHARACTER (LEN=256) :: a_message
@@ -501,7 +501,9 @@
     CALL nl_set_map_proj ( grid%id , config_flags%map_proj )
     grid%map_proj = config_flags%map_proj
 
+    mminlu = " "
     CALL wrf_get_dom_ti_char ( fid , 'MMINLU', mminlu , ierr )
+    IF ( ierr .NE. 0 ) mminlu = " "
 #if ( ( EM_CORE == 1 ) && ( DA_CORE != 1 ) )
     IF ( ( ( switch .EQ. input_only ) .OR. ( switch .EQ. restart_only ) ) .AND. &
          ( ( config_flags%io_form_input .EQ.  2 ) .OR. &

@@ -111,6 +111,11 @@ CONTAINS
 !  For LES, add randx
    real :: randx
 
+
+!DJW added for specifying different eta levels for each domain
+  INTEGER :: ks, ke, id
+  LOGICAL :: vnest !DJW T if using vertical nesting, otherwise F
+
 #ifdef DM_PARALLEL
 #    include "data_calls.inc"
 #endif
@@ -229,16 +234,76 @@ CONTAINS
 
 ! set up the grid
 
+    !DJW Added code for specifying multiple domains' eta_levels.
+    !First check to make sure that we've not specified more
+    !eta_levels than the dimensionality of eta_levels can handle! This
+    !issue will most likely cause a break sometime before we real this
+    !check, however it doesn't hurt to include it. To increase max_eta,
+    !go to frame/module_driver_constants.F.
+   vnest = .FALSE.
+   DO id=1,model_config_rec%max_dom
+     IF (model_config_rec%vert_refine_method(id) .NE. 0) THEN
+       vnest = .TRUE.
+     ENDIF
+   ENDDO
+
+       IF (model_config_rec%eta_levels(1) .EQ. -1) THEN !we do not have eta_levels from namelist      
+         !DJW start of original code to set eta levels
    IF (stretch_grid) THEN ! exponential stretch for eta (nearly constant dz)
+	    CALL wrf_debug(0, "module_initialize_les: eta_levels is not specified in the namelist, setting levels with stretched spacing in eta.")
      DO k=1, kde
       grid%znw(k) = (exp(-(k-1)/float(kde-1)/z_scale) - exp(-1./z_scale))/ &
                                 (1.-exp(-1./z_scale))
      ENDDO
    ELSE
+	    CALL wrf_debug(0,"module_initialize_les: eta_levels is not specified in the namelist, setting levels with constant spacing in eta.")
      DO k=1, kde
       grid%znw(k) = 1. - float(k-1)/float(kde-1)
      ENDDO
    ENDIF
+       ELSE !we have specified eta levels from the namelist
+          CALL wrf_debug(0,"module_initialize_les: vertical nesting is enabled, using eta_levels specified in namelist.input")
+          ks = 0
+          DO id=1,grid%id
+             ks = ks+model_config_rec%e_vert(id)
+          ENDDO
+          IF (ks .GT. max_eta) THEN
+             CALL wrf_error_fatal("too many vertical levels, increase max_eta in frame/module_driver_constants.F")
+          ENDIF
+	  !Now set the eta_levels to what we specified in the namelist. We've
+	  !packed all the domains' eta_levels into a 'vector' and now we need
+	  !to pull only the section of the vector associated with our domain
+	  !of interest, which is between indicies ks and ke.
+	  IF (grid%id .EQ. 1) THEN
+            ks = 1
+            ke = model_config_rec%e_vert(1)
+	  ELSE
+            id = 1
+            ks = 1
+            ke = 0
+            DO WHILE (grid%id .GT. id)
+              id = id+1
+              ks = ks+model_config_rec%e_vert(id-1)
+              ke = ks+model_config_rec%e_vert(id)
+            ENDDO
+	  ENDIF
+	  DO k=1,kde
+            grid%znw(k) = model_config_rec%eta_levels(ks+k-1)
+	  ENDDO
+	  !Check the value of the first and last eta level for our domain,
+	  !then check that the vector of eta levels is only decreasing
+	  IF (grid%znw(1) .NE. 1.0) THEN
+            CALL wrf_error_fatal("error with specified eta_levels, first level is not 1.0")
+	  ENDIF
+	  IF (grid%znw(kde) .NE. 0.0) THEN
+            CALL wrf_error_fatal("error with specified eta_levels, last level is not 0.0")
+	  ENDIF
+	  DO k=2,kde
+            IF (grid%znw(k) .GT. grid%znw(k-1)) THEN
+              CALL wrf_error_fatal("eta_levels are not uniformly decreasing from 1.0 to 0.0")
+            ENDIF
+	  ENDDO
+       ENDIF
 
    DO k=1, kde-1
     grid%dnw(k) = grid%znw(k+1) - grid%znw(k)
@@ -436,8 +501,8 @@ CONTAINS
 
     grid%ph_1(i,1,j) = 0.
     DO k  = 2,kte
-      grid%ph_1(i,k,j) = grid%ph_1(i,k-1,j) - (1./grid%rdnw(k-1))*(       &
-                   (grid%mub(i,j)+grid%mu_1(i,j))*grid%al(i,k-1,j)+ &
+      grid%ph_1(i,k,j) = grid%ph_1(i,k-1,j) - &
+                    grid%dnw(k-1)*((grid%mub(i,j)+grid%mu_1(i,j))*grid%al(i,k-1,j)+ &
                     grid%mu_1(i,j)*grid%alb(i,k-1,j)  )
                                                    
       grid%ph_2(i,k,j) = grid%ph_1(i,k,j) 
@@ -501,7 +566,7 @@ CONTAINS
 !  rebalance hydrostatically
 
       DO k  = 2,kte
-        grid%ph_1(i,k,j) = grid%ph_1(i,k-1,j) - (1./grid%rdnw(k-1))*(       &
+        grid%ph_1(i,k,j) = grid%ph_1(i,k-1,j) - (grid%dnw(k-1))*(       &
                      (grid%mub(i,j)+grid%mu_1(i,j))*grid%al(i,k-1,j)+ &
                       grid%mu_1(i,j)*grid%alb(i,k-1,j)  )
                                                    

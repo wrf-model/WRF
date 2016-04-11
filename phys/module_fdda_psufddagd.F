@@ -1,5 +1,15 @@
 !wrf:model_layer:physics
 !
+!ckay=KIRAN ALAPATY @ US EPA -- November 01, 2015
+!
+! Tim Glotfelty@CNSU; AJ Deng@PSU
+!modified for use with FASDAS 
+!Flux Adjusting Surface Data Assimilation System to assimilate 
+!surface layer and soil layers temperature and moisture using
+! surfance reanalsys 
+!Reference: Alapaty et al., 2008: Development of the flux-adjusting surface
+! data assimilation system for mesoscale models. JAMC, 47, 2331-2350
+
 !
 !
 MODULE module_fdda_psufddagd
@@ -28,6 +38,8 @@ CONTAINS
      u10_ndg_new, v10_ndg_new, t2_ndg_new, th2_ndg_new, q2_ndg_new, &
      rh_ndg_new, psl_ndg_new, ps_ndg_new, tob_ndg_new, odis_ndg_new, &
                RUNDGDTEN,RVNDGDTEN,RTHNDGDTEN,RQVNDGDTEN,RMUNDGDTEN,&
+               fasdas, SDA_HFX, SDA_QFX,                            & ! fasdas
+               HFX_FDDA,dz8w,                                       & ! fasdas
                pblh, ht, regime, znt, z, z_at_w,                             &
                ids,ide, jds,jde, kds,kde,                           &
                ims,ime, jms,jme, kms,kme,                           &
@@ -109,6 +121,20 @@ CONTAINS
                                           rvndgdten, &
                                          rthndgdten, &
                                          rqvndgdten
+!
+! FASDAS
+!
+   INTEGER,  INTENT(IN)   ::      fasdas
+   REAL,     DIMENSION( ims:ime, jms:jme ), &
+             INTENT(INOUT)   ::           SDA_HFX, &
+                                          SDA_QFX
+   REAL,     DIMENSION( ims:ime, kms:kme, jms:jme ), &
+             INTENT(INOUT)   ::           HFX_FDDA
+   REAL,     DIMENSION( ims:ime, kms:kme, jms:jme ), &
+             INTENT(IN)   ::                   dz8w
+!
+! END FASDAS
+!
 
    REAL,     DIMENSION( ims:ime, jms:jme ), &
              INTENT(INOUT)   ::          rmundgdten
@@ -169,21 +195,38 @@ CONTAINS
    INTEGER             :: kpbl, dbg_level
 
    REAL                :: zpbl, zagl, zagl_bot, zagl_top, tfac, actual_end_fdda_min
+   !BPR BEGIN
+   REAL                :: tfac_sfc, actual_end_fdda_min_sfc
+   !BPR END
    REAL, DIMENSION( its:ite, kts:kte, jts:jte, 4 ) :: wpbl  ! 1: u, 2: v, 3: t, 4: q
    REAL, DIMENSION( kts:kte, 4 )                   :: wzfac ! 1: u, 2: v, 3: t, 4: q
+
+!  TWG 2015 Pseudo Radiative Flux
+   REAL, DIMENSION( its:ite, kts:kte, jts:jte) :: rho_air
+!  END TWG 2015
 
    LOGICAL , EXTERNAL  :: wrf_dm_on_monitor
 
    CHARACTER (LEN=256) :: message
    INTEGER :: int4
 
+
    int4 = 1  ! 1: temporal interpolation. else: target nudging toward *_ndg_new values
 
    actual_end_fdda_min = end_fdda_hour*60.0
+   !BPR BEGIN
+   actual_end_fdda_min_sfc = end_fdda_hour*60.0
+   !BPR END
    IF( if_ramping == 1 .AND. dtramp_min > 0.0 ) &
        actual_end_fdda_min = end_fdda_hour*60.0 + ABS(dtramp_min)
-   IF( xtime > actual_end_fdda_min ) THEN
-!  If xtime is greater than the end time, no need to calculate tendencies. Just set the tnedencies 
+       !BPR BEGIN
+       actual_end_fdda_min_sfc = end_fdda_hour_sfc*60.0 + ABS(dtramp_min)
+       !BPR END
+   !BPR BEGIN
+   !IF( xtime > actual_end_fdda_min ) THEN
+   IF( ( xtime > actual_end_fdda_min ) .AND. ( xtime > actual_end_fdda_min_sfc ) ) THEN
+   !BPR END
+!  If xtime is greater than the end time, no need to calculate tendencies. Just set the tendencies 
 !  to zero to turn off nudging and return.
      DO j = jts, jte
      DO k = kts, kte
@@ -289,13 +332,13 @@ CONTAINS
    itf=MIN0(ite,ide-1)
 !
 ! If the user-defined namelist switches (if_no_pbl_nudging_uv, if_no_pbl_nudging_t, 
-! if_no_pbl_nudging_q swithes) are set to 1, compute the weighting function, wpbl(:,k,:,:), 
+! if_no_pbl_nudging_q switches) are set to 1, compute the weighting function, wpbl(:,k,:,:), 
 ! based on the PBL depth.  wpbl = 1 above the PBL and wpbl = 0 in the PBL.  If all 
-! the switche are set to zero, wpbl = 1 (default value).
+! the switches are set to zero, wpbl = 1 (default value).
 !
    wpbl(:,:,:,:) = 1.0
 
-   IF( if_no_pbl_nudging_uv == 1 .OR. grid_sfdda == 1 ) THEN
+   IF( if_no_pbl_nudging_uv == 1 .OR. grid_sfdda >= 1 ) THEN
 
      DO j=jts,jtf 
      DO i=itsu,itf
@@ -349,7 +392,7 @@ CONTAINS
 
    ENDIF
 
-   IF( if_no_pbl_nudging_t == 1 .OR. grid_sfdda == 1 ) THEN
+   IF( if_no_pbl_nudging_t == 1 .OR. grid_sfdda >= 1 ) THEN
    
      DO j=jts,jtf
      DO i=its,itf
@@ -378,7 +421,7 @@ CONTAINS
 
    ENDIF
 
-   IF( if_no_pbl_nudging_q == 1 .OR. grid_sfdda == 1 ) THEN
+   IF( if_no_pbl_nudging_q == 1 .OR. grid_sfdda >= 1 ) THEN
    
      DO j=jts,jtf
      DO i=its,itf
@@ -457,7 +500,7 @@ CONTAINS
 
    ENDIF
 !
-! If if_ramping and dtramp_min are defined by user, comput a time weighting function, tfac, 
+! If if_ramping and dtramp_min are defined by user, compute a time weighting function, tfac, 
 ! for analysis nudging so that at the end of the nudging period (which has to be at a 
 ! analysis time) we ramp down the nudging coefficient, based on the use-defined sign of dtramp_min.
 !
@@ -465,11 +508,21 @@ CONTAINS
 ! end_fdda_hour-ABS(dtramp_min).  
 !
 ! When dtramp_min is positive, ramping starts at end_fdda_hour and ends at 
-! end_fdda_hour+ABS(dtramp_min). In this case, the obs values are extrapolated using 
-! the obs tendency saved from the previous FDDA wondow.  More specifically for extrapolation, 
+! end_fdda_hour+ABS(dtramp_min). 
+! BPR BEGIN
+! In this case, during the rampdown we nudge towards the most recent past analysis and ignore
+! the future analysis (implemented by setting coef = 0.0)
+! THE FOLLOWING COMMENT IS NO LONGER APPLICABLE
+! In this case, the obs values are extrapolated using 
+! the obs tendency saved from the previous FDDA window.  More specifically for extrapolation, 
 ! coef (see codes below) is recalculated to reflect extrapolation during the ramping period.
+! THE PRECEDING COMMENT IS NOT LONGER APPLICABLE
+! BPR END
 !
    tfac = 1.0
+   !BPR BEGIN
+   tfac_sfc = 1.0
+   !BPR END
 
    IF( if_ramping == 1 .AND. ABS(dtramp_min) > 0.0 ) THEN
  
@@ -483,16 +536,48 @@ CONTAINS
        tfac = 1.0
      ELSEIF( xtime >= actual_end_fdda_min-ABS(dtramp_min) .AND. xtime <= actual_end_fdda_min )THEN
        tfac = ( actual_end_fdda_min - xtime ) / ABS(dtramp_min)
-       IF( dtramp_min > 0.0 ) coef = (xtime-xtime_old+analysis_interval)/(analysis_interval*1.0)
+       !BPR BEGIN
+       !The original method assumed that to be here in the code with dtramp_min>0
+       !meant that we were after the valid time of *_ndg_new and so used the
+       !values *_ndg_old and *_ndg_new to extrapolate a current analysis value.
+       !HOWEVER, in practice once we get to the valid time of *_ndg_new WRF will
+       !read in the next pair of *_ndg_old and *_ndg_new values, even if we are
+       !at the beginning of the rampdown period. Since the *_ndg_new values have
+       !a valid time after the beginning of the rampdown period we do not want
+       !to use them as we would be using analyses valid after the supposed end
+       !time of the analysis nudging.
+       !IF( dtramp_min > 0.0 ) coef = (xtime-xtime_old+analysis_interval)/(analysis_interval*1.0)
+       !Use only the *_ndg_old values
+       IF( dtramp_min > 0.0 ) coef = 0.0 
+       !BPR END
      ELSE                                                     
        tfac = 0.0
      ENDIF
 
+     !BPR BEGIN
+     !Now calculate the same quantities for surface analysis nudging
+     !Add actual_end_fdda_min_sfc, tfac_sfc
+     IF( dtramp_min <= 0.0 ) THEN
+       actual_end_fdda_min_sfc = end_fdda_hour_sfc*60.0
+     ELSE
+       actual_end_fdda_min_sfc = end_fdda_hour_sfc*60.0 + dtramp_min
+     ENDIF
+
+     IF( xtime < actual_end_fdda_min_sfc-ABS(dtramp_min) )THEN 
+       tfac_sfc = 1.0
+     ELSEIF( xtime >= actual_end_fdda_min_sfc-ABS(dtramp_min) .AND. xtime <= actual_end_fdda_min_sfc )THEN
+       tfac_sfc = ( actual_end_fdda_min_sfc - xtime ) / ABS(dtramp_min)
+     ELSE                                                     
+       tfac_sfc = 0.0
+     ENDIF
+     !BPR END
+
    ENDIF                                                  
+
 !
 ! Surface Analysis Nudging
 !
-   IF( grid_sfdda == 1 ) THEN
+   IF( grid_sfdda >= 1 ) THEN
      CALL SFDDAGD(itimestep,dx,dt,xtime, id, &
      analysis_interval_sfc, end_fdda_hour_sfc, guv_sfc, gt_sfc, gq_sfc, &
      rinblw, &
@@ -508,7 +593,18 @@ CONTAINS
      ids,ide, jds,jde, kds,kde,                           &
      ims,ime, jms,jme, kms,kme,                           &
      its,ite, jts,jte, kts,kte, wpbl, wzfac, if_ramping, dtramp_min, &
-     actual_end_fdda_min, tfac )
+!BPR BEGIN
+!    actual_end_fdda_min, tfac &
+     actual_end_fdda_min_sfc, tfac_sfc &
+!BPR END
+!
+! FASDAS
+!
+        ,fasdas, SDA_HFX, SDA_QFX     &
+!
+! END FASDAS
+!
+                                    )
    ENDIF
 !
 ! Compute 3-D nudging tendencies for u, v, t and q
@@ -536,16 +632,50 @@ CONTAINS
    DO j=jts,jtf
    DO k=kts,ktf
    DO i=its,itf
+
+
      val_analysis = t_ndg_old(i,k,j) *( 1.0 - coef ) + t_ndg_new(i,k,j) * coef
      RTHNDGDTEN(i,k,j) = RTHNDGDTEN(i,k,j) +   gt * wpbl(i,k,j,3) * wzfac(k,3) * tfac * &
                           ( val_analysis - th3d(i,k,j) + 300.0 )
+!
+!FASDAS
+!
+!TWG 2015 Pseudo Radiative Flux
 
+     rho_air(i,k,j) = p3d(i,k,j)/(287.0*th3d(i,k,j))
+     HFX_FDDA(i,k,j) = rho_air(i,k,j)*1004.0*RTHNDGDTEN(i,k,j)*dz8w(i,k,j)
+
+!TWG 2015 END
+!
+!END FASDAS
+!
      val_analysis = q_ndg_old(i,k,j) *( 1.0 - coef ) + q_ndg_new(i,k,j) * coef
      RQVNDGDTEN(i,k,j) = RQVNDGDTEN(i,k,j) + gq * wpbl(i,k,j,4) * wzfac(k,4) * tfac * &
                           ( val_analysis - qv3d(i,k,j) )
+
    ENDDO
    ENDDO
    ENDDO
+
+   !BPR BEGIN 
+   !Diagnostic print
+   IF ( wrf_dm_on_monitor()) THEN
+    IF( dbg_level .GE. 10 ) THEN
+     i0 = (ite-its)/2+its
+     j0 = (jte-jts)/2+jts 
+     k0 = (kte-kts)/2+kts
+     WRITE(message,'(a,i1,a,f7.2,a,i4,a,i4,a,i4,a,f7.2,a,f4.2,a,f7.2,a,f4.2,a,f4.2 )') &
+      '    D0',id,' At xtime=',xtime,' FDDA sample pot. temp. analysis (i=',i0,', j=',j0,' k=', &
+      k0,') = (t_ndg_old=', t_ndg_old(i0,k0,j0),') * ',1.0-coef,' + (t_ndg_new=', &
+      t_ndg_new(i0,k0,j0),') * ',coef, ' where tfac=',tfac
+     CALL wrf_message( TRIM(message) )
+     WRITE(message,'(a,i1,a,f7.2,a,i4,a,f7.2,a,f7.2)') &
+     '    D0',id,'  xtime_old=',xtime_old,' analysis_interval=',analysis_interval,' actual_end_fdda_min=', &
+     actual_end_fdda_min,' dtramp_min=',dtramp_min
+     CALL wrf_message( TRIM(message) )
+    END IF
+   END IF
+   !BPR END 
 
    END SUBROUTINE fddagd
 
@@ -565,8 +695,18 @@ CONTAINS
                ids,ide, jds,jde, kds,kde,                           &
                ims,ime, jms,jme, kms,kme,                           &
                its,ite, jts,jte, kts,kte, wpbl, wzfac, if_ramping, dtramp_min, &
-               actual_end_fdda_min, tfac)
-
+!BPR BEGIN
+!              actual_end_fdda_min, tfac &
+               actual_end_fdda_min_sfc, tfac_sfc &
+!BPR END
+!
+! FASDAS
+!
+               ,fasdas, SDA_HFX, SDA_QFX   &
+!
+! END FASDAS
+!
+                                              )
 !-------------------------------------------------------------------
    USE module_model_constants
  
@@ -682,10 +822,10 @@ CONTAINS
    REAL                :: xtime_old_sfc, xtime_new_sfc, coef, val_analysis, es
    INTEGER             :: kpbl, dbg_level
 
-   REAL                :: zpbl, zagl, zagl_bot, zagl_top, tfac, actual_end_fdda_min
+   REAL                :: zpbl, zagl, zagl_bot, zagl_top, tfac_sfc, actual_end_fdda_min_sfc
 
    REAL, DIMENSION( its:ite, kts:kte, jts:jte, 4 ), &
-         INTENT(IN)                                   :: wpbl  ! 1: u, 2: v, 3: t, 4: q
+         INTENT(INout)                                   :: wpbl  ! 1: u, 2: v, 3: t, 4: q
    REAL, DIMENSION( kts:kte, 4 ),  &
          INTENT(IN)                                   :: wzfac ! 1: u, 2: v, 3: t, 4: q
    REAL, DIMENSION( its:ite, jts:jte)                 :: wndcor_u, wndcor_v
@@ -702,7 +842,18 @@ CONTAINS
 
    CHARACTER (LEN=256)    :: message
    INTEGER :: iwinds, idd, iqsat, int4
-
+!
+! FASDAS
+!
+   INTEGER,  INTENT(IN)   ::      fasdas
+   REAL,     DIMENSION( ims:ime, jms:jme ), &
+             INTENT(  OUT)   ::           SDA_HFX, &
+                                          SDA_QFX
+   REAL :: stabFac, exf, DiffTN
+   REAL, DIMENSION( its:ite, kts:kte, jts:jte ) :: wpblfasdas
+!
+! END FASDAS
+!
    iwinds = 1    ! 1: Scale the surface wind analysis to the lowest model level, 
                  ! if the first model half-layer is greater than 10 meters 
                  ! and we are in the free convection regime (REGIME=4.0). else: no
@@ -734,7 +885,7 @@ CONTAINS
          CALL wrf_message( TRIM(message) )
        ENDIF
 
-       IF( dbg_level .GE. 10 .AND. xtime <= actual_end_fdda_min ) THEN
+       IF( dbg_level .GE. 10 .AND. xtime <= actual_end_fdda_min_sfc ) THEN
 !        Find the mid point of the tile and print out the sample values
          i0 = (ite-its)/2+its
          j0 = (jte-jts)/2+jts 
@@ -828,7 +979,7 @@ CONTAINS
 
      IF ( wrf_dm_on_monitor()) THEN
        IF( xtime-xtime_old_sfc < 0.5*dt/60.0 ) THEN
-         IF( dbg_level .GE. 10 .AND. xtime <= actual_end_fdda_min ) THEN
+         IF( dbg_level .GE. 10 .AND. xtime <= actual_end_fdda_min_sfc ) THEN
            i0 = (ite-its)/2+its
            j0 = (jte-jts)/2+jts
            WRITE(message,'(a,i1,a,2i4,a,f10.4)') &
@@ -868,7 +1019,7 @@ CONTAINS
      ENDDO
      IF ( wrf_dm_on_monitor()) THEN
        IF( xtime-xtime_old_sfc < 0.5*dt/60.0 ) THEN
-         IF( dbg_level .GE. 10 .AND. xtime <= actual_end_fdda_min ) THEN
+         IF( dbg_level .GE. 10 .AND. xtime <= actual_end_fdda_min_sfc ) THEN
            i0 = (ite-its)/2+its
            j0 = (jte-jts)/2+jts
            WRITE(message,'(a,i1,a,2i4,a,f10.4)') &
@@ -897,7 +1048,7 @@ CONTAINS
 
      IF ( wrf_dm_on_monitor()) THEN
        IF( xtime-xtime_old_sfc < 0.5*dt/60.0 ) THEN
-         IF( dbg_level .GE. 10 .AND. xtime <= actual_end_fdda_min ) THEN
+         IF( dbg_level .GE. 10 .AND. xtime <= actual_end_fdda_min_sfc ) THEN
            i0 = (ite-its)/2+its
            j0 = (jte-jts)/2+jts 
            DO k = kts, kte
@@ -965,7 +1116,7 @@ CONTAINS
 
      IF ( wrf_dm_on_monitor()) THEN
        IF( xtime-xtime_old_sfc < 0.5*dt/60.0 ) THEN
-         IF( dbg_level .GE. 10 .AND. xtime <= actual_end_fdda_min ) THEN
+         IF( dbg_level .GE. 10 .AND. xtime <= actual_end_fdda_min_sfc ) THEN
            i0 = (ite-its)/2+its
            j0 = (jte-jts)/2+jts
            WRITE(message,'(a,i1,a,2i4,4(a,f10.4))') &
@@ -979,15 +1130,54 @@ CONTAINS
 
    ENDIF
 !
-! TFAC for surface analysis nudging
+! tfac_sfc for surface analysis nudging
 !
-   IF( xtime >= actual_end_fdda_min-ABS(dtramp_min) .AND. xtime <= actual_end_fdda_min &
+   IF( xtime >= actual_end_fdda_min_sfc-ABS(dtramp_min) .AND. xtime <= actual_end_fdda_min_sfc &
        .AND. dtramp_min > 0.0 .AND. if_ramping == 1 )  &
-    coef = (xtime-xtime_old_sfc+analysis_interval_sfc)/(analysis_interval_sfc*1.0)
+
+    !BPR BEGIN
+    !The original method assumed that to be here in the code with dtramp_min>0
+    !meant that we were after the valid time of *_ndg_new and so used the
+    !values *_ndg_old and *_ndg_new to extrapolate a current analysis value.
+    !HOWEVER, in practice once we get to the valid time of *_ndg_new WRF will
+    !read in the next pair of *_ndg_old and *_ndg_new values, even if we are
+    !at the beginning of the rampdown period. Since the *_ndg_new values have
+    !a valid time after the beginning of the rampdown period we do not want
+    !to use them as we would be using analyses valid after the supposed end
+    !time of the analysis nudging.
+    !coef = (xtime-xtime_old_sfc+analysis_interval_sfc)/(analysis_interval_sfc*1.0)
+    !Use only the *_ndg_old values
+    coef = 0.0 
+    !BPR END
+
 !  print*, 'coef =', xtime_old_sfc, xtime, xtime_new_sfc, coef
 !              
 ! Compute surface analysis nudging tendencies for u, v, t and q
 !              
+! FASDAS
+!
+     IF( fasdas == 1 ) THEN
+
+      !Edit TWG2015 Add new variable wpblfasdas to avoid altering global wpbl
+      !field when using the FASDAS option
+
+       wpblfasdas = 1.0
+       DO j=jts,jtf
+       DO k=kts,ktf
+       DO i=its,itf
+          if( k == 1 ) then
+            wpblfasdas(i, k, j) = 0.0
+          else
+            wpblfasdas(i, k, j) = 1.0
+          endif
+       ENDDO
+       ENDDO
+       ENDDO
+
+     ENDIF
+!
+! END FASDAS
+!
    DO j=jts,jtf
    DO k=kts,ktf
    DO i=itsu,itf
@@ -999,7 +1189,7 @@ CONTAINS
      ENDIF
      val_analysis = u10_ndg_old(i,j) *( 1.0 - coef ) + u10_ndg_new(i,j) * coef
      val_analysis = val_analysis * wndcor_u(i,j)
-     RUNDGDTEN(i,k,j) = guv_sfc * (1.0-wpbl(i,k,j,1)) * wzfac(k,1) * tfac * blw * &
+     RUNDGDTEN(i,k,j) = guv_sfc * (1.0-wpbl(i,k,j,1)) * wzfac(k,1) * tfac_sfc * blw * &
                          ( val_analysis - u3d(i,1,j) )
    ENDDO
    ENDDO
@@ -1008,6 +1198,7 @@ CONTAINS
    DO j=jtsv,jtf
    DO k=kts,ktf 
    DO i=its,itf
+
      IF( idd == 1 ) THEN
        blw = 0.5* (blw_old(i,j-1)+blw_old(i,j)) * ( 1.0 - coef ) &
            + 0.5* (blw_new(i,j-1)+blw_new(i,j)) * coef
@@ -1016,7 +1207,7 @@ CONTAINS
      ENDIF
      val_analysis = v10_ndg_old(i,j) *( 1.0 - coef ) + v10_ndg_new(i,j) * coef
      val_analysis = val_analysis * wndcor_v(i,j)
-     RVNDGDTEN(i,k,j) = guv_sfc * (1.0-wpbl(i,k,j,2)) * wzfac(k,2) * tfac * blw * &
+     RVNDGDTEN(i,k,j) = guv_sfc * (1.0-wpbl(i,k,j,2)) * wzfac(k,2) * tfac_sfc * blw * &
                        ( val_analysis - v3d(i,1,j) )
    ENDDO
    ENDDO
@@ -1030,23 +1221,99 @@ CONTAINS
      ELSE
        blw = 1.0
      ENDIF
+
+!ckay2015 and TWG2015 add stability factor for stable regime, ensure
+!consistency between Direct and Indirect nudging, and Convert potential
+!temperature tendency to temperature tendency
+!
+! FASDAS
+!
+     IF( fasdas == 1 ) THEN
+         if(regime(i,j).le.1.1) then
+          stabFac = 1.0/3.0
+         else
+          stabFac = 1.0
+         end if
+
      val_analysis = th2_ndg_old(i,j) *( 1.0 - coef ) + th2_ndg_new(i,j) * coef
-     RTHNDGDTEN(i,k,j) = gt_sfc * (1.0-wpbl(i,k,j,3)) * wzfac(k,3) * tfac * blw * &
+     !BPR BEGIN
+     !RTHNDGDTEN(i,k,j) = stabFac*gt_sfc * (1.0-wpblfasdas(i,k,j)) * wzfac(k,3) * tfac * blw * &
+     RTHNDGDTEN(i,k,j) = stabFac*gt_sfc * (1.0-wpblfasdas(i,k,j)) * wzfac(k,3) * tfac_sfc * blw * &
+     !BPR END
+                          ( val_analysis - th3d(i,1,j))
+
+     DiffTN = val_analysis - th3d(i,1,j)
+     if(k.eq.1) then
+        exf = (1.0E05/p3d(i,k,j))**(287./1004.)
+        SDA_HFX(i,j) = RTHNDGDTEN(i,k,j)/exf !TWG 2015
+     else
+        RTHNDGDTEN(i,k,j) = 0.0
+     end if
+
+     val_analysis = q2_ndg_old(i,j) *( 1.0 - coef ) + q2_ndg_new(i,j) * coef
+     IF( iqsat ==  1 .AND. val_analysis > qsat(i,k,j) ) val_analysis = qsat(i,k,j)
+     !BPR BEGIN
+     !RQVNDGDTEN(i,k,j) = stabFac*gq_sfc * (1.0-wpblfasdas(i,k,j)) * wzfac(k,4) * tfac * blw * &
+     RQVNDGDTEN(i,k,j) = stabFac*gq_sfc * (1.0-wpblfasdas(i,k,j)) * wzfac(k,4) * tfac_sfc * blw * &
+     !BPR END
+                          ( val_analysis - qv3d(i,k,j) )
+     if(k.eq.1) then
+         SDA_QFX = RQVNDGDTEN(i,k,j)
+     else
+         RQVNDGDTEN(i,k,j) = 0.0
+     end if
+
+     ELSE
+
+     val_analysis = th2_ndg_old(i,j) *( 1.0 - coef ) + th2_ndg_new(i,j) * coef
+     !BPR BEGIN
+     !RTHNDGDTEN(i,k,j) = gt_sfc * (1.0-wpbl(i,k,j,3)) * wzfac(k,3) * tfac * blw * &
+     RTHNDGDTEN(i,k,j) = gt_sfc * (1.0-wpbl(i,k,j,3)) * wzfac(k,3) * tfac_sfc * blw * &
+     !BPR END
                           ( val_analysis - th3d(i,1,j))
 
      val_analysis = q2_ndg_old(i,j) *( 1.0 - coef ) + q2_ndg_new(i,j) * coef
      IF( iqsat ==  1 .AND. val_analysis > qsat(i,k,j) ) val_analysis = qsat(i,k,j)
-     RQVNDGDTEN(i,k,j) = gq_sfc * (1.0-wpbl(i,k,j,4)) * wzfac(k,4) * tfac * blw * &
+     !BPR BEGIN
+     !RQVNDGDTEN(i,k,j) = gq_sfc * (1.0-wpbl(i,k,j,4)) * wzfac(k,4) * tfac * blw * &
+     RQVNDGDTEN(i,k,j) = gq_sfc * (1.0-wpbl(i,k,j,4)) * wzfac(k,4) * tfac_sfc * blw * &
+     !BPR END
                           ( val_analysis - qv3d(i,k,j) )
+
+    ENDIF
+!
+! END FASDAS
+!
    ENDDO
    ENDDO
    ENDDO
+
+   !BPR BEGIN 
+   !Diagnostic print
+   IF ( wrf_dm_on_monitor()) THEN
+    IF( dbg_level .GE. 10 ) THEN
+     i0 = (ite-its)/2+its
+     j0 = (jte-jts)/2+jts 
+     WRITE(message,'(a,i1,a,f7.2,a,i4,a,i4,a,f7.2,a,f4.2,a,f7.2,a,f4.2,a,f4.2 )') &
+      '    D0',id,' At xtime=',xtime,' SFC FDDA sample TH2 analysis (i=',i0,', j=',j0,') = (th2_ndg_old=', &
+      th2_ndg_old(i0,j0),') * ',1.0-coef,' + (th2_ndg_new=',th2_ndg_new(i0,j0),') * ',coef, &
+      ' where tfac_sfc=',tfac_sfc
+     CALL wrf_message( TRIM(message) )
+     WRITE(message,'(a,i1,a,f7.2,a,i4,a,f7.2,a,f7.2)') &
+      '    D0',id,'  xtime_old_sfc=',xtime_old_sfc,' analysis_interval_sfc=',analysis_interval_sfc, &
+      ' actual_end_fdda_min_sfc=', actual_end_fdda_min_sfc,' dtramp_min=',dtramp_min
+     CALL wrf_message( TRIM(message) )
+    END IF
+   END IF
+   !BPR END 
 
    END SUBROUTINE sfddagd
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
    SUBROUTINE fddagdinit(id,rundgdten,rvndgdten,rthndgdten,rqvndgdten,rmundgdten,&
+               SDA_HFX, SDA_QFX, QNORM, HFX_BOTH, QFX_BOTH, fasdas,& !fasdas
+               HFX_FDDA,                                           & !fasdas
                run_hours,  &
                if_no_pbl_nudging_uv, if_no_pbl_nudging_t, if_no_pbl_nudging_q, &
                if_zfac_uv, k_zfac_uv, if_zfac_t, k_zfac_t, if_zfac_q, k_zfac_q, &
@@ -1070,6 +1337,19 @@ CONTAINS
                                                        rvndgdten, &
                                                       rthndgdten, &
                                                       rqvndgdten
+!
+! FASDAS
+!
+   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(OUT) :: &
+                                                       SDA_HFX, &
+                                                       SDA_QFX, &
+                                                       QNORM, HFX_BOTH, QFX_BOTH
+   INTEGER, INTENT(IN   )           ::  fasdas
+   REAL, DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(OUT) :: &
+                                                  HFX_FDDA
+!
+! END FASDAS
+!
    INTEGER,  INTENT(IN)   ::      run_hours
    INTEGER,  INTENT(IN)   ::      if_no_pbl_nudging_uv, if_no_pbl_nudging_t, &
                                   if_no_pbl_nudging_q, end_fdda_hour
@@ -1163,7 +1443,7 @@ CONTAINS
         CALL wrf_message(TRIM(message))
      ENDIF
 
-     IF( grid_sfdda ==1 ) THEN
+     IF( grid_sfdda >=1 ) THEN
        IF( guv_sfc > 0.0 ) THEN
          WRITE(message,'(a,i1,a,e12.4)') &
              'D0',id,' surface analysis nudging for wind is applied and Guv_sfc= ', guv_sfc
@@ -1231,10 +1511,30 @@ CONTAINS
         rvndgdten(i,k,j) = 0.
         rthndgdten(i,k,j) = 0.
         rqvndgdten(i,k,j) = 0.
+! TWG 2015 Psuedo radiative flux
+        HFX_FDDA(i,k,j) = 0.
+! TWG END
         if(k.eq.kts) rmundgdten(i,j) = 0.
      ENDDO
      ENDDO
      ENDDO
+!
+! FASDAS
+!
+     IF( fasdas == 1 ) THEN
+       DO j = jts,jte
+       DO i = its,ite
+          SDA_HFX(I,J)  = 0.0
+          SDA_QFX(I,J)  = 0.0
+          QNORM(I,J)    = 0.0
+          HFX_BOTH(I,J) = 0.0
+          QFX_BOTH(I,J) = 0.0  
+       ENDDO
+       ENDDO
+     ENDIF
+!
+! END FASDAS
+!
    ENDIF
 
    END SUBROUTINE fddagdinit

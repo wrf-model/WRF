@@ -9,6 +9,8 @@ CONTAINS
                   id,  &
                   RUNDGDTEN,RVNDGDTEN,RTHNDGDTEN,                 &
                   RPHNDGDTEN,RQVNDGDTEN,RMUNDGDTEN,               &
+                  SDA_HFX, SDA_QFX,                               & !fasdas
+                  HFX_FDDA,                                       & !fasdas
                   u_ndg_old,v_ndg_old,t_ndg_old,ph_ndg_old,       &
                   q_ndg_old,mu_ndg_old,       &
                   u_ndg_new,v_ndg_new,t_ndg_new,ph_ndg_new,       &
@@ -170,7 +172,17 @@ CONTAINS
                                                         RTHNDGDTEN, &
                                                         RPHNDGDTEN, &
                                                         RQVNDGDTEN
-
+!
+! FASDAS
+!
+   REAL,       DIMENSION( ims:ime, jms:jme ),            &
+               INTENT(INOUT)    ::                       SDA_HFX, &
+                                                         SDA_QFX
+   REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ),            &
+               INTENT(INOUT)    ::                       HFX_FDDA
+!
+! END FASDAS
+!
    REAL,       DIMENSION( ims:ime,  jms:jme ),            &
                INTENT(INOUT)    ::                      RMUNDGDTEN
 
@@ -337,6 +349,158 @@ CONTAINS
 
       CASE (PSUFDDAGD)
 
+      !BPR BEGIN
+      !Add error checks to ensure that user does not use analysis nudging
+      !options that WRF will read in but not fully utilize
+      !3D Analysis nudging
+
+      !The begin time of analysis nudging must be the model start time
+      !It appears the WRF code that reads analysis nudging files respects 
+      !the start time settings, but the actual nudging code does not.  This
+      !leads one to nudge towards 0 in all fields (including potential
+      !temperature [K]) since the nudging code applies analysis nudging but has
+      !no data to nudge towards
+      IF( config_flags%gfdda_begin_y /= 0 ) THEN
+       WRITE( wrf_err_message , * ) 'WRF currently assumes analysis nudging starts at the model ',&
+        'start time and so analysis nudging start time cannot be specified via gfdda_begin_y'
+       CALL wrf_error_fatal ( wrf_err_message )
+      ENDIF
+      IF( config_flags%gfdda_begin_d /= 0 ) THEN
+       WRITE( wrf_err_message , * ) 'WRF currently assumes analysis nudging starts at the model ',&
+        'start time and so analysis nudging start time cannot be specified via gfdda_begin_d'
+       CALL wrf_error_fatal ( wrf_err_message )
+      ENDIF
+      IF( config_flags%gfdda_begin_h /= 0 ) THEN
+       WRITE( wrf_err_message , * ) 'WRF currently assumes analysis nudging starts at the model ',&
+        'start time and so analysis nudging start time cannot be specified via gfdda_begin_h'
+       CALL wrf_error_fatal ( wrf_err_message )
+      ENDIF
+      IF( config_flags%gfdda_begin_m /= 0 ) THEN
+       WRITE( wrf_err_message , * ) 'WRF currently assumes analysis nudging starts at the model ',&
+        'start time and so analysis nudging start time cannot be specified via gfdda_begin_m'
+       CALL wrf_error_fatal ( wrf_err_message )
+      ENDIF
+      IF( config_flags%gfdda_begin_s /= 0 ) THEN
+       WRITE( wrf_err_message , * ) 'WRF currently assumes analysis nudging starts at the model ',&
+        'start time and so analysis nudging start time cannot be specified via gfdda_begin_s'
+       CALL wrf_error_fatal ( wrf_err_message )
+      ENDIF
+       
+
+      !The end time of analysis nudging relative to the model start must be
+      !specified in hours
+      IF( config_flags%gfdda_end_y /= 0 ) THEN
+       WRITE( wrf_err_message , * ) 'The option gfdda_end_y is ignored, use gfdda_end_h instead'
+       CALL wrf_error_fatal ( wrf_err_message )
+      ENDIF
+      IF( config_flags%gfdda_end_d /= 0 ) THEN
+       WRITE( wrf_err_message , * ) 'The option gfdda_end_d is ignored, use gfdda_end_h instead'
+       CALL wrf_error_fatal ( wrf_err_message )
+      ENDIF
+      IF( config_flags%gfdda_end_m /= 0 ) THEN
+       WRITE( wrf_err_message , * ) 'The option gfdda_end_m is ignored, use gfdda_end_h instead'
+       CALL wrf_error_fatal ( wrf_err_message )
+      ENDIF
+      IF( config_flags%gfdda_end_s /= 0 ) THEN
+       WRITE( wrf_err_message , * ) 'The option gfdda_end_s is ignored, use gfdda_end_h instead'
+       CALL wrf_error_fatal ( wrf_err_message )
+      ENDIF
+
+      !The interval between analyses must be specified in minutes
+      IF( config_flags%gfdda_interval_y /= 0 ) THEN
+       WRITE( wrf_err_message , * ) 'The option gfdda_interval_y is ignored, use gfdda_interval_m instead'
+       CALL wrf_error_fatal ( wrf_err_message )
+      ENDIF
+      IF( config_flags%gfdda_interval_d /= 0 ) THEN
+       WRITE( wrf_err_message , * ) 'The option gfdda_interval_d is ignored, use gfdda_interval_m instead'
+       CALL wrf_error_fatal ( wrf_err_message )
+      ENDIF
+      IF( config_flags%gfdda_interval_h /= 0 ) THEN
+       WRITE( wrf_err_message , * ) 'The option gfdda_interval_h is ignored, use gfdda_interval_m instead'
+       CALL wrf_error_fatal ( wrf_err_message )
+      ENDIF
+      IF( config_flags%gfdda_interval_s /= 0 ) THEN
+       WRITE( wrf_err_message , * ) 'The option gfdda_interval_s is ignored, use gfdda_interval_m instead'
+       CALL wrf_error_fatal ( wrf_err_message )
+      ENDIF
+
+      !If surface analysis nudging chosen check analogous surface analysis
+      !nudging namelist options
+      IF( config_flags%grid_sfdda /= 0 ) THEN
+
+       !The begin time of analysis nudging must be the model start time
+       !It appears the WRF code that reads analysis nudging files respects 
+       !the start time settings, but the actual nudging code does not.  This
+       !leads one to nudge towards 0 in all fields (including potential
+       !temperature [K]) since the nudging code applies analysis nudging but has
+       !no data to nudge towards
+       IF( config_flags%sgfdda_begin_y /= 0 ) THEN
+        WRITE( wrf_err_message , * ) 'WRF currently assumes analysis nudging starts at the model ',&
+         'start time and so analysis nudging start time cannot be specified via sgfdda_begin_y'
+        CALL wrf_error_fatal ( wrf_err_message )
+       ENDIF
+       IF( config_flags%sgfdda_begin_d /= 0 ) THEN
+        WRITE( wrf_err_message , * ) 'WRF currently assumes analysis nudging starts at the model ',&
+         'start time and so analysis nudging start time cannot be specified via sgfdda_begin_d'
+        CALL wrf_error_fatal ( wrf_err_message )
+       ENDIF
+       IF( config_flags%sgfdda_begin_h /= 0 ) THEN
+        WRITE( wrf_err_message , * ) 'WRF currently assumes analysis nudging starts at the model ',&
+         'start time and so analysis nudging start time cannot be specified via sgfdda_begin_h'
+        CALL wrf_error_fatal ( wrf_err_message )
+       ENDIF
+       IF( config_flags%sgfdda_begin_m /= 0 ) THEN
+        WRITE( wrf_err_message , * ) 'WRF currently assumes analysis nudging starts at the model ',&
+         'start time and so analysis nudging start time cannot be specified via sgfdda_begin_m'
+        CALL wrf_error_fatal ( wrf_err_message )
+       ENDIF
+       IF( config_flags%sgfdda_begin_s /= 0 ) THEN
+        WRITE( wrf_err_message , * ) 'WRF currently assumes analysis nudging starts at the model ',&
+         'start time and so analysis nudging start time cannot be specified via sgfdda_begin_s'
+        CALL wrf_error_fatal ( wrf_err_message )
+       ENDIF
+        
+ 
+       !The end time of analysis nudging relative to the model start must be
+       !specified in hours
+       IF( config_flags%sgfdda_end_y /= 0 ) THEN
+        WRITE( wrf_err_message , * ) 'The option sgfdda_end_y is ignored, use sgfdda_end_h instead'
+        CALL wrf_error_fatal ( wrf_err_message )
+       ENDIF
+       IF( config_flags%sgfdda_end_d /= 0 ) THEN
+        WRITE( wrf_err_message , * ) 'The option sgfdda_end_d is ignored, use sgfdda_end_h instead'
+        CALL wrf_error_fatal ( wrf_err_message )
+       ENDIF
+       IF( config_flags%sgfdda_end_m /= 0 ) THEN
+        WRITE( wrf_err_message , * ) 'The option sgfdda_end_m is ignored, use sgfdda_end_h instead'
+        CALL wrf_error_fatal ( wrf_err_message )
+       ENDIF
+       IF( config_flags%sgfdda_end_s /= 0 ) THEN
+        WRITE( wrf_err_message , * ) 'The option sgfdda_end_s is ignored, use sgfdda_end_h instead'
+        CALL wrf_error_fatal ( wrf_err_message )
+       ENDIF
+ 
+       !The interval between analyses must be specified in minutes
+       IF( config_flags%sgfdda_interval_y /= 0 ) THEN
+        WRITE( wrf_err_message , * ) 'The option sgfdda_interval_y is ignored, use sgfdda_interval_m instead'
+        CALL wrf_error_fatal ( wrf_err_message )
+       ENDIF
+       IF( config_flags%sgfdda_interval_d /= 0 ) THEN
+        WRITE( wrf_err_message , * ) 'The option sgfdda_interval_d is ignored, use sgfdda_interval_m instead'
+        CALL wrf_error_fatal ( wrf_err_message )
+       ENDIF
+       IF( config_flags%sgfdda_interval_h /= 0 ) THEN
+        WRITE( wrf_err_message , * ) 'The option sgfdda_interval_h is ignored, use sgfdda_interval_m instead'
+        CALL wrf_error_fatal ( wrf_err_message )
+       ENDIF
+       IF( config_flags%sgfdda_interval_s /= 0 ) THEN
+        WRITE( wrf_err_message , * ) 'The option sgfdda_interval_s is ignored, use sgfdda_interval_m instead'
+        CALL wrf_error_fatal ( wrf_err_message )
+       ENDIF
+
+      ENDIF !IF surface analysis nudging is anabled
+      !BPR END
+
       !$OMP PARALLEL DO   &
       !$OMP PRIVATE ( ij, i,j,k )
        DO ij = 1 , num_tiles
@@ -388,6 +552,14 @@ CONTAINS
      u10_ndg_new, v10_ndg_new, t2_ndg_new, th2_ndg_new, q2_ndg_new, &
      rh_ndg_new, psl_ndg_new, ps_ndg_new, tob_ndg_new, odis_ndg_new,  &
                RUNDGDTEN,RVNDGDTEN,RTHNDGDTEN,RQVNDGDTEN,RMUNDGDTEN,&
+!
+! FASDAS
+!
+           config_flags%fasdas, SDA_HFX, SDA_QFX,           &
+           HFX_FDDA,dz8w,       &
+!
+! END FASDAS
+!
                pblh, ht, regime, znt, z, z_at_w,                             &
                ids,ide, jds,jde, kds,kde,                           &
                ims,ime, jms,jme, kms,kme,                           &

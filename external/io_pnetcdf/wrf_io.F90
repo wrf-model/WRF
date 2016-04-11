@@ -1252,7 +1252,7 @@ SUBROUTINE ext_pnc_open_for_write_begin(FileName,Comm,IOComm,SysDepInfo,DataHand
 
 
 ! Remove the dash/underscore change to filenames for pnetcdf...
-  write(newFileName, fmt="(a)") FileName
+  write(newFileName, fmt="(a)") TRIM(ADJUSTL(FileName))
   do i = 1, len_trim(newFileName)
 !     if(newFileName(i:i) == '-') newFileName(i:i) = '_'
      if(newFileName(i:i) == ':') newFileName(i:i) = '_'

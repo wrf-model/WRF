@@ -324,20 +324,58 @@ CONTAINS
      uses = 0
      in_use = .TRUE.
 
-     IF      ( vname(1:1) .GE. 'x' ) THEN
-#  include "in_use_for_config_xz.inc"
-     ELSE IF ( vname(1:1) .GE. 't' ) THEN
-#  include "in_use_for_config_tw.inc"
-     ELSE IF ( vname(1:1) .GE. 'o' ) THEN
-#  include "in_use_for_config_os.inc"
-     ELSE IF ( vname(1:1) .GE. 'l' ) THEN
-#  include "in_use_for_config_ln.inc"
-     ELSE IF ( vname(1:1) .GE. 'g' ) THEN
-#  include "in_use_for_config_gk.inc"
-     ELSE IF ( vname(1:1) .GE. 'd' ) THEN
-#  include "in_use_for_config_df.inc"
-     ELSE 
-#  include "in_use_for_config_ac.inc"
+     IF      ( vname(1:1) .EQ. 'a' ) THEN
+#    include "in_use_for_config_a.inc"
+     ELSE IF ( vname(1:1) .EQ. 'b' ) THEN
+#    include "in_use_for_config_b.inc"
+     ELSE IF ( vname(1:1) .EQ. 'c' ) THEN
+#    include "in_use_for_config_c.inc"
+     ELSE IF ( vname(1:1) .EQ. 'd' ) THEN
+#    include "in_use_for_config_d.inc"
+     ELSE IF ( vname(1:1) .EQ. 'e' ) THEN
+#    include "in_use_for_config_e.inc"
+     ELSE IF ( vname(1:1) .EQ. 'f' ) THEN
+#    include "in_use_for_config_f.inc"
+     ELSE IF ( vname(1:1) .EQ. 'g' ) THEN
+#    include "in_use_for_config_g.inc"
+     ELSE IF ( vname(1:1) .EQ. 'h' ) THEN
+#    include "in_use_for_config_h.inc"
+     ELSE IF ( vname(1:1) .EQ. 'i' ) THEN
+#    include "in_use_for_config_i.inc"
+     ELSE IF ( vname(1:1) .EQ. 'j' ) THEN
+#    include "in_use_for_config_j.inc"
+     ELSE IF ( vname(1:1) .EQ. 'k' ) THEN
+#    include "in_use_for_config_k.inc"
+     ELSE IF ( vname(1:1) .EQ. 'l' ) THEN
+#    include "in_use_for_config_l.inc"
+     ELSE IF ( vname(1:1) .EQ. 'm' ) THEN
+#    include "in_use_for_config_m.inc"
+     ELSE IF ( vname(1:1) .EQ. 'n' ) THEN
+#    include "in_use_for_config_n.inc"
+     ELSE IF ( vname(1:1) .EQ. 'o' ) THEN
+#    include "in_use_for_config_o.inc"
+     ELSE IF ( vname(1:1) .EQ. 'p' ) THEN
+#    include "in_use_for_config_p.inc"
+     ELSE IF ( vname(1:1) .EQ. 'q' ) THEN
+#    include "in_use_for_config_q.inc"
+     ELSE IF ( vname(1:1) .EQ. 'r' ) THEN
+#    include "in_use_for_config_r.inc"
+     ELSE IF ( vname(1:1) .EQ. 's' ) THEN
+#    include "in_use_for_config_s.inc"
+     ELSE IF ( vname(1:1) .EQ. 't' ) THEN
+#    include "in_use_for_config_t.inc"
+     ELSE IF ( vname(1:1) .EQ. 'u' ) THEN
+#    include "in_use_for_config_u.inc"
+     ELSE IF ( vname(1:1) .EQ. 'v' ) THEN
+#    include "in_use_for_config_v.inc"
+     ELSE IF ( vname(1:1) .EQ. 'w' ) THEN
+#    include "in_use_for_config_w.inc"
+     ELSE IF ( vname(1:1) .EQ. 'x' ) THEN
+#    include "in_use_for_config_x.inc"
+     ELSE IF ( vname(1:1) .EQ. 'y' ) THEN
+#    include "in_use_for_config_y.inc"
+     ELSE IF ( vname(1:1) .EQ. 'z' ) THEN
+#    include "in_use_for_config_z.inc"
      ENDIF
 
      RETURN

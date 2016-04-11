@@ -148,8 +148,10 @@ contains
     ENDIF
 
     IF ( grid%active_this_task .OR. ngrid%active_this_task ) THEN
+#if defined(DM_PARALLEL) && !defined(STUBMPI)
       CALL mpi_comm_rank(local_comm,myproc,ierr)
       CALL mpi_comm_size(local_comm,nproc,ierr)
+#endif
       CALL rsl_lite_bcast_msgs( myproc, nest_pes_x(grid%id)*nest_pes_y(grid%id),         &
                                           nest_pes_x(ngrid%id)*nest_pes_y(ngrid%id),       &
                                           ioffset, local_comm )

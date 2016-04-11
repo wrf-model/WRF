@@ -579,7 +579,9 @@ rsl_lite_allgather_msgs ( mytask_p, ntasks_par_p, ntasks_nest_p, offset_p, comm,
       "rsl_lite_allgather_msgs: rsl_to_child_info or rsl_to_parent_info not called first" ) ;
   }
 
+#ifndef STUBMPI
   ntasks = MAX(ntasks_par,ntasks_nest+*offset_p) ;
+#endif
 
   RSL_TEST_ERR( ntasks >= RSL_MAXPROC ,
     "rsl_lite_allgather_msgs: raise the compile time value of MAXPROC" ) ;

@@ -81,7 +81,7 @@
 
     CHARACTER*80  dname, memord
     CHARACTER*256 message
-    CHARACTER*80  fname
+    CHARACTER*256  fname
     CHARACTER*80  char_junk
     CHARACTER(LEN=256) :: MMINLU
     INTEGER    ibuf(1)
@@ -212,7 +212,7 @@
     CALL nl_get_dtramp_min ( 1       , dtramp_min )
     ENDIF
 
-    IF ( grid_sfdda == 1 ) THEN
+    IF ( grid_sfdda >= 1 ) THEN
     CALL nl_get_guv_sfc      ( grid%id , guv_sfc )
     CALL nl_get_gt_sfc       ( grid%id , gt_sfc )
     CALL nl_get_gq_sfc       ( grid%id , gq_sfc )
@@ -333,7 +333,7 @@
     CALL wrf_put_dom_ti_char ( fid , 'START_DATE', TRIM(start_date) , ierr )
     IF ( switch .EQ. input_only) THEN
        CALL wrf_put_dom_ti_char ( fid , 'SIMULATION_START_DATE', TRIM(start_date) , ierr )
-#ifdef HWRF
+#if ( HWRF == 1 )
     ELSE
 #else
     ELSE IF ( ( switch .EQ. restart_only ) .OR. ( switch .EQ. history_only ) ) THEN
@@ -711,7 +711,7 @@ endif
         CALL wrf_put_dom_ti_real    ( fid, 'DTRAMP_MIN', dtramp_min , 1 , ierr )
       ENDIF
 
-      IF ( grid_sfdda == 1 ) THEN
+      IF ( grid_sfdda >= 1 ) THEN
         CALL wrf_put_dom_ti_real    ( fid, 'GUV_SFC', guv_sfc , 1 , ierr )
         CALL wrf_put_dom_ti_real    ( fid, 'GT_SFC', gt_sfc , 1 , ierr )
         CALL wrf_put_dom_ti_real    ( fid, 'GQ_SFC', gq_sfc , 1 , ierr )
@@ -763,6 +763,8 @@ endif
         CALL wrf_put_dom_ti_integer   ( fid, 'OPT_SNF',     config_flags%opt_snf     , 1 , ierr )
         CALL wrf_put_dom_ti_integer   ( fid, 'OPT_TBOT',    config_flags%opt_tbot    , 1 , ierr )
         CALL wrf_put_dom_ti_integer   ( fid, 'OPT_STC',     config_flags%opt_stc     , 1 , ierr )
+        CALL wrf_put_dom_ti_integer   ( fid, 'OPT_GLA',     config_flags%opt_gla     , 1 , ierr )
+        CALL wrf_put_dom_ti_integer   ( fid, 'OPT_RSF',     config_flags%opt_rsf     , 1 , ierr )
       ENDIF
 
 
@@ -914,7 +916,7 @@ endif
     CALL wrf_put_dom_ti_integer ( fid , 'ISOILWATER' ,  config_flags%isoilwater , 1 , ierr )
 ! added these fields for restarting of moving nests, JM
 !For HWRF: zhang 
-#if defined (HWRF)
+#if ( HWRF == 1 )
     CALL wrf_put_dom_ti_integer ( fid , 'I_PARENT_START' ,  grid%i_parent_start  , 1 , ierr )
     CALL wrf_put_dom_ti_integer ( fid , 'J_PARENT_START' ,  grid%j_parent_start  , 1 , ierr )
 #elif ! defined(EM_CORE)

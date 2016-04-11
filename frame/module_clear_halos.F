@@ -42,7 +42,11 @@ contains
          ips, ipe, jps, jpe, kps, kpe
     logical :: fulldom
     real :: badR, badR_N,badR_NE,badR_NW,badR_S,badR_SW,badR_SE,badR_E,badR_W
+#if (RWORDSIZE==4)
     double precision :: badD, badD_N,badD_NE,badD_NW,badD_S,badD_SW,badD_SE,badD_E,badD_W
+#else
+    real             :: badD, badD_N,badD_NE,badD_NW,badD_S,badD_SW,badD_SE,badD_E,badD_W
+#endif
     integer :: badI, badI_N,badI_NE,badI_NW,badI_S,badI_SW,badI_SE,badI_E,badI_W
 
     select case(how)

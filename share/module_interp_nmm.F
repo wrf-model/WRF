@@ -2380,6 +2380,7 @@ contains
     real :: tsfc(nx), slp(nx), zmslp(nx), z0mid(nx), zbelow(nx), &
             tbelow(nx), RHbelow(nx)
     real :: pb,pb1,pb2,pa,pa1,pa2,pnext,pa3, wnum,wdenom, QC, P0
+    logical :: warned
 
     ! Constants from UPP params.f for RH calculation (all mks):
     real, parameter :: PQ0=379.90516
@@ -2387,6 +2388,8 @@ contains
     real, parameter :: A3=273.16
     real, parameter :: A4=35.86
     real, parameter :: RHmin=1.0E-6     ! minimal RH bound
+
+    warned=.false.
 
     if(method/=nmm_method_linear) then
        call wrf_error_fatal('only linear interpolation is supported')
@@ -2451,8 +2454,11 @@ contains
              ! unrealistically high.  Follow base_state_parent method:
              ! when this happens, assign input pressure to output 
              ! pressure.
-             WRITE(0,*)'WARNING: NESTED DOMAIN PRESSURE AT LOWEST LEVEL HIGHER THAN PSTD'
-             WRITE(0,*)'PINT(1),PD(1),PSTD(1)',pintA(1,ix),pdA(ix),p_ref
+             if(.not.warned) then
+                WRITE(0,*)'WARNING: NESTED DOMAIN PRESSURE AT LOWEST LEVEL HIGHER THAN PSTD'
+                WRITE(0,*)'PINT(1),PD(1),PSTD(1)',pintA(1,ix),pdA(ix),p_ref
+                warned=.true.
+             endif
              pdB(ix)=pdA(ix)
              cycle xloop
           endif

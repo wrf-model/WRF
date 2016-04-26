@@ -21,7 +21,7 @@ subroutine da_transform_xtogpsref(grid)
    do ij = 1 , grid%num_tiles
 
    do k = kts, kte
-      do j = jts, jte
+      do j = grid%j_start(ij), grid%j_end(ij)
          do i = its, ite
             ! calculate refractivity
 

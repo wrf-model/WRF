@@ -40,6 +40,7 @@
  rtm_option=2,
  only_sea_rad=false,
  use_varbc=true,
+ crtm_coef_path="../../run/crtm_coeffs_2.1.3"
 /
 &wrfvar15
 /
@@ -59,8 +60,6 @@
 /
 &wrfvar22
  time_window_max="2008-02-05_13:00:00.0000",
-/
-&wrfvar23
 /
 &time_control
  start_year=2008,

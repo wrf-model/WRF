@@ -360,10 +360,6 @@ the unit is stream 22.
  auxhist23_interval                  = 30,   30,    30,
  frames_per_auxhist23                =  1,    1,     1, 
  auxhist23_outname                   = "PLEVS_d<domain>_<date>"
- io_form_auxhist22                   =  2,
- auxhist22_interval                  = 30,   30,    30,
- frames_per_auxhist22                =  1,    1,     1, 
- auxhist22_outname                   = "ZLEVS_d<domain>_<date>"
  /
 
  &diags
@@ -530,10 +526,18 @@ the turbine type: windturbines.txt
 the CAM radiation scheme and is not recommended with other radiation schemes.
 Regarding cu_rad_feedback, users want the parameterized clouds to affect radiation.  
 Turning it off is only useful as a sensitivity study to determine the importance of 
-that effect.
+that effect. Regarding shallowcu_forced_ra option, setting it to true will override 
+the cloud fraction calculations to a prescribed maximum cloud fraction (a value of 0.36)
+which can be changed by the user for sensitivity testing purposes.
 
 &physics
  cu_physics          = 10,    10,    10,
  ra_lw_physics       = 3,     3,     3,
  ra_sw_physics       = 3,     3,     3,
- cu_rad_feedback     =.true.,
+ cu_rad_feedback     =.true.,.true.,.true.,
+ shallowcu_forced_ra = .false.,.false.,.false.,
+ numBins             = 21,    21,    21,
+ thBinSize           = 0.1,   0.1,   0.1,
+ rBinSize            = 0.0001,0.0001,0.0001,
+ minDeepFreq         = 0.333, 0.333, 0.333,
+ minShallowFreq      = 0.01,  0.01,  0.01, 

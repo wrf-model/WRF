@@ -1845,7 +1845,10 @@ CONTAINS
         INTEGER , PARAMETER :: OPEN_OK = 0
 
         character*128 :: mess , message
+        character*256 :: a_string
         logical, external :: wrf_dm_on_monitor
+        integer , parameter :: loop_max   = 10
+        integer             :: loop_count
 
 
 !-----SPECIFY VEGETATION RELATED CHARACTERISTICS :
@@ -1884,8 +1887,9 @@ CONTAINS
 
         LUMATCH=0
 
+        loop_count = 0
+        READ (19,FMT='(A)',END=2002) a_string
         FIND_LUTYPE : DO WHILE (LUMATCH == 0)
-           READ (19,*,END=2002)
            READ (19,*,END=2002)LUTYPE
            READ (19,*)LUCATS,IINDEX
 
@@ -1894,10 +1898,16 @@ CONTAINS
               CALL wrf_message( mess )
               LUMATCH=1
            ELSE
+              loop_count = loop_count+1
               call wrf_message ( "Skipping over LUTYPE = " // TRIM ( LUTYPE ) )
-              DO LC = 1, LUCATS+20
-                 read(19,*)
-              ENDDO
+              FIND_VEGETATION_PARAMETER_FLAG : DO
+                 READ (19,FMT='(A)', END=2002) a_string
+                 IF ( a_string(1:21) .EQ. 'Vegetation Parameters' ) THEN
+                    EXIT FIND_VEGETATION_PARAMETER_FLAG
+                 ELSE IF ( loop_count .GE. loop_max ) THEN
+                    CALL wrf_error_fatal ( 'Too many loops in VEGPARM.TBL')
+                 ENDIF
+              ENDDO FIND_VEGETATION_PARAMETER_FLAG
            ENDIF
         ENDDO FIND_LUTYPE
 ! prevent possible array overwrite, Bill Bovermann, IBM, May 6, 2008
@@ -1946,7 +1956,11 @@ CONTAINS
           READ (19,*)NATURAL
           READ (19,*)
           READ (19,*)
-          READ (19,*)
+          READ (19,FMT='(A)') a_string
+          IF ( a_string(1:21) .EQ. 'Vegetation Parameters' ) THEN
+             CALL wrf_message     ("Expected low and high density residential, and high density industrial information in VEGPARM.TBL")
+             CALL wrf_error_fatal ("This could be caused by using an older VEGPARM.TBL file with a newer WRF source code.")
+          ENDIF
           READ (19,*)LOW_DENSITY_RESIDENTIAL
           READ (19,*)
           READ (19,*)HIGH_DENSITY_RESIDENTIAL

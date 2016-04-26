@@ -89,6 +89,7 @@ export NL_CV_OPTIONS=${NL_CV_OPTIONS:-5}
 export NUM_PROCS=${NUM_PROCS:-1}
 export PROCESS_AERO=${PROCESS_AERO:-false}
 export AEROS_TO_PROCESS=${AEROS_TO_PROCESS:-" "}
+export NOCOLONS=${NOCOLONS:-.false.}                 # Set to true if using WRF "nocolons" option
 
 # Directories:
 export REL_DIR=${REL_DIR:-$HOME/trunk}            # Directory containing codes.

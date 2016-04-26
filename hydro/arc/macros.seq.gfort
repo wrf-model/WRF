@@ -1,12 +1,25 @@
 .IGNORE:
+
+ifeq ($(SPATIAL_SOIL),1)
+SPATIAL_SOIL = -DSPATIAL_SOIL
+else
+SPATIAL_SOIL = 
+endif
+
+ifeq ($(HYDRO_REALTIME),1)
+HYDRO_REALTIME = -DHYDRO_REALTIME
+else
+HYDRO_REALTIME =
+endif
+
 ifeq ($(WRF_HYDRO),1)
-WRF_HYDRO = -DWRF_HYDRO
+WRF_HYDRO = -DWRF_HYDRO $(HYDRO_REALTIME)
 else
 WRF_HYDRO =
 endif
 
 ifeq ($(WRF_HYDRO_RAPID),1)
-WRF_HYDRO = -DWRF_HYDRO -DWRF_HYDRO_RAPID
+WRF_HYDRO = -DWRF_HYDRO -DWRF_HYDRO_RAPID $(HYDRO_REALTIME)
 endif
 
 ifeq ($(HYDRO_D),1)
@@ -28,7 +41,7 @@ F90FLAGS  =       -w -c -ffree-form -ffree-line-length-none -fconvert=big-endian
 MODFLAG	=	-I./ -I../mod
 LDFLAGS	=	
 CPP	=       cpp
-CPPFLAGS	=       -C -P -xassembler-with-cpp -traditional -I"../Data_Rec" $(HYDRO_D) $(WRFIO_NCD_LARGE_FILE_SUPPORT)
+CPPFLAGS	=        -P -xassembler-with-cpp -traditional -I"../Data_Rec" $(HYDRO_D) $(SPATIAL_SOIL) $(WRFIO_NCD_LARGE_FILE_SUPPORT)
 LIBS 	=	
 NETCDFINC       =       $(NETCDF_INC)
 NETCDFLIB       =       -L$(NETCDF_LIB) -lnetcdff -lnetcdf

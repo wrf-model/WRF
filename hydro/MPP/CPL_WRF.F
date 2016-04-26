@@ -1,3 +1,23 @@
+!  Program Name:
+!  Author(s)/Contact(s):
+!  Abstract:
+!  History Log:
+! 
+!  Usage:
+!  Parameters: <Specify typical arguments passed>
+!  Input Files:
+!        <list file names and briefly describe the data they include>
+!  Output Files:
+!        <list file names and briefly describe the information they include>
+! 
+!  Condition codes:
+!        <list exit condition or error codes returned >
+!        If appropriate, descriptive troubleshooting instructions or
+!        likely causes for failures could be mentioned here with the
+!        appropriate error code
+! 
+!  User controllable options: <if applicable>
+
 !   This is used as a coupler with the WRF model.
 MODULE MODULE_CPL_LAND
 
@@ -15,17 +35,25 @@ MODULE MODULE_CPL_LAND
            time_step_write_rstart, time_step_output
   character(len=19) cpl_outdate, cpl_rstdate
 
-
+  integer, public :: cartGridComm
+  integer, public :: np_up_down, np_left_right
+  integer, public :: p_up_down, p_left_right
 
   contains
 
   subroutine CPL_LAND_INIT(istart,iend,jstart,jend)
       implicit none
    include "mpif.h"
-      integer  ierr
+      integer ierr
       logical mpi_inited
       integer istart,iend,jstart,jend 
-
+      
+      integer :: xx, ndim
+      integer, dimension(0:1) :: dims, coords
+      logical cyclic(0:1), reorder
+      data cyclic/.false.,.false./  ! not cyclic
+      data reorder/.false./   
+      
       CALL mpi_initialized( mpi_inited, ierr )
       if ( .NOT. mpi_inited ) then
           call mpi_init(ierr)
@@ -53,6 +81,30 @@ MODULE MODULE_CPL_LAND
       call find_down()
 
       call send_info()
+
+      ! initialize cartesian grid communicator
+      dims(0) = 0
+      dims(1) = 0
+      do xx=1,total_pe_num
+	if(node_info(2,xx) .eq. (-1)) then
+	  dims(0) = dims(0)+1
+	endif
+	if(node_info(4,xx) .eq. (-1)) then
+	  dims(1) = dims(1)+1
+	endif
+      enddo
+      
+      ndim = 2
+      np_up_down = dims(0)
+      np_left_right = dims(1)
+
+      call MPI_Cart_create(MPI_COMM_WORLD, ndim, dims, &
+                          cyclic, reorder, cartGridComm, ierr)
+     
+      call MPI_CART_GET(cartGridComm, 2, dims, cyclic, coords, ierr)
+     
+      p_up_down = coords(0)
+      p_left_right = coords(1)
 
       initialized = .false.  ! land model need to be initialized. 
       return

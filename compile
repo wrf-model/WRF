@@ -47,7 +47,7 @@ foreach a ( $argv )
     if ( "$a" != "-d" ) then
       set arglist = ( $arglist $a )
     endif
-    if ( "$a" == "all_wrfvar" ) then
+    if ( "$a" == "all_wrfvar" || "$a" == "gen_be" ) then
       grep "DA_CORE=1" configure.wrf > /dev/null
       if ( ! $status ) then 
         # If configuration file has DA_CORE=1, set WRF_DA_CORE to 1

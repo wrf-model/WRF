@@ -4845,7 +4845,7 @@ END SUBROUTINE vertical_diffusion_s
     END DO
     END DO
  
-    IF ( config_flags%sfs_opt .EQ. 1 ) THEN ! USE NBA MODEL SFS STRESSES
+    IF ( config_flags%sfs_opt .GT. 0 ) THEN ! USE NBA MODEL SFS STRESSES
 
       DO j = j_start, j_end
       DO k = kts+1, ktf

@@ -499,11 +499,13 @@ SUBROUTINE vert_cor_vertical_nesting_arbitrary(nest,znw_c,kde_c,use_baseparam_fr
 END SUBROUTINE vert_cor_vertical_nesting_arbitrary
 
 SUBROUTINE compute_eta ( znw , &
-                         eta_levels , max_eta , max_dz , &
-                         p_top , g , p00 , cvpm , a , r_d , cp , &
-                         t00 , p1000mb , t0 , tiso , p_strat , a_strat , &
-                         ids , ide , jds , jde , kds , kde , &
-                         ims , ime , jms , jme , kms , kme , &
+                         eta_levels , max_eta , max_dz ,        &
+                         p_top_def , g_def , p00_def ,          &
+                         cvpm_def , a_def , r_d_def , cp_def ,  &
+                         t00_def , p1000mb_def , t0_def ,       &
+                         tiso_def , p_strat_def , a_strat_def , &
+                         ids , ide , jds , jde , kds , kde ,    &
+                         ims , ime , jms , jme , kms , kme ,    &
                          its , ite , jts , jte , kts , kte )
 
       !  Compute eta levels, either using given values from the namelist (hardly
@@ -516,8 +518,10 @@ SUBROUTINE compute_eta ( znw , &
                                      ims , ime , jms , jme , kms , kme , &
                                      its , ite , jts , jte , kts , kte
       REAL , INTENT(IN)           :: max_dz
-      REAL , INTENT(IN)           :: p_top , g , p00 , cvpm , a , r_d , cp , t00 , p1000mb , t0 , tiso
-      REAL , INTENT(IN)           :: p_strat , a_strat
+      REAL , INTENT(IN)           :: p_top_def , g_def , p00_def , cvpm_def , &
+                                     a_def , r_d_def , cp_def , t00_def ,     &
+                                     p1000mb_def , t0_def , tiso_def ,        &
+                                     p_strat_def , a_strat_def
       INTEGER , INTENT(IN)        :: max_eta
       REAL , DIMENSION (max_eta)  :: eta_levels
 
@@ -528,6 +532,10 @@ SUBROUTINE compute_eta ( znw , &
       INTEGER :: k , kk
       REAL(KIND=8) :: mub , t_init , p_surf , pb, ztop, ztop_pbl , dz , temp
       REAL(KIND=8) , DIMENSION(kts:kte) :: dnw
+      REAL(KIND=8) :: p_top , g , p00 , cvpm , &
+                      a , r_d , cp , t00 ,     &
+                      p1000mb , t0 , tiso ,        &
+                      p_strat , a_strat
 
       INTEGER , PARAMETER :: prac_levels = 59
       INTEGER :: loop , loop1
@@ -543,6 +551,20 @@ SUBROUTINE compute_eta ( znw , &
       !  levels, and then just coarse resolution above that.  We know p_top,
       !  and we
       !  have the base state vars.
+
+      p_top   = p_top_def
+      g       = g_def
+      p00     = p00_def
+      cvpm    = cvpm_def
+      a       = a_def
+      r_d     = r_d_def
+      cp      = cp_def
+      t00     = t00_def
+      p1000mb = p1000mb_def
+      t0      = t0_def
+      tiso    = tiso_def
+      p_strat = p_strat_def
+      a_strat = a_strat_def
 
       p_surf = p00
 

@@ -227,6 +227,8 @@ CONTAINS
 #endif
       CALL nl_set_nproc_x ( 1, ntasks_x )
       CALL nl_set_nproc_y ( 1, ntasks_y )
+      WRITE( wrf_err_message , * )'Ntasks in X ',ntasks_x,', ntasks in Y ',ntasks_y
+      CALL wrf_message( wrf_err_message )
       RETURN
    END SUBROUTINE wrf_dm_initialize
 
@@ -830,6 +832,9 @@ CONTAINS
          intermediate_grid%num_parents = 1
          intermediate_grid%max_tiles   = 0
          intermediate_grid%num_tiles_spec   = 0
+#if ( EM_CORE == 1 && DA_CORE != 1 )
+         intermediate_grid%active_this_task = .true.
+#endif
          CALL find_grid_by_id ( id, head_grid, nest_grid )
 
          nest_grid%intermediate_grid => intermediate_grid  ! nest grid now has a pointer to this baby

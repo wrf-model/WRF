@@ -1,4 +1,4 @@
-WRF Model Version 3.7.1 (August 14, 2015)
+WRF Model Version 3.8 (April 8, 2016)
 http://wrf-model.org/users/users.php
 
 ------------------------
@@ -26,6 +26,13 @@ infringement actions.
 ======================================
 This is the main directory for the WRF Version 3 source code release.
 ======================================
+
+V3.8 Release Notes (4/8/16) (rev 9345):
+-------------------
+
+- For more information on WRF V3.8 release, visit WRF User's home pages
+  http://www2.mmm.ucar.edu/wrf/users/, and
+  http://www.dtcenter.org/wrf-nmm/users/, and read the online User's Guide.
 
 V3.7.1 Release Notes (8/14/15) (rev 8584):
 -------------------
@@ -349,7 +356,8 @@ What is in WRF V3?
     Grell-Freitas ensemble /
     Tiedtke (with shallow conv and momentum transport) / NSAS (with shallow conv and momentum transport) /
     SAS (with shallow conv for ARW) / Zhang-McFarlane (with momentum transport) ) /
-    New Tiedtke (with shallow conv and momentum transport) / Multi-scale KF (with shallow convection)
+    New Tiedtke (with shallow conv and momentum transport) / Multi-scale KF (with shallow convection) /
+    Kain-Fritsch Cumulus Potential (with shallow convection)
   * UW shallow convection / GRIMS shallow convection
   * planetary boundary layer (Yosei University / Mellor-Yamada-Janjic / ACM2 / QNSE-EDMF / MYNN / 
     BouLac / UW / TEMF / Grenier-Bretherton-McCaa ) / Shin-Hong 
@@ -375,7 +383,7 @@ What is in WRF V3?
   * windfarm drag
 
 - Nudging:
-  * three-dimensional and surface analysis nudging 
+  * three-dimensional, surface analysis nudging, and flux-adjusting surface data nudging
   * observation nudging 
   * spectral nudging
 

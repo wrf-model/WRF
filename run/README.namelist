@@ -268,7 +268,11 @@ Namelist variables specifically for the WPS input for real:
                                                 ;           the terrain following portion of the hybrid vertical
                                                 ;           coordinate (p > ptsgm) and the purely
                                                 ;           isobaric portion of the vertical coordinate (p < ptsgm)
- vert_refine_fact                    = 1        ; vertical refinement factor for ndown
+ vert_refine_fact                    = 1        ; vertical refinement factor for ndown, not used for concurrent vertical grid refinement
+ vert_refine_method (max_dom)        = 0        ; vertical refinement method (new in 3.7)
+                                                  0: no vertical refinement
+                                                  1: integer vertical refinement
+                                                  2: use specified or computed eta levels for vertical refinement
 
 Users may explicitly define full eta levels.  Given are two distributions for 28 and 35 levels.  The number
 of levels must agree with the number of eta surfaces allocated (e_vert).  Users may alternatively request 
@@ -304,6 +308,9 @@ a known first several layers, then generates equi-height spaced levels up to the
                                        0.8210, 0.7906, 0.7602, 0.7298, 0.6812, 0.6290, 0.5796, 0.5333, 0.4901, 0.4493, 0.4109,
                                        0.3746, 0.3412, 0.3098, 0.2802, 0.2524, 0.2267, 0.2028, 0.1803, 0.1593, 0.1398, 0.1219,
                                        0.1054, 0.0904, 0.0766, 0.0645, 0.0534, 0.0433, 0.0341, 0.0259, 0.0185, 0.0118, 0.0056, 0.
+
+ ideal_init_method                   method to compute alb in idealized cases in start_em (new in 3.8)
+                                     = 1, alb from phb (default); = 2, alb from t_init
 
 Horizontal interpolation options, coarse grid to fine grid.  The default is to use
 the Smolarkiewicz "SINT" method.  However, this is known to break with the 
@@ -520,6 +527,9 @@ Namelist variables for controlling the adaptive time step option:
 
  no_mp_heating                       = 0       ; normal
                                      = 1       ; turn off latent heating from a microphysics scheme
+ use_mp_re                           = 1       ; whether to use effective radii computed in mp schemes in RRTMG (new in 3.8).
+                                                 0: do not use; 1: use effective radii
+                                                 (The mp schemes that compute effective radii are 3,4,6,8,14,16,17-21)
 
  ra_lw_physics (max_dom)             longwave radiation option
                                      = 0, no longwave radiation
@@ -589,6 +599,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 0, none
                                      = 1, using Tegen (1997) data, 
                                      = 2, using J. A. Ruiz-Arias method (see other aer_* options) 
+                                     = 3, using G. Thompson's water/ice friendly climatological aerosol 
  alevsiz                             = 12 for Tegen aerosol input levels, set automatically
  no_src_types                        = 6 for Tegen aerosols: organic and black carbon, sea salt, sulfalte, dust,
                                        and stratospheric aerosol (volcanic ashes - currently 0), set automatically
@@ -682,11 +693,42 @@ Namelist variables for controlling the adaptive time step option:
                                      = 1, turn on topographic surface wind correction from Jimenez 
                                        (YSU PBL only, and require extra input from geogrid)
                                      = 2, turn on topographic surface wind correction from Mass (YSU PBL only)
+
  bl_mynn_tkebudget (max_dom)         = 0, default off; = 1 adds MYNN tke budget terms to output
  bl_mynn_tkeadvect (max_dom)         = .false., default off; = .true. do MYNN tke advection
+ icloud_bl                           option to couple the subgrid-scale clouds from the PBL scheme (MYNN only) 
+                                     to radiation schemes 
+                                     0: no coupling; 1: activate coupling to radiation (default)
+ bl_mynn_cloudmix                    option to activate mixing of qc and qi in MYNN
+                                     0: no mixing of qc & qi; 1: mixing activated (default). 
+                                       Note qnc and qni are mixed when scalar_pblmix =1.
+ bl_mynn_mixlength                   option to change mixing length formulation in MYNN
+                                     0:original as in Nakanishi and Niino 2009, 
+                                     1:RAP/HRRR (default, including BouLac in free atmosphere), 
+                                     2:experimental (includes cloud-specific mixing length and a scale-aware mixing 
+                                       length, following Ito et al. 2015, BLM). Option 2 has been well tested with 
+                                       the edmf options.
+ bl_mynn_cloudpdf                    option to switch to different cloud PDFs to represent subgrid clouds
+                                     0: original (Sommeria and Deardorf 1977); 
+                                     1: Kuwano et al 2010?, similar to option 0, but uses resolved scale gradients 
+                                        as opposed to higher order moments ; 
+                                     2: from Chaboureau and Bechtold (2002, JAS, with mods, default) 
+ bl_mynn_edmf                        option to activate mass-flux scheme in MYNN 
+                                     1: for StEM; 2: for TEMF; default =0, just regular MYNN. 
+                                     Related (hidden) options: 
+ bl_mynn_edmf_mom                    option to activate momentum transport in MYNN mass-flux scheme 
+                                     (assuming bl_mynn_edmf > 0)
+                                     0: no momentum transport; 1: momentum transport activated (default)
+ bl_mynn_edmf_tke                    option to activate TKE transport in MYNN mass-flux scheme 
+                                     (assuming bl_mynn_edmf > 0)
+                                     0: no TKE transport (default);1: activate TKE transport
+
  scalar_pblmix (max_dom)             = 1 ; mix scalar fields consistent with PBL option (exch_h)
  tracer_pblmix (max_dom)             = 1 ; mix tracer fields consistent with PBL option (exch_h)
  shinhong_tke_diag (max_dom)         = 0 ; diagnostic TKE and mixing length from Shin-Hong PBL
+ opt_thcnd                           option to treat thermal conductivity in Noah LSM (new in 3.8)
+                                     = 1, original (default)
+                                     = 2, McCumber and Pielke for silt loam and sandy loam
  sf_surface_mosaic                   option to mosaic landuse categories for Noah LSM            
                                      = 0 ; default; use dominant category only
                                      = 1 ; use mosaic landuse categories
@@ -703,7 +745,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 5, Grell 3D ensemble scheme
                                      = 6, Modifed Tiedtke scheme (ARW only)
                                      = 7, Zhang-McFarlane scheme from CAM5 (CESM 1_0_1)
-                                     = 10, Modified Kain-Fritsch scheme with triger function based on PDFs (ARW only)
+                                     = 10, Modified Kain-Fritsch scheme with trigger function based on PDFs (ARW only)
                                      = 11, Multi-scale Kain-Fritsch scheme
                                      = 14, New GFS simplified Arakawa-Schubert scheme from YSU (ARW only)
                                      = 16, A newer Tiedtke scheme
@@ -720,7 +762,9 @@ Namelist variables for controlling the adaptive time step option:
  ishallow                            = 1,   Shallow convection used with Grell 3D ensemble schemes (cu_physics = 3 or 5)
  clos_choice                         = 0,   closure choice (place holder only)
  cu_diag                             = 0,   additional t-averaged stuff for cu physics (cu_phys = 3, 5 and 93 only)
- kf_edrates                          = 0,   Add entrainment/detrainment rates and convective timescale output variables for KF-based cumulus schemes (cu_phys = 1, 11 and 99 only)
+ kf_edrates (max_dom)                = 0,   Add entrainment/detrainment rates and convective timescale output variables for KF-based 
+                                            cumulus schemes (cu_phys = 1, 11 and 99 only) (new in 3.8)
+                                     = 0,   no output; = 1, additional output
  convtrans_avglen_m                  = 30,  averaging time for variables used by convective transport (call cu_phys options)  and radiation routines (only cu_phys=3,5 and 93) (minutes) 
  cu_rad_feedback (max_dom)           = .false.  ; sub-grid cloud effect to the optical depth in radiation
                                                   currently it works only for GF, G3, GD and KF scheme
@@ -735,6 +779,17 @@ Namelist variables for controlling the adaptive time step option:
                                      = 3, for small grid distances (DX < 5 km)
  nsas_dx_factor                      = 0, default option
                                      = 1, NSAS grid-distance dependent option (new in 3.6)
+ For KF-CuP scheme: recommended to use with cu_rad_feedback
+ shallowcu_forced_ra(max_dom)        radiative impact of shallow Cu by a prescribed maximum cloud fraction
+                                     = .false., option off, default
+                                     = .true., radiative impact of shallow cu with a cloud fraction value of 0.36
+ numbins(max_dom)                    number of perturbations for potential temperature and mixing ratio in the CuP PDF,
+                                     should be an odd number (21 is a recommended value)
+ thBinSize(max_dom)                  bin size of potential temperature perturbation increment (0.01 K)
+ rBinSize(max_dom)                   bin size of mixing ratio perturbation increment (1.0e-4 kg/kg)
+ minDeepFreq(max_dom)                minimum frequency required before deep convection is allowed (0.333)
+ minShallowFreq(max_dom)             minimum frequency required before shallow convection is allowed (1.0e-2)
+ shcu_aerosols_opt(max_dom)          whether aerosols in shcu:  0=none, 2=prognostic (run with WRF-Chem), 
 
  ncnvc (max_dom)                     = FOR NMM: number of fundamental timesteps between
                                                 calls to convection; the value is set in Registry.NMM
@@ -775,11 +830,11 @@ Namelist variables for controlling the adaptive time step option:
                                                       Sundqvist et al. (1989) (since 3.7)
  swrad_scat                          = 1.       ; scattering tuning parameter (default 1. is 1.e-5 m2/kg)
                                                   (works for ra_sw_physics = 1 option only)
- surface_input_source                = 1,	; where landuse and soil category data come from:
+ surface_input_source                = 3,	; where landuse and soil category data come from:
                                                   1 = WPS/geogrid but with dominant categories recomputed
                                                   2 = GRIB data from another model (only possible
                                                       (VEGCAT/SOILCAT are in met_em files from WPS)
-                                                  3 = use dominant land and soil categories from WPS/geogrid
+                                                  3 = use dominant land and soil categories from WPS/geogrid (default since 3.8)
 
  num_soil_layers                     = 5,	; number of soil layers in land surface model
                                                   = 5: thermal diffusion scheme
@@ -788,10 +843,10 @@ Namelist variables for controlling the adaptive time step option:
                                                   = 10: CLM4 landsurface model
                                                   = 2: Pleim-Xu landsurface model
                                                   = 3: SSiB landsurface model
- num_land_cat                        = 24,      ; number of land categories in input data.
+ num_land_cat                        = 21,      ; number of land categories in input data.
                                                   24 - for USGS (default); 20 for MODIS
                                                   28 - for USGS if including lake category
-                                                  21 - for MODIS if including lake category
+                                                  21 - for MODIS if including lake category (default since 3.8)
 						  40 - for NCLD
  num_soil_cat                        = 16,      ; number of soil categories in input data
 
@@ -835,6 +890,8 @@ Namelist variables for controlling the adaptive time step option:
                                                 ; works with sf_surface_physics = 1 only
  oml_hml0                            = 50       ; oml model can be initialized with a constant depth everywhere (m)
  oml_gamma                           = 0.14     ; oml deep water lapse rate (K m-1)
+ oml_relaxation_time                 = 0.       ; Relaxation time (in second) of mixed layer ocean model back to original values 
+                                                  (an example value is 259200 sec. (3 days)) (new in 3.8)
  omdt                                = 1.       ; 3D PWP time step (min).  It can be set to be the same as WRF time step 
                                                 ; in corresponding nested grids, but omdt should be no less than 1.0 minute.
  ocean_levels                        = 30       ; number of vertical levels in 3DPWP. Note that the depth of each ocean 
@@ -1023,6 +1080,14 @@ Options for use with the Noah-MP Land Surface Model:
                                                 ;    1 = semi-implicit
                                                 ;    2 = full-implicit
 						;    3 = semi-implicit where Ts uses snow cover fraction
+ opt_gla                            = 1,        ; Noah-MP glacier treatment option (new in 3.8)
+                                                ;    1 = includes phase change
+                                                ;    2 = slab ice (Noah)
+ opt_rsf                            = 1,        ; Noah-MP surface evaporation resistence option (new in 3.8)
+                                                ;    1 -> Sakaguchi and Zeng, 2009
+                                                ;    2 -> Sellers (1992)
+                                                ;    3 -> adjusted Sellers to decrease RSURF for wet soil
+                                                ;    4 -> option 1 for non-snow; rsurf = rsurf_snow for snow (set in MPTABLE); AD v3.8
  /
 
  &fdda

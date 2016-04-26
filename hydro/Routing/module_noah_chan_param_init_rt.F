@@ -1,3 +1,23 @@
+!  Program Name:
+!  Author(s)/Contact(s):
+!  Abstract:
+!  History Log:
+! 
+!  Usage:
+!  Parameters: <Specify typical arguments passed>
+!  Input Files:
+!        <list file names and briefly describe the data they include>
+!  Output Files:
+!        <list file names and briefly describe the information they include>
+! 
+!  Condition codes:
+!        <list exit condition or error codes returned >
+!        If appropriate, descriptive troubleshooting instructions or
+!        likely causes for failures could be mentioned here with the
+!        appropriate error code
+! 
+!  User controllable options: <if applicable>
+
 MODULE module_noah_chan_param_init_rt
 
 
@@ -10,7 +30,7 @@ CONTAINS
     IMPLICIT NONE
 
     integer :: IINDEX, CHANCATS
-    integer :: ORDER
+    integer :: ORDER, IUNIT
     integer, PARAMETER :: NCHANTYPES=50 
     real,dimension(NCHANTYPES)    :: BOTWID,HLINK_INIT,CHAN_SS,CHMann
     character(LEN=11) :: DATATYPE
@@ -24,13 +44,18 @@ CONTAINS
 
 
 !-----READ IN CHANNEL PROPERTIES FROM CHANPARM.TBL :
-    OPEN(19, FILE='CHANPARM.TBL',FORM='FORMATTED',STATUS='OLD')
-    READ (19,*)
-    READ (19,2000,END=2002) DATATYPE
+    IUNIT = 23
+    OPEN(IUNIT, &
+#ifndef NCEP_WCOSS
+    FILE='CHANPARM.TBL', &
+#endif
+    FORM='FORMATTED',STATUS='OLD')
+    READ (IUNIT,*)
+    READ (IUNIT,2000,END=2002) DATATYPE
 #ifdef HYDRO_D
     PRINT *, DATATYPE
 #endif
-    READ (19,*)CHANCATS,IINDEX
+    READ (IUNIT,*)CHANCATS,IINDEX
 2000 FORMAT (A11)
 
 !-----Read in Channel Parameters as functions of stream order...
@@ -41,10 +66,12 @@ CONTAINS
             CHANCATS,' CATEGORIES'
 #endif
        DO ORDER=1,CHANCATS
-          READ (19,*)IINDEX,BOTWID(ORDER),HLINK_INIT(ORDER),CHAN_SS(ORDER),   &
+          READ (IUNIT,*)IINDEX,BOTWID(ORDER),HLINK_INIT(ORDER),CHAN_SS(ORDER),   &
                &     CHMann(ORDER)
+#ifdef HYDRO_D
           PRINT *, IINDEX,BOTWID(ORDER),HLINK_INIT(ORDER),CHAN_SS(ORDER),   &
                &     CHMann(ORDER)
+#endif
        ENDDO
     ENDIF
 
@@ -54,7 +81,7 @@ CONTAINS
 
 2002 CONTINUE
 
-    CLOSE (19)
+    CLOSE (IUNIT)
   END SUBROUTINE CHAN_PARM_INIT
 
 

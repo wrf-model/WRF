@@ -43,6 +43,7 @@
      print "   6. Linux gfort compiler dmpar      \n";
      print "   7. Linux ifort compiler sequential \n";
      print "   8. Linux ifort compiler dmpar      \n";
+     print "   9. Linux ifort compiler dmpar (WCOSS Luna)   \n";
      print "   0. exit only \n";
 
      printf "\nEnter selection [%d-%d] : ",1,5 ;
@@ -98,10 +99,15 @@
                system "cp arc/macros.mpp.ifort macros"; 
                system "cp arc/Makefile.mpp Makefile.comm"; 
              }
+      case 9 {
+               # ifort Luna   dmpar only                         
+               system "cp arc/macros.mpp.ifort.luna macros"; 
+               system "cp arc/Makefile.mpp Makefile.comm"; 
+             }
 
      else   {print "no selection $response\n"; last} 
   }
   if(! (-e lib)) {mkdir lib;}
   if(! (-e mod)) {mkdir mod;}
   if(-e "macros.tmp")  { system("cat macros macros.tmp > macros.a; rm -f macros.tmp; mv macros.a macros");}
-  if((-d "LandModel") ) {system "cat macros LandModel/user_build_options.bak  > LandModel/user_build_options";}
+  # if((-d "LandModel") ) {system "cat macros LandModel/user_build_options.bak  > LandModel/user_build_options";}

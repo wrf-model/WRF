@@ -1144,7 +1144,7 @@ contains
       call cudtdqn(klon,klev,itopm2,kctop,idtop,ldcum,loddraf, &
                  ztmst,paph,zgeoh,pgeo,pten,ztenh,pqen,zqenh,pqsen,     &
                  zlglac,plude,pmfu,pmfd,zmfus,zmfds,zmfuq,zmfdq,zmful,   &
-                 zdmfup,zdpmel,ptte,pqte,pcte)
+                 zdmfup,zdmfdp,zdpmel,ptte,pqte,pcte)
 !----------------------------------------------------------------
 !*    9.0      update tendencies for u and u in subroutine cududv
 !----------------------------------------------------------------
@@ -2350,7 +2350,7 @@ contains
                 plude(jl,jk) = plu(jl,jk+1)*zdmfde(jl)
                 pmfu(jl,jk) = pmfu(jl,jk+1) + zdmfen(jl) - zdmfde(jl)
               end if
-              if ( zbuo(jl,jk) > 0. ) then
+              if ( zbuo(jl,jk) > 0.  ) then
                 ikb = kcbot(jl)
                 zoentr(jl) = 1.75e-3*(0.3-(min(1.,pqen(jl,jk-1) /    &
                   pqsen(jl,jk-1))-1.))*(pgeoh(jl,jk-1)-pgeoh(jl,jk)) * &
@@ -2398,7 +2398,7 @@ contains
               zdshrd = 3.e-4
             end if
             ikb=kcbot(jl)
-            if ( plu(jl,jk) > zdshrd ) then
+            if ( plu(jl,jk) > zdshrd )then
               zwu = min(15.0,sqrt(2.*max(0.1,kup(jl,jk+1))))
               zprcon = zprcdgw/(0.75*zwu)
 ! PARAMETERS FOR BERGERON-FINDEISEN PROCESS (T < -5C)
@@ -2809,116 +2809,90 @@ contains
 !                     (c) checking for negative buoyancy and              
 !                         specifying final t,q,u,v and downward fluxes    
 !                    -------------------------------------------------    
-      do jl=1,klon                                                   
-        zoentr(jl)=0.                                                     
-        zbuoy(jl)=0.                                                      
-        zdmfen(jl)=0.                                                     
+      do jl=1,klon
+        zdmfen(jl)=0.
         zdmfde(jl)=0.
-      enddo 
+      enddo
 
       do jk=1,klev
        do jl=1,klon
          pmfdde_rate(jl,jk) = 0.
        end do
-      end do                                                              
-                                                                 
-      do jk=3,klev                                                        
-        is=0                                                              
-        do jl=1,klon                                                 
-          zph(jl)=paph(jl,jk)                                             
-          llo2(jl)=lddraf(jl).and.pmfd(jl,jk-1).lt.0.                     
-          if(llo2(jl)) then                                               
-            is=is+1                                                       
-          endif                                                           
-        enddo                                                             
-        if(is.eq.0) cycle                                                 
-                                                                          
-        do jl=1,klon                                                 
-          if(llo2(jl)) then    
-            zentr = entrdd*pmfd(jl,jk-1)*(pgeoh(jl,jk-1)-pgeoh(jl,jk))*zrg
-            zdmfen(jl)=zentr                                              
-            zdmfde(jl)=zentr                                              
-          endif                                                           
-        enddo 
-                                                            
-        if(jk.gt.itopde) then
-          do jl=1,klon
-            if(llo2(jl)) then
-              zdmfen(jl)=0.
-              zdmfde(jl)=pmfd(jl,itopde)*                    &
-     &         (paph(jl,jk)-paph(jl,jk-1))/                  &
-     &         (paph(jl,klev+1)-paph(jl,itopde))
-            endif
-          enddo
-        endif
+      end do
 
-        if(jk.le.itopde) then
-          do jl=1,klon
-            if(llo2(jl)) then
-              zdz=-(pgeoh(jl,jk-1)-pgeoh(jl,jk))*zrg
-              zzentr=zoentr(jl)*zdz*pmfd(jl,jk-1)
-              zdmfen(jl)=zdmfen(jl)+zzentr
-              zdmfen(jl)=max(zdmfen(jl),0.3*pmfd(jl,jk-1))
-              zdmfen(jl)=max(zdmfen(jl),-0.75*pmfu(jl,jk)-   &
-     &         (pmfd(jl,jk-1)-zdmfde(jl)))
-              zdmfen(jl)=min(zdmfen(jl),0.)
-            endif
-          enddo
-        endif
+      do jk=3,klev
+      is=0
+      do jl=1,klon
+      zph(jl)=paph(jl,jk)
+      llo2(jl)=lddraf(jl).and.pmfd(jl,jk-1).lt.0.
+      if(llo2(jl)) then
+         is=is+1
+      endif
+      end do
 
-        do jl=1,klon                                                 
-          if(llo2(jl)) then                                               
+      if(is.eq.0) cycle
+      do jl=1,klon
+      if(llo2(jl)) then
+         zentr = entrdd*pmfd(jl,jk-1)*(pgeoh(jl,jk-1)-pgeoh(jl,jk))*zrg
+         zdmfen(jl)=zentr
+         zdmfde(jl)=zentr
+      end if
+      end do
+
+      if(jk.gt.itopde) then
+         do jl=1,klon
+         if(llo2(jl)) then
+            zdmfen(jl)=0.
+            zdmfde(jl)=pmfd(jl,itopde)*      &
+            (paph(jl,jk)-paph(jl,jk-1))/     &
+            (paph(jl,klev+1)-paph(jl,itopde))
+         end if
+         end do
+      end if
+
+      do jl=1,klon
+         if(llo2(jl)) then
             pmfd(jl,jk)=pmfd(jl,jk-1)+zdmfen(jl)-zdmfde(jl)
-            zseen=(cpd*ptenh(jl,jk-1)+pgeoh(jl,jk-1))*zdmfen(jl)         
-            zqeen=pqenh(jl,jk-1)*zdmfen(jl)                               
-            zsdde=(cpd*ptd(jl,jk-1)+pgeoh(jl,jk-1))*zdmfde(jl)           
-            zqdde=pqd(jl,jk-1)*zdmfde(jl)                                 
-            zmfdsk=pmfds(jl,jk-1)+zseen-zsdde                             
-            zmfdqk=pmfdq(jl,jk-1)+zqeen-zqdde                             
-            pqd(jl,jk)=zmfdqk*(1./min(-cmfcmin,pmfd(jl,jk)))              
-            ptd(jl,jk)=(zmfdsk*(1./min(-cmfcmin,pmfd(jl,jk)))-&            
-     &                  pgeoh(jl,jk))*rcpd                                
-            ptd(jl,jk)=min(400.,ptd(jl,jk))                               
-            ptd(jl,jk)=max(100.,ptd(jl,jk))                               
-            zcond(jl)=pqd(jl,jk)                                          
-          endif                                                           
-        enddo                                                             
-                                                                          
-        ik=jk                                                             
-        icall=2                                                           
-        call cuadjtqn(klon, klev, ik, zph, ptd, pqd, llo2, icall )                
-                                                                          
-        do jl=1,klon                                                 
-          if(llo2(jl)) then                                               
+            zseen=(cpd*ptenh(jl,jk-1)+pgeoh(jl,jk-1))*zdmfen(jl)
+            zqeen=pqenh(jl,jk-1)*zdmfen(jl)
+            zsdde=(cpd*ptd(jl,jk-1)+pgeoh(jl,jk-1))*zdmfde(jl)
+            zqdde=pqd(jl,jk-1)*zdmfde(jl)
+            zmfdsk=pmfds(jl,jk-1)+zseen-zsdde
+            zmfdqk=pmfdq(jl,jk-1)+zqeen-zqdde
+            pqd(jl,jk)=zmfdqk*(1./min(-cmfcmin,pmfd(jl,jk)))
+            ptd(jl,jk)=(zmfdsk*(1./min(-cmfcmin,pmfd(jl,jk)))- &
+                       pgeoh(jl,jk))*rcpd
+            ptd(jl,jk)=min(400.,ptd(jl,jk))
+            ptd(jl,jk)=max(100.,ptd(jl,jk))
+            zcond(jl)=pqd(jl,jk)
+         end if
+      end do
+
+      ik=jk
+      icall=2
+      call cuadjtqn(klon,klev,ik,zph,ptd,pqd,llo2,icall)
+      do jl=1,klon
+         if(llo2(jl)) then
             zcond(jl)=zcond(jl)-pqd(jl,jk)
-            zbuo=ptd(jl,jk)*(1.+vtmpc1  *pqd(jl,jk))-          &             
-     &      ptenh(jl,jk)*(1.+vtmpc1  *pqenh(jl,jk))                         
-            if(prfl(jl).gt.0..and.pmfu(jl,jk).gt.0.) then                 
-              zrain=prfl(jl)/pmfu(jl,jk)                                  
+            zbuo=ptd(jl,jk)*(1.+vtmpc1*pqd(jl,jk))- &
+                 ptenh(jl,jk)*(1.+vtmpc1*pqenh(jl,jk))
+            if(prfl(jl).gt.0..and.pmfu(jl,jk).gt.0.) then
+              zrain=prfl(jl)/pmfu(jl,jk)
               zbuo=zbuo-ptd(jl,jk)*zrain
-            endif                                                         
-            if(zbuo.ge.0 .or. prfl(jl).le.(pmfd(jl,jk)*zcond(jl))) then    
-              pmfd(jl,jk)=0.
-              zbuo=0.                                              
             endif
-            pmfds(jl,jk)=(cpd*ptd(jl,jk)+pgeoh(jl,jk))*pmfd(jl,jk)       
-            pmfdq(jl,jk)=pqd(jl,jk)*pmfd(jl,jk)                           
-            zdmfdp=-pmfd(jl,jk)*zcond(jl)                                 
-            pdmfdp(jl,jk-1)=zdmfdp                                        
-            prfl(jl)=prfl(jl)+zdmfdp                                      
-                                                                          
-! compute organized entrainment for use at next level                     
-            zbuoyz=zbuo/ptenh(jl,jk)                                      
-            zbuoyz=min(zbuoyz,0.0)                                        
-            zdz=-(pgeo(jl,jk-1)-pgeo(jl,jk))
-            zbuoy(jl)=zbuoy(jl)+zbuoyz*zdz
-            zoentr(jl)=g*zbuoyz*0.5/(1.+zbuoy(jl)) 
+            if(zbuo.ge.0..or.prfl(jl).le.(pmfd(jl,jk)*zcond(jl))) then
+               pmfd(jl,jk)=0.
+            end if
+            pmfds(jl,jk)=(cpd*ptd(jl,jk)+pgeoh(jl,jk))*pmfd(jl,jk)
+            pmfdq(jl,jk)=pqd(jl,jk)*pmfd(jl,jk)
+            zdmfdp=-pmfd(jl,jk)*zcond(jl)
+            pdmfdp(jl,jk-1)=zdmfdp
+            prfl(jl)=prfl(jl)+zdmfdp
             pmfdde_rate(jl,jk) = -zdmfde(jl)
-          endif                                                           
-        enddo
+          end if                                                           
+        end do
                                                              
-      enddo                                                               
-                                                                          
+      end do                                                               
       return                                                              
       end subroutine cuddrafn
 !---------------------------------------------------------
@@ -3076,7 +3050,7 @@ contains
             pmfuq(jl,jk)=pmfuq(jl,jk)-pmfu(jl,jk)*pqenh(jl,jk)
             plglac(jl,jk)=pmfu(jl,jk)*plglac(jl,jk)
             llddraf = lddraf(jl) .and. jk >= kdtop(jl)
-            if ( llddraf ) then
+            if ( llddraf .and.jk.ge.kdtop(jl)) then
               pmfds(jl,jk) = pmfds(jl,jk)-pmfd(jl,jk) * &
                            (cpd*ptenh(jl,jk)+pgeoh(jl,jk))
               pmfdq(jl,jk) = pmfdq(jl,jk)-pmfd(jl,jk)*pqenh(jl,jk)
@@ -3253,7 +3227,7 @@ contains
      subroutine cudtdqn(klon,klev,ktopm2,kctop,kdtop,ldcum, &
                      lddraf,ztmst,paph,pgeoh,pgeo,pten,ptenh,pqen,  &
                      pqenh,pqsen,plglac,plude,pmfu,pmfd,pmfus,pmfds, &
-                     pmfuq,pmfdq,pmful,pdmfup,pdpmel,ptent,ptenq,pcte)
+                     pmfuq,pmfdq,pmful,pdmfup,pdmfdp,pdpmel,ptent,ptenq,pcte)
     implicit none
     integer  klon,klev,ktopm2
     integer  kctop(klon),  kdtop(klon)
@@ -3268,7 +3242,7 @@ contains
              pmfus(klon,klev),  pmfds(klon,klev),&
              pmfuq(klon,klev),  pmfdq(klon,klev),&
              pmful(klon,klev),  pdmfup(klon,klev),&
-             pdpmel(klon,klev)
+             pdpmel(klon,klev), pdmfdp(klon,klev)
     real     ptent(klon,klev),  ptenq(klon,klev)
     real     pcte(klon,klev)
 
@@ -3302,10 +3276,10 @@ contains
             zdtdt(jl,jk) = zdp(jl,jk)*rcpd * &
               (zmfus(jl,jk+1)-zmfus(jl,jk)+zmfds(jl,jk+1) - &
                zmfds(jl,jk)+alf*plglac(jl,jk)-alf*pdpmel(jl,jk) - &
-               zalv*(pmful(jl,jk+1)-pmful(jl,jk)-plude(jl,jk)-pdmfup(jl,jk)))
+               zalv*(pmful(jl,jk+1)-pmful(jl,jk)-plude(jl,jk)-pdmfup(jl,jk)-pdmfdp(jl,jk)))
             zdqdt(jl,jk) = zdp(jl,jk)*(zmfuq(jl,jk+1) - &
               zmfuq(jl,jk)+zmfdq(jl,jk+1)-zmfdq(jl,jk)+pmful(jl,jk+1) - &
-              pmful(jl,jk)-plude(jl,jk)-pdmfup(jl,jk))
+              pmful(jl,jk)-plude(jl,jk)-pdmfup(jl,jk)-pdmfdp(jl,jk))
           end if
         end do
       else
@@ -3314,9 +3288,9 @@ contains
             zalv = foelhm(pten(jl,jk))
             zdtdt(jl,jk) = -zdp(jl,jk)*rcpd * &
               (zmfus(jl,jk)+zmfds(jl,jk)+alf*pdpmel(jl,jk) - &
-               zalv*(pmful(jl,jk)+pdmfup(jl,jk)))
+               zalv*(pmful(jl,jk)+pdmfup(jl,jk)+pdmfdp(jl,jk)))
             zdqdt(jl,jk) = -zdp(jl,jk)*(zmfuq(jl,jk) + &
-              zmfdq(jl,jk)+(pmful(jl,jk)+pdmfup(jl,jk)))
+              zmfdq(jl,jk)+(pmful(jl,jk)+pdmfup(jl,jk)+pdmfdp(jl,jk)))
           end if
         end do
       end if

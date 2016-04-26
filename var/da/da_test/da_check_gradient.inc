@@ -84,10 +84,9 @@ subroutine da_check_gradient(grid, config_flags, cv_size, xhat, cv, pdx, itertes
    ! [1.1] Define perturbation direction ZH
    !----------------------------------------------------------------------------
 
-   call da_message((/' The test direction is the positive of the gradient '/))
+   call da_message((/' The test direction is the opposite of the gradient '/))
 
-!   xdir  = -1.0  * grad
-   xdir  = 1.0  * grad  
+   xdir  = -1.0  * grad
    !----------------------------------------------------------------------------
    ! [1.2] Set function f value and derivative at origin
    !----------------------------------------------------------------------------
@@ -166,8 +165,6 @@ subroutine da_check_gradient(grid, config_flags, cv_size, xhat, cv, pdx, itertes
          if (rootproc) write(6,*)'grtest: gradient T1=',zt1
       ENDIF
 
-
-if (rootproc) write(unit=check_test_unit,fmt='(e10.3,f20.16)')za,zt1
       !----------------------------------------------------------------------------
       ! [2.4] Quantity TC1=( f(a)-f(0)-a.df(0) )/a
       !----------------------------------------------------------------------------

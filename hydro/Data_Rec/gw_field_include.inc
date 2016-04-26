@@ -16,11 +16,19 @@
 
       real,    allocatable, dimension(:,:) ::  &
         h,              &  ! head, after ghmcompute (m)
-        convgw             ! convergence due to gw flow (m/s)
+        convgw,         &  ! convergence due to gw flow (m/s)
+        excess             ! surface exceeding groundwater (mm)
+
+      real,    allocatable, dimension(:,:) ::  &
+	qdarcyRT,       &  ! approximated flux between soil and groundwater for coupled simulations on routing grid
+	qsgwrt,         &  ! flux between soil and groundwater for coupled simulations on routing grid
+	qsgw,           &  ! flux between soil and groundwater for coupled simulations on lsm grid
+	qgw_chanrt         ! flux between groundwater and channel
 
       real  :: ebot, eocn
       integer ::istep = 0
-
+      
+      real :: its, ite, jts, jte
 
   end type gw_field
 

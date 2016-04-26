@@ -258,7 +258,7 @@ module da_control
    ! Do not use get_unit/free_unit because tracing is too low level
    integer, parameter :: trace_csv_unit = 8
 
-   integer :: y_unit, yp_unit, cost_unit, grad_unit, stats_unit, jo_unit, check_test_unit
+   integer :: y_unit, yp_unit, cost_unit, grad_unit, stats_unit, jo_unit
    integer :: check_max_iv_unit, check_buddy_unit, rand_unit, omb_unit, &
               filtered_obs_unit
    integer :: biasprep_unit, qcstat_conv_unit

@@ -8,14 +8,16 @@ SUBROUTINE med_nest_move ( parent, nest )
    USE module_configure, ONLY : grid_config_rec_type, model_config_rec, model_to_grid_config_rec
    USE module_state_description
 !   USE module_io_domain
+#if defined(DM_PARALLEL) && ! defined(STUBMPI)
    USE module_dm, ONLY : wrf_dm_move_nest,nest_task_offsets,mpi_comm_to_kid,mpi_comm_to_mom, which_kid
+#endif
    IMPLICIT NONE
    TYPE(domain) , POINTER                     :: parent, nest, grid
    INTEGER dx, dy, origdy       ! number of parent domain points to move
 #ifdef MOVE_NESTS
   ! Local 
    CHARACTER*256 mess
-   INTEGER i, j, p, parent_grid_ratio
+   INTEGER i, j, k, p, parent_grid_ratio
    INTEGER px, py       ! number and direction of nd points to move
    INTEGER                         :: ids , ide , jds , jde , kds , kde , &
                                       ims , ime , jms , jme , kms , kme , &
@@ -33,7 +35,7 @@ SUBROUTINE med_nest_move ( parent, nest )
    LOGICAL, EXTERNAL :: should_not_move
 #if ( HWRF == 1 )
 !XUEJIN added for HWRFx
-   INTEGER                  :: k,idum1,idum2 
+   INTEGER                  :: idum1,idum2 
    INTEGER                  :: ITS,ITE,JTS,JTE,KTS,KTE
 #else
 !
@@ -291,6 +293,7 @@ SUBROUTINE med_nest_move ( parent, nest )
      grid%i_parent_start = grid%i_parent_start + px / grid%parent_grid_ratio 
      grid%j_parent_start = grid%j_parent_start + py / grid%parent_grid_ratio
 
+#if defined(DM_PARALLEL) && ! defined(STUBMPI)
      IF ( (parent%active_this_task .OR. grid%active_this_task) ) THEN
        IF ( parent%active_this_task ) THEN
          comzilla = mpi_comm_to_kid( which_kid( grid%id ) , parent%id )
@@ -311,6 +314,7 @@ SUBROUTINE med_nest_move ( parent, nest )
        CALL wrf_message(TRIM(mess))
      ENDIF
      CALL pop_communicators_for_domain(grid%id)
+#endif
 
 #if (NMM_CORE == 1 && NMM_NEST == 1)
 
@@ -496,11 +500,14 @@ SUBROUTINE med_nest_move ( parent, nest )
      nest%press_adj = .FALSE.
 #endif
 
+#if defined(DM_PARALLEL) && ! defined(STUBMPI)
+
      IF ( nest%active_this_task ) THEN
        CALL push_communicators_for_domain(nest%id)
        CALL start_domain ( nest , .FALSE. )
        CALL pop_communicators_for_domain
      ENDIF
+#endif
      config_flags%restart = saved_restart_value
      grid%restart = saved_restart_value
      CALL nl_set_restart ( 1,  saved_restart_value )

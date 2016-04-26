@@ -1160,12 +1160,12 @@ CONTAINS
                !Partition the BL clouds into water & ice according to a linear
                !approximation of Hobbs et al. (1974). This allows us to only use
                !one 3D array for both cloud water & ice.
-               Wice = 1. - MIN(1., MAX(0., (t(i,k,j)-254.)/15.))
-               Wh2o = 1. - Wice
+!              Wice = 1. - MIN(1., MAX(0., (t(i,k,j)-254.)/15.))
+!              Wh2o = 1. - Wice
                CLDFRA(i,k,j)=MAX(CLDFRA(i,k,j),CLDFRA_BL(i,k,j))
                CLDFRA(i,k,j)=MAX(0.0,MIN(1.0,CLDFRA(i,k,j)))
-               qc(i,k,j)=qc(i,k,j) + QC_BL(i,k,j)*Wh2o*CLDFRA_BL(i,k,j)
-               qi(i,k,j)=qi(i,k,j) + QC_BL(i,k,j)*Wice*CLDFRA_BL(i,k,j)
+               qc(i,k,j)=qc(i,k,j) + QC_BL(i,k,j)*(MIN(1., MAX(0., (t(i,k,j)-254.)/15.)))*CLDFRA_BL(i,k,j)
+               qi(i,k,j)=qi(i,k,j) + QC_BL(i,k,j)*(1. - MIN(1., MAX(0., (t(i,k,j)-254.)/15.)))*CLDFRA_BL(i,k,j)
            ENDDO
            ENDDO
            ENDDO
@@ -2520,7 +2520,6 @@ CONTAINS
      endif
 
 
-
     IF( nested ) THEN
 
       !$OMP PARALLEL DO   &
@@ -3757,8 +3756,8 @@ CONTAINS
               i2 = i1+1
               wgt = ri-i1
               dxabs = sqrt((dy*(jj-j))**2+(dx*(ri-i))**2)
-              if ((jj.ge.jpe+1).or.(i1.le.ips-1).or.(i2.ge.ipe+1)) then
-                if (shadowmask(i,j).eq.0) shadowmask(i,j) = -1
+              if ((jj.ge.jpe+3).or.(i1.le.ips-3).or.(i2.ge.ipe+3)) then
+!               if (shadowmask(i,j).eq.0) shadowmask(i,j) = -1
                 goto 120
               endif
               topoelev=atan((wgt*ht_loc(i2,jj)+(1.-wgt)*ht_loc(i1,jj)-ht_loc(i,j))/dxabs)
@@ -3775,8 +3774,8 @@ CONTAINS
               j2 = j1+1
               wgt = rj-j1
               dxabs = sqrt((dx*(ii-i))**2+(dy*(rj-j))**2)
-              if ((ii.ge.ipe+1).or.(j1.le.jps-1).or.(j2.ge.jpe+1)) then
-                if (shadowmask(i,j).eq.0) shadowmask(i,j) = -1
+              if ((ii.ge.ipe+3).or.(j1.le.jps-3).or.(j2.ge.jpe+3)) then
+!               if (shadowmask(i,j).eq.0) shadowmask(i,j) = -1
                 goto 120
               endif
               topoelev=atan((wgt*ht_loc(ii,j2)+(1.-wgt)*ht_loc(ii,j1)-ht_loc(i,j))/dxabs)
@@ -3793,8 +3792,8 @@ CONTAINS
               i2 = i1+1
               wgt = ri-i1
               dxabs = sqrt((dy*(jj-j))**2+(dx*(ri-i))**2)
-              if ((jj.le.jps-1).or.(i1.le.ips-1).or.(i2.ge.ipe+1)) then
-                if (shadowmask(i,j).eq.0) shadowmask(i,j) = -1
+              if ((jj.le.jps-3).or.(i1.le.ips-3).or.(i2.ge.ipe+3)) then
+!               if (shadowmask(i,j).eq.0) shadowmask(i,j) = -1
                 goto 120
               endif
               topoelev=atan((wgt*ht_loc(i2,jj)+(1.-wgt)*ht_loc(i1,jj)-ht_loc(i,j))/dxabs)
@@ -3811,8 +3810,8 @@ CONTAINS
               j2 = j1+1
               wgt = rj-j1
               dxabs = sqrt((dx*(ii-i))**2+(dy*(rj-j))**2)
-              if ((ii.le.ips-1).or.(j1.le.jps-1).or.(j2.ge.jpe+1)) then
-                if (shadowmask(i,j).eq.0) shadowmask(i,j) = -1
+              if ((ii.le.ips-3).or.(j1.le.jps-3).or.(j2.ge.jpe+3)) then
+!               if (shadowmask(i,j).eq.0) shadowmask(i,j) = -1
                 goto 120
               endif
               topoelev=atan((wgt*ht_loc(ii,j2)+(1.-wgt)*ht_loc(ii,j1)-ht_loc(i,j))/dxabs)
@@ -3840,6 +3839,12 @@ CONTAINS
        HRANG=15.*(TLOCTM-12.)*DEGRAD
        XXLAT=XLAT(i,j)*DEGRAD
        CSZA=SIN(XXLAT)*SIN(DECLIN)+COS(XXLAT)*COS(DECLIN)*COS(HRANG)
+
+       if (csza.lt.1.e-2) then   ! shadow mask does not need to be computed
+       shadowmask(i,j) = 0
+       ht_shad(i,j) = ht_loc(i,j)-0.001
+       goto 220
+       endif
 
 ! Solar azimuth angle
 

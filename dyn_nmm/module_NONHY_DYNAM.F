@@ -396,7 +396,7 @@
 
 !dumping dwdt at stratsphere, Zhan
 
-      if ( dwdt_damping_lev .ne. 0. ) then
+      if ( dwdt_damping_lev .ge. 0.001 ) then
         lsltp=0
         SLTP=(PT+AETA1(KTE-1)*PDTOP+PT+AETA1(KTE)*PDTOP)*0.5
         DO L=KTE,2,-1

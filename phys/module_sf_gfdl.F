@@ -342,7 +342,7 @@ CONTAINS
         !first time step, u10 and v10 may be zero
            zhalf=0.0
           if (wind10(i) <= 1.0e-10 .or. wind10(i) > 150.0) then
-           write(0,*)'maybe first timestep'
+!           write(0,*)'maybe first timestep'
            zhalf = -R*tpc(kts,i)*alog(pkmax(i)/pspc(i))/grav
            wind10(i)=sqrt(u1(i)*u1(i)+v1(i)*v1(i))*alog(10.0/znt(i,j))/alog(zhalf/znt(i,j))
           endif
@@ -801,6 +801,8 @@ CONTAINS
       real, dimension (54) :: table3
       real, dimension (74) :: table1
       real, dimension (80) :: tab22
+
+      character(len=255) :: message
 
       equivalence (tab(1),tab11(1))
       equivalence (tab(102),tab22(1))
@@ -1265,6 +1267,7 @@ CONTAINS
       go to 130
 
 110   continue
+
       write(6,120)
 120   format(2X, ' NON-CONVERGENCE FOR STABLE ZETA IN ROW ')
 !     call MPI_CLOSE(1,routine)
@@ -1447,8 +1450,9 @@ CONTAINS
             uq        = (ugz - ugzm(i))/(uzeta(i) - uzetam(i))
             uzetam(i) = uzeta(i)
             if(uq .EQ. 1) then
-             write(0,*)'NCO ERROR DIVIDE BY ZERO IN MFLUX2 (UNSTABLE CASE)' 
-             write(0,*)'uq is 1 ',ux2,ugz,ugzm(i),uzeta(i),uzetam(i) 
+             call wrf_message('NCO ERROR DIVIDE BY ZERO IN MFLUX2 (UNSTABLE CASE)')
+             write(message,*)'uq is 1 ',ux2,ugz,ugzm(i),uzeta(i),uzetam(i) 
+             call wrf_message(message)
             endif
             uzeta (i) = (ugz - uzeta(i)*uq)/(1.0 - uq)
             ugzm  (i) = ugz
@@ -1467,7 +1471,8 @@ CONTAINS
       go to 250
 
 230   continue
-      write(6,240)
+      write(message,240)
+      call wrf_message(message)
 240   format(2X, ' NON-CONVERGENCE FOR UNSTABLE ZETA IN ROW ')
 !     call MPI_CLOSE(1,routine)
 
@@ -1687,12 +1692,14 @@ CONTAINS
 
       do i = 1,ip
         if (ifz(i) .EQ. 1) then
-        write(6, 340) tsp(i), i, j
+        write(message, 340) tsp(i), i, j
 340   format(2X, ' NON-CONVERGENCE OF T* PREDICTED (T*,I,J) = ', E14.8, &
             2I5)
+        call wrf_message(message)
 
-        write(6,345) indx(i), j, tstar(indx(i)), tsp(i), ip
+        write(message,345) indx(i), j, tstar(indx(i)), tsp(i), ip
 345   format(2X, ' I, J, OLD T*, NEW T*, NPTS ', 2I5, 2E14.8, I5)
+        call wrf_message(message)
 
 !       write(6,350) reflect, sigt4, shfx, alevp, delten, diffot
 350   format(2X, ' REFLECT, SIGT4, SHFX, ALEVP, DELTEN, DIFFOT ', &

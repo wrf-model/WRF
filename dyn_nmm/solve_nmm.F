@@ -2526,7 +2526,6 @@
 #ifdef MOVE_NESTS
    IF ( grid%num_moves.EQ.-99 ) THEN
      btimx=now_time()
-      call start_timing()
       call stats_for_move(grid,config_flags &
                          ,IDS,IDE,JDS,JDE,KDS,KDE &
                          ,IMS,IME,JMS,JME,KMS,KME &
@@ -2534,7 +2533,6 @@
                          ,ITS,ITE,JTS,JTE,KTS,KTE)
 3303  format('stats_for_move on domain ',I0)
       write(message,3303) grid%id
-      call end_timing(message)
    CALL wrf_debug ( 100 , 'nmm stats_for_move: after advection' )
      diag_tim=diag_tim+now_time()-btimx
    ENDIF

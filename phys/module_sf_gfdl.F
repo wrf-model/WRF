@@ -283,7 +283,7 @@ CONTAINS
    KM=KTE-KTS+1
 
    WRITE(message,*)'WITHIN THE GFDL SCHEME, NTSFLG=1 FOR GFDL SLAB  2010 UPGRADS',NTSFLG
-   call wrf_debug(1,message)
+   call wrf_debug(2,message)
 
 !!     write(0,*)'icoef_sf,lcurr_sf=',icoef_sf,lcurr_sf
 

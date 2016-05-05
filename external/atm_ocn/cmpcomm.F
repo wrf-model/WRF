@@ -832,7 +832,7 @@
 
       if (process_rank_local.eq.component_master_rank_local) then
          if(nunit==0 .or. nunit==6) then
-            call wrf_debug(1,s)
+            call wrf_debug(2,s)
          else
         write(nunit,*) trim(s)
          endif

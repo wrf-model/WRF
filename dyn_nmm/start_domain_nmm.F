@@ -714,6 +714,12 @@
 ! End Sam Trahan's doing for vortex tracker initialization
 #endif
 #ifdef HWRF
+! Begin Sam Trahan's change to merge two log messages for WRF_NMM
+    IF(allowed_to_read .and. .not. restrt) THEN
+       grid%avgPchg=0
+    ENDIF
+! End Sam Trahan's change to merge two log messages for WRF_NMM
+
 !zhang's doing
   IF((.NOT.RESTRT .AND. .NOT.ANAL) .OR. .NOT.allowed_to_read)THEN
 !end of zhang's doing

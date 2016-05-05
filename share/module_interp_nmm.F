@@ -2383,6 +2383,7 @@ contains
     ! calls later on:
     real, intent(out) :: winfo(nz-1,nx)
     integer, intent(out) :: iinfo(nz-1,nx)
+    logical, intent(inout) :: warned
 
     ! ==================== Local variables ====================
 
@@ -2392,7 +2393,6 @@ contains
     real :: tsfc(nx), slp(nx), zmslp(nx), z0mid(nx), zbelow(nx), &
             tbelow(nx), RHbelow(nx)
     real :: pb,pb1,pb2,pa,pa1,pa2,pnext,pa3, wnum,wdenom, QC, P0
-    logical :: warned
 
     ! Constants from UPP params.f for RH calculation (all mks):
     real, parameter :: PQ0=379.90516
@@ -2694,6 +2694,8 @@ contains
     ! calls later on:
     real, intent(out) :: winfo(nz2-1,nx)
     integer, intent(out) :: iinfo(nz2-1,nx)
+
+    logical, intent(inout) :: warned
 
     ! ==================== Local variables ====================
 

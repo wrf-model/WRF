@@ -423,10 +423,13 @@ IF ( grid%active_this_task ) THEN
                else
                   WRITE ( message , FMT = '("main: time ",A," on domain ",I3)' ) TRIM(message2), grid%id
                endif
-#else
-                  WRITE ( message , FMT = '("main: time ",A," on domain ",I3)' ) TRIM(message2), grid%id
-#endif
                CALL end_timing ( TRIM(message) )
+#else
+               ! NMM uses a more compact syntax and adds more information:
+3011           format("main: ",A," dom ",I0," <dP/dt>=",F0.3," hPa/3hr timing ")
+               write(message,3011) trim(message2),grid%id,grid%avgPchg
+               CALL end_timing_fmt ( TRIM(message), FMT='(A,F0.5," s")' )
+#endif
 ENDIF ! active_this_task
             CALL med_endup_step ( grid , config_flags )
          END DO

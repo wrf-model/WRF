@@ -295,31 +295,50 @@ else
     endif
 
     setenv BUFR 1
-    setenv CRTM 1
-    if ( $?CRTM ) then
+    set CRTM = ( `grep "\-DCRTM" configure.wrf | sed -e 's/\\//g' | sed 's/-//g' ` )
+    if ( $CRTM != "" ) then
+       echo "  "
+       echo "Will compile with CRTM library"
+       echo "  "
        if ( ! $?BUFR ) then
           echo "  "
-          echo "BUFR library will be compiled for radiance data ingest."
+          echo "BUFR library is needed for radiance data ingest."
+          echo "setting BUFR=1"
           echo "  "
+          setenv BUFR 1
        endif
        setenv CRTM_CPP "-DCRTM"
        setenv CRTM_LIB "-L../external/crtm_2.1.3/libsrc -lCRTM"
        setenv CRTM_SRC "-I../external/crtm_2.1.3/libsrc"
        setenv SFC_CRTM `grep '^SFC' configure.wrf | awk '{print $3}' | sed -e 's/\// /g' | awk '{print $NF}'`
        setenv ABI_CRTM `grep '^SFC' configure.wrf | sed -n 's/.*\(\-m[0-9]\{2\}\).*/\1/p'`
+       setenv CRTM 1
     else
+       echo "  "
+       echo "Compiling WRFDA without CRTM library"
+       echo "  "
        setenv CRTM_CPP " "
        setenv CRTM_LIB " "
        setenv CRTM_SRC " "
+       setenv CRTM 0
     endif
-    if ( $?RTTOV ) then
+    set RTTOV = ( `grep "^RTTOVPATH" configure.wrf | cut -d"=" -f2-` )
+    if ( $RTTOV == "" ) then
+       setenv RTTOV_LIB " "
+       setenv RTTOV_SRC " "
+       unsetenv RTTOV
+    else
+       echo "  "
+       echo "Compiling with RTTOV libraries in:"
+       echo $RTTOV
+       echo "  "
        if ( ! $?BUFR ) then
           echo "  "
           echo "BUFR library is needed for radiance data ingest."
+          echo "setting BUFR=1"
           echo "  "
           setenv BUFR 1
        endif
-       setenv RTTOV_CPP "-DRTTOV"
        if ( -e ${RTTOV}/lib/librttov11.1.0_main.a ) then
           setenv RTTOV_LIB "-L${RTTOV}/lib -lrttov11.1.0_coef_io -lrttov11.1.0_emis_atlas -lrttov11.1.0_main"
        else if ( -e ${RTTOV}/lib/librttov11.2.0_main.a ) then
@@ -333,16 +352,16 @@ else
           exit 1
        endif
        setenv RTTOV_SRC "-I${RTTOV}/include -I${RTTOV}/mod"
-    else
-       setenv RTTOV_CPP " "
-       setenv RTTOV_LIB " "
-       setenv RTTOV_SRC " "
     endif
     set hdf5path = ( `grep "^HDF5PATH" configure.wrf | cut -d"=" -f2-` )
     if ( $hdf5path == "" ) then
        setenv HDF5_INC ""
        unsetenv HDF5
     else
+       echo "  "
+       echo "Compiling with HDF5 libraries in:"
+       echo $hdf5path
+       echo "  "
        setenv HDF5_INC "-I${hdf5path}/include"
        setenv HDF5 1
     endif

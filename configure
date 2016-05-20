@@ -624,7 +624,8 @@ if test -n "$PERL" ; then
      if [ "$rword" = "-r8" ] ; then
        srch=`grep -i "^SFC" configure.wrf | grep -i "gfortran"`
        if [ -n "$srch" ] ; then
-         sed -e '/^PROMOTION/s/#//' configure.wrf > configure.wrf.edit
+         sed -e '/^PROMOTION/s/#//' \
+          -e '/^RWORDSIZE/s/$(NATIVE_RWORDSIZE)/8/' configure.wrf > configure.wrf.edit
        else
          sed -e '/^RWORDSIZE/s/$(NATIVE_RWORDSIZE)/8/' configure.wrf > configure.wrf.edit
        fi

@@ -3585,7 +3585,7 @@ ENDIF
           s_awv1(kte+1)=0.
           s_awqke1(kte+1)=0.
 #if (WRF_CHEM == 1)
-          DO ic = 1,ndvel
+          DO ic = 1,nchem
             s_awchem1(kte+1,ic)=0.
           ENDDO
 #endif
@@ -3904,7 +3904,7 @@ ENDIF
             IF (icloud_bl > 0) THEN
                IF (QC_BL(i,k,j) < 1E-6 .AND. ABS(CLDFRA_BL(i,k,j)) > 0.1)QC_BL(i,k,j)= 1E-6
                IF (CLDFRA_BL(i,k,j) < 1E-2)CLDFRA_BL(i,k,j)= 0.
-             ENDIF
+            ENDIF
             ENDIF
 
              !***  Begin debug prints

@@ -3901,9 +3901,11 @@ ENDIF
                !Reapply checks on cldfra_bl and qc_bl to avoid FPEs in radiation driver
                ! when these two quantities are multiplied by eachother (they may have changed 
                ! in the MF scheme:
+            IF (icloud_bl > 0) THEN
                IF (QC_BL(i,k,j) < 1E-6 .AND. ABS(CLDFRA_BL(i,k,j)) > 0.1)QC_BL(i,k,j)= 1E-6
                IF (CLDFRA_BL(i,k,j) < 1E-2)CLDFRA_BL(i,k,j)= 0.
              ENDIF
+            ENDIF
 
              !***  Begin debug prints
              IF ( wrf_at_debug_level(3000) ) THEN

@@ -335,6 +335,9 @@ activated, the user must specify a reasonable ocean.  Currently, this is the onl
 available to run the 3d ocean option.
 
  &physics
+ ra_sw_eclipse(max_dom)              = 0 (default), 1 (acrivate eclipse option for solar radation)
+
+ &physics
  sf_ocean_physics                    = 0 (default), 1 (mixed layer model), 2 (3d ocean)
 
  &domains

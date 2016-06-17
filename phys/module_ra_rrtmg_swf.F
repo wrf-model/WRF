@@ -1,4 +1,3 @@
-!!MODULE module_ra_rrtmg_swf
 #define CHNK 8
 !#define CHNK 1849
 !#define CHNK 43
@@ -8624,7 +8623,8 @@ IKLOOP1_E
              pbbfd, pbbfu, pbbcd, pbbcu, puvfd, puvcd, pnifd, pnicd, &
              pbbfddir, pbbcddir, puvfddir, puvcddir, pnifddir, pnicddir, &
              zgco,zomco,zrdnd,zref,zrefo,zrefd,zrefdo,ztauo,zdbt,ztdbt, &
-             ztra,ztrao,ztrad,ztrado,zfd,zfu,ztaug, ztaur, zsflxzen)
+             ztra,ztrao,ztrad,ztrado,zfd,zfu,ztaug, ztaur, zsflxzen, &
+             obscur)
 ! ---------------------------------------------------------------------------
 !
 ! Purpose: Contains spectral loop to compute the shortwave radiative fluxes, 
@@ -8703,6 +8703,8 @@ IKLOOP1_E
       real , intent(in) :: palbp(:,:)                     ! surface albedo (direct)
                                                           !   Dimensions: (ncol,nbndsw)
       real , intent(in) :: prmu0(:)                       ! cosine of solar zenith angle
+                                                          !   Dimensions: (ncol)
+      real , intent(in) :: obscur(:)                      ! degree of obscuration
                                                           !   Dimensions: (ncol)
 
       real , intent(in) :: pcldfmc(:,:,:)                 ! cloud fraction [mcica]
@@ -9067,7 +9069,7 @@ real gpu_device  :: zcd(tncol,ngptsw,nlayers+1)  , zcu(tncol,ngptsw,nlayers+1)
              ibm = jb-15
 !DIR$ SIMD
           ILOOP_S_CPU
-             zincflx = adjflux(jb)  * zsflxzen(iplon,iw)   * prmu0(iplon)           
+             zincflx = adjflux(jb)  * zsflxzen(iplon,iw)   * prmu0(iplon) * (1. - obscur(iplon))          
 
 ! Accumulate spectral fluxes over whole spectrum  
               
@@ -9261,8 +9263,7 @@ real gpu_device  :: zcd(tncol,ngptsw,nlayers+1)  , zcu(tncol,ngptsw,nlayers+1)
                jk=klev+2-ikl
                ibm = jb-15
             ILOOP_S_CPU
-               zincflx = adjflux(jb)  * zsflxzen(iplon,iw)   * prmu0(iplon)           
-
+               zincflx = adjflux(jb)  * zsflxzen(iplon,iw)   * prmu0(iplon) * (1. - obscur(iplon))            
 ! Accumulate spectral fluxes over whole spectrum  
                pbbfu(iplon,ikl)  = pbbfu(iplon,ikl)  + zincflx*zfu(iplon,iw,jk)  
                pbbfd(iplon,ikl)  = pbbfd(iplon,ikl)  + zincflx*zfd(iplon,iw,jk)              
@@ -9313,8 +9314,8 @@ real gpu_device  :: zcd(tncol,ngptsw,nlayers+1)  , zcu(tncol,ngptsw,nlayers+1)
             jb = ngb(iw)
             ibm = jb - 15
          ILOOP_S_CPU
-            zincflx = adjflux(jb)  * zsflxzen(iplon,iw)   * prmu0(iplon)    
-            
+            zincflx = adjflux(jb)  * zsflxzen(iplon,iw)   * prmu0(iplon) * (1. - obscur(iplon)) 
+      
          end do
       end do
 !$acc end kernels
@@ -9932,8 +9933,9 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
 ! -------------------      by Zhenxin 2011-06-20      --------------------------------!
              sibvisdir, sibvisdif, sibnirdir, sibnirdif,         &
 ! ----------------------  End,  Zhenxin 2011-06-20    --------------------------------!
-             swdkdir,   swdkdif                                  & ! jararias, 2013/08/10
-                                )
+             swdkdir,   swdkdif,                                 & ! jararias, 2013/08/10
+             obscur                                              & ! amontornes-bcodina 2015/09
+                                                                 )
 
 
       use parrrsw_f, only : nbndsw, ngptsw, naerec, nstr, nmol, mxmol, &
@@ -10001,7 +10003,8 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
       real , intent(in) :: coszen(:)          ! Cosine of solar zenith angle
                                               !    Dimensions: (ncol)
       real , intent(in) :: scon               ! Solar constant (W/m2)
-
+      real , intent(in) :: obscur(:)          ! Degree of obscuration amontornes-bcodina 2015/09
+ 
       integer , intent(in) :: inflgsw         ! Flag for cloud optical properties
       integer , intent(in) :: iceflgsw        ! Flag for ice particle specification
       integer , intent(in) :: liqflgsw        ! Flag for liquid droplet specification
@@ -10164,8 +10167,9 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
              tauaer  ,ssaaer  ,asmaer  ,ecaer   , &
              swuflx  ,swdflx  ,swhr    ,swuflxc ,swdflxc ,swhrc, &
              sibvisdir, sibvisdif, sibnirdir, sibnirdif,         &
-             swdkdir  , swdkdif                                  & ! jararias, 2013/08/10
-                                )
+             swdkdir  , swdkdif,                                 & ! jararias, 2013/08/10
+             obscur                                             & ! amontornes-bcodina 2015/09
+                                                                 )
       call cpu_time(t2)
       WRITE(message,*)'------------------------------------------------'
       call wrf_debug( debug_level_swf, message)
@@ -10189,8 +10193,9 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
              gtauaer ,gssaaer ,gasmaer ,gecaer  , &
              swuflx  ,swdflx  ,swhr    ,swuflxc ,swdflxc ,swhrc, &
              sibvisdir, sibvisdif, sibnirdir, sibnirdif,         &
-             swdkdir  , swdkdif                                  & ! jararias, 2013/08/10
-                                )
+             swdkdir  , swdkdif,                                 & ! jararias, 2013/08/10
+             gobscur                                              & ! amontornes-bcodina 2015/09 
+                                                                 )
       use parrrsw_f, only : nbndsw, ngptsw, naerec, nstr, nmol, mxmol, &
                           jpband, jpb1, jpb2, rrsw_scon
       use rrsw_aer_f, only : rsrtaua, rsrpiza, rsrasya
@@ -10331,6 +10336,9 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
       
       real , intent(in) :: gcoszen(gncol)             ! Cosine of solar zenith angle
                                                       !    Dimensions: (ncol)
+
+      real , intent(in) :: gobscur(gncol)             ! Degree of obscuration (eclipses)
+                                                      !    Dimensions: (ncol)
     
       real , intent(in) :: gtauaer(gncol,nlay,nbndsw) ! Aerosol optical depth (iaer=10 only)
                                                       !    Dimensions: (ncol,nlay,nbndsw)
@@ -10458,6 +10466,7 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
       real :: tsfc(ncol)                      ! Surface temperature (K)
                                               !    Dimensions: (ncol)
       real :: coszen(ncol)   
+      real :: obscur(ncol)   
 
 ! Atmosphere/clouds - cldprop
       integer  :: ncbands                     ! number of cloud spectral bands
@@ -10799,6 +10808,7 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
                wkl(iplon,6,:) = gch4vmr(piplon,1:nlay)
                wkl(iplon,7,:) = go2vmr(piplon,1:nlay)   
                coszen(iplon)  = gcoszen(piplon)
+               obscur(iplon)  = gobscur(piplon)
              end do
 !$acc end kernels
 
@@ -10892,6 +10902,7 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
               wkl(iplon,6,:) = gch4vmr(piplon,1:nlay)
               wkl(iplon,7,:) = go2vmr(piplon,1:nlay)  
               coszen(iplon)  = gcoszen(piplon)
+              obscur(iplon)  = gobscur(piplon)
             end do
 !$acc end kernels
           end if    ! if-else-endif cc=1 (clear and cloudy cases)
@@ -11039,7 +11050,8 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
                          zuvcd, znifd, znicd, &
                          zbbfddir, zbbcddir, zuvfddir, zuvcddir, znifddir, znicddir,&
                          zgco,zomco,zrdnd,zref,zrefo,zrefd,zrefdo,ztauo,zdbt,ztdbt,&
-                         ztra,ztrao,ztrad,ztrado,zfd,zfu,ztaug, ztaur, zsflxzen)
+                         ztra,ztrao,ztrad,ztrado,zfd,zfu,ztaug, ztaur, zsflxzen, &
+                         obscur)
 
 #ifndef _ACCEL
 #  undef colr
@@ -11234,7 +11246,8 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
                        swupflx, swupflxc, swdnflx, swdnflxc,      &
                        tauaer3d_sw,ssaaer3d_sw,asyaer3d_sw,       & ! jararias 2013/11
                        swddir, swddni, swddif,                    & ! jararias 2013/08
-                       xcoszen,julian                             & ! jararias 2013/08
+                       xcoszen,julian,                            & ! jararias 2013/08
+                       obscur                                     & ! amontornes-bcodina 2015/09 solar eclipses
                                                                   )
 !------------------------------------------------------------------
       IMPLICIT NONE
@@ -11276,7 +11289,8 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
                                                             XICE, &
                                                             SNOW, &
                                                              TSK, &
-                                                          ALBEDO
+                                                          ALBEDO, &
+                                                          obscur    ! amontornes-bcodina 2015/09 solar eclipses
 !
 !!! -------------------  Zhenxin (2011-06/20) ------------------
    REAL, DIMENSION( ims:ime, jms:jme )                          , &
@@ -11484,7 +11498,9 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
 
     real, dimension ( (jte-jts+1)*(ite-its+1) ) ::                             tsfc, &
                                                               ps, &
-                                                          coszen
+                                                          coszen, &
+							obscur1D
+
     real ::                                                   ro, &
                                                               dz, &
                                                            adjes, &
@@ -11884,7 +11900,9 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
 
 ! Set cosine of solar zenith angle
          coszen(icol) = coszrs
-! Set solar constant
+! Set solar obscuration by amontornes-bcodina 2015/09 for solar eclipses
+	 obscur1D(icol) = obscur(i,j)
+
          scon = solcon
 ! For Earth/Sun distance adjustment in RRTMG
 !         dyofyr = julday
@@ -12393,8 +12411,9 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
 ! -----      Zhenxin added for ssib coupiling 2011-06-20 --------!
              sibvisdir, sibvisdif, sibnirdir, sibnirdif,         &
 ! --------------------   End of addition by Zhenxin 2011-06-20 ------!
-             swdkdir, swdkdif                      &  ! jararias, 2012/08/10
-                                                  )
+             swdkdir, swdkdif,                     &  ! jararias, 2012/08/10
+             obscur1D                              &  ! amontornes-bcodina 2015/09
+                                                   )
 
       endif
 

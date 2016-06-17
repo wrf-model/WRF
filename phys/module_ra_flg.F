@@ -7979,6 +7979,9 @@ MODULE module_ra_FLG
      & ,   swddir,swddif,swddni           &
 !-- for optional aerosol input
 !     & ,   tau_aer_2D, tau_aer_3D, fraca_in      &
+!-- amontornes-bcodina 2015/09: solar eclipses
+!  obscur --> degree of obscuration for solar eclipses prediction (2D)
+     & ,   obscur                         &
 !-- change over
      & ) 
 
@@ -8041,6 +8044,9 @@ MODULE module_ra_FLG
 !* Prescribed inaut to Fu-Liou program:
 !* pde = Effective size of ice cloud (um)
 !* pre = Effective radius of water cloud (um)
+!
+!* Solar eclipses  amontornes-bcodina 2015/09
+!* obscur = Degree of obscuration (-)
 !*****************************************************************************
 !* INCLUDE files
 !*****************************************************************************
@@ -8188,6 +8194,10 @@ MODULE module_ra_FLG
 	real dtshort(ims:idim,kms:kmax,jms:jdim)
 	real dtlongwv(ims:idim,kms:kmax, jms:jdim)
 	real deltat(ims:idim,kms:kmax,jms:jdim)
+
+!c--- amontornes-bcodina 2015/09: solar eclipse prediction
+	real obscur(ims:idim,jms:jdim)
+        real obscur1D
 
 ! add for ozone profile
 ! iprof = 1  :  mid-latitude summer profile
@@ -8350,7 +8360,10 @@ MODULE module_ra_FLG
 
 
 !C---- ee is the IR surface emissivity
-	    ee(1:mbir) = emiss(i,j) 
+	    ee(1:mbir) = emiss(i,j)
+
+!C--- amontornes-bcodina 2015/09:: solar eclipses
+            obscur1D = obscur(i,j)
 
 ! *** the model k=1 start from sfc. need to reverse variable for radiation
 ! calculation          
@@ -8929,6 +8942,8 @@ MODULE module_ra_FLG
     &  ,         fd, fu, dt_rad                    &
 !C--- amontornes-bcodina (2014-04-29): new to save the direct and diffuse fluxes
     &   ,        fdsdir, fdsdif                    &
+!C--- amontornes-bcodina 2015/09: solar eclipses
+    &   ,        obscur1D                          &
     &  )
 !CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 
@@ -9104,6 +9119,8 @@ MODULE module_ra_FLG
    &   ,           fdij, fuij, dtij                  &
 !C--- amontornes-bcodina (2014-04-29): new to save the direct and diffuse fluxes
    &   ,           fdsdir, fdsdif                    &
+!C--- amontornes-bcodina 2015/09: solar eclipses
+   &   ,        obscur                               &
    &   )
 
 !c *********************************************************************
@@ -9193,6 +9210,8 @@ MODULE module_ra_FLG
     real, dimension(nv1) :: fds, fus, fdir, fuir, fd, fu
 !C--- amontornes-bcodina (2014-04-29): new to save the direct and diffuse information
     real, dimension(nv1) :: fdsdir, fdsdif
+!C--- amontornes-bcodina 2015/09) solar eclipses
+    real                 :: obscur
     real, dimension(nv)  :: dts, dtir, dt
     real, dimension(nv)  :: piwc, plwc, pgwc, prwc, &
    &                                pde, pre, cldamnt
@@ -9509,7 +9528,8 @@ MODULE module_ra_FLG
 31        end do  
 30      end do  
 20    end do
-	  fuq1 = ss / 1340.0
+! amontornes-bcodina 2015/09 solar eclipses
+	  fuq1 = ss * (1. - obscur) / 1340.0
 !c In this model, we used the solar spectral irradiance determined by
 !c Thekaekara (1973), and 1340.0 W/m**2 is the solar energy contained 
 !c in the spectral region 0.2 - 4.0 um.

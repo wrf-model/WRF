@@ -545,6 +545,12 @@ rconfig   real    aer_angexp_val          namelist,physics      max_domains   1.
 rconfig   real    aer_ssa_val             namelist,physics      max_domains   0.85    irh    "aer_ssa_val"    "fixed value for aerosol single-scattering albedo. Valid when aer_ssa_opt=1" ""
 rconfig   real    aer_asy_val             namelist,physics      max_domains   0.90    irh    "aer_asy_val"    "fixed value for aerosol asymmetry parameter. Valid when aer_asy_opt=1" ""
 
+# Eclipse amontornes 2015-03-30
+ state    integer   ECMASK          ij          misc        1        -     rh     "ECMASK"  "ECLIPSE MASK"     "dimensionless"
+ state    real      ECOBSC          ij          misc        1        -     rh     "ECOBSC"  "ECLIPSE OBSCURITY"     "dimensionless"
+ state    real      elon_track      -           misc        1        -     rh     "elon_track"  "ECLIPSE LON"     "degrees"
+ state    real      elat_track      -           misc        1        -     rh     "elat_track"  "ECLIPSE LAT"     "degrees"
+
 # module_CLDWTR.F
 #
 state  real   cwm       ijkb   dyn_nmm   1    -     rh023u=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)  "CWM"       "Total condensate"                     "kg kg-1"
@@ -1363,6 +1369,7 @@ rconfig   integer     do_radar_ref        namelist,physics      1              0
 rconfig   integer     compute_radar_ref   derived               1              0       -        "compute_radar_ref" "0/1 flag: compute radar reflectivity, either do_radar_ref=1 .or. (milbrandt or NSSL schemes)"
 rconfig   integer     ra_lw_physics       namelist,physics	max_domains    0       rh0123       "ra_lw_physics"         ""      ""
 rconfig   integer     ra_sw_physics       namelist,physics	max_domains    0       rh0123       "ra_sw_physics"         ""      ""
+rconfig   integer     ra_sw_eclipse       namelist,physics      1              0       rh       "ra_sw_eclipse"         ""      ""
 rconfig   real    radt                    namelist,physics	max_domains    0       h    "RADT"          ""      ""
 rconfig   integer     sf_sfclay_physics   namelist,physics	max_domains    0       rh0123       "sf_sfclay_physics"             ""      ""
 rconfig   integer     sf_surface_physics  namelist,physics	max_domains    0       rh0123       "sf_surface_physics"            ""      ""

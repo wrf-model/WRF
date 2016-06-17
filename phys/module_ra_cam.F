@@ -226,7 +226,7 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte,                    &
-                     coszen                                        )
+                     coszen,obscur                                 ) ! amontornes-bcodina 2015/09 solar eclipses
 
 !ccc To use CLWRF time-varying trace gases
    USE MODULE_RA_CLWRF_SUPPORT, ONLY : read_CAMgases
@@ -368,6 +368,10 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
 
   real, dimension(ims:ime,jms:jme), optional, intent(in) :: coszen
 
+! amontornes-bcodina 2015/09 solar eclipses
+!  obscur --> degree of obscuration for solar eclipses prediction (one row)
+   real, dimension(ims:ime,jms:jme), INTENT(IN) :: obscur
+
 ! LOCAL VARIABLES
  
    INTEGER :: lchnk, ncol, pcols, pver, pverp, pverr, pverrp
@@ -437,6 +441,7 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
    real(r8), dimension(its:ite,kts:kte+1,kts:kte+1) :: abstot ! Total absorptivity
    real(r8), dimension(its:ite,kts:kte,4)           :: absnxt ! Total nearest layer absorptivity
    real(r8), dimension(its:ite,kts:kte+1)           :: emstot ! Total emissivity
+   real(r8), dimension(1:ite-its+1)                     :: obscur_row ! amontornes-bcodina 2015/09 solar eclipses
    CHARACTER(LEN=256) :: msgstr
 
 !ccc
@@ -683,6 +688,11 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
       enddo
       enddo
 
+! amontornes-bcodina 2015/09 solar eclipses
+      do i = its,ite
+        ii = i - its + 1
+        obscur_row(ii) = obscur(i,j)
+      enddo
 
 ! Compute cloud water/ice paths and optical properties for input to radiation
 
@@ -778,7 +788,8 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
                    n2ovmr, ch4vmr, f11vmr, f12vmr  , &
 #endif
 !ccc
-                   landfrac, zm, fsds, fsdsdir, fsdsdif) ! amontornes-bcodina (2014-04-20) Dir/Dif fluxes
+                   landfrac, zm, fsds, fsdsdir, fsdsdif, & ! amontornes-bcodina (2014-04-20) Dir/Dif fluxes
+                   obscur_row)  ! amontornes-bcodina 2015/09 solar eclipses
 
       do k = kts,kte
       kk = kte - k + kts 
@@ -1586,7 +1597,8 @@ subroutine radctl(j, lchnk   ,ncol    , pcols, pver, pverp, pverr, pverrp, ppcns
                   n2ovmr, ch4vmr, f11vmr, f12vmr     , &
 #endif
 !ccc
-                  landfrac,zm      ,fsds, fsdsdir,fsdsdif     ) ! amontornes-bcodina (2014-04-20) Dir/Dif fluxes
+                  landfrac,zm      ,fsds, fsdsdir,fsdsdif, &  ! amontornes-bcodina (2014-04-20) Dir/Dif fluxes
+                  obscur     )				      ! amontornes-bcodina 2015/09 solar eclipses
 !----------------------------------------------------------------------- 
 ! 
 ! Purpose: 
@@ -1671,6 +1683,10 @@ subroutine radctl(j, lchnk   ,ncol    , pcols, pver, pverp, pverr, pverrp, ppcns
    real(r8), intent(in)     :: aerosoljp(pcols,paerlev,naer_c)   ! aerosol concentrations
    real(r8), intent(in)     :: aerosoljn(pcols,paerlev,naer_c)   ! aerosol concentrations
    real(r8), intent(in)     :: m_hybi(paerlev)
+
+! amontornes-bcodina 2015/09 solar eclipses
+    real(r8), intent(in)     :: obscur(pcols) ! Degree of obscuration
+
 !  type(physics_state), intent(in) :: state     
    real(r8), intent(inout) :: pmxrgn(pcols,pverp) ! Maximum values of pmid for each
 !    maximally overlapped region.
@@ -1853,7 +1869,8 @@ subroutine radctl(j, lchnk   ,ncol    , pcols, pver, pverp, pverr, pverrp, ppcns
                     fsup    ,fsupc   ,fsdn    ,fsdnc   ,          &
                     fsdndir ,fsdncdir,fsdndif ,fsdncdif,          & ! amontornes-bcodina (2014-04-20) Dir/Dif fluxes profile
                     fsdsdir ,fsdsdif ,fsdscdir,fsdscdif,          & ! amontornes-bcodina (2014-04-20) Dir/Dif fluxes sfc
-                    aertau  ,aerssa  ,aerasm  ,aerfwd             )
+                    aertau  ,aerssa  ,aerasm  ,aerfwd,            &
+                    obscur                                        ) ! amontornes-bcodina 2015/09 solar eclipses
 !        call t_stopf('radcswmx_rf')
 
 !
@@ -1903,7 +1920,9 @@ subroutine radctl(j, lchnk   ,ncol    , pcols, pver, pverp, pverr, pverrp, ppcns
                     fsup    ,fsupc   ,fsdn    ,fsdnc   ,          &
                     fsdndir ,fsdncdir,fsdndif ,fsdncdif,          & ! amontornes-bcodina (2014-04-20) Dir/Dif fluxes profiles
                     fsdsdir ,fsdsdif ,fsdscdir,fsdscdif,          & ! amontornes-bcodina (2014-04-20) Dir/Dif fluxes sfc
-                    aertau  ,aerssa  ,aerasm  ,aerfwd             )
+                    aertau  ,aerssa  ,aerasm  ,aerfwd,            &
+                    obscur                                        & ! amontornes-bcodina 2015/09 solar eclipses
+                                                                  )
 !     call t_stopf('radcswmx')
 
 ! -- tls ---------------------------------------------------------------2
@@ -5713,7 +5732,8 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
                     fsup    ,fsupc   ,fsdn    ,fsdnc   ,          &
                     fsdndir ,fsdncdir,fsdndif ,fsdncdif,          & ! amontornes-bcodina (2014-04-20) Dir/Dif fluxes profiles
                     fsdsdir ,fsdsdif ,fsdscdir,fsdscdif,          & ! amontornes-bcodina (2014-04-20) Dir/Dif fluxes sfc
-                    aertau  ,aerssa  ,aerasm  ,aerfwd             )
+                    aertau  ,aerssa  ,aerasm  ,aerfwd,            &
+                    obscur                                        ) ! amontornes-bcodina 2015/09 solar eclipses
 !-----------------------------------------------------------------------
 ! 
 ! Purpose: 
@@ -5867,6 +5887,9 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
    real(r8), intent(in) :: aldif(pcols)     ! 0.7-5.0 micro-meter srfc alb: diffuse rad
 
    real(r8), intent(in) :: scon             ! solar constant 
+
+! amontornes-bcodina 2015/09 solar eclipses
+    real(r8), intent(in) :: obscur(pcols)   ! degree of obscuration
 ! 
 ! IN/OUT arguments
 ! 
@@ -6389,8 +6412,11 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
 ! Define solar incident radiation and interface pressures:
 ! 
 !        solin(i)  = scon*eccf*coszrs(i)
-!WRF use SOLCON (MKS) calculated outside
-         solin(i)  = solcon*coszrs(i)*1000.
+!WRF use SOLCON (MKS) calculated outside || amontornes-bcodina 2015/09 solar eclipses
+!         solin(i)  = solcon*coszrs(i)*1000.
+! amontornes-bcodina 2015/09 solar eclipses
+         solin(i)  = solcon*coszrs(i)*1000.*(1. - obscur(i))
+
          pflx(i,0) = 0._r8
          do k=1,pverp
             pflx(i,k) = pint(i,k)

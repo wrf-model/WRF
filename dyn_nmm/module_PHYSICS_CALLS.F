@@ -478,6 +478,9 @@
      &                 ,QS=MOIST_TRANS(IMS,KMS,JMS,P_QS),F_QS=F_QS      &
      &                 ,QG=MOIST_TRANS(IMS,KMS,JMS,P_QG),F_QG=F_QG      &
      &                 ,IS_CAMMGMP_USED=IS_CAMMGMP_USED                 &
+     &         ,obscur=grid%ECOBSC, mask=grid%ECMASK                    &
+     &         ,elat_track=grid%elat_track,elon_track=grid%elon_track   &
+     &         ,SW_ECLIPSE=config_flags%ra_sw_eclipse                   &
      &                 ,EXPLICIT_CONVECTION=config_flags%cu_physics==0  &
      &                 ,CU_PHYSICS=config_flags%cu_physics              &
      &                 ,MP_PHYSICS=CONFIG_FLAGS%MP_PHYSICS)

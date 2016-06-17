@@ -176,6 +176,7 @@ contains
                    ,swddir,swddni,swddif                          & ! jararias 2013/08
                    ,coszen,julian                                 & ! jararias 2013/08
                    ,aer_opt                                       &
+                   ,obscur                                        & ! amontornes-bcodina 2015/09 solar eclipses
                                                                   )
    implicit none
 
@@ -275,6 +276,11 @@ contains
 !        asyaer3d_sw    ! 3D asymmetry factor for SW bands
    real, dimension(:,:,:,:), pointer :: tauaer3d_sw,ssaaer3d_sw,asyaer3d_sw
    integer, intent(in) :: aer_opt
+
+! amontornes-bcodina 2015/09 solar eclipses
+!  obscur --> degree of obscuration for solar eclipses prediction (2D)
+ real, dimension( ims:ime, jms:jme ), intent(in)  :: &
+         obscur
 
 !------- Local variables ----------------------------------------------
 
@@ -966,10 +972,10 @@ contains
             swddif(i,j) = 0. !jararias, 14/08/2013
             swddni(i,j) = 0. !jararias, 14/08/2013
           else
-            flx(i,k) = flx(i,k) * solcon * cosz(i)
-            swddni(i,j) = ( fdiruv(i) + fdirpar(i) + fdirir(i) ) * solcon           !jararias, 14/08/2013
+            flx(i,k) = flx(i,k) * solcon * cosz(i) * ( 1 - obscur(i,j) )! amontornes-bcodina 2015/09 solar eclipses
+            swddni(i,j) = ( fdiruv(i) + fdirpar(i) + fdirir(i) ) * solcon * ( 1 - obscur(i,j) ) !jararias, 14/08/2013, ! amontornes-bcodina 2015/09 solar eclipses
             swddir(i,j) = swddni(i,j) * cosz(i)                                     !jararias, 14/08/2013
-            swddif(i,j) = ( fdifuv(i) + fdifpar(i) + fdifir(i) ) * solcon * cosz(i) !jararias, 14/08/2013
+            swddif(i,j) = ( fdifuv(i) + fdifpar(i) + fdifir(i) ) * solcon * cosz(i) * ( 1 - obscur(i,j) ) !jararias, 14/08/2013, ! amontornes-bcodina 2015/09 solar eclipses
           endif
         end do
       end do
@@ -1005,16 +1011,16 @@ contains
 !
 ! absorbed part in surface energy budget [W/m^2] (Note that flxd in SW is flux fraction)
 !
-          gsf(i,j) = (1. - rsuvbm(i)) * flxd(i,kte+1) * solcon * cosz(i)
+          gsf(i,j) = (1. - rsuvbm(i)) * flxd(i,kte+1) * solcon * cosz(i) * (1 - obscur(i,j) ) ! amontornes-bcodina 2015/09 solar eclipses
 
 !
 ! extra output for SDSU
 !       
-          if(present(ERBE_out)) then
-             ERBE_out(i,j,5) = flxd(i,1)     * solcon * cosz(i)  ! TOA SW downwelling flux [W/m2] 
-             ERBE_out(i,j,6) = flxu(i,1)     * solcon * cosz(i)  ! TOA SW upwelling flux   [W/m2]
-             ERBE_out(i,j,7) = flxd(i,kte+1) * solcon * cosz(i)  ! surface SW downwelling flux [W/m2]
-             ERBE_out(i,j,8) = flxu(i,kte+1) * solcon * cosz(i)  ! surface SW upwelling flux   [W/m2]
+          if(present(ERBE_out)) then ! amontornes-bcodina 2015/09 solar eclipses
+             ERBE_out(i,j,5) = flxd(i,1)     * solcon * cosz(i) * (1 - obscur(i,j) )  ! TOA SW downwelling flux [W/m2] 
+             ERBE_out(i,j,6) = flxu(i,1)     * solcon * cosz(i) * (1 - obscur(i,j) )  ! TOA SW upwelling flux   [W/m2]
+             ERBE_out(i,j,7) = flxd(i,kte+1) * solcon * cosz(i) * (1 - obscur(i,j) )  ! surface SW downwelling flux [W/m2]
+             ERBE_out(i,j,8) = flxu(i,kte+1) * solcon * cosz(i) * (1 - obscur(i,j) )  ! surface SW upwelling flux   [W/m2]
           endif
         endif
       enddo

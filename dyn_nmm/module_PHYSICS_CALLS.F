@@ -928,7 +928,7 @@
                                                       ,DUBLDT          &  
                                                       ,DVBLDT         
 
-      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: taux, tauy
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: taux, tauy
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(IN) :: PINT
 !
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT) :: CWM      &
@@ -1079,6 +1079,12 @@
       IFNDALBSI = 0
       IFNDSNOWSI = 0
       IFNDICEDEPTH = 0
+
+      ! BR is replaced by SF_GFDL inside SURFACE_DRIVER.  This variable
+      ! was uninitialized.  The variable RIBN or RCHNO in the Registry
+      ! are retained accross timesteps.  This is a bug fix to avoid junk
+      ! data in RCHNO at the I=IDE and J=JDE locations.
+      BR=10
 
       SEAICE_ALBEDO_DEFAULT = CONFIG_FLAGS%SEAICE_ALBEDO_DEFAULT
       SEAICE_THICKNESS_OPT = CONFIG_FLAGS%SEAICE_THICKNESS_OPT
@@ -2265,6 +2271,7 @@
      &                 ,HPBL2D,EVAP2D,HEAT2D                            &     !Kwon S&P
      &                 ,DX2D,DYNMM                                      &     !WANG scale-aware sas
      &                 ,SCALEFUN, SCALEFUN1                             & !scale functions
+     &                 ,SIGMU, SIGMU1                                   & !updraft fraction
      &                 ,AVCNVC,ACUTIM,IHE,IHW                           &
      &                 ,GRID,CONFIG_FLAGS                               &
      &                 ,IDS,IDE,JDS,JDE,KDS,KDE                         &
@@ -2313,6 +2320,7 @@
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: SCALEFUN,SCALEFUN1 ! Wang scale-sware sas
                                                                      ! scale
                                                                      ! functions
+       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: SIGMU,SIGMU1 ! Wang, updraft fractional area
 
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: HPBL2D,EVAP2D,HEAT2D     !Kwon S&P
@@ -2809,7 +2817,8 @@
      &                 ,SHALL=grid%shall                                &
      &                 ,HPBL2D=HPBL2D,EVAP2D=EVAP2D,HEAT2D=HEAT2D       &     !Kwon S&P
      &                 ,DX2D=DX2D,DYNMM=DYNMM                          &     !Wang scale-sware SAS 
-     &                 ,SCALEFUN=SCALEFUN, SCALEFUN1=SCALEFUN1          &
+     &                 ,SCALEFUN=SCALEFUN, SCALEFUN1=SCALEFUN1          &    ! scale function
+     &                 ,SIGMU=SIGMU, SIGMU1=SIGMU1                      &    ! updraft fraction
      &                 ,pgcon=config_flags%sas_pgcon                    &
      &                 ,sas_mass_flux=config_flags%sas_mass_flux        &
      &                 ,shalconv=config_flags%sas_shal_conv             &
@@ -2906,8 +2915,12 @@
           endif
 #if ( HWRF == 1 )
           if(have_swath) then
-             if(grid%interesting(i,j)/=0) &
-                  grid%precip_swath(i,j) = grid%precip_swath(i,j) + PCPCOL
+             if(grid%interesting(i,j)/=0) then
+                grid%precip_swath(i,j) = grid%precip_swath(i,j) + PCPCOL
+                if(size(grid%cuprecip_swath)>0) then
+                   grid%cuprecip_swath(i,j) = grid%cuprecip_swath(i,j) + PCPCOL
+                endif
+             endif
           endif
 #endif
 !

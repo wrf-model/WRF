@@ -10,7 +10,7 @@
          write(message,3038) trim(s),ie,rc
 
          if(rc.eq.0) then
-            call wrf_message(message)
+            call wrf_debug(2,message)
          else
             call wrf_error_fatal(message)
          endif

@@ -260,7 +260,7 @@ CONTAINS
    ipr=1
    ntcw=2
 
-    write(0,*)'in gfsedmf PBL'
+!    write(0,*)'in gfsedmf PBL'
 
    IF (P_QI.ge.P_FIRST_SCALAR) NTRAC=3
 
@@ -654,6 +654,9 @@ CONTAINS
      real :: VAR_RIC,coef_ric_l,coef_ric_s
      
      logical:: outp
+     integer :: stype, useshape
+     real :: smax,ashape,sz2h, sksfc,skmax,ashape1,skminusk0, hmax
+
 !!
 
 !cc
@@ -685,6 +688,15 @@ CONTAINS
       parameter (zstblmax = 2500., qlcr=3.5e-5)
 !     parameter (actei = 0.23)
       parameter (actei = 0.7)
+
+
+! Weiguo Wang added, height-dependent ALPHA
+!       smax=0.148
+!       stype=1
+      useshape=2 !0-- no change, origincal ALPHA adjustment,1-- shape1, 2-- shape2(adjust above sfc)
+  !     useshape=1 
+!c
+!c-----------------------------------------------------------------------
 !c
 !c-----------------------------------------------------------------------
 !c
@@ -922,7 +934,7 @@ CONTAINS
            crb(i) = max(min(crb(i), crbmax), crbmin)
       enddo
 
-         outp=.true.
+         outp=.false.
          if(outp) then
           write(*,*)'var_ric,coef_ric_l,coef_ric_s,alpha'
           write(*,*)var_ric,coef_ric_l,coef_ric_s,alpha
@@ -1226,6 +1238,39 @@ CONTAINS
             zfac = max((1.-zi(i,k+1)/hpbl(i)), zfmin)
          !   tem = zi(i,k+1) * (zfac**pfac) 
             tem = zi(i,k+1) * (zfac**pfac) * ABS(ALPHA)
+
+!!!! CHANGES FOR HEIGHT-DEPENDENT K ADJUSTMENT, WANG W
+             if(useshape .ge. 1) then
+                sz2h=(ZI(I,K+1)-ZL(I,1))/(HPBL(I)-ZL(I,1))
+                sz2h=max(sz2h,zfmin)
+                sz2h=min(sz2h,1.0)
+                    zfac=(1.0-sz2h)**pfac
+!                    smax=0.148  !! max value of this shape function
+                     smax=0.148  !! max value of this shape function
+                     hmax=0.333  !! roughly height if max K
+                     skmax=hmax*(1.0-hmax)**pfac
+                     sksfc=min(ZI(I,2)/HPBL(I),0.05)  ! surface layer top, 0.05H or ZI(2) (Zi(1)=0)
+                     sksfc=sksfc*(1-sksfc)**pfac
+
+                zfac=max(zfac,zfmin)
+                ashape=max(ABS(ALPHA),0.2)  ! should not be smaller than 0.2, otherwise too much adjustment(?)
+                if(useshape ==1) then 
+                 ashape=( 1.0 - ((sz2h*zfac/smax)**0.25) *( 1.0 - ashape )  )
+                 tem = zi(i,k+1) * (zfac) * ashape
+                endif
+
+                if (useshape == 2) then   !only adjus K that is > K_surface_top
+                  ashape1=1.0
+                 if (skmax > sksfc)  ashape1=(skmax*ashape-sksfc)/(skmax-sksfc)
+                  skminusk0=ZI(I,K+1)*zfac - HPBL(i)*sksfc
+                   tem = zi(i,k+1) * (zfac) ! no adjustment
+                  if (skminusk0 > 0) then   ! only adjust K which is > surface top K
+                   tem = skminusk0*ashape1 + HPBL(i)*sksfc
+                  endif
+                endif
+             endif  ! endif useshape>1
+!!!! END OF CHAGES , WANG W
+
 !!If alpha >= 0, this is the only modification of K
 ! if alpha = -1, the above provides the first guess for DKU, based on assumption
 ! alpha = +1
@@ -1296,6 +1341,44 @@ CONTAINS
             zfac = max((1.-zi(i,k+1)/hpbl(i)), zfmin)
          !   tem = zi(i,k+1) * (zfac**pfac) 
             tem = zi(i,k+1) * (zfac**pfac) * WSPM(i,4)
+
+!!! wang use different K shape, options!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!! CHANGES FOR HEIGHT-DEPENDENT K ADJUSTMENT, WANG W
+             if(useshape .ge. 1) then
+                sz2h=(ZI(I,K+1)-ZL(I,1))/(HPBL(I)-ZL(I,1))
+                sz2h=max(sz2h,zfmin)
+                sz2h=min(sz2h,1.0)
+                    zfac=(1.0-sz2h)**pfac
+                     smax=0.148  !! max value of this shape function
+                     hmax=0.333  !! roughly height if max K
+                     skmax=hmax*(1.0-hmax)**pfac
+                     sksfc=min(ZI(I,2)/HPBL(I),0.05)  ! surface layer top, 0.05H or ZI(2) (Zi(1)=0)
+                     sksfc=sksfc*(1-sksfc)**pfac
+
+                zfac=max(zfac,zfmin)
+                ashape=max(WSPM(i,4),0.2)  !! adjustment coef should not smaller than 0.2
+                if(useshape ==1) then 
+                 ashape=( 1.0 - ((sz2h*zfac/smax)**0.25) *( 1.0 - ashape )  )
+                 tem = zi(i,k+1) * (zfac) * ashape
+!                 if(k ==5) write(0,*)'min alf, height-depend alf',WSPM(i,4),ashape
+                endif  ! endif useshape=1
+
+                if (useshape == 2) then   !only adjus K that is > K_surface_top
+                  ashape1=1.0
+                 if (skmax > sksfc)  ashape1=(skmax*ashape-sksfc)/(skmax-sksfc)
+
+                  skminusk0=ZI(I,K+1)*zfac - HPBL(i)*sksfc
+                 tem = zi(i,k+1) * (zfac) ! no adjustment
+!             if(k ==5) write(0,*)'before, dku,ashape,ashpe1',tem*wscaleu(i)*vk,ashape,ashape1
+                  if (skminusk0 > 0) then   ! only adjust K which is > surface top K
+                   tem = skminusk0*ashape1 + HPBL(i)*sksfc
+                  endif
+!            if(k ==5) write(0,*)'after, dku,k_sfc,skmax,sksfc,zi(2),hpbl',tem*wscaleu(i)*vk,WSCALEU(I)*VK*HPBL(i)*sksfc, skmax,sksfc,ZI(I,2),HPBL(I)
+
+                endif  ! endif useshape=2
+             endif  ! endif useshape>1
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
             if(pblflg(i)) then
               tem1 = vk * wscaleu(i) * tem

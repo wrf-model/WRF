@@ -704,14 +704,22 @@
                             IMS,IME,JMS,JME,KMS,KME, &
                             ITS,ITE,JTS,JTE,KTS,KTE)
          call init_swath(grid, config_flags, &
-              (allowed_to_read .and. .not. restrt) )
+              (allowed_to_read .and. .not. restrt),&
+              allowed_to_read)
     ENDIF
     IF(ANAL .or. allowed_to_read) THEN
+       call wrf_debug(1,'Request update to area of interest in start_domain_nmm.')
        grid%update_interest=.true.
     ENDIF
 ! End Sam Trahan's doing for vortex tracker initialization
 #endif
 #if ( HWRF == 1 )
+! Begin Sam Trahan's change to merge two log messages for WRF_NMM
+    IF(allowed_to_read .and. .not. restrt) THEN
+       grid%avgPchg=0
+    ENDIF
+! End Sam Trahan's change to merge two log messages for WRF_NMM
+
 !zhang's doing
   IF((.NOT.RESTRT .AND. .NOT.ANAL) .OR. .NOT.allowed_to_read)THEN
 !end of zhang's doing

@@ -349,7 +349,7 @@
       if (VerbLev.ge.2) then
          write(message,*) 'AM: ATM_TSTEP_INIT: returning ',gid,         &
      &n_ts(gid),ids,idf,jds,jdf,its,ite,jts,jte,ims,ime,jms,jme,NGP,NSF
-         call wrf_message(message)
+         call wrf_debug(2,message)
       endif
 
       RETURN

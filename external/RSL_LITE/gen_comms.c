@@ -2193,6 +2193,14 @@ gen_nest_packunpack ( FILE *fp , node_t * node , int dir, int down_path )
   char c, d ;
   int need_endif;
 
+  if(dir==UNPACKIT)
+    if(down_path==INTERP_UP)
+      fprintf(fp,"CALL rsl_lite_from_child_msg(-1,xv) ! -1 = all data\n");
+    else
+      fprintf(fp,"CALL rsl_lite_from_parent_msg(-1,xv) ! -1 = all data\n");
+
+  fprintf(fp,"ixv=0 ! Reset read/write counter\n");
+
   need_endif=0;
   for ( p1 = node ;  p1 != NULL ; p1 = p1->next )
   {
@@ -2299,9 +2307,9 @@ fprintf(fp,"IF ( SIZE(%s%s%s) .GT. 1 ) THEN ! okay for intermediate_grid too. se
                   if (p->nmm_v_grid)
                     sjl = "_v" ;
             if ( zdex >= 0 ) {
-fprintf(fp,"CALL rsl_lite_from_child_msg(((%s)-(%s)+1)*RWORDSIZE,xv) ;\n",ddim[zdex][1], ddim[zdex][0] ) ;
+//fprintf(fp,"CALL rsl_lite_from_child_msg(((%s)-(%s)+1)*RWORDSIZE,xv) ;\n",ddim[zdex][1], ddim[zdex][0] ) ;
             } else {
-fprintf(fp,"CALL rsl_lite_from_child_msg(RWORDSIZE,xv)\n" ) ;
+//fprintf(fp,"CALL rsl_lite_from_child_msg(RWORDSIZE,xv)\n" ) ;
             }
 #if (NMM_CORE == 1)
                   if(p->stag_x || p->stag_y) {
@@ -2323,19 +2331,21 @@ fprintf(fp,"IF ( cd_feedback_mask%s( pig, ips_save, ipe_save , pjg, jps_save, jp
             }
 #endif
             if ( zdex >= 0 ) {
-fprintf(fp,"DO k = %s,%s\n%s(%s%s,xv(k))\nENDDO\n", ddim[zdex][0], ddim[zdex][1], feed, grid, vname ) ;
+fprintf(fp,"DO k = %s,%s\n%s(%s%s,xv(ixv+1+k-%s))\nENDDO\nENDIF\nixv=ixv+%s-%s+1\n",
+	ddim[zdex][0], ddim[zdex][1], feed, grid, vname, ddim[zdex][0],
+	ddim[zdex][1], ddim[zdex][0]) ;
             } else {
-fprintf(fp,"%s(%s%s,xv(1))\n", feed, grid, vname ) ;
+fprintf(fp,"ixv=ixv+1\n%s(%s%s,xv(ixv))\nELSE\nixv=ixv+1\nENDIF\n", feed, grid, vname ) ;
             }
-fprintf(fp,"ENDIF\n") ;
           }
           else
           {
             if ( zdex >= 0 ) {
-fprintf(fp,"CALL rsl_lite_from_parent_msg(((%s)-(%s)+1)*RWORDSIZE,xv)\nDO k = %s,%s\n%s%s = xv(k)\nENDDO\n",
-                                    ddim[zdex][1], ddim[zdex][0], ddim[zdex][0], ddim[zdex][1], grid, vname) ;
+fprintf(fp,"DO k = %s,%s\n%s%s = xv(k-%s+ixv+1)\nENDDO\nixv=ixv+%s-%s+1\n",
+	ddim[zdex][0], ddim[zdex][1], grid, vname, ddim[zdex][0],
+	ddim[zdex][1], ddim[zdex][0]) ;
             } else {
-fprintf(fp,"CALL rsl_lite_from_parent_msg(RWORDSIZE,xv)\n%s%s = xv(1)\n", grid, vname) ;
+fprintf(fp,"ixv=ixv+1\n%s%s = xv(ixv)\n", grid, vname) ;
             }
           }
         }
@@ -2344,19 +2354,20 @@ fprintf(fp,"CALL rsl_lite_from_parent_msg(RWORDSIZE,xv)\n%s%s = xv(1)\n", grid, 
           if ( down_path == INTERP_UP )
 	  {
             if ( zdex >= 0 ) {
-fprintf(fp,"DO k = %s,%s\nxv(k)= intermediate_grid%%%s\nENDDO\nCALL rsl_lite_to_parent_msg(((%s)-(%s)+1)*RWORDSIZE,xv)\n",
-                           ddim[zdex][0], ddim[zdex][1], vname, ddim[zdex][1], ddim[zdex][0] ) ;
+	      fprintf(fp,"DO k = %s,%s\nxv(ixv+1+k-%s)= intermediate_grid%%%s\nENDDO\nixv=ixv+%s-%s+1\n",
+		      ddim[zdex][0], ddim[zdex][1], ddim[zdex][0], vname, ddim[zdex][1], ddim[zdex][0] ) ;
             } else {
-fprintf(fp,"xv(1)= intermediate_grid%%%s\nCALL rsl_lite_to_parent_msg(RWORDSIZE,xv)\n", vname) ;
+	      fprintf(fp,"ixv=ixv+1\nxv(ixv)= intermediate_grid%%%s\n", vname) ;
             }
           }
           else
           {
             if ( zdex >= 0 ) {
-fprintf(fp,"DO k = %s,%s\nxv(k)= %s%s\nENDDO\nCALL rsl_lite_to_child_msg(((%s)-(%s)+1)*RWORDSIZE,xv)\n",
-                           ddim[zdex][0], ddim[zdex][1], grid, vname, ddim[zdex][1], ddim[zdex][0] ) ;
+	      fprintf(fp,"DO k = %s,%s\nxv(k+ixv+1-%s)= %s%s\nENDDO\nixv=ixv+%s-%s+1\n",
+		      ddim[zdex][0], ddim[zdex][1], ddim[zdex][0], grid, vname,
+		      ddim[zdex][1], ddim[zdex][0] ) ;
             } else {
-fprintf(fp,"xv(1)=%s%s\nCALL rsl_lite_to_child_msg(RWORDSIZE,xv)\n", grid, vname) ;
+	      fprintf(fp,"ixv=ixv+1\nxv(ixv)=%s%s\n", grid, vname) ;
             }
           }
         }
@@ -2374,9 +2385,15 @@ fprintf(fp,"ENDIF\n") ; /* in_use_for_config */
     }
   }
   if(need_endif) {
-    fprintf(fp,"endif\n");
+    fprintf(fp,"endif\n"); /* interp_mp */
     need_endif=0;
   }
+
+  if(dir!=UNPACKIT)
+    if(down_path==INTERP_UP)
+      fprintf(fp,"CALL rsl_lite_to_child_msg(ixv*RWORDSIZE,xv)\n");
+    else
+      fprintf(fp,"CALL rsl_lite_to_parent_msg(ixv*RWORDSIZE,xv)\n");
 
   return(0) ;
 }

@@ -6586,6 +6586,9 @@ HFX_SEA, LH_SEA, QFX_SEA, QGH_SEA, QSFC_SEA, TSK_SEA,  &
 
 ! Local
       INTEGER :: i,j
+      REAL    :: TICE_MIN
+
+      TICE_MIN = 221.4
 
       DO j = JTS , JTE
          DO i = ITS , ITE
@@ -6620,6 +6623,7 @@ HFX_SEA, LH_SEA, QFX_SEA, QGH_SEA, QSFC_SEA, TSK_SEA,  &
                   TSK_ICE(i,j) = MIN( TSK(i,j), 273.15 )
                ELSE
                   TSK_ICE(i,j) = ( TSK(i,j) - (1.0-XICE(i,j)) * SST(i,j) ) / XICE(i,j)
+                  IF ( TSK_ICE(i,j) < TICE_MIN ) TSK_ICE(i,j) = TICE_MIN
                ENDIF
  
                IF ( ( XICE(i,j) < 0.2 ) .AND. ( TSK(i,j) < 253.15 ) ) THEN

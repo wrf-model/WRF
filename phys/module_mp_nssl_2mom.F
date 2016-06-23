@@ -71,12 +71,6 @@
 !   Bug fix in snow fall speeds
 !   Further fix in snow reflectivity
 !   Use diameter of maximum mass rather than mean diamter when checking maximum size
-!   Helped performance in sedimentation with flag "do_accurate_sedimentation" to control recalculation of fall speeds when
-!       more than one sub-time step is needed (often happens with large time steps and small dz near the ground):
-!        = .true. : recalculates fall speed after each substep (more accurate)
-!        = .false. : (default) reuses fall speeds calculated on the first substep (typical for most schemes), theoretically could cause an occasional glitch, but none seen in practice
-!   Increased maximum mean droplet radius from 40 to 60 microns, which alleviates spurious number concentration increases at low CCN concentration.
-!   Removed a duplicate factor from hail reflectivity that was causing a loss of about 6 dBZ (since WRF 3.5).
 !
 !---------------------------------------------------------------------
 

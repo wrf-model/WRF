@@ -324,7 +324,7 @@ bufrfile:  do ibufr=1,numbufr
             if (trace_use) call da_trace_exit("da_read_obs_bufratms")
             return
          endif
-         write(unit=message(1),fmt='(a,i10)') 'The number of observation is:',nnum-1
+         write(unit=message(1),fmt='(a,i10)') 'The number of observations is:',nnum-1
          call da_message(message(1:1))
       call ATMS_Spatial_Average(nnum, NChanl, Fov_save(1:nnum), Time_save(1:nnum), BT_InOut_save(1:NChanl,1:nnum), &
                                 Scanline_save, Error_Status)

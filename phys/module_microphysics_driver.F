@@ -858,7 +858,14 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,REFL_10CM=refl_10cm                 &  ! added for radar reflectivity
                  ,diagflag=diagflag                   &  ! added for radar reflectivity
                  ,do_radar_ref=do_radar_ref           &  ! added for radar reflectivity
-                 ,RAINNC=rainnc)
+                 ,RAINNC=rainnc                       &
+                 ,RAINNCV=rainncv                     &
+                 ,SNOWNC=snownc                       &
+                 ,SNOWNCV=snowncv                     &
+                 ,GRAUPELNC=graupelnc                 &
+                 ,GRAUPELNCV=graupelncv               &
+                 ,SR=sr                               &
+                                         )
 
 !
        CASE (FULL_KHAIN_LYNN)
@@ -917,7 +924,16 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,REFL_10CM=refl_10cm                 &  ! added for radar reflectivity
                  ,diagflag=diagflag                   &  ! added for radar reflectivity
                  ,do_radar_ref=do_radar_ref           &  ! added for radar reflectivity
-                 ,RAINNC=rainnc)
+                 ,RAINNC=rainnc                       &
+                 ,RAINNCV=rainncv                     &
+                 ,SNOWNC=snownc                       &
+                 ,SNOWNCV=snowncv                     &
+                 ,GRAUPELNC=graupelnc                 &
+                 ,GRAUPELNCV=graupelncv               &
+                 ,HAILNC=hailnc                       &
+                 ,HAILNCV=hailncv                     &
+                 ,SR=sr                               &
+                                                      )
 #endif
 
 !

@@ -1,0 +1,33 @@
+#-------------------------------------------------------------------------------#
+# PRODUCTION build settings for IBM AIX xlf compiler
+#-------------------------------------------------------------------------------#
+
+# The compiler and linker name
+export FC="ftn"
+
+export FL="ftn"
+
+# Compiler and linker settings for PRODUCTION builds
+F_COMMON_FLAGS="-O3"
+
+export FC_FLAGS="\
+ -c \
+ -FR \
+ -ip \
+ -w -ftz -fno-alias -align all \
+ ${F_COMMON_FLAGS} \
+ ${INCLUDES}"
+
+export FL_FLAGS="\
+ ${F_COMMON_FLAGS} \
+ ${LIBRARIES}"
+
+
+echo "========================================="
+echo " CRTM compilation environment variables:"
+echo "   FC:       ${FC}"
+echo "   FC_FLAGS: ${FC_FLAGS}"
+echo "   FL:       ${FL}"
+echo "   FL_FLAGS: ${FL_FLAGS}"
+echo "========================================="
+echo

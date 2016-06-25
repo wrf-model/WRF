@@ -192,7 +192,6 @@ CONTAINS
    SUBROUTINE wrf_dm_initialize
       IMPLICIT NONE
 #ifndef STUBMPI
-      INCLUDE 'mpif.h'
       INTEGER :: local_comm_per, local_comm_x, local_comm_y, local_comm2, new_local_comm, group, newgroup, p, p1, ierr,itmp
       INTEGER, ALLOCATABLE, DIMENSION(:) :: ranks
       INTEGER comdup
@@ -1279,7 +1278,6 @@ CONTAINS
    INTEGER function getrealmpitype()
 #ifndef STUBMPI
       IMPLICIT NONE
-      INCLUDE 'mpif.h'
       INTEGER rtypesize, dtypesize, ierr
       CALL mpi_type_size ( MPI_REAL, rtypesize, ierr )
       CALL mpi_type_size ( MPI_DOUBLE_PRECISION, dtypesize, ierr )
@@ -1300,7 +1298,6 @@ CONTAINS
    REAL FUNCTION wrf_dm_max_real ( inval )
       IMPLICIT NONE
 #ifndef STUBMPI
-      INCLUDE 'mpif.h'
       REAL inval, retval
       INTEGER comm,ierr
       CALL wrf_get_dm_communicator(comm)
@@ -1315,7 +1312,6 @@ CONTAINS
    REAL FUNCTION wrf_dm_min_real ( inval )
       IMPLICIT NONE
 #ifndef STUBMPI
-      INCLUDE 'mpif.h'
       REAL inval, retval
       INTEGER comm,ierr
       CALL wrf_get_dm_communicator(comm)
@@ -1333,7 +1329,6 @@ CONTAINS
       REAL inval(*)
       REAL retval(*)
 #ifndef STUBMPI
-      INCLUDE 'mpif.h'
       INTEGER comm,ierr
       CALL wrf_get_dm_communicator(comm)
       CALL mpi_allreduce ( inval, retval , n, getrealmpitype(), MPI_MIN, comm, ierr )
@@ -1347,7 +1342,6 @@ CONTAINS
      ! mean motion in HWRF moduel_tracker.
       IMPLICIT NONE
 #ifndef STUBMPI
-      INCLUDE 'mpif.h'
       REAL*8 inval, retval, wrf_dm_sum_real8
       INTEGER comm,ierr
       CALL wrf_get_dm_communicator(comm)
@@ -1362,7 +1356,6 @@ CONTAINS
    REAL FUNCTION wrf_dm_sum_real ( inval )
       IMPLICIT NONE
 #ifndef STUBMPI
-      INCLUDE 'mpif.h'
       REAL inval, retval
       INTEGER comm,ierr
       CALL wrf_get_dm_communicator(comm)
@@ -1379,7 +1372,6 @@ CONTAINS
       REAL, INTENT(IN)  :: inval(:)
       REAL, INTENT(OUT) :: retval(:)
 #ifndef STUBMPI
-      INCLUDE 'mpif.h'
       INTEGER comm,ierr
       CALL wrf_get_dm_communicator(comm)
       CALL mpi_allreduce ( inval, retval, SIZE(inval), getrealmpitype(), MPI_SUM, comm, ierr )
@@ -1391,7 +1383,6 @@ CONTAINS
    INTEGER FUNCTION wrf_dm_sum_integer ( inval )
       IMPLICIT NONE
 #ifndef STUBMPI
-      INCLUDE 'mpif.h'
       INTEGER inval, retval
       INTEGER comm,ierr
       CALL wrf_get_dm_communicator(comm)
@@ -1408,7 +1399,6 @@ CONTAINS
       INTEGER, INTENT(IN)  :: inval(:)
       INTEGER, INTENT(OUT) :: retval(:)
 #ifndef STUBMPI
-      INCLUDE 'mpif.h'
       INTEGER comm,ierr
       CALL wrf_get_dm_communicator(comm)
       CALL mpi_allreduce ( inval, retval, SIZE(inval), MPI_INTEGER, MPI_SUM, comm, ierr )
@@ -1477,7 +1467,6 @@ CONTAINS
    INTEGER FUNCTION wrf_dm_bxor_integer ( inval )
       IMPLICIT NONE
 #ifndef STUBMPI
-      INCLUDE 'mpif.h'
       INTEGER inval, retval
       INTEGER comm, ierr
       CALL wrf_get_dm_communicator(comm)
@@ -1651,7 +1640,6 @@ CONTAINS
 #if ( HWRF == 1 )
 # ifndef STUBMPI
       IMPLICIT NONE
-      INCLUDE 'mpif.h'
       LOGICAL mpi_inited
       INTEGER mpi_comm_here,ierr
       CALL MPI_INITIALIZED( mpi_inited, ierr )
@@ -1674,7 +1662,6 @@ CONTAINS
    SUBROUTINE split_communicator
 #ifndef STUBMPI
       IMPLICIT NONE
-      INCLUDE 'mpif.h'
       LOGICAL mpi_inited
 !      INTEGER mpi_comm_here, mpi_comm_local, comdup, comdup2, origmytask,  mytask, ntasks, ierr, io_status
       INTEGER mpi_comm_here, mpi_comm_local, comdup, comdup2, origmytask,  ierr, io_status
@@ -2122,7 +2109,6 @@ CONTAINS
 #ifndef STUBMPI
       IMPLICIT NONE
       INTEGER mpi_comm_local, mpi_comm_here, ierr, mytask, nproc
-      INCLUDE 'mpif.h'
       LOGICAL mpi_inited
       CALL mpi_initialized( mpi_inited, ierr )
       IF ( .NOT. mpi_inited ) THEN
@@ -2169,7 +2155,6 @@ CONTAINS
     REAL, INTENT(INOUT)   :: errf(nerrf, niobf)
 
 #ifndef STUBMPI
-    INCLUDE 'mpif.h'
         
 ! Local declarations
     integer i, n, nlocal_dot, nlocal_crs
@@ -2355,7 +2340,6 @@ CONTAINS
 ! </DESCRIPTION>
       INTEGER i, comm
 #ifndef STUBMPI
-      INCLUDE 'mpif.h'
 
       CALL wrf_get_dm_communicator ( comm )
       CALL mpi_allgather ( val, 1, getrealmpitype(), val_all , 1, getrealmpitype(), comm, ierr )
@@ -2384,7 +2368,6 @@ CONTAINS
 ! </DESCRIPTION>
       INTEGER i, comm
 #ifndef STUBMPI
-      INCLUDE 'mpif.h'
 
       CALL wrf_get_dm_communicator ( comm )
       CALL mpi_allgather ( val, 1, getrealmpitype(), val_all , 1, getrealmpitype(), comm, ierr )
@@ -2413,7 +2396,6 @@ CONTAINS
 ! </DESCRIPTION>
       INTEGER i, comm
 #ifndef STUBMPI
-      INCLUDE 'mpif.h'
 
       CALL wrf_get_dm_communicator ( comm )
       CALL mpi_allgather ( val, 1, MPI_DOUBLE_PRECISION, val_all , 1, MPI_DOUBLE_PRECISION, comm, ierr )
@@ -2441,7 +2423,6 @@ CONTAINS
 ! </DESCRIPTION>
       INTEGER i, comm
 #ifndef STUBMPI
-      INCLUDE 'mpif.h'
 
       CALL wrf_get_dm_communicator ( comm )
       CALL mpi_allgather ( val, 1, MPI_INTEGER, val_all , 1, MPI_INTEGER, comm, ierr )

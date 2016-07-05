@@ -251,7 +251,8 @@ BENCH_START(cal_phy_tend)
       DO ij = 1 , grid%num_tiles
 
         CALL wrf_debug ( 200 , ' call calculate_phy_tend' )
-        CALL calculate_phy_tend (config_flags,grid%mut,grid%muu,grid%muv,pi_phy, &
+        CALL calculate_phy_tend (config_flags,grid%c1h,grid%c2h,       &
+                     grid%mut,grid%muu,grid%muv,pi_phy,                &
                      grid%rthraten,                                    &
                      grid%rublten,grid%rvblten,grid%rthblten,          &
                      grid%rqvblten,grid%rqcblten,grid%rqiblten,        &
@@ -707,7 +708,7 @@ BENCH_START(tke_rhs_tim)
                          grid%defor33,                                &
                          grid%defor12,grid%defor13,grid%defor23,      &
                          grid%u_2,grid%v_2,grid%w_2,grid%div,         &
-                         grid%tke_2,grid%mut,                         &
+                         grid%tke_2,grid%mut,grid%c1h,grid%c2h,       &
                          th_phy,p_phy,p8w,t8w,grid%z,grid%fnm,        & 
                          grid%fnp,grid%cf1,grid%cf2,grid%cf3,         &     
                          grid%msftx,grid%msfty,grid%xkmh,             &
@@ -750,7 +751,8 @@ BENCH_START(vert_diff_tim)
                                       tracer_tend, num_tracer,                     &
                                       grid%u_2, grid%v_2,                                  &
                                       grid%t_2,grid%u_base,grid%v_base,grid%t_base,grid%qv_base,          &
-                                      grid%mut,grid%tke_2,config_flags, &
+                                      grid%mut, grid%c1h, grid%c2h,            &
+                                      grid%tke_2, config_flags,              &
                                       grid%defor13,grid%defor23,grid%defor33,                   &
                                       nba_mij, num_nba_mij,          & !JDM
                                       grid%div, moist, chem, scalar,tracer,         &
@@ -782,7 +784,8 @@ BENCH_START(hor_diff_tim)
                                       scalar_tend, num_scalar,                 &
                                       tracer_tend, num_tracer,                 &
                                       grid%t_2, th_phy,                           &
-                                      grid%mut, grid%tke_2, config_flags,              &
+                                      grid%mut, grid%c1h, grid%c2h,            &
+                                      grid%tke_2, config_flags,              &
                                       grid%defor11, grid%defor22, grid%defor12,             &
                                       grid%defor13, grid%defor23,   &
                                       nba_mij, num_nba_mij,         & !JDM

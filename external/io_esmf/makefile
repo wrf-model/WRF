@@ -1,11 +1,8 @@
 # these settings for compiling standalone on Compaq. Type "make -r"
-#CPP = /lib/cpp 
-#FC  = f90 -free
 
 .SUFFIXES: .F90 .o
 
 AR = ar
-#RANLIB	= ranlib
 RANLIB	= echo
 
 OBJS = module_symbols_util.o \

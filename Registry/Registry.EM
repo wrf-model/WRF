@@ -18,6 +18,7 @@ include registry.afwa
 include registry.sbm
 include registry.elec
 include registry.bdy_perturb
+include registry.hyb_coord
 
 # added to output 5 for ESMF
 state   real   landmask            ij    misc          1     -     i0125rh05d=(interp_fcnm_imask)u=(copy_fcnm)   "LANDMASK"      "LAND MASK (1 FOR LAND, 0 FOR WATER)"  ""

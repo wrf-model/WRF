@@ -2236,7 +2236,7 @@ rconfig   real minDeepFreq                namelist,physics      max_domains    1
 rconfig   real minShallowFreq             namelist,physics      max_domains    1  -     "Minimum frequency required for shallow convection"
 rconfig   integer shcu_aerosols_opt       namelist,physics      max_domains    0  -     "aerosols in shcu:  0=none, 2=prognostic "  ""
 
-rconfig   integer ICLOUD_CU               derived               1             0        -     "ICLOUD_CU"                     ""      ""
+rconfig   integer ICLOUD_CU               derived               max_domains   0        -     "ICLOUD_CU"                     ""      ""
 rconfig   integer pxlsm_smois_init        namelist,physics      max_domains   1       irh    "PXLSM_SMOIS_INIT"    "Soil moisture initialization option 0-From analysis 1-From MAVAIL"   ""
 rconfig   integer omlcall                 namelist,physics      1            0         h     "omlcall"     "temporary holder to allow checking for new name: oml_opt"
 rconfig   integer sf_ocean_physics        namelist,physics      1            0         h     "sf_ocean_physics"     "activate ocean model  0=no, 1=1d mixed layer, 2=3D PWP" ""

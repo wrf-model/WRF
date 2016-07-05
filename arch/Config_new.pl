@@ -21,6 +21,7 @@ $sw_opt_level="";
 $sw_rwordsize="\$\(NATIVE_RWORDSIZE\)";
 $sw_rttov_flag = "" ;
 $sw_rttov_inc = "" ;
+$sw_rttov_path = "" ;
 $sw_crtm_flag = "" ;
 $sw_cloudcv_flag = "" ;
 $sw_4dvar_flag = "" ;
@@ -258,14 +259,24 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
  if ( $ENV{WRF_DA_CORE} eq "1" || $sw_da_core eq "-DDA_CORE=1" )
    {
      $sw_rwordsize = "8";  
-     if ( $ENV{CRTM} )
+     if(defined $ENV{'CRTM'})
        {
-       $sw_crtm_flag = "-DCRTM";
+       if ( $ENV{CRTM} ne "0" )
+         {
+         $sw_crtm_flag = "-DCRTM";
+         }
+       } 
+     else 
+       {
+         {
+         $sw_crtm_flag = "-DCRTM";
+         }
        }
      if ( $ENV{RTTOV} )
        {
        $sw_rttov_flag = "-DRTTOV";
        $sw_rttov_inc = "-I$ENV{RTTOV}/include -I$ENV{RTTOV}/mod";
+       $sw_rttov_path= $ENV{RTTOV};
        }
      if ( $ENV{CLOUD_CV} )
        {
@@ -439,6 +450,7 @@ while ( <CONFIGURE_DEFAULTS> )
     $_ =~ s/CONFIGURE_CRTM_FLAG/$sw_crtm_flag/g ;
     $_ =~ s/CONFIGURE_RTTOV_FLAG/$sw_rttov_flag/g ;
     $_ =~ s/CONFIGURE_RTTOV_INC/$sw_rttov_inc/g ;
+    $_ =~ s/CONFIGURE_RTTOV_PATH/$sw_rttov_path/g ;
     $_ =~ s/CONFIGURE_CLOUDCV_FLAG/$sw_cloudcv_flag/g ;
     $_ =~ s/CONFIGURE_WAVELET_FLAG/$sw_wavelet_flag/g ;
     if ( $sw_ifort_r8 ) {

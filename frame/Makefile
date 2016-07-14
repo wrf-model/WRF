@@ -177,11 +177,11 @@ adStack.o : adStack.c
 adBuffer.o : adBuffer.F
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
-	$(CPP) $(CPPFLAGS) -I../inc $*.b  > $*.f
+	$(CPP) $(CPPFLAGS) -I../inc $*.b  > $*.for
 	$(RM) $*.b
 	$(RM) $@
-	$(SFC) -c $(FORMAT_FIXED) $(PROMOTION) $(FCNOOPT) $*.f
-	$(RM) adBuffer.f
+	$(SFC) -c $(FORMAT_FIXED) $(PROMOTION) $(FCNOOPT) $*.for
+	$(RM) adBuffer.for
 
 pack_utils.o :
 	$(CC) -c $(CFLAGS) -DIWORDSIZE=$(IWORDSIZE) pack_utils.c

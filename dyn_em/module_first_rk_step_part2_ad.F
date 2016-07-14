@@ -178,6 +178,7 @@ BENCH_START(adj_hor_diff_tim)
                 grid%rdx, grid%rdy, grid%rdz,grid%a_rdz, grid%rdzw,grid%a_rdzw,                &
                 grid%fnm, grid%fnp, grid%cf1, grid%cf2, grid%cf3,          &
                 grid%zx,grid%a_zx, grid%zy,grid%a_zy, grid%dn, grid%dnw,                       &
+                grid%rho, grid%a_rho,                  &
                 ids, ide, jds, jde, kds, kde,          &
                 ims, ime, jms, jme, kms, kme,          &
                 grid%i_start(ij), grid%i_end(ij),      &

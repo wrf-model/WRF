@@ -10480,7 +10480,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
    a_defor12,defor13,a_defor13,defor23,a_defor23,nba_mij,a_nba_mij,n_nba_mij, &
    div,a_div,moist,a_moist,chem,a_chem,scalar,a_scalar,tracer,a_tracer,msfux, &
    msfuy,msfvx,msfvy,msftx,msfty,xkmh,a_xkmh,xkhh,a_xkhh,km_opt,rdx,rdy,rdz,a_rdz, &
-   rdzw,a_rdzw,fnm,fnp,cf1,cf2,cf3,zx,a_zx,zy,a_zy,dn,dnw,ids,ide,jds,jde,kds,kde, &
+   rdzw,a_rdzw,fnm,fnp,cf1,cf2,cf3,zx,a_zx,zy,a_zy,dn,dnw,rho,a_rho,ids,ide,jds,jde,kds,kde, &
    ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
 
 !PART I: DECLARATION OF VARIABLES
@@ -10511,6 +10511,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
    defor12,a_defor12,defor13,a_defor13,defor23,a_defor23,div,a_div,xkmh, &
    a_xkmh,xkhh,a_xkhh,zx,a_zx,zy,a_zy,theta,a_theta,thp,a_thp,tke,a_tke, &
    rdz,a_rdz,rdzw,a_rdzw
+   REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: rho, a_rho
    REAL :: rdx,rdy
    INTEGER :: n_nba_mij
    REAL,DIMENSION(ims:ime,kms:kme,jms:jme,n_nba_mij) :: nba_mij,a_nba_mij
@@ -10807,7 +10808,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
    ,msftx,msfty,msfux,msfuy,msfvx,msfvy,xkhh,a_xkhh,rdx,rdy,fnm,fnp,cf1,cf2,cf3,zx,  &
 ! Revised by Ning Pan, 2010-08-10
 !   a_zx,zy,a_zy,rdz,a_rdz,rdzw,a_rdzw,dnw,dn,,ids,ide,jds,jde,kds,kde,ims,ime,  &
-   a_zx,zy,a_zy,rdz,a_rdz,rdzw,a_rdzw,dnw,dn,.false.,ids,ide,jds,jde,kds,kde,ims,ime,  &
+   a_zx,zy,a_zy,rdz,a_rdz,rdzw,a_rdzw,dnw,dn,rho,a_rho,.false.,ids,ide,jds,jde,kds,kde,ims,ime,  &
    jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
    ENDDO
 
@@ -10850,7 +10851,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
    ,msftx,msfty,msfux,msfuy,msfvx,msfvy,xkhh,a_xkhh,rdx,rdy,fnm,fnp,cf1,cf2,cf3,zx,  &
 ! Revised by Ning Pan, 2010-08-10
 !   a_zx,zy,a_zy,rdz,a_rdz,rdzw,a_rdzw,dnw,dn,,ids,ide,jds,jde,kds,kde,ims,ime,  &
-   a_zx,zy,a_zy,rdz,a_rdz,rdzw,a_rdzw,dnw,dn,.false.,ids,ide,jds,jde,kds,kde,ims,ime,  &
+   a_zx,zy,a_zy,rdz,a_rdz,rdzw,a_rdzw,dnw,dn,rho,a_rho,.false.,ids,ide,jds,jde,kds,kde,ims,ime,  &
    jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
    ENDDO
 
@@ -10893,7 +10894,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
    ,msftx,msfty,msfux,msfuy,msfvx,msfvy,xkhh,a_xkhh,rdx,rdy,fnm,fnp,cf1,cf2,cf3,zx,  &
 ! Revised by Ning Pan, 2010-08-10
 !   a_zx,zy,a_zy,rdz,a_rdz,rdzw,a_rdzw,dnw,dn,,ids,ide,jds,jde,kds,kde,ims,ime,  &
-   a_zx,zy,a_zy,rdz,a_rdz,rdzw,a_rdzw,dnw,dn,.false.,ids,ide,jds,jde,kds,kde,ims,ime,  &
+   a_zx,zy,a_zy,rdz,a_rdz,rdzw,a_rdzw,dnw,dn,rho,a_rho,.false.,ids,ide,jds,jde,kds,kde,ims,ime,  &
    jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
    ENDDO
 
@@ -10936,7 +10937,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
    ,msftx,msfty,msfux,msfuy,msfvx,msfvy,xkhh,a_xkhh,rdx,rdy,fnm,fnp,cf1,cf2,cf3,zx,  &
 ! Revised by Ning Pan, 2010-08-10
 !   a_zx,zy,a_zy,rdz,a_rdz,rdzw,a_rdzw,dnw,dn,,ids,ide,jds,jde,kds,kde,ims,ime,  &
-   a_zx,zy,a_zy,rdz,a_rdz,rdzw,a_rdzw,dnw,dn,.false.,ids,ide,jds,jde,kds,kde,ims,ime,  &
+   a_zx,zy,a_zy,rdz,a_rdz,rdzw,a_rdzw,dnw,dn,rho,a_rho,.false.,ids,ide,jds,jde,kds,kde,ims,ime,  &
    jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
    ENDDO
 
@@ -10971,7 +10972,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
    msfuy,msfvx,msfvy,xkhh,a_xkhh,rdx,rdy,fnm,fnp,cf1,cf2,cf3,zx,a_zx,zy,a_zy,rdz,  &
 ! Revised by Ning Pan, 2010-08-10
 !   a_rdz,rdzw,a_rdzw,dnw,dn,,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,  &
-   a_rdz,rdzw,a_rdzw,dnw,dn,.true.,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,  &
+   a_rdz,rdzw,a_rdzw,dnw,dn,rho,a_rho,.true.,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,  &
    ite,jts,jte,kts,kte)
 
    END IF
@@ -11038,7 +11039,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
 
    Keep_Lpb0_nba_mij = nba_mij  ! Added by Ning Pan, 2010-08-11
    CALL horizontal_diffusion_u_2(ru_tendf,mu,config_flags,defor11,defor12,div,  &
-   nba_mij,n_nba_mij,tke(ims,kms,jms),msfux,msfuy,xkmh,rdx,rdy,fnm,fnp,zx,zy,rdzw,ids,  &
+   nba_mij,n_nba_mij,tke(ims,kms,jms),msfux,msfuy,xkmh,rdx,rdy,fnm,fnp,dnw,zx,zy,rdzw,rho,ids,  &
    ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
 
 ! Remarked by Ning Pan, 2010-08-11: useless recomputation
@@ -11062,7 +11063,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
 
    Keep_Lpb1_nba_mij = nba_mij  ! Added by Ning Pan, 2010-08-11
    CALL horizontal_diffusion_v_2(rv_tendf,mu,config_flags,defor12,defor22,div,  &
-   nba_mij,n_nba_mij,tke(ims,kms,jms),msfvx,msfvy,xkmh,rdx,rdy,fnm,fnp,zx,zy,rdzw,ids,  &
+   nba_mij,n_nba_mij,tke(ims,kms,jms),msfvx,msfvy,xkmh,rdx,rdy,fnm,fnp,dnw,zx,zy,rdzw,rho,ids,  &
    ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
 
 !   DO IX3=jms,jme
@@ -11084,7 +11085,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
 !   END DO
 
 !   CALL horizontal_diffusion_w_2(rw_tendf,mu,config_flags,defor13,defor23,div,  &
-!   nba_mij,n_nba_mij,tke(ims,kms,jms),msftx,msfty,xkmh,rdx,rdy,fnm,fnp,zx,zy,rdz,ids,  &
+!   nba_mij,n_nba_mij,tke(ims,kms,jms),msftx,msfty,xkmh,rdx,rdy,fnm,fnp,dn,zx,zy,rdz,rho,ids,  &
 !   ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
 
 !   DO IX3=jms,jme
@@ -11096,7 +11097,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
 !   END DO
 
 !   CALL horizontal_diffusion_s(rt_tendf,mu,config_flags,thp,msftx,msfty,msfux,msfuy,  &
-!   msfvx,msfvy,xkhh,rdx,rdy,fnm,fnp,cf1,cf2,cf3,zx,zy,rdz,rdzw,dnw,dn,.false.,ids,ide,  &
+!   msfvx,msfvy,xkhh,rdx,rdy,fnm,fnp,cf1,cf2,cf3,zx,zy,rdz,rdzw,dnw,dn,rho,.false.,ids,ide,  &
 !   jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
 
 !   DO IX3=jms,jme
@@ -11111,7 +11112,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
    a_thp,msftx,msfty,msfux,msfuy,msfvx,msfvy,xkhh,a_xkhh,rdx,rdy,fnm,fnp,cf1,cf2,  &
 ! Revised by Ning Pan, 2010-08-10
 !   cf3,zx,a_zx,zy,a_zy,rdz,a_rdz,rdzw,a_rdzw,dnw,dn,,ids,ide,jds,jde,kds,kde,  &
-   cf3,zx,a_zx,zy,a_zy,rdz,a_rdz,rdzw,a_rdzw,dnw,dn,.false.,ids,ide,jds,jde,kds,kde,  &
+   cf3,zx,a_zx,zy,a_zy,rdz,a_rdz,rdzw,a_rdzw,dnw,dn,rho,a_rho,.false.,ids,ide,jds,jde,kds,kde,  &
    ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
 
 ! Remarked by Ning Pan, 2010-08-11
@@ -11136,7 +11137,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
    CALL a_horizontal_diffusion_w_2(rw_tendf,a_rw_tendf,mu,a_mu,config_flags,  &
    defor13,a_defor13,defor23,a_defor23,div,a_div,nba_mij,a_nba_mij,n_nba_mij,  &
    tke(ims,kms,jms),a_tke(ims,kms,jms),msftx,msfty,xkmh,a_xkmh,rdx,rdy,fnm,fnp,zx,  &
-   a_zx,zy,a_zy,rdz,a_rdz,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,  &
+   a_zx,zy,a_zy,rdz,a_rdz,rho,a_rho,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,  &
    jts,jte,kts,kte)
 
 ! Remarked by Ning Pan, 2010-08-11
@@ -11162,7 +11163,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
    CALL a_horizontal_diffusion_v_2(rv_tendf,a_rv_tendf,mu,a_mu,config_flags,  &
    defor12,a_defor12,defor22,a_defor22,div,a_div,nba_mij,a_nba_mij,n_nba_mij,  &
    tke(ims,kms,jms),a_tke(ims,kms,jms),msfvx,msfvy,xkmh,a_xkmh,rdx,rdy,fnm,fnp,zx,  &
-   a_zx,zy,a_zy,rdzw,a_rdzw,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,  &
+   a_zx,zy,a_zy,rdzw,a_rdzw,rho,a_rho,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,  &
    ite,jts,jte,kts,kte)
 
 ! Remarked by Ning Pan, 2010-08-11
@@ -11189,7 +11190,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
    CALL a_horizontal_diffusion_u_2(ru_tendf,a_ru_tendf,mu,a_mu,config_flags,  &
    defor11,a_defor11,defor12,a_defor12,div,a_div,nba_mij,a_nba_mij,n_nba_mij,  &
    tke(ims,kms,jms),a_tke(ims,kms,jms),msfux,msfuy,xkmh,a_xkmh,rdx,rdy,fnm,fnp,zx,  &
-   a_zx,zy,a_zy,rdzw,a_rdzw,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,  &
+   a_zx,zy,a_zy,rdzw,a_rdzw,rho,a_rho,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,  &
    ite,jts,jte,kts,kte)
 
    END SUBROUTINE a_horizontal_diffusion_2
@@ -11197,7 +11198,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
    SUBROUTINE a_horizontal_diffusion_u_2(tendency,a_tendency,mu,a_mu,config_flags, &
    defor11,a_defor11,defor12,a_defor12,div,a_div,nba_mij,a_nba_mij,n_nba_mij, &
    tke,a_tke,msfux,msfuy,xkmh,a_xkmh,rdx,rdy,fnm,fnp,zx,a_zx,zy,a_zy,rdzw, &
-   a_rdzw,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
+   a_rdzw,rho,a_rho,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
 
 !PART I: DECLARATION OF VARIABLES
 
@@ -11211,6 +11212,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
    REAL,DIMENSION(ims:ime,jms:jme) :: msfux,msfuy,mu,a_mu
    REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: tendency,a_tendency
    REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: rdzw,a_rdzw
+   REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: rho, a_rho
    REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: defor11,a_defor11,defor12,a_defor12, &
    div,a_div,tke,a_tke,xkmh,a_xkmh,zx,a_zx,zy,a_zy
    INTEGER :: n_nba_mij
@@ -11308,7 +11310,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
       je_ext=0
       CALL cal_titau_11_22_33( config_flags, titau1,              &
                                mu, tke, xkmh, defor11,            &
-                               nba_mij(ims,kms,jms,P_m11),         &
+                               nba_mij(ims,kms,jms,P_m11), rho,   &
                                is_ext, ie_ext, js_ext, je_ext,    &
                                ids, ide, jds, jde, kds, kde,      &
                                ims, ime, jms, jme, kms, kme,      &
@@ -11319,7 +11321,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
       je_ext=1
       CALL cal_titau_12_21( config_flags, titau2,              &
                             mu, xkmh, defor12,                 &
-                            nba_mij(ims,kms,jms,P_m12),         &
+                            nba_mij(ims,kms,jms,P_m12), rho,   &
                             is_ext, ie_ext, js_ext, je_ext,    &
                             ids, ide, jds, jde, kds, kde,      &
                             ims, ime, jms, jme, kms, kme,      &
@@ -11707,6 +11709,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
 
    CALL a_cal_titau_12_21(config_flags,titau2,a_titau2,mu,a_mu,xkmh,a_xkmh,  &
    defor12,a_defor12,nba_mij(ims,kms,jms,P_m12),a_nba_mij(ims,kms,jms,P_m12)  &
+   ,rho, a_rho &
    ,is_ext,ie_ext,js_ext,je_ext,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,  &
    jts,jte,kts,kte)
 
@@ -11729,7 +11732,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
 
    CALL a_cal_titau_11_22_33(config_flags,titau1,a_titau1,mu,a_mu,tke,a_tke,  &
    xkmh,a_xkmh,defor11,a_defor11,nba_mij(ims,kms,jms,P_m11),a_nba_mij(ims,kms,jms,  &
-   P_m11),is_ext,ie_ext,js_ext,je_ext,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,  &
+   P_m11),rho,a_rho,is_ext,ie_ext,js_ext,je_ext,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,  &
    its,ite,jts,jte,kts,kte)
 
 !LPB[11]
@@ -11818,7 +11821,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
    SUBROUTINE a_horizontal_diffusion_v_2(tendency,a_tendency,mu,a_mu,config_flags, &
    defor12,a_defor12,defor22,a_defor22,div,a_div,nba_mij,a_nba_mij,n_nba_mij, &
    tke,a_tke,msfvx,msfvy,xkmh,a_xkmh,rdx,rdy,fnm,fnp,zx,a_zx,zy,a_zy,rdzw, &
-   a_rdzw,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
+   a_rdzw,rho,a_rho,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
 
 !PART I: DECLARATION OF VARIABLES
 
@@ -11833,6 +11836,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
    REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: tendency,a_tendency
    REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: defor12,a_defor12,defor22,a_defor22, &
    div,a_div,tke,a_tke,xkmh,a_xkmh,zx,a_zx,zy,a_zy,rdzw,a_rdzw
+   REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: rho, a_rho
    INTEGER :: n_nba_mij
    REAL,DIMENSION(ims:ime,kms:kme,jms:jme,n_nba_mij) :: nba_mij,a_nba_mij
    REAL :: rdx,rdy
@@ -11926,7 +11930,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
       je_ext=0
       CALL cal_titau_12_21( config_flags, titau1,            &
                             mu, xkmh, defor12,               &
-                            nba_mij(ims,kms,jms,P_m12),       &
+                            nba_mij(ims,kms,jms,P_m12), rho, &
                             is_ext,ie_ext,js_ext,je_ext,     &
                             ids, ide, jds, jde, kds, kde,    &
                             ims, ime, jms, jme, kms, kme,    &
@@ -11937,7 +11941,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
       je_ext=0
       CALL cal_titau_11_22_33( config_flags, titau2,             &
                                mu, tke, xkmh, defor22,           &
-                               nba_mij(ims,kms,jms,P_m22),        &
+                               nba_mij(ims,kms,jms,P_m22), rho,  &
                                is_ext, ie_ext, js_ext, je_ext,   &
                                ids, ide, jds, jde, kds, kde,     &
                                ims, ime, jms, jme, kms, kme,     &
@@ -12322,7 +12326,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
 
    CALL a_cal_titau_11_22_33(config_flags,titau2,a_titau2,mu,a_mu,tke,a_tke,  &
    xkmh,a_xkmh,defor22,a_defor22,nba_mij(ims,kms,jms,P_m22),a_nba_mij(ims,kms,jms,  &
-   P_m22),is_ext,ie_ext,js_ext,je_ext,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,  &
+   P_m22),rho,a_rho,is_ext,ie_ext,js_ext,je_ext,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,  &
    its,ite,jts,jte,kts,kte)
 
 !   nba_mij(ims,kms,jms,P_m12) =Tmpv_1  ! Remarked by Ning Pan, 2010-08-10
@@ -12344,6 +12348,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
 
    CALL a_cal_titau_12_21(config_flags,titau1,a_titau1,mu,a_mu,xkmh,a_xkmh,  &
    defor12,a_defor12,nba_mij(ims,kms,jms,P_m12),a_nba_mij(ims,kms,jms,P_m12)  &
+   ,rho,a_rho &
    ,is_ext,ie_ext,js_ext,je_ext,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,  &
    jts,jte,kts,kte)
 
@@ -12433,7 +12438,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
    SUBROUTINE a_horizontal_diffusion_w_2(tendency,a_tendency,mu,a_mu,config_flags, &
    defor13,a_defor13,defor23,a_defor23,div,a_div,nba_mij,a_nba_mij,n_nba_mij, &
    tke,a_tke,msftx,msfty,xkmh,a_xkmh,rdx,rdy,fnm,fnp,zx,a_zx,zy,a_zy,rdz, &
-   a_rdz,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
+   a_rdz,rho,a_rho,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
 
 !PART I: DECLARATION OF VARIABLES
 
@@ -12448,6 +12453,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
    REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: tendency,a_tendency
    REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: defor13,a_defor13,defor23,a_defor23, &
    div,a_div,tke,a_tke,xkmh,a_xkmh,zx,a_zx,zy,a_zy,rdz,a_rdz
+   REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: rho, a_rho
    INTEGER :: n_nba_mij
    REAL,DIMENSION(ims:ime,kms:kme,jms:jme,n_nba_mij) :: nba_mij,a_nba_mij
    REAL :: rdx,rdy
@@ -12542,7 +12548,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
       je_ext=0
       CALL cal_titau_13_31( config_flags, titau1, defor13,     &
                             nba_mij(ims,kms,jms,P_m13),         &
-                            mu, xkmh, fnm, fnp,                &
+                            mu, xkmh, fnm, fnp, rho,           &
                             is_ext, ie_ext, js_ext, je_ext,    &
                             ids, ide, jds, jde, kds, kde,      &
                             ims, ime, jms, jme, kms, kme,      &
@@ -12553,7 +12559,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
       je_ext=1
       CALL cal_titau_23_32( config_flags, titau2, defor23,     &
                             nba_mij(ims,kms,jms,P_m23),         &
-                            mu, xkmh, fnm, fnp,                &
+                            mu, xkmh, fnm, fnp, rho,           &
                             is_ext, ie_ext, js_ext, je_ext,    &
                             ids, ide, jds, jde, kds, kde,      &
                             ims, ime, jms, jme, kms, kme,      &
@@ -12947,7 +12953,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
 
    CALL a_cal_titau_23_32(config_flags,titau2,a_titau2,defor23,a_defor23,  &
    nba_mij(ims,kms,jms,P_m23),a_nba_mij(ims,kms,jms,P_m23),mu,a_mu,xkmh,a_xkmh,  &
-   fnm,fnp,is_ext,ie_ext,js_ext,je_ext,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,  &
+   fnm,fnp,rho,a_rho,is_ext,ie_ext,js_ext,je_ext,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,  &
    its,ite,jts,jte,kts,kte)
 
 !   nba_mij(ims,kms,jms,P_m13) =Tmpv_1  ! Remarked by Ning Pan, 2010-08-10
@@ -12969,7 +12975,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
 
    CALL a_cal_titau_13_31(config_flags,titau1,a_titau1,defor13,a_defor13,  &
    nba_mij(ims,kms,jms,P_m13),a_nba_mij(ims,kms,jms,P_m13),mu,a_mu,xkmh,a_xkmh,  &
-   fnm,fnp,is_ext,ie_ext,js_ext,je_ext,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,  &
+   fnm,fnp,rho,a_rho,is_ext,ie_ext,js_ext,je_ext,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,  &
    its,ite,jts,jte,kts,kte)
 
 !LPB[11]
@@ -13057,7 +13063,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
 
    SUBROUTINE a_horizontal_diffusion_s(tendency,a_tendency,mu,a_mu,config_flags, &
    var,a_var,msftx,msfty,msfux,msfuy,msfvx,msfvy,xkhh,a_xkhh,rdx,rdy,fnm,fnp,cf1, &
-   cf2,cf3,zx,a_zx,zy,a_zy,rdz,a_rdz,rdzw,a_rdzw,dnw,dn,doing_tke,ids,ide,jds, &
+   cf2,cf3,zx,a_zx,zy,a_zy,rdz,a_rdz,rdzw,a_rdzw,dnw,dn,rho,a_rho,doing_tke,ids,ide,jds, &
    jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
 
 !PART I: DECLARATION OF VARIABLES
@@ -13082,6 +13088,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
    REAL,DIMENSION(ims:ime,jms:jme) :: mu,a_mu
    REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: tendency,a_tendency
    REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: xkhh,a_xkhh,rdz,a_rdz,rdzw,a_rdzw
+   REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: rho, a_rho
    REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: var,a_var,zx,a_zx,zy,a_zy
    REAL :: rdx,rdy
    INTEGER :: i,j,k,ktf
@@ -14898,7 +14905,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
    kms,jms,im),config_flags,scalar(ims,kms,jms,im),a_scalar(ims,kms,jms,im)  &
 ! Revised by Ning Pan, 2010-08-10
 !   ,mu,a_mu,xkhv,a_xkhv,dn,dnw,rdz,a_rdz,rdzw,a_rdzw,fnm,fnp,,ids,ide,jds,jde,  &
-   ,mu,a_mu,xkhv,a_xkhv,dn,dnw,rdz,a_rdz,rdzw,a_rdzw,fnm,fnp,.false.,ids,ide,jds,jde,  &
+   ,mu,a_mu,xkhv,a_xkhv,dn,dnw,rdz,a_rdz,rdzw,a_rdzw,fnm,fnp,rho,a_rho,.false.,ids,ide,jds,jde,  &
    kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
    ENDDO
 
@@ -14939,7 +14946,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
    kms,jms,im),config_flags,tracer(ims,kms,jms,im),a_tracer(ims,kms,jms,im)  &
 ! Revised by Ning Pan, 2010-08-10
 !   ,mu,a_mu,xkhv,a_xkhv,dn,dnw,rdz,a_rdz,rdzw,a_rdzw,fnm,fnp,,ids,ide,jds,jde,  &
-   ,mu,a_mu,xkhv,a_xkhv,dn,dnw,rdz,a_rdz,rdzw,a_rdzw,fnm,fnp,.false.,ids,ide,jds,jde,  &
+   ,mu,a_mu,xkhv,a_xkhv,dn,dnw,rdz,a_rdz,rdzw,a_rdzw,fnm,fnp,rho,a_rho,.false.,ids,ide,jds,jde,  &
    kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
    ENDDO
 
@@ -14980,7 +14987,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
    jms,im),config_flags,chem(ims,kms,jms,im),a_chem(ims,kms,jms,im),mu,a_mu,xkhv,  &
 ! Revised by Ning Pan, 2010-08-10
 !   a_xkhv,dn,dnw,rdz,a_rdz,rdzw,a_rdzw,fnm,fnp,,ids,ide,jds,jde,kds,kde,ims,ime,  &
-   a_xkhv,dn,dnw,rdz,a_rdz,rdzw,a_rdzw,fnm,fnp,.false.,ids,ide,jds,jde,kds,kde,ims,ime,  &
+   a_xkhv,dn,dnw,rdz,a_rdz,rdzw,a_rdzw,fnm,fnp,rho,a_rho,.false.,ids,ide,jds,jde,kds,kde,ims,ime,  &
    jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
    ENDDO
 
@@ -15142,7 +15149,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
    jms,im),config_flags,var_mix,a_var_mix,mu,a_mu,xkhv,a_xkhv,dn,dnw,rdz,a_rdz,  &
 ! Revised by Ning Pan, 2010-08-10
 !   rdzw,a_rdzw,fnm,fnp,,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,  &
-   rdzw,a_rdzw,fnm,fnp,.false.,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,  &
+   rdzw,a_rdzw,fnm,fnp,rho,a_rho,.false.,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,  &
    jte,kts,kte)
 
    IF( (.not. config_flags%mix_full_fields) .and. (im == P_QV) ) THEN
@@ -15206,7 +15213,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
    ,config_flags,tke(ims,kms,jms),a_tke(ims,kms,jms),mu,a_mu,xkhv,a_xkhv,dn,dnw,  &
 ! Revised by Ning Pan, 2010-08-10
 !   rdz,a_rdz,rdzw,a_rdzw,fnm,fnp,,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,  &
-   rdz,a_rdz,rdzw,a_rdzw,fnm,fnp,.true.,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,  &
+   rdz,a_rdz,rdzw,a_rdzw,fnm,fnp,rho,a_rho,.true.,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,  &
    its,ite,jts,jte,kts,kte)
 
    endif
@@ -15378,7 +15385,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
   CALL a_vertical_diffusion_s(rt_tendf,a_rt_tendf,config_flags,var_mix,  &
 ! Revised by Ning Pan, 2010-08-10
 !   a_var_mix,mu,a_mu,xkhv,a_xkhv,dn,dnw,rdz,a_rdz,rdzw,a_rdzw,fnm,fnp,,ids,  &
-   a_var_mix,mu,a_mu,xkhv,a_xkhv,dn,dnw,rdz,a_rdz,rdzw,a_rdzw,fnm,fnp,.false.,ids,  &
+   a_var_mix,mu,a_mu,xkhv,a_xkhv,dn,dnw,rdz,a_rdz,rdzw,a_rdzw,fnm,fnp,rho,a_rho,.false.,ids,  &
    ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
 
 !LPB[3]
@@ -15981,7 +15988,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
 
    Keep_Lpb0_nba_mij = nba_mij
    CALL vertical_diffusion_u_2(ru_tendf,config_flags,mu,defor13,xkmv,nba_mij,  &
-   n_nba_mij,dnw,rdzw,fnm,fnp,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,  &
+   n_nba_mij,dnw,rdzw,fnm,fnp,rho,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,  &
    jts,jte,kts,kte)
 
 !   DO IX3=jms,jme
@@ -16004,7 +16011,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
 
    Keep_Lpb1_nba_mij = nba_mij
    CALL vertical_diffusion_v_2(rv_tendf,config_flags,mu,defor23,xkmv,nba_mij,  &
-   n_nba_mij,dnw,rdzw,fnm,fnp,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,  &
+   n_nba_mij,dnw,rdzw,fnm,fnp,rho,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,  &
    jts,jte,kts,kte)
 
 !   DO IX3=jms,jme
@@ -16049,7 +16056,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
 
    CALL a_vertical_diffusion_w_2(rw_tendf,a_rw_tendf,config_flags,mu,a_mu,  &
    defor33,a_defor33,tke(ims,kms,jms),a_tke(ims,kms,jms),nba_mij,a_nba_mij,  &
-   n_nba_mij,div,a_div,xkmv,a_xkmv,dn,rdz,a_rdz,ids,ide,jds,jde,kds,kde,ims,ime,  &
+   n_nba_mij,div,a_div,xkmv,a_xkmv,dn,rdz,a_rdz,rho,a_rho,ids,ide,jds,jde,kds,kde,ims,ime,  &
    jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
 
 ! Remarked by Ning Pan, 2010-08-11
@@ -16074,7 +16081,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
    nba_mij = Keep_Lpb1_nba_mij
    CALL a_vertical_diffusion_v_2(rv_tendf,a_rv_tendf,config_flags,mu,a_mu,  &
    defor23,a_defor23,xkmv,a_xkmv,nba_mij,a_nba_mij,n_nba_mij,dnw,rdzw,a_rdzw,  &
-   fnm,fnp,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
+   fnm,fnp,rho,a_rho,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
 
 ! Remarked by Ning Pan, 2010-08-11
 !   DO IX4=1,n_nba_mij
@@ -16098,13 +16105,13 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
    nba_mij = Keep_Lpb0_nba_mij
    CALL a_vertical_diffusion_u_2(ru_tendf,a_ru_tendf,config_flags,mu,a_mu,  &
    defor13,a_defor13,xkmv,a_xkmv,nba_mij,a_nba_mij,n_nba_mij,dnw,rdzw,a_rdzw,  &
-   fnm,fnp,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
+   fnm,fnp,rho,a_rho,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
 
    END SUBROUTINE a_vertical_diffusion_2
 
    SUBROUTINE a_vertical_diffusion_u_2(tendency,a_tendency,config_flags,mu,a_mu, &
    defor13,a_defor13,xkmv,a_xkmv,nba_mij,a_nba_mij,n_nba_mij,dnw,rdzw,a_rdzw, &
-   fnm,fnp,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
+   fnm,fnp,rho,a_rho,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
 
 !PART I: DECLARATION OF VARIABLES
 
@@ -16118,6 +16125,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
    REAL,DIMENSION(kms:kme) :: dnw
    REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: tendency,a_tendency
    REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: defor13,a_defor13,xkmv,a_xkmv,rdzw,a_rdzw
+   REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: rho, a_rho
    INTEGER :: n_nba_mij
    REAL,DIMENSION(ims:ime,kms:kme,jms:jme,n_nba_mij) :: nba_mij,a_nba_mij
    REAL,DIMENSION(ims:ime,jms:jme) :: mu,a_mu
@@ -16200,7 +16208,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
       je_ext=0
       CALL cal_titau_13_31( config_flags, titau3, defor13,     &
                             nba_mij(ims,kms,jms,P_m13),         &
-                            mu, xkmv, fnm, fnp,                &
+                            mu, xkmv, fnm, fnp, rho,           &
                             is_ext, ie_ext, js_ext, je_ext,    &
                             ids, ide, jds, jde, kds, kde,      &
                             ims, ime, jms, jme, kms, kme,      &
@@ -16373,7 +16381,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
 
    CALL a_cal_titau_13_31(config_flags,titau3,a_titau3,defor13,a_defor13,  &
    nba_mij(ims,kms,jms,P_m13),a_nba_mij(ims,kms,jms,P_m13),mu,a_mu,xkmv,a_xkmv,  &
-   fnm,fnp,is_ext,ie_ext,js_ext,je_ext,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,  &
+   fnm,fnp,rho,a_rho,is_ext,ie_ext,js_ext,je_ext,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,  &
    its,ite,jts,jte,kts,kte)
 
 !LPB[11]
@@ -16461,7 +16469,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
 
    SUBROUTINE a_vertical_diffusion_v_2(tendency,a_tendency,config_flags,mu,a_mu, &
    defor23,a_defor23,xkmv,a_xkmv,nba_mij,a_nba_mij,n_nba_mij,dnw,rdzw,a_rdzw, &
-   fnm,fnp,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
+   fnm,fnp,rho,a_rho,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
 
 !PART I: DECLARATION OF VARIABLES
 
@@ -16475,6 +16483,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
    REAL,DIMENSION(kms:kme) :: dnw
    REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: tendency,a_tendency
    REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: defor23,a_defor23,xkmv,a_xkmv,rdzw,a_rdzw
+   REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: rho, a_rho
    INTEGER :: n_nba_mij
    REAL,DIMENSION(ims:ime,kms:kme,jms:jme,n_nba_mij) :: nba_mij,a_nba_mij
    REAL,DIMENSION(ims:ime,jms:jme) :: mu,a_mu
@@ -16556,7 +16565,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
       je_ext=0
       CALL cal_titau_23_32( config_flags, titau3, defor23,     &
                             nba_mij(ims,kms,jms,P_m23),         &
-                            mu, xkmv, fnm, fnp,                &
+                            mu, xkmv, fnm, fnp, rho,           &
                             is_ext, ie_ext, js_ext, je_ext,    &
                             ids, ide, jds, jde, kds, kde,      &
                             ims, ime, jms, jme, kms, kme,      &
@@ -16729,7 +16738,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
 
    CALL a_cal_titau_23_32(config_flags,titau3,a_titau3,defor23,a_defor23,  &
    nba_mij(ims,kms,jms,P_m23),a_nba_mij(ims,kms,jms,P_m23),mu,a_mu,xkmv,a_xkmv,  &
-   fnm,fnp,is_ext,ie_ext,js_ext,je_ext,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,  &
+   fnm,fnp,rho,a_rho,is_ext,ie_ext,js_ext,je_ext,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,  &
    its,ite,jts,jte,kts,kte)
 
 !LPB[11]
@@ -16817,7 +16826,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
 
    SUBROUTINE a_vertical_diffusion_w_2(tendency,a_tendency,config_flags,mu,a_mu, &
    defor33,a_defor33,tke,a_tke,nba_mij,a_nba_mij,n_nba_mij,div,a_div,xkmv, &
-   a_xkmv,dn,rdz,a_rdz,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts, &
+   a_xkmv,dn,rdz,a_rdz,rho,a_rho,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts, &
    jte,kts,kte)
 
 !PART I: DECLARATION OF VARIABLES
@@ -16831,6 +16840,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
    REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: tendency,a_tendency
    REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: defor33,a_defor33,tke,a_tke,div, &
    a_div,xkmv,a_xkmv,rdz,a_rdz
+   REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: rho, a_rho
    INTEGER :: n_nba_mij
    REAL,DIMENSION(ims:ime,kms:kme,jms:jme,n_nba_mij) :: nba_mij,a_nba_mij
    REAL,DIMENSION(ims:ime,jms:jme) :: mu,a_mu
@@ -16905,7 +16915,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
       je_ext=0
       CALL cal_titau_11_22_33( config_flags, titau3,              &
                                mu, tke, xkmv, defor33,            &
-                               nba_mij(ims,kms,jms,P_m33),         &
+                               nba_mij(ims,kms,jms,P_m33), rho,   &
                                is_ext, ie_ext, js_ext, je_ext,    &
                                ids, ide, jds, jde, kds, kde,      &
                                ims, ime, jms, jme, kms, kme,      &
@@ -16989,7 +16999,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
 
    CALL a_cal_titau_11_22_33(config_flags,titau3,a_titau3,mu,a_mu,tke,a_tke,  &
    xkmv,a_xkmv,defor33,a_defor33,nba_mij(ims,kms,jms,P_m33),a_nba_mij(ims,kms,jms,  &
-   P_m33),is_ext,ie_ext,js_ext,je_ext,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,  &
+   P_m33),rho,a_rho,is_ext,ie_ext,js_ext,je_ext,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,  &
    its,ite,jts,jte,kts,kte)
 
 !LPB[11]
@@ -17076,7 +17086,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
    END SUBROUTINE a_vertical_diffusion_w_2
 
    SUBROUTINE a_vertical_diffusion_s(tendency,a_tendency,config_flags,var,a_var, &
-   mu,a_mu,xkhv,a_xkhv,dn,dnw,rdz,a_rdz,rdzw,a_rdzw,fnm,fnp,doing_tke,ids,ide, &
+   mu,a_mu,xkhv,a_xkhv,dn,dnw,rdz,a_rdz,rdzw,a_rdzw,fnm,fnp,rho,a_rho,doing_tke,ids,ide, &
    jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
 
 !PART I: DECLARATION OF VARIABLES
@@ -17095,6 +17105,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
    REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: xkhv,a_xkhv
    REAL,DIMENSION(ims:ime,jms:jme) :: mu,a_mu
    REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: var,a_var,rdz,a_rdz,rdzw,a_rdzw
+   REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: rho, a_rho
    INTEGER :: i,j,k,ktf
    INTEGER :: i_start,i_end,j_start,j_end
    REAL,DIMENSION(its:ite,kts:kte,jts:jte) :: H3,a_H3,xkxavg,a_xkxavg,rravg,a_rravg
@@ -17503,7 +17514,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
    END SUBROUTINE a_vertical_diffusion_s
 
    SUBROUTINE a_cal_titau_11_22_33(config_flags,titau,a_titau,mu,a_mu,tke,a_tke, &
-   xkx,a_xkx,defor,a_defor,mtau,a_mtau,is_ext,ie_ext,js_ext,je_ext,ids,ide,jds, &
+   xkx,a_xkx,defor,a_defor,mtau,a_mtau,rho,a_rho,is_ext,ie_ext,js_ext,je_ext,ids,ide,jds, &
    jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
 
 !PART I: DECLARATION OF VARIABLES
@@ -17517,6 +17528,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
    REAL,DIMENSION(its-1:ite+1,kts:kte,jts-1:jte+1) :: titau,a_titau
    REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: defor,a_defor,xkx,a_xkx,tke,a_tke
    REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: mtau,a_mtau
+   REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: rho, a_rho
    REAL,DIMENSION(ims:ime,jms:jme) :: mu,a_mu
    INTEGER :: i,j,k,ktf,i_start,i_end,j_start,j_end
 
@@ -17826,7 +17838,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
    END SUBROUTINE a_cal_titau_11_22_33
 
    SUBROUTINE a_cal_titau_12_21(config_flags,titau,a_titau,mu,a_mu,xkx,a_xkx, &
-   defor,a_defor,mtau,a_mtau,is_ext,ie_ext,js_ext,je_ext,ids,ide,jds,jde,kds,kde, &
+   defor,a_defor,mtau,a_mtau,rho,a_rho,is_ext,ie_ext,js_ext,je_ext,ids,ide,jds,jde,kds,kde, &
    ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
 
 !PART I: DECLARATION OF VARIABLES
@@ -17840,6 +17852,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
    REAL,DIMENSION(its-1:ite+1,kts:kte,jts-1:jte+1) :: titau,a_titau
    REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: defor,a_defor,xkx,a_xkx
    REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: mtau,a_mtau
+   REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: rho, a_rho
    REAL,DIMENSION(ims:ime,jms:jme) :: mu,a_mu
    INTEGER :: i,j,k,ktf,i_start,i_end,j_start,j_end
    REAL,DIMENSION(its-1:ite+1,kts:kte,jts-1:jte+1) :: xkxavg,a_xkxavg
@@ -18249,7 +18262,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
    END SUBROUTINE a_cal_titau_12_21
 
    SUBROUTINE a_cal_titau_13_31(config_flags,titau,a_titau,defor,a_defor,mtau, &
-   a_mtau,mu,a_mu,xkx,a_xkx,fnm,fnp,is_ext,ie_ext,js_ext,je_ext,ids,ide,jds,jde, &
+   a_mtau,mu,a_mu,xkx,a_xkx,fnm,fnp,rho,a_rho,is_ext,ie_ext,js_ext,je_ext,ids,ide,jds,jde, &
    kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
 
 !PART I: DECLARATION OF VARIABLES
@@ -18263,6 +18276,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
    REAL,DIMENSION(kms:kme) :: fnm,fnp
    REAL,DIMENSION(its-1:ite+1,kts:kte,jts-1:jte+1) :: titau,a_titau
    REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: defor,a_defor,xkx,a_xkx
+   REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: rho, a_rho
    REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: mtau,a_mtau
    REAL,DIMENSION(ims:ime,jms:jme) :: mu,a_mu
    INTEGER :: i,j,k,ktf,i_start,i_end,j_start,j_end
@@ -18699,7 +18713,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
    END SUBROUTINE a_cal_titau_13_31
 
    SUBROUTINE a_cal_titau_23_32(config_flags,titau,a_titau,defor,a_defor,mtau, &
-   a_mtau,mu,a_mu,xkx,a_xkx,fnm,fnp,is_ext,ie_ext,js_ext,je_ext,ids,ide,jds,jde, &
+   a_mtau,mu,a_mu,xkx,a_xkx,fnm,fnp,rho,a_rho,is_ext,ie_ext,js_ext,je_ext,ids,ide,jds,jde, &
    kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
 
 !PART I: DECLARATION OF VARIABLES
@@ -18713,6 +18727,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
    REAL,DIMENSION(kms:kme) :: fnm,fnp
    REAL,DIMENSION(its-1:ite+1,kts:kte,jts-1:jte+1) :: titau,a_titau
    REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: defor,a_defor,xkx,a_xkx
+   REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: rho, a_rho
    REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: mtau,a_mtau
    REAL,DIMENSION(ims:ime,jms:jme) :: mu,a_mu
    INTEGER :: i,j,k,ktf,i_start,i_end,j_start,j_end

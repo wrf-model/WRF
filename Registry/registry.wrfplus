@@ -248,8 +248,8 @@ state   real   g_xkhv            ikj      misc        1         -     r         
 state   real   g_xkhh            ikj      misc        1         -     r         "g_xkhh"                  "HORIZONTAL EDDY DIFFUSIVITY OF HEAT"                             "m2 s-1"      
 state   real    g_div            ikj      misc        1         -     r         "g_div"                   "DIVERGENCE"                                                      "s-1"
 state   real    g_BN2            ikj      misc        1         -     r         "g_BN2"                   "BRUNT-VAISALA FREQUENCY"                                         "s-2"
-state    real   g_zx             ikj     dyn_em      1         X      -         " "  " "  " "    
-state    real   g_zy             ikj     dyn_em      1         Y      -         " "  " "  " "   
+state    real   g_zx             ikj     dyn_em      1         XZ     -         " "  " "  " "    
+state    real   g_zy             ikj     dyn_em      1         YZ     -         " "  " "  " "   
 state    real   g_rdz            ikj     dyn_em      1         Z      -         " "  " "  " "   
 state    real   g_rdzw           ikj     dyn_em      1         Z       -        " "  " "  " "   
 state    real  g_HFX              ij      misc        1         -      rh       "g_HFX"                   "UPWARD HEAT FLUX AT THE SURFACE"              "W m-2"      
@@ -285,6 +285,7 @@ state    real  g_RUBLTEN         ikj      misc        1         -      r        
 state    real  g_RVBLTEN         ikj      misc        1         -      r        "g_RVBLTEN"               "COUPLED Y WIND TENDENCY DUE TO PBL PARAMETERIZATION"  "Pa m s-2"
 state    real  g_RTHBLTEN        ikj      misc        1         -      r        "g_RTHBLTEN"              "COUPLED THETA TENDENCY DUE TO PBL PARAMETERIZATION"   "Pa K s-1"
 state    real  g_RQVBLTEN        ikj      misc        1         -      r        "g_RQVBLTEN"              "COUPLED Q_V TENDENCY DUE TO PBL PARAMETERIZATION"     "Pa kg kg-1 s-1"
+state    real  g_UST              ij      misc        1         -      rh       "g_UST"                   "U* IN SIMILARITY THEORY"                      "m s-1"
 state    real  g_USTM             ij      misc        1         -      r        "g_USTM"                  "U* IN SIMILARITY THEORY WITHOUT VCONV"        "m s-1"
 # hydrostatic pressure vars
 state    real   g_p_hyd           ikj     dyn_em      1         -      irh       "g_p_hyd"       "hydrostatic pressure"         "Pa"
@@ -303,8 +304,8 @@ state   real   a_xkhv            ikj      misc        1         -     r         
 state   real   a_xkhh            ikj      misc        1         -     r         "a_xkhh"                  "HORIZONTAL EDDY DIFFUSIVITY OF HEAT"                             "m2 s-1"      
 state   real    a_div            ikj      misc        1         -     r         "a_div"                   "DIVERGENCE"                                                      "s-1"
 state   real    a_BN2            ikj      misc        1         -     r         "a_BN2"                   "BRUNT-VAISALA FREQUENCY"                                         "s-2"
-state    real   a_zx             ikj     dyn_em      1         X      -         " "  " "  " "    
-state    real   a_zy             ikj     dyn_em      1         Y      -         " "  " "  " "   
+state    real   a_zx             ikj     dyn_em      1         XZ     -         " "  " "  " "    
+state    real   a_zy             ikj     dyn_em      1         YZ     -         " "  " "  " "   
 state    real   a_rdz            ikj     dyn_em      1         Z      -         " "  " "  " "   
 state    real   a_rdzw           ikj     dyn_em      1         Z       -        " "  " "  " "   
 state    real  a_HFX              ij      misc        1         -      rh       "a_HFX"                   "UPWARD HEAT FLUX AT THE SURFACE"              "W m-2"      
@@ -340,6 +341,7 @@ state    real  a_RUBLTEN         ikj      misc        1         -      r        
 state    real  a_RVBLTEN         ikj      misc        1         -      r        "a_RVBLTEN"               "COUPLED Y WIND TENDENCY DUE TO PBL PARAMETERIZATION"  "Pa m s-2"
 state    real  a_RTHBLTEN        ikj      misc        1         -      r        "a_RTHBLTEN"              "COUPLED THETA TENDENCY DUE TO PBL PARAMETERIZATION"   "Pa K s-1"
 state    real  a_RQVBLTEN        ikj      misc        1         -      r        "a_RQVBLTEN"              "COUPLED Q_V TENDENCY DUE TO PBL PARAMETERIZATION"     "Pa kg kg-1 s-1"
+state    real  a_UST              ij      misc        1         -      rh       "a_UST"                   "U* IN SIMILARITY THEORY"                      "m s-1"
 state    real  a_USTM             ij      misc        1         -      r        "a_USTM"                  "U* IN SIMILARITY THEORY WITHOUT VCONV"        "m s-1"
 # hydrostatic pressure vars
 state    real   a_p_hyd           ikj     dyn_em      1         -      irh       "a_p_hyd"       "hydrostatic pressure"         "Pa"
@@ -639,9 +641,9 @@ halo_nta      HALO_EM_MOIST_E_5 dyn_em 48:moist
 halo_nta      HALO_EM_MOIST_E_7 dyn_em 80:moist
 halo_nta      HALO_EM_MOIST_OLD_E_5 dyn_em 48:moist_old
 halo_nta      HALO_EM_MOIST_OLD_E_7 dyn_em 80:moist_old
-halo_nta      HALO_EM_TKE_C dyn_em 8:u_2,v_2,z,zx,zy,rdz,rdzw,ustm
+halo_nta      HALO_EM_TKE_C dyn_em 8:u_2,v_2,z,zx,zy,rdz,rdzw,ustm,ust
 halo_nta      HALO_EM_TKE_D dyn_em 8:defor11,defor22,defor33,defor12,defor13,defor23,div
-halo_nta      HALO_EM_TKE_E dyn_em 8:xkmv,xkmh,xkhv,xkhh,BN2,moist
+halo_nta      HALO_EM_TKE_E dyn_em 8:xkmv,xkmh,xkhv,xkhh,BN2,moist,rho
 halo_nta      HALO_EM_TKE_3 dyn_em   24:tke_1,tke_2
 halo_nta      HALO_EM_TKE_5 dyn_em   48:tke_1,tke_2
 halo_nta      HALO_EM_TKE_7 dyn_em   80:tke_1,tke_2

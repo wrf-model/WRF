@@ -92,20 +92,27 @@ subroutine da_setup_firstguess_wrf(xbx, grid, config_flags, ens)
 
    map_util_project = grid%map_proj
 
-   if (print_detail_map) then
-      write(unit=stdout, fmt='(a, i6)') &
-           'map_proj =', grid%map_proj
-
-      write(unit=stdout, fmt='(a, e16.6)') &
-           'cen_lat   =', grid%cen_lat,  &
-           'cen_lon   =', grid%cen_lon,  &
-           'truelat1  =', grid%truelat1, &
-           'truelat2  =', grid%truelat2, &
-           'start_lat =', start_lat,     &
-           'start_lon =', start_lon,     &
-           'pole_lat  =', grid%pole_lat, &
-           'dsm       =', dsm
-   end if
+   ! Print mapping info to log file(s)
+   write(unit=message(1), fmt='(a)') 'Domain mapping info:'
+   write(unit=message(2), fmt='(a, i6)') &
+        'map_proj =', grid%map_proj
+   write(unit=message(3), fmt='(a, e16.6)') &
+        'cen_lat   =', grid%cen_lat
+   write(unit=message(4), fmt='(a, e16.6)') &
+        'cen_lon   =', grid%cen_lon
+   write(unit=message(5), fmt='(a, e16.6)') &
+        'truelat1  =', grid%truelat1
+   write(unit=message(6), fmt='(a, e16.6)') &
+        'truelat2  =', grid%truelat2
+   write(unit=message(7), fmt='(a, e16.6)') &
+        'start_lat =', start_lat
+   write(unit=message(8), fmt='(a, e16.6)') &
+        'start_lon =', start_lon
+   write(unit=message(9), fmt='(a, e16.6)') &
+        'pole_lat  =', grid%pole_lat
+   write(unit=message(10), fmt='(a, e16.6)') &
+        'dsm       =', dsm
+   call da_message(message(1:10))
 
    ! Set map projection in WRFSI world.
    map_util_project = PROJ_LC

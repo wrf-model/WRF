@@ -16404,10 +16404,10 @@ integer,external :: omp_get_thread_num
 
          if (present(lwupt)) then 
 ! Output up and down toa fluxes for total and clear sky
-            lwupt(i,j)     = uflx(icol,kte+2)
-            lwuptc(i,j)    = uflxc(icol,kte+2)
-            lwdnt(i,j)     = dflx(icol,kte+2)
-            lwdntc(i,j)    = dflxc(icol,kte+2)
+            lwupt(i,j)     = uflx(icol,nlayers+1)
+            lwuptc(i,j)    = uflxc(icol,nlayers+1)
+            lwdnt(i,j)     = dflx(icol,nlayers+1)
+            lwdntc(i,j)    = dflxc(icol,nlayers+1)
 ! Output up and down surface fluxes for total and clear sky
             lwupb(i,j)     = uflx(icol,1)
             lwupbc(i,j)    = uflxc(icol,1)

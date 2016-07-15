@@ -18,7 +18,7 @@ CONTAINS
                      QGH,QSFC,U10,V10,                          &
                      ICOEF_SF, LCURR_SF,                        & 
                      pert_Cd, ens_random_seed, ens_Cdamp,       &
-                     GZ1OZ0,WSPD,BR,ISFFLX,                     &
+                     GZ1OZ0,WSPD,BR,ZKMAX, ISFFLX,              &
                      EP1,EP2,KARMAN,NTSFLG,SFENTH,              &
                      Cd_out,Ch_out,                             &
                      ids,ide, jds,jde, kds,kde,                 &
@@ -127,6 +127,7 @@ CONTAINS
       REAL,    DIMENSION(ims:ime, jms:jme), INTENT(INOUT) ::            & 
                                         TSK,                            &
                                         BR,                             &
+                                        ZKMAX,                          &
                                         CHS,                            &
                                         Cd_out,                         &
                                         Ch_out,                         &
@@ -224,7 +225,7 @@ CONTAINS
                                         wetc,                           &
                                         slwdc,                          &
                                         rib,                            &
-                                        zkmax,                          &
+!!!                                        zkmax,                          &
                                         tkmax,                          &
                                         fxmx,                           &
                                         fxmy,                           &
@@ -431,10 +432,10 @@ CONTAINS
 !       br     =0.0001*zfull(i,kmax)*dthv/
 !    &          (gmks*theta(i,kmax)*wspd     *wspd     )
 !       zkmax    = rgas*tpc(kmax,i)*qqlog(kmax)*og
-        zkmax(i) = -R*tpc(kts,i)*alog(pkmax(i)/pspc(i))/grav
+        zkmax(i,j) = -R*tpc(kts,i)*alog(pkmax(i)/pspc(i))/grav
 !------------------------------------------------------------------------
 
-        gz1oz0(i,j)=alog(zkmax(i)/znt(i,j))
+        gz1oz0(i,j)=alog(zkmax(i,j)/znt(i,j))
         ustar   (i)= 0.01*sqrt(cdm(i)*   &
                    (upc(kts,i)*upc(kts,i) + vpc(kts,i)*vpc(kts,i)))
 !       convert from g/(cm*cm*sec) to kg/(m*m*sec)

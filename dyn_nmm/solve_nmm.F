@@ -1616,6 +1616,7 @@
      &            ,grid%czen,grid%czmean,grid%sigt4,grid%rlwin,grid%rswin,grid%radot                 &
      &            ,grid%pd,grid%res,grid%pint,grid%t,grid%q,grid%cwm,grid%f_ice,grid%f_rain,grid%sr                 &
      &            ,grid%q2,grid%u,grid%v,grid%ths,grid%nmm_tsk,grid%sst,grid%prec,grid%sno                     &
+     &            ,grid%scurx,grid%scury                                              &
      &            ,grid%fis,grid%z0,grid%mz0,grid%z0base,grid%ustar,grid%mixht,grid%pblh,grid%lpbl,grid%el_pbl    &   !KWON MZ0
      &            ,MOIST,SCALAR,grid%rmol,grid%mol                                      &
      &            ,grid%exch_h,grid%exch_m,grid%f,grid%akhs,grid%akms,grid%akhs_out,grid%akms_out         &
@@ -1654,6 +1655,9 @@
      &            ,GRID%HPBL2D, GRID%EVAP2D, GRID%HEAT2D,GRID%RC2D               &  !S&P Kwon
      &            ,GRID%SFCHEADRT,GRID%INFXSRT,GRID%SOLDRAIN           &  !Hydrology, no-op right now
      &            ,grid%cd_out,grid%ch_out                             &
+     &            ,grid%ulowl,grid%vlowl                               &
+     &            ,grid%zsig1,grid%rchno                               &
+     &            ,grid%charn,grid%msang                               &
      &            ,grid%DUBLDT,grid%DVBLDT,grid%DTHBLDT,grid%DQVBLDT   &!wang added PBL tendency output
      &            ,IDS,IDF,JDS,JDF,KDS,KDE                             &
      &            ,IMS,IME,JMS,JME,KMS,KME                             &
@@ -1696,6 +1700,7 @@
         btimx=now_time()
         call ATM_DOFLUXES(grid%twbs,grid%qwbs,grid%rlwin,grid%rswin,grid%radot,grid%rswout, &
         grid%taux,grid%tauy,grid%pint,grid%prec,grid%u10,grid%v10)
+        CALL atm_prepwindp(grid%ulowl,grid%vlowl,grid%rchno,grid%zsig1) !BT
         flux_tim=flux_tim+now_time()-btimx
 !<-:Coupling insertion
 !
@@ -2574,6 +2579,7 @@
 ! Coupling insertion:->
         btimx=now_time()
         call ATM_SENDFLUXES
+        CALL atm_sendwindp  !BT
         flux_tim=flux_tim+now_time()-btimx
 !<-:Coupling insertion
 !

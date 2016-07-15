@@ -847,6 +847,16 @@ CONTAINS
 
      END IF     !   <----- END OF VERTICAL INTERPOLATION PART ---->
 
+     DO j = jts, MIN(jde-1,jte) ! <--- Initialize the arrays from WW/Ocean Biju!
+        DO i = its, MIN(ide-1,ite)
+          grid%scurx(i,j) = 0.0
+          grid%scury(i,j) = 0.0
+          grid%charn(i,j) = 0.0185
+          grid%msang(i,j) = 0.0
+          grid%rchno(i,j) = 1e-03
+          grid%zsig1(i,j) = 20.0
+        END DO
+     END DO           ! <----- END ---->
 
 !! compute SST at each time if updating SST
         if (config_flags%sst_update == 1) then

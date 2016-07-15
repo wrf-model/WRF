@@ -263,6 +263,7 @@ module_comm_dm_1.o \
 module_comm_dm_2.o \
 module_comm_dm_3.o \
 module_comm_nesting_dm.o \
+module_bl_mynn.o \
 module_configure.o :
 	$(RM) $@
 	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.F  > $*.bb

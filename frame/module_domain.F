@@ -1343,6 +1343,10 @@ CONTAINS
       IF ( grid%id .EQ. 1 ) &
           CALL wrf_message ( 'DYNAMICS OPTION: nmm dyncore' )
 #endif
+#if (COAMPS_CORE == 1)
+        IF ( grid%id .EQ. 1 ) &
+          CALL wrf_message ( 'DYNAMICS OPTION: coamps dyncore' )
+#endif
 
       CALL set_scalar_indices_from_config( id , idum1 , idum2 )
 

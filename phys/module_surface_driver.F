@@ -18,6 +18,7 @@ CONTAINS
      &          ,isltyp,itimestep,julian_in,ivgtyp,lowlyr,mavail,rmol &
      &          ,num_soil_layers,p8w,pblh,pi_phy,pshltr,fm,fhh,psih   &
 #if (NMM_CORE==1)
+     &          ,zkmax                                                &
      &          ,psim,p_phy,q10,q2,qfx,taux,tauy,qsfc,qshltr,qz0      &
      &          ,icoef_sf,lcurr_sf                                    & !for gfdl-sf drag
      &          ,pert_Cd, ens_random_seed, ens_Cdamp                  &
@@ -764,6 +765,9 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme ) , OPTIONAL, INTENT(INOUT)::   BIO4    ! ssib-snow
    REAL, DIMENSION( ims:ime, jms:jme ) , OPTIONAL, INTENT(INOUT)::   BLO4    ! ssib-snow
    REAL, DIMENSION( ims:ime, jms:jme ) , OPTIONAL, INTENT(INOUT)::   HO4     ! ssib-snow
+#if (NMM_CORE==1)
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   ZKMAX
+#endif
 !----------------------------------------------------------
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   BR
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   CHKLOWQ
@@ -2272,7 +2276,7 @@ CONTAINS
                    QGH,QSFC,U10,V10,                              &
                    ICOEF_SF, LCURR_SF,                            &
                    pert_Cd, ens_random_seed, ens_Cdamp,           &
-                   GZ1OZ0,WSPD,BR,ISFFLX,                         &
+                   GZ1OZ0,WSPD,BR,ZKMAX, ISFFLX,                  &
                    EP_1,EP_2,KARMAN,GFDL_NTSFLG,SFENTH,           &
                    cd_out, ch_out,                                &
                    ids,ide, jds,jde, kds,kde,                     &

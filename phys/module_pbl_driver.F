@@ -12,6 +12,7 @@ CONTAINS
                  ,rublten,rvblten,rthblten                         &
                  ,tsk,xland,znt                                    &
 #if (HWRF==1)
+                 ,msang,scurx,scury,iwavecpl,lcurr_sf              &
                  ,mznt                                             &
 #endif
                  ,ht                                               &   
@@ -384,6 +385,10 @@ CONTAINS
 !
    LOGICAL,      INTENT(IN   )    ::   warm_rain
    LOGICAL,      INTENT(IN   )    ::   is_CAMMGMP_used !BSINGH:01/31/2013: Added for CAMUWPBL
+#ifdef HWRF
+   INTEGER,      INTENT(IN   )    ::   iwavecpl
+   LOGICAL,      INTENT(IN   )    ::   lcurr_sf
+#endif
 #if (NMM_CORE==1)
    LOGICAL,      INTENT(IN   )    ::   DISHEAT ! (for HWRF)
    REAL, DIMENSION( ims:ime , jms:jme ),                         &
@@ -476,6 +481,13 @@ CONTAINS
                                                               BR, &
                                                                F, &
                                                          CHKLOWQ
+#if (HWRF==1)
+   REAL,       DIMENSION( ims:ime , jms:jme ),                    &
+               INTENT(IN   )    ::                         SCURX, &
+                                                           SCURY, &
+                                                           MSANG
+#endif
+
 !
    REAL,       DIMENSION( ims:ime, jms:jme )                    , &
                INTENT(INOUT)    ::                           TSK, &
@@ -1338,6 +1350,7 @@ CONTAINS
               ,U10=U10,V10=V10,ZNT=ZNT,MZNT=MZNT,RC2D=RC2D          &   !Kwon for variable Ric
               ,DKU3D=DKU3D,DKT3D=DKT3D                              &
               ,coef_ric_l=coef_ric_l,coef_ric_s=coef_ric_s,xland=xland    &
+              ,MSANG=MSANG,SCURX=SCURX,SCURY=SCURY,IWAVECPL=IWAVECPL,LCURR_SF=LCURR_SF &
               ,pert_pbl=pert_pbl                                    &
               ,ens_random_seed=ens_random_seed                      &
               ,ens_pblamp=ens_pblamp                                &

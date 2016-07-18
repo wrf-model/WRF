@@ -1476,6 +1476,7 @@ endif
 rconfig   integer random_seed             namelist,physics     max_domains    0       irh    "random_seed"  "random number generator seed"
 
 rconfig   integer icoef_sf                namelist,physics     max_domains    0       irh012     3  "icoef_sf"   "Option for exchange coefficients in the surface flux scheme" ""
+rconfig   integer iwavecpl                namelist,physics     max_domains    0       irh012     3  "iwavecpl"   "Option for activate coupling to sea surface wave model" ""
 rconfig   logical lcurr_sf                namelist,physics     max_domains    .false. irh012     3  "lcurr_sf"   "Option to include ocean currents in the surface flux calculations" ""
 
 ifdef HWRF=1
@@ -1945,7 +1946,7 @@ halo      HALO_NMM_TURBL_B  dyn_nmm 8:dudt,dvdt
 # following halos added for nesting purpose  (gopal's doing):
 
 halo HALO_NMM_TRACK dyn_nmm 120:sm,pdyn,mslp,sqws
-halo HALO_NMM_FORCE_DOWN_SST dyn_nmm 120:sst
+halo HALO_NMM_FORCE_DOWN_SST dyn_nmm 120:sst,scurx,scury,charn,msang
 halo HALO_NMM_WEIGHTS dyn_nmm 48:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,IIV,JJV,VBWGT1,VBWGT2,VBWGT3,VBWGT4,HNEAR_I,HNEAR_J
 
 #halo HALO_NMM_FORCE_DOWN1 dyn_nmm 24:t,u,v,q,q2,cwm,pint,pd,hres_fis,fis,pdyn_parent,pdyn_smooth

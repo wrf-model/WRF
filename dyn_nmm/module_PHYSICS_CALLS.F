@@ -786,7 +786,6 @@
      &                ,HPBL2D, EVAP2D, HEAT2D,RC2D                      &  !Kwon S&P
      &                ,SFCHEADRT,INFXSRT,SOLDRAIN                       &  !Hydrology, no-op right now
      &                ,cd_out,ch_out                                    &
-     &                ,cd_out,ch_out                                    &
      &                ,ulowl, vlowl                                     &
      &                ,zkmax, ribn                                      &
      &                ,charn, msang                                     &

@@ -22,6 +22,7 @@ CONTAINS
                   VAR_RIC,                                         &    !Kwon for variable Ric
                   U10,V10,ZNT,MZNT,rc2d,                           &    !Kwon for variable Ric
                   DKU3D,DKT3D,coef_ric_l,coef_ric_s,xland,         &    !Kwon for variable Ric
+                  msang,scurx,scury,iwavecpl,lcurr_sf,                      &
                   pert_pbl, ens_random_seed, ens_pblamp,           &
 #endif
                   ids,ide, jds,jde, kds,kde,                       &
@@ -105,6 +106,8 @@ CONTAINS
 #endif
 
 #if (HWRF==1)
+      INTEGER , INTENT(IN)          ::  iwavecpl
+      LOGICAL , INTENT(IN)          ::  lcurr_sf
       REAL,  DIMENSION(ims:ime, jms:jme), INTENT(OUT) ::              &
                                         HPBL2D,                         &    !ADDED BY KWON FOR SHALLOW CONV.
                                         EVAP2D,                         &    !ADDED BY KWON FOR SHALLOW CONV.
@@ -115,6 +118,10 @@ CONTAINS
                                         ZNT                               !ADDED BY KWON FOR VARIABLE Ric
       REAL,  DIMENSION(ims:ime, jms:jme, kms:kme), INTENT(OUT) :: DKU3D,DKT3D  
       REAL,    INTENT(IN) :: VAR_RIC,coef_ric_l,coef_ric_s                   !ADDED BY KWON
+      REAL,  DIMENSION(ims:ime, jms:jme), INTENT(IN) ::                 &
+                                        SCURX,                          &
+                                        SCURY,                          &
+                                        MSANG
       integer,intent(in) :: ens_random_seed
       real,intent(in) :: ens_pblamp
       logical,intent(in) :: pert_pbl
@@ -240,6 +247,9 @@ CONTAINS
       REAL, PARAMETER:: ALPHA=1.0
 #endif
 
+#if (HWRF == 1)
+      REAL :: UBOT, VBOT, UBOT1, VBOT1
+#endif
       INTEGER, DIMENSION( its:ite ) ::                                  &
                                         KPBL 
 
@@ -285,6 +295,29 @@ CONTAINS
         XLAND1(i) = XLAND(I,J)
 #endif
 !
+#if (HWRF==1)
+        IF ( XLAND(I,J)  > 1.99 ) THEN
+          IF ( LCURR_SF ) THEN
+            UBOT = U3D(I,KTS,J)-SCURX(I,J)
+            VBOT = V3D(I,KTS,J)-SCURY(I,J)
+          ELSE
+            UBOT = U3D(I,KTS,J)
+            VBOT = V3D(I,KTS,J)
+          ENDIF
+          IF ( IWAVECPL .eq. 1 ) THEN
+            UBOT1 = ( UBOT * COS(MSANG(I,J))  -               &
+                     VBOT * SIN(MSANG(I,J)) )                 &
+                                  * COS(MSANG(I,J))
+            VBOT1 = ( VBOT * COS(MSANG(I,J))  -               &
+                     UBOT * SIN(MSANG(I,J)) )                &
+                                  * COS(MSANG(I,J))
+
+            WSPD(i,j) = SQRT(UBOT1*UBOT1+VBOT1*VBOT1) + 1.E-9
+          ELSE
+            WSPD(i,j) = SQRT(UBOT*UBOT+VBOT*VBOT) + 1.E-9
+          ENDIF
+        ENDIF
+#endif
         STRESS(i)=KARMAN*KARMAN*WSPD(i,j)*WSPD(i,j)/(FMTMP*FMTMP)
         SPD1(i)=WSPD(i,j)
         PRSI(i,kts)=PSFC(i,j)*.001
@@ -302,8 +335,34 @@ CONTAINS
           DV(I,K) = 0.
           DU(I,K) = 0.
           TAU(I,K) = 0.
+#if (HWRF==1)
+          IF ( XLAND(I,J) > 1.99  .AND. k == KTS ) THEN
+            IF ( LCURR_SF ) THEN
+              UBOT = U3D(i,k,j) - SCURX(I,J)
+              VBOT = V3D(i,k,j) - SCURY(I,J)
+            ELSE
+              UBOT = U3D(i,k,j)
+              VBOT = V3D(i,k,j)
+            ENDIF
+            IF ( IWAVECPL .eq. 1 ) THEN
+              U1(I,K) = ( UBOT * COS(MSANG(I,J))  -            &
+                          VBOT * SIN(MSANG(I,J)) )             &
+                                  * COS(MSANG(I,J))
+              V1(I,K) = ( VBOT * COS(MSANG(I,J))  -            &
+                          UBOT * SIN(MSANG(I,J)) )             &
+                                  * COS(MSANG(I,J))
+            ELSE
+              U1(I,K) =  UBOT
+              V1(I,K) =  VBOT
+            ENDIF
+          ELSE
+            U1(I,K) = U3D(i,k,j)
+            V1(I,K) = V3D(i,k,j)
+          ENDIF
+#else
           U1(I,K) = U3D(i,k,j)
           V1(I,K) = V3D(i,k,j)
+#endif
           T1(I,K) = T3D(i,k,j)
           Q1(I,K,1) = QV3D(i,k,j)/(1.+QV3D(i,k,j))
           Q1(I,K,2) = QC3D(i,k,j)/(1.+QC3D(i,k,j))

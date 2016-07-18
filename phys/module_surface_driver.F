@@ -18,9 +18,8 @@ CONTAINS
      &          ,isltyp,itimestep,julian_in,ivgtyp,lowlyr,mavail,rmol &
      &          ,num_soil_layers,p8w,pblh,pi_phy,pshltr,fm,fhh,psih   &
 #if (NMM_CORE==1)
-     &          ,zkmax                                                &
      &          ,psim,p_phy,q10,q2,qfx,taux,tauy,qsfc,qshltr,qz0      &
-     &          ,icoef_sf,lcurr_sf                                    & !for gfdl-sf drag
+     &          ,zkmax,ribn,charn,msang,scurx,scury,icoef_sf,iwavecpl,lcurr_sf & !for gfdl-sf drag
      &          ,pert_Cd, ens_random_seed, ens_Cdamp                  &
      &          ,cd_out,ch_out                                        &
 #else
@@ -606,6 +605,7 @@ CONTAINS
 #if (NMM_CORE==1)
    real , intent(IN )::   SFENTH
    INTEGER, INTENT(IN)::   ICOEF_SF
+   INTEGER, INTENT(IN)::   IWAVECPL
    LOGICAL, INTENT(IN)::   LCURR_SF
    logical,intent(in),optional  :: pert_Cd
    integer,intent(in),optional  :: ens_random_seed
@@ -766,7 +766,8 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme ) , OPTIONAL, INTENT(INOUT)::   BLO4    ! ssib-snow
    REAL, DIMENSION( ims:ime, jms:jme ) , OPTIONAL, INTENT(INOUT)::   HO4     ! ssib-snow
 #if (NMM_CORE==1)
-   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   ZKMAX
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN)::    CHARN, MSANG, SCURX, SCURY
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   RIBN, ZKMAX
 #endif
 !----------------------------------------------------------
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   BR

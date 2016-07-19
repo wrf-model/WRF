@@ -3416,7 +3416,7 @@ call wrf_message(mess)
                qvf2 = 1./(1.+qtot)
                qvf1 = qtot*qvf2
                grid%p(i,kk,j) = grid%p(i,kk+1,j) - (grid%Mu_2(i,j) +       &
-                               qvf1*grid%Mub(i,j))/qvf2/grid%rdn(k+1)
+                               qvf1*grid%Mub(i,j))/qvf2/grid%rdn(kk+1)
                qvf = 1. + rvovrd*moist(i,kk,j,P_QV)
                grid%alt(i,kk,j) = (r_d/p1000mb)*(grid%t_2(i,kk,j)+t0)*qvf* &
                            (((grid%p(i,kk,j)+grid%pb(i,kk,j))/p1000mb)**cvpm)

@@ -1064,7 +1064,7 @@ CONTAINS
 		ids,ide, jds,jde, kds,kde,                        &
 		ims,ime, jms,jme, kms,kme,                        &
 		its,ite, jts,jte, kts,kte                         )
-   CASE (RACM_SOA_VBS_KPP,RACM_SOA_VBS_AQCHEM_KPP)
+   CASE (RACM_SOA_VBS_AQCHEM_KPP)
       CALL wrf_debug(15,'call mixactivate for soa-vbs aerosol')
       call soa_vbs_mixactivate (                        &
                 id, ktau, dtstep, config_flags, idrydep_onoff,   &

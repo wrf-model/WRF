@@ -647,6 +647,12 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
 
    has_regime = sum(grid%regime*grid%regime) > 0.0
    has_znt    = sum(grid%znt*grid%znt)       > 0.0
+   if ( has_regime .neqv. has_znt ) then
+      ! make sure they are consistent
+      ! either both from model, or both calculated here
+      has_regime = .false.
+      has_znt    = .false.
+   end if
    if ( has_znt ) then
       grid%xb%rough = grid%znt
    else

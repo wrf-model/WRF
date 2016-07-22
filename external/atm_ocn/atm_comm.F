@@ -599,6 +599,7 @@
       integer i,j
       real(kind=kind_SST) SST_g(ids:idf,jds:jdf)
 !C
+      IF ( io2a .LT. 1 ) RETURN
 
       IF (.not.PHYS) RETURN
 

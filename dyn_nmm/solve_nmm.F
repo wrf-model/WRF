@@ -1699,7 +1699,7 @@
 ! Coupling insertion:->
         btimx=now_time()
         call ATM_DOFLUXES(grid%twbs,grid%qwbs,grid%rlwin,grid%rswin,grid%radot,grid%rswout, &
-        grid%taux,grid%tauy,grid%pint,grid%prec,grid%u10,grid%v10)
+        grid%taux,grid%tauy,grid%pint,grid%prec)
         CALL atm_prepwindp(grid%ulowl,grid%vlowl,grid%rchno,grid%zsig1) !BT
         flux_tim=flux_tim+now_time()-btimx
 !<-:Coupling insertion

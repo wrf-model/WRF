@@ -650,7 +650,7 @@
 !C
       SUBROUTINE ATM_DOFLUXES(TWBS,QWBS,RLWIN,RSWIN,RADOT,RSWOUT, &
 !c    &USTAR,U10,V10,PINT,PREC)
-     &TX,TY,PINT,PREC,U10,V10)
+     &TX,TY,PINT,PREC)
 
       USE ATM_cc
 
@@ -659,7 +659,7 @@
       real(kind=kind_sfcflux),dimension(ims:ime,jms:jme,kms:kme):: PINT
 
       real(kind=kind_sfcflux),dimension(ims:ime,jms:jme):: &
-     &TWBS,QWBS,RLWIN,RSWIN,RADOT,RSWOUT,TX,TY,PREC,U10,V10
+     &TWBS,QWBS,RLWIN,RSWIN,RADOT,RSWOUT,TX,TY,PREC
 !c    &TWBS,QWBS,RLWIN,RSWIN,RADOT,RSWOUT,USTAR,U10,V10,PINT,PREC
 !       Act. arg. for PINT is a 3d array - so this only is OK if
 !       Ps=Act.arg.(:,:.1) - actually, Ps=PINT(:,1,:)
@@ -727,16 +727,6 @@
 !ooooooooooo
       END IF
 !ooooooooooo
-
-
-!wwwwwwwwwwwwwwwwwwwwwwwww
-      IF (WM_id.gt.0) THEN
-!wwwwwwwwwwwwwwwwwwwwwwwww
-        sf(gid)%a(its:ite,jts:jte,NSF-1)=sf(gid)%a(its:ite,jts:jte,NSF-1)+U10(its:ite,jts:jte)
-        sf(gid)%a(its:ite,jts:jte,NSF)=sf(gid)%a(its:ite,jts:jte,NSF)+V10(its:ite,jts:jte)
-!wwwwwwwwwww
-      END IF
-!wwwwwwwwwww
 
       if (nrmSF) then
         sf(gid)%a=sf(gid)%a*dta2dtc
@@ -817,7 +807,7 @@ SUBROUTINE atm_getcur(ucur,vcur)
    REAL(KIND = kind_cur), DIMENSION(ids:idf,jds:jdf) :: ucur_g, vcur_g
    REAL, PARAMETER :: cur_ll = 0._kind_cur, cur_ul = 5._kind_cur,  &
                       cur_k = 0._kind_cur
-
+                      
    INTEGER :: i, j
    LOGICAL :: getcur
 
@@ -825,9 +815,9 @@ SUBROUTINE atm_getcur(ucur,vcur)
    IF (.NOT. phys .OR. gid > 2) RETURN
    IF (ocean_spec /= 1) CALL atm_announce('Warn: ocean currents needed',3)
    CALL atm_announce('atm_getcur entered (phys = .true.)',3)
-
+   
    getcur = ((n_ts(gid)-1)/i_dtc2dta)*i_dtc2dta == n_ts(gid)-1
-
+   
    IF (getcur .NEQV. zerosf) THEN
       CALL glob_abort(1, 'Warn: getcur does not match zerosf', rc)
    END IF
@@ -839,8 +829,8 @@ SUBROUTINE atm_getcur(ucur,vcur)
       CALL disassemble(ucur_g, ucur_cc(gid)%a, kind_cur)
       CALL disassemble(vcur_g, vcur_cc(gid)%a, kind_cur)
       CALL atm_announce('atm_getcur: CUR received',3)
-   END IF
-
+   END IF  
+   
    IF ( coupler_id .LT. 0 ) RETURN
 
 
@@ -861,7 +851,7 @@ SUBROUTINE atm_getcur(ucur,vcur)
    ENDDO
    ENDDO
 
-END SUBROUTINE atm_getcur
+END SUBROUTINE atm_getcur 
 
 SUBROUTINE atm_getwstate(alpha,gamma)
 
@@ -873,7 +863,7 @@ SUBROUTINE atm_getwstate(alpha,gamma)
    REAL(KIND = kind_wstate), DIMENSION(ims:ime,jms:jme) :: alpha, gamma
    REAL(KIND = kind_wstate), DIMENSION(ids:idf,jds:jdf) :: alpha_g, &
                                                            gamma_g
-   REAL, PARAMETER :: deg2rad=3.1415926_kind_wstate/180_kind_wstate
+   REAL, PARAMETER :: deg2rad=3.1415926_kind_wstate/180_kind_wstate 
    REAL, PARAMETER :: alpha_ll = 0.0_kind_wstate, &
                       alpha_ul = 0.2_kind_wstate, &
                       alpha_k = 0.0185_kind_wstate, &
@@ -906,8 +896,8 @@ SUBROUTINE atm_getwstate(alpha,gamma)
    END IF
 
    IF ( coupler_id .LT. 0 ) RETURN
-
-
+   
+   
    DO j = jts,jte
    DO i = its,ite
 !     IF ( alpha_cc(gid)%a(i,j) .GT. alpha_ll .AND.                &
@@ -925,7 +915,7 @@ SUBROUTINE atm_getwstate(alpha,gamma)
      ENDIF
    ENDDO
    ENDDO
-
+ 
 END SUBROUTINE atm_getwstate
 
 SUBROUTINE atm_prepwindp(ulowl, vlowl, richn, zlowl)
@@ -946,13 +936,13 @@ SUBROUTINE atm_prepwindp(ulowl, vlowl, richn, zlowl)
    CALL atm_announce('atm_atm_prepwindp: entered',3)
 
    IF (zerosf) wwinp(gid)%a = 0.0
-
+   
    wwinp(gid)%a(its:ite,jts:jte,NSF_WM-1) =    &  ! D.S.
                               wwinp(gid)%a(its:ite,jts:jte,NSF_WM-1) + &
                               ulowl(its:ite,jts:jte)
    wwinp(gid)%a(its:ite,jts:jte,NSF_WM) =      &  ! D.S.
                               wwinp(gid)%a(its:ite,jts:jte,NSF_WM)   + &
-                              vlowl(its:ite,jts:jte)
+                              vlowl(its:ite,jts:jte) 
    wwinp(gid)%a(its:ite,jts:jte,NSF_WM-3) =    &  ! D.S.
                               wwinp(gid)%a(its:ite,jts:jte,NSF_WM-3) + &
                               richn(its:ite,jts:jte)
@@ -961,8 +951,8 @@ SUBROUTINE atm_prepwindp(ulowl, vlowl, richn, zlowl)
                               zlowl(its:ite,jts:jte)
    IF (nrmsf) THEN
       wwinp(gid)%a = wwinp(gid)%a*dta2dtc
-   END IF
-
+   END IF  
+ 
    CALL atm_announce('atm_atm_prepwindp: returned',3)
 
 END SUBROUTINE atm_prepwindp
@@ -982,7 +972,7 @@ SUBROUTINE atm_sendwindp
       IF ( ia2w .LT. 1 ) RETURN
    IF (wm_id <= 0)  RETURN
    IF (.NOT. phys .OR. gid > 2) RETURN
-
+ 
    IF (.NOT. sendsf) THEN
       CALL atm_announce('atm_sendwindp entered with PHYS but not sendSF: returning'// &
       sgid,3)

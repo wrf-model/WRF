@@ -74,6 +74,7 @@ MODULE MODULE_SF_NOAHMPLSM
                       !   7 -> off (use input LAI; use FVEG = SHDFAC from input)
                       !   8 -> off (use input LAI; calculate FVEG)
                       !   9 -> off (use input LAI; use maximum vegetation fraction)
+                      !  10 -> crop model on (use maximum vegetation fraction)
 
   INTEGER :: OPT_CRS  ! options for canopy stomatal resistance
                       ! **1 -> Ball-Berry
@@ -755,7 +756,7 @@ contains
                  TOTLB  ,LAI    ,SAI    )                   !out
    END IF
 
-   IF (DVEG == 6) THEN !XING
+   IF (DVEG == 10) THEN !XING
     CALL CARBON_CROP (parameters,NSNOW  ,NSOIL  ,VEGTYP ,DT     ,ZSOIL  ,JULIAN , & !in 
                          DZSNSO ,STC    ,SMC    ,TV     ,PSN    ,FOLN   ,BTRAN  , & !in
 			 SOLDN  ,T2M    ,                                         & !in
@@ -9575,7 +9576,7 @@ RSURF_SNOW_TABLE     = RSURF_SNOW
        write(*,'("Cannot find file MPTABLE.TBL")')
        write(*,'("STOP")')
        write(*,'("*******************************************************************")')
-       call wrf_error_fatal("STOP in Noah-MP read_mp_rad_parameters")
+       call wrf_error_fatal("STOP in Noah-MP read_mp_crop_parameters")
     endif
 
     read(15,noahmp_crop_parameters)

@@ -562,6 +562,8 @@ state   real    dfi_qvolg      ikjftb  dfi_scalar      1         -     \
    rhusdf=(bdy_interp:dt)   "DFI_QVGRAUPEL" "DFI Graupel Particle Volume" "m(3) kg(-1)"
 state   real    dfi_qvolh     ikjftb  dfi_scalar      1         -     \
    rhusdf=(bdy_interp:dt)   "DFI_QVHAIL"    "DFI Hail Particle Volume" "m(3) kg(-1)"
+state   real    dfi_qke_adv   ikjftb  dfi_scalar      1         -      \
+   rusdf=(bdy_interp:dt) "dfi_qke_adv"   "DFI twice TKE from MYNN"      "m2 s-2"
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -2566,6 +2568,7 @@ rconfig   integer map_proj                derived                  max_domains  
 rconfig   integer use_wps_input           derived                       1         0       -        "use_wps_input"        "0/1/2 flag, using wps input"   "0=no, 1=real, 2=tc"
 rconfig   integer dfi_stage               derived                  max_domains    3       -        "dfi_stage"            "current stage of DFI processing"      "0=DFI setup, 1=DFI backward integration, 2=DFI forward integration, 3=WRF forecast"
 rconfig   integer mp_physics_dfi          derived                  max_domains   -1       -        "mp_physics_dfi"       ""      "-1 = no DFI and so no need to allocate DFI moist and scalar variables, >0 = running with DFI, so allocate DFI moist and scalar variables appropriate for selected microphysics package"
+rconfig   integer bl_pbl_physics_dfi      derived                  max_domains   -1       -        "bl_pbl_physics_dfi"   ""      "-1 = no DFI and so no need to allocate DFI qke_adv variable, >0 = running with DFI, so allocate DFI qke_adv variable appropriate for selected PBL package"
 
 #
 # Single dummy declaration to define a nodyn dyn option
@@ -2701,6 +2704,10 @@ package   mynn_tkebudget bl_mynn_tkebudget==1        -             state:qSHEAR,
 package   mynn_stem_edmf bl_mynn_edmf==1            -              state:edmf_a,edmf_w,edmf_thl,edmf_qt,edmf_ent,edmf_qc
 package   mynn_temf_edmf bl_mynn_edmf==2            -              state:edmf_a,edmf_w,edmf_thl,edmf_qt,edmf_ent,edmf_qc
 package   pbl_cloud      icloud_bl==1                -             state:cldfra_bl,qc_bl
+
+# dfi
+package   mynnpblscheme2_dfi bl_pbl_physics_dfi==5   -             dfi_scalar:dfi_qke_adv
+package   mynnpblscheme3_dfi bl_pbl_physics_dfi==6   -             dfi_scalar:dfi_qke_adv
 
 package   nocuscheme     cu_physics==0               -             -
 package   kfetascheme    cu_physics==1               -             state:w0avg

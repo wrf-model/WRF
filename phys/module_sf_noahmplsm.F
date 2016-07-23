@@ -778,7 +778,7 @@ contains
 ! urban - jref
     QFX = ETRAN + ECAN + EDIR
     IF ( parameters%urban_flag ) THEN
-       QSFC = (QFX/RHOAIR*CH) + QAIR
+       QSFC = QFX/(RHOAIR*CH) + QAIR
        Q2B = QSFC
     END IF
 
@@ -2281,7 +2281,8 @@ contains
     THKS = (THKQTZ ** parameters%QUARTZ(ISOIL))* (THKO ** (1. - parameters%QUARTZ(ISOIL)))
 
 ! UNFROZEN VOLUME FOR SATURATION (POROSITY*XUNFROZ)
-    XUNFROZ = SH2O / SMC
+    XUNFROZ = 1.0                       ! Prevent divide by zero (suggested by D. Mocko)
+    IF(SMC > 0.) XUNFROZ = SH2O / SMC
 ! SATURATED THERMAL CONDUCTIVITY
     XU = XUNFROZ * parameters%SMCMAX(ISOIL)
 
@@ -4467,6 +4468,8 @@ contains
        ELSE
           ZETALU = MIN (ZETALU,ZTMAX)
           ZETALT = MIN (ZETALT,ZTMAX)
+          ZETAU  = MIN (ZETAU,ZTMAX/(ZSLU/ZU))   ! Barlage: add limit on ZETAU/ZETAT
+          ZETAT  = MIN (ZETAT,ZTMAX/(ZSLT/ZT))   ! Barlage: prevent SIMM/SIMH < 0
           PSMZ = PSPMS (ZETAU)
           SIMM = PSPMS (ZETALU) - PSMZ + RLOGU
           PSHZ = PSPHS (ZETAT)
@@ -4503,10 +4506,12 @@ contains
 !-----------------------------------------------------------------------
        RLOGT = log (ZSLT / ZT)
        USTARK = USTAR * VKRM
+       IF(SIMM < 1.e-6) SIMM = 1.e-6        ! Limit stability function
        AKMS = MAX (USTARK / SIMM,CXCH)
 !-----------------------------------------------------------------------
 ! IF STATEMENTS TO AVOID TANGENT LINEAR PROBLEMS NEAR ZERO
 !-----------------------------------------------------------------------
+       IF(SIMH < 1.e-6) SIMH = 1.e-6        ! Limit stability function
        AKHS = MAX (USTARK / SIMH,CXCH)
 
        IF (BTGH * AKHS * DTHV .ne. 0.0) THEN
@@ -8073,10 +8078,10 @@ END  SUBROUTINE SHALLOWWATERTABLE
 
 !  fraction of carbon into wood versus root
 
-     IF(WOOD.GT.0) THEN
+     IF(WOOD > 1.e-6) THEN
         WOODF = (1.-EXP(-BF*(parameters%WRRAT*RTMASS/WOOD))/BF)*parameters%WDPOOL
      ELSE
-        WOODF = 0.
+        WOODF = parameters%WDPOOL
      ENDIF
 
      ROOTPT = NONLEF*(1.-WOODF)

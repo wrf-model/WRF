@@ -16,7 +16,7 @@ CONTAINS
                      UST,PSIM,PSIH,                             &   
                      XLAND,HFX,QFX,TAUX,TAUY,LH,GSW,GLW,TSK,FLHC,FLQC,    & ! gopal's doing for Ocean coupling
                      QGH,QSFC,U10,V10,                          &
-                     ICOEF_SF, LCURR_SF,                        & 
+                     ICOEF_SF,IWAVECPL,LCURR_SF,CHARN,MSANG,SCURX, SCURY,&
                      pert_Cd, ens_random_seed, ens_Cdamp,       &
                      GZ1OZ0,WSPD,BR,ZKMAX, ISFFLX,              &
                      EP1,EP2,KARMAN,NTSFLG,SFENTH,              &
@@ -94,6 +94,7 @@ CONTAINS
                                         its,ite, jts,jte, kts,kte,      &
                                         ISFFLX,NUM_SOIL_LAYERS,NTSFLG
       INTEGER, INTENT(IN) ::            ICOEF_SF
+      INTEGER, INTENT(IN) ::            IWAVECPL
       LOGICAL, INTENT(IN) ::            LCURR_SF
       logical,intent(in)  :: pert_Cd 
       integer,intent(in)  :: ens_random_seed
@@ -124,6 +125,11 @@ CONTAINS
                                         GLW,                            &
                                         GSW,                            &
                                         XLAND                           
+      REAL,    DIMENSION(ims:ime, jms:jme), INTENT(IN) ::               &
+                                        CHARN,                          &
+                                        MSANG,                          &
+                                        SCURX,                          &
+                                        SCURY
       REAL,    DIMENSION(ims:ime, jms:jme), INTENT(INOUT) ::            & 
                                         TSK,                            &
                                         BR,                             &
@@ -235,7 +241,11 @@ CONTAINS
                                         xxfh,                           &
                                         xxfh2,                          &
                                         wind10,                         &
-                                        tjloc
+                                        tjloc,                          &
+                                        alpha,                          &
+                                        gamma,                          &
+                                        xcur,                           &
+                                        ycur
 
       INTEGER ::                                                        &
                                         I,                              &
@@ -311,6 +321,7 @@ CONTAINS
         vpc(kts,i)=v3D(i,kts,j) * 100.
         Z0RL(I) = ZNT(i,j)*100.
         zoc(i)=ZNT(i,j)*100.
+        cdm(i) = Cd_out(i,j)
          if(XLAND(i,j).gt.1.99)  zoc(i)=- zoc(i)
 !        Z0RL(I) = z00(i,j)*100.
 !       slwdc... GFDL downward net flux in units of cal/(cm**2/min)
@@ -318,7 +329,9 @@ CONTAINS
         slwdc(i)=gsw(i,j)+glw(i,j)
         slwdc(i)=0.239*60.*slwdc(i)*1.e-4
          tjloc(i)=float(j)
-        
+        gamma(i) = msang(i,j)
+        xcur(i) = scurx(i,j)
+        ycur(i) = scury(i,j)
 
 
  !Wang, calulate height of the first half level
@@ -363,7 +376,7 @@ CONTAINS
 
      CALL MFLUX2(  fxh,fxe,fxmx,fxmy,cdm,rib,xxfh,zoc,mzoc,tstrc,   &    !mzoc for momentum Zo KWON
                    pspc,pkmax,wetc,slwdc,tjloc,                &
-                   icoef_sf,lcurr_sf,                          &
+                   icoef_sf,iwavecpl,lcurr_sf,alpha,gamma,xcur,ycur,           &
                    pert_Cd, ens_random_seed, ens_Cdamp,        &
                    upc,vpc,tpc,rpc,dt,J,wind10,xxfh2,ntsflg,SFENTH,   &
                    tzot,   &  ! tzot , zot for thermal z0 Wang
@@ -586,7 +599,7 @@ CONTAINS
 !-------------------------------------------------------------------
        SUBROUTINE MFLUX2( fxh,fxe,fxmx,fxmy,cdm,rib,xxfh,zoc,mzoc,tstrc,       &    !mzoc KWON
                           pspc,pkmax,wetc,slwdc,tjloc,                    &
-                          icoef_sf,lcurr_sf,                              &
+                         icoef_sf,iwavecpl,lcurr_sf,alpha,gamma,xcur,ycur,                &
                           pert_Cd, ens_random_seed, ens_Cdamp,            &
                           upc,vpc,tpc,rpc,dt,jfix,wind10,xxfh2,ntsflg,sfenth,    &
                            tzot, &
@@ -635,6 +648,7 @@ CONTAINS
       integer,intent(in)  :: its,ite, jts,jte, kts,kte
       integer,intent(in)  :: jfix,ntsflg
       integer,intent(in)  :: icoef_sf
+      integer,intent(in)  :: iwavecpl
       logical,intent(in)  :: lcurr_sf
       logical,intent(in)  :: pert_Cd 
       integer,intent(in)  :: ens_random_seed
@@ -644,7 +658,7 @@ CONTAINS
       real, intent (out), dimension (ims :ime ) :: fxe
       real, intent (out), dimension (ims :ime ) :: fxmx
       real, intent (out), dimension (ims :ime ) :: fxmy
-      real, intent (out), dimension (ims :ime ) :: cdm
+      real, intent (inout), dimension (ims :ime ) :: cdm
 !      real, intent (out), dimension (ims :ime ) :: cdm2
       real, intent (out), dimension (ims :ime ) :: rib
       real, intent (out), dimension (ims :ime ) :: xxfh
@@ -662,6 +676,8 @@ CONTAINS
       real, intent ( in), dimension (ims :ime ) :: wetc
       real, intent ( in), dimension (ims :ime ) :: slwdc
       real, intent ( in), dimension (ims :ime ) :: tjloc
+      real, intent ( in), dimension (ims :ime ) :: alpha, gamma
+      real, intent ( in), dimension (ims :ime ) :: xcur, ycur
 
       real, intent ( in), dimension (kms:kme, ims :ime ) :: upc
       real, intent ( in), dimension (kms:kme, ims :ime ) :: vpc
@@ -767,6 +783,7 @@ CONTAINS
       real :: cor1,cor2,szetho,zal2gh,cons_p000001,cons_7,vis,ustar,restar,rat
       real :: wndm,ckg
       real :: windmks,znott,znotm
+      real :: ubot, vbot
       integer:: i,j,ii,iq,nnest,icnt,ngd,ip
 
 !-----------------------------------------------------------------------
@@ -873,6 +890,7 @@ CONTAINS
       real,parameter :: g     = 980.6
       real,parameter :: rgas  = 2.87e6
       real,parameter :: og    = 1./g
+      integer :: ntstep = 0
 !
 #if HWRF==1
       real*8 :: gasdev,ran1          !zhang
@@ -914,8 +932,33 @@ CONTAINS
         z2 (i) =  200.
         pss(i) = pspc(i)
         tstar(i) = tstrc(i)
-        ukmax(i) = upc(1,i)
-        vkmax(i) = vpc(1,i)
+
+        if ( lcurr_sf .and. zoc(i) .le. 0.0 ) then
+          ubot = upc(1,i)  - xcur(i) * 100.0
+          vbot = vpc(1,i)  - ycur(i) * 100.0
+!          ubot = upc(1,i)
+!          vbot = vpc(1,i)
+        else
+          ubot = upc(1,i)
+          vbot = vpc(1,i)
+        endif
+        uvs1(i)= amax1( SQRT(ubot*ubot +    &
+                             vbot*vbot), 100.0)
+        if ( iwavecpl .eq. 1 .and. zoc(i) .le. 0.0 ) then
+          ukmax(i) = ( ubot * cos(gamma(i))  -          &
+                      vbot * sin(gamma(i)) )            &
+                                  * cos(gamma(i))
+          vkmax(i) = ( vbot * cos(gamma(i))  -          &
+                      ubot * sin(gamma(i)) )            &
+                                  * cos(gamma(i))
+
+        else
+          ukmax(i) = ubot
+          vkmax(i) = vbot
+        endif
+
+!       ukmax(i) = upc(1,i)
+!        vkmax(i) = vpc(1,i)
         tkmax(i) = tpc(1,i)
         rkmax(i) = rpc(1,i)
       enddo
@@ -944,12 +987,13 @@ CONTAINS
           land(i) = 0.0
           !windmks=wind(i)*.01
           windmks=wind10p(i)*.01
-          if ( icoef_sf .EQ. 1) then
-             call  znot_m_v1(windmks,znotm)
-             call  znot_t_v1(windmks,znott)
-          else if ( icoef_sf .EQ. 0 ) then
-             call  znot_m_v0(windmks,znotm)
-             call  znot_t_v0(windmks,znott)
+          if ( iwavecpl .eq. 1 ) then
+            if (  ntstep == 0 ) then
+              call  znot_m_v1(windmks,znotm)
+              zoc(i)  = -100.*znotm
+            endif
+            call  znot_t_v2(windmks,znott)
+            zot(i) =  -100* znott
           else
 !            if ( icoef_sf .EQ. 1) then
 !              call  znot_m_v1(windmks,znotm)
@@ -1675,6 +1719,20 @@ CONTAINS
 
 370   continue
       do i = its,ite
+!!!
+        if ( iwavecpl .eq. 1 .and. zoc(i) .le. 0.0 ) then
+          windmks = wind(i) * 0.01
+          ustar = windmks / xxfm(i)
+          !Check if Charnock parameter ratio is received in a proper range.
+          if ( alpha(i) .ge. 0.2 .and. alpha(i) .le. 5. ) then
+            call  znot_m_v1(windmks,znotm)
+            znotm = znotm*alpha(i)
+          else
+            call  znot_m_v1(windmks,znotm)
+          endif
+          zoc(i)  = -100.*znotm
+        endif
+!!!!
         fxh(i) = bq1(i)*(theta(i) - tsg(i))
         fxe(i) = ecof(i)*bq1(i)*(rkmax(i) - rstso(i))
         if (fxe(i) .GT. 0.0) fxe(i) = 0.0
@@ -1694,7 +1752,7 @@ CONTAINS
 #endif
 
       enddo
-
+      ntstep = ntstep + 1
       return
       end subroutine MFLUX2
 
@@ -1776,5 +1834,16 @@ CONTAINS
    ENDDO
 
   END SUBROUTINE hwrfsfcinit
+
+!  SUBROUTINE ustar_charn_to_znot(ustar, zch, znot)
+!  IMPLICIT NONE
+!
+!    REAL,    INTENT (IN)      :: ustar
+!    REAL,    INTENT (INOUT)   :: zch
+!    REAL,    INTENT (OUT)     :: znot
+!    REAL grav, zchf
+!    PARAMETER(grav = 9.806650)
+!       znot = ustar*ustar*zch/grav
+!    END SUBROUTINE ustar_charn_to_znot
 
 END MODULE module_sf_gfdl

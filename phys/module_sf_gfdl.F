@@ -329,6 +329,7 @@ CONTAINS
         slwdc(i)=gsw(i,j)+glw(i,j)
         slwdc(i)=0.239*60.*slwdc(i)*1.e-4
          tjloc(i)=float(j)
+        alpha(i) = charn(i,j)
         gamma(i) = msang(i,j)
         xcur(i) = scurx(i,j)
         ycur(i) = scury(i,j)
@@ -599,7 +600,7 @@ CONTAINS
 !-------------------------------------------------------------------
        SUBROUTINE MFLUX2( fxh,fxe,fxmx,fxmy,cdm,rib,xxfh,zoc,mzoc,tstrc,       &    !mzoc KWON
                           pspc,pkmax,wetc,slwdc,tjloc,                    &
-                         icoef_sf,iwavecpl,lcurr_sf,alpha,gamma,xcur,ycur,                &
+                          icoef_sf,iwavecpl,lcurr_sf,alpha,gamma,xcur,ycur,                &
                           pert_Cd, ens_random_seed, ens_Cdamp,            &
                           upc,vpc,tpc,rpc,dt,jfix,wind10,xxfh2,ntsflg,sfenth,    &
                            tzot, &
@@ -1010,8 +1011,6 @@ CONTAINS
             zoc(i)  = -100.*znotm
             zot(i) =  -100* znott
           endif
-          zoc(i)  = -100.*znotm
-          zot(i) =  -100* znott
         endif
 
 !          if(i == (its+ite)/2 .and. j == (jts+jte)/2) then
@@ -1325,7 +1324,7 @@ CONTAINS
 
 !!!   if (ngd .EQ. nNEST) then
         do i = 1,ip
-         wind10(istb(i)) = sf10(i)*wind(istb(i))/sfm(i)
+         wind10(istb(i)) = sf10(i)*uvs1(istb(i))/sfm(i)
          wind10(istb(i)) = wind10(istb(i)) * 1.944
            if(wind10(istb(i)) .GT. 6000.0) then
        wind10(istb(i))=wind10(istb(i))+wind10(istb(i))*cor1 &
@@ -1525,7 +1524,7 @@ CONTAINS
 
 !!!   if (ngd .EQ. nNEST) then
         do i = 1,iq
-          wind10(iutb(i)) = uf10(i)*wind(iutb(i))/ufm(i)
+          wind10(iutb(i)) = uf10(i)*uvs1(iutb(i))/ufm(i)
           wind10(iutb(i)) = wind10(iutb(i)) * 1.944
            if(wind10(iutb(i)) .GT. 6000.0) then
          wind10(iutb(i))=wind10(iutb(i))+wind10(iutb(i))*cor1 &
@@ -1834,16 +1833,5 @@ CONTAINS
    ENDDO
 
   END SUBROUTINE hwrfsfcinit
-
-!  SUBROUTINE ustar_charn_to_znot(ustar, zch, znot)
-!  IMPLICIT NONE
-!
-!    REAL,    INTENT (IN)      :: ustar
-!    REAL,    INTENT (INOUT)   :: zch
-!    REAL,    INTENT (OUT)     :: znot
-!    REAL grav, zchf
-!    PARAMETER(grav = 9.806650)
-!       znot = ustar*ustar*zch/grav
-!    END SUBROUTINE ustar_charn_to_znot
 
 END MODULE module_sf_gfdl

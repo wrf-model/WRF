@@ -4525,7 +4525,7 @@ END SUBROUTINE aer_p_int
       INTEGER :: i, k, j, RH_idx, RH_idx1, RH_idx2, t_idx
       INTEGER, PARAMETER:: rind=8
       REAL, DIMENSION(rind), PARAMETER:: rh_arr =                       &
-     &                      (/10., 60., 70., 80., 85., 90., 95., 100./)
+     &                      (/10., 60., 70., 80., 85., 90., 95., 99.8/)
       REAL, DIMENSION(rind,4,2) :: lookup_tabl                           ! RH, temp, water-friendly, ice-friendly
 
       lookup_tabl(1,1,1) =  5.73936E-15  
@@ -4615,7 +4615,7 @@ END SUBROUTINE aer_p_int
                rhoa = p_phy(i,k,j)/(287.*t_phy(i,k,j))
                t_idx = MAX(1, MIN(nint(10.999-0.0333*t_phy(i,k,j)),4))
                qvsat = rslf(p_phy(i,k,j),t_phy(i,k,j))
-               RH = MIN(97., MAX(10.1, qvapor(i,k,j)/qvsat*100.))
+               RH = MIN(98., MAX(10.1, qvapor(i,k,j)/qvsat*100.))
 
                !..Get the index for the RH array element
 
@@ -4658,8 +4658,11 @@ END SUBROUTINE aer_p_int
 
                !..RH fraction to be used
 
-               rh_f = MAX(0., MIN( (rh-rh_arr(rh_idx1))                 &
-     &                         /(rh_arr(rh_idx2)-rh_arr(rh_idx1)), 1.0))
+               rh_f = MAX(0., MIN(1.0, (rh/(100-rh)-rh_arr(rh_idx1)     &
+     &                                  /(100-rh_arr(rh_idx1)))         &
+     &                        /(rh_arr(rh_idx2)/(100-rh_arr(rh_idx2))   &
+     &                        -rh_arr(rh_idx1)/(100-rh_arr(rh_idx1))) ))
+
       
                unit_bext1 = lookup_tabl(RH_idx1,t_idx,1)                &
      &                    + (lookup_tabl(RH_idx2,t_idx,1)               &

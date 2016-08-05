@@ -11,7 +11,7 @@ Note, this is not a namelist.input file. Find what interests you, and cut and pa
  lowest_lev_from_sfc                 = .false.
  use_levels_below_ground             = .true.
  use_surface                         = .true.
- lagrange_order                      = 1
+ lagrange_order                      = 2
  force_sfc_in_vinterp                = 1
  zap_close_levels                    = 500
  sfcp_to_sfcp                        = .false.

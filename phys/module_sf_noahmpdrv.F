@@ -1207,6 +1207,7 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,parameter
     call read_mp_soil_parameters()
     call read_mp_rad_parameters()
     call read_mp_global_parameters()
+    call read_mp_crop_parameters()
 
     IF( .NOT. restart ) THEN
 

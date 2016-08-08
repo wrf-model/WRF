@@ -83,7 +83,8 @@ CONTAINS
   END SUBROUTINE mynn_sf_init_driver
 
 !-------------------------------------------------------------------
-   SUBROUTINE SFCLAY_mynn(U3D,V3D,T3D,QV3D,P3D,dz8w,               &
+   SUBROUTINE SFCLAY_mynn(& 
+                     U3D,V3D,T3D,QV3D,P3D,dz8w,               &
                      CP,G,ROVCP,R,XLV,PSFCPA,CHS,CHS2,CQS2,CPM,    &
                      ZNT,UST,PBLH,MAVAIL,ZOL,MOL,REGIME,PSIM,PSIH, &
                      XLAND,HFX,QFX,LH,TSK,FLHC,FLQC,QGH,QSFC,RMOL, &
@@ -218,6 +219,7 @@ CONTAINS
       INTEGER,  OPTIONAL,  INTENT(IN)   ::     ISFTCFLX, IZ0TLND,&
                                                 bl_mynn_cloudpdf,&
                                                 icloud_bl
+
 !===================================
 ! 3D VARIABLES
 !===================================
@@ -293,7 +295,7 @@ CONTAINS
       REAL,     DIMENSION(kts:kts+1 ) :: dummy1,dummy2,dummy3,dummy4, &
                                          dummy5,dummy6,dummy7,dummy8, &
                                          dummy9,dummy10,dummy11,      &
-                                         dummy12,dummy13
+                                         dummy12,dummy13,dummy14
 
       REAL,     DIMENSION( its:ite ) ::  vt1,vq1
       REAL,     DIMENSION(kts:kts+1) ::  thl, qw, vt, vq
@@ -347,6 +349,7 @@ CONTAINS
                 dummy8(k)=cov(i,k,j)
                 dummy9(k)=Sh3d(i,k,j)
                 dummy10(k)=el_pbl(i,k,j)
+                dummy14(k)=th3d(i,k,j)
                 if(icloud_bl > 0) then
                   dummy11(k)=qc_bl(i,k,j)
                   dummy12(k)=cldfra_bl(i,k,j)
@@ -366,7 +369,8 @@ CONTAINS
                    &            dummy11,dummy12,        &
                    &            PBLH(i,j),HFX(i,j),     &
                    &            dummy13,                &
-                   &            vt(kts:kts+1), vq(kts:kts+1))
+                   &            vt(kts:kts+1), vq(kts:kts+1), &
+                   &            dummy14)
 
 !              ! NOTE: The last grid number is kts+1 instead of kte.
 !              CALL mym_condensation (kts,kts+1, dx,     &
@@ -390,7 +394,8 @@ CONTAINS
            ENDDO
         ENDIF
 
-        CALL SFCLAY1D_mynn(J,U1D,V1D,T1D,QV1D,P1D,dz8w1d,rho1d,    &
+        CALL SFCLAY1D_mynn(& 
+                J,U1D,V1D,T1D,QV1D,P1D,dz8w1d,rho1d,    &
                 U1D2,V1D2,dz2w1d,                                  &
                 CP,G,ROVCP,R,XLV,PSFCPA(ims,j),CHS(ims,j),CHS2(ims,j),&
                 CQS2(ims,j),CPM(ims,j),PBLH(ims,j), RMOL(ims,j),   &
@@ -421,7 +426,8 @@ CONTAINS
     END SUBROUTINE SFCLAY_MYNN
 
 !-------------------------------------------------------------------
-   SUBROUTINE SFCLAY1D_mynn(J,U1D,V1D,T1D,QV1D,P1D,dz8w1d,rho1d,   &
+   SUBROUTINE SFCLAY1D_mynn(&
+                     J,U1D,V1D,T1D,QV1D,P1D,dz8w1d,rho1d,   &
                      U1D2,V1D2,dz2w1d,                             &
                      CP,G,ROVCP,R,XLV,PSFCPA,CHS,CHS2,CQS2,CPM,    &
                      PBLH,RMOL,ZNT,UST,MAVAIL,ZOL,MOL,REGIME,      &
@@ -536,7 +542,7 @@ CONTAINS
             GZ10OZt, &    !LOG((10.+z_t(i))/z_t(i))
              GZ1OZt       !LOG((ZA(I)+z_t(i))/z_t(i))
 
-      INTEGER ::  N,I,K,L,NZOL,NK,NZOL2,NZOL10, ITER
+      INTEGER ::  N,I,K,L,NZOL,NK,NZOL2,NZOL10, ITER, yesno
       INTEGER, PARAMETER :: ITMAX=1
 
       REAL    ::  PL,THCON,TVCON,E1
@@ -776,7 +782,7 @@ CONTAINS
                 ENDIF
              ELSEIF ( ISFTCFLX .EQ. 4 ) THEN
                 CALL zilitinkevich_1995(ZNT(i),z_t(i),z_q(i),restar,&
-                                   UST(I),KARMAN,XLAND(I),IZ0TLND)
+                                   UST(I),KARMAN,XLAND(I),IZ0TLND) 
              ENDIF
           ELSE
              !DEFAULT TO COARE 3.0/3.5
@@ -1242,30 +1248,58 @@ CONTAINS
    ENDIF !end ISFFLX option
 
    IF ( wrf_at_debug_level(3000) ) THEN
-   IF (HFX(I) > 1200. .OR. HFX(I) < -500. .OR. &
-      &LH(I)  > 1200. .OR. LH(I)  < -500. .OR. &
-      &UST(I) < 0.0 .OR. UST(I) > 4.0 .OR. &
-      &WSTAR(I)<0.0 .OR. WSTAR(I) > 6.0 .OR. &
-      &RHO1D(I)<0.0 .OR. RHO1D(I) > 1.6 .OR. &
-      &QSFC(I)*1000. <0.0 .OR. QSFC(I)*1000. >38. .OR. &
-      &PBLH(I)>6000.) THEN
-      print*,"SUSPICIOUS VALUES IN MYNN SFCLAYER",&
-            ITER-ITMAX," ITERATIONS",I,J
-      write(*,1000)"HFX: ",HFX(I)," LH:",LH(I)," CH:",CH(I),&
-            " PBLH:",PBLH(I)
-      write(*,1001)"REGIME:",REGIME(I)," z/L:",ZOL(I)," U*:",UST(I),&
-            " Tstar:",MOL(I)
-      write(*,1002)"PSIM:",PSIM(I)," PSIH:",PSIH(I)," W*:",WSTAR(I),&
-            " DTHV:",THV1D(I)-THVGB(I)
-      write(*,1003)"CPM:",CPM(I)," RHO1D:",RHO1D(I)," L:",&
-            ZOL(I)/ZA(I)," DTH:",TH1D(I)-THGB(I)
-      write(*,1004)"Z0/Zt:",zratio(I)," Z0:",ZNT(I)," Zt:",z_t(I),&
-            " za:",za(I)
-      write(*,1005)"Re:",restar," MAVAIL:",MAVAIL(I)," QSFC(I):",&
-            QSFC(I)," QVSH(I):",QVSH(I)
-      print*,"PSIX=",PSIX," Z0:",ZNT(I)," T1D(i):",T1D(i)
-      write(*,*)"============================================="
-   ENDIF
+      yesno = 0
+      IF (HFX(I) > 1200. .OR. HFX(I) < -500.)THEN
+            print*,"SUSPICIOUS VALUES IN MYNN SFCLAYER",&
+            ITER-ITMAX," ITERATIONS",I,J, "HFX: ",HFX(I)
+            yesno = 1
+      ENDIF
+      IF (LH(I)  > 1200. .OR. LH(I)  < -500.)THEN
+            print*,"SUSPICIOUS VALUES IN MYNN SFCLAYER",&
+            ITER-ITMAX," ITERATIONS",I,J, "LH: ",LH(I)
+            yesno = 1
+      ENDIF
+      IF (UST(I) < 0.0 .OR. UST(I) > 4.0 )THEN
+            print*,"SUSPICIOUS VALUES IN MYNN SFCLAYER",&                                                                     
+            ITER-ITMAX," ITERATIONS",I,J, "UST: ",UST(I)
+            yesno = 1
+      ENDIF
+      IF (WSTAR(I)<0.0 .OR. WSTAR(I) > 6.0)THEN
+            print*,"SUSPICIOUS VALUES IN MYNN SFCLAYER",&
+            ITER-ITMAX," ITERATIONS",I,J, "WSTAR: ",WSTAR(I)
+            yesno = 1
+      ENDIF
+      IF (RHO1D(I)<0.0 .OR. RHO1D(I) > 1.6 )THEN
+            print*,"SUSPICIOUS VALUES IN MYNN SFCLAYER",&
+            ITER-ITMAX," ITERATIONS",I,J, "rho: ",RHO1D(I)
+            yesno = 1
+      ENDIF
+      IF (QSFC(I)*1000. <0.0 .OR. QSFC(I)*1000. >40.)THEN
+            print*,"SUSPICIOUS VALUES IN MYNN SFCLAYER",&
+            ITER-ITMAX," ITERATIONS",I,J, "QSFC: ",QSFC(I)
+            yesno = 1
+      ENDIF
+      IF (PBLH(I)<0. .OR. PBLH(I)>6000.)THEN
+            print*,"SUSPICIOUS VALUES IN MYNN SFCLAYER",&                                                              
+            ITER-ITMAX," ITERATIONS",I,J, "PBLH: ",PBLH(I)
+            yesno = 1
+      ENDIF
+
+      IF (yesno == 1) THEN
+        print*," OTHER INFO:"
+        write(*,1001)"REGIME:",REGIME(I)," z/L:",ZOL(I)," U*:",UST(I),&
+              " Tstar:",MOL(I)
+        write(*,1002)"PSIM:",PSIM(I)," PSIH:",PSIH(I)," W*:",WSTAR(I),&
+              " DTHV:",THV1D(I)-THVGB(I)
+        write(*,1003)"CPM:",CPM(I)," RHO1D:",RHO1D(I)," L:",&
+              ZOL(I)/ZA(I)," DTH:",TH1D(I)-THGB(I)
+        write(*,1004)"Z0/Zt:",zratio(I)," Z0:",ZNT(I)," Zt:",z_t(I),&
+              " za:",za(I)
+        write(*,1005)"Re:",restar," MAVAIL:",MAVAIL(I)," QSFC(I):",&
+              QSFC(I)," QVSH(I):",QVSH(I)
+        print*,"PSIX=",PSIX," Z0:",ZNT(I)," T1D(i):",T1D(i)
+        write(*,*)"============================================="
+      ENDIF
    ENDIF
 
  ENDDO !end i-loop

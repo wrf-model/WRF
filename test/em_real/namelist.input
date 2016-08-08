@@ -78,6 +78,7 @@ spec_zone=1,
 relax_zone=4,
 specified=true,
 nested=.false.,
+spec_bdy_final_mu=0
 /
 &grib2
 /

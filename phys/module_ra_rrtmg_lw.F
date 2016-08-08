@@ -12603,10 +12603,11 @@ CONTAINS
 
          if (present(lwupt)) then 
 ! Output up and down toa fluxes for total and clear sky
-            lwupt(i,j)     = uflx(1,kte+2)
-            lwuptc(i,j)    = uflxc(1,kte+2)
-            lwdnt(i,j)     = dflx(1,kte+2)
-            lwdntc(i,j)    = dflxc(1,kte+2)
+! nlayers+1 represents value at 0 mb
+            lwupt(i,j)     = uflx(1,nlayers+1)
+            lwuptc(i,j)    = uflxc(1,nlayers+1)
+            lwdnt(i,j)     = dflx(1,nlayers+1)
+            lwdntc(i,j)    = dflxc(1,nlayers+1)
 ! Output up and down surface fluxes for total and clear sky
             lwupb(i,j)     = uflx(1,1)
             lwupbc(i,j)    = uflxc(1,1)

@@ -18,6 +18,7 @@ module_comm_dm_0.o : module_comm_dm_0.F
 module_comm_dm_1.o : module_comm_dm_1.F
 module_comm_dm_2.o : module_comm_dm_2.F
 module_comm_dm_3.o : module_comm_dm_3.F
+module_comm_dm_4.o : module_comm_dm_4.F
 module_comm_nesting_dm.o : module_comm_nesting_dm.F
 module_configure.o : module_configure.F
 module_dm.o : module_dm.F
@@ -37,6 +38,8 @@ module_tiles.o : module_tiles.F
 module_fddaobs_rtfdda.o : module_fddaobs_rtfdda.F
 module_initialize.o : module_initialize.F
 module_physics_init.o : module_physics_init.F 
+module_physics_init_tl.o : module_physics_init_tl.F 
+module_physics_init_ad.o : module_physics_init_ad.F 
 module_initialize_b_wave.o : module_initialize_b_wave.F
 module_initialize_hill2d_x.o : module_initialize_hill2d_x.F
 module_initialize_quarter_ss.o : module_initialize_quarter_ss.F
@@ -52,9 +55,14 @@ module_si_io.o : module_si_io.F
 module_wps_io_arw.o : module_wps_io_arw.F
 module_state_description.o : module_state_description.F 
 output_wrf.o : output_wrf.F
+solve_em.o : solve_em.F
+solve_em_tl.o : solve_em_tl.F
+solve_em_ad.o : solve_em_ad.F
 solve_interface.o : solve_interface.F
 start_domain.o : start_domain.F
 start_em.o : start_em.F
+start_em_tl.o : start_em_tl.F
+start_em_ad.o : start_em_ad.F
 wrf_bdyin.o : wrf_bdyin.F
 wrf_bdyout.o : wrf_bdyout.F
 wrf_ext_read_field.o : wrf_ext_read_field.F
@@ -93,9 +101,14 @@ module_si_io.o \
 module_wps_io_arw.o \
 module_tiles.o \
 output_wrf.o \
+solve_em.o \
+solve_em_tl.o \
+solve_em_ad.o \
 solve_interface.o \
 start_domain.o \
 start_em.o \
+start_em_tl.o \
+start_em_ad.o \
 wrf_fddaobs_in.o \
 wrf_tsin.o :
 	$(RM) $@
@@ -143,6 +156,8 @@ input_wrf.o \
 module_domain.o \
 module_domain_type.o \
 module_physics_init.o \
+module_physics_init_tl.o \
+module_physics_init_ad.o \
 module_io.o \
 wrf_bdyin.o \
 wrf_bdyout.o \
@@ -171,6 +186,7 @@ module_comm_dm_0.o \
 module_comm_dm_1.o \
 module_comm_dm_2.o \
 module_comm_dm_3.o \
+module_comm_dm_4.o \
 module_comm_nesting_dm.o \
 module_configure.o :
 	$(RM) $@

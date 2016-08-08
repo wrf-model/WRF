@@ -1570,7 +1570,7 @@ integer::oops1,oops2
                                num_metgrid_levels , 'Z' , &
                                interp_type , lagrange_order , extrap_type , &
                                lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
-                               zap_close_levels , force_sfc_in_vinterp , &
+                               zap_close_levels , force_sfc_in_vinterp , grid%id , &
                                ids , ide , jds , jde , kds , kde , &
                                ims , ime , jms , jme , kms , kme , &
                                its , ite , jts , jte , kts , kte )
@@ -1625,7 +1625,7 @@ integer::oops1,oops2
                             num_metgrid_levels , 'Q' , &
                             interp_type , lagrange_order , extrap_type , &
                             lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
-                            zap_close_levels , force_sfc_in_vinterp , &
+                            zap_close_levels , force_sfc_in_vinterp , grid%id , &
                             ids , ide , jds , jde , kds , kde , &
                             ims , ime , jms , jme , kms , kme , &
                             its , ite , jts , jte , kts , kte )
@@ -1662,7 +1662,7 @@ integer::oops1,oops2
                             num_metgrid_levels , 'T' , &
                             interp_type , lagrange_order , t_extrap_type , &
                             lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
-                            zap_close_levels , force_sfc_in_vinterp , &
+                            zap_close_levels , force_sfc_in_vinterp , grid%id , &
                             ids , ide , jds , jde , kds , kde , &
                             ims , ime , jms , jme , kms , kme , &
                             its , ite , jts , jte , kts , kte )
@@ -1680,7 +1680,7 @@ integer::oops1,oops2
                             num_metgrid_levels , 'T' , &
                             interp_type , lagrange_order , t_extrap_type , &
                             lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
-                            zap_close_levels , force_sfc_in_vinterp , &
+                            zap_close_levels , force_sfc_in_vinterp , grid%id , &
                             ids , ide , jds , jde , kds , kde , &
                             ims , ime , jms , jme , kms , kme , &
                             its , ite , jts , jte , kts , kte )
@@ -1744,7 +1744,7 @@ integer::oops1,oops2
                                      num_metgrid_levels , 'Q' , &
                                      interp_type , lagrange_order , extrap_type , &
                                      lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
-                                     zap_close_levels , force_sfc_in_vinterp , &
+                                     zap_close_levels , force_sfc_in_vinterp , grid%id , &
                                      ids , ide , jds , jde , kds , kde , &
                                      ims , ime , jms , jme , kms , kme , &
                                      its , ite , jts , jte , kts , kte )
@@ -1774,7 +1774,7 @@ integer::oops1,oops2
                                      num_metgrid_levels , 'Q' , &
                                      interp_type , lagrange_order , extrap_type , &
                                      lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
-                                     zap_close_levels , force_sfc_in_vinterp , &
+                                     zap_close_levels , force_sfc_in_vinterp , grid%id , &
                                      ids , ide , jds , jde , kds , kde , &
                                      ims , ime , jms , jme , kms , kme , &
                                      its , ite , jts , jte , kts , kte )
@@ -1804,7 +1804,7 @@ integer::oops1,oops2
                                      num_metgrid_levels , 'Q' , &
                                      interp_type , lagrange_order , extrap_type , &
                                      lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
-                                     zap_close_levels , force_sfc_in_vinterp , &
+                                     zap_close_levels , force_sfc_in_vinterp , grid%id , &
                                      ids , ide , jds , jde , kds , kde , &
                                      ims , ime , jms , jme , kms , kme , &
                                      its , ite , jts , jte , kts , kte )
@@ -1824,7 +1824,7 @@ integer::oops1,oops2
                                      num_metgrid_levels , 'Q' , &
                                      interp_type , lagrange_order , extrap_type , &
                                      lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
-                                     zap_close_levels , force_sfc_in_vinterp , &
+                                     zap_close_levels , force_sfc_in_vinterp , grid%id , &
                                      ids , ide , jds , jde , kds , kde , &
                                      ims , ime , jms , jme , kms , kme , &
                                      its , ite , jts , jte , kts , kte )
@@ -1844,7 +1844,7 @@ integer::oops1,oops2
                                      num_metgrid_levels , 'Q' , &
                                      interp_type , lagrange_order , extrap_type , &
                                      lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
-                                     zap_close_levels , force_sfc_in_vinterp , &
+                                     zap_close_levels , force_sfc_in_vinterp , grid%id , &
                                      ids , ide , jds , jde , kds , kde , &
                                      ims , ime , jms , jme , kms , kme , &
                                      its , ite , jts , jte , kts , kte )
@@ -1864,7 +1864,7 @@ integer::oops1,oops2
                                      num_metgrid_levels , 'Q' , &
                                      interp_type , lagrange_order , extrap_type , &
                                      lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
-                                     zap_close_levels , force_sfc_in_vinterp , &
+                                     zap_close_levels , force_sfc_in_vinterp , grid%id , &
                                      ids , ide , jds , jde , kds , kde , &
                                      ims , ime , jms , jme , kms , kme , &
                                      its , ite , jts , jte , kts , kte )
@@ -1884,7 +1884,7 @@ integer::oops1,oops2
                                      num_metgrid_levels , 'Q' , &
                                      interp_type , lagrange_order , extrap_type , &
                                      lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
-                                     zap_close_levels , force_sfc_in_vinterp , &
+                                     zap_close_levels , force_sfc_in_vinterp , grid%id , &
                                      ids , ide , jds , jde , kds , kde , &
                                      ims , ime , jms , jme , kms , kme , &
                                      its , ite , jts , jte , kts , kte )
@@ -1904,7 +1904,7 @@ integer::oops1,oops2
                                      num_metgrid_levels , 'Q' , &
                                      interp_type , lagrange_order , extrap_type , &
                                      lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
-                                     zap_close_levels , force_sfc_in_vinterp , &
+                                     zap_close_levels , force_sfc_in_vinterp , grid%id , &
                                      ids , ide , jds , jde , kds , kde , &
                                      ims , ime , jms , jme , kms , kme , &
                                      its , ite , jts , jte , kts , kte )
@@ -1930,7 +1930,7 @@ integer::oops1,oops2
                                      num_metgrid_levels , 'Q' , &
                                      interp_type , lagrange_order , extrap_type , &
                                      lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
-                                     zap_close_levels , force_sfc_in_vinterp , &
+                                     zap_close_levels , force_sfc_in_vinterp , grid%id , &
                                      ids , ide , jds , jde , kds , kde , &
                                      ims , ime , jms , jme , kms , kme , &
                                      its , ite , jts , jte , kts , kte )
@@ -1945,7 +1945,7 @@ integer::oops1,oops2
                                      num_metgrid_levels , 'Q' , &
                                      interp_type , lagrange_order , extrap_type , &
                                      lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
-                                     zap_close_levels , force_sfc_in_vinterp , &
+                                     zap_close_levels , force_sfc_in_vinterp , grid%id , &
                                      ids , ide , jds , jde , kds , kde , &
                                      ims , ime , jms , jme , kms , kme , &
                                      its , ite , jts , jte , kts , kte )
@@ -1981,7 +1981,7 @@ integer::oops1,oops2
                                      num_metgrid_levels , 'Q' , &
                                      interp_type , lagrange_order , extrap_type , &
                                      lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
-                                     zap_close_levels , force_sfc_in_vinterp , &
+                                     zap_close_levels , force_sfc_in_vinterp , grid%id , &
                                      ids , ide , jds , jde , kds , kde , &
                                      ims , ime , jms , jme , kms , kme , &
                                      its , ite , jts , jte , kts , kte )
@@ -1996,7 +1996,7 @@ integer::oops1,oops2
                                      num_metgrid_levels , 'Q' , &
                                      interp_type , lagrange_order , extrap_type , &
                                      lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
-                                     zap_close_levels , force_sfc_in_vinterp , &
+                                     zap_close_levels , force_sfc_in_vinterp , grid%id , &
                                      ids , ide , jds , jde , kds , kde , &
                                      ims , ime , jms , jme , kms , kme , &
                                      its , ite , jts , jte , kts , kte )
@@ -2055,7 +2055,7 @@ integer::oops1,oops2
                             num_metgrid_levels , 'U' , &
                             interp_type , lagrange_order , extrap_type , &
                             lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
-                            zap_close_levels , force_sfc_in_vinterp , &
+                            zap_close_levels , force_sfc_in_vinterp , grid%id , &
                             ids , ide , jds , jde , kds , kde , &
                             ims , ime , jms , jme , kms , kme , &
                             its , ite , jts , jte , kts , kte )
@@ -2069,7 +2069,7 @@ integer::oops1,oops2
                             num_metgrid_levels , 'V' , &
                             interp_type , lagrange_order , extrap_type , &
                             lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
-                            zap_close_levels , force_sfc_in_vinterp , &
+                            zap_close_levels , force_sfc_in_vinterp , grid%id , &
                             ids , ide , jds , jde , kds , kde , &
                             ims , ime , jms , jme , kms , kme , &
                             its , ite , jts , jte , kts , kte )
@@ -4442,7 +4442,7 @@ end function skip_middle_points_t
                             generic , var_type , &
                             interp_type , lagrange_order , extrap_type , &
                             lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
-                            zap_close_levels , force_sfc_in_vinterp , &
+                            zap_close_levels , force_sfc_in_vinterp , id , &
                             ids , ide , jds , jde , kds , kde , &
                             ims , ime , jms , jme , kms , kme , &
                             its , ite , jts , jte , kts , kte )
@@ -4456,7 +4456,7 @@ end function skip_middle_points_t
       LOGICAL , INTENT(IN)        :: lowest_lev_from_sfc , use_levels_below_ground , use_surface
       REAL    , INTENT(IN)        :: zap_close_levels
       REAL    , INTENT(IN)        :: maxw_horiz_pres_diff , trop_horiz_pres_diff , maxw_above_this_level
-      INTEGER , INTENT(IN)        :: force_sfc_in_vinterp
+      INTEGER , INTENT(IN)        :: force_sfc_in_vinterp , id
       INTEGER , INTENT(IN)        :: ids , ide , jds , jde , kds , kde , &
                                      ims , ime , jms , jme , kms , kme , &
                                      its , ite , jts , jte , kts , kte
@@ -4477,6 +4477,7 @@ end function skip_middle_points_t
 
       !  Local vars
 
+      CHARACTER (LEN=256) :: message
       INTEGER :: i , j , k , ko , kn , k1 , k2 , ko_1 , ko_2 , knext
       INTEGER :: istart , iend , jstart , jend , kstart , kend
       INTEGER , DIMENSION(ims:ime,kms:kme        )               :: k_above , k_below
@@ -4501,6 +4502,7 @@ end function skip_middle_points_t
       INTEGER :: em_width
       LOGICAL :: hold_ups
 #endif
+      INTEGER :: final_zap_check_count , count_close_by_at_ko
 
       !  Vertical interpolation of the extra levels from metgrid: max wind and tropopause
 
@@ -5082,6 +5084,72 @@ end function skip_middle_points_t
                END IF
             END IF
  
+#if 0
+            !  One final check to make sure that the delta pressures are OK.
+
+            final_zap_check_count = 0
+            DO ko = kinterp_start , kinterp_end-1
+
+               count_close_by_at_ko = 0
+               close_by_at_ko : DO 
+
+                  !  First, is the pressure difference between two neighboring layers too small?
+   
+                  IF ( ABS(ordered_porig(ko) - ordered_porig(ko+1)) .LT. zap_close_levels ) THEN
+   
+                     !  Make sure we are vertically located where this difference is meaningful.  For
+                     !  example, a 5 hPa zap_close_levels makes sense at 850 hPa.  However, a 5 hPa
+                     !  critical thickness is sill when the top few isobaric levels are 1, 2, 3 hPa.
+   
+                     IF ( ordered_porig(ko) .GT. zap_close_levels * 10 ) THEN
+   
+                        !  Now we have a grid point that we should remove.  We pull out the pressure
+                        !  and field values, then we drop the rest of the array to fill in the 
+                        !  missing spot, we increment our counter of bad values found in this column,
+                        !  and then we reduce the count of the total number of values in the array.
+     
+                        DO kn = ko+1 , kinterp_end
+                           ordered_porig(kn-1) = ordered_porig(kn) 
+                           ordered_forig(kn-1) = ordered_forig(kn) 
+                        END DO
+                        final_zap_check_count = final_zap_check_count + 1
+                     END IF
+                  END IF
+
+                  !  Did we pull down another pressure difference into the ko and ko+1 slots that will 
+                  !  cause troubles?  Make sure we don't spend an infinite amount of time in this loop.
+
+                  IF ( ( ABS(ordered_porig(ko) - ordered_porig(ko+1)) .GE. zap_close_levels ) .OR. &
+                       ( ordered_porig(ko) .LE. zap_close_levels * 10 ) ) THEN
+                     EXIT close_by_at_ko
+                  ELSE IF ( count_close_by_at_ko .GT. 3 ) THEN
+                     final_zap_check_count = 99
+                     EXIT close_by_at_ko
+                  ELSE
+                     count_close_by_at_ko = count_close_by_at_ko + 1
+                     CYCLE close_by_at_ko
+                  END IF
+               END DO close_by_at_ko
+            END DO
+            IF ( final_zap_check_count .GT. 2 ) THEN
+               WRITE ( message , * ) 'We are removing too many values: ',final_zap_check_count,' for (i,j) = ',i,j
+               CALL wrf_error_fatal ( TRIM(message) ) 
+            END IF
+            kinterp_end = kinterp_end - final_zap_check_count
+#else
+            outer : DO ko = kinterp_start , kinterp_end-1
+               IF ( ( ABS(ordered_porig(ko) - ordered_porig(ko+1)) .LT. MAX(zap_close_levels/10,50.) ) .AND. &
+                    ( ordered_porig(ko) .GT. zap_close_levels * 10 ) ) THEN
+                  WRITE ( message , FMT='(a,I2.2,a,F9.2,a,F9.2,a,i4,a,i4,a,a)' ) '*** -> Check your wrfinput_d',id, &
+                                                                    ' file, you might have input pressure levels too close together (',&
+                                                                    ordered_porig(ko),' Pa and ', ordered_porig(ko+1), &
+                                                                    ' Pa) at (',i,',',j,') for variable type ',var_type
+                     CALL wrf_message ( TRIM(message) ) 
+                  EXIT outer
+               END IF
+            END DO outer
+#endif
+
             !  The polynomials are either in pressure or LOG(pressure).
 
             IF ( interp_type .EQ. 1 ) THEN

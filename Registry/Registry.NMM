@@ -225,8 +225,8 @@ state  real   VBWGT4       ij     dyn_nmm     1      -      r
 #end of HWRF: 
 
 #
-state  real   HLON        ij     dyn_nmm     1      -      h0123d=(NoInterp)
-state  real   HLAT        ij     dyn_nmm     1      -      h0123d=(NoInterp)
+state  real   HLON        ij     dyn_nmm     1      -      h01234d=(NoInterp)
+state  real   HLAT        ij     dyn_nmm     1      -      h01234d=(NoInterp)
 state  real   VLON        ij     dyn_nmm     1      -      irh023
 state  real   VLAT        ij     dyn_nmm     1      -      irh023
 
@@ -544,8 +544,8 @@ state  integer  has_reqi   -      misc        1    -     r       "has_reqi"     
 state  integer  has_reqs   -      misc        1    -     r       "has_reqs"       "Flag for has effective radius of snow"           ""
 
 # heating rate per day: J. Henderson AER 20160727 output only in auxiliary file
-state  real  hrswpd        ikj    dyn_nmm     1    -     h       "hrswpd"         "Short wave heating rate per day"      "K d-1"
-state  real  hrlwpd        ikj    dyn_nmm     1    -     h       "hrlwpd"         "Long wave heating rate per day"       "K d-1"
+state  real  hrswpd        ikj    dyn_nmm     1    -     h4      "hrswpd"         "Short wave heating rate per day"      "K d-1"
+state  real  hrlwpd        ikj    dyn_nmm     1    -     h4      "hrlwpd"         "Long wave heating rate per day"       "K d-1"
 
 #
 # added WRF-Solar
@@ -656,11 +656,11 @@ state  real   ssroff    ij    dyn_nmm     1    -    rh023    "SSROFF"    "Surfac
 state  real   bgroff    ij    dyn_nmm     1    -    rh    "BGROFF"    "Subsurface runoff"                 "mm"
 state  real   rlwin     ij    dyn_nmm     1    -    rh0123d=(DownCopy)    "RLWIN"     "Downward longwave at surface"      "W m-2"
 state  real   rlwout    ij    dyn_nmm     1    -    -
-state  real   rlwtoa    ij    dyn_nmm     1    -    rh023    "RLWTOA"    "Outgoing LW flux at top of atmos"  "W m-2"
+state  real   rlwtoa    ij    dyn_nmm     1    -    rh0234   "RLWTOA"    "Outgoing LW flux at top of atmos"  "W m-2"
 state  real   alwin     ij    dyn_nmm     1    -    rh023    "ALWIN"     "Accum LW down at surface"          "W m-2"
 state  real   alwout    ij    dyn_nmm     1    -    rh023    "ALWOUT"    "Accum RADOT (see above)"           "W m-2"
 state  real   alwtoa    ij    dyn_nmm     1    -    rh023    "ALWTOA"    "Accum RLWTOA"                      "W m-2"
-state  real   rswin     ij    dyn_nmm     1    -    rh0123d=(DownCopy)    "RSWIN"     "Downward shortwave at surface"     "W m-2"
+state  real   rswin     ij    dyn_nmm     1    -    rh01234d=(DownCopy)   "RSWIN"     "Downward shortwave at surface"     "W m-2"
 state  real   rswinc    ij    dyn_nmm     1    -    rh023    "RSWINC"    "Clear-sky equivalent of RSWIN"     "W m-2"
 state  real   rswout    ij    dyn_nmm     1    -    rh0123    "RSWOUT"    "Upward shortwave at surface"       "W m-2"
 #for HWRF: add to restart

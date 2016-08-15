@@ -1500,6 +1500,7 @@
      &                ,RTHRATEN                                        &  
      &                ,grid%re_cloud,grid%re_ice,grid%re_snow          &  ! G. Thompson
      &                ,grid%has_reqc,grid%has_reqi,grid%has_reqs       &  ! G. Thompson
+     &                ,grid%hrswpd,grid%hrlwpd                         &  ! J. Henderson AER
      &                ,grid%SWUPT,grid%SWUPTC,grid%SWDNT,grid%SWDNTC   &
      &                ,grid%SWUPB,grid%SWUPBC,grid%SWDNB,grid%SWDNBC   &
      &                ,grid%LWUPT,grid%LWUPTC,grid%LWDNT,grid%LWDNTC   &

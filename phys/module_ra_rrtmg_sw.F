@@ -9823,6 +9823,7 @@ CONTAINS
 !------------------------------------------------------------------
    SUBROUTINE RRTMG_SWRAD(                                        &
                        rthratensw,                                &
+                       hrswpd,                                    & ! J. Henderson AER
                        swupt, swuptc, swdnt, swdntc,              &
                        swupb, swupbc, swdnb, swdnbc,              &
 !                      swupflx, swupflxc, swdnflx, swdnflxc,      &
@@ -9967,6 +9968,10 @@ CONTAINS
                                                           RE_ICE, &
                                                          RE_SNOW
    INTEGER, INTENT(IN):: has_reqc, has_reqi, has_reqs
+
+!..Added by J. Henderson AER to output SW daily heating rates [K].
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(OUT)::      &
+                                                          hrswpd
 
    real pi,third,relconst,lwpmin,rhoh2o
 
@@ -11066,6 +11071,7 @@ CONTAINS
          do k=kts,kte 
             tten1d(k) = swhr(ncol,k)/86400.
             rthratensw(i,k,j) = tten1d(k)/pi3d(i,k,j)
+            hrswpd(i,k,j) = swhr(ncol,k) !J. Henderson AER 20170727: add shortwave heating rate per day to history file
          enddo
       else
          if (present(swupt)) then 

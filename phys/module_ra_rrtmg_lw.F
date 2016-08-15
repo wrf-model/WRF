@@ -11415,6 +11415,7 @@ CONTAINS
 !------------------------------------------------------------------
    SUBROUTINE RRTMG_LWRAD(                                        &
                        rthratenlw,                                &
+                       hrlwpd,                                    & ! J. Henderson AER
                        lwupt, lwuptc, lwdnt, lwdntc,              &
                        lwupb, lwupbc, lwdnb, lwdnbc,              &
 !                      lwupflx, lwupflxc, lwdnflx, lwdnflxc,      &
@@ -11521,6 +11522,10 @@ CONTAINS
                                                           re_ice, &
                                                          re_snow
    INTEGER, INTENT(IN):: has_reqc, has_reqi, has_reqs
+
+!..Added by J. Henderson AER to output LW daily heating rates [K].
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(OUT)::      &
+                                                          hrlwpd
 
    real pi,third,relconst,lwpmin,rhoh2o
 
@@ -12630,6 +12635,7 @@ CONTAINS
          do k=kts,kte
             tten1d(k) = hr(ncol,k)/86400.
             rthratenlw(i,k,j) = tten1d(k)/pi3d(i,k,j)
+            hrlwpd(i,k,j) = hr(ncol,k) !jmh 20170727: add longwave heating rate per day to history file
          enddo
 
 !

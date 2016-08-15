@@ -14,13 +14,7 @@ init_modules_em.o : init_modules_em.F
 input_wrf.o : input_wrf.F
 module_io.o : module_io.F
 module_comm_dm.o : module_comm_dm.F
-module_comm_dm_0.o : module_comm_dm_0.F
-module_comm_dm_1.o : module_comm_dm_1.F
-module_comm_dm_2.o : module_comm_dm_2.F
-module_comm_dm_3.o : module_comm_dm_3.F
-module_comm_nesting_dm.o : module_comm_nesting_dm.F
 module_configure.o : module_configure.F
-module_dm.o : module_dm.F
 module_domain.o : module_domain.F
 module_domain_type.o : module_domain_type.F
 module_alloc_space_0.o : module_alloc_space_0.F
@@ -78,7 +72,6 @@ mediation_integrate.o \
 track_driver.o \
 convert_nmm.o \
 init_modules_em.o \
-module_dm.o \
 module_fddaobs_rtfdda.o \
 module_initialize.o \
 module_initialize_b_wave.o \
@@ -169,11 +162,6 @@ module_alloc_space_7.o \
 module_alloc_space_8.o \
 module_alloc_space_9.o \
 module_comm_dm.o \
-module_comm_dm_0.o \
-module_comm_dm_1.o \
-module_comm_dm_2.o \
-module_comm_dm_3.o \
-module_comm_nesting_dm.o \
 module_configure.o :
 	$(RM) $@
 	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.F  > $*.bb

@@ -754,6 +754,7 @@
 !- RLWIN/RSWIN - downward longwave/shortwave at the surface (also TOTLWDN/TOTSWDN in RADIATION)
      &                ,PD,RES,PINT,T,Q,CWM,F_ICE,F_RAIN,SR              &
      &                ,Q2,U,V,THS,TSFC,SST,PREC,SNO                     &
+     &                ,SCURX,SCURY                                      &
      &                ,FIS,Z0,MZ0,Z0BASE,USTAR,MIXHT,PBLH,LPBL,EL_MYJ   &   !MZ0: MOMENTUM Z0 (KWON)
      &                ,MOIST,SCALAR,RMOL,MOL                            &
      &                ,EXCH_H,EXCH_M,F,AKHS,AKMS,AKHS_OUT,AKMS_OUT      &
@@ -785,6 +786,9 @@
      &                ,HPBL2D, EVAP2D, HEAT2D,RC2D                      &  !Kwon S&P
      &                ,SFCHEADRT,INFXSRT,SOLDRAIN                       &  !Hydrology, no-op right now
      &                ,cd_out,ch_out                                    &
+     &                ,ulowl, vlowl                                     &
+     &                ,zkmax, ribn                                      &
+     &                ,charn, msang                                     &
      &                ,DUBLDT,DVBLDT,DTHBLDT,DQVBLDT                    & !wang added PBL tendency output
      &                ,IDS,IDE,JDS,JDE,KDS,KDE                          &
      &                ,IMS,IME,JMS,JME,KMS,KME                          &
@@ -920,6 +924,7 @@
                                                     ,SFCEXC,SMSTAV      &
                                                     ,SOILTB,TWBS
 !
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN)  :: scurx, scury
 
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: cd_out,ch_out
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT) :: &
@@ -928,7 +933,9 @@
                                                       ,DUBLDT          &  
                                                       ,DVBLDT         
 
-      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: taux, tauy
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: taux, tauy
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: zkmax, ribn
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: charn, msang
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(IN) :: PINT
 !
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT) :: CWM      &
@@ -1014,6 +1021,8 @@
      &                                          ,T_PHY,TH_PHY,TKE       &
      &                                          ,DUDT_GWD,DVDT_GWD      & ! GWD
      &                                          ,U_PHY,V_PHY,Z
+
+      REAL,DIMENSION(IMS:IME,JMS:JME), INTENT(OUT) :: ULOWL, VLOWL
 !
       REAL,DIMENSION(:,:,:,:),ALLOCATABLE :: MOIST_TRANS
 !
@@ -1079,6 +1088,12 @@
       IFNDALBSI = 0
       IFNDSNOWSI = 0
       IFNDICEDEPTH = 0
+
+      ! BR is replaced by SF_GFDL inside SURFACE_DRIVER.  This variable
+      ! was uninitialized.  The variable RIBN or RCHNO in the Registry
+      ! are retained accross timesteps.  This is a bug fix to avoid junk
+      ! data in RCHNO at the I=IDE and J=JDE locations.
+      BR=10
 
       SEAICE_ALBEDO_DEFAULT = CONFIG_FLAGS%SEAICE_ALBEDO_DEFAULT
       SEAICE_THICKNESS_OPT = CONFIG_FLAGS%SEAICE_THICKNESS_OPT
@@ -1305,6 +1320,10 @@
             V_PHY(I,K,J)=(V(I+IHE(J),J,K)+V(I+IHW(J),J,K)               &
      &                   +V(I,J+1,K)+V(I,J-1,K))                        &
      &                   *0.25
+          IF ( K == KTS ) THEN
+             ULOWL(I,J) = U_PHY(I,K,J)
+             VLOWL(I,J) = V_PHY(I,K,J)
+          ENDIF
           ENDDO
         ENDDO
       ENDDO
@@ -1418,7 +1437,10 @@
      &          ,PBLH=PBLH,PI_PHY=PI_PHY,PSHLTR=PSHLTR,PSIH=PSIH        &
      &          ,PSIM=PSIM,P_PHY=P_PHY,Q10=Q10,Q2=Q2X,QFX=QWBS,TAUX=TAUX,TAUY=TAUY,QSFC=QS  &
      &          ,QSHLTR=QSHLTR,QZ0=QZ0                                  &
+     &          ,ZKMAX=ZKMAX,RIBN=RIBN                                  &
+     &          ,CHARN=CHARN,MSANG=MSANG,SCURX=SCURX,SCURY=SCURY        &
      &          ,ICOEF_SF=CONFIG_FLAGS%ICOEF_SF                         &
+     &          ,IWAVECPL=CONFIG_FLAGS%IWAVECPL                         &
      &          ,LCURR_SF=CONFIG_FLAGS%LCURR_SF                         &!for gfdl-sf drag
 #if (HWRF==1)
      &          ,pert_Cd=config_flags%pert_Cd                           &
@@ -1621,6 +1643,7 @@
 !BSF &               ,RQGBLTEN=RQGBLTEN                               & !BSF
      &               ,TSK=TSFC,XLAND=XLAND,ZNT=Z0                     &
 #if ( HWRF == 1 )
+     &               ,MSANG=MSANG,SCURX=SCURX,SCURY=SCURY,IWAVECPL=CONFIG_FLAGS%IWAVECPL,LCURR_SF=CONFIG_FLAGS%LCURR_SF &
      &               ,MZNT=MZ0                                        &
 #endif
      &               ,HT=SFCZ                                         &   !KWON
@@ -2265,6 +2288,7 @@
      &                 ,HPBL2D,EVAP2D,HEAT2D                            &     !Kwon S&P
      &                 ,DX2D,DYNMM                                      &     !WANG scale-aware sas
      &                 ,SCALEFUN, SCALEFUN1                             & !scale functions
+     &                 ,SIGMU, SIGMU1                                   & !updraft fraction
      &                 ,AVCNVC,ACUTIM,IHE,IHW                           &
      &                 ,GRID,CONFIG_FLAGS                               &
      &                 ,IDS,IDE,JDS,JDE,KDS,KDE                         &
@@ -2313,6 +2337,7 @@
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: SCALEFUN,SCALEFUN1 ! Wang scale-sware sas
                                                                      ! scale
                                                                      ! functions
+       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: SIGMU,SIGMU1 ! Wang, updraft fractional area
 
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: HPBL2D,EVAP2D,HEAT2D     !Kwon S&P
@@ -2809,7 +2834,8 @@
      &                 ,SHALL=grid%shall                                &
      &                 ,HPBL2D=HPBL2D,EVAP2D=EVAP2D,HEAT2D=HEAT2D       &     !Kwon S&P
      &                 ,DX2D=DX2D,DYNMM=DYNMM                          &     !Wang scale-sware SAS 
-     &                 ,SCALEFUN=SCALEFUN, SCALEFUN1=SCALEFUN1          &
+     &                 ,SCALEFUN=SCALEFUN, SCALEFUN1=SCALEFUN1          &    ! scale function
+     &                 ,SIGMU=SIGMU, SIGMU1=SIGMU1                      &    ! updraft fraction
      &                 ,pgcon=config_flags%sas_pgcon                    &
      &                 ,sas_mass_flux=config_flags%sas_mass_flux        &
      &                 ,shalconv=config_flags%sas_shal_conv             &
@@ -2906,8 +2932,12 @@
           endif
 #if ( HWRF == 1 )
           if(have_swath) then
-             if(grid%interesting(i,j)/=0) &
-                  grid%precip_swath(i,j) = grid%precip_swath(i,j) + PCPCOL
+             if(grid%interesting(i,j)/=0) then
+                grid%precip_swath(i,j) = grid%precip_swath(i,j) + PCPCOL
+                if(size(grid%cuprecip_swath)>0) then
+                   grid%cuprecip_swath(i,j) = grid%cuprecip_swath(i,j) + PCPCOL
+                endif
+             endif
           endif
 #endif
 !

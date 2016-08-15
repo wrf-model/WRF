@@ -2086,7 +2086,9 @@ contains
 ! Public subroutines
 !------------------------------------------------------------------
 
-      subroutine mcica_subcol_lw(iplon, ncol, nlay, icld, permuteseed, irng, play, &
+! mji - Add height needed for exponential-random cloud overlap method (icld=4)
+!      subroutine mcica_subcol_lw(iplon, ncol, nlay, icld, permuteseed, irng, play, &
+    subroutine mcica_subcol_lw(iplon, ncol, nlay, icld, permuteseed, irng, play, hgt, &
                        cldfrac, ciwp, clwp, cswp, rei, rel, res, tauc, cldfmcl, &
                        ciwpmcl, clwpmcl, cswpmcl, reicmcl, relqmcl, resnmcl, taucmcl)
 
@@ -2106,6 +2108,9 @@ contains
 
 ! Atmosphere
       real(kind=rb), intent(in) :: play(:,:)          ! layer pressures (mb) 
+                                                      !    Dimensions: (ncol,nlay)
+! mji - Add height
+      real(kind=rb), intent(in) :: hgt(:,:)           ! layer height (m)
                                                       !    Dimensions: (ncol,nlay)
 
 ! Atmosphere/clouds - cldprop
@@ -2167,7 +2172,7 @@ contains
 
 ! Return if clear sky; or stop if icld out of range
       if (icld.eq.0) return
-      if (icld.lt.0.or.icld.gt.3) then 
+      if (icld.lt.0.or.icld.gt.4) then 
          stop 'MCICA_SUBCOL: INVALID ICLD'
       endif 
 
@@ -2198,27 +2203,34 @@ contains
 !      enddo
 
 !  Generate the stochastic subcolumns of cloud optical properties for the longwave;
-      call generate_stochastic_clouds (ncol, nlay, nsubclw, icld, irng, pmid, cldfrac, clwp, ciwp, cswp, tauc, &
+! mji - Add height
+!      call generate_stochastic_clouds (ncol, nlay, nsubclw, icld, irng, pmid, cldfrac, clwp, ciwp, cswp, tauc, &
+      call generate_stochastic_clouds (ncol, nlay, nsubclw, icld, irng, pmid, hgt, cldfrac, clwp, ciwp, cswp, tauc, &
                                cldfmcl, clwpmcl, ciwpmcl, cswpmcl, taucmcl, permuteseed)
 
       end subroutine mcica_subcol_lw
 
 
 !-------------------------------------------------------------------------------------------------
-      subroutine generate_stochastic_clouds(ncol, nlay, nsubcol, icld, irng, pmid, cld, clwp, ciwp, cswp, tauc, &
+! mji - Add height
+!      subroutine generate_stochastic_clouds(ncol, nlay, nsubcol, icld, irng, pmid, cld, clwp, ciwp, cswp, tauc, &
+      subroutine generate_stochastic_clouds(ncol, nlay, nsubcol, icld, irng, pmid, hgt, cld, clwp, ciwp, cswp, tauc, &
                                    cld_stoch, clwp_stoch, ciwp_stoch, cswp_stoch, tauc_stoch, changeSeed) 
 !-------------------------------------------------------------------------------------------------
 
   !----------------------------------------------------------------------------------------------------------------
   ! ---------------------
-  ! Contact: Cecile Hannay (hannay@ucar.edu)
   ! 
   ! Original code: Based on Raisanen et al., QJRMS, 2004.
-  ! 
-  ! Modifications: Generalized for use with RRTMG and added Mersenne Twister as the default
+  ! Additional reference: Pincus, et al., JGR, 2005.
+  !
+  ! Modifications:
+  !   1) Generalized for use with RRTMG and added Mersenne Twister as the default
   !   random number generator, which can be changed to the optional kissvec random number generator
-  !   with flag 'irng'. Some extra functionality has been commented or removed.  
+  !   with flag 'irng'. Some extra functionality has been commented or removed.
   !   Michael J. Iacono, AER, Inc., February 2007
+  !   2) Activated exponential/random cloud overlap method
+  !   Michael J. Iacono, AER, July 2016
   !
   ! Given a profile of cloud fraction, cloud water and cloud ice, we produce a set of subcolumns.
   ! Each layer within each subcolumn is homogeneous, with cloud fraction equal to zero or one 
@@ -2230,9 +2242,8 @@ contains
   !  The cloud are consistent with 4 overlap assumptions: random, maximum, maximum-random and exponential. 
   !  The default option is maximum-random (option 3)
   !  The options are: 1=random overlap, 2=max/random, 3=maximum overlap, 4=exponential overlap
-  !  This is set with the variable "overlap" 
-  !mji - Exponential overlap option (overlap=4) has been deactivated in this version
-  !  The exponential overlap uses also a length scale, Zo. (real,    parameter  :: Zo = 2500. ) 
+  !  This is set with the variable "overlap"
+  !  The exponential overlap uses also a length scale, Zo. (real,    parameter  :: Zo = 2000. ) 
   ! 
   ! Seed:
   !  If the stochastic cloud generator is called several times during the same timestep, 
@@ -2249,7 +2260,7 @@ contains
   ! History file:
   !  Option to add diagnostics variables in the history file. (using FINCL in the namelist)
   !  nsubcol = number of subcolumns
-  !  overlap = overlap type (1-3)
+  !  overlap = overlap type (1-4)
   !  Zo = length scale 
   !  CLOUD_S = mean of the subcolumn cloud fraction ('_S" means Stochastic)
   !  CLDLIQ_S = mean of the subcolumn cloud water
@@ -2284,7 +2295,10 @@ contains
 ! Column state (cloud fraction, cloud water, cloud ice) + variables needed to read physics state 
       real(kind=rb), intent(in) :: pmid(:,:)          ! layer pressure (Pa)
                                                       !    Dimensions: (ncol,nlay)
-      real(kind=rb), intent(in) :: cld(:,:)           ! cloud fraction 
+! mji - Add height
+      real(kind=rb), intent(in) :: hgt(:,:)           ! layer height (m)
+                                                      !    Dimensions: (ncol,nlay)
+      real(kind=rb), intent(in) :: cld(:,:)           ! cloud fraction
                                                       !    Dimensions: (ncol,nlay)
       real(kind=rb), intent(in) :: clwp(:,:)          ! in-cloud liquid water path
                                                       !    Dimensions: (ncol,nlay)
@@ -2330,11 +2344,10 @@ contains
 !      real(kind=rb) :: mean_asmc_stoch(ncol, nlay)   ! cloud asymmetry parameter
 
 ! Set overlap
-      integer(kind=im) :: overlap                     ! 1 = random overlap, 2 = maximum/random,
-                                                      ! 3 = maximum overlap, 
-!      real(kind=rb), parameter  :: Zo = 2500._rb        ! length scale (m) 
-!      real(kind=rb) :: zm(ncol,nlay)                 ! Height of midpoints (above surface)
-!      real(kind=rb), dimension(nlay) :: alpha=0.0_rb    ! overlap parameter  
+      integer(kind=im) :: overlap                     ! 1 = random overlap, 2 = maximum-random,
+                                                      ! 3 = maximum overlap, 4 = exponential-random
+      real(kind=rb), parameter :: Zo = 2000._rb       ! length scale (m)
+      real(kind=rb), dimension(ncol,nlay) :: alpha    ! overlap parameter
 
 ! Constants (min value for cloud fraction and cloud water and ice)
       real(kind=rb), parameter :: cldmin = 1.0e-20_rb ! min cloud fraction
@@ -2481,43 +2494,56 @@ contains
              enddo
          endif
 
-!    case(4) - inactive
-!       ! Exponential overlap: weighting between maximum and random overlap increases with the distance. 
-!       ! The random numbers for exponential overlap verify:
-!       ! j=1   RAN(j)=RND1
-!       ! j>1   if RND1 < alpha(j,j-1) => RAN(j) = RAN(j-1)
-!       !                                 RAN(j) = RND2
-!       ! alpha is obtained from the equation
-!       ! alpha = exp(- (Zi-Zj-1)/Zo) where Zo is a characteristic length scale    
+! mji - Activate exponential-random cloud overlap option
+         case(4)
+            ! Exponential overlap: weighting between maximum and random overlap increases with the distance.
+            ! The random numbers for exponential overlap verify:
+            ! j=1   RAN(j)=RND1
+            ! j>1   if RND1 < alpha(j,j-1) => RAN(j) = RAN(j-1)
+            !                                 RAN(j) = RND2
+            ! alpha is obtained from the equation
+            ! alpha = exp(-(Z(j)-Z(j-1))/Zo) where Zo is a characteristic length scale
 
+            ! compute alpha
+            do i = 1, ncol
+               alpha(i, 1) = 0._rb
+               do ilev = 2,nlay
+                  alpha(i, ilev) = exp( -( hgt (i, ilev) -  hgt (i, ilev-1)) / Zo)
+               enddo
+            enddo
 
-!       ! compute alpha
-!       zm    = state%zm     
-!       alpha(:, 1) = 0.
-!       do ilev = 2,nlay
-!          alpha(:, ilev) = exp( -( zm (:, ilev-1) -  zm (:, ilev)) / Zo)
-!       end do
-       
-!       ! generate 2 streams of random numbers
-!       do isubcol = 1,nsubcol
-!          do ilev = 1,nlay
-!             call kissvec(seed1, seed2, seed3, seed4, rand_num)
-!             CDF(isubcol, :, ilev) = rand_num
-!             call kissvec(seed1, seed2, seed3, seed4, rand_num)
-!             CDF2(isubcol, :, ilev) = rand_num
-!          end do
-!       end do
+            ! generate 2 streams of random numbers
+            if (irng.eq.0) then
+               do isubcol = 1,nsubcol
+                  do ilev = 1,nlay
+                     call kissvec(seed1, seed2, seed3, seed4, rand_num)
+                     CDF(isubcol, :, ilev) = rand_num
+                     call kissvec(seed1, seed2, seed3, seed4, rand_num)
+                     CDF2(isubcol, :, ilev) = rand_num
+                  enddo
+               enddo
+            elseif (irng.eq.1) then
+               do isubcol = 1, nsubcol
+                  do i = 1, ncol
+                     do ilev = 1, nlay
+                        rand_num_mt = getRandomReal(randomNumbers)
+                        CDF(isubcol,i,ilev) = rand_num_mt
+                        rand_num_mt = getRandomReal(randomNumbers)
+                        CDF2(isubcol,i,ilev) = rand_num_mt
+                     enddo
+                  enddo
+               enddo
+            endif
 
-!       ! generate random numbers
-!       do ilev = 2,nlay
-!          where (CDF2(:, :, ilev) < spread(alpha (:,ilev), dim=1, nCopies=nsubcol) )
-!             CDF(:,:,ilev) = CDF(:,:,ilev-1) 
-!          end where
-!       end do
+            ! generate random numbers
+            do ilev = 2,nlay
+               where (CDF2(:, :, ilev) < spread(alpha (:,ilev), dim=1, nCopies=nsubcol) )
+                  CDF(:,:,ilev) = CDF(:,:,ilev-1)
+               end where
+            end do
 
       end select
 
- 
 ! -- generate subcolumns for homogeneous clouds -----
       do ilev = 1,nlay
          iscloudy(:,:,ilev) = (CDF(:,:,ilev) >= 1._rb - spread(cldf(:,ilev), dim=1, nCopies=nsubcol) )
@@ -11523,7 +11549,7 @@ CONTAINS
                                                          re_snow
    INTEGER, INTENT(IN):: has_reqc, has_reqi, has_reqs
 
-!..Added by J. Henderson AER to output LW daily heating rates [K].
+!..Added by J. Henderson AER to output LW daily heating rates [K d-1].
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(OUT)::      &
                                                           hrlwpd
 
@@ -11617,6 +11643,10 @@ CONTAINS
                                                         cfc22vmr, &
                                                          ccl4vmr
     real, dimension( kts:nlayers )  ::                     o3mmr
+! mji - Add height of each layer for exponential-random cloud overlap
+! This will be derived below from the dz in each layer
+    real, dimension( 1, kts:nlayers )  ::                   hgt
+    real ::                                               dzsum
 ! For old cloud property specification for rrtm_lw
     real, dimension( kts:kte )  ::                          clwp, &
                                                             ciwp, &
@@ -12008,14 +12038,17 @@ CONTAINS
           nlay = nlayers ! Keep these indices the same
 
 
+! Select cloud overlap assumption (1 = random, 2 = maximum-random, 3 = maximum, 4 = exponential-random
+! mji - Maximum-random cloud overlap
+!         icld = 2
+! mji - Exponential-random cloud overlap
+         icld = 4
 ! Select cloud liquid and ice optics parameterization options
 ! For passing in cloud optical properties directly:
-!         icld = 2
 !         inflglw = 0
 !         iceflglw = 0
 !         liqflglw = 0
 ! For passing in cloud physical properties; cloud optics parameterized in RRTMG:
-         icld = 2
          inflglw = 2
          iceflglw = 3
          liqflglw = 1
@@ -12127,6 +12160,15 @@ CONTAINS
             ccl4vmr(ncol,k) = ccl4
          enddo
 
+! mji - Derive height of each layer mid-point from layer thickness.
+! Needed for exponential-random overlap option (icld=4) only.
+         dzsum = 0.0
+         do k = kts, kte
+            dz = dz1d(k)
+            hgt(ncol,k) = dzsum + 0.5*dz
+            dzsum = dzsum + dz
+         enddo
+
 ! This section is replaced with a new method to deal with model top
          if ( 1 == 0 ) then
 
@@ -12163,6 +12205,11 @@ CONTAINS
        do L=kte+1,nlayers,1
           plev(ncol,L+1) = plev(ncol,L) - deltap
           play(ncol,L) = 0.5*(plev(ncol,L) + plev(ncol,L+1))
+! mji - Fill in height array above model top to top of atmosphere using
+! dz from model top layer for completeness, though this information is not
+! likely to be used by the exponential-random cloud overlap method.
+          hgt(ncol,L) = dzsum + 0.5*dz
+          dzsum = dzsum + dz
        enddo          
        ! Add zero as top level.  This gets the temperature max at the
        ! stratopause, reducing the downward flux errors in the top 
@@ -12511,7 +12558,9 @@ CONTAINS
          permuteseed = 150
 
 ! Sub-column generator for McICA
-         call mcica_subcol_lw(iplon, ncol, nlay, icld, permuteseed, irng, play, &
+! mji - Add layer neight needed for exponential-random overlap option (icld=4)
+!         call mcica_subcol_lw(iplon, ncol, nlay, icld, permuteseed, irng, play, &
+         call mcica_subcol_lw(iplon, ncol, nlay, icld, permuteseed, irng, play, hgt, &
                        cldfrac, ciwpth, clwpth, cswpth, rei, rel, res, taucld, cldfmcl, &
                        ciwpmcl, clwpmcl, cswpmcl, reicmcl, relqmcl, resnmcl, taucmcl)
 
@@ -12635,7 +12684,7 @@ CONTAINS
          do k=kts,kte
             tten1d(k) = hr(ncol,k)/86400.
             rthratenlw(i,k,j) = tten1d(k)/pi3d(i,k,j)
-            hrlwpd(i,k,j) = hr(ncol,k) !jmh 20170727: add longwave heating rate per day to history file
+            hrlwpd(i,k,j) = hr(ncol,k) ! J. Henderson 20170727: add long wave heating rate per day to history file
          enddo
 
 !

@@ -266,7 +266,8 @@ state  real   hbm2      ij     dyn_nmm     1      -      irh0123     "HBM2"    "
 state  real   hbm3      ij     dyn_nmm     1      -      irh     "HBM3"    "Height boundary mask; =0 outer 3 rows on H points"       ""
 state  real   vbm2      ij     dyn_nmm     1      -      irh     "VBM2"    "Velocity boundary mask; =0 outer 2 rows on V points"     ""
 state  real   vbm3      ij     dyn_nmm     1      -      irh     "VBM3"    "Velocity boundary mask; =0 outer 3 rows on V points"     ""
-state  real   sm        ij     dyn_nmm     1      f      i01rh0123d=(DownNear)  "SM"      "Sea mask; =1 for sea, =0 for land"      ""
+##!!state  real   sm        ij     dyn_nmm     1      f      i01rh0123d=(DownNear)  "SM"      "Sea mask; =1 for sea, =0 for land"      ""
+state  real   sm        ijb     dyn_nmm     1      -      i01rhd=(DownNear)f=(BdyNear)  "SM"      "Sea mask; =1 for sea, =0 for land"      ""
 state  real   sice      ij     dyn_nmm     1      f      irh023d=(DownNear)     "SICE"    "Sea ice mask; =1 for sea ice, =0 for no sea ice"         ""
 #
 # module_VRBLS

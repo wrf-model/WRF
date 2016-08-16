@@ -1389,9 +1389,7 @@
 ! Public subroutines
 !------------------------------------------------------------------
 
-! mji - Add height needed for exponential-ranom cloud overlap method (icld=4)
-!      subroutine mcica_subcol_sw(iplon, ncol, nlay, icld, permuteseed, irng, play, &
-      subroutine mcica_subcol_sw(iplon, ncol, nlay, icld, permuteseed, irng, play, hgt, &
+      subroutine mcica_subcol_sw(iplon, ncol, nlay, icld, permuteseed, irng, play, &
                        cldfrac, ciwp, clwp, cswp, rei, rel, res, tauc, ssac, asmc, fsfc, &
                        cldfmcl, ciwpmcl, clwpmcl, cswpmcl, reicmcl, relqmcl, resnmcl, &
                        taucmcl, ssacmcl, asmcmcl, fsfcmcl)
@@ -1412,9 +1410,6 @@
         
 ! Atmosphere
       real(kind=rb), intent(in) :: play(:,:)          ! layer pressures (mb) 
-                                                      !    Dimensions: (ncol,nlay)
-! mji - Add height
-      real(kind=rb), intent(in) :: hgt(:,:)           ! layer height (m)
                                                       !    Dimensions: (ncol,nlay)
 
 ! Atmosphere/clouds - cldprop
@@ -1480,7 +1475,7 @@
 
 ! Return if clear sky; or stop if icld out of range
       if (icld.eq.0) return
-      if (icld.lt.0.or.icld.gt.4) then 
+      if (icld.lt.0.or.icld.gt.3) then 
          stop 'MCICA_SUBCOL: INVALID ICLD'
       endif 
 
@@ -1511,9 +1506,7 @@
 !      enddo
 
 !  Generate the stochastic subcolumns of cloud optical properties for the shortwave;
-! mji - Add height
-!      call generate_stochastic_clouds_sw (ncol, nlay, nsubcsw, icld, irng, pmid, cldfrac, clwp, ciwp, cswp, &
-      call generate_stochastic_clouds_sw (ncol, nlay, nsubcsw, icld, irng, pmid, hgt, cldfrac, clwp, ciwp, cswp, &
+      call generate_stochastic_clouds_sw (ncol, nlay, nsubcsw, icld, irng, pmid, cldfrac, clwp, ciwp, cswp, &
                                tauc, ssac, asmc, fsfc, cldfmcl, clwpmcl, ciwpmcl, cswpmcl, &
                                taucmcl, ssacmcl, asmcmcl, fsfcmcl, permuteseed)
 
@@ -1521,25 +1514,21 @@
 
 
 !-------------------------------------------------------------------------------------------------
-! mji - Add height
-!      subroutine generate_stochastic_clouds_sw(ncol, nlay, nsubcol, icld, irng, pmid, cld, clwp, ciwp, cswp, &
-      subroutine generate_stochastic_clouds_sw(ncol, nlay, nsubcol, icld, irng, pmid, hgt, cld, clwp, ciwp, cswp, &
+      subroutine generate_stochastic_clouds_sw(ncol, nlay, nsubcol, icld, irng, pmid, cld, clwp, ciwp, cswp, &
                                tauc, ssac, asmc, fsfc, cld_stoch, clwp_stoch, ciwp_stoch, cswp_stoch,        &
                                tauc_stoch, ssac_stoch, asmc_stoch, fsfc_stoch, changeSeed) 
 !-------------------------------------------------------------------------------------------------
 
   !----------------------------------------------------------------------------------------------------------------
   ! ---------------------
+  ! Contact: Cecile Hannay (hannay@ucar.edu)
   ! 
   ! Original code: Based on Raisanen et al., QJRMS, 2004.
   !
-  ! Modifications:
-  !   1) Generalized for use with RRTMG and added Mersenne Twister as the default
+  ! Modifications: Generalized for use with RRTMG and added Mersenne Twister as the default
   !   random number generator, which can be changed to the optional kissvec random number generator
-  !   with flag 'irng'. Some extra functionality has been commented or removed.
+  !   with flag 'irng'. Some extra functionality has been commented or removed.  
   !   Michael J. Iacono, AER, Inc., February 2007
-  !   2) Activated exponential/random cloud overlap method
-  !   Michael J. Iacono, AER, July 2016
   !
   ! Given a profile of cloud fraction, cloud water and cloud ice, we produce a set of subcolumns.
   ! Each layer within each subcolumn is homogeneous, with cloud fraction equal to zero or one 
@@ -1551,8 +1540,9 @@
   !  The cloud are consistent with 4 overlap assumptions: random, maximum, maximum-random and exponential. 
   !  The default option is maximum-random (option 3)
   !  The options are: 1=random overlap, 2=max/random, 3=maximum overlap, 4=exponential overlap
-  !  This is set with the variable "overlap"
-  !  The exponential overlap uses also a length scale, Zo. (real,    parameter  :: Zo = 2000. )
+  !  This is set with the variable "overlap" 
+  !mji - Exponential overlap option (overlap=4) has been deactivated in this version
+  !  The exponential overlap uses also a length scale, Zo. (real,    parameter  :: Zo = 2500. ) 
   ! 
   ! Seed:
   !  If the stochastic cloud generator is called several times during the same timestep, 
@@ -1569,7 +1559,7 @@
   ! History file:
   !  Option to add diagnostics variables in the history file. (using FINCL in the namelist)
   !  nsubcol = number of subcolumns
-  !  overlap = overlap type (1-4)
+  !  overlap = overlap type (1-3)
   !  Zo = length scale 
   !  CLOUD_S = mean of the subcolumn cloud fraction ('_S" means Stochastic)
   !  CLDLIQ_S = mean of the subcolumn cloud water
@@ -1604,10 +1594,7 @@
 ! Column state (cloud fraction, cloud water, cloud ice) + variables needed to read physics state 
       real(kind=rb), intent(in) :: pmid(:,:)          ! layer pressure (Pa)
                                                       !    Dimensions: (ncol,nlay)
-! mji - Add height
-      real(kind=rb), intent(in) :: hgt(:,:)           ! layer height (m)
-                                                      !    Dimensions: (ncol,nlay)
-      real(kind=rb), intent(in) :: cld(:,:)           ! cloud fraction
+      real(kind=rb), intent(in) :: cld(:,:)           ! cloud fraction 
                                                       !    Dimensions: (ncol,nlay)
       real(kind=rb), intent(in) :: clwp(:,:)          ! in-cloud liquid water path (g/m2)
                                                       !    Dimensions: (ncol,nlay)
@@ -1655,10 +1642,11 @@
 !      real(kind=rb) :: mean_fsfc_stoch(ncol,nlay)    ! cloud forward scattering fraction
 
 ! Set overlap
-      integer(kind=im) :: overlap                     ! 1 = random overlap, 2 = maximum-random,
-                                                      ! 3 = maximum overlap, 4 = exponential-random
-      real(kind=rb), parameter :: Zo = 2000._rb       ! length scale (m)
-      real(kind=rb), dimension(ncol,nlay) :: alpha    ! overlap parameter
+      integer(kind=im) :: overlap                     ! 1 = random overlap, 2 = maximum/random,
+                                                      ! 3 = maximum overlap, 
+!      real(kind=rb), parameter  :: Zo = 2500._rb        ! length scale (m) 
+!      real(kind=rb) :: zm(ncon,nlay)                    ! Height of midpoints (above surface)
+!      real(kind=rb), dimension(nlay) :: alpha=0.0_rb    ! overlap parameter  
 
 ! Constants (min value for cloud fraction and cloud water and ice)
       real(kind=rb), parameter :: cldmin = 1.0e-20_rb ! min cloud fraction
@@ -1805,56 +1793,43 @@
              enddo
          endif
 
-! mji - Activate exponential-random cloud overlap option
-         case(4)
-            ! Exponential overlap: weighting between maximum and random overlap increases with the distance.
-            ! The random numbers for exponential overlap verify:
-            ! j=1   RAN(j)=RND1
-            ! j>1   if RND1 < alpha(j,j-1) => RAN(j) = RAN(j-1)
-            !                                 RAN(j) = RND2
-            ! alpha is obtained from the equation
-            ! alpha = exp(-(Z(j)-Z(j-1))/Zo) where Zo is a characteristic length scale
+!    case(4)  - inactive
+!       ! Exponential overlap: weighting between maximum and random overlap increases with the distance. 
+!       ! The random numbers for exponential overlap verify:
+!       ! j=1   RAN(j)=RND1
+!       ! j>1   if RND1 < alpha(j,j-1) => RAN(j) = RAN(j-1)
+!       !                                 RAN(j) = RND2
+!       ! alpha is obtained from the equation
+!       ! alpha = exp(- (Zi-Zj-1)/Zo) where Zo is a characteristic length scale    
 
-            ! compute alpha
-            do i = 1, ncol
-               alpha(i, 1) = 0._rb
-               do ilev = 2,nlay
-                  alpha(i, ilev) = exp( -( hgt (i, ilev) -  hgt (i, ilev-1)) / Zo)
-               enddo
-            enddo
 
-            ! generate 2 streams of random numbers
-            if (irng.eq.0) then
-               do isubcol = 1,nsubcol
-                  do ilev = 1,nlay
-                     call kissvec(seed1, seed2, seed3, seed4, rand_num)
-                     CDF(isubcol, :, ilev) = rand_num
-                     call kissvec(seed1, seed2, seed3, seed4, rand_num)
-                     CDF2(isubcol, :, ilev) = rand_num
-                  enddo
-               enddo
-            elseif (irng.eq.1) then
-            do isubcol = 1, nsubcol
-               do i = 1, ncol
-                  do ilev = 1, nlay
-                     rand_num_mt = getRandomReal(randomNumbers)
-                     CDF(isubcol,i,ilev) = rand_num_mt
-                     rand_num_mt = getRandomReal(randomNumbers)
-                     CDF2(isubcol,i,ilev) = rand_num_mt
-                  enddo
-               enddo
-            enddo
-         endif
+!       ! compute alpha
+!       zm    = state%zm     
+!       alpha(:, 1) = 0._rb
+!       do ilev = 2,nlay
+!          alpha(:, ilev) = exp( -( zm (:, ilev-1) -  zm (:, ilev)) / Zo)
+!       end do
+       
+!       ! generate 2 streams of random numbers
+!       do isubcol = 1,nsubcol
+!          do ilev = 1,nlay
+!             call kissvec(seed1, seed2, seed3, seed4, rand_num)
+!             CDF(isubcol, :, ilev) = rand_num
+!             call kissvec(seed1, seed2, seed3, seed4, rand_num)
+!             CDF2(isubcol, :, ilev) = rand_num
+!          end do
+!       end do
 
-         ! generate random numbers
-         do ilev = 2,nlay
-            where (CDF2(:, :, ilev) < spread(alpha (:,ilev), dim=1, nCopies=nsubcol) )
-               CDF(:,:,ilev) = CDF(:,:,ilev-1)
-            end where
-         end do
+!       ! generate random numbers
+!       do ilev = 2,nlay
+!          where (CDF2(:, :, ilev) < spread(alpha (:,ilev), dim=1, nCopies=nsubcol) )
+!             CDF(:,:,ilev) = CDF(:,:,ilev-1) 
+!          end where
+!       end do
 
       end select
 
+ 
 ! -- generate subcolumns for homogeneous clouds -----
       do ilev = 1, nlay
          isCloudy(:,:,ilev) = (CDF(:,:,ilev) >= 1._rb - spread(cldf(:,ilev), dim=1, nCopies=nsubcol) )
@@ -8939,13 +8914,13 @@
       real(kind=rb), intent(in) :: reicmcl(:,:)       ! Cloud ice effective radius (microns)
                                                       !    Dimensions: (ncol,nlay)
                                                       ! specific definition of reicmcl depends on setting of iceflglw:
-                                                      ! iceflgsw = 0: ice effective radius, r_ec, (Ebert and Curry, 1992),
+                                                      ! iceflglw = 0: ice effective radius, r_ec, (Ebert and Curry, 1992),
                                                       !               r_ec must be >= 10.0 microns
-                                                      ! iceflgsw = 1: ice effective radius, r_ec, (Ebert and Curry, 1992),
+                                                      ! iceflglw = 1: ice effective radius, r_ec, (Ebert and Curry, 1992),
                                                       !               r_ec range is limited to 13.0 to 130.0 microns
-                                                      ! iceflgsw = 2: ice effective radius, r_k, (Key, Streamer Ref. Manual, 1996)
+                                                      ! iceflglw = 2: ice effective radius, r_k, (Key, Streamer Ref. Manual, 1996)
                                                       !               r_k range is limited to 5.0 to 131.0 microns
-                                                      ! iceflgsw = 3: generalized effective size, dge, (Fu, 1996),
+                                                      ! iceflglw = 3: generalized effective size, dge, (Fu, 1996),
                                                       !               dge range is limited to 5.0 to 140.0 microns
                                                       !               [dge = 1.0315 * r_ec]
       real(kind=rb), intent(in) :: relqmcl(:,:)       ! Cloud water drop effective radius (microns)
@@ -9848,7 +9823,6 @@ CONTAINS
 !------------------------------------------------------------------
    SUBROUTINE RRTMG_SWRAD(                                        &
                        rthratensw,                                &
-                       hrswpd,                                    & ! J. Henderson AER
                        swupt, swuptc, swdnt, swdntc,              &
                        swupb, swupbc, swdnb, swdnbc,              &
 !                      swupflx, swupflxc, swdnflx, swdnflxc,      &
@@ -9888,13 +9862,14 @@ CONTAINS
                        its,ite, jts,jte, kts,kte,                 &
                        swupflx, swupflxc, swdnflx, swdnflxc,      &
                        tauaer3d_sw,ssaaer3d_sw,asyaer3d_sw,       & ! jararias 2013/11
+                       use_aer3d,                                 & ! bug fix, SGT 2015/03
                        swddir, swddni, swddif,                    & ! jararias 2013/08
                        xcoszen,julian                             & ! jararias 2013/08
                                                                   )
 !------------------------------------------------------------------
    IMPLICIT NONE
 !------------------------------------------------------------------
-   LOGICAL, INTENT(IN )      ::        warm_rain
+   LOGICAL, INTENT(IN )      ::        warm_rain, use_aer3d
    LOGICAL, INTENT(IN )      ::   is_CAMMGMP_used ! Added for CAM5 RRTMG<->CAMMGMP
 !
    INTEGER, INTENT(IN )      ::        ids,ide, jds,jde, kds,kde, &
@@ -9962,7 +9937,10 @@ CONTAINS
             julian      ! julian day (1-366)
    real, dimension(ims:ime,jms:jme), intent(in) :: &
             xcoszen     ! cosine of the solar zenith angle
-   real, dimension(:,:,:,:), pointer :: tauaer3d_sw,ssaaer3d_sw,asyaer3d_sw
+  real, dimension(ims:ime,kms:kme,jms:jme,nbndsw), optional,      &
+        intent(in)                                :: tauaer3d_sw, &
+                                                     ssaaer3d_sw, &
+                                                     asyaer3d_sw
 ! ------------------------ jararias end snippet -----------------
 
    REAL, INTENT(IN  )   ::                                   R,G
@@ -9989,10 +9967,6 @@ CONTAINS
                                                           RE_ICE, &
                                                          RE_SNOW
    INTEGER, INTENT(IN):: has_reqc, has_reqi, has_reqs
-
-!..Added by J. Henderson AER to output SW daily heating rates [K d-1].
-   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(OUT)::      &
-                                                          hrswpd
 
    real pi,third,relconst,lwpmin,rhoh2o
 
@@ -10093,10 +10067,6 @@ CONTAINS
                                                           ch4vmr, &
                                                           n2ovmr
     real, dimension( kts:kte+1 )  ::                       o3mmr
-! mji - Add height of each layer for exponential-random cloud overlap
-! This will be derived below from the dz in each layer
-    real, dimension( 1, kts:kte+1 )  ::                     hgt
-    real ::                                               dzsum
 ! Surface albedo (for UV/visible and near-IR spectral regions,
 ! and for direct and diffuse radiation)
     real, dimension( 1 )  ::                               asdir, &
@@ -10307,6 +10277,7 @@ CONTAINS
                O31D(K)=O33D(I,K,J)
             ENDDO
          ELSE
+            call wrf_error_fatal('did not pass O33d') ! FIXME: REMOVE THIS LINE
             DO K=kts,kte
                O31D(K)=0.0
             ENDDO
@@ -10417,11 +10388,11 @@ CONTAINS
             ENDIF
 
          ENDIF
-! For mp option=5 or 85  (new Ferrier- Aligo or called fer_hires
+! For mp option=5, 15 or 85  (new Ferrier- Aligo or called fer_hires
 ! scheme), QI3D saves all frozen water (ice+snow)
 #if (HWRF == 1)
            IF ( mp_physics == FER_MP_HIRES .OR. &
-                mp_physics == FER_MP_HIRES_ADVECT .OR. &
+                mp_physics == FER_MP_HIRES_ADVECT .or. &
                 mp_physics == ETAMP_HWRF ) THEN
 #else
            IF ( mp_physics == FER_MP_HIRES .OR. &
@@ -10449,17 +10420,14 @@ CONTAINS
 ! Add extra layer from top of model to top of atmosphere
          nlay = (kte - kts + 1) + 1
 
-! Select cloud overlap assumption (1 = random, 2 = maximum-random, 3 = maximum, 4 = exponential-random
-! mji - Maximum-random cloud overlap
-!         icld = 2
-! mji - Exponential-random cloud overlap
-         icld = 4
 ! Select cloud liquid and ice optics parameterization options
 ! For passing in cloud optical properties directly:
-!         inflglw = 0
-!         iceflglw = 0
-!         liqflglw = 0
+!         icld = 2
+!         inflgsw = 0
+!         iceflgsw = 0
+!         liqflgsw = 0
 ! For passing in cloud physical properties; cloud optics parameterized in RRTMG:
+         icld = 2
          inflgsw = 2
          iceflgsw = 3
          liqflgsw = 1
@@ -10492,14 +10460,14 @@ CONTAINS
                inflgsw  = 4
                iceflgsw = 4
                DO K=kts,kte
-                  reice1D(ncol,K) = MAX(5., re_ice(I,K,J)*1.E6)
-                  if (reice1D(ncol,K).LE.5..AND.cldfra3d(i,k,j).gt.0.) then
+                  reice1D(ncol,K) = MAX(10., re_ice(I,K,J)*1.E6)
+                  if (reice1D(ncol,K).LE.10..AND.cldfra3d(i,k,j).gt.0.) then
                      idx_rei = int(t3d(i,k,j)-179.)
                      idx_rei = min(max(idx_rei,1),75)
                      corr = t3d(i,k,j) - int(t3d(i,k,j))
                      reice1D(ncol,K) = retab(idx_rei)*(1.-corr) +      &
      &                                 retab(idx_rei+1)*corr
-                     reice1D(ncol,K) = MAX(reice1D(ncol,K), 5.0)
+                     reice1D(ncol,K) = MAX(reice1D(ncol,K), 10.0)
                   endif
                ENDDO
             ELSE
@@ -10571,16 +10539,7 @@ CONTAINS
             n2ovmr(ncol,k) = n2o
          enddo
 
-! mji - Derive height of each layer mid-point from layer thickness.
-! Needed for exponential-random overlap option (icld=4) only.
-         dzsum = 0.0
-         do k = kts, kte
-            dz = dz1d(k)
-            hgt(ncol,k) = dzsum + 0.5*dz
-            dzsum = dzsum + dz
-         enddo
-
-!  Define profile values for extra layer from model top to top of atmosphere.
+!  Define profile values for extra layer from model top to top of atmosphere. 
 !  The top layer temperature for all gridpoints is set to the top layer-1 
 !  temperature plus a constant (0 K) that represents an isothermal layer    
 !  above ptop.  Top layer interface temperatures are linearly interpolated 
@@ -10596,10 +10555,6 @@ CONTAINS
          o2vmr(ncol,kte+1) = o2vmr(ncol,kte) 
          ch4vmr(ncol,kte+1) = ch4vmr(ncol,kte) 
          n2ovmr(ncol,kte+1) = n2ovmr(ncol,kte) 
-! mji - Fill in height array above model top to top of atmosphere using
-! dz from model top layer for completeness, though this information is not
-! likely to be used by the exponential-random cloud overlap method.
-         hgt(ncol,kte+1) = dzsum + 0.5*dz
 
 ! Get ozone profile including amount in extra layer above model top
          call inirad (o3mmr,plev,kts,kte)
@@ -10620,6 +10575,7 @@ CONTAINS
             ENDIF
          enddo
         else
+         call wrf_error_fatal('did not pass O33D - abort') ! FIXME: remove this line
          do k = kts, kte+1
             o3vmr(ncol,k) = o3mmr(k) * amdo
          enddo
@@ -10895,9 +10851,8 @@ CONTAINS
          permuteseed = 1
 
 ! Sub-column generator for McICA
-! mji - Add layer neight needed for exponential-random overlap option (icld=4)
-!         call mcica_subcol_sw(iplon, ncol, nlay, icld, permuteseed, irng, play, &
-         call mcica_subcol_sw(iplon, ncol, nlay, icld, permuteseed, irng, play, hgt, &
+
+         call mcica_subcol_sw(iplon, ncol, nlay, icld, permuteseed, irng, play, &
                        cldfrac, ciwpth, clwpth, cswpth, rei, rel, res, taucld, ssacld, asmcld, fsfcld, &
                        cldfmcl, ciwpmcl, clwpmcl, cswpmcl, reicmcl, relqmcl, resnmcl, &
                        taucmcl, ssacmcl, asmcmcl, fsfcmcl)
@@ -10926,8 +10881,9 @@ CONTAINS
       end do
       end do
 
-      if ( associated (tauaer3d_sw) ) then
+      if ( use_aer3d ) then
 ! ---- jararias 11/2012
+         if ( aer_opt .eq. 2 .or. aer_opt.eq.3) then
             do nb=1,nbndsw
                do k=kts,kte
                   tauaer(ncol,k,nb)=tauaer3d_sw(i,k,j,nb)
@@ -10935,6 +10891,7 @@ CONTAINS
                   asmaer(ncol,k,nb)=asyaer3d_sw(i,k,j,nb)
                end do
             end do
+         end if
       end if
 
 #if ( WRF_CHEM == 1 )
@@ -11109,7 +11066,6 @@ CONTAINS
          do k=kts,kte 
             tten1d(k) = swhr(ncol,k)/86400.
             rthratensw(i,k,j) = tten1d(k)/pi3d(i,k,j)
-            hrswpd(i,k,j) = swhr(ncol,k) ! J. Henderson AER 20170727: add short wave heating rate per day to history file
          enddo
       else
          if (present(swupt)) then 
@@ -11131,7 +11087,6 @@ CONTAINS
             swddir(i,j)    = 0.  ! jararias 2013/08/10
             swddni(i,j)    = 0.  ! jararias 2013/08/10
             swddif(i,j)    = 0.  ! jararias 2013/08/10
-            swcf(i,j)      = 0.
 
       endif
 !

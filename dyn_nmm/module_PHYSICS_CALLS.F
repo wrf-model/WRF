@@ -79,7 +79,6 @@
      &                    ,RTHRATEN                                     &
      &                    ,re_cloud,re_ice,re_snow                      & ! G. Thompson
      &                    ,has_reqc,has_reqi,has_reqs                   & ! G. Thompson
-     &                    ,hrswpd,hrlwpd                                & ! J. Henderson AER
      &                    ,SWUPT,SWUPTC,SWDNT,SWDNTC                    &
      &                    ,SWUPB,SWUPBC,SWDNB,SWDNBC                    &
      &                    ,LWUPT,LWUPTC,LWDNT,LWDNTC                    &
@@ -202,9 +201,6 @@
 !..Additions for coupling cloud physics effective radii and radiation.  G. Thompson
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(IN):: re_cloud, re_ice, re_snow
       INTEGER, INTENT(IN):: has_reqc, has_reqi, has_reqs
-
-!..Output daily longwave and shortwave heating rates: ! J. Henderson AER
-      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(OUT):: hrlwpd,hrswpd
 !
       LOGICAL,INTENT(IN) :: RESTRT
 !
@@ -428,7 +424,6 @@
      &       ,aer_asy_opt=config_flags%aer_asy_opt,aer_asy_val=config_flags%aer_asy_val             &
      &                 ,RTHRATENLW=THRATENLW,RTHRATENSW=THRATENSW       &
      &                 ,RTHRATEN=RTHRATEN                               &
-     &                 ,HRSWPD=HRSWPD, HRLWPD=HRLWPD                    & ! J. Henderson AER
      &                 ,CEN_LAT=grid%cen_lat                            &
      &                 ,GLW=TOTLWDN,GSW=SWNETDN,SWDOWN=TOTSWDN          &
      &                 ,XLAT=grid%HLAT,XLONG=grid%HLON,ALBEDO=ALBEDO,EMISS=EPSR   &

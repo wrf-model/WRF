@@ -1,0 +1,21 @@
+&init_land
+mvland = .true.
+imin = 0
+imax = 25
+jmin = 0
+jmax = 576
+logic_temp = .true.
+s_temp = 308.0
+VEG_ID = 19
+SOIL_ID = 1
+/
+
+&param_land
+VEG_ID = 19
+SOIL_ID = 1
+land_emiss = 0.90
+land_albedo = 0.25
+land_vgfrac = 0.20
+land_z0 = 0.01
+land_smc = 0.02
+/

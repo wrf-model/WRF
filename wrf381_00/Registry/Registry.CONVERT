@@ -1,0 +1,521 @@
+# Registry file, EM_CONVERT
+#                                               
+# At the present time this file is managed manually and edited by hand.                                         
+#                                               
+################################################################################
+# Dimension specifications
+#
+# This section of the Registry file is used to specify the dimensions
+# that will be used to define arrays. Dim is the one-letter name of the
+# dimension.  How defined can either be "standard_domain", which means
+# that the dimension (1) is one of the three spatial dimensions and (2)
+# it will be set using the standard namelist mechanism and domain data
+# structure dimension fields (e.g. sd31,ed31,sd32...).
+#
+# Order refers to which of the three sets of just-mentioned internal
+# dimension variables the dimension is referred to by in the driver.
+# That is, is it the first, second, or third dimension.  The registry
+# infers the mapping of its internal dimensions according to the
+# combination of Order and Coord-axis that are specified in this table.
+# Note that it is all right to more than one dimension name for, say, the
+# x dimension.  However, the Order and Coord-axis relationship must be
+# consistent throughout.
+# 
+# Note: these entries do not enforce storage order on a particular field.
+# That is determined by the dimension strings for each field. But it does
+# relate the dimspec to the internal data structures that the driver uses
+# to maintain the three physical domain dimensions.
+# 
+# "How defined" can also specify the name of a namelist variable from which
+# the definition for the dimension will come; this is specified as
+# "namelist=<variable name>".  The namelist variable must have been
+# defined as an integer and with only one entry in the rconfig table. Or
+# a constant can be specified.  The coordinate axis for the dimension is
+# either X, Y, Z, or C (for "not a spatial dimension").  The Dimname is
+# the descriptive name of the dimension that will be included in the
+# metadata in data sets.  Note that the b, f, and t modifiers that appear
+# as the last characters of dimension strings used # in state and # i1
+# registry definitions are not dimensions and do not need to be declared
+# here.
+#
+
+#<Table>  <Dim>  <Order> <How defined>         <Coord-axis>  <Dimname in Datasets>
+dimspec    i      1     standard_domain              x          west_east
+dimspec    j      3     standard_domain              y          south_north
+dimspec    k      2     standard_domain              z          bottom_top
+dimspec    l      2     namelist=num_soil_layers     z          soil_layers
+dimspec    u      2     namelist=num_land_cat        z          land_cat
+dimspec    s      2     namelist=num_soil_cat        z          soil_cat
+dimspec    p      -     constant=7501                c          microphysics_rstrt_state
+dimspec    w      -     namelist=spec_bdy_width      c          spec_bdy_width
+dimspec    e      3     namelist=ensdim              z          ensemble dimension
+dimspec    g      2     namelist=num_metgrid_levels  z          num_metgrid_levels
+dimspec    m      2     constant=12                  z          months_per_year
+
+
+################################################################################
+################################################################################
+################################################################################
+
+# Lines that start with the word 'state' form a table that is                                           
+# used by the script use_registry to generate module_state_descript.F                                           
+# and other files.  Also see documentation in use_registry.                                             
+#                                               
+# table entries are of the form                                         
+#<Table> <Type> <Sym>         <Dims>   <Use>   <NumTLev> <Stagger> <IO>     <DNAME>             <DESCRIP>     <UNITS>   
+#
+
+#
+# Variables from WPS
+#
+state    real   u_gc           igj      dyn_em      1        X     i1  "UU"     "x-wind component"    "m s-1"
+state    real   v_gc           igj      dyn_em      1        Y     i1  "VV"     "y-wind component"    "m s-1"
+state    real   t_gc           igj      dyn_em      1        -     i1  "TT"     "temperature"         "K"
+state    real   rh_gc          igj      dyn_em      1        -     i1  "RH"    "relative humidity"   "%"
+state    real   ght_gc         igj      dyn_em      1        -     i1  "GHT"   "geopotential height" "m"
+state    real   p_gc           igj      dyn_em      1        -     i1  "P"     "pressure"            "Pa"
+state    real   xlat_gc        ij       dyn_em      1        -     i1  "XLAT_M" "latitude, positive north" "degrees"
+state    real   xlong_gc       ij       dyn_em      1        -     i1  "XLONG_M" "longitude, positive east" "degrees"
+state    real   ht_gc          ij       dyn_em      1        -     i1  "HGT_M" "topography elevation" "m"
+state    real   tsk_gc         ij       dyn_em      1        -     i1  "SKINTEMP"  "skin temperature"  "K"
+state    real   tavgsfc        ij       dyn_em      1        -     i1  "TAVGSFC"  "daily mean of surface air temperature"  "K"
+state    real   tmn_gc         ij       dyn_em      1        -     i1  "SOILTEMP"  "annual mean deep soil temperature"  "K"
+state    real   pslv_gc        ij       dyn_em      1        -     i1  "PMSL"  "sea level pressure"  "Pa"
+state    real   greenfrac      imj      dyn_em      1        -     i1  "GREENFRAC" "monthly greenness fraction" "0 - 1 fraction"
+state    real   albedo12m      imj      dyn_em      1        -     i1  "ALBEDO12M" "background albedo" "0 - 1 fraction"
+state    real   pd_gc          igj      dyn_em      1        -     -   "PD"    "dry pressure"        "Pa"
+state    real   qv_gc           igj      dyn_em      1        -    i1   "QV"     "mixing ratio"        "kg kg-1"
+state    real   intq_gc        ij       dyn_em      1        -     -   "INTQ"  "integrated mixing ratio" "Pa"
+state    real   pdhs           ij       dyn_em      1        -     -   "PDHS"  "hydrostatic dry surface pressure" "Pa"
+#state    real   qr_gc          igj      dyn_em      1        -     i1  "QR"    "rain water mixing ratio"   "kg kg-1"
+#state    real   qc_gc          igj      dyn_em      1        -     i1  "QC"    "cloud water mixing ratio"   "kg kg-1"
+#state    real   qs_gc          igj      dyn_em      1        -     i1  "QS"    "snow mixing ratio"   "kg kg-1"
+#state    real   qi_gc          igj      dyn_em      1        -     i1  "QI"    "cloud ice mixing ratio"   "kg kg-1"
+#state    real   qg_gc          igj      dyn_em      1        -     i1  "QG"    "graupel mixing ratio"   "kg kg-1"
+
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+#                                               
+# Variables for Eulerian mass coordinate dynamics                                            
+#                                               
+
+# Velocities
+#
+# U Vel
+state    real   u              ikj     dyn_em     1         X     ih       "U"      "x-wind component"   "m s-1"
+#                                               
+# V Vel
+state    real   v              ikj     dyn_em     1         Y     ih       "V"      "y-wind component"   "m s-1"
+#                                               
+# Vertical Vel                                          
+state    real   w              ikj     dyn_em     1         Z     ih       "W"      "z-wind component"   "m s-1"
+# Geopotential
+state    real   ph             ikj     dyn_em     1         Z     ih       "PH"     "perturbation geopotential"  "m2 s-2"
+state    real   phb            ikj     dyn_em     1         Z     ih       "PHB"    "base-state geopotential"  "m2 s-2"
+# Potential Temperature
+state    real   t              ikj     dyn_em     1         -     ih       "T"      "perturbation potential temperature (theta-t0)" "K"
+# Mass
+state    real   mu              ij     dyn_em     1         -     ih       "MU"     "perturbation dry air mass in column" "Pa"
+state    real   mub             ij     dyn_em      1         -    ih       "MUB"    "base state dry air mass in column" "Pa"
+# Pressure and Density
+state    real   p              ikj     dyn_em      1         -      ih     "p"      "perturbation pressure"         "Pa"
+state    real   pb             ikj     dyn_em      1         -      ih     "pb"     "BASE STATE PRESSURE "          "Pa"
+# 2m and 10m output diagnostics
+state    real   Q2               ij     misc        1         -     ih     "Q2"     "QV at 2 M"         "kg kg-1"
+state    real   T2               ij     misc        1         -     ih     "T2"     "TEMP at 2 M"       "K"
+state    real   TH2              ij     misc        1         -     ih     "TH2"    "POT TEMP at 2 M"   "K"
+state    real   PSFC             ij     misc        1         -     ih     "PSFC"   "SFC PRESSURE"      "Pa"
+state    real   U10              ij     misc        1         -     ih     "U10"    "U at 10 M"         "m s-1"
+state    real   V10              ij     misc        1         -     ih     "V10"    "V at 10 M"         "m s-1"
+
+# Scalar (4D) arrays
+# Moist Scalars
+#                                               
+# The first line ensures that there will be identifiers named moist and                                         
+# moist_tend even if there are not any moist scalars (so the essentially                                                
+# dry code will will still link properly)                                               
+#                                               
+state   real    -              ikjftb   moist       1         -     -    -
+state   real    qv             ikjftb   moist       1         -     ih  "QVAPOR"           "Water vapor mixing ratio"      "kg kg-1"
+state   real    qc             ikjftb   moist       1         -     ih  "QCLOUD"           "Cloud water mixing ratio"      "kg kg-1"
+state   real    qr             ikjftb   moist       1         -     ih  "QRAIN"            "Rain water mixing ratio"       "kg kg-1"
+state   real    qi             ikjftb   moist       1         -     ih  "QICE"             "Ice mixing ratio"              "kg kg-1"
+state   real    qs             ikjftb   moist       1         -     ih  "QSNOW"            "Snow mixing ratio"             "kg kg-1"
+state   real    qg             ikjftb   moist       1         -     ih  "QGRAUP"           "Graupel mixing ratio"          "kg kg-1"
+
+state   real    -              ikjftb   chem        1         -     -   -
+
+state   real    -              ikjftb  scalar      1          -     -   -
+state   real    qni            ikjftb  scalar      1          -     ih  "QNICE"         "Ice Number concentration" "# kg(-1)"
+
+
+state   real    ht             ij      misc         1         -     ih  "HGT"              "Terrain Height"                "m"
+state   real    TSK            ij      misc         1         -     ih  "TSK"              "SURFACE SKIN TEMPERATURE"      "K"
+
+# from the metadata?  Otherwise it's a field?
+state   real    p_top          -       misc         -         -     ih  "p_top"            "PRESSURE TOP OF THE MODEL"  "Pa"
+                                                
+state    real  RAINC            ij      misc        1         -     ih  "RAINC"            "ACCUMULATED TOTAL CUMULUS PRECIPITATION"                 "mm"      
+state    real  RAINNC           ij      misc        1         -     ih  "RAINNC"           "ACCUMULATED TOTAL GRID SCALE PRECIPITATION"              "mm"      
+state    real  SNOWC            ij      misc        1         -     ih  "SNOWC"            "FLAG INDICATING SNOW COVERAGE (1 FOR SNOW COVER)"         ""
+#
+#---------------------------------------------------------------------------------------------------------------------------------------
+#                                               
+
+######                                          
+#                                               
+# Variables that are set at run-time to control configuration  (namelist-settable)                                              
+#                                               
+#<Table>  <Type>  <Sym>                   <How set>          <Nentries>   <Default>                                             
+
+
+# Time Control
+rconfig   integer run_days                namelist,time_control		1             0       irh   "run_days"              "NUMBER OF DAYS TO RUN"
+rconfig   integer run_hours               namelist,time_control		1             0       irh   "run_hours"             "NUMBER OF HOURS TO RUN"
+rconfig   integer run_minutes             namelist,time_control		1             0       irh   "run_minutes"           "NUMBER OF MINUTES TO RUN"
+rconfig   integer run_seconds             namelist,time_control		1             0       irh   "run_seconds"           "NUMBER OF SECONDS TO RUN"
+rconfig   integer start_year              namelist,time_control 	max_domains    1993    irh   "start_year"            "4 DIGIT YEAR OF START OF MODEL" "YEARS"
+rconfig   integer start_month             namelist,time_control		max_domains      03    irh   "start_month"           "2 DIGIT MONTH OF THE YEAR OF START OF MODEL, 1-12" "MONTHS"
+rconfig   integer start_day               namelist,time_control		max_domains      13    irh   "start_day"             "2 DIGIT DAY OF THE MONTH OF START OF MODEL, 1-31" "DAYS"
+rconfig   integer start_hour              namelist,time_control		max_domains      12    irh   "start_hour"            "2 DIGIT HOUR OF THE DAY OF START OF MODEL, 0-23" "HOURS"
+rconfig   integer start_minute            namelist,time_control		max_domains      00    irh   "start_minute"          "2 DIGIT MINUTE OF THE HOUR OF START OF MODEL, 0-59" "MINUTES"
+rconfig   integer start_second            namelist,time_control		max_domains      00    irh   "start_second"          "2 DIGIT SECOND OF THE MINUTE OF START OF MODEL, 0-59" "SECONDS"
+rconfig   integer end_year                namelist,time_control		max_domains    1993    irh   "end_year"              "4 DIGIT YEAR OF END OF MODEL" "YEARS"
+rconfig   integer end_month               namelist,time_control		max_domains      03    irh   "end_month"             "2 DIGIT MONTH OF THE YEAR OF END OF MODEL, 1-12" "MONTHS"
+rconfig   integer end_day                 namelist,time_control		max_domains      14    irh   "end_day"               "2 DIGIT DAY OF THE MONTH OF END OF MODEL, 1-31" "DAYS"
+rconfig   integer end_hour                namelist,time_control		max_domains      12    irh   "end_hour"              "2 DIGIT HOUR OF THE DAY OF END OF MODEL, 0-23" "HOURS"
+rconfig   integer end_minute              namelist,time_control		max_domains      00    irh   "end_minute"            "2 DIGIT MINUTE OF THE HOUR OF END OF MODEL, 0-59" "MINUTES"
+rconfig   integer end_second              namelist,time_control		max_domains      00    irh   "end_second"            "2 DIGIT SECOND OF THE MINUTE OF END OF MODEL, 0-59" "SECONDS"
+rconfig   integer interval_seconds        namelist,time_control		1             43200    irh   "interval_seconds"      "SECONDS BETWEEN ANALYSIS AND BOUNDARY PERIODS" "SECONDS"
+rconfig   logical input_from_file         namelist,time_control		max_domains    .false. irh    "input_from_file"      "T/F INPUT FOR THIS DOMAIN FROM A SEPARATE INPUT FILE"  ""
+rconfig   integer fine_input_stream       namelist,time_control		max_domains    0       irh    "fine_input_stream"      "0 THROUGH 11, WHAT INPUT STREAM IS FINE GRID IC FROM"  ""
+rconfig   logical input_from_hires        namelist,time_control		max_domains    .false. irh    "input_from_hires"     "T/F INPUT FOR THIS DOMAIN FROM USGS HI RES TERRAIN"  ""
+rconfig   character rsmas_data_path       namelist,time_control		1              "."     -    "rsmas_data_path"      ""  ""
+
+include registry.io_boilerplate
+include registry.io_boilerplate_EM
+
+rconfig   integer JULYR                   namelist,time_control		max_domains    0       h    "JULYR"                 ""      ""
+rconfig   integer JULDAY                  namelist,time_control		max_domains    1       h    "JULDAY"                ""      ""
+rconfig   real    GMT                     namelist,time_control		max_domains    0.      h    "GMT"           ""      ""
+rconfig   character  input_inname      namelist,time_control		1  "wrfinput_d<domain>"          -     "name of input   infile"   ""      ""
+rconfig   character  input_outname     namelist,time_control		1  "wrfinput_d<domain>"          -     "name of input   outfile"  ""      ""
+rconfig   character  bdy_inname        namelist,time_control		1  "wrfbdy_d<domain>"            -     "name of boundary infile"  ""      ""
+rconfig   character  bdy_outname       namelist,time_control		1  "wrfbdy_d<domain>"            -     "name of boundary outfile" ""      ""
+rconfig   character  rst_inname        namelist,time_control		1  "wrfrst_d<domain>_<date>"     -     "name of restrt infile"    ""      ""
+rconfig   character  rst_outname       namelist,time_control		1  "wrfrst_d<domain>_<date>"     -     "name of restrt outfile"   ""      ""
+rconfig   logical write_input             namelist,time_control		1             .false. -    "write input data for 3dvar etc."              ""      ""
+rconfig   logical write_restart_at_0h     namelist,time_control		1             .false. h    "write_restart_at_0h"              ""      ""
+rconfig   logical adjust_output_times     namelist,time_control         1             .false. -    "adjust_output_times"
+rconfig   logical adjust_input_times      namelist,time_control         1             .false. -    "adjust_input_times"
+
+rconfig   logical nocolons                namelist,time_control         1             .false. -    "nocolons"
+
+
+# Domains
+rconfig   integer time_step               namelist,domains	1             -       ih   "time_step"     
+rconfig   integer time_step_fract_num     namelist,domains	1             0       ih   "time_step_fract_num"     
+rconfig   integer time_step_fract_den     namelist,domains	1             1       ih   "time_step_fract_den"     
+rconfig   integer max_dom                 namelist,domains	1             1       irh  "max_dom"               ""      ""
+rconfig   integer s_we                    namelist,domains	max_domains    1       irh    "s_we"          ""      ""
+rconfig   integer e_we                    namelist,domains	max_domains    32      irh    "e_we"          ""      ""
+rconfig   integer s_sn                    namelist,domains	max_domains    1       irh    "s_sn"          ""      ""
+rconfig   integer e_sn                    namelist,domains	max_domains    32      irh    "e_sn"          ""      ""
+rconfig   integer s_vert                  namelist,domains	max_domains    1       irh    "s_vert"                ""      ""
+rconfig   integer e_vert                  namelist,domains	max_domains    31      irh    "e_vert"                ""      ""
+rconfig   integer num_metgrid_levels      namelist,domains      1              27      irh    "num_metgrid_levels"                ""      ""
+rconfig   integer interp_type             namelist,domains	1              1       irh    "interp_type"                ""      ""
+rconfig   logical lowest_lev_from_sfc     namelist,domains	1             .false.  irh    "lowest_lev_from_sfc"                ""      ""
+rconfig   integer lagrange_order          namelist,domains	1              1       irh    "lagrange_order"   "1=linear, 2=quadratic vertical interpolation"      ""
+rconfig   integer force_sfc_in_vinterp    namelist,domains	1              0       irh    "force_sfc_in_vinterp"   "number of eta levels forced to use sfc in vert interp"      ""
+rconfig   real    zap_close_levels        namelist,domains	1              500     irh    "zap_close_levels"   "delta p where level is removed in vert interp"      "Pa"
+rconfig   real    dx                      namelist,domains     max_domains    200     h     "dx"        "X HORIZONTAL RESOLUTION"   "METERS"
+rconfig   real    dy                      namelist,domains   	max_domains    200     h     "dy"        "Y HORIZONTAL RESOLUTION"   "METERS"
+rconfig   integer grid_id                 namelist,domains	max_domains    1       irh    "id"            ""      ""
+rconfig   logical grid_allowed            namelist,domains      max_domains    .true.  irh    "allowed"       ""      ""
+rconfig   integer parent_id               namelist,domains	max_domains    0       h     "parent_id"             ""      ""
+rconfig   integer i_parent_start          namelist,domains	max_domains    1       rh     "i_parent_start"                ""      ""
+rconfig   integer j_parent_start          namelist,domains	max_domains    1       rh     "j_parent_start"                ""      ""
+rconfig   integer parent_grid_ratio       namelist,domains	max_domains    1       h     "parent_grid_ratio"             ""      ""
+rconfig   integer parent_time_step_ratio  namelist,domains	max_domains    1       h     "parent_time_step_ratio"                ""      ""
+rconfig   integer feedback                namelist,domains	1    1       h     "feedback"          ""      ""
+rconfig   integer smooth_option           namelist,domains	1    2       h     "smooth_option"          ""      ""
+rconfig   integer blend_width             namelist,domains	1    5       h     "blend_width"  "width of cg fg terrain blended zone"      ""
+rconfig   real    ztop                    namelist,domains	max_domains    15000.  h    "ztop"          ""      ""
+rconfig   integer moad_grid_ratio         namelist,domains	max_domains    1       h     "moad_grid_ratio"               ""      ""
+rconfig   integer moad_time_step_ratio    namelist,domains	max_domains    1       h     "moad_time_step_ratio"          ""      ""
+rconfig   integer shw                     namelist,domains	max_domains    2       h     "stencil_half_width"   "HORIZONTAL INTERPOLATION STENCIL HALF-WIDTH"  "GRID POINTS"
+rconfig   integer tile_sz_x               namelist,domains	1             0       -      "tile_sz_x"             ""      ""
+rconfig   integer tile_sz_y               namelist,domains	1             0       -      "tile_sz_y"             ""      ""
+rconfig   integer numtiles                namelist,domains	1             1       -      "numtiles"              ""      ""
+rconfig   integer numtiles_inc            namelist,domains	1             0       -      "numtiles_inc"          ""      ""
+rconfig   integer numtiles_x              namelist,domains	1             0       -      "numtiles_x"            ""      ""
+rconfig   integer numtiles_y              namelist,domains	1             0       -      "numtiles_y"            ""      ""
+rconfig   integer tile_strategy           namelist,domains	1             0       -      "tile_strategy"         ""      ""
+rconfig   integer nproc_x                 namelist,domains	1             -1       -      "nproc_x"              "-1 means not set"      ""
+rconfig   integer nproc_y		  namelist,domains	1             -1       -      "nproc_y"              "-1 means not set"      ""
+rconfig   integer irand                   namelist,domains	1             0       -      "irand"           ""      ""
+rconfig   real    dt                      derived              max_domains    2.      h     "dt"        "TEMPORAL RESOLUTION"      "SECONDS"
+rconfig   integer   num_moves       namelist,domains    1                0
+rconfig   integer   vortex_interval  namelist,domains   max_domains      15  -  "" "" "minutes"
+rconfig   integer   max_vortex_speed namelist,domains   max_domains      40  -  "" "" "meters per second"
+rconfig   integer   corral_dist     namelist,domains    max_domains      8
+rconfig   integer   move_id         namelist,domains    max_moves        0
+rconfig   integer   move_interval   namelist,domains    max_moves        999999999
+rconfig   integer   move_cd_x       namelist,domains    max_moves        0
+rconfig   integer   move_cd_y       namelist,domains    max_moves        0
+rconfig   logical   swap_x          namelist,domains    max_domains    .false. rh    "swap_x"            ""      ""
+rconfig   logical   swap_y          namelist,domains    max_domains    .false. rh    "swap_y"            ""      ""
+rconfig   logical   cycle_x         namelist,domains    max_domains    .false. rh    "cycle_x"            ""      ""
+rconfig   logical   cycle_y         namelist,domains    max_domains    .false. rh    "cycle_y"            ""      ""
+rconfig   logical   reorder_mesh    namelist,domains    1              .false. rh    "reorder_mesh"       ""      ""
+rconfig   logical   perturb_input   namelist,domains    1              .false. h     "" "" ""
+rconfig   real      eta_levels      namelist,domains    max_eta        -1.
+rconfig   real      max_dz          namelist,domains    1               1000.
+
+# Physics
+rconfig   integer     mp_physics          namelist,physics	max_domains    0       rh       "mp_physics"            ""      ""
+rconfig   integer     ra_lw_physics       namelist,physics	max_domains    0       rh       "ra_lw_physics"         ""      ""
+rconfig   integer     ra_sw_physics       namelist,physics	max_domains    0       rh       "ra_sw_physics"         ""      ""
+rconfig   real    radt                    namelist,physics	max_domains    0       h    "RADT"          ""      ""
+rconfig   integer     sf_sfclay_physics   namelist,physics	max_domains    0       rh       "sf_sfclay_physics"             ""      ""
+rconfig   integer     sf_surface_physics  namelist,physics	max_domains    0       rh       "sf_surface_physics"            ""      ""
+rconfig   integer     bl_pbl_physics      namelist,physics	max_domains    0       rh       "bl_pbl_physics"                ""      ""
+rconfig   real    BLDT                    namelist,physics	max_domains    0       h    "BLDT"          ""      ""
+rconfig   integer     cu_physics          namelist,physics	max_domains    0       rh       "cu_physics"            ""      ""
+rconfig   real    CUDT                    namelist,physics	max_domains    0       h    "CUDT"          ""      ""
+rconfig   real    GSMDT                   namelist,physics	max_domains    0       h    "GSMDT"          ""      ""
+rconfig   integer ISFFLX                  namelist,physics 	1             1       irh    "ISFFLX"                        ""      ""
+rconfig   integer ideal_xland             namelist,physics      1             1        rh    "IDEAL_XLAND"  "land=1(def), water=2, for ideal cases with no land-use"      ""
+rconfig   integer IFSNOW                  namelist,physics	1             1       irh    "IFSNOW"                        ""      ""
+rconfig   integer ICLOUD                  namelist,physics	1             1       irh    "ICLOUD"                        ""      ""
+rconfig   integer surface_input_source    namelist,physics	1             1       irh    "surface_input_source"          "1=static (fractional), 2=time dependent (dominant), 3=hybrid (not yet implemented)"      ""
+rconfig   integer num_soil_layers         namelist,physics	1             5       irh    "num_soil_layers"               ""      ""
+rconfig   integer maxiens                 namelist,physics	1             1       irh    "maxiens"                    ""      ""
+rconfig   integer maxens                  namelist,physics	1             3       irh    "maxens"                    ""      ""
+rconfig   integer maxens2                 namelist,physics	1             3       irh    "maxens2"                    ""      ""
+rconfig   integer maxens3                 namelist,physics	1            16       irh    "maxens3"                    ""      ""
+rconfig   integer ensdim                  namelist,physics	1            144      irh    "ensdim"                    ""      ""
+rconfig   integer     chem_opt            namelist,physics	max_domains    0       rh       "chem_opt"              ""      ""
+rconfig   integer num_land_cat            namelist,physics	1            24       -      "num_land_cat"                  ""      ""
+rconfig   integer num_soil_cat            namelist,physics	1            16       -      "num_soil_cat"                  ""      ""
+rconfig   integer mp_zero_out             namelist,physics	1             0       -      "mp_zero_out"  "microphysics fields set to zero  0=no action taken, 1=all fields but Qv, 2=all fields including Qv"      "flag"
+rconfig   real mp_zero_out_thresh         namelist,physics	1          1.e-8      -      "mp_zero_out_thresh"  "minimum threshold for non-Qv moist fields, below are set to zero"  "kg/kg"
+rconfig   real    seaice_threshold        namelist,physics	1            100       h    "seaice_threshold"  "tsk below which which water points are set to sea ice for slab scheme"   "K"
+rconfig   integer sst_update              namelist,physics	1            0         h    "sst_update"  "update sst from wrflowinp file  0=no, 1=yes"   ""
+rconfig   integer co2tf                   namelist,physics	1            0         -    "GFDL radiation co2 flag"  ""   ""
+
+
+# Dynamics
+# dynamics option (see package definitions, below)
+rconfig   integer rk_ord                  namelist,dynamics	1             3       irh   "rk_order"               ""      ""
+rconfig   integer w_damping               namelist,dynamics	1             0       irh    "w_damping"             ""      ""
+# diff_opt 1=old diffusion, 2=new
+rconfig   integer diff_opt                namelist,dynamics	max_domains   -1      irh    "diff_opt"              ""      ""
+# km_opt   1=old coefs, 2=tke, 3=Smagorinksy
+rconfig   integer km_opt                  namelist,dynamics	max_domains   -1      irh    "km_opt"                ""      ""
+rconfig   integer damp_opt                namelist,dynamics	1             0       irh    "damp_opt"              ""      ""
+rconfig   real    zdamp                   namelist,dynamics	max_domains    5000.   h    "zdamp"         ""      ""
+rconfig   real    dampcoef                namelist,dynamics     max_domains    0.      h    "dampcoef"              ""      ""
+rconfig   real    khdif                   namelist,dynamics	max_domains    0       h    "khdif"         ""      ""
+rconfig   real    kvdif                   namelist,dynamics	max_domains    0       h    "kvdif"         ""      ""
+rconfig   real    smdiv                   namelist,dynamics	max_domains    0.1     h    "smdiv"         ""      ""
+rconfig   real    emdiv                   namelist,dynamics	max_domains    0.01    h    "emdiv"         ""      ""
+rconfig   real    epssm                   namelist,dynamics	max_domains    .1      h    "epssm"         ""      ""
+rconfig   logical non_hydrostatic         namelist,dynamics	max_domains  .true.   irh  "non_hydrostatic"    ""   ""
+rconfig   integer time_step_sound         namelist,dynamics	max_domains    0       h     "time_step_sound"               ""      ""
+rconfig   integer     h_mom_adv_order     namelist,dynamics	max_domains    5       rh       "h_mom_adv_order"               ""      ""
+rconfig   integer     v_mom_adv_order     namelist,dynamics	max_domains    3       rh       "v_mom_adv_order"               ""      ""
+rconfig   integer     h_sca_adv_order     namelist,dynamics	max_domains    5       rh       "h_sca_adv_order"               ""      ""
+rconfig   integer     v_sca_adv_order     namelist,dynamics	max_domains    3       rh       "v_sca_adv_order"               ""      ""
+rconfig   logical top_radiation           namelist,dynamics	max_domains    .false. rh    "top_radiation"         ""      ""
+rconfig   real    tke_upper_bound         namelist,dynamics	max_domains    1000.   h    "tke_upper_bound"            ""      ""
+rconfig   real    tke_drag_coefficient      namelist,dynamics	max_domains    0.      h    "tke_drag_coefficient"       ""      ""
+rconfig   real    tke_heat_flux           namelist,dynamics	max_domains    0.      h    "tke_heat_flux"              ""      ""
+rconfig   logical pert_coriolis           namelist,dynamics	max_domains  .false.  irh  "pert_coriolis"    ""   ""
+rconfig   logical mix_full_fields         namelist,dynamics     max_domains  .false.  irh  "mix_full_field"   ""   ""
+rconfig   real    base_pres               namelist,dynamics	1          100000.     h    "base_pres"  "Base state pressure - do not change (10^5 Pa), real only"      "Pa"
+rconfig   real    base_temp               namelist,dynamics	1             290.     h    "base_temp"  "Base state sea level temperature, real only"      "K"
+rconfig   real    base_lapse              namelist,dynamics	1              50.     h    "base_lapse" "Base state temperature difference between base pres and 1/e of atm depth - do not change, real only"      "K"
+
+
+# Bdy_control
+rconfig   integer spec_bdy_width          namelist,bdy_control		1             5       irh    "spec_bdy_width"                ""      ""
+rconfig   integer spec_zone               namelist,bdy_control		1             1       irh    "spec_zone"                     ""      ""
+rconfig   integer relax_zone              namelist,bdy_control		1             4       irh    "relax_zone"                    ""      ""
+rconfig   logical specified               namelist,bdy_control	max_domains    .false. rh    "specified"             ""      ""
+rconfig   logical periodic_x              namelist,bdy_control	max_domains    .false. rh    "periodic_x"            ""      ""
+rconfig   logical symmetric_xs            namelist,bdy_control	max_domains    .false. rh    "symmetric_xs"          ""      ""
+rconfig   logical symmetric_xe            namelist,bdy_control	max_domains    .false. rh    "symmetric_xe"          ""      ""
+rconfig   logical open_xs                 namelist,bdy_control	max_domains    .false. rh    "open_xs"               ""      ""
+rconfig   logical open_xe                 namelist,bdy_control	max_domains    .false. rh    "open_xe"               ""      ""
+rconfig   logical periodic_y              namelist,bdy_control	max_domains    .false. rh    "periodic_y"            ""      ""
+rconfig   logical symmetric_ys            namelist,bdy_control	max_domains    .false. rh    "symmetric_ys"          ""      ""
+rconfig   logical symmetric_ye            namelist,bdy_control	max_domains    .false. rh    "symmetric_ye"          ""      ""
+rconfig   logical open_ys                 namelist,bdy_control	max_domains    .false. rh    "open_ys"               ""      ""
+rconfig   logical open_ye                 namelist,bdy_control	max_domains    .false. rh    "open_ye"               ""      ""
+rconfig   logical nested                  namelist,bdy_control	max_domains    .false. rh    "nested"                ""      ""
+rconfig   integer real_data_init_type     namelist,bdy_control		1                 1    irh   "real_data_init_type"   "REAL DATA INITIALIZATION OPTIONS: 1=SI, 2=MM5, 3=GENERIC" "PRE-PROCESSOR TYPES"
+
+rconfig   integer background_proc_id      namelist,grib2 	        1     255    rh    "background_proc_id"    "Background processing id for grib2"  ""
+rconfig   integer forecast_proc_id        namelist,grib2 	        1     255    rh    "forecast_proc_id"      "Analysis and forecast processing id for grib2"  ""
+rconfig   integer production_status       namelist,grib2 	        1     255    rh    "production_status"     "Background processing id for grib2"  ""
+rconfig   integer compression             namelist,grib2 	        1      40    rh    "compression"           "grib2 compression, 40 for JPEG2000 or 41 for PNG"  ""
+
+# NAMELIST DERIVED
+rconfig   real    cen_lat                 derived                  max_domains    0       -        "cen_lat"              "center latitude"      "degrees, negative is south"
+rconfig   real    cen_lon                 derived                  max_domains    0       -        "cen_lon"              "central longitude"      "degrees, negative is west"
+rconfig   real    truelat1                derived                  max_domains    0       -        "true_lat1"             "first standard parallel"      "degrees, negative is south"
+rconfig   real    truelat2                derived                  max_domains    0       -        "true_lat2"             "second standard parallel"      "degrees, negative is south"
+rconfig   real    moad_cen_lat            derived                  max_domains    0       -        "moad_cen_lat"             "center latitude of the most coarse grid"      "degrees, negative is south"
+rconfig   real    stand_lon               derived                  max_domains    0       -        "stand_lon"             "standard longitude, parallel to j-direction, perpendicular to i-direction "      "degrees, negative is west"
+rconfig   real    bdyfrq                  derived                  max_domains    0       -        "bdyfrq"               "lateral boundary input frequency"      "seconds"
+rconfig   integer iswater                 derived                  max_domains    0       -        "iswater"              "land use index of water"      "index category"
+rconfig   integer islake                  derived                  max_domains    0       -        "islake"               "land use index of inland lake"      "index category"
+rconfig   integer isice                   derived                  max_domains    0       -        "isice"                "land use index of ice"        "index category"
+rconfig   integer isurban                 derived                  max_domains    0       -        "isurban"              "land use index for 'urban and built-up"     "index category"
+rconfig   integer isoilwater              derived                  max_domains    0       -        "isoilwater"           "land use index of water for soil"        "index category"
+rconfig   integer map_proj                derived                  max_domains    0       -        "map_proj"             "domain map projection"      "0=none, 1=Lambert, 2=polar, 3=Mercator"
+
+#
+# Single dummy declaration to define a nodyn dyn option
+state integer nodyn_dummy - dyn_nodyn -  -  -  "" "" ""      
+
+#-------------------------------------------------------------------------------------------------------------------------------------------
+# a few entries that need to be in the registry for stuff in share to compile, but that you probably do not want converted
+
+
+# State for derived time quantities.  
+state   real    xtime          -        -          -         -     -        "xtime"                 "minutes since simulation start"         ""      
+state   real    julian         -        -          -         -     -        "julian"                "day of year, 0.0 at 0Z on 1 Jan."         "days"      
+
+state    real   dtbc            -        misc     -         -      ir       "dtbc"                 "TIME SINCE BOUNDARY READ"         ""
+# input file descriptor for lbcs on parent domain
+state   integer lbc_fid        -        -          -         -     -         "lbc_fid"               ""         ""
+# indicates if tiling has been computed
+state   logical tiled          -        -          -         -     -         "tiled"                 ""         ""
+# indicates if patches have been computed
+state   logical patched        -        -          -         -     -         "patched"               ""         ""
+# indicates whether to read input from file or generate
+#state   logical input_from_file        -        -          -         -     -         "input_from_file"         ""         ""
+
+# Mask for moving nest interpolations
+state    integer imask_nostag         ij      misc     1     -
+state    integer imask_xstag          ij      misc     1     X
+state    integer imask_ystag          ij      misc     1     Y
+state    integer imask_xystag         ij      misc     1     XY
+
+state   real   sm000010            ij    misc          1     -     i1      "SM000010"      "LAYER SOIL MOISTURE" "m3 m-3"
+state   real   sm010040            ij    misc          1     -     i1      "SM010040 "     "LAYER SOIL MOISTURE" "m3 m-3"
+state   real   sm040100            ij    misc          1     -     i1      "SM040100 "     "LAYER SOIL MOISTURE" "m3 m-3"
+state   real   sm100200            ij    misc          1     -     i1      "SM100200 "     "LAYER SOIL MOISTURE" "m3 m-3"
+state   real   sm010200            ij    misc          1     -     i1      "SM010200"      "LAYER SOIL MOISTURE" "m3 m-3"
+state   real   soilm000            ij    misc          1     -     i1      "SOILM000"      "LAYER SOIL MOISTURE" "m3 m-3"
+state   real   soilm005            ij    misc          1     -     i1      "SOILM005"      "LAYER SOIL MOISTURE" "m3 m-3"
+state   real   soilm020            ij    misc          1     -     i1      "SOILM020"      "LAYER SOIL MOISTURE" "m3 m-3"
+state   real   soilm040            ij    misc          1     -     i1      "SOILM040"      "LAYER SOIL MOISTURE" "m3 m-3"
+state   real   soilm160            ij    misc          1     -     i1      "SOILM160"      "LAYER SOIL MOISTURE" "m3 m-3"
+state   real   soilm300            ij    misc          1     -     i1      "SOILM300"      "LAYER SOIL MOISTURE" "m3 m-3"
+state   real   sw000010            ij    misc          1     -     i1      "SW000010"      "LAYER SOIL LIQUID" "m3 m-3"
+state   real   sw010040            ij    misc          1     -     i1      "SW010040"      "LAYER SOIL LIQUID" "m3 m-3"
+state   real   sw040100            ij    misc          1     -     i1      "SW040100"      "LAYER SOIL LIQUID" "m3 m-3"
+state   real   sw100200            ij    misc          1     -     i1      "SW100200"      "LAYER SOIL LIQUID" "m3 m-3"
+state   real   sw010200            ij    misc          1     -     i1      "SW010200"      "LAYER SOIL LIQUID" "m3 m-3"
+state   real   soilw000            ij    misc          1     -     i1      "SOILW000"      "LAYER SOIL LIQUID" "m3 m-3"
+state   real   soilw005            ij    misc          1     -     i1      "SOILW005"      "LAYER SOIL LIQUID" "m3 m-3"
+state   real   soilw020            ij    misc          1     -     i1      "SOILW020"      "LAYER SOIL LIQUID" "m3 m-3"
+state   real   soilw040            ij    misc          1     -     i1      "SOILW040"      "LAYER SOIL LIQUID" "m3 m-3"
+state   real   soilw160            ij    misc          1     -     i1      "SOILW160"      "LAYER SOIL LIQUID" "m3 m-3"
+state   real   soilw300            ij    misc          1     -     i1      "SOILW300"      "LAYER SOIL LIQUID" "m3 m-3"
+state   real   st000010            ij    misc          1     -     i1      "ST000010"      "LAYER SOIL TEMPERATURE" "K"
+state   real   st010040            ij    misc          1     -     i1      "ST010040"      "LAYER SOIL TEMPERATURE" "K"
+state   real   st040100            ij    misc          1     -     i1      "ST040100"      "LAYER SOIL TEMPERATURE" "K"
+state   real   st100200            ij    misc          1     -     i1      "ST100200"      "LAYER SOIL TEMPERATURE" "K"
+state   real   st010200            ij    misc          1     -     i1      "ST010200"      "LAYER SOIL TEMPERATURE" "K"
+state   real   soilt000            ij    misc          1     -     i1      "SOILT000"      "LAYER SOIL TEMPERATURE" "K"
+state   real   soilt005            ij    misc          1     -     i1      "SOILT005"      "LAYER SOIL TEMPERATURE" "K"
+state   real   soilt020            ij    misc          1     -     i1      "SOILT020"      "LAYER SOIL TEMPERATURE" "K"
+state   real   soilt040            ij    misc          1     -     i1      "SOILT040"      "LAYER SOIL TEMPERATURE" "K"
+state   real   soilt160            ij    misc          1     -     i1      "SOILT160"      "LAYER SOIL TEMPERATURE" "K"
+state   real   soilt300            ij    misc          1     -     i1      "SOILT300"      "LAYER SOIL TEMPERATURE" "K"
+state   real   landmask            ij    misc          1     -     rd=(interp_fcnm)u=(copy_fcnm)   "LANDMASK"      "LAND MASK (1 FOR LAND, 0 FOR WATER)"  ""
+state   real   topostdv            ij    misc          1     -     i12     "TOPOSTDV"      "ELEVATION STD DEV"  "m"
+state   real   toposlpx            ij    misc          1     -     i012rdu "TOPOSLPX"      "ELEVATION X SLOPE"  ""
+state   real   toposlpy            ij    misc          1     -     i012rdu "TOPOSLPY"      "ELEVATION Y SLOPE"  ""
+state   real   slope               ij    misc          1     -     rdu     "SLOPE"         "ELEVATION SLOPE"  ""
+state   real   slp_azi             ij    misc          1     -     rdu     "SLP_AZI"       "ELEVATION SLOPE AZIMUTH"  "rad"
+state   real   shdmax              ij    misc          1     -     -   "SHDMAX"        "ANNUAL MAX VEG FRACTION" ""
+state   real   shdmin              ij    misc          1     -     -   "SHDMIN"        "ANNUAL MIN VEG FRACTION" ""
+state   real   snoalb              ij    misc          1     -     -   "SNOALB"        "ANNUAL MAX SNOW ALBEDO IN FRACTION" ""
+state   real   slopecat            ij    misc          1     -     i12     "SLOPECAT"      "SLOPE CATEGORY"  ""
+state   real   toposoil            ij    misc          1     -     i12     "SOILHGT"       "ELEVATION OF LSM DATA"  "m"
+state   real   landusef            iuj   misc          1     Z     i12     "LANDUSEF"      "LANDUSE FRACTION BY CATEGORY"  ""
+state   real   soilctop            isj   misc          1     Z     i12     "SOILCTOP"      "SOIL CAT FRACTION (TOP)"  ""
+state   real   soilcbot            isj   misc          1     Z     i1      "SOILCBOT"      "SOIL CAT FRACTION (BOTTOM)"  ""
+state   real   soilcat             ij    misc          1     -     i12     "SOILCAT"       "SOIL CAT DOMINANT TYPE" ""
+state   real   vegcat              ij    misc          1     -     i12     "VEGCAT"        "VEGETATION CAT DOMINANT TYPE" ""
+
+
+
+
+
+#
+#---------------------------------------------------------------------------------------------------------------------------------------
+# Package Declarations
+#                                               
+
+#key      package       associated                package          associated 4d scalars
+#         name          namelist choice           state vars
+
+#package   passivec1     chem_opt==0                  -             
+package   passiveqv     mp_physics==0                -             moist:qv
+package   kesslerscheme mp_physics==1                -             moist:qv,qc,qr
+package   linscheme     mp_physics==2                -             moist:qv,qc,qr,qi,qs,qg
+package   wsm3scheme    mp_physics==3                -             moist:qv,qc,qr
+package   wsm5scheme    mp_physics==4                -             moist:qv,qc,qr,qi,qs
+package   etampnew      mp_physics==5                -             moist:qv,qc
+package   wsm6scheme    mp_physics==6                -             moist:qv,qc,qr,qi,qs,qg
+package   thompson       mp_physics==8               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni
+package   sbu_ylinscheme    mp_physics==13           -             moist:qv,qc,qr,qi,qs
+
+package   rrtmscheme    ra_lw_physics==1             -             -
+package   gfdllwscheme  ra_lw_physics==99            -             moist:qv,qc,qr,qi
+
+package   swradscheme   ra_sw_physics==1             -             -
+package   gsfcswscheme  ra_sw_physics==2             -             -
+package   gfdlswscheme  ra_sw_physics==99            -             -
+
+package   sfclayscheme   sf_sfclay_physics==91       -             -
+package   myjsfcscheme   sf_sfclay_physics==2        -             -
+package   gfssfcscheme   sf_sfclay_physics==3        -             -
+package   slabscheme     sf_surface_physics==1       -             -
+package   lsmscheme      sf_surface_physics==2       -             -
+package   ruclsmscheme   sf_surface_physics==3       -             -
+package   noahmpscheme   sf_surface_physics==4       -             -
+package   ysuscheme      bl_pbl_physics==1           -             -
+package   myjpblscheme   bl_pbl_physics==2           -             -
+package   gfsscheme      bl_pbl_physics==3           -             -
+package   mrfscheme      bl_pbl_physics==99          -             -
+
+package   kfetascheme    cu_physics==1               -             -
+package   bmjscheme      cu_physics==2               -             -
+package   gdscheme       cu_physics==3               -             -
+package   sasscheme      cu_physics==4               -             -
+package   kfscheme       cu_physics==99              -             -
+
+# only need to specify these once; not for every io_form* variable
+package   io_intio    io_form_restart==1                     -             -
+package   io_netcdf   io_form_restart==2                     -             -
+# Placeholders for additional packages (we can go beyond zzz
+# but that will entail modifying frame/module_io.F and frame/md_calls.m4)
+# Please note these are placeholders; HDF has not been implemented yet.
+package   io_hdf      io_form_restart==3                     -             -
+package   io_phdf5    io_form_restart==4                     -             -
+package   io_grib1    io_form_restart==5                     -             -
+package   io_mcel     io_form_restart==6                     -             -
+package   io_esmf     io_form_restart==7                     -             -
+package   io_yyy      io_form_restart==8                     -             -
+package   io_zzz      io_form_restart==9                     -             -
+package   io_grib2    io_form_restart==10                    -             -
+package   io_pnetcdf  io_form_restart==11                    -             -
+package   io_pio      io_form_restart==12                    -             -
+                                                

@@ -1,0 +1,525 @@
+#!/bin/csh -f
+
+setenv START_OF_COMPILE "`date`"
+
+cont1:
+
+if ( !  -e configure.wrf  ) then
+  echo ""
+  echo "You must run the 'configure' script before running the 'compile' script!"
+  echo "Exiting..."
+  echo ""
+  exit 1
+endif
+
+
+#----------------------------------
+if ( ! $?WRF_KPP )   setenv WRF_KPP  0
+if ( $WRF_KPP == 1 ) then
+chem/KPP/compile_wkc
+endif
+
+#---------------------------------
+
+if ( ! $?dontask && $?prompt ) then
+  echo "This script assumes you have configured the code already."
+  echo "You only need to configure once."
+  echo "If you wish to reconfigure, type c at the prompt below"
+  echo " "
+  echo "Ready to compile? [ync]"
+  set resp=$<
+
+  if ( "$resp" == "c" ) then
+    ./configure
+    goto cont1
+  endif
+
+  if ( "$resp" == "n" ) then
+    exit 2
+  endif
+endif
+
+set arglist=""
+foreach a ( $argv )
+  if ( "$a" == "-h" ) then
+    goto hlp
+  else
+    if ( "$a" != "-d" ) then
+      set arglist = ( $arglist $a )
+    endif
+    if ( "$a" == "all_wrfvar" || "$a" == "gen_be" ) then
+      grep "DA_CORE=1" configure.wrf > /dev/null
+      if ( ! $status ) then 
+        # If configuration file has DA_CORE=1, set WRF_DA_CORE to 1
+        setenv WRF_DA_CORE 1
+      else
+        # If the user ran the configure script without the "wrfda" option, "./compile all_wrfvar"
+        # will fail in non-obvious ways, and some executables will be created incorrectly.
+        # Let's just quit right away to avoid the hassle.
+        echo ""
+        echo "To build WRFDA, you must run the 'configure' script with the 'wrfda' option:"
+        echo "  ./configure wrfda"
+        echo ""
+        echo "Exiting..."
+        echo ""
+        exit 1
+      endif
+    endif
+    if ( "$a" == "nmm_real" ) then
+      grep "NMM_CORE=1" configure.wrf > /dev/null
+      if ( ! $status ) then 
+         # If configuration file has NMM_CORE=1 hardwired, ok to set WRF_NMM_CORE to 1
+         if ( ! $?WRF_NMM_CORE ) setenv WRF_NMM_CORE 1
+      endif
+    endif
+    set ZAP = .foofoo
+    if      ( ( "$a" ==  "nmm_real" ) || ( "$a" ==  "nmm_nest" ) || ( "$a" ==  "nmm_hwrf" ) ) then
+       set ZAP = ( main/wrf.exe main/real_nmm.exe )
+    else if ( `echo $a | cut -c 1-4` == "nmm_" ) then
+       set ZAP = ( main/wrf.exe main/ideal_nmm.exe )
+    else if   ( "$a" ==  "em_real" ) then
+       set ZAP = ( main/wrf.exe main/real.exe main/ndown.exe main/tc.exe )
+    else if   ( `echo $a | cut -c 1-3` == "em_" ) then
+       set ZAP = ( main/wrf.exe main/ideal.exe )
+    endif
+    if ( "$a" == "-j" ) then
+      shift argv
+      setenv J "-j $argv[1]"
+    endif
+  endif
+end
+
+if ( $?WRF_NMM_CORE ) then
+    if ( $WRF_NMM_CORE == 1 ) then
+        setenv WRF_NMM_NEST 1
+    endif
+endif
+
+if ( "$arglist" == "" ) then
+  goto hlp
+else
+  unsetenv A2DCASE
+  setenv A2DCASE `echo $arglist | grep 2d`
+
+  if ( ! (   $?WRF_EM_CORE  || $?WRF_NMM_CORE \
+          ||  $?WRF_COAMPS_CORE || $?WRF_EXP_CORE )) then 
+    echo 'None of WRF_EM_CORE, WRF_NMM_CORE, '
+#    echo '        WRF_COAMPS_CORE, or WRF_EXP_CORE '
+    echo '        specified in shell environment.... '
+    setenv WRF_EM_CORE 1
+    setenv WRF_NMM_CORE 0
+    setenv WRF_COAMPS_CORE 0
+    setenv WRF_EXP_CORE 0
+  endif
+
+# these settings get passed down through the environment in the
+# calls to Make
+  if ( ! $?WRF_HYDRO )       then
+       setenv WRF_HYDRO  0
+       setenv LIB_WRF_HYDRO ""
+  else
+       if($WRF_HYDRO == 1) then
+          setenv LIB_WRF_HYDRO "-L../hydro/lib -lHYDRO"
+       else
+          setenv LIB_WRF_HYDRO ""
+       endif
+  endif
+
+  if ( ! $?WRF_DA_CORE )     setenv WRF_DA_CORE 0
+  if ( ! $?WRF_EM_CORE )     setenv WRF_EM_CORE 0
+  if ( ! $?WRF_NMM_CORE )    setenv WRF_NMM_CORE 0
+  if ( ! $?WRF_NMM_NEST )    setenv WRF_NMM_NEST 0
+  if ( ! $?WRF_COAMPS_CORE ) setenv WRF_COAMPS_CORE 0
+  if ( ! $?WRF_EXP_CORE )    setenv WRF_EXP_CORE 0
+  if ( ! $?WRF_CHEM )        setenv WRF_CHEM 0
+  if ( ! $?WRF_DFI_RADAR )   setenv WRF_DFI_RADAR 0
+  if ( ! $?HWRF )            setenv HWRF 0
+  if ( ! $?WRF_CONVERT ) then
+     if ( "$arglist" == "convert_em" ) then
+       setenv WRF_CONVERT 1
+       setenv WRF_EM_CORE 0
+     else
+       setenv WRF_CONVERT 0
+     endif
+  endif
+
+  if ( ! $?DA_ARCHFLAGS )     setenv DA_ARCHFLAGS ""
+
+  if ( ( $WRF_CHEM == 1 )  && ( $WRF_DA_CORE == 1 ) ) then
+    echo "  "
+    echo "WRFDA can not be compiled with WRF_CHEM=1"
+    echo "unset the WRF_CHEM env variable."
+    echo "  "
+    exit
+  endif
+
+  if ( ( $WRF_DA_CORE == 1 )  && ( ! -d var ) ) then
+    echo "  "
+    echo "You need to download and untar the Var code, or"
+    echo "unset the WRF_DA_CORE env variable."
+    echo "  "
+    exit
+  endif
+
+  if ( ( $WRF_CHEM == 1 )  && ( ! -d chem ) ) then
+    echo "  "
+    echo "You need to download and untar the chem code, or"
+    echo "unset the WRF_CHEM env variable."
+    echo "  "
+    exit
+  endif
+
+  set overwrite=0
+  if ($WRF_NMM_CORE == 1 && $WRF_DFI_RADAR == 1 ) then
+    echo "radar dfi not yet supported in NMM core, set WRF_DFI_RADAR to 0 "
+  endif
+
+  if ($WRF_NMM_CORE == 1 && $WRF_CHEM == 1 ) then
+    echo "Chemistry not yet supported in NMM core, set WRF_CHEM to 0 "
+    if ( ! -f Registry/Registry ) then
+      echo Registry file does not exist
+      set overwrite=1
+    else
+      head -2 Registry/Registry | tail -1 | grep NMM_CHEM > /dev/null
+      if ( $status ) then
+        set overwrite=1
+      else 
+        set nmm_time=`ls -1tr Registry | cat -n | grep -w 'Registry\.NMM_CHEM' | grep -v 'Registry.NMM_CHEM.' | awk '{print $1}'`
+        set rg_time=`ls -1tr Registry | cat -n | grep -w 'Registry' | grep -v 'Registry.' | awk '{print $1}'`
+        if ( $nmm_time > $rg_time ) set overwrite=1
+      endif
+    endif
+    if ( $overwrite ) then
+      echo copying Registry/Registry.NMM_CHEM to Registry/Registry
+      echo '## WARNING: this file is autogenerated from Registry/Registry.NMM_CHEM. Changes may be lost' > Registry/Registry
+      /bin/cat Registry/Registry.NMM_CHEM >> Registry/Registry
+    endif
+#   exit 2
+  endif
+
+
+  if ($WRF_EM_CORE == 1 && $WRF_NMM_CORE == 1 ) then
+    echo "Cannot compile both EM and NMM cores in same executable yet."
+    exit 2
+  endif
+  if ($WRF_EM_CORE == 0 && $WRF_NMM_CORE == 0 && ! $WRF_CONVERT == 1 ) then
+    echo "Cannot compile because both EM and NMM cores are set to 0."
+    exit 2
+  endif
+  if ("$arglist" == 'nmm_real' && $WRF_NMM_CORE == 0) then
+    echo WRF_NMM_CORE must be set to 1 in order to compile nmm_real
+    exit 2
+  endif
+  if (($WRF_EM_CORE == 1)&&($WRF_DA_CORE == 0 ) &&($WRF_CHEM == 0 )&&($WRF_CONVERT == 0))  then
+    if ( ! -f Registry/Registry ) then
+      set overwrite=1
+    else
+      head -2 Registry/Registry | tail -1 | grep EM > /dev/null
+      if ( $status ) then
+        set overwrite=1
+      else
+        set em_time=`ls -1tr Registry | cat -n | grep -w 'Registry\.EM' | grep -v 'Registry.EM.' | awk '{print $1}'`
+        set rg_time=`ls -1tr Registry | cat -n | grep -w 'Registry' | grep -v 'Registry.' | awk '{print $1}'`
+        if ( $em_time > $rg_time ) set overwrite=1
+      endif
+    endif
+    if ( $overwrite ) then
+      echo copying Registry/Registry.EM to Registry/Registry
+      echo '## WARNING: this file is autogenerated from Registry/Registry.EM. Changes may be lost' > Registry/Registry
+      /bin/cat Registry/Registry.EM >> Registry/Registry
+    endif
+  else if (($WRF_EM_CORE == 1)&&($WRF_CHEM == 1 ))  then
+    if ( ! -f Registry/Registry ) then
+      set overwrite=1
+    else
+      head -2 Registry/Registry | tail -1 | grep EM_CHEM > /dev/null
+      if ( $status ) then
+        set overwrite=1
+      else
+        set em_time=`ls -1tr Registry | cat -n | grep -w 'Registry\.EM_CHEM' | grep -v 'Registry.EM_CHEM.' | awk '{print $1}'`
+        set rg_time=`ls -1tr Registry | cat -n | grep -w 'Registry' | grep -v 'Registry.' | awk '{print $1}'`
+        if ( $em_time > $rg_time ) set overwrite=1
+      endif
+    endif
+    if ( $overwrite ) then
+      echo copying Registry/Registry.EM_CHEM to Registry/Registry
+      echo '## WARNING: this file is autogenerated from Registry/Registry.EM_CHEM. Changes may be lost' > Registry/Registry
+      /bin/cat Registry/Registry.EM_CHEM >> Registry/Registry
+    endif
+  else if (($WRF_EM_CORE == 1)&&($WRF_DFI_RADAR == 1 ))  then
+    if ( ! -f Registry/Registry ) then
+      set overwrite=1
+    endif
+    if ( $overwrite ) then
+      echo copying Registry/Registry.EM to Registry/Registry
+      echo '## WARNING: this file is autogenerated from Registry/Registry.EM. Changes may be lost' > Registry/Registry
+      /bin/cat Registry/Registry.EM >> Registry/Registry
+    endif
+  else if (($WRF_EM_CORE == 0)&&($WRF_CONVERT == 1 ))  then
+    if ( ! -f Registry/Registry ) then
+      set overwrite=1
+    else
+      head -2 Registry/Registry | tail -1 | grep EM_CONVERT > /dev/null
+      if ( $status ) then
+        set overwrite=1
+      else
+        set em_time=`ls -1tr Registry | cat -n | grep -w 'Registry\.EM_CONVERT' | grep -v 'Registry.EM_CONVERT.' | awk '{print $1}'`
+        set rg_time=`ls -1tr Registry | cat -n | grep -w 'Registry' | grep -v 'Registry.' | awk '{print $1}'`
+        if ( $em_time > $rg_time ) set overwrite=1
+      endif
+    endif
+    if ( $overwrite ) then
+      echo copying Registry/Registry.CONVERT to Registry/Registry
+      echo '## WARNING: this file is autogenerated from Registry/Registry.CONVERT. Changes may be lost' > Registry/Registry
+      /bin/cat Registry/Registry.CONVERT >> Registry/Registry
+    endif
+  else if ( $WRF_DA_CORE == 1 )  then
+    if ( ! -f Registry/Registry ) then
+      set overwrite=1
+    else
+      head -2 Registry/Registry | tail -1 | grep WRFVAR > /dev/null
+      if ( $status ) then
+        set overwrite=1
+      else
+        set nmm_time=`ls -1tr Registry | cat -n | grep -w 'Registry\.NMM' | grep -v 'Registry.NMM.' | awk '{print $1}'`
+        set rg_time=`ls -1tr Registry | cat -n | grep -w 'Registry' | grep -v 'Registry.' | awk '{print $1}'`
+        if ( $nmm_time > $rg_time ) set overwrite=1
+      endif
+    endif
+    if ( $overwrite ) then
+      echo copying Registry/Registry.wrfvar to Registry/Registry
+      /bin/rm -f Registry/Registry.rconfig
+      /bin/cat Registry/Registry.EM_COMMON | grep '^rconfig' > Registry/Registry.rconfig
+      echo '## WARNING: this file is autogenerated from Registry/Registry.wrfvar Registry/Registry.EM_COMMON.var. Changes may be lost' > Registry/Registry
+      /bin/cat Registry/Registry.wrfvar >> Registry/Registry
+    endif
+
+    set wrfpluspath = ( `grep "^WRFPLUSPATH" configure.wrf | cut -d"=" -f2-` )
+    if ( $wrfpluspath == "" ) then
+       setenv WRFPLUS_INC " "
+    else
+       setenv WRFPLUS_DIR $wrfpluspath
+       setenv WRFPLUS_INC "-I${wrfpluspath}/dyn_em -I${wrfpluspath}/main -I${wrfpluspath}/frame -I${wrfpluspath}/share"
+    endif
+
+    setenv BUFR 1
+    set CRTM = ( `grep "\-DCRTM" configure.wrf | sed -e 's/\\//g' | sed 's/-//g' ` )
+    if ( $CRTM != "" ) then
+       echo "  "
+       echo "Will compile with CRTM library"
+       echo "  "
+       if ( ! $?BUFR ) then
+          echo "  "
+          echo "BUFR library is needed for radiance data ingest."
+          echo "setting BUFR=1"
+          echo "  "
+          setenv BUFR 1
+       endif
+       setenv CRTM_CPP "-DCRTM"
+       setenv CRTM_LIB "-L../external/crtm_2.1.3/libsrc -lCRTM"
+       setenv CRTM_SRC "-I../external/crtm_2.1.3/libsrc"
+       setenv SFC_CRTM `grep '^SFC' configure.wrf | awk '{print $3}' | sed -e 's/\// /g' | awk '{print $NF}'`
+       setenv ABI_CRTM `grep '^SFC' configure.wrf | sed -n 's/.*\(\-m[0-9]\{2\}\).*/\1/p'`
+       setenv CRTM 1
+    else
+       echo "  "
+       echo "Compiling WRFDA without CRTM library"
+       echo "  "
+       setenv CRTM_CPP " "
+       setenv CRTM_LIB " "
+       setenv CRTM_SRC " "
+       setenv CRTM 0
+    endif
+    set RTTOV = ( `grep "^RTTOVPATH" configure.wrf | cut -d"=" -f2-` )
+    if ( $RTTOV == "" ) then
+       setenv RTTOV_LIB " "
+       setenv RTTOV_SRC " "
+       unsetenv RTTOV
+    else
+       echo "  "
+       echo "Compiling with RTTOV libraries in:"
+       echo $RTTOV
+       echo "  "
+       if ( ! $?BUFR ) then
+          echo "  "
+          echo "BUFR library is needed for radiance data ingest."
+          echo "setting BUFR=1"
+          echo "  "
+          setenv BUFR 1
+       endif
+       if ( -e ${RTTOV}/lib/librttov11.1.0_main.a ) then
+          setenv RTTOV_LIB "-L${RTTOV}/lib -lrttov11.1.0_coef_io -lrttov11.1.0_emis_atlas -lrttov11.1.0_main"
+       else if ( -e ${RTTOV}/lib/librttov11.2.0_main.a ) then
+          setenv RTTOV_LIB "-L${RTTOV}/lib -lrttov11.2.0_coef_io -lrttov11.2.0_emis_atlas -lrttov11.2.0_main"
+       else if ( -e ${RTTOV}/lib/librttov11_main.a ) then
+          setenv RTTOV_LIB "-L${RTTOV}/lib -lrttov11_coef_io -lrttov11_emis_atlas -lrttov11_main"
+       else
+          echo "Can not find a compatible RTTOV library! Please ensure that your RTTOV build was successful,"
+          echo "your 'RTTOV' environment variable is set correctly, and you are using a supported version of RTTOV."
+          echo "Currently supported versions are 11.1, 11.2, and 11.3"
+          exit 1
+       endif
+       setenv RTTOV_SRC "-I${RTTOV}/include -I${RTTOV}/mod"
+    endif
+    set hdf5path = ( `grep "^HDF5PATH" configure.wrf | cut -d"=" -f2-` )
+    if ( $hdf5path == "" ) then
+       setenv HDF5_INC ""
+       unsetenv HDF5
+    else
+       echo "  "
+       echo "Compiling with HDF5 libraries in:"
+       echo $hdf5path
+       echo "  "
+       setenv HDF5_INC "-I${hdf5path}/include"
+       setenv HDF5 1
+    endif
+    if ( $?CLOUD_CV ) then
+       setenv CLOUD_CV_CPP "-DCLOUD_CV"
+    else
+       setenv CLOUD_CV_CPP " "
+    endif
+    if ( $?BUFR ) then
+       setenv BUFR_CPP "-DBUFR"
+       setenv BUFR_LIB "-L../external/bufr -lbufr"
+    else
+       setenv BUFR_CPP " "
+       setenv BUFR_LIB " "
+    endif
+    if ( $?WAVELET ) then
+       setenv WAVELET_LIB "../external/wavelet/libWavelet.a ../external/wavelet/lib_wavelet.a"
+    else
+       setenv WAVELET_LIB " "
+    endif
+    if ( $?MADIS ) then
+       setenv MADIS_CPP "-DMADIS"
+       setenv MADIS_STATIC ${MADIS}/static
+       setenv MADIS_LIB "-L${MADIS} -lmadis"
+    else
+       setenv MADIS_CPP " "
+       setenv MADIS_LIB " "
+    endif
+    setenv DA_ARCHFLAGS "${BUFR_CPP} ${MADIS_CPP} -DFFTPACK -DNORESHAPE"
+  endif
+  if (($WRF_NMM_CORE == 1)&&($WRF_CHEM == 0 )) then
+    if ( ! -f Registry/Registry ) then
+      set overwrite=1
+    else
+      head -2 Registry/Registry | tail -1 | grep NMM > /dev/null
+      if ( $status ) then
+        set overwrite=1
+      else
+        set nmm_time=`ls -1tr Registry | cat -n | grep -w 'Registry\.NMM' | grep -v 'Registry.NMM.' | awk '{print $1}'`
+        set rg_time=`ls -1tr Registry | cat -n | grep -w 'Registry' | grep -v 'Registry.' | awk '{print $1}'`
+        if ( $nmm_time > $rg_time ) set overwrite=1
+      endif
+    endif
+    if ( $overwrite ) then
+       echo copying Registry/Registry.NMM to Registry/Registry
+       echo '## WARNING: this file is autogenerated from Registry/Registry.NMM. Changes may be lost' > Registry/Registry
+       /bin/cat Registry/Registry.NMM >> Registry/Registry
+    endif
+# integrity check for a kludge where a hard coded value in the 
+# registry must match the same value in arch/preamble_new
+    set registryvalue=`grep 'dimspec.* q ' Registry/registry.dimspec | sed -e 's/..*constant=//' -e 's/ ..*$//'`
+    set preamblevalue=`grep 'DNMM_MAX_DIM=.*' arch/preamble_new | sed -e 's/..*-DNMM_MAX_DIM=//' -e 's/ ..*$//'`
+    if ( $registryvalue != $preamblevalue ) then
+      echo "Harded coded value of dimspec q in Registry ($registryvalue) does not"
+      echo "equal the hard coded value of NMM_MAX_DIM in arch/preamble_new ($preamblevalue)"
+      echo "Please fix and try again."
+      exit 2
+    endif
+  endif
+
+  echo " "
+  echo "============================================================================================== "
+  echo " "
+  cat inc/version_decl | cut -c 45-54
+  echo " "
+  echo -n "Compiling: "
+  if ( $WRF_DA_CORE ) echo -n "WRF_DA_CORE "
+  if ( $WRF_EM_CORE ) echo -n "WRF_EM_CORE "
+  if ( $WRF_NMM_CORE ) echo -n "WRF_NMM_CORE "
+  if ( $WRF_COAMPS_CORE ) echo -n "WRF_COAMPS_CORE "
+  if ( $WRF_EXP_CORE ) echo -n "WRF_EXP_CORE "
+  echo " "
+  env | grep LARGE
+  echo " "
+  uname -a
+  echo " "
+  set comp = ( `grep "^SFC" configure.wrf | cut -d"=" -f2-` )
+  if      ( "$comp[1]" == "gfortran" ) then
+    gfortran --version
+  else if ( "$comp[1]" == "pgf90" ) then
+    pgf90 --version
+  else if ( "$comp[1]" == "ifort" ) then
+    ifort -V
+  else
+    echo "Not sure how to figure out the version of this compiler: $comp[1]"
+  endif
+  echo " "
+  echo "============================================================================================== "
+  echo " "
+
+  if ( ! $?WRF_SRC_ROOT_DIR ) setenv WRF_SRC_ROOT_DIR `pwd`
+
+# new dec 2009.  check to see if make supports parallel -j option
+  make -j 2 >& /dev/null
+  if ( $status == 0 ) then              # Parallel make ok
+    if ( ! $?J ) then                   # J not defined
+      echo setting parallel make -j 2   # Set default to 2
+      setenv J "-j 2"
+    else
+#     J is defined, check that it is a correctly formed variable
+      set first2chars = `echo $J | cut -c 1-2`         # Are 1st two chars are -j?
+      set second_word = `echo $J | cut -d" " -f2`      # Is second word a number?
+      if    ( "$first2chars" == "-j" ) then
+         if ( ( "$second_word" >= "2"  )  && \
+              ( "$second_word" <= "20" ) ) then
+            echo setting parallel make $J
+         else if ( "$second_word" == "1" ) then
+            echo setting serial make $J
+         else
+            echo "badly formed -j option for parallel make: $J"
+            echo "or you set the number of processors above 20 "
+            echo setting parallel make -j 2            # Set default to 2
+            setenv J "-j 2"
+         endif
+      else
+         if ( "$J" == "" ) then     # J blank is OK
+            echo setting serial make $J
+         else
+            echo "parallel option for make is -j, you entered: $first2chars"
+            echo setting parallel make -j 2               # Set default to 2
+            setenv J "-j 2"
+         endif
+      endif
+    endif
+  else
+    echo not setting parallel make
+  endif
+
+  /bin/rm -f $ZAP >& /dev/null
+  make $arglist A2DCASE="$A2DCASE" WRF_SRC_ROOT_DIR="$WRF_SRC_ROOT_DIR"
+
+endif
+
+exit 0
+
+hlp:
+
+echo ' '
+echo 'Usage:'
+echo ' '
+echo '   compile [-j n] wrf   compile wrf in run dir (NOTE: no real.exe, ndown.exe, or ideal.exe generated)'
+echo ' '
+echo '   or choose a test case (see README_test_cases for details) :'
+foreach d ( `/bin/ls test` )
+  if ( "$d" != "CVS" ) then
+    echo "      compile [-j n] $d"
+  endif
+end
+echo ' '
+echo '  compile -j n               parallel make using n tasks if supported (default 2)'
+echo '  compile -h                 help message'
+
+

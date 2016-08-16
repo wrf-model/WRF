@@ -1,0 +1,85 @@
+file README.io_esmf
+Tom Henderson                                          03/08/07
+
+
+GENERAL NOTES
+
+This version of WRF has been tested with ESMF 2.2.0rp1 and with ESMF 2.2.2r.  
+Since ESMF interfaces are still evolving, it is possible that this version of 
+WRF will not work with newer versions of ESMF.  
+
+New environment variables ESMFLIB and ESMFINC may be set to trigger 
+build using a separately installed ESMF library instead of the default 
+library embedded in external/esmf_time_f90/.  These new environment variables 
+must be set to point to library and module paths for the separately 
+installed ESMF library before WRF "configure" is run.  For example, an 
+installation of ESMF on bluesky built with default ESMF settings in 
+/home/bluesky/hender/esmf requires the following settings:  
+  ESMFLIB /home/bluesky/hender/esmf/lib/libO/AIX.default.32.default
+  ESMFINC /home/bluesky/hender/esmf/mod/modO/AIX.default.32.default
+(Note that the portions of the pathnames following 
+"/home/bluesky/hender/esmf/" are defined by ESMF and described in the ESMF 
+documentation.)  
+
+When ESMFLIB and ESMFINC are set, a new main program is built in 
+main/wrf_SST_ESMF.exe.  This program is a sample coupled application in 
+which WRF is coupled to a very simple "data-ocean" component named SST via 
+a very simple coupler.  While this is a functional example of coupling WRF 
+to another ESMF component, it should be considered *HIGHLY EXPERIMENTAL*.  
+The implementation is quite primitive and has severe limitations.  
+Most important, it is only possible to couple with another component that 
+uses the exact same grid as WRF due to limitations of ESMF at the time this 
+work was originally done.  Also, the ESMF component only works with the 
+DM-Parallel RSL build and has only been tested on AIX.  These and a large 
+number of other issues are described in external/io_esmf/TODO.list.  
+
+Since external/io_esmf is an implementation of the WRF I/O and coupling 
+API (WRF IOAPI), ESMF coupling can be controlled by the user in the same 
+manner as other WRF I/O.  Specifically, contents of ESMF import and export 
+states are defined in the Registry (see Registry.EM_SST for example) and 
+timing of coupling is defined in namelist.input.  In the case of the WRF-SST 
+coupling example, the SST component simply reads SST values stored in a file 
+and sends it to WRF.  Since the SST component also uses the WRF IOAPI and 
+the format and metadata of SST data files is compatible with the WRF IOAPI, 
+it is possible to switch from coupled operation to stand-alone operation (in 
+which WRF reads the SST data directly via auxinput5), simply by changing 
+the io_form in the namelist.  A test that can be run to validate this claim 
+can be found in test/em_esmf_exp (see test/em_esmf_exp/README_WRF_CPL_SST.txt). 
+
+This is a work-in-progress!  
+
+
+NOTES ABOUT THE EVENT LOOP FOR WRF+CPL+SST
+
+The event loop (time-stepping loop) in the ESMF driver program in 
+main/wrf_SST_ESMF.F is a serial analog of concurrent coupling performed using
+the Model Coupling Environment Library (MCEL) by Michalakes and Bettencourt 
+(http://www.mmm.ucar.edu/wrf/WG2/Tigers/IOAPI/index.html).  Specifically, 
+the "read" of the WRF ImportState and the "write" of the WRF ExportState both 
+occur during subroutine med_before_solve_io() which is called before the main 
+WRF solver (which advances a domain by one time-step).  This approach is 
+suitable for "loose" coupling in which precise time synchronization between 
+components is not critical.  Such "loose" coupling is appropriate for some 
+ocean-atmosphere systems.  The WRF+CPL+SST event loop contains the following 
+steps:  
+ - SST run phase 1
+ - CPL SST to WRF
+ - CPL WRF to SST
+ - WRF run
+ - SST run phase 2
+However, coupling of components that require more precise synchronization, 
+such as land-atmosphere coupling, requires "tighter" coupling.  Also, it is 
+not always convenient to split a component into multiple run phases (or 
+multiple components).  A more suitable event loop for this case might contain 
+the following steps:  
+ - LAND run
+ - CPL LAND to WRF
+ - WRF run
+ - CPL WRF to LAND
+This requires modifying WRF so the "output" calls that "write" the WRF 
+ExportState occur in subroutine med_after_solve_io() in file 
+share/mediation_integrate.F.  
+We plan to make this modification in a future revision of WRF and allow users 
+to control where the WRF ExportState is set at run-time via a namelist 
+variable.  
+

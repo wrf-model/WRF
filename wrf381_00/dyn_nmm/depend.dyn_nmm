@@ -1,0 +1,81 @@
+# DEPENDENCIES : only dependencies after this line (don't remove the word DEPENDENCIES)
+
+solve_nmm.o:   module_BC_NMM.o module_STATS_FOR_MOVE.o \
+               module_IGWAVE_ADJUST.o module_ADVECTION.o  \
+               module_NONHY_DYNAM.o module_DIFFUSION_NMM.o    \
+               module_BNDRY_COND.o module_PHYSICS_CALLS.o \
+               module_CTLBLK.o module_HIFREQ.o \
+               module_swath.o \
+               ../share/module_random.o ../frame/hires_timer.o \
+               module_tornado_genesis.o nmm_get_cpu.o
+
+mediation_integrate.o: module_tornado_genesis.o
+
+module_swath.o: module_tracker.o ../frame/module_dm.o ../frame/module_domain.o \
+	../frame/module_configure.o
+
+mediation_nest_move.o: ../dyn_nmm/module_tracker.o
+
+module_tornado_genesis.o: ../frame/module_dm.o ../frame/module_domain.o \
+                          $(ESMF_MOD_DEPENDENCE) ../frame/module_configure.o
+
+module_membrane_mslp.o: module_relax.o ../frame/module_dm.o ../frame/module_domain.o
+module_tracker.o: module_relax.o ../frame/module_dm.o ../frame/module_domain.o
+
+NMM_NEST_UTILS1.o: module_TERRAIN.o module_SMOOTH_TERRAIN.o \
+	../frame/module_dm.o ../frame/module_domain.o \
+	../frame/module_configure.o ../frame/module_timing.o
+
+module_STATS_FOR_MOVE.o: ../frame/module_dm.o ../frame/module_domain.o \
+	../frame/module_configure.o module_membrane_mslp.o module_tracker.o
+
+#start_domain_nmm.o: module_HIFREQ.o ../share/module_random.o module_STATS_FOR_MOVE.o \
+#                    module_tornado_genesis.o module_swath.o ../frame/module_clear_halos.o \
+#                    ../phys/module_physics_init.o 
+
+module_ADVECTION.o: ../share/module_MPP.o module_INDX.o
+
+module_ADVECTION.o: ../share/module_MPP.o module_INDX.o
+
+module_MPPINIT.o: ../share/module_MPP.o 
+
+module_DIFFUSION_NMM.o: ../share/module_MPP.o module_INDX.o
+
+module_IGWAVE_ADJUST.o: ../share/module_MPP.o module_INDX.o module_TIMERS.o
+
+module_HIFREQ.o: module_NEST_UTIL.o ../frame/module_dm.o \
+	../frame/module_domain.o ../frame/module_configure.o
+
+module_PHYSICS_CALLS.o: \
+		../frame/module_domain.o		\
+		../frame/module_dm.o		\
+		../frame/module_configure.o		\
+		../frame/module_tiles.o		\
+		../frame/module_state_description.o		\
+		../share/module_model_constants.o		\
+		../phys/module_ra_gfdleta.o  \
+		../phys/module_radiation_driver.o  \
+		../phys/module_sf_myjsfc.o  \
+		../phys/module_surface_driver.o  \
+		../phys/module_pbl_driver.o  \
+                ./module_GWD.o  \
+		../phys/module_cu_bmj.o  \
+		../phys/module_cumulus_driver.o  \
+		../phys/module_mp_etanew.o  \
+		../phys/module_microphysics_driver.o
+
+module_GWD.o: ../frame/module_dm.o
+
+module_initialize_real.o: ../share/module_model_constants.o
+
+module_initialize_tropical_cyclone.o: ../share/module_model_constants.o
+
+start_domain_nmm.o: module_ADVECTION.o module_BNDRY_COND.o module_CTLBLK.o \
+                    module_DIFFUSION_NMM.o module_GWD.o module_NONHY_DYNAM.o \
+                    module_IGWAVE_ADJUST.o \
+                    module_HIFREQ.o ../share/module_random.o \
+                    ../phys/module_physics_init.o \
+                    module_STATS_FOR_MOVE.o \
+                    module_tornado_genesis.o module_swath.o ../frame/module_clear_halos.o
+
+# DO NOT DELETE

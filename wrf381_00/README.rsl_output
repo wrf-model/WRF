@@ -1,0 +1,25 @@
+
+When the WRF model runs, the contents of the rsl.output and rsl.error files have all been placed in individual
+files (whose names are subtended with the task ID) in the run directory.  The user now has another option in
+which the contents of the files may be written together in single files.  See below for directions.
+
+
+******************
+For RSL_LITE:
+******************
+
+Include -DNCEP_DEBUG_MULTIDIR in CFLAGS of configure.wrf to have the rsl.output and rsl.error data written to separate
+files in separate task numbered directories.  All of these directories will be in a single TASKOUTPUT directory under
+the run directory, i.e.,  <rundirectory>/TASKOUTPUT/0000/rsl.error.0000 .
+
+Include -DNCEP_DEBUG_MULTIDIR -DNCEP_DEBUG_GLOBALSTDOUT in CFLAGS of configure.wrf to have all rsl.error and rsl.out information written to
+the global stderr and stdout for the job (2 files).
+
+If you do not include either flag, the default is to have the rsl output/error data written to separate files in the
+run directory.
+
+To alter your option after everything has been compiled do the following from the top level source directory:
+
+rm external/RSL_LITE/*.o external/RSL_LITE/*.a  (or cd external/RSL_LITE followed by rm *.o *.a)
+./compile nmm_real
+

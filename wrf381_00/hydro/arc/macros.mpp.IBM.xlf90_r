@@ -1,0 +1,43 @@
+.IGNORE:
+
+ifeq ($(HYDRO_REALTIME),1)
+HYDRO_REALTIME = -DHYDRO_REALTIME
+else
+HYDRO_REALTIME =
+endif
+
+ifeq ($(WRF_HYDRO),1)
+WRF_HYDRO = -DWRF_HYDRO $(HYDRO_REALTIME)
+else
+WRF_HYDRO =
+endif
+
+ifeq ($(WRF_HYDRO_RAPID),1)
+WRF_HYDRO = -DWRF_HYDRO -DWRF_HYDRO_RAPID $(HYDRO_REALTIME)
+endif
+
+ifeq ($(HYDRO_D),1)
+HYDRO_D = -DHYDRO_D $(WRF_HYDRO)
+else
+HYDRO_D =  $(WRF_HYDRO)
+endif
+
+ifeq ($(WRFIO_NCD_LARGE_FILE_SUPPORT),1)
+WRFIO_NCD_LARGE_FILE_SUPPORT = -DWRFIO_NCD_LARGE_FILE_SUPPORT
+else
+WRFIO_NCD_LARGE_FILE_SUPPORT = 
+endif
+
+RM		=	rm -f 
+RMD		=	rm -f 
+COMPILER90=	mpxlf90_r
+F90FLAGS  =     -O2 -qfree=f90 -c -w -qspill=20000 -qmaxmem=64000
+LDFLAGS  =     -O2 -qfree=f90  -w -qspill=20000 -qmaxmem=64000
+MODFLAG	=	-I./ -I ../MPP -I../../MPP -I ../mod
+LDFLAGS	=	
+CPP	=       cpp
+LIBS 	=	
+CPPFLAGS	= -P -traditional -DMPP_LAND -I../Data_Rec $(HYDRO_D) $(WRFIO_NCD_LARGE_FILE_SUPPORT)
+NETCDFINC	=	$(NETCDF_INC) 
+NETCDFLIB	=	-L$(NETCDF_LIB) -lnetcdff -lnetcdf
+

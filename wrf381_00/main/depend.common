@@ -1,0 +1,1232 @@
+# DEPENDENCIES for frame
+
+
+module_configure.o: \
+		../dyn_em/namelist_remappings_em.h \
+		module_domain_type.o \
+		module_state_description.o \
+                module_wrf_error.o \
+		module_driver_constants.o 
+
+module_dm.o: module_machine.o module_state_description.o module_wrf_error.o \
+		module_domain.o \
+		module_driver_constants.o \
+		module_timing.o \
+		module_comm_nesting_dm.o \
+		module_configure.o module_comm_dm.o \
+		module_cpl.o \
+		../share/module_model_constants.o
+
+module_timing.o: hires_timer.o clog.o
+
+module_comm_dm.o: module_comm_dm_0.o module_comm_dm_1.o module_comm_dm_2.o module_comm_dm_3.o module_comm_dm_4.o
+
+module_comm_dm_0.o: module_domain.o module_configure.o
+module_comm_dm_1.o: module_domain.o module_configure.o
+module_comm_dm_2.o: module_domain.o module_configure.o
+module_comm_dm_3.o: module_domain.o module_configure.o
+module_comm_dm_4.o: module_domain.o module_configure.o
+
+module_comm_nesting_dm.o: \
+		module_domain.o \
+		module_configure.o
+
+module_dm_stubs.F: module_domain.o
+
+module_domain.o: module_domain_type.o \
+                 module_alloc_space_0.o \
+                 module_alloc_space_1.o \
+                 module_alloc_space_2.o \
+                 module_alloc_space_3.o \
+                 module_alloc_space_4.o \
+                 module_alloc_space_5.o \
+                 module_alloc_space_6.o \
+                 module_alloc_space_7.o \
+                 module_alloc_space_8.o \
+                 module_alloc_space_9.o \
+                module_driver_constants.o \
+		module_configure.o \
+		module_machine.o  \
+		module_state_description.o \
+                module_wrf_error.o \
+		$(ESMF_MOD_DEPENDENCE)
+
+module_domain_type.o : module_driver_constants.o module_streams.o $(ESMF_MOD_DEPENDENCE)
+
+module_alloc_space_0.o : module_domain_type.o module_configure.o
+module_alloc_space_1.o : module_domain_type.o module_configure.o
+module_alloc_space_2.o : module_domain_type.o module_configure.o
+module_alloc_space_3.o : module_domain_type.o module_configure.o
+module_alloc_space_4.o : module_domain_type.o module_configure.o
+module_alloc_space_5.o : module_domain_type.o module_configure.o
+module_alloc_space_6.o : module_domain_type.o module_configure.o
+module_alloc_space_7.o : module_domain_type.o module_configure.o
+module_alloc_space_8.o : module_domain_type.o module_configure.o
+module_alloc_space_9.o : module_domain_type.o module_configure.o
+
+module_streams.o : \
+		module_state_description.o 
+
+module_driver_constants.o: \
+		module_state_description.o \
+                module_wrf_error.o
+
+module_integrate.o: \
+		module_domain.o \
+		module_timing.o \
+		module_driver_constants.o \
+		module_state_description.o \
+		module_nesting.o \
+		module_configure.o \
+		module_cpl.o \
+                module_dm.o \
+		$(ESMF_MOD_DEPENDENCE)
+
+module_intermediate_nmm.o: \
+		module_state_description.o \
+		module_domain.o \
+		module_configure.o \
+		module_dm.o \
+		module_comm_dm.o \
+                module_timing.o
+
+module_io.o :	md_calls.inc \
+                module_dm.o \
+		module_state_description.o \
+		module_configure.o  \
+                module_streams.o \
+		module_driver_constants.o 
+
+module_io_quilt.o: \
+		module_state_description.o \
+                module_dm.o \
+                module_configure.o \
+		module_internal_header_util.o \
+		module_quilt_outbuf_ops.o \
+		module_wrf_error.o  \
+                module_cpl.o 
+
+module_machine.o: \
+		module_driver_constants.o
+
+module_nesting.o: \
+		module_machine.o \
+		module_driver_constants.o \
+		module_configure.o \
+		$(ESMF_MOD_DEPENDENCE) \
+		module_domain.o 
+
+module_quilt_outbuf_ops.o: \
+		module_state_description.o module_timing.o
+
+module_tiles.o: module_domain.o \
+		module_driver_constants.o \
+		module_machine.o  \
+		module_configure.o  \
+                module_wrf_error.o
+ 
+module_timing.o: \
+		module_state_description.o \
+                module_wrf_error.o
+
+module_wrf_error.o: \
+		wrf_shutdown.o \
+		clog.o \
+		$(ESMF_MOD_DEPENDENCE)
+
+wrf_debug.o: \
+		module_wrf_error.o
+
+module_sm.o:	module_wrf_error.o
+
+module_cpl.o: \
+		../share/module_model_constants.o \
+		module_driver_constants.o \
+		module_domain.o \
+		module_configure.o \
+		module_cpl_oasis3.o
+
+module_cpl_oasis3.o: module_driver_constants.o \
+                     module_domain.o
+
+module_clear_halos.o: module_configure.o \
+                     module_domain.o
+
+# End of DEPENDENCIES for frame
+
+# DEPENDENCIES for phys
+
+module_bl_myjpbl.o: ../share/module_model_constants.o
+
+module_bl_myjurb.o: ../share/module_model_constants.o
+
+module_bl_gbmpbl.o: ../share/module_model_constants.o
+
+module_bl_boulac.o: ../share/module_model_constants.o
+
+module_bl_qnsepbl.o: ../share/module_model_constants.o
+
+module_progtm.o: module_gfs_machine.o 
+
+module_bl_gfs.o: module_gfs_machine.o \
+		 module_gfs_physcons.o
+
+module_bl_gfs2011.o: module_gfs_machine.o \
+		 module_gfs_physcons.o
+
+module_bl_mynn.o: ../share/module_model_constants.o
+
+module_cam_upper_bc.o: module_cam_shr_kind_mod.o \
+		module_cam_support.o
+
+module_cam_constituents.o: module_cam_shr_kind_mod.o \
+		module_cam_physconst.o \
+		module_cam_support.o \
+		../frame/module_wrf_error.o 
+
+module_cam_trb_mtn_stress.o: module_cam_shr_kind_mod.o \
+		module_cam_support.o
+
+module_cam_molec_diff.o: module_cam_support.o \
+		module_cam_constituents.o \
+		module_cam_upper_bc.o 
+
+module_data_cam_mam_aero.o : module_cam_shr_kind_mod.o \
+		module_cam_support.o \
+		module_cam_mp_radconstants.o
+
+module_data_cam_mam_asect.o : module_cam_shr_kind_mod.o \
+		module_data_cam_mam_aero.o
+
+module_cam_bl_diffusion_solver.o: module_cam_support.o 
+
+module_cam_bl_eddy_diff.o:module_cam_bl_diffusion_solver.o \
+		module_cam_support.o 
+
+module_bl_camuwpbl_driver.o: module_cam_shr_kind_mod.o \
+		module_cam_support.o \
+		module_cam_constituents.o \
+		module_cam_bl_diffusion_solver.o\
+		module_cam_physconst.o \
+		module_cam_trb_mtn_stress.o \
+		module_cam_bl_eddy_diff.o \
+		module_cam_wv_saturation.o \
+		module_cam_molec_diff.o \
+		module_data_cam_mam_aero.o \
+		../share/module_model_constants.o \
+		module_cam_esinti.o 
+
+module_sf_mynn.o: module_sf_sfclay.o module_bl_mynn.o \
+                ../share/module_model_constants.o \
+                ../frame/module_wrf_error.o
+
+module_sf_fogdes.o: ../share/module_model_constants.o \
+                module_bl_mynn.o
+
+module_bl_fogdes.o: ../share/module_model_constants.o \
+                module_bl_mynn.o
+
+module_sf_gfdl.o : \
+		module_gfs_machine.o \
+		module_sf_exchcoef.o \
+		module_gfs_funcphys.o \
+		module_gfs_physcons.o
+
+module_cu_bmj.o: ../share/module_model_constants.o
+
+module_shcu_camuwshcu_driver.o: module_cam_support.o \
+		module_mp_cammgmp_driver.o \
+                module_cam_physconst.o \
+                module_cam_wv_saturation.o \
+                module_shcu_camuwshcu.o
+
+module_shcu_camuwshcu.o: module_cam_support.o \
+                module_cam_constituents.o \
+                module_cam_error_function.o \
+                module_cam_esinti.o \
+                module_cam_physconst.o \
+                module_bl_camuwpbl_driver.o
+
+module_cu_camzm_driver.o: ../share/module_model_constants.o \
+                module_cam_shr_kind_mod.o \
+                module_cam_support.o \
+                module_cam_physconst.o \
+		module_mp_cammgmp_driver.o \
+                module_bl_camuwpbl_driver.o \
+                module_cu_camzm.o
+
+module_cu_camzm.o: module_cam_shr_kind_mod.o \
+                module_cam_constituents.o \
+                module_cam_support.o \
+                module_cam_physconst.o \
+                module_cam_wv_saturation.o \
+                module_cam_cldwat.o
+
+module_cam_error_function.o: 
+
+module_cam_cldwat.o: module_cam_shr_kind_mod.o \
+                module_cam_support.o \
+                module_cam_wv_saturation.o \
+                module_cam_physconst.o
+
+module_cam_esinti.o: module_cam_shr_kind_mod.o \
+                module_cam_wv_saturation.o
+
+module_cam_wv_saturation.o: module_cam_shr_kind_mod.o \
+                module_cam_support.o \
+                module_cam_gffgch.o
+
+module_cam_gffgch.o: module_cam_shr_kind_mod.o \
+                module_cam_support.o \
+                module_cam_physconst.o
+
+module_cam_physconst.o: module_cam_shr_kind_mod.o \
+                module_cam_shr_const_mod.o
+
+module_cam_shr_const_mod.o: module_cam_shr_kind_mod.o
+
+module_cam_support.o: module_cam_shr_kind_mod.o \
+		../frame/module_state_description.o
+
+module_cam_shr_kind_mod.o:
+
+module_cu_kf.o:  ../frame/module_wrf_error.o
+
+
+module_cu_kfcup.o:  ../frame/module_wrf_error.o     \
+		../frame/module_state_description.o \
+		$(CF2)                              \
+		../share/module_model_constants.o   \
+		module_mixactivate.o
+
+module_cu_kfeta.o: ../frame/module_wrf_error.o
+
+module_cu_gd.o:
+
+module_cu_nsas.o:
+
+module_gfs_physcons.o: module_gfs_machine.o
+
+module_gfs_funcphys.o: module_gfs_machine.o \
+		       module_gfs_physcons.o
+
+module_cu_sas.o: module_gfs_machine.o \
+		 module_gfs_funcphys.o \
+		 module_gfs_physcons.o
+
+module_cu_mesosas.o: module_gfs_machine.o \
+		 module_gfs_funcphys.o \
+		 module_gfs_physcons.o
+
+module_cu_osas.o: module_gfs_machine.o \
+		 module_gfs_funcphys.o \
+		 module_gfs_physcons.o
+
+module_cu_tiedtke.o:module_gfs_machine.o \
+		module_gfs_funcphys.o \
+		module_gfs_physcons.o
+
+module_cu_ntiedtke.o: ../share/module_model_constants.o
+
+module_ra_gfdleta.o:  ../frame/module_dm.o \
+		module_mp_etanew.o
+
+module_ra_HWRF.o:   ../frame/module_dm.o module_mp_HWRF.o
+
+module_ra_rrtm.o: ../frame/module_wrf_error.o \
+		module_ra_clWRF_support.o \
+		../frame/module_dm.o
+
+module_ra_cam_support.o: module_cam_support.o \
+                ../frame/module_wrf_error.o
+
+module_ra_cam.o: module_ra_cam_support.o \
+		 module_cam_support.o \
+		 module_ra_clWRF_support.o \
+                ../frame/module_wrf_error.o
+
+module_mp_lin.o : ../frame/module_wrf_error.o \
+		module_mp_radar.o
+
+module_ra_flg.o: ../frame/module_wrf_error.o \
+		../frame/module_dm.o
+
+module_mp_sbu_ylin.o : ../frame/module_wrf_error.o \
+                   ../share/module_model_constants.o
+
+module_mp_milbrandt2mom.o : ../frame/module_wrf_error.o \
+		../share/module_model_constants.o
+
+module_mp_thompson.o : ../frame/module_wrf_error.o \
+		module_mp_radar.o
+
+module_mp_nssl_2mom.o : ../frame/module_wrf_error.o \
+		../share/module_model_constants.o
+
+module_mp_fast_sbm.o : module_mp_radar.o
+
+module_mp_full_sbm.o : module_mp_radar.o
+
+module_mp_cammgmp_driver.o : module_cam_mp_microp_aero.o \
+		module_cam_constituents.o \
+		module_cam_shr_kind_mod.o \
+		module_cam_cldwat.o \
+		module_cam_mp_cldwat2m_micro.o \
+		module_cam_physconst.o \
+		module_cam_support.o \
+		module_data_cam_mam_aero.o \
+		module_data_cam_mam_asect.o \
+		module_cam_wv_saturation.o \
+		module_cam_mp_ndrop.o \
+		module_cam_mp_conv_water.o \
+		../frame/module_state_description.o 
+
+module_cam_mp_microp_aero.o : module_cam_shr_kind_mod.o \
+		module_cam_support.o \
+		module_cam_physconst.o \
+		module_cam_error_function.o \
+		module_cam_wv_saturation.o \
+		module_cam_mp_ndrop.o \
+		module_data_cam_mam_aero.o 
+module_cam_mp_cldwat2m_micro.o : module_cam_shr_kind_mod.o \
+		module_cam_support.o \
+		module_cam_physconst.o \
+		module_cam_error_function.o \
+		module_cam_wv_saturation.o 
+
+module_cam_mp_ndrop.o : module_cam_shr_kind_mod.o \
+		module_data_cam_mam_aero.o \
+		module_cam_support.o \
+		module_cam_physconst.o \
+		module_cam_constituents.o \
+		module_cam_error_function.o \
+		module_cam_wv_saturation.o 
+
+module_cam_mp_modal_aero_initialize_data_phys.o : module_data_cam_mam_aero.o
+module_cam_mp_conv_water.o: module_cam_shr_kind_mod.o \
+		module_cam_support.o \
+		module_cam_physconst.o 
+
+module_cam_mp_qneg3.o: module_cam_shr_kind_mod.o \
+		module_cam_support.o 
+
+module_cam_mp_radconstants.o : module_cam_shr_kind_mod.o \
+		module_cam_support.o 
+module_cam_infnan.o: module_cam_shr_kind_mod.o
+
+module_ra_goddard.o : ../frame/module_wrf_error.o
+
+module_mp_gsfcgce.o : ../frame/module_wrf_error.o \
+		module_mp_radar.o
+
+module_sf_myjsfc.o: ../share/module_model_constants.o 
+
+module_sf_qnsesfc.o: ../share/module_model_constants.o 
+
+module_sf_gfs.o: module_gfs_machine.o \
+		 module_gfs_funcphys.o \
+		 module_gfs_physcons.o \
+		 module_progtm.o
+
+module_sf_noahdrv.o: module_sf_noahlsm.o \
+                     module_sf_noahlsm_glacial_only.o \
+                     module_data_gocart_dust.o \
+                     module_sf_urban.o module_sf_bep.o module_sf_bep_bem.o 
+
+module_sf_noahlsm.o: ../share/module_model_constants.o
+
+module_sf_clm.o: module_cam_shr_kind_mod.o \
+		 module_cam_shr_const_mod.o \
+		 module_cam_support.o \
+		 module_sf_urban.o \
+		 ../share/module_date_time.o \
+		 ../frame/module_wrf_error.o  \
+		../frame/module_configure.o
+
+module_sf_ssib.o: ../share/module_model_constants.o  
+
+module_sf_noah_seaice_drv.o:	module_sf_noah_seaice.o
+
+module_sf_noah_seaice.o: 	module_sf_noahlsm.o ../share/module_model_constants.o
+
+module_sf_noahmpdrv.o: module_sf_noahmplsm.o \
+			module_data_gocart_dust.o \
+			module_sf_noahmp_glacier.o \
+			module_sf_noahmp_groundwater.o \
+			../share/module_model_constants.o
+
+module_sf_noahlsm_glacial_only.o: module_sf_noahlsm.o module_sf_noahmplsm.o
+
+module_sf_noahmplsm.o:	../share/module_model_constants.o \
+			module_sf_myjsfc.o
+
+module_sf_noahmp_groundwater.o:	module_sf_noahmplsm.o
+
+module_sf_bep.o: ../share/module_model_constants.o module_sf_urban.o
+
+module_sf_bep_bem.o: ../share/module_model_constants.o module_sf_bem.o module_sf_urban.o
+
+module_sf_bem.o: ../share/module_model_constants.o
+
+module_sf_ruclsm.o: ../frame/module_wrf_error.o module_data_gocart_dust.o 
+
+module_sf_pxlsm.o: ../share/module_model_constants.o module_sf_pxlsm_data.o
+
+module_ra_rrtmg_sw.o: module_ra_rrtmg_lw.o
+module_ra_rrtmg_swf.o: module_ra_rrtmg_lwf.o
+
+module_ra_rrtmg_lw.o: ../share/module_model_constants.o \
+		 module_ra_clWRF_support.o 
+module_ra_rrtmg_lwf.o: ../share/module_model_constants.o \
+		 module_ra_clWRF_support.o 
+
+module_physics_addtendc.o: \
+		module_cu_kf.o			\
+		module_cu_kfeta.o		\
+		../frame/module_state_description.o \
+		../frame/module_configure.o
+
+
+module_physics_init.o : \
+		module_ra_rrtm.o		\
+		module_ra_rrtmg_lwf.o		\
+		module_ra_rrtmg_swf.o		\
+		module_ra_rrtmg_lw.o		\
+		module_ra_rrtmg_sw.o		\
+		module_ra_cam.o		\
+		module_ra_cam_support.o		\
+		module_ra_sw.o			\
+		module_ra_gsfcsw.o		\
+		module_ra_gfdleta.o		\
+		module_ra_HWRF.o		\
+		module_ra_hs.o			\
+                module_ra_flg.o                 \
+		module_sf_sfclay.o		\
+		module_sf_sfclayrev.o		\
+		module_sf_slab.o		\
+		module_sf_myjsfc.o		\
+		module_sf_mynn.o                \
+		module_sf_fogdes.o              \
+		module_sf_urban.o               \
+		module_sf_qnsesfc.o		\
+		module_sf_pxsfclay.o		\
+		module_sf_noahlsm.o		\
+		module_sf_noahdrv.o		\
+		module_sf_clm.o			\
+                module_sf_ssib.o                \
+		module_sf_noahmplsm.o		\
+		module_sf_noahmpdrv.o		\
+                module_sf_bep.o                 \
+                module_sf_bep_bem.o             \
+		module_sf_ruclsm.o		\
+		module_sf_pxlsm.o		\
+		module_sf_lake.o		\
+		module_bl_ysu.o		        \
+		module_bl_mrf.o			\
+		module_bl_gfs.o			\
+		module_bl_gfs2011.o		\
+		module_bl_acm.o			\
+		module_bl_myjpbl.o		\
+		module_bl_qnsepbl.o		\
+		module_bl_mynn.o                \
+		module_bl_myjurb.o              \
+		module_bl_boulac.o              \
+		module_bl_camuwpbl_driver.o     \
+		module_bl_temf.o              \
+		module_bl_mfshconvpbl.o         \
+		module_cu_kf.o			\
+	        module_cu_g3.o                  \
+		module_cu_kfeta.o		\
+		module_cu_mskf.o		\
+		module_cu_bmj.o			\
+		module_cu_gd.o			\
+		module_cu_nsas.o		\
+		module_cu_sas.o			\
+		module_cu_osas.o		\
+		module_cu_camzm_driver.o        \
+		module_cu_kfcup.o               \
+		module_shcu_camuwshcu.o		\
+                module_shcu_grims.o             \
+		module_mp_sbu_ylin.o		\
+		module_mp_wsm3.o		\
+		module_mp_wsm5.o		\
+		module_mp_wsm6.o		\
+		module_mp_etanew.o		\
+		module_mp_fer_hires.o 		\
+		module_mp_HWRF.o		\
+		module_fdda_psufddagd.o		\
+		module_fdda_spnudging.o         \
+		module_fddaobs_rtfdda.o		\
+		module_mp_thompson.o            \
+		module_mp_gsfcgce.o 		\
+                module_mp_morr_two_moment.o     \
+                module_mp_milbrandt2mom.o     \
+                module_mp_nssl_2mom.o         \
+		module_mp_wdm5.o		\
+		module_mp_wdm6.o		\
+		module_cam_physconst.o		\
+		module_cam_shr_kind_mod.o	\
+		module_mp_cammgmp_driver.o      \
+		module_cam_esinti.o             \
+		module_cam_constituents.o       \
+		module_cam_mp_modal_aero_initialize_data_phys.o \
+		module_cam_support.o \
+		module_wind_fitch.o \
+		../frame/module_state_description.o \
+		../frame/module_configure.o \
+		../frame/module_wrf_error.o \
+		../frame/module_dm.o \
+		../share/module_llxy.o \
+		../share/module_model_constants.o 
+
+module_microphysics_driver.o: \
+		module_mixactivate.o \
+		module_mp_kessler.o  module_mp_sbu_ylin.o module_mp_lin.o \
+		module_mp_wsm3.o module_mp_wsm5.o \
+		module_mp_wsm6.o module_mp_etanew.o \
+		module_mp_fer_hires.o module_mp_HWRF.o  \
+		module_mp_thompson.o            \
+		module_mp_gsfcgce.o 		\
+                module_mp_morr_two_moment.o     \
+                module_mp_milbrandt2mom.o     \
+                module_mp_nssl_2mom.o         \
+		module_mp_wdm5.o module_mp_wdm6.o \
+		module_mp_cammgmp_driver.o \
+		../frame/module_driver_constants.o \
+		../frame/module_state_description.o \
+		../frame/module_wrf_error.o \
+		../frame/module_configure.o \
+		../share/module_model_constants.o 
+
+module_shallowcu_driver.o: \
+		module_shcu_camuwshcu_driver.o \
+		../frame/module_state_description.o \
+		../share/module_model_constants.o
+
+module_cumulus_driver.o: \
+		module_cu_kf.o \
+		module_cu_g3.o \
+		module_cu_kfeta.o \
+		module_cu_bmj.o \
+		module_cu_gd.o \
+		module_cu_nsas.o \
+		module_cu_sas.o \
+		module_cu_osas.o \
+		module_cu_camzm_driver.o \
+		module_cu_tiedtke.o \
+		module_cu_ntiedtke.o \
+		module_cu_kfcup.o \
+		../frame/module_state_description.o \
+		../frame/module_configure.o \
+		../frame/module_domain.o \
+		../frame/module_dm.o \
+		../frame/module_comm_dm.o \
+		../frame/module_wrf_error.o \
+		../share/module_model_constants.o
+
+module_pbl_driver.o:  \
+		module_bl_myjpbl.o \
+		module_bl_myjurb.o \
+		module_bl_qnsepbl.o \
+		module_bl_acm.o \
+		module_bl_ysu.o \
+		module_bl_mrf.o \
+                module_bl_boulac.o \
+		module_bl_camuwpbl_driver.o \
+		module_bl_gfs.o \
+		module_bl_gfs2011.o \
+		module_bl_mynn.o \
+		module_bl_fogdes.o \
+		module_bl_gwdo.o \
+		module_bl_temf.o \
+		module_bl_mfshconvpbl.o \
+		module_wind_fitch.o \
+		../frame/module_state_description.o \
+		../frame/module_configure.o \
+		../share/module_model_constants.o 
+
+module_data_gocart_dust.o: 
+
+module_mixactivate.o: \
+		module_radiation_driver.o
+
+module_radiation_driver.o: \
+		module_ra_sw.o \
+		module_ra_gsfcsw.o \
+		module_ra_rrtm.o \
+		module_ra_rrtmg_lw.o \
+		module_ra_rrtmg_sw.o \
+		module_ra_rrtmg_lwf.o \
+		module_ra_rrtmg_swf.o \
+		module_ra_cam.o \
+		module_ra_gfdleta.o \
+		module_ra_HWRF.o \
+		module_ra_hs.o \
+		module_ra_goddard.o \
+                module_ra_flg.o \
+                module_ra_aerosol.o \
+                module_mp_thompson.o \
+		../frame/module_driver_constants.o \
+		../frame/module_state_description.o \
+		../frame/module_dm.o \
+		../frame/module_comm_dm.o \
+		../frame/module_domain.o \
+		../frame/module_wrf_error.o \
+		../frame/module_configure.o \
+		../share/module_bc.o  \
+		../share/module_model_constants.o 
+
+module_surface_driver.o: \
+		module_sf_sfclay.o		\
+		module_sf_sfclayrev.o		\
+		module_sf_slab.o		\
+		module_sf_myjsfc.o		\
+		module_sf_qnsesfc.o		\
+		module_sf_pxsfclay.o		\
+		module_sf_gfs.o  		\
+		module_sf_noah_seaice_drv.o	\
+                module_sf_noahmp_groundwater.o  \
+		module_sf_noahdrv.o		\
+		module_sf_clm.o			\
+                module_sf_ssib.o                \
+		module_sf_noahmpdrv.o		\
+		module_sf_ruclsm.o		\
+		module_sf_pxlsm.o		\
+		module_sf_mynn.o                \
+		module_sf_fogdes.o              \
+		module_sf_sfcdiags.o		\
+		module_sf_sfcdiags_ruclsm.o     \
+		module_sf_sstskin.o		\
+                module_sf_lake.o                \
+		module_sf_tmnupdate.o		\
+		module_sf_temfsfclay.o		\
+		module_sf_idealscmsfclay.o	\
+		module_sf_scmflux.o		\
+		module_sf_scmskintemp.o		\
+		module_sf_ocean_driver.o	\
+		../frame/module_state_description.o \
+		../frame/module_configure.o \
+		../frame/module_cpl.o \
+		../share/module_model_constants.o  
+
+module_sf_ocean_driver.o : \
+		module_sf_oml.o \
+		module_sf_3dpwp.o \
+		../frame/module_state_description.o 
+
+module_diagnostics_driver.o: \
+		module_lightning_driver.o 		\
+		module_diag_misc.o 			\
+		module_diag_cl.o			\
+		module_diag_pld.o 			\
+		module_diag_zld.o 			\
+		module_diag_afwa.o 			\
+		../frame/module_comm_dm.o		\
+		../frame/module_state_description.o 	\
+		../frame/module_domain.o 		\
+		../frame/module_configure.o 		\
+		../frame/module_driver_constants.o 	\
+		../share/module_model_constants.o
+
+module_diag_misc.o: \
+		../frame/module_dm.o
+
+module_diag_cl.o: \
+		../frame/module_dm.o 			\
+		../frame/module_configure.o
+
+module_diag_pld.o: \
+		../share/module_model_constants.o
+
+module_diag_zld.o: \
+		../share/module_model_constants.o
+
+module_diag_afwa_hail.o:
+
+module_diag_afwa.o: \
+		../frame/module_domain.o 		\
+		../frame/module_dm.o 			\
+		../frame/module_state_description.o 	\
+		../frame/module_configure.o 		\
+		../frame/module_streams.o		\
+		../external/esmf_time_f90/module_utility.o \
+		../share/module_model_constants.o	\
+		module_diag_afwa_hail.o
+
+module_diag_refl.o: \
+		../frame/module_dm.o			\
+		../share/module_model_constants.o
+
+module_mixactivate.o: \
+		module_radiation_driver.o
+
+module_fddagd_driver.o: \
+		module_fdda_spnudging.o \
+		module_fdda_psufddagd.o \
+		../frame/module_state_description.o \
+		../frame/module_configure.o \
+		../share/module_model_constants.o
+
+module_fddaobs_driver.o: \
+		../frame/module_domain.o \
+		../share/module_bc.o  \
+		../share/module_model_constants.o  \
+		module_fddaobs_rtfdda.o
+
+module_sf_lake.o : \
+             ../share/module_model_constants.o
+ 
+
+module_fr_fire_driver.o: \
+		../share/module_model_constants.o  \
+                ../frame/module_comm_dm.o \
+		module_fr_fire_phys.o \
+		module_fr_fire_model.o \
+		module_fr_fire_util.o 
+
+module_fr_fire_driver_wrf.o: \
+		../share/module_model_constants.o  \
+                ../frame/module_comm_dm.o \
+		module_fr_fire_driver.o \
+		module_fr_fire_atm.o \
+		module_fr_fire_util.o 
+
+module_fr_fire_atm.o: \
+		../share/module_model_constants.o  \
+		module_fr_fire_util.o 
+
+module_fr_fire_model.o: \
+	        module_fr_fire_core.o \
+                module_fr_fire_phys.o \
+		module_fr_fire_util.o 
+
+module_fr_fire_core.o: \
+		module_fr_fire_util.o \
+	        module_fr_fire_phys.o 
+
+module_fr_fire_phys.o: \
+		../share/module_model_constants.o  \
+		module_fr_fire_util.o 
+
+module_fire_debug_output.o: \
+	        ../frame/module_domain.o \
+	        ../frame/module_configure.o \
+	        ../share/mediation_integrate.o
+
+module_fdda_spnudging.o :\
+		../frame/module_dm.o \
+		../frame/module_state_description.o \
+		../frame/module_domain.o \
+		../frame/module_wrf_error.o
+
+module_sf_bep.o :\
+		module_sf_urban.o
+
+module_mp_wsm5.o :\
+		module_mp_wsm5_accel.F \
+		module_mp_radar.o
+
+module_mp_wdm5.o :\
+		module_mp_radar.o
+
+module_mp_wsm6.o :\
+		module_mp_radar.o
+
+module_mp_wdm6.o :\
+		module_mp_radar.o
+
+module_mp_morr_two_moment.o :\
+		module_mp_radar.o
+
+module_mp_wsm3.o :\
+		module_mp_wsm3_accel.F
+
+module_mp_radar.o :
+
+module_lightning_driver.o : \
+        module_ltng_crmpr92.o module_ltng_cpmpr92z.o module_ltng_iccg.o
+
+module_ltng_cpmpr92z.o :
+
+module_ltng_crmpr92.o :
+
+module_ltng_iccg.o :
+
+module_ra_aerosol.o :\
+	../frame/module_wrf_error.o
+
+# End of DEPENDENCIES for phys
+
+
+# DEPENDENCIES for share
+
+solve_interface.o: solve_em.int ../frame/module_domain.o ../frame/module_configure.o \
+		../frame/module_timing.o ../frame/module_driver_constants.o \
+		../frame/module_wrf_error.o
+
+start_domain.o: start_domain_em.int wrf_timeseries.o track_driver.o ../frame/module_domain.o ../frame/module_configure.o ../share/module_llxy.o
+
+module_date_time.o: ../frame/module_wrf_error.o ../frame/module_configure.o \
+                module_model_constants.o
+
+module_bc.o: ../frame/module_configure.o ../frame/module_state_description.o \
+		../frame/module_wrf_error.o module_model_constants.o
+
+module_bc_time_utilities.o: $(ESMF_MOD_DEPENDENCE)
+
+module_get_file_names.o: ../frame/module_dm.o
+
+module_io_wrf.o: module_date_time.o \
+                ../frame/module_wrf_error.o ../frame/module_streams.o \
+                $(ESMF_MOD_DEPENDENCE)
+
+module_io_domain.o: module_io_wrf.o module_date_time.o ../frame/module_io.o  \
+		../frame/module_domain.o ../frame/module_configure.o \
+		../frame/module_state_description.o
+
+output_wrf.o:   ../frame/module_io.o ../frame/module_wrf_error.o \
+                ../frame/module_domain.o ../frame/module_state_description.o \
+                ../frame/module_configure.o module_io_wrf.o  \
+		$(ESMF_MOD_DEPENDENCE)
+
+wrf_fddaobs_in.o: \
+		module_date_time.o \
+		module_llxy.o
+
+wrf_timeseries.o: wrf_tsin.o \
+		module_model_constants.o \
+		module_llxy.o \
+		../frame/module_domain.o \
+		../frame/module_configure.o \
+		../frame/module_dm.o
+
+track_driver.o: track_input.o \
+                module_model_constants.o \
+                module_llxy.o \
+                module_date_time.o \
+                ../frame/module_domain.o \
+                ../frame/module_configure.o \
+                ../frame/module_state_description.o \
+                ../frame/module_dm.o
+
+input_wrf.o:    ../frame/module_io.o ../frame/module_wrf_error.o \
+                ../frame/module_domain.o ../frame/module_state_description.o \
+                ../frame/module_configure.o module_io_wrf.o  \
+		$(ESMF_MOD_DEPENDENCE)
+
+wrf_ext_write_field.o : ../frame/module_io.o ../frame/module_wrf_error.o \
+                ../frame/module_domain.o ../frame/module_timing.o
+
+wrf_ext_read_field.o : ../frame/module_io.o ../frame/module_wrf_error.o \
+                ../frame/module_domain.o ../frame/module_timing.o
+
+module_soil_pre.o: module_date_time.o ../frame/module_state_description.o
+
+module_check_a_mundo.o: ../frame/module_configure.o ../frame/module_wrf_error.o \
+		../frame/module_state_description.o
+
+dfi.o : 	../frame/module_wrf_error.o ../frame/module_configure.o \
+		../frame/module_state_description.o \
+		../frame/module_domain.o ../frame/module_timing.o \
+		../frame/module_machine.o ../frame/module_comm_dm.o \
+		../frame/module_dm.o ../frame/module_driver_constants.o \
+		module_model_constants.o module_date_time.o module_io_domain.o \
+		$(ESMF_MOD_DEPENDENCE)
+
+module_optional_input.o: module_io_wrf.o module_io_domain.o \
+		../frame/module_domain.o ../frame/module_configure.o
+
+mediation_wrfmain.o: ../frame/module_domain.o ../frame/module_configure.o ../frame/module_dm.o \
+		../frame/module_timing.o $(ESMF_MOD_DEPENDENCE) \
+		module_bc_time_utilities.o module_io_domain.o
+
+init_modules.o: ../frame/module_configure.o ../frame/module_driver_constants.o \
+		../frame/module_domain.o ../frame/module_machine.o \
+		../frame/module_nesting.o ../frame/module_timing.o \
+		../frame/module_tiles.o ../frame/module_io.o \
+		../frame/module_io_quilt.o ../frame/module_dm.o \
+		../external/io_int/io_int.o \
+		 module_io_wrf.o module_bc.o module_model_constants.o  \
+		../frame/module_wrf_error.o
+
+interp_fcn.o: ../frame/module_timing.o ../frame/module_state_description.o ../frame/module_configure.o \
+		../frame/module_wrf_error.o module_model_constants.o module_interp_nmm.o module_interp_store.o
+
+module_interp_nmm.o: module_model_constants.o module_interp_store.o
+
+mediation_feedback_domain.o: ../frame/module_domain.o ../frame/module_configure.o \
+		../frame/module_intermediate_nmm.o
+
+mediation_force_domain.o: ../frame/module_domain.o ../frame/module_configure.o
+
+mediation_integrate.o: ../frame/module_domain.o ../frame/module_configure.o \
+			../frame/module_timing.o \
+			$(ESMF_MOD_DEPENDENCE) \
+			module_date_time.o module_bc_time_utilities.o \
+			module_compute_geop.o                         \
+			module_io_domain.o
+
+
+mediation_interp_domain.o: ../frame/module_domain.o ../frame/module_configure.o \
+			../frame/module_timing.o
+
+mediation_nest_move.o: \
+		../frame/module_domain.o \
+		../frame/module_configure.o \
+		../frame/module_state_description.o \
+		../frame/module_driver_constants.o \
+		module_io_domain.o
+
+#mediation_conv_emissions.o: ../frame/module_domain.o ../frame/module_configure.o \
+#			../external/esmf_time_f90/ESMF_Mod.o \
+#			module_date_time.o module_bc_time_utilities.o \
+#			module_io_domain.o
+
+set_timekeeping.o: ../frame/module_domain.o ../frame/module_configure.o \
+                   $(ESMF_MOD_DEPENDENCE)
+
+wrf_inputout.o                  : ../frame/module_domain.o \
+				../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o 
+wrf_auxinput1out.o              : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxinput2out.o              : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxinput3out.o              : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxinput4out.o              : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxinput5out.o              : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxinput6out.o              : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxinput7out.o              : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxinput8out.o              : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxinput9out.o              : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxinput10out.o              : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxinput11out.o              : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_histout.o                   : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxhist1out.o               : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxhist2out.o               : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxhist3out.o               : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxhist4out.o               : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxhist5out.o               : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxhist6out.o               : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxhist7out.o               : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxhist8out.o               : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxhist9out.o               : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxhist10out.o               : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxhist11out.o               : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_restartout.o                : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_bdyout.o                    : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_inputin.o                   : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxhist1in.o                : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxhist2in.o                : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxhist3in.o                : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxhist4in.o                : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxhist5in.o                : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxhist6in.o                : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxhist7in.o                : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxhist8in.o                : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxhist9in.o                : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxhist10in.o                : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxhist11in.o                : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxinput1in.o               : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxinput2in.o               : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxinput3in.o               : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxinput4in.o               : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxinput5in.o               : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxinput6in.o               : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxinput7in.o               : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxinput8in.o               : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxinput9in.o               : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxinput10in.o               : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_auxinput11in.o               : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_bdyin.o                     : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_histin.o                    : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_restartin.o                 : ../frame/module_domain.o \
+                                ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_tsin.o	                : ../frame/module_domain.o
+
+track_input.o                   : ../frame/module_domain.o
+
+module_random.o: bobrand.o
+
+# End of DEPENDENCIES for share
+
+
+# DEPENDENCIES for main
+
+convert_nmm.o: \
+	../frame/module_machine.o \
+	../frame/module_domain.o \
+	../frame/module_driver_constants.o \
+	../frame/module_configure.o \
+	../frame/module_timing.o \
+	../frame/module_dm.o \
+	../share/module_bc.o \
+	../share/module_io_domain.o \
+	$(ESMF_MOD_DEPENDENCE)
+
+convert_em.o: \
+	../frame/module_machine.o \
+	../frame/module_domain.o \
+	../frame/module_driver_constants.o \
+	../frame/module_configure.o \
+	../frame/module_timing.o \
+	../frame/module_dm.o \
+	../share/module_bc.o \
+	../share/module_io_domain.o \
+	$(ESMF_MOD_DEPENDENCE)
+
+ideal_em.o: \
+	../frame/module_machine.o \
+	../frame/module_domain.o \
+	../frame/module_driver_constants.o \
+	../frame/module_configure.o \
+	../frame/module_timing.o \
+	../frame/module_dm.o \
+	../share/module_io_domain.o \
+	../dyn_$(SOLVER)/$(CASE_MODULE) \
+	$(ESMF_MOD_DEPENDENCE)
+
+ideal_nmm.o: \
+	../dyn_$(SOLVER)/$(CASE_MODULE) \
+	../share/module_optional_input.o \
+	../share/module_io_domain.o \
+	../share/input_wrf.o 
+
+ndown_em.o: \
+	../frame/module_machine.o \
+	../frame/module_domain.o \
+	../frame/module_driver_constants.o \
+	../frame/module_configure.o \
+	../frame/module_timing.o \
+	../frame/module_dm.o \
+	../frame/module_wrf_error.o \
+	../frame/module_integrate.o \
+	../share/module_bc.o \
+	../share/module_io_domain.o \
+	../share/module_get_file_names.o \
+	../share/module_soil_pre.o \
+	../dyn_em/module_initialize_$(IDEAL_CASE).o \
+	../dyn_em/module_big_step_utilities_em.o \
+	$(ESMF_MOD_DEPENDENCE)
+
+#TEMPORARILY REMOVED nup_em.o: \
+#	../frame/module_machine.o \
+#	../frame/module_domain.o \
+#	../frame/module_streams.o \
+#	../frame/module_driver_constants.o \
+#	../frame/module_configure.o \
+#	../frame/module_timing.o \
+#	../frame/module_dm.o \
+#	../frame/module_wrf_error.o \
+#	../frame/module_integrate.o \
+#	../share/module_bc.o \
+#	../share/module_io_domain.o \
+#	../share/module_get_file_names.o \
+#	../share/module_soil_pre.o \
+#	../dyn_em/module_initialize_real.o \
+#	../dyn_em/module_big_step_utilities_em.o \
+#	$(ESMF_MOD_DEPENDENCE)
+
+# this already built above :../dyn_em/module_initialize.real.o \
+real_em.o: \
+	../frame/module_machine.o \
+	../frame/module_domain.o \
+	../frame/module_driver_constants.o \
+	../frame/module_configure.o \
+	../frame/module_timing.o \
+	../frame/module_dm.o \
+	../dyn_em/module_initialize_$(IDEAL_CASE).o \
+	../dyn_em/module_big_step_utilities_em.o \
+	../share/module_io_domain.o \
+	../share/module_date_time.o \
+	../share/module_optional_input.o \
+	../share/module_bc_time_utilities.o \
+        ../dyn_em/module_wps_io_arw.o \
+	$(ESMF_MOD_DEPENDENCE)
+#	../chem/module_input_chem_data.o \
+#	../chem/module_input_chem_bioemiss.o \
+
+
+tc_em.o: \
+	../frame/module_machine.o \
+	../frame/module_domain.o \
+	../frame/module_driver_constants.o \
+	../frame/module_configure.o \
+	../frame/module_timing.o \
+	../frame/module_dm.o \
+	../dyn_em/module_initialize_$(IDEAL_CASE).o \
+	../dyn_em/module_big_step_utilities_em.o \
+	../share/module_io_domain.o \
+	../share/module_date_time.o \
+	../share/module_optional_input.o \
+	../share/module_bc_time_utilities.o \
+	$(ESMF_MOD_DEPENDENCE)
+
+
+
+wrf.o:  ../main/module_wrf_top.o
+
+wrf_ESMFMod.o:  ../main/module_wrf_top.o
+
+wrf_SST_ESMF.o:  wrf_ESMFMod.o
+
+module_wrf_top.o: ../frame/module_machine.o \
+                  ../frame/module_domain.o \
+                  ../frame/module_integrate.o \
+                  ../frame/module_driver_constants.o \
+                  ../frame/module_configure.o \
+                  ../frame/module_timing.o \
+                  ../frame/module_wrf_error.o \
+                  ../frame/module_state_description.o \
+                  ../frame/module_cpl.o \
+                  $(ESMF_MOD_DEPENDENCE)
+
+# End of DEPENDENCIES for main
+

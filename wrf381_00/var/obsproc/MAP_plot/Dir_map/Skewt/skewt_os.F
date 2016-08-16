@@ -1,0 +1,5 @@
+      FUNCTION  SKEWT_OS(T, P)
+C  OS AND T (KELVIN) , P (MILLIBARS )
+      SKEWT_OS = T*((1000./P)**.286)/(EXP(-2.6518986*SKEWT_W(T,P)/T))
+      RETURN
+      END

@@ -1,0 +1,14 @@
+#!/bin/csh
+
+# strip all the dependencies out of the makefiles so it compiles quicker
+
+if ( ! -d  tools ) then
+ echo 'must be run in top level dir'
+endif
+
+tools/safe >& /dev/null
+foreach f ( */Makefile )
+  /bin/mv $f $f.saved
+  cat $f.saved | sed '/ DEPENDENCIES/,$d'  > $f
+end
+

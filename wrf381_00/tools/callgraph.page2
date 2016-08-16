@@ -1,0 +1,133 @@
+// set cookie data
+function setCurrState(setting) {
+	document.cookie = "currState=" + escape(setting)
+}
+
+// retrieve cookie data
+function getCurrState() {
+	var label = "currState="
+	var labelLen = label.length
+	var cLen = document.cookie.length
+	var i = 0
+	while (i < cLen) {
+		var j = i + labelLen
+		if (document.cookie.substring(i,j) == label) {
+			var cEnd = document.cookie.indexOf(";",j)
+			if (cEnd ==	-1) {
+				cEnd = document.cookie.length
+			}
+			return unescape(document.cookie.substring(j,cEnd))
+		} else {
+                        i = document.cookie.indexOf(";",j)
+                        if ( i == -1 ) {
+				i = document.cookie.length
+                        }
+                }
+	}
+	return ""
+}
+
+// **function that updates persistent storage of state**
+// toggles an outline mother entry, storing new value in the cookie
+function toggle(n) {
+	if (n != 0) {
+		var newString = ""
+		var currState = getCurrState() // of whole outline
+		var expanded = currState.substring(n-1,n) // of clicked item
+		newString += currState.substring(0,n-1)
+		newString += expanded ^ 1 // Bitwise XOR clicked item
+		newString += currState.substring(n,currState.length)
+		setCurrState(newString) // write new state back to cookie
+	}
+}
+
+// **functions used in assembling updated outline**
+// returns the proper GIF file name for each entry's control
+function getGIF(n) {
+	var mom = db[n].mother  // is entry a parent?
+	var expanded = getCurrState().substring(n-1,n) // of clicked item
+	if (!mom) {
+		return "daughter.gif"
+	} else {
+		if (expanded == 1) {
+			return "exploded.gif"
+		}
+	}
+	return "collapsd.gif"
+}
+
+// returns the proper status line text based on the icon style
+function getGIFStatus(n) {
+	var mom = db[n].mother  // is entry a parent
+	var expanded = getCurrState().substring(n-1,n) // of rolled item
+	if (!mom) {
+		return "No further items"
+	} else {
+		if (expanded == 1) {
+			return "Click to collapse nested items"
+		}
+	}
+	return "Click to expand nested items"
+}
+
+// returns padded spaces (in multiples of 3) for indenting
+function pad(n) {
+	var result = ""
+	for (var i = 1; i <= n; i++) {
+		result += "   "
+	}
+	return result
+}
+
+// initialize 'current state' storage field
+if (getCurrState() == "" || getCurrState().length != db.length) {
+	initState = "1"
+	for (i = 2; i <= db.length; i++) {
+		initState += "0"
+	}
+	setCurrState(initState)
+}
+
+// see if user is running a Mac browser for special case handling
+function isMac() {
+	return (navigator.userAgent.indexOf("Macintosh") >= 0) ? true :false
+}
+// end -->
+</SCRIPT>
+</HEAD>
+
+<BODY>
+<SCRIPT LANGUAGE="JavaScript">
+<!-- start
+// build new outline based on the values of the cookie
+// and data points in the outline data array.
+// This fires each time the user clicks on a control,
+// because the HREF for each one reloads the current document.
+var prevIndentDisplayed = 0
+var showMyDaughter = 0
+document.write( "<CENTER><H3>Call Tree</H3></CENTER><HR>" )
+var newOutline = "<PRE><H4>"   // let padded spaces make indents
+
+// cycle through each entry in the outline array
+for (var i = 1; i <= db.length; i++) {
+	var theGIF = getGIF(i)				// get the image
+	var theGIFStatus = getGIFStatus(i)  // get the status message
+	var currIndent = db[i].indent		// get the indent level
+	var expanded = getCurrState().substring(i-1,i) // current state
+	// display entry only if it meets one of three criteria
+	if (currIndent == 0 || currIndent <= prevIndentDisplayed || (showMyDaughter == 1 && (currIndent - prevIndentDisplayed == 1))) {
+		newOutline += pad(currIndent)
+		newOutline += "<A HREF=\"javascript:history.go(0)\" onMouseOver=\"window.parent.status=\'" + theGIFStatus + "\';return true;\" onClick=\"toggle(" + i + ")\"><IMG SRC=\"" + theGIF + "\" HEIGHT=11 WIDTH=11 BORDER=0></A>"		
+		newOutline += " <A HREF=\"" + db[i].URL + "\" TARGET=\"bottom_target\" onMouseOver=\"window.parent.status=\'View " + db[i].display + "...\';return true;\">" + db[i].display + "</A><BR>"
+		prevIndentDisplayed = currIndent
+		showMyDaughter = expanded
+	}
+}
+newOutline += "</H4></PRE><HR>"
+document.write(newOutline)
+
+// end -->
+</SCRIPT> 
+</BODY>
+</HTML>
+

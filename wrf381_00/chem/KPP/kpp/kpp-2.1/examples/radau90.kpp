@@ -1,0 +1,6 @@
+#MODEL      saprc99
+#INTEGRATOR radau5 
+#LANGUAGE   Fortran90
+#DRIVER     general 
+#HESSIAN    on
+#STOICMAT   on

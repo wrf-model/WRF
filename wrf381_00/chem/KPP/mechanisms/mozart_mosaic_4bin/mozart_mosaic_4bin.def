@@ -1,0 +1,172 @@
+#include atoms_red
+#include ./mozart_mosaic_4bin.spc
+#include ./mozart_mosaic_4bin.eqn
+
+
+
+
+#INLINE F90_RATES
+
+REAL(kind=dp) FUNCTION JPL_TROE( k0_300K, n, kinf_300K, m, base, temp, cair )
+
+!------------------------------------------------------------
+!	... dummy arguments
+!------------------------------------------------------------
+    REAL(kind=dp), INTENT(IN) :: base      ! base expononent
+    REAL(kind=dp), INTENT(IN) :: temp      ! temperature [K]
+    REAL(kind=dp), INTENT(IN) :: cair      ! air concentration [molecules/cm3]
+    REAL(kind=dp), INTENT(IN) :: k0_300K   ! low pressure limit at 300 K
+    REAL(kind=dp), INTENT(IN) :: n         ! exponent for low pressure limit
+    REAL(kind=dp), INTENT(IN) :: kinf_300K ! high pressure limit at 300 K
+    REAL(kind=dp), INTENT(IN) :: m         ! exponent for high pressure limit
+
+!------------------------------------------------------------
+!	... local variables
+!------------------------------------------------------------
+    REAL(kind=dp)  :: zt_help, k0_T, kinf_T, k_ratio
+
+    zt_help = 300._dp/temp
+    k0_T    = k0_300K   * zt_help**(n) * cair ! k_0   at current T
+    kinf_T  = kinf_300K * zt_help**(m)        ! k_inf at current T
+    k_ratio = k0_T/kinf_T
+
+    JPL_TROE = k0_T/(1._dp + k_ratio)*base**(1._dp/(1._dp + LOG10(k_ratio)**2))
+
+END FUNCTION JPL_TROE
+
+REAL(KIND=dp) FUNCTION usr5( temp, c_m )
+
+    REAL(KIND=dp), INTENT(IN) :: temp
+    REAL(KIND=dp), INTENT(IN) :: c_m
+
+    REAL(KIND=dp) :: k0, k2
+
+   k0 = c_m * 6.5e-34_dp * exp( 1335._dp/temp )
+   k2 = exp( 2199._dp/temp )
+   k0 = k0 /(1.0_dp + k0/(2.7e-17_dp*k2))
+   k2 = exp( 460._dp/temp )
+
+   usr5 = k0 + 2.4e-14_dp * k2
+
+END FUNCTION usr5
+
+REAL(KIND=dp) FUNCTION usr8( temp, c_m )
+
+    REAL(KIND=dp), INTENT(IN) :: temp
+    REAL(KIND=dp), INTENT(IN) :: c_m
+
+    REAL(KIND=dp), parameter :: boltz = 1.38044e-16_dp
+
+    usr8 = 1.5e-13_dp * (1._dp + 6.e-7_dp*boltz*c_m*temp)
+
+END FUNCTION usr8
+
+REAL(KIND=dp) FUNCTION usr9( temp, c_m, c_h2o )
+
+    REAL(KIND=dp), INTENT(IN) :: temp
+    REAL(KIND=dp), INTENT(IN) :: c_m
+    REAL(KIND=dp), INTENT(IN) :: c_h2o
+
+    REAL(KIND=dp) :: ko, kinf, fc
+
+    if( c_h2o > 0._dp ) then
+       ko   = 2.3e-13_dp * exp( 600._dp/temp )
+       kinf = 1.7e-33_dp * c_m * exp( 1000._dp/temp )
+       fc   = 1._dp/c_h2o + 1.4e-21_dp * exp( 2200._dp/temp )
+       usr9 = (ko + kinf) * fc
+    else
+       usr9 = 0._dp
+    end if
+
+END FUNCTION usr9
+
+REAL(KIND=dp) FUNCTION usr16( rh, temp )
+
+    REAL(KIND=dp), INTENT(IN) :: rh                       ! relative humidity
+    REAL(KIND=dp), INTENT(IN) :: temp                     ! temperature (K)
+
+
+    usr16 = 0._dp
+
+END FUNCTION usr16
+
+REAL(KIND=dp) FUNCTION usr17( rh, temp )
+
+    REAL(KIND=dp), INTENT(IN) :: rh                       ! relative humidity
+    REAL(KIND=dp), INTENT(IN) :: temp                     ! temperature (K)
+
+    usr17 = 0._dp
+
+END FUNCTION usr17
+
+REAL(KIND=dp) FUNCTION usr17a( rh, temp )
+
+    REAL(KIND=dp), INTENT(IN) :: rh                       ! relative humidity
+    REAL(KIND=dp), INTENT(IN) :: temp                     ! temperature (K)
+
+    usr17a = 0._dp
+
+END FUNCTION usr17a
+
+REAL(KIND=dp) FUNCTION usr23( temp, c_m )
+
+    REAL(KIND=dp), INTENT(IN) :: temp
+    REAL(KIND=dp), INTENT(IN) :: c_m
+
+    REAL(KIND=dp) :: fc, k0
+    REAL(KIND=dp) :: wrk
+
+    fc    = 3.e-11_dp * (300._dp/temp) ** 3.3_dp
+    wrk   = fc * c_m
+    k0    = wrk / (1._dp + wrk/1.5e-12_dp)
+    usr23 = k0 * .6_dp ** (1._dp/(1._dp + (log10( wrk/1.5e-12_dp ))**2._dp))
+
+END FUNCTION usr23
+
+REAL(KIND=dp) FUNCTION usr24( temp, c_m )
+
+    REAL(KIND=dp), INTENT(IN) :: temp
+    REAL(KIND=dp), INTENT(IN) :: c_m
+
+    REAL(KIND=dp) :: ko, wrk
+
+    wrk   = .21_dp*c_m
+    ko    = 1._dp + 5.5e-31_dp*exp( 7460._dp/temp )*wrk
+    usr24 = 1.7e-42_dp*exp( 7810._dp/temp )*wrk/ko
+
+END FUNCTION usr24
+
+REAL(KIND=dp) FUNCTION usr26( rh, temp )
+
+    REAL(KIND=dp), INTENT(IN) :: rh                       ! relative humidity
+    REAL(KIND=dp), INTENT(IN) :: temp                     ! temperature (K)
+
+    usr26 = 0._dp
+
+END FUNCTION usr26
+
+
+
+!__________________________________________________
+
+    REAL(KIND=dp) FUNCTION Keff ( A0,B0,C0, TEMP,X1,X2,y1,y2 )
+    REAL(KIND=dp),INTENT(IN) :: X1,X2,y1,y2
+    REAL(KIND=dp),INTENT(IN) :: TEMP
+    REAL(KIND=dp),INTENT(IN):: A0,B0,C0
+    Keff = A0 * EXP(- B0 /TEMP ) &
+      *(TEMP/300._dp)**C0*(y1*X1/(X1 + X2 + 1.0e-35) &
+       +y2*(1-X1/(X1 + X2 + 1.0e-35)))
+    END FUNCTION Keff
+!__________________________________________________
+
+    REAL(KIND=dp) FUNCTION Keff2 ( C0,X1,X2,y1,y2 )
+    REAL(KIND=dp),INTENT(IN) :: X1,X2,y1,y2
+    REAL(KIND=dp),INTENT(IN):: C0
+    Keff2 = C0*(y1*X1/(X1 + X2 + 1.0e-35) &
+       +y2*(1-X1/(X1 + X2 + 1.0e-35 )))
+    END FUNCTION Keff2
+!__________________________________________________
+
+
+
+#ENDINLINE 

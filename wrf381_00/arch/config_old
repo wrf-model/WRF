@@ -1,0 +1,406 @@
+#!/bin/sh
+
+arg1=$1
+
+# lifted from the configure file for mpich; 00/03/10 jm
+#
+# Check for perl and perl version
+for p in perl5 perl
+do
+  # Extract the first word of "$p", so it can be a program name with args.
+  set dummy $p; ac_word=$2
+  if test -z "$ac_echo_n" ; then
+    ac_echo_n=yes
+    if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
+      # Stardent Vistra SVR4 grep lacks -e, says ghazi@caip.rutgers.edu.
+      if (echo -n testing; echo 1,2,3) | sed s/-n/xn/ | grep xn >/dev/null; then
+    ac_n= ac_c='
+' ac_t='        '
+      else
+        ac_n=-n ac_c= ac_t=
+      fi
+    else
+      ac_n= ac_c='\c' ac_t=
+    fi
+    ac_echo_test=`echo foo 1>&1`
+    if test -z "$ac_echo_test" ; then
+       print_error "Your sh shell does not handle the output redirection"
+       print_error "1>&1 correctly.  Configure will work around this problem,"
+       print_error "but you should report the problem to your vendor."
+    fi
+  fi
+  if test -z "$ac_echo_test" -a 1 = 1 ; then
+    echo $ac_n "checking for $ac_word""... $ac_c"
+  else
+    echo $ac_n "checking for $ac_word""... $ac_c" 1>&1
+  fi
+  ac_prog_where=""
+  if test -n "$PERL"; then
+    ac_pg_PERL="$PERL" # Let the user override the test.
+  else
+    ac_first_char=`expr "$p" : "\(.\)"`
+    if test "$ac_first_char" = "/" -a -x "$p" ; then
+         ac_pg_PERL="$p"
+         ac_prog_where=$p
+    else
+        IFS="${IFS=     }"; ac_save_ifs="$IFS"; IFS="${IFS}:"
+        for ac_dir in $PATH; do
+          test -z "$ac_dir" && ac_dir=.
+          if test -f $ac_dir/$ac_word; then
+            ac_pg_PERL="$p"
+            ac_prog_where=$ac_dir/$ac_word
+            break
+          fi
+        done
+        IFS="$ac_save_ifs"
+    fi
+  fi;PERL="$ac_pg_PERL"
+  if test -n "$ac_prog_where" ; then
+    if test -z "$ac_echo_test" -a 1 = 1 ; then
+      echo "$ac_t""found $ac_prog_where ($PERL)"
+    else
+      echo "$ac_t""found $ac_prog_where ($PERL)" 1>&1
+    fi
+    PERLFULLPATH=$ac_prog_where  
+  else
+    if test -z "$ac_echo_test" -a 1 = 1 ; then
+      echo "$ac_t""no"
+    else
+      echo "$ac_t""no" 1>&1
+    fi
+  fi
+  test -n "$PERL" && break
+done
+
+if test -z "$PERL" ; then
+    # We have to set this outside of the loop lest the first failure in 
+    # PROGRAM_CHECK set the value (which then terminates the effect of the
+    # loop, since autoconf macros only set values that are null, they 
+    # don't override them
+    PERL=""
+fi
+
+if test -n "$PERL" ; then
+    PERL="$PERL"
+    
+    perlversion=`$PERL -v | grep 'This is perl' | \
+       sed -e 's/^.*v[a-z ]*\([0-9]\).*$/\1/'`
+
+    # Should do a test first for ch_p4 etc.
+    if test "$perlversion" -lt 5 ; then
+        echo "WRF build requires perl version 5, which configure did not find."
+        echo "You can set the environment variable PERL to contain the "
+        echo "location of perl version 5."
+        echo "Configure believes that $PERL is version $perlversion ."
+        PERL=""
+    fi
+    
+fi
+
+# Look for netcdf
+if test -z "$NETCDF" ; then
+  for p in /usr/local/netcdf
+  do
+    if test -d $p ; then
+      NETCDF=$p
+      break
+    fi
+  done
+fi
+if  test -z "$NETCDF"  ; then
+ 
+  if [ `hostname | cut -c 1-2` = "bs" -o \
+       `hostname | cut -c 1-2` = "bd" -o \
+       `hostname` = "tempest" -o `hostname` = "ute" ] ; then
+    echo 'Compiling on an NCAR system with weird paths to NetCDF'
+    echo 'Setting up a local NetCDF directory with symlinks'
+    if ( test -d ./netcdf_links ) ; then
+      echo 'A directory ./netcdf_links already exists. Continuing.'
+    else
+      mkdir ./netcdf_links
+      if [ -z "$OBJECT_MODE" ] ; then
+         OBJECT_MODE=32 
+         export OBJECT_MODE
+      fi
+      if [ $OBJECT_MODE -ne 64 -a \( `hostname | cut -c 1-2` = "bd" -o `hostname | cut -c 1-2` = "bs" \) ] ; then
+        ( cd ./netcdf_links ; ln -s /usr/local/lib32/r4i4 ./lib ; \
+                              ln -s /usr/local/include ./include )
+      else
+        ( cd ./netcdf_links ; ln -s /usr/local/lib64/r4i4 ./lib ; \
+                              ln -s /usr/local/include ./include )
+      fi
+    fi
+    NETCDF=`pwd`/netcdf_links
+    export NETCDF
+
+
+  else
+    bedone=""
+    if [ -d ./netcdf_links ] ; then
+      echo '** There is an existing ./netcdf_links file. Should I use? [y]'
+      read resp
+      if [ "$resp" = "y" ] ; then
+        NETCDF=`pwd`/netcdf_links
+        bedone="yes"
+      else
+        echo 'Removing existing ./netcdf_links directory'
+        /bin/rm -fr ./netcdf_links
+      fi
+    else
+      echo '** WARNING: No path to NETCDF and environment variable NETCDF not set.'
+      echo '** would you like me to try to fix? [y]'
+    fi
+    netcdfipath=""
+    netcdflpath=""
+    while [ -z "$bedone" ] ; do 
+      read resp
+      if [ "$resp" = "y" -o -z "$resp" ]  ; then
+        if [ -d ./netcdf_links ] ; then
+          echo 'There is already a ./netcdf_links directory. Okay to use links'
+          echo 'in this directory for NetCDF include and lib dirs? [y]'
+          read resp
+          if [ "$resp" = "y" ] ; then
+            NETCDF=`pwd`/netcdf_links
+            export NETCDF
+            bedone="yes"
+            continue
+          fi
+        fi
+        if [ -z "$netcdfipath" ] ; then
+          echo 'Enter full path to NetCDF include directory on your system'
+          read resp
+          if [ ! -d "$resp" ] ; then
+            echo "invalid path: $resp. Try again? [y]" ; continue
+          fi
+          netcdfipath=$resp
+        fi
+        if  [ -z "$netcdflpath" ] ; then
+          echo 'Enter full path to NetCDF library directory on your system'
+          read resp
+          if [ ! -d "$resp" ] ; then
+            echo "invalid path: $resp. Try again? [y]" ; continue
+          fi
+          netcdflpath=$resp
+        fi
+
+        if [ -n "$netcdflpath" -a -n "$netcdfipath" ] ; then
+          if [ -d ./netcdf_links ] ; then
+            echo 'Existing ./netcdf_links directory. Okay to remove. [y]'
+            read resp
+            if [ "$resp" = "y" ]  ; then
+              /bin/rm -fr ./netcdf_links
+            fi
+          fi
+          mkdir ./netcdf_links
+          cd ./netcdf_links 
+            ln -s "$netcdfipath" include
+            ln -s "$netcdflpath" lib
+          cd ..
+          echo created new ./netcdf_links directory
+          /bin/ls -lF ./netcdf_links
+          NETCDF=`pwd`/netcdf_links
+          export NETCDF
+          bedone="yes"
+        fi
+      else
+        bedone="yes"
+      fi
+    done
+  fi
+fi
+
+if test -z "$PDHF5" ; then 
+  if [ `hostname | cut -c 1-2` = "bb" -o `hostname | cut -c 1-2` = "bf" -o `hostname | cut -c 1-2` = "bs" -o \
+       `hostname` = "dataproc" -o `hostname` = "ute" ] ; then
+      if [ -d ~michalak/hdf5pbin ] ; then
+        PHDF5=~michalak/hdf5pbin
+        export PHDF5
+      fi
+      if [ "$OBJECT_MODE" -eq 64 ] ; then
+            if [ -d ~michalak/hdf5pbin-64 ] ; then
+              PHDF5=~michalak/hdf5pbin-64
+              export PHDF5
+            fi
+      fi
+  fi
+fi
+
+if [ -n "$NETCDF" ] ; then
+  echo "Will use NETCDF in dir: $NETCDF"
+else
+  echo "Will configure for use without NetCDF"
+fi
+
+if [ -n "$PNETCDF" ] ; then
+  echo "Will use PNETCDF in dir: $PNETCDF"
+# experimental, so don't tease the user if it is not there
+#else
+#  echo "Will configure for use without NetCDF"
+fi
+
+if [ -n "$PHDF5" ] ; then
+  echo "Will use PHDF5 in dir: $PHDF5"
+else
+  echo "PHDF5 not set in environment. Will configure WRF for use without."
+fi
+
+# Users who are cross-compiling can set environment variable 
+# $WRF_OS to override the value normally obtained from `uname`.  
+# If $WRF_OS is set, then $WRF_MACH can also be set to override 
+# the value normally obtained from `uname -m`.  If $WRF_OS is 
+# set and $WRF_MACH is not set, then $WRF_MACH defaults to "ARCH".  
+# If $WRF_OS is not set then $WRF_MACH is ignored.  
+if [ -n "$WRF_OS" ] ; then
+  echo "${0}:  WRF operating system set to \"${WRF_OS}\" via environment variable \$WRF_OS"
+  os=$WRF_OS
+  mach="ARCH"
+  if [ -n "$WRF_MACH" ] ; then
+    echo "${0}:  WRF machine set to \"${WRF_MACH}\" via environment variable \$WRF_MACH"
+    mach=$WRF_MACH
+  fi
+else
+  # if the uname command exists, give it a shot and see if
+  # we can narrow the choices; otherwise, spam 'em
+  os="ARCH"
+  mach="ARCH"
+  type uname > /dev/null
+  if [ $? -eq 0 ] ; then
+    os=`uname`
+    if [ "$os" = "AIX" -o "$os" = "IRIX" -o "$os" = "IRIX64" -o "$os" = "SunOS" -o "$os" = "HP-UX"  -o "$os" = "Darwin" -o "$os" = "Interix" ] ; then
+      mach="ARCH"
+    else
+      if [ "$os" = "OSF1" -o "$os" = "Linux" -o "$os" = "UNICOS/mp" -o "$os" = "UNIX_System_V" -o "$os" = "CYGWIN_NT-5.1" ] ; then
+        mach=`uname -m`
+      else
+        os="ARCH"
+        mach="ARCH"
+      fi
+    fi
+  fi
+fi
+
+# an IBM specific hack to adjust the bmaxstack and bmaxdata options if addressing is 32-bit
+if [ "$os" = "AIX" ] ; then
+      if [ -z "$OBJECT_MODE" ] ; then
+         OBJECT_MODE=32
+         export OBJECT_MODE
+      fi
+      if [ "$OBJECT_MODE" = "32" ] ; then
+# the bang means nothing to sh in this context; use to represent spaces (perl will unbang)
+         ldflags=-bmaxstack:256000000!-bmaxdata:2048000000
+      fi
+fi
+
+# compile options that come from the environment, such as chemistry
+# the "!" is removed by Config_old.pl
+if [ -n "$WRF_MARS" ] ; then
+  if [ $WRF_MARS = 1 ] ; then
+    echo building WRF for Mars
+    compileflags="${compileflags}!-DPLANET!-DMARS"
+    echo $compileflags
+  fi
+fi
+
+if [ -n "$WRF_TITAN" ] ; then
+  if [ $WRF_TITAN = 1 ] ; then
+    echo building WRF for Mars
+    compileflags="${compileflags}!-DPLANET!-DTITAN"
+  fi
+fi
+
+if [ -n "$WRF_VENUS" ] ; then
+  if [ $WRF_VENUS = 1 ] ; then
+    echo building WRF for Mars
+    compileflags="${compileflags}!-DPLANET!-DVENUS"
+  fi
+fi
+if [ -n "$WRF_CHEM" ] ; then
+  if [ $WRF_CHEM = 1 ] ; then
+    echo building WRF with chemistry option
+    compileflags="${compileflags}!-DWRF_CHEM"
+    if [ -n "$WRF_KPP" ] ; then
+      if [ $WRF_KPP = 1 ] ; then
+        echo building WRF with KPP chemistry option
+        compileflags="${compileflags}!-DWRF_KPP"
+      fi
+    fi
+  else
+    compileflags="${compileflags} "
+  fi
+else
+  compileflags="${compileflags} "
+fi
+
+# Found perl, so proceed with configuration
+if test -n "$PERL" ; then
+   $PERL arch/Config_old.pl -perl=$PERL -netcdf=$NETCDF -pnetcdf=$PNETCDF -phdf5=$PHDF5 -os=$os -mach=$mach -ldflags=$ldflags \
+   -compileflags=$compileflags
+  if test ! -f configure.wrf ; then
+    exit 1
+  fi
+fi
+
+if [ "$arg1" = "-d" ] ; then
+ls -l configure.wrf
+   if [ -e configure.wrf ] ; then
+     sed -e 's/FCOPTIM[	  ]*=/& # /' -e '/FCDEBUG[ 	]*=/s/#//g' configure.wrf > configure.wrf.edit
+     /bin/mv configure.wrf.edit configure.wrf
+   fi
+fi
+
+# new feb 2005.  test whether MPI-2
+if test -f configure.wrf ; then
+  grep 'DMPARALLEL .*=.*1' configure.wrf > /dev/null
+  if [ $? = 0 ] ; then
+    echo testing for MPI_Comm_f2c and MPI_Comm_c2f 
+    /bin/rm -f tools/mpi2_test
+    ( make mpi2_test 2> /dev/null ) 1> /dev/null
+    if test -e tools/mpi2_test.o ; then
+      echo "  " MPI_Comm_f2c and MPI_Comm_c2f are supported
+      sed '/^CC .*=/s/$/ -DMPI2_SUPPORT/' configure.wrf > xx$$ ; /bin/mv xx$$ configure.wrf
+    else
+      echo "  " MPI_Comm_f2c and MPI_Comm_c2f are not supported
+    fi
+  fi
+# new dec 2005.  test what fseek is supported (needed for share/landread.c to work correctly)
+  echo testing for fseeko and fseeko64
+  /bin/rm -f tools/fseeko_test tools/fseeko64_test
+  ( make fseek_test 2> /dev/null ) 1> /dev/null
+  if [ "$os" = "Darwin" ] ; then
+    # fseeko64 does not exist under Darwin fseeko does. Remove the 0 length executable
+    # file that might get generated anyway, even though the compiler complains about missing reference.
+    /bin/rm -f tools/fseeko64_test 
+  fi
+  if test -x tools/fseeko64_test ; then
+    ( tools/fseeko64_test 2> /dev/null ) 1> /dev/null
+    if [ $? = 0 ] ; then
+       echo fseeko64 is supported
+       sed '/^CC .*=/s/$/ -DFSEEKO64_OK /' configure.wrf > xx$$ ; /bin/mv xx$$ configure.wrf
+    fi
+  else
+    if test -x tools/fseeko_test ; then
+      ( tools/fseeko_test 2> /dev/null ) 1> /dev/null
+      if [ $? = 0 ] ; then
+        echo fseeko is supported and handles 64 bit offsets
+        sed '/^CC .*=/s/$/ -DFSEEKO_OK /' configure.wrf > xx$$ ; /bin/mv xx$$ configure.wrf
+      else
+        echo neither fseeko64 nor fseeko with 64 bit offsets works, landread will be compiled with fseek
+        echo but may not work correctly for very high resolution terrain datasets
+      fi
+    else
+      echo neither fseeko64 nor fseeko with 64 bit offsets works, landread will be compiled with fseek
+      echo but may not work correctly for very high resolution terrain datasets
+    fi
+  fi
+fi
+
+echo "------------------------------------------------------------------------"
+sed -e '1,/#### Architecture specific settings ####/d' -e '/^externals/,$d' configure.wrf
+
+echo "------------------------------------------------------------------------"
+echo "Settings listed above are written to configure.wrf."
+echo "If you wish to change settings, please edit that file."
+echo "If you wish to change the default options, edit the file:"
+echo "     arch/configure.defaults"
+echo " "
+

@@ -1,0 +1,414 @@
+                                         
+# At the present time this file is managed manually and edited by hand.                                         
+# This file includes the minimal subset of Registry.EM_COMMON required by WRFDA compilation                                              
+# All "ikj" variables are changed to "ijk" variables.
+
+
+################################################################################
+################################################################################
+################################################################################
+
+# Lines that start with the word 'state' form a table that is
+# used by the script use_registry to generate module_state_descript.F
+# and other files.  Also see documentation in use_registry.
+#                                               
+# table entries are of the form
+#<Table> <Type> <Sym>         <Dims>   <Use>   <NumTLev> <Stagger> <IO>     <DNAME>             <DESCRIP>     <UNITS>
+#
+
+# It is required that LU_INDEX appears before any variable that is
+# interpolated with a mask, as lu_index supplies that mask.
+# this next 1 is for the HFSoLE/PET demo; writing these to auxhist1 output over MCEL for coupling
+# with wave model, only if compiled with -DMCELIO, JM 2003/05/29
+state    real  LU_INDEX         ij      misc        1         -     i012rh01d=(interp_fcnm)u=(copy_fcnm)   "LU_INDEX"              "LAND USE CATEGORY"         ""
+state    real  LU_MASK          ij      misc        1         -     i3h1     "LU_MASK"              "0 land 1 water"         ""
+
+# znw, znu, dzs, and zs must be listed before any 3-d fields
+# in order for the grib output module to work correctly.  The grib output
+# module retrieves the vertical levels from these parameters.  If znw, znu
+# dzs, and zs are not listed first, vertical level will not be encoded at 
+# time 0.
+
+state    real    znu            k       dyn_em      1         -     irh      "znu"  "eta values on half (mass) levels"  ""
+state    real    znw            k       dyn_em      1         Z     i0rh     "znw"  "eta values on full (w) levels"  ""
+state    real   ZS              l        misc      -         Z     irh       "ZS"                    "DEPTHS OF CENTERS OF SOIL LAYERS"         "m"
+state    real   DZS             l        misc      -         Z     irh       "DZS"                   "THICKNESSES OF SOIL LAYERS"               "m"
+
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+#                                               
+# Variables for Eulerian mass coordinate dynamics                                            
+#                                               
+
+# Velocities
+#
+# U Vel
+state    real   u              ijkb     dyn_em      2         X     \
+     i0rhusdf=(bdy_interp:dt)       "U"                      "x-wind component"   "m s-1"
+state    real   ru             ijk     dyn_em      1         X      -        "MU_U"        "mu-coupled u"   "Pa m s-1"
+state    real   ru_m           ijk     dyn_em      1         X      -        "ru_m"        ""   ""
+state    real   ru_tend        ijk     dyn_em      1         X      -        "ru_tend"        ""   ""
+#                                               
+# V Vel
+state    real   v              ijkb     dyn_em      2         Y     \
+     i0rhusdf=(bdy_interp:dt)        "V"                     "y-wind component"   "m s-1"
+state    real   rv             ijk     dyn_em      1         Y      -        "MU_V"        "mu-coupled v"   "Pa m s-1"
+state    real   rv_m           ijk     dyn_em      1         Y      -        "rv_m"
+state    real   rv_tend        ijk     dyn_em      1         Y      -        "rv_tend"
+#                                               
+# Vertical Vel                                          
+state    real   w              ijkb     dyn_em      2         Z     \
+        irhusdf=(bdy_interp:dt)  "w"                          "z-wind component"   "m s-1"
+
+# Geopotential
+state    real   ph             ijkb     dyn_em      2         Z     \
+       irhusdf=(bdy_interp:dt)   "ph"   "perturbation geopotential"  "m2 s-2"
+state    real   phb            ijk     dyn_em      1         Z     irhdus "phb"  "base-state geopotential"  "m2 s-2"
+state    real   ph0            ijk     dyn_em      1         Z      r     "ph0"  "initial geopotential"     "m2 s-2"
+state    real   php            ijk     dyn_em      1         -      r     "php"  "geopotential"             "m2 s-2"
+
+# Potential Temperature
+state    real   t              ijkb     dyn_em      2         -     \
+       i0rhusdf=(bdy_interp:dt)   "t"      "perturbation potential temperature (theta-t0)" "K"
+
+state    real   t_init         ijk     dyn_em      1         -      ir       "t_init" "initial potential temperature" "K"
+
+# Mass
+state    real   mu              ijb     dyn_em      2         -     \
+     irhusdf=(bdy_interp:dt)   "mu"  "perturbation dry air mass in column" "Pa"
+state    real   mub             ij     dyn_em      1         -     irhdus       "mub" "base state dry air mass in column" "Pa"
+state    real   mu0             ij     dyn_em      1         -      i1          "mu0" "initial dry mass in column" "Pa"
+state    real   mudf            ij     dyn_em      1         -      -           "mudf" "" ""
+state    real   muu             ij     dyn_em      1          X     -           "muu"
+i1       real   muus            ij     dyn_em      1          -     
+state    real   muv             ij     dyn_em      1          Y     -           "muv"
+i1       real   muvs            ij     dyn_em      1          -     
+state    real   mut             ij     dyn_em      1          -     -           "mut"
+state    real   muts            ij     dyn_em      1          -     -           "muts"
+
+# Pressure and Density
+state    real   p              ijk     dyn_em      1         -      irh       "p"           "perturbation pressure"         "Pa"
+state    real   al             ijk     dyn_em      1         -      r         "al"          "inverse perturbation density"  "m3 kg-1"
+state    real   alt            ijk     dyn_em      1         -      r         "alt"         "inverse density"               "m3 kg-1"
+state    real   alb            ijk     dyn_em      1         -      rdus      "alb"         "inverse base density"          "m3 kg-1"
+state    real   zx             ijk     dyn_em      1         X      -         " "  " "  " "    
+state    real   zy             ijk     dyn_em      1         Y      -         " "  " "  " "   
+state    real   rdz            ijk     dyn_em      1         Z      -         " "  " "  " "   
+state    real   rdzw           ijk     dyn_em      1         Z       -        " "  " "  " "   
+state    real   pb             ijk     dyn_em      1         -      irhdus    "pb"          "BASE STATE PRESSURE "          "Pa"
+
+#                                               
+# Other dyn                                             
+#                                               
+state    real    fnm            k       dyn_em      1         -     irh       "fnm"  "upper weight for vertical stretching"  ""
+state    real    fnp            k       dyn_em      1         -     irh       "fnp"  "lower weight for vertical stretching"  ""
+state    real    rdnw           k       dyn_em      1         -     irh       "rdnw"  "inverse d(eta) values between full (w) levels"   ""
+state    real    rdn            k       dyn_em      1         -     irh       "rdn"  "inverse d(eta) values between half (mass) levels"   ""
+state    real    dnw            k       dyn_em      1         -     irh       "dnw" "d(eta) values between full (w) levels"   ""
+state    real    dn             k       dyn_em      1         -     irh       "dn " "d(eta) values between half (mass) levels"   ""
+state    real    t_base         k       dyn_em      1         -     ir        "t_base"               "BASE STATE T IN IDEALIZED CASES"         "K"      
+state    real    z              ijk     dyn_em      1         -     -         " " " " " "
+state    real    z_at_w         ijk     dyn_em      1         Z 
+state    real    cfn            -       misc      -         -     irh       "cfn"    "extrapolation constant"  ""
+state    real    cfn1           -       misc      -         -     irh       "cfn1"   "extrapolation constant"  ""
+state    integer step_number    -       misc      -         -     ir        "step_number"  ""
+
+# Idealized run
+state    logical this_is_an_ideal_run   - misc    -         -      r     "this_is_an_ideal_run"     "T/F flag: this is an ARW ideal simulation"
+
+# For the adaptive timestep restart
+state    logical stepping_to_time       - misc    -         -      r     "stepping_to_time"         ""
+state    integer last_step_updated      - misc    -         -      r     "last_step_updated"        ""
+
+# hydrostatic pressure vars
+state    real   p_hyd           ijk     dyn_em      1         -      irh       "p_hyd"       "hydrostatic pressure"         "Pa"
+state    real   p_hyd_w         ijk     dyn_em      1         Z       r        "p_hyd_w"     "hydrostatic pressure at full levels"         "Pa"
+
+# 2m and 10m output diagnostics
+state    real   Q2               ij     misc        1         -     irh0{23}du     "Q2"                   "QV at 2 M"         "kg kg-1"
+state    real   T2               ij     misc        1         -     i01rh0{23}du   "T2"                   "TEMP at 2 M"       "K"
+state    real   TH2              ij     misc        1         -     irhdu     "TH2"                  "POT TEMP at 2 M"   "K"
+state    real   PSFC             ij     misc        1         -     i01rhdu   "PSFC"                 "SFC PRESSURE"      "Pa"
+state    real   QSFC             ij     misc        1         -     irh       "QSFC"                 "SPECIFIC HUMIDITY AT LOWER BOUNDARY"          "kg kg-1"
+
+# these next 2 are for the HFSoLE/PET demo; writing these to auxhist1 output over MCEL for coupling
+# with wave model, only if compiled with -DMCELIO, JM 2003/05/29
+state    real   U10              ij     misc        1         -     irh01du     "U10"                "U at 10 M"         "m s-1"
+state    real   V10              ij     misc        1         -     irh01du     "V10"                "V at 10 M"         "m s-1"
+
+# Other
+state   real    rdx            -        misc      -         -     irh       "rdx"                   "INVERSE X GRID LENGTH"         ""      
+state   real    rdy            -        misc      -         -     irh       "rdy"                   "INVERSE Y GRID LENGTH"         ""      
+state   real    dts            -        misc      -         -     ir        "dts"                   "SMALL TIMESTEP"         ""      
+state   real    dtseps         -        misc      -         -     ir        "dtseps"                "TIME WEIGHT CONSTANT FOR SMALL STEPS"         ""      
+state   real    resm           -        misc      -         -     irh       "resm"                  "TIME WEIGHT CONSTANT FOR SMALL STEPS"         ""      
+state   real    zetatop        -        misc      -         -     irh       "zetatop"               "ZETA AT MODEL TOP"         ""      
+state   real    cf1            -        misc      -         -     irh       "cf1"                   "2nd order extrapolation constant"         ""      
+state   real    cf2            -        misc      -         -     irh       "cf2"                   "2nd order extrapolation constant"         ""      
+state   real    cf3            -        misc      -         -     irh       "cf3"                   "2nd order extrapolation constant"         ""      
+
+# State for derived time quantities.  
+state   integer itimestep      -        -          -         -     rh         "itimestep"             ""         ""      
+state   real    xtime          -        -          -         -     rh         "xtime"                 "minutes since simulation start"         ""      
+state   real    julian         -        -          -         -     -          "julian"                "day of year, 0.0 at 0Z on 1 Jan."         "days"      
+
+# input file descriptor for lbcs on parent domain                                               
+state   integer lbc_fid        -        -          -         -     -         "lbc_fid"               ""         ""      
+# indicates if tiling has been computed                                         
+state   logical tiled          -        -          -         -     -         "tiled"                 ""         ""      
+# indicates if patches have been computed                                               
+state   logical patched        -        -          -         -     -         "patched"               ""         ""      
+# indicates whether to read input from file or generate                                         
+#state   logical input_from_file        -        -          -         -     -         "input_from_file"         ""         ""    
+# indicates whether to recompute mu                                                             
+state   logical press_adj      -        -          -         -     -         "press_adj"         "T/F flag adjust mu"         ""    
+
+# Mask for moving nest interpolations
+state    integer imask_nostag         ij      misc     1     -
+state    integer imask_xstag          ij      misc     1     X
+state    integer imask_ystag          ij      misc     1     Y
+state    integer imask_xystag         ij      misc     1     XY
+
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+# Scalar (4D) arrays
+
+# Moist Scalars
+#                                               
+# The first line ensures that there will be identifiers named moist and                                         
+# moist_tend even if there are not any moist scalars (so the essentially                                                
+# dry code will will still link properly)                                               
+#                                               
+state   real    -              ijkftb   moist       1         -     -    -
+state   real    qv             ijkftb   moist       1         -     \
+   i0rhusdf=(bdy_interp:dt)  "QVAPOR"           "Water vapor mixing ratio"      "kg kg-1"
+state   real    qc             ijkftb   moist       1         -     \
+   i0rhusdf=(bdy_interp:dt)  "QCLOUD"           "Cloud water mixing ratio"      "kg kg-1"
+state   real    qr             ijkftb   moist       1         -     \
+   i0rhusdf=(bdy_interp:dt)  "QRAIN"            "Rain water mixing ratio"       "kg kg-1"
+state   real    qi             ijkftb   moist       1         -     \
+   i0rhusdf=(bdy_interp:dt)  "QICE"             "Ice mixing ratio"              "kg kg-1"
+state   real    qs             ijkftb   moist       1         -     \
+   i0rhusdf=(bdy_interp:dt)  "QSNOW"            "Snow mixing ratio"             "kg kg-1"
+state   real    qg             ijkftb   moist       1         -     \
+   i0rhusdf=(bdy_interp:dt)  "QGRAUP"           "Graupel mixing ratio"          "kg kg-1"
+state   real    qh             ijkftb   moist       1         -     \
+   i0rhusdf=(bdy_interp:dt)  "QHAIL"            "Hail mixing ratio"             "kg kg-1"
+
+
+# Other Scalars
+state   real    -              ijkftb  scalar      1         -     -   -
+state   real    qndrop         ijkftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "QNDROP"        "Droplet number mixing ratio"        "# kg-1"
+state   real    qni            ijkftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "QNICE"         "Ice Number concentration" "# kg-1"
+state   real    qt             ijkftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "CWM"           "Total condensate mixing ratio"      "kg kg-1"
+state   real    qns            ijkftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "QNSNOW"         "Snow Number concentration"   "# kg(-1)"
+state   real    qnr            ijkftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "QNRAIN"        "Rain Number concentration"   "# kg(-1)"
+state   real    qng            ijkftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "QNGRAUPEL"     "Graupel Number concentration" "# kg(-1)"
+state   real    qnh            ijkftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "QNHAIL"        "Hail Number concentration" "# kg(-1)"
+state   real    qnn            ijkftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "QNCCN"         "CCN Number concentration" "# kg(-1)"
+state   real    qnc            ijkftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "QNCLOUD"       "cloud water Number concentration" "# kg(-1)"
+state   real    qvolg          ijkftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "QVGRAUPEL"     "Graupel Particle Volume" "m(3) kg(-1)"
+#state   real    qvolh          ijkftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "QVHAIL"        "Hail Particle Volume" "m(3) kg(-1)""
+
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# Arrays for Specified LBCs  (lbc arrays REMOVED; Boundary arrays are now specified with the state array; see above, 20050413 JM )
+
+state    real   fcx            w         misc     -         -      ir       "fcx"                  "RELAXATION TERM FOR BOUNDARY ZONE"         ""
+state    real   gcx            w         misc     -         -      ir       "gcx"                  "2ND RELAXATION TERM FOR BOUNDARY ZONE"         ""
+state    real   dtbc            -        misc     -         -      ir       "dtbc"                 "TIME SINCE BOUNDARY READ"         ""
+
+#-------------------------------------------------------------------------------------------------------------------------------------------
+# Physics Related State Varibles
+
+# lsm State Variables
+
+state    real   SMOIS            ijl     -          1         Z     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "SMOIS"            "SOIL MOISTURE"     "m3 m-3"
+state    real   SH2O             ijl     -          1         Z     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "SH2O"             "SOIL LIQUID WATER" "m3 m-3"
+state    real   SMCREL           ijl     -          1         Z     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "SMCREL"           "RELATIVE SOIL MOISTURE" ""
+state    real   XICE             ij     misc        1         -     i0124rhd=(interp_mask_water_field:lu_index,isice)u=(copy_fcnm)  "SEAICE"             "SEA ICE FLAG"  ""
+state  integer  IVGTYP           ij     misc        1         -     i02rhd=(interp_fcni)u=(copy_fcni)           "IVGTYP"           "DOMINANT VEGETATION CATEGORY" ""
+state  integer  ISLTYP           ij     misc        1         -     i02rhd=(interp_fcni)u=(copy_fcni)           "ISLTYP"           "DOMINANT SOIL CATEGORY"       ""
+state    real   VEGFRA           ij     misc        1         -     i024rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)   "VEGFRA"           "VEGETATION FRACTION" ""
+state    real   SNOW             ij     misc        1         -     i012rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "SNOW"             "SNOW WATER EQUIVALENT"    "kg m-2"
+state    real   SNOWH            ij     misc        1         -     i012rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "SNOWH"            "PHYSICAL SNOW DEPTH"      "m"
+
+# gfdl (eta) radiation State Variables
+state    real    HTOP            ij     misc        1         -      r        "HTOP"                 "TOP OF CONVECTION LEVEL"         ""
+state    real    HBOT            ij     misc        1         -      r        "HBOT"                 "BOT OF CONVECTION LEVEL"         ""
+
+#---------------------------------------------------------------------------------------------------------------------------------------
+# SI - end variables from netCDF format from Standard Initialization
+#---------------------------------------------------------------------------------------------------------------------------------------
+
+# soil model variables  (Note that they are marked as staggered in the vertical dimension
+# because they are "fully dimensioned" -- they use every element in that dim
+state    real   TSLB           ijl       misc      1         Z     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)           "TSLB"     "SOIL TEMPERATURE"   "K"
+
+# Other Misc State Variables                                            
+#zxstate   real    h_diabatic     ijk     misc         1         -      rdu      "h_diabatic"            "MICROPHYSICS LATENT HEATING"         "K s-1"      
+state   real    msft           ij      misc         1         -     i012rhdu=(copy_fcnm)    "MAPFAC_M"         "Map scale factor on mass grid" ""
+state   real    msfu           ij      misc         1         X     i012rhdu=(copy_fcnm)    "MAPFAC_U"         "Map scale factor on u-grid" ""
+state   real    msfv           ij      misc         1         Y     i012rhdu=(copy_fcnm)    "MAPFAC_V"         "Map scale factor on v-grid" ""
+state   real    msftx          ij      misc         1         -     i012rhdu=(copy_fcnm)    "MAPFAC_MX"         "Map scale factor on mass grid, x direction" ""
+state   real    msfty          ij      misc         1         -     i012rhdu=(copy_fcnm)    "MAPFAC_MY"         "Map scale factor on mass grid, y direction" ""
+state   real    msfux          ij      misc         1         X     i012rhdu=(copy_fcnm)    "MAPFAC_UX"         "Map scale factor on u-grid, x direction" ""
+state   real    msfuy          ij      misc         1         X     i012rhdu=(copy_fcnm)    "MAPFAC_UY"         "Map scale factor on u-grid, y direction" ""
+state   real    msfvx          ij      misc         1         Y     i012rhdu=(copy_fcnm)    "MAPFAC_VX"         "Map scale factor on v-grid, x direction" ""
+state   real    msfvx_inv      ij      misc         1         Y     i012rhdu=(copy_fcnm)    "MF_VX_INV"         "Inverse map scale factor on v-grid, x direction" ""
+state   real    msfvy          ij      misc         1         Y     i012rhdu=(copy_fcnm)    "MAPFAC_VY"         "Map scale factor on v-grid, y direction" ""
+
+state   real    f              ij      misc         1         -     i012rhdu=(copy_fcnm)    "f"                "Coriolis sine latitude term"  "s-1"
+state   real    e              ij      misc         1         -     i012rhdu=(copy_fcnm)    "e"                "Coriolis cosine latitude term"  "s-1"
+state   real    sina           ij      misc         1         -     i012rhdu=(copy_fcnm)    "SINALPHA"         "Local sine of map rotation"   ""
+state   real    cosa           ij      misc         1         -     i012rhdu=(copy_fcnm)    "COSALPHA"         "Local cosine of map rotation"  ""
+state   real    ht             ij      misc         1         -     i012rhdus  "HGT"              "Terrain Height"   "m"
+state   real    ht_fine        ij      misc         1         -     -          "HGT_FINE"         "Fine Terrain Height"   "m"
+state   real    ht_int         ij      misc         1         -     -          "HGT_INT"          "Terrain Height Horizontally Interpolated"   "m"
+state   real    ht_input       ij      misc         1         -     -          "HGT_INPUT"        "Terrain Height from FG Input File"   "m"
+
+state   real    TSK            ij      misc         1         -     i012rhdu=(copy_fcnm)    "TSK"                   "SURFACE SKIN TEMPERATURE"                  "K"
+state   real    u_base         k       misc         1         -     ir        "u_base"                "BASE STATE X WIND IN IDEALIZED CASES"         ""      
+state   real    v_base         k       misc         1         -     ir        "v_base"                "BASE STATE Y WIND IN IDEALIZED CASES"         ""      
+state   real    qv_base        k       misc         1         -     ir        "qv_base"               "BASE STATE QV IN IDEALIZED CASES"         ""      
+state   real    z_base         k       misc         1         -     ir        "z_base"                "BASE STATE HEIGHT IN IDEALIZED CASES"         ""      
+state   real    u_frame        -       misc         1         -     ir        "u_frame"               "FRAME X WIND"         "m s-1"      
+state   real    v_frame        -       misc         1         -     ir        "v_frame"               "FRAME Y WIND"         "m s-1"      
+# p_top appears as metadata between SI and real but as a state variable in real and WRF
+# since it is a scalar and a constant, it makes sense to have it as metadata -- there
+# are, however, probably post-processing programs that expect to see it as an I/O record
+# another problem: share/input_wrf tries to read this as metadata (fine for real reading
+# SI, but with model reading real output, it generates a warning when debug is > 0 in
+# namelist and causes repeated questions from users.  A third problem is the potential
+# collision between a metadata name and a field record in the I/O data
+# resolve this how?  Have the real program throw a switch to tell the code to get it
+# from the metadata?  Otherwise it's a field?
+state   real    p_top          -       misc         -         -     irh       "p_top"                 "PRESSURE TOP OF THE MODEL"  "Pa"
+state   real    t00            -       misc         -         -     i02rh     "t00"                   "BASE STATE TEMPERATURE   "  "K"
+state   real    p00            -       misc         -         -     i02rh     "p00"                   "BASE STATE PRESURE"         "Pa"
+state   real    tlp            -       misc         -         -     i02rh     "tlp"                   "BASE STATE LAPSE RATE    "  ""
+state   real    tiso           -       misc         -         -     i02rh     "tiso"                  "TEMP AT WHICH THE BASE T TURNS CONST"  "K"
+state   real    tlp_strat      -       misc         -         -     i02rh     "tlp_strat"             "BASE STATE LAPSE RATE (DT/D(LN(P)) IN STRATOSPHERE"  "K"
+state   real    p_strat        -       misc         -         -     i02rh     "p_strat"               "BASE STATE PRESSURE AT BOTTOM OF STRATOSPHERE" "Pa"
+state   real    max_msftx      -       misc         -         -      rh       "max_mstfx"             "Max map factor in domain"  ""
+state   real    max_msfty      -       misc         -         -      rh       "max_mstfy"             "Max map factor in domain"  ""
+
+state    real  RAINC            ij      misc        1         -      rhdu     "RAINC"                 "ACCUMULATED TOTAL CUMULUS PRECIPITATION"                 "mm"      
+state    real  RAINNC           ij      misc        1         -      rhdu     "RAINNC"                "ACCUMULATED TOTAL GRID SCALE PRECIPITATION"              "mm"      
+state    real  RAINCV           ij      misc        1         -      r        "RAINCV"                "TIME-STEP CUMULUS PRECIPITATION"                         "mm"
+state    real  RAINNCV          ij      misc        1         -      r        "RAINNCV"               "TIME-STEP NONCONVECTIVE PRECIPITATION"                   "mm"
+
+# these next 2 are for the HFSoLE/PET demo; writing these to auxhist1 output over MCEL for coupling
+# with wave model, only if compiled with -DMCELIO, JM 2003/05/29
+state    real  XLAT             ij      misc        1         -     i0123rh01du=(copy_fcnm)      "XLAT"                "LATITUDE, SOUTH IS NEGATIVE"                                          "degree_north"
+state    real  XLONG            ij      misc        1         -     i0123rh01du=(copy_fcnm)      "XLONG"               "LONGITUDE, WEST IS NEGATIVE"                                          "degree_east"
+state    real  XLAT_U           ij      dyn_em      1         X     i012rh01du=(copy_fcnm)       "XLAT_U"              "LATITUDE, SOUTH IS NEGATIVE"                                          "degree_north"
+state    real  XLONG_U          ij      dyn_em      1         X     i012rh01du=(copy_fcnm)       "XLONG_U"             "LONGITUDE, WEST IS NEGATIVE"                                          "degree_east"
+state    real  XLAT_V           ij      dyn_em      1         Y     i012rh01du=(copy_fcnm)       "XLAT_V"              "LATITUDE, SOUTH IS NEGATIVE"                                          "degree_north"
+state    real  XLONG_V          ij      dyn_em      1         Y     i012rh01du=(copy_fcnm)       "XLONG_V"             "LONGITUDE, WEST IS NEGATIVE"                                          "degree_east"
+state    real  ALBEDO           ij      misc        1         -      rh          "ALBEDO"                   "ALBEDO"
+state    real  CLAT             ij      misc        1         -     i012rhdu=(copy_fcnm)         "CLAT"                "COMPUTATIONAL GRID LATITUDE, SOUTH IS NEGATIVE"                       "degree_north"
+state    real  ALBBCK           ij      misc        1         -     i0124rh   "ALBBCK"                "BACKGROUND ALBEDO"        ""
+state    real  EMBCK            ij      misc        1         -      r        "EMBCK"                 "BACKGROUND EMISSIVITY"         ""
+state    real  EMISS            ij      misc        1         -      rh       "EMISS"                 "SURFACE EMISSIVITY"         "" 
+state    real  SNOTIME          ij      misc        1         -      r        "SNOTIME"               "SNOTIME"         "" 
+state    real  NOAHRES          ij      misc        1         -      h        "NOAHRES"               "RESIDUAL OF THE NOAH SURFACE ENERGY BUDGET" "W m{-2}"
+state    real  CLDEFI           ij      misc        1         -      r        "CLDEFI"                "precipitation efficiency in BMJ SCHEME"    ""      
+state integer  STEPRA          -        misc        1         -      r        "STEPRA"                "NUMBER OF FUNDAMENTAL TIMESTEPS BETWEEN RADIATION CALLS"        ""
+                                                
+# State variables for landuse_init, Must be declared state because they are read in and needed for restarts. Had been SAVE vars in
+# landuse_init (phys/module_physics_init.F)
+state  logical warm_rain        -       misc        1         -     -         "warm_rain"              "WARM_RAIN_LOGICAL"
+state  logical adv_moist_cond   -       misc        1         -     -         "adv_moist_cond"         "ADVECT MOIST CONDENSATES LOGICAL"
+state  integer save_topo_from_real -    dyn_em	    1         -    irh        "save_topo_from_real"    "1=original topo from real/0=topo modified by WRF"      "flag"
+
+state    real  TMN              ij      misc        1         -     i012rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)     "TMN"   "SOIL TEMPERATURE AT LOWER BOUNDARY"           "K"
+state    real  XLAND            ij      misc        1         -     i02rhd=(interp_fcnm)u=(copy_fcnm)       "XLAND"                 "LAND MASK (1 FOR LAND, 2 FOR WATER)"          ""
+state    real  SNOWC            ij      misc        1         -     irhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)  "SNOWC"  "FLAG INDICATING SNOW COVERAGE (1 FOR SNOW COVER)"  ""
+
+state    real  ZNT              ij      misc        1         -      irh      "ZNT"                   "TIME-VARYING ROUGHNESS LENGTH"                "m"
+state    real  UST              ij      misc        1         -      irh      "UST"                   "U* IN SIMILARITY THEORY"                      "m s-1"
+state    real  MOL              ij      misc        1         -      irh      "MOL"                   "T* IN SIMILARITY THEORY"                      "K"
+state    real  PBLH             ij      misc        1         -      irh      "PBLH"                  "PBL HEIGHT"                                   "m"
+state    real  HFX              ij      misc        1         -      irh      "HFX"                   "UPWARD HEAT FLUX AT THE SURFACE"              "W m-2"
+state    real  QFX              ij      misc        1         -      irh      "QFX"                   "UPWARD MOISTURE FLUX AT THE SURFACE"          "kg m-2 s-1"
+state    real  REGIME           ij      misc        1         -      irh      "REGIME"  "FLAGS: 1=Night/Stable, 2=Mechanical Turbulent, 3=Forced Conv, 4=Free Conv" ""
+
+#
+#---------------------------------------------------------------------------------------------------------------------------------------
+#                                               
+
+######                                          
+#                                               
+# Variables that are set at run-time to control configuration  (namelist-settable)                                              
+#                                               
+#<Table>  <Type>  <Sym>                   <How set>          <Nentries>   <Default>                                             
+
+include Registry.rconfig
+
+#
+#---------------------------------------------------------------------------------------------------------------------------------------
+# Package Declarations
+#                                               
+
+#key      package       associated                package          associated 4d scalars
+#         name          namelist choice           state vars
+
+#package   passivec1     chem_opt==0                  -             
+
+package   slabscheme     sf_surface_physics==1       -             -
+package   lsmscheme      sf_surface_physics==2       -             -
+package   ruclsmscheme   sf_surface_physics==3       -             -
+package   noahmpscheme   sf_surface_physics==4       -             -
+
+package   dfi_setup      dfi_stage==0                -             -
+package   dfi_bck        dfi_stage==1                -             -
+package   dfi_fwd        dfi_stage==2                -             -
+package   dfi_fst        dfi_stage==3                -             -
+package   dfi_startfwd   dfi_stage==4                -             -
+package   dfi_startbck   dfi_stage==5                -             -
+
+
+package   dfi_nodfi     dfi_opt==0                  -             -
+package   dfi_dfl       dfi_opt==1                  -             -
+package   dfi_ddfi      dfi_opt==2                  -             -
+package   dfi_tdfi      dfi_opt==3                  -             -
+
+# only need to specify these once; not for every io_form* variable
+package   io_intio    io_form_restart==1                     -             -
+package   io_netcdf   io_form_restart==2                     -             -
+# Placeholders for additional packages (we can go beyond zzz
+# but that will entail modifying frame/module_io.F and frame/md_calls.m4)
+# Please note these are placeholders; HDF has not been implemented yet.
+package   io_hdf      io_form_restart==3                     -             -
+package   io_phdf5    io_form_restart==4                     -             -
+package   io_grib1    io_form_restart==5                     -             -
+package   io_mcel     io_form_restart==6                     -             -
+package   io_esmf     io_form_restart==7                     -             -
+package   io_yyy      io_form_restart==8                     -             -
+package   io_zzz      io_form_restart==9                     -             -
+package   io_grib2    io_form_restart==10                    -             -
+package   io_pnetcdf  io_form_restart==11                    -             -
+package   io_pio      io_form_restart==12                    -             -
+
+#WRF Hydro
+package   no_wrfhydro    wrf_hydro==0                -            -
+package   wrfhydro       wrf_hydro==1                -            -
+
+#---------------------------------------------------------------------------------------------------------------------------------------
+## communications                                               
+
+### 8. Edit the Registry file and create a halo-exchange for x_1.
+
+# Halo Update Communications
+
+halo      HALO_EM_C dyn_em    4:u_2,v_2

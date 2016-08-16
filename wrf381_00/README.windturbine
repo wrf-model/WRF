@@ -1,0 +1,115 @@
+README for wind turbine drag parameterization schemes, added 20101220.  JM
+       The code was modified to introduce the power curve and the thrust
+       coefficient using tables. The parameterization is activated in the
+       physics part of the namelist. 
+ NOTE: For V3.6 (April 2014) the namelist options and idealized set-up
+       have been changed. Further description below and in README.namelist.
+       The scheme is now activated with windfarm_opt = 1 in the physics namelist.
+
+
+*Specific note for the Fitch scheme.*
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! NOTICE
+!! The following paper should be cited whenever presenting results using this scheme
+!! (using either the original version or any modified versions of the scheme):
+!! Fitch, A. C. et al. 2012: Local and Mesoscale Impacts of Wind Farms as Parameterized in a
+!! Mesoscale NWP Model. Monthly Weather Review, doi:http://dx.doi.org/10.1175/MWR-D-11-00352.1
+!!
+!! Anna C. Fitch, National Center for Atmospheric Research (formerly University of Bergen)
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+The Fitch scheme is based on Blahak et al. (2010) of Wetter Jetzt GbR.
+It differs in that the kinetic energy (KE) extracted is based on the
+thrust coefficient of the turbine (representing the total fraction of KE extracted
+from the atmosphere due to the turbine), rather than the power coefficient plus an
+estimated loss factor.  In addition the TKE generated is a function of wind speed.
+The thrust coefficients and the power curve should be obtained from the turbine manufacturer
+for the turbines of interest and incorporated into a table as described below.
+If you do not have access to these data an idealized wind turbine is provided in this
+release (./run/wind-turbine-1.tbl). It is strongly recomended to use the data from the manufacturer.
+The parameterization works with the MYNN PBL and modifies the QKE field representing 2xTKE
+to include the TKE produced by wind turbines. QKE can be advected as a part
+of the scalar 4D tracer array in WRF using the bl_mynn_tkeadvect switch for each domain (default =.false.)
+
+It is not recommended to run the parameterization at resolutions higher than 5 rotor diameters -
+at this resolution rotation of the rotor blades should be included (not represented in the current
+model).  See 1st reference below and Wu and Porte-Agel (2011) and Porte-Agel et al. (2011).
+
+The specific implementation comes from Anna Fitch, Alok Gupta, and Idar Barstad at Uni Bergen,
+Norway.  It was added to this release of WRF by Jimy Dudhia, Joe Olson
+(NOAA), Julie Lundquist (U. Colorado/NREL), and John Michalakes (NREL).
+Further development comes from Pedro A. Jimenez (CIEMAT/NCAR) who introduced the capability
+of introducing the manufacturer information via user specified tables as well as other functionalities.
+
+References:
+Fitch, A. C. et al. 2012: Local and Mesoscale Impacts of Wind Farms as Parameterized in a
+  Mesoscale NWP Model. Monthly Weather Review, doi:http://dx.doi.org/10.1175/MWR-D-11-00352.1
+Fitch, A. C. et al. 2013: Mesoscale Influences of Wind Farms Throughout a Diurnal Cycle.
+  Monthly Weather Review, doi:http://dx.doi.org/10.1175/MWR-D-12-00185.1
+Fitch, A. C. et al. 2013: Parameterization of Wind Farms in Climate Models.
+  Journal of Climate, doi:http://dx.doi.org/10.1175/JCLI-D-12-00376.1
+Jimenez, P.A., J. Navarro, A.M. Palomares and J. Dudhia:  Mesoscale modeling of offshore
+  wind turbines wakes at the wind farm resolving scale: a composite-based analysis with
+  the WRF model over Horns Rev. Wind Energy, (In Press.). DOI: 10.1002/we.1708
+
+*Compiling the code.* no different from normal
+
+*Running the code*  To activate the parameterization the user needs
+to set the domain dependent variable windfarm_opt to 1 in the physics part of the
+namelist. WRF is expected to find a file called "windturbines.txt". Each line of
+the file specifies one turbine. The entries of a line are separated by spaces.
+The entries are listed in order on the line and specify the following,
+by position on the line:
+
+     1. True latitude of the wind turbine in degrees   [real]
+     2. True longitude of the wind turbine in degrees  [real]
+     3. Turbine type [integer]
+
+For example:
+ 55.574051 6.883480 1
+ 55.569066 6.884697 1 
+ 30.000000 -77.000000 1
+
+The location of each turbine is specified using the lat and lon elements
+for the turbine's entry in the windturbines.txt file. That is, the i, j index
+in the grid is computed from the true latitude (entry 1) and the true
+longitude (entry 2). The type of turbine (entry 3) points to the file that
+ contains the turbine specifications. If the turbine type is set to 1, WRF is expecting
+to find the file wind-turbine-1.tbl. The first line of the table is an integer,
+ N, indicating the number of pairs entries for the power curve and the
+thrust coefficient; the second line contains 4 real values specifying the
+ characteristics of the turbine:
+
+1.- Height in meters of the turbine hub [real]
+2.- Diameter in meters of the rotor [real]
+3.- Standing thrust coefficient [real]
+4.- Nominal power of turbine (MW) [real]
+
+ and the following N lines contain 3 real values with the
+ wind speed, thrust coefficient and power production (kW).
+
+ For example:
+
+23
+80. 85. 0.1 2.0
+3.    0.7     80.      |
+4.    0.75   150.      |
+.....                  |
+                       |  23 lines
+.....                  |
+25.   0.05   2000.0    |
+
+*Pseudo-real configuration.*  This mode is only for testing the real-world
+specification mechanism. This option allows to define the position of the
+turbines using the i and j coordinates on the grid instead of the latitude
+and longitude. To activate this option the user needs to set the variable
+windfarm_ij to 1 in the physics part of the namelist. WRF is expecting to
+find a file "windturbines-ij.txt". Each line of the file is associated with
+a turbine and each line has three columns corresponding to the I (entry 1), J
+ (entry 2) and kind of turbine (entry 3).
+
+For example:
+10   10   1
+10   10   1
+10   11   1

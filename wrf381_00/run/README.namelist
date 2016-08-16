@@ -1,0 +1,1468 @@
+Description of namelist variables
+
+---------------------------------
+ 
+For WRF-NMM users, please see Chapter 5 of the WRF-NMM User's Guide for 
+information on NMM specific settings (http://www.dtcenter.org/wrf-nmm/users)
+
+
+ Note: variables followed by (max_dom) indicate that this variable needs to
+       be defined for the nests when max_dom > 1.
+
+ &time_control
+ run_days                            = 1,	; run time in days
+ run_hours                           = 0,	; run time in hours
+                                                  Note: if it is more than 1 day, one may use both run_days and run_hours
+                                                  or just run_hours. e.g. if the total run length is 36 hrs, you may
+                                                  set run_days = 1, and run_hours = 12, or run_days = 0, and run_hours = 36
+ run_minutes                         = 0,	; run time in minutes
+ run_seconds                         = 0,	; run time in seconds
+ start_year (max_dom)                = 2001,	; four digit year of starting time
+ start_month (max_dom)               = 06,	; two digit month of starting time
+ start_day (max_dom)                 = 11,	; two digit day of starting time
+ start_hour (max_dom)                = 12,	; two digit hour of starting time
+ start_minute (max_dom)              = 00,	; two digit minute of starting time
+ start_second (max_dom)              = 00,	; two digit second of starting time
+                                                  Note: the start time is used to name the first wrfout file.
+                                                  It also controls the start time for nest domains, and the time to restart
+ tstart (max_dom)                    = 00,	; FOR NMM: starting hour of the forecast
+ end_year (max_dom)                  = 2001,	; four digit year of ending time
+ end_month (max_dom)                 = 06,	; two digit month of ending time
+ end_day (max_dom)                   = 12,	; two digit day of ending time
+ end_hour (max_dom)                  = 12,	; two digit hour of ending time
+ end_minute (max_dom)                = 00,	; two digit minute of ending time
+ end_second (max_dom)                = 00,	; two digit second of ending time
+                                                  It also controls when the nest domain integrations end
+                                                  All start and end times are used by real.exe.
+
+                                                  Note that one may use either run_days/run_hours etc. or 
+                                                  end_year/month/day/hour etc. to control the length of 
+                                                  model integration. But run_days/run_hours
+                                                  takes precedence over the end times. 
+                                                  Program real.exe uses start and end times only.
+
+ interval_seconds                    = 10800,	; time interval between incoming real data, which will be the interval
+                                                  between the lateral boundary condition file
+ input_from_file (max_dom)           = T,       ; whether nested run will have input files for domains other than 1
+ fine_input_stream (max_dom)         = 0,       ; field selection from nest input for its initialization
+                                                  0: all fields are used; 2: only static and time-varying, masked land 
+                                                  surface fields are used. In V3.2, this requires the use of 
+                                                  io_form_auxinput2
+ history_interval (max_dom)          = 60,  	; history output file interval in minutes
+ frames_per_outfile (max_dom)        = 1, 	; number of output times per history output file, 
+                                                  used to split output into multiple files 
+                                                  into smaller pieces
+ restart                             = F,	; whether this run is a restart run
+ cycling                             = F,       ; whether this run is a cycling run, if so, initializes look-up table for Thompson schemes only
+ restart_interval		     = 1440,	; restart output file interval in minutes
+ reset_simulation_start              = F,       ; whether to overwrite simulation_start_date with forecast start time
+ io_form_history                     = 2,       ; 2 = netCDF 
+ io_form_restart                     = 2,       ; 2 = netCDF 
+ io_form_input                       = 2,       ; 2 = netCDF
+ io_form_boundary                    = 2,       ; netCDF format
+                                     = 4,       ; PHD5 format
+                                     = 5,       ; GRIB1 format
+                                     = 10,      ; GRIB2 format
+                                     = 11,      ; pnetCDF format
+ ncd_nofill                          = .true.,  ; only a single write, not the write/read/write sequence, new in 3.6
+ frames_per_emissfile                = 12,      ; number of times in each chemistry emission file.
+ io_style_emiss                      = 1,       ; style to use for the chemistry emission files.
+                                                ; 0 = Do not read emissions from files.
+                                                ; 1 = Cycle between two 12 hour files (set frames_per_emissfile=12)
+                                                ; 2 = Dated files with length set by frames_per_emissfile
+ debug_level                         = 0, 	; 50,100,200,300 values give increasing prints
+ diag_print                          = 0, 	; print out time series of model diagnostics
+                                                ; 0 = no print
+                                                ; 1 = domain averaged 3-hourly hydrostatic surface pressure tendency 
+                                                      (Dpsfc/Dt), and dry-hydrostatic column pressure tendency (Dmu/Dt)
+                                                      will appear in stdout file
+                                                ; 2 = in addition to those above, domain averaged rainfall, 
+                                                  surface evaporation, and sensible and latent heat fluxes will be output
+ all_ic_times                        = .false., ; whether to write out wrfinput for all processing times
+ adjust_output_times                 = .false., ; adjust output times to the nearest hour
+ override_restart_timers             = .false., ; whether to change the alarms from what is previously set
+ write_hist_at_0h_rst                = .false., ; whether to output history file at the start of restart run
+ output_ready_flag		     = .true.,  ; asks the model to write-out an empty file with the name 'wrfoutReady_d<domain>_<date>.  
+                                                  Useful in production runs so that post-processing code can check on the 
+                                                  completeness of this file
+
+To choose between SI and WPS input to real for EM core:
+ auxinput1_inname                    = "met_em.d<domain>.<date>"             ; Input to real from WPS (default since 3.0)
+                                     = "wrf_real_input_em.d<domain>.<date>"  ; Input to real from SI
+
+To choose between SI and WPS input to real for NMM core:
+ auxinput1_inname                    = "met_nm.d<domain>.<date>"             ; Input to real from WPS
+                                     = "wrf_real_input_nm.d<domain>.<date>"  ; Input to real from SI
+
+Other output options:
+
+ auxhist2_outname                    = "rainfall" ; file name for extra output; if not specified,
+                                                  auxhist2_d<domain>_<date> will be used
+                                                  also note that to write variables in output other
+                                                  than the history file requires Registry.EM file change
+ auxhist2_interval (max_dom)         = 10,      ; interval in minutes
+ io_form_auxhist2                    = 2,       ; output in netCDF
+ frames_per_auxhist2                 = 1000,    ; number of output times in this file
+
+For SST updating (used only with sst_update=1):
+ 
+ auxinput4_inname                    = "wrflowinp_d<domain>" 
+ auxinput4_interval                  = 360      ; minutes generally matches time given by interval_seconds
+ io_form_auxinput4                   = 2        ; IO format, required in V3.2
+
+ nwp_diagnostics                     = 1        ; adds 7 history-interval max diagnostic fields
+
+For additional regional climate surface fields
+
+ output_diagnostics                  = 1        ; adds 36 surface diagnostic arrays (max/min/mean/std)
+ auxhist3_outname                    = 'wrfxtrm_d<domain>_<date>' ; file name for added diagnostics
+ io_form_auxhist3                    = 2        ; netcdf
+ auxhist3_interval                   = 1440     ; minutes between outputs (1440 gives daily max/min)
+ frames_per_auxhist3                 = 1        ; output times per file
+                                                  Note: do restart only at multiple of auxhist3_intervals
+
+For observation nudging:
+ auxinput11_interval                 = 10       ; interval in minutes for observation data. It should be 
+                                                  set as or more frequently as obs_ionf (with unit of 
+                                                  coarse domain time step).
+ auxinput11_end_h                    = 6        ; end of observation time in hours.
+
+Options for run-time IO:
+
+ iofields_filename (max_dom)         = "my_iofields_list.txt",
+                                       (example: +:h:21:rainc, rainnc, rthcuten)
+ ignore_iofields_warning             = .true.,  ; what to do when encountering an error in the user-specified files
+                                       .false., : abort when encountering an error in iofields_filename file
+
+Additional settings when running WRFVAR:
+
+ write_input                         = t,       ; write input-formatted data as output
+ inputout_interval                   = 180,     ; interval in minutes when writing input-formatted data 
+ input_outname                       = 'wrfinput_d<domain>_<date>' ; you may change the output file name
+ inputout_begin_y                    = 0
+ inputout_begin_mo                   = 0
+ inputout_begin_d                    = 0
+ inputout_begin_h                    = 3
+ inputout_begin_m                    = 0
+ inputout_begin_s                    = 0
+ inputout_end_y                      = 0
+ inputout_end_mo                     = 0
+ inputout_end_d                      = 0
+ inputout_end_h                      = 12
+ inputout_end_m                      = 0
+ inputout_end_s                      = 0        ; the above shows that the input-formatted data are output
+                                                  starting from hour 3 to hour 12 in 180 min interval.
+
+For automatic moving nests: requires special input data, and environment variable TERRAIN_AND_LANDUSE set at compile time
+                                     (This option will overwrite input_from_file for nest domains)
+ input_from_hires (max_dom)          = .true., 
+ rsmas_data_path                     = "path-to-terrain-and-landuse-dataset"
+
+ &domains
+ time_step                           = 60,	; time step for integration in integer seconds
+                                                  recommend 6*dx (in km) for typical real-data cases
+ time_step_fract_num                 = 0,	; numerator for fractional time step 
+ time_step_fract_den                 = 1,	; denominator for fractional time step 
+                                                  Example, if you want to use 60.3 sec as your time step,
+                                                  set time_step = 60, time_step_fract_num = 3, and 
+                                                  time_step_fract_den = 10
+ time_step_dfi                       = 60,	; time step for DFI, may be different from regular time_step
+ max_dom                             = 1,	; number of domains - set it to > 1 if it is a nested run
+ s_we (max_dom)                      = 1,	; start index in x (west-east) direction (leave as is)
+ e_we (max_dom)                      = 91,	; end index in x (west-east) direction (staggered dimension)
+ s_sn (max_dom)                      = 1,	; start index in y (south-north) direction (leave as is)
+ e_sn (max_dom)                      = 82,	; end index in y (south-north) direction (staggered dimension)
+ s_vert (max_dom)                    = 1,	; start index in z (vertical) direction (leave as is)
+ e_vert (max_dom)                    = 30,	; end index in z (vertical) direction (staggered dimension)
+                                                  Note: this refers to full levels including surface and top
+                                                  vertical dimensions need to be the same for all nests
+                                                  Note: most variables are unstaggered (= staggered dim - 1)
+ dx (max_dom)                        = 10000,	; grid length in x direction; ARW: unit in meters, NMM: unit in degrees (e.g. 0.667)
+ dy (max_dom)                        = 10000,	; grid length in y direction; ARW: unit in meters, NMM: unit in degrees (e.g. 0.0658) 
+ ztop (max_dom)                      = 19000.	; used in mass model for idealized cases
+ grid_id (max_dom)                   = 1,	; domain identifier
+ parent_id (max_dom)                 = 0,       ; id of the parent domain
+ i_parent_start (max_dom)            = 0,       ; starting LLC I-indices from the parent domain
+ j_parent_start (max_dom)            = 0,       ; starting LLC J-indices from the parent domain
+ parent_grid_ratio (max_dom)         = 1,       ; parent-to-nest domain grid size ratio: for real-data cases
+                                                  the ratio has to be odd; for idealized cases,
+                                                  the ratio can be even if feedback is set to 0. (NMM: must be 3)
+ parent_time_step_ratio (max_dom)    = 1,       ; parent-to-nest time step ratio; it can be different
+                                                  from the parent_grid_ratio (NMM: must be 3)
+ feedback                            = 1,       ; feedback from nest to its parent domain; 0 = no feedback
+ smooth_option                       = 0        ; smoothing option for parent domain, used only with feedback
+                                                  option on. 0: no smoothing; 1: 1-2-1 smoothing; 2: smoothing-desmoothing
+
+Namelist variables specifically for the WPS input for real:
+
+ num_metgrid_soil_levels             = 4        ; number of vertical soil levels or layers input
+                                                ; from WPS metgrid program
+ num_metgrid_levels                  = 27       ; number of vertical levels of 3d meteorological fields coming 
+                                                ; from WPS metgrid program
+ interp_type                         = 2        ; vertical interpolation
+                                                ; 1 = linear in pressure
+                                                ; 2 = linear in log(pressure)
+ extrap_type                         = 2        ; vertical extrapolation of non-temperature fields
+                                                ; 1 = extrapolate using the two lowest levels
+                                                ; 2 = use lowest level as constant below ground
+ t_extrap_type                       = 2        ; vertical extrapolation for potential temperature
+                                                ; 1 = isothermal
+                                                ; 2 = -6.5 K/km lapse rate for temperature
+                                                ; 3 = constant theta
+ use_levels_below_ground             = .true.   ; in vertical interpolation, use levels below input surface level
+                                                ; T = use input isobaric levels below input surface
+                                                ; F = extrapolate when WRF location is below input surface value
+ use_surface                         = .true.   ; use the input surface level data in the vertical interp and extrap
+                                                ; T = use the input surface data
+                                                ; F = do not use the input surface data
+ lagrange_order                      = 2        ; vertical interpolation order
+                                                ; 1 = linear
+                                                ; 2 = quadratic
+                                                ; 9 = cubic spline
+ zap_close_levels                    = 500      ; ignore isobaric level above surface if delta p (Pa) < zap_close_levels
+ lowest_lev_from_sfc                 = .false.  ; place the surface value into the lowest eta location
+                                                ; T = use surface value as lowest eta (u,v,t,q)
+                                                ; F = use traditional interpolation
+ force_sfc_in_vinterp                = 1        ; use the surface level as the lower boundary when interpolating
+                                                ; through this many eta levels
+                                                ; 0 = perform traditional trapping interpolation
+                                                ; n = first n eta levels directly use surface level
+ maxw_horiz_pres_diff                = 5000     ; Pressure threshold (Pa).  For using the level of max winds, when the
+                                                ; pressure differnce between neighboring values exceeds this maximum,
+                                                ; the variable is NOT inserted into the column for vertical interpolation.
+                                                ; ARW real only.
+ trop_horiz_pres_diff                = 5000     ; Pressure threshold (Pa).  For using the tropopause level, when the
+                                                ; pressure differnce between neighboring values exceeds this maximum,
+                                                ; the variable is NOT inserted into the column for vertical interpolation.
+                                                ; ARW real only.
+ maxw_above_this_level               = 30000    ; Minimum height (actually it is pressure in Pa) to allow using the 
+                                                ; level of max wind information in real.  With a value of 300 hPa, then
+                                                ; a max wind value at 500 hPa will be ignored.
+                                                ; ARW real only.
+ use_maxw_level                                 ; 0=do not use max wind speed level in vertical interpolation inside
+                                                ; of the ARW real program, 1 = use level
+ use_trop_level                                 ; as above, with tropopause level data
+ sfcp_to_sfcp                        = .false.  ; Optional method to compute model's surface pressure when incoming
+                                                ; data only has surface pressure and terrain, but not SLP
+ smooth_cg_topo	                     = .false.  ; Smooth the outer rows and columns of domain 1's topography w.r.t.
+                                                ; the input data
+ use_tavg_for_tsk                    = .false.  ; whether to use diurnally averaged surface temp as skin temp. The 
+                                                  diurnall averaged surface temp can be computed using WPS utility
+                                                  avg_tsfc.exe. May use this option when SKINTEMP is not present.
+ aggregate_lu                        = .false.  ; whetger to aggregate the grass, shrubs, trees in dominant landuse;
+                                                  default is false.
+ rh2qv_wrt_liquid                    = .true.,  ; whether to compute RH with respect to water (true) or ice (false)
+ rh2qv_method                        = 1,       ; which methed to use to computer mixing ratio from RH:
+                                                  default is option 1, the old MM5 method; option 2 uses a WMO 
+                                                  recommended method (WMO-No. 49, corrigendum, August 2000) - 
+                                                  there is a difference between the two methods though small
+ interp_theta                        = .false.  ; If set to .false., it will vertically interpolate temperature 
+                                                  instead of potential temperature, which may reduce bias when 
+                                                  compared with input data
+ hypsometric_opt                     = 2,       ; = 1: default method
+                                                  = 2: it uses an alternative way (less biased 
+                                                  when compared agaist input data) to compute height in program 
+                                                  real and pressure in model (ARW only). 
+ p_top_requested                     = 5000     ; p_top (Pa) to use in the model
+ ptsgm                               = 42000.   ; FOR NMM:  defines the pressure interface dividing
+                                                ;           the terrain following portion of the hybrid vertical
+                                                ;           coordinate (p > ptsgm) and the purely
+                                                ;           isobaric portion of the vertical coordinate (p < ptsgm)
+ vert_refine_fact                    = 1        ; vertical refinement factor for ndown, not used for concurrent vertical grid refinement
+ vert_refine_method (max_dom)        = 0        ; vertical refinement method (new in 3.7)
+                                                  0: no vertical refinement
+                                                  1: integer vertical refinement
+                                                  2: use specified or computed eta levels for vertical refinement
+
+Users may explicitly define full eta levels.  Given are two distributions for 28 and 35 levels.  The number
+of levels must agree with the number of eta surfaces allocated (e_vert).  Users may alternatively request 
+only the number of levels (with e_vert), and the real program will compute values.  The computation assumes
+a known first several layers, then generates equi-height spaced levels up to the top of the model.
+
+ eta_levels                          = 1.000, 0.990, 0.978, 0.964, 0.946,
+                                       0.922, 0.894, 0.860, 0.817, 0.766,
+                                       0.707, 0.644, 0.576, 0.507, 0.444,
+                                       0.380, 0.324, 0.273, 0.228, 0.188,
+                                       0.152, 0.121, 0.093, 0.069, 0.048,
+                                       0.029, 0.014, 0.000,
+ eta_levels                          = 1.000, 0.993, 0.983, 0.970, 0.954,
+                                       0.934, 0.909, 0.880, 0.845, 0.807,
+                                       0.765, 0.719, 0.672, 0.622, 0.571,
+                                       0.520, 0.468, 0.420, 0.376, 0.335,
+                                       0.298, 0.263, 0.231, 0.202, 0.175,
+                                       0.150, 0.127, 0.106, 0.088, 0.070,
+                                       0.055, 0.040, 0.026, 0.013, 0.000
+
+                                     = 0,2,      ; this allows vertical nesting in the nest domain
+                                       Note that with vertical nesting one can only use RRTM and RRTMG radiation physics
+
+ An example to define vertical nested levels (in program real):
+                                       
+ e_vert                              = 35,    45,
+ eta_levels(1:35)                    = 1., 0.993, 0.983, 0.97, 0.954, 0.934, 0.909, 0.88, 0.8406663, 0.8013327,
+                                       0.761999, 0.7226653, 0.6525755, 0.5877361, 0.5278192, 0.472514,
+                                       0.4215262, 0.3745775, 0.3314044, 0.2917579, 0.2554026, 0.2221162,
+                                       0.1916888, 0.1639222, 0.1386297, 0.1156351, 0.09525016, 0.07733481,
+                                       0.06158983, 0.04775231, 0.03559115, 0.02490328, 0.0155102, 0.007255059, 0.
+ eta_levels(36:81)                   = 1.0000, 0.9946, 0.9875, 0.9789, 0.9685, 0.9562, 0.9413, 0.9238, 0.9037, 0.8813, 0.8514,
+                                       0.8210, 0.7906, 0.7602, 0.7298, 0.6812, 0.6290, 0.5796, 0.5333, 0.4901, 0.4493, 0.4109,
+                                       0.3746, 0.3412, 0.3098, 0.2802, 0.2524, 0.2267, 0.2028, 0.1803, 0.1593, 0.1398, 0.1219,
+                                       0.1054, 0.0904, 0.0766, 0.0645, 0.0534, 0.0433, 0.0341, 0.0259, 0.0185, 0.0118, 0.0056, 0.
+
+ ideal_init_method                   method to compute alb in idealized cases in start_em (new in 3.8)
+                                     = 1, alb from phb (default); = 2, alb from t_init
+
+Horizontal interpolation options, coarse grid to fine grid.  The default is to use
+the Smolarkiewicz "SINT" method.  However, this is known to break with the 
+implementation inside of WRF for large refinement ratios (such as 15:1).  For those
+extreme (and quite rare occurrences), other schemes are available.  For options
+1, 3, 4, and 12, the FG lateral boundaries use the same horizontal scheme for the
+lateral BC computations.
+ interp_method_type                  = 1 ! bi-linear interpolation
+                                     = 2 ! SINT, default
+                                     = 3 ! nearest neighbor - only to be used for 
+                                         ! testing purposes
+                                     = 4 ! overlapping quadratic
+                                     =12 ! again for testing, uses SINT horizontal
+                                         ! interpolation, and same scheme for 
+                                         ! computation of FG lateral boundaries
+
+Variables specifically for the 3d ocean initialization with a single profile. Set
+the ocean physics option to #2.  Specify a number of levels.  For each of those levels,
+provide a depth (m) below the surface.  At each depth provide a temperature (K) and
+a salinity (ppt).  The default is not to use the 3d ocean.  Even when the 3d ocean is
+activated, the user must specify a reasonable ocean.  Currently, this is the only way
+available to run the 3d ocean option.
+
+ &physics
+ sf_ocean_physics                    = 0 (default), 1 (mixed layer model), 2 (3d ocean)
+
+ &domains
+ ocean_levels                        = 30,
+ ocean_z                             =       5.,       15.,       25.,       35.,       45.,       55.,
+                                            65.,       75.,       85.,       95.,      105.,      115.,
+                                           125.,      135.,      145.,      155.,      165.,      175.,
+                                           185.,      195.,      210.,      230.,      250.,      270.,
+                                           290.,      310.,      330.,      350.,      370.,      390.
+ ocean_t                             = 302.3493,  302.3493,  302.3493,  302.1055,  301.9763,  301.6818,
+                                       301.2220,  300.7531,  300.1200,  299.4778,  298.7443,  297.9194,
+                                       297.0883,  296.1443,  295.1941,  294.1979,  293.1558,  292.1136,
+                                       291.0714,  290.0293,  288.7377,  287.1967,  285.6557,  284.8503,
+                                       284.0450,  283.4316,  283.0102,  282.5888,  282.1674,  281.7461
+ ocean_s                             =  34.0127,   34.0127,   34.0127,   34.3217,   34.2624,   34.2632,
+                                        34.3240,   34.3824,   34.3980,   34.4113,   34.4220,   34.4303,
+                                        34.6173,   34.6409,   34.6535,   34.6550,   34.6565,   34.6527,
+                                        34.6490,   34.6446,   34.6396,   34.6347,   34.6297,   34.6247,
+                                        34.6490,   34.6446,   34.6396,   34.6347,   34.6297,   34.6247
+
+Namelist variables for controling the specified moving nest: 
+                   Note that this moving nest option needs to be activated at the compile time by adding -DMOVE_NESTS
+                   to the ARCHFLAGS. The maximum number of moves, max_moves, is set to 50 
+                   but can be modified in source code file frame/module_driver_constants.F.
+ num_moves                           = 4        ; total number of moves
+ move_id(max_moves)                  = 2,2,2,2, ; a list of nest domain id's, one per move
+ move_interval(max_moves)            = 60,120,150,180,   ; time in minutes since the start of this domain
+ move_cd_x(max_moves)                = 1,1,0,-1,; the number of parent domain grid cells to move in i direction
+ move_cd_y(max_moves)                = 1,0,-1,1,; the number of parent domain grid cells to move in j direction
+                                                  positive is to move in increasing i and j direction, and 
+                                                  negative is to move in decreasing i and j direction.
+                                                  0 means no move. The limitation now is to move only 1 grid cell
+                                                  at each move.
+
+Namelist variables for controling the automatic moving nest: 
+                   Note that this moving nest option needs to be activated at the compile time by adding -DMOVE_NESTS
+                   and -DVORTEX_CENTER to the ARCHFLAGS. This option uses an mid-level vortex following algorthm to
+                   determine the nest move. This option is experimental.
+ vortex_interval(max_dom)            = 15       ; how often the new vortex position is computed
+ max_vortex_speed(max_dom)           = 40       ; used to compute the search radius for the new vortex position
+ corral_dist(max_dom)                = 8        ; how many coarse grid cells the moving nest is allowed to get
+                                                  near the mother domain boundary
+ track_level                         = 50000    ; pressure value in Pa where the vortex is tracked
+ time_to_move(max_dom)               = 0.       ; time (in minutes) to start the moving nests     
+
+ tile_sz_x                           = 0,       ; number of points in tile x direction
+ tile_sz_y                           = 0,       ; number of points in tile y direction
+                                                  can be determined automatically
+ numtiles                            = 1,       ; number of tiles per patch (alternative to above two items)
+ nproc_x                             = -1,      ; number of processors in x for decomposition
+ nproc_y                             = -1,      ; number of processors in y for decomposition
+                                                  -1: code will do automatic decomposition
+                                                  >1: for both: will be used for decomposition
+
+Namelist variables for controlling the adaptive time step option:
+                   These options are only valid for the ARW core.  
+ use_adaptive_time_step              = .false.  ; T/F use adaptive time stepping, ARW only
+ step_to_output_time                 = .true.   ; if adaptive time stepping, T/F modify the
+                                                  time steps so that the exact history time is reached
+ target_cfl(max_dom)                 = 1.2,1.2  ; vertical and horizontal CFL <= to this value implies
+                                                  no reason to reduce the time step, and to increase it
+ target_hcfl(max_dom)                = .84,.84  ; horizontal CFL <= to this value implies
+ max_step_increase_pct(max_dom)      = 5,51     ; percentage of previous time step to increase, if the
+                                                  max(vert cfl, horiz cfl) <= target_cfl, then the time
+                                                  will increase by max_step_increase_pct. Use something 
+                                                  large for nests (51% suggested)
+ starting_time_step(max_dom)         = -1,-1    ; flag = -1 implies use 6 * dx (defined in start_em), 
+                                                  starting_time_step = 100 means the starting time step
+                                                  for the coarse grid is 100 s
+ max_time_step(max_dom)              = -1,-1    ; flag = -1 implies max time step is 3 * starting_time_step,
+                                                  max_time_step = 100 means that the time step will not
+                                                  exceed 100 s
+ min_time_step(max_dom)              = -1,-1    ; flag = -1 implies max time step is 0.5 * starting_time_step,
+                                                  min_time_step = 100 means that the time step will not
+                                                  be less than 100 s
+ adaptation_domain                   = 1        ; default, all fine grid domains adaptive dt driven by coarse-grid
+                                                ; 2 = Fine grid domain #2 determines the fundamental adaptive dt.
+
+ &dfi_control
+ dfi_opt                             = 0        ; which DFI option to use (3 is recommended)
+                                                ;   0 = no digital filter initialization
+                                                ;   1 = digital filter launch (DFL)
+                                                ;   2 = diabatic DFI (DDFI)
+                                                ;   3 = twice DFI (TDFI)
+ dfi_nfilter                         = 7        ; digital filter type to use (7 is recommended)
+                                                ;   0 = uniform
+                                                ;   1 = Lanczos
+                                                ;   2 = Hamming
+                                                ;   3 = Blackman
+                                                ;   4 = Kaiser
+                                                ;   5 = Potter
+                                                ;   6 = Dolph window
+                                                ;   7 = Dolph
+                                                ;   8 = recursive high-order
+ dfi_write_filtered_input            = .true.   ; whether to write wrfinput file with filtered 
+                                                ;   model state before beginning forecast
+ dfi_write_dfi_history               = .false.  ; whether to write wrfout files during filtering integration
+ dfi_cutoff_seconds                  = 3600     ; cutoff period, in seconds, for the filter
+ dfi_time_dim                        = 1000     ; maximum number of time steps for filtering period
+                                                ;   this value can be larger than necessary
+ dfi_bckstop_year                    = 2004     ; four-digit year of stop time for backward DFI integration
+ dfi_bckstop_month                   = 03       ; two-digit month of stop time for backward DFI integration
+ dfi_bckstop_day                     = 14       ; two-digit day of stop time for backward DFI integration
+ dfi_bckstop_hour                    = 12       ; two-digit hour of stop time for backward DFI integration
+ dfi_bckstop_minute                  = 00       ; two-digit minute of stop time for backward DFI integration
+ dfi_bckstop_second                  = 00       ; two-digit second of stop time for backward DFI integration
+ dfi_fwdstop_year                    = 2004     ; four-digit year of stop time for forward DFI integration
+ dfi_fwdstop_month                   = 03       ; two-digit month of stop time for forward DFI integration
+ dfi_fwdstop_day                     = 13       ; two-digit month of stop time for forward DFI integration
+ dfi_fwdstop_hour                    = 12       ; two-digit month of stop time for forward DFI integration
+ dfi_fwdstop_minute                  = 00       ; two-digit month of stop time for forward DFI integration
+ dfi_fwdstop_second                  = 00       ; two-digit month of stop time for forward DFI integration
+ dfi_radar                           = 0        ; DFI radar da switch
+
+ &physics
+
+ Note: even the physics options can be different in different nest domains, 
+       caution must be used as what options are sensible to use
+
+ chem_opt                            = 0,       ; chemistry option - use WRF-Chem
+ mp_physics (max_dom)                microphysics option
+                                     = 0, no microphysics
+                                     = 1, Kessler scheme
+                                     = 2, Lin et al. scheme
+                                     = 3, WSM 3-class simple ice scheme
+                                     = 4, WSM 5-class scheme
+                                     = 5, Ferrier (new Eta) microphysics, operational High-Resolution Window version
+                                     = 6, WSM 6-class graupel scheme
+                                     = 7, Goddard GCE scheme (also uses gsfcgce_hail, gsfcgce_2ice)
+                                     = 8, Thompson scheme (new for V3.1)
+                                     = 9, Milbrandt-Yau 2-moment scheme (new for V3.2)
+                                     = 10, Morrison (2 moments)
+                                     = 11, CAM 5.1 microphysics
+                                     = 13, SBU_YLIN scheme
+                                     = 14, WDM 5-class scheme
+                                     = 16, WDM 6-class scheme
+                                     = 17, NSSL 2-moment 4-ice scheme (steady background CCN)
+                                     = 18, NSSL 2-moment 4-ice scheme with predicted CCN (better for idealized than real cases)
+                                       ; to set a global CCN value, use
+                                       nssl_cccn  = 0.7e9   ; CCN for NSSL scheme (18). Also sets same value to ccn_conc for mp_physics=18
+                                     = 19, NSSL 1-moment (7 class: qv,qc,qr,qi,qs,qg,qh; predicts graupel density)
+                                     = 21, NSSL 1-moment, (6-class), very similar to Gilmore et al. 2004
+                                           Can set intercepts and particle densities in physics namelist, e.g., nssl_cnor
+                                       For NSSL 1-moment schemes, intercept and particle densities can be set for snow, 
+                                       graupel, hail, and rain. For the 1- and 2-moment schemes, the shape parameters 
+                                       for graupel and hail can be set.
+                                       nssl_alphah  = 0.    ! shape parameter for graupel
+                                       nssl_alphahl = 2.    ! shape parameter for hail
+                                       nssl_cnoh    = 4.e5  ! graupel intercept
+                                       nssl_cnohl   = 4.e4  ! hail intercept
+                                       nssl_cnor    = 8.e5  ! rain intercept
+                                       nssl_cnos    = 3.e6  ! snow intercept
+                                       nssl_rho_qh  = 500.  ! graupel density
+                                       nssl_rho_qhl = 900.  ! hail density
+                                       nssl_rho_qs  = 100.  ! snow density
+                                     = 28, aerosol-aware Thompson scheme with water- and ice-friendly aerosol climatology 
+                                           (new for V3.6)
+                                       This option has two climatogical aerosol input options:
+                                       use_aero_icbc = .F. : use constant values
+                                       use_aero_icbc = .T. : use input from WPS
+                                     = 30, HUJI (Hebrew University of Jerusalem, Israel) spectral bin microphysics,
+                                           fast version
+                                     = 32, HUJI spectral bin microphysics, full version
+                                     = 95, Ferrier (old Eta) microphysics, operational NAM (WRF NMM) version
+
+ For non-zero mp_physics options, to keep Qv .GE. 0, and to set the other moisture
+ fields .LT. a critcal value to zero
+
+ mp_zero_out                         = 0,      ; no action taken, no adjustment to any moist field
+                                     = 1,      ; except for Qv, all other moist arrays are set to zero
+                                               ; if they fall below a critical value
+                                     = 2,      ; Qv is .GE. 0, all other moist arrays are set to zero
+                                               ; if they fall below a critical value
+ mp_zero_out_thresh                  = 1.e-8   ; critical value for moist array threshold, below which
+                                               ; moist arrays (except for Qv) are set to zero (kg/kg)
+
+ gsfcgce_hail                        = 0       ; for running gsfcgce microphysics with graupel
+                                     = 1       ; for running gsfcgce microphysics with hail
+                                                 default value = 0
+ gsfcgce_2ice                        = 0       ; for running with snow, ice and graupel/hail
+                                     = 1       ; for running with only ice and snow
+                                     = 2       ; for running with only ice and graupel
+                                                 (only used in very extreme situation)
+                                                 default value = 0
+                                                 gsfcgce_hail is ignored if gsfcgce_2ice is set to 1 or 2.
+ hail_opt                            = 0       ; hail switch for WSM6, WDM6 and Morrison schemes: 0 - off, 1 - on (new in 3.6.1)
+ progn                               = 0       ; switch to use mix-activate scheme (Only for Morrison, WDM6, WDM5, 
+                                                 and NSSL_2MOMCCN/NSSL_2MOM
+ ccn_conc                            = 1.E8    ; CCN concentration, used by WDM schemes (new in 3.6.1)
+
+ no_mp_heating                       = 0       ; normal
+                                     = 1       ; turn off latent heating from a microphysics scheme
+ use_mp_re                           = 1       ; whether to use effective radii computed in mp schemes in RRTMG (new in 3.8).
+                                                 0: do not use; 1: use effective radii
+                                                 (The mp schemes that compute effective radii are 3,4,6,8,14,16,17-21)
+
+ ra_lw_physics (max_dom)             longwave radiation option
+                                     = 0, no longwave radiation
+                                     = 1, rrtm scheme 
+                                       (Default values for GHG in V3.5: co2vmr=379.e-6, n2ovmr=319.e-9, ch4vmr=1774.e-9;
+                                        Values used in previous versions: co2vmr=330.e-6, n2ovmr=0., ch4vmr=0.)
+                                     = 3, cam scheme
+                                          also requires levsiz, paerlev, cam_abs_dim1/2 (see below)
+                                     = 4, rrtmg scheme
+                                       (Default values for GHG in V3.5: co2vmr=379.e-6, n2ovmr=319.e-9, ch4vmr=1774.e-9)
+                                     = 24, fast rrtmg scheme for GPU and MIC (since 3.7)
+                                     = 5, Goddard longwave scheme
+                                     = 7, FLG (UCLA) scheme 
+                                     = 31, Earth Held-Suarez forcing
+                                     = 99, GFDL (Eta) longwave (semi-supported)
+                                          also must use co2tf = 1 for ARW
+
+ ra_sw_physics (max_dom)             shortwave radiation option
+                                     = 0, no shortwave radiation
+                                     = 1, Dudhia scheme
+                                     = 2, Goddard short wave
+                                     = 3, cam scheme
+                                          also must set levsiz, paerlev, cam_abs_dim1/2 (see below)
+                                     = 4, rrtmg scheme
+                                     = 24, fast rrtmg scheme for GPU and MIC (since 3.7)
+                                     = 5, Goddard shortwave scheme
+                                     = 7, FLG (UCLA) scheme
+                                     = 99, GFDL (Eta) longwave (semi-supported)
+                                          also must use co2tf = 1 for ARW
+
+ radt (max_dom)                      = 30,	; minutes between radiation physics calls
+                                           recommend 1 min per km of dx (e.g. 10 for 10 km);
+                                           use the same value for all nests.                      
+
+ nrads (max_dom)                     = FOR NMM: number of fundamental timesteps between 
+                                                calls to shortwave radiation; the value
+                                                is set in Registry.NMM but is overridden
+                                                by namelist value; radt will be computed
+                                                from this.
+
+ nradl (max_dom)                     = FOR NMM: number of fundamental timesteps between 
+                                                calls to longwave radiation; the value
+                                                is set in Registry.NMM but is overridden
+                                                by namelist value.
+
+ co2tf                               CO2 transmission function flag only for GFDL radiation
+                                     = 0, read CO2 function data from pre-generated file
+                                     = 1, generate CO2 functions internally in the forecast
+
+ ra_call_offset                      radiation call offset
+                                     = 0 (no offset), =-1 (old offset)
+ swint_opt                           Interpolation of short-wave radiation based on the updated solar zenith angle 
+                                       between SW call
+                                     = 0, no interpolation
+                                     = 1, use interpolation
+ cam_abs_freq_s                      = 21600 default CAM clearsky longwave absorption calculation frequency
+                                            (recommended minimum value to speed scheme up)
+ levsiz                              = 59 for CAM radiation input ozone levels, set automatically
+ paerlev                             = 29 for CAM radiation input aerosol levels, set automatically
+ cam_abs_dim1                        = 4 for CAM absorption save array, set automatically
+ cam_abs_dim2                        = value of e_vert for CAM 2nd absorption save array, set automatically
+
+ o3input                             = ozone input option for radiation (currently rrtmg only)
+                                     = 0, using profile inside the code
+                                     = 2, using CAM ozone data (ozone.formatted)
+ aer_opt                             = aerosol input option for radiation (currently rrtmg only)
+                                     = 0, none
+                                     = 1, using Tegen (1997) data, 
+                                     = 2, using J. A. Ruiz-Arias method (see other aer_* options) 
+                                     = 3, using G. Thompson's water/ice friendly climatological aerosol 
+ alevsiz                             = 12 for Tegen aerosol input levels, set automatically
+ no_src_types                        = 6 for Tegen aerosols: organic and black carbon, sea salt, sulfalte, dust,
+                                       and stratospheric aerosol (volcanic ashes - currently 0), set automatically
+
+ The following aerosol options allow RRTMG and new Goddard radiation schemes to see it, but the aerosols are
+     constant during the model integration.
+ aer_aod550_opt                      = [1,2] :
+                                       1 = input constant value for AOD at 550 nm from namelist.
+                                           In this case, the value is read from aer_aod550_val;
+                                       2 = input value from auxiliary input 5. It is a time-varying 2D grid in netcdf 
+                                           wrf-compatible format. The default is aer_aod550_opt=1 and aer_aod550_val=0.12
+ aer_aod550_val                      = 0.12
+ aer_angexp_opt                      = [1,2,3] :
+                                       1 = input constant value for Angstrom exponent from namelist. In this case, 
+                                           the value is read from aer_angexp_val;
+                                       2 = input value from auxiliary input 5, as in aer_aod550_opt;
+                                       3 = Angstrom exponent value estimated from the aerosol type defined in aer_type, and modulated
+                                           with the RH in WRF. Default operation is aer_angexp_opt = 1, and aer_angexp_val=1.3.
+ aer_angexp_val                      = 1.3   
+ aer_ssa_opt                         = [1,2,3] similar to aer_angexp_opt.
+ aer_ssa_val                         = 0.85
+ aer_asy_opt                         = [1,2,3] similar to aer_angexp_opt.
+ aer_asy_val                         = 0.9
+ aer_type                            = [1,2,3] : 1 for rural, 2 is urban and 3 is maritime.
+
+ sf_sfclay_physics (max_dom)         surface-layer option (old bl_sfclay_physics option)
+                                     = 0, no surface-layer
+                                     = 1, Revised MM5 Monin-Obukhov scheme (Jimenez, renamed in v3.6)
+                                     = 2, Monin-Obukhov (Janjic) scheme
+                                     = 3, NCEP Global Forecast System scheme (NMM only)
+                                     = 4, QNSE surface layer
+                                     = 5, MYNN surface layer
+                                     = 7, Pleim-Xiu surface layer (ARW only)
+                                     = 10, TEMF surface layer (ARW only)
+                                     = 91, Old MM5 scheme (previously option 1)
+
+ sf_surface_physics (max_dom)        land-surface option (old bl_surface_physics option)
+                                     = 0, no surface temp prediction
+                                     = 1, thermal diffusion scheme
+                                     = 2, Unified Noah land-surface model
+                                     = 3, RUC land-surface model
+                                     = 4, Noah-MP land-surface model (see additional &noah_mp namelist)
+                                     = 5, Community Land Model version 4 (CLM4), adapted from CAM
+                                     = 7, Pleim-Xiu LSM (ARW)
+                                     = 8, Simplified Simple Biosphere Model (SSiB) 
+                                          - can be used with Dudhia/RRTM, CAM or RRTMG radiation options
+
+ sf_urban_physics(max_dom)           = 0, ; activate urban canopy model (in Noah LSM only)
+                                     = 0: no
+                                     = 1: Single-layer, UCM 
+                                     = 2: Multi-layer, Building Environment Parameterization (BEP) scheme 
+                                          (works only with MYJ and BouLac PBL)
+                                     = 3: Multi-layer, Building Environment Model (BEM) scheme 
+                                          (works only with MYJ and BouLac PBL)
+
+ bl_pbl_physics (max_dom)            boundary-layer option
+                                     = 0, no boundary-layer 
+                                     = 1, YSU scheme
+                                     = 2, Mellor-Yamada-Janjic TKE scheme
+                                     = 3, NCEP Global Forecast System scheme (NMM only)
+                                     = 4, Eddy-diffusivity Mass Flux, Quasi-Normal Scale Elimination PBL
+                                     = 5, MYNN 2.5 level TKE scheme, works with
+                                          sf_sfclay_physics=1 or 2 as well as 5
+                                     = 6, MYNN 3rd level TKE scheme, works only
+                                          MYNNSFC (sf_sfclay_physics = 5)
+                                     = 7, ACM2 (Pleim) PBL (ARW)
+                                     = 8, Bougeault and Lacarrere (BouLac) PBL
+                                     = 9, UW boundary layer scheme from CAM5 (CESM 1_0_1)
+                                     = 10, TEMF (Total Energy Mass Flux) scheme (ARW only)
+                                          sf_sfclay_physics=10
+                                     = 11, Shin-Hong 'scale-aware' PBL scheme
+                                     = 12, Grenier-Bretherton-McCaa scheme (ARW only)
+                                     = 99, MRF scheme
+
+ bldt (max_dom)                      = 0,       ; minutes between boundary-layer physics calls
+
+ grav_settling (max_dom)             gravitational settling of fog/cloud droplets (Now works for any PBL scheme)
+ 				     = 0, No settling of cloud droplets
+				     = 1, Settling from Dyunkerke 1991 (in atmos and at surface)
+				     = 2, Fogdes (vegetation & wind speed dependent; Katata et al. 2008) at surface 
+                                          and Dyunkerke in the atmos.
+
+ nphs (max_dom)                      = FOR NMM: number of fundamental timesteps between
+                                                calls to turbulence and microphysics;
+                                                the value is set in Registry.NMM but is
+                                                overridden by namelist value; bldt will
+                                                be computed from this.
+ ysu_topdown_pblmix                  = 0,; whether to turn on top-down, radiation-driven mixing (1=yes)
+ mfshconv (max_dom)                  = 1,; whether to turn on new day-time EDMF QNSE (0=no)
+ topo_wind (max_dom)                 = 0, turn off, 
+                                     = 1, turn on topographic surface wind correction from Jimenez 
+                                       (YSU PBL only, and require extra input from geogrid)
+                                     = 2, turn on topographic surface wind correction from Mass (YSU PBL only)
+
+ bl_mynn_tkebudget (max_dom)         = 0, default off; = 1 adds MYNN tke budget terms to output
+ bl_mynn_tkeadvect (max_dom)         = .false., default off; = .true. do MYNN tke advection
+ icloud_bl                           option to couple the subgrid-scale clouds from the PBL scheme (MYNN only) 
+                                     to radiation schemes 
+                                     0: no coupling; 1: activate coupling to radiation (default)
+ bl_mynn_cloudmix                    option to activate mixing of qc and qi in MYNN
+                                     0: no mixing of qc & qi; 1: mixing activated (default). 
+                                       Note qnc and qni are mixed when scalar_pblmix =1.
+ bl_mynn_mixlength                   option to change mixing length formulation in MYNN
+                                     0:original as in Nakanishi and Niino 2009, 
+                                     1:RAP/HRRR (default, including BouLac in free atmosphere), 
+                                     2:experimental (includes cloud-specific mixing length and a scale-aware mixing 
+                                       length, following Ito et al. 2015, BLM). Option 2 has been well tested with 
+                                       the edmf options.
+ bl_mynn_cloudpdf                    option to switch to different cloud PDFs to represent subgrid clouds
+                                     0: original (Sommeria and Deardorf 1977); 
+                                     1: Kuwano et al 2010?, similar to option 0, but uses resolved scale gradients 
+                                        as opposed to higher order moments ; 
+                                     2: from Chaboureau and Bechtold (2002, JAS, with mods, default) 
+ bl_mynn_edmf                        option to activate mass-flux scheme in MYNN 
+                                     1: for StEM; 2: for TEMF; default =0, just regular MYNN. 
+                                     Related (hidden) options: 
+ bl_mynn_edmf_mom                    option to activate momentum transport in MYNN mass-flux scheme 
+                                     (assuming bl_mynn_edmf > 0)
+                                     0: no momentum transport; 1: momentum transport activated (default)
+ bl_mynn_edmf_tke                    option to activate TKE transport in MYNN mass-flux scheme 
+                                     (assuming bl_mynn_edmf > 0)
+                                     0: no TKE transport (default);1: activate TKE transport
+
+ scalar_pblmix (max_dom)             = 1 ; mix scalar fields consistent with PBL option (exch_h)
+ tracer_pblmix (max_dom)             = 1 ; mix tracer fields consistent with PBL option (exch_h)
+ shinhong_tke_diag (max_dom)         = 0 ; diagnostic TKE and mixing length from Shin-Hong PBL
+ opt_thcnd                           option to treat thermal conductivity in Noah LSM (new in 3.8)
+                                     = 1, original (default)
+                                     = 2, McCumber and Pielke for silt loam and sandy loam
+ sf_surface_mosaic                   option to mosaic landuse categories for Noah LSM            
+                                     = 0 ; default; use dominant category only
+                                     = 1 ; use mosaic landuse categories
+ mosaic_cat                          = 3 ; number of mosaic landuse categories in a grid cell
+ mosaic_lu                           = 1 ;  use mosaic landuse categories in RUC; default is 0
+ mosaic_soil                         = 1 ;  use mosaic soil categories in RUC; default is 0
+
+ cu_physics (max_dom)                cumulus option
+                                     = 0, no cumulus
+                                     = 1, Kain-Fritsch (new Eta) scheme
+                                     = 2, Betts-Miller-Janjic scheme
+                                     = 3, Grell-Freitas ensemble scheme
+                                     = 4, Old GFS simplified Arakawa-Schubert scheme 
+                                     = 5, Grell 3D ensemble scheme
+                                     = 6, Modifed Tiedtke scheme (ARW only)
+                                     = 7, Zhang-McFarlane scheme from CAM5 (CESM 1_0_1)
+                                     = 10, Modified Kain-Fritsch scheme with trigger function based on PDFs (ARW only)
+                                     = 11, Multi-scale Kain-Fritsch scheme
+                                     = 14, New GFS simplified Arakawa-Schubert scheme from YSU (ARW only)
+                                     = 16, A newer Tiedtke scheme
+                                     = 84, New GFS simplified Arakawa-Schubert scheme (HWRF) 
+                                     = 93, Grell-Devenyi ensemble scheme
+                                     = 99, previous Kain-Fritsch scheme
+
+ shcu_physics (max_dom)              independent shallow cumulus option (not tied to deep convection)
+                                     = 0, no independent shallow cumulus
+                                     = 1, Grell 3D ensemble scheme (use with cu_physics=93 or 5) (PLACEHOLDER: SWITCH NOT YET IMPLEMENTED--use ishallow)
+                                     = 2, Park and Bretherton shallow cumulus from CAM5 (CESM 1_0_1)
+                                     = 3, GRIMS shallow cumulus from YSU group
+
+ ishallow                            = 1,   Shallow convection used with Grell 3D ensemble schemes (cu_physics = 3 or 5)
+ clos_choice                         = 0,   closure choice (place holder only)
+ cu_diag                             = 0,   additional t-averaged stuff for cu physics (cu_phys = 3, 5 and 93 only)
+ kf_edrates (max_dom)                = 0,   Add entrainment/detrainment rates and convective timescale output variables for KF-based 
+                                            cumulus schemes (cu_phys = 1, 11 and 99 only) (new in 3.8)
+                                     = 0,   no output; = 1, additional output
+ convtrans_avglen_m                  = 30,  averaging time for variables used by convective transport (call cu_phys options)  and radiation routines (only cu_phys=3,5 and 93) (minutes) 
+ cu_rad_feedback (max_dom)           = .false.  ; sub-grid cloud effect to the optical depth in radiation
+                                                  currently it works only for GF, G3, GD and KF scheme
+                                                  One also needs to set cu_diag = 1 for GF, G3 and GD schemes
+ cudt                                = 0,       ; minutes between cumulus physics calls
+ kfeta_trigger                       KF trigger option (cu_physics=1 only):
+                                     = 1, default option
+                                     = 2, moisture-advection based trigger (Ma and Tan [2009]) - ARW only
+                                     = 3, RH-dependent additional perturbation to option 1 (JMA)
+ cugd_avedx                          ; number of grid boxes over which subsidence is spread.
+                                     = 1, default, for large grid distances
+                                     = 3, for small grid distances (DX < 5 km)
+ nsas_dx_factor                      = 0, default option
+                                     = 1, NSAS grid-distance dependent option (new in 3.6)
+ For KF-CuP scheme: recommended to use with cu_rad_feedback
+ shallowcu_forced_ra(max_dom)        radiative impact of shallow Cu by a prescribed maximum cloud fraction
+                                     = .false., option off, default
+                                     = .true., radiative impact of shallow cu with a cloud fraction value of 0.36
+ numbins(max_dom)                    number of perturbations for potential temperature and mixing ratio in the CuP PDF,
+                                     should be an odd number (21 is a recommended value)
+ thBinSize(max_dom)                  bin size of potential temperature perturbation increment (0.01 K)
+ rBinSize(max_dom)                   bin size of mixing ratio perturbation increment (1.0e-4 kg/kg)
+ minDeepFreq(max_dom)                minimum frequency required before deep convection is allowed (0.333)
+ minShallowFreq(max_dom)             minimum frequency required before shallow convection is allowed (1.0e-2)
+ shcu_aerosols_opt(max_dom)          whether aerosols in shcu:  0=none, 2=prognostic (run with WRF-Chem), 
+
+ ncnvc (max_dom)                     = FOR NMM: number of fundamental timesteps between
+                                                calls to convection; the value is set in Registry.NMM
+                                                but is overridden by namelist value; cudt will be
+                                                computed from this.
+
+ tprec (max_dom)                     = FOR NMM: number of hours in precipitation bucket
+ theat (max_dom)                     = FOR NMM: number of hours in latent heating bucket
+ tclod (max_dom)                     = FOR NMM: number of hours in cloud fraction average
+ trdsw (max_dom)                     = FOR NMM: number of hours in short wave buckets
+ trdlw (max_dom)                     = FOR NMM: number of hours in long wave buckets
+ tsrfc (max_dom)                     = FOR NMM: number of hours in surface flux buckets
+ pcpflg (max_dom)                    = FOR NMM: logical switch for precipitation assimilation
+
+ isfflx                              = 1,	; heat and moisture fluxes from the surface
+                                                  (only works for sf_sfclay_physics = 1,5,7,11)
+                                                  1 = with fluxes from the surface 
+                                                  0 = no flux from the surface
+                                                      with bl_pbl_physics=0 this uses tke_drag_coefficient
+                                                      and tke_heat_flux in vertical diffusion
+                                                  2 = use drag from sf_sfclay_physics and heat flux from
+                                                      tke_heat_flux with bl_pbl_physics=0
+ ideal_xland                         = 1,       ; sets XLAND (1=land,2=water) for ideal cases with no input land-use
+                                                      run-time switch for wrf.exe physics_init (default 1 as before)
+ ifsnow                              = 0,	; snow-cover effects
+                                                  (only works for sf_surface_physics = 1)
+                                                  1 = with snow-cover effect
+                                                  0 = without snow-cover effect
+ icloud                              = 1,	; cloud effect to the optical depth in radiation
+                                                  (only works for ra_sw_physics = 1,4 and ra_lw_physics = 1,4)
+                                                  Since 3.6, this also controls the cloud fraction options
+                                                  1 = with cloud effect, and use cloud fraction option 1
+                                                      (Xu-Randall method) 
+                                                  0 = without cloud effect
+                                                  2 = with cloud effect, and use cloud fraction option 2 (0/1 based
+                                                      on threshold
+                                                  3 = with cloud effect, and use cloud fraction option 3, based on
+                                                      Sundqvist et al. (1989) (since 3.7)
+ swrad_scat                          = 1.       ; scattering tuning parameter (default 1. is 1.e-5 m2/kg)
+                                                  (works for ra_sw_physics = 1 option only)
+ surface_input_source                = 3,	; where landuse and soil category data come from:
+                                                  1 = WPS/geogrid but with dominant categories recomputed
+                                                  2 = GRIB data from another model (only possible
+                                                      (VEGCAT/SOILCAT are in met_em files from WPS)
+                                                  3 = use dominant land and soil categories from WPS/geogrid (default since 3.8)
+
+ num_soil_layers                     = 5,	; number of soil layers in land surface model
+                                                  = 5: thermal diffusion scheme
+                                                  = 4: Noah landsurface model
+                                                  = 6 or 9: RUC landsurface model
+                                                  = 10: CLM4 landsurface model
+                                                  = 2: Pleim-Xu landsurface model
+                                                  = 3: SSiB landsurface model
+ num_land_cat                        = 21,      ; number of land categories in input data.
+                                                  24 - for USGS (default); 20 for MODIS
+                                                  28 - for USGS if including lake category
+                                                  21 - for MODIS if including lake category (default since 3.8)
+						  40 - for NCLD
+ num_soil_cat                        = 16,      ; number of soil categories in input data
+
+ pxlsm_smois_init(max_dom)           = 1        ; PXLSM Soil moisture initialization option 
+                                                   0 - From analysis, 1 - From moisture availability
+                                                   or SLMO in LANDUSE.TBL
+
+ maxiens                             = 1,       ; Grell-Devenyi only
+ maxens                              = 3,       ; G-D only
+ maxens2                             = 3,       ; G-D only
+ maxens3                             = 16       ; G-D only
+ ensdim                              = 144      ; G-D only
+                                                  These are recommended numbers. If you would like to use
+                                                  any other number, consult the code, know what you are doing.
+ seaice_threshold                    = 100.     ; tsk < seaice_threshold, if water point and 5-layer slab
+                                                ; scheme, set to land point and permanent ice; if water point
+                                                ; and Noah scheme, set to land point, permanent ice, set temps
+                                                ; from 2 m to surface, and set smois and sh2o. The default value has changed
+                                                ; from 271 to 100 K in v3.5.1 to avoid mixed-up use with fractional seaice input
+                                                ; Used by land model option 1,2,3,4 and 8
+ sst_update                          = 0        ; time-varying sea-surface temp (0=no, 1=yes). If selected real 
+                                                ; puts SST, XICE, ALBEDO and VEGFRA in wrflowinp_d01 file, and wrf updates 
+                                                ; these from it at same interval as boundary file. Also requires
+                                                ; namelists in &time_control: auxinput4_interval, auxinput4_end_h,
+                                                ; auxinput4_inname = "wrflowinp_d<domain>", 
+                                                ; and in V3.2 io_form_auxinput4
+ usemonalb                           = .true.   ; use monthly albedo map instead of table value
+                                                ; (must be used for NMM and recommended for sst_update=1)
+ rdmaxalb                            = .true.   ; use snow albedo from geogrid; false means using values from table
+ rdlai2d                             = .false.  ; use LAI from input; false means using values from table
+                                                  if sst_update=1, LAI will also be in wrflowinp file
+ bucket_mm                           = -1.      ; bucket reset value for water accumulations (value in mm, -1.=inactive)
+ bucket_J                            = -1.      ; bucket reset value for energy accumulations (value in J, -1.=inactive)
+ tmn_update                          = 0        ; update deep soil temperature (1, yes; 0, no)
+ lagday                              = 150      ; days over which tmn is computed using skin temperature
+ sst_skin                            = 0        ; calculate skin SST
+ slope_rad (max_dom)                 = 0        ; slope effects for solar radiation (1=on, 0=off)
+ topo_shading (max_dom)              = 0        ; neighboring-point shadow effects for solar radiation (1=on, 0=off)
+ shadlen                             = 25000.   ; max shadow length in meters for topo_shading=1
+ sf_ocean_physics                    = 0        ; activate ocean model (0=no, 1=1d mixed layer; 2=3D PWP, no bathy)
+                                                ; works with sf_surface_physics = 1 only
+ oml_hml0                            = 50       ; oml model can be initialized with a constant depth everywhere (m)
+ oml_gamma                           = 0.14     ; oml deep water lapse rate (K m-1)
+ oml_relaxation_time                 = 0.       ; Relaxation time (in second) of mixed layer ocean model back to original values 
+                                                  (an example value is 259200 sec. (3 days)) (new in 3.8)
+ omdt                                = 1.       ; 3D PWP time step (min).  It can be set to be the same as WRF time step 
+                                                ; in corresponding nested grids, but omdt should be no less than 1.0 minute.
+ ocean_levels                        = 30       ; number of vertical levels in 3DPWP. Note that the depth of each ocean 
+                                                ; model layers is specified in OM_DEPTH in wrfinput_d01
+ traj_opt                            = 0        ; Forward trajectory calculation (Lee and Chen 2013)
+ num_traj                            = 50       ; number of trajectories to be released
+ isftcflx                            = 0        ; alternative Ck, Cd formulation for tropical storm application 
+                                                ; sf_sfclay=1 and 11
+                                                ; 0=default
+                                                ; 1=Donelan Cd + const z0q 
+                                                ; 2=Donelan Cd + Garratt 
+                                                ; sf_sfclay=5
+                                                ;   (default) =0: z0, zt, and zq from COARE3.0 (Fairall et al 2003)
+                                                ;             =1: z0 from Davis et al (2008), zt & zq from COARE3.0
+                                                ;             =2: z0 from Davis et al (2008), zt & zq from Garratt (1992)
+ fractional_seaice                   = 0        ; treat sea-ice as fractional field (1) or ice/no-ice flag (0)
+                                                  works for sf_sfclay_physics=1,2,5,or 7.
+                                                  If fractional_seaice = 1, also set seaice_threshold = 0.
+ seaice_albedo_opt                   = 0        ; option to set albedo over sea ice
+                                                ; 0 = seaice albedo is a constant value from namelist option seaice_albedo_default
+                                                ; 1 = seaice albedo is f(Tair,Tskin,Snow) follwing Mills (2011) for Arctic Ocean
+                                                ; 2 = seaice albedo read in from input variable ALBSI
+ seaice_albedo_default               =  0.65    ; default value of seaice albedo for seaice_albedo_opt=0
+ seaice_snowdepth_opt                = 0        ; method for treating snow depth on sea ice
+                                                ; 0 = snow depth on sea ice is bounded by seaice_snowdepth_min and seaice_snowdepth_max
+                                                ; 1 = snow depth on sea ice read in from input array SNOWSI (bounded by 
+                                                ;     seaice_snowdepth_min and seaice_snodepth_max)
+ seaice_snowdepth_max                = 1.E10    ; maximum allowed accumulation of snow (m) on sea ice
+ seaice_snowdepth_min                = 0.001    ; minimum snow depth (m) on sea ice
+ seaice_thickness_opt                = 0        ; option for treating seaice thickness
+                                                ; 0 = seaice thickness is uniform value taken from namelist variable seaice_thickness_default
+                                                ; 1 = seaice_thickness is read in from input variable ICEDEPTH
+ seaice_thickness_default            = 3.0      ; default value of seaice thickness for seaice_thickness_opt=0
+ tice2tsk_if2cold                    = .false.  ; set Tice to Tsk to avoid unrealistically low sea ice temperatures
+ iz0tlnd                             = 0        ; thermal roughness length for sfclay and myjsfc (0 = old, 1 = veg dependent Chen-Zhang Czil)
+                                                ;     for mynn sfc (0=Zilitinkevitch,1=Chen-Zhang,2=mod Yang,3=const zt)
+ mp_tend_lim                         = 10.,     ; limit on temp tendency from mp latent heating from radar data assimilation
+ prec_acc_dt (max_dom)               = 0.,      ; number of minutes in precipitation bucket (ARW only) - will add three
+                                                  new 2d output fields: prec_acc_c, prec_acc_nc and snow_acc_nc
+ topo_wind (max_dom)                 = 0,       ; 1 = improve effect of topography for surface winds.
+ ua_phys                             = .false.  ; Option to activate UA Noah changes: a different snow-cover physics in
+                                                  Noah, aimed particularly toward improving treatment of snow as it relates 
+                                                  to the vegetation canopy. Also uses new columns added in VEGPARM.TBL
+ do_radar_ref			     = 0, 	; 1 = allows radar reflectivity to be computed using mp-scheme-specific
+ 						  parameters.  Currently works for mp_physics = 2,4,6,7,8,10,14,16
+				
+Namelist variables for lake module: 
+
+ sf_lake_physics(max_dom)            = 1,       ; lake model on/off 
+ lakedepth_default(max_dom)          = 50,      ; default lake depth (If there is no lake_depth information in the input data, then lake depth 
+                                                  is assumed to be 50m)  
+ lake_min_elev(max_dom)              = 5,       ; minimum elevation of lakes. May be used to determine whether a water point is a lake in the absence of lake
+                                                  category. If the landuse type includes 'lake' (i.e. Modis_lake and USGS_LAKE), this variable is of no effects. 
+ use_lakedepth                       = 1,       ; option to use lake depth data. Lake depth data is available from 3.6 geogrid program. If one didn't process
+                                                  the lake depth data, but this switch is set to 1, the program will stop and tell one to go back to geogrid
+                                                  program. 
+                                                  = 0, do not use lake depth data.
+ lightning_option (max_dom)                     ; Lightning parameterization option to allow flash rate prediction without chemistry
+                                     = 0        ; off
+                                     = 1        ; PR92 based on maximum w, redistributes flashes within dBZ > 20 (for convection resolved runs; must also use 
+				     		  do_radar_ref = 1, and mp_physics = 2,4,6,7,8,10,14, or 16)
+                                     = 2        ; PR92 based on 20 dBZ top, redistributes flashes within dBZ > 20 (for convection resolved runs; must also use 
+				     		  do_radar_ref = 1, and mp_physics = 2,4,6,7,8,10,14, or 16)
+                                     = 3        ; Predicting the potential for lightning activity (based on Yair et al, 2010, J. Geophys. Res., 115, D04205, doi:10.1029/2008JD010868) 
+                                     = 11       ; PR92 based on level of neutral buoyancy from convective parameterization (for scales
+                                                  where a CPS is used, intended for use at 10 < dx < 50 km; must also use cu_physics = 5 or 93)
+ lightning_dt  (max_dom)             = 0.       ; time interval (seconds) for calling lightning parameterization. Default uses model time step
+ lightning_start_seconds (max_dom)   = 0.       ; Start time for calling lightning parameterization. Recommends at least 10 minutes for spin-up.
+ flashrate_factor  (max_dom)         = 1.0      ; Factor to adjust the predicted number of flashes. Recommends 1.0 for lightning_option = 11
+                                                  between dx=10 and 50 km. Manual tuning recommended for all other options independently
+                                                  for each nest.
+ cellcount_method (max_dom)                     ; Method for counting storm cells. Used by CRM options (lightning_options=1,2).
+                                     = 0,       ; model determines method used
+                                     = 1,       ; tile-wide, appropriate for large domains
+                                     = 2,       ; domain-wide, appropriate for sing-storm domains
+ cldtop_adjustment (max_dom)         = 0.       ; Adjustment from LNB in km. Used by lightning_option=11. Default is 0, but recommends 2 km
+ iccg_method (max_dom)                          ; IC:CG partitioning method (IC: intra-cloud; CG: cloud-to-ground)
+                                     = 0        ; Default method depending on lightning option, currently all options use iccg_method=2 by default
+                                     = 1        ; Constant everywhere, set with namelist options iccg_prescribed (num|den)#, default is 0./1. (all CG).
+                                     = 2        ; Coarsely prescribed 1995-1999 NLDN/OTD climatology based on Boccippio et al. (2001)
+                                     = 3        ; Parameterization by Price and Rind (1993) based on cold-cloud depth
+                                     = 4        ; Gridded input via arrays iccg_in_(num|den) from wrfinput for monthly mapped ratios. 
+                                                  Points with 0/0 values use ratio defined by iccg_prescribed_(num|den)
+ iccg_prescribed_num                 = 0.       ; Numerator of user-specified prescribed IC:CG
+ iccg_prescribed_den                 = 1.       ; Denominator of user-specified prescribed IC:CG
+
+Options for wind turbine drag parameterization:
+
+ windfarm_opt                       = 0         ; 1 = Simulates the effects of wind turbines in the atmospheric evolution
+ windfarm_ij                        = 0         ; whether to use lat-lon or i-j coordinate as wind turbine locations    
+                                                ; 0 = The coordinate of the turbines are defined in terms of lat-lon
+                                                ; 1 = The coordinate of the turbines are defined in terms of grid points
+
+
+Stochastic parameterization schemes:
+
+&stoch
+ skebs                                = 1       ; stochastic kinetic-energy backscatter scheme, 1: on
+ tot_backscat_psi                     = 1.0E-05 ; total backscattered dissipation for streamfunction; 
+                                                ; determines amplitude of streamfunction perturbations
+ tot_backscat_t                       = 1.0E-06 ; total backscattered dissipation for potential temperature 
+ ztau_psi                             = 10800.0 ; decorrelation time scale of noise for streamfunction perturbations
+ rand_perturb                         = 1       ; generate array with random perturbations for user determined use, 1: on
+ gridpt_stddev_rand_pert              = 0.03    ; standard deviation of random perturbations at each gridpoint  
+                                                ; determines amplitude of random perturbations 
+ stddev_cutoff_rand_pert              = 3.0     ; cutoff tails of pdf above this threshold standard deviation
+ lengthscale_rand_pert                = 500000.0 ; correlation length scale in meters
+ timescale_rand_pert                  = 21600.0 ; decorrelation time scale in s
+ nens                                 = 1       ; creates different seed for random number streams in either stochastic scheme
+                                                ; must be different for each member in ensemble forecasts 
+
+Options for stochastic kinetic-energy backscatter scheme:
+
+ stoch_force_opt (max_dom)          = 0,        : No stochastic parameterization
+                                      1,        : Stochastic kinetic-energy backscatter scheme (SKEB)
+ stoch_vertstruc_opt (max_dom)      = 0,        : Constant vertical structure of random pattern generator
+                                      1,        : Random phase vertical structure random pattern generator
+ tot_backscat_psi                   = 1.0E-05   ; Controls amplitude of rotational wind perturbations
+ tot_backscat_t                     = 1.0E-06   ; Controls amplitude of potential temperature perturbations
+ nens                               = 1         ; an integer that controls the random number stream which will then
+                                                  change the run. When running an ensemble, this can be
+                                                  ensemble member number, so that each ensemble member gets a
+                                                  different random number stream, hence a different perturbed run.
+ ztau_psi                           = 10800.0   ; decorr. time of noise for psi perturb
+ ztau_t                             = 10800.0   ; decorr. time of noise for theta perturb
+ rexponent_psi                      = -1.83     ; spectral slope of forcing for psi
+ rexponent_t                        = -1.83     ; spectral slope of forcing for theta
+ zsigma2_eps                        = 0.0833    ; variance of noise for psi perturb
+ zsigma2_eta                        = 0.0833    ; variance of noise for theta perturb
+ kminforc                           = 1         ; min. forcing wavenumber in lon. for psi perturb
+ lminforc                           = 1         ; min. forcing wavenumber in lat. for psi perturb
+ kminforct                          = 1         ; min. forcing wavenumber in lon. for theta perturb
+ lminforct                          = 1         ; min. forcing wavenumber in lat. for theta perturb
+ kmaxforc                           = 1000000   ; max. forcing wavenumber in lon. for psi perturb
+ lmaxforc                           = 1000000   ; max. forcing wavenumber in lat. for psi perturb
+ kmaxforct                          = 1000000   ; max. forcing wavenumber in lon. for theta perturb
+ lmaxforct                          = 1000000   ; max. forcing wavenumber in lat. for theta perturb
+ perturb_chem_bdy                               ; Options for perturbing lateral boundaries of chemical tracers:
+                                                  0 = off; 1 = on with RAND_PERTURB pattern
+ perturb_bdy                        = 0         ; No boundary perturbations
+                                      1         ; Use SKEBS pattern for boundary perturbations
+                                      2         ; Use other user-provided pattern for boundary perturbations
+
+Options for use with the Noah-MP Land Surface Model:
+
+&noah_mp
+ dveg                               = 4,        ; Noah-MP Dynamic Vegetation option:
+                                                ;    1 = Off (LAI from table; FVEG = shdfac)
+                                                ;    2 = On  (LAI predicted;  FVEG calculated)
+                                                ;    3 = Off (LAI from table; FVEG calculated)
+                                                ;    4 = Off (LAI from table; FVEG = maximum veg. fraction)
+                         			;    5 = On  (LAI predicted;  FVEG = maximum veg. fraction)
+ opt_crs                            = 1,        ; Noah-MP Stomatal Resistance option:
+                                                ;    1 = Ball-Berry; 2 = Jarvis
+ opt_sfc                            = 1         ; Noah-MP surface layer drag coefficient calculation
+                                                ;    1 = Monin-Obukhov; 2 = original Noah (Chen97);
+                                                ;    3 = MYJ consistent; 4 = YSU consistent.
+                                                ;    options 3 and 4 removed in 3.7
+ opt_btr                            = 1,        ; Noah-MP Soil Moisture Factor for Stomatal Resistance
+                                                ;    1 = Noah; 2 = CLM; 3 = SSiB
+ opt_run                            = 1,        ; Noah-MP Runoff and Groundwater option
+                                                ;    1 = TOPMODEL with groundwater
+                                                ;    2 = TOPMODEL with equilibrium water table
+                                                ;    3 = original surface and subsurface runoff (free drainage)
+                                                ;    4 = BATS surface and subsurface runoff (free drainage)
+ opt_frz                            = 1,        ; Noah-MP Supercooled Liquid Water option
+                                                ;    1 = No iteration; 2 = Koren's iteration
+ opt_inf                            = 1,        ; Noah-MP Soil Permeability option
+                                                ;    1 = Linear effects, more permeable;
+                                                ;    2 = Non-linear effects, less permeable
+ opt_rad                            = 3,        ; Noah-MP Radiative Transfer option
+                                                ;    1 = Modified two-stream;
+                                                ;    2 = Two-stream applied to grid-cell
+                                                ;    3 = Two-stream applied to vegetated fraction
+ opt_alb                            = 2,        ; Noah-MP Ground Surface Albedo option
+                                                ;    1 = BATS; 2 = CLASS
+ opt_snf                            = 1,        ; Noah-MP Precipitation Partitioning between snow and rain
+                                                ;    1 = Jordan (1991)
+                                                ;    2 = BATS:  Snow when SFCTMP < TFRZ+2.2
+                                                ;    3 = Snow when SFCTMP < TFRZ
+						;    4 = Use WRF precipitation partitioning
+ opt_tbot                           = 2,        ; Noah-MP Soil Temperature Lower Boundary Condition
+                                                ;    1 = Zero heat flux
+                                                ;    2 = TBOT at 8 m from input file
+ opt_stc                            = 1,        ; Noah-MP Snow/Soil temperature time scheme
+                                                ;    1 = semi-implicit
+                                                ;    2 = full-implicit
+						;    3 = semi-implicit where Ts uses snow cover fraction
+ opt_gla                            = 1,        ; Noah-MP glacier treatment option (new in 3.8)
+                                                ;    1 = includes phase change
+                                                ;    2 = slab ice (Noah)
+ opt_rsf                            = 1,        ; Noah-MP surface evaporation resistence option (new in 3.8)
+                                                ;    1 -> Sakaguchi and Zeng, 2009
+                                                ;    2 -> Sellers (1992)
+                                                ;    3 -> adjusted Sellers to decrease RSURF for wet soil
+                                                ;    4 -> option 1 for non-snow; rsurf = rsurf_snow for snow (set in MPTABLE); AD v3.8
+ /
+
+ &fdda
+ grid_fdda (max_dom)                 = 1        ; grid-nudging fdda on (=0 off) for each domain
+                                     = 2        ; spectral nudging
+ gfdda_inname                        = "wrffdda_d<domain>" ; defined name in real
+ gfdda_interval_m (max_dom)          = 360      ; time interval (in min) between analysis times (must use minutes)
+ gfdda_end_h (max_dom)               = 6        ; time (in hours) to stop nudging after start of forecast
+ io_form_gfdda                       = 2        ; analysis data io format (2 = netCDF)
+ fgdt (max_dom)                      = 0        ; calculation frequency (minutes) for grid-nudging (0=every step)
+ if_no_pbl_nudging_uv (max_dom)      = 0        ; 1= no nudging of u and v in the pbl, 0=nudging in the pbl
+ if_no_pbl_nudging_t (max_dom)       = 0        ; 1= no nudging of temp in the pbl, 0=nudging in the pbl
+ if_no_pbl_nudging_q (max_dom)       = 0        ; 1= no nudging of qvapor in the pbl, 0=nudging in the pbl
+ if_zfac_uv (max_dom)                = 0        ; 0= nudge u and v in all layers, 1= limit nudging to levels above k_zfac_uv
+  k_zfac_uv (max_dom)                = 10       ; 10=model level below which nudging is switched off for u and v
+ if_zfac_t (max_dom)                 = 0        ; 0= nudge temp in all layers, 1= limit nudging to levels above k_zfac_t
+  k_zfac_t (max_dom)                 = 10       ; 10=model level below which nudging is switched off for temp
+ if_zfac_q (max_dom)                 = 0        ; 0= nudge qvapor in all layers, 1= limit nudging to levels above k_zfac_q
+  k_zfac_q (max_dom)                 = 10       ; 10=model level below which nudging is switched off for qvapor
+ guv (max_dom)                       = 0.0003   ; nudging coefficient for u and v (sec-1)
+ gt (max_dom)                        = 0.0003   ; nudging coefficient for temp (sec-1)
+ gq (max_dom)                        = 0.0003   ; nudging coefficient for qvapor (sec-1)
+ if_ramping                          = 0        ; 0= nudging ends as a step function, 1= ramping nudging down at end of period
+ dtramp_min                          = 60.0     ; time (min) for ramping function, 60.0=ramping starts at last analysis time, 
+                                                                                  -60.0=ramping ends at last analysis time
+ grid_sfdda (max_dom)                = 0        ; surface fdda switch
+                                                  0: off; 
+                                                  1: nudging selected surface fields; 
+                                                  2: FASDAS (flux-adjusting surface data assimilation system)
+ sgfdda_inname                       = "wrfsfdda_d<domain>" ; defined name for sfc nudgingi in input file (from program obsgrid) 
+ sgfdda_end_h (max_dom)              = 6        ; time (in hours) to stop sfc nudging after start of forecast
+ sgfdda_interval_m (max_dom)         = 180      ; time interval (in min) between sfc analysis times (must use minutes)
+ io_form_sgfdda                      = 2        ; sfc analysis data io format (2 = netCDF)
+ guv_sfc (max_dom)                   = 0.0003   ; nudging coefficient for sfc u and v (sec-1)
+ gt_sfc (max_dom)                    = 0.0003   ; nudging coefficient for sfc temp (sec-1)
+ gq_sfc (max_dom)                    = 0.0003   ; nudging coefficient for sfc qvapor (sec-1)
+ rinblw                              = 250.0    ; radius of influence used to determine the confidence (or weights) for
+                                                  the analysis, which is based on the distance between the grid point to the nearest
+                                                  obs. The analysis without nearby observation is used at a reduced weight.
+
+ pxlsm_soil_nudge(max_dom)           = 1        ; PXLSM Soil nudging option (requires wrfsfdda file)
+
+The following are for spectral nudging:
+ fgdtzero (max_dom)                  = 0,       ; 1= nudging tendencies are set to zero in between fdda calls
+ if_no_pbl_nudging_ph                = 0,       ; 1= no nudging of ph in the pbl, 0= nuding in the pbl
+ if_zfac_ph (max_dom)                = 0,       ; 0= nudge ph in all layers, 1= limit nudging to levels above k_zfac_ph
+  k_zfac_ph (max_dom)                = 10,      ; 10= model level below which nudging is switched off for ph
+ dk_zfac_uv (max_dom)                = 1,       ; depth in k between k_zfac_X to dk_zfac_X where nudging increases 
+                                                  linearly to full strength
+ dk_zfac_t  (max_dom)                = 1,
+ dk_zfac_ph (max_dom)                = 1,
+ gph (max_dom)                       = 0.0003,
+ xwavenum (max_dom)                  = 3,       ; top wave number to nudge in x direction
+ ywavenum (max_dom)                  = 3,       ; top wave number to nudge in y direction
+
+The following are for observation nudging:
+ obs_nudge_opt (max_dom)             = 1        ; obs-nudging fdda on (=0 off) for each domain
+                                                  also need to set auxinput11_interval and auxinput11_end_h
+                                                  in time_control namelist
+ max_obs                             = 150000   ; max number of observations used on a domain during any 
+                                                  given time window
+ fdda_start                          = 0        ; obs nudging start time in minutes
+ fdda_end                            = 180      ; obs nudging end time in minutes
+ obs_nudge_wind (max_dom)            = 1        ; whether to nudge wind: (=0 off)
+ obs_coef_wind                       = 6.E-4,   ; nudging coefficient for wind, unit: s-1
+ obs_nudge_temp                      = 1        ; whether to nudge temperature: (=0 off)
+ obs_coef_temp                       = 6.E-4,   ; nudging coefficient for temperature, unit: s-1
+ obs_nudge_mois                      = 1        ; whether to nudge water vapor mixing ratio: (=0 off)
+ obs_coef_mois                       = 6.E-4,   ; nudging coefficient for water vapor mixing ratio, unit: s-1
+ obs_nudge_pstr                      = 0        ; whether to nudge surface pressure (not used)
+ obs_coef_pstr                       = 0.       ; nudging coefficient for surface pressure, unit: s-1 (not used)
+ obs_rinxy                           = 200.,    ; horizonal radius of influence in km
+ obs_rinsig                          = 0.1,     ; vertical radius of influence in eta
+ obs_twindo (max_dom)                = 0.66667  ; half-period time window over which an observation 
+                                                  will be used for nudging (hours)
+ obs_npfi                            = 10,      ; freq in coarse grid timesteps for diag prints
+ obs_ionf (max_dom)                  = 2        ; freq in coarse grid timesteps for obs input and err calc
+ obs_idynin                          = 0        ; for dynamic initialization using a ramp-down function to gradually
+                                                  turn off the FDDA before the pure forecast (=1 on)
+ obs_dtramp                          = 40       ; time period in minutes over which the nudging is ramped down 
+                                                  from one to zero.
+ obs_prt_freq (max_dom)              = 10,      ; Frequency in obs index for diagnostic printout
+ obs_prt_max                         = 1000,    ; Maximum allowed obs entries in diagnostic printout
+ obs_ipf_in4dob                      = .true.   ; print obs input diagnostics (=.false. off)
+ obs_ipf_errob                       = .true.   ; print obs error diagnostics (=.false. off)
+ obs_ipf_nudob                       = .true.   ; print obs nudge diagnostics (=.false. off)
+ obs_ipf_init                        = .true.   ; Enable obs init warning messages
+
+ obs_no_pbl_nudge_uv (max_dom)       = 0        ; 1=no wind-nudging within pbl
+ obs_no_pbl_nudge_t (max_dom)        = 0        ; 1=no temperature-nudging within pbl
+ obs_no_pbl_nudge_q (max_dom)        = 0        ; 1=no moisture-nudging within pbl
+ obs_sfc_scheme_horiz                = 0        ; horizontal spreading scheme for surf obs;
+                                                  0=wrf scheme, 1=original mm5 scheme
+ obs_sfc_scheme_vert                 = 0        ; vertical spreading scheme for surf obs
+                                                  0=regime vif scheme, 1=original simple scheme
+ obs_max_sndng_gap                   = 20       ; Max pressure gap between soundings, in cb
+ obs_nudgezfullr1_uv                 = 50       ; Vert infl full weight  height for lowest model level (LML) obs, regime 1, winds
+ obs_nudgezrampr1_uv                 = 50       ; Vert infl ramp-to-zero height for LML obs, regime 1, winds
+ obs_nudgezfullr2_uv                 = 50       ; Vert infl full weight  height for LML obs, regime 2, winds
+ obs_nudgezrampr2_uv                 = 50       ; Vert infl ramp-to-zero height for LML obs, regime 2, winds
+ obs_nudgezfullr4_uv                 = -5000    ; Vert infl full weight  height for LML obs, regime 4, winds
+ obs_nudgezrampr4_uv                 = 50       ; Vert infl ramp-to-zero height for LML obs, regime 4, winds
+ obs_nudgezfullr1_t                  = 50       ; Vert infl full weight  height for LML obs, regime 1, temperature
+ obs_nudgezrampr1_t                  = 50       ; Vert infl ramp-to-zero height for LML obs, regime 1, temperature
+ obs_nudgezfullr2_t                  = 50       ; Vert infl full weight  height for LML obs, regime 2, temperature
+ obs_nudgezrampr2_t                  = 50       ; Vert infl ramp-to-zero height for LML obs, regime 2, temperature
+ obs_nudgezfullr4_t                  = -5000    ; Vert infl full weight  height for LML obs, regime 4, temperature
+ obs_nudgezrampr4_t                  = 50       ; Vert infl ramp-to-zero height for LML obs, regime 4, temperature
+ obs_nudgezfullr1_q                  = 50       ; Vert infl full weight  height for LML obs, regime 1, moisture
+ obs_nudgezrampr1_q                  = 50       ; Vert infl ramp-to-zero height for LML obs, regime 1, moisture
+ obs_nudgezfullr2_q                  = 50       ; Vert infl full weight  height for LML obs, regime 2, moisture
+ obs_nudgezrampr2_q                  = 50       ; Vert infl ramp-to-zero height for LML obs, regime 2, moisture
+ obs_nudgezfullr4_q                  = -5000    ; Vert infl full weight  height for LML obs, regime 4, moisture
+ obs_nudgezrampr4_q                  = 50       ; Vert infl ramp-to-zero height for LML obs, regime 4, moisture
+ obs_nudgezfullmin                   = 50       ; Min depth through which vertical infl fcn remains 1.0
+ obs_nudgezrampmin                   = 50       ; Min depth (m) through which vert infl fcn decreases from 1 to 0
+ obs_nudgezmax                       = 3000     ; Max depth (m) in which vert infl function is nonzero
+ obs_sfcfact                         = 1.0      ; Scale factor applied to time window for surface obs
+ obs_sfcfacr                         = 1.0      ; Scale factor applied to horiz radius of influence for surface obs
+ obs_dpsmx                           = 7.5      ; Max pressure change (cb) allowed within horiz radius of influence
+
+ obs_scl_neg_qv_innov                = 0        ; 1 = prevent to nudge toward negative QV 
+ /
+
+ &scm
+ scm_force                           = 1,       ; switch for single column forcing (=0 off)
+ scm_force_dx                        = 4000.    ; DX for SCM forcing (in meters)
+ num_force_layers                    = 8        ; number of SCM input forcing layers
+ scm_lu_index                        = 2        ; SCM landuse category (2 is dryland, cropland and pasture)
+ scm_isltyp                          = 4        ; SCM soil category (4 is silt loam)
+ scm_vegfra                          = 0.5      ; SCM vegetation fraction
+ scm_canwat                          = 0.0      ; SCM canopy water
+ scm_lat                             = 37.600   ; SCM latitude
+ scm_lon                             = -96.700  ; SCM longitude
+ scm_th_adv                          = .true.   ; turn on theta advection in SCM
+ scm_wind_adv                        = .true.   ; turn on wind advection in SCM
+ scm_qv_adv                          = .true.   ; turn on moisture advection in SCM
+ scm_ql_adv                          = .true.   ; turn on cloud liquid water advection in SCM
+ scm_vert_adv                        = .true.   ; turn on vertical advection in SCM
+ num_force_soil_layers               = 5,       ; Number of SCM soil forcing layer 
+ scm_soilT_force                     = .false.  ; Turn on soil temp forcing in SCM
+ scm_soilq_force                     = .false.  ; Turn on soil moisture forcing in SCM
+ scm_force_th_largescale             = .false.  ; Turn on large scale theta forcing in SCM
+ scm_force_qv_largescale             = .false.  ; Turn on large scale qv forcing in SCM
+ scm_force_ql_largescale             = .false.  ; Turn on large scale cloud water forcing in SCM
+ scm_force_wind_largescale           = .false.  ; Turn on large scale wind forcing in SCM
+
+ &dynamics
+ rk_ord                              = 3,	; time-integration scheme option:
+                                                  2 = Runge-Kutta 2nd order
+                                                  3 = Runge-Kutta 3rd order
+ diff_opt(max_dom)                   = 0,	; turbulence and mixing option:
+                                                  0 = no turbulence or explicit
+                                                      spatial numerical filters (km_opt IS IGNORED).
+                                                  1 = evaluates 2nd order
+                                                      diffusion term on coordinate surfaces.
+                                                      uses kvdif for vertical diff unless PBL option
+                                                      is used. may be used with km_opt = 1 and 4.
+                                                      (= 1, recommended for real-data cases)
+                                                  2 = evaluates mixing terms in
+                                                      physical space (stress form) (x,y,z).
+                                                      turbulence parameterization is chosen
+                                                      by specifying km_opt.
+ km_opt(max_dom)                     = 1,	; eddy coefficient option
+                                                  1 = constant (use khdif kvdif)
+                                                  2 = 1.5 order TKE closure (3D)
+                                                  3 = Smagorinsky first order closure (3D)
+                                                      Note: option 2 and 3 are not recommended for DX > 2 km
+                                                  4 = horizontal Smagorinsky first order closure
+                                                      (recommended for real-data cases)
+ damp_opt                            = 0,	; upper level damping flag 
+                                                  0 = without damping
+                                                  1 = with diffusive damping, maybe used for real-data cases 
+                                                      (dampcoef nondimensional ~0.01-0.1)
+                                                  2 = with Rayleigh  damping (dampcoef inverse time scale [1/s] e.g. .003; idealized case only
+                                                      not for real-data cases)
+                                                  3 = with w-Rayleigh damping (dampcoef inverse time scale [1/s] e.g. .2; 
+                                                      for real-data cases)
+ use_theta_m                         = 0        ; 1: use theta_m=theta(1+1.61Qv)
+                                                  0: use dry theta in dynamics
+ use_q_diabatic                      = 0        ; whether to include QV and QC tendencies in advection (new in 3.7)
+                                                  0 = default, old behavior
+                                                  1 = include QV and QC tendencies - this helps to produce correct solution
+                                                      in an idealized 'moist benchmark' test case (Bryan, 2014).
+                                                      In real data testing, time step needs to be reduce to maintain stable solution
+ c_s                                 = 0.25     ; Smagorinsky coeff
+ c_k                                 = 0.15     ; TKE coeff
+ diff_6th_opt                        = 0,       ; 6th-order numerical diffusion
+                                                  0 = no 6th-order diffusion (default)
+                                                  1 = 6th-order numerical diffusion (not recommended)
+                                                  2 = 6th-order numerical diffusion but prohibit up-gradient diffusion
+ diff_6th_factor                     = 0.12,    ; 6th-order numerical diffusion non-dimensional rate (max value 1.0
+                                                      corresponds to complete removal of 2dx wave in one timestep)
+ dampcoef (max_dom)                  = 0.,	; damping coefficient (see above)
+ zdamp (max_dom)                     = 5000.,	; damping depth (m) from model top
+ w_damping                           = 0,       ; vertical velocity damping flag (for operational use)
+                                                  0 = without damping
+                                                  1 = with    damping
+ base_temp                           = 290.,    ; real-data, em ONLY, base sea-level temp (K)
+ base_pres                           = 10^5     ; real-data, em ONLY, base sea-level pres (Pa), DO NOT CHANGE
+ base_lapse                          = 50.,     ; real-data, em ONLY, lapse rate (K), DO NOT CHANGE
+ iso_temp                            = 200.,    ; real-data, em ONLY, reference temp in stratosphere, US Standard atmosphere 216.5 K
+ base_pres_strat                     = 5500.    ; real-data, em ONLY, base state pressure (Pa) at bottom of the stratosphere, 
+                                                  US Standard atmosphere 55 hPa
+ base_lapse_strat                    = 0.       ; real-data, em ONLY, base state lapse rate ( dT / d(lnP) ) in stratosphere, 
+                                                  approx to US Standard atmosphere -12 K
+ use_baseparam_fr_nml                = .f.,     ; whether to use base state parameters from the namelist
+ use_input_w                         = .f.,     ; whether to use vertical velocity from input file
+ khdif (max_dom)                     = 0,	; horizontal diffusion constant (m^2/s). A typical value should be 0.1*DX in meters.
+ kvdif (max_dom)                     = 0,	; vertical diffusion constant (m^2/s). A typical value should be 100.
+ smdiv (max_dom)                     = 0.1,	; divergence damping (0.1 is typical)
+ emdiv (max_dom)                     = 0.01,	; external-mode filter coef for mass coordinate model
+                                                  (0.01 is typical for real-data cases)
+ epssm (max_dom)                     = .1,	; time off-centering for vertical sound waves
+ non_hydrostatic (max_dom)           = .true.,	; whether running the model in hydrostatic or non-hydro mode
+ pert_coriolis (max_dom)             = .false.,	; Coriolis only acts on wind perturbation (idealized)
+ top_lid (max_dom)                   = .false., ; Zero vertical motion at top of domain
+ mix_full_fields(max_dom)            = .true.,  ; used with diff_opt = 2; value of ".true." is recommended, except for
+                                                  highly idealized numerical tests; damp_opt must not be 1 if ".true."
+                                                  is chosen. .false. means subtract 1-d base-state profile before mixing
+ mix_isotropic(max_dom)              = 0        ; 0=anistropic vertical/horizontal diffusion coeffs, 1=isotropic
+ mix_upper_bound(max_dom)            = 0.1      ; non-dimensional upper limit for diffusion coeffs
+ tke_drag_coefficient(max_dom)       = 0.,      ; surface drag coefficient (Cd, dimensionless) for diff_opt=2 only
+ tke_heat_flux(max_dom)              = 0.,      ; surface thermal flux (H/(rho*cp), K m/s) for diff_opt=2 only
+ h_mom_adv_order (max_dom)           = 5,       ; horizontal momentum advection order (5=5th, etc.)
+ v_mom_adv_order (max_dom)           = 3,       ; vertical momentum advection order
+ h_sca_adv_order (max_dom)           = 5,       ; horizontal scalar advection order
+ v_sca_adv_order (max_dom)           = 3,       ; vertical scalar advection order
+
+ momentum_adv_opt(max_dom)           = 1,       ; advection options for momentum variables: 
+                                                  1=original, 3 = 5th-order WENO
+                                                ; advection options for scalar variables: 0=simple, 1=positive definite,
+                                                  2=monotonic, 3=5th order WENO, 4=5th-order WENO with positive definite filter
+ moist_adv_opt (max_dom)             = 1        ; for moisture
+ scalar_adv_opt (max_dom)            = 1        ; for scalars
+ chem_adv_opt (max_dom)              = 1        ; for chem variables
+ tracer_adv_opt (max_dom)            = 1        ; for tracer variables (WRF-Chem activated)
+ tke_adv_opt (max_dom)               = 1        ; for tke
+
+ time_step_sound (max_dom)           = 4 /	; number of sound steps per time-step (0=set automatically)
+                                                  (if using a time_step much larger than 6*dx (in km),
+                                                  proportionally increase number of sound steps - also
+                                                  best to use even numbers)
+ do_avgflx_em (max_dom)               = 0,       ; whether to output time-averaged mass-coupled advective velocities
+                                                  0 = no (default)
+                                                  1 = yes
+ do_avgflx_cugd (max_dom)             = 0,       ; whether to output time-averaged convective mass-fluxes from Grell-Devenyi ensemble scheme
+                                                  0 = no (default)
+                                                  1 = yes (only takes effect if do_avgflx_em=1 and cu_physics= 93
+ do_coriolis (max_dom)               = .true.,	; whether to do Coriolis calculations (idealized) (inactive)
+ do_curvature (max_dom)              = .true.,	; whether to do curvature calculations (idealized) (inactive)
+ do_gradp (max_dom)                  = .true.,	; whether to do horizontal pressure gradient calculations (idealized) (inactive)
+ fft_filter_lat                      = 45.      ; the latitude above which the polar filter is turned on
+ coupled_filtering                   = .true.   ; T/F mu coupled scalar arrays are run through the polar filters
+ pos_def                             = .false.  ; T/F remove negative values of scalar arrays by setting minimum value to zero
+ swap_pole_with_next_j               = .false.  ; T/F replace the entire j=1 (jds-1) with the values from j=2 (jds-2)
+ actual_distance_average             = .false.  ; T/F average the field at each i location in the j-loop with a number of grid points based on a map-factor ratio
+ gwd_opt                             = 0       ; for running without gravity wave drag
+                                     = 1       ; for running the WRF-ARW with its gravity wave drag
+                                     = 2       ; for running the WRF-NMM with its gravity wave drag
+ sfs_opt (max_dom)                   = 0       ; nonlinear backscatter and anisotropy (NBA) off
+                                     = 1       ; NBA1 using diagnostic stress terms (km_opt=2,3 for scalars)
+                                     = 2       ; NBA2 using tke-based stress terms (km_opt=2 needed)
+ m_opt (max_dom)                     = 0       ; no added output
+                                     = 1       ; adds output of Mij stress terms when NBA is not used
+ tracer_opt(max_dom)                 = 0       ; 
+
+ &bdy_control
+ spec_bdy_width                      = 5,       ; total number of rows for specified boundary value nudging
+ spec_zone                           = 1,       ; number of points in specified zone (spec b.c. option)
+ relax_zone                          = 4,       ; number of points in relaxation zone (spec b.c. option)
+ specified (max_dom)                 = .false., ; specified boundary conditions (only can be used for domain 1)
+                                                  the above 4 are used for real-data runs
+ spec_exp                            = 0.       ; exponential multiplier for relaxation zone ramp for specified=.t.
+                                                  (0.=linear ramp default, e.g. 0.33=~3*dx exp decay factor)
+ constant_bc                         = .false.  ; constant boundary condition used with DFI
+ spec_bdy_final_mu                   = 0,       ; whether to call spec_bdy_final for mu (since 3.7): 
+                                                  = 0, no call; = 1: call (this may cause different restart results)
+
+ periodic_x (max_dom)                = .false., ; periodic boundary conditions in x direction
+ symmetric_xs (max_dom)              = .false., ; symmetric boundary conditions at x start (west)
+ symmetric_xe (max_dom)              = .false., ; symmetric boundary conditions at x end (east)
+ open_xs (max_dom)                   = .false., ; open boundary conditions at x start (west)
+ open_xe (max_dom)                   = .false., ; open boundary conditions at x end (east)
+ periodic_y (max_dom)                = .false., ; periodic boundary conditions in y direction
+ symmetric_ys (max_dom)              = .false., ; symmetric boundary conditions at y start (south)
+ symmetric_ye (max_dom)              = .false., ; symmetric boundary conditions at y end (north)
+ open_ys (max_dom)                   = .false., ; open boundary conditions at y start (south)
+ open_ye (max_dom)                   = .false., ; open boundary conditions at y end (north)
+ nested (max_dom)                    = .false., ; nested boundary conditions (must be used for nests)
+ polar                               = .false., ; polar boundary condition
+                                                  (v=0 at polarward-most v-point)
+ have_bcs_moist                      = .false., ; model run after ndown only: do not use microphysics variables in bdy file
+                                     = .true. , ; use microphysics variables in bdy file
+ have_bcs_scalar                     = .false., ; model run after ndown only: do not use scalar variables in bdy file
+                                     = .true. , ; use scalar variables in bdy file
+
+ euler_adv                           = .false., ; conservative Eulerian passive advection (NMM only)
+ idtadt                              = 1,       ; fundamental timesteps between calls to Euler advection, dynamics (NMM only)
+ idtadc                              = 1        ; fundamental timesteps between calls to Euler advection, chemistry (NMM only)
+
+
+
+ &tc                                            ; controls for tc_em.exe ONLY, no impact on real, ndown, or model
+
+ insert_bogus_storm                  = .false.  ; T/F for inserting a bogus tropical storm (TC)
+ remove_storm                        = .false.  ; T/F for only removing the original TC
+ num_storm                           = 1        ; Number of bogus TC
+ latc_loc                            = -999.    ; center latitude of the bogus TC
+ lonc_loc                            = -999.    ; center longitude of the bogus TC
+ vmax_meters_per_second(max_bogus)   = -999.    ; vmax of bogus storm in meters per second
+ rmax                                = -999.    ; maximum radius outward from storm center
+ vmax_ratio(max_bogus)               = -999.    ; ratio for representative maximum winds, 0.75 for 45 km grid, and 
+                                                  0.9 for 15 km grid.
+ rankine_lid                         = -999.    ; top pressure limit for the tc bogus scheme
+
+ &namelist_quilt    This namelist record controls asynchronized I/O for MPI applications. 
+
+ nio_tasks_per_group                 = 0,        default value is 0: no quilting; > 0 quilting I/O
+ nio_groups                          = 1,        default 1. May be set to higher value for nesting IO 
+                                                 or history and restart IO
+
+
+ &grib2:
+ background_proc_id                  = 255,	; Background generating process identifier, typically defined
+                                                  by the originating center to identify the background data that
+                                                  was used in creating the data. This is octet 13 of Section 4 
+                                                  in the grib2 message
+ forecast_proc_id                    = 255,	; Analysis or generating forecast process identifier, typically
+                                                  defined by the originating center to identify the forecast process
+                                                  that was used to generate the data. This is octet 14 of Section
+                                                  4 in the grib2 message
+ production_status                   = 255,     ; Production status of processed data in the grib2 message. 
+                                                  See Code Table 1.3 of the grib2 manual. This is octet 20 of
+                                                  Section 1 in the grib2 record
+ compression                         = 40,      ; The compression method to encode the output grib2 message.
+                                                  Only 40 for jpeg2000 or 41 for PNG are supported
+
+
+By default the pressure and height level data goes into stream 23 and 22, respectively. Using
+the vertical interpolation options requires the user to define an io_form and interval for
+the requested stream.  See examples.namelist.
+
+ &diags:
+ p_lev_diags                         = 1,       ; Vertically interpolate diagnostics to p-levels
+                                                  0=NO, 1=YES
+ num_press_levels                    = 0,       ; Number of pressure levels to interpolate to, for example,
+                                                  could be 2
+ press_levels                        = 0,       ; Which pressure levels (Pa) to interpolate to, for example
+                                                  could be 85000, 70000
+ use_tot_or_hyd_p                    = 2        ; Which half level pressure to use: 1=total (p+pb); 2=hydrostatic
+                                                  (p_hyd).  The p_hyd option is the default and less noisy.  Total
+                                                  pressure is consistent with what is done in various post-proc
+                                                  packages.
+ z_lev_diags                         = 0,       ; Vertically interpolate diagnostics to z-levels
+                                                  0=NO, 1=YES
+ num_z_levels                        = 2,       ; Number of height levels to interpolate to
+ z_levels                            = 0,       ; List of height values (m) to interpolate data to. 
+                                                ;   Positive numbers are for height above mean sea level (i.e. a flight level)
+                                                ;   Negative numbers are for levels above ground
+ /
+
+AFWA diagnostics:
+&afwa
+afwa_diag_opt (max_dom)              = 0,       ; AFWA Diagnostic option, 1: on
+afwa_ptype_opt (max_dom)             = 0,       ; Precip type option, 1: on
+afwa_vil_opt (max_dom)               = 0,       ; Vert Int Liquid option, 1: on
+afwa_radar_opt (max_dom)             = 0,       ; Radar option, 1: on
+afwa_severe_opt (max_dom)            = 0,       ; Severe Wx option, 1: on
+afwa_icing_opt (max_dom)             = 0,       ; Icing option, 1: on
+afwa_vis_opt (max_dom)               = 0,       ; Visibility option, 1: on
+afwa_cloud_opt (max_dom)             = 0,       ; Cloud option, 1: on
+afwa_therm_opt (max_dom)             = 0,       ; Thermal indices option, 1: on
+afwa_turb_opt (max_dom)              = 0,       ; Turbulence option, 1: on
+afwa_buoy_opt (max_dom)              = 0,       ; Buoyancy option, 1: on
+afwa_hailcast_opt (max_dom)          = 0,       ; Hailcast option, 1: on
+afwa_ptype_ccn_tmp                   = 264.15,  ; CCN temperature for precipitation type calculation
+afwa_ptype_tot_melt                  = 50,      ; Total melting energy for precipitation type calculation

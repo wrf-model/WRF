@@ -1,0 +1,123 @@
+1.  Created a new "core specific" directory
+
+mkdir dyn_exp
+
+2.  Create a test directory for experimental core
+
+mkdir test/exp_real
+
+3.  Edited top level Makefile to add targets for same
+
+3.a.  rules to build the framework and then the experimental core
+
+exp_wrf :
+        $(MAKE) MODULE_DIRS="$(SLT_MODULES)" ext
+        $(MAKE) MODULE_DIRS="$(SLT_MODULES)" toolsdir
+        $(MAKE) MODULE_DIRS="$(SLT_MODULES)" framework
+        $(MAKE) MODULE_DIRS="$(SLT_MODULES)" shared
+        $(MAKE) MODULE_DIRS="$(SLT_MODULES)" exp_core
+
+3.b.  sub-rule to build the expimental core
+
+exp_core :
+        @ echo '--------------------------------------'
+        ( cd dyn_exp ; $(MAKE) )
+
+3.c.  experimental core initialization
+
+exp_real : exp_wrf
+        @ echo '--------------------------------------'
+        ( cd main ; $(MAKE) MODULE_DIRS="$(EXP_MODULES)" SOLVER=exp IDEAL_CASE=exp exp_ideal )
+        ( cd test/exp ; /bin/rm -f ideal.exe ; ln -sf ../../main/ideal.exe . )
+        ( cd test/exp ; ln -sf ../../run/README.namelist . )
+
+
+3.d.   add macros to specify the modules for this core
+
+EXP_MODULE_DIR = -I../dyn_exp
+EXP_MODULES =  $(EXP_MODULE_DIR) $(INCLUDE_MODULES)
+
+
+
+4. Edit share/solve_interface.F to add call to experimental core
+
+   ELSE IF ( config_flags%dyn_opt == DYN_EXP  ) THEN
+
+     CALL solve_exp  ( grid ,            &
+!
+#include <exp_actual_args.inc>
+!
+               )
+
+4a. share/start_domain.F
+
+5. Create dyn_exp/solve_exp.F
+
+It's all there and very short -- just a trivial relaxation; some of the
+stuff in there is just "magic," for right now.  Note that the code in
+here is the code to do one step. The time loop is part of the driver
+and can be found in frame/module_integrate.F, which call
+solve_interface, which calls this routine. Note, too, that solve_exp
+doesn't do any computation itself. It is mediation layer. It calls
+model layer subroutines (dyn_exp/module_exp.F) to do the actual computation
+in 'tile-callable' fashion.
+
+6. Create dyn_exp/module_exp.F
+
+This is the model layer code.  Note that boundary tests are always
+encoded explicitly as conditionals using the domain indices passed
+in through the arg list; never implicitly as part of the loop range.
+
+7. Edit the Registry file and create the state data assocaited with this
+solver.  Single entry:
+
+ state real x ikj dyn_exp 2 - ih "TOYVAR"
+
+This specfies a two timelevel variable 'x' that will be known at the
+mediation layer and below as x_1 and x_2 (since it is core associated it
+will be known as exp_x_1 and exp_x_2 in the driver layer; the name
+of the core is prepended to prevent colllisions with variables of the
+same name that are associated with other cores).  The 'ih' means it will
+participate in initial data and in history data. The veriable is known
+externally as TOYVAR, its data name and the name the variable will have
+in data sets.
+
+Note that since the variable is not listed as staggered in any dimension
+it's logical (domain) size is ids:ide-1, kds:kde-1, jds:jde-1. This
+is important in the the module_exp.F code that tests for northern
+and eastern boundaries, and in the init code in module_initialize_exp.F
+
+8. Edit the Registry file and create a halo-exchange for x_1.
+
+ halo     HALO_EXP_A    4:x_1
+
+Note that since halo operations are called from the mediation layer, it
+is not necessary to pre-pend the dyncore name to the variable name x_1
+when adding it to a comm operation like a halo exchange.
+
+9. Edit the Registry file to set up '4' as the value of the 
+namelist variable dyn_opt that means to select our exp dyncore.
+
+package   dyn_exp       dyn_opt==4                   -             -
+
+10. Create a dyn_exp/Makefile  (see that file)
+
+11. Create an file exp/init_modules.F (also includes a couple of stubs
+for other dyncores already in WRF; this is not the normal or correct
+way of doing that; but I'm hurrying...)
+
+12. Create a file exp/module_initialize_exp.F.  This is not part of the
+WRF model itself; rather it is a pre-processor that produces initial
+data for the WRF model.
+
+13. Edit frame/module_domain.F to add case for DYN_EXP to
+alloc_space_field.  (This is a bug;
+one should never have to edit the framework code; will fix this in
+coming versions).  Same goes for share/start_domain.F, although this
+is not a framework routine.
+
+14. clean commands
+
+15. namelist file
+     copy from another dir and change dyn_opt
+     boundary conditions

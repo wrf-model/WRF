@@ -1,7 +1,7 @@
 subroutine da_transfer_wrftltoxa_adj(grid, config_flags, filnam, timestr)
 
    !---------------------------------------------------------------------------
-   ! Purpose: Convert analysis increments into WRFAD increments 
+   ! Purpose: Convert analysis increments into WRFDA increments 
    !          (following xatowrf, but only keep the increments)
    !---------------------------------------------------------------------------
 
@@ -176,7 +176,7 @@ subroutine da_transfer_wrftltoxa_adj(grid, config_flags, filnam, timestr)
    grid%xa%v(is:ie, js:je, ks:ke) = 0.0
 
    !---------------------------------------------------------------------------
-   ! [4.0] CONVERT THETA inCREMENTS TO T inCREMENTS
+   ! [4.0] CONVERT THETA INCREMENTS TO T INCREMENTS
    !---------------------------------------------------------------------------
 
    ! In the inverse, g_ph information is lost. This should be investigated later!!!

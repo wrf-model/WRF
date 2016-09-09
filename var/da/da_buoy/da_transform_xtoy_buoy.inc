@@ -71,7 +71,7 @@ subroutine da_transform_xtoy_buoy (grid, iv, y)
       deallocate (vb)
 
    else if (sfc_assi_options == sfc_assi_options_2) then
-      ! [2.0] Surface assmiilation approach 2
+      ! [2.0] Surface assimilation approach 2
       call da_transform_xtopsfc(grid,iv,buoy,iv%buoy(:),y%buoy(:))
    end if
 

@@ -68,7 +68,7 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
    !rizvi   xbx%big_header%bhi(8,5) = grid%start_hour
 
    !---------------------------------------------------------------------------
-   ! WRF-specific fitelds:
+   ! WRF-specific fields:
    !---------------------------------------------------------------------------
 
    ptop = grid%p_top
@@ -387,7 +387,7 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
                                  (base_pres*(aln+albn)))**cpovcv
                ! total density
                grid%xb%rho(i,j,k)= 1.0 / (albn+aln)
-               ! pressure purtubation:
+               ! pressure perturbation:
                grid%p(i,j,k) = grid%xb%p(i,j,k) - ppb
             end do
            end do
@@ -510,7 +510,7 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
             ! Convert to specific humidity from mixing ratio of water vapor:
             grid%xb%q(i,j,k)=grid%xb%q(i,j,k)/(1.0+grid%xb%q(i,j,k))
    
-            ! Background qrn needed for radar radial velocity assmiilation:
+            ! Background qrn needed for radar radial velocity assimilation:
 
             if (size(grid%moist,dim=4) >= 4) then
                grid%xb%qcw(i,j,k) = max(grid%moist(i,j,k,p_qc), 0.0)

@@ -1,7 +1,7 @@
 subroutine da_update_firstguess(grid, out_filename) 
 
 !---------------------------------------------------------------------------
-!  Purpose: Only replce the fields touched by WRFDA, other than re-generate 
+!  Purpose: Only replace the fields touched by WRFDA, rather than re-generate 
 !           whole wrfvar_output from the scratch.
 !
 !  Update  :   jliu@ucar.edu Apr 1, 2013

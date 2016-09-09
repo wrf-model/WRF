@@ -531,7 +531,7 @@
            read(cvt_unit) cvt
            close(cvt_unit)
          else
-           write(unit=message(1),fmt='(a)') "cvt file '"//trim(cvtfile)//"' does not exists, initiallizing cvt."
+           write(unit=message(1),fmt='(a)') "cvt file '"//trim(cvtfile)//"' does not exists, initializing cvt."
            call da_message(message(1:1))
            call da_initialize_cv (cv_size, cvt)
          end if

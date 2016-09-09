@@ -52,7 +52,7 @@ subroutine da_transfer_wrftoxb_lite(xbx, grid, config_flags)
    grid%xb % mkz = grid%xp % kde - grid%xp % kds + 1
 
    !---------------------------------------------------------------------------
-   ! WRF-specific fitelds:
+   ! WRF-specific fields:
    !---------------------------------------------------------------------------
 
    ptop = grid%p_top
@@ -75,7 +75,7 @@ subroutine da_transfer_wrftoxb_lite(xbx, grid, config_flags)
    grid%xb % ptop = ptop
       
    !---------------------------------------------------------------------------
-   ! Convert WRF fitelds to xb:
+   ! Convert WRF fields to xb:
    !---------------------------------------------------------------------------
 
    !---------------------------------------------------------------
@@ -85,7 +85,7 @@ subroutine da_transfer_wrftoxb_lite(xbx, grid, config_flags)
    !
    ! Note, this is needed as u_2 and v_2 has no guarantee
    ! the most east column, and the most north row are
-   ! properly initailized for each tile.
+   ! properly initialized for each tile.
    !---------------------------------------------------------------
 
    ! Fill the halo region for u and v.
@@ -131,7 +131,7 @@ subroutine da_transfer_wrftoxb_lite(xbx, grid, config_flags)
       cpovcv = cp / (cp - gas_constant)
 
       ! In case of var4d, pb etc. will be recalculated in start_em with realsize=8, 
-      ! Howvwer, the originals are computed with realsize=4.
+      ! However, the originals are computed with realsize=4.
       if ( no_ppb ) then
          do k=kts,kte
             do i=its,ite
@@ -204,7 +204,7 @@ subroutine da_transfer_wrftoxb_lite(xbx, grid, config_flags)
             ! Convert to specific humidity from mixing ratio of water vapor:
             grid%xb%q(i,j,k)=grid%xb%q(i,j,k)/(1.0+grid%xb%q(i,j,k))
    
-            ! Background qrn needed for radar radial velocity assmiilation:
+            ! Background qrn needed for radar radial velocity assimilation:
 
             if (size(grid%moist,dim=4) >= 4) then
                grid%xb%qcw(i,j,k) = max(grid%moist(i,j,k,p_qc), 0.0)

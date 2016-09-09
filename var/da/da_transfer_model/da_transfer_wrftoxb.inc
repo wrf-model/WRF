@@ -387,7 +387,7 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
                                  (base_pres*(aln+albn)))**cpovcv
                ! total density
                grid%xb%rho(i,j,k)= 1.0 / (albn+aln)
-               ! pressure purtubation:
+               ! pressure perturbation:
                grid%p(i,j,k) = grid%xb%p(i,j,k) - ppb
             end do
            end do

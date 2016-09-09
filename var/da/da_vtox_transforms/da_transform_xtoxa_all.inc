@@ -1,7 +1,7 @@
 subroutine da_transform_xtoxa_all(grid)
 
    !--------------------------------------------------------------------------------------------------
-   ! Purpose: Transfers fields from WRF TL fields to dignostic fields needed by observational operators
+   ! Purpose: Transfers fields from WRF TL fields to diagnostic fields needed by observational operators
    !    Updated for Analysis on Arakawa-C grid
    !    Author: Syed RH Rizvi,  MMM/ESSL/NCAR,  Date: 10/22/2008
    !--------------------------------------------------------------------------------------------------
@@ -71,7 +71,7 @@ subroutine da_transform_xtoxa_all(grid)
 
    call da_pt_to_rho_lin(grid)
 
-!by lixin update perturbated geoh
+!by lixin update perturbed geoh
 
    do j=jts,jte
       do i=its,ite

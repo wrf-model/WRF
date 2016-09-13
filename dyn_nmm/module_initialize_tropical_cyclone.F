@@ -4823,7 +4823,7 @@ INTEGER, INTENT(IN):: ids,ide,jds,jde,kds,kde, &
 !     create land patch that will move from W2E
       if(mvland .and. (i .ge. imin .and. i .le. imax .and. j .ge. jmin .and.j.le. jmax))then
        if(logic_temp .eq. .true.) then
-       tsk_gc(i,j)=308.0                            ! uniform land temperature or t_gc(i,j,1) for applying first level temperature
+       tsk_gc(i,j)=s_temp                            ! uniform land temperature or t_gc(i,j,1) for applying first level temperature
        else
        tsk_gc(i,j)= t_gc(i,j,1)
        endif

@@ -395,7 +395,7 @@ SUBROUTINE MOVE_LAND (SM,TSK                      &
                      ,NTSD                        &
                      ,IDS,IDE,JDS,JDE,KDS,KDE     &
                      ,IMS,IME,JMS,JME,KMS,KME     &
-                     ,ITS,ITE,JTS,JTE,KTS,KTE     )
+                     ,ITS,ITE,JTS,JTE,KTS,KTE,DIRN)
 
       USE MODULE_MODEL_CONSTANTS
       USE MODULE_DM
@@ -404,7 +404,7 @@ SUBROUTINE MOVE_LAND (SM,TSK                      &
 
 !     global variables
 
-      INTEGER,INTENT(IN)                                      :: NTSD
+      INTEGER,INTENT(IN)                                      :: NTSD,DIRN
 
       INTEGER,INTENT(IN)                                      :: IDS,IDE,JDS,JDE,KDS,KDE   &
                                                                 ,IMS,IME,JMS,JME,KMS,KME   &
@@ -426,17 +426,19 @@ SUBROUTINE MOVE_LAND (SM,TSK                      &
 !     for SM. This is subashini's doing for advecting land surface in
 !     idealized framework
 !
+     IF(DIRN == 1) THEN
       DO J = MAX(JTS,2), MIN(JTE,JDE-1)
        DO I = MIN(ITE,IDE),MAX(ITS,2),-1
            SM(I,J)=SM(I-1,J)          ! Motion of land (0) from West to East
        ENDDO
       ENDDO
-
-!      DO J = MAX(JTS,2), MIN(JTE,JDE-1)
-!       DO I = ITS, MIN(ITE,IDE-1)
-!           SM(I,J)=SM(I+1,J)          ! Motion of land (0) from East to west
-!       ENDDO
-!      ENDDO
+     ELSE 
+      DO J = MAX(JTS,2), MIN(JTE,JDE-1)
+       DO I = ITS, MIN(ITE,IDE-1)
+           SM(I,J)=SM(I+1,J)          ! Motion of land (0) from East to west
+       ENDDO
+      ENDDO
+     ENDIF
 
 END SUBROUTINE MOVE_LAND
 #endif

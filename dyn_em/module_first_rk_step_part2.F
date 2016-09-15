@@ -329,14 +329,14 @@ BENCH_START(tke_diff_bc_tim)
                                    grid%i_start(ij), grid%i_end(ij),   &
                                    grid%j_start(ij), grid%j_end(ij),   &
                                    k_start    , k_end                 )
-           CALL set_physical_bc3d( grid%zx , 'w', config_flags,             &
+           CALL set_physical_bc3d( grid%zx , 'e', config_flags,             &
                                    ids, ide, jds, jde, kds, kde,       &
                                    ims, ime, jms, jme, kms, kme,       &
                                    ips, ipe, jps, jpe, kps, kpe,       &
                                    grid%i_start(ij), grid%i_end(ij),   &
                                    grid%j_start(ij), grid%j_end(ij),   &
                                    k_start    , k_end                 )
-           CALL set_physical_bc3d( grid%zy , 'w', config_flags,             &
+           CALL set_physical_bc3d( grid%zy , 'f', config_flags,             &
                                    ids, ide, jds, jde, kds, kde,       &
                                    ims, ime, jms, jme, kms, kme,       &
                                    ips, ipe, jps, jpe, kps, kpe,       &
@@ -349,7 +349,13 @@ BENCH_START(tke_diff_bc_tim)
                                    ips, ipe, jps, jpe,                 &
                                    grid%i_start(ij), grid%i_end(ij),   &
                                    grid%j_start(ij), grid%j_end(ij)   )
-
+          CALL set_physical_bc2d( grid%ust, 't', config_flags,              &
+                                   ids, ide, jds, jde,                 &
+                                   ims, ime, jms, jme,                 &
+                                   ips, ipe, jps, jpe,                 &
+                                   grid%i_start(ij), grid%i_end(ij),   &
+                                   grid%j_start(ij), grid%j_end(ij)   )
+ 
          ENDDO
          !$OMP END PARALLEL DO
 BENCH_END(tke_diff_bc_tim)
@@ -474,7 +480,7 @@ BENCH_START(phy_bc_tim)
          CALL phy_bc (config_flags,grid%div,grid%defor11,grid%defor22,grid%defor33,            &
                       grid%defor12,grid%defor13,grid%defor23,      &
                       grid%xkmh,grid%xkmv,grid%xkhh,grid%xkhv,     &
-                      grid%tke_2,                                  &
+                      grid%tke_2,grid%rho,                         &
                       grid%rublten, grid%rvblten,                  &
                       grid%rucuten, grid%rvcuten,                  &
                       grid%rushten, grid%rvshten,                  &
@@ -751,7 +757,6 @@ BENCH_START(vert_diff_tim)
                                       tracer_tend, num_tracer,                     &
                                       grid%u_2, grid%v_2,                                  &
                                       grid%t_2,grid%u_base,grid%v_base,grid%t_base,grid%qv_base,          &
-                                      grid%mut, grid%c1h, grid%c2h,            &
                                       grid%tke_2, config_flags,              &
                                       grid%defor13,grid%defor23,grid%defor33,                   &
                                       nba_mij, num_nba_mij,          & !JDM
@@ -784,7 +789,6 @@ BENCH_START(hor_diff_tim)
                                       scalar_tend, num_scalar,                 &
                                       tracer_tend, num_tracer,                 &
                                       grid%t_2, th_phy,                           &
-                                      grid%mut, grid%c1h, grid%c2h,            &
                                       grid%tke_2, config_flags,              &
                                       grid%defor11, grid%defor22, grid%defor12,             &
                                       grid%defor13, grid%defor23,   &
@@ -795,7 +799,7 @@ BENCH_START(hor_diff_tim)
                                       grid%msfty, grid%xkmh, grid%xkhh, config_flags%km_opt,     &
                                       grid%rdx, grid%rdy, grid%rdz, grid%rdzw,                   &
                                       grid%fnm, grid%fnp, grid%cf1, grid%cf2, grid%cf3,          &
-                                      grid%zx, grid%zy, grid%dn, grid%dnw,                       &
+                                      grid%zx, grid%zy, grid%dn, grid%dnw, grid%rho,             &
                                       ids, ide, jds, jde, kds, kde,          &
                                       ims, ime, jms, jme, kms, kme,          &
                                       grid%i_start(ij), grid%i_end(ij),      &

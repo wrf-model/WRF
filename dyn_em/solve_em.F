@@ -3458,6 +3458,7 @@ BENCH_END(bc_end_tim)
 !**********************************************************
 
    END DO Runge_Kutta_loop
+!  grid%dmudt=grid%mu_2 - grid%mu_1
 
    IF      ( config_flags%traj_opt .EQ. UM_TRAJECTORY ) THEN
 #ifdef DM_PARALLEL

@@ -14,7 +14,7 @@ include ../configure.wrf
 
 $(SOLVER)_wrf : wrf.o ../main/module_wrf_top.o
 	$(RANLIB) $(RLFLAGS) $(LIBWRFLIB)
-	$(LD) -o wrf.exe $(LDFLAGS) wrf.o ../main/module_wrf_top.o $(LIBWRFLIB) $(LIB)
+	$(LD) -o wrf.exe $(LDFLAGS) wrf.o ../main/module_wrf_top.o $(LIBWRFLIB) $(LIB) 
 
 $(SOLVER)_wrf_SST_ESMF : wrf_ESMFMod.o wrf_SST_ESMF.o ../main/module_wrf_top.o
 	$(RANLIB) $(RLFLAGS) $(LIBWRFLIB)

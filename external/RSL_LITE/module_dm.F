@@ -1,3 +1,21 @@
+! sed -e "s/grid%mu/gridmu/g" -e "s/grid%Mu/gridMu/g" module_dm.F | cpp -DDM_PARALLEL=1 -DHYBRID_COORD=1 -DEM_CORE=1 | sed -e "s/gridmu/grid%mu/g" -e "s/gridMu/grid%Mu/g" > module_dm.next
+#if ( HYBRID_COORD==1 )
+#  define gridmu_2(...) (grid%c1h(k)*XXPC2HXX(__VA_ARGS__))
+#  define XXPC2HXX(...) grid%mu_2(__VA_ARGS__)
+
+#  define gridmub(...) (grid%c1h(k)*XXPCBHXX(__VA_ARGS__)+grid%c2h(k))
+#  define XXPCBHXX(...) grid%mub(__VA_ARGS__)
+
+#  define gridMu_2(...) (grid%c1f(k)*XXPC2FXX(__VA_ARGS__))
+#  define XXPC2FXX(...) grid%Mu_2(__VA_ARGS__)
+
+#  define gridMub(...) (grid%c1f(k)*XXPCBFXX(__VA_ARGS__)+grid%c2f(k))
+#  define XXPCBFXX(...) grid%Mub(__VA_ARGS__)
+#endif
+
+
+
+
 #if NMM_CORE==1
 #define copy_fcnm UpNear
 #define copy_fcn UpCopy
@@ -4055,7 +4073,7 @@ END
       TYPE(domain), POINTER :: pgrid         !KAL added for vertical nesting
 #include "dummy_new_decl.inc"
       INTEGER nlev, msize
-      INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
+      INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k,kk
       TYPE (grid_config_rec_type)            :: config_flags
       REAL xv(2000)
       INTEGER       ::          cids, cide, cjds, cjde, ckds, ckde,    &
@@ -4199,7 +4217,11 @@ endif
             DO i = ips,ipe
 
                DO k = 1, kpe-1
+#if  !( HYBRID_COORD==1 )
                   grid%pb(i,k,j) = ngrid%znu(k)*grid%mub(i,j)+ngrid%p_top
+#elif ( HYBRID_COORD==1 )
+                  grid%pb(i,k,j) = ngrid%c3h(k)*grid%mub(i,j) + ngrid%c4h(k) + ngrid%p_top
+#endif
              
                   !  If this is a real run, recalc t_init.
    
@@ -4220,13 +4242,20 @@ endif
                grid%phb(i,1,j) = grid%ht(i,j) * g
                IF (grid%hypsometric_opt == 1) THEN
                   DO k = 2,kpe
-                     grid%phb(i,k,j) = grid%phb(i,k-1,j) - ngrid%dnw(k-1)*grid%mub(i,j)*grid%alb(i,k-1,j)
+                     kk = k - 1
+                     grid%phb(i,kk,j) = grid%phb(i,kk-1,j) - ngrid%dnw(kk-1)*grid%mub(i,j)*grid%alb(i,kk-1,j)
                   END DO
                ELSE IF (grid%hypsometric_opt == 2) THEN
                   DO k = 2,kpe
+#if  !( HYBRID_COORD==1 )
                      pfu = grid%mub(i,j)*ngrid%znw(k)   + ngrid%p_top
                      pfd = grid%mub(i,j)*ngrid%znw(k-1) + ngrid%p_top
                      phm = grid%mub(i,j)*ngrid%znu(k-1) + ngrid%p_top
+#elif ( HYBRID_COORD==1 )
+                     pfu = ngrid%c3f(k  )*grid%MUB(i,j) + ngrid%c4f(k  ) + ngrid%p_top
+                     pfd = ngrid%c3f(k-1)*grid%MUB(i,j) + ngrid%c4f(k-1) + ngrid%p_top
+                     phm = ngrid%c3h(k-1)*grid%MUB(i,j) + ngrid%c4h(k-1) + ngrid%p_top
+#endif
                      grid%phb(i,k,j) = grid%phb(i,k-1,j) + grid%alb(i,k-1,j)*phm*LOG(pfd/pfu)
                   END DO
                ELSE
@@ -4253,7 +4282,7 @@ endif
                qvf2 = 1./(1.+qvf1)
                qvf1 = qvf1*qvf2
       
-               p(i,k,j) = - 0.5*(grid%mu_2(i,j)+qvf1*grid%mub(i,j))/ngrid%rdnw(k)/qvf2
+               p(i,k,j) = - 0.5*(grid%Mu_2(i,j)+qvf1*grid%Mub(i,j))/ngrid%rdnw(k)/qvf2
                qvf = 1. + rvovrd*moist(i,k,j,P_QV)
                al(i,k,j) = (r_d/p1000mb)*(grid%t_2(i,k,j)+t0)*qvf* &
                            (((p(i,k,j)+grid%pb(i,k,j))/p1000mb)**cvpm) - grid%alb(i,k,j)
@@ -4261,24 +4290,26 @@ endif
                !  Now, integrate down the column to compute the pressure perturbation, and diagnose the two
                !  inverse density fields (total and perturbation).
       
-               DO k=kpe-2,1,-1
-                  qvf1 = 0.5*(moist(i,k,j,P_QV)+moist(i,k+1,j,P_QV))
+               DO kk=kpe-2,1,-1
+                  k = kk + 1
+                  qvf1 = 0.5*(moist(i,kk,j,P_QV)+moist(i,kk+1,j,P_QV))
                   qvf2 = 1./(1.+qvf1)
                   qvf1 = qvf1*qvf2
-                  p(i,k,j) = p(i,k+1,j) - (grid%mu_2(i,j) + qvf1*grid%mub(i,j))/qvf2/ngrid%rdn(k+1)
-                  qvf = 1. + rvovrd*moist(i,k,j,P_QV)
-                  al(i,k,j) = (r_d/p1000mb)*(grid%t_2(i,k,j)+t0)*qvf* &
-                              (((p(i,k,j)+grid%pb(i,k,j))/p1000mb)**cvpm) - grid%alb(i,k,j)
+                  p(i,kk,j) = p(i,kk+1,j) - (grid%Mu_2(i,j) + qvf1*grid%Mub(i,j))/qvf2/ngrid%rdn(kk+1)
+                  qvf = 1. + rvovrd*moist(i,kk,j,P_QV)
+                  al(i,kk,j) = (r_d/p1000mb)*(grid%t_2(i,kk,j)+t0)*qvf* &
+                              (((p(i,kk,j)+grid%pb(i,kk,j))/p1000mb)**cvpm) - grid%alb(i,kk,j)
                END DO
       
                !  This is the hydrostatic equation used in the model after the small timesteps.  In
                !  the model, grid%al (inverse density) is computed from the geopotential.
       
                IF (grid%hypsometric_opt == 1) THEN
-                  DO k  = 2,kpe
-                     grid%ph_2(i,k,j) = grid%ph_2(i,k-1,j) - &
-                                        ngrid%dnw(k-1) * ( (grid%mub(i,j)+grid%mu_2(i,j))*al(i,k-1,j) &
-                                        + grid%mu_2(i,j)*grid%alb(i,k-1,j) )
+                  DO kk = 2,kpe
+                     k = kk - 1
+                     grid%ph_2(i,kk,j) = grid%ph_2(i,kk-1,j) - &
+                                        ngrid%dnw(kk-1) * ( (grid%mub(i,j)+grid%mu_2(i,j))*al(i,kk-1,j) &
+                                        + grid%mu_2(i,j)*grid%alb(i,kk-1,j) )
                   END DO
       
                ! Alternative hydrostatic eq.: dZ = -al*p*dLOG(p), where p is dry pressure.
@@ -4289,9 +4320,15 @@ endif
       
                   grid%ph_2(i,1,j) = grid%phb(i,1,j)
                   DO k = 2,kpe
+#if  !( HYBRID_COORD==1 )
                      pfu = ( grid%mub(i,j)+grid%mu_2(i,j))*ngrid%znw(k)   + ngrid%p_top
                      pfd = ( grid%mub(i,j)+grid%mu_2(i,j))*ngrid%znw(k-1) + ngrid%p_top
                      phm = ( grid%mub(i,j)+grid%mu_2(i,j))*ngrid%znu(k-1) + ngrid%p_top
+#elif ( HYBRID_COORD==1 )
+                     pfu = ngrid%c3f(k  )*( grid%MUB(i,j)+grid%MU_2(i,j) ) + ngrid%c4f(k  ) + ngrid%p_top
+                     pfd = ngrid%c3f(k-1)*( grid%MUB(i,j)+grid%MU_2(i,j) ) + ngrid%c4f(k-1) + ngrid%p_top
+                     phm = ngrid%c3h(k-1)*( grid%MUB(i,j)+grid%MU_2(i,j) ) + ngrid%c4h(k-1) + ngrid%p_top
+#endif
                      grid%ph_2(i,k,j) = grid%ph_2(i,k-1,j) + (grid%alb(i,k-1,j)+al(i,k-1,j))*phm*LOG(pfd/pfu)
                   END DO
       
@@ -4311,7 +4348,7 @@ endif
          DO j = jps, jpe
             DO i = ips,ipe
                DO k=kps,kpe
-               grid%ph_2(i,k,j) = grid%ph_2(i,k,j)*(grid%mub(i,j) + grid%mu_2(i,j))
+               grid%ph_2(i,k,j) = grid%ph_2(i,k,j)*(grid%Mub(i,j) + grid%Mu_2(i,j))
                END DO
             END DO
          END DO

@@ -1,3 +1,16 @@
+#if ( HYBRID_COORD==1 ) 
+#  define mub(...) (c1(k)*XXPCBXX(__VA_ARGS__)+c2(k))
+#  define XXPCBXX(...) mub(__VA_ARGS__)
+
+#  define mut(...) (c1(k)*XXPCTXX(__VA_ARGS__)+c2(k))
+#  define XXPCTXX(...) mut(__VA_ARGS__)
+
+#  define mu_old(...) (c1(k)*XXPCOLDXX(__VA_ARGS__))
+#  define XXPCOLDXX(...) mu_old(__VA_ARGS__)
+#endif
+
+
+
 !WRF:MODEL_LAYER:DYNAMICS
 !
 #if ( defined(ADVECT_KERNEL) )
@@ -124,6 +137,7 @@ CONTAINS
 
 SUBROUTINE advect_u   ( u, u_old, tendency,            &
                         ru, rv, rom,                   &
+                        c1, c2,                        &
                         mut, time_step, config_flags,  &
                         msfux, msfuy, msfvx, msfvy,    &
                         msftx, msfty,                  &
@@ -161,7 +175,9 @@ SUBROUTINE advect_u   ( u, u_old, tendency,            &
 
    REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: fzm,  &
                                                                   fzp,  &
-                                                                  rdzw
+                                                                  rdzw, &
+                                                                  c1,   &
+                                                                  c2
 
    REAL ,                                        INTENT(IN   ) :: rdx,  &
                                                                   rdy
@@ -1525,6 +1541,7 @@ END SUBROUTINE advect_u
 
 SUBROUTINE advect_v   ( v, v_old, tendency,            &
                         ru, rv, rom,                   &
+                        c1, c2,                        &
                         mut, time_step, config_flags,  &
                         msfux, msfuy, msfvx, msfvy,    &
                         msftx, msfty,                  &
@@ -1562,7 +1579,9 @@ SUBROUTINE advect_v   ( v, v_old, tendency,            &
 
    REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: fzm,  &
                                                                   fzp,  &
-                                                                  rdzw
+                                                                  rdzw, &
+                                                                  c1,   &
+                                                                  c2
 
    REAL ,                                        INTENT(IN   ) :: rdx,  &
                                                                   rdy
@@ -3021,6 +3040,7 @@ END SUBROUTINE advect_v
 #endif
 SUBROUTINE advect_scalar   ( field, field_old, tendency,    &
                              ru, rv, rom,                   &
+                             c1, c2,                        &
                              mut, time_step, config_flags,  &
                              msfux, msfuy, msfvx, msfvy,    &
                              msftx, msfty,                  &
@@ -3058,7 +3078,9 @@ SUBROUTINE advect_scalar   ( field, field_old, tendency,    &
 
    REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: fzm,  &
                                                                   fzp,  &
-                                                                  rdzw
+                                                                  rdzw, &
+                                                                  c1,   &
+                                                                  c2
 
    REAL ,                                        INTENT(IN   ) :: rdx,  &
                                                                   rdy
@@ -4353,6 +4375,7 @@ END SUBROUTINE advect_scalar
 
 SUBROUTINE advect_w    ( w, w_old, tendency,            &
                          ru, rv, rom,                   &
+                         c1, c2,                        &
                          mut, time_step, config_flags,  &
                          msfux, msfuy, msfvx, msfvy,    &
                          msftx, msfty,                  &
@@ -4390,7 +4413,9 @@ SUBROUTINE advect_w    ( w, w_old, tendency,            &
 
    REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: fzm,  &
                                                                   fzp,  &
-                                                                  rdzu
+                                                                  rdzu, &
+                                                                  c1,   &
+                                                                  c2
 
    REAL ,                                        INTENT(IN   ) :: rdx,  &
                                                                   rdy
@@ -6056,6 +6081,7 @@ END SUBROUTINE advect_w
 SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
                                 h_tendency, z_tendency,        & 
                                 ru, rv, rom,                   &
+                                c1, c2,                        &
                                 mut, mub, mu_old,              &
                                 time_step, config_flags,       &
                                 tenddec,                       & 
@@ -6109,7 +6135,9 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
 
    REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: fzm,  &
                                                                   fzp,  &
-                                                                  rdzw
+                                                                  rdzw, &
+                                                                  c1,   &
+                                                                  c2
 
    REAL ,                                        INTENT(IN   ) :: rdx,  &
                                                                   rdy,  &
@@ -7837,6 +7865,7 @@ END SUBROUTINE advect_scalar_pd
 
 SUBROUTINE advect_scalar_wenopd ( field, field_old, tendency,    &
                                 ru, rv, rom,                   &
+                                c1, c2,                        &
                                 mut, mub, mu_old,              &
                                 time_step, config_flags,       &
                                 msfux, msfuy, msfvx, msfvy,    &
@@ -7893,7 +7922,9 @@ SUBROUTINE advect_scalar_wenopd ( field, field_old, tendency,    &
 
    REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: fzm,  &
                                                                   fzp,  &
-                                                                  rdzw
+                                                                  rdzw, &
+                                                                  c1,   &
+                                                                  c2
 
    REAL ,                                        INTENT(IN   ) :: rdx,  &
                                                                   rdy,  &
@@ -8734,6 +8765,7 @@ END SUBROUTINE advect_scalar_wenopd
 SUBROUTINE advect_scalar_mono   ( field, field_old, tendency,    &
                                   h_tendency, z_tendency,        & 
                                   ru, rv, rom,                   &
+                                  c1, c2,                        &
                                   mut, mub, mu_old,              &
                                   config_flags,                  &
                                   tenddec,                       & 
@@ -8785,7 +8817,9 @@ SUBROUTINE advect_scalar_mono   ( field, field_old, tendency,    &
 
    REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: fzm,  &
                                                                   fzp,  &
-                                                                  rdzw
+                                                                  rdzw, &
+                                                                  c1,   &
+                                                                  c2
 
    REAL ,                                        INTENT(IN   ) :: rdx,  &
                                                                   rdy,  &
@@ -9946,6 +9980,7 @@ END PROGRAM feeder
 
 SUBROUTINE advect_scalar_weno ( field, field_old, tendency,     &
                              ru, rv, rom,                   &
+                             c1, c2,                        &
                              mut, time_step, config_flags,  &
                              msfux, msfuy, msfvx, msfvy,    &
                              msftx, msfty,                  &
@@ -9987,7 +10022,9 @@ SUBROUTINE advect_scalar_weno ( field, field_old, tendency,     &
 
    REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: fzm,  &
                                                                   fzp,  &
-                                                                  rdzw
+                                                                  rdzw, &
+                                                                  c1,   &
+                                                                  c2
 
    REAL ,                                        INTENT(IN   ) :: rdx,  &
                                                                   rdy
@@ -10627,6 +10664,7 @@ END SUBROUTINE advect_scalar_weno
 
 SUBROUTINE advect_weno_u ( u, u_old, tendency,            &
                         ru, rv, rom,                   &
+                        c1, c2,                        &
                         mut, time_step, config_flags,  &
                         msfux, msfuy, msfvx, msfvy,    &
                         msftx, msfty,                  &
@@ -10670,7 +10708,9 @@ SUBROUTINE advect_weno_u ( u, u_old, tendency,            &
 
    REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: fzm,  &
                                                                   fzp,  &
-                                                                  rdzw
+                                                                  rdzw, &
+                                                                  c1,   &
+                                                                  c2
 
    REAL ,                                        INTENT(IN   ) :: rdx,  &
                                                                   rdy
@@ -11271,6 +11311,7 @@ END SUBROUTINE advect_weno_u
 
 SUBROUTINE advect_weno_v   ( v, v_old, tendency,            &
                         ru, rv, rom,                   &
+                        c1, c2,                        &
                         mut, time_step, config_flags,  &
                         msfux, msfuy, msfvx, msfvy,    &
                         msftx, msfty,                  &
@@ -11314,7 +11355,9 @@ SUBROUTINE advect_weno_v   ( v, v_old, tendency,            &
 
    REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: fzm,  &
                                                                   fzp,  &
-                                                                  rdzw
+                                                                  rdzw, &
+                                                                  c1,   &
+                                                                  c2
 
    REAL ,                                        INTENT(IN   ) :: rdx,  &
                                                                   rdy
@@ -11963,6 +12006,7 @@ END SUBROUTINE advect_weno_v
 
 SUBROUTINE advect_weno_w    ( w, w_old, tendency,            &
                          ru, rv, rom,                   &
+                         c1, c2,                        &
                          mut, time_step, config_flags,  &
                          msfux, msfuy, msfvx, msfvy,    &
                          msftx, msfty,                  &
@@ -12006,7 +12050,9 @@ SUBROUTINE advect_weno_w    ( w, w_old, tendency,            &
 
    REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: fzm,  &
                                                                   fzp,  &
-                                                                  rdzu
+                                                                  rdzu, &
+                                                                  c1,   &
+                                                                  c2
 
    REAL ,                                        INTENT(IN   ) :: rdx,  &
                                                                   rdy

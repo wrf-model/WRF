@@ -57,7 +57,7 @@ SUBROUTINE microphysics_driver(                                          &
                       ,f_qnic,f_qnip,f_qnid &
                       ,f_effr,f_ice_effr,f_tot_effr                      &
                       ,f_qic_effr,f_qip_effr,f_qid_effr                  &                 
-                      ,qrcuten, qscuten, qicuten, mu                     &
+                      ,qrcuten, qscuten, qicuten, mu, c1, c2h            &
                       ,qt_curr,f_qt                                      &
                       ,mp_restart_state,tbpvs_state,tbpvs0_state         & ! for etampnew or fer_mp_hires
                       ,hail,ice2                                         & ! for mp_gsfcgce
@@ -484,6 +484,9 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
    REAL, DIMENSION( ims:ime, jms:jme ),                           &
          OPTIONAL,                                                &
          INTENT(IN) :: mu
+   REAL, DIMENSION( kms:kme),                                     &
+         OPTIONAL,                                                &
+         INTENT(IN) :: c1, c2h
 ! YLIN
 ! Added RI_CURR similar to microphysics fields above
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
@@ -947,6 +950,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
          PRESENT (QNS_CURR) .AND. PRESENT (QNI_CURR).AND. &
          PRESENT (QNR_CURR) .AND. PRESENT (QNG_CURR).AND. &
          PRESENT (MU) .AND. PRESENT (QSCUTEN).AND. &
+         PRESENT (C1) .AND. PRESENT (C2H) .AND. &
          PRESENT (QRCUTEN) .AND. PRESENT (QICUTEN).AND. &
          PRESENT (RAINNC ) .AND. PRESENT (RAINNCV) .AND. &
          PRESENT ( W      )  ) THEN
@@ -983,7 +987,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                     ,qrcuten=qrcuten                     &  ! hm
                     ,qscuten=qscuten                     &  ! hm
                     ,qicuten=qicuten                     &  ! hm
-                    ,mu=mu                          &  ! hm
+                    ,mu=mu,c1=c1,c2=c2h                  &  ! hm
                     ,F_QNDROP=f_qndrop                   &  ! hm for wrf-chem
                  ,QNDROP=qndrop_curr                     &  ! hm for wrf-chem
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &

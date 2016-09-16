@@ -1,3 +1,7 @@
+! careful adding any HYBRID_COORD stuff in here, adjust_tempqv has
+! c3 and c4 to compute pressure with two reference pressures
+
+
 SUBROUTINE init_domain_constants_em ( parent , nest )
    USE module_domain, ONLY : domain
    IMPLICIT NONE
@@ -113,6 +117,14 @@ SUBROUTINE init_domain_constants_em ( parent , nest )
    nest%z_base    = parent%z_base
    nest%dzs       = parent%dzs
    nest%zs        = parent%zs
+   nest%c1h       = parent%c1h
+   nest%c2h       = parent%c2h
+   nest%c3h       = parent%c3h
+   nest%c4h       = parent%c4h
+   nest%c1f       = parent%c1f
+   nest%c2f       = parent%c2f
+   nest%c3f       = parent%c3f
+   nest%c4f       = parent%c4f
 
 END SUBROUTINE init_domain_constants_em
 
@@ -755,7 +767,7 @@ SUBROUTINE copy_3d_field ( ter_interpolated , ter_input , &
 
 END SUBROUTINE copy_3d_field
 
-SUBROUTINE adjust_tempqv ( mub, save_mub, znw, p_top, &
+SUBROUTINE adjust_tempqv ( mub, save_mub, c3, c4, znw, p_top, &
                            th, pp, qv,  &
                            ids , ide , jds , jde , kds , kde , &
                            ims , ime , jms , jme , kms , kme , &
@@ -777,6 +789,7 @@ SUBROUTINE adjust_tempqv ( mub, save_mub, znw, p_top, &
                                                  ips , ipe , jps , jpe , kps , kpe
    REAL , DIMENSION(ims:ime,jms:jme) , INTENT(IN)    :: mub, save_mub
    REAL , DIMENSION(kms:kme) , INTENT(IN)    :: znw
+   REAL , DIMENSION(kms:kme) , INTENT(IN)    :: c3, c4
    REAL , DIMENSION(ims:ime,kms:kme,jms:jme) , INTENT(INOUT) :: th, pp, qv
 
    REAL , DIMENSION(ims:ime,kms:kme,jms:jme) :: p_old, p_new, rh
@@ -791,7 +804,11 @@ SUBROUTINE adjust_tempqv ( mub, save_mub, znw, p_top, &
    DO j = jps , MIN(jpe, jde-1)
       DO k = kps , kpe-1
          DO i = ips , MIN(ipe, ide-1)
+#if  !( HYBRID_COORD==1 )
             p_old(i,k,j) = 0.5*(znw(k+1)+znw(k))*save_mub(i,j) + p_top + pp(i,k,j)
+#elif ( HYBRID_COORD==1 )
+            p_old(i,k,j) = c4(k) +         c3(k)*save_mub(i,j) + p_top + pp(i,k,j)
+#endif
             tc = (th(i,k,j)+300.)*(p_old(i,k,j)/1.e5)**(2./7.) - 273.15
             es = 610.78*exp(17.0809*tc/(234.175+tc))
             e = qv(i,k,j)*p_old(i,k,j)/(0.622+qv(i,k,j))
@@ -804,7 +821,11 @@ SUBROUTINE adjust_tempqv ( mub, save_mub, znw, p_top, &
    DO j = jps , MIN(jpe, jde-1)
       DO k = kps , kpe-1
          DO i = ips , MIN(ipe, ide-1)
+#if  !( HYBRID_COORD==1 )
             p_new(i,k,j) = 0.5*(znw(k+1)+znw(k))*mub(i,j) + p_top + pp(i,k,j)
+#elif ( HYBRID_COORD==1 )
+            p_new(i,k,j) = c4(k) +         c3(k)*mub(i,j) + p_top + pp(i,k,j)
+#endif
 ! 2*(g/cp-6.5e-3)*R_dry/g = -191.86e-3
             dth1 = -191.86e-3*(th(i,k,j)+300.)/(p_new(i,k,j)+p_old(i,k,j))*(p_new(i,k,j)-p_old(i,k,j))
             dth = -191.86e-3*(th(i,k,j)+0.5*dth1+300.)/(p_new(i,k,j)+p_old(i,k,j))*(p_new(i,k,j)-p_old(i,k,j))

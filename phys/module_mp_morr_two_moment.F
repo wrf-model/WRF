@@ -1,3 +1,5 @@
+#define mu(...) (c1(k)*XXPCTXX(__VA_ARGS__)+c2(k))
+#define XXPCTXX(...) mu(__VA_ARGS__)
 !WRF:MODEL_LAYER:PHYSICS
 !
 
@@ -566,7 +568,7 @@ SUBROUTINE MP_MORR_TWO_MOMENT(ITIMESTEP,                       &
                 RAINNC, RAINNCV, SR,                    &
 		SNOWNC,SNOWNCV,GRAUPELNC,GRAUPELNCV,    & ! hm added 7/13/13
                 refl_10cm, diagflag, do_radar_ref,      & ! GT added for reflectivity calcs
-                qrcuten, qscuten, qicuten, mu           & ! hm added
+                qrcuten, qscuten, qicuten, mu, c1, c2   & ! hm added
                ,F_QNDROP, qndrop                        & ! hm added, wrf-chem 
                ,IDS,IDE, JDS,JDE, KDS,KDE               & ! domain dims
                ,IMS,IME, JMS,JME, KMS,KME               & ! memory dims
@@ -701,6 +703,8 @@ SUBROUTINE MP_MORR_TWO_MOMENT(ITIMESTEP,                       &
       qrcuten, qscuten, qicuten
    REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN):: &
       mu
+   REAL, DIMENSION(kms:kme) , INTENT(IN):: &
+      c1, c2
 
   LOGICAL, INTENT(IN), OPTIONAL ::                F_QNDROP  ! wrf-chem
   LOGICAL :: flag_qndrop  ! wrf-chem

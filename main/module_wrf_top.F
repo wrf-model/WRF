@@ -596,6 +596,18 @@ CONTAINS
       END IF
 ! #endif
 
+#if (EM_CORE == 1)
+      IF ( model_config_rec % dfi_opt .EQ. DFI_NODFI ) THEN
+        DO i = 1, model_config_rec % max_dom
+           model_config_rec % bl_pbl_physics_dfi(i) = -1
+        ENDDO
+      ELSE
+        DO i = 1, model_config_rec % max_dom
+           model_config_rec % bl_pbl_physics_dfi(i) = model_config_rec % bl_pbl_physics(i)
+        ENDDO
+      END IF
+#endif
+
 #if (DA_CORE == 1)
       IF ( model_config_rec % dyn_opt .EQ. 2 ) THEN
         DO i = 1, model_config_rec % max_dom

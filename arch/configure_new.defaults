@@ -1384,7 +1384,7 @@ FORMAT_FIXED    =       -Fixed
 FORMAT_FREE     =       -Free
 FCSUFFIX        =       
 BYTESWAPIO      =       
-FCBASEOPTS_NO_G =       -Kautoobjstack,ocl -V -Qa,d,i,p,t,x -Koptmsg=2 $(FORMAT_FREE) $(BYTESWAPIO) $(OMP)
+FCBASEOPTS_NO_G =       -Kautoobjstack,ocl -fw $(FORMAT_FREE) $(BYTESWAPIO) $(OMP)
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =
 TRADFLAG        =      #-traditional-cpp

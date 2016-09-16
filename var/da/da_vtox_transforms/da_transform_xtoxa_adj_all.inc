@@ -1,7 +1,7 @@
 subroutine da_transform_xtoxa_adj_all(grid)
 
    !--------------------------------------------------------------------------------------------------
-   ! Purpose: Transfers fields from WRF TL fields to dignostic fields needed by observational operators
+   ! Purpose: Transfers fields from WRF TL fields to diagnostic fields needed by observational operators
    !          Adjoint   
    !--------------------------------------------------------------------------------------------------
 

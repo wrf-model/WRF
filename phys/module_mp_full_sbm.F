@@ -885,7 +885,7 @@ USE module_mp_radar
  !        IF (QQA.LE.0)print*,'tta = ',tta
  !        IF (QQA.LE.0)print*,'tt = ',tt
  !        IF (QQA.LE.0)print*,'qq = ',qq
- !        IF (QQA.LE.0)QQA=1.D-10
+          IF (QQA.LE.0)QQA=1.D-10
          ES1N=AA1_MY*DEXP(-BB1_MY/TT)
          ES2N=AA2_MY*DEXP(-BB2_MY/TT)
          EW1N=QQ*PP/(0.622+0.378*QQ)
@@ -918,7 +918,9 @@ USE module_mp_radar
           DIV2=DIV2+DELDIV2
           END IF
 !959       format (' ',i3,1x,f7.1,1x,f6.1,1x,f6.4,1x,f6.2,1x,f6.3)
-          IF (DIV1.GT.DIV2.AND.TT.LE.265)THEN
+!         IF (DIV1.GT.DIV2.AND.TT.LE.265)THEN
+! Jin-Fang Yin
+          IF ((DIV1 - DIV2) .GE. 1.0*10e-24 .AND.TT.LE.265)THEN
 !          print*,'div1 > div2',div1,div2
 !          print*,'delsup1, delsup2 = ',delsup1,delsup2
 !          print*,'del1in, del2in = ',del1in,del2in
@@ -1032,7 +1034,7 @@ USE module_mp_radar
 ! Avoid Diffusional Growth
 !         IF (T_OLD(I,K,J).GE.237)THEN     
 ! Same temperature range as above.
-!         IF (T_OLD(I,K,J).GT.233)THEN
+          IF (T_OLD(I,K,J).GT.233)THEN
           IF(ISYM1.EQ.1.AND.((TT-273.15).GT.-0.187.OR. &
      &     (ISYM2.EQ.0.AND. &
      &     ISYM3.EQ.0.AND.ISYM4.EQ.0.AND.ISYM5.EQ.0)))THEN
@@ -1077,7 +1079,7 @@ USE module_mp_radar
      &      ,ISYM1,ISYM2,ISYM3,ISYM4,ISYM5)
           END IF
           END IF
-!         END IF
+          END IF
              IF (IKL.EQ.NCOND)CALL COAL_BOTT_NEW(FF1R,FF2R,FF3R, &
      &       FF4R,FF5R,TT,QQ,PP,rhocgs(I,K,J),dt_coll,TCRIT,TTCOAL)
          END DO

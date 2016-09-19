@@ -497,6 +497,7 @@ module da_define_structures
       integer, pointer     :: tb_qc(:,:)
       real,    pointer     :: tb_error(:,:)
       real,    pointer     :: tb_xb(:,:) 
+      real,    pointer     :: tb_xb_clr(:,:) 
       real,    pointer     :: tb_sens(:,:)
       real,    pointer     :: tb_imp(:,:)
       real,    pointer     :: rad_xb(:,:)

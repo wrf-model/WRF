@@ -201,4 +201,5 @@ contains
 #include "da_lanczos_io.inc"
 #include "da_swap_xtraj.inc"
 #include "da_read_basicstates.inc"
+#include "da_copy_xa.inc"
 end module da_minimisation

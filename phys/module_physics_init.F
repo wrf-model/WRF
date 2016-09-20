@@ -3555,6 +3555,17 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    STEPCU = nint(CUDT*60./DT)
    STEPCU = max(STEPCU,1)
 
+!-- initialization
+
+   IF(start_of_simulation)THEN
+     DO j=jts,jtf
+     DO i=its,itf
+        RAINC(i,j)=0.
+        RAINCV(i,j)=0.
+     ENDDO
+     ENDDO
+   ENDIF
+
 !-- independent shallow convection schemes
    shcu_select: SELECT CASE(config_flags%shcu_physics)
 

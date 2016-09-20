@@ -50,11 +50,16 @@ CONTAINS
 
    END SUBROUTINE start_timing
 
+   SUBROUTINE end_timing(string)
+      CHARACTER *(*) :: string
+      CALL end_timing_fmt(string)
+   END SUBROUTINE end_timing
 
-   SUBROUTINE end_timing ( string )
+   SUBROUTINE end_timing_fmt ( string,fmt)
      use module_wrf_error, only: silence, stderrlog, buffered
    
       IMPLICIT NONE
+      character*(*), intent(in), optional :: fmt
       REAL(kind=8) :: now_hires
       CHARACTER *(*) :: string
       character*512 :: buf
@@ -84,14 +89,26 @@ CONTAINS
 #endif
       elapsed_seconds_total = elapsed_seconds_total + elapsed_seconds
 
+      ! Format to use if FMT argument is unspecified:
 3031 format("Timing for ",A,": ",F10.5," elapsed seconds")
+
       if(buffered/=0) then
-         write(buf,3031) TRIM(string),elapsed_seconds
+         if(present(fmt)) then
+            write(buf,fmt=fmt) TRIM(string),elapsed_seconds
+         else
+            write(buf,3031) TRIM(string),elapsed_seconds
+         endif
          call wrf_message(buf)
       else
-         if(stderrlog/=0) &
-              write(0,3031) TRIM(string),elapsed_seconds
-         write(6,3031) TRIM(string),elapsed_seconds
+         if(present(fmt)) then
+            if(stderrlog/=0) &
+                 write(0,fmt=fmt) TRIM(string),elapsed_seconds
+            write(6,fmt=fmt) TRIM(string),elapsed_seconds
+         else
+            if(stderrlog/=0) &
+                 write(0,3031) TRIM(string),elapsed_seconds
+            write(6,3031) TRIM(string),elapsed_seconds
+         endif
       endif
 
 !     cpu_seconds = cpu_2 - cpu_1
@@ -100,7 +117,7 @@ CONTAINS
 
       cn = cn - 1
 
-   END SUBROUTINE end_timing
+   END SUBROUTINE end_timing_fmt
 
    FUNCTION now_time() result(timef)
      ! This is a simple subroutine that returns the current time in

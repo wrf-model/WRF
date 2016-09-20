@@ -19,7 +19,7 @@ CONTAINS
      &          ,num_soil_layers,p8w,pblh,pi_phy,pshltr,fm,fhh,psih   &
 #if (NMM_CORE==1)
      &          ,psim,p_phy,q10,q2,qfx,taux,tauy,qsfc,qshltr,qz0      &
-     &          ,icoef_sf,lcurr_sf                                    & !for gfdl-sf drag
+     &          ,zkmax,ribn,charn,msang,scurx,scury,icoef_sf,iwavecpl,lcurr_sf & !for gfdl-sf drag
      &          ,pert_Cd, ens_random_seed, ens_Cdamp                  &
      &          ,cd_out,ch_out                                        &
 #else
@@ -605,6 +605,7 @@ CONTAINS
 #if (NMM_CORE==1)
    real , intent(IN )::   SFENTH
    INTEGER, INTENT(IN)::   ICOEF_SF
+   INTEGER, INTENT(IN)::   IWAVECPL
    LOGICAL, INTENT(IN)::   LCURR_SF
    logical,intent(in),optional  :: pert_Cd
    integer,intent(in),optional  :: ens_random_seed
@@ -653,10 +654,10 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   Q2
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   QFX
 #if (NMM_CORE==1)
-   REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(OUT):: TAUX
-   REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(OUT):: TAUY
-   REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(OUT):: cd_out
-   REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(OUT):: ch_out
+   REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT):: TAUX
+   REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT):: TAUY
+   REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT):: cd_out
+   REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT):: ch_out
 #endif
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   QSFC
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   QZ0
@@ -764,6 +765,10 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme ) , OPTIONAL, INTENT(INOUT)::   BIO4    ! ssib-snow
    REAL, DIMENSION( ims:ime, jms:jme ) , OPTIONAL, INTENT(INOUT)::   BLO4    ! ssib-snow
    REAL, DIMENSION( ims:ime, jms:jme ) , OPTIONAL, INTENT(INOUT)::   HO4     ! ssib-snow
+#if (NMM_CORE==1)
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN)::    CHARN, MSANG, SCURX, SCURY
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   RIBN, ZKMAX
+#endif
 !----------------------------------------------------------
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   BR
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   CHKLOWQ
@@ -2270,14 +2275,15 @@ CONTAINS
                    UST,PSIM,PSIH,                                         &  
                    XLAND,HFX,QFX,TAUX,TAUY,LH,GSW,GLW,TSK,FLHC,FLQC,  & ! gopal's doing for Ocean coupling
                    QGH,QSFC,U10,V10,                              &
-                   ICOEF_SF, LCURR_SF,                            &
+                   ICOEF_SF,IWAVECPL,LCURR_SF,CHARN, MSANG, SCURX, SCURY, &
                    pert_Cd, ens_random_seed, ens_Cdamp,           &
-                   GZ1OZ0,WSPD,BR,ISFFLX,                         &
+                   GZ1OZ0,WSPD,BR,ZKMAX, ISFFLX,                  &
                    EP_1,EP_2,KARMAN,GFDL_NTSFLG,SFENTH,           &
                    cd_out, ch_out,                                &
                    ids,ide, jds,jde, kds,kde,                     &
                    ims,ime, jms,jme, kms,kme,                             &
                    i_start(ij),i_end(ij),j_start(ij),j_end(ij),kts,kte    )
+           RIBN = BR
            DO j=j_start(ij),j_end(ij)
            DO i=i_start(ij),i_end(ij)
               CHKLOWQ(I,J)= 1.0

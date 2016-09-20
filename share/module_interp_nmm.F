@@ -102,7 +102,7 @@ module module_interp_nmm
   implicit none
 
   private
-  public :: interp_T_PD_Q, find_kpres
+  public :: find_kpres
 
   public :: nmm_interp_pd, nmm_keep_pd, nmm_method_linear
 
@@ -1528,7 +1528,9 @@ contains
     integer, dimension(nkde-1,nite-nits+1) :: iinfo
     integer :: nx,nz,k,i,a,j, istart,iend,jstart,jend, ni,nj,jprint,itest,jtest
     character*255 :: message
-    logical bad
+    logical bad, warned
+
+    warned=.false. ! allow one P>PSTD message
 
     nx=min(cide-2,cite)-max(cids+1,cits)+1
     nz=ckde-ckds+1
@@ -1574,7 +1576,7 @@ contains
        call interp_T_PD_Q(nmm_method_linear, nmm_keep_pd, nx,nz, &
             deta1,deta2,eta1,eta2,ptop,pdtop, kpres, &
             inFIS,icFIS, inPINT,icPINT, inT0, icT, inPD,icPD, inQ,icQ, &
-            iinfo, winfo)
+            iinfo, winfo, warned)
 
        ! Step 3: Copy back from reordered arrays to final nest arrays:
 
@@ -1652,7 +1654,9 @@ contains
     integer, dimension(kpres+1,nite-nits+1) :: iinfo
     integer :: nx,nz,k,i,a,j, istart,iend,jstart,jend, ni,nj,jprint,itest,jtest
     character*255 :: message
-    logical bad
+    logical bad, warned
+
+    warned=.false. ! Allow one P>PSTD message
 
     nx=min(cide-2,cite)-max(cids+1,cits)+1
     nz=ckde-ckds+1
@@ -1698,7 +1702,7 @@ contains
        call interp_T_PD_Q_kpres(nmm_method_linear, nmm_keep_pd, nx,nz, &
             deta1,deta2,eta1,eta2,ptop,pdtop, kpres, kpres+2, &
             inFIS,icFIS, inPINT,icPINT, inT0, icT, inPD,icPD, inQ,icQ, &
-            iinfo, winfo)
+            iinfo, winfo, warned)
 
        ! Step 3: Copy back from reordered arrays to final nest arrays:
 
@@ -1800,6 +1804,9 @@ contains
     real, dimension(nkde-1,2*(nite-nits+5)+2*(njte-njts+5)) :: inT,inQ,icT,icQ,winfo
     integer, dimension(nkde-1,2*(nite-nits+5)+2*(njte-njts+5)) :: iinfo
     real, dimension(nkde,2*(nite-nits+5)+2*(njte-njts+5)) :: inPINT,icPINT
+    logical :: warned
+
+    warned=.false. ! Allow one P>PSTD message
 
     nx=min(nide-1,nite)-max(nids,nits)+1
     nz=nkde-nkds+1
@@ -1879,7 +1886,7 @@ contains
     call interp_T_PD_Q_kpres(nmm_method_linear, nmm_interp_pd, used,nz, &
          deta1,deta2,eta1,eta2,ptop,pdtop, kpres, nz, &
          icFIS,inFIS, icPINT,inPINT, icT, inT, icPD,inPD, icQ,inQ, &
-         iinfo, winfo)
+         iinfo, winfo, warned)
 
     used1=used
     used=0
@@ -2010,6 +2017,9 @@ contains
     real, dimension(kpres+1,2*(nite-nits+5)+2*(njte-njts+5)) :: inT,inQ,icT,icQ,winfo
     integer, dimension(kpres+1,2*(nite-nits+5)+2*(njte-njts+5)) :: iinfo
     real, dimension(kpres+2,2*(nite-nits+5)+2*(njte-njts+5)) :: inPINT,icPINT
+    logical :: warned
+
+    warned=.false. ! Allow one P>PSTD message
 
     nx=min(nide-1,nite)-max(nids,nits)+1
     nz=nkde-nkds+1
@@ -2089,7 +2099,7 @@ contains
     call interp_T_PD_Q_kpres(nmm_method_linear, nmm_interp_pd, used,nz, &
          deta1,deta2,eta1,eta2,ptop,pdtop, kpres, kpres+2, &
          icFIS,inFIS, icPINT,inPINT, icT, inT, icPD,inPD, icQ,inQ, &
-         iinfo, winfo)
+         iinfo, winfo, warned)
 
     used1=used
     used=0
@@ -2242,7 +2252,9 @@ contains
 
     real :: pdcheck
     integer :: i,j,k,a, nx,nz,used
-    logical :: badbad
+    logical :: badbad, warned
+
+    warned=.false. ! Allow one P>PSTD message
 
     nx=min(nide-1,nite)-max(nids,nits)+1
     nz=nkde-nkds+1
@@ -2290,7 +2302,7 @@ contains
           call interp_T_PD_Q(nmm_method_linear, nmm_interp_pd, used,nz, &
                deta1,deta2,eta1,eta2,ptop,pdtop,kpres, &
                icFIS,inFIS, icPINT,inPINT, icT, inT, icPD,inPD, icQ,inQ, &
-               iinfo, winfo)
+               iinfo, winfo, warned)
        endif
 
        ! Step 3: Copy back from reordered arrays to final nest arrays:
@@ -2351,7 +2363,7 @@ contains
   subroutine interp_T_PD_Q(method, pd_interp, nx, nz, &
        deta1,deta2, eta1,eta2, ptop,pdtop, kpres,     &
        fisA,fisB, pintA,pintB, tA,tB, pdA,pdB, qA,qB, &
-       iinfo, winfo)
+       iinfo, winfo, warned)
     implicit none
 
     integer, intent(in) :: pd_interp,method, kpres
@@ -2371,6 +2383,7 @@ contains
     ! calls later on:
     real, intent(out) :: winfo(nz-1,nx)
     integer, intent(out) :: iinfo(nz-1,nx)
+    logical, intent(inout) :: warned
 
     ! ==================== Local variables ====================
 
@@ -2395,8 +2408,6 @@ contains
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !! Step 1: calculate near-surface values !!!!!!!!!!!!!!!!!!!!!
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-
 
     pstd1=p_ref ! pstd(1) from base_state_parent
     ! pstd(2) from base_state_parent:
@@ -2451,8 +2462,12 @@ contains
              ! unrealistically high.  Follow base_state_parent method:
              ! when this happens, assign input pressure to output 
              ! pressure.
-             WRITE(0,*)'WARNING: NESTED DOMAIN PRESSURE AT LOWEST LEVEL HIGHER THAN PSTD'
-             WRITE(0,*)'PINT(1),PD(1),PSTD(1)',pintA(1,ix),pdA(ix),p_ref
+             if(.not.warned) then
+                call wrf_message2('WARNING: NESTED DOMAIN PRESSURE AT LOWEST LEVEL HIGHER THAN PSTD')
+                write(message,*) 'PINT(1),PD(1),PSTD(1)',pintA(1,ix),pdA(ix),p_ref
+                call wrf_message2(message)
+                warned=.true.
+             endif
              pdB(ix)=pdA(ix)
              cycle xloop
           endif
@@ -2659,7 +2674,7 @@ contains
   subroutine interp_T_PD_Q_kpres(method, pd_interp, nx, nz, &
        deta1,deta2, eta1,eta2, ptop,pdtop, kpres, nz2,     &
        fisA,fisB, pintA,pintB, tA,tB, pdA,pdB, qA,qB, &
-       iinfo, winfo)
+       iinfo, winfo, warned)
     implicit none
 
     integer, intent(in) :: pd_interp,method, kpres, nz2
@@ -2679,6 +2694,8 @@ contains
     ! calls later on:
     real, intent(out) :: winfo(nz2-1,nx)
     integer, intent(out) :: iinfo(nz2-1,nx)
+
+    logical, intent(inout) :: warned
 
     ! ==================== Local variables ====================
 
@@ -2759,8 +2776,12 @@ contains
              ! unrealistically high.  Follow base_state_parent method:
              ! when this happens, assign input pressure to output 
              ! pressure.
-             WRITE(0,*)'WARNING: NESTED DOMAIN PRESSURE AT LOWEST LEVEL HIGHER THAN PSTD'
-             WRITE(0,*)'PINT(1),PD(1),PSTD(1)',pintA(1,ix),pdA(ix),p_ref
+             if(.not.warned) then
+                call wrf_message2('WARNING: NESTED DOMAIN PRESSURE AT LOWEST LEVEL HIGHER THAN PSTD')
+                WRITE(message,*) 'PINT(1),PD(1),PSTD(1)',pintA(1,ix),pdA(ix),p_ref
+                call wrf_message2(message)
+                warned=.true.
+             endif
              pdB(ix)=pdA(ix)
              cycle xloop
           endif

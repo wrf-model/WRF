@@ -21,6 +21,7 @@ CONTAINS
                  P_QI,P_FIRST_SCALAR,                               & 
                  DX2D, DY,                                          & ! Wang W for scale-aware cnv
                  SCALEFUN, SCALEFUN1,                               & !cnv scale functions
+                 SIGMU,SIGMU1,                                      &
                  ids,ide, jds,jde, kds,kde,                         &
                  ims,ime, jms,jme, kms,kme,                         &
                  its,ite, jts,jte, kts,kte                          )
@@ -124,7 +125,9 @@ CONTAINS
 !wang
       REAL,    INTENT(IN) ::            DY 
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: DX2D
-      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: SCALEFUN,SCALEFUN1 !updaft area fraction for deep and shallow cnv
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: SCALEFUN,SCALEFUN1, & !updaft area fraction for deep and shallow cnv
+                                                     SIGMU, SIGMU1      !updaft area fraction for      deep and shallow cnv
+
 !wang
 
       REAL, OPTIONAL, INTENT(IN) :: PGCON,sas_mass_flux,shal_pgcon
@@ -199,7 +202,8 @@ CONTAINS
       REAL     (kind=kind_phys), DIMENSION(its:ite) :: garea             ! grid box area in m^2, 
                                                                          ! Wang scale-aware cnv
 
-      REAL     (kind=kind_phys), DIMENSION(its:ite) :: SCALEFUN_out,SCALEFUN1_out  !updraft area fraction for deep and shallow cnv 
+      REAL     (kind=kind_phys), DIMENSION(its:ite) :: SCALEFUN_out,SCALEFUN1_out,&  !updraft area fraction for deep and shallow cnv 
+                                                      SIGMU_out,SIGMU1_out  !updraft area fraction for deep and shallow cnv
 
 
       REAL     (kind=kind_phys), DIMENSION(its:ite, kts:kte+1) ::       &
@@ -445,7 +449,7 @@ CONTAINS
           
         CALL scale_sascnvn(IM,IM,KX,JCAP,DELT,DEL,PRSL,PS,PHIL,QL,     &   
             q1,t1,u1,v1,cldwrk,rn,kbot,ktop,kcnv,nint(slimsk),garea,       &
-            dot,ncloud,ud_mf,dd_mf,dt_mf,cnvw,cnvc,SCALEFUN_out)
+            dot,ncloud,ud_mf,dd_mf,dt_mf,cnvw,cnvc,SIGMU_out,SCALEFUN_out)
 !
 
       do i=its,ite
@@ -471,7 +475,7 @@ CONTAINS
        !! added 2015-12-10 W Wang
         call scale_shalcnv(im,im,kx,delt,del,prsl,ps,phil,ql,       &
      &     q1,t1,u1,v1,rn,kbot,ktop,kcnv,nint(slimsk),garea,             &
-     &     dot,ncloud,hpbl,heat,evap,ud_mf,dt_mf,cnvw,cnvc,SCALEFUN1_out)
+     &     dot,ncloud,hpbl,heat,evap,ud_mf,dt_mf,cnvw,cnvc,SIGMU1_out,SCALEFUN1_out)
 !
       DO I=ITS,ITE
         RAINCV2(I,J)=RN(I)*1000./STEPCU
@@ -495,6 +499,8 @@ CONTAINS
       do i=its,ite
         SCALEFUN(I,J)=SCALEFUN_OUT(i)
         SCALEFUN1(I,J)=SCALEFUN1_OUT(i)
+        SIGMU(I,J)=SIGMU_OUT(i)
+        SIGMU1(I,J)=SIGMU1_OUT(i)
       enddo
 
 
@@ -632,7 +638,7 @@ CONTAINS
       subroutine scale_sascnvn(im,ix,km,jcap,delt,delp,prslp,psp,phil,ql,  &
      &     q1,t1,u1,v1,cldwrk,rn,kbot,ktop,kcnv,islimsk,garea,             &
 !     &     dot,ncloud,ud_mf,dd_mf,dt_mf,cnvw,cnvc, tmpout9)
-     &     dot,ncloud,ud_mf,dd_mf,dt_mf,cnvw,cnvc, scaldfunc)
+     &     dot,ncloud,ud_mf,dd_mf,dt_mf,cnvw,cnvc, sigmuout,scaldfunc)
 !    &     q1,t1,u1,v1,rcs,cldwrk,rn,kbot,ktop,kcnv,islimsk,
 !    &     dot,ncloud,ud_mf,dd_mf,dt_mf,me)
 !
@@ -761,7 +767,7 @@ CONTAINS
      &                     sigmaw(im),     sigmagf(im) ,   sigmagfm(im) 
 
 !! tmpout
-      real(kind=kind_phys) tmpout9(im)
+      real(kind=kind_phys) tmpout9(im), sigmuout(im)
 
 !
 !c  cloud water
@@ -843,6 +849,7 @@ CONTAINS
           sigmagf(i)=-1.0
           sigmagfm(i)=-1.0
           tmpout9(i)=-1.0
+          sigmuout(i)=-1.0
       enddo
 !
       do i=1,im
@@ -2653,8 +2660,10 @@ CONTAINS
 !           scaldfunc(i) = (1.-sigmaw(i)) * (1.-sigmaw(i))   ! Arakawa & Wu (2013)
 !           scaldfunc(i) = (1.-sigmagf(i)) * (1.-sigmagf(i)) ! Grell & Freitas (2014)
             scaldfunc(i) = (1.-sigmagfm(i)) * (1.-sigmagfm(i)) ! modified Grell & Freitas(2014)
+       
 !            scaldfunc(i) = (1.-sigmaw(i)) * (1.-sigmagf(i))  ! AW & GF
             scaldfunc(i) = max(min(scaldfunc(i), 1.0), 0.)
+             sigmuout(i)=sigmagfm(i)
           else
             scaldfunc(i) = 1.0
           endif
@@ -2927,7 +2936,7 @@ CONTAINS
 !     subroutine shalcnv(im,ix,km,jcap,delt,delp,prslp,psp,phil,ql,
       subroutine scale_shalcnv(im,ix,km,delt,delp,prslp,psp,phil,ql,      &
      &     q1,t1,u1,v1,rn,kbot,ktop,kcnv,islimsk,garea,                   &
-     &     dot,ncloud,hpbl,heat,evap,ud_mf,dt_mf,cnvw,cnvc, scaldfunc)
+     &     dot,ncloud,hpbl,heat,evap,ud_mf,dt_mf,cnvw,cnvc, sigmuout,scaldfunc)
 !     &     dot,ncloud,hpbl,heat,evap,ud_mf,dt_mf,cnvw,cnvc, sigmagfm)
 !    &     q1,t1,u1,v1,rcs,rn,kbot,ktop,kcnv,islimsk,
 !    &     dot,ncloud,hpbl,heat,evap,ud_mf,dt_mf,me)
@@ -3048,6 +3057,7 @@ CONTAINS
       real(kind=kind_phys) wbar(im),       xmbeta(im)
       real(kind=kind_phys) scaldfunc(im),  awlam(im),                  &
      &                     sigmaw(im),     sigmagf(im), sigmagfm(im)
+      real(kind=kind_phys) sigmuout(im)   ! output sigm_u,
 !
 !c  cloud water
 !     real(kind=kind_phys) qlko_ktcon(im), dellal(im,km), tvo(im,km),
@@ -3109,6 +3119,7 @@ CONTAINS
           sigmaw(i)=-1.0
           sigmagf(i)=-1.0
           sigmagfm(i)=-1.0
+           sigmuout(i)=-1.0
       enddo
 !!
       totflg = .true.
@@ -4230,6 +4241,7 @@ CONTAINS
             scaldfunc(i) = (1.-sigmagfm(i)) * (1.-sigmagfm(i)) ! modified Grell & Freitas(2014)
 !            scaldfunc(i) = (1.-sigmaw(i)) * (1.-sigmagf(i))  ! AW & GF
             scaldfunc(i) = max(min(scaldfunc(i), 1.0), 0.)
+             sigmuout(i) = sigmagfm(i)
           else
             scaldfunc(i) = 1.0
           endif

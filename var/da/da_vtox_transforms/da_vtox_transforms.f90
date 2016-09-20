@@ -14,6 +14,7 @@ module da_vtox_transforms
       halo_psichi_uv_sub, halo_xa_all_sub,halo_xb_all_sub
 #endif
    use module_domain, only : xb_type, xpose_type, ep_type, vp_type, x_type, domain, get_ijk_from_grid
+   use module_domain, only : x_subtype
 
 #ifdef A2C
    use da_control, only : trace_use, var4d, cos_xls, cos_xle, sin_xle, sin_xls, pi, global, &
@@ -42,7 +43,8 @@ module da_vtox_transforms
       len_scaling5, len_scaling6, len_scaling7, len_scaling8, len_scaling9, len_scaling10, len_scaling11
 #endif
 
-   use da_control, only : anal_type_hybrid_dual_res, myproc, num_procs,dual_res_upscale_opt
+   use da_control, only : anal_type_hybrid_dual_res, myproc, num_procs,dual_res_upscale_opt, &
+                          ensdim_alpha
    use da_control, only : its_int,ite_int,jts_int,jte_int,kts_int,kte_int,shw, &
                           ims_int,ime_int,jms_int,jme_int,kms_int,kme_int, &
                           ids_int,ide_int,jds_int,jde_int,kds_int,kde_int, &
@@ -80,10 +82,6 @@ module da_vtox_transforms
 
 #include "da_add_flow_dependence_vp.inc"
 #include "da_add_flow_dependence_vp_adj.inc"
-#include "da_add_flow_dependence_xa.inc"
-#include "da_add_flow_dependence_xa_dual_res.inc"
-#include "da_add_flow_dependence_xa_adj.inc"
-#include "da_add_flow_dependence_xa_adj_dual_res.inc"
 #include "da_check_eof_decomposition.inc"
 #include "da_transform_vtovv.inc"
 #include "da_transform_vtovv_adj.inc"
@@ -114,5 +112,12 @@ module da_vtox_transforms
 
 #include "da_transform_vvtovp_dual_res.inc"
 #include "da_transform_vvtovp_adj_dual_res.inc"
+
+#include "da_add_xa.inc"
+
+#include "da_calc_flow_dependence_xa.inc"
+#include "da_calc_flow_dependence_xa_dual_res.inc"
+#include "da_calc_flow_dependence_xa_adj.inc"
+#include "da_calc_flow_dependence_xa_adj_dual_res.inc"
 
 end module da_vtox_transforms

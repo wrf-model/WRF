@@ -23,6 +23,7 @@ subroutine da_transform_vtoy(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx, &
 
    type(x_type) :: shuffle
    integer :: nobwin, jl_start, jl_end, time_step_seconds
+   integer :: num_subtwindow
 
    character(len=4) :: filnam
    character(len=256) :: timestr, timestr1
@@ -150,15 +151,81 @@ subroutine da_transform_vtoy(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx, &
 
 #endif
    else  ! not var4d
-      call da_transform_vtox(grid, cv_size, xbx, be, ep, cv, vv, vp)
-      iv%info(:)%n1 = 1
-      iv%info(:)%n2 = iv%info(:)%nlocal
-      if ( use_rad ) then
-         iv%instid(:)%info%n1 = 1
-         iv%instid(:)%info%n2 = iv%instid(:)%num_rad
+
+      !call da_zero_x(grid%xa_ens)
+      grid%xa_ens%u = 0.0
+      grid%xa_ens%v = 0.0
+      grid%xa_ens%t = 0.0
+      grid%xa_ens%q = 0.0
+      grid%xa_ens%psfc = 0.0
+#ifdef CLOUD_CV
+      grid%xa_ens%qcw = 0.0
+      grid%xa_ens%qrn = 0.0
+      grid%xa_ens%qci = 0.0
+      grid%xa_ens%qsn = 0.0
+      grid%xa_ens%qgr = 0.0
+#endif
+      call da_zero_x(grid%xa_static)
+
+      if ( use_4denvar ) then
+         num_subtwindow = num_fgat_time
+      else
+         num_subtwindow = 1
       end if
-      call da_transform_xtoxa(grid)
-      call da_transform_xtoy(cv_size, cv, grid, iv, y)
+
+      ! vp%alpha is not included in the vptox calculation
+      ! here grid%xa contains only the static increment
+      call da_transform_vtox(grid, cv_size, xbx, be, ep, cv, vv, vp)
+
+      !grid%xa_static = grid%xa !save the static increment
+      call da_copy_xa(grid%xa_static, grid%xa)
+
+      do nobwin = num_subtwindow, 1 , -1
+         if (be % ne > 0 .and. alphacv_method == alphacv_method_xa) then
+            !transform xa_ens from vp%alpha
+            !xa_ens holds the increment from ensemble perturbations for certain fgat time
+            !call da_zero_x(grid%xa_ens)
+            grid%xa_ens%u = 0.0
+            grid%xa_ens%v = 0.0
+            grid%xa_ens%t = 0.0
+            grid%xa_ens%q = 0.0
+            grid%xa_ens%psfc = 0.0
+#ifdef CLOUD_CV
+            grid%xa_ens%qcw = 0.0
+            grid%xa_ens%qrn = 0.0
+            grid%xa_ens%qci = 0.0
+            grid%xa_ens%qsn = 0.0
+            grid%xa_ens%qgr = 0.0
+#endif
+            if ( anal_type_hybrid_dual_res ) then
+               call da_calc_flow_dependence_xa_dual_res(grid, grid%xa_ens, be%ne, ep, vp, nobwin)
+            else
+               call da_calc_flow_dependence_xa(grid%xa_ens, be%ne, ep, vp, nobwin)
+            end if
+            !grid%xa = grid%xa_static                 !reset grid%xa
+            call da_copy_xa(grid%xa, grid%xa_static)
+            call da_add_xa(grid%xa, grid%xa_ens) !grid%xa = grid%xa(i.e. xa_static) + xa_ens
+         end if
+         call da_transform_xtoxa(grid)
+         iv%time = nobwin
+         if ( use_4denvar ) then
+            iv%info(:)%n1 = iv%info(:)%plocal(iv%time-1) + 1
+            iv%info(:)%n2 = iv%info(:)%plocal(iv%time)
+            if ( use_rad ) then
+               iv%instid(:)%info%n1 = iv%instid(:)%info%plocal(iv%time-1) + 1
+               iv%instid(:)%info%n2 = iv%instid(:)%info%plocal(iv%time)
+            end if
+         else
+            iv%info(:)%n1 = 1
+            iv%info(:)%n2 = iv%info(:)%nlocal
+            if ( use_rad ) then
+               iv%instid(:)%info%n1 = 1
+               iv%instid(:)%info%n2 = iv%instid(:)%num_rad
+            end if
+         end if !4denvar
+         call da_transform_xtoy(cv_size, cv, grid, iv, y)
+      end do
+
    end if ! var4d
 
    !--------------------------------------------------------------

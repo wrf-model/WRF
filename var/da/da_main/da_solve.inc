@@ -47,6 +47,7 @@
    real, allocatable :: grid_box_area(:,:), mapfac(:,:)
    character (len=10)    :: variable_name
 
+   integer :: iwin, num_subtwindow
    integer :: xx, yy, ii, jj,  xy, kk, jjj
    real    :: lat, lon, x_pos, y_pos, dx, dy, dxm, dym
    logical :: outside
@@ -494,8 +495,19 @@
       if (use_background_errors .and. be % ne > 0) then
 !        call da_setup_flow_predictors ( ide, jde, kde, be % ne, grid%ep, &
 !                                        its, ite, jts, jte, kts, kte )
-         call da_setup_flow_predictors ( ide_ens, jde_ens, kde_ens, be % ne, grid%ep, &
-                                         its_int, ite_int, jts_int, jte_int, kts_int, kte_int )
+         select case ( ep_para_read )
+            case ( 0 ) ! serial read (default)
+               call da_setup_flow_predictors ( ide_ens, jde_ens, kde_ens, be % ne, grid%ep, &
+                                               its_int, ite_int, jts_int, jte_int, kts_int, kte_int )
+            case ( 1 ) ! para_read_opt1, breaks total number of ep into reading bins
+               call da_setup_flow_predictors_para_read_opt1 ( &
+                                            ide_ens, jde_ens, kde_ens, be % ne, grid%ep, &
+                                            its_int, ite_int, jts_int, jte_int, kts_int, kte_int )
+            case ( 2 ) ! para_read_opt2, requires more memory
+               call da_setup_flow_predictors_para_read_opt2 ( &
+                                            ide_ens, jde_ens, kde_ens, be % ne, grid%ep, &
+                                            its_int, ite_int, jts_int, jte_int, kts_int, kte_int )
+         end select
       end if
 
    !---------------------------------------------------------------------------
@@ -764,9 +776,43 @@
       end if
 
       ! [8.5] Update latest analysis solution:
-  
+
       if (.not. var4d) then
+         ! vp%alpha is not included in the vptox calculation,
+         ! here grid%xa contains only the static increment
          call da_transform_vtox (grid,cv_size,xbx,be,grid%ep,xhat,grid%vv,grid%vp)
+
+         ! adding the ensemble contribution
+         if (be % ne > 0 .and. alphacv_method == alphacv_method_xa) then
+            if ( use_4denvar ) then
+               num_subtwindow = num_fgat_time
+            else
+               num_subtwindow = 1
+            end if
+            do iwin = num_subtwindow, 1 , -1
+               !transform xa_ens from vp%alpha
+               !xa_ens holds the increment from ensemble perturbations for certain fgat time
+               !call da_zero_x(grid%xa_ens)
+               grid%xa_ens%u = 0.0
+               grid%xa_ens%v = 0.0
+               grid%xa_ens%t = 0.0
+               grid%xa_ens%q = 0.0
+               grid%xa_ens%psfc = 0.0
+#ifdef CLOUD_CV
+               grid%xa_ens%qcw = 0.0
+               grid%xa_ens%qrn = 0.0
+               grid%xa_ens%qci = 0.0
+               grid%xa_ens%qsn = 0.0
+               grid%xa_ens%qgr = 0.0
+#endif
+               if ( anal_type_hybrid_dual_res ) then
+                  call da_calc_flow_dependence_xa_dual_res(grid, grid%xa_ens, be%ne, grid%ep, grid%vp, iwin)
+               else
+                  call da_calc_flow_dependence_xa(grid%xa_ens, be%ne, grid%ep, grid%vp, iwin)
+               end if
+               call da_add_xa(grid%xa, grid%xa_ens) !grid%xa = grid%xa + xa_ens
+            end do
+         end if !ne>0
       else
          call da_transform_vtox (grid,be%cv%size_jb,xbx,be,grid%ep,xhat(1:be%cv%size_jb),grid%vv,grid%vp)
       endif

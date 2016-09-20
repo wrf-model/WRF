@@ -22,8 +22,10 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx,
    type(grid_config_rec_type), intent(inout) :: config_flags
    logical,                    intent(in)    :: jcdf_flag       ! additional flag to switch off JcDF, used to switch off JcDF in calculation of J.
 
-   type(x_type) :: shuffle
-   integer :: nobwin,ndynopt, jl_start, jl_end, time_step_seconds
+   type(x_type)  :: shuffle
+   real          :: cv_local(1:cv_size) ! control variables
+   integer       :: nobwin, jl_start, jl_end, time_step_seconds
+   integer       :: num_subtwindow
    character*256 :: timestr, timestr1
    integer       :: i, j, k
    real          :: subarea, whole_area
@@ -201,17 +203,51 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx,
 
 #endif
    else  ! not var4d
-      iv%info(:)%n1 = 1
-      iv%info(:)%n2 = iv%info(:)%nlocal
-      if ( use_rad ) then
-         iv%instid(:)%info%n1 = 1
-         iv%instid(:)%info%n2 = iv%instid(:)%num_rad
-      end if
-      call da_zero_x(grid%xa)
 
-      call da_transform_xtoy_adj(cv_size, cv, grid, iv, y,grid%xa)
-      call da_transform_xtoxa_adj(grid)
-      call da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv)
+      if ( use_4denvar ) then
+         num_subtwindow = num_fgat_time
+      else
+         num_subtwindow = 1
+      end if
+
+      do nobwin= num_subtwindow, 1 , -1
+         cv_local = 0.0
+         call da_zero_vp_type (vp)
+         iv%time = nobwin
+         if ( use_4denvar ) then
+            iv%info(:)%n1 = iv%info(:)%plocal(iv%time-1) + 1
+            iv%info(:)%n2 = iv%info(:)%plocal(iv%time)
+            if ( use_rad ) then
+               iv%instid(:)%info%n1 = iv%instid(:)%info%plocal(iv%time-1) + 1
+               iv%instid(:)%info%n2 = iv%instid(:)%info%plocal(iv%time)
+            end if
+         else
+            iv%info(:)%n1 = 1
+            iv%info(:)%n2 = iv%info(:)%nlocal
+            if ( use_rad ) then
+               iv%instid(:)%info%n1 = 1
+               iv%instid(:)%info%n2 = iv%instid(:)%num_rad
+            end if
+         end if !4denvar
+         call da_zero_x(grid%xa)
+         call da_transform_xtoy_adj(cv_size, cv_local, grid, iv, y, grid%xa)
+         call da_transform_xtoxa_adj(grid)
+         if (be % ne > 0 .and. alphacv_method == alphacv_method_xa) then
+            !this is for getting vp%alpha only
+            vp%alpha = 0.0
+            if ( anal_type_hybrid_dual_res ) then
+               call da_calc_flow_dependence_xa_adj_dual_res(be%ne, ep, grid, grid%xa, vp, nobwin)
+            else
+               call da_calc_flow_dependence_xa_adj(be%ne, ep, grid%xa, vp, nobwin)
+            end if
+         end if
+         !the calculation of vp%alpha is taken out of vptox_adj.
+         !da_zero_vp_type(vp) is commented out in the da_transform_vtox_adj,
+         !in order to pass in vp%alpha
+         call da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv_local)
+         cv = cv + cv_local
+      end do
+
    end if ! var4d
 
    !--------------------------------------------------------------

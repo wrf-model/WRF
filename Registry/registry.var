@@ -420,6 +420,8 @@ rconfig   real      pseudo_y                namelist,wrfvar15  1  1.0      - "ps
 rconfig   real      pseudo_z                namelist,wrfvar15  1  1.0      - "pseudo_z"                ""  ""   
 rconfig   real      pseudo_val              namelist,wrfvar15  1  1.0      - "pseudo_val"              ""  ""   
 rconfig   real      pseudo_err              namelist,wrfvar15  1  1.0      - "pseudo_err"              ""  ""   
+rconfig   integer   ep_para_read            namelist,wrfvar16  1  0        - "ep_para_read"            ""  ""
+rconfig   integer   rden_bin                namelist,wrfvar16  1  1        - "rden_bin"                ""  ""
 rconfig   integer   alphacv_method          namelist,wrfvar16  1  2        - "alphacv_method"          ""  ""   
 rconfig   integer   ensdim_alpha            namelist,wrfvar16  1  0        - "ensdim_alpha"            ""  ""   
 rconfig   integer   alpha_truncation        namelist,wrfvar16  1  0        - "alpha_truncation"        ""  ""   
@@ -430,6 +432,7 @@ rconfig   logical   alpha_vertloc           namelist,wrfvar16  1  .false.  - "al
 rconfig   logical   alpha_hydrometeors      namelist,wrfvar16  1  .false.  - "alpha_hydrometeors"      ""  ""
 rconfig   logical   hybrid_dual_res         namelist,wrfvar16  1  .false.  - "hybrid_dual_res"         ""  ""
 rconfig   integer   dual_res_upscale_opt    namelist,wrfvar16  1  3        - "dual_res_upscale_opt"    ""  ""
+rconfig   logical   use_4denvar             namelist,wrfvar16  1  .false.  - "4D-En-Var"               ""  ""
 rconfig   character analysis_type           namelist,wrfvar17  1  "3D-VAR" - "analysis_type"           ""  ""
 rconfig   integer   sensitivity_option      namelist,wrfvar17  1  -1       - "sensitivity_option"      ""  ""
 rconfig   logical   adj_sens                namelist,wrfvar17  1  .false.  - "adj_sens"                ""  ""
@@ -550,6 +553,11 @@ typedef ep_type real    v2                      ijk9     -         1        -   
 typedef ep_type real    v3                      ijk9     -         1        -       -
 typedef ep_type real    v4                      ijk9     -         1        -       -
 typedef ep_type real    v5                      ijk9     -         1        -       -
+typedef ep_type real    cw                      ijk9     -         1        -       -
+typedef ep_type real    rn                      ijk9     -         1        -       -
+typedef ep_type real    ci                      ijk9     -         1        -       -
+typedef ep_type real    sn                      ijk9     -         1        -       -
+typedef ep_type real    gr                      ijk9     -         1        -       -
 # END EP_TYPE DEFINITION
 # BEGIN XB_TYPE DEFINITION:
 typedef xb_type integer      map
@@ -698,6 +706,18 @@ typedef x_type real    tb37h                  ij       -         1        -     
 typedef x_type real    tb85v                  ij       -         1        -       -
 typedef x_type real    tb85h                  ij       -         1        -       -
 #  END TYPE x_type
+# BEGIN X_subTYPE DEFINITION
+typedef x_subtype real    u                      ijk      -         1        X       -
+typedef x_subtype real    v                      ijk      -         1        Y       -
+typedef x_subtype real    t                      ijk      -         1        -       -
+typedef x_subtype real    q                      ijk      -         1        -       -
+typedef x_subtype real    psfc                   ij       -         1        -       -
+typedef x_subtype real    qrn                    ijk      -         1        -       -
+typedef x_subtype real    qcw                    ijk      -         1        -       -
+typedef x_subtype real    qci                    ijk      -         1        -       -
+typedef x_subtype real    qsn                    ijk      -         1        -       -
+typedef x_subtype real    qgr                    ijk      -         1        -       -
+#  END TYPE x_subtype
 # BEGIN XPOSE_TYPE DEFINITION:
 #
 typedef xpose_type integer    domdesc
@@ -803,5 +823,8 @@ state vp_type vp6 - -
 state ep_type ep - -
 state xb_type xb - -
 state x_type xa - -
+state x_subtype xa_ens - -
+#state x_type xa_ens - -
+state x_type xa_static - -
 state x_type x6a - -
 state xpose_type xp - -

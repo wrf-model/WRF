@@ -1,4 +1,4 @@
-subroutine da_add_flow_dependence_xa_adj_dual_res (ne, ep, grid, vp)
+subroutine da_add_flow_dependence_xa_adj_dual_res (ne, ep, grid, vp, nobwin)
 
    !-----------------------------------------------------------------------
    ! Purpose: Add flow-dependent increments in model space (xa).
@@ -13,10 +13,12 @@ subroutine da_add_flow_dependence_xa_adj_dual_res (ne, ep, grid, vp)
    
    integer                              :: i, j, k, n ! Loop counters.
    real                                 :: alpha       ! Local alpha copy.
-
+   integer, intent(in), optional        :: nobwin
    real, allocatable, dimension(:,:,:)  :: output_u,output_v,output_t,output_q, output_p
    real, allocatable, dimension(:,:,:)  :: input_u,input_v,input_t,input_q,input_p
-   
+   real, allocatable, dimension(:,:,:)  :: output_qcw,output_qrn,output_qci,output_qsn, output_qgr
+   real, allocatable, dimension(:,:,:)  :: input_qcw,input_qrn,input_qci,input_qsn,input_qgr
+
    integer  :: cids, cide, ckds, ckde, cjds, cjde, &
                cims, cime, ckms, ckme, cjms, cjme, &
                cips, cipe, ckps, ckpe, cjps, cjpe, &
@@ -54,6 +56,13 @@ subroutine da_add_flow_dependence_xa_adj_dual_res (ne, ep, grid, vp)
    allocate( input_t(nims:nime,nkms:nkme,njms:njme) )
    allocate( input_q(nims:nime,nkms:nkme,njms:njme) )
    allocate( input_p(nims:nime,1:1,njms:njme) )
+#ifdef CLOUD_CV
+   allocate( input_qcw(nims:nime,nkms:nkme,njms:njme) )
+   allocate( input_qrn(nims:nime,nkms:nkme,njms:njme) )
+   allocate( input_qci(nims:nime,nkms:nkme,njms:njme) )
+   allocate( input_qsn(nims:nime,nkms:nkme,njms:njme) )
+   allocate( input_qgr(nims:nime,nkms:nkme,njms:njme) )
+#endif
 
    ! Output is low-res domain
    allocate( output_u(cims:cime,ckms:ckme,cjms:cjme) )
@@ -61,12 +70,26 @@ subroutine da_add_flow_dependence_xa_adj_dual_res (ne, ep, grid, vp)
    allocate( output_t(cims:cime,ckms:ckme,cjms:cjme) )
    allocate( output_q(cims:cime,ckms:ckme,cjms:cjme) )
    allocate( output_p(cims:cime,1:1,cjms:cjme) )
+#ifdef CLOUD_CV
+   allocate( output_qcw(cims:cime,ckms:ckme,cjms:cjme) )
+   allocate( output_qrn(cims:cime,ckms:ckme,cjms:cjme) )
+   allocate( output_qci(cims:cime,ckms:ckme,cjms:cjme) )
+   allocate( output_qsn(cims:cime,ckms:ckme,cjms:cjme) )
+   allocate( output_qgr(cims:cime,ckms:ckme,cjms:cjme) )
+#endif
 
    output_u = 0. ; input_u = 0.
    output_v = 0. ; input_v = 0.
    output_t = 0. ; input_t = 0.
    output_q = 0. ; input_q = 0.
    output_p = 0. ; input_p = 0.
+#ifdef CLOUD_CV
+   output_qcw = 0. ; input_qcw = 0.
+   output_qrn = 0. ; input_qrn = 0.
+   output_qci = 0. ; input_qci = 0.
+   output_qsn = 0. ; input_qsn = 0.
+   output_qgr = 0. ; input_qgr = 0.
+#endif
 
 
    !
@@ -80,6 +103,13 @@ subroutine da_add_flow_dependence_xa_adj_dual_res (ne, ep, grid, vp)
             input_v(i,k,j) = grid%xa%v(i,j,k)
             input_t(i,k,j) = grid%xa%t(i,j,k)
             input_q(i,k,j) = grid%xa%q(i,j,k)
+#ifdef CLOUD_CV
+            input_qcw(i,k,j) = grid%xa%qcw(i,j,k)
+            input_qrn(i,k,j) = grid%xa%qrn(i,j,k)
+            input_qci(i,k,j) = grid%xa%qci(i,j,k)
+            input_qsn(i,k,j) = grid%xa%qsn(i,j,k)
+            input_qgr(i,k,j) = grid%xa%qgr(i,j,k)
+#endif
          end do
       end do
    end do
@@ -110,7 +140,11 @@ subroutine da_add_flow_dependence_xa_adj_dual_res (ne, ep, grid, vp)
       CALL RSL_LITE_INIT_EXCH ( local_communicator, 4, 0, &
 	   rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p,   &
 	   rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p,   &
-	   4, 1, RWORDSIZE, &
+#ifdef CLOUD_CV
+           9, 1, RWORDSIZE, &
+#else
+           4, 1, RWORDSIZE, &
+#endif
 	   0, 0, IWORDSIZE, &
 	   0, 0, DWORDSIZE, &
 	    0,  0, LWORDSIZE, &
@@ -174,6 +208,63 @@ subroutine da_add_flow_dependence_xa_adj_dual_res (ne, ep, grid, vp)
            nims, nime, njms, njme, 1, 1,    &
            nips, nipe, njps, njpe, 1, 1   )
 	ENDIF
+#ifdef CLOUD_CV
+        IF ( SIZE(input_qcw,1)*SIZE(input_qcw,3) .GT. 1 ) THEN
+           CALL RSL_LITE_PACK ( local_communicator,                &
+           input_qcw, 4,                                           &
+           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
+           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
+           RWORDSIZE, 0, 0, DATA_ORDER_XZY, 0,                     &
+           myproc, ntasks, ntasks_x, ntasks_y,                     &
+           nids, nide, njds, njde, nkds, nkde,                     &
+           nims, nime, njms, njme, nkms, nkme,                     &
+           nips, nipe, njps, njpe, nkps, nkpe   )
+        ENDIF
+        IF ( SIZE(input_qrn,1)*SIZE(input_qrn,3) .GT. 1 ) THEN
+           CALL RSL_LITE_PACK ( local_communicator,                &
+           input_qrn, 4,                                           &
+           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
+           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
+           RWORDSIZE, 0, 0, DATA_ORDER_XZY, 0,                     &
+           myproc, ntasks, ntasks_x, ntasks_y,                     &
+           nids, nide, njds, njde, nkds, nkde,                     &
+           nims, nime, njms, njme, nkms, nkme,                     &
+           nips, nipe, njps, njpe, nkps, nkpe   )
+        ENDIF
+        IF ( SIZE(input_qci,1)*SIZE(input_qci,3) .GT. 1 ) THEN
+           CALL RSL_LITE_PACK ( local_communicator,                &
+           input_qci, 4,                                           &
+           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
+           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
+           RWORDSIZE, 0, 0, DATA_ORDER_XZY, 0,                     &
+           myproc, ntasks, ntasks_x, ntasks_y,                     &
+           nids, nide, njds, njde, nkds, nkde,                     &
+           nims, nime, njms, njme, nkms, nkme,                     &
+           nips, nipe, njps, njpe, nkps, nkpe   )
+        ENDIF
+        IF ( SIZE(input_qsn,1)*SIZE(input_qsn,3) .GT. 1 ) THEN
+           CALL RSL_LITE_PACK ( local_communicator,                &
+           input_qsn, 4,                                           &
+           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
+           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
+           RWORDSIZE, 0, 0, DATA_ORDER_XZY, 0,                     &
+           myproc, ntasks, ntasks_x, ntasks_y,                     &
+           nids, nide, njds, njde, nkds, nkde,                     &
+           nims, nime, njms, njme, nkms, nkme,                     &
+           nips, nipe, njps, njpe, nkps, nkpe   )
+        ENDIF
+        IF ( SIZE(input_qgr,1)*SIZE(input_qgr,3) .GT. 1 ) THEN
+           CALL RSL_LITE_PACK ( local_communicator,                &
+           input_qgr, 4,                                           &
+           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
+           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
+           RWORDSIZE, 0, 0, DATA_ORDER_XZY, 0,                     &
+           myproc, ntasks, ntasks_x, ntasks_y,                     &
+           nids, nide, njds, njde, nkds, nkde,                     &
+           nims, nime, njms, njme, nkms, nkme,                     &
+           nips, nipe, njps, njpe, nkps, nkpe   )
+        ENDIF
+#endif
 
         CALL RSL_LITE_EXCH_Y ( local_communicator , myproc, ntasks, ntasks_x, ntasks_y, &
                           rsl_sendw_m,  rsl_sendw_p, rsl_recvw_m,  rsl_recvw_p    )
@@ -233,6 +324,63 @@ subroutine da_add_flow_dependence_xa_adj_dual_res (ne, ep, grid, vp)
            nims, nime, njms, njme, 1, 1,    &
            nips, nipe, njps, njpe, 1, 1   )
 	ENDIF
+#ifdef CLOUD_CV
+        IF ( SIZE(input_qcw,1)*SIZE(input_qcw,3) .GT. 1 ) THEN
+           CALL RSL_LITE_PACK ( local_communicator,                &
+           input_qcw, 4,                                           &
+           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
+           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
+           RWORDSIZE, 0, 1, DATA_ORDER_XZY, 0,                     &
+           myproc, ntasks, ntasks_x, ntasks_y,                     &
+           nids, nide, njds, njde, nkds, nkde,                     &
+           nims, nime, njms, njme, nkms, nkme,                     &
+           nips, nipe, njps, njpe, nkps, nkpe   )
+        ENDIF
+        IF ( SIZE(input_qrn,1)*SIZE(input_qrn,3) .GT. 1 ) THEN
+           CALL RSL_LITE_PACK ( local_communicator,                &
+           input_qrn, 4,                                           &
+           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
+           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
+           RWORDSIZE, 0, 1, DATA_ORDER_XZY, 0,                     &
+           myproc, ntasks, ntasks_x, ntasks_y,                     &
+           nids, nide, njds, njde, nkds, nkde,                     &
+           nims, nime, njms, njme, nkms, nkme,                     &
+           nips, nipe, njps, njpe, nkps, nkpe   )
+        ENDIF
+        IF ( SIZE(input_qci,1)*SIZE(input_qci,3) .GT. 1 ) THEN
+           CALL RSL_LITE_PACK ( local_communicator,                &
+           input_qci, 4,                                           &
+           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
+           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
+           RWORDSIZE, 0, 1, DATA_ORDER_XZY, 0,                     &
+           myproc, ntasks, ntasks_x, ntasks_y,                     &
+           nids, nide, njds, njde, nkds, nkde,                     &
+           nims, nime, njms, njme, nkms, nkme,                     &
+           nips, nipe, njps, njpe, nkps, nkpe   )
+        ENDIF
+        IF ( SIZE(input_qsn,1)*SIZE(input_qsn,3) .GT. 1 ) THEN
+           CALL RSL_LITE_PACK ( local_communicator,                &
+           input_qsn, 4,                                           &
+           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
+           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
+           RWORDSIZE, 0, 1, DATA_ORDER_XZY, 0,                     &
+           myproc, ntasks, ntasks_x, ntasks_y,                     &
+           nids, nide, njds, njde, nkds, nkde,                     &
+           nims, nime, njms, njme, nkms, nkme,                     &
+           nips, nipe, njps, njpe, nkps, nkpe   )
+        ENDIF
+        IF ( SIZE(input_qgr,1)*SIZE(input_qgr,3) .GT. 1 ) THEN
+           CALL RSL_LITE_PACK ( local_communicator,                &
+           input_qgr, 4,                                           &
+           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
+           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
+           RWORDSIZE, 0, 1, DATA_ORDER_XZY, 0,                     &
+           myproc, ntasks, ntasks_x, ntasks_y,                     &
+           nids, nide, njds, njde, nkds, nkde,                     &
+           nims, nime, njms, njme, nkms, nkme,                     &
+           nips, nipe, njps, njpe, nkps, nkpe   )
+        ENDIF
+#endif
 
       ENDDO
 
@@ -246,7 +394,11 @@ subroutine da_add_flow_dependence_xa_adj_dual_res (ne, ep, grid, vp)
       CALL RSL_LITE_INIT_EXCH ( local_communicator, 4, 1, &
 	   rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p,   &
 	   rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p,   &
-	   4, 1, RWORDSIZE, &
+#ifdef CLOUD_CV
+           9, 1, RWORDSIZE, &
+#else
+           4, 1, RWORDSIZE, &
+#endif
 	   0, 0, IWORDSIZE, &
 	   0, 0, DWORDSIZE, &
 	    0,  0, LWORDSIZE, &
@@ -310,6 +462,63 @@ subroutine da_add_flow_dependence_xa_adj_dual_res (ne, ep, grid, vp)
            nims, nime, njms, njme, 1, 1,    &
            nips, nipe, njps, njpe, 1, 1   )
 	ENDIF
+#ifdef CLOUD_CV
+        IF ( SIZE(input_qcw,1)*SIZE(input_qcw,3) .GT. 1 ) THEN
+           CALL RSL_LITE_PACK ( local_communicator,                &
+           input_qcw, 4,                                           &
+           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
+           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
+           RWORDSIZE, 1, 0, DATA_ORDER_XZY, 0,                     &
+           myproc, ntasks, ntasks_x, ntasks_y,                     &
+           nids, nide, njds, njde, nkds, nkde,                     &
+           nims, nime, njms, njme, nkms, nkme,                     &
+           nips, nipe, njps, njpe, nkps, nkpe   )
+        ENDIF
+        IF ( SIZE(input_qrn,1)*SIZE(input_qrn,3) .GT. 1 ) THEN
+           CALL RSL_LITE_PACK ( local_communicator,                &
+           input_qrn, 4,                                           &
+           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
+           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
+           RWORDSIZE, 1, 0, DATA_ORDER_XZY, 0,                     &
+           myproc, ntasks, ntasks_x, ntasks_y,                     &
+           nids, nide, njds, njde, nkds, nkde,                     &
+           nims, nime, njms, njme, nkms, nkme,                     &
+           nips, nipe, njps, njpe, nkps, nkpe   )
+        ENDIF
+        IF ( SIZE(input_qci,1)*SIZE(input_qci,3) .GT. 1 ) THEN
+           CALL RSL_LITE_PACK ( local_communicator,                &
+           input_qci, 4,                                           &
+           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
+           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
+           RWORDSIZE, 1, 0, DATA_ORDER_XZY, 0,                     &
+           myproc, ntasks, ntasks_x, ntasks_y,                     &
+           nids, nide, njds, njde, nkds, nkde,                     &
+           nims, nime, njms, njme, nkms, nkme,                     &
+           nips, nipe, njps, njpe, nkps, nkpe   )
+        ENDIF
+        IF ( SIZE(input_qsn,1)*SIZE(input_qsn,3) .GT. 1 ) THEN
+           CALL RSL_LITE_PACK ( local_communicator,                &
+           input_qsn, 4,                                           &
+           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
+           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
+           RWORDSIZE, 1, 0, DATA_ORDER_XZY, 0,                     &
+           myproc, ntasks, ntasks_x, ntasks_y,                     &
+           nids, nide, njds, njde, nkds, nkde,                     &
+           nims, nime, njms, njme, nkms, nkme,                     &
+           nips, nipe, njps, njpe, nkps, nkpe   )
+        ENDIF
+        IF ( SIZE(input_qgr,1)*SIZE(input_qgr,3) .GT. 1 ) THEN
+           CALL RSL_LITE_PACK ( local_communicator,                &
+           input_qgr, 4,                                           &
+           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
+           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
+           RWORDSIZE, 1, 0, DATA_ORDER_XZY, 0,                     &
+           myproc, ntasks, ntasks_x, ntasks_y,                     &
+           nids, nide, njds, njde, nkds, nkde,                     &
+           nims, nime, njms, njme, nkms, nkme,                     &
+           nips, nipe, njps, njpe, nkps, nkpe   )
+        ENDIF
+#endif
 
 
       CALL RSL_LITE_EXCH_X ( local_communicator , myproc, ntasks, ntasks_x, ntasks_y, &
@@ -371,6 +580,63 @@ subroutine da_add_flow_dependence_xa_adj_dual_res (ne, ep, grid, vp)
            nims, nime, njms, njme, 1, 1,    &
            nips, nipe, njps, njpe, 1, 1   )
 	ENDIF
+#ifdef CLOUD_CV
+        IF ( SIZE(input_qcw,1)*SIZE(input_qcw,3) .GT. 1 ) THEN
+           CALL RSL_LITE_PACK ( local_communicator,                &
+           input_qcw, 4,                                           &
+           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
+           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
+           RWORDSIZE, 1, 1, DATA_ORDER_XZY, 0,                     &
+           myproc, ntasks, ntasks_x, ntasks_y,                     &
+           nids, nide, njds, njde, nkds, nkde,                     &
+           nims, nime, njms, njme, nkms, nkme,                     &
+           nips, nipe, njps, njpe, nkps, nkpe   )
+        ENDIF
+        IF ( SIZE(input_qrn,1)*SIZE(input_qrn,3) .GT. 1 ) THEN
+           CALL RSL_LITE_PACK ( local_communicator,                &
+           input_qrn, 4,                                           &
+           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
+           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
+           RWORDSIZE, 1, 1, DATA_ORDER_XZY, 0,                     &
+           myproc, ntasks, ntasks_x, ntasks_y,                     &
+           nids, nide, njds, njde, nkds, nkde,                     &
+           nims, nime, njms, njme, nkms, nkme,                     &
+           nips, nipe, njps, njpe, nkps, nkpe   )
+        ENDIF
+        IF ( SIZE(input_qci,1)*SIZE(input_qci,3) .GT. 1 ) THEN
+           CALL RSL_LITE_PACK ( local_communicator,                &
+           input_qci, 4,                                           &
+           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
+           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
+           RWORDSIZE, 1, 1, DATA_ORDER_XZY, 0,                     &
+           myproc, ntasks, ntasks_x, ntasks_y,                     &
+           nids, nide, njds, njde, nkds, nkde,                     &
+           nims, nime, njms, njme, nkms, nkme,                     &
+           nips, nipe, njps, njpe, nkps, nkpe   )
+        ENDIF
+        IF ( SIZE(input_qsn,1)*SIZE(input_qsn,3) .GT. 1 ) THEN
+           CALL RSL_LITE_PACK ( local_communicator,                &
+           input_qsn, 4,                                           &
+           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
+           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
+           RWORDSIZE, 1, 1, DATA_ORDER_XZY, 0,                     &
+           myproc, ntasks, ntasks_x, ntasks_y,                     &
+           nids, nide, njds, njde, nkds, nkde,                     &
+           nims, nime, njms, njme, nkms, nkme,                     &
+           nips, nipe, njps, njpe, nkps, nkpe   )
+        ENDIF
+        IF ( SIZE(input_qgr,1)*SIZE(input_qgr,3) .GT. 1 ) THEN
+           CALL RSL_LITE_PACK ( local_communicator,                &
+           input_qgr, 4,                                           &
+           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
+           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
+           RWORDSIZE, 1, 1, DATA_ORDER_XZY, 0,                     &
+           myproc, ntasks, ntasks_x, ntasks_y,                     &
+           nids, nide, njds, njde, nkds, nkde,                     &
+           nims, nime, njms, njme, nkms, nkme,                     &
+           nips, nipe, njps, njpe, nkps, nkpe   )
+        ENDIF
+#endif
 
    ENDDO
 
@@ -580,6 +846,32 @@ subroutine da_add_flow_dependence_xa_adj_dual_res (ne, ep, grid, vp)
 	    output_q(ob_locs(n)%i+1,k,ob_locs(n)%j)   = ob_locs(n)%dym * ob_locs(n)%dx   * input_q( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_q(ob_locs(n)%i+1,k,ob_locs(n)%j)   
 	    output_q(ob_locs(n)%i  ,k,ob_locs(n)%j+1) = ob_locs(n)%dy  * ob_locs(n)%dxm  * input_q( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_q(ob_locs(n)%i  ,k,ob_locs(n)%j+1) 
 	    output_q(ob_locs(n)%i+1,k,ob_locs(n)%j+1) = ob_locs(n)%dy  * ob_locs(n)%dx   * input_q( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_q(ob_locs(n)%i+1,k,ob_locs(n)%j+1) 
+#ifdef CLOUD_CV
+            output_qcw(ob_locs(n)%i  ,k,ob_locs(n)%j)   = ob_locs(n)%dym * ob_locs(n)%dxm  * input_qcw( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_qcw(ob_locs(n)%i  ,k,ob_locs(n)%j)
+            output_qcw(ob_locs(n)%i+1,k,ob_locs(n)%j)   = ob_locs(n)%dym * ob_locs(n)%dx   * input_qcw( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_qcw(ob_locs(n)%i+1,k,ob_locs(n)%j)
+            output_qcw(ob_locs(n)%i  ,k,ob_locs(n)%j+1) = ob_locs(n)%dy  * ob_locs(n)%dxm  * input_qcw( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_qcw(ob_locs(n)%i  ,k,ob_locs(n)%j+1)
+            output_qcw(ob_locs(n)%i+1,k,ob_locs(n)%j+1) = ob_locs(n)%dy  * ob_locs(n)%dx   * input_qcw( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_qcw(ob_locs(n)%i+1,k,ob_locs(n)%j+1)
+
+            output_qrn(ob_locs(n)%i  ,k,ob_locs(n)%j)   = ob_locs(n)%dym * ob_locs(n)%dxm  * input_qrn( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_qrn(ob_locs(n)%i  ,k,ob_locs(n)%j)
+            output_qrn(ob_locs(n)%i+1,k,ob_locs(n)%j)   = ob_locs(n)%dym * ob_locs(n)%dx   * input_qrn( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_qrn(ob_locs(n)%i+1,k,ob_locs(n)%j)
+            output_qrn(ob_locs(n)%i  ,k,ob_locs(n)%j+1) = ob_locs(n)%dy  * ob_locs(n)%dxm  * input_qrn( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_qrn(ob_locs(n)%i  ,k,ob_locs(n)%j+1)
+            output_qrn(ob_locs(n)%i+1,k,ob_locs(n)%j+1) = ob_locs(n)%dy  * ob_locs(n)%dx   * input_qrn( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_qrn(ob_locs(n)%i+1,k,ob_locs(n)%j+1)
+
+            output_qci(ob_locs(n)%i  ,k,ob_locs(n)%j)   = ob_locs(n)%dym * ob_locs(n)%dxm  * input_qci( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_qci(ob_locs(n)%i  ,k,ob_locs(n)%j)
+            output_qci(ob_locs(n)%i+1,k,ob_locs(n)%j)   = ob_locs(n)%dym * ob_locs(n)%dx   * input_qci( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_qci(ob_locs(n)%i+1,k,ob_locs(n)%j)
+            output_qci(ob_locs(n)%i  ,k,ob_locs(n)%j+1) = ob_locs(n)%dy  * ob_locs(n)%dxm  * input_qci( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_qci(ob_locs(n)%i  ,k,ob_locs(n)%j+1)
+            output_qci(ob_locs(n)%i+1,k,ob_locs(n)%j+1) = ob_locs(n)%dy  * ob_locs(n)%dx   * input_qci( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_qci(ob_locs(n)%i+1,k,ob_locs(n)%j+1)
+
+            output_qsn(ob_locs(n)%i  ,k,ob_locs(n)%j)   = ob_locs(n)%dym * ob_locs(n)%dxm  * input_qsn( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_qsn(ob_locs(n)%i  ,k,ob_locs(n)%j)
+            output_qsn(ob_locs(n)%i+1,k,ob_locs(n)%j)   = ob_locs(n)%dym * ob_locs(n)%dx   * input_qsn( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_qsn(ob_locs(n)%i+1,k,ob_locs(n)%j)
+            output_qsn(ob_locs(n)%i  ,k,ob_locs(n)%j+1) = ob_locs(n)%dy  * ob_locs(n)%dxm  * input_qsn( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_qsn(ob_locs(n)%i  ,k,ob_locs(n)%j+1)
+            output_qsn(ob_locs(n)%i+1,k,ob_locs(n)%j+1) = ob_locs(n)%dy  * ob_locs(n)%dx   * input_qsn( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_qsn(ob_locs(n)%i+1,k,ob_locs(n)%j+1)
+
+            output_qgr(ob_locs(n)%i  ,k,ob_locs(n)%j)   = ob_locs(n)%dym * ob_locs(n)%dxm  * input_qgr( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_qgr(ob_locs(n)%i  ,k,ob_locs(n)%j)
+            output_qgr(ob_locs(n)%i+1,k,ob_locs(n)%j)   = ob_locs(n)%dym * ob_locs(n)%dx   * input_qgr( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_qgr(ob_locs(n)%i+1,k,ob_locs(n)%j)
+            output_qgr(ob_locs(n)%i  ,k,ob_locs(n)%j+1) = ob_locs(n)%dy  * ob_locs(n)%dxm  * input_qgr( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_qgr(ob_locs(n)%i  ,k,ob_locs(n)%j+1)
+            output_qgr(ob_locs(n)%i+1,k,ob_locs(n)%j+1) = ob_locs(n)%dy  * ob_locs(n)%dx   * input_qgr( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_qgr(ob_locs(n)%i+1,k,ob_locs(n)%j+1)
+#endif
 	 end do
 
 	 output_p(ob_locs(n)%i  ,1,ob_locs(n)%j)   = ob_locs(n)%dym * ob_locs(n)%dxm  * input_p( ob_locs(n)%xx,1,ob_locs(n)%yy) + output_p(ob_locs(n)%i  ,1,ob_locs(n)%j)   
@@ -644,34 +936,76 @@ subroutine da_add_flow_dependence_xa_adj_dual_res (ne, ep, grid, vp)
    !
 
    vp % alpha = 0.0
-
-   do n = ne, 1, -1
-      ! ps:
-      vp % alpha(its_int:ite_int,jts_int:jte_int,1,n) = vp % alpha(its_int:ite_int,jts_int:jte_int,1,n) + &
-                                        ep % v5(its_int:ite_int,jts_int:jte_int,1,n) * & ! v5 = ps
+   if (present(nobwin)) then 
+      do n = ne, 1, -1
+         ! ps:
+         vp % alpha(its_int:ite_int,jts_int:jte_int,1,n) = vp % alpha(its_int:ite_int,jts_int:jte_int,1,n) + &
+                                        ep % v5(its_int:ite_int,jts_int:jte_int,1,(nobwin-1)*ensdim_alpha+n) * & ! v5 = ps
                                        output_p(its_int:ite_int,1,jts_int:jte_int)
-   end do
+      end do
 
 
-   do j = jte_int, jts_int, -1
-      do k = kte_int, kts_int, -1
-         do i = ite_int, its_int, -1
+      do j = jte_int, jts_int, -1
+         do k = kte_int, kts_int, -1
+            do i = ite_int, its_int, -1
 
-            do n = ne, 1, -1
-               alpha = 0.0
-               alpha = alpha + ep % v4(i,j,k,n) * output_q(i,k,j)
-               alpha = alpha + ep % v3(i,j,k,n) * output_t(i,k,j)
-               alpha = alpha + ep % v2(i,j,k,n) * output_v(i,k,j)
-               alpha = alpha + ep % v1(i,j,k,n) * output_u(i,k,j)
-               vp % alpha(i,j,k,n) = vp % alpha(i,j,k,n) + alpha
+               do n = ne, 1, -1
+                  alpha = 0.0
+#ifdef CLOUD_CV
+                  alpha = alpha + ep % gr(i,j,k,(nobwin-1)*ensdim_alpha+n) * output_qgr(i,k,j)
+                  alpha = alpha + ep % sn(i,j,k,(nobwin-1)*ensdim_alpha+n) * output_qsn(i,k,j)
+                  alpha = alpha + ep % ci(i,j,k,(nobwin-1)*ensdim_alpha+n) * output_qci(i,k,j)
+                  alpha = alpha + ep % rn(i,j,k,(nobwin-1)*ensdim_alpha+n) * output_qrn(i,k,j)
+                  alpha = alpha + ep % cw(i,j,k,(nobwin-1)*ensdim_alpha+n) * output_qcw(i,k,j)
+#endif
+                  alpha = alpha + ep % v4(i,j,k,(nobwin-1)*ensdim_alpha+n) * output_q(i,k,j)
+                  alpha = alpha + ep % v3(i,j,k,(nobwin-1)*ensdim_alpha+n) * output_t(i,k,j)
+                  alpha = alpha + ep % v2(i,j,k,(nobwin-1)*ensdim_alpha+n) * output_v(i,k,j)
+                  alpha = alpha + ep % v1(i,j,k,(nobwin-1)*ensdim_alpha+n) * output_u(i,k,j)
+                  vp % alpha(i,j,k,n) = vp % alpha(i,j,k,n) + alpha
+               end do
             end do
          end do
       end do
-   end do
+   else
+      do n = ne, 1, -1
+         ! ps:
+         vp % alpha(its_int:ite_int,jts_int:jte_int,1,n) = vp % alpha(its_int:ite_int,jts_int:jte_int,1,n) + &
+                                        ep % v5(its_int:ite_int,jts_int:jte_int,1,n) * & ! v5 = ps
+                                       output_p(its_int:ite_int,1,jts_int:jte_int)
+      end do
 
+
+      do j = jte_int, jts_int, -1
+         do k = kte_int, kts_int, -1
+            do i = ite_int, its_int, -1
+
+               do n = ne, 1, -1
+                  alpha = 0.0
+#ifdef CLOUD_CV
+                  alpha = alpha + ep % gr(i,j,k,n) * output_qgr(i,k,j)
+                  alpha = alpha + ep % sn(i,j,k,n) * output_qsn(i,k,j)
+                  alpha = alpha + ep % ci(i,j,k,n) * output_qci(i,k,j)
+                  alpha = alpha + ep % rn(i,j,k,n) * output_qrn(i,k,j)
+                  alpha = alpha + ep % cw(i,j,k,n) * output_qcw(i,k,j)
+#endif
+                  alpha = alpha + ep % v4(i,j,k,n) * output_q(i,k,j)
+                  alpha = alpha + ep % v3(i,j,k,n) * output_t(i,k,j)
+                  alpha = alpha + ep % v2(i,j,k,n) * output_v(i,k,j)
+                  alpha = alpha + ep % v1(i,j,k,n) * output_u(i,k,j)
+                  vp % alpha(i,j,k,n) = vp % alpha(i,j,k,n) + alpha
+               end do
+            end do
+         end do
+      end do
+   end if
    ! Clean-up
    deallocate(output_u,output_v,output_t,output_q,output_p)
    deallocate(input_u,input_v,input_t,input_q,input_p)
+#ifdef CLOUD_CV
+   deallocate(output_qcw,output_qrn,output_qci,output_qsn,output_qgr)
+   deallocate(input_qcw,input_qrn,input_qci,input_qsn,input_qgr)
+#endif
 
    if (trace_use) call da_trace_exit("da_add_flow_dependence_xa_adj_dual_res")
 

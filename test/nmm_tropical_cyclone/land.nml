@@ -1,5 +1,5 @@
 &init_land
-mvland = .true.			!true=land or false=only ocean
+mvland = .false.		!true=land or false=only ocean
 imin = 260			!setup the land strip for motion
 imax = 288
 jmin = 0

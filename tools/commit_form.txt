@@ -1,20 +1,21 @@
-TYPE: bug fix, enhancement, new feature, feature removed, no impact, text only
+The first line should be a single-line "purpose" for this change
 
-KEYWORDS: 5 to 10 words related to commit
+TYPE: choose one of [bug fix, enhancement, new feature, feature removed, no impact, text only]
+
+KEYWORDS: 5 to 10 words related to commit, separated by commas
 
 SOURCE: Either "developer's name (affiliation)" .XOR. "internal" for a WRF Dev committee member
 
-PURPOSE: single line, usually one sentence
+DESCRIPTION OF CHANGES: One or more paragraphs describing problem, solution, and required changes.
 
-DESCRIPTION OF CHANGES: 
-Paragraph describing problem, solution, and required changes.
+LIST OF MODIFIED FILES: list of changed files (use `git diff --name-status master` to get formatted list)
 
-LIST OF MODIFIED FILES (annotated if not obvious, not required to be on a single line): 
+TESTS CONDUCTED: Explicitly state if a WTF and or other tests were run, or are pending. For more complicated changes please be explicit!
 
-TESTS CONDUCTED (explicitly state mandatory, voluntary, and assigned tests, not required to be on a single line):
+------------------------------------------------------------------
 
-
-
+For github pull requests, the beginning single-line "purpose" should be entered in the title line
+See https://github.com/wrf-model/WRF/wiki/Changes-to-the-WRF-code-from-start-to-finish for examples
 
 Description of commit types:
 - "bug fix" 

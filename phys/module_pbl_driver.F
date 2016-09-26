@@ -264,7 +264,7 @@ CONTAINS
 !-- QFX           upward moisture flux at the surface (kg/m^2/s)
 !-- REGIME        flag indicating PBL regime (stable, unstable, etc.)
 !-- exch_m        exchange coefficient for momentum, m^2/s
-!-- exch_h        exchange coefficient for heat, K m/s 
+!-- exch_h        exchange coefficient for heat, m^2/s 
 !-- exch_tke      exchange coeff. for TKE [enhanced], m^2/s (gbmpbl scheme)
 !-- rthraten      tendency from radiation, used in GBM PBL scheme
 !-- akhs          sfc exchange coefficient of heat/moisture from MYJ

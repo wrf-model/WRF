@@ -3776,6 +3776,21 @@ endif
 !     CALL wrf_debug ( 0 , '   DONE routine to add snow in high mountain peaks')
 !+---+-----------------------------------------------------------------+
 
+! checking whether var_sso exists in the domain
+      ! if so, we set got_var_sso flag to true.  This is later used in external/RSL_LITE/module_dm.F
+      ! to check for this, when the topo_wind option is used.
+      grid%got_var_sso = .FALSE.
+      DO j=jts,MIN(jde-1,jte)
+         DO i=its,MIN(ide-1,ite)
+           IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE
+               IF(grid%var_sso(i,j) .NE. 0) THEN
+                    grid%got_var_sso = .true.
+               ENDIF
+         END DO
+      END DO
+#if ( defined(DM_PARALLEL)  &&   ! defined(STUBMPI) )
+      grid%got_var_sso = wrf_dm_lor_logical ( grid%got_var_sso )
+#endif
 
 #ifdef DM_PARALLEL
 #   include "HALO_EM_INIT_1.inc"

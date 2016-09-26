@@ -204,6 +204,10 @@
 ! here we check to see if the boundary conditions are set properly
 
    CALL boundary_condition_check( config_flags, bdyzone, error, grid%id )
+! make sure that topo_wind option has var_sso data available
+    IF ((config_flags%topo_wind .EQ. 1) .AND. (.NOT. grid%got_var_sso)) THEN
+      CALL wrf_error_fatal ("topo_wind requires VAR_SSO data")
+    ENDIF
 
 !kludge - need to stop CG from resetting precip and phys tendencies to zero
 !         when we are in here due to a nest being spawned, we want to still

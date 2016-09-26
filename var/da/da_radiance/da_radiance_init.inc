@@ -33,6 +33,8 @@ subroutine da_radiance_init(iv,ob)
  integer             :: idum, wmo_sensor_id, sensor_type, iost
  integer             :: iunit
  character(len=filename_len)  :: filename
+ character(len=20)   :: cdum
+ real                :: error_cld
 
 ! local variables for tuning error factor
 !----------------------------------------
@@ -161,18 +163,40 @@ subroutine da_radiance_init(iv,ob)
    allocate ( satinfo(n) % ichan(nchanl(n)) )
    allocate ( satinfo(n) % iuse (nchanl(n)) )
    allocate ( satinfo(n) % error(nchanl(n)) )
+   allocate ( satinfo(n) % error_cld(nchanl(n)) )
    allocate ( satinfo(n) % polar(nchanl(n)) )
+
+   satinfo(n) % error_cld(:) = 500.0 !initialize
 
    read(iunit,*)
    do j = 1, nchanl(n)
-     read(iunit,'(1x,5i5,2e18.10)')    &
+      read(iunit,'(1x,5i5,2e18.10,a20)') &
                      wmo_sensor_id, &
                satinfo(n)%ichan(j), &
                        sensor_type, &
                satinfo(n)%iuse(j) , &
                               idum, &
                satinfo(n)%error(j), &
-               satinfo(n)%polar(j)
+               satinfo(n)%polar(j), &
+               cdum
+      !in the current radiance info files, the last column
+      !can be either sensor_id_string or blank
+      if ( len_trim(cdum) > 0 .and. index(cdum,'-') == 0 ) then
+         ! read the line again to get error_cld when it is available
+         backspace(iunit)
+         read(iunit,'(1x,5i5,2e18.10,f10.5)')  &
+                     wmo_sensor_id, &
+               satinfo(n)%ichan(j), &
+                       sensor_type, &
+               satinfo(n)%iuse(j) , &
+                              idum, &
+               satinfo(n)%error(j), &
+               satinfo(n)%polar(j), &
+               error_cld
+         if ( error_cld > 0.0 ) then
+            satinfo(n)%error_cld(j) = error_cld
+         end if
+      end if
      iv%instid(n)%ichan(j) = satinfo(n)%ichan(j)
      ob%instid(n)%ichan(j) = satinfo(n)%ichan(j)
    end do

@@ -74,6 +74,9 @@ subroutine da_initialize_rad_iv (i, n, iv, p)
    end if
    iv%instid(i)%ps(n)           = 0.0
    iv%instid(i)%tb_xb(:,n)      = 0.0
+   if ( crtm_cloud ) then
+      iv%instid(i)%tb_xb_clr(:,n) = 0.0
+   end if
    iv%instid(i)%tb_inv(:,n)     = p%tb_inv(:)
    iv%instid(i)%tb_qc(:,n)      = 0
    iv%instid(i)%tb_error(:,n)   = 500.0

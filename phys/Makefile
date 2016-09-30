@@ -83,6 +83,7 @@ MODULES = \
 	module_ltng_lpi.o \
 	module_mp_gsfcgce.o \
 	module_mp_morr_two_moment.o \
+        module_mp_p3.o \
 	module_mp_milbrandt2mom.o \
 	module_mp_nssl_2mom.o \
 	module_mp_wdm5.o \

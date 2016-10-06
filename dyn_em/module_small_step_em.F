@@ -503,7 +503,7 @@ END SUBROUTINE small_step_finish
 
 SUBROUTINE calc_p_rho( al, p, ph,                    &
                        alt, t_2, t_1, c2a, pm1,      &
-                       mu, muts,                     &
+                       mu, mut,                      &
                        c1h, c2h, c1f, c2f,           &
                        c3h, c4h, c3f, c4f,           &
                        znu, t0,                      &
@@ -534,7 +534,7 @@ SUBROUTINE calc_p_rho( al, p, ph,                    &
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme),INTENT(INOUT) :: ph, pm1
 
   REAL, DIMENSION(ims:ime, jms:jme)         , INTENT(IN   ) :: mu,   &
-                                                               muts
+                                                               mut
 
   REAL, DIMENSION(kms:kme)         , INTENT(IN   ) :: dnw,  &
                                                       rdnw, &
@@ -585,13 +585,13 @@ SUBROUTINE calc_p_rho( al, p, ph,                    &
 
 !  al computation is all dry, so ok with moisture
 
-      al(i,k,j)=-1./muts(i,j)*(alt(i,k,j)*mu(i,j)  &
+      al(i,k,j)=-1./Mut(i,j)*(alt(i,k,j)*mu(i,j)  &
              +rdnw(k)*(ph(i,k+1,j)-ph(i,k,j)))
 
 !  this is temporally linearized p, no moisture correction needed
 
       p(i,k,j)=c2a(i,k,j)*(alt(i,k,j)*(t_2(i,k,j)-mu(i,j)*t_1(i,k,j))  &
-                       /(muts(i,j)*(t0+t_1(i,k,j)))-al (i,k,j))
+                       /(Mut(i,j)*(t0+t_1(i,k,j)))-al (i,k,j))
 
      ENDDO
      ENDDO
@@ -607,9 +607,9 @@ SUBROUTINE calc_p_rho( al, p, ph,                    &
 #else
          p(i,k,j)=MU(i,j)*c3h(k)
 #endif
-         al(i,k,j)=alt(i,k,j)*(t_2(i,k,j)-mu(i,j)*t_1(i,k,j))            &
-                      /(muts(i,j)*(t0+t_1(i,k,j)))-p(i,k,j)/c2a(i,k,j)
-         ph(i,k+1,j)=ph(i,k,j)-dnw(k)*(muts(i,j)*al (i,k,j)              &
+         al(i,k,j)=alt(i,k,j)*(t_2(i,k,j)-mu(i,j)*t_1(i,k,j))           &
+                      /(Mut(i,j)*(t0+t_1(i,k,j)))-p(i,k,j)/c2a(i,k,j)
+         ph(i,k+1,j)=ph(i,k,j)-dnw(k)*(Mut(i,j)*al (i,k,j)              &
                           +mu(i,j)*alt(i,k,j))
        ENDDO
        ENDDO

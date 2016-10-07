@@ -165,6 +165,13 @@
       real :: et_max,this_tim
       double precision :: fhr
       integer :: n_print_time
+!!BEGIN: LSM changes for LANDFALL: Subashini 7/27/2016
+      integer :: move_land_time
+      integer :: SOIL_ID, VEG_ID, DIRN
+      real :: land_albedo, land_emiss, land_vgfrac, land_smc, land_z0
+      NAMELIST/param_land/SOIL_ID, VEG_ID, DIRN, land_albedo, land_emiss, land_vgfrac, land_smc,land_z0
+!! END: LSM changes for LANDFALL : Subashini 7/27/2016
+
 !
 !-----------------------------------------------------------------------
 !
@@ -2137,8 +2144,16 @@
      &          ,grid%Q_BTYS,grid%Q_BTYE,grid%U_BTXS,grid%U_BTXE,grid%U_BTYS,grid%U_BTYE,grid%V_BTXS       &
      &          ,grid%V_BTXE,grid%V_BTYS,grid%V_BTYE,grid%Q2_BTXS,grid%Q2_BTXE,grid%Q2_BTYS,grid%Q2_BTYE   &
      &          ,grid%pd,grid%t,grid%q,grid%q2,grid%pint &
-     &          ,GRID%SPEC_BDY_WIDTH,grid%z                                  &
-     &          ,grid%ihe,grid%ihw,grid%ive,grid%ivw                                        &
+!!BEGIN: LSM changes for LANDFALL: Subashini 7/27/2016
+#ifdef IDEAL_NMM_TC
+     &          ,grid%SM_BXS, grid%SM_BXE, grid%SM_BYS, grid%SM_BYE     & ! gopal's doing for land motion
+     &          ,grid%SM_BTXS, grid%SM_BTXE, grid%SM_BTYS, grid%SM_BTYE &
+     &          ,grid%SM                                                &
+     &          ,grid%THS 						&
+#endif
+!!END: LSM changes for LANDFALL : Subashini 7/27/2016
+     &          ,GRID%SPEC_BDY_WIDTH,grid%z                             &
+     &          ,grid%ihe,grid%ihw,grid%ive,grid%ivw                    &
      &          ,IDS,IDF,JDS,JDF,KDS,KDE                                &
      &          ,IMS,IME,JMS,JME,KMS,KME                                &
      &          ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -2560,6 +2575,83 @@
      diag_tim=diag_tim+now_time()-btimx
    endif hwrfx_mlsp
 #endif
+!!BEGIN: LSM changes for LANDFALL: Subashini 7/27/2016
+#ifdef IDEAL_NMM_TC
+
+     IF(grid%NTSD==0 .and. grid%id .gt. 1)THEN  ! Initialize some variables
+           call wrf_debug(1,'NESTS INITIALIZED TO WATER WORLD')
+           grid%sm=1.0    ! Initialize a water world in the nests
+     ENDIF
+!
+     move_land_time=nint(1200./30) ! This needs to be changed for different parent domain resolution & dt.  Subashini V1.0 7.13.2016
+
+     IF(MOD(grid%NTSD,move_land_time)==0)THEN    ! n_print_time
+
+       call wrf_debug(1,'LAND ADVECTED W2E FOR IDEALIZED LSM')
+
+#ifdef DM_PARALLEL
+#    include "HALO_NMM_INIT_3.inc"
+#endif
+!open ideal_land.nml for namelist values
+
+      open(8,FILE='land.nml')
+      read(UNIT=8,NML=param_land)
+      close(UNIT=8)
+
+       CALL MOVE_LAND (grid%SM,grid%nmm_tsk        &
+                      ,grid%SST,grid%FIS           &
+                      ,grid%PINT,grid%T,grid%Q     &
+                      ,grid%NTSD                   &
+                      ,IDS,IDE,JDS,JDE,KDS,KDE     &
+                      ,IMS,IME,JMS,JME,KMS,KME     &
+                      ,ITS,ITE,JTS,JTE,KTS,KTE,DIRN)
+
+!For diurnal temp changes - comment out for constant temperature and
+!uncomment  temperature fix in module_surface_driver.F and
+!module_radiation_driver.F
+
+     IF(DIRN == 1) THEN
+      DO J = JMS, JME
+       DO I = IMS,IME
+        if(grid%SM(I,J) .le. 0.5)then
+         grid%nmm_tsk(I,J)=grid%nmm_tsk(I-1,J)
+         grid%albedo(I,J)=land_albedo
+         grid%epsr(I,J)=land_emiss
+         grid%isltyp(I,J)=SOIL_ID
+         grid%ivgtyp(I,J)=VEG_ID
+         grid%vegfrc(I,J)=land_vgfrac
+         grid%z0(I,J)=land_z0
+         DO K = 1,grid%num_soil_layers
+         grid%smc(I,K,J)=land_smc
+         ENDDO
+        endif
+       ENDDO
+      ENDDO
+     ELSE IF(DIRN == 2) THEN
+      DO J = JMS, JME
+       DO I = IME,IMS, -1
+        if(grid%SM(I,J) .le. 0.5)then
+         grid%nmm_tsk(I,J)=grid%nmm_tsk(I+1,J)
+         grid%albedo(I,J)=land_albedo
+         grid%epsr(I,J)=land_emiss
+         grid%isltyp(I,J)=SOIL_ID
+         grid%ivgtyp(I,J)=VEG_ID
+         grid%vegfrc(I,J)=land_vgfrac
+         grid%z0(I,J)=land_z0
+         DO K = 1,grid%num_soil_layers
+         grid%smc(I,K,J)=land_smc
+         ENDDO
+        endif
+       ENDDO
+      ENDDO
+     ELSE
+     CALL wrf_error_fatal ('Choose between 1 or 2 in land.nml')
+     ENDIF
+
+     ENDIF
+
+#endif
+!!END: LSM changes for LANDFALL : Subashini 7/27/2016
 
 !#define COPY_OUT
 !#include "scalar_derefs.inc"

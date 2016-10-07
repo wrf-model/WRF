@@ -1478,6 +1478,37 @@ CONTAINS
 #endif
    END FUNCTION wrf_dm_bxor_integer
 
+
+LOGICAL FUNCTION wrf_dm_lor_logical ( inval )
+      IMPLICIT NONE
+#ifndef STUBMPI
+      LOGICAL inval, retval
+      INTEGER comm, ierr
+      CALL wrf_get_dm_communicator(comm)
+      CALL mpi_allreduce ( inval, retval , 1, MPI_LOGICAL, MPI_LAND, comm, ierr )
+      wrf_dm_lor_logical = retval
+#else
+      LOGICAL inval
+      wrf_dm_lor_logical = inval
+#endif
+   END FUNCTION wrf_dm_lor_logical
+
+
+LOGICAL FUNCTION wrf_dm_land_logical ( inval )
+      IMPLICIT NONE
+#ifndef STUBMPI
+      LOGICAL inval, retval
+      INTEGER comm, ierr
+      CALL wrf_get_dm_communicator(comm)
+      CALL mpi_allreduce ( inval, retval , 1, MPI_LOGICAL, MPI_LAND, comm, ierr )
+      wrf_dm_land_logical = retval
+#else
+      LOGICAL inval
+      wrf_dm_land_logical = inval
+#endif
+   END FUNCTION wrf_dm_land_logical
+
+
    SUBROUTINE wrf_dm_maxval_real ( val, idex, jdex )
 # ifndef STUBMPI
       use mpi

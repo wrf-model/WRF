@@ -1913,10 +1913,10 @@ end function DEMPIRICAL
 
 function GAMMA( X )
 !-----------------------------------------------------------------------
-!       Purpose: Compute the gamma function â(x)
-!       Input :  x  --- Argument of â(x)
-!                       ( x is not equal to 0,-1,-2,úúú )
-!       Output:  GA --- â(x)
+!       Purpose: Compute the gamma function Ahat(x)
+!       Input :  x  --- Argument of Ahat(x)
+!                       ( x is not equal to 0,-1,-2, ... )
+!       Output:  GA --- Ahat(x)
 !-----------------------------------------------------------------------
 
 !-----------------------------------------------------------------------

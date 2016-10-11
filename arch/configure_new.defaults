@@ -1341,7 +1341,8 @@ FORMAT_FIXED    =       -FI
 FORMAT_FREE     =       -FR
 FCSUFFIX        =
 BYTESWAPIO      =       -convert big_endian
-FCBASEOPTS_NO_G =       -w -ftz -fno-alias -align all $(FORMAT_FREE) $(BYTESWAPIO) #-vec-report6
+#add -fp-model precise in FCBASEOPTS_NO_G to improve the accuracy of WRFPLUS check_AD test, suggested by Thomas Schwitalla.
+FCBASEOPTS_NO_G =       -w -ftz -fno-alias -align all $(FORMAT_FREE) $(BYTESWAPIO) #-fp-model precise #-vec-report6
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =     
 TRADFLAG        =      -traditional
@@ -1353,48 +1354,6 @@ RANLIB          =      ranlib
 RLFLAGS		=	
 CC_TOOLS        =      gcc
 
-###########################################################
-#ARCH    Fujitsu FX10/FX100 Linux SPARC64IXfx/SPARC64Xlfx, mpifrtpx and mpifccpx compilers #serial smpar dmpar dm+sm
-#
-DESCRIPTION     =       FUJITSU ($SFC/$SCC): FX10/FX100 SPARC64 IXfx/Xlfx
-DMPARALLEL      =       # 1
-OMPCPP          =       # -D_OPENMP
-OMP             =       # -Kopenmp
-OMPCC           =       # -Kopenmp
-SFC             =       frtpx
-SCC             =       fccpx
-CCOMP           =       fccpx
-DM_FC           =       mpifrtpx
-DM_CC           =       mpifccpx -DMPI2_SUPPORT -DMPI2_THREAD_SUPPORT
-FC              =       CONFIGURE_FC
-CC              =       CONFIGURE_CC
-LD              =       $(FC)
-RWORDSIZE       =       CONFIGURE_RWORDSIZE
-PROMOTION       =       -CcdRR$(RWORDSIZE)
-ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR  -DWRF_USE_CLM
-CFLAGS_LOCAL    =       -Kfast -Xg -DSUN
-LDFLAGS_LOCAL   =
-CPLUSPLUSLIB    =       
-ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
-FCOPTIM         =       -Kfast
-FCREDUCEDOPT	=       $(FCOPTIM)
-FCNOOPT         =       -O0
-FCDEBUG         =       # -g $(FCNOOPT)
-FORMAT_FIXED    =       -Fixed
-FORMAT_FREE     =       -Free
-FCSUFFIX        =       
-BYTESWAPIO      =       
-FCBASEOPTS_NO_G =       -Kautoobjstack,ocl -fw $(FORMAT_FREE) $(BYTESWAPIO) $(OMP)
-FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
-MODULE_SRCH_FLAG =
-TRADFLAG        =      -traditional
-CPP             =      /lib/cpp -P
-AR              =      ar
-ARFLAGS         =      ru
-M4              =      m4
-RANLIB          =      ranlib
-RLFLAGS		=	
-CC_TOOLS        =      /usr/bin/gcc -Wall
 
 ###########################################################
 #ARCH    Linux ppc64 BG /L blxlf compiler with blxlc # dmpar
@@ -1853,7 +1812,52 @@ RANLIB          =      ranlib
 RLFLAGS		=	
 CC_TOOLS        =      $(SCC) 
 
+#insert new stanza here
 
+###########################################################
+#ARCH    Fujitsu FX10/FX100 Linux x86_64 SPARC64IXfx/SPARC64Xlfx, mpifrtpx and mpifccpx compilers #serial smpar dmpar dm+sm
+#
+DESCRIPTION     =       FUJITSU ($SFC/$SCC): FX10/FX100 SPARC64 IXfx/Xlfx
+DMPARALLEL      =       # 1
+OMPCPP          =       # -D_OPENMP
+OMP             =       # -Kopenmp
+OMPCC           =       # -Kopenmp
+SFC             =       frtpx
+SCC             =       fccpx
+CCOMP           =       fccpx
+DM_FC           =       mpifrtpx
+DM_CC           =       mpifccpx -DMPI2_SUPPORT -DMPI2_THREAD_SUPPORT
+FC              =       CONFIGURE_FC
+CC              =       CONFIGURE_CC
+LD              =       $(FC)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
+PROMOTION       =       -CcdRR$(RWORDSIZE)
+ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR  -DWRF_USE_CLM
+CFLAGS_LOCAL    =       -Kfast -Xg -DSUN
+LDFLAGS_LOCAL   =
+CPLUSPLUSLIB    =
+ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
+FCOPTIM         =       -Kfast
+FCREDUCEDOPT    =       $(FCOPTIM)
+FCNOOPT         =       -O0
+FCDEBUG         =       # -g $(FCNOOPT)
+FORMAT_FIXED    =       -Fixed
+FORMAT_FREE     =       -Free
+FCSUFFIX        =
+BYTESWAPIO      =
+FCBASEOPTS_NO_G =       -Kautoobjstack,ocl -fw $(FORMAT_FREE) $(BYTESWAPIO) $(OMP)
+FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
+MODULE_SRCH_FLAG =
+TRADFLAG        =      -traditional
+CPP             =      /lib/cpp -P
+AR              =      ar
+ARFLAGS         =      ru
+M4              =      m4
+RANLIB          =      ranlib
+RLFLAGS         =
+CC_TOOLS        =      /usr/bin/gcc -Wall
+
+#insert new stanza before the Fujitsu block, keep Fujitsu at the end of the list
 ###########################################################
 #ARCH  NULL
 

@@ -5138,7 +5138,7 @@ SUBROUTINE get_mpi_comm_io_groups( retval, isrvr )
       RETURN
 END SUBROUTINE get_mpi_comm_io_groups
 
-SUBROUTINE get_nio_tasks_in_group( retval )
+SUBROUTINE get_nio_tasks_in_group( id, retval )
 !<DESCRIPTION>
 ! This routine returns the number of I/O server tasks in each 
 ! I/O server group.  It can be called by both clients and 
@@ -5147,6 +5147,7 @@ SUBROUTINE get_nio_tasks_in_group( retval )
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
       USE module_wrf_quilt
       IMPLICIT NONE
+      INTEGER, INTENT(IN)  :: id
       INTEGER, INTENT(OUT) :: retval
       retval = nio_tasks_in_group
 #endif

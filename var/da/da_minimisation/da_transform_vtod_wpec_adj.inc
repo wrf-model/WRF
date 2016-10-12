@@ -25,7 +25,8 @@ subroutine da_transform_vtod_wpec_adj(cv_size, be, ep, cv, vp, vv, xbx, grid)
 
       call da_transform_xtoxa_adj_all(grid)
 
-      call da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv)
+      !hcl need to re-visit da_transform_xtoxa_adj_all
+      !hcl call da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv)
 
    if (trace_use) call da_trace_exit("da_transform_vtod_wpec_adj")
 

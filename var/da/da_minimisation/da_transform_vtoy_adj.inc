@@ -182,6 +182,8 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx,
          jl_start    = be%cv%size_jb + be%cv%size_je + be%cv%size_jp + 1
          jl_end      = be%cv%size_jb + be%cv%size_je + be%cv%size_jp + be%cv%size_jl
          grid%xa = grid%x6a
+         !hcl da_zero_vp_type(vp) is commented out in the da_transform_vtox_adj,
+         call da_zero_vp_type (vp6) !hcl zero it out here
          call da_transform_vtox_adj(grid, be%cv%size_jl, xbx, be, ep, vp6, vv6, cv(jl_start:jl_end))
          grid%xa = shuffle
 
@@ -192,6 +194,8 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx,
 
       call da_zero_x(grid%xa)
       call da_transfer_xatowrftl_adj(grid, config_flags, 'gr01')
+      !hcl da_zero_vp_type(vp) is commented out in the da_transform_vtox_adj,
+      call da_zero_vp_type (vp) !hcl zero it out here
       call da_transform_vtox_adj(grid, be%cv%size_jb, xbx, be, ep, vp, vv, cv(1:be%cv%size_jb))
   
       if (num_fgat_time > 1 .and. use_rainobs) then

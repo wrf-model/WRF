@@ -1661,7 +1661,6 @@ CONTAINS
       IF (variable == 'u') itf = min(ite,ide)
       IF (variable == 'v') jbe = jde
       IF (variable == 'v') jtf = min(jte,jde)
-      IF (variable == 't') ktf = kte
       IF (variable == 'h') ktf = kte
 
       IF (jts - jbs .lt. spec_zone) THEN
@@ -2176,8 +2175,7 @@ CONTAINS
       IF (variable == 'u') itf = min(ite,ide)
       IF (variable == 'v') jbe = jde
       IF (variable == 'v') jtf = min(jte,jde)
-      IF (variable == 't') ktf = kte
-      IF (variable == 'm') ktf = kte
+      IF (variable == 'm') ktf = kde
       IF (variable == 'h') ktf = kde
       IF (variable == 'w') ktf = kde
 

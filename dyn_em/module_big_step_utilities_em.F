@@ -33,10 +33,6 @@
 #  define XXPCTHXX(...) MUT(__VA_ARGS__)
 #endif
 
-
-
-
-
 !wrf:MODEL_LAYER:DYNAMICS
 !
 

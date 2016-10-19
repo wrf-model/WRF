@@ -1,7 +1,6 @@
 ! careful adding any HYBRID_COORD stuff in here, adjust_tempqv has
 ! c3 and c4 to compute pressure with two reference pressures
 
-
 SUBROUTINE init_domain_constants_em ( parent , nest )
    USE module_domain, ONLY : domain
    IMPLICIT NONE

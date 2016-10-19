@@ -649,7 +649,7 @@ BENCH_END(update_phy_ten_tim)
                                grid%ru_tendf_stoch,                          &
                                grid%rv_tendf_stoch,                          &
                                grid%rt_tendf_stoch,                          &
-                               grid%mu_2 , grid%mub,                         &
+                               grid%mu_2, grid%mub, grid%c1h, grid%c2h,      &
                                ids, ide, jds, jde, kds, kde,                 &
                                ims, ime, jms, jme, kms, kme,                 &
                                grid%i_start(ij), grid%i_end(ij),             &
@@ -682,6 +682,12 @@ BENCH_END(update_phy_ten_tim)
 #ifdef PLANET
        ! do rayleigh (and zonal-average newtonian) damping during
        ! first iteration of RK loop only
+
+=============================================================
+INTENTIONALLY PLACED HERE TO BREAK COMPILE
+The DAMPTOP routine needs to have 1d column arrays c1 and c2
+to correctly use the column pressures mut, muu, and muv.
+=============================================================
 
        IF ( (config_flags%damp_opt == 101) .OR. &
             (config_flags%damp_opt == 103)      ) THEN
@@ -854,7 +860,7 @@ BENCH_END(hor_diff_tim)
                    model_config_rec%nobs_err_flds,                      &
                    grid%fdob%nstat, grid%fdob%varobs, grid%fdob%errf,   &
                    grid%dx, grid%KPBL,grid%HT,                          &
-                   grid%mut, grid%muu, grid%muv,                        &
+                   grid%mut, grid%muu, grid%muv, grid%c1h, grid%c2h,    &
                    grid%msftx, grid%msfty, grid%msfux, grid%msfuy, grid%msfvx, grid%msfvy, &
                    p_phy, t_tendf, t0,                                  &
                    grid%u_2, grid%v_2, grid%t_2,                        &

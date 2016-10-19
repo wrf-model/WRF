@@ -50,13 +50,14 @@ PROGRAM ndown_em
        TYPE(domain), POINTER  :: parent , nest
      END SUBROUTINE init_domain_constants_em_ptr
 
-     SUBROUTINE vertical_interp (nested_grid,znw_c,znu_c,cf1_c,cf2_c,cf3_c,cfn_c,cfn1_c,k_dim_c)
+     SUBROUTINE vertical_interp (nested_grid,znw_c,znu_c,cf1_c,cf2_c,cf3_c,cfn_c,cfn1_c,k_dim_c,c3h,c4h,c3f,c4f)
          USE module_domain
          USE module_configure
          TYPE(domain), POINTER ::  nested_grid
          INTEGER , INTENT (IN) :: k_dim_c
          REAL , INTENT (IN) :: cf1_c,cf2_c,cf3_c,cfn_c,cfn1_c
          REAL , DIMENSION(k_dim_c) , INTENT (IN) ::  znw_c,znu_c
+         REAL , DIMENSION(k_dim_c) , INTENT (IN) ::  c3h,c4h,c3f,c4f
       END SUBROUTINE vertical_interp
 
 
@@ -136,6 +137,7 @@ integer :: ii
     integer ::  n_ref_m,k_dim_c,k_dim_n
 real :: cf1_c,cf2_c,cf3_c,cfn_c,cfn1_c
    REAL , DIMENSION(:) , ALLOCATABLE :: znw_c,znu_c
+   REAL , DIMENSION(:) , ALLOCATABLE :: c3h,c4h,c3f,c4f
 !!!!!!!!!!!!!!!!!!!!!!!!!!11
 
    !  Interface block for routine that passes pointers and needs to know that they
@@ -414,6 +416,12 @@ real :: cf1_c,cf2_c,cf3_c,cfn_c,cfn1_c
       znw_c(k) = head_grid%znw(k)
       znu_c(k) = head_grid%znu(k)
       enddo
+      do k = 1,k_dim_c
+      c3h(k) = head_grid%c3h(k)
+      c4h(k) = head_grid%c4h(k)
+      c3f(k) = head_grid%c3f(k)
+      c4f(k) = head_grid%c4f(k)
+      enddo
       call vert_cor(head_grid,znw_c,k_dim_c)
       WRITE ( message , * ) 'CFA' ,cf1_c,cf2_c,cf3_c,cfn_c,cfn1_c,znw_c(1),znu_c(1)
       CALL       wrf_debug (  99,message )
@@ -565,7 +573,7 @@ nested_grid%chem_in_opt = parent_grid%chem_in_opt
       CALL med_interp_domain ( head_grid , nested_grid )
       WRITE ( message , * ) 'MOUSTA_L', nested_grid%mu_2(ips,jps) , nested_grid%u_2(ips,kde-2,jps)
       CALL       wrf_debug (  99,message )
-      CALL vertical_interp (nested_grid,znw_c,znu_c,cf1_c,cf2_c,cf3_c,cfn_c,cfn1_c,k_dim_c)
+      CALL vertical_interp (nested_grid,znw_c,znu_c,cf1_c,cf2_c,cf3_c,cfn_c,cfn1_c,k_dim_c,c3h,c4h,c3f,c4f)
       WRITE ( message , * ) 'MOUSTA_V', nested_grid%mu_2(ips,jps) , nested_grid%u_2(ips,kde-2,jps)
       CALL       wrf_debug (  99,message )
       nested_grid%ht_int = nested_grid%ht
@@ -1703,7 +1711,7 @@ SUBROUTINE init_domain_constants_em_ptr ( parent , nest )
 END SUBROUTINE init_domain_constants_em_ptr
 
 
-     SUBROUTINE vertical_interp (parent_grid,znw_c,znu_c,cf1_c,cf2_c,cf3_c,cfn_c,cfn1_c,k_dim_c)
+     SUBROUTINE vertical_interp (parent_grid,znw_c,znu_c,cf1_c,cf2_c,cf3_c,cfn_c,cfn1_c,k_dim_c,c3h,c4h,c3f,c4f)
          USE module_domain
          USE module_configure
    IMPLICIT NONE
@@ -1711,6 +1719,7 @@ END SUBROUTINE init_domain_constants_em_ptr
          INTEGER , INTENT (IN) :: k_dim_c
          REAL , INTENT (IN) :: cf1_c,cf2_c,cf3_c,cfn_c,cfn1_c
          REAL , DIMENSION(k_dim_c) , INTENT (IN) ::  znw_c,znu_c
+         REAL , DIMENSION(k_dim_c) , INTENT (IN) ::  c3h,c4h,c3f,c4f
 
        integer :: kde_c , kde_n ,n_refine,ii,kkk
        integer :: i , j, k , itrace
@@ -1758,22 +1767,38 @@ END SUBROUTINE init_domain_constants_em_ptr
 !        print * , 'p_top_m', p_top_m
 !    parent
          do  k = 1,kde_c
+#if  !( HYBRID_COORD==1 )
          pre_c = mu_m * znw_c(k) + p_top_m
+#elif ( HYBRID_COORD==1 )
+         pre_c = mu_m * c3f(1) + c4f(1) + p_top_m
+#endif
          alt_w_c(k) =  -hsca_m * alog(pre_c/p_surf_m)
          enddo
          do  k = 1,kde_c-1
+#if  !( HYBRID_COORD==1 )
          pre_c = mu_m * znu_c(k) + p_top_m
+#elif ( HYBRID_COORD==1 )
+         pre_c = mu_m * c3h(1) + c4h(1) + p_top_m
+#endif
          alt_u_c(k+1) =  -hsca_m * alog(pre_c/p_surf_m)
          enddo
          alt_u_c(1) =  alt_w_c(1) 
          alt_u_c(kde_c+1) =  alt_w_c(kde_c) 
 !    nest
          do  k = 1,kde_n
+#if  !( HYBRID_COORD==1 )
          pre_n = mu_m * parent_grid%znw(k) + p_top_m
+#elif ( HYBRID_COORD==1 )
+         pre_n = mu_m * parent_grid%c3f(1) + parent_grid%c4f(1) + p_top_m
+#endif
          alt_w_n(k) =  -hsca_m * alog(pre_n/p_surf_m)
          enddo
          do  k = 1,kde_n-1
+#if  !( HYBRID_COORD==1 )
          pre_n = mu_m * parent_grid%znu(k) + p_top_m
+#elif ( HYBRID_COORD==1 )
+         pre_n = mu_m * parent_grid%c3h(1) + parent_grid%c4h(1) + p_top_m
+#endif
          alt_u_n(k+1) =  -hsca_m * alog(pre_n/p_surf_m)
          enddo
          alt_u_n(1) =  alt_w_n(1)

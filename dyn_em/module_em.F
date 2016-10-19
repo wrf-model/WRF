@@ -24,8 +24,6 @@
 #  define XXPCTNEWXX(...) munew(__VA_ARGS__)
 #endif
 
-
-
 !WRF:MODEL_LAYER:DYNAMICS
 !
 

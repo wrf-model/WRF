@@ -13,11 +13,6 @@
 #  define XXPCBFXX(...) grid%Mub(__VA_ARGS__)
 #endif
 
-
-
-
-
-
    SUBROUTINE dfi_accumulate( grid )
 
       USE module_domain, ONLY : domain

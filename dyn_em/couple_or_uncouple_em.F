@@ -13,9 +13,6 @@
 #  define XXPCBFXX(...) grid%Mub(__VA_ARGS__)
 #endif
 
-
-
-
 !WRF:MEDIATION_LAYER:couple_uncouple_utility
 
 SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple &

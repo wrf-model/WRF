@@ -13,9 +13,6 @@
 #  define XXPCBFXX(...) grid%Mub(__VA_ARGS__)
 #endif
 
-
-
-
 #if NMM_CORE==1
 #define copy_fcnm UpNear
 #define copy_fcn UpCopy
@@ -4241,9 +4238,9 @@ endif
    
                grid%phb(i,1,j) = grid%ht(i,j) * g
                IF (grid%hypsometric_opt == 1) THEN
-                  DO k = 2,kpe
-                     kk = k - 1
-                     grid%phb(i,kk,j) = grid%phb(i,kk-1,j) - ngrid%dnw(kk-1)*grid%mub(i,j)*grid%alb(i,kk-1,j)
+                  DO kk = 2,kpe
+                     k = kk - 1
+                     grid%phb(i,kk,j) = grid%phb(i,k,j) - ngrid%dnw(k)*grid%mub(i,j)*grid%alb(i,k,j)
                   END DO
                ELSE IF (grid%hypsometric_opt == 2) THEN
                   DO k = 2,kpe
@@ -4276,16 +4273,17 @@ endif
                !  equation) down from the top to get the pressure perturbation.  First get the pressure
                !  perturbation, moisture, and inverse density (total and perturbation) at the top-most level.
       
-               k = kpe-1
+               kk = kpe-1
+               k = kk+1
       
-               qvf1 = 0.5*(moist(i,k,j,P_QV)+moist(i,k,j,P_QV))
+               qvf1 = 0.5*(moist(i,kk,j,P_QV)+moist(i,kk,j,P_QV))
                qvf2 = 1./(1.+qvf1)
                qvf1 = qvf1*qvf2
       
-               p(i,k,j) = - 0.5*(grid%Mu_2(i,j)+qvf1*grid%Mub(i,j))/ngrid%rdnw(k)/qvf2
-               qvf = 1. + rvovrd*moist(i,k,j,P_QV)
-               al(i,k,j) = (r_d/p1000mb)*(grid%t_2(i,k,j)+t0)*qvf* &
-                           (((p(i,k,j)+grid%pb(i,k,j))/p1000mb)**cvpm) - grid%alb(i,k,j)
+               p(i,kk,j) = - 0.5*(grid%Mu_2(i,j)+qvf1*grid%Mub(i,j))/ngrid%rdnw(kk)/qvf2
+               qvf = 1. + rvovrd*moist(i,kk,j,P_QV)
+               al(i,kk,j) = (r_d/p1000mb)*(grid%t_2(i,kk,j)+t0)*qvf* &
+                           (((p(i,kk,j)+grid%pb(i,kk,j))/p1000mb)**cvpm) - grid%alb(i,kk,j)
       
                !  Now, integrate down the column to compute the pressure perturbation, and diagnose the two
                !  inverse density fields (total and perturbation).

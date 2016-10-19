@@ -6,8 +6,6 @@
 #  define XXPCXX(...) mu(__VA_ARGS__)
 #endif
 
-
-
 MODULE module_polarfft
 
   USE module_model_constants

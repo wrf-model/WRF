@@ -9,8 +9,6 @@
 #  define XXPCOLDXX(...) mu_old(__VA_ARGS__)
 #endif
 
-
-
 !WRF:MODEL_LAYER:DYNAMICS
 !
 #if ( defined(ADVECT_KERNEL) )

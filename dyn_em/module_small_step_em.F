@@ -50,7 +50,6 @@
 #  define MUTHMUTF_KM1K ((c1h(k-1)*MUT(i,j)+c2h(k-1))*(c1f(k)*MUT(i,j)+c2f(k)))
 
 #  define MUTHMUTF_KKP1 ((c1h(k)*MUT(i,j)+c2h(k))*(c1f(k+1)*MUT(i,j)+c2f(k+1)))
-
 #endif
 
 !WRF:MODEL_LAYER:DYNAMICS

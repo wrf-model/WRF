@@ -16,29 +16,6 @@
 #  define XXPCBFXX(...) grid%Mub(__VA_ARGS__)
 #endif
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 !-------------------------------------------------------------------
 
    SUBROUTINE start_domain_em ( grid, allowed_to_read &

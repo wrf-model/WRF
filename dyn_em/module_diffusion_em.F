@@ -3,8 +3,6 @@
 #  define XXPCTXX(...) mu(__VA_ARGS__)
 #endif
 
-
-
 ! WRF:MODEL_LAYER:PHYSICS
 
     MODULE module_diffusion_em

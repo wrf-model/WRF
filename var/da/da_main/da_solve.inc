@@ -503,10 +503,6 @@
                call da_setup_flow_predictors_para_read_opt1 ( &
                                             ide_ens, jde_ens, kde_ens, be % ne, grid%ep, &
                                             its_int, ite_int, jts_int, jte_int, kts_int, kte_int )
-            case ( 2 ) ! para_read_opt2, requires more memory
-               call da_setup_flow_predictors_para_read_opt2 ( &
-                                            ide_ens, jde_ens, kde_ens, be % ne, grid%ep, &
-                                            its_int, ite_int, jts_int, jte_int, kts_int, kte_int )
          end select
       end if
 

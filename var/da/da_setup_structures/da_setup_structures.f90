@@ -119,7 +119,6 @@ contains
 #include "da_chgvres.inc"
 #include "da_setup_flow_predictors.inc"
 #include "da_setup_flow_predictors_para_read_opt1.inc"
-#include "da_setup_flow_predictors_para_read_opt2.inc"
 #include "da_setup_obs_structures.inc"
 #include "da_setup_obs_structures_ascii.inc"
 #include "da_setup_obs_structures_bufr.inc"

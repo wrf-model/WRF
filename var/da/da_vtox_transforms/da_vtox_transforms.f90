@@ -11,7 +11,7 @@ module da_vtox_transforms
       ntasks_y, data_order_xy, data_order_xyz, data_order_xzy, get_dm_max_halo_width
    use module_comm_dm, only : halo_psichi_uv_adj_sub,halo_ssmi_xa_sub,halo_sfc_xa_sub, &
       halo_radar_xa_w_sub, halo_xa_sub, halo_psichi_uv_sub, &
-      halo_psichi_uv_sub, halo_xa_all_sub,halo_xb_all_sub
+      halo_psichi_uv_sub, halo_xa_wpec_sub,halo_xb_wpec_sub
 #endif
    use module_domain, only : xb_type, xpose_type, ep_type, vp_type, x_type, domain, get_ijk_from_grid
 
@@ -90,10 +90,8 @@ module da_vtox_transforms
 #include "da_transform_rescale.inc"
 #include "da_transform_vtox.inc"
 #include "da_transform_xtoxa.inc"
-#include "da_transform_xtoxa_all.inc"
 #include "da_transform_vtox_adj.inc"
 #include "da_transform_xtoxa_adj.inc"
-#include "da_transform_xtoxa_adj_all.inc"
 #include "da_transform_vptox.inc"
 #include "da_transform_vptox_adj.inc"
 #include "da_transform_vvtovp.inc"

@@ -39,8 +39,7 @@ module da_wrfvar_top
       ntasks, data_order_xy,wrf_dm_initialize
    use module_comm_dm, only : halo_radar_xa_w_sub,halo_ssmi_xa_sub, &
       halo_sfc_xa_sub, halo_xa_sub, halo_psichi_uv_adj_sub, halo_bal_eqn_adj_sub, &
-      halo_psichi_uv_sub, halo_init_sub, halo_psichi_uv_adj_sub, halo_2d_work_sub,&
-      halo_wpec_sub, halo_wpec_adj_sub, halo_xa_all_sub, halo_xb_all_sub
+      halo_psichi_uv_sub, halo_init_sub, halo_psichi_uv_adj_sub, halo_2d_work_sub
 #endif
 
    ! too many namelist options to list

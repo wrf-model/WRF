@@ -4,7 +4,7 @@
 ! for resolutions permitting resolved deep convection.
 !
 ! Price, C., and D. Rind (1992), A Simple Lightning Parameterization for Calculating
-!   Global Lightning Distributions, J. Geophys. Res., 97(D9), 9919–9933, doi:10.1029/92JD00719.
+!   Global Lightning Distributions, J. Geophys. Res., 97(D9), 9919-9933, doi:10.1029/92JD00719.
 !
 ! Wong, J., M. Barth, and D. Noone (2012), Evaluating a Lightning Parameterization
 !   at Resolutions with Partially-Resolved Convection, GMDD, in preparation.
@@ -230,8 +230,8 @@
 !
 ! Price and Rind 1993 base on cold cloud depth (CCD)
 !
-! Price, C. and D. Rind (1993), What determines the cloud‐to‐ground lightning
-! fraction in thunderstorms?, Geophys. Res. Lett., 20(6), 463–466, doi:10.1029/93GL00226.
+! Price, C. and D. Rind (1993), What determines the cloud-to-ground lightning
+! fraction in thunderstorms?, Geophys. Res. Lett., 20(6), 463-466, doi:10.1029/93GL00226.
 !
 ! Valid range of CCD is set to 5.5-14 km. Beyond this range CCD is assumed
 ! to be 5.5 or 14 for continuity.

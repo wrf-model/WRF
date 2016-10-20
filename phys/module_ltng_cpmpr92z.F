@@ -4,7 +4,7 @@
 ! for models using convective parameterization. Assume use of sub-grid LNB.
 !
 ! Price, C., and D. Rind (1992), A Simple Lightning Parameterization for Calculating
-!   Global Lightning Distributions, J. Geophys. Res., 97(D9), 9919–9933, doi:10.1029/92JD00719.
+!   Global Lightning Distributions, J. Geophys. Res., 97(D9), 9919-9933, doi:10.1029/92JD00719.
 !
 ! Wong, J., M. Barth, and D. Noone (2012), Evaluating a Lightning Parameterization
 !   at Resolutions with Partially-Resolved Convection, GMDD, in preparation.

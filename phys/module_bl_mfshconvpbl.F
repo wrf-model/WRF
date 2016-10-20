@@ -1388,7 +1388,7 @@ PV_UP(:,:)=ZVM_F(:,:)
 
 
 ! Computation or initialisation of updraft characteristics at the KK level
-! thetal_up,rt_up,thetaV_up, w²,Buoyancy term and mass flux (PEMF)
+! thetal_up,rt_up,thetaV_up, w-squared,Buoyancy term and mass flux (PEMF)
 
 ! 03/2009
 !PTHL_UP(:,KK)= ZTHLM_F(:,KK)+(PSFTH(:)/SQRT(ZTKEM_F(:,KK)))*XALP_PERT

@@ -1,4 +1,4 @@
-subroutine da_transform_xtoxa(grid)
+subroutine da_transform_xtoxa(grid, wpec_on)
 
    !--------------------------------------------------------------------------------------------------
    ! Purpose: Transfers fields from WRF TL fields to diagnostic fields needed by observational operators
@@ -9,6 +9,7 @@ subroutine da_transform_xtoxa(grid)
    implicit none
 
    type(domain),   intent(inout) :: grid
+   logical, intent(in), optional :: wpec_on
 
    integer :: i, j, k
    real    :: sdmd, s1md, mu
@@ -17,6 +18,7 @@ subroutine da_transform_xtoxa(grid)
    real    :: mr_b(kms:kme)
    real    :: PU, PD, coeff
    real    :: geoh(kms:kme)
+   logical :: calc_wpec_term
 
    if (trace_use) call da_trace_entry("da_transform_xtoxa")
 
@@ -25,6 +27,11 @@ subroutine da_transform_xtoxa(grid)
    !----------------------------------------------------------------------
 
    if ( .not. var4d ) then ! for 4dvar the xa%p is come from the model
+
+   calc_wpec_term = .false.
+   if ( present(wpec_on) ) then
+      if ( wpec_on ) calc_wpec_term =.true.
+   end if
 
    do j=jts,jte
       do i=its,ite
@@ -42,7 +49,7 @@ subroutine da_transform_xtoxa(grid)
             end do
 
             mu=-(grid%xa%psfc(i,j)+grid%xb%psac(i,j)*sdmd)/s1md
-            if ( use_wpec ) then
+            if ( calc_wpec_term ) then
                grid%xa%mu(i,j) = mu
             end if
 
@@ -76,8 +83,8 @@ subroutine da_transform_xtoxa(grid)
    endif ! only for 3dvar
 
    call da_pt_to_rho_lin(grid)
- 
-   if ( .not. var4d .and. use_wpec ) then
+
+   if ( .not. var4d .and. calc_wpec_term ) then
       do j=jts,jte
          do i=its,ite
             if ((fg_format==fg_format_wrf_arw_regional) .or. &
@@ -110,7 +117,7 @@ subroutine da_transform_xtoxa(grid)
 #include "HALO_XA.inc"
 #endif
 
-  if ( .not. var4d .and. use_wpec ) then
+  if ( .not. var4d .and. calc_wpec_term ) then
 #ifdef DM_PARALLEL
 #include "HALO_XA_WPEC.inc"
 #include "HALO_XB_WPEC.inc"

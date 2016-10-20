@@ -145,6 +145,14 @@ else
 
   if ( ! $?DA_ARCHFLAGS )     setenv DA_ARCHFLAGS ""
 
+  if ( ( $WRF_CHEM == 1 )  && ( $WRF_DA_CORE == 1 ) ) then
+    echo "  "
+    echo "WRFDA can not be compiled with WRF_CHEM=1"
+    echo "unset the WRF_CHEM env variable."
+    echo "  "
+    exit
+  endif
+
   if ( ( $WRF_DA_CORE == 1 )  && ( ! -d var ) ) then
     echo "  "
     echo "You need to download and untar the Var code, or"

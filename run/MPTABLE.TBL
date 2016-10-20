@@ -355,7 +355,7 @@ GDDS3      = 1183.0,  933.0,  933.0,  933.0,  933.0,  ! GDD from seeding to post
 GDDS4      = 1253.0, 1103.0, 1103.0, 1103.0, 1103.0,  ! GDD from seeding to intial reproductive
 GDDS5      = 1605.0, 1555.0, 1555.0, 1555.0, 1555.0,  ! GDD from seeding to pysical maturity 
 
-C3C4       =    2.0,    1.0,    2.0,    2.0,    2.0,  ! photosynthetic pathway:  1. = c3 2. = c4
+C3C4       =      2,      1,      2,      2,      2,  ! photosynthetic pathway:  1. = c3 2. = c4
 Aref       =    7.0,    7.0,    7.0,    7.0,    7.0,  ! reference maximum CO2 assimulation rate 
 PSNRF      =   0.85,   0.85,   0.85,   0.85,   0.85,  ! CO2 assimulation reduction factor(0-1) (caused by non-modeling part,e.g.pest,weeds)
 I2PAR      =    0.5,    0.5,    0.5,    0.5,    0.5,  ! Fraction of incoming solar radiation to photosynthetically active radiation

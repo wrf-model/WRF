@@ -42,7 +42,7 @@
    USE module_dm, ONLY : wrf_dm_min_real, wrf_dm_max_real
 #endif
    USE module_comm_dm
-
+   USE module_llxy, ONLY : proj_cassini
    USE module_physics_init
    USE module_lightning_driver, ONLY : lightning_init
    USE module_fr_fire_driver_wrf, ONLY : fire_driver_em_init
@@ -114,7 +114,7 @@
    REAL :: lat1 , lat2 , lat3 , lat4
    REAL :: lon1 , lon2 , lon3 , lon4
    INTEGER :: num_points_lat_lon , iloc , jloc
-   CHARACTER (LEN=132) :: message
+   CHARACTER (LEN=256) :: message, a_message
    TYPE(WRFU_TimeInterval) :: stepTime
    REAL, DIMENSION(:,:), ALLOCATABLE :: clat_glob
    logical :: f_flux  ! flag for computing averaged fluxes in cu_gd
@@ -141,6 +141,7 @@
 !  CCN for MP=18 initializatio
    REAL :: ccn_max_val
 
+   REAL :: max_mf
    CALL get_ijk_from_grid ( grid ,                              &
                            ids, ide, jds, jde, kds, kde,        &
                            ims, ime, jms, jme, kms, kme,        &
@@ -223,6 +224,10 @@
 ! here we check to see if the boundary conditions are set properly
 
    CALL boundary_condition_check( config_flags, bdyzone, error, grid%id )
+! make sure that topo_wind option has var_sso data available
+    IF ((config_flags%topo_wind .EQ. 1) .AND. (.NOT. grid%got_var_sso)) THEN
+      CALL wrf_error_fatal ("topo_wind requires VAR_SSO data")
+    ENDIF
 
 !kludge - need to stop CG from resetting precip and phys tendencies to zero
 !         when we are in here due to a nest being spawned, we want to still
@@ -242,6 +247,24 @@
    IF ( config_flags%restart .or. grid%moved .or. config_flags%cycling) THEN
        first_trip_for_this_domain = .TRUE.
    ENDIF
+
+      ! Print out the maximum map scale factor on the coarse domain 
+
+      IF ( ( first_trip_for_this_domain ) .AND. ( grid%id .EQ. 1 ) .AND. &
+           ( .NOT. config_flags%map_proj .EQ. PROJ_CASSINI ) ) THEN
+         max_mf = grid%msft(its,jts)
+         DO j=jts,MIN(jde-1,jte)
+            DO i=its,MIN(ide-1,ite)
+               max_mf = MAX ( max_mf , grid%msft(i,j) )
+            END DO
+         END DO
+#if ( defined(DM_PARALLEL)  &&   ! defined(STUBMPI) )
+         max_mf = wrf_dm_max_real ( max_mf )
+#endif
+         WRITE ( a_message , FMT='(A,F5.2,A)' ) 'Max map factor in domain 1 = ',max_mf, &
+                                                '. Scale the dt in the model accordingly.'
+         CALL wrf_message ( a_message ) 
+      END IF
 
 !   --- SETUP AND INITIALIZE STOCHASTIC PERTURBATION SCHEMES ---
 

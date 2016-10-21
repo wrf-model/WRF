@@ -53,7 +53,7 @@ module da_minimisation
       orthonorm_gradient, its, ite, jts, jte, kts, kte, ids, ide, jds, jde, kds, kde, cp, &
       use_satcv, sensitivity_option, print_detail_outerloop, adj_sens, filename_len, &
       ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe, fgat_rain_flags, var4d_bin_rain, freeze_varbc, &
-      use_wpec, wpec_factor
+      use_wpec, wpec_factor, use_4denvar, anal_type_hybrid_dual_res, alphacv_method, alphacv_method_xa
    use da_define_structures, only : iv_type, y_type,  j_type, be_type, &
       xbx_type, jo_type, da_allocate_y,da_zero_x,da_zero_y,da_deallocate_y, &
       da_zero_vp_type, qhat_type
@@ -153,6 +153,7 @@ module da_minimisation
    use da_varbc, only : da_varbc_tl,da_varbc_adj,da_varbc_precond,da_varbc_coldstart
 #endif
    use da_vtox_transforms, only : da_transform_vtox,da_transform_vtox_adj,da_transform_xtoxa,da_transform_xtoxa_adj
+   use da_vtox_transforms, only : da_copy_xa, da_add_xa, da_transform_vpatox, da_transform_vpatox_adj
    use da_wrf_interfaces, only : wrf_dm_bcast_real, wrf_get_dm_communicator
    use module_symbols_util, only : wrfu_finalize
    use da_lapack, only : dsteqr
@@ -200,4 +201,5 @@ contains
 #include "da_lanczos_io.inc"
 #include "da_swap_xtraj.inc"
 #include "da_read_basicstates.inc"
+#include "da_copy_xa.inc"
 end module da_minimisation

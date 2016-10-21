@@ -68,13 +68,14 @@ module da_wrfvar_top
    use da_setup_structures, only : da_setup_obs_structures, &
       da_setup_background_errors,da_setup_flow_predictors, &
       da_setup_cv, da_scale_background_errors, da_scale_background_errors_cv3
+   use da_setup_structures, only : da_setup_flow_predictors_para_read_opt1
    use da_test, only : da_check, da_check_gradient
    use da_tools_serial, only : da_get_unit, da_free_unit
    use da_tracing, only : da_trace_entry, da_trace_exit, da_trace, da_trace_report
    use da_transfer_model, only : da_transfer_xatoanalysis,da_setup_firstguess, &
        da_transfer_wrftltoxa_adj
    use da_vtox_transforms, only : da_transform_vtox, da_transform_xtoxa, &
-      da_transform_xtoxa_adj
+      da_transform_xtoxa_adj, da_copy_xa, da_add_xa, da_transform_vpatox
    use da_wrfvar_io, only : da_med_initialdata_input, da_update_firstguess
    use da_tools, only : da_set_randomcv, da_get_julian_time
 

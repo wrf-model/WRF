@@ -1,4 +1,5 @@
 subroutine da_transform_vptox_adj(grid, vp, be, ep)
+!subroutine da_transform_vptox_adj(grid, vp, be, ep, nobwin)
 
    !--------------------------------------------------------------------------
    ! Purpose: Adjoint for Physical transform of variables 
@@ -17,26 +18,35 @@ subroutine da_transform_vptox_adj(grid, vp, be, ep)
    type (vp_type), intent(inout)        :: vp  ! CV on grid structure.
    type (ep_type), intent(in)           :: ep  ! Ensemble perturbation.
    type (be_type), intent(in), optional :: be  ! Background errors.
+!   integer, intent(in), optional        :: nobwin
 
    integer :: i, k, j, ij, k1              ! Loop counters.
    real, allocatable                    :: chi_u(:,:,:)  ! Unbalanced chi
 
    if (trace_use) call da_trace_entry("da_transform_vptox_adj")
 
-   !---------------------------------------------------------------------------
-   !  [4] Add flow-dependent increments in model space (grid%xa):
-   !---------------------------------------------------------------------------
-      
-!  if (be % ne > 0 .and. alphacv_method == alphacv_method_xa) then
-!     call da_add_flow_dependence_xa_adj(be % ne, ep, grid%xa, vp)
-!  end if
-   if (be % ne > 0 .and. alphacv_method == alphacv_method_xa) then
-      if ( anal_type_hybrid_dual_res ) then
-         call da_add_flow_dependence_xa_adj_dual_res(be % ne, ep, grid, vp)
-      else
-         call da_add_flow_dependence_xa_adj(be % ne, ep, grid%xa, vp)
-      endif
-   endif
+!   !---------------------------------------------------------------------------
+!   !  [4] Add flow-dependent increments in model space (grid%xa):
+!   !---------------------------------------------------------------------------
+!
+!!  if (be % ne > 0 .and. alphacv_method == alphacv_method_xa) then
+!!     call da_add_flow_dependence_xa_adj(be % ne, ep, grid%xa, vp)
+!!  end if
+!   if (be % ne > 0 .and. alphacv_method == alphacv_method_xa) then
+!      if ( anal_type_hybrid_dual_res ) then
+!         if( present(nobwin) ) then
+!            call da_add_flow_dependence_xa_adj_dual_res(be % ne, ep, grid, vp, nobwin)
+!         else
+!            call da_add_flow_dependence_xa_adj_dual_res(be % ne, ep, grid, vp)
+!         end if
+!      else
+!         if( present(nobwin) ) then
+!            call da_add_flow_dependence_xa_adj(be % ne, ep, grid%xa, vp, nobwin)
+!         else
+!            call da_add_flow_dependence_xa_adj(be % ne, ep, grid%xa, vp)
+!         end if
+!      endif
+!   endif
 
    !--------------------------------------------------------------------------
    ! [3] Transform to model variable space:

@@ -194,7 +194,7 @@
 ! Inputs
  INTEGER, DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ) :: kLNB
  REAL,                                            INTENT(IN   ) :: cldtop_adjustment
- REAL,    DIMENSION( ims:ims, kms:kme, jms:jme ), INTENT(IN   ) :: t, z
+ REAL,    DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   ) :: t, z
 
 ! Order dependent args for domain, mem, and tile dims
  INTEGER, INTENT(IN   )    ::       ids,ide, jds,jde, kds,kde

@@ -824,7 +824,6 @@ state ep_type ep - -
 state xb_type xb - -
 state x_type xa - -
 state x_subtype xa_ens - -
-#state x_type xa_ens - -
 state x_type xa_static - -
 state x_type x6a - -
 state xpose_type xp - -

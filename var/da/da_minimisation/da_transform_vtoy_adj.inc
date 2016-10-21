@@ -182,8 +182,8 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx,
          jl_start    = be%cv%size_jb + be%cv%size_je + be%cv%size_jp + 1
          jl_end      = be%cv%size_jb + be%cv%size_je + be%cv%size_jp + be%cv%size_jl
          grid%xa = grid%x6a
-         !hcl da_zero_vp_type(vp) is commented out in the da_transform_vtox_adj,
-         call da_zero_vp_type (vp6) !hcl zero it out here
+         !as of V3.9, da_zero_vp_type(vp) is commented out in the da_transform_vtox_adj,
+         call da_zero_vp_type (vp6) !as of V3.9, zero out vp here
          call da_transform_vtox_adj(grid, be%cv%size_jl, xbx, be, ep, vp6, vv6, cv(jl_start:jl_end))
          grid%xa = shuffle
 
@@ -194,8 +194,8 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx,
 
       call da_zero_x(grid%xa)
       call da_transfer_xatowrftl_adj(grid, config_flags, 'gr01')
-      !hcl da_zero_vp_type(vp) is commented out in the da_transform_vtox_adj,
-      call da_zero_vp_type (vp) !hcl zero it out here
+      !as of V3.9, da_zero_vp_type(vp) is commented out in the da_transform_vtox_adj,
+      call da_zero_vp_type (vp) !as of V3.9, zero out vp here
       call da_transform_vpatox_adj(grid, be, ep, vp)
       call da_transform_vtox_adj(grid, be%cv%size_jb, xbx, be, ep, vp, vv, cv(1:be%cv%size_jb))
   
@@ -238,7 +238,7 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx,
          call da_transform_xtoxa_adj(grid)
          call da_zero_vp_type (vp)
          call da_transform_vpatox_adj(grid, be, ep, vp, nobwin)
-         !the calculation of vp%alpha is taken out of vptox_adj.
+         !as of V3.9, the calculation of vp%alpha is taken out of vptox_adj.
          !da_zero_vp_type(vp) is commented out in the da_transform_vtox_adj,
          !in order to pass in vp%alpha
          call da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv_local)

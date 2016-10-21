@@ -8,7 +8,6 @@ subroutine da_calc_flow_dependence_xa (xa_ens, ne,  ep, vp, nobwin)
    implicit none
 
    type (x_subtype), intent(inout)      :: xa_ens
-!   type (x_type), intent(inout)         :: xa_ens
    integer, intent(in)                  :: ne  ! Ensemble size.
    type (ep_type), intent(in)           :: ep  ! Ensemble perturbations.
    type (vp_type), intent(in)           :: vp  ! CV on grid structure.

@@ -50,7 +50,6 @@ module da_vtox_transforms
                           ids_int,ide_int,jds_int,jde_int,kds_int,kde_int, &
                           ips_int,ipe_int,jps_int,jpe_int,kps_int,kpe_int
    use da_control, only : dual_res_type, ob_locs, total_here
-   use da_control, only : use_4denvar, num_fgat_time
 
 
    use da_define_structures, only : be_type, xbx_type,da_zero_vp_type,da_zero_x

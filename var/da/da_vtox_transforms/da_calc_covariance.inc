@@ -61,8 +61,7 @@ SUBROUTINE da_calc_covariance( xb, xbx, be, cv, vv, vp, xp, xa,        &
 !------------------------------------------------------------------------------
 
 !  [3.1] Calculate v_hat = U^T x_hat
-   !hcl da_zero_vp_type(vp) is commented out in the da_transform_vtox_adj
-   call da_zero_vp_type(vp) !hcl zero it out here
+   call da_zero_vp_type(vp)
    call da_transform_vtox_adj( xb, xbx, be, xa, xp, vp, vv, cv, &
                                ids, ide, jds, jde, kds, kde,           &
                                ims, ime, jms, jme, kms, kme,           &

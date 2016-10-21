@@ -1,7 +1,7 @@
 subroutine da_transform_vpatox_adj(grid, be, ep, vp, nobwin) 
 
    !----------------------------------------------------------------------
-   ! Purpose:  Does transform adjoint of alpha control variable (vp%alpha) to x
+   ! Purpose:  Does adjoint transform of alpha control variable (vp%alpha) to x
    !----------------------------------------------------------------------
 
    implicit none

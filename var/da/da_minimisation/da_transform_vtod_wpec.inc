@@ -21,8 +21,8 @@ subroutine da_transform_vtod_wpec(cv_size, be, ep, cv, vp, vv, xbx, grid)
       call da_transform_vtox(grid, cv_size, xbx, be, ep, cv, vv, vp)
 
       if ( be%ne > 0 .and. alphacv_method == alphacv_method_xa ) then
-         call da_copy_xa(grid%xa_static, grid%xa)
-         call da_transform_vpatox(grid, cv_size, be, ep, cv, vv, vp)
+         call da_transform_vpatox(grid, be, ep, vp)
+         call da_add_xa(grid%xa, grid%xa_ens) !grid%xa = grid%xa + xa_ens
       end if
 
       call da_transform_xtoxa(grid, .true.)

@@ -35,7 +35,7 @@ subroutine da_transform_vtoy(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx, &
    if (var4d) then
 #ifdef VAR4D
       call da_transform_vtox(grid, be%cv%size_jb, xbx, be, ep, cv(1:be%cv%size_jb), vv, vp)
-      call da_transform_vpatox(grid, cv_size, be, ep, cv, vv, vp)
+      call da_transform_vpatox(grid, be, ep, vp)
       call domain_clock_get( grid, start_timestr=timestr )
       call da_transfer_xatowrftl(grid, config_flags, 'tl01', timestr)
 
@@ -153,12 +153,9 @@ subroutine da_transform_vtoy(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx, &
 #endif
    else  ! not var4d
 
-      ! vp%alpha is not included in the vptox calculation
+      ! as of V3.9, vp%alpha is not included in the vptox (called by vtox) calculation
       ! here grid%xa contains only the static increment
       call da_transform_vtox(grid, cv_size, xbx, be, ep, cv, vv, vp)
-
-      !grid%xa_static = grid%xa !save the static increment
-      call da_copy_xa(grid%xa_static, grid%xa)
 
       if ( use_4denvar ) then
          num_subtwindow = num_fgat_time
@@ -166,8 +163,19 @@ subroutine da_transform_vtoy(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx, &
          num_subtwindow = 1
       end if
 
+      if ( num_subtwindow > 1 ) then
+         !grid%xa_static = grid%xa !save the static increment
+         !hcl check if is this really needed?
+         call da_copy_xa(grid%xa_static, grid%xa)
+      end if
+
       do nobwin = num_subtwindow, 1 , -1
-         call da_transform_vpatox(grid, cv_size, be, ep, cv, vv, vp, nobwin)
+         if (be % ne > 0 .and. alphacv_method == alphacv_method_xa) then
+            call da_transform_vpatox(grid, be, ep, vp, nobwin)
+            !reset grid%xa = grid%xa_static
+            call da_copy_xa(grid%xa, grid%xa_static)
+            call da_add_xa(grid%xa, grid%xa_ens) !grid%xa = grid%xa + xa_ens
+         end if
          call da_transform_xtoxa(grid)
          iv%time = nobwin
          if ( use_4denvar ) then

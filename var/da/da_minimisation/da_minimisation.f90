@@ -153,7 +153,7 @@ module da_minimisation
    use da_varbc, only : da_varbc_tl,da_varbc_adj,da_varbc_precond,da_varbc_coldstart
 #endif
    use da_vtox_transforms, only : da_transform_vtox,da_transform_vtox_adj,da_transform_xtoxa,da_transform_xtoxa_adj
-   use da_vtox_transforms, only : da_copy_xa, da_transform_vpatox, da_transform_vpatox_adj
+   use da_vtox_transforms, only : da_copy_xa, da_add_xa, da_transform_vpatox, da_transform_vpatox_adj
    use da_wrf_interfaces, only : wrf_dm_bcast_real, wrf_get_dm_communicator
    use module_symbols_util, only : wrfu_finalize
    use da_lapack, only : dsteqr

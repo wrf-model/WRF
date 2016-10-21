@@ -774,25 +774,25 @@
       ! [8.5] Update latest analysis solution:
 
       if (.not. var4d) then
-         ! vp%alpha is not included in the vptox calculation,
+         ! as of V3.9, vp%alpha is not included in the vptox (called by vtox) calculation,
          ! here grid%xa contains only the static increment
          call da_transform_vtox (grid,cv_size,xbx,be,grid%ep,xhat,grid%vv,grid%vp)
 
          ! adding the ensemble contribution
          if (be % ne > 0 .and. alphacv_method == alphacv_method_xa) then
-            call da_copy_xa(grid%xa_static, grid%xa)
             if ( use_4denvar ) then
                num_subtwindow = num_fgat_time
             else
                num_subtwindow = 1
             end if
             do iwin = num_subtwindow, 1 , -1
-               call da_transform_vpatox (grid,cv_size,be,grid%ep,xhat,grid%vv,grid%vp,iwin)
+               call da_transform_vpatox (grid,be,grid%ep,grid%vp,iwin)
+               call da_add_xa(grid%xa, grid%xa_ens) !grid%xa = grid%xa + xa_ens
             end do
          end if !ne>0
       else
          call da_transform_vtox (grid,be%cv%size_jb,xbx,be,grid%ep,xhat(1:be%cv%size_jb),grid%vv,grid%vp)
-         call da_transform_vpatox (grid,be%cv%size_jb,be,grid%ep,xhat(1:be%cv%size_jb),grid%vv,grid%vp)
+         call da_transform_vpatox (grid,be,grid%ep,grid%vp)
       endif
       call da_transform_xtoxa (grid)
 

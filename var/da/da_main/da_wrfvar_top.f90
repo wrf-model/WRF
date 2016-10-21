@@ -75,7 +75,7 @@ module da_wrfvar_top
    use da_transfer_model, only : da_transfer_xatoanalysis,da_setup_firstguess, &
        da_transfer_wrftltoxa_adj
    use da_vtox_transforms, only : da_transform_vtox, da_transform_xtoxa, &
-      da_transform_xtoxa_adj, da_copy_xa, da_transform_vpatox
+      da_transform_xtoxa_adj, da_copy_xa, da_add_xa, da_transform_vpatox
    use da_wrfvar_io, only : da_med_initialdata_input, da_update_firstguess
    use da_tools, only : da_set_randomcv, da_get_julian_time
 

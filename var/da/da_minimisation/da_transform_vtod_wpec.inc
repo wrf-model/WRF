@@ -19,29 +19,12 @@ subroutine da_transform_vtod_wpec(cv_size, be, ep, cv, vp, vv, xbx, grid)
    if (trace_use) call da_trace_entry("da_transform_vtod_wpec")
 
       call da_transform_vtox(grid, cv_size, xbx, be, ep, cv, vv, vp)
-      if (be % ne > 0 .and. alphacv_method == alphacv_method_xa) then
-         !transform xa_ens from vp%alpha
-         !xa_ens holds the increment from ensemble perturbations for certain fgat time
-         !call da_zero_x(grid%xa_ens)
-         grid%xa_ens%u = 0.0
-         grid%xa_ens%v = 0.0
-         grid%xa_ens%t = 0.0
-         grid%xa_ens%q = 0.0
-         grid%xa_ens%psfc = 0.0
-#ifdef CLOUD_CV
-         grid%xa_ens%qcw = 0.0
-         grid%xa_ens%qrn = 0.0
-         grid%xa_ens%qci = 0.0
-         grid%xa_ens%qsn = 0.0
-         grid%xa_ens%qgr = 0.0
-#endif
-         if ( anal_type_hybrid_dual_res ) then
-            call da_calc_flow_dependence_xa_dual_res(grid, grid%xa_ens, be%ne, ep, vp)
-         else
-            call da_calc_flow_dependence_xa(grid%xa_ens, be%ne, ep, vp)
-         end if
-         call da_add_xa(grid%xa, grid%xa_ens) !grid%xa = grid%xa(i.e. xa_static) + xa_ens
+
+      if ( be%ne > 0 .and. alphacv_method == alphacv_method_xa ) then
+         call da_copy_xa(grid%xa_static, grid%xa)
+         call da_transform_vpatox(grid, cv_size, be, ep, cv, vv, vp)
       end if
+
       call da_transform_xtoxa(grid, .true.)
 
       call da_wpec_constraint_lin(grid, xbx)

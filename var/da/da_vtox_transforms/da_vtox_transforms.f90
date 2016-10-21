@@ -50,6 +50,7 @@ module da_vtox_transforms
                           ids_int,ide_int,jds_int,jde_int,kds_int,kde_int, &
                           ips_int,ipe_int,jps_int,jpe_int,kps_int,kpe_int
    use da_control, only : dual_res_type, ob_locs, total_here
+   use da_control, only : use_4denvar, num_fgat_time
 
 
    use da_define_structures, only : be_type, xbx_type,da_zero_vp_type,da_zero_x
@@ -95,6 +96,7 @@ module da_vtox_transforms
 #include "da_transform_vvtovp.inc"
 #include "da_transform_vvtovp_adj.inc"
 #include "da_transform_vptovv.inc"
+#include "da_transform_vpatox.inc"
 #include "da_vertical_transform.inc"
 #include "da_get_vpoles.inc"
 #include "da_get_spoles.inc"
@@ -111,6 +113,7 @@ module da_vtox_transforms
 #include "da_transform_vvtovp_dual_res.inc"
 #include "da_transform_vvtovp_adj_dual_res.inc"
 
+#include "da_copy_xa.inc"
 #include "da_add_xa.inc"
 
 #include "da_calc_flow_dependence_xa.inc"

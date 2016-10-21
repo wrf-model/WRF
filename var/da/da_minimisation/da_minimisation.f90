@@ -155,6 +155,7 @@ module da_minimisation
    use da_vtox_transforms, only : da_transform_vtox,da_transform_vtox_adj,da_transform_xtoxa,da_transform_xtoxa_adj
    use da_vtox_transforms, only : da_add_xa, da_calc_flow_dependence_xa, &
       da_calc_flow_dependence_xa_adj, da_calc_flow_dependence_xa_dual_res, da_calc_flow_dependence_xa_adj_dual_res
+   use da_vtox_transforms, only : da_copy_xa, da_transform_vpatox
    use da_wrf_interfaces, only : wrf_dm_bcast_real, wrf_get_dm_communicator
    use module_symbols_util, only : wrfu_finalize
    use da_lapack, only : dsteqr
@@ -202,5 +203,4 @@ contains
 #include "da_lanczos_io.inc"
 #include "da_swap_xtraj.inc"
 #include "da_read_basicstates.inc"
-#include "da_copy_xa.inc"
 end module da_minimisation

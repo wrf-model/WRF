@@ -1485,7 +1485,7 @@ LOGICAL FUNCTION wrf_dm_lor_logical ( inval )
       LOGICAL inval, retval
       INTEGER comm, ierr
       CALL wrf_get_dm_communicator(comm)
-      CALL mpi_allreduce ( inval, retval , 1, MPI_LOGICAL, MPI_LAND, comm, ierr )
+      CALL mpi_allreduce ( inval, retval , 1, MPI_LOGICAL, MPI_LOR, comm, ierr )
       wrf_dm_lor_logical = retval
 #else
       LOGICAL inval

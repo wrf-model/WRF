@@ -97,6 +97,7 @@ module da_vtox_transforms
 #include "da_transform_vvtovp_adj.inc"
 #include "da_transform_vptovv.inc"
 #include "da_transform_vpatox.inc"
+#include "da_transform_vpatox_adj.inc"
 #include "da_vertical_transform.inc"
 #include "da_get_vpoles.inc"
 #include "da_get_spoles.inc"

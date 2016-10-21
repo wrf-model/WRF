@@ -780,37 +780,19 @@
 
          ! adding the ensemble contribution
          if (be % ne > 0 .and. alphacv_method == alphacv_method_xa) then
+            call da_copy_xa(grid%xa_static, grid%xa)
             if ( use_4denvar ) then
                num_subtwindow = num_fgat_time
             else
                num_subtwindow = 1
             end if
             do iwin = num_subtwindow, 1 , -1
-               !transform xa_ens from vp%alpha
-               !xa_ens holds the increment from ensemble perturbations for certain fgat time
-               !call da_zero_x(grid%xa_ens)
-               grid%xa_ens%u = 0.0
-               grid%xa_ens%v = 0.0
-               grid%xa_ens%t = 0.0
-               grid%xa_ens%q = 0.0
-               grid%xa_ens%psfc = 0.0
-#ifdef CLOUD_CV
-               grid%xa_ens%qcw = 0.0
-               grid%xa_ens%qrn = 0.0
-               grid%xa_ens%qci = 0.0
-               grid%xa_ens%qsn = 0.0
-               grid%xa_ens%qgr = 0.0
-#endif
-               if ( anal_type_hybrid_dual_res ) then
-                  call da_calc_flow_dependence_xa_dual_res(grid, grid%xa_ens, be%ne, grid%ep, grid%vp, iwin)
-               else
-                  call da_calc_flow_dependence_xa(grid%xa_ens, be%ne, grid%ep, grid%vp, iwin)
-               end if
-               call da_add_xa(grid%xa, grid%xa_ens) !grid%xa = grid%xa + xa_ens
+               call da_transform_vpatox (grid,cv_size,be,grid%ep,xhat,grid%vv,grid%vp,iwin)
             end do
          end if !ne>0
       else
          call da_transform_vtox (grid,be%cv%size_jb,xbx,be,grid%ep,xhat(1:be%cv%size_jb),grid%vv,grid%vp)
+         call da_transform_vpatox (grid,be%cv%size_jb,be,grid%ep,xhat(1:be%cv%size_jb),grid%vv,grid%vp)
       endif
       call da_transform_xtoxa (grid)
 

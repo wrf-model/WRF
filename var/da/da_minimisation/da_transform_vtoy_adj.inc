@@ -196,6 +196,7 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx,
       call da_transfer_xatowrftl_adj(grid, config_flags, 'gr01')
       !hcl da_zero_vp_type(vp) is commented out in the da_transform_vtox_adj,
       call da_zero_vp_type (vp) !hcl zero it out here
+      call da_transform_vpatox_adj(grid, be, ep, vp)
       call da_transform_vtox_adj(grid, be%cv%size_jb, xbx, be, ep, vp, vv, cv(1:be%cv%size_jb))
   
       if (num_fgat_time > 1 .and. use_rainobs) then
@@ -216,7 +217,6 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx,
 
       do nobwin= num_subtwindow, 1 , -1
          cv_local = 0.0
-         call da_zero_vp_type (vp)
          iv%time = nobwin
          if ( use_4denvar ) then
             iv%info(:)%n1 = iv%info(:)%plocal(iv%time-1) + 1
@@ -236,15 +236,8 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx,
          call da_zero_x(grid%xa)
          call da_transform_xtoy_adj(cv_size, cv_local, grid, iv, y, grid%xa)
          call da_transform_xtoxa_adj(grid)
-         if (be % ne > 0 .and. alphacv_method == alphacv_method_xa) then
-            !this is for getting vp%alpha only
-            vp%alpha = 0.0
-            if ( anal_type_hybrid_dual_res ) then
-               call da_calc_flow_dependence_xa_adj_dual_res(be%ne, ep, grid, grid%xa, vp, nobwin)
-            else
-               call da_calc_flow_dependence_xa_adj(be%ne, ep, grid%xa, vp, nobwin)
-            end if
-         end if
+         call da_zero_vp_type (vp)
+         call da_transform_vpatox_adj(grid, be, ep, vp, nobwin)
          !the calculation of vp%alpha is taken out of vptox_adj.
          !da_zero_vp_type(vp) is commented out in the da_transform_vtox_adj,
          !in order to pass in vp%alpha

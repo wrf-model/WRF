@@ -15,15 +15,15 @@ subroutine da_transform_vtod_wpec_adj(cv_size, be, ep, cv, vp, vv, xbx, grid)
    type(xbx_type),             intent(inout) :: xbx    ! For header & non-grid arrays.
    type(domain),               intent(inout) :: grid
 
-   call da_trace_entry("da_transform_vtod_wpec_adj")
+   if ( trace_use) call da_trace_entry("da_transform_vtod_wpec_adj")
 
-   cv = 0.0
+      cv = 0.0
 
       call da_zero_x(grid%xa)
 
       call da_wpec_constraint_adj(grid, xbx)
 
-      call da_transform_xtoxa_adj_all(grid)
+      call da_transform_xtoxa_adj(grid, .true.)
 
       call da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv)
 

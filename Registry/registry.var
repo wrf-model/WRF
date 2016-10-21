@@ -517,8 +517,8 @@ halo      HALO_X6A_A         dyn_em 4:x6a%u,x6a%v
 halo      HALO_EM_C_TL       dyn_em 4:g_u_2,g_v_2,g_rainc,g_rainnc
 halo      HALO_XB            dyn_em 24:xb%psac,xb%rough,xb%u,xb%v,xb%w,xb%wh,xb%t,xb%p,xb%q,xb%qs,xb%qrn,xb%qcw,xb%qci,xb%qsn,xb%qgr,xb%qt,xb%rho,xb%rh,xb%h,xb%hf,xb%u10,xb%v10,xb%t2,xb%q2,xb%psfc,xb%regime,xb%ztd,xb%tpw,xb%speed,xb%tb19v,xb%tb19h,xb%tb22v,xb%tb37v,xb%tb37h,xb%tb85v,xb%tb85h,xb%ref,xb%reflog,xb%delt,xb%slp,xb%tsk,xb%smois,xb%tslb,xb%xice,xb%ivgtyp,xb%isltyp,xb%vegfra,xb%snowh,xb%snow
 halo      HALO_XA            dyn_em 24:xa%u,xa%v,xa%q,xa%p,xa%t,xa%rho,xa%rh,xa%psfc,xa%qcw,xa%qrn,xa%qci,xa%qt,xa%qsn,xa%qgr
-halo      HALO_XA_ALL        dyn_em 24:xa%u,xa%v,xa%q,xa%p,xa%t,xa%rho,xa%rh,xa%psfc,xa%qcw,xa%qrn,xa%qci,xa%qt,xa%qsn,xa%qgr,xa%geoh,xa%mu
-halo      HALO_XB_ALL        dyn_em 24:xb%u,xb%v,xb%p,xb%rho,xb%h
+halo      HALO_XA_WPEC       dyn_em 24:xa%geoh,xa%mu
+halo      HALO_XB_WPEC       dyn_em 24:xb%u,xb%v,xb%p,xb%rho,xb%h
 halo      HALO_XA_CLOUD      dyn_em 24:xa%q,xa%t,xa%qcw,xa%qrn,xa%qci,xa%qsn,xa%qgr
 halo      HALO_SFC_XA        dyn_em 24:xa%u10,xa%v10,xa%t2,xa%q2
 halo      HALO_SSMI_XA       dyn_em 24:xa%ztd,xa%tpw,xa%speed,xa%tb19v,xa%tb19h,xa%tb22v,xa%tb37v,xa%tb37h,xa%tb85v,xa%tb85h,xa%ref

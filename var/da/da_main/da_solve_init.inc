@@ -17,7 +17,9 @@ subroutine da_solve_init(grid &
 #endif
 
    integer :: sm31,sm32,sm33,sm31x,sm32x,sm33x,sm31y,sm32y,sm33y
-
+   integer :: em31,em32,em33,ep_dim
+   ep_dim=1
+   if ( use_4denvar ) ep_dim=num_fgat_time   !  4D-En-Var
    ! if (dwordsize != rwordsize)
 #define true_MSG_XPOSE add_msg_xpose_real
    ! else
@@ -46,6 +48,10 @@ subroutine da_solve_init(grid &
    sm31y            = grid%sm31y
    sm32y            = grid%sm32y
    sm33y            = grid%sm33y
+
+   em31             = grid%em31
+   em32             = grid%em32
+   em33             = grid%em33
 
 #ifdef DM_PARALLEL
 #define REGISTER_I1
@@ -112,6 +118,103 @@ subroutine da_solve_init(grid &
    grid%xb%jte = grid%xp%jte 
    grid%xb%kts = grid%xp%kts
    grid%xb%kte = grid%xp%kte 
+
+! if anal_type_hybrid_dual_res,
+! grid%ep is already allocated in the call to reallocate_analysis_grid
+if ( .not. anal_type_hybrid_dual_res ) then
+   !
+   ! allocate grid%ep%v1
+   !
+   ALLOCATE(grid%ep%v1(sm31:em31,sm32:em32,sm33:em33,1:config_flags%ensdim_alpha*ep_dim),STAT=ierr)
+   if (ierr.ne.0) then
+     print *,' Failed to allocate grid%ep%v1(sm31:em31,sm32:em32,sm33:em33,1:config_flags%ensdim_alpha). '
+   endif
+   grid%ep%v1=0.
+
+   !
+   ! allocate grid%ep%v2
+   !
+   ALLOCATE(grid%ep%v2(sm31:em31,sm32:em32,sm33:em33,1:config_flags%ensdim_alpha*ep_dim),STAT=ierr)
+   if (ierr.ne.0) then
+     print *,' Failed to allocate grid%ep%v2(sm31:em31,sm32:em32,sm33:em33,1:config_flags%ensdim_alpha). '
+   endif
+   grid%ep%v2=0.
+
+   !
+   ! allocate grid%ep%v3
+   !
+   ALLOCATE(grid%ep%v3(sm31:em31,sm32:em32,sm33:em33,1:config_flags%ensdim_alpha*ep_dim),STAT=ierr)
+   if (ierr.ne.0) then
+     print *,' Failed to allocate grid%ep%v3(sm31:em31,sm32:em32,sm33:em33,1:config_flags%ensdim_alpha). '
+   endif
+   grid%ep%v3=0.
+
+   !
+   ! allocate grid%ep%v4
+   !
+   ALLOCATE(grid%ep%v4(sm31:em31,sm32:em32,sm33:em33,1:config_flags%ensdim_alpha*ep_dim),STAT=ierr)
+   if (ierr.ne.0) then
+     print *,' Failed to allocate grid%ep%v4(sm31:em31,sm32:em32,sm33:em33,1:config_flags%ensdim_alpha). '
+   endif
+   grid%ep%v4=0.
+
+   !
+   ! allocate grid%ep%v5
+   !
+   ALLOCATE(grid%ep%v5(sm31:em31,sm32:em32,sm33:em33,1:config_flags%ensdim_alpha*ep_dim),STAT=ierr)
+   if (ierr.ne.0) then
+     print *,' Failed to allocate grid%ep%v5(sm31:em31,sm32:em32,sm33:em33,1:config_flags%ensdim_alpha). '
+   endif
+   grid%ep%v5=0.
+
+#ifdef CLOUD_CV
+   !
+   ! allocate grid%ep%cw
+   !
+   ALLOCATE(grid%ep%cw(sm31:em31,sm32:em32,sm33:em33,1:config_flags%ensdim_alpha*ep_dim),STAT=ierr)
+   if (ierr.ne.0) then
+      write(unit=message(1),fmt='(a)') 'Failed to allocate grid%ep%cw(sm31:em31,sm32:em32,sm33:em33,1:config_flags%ensdim_alpha) '
+      call da_error(__FILE__,__LINE__,message(1:1))
+   endif
+   grid%ep%cw=0.
+   !
+   ! allocate grid%ep%rn
+   !
+   ALLOCATE(grid%ep%rn(sm31:em31,sm32:em32,sm33:em33,1:config_flags%ensdim_alpha*ep_dim),STAT=ierr)
+   if (ierr.ne.0) then
+      write(unit=message(1),fmt='(a)') 'Failed to allocate grid%ep%rn(sm31:em31,sm32:em32,sm33:em33,1:config_flags%ensdim_alpha) '
+      call da_error(__FILE__,__LINE__,message(1:1))
+   endif
+   grid%ep%rn=0.
+   !
+   ! allocate grid%ep%ci
+   !
+   ALLOCATE(grid%ep%ci(sm31:em31,sm32:em32,sm33:em33,1:config_flags%ensdim_alpha*ep_dim),STAT=ierr)
+   if (ierr.ne.0) then
+      write(unit=message(1),fmt='(a)') 'Failed to allocate grid%ep%ci(sm31:em31,sm32:em32,sm33:em33,1:config_flags%ensdim_alpha) '
+      call da_error(__FILE__,__LINE__,message(1:1))
+   endif
+   grid%ep%ci=0.
+   !
+   ! allocate grid%ep%sn
+   !
+   ALLOCATE(grid%ep%sn(sm31:em31,sm32:em32,sm33:em33,1:config_flags%ensdim_alpha*ep_dim),STAT=ierr)
+   if (ierr.ne.0) then
+      write(unit=message(1),fmt='(a)') 'Failed to allocate grid%ep%sn(sm31:em31,sm32:em32,sm33:em33,1:config_flags%ensdim_alpha) '
+      call da_error(__FILE__,__LINE__,message(1:1))
+   endif
+   grid%ep%sn=0.
+   !
+   ! allocate grid%ep%gr
+   !
+   ALLOCATE(grid%ep%gr(sm31:em31,sm32:em32,sm33:em33,1:config_flags%ensdim_alpha*ep_dim),STAT=ierr)
+   if (ierr.ne.0) then
+      write(unit=message(1),fmt='(a)') 'Failed to allocate grid%ep%gr(sm31:em31,sm32:em32,sm33:em33,1:config_flags%ensdim_alpha) '
+      call da_error(__FILE__,__LINE__,message(1:1))
+   endif
+   grid%ep%gr=0.
+#endif
+end if !not anal_type_hybrid_dual_res
 
    if (trace_use) call da_trace_exit("da_solve_init")
 

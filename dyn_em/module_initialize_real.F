@@ -1437,7 +1437,7 @@ integer::oops1,oops2
               DO WHILE (grid%id .GT. id)
                 id = id+1
                 ks = ks+model_config_rec%e_vert(id-1)
-                ke = ks+model_config_rec%e_vert(id)
+                ke = ks+model_config_rec%e_vert(id)-1
               ENDDO
             ENDIF
             eta_levels(1:kde) = model_config_rec%eta_levels(ks:ke)

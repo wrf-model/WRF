@@ -66,6 +66,7 @@
       USE MODULE_CLEAR_HALOS, only: clear_ij_halos
       USE MODULE_STATS_FOR_MOVE, only: vorttrak_init
       USE MODULE_SWATH, only: init_swath
+      USE MODULE_SF_EXCHCOEF, only: znot_wind10m
 #endif
       USE MODULE_TIMING
 #if ( HWRF == 1 )
@@ -168,9 +169,14 @@
      &       ,SLPM,TERM1,THLM,TIME,TLM,TSFCK,ULM,VLM
 !
 !!!   REAL :: BLDT,CWML,EXNSFC,G_INV,PLYR,PSFC,ROG,SFCZ,THSIJ,TL
-      REAL :: CWML,EXNSFC,G_INV,PLYR,PSURF,ROG,SFCZ,THSIJ,TL,ZOQING
+      REAL :: CWML,EXNSFC,G_INV,PLYR,PSURF,ROG,SFCZ,THSIJ,TL
       REAL :: TEND, TEMPDX,TEMPDY
 #if ( HWRF == 1 )
+! For calculating 10-m wind from lowest model level wind
+      INTEGER :: ITER
+      REAL :: windlmtmp,wind10tmp,wind10new,znotmtmp,znotttmp
+#endif
+#ifdef HWRF
 !zhang's doing 
       REAL :: TSTART
 !zhang's doing ends
@@ -1541,26 +1547,27 @@
 #endif
           grid%th10(I,J)=FAC2*grid%ths(I,J)+FAC1*THLM
           grid%q10(I,J)=FAC2*grid%qsh(I,J)+FAC1*QLM
-#if ( HWRF == 1 )
+#ifdef HWRF
           IF(grid%sm(I,J).LT.0.5)THEN
-              grid%u10(I,J)=ULM*(log(10./grid%z0(I,J))/log(DZLM/grid%z0(I,J)))      ! this is all Qingfu's doing
+              grid%u10(I,J)=ULM*(log(10./grid%z0(I,J))/log(DZLM/grid%z0(I,J)))
               grid%v10(I,J)=VLM*(log(10./grid%z0(I,J))/log(DZLM/grid%z0(I,J)))
-              ZOQING=1.944*SQRT(grid%u10(I,J)*grid%u10(I,J)+grid%v10(I,J)*grid%v10(I,J))
-            IF(ZOQING.GT.60.)THEN
-              grid%u10(I,J)=grid%u10(I,J)*(1.12-7.2/ZOQING)
-              grid%v10(I,J)=grid%v10(I,J)*(1.12-7.2/ZOQING)
-             ENDIF
           ELSE
-             ZOQING=(0.074*SQRT(ULM*ULM+VLM*VLM)-0.58)*1.0e-3
-             ZOQING=MAX(ZOQING,grid%z0(I,J))          ! for winds greater than 12.5 m/s
-             grid%u10(I,J)=ULM*(log(10./ZOQING))/log(DZLM/ZOQING)      ! this is all Qingfu's doing
-             grid%v10(I,J)=VLM*(log(10./ZOQING))/log(DZLM/ZOQING)
-             ZOQING=1.944*SQRT(grid%u10(I,J)*grid%u10(I,J)+grid%v10(I,J)*grid%v10(I,J))
-           IF(ZOQING.GT.60.)THEN
-              grid%u10(I,J)=grid%u10(I,J)*(1.12-7.2/ZOQING)
-              grid%v10(I,J)=grid%v10(I,J)*(1.12-7.2/ZOQING)
-           END IF
-          ENDIF          
+             windlmtmp=SQRT(ULM*ULM+VLM*VLM)
+             wind10tmp=windlmtmp
+             DO ITER=1,10
+               call znot_wind10m(wind10tmp,znotttmp,znotmtmp,config_flags%icoef_sf)
+               znotmtmp=MAX(znotmtmp,1.e-6)
+               wind10new=windlmtmp*(log(10./znotmtmp))/log(DZLM/znotmtmp)
+               IF (ABS(wind10new-wind10tmp) .LE. 1.e-3 ) EXIT
+               wind10tmp=wind10new
+               IF ( ITER .GE. 10 ) THEN
+                 write(message,*) 'Warning: reached the 10th iteration step in calculating U10 from ULM'
+                 CALL wrf_message( message )
+               ENDIF
+             ENDDO
+             grid%u10(I,J)=ULM*(log(10./znotmtmp))/log(DZLM/znotmtmp)
+             grid%v10(I,J)=VLM*(log(10./znotmtmp))/log(DZLM/znotmtmp)
+          ENDIF
 #else
           grid%u10(I,J)=ULM
           grid%v10(I,J)=VLM

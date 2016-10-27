@@ -344,10 +344,17 @@ end do
            j_start = max(jts-1, jds)
            j_end = min(jte+1, jde-1)
 
-           CALL mass_weight ( w , mut , rfield , c1f, c2f, &
-                              ids,ide, jds,jde, kds,kde,   &        ! domain dims
-                              ims,ime, jms,jme, kms,kme,   &        ! memory dims
-                              i_start,i_end, j_start,j_end, kts,kte) ! tile dims
+!          CALL mass_weight ( w , mut , rfield , c1f, c2f, &
+!                             ids,ide, jds,jde, kds,kde,   &        ! domain dims
+!                             ims,ime, jms,jme, kms,kme,   &        ! memory dims
+!                             i_start,i_end, j_start,j_end, kts,kte) ! tile dims
+do j = j_start,j_end
+do k = kts,kte
+do i = i_start,i_end
+rfield(i,k,j) = w(i,k,j)*(c1f(k)*MUT(i,j)+c2f(k))
+end do
+end do
+end do
 
            CALL relax_bdytend_tile ( rfield, rw_tendf,             &
                                w_bxs,w_bxe,w_bys,w_bye, w_btxs,w_btxe,w_btys,w_btye,       &

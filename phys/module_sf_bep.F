@@ -3191,11 +3191,11 @@ MODULE module_sf_bep
       real rlw(2*ndm,nz_um)         ! Long wave radiation at the walls for a given canyon direction [W/m2]
       real rsg(ndm)                   ! Short wave radiation at the canyon for a given canyon direction [W/m2]
       real rlg(ndm)                   ! Long wave radiation at the ground for a given canyon direction [W/m2]
-      real rs                        ! Short wave radiation at the horizontal surface from the sun [W/m²]  
-      real sfw(2*ndm,nz_um)      ! Sensible heat flux from walls [W/m²]
-      real sfg(ndm)              ! Sensible heat flux from ground (road) [W/m²]
-      real sfr(ndm,nz_um)      ! Sensible heat flux from roofs [W/m²]                      
-      real rld                        ! Long wave radiation from the sky [W/m²]
+      real rs                        ! Short wave radiation at the horizontal surface from the sun [W/m2]  
+      real sfw(2*ndm,nz_um)      ! Sensible heat flux from walls [W/m2]
+      real sfg(ndm)              ! Sensible heat flux from ground (road) [W/m2]
+      real sfr(ndm,nz_um)      ! Sensible heat flux from roofs [W/m2]                      
+      real rld                        ! Long wave radiation from the sky [W/m2]
       real albg_u                    ! albedo of the ground/street
       real albw_u                    ! albedo of the walls
       real albr_u                    ! albedo of the roof 

@@ -1,4 +1,4 @@
-subroutine da_add_flow_dependence_xa_dual_res (grid, ne,  ep, vp)
+subroutine da_add_flow_dependence_xa_dual_res (grid, ne,  ep, vp, nobwin)
 
    !-----------------------------------------------------------------------
    ! Purpose: Add flow-dependent increments in model space (grid%xa).
@@ -13,9 +13,11 @@ subroutine da_add_flow_dependence_xa_dual_res (grid, ne,  ep, vp)
    
    integer                              :: i, j, k, n  ! Loop counters.
    real                                 :: alpha       ! Local alpha copy.
-
+   integer, intent(in), optional        :: nobwin
    real, allocatable, dimension(:,:,:)  :: ens_contrib_u, ens_contrib_v, ens_contrib_t, ens_contrib_q, ens_contrib_p
    real, allocatable, dimension(:,:,:)  :: output_u,output_v,output_t,output_q, output_p
+   real, allocatable, dimension(:,:,:)  :: ens_contrib_qcw, ens_contrib_qrn, ens_contrib_qci, ens_contrib_qsn, ens_contrib_qgr
+   real, allocatable, dimension(:,:,:)  :: output_qcw, output_qrn, output_qci, output_qsn, output_qgr
 
    integer  :: thisdomain_max_halo_width
 
@@ -57,6 +59,13 @@ subroutine da_add_flow_dependence_xa_dual_res (grid, ne,  ep, vp)
    allocate( ens_contrib_t(cims:cime,ckms:ckme,cjms:cjme) ) 
    allocate( ens_contrib_q(cims:cime,ckms:ckme,cjms:cjme) ) 
    allocate( ens_contrib_p(cims:cime,1:1,cjms:cjme) )
+#ifdef CLOUD_CV
+   allocate( ens_contrib_qcw(cims:cime,ckms:ckme,cjms:cjme) )
+   allocate( ens_contrib_qrn(cims:cime,ckms:ckme,cjms:cjme) )
+   allocate( ens_contrib_qci(cims:cime,ckms:ckme,cjms:cjme) )
+   allocate( ens_contrib_qsn(cims:cime,ckms:ckme,cjms:cjme) )
+   allocate( ens_contrib_qgr(cims:cime,ckms:ckme,cjms:cjme) )
+#endif
 
    ! Output: Ensemble contribution to increment interpolated to hi-res domain, (x,z,y) order
    allocate( output_u(nims:nime,nkms:nkme,njms:njme) )
@@ -64,47 +73,105 @@ subroutine da_add_flow_dependence_xa_dual_res (grid, ne,  ep, vp)
    allocate( output_t(nims:nime,nkms:nkme,njms:njme) )
    allocate( output_q(nims:nime,nkms:nkme,njms:njme) )
    allocate( output_p(nims:nime,1:1,njms:njme) )
+#ifdef CLOUD_CV
+   allocate( output_qcw(nims:nime,nkms:nkme,njms:njme) )
+   allocate( output_qrn(nims:nime,nkms:nkme,njms:njme) )
+   allocate( output_qci(nims:nime,nkms:nkme,njms:njme) )
+   allocate( output_qsn(nims:nime,nkms:nkme,njms:njme) )
+   allocate( output_qgr(nims:nime,nkms:nkme,njms:njme) )
+#endif
 
    ens_contrib_u = 0.
    ens_contrib_v = 0.
    ens_contrib_t = 0.
    ens_contrib_q = 0.
    ens_contrib_p = 0.
+#ifdef CLOUD_CV
+   ens_contrib_qcw = 0.
+   ens_contrib_qrn = 0.
+   ens_contrib_qci = 0.
+   ens_contrib_qsn = 0.
+   ens_contrib_qgr = 0.
+#endif
 
    output_u = 0.
    output_v = 0.
    output_t = 0.
    output_q = 0.
    output_p = 0.
+#ifdef CLOUD_CV
+   output_qcw = 0.
+   output_qrn = 0.
+   output_qci = 0.
+   output_qsn = 0.
+   output_qgr = 0.
+#endif
 
    !
    ! Determine the ensemble contribution to the increment (low-res) and put in (x,z,y) order for interpolation
    !
+   if (present(nobwin)) then
+      do j = jts_int, jte_int
+         do k = kts_int, kte_int
+            do i = its_int, ite_int
+               do n = 1, ne
 
-   do j = jts_int, jte_int
-      do k = kts_int, kte_int
-         do i = its_int, ite_int
-            do n = 1, ne
+                  alpha = vp % alpha(i,j,k,n)
 
-               alpha = vp % alpha(i,j,k,n)
+                  ens_contrib_u(i,k,j) = ens_contrib_u(i,k,j) + alpha * ep % v1(i,j,k,(nobwin-1)*ensdim_alpha+n) ! v1 = u
+                  ens_contrib_v(i,k,j) = ens_contrib_v(i,k,j) + alpha * ep % v2(i,j,k,(nobwin-1)*ensdim_alpha+n) ! v2 = v
+                  ens_contrib_t(i,k,j) = ens_contrib_t(i,k,j) + alpha * ep % v3(i,j,k,(nobwin-1)*ensdim_alpha+n) ! v3 = t
+                  ens_contrib_q(i,k,j) = ens_contrib_q(i,k,j) + alpha * ep % v4(i,j,k,(nobwin-1)*ensdim_alpha+n) ! v4 = q
+#ifdef CLOUD_CV
+                  ens_contrib_qcw(i,k,j) = ens_contrib_qcw(i,k,j) + alpha * ep%cw(i,j,k,(nobwin-1)*ensdim_alpha+n)
+                  ens_contrib_qrn(i,k,j) = ens_contrib_qrn(i,k,j) + alpha * ep%rn(i,j,k,(nobwin-1)*ensdim_alpha+n)
+                  ens_contrib_qci(i,k,j) = ens_contrib_qci(i,k,j) + alpha * ep%ci(i,j,k,(nobwin-1)*ensdim_alpha+n)
+                  ens_contrib_qsn(i,k,j) = ens_contrib_qsn(i,k,j) + alpha * ep%sn(i,j,k,(nobwin-1)*ensdim_alpha+n)
+                  ens_contrib_qgr(i,k,j) = ens_contrib_qgr(i,k,j) + alpha * ep%gr(i,j,k,(nobwin-1)*ensdim_alpha+n)
+#endif
 
-               ens_contrib_u(i,k,j) = ens_contrib_u(i,k,j) + alpha * ep % v1(i,j,k,n) ! v1 = u
-               ens_contrib_v(i,k,j) = ens_contrib_v(i,k,j) + alpha * ep % v2(i,j,k,n) ! v2 = v
-               ens_contrib_t(i,k,j) = ens_contrib_t(i,k,j) + alpha * ep % v3(i,j,k,n) ! v3 = t
-               ens_contrib_q(i,k,j) = ens_contrib_q(i,k,j) + alpha * ep % v4(i,j,k,n) ! v4 = q
+               end do
+             end do
+         end do
+      end do
 
+      do n = 1,ne
+         ens_contrib_p(its_int:ite_int,1,jts_int:jte_int) = ens_contrib_p(its_int:ite_int,1,jts_int:jte_int) + & 
+                                                     vp % alpha(its_int:ite_int,jts_int:jte_int,1,n)  * &
+                                                     ep % v5   (its_int:ite_int,jts_int:jte_int,1,(nobwin-1)*ensdim_alpha+n)  ! v5 = ps
+      end do
+
+   else
+      do j = jts_int, jte_int
+         do k = kts_int, kte_int
+            do i = its_int, ite_int
+               do n = 1, ne
+
+                  alpha = vp % alpha(i,j,k,n)
+
+                  ens_contrib_u(i,k,j) = ens_contrib_u(i,k,j) + alpha * ep % v1(i,j,k,n) ! v1 = u
+                  ens_contrib_v(i,k,j) = ens_contrib_v(i,k,j) + alpha * ep % v2(i,j,k,n) ! v2 = v
+                  ens_contrib_t(i,k,j) = ens_contrib_t(i,k,j) + alpha * ep % v3(i,j,k,n) ! v3 = t
+                  ens_contrib_q(i,k,j) = ens_contrib_q(i,k,j) + alpha * ep % v4(i,j,k,n) ! v4 = q
+#ifdef CLOUD_CV
+                  ens_contrib_qcw(i,k,j) = ens_contrib_qcw(i,k,j) + alpha * ep%cw(i,j,k,n)
+                  ens_contrib_qrn(i,k,j) = ens_contrib_qrn(i,k,j) + alpha * ep%rn(i,j,k,n)
+                  ens_contrib_qci(i,k,j) = ens_contrib_qci(i,k,j) + alpha * ep%ci(i,j,k,n)
+                  ens_contrib_qsn(i,k,j) = ens_contrib_qsn(i,k,j) + alpha * ep%sn(i,j,k,n)
+                  ens_contrib_qgr(i,k,j) = ens_contrib_qgr(i,k,j) + alpha * ep%gr(i,j,k,n)
+#endif
+
+               end do
             end do
          end do
       end do
-   end do
 
-   do n = 1,ne
-      ens_contrib_p(its_int:ite_int,1,jts_int:jte_int) = ens_contrib_p(its_int:ite_int,1,jts_int:jte_int) + & 
+      do n = 1,ne
+         ens_contrib_p(its_int:ite_int,1,jts_int:jte_int) = ens_contrib_p(its_int:ite_int,1,jts_int:jte_int) + & 
                                                      vp % alpha(its_int:ite_int,jts_int:jte_int,1,n)  * &
                                                      ep % v5   (its_int:ite_int,jts_int:jte_int,1,n)  ! v5 = ps
-   end do
-
-
+      end do
+   end if
 #ifdef DM_PARALLEL
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    !!!!!! DO HALO STUFF !!!!!!!!!!!!!!!
@@ -119,7 +186,11 @@ subroutine da_add_flow_dependence_xa_dual_res (grid, ne,  ep, vp)
       CALL RSL_LITE_INIT_EXCH ( local_communicator, 4, 0, &
 	   rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p,   &
 	   rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p,   &
-	   4, 1, RWORDSIZE, &
+#ifdef CLOUD_CV
+           9, 1, RWORDSIZE, &
+#else
+           4, 1, RWORDSIZE, &
+#endif
 	   0, 0, IWORDSIZE, &
 	   0, 0, DWORDSIZE, &
 	    0,  0, LWORDSIZE, &
@@ -183,6 +254,63 @@ subroutine da_add_flow_dependence_xa_dual_res (grid, ne,  ep, vp)
          cims, cime, cjms, cjme, 1, 1,    &
          cips, cipe, cjps, cjpe, 1, 1    )
       ENDIF
+#ifdef CLOUD_CV
+      IF ( SIZE(ens_contrib_qcw,1)*SIZE(ens_contrib_qcw,3) .GT. 1 ) THEN
+         CALL RSL_LITE_PACK ( local_communicator,                &
+         ens_contrib_qcw, 4,                                     &
+         rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
+         rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
+         RWORDSIZE, 0, 0, DATA_ORDER_XZY, 0,                     &
+         myproc, ntasks, ntasks_x, ntasks_y,                     &
+         cids, cide, cjds, cjde, ckds, ckde,                     &
+         cims, cime, cjms, cjme, ckms, ckme,                     &
+         cips, cipe, cjps, cjpe, ckps, ckpe    )
+      ENDIF
+      IF ( SIZE(ens_contrib_qrn,1)*SIZE(ens_contrib_qrn,3) .GT. 1 ) THEN
+         CALL RSL_LITE_PACK ( local_communicator,                &
+         ens_contrib_qrn, 4,                                     &
+         rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
+         rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
+         RWORDSIZE, 0, 0, DATA_ORDER_XZY, 0,                     &
+         myproc, ntasks, ntasks_x, ntasks_y,                     &
+         cids, cide, cjds, cjde, ckds, ckde,                     &
+         cims, cime, cjms, cjme, ckms, ckme,                     &
+         cips, cipe, cjps, cjpe, ckps, ckpe    )
+      ENDIF
+      IF ( SIZE(ens_contrib_qci,1)*SIZE(ens_contrib_qci,3) .GT. 1 ) THEN
+         CALL RSL_LITE_PACK ( local_communicator,                &
+         ens_contrib_qci, 4,                                     &
+         rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
+         rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
+         RWORDSIZE, 0, 0, DATA_ORDER_XZY, 0,                     &
+         myproc, ntasks, ntasks_x, ntasks_y,                     &
+         cids, cide, cjds, cjde, ckds, ckde,                     &
+         cims, cime, cjms, cjme, ckms, ckme,                     &
+         cips, cipe, cjps, cjpe, ckps, ckpe    )
+      ENDIF
+      IF ( SIZE(ens_contrib_qsn,1)*SIZE(ens_contrib_qsn,3) .GT. 1 ) THEN
+         CALL RSL_LITE_PACK ( local_communicator,                &
+         ens_contrib_qsn, 4,                                     &
+         rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
+         rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
+         RWORDSIZE, 0, 0, DATA_ORDER_XZY, 0,                     &
+         myproc, ntasks, ntasks_x, ntasks_y,                     &
+         cids, cide, cjds, cjde, ckds, ckde,                     &
+         cims, cime, cjms, cjme, ckms, ckme,                     &
+         cips, cipe, cjps, cjpe, ckps, ckpe    )
+      ENDIF
+      IF ( SIZE(ens_contrib_qgr,1)*SIZE(ens_contrib_qgr,3) .GT. 1 ) THEN
+         CALL RSL_LITE_PACK ( local_communicator,                &
+         ens_contrib_qgr, 4,                                     &
+         rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
+         rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
+         RWORDSIZE, 0, 0, DATA_ORDER_XZY, 0,                     &
+         myproc, ntasks, ntasks_x, ntasks_y,                     &
+         cids, cide, cjds, cjde, ckds, ckde,                     &
+         cims, cime, cjms, cjme, ckms, ckme,                     &
+         cips, cipe, cjps, cjpe, ckps, ckpe    )
+      ENDIF
+#endif
 
 
      CALL RSL_LITE_EXCH_Y ( local_communicator , myproc, ntasks, ntasks_x, ntasks_y, &
@@ -243,6 +371,63 @@ subroutine da_add_flow_dependence_xa_dual_res (grid, ne,  ep, vp)
          cims, cime, cjms, cjme, 1, 1,    &
          cips, cipe, cjps, cjpe, 1, 1    )
       ENDIF
+#ifdef CLOUD_CV
+      IF ( SIZE(ens_contrib_qcw,1)*SIZE(ens_contrib_qcw,3) .GT. 1 ) THEN
+         CALL RSL_LITE_PACK ( local_communicator,                &
+         ens_contrib_qcw, 4,                                     &
+         rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
+         rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
+         RWORDSIZE, 0, 1, DATA_ORDER_XZY, 0,                     &
+         myproc, ntasks, ntasks_x, ntasks_y,                     &
+         cids, cide, cjds, cjde, ckds, ckde,                     &
+         cims, cime, cjms, cjme, ckms, ckme,                     &
+         cips, cipe, cjps, cjpe, ckps, ckpe    )
+      ENDIF
+      IF ( SIZE(ens_contrib_qrn,1)*SIZE(ens_contrib_qrn,3) .GT. 1 ) THEN
+         CALL RSL_LITE_PACK ( local_communicator,                &
+         ens_contrib_qrn, 4,                                     &
+         rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
+         rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
+         RWORDSIZE, 0, 1, DATA_ORDER_XZY, 0,                     &
+         myproc, ntasks, ntasks_x, ntasks_y,                     &
+         cids, cide, cjds, cjde, ckds, ckde,                     &
+         cims, cime, cjms, cjme, ckms, ckme,                     &
+         cips, cipe, cjps, cjpe, ckps, ckpe    )
+      ENDIF
+      IF ( SIZE(ens_contrib_qci,1)*SIZE(ens_contrib_qci,3) .GT. 1 ) THEN
+         CALL RSL_LITE_PACK ( local_communicator,                &
+         ens_contrib_qci, 4,                                     &
+         rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
+         rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
+         RWORDSIZE, 0, 1, DATA_ORDER_XZY, 0,                     &
+         myproc, ntasks, ntasks_x, ntasks_y,                     &
+         cids, cide, cjds, cjde, ckds, ckde,                     &
+         cims, cime, cjms, cjme, ckms, ckme,                     &
+         cips, cipe, cjps, cjpe, ckps, ckpe    )
+      ENDIF
+      IF ( SIZE(ens_contrib_qsn,1)*SIZE(ens_contrib_qsn,3) .GT. 1 ) THEN
+         CALL RSL_LITE_PACK ( local_communicator,                &
+         ens_contrib_qsn, 4,                                     &
+         rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
+         rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
+         RWORDSIZE, 0, 1, DATA_ORDER_XZY, 0,                     &
+         myproc, ntasks, ntasks_x, ntasks_y,                     &
+         cids, cide, cjds, cjde, ckds, ckde,                     &
+         cims, cime, cjms, cjme, ckms, ckme,                     &
+         cips, cipe, cjps, cjpe, ckps, ckpe    )
+      ENDIF
+      IF ( SIZE(ens_contrib_qgr,1)*SIZE(ens_contrib_qgr,3) .GT. 1 ) THEN
+         CALL RSL_LITE_PACK ( local_communicator,                &
+         ens_contrib_qgr, 4,                                     &
+         rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
+         rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
+         RWORDSIZE, 0, 1, DATA_ORDER_XZY, 0,                     &
+         myproc, ntasks, ntasks_x, ntasks_y,                     &
+         cids, cide, cjds, cjde, ckds, ckde,                     &
+         cims, cime, cjms, cjme, ckms, ckme,                     &
+         cips, cipe, cjps, cjpe, ckps, ckpe    )
+      ENDIF
+#endif
    END DO
 
 
@@ -255,7 +440,11 @@ subroutine da_add_flow_dependence_xa_dual_res (grid, ne,  ep, vp)
       CALL RSL_LITE_INIT_EXCH ( local_communicator, 4, 1, &
 	   rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p,   &
 	   rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p,   &
-	   4, 1, RWORDSIZE, &
+#ifdef CLOUD_CV
+           9, 1, RWORDSIZE, &
+#else
+           4, 1, RWORDSIZE, &
+#endif
 	   0, 0, IWORDSIZE, &
 	   0, 0, DWORDSIZE, &
 	    0,  0, LWORDSIZE, &
@@ -319,6 +508,63 @@ subroutine da_add_flow_dependence_xa_dual_res (grid, ne,  ep, vp)
          cims, cime, cjms, cjme, 1, 1,    &
          cips, cipe, cjps, cjpe, 1, 1    )
       ENDIF
+#ifdef CLOUD_CV
+      IF ( SIZE(ens_contrib_qcw,1)*SIZE(ens_contrib_qcw,3) .GT. 1 ) THEN
+         CALL RSL_LITE_PACK ( local_communicator,                &
+         ens_contrib_qcw, 4,                                     &
+         rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
+         rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
+         RWORDSIZE, 1, 0, DATA_ORDER_XZY, 0,                     &
+         myproc, ntasks, ntasks_x, ntasks_y,                     &
+         cids, cide, cjds, cjde, ckds, ckde,                     &
+         cims, cime, cjms, cjme, ckms, ckme,                     &
+         cips, cipe, cjps, cjpe, ckps, ckpe    )
+      ENDIF
+      IF ( SIZE(ens_contrib_qrn,1)*SIZE(ens_contrib_qrn,3) .GT. 1 ) THEN
+         CALL RSL_LITE_PACK ( local_communicator,                &
+         ens_contrib_qrn, 4,                                     &
+         rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
+         rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
+         RWORDSIZE, 1, 0, DATA_ORDER_XZY, 0,                     &
+         myproc, ntasks, ntasks_x, ntasks_y,                     &
+         cids, cide, cjds, cjde, ckds, ckde,                     &
+         cims, cime, cjms, cjme, ckms, ckme,                     &
+         cips, cipe, cjps, cjpe, ckps, ckpe    )
+      ENDIF
+      IF ( SIZE(ens_contrib_qci,1)*SIZE(ens_contrib_qci,3) .GT. 1 ) THEN
+         CALL RSL_LITE_PACK ( local_communicator,                &
+         ens_contrib_qci, 4,                                     &
+         rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
+         rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
+         RWORDSIZE, 1, 0, DATA_ORDER_XZY, 0,                     &
+         myproc, ntasks, ntasks_x, ntasks_y,                     &
+         cids, cide, cjds, cjde, ckds, ckde,                     &
+         cims, cime, cjms, cjme, ckms, ckme,                     &
+         cips, cipe, cjps, cjpe, ckps, ckpe    )
+      ENDIF
+      IF ( SIZE(ens_contrib_qsn,1)*SIZE(ens_contrib_qsn,3) .GT. 1 ) THEN
+         CALL RSL_LITE_PACK ( local_communicator,                &
+         ens_contrib_qsn, 4,                                     &
+         rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
+         rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
+         RWORDSIZE, 1, 0, DATA_ORDER_XZY, 0,                     &
+         myproc, ntasks, ntasks_x, ntasks_y,                     &
+         cids, cide, cjds, cjde, ckds, ckde,                     &
+         cims, cime, cjms, cjme, ckms, ckme,                     &
+         cips, cipe, cjps, cjpe, ckps, ckpe    )
+      ENDIF
+      IF ( SIZE(ens_contrib_qgr,1)*SIZE(ens_contrib_qgr,3) .GT. 1 ) THEN
+         CALL RSL_LITE_PACK ( local_communicator,                &
+         ens_contrib_qgr, 4,                                     &
+         rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
+         rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
+         RWORDSIZE, 1, 0, DATA_ORDER_XZY, 0,                     &
+         myproc, ntasks, ntasks_x, ntasks_y,                     &
+         cids, cide, cjds, cjde, ckds, ckde,                     &
+         cims, cime, cjms, cjme, ckms, ckme,                     &
+         cips, cipe, cjps, cjpe, ckps, ckpe    )
+      ENDIF
+#endif
 
      CALL RSL_LITE_EXCH_X ( local_communicator , myproc, ntasks, ntasks_x, ntasks_y, &
                           rsl_sendw_m,  rsl_sendw_p, rsl_recvw_m,  rsl_recvw_p    )
@@ -379,6 +625,63 @@ subroutine da_add_flow_dependence_xa_dual_res (grid, ne,  ep, vp)
          cips, cipe, cjps, cjpe, 1, 1    )
       ENDIF
    ENDDO
+#ifdef CLOUD_CV
+      IF ( SIZE(ens_contrib_qcw,1)*SIZE(ens_contrib_qcw,3) .GT. 1 ) THEN
+         CALL RSL_LITE_PACK ( local_communicator,                &
+         ens_contrib_qcw, 4,                                     &
+         rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
+         rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
+         RWORDSIZE, 1, 1, DATA_ORDER_XZY, 0,                     &
+         myproc, ntasks, ntasks_x, ntasks_y,                     &
+         cids, cide, cjds, cjde, ckds, ckde,                     &
+         cims, cime, cjms, cjme, ckms, ckme,                     &
+         cips, cipe, cjps, cjpe, ckps, ckpe    )
+      ENDIF
+      IF ( SIZE(ens_contrib_qrn,1)*SIZE(ens_contrib_qrn,3) .GT. 1 ) THEN
+         CALL RSL_LITE_PACK ( local_communicator,                &
+         ens_contrib_qrn, 4,                                     &
+         rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
+         rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
+         RWORDSIZE, 1, 1, DATA_ORDER_XZY, 0,                     &
+         myproc, ntasks, ntasks_x, ntasks_y,                     &
+         cids, cide, cjds, cjde, ckds, ckde,                     &
+         cims, cime, cjms, cjme, ckms, ckme,                     &
+         cips, cipe, cjps, cjpe, ckps, ckpe    )
+      ENDIF
+      IF ( SIZE(ens_contrib_qci,1)*SIZE(ens_contrib_qci,3) .GT. 1 ) THEN
+         CALL RSL_LITE_PACK ( local_communicator,                &
+         ens_contrib_qci, 4,                                     &
+         rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
+         rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
+         RWORDSIZE, 1, 1, DATA_ORDER_XZY, 0,                     &
+         myproc, ntasks, ntasks_x, ntasks_y,                     &
+         cids, cide, cjds, cjde, ckds, ckde,                     &
+         cims, cime, cjms, cjme, ckms, ckme,                     &
+         cips, cipe, cjps, cjpe, ckps, ckpe    )
+      ENDIF
+      IF ( SIZE(ens_contrib_qsn,1)*SIZE(ens_contrib_qsn,3) .GT. 1 ) THEN
+         CALL RSL_LITE_PACK ( local_communicator,                &
+         ens_contrib_qsn, 4,                                     &
+         rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
+         rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
+         RWORDSIZE, 1, 1, DATA_ORDER_XZY, 0,                     &
+         myproc, ntasks, ntasks_x, ntasks_y,                     &
+         cids, cide, cjds, cjde, ckds, ckde,                     &
+         cims, cime, cjms, cjme, ckms, ckme,                     &
+         cips, cipe, cjps, cjpe, ckps, ckpe    )
+      ENDIF
+      IF ( SIZE(ens_contrib_qgr,1)*SIZE(ens_contrib_qgr,3) .GT. 1 ) THEN
+         CALL RSL_LITE_PACK ( local_communicator,                &
+         ens_contrib_qgr, 4,                                     &
+         rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
+         rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
+         RWORDSIZE, 1, 1, DATA_ORDER_XZY, 0,                     &
+         myproc, ntasks, ntasks_x, ntasks_y,                     &
+         cids, cide, cjds, cjde, ckds, ckde,                     &
+         cims, cime, cjms, cjme, ckms, ckme,                     &
+         cips, cipe, cjps, cjpe, ckps, ckpe    )
+      ENDIF
+#endif
 
    !!!!!! END HALO STUFF !!!!!!!!!!!!!
 #endif
@@ -519,6 +822,34 @@ subroutine da_add_flow_dependence_xa_dual_res (grid, ne,  ep, vp)
 		      + ob_locs(n)%dy *(ob_locs(n)%dxm*ens_contrib_q(ob_locs(n)%i,k,ob_locs(n)%j+1)  &
 		      + ob_locs(n)%dx*ens_contrib_q(ob_locs(n)%i+1,k,ob_locs(n)%j+1))
 
+#ifdef CLOUD_CV
+            output_qcw(ob_locs(n)%xx,k,ob_locs(n)%yy) =                                               &
+                        ob_locs(n)%dym*(ob_locs(n)%dxm*ens_contrib_qcw(ob_locs(n)%i,k,ob_locs(n)%j)   &
+                      + ob_locs(n)%dx*ens_contrib_qcw(ob_locs(n)%i+1,k,ob_locs(n)%j))                 &
+                      + ob_locs(n)%dy *(ob_locs(n)%dxm*ens_contrib_qcw(ob_locs(n)%i,k,ob_locs(n)%j+1) &
+                      + ob_locs(n)%dx*ens_contrib_qcw(ob_locs(n)%i+1,k,ob_locs(n)%j+1))
+            output_qrn(ob_locs(n)%xx,k,ob_locs(n)%yy) =                                               &
+                        ob_locs(n)%dym*(ob_locs(n)%dxm*ens_contrib_qrn(ob_locs(n)%i,k,ob_locs(n)%j)   &
+                      + ob_locs(n)%dx*ens_contrib_qrn(ob_locs(n)%i+1,k,ob_locs(n)%j))                 &
+                      + ob_locs(n)%dy *(ob_locs(n)%dxm*ens_contrib_qrn(ob_locs(n)%i,k,ob_locs(n)%j+1) &
+                      + ob_locs(n)%dx*ens_contrib_qrn(ob_locs(n)%i+1,k,ob_locs(n)%j+1))
+            output_qci(ob_locs(n)%xx,k,ob_locs(n)%yy) =                                               &
+                        ob_locs(n)%dym*(ob_locs(n)%dxm*ens_contrib_qci(ob_locs(n)%i,k,ob_locs(n)%j)   &
+                      + ob_locs(n)%dx*ens_contrib_qci(ob_locs(n)%i+1,k,ob_locs(n)%j))                 &
+                      + ob_locs(n)%dy *(ob_locs(n)%dxm*ens_contrib_qci(ob_locs(n)%i,k,ob_locs(n)%j+1) &
+                      + ob_locs(n)%dx*ens_contrib_qci(ob_locs(n)%i+1,k,ob_locs(n)%j+1))
+            output_qsn(ob_locs(n)%xx,k,ob_locs(n)%yy) =                                               &
+                        ob_locs(n)%dym*(ob_locs(n)%dxm*ens_contrib_qsn(ob_locs(n)%i,k,ob_locs(n)%j)   &
+                      + ob_locs(n)%dx*ens_contrib_qsn(ob_locs(n)%i+1,k,ob_locs(n)%j))                 &
+                      + ob_locs(n)%dy *(ob_locs(n)%dxm*ens_contrib_qsn(ob_locs(n)%i,k,ob_locs(n)%j+1) &
+                      + ob_locs(n)%dx*ens_contrib_qsn(ob_locs(n)%i+1,k,ob_locs(n)%j+1))
+            output_qgr(ob_locs(n)%xx,k,ob_locs(n)%yy) =                                               &
+                        ob_locs(n)%dym*(ob_locs(n)%dxm*ens_contrib_qgr(ob_locs(n)%i,k,ob_locs(n)%j)   &
+                      + ob_locs(n)%dx*ens_contrib_qgr(ob_locs(n)%i+1,k,ob_locs(n)%j))                 &
+                      + ob_locs(n)%dy *(ob_locs(n)%dxm*ens_contrib_qgr(ob_locs(n)%i,k,ob_locs(n)%j+1) &
+                      + ob_locs(n)%dx*ens_contrib_qgr(ob_locs(n)%i+1,k,ob_locs(n)%j+1))
+#endif
+
 	 end do
 
 	 output_p(ob_locs(n)%xx,1,ob_locs(n)%yy) = &
@@ -554,6 +885,14 @@ subroutine da_add_flow_dependence_xa_dual_res (grid, ne,  ep, vp)
                ! q:
                grid%xa % q(i,j,k) = grid%xa % q(i,j,k) + output_q(i,k,j) ! q
 
+#ifdef CLOUD_CV
+               grid%xa%qcw(i,j,k) = grid%xa%qcw(i,j,k) + output_qcw(i,k,j)
+               grid%xa%qrn(i,j,k) = grid%xa%qrn(i,j,k) + output_qrn(i,k,j)
+               grid%xa%qci(i,j,k) = grid%xa%qci(i,j,k) + output_qci(i,k,j)
+               grid%xa%qsn(i,j,k) = grid%xa%qsn(i,j,k) + output_qsn(i,k,j)
+               grid%xa%qgr(i,j,k) = grid%xa%qgr(i,j,k) + output_qgr(i,k,j)
+#endif
+
          end do
       end do
    end do
@@ -570,6 +909,10 @@ subroutine da_add_flow_dependence_xa_dual_res (grid, ne,  ep, vp)
 
    deallocate(ens_contrib_u,ens_contrib_v,ens_contrib_t,ens_contrib_q,ens_contrib_p)
    deallocate(output_u,output_v,output_t,output_q,output_p)
+#ifdef CLOUD_CV
+   deallocate(ens_contrib_qcw,ens_contrib_qrn,ens_contrib_qci,ens_contrib_qsn,ens_contrib_qgr)
+   deallocate(output_qcw,output_qrn,output_qci,output_qsn,output_qgr)
+#endif
 
 end subroutine da_add_flow_dependence_xa_dual_res
 

@@ -44,6 +44,8 @@ subroutine da_adjoint_sensitivity(grid, config_flags, cv_size, xbx, be, iv, xhat
          call da_zero_x (grid%xa)
          call da_transfer_xatowrftl_adj(grid, config_flags, 'gr01')
          call da_transform_xtoxa_adj(grid)
+         !as of V3.9, da_zero_vp_type(vp) is commented out in the da_transform_vtox_adj
+         call da_zero_vp_type(grid%vp) !as of V3.9, zero out vp here
          call da_transform_vtox_adj (grid, cv_size, xbx, be, grid%ep, grid%vp, grid%vv, shat)
 
 !---------------------------

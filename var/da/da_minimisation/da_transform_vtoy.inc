@@ -23,6 +23,7 @@ subroutine da_transform_vtoy(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx, &
 
    type(x_type) :: shuffle
    integer :: nobwin, jl_start, jl_end, time_step_seconds
+   integer :: num_subtwindow
 
    character(len=4) :: filnam
    character(len=256) :: timestr, timestr1
@@ -34,6 +35,10 @@ subroutine da_transform_vtoy(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx, &
    if (var4d) then
 #ifdef VAR4D
       call da_transform_vtox(grid, be%cv%size_jb, xbx, be, ep, cv(1:be%cv%size_jb), vv, vp)
+      if (be % ne > 0 .and. alphacv_method == alphacv_method_xa) then
+         call da_transform_vpatox(grid, be, ep, vp)
+         call da_add_xa(grid%xa, grid%xa_ens) !grid%xa = grid%xa + xa_ens
+      end if
       call domain_clock_get( grid, start_timestr=timestr )
       call da_transfer_xatowrftl(grid, config_flags, 'tl01', timestr)
 
@@ -150,15 +155,51 @@ subroutine da_transform_vtoy(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx, &
 
 #endif
    else  ! not var4d
+
+      ! as of V3.9, vp%alpha is not included in the vptox (called by vtox) calculation
+      ! here grid%xa contains only the static increment
       call da_transform_vtox(grid, cv_size, xbx, be, ep, cv, vv, vp)
-      iv%info(:)%n1 = 1
-      iv%info(:)%n2 = iv%info(:)%nlocal
-      if ( use_rad ) then
-         iv%instid(:)%info%n1 = 1
-         iv%instid(:)%info%n2 = iv%instid(:)%num_rad
+
+      if ( use_4denvar ) then
+         num_subtwindow = num_fgat_time
+      else
+         num_subtwindow = 1
       end if
-      call da_transform_xtoxa(grid)
-      call da_transform_xtoy(cv_size, cv, grid, iv, y)
+
+      if ( num_subtwindow > 1 ) then
+         !grid%xa_static = grid%xa !save the static increment
+         call da_copy_xa(grid%xa_static, grid%xa)
+      end if
+
+      do nobwin = num_subtwindow, 1 , -1
+         if (be % ne > 0 .and. alphacv_method == alphacv_method_xa) then
+            call da_transform_vpatox(grid, be, ep, vp, nobwin)
+            if ( num_subtwindow > 1 ) then
+               !reset grid%xa = grid%xa_static
+               call da_copy_xa(grid%xa, grid%xa_static)
+            end if
+            call da_add_xa(grid%xa, grid%xa_ens) !grid%xa = grid%xa + xa_ens
+         end if
+         call da_transform_xtoxa(grid)
+         iv%time = nobwin
+         if ( use_4denvar ) then
+            iv%info(:)%n1 = iv%info(:)%plocal(iv%time-1) + 1
+            iv%info(:)%n2 = iv%info(:)%plocal(iv%time)
+            if ( use_rad ) then
+               iv%instid(:)%info%n1 = iv%instid(:)%info%plocal(iv%time-1) + 1
+               iv%instid(:)%info%n2 = iv%instid(:)%info%plocal(iv%time)
+            end if
+         else
+            iv%info(:)%n1 = 1
+            iv%info(:)%n2 = iv%info(:)%nlocal
+            if ( use_rad ) then
+               iv%instid(:)%info%n1 = 1
+               iv%instid(:)%info%n2 = iv%instid(:)%num_rad
+            end if
+         end if !4denvar
+         call da_transform_xtoy(cv_size, cv, grid, iv, y)
+      end do
+
    end if ! var4d
 
    !--------------------------------------------------------------

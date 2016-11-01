@@ -26,12 +26,12 @@ subroutine da_transform_xtoxa(grid, wpec_on)
    ! [4.0]: Move the following:
    !----------------------------------------------------------------------
 
-   if ( .not. var4d ) then ! for 4dvar the xa%p is come from the model
-
    calc_wpec_term = .false.
    if ( present(wpec_on) ) then
       if ( wpec_on ) calc_wpec_term =.true.
    end if
+
+   if ( .not. var4d ) then ! for 4dvar the xa%p is come from the model
 
    do j=jts,jte
       do i=its,ite

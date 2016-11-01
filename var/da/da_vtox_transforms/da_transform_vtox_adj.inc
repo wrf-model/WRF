@@ -11,7 +11,7 @@ subroutine da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv)
    type(xbx_type), intent(in)    :: xbx  ! For header & non-grid arrays.
    type(be_type),  intent(in)    :: be   ! background errors.
    type(ep_type),  intent(in)    :: ep   ! ensemble perturbation structure.
-   type(vp_type),  intent(out)   :: vp   ! grdipt/level cv (local).
+   type(vp_type),  intent(inout) :: vp   ! grdipt/level cv (local).
    type(vp_type),  intent(out)   :: vv   ! grdipt/eof cv (local).
    real,           intent(inout) :: cv(1:cv_size) ! control variables.
 
@@ -32,7 +32,8 @@ subroutine da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv)
    ! [3.0]: Perform x = u_p vp transform::
    !-------------------------------------------------------------------------
 
-   call da_zero_vp_type (vp)
+   !zero out vp outside this subroutine in order for vp%alpha to pass in
+   !call da_zero_vp_type (vp)
    call da_transform_vptox_adj(grid, vp, be, ep)
 
 

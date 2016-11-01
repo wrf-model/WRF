@@ -11341,7 +11341,7 @@ MODULE module_ra_FLG
       i1 = 1
       do i = 1, nv1
 ! -test
-        if (pt(i).gt.320.) then
+        if (pt(i).gt.345.) then
           pt(i) = 345.
         endif
         if (pt(i).lt.180.) then

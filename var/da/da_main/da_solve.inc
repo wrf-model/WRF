@@ -47,6 +47,7 @@
    real, allocatable :: grid_box_area(:,:), mapfac(:,:)
    character (len=10)    :: variable_name
 
+   integer :: iwin, num_subtwindow
    integer :: xx, yy, ii, jj,  xy, kk, jjj
    real    :: lat, lon, x_pos, y_pos, dx, dy, dxm, dym
    logical :: outside
@@ -494,8 +495,15 @@
       if (use_background_errors .and. be % ne > 0) then
 !        call da_setup_flow_predictors ( ide, jde, kde, be % ne, grid%ep, &
 !                                        its, ite, jts, jte, kts, kte )
-         call da_setup_flow_predictors ( ide_ens, jde_ens, kde_ens, be % ne, grid%ep, &
-                                         its_int, ite_int, jts_int, jte_int, kts_int, kte_int )
+         select case ( ep_para_read )
+            case ( 0 ) ! serial read (default)
+               call da_setup_flow_predictors ( ide_ens, jde_ens, kde_ens, be % ne, grid%ep, &
+                                               its_int, ite_int, jts_int, jte_int, kts_int, kte_int )
+            case ( 1 ) ! para_read_opt1, breaks total number of ep into reading bins
+               call da_setup_flow_predictors_para_read_opt1 ( &
+                                            ide_ens, jde_ens, kde_ens, be % ne, grid%ep, &
+                                            its_int, ite_int, jts_int, jte_int, kts_int, kte_int )
+         end select
       end if
 
    !---------------------------------------------------------------------------
@@ -764,11 +772,27 @@
       end if
 
       ! [8.5] Update latest analysis solution:
-  
+
       if (.not. var4d) then
+         ! as of V3.9, vp%alpha is not included in the vptox (called by vtox) calculation,
+         ! here grid%xa contains only the static increment
          call da_transform_vtox (grid,cv_size,xbx,be,grid%ep,xhat,grid%vv,grid%vp)
+
+         ! adding the ensemble contribution
+         if (be % ne > 0 .and. alphacv_method == alphacv_method_xa) then
+            if ( use_4denvar ) then
+               num_subtwindow = num_fgat_time
+            else
+               num_subtwindow = 1
+            end if
+            do iwin = num_subtwindow, 1 , -1
+               call da_transform_vpatox (grid,be,grid%ep,grid%vp,iwin)
+               call da_add_xa(grid%xa, grid%xa_ens) !grid%xa = grid%xa + xa_ens
+            end do
+         end if !ne>0
       else
          call da_transform_vtox (grid,be%cv%size_jb,xbx,be,grid%ep,xhat(1:be%cv%size_jb),grid%vv,grid%vp)
+         call da_transform_vpatox (grid,be,grid%ep,grid%vp)
       endif
       call da_transform_xtoxa (grid)
 

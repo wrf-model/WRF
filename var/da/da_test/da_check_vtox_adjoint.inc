@@ -121,6 +121,8 @@ subroutine da_check_vtox_adjoint(grid, cv_size, xbx, be, ep, cv1, vv, vp)
    !-------------------------------------------------------------------------
 
    call da_transform_xtoxa_adj(grid)
+   !as of V3.9, da_zero_vp_type(vp) is commented out in the da_transform_vtox_adj
+   call da_zero_vp_type(vp) !as of V3.9, zero out vp here
    call da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv2)
 
    !-------------------------------------------------------------------------

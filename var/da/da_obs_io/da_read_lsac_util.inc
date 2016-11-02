@@ -19,6 +19,7 @@ real, allocatable, dimension(:,:,:) ::  u_lsac, v_lsac, w_lsac, t_lsac, p_lsac, 
 real, allocatable, dimension(:,:,:) ::  pb_lsac, ph_lsac, phb_lsac, height_lsac, press
 real, allocatable, dimension(:,:)   ::  lat_lsac, lon_lsac
 logical                             ::  debug
+logical, external                   ::  wrf_dm_on_monitor
 
 ! If the errors are not calculated from equation, then a minimum value is set.
 !Minimum Error
@@ -41,18 +42,11 @@ lsac_wrfinput  = 'fg_l'
 debug=.false.
 
 if (onlyscan) then
-   if (myproc == 0) then
-      ! print *, '****my proc num is:', myproc, ' I will read and brocast data'
-      call da_get_dims_cdf( lsac_wrfinput, 'XLAT',   dims_lat,  ndims, debug)
-      call da_get_dims_cdf( lsac_wrfinput, 'XLONG',  dims_lon,  ndims, debug)
-      call da_get_dims_cdf( lsac_wrfinput, 'T',      dims_t,    ndims, debug)
-   endif
-#ifdef DM_PARALLEL
-   call MPI_BCAST(dims_lon, 4, MPI_INT, 0, comm, ierror)
-   call MPI_BCAST(dims_lat, 4, MPI_INT, 0, comm, ierror)
-   call MPI_BCAST(dims_t,   4, MPI_INT, 0, comm, ierror)
-#endif
-   ! print *, myproc, dims_lon(1), dims_lon(2), dims_lat(1), dims_lat(2), dims_t(1), dims_t(2)
+
+   call da_get_dims_cdf( lsac_wrfinput, 'XLAT',   dims_lat,  ndims, debug)
+   call da_get_dims_cdf( lsac_wrfinput, 'XLONG',  dims_lon,  ndims, debug)
+   call da_get_dims_cdf( lsac_wrfinput, 'T',      dims_t,    ndims, debug)
+
    allocate(lat_lsac(dims_lat(1), dims_lat(2)))
    allocate(lon_lsac(dims_lon(1), dims_lon(2)))
 
@@ -61,14 +55,8 @@ if (onlyscan) then
    !---------------------------------------------------------
    ! Reading data from WRF Input file
    !---------------------------------------------------------
-   if (myproc == 0) then
-      call da_get_var_2d_real_cdf( lsac_wrfinput, 'XLAT',   lat_lsac, dims_lat(1), dims_lat(2), 1, debug)
-      call da_get_var_2d_real_cdf( lsac_wrfinput, 'XLONG',  lon_lsac, dims_lon(1), dims_lon(2), 1, debug)
-   endif
-#ifdef DM_PARALLEL
-   call MPI_BCAST(lat_lsac, dims_lat(1)*dims_lat(2), MPI_DOUBLE, 0, comm, ierror)
-   call MPI_BCAST(lon_lsac, dims_lon(1)*dims_lon(2), MPI_DOUBLE, 0, comm, ierror)
-#endif
+   call da_get_var_2d_real_cdf( lsac_wrfinput, 'XLAT',   lat_lsac, dims_lat(1), dims_lat(2), 1, debug)
+   call da_get_var_2d_real_cdf( lsac_wrfinput, 'XLONG',  lon_lsac, dims_lon(1), dims_lon(2), 1, debug)
 
    ! Calculating the errors and fill the iv type
    nlocal=0
@@ -97,7 +85,6 @@ if (onlyscan) then
             nrecs  = nrecs+1
          endif
       enddo
-      ! print *, '**************TXW:', myproc, nlevels, nlocal, nrecs
    enddo
    iv%info(bogus)%max_lev = nlevels
    iv%info(bogus)%nlocal  = nlocal
@@ -108,28 +95,16 @@ else
    !---------------------------------------------------------
    ! Getting information from NETCDF files (WRF Input file)
    !---------------------------------------------------------
-   if (myproc == 0) then
-      call da_get_dims_cdf( lsac_wrfinput, 'U',      dims_u,    ndims, debug)
-      call da_get_dims_cdf( lsac_wrfinput, 'V',      dims_v,    ndims, debug)
-      call da_get_dims_cdf( lsac_wrfinput, 'T',      dims_t,    ndims, debug)
-      call da_get_dims_cdf( lsac_wrfinput, 'PB',     dims_p,    ndims, debug)
-      call da_get_dims_cdf( lsac_wrfinput, 'QVAPOR', dims_q,    ndims, debug)
-      call da_get_dims_cdf( lsac_wrfinput, 'XLAT',   dims_lat,  ndims, debug)
-      call da_get_dims_cdf( lsac_wrfinput, 'XLONG',  dims_lon,  ndims, debug)
-      call da_get_dims_cdf( lsac_wrfinput, 'PHB',    dims_phb,  ndims, debug)
-      call da_get_dims_cdf( lsac_wrfinput, 'PH',     dims_ph,   ndims, debug)
-   endif
-#ifdef DM_PARALLEL
-   call MPI_BCAST(dims_u,   4, MPI_INT, 0, comm, ierror)
-   call MPI_BCAST(dims_v,   4, MPI_INT, 0, comm, ierror)
-   call MPI_BCAST(dims_t,   4, MPI_INT, 0, comm, ierror)
-   call MPI_BCAST(dims_p,   4, MPI_INT, 0, comm, ierror)
-   call MPI_BCAST(dims_q,   4, MPI_INT, 0, comm, ierror)
-   call MPI_BCAST(dims_lat, 4, MPI_INT, 0, comm, ierror)
-   call MPI_BCAST(dims_lon, 4, MPI_INT, 0, comm, ierror)
-   call MPI_BCAST(dims_phb, 4, MPI_INT, 0, comm, ierror)
-   call MPI_BCAST(dims_ph,  4, MPI_INT, 0, comm, ierror)
-#endif
+   call da_get_dims_cdf( lsac_wrfinput, 'U',      dims_u,    ndims, debug)
+   call da_get_dims_cdf( lsac_wrfinput, 'V',      dims_v,    ndims, debug)
+   call da_get_dims_cdf( lsac_wrfinput, 'T',      dims_t,    ndims, debug)
+   call da_get_dims_cdf( lsac_wrfinput, 'PB',     dims_p,    ndims, debug)
+   call da_get_dims_cdf( lsac_wrfinput, 'QVAPOR', dims_q,    ndims, debug)
+   call da_get_dims_cdf( lsac_wrfinput, 'XLAT',   dims_lat,  ndims, debug)
+   call da_get_dims_cdf( lsac_wrfinput, 'XLONG',  dims_lon,  ndims, debug)
+   call da_get_dims_cdf( lsac_wrfinput, 'PHB',    dims_phb,  ndims, debug)
+   call da_get_dims_cdf( lsac_wrfinput, 'PH',     dims_ph,   ndims, debug)
+
    ! It will be assimilated every "lsac_nhskip" data point in the horizontal and "lsac_nvskip"
    ! in the vertical
    nrecs   = ( 1 + ( dims_lat(1) - 1 )/lsac_nhskip ) * ( 1 + ( dims_lat(2) - 1 )/lsac_nhskip )
@@ -150,36 +125,22 @@ else
    allocate(phb_lsac(dims_phb(1),   dims_phb(2), dims_phb(3) ))
    allocate(ph_lsac(dims_ph(1),     dims_ph(2),  dims_ph(3)  ))
    allocate(height_lsac(dims_ph(1), dims_ph(2),  dims_ph(3)  ))
-   allocate(press(dims_p(1),        dims_p(2),   dims_p(3)))
+   allocate(press(dims_p(1),        dims_p(2),   dims_p(3)   ))
 
    !---------------------------------------------------------
    ! Reading data from WRF Input file
    !---------------------------------------------------------
-   if (myproc == 0) then
-      call da_get_var_3d_real_cdf( lsac_wrfinput, 'U',      u_lsac,   dims_u(1),   dims_u(2),   dims_u(3),   1, debug)
-      call da_get_var_3d_real_cdf( lsac_wrfinput, 'V',      v_lsac,   dims_v(1),   dims_v(2),   dims_v(3),   1, debug)
-      call da_get_var_3d_real_cdf( lsac_wrfinput, 'T',      t_lsac,   dims_t(1),   dims_t(2),   dims_t(3),   1, debug)
-      call da_get_var_3d_real_cdf( lsac_wrfinput, 'P',      p_lsac,   dims_p(1),   dims_p(2),   dims_p(3),   1, debug)
-      call da_get_var_3d_real_cdf( lsac_wrfinput, 'PB',     pb_lsac,  dims_p(1),   dims_p(2),   dims_p(3),   1, debug)
-      call da_get_var_3d_real_cdf( lsac_wrfinput, 'QVAPOR', q_lsac,   dims_q(1),   dims_q(2),   dims_q(3),   1, debug)
-      call da_get_var_2d_real_cdf( lsac_wrfinput, 'XLAT',   lat_lsac, dims_lat(1), dims_lat(2),              1, debug)
-      call da_get_var_2d_real_cdf( lsac_wrfinput, 'XLONG',  lon_lsac, dims_lon(1), dims_lon(2),              1, debug)
-      call da_get_var_3d_real_cdf( lsac_wrfinput, 'PHB',    phb_lsac, dims_phb(1), dims_phb(2), dims_phb(3), 1, debug)
-      call da_get_var_3d_real_cdf( lsac_wrfinput, 'PH',     ph_lsac,  dims_ph(1),  dims_ph(2),  dims_ph(3),  1, debug)
-   endif
-#ifdef DM_PARALLEL
-   call MPI_BCAST(u_lsac,   PRODUCT(dims_u(1:3)),   MPI_DOUBLE, 0, comm, ierror)
-   call MPI_BCAST(v_lsac,   PRODUCT(dims_v(1:3)),   MPI_DOUBLE, 0, comm, ierror)
-   call MPI_BCAST(t_lsac,   PRODUCT(dims_t(1:3)),   MPI_DOUBLE, 0, comm, ierror)
-   call MPI_BCAST(p_lsac,   PRODUCT(dims_p(1:3)),   MPI_DOUBLE, 0, comm, ierror)
-   call MPI_BCAST(pb_lsac,  PRODUCT(dims_p(1:3)),   MPI_DOUBLE, 0, comm, ierror)
-   call MPI_BCAST(q_lsac,   PRODUCT(dims_q(1:3)),   MPI_DOUBLE, 0, comm, ierror)
-   call MPI_BCAST(lat_lsac, PRODUCT(dims_lat(1:2)), MPI_DOUBLE, 0, comm, ierror)
-   call MPI_BCAST(lon_lsac, PRODUCT(dims_lon(1:2)), MPI_DOUBLE, 0, comm, ierror)
-   call MPI_BCAST(phb_lsac, PRODUCT(dims_phb(1:3)), MPI_DOUBLE, 0, comm, ierror)
-   call MPI_BCAST(ph_lsac,  PRODUCT(dims_ph(1:3)),  MPI_DOUBLE, 0, comm, ierror)
-#endif
-   print *, 'check value', myproc, MINVAL(u_lsac), MAXVAL(u_lsac)
+   call da_get_var_3d_real_cdf( lsac_wrfinput, 'U',      u_lsac,   dims_u(1),   dims_u(2),   dims_u(3),   1, debug)
+   call da_get_var_3d_real_cdf( lsac_wrfinput, 'V',      v_lsac,   dims_v(1),   dims_v(2),   dims_v(3),   1, debug)
+   call da_get_var_3d_real_cdf( lsac_wrfinput, 'T',      t_lsac,   dims_t(1),   dims_t(2),   dims_t(3),   1, debug)
+   call da_get_var_3d_real_cdf( lsac_wrfinput, 'P',      p_lsac,   dims_p(1),   dims_p(2),   dims_p(3),   1, debug)
+   call da_get_var_3d_real_cdf( lsac_wrfinput, 'PB',     pb_lsac,  dims_p(1),   dims_p(2),   dims_p(3),   1, debug)
+   call da_get_var_3d_real_cdf( lsac_wrfinput, 'QVAPOR', q_lsac,   dims_q(1),   dims_q(2),   dims_q(3),   1, debug)
+   call da_get_var_2d_real_cdf( lsac_wrfinput, 'XLAT',   lat_lsac, dims_lat(1), dims_lat(2),              1, debug)
+   call da_get_var_2d_real_cdf( lsac_wrfinput, 'XLONG',  lon_lsac, dims_lon(1), dims_lon(2),              1, debug)
+   call da_get_var_3d_real_cdf( lsac_wrfinput, 'PHB',    phb_lsac, dims_phb(1), dims_phb(2), dims_phb(3), 1, debug)
+   call da_get_var_3d_real_cdf( lsac_wrfinput, 'PH',     ph_lsac,  dims_ph(1),  dims_ph(2),  dims_ph(3),  1, debug)
+
    !---------------------------------------------------------
    !Calculating the height
    !---------------------------------------------------------
@@ -189,7 +150,7 @@ else
    !Temperature from potential temperature
    taux_lsac=(300.0+t_lsac) * ( ( press/1000.0 )**(287.04/1004.5) )
 
-   if (lsac_print_details .and. myproc == 0) then
+   if (lsac_print_details .and. wrf_dm_on_monitor() ) then
       call da_get_unit(iunit)
       open(iunit, file='lsac_details')
    endif
@@ -236,7 +197,7 @@ else
             platform%each(ilevel)%q%error=q_ferr
             platform%each(ilevel)%q%qc=q_qc
 
-            if(lsac_print_details .and. myproc == 0) then
+            if(lsac_print_details .and. wrf_dm_on_monitor() ) then
                write(iunit,'(3f10.3,x,4(f10.3,x,f10.3,x,i4))') height_lsac(i,j,k), lat_lsac(i,j), lon_lsac(i,j), &
                  u_lsac(i,j,k)           , u_ferr     ,   u_qc, &
                  v_lsac(i,j,k)           , v_ferr     ,   v_qc, &
@@ -344,7 +305,7 @@ else
    deallocate(press)
 endif
 
-if(lsac_print_details .and. myproc == 0) then
+if (lsac_print_details .and. wrf_dm_on_monitor() ) then
    close(iunit)
 endif
 

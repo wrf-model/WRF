@@ -54,6 +54,8 @@ subroutine da_fill_obs_structures(iv, ob, uvq_direct)
    iv % gpsref_ef_t = 1.0
    iv % gpsref_ef_q = 1.0
 
+   iv % gpseph_ef_eph = 1.0
+
    iv % sound_ef_u = 1.0
    iv % sound_ef_v = 1.0
    iv % sound_ef_t = 1.0
@@ -269,6 +271,16 @@ subroutine da_fill_obs_structures(iv, ob, uvq_direct)
             ob % gpsref(n) %   p(k) = iv % gpsref(n) %   p(k) % inv
             ob % gpsref(n) %   t(k) = iv % gpsref(n) %   t(k) % inv
             ob % gpsref(n) %   q(k) = iv % gpsref(n) %   q(k) % inv
+         end do
+      end do
+   end if
+
+   ! [2.6.1] Transfer GPS EPH obs:
+
+   if (iv%info(gpseph)%nlocal > 0) then
+      do n = 1, iv%info(gpseph)%nlocal
+         do k = 1, iv%info(gpseph)%levels(n)
+            ob % gpseph(n) % eph(k) = iv % gpseph(n) % eph(k) % inv
          end do
       end do
    end if

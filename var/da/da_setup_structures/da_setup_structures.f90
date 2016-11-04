@@ -69,13 +69,14 @@ module da_setup_structures
    use da_control, only: rden_bin, use_lsac
    use da_control, only: use_cv_w
    use da_control, only: pseudo_tpw, pseudo_ztd, pseudo_ref, pseudo_uvtpq, pseudo_elv, anal_type_qcobs
+   use da_control, only: use_gpsephobs, gpseph_loadbalance, gpseph
 
    use da_obs, only : da_fill_obs_structures, da_store_obs_grid_info, da_store_obs_grid_info_rad, &
                       da_fill_obs_structures_rain, da_fill_obs_structures_radar, da_set_obs_missing,da_set_3d_obs_missing
    use da_obs_io, only : da_read_obs_bufr,da_read_obs_radar, &
       da_scan_obs_radar,da_scan_obs_ascii,da_read_obs_ascii, &
       da_read_obs_bufrgpsro, da_scan_obs_rain, da_read_obs_rain, &
-      da_read_obs_lsac, da_scan_obs_lsac
+      da_read_obs_lsac, da_scan_obs_lsac, da_read_obs_bufrgpsro_eph
    use da_par_util1, only : da_proc_sum_real, da_proc_sum_int, da_proc_sum_ints
    use da_par_util, only : da_patch_to_global
    use da_lapack, only : dsyev

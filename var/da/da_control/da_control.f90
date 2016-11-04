@@ -89,6 +89,14 @@ module da_control
    ! GPS Refractivity constant  
    real, parameter    :: coeff = (wdk2*1.e8) / 77.6
 
+   ! GPS Excess Phase parameter
+   !hcl-note: is 5km a universal applicable setting?
+   !hcl-note: should this be a namelist option?
+   real, parameter    :: gps_ray_path_step = 5.0 !5km
+   !hcl-note: 2000 is derived from 20km (50hPa) top with 0.01km interval
+   !hcl-note: should the top and interval be namelist options?
+   integer, parameter :: interpolate_level = 2000
+
 #if RWORDSIZE==8
    real, parameter :: da_zero = 0D0
 #else
@@ -218,6 +226,7 @@ module da_control
    real, parameter    :: typical_rho_rms = 0.01  ! kg/m^3
    real, parameter    :: typical_tpw_rms = 0.2   ! cm
    real, parameter    :: typical_ref_rms = 5.0   ! N unit
+   real, parameter    :: typical_eph_rms =1000.0 ! km
    real, parameter    :: typical_rh_rms = 20.0   ! %
    real, parameter    :: typical_thickness_rms = 50.0   ! m
    real, parameter    :: typical_qrn_rms = 0.00001 ! g/kg
@@ -500,6 +509,7 @@ module da_control
    integer, parameter :: tamdar    = 26
    integer, parameter :: tamdar_sfc = 27
    integer, parameter :: rain      = 28
+   integer, parameter :: gpseph    = 29
 
    character(len=14), parameter :: obs_names(num_ob_indexes) = (/ &
       "sound         ", &
@@ -529,7 +539,8 @@ module da_control
       "mtgirs        ", &
       "tamdar        ", &
       "tamdar_sfc    ", &
-      "rain          " &
+      "rain          ", &
+      "gpseph        "  &
    /)
 
    logical :: pseudo_tpw
@@ -577,7 +588,7 @@ module da_control
       0,0,0,0,0,satem,0,geoamv,0,0,           & ! 81-90
       0,0,0,0,0,airep,airep,0,0,0,            & ! 91-100
       tamdar,0,0,0,0,0,0,0,0,0,                                & ! 101-110
-      gpspw,0,0,gpspw,0,gpsref,0,0,0,0, & ! 111-120
+      gpspw,0,0,gpspw,0,gpsref,0,gpseph,0,0,  & ! 111-120
       ssmt1,ssmt2,0,0,ssmi_rv,0,0,0,0,0,            & ! 121-130
       0,profiler,airsr,0,bogus,0,0,0,0,0, & ! 131-140
       0,0,0,0,0,0,0,0,0,0,                                & ! 141-150

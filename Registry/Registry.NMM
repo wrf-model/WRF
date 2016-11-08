@@ -191,8 +191,11 @@ state integer NTIME0         -     dyn_nmm     1      -    r  "NTIME0" "COUNT FO
 # flag for nest movement
 state  logical moved       -     misc       1      -     r
 
-state   real   ducudt       ijk     misc        1         -    rh  "UMMIX" "U TENDENCY  MOMENTUM MIXING IN SAS"
-state   real   dvcudt       ijk     misc        1         -    rh  "VMMIX" "V TENDENCY  MOMENTUM MIXING IN SAS"
+#state   real   ducudt       ijk     misc        1         -    rh  "UMMIX" "U TENDENCY  MOMENTUM MIXING IN SAS"
+#state   real   dvcudt       ijk     misc        1         -    rh  "VMMIX" "V TENDENCY  MOMENTUM MIXING IN SAS"
+state   real   ducudt       ijk     misc        1         -    rh023  "UMMIX" "U TENDENCY  MOMENTUM MIXING IN Cu"
+state   real   dvcudt       ijk     misc        1         -    rh023  "VMMIX" "V TENDENCY  MOMENTUM MIXING IN Cu"
+
 
 state integer randstate1     ij     dyn_nmm     1      -    r  "randstate1" "random number generator state word 1"
 state integer randstate2     ij     dyn_nmm     1      -    r  "randstate2" "random number generator state word 2"
@@ -408,16 +411,16 @@ state  real   SCALEFUN  ij    dyn_nmm   1    -     rh023       "SCALEFUN"  "CNV 
 state  real   SCALEFUN1 ij    dyn_nmm   1    -     rh023       "SCALEFUN1"  "CNV Mass Scale function 1(0-1)"        " "
 state  real   SIGMU     ij    dyn_nmm   1    -     rh023       "SIGMU"  "CNV deep updraft fractio     n(0-1)"        " "
 state  real   SIGMU1    ij    dyn_nmm   1    -     rh023       "SIGMU1"  "CNV shallow updraft fra     ction(0-1)"  
-state  real   DTHCUDT  ijk    dyn_nmm   1    -      rh      "DTHCUDT"     "TH tendency due to CU" "K/s"
-state  real   DQVCUDT  ijk    dyn_nmm   1    -      rh      "DQVCUDT"     "QV tendency due to CU" "kg/kg/s"
-state  real   DQRCUDT  ijk    dyn_nmm   1    -      rh      "DQRCUDT"     "QR tendency due to CU" "kg/kg/s"
-state  real   DQCCUDT  ijk    dyn_nmm   1    -      rh      "DQCCUDT"     "QC tendency due to CU" "Kg/kg/s"
-state  real   DQICUDT  ijk    dyn_nmm   1    -      rh      "DQICUDT"     "QI tendency due to CU" "Kg/kg/s"
-state  real   DQSCUDT  ijk    dyn_nmm   1    -      rh      "DQSCUDT"     "QS tendency due to CU" "Kg/kg/s"
-state  real   DTHBLDT  ijk    dyn_nmm   1    -      rh      "DTHBLDT"     "TH tendency due to PBL" "K/s"
-state  real   DQVBLDT  ijk    dyn_nmm   1    -      rh      "DQVBLDT"     "QV tendency due to PBL" "Kg/kg/s"
-state  real   DUBLDT   ijk    dyn_nmm   1    -      rh      "DUBLDT"     "U tendency due to PBL" "m/s/s"
-state  real   DVBLDT   ijk    dyn_nmm   1    -      rh      "DVBLDT"     "V tendency due to PBL" "m/s/s"
+state  real   DTHCUDT  ijk    dyn_nmm   1    -     rh023    "DTHCUDT"     "TH tendency due to CU" "K/s"
+state  real   DQVCUDT  ijk    dyn_nmm   1    -     rh023    "DQVCUDT"     "QV tendency due to CU" "kg/kg/s"
+state  real   DQRCUDT  ijk    dyn_nmm   1    -      r       "DQRCUDT"     "QR tendency due to CU" "kg/kg/s"
+state  real   DQCCUDT  ijk    dyn_nmm   1    -     rh023    "DQCCUDT"     "QC tendency due to CU" "Kg/kg/s"
+state  real   DQICUDT  ijk    dyn_nmm   1    -     rh023    "DQICUDT"     "QI tendency due to CU" "Kg/kg/s"
+state  real   DQSCUDT  ijk    dyn_nmm   1    -      r       "DQSCUDT"     "QS tendency due to CU" "Kg/kg/s"
+state  real   DTHBLDT  ijk    dyn_nmm   1    -     rh023    "DTHBLDT"     "TH tendency due to PBL" "K/s"
+state  real   DQVBLDT  ijk    dyn_nmm   1    -     rh023    "DQVBLDT"     "QV tendency due to PBL" "Kg/kg/s"
+state  real   DUBLDT   ijk    dyn_nmm   1    -     rh023    "DUBLDT"     "U tendency due to PBL" "m/s/s"
+state  real   DVBLDT   ijk    dyn_nmm   1    -     rh023    "DVBLDT"     "V tendency due to PBL" "m/s/s"
 
 state  real   hpbl2d    ij    dyn_nmm   1    -     irh        "HPBL2D"     "HEIGHT OF PBL from new GFS pbl" "m"
 state  real   heat2d    ij    dyn_nmm   1    -     irh        "HEAT2D"     "" ""
@@ -483,7 +486,7 @@ state  real   dfrlg     k     dyn_nmm   1    Z     i01r     "DFRLG"     "Std atm
 state integer lvl       ij    dyn_nmm   1    -     ir
 state    integer  k22_deep     ij      misc        1         -       -       "K22_DEEP"             "K22 LEVEL FROM DEEPCONVECTION (G3 only)"             ""
 state    integer  kbcon_deep     ij      misc        1         -     -       "KBCON_DEEP"             "KBCON LEVEL FROM DEEP CONVECTION (G3 only)"             ""
-state    integer  ktop_deep     ij      misc        1         -      -       "KTOP_DEEP"             "KTOP LEVEL FROM DEEP CONVECTION (G3 only)"             ""
+state    integer  ktop_deep     ij      misc        1         -      rh023       "KTOP_DEEP"             "KTOP LEVEL FROM DEEP CONVECTION (G3 only)"             ""
 state  real  RAINCV_A       ij  misc     1   -      r      "RAINCV_A"     "taveragd TIME-STEP CUMULUS PRECIPITATION"                         "mm"
 state  real  RAINCV_B       ij  misc     1   -      r       "RAINCV_B"     "taveragd TIME-STEP CUMULUS PRECIPITATION"                         "mm"
 state  real  GD_CLOUD      ikj  misc     1   -      r       "GD_CLOUD" "CLOUD WATER/ICE MIXING RAIO IN GD CLOUD"         "kg kg-1"
@@ -493,6 +496,11 @@ state  real  GD_CLOUD2_A   ikj  misc     1   -      r      "GD_CLOUD2_A"  "taver
 state  real  QC_CU         ikj  misc     1   -      r      "QC_CU"        "CLOUD WATER MIXING RATIO FROM A CU SCHEME"  "kg kg-1"
 state  real  QI_CU         ikj  misc     1   -      r      "QI_CU"        "CLOUD ICE MIXUNG RATIO FROM A CU SCHEME"    "kg kg-1"
 state    real  GD_CLDFR         ikj      misc        1         -      r     "GD_CLDFR"              "GD CLOUD Fraction"         " ? "
+state  real  xmb_shallow    ij   misc    1   -      rh023      "XMB_SHALLOW"     "MASSFLUX FROM SHALLOW CONVECTION (G3, GF only)"        ""
+state  integer  k22_shallow  ij   misc    1   -      rh023     "K22_SHALLOW"     "K22 LEVEL FROM SHALLOW CONVECTION (G3, GF only)"       ""
+state  integer  kbcon_shallow  ij   misc    1   -    rh023     "KBCON_SHALLOW"   "KBCON LEVEL FROM SHALLOW CONVECTION (G3, GF only)"     ""
+state  integer  ktop_shallow   ij   misc    1   -     rh023     "KTOP_SHALLOW"   "KTOP LEVEL FROM SHALLOW CONVECTION (G3, GF only)"      ""
+
 # upward and downward clearsky and total diagnostic fluxes for radiation (RRTMG)
 state    real  ACSWUPT          ij      misc        1         -      rhdu     "ACSWUPT"               "ACCUMULATED UPWELLING SHORTWAVE FLUX AT TOP"          "J m-2"
 state    real  ACSWUPTC         ij      misc        1         -      rhdu     "ACSWUPTC"              "ACCUMULATED UPWELLING CLEAR SKY SHORTWAVE FLUX AT TOP" "J m-2"
@@ -1433,6 +1441,8 @@ rconfig   integer maxens                  namelist,physics	1             3      
 rconfig   integer maxens2                 namelist,physics	1             3       irh    "maxens2"                    ""      ""
 rconfig   integer maxens3                 namelist,physics	1            16       irh    "maxens3"                    ""      ""
 rconfig   integer ensdim                  namelist,physics	1            144      irh    "ensdim"                    ""      ""
+rconfig   integer ishallow                namelist,physics      max_domains    0       rh    "ishallow"    "shallow convection in GF scheme"
+
 rconfig   integer     chem_opt            namelist,physics	max_domains    0       rh       "chem_opt"              ""      ""
 rconfig   integer num_land_cat            namelist,physics	1            24       -      "num_land_cat"                  ""      ""
 rconfig   integer num_soil_cat            namelist,physics	1            16       -      "num_soil_cat"                  ""      ""
@@ -1804,7 +1814,7 @@ package   meso_sas       cu_physics==85              -             state:hpbl2d,
 package   scalesasscheme cu_physics==86              -             state:hpbl2d,heat2d,evap2d
 package   osasscheme     cu_physics==4               -             state:randstate1,randstate2,randstate3,randstate4,random
 package   g3scheme       cu_physics==5               -             -
-package   gfscheme       cu_physics==3               -             -
+package   gfscheme       cu_physics==3               -             state:xmb_shallow,k22_shallow,kbcon_shallow,ktop_shallow,GD_CLOUD,GD_CLOUD2,ktop_deep
 package   camzmscheme    cu_physics==7               -             -
 package   kfcupscheme    cu_physics==10              -             -
 package   g3tave         cu_diag==1                  -             state:GD_CLOUD,GD_CLOUD2,GD_CLDFR,GD_CLOUD_A,GD_CLOUD2_A,kbcon_deep,ktop_deep,k22_deep
@@ -1917,6 +1927,9 @@ halo HALO_NMM_INIT_36	dyn_nmm 120:ALWTOA,SMC,CMC
 halo HALO_NMM_INIT_37	dyn_nmm 120:STC,SH2O,ALBEDO
 halo HALO_NMM_INIT_38   dyn_nmm 120:PINT,Z,DWDT
 halo HALO_NMM_INIT_39	dyn_nmm 120:TOLD,UOLD,VOLD
+#gf
+halo HALO_NMM_INIT_40   dyn_nmm 120:DTHCUDT,DQVCUDT,DQCCUDT
+halo HALO_NMM_INIT_41   dyn_nmm 120:DQRCUDT,DQICUDT,DQSCUDT
 
 #for HWRF: zhang increase halo width to fix feedback bug for HALO_NMM_A (24 => 48)
 #for HWRF: zhang HALO_NMM_C (24 => 48), HALO_NMM_G (24 => 48), HALO_NMM_K (8 => 24)

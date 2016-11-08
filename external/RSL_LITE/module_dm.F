@@ -4217,17 +4217,24 @@ endif
       
          !  Uncouple the variables moist and t_2 that are used to calculate ph_2
 
-         DO j = jps,jpe
-            DO i = ips,ipe
-               DO k=kps,kpe-1
+         DO j = MAX(jds,jps),MIN(jde-1,jps)
+            DO i = MAX(ids,ips),MIN(ide-1,ips)
+               DO k=kds,kde-1
+if((grid%mub(i,j) + grid%mu_2(i,j)).lt.0.01)then
+print *,'DAVE i,j,k=',i,j,k
+print *,'t_2 = ',grid%t_2(i,k,j)
+print *,'Qv  = ',moist(i,k,j,P_qv)
+print *,'mu_2= ',grid%mu_2(i,j)
+print *,'mub= ',grid%mub(i,j)
+endif
                   grid%t_2(i,k,j) = grid%t_2(i,k,j)/(grid%mub(i,j) + grid%mu_2(i,j))
                   moist(i,k,j,P_QV) = moist(i,k,j,P_QV)/(grid%mub(i,j) + grid%mu_2(i,j))
                END DO
             END DO
          END DO
     
-         DO j = jps, jpe
-            DO i = ips,ipe
+         DO j = MAX(jds,jps),MIN(jde-1,jps)
+            DO i = MAX(ids,ips),MIN(ide-1,ips)
 
                DO k = 1, kpe-1
                   grid%pb(i,k,j) = ngrid%znu(k)*grid%mub(i,j)+ngrid%p_top
@@ -4271,8 +4278,8 @@ endif
          ALLOCATE( p (ips:ipe, kps:kpe, jps:jpe) )
          ALLOCATE( al(ips:ipe, kps:kpe, jps:jpe) )
 
-         DO j = jps, jpe
-            DO i = ips, ipe
+         DO j = MAX(jds,jps),MIN(jde-1,jps)
+            DO i = MAX(ids,ips),MIN(ide-1,ips)
 
                !  Integrate the hydrostatic equation (from the RHS of the bigstep vertical momentum
                !  equation) down from the top to get the pressure perturbation.  First get the pressure
@@ -4339,15 +4346,15 @@ endif
          DEALLOCATE(al)
       
          ! Couple the variables moist and t_2, and the newly calculated ph_2
-         DO j = jps, jpe
-            DO i = ips,ipe
+         DO j = MAX(jds,jps),MIN(jde-1,jps)
+            DO i = MAX(ids,ips),MIN(ide-1,ips)
                DO k=kps,kpe
                grid%ph_2(i,k,j) = grid%ph_2(i,k,j)*(grid%mub(i,j) + grid%mu_2(i,j))
                END DO
             END DO
          END DO
-         DO j = jps, jpe
-            DO i = ips,ipe
+         DO j = MAX(jds,jps),MIN(jde-1,jps)
+            DO i = MAX(ids,ips),MIN(ide-1,ips)
                DO k=kps,kpe-1
                grid%t_2(i,k,j) = grid%t_2(i,k,j)*(grid%mub(i,j) + grid%mu_2(i,j))
                moist(i,k,j,P_QV) = moist(i,k,j,P_QV)*(grid%mub(i,j) + grid%mu_2(i,j))

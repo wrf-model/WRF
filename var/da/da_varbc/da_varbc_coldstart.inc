@@ -12,7 +12,9 @@
    !
    !  HISTORY: 10/26/2007 - Creation                     Tom Auligne
    !           11/03/2008 - Bug-fix: exclude HALO data for
-   !                        computation of predictor statistics    Tom/Hui-Chuan  
+   !                        computation of predictor statistics    Tom/Hui-Chuan
+   !           11/03/2016 - Bug-fix: exclude missing_r data where the pressure is not monotonic for
+   !                        computation of predictor statistics    Yuanbing Wang
    !---------------------------------------------------------------------------
 
    implicit none
@@ -46,7 +48,6 @@
       else
          num_rad_domain = 0
       end if
-      num_rad_tot    = wrf_dm_sum_integer(num_rad_domain)
       
       if (npredmax <= 0) cycle                                         !! VarBC instr only
       
@@ -68,30 +69,34 @@
 	    Allocate ( hist(nbins),  hist_tot(nbins))
             hist(:) = 0  
             mode    = 0.0
-	 
+
            ! Accumulate statistics for histogram
            ! -----------------------------------
             do n = 1, num_rad      !! loop for pixel      
                if (iv%instid(inst)%info%proc_domain(1,n)) then ! do not count HALO
-                  ibin = NINT( (iv%instid(inst)%tb_inv(k,n)+maxhist)/zbin )
- 	          if ((ibin>0).AND.(ibin<=nbins)) &
-	             hist(ibin) = hist(ibin) + 1
-               end if          
+                  if (iv%instid(inst)%tb_inv(k,n) /= missing_r) then
+                     ibin = NINT( (iv%instid(inst)%tb_inv(k,n)+maxhist)/zbin )
+                     if ((ibin>0).and.(ibin<=nbins)) hist(ibin) = hist(ibin) + 1
+                  end if
+               end if 
+
+               if (iv%instid(inst)%tb_inv(1,n) /= missing_r) num_rad_domain=num_rad_domain-1
             end do             ! end loop for pixels
-	       
+            num_rad_tot = wrf_dm_sum_integer(num_rad_domain)
+
            ! Do inter-processor communication to gather statistics
            ! ------------------------------------------------------
 	    do ibin = 1, nbins
 	       hist_tot(ibin) = wrf_dm_sum_integer(hist(ibin))
 	    end do
-		   
+
            ! Determine mode of Histogram
            !----------------------------
             if ( SUM(hist_tot(:)) > 0 ) then
 	      modetmp(1:1) = MAXLOC(hist_tot(:))*zbin - maxhist
               mode = modetmp(1)
 	    end if
-	 
+
 	   ! Use mode to initialize VarBC 
 	   !-----------------------------
 	    if (iv%instid(inst)%varbc(k)%ipred(1) == 1) &
@@ -101,7 +106,7 @@
             if ( satinfo(inst)%iuse(k) == 1 ) &
                write(unit=stdout,fmt='(A,A,I5,A,F5.2)') 'VARBC: Cold-starting ', &
                   trim(adjustl(iv%instid(inst)%rttovid_string)),iv%instid(inst)%ichan(k),&
-	          ' --> ',mode			       	
+	          ' --> ',mode
 	 end if
       end do                                                              !  end loop for channels
 
@@ -112,7 +117,7 @@
       do k = 1, iv%instid(inst)%nchan 
 	 if (iv%instid(inst)%varbc(k)%npred <= 0) cycle                   !! VarBC channels only      
 	 if (ANY(iv%instid(inst)%varbc(k)%pred_use > 0)) global_cs = .false.      
-      end do	 
+      end do
     
       if (global_cs) then                                                 !! Instrument coldstart only
 
@@ -120,12 +125,14 @@
 
         ! Accumulate statistics for predictor mean/std
         ! ---------------------------------------------
-	 if (num_rad > 0) then
+         if (num_rad > 0) then
             do i = 1, npredmax
                mean(i) = SUM( iv%instid(inst)%varbc_info%pred(i,1:num_rad),    &
-                         MASK=iv%instid(inst)%info%proc_domain(1,1:num_rad))   ! do not count HALO  
+                         MASK=iv%instid(inst)%info%proc_domain(1,1:num_rad) .and. &
+                         iv%instid(inst)%tb_inv(1,1:num_rad) /= missing_r)   ! do not count HALO  
                rms(i)  = SUM( iv%instid(inst)%varbc_info%pred(i,1:num_rad)**2, &
-                         MASK=iv%instid(inst)%info%proc_domain(1,1:num_rad))   ! do not count HALO 
+                         MASK=iv%instid(inst)%info%proc_domain(1,1:num_rad) .and. &
+                         iv%instid(inst)%tb_inv(1,1:num_rad) /= missing_r)   ! do not count HALO 
             end do
 	 else
 	    mean = 0.0
@@ -135,36 +142,44 @@
         ! Do inter-processor communication to gather statistics
         ! ------------------------------------------------------
 	 call wrf_dm_sum_reals(mean, mean_tot)
-  	 call wrf_dm_sum_reals(rms,  rms_tot)	 
+	 call wrf_dm_sum_reals(rms,  rms_tot)
+
+         num_rad_tot =mean_tot(1)
+
          if (num_rad_tot >= varbc_nobsmin) then
-	    mean_tot = mean_tot / num_rad_tot
+            mean_tot = mean_tot / num_rad_tot
             rms_tot  = rms_tot  / num_rad_tot
-	 else
-	    mean_tot = 0.0
-	    rms_tot  = 1.0   
-	 end if
-	 
+         else
+            mean_tot = 0.0
+            rms_tot  = 1.0   
+         end if
+
         ! Store statistics
         !------------------
-	 iv%instid(inst)%varbc_info%pred_mean = mean_tot
+         iv%instid(inst)%varbc_info%pred_mean = mean_tot
          iv%instid(inst)%varbc_info%pred_std  = sqrt(rms_tot - mean_tot**2)
-      
+
          deallocate(mean, rms, mean_tot, rms_tot)
 
       end if
-      deallocate(ipred)  	           	     	
+      deallocate(ipred)
 
     !---------------------------------------------------------------------------
     !  [3]: Normalize predictors
     !---------------------------------------------------------------------------
       do i = 1,  npredmax
          if ( iv%instid(inst)%varbc_info%pred_std(i) <= 0.0 ) cycle
-         do n = 1, num_rad      
-            iv%instid(inst)%varbc_info%pred(i,n) = &
-          ( iv%instid(inst)%varbc_info%pred(i,n) - &
-            iv%instid(inst)%varbc_info%pred_mean(i) ) / &
-            iv%instid(inst)%varbc_info%pred_std(i)
-	 end do     
+         do n = 1, num_rad
+            if (iv%instid(inst)%tb_inv(1,n) /= missing_r) then
+               iv%instid(inst)%varbc_info%pred(i,n) = &
+               ( iv%instid(inst)%varbc_info%pred(i,n) - &
+               iv%instid(inst)%varbc_info%pred_mean(i) ) / &
+               iv%instid(inst)%varbc_info%pred_std(i)
+            else
+               iv%instid(inst)%varbc_info%pred(i,n) = missing_r
+               iv%instid(inst)%tb_qc(k,n) = qc_varbc_bad
+            end if
+         end do
       end do
       
    end do                           !  end loop for sensor

@@ -43,11 +43,6 @@
 
       npredmax       = iv%instid(inst)%varbc_info%npredmax
       num_rad        = iv%instid(inst)%num_rad
-      if (num_rad > 0) then
-         num_rad_domain = COUNT(iv%instid(inst)%info%proc_domain(1,1:num_rad)) !do not count HALO
-      else
-         num_rad_domain = 0
-      end if
       
       if (npredmax <= 0) cycle                                         !! VarBC instr only
       
@@ -69,34 +64,44 @@
 	    Allocate ( hist(nbins),  hist_tot(nbins))
             hist(:) = 0  
             mode    = 0.0
-
+ 
            ! Accumulate statistics for histogram
            ! -----------------------------------
+            if (k==1) then
+               if (num_rad > 0) then
+                  num_rad_domain = COUNT(iv%instid(inst)%info%proc_domain(1,1:num_rad)) !do not count HALO
+               else
+                  num_rad_domain = 0
+               end if
+            end if
+
             do n = 1, num_rad      !! loop for pixel      
                if (iv%instid(inst)%info%proc_domain(1,n)) then ! do not count HALO
                   if (iv%instid(inst)%tb_inv(k,n) /= missing_r) then
                      ibin = NINT( (iv%instid(inst)%tb_inv(k,n)+maxhist)/zbin )
                      if ((ibin>0).and.(ibin<=nbins)) hist(ibin) = hist(ibin) + 1
+                     iv%instid(inst)%tb_qc(k,n) = qc_varbc_bad
+                     if (k==1) num_rad_domain = num_rad_domain - 1
                   end if
                end if 
 
-               if (iv%instid(inst)%tb_inv(1,n) /= missing_r) num_rad_domain=num_rad_domain-1
             end do             ! end loop for pixels
-            num_rad_tot = wrf_dm_sum_integer(num_rad_domain)
 
+            if (k==1) num_rad_tot = wrf_dm_sum_integer(num_rad_domain)
+       
            ! Do inter-processor communication to gather statistics
            ! ------------------------------------------------------
 	    do ibin = 1, nbins
 	       hist_tot(ibin) = wrf_dm_sum_integer(hist(ibin))
 	    end do
-
+   
            ! Determine mode of Histogram
            !----------------------------
             if ( SUM(hist_tot(:)) > 0 ) then
-	      modetmp(1:1) = MAXLOC(hist_tot(:))*zbin - maxhist
+              modetmp(1:1) = MAXLOC(hist_tot(:))*zbin - maxhist
               mode = modetmp(1)
-	    end if
-
+            end if
+	 
 	   ! Use mode to initialize VarBC 
 	   !-----------------------------
 	    if (iv%instid(inst)%varbc(k)%ipred(1) == 1) &
@@ -106,8 +111,8 @@
             if ( satinfo(inst)%iuse(k) == 1 ) &
                write(unit=stdout,fmt='(A,A,I5,A,F5.2)') 'VARBC: Cold-starting ', &
                   trim(adjustl(iv%instid(inst)%rttovid_string)),iv%instid(inst)%ichan(k),&
-	          ' --> ',mode
-	 end if
+                  ' --> ',mode
+         end if
       end do                                                              !  end loop for channels
 
     !---------------------------------------------------------------------------
@@ -134,18 +139,16 @@
                          MASK=iv%instid(inst)%info%proc_domain(1,1:num_rad) .and. &
                          iv%instid(inst)%tb_inv(1,1:num_rad) /= missing_r)   ! do not count HALO 
             end do
-	 else
-	    mean = 0.0
-	    rms  = 0.0
-	 end if
-  
+         else
+            mean = 0.0
+            rms  = 0.0
+         end if
+
         ! Do inter-processor communication to gather statistics
         ! ------------------------------------------------------
-	 call wrf_dm_sum_reals(mean, mean_tot)
-	 call wrf_dm_sum_reals(rms,  rms_tot)
-
-         num_rad_tot =mean_tot(1)
-
+         call wrf_dm_sum_reals(mean, mean_tot)
+         call wrf_dm_sum_reals(rms,  rms_tot) 
+ 
          if (num_rad_tot >= varbc_nobsmin) then
             mean_tot = mean_tot / num_rad_tot
             rms_tot  = rms_tot  / num_rad_tot
@@ -172,16 +175,14 @@
          do n = 1, num_rad
             if (iv%instid(inst)%tb_inv(1,n) /= missing_r) then
                iv%instid(inst)%varbc_info%pred(i,n) = &
-               ( iv%instid(inst)%varbc_info%pred(i,n) - &
-               iv%instid(inst)%varbc_info%pred_mean(i) ) / &
-               iv%instid(inst)%varbc_info%pred_std(i)
+                    ( iv%instid(inst)%varbc_info%pred(i,n) - iv%instid(inst)%varbc_info%pred_mean(i) ) / &
+                    iv%instid(inst)%varbc_info%pred_std(i)
             else
                iv%instid(inst)%varbc_info%pred(i,n) = missing_r
-               iv%instid(inst)%tb_qc(k,n) = qc_varbc_bad
             end if
-         end do
+         end do     
       end do
-      
+
    end do                           !  end loop for sensor
    
    if (trace_use) call da_trace_exit("da_varbc_coldstart")

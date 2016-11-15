@@ -1693,6 +1693,7 @@ CONTAINS
             (sf_sfclay_physics .EQ. QNSESFCSCHEME) )
   isisfc = ( FRACTIONAL_SEAICE .EQ. 1  .AND. (          &
             (sf_sfclay_physics .EQ. SFCLAYSCHEME ) .OR. &
+            (sf_sfclay_physics .EQ. SFCLAYREVSCHEME ) .OR. &
             (sf_sfclay_physics .EQ. PXSFCSCHEME  ) .OR. &
             (sf_sfclay_physics .EQ. MYJSFCSCHEME ) .OR. &
             (sf_sfclay_physics .EQ. QNSESFCSCHEME ) .OR. &  !emt

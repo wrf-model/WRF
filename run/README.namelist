@@ -908,7 +908,7 @@ Namelist variables for controlling the adaptive time step option:
                                                 ;             =1: z0 from Davis et al (2008), zt & zq from COARE3.0
                                                 ;             =2: z0 from Davis et al (2008), zt & zq from Garratt (1992)
  fractional_seaice                   = 0        ; treat sea-ice as fractional field (1) or ice/no-ice flag (0)
-                                                  works for sf_sfclay_physics=1,2,5,or 7.
+                                                  works for sf_sfclay_physics=1,2,3,4,5,7,and 91 
                                                   If fractional_seaice = 1, also set seaice_threshold = 0.
  seaice_albedo_opt                   = 0        ; option to set albedo over sea ice
                                                 ; 0 = seaice albedo is a constant value from namelist option seaice_albedo_default

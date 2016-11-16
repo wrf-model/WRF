@@ -107,7 +107,7 @@ module module_cu_ntiedtke
 !     isequil: representing equilibrium and nonequilibrium convection
 !     ( .false. [default]; .true. [experimental]. Ref. Bechtold et al. 2014 JAS )
 ! 
-      parameter(isequil = .false. )
+      parameter(isequil = .true. )
 !
 !--------------------
 !     switches for deep, mid, shallow convections, downdraft, and momentum transport
@@ -939,7 +939,7 @@ contains
         ztauc(jl)  = (zgeoh(jl,ikt)-zgeoh(jl,ikb)) / &
                    ((2.+ min(15.0,wup(jl)))*g)
         if(lndj(jl) .eq. 0) then 
-          upbl(jl) = 10.+ upbl(jl)/(paph(jl,klev+1)-paph(jl,ikb))
+          upbl(jl) = 2.+ upbl(jl)/(paph(jl,klev+1)-paph(jl,ikb))
           ztaubl(jl) = (zgeoh(jl,ikb)-zgeoh(jl,klev+1))/(g*upbl(jl))
           ztaubl(jl) = min(300., ztaubl(jl))
         else
@@ -978,7 +978,7 @@ contains
            ikt = kctop(jl)
            ztau = ztauc(jl) * (1.+1.33e-5*dx)
            ztau = max(ztmst,ztau)
-           ztau = max(720.,ztau)
+           ztau = max(360.,ztau)
            ztau = min(10800.,ztau)
            if(isequil) then
              zcape2(jl)= max(0.,zcape2(jl))

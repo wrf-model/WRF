@@ -77,7 +77,7 @@ CONTAINS
             rcvname(jwrf,jext,3) = clprefix//'VOCE'                 ! receive ocean meridional surface current 
             
             ! Variables that can be sent by WRF
-            sndname(jwrf,jext,1) = clprefix//'EVAP-PRECIP'          ! send net fresh water budget: evaporation - total précipitation
+            sndname(jwrf,jext,1) = clprefix//'EVAP-PRECIP'          ! send net fresh water budget: evaporation - total precipitation
             sndname(jwrf,jext,2) = clprefix//'SURF_NET_SOLAR'       ! send net short wave flux at ground surface
             sndname(jwrf,jext,3) = clprefix//'SURF_NET_NON-SOLAR'   ! send net non-solar heat flux at ground surface
             sndname(jwrf,jext,4) = clprefix//'TAUX'                 ! send zonal wind tress at atmosphere-ocean interface

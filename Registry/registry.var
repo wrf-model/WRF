@@ -329,6 +329,11 @@ rconfig   integer   interp_option           namelist,wrfvar11  1  1        - "in
 rconfig   integer   balance_type            namelist,wrfvar12  1  3        - "balance_type"            ""  "For use_wpec: 1 = geostrophic; 2 = cyclostrophic; 3 = both"
 rconfig   logical   use_wpec                namelist,wrfvar12  1  .false.  - "use_wpec"                ""  ""
 rconfig   real      wpec_factor             namelist,wrfvar12  1  0.001    - "wpec_factor"             ""  "Inverse of WPEC gamma factor"
+rconfig   logical   use_lsac                namelist,wrfvar12  1  .false.  - "use_lsac"                "switch for large scale analysis constraint"  ""
+rconfig   integer   lsac_nhskip             namelist,wrfvar12  1  5        - "lsac_nhskip"             "number of horizontal grid points to skip"  ""
+rconfig   integer   lsac_nvskip             namelist,wrfvar12  1  4        - "lsac_nvskip"             "number of vertical grid points to skip"  ""
+rconfig   logical   lsac_calcerr            namelist,wrfvar12  1  .false.  - "lsac_calcerr"            "switch for using fixed (false) or scaled (true) error"  ""
+rconfig   logical   lsac_print_details      namelist,wrfvar12  1  .false.  - "lsac_print_details"      "switch for printout"  ""
 rconfig   integer   vert_corr               namelist,wrfvar13  1  2        - "vert_corr"               ""  ""  
 rconfig   integer   vertical_ip             namelist,wrfvar13  1  0        - "vertical_ip"             ""  ""  
 rconfig   integer   vert_evalue             namelist,wrfvar13  1  1        - "vert_evalue"             ""  ""  
@@ -420,6 +425,8 @@ rconfig   real      pseudo_y                namelist,wrfvar15  1  1.0      - "ps
 rconfig   real      pseudo_z                namelist,wrfvar15  1  1.0      - "pseudo_z"                ""  ""   
 rconfig   real      pseudo_val              namelist,wrfvar15  1  1.0      - "pseudo_val"              ""  ""   
 rconfig   real      pseudo_err              namelist,wrfvar15  1  1.0      - "pseudo_err"              ""  ""   
+rconfig   integer   ep_para_read            namelist,wrfvar16  1  0        - "ep_para_read"            ""  ""
+rconfig   integer   rden_bin                namelist,wrfvar16  1  1        - "rden_bin"                ""  ""
 rconfig   integer   alphacv_method          namelist,wrfvar16  1  2        - "alphacv_method"          ""  ""   
 rconfig   integer   ensdim_alpha            namelist,wrfvar16  1  0        - "ensdim_alpha"            ""  ""   
 rconfig   integer   alpha_truncation        namelist,wrfvar16  1  0        - "alpha_truncation"        ""  ""   
@@ -430,6 +437,7 @@ rconfig   logical   alpha_vertloc           namelist,wrfvar16  1  .false.  - "al
 rconfig   logical   alpha_hydrometeors      namelist,wrfvar16  1  .false.  - "alpha_hydrometeors"      ""  ""
 rconfig   logical   hybrid_dual_res         namelist,wrfvar16  1  .false.  - "hybrid_dual_res"         ""  ""
 rconfig   integer   dual_res_upscale_opt    namelist,wrfvar16  1  3        - "dual_res_upscale_opt"    ""  ""
+rconfig   logical   use_4denvar             namelist,wrfvar16  1  .false.  - "4D-En-Var"               ""  ""
 rconfig   character analysis_type           namelist,wrfvar17  1  "3D-VAR" - "analysis_type"           ""  ""
 rconfig   integer   sensitivity_option      namelist,wrfvar17  1  -1       - "sensitivity_option"      ""  ""
 rconfig   logical   adj_sens                namelist,wrfvar17  1  .false.  - "adj_sens"                ""  ""
@@ -514,8 +522,8 @@ halo      HALO_X6A_A         dyn_em 4:x6a%u,x6a%v
 halo      HALO_EM_C_TL       dyn_em 4:g_u_2,g_v_2,g_rainc,g_rainnc
 halo      HALO_XB            dyn_em 24:xb%psac,xb%rough,xb%u,xb%v,xb%w,xb%wh,xb%t,xb%p,xb%q,xb%qs,xb%qrn,xb%qcw,xb%qci,xb%qsn,xb%qgr,xb%qt,xb%rho,xb%rh,xb%h,xb%hf,xb%u10,xb%v10,xb%t2,xb%q2,xb%psfc,xb%regime,xb%ztd,xb%tpw,xb%speed,xb%tb19v,xb%tb19h,xb%tb22v,xb%tb37v,xb%tb37h,xb%tb85v,xb%tb85h,xb%ref,xb%reflog,xb%delt,xb%slp,xb%tsk,xb%smois,xb%tslb,xb%xice,xb%ivgtyp,xb%isltyp,xb%vegfra,xb%snowh,xb%snow
 halo      HALO_XA            dyn_em 24:xa%u,xa%v,xa%q,xa%p,xa%t,xa%rho,xa%rh,xa%psfc,xa%qcw,xa%qrn,xa%qci,xa%qt,xa%qsn,xa%qgr
-halo      HALO_XA_ALL        dyn_em 24:xa%u,xa%v,xa%q,xa%p,xa%t,xa%rho,xa%rh,xa%psfc,xa%qcw,xa%qrn,xa%qci,xa%qt,xa%qsn,xa%qgr,xa%geoh,xa%mu
-halo      HALO_XB_ALL        dyn_em 24:xb%u,xb%v,xb%p,xb%rho,xb%h
+halo      HALO_XA_WPEC       dyn_em 24:xa%geoh,xa%mu
+halo      HALO_XB_WPEC       dyn_em 24:xb%u,xb%v,xb%p,xb%rho,xb%h
 halo      HALO_XA_CLOUD      dyn_em 24:xa%q,xa%t,xa%qcw,xa%qrn,xa%qci,xa%qsn,xa%qgr
 halo      HALO_SFC_XA        dyn_em 24:xa%u10,xa%v10,xa%t2,xa%q2
 halo      HALO_SSMI_XA       dyn_em 24:xa%ztd,xa%tpw,xa%speed,xa%tb19v,xa%tb19h,xa%tb22v,xa%tb37v,xa%tb37h,xa%tb85v,xa%tb85h,xa%ref
@@ -550,6 +558,11 @@ typedef ep_type real    v2                      ijk9     -         1        -   
 typedef ep_type real    v3                      ijk9     -         1        -       -
 typedef ep_type real    v4                      ijk9     -         1        -       -
 typedef ep_type real    v5                      ijk9     -         1        -       -
+typedef ep_type real    cw                      ijk9     -         1        -       -
+typedef ep_type real    rn                      ijk9     -         1        -       -
+typedef ep_type real    ci                      ijk9     -         1        -       -
+typedef ep_type real    sn                      ijk9     -         1        -       -
+typedef ep_type real    gr                      ijk9     -         1        -       -
 # END EP_TYPE DEFINITION
 # BEGIN XB_TYPE DEFINITION:
 typedef xb_type integer      map
@@ -698,6 +711,18 @@ typedef x_type real    tb37h                  ij       -         1        -     
 typedef x_type real    tb85v                  ij       -         1        -       -
 typedef x_type real    tb85h                  ij       -         1        -       -
 #  END TYPE x_type
+# BEGIN X_subTYPE DEFINITION
+typedef x_subtype real    u                      ijk      -         1        X       -
+typedef x_subtype real    v                      ijk      -         1        Y       -
+typedef x_subtype real    t                      ijk      -         1        -       -
+typedef x_subtype real    q                      ijk      -         1        -       -
+typedef x_subtype real    psfc                   ij       -         1        -       -
+typedef x_subtype real    qrn                    ijk      -         1        -       -
+typedef x_subtype real    qcw                    ijk      -         1        -       -
+typedef x_subtype real    qci                    ijk      -         1        -       -
+typedef x_subtype real    qsn                    ijk      -         1        -       -
+typedef x_subtype real    qgr                    ijk      -         1        -       -
+#  END TYPE x_subtype
 # BEGIN XPOSE_TYPE DEFINITION:
 #
 typedef xpose_type integer    domdesc
@@ -803,5 +828,7 @@ state vp_type vp6 - -
 state ep_type ep - -
 state xb_type xb - -
 state x_type xa - -
+state x_subtype xa_ens - -
+state x_type xa_static - -
 state x_type x6a - -
 state xpose_type xp - -

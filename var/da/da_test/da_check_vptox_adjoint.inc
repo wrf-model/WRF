@@ -110,7 +110,7 @@ subroutine da_check_vptox_adjoint(grid, ne, be, ep, vp, cv_size)
    vp2_v11(:,:,:)= vp % v11(:,:,:)
 #endif
 
-   if (be % ne > 0) vp2_alpha(:,:,:,:) = vp % alpha(:,:,:,:)
+   !hcl if (be % ne > 0) vp2_alpha(:,:,:,:) = vp % alpha(:,:,:,:)
 
    !-------------------------------------------------------------------------
    ! [2.0] Perform x = U vp transform:
@@ -294,10 +294,10 @@ subroutine da_check_vptox_adjoint(grid, ne, be, ep, vp, cv_size)
    adj_par_rhs = sum(vp % v11(its:ite,jts:jte,:)* vp2_v11(its:ite,jts:jte,:)) + &
       adj_par_rhs
 #endif
-   if (be % ne > 0) then
-      adj_par_rhs = sum(vp % alpha(its_int:ite_int,jts_int:jte_int,kts_int:kte_int,:) * &
-         vp2_alpha(its_int:ite_int,jts_int:jte_int,kts_int:kte_int,:)) + adj_par_rhs
-   end if
+   !hcl if (be % ne > 0) then
+   !hcl    adj_par_rhs = sum(vp % alpha(its_int:ite_int,jts_int:jte_int,kts_int:kte_int,:) * &
+   !hcl       vp2_alpha(its_int:ite_int,jts_int:jte_int,kts_int:kte_int,:)) + adj_par_rhs
+   !hcl end if
 
    if ( cv_options == 3 ) adj_par_rhs = sum (cv_2*cv)
 
@@ -334,7 +334,7 @@ subroutine da_check_vptox_adjoint(grid, ne, be, ep, vp, cv_size)
    vp % v10(:,:,:)= vp2_v10(:,:,:)
    vp % v11(:,:,:)= vp2_v11(:,:,:)
 #endif
-   if (be % ne > 0) vp % alpha(:,:,:,:) = vp2_alpha(:,:,:,:)
+   !hcl if (be % ne > 0) vp % alpha(:,:,:,:) = vp2_alpha(:,:,:,:)
 
    write(unit=stdout, fmt='(/a/)') 'da_check_vptox_adjoint: Test Finished:'
 

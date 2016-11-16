@@ -339,6 +339,57 @@ is_mozcart : &
                     ebu(i,k,j,p_ebu_bc)  = ebu(i,k,j,p_ebu_bc)*ratio
                   end do
                 endif
+
+!psp add for other treatments
+               elseif (config_flags%biomass_burn_opt == BIOMASSB) then
+ 
+!-------------------------------------------------------------------
+! we input total emissions instead of smoldering emissions:
+! ratio of smolderling to total
+!-------------------------------------------------------------------
+                 sum = 0.
+                 do k = kts,kte
+                   sum = sum + ebu(i,k,j,p_ebu_co)
+                 end do
+                 if( sum > 0. ) then
+                   ratio = ebu(i,kts,j,p_ebu_co)/sum
+                 else
+                   ratio = 0.
+                 endif
+ 
+                 do k = kts,kte
+                   ebu(i,k,j,p_ebu_no)  = ebu(i,k,j,p_ebu_no)*ratio
+                   ebu(i,k,j,p_ebu_no2)  = ebu(i,k,j,p_ebu_no2)*ratio
+                   ebu(i,k,j,p_ebu_co)  = ebu(i,k,j,p_ebu_co)*ratio
+                   ebu(i,k,j,p_ebu_co2)  = ebu(i,k,j,p_ebu_co2)*ratio
+                   ebu(i,k,j,p_ebu_eth)  = ebu(i,k,j,p_ebu_eth)*ratio
+                   ebu(i,k,j,p_ebu_hc3)  = ebu(i,k,j,p_ebu_hc3)*ratio
+                   ebu(i,k,j,p_ebu_hc5)  = ebu(i,k,j,p_ebu_hc5)*ratio
+                   ebu(i,k,j,p_ebu_hc8)  = ebu(i,k,j,p_ebu_hc8)*ratio
+                   ebu(i,k,j,p_ebu_ete)  = ebu(i,k,j,p_ebu_ete)*ratio
+                   ebu(i,k,j,p_ebu_olt)  = ebu(i,k,j,p_ebu_olt)*ratio
+                   ebu(i,k,j,p_ebu_oli)  = ebu(i,k,j,p_ebu_oli)*ratio
+                   ebu(i,k,j,p_ebu_pm25)  = ebu(i,k,j,p_ebu_pm25)*ratio
+                   ebu(i,k,j,p_ebu_pm10)  = ebu(i,k,j,p_ebu_pm10)*ratio
+                   ebu(i,k,j,p_ebu_dien)  = ebu(i,k,j,p_ebu_dien)*ratio
+                   ebu(i,k,j,p_ebu_iso)  = ebu(i,k,j,p_ebu_iso)*ratio
+                   ebu(i,k,j,p_ebu_api)  = ebu(i,k,j,p_ebu_api)*ratio
+                   ebu(i,k,j,p_ebu_lim)  = ebu(i,k,j,p_ebu_lim)*ratio
+                   ebu(i,k,j,p_ebu_tol)  = ebu(i,k,j,p_ebu_tol)*ratio
+                   ebu(i,k,j,p_ebu_csl)  = ebu(i,k,j,p_ebu_csl)*ratio
+                   ebu(i,k,j,p_ebu_hcho)  = ebu(i,k,j,p_ebu_hcho)*ratio
+                   ebu(i,k,j,p_ebu_ald)  = ebu(i,k,j,p_ebu_ald)*ratio
+                   ebu(i,k,j,p_ebu_ket)  = ebu(i,k,j,p_ebu_ket)*ratio
+                   ebu(i,k,j,p_ebu_macr)  = ebu(i,k,j,p_ebu_macr)*ratio
+                   ebu(i,k,j,p_ebu_ora1)  = ebu(i,k,j,p_ebu_ora1)*ratio
+                   ebu(i,k,j,p_ebu_ora2)  = ebu(i,k,j,p_ebu_ora2)*ratio
+                   ebu(i,k,j,p_ebu_so2)  = ebu(i,k,j,p_ebu_so2)*ratio
+                   ebu(i,k,j,p_ebu_nh3)  = ebu(i,k,j,p_ebu_nh3)*ratio
+                   ebu(i,k,j,p_ebu_oc)  = ebu(i,k,j,p_ebu_oc)*ratio
+                   ebu(i,k,j,p_ebu_bc)  = ebu(i,k,j,p_ebu_bc)*ratio
+                   ebu(i,k,j,p_ebu_sulf)  = ebu(i,k,j,p_ebu_sulf)*ratio
+                   ebu(i,k,j,p_ebu_dms)  = ebu(i,k,j,p_ebu_dms)*ratio
+                 end do
               end if is_mozcart
             end if has_total_emissions
 

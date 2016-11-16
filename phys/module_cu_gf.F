@@ -1333,9 +1333,8 @@ CONTAINS
 ! calculate downdraft mass terms
 !
             do ki=jmin(i)-1,1,-1
-               mentrd_rate=mentrd_rate_2d(i,ki)
                dzo=zo_cup(i,ki+1)-zo_cup(i,ki)
-               dd_massentro(i,ki)=mentrd_rate*dzo*zdo(i,ki+1)
+               dd_massentro(i,ki)=mentrd_rate_2d(i,ki)*dzo*zdo(i,ki+1)
                dd_massdetro(i,ki)=cdd(i,ki)*dzo*zdo(i,ki+1)
                zdo(i,ki)=zdo(i,ki+1)+dd_massentro(i,ki)-dd_massdetro(i,ki)
             enddo

@@ -334,11 +334,10 @@ CONTAINS
           tile_strategy=TILE_Y
           WRITE(mess,*)'Tile Strategy is not specified. Assuming 1D-Y'
           CALL WRF_MESSAGE ( mess )
-
-         IF ( num_tiles >= (epy-spy+1)/MIN_TILE_SIZE .and. num_tiles_x == 0 .and. num_tiles_y == 0) THEN ! number of tiles is too high. Trying to adjust
+          IF ( num_tiles > (epy-spy+1)/MIN_TILE_SIZE .and. num_tiles_x == 0 .and. num_tiles_y == 0) THEN ! number of tiles is too high. Trying to adjust
             num_tiles_x=1
             num_tiles_y=(epy-spy+1)/MIN_TILE_SIZE
-            DO WHILE (num_tiles_x*num_tiles_inc*num_tiles_y <= num_tiles)
+            DO WHILE (num_tiles_x*num_tiles_inc*num_tiles_y < num_tiles)
                num_tiles_x=num_tiles_x+1
             END DO
           num_tiles_x=num_tiles_x*num_tiles_inc

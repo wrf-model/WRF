@@ -316,14 +316,14 @@ END IF
                      if (iv % radar(n) % rsn(k) % qc >= obs_qc_pointer) then
                         iv % radar(n) % rsn(k) % inv = iv % radar(n) % rsno(k) - model_qsn(k,n)
                         iv % radar(n) % rsn(k) % error = iv % radar(n) % rf(k) % error * iv % radar(n) % rsno(k) * alog_10/leh2
-                        ! rainwater error
-                        iv % radar(n) % rsn(k) % error = amax1(0.0005,iv % radar(n) % rrn(k) % error)
-                        iv % radar(n) % rsn(k) % error = amin1( 0.001,iv % radar(n) % rrn(k) % error)
+                        ! snow error
+                        iv % radar(n) % rsn(k) % error = amax1(0.0005,iv % radar(n) % rsn(k) % error)
+                        iv % radar(n) % rsn(k) % error = amin1( 0.001,iv % radar(n) % rsn(k) % error)
                      end if
                      if (iv % radar(n) % rgr(k) % qc >= obs_qc_pointer) then
                         iv % radar(n) % rgr(k) % inv = iv % radar(n) % rgro(k) - model_qgr(k,n)
                         iv % radar(n) % rgr(k) % error = iv % radar(n) % rf(k) % error * iv % radar(n) % rgro(k) * alog_10/leh2
-                        ! rainwater error
+                        ! graupel error
                         iv % radar(n) % rgr(k) % error = amax1(0.0005,iv % radar(n) % rgr(k) % error)
                         iv % radar(n) % rgr(k) % error = amin1( 0.001,iv % radar(n) % rgr(k) % error)
                      end if

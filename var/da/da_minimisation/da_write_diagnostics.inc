@@ -1,7 +1,7 @@
 subroutine da_write_diagnostics(it, grid,num_qcstat_conv, ob, iv, re, y, j)
 
    !---------------------------------------------------------------------------
-   ! Purpose: Output data assmiilation diagnostics
+   ! Purpose: Output data assimilation diagnostics
    !---------------------------------------------------------------------------
 
    implicit none

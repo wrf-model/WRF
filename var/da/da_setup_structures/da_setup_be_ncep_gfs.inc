@@ -182,7 +182,7 @@ subroutine da_setup_be_ncep_gfs( grid, be )
    ALLOCATE ( be % wgvz(its:ite,jts:jte,kts:kte) )
 !
 
-! 2, load the WFR model latitude and map factor:
+! 2, load the WRF model latitude and map factor:
 
 #ifdef DM_PARALLEL
    ij = ( ide- ids+1)*( jde- jds+1)
@@ -420,7 +420,7 @@ subroutine da_setup_be_ncep_gfs( grid, be )
       end do
    end do
 
-   ! potentail velocity:
+   ! potential velocity:
    do k=kts,kte
       do j=jts,jte
          do i=its,ite
@@ -578,7 +578,7 @@ if ( max_ext_its > 1 ) then
      endif
    enddo
 !
-!  Horizotal scales:
+!  Horizontal scales:
     if (rootproc) then
       write (be_rf_unit) hwll
       xsum = sum (hwll*hwll)
@@ -630,7 +630,7 @@ if ( max_ext_its > 1 ) then
 !     write (*,'(5x,i3,1x,a,2x,"sum^2=",e20.12)') ii, vname, xsum
    enddo
 !
-!  Horizotal scales:
+!  Horizontal scales:
 !   write (*,'(3x,a)')  'HORIZONTAL SCALES:'
    write (be_rf_unit) hwll
    xsum = sum (hwll*hwll)
@@ -680,7 +680,7 @@ if ( max_ext_its > 1 ) then
      write (be_print_unit,'(5x,i3,1x,a,2x,"sum^2=",e20.12)') ii, vname, xxsum(1)
    enddo
 
-!  Horizotal scales:
+!  Horizontal scales:
    if (rootproc) &
    write (be_print_unit,'(3x,a)')  'READ IN THE HORIZONTAL SCALES:'
    if (rootproc) then

@@ -83,7 +83,9 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
 
 !! for crtm cloud
    real :: qcw(1),qrn(1), qci(1),qsn(1),qgr(1)
-   
+   logical :: calc_tb_clr
+   type (CRTM_RTSolution_type), allocatable :: RTSolution_clr(:,:)
+
    ! Initializations for AIRS (MMR) Cloud Detection
    integer           :: ilev, jlev, nclouds
    real, allocatable :: hessian(:,:)
@@ -222,7 +224,28 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
          call da_error(__FILE__,__LINE__, &
             (/"Error in allocating CRTM RTSolution Stucture"/))
       end if
-            
+
+      calc_tb_clr = .false.
+      if ( crtm_cloud .and. &
+           trim( crtm_sensor_name(rtminit_sensor(inst))) == 'amsr2' ) then
+         !Tb_clear_sky is only needed for symmetric obs error model
+         !symmetric obs error model only implemented for amsr2 for now
+         calc_tb_clr = .true.
+      end if
+
+      if ( calc_tb_clr ) then
+         allocate (RTSolution_clr(ChannelInfo(inst)%n_Channels,1), STAT = Allocate_Status )
+         if ( Allocate_Status /= 0 ) then
+            call da_error(__FILE__,__LINE__, (/"Error in allocating RTSolution_clr"/))
+         end if
+         call CRTM_RTSolution_Create( RTSolution_clr , &              !Output
+                                      Atmosphere(1)%n_layers )        !Input
+         if ( .NOT.(ANY(crtm_rtsolution_associated(RTSolution_clr))) ) then
+            call da_error(__FILE__,__LINE__, &
+               (/"Error in allocating CRTM RTSolution_clr Stucture"/))
+         end if
+      end if !calc_tb_clr
+
       if (use_crtm_kmatrix) then
          allocate (RTSolution_K(ChannelInfo(inst)%n_Channels,1), &
                    Atmosphere_K(ChannelInfo(inst)%n_Channels,1), &
@@ -820,6 +843,22 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
          iv%instid(inst)%land_coverage(n)  = Surface(1)%land_coverage
          iv%instid(inst)%ice_coverage(n)   = Surface(1)%ice_coverage                              
          iv%instid(inst)%snow_coverage(n)  = Surface(1)%snow_coverage
+
+         if ( calc_tb_clr ) then
+            atmosphere(1)%n_clouds = 0
+            call da_crtm_direct(1, nchanl, 1, Atmosphere,   &
+               Surface,                                     &
+               GeometryInfo,                                &
+               ChannelInfo(inst:inst),                      &
+               RTSolution_clr,                              &
+               Options)
+            do k = 1, nchanl
+               iv%instid(inst)%tb_xb_clr(k,n) = RTSolution_clr(k,1)%Brightness_Temperature
+            end do
+            ! resetting n_clouds
+            atmosphere(1)%n_clouds = n_clouds
+         end if !calc_tb_clr
+
       end do pixel_loop      !  end loop for pixels
 
       if ( use_mspps_emis(inst) ) deallocate(em_mspps)
@@ -840,6 +879,14 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
       if (Allocate_Status /= 0) &
          call da_error(__FILE__,__LINE__, &
             (/"Error in deallocating RTSolution"/))
+
+      if ( calc_tb_clr ) then
+         call CRTM_RTSolution_Destroy(RTSolution_clr)
+         deallocate( RTSolution_clr, STAT = Allocate_Status )
+         if (Allocate_Status /= 0) &
+            call da_error(__FILE__,__LINE__, &
+               (/"Error in deallocating RTSolution_clr"/))
+      end if !calc_tb_clr
 
       if (use_crtm_kmatrix) then
          call CRTM_RTSolution_Destroy(RTSolution_K)

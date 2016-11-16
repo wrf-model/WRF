@@ -143,9 +143,10 @@ module module_radiance
 
    type satinfo_type
       integer, pointer   :: ichan(:)      ! channel index
-      integer, pointer   :: iuse (:)      ! usage flag (-1: not use) from GSI info file
-      real   , pointer   :: error(:)      ! error Standard Deviation from GSI info file
-      real   , pointer   :: polar(:)      ! polarisation (0:ver; 1:hori) from GSI info file
+      integer, pointer   :: iuse (:)      ! usage flag (-1: not use) from radiance info file
+      real   , pointer   :: error(:)      ! error Standard Deviation from radiance info file
+      real   , pointer   :: error_cld(:)  ! error Standard Deviation for cloudy radiance from radiance info file
+      real   , pointer   :: polar(:)      ! polarisation (0:ver; 1:hori) from radiance info file
       real   , pointer   :: error_factor(:) ! error tuning factor ! from error tuning file
      ! new air mass bias correction coefs.
       real   , pointer   :: scanbias(:,:) ! scan bias without latitude band variation

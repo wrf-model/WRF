@@ -414,17 +414,14 @@
       !tgs  After start_domain moist and scalar arrays are fully dimentioned,
       !and initial values should be restored here if grid%dfi_savehydmeteors .EQ. 1:
     IF ( grid%dfi_savehydmeteors .EQ. 1 ) then
-        n_moist = num_moist
 !       print *,'FWD n_moist,PARAM_FIRST_SCALAR,P_QV,P_QC,P_QR,P_QI,P_QS,P_QG', &
 !                n_moist,PARAM_FIRST_SCALAR,P_QV,P_QC,P_QR,P_QI,P_QS,P_QG
 !       print *,'FWD num_scalar,P_QNC,P_QNI,P_QNR,P_QNWFA,P_QNIFA',P_QNC,P_QNI,P_QNR,P_QNWFA,P_QNIFA
+        n_moist = num_moist
          DO nm=PARAM_FIRST_SCALAR+1,n_moist
              grid%moist(:,:,:,nm)=grid%dfi_moist(:,:,:,nm)
          ENDDO
-        n_scalar = num_scalar - 1
-         DO ns=PARAM_FIRST_SCALAR,n_scalar
-             grid%scalar(:,:,:,ns) = grid%dfi_scalar(:,:,:,ns)
-         ENDDO
+        grid%scalar(:,:,:,:) = grid%dfi_scalar(:,:,:,:)
     ENDIF
 
    END SUBROUTINE dfi_fwd_init
@@ -751,7 +748,6 @@
 !    print *,'In dfi_array_reset - restore initial hydrometeors'
 !      grid%moist(:,:,:,:)      = grid%dfi_moist(:,:,:,:)    !tgs
         n_moist  = num_moist
-        n_scalar = num_scalar-1
       if (grid%dfi_stage .EQ. DFI_BCK) then
 !tgs - backward integration changed only QV
         n_moist        = P_QV
@@ -760,9 +756,7 @@
          DO nm=PARAM_FIRST_SCALAR+1,n_moist
              grid%moist(:,:,:,nm)=grid%dfi_moist(:,:,:,nm)
          ENDDO
-         DO ns=PARAM_FIRST_SCALAR,n_scalar
-             grid%scalar(:,:,:,ns) = grid%dfi_scalar(:,:,:,ns)
-         ENDDO
+        grid%scalar(:,:,:,:)     = grid%dfi_scalar(:,:,:,:)
 
        if(grid%dfi_stage .EQ. DFI_FWD) then
 !tgs change QV to restore initial RH field after the diabatic DFI
@@ -1044,13 +1038,13 @@ call wrf_message(mess)
       ! save hydrometeor and scalar fields 
     IF ( grid%dfi_savehydmeteors .EQ. 1 ) then    !tgs
 !    print *,'In dfi_save_arrays - save initial hydrometeors'
-        n_moist = num_moist
 !       print *,'SAVE n_moist,PARAM_FIRST_SCALAR,P_QV,P_QC,P_QR,P_QI,P_QS,P_QG', &
 !                n_moist,PARAM_FIRST_SCALAR,P_QV,P_QC,P_QR,P_QI,P_QS,P_QG
+        n_moist = num_moist
          DO nm=PARAM_FIRST_SCALAR+1,n_moist
              grid%dfi_moist(:,:,:,nm)=max(0.,grid%moist(:,:,:,nm))
          ENDDO
-         grid%dfi_scalar(:,:,:,:) = max(0.,grid%scalar(:,:,:,:))
+        grid%dfi_scalar(:,:,:,:) = max(0.,grid%scalar(:,:,:,:))
     ENDIF
 
        if(grid%dfi_stage .EQ. DFI_BCK) then
@@ -3290,6 +3284,7 @@ call wrf_message(mess)
       REAL :: p_surf ,  pd_surf, p_surf_int , pb_int , ht_hold
       REAL :: qvf , qvf1 , qvf2, qtot
       REAL :: pfu, pfd, phm
+      REAL :: z0, z1, z2, w1, w2
 
       !  Local domain indices and counters.
 
@@ -3431,7 +3426,18 @@ call wrf_message(mess)
                      grid%ph_2(i,k,j) = grid%ph_2(i,k,j) - grid%phb(i,k,j)
                   END DO
 
+                  DO k = 1,kte
+                     grid%ph0(i,k,j) = grid%ph_2(i,k,j) + grid%phb(i,k,j)
+                  END DO
+
                END IF
+! update surface pressure PSFC:
+                  z0 = grid%ph0(i,1,j)/g
+                  z1 = 0.5*(grid%ph0(i,1,j)+grid%ph0(i,2,j))/g
+                  z2 = 0.5*(grid%ph0(i,2,j)+grid%ph0(i,3,j))/g
+                  w1 = (z0 - z2)/(z1 - z2)
+                  w2 = 1. - w1
+                  grid%psfc(i,j) = w1*(grid%p(i,1,j)+grid%pb(i,1,j))+w2*(grid%p(i,2,j)+grid%pb(i,2,j))
 
          ENDDO  !i
         ENDDO  !j

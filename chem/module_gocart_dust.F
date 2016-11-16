@@ -299,8 +299,8 @@ end subroutine gocart_dust_driver
               IF (dsrc < 0.0) dsrc = 0.0
               
               ! Update dust mixing ratio at first model level.
-              tc(i,j,1,n) = tc(i,j,1,n) + .2*dsrc / airmas(i,j,1)
-              bems(i,j,n) = .2*dsrc
+              tc(i,j,1,n) = tc(i,j,1,n) + dsrc / airmas(i,j,1)
+              bems(i,j,n) = dsrc
            END DO
         END DO
      END DO

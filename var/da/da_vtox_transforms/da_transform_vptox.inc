@@ -1,4 +1,5 @@
 subroutine da_transform_vptox(grid, vp, be, ep)
+!subroutine da_transform_vptox(grid, vp, be, ep, nobwin)
 
    !-----------------------------------------------------------------------
    ! Purpose: Physical transform of analysis increment variables.
@@ -17,6 +18,7 @@ subroutine da_transform_vptox(grid, vp, be, ep)
    type (vp_type), intent(inout)        :: vp  ! CV on grid structure.
    type (be_type), intent(in), optional :: be  ! Background errors.
    type (ep_type), intent(in), optional :: ep  ! Ensemble perturbations.
+!   integer, intent(in), optional         :: nobwin
 
    integer :: i, k, j, k1, ij            ! Loop counters.
    real, allocatable          :: chi_u(:,:,:)  ! Unbalanced chi
@@ -323,20 +325,28 @@ subroutine da_transform_vptox(grid, vp, be, ep)
       enddo
       !$OMP END PARALLEL DO
   end if ! RF or Radiance
-   !---------------------------------------------------------------------------
-   !  [4] Add flow-dependent increments in model space (grid%xa):
-   !---------------------------------------------------------------------------
-
-!  if (be % ne > 0 .and. alphacv_method == alphacv_method_xa) then
-!     call da_add_flow_dependence_xa(grid, be % ne, ep, vp)
-!  end if
-   if (be % ne > 0 .and. alphacv_method == alphacv_method_xa) then
-      if ( anal_type_hybrid_dual_res ) then
-         call da_add_flow_dependence_xa_dual_res(grid, be % ne, ep, vp)
-      else
-         call da_add_flow_dependence_xa(grid, be % ne, ep, vp)
-      endif
-   end if
+!   !---------------------------------------------------------------------------
+!   !  [4] Add flow-dependent increments in model space (grid%xa):
+!   !---------------------------------------------------------------------------
+!
+!!  if (be % ne > 0 .and. alphacv_method == alphacv_method_xa) then
+!!     call da_add_flow_dependence_xa(grid, be % ne, ep, vp)
+!!  end if
+!   if (be % ne > 0 .and. alphacv_method == alphacv_method_xa) then
+!      if ( anal_type_hybrid_dual_res ) then
+!         if( present(nobwin) ) then
+!            call da_add_flow_dependence_xa_dual_res(grid, be % ne, ep, vp, nobwin)
+!         else
+!            call da_add_flow_dependence_xa_dual_res(grid, be % ne, ep, vp)
+!         end if
+!      else
+!         if( present(nobwin) ) then
+!            call da_add_flow_dependence_xa(grid, be % ne, ep, vp, nobwin)
+!         else
+!            call da_add_flow_dependence_xa(grid, be % ne, ep, vp)
+!         end if
+!      endif
+!   end if
 
    if (trace_use) call da_trace_exit("da_transform_vptox") 
  

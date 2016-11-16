@@ -136,9 +136,11 @@ subroutine da_minimise_cg(grid, config_flags,            &
 11 format('Starting cost function: ' ,1PD22.15,', Gradient= ',1PD22.15,/,&
           'For this outer iteration gradient target is:       ',1PD22.15)
    write(unit=stdout,fmt='(A)') &
-      '----------------------------------------------------------'
+      '----------------------------------------------------------------------'
    write(unit=stdout,fmt='(A)') &
-      'Iter    Cost Function         Gradient             Step'
+      '              Loop Iter     Cost Function              Gradient                   Step'
+
+   write(unit=stdout,fmt=12) " minimize_cg ", it, 0, j0_total, sqrt(rrmold), 0.0
 
    !-------------------------------------------------------------------------
    ! [2.0] iteratively solve for minimum of cost function:
@@ -192,10 +194,10 @@ subroutine da_minimise_cg(grid, config_flags,            &
          j_total = j0_total + 0.5 * da_dot_cv(cv_size,ghat0,xhat,grid,mz,jp_start,jp_end)
       endif
 
-      write(unit=stdout,fmt=12)iter, j_total, rrmnew_norm, step         	 
+      write(unit=stdout,fmt=12) " minimize_cg ", it, iter, j_total, rrmnew_norm, step         	 
       if (rrmnew_norm  < eps(it) * j_grad_norm_target) exit
 
-12    format(i3,5x,1PD22.15,5x,1PD22.15,5x,1PD22.15)
+12    format(a13,1x,i3,1x,i4,5x,1PD22.15,5x,1PD22.15,5x,1PD22.15)
 
    end do
 
@@ -214,7 +216,7 @@ subroutine da_minimise_cg(grid, config_flags,            &
    end if
    
    write(unit=stdout,fmt='(A)') &
-      '----------------------------------------------------------'
+      '----------------------------------------------------------------------'
    write(unit=stdout,fmt='(A)') " "
    write(unit=stdout, &
       fmt='("Inner iteration stopped after ",i4," iterations")') iter
@@ -228,7 +230,7 @@ subroutine da_minimise_cg(grid, config_flags,            &
     write(unit=stdout,fmt=15) iter, j_cost%total , rrmnew_norm
 15  format('Final: ',I3,' iter, J=',1PD22.15,', g=',1PD22.15)
     write(unit=stdout,fmt='(A)') &
-      '----------------------------------------------------------'
+      '----------------------------------------------------------------------'
 
    if (trace_use) call da_trace_exit("da_minimise_cg")
 

@@ -123,6 +123,7 @@ subroutine da_oi_stats_radar (stats_unit, iv)
          stats%minimum%rsn%value, stats%maximum%rsn%value, &
          stats%minimum%rsn%n, stats%maximum%rsn%n, &
          stats%minimum%rsn%l, stats%maximum%rsn%l)
+      call da_proc_sum_int(nrgr)
       call da_proc_stats_combine(stats%average%rgr, stats%rms_err%rgr, &
          stats%minimum%rgr%value, stats%maximum%rgr%value, &
          stats%minimum%rgr%n, stats%maximum%rgr%n, &

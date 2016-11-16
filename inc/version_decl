@@ -1,1 +1,1 @@
-   CHARACTER (LEN=10) :: release_version = 'V3.8      '
+   CHARACTER (LEN=10) :: release_version = 'V3.8.1    '

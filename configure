@@ -401,6 +401,14 @@ else
   echo "PHDF5 not set in environment. Will configure WRF for use without."
 fi
 
+if [ "$wrf_core" = "DA_CORE" -o "$wrf_core" = "4D_DA_CORE" ] ; then
+  if [ -n "$RTTOV" ] ; then
+    echo "Will use RTTOV in dir: $RTTOV"
+  else
+    echo "RTTOV not set in environment. Will configure WRFDA for use without."
+  fi
+fi
+
 if [ "$wrf_core" = "4D_DA_CORE" ]; then
    if [ -n "$WRFPLUS_DIR" ] ; then
       echo "Will use WRFPLUS in dir: $WRFPLUS_DIR"
@@ -616,7 +624,8 @@ if test -n "$PERL" ; then
      if [ "$rword" = "-r8" ] ; then
        srch=`grep -i "^SFC" configure.wrf | grep -i "gfortran"`
        if [ -n "$srch" ] ; then
-         sed -e '/^PROMOTION/s/#//' configure.wrf > configure.wrf.edit
+         sed -e '/^PROMOTION/s/#//' \
+          -e '/^RWORDSIZE/s/$(NATIVE_RWORDSIZE)/8/' configure.wrf > configure.wrf.edit
        else
          sed -e '/^RWORDSIZE/s/$(NATIVE_RWORDSIZE)/8/' configure.wrf > configure.wrf.edit
        fi

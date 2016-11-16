@@ -3785,13 +3785,13 @@ rconfig   real        dust_gamma          namelist,chem          1    1.      rh
 rconfig   real        dust_smtune         namelist,chem          1    1.      rh    "dust_smtune"   "AFWA Dust soil moisture tuning constant"    ""
 rconfig   real        dust_ustune         namelist,chem          1    1.      rh    "dust_ustune"   "AFWA Dust friction velocity tuning constant"    ""
 # Dust source region selector
-rconfig   integer     dust_dsr            namelist,chem          1    0.      rh    "dust_dsr"      "AFWA Dust dust source region: 0 Ginoux (default), 1 DRI"    ""
+rconfig   integer     dust_dsr            namelist,chem          1    0       rh    "dust_dsr"      "AFWA Dust dust source region: 0 Ginoux (default), 1 DRI"    ""
 # Vegetation mask selector (to be applied to dust source region)
-rconfig   integer     dust_veg            namelist,chem          1    0.      rh    "dust_veg"      "AFWA Dust veg. mask: 0 Ginoux, 1 12mo GreenFrac, 2 8day MODIS LAI" ""
+rconfig   integer     dust_veg            namelist,chem          1    0       rh    "dust_veg"      "AFWA Dust veg. mask: 0 Ginoux, 1 12mo GreenFrac, 2 8day MODIS LAI" ""
 # Soil texture selector
-rconfig   integer     dust_soils          namelist,chem          1    0.      rh    "dust_soils"    "AFWA Dust clayfrac and sandfrac: 0 WRF (default), 1 NGA"    ""
+rconfig   integer     dust_soils          namelist,chem          1    0       rh    "dust_soils"    "AFWA Dust clayfrac and sandfrac: 0 WRF (default), 1 NGA"    ""
 # Soil moisture selector
-rconfig   integer     dust_smois          namelist,chem          1    0.      rh    "dust_smois"    "AFWA Dust soil moisture option: 0 gravimetric, 1 volumetric"    ""
+rconfig   integer     dust_smois          namelist,chem          1    0       rh    "dust_smois"    "AFWA Dust soil moisture option: 0 gravimetric, 1 volumetric"    ""
 
 # Volcanic ash height
 rconfig   real        emiss_ash_hgt       namelist,chem          1      0.      rh    "emiss_ash_hgt"       "Volcanic ash cloud top elevation (AGL)"      ""

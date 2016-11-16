@@ -773,8 +773,11 @@ CONTAINS
           snow(i,lat) = fallsum_qsi*delz(i,kts)/denr*dtcld*1000. + snow(i,lat)
         ENDIF
         endif
-!       if(fallsum.gt.0.)sr(i)=snowncv(i,lat)/(rainncv(i)+1.e-12)
-        if(fallsum.gt.0.)sr(i)=tstepsnow(i)/(rainncv(i)+1.e-12)
+        IF ( PRESENT (snowncv) ) THEN
+          if(fallsum.gt.0.)sr(i)=snowncv(i,lat)/(rainncv(i)+1.e-12)
+        ELSE
+          if(fallsum.gt.0.)sr(i)=tstepsnow(i)/(rainncv(i)+1.e-12)
+        ENDIF
       enddo
 !
 !---------------------------------------------------------------

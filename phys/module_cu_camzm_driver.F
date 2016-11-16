@@ -580,7 +580,7 @@ SUBROUTINE camzm_driver(                                      &
            preccdzm(i,j)   = prec(1)       !Rain rate from just deep
            precz(i,j)      = prec(1)       !Rain rate for total convection (just deep right now)
            pratec(i,j)     = prec(1)*1e3   !Rain rate used in WRF for accumulation (mm/s)
-           raincv(i,j)     = pratec(i,j)*cudts !Rain amount for time step returned back to WRF   !PMA
+           raincv(i,j)     = pratec(i,j)*dt !Rain amount for dynamic time step returned back to WRF   !wig: fixed wrong timestep usage 3-Jun-2016
         end do
 
         !BSINGH - storing quantities at interfaces

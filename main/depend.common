@@ -864,7 +864,7 @@ solve_interface.o: solve_em.int ../frame/module_domain.o ../frame/module_configu
 		../frame/module_timing.o ../frame/module_driver_constants.o \
 		../frame/module_wrf_error.o
 
-start_domain.o: start_domain_em.int wrf_timeseries.o track_driver.o ../frame/module_domain.o ../frame/module_configure.o
+start_domain.o: start_domain_em.int wrf_timeseries.o track_driver.o ../frame/module_domain.o ../frame/module_configure.o ../share/module_llxy.o
 
 module_date_time.o: ../frame/module_wrf_error.o ../frame/module_configure.o \
                 module_model_constants.o

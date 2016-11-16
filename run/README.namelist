@@ -215,7 +215,7 @@ Namelist variables specifically for the WPS input for real:
  use_surface                         = .true.   ; use the input surface level data in the vertical interp and extrap
                                                 ; T = use the input surface data
                                                 ; F = do not use the input surface data
- lagrange_order                      = 1        ; vertical interpolation order
+ lagrange_order                      = 2        ; vertical interpolation order
                                                 ; 1 = linear
                                                 ; 2 = quadratic
                                                 ; 9 = cubic spline
@@ -256,10 +256,10 @@ Namelist variables specifically for the WPS input for real:
                                                   default is option 1, the old MM5 method; option 2 uses a WMO 
                                                   recommended method (WMO-No. 49, corrigendum, August 2000) - 
                                                   there is a difference between the two methods though small
- interp_theta                        = .true.   ; If set to .false., it will vertically interpolate temperature 
+ interp_theta                        = .false.  ; If set to .false., it will vertically interpolate temperature 
                                                   instead of potential temperature, which may reduce bias when 
                                                   compared with input data
- hypsometric_opt                     = 1,       ; = 1: default method
+ hypsometric_opt                     = 2,       ; = 1: default method
                                                   = 2: it uses an alternative way (less biased 
                                                   when compared agaist input data) to compute height in program 
                                                   real and pressure in model (ARW only). 
@@ -339,11 +339,11 @@ available to run the 3d ocean option.
 
  &domains
  ocean_levels                        = 30,
- ocean_z                             =        5,        15,        25,        35,        45,        55,
-                                             65,        75,        85,        95,       105,       115,
-                                            125,       135,       145,       155,       165,       175,
-                                            185,       195,       210,       230,       250,       270,
-                                            290,       310,       330,       350,       370,       390
+ ocean_z                             =       5.,       15.,       25.,       35.,       45.,       55.,
+                                            65.,       75.,       85.,       95.,      105.,      115.,
+                                           125.,      135.,      145.,      155.,      165.,      175.,
+                                           185.,      195.,      210.,      230.,      250.,      270.,
+                                           290.,      310.,      330.,      350.,      370.,      390.
  ocean_t                             = 302.3493,  302.3493,  302.3493,  302.1055,  301.9763,  301.6818,
                                        301.2220,  300.7531,  300.1200,  299.4778,  298.7443,  297.9194,
                                        297.0883,  296.1443,  295.1941,  294.1979,  293.1558,  292.1136,
@@ -1296,8 +1296,8 @@ The following are for observation nudging:
                                                   approx to US Standard atmosphere -12 K
  use_baseparam_fr_nml                = .f.,     ; whether to use base state parameters from the namelist
  use_input_w                         = .f.,     ; whether to use vertical velocity from input file
- khdif (max_dom)                     = 0,	; horizontal diffusion constant (m^2/s)
- kvdif (max_dom)                     = 0,	; vertical diffusion constant (m^2/s)
+ khdif (max_dom)                     = 0,	; horizontal diffusion constant (m^2/s). A typical value should be 0.1*DX in meters.
+ kvdif (max_dom)                     = 0,	; vertical diffusion constant (m^2/s). A typical value should be 100.
  smdiv (max_dom)                     = 0.1,	; divergence damping (0.1 is typical)
  emdiv (max_dom)                     = 0.01,	; external-mode filter coef for mass coordinate model
                                                   (0.01 is typical for real-data cases)

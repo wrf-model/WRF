@@ -908,8 +908,11 @@ CONTAINS
             graupel(i) = fallsum_qg*delz(i,kts)/denr*dtcld*1000. + graupel(i)
           ENDIF
         ENDIF
-        if(fallsum.gt.0.) sr(i) = (tstepsnow(i) + tstepgraup(i))               &
-                                  /(rainncv(i)+1.e-12)
+        IF ( PRESENT (snowncv)) THEN
+          if(fallsum.gt.0.)sr(i)=(snowncv(i) + graupelncv(i))/(rainncv(i)+1.e-12)
+        ELSE
+          if(fallsum.gt.0.)sr(i)=(tstepsnow(i) + tstepgraup(i))/(rainncv(i)+1.e-12)
+        ENDIF
       enddo
 !
 !---------------------------------------------------------------
@@ -1501,7 +1504,7 @@ CONTAINS
 !
 !----------------------------------------------------------------
 !     check mass conservation of generation terms and feedback to the
-!     large scale
+!     large scale
 !
       do k = kts, kte
         do i = its, ite

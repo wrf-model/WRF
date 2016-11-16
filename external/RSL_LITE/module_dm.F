@@ -192,7 +192,6 @@ CONTAINS
    SUBROUTINE wrf_dm_initialize
       IMPLICIT NONE
 #ifndef STUBMPI
-      INCLUDE 'mpif.h'
       INTEGER :: local_comm_per, local_comm_x, local_comm_y, local_comm2, new_local_comm, group, newgroup, p, p1, ierr,itmp
       INTEGER, ALLOCATABLE, DIMENSION(:) :: ranks
       INTEGER comdup
@@ -1279,7 +1278,6 @@ CONTAINS
    INTEGER function getrealmpitype()
 #ifndef STUBMPI
       IMPLICIT NONE
-      INCLUDE 'mpif.h'
       INTEGER rtypesize, dtypesize, ierr
       CALL mpi_type_size ( MPI_REAL, rtypesize, ierr )
       CALL mpi_type_size ( MPI_DOUBLE_PRECISION, dtypesize, ierr )
@@ -1300,7 +1298,6 @@ CONTAINS
    REAL FUNCTION wrf_dm_max_real ( inval )
       IMPLICIT NONE
 #ifndef STUBMPI
-      INCLUDE 'mpif.h'
       REAL inval, retval
       INTEGER comm,ierr
       CALL wrf_get_dm_communicator(comm)
@@ -1315,7 +1312,6 @@ CONTAINS
    REAL FUNCTION wrf_dm_min_real ( inval )
       IMPLICIT NONE
 #ifndef STUBMPI
-      INCLUDE 'mpif.h'
       REAL inval, retval
       INTEGER comm,ierr
       CALL wrf_get_dm_communicator(comm)
@@ -1333,7 +1329,6 @@ CONTAINS
       REAL inval(*)
       REAL retval(*)
 #ifndef STUBMPI
-      INCLUDE 'mpif.h'
       INTEGER comm,ierr
       CALL wrf_get_dm_communicator(comm)
       CALL mpi_allreduce ( inval, retval , n, getrealmpitype(), MPI_MIN, comm, ierr )
@@ -1347,7 +1342,6 @@ CONTAINS
      ! mean motion in HWRF moduel_tracker.
       IMPLICIT NONE
 #ifndef STUBMPI
-      INCLUDE 'mpif.h'
       REAL*8 inval, retval, wrf_dm_sum_real8
       INTEGER comm,ierr
       CALL wrf_get_dm_communicator(comm)
@@ -1362,7 +1356,6 @@ CONTAINS
    REAL FUNCTION wrf_dm_sum_real ( inval )
       IMPLICIT NONE
 #ifndef STUBMPI
-      INCLUDE 'mpif.h'
       REAL inval, retval
       INTEGER comm,ierr
       CALL wrf_get_dm_communicator(comm)
@@ -1379,7 +1372,6 @@ CONTAINS
       REAL, INTENT(IN)  :: inval(:)
       REAL, INTENT(OUT) :: retval(:)
 #ifndef STUBMPI
-      INCLUDE 'mpif.h'
       INTEGER comm,ierr
       CALL wrf_get_dm_communicator(comm)
       CALL mpi_allreduce ( inval, retval, SIZE(inval), getrealmpitype(), MPI_SUM, comm, ierr )
@@ -1391,7 +1383,6 @@ CONTAINS
    INTEGER FUNCTION wrf_dm_sum_integer ( inval )
       IMPLICIT NONE
 #ifndef STUBMPI
-      INCLUDE 'mpif.h'
       INTEGER inval, retval
       INTEGER comm,ierr
       CALL wrf_get_dm_communicator(comm)
@@ -1408,7 +1399,6 @@ CONTAINS
       INTEGER, INTENT(IN)  :: inval(:)
       INTEGER, INTENT(OUT) :: retval(:)
 #ifndef STUBMPI
-      INCLUDE 'mpif.h'
       INTEGER comm,ierr
       CALL wrf_get_dm_communicator(comm)
       CALL mpi_allreduce ( inval, retval, SIZE(inval), MPI_INTEGER, MPI_SUM, comm, ierr )
@@ -1477,7 +1467,6 @@ CONTAINS
    INTEGER FUNCTION wrf_dm_bxor_integer ( inval )
       IMPLICIT NONE
 #ifndef STUBMPI
-      INCLUDE 'mpif.h'
       INTEGER inval, retval
       INTEGER comm, ierr
       CALL wrf_get_dm_communicator(comm)
@@ -1488,6 +1477,37 @@ CONTAINS
       wrf_dm_bxor_integer = inval
 #endif
    END FUNCTION wrf_dm_bxor_integer
+
+
+LOGICAL FUNCTION wrf_dm_lor_logical ( inval )
+      IMPLICIT NONE
+#ifndef STUBMPI
+      LOGICAL inval, retval
+      INTEGER comm, ierr
+      CALL wrf_get_dm_communicator(comm)
+      CALL mpi_allreduce ( inval, retval , 1, MPI_LOGICAL, MPI_LOR, comm, ierr )
+      wrf_dm_lor_logical = retval
+#else
+      LOGICAL inval
+      wrf_dm_lor_logical = inval
+#endif
+   END FUNCTION wrf_dm_lor_logical
+
+
+LOGICAL FUNCTION wrf_dm_land_logical ( inval )
+      IMPLICIT NONE
+#ifndef STUBMPI
+      LOGICAL inval, retval
+      INTEGER comm, ierr
+      CALL wrf_get_dm_communicator(comm)
+      CALL mpi_allreduce ( inval, retval , 1, MPI_LOGICAL, MPI_LAND, comm, ierr )
+      wrf_dm_land_logical = retval
+#else
+      LOGICAL inval
+      wrf_dm_land_logical = inval
+#endif
+   END FUNCTION wrf_dm_land_logical
+
 
    SUBROUTINE wrf_dm_maxval_real ( val, idex, jdex )
 # ifndef STUBMPI
@@ -1651,7 +1671,6 @@ CONTAINS
 #if ( HWRF == 1 )
 # ifndef STUBMPI
       IMPLICIT NONE
-      INCLUDE 'mpif.h'
       LOGICAL mpi_inited
       INTEGER mpi_comm_here,ierr
       CALL MPI_INITIALIZED( mpi_inited, ierr )
@@ -1674,7 +1693,6 @@ CONTAINS
    SUBROUTINE split_communicator
 #ifndef STUBMPI
       IMPLICIT NONE
-      INCLUDE 'mpif.h'
       LOGICAL mpi_inited
 !      INTEGER mpi_comm_here, mpi_comm_local, comdup, comdup2, origmytask,  mytask, ntasks, ierr, io_status
       INTEGER mpi_comm_here, mpi_comm_local, comdup, comdup2, origmytask,  ierr, io_status
@@ -2122,7 +2140,6 @@ CONTAINS
 #ifndef STUBMPI
       IMPLICIT NONE
       INTEGER mpi_comm_local, mpi_comm_here, ierr, mytask, nproc
-      INCLUDE 'mpif.h'
       LOGICAL mpi_inited
       CALL mpi_initialized( mpi_inited, ierr )
       IF ( .NOT. mpi_inited ) THEN
@@ -2169,7 +2186,6 @@ CONTAINS
     REAL, INTENT(INOUT)   :: errf(nerrf, niobf)
 
 #ifndef STUBMPI
-    INCLUDE 'mpif.h'
         
 ! Local declarations
     integer i, n, nlocal_dot, nlocal_crs
@@ -2355,7 +2371,6 @@ CONTAINS
 ! </DESCRIPTION>
       INTEGER i, comm
 #ifndef STUBMPI
-      INCLUDE 'mpif.h'
 
       CALL wrf_get_dm_communicator ( comm )
       CALL mpi_allgather ( val, 1, getrealmpitype(), val_all , 1, getrealmpitype(), comm, ierr )
@@ -2384,7 +2399,6 @@ CONTAINS
 ! </DESCRIPTION>
       INTEGER i, comm
 #ifndef STUBMPI
-      INCLUDE 'mpif.h'
 
       CALL wrf_get_dm_communicator ( comm )
       CALL mpi_allgather ( val, 1, getrealmpitype(), val_all , 1, getrealmpitype(), comm, ierr )
@@ -2413,7 +2427,6 @@ CONTAINS
 ! </DESCRIPTION>
       INTEGER i, comm
 #ifndef STUBMPI
-      INCLUDE 'mpif.h'
 
       CALL wrf_get_dm_communicator ( comm )
       CALL mpi_allgather ( val, 1, MPI_DOUBLE_PRECISION, val_all , 1, MPI_DOUBLE_PRECISION, comm, ierr )
@@ -2441,7 +2454,6 @@ CONTAINS
 ! </DESCRIPTION>
       INTEGER i, comm
 #ifndef STUBMPI
-      INCLUDE 'mpif.h'
 
       CALL wrf_get_dm_communicator ( comm )
       CALL mpi_allgather ( val, 1, MPI_INTEGER, val_all , 1, MPI_INTEGER, comm, ierr )
@@ -4205,17 +4217,17 @@ endif
       
          !  Uncouple the variables moist and t_2 that are used to calculate ph_2
 
-         DO j = jps,jpe
-            DO i = ips,ipe
-               DO k=kps,kpe-1
+         DO j = MAX(jds,jps),MIN(jde-1,jpe)
+            DO i = MAX(ids,ips),MIN(ide-1,ipe)
+               DO k=kds,kde-1
                   grid%t_2(i,k,j) = grid%t_2(i,k,j)/(grid%mub(i,j) + grid%mu_2(i,j))
                   moist(i,k,j,P_QV) = moist(i,k,j,P_QV)/(grid%mub(i,j) + grid%mu_2(i,j))
                END DO
             END DO
          END DO
     
-         DO j = jps, jpe
-            DO i = ips,ipe
+         DO j = MAX(jds,jps),MIN(jde-1,jpe)
+            DO i = MAX(ids,ips),MIN(ide-1,ipe)
 
                DO k = 1, kpe-1
                   grid%pb(i,k,j) = ngrid%znu(k)*grid%mub(i,j)+ngrid%p_top
@@ -4259,8 +4271,8 @@ endif
          ALLOCATE( p (ips:ipe, kps:kpe, jps:jpe) )
          ALLOCATE( al(ips:ipe, kps:kpe, jps:jpe) )
 
-         DO j = jps, jpe
-            DO i = ips, ipe
+         DO j = MAX(jds,jps),MIN(jde-1,jpe)
+            DO i = MAX(ids,ips),MIN(ide-1,ipe)
 
                !  Integrate the hydrostatic equation (from the RHS of the bigstep vertical momentum
                !  equation) down from the top to get the pressure perturbation.  First get the pressure
@@ -4327,15 +4339,15 @@ endif
          DEALLOCATE(al)
       
          ! Couple the variables moist and t_2, and the newly calculated ph_2
-         DO j = jps, jpe
-            DO i = ips,ipe
+         DO j = MAX(jds,jps),MIN(jde-1,jpe)
+            DO i = MAX(ids,ips),MIN(ide-1,ipe)
                DO k=kps,kpe
                grid%ph_2(i,k,j) = grid%ph_2(i,k,j)*(grid%mub(i,j) + grid%mu_2(i,j))
                END DO
             END DO
          END DO
-         DO j = jps, jpe
-            DO i = ips,ipe
+         DO j = MAX(jds,jps),MIN(jde-1,jpe)
+            DO i = MAX(ids,ips),MIN(ide-1,ipe)
                DO k=kps,kpe-1
                grid%t_2(i,k,j) = grid%t_2(i,k,j)*(grid%mub(i,j) + grid%mu_2(i,j))
                moist(i,k,j,P_QV) = moist(i,k,j,P_QV)*(grid%mub(i,j) + grid%mu_2(i,j))

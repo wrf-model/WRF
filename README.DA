@@ -23,6 +23,34 @@ WRFDA, including infringement actions.
 This is the main directory for the WRFDA Version 3 source code release.
 ======================================
 
+V3.8.1 Release Notes :
+-------------------
+
+Version 3.8.1 was released on August 12, 2016.
+
+  For more information about WRFDA, visit the WRFDA Users home page
+  http://www2.mmm.ucar.edu/wrf/users/wrfda/index.html
+
+  Updated features:
+
+    - Additional information is now printed to log files, including:
+        - Domain mapping info
+        - Extra minimization info
+    - CRTM-specific code is now compiled automatically
+    - A number of issues have been fixed for this release, including:
+        - Fixed compilation problems for Fujitsu compilers
+        - A fix for some BUFR compilation problems if user has certain environment variables set
+        - A fix for crashes with 4DVAR assimilation when using RRTMG radiation physics
+        - Avoiding alarming (but harmless) error messages from GEN_BE stage 0
+        - Fixing CRTM compilation problems for some Cray platforms
+        - Cleaning up various log file outputs and clarifying some error messages
+        - Fixed some incorrect default variables for certain physics options
+    - WRFPLUS has been upgraded to V3.8.1 and is consistent with the released WRF version 3.8.1.
+
+See http://www2.mmm.ucar.edu/wrf/users/wrfda/updates-3.8.1.html for a full list of updates
+
+======================================
+
 V3.8 Release Notes :
 -------------------
 

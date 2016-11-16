@@ -109,13 +109,13 @@ wrf : framework_only
 all_wrfvar : 
 	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" ext
 	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" toolsdir
-	if [ $(CRTM) ] ; then \
+	if [ $(CRTM) -ne 0 ] ; then \
 	  (cd var/external/crtm_2.1.3; \
 	   export ABI_CRTM="${ABI_CRTM}"; . configure/$(SFC_CRTM).setup; $(MAKE) $(J) ) ; \
 	fi
 	if [ $(BUFR) ] ; then \
 	  (cd var/external/bufr;  \
-	  $(MAKE) $(J) FC="$(SFC)" CC="$(SCC)" CPP="$(CPP)" CPPFLAGS="$(CPPFLAGS)" CFLAGS="$(CFLAGS)" FFLAGS="$(FCDEBUG) $(FORMAT_FIXED)" RANLIB="$(RANLIB)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" ) ; \
+	  $(MAKE) $(J) FC="$(SFC)" CC="$(SCC)" CPP="$(CPP)" CPPFLAGS="$(CPPFLAGS)" CFLAGS="$(CFLAGS)" FFLAGS="$(FCOPTIM) $(FORMAT_FIXED)" RANLIB="$(RANLIB)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" ) ; \
 	fi
 ### Use 'make' to avoid '-i -r' above:
 	if [ $(WAVELET) ] ; then \

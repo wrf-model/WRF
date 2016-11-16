@@ -6,18 +6,18 @@ CSHCO PROGRAM CPVFULL
      .          A(KMAX),B(KMAX),GPS8(IMAX,JMAX),GPS1(IMAX,JMAX),
      .          GPV9(IMAX,JMAX,KMAX),GPV8(IMAX,JMAX,KMAX)
       DIMENSION GPVC9(IMAX,JMAX,KMAX)
-C : η面定義係数
+C : eta-level coefficients
       A(1) = 0.01
       A(2) = 0.021
       A(3) = 0.03
       B(1) = 1.0
       B(2) = 0.95
       B(3) = 0.8
-C : 基本場設定
+C : base state
       GPS9(1,1)= 1013.
-C : 入力変数設定
+C : input variable
       GPS(1,1) = GPS9(1,1)*0.01
-C : 元のコード フルモデル面対数気圧
+C : original log P on full model levels
       JSTA=1
       JFIN=1
       CALL PVFULL
@@ -29,23 +29,23 @@ C     WRITE(6,*) ' GPV9=',(DEXP(GPV9(1,1,K)),K=1,KMAX)
      I  (GPS9,IMAX,JMAX,KMAX,A,B,
      I   JSTA,JFIN,
      O   GPVC9)
-C :接線コード処理
+C : tangent code
       CALL TPVFULL
      I  (GPS,IMAX,JMAX,KMAX,
      I   GPVC9,
      I   JSTA,JFIN,
      O   GPV)
-C : 入力変数設定（可変増分）
+C : input variable
 C     DO 8000 N=1,10
       DO 8000 N=-4,8
         ALFA = 10.D0**(-DFLOAT(N)/2.D0)
         GPS8(1,1) = GPS9(1,1)+GPS(1,1)*ALFA
-C : 元のコード
+C : original code
       CALL PVFULL
      I  (GPS8,IMAX,JMAX,KMAX,A,B,
      I   JSTA,JFIN,
      O   GPV8)
-C :増分チェック　
+C : incremental check
         DOT1 = 0.D0
         DOT2 = 0.D0
         DOT  = 0.D0
@@ -67,14 +67,14 @@ C         write(6,*) ' GPV DOT1,DOT2,DOT=',DOT1V,DOT2V,DOTV
  8100   CONTINUE
           WRITE(6,*) ' GSI DEV=',N,DOT/DSQRT(DOT1*DOT2),ALFA*GPS(1,1)
  8000 CONTINUE
-C :左辺計算（接線コード出力内積）
+C : left-hand side calculation (inner product of tagent code output)
       RLEFT = 0.
       RLEFT = RLEFT + GPS(1,1)*GPS(1,1)
       DO 3100 K=1,KMAX
       RLEFT = RLEFT + GPV(1,1,K)*GPV(1,1,K)
  3100 CONTINUE
       WRITE(6,*) ' RLEFT=',RLEFT
-C : 随伴コード処理
+C : adjoint code
       GPS1(1,1) = GPS(1,1)
       CALL APVFULL
      I  (GPS1,IMAX,JMAX,KMAX,
@@ -86,7 +86,7 @@ C : 随伴コード処理
       WRITE(6,*) ' AGPV=',GPV
       WRITE(6,*) ' GPS9=',GPS9
       WRITE(6,*) ' AGPS=',GPS1
-C :右辺計算（元の入力と随伴出力の内挿）
+C : right-hand side calculation
       RIGHT= 0.
       RIGHT = RIGHT + GPS(1,1)*GPS1(1,1)
       WRITE(6,*) ' LEFT,RIGHT,DEV=',RLEFT,RIGHT,RLEFT-RIGHT
@@ -97,19 +97,19 @@ C :右辺計算（元の入力と随伴出力の内挿）
      I   JSTA,JFIN,
      O   GPV)
 C**********************************************************************
-C : フルレベル(L)気圧(PV)(HPA)計算 対数気圧版
+C full-level (L) pressure (PV) (HPA) calcualtion (log P)
 C                                            2000.01.19 Y.TAKEUCHI
 C<INPUT>
-C GPS(IMAX,JMAX): 地上気圧(hPa)
+C GPS(IMAX,JMAX): surface pressure (hPa)
 C<OUTPUT>
-C GPV(IMAX,JMAX,KMAX): フルレベル対数気圧(NOUNIT)
+C GPV(IMAX,JMAX,KMAX): full-level log P (NOUNIT)
 C**********************************************************************
       IMPLICIT DOUBLE PRECISION (A-H,O-Z)
       DIMENSION GPS(IMAX,JMAX),GPV(IMAX,JMAX,KMAX)
       REAL*8    A(50), B(50)
 C******************** PROCEDURE ***************************************
-C : ハーフレベル(L+1/2,L-1/2)気圧(HPA)計算
-C : 並列化、ベクトル化用に改造
+C : half-level (L+1/2,L-1/2) pressure (HPA) calculation
+C : parallelization, modified for vectorization
 C     IJFACT = 8
 C     IJFACT = 1
 CSHCO*POPTION PARALLEL
@@ -126,11 +126,11 @@ C       J = (J1-1)*IJFACT+(I1-1)/IMAX+1
 C       write(6,*) ' I,J,I1,J1=',I,J,I1,J1
 *vdir novector  !SHCN
       DO 165 K = 1,KMAX-1
-C : ハーフレベル(L+1/2,L-1/2)気圧(HPA)計算
+C : half-level (L+1/2,L-1/2) pressure (HPA) calculation
           PU  = A(K+1) + B(K+1)*GPS(I,J)
           PD  = A(K  ) + B(K  )*GPS(I,J)
 c         if (pd.eq.0.0.or.pu.eq.0.0) write(999,*) i,j,pd,pu  !SHCN
-C : フルレベル(L)気圧(HPA)計算　
+C : full-level (L) pressure (HPA) calculation
           GPV(I,J,K) = ( PD*DLOG(PD)-PU*DLOG(PU) )/(PD-PU) -1.D0
 C       if(I.EQ.1.AND.J.EQ.1) write(6,*) ' GPV',K,PU,PD,GPV(I,J,K)
 C         GPV(I,J,K) = GPV(I,J,K)*1000.D0
@@ -148,21 +148,21 @@ C       if(I.EQ.1.AND.J.EQ.1) write(6,*) ' GPV',KMAX,PU,PD,GPV(I,J,KMAX)
      I   JSTA,JFIN,
      O   GPV)
 C**********************************************************************
-C : PV:フルレベル(L)気圧(HPA)計算　逆計算 GPV DELETE
-C : 接線コード
-C :                                対数気圧版
+C : PV: full-level (L) pressure (HPA) calculation  GPV DELETE
+C : tangent code
+C : log P
 C                                            2000.01.19 Y.TAKEUCHI
 C<INPUT>
-C GPS(IMAX,JMAX): 地上気圧インクリメント(hPa)
-C GPVC9(IMAX,JMAX,KMAX): 係数
+C GPS(IMAX,JMAX): surface pressure increment (hPa)
+C GPVC9(IMAX,JMAX,KMAX): coefficient
 C<OUTPUT>
-C GPV(IMAX,JMAX,KMAX): フルレベル対数気圧インクリメント(NOUNIT)
+C GPV(IMAX,JMAX,KMAX): full-level log P increment (NOUNIT)
 C**********************************************************************
       IMPLICIT DOUBLE PRECISION (A-H,O-Z)
       DIMENSION GPS(IMAX,JMAX),GPVC9(IMAX,JMAX,KMAX)
       DIMENSION GPV(IMAX,JMAX,KMAX)
 C******************** PROCEDURE ***************************************
-C : 並列化、ベクトル化用に改造
+C : parallelization, modified for vectorization
 C     IJFACT = 8
 C     IJFACT = 1
 *POPTION PARALLEL
@@ -195,9 +195,9 @@ C     DO 961 I = 1,IMAX
      I   JSTA,JFIN,
      O   GPV)
 C**********************************************************************
-C : PV:フルレベル(L)気圧(HPA)計算　逆計算 GPV DELETE
-C : アジョイントコードの検証は TDVAR.FORT(PVFULL) で行う
-C : フルレベル(L)気圧(PV)(HPA)計算 対数気圧版
+C : PV: full-level (L) pressure (HPA) calculation  GPV DELETE
+C : verification of the adjoint code TDVAR.FORT(PVFULL)
+C : log P
 C                                            2000.01.19 Y.TAKEUCHI
 C**********************************************************************
       IMPLICIT DOUBLE PRECISION (A-H,O-Z)
@@ -224,11 +224,11 @@ C2000.09.11
      I   JSTA,JFIN,
      O   GPVC9)
 C**********************************************************************
-C : フルレベル気圧計算用係数計算
-C :                                対数気圧版
+C : coefficients for full-level pressure calculation
+C : log P
 C                                            2000.01.19 Y.TAKEUCHI
 C<INPUT>
-C GPS9(IMAX,JMAX): 地上気圧基本場(hPa)
+C GPS9(IMAX,JMAX): base state of surface pressure (hPa)
 C<OUTPUT>
 C GPVC9(IMAX,JMAX,KMAX): 
 C**********************************************************************
@@ -236,9 +236,9 @@ C**********************************************************************
       DIMENSION GPS9(IMAX,JMAX),GPVC9(IMAX,JMAX,KMAX)
       REAL*8    A(50), B(50)
 C******************** PROCEDURE ***************************************
-C : ハーフレベル(L+1/2,L-1/2)気圧(HPA)計算
+C : half-level (L+1/2,L-1/2) pressure (HPA) calculation
 
-C : 並列化、ベクトル化用に改造
+C : parallelization, modified for vectorization
 C     IJFACT = 8
 C     IJFACT = 1
 *POPTION PARALLEL

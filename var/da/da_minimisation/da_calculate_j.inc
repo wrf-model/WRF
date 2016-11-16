@@ -170,6 +170,7 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
       grid%xa%grad_p_x(:,:,:)=0.0
       grid%xa%grad_p_y(:,:,:)=0.0
 
+      !hcl why xhat+cv
       call da_transform_vtod_wpec(cv_size, be, grid%ep, xhat+cv, grid%vp, grid%vv, xbx, grid)
 
       do i=its,ite

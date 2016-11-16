@@ -1098,7 +1098,7 @@ CONTAINS
               ,FLAG_QI=flag_qi                                      &
               ,g=g,cp=cp,rcp=rcp,r_d=r_d,r_v=r_v,cpv=cpv                    &
               ,Z=z,XLV=XLV,PSFC=PSFC               &
-              ,MUT=mut,P_TOP=p_top                  &
+              ,P_TOP=p_top                                          &
               ,ZNT=znt,HT=ht,UST=ust,ZOL=zol,HOL=hol,HPBL=pblh      &
               ,PSIM=psim,PSIH=psih,XLAND=xland                      &
               ,HFX=hfx,QFX=qfx,TSK=tskold,QSFC=qsfc,GZ1OZ0=gz1oz0   &
@@ -1142,7 +1142,7 @@ CONTAINS
               ,FLAG_QI=flag_qi                                      &
               ,CP=cp,G=g,ROVCP=rcp,RD=r_D,ROVG=rovg                 &
               ,DZ8W=dz8w,XLV=XLV,RV=r_v,PSFC=PSFC                   &
-              ,ZNU=znu,ZNW=znw,MUT=mut,P_TOP=p_top                  &
+              ,ZNU=znu,ZNW=znw,P_TOP=p_top                          &
               ,ZNT=znt,UST=ust,HPBL=pblh                            &
               ,PSIM=fm,PSIH=fhh,XLAND=xland                         &
               ,HFX=hfx,QFX=qfx                                      &
@@ -1219,7 +1219,7 @@ CONTAINS
               ,FLAG_QI=flag_qi                                      &
               ,CP=cp,G=g,ROVCP=rcp,RD=r_D,ROVG=rovg                 &
               ,DZ8W=dz8w,XLV=XLV,RV=r_v,PSFC=PSFC                   &
-              ,ZNU=znu,ZNW=znw,MUT=mut,P_TOP=p_top                  &
+              ,ZNU=znu,ZNW=znw,P_TOP=p_top                          &
               ,ZNT=znt,UST=ust,HPBL=pblh                            &
               ,PSIM=fm,PSIH=fhh,XLAND=xland                         &
               ,HFX=hfx,QFX=qfx                                      &
@@ -1892,7 +1892,7 @@ CONTAINS
               ,VAR2D=var2d,OC12D=oc12d     &
               ,OA2D1=oa1,OA2D2=oa2,OA2D3=oa3,OA2D4=oa4  &
               ,OL2D1=ol1,OL2D2=ol2,OL2D3=ol3,OL2D4=ol4  &
-              ,ZNU=znu,ZNW=znw,MUT=mut,P_TOP=p_top                  &
+              ,ZNU=znu,ZNW=znw,P_TOP=p_top                &
               ,CP=cp,G=g,RD=r_d                           &
               ,RV=r_v,EP1=ep_1,PI=3.141592653                        &
               ,DT=dtbl,DX=dx,KPBL2D=kpbl,ITIMESTEP=itimestep      &

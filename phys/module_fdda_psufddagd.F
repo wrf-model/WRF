@@ -1258,7 +1258,7 @@ CONTAINS
      !BPR END
                           ( val_analysis - qv3d(i,k,j) )
      if(k.eq.1) then
-         SDA_QFX = RQVNDGDTEN(i,k,j)
+         SDA_QFX(i,j) = RQVNDGDTEN(i,k,j)
      else
          RQVNDGDTEN(i,k,j) = 0.0
      end if

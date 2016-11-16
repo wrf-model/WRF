@@ -2225,7 +2225,7 @@ END SUBROUTINE nssl_2mom_driver
 !       Input :  a   --- Parameter ( a < 170 )
 !                x   --- Argument 
 !       Output:  GIM --- Gamma(a,x) t=x,Infinity
-!       Routine called: GAMMA for computing â(x)
+!       Routine called: GAMMA for computing Ahat(x)
 !       ===================================================
 
 !        IMPLICIT DOUBLE PRECISION (A-H,O-Z)

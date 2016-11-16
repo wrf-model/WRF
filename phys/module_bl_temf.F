@@ -13,7 +13,7 @@ contains
                   rqvblten,rqcblten,rqiblten,flag_qi,                          &
                   g,cp,rcp,r_d,r_v,cpv,                                   &
                   z,xlv,psfc,                                          &
-                  mut,p_top,                                           &
+                  p_top,                                               &
                   znt,ht,ust,zol,hol,hpbl,psim,psih,                         &
                   xland,hfx,qfx,tsk,qsfc,gz1oz0,wspd,br,                    &
                   dt,dtmin,kpbl2d,                                             &
@@ -200,10 +200,6 @@ contains
 !   real,     dimension( ims:ime, kms:kme, jms:jme ), &
 !             optional                              , &
 !             intent(inout)   ::      rqiblten
-!
-   real,     dimension( ims:ime, jms:jme )                                   , &
-             optional                                                        , &
-             intent(in   )   ::      mut
 !
    real,     optional, intent(in   )   ::  p_top
 !

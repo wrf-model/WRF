@@ -80,8 +80,8 @@
                   if (iv%instid(inst)%tb_inv(k,n) /= missing_r) then
                      ibin = NINT( (iv%instid(inst)%tb_inv(k,n)+maxhist)/zbin )
                      if ((ibin>0).and.(ibin<=nbins)) hist(ibin) = hist(ibin) + 1
-                     iv%instid(inst)%tb_qc(k,n) = qc_varbc_bad
                   else
+                     iv%instid(inst)%tb_qc(k,n) = qc_varbc_bad
                      if (k==1) num_rad_domain = num_rad_domain - 1
                   end if
                end if 

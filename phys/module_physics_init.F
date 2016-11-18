@@ -3238,6 +3238,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    USE MODULE_CU_BMJ
    USE module_cu_gd,  ONLY : GDINIT
    USE module_cu_g3,  ONLY : G3INIT
+   USE module_cu_gf_deep,  ONLY : GFINIT
    USE module_cu_sas
    USE module_cu_mesosas
    USE module_cu_scalesas
@@ -3405,6 +3406,17 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                       ims, ime, jms, jme, kms, kme,               &
                       its, ite, jts, jte, kts, kte                )
 #endif
+     CASE (GFSCHEME)
+          CALL gfinit(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN,        &
+                      RUCUTEN,RVCUTEN,                            &
+                      restart,                                    &
+                      P_QC,P_QI,PARAM_FIRST_SCALAR,               &
+                      RTHFTEN, RQVFTEN,                           &
+                      allowed_to_read ,                           &
+                      ids, ide, jds, jde, kds, kde,               &
+                      ims, ime, jms, jme, kms, kme,               &
+                      its, ite, jts, jte, kts, kte                )
+
      CASE (SASSCHEME)
           CALL sasinit(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN,       &
                       RUCUTEN,RVCUTEN,                            &   ! gopal's doing for SAS

@@ -387,6 +387,62 @@ SUBROUTINE MSLP_DIAG (MSLP,PINT,T,Q               &
      ENDDO
 
 END SUBROUTINE MSLP_DIAG
+!!BEGIN: LSM changes for LANDFALL: Subashini 7/27/2016
+#ifdef IDEAL_NMM_TC
+SUBROUTINE MOVE_LAND (SM,TSK                      &
+                     ,SST,FIS                     &
+                     ,PINT,T,Q                    &
+                     ,NTSD                        &
+                     ,IDS,IDE,JDS,JDE,KDS,KDE     &
+                     ,IMS,IME,JMS,JME,KMS,KME     &
+                     ,ITS,ITE,JTS,JTE,KTS,KTE,DIRN)
+
+      USE MODULE_MODEL_CONSTANTS
+      USE MODULE_DM
+
+      IMPLICIT NONE
+
+!     global variables
+
+      INTEGER,INTENT(IN)                                      :: NTSD,DIRN
+
+      INTEGER,INTENT(IN)                                      :: IDS,IDE,JDS,JDE,KDS,KDE   &
+                                                                ,IMS,IME,JMS,JME,KMS,KME   &
+                                                                ,ITS,ITE,JTS,JTE,KTS,KTE
+
+      REAL, DIMENSION(IMS:IME,JMS:JME),         INTENT(INOUT) :: SM,TSK
+      REAL, DIMENSION(IMS:IME,JMS:JME),         INTENT(IN)    :: SST,FIS
+      REAL, DIMENSION(IMS:IME,JMS:JME,KMS:KME), INTENT(IN)    :: PINT,T,Q
+
+!     local variables
+
+      INTEGER                                               :: I,J,K,CNT
+      REAL                                                  :: PSFC,EXNSFC,CAPA,SUMTHS,AVGTHS
+!-----------------------------------------------------------------------------------------------------
+!
+!     Note: make appropriate changes for boundary condition updates in
+!     d02 and d03 by adding "i01rhd=(DownNear)f=(BdyNear)" for SM in the
+!     Registry.NMM_HWRF. Also module_BNDRY_COND.F needs to be updated
+!     for SM. This is subashini's doing for advecting land surface in
+!     idealized framework
+!
+     IF(DIRN == 1) THEN
+      DO J = MAX(JTS,2), MIN(JTE,JDE-1)
+       DO I = MIN(ITE,IDE),MAX(ITS,2),-1
+           SM(I,J)=SM(I-1,J)          ! Motion of land (0) from West to East
+       ENDDO
+      ENDDO
+     ELSE 
+      DO J = MAX(JTS,2), MIN(JTE,JDE-1)
+       DO I = ITS, MIN(ITE,IDE-1)
+           SM(I,J)=SM(I+1,J)          ! Motion of land (0) from East to west
+       ENDDO
+      ENDDO
+     ENDIF
+
+END SUBROUTINE MOVE_LAND
+#endif
+!!END: LSM changes for LANDFALL : Subashini 7/27/2016
 !------------------------------------------------------------------------------------------------------
 SUBROUTINE CALC_BEST_MSLP(BEST_MSLP,MSLP,MEMBRANE_MSLP,FIS &
                          ,IDS,IDE,JDS,JDE,KDS,KDE     &

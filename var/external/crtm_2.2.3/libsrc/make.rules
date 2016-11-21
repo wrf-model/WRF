@@ -1,0 +1,41 @@
+#------------------------------------------------------------------------------
+#
+# NAME:
+#       make.rules
+#
+# PURPOSE:
+#       Unix make utility include file for definition of CRTM suffix and
+#       compilation rules
+#
+# LANGUAGE:
+#       Unix make
+#
+# CALLING SEQUENCE:
+#       include make.rules
+#
+# CREATION HISTORY:
+#       Written by:     Paul van Delst, 08-Jun-2000
+#                       paul.vandelst@noaa.gov
+#
+#
+# $Id: make.rules 60152 2015-08-13 19:19:13Z paul.vandelst@noaa.gov $
+#
+#------------------------------------------------------------------------------
+
+.SUFFIXES:
+.SUFFIXES: .fpp .F95 .f95 .F90 .f90 .o
+.fpp.o:
+	$(FC) $(FCFLAGS) $(EXTRA_FCFLAGS) $(FPPFLAGS) $<
+
+.F95.o:
+	$(FC) $(FCFLAGS) $(EXTRA_FCFLAGS) $(FPPFLAGS) $<
+
+.f95.o:
+	$(FC) $(FCFLAGS) $(EXTRA_FCFLAGS) $<
+
+.F90.o:
+	$(FC) $(FCFLAGS) $(EXTRA_FCFLAGS) $(FPPFLAGS) $<
+
+.f90.o:
+	$(FC) $(FCFLAGS) $(EXTRA_FCFLAGS) $<
+

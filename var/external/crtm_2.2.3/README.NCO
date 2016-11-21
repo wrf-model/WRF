@@ -1,0 +1,26 @@
+CRTM v2.2.3 Build Instructions for NCO 
+======================================
+
+$Revision: 60152 $
+
+
+The included script, "make_crtm_lib.sh", can be used by NCO SPAs to configure,
+build, and install the CRTM library on WCOSS (or zeus) by typing:
+
+  $ make_crtm_lib.sh ifort.setup
+
+This will:
+
+  1. Build the CRTM library using the Intel ifort compiler.
+  2. Install the CRTM library *in the build directory* in the structure required
+     by NCO for use in /nwprod/lib.
+
+The created installation directory can then be moved by NCO SPAs to its final
+or testing location (/nwprod/lib or /nwpara/lib) as required.
+
+If there are any questions or problems (or suggestions to make this even easier)
+don't hesistate to contact me at paul.vandelst@noaa.gov.
+
+Full-blown configuration, build, check, and install instructions are available
+in the README file.
+

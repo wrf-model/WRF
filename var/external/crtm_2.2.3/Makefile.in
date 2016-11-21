@@ -1,0 +1,61 @@
+# @configure_input@
+
+# Package-specific substitution variables
+package = @PACKAGE_NAME@
+version = @PACKAGE_VERSION@
+tarname = @PACKAGE_TARNAME@
+distdir = $(tarname)_$(version)
+
+# Prefix-specific substitution variables
+prefix      = @prefix@
+
+# Mixed package and prefix substitution variables
+installdir  = $(prefix)/$(distdir)
+
+# Target specification
+all clean check install uninstall nco_install:
+	cd libsrc && $(MAKE) $@
+
+distclean: clean
+	cd libsrc && $(MAKE) $@
+	-rm Makefile config.log* config.status >/dev/null 2>&1
+
+dist: $(distdir).tar.gz
+
+distcheck:  $(distdir).tar.gz
+	gzip -cd $(distdir).tar.gz | tar xvf -
+	cd $(distdir) && ./configure
+	cd $(distdir) && $(MAKE) all
+	cd $(distdir) && $(MAKE) check
+	cd $(distdir) && $(MAKE) DESTDIR=$${PWD}/_inst install
+	cd $(distdir) && $(MAKE) DESTDIR=$${PWD}/_inst uninstall
+	cd $(distdir) && $(MAKE) clean
+	rm -fr $(distdir)
+	@echo; \
+	echo "*** Package $(distdir).tar.gz is ready for distribution ***"; \
+	echo
+
+$(distdir).tar.gz: $(distdir)
+	tar -chof - $(distdir) --exclude .svn | gzip -9 -c > $@
+	rm -rf $(distdir)
+
+$(distdir): FORCE
+	mkdir -p $(distdir)
+	cp configure.ac $(distdir)
+	cp configure $(distdir)
+	cp Makefile.in $(distdir)
+	cp install-sh $(distdir)
+	cp -rL libsrc $(distdir)/libsrc
+	cp -rL config-setup $(distdir)/config-setup
+
+Makefile: Makefile.in config.status
+	./config.status $@
+
+config.status: configure
+	./config.status --recheck
+
+FORCE:
+	-rm $(distdir).tar.gz >/dev/null 2>&1
+	-rm -fr $(distdir) >/dev/null 2>&1
+
+.PHONY: FORCE all clean check dist distcheck install uninstall

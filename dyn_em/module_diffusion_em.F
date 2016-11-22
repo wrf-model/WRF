@@ -2909,8 +2909,8 @@ SUBROUTINE horizontal_diffusion_v_2( tendency, mu, config_flags,          &
 !           )                                                                !old code
       tmpdz = (1./rdzw(i,k,j)+1./rdzw(i,k,j-1))/2.                      !new code
       tendency(i,k,j)=tendency(i,k,j) +    g*tmpdz/dnw(k) *           & !new code
-           (mrdx*(titau2(i,k,j  ) - titau2(i,k,j-1)) +                & !new code
-            mrdy*(titau1(i+1,k,j) - titau1(i  ,k,j)) -                & !new code
+           (mrdy*(titau2(i,k,j  ) - titau2(i,k,j-1)) +                & !new code
+            mrdx*(titau1(i+1,k,j) - titau1(i  ,k,j)) -                & !new code
             msfvy(i,j)*(titau1avg(i,k+1,j)-titau1avg(i,k,j))/tmpdz -  & !new code
             msfvy(i,j)*(titau2avg(i,k+1,j)-titau2avg(i,k,j))/tmpdz    & !new code
                                                                   )     !new code

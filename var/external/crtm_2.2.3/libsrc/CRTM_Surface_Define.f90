@@ -322,6 +322,11 @@ CONTAINS
 
   ELEMENTAL SUBROUTINE CRTM_Surface_Destroy( Sfc )
     TYPE(CRTM_Surface_type), INTENT(OUT) :: Sfc
+!gfortran compiler (V4.4.0 and 4.3.3) and older PGI compilers can
+!not handle INTENT(OUT) properly, add a dummy local type so that
+!Sfc is forced to be re-initialized.
+    TYPE(CRTM_Surface_type) :: Dummy
+    Sfc = Dummy
     Sfc%Is_Allocated = .TRUE.  ! Placeholder for future expansion
   END SUBROUTINE CRTM_Surface_Destroy
 

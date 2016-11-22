@@ -1,9 +1,9 @@
 
 package = CRTM
 
-FCFLAGS_CRTM = $(FCFLAGS)
-
 include ../../../../configure.wrf
+
+FCFLAGS_CRTM = $(FCFLAGS)
 
 # The library name
 LIBRARY = lib$(package).a

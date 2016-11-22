@@ -36,6 +36,14 @@
      &                ,V_BTXS, V_BTXE, V_BTYS, V_BTYE                   &
      &                ,Q2_BTXS, Q2_BTXE, Q2_BTYS, Q2_BTYE               &
      &                ,PD,T,Q,Q2,PINT                                   &
+!!BEGIN: LSM changes for LANDFALL: Subashini 7/27/2016
+#ifdef IDEAL_NMM_TC
+     &                ,SM_BXS, SM_BXE, SM_BYS, SM_BYE                   &
+     &                ,SM_BTXS, SM_BTXE, SM_BTYS, SM_BTYE               &
+     &                ,SM                                               &
+     &                ,TH                                               &
+#endif
+!!END: LSM changes for LANDFALL : Subashini 7/27/2016
      &                ,SPEC_BDY_WIDTH,Z                                 &  
      &                ,IHE,IHW,IVE,IVW                                  &
      &                ,IDS,IDE,JDS,JDE,KDS,KDE                          &
@@ -119,7 +127,13 @@
       REAL,DIMENSION(IMS:IME,1,SPEC_BDY_WIDTH)                          &
      &                           ,INTENT(INOUT) :: PD_BYS, PD_BYE       &
      &                                            ,PD_BTYS,PD_BTYE
-!
+!!BEGIN: LSM changes for LANDFALL: Subashini 7/27/2016
+#ifdef IDEAL_NMM_TC
+      REAL,DIMENSION(IMS:IME,1,SPEC_BDY_WIDTH)                          &
+     &                           ,INTENT(INOUT) :: SM_BYS, SM_BYE       &
+     &                                            ,SM_BTYS,SM_BTYE
+#endif
+!!END: LSM changes for LANDFALL : Subashini 7/27/2016
       REAL,DIMENSION(IMS:IME,KMS:KME,SPEC_BDY_WIDTH)                   &
      &                           ,INTENT(INOUT) :: T_BYS, T_BYE        &
      &                                            ,U_BYS, U_BYE        &
@@ -135,7 +149,13 @@
       REAL,DIMENSION(JMS:JME,1,SPEC_BDY_WIDTH)                         &
      &                           ,INTENT(INOUT) :: PD_BXS, PD_BXE      &
      &                                            ,PD_BTXS,PD_BTXE
-
+!!BEGIN: LSM changes for LANDFALL: Subashini 7/27/2016
+#ifdef IDEAL_NMM_TC
+      REAL,DIMENSION(JMS:JME,1,SPEC_BDY_WIDTH)                         &
+     &                           ,INTENT(INOUT) :: SM_BXS, SM_BXE      &
+     &                                            ,SM_BTXS,SM_BTXE
+#endif
+!!END: LSM changes for LANDFALL : Subashini 7/27/2016
       REAL,DIMENSION(JMS:JME,KMS:KME,SPEC_BDY_WIDTH)                   &
      &                           ,INTENT(INOUT) :: T_BXS, T_BXE        &
      &                                            ,U_BXS, U_BXE        &
@@ -151,7 +171,11 @@
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: RES
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: PD
-!
+!!BEGIN: LSM changes for LANDFALL: Subashini 7/27/2016
+#ifdef IDEAL_NMM_TC
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: SM,TH
+#endif
+!!END: LSM changes for LANDFALL : Subashini 7/27/2016
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT) ::          &
      &                                                         PINT,Q   &
      &                                                        ,Q2,T,Z
@@ -289,6 +313,14 @@
             IF(MOD(J,2)==1)THEN
               PD_BXS(J,1,IB)=PD_BXS(J,1,IB)+PD_BTXS(J,1,IB)*DT
               PD(II,J)=PD_BXS(J,1,IB)
+!!BEGIN: LSM changes for LANDFALL: Subashini 7/27/2016
+#ifdef IDEAL_NMM_TC
+              IF(GRIDID.GT.1)THEN
+                SM(II,J)=SM_BXS(J,1,IB)   ! for W-E motion
+!               TH(II,J)=TH_BXS(J,1,IB)
+              ENDIF
+#endif
+!!END: LSM changes for LANDFALL : Subashini 7/27/2016
             ENDIF
           ENDDO
 !
@@ -320,6 +352,14 @@
             IF(MOD(J,2)==1)THEN
               PD_BXE(J,1,IB)=PD_BXE(J,1,IB)+PD_BTXE(J,1,IB)*DT
               PD(II,J)=PD_BXE(J,1,IB)
+!!BEGIN: LSM changes for LANDFALL: Subashini 7/27/2016
+#ifdef IDEAL_NMM_TC
+              IF(GRIDID.GT.1)THEN
+                 SM(II,J)=SM_BXE(J,1,IB)    ! for E-W motion
+!                TH(II,J)=TH_BXE(J,1,IB)
+              ENDIF
+#endif
+!!END: LSM changes for LANDFALL : Subashini 7/27/2016
             ENDIF
           ENDDO
 !
@@ -418,6 +458,14 @@
             CWK=PD(1,J)
             JJ=J
             PD(1,JJ)=0.25*(PD(1,JJ-1)+PD(2,JJ-1)+PD(1,JJ+1)+PD(2,JJ+1))
+!!BEGIN: LSM changes for LANDFALL: Subashini 7/27/2016
+#ifdef IDEAL_NMM_TC
+           IF(GRIDID.GT.1)THEN
+             SM(1,JJ)=0.5*(SM(1,JJ-1)+SM(1,JJ+1))  ! updates only along W Boundary
+!            TH(IIM-1,JJ)=0.5*(TH(IIM,JJ-1)+TH(IIM,JJ+1))
+           ENDIF
+#endif
+!!END: LSM changes for LANDFALL : Subashini 7/27/2016
 !
 !***  NESTING TEST
 !
@@ -451,6 +499,14 @@
             JJ=J
             PD(IIM-1,JJ)=0.25*(PD(IIM-1,JJ-1)+PD(IIM,JJ-1)              &
      &                        +PD(IIM-1,JJ+1)+PD(IIM,JJ+1))
+!!BEGIN: LSM changes for LANDFALL: Subashini 7/27/2016
+#ifdef IDEAL_NMM_TC
+           IF(GRIDID.GT.1)THEN
+             SM(IIM-1,JJ)=0.5*(SM(IIM,JJ-1)+SM(IIM,JJ+1))  ! updates only along E Boundary
+!            TH(IIM-1,JJ)=0.5*(TH(IIM,JJ-1)+TH(IIM,JJ+1))
+           ENDIF
+#endif
+!!END: LSM changes for LANDFALL : Subashini 7/27/2016
 !
 !***  NESTING TEST
 !

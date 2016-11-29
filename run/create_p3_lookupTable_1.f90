@@ -1270,7 +1270,7 @@ PROGRAM make_p3_lookuptable1
 
 !.....................................................................................
 ! ice effective radius
-! use definition of Fu (1996)
+! use definition of Francis et al. (1994), e.g., Eq. 3.11 in Fu (1996) J. Climate
 !.....................................................................................
              sum1 = 0.
              sum2 = 0.
@@ -1339,7 +1339,7 @@ PROGRAM make_p3_lookuptable1
 ! hm 4/9/09, calculate effective size following Fu (1996)
 !            eff(i_Qnorm,i_Fr) = sum1/(1.1547*916.7*sum2)
 ! hm, calculate for eff rad for twp ice
-             eff(i_Qnorm,i_Fr) = 3.*sum1/(4.*sum2*1000.)
+             eff(i_Qnorm,i_Fr) = 3.*sum1/(4.*sum2*916.7)
 
 !            a_100(i_Qnorm,i_Fr)=sum4
 !            n_100(i_Qnorm,i_Fr)=sum3

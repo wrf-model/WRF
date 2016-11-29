@@ -12,8 +12,8 @@
 !    Jason Milbrandt (jason.milbrandt@canada.ca)                                           !
 !__________________________________________________________________________________________!
 !                                                                                          !
-! Version:       2.3_b02                                                                 !
-! Last updated:  2016-09-22                                                                !
+! Version:       2.3                                                                       !
+! Last updated:  2016-11-24                                                                !
 !__________________________________________________________________________________________!
 
 MODULE MODULE_MP_P3   !WRF
@@ -1317,7 +1317,7 @@ END SUBROUTINE P3_INIT
 
 ! Compute time scale factor over which to apply soft rain lambda limiter
 ! note: '1./max(30.,dt)' = '1.*min(1./30., 1./dt)'
- timeScaleFactor = min(1./30., odt)
+ timeScaleFactor = min(1./120., odt)
 
  pcprt_liq  = 0.
  pcprt_sol  = 0.
@@ -2125,9 +2125,9 @@ END SUBROUTINE P3_INIT
        if (qrevp.gt.0. .and. qr(i,k).ge.qsmall) then
            dum1  = -qrevp*dt/qr(i,k)
            dum1  = max(-1.,dum1)
-           dum2  = exp(-0.2*mu_r(i,k)) ! mu dependence from Seifert (2008), neglecting size dependence
-          !dum2  = 1.                  ! or, neglect mu dependence
-           nrevp = dum2*dum1*nr(i,k)
+           !dum2  = exp(-0.2*mu_r(i,k)) ! mu dependence from Seifert (2008), neglecting size dependence
+           dum2  = 1.                  ! or, neglect mu dependence
+           nrevp = dum2*dum1*nr(i,k)*odt
        endif
 
        iice_loop_depsub:  do iice = 1,nCat
@@ -2172,7 +2172,7 @@ END SUBROUTINE P3_INIT
 
 !................................................................
 ! deposition/condensation-freezing nucleation
-! allow ice nucleation if < -5 C and > 0.1% ice supersaturation
+! allow ice nucleation if < -15 C and > 5% ice supersaturation
 
       if (t(i,k).lt.258.15 .and. supi(i,k).ge.0.05) then
 
@@ -3208,15 +3208,16 @@ END SUBROUTINE P3_INIT
        if (qr(i,k).ge.qsmall) then
           call get_rain_dsd(qr(i,k),nr(i,k),mu_r(i,k),rdumii,dumii,lamr(i,k),mu_r_table, &
                             tmp1,tmp2,log_tmp1,tmpint1,tmpint2)
+         ! hm, turn off soft lambda limiter
          ! impose size limits for rain with 'soft' lambda limiter
          ! (adjusts over a set timescale rather than within one timestep)
-          dum2 = (qr(i,k)/(pi*rhow*nr(i,k)))**thrd
-          if (dum2.gt.dbrk) then
-             dum   = qr(i,k)*cons4
-            !dum1  = (dum-nr(i,k))/max(60.,dt)  !time scale for adjustment is 60 s
-             dum1  = (dum-nr(i,k))*timeScaleFactor
-             nr(i,k) = nr(i,k)+dum1*dt
-          endif
+         ! dum2 = (qr(i,k)/(pi*rhow*nr(i,k)))**thrd
+         ! if (dum2.gt.dbrk) then
+         !    dum   = qr(i,k)*cons4
+         !   !dum1  = (dum-nr(i,k))/max(60.,dt)  !time scale for adjustment is 60 s
+         !    dum1  = (dum-nr(i,k))*timeScaleFactor
+         !     nr(i,k) = nr(i,k)+dum1*dt
+         ! endif
 
           diag_effr(i,k) = 0.5*(mu_r(i,k)+3.)/lamr(i,k)
         ! ze_rain(i,k) = n0r(i,k)*720./lamr(i,k)**3/lamr(i,k)**3/lamr(i,k)

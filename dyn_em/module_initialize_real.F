@@ -2028,7 +2028,7 @@ integer::oops1,oops2
          !  data.  Mostly, this is expected to be for monthly data (such as background
          !  aerosol information).
 
-!#if ( WRF_CHEM == 1 )
+#if ( WRF_CHEM == 1 )
          ! OPTIONAL DATA #1: GCA - Go Cart Aerosols: OH, H2O2, NO3
          !       Pressure name: p_gca
          !       Number of vertical levels: num_gca_levels
@@ -2237,7 +2237,7 @@ enddo
                                ims , ime , jms , jme , kms , kme , &
                                its , ite , jts , jte , kts , kte )
          END IF
-!#endif
+#endif
 
          ! OPTIONAL DATA #2: Thompson Water-Friendly Ice-Friendly Aerosols
          !       Pressure name (assumed to end with _jan, _feb, _mar, ..., _nov, _dec): p_wif

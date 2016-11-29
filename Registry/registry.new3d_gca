@@ -10,13 +10,10 @@
 ###   G C A
 ### GOCART AEROSOL
 
-# SHOULD BE PERMANENTLY ADDED TO registy.dimspec (no CHEM ifdef, always in the code)
 dimspec  gca     2     namelist=num_gca_levels           z     num_gca_levels
 
-# SHOULD BE PERMANENTLY ADDED TO Registry.EM_COMMON
 rconfig   integer num_gca_levels     namelist,domains	   1              27      irh    "num_gca_levels" "number of levels in the GOcart Aerosol input"      ""
 
-# SHOULD BE PERMANENTLY ADDED ONLY TO registy.chem
 state    real       p_gca          i{gca}j      dyn_em      1        Z     i1          "P_GCA"   "Pressure for using  Aerosol-GOcart option"       "Pa"
 
 state    real      oh_gca_now      i{gca}j      dyn_em      1        Z     -          "OH_NOW"   "Background   OH for Aerosol-GOcart option Now"   "kg kg-1"
@@ -64,8 +61,3 @@ state    real     no3_gca_dec      i{gca}j      dyn_em      1        Z     i1   
 rconfig   integer gca_input_opt      namelist,domains      1              0       irh    "gca_input_opt" "0=do not process the GOcart Aerosol input from metgrid"
 
 package   use_gca_input       gca_input_opt==1             -             state:p_gca,oh_gca_now,oh_gca_jan,oh_gca_feb,oh_gca_mar,oh_gca_apr,oh_gca_may,oh_gca_jun,oh_gca_jul,oh_gca_aug,oh_gca_sep,oh_gca_oct,oh_gca_nov,oh_gca_dec,h2o2_gca_now,h2o2_gca_jan,h2o2_gca_feb,h2o2_gca_mar,h2o2_gca_apr,h2o2_gca_may,h2o2_gca_jun,h2o2_gca_jul,h2o2_gca_aug,h2o2_gca_sep,h2o2_gca_oct,h2o2_gca_nov,h2o2_gca_dec,no3_gca_now,no3_gca_jan,no3_gca_feb,no3_gca_mar,no3_gca_apr,no3_gca_may,no3_gca_jun,no3_gca_jul,no3_gca_aug,no3_gca_sep,no3_gca_oct,no3_gca_nov,no3_gca_dec
-
-#TEMPORARY - already in Registry.EM_CHEM
-state    real  backg_oh       ikj     misc        1         -      i08r    "BACKG_OH"       "Background   OH for Aerosol-GOcart option"     "volume mixing ratio"
-state    real  backg_h2o2     ikj     misc        1         -      i08r    "BACKG_H2O2"     "Background H2O2 for Aerosol-GOcart option"     "volume mixing ratio"
-state    real  backg_no3      ikj     misc        1         -      i08r    "BACKG_NO3"      "Background  NO3 for Aerosol-GOcart option"     "volume mixing ratio"

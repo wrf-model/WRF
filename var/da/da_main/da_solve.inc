@@ -97,6 +97,34 @@
       end if
    end if
 
+   ! for WRF hybrid coordinate
+   allocate ( c1f(kms:kme) )
+   allocate ( c2f(kms:kme) )
+   allocate ( c3f(kms:kme) )
+   allocate ( c4f(kms:kme) )
+   allocate ( c1h(kms:kme) )
+   allocate ( c2h(kms:kme) )
+   allocate ( c3h(kms:kme) )
+   allocate ( c4h(kms:kme) )
+   c1f = grid%c1f
+   c2f = grid%c2f
+   c3f = grid%c3f
+   c4f = grid%c4f
+   c1h = grid%c1h
+   c2h = grid%c2h
+   c3h = grid%c3h
+   c4h = grid%c4h
+   if ( config_flags%hybrid_opt == 0 ) then
+      c3f = grid%znw
+      c3h = grid%znu
+      c4f = 0.0
+      c4h = 0.0
+      c1f = 1.0
+      c1h = 1.0
+      c2f = 0.0
+      c2h = 0.0
+   end if
+
    ! Calculate the num_fgat_time based on time_window_min, time_window_max
     if ( var4d ) then
        if (time_step == 0) then
@@ -964,7 +992,14 @@
 
    if ( anal_type_hybrid_dual_res ) deallocate(ob_locs)
 
-
+   deallocate ( c1f )
+   deallocate ( c2f )
+   deallocate ( c3f )
+   deallocate ( c4f )
+   deallocate ( c1h )
+   deallocate ( c2h )
+   deallocate ( c3h )
+   deallocate ( c4h )
 
 #ifdef DM_PARALLEL
    call mpi_barrier (comm,ierr)

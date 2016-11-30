@@ -1072,7 +1072,7 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
       ELSE
 
         CALL advect_scalar     ( scalar(ims,kms,jms,im),        &
-                                 scalar_old(ims,kms,jms,im),    &
+                                 scalar(ims,kms,jms,im),        &
                                  advect_tend(ims,kms,jms),      &
                                  ru, rv, ww, mut, time_step,    &
                                  config_flags,                  &

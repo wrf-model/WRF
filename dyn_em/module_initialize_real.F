@@ -2247,6 +2247,7 @@ enddo
          !       Stored in scalar arrays, tested and assumed to be upside down.
 
          IF ( ( config_flags%wif_input_opt .EQ. 1 ) .AND. &
+              ( config_flags%mp_physics .EQ. THOMPSONAERO ) .AND. &
               ( flag_qnwfa .EQ. 1 ) .AND.  &
               ( flag_qnifa .EQ. 1 ) ) THEN
 
@@ -2432,6 +2433,15 @@ enddo
                                ids , ide , jds , jde , kds , kde , &
                                ims , ime , jms , jme , kms , kme , &
                                its , ite , jts , jte , kts , kte )
+
+         ELSE IF ( ( config_flags%wif_input_opt .EQ. 1 ) .AND. &
+                   ( config_flags%mp_physics .EQ. THOMPSONAERO ) .AND. &
+                   ( ( flag_qnwfa .NE. 1 ) .OR.  &
+                     ( flag_qnifa .NE. 1 ) ) ) THEN
+            WRITE (a_message,*) 'COMMENT: QNWFA or QNIFA flags not set in metgrid input, cannot have wif_input_opt=1'
+            CALL wrf_debug ( 0 , a_message)
+            WRITE (a_message,*) 'COMMENT: QNWFA and QNIFA will be initialized to zero values'
+            CALL wrf_debug ( 0 , a_message)
 
          END IF
 

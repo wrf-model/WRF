@@ -2246,7 +2246,9 @@ enddo
          !       Option to interpolate data: wif_input_opt = 1
          !       Stored in scalar arrays, tested and assumed to be upside down.
 
-         IF ( config_flags%wif_input_opt .EQ. 1 ) THEN
+         IF ( ( config_flags%wif_input_opt .EQ. 1 ) .AND. &
+              ( flag_qnwfa .EQ. 1 ) .AND.  &
+              ( flag_qnifa .EQ. 1 ) ) THEN
 
             CALL wrf_debug ( 0 , 'Using monthly Water-Friendly and Ice-Friendly aerosols from metgrid input file' )
 

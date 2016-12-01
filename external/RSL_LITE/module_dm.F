@@ -1,15 +1,15 @@
 ! sed -e "s/grid%mu/gridmu/g" -e "s/grid%Mu/gridMu/g" module_dm.F | cpp -DDM_PARALLEL=1 -DHYBRID_COORD=1 -DEM_CORE=1 | sed -e "s/gridmu/grid%mu/g" -e "s/gridMu/grid%Mu/g" > module_dm.next
 #if ( HYBRID_COORD==1 )
-#  define gridmu_2(...) (grid%c1h(k)*XXPC2HXX(__VA_ARGS__))
+#  define gridmu_2(...) (ngrid%c1h(k)*XXPC2HXX(__VA_ARGS__))
 #  define XXPC2HXX(...) grid%mu_2(__VA_ARGS__)
 
-#  define gridmub(...) (grid%c1h(k)*XXPCBHXX(__VA_ARGS__)+grid%c2h(k))
+#  define gridmub(...) (ngrid%c1h(k)*XXPCBHXX(__VA_ARGS__)+ngrid%c2h(k))
 #  define XXPCBHXX(...) grid%mub(__VA_ARGS__)
 
-#  define gridMu_2(...) (grid%c1f(k)*XXPC2FXX(__VA_ARGS__))
+#  define gridMu_2(...) (ngrid%c1f(k)*XXPC2FXX(__VA_ARGS__))
 #  define XXPC2FXX(...) grid%Mu_2(__VA_ARGS__)
 
-#  define gridMub(...) (grid%c1f(k)*XXPCBFXX(__VA_ARGS__)+grid%c2f(k))
+#  define gridMub(...) (ngrid%c1f(k)*XXPCBFXX(__VA_ARGS__)+ngrid%c2f(k))
 #  define XXPCBFXX(...) grid%Mub(__VA_ARGS__)
 #endif
 
@@ -4164,22 +4164,38 @@ if (ngrid%vert_refine_method .NE. 0) then
       mu_m = p_surf_m - p_top_m
 !    parent
       do  k = 1,ckde
+#if  !( HYBRID_COORD==1 )
       pre_c = mu_m * pgrid%znw(k) + p_top_m
+#elif ( HYBRID_COORD==1 )
+      pre_c = mu_m * pgrid%c3f(k) + p_top_m + pgrid%c4f(k)
+#endif
       alt_w_c(k) =  -hsca_m * alog(pre_c/p_surf_m)
       enddo   
       do  k = 1,ckde-1
+#if  !( HYBRID_COORD==1 )
       pre_c = mu_m * pgrid%znu(k) + p_top_m
+#elif ( HYBRID_COORD==1 )
+      pre_c = mu_m * pgrid%c3h(k) + p_top_m + pgrid%c4h(k)
+#endif
       alt_u_c(k+1) =  -hsca_m * alog(pre_c/p_surf_m)
       enddo
       alt_u_c(1) =  alt_w_c(1) 
       alt_u_c(ckde+1) =  alt_w_c(ckde)       
 !    nest
       do  k = 1,nkde
+#if  !( HYBRID_COORD==1 )
       pre_n = mu_m * ngrid%znw(k) + p_top_m
+#elif ( HYBRID_COORD==1 )
+      pre_n = mu_m * ngrid%c3f(k) + p_top_m + ngrid%c4f(k)
+#endif
       alt_w_n(k) =  -hsca_m * alog(pre_n/p_surf_m)
       enddo
       do  k = 1,nkde-1
+#if  !( HYBRID_COORD==1 )
       pre_n = mu_m * ngrid%znu(k) + p_top_m
+#elif ( HYBRID_COORD==1 )
+      pre_n = mu_m * ngrid%c3h(k) + p_top_m + ngrid%c4h(k)
+#endif
       alt_u_n(k+1) =  -hsca_m * alog(pre_n/p_surf_m)
       enddo
       alt_u_n(1) =  alt_w_n(1)
@@ -4232,24 +4248,17 @@ endif
       
          !  Uncouple the variables moist and t_2 that are used to calculate ph_2
 
-         DO j = MAX(jds,jps),MIN(jde-1,jps)
-            DO i = MAX(ids,ips),MIN(ide-1,ips)
+         DO j = MAX(jds,jps),MIN(jde-1,jpe)
+            DO i = MAX(ids,ips),MIN(ide-1,ipe)
                DO k=kds,kde-1
-if((grid%mub(i,j) + grid%mu_2(i,j)).lt.0.01)then
-print *,'DAVE i,j,k=',i,j,k
-print *,'t_2 = ',grid%t_2(i,k,j)
-print *,'Qv  = ',moist(i,k,j,P_qv)
-print *,'mu_2= ',grid%mu_2(i,j)
-print *,'mub= ',grid%mub(i,j)
-endif
                   grid%t_2(i,k,j) = grid%t_2(i,k,j)/(grid%mub(i,j) + grid%mu_2(i,j))
                   moist(i,k,j,P_QV) = moist(i,k,j,P_QV)/(grid%mub(i,j) + grid%mu_2(i,j))
                END DO
             END DO
          END DO
     
-         DO j = MAX(jds,jps),MIN(jde-1,jps)
-            DO i = MAX(ids,ips),MIN(ide-1,ips)
+         DO j = MAX(jds,jps),MIN(jde-1,jpe)
+            DO i = MAX(ids,ips),MIN(ide-1,ipe)
 
                DO k = 1, kpe-1
 #if  !( HYBRID_COORD==1 )
@@ -4304,8 +4313,8 @@ endif
          ALLOCATE( p (ips:ipe, kps:kpe, jps:jpe) )
          ALLOCATE( al(ips:ipe, kps:kpe, jps:jpe) )
 
-         DO j = MAX(jds,jps),MIN(jde-1,jps)
-            DO i = MAX(ids,ips),MIN(ide-1,ips)
+         DO j = MAX(jds,jps),MIN(jde-1,jpe)
+            DO i = MAX(ids,ips),MIN(ide-1,ipe)
 
                !  Integrate the hydrostatic equation (from the RHS of the bigstep vertical momentum
                !  equation) down from the top to get the pressure perturbation.  First get the pressure
@@ -4381,15 +4390,15 @@ endif
          DEALLOCATE(al)
       
          ! Couple the variables moist and t_2, and the newly calculated ph_2
-         DO j = MAX(jds,jps),MIN(jde-1,jps)
-            DO i = MAX(ids,ips),MIN(ide-1,ips)
+         DO j = MAX(jds,jps),MIN(jde-1,jpe)
+            DO i = MAX(ids,ips),MIN(ide-1,ipe)
                DO k=kps,kpe
                grid%ph_2(i,k,j) = grid%ph_2(i,k,j)*(grid%Mub(i,j) + grid%Mu_2(i,j))
                END DO
             END DO
          END DO
-         DO j = MAX(jds,jps),MIN(jde-1,jps)
-            DO i = MAX(ids,ips),MIN(ide-1,ips)
+         DO j = MAX(jds,jps),MIN(jde-1,jpe)
+            DO i = MAX(ids,ips),MIN(ide-1,ipe)
                DO k=kps,kpe-1
                grid%t_2(i,k,j) = grid%t_2(i,k,j)*(grid%mub(i,j) + grid%mu_2(i,j))
                moist(i,k,j,P_QV) = moist(i,k,j,P_QV)*(grid%mub(i,j) + grid%mu_2(i,j))
@@ -4597,22 +4606,38 @@ if (ngrid%vert_refine_method .NE. 0) then
       mu_m = p_surf_m - p_top_m
 !    parent
       do  k = 1,ckde
+#if  !( HYBRID_COORD==1 )
       pre_c = mu_m * pgrid%znw(k) + p_top_m
+#elif ( HYBRID_COORD==1 )
+      pre_c = mu_m * pgrid%c3f(k) + p_top_m + pgrid%c4f(k)
+#endif
       alt_w_c(k) =  -hsca_m * alog(pre_c/p_surf_m)
       enddo   
       do  k = 1,ckde-1
+#if  !( HYBRID_COORD==1 )
       pre_c = mu_m * pgrid%znu(k) + p_top_m
+#elif ( HYBRID_COORD==1 )
+      pre_c = mu_m * pgrid%c3h(k) + p_top_m + pgrid%c4h(k)
+#endif
       alt_u_c(k+1) =  -hsca_m * alog(pre_c/p_surf_m)
       enddo
       alt_u_c(1) =  alt_w_c(1) 
       alt_u_c(ckde+1) =  alt_w_c(ckde)       
 !    nest
       do  k = 1,nkde
+#if  !( HYBRID_COORD==1 )
       pre_n = mu_m * ngrid%znw(k) + p_top_m
+#elif ( HYBRID_COORD==1 )
+      pre_n = mu_m * ngrid%c3f(k) + p_top_m + ngrid%c4f(k)
+#endif
       alt_w_n(k) =  -hsca_m * alog(pre_n/p_surf_m)
       enddo
       do  k = 1,nkde-1
+#if  !( HYBRID_COORD==1 )
       pre_n = mu_m * ngrid%znu(k) + p_top_m
+#elif ( HYBRID_COORD==1 )
+      pre_n = mu_m * ngrid%c3h(k) + p_top_m + ngrid%c4h(k)
+#endif
       alt_u_n(k+1) =  -hsca_m * alog(pre_n/p_surf_m)
       enddo
       alt_u_n(1) =  alt_w_n(1)

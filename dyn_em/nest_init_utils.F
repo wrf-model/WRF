@@ -101,29 +101,33 @@ SUBROUTINE init_domain_constants_em ( parent , nest )
 
 ! 1D constants (Z)
 
-   nest%fnm    = parent%fnm
-   nest%fnp    = parent%fnp
-   nest%rdnw   = parent%rdnw
-   nest%rdn    = parent%rdn
-   nest%dnw    = parent%dnw
-   nest%dn     = parent%dn
-   nest%znu    = parent%znu
-   nest%znw    = parent%znw
-   nest%t_base = parent%t_base
-   nest%u_base    = parent%u_base
-   nest%v_base    = parent%v_base
-   nest%qv_base   = parent%qv_base
-   nest%z_base    = parent%z_base
+!DAVE - maybe test if vert_nest instead
+!  IF  ( parent%e_vert .EQ. nest%e_vert ) THEN
+      nest%fnm(1:parent%e_vert)       = parent%fnm(1:parent%e_vert)
+      nest%fnp(1:parent%e_vert)       = parent%fnp(1:parent%e_vert)
+      nest%rdnw(1:parent%e_vert)      = parent%rdnw(1:parent%e_vert)
+      nest%rdn(1:parent%e_vert)       = parent%rdn(1:parent%e_vert)
+      nest%dnw(1:parent%e_vert)       = parent%dnw(1:parent%e_vert)
+      nest%dn(1:parent%e_vert)        = parent%dn(1:parent%e_vert)
+      nest%znu(1:parent%e_vert)       = parent%znu(1:parent%e_vert)
+      nest%znw(1:parent%e_vert)       = parent%znw(1:parent%e_vert)
+      nest%t_base(1:parent%e_vert)    = parent%t_base(1:parent%e_vert)
+      nest%u_base(1:parent%e_vert)    = parent%u_base(1:parent%e_vert)
+      nest%v_base(1:parent%e_vert)    = parent%v_base(1:parent%e_vert)
+      nest%qv_base(1:parent%e_vert)   = parent%qv_base(1:parent%e_vert)
+      nest%z_base(1:parent%e_vert)    = parent%z_base(1:parent%e_vert)
+      nest%c1h(1:parent%e_vert)       = parent%c1h(1:parent%e_vert)
+      nest%c2h(1:parent%e_vert)       = parent%c2h(1:parent%e_vert)
+      nest%c3h(1:parent%e_vert)       = parent%c3h(1:parent%e_vert)
+      nest%c4h(1:parent%e_vert)       = parent%c4h(1:parent%e_vert)
+      nest%c1f(1:parent%e_vert)       = parent%c1f(1:parent%e_vert)
+      nest%c2f(1:parent%e_vert)       = parent%c2f(1:parent%e_vert)
+      nest%c3f(1:parent%e_vert)       = parent%c3f(1:parent%e_vert)
+      nest%c4f(1:parent%e_vert)       = parent%c4f(1:parent%e_vert)
+!  END IF
+
    nest%dzs       = parent%dzs
    nest%zs        = parent%zs
-   nest%c1h       = parent%c1h
-   nest%c2h       = parent%c2h
-   nest%c3h       = parent%c3h
-   nest%c4h       = parent%c4h
-   nest%c1f       = parent%c1f
-   nest%c2f       = parent%c2f
-   nest%c3f       = parent%c3f
-   nest%c4f       = parent%c4f
 
 END SUBROUTINE init_domain_constants_em
 

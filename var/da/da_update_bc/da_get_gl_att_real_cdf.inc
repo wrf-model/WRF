@@ -1,4 +1,4 @@
-subroutine da_get_gl_att_real_cdf(file, att_name, value, debug)
+subroutine da_get_gl_att_real_cdf(file, att_name, value, debug, return_code)
  
    !-----------------------------------------------------------------------
    ! Purpose: TBD
@@ -12,6 +12,7 @@ subroutine da_get_gl_att_real_cdf(file, att_name, value, debug)
    character (len=*),  intent(in)  :: att_name
    logical,            intent(in)  :: debug
    real,               intent(out) :: value
+   integer, optional,  intent(out) :: return_code
 
    real(kind=8)         :: tmp
    real(kind=4)         :: tmp4
@@ -50,6 +51,10 @@ subroutine da_get_gl_att_real_cdf(file, att_name, value, debug)
       write(unit=stdout, fmt='(a, i6)') &
          'Unrecognizable ivtype:', ivtype
       stop
+   end if
+
+   if ( present(return_code) ) then
+      return_code = rcode
    end if
 
    call ncclos(cdfid,rcode)

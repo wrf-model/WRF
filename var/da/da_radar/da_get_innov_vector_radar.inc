@@ -280,7 +280,7 @@ END IF
                         else if (model_tc(k,n).lt.5.0 .and. model_tc(k,n).gt.-5.0 ) then
                              ! contribution from rain, snow and graupel
                              ! Ze = c * Z_Qr + (1-c) * (Z_Qs+Z_Qg)
-                             ! the factor c varies linearly bwteen 0 at t=-5C and 1 at t=5C
+                             ! the factor c varies linearly between 0 at t=-5C and 1 at t=5C
                              czr=(model_tc(k,n)+5)/10.0
                              if (model_tc(k,n).le.0.0) then
                                 czs = (1.0-czr)*zds/(zds+zg) ! dry snow

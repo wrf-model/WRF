@@ -261,36 +261,34 @@ program da_update_bc
    cdfid = ncopn(da_file, NCWRITE, io_status )
 
    ! for WRF hybrid coordinate
-   if ( .not. update_lateral_bdy ) then
 
-      call da_get_gl_att_int_cdf(da_file, 'BOTTOM-TOP_PATCH_END_STAG',   nlevf, debug, io_status)
-      call da_get_gl_att_int_cdf(da_file, 'BOTTOM-TOP_PATCH_END_UNSTAG', nlevh, debug, io_status)
-      if ( io_status /= NF_NOERR .or. nlevf <= 0 .or. nlevh <= 0 ) then
-         write(unit=stdout,fmt=*) 'Error finding the number of vertical levels'
-         stop
-      else
-         allocate ( c1f(nlevf) )
-         allocate ( c2f(nlevf) )
-         allocate ( c1h(nlevh) )
-         allocate ( c2h(nlevh) )
-      end if
+   call da_get_gl_att_int_cdf(da_file, 'BOTTOM-TOP_PATCH_END_STAG',   nlevf, debug, io_status)
+   call da_get_gl_att_int_cdf(da_file, 'BOTTOM-TOP_PATCH_END_UNSTAG', nlevh, debug, io_status)
+   if ( io_status /= NF_NOERR .or. nlevf <= 0 .or. nlevh <= 0 ) then
+      write(unit=stdout,fmt=*) 'Error finding the number of vertical levels'
+      stop
+   else
+      allocate ( c1f(nlevf) )
+      allocate ( c2f(nlevf) )
+      allocate ( c1h(nlevh) )
+      allocate ( c2h(nlevh) )
+   end if
 
-      ! initialize as hybrid_opt = 0
-      hybrid_opt = 0
-      c1f(:) = 1.0
-      c2f(:) = 0.0
-      c1h(:) = 1.0
-      c2h(:) = 0.0
+   ! initialize as hybrid_opt = 0
+   hybrid_opt = 0
+   c1f(:) = 1.0
+   c2f(:) = 0.0
+   c1h(:) = 1.0
+   c2h(:) = 0.0
 
-      !hcl make sure the global attribute HYBRID_OPT is included in the WRF mods
-      call da_get_gl_att_int_cdf(da_file, 'HYBRID_OPT', hybrid_opt, debug, io_status)
-      if ( io_status == NF_NOERR ) then
-         call da_get_var_1d_real_cdf( da_file, 'C1F', c1f, nlevf, 1, debug)
-         call da_get_var_1d_real_cdf( da_file, 'C2F', c2f, nlevf, 1, debug)
-         call da_get_var_1d_real_cdf( da_file, 'C1H', c1h, nlevh, 1, debug)
-         call da_get_var_1d_real_cdf( da_file, 'C2H', c2h, nlevh, 1, debug)
-      end if
-   end if ! not update_lateral_bdy
+   !hcl make sure the global attribute HYBRID_OPT is included in the WRF mods
+   call da_get_gl_att_int_cdf(da_file, 'HYBRID_OPT', hybrid_opt, debug, io_status)
+   if ( io_status == NF_NOERR ) then
+      call da_get_var_1d_real_cdf( da_file, 'C1F', c1f, nlevf, 1, debug)
+      call da_get_var_1d_real_cdf( da_file, 'C2F', c2f, nlevf, 1, debug)
+      call da_get_var_1d_real_cdf( da_file, 'C1H', c1h, nlevh, 1, debug)
+      call da_get_var_1d_real_cdf( da_file, 'C2H', c2h, nlevh, 1, debug)
+   end if
 
    ! For 2D variables
    ! Get mu, mub, msfu, and msfv

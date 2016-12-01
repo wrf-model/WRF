@@ -1446,12 +1446,12 @@ program da_update_bc
    deallocate(thisbdytime)
    deallocate(nextbdytime)
 
-   deallocate ( c1f )
-   deallocate ( c2f )
-   deallocate ( c1h )
-   deallocate ( c2h )
-
  end if ! end if update_lateral_bdy
+
+ deallocate ( c1f )
+ deallocate ( c2f )
+ deallocate ( c1h )
+ deallocate ( c2h )
 
  write(unit=stdout,fmt=*) &
     '=================================================================='

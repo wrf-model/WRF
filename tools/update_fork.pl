@@ -63,8 +63,7 @@ print "\nStep 2: Setting the 'push' url for 'upstream' to the user's fork, to av
 
 # Checkout master, fetch "upstream" commits, and perform a fastforward merge
 print "\nStep 3: Fetching 'upstream' commits, and performing fastforward merge\n\n";
-! system("git", "checkout", "master") or die "Can not checkout master: $!\nWhat on earth did you do??\n";
-! system("git", "fetch", "upstream", "master") or die "Can not fetch upstream changes from : $!\nWhat on earth did you do??\n";
+! system("git", "fetch", "upstream", "master") or die "Can not fetch upstream changes from : $!\nSomething has gone seriously wrong! Perhaps you don't have internet access?\n";
 ! system("git", "merge", "--ff-only", "upstream/master") or die "\nCan not perform fastforward merge from upstream/master: $!\n\nTroubleshooting info:\n\n 1. If you receive a message 'fatal: 'upstream/master' does not point to a commit', your git version may be too old. On yellowstone, try `module load git`\n 2. If you receive a message' fatal: Not possible to fast-forward, aborting.', you have likely made local changes to the master branch of your fork. All work should be done on branches of your fork, not the master!\n";
 
 # Finally, push updated master to the Github copy of your fork:

@@ -8062,7 +8062,7 @@ SUBROUTINE advect_scalar_wenopd ( field, field_old, tendency,    &
           cr = vel*dt/dy/mu
           fqyl(i,k,j) = mu*(dy/dt)*flux_upwind(field_old(i,k,j-1), field_old(i,k,j  ), cr)
 
-         IF ( vel .ge. 0.0 ) THEN
+         IF ( vel*sign(1,time_step) .ge. 0.0 ) THEN
             qip2 = field(i,k,j+1)
             qip1 = field(i,k,j  )
             qi   = field(i,k,j-1)
@@ -8224,7 +8224,7 @@ SUBROUTINE advect_scalar_wenopd ( field, field_old, tendency,    &
           fqxl(i,k,j) = mu*(dx/dt)*flux_upwind(field_old(i-1,k,j), field_old(i,k,j  ), cr)
 
 
-         IF ( vel .ge. 0.0 ) THEN
+         IF ( vel*sign(1,time_step) .ge. 0.0 ) THEN
             qip2 = field(i+1,k,j)
             qip1 = field(i,  k,j)
             qi   = field(i-1,k,j)
@@ -8495,7 +8495,7 @@ SUBROUTINE advect_scalar_wenopd ( field, field_old, tendency,    &
            fqzl(i,k,j) = mu*(dz/dt)*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
 
 
-         IF( -vel .ge. 0.0 ) THEN
+         IF( -vel*sign(1,time_step) .ge. 0.0 ) THEN
             qip2 = field(i,k+1,j)
             qip1 = field(i,k  ,j)
             qi   = field(i,k-1,j)
@@ -10149,7 +10149,7 @@ SUBROUTINE advect_scalar_weno ( field, field_old, tendency,     &
 !          vel = rv(i,k,j)
           vel = 0.5*( rv(i,k,j) + rv(i-is,k-ks,j-js) )
 
-         IF ( vel .ge. 0.0 ) THEN
+         IF ( vel*sign(1,time_step) .ge. 0.0 ) THEN
             qip2 = field(i,k,j+1)
             qip1 = field(i,k,j  )
             qi   = field(i,k,j-1)
@@ -10344,7 +10344,7 @@ SUBROUTINE advect_scalar_weno ( field, field_old, tendency,     &
           vel = 0.5*( ru(i,k,j) + ru(i-is,k-ks,j-js) )
 
 
-         IF ( vel .ge. 0.0 ) THEN
+         IF ( vel*sign(1,time_step) .ge. 0.0 ) THEN
             qip2 = field(i+1,k,j)
             qip1 = field(i,  k,j)
             qi   = field(i-1,k,j)
@@ -10555,7 +10555,7 @@ SUBROUTINE advect_scalar_weno ( field, field_old, tendency,     &
 !           vel = rom(i,k,j)
            vel = 0.5*( rom(i,k,j) + rom(i-is,k-ks,j-js) )
 
-         IF( -vel .ge. 0.0 ) THEN
+         IF( -vel*sign(1,time_step) .ge. 0.0 ) THEN
             qip2 = field(i,k+1,j)
             qip1 = field(i,k  ,j)
             qi   = field(i,k-1,j)
@@ -10824,7 +10824,7 @@ SUBROUTINE advect_weno_u ( u, u_old, tendency,            &
         DO i = i_start, i_end
           vel = 0.5*(rv(i,k,j)+rv(i-1,k,j))
 
-         IF ( vel .ge. 0.0 ) THEN
+         IF ( vel*sign(1,time_step) .ge. 0.0 ) THEN
             qip2 = u(i,k,j+1)
             qip1 = u(i,k,j  )
             qi   = u(i,k,j-1)
@@ -10977,7 +10977,7 @@ SUBROUTINE advect_weno_u ( u, u_old, tendency,            &
         DO i = i_start_f, i_end_f
           vel = 0.5*(ru(i,k,j)+ru(i-1,k,j))
 
-         IF ( vel .ge. 0.0 ) THEN
+         IF ( vel*sign(1,time_step) .ge. 0.0 ) THEN
             qip2 = u(i+1,k,j)
             qip1 = u(i,  k,j)
             qi   = u(i-1,k,j)
@@ -11201,7 +11201,7 @@ SUBROUTINE advect_weno_u ( u, u_old, tendency,            &
          DO i = i_start, i_end
            vel=0.5*(rom(i-1,k,j)+rom(i,k,j))
 
-         IF( -vel .ge. 0.0 ) THEN
+         IF( -vel*sign(1,time_step) .ge. 0.0 ) THEN
             qip2 = u(i,k+1,j)
             qip1 = u(i,k  ,j)
             qi   = u(i,k-1,j)
@@ -11466,7 +11466,7 @@ SUBROUTINE advect_weno_v   ( v, v_old, tendency,            &
         DO i = i_start, i_end
           vel = 0.5*(rv(i,k,j)+rv(i,k,j-1))
 
-         IF ( vel .ge. 0.0 ) THEN
+         IF ( vel*sign(1,time_step) .ge. 0.0 ) THEN
             qip2 = v(i,k,j+1)
             qip1 = v(i,k,j  )
             qi   = v(i,k,j-1)
@@ -11633,7 +11633,7 @@ SUBROUTINE advect_weno_v   ( v, v_old, tendency,            &
         DO i = i_start_f, i_end_f
           vel = 0.5*(ru(i,k,j)+ru(i,k,j-1))
 
-         IF ( vel .ge. 0.0 ) THEN
+         IF ( vel*sign(1,time_step) .ge. 0.0 ) THEN
             qip2 = v(i+1,k,j)
             qip1 = v(i,  k,j)
             qi   = v(i-1,k,j)
@@ -11887,7 +11887,7 @@ SUBROUTINE advect_weno_v   ( v, v_old, tendency,            &
          DO i = i_start, i_end
            vel=0.5*(rom(i,k,j)+rom(i,k,j-1))
 
-         IF( -vel .ge. 0.0 ) THEN
+         IF( -vel*sign(1,time_step) .ge. 0.0 ) THEN
             qip2 = v(i,k+1,j)
             qip1 = v(i,k  ,j)
             qi   = v(i,k-1,j)
@@ -12152,7 +12152,7 @@ SUBROUTINE advect_weno_w    ( w, w_old, tendency,            &
         DO i = i_start, i_end
           vel = fzm(k)*rv(i,k,j)+fzp(k)*rv(i,k-1,j)
 
-         IF ( vel .ge. 0.0 ) THEN
+         IF ( vel*sign(1,time_step) .ge. 0.0 ) THEN
             qip2 = w(i,k,j+1)
             qip1 = w(i,k,j  )
             qi   = w(i,k,j-1)
@@ -12192,7 +12192,7 @@ SUBROUTINE advect_weno_w    ( w, w_old, tendency,            &
         DO i = i_start, i_end
           vel = (2.-fzm(k-1))*rv(i,k-1,j)-fzp(k-1)*rv(i,k-2,j)
 
-         IF ( vel .ge. 0.0 ) THEN
+         IF ( vel*sign(1,time_step) .ge. 0.0 ) THEN
             qip2 = w(i,k,j+1)
             qip1 = w(i,k,j  )
             qi   = w(i,k,j-1)
@@ -12371,7 +12371,7 @@ SUBROUTINE advect_weno_w    ( w, w_old, tendency,            &
         DO i = i_start_f, i_end_f
           vel = fzm(k)*ru(i,k,j)+fzp(k)*ru(i,k-1,j)
 
-         IF ( vel .ge. 0.0 ) THEN
+         IF ( vel*sign(1,time_step) .ge. 0.0 ) THEN
             qip2 = w(i+1,k,j)
             qip1 = w(i,  k,j)
             qi   = w(i-1,k,j)
@@ -12412,7 +12412,7 @@ SUBROUTINE advect_weno_w    ( w, w_old, tendency,            &
         DO i = i_start_f, i_end_f
           vel = (2.-fzm(k-1))*ru(i,k-1,j)-fzp(k-1)*ru(i,k-2,j)
 
-         IF ( vel .ge. 0.0 ) THEN
+         IF ( vel*sign(1,time_step) .ge. 0.0 ) THEN
             qip2 = w(i+1,k,j)
             qip1 = w(i,  k,j)
             qi   = w(i-1,k,j)
@@ -12709,7 +12709,7 @@ SUBROUTINE advect_weno_w    ( w, w_old, tendency,            &
          DO i = i_start, i_end
            vel=0.5*(rom(i,k,j)+rom(i,k-1,j))
 
-         IF( -vel .ge. 0.0 ) THEN
+         IF( -vel*sign(1,time_step) .ge. 0.0 ) THEN
             qip2 = w(i,k+1,j)
             qip1 = w(i,k  ,j)
             qi   = w(i,k-1,j)

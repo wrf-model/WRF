@@ -1536,9 +1536,21 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
                               ims,ime, jms,jme, kms,kme,                                &  ! memory dims
                               its,ite, jts,jte, kts,kte)                                   ! tile dims
 
+
+#ifdef ( defined(DM_PARALLEL)  &&   ! defined(STUBMPI) )
+#define MPI
+      USE module_dm, ONLY : &
+         local_communicator, mytask
+! keep a spacing line here to keep Apple cpp from adding a space in front of the endif
+#endif
+
       implicit none
 
+#if ( defined(DM_PARALLEL)  &&   ! defined(STUBMPI) ) || defined(MPI)
+      INCLUDE 'mpif.h'
+#else
       integer :: mytask = 0
+#endif
 
  !Subroutine arguments:
 

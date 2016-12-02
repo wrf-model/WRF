@@ -32,15 +32,10 @@ subroutine da_write_oa_radar_ascii ( ob, iv, re, it )
    write(unit=message(1),fmt='(A)') 'Writing radar OMA ascii file'
    call da_message(message(1:1))
 
-#ifdef DM_PARALLEL
+   ! myproc is set in var/da/da_main/da_wrfvar_init1.inc
+   ! it is 0 for serial mode
    write(unit=filename, fmt='(a,i2.2,a,i4.4)') 'radar_omb_oma_',it,'.', myproc
-#else
-   !write(unit=message(1),fmt='(A)') 'write_ao_radar does not work in serial mode'
-   !call da_warning(__FILE__,__LINE__,message(1:1))
-   !if (trace_use) call da_trace_exit("da_write_oa_radar_ascii")
-   !return
-   write(unit=filename, fmt='(a,i2.2,a)') 'radar_omb_oma_',it,'.0000'
-#endif
+
    call da_get_unit(oma_radar_unit)
    open(unit=oma_radar_unit,file=trim(filename),form='formatted',iostat=ios)
    if (ios /= 0) Then

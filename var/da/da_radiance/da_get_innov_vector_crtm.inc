@@ -455,6 +455,7 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
                   ' where the pressure is not monotonic'
                call da_warning(__FILE__,__LINE__,message(1:1))
                iv%instid(inst)%tb_inv(:,n) = missing_r
+               iv%instid(inst)%info%proc_domain(:,n) = .false.
                cycle pixel_loop
             end if
          end do

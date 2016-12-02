@@ -257,49 +257,51 @@ END IF
                   if (abs(ob % radar(n) % rf(k) - missing_r) > 1.0 .AND. &
                      iv % radar(n) % rf(k) % qc >= obs_qc_pointer) then
 
-                     ! compute retrieved hydrometeoro varibles rhv 
+                     ! compute retrieved hydrometeors rhv
                      if (it.eq.1) then
+
+                        ! convert dBZ to equivalent reflectivity factor
+                        ! Zdb = 10*log10(Ze)
+                        rze = 10.0**(ob % radar(n) % rf(k)*0.1)
+
                         if (model_tc(k,n).ge.5.0) then
-                           !JAMC 
-                           !iv % radar(n) % rrno(k) = 10.0** ( (ob % radar(n) % rf(k)-leh1)/leh2 ) /model_rho(k,n)*0.001
-                           !JAS
-                           rze = 10.0**(ob % radar(n) % rf(k)/10.0)
+                           ! contribution from rain only
+                           ! Z_Qr = 3.63*1.0e9*(rho*Qr)**1.75
                            iv % radar(n) % rrno(k) = exp ( log(rze/zrr)/1.75 )/model_rho(k,n)
-                           ! rrn and rrno were assighed to missing values in read_obs_radar_ascii.inc
+
+                           ! rrn and rrno were assigned missing values in read_obs_radar_ascii.inc
                            ! maximum value check, use the data under threshold 15g/kg
-                           call da_radar_rf (model_qrn(k,n),model_qsn(k,n),model_qgr(k,n),model_tc(k,n),model_rho(k,n),rze)
                            if (iv % radar(n) % rrno(k) .ge. 0.015.or.ob % radar(n) % rf(k).ge.55) then
                               iv % radar(n) % rrn(k) % qc = -5  ! old -5 
                            else
                               iv % radar(n) % rrn(k) % qc = 0
                            end if
-                        else if (model_tc(k,n).lt.5.0 .and. model_tc(k,n).ge.-5.0 ) then
+
+                        else if (model_tc(k,n).lt.5.0 .and. model_tc(k,n).gt.-5.0 ) then
+                             ! contribution from rain, snow and graupel
+                             ! Ze = c * Z_Qr + (1-c) * (Z_Qs+Z_Qg)
+                             ! the factor c varies linearly between 0 at t=-5C and 1 at t=5C
                              czr=(model_tc(k,n)+5)/10.0
                              if (model_tc(k,n).le.0.0) then
-                             czs = (1.0-czr)*zds/(zds+zg)
-                             czg = (1.0-czr)*zg/(zds+zg)
+                                czs = (1.0-czr)*zds/(zds+zg) ! dry snow
+                                czg = (1.0-czr)*zg/(zds+zg)
                              else
-                             czs = (1.0-czr)*zws/(zws+zg)
-                             czg = (1.0-czr)*zg/(zws+zg)
+                                czs = (1.0-czr)*zws/(zws+zg) ! wet snow
+                                czg = (1.0-czr)*zg/(zws+zg)
                              end if
-                             !iv % radar(n) % rrno(k) = 10.0** ( (czr*ob % radar(n) % rf(k)-leh1)/leh2 ) /model_rho(k,n)*0.001
-                             rze = 10.0**(czr*ob % radar(n) % rf(k)/10.0)
-                             iv % radar(n) % rrno(k) = exp ( log(rze/zrr)/1.75 )/model_rho(k,n)
-                             rze = 10.0**(czs*ob % radar(n) % rf(k)/10.0)
-                             iv % radar(n) % rsno(k) = exp ( log(rze/zds)/1.75 )/model_rho(k,n)
-                             rze = 10.0**(czg*ob % radar(n) % rf(k)/10.0)
-                             iv % radar(n) % rgro(k) = exp ( log(rze/zg )/1.75 )/model_rho(k,n)
+                             iv % radar(n) % rrno(k) = exp ( log(czr*rze/zrr)/1.75 )/model_rho(k,n)
+                             iv % radar(n) % rsno(k) = exp ( log(czs*rze/zds)/1.75 )/model_rho(k,n)
+                             iv % radar(n) % rgro(k) = exp ( log(czg*rze/zg )/1.75 )/model_rho(k,n)
                              iv % radar(n) % rrn(k) % qc = 0
                              iv % radar(n) % rsn(k) % qc = 0
                              iv % radar(n) % rgr(k) % qc = 0
+
                         else if (model_tc(k,n).le.-5.0) then
+                             ! contribution from snow and graupel
                              czs = zds/(zds+zg)
                              czg = 1.0 - czs
-                             !   rra  = exp(log(rrze/zgr)/1.75)/ro1
-                             rze = 10.0**(czs*ob % radar(n) % rf(k)/10.0) 
-                             iv % radar(n) % rsno(k) = exp ( log(rze/zds)/1.75 )/model_rho(k,n)
-                             rze = 10.0**(czg*ob % radar(n) % rf(k)/10.0)
-                             iv % radar(n) % rgro(k) = exp ( log(rze/zg )/1.75 )/model_rho(k,n)
+                             iv % radar(n) % rsno(k) = exp ( log(czs*rze/zds)/1.75 )/model_rho(k,n)
+                             iv % radar(n) % rgro(k) = exp ( log(czg*rze/zg )/1.75 )/model_rho(k,n)
                              iv % radar(n) % rsn(k) % qc = 0
                              iv % radar(n) % rgr(k) % qc = 0
                         end if  ! temp

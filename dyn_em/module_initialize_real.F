@@ -2037,33 +2037,6 @@ integer::oops1,oops2
          !       Not stored in scalar arrays.
 
          IF ( config_flags%gca_input_opt .EQ. 1 ) THEN
-grid%p_gca(:, 1,:) = 105000
-grid%p_gca(:, 2,:) = 100000
-grid%p_gca(:, 3,:) =  90000
-grid%p_gca(:, 4,:) =  80000
-grid%p_gca(:, 5,:) =  70000
-grid%p_gca(:, 6,:) =  60000
-grid%p_gca(:, 7,:) =  50000
-grid%p_gca(:, 8,:) =  40000
-grid%p_gca(:, 9,:) =  30000
-grid%p_gca(:,10,:) =  10000
-grid%p_gca(:,11,:) =   7000
-grid%p_gca(:,12,:) =   5000
-grid%p_gca(:,13,:) =   1000
-DO k = 1, config_flags%num_gca_levels
-grid %  oh_gca_jan(:,k,:) =  1 + 20*k
-grid %  oh_gca_feb(:,k,:) =  2 + 20*k
-grid %  oh_gca_mar(:,k,:) =  3 + 20*k
-grid %  oh_gca_apr(:,k,:) =  4 + 20*k
-grid %  oh_gca_may(:,k,:) =  5 + 20*k
-grid %  oh_gca_jun(:,k,:) =  6 + 20*k
-grid %  oh_gca_jul(:,k,:) =  7 + 20*k
-grid %  oh_gca_aug(:,k,:) =  8 + 20*k
-grid %  oh_gca_sep(:,k,:) =  9 + 20*k
-grid %  oh_gca_oct(:,k,:) = 10 + 20*k
-grid %  oh_gca_nov(:,k,:) = 11 + 20*k
-grid %  oh_gca_dec(:,k,:) = 12 + 20*k
-end do
 
             CALL wrf_debug ( 0 , 'Using monthly GOcart Aerosol input: OH, H2O2, NO3 from metgrid input file' )
 
@@ -2109,10 +2082,6 @@ end do
                   END DO
                END DO
             END DO
-print *,'        LEV     PRESSURE           OH'
-do k = 1, config_flags%num_gca_levels
-print *,k,grid%p_gca(its,k,jts), grid%oh_gca_now(its,k,jts)
-enddo
 
             CALL vert_interp ( grid %  oh_gca_now , grid%p_gca , grid%backg_oh   , grid%pb , &
                                grid%hgtmaxw , grid%hgttrop , grid%pmaxw , grid%ptrop , &
@@ -2127,11 +2096,6 @@ enddo
                                ids , ide , jds , jde , kds , kde , &
                                ims , ime , jms , jme , kms , kme , &
                                its , ite , jts , jte , kts , kte )
-print *,' '
-print *,'        ETA       PRES             OH'
-do k = 1, kte-1
-print *,k,grid%pb(its,k,jts), grid%backg_oh(its,k,jts)
-enddo
 
             DO k = 1, config_flags%num_gca_levels
                WRITE(a_message,*) '  transferring each K-level ', k, ' to H2O2, sample Jan data, ', grid %h2o2_gca_jan(its,k,jts)

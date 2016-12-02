@@ -1,0 +1,340 @@
+JCSDA CRTM v2.2.3 Build Instructions
+====================================
+
+$Revision: 60152 $
+
+
+CRTM SUPPORT EMAIL: ncep.list.emc.jcsda_crtm.support@noaa.gov
+
+If you have problems building the library please include the
+generated "config.log" file in your email correspondence.
+
+
+
+            Contents
+  ===============================
+  1. Configuration
+    a. The easy (I hope) way
+    b. The more flexible way
+  2. Building the library
+  3. Testing the library
+  4. Installing the library
+    a. GNU Install
+         - Linking to the library
+    b. NCO Install
+         - Linking to the library
+    c. Uninstalling the library
+  5. Cleaning up
+  6. Feedback and contact info
+
+
+
+
+1. CONFIGURATION
+================
+
+The CRTM tarball directory structure looks like:
+ ./
+  |-README  .................. this file
+  |-configure  ............... configuration script
+  |-Makefile.in  ............. makefile template
+  |-config-setup/  ........... "courtesy" configuration definition scripts 
+  |-fix/  .................... coefficient datafiles
+  `-libsrc/  ................. library source files
+
+
+The build system for the CRTM uses an autoconf-generated configure script.
+
+The build makefiles now assume that environment variables (envars) will
+be defined that describe the compilation environment. The envars
+that *must* be defined are:
+  FC:      the Fortran95/2003 compiler executable,
+  FCFLAGS: the flags/switches provided to the Fortran compiler,
+
+
+
+a. The easy (I hope) way...
+-------------------------
+
+Several shell (and C shell) source files are provided for the compilers to
+which we have access and have tested here. These shell source files are in
+the "config-setup/" subdirectory of the tarball.
+
+The current list of test compiler environments in the config-setup/ directory
+are:
+
+  $ ls  config-setup/
+  g95-debug.setup           gfortran.setup.csh     pgf95.setup
+  g95-debug.setup.csh       ifort-debug.setup      pgf95.setup.csh
+  g95.setup                 ifort-debug.setup.csh  xlf2003-debug.setup
+  g95.setup.csh             ifort.setup            xlf2003-debug.setup.csh
+  gfortran-debug.setup      ifort.setup.csh        xlf2003.setup
+  gfortran-debug.setup.csh  pgf95-debug.setup      xlf2003.setup.csh
+  gfortran.setup            pgf95-debug.setup.csh
+
+All of the above files define values for the envars FC, FCFLAGS, LDFLAGS,
+and LIBS.
+
+To use these files to define the CRTM build environment, you should source
+them. For example, if you use the sh/bash/ksh shells and you want to setup
+for a build using the gfortran compiler using debug options you would type:
+
+  $ . config-setup/gfortran-debug.setup
+
+If you are a C shell aficionado, the equivalent command would be
+
+  % source config-setup/gfortran-debug.setup.csh
+
+You can tailor you build environment by modifying the relevant build
+configuration setup file in the "config-setup/" subdirectory.
+
+Or, if you are going to be testing library builds multiple times, create your
+own configuration setup file.
+
+Once you've sourced the setup file, you run the configuration script like so:
+
+  $ ./configure --prefix=<install directory>
+
+The --prefix switch sets the installation directory and defaults to /usr/local so
+make sure you set it to a directory in which you have write access.
+
+By default, the CRTM is built for big-endian I/O. The --disable-big-endian switch
+builds the library and test programs for little-endian I/O:
+
+  $ ./configure --disable-big-endian --prefix=<install directory>
+
+
+
+b. The more flexible way
+------------------------
+
+If you need more flexibility in the library build you can specify the necessary
+information directly to the configure script that generates the makefiles. For
+example, for the intel ifort compiler:
+	
+  $ ./configure --prefix=${PWD} \
+                --disable-big-endian \
+                FC="ifort" \
+                FCFLAGS="-O3 -g -traceback"
+
+The --prefix switch sets the installation directory and defaults to /usr/local so
+make sure you set it to a directory in which you have write access.
+
+The --disable-big-endian switch builds the library and test programs for little-endian
+I/O. The default is big-endian I/O.
+
+NOTE: The --disable-big-endian switch (whether it's turned on or off) modifies the
+      compilation environment by setting (or deselecting) the compiler switches
+      that control the endian-ness of the I/O. As such, you should be careful if
+      you set those compiler switches directly on the command line via FCFLAGS.
+
+
+
+
+2. BUILDING THE LIBRARY
+=======================
+
+To start the library build for a particular configuration, simply type
+
+  $ make
+
+
+
+
+3. CHECKING THE LIBRARY BUILD
+=============================
+
+To run the accompanying tests using the just-built library, simply type
+
+  $ make check
+
+This will build and run any tests. The current output from the (successful)
+test runs looks like:
+
+  ========================================
+    Running test: big-endian I/O on little-endian platform...
+
+
+       **********************************************************
+                               check_crtm
+
+        Check/example program for the CRTM Forward and K-Matrix 
+        functions using big_endian coefficient datafiles
+
+        CRTM Version: REL-2.2.3
+       **********************************************************
+
+
+       Initializing the CRTM...
+
+       Processing a total of 421 channels...
+         399 from cris399_npp
+         22 from atms_npp
+
+       Calling the CRTM functions for cris399_npp...
+
+       Calling the CRTM functions for atms_npp...
+
+       Destroying the CRTM...
+
+    TEST SUCCESSFUL!
+  ========================================
+
+
+
+
+4. INSTALLING THE LIBRARY
+=========================
+
+Installation of the library *always* occurs into its own directory within the
+directory specified by the --prefix switch. The name of the installation
+directory follows the convention:
+
+  <library name>_<version>
+
+So, if a library version (say, v2.2.3) build was configured with --prefix=$PWD
+then the installation directory will be
+
+  ${PWD}/crtm_v2.2.3
+
+
+
+a. GNU Install
+--------------
+
+To perform a GNU-type install, type:
+
+  $ make install
+
+For a library version, say, v2.2.3, this will create a directory called
+"crtm_v2.2.3". That directory structure is shown below:
+
+  crtm_v2.2.3/
+    |
+    |--include/
+    |    |
+    |    |--accoeff_binary_io.mod
+    |    |--accoeff_define.mod
+    |    ...etc...
+    |    |--zeeman_input_define.mod
+    |    `--zeeman_utility.mod
+    |
+    `--lib/
+         |
+         `--libcrtm.a
+
+Note that the only version-numbered item in this type of install is the name of
+the installation directory itself.
+
+
+Linking to the library
+......................
+
+Let's assume the above install was moved into "/usrx/local/nceplibs", to use the
+library in this structure in your own application, the usual environment variables
+would be modified something like:
+
+  libroot="/usrx/local/nceplibs/crtm_v2.2.3"
+  FCFLAGS="-I${libroot}/include ${FCFLAGS}"
+  LDFLAGS="-L${libroot}/lib ${LDFLAGS}"
+  LIBS="-lcrtm"
+
+(with appropriate syntax changes for csh)
+
+
+
+b. NCO Install
+--------------
+
+To install the library conforming to the NCO directory organisation and naming
+conventions, type:
+
+  $ make nco_install
+
+For a library version, say, v2.2.3, this will create a directory called
+"crtm_v2.2.3". That directory is organised according to the current NCO structure
+on WCOSS in /nwprod/lib, as shown below:
+
+  crtm_v2.2.3/
+    |
+    |--libcrtm_v2.2.3.a
+    |
+    `--incmod/
+         |
+         `--crtm_v2.2.3/
+              |
+              |--accoeff_binary_io.mod
+              |--accoeff_define.mod
+              ...etc..
+              |--zeeman_input_define.mod
+              `--zeeman_utility.mod
+
+The contents of the "crtm_v2.2.3" directory can then be moved into the official
+/nwprod/lib location as needed.
+
+NOTE: ********** IMPORTANT - READ THIS **********
+      To avoid installing over the top of an existing installation, this NCO-style
+      installation *DOES NOT* install the CRTM into an existing directory. If the
+      installation directory already exists, an error is issued and the installation
+      process halts.
+      ********** IMPORTANT - HAVE YOU READ IT? **********
+
+
+Linking to the library
+......................
+
+Let's assume the above install was moved into "/usrx/local/nceplibs", to use the
+library in this structure in your own application, the usual environment variables
+would be modified something like:
+
+  libroot="/usrx/local/nceplibs"
+  FCFLAGS="-I${libroot}/incmod/crtm_v2.2.3 ${FCFLAGS}"
+  LDFLAGS="-L${libroot} ${LDFLAGS}"
+  LIBS="-lcrtm_v2.2.3"
+  
+(with appropriate syntax changes for csh)
+
+
+
+c. Uninstalling the library
+---------------------------
+
+To uninstall the library (assuming you haven't moved the installation directory
+contents somewhere else) you can type:
+
+  $ make uninstall
+ 
+This will DELETE the created installation directory. So, for a library version,
+say, v2.2.3, if your configure script invocation was something like
+
+  $ ./configure --prefix=${PWD} ...other command line arguments...
+
+then the "uninstall" target will delete the "${PWD}/crtm_v2.2.3" directory.
+
+
+
+
+5. CLEANING UP
+==============
+
+Two targets are provided for cleaning up after the build. To remove all the
+build products type
+
+  $ make clean
+
+To also remove all the configuration products (i.e. the makefiles) type
+
+  $ make distclean
+
+
+
+
+6. FEEDBACK AND CONTACT INFO
+============================
+
+That's pretty much it. Any questions or bug reports can be sent to CRTM Support.
+
+  CRTM SUPPORT EMAIL: ncep.list.emc.jcsda_crtm.support@noaa.gov
+
+If you have problems building the library please include the generated "config.log"
+file in your email correspondence.

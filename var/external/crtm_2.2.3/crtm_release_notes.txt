@@ -1,0 +1,52 @@
+Release Notes: CRTM library v2.2.3
+
+$Revision: 60152 $
+
+-----------------------------------------------------------
+v2.2.3 - released August 13, 2015
+
+ * Made minor fixfile changes to include
+     1. Corrected the WMO satellite id for DMSP-19 SSMIS in the CRTM fixfiles.
+
+ * Compute resource information
+     N/A. This is a library used in the GSI.
+
+
+-----------------------------------------------------------
+v2.2.2 - released August 12, 2015
+
+ * Made minor code changes to include
+     1. Report invalid WMO Sensor and Satellite identifiers as a WARNING rather than ERROR.
+
+ * Made minor build changes to include
+     1. Modification of Intel ifort compiler flags as requested by GSI developers.
+
+ * Compute resource information
+     N/A. This is a library used in the GSI.
+
+
+-----------------------------------------------------------
+v2.2.1 - released April 20, 2015
+
+ * Made scientific changes to include
+     1. Revert ATMS spectral and transmittance coefficients to those derived
+        from a boxcar response.
+
+ * Compute resource information
+     N/A. This is a library used in the GSI.
+
+
+-----------------------------------------------------------
+v2.2.0 - released April 13, 2015
+
+ * Made scientific changes to include
+     1. Overcast radiances
+     2. Reflection correction in microwave sea surface emissivity model for
+        non-precipitating clouds
+     3. ATMS snow emissivity model
+     4. Cloud optical property coefficient update for infrared ice clouds.
+     5. Software updates to address zeus meta-data server issues (file inquiries)
+     6. Implementation of the FASTEM-6 microwave sea surface emissivity model.
+
+ * Compute resource information
+     N/A. This is a library used in the GSI.

@@ -138,6 +138,7 @@ subroutine da_fill_obs_structures(iv, ob, uvq_direct)
          ob % synop(n) % q = iv % synop(n) % q % inv
          ob % synop(n) % p = iv % synop(n) % p % inv
 
+        if ( q_error_options == 1 ) then
          ! Calculate q error from rh error:
 
          if (.not. present(uvq_direct) .or. (present(uvq_direct) .and. (.not. uvq_direct))) then
@@ -149,6 +150,8 @@ subroutine da_fill_obs_structures(iv, ob, uvq_direct)
          !    (iv % synop(n) % p % qc >= obs_qc_pointer) .and. &
          !    (iv % synop(n) % t % qc >= obs_qc_pointer) .and. &
          !    (iv % synop(n) % q % qc >= obs_qc_pointer)) then
+!hcl da_get_q_error should be called in da_get_innov_vector_synop after getting the corrected t and p
+!hcl but the difference is small, and the specified rh error is rough anyway.
          call da_get_q_error(ob % synop(n) % p, &
                               ob % synop(n) % t, &
                               ob % synop(n) % q, &
@@ -158,6 +161,7 @@ subroutine da_fill_obs_structures(iv, ob, uvq_direct)
 
          ! end if
          end if
+        end if !q_error_options
       end do      
    end if
 

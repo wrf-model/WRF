@@ -1609,6 +1609,19 @@ CONTAINS
          END DO
       END DO
 
+      !  Put the final values for the tendencies into the arrays that get passed 
+      !  back out to the calling routine.
+
+      orig_t_bdy_xs ( jts:jte , kds:kde , 1:spec_bdy_width ) :: t_bdy_xs ( jts:jte , kds:kde , 1:spec_bdy_width )
+      orig_t_bdy_xe ( jts:jte , kds:kde , 1:spec_bdy_width ) :: t_bdy_xe ( jts:jte , kds:kde , 1:spec_bdy_width )
+      orig_t_bdy_tend_xs ( jts:jte , kds:kde , 1:spec_bdy_width ) :: t_bdy_tend_xs ( jts:jte , kds:kde , 1:spec_bdy_width )
+      orig_t_bdy_tend_xe ( jts:jte , kds:kde , 1:spec_bdy_width ) :: t_bdy_tend_xe ( jts:jte , kds:kde , 1:spec_bdy_width )
+
+      orig_t_bdy_ys ( its:ite , kds:kde , 1:spec_bdy_width ) :: t_bdy_ys ( its:ite , kds:kde , 1:spec_bdy_width )
+      orig_t_bdy_ye ( its:ite , kds:kde , 1:spec_bdy_width ) :: t_bdy_ye ( its:ite , kds:kde , 1:spec_bdy_width )
+      orig_t_bdy_tend_ys ( its:ite , kds:kde , 1:spec_bdy_width ) :: t_bdy_tend_ys ( its:ite , kds:kde , 1:spec_bdy_width )
+      orig_t_bdy_tend_ye ( its:ite , kds:kde , 1:spec_bdy_width ) :: t_bdy_tend_ye ( its:ite , kds:kde , 1:spec_bdy_width )
+
    END SUBROUTINE theta_and_thetam_lbc_only
 
 !------------------------------------------------------------------------

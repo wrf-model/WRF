@@ -308,6 +308,10 @@ END IF
          iv % radar(n) % rv(k) % inv = 0.0
          iv % radar(n) % rf(k) % inv = 0.0
 
+         ! initialize
+         echo_non_precip = .false.
+         echo_rf_good    = .false.
+
          if (iv % radar(n) % height_qc(k) /= below_model_surface .and.  &
              iv % radar(n) % height_qc(k) /= above_model_lid) then
 

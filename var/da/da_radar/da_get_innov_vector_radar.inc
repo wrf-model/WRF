@@ -270,10 +270,13 @@ END IF
             model_lcl(n) = amin1(2000.     ,model_lcl(n))
 
          case ( 2 )  !NCAR scheme
-            !sbgao_orig model_lcl(n)=ZLCL(i,j)
             model_lcl(n) = dxm *(dym * zlcl(i,j)   + dy * zlcl(i+1, j))  + &
                            dx  *(dym * zlcl(i,j+1) + dy * zlcl(i+1,j+1))
             model_lcl(n) = max(model_lcl(n), zlcla)
+
+            ! add radar elevation to the calculated model_lcl
+            ! iv%radar(n)%height(k) (rather than zr) is later used for checking
+            model_lcl(n) = model_lcl(n) + iv%radar(n)%stn_loc%elv
 
          end select
       end if ! lcl for use_radar_rqv

@@ -354,7 +354,7 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
       nlevels = platform%info%levels
       if (nlevels > max_ob_levels) then
          nlevels = max_ob_levels
-         write(unit=message(1), fmt='(/4(2a,2x),a,2f8.2,2x,2(a,f9.2,2x),2(a,i4,2x)/)') &
+         write(unit=message(1), fmt='(4(2a,2x),a,2f8.2,2x,2(a,f9.2,2x),2(a,i4,2x))') &
             'Station: ', trim(platform%info%name), &
             'ID: ', trim(platform%info%id), &
             'Platform: ', trim(platform%info%platform), &

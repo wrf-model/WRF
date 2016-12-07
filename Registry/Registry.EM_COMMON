@@ -2725,6 +2725,7 @@ package   ntiedtkescheme cu_physics==16              -             -
 package   gdscheme       cu_physics==93              -             -
 package   sasscheme      cu_physics==84              -             -
 package   meso_sas       cu_physics==85              -             -
+package   scalesasscheme cu_physics==86              -             -
 package   kfscheme       cu_physics==99              -             state:w0avg
 
 package   g3tave         cu_diag==1                  -             state:GD_CLOUD,GD_CLOUD2,GD_CLDFR,GD_CLOUD_A,GD_CLOUD2_A,kbcon_deep,ktop_deep,k22_deep

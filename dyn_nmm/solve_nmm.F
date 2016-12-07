@@ -1852,12 +1852,17 @@
      &             ,grid%prec,grid%acprec,grid%cuprec,grid%cuppt,grid%cprate                    &
      &             ,grid%sm,grid%hbm2,grid%pblh,grid%lpbl,grid%cnvbot,grid%cnvtop                         &
      &             ,grid%htop,grid%hbot,grid%htopd,grid%hbotd,grid%htops,grid%hbots                  &
-     &             ,RTHBLTEN,RQVBLTEN,RTHRATEN                         & 
+     &             ,RTHBLTEN,RQVBLTEN,RTHRATEN                          & 
 #if (NMM_CORE==1)                  
      &             ,grid%twbs,grid%qwbs                                &
-     &                 ,grid%DUCUDT, grid%DVCUDT, GRID%MOMMIX, grid%random             &
+     &             ,grid%DUCUDT, grid%DVCUDT, GRID%MOMMIX, grid%random & 
+     &             ,grid%DTHCUDT,grid%DQVCUDT,grid%DQRCUDT,grid%DQCCUDT&! wang, output CU tendency 
+     &             ,grid%DQICUDT,grid%DQSCUDT                          &
 #endif
      &             ,grid%hpbl2d,grid%evap2d,grid%heat2d                &
+     &             ,grid%dx_nmm,grid%dy_nmm                            & !wang, dx2d, dy
+     &             ,grid%scalefun, grid%scalefun1                      & !wang
+     &             ,grid%sigmu, grid%sigmu1                            & !wang
      &             ,grid%avcnvc,grid%acutim,grid%ihe,grid%ihw          &
      &             ,GRID,CONFIG_FLAGS                                  &
      &             ,IDS,IDF,JDS,JDF,KDS,KDE                            &

@@ -1780,10 +1780,9 @@ package   fitchscheme    windfarm_opt==1             -             -
 package   kfetascheme    cu_physics==1               -             -
 package   bmjscheme      cu_physics==2               -             -
 package   gdscheme       cu_physics==93              -             -
-package   sasscheme      cu_physics==84              -             state:hpbl2d,heat2d,evap2d
-package   meso_sas       cu_physics==85              -             state:hpbl2d,heat2d,evap2d
-package   scalesasscheme cu_physics==86              -             state:hpbl2d,heat2d,evap2d
-package   osasscheme     cu_physics==4               -             state:randstate1,randstate2,randstate3,randstate4,random
+package   sasscheme      cu_physics==94              -             state:hpbl2d,heat2d,evap2d
+package   scalesasscheme cu_physics==4               -             state:hpbl2d,heat2d,evap2d
+package   osasscheme     cu_physics==95              -             state:randstate1,randstate2,randstate3,randstate4,random
 package   g3scheme       cu_physics==5               -             -
 package   gfscheme       cu_physics==3               -             -
 package   camzmscheme    cu_physics==7               -             -

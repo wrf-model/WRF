@@ -46,7 +46,6 @@ subroutine da_transfer_xatowrf(grid, config_flags)
    real :: zs1, zs2, pf2, theta, thetam, mu_full, pfu, pfd, phm, cvpm, p2m
    real, dimension(kms:kme) :: ald, ph
    logical :: has_lsm_info
-   real, dimension(ims:ime,jms:jme,kms:kme) :: xb_psac
 
    if (trace_use) call da_trace_entry("da_transfer_xatowrf")
 
@@ -64,14 +63,6 @@ subroutine da_transfer_xatowrf(grid, config_flags)
       do i=its,ite
          do k=kts, kte+1
             ph_cgrid(i,j,k) = grid%ph_2(i,j,k)
-         end do
-      end do
-   end do
-
-   do j=jts,jte
-      do i=its,ite
-         do k=kts, kte
-            xb_psac(i,j,k) = c1h(k) * grid%xb%psac(i,j) + c2h(k)
          end do
       end do
    end do
@@ -129,8 +120,8 @@ subroutine da_transfer_xatowrf(grid, config_flags)
          qvf1   = qvf1*qvf2_b + qvf1_b*qvf2
          qvf1_b = qvf1_b*qvf2_b
          grid%xa%p(i,j,k) = (-0.5/grid%rdnw(k)) * &
-                    ((c1h(k)*mu_cgrid(i,j)+qvf1*c1h(k)*grid%mub(i,j)) / qvf2_b &
-                     -(c1h(k)*grid%mu_2(i,j)+qvf1_b*c1h(k)*grid%mub(i,j))*qvf2/(qvf2_b*qvf2_b))
+                    ((c1f(k)*mu_cgrid(i,j)+qvf1*c1f(k)*grid%mub(i,j)) / qvf2_b &
+                     -(c1f(k)*grid%mu_2(i,j)+qvf1_b*c1f(k)*grid%mub(i,j))*qvf2/(qvf2_b*qvf2_b))
 
          do k = kte-1,1,-1
             qvf1   = 0.5*(q_cgrid(i,j,k)+q_cgrid(i,j,k+1))
@@ -141,8 +132,8 @@ subroutine da_transfer_xatowrf(grid, config_flags)
             qvf1_b = qvf1_b*qvf2_b
             grid%xa%p(i,j,k) = grid%xa%p(i,j,k+1)  &
                        - (1.0/grid%rdn(k+1)) * &
-                       ((c1h(k)*mu_cgrid(i,j)+qvf1*c1h(k)*grid%mub(i,j)) / qvf2_b &
-                        -(c1h(k)*grid%mu_2(i,j)+qvf1_b*c1h(k)*grid%mub(i,j))*qvf2/(qvf2_b*qvf2_b))
+                       ((c1f(k)*mu_cgrid(i,j)+qvf1*c1f(k)*grid%mub(i,j)) / qvf2_b &
+                        -(c1f(k)*grid%mu_2(i,j)+qvf1_b*c1f(k)*grid%mub(i,j))*qvf2/(qvf2_b*qvf2_b))
          end do
 
       end do
@@ -255,11 +246,14 @@ subroutine da_transfer_xatowrf(grid, config_flags)
 
             ! The full field of analysis ph:
             ph_full  = ph_full  &
-                       - grid%xb%dnw(k) * (xb_psac(i,j,k)+c1h(k)*mu_cgrid(i,j)) / rho_dry
+                       - grid%xb%dnw(k) * &
+                       ((c1h(k)*grid%xb%psac(i,j)+c2h(k))+c1h(k)*mu_cgrid(i,j)) &
+                       / rho_dry
 
             ! background hydrostatic phi:
             ph_xb_hd  = ph_xb_hd  &
-                       - grid%xb%dnw(k) * xb_psac(i,j,k) / grid%xb%rho(i,j,k)
+                       - grid%xb%dnw(k) * &
+                       (c1h(k)*grid%xb%psac(i,j)+c2h(k)) / grid%xb%rho(i,j,k)
 
             ! The analysis perturbation = Hydro_ph - base_ph + nonhydro_xb_ph:
             grid%ph_2(i,j,k+1) = ph_full - grid%phb(i,j,k+1) &
@@ -296,8 +290,6 @@ subroutine da_transfer_xatowrf(grid, config_flags)
          ald(k) = (gas_constant/base_pres)*thetam*(p_full/base_pres)**cvpm
 
       ! Dry mass is purely hydrostatic: Native approach in WRF
-
-          !hcl mu_full = grid%mub(i,j)+grid%mu_2(i,j)+ c1h(k)*mu_cgrid(i,j)
 
           pfu = mu_full*c3f(k+1) + c4f(k+1) + grid%p_top
           pfd = mu_full*c3f(k)   + c4f(k)   + grid%p_top

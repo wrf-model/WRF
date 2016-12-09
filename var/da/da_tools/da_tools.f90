@@ -119,5 +119,7 @@ contains
 #include "da_msl2geo1.inc"
 #include "da_geo2msl1.inc"
 
+#include "da_sfc_hori_interp_weights.inc"
+
 end module da_tools
 

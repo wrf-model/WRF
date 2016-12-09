@@ -31,13 +31,11 @@ subroutine da_transform_vpatox(grid, be, ep, vp, nobwin)
       grid%xa_ens%t = 0.0
       grid%xa_ens%q = 0.0
       grid%xa_ens%psfc = 0.0
-#ifdef CLOUD_CV
       grid%xa_ens%qcw = 0.0
       grid%xa_ens%qrn = 0.0
       grid%xa_ens%qci = 0.0
       grid%xa_ens%qsn = 0.0
       grid%xa_ens%qgr = 0.0
-#endif
       if ( anal_type_hybrid_dual_res ) then
          call da_calc_flow_dependence_xa_dual_res(grid, grid%xa_ens, be%ne, ep, vp, iobwin)
       else

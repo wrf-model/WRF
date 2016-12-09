@@ -229,7 +229,7 @@ subroutine da_transform_vptox(grid, vp, be, ep)
          enddo
       enddo
       !$OMP END PARALLEL DO
-#ifdef CLOUD_CV
+!#ifdef CLOUD_CV
       !qcloud
       !$OMP PARALLEL DO &
       !$OMP PRIVATE ( ij, i, j, k )
@@ -295,6 +295,9 @@ subroutine da_transform_vptox(grid, vp, be, ep)
          enddo
       enddo
       !$OMP END PARALLEL DO
+!#endif
+     end if ! cloud_cv_options>=2
+     if ( use_cv_w ) then
       !vertical velocity
       !$OMP PARALLEL DO &
       !$OMP PRIVATE ( ij, i, j, k )
@@ -308,8 +311,7 @@ subroutine da_transform_vptox(grid, vp, be, ep)
          enddo
       enddo
       !$OMP END PARALLEL DO
-#endif
-     end if
+     end if ! use_cv_w
   else  ! no rf or cloud radiance
       ! Pseudo RH --> Water vapor mixing ratio:
       !$OMP PARALLEL DO &

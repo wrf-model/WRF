@@ -40,28 +40,37 @@ subroutine da_test_vxtransform( grid, xbx, be, vv, vp)
    allocate (vp1 % v3(ims:ime,jms:jme,kms:kme))
    allocate (vp1 % v4(ims:ime,jms:jme,kms:kme))
    allocate (vp1 % v5(ims:ime,jms:jme,kms:kme))
-#ifdef CLOUD_CV
-   allocate (vp1 % v6(ims:ime,jms:jme,kms:kme))
-   allocate (vp1 % v7(ims:ime,jms:jme,kms:kme))
-   allocate (vp1 % v8(ims:ime,jms:jme,kms:kme))
-   allocate (vp1 % v9(ims:ime,jms:jme,kms:kme))
-   allocate (vp1 % v10(ims:ime,jms:jme,kms:kme))
-   allocate (vp1 % v11(ims:ime,jms:jme,kms:kme))
-#endif
+
+   if ( cloud_cv_options >= 2 ) then
+      allocate (vp1 % v6(ims:ime,jms:jme,kms:kme))
+      allocate (vp1 % v7(ims:ime,jms:jme,kms:kme))
+      allocate (vp1 % v8(ims:ime,jms:jme,kms:kme))
+      allocate (vp1 % v9(ims:ime,jms:jme,kms:kme))
+      allocate (vp1 % v10(ims:ime,jms:jme,kms:kme))
+   end if
+
+   if ( use_cv_w ) then
+      allocate (vp1 % v11(ims:ime,jms:jme,kms:kme))
+   end if
 
    allocate (vv1 % v1(ims:ime,jms:jme,1:kz_vv(1)))
    allocate (vv1 % v2(ims:ime,jms:jte,1:kz_vv(2)))
    allocate (vv1 % v3(ims:ime,jms:jme,1:kz_vv(3)))
    allocate (vv1 % v4(ims:ime,jms:jme,1:kz_vv(4)))
    allocate (vv1 % v5(ims:ime,jms:jme,1:kz_vv(5)))
-#ifdef CLOUD_CV
-   allocate (vv1 % v6(ims:ime,jms:jme,1:kz_vv(6)))
-   allocate (vv1 % v7(ims:ime,jms:jme,1:kz_vv(7)))
-   allocate (vv1 % v8(ims:ime,jms:jme,1:kz_vv(8)))
-   allocate (vv1 % v9(ims:ime,jms:jme,1:kz_vv(9)))
-   allocate (vv1 % v10(ims:ime,jms:jme,1:kz_vv(10)))
-   allocate (vv1 % v11(ims:ime,jms:jme,1:kz_vv(11)))
-#endif 
+
+   if ( cloud_cv_options >= 2 ) then
+      allocate (vv1 % v6(ims:ime,jms:jme,1:kz_vv(6)))
+      allocate (vv1 % v7(ims:ime,jms:jme,1:kz_vv(7)))
+      allocate (vv1 % v8(ims:ime,jms:jme,1:kz_vv(8)))
+      allocate (vv1 % v9(ims:ime,jms:jme,1:kz_vv(9)))
+      allocate (vv1 % v10(ims:ime,jms:jme,1:kz_vv(10)))
+   end if
+
+   if ( use_cv_w ) then
+      allocate (vv1 % v11(ims:ime,jms:jme,1:kz_vv(11)))
+   end if
+
    call da_zero_vp_type(vp1)
    call da_zero_vp_type(vv1)
 
@@ -112,28 +121,34 @@ subroutine da_test_vxtransform( grid, xbx, be, vv, vp)
    vv1 % v3(its:ite,jts:jte,1:kz_vv(3)) = vv % v3(its:ite,jts:jte,1:kz_vv(3))
    vv1 % v4(its:ite,jts:jte,1:kz_vv(4)) = vv % v4(its:ite,jts:jte,1:kz_vv(4))
    vv1 % v5(its:ite,jts:jte,1:kz_vv(5)) = vv % v5(its:ite,jts:jte,1:kz_vv(5))
-#ifdef CLOUD_CV
-   vv1 % v6(its:ite,jts:jte,1:kz_vv(6)) = vv % v6(its:ite,jts:jte,1:kz_vv(6))
-   vv1 % v7(its:ite,jts:jte,1:kz_vv(7)) = vv % v7(its:ite,jts:jte,1:kz_vv(7))
-   vv1 % v8(its:ite,jts:jte,1:kz_vv(8)) = vv % v8(its:ite,jts:jte,1:kz_vv(8))
-   vv1 % v9(its:ite,jts:jte,1:kz_vv(9)) = vv % v9(its:ite,jts:jte,1:kz_vv(9))
-   vv1 % v10(its:ite,jts:jte,1:kz_vv(10)) = vv % v10(its:ite,jts:jte,1:kz_vv(10))
-   vv1 % v11(its:ite,jts:jte,1:kz_vv(11)) = vv % v11(its:ite,jts:jte,1:kz_vv(11))
-#endif
+   if ( cloud_cv_options >= 2 ) then
+      vv1 % v6(its:ite,jts:jte,1:kz_vv(6))   = vv % v6(its:ite,jts:jte,1:kz_vv(6))
+      vv1 % v7(its:ite,jts:jte,1:kz_vv(7))   = vv % v7(its:ite,jts:jte,1:kz_vv(7))
+      vv1 % v8(its:ite,jts:jte,1:kz_vv(8))   = vv % v8(its:ite,jts:jte,1:kz_vv(8))
+      vv1 % v9(its:ite,jts:jte,1:kz_vv(9))   = vv % v9(its:ite,jts:jte,1:kz_vv(9))
+      vv1 % v10(its:ite,jts:jte,1:kz_vv(10)) = vv % v10(its:ite,jts:jte,1:kz_vv(10))
+   end if
+   if ( use_cv_w ) then
+      vv1 % v11(its:ite,jts:jte,1:kz_vv(11)) = vv % v11(its:ite,jts:jte,1:kz_vv(11))
+   end if
 
    vp1 % v1(its:ite,jts:jte,1:kz_vp(1)) = vp % v1(its:ite,jts:jte,1:kz_vp(1))
    vp1 % v2(its:ite,jts:jte,1:kz_vp(2)) = vp % v2(its:ite,jts:jte,1:kz_vp(2))
    vp1 % v3(its:ite,jts:jte,1:kz_vp(3)) = vp % v3(its:ite,jts:jte,1:kz_vp(3))
    vp1 % v4(its:ite,jts:jte,1:kz_vp(4)) = vp % v4(its:ite,jts:jte,1:kz_vp(4))
    vp1 % v5(its:ite,jts:jte,1:kz_vp(5)) = vp % v5(its:ite,jts:jte,1:kz_vp(5))
-#ifdef CLOUD_CV
-   vp1 % v6(its:ite,jts:jte,1:kz_vp(6)) = vp % v6(its:ite,jts:jte,1:kz_vp(6))
-   vp1 % v7(its:ite,jts:jte,1:kz_vp(7)) = vp % v7(its:ite,jts:jte,1:kz_vp(7))
-   vp1 % v8(its:ite,jts:jte,1:kz_vp(8)) = vp % v8(its:ite,jts:jte,1:kz_vp(8))
-   vp1 % v9(its:ite,jts:jte,1:kz_vp(9)) = vp % v9(its:ite,jts:jte,1:kz_vp(9))
-   vp1 % v10(its:ite,jts:jte,1:kz_vp(10)) = vp % v10(its:ite,jts:jte,1:kz_vp(10))
-   vp1 % v11(its:ite,jts:jte,1:kz_vp(11)) = vp % v11(its:ite,jts:jte,1:kz_vp(11))
-#endif
+
+   if ( cloud_cv_options >= 2 ) then
+      vp1 % v6(its:ite,jts:jte,1:kz_vp(6))   = vp % v6(its:ite,jts:jte,1:kz_vp(6))
+      vp1 % v7(its:ite,jts:jte,1:kz_vp(7))   = vp % v7(its:ite,jts:jte,1:kz_vp(7))
+      vp1 % v8(its:ite,jts:jte,1:kz_vp(8))   = vp % v8(its:ite,jts:jte,1:kz_vp(8))
+      vp1 % v9(its:ite,jts:jte,1:kz_vp(9))   = vp % v9(its:ite,jts:jte,1:kz_vp(9))
+      vp1 % v10(its:ite,jts:jte,1:kz_vp(10)) = vp % v10(its:ite,jts:jte,1:kz_vp(10))
+   end if
+   if ( use_cv_w ) then
+      vp1 % v11(its:ite,jts:jte,1:kz_vp(11)) = vp % v11(its:ite,jts:jte,1:kz_vp(11))
+   end if
+
    !----------------------------------------------------------------------
    ! [1.0]: Perform VvToVpToVv test:                        
    !----------------------------------------------------------------------
@@ -148,14 +163,16 @@ subroutine da_test_vxtransform( grid, xbx, be, vv, vp)
       vv % v3(its:ite,jts:jte,1:kz_vv(3)) = vp % v3(its:ite,jts:jte,1:kz_vp(3))
       vv % v4(its:ite,jts:jte,1:kz_vv(4)) = vp % v4(its:ite,jts:jte,1:kz_vp(4))
       vv % v5(its:ite,jts:jte,1:kz_vv(5)) = vp % v5(its:ite,jts:jte,1:kz_vp(5))
-#ifdef CLOUD_CV 
-      vv % v6(its:ite,jts:jte,1:kz_vv(6)) = vp % v6(its:ite,jts:jte,1:kz_vp(6))
-      vv % v7(its:ite,jts:jte,1:kz_vv(7)) = vp % v7(its:ite,jts:jte,1:kz_vp(7))
-      vv % v8(its:ite,jts:jte,1:kz_vv(8)) = vp % v8(its:ite,jts:jte,1:kz_vp(8))
-      vv % v9(its:ite,jts:jte,1:kz_vv(9)) = vp % v9(its:ite,jts:jte,1:kz_vp(9))
-      vv % v10(its:ite,jts:jte,1:kz_vv(10)) = vp % v10(its:ite,jts:jte,1:kz_vp(10))
-      vv % v11(its:ite,jts:jte,1:kz_vv(11)) = vp % v11(its:ite,jts:jte,1:kz_vp(11))
-#endif
+      if ( cloud_cv_options >= 2 ) then
+         vv % v6(its:ite,jts:jte,1:kz_vv(6))   = vp % v6(its:ite,jts:jte,1:kz_vp(6))
+         vv % v7(its:ite,jts:jte,1:kz_vv(7))   = vp % v7(its:ite,jts:jte,1:kz_vp(7))
+         vv % v8(its:ite,jts:jte,1:kz_vv(8))   = vp % v8(its:ite,jts:jte,1:kz_vp(8))
+         vv % v9(its:ite,jts:jte,1:kz_vv(9))   = vp % v9(its:ite,jts:jte,1:kz_vp(9))
+         vv % v10(its:ite,jts:jte,1:kz_vv(10)) = vp % v10(its:ite,jts:jte,1:kz_vp(10))
+      end if
+      if ( use_cv_w ) then
+         vv % v11(its:ite,jts:jte,1:kz_vv(11)) = vp % v11(its:ite,jts:jte,1:kz_vp(11))
+      end if
    end if
 
    write(unit=stdout, fmt='(/a/)') 'da_check_vvtovptovv_errors'
@@ -174,14 +191,18 @@ subroutine da_test_vxtransform( grid, xbx, be, vv, vp)
       vp % v3(its:ite,jts:jte,1:kz_vv(3)) = vv % v3(its:ite,jts:jte,1:kz_vv(3))
       vp % v4(its:ite,jts:jte,1:kz_vv(4)) = vv % v4(its:ite,jts:jte,1:kz_vv(4))
       vp % v5(its:ite,jts:jte,1:kz_vv(5)) = vv % v5(its:ite,jts:jte,1:kz_vv(5))
-#ifdef CLOUD_CV
-      vp % v6(its:ite,jts:jte,1:kz_vv(6)) = vv % v6(its:ite,jts:jte,1:kz_vv(6))
-      vp % v7(its:ite,jts:jte,1:kz_vv(7)) = vv % v7(its:ite,jts:jte,1:kz_vv(7))
-      vp % v8(its:ite,jts:jte,1:kz_vv(8)) = vv % v8(its:ite,jts:jte,1:kz_vv(8))
-      vp % v9(its:ite,jts:jte,1:kz_vv(9)) = vv % v9(its:ite,jts:jte,1:kz_vv(9))
-      vp % v10(its:ite,jts:jte,1:kz_vv(10)) = vv % v10(its:ite,jts:jte,1:kz_vv(10))
-      vp % v11(its:ite,jts:jte,1:kz_vv(11)) = vv % v11(its:ite,jts:jte,1:kz_vv(11))
-#endif
+
+      if ( cloud_cv_options >= 2 ) then
+         vp % v6(its:ite,jts:jte,1:kz_vv(6))   = vv % v6(its:ite,jts:jte,1:kz_vv(6))
+         vp % v7(its:ite,jts:jte,1:kz_vv(7))   = vv % v7(its:ite,jts:jte,1:kz_vv(7))
+         vp % v8(its:ite,jts:jte,1:kz_vv(8))   = vv % v8(its:ite,jts:jte,1:kz_vv(8))
+         vp % v9(its:ite,jts:jte,1:kz_vv(9))   = vv % v9(its:ite,jts:jte,1:kz_vv(9))
+         vp % v10(its:ite,jts:jte,1:kz_vv(10)) = vv % v10(its:ite,jts:jte,1:kz_vv(10))
+      end if
+
+      if ( use_cv_w ) then
+         vp % v11(its:ite,jts:jte,1:kz_vv(11)) = vv % v11(its:ite,jts:jte,1:kz_vv(11))
+      end if
    end if
 
    ! Check inverse errors:
@@ -264,28 +285,37 @@ subroutine da_test_vxtransform( grid, xbx, be, vv, vp)
    deallocate (vp1 % v3)
    deallocate (vp1 % v4)
    deallocate (vp1 % v5)
-#ifdef CLOUD_CV
-   deallocate (vp1 % v6)
-   deallocate (vp1 % v7)
-   deallocate (vp1 % v8)
-   deallocate (vp1 % v9)
-   deallocate (vp1 % v10)
-   deallocate (vp1 % v11)
-#endif
+
+   if ( cloud_cv_options >= 2 ) then
+      deallocate (vp1 % v6)
+      deallocate (vp1 % v7)
+      deallocate (vp1 % v8)
+      deallocate (vp1 % v9)
+      deallocate (vp1 % v10)
+   end if
+
+   if ( use_cv_w ) then
+      deallocate (vp1 % v11)
+   end if
 
    deallocate (vv1 % v1)
    deallocate (vv1 % v2)
    deallocate (vv1 % v3)
    deallocate (vv1 % v4)
    deallocate (vv1 % v5)
-#ifdef CLOUD_CV
-   deallocate (vv1 % v6)
-   deallocate (vv1 % v7)
-   deallocate (vv1 % v8)
-   deallocate (vv1 % v9)
-   deallocate (vv1 % v10)
-   deallocate (vv1 % v11)
-#endif
+
+   if ( cloud_cv_options >= 2 ) then
+      deallocate (vv1 % v6)
+      deallocate (vv1 % v7)
+      deallocate (vv1 % v8)
+      deallocate (vv1 % v9)
+      deallocate (vv1 % v10)
+   end if
+
+   if ( use_cv_w ) then
+      deallocate (vv1 % v11)
+   end if
+
    if (trace_use) call da_trace_exit("da_test_vxtransform") 
 
 end subroutine da_test_vxtransform

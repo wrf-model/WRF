@@ -45,7 +45,7 @@ subroutine reallocate_analysis_grid(grid)
        print *, ' Failed to deallocate grid%ep%v5. '
     endif
    ENDIF
-#ifdef CLOUD_CV
+if ( alpha_hydrometeors ) then
    IF ( ASSOCIATED( grid%ep%cw ) ) THEN
      DEALLOCATE(grid%ep%cw,STAT=ierr)
      if (ierr.ne.0) then
@@ -81,7 +81,7 @@ subroutine reallocate_analysis_grid(grid)
         call da_error(__FILE__,__LINE__,message(1:1))
      endif
    ENDIF
-#endif
+end if ! alpha_hydrometeors
   IF ( ASSOCIATED( grid%vp%alpha ) ) THEN
      DEALLOCATE(grid%vp%alpha,STAT=ierr)
     if (ierr.ne.0) then
@@ -176,7 +176,7 @@ subroutine reallocate_analysis_grid(grid)
    endif
    grid%ep%v5=0.
 
-#ifdef CLOUD_CV
+if ( alpha_hydrometeors ) then
    !
    ! allocate grid%ep%cw
    !
@@ -222,7 +222,7 @@ subroutine reallocate_analysis_grid(grid)
       call da_error(__FILE__,__LINE__,message(1:1))
    endif
    grid%ep%gr=0.
-#endif
+end if ! alpha_hydrometeors
 
    if (trace_use) call da_trace_exit("da_solve_dual_res_init")
 

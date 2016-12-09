@@ -195,13 +195,11 @@
          ' Resetting ntmax = 0 for analysis_type = randomcv' 
    end if
 
-#ifdef CLOUD_CV
-   if ( cv_options == 3 ) then
+   if ( cv_options == 3 .and. cloud_cv_options > 0 ) then
       write(unit=message(1),fmt='(A,I3)') &
          'cloud_cv does NOT work with cv_options = ', cv_options
       call da_error(__FILE__,__LINE__,message(1:1))
    end if
-#endif
 
    !---------------------------------------------------------------------------
    ! [2.0] Initialise wrfvar parameters:
@@ -450,14 +448,16 @@
       be % v3 % mz = 0
       be % v4 % mz = 0
       be % v5 % mz = 0
-#ifdef CLOUD_CV
       be % v6  % mz = 0
       be % v7  % mz = 0
       be % v8  % mz = 0
       be % v9  % mz = 0
       be % v10 % mz = 0
       be % v11 % mz = 0
-#endif
+      !hcl-check
+      be%ncv_mz = 5
+      allocate (be%cv_mz(5))
+      be%cv_mz(:) = 0
    end if
 
     ! overwrite variables defined in da_setup_cv.inc set in the call to da_setup_background_errors

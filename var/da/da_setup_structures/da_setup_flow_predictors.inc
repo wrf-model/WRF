@@ -170,7 +170,7 @@ subroutine da_setup_flow_predictors( ix, jy, kz, ne, ep, its, ite, jts, jte, kts
                                                   ens_scaling_inv * temp3d(its:ite,jts:jte,kts:kte)
             close(unit=ep_unit)
          end if !end if cloud_cv_options=1
-#ifdef CLOUD_CV
+
          if ( cloud_cv_options >= 2 ) then
             filename = trim(ep_dir_name(it))//'/'//'qcloud'//'.e'//trim(ce)
             open(unit=ep_unit, file = filename, form = 'unformatted', status = 'old')
@@ -207,7 +207,7 @@ subroutine da_setup_flow_predictors( ix, jy, kz, ne, ep, its, ite, jts, jte, kts
             ep % gr(its:ite,jts:jte,kts:kte,te) = ens_scaling_inv * temp3d(its:ite,jts:jte,kts:kte)
             close(unit=ep_unit)
          end if ! end if cloud_cv_options>=2
-#endif
+
       end do ! num_fgat_time*ne loop
    end if ! hydrometeors
 
@@ -216,13 +216,14 @@ subroutine da_setup_flow_predictors( ix, jy, kz, ne, ep, its, ite, jts, jte, kts
    print *,"MAX EP",MAXVAL(ep % v3(its:ite,jts:jte,:,:)) 
    print *,"MAX EP",MAXVAL(ep % v4(its:ite,jts:jte,:,:))
    print *,"MAX EP",MAXVAL(ep % v5(its:ite,jts:jte,:,:))
-#ifdef CLOUD_CV
-   print *,"MAX EP",MAXVAL(ep % cw(its:ite,jts:jte,:,:))
-   print *,"MAX EP",MAXVAL(ep % rn(its:ite,jts:jte,:,:))
-   print *,"MAX EP",MAXVAL(ep % ci(its:ite,jts:jte,:,:))
-   print *,"MAX EP",MAXVAL(ep % sn(its:ite,jts:jte,:,:))
-   print *,"MAX EP",MAXVAL(ep % gr(its:ite,jts:jte,:,:))
-#endif
+
+   if ( cloud_cv_options >= 2 ) then
+      print *,"MAX EP",MAXVAL(ep % cw(its:ite,jts:jte,:,:))
+      print *,"MAX EP",MAXVAL(ep % rn(its:ite,jts:jte,:,:))
+      print *,"MAX EP",MAXVAL(ep % ci(its:ite,jts:jte,:,:))
+      print *,"MAX EP",MAXVAL(ep % sn(its:ite,jts:jte,:,:))
+      print *,"MAX EP",MAXVAL(ep % gr(its:ite,jts:jte,:,:))
+   end if
 
    deallocate(ep_dir_name)
    call da_free_unit(ep_unit)

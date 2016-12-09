@@ -76,6 +76,15 @@ SUBROUTINE solve_em ( grid , config_flags  &
    USE module_avgflx_em, ONLY : zero_avgflx, upd_avgflx
    USE module_cpl, ONLY : coupler_on, cpl_settime, cpl_store_input
 
+!----------------------------------------------------------------------
+! RASM Climate Diagnostics - JR, AS, MS  - October 2016
+!----------------------------------------------------------------------
+   USE module_streams
+   USE module_diag_misc
+!----------------------------------------------------------------------
+! end RASM Climate Diagnostics
+!----------------------------------------------------------------------
+
    IMPLICIT NONE
 
    !  Input data.
@@ -175,6 +184,16 @@ SUBROUTINE solve_em ( grid , config_flags  &
    INTEGER, PARAMETER                         :: precision = 100
    INTEGER                                    :: num, den
    TYPE(WRFU_TimeInterval)                    :: dtInterval, intervaltime,restartinterval
+
+!----------------------------------------------------------------------
+! RASM Climate Diagnostics - JR, AS, MS  - October 2016
+!----------------------------------------------------------------------
+   TYPE(WRFU_Time)    :: stepTime           ! current time associated with current simulation step
+   INTEGER            :: freq_out           ! interval type
+   INTEGER            :: stats_interval     ! avg history interval
+!----------------------------------------------------------------------
+! end RASM Climate Diagnostics
+!----------------------------------------------------------------------
 
 ! Define benchmarking timers if -DBENCH is compiled
 #include "bench_solve_em_def.h"
@@ -4513,7 +4532,141 @@ BENCH_END(bc_2d_tim)
                             imsy, imey, jmsy, jmey, kmsy, kmey,  &
                             ipsy, ipey, jpsy, jpey, kpsy, kpey   )
 
+!----------------------------------------------------------------------
+! RASM Climate Diagnostics - Jose Renteria, Amy Solomon, Mark Seefeldt 
+! -October 2016
+! -call to module_diag_misc.F for the calculation of RASM Climate Diag.
+!----------------------------------------------------------------------
+   IF ((config_flags%mean_freq > 0) .and. (config_flags%mean_interval > 0)) THEN
 
+      WRITE(message, *) "RASM Climate Diagnostics: ON  ...................."
+      CALL wrf_debug(200, message)  
+
+      ! set mean interval used to average data
+      freq_out = config_flags%mean_freq
+      
+      IF ( freq_out .eq. MONTHLY) THEN  
+         stats_interval = (config_flags%run_days + 1) * 24 * 60 * 60
+         WRITE(message, *) "RASM Climate Diagnostics: Set average output to MONTHLY_INTERVAL ... "
+         CALL wrf_debug(200, message) 
+      ELSE IF (freq_out .eq. DAYS ) THEN
+         stats_interval = config_flags%mean_interval  * 24 * 60 * 60
+         WRITE(message, *) "RASM Climate Diagnostics: Set average output to DAYS  ... stats_interval (secs) =", stats_interval
+         CALL wrf_debug(200, message)   
+      ELSE IF (freq_out .eq. HRS ) THEN    
+         stats_interval =  config_flags%mean_interval * 60 * 60
+         WRITE(message, *) "RASM Climate Diagnostics: Set average output to HRS  ... stats_interval (secs) =", stats_interval
+         CALL wrf_debug(200, message)  
+      ELSE IF (freq_out .eq. MINS ) THEN    
+         stats_interval = config_flags%mean_interval * 60
+         WRITE(message, *) "RASM Climate Diagnostics: Set average output to MINS  ... stats_interval (secs) =", stats_interval
+         CALL wrf_debug(200, message)   
+      ELSE IF (freq_out .eq. SECS ) THEN 
+         stats_interval = config_flags%mean_interval
+         WRITE(message, *) "RASM Climate Diagnostics: Set average output to SECS  ... stats_interval (secs) =", stats_interval
+         CALL wrf_debug(200, message)    
+      ELSE
+         WRITE (wrf_err_message , * )"RASM Climate Diagnostics:: ERROR -- error -- ERROR -- error : NO valid interval provided in namelist.input, please provided"
+         CALL wrf_error_fatal ( TRIM(wrf_err_message) )  
+      END IF
+
+      CALL wrf_debug ( 200 , ' RASM Climate Diagnostics: call to mean_output_calc' )
+      CALL domain_clock_get ( grid, current_time=stepTime)
+
+      CALL mean_output_calc(                                                  &
+           &            IDS=ids, IDE=ide, JDS=jds, JDE=jde, KDS=kds, KDE=kde  &
+           &           ,IMS=ims, IME=ime, JMS=jms, JME=jme, KMS=kms, KME=kme  & 
+           &           ,IPS=ips, IPE=ipe, JPS=jps, JPE=jpe, KPS=kps, KPE=kpe  &         
+           &           ,I_START=grid%i_start, I_END=min(grid%i_end, ide-1)    &
+           &           ,J_START=grid%j_start, J_END=min(grid%j_end, jde-1)    &
+           &           ,NUM_TILES=grid%num_tiles                              &
+           &           ,is_restart=config_flags%restart                       &
+           &           ,mean_interval=stats_interval                          &
+           &           ,DT=grid%dt, XTIME=grid%xtime                          &
+           &           ,PSFC=grid%psfc, PSFC_MEAN=grid%psfc_mean              &
+           &           ,TSK=grid%tsk, TSK_MEAN=grid%tsk_mean                  &
+           &           ,PMSL_MEAN=grid%pmsl_mean                              &
+           &           ,T2=grid%t2, T2_MEAN=grid%t2_mean                      &
+           &           ,T=grid%t_2, P=grid%p, PB=grid%pb                      &
+           &           ,MOIST=grid%moist(:,:,:,P_QV), HT=grid%ht              &
+           &           ,TH2=grid%th2, TH2_MEAN=grid%th2_mean                  &
+           &           ,Q2=grid%q2, Q2_MEAN=grid%q2_mean                      &
+           &           ,U10=grid%u10, U10_MEAN=grid%u10_mean                  &
+           &           ,V10=grid%v10, V10_MEAN=grid%v10_mean                  &           
+           &           ,HFX=grid%hfx, HFX_MEAN=grid%hfx_mean                  &
+           &           ,LH=grid%lh, LH_MEAN=grid%lh_mean                      &
+           &           ,SWDNB=grid%swdnb, SWDNB_MEAN=grid%swdnb_mean          &
+           &           ,GLW=grid%glw , GLW_MEAN=grid%glw_mean                 &
+           &           ,LWUPB=grid%lwupb, LWUPB_MEAN=grid%lwupb_mean          &
+           &           ,SWUPB=grid%swupb, SWUPB_MEAN=grid%swupb_mean          &
+           &           ,SWUPT=grid%swupt, SWUPT_MEAN=grid%swupt_mean          &
+           &           ,SWDNT=grid%swdnt, SWDNT_MEAN=grid%swdnt_mean          &
+           &           ,LWUPT=grid%lwupt, LWUPT_MEAN=grid%lwupt_mean          &
+           &           ,LWDNT=grid%lwdnt, LWDNT_MEAN=grid%lwdnt_mean          &
+           &           ,CURRENTTIME=stepTime, OUTPUT_FREQ=freq_out            &
+           &           ,AVGOUTALARM=grid%alarms(AUXHIST5_ALARM)               &
+           &           ,AVGOUTDATESTR=grid%OUTDATE_MEAN                       &
+           &           ,NSTEPS=grid%NSTEPS_MEAN                               &
+           &                                                          )
+   ELSE
+      WRITE(message, *) "RASM Climate Diagnostics: OFF  ...................."
+      CALL wrf_debug(200, message)  
+   ENDIF
+
+   IF (config_flags%diurnal_cycle .eq. DIURNAL_ON) THEN
+      WRITE(message, *) "RASM Climate Diagnostics: Compute Diurnal Cycle ON  ...................."
+      CALL wrf_debug(200, message)  
+    
+      CALL domain_clock_get ( grid, current_time=stepTime)
+
+      CALL diurnalcycle_output_calc(                                          &
+            IDS=ids, IDE=ide, JDS=jds, JDE=jde, KDS=kds, KDE=kde              &
+           ,IMS=ims, IME=ime, JMS=jms, JME=jme, KMS=kms, KME=kme              & 
+           ,IPS=ips, IPE=ipe, JPS=jps, JPE=jpe, KPS=kps, KPE=kpe              &         
+           ,I_START=grid%i_start, I_END=min(grid%i_end, ide-1)                &
+           ,J_START=grid%j_start, J_END=min(grid%j_end, jde-1)                &
+           ,NUM_TILES=grid%num_tiles, is_restart=config_flags%restart         &
+           ,DT=grid%dt, XTIME=grid%xtime                                      &
+           ,PSFC=grid%psfc, PSFC_DTMP=grid%psfc_dtmp                          &
+           ,TSK=grid%tsk, TSK_DTMP=grid%tsk_dtmp                              &
+           ,T2=grid%t2, T2_DTMP=grid%t2_dtmp                                  &
+           ,T=grid%t_2, P=grid%p, PB=grid%pb, MOIST=grid%moist(:,:,:,P_QV)    &
+           ,TH2=grid%th2, TH2_DTMP=grid%th2_dtmp                              &
+           ,Q2=grid%q2, Q2_DTMP=grid%q2_dtmp                                  &
+           ,U10=grid%u10, U10_DTMP=grid%u10_dtmp                              &
+           ,V10=grid%v10, V10_DTMP=grid%v10_dtmp                              &
+           ,HFX=grid%hfx, HFX_DTMP=grid%hfx_dtmp                              &
+           ,LH=grid%lh, LH_DTMP=grid%lh_dtmp                                  &
+           ,SWDNB=grid%swdnb, SWDNB_DTMP=grid%swdnb_dtmp                      &
+           ,GLW=grid%glw, GLW_DTMP=grid%glw_dtmp                              &
+           ,LWUPB=grid%lwupb, LWUPB_DTMP=grid%lwupb_dtmp                      &
+           ,SWUPB=grid%swupb, SWUPB_DTMP=grid%swupb_dtmp                      &
+           ,SWUPT=grid%swupt, SWUPT_DTMP=grid%swupt_dtmp                      &
+           ,SWDNT=grid%swdnt, SWDNT_DTMP=grid%swdnt_dtmp                      &
+           ,LWUPT=grid%lwupt, LWUPT_DTMP=grid%lwupt_dtmp                      &
+           ,LWDNT=grid%lwdnt, LWDNT_DTMP=grid%lwdnt_dtmp                      &
+           ,CURRENTTIME=stepTime                                              &
+           ,AVGOUTALARM=grid%alarms(AUXHIST6_ALARM)                           &
+           ,DIURNOUTDATESTR=grid%OUTDATE_DIURN                                &
+           ,AVG_NSTEPS=grid%NSTEPSMEAN_DIURN                                  &
+           ,DIURNAL_NSTEPS=grid%NSTEPS_DIURN                                  &
+           ,PSFC_DIURN=grid%PSFC_DIURN                                        &
+           ,TSK_DIURN=grid%TSK_DIURN, T2_DIURN=grid%T2_DIURN                  &
+           ,TH2_DIURN=grid%TH2_DIURN, Q2_DIURN=grid%Q2_DIURN                  &
+           ,U10_DIURN=grid%U10_DIURN, V10_DIURN=grid%V10_DIURN                &
+           ,HFX_DIURN=grid%HFX_DIURN, LH_DIURN=grid%LH_DIURN                  &
+           ,SWDNB_DIURN=grid%SWDNB_DIURN, GLW_DIURN=grid%GLW_DIURN            &
+           ,LWUPB_DIURN=grid%LWUPB_DIURN, SWUPB_DIURN=grid%SWUPB_DIURN        &
+           ,SWUPT_DIURN=grid%SWUPT_DIURN, SWDNT_DIURN=grid%SWDNT_DIURN        &
+           ,LWUPT_DIURN=grid%LWUPT_DIURN, LWDNT_DIURN=grid%LWDNT_DIURN        &
+                                                                     )
+   ELSE
+      WRITE(message, *) "RASM Climate Diagnostics: Compute Diurnal Cycle OFF  ...................."
+      CALL wrf_debug(200, message)  
+   ENDIF
+!----------------------------------------------------------------------
+! end RASM Climate Diagnostics - JR, AS, MS
+!----------------------------------------------------------------------
 
 #ifdef DM_PARALLEL
 !-----------------------------------------------------------------------

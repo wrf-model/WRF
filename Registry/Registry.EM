@@ -20,6 +20,11 @@ include registry.elec
 include registry.bdy_perturb
 include registry.new3d_wif
 
+#-----------------------------------------------------------------------------
+# RASM Climate Diagnostics - JR,AS,MS - October 2016
+include registry.rasm_diag
+#-----------------------------------------------------------------------------                                                 
+
 # added to output 5 for ESMF
 state   real   landmask            ij    misc          1     -     i0125rh05d=(interp_fcnm_imask)u=(copy_fcnm)   "LANDMASK"      "LAND MASK (1 FOR LAND, 0 FOR WATER)"  ""
 state   real   lakemask            ij    misc          1     -     i012rhd=(interp_fcnm_imask)u=(copy_fcnm)      "LAKEMASK"      "LAKE MASK (1 FOR LAKE, 0 FOR NON-LAKE)"  ""

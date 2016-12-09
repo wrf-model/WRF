@@ -1107,6 +1107,10 @@ CONTAINS
                                               AtmOptics_AD    , &  ! AD  Input
                                               Predictor_AD    , &  ! AD  Output
                                               AAVar             )  ! Internal variable input
+          ! Gamma correction to optical depth
+          RTSolution_AD(ln,m)%Gamma  = SUM(AtmOptics%Optical_Depth * AtmOptics_AD%Optical_Depth)
+          AtmOptics_AD%Optical_Depth = AtmOptics_AD%Optical_Depth * (RTSolution(ln,m)%Gamma + ONE)
+
         END DO Channel_Loop
 
 

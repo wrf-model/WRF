@@ -196,9 +196,11 @@
    end if
 
    if ( cv_options == 3 .and. cloud_cv_options > 0 ) then
-      write(unit=message(1),fmt='(A,I3)') &
-         'cloud_cv does NOT work with cv_options = ', cv_options
-      call da_error(__FILE__,__LINE__,message(1:1))
+      write(unit=message(1),fmt='(A)') &
+         'Cloud control variables are not implemented for cv_options = 3'
+      write(unit=message(2),fmt='(A)') &
+         'Resetting cloud_cv_options = 0 for cv_options = 3'
+      call da_warning(__FILE__,__LINE__,message(1:1))
    end if
 
    !---------------------------------------------------------------------------

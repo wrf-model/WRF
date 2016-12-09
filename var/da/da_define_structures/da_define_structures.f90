@@ -1005,7 +1005,7 @@ module da_define_structures
    end type be_subtype
 
    type be_type
-      integer           :: ncv_mz      ! number of control variables for mz
+      integer           :: ncv_mz      ! number of variables for cv_mz
       integer, pointer  :: cv_mz(:)    ! array to hold mz of each cv
       integer           :: ne
       integer           :: max_wave           ! Smallest spectral mode (global).

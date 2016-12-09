@@ -18,11 +18,13 @@ subroutine da_copy_xa (xa_dst, xa_src)
    xa_dst % t(:,:,:)   = xa_src % t(:,:,:)
    xa_dst % q(:,:,:)   = xa_src % q(:,:,:)
 
-   xa_dst % qcw(:,:,:) = xa_src % qcw(:,:,:)
-   xa_dst % qrn(:,:,:) = xa_src % qrn(:,:,:)
-   xa_dst % qci(:,:,:) = xa_src % qci(:,:,:)
-   xa_dst % qsn(:,:,:) = xa_src % qsn(:,:,:)
-   xa_dst % qgr(:,:,:) = xa_src % qgr(:,:,:)
+   if ( alpha_hydrometeors ) then
+      xa_dst % qcw(:,:,:) = xa_src % qcw(:,:,:)
+      xa_dst % qrn(:,:,:) = xa_src % qrn(:,:,:)
+      xa_dst % qci(:,:,:) = xa_src % qci(:,:,:)
+      xa_dst % qsn(:,:,:) = xa_src % qsn(:,:,:)
+      xa_dst % qgr(:,:,:) = xa_src % qgr(:,:,:)
+   end if
 
    xa_dst % w(:,:,:)   = xa_src % w(:,:,:)
    xa_dst % p(:,:,:)   = xa_src % p(:,:,:)

@@ -51,7 +51,7 @@ subroutine da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv)
       vv % v3(its:ite,jts:jte,kts:kte) = vp % v3(its:ite,jts:jte,kts:kte)
       vv % v4(its:ite,jts:jte,kts:kte) = vp % v4(its:ite,jts:jte,kts:kte)
       vv % v5(its:ite,jts:jte,kts:kte) = vp % v5(its:ite,jts:jte,kts:kte)
-!#ifdef CLOUD_CV
+
       if ( cloud_cv_options >= 2 ) then
          vv % v6(its:ite,jts:jte,kts:kte)  = vp % v6(its:ite,jts:jte,kts:kte)
          vv % v7(its:ite,jts:jte,kts:kte)  = vp % v7(its:ite,jts:jte,kts:kte)
@@ -62,7 +62,7 @@ subroutine da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv)
       if ( use_cv_w ) then
          vv % v11(its:ite,jts:jte,kts:kte) = vp % v11(its:ite,jts:jte,kts:kte)
       end if
-!#endif
+
    !  Uv for alpha is an identity transform:
       if (be % ne > 0) then
 !        vv % alpha(its:ite,jts:jte,kts:kte,1:be%ne) = &

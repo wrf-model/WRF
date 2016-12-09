@@ -98,6 +98,10 @@ CONTAINS
                      ,ens_sasamp                                      &
                      ,shalconv,shal_pgcon                             &
                      ,HPBL2D,EVAP2D,HEAT2D                            &     !Kwon for SAS2010 shallow convection
+                     ,DX2D, DYNMM                                     & ! For scale-aware SAS
+                     ,SCALEFUN,SCALEFUN1                              & !    scale functions 
+                     ,SIGMU,SIGMU1                                    & !    updraft fraction
+
                  ! Optional arguments for NSAS scheme
                      ,mp_physics                                      &
                  ! Optional moisture and other tendencies
@@ -129,7 +133,9 @@ CONTAINS
                                           ,G3SCHEME,GFSCHEME          &
                                           ,P_QC,P_QI,Param_FIRST_SCALAR &
                                           ,CAMZMSCHEME, SASSCHEME     &
-                                          ,OSASSCHEME,MESO_SAS        &  !Kwon
+                                          ,OSASSCHEME                 &  
+                                          ,SCALESASSCHEME             &  ! scale-sware sas
+
                                           ,NSASSCHEME                 &
 #if (EM_CORE == 1)
                                           ,MSKFSCHEME                 &
@@ -160,11 +166,12 @@ CONTAINS
    USE module_cu_gf     , ONLY : gfdrv
    USE module_cu_g3     , ONLY : g3drv,conv_grell_spread3d
    USE module_cu_sas    , ONLY : cu_sas
+   USE module_cu_scalesas    , ONLY : cu_scalesas
+
 #if (EM_CORE == 1)
    USE module_cu_kfcup  , ONLY : KF_CUP_CPS !wig, 3-Aug-2006 !BSINGH - For WRFCuP scheme 
 #endif
    USE module_cu_osas   , ONLY : cu_osas
-   USE module_cu_mesosas, ONLY : cu_meso_sas
    USE module_cu_camzm_driver, ONLY : camzm_driver
    USE module_cu_tiedtke, ONLY : cu_tiedtke
    USE module_cu_ntiedtke,ONLY : cu_ntiedtke
@@ -501,6 +508,14 @@ CONTAINS
    REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(IN) ::  STORE_RAND
 !
    REAL, OPTIONAL,  INTENT(INOUT) :: mommix
+
+
+   REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL,               &    
+                    INTENT(IN) ::  DX2D                           ! For scale-aware SAS
+   REAL, OPTIONAL,  INTENT(IN) ::  DYNMM                          ! For scale-aware SAS  
+   REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL,INTENT(INOUT) :: &
+                                   SCALEFUN,SCALEFUN1,SIGMU,SIGMU1    
+
 
    REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL,               &    !Kwon for sas2010 shallow convection
                     INTENT(INOUT) ::  HPBL2D, EVAP2D, HEAT2D
@@ -1025,14 +1040,14 @@ CONTAINS
                ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
                                                                 )
-     CASE (MESO_SAS)                  !Kwon
+     CASE (SCALESASSCHEME)   ! 2015-12-11 added to call scale-aware SAS
 
           IF ( adapt_step_flag_pass ) THEN
-            WRITE( wrf_err_message , * ) 'The meso SAS cumulus option will not work properly with an adaptive time step'
+            WRITE( wrf_err_message , * ) 'The SCALE-AWARE SAS cumulus option will not work properly with an adaptive time step'
             CALL wrf_error_fatal ( wrf_err_message )
           END IF
-          CALL wrf_debug(100,'in cu_mesosas')
-          CALL CU_MESO_SAS(                                          &
+          CALL wrf_debug(100,'in cu_scalesas')
+          CALL CU_SCALESAS(                                     &
                 DT=dt,ITIMESTEP=itimestep,STEPCU=STEPCU         &
                ,RTHCUTEN=RTHCUTEN,RQVCUTEN=RQVCUTEN             &
                ,RQCCUTEN=RQCCUTEN,RQICUTEN=RQICUTEN             &
@@ -1049,6 +1064,9 @@ CONTAINS
                ,shalconv=shalconv,shal_pgcon=shal_pgcon         &
                ,hpbl2d=hpbl2d,evap2d=evap2d,heat2d=heat2d       &
                ,P_QI=p_qi,P_FIRST_SCALAR=param_first_scalar     &
+               ,DX2D=dx2d,DY=dynmm                              & ! 2 new 
+               ,SCALEFUN=SCALEFUN,SCALEFUN1=SCALEFUN1           & ! CNV scale functions
+               ,SIGMU=SIGMU,SIGMU1=SIGMU1                       & ! CNV updraft fractions
                ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
                ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &

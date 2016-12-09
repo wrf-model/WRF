@@ -142,19 +142,6 @@ subroutine da_get_innov_vector_synop( it,num_qcstat_conv, grid, ob, iv)
                iv%synop(n)%q%error = iv%synop(n)%q%error * err_inflate_fac
             end if
 
-            !if ( q_error_options == 1 ) then
-            !   !hcl q error should be calculated here with the corrected t and p?
-            !   !hcl but the difference is probably small,
-            !   !hcl and the specified rh error is rough anyway.
-            !   rh_error = iv%synop(n)%q%error !q error is rh at this stage
-            !   call da_get_q_error(iv%synop(n)%p%inv, &
-            !                       iv%synop(n)%t%inv, &
-            !                       iv%synop(n)%q%inv, &
-            !                       iv%synop(n)%t%error, &
-            !                       rh_error, iv%synop(n)%q%error)
-            !   if (iv%synop(n)%q%error < 0.0) iv%synop(n)%q%qc = missing_data
-            !end if
-
          else if (ob % synop(n) % p > 1.0) then
             do k=kts,kte
               v_p(k) = dym*(dxm*grid%xb%p(i,j  ,k) + dx*grid%xb%p(i+1,j  ,k)) &

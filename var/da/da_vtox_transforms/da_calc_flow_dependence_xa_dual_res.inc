@@ -714,8 +714,11 @@ end if ! alpha_hydrometeors
                 + ob_locs(n)%dx*ens_contrib_p(ob_locs(n)%i+1,1,ob_locs(n)%j+1))
 
    end do
+   !$OMP END PARALLEL DO
 
    if ( alpha_hydrometeors ) then
+      !$OMP PARALLEL DO &
+      !$OMP PRIVATE (n)
       do n=1,total_here
          do k = kts, kte
             output_qcw(ob_locs(n)%xx,k,ob_locs(n)%yy) =                                            &
@@ -745,9 +748,8 @@ end if ! alpha_hydrometeors
                    + ob_locs(n)%dx*ens_contrib_qgr(ob_locs(n)%i+1,k,ob_locs(n)%j+1))
          end do
       end do
+      !$OMP END PARALLEL DO
    end if ! alpha_hydrometeors
-
-   !$OMP END PARALLEL DO
 
    !
    ! Now add the hi-res ensemble contribution to the increment to the static increment.

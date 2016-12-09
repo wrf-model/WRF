@@ -105,8 +105,9 @@ subroutine da_transform_xtoxa_adj(grid, wpec_on)
                do k=kte,kts,-1
                   geoh(k) = geoh(k) + 0.5*grid%xa%geoh(i,j,k)
                   geoh(k+1) = geoh(k+1) + 0.5*grid%xa%geoh(i,j,k)
-                  grid%xa%mu(i,j)=grid%xa%mu(i,j)-geoh(k+1)*grid%xb%dnw(k)/grid%xb%rho(i,j,k)
-                  grid%xa%rho(i,j,k)=grid%xa%rho(i,j,k)+geoh(k+1)*grid%xb%psac(i,j)*grid%xb%dnw(k)/(grid%xb%rho(i,j,k)**2)
+                  grid%xa%mu(i,j)=grid%xa%mu(i,j)-c1h(k)*geoh(k+1)*grid%xb%dnw(k)/grid%xb%rho(i,j,k)
+                  grid%xa%rho(i,j,k)=grid%xa%rho(i,j,k)+ &
+                     geoh(k+1)*(c1h(k)*grid%xb%psac(i,j)+c2h(k))*grid%xb%dnw(k)/(grid%xb%rho(i,j,k)**2)
                   geoh(k) = geoh(k) + geoh(k+1)
                end do
             end if
@@ -135,13 +136,13 @@ subroutine da_transform_xtoxa_adj(grid, wpec_on)
                p(k+1) = p(k+1) + 0.5*grid%xa%p(i,j,k)
 
                if ( calc_wpec_term ) then
-                  grid%xa%mu(i,j) = grid%xa%mu(i,j) - p(k)*(1.0+mr_b(k))*grid%xb%dnw(k)
+                  grid%xa%mu(i,j) = grid%xa%mu(i,j) - c1h(k)*p(k)*(1.0+mr_b(k))*grid%xb%dnw(k)
                   mu = grid%xa%mu(i,j)
                else
-                  mu = mu - p(k)*(1.0+mr_b(k))*grid%xb%dnw(k)
+                  mu = mu - c1h(k)*p(k)*(1.0+mr_b(k))*grid%xb%dnw(k)
                end if
 
-               mr_a(k) = - p(k)*grid%xb%psac(i,j)*grid%xb%dnw(k)
+               mr_a(k) = - p(k)*(c1h(k)*grid%xb%psac(i,j)+c2h(k))*grid%xb%dnw(k)
                p(k+1) = p(k+1) + p(k)
             end do
 

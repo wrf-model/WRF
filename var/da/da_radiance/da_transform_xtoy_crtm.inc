@@ -264,7 +264,7 @@ subroutine da_transform_xtoy_crtm (cv_size, cv, grid, iv, y )
 
       ! Gamma correction from VarBC
       !----------------------------
-#ifdef CRTM_MODIF
+!#ifdef CRTM_MODIF
       if (use_varbc) then
         gammapred = iv%instid(inst)%varbc_info%gammapred 
         do k = 1, nchanl
@@ -280,7 +280,7 @@ subroutine da_transform_xtoy_crtm (cv_size, cv, grid, iv, y )
            end do	  
         end do
       end if
-#endif
+!#endif
 
       do n = iv%instid(inst)%info%n1, iv%instid(inst)%info%n2 ! loop for pixel
             

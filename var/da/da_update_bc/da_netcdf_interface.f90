@@ -11,6 +11,7 @@ contains
 #include "da_get_gl_att_real_cdf.inc"
 #include "da_get_var_3d_real_cdf.inc"
 #include "da_get_var_2d_real_cdf.inc"
+#include "da_get_var_1d_real_cdf.inc"
 #include "da_put_var_3d_real_cdf.inc"
 #include "da_put_var_2d_real_cdf.inc"
 #include "da_get_var_2d_int_cdf.inc"

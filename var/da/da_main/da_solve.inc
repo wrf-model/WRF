@@ -200,6 +200,7 @@
          'Cloud control variables are not implemented for cv_options = 3'
       write(unit=message(2),fmt='(A)') &
          'Resetting cloud_cv_options = 0 for cv_options = 3'
+      cloud_cv_options = 0
       call da_warning(__FILE__,__LINE__,message(1:1))
    end if
 

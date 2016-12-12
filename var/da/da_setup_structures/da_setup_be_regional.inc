@@ -217,7 +217,7 @@ subroutine da_setup_be_regional(xb, be, grid)
       endif
    end if
 
-!===========end this section for interpolating CV5======================
+!===========for interpolating CV5==============================================================
 
    allocate (bin(1:ni,1:nj,1:nk))
    allocate (bin2d(1:ni,1:nj))
@@ -275,7 +275,7 @@ subroutine da_setup_be_regional(xb, be, grid)
       deallocate (bin_out)
       deallocate (bin2d_out)
     endif
-!===========end this section for interpolating CV5==============================================================
+!===========for interpolating CV5==============================================================
 !
    if ( cv_options /= 7 ) then   ! No regression coefficients for cv_options == 7
 
@@ -578,7 +578,7 @@ subroutine da_setup_be_regional(xb, be, grid)
    end if
 
    if ( cloud_cv_options == 3 ) then
-      ! hard-coded the BE values here
+      ! hard-coded the v6-v11 BE values here
       be % v6  % name     = "qcloud"
       be % v7  % name     = "qrain"
       be % v8  % name     = "qice"
@@ -807,23 +807,24 @@ subroutine da_setup_be_regional(xb, be, grid)
       if ( cloud_cv_options == 1 ) be % v4 % name = 'qt   '
    end if
 
-   message(1:4) = ''
-   write (unit=message(1),fmt='(3x,A,7A)') 'WRFDA dry control variables are: ', &
+   message(1:5) = ''
+   write (unit=message(1),fmt='(3x,A,i2)') 'cloud_cv_options = ', cloud_cv_options
+   write (unit=message(2),fmt='(3x,A,7A)') 'WRFDA dry control variables are: ', &
       trim(be % v1 % name), ', ', trim(be % v2 % name), ', ', &
       trim(be % v3 % name), ' and ', trim(be % v5 % name)
-   write (unit=message(2),fmt='(3x,A,A)') &
+   write (unit=message(3),fmt='(3x,A,A)') &
       'WRFDA Humidity control variable is ', trim(be % v4 % name)
    if ( cloud_cv_options >= 2 ) then
-      write (unit=message(3),fmt='(3x,A,10A)') 'WRFDA hydrometeor control variables are: ', &
+      write (unit=message(4),fmt='(3x,A,10A)') 'WRFDA hydrometeor control variables are: ', &
          trim(be % v6 % name), ', ', trim(be % v7 % name), ', ', &
          trim(be % v8 % name), ', ', trim(be % v9 % name), ', and ', &
          trim(be % v10 % name)
    end if
    if ( use_cv_w ) then
-      write (unit=message(4),fmt='(3x,A)') &
+      write (unit=message(5),fmt='(3x,A)') &
          'z-wind control variable is activated'
    end if
-   call da_message(message(1:4))
+   call da_message(message(1:5))
 
    if (use_rf) then
 
@@ -958,7 +959,7 @@ subroutine da_setup_be_regional(xb, be, grid)
          end if
       end if ! print_detail_be
 
-  end if ! use_rf
+   end if ! use_rf
 !================== for interpolating CV5 =======================================
    ! 3.3 Interpolate the CV5 BE to the model resolution
 
@@ -1230,7 +1231,9 @@ subroutine da_setup_be_regional(xb, be, grid)
          call da_get_vertical_truncation(max_vert_var8, be8_eval_glo(:), be % v8)
          call da_get_vertical_truncation(max_vert_var9, be9_eval_glo(:), be % v9)
          call da_get_vertical_truncation(max_vert_var10,be10_eval_glo(:),be % v10)
-         call da_get_vertical_truncation(max_vert_var11,be11_eval_glo(:),be % v11)
+         if ( use_cv_w ) then
+            call da_get_vertical_truncation(max_vert_var11,be11_eval_glo(:),be % v11)
+         end if
       else
          if ( jb_factor > 0.0 ) then
             be % v6  % mz = xb % mkz
@@ -1238,7 +1241,9 @@ subroutine da_setup_be_regional(xb, be, grid)
             be % v8  % mz = xb % mkz
             be % v9  % mz = xb % mkz
             be % v10 % mz = xb % mkz
-            be % v11 % mz = xb % mkz
+            if ( use_cv_w ) then
+               be % v11 % mz = xb % mkz
+            end if
          else
             be % v6  % mz = 0
             be % v7  % mz = 0

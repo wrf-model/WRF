@@ -107,15 +107,18 @@ subroutine da_transform_vtovv_adj(grid, cv_size, be, cv, vv)
    endif
    s(1)=s(3)+1
 
-   ! initialize v6-v11
-   ! for .not. use_rf and for cloud_cv_options<=1
-   vv % v6  = 0.0
-   vv % v7  = 0.0
-   vv % v8  = 0.0
-   vv % v9  = 0.0
-   vv % v10 = 0.0
-   vv % v11 = 0.0
-   scaling = .false.
+   if ( .not. use_rf .and. cloud_cv_options > 0 ) then
+      call da_error(__FILE__,__LINE__,(/"no da_transform_through_wavelet_adj for v6-v11"/))
+   end if
+
+   if ( use_rf .and. cloud_cv_options <= 1 ) then
+      vv % v6  = 0.0
+      vv % v7  = 0.0
+      vv % v8  = 0.0
+      vv % v9  = 0.0
+      vv % v10 = 0.0
+      vv % v11 = 0.0
+   end if
 
    if ( use_rf .and. cloud_cv_options >= 2 ) then
       select case ( cloud_cv_options )
@@ -144,7 +147,7 @@ subroutine da_transform_vtovv_adj(grid, cv_size, be, cv, vv)
          case ( 3 )
             scaling = .true.
             mz = be % v6 % mz
-            if ( mz > 0 .and. len_scaling6(1) /= 0.0 ) then
+            if ( mz > 0 .and. len_scaling6(1) > 0.0 ) then
                call da_transform_through_rf_adj(grid, mz, be % v6 % rf_alpha, be % v6 % val, vv % v6, scaling)
             end if
             mz = be % v7 % mz

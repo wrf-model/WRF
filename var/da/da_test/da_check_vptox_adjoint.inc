@@ -168,7 +168,6 @@ subroutine da_check_vptox_adjoint(grid, ne, be, ep, vp, cv_size)
    adj_par_lhs = sum(grid%xa%rho(its:ite,jts:jte,:)**2)/typical_rho_rms**2 + &
       adj_par_lhs
 
-!hcl-check
    if (use_radarobs) then
       adj_par_lhs = adj_par_lhs &
                 + sum(grid%xa % wh (its:ite, jts:jte, kts:kte)**2)/typical_w_rms**2

@@ -12,23 +12,24 @@ subroutine da_print_stats_pseudo(stats_unit, nu, nv, nt, np, nq, pseudo)
 
    if (trace_use_dull) call da_trace_entry("da_print_stats_pseudo")
 
-#ifdef CLOUD_CV
-   write(unit=stats_unit, fmt='(6a/)') &
-        '   var             ', &
-        'u (m/s)     n    k    ', &
-        'v (m/s)     n    k    ', &
-        't (K)       n    k    ', &
-        'p (Pa)      n    k    ', &
-        pseudo_var(1:3), ' (kg/kg)   n    k'
-#else
-   write(unit=stats_unit, fmt='(6a/)') &
-        '   var             ', &
-        'u (m/s)     n    k    ', &
-        'v (m/s)     n    k    ', &
-        't (K)       n    k    ', &
-        'p (Pa)      n    k    ', &
-        'q (kg/kg)   n    k'
-#endif
+   if ( len_trim(adjustl(pseudo_var)) == 3 .and. &
+        (pseudo_var(1:1) == 'q' .or. pseudo_var(1:1) == 'Q') ) then
+      write(unit=stats_unit, fmt='(6a/)') &
+         '   var             ',    &
+         'u (m/s)     n    k    ', &
+         'v (m/s)     n    k    ', &
+         't (K)       n    k    ', &
+         'p (Pa)      n    k    ', &
+         pseudo_var(1:3), ' (kg/kg)   n    k'
+   else
+      write(unit=stats_unit, fmt='(6a/)') &
+         '   var             ',    &
+         'u (m/s)     n    k    ', &
+         'v (m/s)     n    k    ', &
+         't (K)       n    k    ', &
+         'p (Pa)      n    k    ', &
+         'q (kg/kg)   n    k'
+   end if
    write(unit=stats_unit, fmt='(a,i16,4i22)') &
         '  Number: ', nu, nv, nt, np, nq
 
@@ -37,7 +38,7 @@ subroutine da_print_stats_pseudo(stats_unit, nu, nv, nt, np, nq, pseudo)
    if (nt < 1) nt = 1
    if (np < 1) np = 1
    if (nq < 1) nq = 1
-   
+
    write(unit=stats_unit, fmt='((a,4(f12.4,2i5),e12.4,2i5))') &
         ' Minimum(n,k): ', pseudo%minimum%u, pseudo%minimum%v, pseudo%minimum%t, &
                       pseudo%minimum%p, pseudo%minimum%q, &

@@ -917,22 +917,21 @@ subroutine da_setup_be_regional(xb, be, grid)
       end if
       read (be_unit) be5_rf_lengthscale(1:1)
 
-!hcl-disable this
-!         if( do_normalize )then
-!            read(be_unit)do_normalize1
-!            if( do_normalize.neqv.do_normalize1 ) &
-!               call da_error(__FILE__,__LINE__,(/namv(i)//": do_normalize.neqv.do_normalize1"/))
-!            read(be_unit)nij
-!            if( i==1 )allocate(be%sd(nij(0,1,0),nij(0,0,0),sum(mzs)))
-!            do k=1,mzs(i)
-!               read(be_unit)be%sd(:,:,b+k)
-!            enddo
-!            do k=mzs(i)+1,kzs(i)! read and discard truncated modes:
-!               read(be_unit)(junk,j=1,nij(0,1,0)*nij(0,0,0))
-!            enddo
-!            write(*,'(A,": |sd[",A,"]|=",es9.3)')__FILE__,namv(i),sqrt(sum(be%sd(:,:,b+1:b+mzs(i))**2))
-!            b=b+mzs(i)  ! point to next variable.
-!         endif
+         if( do_normalize )then
+            read(be_unit)do_normalize1
+            if( do_normalize.neqv.do_normalize1 ) &
+               call da_error(__FILE__,__LINE__,(/namv(i)//": do_normalize.neqv.do_normalize1"/))
+            read(be_unit)nij
+            if( i==1 )allocate(be%sd(nij(0,1,0),nij(0,0,0),sum(mzs)))
+            do k=1,mzs(i)
+               read(be_unit)be%sd(:,:,b+k)
+            enddo
+            do k=mzs(i)+1,kzs(i)! read and discard truncated modes:
+               read(be_unit)(junk,j=1,nij(0,1,0)*nij(0,0,0))
+            enddo
+            write(*,'(A,": |sd[",A,"]|=",es9.3)')__FILE__,namv(i),sqrt(sum(be%sd(:,:,b+1:b+mzs(i))**2))
+            b=b+mzs(i)          ! point to next variable.
+         endif
 
       if (print_detail_be) then
 ! Lengthscale variables (except 5!) are arrays of length "kz", so need to account for this in fmt statement

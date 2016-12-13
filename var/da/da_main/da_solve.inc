@@ -509,10 +509,6 @@
       be % v9  % mz = 0
       be % v10 % mz = 0
       be % v11 % mz = 0
-      !hcl-check
-      !be%ncv_mz = 5
-      !allocate (be%cv_mz(5))
-      !be%cv_mz(:) = 0
    end if
 
     ! overwrite variables defined in da_setup_cv.inc set in the call to da_setup_background_errors

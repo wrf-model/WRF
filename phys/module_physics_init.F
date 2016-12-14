@@ -2146,7 +2146,9 @@ integer myproc
    USE module_bl_shinhong
    USE module_bl_mrf
    USE module_bl_gfs
+#if (HWRF==1)
    USE module_bl_gfsedmf, only : gfsedmfinit
+#endif
    USE module_bl_acm
    USE module_sf_myjsfc
    USE module_sf_qnsesfc
@@ -3038,7 +3040,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                         ids, ide, jds, jde, kds, kde,         &
                         ims, ime, jms, jme, kms, kme,         &
                         its, ite, jts, jte, kts, kte          )
-#if (NMM_CORE == 1)
+#if (HWRF == 1)
       CASE (GFSEDMFSCHEME)
            if(isfc .ne. 2)CALL wrf_error_fatal &
             ( 'module_physics_init: use myjsfc scheme for this pbl option' )

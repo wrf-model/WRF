@@ -155,7 +155,9 @@ CONTAINS
    USE module_bl_shinhong
    USE module_bl_mrf
    USE module_bl_gfs
+#if (HWRF==1_
    USE module_bl_gfsedmf, only: bl_gfsedmf
+#endif
    USE module_bl_acm
    USE module_bl_gwdo
    USE module_bl_myjurb
@@ -1361,7 +1363,7 @@ CONTAINS
                CALL wrf_error_fatal('Lack arguments to call GFS pbl')
            ENDIF
 
-#if (NMM_CORE==1)
+#if (HWRF==1)
       CASE (GFSEDMFSCHEME)
            IF ( PRESENT( qv_curr )  .AND. PRESENT( qc_curr )  .AND. &
                 PRESENT( rqvblten ) .AND. PRESENT( rqcblten ) .AND. &
@@ -1382,12 +1384,9 @@ CONTAINS
               ,HFX=hfx,QFX=qfx,TSK=tskold,GZ1OZ0=gz1oz0             &
               ,WSPD=wspd,BR=br                                      &
               ,DT=dtbl,KPBL2D=kpbl,EP1=ep_1,KARMAN=karman           &
-#if (NMM_CORE==1)
               ,DISHEAT=DISHEAT                                      &
-#endif
               ,RTHRATEN=RTHRATEN                    &
               ,HPBL2D=HPBL2D, EVAP2D=EVAP2D, HEAT2D=HEAT2D          &
-
               ,U10=u10,V10=v10,ZNT=mznt                             &
               ,DKU3D=dku3d,DKT3D=dkt3d                             &
               ,VAR_RIC=VAR_RIC                                      &

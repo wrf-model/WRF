@@ -2,6 +2,8 @@
 !
 MODULE module_bl_gfsedmf
 
+#if (HWRF==1)
+
 CONTAINS
 
 !-------------------------------------------------------------------          
@@ -13,9 +15,7 @@ CONTAINS
                   UST,PBL,PSIM,PSIH,                               &
                   HFX,QFX,TSK,GZ1OZ0,WSPD,BR,                      &
                   DT,KPBL2D,EP1,KARMAN,                            &
-#if (NMM_CORE==1)
                   DISHEAT,                                         &
-#endif
                   RTHRATEN,                                        &    !Kwon add RTHRATEN 
                   HPBL2D, EVAP2D, HEAT2D,                          &    !Kwon add FOR SHAL. CON.
 
@@ -2212,4 +2212,5 @@ CONTAINS
       return
       end subroutine mfpbl
 !----------------------------------------------------------------------
+#endif
       END MODULE module_bl_gfsedmf

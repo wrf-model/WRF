@@ -155,7 +155,7 @@ CONTAINS
    USE module_bl_shinhong
    USE module_bl_mrf
    USE module_bl_gfs
-#if (HWRF==1_
+#if (HWRF==1)
    USE module_bl_gfsedmf, only: bl_gfsedmf
 #endif
    USE module_bl_acm

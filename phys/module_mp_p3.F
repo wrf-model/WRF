@@ -12,8 +12,8 @@
 !    Jason Milbrandt (jason.milbrandt@canada.ca)                                           !
 !__________________________________________________________________________________________!
 !                                                                                          !
-! Version:       2.3                                                                       !
-! Last updated:  2016-11-24                                                                !
+! Version:       2.3.1                                                                       !
+! Last updated:  2016-12-14                                                                !
 !__________________________________________________________________________________________!
 
 MODULE MODULE_MP_P3   !WRF
@@ -228,7 +228,7 @@ MODULE MODULE_MP_P3   !WRF
 ! read in ice microphysics table
 
  print*
- print*, ' P3 microphysics, version: 2.3_b02'
+ print*, ' P3 microphysics, version: 2.3.1'
  print*, '   P3_INIT (READING/CREATING LOOK-UP TABLES) ...'
 !print*, '   Reading lookup-table 1 ...'
 
@@ -1531,7 +1531,7 @@ END SUBROUTINE P3_INIT
           eii=0.1
        else if (t(i,k).ge.253.15.and.t(i,k).lt.268.15) then
           eii=0.1+(t(i,k)-253.15)/15.*0.9  ! linear ramp from 0.1 to 1 between 253.15 and 268.15 K
-       else if (t(i,k).gt.268.15) then
+       else if (t(i,k).ge.268.15) then
           eii=1.
        end if
 
@@ -1606,7 +1606,7 @@ END SUBROUTINE P3_INIT
                 else if (tmp1.ge.0.6.and.tmp1.lt.0.9) then
           ! linear ramp from 1 to 0 for Fr between 0.6 and 0.9
                    Eii_fact(iice) = 1.-(tmp1-0.6)/0.3
-                else if (tmp1.gt.0.9) then
+                else if (tmp1.ge.0.9) then
                    Eii_fact(iice) = 0.
                 endif
              else

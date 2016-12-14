@@ -139,7 +139,7 @@ CONTAINS
    USE module_state_description, ONLY :                            &
                    YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME,ACMPBLSCHEME &
                    , QNSEPBLSCHEME, p_qi,param_first_scalar &
-                   , TEMFPBLSCHEME, GFS2011SCHEME,GFSEDMFSCHEME           &
+                   , TEMFPBLSCHEME, GFSEDMFSCHEME           &
                    , CAMUWPBLSCHEME                                       &
                    , FITCHSCHEME, SHINHONGSCHEME                          &
                    , GBMPBLSCHEME, MYJSFCSCHEME
@@ -155,7 +155,6 @@ CONTAINS
    USE module_bl_shinhong
    USE module_bl_mrf
    USE module_bl_gfs
-   USE module_bl_gfs2011, only: bl_gfs2011
    USE module_bl_gfsedmf, only: bl_gfsedmf
    USE module_bl_acm
    USE module_bl_gwdo
@@ -1361,52 +1360,6 @@ CONTAINS
                CALL wrf_debug(0,message)
                CALL wrf_error_fatal('Lack arguments to call GFS pbl')
            ENDIF
-
-#if (NMM_CORE==1)
-      CASE (GFS2011SCHEME)
-           IF ( PRESENT( qv_curr )  .AND. PRESENT( qc_curr )  .AND. &
-                PRESENT( rqvblten ) .AND. PRESENT( rqcblten ) .AND. &
-                                                        .TRUE.  ) THEN
-             CALL wrf_debug(100,'in GFS')
-             CALL bl_gfs2011(                                       &
-               U3D=u_phytmp,V3D=v_phytmp                            &
-              ,TH3D=th_phy,T3D=t_phy                                &
-              ,QV3D=qv_curr,QC3D=qc_curr,QI3D=qi_curr               &
-              ,P3D=p_phy,PI3D=pi_phy                                &
-              ,RUBLTEN=rublten,RVBLTEN=rvblten,RTHBLTEN=rthblten    &
-              ,RQVBLTEN=rqvblten,RQCBLTEN=rqcblten                  &
-              ,RQIBLTEN=rqiblten                                    &
-              ,CP=cp,G=g,ROVCP=rcp,R=r_d,ROVG=rovg                  &
-              ,DZ8W=dz8w,z=z,PSFC=psfc                              &
-              ,UST=ust,PBL=pblh,PSIM=psim,PSIH=psih                 &
-              ,HFX=hfx,QFX=qfx,TSK=tskold,GZ1OZ0=gz1oz0             &
-              ,WSPD=wspd,BR=br                                      &
-              ,DT=dtbl,KPBL2D=kpbl,EP1=ep_1,KARMAN=karman           &
-#if (NMM_CORE==1)
-              ,DISHEAT=DISHEAT                                      &
-#endif
-              ,RTHRATEN=RTHRATEN                    &
-              ,HPBL2D=HPBL2D, EVAP2D=EVAP2D, HEAT2D=HEAT2D          &   !Kwon add FOR SHAL. CON.
-              ,P_QI=p_qi,P_FIRST_SCALAR=param_first_scalar          &
-              ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
-              ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
-              ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
-                                                                    )
-           ELSE
-               WRITE ( message , FMT = '(A,4(L1,1X))' )             &
-                 'present: '//                                      &
-                 'qv_curr, '//                                      &
-                 'qc_curr, '//                                      &
-                 'rqvblten, '//                                     &
-                 'rqcblten = ',                                     &
-                  PRESENT( qv_curr ) ,                              &
-                  PRESENT( qc_curr ) ,                              &
-                  PRESENT( rqvblten ) ,                             &
-                  PRESENT( rqcblten )
-               CALL wrf_debug(0,message)
-               CALL wrf_error_fatal('Lack arguments to call GFS pbl')
-           ENDIF
-#endif
 
 #if (NMM_CORE==1)
       CASE (GFSEDMFSCHEME)

@@ -35,7 +35,6 @@ MODULES = \
 	module_bl_shinhong.o \
 	module_bl_mrf.o \
 	module_bl_gfs.o \
-	module_bl_gfs2011.o \
         module_bl_gfsedmf.o \
 	module_bl_myjpbl.o \
 	module_bl_qnsepbl.o \

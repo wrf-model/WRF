@@ -12,3 +12,6 @@
 # conventions than others                                                    #
 ##############################################################################
 *.f
+
+# Exceptions to top-level .gitignore: many external/ source code files use .f90 extension
+!*.f90

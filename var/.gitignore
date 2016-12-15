@@ -1,5 +1,5 @@
-# This is the top-level .gitignore file for the "phys" directory for the WRF #
-# Model                                                                      #
+# This is the top-level .gitignore file for the "var" directory for the      #
+# WRF Model                                                                  #
 #                                                                            #
 # Filenames and wildcards added below will not be tracked by git anywhere in #
 # this directory or any of its subdirectories. Note that these rules will be #
@@ -11,4 +11,8 @@
 # USE CAUTION WHEN ADDING WILDCARDS, as some builds use different filename   #
 # conventions than others                                                    #
 ##############################################################################
-*.f90
+
+# Ignore rules should be listed here (none yet)
+
+# Exceptions to top-level .gitignore: var/ source code files use .f90 extension
+!*.f90

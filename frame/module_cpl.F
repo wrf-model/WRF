@@ -437,7 +437,7 @@ CONTAINS
       DO jext = 1, max_edom
          lltorcv = lltorcv .OR. cpl_toreceive( kdomwrf, jext, ifldid )
       END DO
-      IF( lltorcv == .false. ) return
+      IF( .not.lltorcv ) return
          
       IF( PRESENT(pdataobs) ) THEN
          pdatacpl(ips:ipe,jps:jpe) = pdataobs(ips:ipe,jps:jpe) * ( 1.0 - SUM( pcplmask(ips:ipe,1:max_edom,jps:jpe), dim = 2 ) )

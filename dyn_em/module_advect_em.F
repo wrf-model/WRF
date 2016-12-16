@@ -7938,8 +7938,9 @@ SUBROUTINE advect_scalar_wenopd ( field, field_old, tendency,    &
    LOGICAL :: degrade_xe, degrade_ye
 
    INTEGER :: jp1, jp0, jtmp
-
-   REAL :: flux_out, ph_low, scale
+   
+   REAL,DIMENSION( its-1:ite+2, kts:kte, jts-1:jte+2  ) :: flux_out, ph_low
+   REAL :: scale
    REAL, PARAMETER :: eps=1.e-20
 
     real            :: dir, vv
@@ -8650,15 +8651,29 @@ SUBROUTINE advect_scalar_wenopd ( field, field_old, tendency,    &
 
    DO j=j_start, j_end
    DO k=kts, ktf
+#ifdef XEON_SIMD
+!DIR$ simd
+#else
+!DIR$ vector always
+#endif
    DO i=i_start, i_end
 
-     ph_low = (mub(i,j)+mu_old(i,j))*field_old(i,k,j)        &
+     ph_low(i,k,j) = (mub(i,j)+mu_old(i,j))*field_old(i,k,j)        &
                 - dt*( msftx(i,j)*msfty(i,j)*(               &
                        rdx*(fqxl(i+1,k,j)-fqxl(i,k,j)) +     &
                        rdy*(fqyl(i,k,j+1)-fqyl(i,k,j))  )    &
                       +msfty(i,j)*rdzw(k)*(fqzl(i,k+1,j)-fqzl(i,k,j)) )
 
-     flux_out = dt*( (msftx(i,j)*msfty(i,j))*(                    &
+   ENDDO
+   ENDDO
+   ENDDO
+
+   DO j=j_start, j_end
+   DO k=kts, ktf
+!DIR$ vector always
+   DO i=i_start, i_end
+
+     flux_out(i,k,j) = dt*( (msftx(i,j)*msfty(i,j))*(                    &
                                 rdx*(  max(0.,fqx (i+1,k,j))      &
                                       -min(0.,fqx (i  ,k,j)) )    &
                                +rdy*(  max(0.,fqy (i,k,j+1))      &
@@ -8666,9 +8681,18 @@ SUBROUTINE advect_scalar_wenopd ( field, field_old, tendency,    &
                 +msfty(i,j)*rdzw(k)*(  min(0.,fqz (i,k+1,j))      &
                                       -max(0.,fqz (i,k  ,j)) )   )
 
-     IF( flux_out .gt. ph_low ) THEN
+   ENDDO
+   ENDDO
+   ENDDO
 
-       scale = max(0.,ph_low/(flux_out+eps))
+   DO j=j_start, j_end
+   DO k=kts, ktf
+!DIR$ vector always
+   DO i=i_start, i_end
+
+     IF( flux_out(i,k,j) .gt. ph_low(i,k,j) ) THEN
+
+       scale = max(0.,ph_low(i,k,j)/(flux_out(i,k,j)+eps))
        IF( fqx (i+1,k,j) .gt. 0.) fqx(i+1,k,j) = scale*fqx(i+1,k,j)
        IF( fqx (i  ,k,j) .lt. 0.) fqx(i  ,k,j) = scale*fqx(i  ,k,j)
        IF( fqy (i,k,j+1) .gt. 0.) fqy(i,k,j+1) = scale*fqy(i,k,j+1)

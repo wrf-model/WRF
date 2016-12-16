@@ -659,7 +659,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 0, no boundary-layer 
                                      = 1, YSU scheme
                                      = 2, Mellor-Yamada-Janjic TKE scheme
-                                     = 3, NCEP Global Forecast System scheme (NMM only)
+                                     = 3, Hybrid EDMF GFS scheme (NMM only)
                                      = 4, Eddy-diffusivity Mass Flux, Quasi-Normal Scale Elimination PBL
                                      = 5, MYNN 2.5 level TKE scheme, works with
                                           sf_sfclay_physics=1 or 2 as well as 5
@@ -672,6 +672,7 @@ Namelist variables for controlling the adaptive time step option:
                                           sf_sfclay_physics=10
                                      = 11, Shin-Hong 'scale-aware' PBL scheme
                                      = 12, Grenier-Bretherton-McCaa scheme (ARW only)
+                                     = 93, 2015 GFS scheme (NMM only)
                                      = 99, MRF scheme
 
  bldt (max_dom)                      = 0,       ; minutes between boundary-layer physics calls
@@ -741,7 +742,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 1, Kain-Fritsch (new Eta) scheme
                                      = 2, Betts-Miller-Janjic scheme
                                      = 3, Grell-Freitas ensemble scheme
-                                     = 4, Old GFS simplified Arakawa-Schubert scheme 
+                                     = 4, Scale-aware GFS Simplified Arakawa-Schubert (SAS) scheme 
                                      = 5, Grell 3D ensemble scheme
                                      = 6, Modifed Tiedtke scheme (ARW only)
                                      = 7, Zhang-McFarlane scheme from CAM5 (CESM 1_0_1)
@@ -749,7 +750,8 @@ Namelist variables for controlling the adaptive time step option:
                                      = 11, Multi-scale Kain-Fritsch scheme
                                      = 14, New GFS simplified Arakawa-Schubert scheme from YSU (ARW only)
                                      = 16, A newer Tiedtke scheme
-                                     = 84, New GFS simplified Arakawa-Schubert scheme (HWRF) 
+                                     = 94, 2015 GFS Simplified Arakawa-Schubert scheme (HWRF) 
+                                     = 95, Previous GFS Simplified Arakawa-Schubert scheme (HWRF) 
                                      = 93, Grell-Devenyi ensemble scheme
                                      = 99, previous Kain-Fritsch scheme
 

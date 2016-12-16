@@ -2146,7 +2146,9 @@ integer myproc
    USE module_bl_shinhong
    USE module_bl_mrf
    USE module_bl_gfs
-   USE module_bl_gfs2011, only : gfs2011init
+#if (HWRF==1)
+   USE module_bl_gfsedmf, only : gfsedmfinit
+#endif
    USE module_bl_acm
    USE module_sf_myjsfc
    USE module_sf_qnsesfc
@@ -3038,13 +3040,13 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                         ids, ide, jds, jde, kds, kde,         &
                         ims, ime, jms, jme, kms, kme,         &
                         its, ite, jts, jte, kts, kte          )
-#if (NMM_CORE == 1)
-      CASE (GFS2011SCHEME)
+#if (HWRF == 1)
+      CASE (GFSEDMFSCHEME)
            if(isfc .ne. 2)CALL wrf_error_fatal &
             ( 'module_physics_init: use myjsfc scheme for this pbl option' )
            IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
             ( 'module_physics_init: use myj (option 2) or boulac (option 8) with BEP/BEM urban scheme' )
-           CALL gfs2011init(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,&
+           CALL gfsedmfinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,&
                         RQCBLTEN,RQIBLTEN,P_QI,               &
                         PARAM_FIRST_SCALAR,                   &
                         restart,                              &
@@ -3052,6 +3054,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                         ids, ide, jds, jde, kds, kde,         &
                         ims, ime, jms, jme, kms, kme,         &
                         its, ite, jts, jte, kts, kte          )
+
 #endif
       CASE (MYJPBLSCHEME)
            if(isfc .ne. 2)CALL wrf_error_fatal &

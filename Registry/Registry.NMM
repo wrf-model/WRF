@@ -1766,8 +1766,8 @@ package   pxlsmscheme    sf_surface_physics==7       -             -
 package   ssibscheme     sf_surface_physics==8       -             -
 package   ysuscheme      bl_pbl_physics==1           -             -
 package   myjpblscheme   bl_pbl_physics==2           -             -
-package   gfsscheme      bl_pbl_physics==3           -             state:hpbl2d,heat2d,evap2d,rc2d
-package   gfs2011scheme  bl_pbl_physics==83          -             state:hpbl2d,heat2d,evap2d
+package   gfsscheme      bl_pbl_physics==93          -             state:hpbl2d,heat2d,evap2d,rc2d
+package   gfsedmfscheme  bl_pbl_physics==3           -             state:hpbl2d,heat2d,evap2d
 package   qnsepblscheme  bl_pbl_physics==4           -             -
 package   acmpblscheme   bl_pbl_physics==7           -             -
 package   boulacscheme   bl_pbl_physics==8           -             - 

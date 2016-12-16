@@ -13,17 +13,16 @@ contains
 !   variations   of useful results: rublten dusfcg dvsfcg dtauy3d
 !                rvblten dtaux3d
 !   with respect to varying inputs: rublten p3di u3d dusfcg z dvsfcg
-!                dtauy3d rvblten t3d qv3d pi3d v3d dtaux3d mut
+!                dtauy3d rvblten t3d qv3d pi3d v3d dtaux3d
 !   RW status of diff variables: rublten:in-out p3di:in u3d:in
 !                dusfcg:in-out z:in dvsfcg:in-out dtauy3d:in-out
 !                rvblten:in-out t3d:in qv3d:in pi3d:in v3d:in dtaux3d:in-out
-!                mut:in
 !-------------------------------------------------------------------------------
 SUBROUTINE G_GWDO(u3d, u3dd, v3d, v3dd, t3d, t3dd, qv3d, qv3dd, p3d, &
 & p3di, p3did, pi3d, pi3dd, z, zd, rublten, rubltend, rvblten, rvbltend&
 & , dtaux3d, dtaux3dd, dtauy3d, dtauy3dd, dusfcg, dusfcgd, dvsfcg, &
 & dvsfcgd, var2d, oc12d, oa2d1, oa2d2, oa2d3, oa2d4, ol2d1, ol2d2, ol2d3&
-& , ol2d4, znu, znw, mut, mutd, p_top, cp, g, rd, rv, ep1, pi, dt, dx, &
+& , ol2d4, znu, znw, p_top, cp, g, rd, rv, ep1, pi, dt, dx, &
 & kpbl2d, itimestep, ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, &
 & kms, kme, its, ite, jts, jte, kts, kte)
   IMPLICIT NONE
@@ -99,8 +98,6 @@ SUBROUTINE G_GWDO(u3d, u3dd, v3d, v3dd, t3d, t3dd, qv3d, qv3dd, p3d, &
 !
   REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN) :: var2d, oc12d, oa2d1, &
 & oa2d2, oa2d3, oa2d4, ol2d1, ol2d2, ol2d3, ol2d4
-  REAL, DIMENSION(ims:ime, jms:jme), OPTIONAL, INTENT(IN) :: mut
-  REAL, DIMENSION(ims:ime, jms:jme), OPTIONAL, INTENT(IN) :: mutd
 !
   REAL, DIMENSION(kms:kme), OPTIONAL, INTENT(IN) :: znu, znw
 !
@@ -123,20 +120,7 @@ SUBROUTINE G_GWDO(u3d, u3dd, v3d, v3dd, t3d, t3dd, qv3d, qv3dd, p3d, &
   pdhd = 0.0
 !
   DO j=jts,jte
-    IF (PRESENT(mut)) THEN
-! For ARW we will replace p and p8w with dry hydrostatic pressure
-      DO k=kts,kte+1
-        DO i=its,ite
-          IF (k .LE. kte) THEN
-            pdhd(i, k) = znu(k)*mutd(i, j)
-            pdh(i, k) = mut(i, j)*znu(k) + p_top
-          END IF
-          pdhid(i, k) = znw(k)*mutd(i, j)
-          pdhi(i, k) = mut(i, j)*znw(k) + p_top
-        END DO
-      END DO
-    ELSE
-      DO k=kts,kte+1
+     DO k=kts,kte+1
         DO i=its,ite
           IF (k .LE. kte) THEN
             pdhd(i, k) = 0.0
@@ -145,8 +129,7 @@ SUBROUTINE G_GWDO(u3d, u3dd, v3d, v3dd, t3d, t3dd, qv3d, qv3dd, p3d, &
           pdhid(i, k) = p3did(i, k, j)
           pdhi(i, k) = p3di(i, k, j)
         END DO
-      END DO
-    END IF
+     END DO
 !
     DO k=kts,kte
       DO i=its,ite

@@ -1941,7 +1941,7 @@ write(0,*)__FILE__,__LINE__,' grid%id ',grid%id,' grid%oid ',grid%oid
 
    END SELECT
    IF ( wrf_dm_on_monitor() ) THEN
-     WRITE ( message , FMT = '("Writing ",A30," for domain ",I8)' )TRIM(fname),grid%id
+     WRITE ( message , FMT = '("Writing ",A," for domain ",I8)' )TRIM(fname),grid%id
      CALL end_timing ( TRIM(message) )
    END IF
 

@@ -1,0 +1,22 @@
+&init_land
+mvland = .false.		!true=land or false=only ocean
+imin = 260			!setup the land strip for motion
+imax = 288
+jmin = 0
+jmax = 576
+logic_temp = .false.		!true=initial surface temperature thru s_temp. false=default (first level tmp)
+s_temp = 308.0			!initial surface temperature for the land strip
+VEG_ID = 19			!land surface vegetaion parameter ID. refer VEGPARM.TBL
+SOIL_ID = 1			!land surface soil parameter ID. refer SOILPARM.TBL
+/
+
+&param_land
+DIRN = 1			!1=W-E direction, 2=E-W direction
+VEG_ID = 19			!same as above. Has to be set. Do not leave it blank
+SOIL_ID = 1			!same as above. Has to be set. Do not leave it blank
+land_emiss = 0.90		!emissivity for radiation phys. Refer VEGPARM.TBL for indicative values (0-1)
+land_albedo = 0.25		!albedo for radiation physics. Refer VEGPARM.TBL for indicative values (0-1)
+land_vgfrac = 0.20              !vegetation fraction (0-0.99)
+land_z0 = 0.01			!surface roughness. Refer VEGPARM.TBL
+land_smc = 0.02			!soil moisture. Refer SOILPARM.TBL
+/

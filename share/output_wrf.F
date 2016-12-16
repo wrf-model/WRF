@@ -153,8 +153,8 @@
     call nl_get_aer_asy_opt        ( grid%id,  aer_asy_opt        )
     call nl_get_aer_aod550_val     ( grid%id,  aer_aod550_val     )
     call nl_get_aer_angexp_val     ( grid%id,  aer_angexp_val     )
-    call nl_get_aer_ssa_opt        ( grid%id,  aer_ssa_val        )
-    call nl_get_aer_asy_opt        ( grid%id,  aer_asy_val        )
+    call nl_get_aer_ssa_val        ( grid%id,  aer_ssa_val        )
+    call nl_get_aer_asy_val        ( grid%id,  aer_asy_val        )
     call nl_get_sf_lake_physics    ( grid%id,  sf_lake_physics    )
 
 #if (EM_CORE == 1)

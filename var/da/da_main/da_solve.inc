@@ -47,6 +47,7 @@
    real, allocatable :: grid_box_area(:,:), mapfac(:,:)
    character (len=10)    :: variable_name
 
+   integer :: iwin, num_subtwindow
    integer :: xx, yy, ii, jj,  xy, kk, jjj
    real    :: lat, lon, x_pos, y_pos, dx, dy, dxm, dym
    logical :: outside
@@ -194,13 +195,38 @@
          ' Resetting ntmax = 0 for analysis_type = randomcv' 
    end if
 
-#ifdef CLOUD_CV
-   if ( cv_options == 3 ) then
-      write(unit=message(1),fmt='(A,I3)') &
-         'cloud_cv does NOT work with cv_options = ', cv_options
-      call da_error(__FILE__,__LINE__,message(1:1))
+   if ( cv_options == 3 .and. cloud_cv_options > 0 ) then
+      write(unit=message(1),fmt='(A)') &
+         'Cloud control variables are not implemented for cv_options = 3'
+      write(unit=message(2),fmt='(A)') &
+         'Resetting cloud_cv_options = 0 for cv_options = 3'
+      cloud_cv_options = 0
+      call da_warning(__FILE__,__LINE__,message(1:1))
    end if
-#endif
+
+   if ( use_radarobs ) then
+      if ( use_radar_rf .and. use_radar_rhv ) then
+         write(unit=message(1),fmt='(A)') "Both 'use_radar_rf' and 'use_radar_rhv' are set to true"
+         write(unit=message(2),fmt='(A)') "You must only choose one of these options"
+         call da_error(__FILE__,__LINE__,message(1:2))
+      end if
+      if ( use_radar_rf .and. cloud_cv_options /= 1 ) then
+         write(unit=message(1),fmt='(A)') "Please set cloud_cv_options=1 for use_radar_rf"
+         call da_error(__FILE__,__LINE__,message(1:1))
+      end if
+      if ( use_radar_rhv .and. cloud_cv_options == 1 ) then
+         write(unit=message(1),fmt='(A)') "Please set cloud_cv_options=3 or 2 (2 requires cloudy be.dat) for use_radar_rhv"
+         call da_error(__FILE__,__LINE__,message(1:1))
+      end if
+   end if
+
+   if ( ensdim_alpha > 0 .and. alpha_hydrometeors ) then
+      if ( cloud_cv_options == 1 ) then
+         write(unit=message(1),fmt='(A)') "alpha_hydrometeors is not implemented for cloud_cv_options=1"
+         write(unit=message(2),fmt='(A)') "Please choose cloud_cv_options=3"
+         call da_error(__FILE__,__LINE__,message(1:2))
+      end if
+   end if
 
    !---------------------------------------------------------------------------
    ! [2.0] Initialise wrfvar parameters:
@@ -295,6 +321,34 @@
    !---------------------------------------------------------------------------
    ! [3.0] Set up first guess field (grid%xb):
    !---------------------------------------------------------------------------
+
+   ! for WRF hybrid coordinate
+   allocate ( c1f(kms:kme) )
+   allocate ( c2f(kms:kme) )
+   allocate ( c3f(kms:kme) )
+   allocate ( c4f(kms:kme) )
+   allocate ( c1h(kms:kme) )
+   allocate ( c2h(kms:kme) )
+   allocate ( c3h(kms:kme) )
+   allocate ( c4h(kms:kme) )
+   c1f = grid%c1f
+   c2f = grid%c2f
+   c3f = grid%c3f
+   c4f = grid%c4f
+   c1h = grid%c1h
+   c2h = grid%c2h
+   c3h = grid%c3h
+   c4h = grid%c4h
+   if ( config_flags%hybrid_opt == 0 ) then
+      c3f = grid%znw
+      c3h = grid%znu
+      c4f = 0.0
+      c4h = 0.0
+      c1f = 1.0
+      c1h = 1.0
+      c2f = 0.0
+      c2h = 0.0
+   end if
 
    call da_setup_firstguess(xbx, grid, config_flags, .false.)
 
@@ -449,14 +503,12 @@
       be % v3 % mz = 0
       be % v4 % mz = 0
       be % v5 % mz = 0
-#ifdef CLOUD_CV
       be % v6  % mz = 0
       be % v7  % mz = 0
       be % v8  % mz = 0
       be % v9  % mz = 0
       be % v10 % mz = 0
       be % v11 % mz = 0
-#endif
    end if
 
     ! overwrite variables defined in da_setup_cv.inc set in the call to da_setup_background_errors
@@ -494,8 +546,15 @@
       if (use_background_errors .and. be % ne > 0) then
 !        call da_setup_flow_predictors ( ide, jde, kde, be % ne, grid%ep, &
 !                                        its, ite, jts, jte, kts, kte )
-         call da_setup_flow_predictors ( ide_ens, jde_ens, kde_ens, be % ne, grid%ep, &
-                                         its_int, ite_int, jts_int, jte_int, kts_int, kte_int )
+         select case ( ep_para_read )
+            case ( 0 ) ! serial read (default)
+               call da_setup_flow_predictors ( ide_ens, jde_ens, kde_ens, be % ne, grid%ep, &
+                                               its_int, ite_int, jts_int, jte_int, kts_int, kte_int )
+            case ( 1 ) ! para_read_opt1, breaks total number of ep into reading bins
+               call da_setup_flow_predictors_para_read_opt1 ( &
+                                            ide_ens, jde_ens, kde_ens, be % ne, grid%ep, &
+                                            its_int, ite_int, jts_int, jte_int, kts_int, kte_int )
+         end select
       end if
 
    !---------------------------------------------------------------------------
@@ -531,7 +590,7 @@
            read(cvt_unit) cvt
            close(cvt_unit)
          else
-           write(unit=message(1),fmt='(a)') "cvt file '"//trim(cvtfile)//"' does not exists, initiallizing cvt."
+           write(unit=message(1),fmt='(a)') "cvt file '"//trim(cvtfile)//"' does not exists, initializing cvt."
            call da_message(message(1:1))
            call da_initialize_cv (cv_size, cvt)
          end if
@@ -764,11 +823,27 @@
       end if
 
       ! [8.5] Update latest analysis solution:
-  
+
       if (.not. var4d) then
+         ! as of V3.9, vp%alpha is not included in the vptox (called by vtox) calculation,
+         ! here grid%xa contains only the static increment
          call da_transform_vtox (grid,cv_size,xbx,be,grid%ep,xhat,grid%vv,grid%vp)
+
+         ! adding the ensemble contribution
+         if (be % ne > 0 .and. alphacv_method == alphacv_method_xa) then
+            if ( use_4denvar ) then
+               num_subtwindow = num_fgat_time
+            else
+               num_subtwindow = 1
+            end if
+            do iwin = num_subtwindow, 1 , -1
+               call da_transform_vpatox (grid,be,grid%ep,grid%vp,iwin)
+               call da_add_xa(grid%xa, grid%xa_ens) !grid%xa = grid%xa + xa_ens
+            end do
+         end if !ne>0
       else
          call da_transform_vtox (grid,be%cv%size_jb,xbx,be,grid%ep,xhat(1:be%cv%size_jb),grid%vv,grid%vp)
+         call da_transform_vpatox (grid,be,grid%ep,grid%vp)
       endif
       call da_transform_xtoxa (grid)
 
@@ -940,7 +1015,14 @@
 
    if ( anal_type_hybrid_dual_res ) deallocate(ob_locs)
 
-
+   deallocate ( c1f )
+   deallocate ( c2f )
+   deallocate ( c3f )
+   deallocate ( c4f )
+   deallocate ( c1h )
+   deallocate ( c2h )
+   deallocate ( c3h )
+   deallocate ( c4h )
 
 #ifdef DM_PARALLEL
    call mpi_barrier (comm,ierr)

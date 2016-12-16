@@ -11,19 +11,19 @@ contains
 !
 !  Differentiation of gwdo in reverse (adjoint) mode:
 !   gradient     of useful results: rublten p3di u3d dusfcg z dvsfcg
-!                dtauy3d rvblten t3d qv3d pi3d v3d dtaux3d mut
+!                dtauy3d rvblten t3d qv3d pi3d v3d dtaux3d
 !   with respect to varying inputs: rublten p3di u3d dusfcg z dvsfcg
-!                dtauy3d rvblten t3d qv3d pi3d v3d dtaux3d mut
+!                dtauy3d rvblten t3d qv3d pi3d v3d dtaux3d
 !   RW status of diff variables: rublten:in-out p3di:incr u3d:incr
 !                dusfcg:in-out z:incr dvsfcg:in-out dtauy3d:in-out
 !                rvblten:in-out t3d:incr qv3d:incr pi3d:incr v3d:incr
-!                dtaux3d:in-out mut:incr
+!                dtaux3d:in-out
 !-------------------------------------------------------------------------------
 SUBROUTINE GWDO_B(u3d, u3db, v3d, v3db, t3d, t3db, qv3d, qv3db, p3d, &
 & p3di, p3dib, pi3d, pi3db, z, zb, rublten, rubltenb, rvblten, rvbltenb&
 & , dtaux3d, dtaux3db, dtauy3d, dtauy3db, dusfcg, dusfcgb, dvsfcg, &
 & dvsfcgb, var2d, oc12d, oa2d1, oa2d2, oa2d3, oa2d4, ol2d1, ol2d2, ol2d3&
-& , ol2d4, znu, znw, mut, mutb, p_top, cp, g, rd, rv, ep1, pi, dt, dx, &
+& , ol2d4, znu, znw, p_top, cp, g, rd, rv, ep1, pi, dt, dx, &
 & kpbl2d, itimestep, ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, &
 & kms, kme, its, ite, jts, jte, kts, kte)
   IMPLICIT NONE
@@ -96,8 +96,6 @@ SUBROUTINE GWDO_B(u3d, u3db, v3d, v3db, t3d, t3db, qv3d, qv3db, p3d, &
 !
   REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN) :: var2d, oc12d, oa2d1, &
 & oa2d2, oa2d3, oa2d4, ol2d1, ol2d2, ol2d3, ol2d4
-  REAL, DIMENSION(ims:ime, jms:jme), OPTIONAL, INTENT(IN) :: mut
-  REAL, DIMENSION(ims:ime, jms:jme), OPTIONAL :: mutb
 !
   REAL, DIMENSION(kms:kme), OPTIONAL, INTENT(IN) :: znu, znw
 !
@@ -121,24 +119,7 @@ SUBROUTINE GWDO_B(u3d, u3db, v3d, v3db, t3d, t3db, qv3d, qv3db, p3d, &
   END DO
 !
   DO j=jts,jte
-    IF (PRESENT(mut)) THEN
-! For ARW we will replace p and p8w with dry hydrostatic pressure
-      DO k=kts,kte+1
-        DO i=its,ite
-          IF (k .LE. kte) THEN
-            CALL PUSHREAL8(pdh(i, k))
-            pdh(i, k) = mut(i, j)*znu(k) + p_top
-            CALL PUSHCONTROL1B(0)
-          ELSE
-            CALL PUSHCONTROL1B(1)
-          END IF
-          CALL PUSHREAL8(pdhi(i, k))
-          pdhi(i, k) = mut(i, j)*znw(k) + p_top
-        END DO
-      END DO
-      CALL PUSHCONTROL1B(1)
-    ELSE
-      DO k=kts,kte+1
+     DO k=kts,kte+1
         DO i=its,ite
           IF (k .LE. kte) THEN
             CALL PUSHREAL8(pdh(i, k))
@@ -150,9 +131,7 @@ SUBROUTINE GWDO_B(u3d, u3db, v3d, v3db, t3d, t3db, qv3d, qv3db, p3d, &
           CALL PUSHREAL8(pdhi(i, k))
           pdhi(i, k) = p3di(i, k, j)
         END DO
-      END DO
-      CALL PUSHCONTROL1B(0)
-    END IF
+     END DO
 !
     DO k=kts,kte
       DO i=its,ite
@@ -218,10 +197,8 @@ SUBROUTINE GWDO_B(u3d, u3db, v3d, v3db, t3d, t3db, qv3d, qv3db, p3d, &
         delprsib(i, k) = 0.0
       END DO
     END DO
-    CALL POPCONTROL1B(branch)
-    IF (branch .EQ. 0) THEN
-      DO k=kte+1,kts,-1
-        DO i=ite,its,-1
+    DO k=kte+1,kts,-1
+       DO i=ite,its,-1
           CALL POPREAL8(pdhi(i, k))
           p3dib(i, k, j) = p3dib(i, k, j) + pdhib(i, k)
           pdhib(i, k) = 0.0
@@ -230,23 +207,8 @@ SUBROUTINE GWDO_B(u3d, u3db, v3d, v3db, t3d, t3db, qv3d, qv3db, p3d, &
             CALL POPREAL8(pdh(i, k))
             pdhb(i, k) = 0.0
           END IF
-        END DO
-      END DO
-    ELSE
-      DO k=kte+1,kts,-1
-        DO i=ite,its,-1
-          CALL POPREAL8(pdhi(i, k))
-          mutb(i, j) = mutb(i, j) + znw(k)*pdhib(i, k)
-          pdhib(i, k) = 0.0
-          CALL POPCONTROL1B(branch)
-          IF (branch .EQ. 0) THEN
-            CALL POPREAL8(pdh(i, k))
-            mutb(i, j) = mutb(i, j) + znu(k)*pdhb(i, k)
-            pdhb(i, k) = 0.0
-          END IF
-        END DO
-      END DO
-    END IF
+       END DO
+    END DO
   END DO
 END SUBROUTINE GWDO_B
 

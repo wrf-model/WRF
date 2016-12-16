@@ -35,7 +35,7 @@ MODULES = \
 	module_bl_shinhong.o \
 	module_bl_mrf.o \
 	module_bl_gfs.o \
-	module_bl_gfs2011.o \
+        module_bl_gfsedmf.o \
 	module_bl_myjpbl.o \
 	module_bl_qnsepbl.o \
 	module_bl_acm.o \
@@ -69,12 +69,12 @@ MODULES = \
 	module_cu_gf.o \
 	module_cu_nsas.o \
 	module_cu_sas.o \
+	module_cu_scalesas.o \
+	module_cu_osas.o \
+	module_cu_kfcup.o \
 	module_cu_du.o \
 	module_cu_du_tl.o \
 	module_cu_du_ad.o \
-	module_cu_mesosas.o \
-	module_cu_osas.o \
-	module_cu_kfcup.o \
 	module_mp_radar.o \
 	module_mp_kessler.o \
 	module_mp_mkessler.o \

@@ -265,51 +265,51 @@ subroutine da_qc_airs (it, i, nchan, ob, iv)
 	    end if   
 	    
          end do ! chan
-#ifdef CRTM_MODIF			 
-        !  k. ecmwf cloud_detection
+
+         !  k. ecmwf cloud_detection
          !-----------------------------------------------------------
-        if (use_clddet_ecmwf) then	
-           iv%instid(i)%cloud_flag(:,n) = qc_good	    
-           allocate ( k_cloud_flag(1:nchan) )	  
-           call da_error(__FILE__,__LINE__, &
-             (/"Cloud_Detect_Setup is not implemented here, please contact the author of this subroutine."/))
-!           CALL Cloud_Detect_Setup(sensor_id)
-	       write(unit=stdout,fmt='(A)') 'finish cloud detection setup for airs'   
-           kmin = iv%instid(i)%kmin_t(n)
-           kmax = iv%instid(i)%kmax_p(n)
-           call da_error(__FILE__,__LINE__, &
-             (/"Cloud_Detect is not implemented here, please contact the author of this subroutine."/))		   
-!           CALL Cloud_Detect( &
-!           sensor_id,     &  ! in
-!           nchan,     &  ! in
-!           iv%instid(i)%ichan,     &  ! in
-!           iv%instid(i)%tb_xb(:,n),   &  ! in
-!           iv%instid(i)%tb_inv(:,n),     &  ! in		
-!           iv%instid(i)%p_chan_level(:,n), &  ! in
-!           k_cloud_flag, &  ! out
-!           kmin,     &  ! in
-!           kmax)        ! in 
-						
-           do k = 1, nchan		 
-		 ! remove channels above the modle top
-		 	  if(iv%instid(i)%p_chan_level(k,n)==0) then
-				     iv%instid(i)%tb_qc(k,n)  = qc_bad
-                 if (iv%instid(i)%info%proc_domain(1,n)) &
-                 nrej_eccloud = nrej_eccloud + 1				 
-			  end if
-              if (k_cloud_flag(k) .eq. 1) then
-               iv%instid(i)%tb_qc(k,n)  = qc_bad
-                 if (iv%instid(i)%info%proc_domain(1,n)) &
-                 nrej_eccloud = nrej_eccloud + 1				
-               end if			   
-           end do	 !chan
-	     deallocate ( k_cloud_flag )	 
-        end if		!ecmwf
-#endif			
-      end do ! end loop pixel      
-      			  
-    ! Do inter-processor communication to gather statistics.
-#ifdef CRTM_MODIF
+         if (use_clddet_ecmwf) then
+            iv%instid(i)%cloud_flag(:,n) = qc_good
+            allocate ( k_cloud_flag(1:nchan) )
+            call da_error(__FILE__,__LINE__, &
+              (/"Cloud_Detect_Setup is not implemented here, please contact the author of this subroutine."/))
+!            CALL Cloud_Detect_Setup(sensor_id)
+            write(unit=stdout,fmt='(A)') 'finish cloud detection setup for airs'
+            kmin = iv%instid(i)%kmin_t(n)
+            kmax = iv%instid(i)%kmax_p(n)
+            call da_error(__FILE__,__LINE__, &
+               (/"Cloud_Detect is not implemented here, please contact the author of this subroutine."/))
+!            CALL Cloud_Detect( &
+!            sensor_id,     &  ! in
+!            nchan,     &  ! in
+!            iv%instid(i)%ichan,     &  ! in
+!            iv%instid(i)%tb_xb(:,n),   &  ! in
+!            iv%instid(i)%tb_inv(:,n),     &  ! in
+!            iv%instid(i)%p_chan_level(:,n), &  ! in
+!            k_cloud_flag, &  ! out
+!            kmin,     &  ! in
+!            kmax)        ! in
+
+            do k = 1, nchan
+               ! remove channels above the model top
+               if(iv%instid(i)%p_chan_level(k,n)==0) then
+                  iv%instid(i)%tb_qc(k,n)  = qc_bad
+                  if (iv%instid(i)%info%proc_domain(1,n)) &
+                     nrej_eccloud = nrej_eccloud + 1
+               end if
+               if (k_cloud_flag(k) .eq. 1) then
+                  iv%instid(i)%tb_qc(k,n)  = qc_bad
+                  if (iv%instid(i)%info%proc_domain(1,n)) &
+                     nrej_eccloud = nrej_eccloud + 1
+               end if
+            end do !chan
+            deallocate ( k_cloud_flag )
+         end if !ecmwf
+
+      end do ! end loop pixel
+
+      ! Do inter-processor communication to gather statistics.
+
       if (use_clddet_mmr .and. (.not.use_satcv(2))) then
          do k = 1, nchan
             bias_global(k)   = wrf_dm_sum_real(bias_local(k))
@@ -317,57 +317,56 @@ subroutine da_qc_airs (it, i, nchan, ob, iv)
             if (numrad_global(k) > 0) bias_global(k) = bias_global(k) / numrad_global(k)
          end do
       end if
-#endif
-      
+
       do n= iv%instid(i)%info%n1,iv%instid(i)%info%n2
 
-           ! 1. Cloud detection scheme (NESDIS or MMR)
-           !---------------------------------------------
+         ! 1. Cloud detection scheme (NESDIS or MMR)
+         !---------------------------------------------
          if (use_clddet_mmr .and. (.not.use_satcv(2))) then
             iv%instid(i)%cloud_flag(:,n) = qc_good
-	    
-	    if (rtm_option == rtm_option_rttov) then
+
+            if (rtm_option == rtm_option_rttov) then
 #ifdef RTTOV
-  	       kte_surf   = iv%instid(i)%nlevels     
+               kte_surf   = iv%instid(i)%nlevels
                kts_100hPa = MAXLOC(coefs(i)%coef%ref_prfl_p(1:kte_surf), &
-	                    MASK = coefs(i)%coef%ref_prfl_p(1:kte_surf) < 100.0)
-	       do k=1,nchan 
+                            MASK = coefs(i)%coef%ref_prfl_p(1:kte_surf) < 100.0)
+               do k=1,nchan
                   tstore = coefs(i)%coef%ff_bco(k) + coefs(i)%coef%ff_bcs(k) * &
-		          (ob%instid(i)%tb(k,n) - bias_global(k))
+                           (ob%instid(i)%tb(k,n) - bias_global(k))
                   iv%instid(i)%rad_obs(k,n) = coefs(i)%coef%planck1(k) / &
-		                             (EXP(coefs(i)%coef%planck2(k)/tstore) - 1.0)
-	       end do   
+                           (EXP(coefs(i)%coef%planck2(k)/tstore) - 1.0)
+               end do
 #endif
             elseif (rtm_option == rtm_option_crtm) then
-  	       kte_surf   = kte
-   	       kts_100hPa = MAXLOC(iv%instid(i)%pm(kts:kte,n), &
-	                    MASK = iv%instid(i)%pm(kts:kte,n) < 100.0)
-#ifdef CRTM_MODIF
-       	       do k = 1, nchan
-	          CALL CRTM_Planck_Radiance(i,k,ob%instid(i)%tb(k,n) - bias_global(k), &
-		                                iv%instid(i)%rad_obs(k,n))
-               end do	 	       	 
-#endif
+               kte_surf   = kte
+               kts_100hPa = MAXLOC(iv%instid(i)%pm(kts:kte,n), &
+                            MASK = iv%instid(i)%pm(kts:kte,n) < 100.0)
+
+               do k = 1, nchan
+                  CALL CRTM_Planck_Radiance(i,k,ob%instid(i)%tb(k,n) - bias_global(k), &
+                                            iv%instid(i)%rad_obs(k,n))
+               end do
+
             end if
-	    
-	    ndim = kte_surf - kts_100hPa(1) + 1
-	 
-            call da_cloud_detect_airs(i,nchan,ndim,kts_100hPa(1),kte_surf,n,iv)	       
-         end if	          
-	 
-	 do k = 1, nchan
-	    if (iv%instid(i)%cloud_flag(k,n) == qc_bad) iv%instid(i)%tb_qc(k,n) = qc_bad
+
+            ndim = kte_surf - kts_100hPa(1) + 1
+
+            call da_cloud_detect_airs(i,nchan,ndim,kts_100hPa(1),kte_surf,n,iv)
+         end if
+
+         do k = 1, nchan
+            if (iv%instid(i)%cloud_flag(k,n) == qc_bad) iv%instid(i)%tb_qc(k,n) = qc_bad
          end do
- 	 
-           !  2. Check iuse from information file (channel selection)
-           !-----------------------------------------------------------
+
+         !  2. Check iuse from information file (channel selection)
+         !-----------------------------------------------------------
          do k = 1, nchan
             if (satinfo(i)%iuse(k) .eq. -1) &
                iv%instid(i)%tb_qc(k,n)  = qc_bad
          end do
-	      
-           ! 3. Final QC decision
-           !---------------------------------------------
+
+         ! 3. Final QC decision
+         !---------------------------------------------
          do k = 1, nchan
             if (iv%instid(i)%tb_qc(k,n) == qc_bad) then  ! bad obs
                iv%instid(i)%tb_error(k,n) = 500.0
@@ -378,9 +377,9 @@ subroutine da_qc_airs (it, i, nchan, ob, iv)
                   ngood(k) = ngood(k) + 1
             end if
          end do ! chan
-	 
-      end do ! end loop pixel 
- 
+
+      end do ! end loop pixel
+
    ! Do inter-processor communication to gather statistics.
    call da_proc_sum_int  (num_proc_domain)
    call da_proc_sum_int  (nrej_landsurface )

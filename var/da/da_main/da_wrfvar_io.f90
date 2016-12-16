@@ -11,6 +11,7 @@ module da_wrfvar_io
    use module_state_description, only : p_qv
 
    use da_control, only : trace_use, ierr, var4d, var4d_lbc, num_fgat_time, rootproc
+   use da_control, only : cloud_cv_options
    use da_reporting, only : da_error, message, da_message
    use da_tracing, only : da_trace_entry, da_trace_exit, da_trace
 

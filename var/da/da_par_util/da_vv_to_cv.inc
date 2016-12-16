@@ -1,4 +1,4 @@
-subroutine da_vv_to_cv(vv, xp, mzs, cv_size, rcv)
+subroutine da_vv_to_cv(vv, xp, mzs, nmzs, cv_size, rcv)
 
    !---------------------------------------------------------------------------
    ! Purpose: Fill (local) 1D cv array from 3D (local) vv arrays.
@@ -8,7 +8,8 @@ subroutine da_vv_to_cv(vv, xp, mzs, cv_size, rcv)
 
    type (vp_type), intent(in)    :: vv          ! Grdipt/EOF rcv.
    type (xpose_type), intent(in) :: xp          ! Dimensions and xpose buffers.
-   integer,        intent(in)    :: mzs(:)      ! Background error structure levels.
+   integer,        intent(in)    :: nmzs        ! number of cv for mz
+   integer,        intent(in)    :: mzs(nmzs)   ! Background error structure levels.
    integer,        intent(in)    :: cv_size     ! Length of CV array.
    real,           intent(inout) :: rcv(1:cv_size) ! Control variables v.
 
@@ -138,131 +139,128 @@ subroutine da_vv_to_cv(vv, xp, mzs, cv_size, rcv)
       rcv(cv_s:cv_e) = RESHAPE(vv % v5(is:ie,js:je,1:mz), (/ijm/))
 #endif
    end if
-#ifdef CLOUD_CV
-   ! Store v6
-   mz = mzs(6)
-   if (mz > 0) then
-      ijm = ix * jy * mz
-      cv_s = cv_e + 1
-      cv_e = cv_s + ijm - 1
+   if ( nmzs > 10 ) then
+      ! Store v6
+      mz = mzs(6)
+      if (mz > 0) then
+         ijm = ix * jy * mz
+         cv_s = cv_e + 1
+         cv_e = cv_s + ijm - 1
 #ifdef NORESHAPE
-      do k=1,mz
-         do j=js,je
-            do i=is,ie
-               ijk = ijk + 1
-               rcv(ijk) = vv%v6(i,j,k)
+         do k=1,mz
+            do j=js,je
+               do i=is,ie
+                  ijk = ijk + 1
+                  rcv(ijk) = vv%v6(i,j,k)
+               end do
             end do
          end do
-      end do
 #else
-      rcv(cv_s:cv_e) = RESHAPE(vv % v6(is:ie,js:je,1:mz), (/ijm/))
+         rcv(cv_s:cv_e) = RESHAPE(vv % v6(is:ie,js:je,1:mz), (/ijm/))
 #endif
-   end if
-   ! Store v7
-   mz = mzs(7)
-   if (mz > 0) then
-      ijm = ix * jy * mz
-      cv_s = cv_e + 1
-      cv_e = cv_s + ijm - 1
+      end if
+      ! Store v7
+      mz = mzs(7)
+      if (mz > 0) then
+         ijm = ix * jy * mz
+         cv_s = cv_e + 1
+         cv_e = cv_s + ijm - 1
 #ifdef NORESHAPE
-      do k=1,mz
-         do j=js,je
-            do i=is,ie
-               ijk = ijk + 1
-               rcv(ijk) = vv%v7(i,j,k)
+         do k=1,mz
+            do j=js,je
+               do i=is,ie
+                  ijk = ijk + 1
+                  rcv(ijk) = vv%v7(i,j,k)
+               end do
             end do
          end do
-      end do
 #else
-      rcv(cv_s:cv_e) = RESHAPE(vv % v7(is:ie,js:je,1:mz), (/ijm/))
+         rcv(cv_s:cv_e) = RESHAPE(vv % v7(is:ie,js:je,1:mz), (/ijm/))
 #endif
-   end if
-   ! Store v8
-   mz = mzs(8)
-   if (mz > 0) then
-      ijm = ix * jy * mz
-      cv_s = cv_e + 1
-      cv_e = cv_s + ijm - 1
+      end if
+      ! Store v8
+      mz = mzs(8)
+      if (mz > 0) then
+         ijm = ix * jy * mz
+         cv_s = cv_e + 1
+         cv_e = cv_s + ijm - 1
 #ifdef NORESHAPE
-      do k=1,mz
-         do j=js,je
-            do i=is,ie
-               ijk = ijk + 1
-               rcv(ijk) = vv%v8(i,j,k)
+         do k=1,mz
+            do j=js,je
+               do i=is,ie
+                  ijk = ijk + 1
+                  rcv(ijk) = vv%v8(i,j,k)
+               end do
             end do
          end do
-      end do
 #else
-      rcv(cv_s:cv_e) = RESHAPE(vv % v8(is:ie,js:je,1:mz), (/ijm/))
+         rcv(cv_s:cv_e) = RESHAPE(vv % v8(is:ie,js:je,1:mz), (/ijm/))
 #endif
-   end if
-   ! Store v9
-   mz = mzs(9)
-   if (mz > 0) then
-      ijm = ix * jy * mz
-      cv_s = cv_e + 1
-      cv_e = cv_s + ijm - 1
+      end if
+      ! Store v9
+      mz = mzs(9)
+      if (mz > 0) then
+         ijm = ix * jy * mz
+         cv_s = cv_e + 1
+         cv_e = cv_s + ijm - 1
 #ifdef NORESHAPE
-      do k=1,mz
-         do j=js,je
-            do i=is,ie
-               ijk = ijk + 1
-               rcv(ijk) = vv%v9(i,j,k)
+         do k=1,mz
+            do j=js,je
+               do i=is,ie
+                  ijk = ijk + 1
+                  rcv(ijk) = vv%v9(i,j,k)
+               end do
             end do
          end do
-      end do
 #else
-      rcv(cv_s:cv_e) = RESHAPE(vv % v9(is:ie,js:je,1:mz), (/ijm/))
+         rcv(cv_s:cv_e) = RESHAPE(vv % v9(is:ie,js:je,1:mz), (/ijm/))
 #endif
-   end if
-   ! Store v10
-   mz = mzs(10)
-   if (mz > 0) then
-      ijm = ix * jy * mz
-      cv_s = cv_e + 1
-      cv_e = cv_s + ijm - 1
+      end if
+      ! Store v10
+      mz = mzs(10)
+      if (mz > 0) then
+         ijm = ix * jy * mz
+         cv_s = cv_e + 1
+         cv_e = cv_s + ijm - 1
 #ifdef NORESHAPE
-      do k=1,mz
-         do j=js,je
-            do i=is,ie
-               ijk = ijk + 1
-               rcv(ijk) = vv%v10(i,j,k)
+         do k=1,mz
+            do j=js,je
+               do i=is,ie
+                  ijk = ijk + 1
+                  rcv(ijk) = vv%v10(i,j,k)
+               end do
             end do
          end do
-      end do
 #else
-      rcv(cv_s:cv_e) = RESHAPE(vv % v10(is:ie,js:je,1:mz), (/ijm/))
+         rcv(cv_s:cv_e) = RESHAPE(vv % v10(is:ie,js:je,1:mz), (/ijm/))
 #endif
-   end if
-   ! Store v11
-   mz = mzs(11)
-   if (mz > 0) then
-      ijm = ix * jy * mz
-      cv_s = cv_e + 1
-      cv_e = cv_s + ijm - 1
+      end if
+   end if ! cloud_cv
+   if ( nmzs == 8 .or. nmzs == 13 ) then
+      ! Store v11
+      mz = mzs(nmzs-2)
+      if (mz > 0) then
+         ijm = ix * jy * mz
+         cv_s = cv_e + 1
+         cv_e = cv_s + ijm - 1
 #ifdef NORESHAPE
-      do k=1,mz
-         do j=js,je
-            do i=is,ie
-               ijk = ijk + 1
-               rcv(ijk) = vv%v11(i,j,k)
+         do k=1,mz
+            do j=js,je
+               do i=is,ie
+                  ijk = ijk + 1
+                  rcv(ijk) = vv%v11(i,j,k)
+               end do
             end do
          end do
-      end do
 #else
-      rcv(cv_s:cv_e) = RESHAPE(vv % v11(is:ie,js:je,1:mz), (/ijm/))
+         rcv(cv_s:cv_e) = RESHAPE(vv % v11(is:ie,js:je,1:mz), (/ijm/))
 #endif
-   end if
-#endif
-#ifdef CLOUD_CV
+      end if
+   end if ! w
+
    ! Store alpha:
-   mz = mzs(12)
-   ne = mzs(13)
-#else
-   ! Store alpha:
-   mz = mzs(6)
-   ne = mzs(7)
-#endif
+   mz = mzs(nmzs-1)
+   ne = mzs(nmzs)
    if ( ne > 0 ) then
       ix = ite_int - its_int + 1
       jy = jte_int - jts_int + 1

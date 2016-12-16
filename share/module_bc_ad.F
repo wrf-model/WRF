@@ -2077,8 +2077,7 @@ SUBROUTINE a_SPEC_BDY_FINAL(field, fieldb, mu, mub, msf, field_bdy_xs, &
       jtf = jte
     END IF
   END IF
-  IF (variable .EQ. 't') ktf = kte
-  IF (variable .EQ. 'm') ktf = kte
+  IF (variable .EQ. 'm') ktf = kde
   IF (variable .EQ. 'h') ktf = kde
   IF (variable .EQ. 'w') ktf = kde
   msfcouple = .false.

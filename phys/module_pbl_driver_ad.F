@@ -676,7 +676,7 @@ SUBROUTINE A_PBL_DRIVER(itimestep, dt, u_frame, v_frame, bldt, curr_secs&
 &                dtauy3d, dusfcg=dusfcg, dvsfcg=dvsfcg, var2d=var2d, &
 &                oc12d=oc12d, oa2d1=oa1, oa2d2=oa2, oa2d3=oa3, oa2d4=oa4&
 &                , ol2d1=ol1, ol2d2=ol2, ol2d3=ol3, ol2d4=ol4, znu=znu, &
-&                znw=znw, mut=mut, p_top=p_top, cp=cp, g=g, rd=r_d, rv=&
+&                znw=znw, p_top=p_top, cp=cp, g=g, rd=r_d, rv=&
 &                r_v, ep1=ep_1, pi=3.141592653, dt=dtbl, dx=dx, kpbl2d=&
 &                kpbl, itimestep=itimestep, ids=ids, ide=ide, jds=jds, &
 &                jde=jde, kds=kds, kde=kde, ims=ims, ime=ime, jms=jms, &
@@ -710,7 +710,7 @@ SUBROUTINE A_PBL_DRIVER(itimestep, dt, u_frame, v_frame, bldt, curr_secs&
 &                  dvsfcg=dvsfcg, dvsfcgb=dvsfcgb, var2d=var2d, oc12d=&
 &                  oc12d, oa2d1=oa1, oa2d2=oa2, oa2d3=oa3, oa2d4=oa4, &
 &                  ol2d1=ol1, ol2d2=ol2, ol2d3=ol3, ol2d4=ol4, znu=znu, &
-&                  znw=znw, mut=mut, mutb=mutb, p_top=p_top, cp=cp, g=g, &
+&                  znw=znw, p_top=p_top, cp=cp, g=g, &
 &                  rd=r_d, rv=r_v, ep1=ep_1, pi=3.141592653, dt=dtbl, dx=&
 &                  dx, kpbl2d=kpbl, itimestep=itimestep, ids=ids, ide=ide&
 &                  , jds=jds, jde=jde, kds=kds, kde=kde, ims=ims, ime=ime&

@@ -2146,7 +2146,9 @@ integer myproc
    USE module_bl_shinhong
    USE module_bl_mrf
    USE module_bl_gfs
-   USE module_bl_gfs2011, only : gfs2011init
+#if (HWRF==1)
+   USE module_bl_gfsedmf, only : gfsedmfinit
+#endif
    USE module_bl_acm
    USE module_sf_myjsfc
    USE module_sf_qnsesfc
@@ -3039,13 +3041,13 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                         ids, ide, jds, jde, kds, kde,         &
                         ims, ime, jms, jme, kms, kme,         &
                         its, ite, jts, jte, kts, kte          )
-#if (NMM_CORE == 1)
-      CASE (GFS2011SCHEME)
+#if (HWRF == 1)
+      CASE (GFSEDMFSCHEME)
            if(isfc .ne. 2)CALL wrf_error_fatal &
             ( 'module_physics_init: use myjsfc scheme for this pbl option' )
            IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
             ( 'module_physics_init: use myj (option 2) or boulac (option 8) with BEP/BEM urban scheme' )
-           CALL gfs2011init(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,&
+           CALL gfsedmfinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,&
                         RQCBLTEN,RQIBLTEN,P_QI,               &
                         PARAM_FIRST_SCALAR,                   &
                         restart,                              &
@@ -3053,6 +3055,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                         ids, ide, jds, jde, kds, kde,         &
                         ims, ime, jms, jme, kms, kme,         &
                         its, ite, jts, jte, kts, kte          )
+
 #endif
       CASE (MYJPBLSCHEME)
            if(isfc .ne. 2)CALL wrf_error_fatal &
@@ -3227,7 +3230,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    USE module_cu_gd,  ONLY : GDINIT
    USE module_cu_g3,  ONLY : G3INIT
    USE module_cu_sas
-   USE module_cu_mesosas
+   USE module_cu_scalesas
    USE module_cu_osas
    USE module_cu_camzm_driver, ONLY : zm_conv_init
    USE module_cu_nsas
@@ -3402,6 +3405,15 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                       ims, ime, jms, jme, kms, kme,               &
                       its, ite, jts, jte, kts, kte                )
 
+     CASE (SCALESASSCHEME)
+          CALL scalesasinit(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN,  &
+                      RUCUTEN,RVCUTEN,                            &   
+                      restart,P_QC,P_QI,PARAM_FIRST_SCALAR,       &
+                      allowed_to_read ,                           &
+                      ids, ide, jds, jde, kds, kde,               &
+                      ims, ime, jms, jme, kms, kme,               &
+                      its, ite, jts, jte, kts, kte                )
+
 #if ( EM_CORE == 1 )
           !BSINGH - For WRFCuP Scheme
     CASE (KFCUPSCHEME)  !wig: 18-Sep-2006
@@ -3419,15 +3431,6 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
 
     !BSINGH - ENDS
 #endif
-
-     CASE (MESO_SAS)   !Kwon
-          CALL msasinit(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN,       &
-                      RUCUTEN,RVCUTEN,                            &   ! gopal's doing for SAS
-                      restart,P_QC,P_QI,PARAM_FIRST_SCALAR,       &
-                      allowed_to_read ,                           &
-                      ids, ide, jds, jde, kds, kde,               &
-                      ims, ime, jms, jme, kms, kme,               &
-                      its, ite, jts, jte, kts, kte                )
 
      CASE (OSASSCHEME)
           CALL osasinit(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN,      &
@@ -3543,6 +3546,17 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
 !
    STEPCU = nint(CUDT*60./DT)
    STEPCU = max(STEPCU,1)
+
+!-- initialization
+
+   IF(start_of_simulation)THEN
+     DO j=jts,jtf
+     DO i=its,itf
+        RAINC(i,j)=0.
+        RAINCV(i,j)=0.
+     ENDDO
+     ENDDO
+   ENDIF
 
 !-- independent shallow convection schemes
    shcu_select: SELECT CASE(config_flags%shcu_physics)

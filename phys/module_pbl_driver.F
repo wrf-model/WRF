@@ -140,7 +140,7 @@ CONTAINS
    USE module_state_description, ONLY :                            &
                    YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME,ACMPBLSCHEME &
                    , QNSEPBLSCHEME, p_qi,param_first_scalar &
-                   , TEMFPBLSCHEME, GFS2011SCHEME                         &
+                   , TEMFPBLSCHEME, GFSEDMFSCHEME           &
                    , CAMUWPBLSCHEME                                       &
                    , FITCHSCHEME, SHINHONGSCHEME                          &
                    , GBMPBLSCHEME, MYJSFCSCHEME
@@ -156,7 +156,9 @@ CONTAINS
    USE module_bl_shinhong
    USE module_bl_mrf
    USE module_bl_gfs
-   USE module_bl_gfs2011, only: bl_gfs2011
+#if (HWRF==1)
+   USE module_bl_gfsedmf, only: bl_gfsedmf
+#endif
    USE module_bl_acm
    USE module_bl_gwdo
    USE module_bl_myjurb
@@ -267,7 +269,7 @@ CONTAINS
 !-- QFX           upward moisture flux at the surface (kg/m^2/s)
 !-- REGIME        flag indicating PBL regime (stable, unstable, etc.)
 !-- exch_m        exchange coefficient for momentum, m^2/s
-!-- exch_h        exchange coefficient for heat, K m/s 
+!-- exch_h        exchange coefficient for heat, m^2/s 
 !-- exch_tke      exchange coeff. for TKE [enhanced], m^2/s (gbmpbl scheme)
 !-- rthraten      tendency from radiation, used in GBM PBL scheme
 !-- akhs          sfc exchange coefficient of heat/moisture from MYJ
@@ -1101,7 +1103,7 @@ CONTAINS
               ,FLAG_QI=flag_qi                                      &
               ,g=g,cp=cp,rcp=rcp,r_d=r_d,r_v=r_v,cpv=cpv                    &
               ,Z=z,XLV=XLV,PSFC=PSFC               &
-              ,MUT=mut,P_TOP=p_top                  &
+              ,P_TOP=p_top                                          &
               ,ZNT=znt,HT=ht,UST=ust,ZOL=zol,HOL=hol,HPBL=pblh      &
               ,PSIM=psim,PSIH=psih,XLAND=xland                      &
               ,HFX=hfx,QFX=qfx,TSK=tskold,QSFC=qsfc,GZ1OZ0=gz1oz0   &
@@ -1145,7 +1147,7 @@ CONTAINS
               ,FLAG_QI=flag_qi                                      &
               ,CP=cp,G=g,ROVCP=rcp,RD=r_D,ROVG=rovg                 &
               ,DZ8W=dz8w,XLV=XLV,RV=r_v,PSFC=PSFC                   &
-              ,ZNU=znu,ZNW=znw,MUT=mut,P_TOP=p_top                  &
+              ,ZNU=znu,ZNW=znw,P_TOP=p_top                          &
               ,ZNT=znt,UST=ust,HPBL=pblh                            &
               ,PSIM=fm,PSIH=fhh,XLAND=xland                         &
               ,HFX=hfx,QFX=qfx                                      &
@@ -1222,7 +1224,7 @@ CONTAINS
               ,FLAG_QI=flag_qi                                      &
               ,CP=cp,G=g,ROVCP=rcp,RD=r_D,ROVG=rovg                 &
               ,DZ8W=dz8w,XLV=XLV,RV=r_v,PSFC=PSFC                   &
-              ,ZNU=znu,ZNW=znw,MUT=mut,P_TOP=p_top                  &
+              ,ZNU=znu,ZNW=znw,P_TOP=p_top                          &
               ,ZNT=znt,UST=ust,HPBL=pblh                            &
               ,PSIM=fm,PSIH=fhh,XLAND=xland                         &
               ,HFX=hfx,QFX=qfx                                      &
@@ -1364,13 +1366,13 @@ CONTAINS
                CALL wrf_error_fatal('Lack arguments to call GFS pbl')
            ENDIF
 
-#if (NMM_CORE==1)
-      CASE (GFS2011SCHEME)
+#if (HWRF==1)
+      CASE (GFSEDMFSCHEME)
            IF ( PRESENT( qv_curr )  .AND. PRESENT( qc_curr )  .AND. &
                 PRESENT( rqvblten ) .AND. PRESENT( rqcblten ) .AND. &
                                                         .TRUE.  ) THEN
              CALL wrf_debug(100,'in GFS')
-             CALL bl_gfs2011(                                       &
+             CALL bl_gfsedmf(                                       &
                U3D=u_phytmp,V3D=v_phytmp                            &
               ,TH3D=th_phy,T3D=t_phy                                &
               ,QV3D=qv_curr,QC3D=qc_curr,QI3D=qi_curr               &
@@ -1379,17 +1381,21 @@ CONTAINS
               ,RQVBLTEN=rqvblten,RQCBLTEN=rqcblten                  &
               ,RQIBLTEN=rqiblten                                    &
               ,CP=cp,G=g,ROVCP=rcp,R=r_d,ROVG=rovg                  &
+              ,P_QI=p_qi,P_FIRST_SCALAR=param_first_scalar          &
               ,DZ8W=dz8w,z=z,PSFC=psfc                              &
               ,UST=ust,PBL=pblh,PSIM=psim,PSIH=psih                 &
               ,HFX=hfx,QFX=qfx,TSK=tskold,GZ1OZ0=gz1oz0             &
               ,WSPD=wspd,BR=br                                      &
               ,DT=dtbl,KPBL2D=kpbl,EP1=ep_1,KARMAN=karman           &
-#if (NMM_CORE==1)
               ,DISHEAT=DISHEAT                                      &
-#endif
               ,RTHRATEN=RTHRATEN                    &
-              ,HPBL2D=HPBL2D, EVAP2D=EVAP2D, HEAT2D=HEAT2D          &   !Kwon add FOR SHAL. CON.
-              ,P_QI=p_qi,P_FIRST_SCALAR=param_first_scalar          &
+              ,HPBL2D=HPBL2D, EVAP2D=EVAP2D, HEAT2D=HEAT2D          &
+              ,U10=u10,V10=v10,ZNT=mznt                             &
+              ,DKU3D=dku3d,DKT3D=dkt3d                             &
+              ,VAR_RIC=VAR_RIC                                      &
+              ,coef_ric_l=coef_ric_l,coef_ric_s=coef_ric_s          &
+              ,ALPHA=gfs_alpha                                      &
+              ,xland=xland                                          &
               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
@@ -1406,10 +1412,9 @@ CONTAINS
                   PRESENT( rqvblten ) ,                             &
                   PRESENT( rqcblten )
                CALL wrf_debug(0,message)
-               CALL wrf_error_fatal('Lack arguments to call GFS pbl')
+               CALL wrf_error_fatal('Lack arguments to call GFS edmf pbl')
            ENDIF
 #endif
-
       CASE (MYJPBLSCHEME)
            IF ( PRESENT( qv_curr )  .AND. PRESENT( qc_curr )  .AND. &
                 PRESENT( rqvblten ) .AND. PRESENT( rqcblten ) .AND. &
@@ -1908,7 +1913,7 @@ CONTAINS
               ,VAR2D=var2d,OC12D=oc12d     &
               ,OA2D1=oa1,OA2D2=oa2,OA2D3=oa3,OA2D4=oa4  &
               ,OL2D1=ol1,OL2D2=ol2,OL2D3=ol3,OL2D4=ol4  &
-              ,ZNU=znu,ZNW=znw,MUT=mut,P_TOP=p_top                  &
+              ,ZNU=znu,ZNW=znw,P_TOP=p_top                &
               ,CP=cp,G=g,RD=r_d                           &
               ,RV=r_v,EP1=ep_1,PI=3.141592653                        &
               ,DT=dtbl,DX=dx,KPBL2D=kpbl,ITIMESTEP=itimestep      &

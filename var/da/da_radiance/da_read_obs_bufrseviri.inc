@@ -459,11 +459,14 @@ subroutine da_read_obs_bufrseviri (obstype,iv,infile)
      end do read_loop
   end do
   call closbf(lnbufr)
+
+  !Deallocate temporary arrays for next bufrfile do loop
+  deallocate(datasev1)
+  deallocate(datasev2)
+  deallocate(hdr)
+  deallocate(data_all)
 end do bufrfile
 
-deallocate(data_all) ! Deallocate data arrays
-
-  
    if (thinning .and. num_seviri_global > 0 ) then
 
 #ifdef DM_PARALLEL 

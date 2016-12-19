@@ -1,4 +1,4 @@
-subroutine da_get_gl_att_int_cdf(file, att_name, value, debug)
+subroutine da_get_gl_att_int_cdf(file, att_name, value, debug, return_code)
  
    !-----------------------------------------------------------------------
    ! Purpose: TBD
@@ -12,6 +12,7 @@ subroutine da_get_gl_att_int_cdf(file, att_name, value, debug)
    character (len=*),  intent(in)  :: att_name
    logical,            intent(in)  :: debug
    integer,            intent(out) :: value
+   integer, optional,  intent(out) :: return_code
 
    integer :: cdfid, rcode
 
@@ -27,6 +28,10 @@ subroutine da_get_gl_att_int_cdf(file, att_name, value, debug)
    end if
 
    rcode = NF_GET_ATT_inT(cdfid, nf_global, att_name, value)
+
+   if ( present(return_code) ) then
+      return_code = rcode
+   end if
 
    call ncclos(cdfid,rcode)
 

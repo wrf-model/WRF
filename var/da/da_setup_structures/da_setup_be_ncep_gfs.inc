@@ -103,6 +103,12 @@ subroutine da_setup_be_ncep_gfs( grid, be )
    be % v4 % mz =  kde- kds+1
    be % v5 % mz = 1           
 
+   be%cv_mz(1) = be%v1%mz
+   be%cv_mz(2) = be%v2%mz
+   be%cv_mz(3) = be%v3%mz
+   be%cv_mz(4) = be%v4%mz
+   be%cv_mz(5) = be%v5%mz
+
    be % cv % size1  = ijk
    be % cv % size2  = ijk
    be % cv % size3  = ijk

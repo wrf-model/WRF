@@ -138,6 +138,7 @@ subroutine da_fill_obs_structures(iv, ob, uvq_direct)
          ob % synop(n) % q = iv % synop(n) % q % inv
          ob % synop(n) % p = iv % synop(n) % p % inv
 
+        if ( q_error_options == 1 ) then
          ! Calculate q error from rh error:
 
          if (.not. present(uvq_direct) .or. (present(uvq_direct) .and. (.not. uvq_direct))) then
@@ -158,6 +159,7 @@ subroutine da_fill_obs_structures(iv, ob, uvq_direct)
 
          ! end if
          end if
+        end if !q_error_options
       end do      
    end if
 

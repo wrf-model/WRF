@@ -42,6 +42,7 @@ module da_transfer_model
       its,ite,jts,jte,kts,kte, ips,ipe,jps,jpe,kps,kpe, qlimit, &
       update_sfcdiags, use_wrf_sfcinfo
    use da_control, only: base_pres_strat, base_lapse_strat
+   use da_control, only: c1f, c2f, c1h, c2h, c3f, c3h, c4f, c4h
    use da_define_structures, only : xbx_type, be_type
    use da_par_util, only : da_patch_to_global
    use da_physics, only : da_check_rh_simple,da_roughness_from_lanu, &

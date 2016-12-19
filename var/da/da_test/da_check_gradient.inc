@@ -30,25 +30,11 @@ subroutine da_check_gradient(grid, config_flags, cv_size, xhat, cv, pdx, itertes
    real    :: ZTC00,ZTC02,ZTC10,ZTC12
    real    :: ZERMIN,ZT1TST,ZREF
    integer                           :: jp_start, jp_end       ! Start/end indices of Jp.
-#ifdef CLOUD_CV
-   integer                           :: mz(13)
-   integer                           :: sz(11)
-#else
-   integer                           :: mz(7)
-   integer                           :: sz(5)
-#endif
    integer :: ibest,idig
    integer :: ii, jj
 
    call da_trace_entry("da_check_gradient")
 
-#ifdef CLOUD_CV
-   mz = (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz, be%v6%mz, be%v7%mz,be%v8%mz,be%v9%mz,be%v10%mz,be%v11%mz,be%alpha%mz, be % ne /)
-   sz = (/ be%cv%size1, be%cv%size2, be%cv%size3, be%cv%size4, be%cv%size5, be%cv%size6, be%cv%size7,be%cv%size8,be%cv%size9,be%cv%size10,be%cv%size11i/)
-#else
-   mz = (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz, be%alpha%mz, be % ne /)
-   sz = (/ be%cv%size1, be%cv%size2, be%cv%size3, be%cv%size4, be%cv%size5 /)
-#endif
    jp_start   = be % cv % size_jb + be % cv % size_je + 1
    jp_end     = be % cv % size_jb + be % cv % size_je + be % cv % size_jp
 
@@ -92,7 +78,7 @@ subroutine da_check_gradient(grid, config_flags, cv_size, xhat, cv, pdx, itertes
    !----------------------------------------------------------------------------
 
    zf0=zfy
-   zdf0=da_dot_cv(cv_size,grad,xdir,grid,mz,jp_start,jp_end)
+   zdf0=da_dot_cv(cv_size,grad,xdir,grid,be%cv_mz,be%ncv_mz,jp_start,jp_end)
    if (rootproc) write(6,*)'grtest: F(0)=',zf0,' DF(0)=',zdf0
 
    IF (ZDF0>0.0) write(6,*) 'GRTEST Warning, DF should be negative'
@@ -125,7 +111,7 @@ subroutine da_check_gradient(grid, config_flags, cv_size, xhat, cv, pdx, itertes
       zfy = j_cost%total
 
       zfa=zfy
-      zdfa=da_dot_cv(cv_size,grad,xdir,grid,mz,jp_start,jp_end)
+      zdfa=da_dot_cv(cv_size,grad,xdir,grid,be%cv_mz,be%ncv_mz,jp_start,jp_end)
 
       if (rootproc) write(6,*)'grtest: alpha=',za,' F(a)=',zfa,' DF(a)=',zdfa
    

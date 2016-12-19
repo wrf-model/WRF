@@ -14,27 +14,21 @@ subroutine da_transform_xtoy_radar (grid, iv, y)
    type (iv_type), intent(in)    :: iv       ! Innovation vector (O-B).
    type (y_type),  intent(inout) :: y        ! y = h (grid%xa) (linear)
 
-   integer :: n                   ! Loop counter.      
-   integer :: k                         ! Index dimension.   
+   integer :: n, k
 
    real, allocatable :: model_p(:,:)
    real, allocatable :: model_u(:,:)
    real, allocatable :: model_v(:,:)
    real, allocatable :: model_w(:,:)
-   real, allocatable :: model_rho(:,:)
    real, allocatable :: model_qrn(:,:)
    real, allocatable :: model_qrnb(:,:)
-   real, allocatable :: model_qrnb2(:,:)
    real, allocatable :: model_ps(:)
    real, allocatable :: model_qsn(:,:)
    real, allocatable :: model_qgr(:,:)
-   real, allocatable :: model_qsnb(:,:)
-   real, allocatable :: model_qgrb(:,:)
    real, allocatable :: model_qv(:,:)
    real, allocatable :: model_qvb(:,:)
    real, allocatable :: model_t(:,:)
    real, allocatable :: model_tb(:,:)
-   real, allocatable :: model_tc(:,:)
 
    real    :: xr,yr,zr
 
@@ -48,20 +42,15 @@ subroutine da_transform_xtoy_radar (grid, iv, y)
    allocate (model_u(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
    allocate (model_v(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
    allocate (model_w(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
-   allocate (model_rho(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
    allocate (model_qrn(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
    allocate (model_qrnb(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
-   allocate (model_qrnb2(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
    allocate (model_ps(iv%info(radar)%n1:iv%info(radar)%n2))
    allocate (model_qsn(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
    allocate (model_qgr(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
-   allocate (model_qsnb(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
-   allocate (model_qgrb(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
    allocate (model_qv(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
    allocate (model_qvb(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
    allocate (model_t(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
    allocate (model_tb(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
-   allocate (model_tc(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
 
    do n=iv%info(radar)%n1,iv%info(radar)%n2
       do k = 1, iv%info(radar)%levels(n)
@@ -87,14 +76,8 @@ subroutine da_transform_xtoy_radar (grid, iv, y)
    call da_interp_lin_3d (grid%xa%q,   iv%info(radar), model_qv)
    call da_interp_lin_3d (grid%xa%t,   iv%info(radar), model_t)
    !basic states
-   call da_interp_lin_3d (grid%xb % rho, iv%info(radar), model_rho)
    call da_interp_lin_3d (grid%xb%t,   iv%info(radar), model_tb)
    call da_interp_lin_3d (grid%xb%q,   iv%info(radar), model_qvb)
-   call da_interp_lin_3d (grid%xb%qrn, iv%info(radar), model_qrnb2)
-   call da_interp_lin_3d (grid%xb%qsn, iv%info(radar), model_qsnb)
-   call da_interp_lin_3d (grid%xb%qgr, iv%info(radar), model_qgrb)
-
-   model_tc = model_tb - 273.15
 
    do n=iv%info(radar)%n1,iv%info(radar)%n2
 
@@ -159,9 +142,13 @@ subroutine da_transform_xtoy_radar (grid, iv, y)
    deallocate (model_qrn)
    deallocate (model_qrnb)
    deallocate (model_ps)
+   deallocate (model_qsn)
+   deallocate (model_qgr)
+   deallocate (model_qv)
+   deallocate (model_qvb)
+   deallocate (model_t)
+   deallocate (model_tb)
 
    if (trace_use) call da_trace_exit("da_transform_xtoy_radar")
 
-end subroutine da_transform_xtoy_radar 
-
-
+end subroutine da_transform_xtoy_radar

@@ -298,11 +298,9 @@ print*,__FILE__,jte,' xa2_v.xa2_v for row= ',jte+1,sum(xa2_v(its:ite, jte+1, kts
 #endif
    end if
 
-   if ( (use_radarobs .and. use_radar_rf) .or. (use_rad .and. crtm_cloud) ) then
-    if ( cloud_cv_options == 1 )then
+   if ( cloud_cv_options == 1 )then
       ! Partition of hydrometeor increments via warm rain process
       call da_moist_phys_lin(grid)
-    end if
    end if
 
       !----------------------------------------------------------------------
@@ -388,11 +386,9 @@ print*,__FILE__,jte,' grid%xa%v.grid%x%%v for row= ',jte+1,sum(grid%xa%v(its:ite
       if ( .not. var4d ) call da_uvprho_to_w_adj(grid)
    end if
 
-   if ( (use_radarobs .and. use_radar_rf) .or. (use_rad .and. crtm_cloud) ) then
-     if ( cloud_cv_options == 1) then
+   if ( cloud_cv_options == 1) then
       ! Partition of hydrometeor increments via warm rain process
       call da_moist_phys_adj(grid)
-     end if
    end if
 
       if (use_ssmt1obs .or. use_ssmt2obs .or. use_gpspwobs .or. &

@@ -483,6 +483,26 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
    ENDIF
 !  theta flux divergence
 
+! 11/2016 ERM: Use WENO for theta flux on 3rd RK step if using WENO_SCALAR or WENOPD_SCALAR
+! to be consistent with other scalar fluxes
+      IF(  ( config_flags%scalar_adv_opt == WENO_SCALAR  &
+                 .or. config_flags%scalar_adv_opt == WENOPD_SCALAR    &
+                 .or. config_flags%moist_adv_opt == WENO_SCALAR       &
+                 .or. config_flags%moist_adv_opt == WENOPD_SCALAR     &
+                       )  .and. (rk_step == 3) ) THEN
+! also use weno for monotonic scalar option so that the h_ and z_tendency arrays are not needed
+
+        CALL advect_scalar_weno ( t, t, t_tend, ru, rv, ww,     &
+                                 mut, time_step,                &
+                                 config_flags,                  &
+                                 msfux, msfuy, msfvx, msfvy,    &
+                                 msftx, msfty, fnm, fnp,        &
+                                 rdx, rdy, rdnw,                &
+                                 ids, ide, jds, jde, kds, kde,  &
+                                 ims, ime, jms, jme, kms, kme,  &
+                                 its, ite, jts, jte, kts, kte  )
+     ELSE
+
      CALL advect_scalar ( t, t, t_tend, ru, rv, ww,     &
                           mut, time_step, config_flags, &
                           msfux, msfuy, msfvx, msfvy,   &
@@ -492,6 +512,8 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                           ims, ime, jms, jme, kms, kme, &
                           its, ite, jts, jte, kts, kte ) 
 
+     ENDIF
+     
      IF ( config_flags%cu_physics == GDSCHEME  .OR.     &
           config_flags%cu_physics == GFSCHEME  .OR.     &
           config_flags%cu_physics == G3SCHEME  .OR.     &

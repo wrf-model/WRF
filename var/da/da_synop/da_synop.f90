@@ -13,7 +13,9 @@ module da_synop
       trace_use_dull, synop, max_ext_its,qcstat_conv_unit,ob_vars, &
       convert_fd2uv, convert_uv2fd, max_error_spd, max_error_dir, &
       max_omb_spd, max_omb_dir, pi, qc_rej_both, &
-      wind_sd_synop, wind_stats_sd 
+      wind_sd_synop, wind_stats_sd
+   use da_control, only : surface_correction, sfc_hori_intp_options, &
+      q_error_options, sfcht_adjust_q, obs_err_inflate, stn_ht_diff_scale
    use da_grid_definitions, only : da_ffdduv, da_ffdduv_model, da_ffdduv_diagnose 
    use da_define_structures, only : maxmin_type, iv_type, y_type, jo_type, &
       bad_data_type, x_type, number_type, bad_data_type
@@ -24,10 +26,11 @@ module da_synop
    use da_par_util, only : da_proc_stats_combine, &
       da_deallocate_global_synop, da_to_global_synop
    use da_physics, only : da_sfc_pre, da_transform_xtopsfc, &
-      da_transform_xtopsfc_adj, da_uv_to_sd_lin, da_uv_to_sd_adj
+      da_transform_xtopsfc_adj, da_uv_to_sd_lin, da_uv_to_sd_adj, &
+      da_tpq_to_rh, da_tp_to_qs, da_get_q_error
    use da_statistics, only : da_stats_calculate
    use da_tools, only : da_max_error_qc, da_residual, da_obs_sfc_correction, &
-                        da_buddy_qc, da_convert_zk
+                        da_buddy_qc, da_convert_zk, da_sfc_hori_interp_weights
    use da_tracing, only : da_trace_entry, da_trace_exit
 
    ! The "stats_synop_type" is ONLY used locally in da_synop:

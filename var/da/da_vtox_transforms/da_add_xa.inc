@@ -16,13 +16,13 @@ subroutine da_add_xa (xa, xa_ens)
    xa % t(:,:,:)   = xa % t(:,:,:)   + xa_ens % t(:,:,:)
    xa % q(:,:,:)   = xa % q(:,:,:)   + xa_ens % q(:,:,:)
 
-#ifdef CLOUD_CV
-   xa % qcw(:,:,:) = xa % qcw(:,:,:) + xa_ens % qcw(:,:,:)
-   xa % qrn(:,:,:) = xa % qrn(:,:,:) + xa_ens % qrn(:,:,:)
-   xa % qci(:,:,:) = xa % qci(:,:,:) + xa_ens % qci(:,:,:)
-   xa % qsn(:,:,:) = xa % qsn(:,:,:) + xa_ens % qsn(:,:,:)
-   xa % qgr(:,:,:) = xa % qgr(:,:,:) + xa_ens % qgr(:,:,:)
-#endif
+   if ( alpha_hydrometeors ) then
+      xa % qcw(:,:,:) = xa % qcw(:,:,:) + xa_ens % qcw(:,:,:)
+      xa % qrn(:,:,:) = xa % qrn(:,:,:) + xa_ens % qrn(:,:,:)
+      xa % qci(:,:,:) = xa % qci(:,:,:) + xa_ens % qci(:,:,:)
+      xa % qsn(:,:,:) = xa % qsn(:,:,:) + xa_ens % qsn(:,:,:)
+      xa % qgr(:,:,:) = xa % qgr(:,:,:) + xa_ens % qgr(:,:,:)
+   end if
 
    xa % psfc(:,:)  = xa % psfc(:,:)  + xa_ens % psfc(:,:)
 

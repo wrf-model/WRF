@@ -66,90 +66,59 @@ subroutine da_vertical_transform(grid, string, be, vertical_wgt, vv, vp)
       else
          vp % v5(its:ite,jts:jte,kts:kts) = 0.0
       end if
-#ifdef CLOUD_CV
-!
-     if(cloud_cv_options == 2)then
-      if (be % v6 % mz > 0) then
-         call da_transform_vvtovp (grid, be % v6 % evec, be % v6 % val, vertical_wgt, &
-            vv % v6, vp % v6, be % v6 % mz, kte)
-      else
-         vp % v6(its:ite,jts:jte,kts:kte) = 0.0
+
+      ! for cloud_cv_options<=1 and not use_cv_w
+      vp % v6  = 0.0
+      vp % v7  = 0.0
+      vp % v8  = 0.0
+      vp % v9  = 0.0
+      vp % v10 = 0.0
+      vp % v11 = 0.0
+
+      if ( cloud_cv_options == 2 ) then
+         if (be % v6 % mz > 0) then
+            call da_transform_vvtovp (grid, be % v6 % evec, be % v6 % val, vertical_wgt, &
+               vv % v6, vp % v6, be % v6 % mz, kte)
+         end if
+
+         if (be % v7 % mz > 0) then
+            call da_transform_vvtovp (grid, be % v7 % evec, be % v7 % val, vertical_wgt, &
+               vv % v7, vp % v7, be % v7 % mz, kte)
+         end if
+
+         if (be % v8 % mz > 0) then
+            call da_transform_vvtovp (grid, be % v8 % evec, be % v8 % val, vertical_wgt, &
+               vv % v8, vp % v8, be % v8 % mz, kte)
+         end if
+
+         if (be % v9 % mz > 0) then
+            call da_transform_vvtovp (grid, be % v9 % evec, be % v9 % val, vertical_wgt, &
+               vv % v9, vp % v9, be % v9 % mz, kte)
+         end if
+
+         if (be % v10% mz > 0) then
+            call da_transform_vvtovp (grid, be % v10 % evec, be % v10 % val, vertical_wgt, &
+               vv % v10, vp % v10, be % v10 % mz, kte)
+         end if
+      else if ( cloud_cv_options == 3 ) then
+         if ( be % v6  % mz > 0) vp % v6  = vv % v6
+         if ( be % v7  % mz > 0) vp % v7  = vv % v7
+         if ( be % v8  % mz > 0) vp % v8  = vv % v8
+         if ( be % v9  % mz > 0) vp % v9  = vv % v9
+         if ( be % v10 % mz > 0) vp % v10 = vv % v10
       end if
 
-      if (be % v7 % mz > 0) then
-         call da_transform_vvtovp (grid, be % v7 % evec, be % v7 % val, vertical_wgt, &
-            vv % v7, vp % v7, be % v7 % mz, kte)
-      else
-         vp % v7(its:ite,jts:jte,kts:kte) = 0.0
+      if ( use_cv_w ) then
+         if (be % v11 % mz > 0) then
+            if ( cloud_cv_options == 2 ) then
+               call da_transform_vvtovp (grid, be % v11 % evec, be % v11 % val, vertical_wgt, &
+                  vv % v11, vp % v11, be % v11 % mz, kte)
+            else if ( cloud_cv_options == 3 ) then
+               vp % v11 = vv % v11
+            end if
+         end if
       end if
 
-      if (be % v8 % mz > 0) then
-         call da_transform_vvtovp (grid, be % v8 % evec, be % v8 % val, vertical_wgt, &
-            vv % v8, vp % v8, be % v8 % mz, kte)
-      else
-         vp % v8(its:ite,jts:jte,kts:kte) = 0.0
-      end if
-
-      if (be % v9 % mz > 0) then
-         call da_transform_vvtovp (grid, be % v9 % evec, be % v9 % val, vertical_wgt, &
-            vv % v9, vp % v9, be % v9 % mz, kte)
-      else
-         vp % v9(its:ite,jts:jte,kts:kte) = 0.0
-      end if
-
-      if (be % v10% mz > 0) then
-         call da_transform_vvtovp (grid, be % v10 % evec, be % v10 % val, vertical_wgt, &
-            vv % v10, vp % v10, be % v10 % mz, kte)
-      else
-         vp % v10(its:ite,jts:jte,kts:kte) = 0.0
-      end if
-
-      if (be % v11 % mz > 0) then
-         call da_transform_vvtovp (grid, be % v11 % evec, be % v11 % val, vertical_wgt, &
-            vv % v11, vp % v11, be % v11 % mz, kte)
-      else
-         vp % v11(its:ite,jts:jte,kts:kte) = 0.0
-      end if
-
-     elseif(cloud_cv_options == 3)then
-      if (be % v6 % mz > 0) then
-         vp % v6 = vv % v6
-      else
-         vp % v6 = 0.0
-      end if
-
-      if (be % v7 % mz > 0) then
-         vp % v7 = vv % v7
-      else
-         vp % v7 = 0.0
-      end if
-
-      if (be % v8 % mz > 0) then
-         vp % v8 = vv % v8
-      else
-         vp % v8 = 0.0
-      end if
-
-      if (be % v9 % mz > 0) then
-         vp % v9 = vv % v9
-      else
-         vp % v9 = 0.0
-      end if
-
-      if (be % v10 % mz > 0) then
-         vp % v10 = vv % v10
-      else
-         vp % v10 = 0.0
-      end if
-
-      if (be % v11 % mz > 0) then
-         vp % v11 = vv % v11
-      else
-         vp % v11 = 0.0
-      end if
-
-     end if
-#endif
       if ( be % ne > 0 .and. be % alpha % mz > 0 ) then
          do n = 1, be % ne
             if ( anal_type_hybrid_dual_res ) then
@@ -210,72 +179,72 @@ subroutine da_vertical_transform(grid, string, be, vertical_wgt, vv, vp)
          end if
       end if
 
-#ifdef CLOUD_CV
-     if(cloud_cv_options == 2)then
-      if (be % v6 % mz > 0) then
-         call da_transform_vptovv (be % v6 % evec, be % v6 % val, vertical_wgt, &
-            vp % v6, vv % v6, be % v6 % mz, kds,kde, ims,ime, jms,jme, kms,kme, &
-            its,ite, jts,jte, kts,kte)
+      if ( cloud_cv_options == 2 ) then
+         if (be % v6 % mz > 0) then
+            call da_transform_vptovv (be % v6 % evec, be % v6 % val, vertical_wgt, &
+               vp % v6, vv % v6, be % v6 % mz, kds,kde, ims,ime, jms,jme, kms,kme, &
+               its,ite, jts,jte, kts,kte)
+         end if
+
+         if (be % v7 % mz > 0) then
+            call da_transform_vptovv (be % v7 % evec, be % v7 % val, vertical_wgt, &
+               vp % v7, vv % v7, be % v7 % mz, kds,kde, ims,ime, jms,jme, kms,kme, &
+               its,ite, jts,jte, kts,kte)
+         end if
+
+         if (be % v8 % mz > 0) then
+            call da_transform_vptovv (be % v8 % evec, be % v8 % val, vertical_wgt, &
+               vp % v8, vv % v8, be % v8 % mz, kds,kde, ims,ime, jms,jme, kms,kme, &
+               its,ite, jts,jte, kts,kte)
+         end if
+
+         if (be % v9 % mz > 0) then
+            call da_transform_vptovv (be % v9 % evec, be % v9 % val, vertical_wgt, &
+               vp % v9, vv % v9, be % v9 % mz, kds,kde, ims,ime, jms,jme, kms,kme, &
+               its,ite, jts,jte, kts,kte)
+         end if
+
+         if (be % v10 % mz > 0) then
+            call da_transform_vptovv (be % v10 % evec, be % v10 % val, vertical_wgt, &
+               vp % v10, vv % v10, be % v10 % mz, kds,kde, ims,ime, jms,jme, kms,kme, &
+               its,ite, jts,jte, kts,kte)
+         end if
+
+      else if ( cloud_cv_options == 3 ) then
+         if (be % v6 % mz > 0) then
+            vv % v6 = vp % v6
+         end if
+
+         if (be % v7 % mz > 0) then
+            vv % v7 = vp % v7
+         end if
+
+         if (be % v8 % mz > 0) then
+            vv % v8 = vp % v8
+         end if
+
+         if (be % v9 % mz > 0) then
+            vv % v9 = vp % v9
+         end if
+
+         if (be % v10 % mz > 0) then
+            vv % v10 = vp % v10
+         end if
+
       end if
 
-      if (be % v7 % mz > 0) then
-         call da_transform_vptovv (be % v7 % evec, be % v7 % val, vertical_wgt, &
-            vp % v7, vv % v7, be % v7 % mz, kds,kde, ims,ime, jms,jme, kms,kme, &
-            its,ite, jts,jte, kts,kte)
+      if ( use_cv_w ) then
+         if (be % v11 % mz > 0) then
+             if ( cloud_cv_options == 2 ) then
+                call da_transform_vptovv (be % v11 % evec, be % v11 % val, vertical_wgt, &
+                   vp % v11, vv % v11, be % v11 % mz, kds,kde, ims,ime, jms,jme, kms,kme, &
+                   its,ite, jts,jte, kts,kte)
+             else if ( cloud_cv_options == 3 ) then
+                vv % v11 = vp % v11
+             end if
+         end if
       end if
 
-      if (be % v8 % mz > 0) then
-         call da_transform_vptovv (be % v8 % evec, be % v8 % val, vertical_wgt, &
-            vp % v8, vv % v8, be % v8 % mz, kds,kde, ims,ime, jms,jme, kms,kme, &
-            its,ite, jts,jte, kts,kte)
-      end if
-
-      if (be % v9 % mz > 0) then
-         call da_transform_vptovv (be % v9 % evec, be % v9 % val, vertical_wgt, &
-            vp % v9, vv % v9, be % v9 % mz, kds,kde, ims,ime, jms,jme, kms,kme, &
-            its,ite, jts,jte, kts,kte)
-      end if
-
-      if (be % v10 % mz > 0) then
-         call da_transform_vptovv (be % v10 % evec, be % v10 % val, vertical_wgt, &
-            vp % v10, vv % v10, be % v10 % mz, kds,kde, ims,ime, jms,jme, kms,kme, &
-            its,ite, jts,jte, kts,kte)
-      end if
-
-      if (be % v11 % mz > 0) then
-         call da_transform_vptovv (be % v11 % evec, be % v11 % val, vertical_wgt, &
-            vp % v11, vv % v11, be % v11 % mz, kds,kde, ims,ime, jms,jme, kms,kme, &
-            its,ite, jts,jte, kts,kte)
-      end if
-
-
-     elseif(cloud_cv_options == 3)then
-      if (be % v6 % mz > 0) then
-         vv % v6 = vp % v6
-      end if
-
-      if (be % v7 % mz > 0) then
-         vv % v7 = vp % v7
-      end if
-
-      if (be % v8 % mz > 0) then
-         vv % v8 = vp % v8
-      end if
-
-      if (be % v9 % mz > 0) then
-         vv % v9 = vp % v9
-      end if
-
-      if (be % v10 % mz > 0) then
-         vv % v10 = vp % v10
-      end if
-
-      if (be % v11 % mz > 0) then
-         vv % v11 = vp % v11
-      end if
-
-     end if
-#endif
       if ( be % ne > 0 .and. be % alpha % mz > 0 ) then
          do n = 1, be % ne
 !           call da_transform_vptovv (be % alpha % evec, be % alpha % val, vertical_wgt, &
@@ -323,65 +292,66 @@ subroutine da_vertical_transform(grid, string, be, vertical_wgt, vv, vp)
          end if
       end if
 
-#ifdef CLOUD_CV
-     if(cloud_cv_options == 2)then
-      if (be % v6 % mz > 0) then
-         call da_transform_vvtovp_adj (grid, be % v6 % evec, be % v6 % val, vertical_wgt, &
-            vp % v6, vv % v6, be % v6 % mz, kte)
+      if ( cloud_cv_options == 2 ) then
+         if (be % v6 % mz > 0) then
+            call da_transform_vvtovp_adj (grid, be % v6 % evec, be % v6 % val, vertical_wgt, &
+               vp % v6, vv % v6, be % v6 % mz, kte)
+         end if
+
+         if (be % v7 % mz > 0) then
+            call da_transform_vvtovp_adj (grid, be % v7 % evec, be % v7 % val, vertical_wgt, &
+               vp % v7, vv % v7, be % v7 % mz, kte)
+         end if
+
+         if (be % v8 % mz > 0) then
+            call da_transform_vvtovp_adj (grid, be % v8 % evec, be % v8 % val, vertical_wgt, &
+               vp % v8, vv % v8, be % v8 % mz, kte)
+         end if
+
+         if (be % v9 % mz > 0) then
+            call da_transform_vvtovp_adj (grid, be % v9 % evec, be % v9 % val, vertical_wgt, &
+               vp % v9, vv % v9, be % v9 % mz, kte)
+         end if
+
+         if (be % v10 % mz > 0) then
+            call da_transform_vvtovp_adj (grid, be % v10 % evec, be % v10 % val, vertical_wgt, &
+               vp % v10, vv % v10, be % v10 % mz, kte)
+         end if
+
+      else if ( cloud_cv_options == 3 ) then
+         if (be % v6 % mz > 0) then
+            vv % v6 = vp % v6
+         end if
+
+         if (be % v7 % mz > 0) then
+            vv % v7 = vp % v7
+         end if
+
+         if (be % v8 % mz > 0) then
+            vv % v8 = vp % v8
+         end if
+
+         if (be % v9 % mz > 0) then
+            vv % v9 = vp % v9
+         end if
+
+         if (be % v10 % mz > 0) then
+            vv % v10 = vp % v10
+         end if
+
       end if
 
-      if (be % v7 % mz > 0) then
-         call da_transform_vvtovp_adj (grid, be % v7 % evec, be % v7 % val, vertical_wgt, &
-            vp % v7, vv % v7, be % v7 % mz, kte)
+      if ( use_cv_w ) then
+         if (be % v11 % mz > 0) then
+            if ( cloud_cv_options == 2 ) then
+               call da_transform_vvtovp_adj (grid, be % v11 % evec, be % v11 % val, vertical_wgt, &
+                  vp % v11, vv % v11, be % v11 % mz, kte)
+            else if ( cloud_cv_options == 3 ) then
+               vv % v11 = vp % v11
+            end if
+         end if
       end if
 
-      if (be % v8 % mz > 0) then
-         call da_transform_vvtovp_adj (grid, be % v8 % evec, be % v8 % val, vertical_wgt, &
-            vp % v8, vv % v8, be % v8 % mz, kte)
-      end if
-
-      if (be % v9 % mz > 0) then
-         call da_transform_vvtovp_adj (grid, be % v9 % evec, be % v9 % val, vertical_wgt, &
-            vp % v9, vv % v9, be % v9 % mz, kte)
-      end if
-
-      if (be % v10 % mz > 0) then
-         call da_transform_vvtovp_adj (grid, be % v10 % evec, be % v10 % val, vertical_wgt, &
-            vp % v10, vv % v10, be % v10 % mz, kte)
-      end if
-
-      if (be % v11 % mz > 0) then
-         call da_transform_vvtovp_adj (grid, be % v11 % evec, be % v11 % val, vertical_wgt, &
-            vp % v11, vv % v11, be % v11 % mz, kte)
-      end if
-
-     elseif(cloud_cv_options == 3)then
-      if (be % v6 % mz > 0) then
-         vv % v6 = vp % v6
-      end if
-
-      if (be % v7 % mz > 0) then
-         vv % v7 = vp % v7
-      end if
-
-      if (be % v8 % mz > 0) then
-         vv % v8 = vp % v8
-      end if
-
-      if (be % v9 % mz > 0) then
-         vv % v9 = vp % v9
-      end if
-
-      if (be % v10 % mz > 0) then
-         vv % v10 = vp % v10
-      end if
-
-      if (be % v11 % mz > 0) then
-         vv % v11 = vp % v11
-      end if
-
-     end if
-#endif
       if ( be % ne > 0 .and. be % alpha % mz > 0 ) then
          do n = 1, be % ne
             if ( anal_type_hybrid_dual_res ) then

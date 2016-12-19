@@ -163,6 +163,13 @@
       real :: ttim,btimx
       real :: et_max,this_tim
       integer :: n_print_time
+!!BEGIN: LSM changes for LANDFALL: Subashini 7/27/2016
+      integer :: move_land_time
+      integer :: SOIL_ID, VEG_ID, DIRN
+      real :: land_albedo, land_emiss, land_vgfrac, land_smc, land_z0
+      NAMELIST/param_land/SOIL_ID, VEG_ID, DIRN, land_albedo, land_emiss, land_vgfrac, land_smc,land_z0
+!! END: LSM changes for LANDFALL : Subashini 7/27/2016
+
 !
 !-----------------------------------------------------------------------
 !
@@ -350,7 +357,7 @@
 
       ADVECT_Q2=.TRUE.
       if(CONFIG_FLAGS%BL_PBL_PHYSICS == GFSSCHEME .OR. &
-         CONFIG_FLAGS%BL_PBL_PHYSICS == GFS2011SCHEME) THEN
+         CONFIG_FLAGS%BL_PBL_PHYSICS == GFSEDMFSCHEME) THEN
          ADVECT_Q2=.FALSE.
       endif
 
@@ -1768,7 +1775,6 @@
      &   (CONFIG_FLAGS%CU_PHYSICS.eq.KFETASCHEME .or.                     &
      &   CONFIG_FLAGS%CU_PHYSICS.eq.OSASSCHEME .or.                       &
      &   CONFIG_FLAGS%CU_PHYSICS.eq.NSASSCHEME .or.                       &
-     &   CONFIG_FLAGS%CU_PHYSICS.eq.MESO_SAS .or.                         &   !Kwon
      &   CONFIG_FLAGS%CU_PHYSICS.eq.SASSCHEME))THEN                       ! 
 !
 #ifdef NMM_FIND_LOAD_IMBALANCE
@@ -1845,12 +1851,17 @@
      &             ,grid%prec,grid%acprec,grid%cuprec,grid%cuppt,grid%cprate                    &
      &             ,grid%sm,grid%hbm2,grid%pblh,grid%lpbl,grid%cnvbot,grid%cnvtop                         &
      &             ,grid%htop,grid%hbot,grid%htopd,grid%hbotd,grid%htops,grid%hbots                  &
-     &             ,RTHBLTEN,RQVBLTEN,RTHRATEN                         & 
+     &             ,RTHBLTEN,RQVBLTEN,RTHRATEN                          & 
 #if (NMM_CORE==1)                  
      &             ,grid%twbs,grid%qwbs                                &
-     &                 ,grid%DUCUDT, grid%DVCUDT, GRID%MOMMIX, grid%random             &
+     &             ,grid%DUCUDT, grid%DVCUDT, GRID%MOMMIX, grid%random & 
+     &             ,grid%DTHCUDT,grid%DQVCUDT,grid%DQRCUDT,grid%DQCCUDT&! wang, output CU tendency 
+     &             ,grid%DQICUDT,grid%DQSCUDT                          &
 #endif
      &             ,grid%hpbl2d,grid%evap2d,grid%heat2d                &
+     &             ,grid%dx_nmm,grid%dy_nmm                            & !wang, dx2d, dy
+     &             ,grid%scalefun, grid%scalefun1                      & !wang
+     &             ,grid%sigmu, grid%sigmu1                            & !wang
      &             ,grid%avcnvc,grid%acutim,grid%ihe,grid%ihw          &
      &             ,GRID,CONFIG_FLAGS                                  &
      &             ,IDS,IDF,JDS,JDF,KDS,KDE                            &
@@ -1880,7 +1891,6 @@
         IF(MOD(grid%ntsd, GRID%NCNVC).eq.0.and.                 &
      &    (CONFIG_FLAGS%CU_PHYSICS.eq.OSASSCHEME.or.            &
      &     CONFIG_FLAGS%CU_PHYSICS.eq.NSASSCHEME.or.            &
-     &     CONFIG_FLAGS%CU_PHYSICS.eq.MESO_SAS.or.              & !Kwon
      &     CONFIG_FLAGS%CU_PHYSICS.eq.SASSCHEME))THEN 
 !emc_2010_bugfix_h50
 !
@@ -2104,8 +2114,16 @@
      &          ,grid%Q_BTYS,grid%Q_BTYE,grid%U_BTXS,grid%U_BTXE,grid%U_BTYS,grid%U_BTYE,grid%V_BTXS       &
      &          ,grid%V_BTXE,grid%V_BTYS,grid%V_BTYE,grid%Q2_BTXS,grid%Q2_BTXE,grid%Q2_BTYS,grid%Q2_BTYE   &
      &          ,grid%pd,grid%t,grid%q,grid%q2,grid%pint &
-     &          ,GRID%SPEC_BDY_WIDTH,grid%z                                  &
-     &          ,grid%ihe,grid%ihw,grid%ive,grid%ivw                                        &
+!!BEGIN: LSM changes for LANDFALL: Subashini 7/27/2016
+#ifdef IDEAL_NMM_TC
+     &          ,grid%SM_BXS, grid%SM_BXE, grid%SM_BYS, grid%SM_BYE     & ! gopal's doing for land motion
+     &          ,grid%SM_BTXS, grid%SM_BTXE, grid%SM_BTYS, grid%SM_BTYE &
+     &          ,grid%SM                                                &
+     &          ,grid%THS 						&
+#endif
+!!END: LSM changes for LANDFALL : Subashini 7/27/2016
+     &          ,GRID%SPEC_BDY_WIDTH,grid%z                             &
+     &          ,grid%ihe,grid%ihw,grid%ive,grid%ivw                    &
      &          ,IDS,IDF,JDS,JDF,KDS,KDE                                &
      &          ,IMS,IME,JMS,JME,KMS,KME                                &
      &          ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -2525,6 +2543,83 @@
      diag_tim=diag_tim+now_time()-btimx
    endif hwrfx_mlsp
 #endif
+!!BEGIN: LSM changes for LANDFALL: Subashini 7/27/2016
+#ifdef IDEAL_NMM_TC
+
+     IF(grid%NTSD==0 .and. grid%id .gt. 1)THEN  ! Initialize some variables
+           call wrf_debug(1,'NESTS INITIALIZED TO WATER WORLD')
+           grid%sm=1.0    ! Initialize a water world in the nests
+     ENDIF
+!
+     move_land_time=nint(1200./30) ! This needs to be changed for different parent domain resolution & dt.  Subashini V1.0 7.13.2016
+
+     IF(MOD(grid%NTSD,move_land_time)==0)THEN    ! n_print_time
+
+       call wrf_debug(1,'LAND ADVECTED W2E FOR IDEALIZED LSM')
+
+#ifdef DM_PARALLEL
+#    include "HALO_NMM_INIT_3.inc"
+#endif
+!open ideal_land.nml for namelist values
+
+      open(8,FILE='land.nml')
+      read(UNIT=8,NML=param_land)
+      close(UNIT=8)
+
+       CALL MOVE_LAND (grid%SM,grid%nmm_tsk        &
+                      ,grid%SST,grid%FIS           &
+                      ,grid%PINT,grid%T,grid%Q     &
+                      ,grid%NTSD                   &
+                      ,IDS,IDE,JDS,JDE,KDS,KDE     &
+                      ,IMS,IME,JMS,JME,KMS,KME     &
+                      ,ITS,ITE,JTS,JTE,KTS,KTE,DIRN)
+
+!For diurnal temp changes - comment out for constant temperature and
+!uncomment  temperature fix in module_surface_driver.F and
+!module_radiation_driver.F
+
+     IF(DIRN == 1) THEN
+      DO J = JMS, JME
+       DO I = IMS,IME
+        if(grid%SM(I,J) .le. 0.5)then
+         grid%nmm_tsk(I,J)=grid%nmm_tsk(I-1,J)
+         grid%albedo(I,J)=land_albedo
+         grid%epsr(I,J)=land_emiss
+         grid%isltyp(I,J)=SOIL_ID
+         grid%ivgtyp(I,J)=VEG_ID
+         grid%vegfrc(I,J)=land_vgfrac
+         grid%z0(I,J)=land_z0
+         DO K = 1,grid%num_soil_layers
+         grid%smc(I,K,J)=land_smc
+         ENDDO
+        endif
+       ENDDO
+      ENDDO
+     ELSE IF(DIRN == 2) THEN
+      DO J = JMS, JME
+       DO I = IME,IMS, -1
+        if(grid%SM(I,J) .le. 0.5)then
+         grid%nmm_tsk(I,J)=grid%nmm_tsk(I+1,J)
+         grid%albedo(I,J)=land_albedo
+         grid%epsr(I,J)=land_emiss
+         grid%isltyp(I,J)=SOIL_ID
+         grid%ivgtyp(I,J)=VEG_ID
+         grid%vegfrc(I,J)=land_vgfrac
+         grid%z0(I,J)=land_z0
+         DO K = 1,grid%num_soil_layers
+         grid%smc(I,K,J)=land_smc
+         ENDDO
+        endif
+       ENDDO
+      ENDDO
+     ELSE
+     CALL wrf_error_fatal ('Choose between 1 or 2 in land.nml')
+     ENDIF
+
+     ENDIF
+
+#endif
+!!END: LSM changes for LANDFALL : Subashini 7/27/2016
 
 !#define COPY_OUT
 !#include "scalar_derefs.inc"

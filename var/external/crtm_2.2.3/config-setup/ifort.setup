@@ -1,0 +1,16 @@
+#!/bin/sh
+#-------------------------------------------------------------------------------#
+# PRODUCTION build settings for Linux ifort compiler
+#-------------------------------------------------------------------------------#
+
+export FC="ifort"
+
+export FCFLAGS="\
+-O3 \
+-fp-model source \
+-free \
+-assume byterecl"
+
+export LDFLAGS=""
+
+export LIBS=""

@@ -119,7 +119,7 @@ subroutine da_setup_obs_structures_radar( grid, ob, iv )
                do j=int(iv%info(radar)%j(1,n)), int(iv%info(radar)%j(1,n))+1
                   do k=kts, kte
                      grid%xb%delt(i,j,k) = 1800.0
-                     grid%xb%qrn(i,j,k) = amax1(5.0E-5, grid%xb%qrn(i,j,k))
+                     grid%xb%qrn(i,j,k) = amax1(5.0E-8, grid%xb%qrn(i,j,k))
                      grid%xb%qcw(i,j,k) = amax1(5.0E-12, grid%xb%qcw(i,j,k))
                   end do
                end do

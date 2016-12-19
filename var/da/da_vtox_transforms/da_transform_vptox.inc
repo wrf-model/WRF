@@ -195,27 +195,7 @@ subroutine da_transform_vptox(grid, vp, be, ep)
       grid%xa%v = vp%v2
    end if
 
-  if ( (use_radarobs .and. use_radar_rf) .or. (use_rad .and. crtm_cloud).or. &
-       (use_radarobs .and. use_radar_rhv) .or. (use_radarobs .and. use_radar_rqv) .or. cloud_cv_options .ge. 2 .or. & 
-       (grid%pseudo_var(1:1).eq.'q' .and. grid%pseudo_var(2:2).ne.' ') .or.  &
-       (grid%pseudo_var(1:1).eq.'Q' .and. grid%pseudo_var(2:2).ne.' ') ) then
-
-     if ( cloud_cv_options == 1 .and. use_3dvar_phy) then
-      ! Pseudo RH --> Total water mixing ratio:
-      !$OMP PARALLEL DO &
-      !$OMP PRIVATE ( ij, i, j, k )
-      do ij = 1 , grid%num_tiles
-         do k = kts, kte
-            do j = grid%j_start(ij), grid%j_end(ij)
-               do i = its, ite
-                 grid%xa % qt(i,j,k) = vp%v4(i,j,k) * grid%xb%qs(i,j,k)
-               enddo
-            enddo
-         enddo
-      enddo
-      !$OMP END PARALLEL DO
-     end if
-     if ( cloud_cv_options .ge. 2 ) then 
+   if ( cloud_cv_options /= 1 ) then
       ! Pseudo RH --> Water vapor mixing ratio:
       !$OMP PARALLEL DO &
       !$OMP PRIVATE ( ij, i, j, k )
@@ -229,7 +209,23 @@ subroutine da_transform_vptox(grid, vp, be, ep)
          enddo
       enddo
       !$OMP END PARALLEL DO
-#ifdef CLOUD_CV
+   else ! cloud_cv_options=1
+      ! Pseudo RH --> Total water mixing ratio:
+      !$OMP PARALLEL DO &
+      !$OMP PRIVATE ( ij, i, j, k )
+      do ij = 1 , grid%num_tiles
+         do k = kts, kte
+            do j = grid%j_start(ij), grid%j_end(ij)
+               do i = its, ite
+                 grid%xa % qt(i,j,k) = vp%v4(i,j,k) * grid%xb%qs(i,j,k)
+               enddo
+            enddo
+         enddo
+      enddo
+      !$OMP END PARALLEL DO
+   end if
+
+   if ( cloud_cv_options >= 2 ) then
       !qcloud
       !$OMP PARALLEL DO &
       !$OMP PRIVATE ( ij, i, j, k )
@@ -295,6 +291,9 @@ subroutine da_transform_vptox(grid, vp, be, ep)
          enddo
       enddo
       !$OMP END PARALLEL DO
+   end if ! cloud_cv_options>=2
+
+   if ( use_cv_w ) then
       !vertical velocity
       !$OMP PARALLEL DO &
       !$OMP PRIVATE ( ij, i, j, k )
@@ -308,23 +307,8 @@ subroutine da_transform_vptox(grid, vp, be, ep)
          enddo
       enddo
       !$OMP END PARALLEL DO
-#endif
-     end if
-  else  ! no rf or cloud radiance
-      ! Pseudo RH --> Water vapor mixing ratio:
-      !$OMP PARALLEL DO &
-      !$OMP PRIVATE ( ij, i, j, k )
-      do ij = 1 , grid%num_tiles
-         do k = kts, kte
-            do j = grid%j_start(ij), grid%j_end(ij)
-               do i = its, ite
-                  grid%xa % q(i,j,k) =  vp%v4(i,j,k) * grid%xb%qs(i,j,k)
-               enddo
-            enddo
-         enddo
-      enddo
-      !$OMP END PARALLEL DO
-  end if ! RF or Radiance
+   end if ! use_cv_w
+
 !   !---------------------------------------------------------------------------
 !   !  [4] Add flow-dependent increments in model space (grid%xa):
 !   !---------------------------------------------------------------------------

@@ -32,6 +32,7 @@ subroutine da_calc_flow_dependence_xa_dual_res (grid, xa_ens, ne,  ep, vp, nobwi
                nips, nipe, nkps, nkpe, njps, njpe
 
    integer :: nj, cj, nk, ck, ni, ci ! for testing
+   integer :: nvar
 
 #ifdef DM_PARALLEL
    ! HALO STUFF
@@ -68,13 +69,14 @@ subroutine da_calc_flow_dependence_xa_dual_res (grid, xa_ens, ne,  ep, vp, nobwi
    allocate( ens_contrib_t(cims:cime,ckms:ckme,cjms:cjme) )
    allocate( ens_contrib_q(cims:cime,ckms:ckme,cjms:cjme) )
    allocate( ens_contrib_p(cims:cime,1:1,cjms:cjme) )
-#ifdef CLOUD_CV
-   allocate( ens_contrib_qcw(cims:cime,ckms:ckme,cjms:cjme) )
-   allocate( ens_contrib_qrn(cims:cime,ckms:ckme,cjms:cjme) )
-   allocate( ens_contrib_qci(cims:cime,ckms:ckme,cjms:cjme) )
-   allocate( ens_contrib_qsn(cims:cime,ckms:ckme,cjms:cjme) )
-   allocate( ens_contrib_qgr(cims:cime,ckms:ckme,cjms:cjme) )
-#endif
+
+   if ( alpha_hydrometeors ) then
+      allocate( ens_contrib_qcw(cims:cime,ckms:ckme,cjms:cjme) )
+      allocate( ens_contrib_qrn(cims:cime,ckms:ckme,cjms:cjme) )
+      allocate( ens_contrib_qci(cims:cime,ckms:ckme,cjms:cjme) )
+      allocate( ens_contrib_qsn(cims:cime,ckms:ckme,cjms:cjme) )
+      allocate( ens_contrib_qgr(cims:cime,ckms:ckme,cjms:cjme) )
+   end if
 
    ! Output: Ensemble contribution to increment interpolated to hi-res domain, (x,z,y) order
    allocate( output_u(nims:nime,nkms:nkme,njms:njme) )
@@ -82,39 +84,42 @@ subroutine da_calc_flow_dependence_xa_dual_res (grid, xa_ens, ne,  ep, vp, nobwi
    allocate( output_t(nims:nime,nkms:nkme,njms:njme) )
    allocate( output_q(nims:nime,nkms:nkme,njms:njme) )
    allocate( output_p(nims:nime,1:1,njms:njme) )
-#ifdef CLOUD_CV
-   allocate( output_qcw(nims:nime,nkms:nkme,njms:njme) )
-   allocate( output_qrn(nims:nime,nkms:nkme,njms:njme) )
-   allocate( output_qci(nims:nime,nkms:nkme,njms:njme) )
-   allocate( output_qsn(nims:nime,nkms:nkme,njms:njme) )
-   allocate( output_qgr(nims:nime,nkms:nkme,njms:njme) )
-#endif
+
+   if ( alpha_hydrometeors ) then
+      allocate( output_qcw(nims:nime,nkms:nkme,njms:njme) )
+      allocate( output_qrn(nims:nime,nkms:nkme,njms:njme) )
+      allocate( output_qci(nims:nime,nkms:nkme,njms:njme) )
+      allocate( output_qsn(nims:nime,nkms:nkme,njms:njme) )
+      allocate( output_qgr(nims:nime,nkms:nkme,njms:njme) )
+   end if
 
    ens_contrib_u = 0.
    ens_contrib_v = 0.
    ens_contrib_t = 0.
    ens_contrib_q = 0.
    ens_contrib_p = 0.
-#ifdef CLOUD_CV
-   ens_contrib_qcw = 0.
-   ens_contrib_qrn = 0.
-   ens_contrib_qci = 0.
-   ens_contrib_qsn = 0.
-   ens_contrib_qgr = 0.
-#endif
+
+   if ( alpha_hydrometeors ) then
+      ens_contrib_qcw = 0.
+      ens_contrib_qrn = 0.
+      ens_contrib_qci = 0.
+      ens_contrib_qsn = 0.
+      ens_contrib_qgr = 0.
+   end if
 
    output_u = 0.
    output_v = 0.
    output_t = 0.
    output_q = 0.
    output_p = 0.
-#ifdef CLOUD_CV
-   output_qcw = 0.
-   output_qrn = 0.
-   output_qci = 0.
-   output_qsn = 0.
-   output_qgr = 0.
-#endif
+
+   if ( alpha_hydrometeors ) then
+      output_qcw = 0.
+      output_qrn = 0.
+      output_qci = 0.
+      output_qsn = 0.
+      output_qgr = 0.
+   end if
 
    !
    ! Determine the ensemble contribution to the increment (low-res) and put in (x,z,y) order for interpolation
@@ -131,13 +136,6 @@ subroutine da_calc_flow_dependence_xa_dual_res (grid, xa_ens, ne,  ep, vp, nobwi
                ens_contrib_v(i,k,j) = ens_contrib_v(i,k,j) + alpha * ep % v2(i,j,k,ii) ! v2 = v
                ens_contrib_t(i,k,j) = ens_contrib_t(i,k,j) + alpha * ep % v3(i,j,k,ii) ! v3 = t
                ens_contrib_q(i,k,j) = ens_contrib_q(i,k,j) + alpha * ep % v4(i,j,k,ii) ! v4 = q
-#ifdef CLOUD_CV
-               ens_contrib_qcw(i,k,j) = ens_contrib_qcw(i,k,j) + alpha * ep%cw(i,j,k,ii)
-               ens_contrib_qrn(i,k,j) = ens_contrib_qrn(i,k,j) + alpha * ep%rn(i,j,k,ii)
-               ens_contrib_qci(i,k,j) = ens_contrib_qci(i,k,j) + alpha * ep%ci(i,j,k,ii)
-               ens_contrib_qsn(i,k,j) = ens_contrib_qsn(i,k,j) + alpha * ep%sn(i,j,k,ii)
-               ens_contrib_qgr(i,k,j) = ens_contrib_qgr(i,k,j) + alpha * ep%gr(i,j,k,ii)
-#endif
 
             end do !i loop
           end do !k loop
@@ -146,12 +144,32 @@ subroutine da_calc_flow_dependence_xa_dual_res (grid, xa_ens, ne,  ep, vp, nobwi
       ens_contrib_p(its_int:ite_int,1,jts_int:jte_int) = ens_contrib_p(its_int:ite_int,1,jts_int:jte_int) + &
                                                   vp % alpha(its_int:ite_int,jts_int:jte_int,1,n)  *        &
                                                   ep % v5   (its_int:ite_int,jts_int:jte_int,1,ii)  ! v5 = ps
+      if ( alpha_hydrometeors ) then
+         do j = jts_int, jte_int
+            do k = kts_int, kte_int
+               do i = its_int, ite_int
+                  alpha = vp % alpha(i,j,k,n)
+                  ens_contrib_qcw(i,k,j) = ens_contrib_qcw(i,k,j) + alpha * ep%cw(i,j,k,ii)
+                  ens_contrib_qrn(i,k,j) = ens_contrib_qrn(i,k,j) + alpha * ep%rn(i,j,k,ii)
+                  ens_contrib_qci(i,k,j) = ens_contrib_qci(i,k,j) + alpha * ep%ci(i,j,k,ii)
+                  ens_contrib_qsn(i,k,j) = ens_contrib_qsn(i,k,j) + alpha * ep%sn(i,j,k,ii)
+                  ens_contrib_qgr(i,k,j) = ens_contrib_qgr(i,k,j) + alpha * ep%gr(i,j,k,ii)
+               end do !i loop
+             end do !k loop
+         end do !j loop
+      end if ! alpha_hydrometeors
+
    end do !n loop
 
 #ifdef DM_PARALLEL
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    !!!!!! DO HALO STUFF !!!!!!!!!!!!!!!
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+   nvar = 4
+   if ( alpha_hydrometeors ) then
+      nvar = 9
+   end if
 
    CALL rsl_comm_iter_init(4,cjps,cjpe)
    DO WHILE ( rsl_comm_iter( grid%intermediate_grid%id , grid%intermediate_grid%is_intermediate, 4 ,            &
@@ -162,11 +180,7 @@ subroutine da_calc_flow_dependence_xa_dual_res (grid, xa_ens, ne,  ep, vp, nobwi
       CALL RSL_LITE_INIT_EXCH ( local_communicator, 4, 0,            &
            rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p,   &
            rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p,   &
-#ifdef CLOUD_CV
-           9, 1, RWORDSIZE, &
-#else
-           4, 1, RWORDSIZE, &
-#endif
+           nvar, 1, RWORDSIZE, &
            0, 0, IWORDSIZE, &
            0, 0, DWORDSIZE, &
            0, 0, LWORDSIZE, &
@@ -228,7 +242,7 @@ subroutine da_calc_flow_dependence_xa_dual_res (grid, xa_ens, ne,  ep, vp, nobwi
          cims, cime, cjms, cjme, 1, 1,                           &
          cips, cipe, cjps, cjpe, 1, 1    )
       ENDIF
-#ifdef CLOUD_CV
+if ( alpha_hydrometeors ) then
       IF ( SIZE(ens_contrib_qcw,1)*SIZE(ens_contrib_qcw,3) .GT. 1 ) THEN
          CALL RSL_LITE_PACK ( local_communicator,                &
          ens_contrib_qcw, 4,                                     &
@@ -284,7 +298,7 @@ subroutine da_calc_flow_dependence_xa_dual_res (grid, xa_ens, ne,  ep, vp, nobwi
          cims, cime, cjms, cjme, ckms, ckme,                     &
          cips, cipe, cjps, cjpe, ckps, ckpe    )
       ENDIF
-#endif
+end if ! alpha_hydrometeors
 
      CALL RSL_LITE_EXCH_Y ( local_communicator , myproc, ntasks, ntasks_x, ntasks_y, &
                           rsl_sendw_m,  rsl_sendw_p, rsl_recvw_m,  rsl_recvw_p    )
@@ -344,7 +358,7 @@ subroutine da_calc_flow_dependence_xa_dual_res (grid, xa_ens, ne,  ep, vp, nobwi
          cims, cime, cjms, cjme, 1, 1,                           &
          cips, cipe, cjps, cjpe, 1, 1    )
       ENDIF
-#ifdef CLOUD_CV
+if ( alpha_hydrometeors ) then
       IF ( SIZE(ens_contrib_qcw,1)*SIZE(ens_contrib_qcw,3) .GT. 1 ) THEN
          CALL RSL_LITE_PACK ( local_communicator,                &
          ens_contrib_qcw, 4,                                     &
@@ -400,7 +414,7 @@ subroutine da_calc_flow_dependence_xa_dual_res (grid, xa_ens, ne,  ep, vp, nobwi
          cims, cime, cjms, cjme, ckms, ckme,                     &
          cips, cipe, cjps, cjpe, ckps, ckpe    )
       ENDIF
-#endif
+end if ! alpha_hydrometeors
    END DO
 
 
@@ -413,11 +427,7 @@ subroutine da_calc_flow_dependence_xa_dual_res (grid, xa_ens, ne,  ep, vp, nobwi
       CALL RSL_LITE_INIT_EXCH ( local_communicator, 4, 1,            &
            rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p,   &
            rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p,   &
-#ifdef CLOUD_CV
-           9, 1, RWORDSIZE, &
-#else
-           4, 1, RWORDSIZE, &
-#endif
+           nvar, 1, RWORDSIZE, &
            0, 0, IWORDSIZE, &
            0, 0, DWORDSIZE, &
            0, 0, LWORDSIZE, &
@@ -479,7 +489,7 @@ subroutine da_calc_flow_dependence_xa_dual_res (grid, xa_ens, ne,  ep, vp, nobwi
          cims, cime, cjms, cjme, 1, 1,                           &
          cips, cipe, cjps, cjpe, 1, 1    )
       ENDIF
-#ifdef CLOUD_CV
+if ( alpha_hydrometeors ) then
       IF ( SIZE(ens_contrib_qcw,1)*SIZE(ens_contrib_qcw,3) .GT. 1 ) THEN
          CALL RSL_LITE_PACK ( local_communicator,                &
          ens_contrib_qcw, 4,                                     &
@@ -535,7 +545,7 @@ subroutine da_calc_flow_dependence_xa_dual_res (grid, xa_ens, ne,  ep, vp, nobwi
          cims, cime, cjms, cjme, ckms, ckme,                     &
          cips, cipe, cjps, cjpe, ckps, ckpe    )
       ENDIF
-#endif
+end if ! alpha_hydrometeors
 
      CALL RSL_LITE_EXCH_X ( local_communicator , myproc, ntasks, ntasks_x, ntasks_y, &
                           rsl_sendw_m,  rsl_sendw_p, rsl_recvw_m,  rsl_recvw_p    )
@@ -596,7 +606,7 @@ subroutine da_calc_flow_dependence_xa_dual_res (grid, xa_ens, ne,  ep, vp, nobwi
          cips, cipe, cjps, cjpe, 1, 1    )
       ENDIF
    ENDDO
-#ifdef CLOUD_CV
+if ( alpha_hydrometeors ) then
       IF ( SIZE(ens_contrib_qcw,1)*SIZE(ens_contrib_qcw,3) .GT. 1 ) THEN
          CALL RSL_LITE_PACK ( local_communicator,                &
          ens_contrib_qcw, 4,                                     &
@@ -652,7 +662,7 @@ subroutine da_calc_flow_dependence_xa_dual_res (grid, xa_ens, ne,  ep, vp, nobwi
          cims, cime, cjms, cjme, ckms, ckme,                     &
          cips, cipe, cjps, cjpe, ckps, ckpe    )
       ENDIF
-#endif
+end if ! alpha_hydrometeors
 
    !!!!!! END HALO STUFF !!!!!!!!!!!!!
 #endif
@@ -695,34 +705,6 @@ subroutine da_calc_flow_dependence_xa_dual_res (grid, xa_ens, ne,  ep, vp, nobwi
                    + ob_locs(n)%dy *(ob_locs(n)%dxm*ens_contrib_q(ob_locs(n)%i,k,ob_locs(n)%j+1)  &
                    + ob_locs(n)%dx*ens_contrib_q(ob_locs(n)%i+1,k,ob_locs(n)%j+1))
 
-#ifdef CLOUD_CV
-         output_qcw(ob_locs(n)%xx,k,ob_locs(n)%yy) =                                               &
-                     ob_locs(n)%dym*(ob_locs(n)%dxm*ens_contrib_qcw(ob_locs(n)%i,k,ob_locs(n)%j)   &
-                   + ob_locs(n)%dx*ens_contrib_qcw(ob_locs(n)%i+1,k,ob_locs(n)%j))                 &
-                   + ob_locs(n)%dy *(ob_locs(n)%dxm*ens_contrib_qcw(ob_locs(n)%i,k,ob_locs(n)%j+1) &
-                   + ob_locs(n)%dx*ens_contrib_qcw(ob_locs(n)%i+1,k,ob_locs(n)%j+1))
-         output_qrn(ob_locs(n)%xx,k,ob_locs(n)%yy) =                                               &
-                     ob_locs(n)%dym*(ob_locs(n)%dxm*ens_contrib_qrn(ob_locs(n)%i,k,ob_locs(n)%j)   &
-                   + ob_locs(n)%dx*ens_contrib_qrn(ob_locs(n)%i+1,k,ob_locs(n)%j))                 &
-                   + ob_locs(n)%dy *(ob_locs(n)%dxm*ens_contrib_qrn(ob_locs(n)%i,k,ob_locs(n)%j+1) &
-                   + ob_locs(n)%dx*ens_contrib_qrn(ob_locs(n)%i+1,k,ob_locs(n)%j+1))
-         output_qci(ob_locs(n)%xx,k,ob_locs(n)%yy) =                                               &
-                     ob_locs(n)%dym*(ob_locs(n)%dxm*ens_contrib_qci(ob_locs(n)%i,k,ob_locs(n)%j)   &
-                   + ob_locs(n)%dx*ens_contrib_qci(ob_locs(n)%i+1,k,ob_locs(n)%j))                 &
-                   + ob_locs(n)%dy *(ob_locs(n)%dxm*ens_contrib_qci(ob_locs(n)%i,k,ob_locs(n)%j+1) &
-                   + ob_locs(n)%dx*ens_contrib_qci(ob_locs(n)%i+1,k,ob_locs(n)%j+1))
-         output_qsn(ob_locs(n)%xx,k,ob_locs(n)%yy) =                                               &
-                     ob_locs(n)%dym*(ob_locs(n)%dxm*ens_contrib_qsn(ob_locs(n)%i,k,ob_locs(n)%j)   &
-                   + ob_locs(n)%dx*ens_contrib_qsn(ob_locs(n)%i+1,k,ob_locs(n)%j))                 &
-                   + ob_locs(n)%dy *(ob_locs(n)%dxm*ens_contrib_qsn(ob_locs(n)%i,k,ob_locs(n)%j+1) &
-                   + ob_locs(n)%dx*ens_contrib_qsn(ob_locs(n)%i+1,k,ob_locs(n)%j+1))
-         output_qgr(ob_locs(n)%xx,k,ob_locs(n)%yy) =                                               &
-                     ob_locs(n)%dym*(ob_locs(n)%dxm*ens_contrib_qgr(ob_locs(n)%i,k,ob_locs(n)%j)   &
-                   + ob_locs(n)%dx*ens_contrib_qgr(ob_locs(n)%i+1,k,ob_locs(n)%j))                 &
-                   + ob_locs(n)%dy *(ob_locs(n)%dxm*ens_contrib_qgr(ob_locs(n)%i,k,ob_locs(n)%j+1) &
-                   + ob_locs(n)%dx*ens_contrib_qgr(ob_locs(n)%i+1,k,ob_locs(n)%j+1))
-#endif
-
       end do
 
       output_p(ob_locs(n)%xx,1,ob_locs(n)%yy) = &
@@ -733,6 +715,41 @@ subroutine da_calc_flow_dependence_xa_dual_res (grid, xa_ens, ne,  ep, vp, nobwi
 
    end do
    !$OMP END PARALLEL DO
+
+   if ( alpha_hydrometeors ) then
+      !$OMP PARALLEL DO &
+      !$OMP PRIVATE (n)
+      do n=1,total_here
+         do k = kts, kte
+            output_qcw(ob_locs(n)%xx,k,ob_locs(n)%yy) =                                            &
+                     ob_locs(n)%dym*(ob_locs(n)%dxm*ens_contrib_qcw(ob_locs(n)%i,k,ob_locs(n)%j)   &
+                   + ob_locs(n)%dx*ens_contrib_qcw(ob_locs(n)%i+1,k,ob_locs(n)%j))                 &
+                   + ob_locs(n)%dy *(ob_locs(n)%dxm*ens_contrib_qcw(ob_locs(n)%i,k,ob_locs(n)%j+1) &
+                   + ob_locs(n)%dx*ens_contrib_qcw(ob_locs(n)%i+1,k,ob_locs(n)%j+1))
+            output_qrn(ob_locs(n)%xx,k,ob_locs(n)%yy) =                                            &
+                     ob_locs(n)%dym*(ob_locs(n)%dxm*ens_contrib_qrn(ob_locs(n)%i,k,ob_locs(n)%j)   &
+                   + ob_locs(n)%dx*ens_contrib_qrn(ob_locs(n)%i+1,k,ob_locs(n)%j))                 &
+                   + ob_locs(n)%dy *(ob_locs(n)%dxm*ens_contrib_qrn(ob_locs(n)%i,k,ob_locs(n)%j+1) &
+                   + ob_locs(n)%dx*ens_contrib_qrn(ob_locs(n)%i+1,k,ob_locs(n)%j+1))
+            output_qci(ob_locs(n)%xx,k,ob_locs(n)%yy) =                                            &
+                     ob_locs(n)%dym*(ob_locs(n)%dxm*ens_contrib_qci(ob_locs(n)%i,k,ob_locs(n)%j)   &
+                   + ob_locs(n)%dx*ens_contrib_qci(ob_locs(n)%i+1,k,ob_locs(n)%j))                 &
+                   + ob_locs(n)%dy *(ob_locs(n)%dxm*ens_contrib_qci(ob_locs(n)%i,k,ob_locs(n)%j+1) &
+                   + ob_locs(n)%dx*ens_contrib_qci(ob_locs(n)%i+1,k,ob_locs(n)%j+1))
+            output_qsn(ob_locs(n)%xx,k,ob_locs(n)%yy) =                                            &
+                     ob_locs(n)%dym*(ob_locs(n)%dxm*ens_contrib_qsn(ob_locs(n)%i,k,ob_locs(n)%j)   &
+                   + ob_locs(n)%dx*ens_contrib_qsn(ob_locs(n)%i+1,k,ob_locs(n)%j))                 &
+                   + ob_locs(n)%dy *(ob_locs(n)%dxm*ens_contrib_qsn(ob_locs(n)%i,k,ob_locs(n)%j+1) &
+                   + ob_locs(n)%dx*ens_contrib_qsn(ob_locs(n)%i+1,k,ob_locs(n)%j+1))
+            output_qgr(ob_locs(n)%xx,k,ob_locs(n)%yy) =                                            &
+                     ob_locs(n)%dym*(ob_locs(n)%dxm*ens_contrib_qgr(ob_locs(n)%i,k,ob_locs(n)%j)   &
+                   + ob_locs(n)%dx*ens_contrib_qgr(ob_locs(n)%i+1,k,ob_locs(n)%j))                 &
+                   + ob_locs(n)%dy *(ob_locs(n)%dxm*ens_contrib_qgr(ob_locs(n)%i,k,ob_locs(n)%j+1) &
+                   + ob_locs(n)%dx*ens_contrib_qgr(ob_locs(n)%i+1,k,ob_locs(n)%j+1))
+         end do
+      end do
+      !$OMP END PARALLEL DO
+   end if ! alpha_hydrometeors
 
    !
    ! Now add the hi-res ensemble contribution to the increment to the static increment.
@@ -755,14 +772,6 @@ subroutine da_calc_flow_dependence_xa_dual_res (grid, xa_ens, ne,  ep, vp, nobwi
             ! q:
             xa_ens % q(i,j,k) = xa_ens % q(i,j,k) + output_q(i,k,j) ! q
 
-#ifdef CLOUD_CV
-            xa_ens%qcw(i,j,k) = xa_ens%qcw(i,j,k) + output_qcw(i,k,j)
-            xa_ens%qrn(i,j,k) = xa_ens%qrn(i,j,k) + output_qrn(i,k,j)
-            xa_ens%qci(i,j,k) = xa_ens%qci(i,j,k) + output_qci(i,k,j)
-            xa_ens%qsn(i,j,k) = xa_ens%qsn(i,j,k) + output_qsn(i,k,j)
-            xa_ens%qgr(i,j,k) = xa_ens%qgr(i,j,k) + output_qgr(i,k,j)
-#endif
-
          end do
       end do
    end do
@@ -771,16 +780,30 @@ subroutine da_calc_flow_dependence_xa_dual_res (grid, xa_ens, ne,  ep, vp, nobwi
    xa_ens % psfc(its:ite,jts:jte) = xa_ens % psfc(its:ite,jts:jte) + &
                                     output_p(its:ite,1,jts:jte) ! ps
 
+   if ( alpha_hydrometeors ) then
+      do k = kts, kte
+         do j = jts, jte
+            do i = its, ite
+               xa_ens%qcw(i,j,k) = xa_ens%qcw(i,j,k) + output_qcw(i,k,j)
+               xa_ens%qrn(i,j,k) = xa_ens%qrn(i,j,k) + output_qrn(i,k,j)
+               xa_ens%qci(i,j,k) = xa_ens%qci(i,j,k) + output_qci(i,k,j)
+               xa_ens%qsn(i,j,k) = xa_ens%qsn(i,j,k) + output_qsn(i,k,j)
+               xa_ens%qgr(i,j,k) = xa_ens%qgr(i,j,k) + output_qgr(i,k,j)
+            end do
+         end do
+      end do
+   end if ! alpha_hydrometeors
+
    !
    ! Clean-up
    !
 
    deallocate(ens_contrib_u,ens_contrib_v,ens_contrib_t,ens_contrib_q,ens_contrib_p)
    deallocate(output_u,output_v,output_t,output_q,output_p)
-#ifdef CLOUD_CV
-   deallocate(ens_contrib_qcw,ens_contrib_qrn,ens_contrib_qci,ens_contrib_qsn,ens_contrib_qgr)
-   deallocate(output_qcw,output_qrn,output_qci,output_qsn,output_qgr)
-#endif
+   if ( alpha_hydrometeors ) then
+      deallocate(ens_contrib_qcw,ens_contrib_qrn,ens_contrib_qci,ens_contrib_qsn,ens_contrib_qgr)
+      deallocate(output_qcw,output_qrn,output_qci,output_qsn,output_qgr)
+   end if
 
    if (trace_use) call da_trace_exit("da_calc_flow_dependence_xa_dual_res")
 

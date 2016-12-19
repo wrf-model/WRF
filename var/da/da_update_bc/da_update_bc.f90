@@ -17,7 +17,8 @@ program da_update_bc
    use da_netcdf_interface, only : da_get_var_3d_real_cdf, &
       da_put_var_3d_real_cdf, da_get_dims_cdf, da_put_var_2d_real_cdf, &
       da_get_var_2d_real_cdf, da_get_var_2d_int_cdf, da_get_bdytimestr_cdf, &
-      da_get_times_cdf, da_get_bdyfrq, stderr, stdout, da_put_var_2d_int_cdf
+      da_get_times_cdf, da_get_bdyfrq, stderr, stdout, da_put_var_2d_int_cdf, &
+      da_get_var_1d_real_cdf, da_get_gl_att_int_cdf
 
    use da_module_couple_uv, only : da_couple_uv
 
@@ -39,6 +40,11 @@ program da_update_bc
                         varsf(max_2d_variables)
 
    character(len=10), dimension(4) :: bdyname, tenname
+
+   ! for WRF hybrid coordinate
+   integer           :: nlevf, nlevh
+   integer           :: hybrid_opt
+   real, allocatable :: c1f(:), c2f(:), c1h(:), c2h(:)
 
    integer           :: ids, ide, jds, jde, kds, kde
    integer           :: num3d, num2d, ndims
@@ -253,6 +259,36 @@ program da_update_bc
    north_end=0
 
    cdfid = ncopn(da_file, NCWRITE, io_status )
+
+   ! for WRF hybrid coordinate
+
+   call da_get_gl_att_int_cdf(da_file, 'BOTTOM-TOP_PATCH_END_STAG',   nlevf, debug, io_status)
+   call da_get_gl_att_int_cdf(da_file, 'BOTTOM-TOP_PATCH_END_UNSTAG', nlevh, debug, io_status)
+   if ( io_status /= NF_NOERR .or. nlevf <= 0 .or. nlevh <= 0 ) then
+      write(unit=stdout,fmt=*) 'Error finding the number of vertical levels'
+      stop
+   else
+      allocate ( c1f(nlevf) )
+      allocate ( c2f(nlevf) )
+      allocate ( c1h(nlevh) )
+      allocate ( c2h(nlevh) )
+   end if
+
+   ! initialize as hybrid_opt = 0
+   hybrid_opt = 0
+   c1f(:) = 1.0
+   c2f(:) = 0.0
+   c1h(:) = 1.0
+   c2h(:) = 0.0
+
+   !hcl make sure the global attribute HYBRID_OPT is included in the WRF mods
+   call da_get_gl_att_int_cdf(da_file, 'HYBRID_OPT', hybrid_opt, debug, io_status)
+   if ( io_status == NF_NOERR ) then
+      call da_get_var_1d_real_cdf( da_file, 'C1F', c1f, nlevf, 1, debug)
+      call da_get_var_1d_real_cdf( da_file, 'C2F', c2f, nlevf, 1, debug)
+      call da_get_var_1d_real_cdf( da_file, 'C1H', c1h, nlevh, 1, debug)
+      call da_get_var_1d_real_cdf( da_file, 'C2H', c2h, nlevh, 1, debug)
+   end if
 
    ! For 2D variables
    ! Get mu, mub, msfu, and msfv
@@ -662,9 +698,9 @@ program da_update_bc
 
    !---------------------------------------------------------------------
    ! Couple u, v.
-   call da_couple_uv ( u, v, mu, mub, msfu, msfv, ids, ide, jds, jde, kds, kde)
+   call da_couple_uv ( u, v, mu, mub, msfu, msfv, c1h, c2h, ids, ide, jds, jde, kds, kde)
    if ( var4d_lbc ) then
-      call da_couple_uv ( u2, v2, mu2, mub, msfu, msfv, ids, ide, jds, jde, kds, kde)
+      call da_couple_uv ( u2, v2, mu2, mub, msfu, msfv, c1h, c2h, ids, ide, jds, jde, kds, kde)
    end if
 
    if (debug) then
@@ -717,8 +753,8 @@ program da_update_bc
          do k=1,dims(3)
             do j=1,dims(2)
                do i=1,dims(1)
-                  full3d(i,j,k)=full3d(i,j,k)*(mu(i,j)+mub(i,j))/msfm(i,j)
-                  if ( var4d_lbc ) full3d2(i,j,k)=full3d2(i,j,k)*(mu2(i,j)+mub(i,j))/msfm(i,j)
+                  full3d(i,j,k)=full3d(i,j,k)*(c1f(k)*(mu(i,j)+mub(i,j))+c2f(k))/msfm(i,j)
+                  if ( var4d_lbc ) full3d2(i,j,k)=full3d2(i,j,k)*(c1f(k)*(mu2(i,j)+mub(i,j))+c2f(k))/msfm(i,j)
                end do
             end do
          end do
@@ -743,20 +779,36 @@ program da_update_bc
                  '=', full3d(dims(1)/2,dims(2)/2,dims(3)/2)
          end if
 
-         do k=1,dims(3)
-            do j=1,dims(2)
-               do i=1,dims(1)
-                  full3d(i,j,k)=full3d(i,j,k)*(mu(i,j)+mub(i,j))
-                  if ( var4d_lbc ) full3d2(i,j,k)=full3d2(i,j,k)*(mu2(i,j)+mub(i,j))
+         if ( dims(3) == nlevf ) then
+            ! applying c1f and c2f for mu
+            do k=1,dims(3)
+               do j=1,dims(2)
+                  do i=1,dims(1)
+                     full3d(i,j,k)=full3d(i,j,k)*(c1f(k)*(mu(i,j)+mub(i,j))+c2f(k))
+                     if ( var4d_lbc ) full3d2(i,j,k)=full3d2(i,j,k)*(c1f(k)*(mu2(i,j)+mub(i,j))+c2f(k))
+                  end do
                end do
             end do
-         end do
+         else if ( dims(3) == nlevh ) then
+            ! applying c1h and c2h for mu
+            do k=1,dims(3)
+               do j=1,dims(2)
+                  do i=1,dims(1)
+                     full3d(i,j,k)=full3d(i,j,k)*(c1h(k)*(mu(i,j)+mub(i,j))+c2h(k))
+                     if ( var4d_lbc ) full3d2(i,j,k)=full3d2(i,j,k)*(c1h(k)*(mu2(i,j)+mub(i,j))+c2h(k))
+                  end do
+               end do
+            end do
+         else
+            write(unit=stdout,fmt=*) 'Error finding matched dimensions.'
+            stop
+         end if
 
-            if (debug) then
-               write(unit=stdout, fmt='(3a,e20.12,4x)') &
-                    'After  couple Sample ', trim(var3d(n)), &
-                    '=', full3d(dims(1)/2,dims(2)/2,dims(3)/2)
-            end if
+         if (debug) then
+            write(unit=stdout, fmt='(3a,e20.12,4x)') &
+                 'After  couple Sample ', trim(var3d(n)), &
+                 '=', full3d(dims(1)/2,dims(2)/2,dims(3)/2)
+         end if
       case ('QVAPOR', 'QCLOUD', 'QRAIN', 'QICE', 'QSNOW', 'QGRAUP') ;
          ! var_pref='R' // var3d(n)(1:2)
          ! var_pref=var3d(n)(1:2)
@@ -777,8 +829,8 @@ program da_update_bc
          do k=1,dims(3)
             do j=1,dims(2)
                do i=1,dims(1)
-                  full3d(i,j,k)=full3d(i,j,k)*(mu(i,j)+mub(i,j))
-                  if ( var4d_lbc ) full3d2(i,j,k)=full3d2(i,j,k)*(mu2(i,j)+mub(i,j))
+                  full3d(i,j,k)=full3d(i,j,k)*(c1h(k)*(mu(i,j)+mub(i,j))+c2h(k))
+                  if ( var4d_lbc ) full3d2(i,j,k)=full3d2(i,j,k)*(c1h(k)*(mu2(i,j)+mub(i,j))+c2h(k))
                end do
             end do
          end do
@@ -1127,7 +1179,7 @@ program da_update_bc
 
    !---------------------------------------------------------------------
    ! Couple u, v.
-   call da_couple_uv ( u, v, mu, mub, msfu, msfv, ids, ide, jds, jde, kds, kde)
+   call da_couple_uv ( u, v, mu, mub, msfu, msfv, c1h, c2h, ids, ide, jds, jde, kds, kde)
 
    if (debug) then
       write(unit=stdout, fmt='(a,e20.12,4x)') &
@@ -1173,7 +1225,7 @@ program da_update_bc
          do k=1,dims(3)
             do j=1,dims(2)
                do i=1,dims(1)
-                  full3d(i,j,k)=full3d(i,j,k)*(mu(i,j)+mub(i,j))/msfm(i,j)
+                  full3d(i,j,k)=full3d(i,j,k)*(c1f(k)*(mu(i,j)+mub(i,j))+c2f(k))/msfm(i,j)
                end do
             end do
          end do
@@ -1195,19 +1247,34 @@ program da_update_bc
                  '=', full3d(dims(1)/2,dims(2)/2,dims(3)/2)
          end if
 
-         do k=1,dims(3)
-            do j=1,dims(2)
-               do i=1,dims(1)
-                  full3d(i,j,k)=full3d(i,j,k)*(mu(i,j)+mub(i,j))
+         if ( dims(3) == nlevf ) then
+            ! applying c1f and c2f for mu
+            do k=1,dims(3)
+               do j=1,dims(2)
+                  do i=1,dims(1)
+                     full3d(i,j,k)=full3d(i,j,k)*(c1f(k)*(mu(i,j)+mub(i,j))+c2f(k))
+                  end do
                end do
             end do
-         end do
+         else if ( dims(3) == nlevh ) then
+            ! applying c1h and c2h for mu
+            do k=1,dims(3)
+               do j=1,dims(2)
+                  do i=1,dims(1)
+                     full3d(i,j,k)=full3d(i,j,k)*(c1h(k)*(mu(i,j)+mub(i,j))+c2h(k))
+                  end do
+               end do
+            end do
+         else
+            write(unit=stdout,fmt=*) 'Error finding matched dimensions.'
+            stop
+         end if
 
-            if (debug) then
-               write(unit=stdout, fmt='(3a,e20.12,4x)') &
-                    'After  couple Sample ', trim(var3d(n)), &
-                    '=', full3d(dims(1)/2,dims(2)/2,dims(3)/2)
-            end if
+         if (debug) then
+            write(unit=stdout, fmt='(3a,e20.12,4x)') &
+                 'After  couple Sample ', trim(var3d(n)), &
+                 '=', full3d(dims(1)/2,dims(2)/2,dims(3)/2)
+         end if
       case ('QVAPOR', 'QCLOUD', 'QRAIN', 'QICE', 'QSNOW', 'QGRAUP') ;
          ! var_pref='R' // var3d(n)(1:2)
          ! var_pref=var3d(n)(1:2)
@@ -1225,7 +1292,7 @@ program da_update_bc
          do k=1,dims(3)
             do j=1,dims(2)
                do i=1,dims(1)
-                  full3d(i,j,k)=full3d(i,j,k)*(mu(i,j)+mub(i,j))
+                  full3d(i,j,k)=full3d(i,j,k)*(c1h(k)*(mu(i,j)+mub(i,j))+c2h(k))
                end do
             end do
          end do
@@ -1380,6 +1447,11 @@ program da_update_bc
    deallocate(nextbdytime)
 
  end if ! end if update_lateral_bdy
+
+ deallocate ( c1f )
+ deallocate ( c2f )
+ deallocate ( c1h )
+ deallocate ( c2h )
 
  write(unit=stdout,fmt=*) &
     '=================================================================='

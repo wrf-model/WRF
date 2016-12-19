@@ -23,7 +23,7 @@ module da_obs
       sound, mtgirs, synop, profiler, gpsref, gpspw, polaramv, geoamv, ships, metar, &
       satem, radar, ssmi_rv, ssmi_tb, ssmt1, ssmt2, airsr, pilot, airep, sonde_sfc,rain, &
       bogus, buoy, qscat, tamdar, tamdar_sfc, pseudo, num_ob_indexes, its,ite,jds,jts,jte,ids, &
-      write_mod_filtered_obs, radiance, use_varbc, obs_names
+      write_mod_filtered_obs, radiance, use_varbc, obs_names, q_error_options
    ! use_crtm_kmatrix,use_crtm_kmatrix_fast
 #ifdef CRTM
    use da_crtm, only : da_transform_xtoy_crtm, da_transform_xtoy_crtm_adj

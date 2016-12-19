@@ -160,34 +160,6 @@ subroutine da_setup_flow_predictors_para_read_opt1( ix, jy, kz, ne, ep, its, ite
 
             close(unit=ep_unit)
 
-            if ( iv == 4 ) then
-            !  Optionally include hydrometeors:
-               if( ((use_radarobs .and. use_radar_rf) .or. (use_rad .and. crtm_cloud)) &
-                   .and. alphacv_method == alphacv_method_xa .and. alpha_hydrometeors ) then    ! xa space
-                  if ( cloud_cv_options == 1 ) then  ! qt control variable
-                  ! adding qcloud to v4
-                     filename = trim(ep_dir_name(it))//'/'//'qcloud'//'.e'//trim(ce)
-                     open(unit=ep_unit, file = filename, form = 'unformatted', status = 'old')
-                     read(unit=ep_unit) ni, nj, nk
-                     read(unit=ep_unit) temp3d(1:ix,1:jy,1:kz)
-                     close(unit=ep_unit)
-!                    global_ep(:,:,:,te) = global_ep(:,:,:,te) +        &
-!                                          ens_scaling_inv * temp3d(:,:,:)
-                     global_ep(:,:,:,te-(smemb(nbin)-1)) = global_ep(:,:,:,te-(smemb(nbin)-1)) + ens_scaling_inv * temp3d(:,:,:)
-
-                  ! adding qrain to v4
-                     filename = trim(ep_dir_name(it))//'/'//'qrain'//'.e'//trim(ce)
-                     open(unit=ep_unit, file = filename, form = 'unformatted', status = 'old')
-                     read(unit=ep_unit) ni, nj, nk
-                     read(unit=ep_unit) temp3d(1:ix,1:jy,1:kz)
-                     close(unit=ep_unit)
-!                    global_ep(:,:,:,te) = global_ep(:,:,:,te) +        &
-!                                          ens_scaling_inv * temp3d(:,:,:)
-                     global_ep(:,:,:,te-(smemb(nbin)-1)) = global_ep(:,:,:,te-(smemb(nbin)-1)) + ens_scaling_inv * temp3d(:,:,:)
-                  end if !end if cloud_cv_options=1
-               end if
-            end if !iv = 4 for q
-
          end do ! num_fgat_time*ne loop
 
       !data communication
@@ -231,10 +203,8 @@ subroutine da_setup_flow_predictors_para_read_opt1( ix, jy, kz, ne, ep, its, ite
    end do !num_var loop
 
 !  Optionally include hydrometeors:
-#ifdef CLOUD_CV
-   if ( cloud_cv_options >= 2 ) then
-      if( (use_radarobs .and. use_radar_rf) .or. (use_rad .and. crtm_cloud) .and. &
-          alpha_hydrometeors ) then
+
+   if ( alphacv_method == alphacv_method_xa .and. alpha_hydrometeors ) then
 
          do iv = 1, num_var
 
@@ -307,22 +277,22 @@ subroutine da_setup_flow_predictors_para_read_opt1( ix, jy, kz, ne, ep, its, ite
 #endif
             end do ! rden_bin loop
          end do ! num_var loop
-      end if ! hydrometeors
-   end if ! end if cloud_cv_options>=2
-#endif
+   end if ! xa space and hydrometeors
+
 
    print *,"MAX EP v1 local ",MAXVAL(ep % v1(its:ite,jts:jte,:,:))
    print *,"MAX EP v2 local ",MAXVAL(ep % v2(its:ite,jts:jte,:,:))
    print *,"MAX EP v3 local ",MAXVAL(ep % v3(its:ite,jts:jte,:,:))
    print *,"MAX EP v4 local ",MAXVAL(ep % v4(its:ite,jts:jte,:,:))
    print *,"MAX EP v5 local ",MAXVAL(ep % v5(its:ite,jts:jte,:,:))
-#ifdef CLOUD_CV
-   print *,"MAX EP cw local ",MAXVAL(ep % cw(its:ite,jts:jte,:,:))
-   print *,"MAX EP rn local ",MAXVAL(ep % rn(its:ite,jts:jte,:,:))
-   print *,"MAX EP ci local ",MAXVAL(ep % ci(its:ite,jts:jte,:,:))
-   print *,"MAX EP sn local ",MAXVAL(ep % sn(its:ite,jts:jte,:,:))
-   print *,"MAX EP gr local ",MAXVAL(ep % gr(its:ite,jts:jte,:,:))
-#endif
+
+   if ( alphacv_method == alphacv_method_xa .and. alpha_hydrometeors ) then
+      print *,"MAX EP cw local ",MAXVAL(ep % cw(its:ite,jts:jte,:,:))
+      print *,"MAX EP rn local ",MAXVAL(ep % rn(its:ite,jts:jte,:,:))
+      print *,"MAX EP ci local ",MAXVAL(ep % ci(its:ite,jts:jte,:,:))
+      print *,"MAX EP sn local ",MAXVAL(ep % sn(its:ite,jts:jte,:,:))
+      print *,"MAX EP gr local ",MAXVAL(ep % gr(its:ite,jts:jte,:,:))
+   end if
 
    deallocate(ep_dir_name)
    call da_free_unit(ep_unit)

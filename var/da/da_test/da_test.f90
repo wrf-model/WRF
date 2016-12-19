@@ -44,6 +44,7 @@ module da_test
       cloud_cv_options, cp, gas_constant, test_dm_exact, cv_size_domain, &
       its_int, ite_int, jts_int, jte_int, kts_int, kte_int, &
       ims_int, ime_int, jms_int, jme_int, kms_int, kme_int
+   use da_control, only : use_cv_w
 
    use da_define_structures, only : da_zero_x,da_zero_vp_type,da_allocate_y, &
       da_deallocate_y,be_type, xbx_type, iv_type, y_type, j_type, da_initialize_cv

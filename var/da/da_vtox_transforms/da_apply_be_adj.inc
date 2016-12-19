@@ -41,9 +41,7 @@ SUBROUTINE da_apply_be_adj( be, cv, vp, grid )
 !  [1.0] Make global-grid copy of cc from 3-dimensional local-grid vv.
 !-------------------------------------------------------------------------
 
-   call da_vv_to_cv( vp, grid%xp,&
-          (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz, be%alpha%mz, be%ne /), &
-          cv_size, cv )
+   call da_vv_to_cv( vp, grid%xp, be%cv_mz, be%ncv_mz, cv_size, cv )
 
 END SUBROUTINE da_apply_be_adj
 

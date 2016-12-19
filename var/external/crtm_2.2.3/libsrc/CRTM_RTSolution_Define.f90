@@ -143,6 +143,7 @@ MODULE CRTM_RTSolution_Define
     ! Radiative transfer results for a single channel/node
     REAL(fp) :: Radiance               = ZERO
     REAL(fp) :: Brightness_Temperature = ZERO
+    REAL(fp) :: Gamma                  = ZERO
   END TYPE CRTM_RTSolution_type
   !:tdoc-:
 
@@ -330,6 +331,7 @@ CONTAINS
     RTSolution%Surface_Planck_Radiance = ZERO
     RTSolution%Radiance                = ZERO
     RTSolution%Brightness_Temperature  = ZERO
+    RTSolution%Gamma                   = ZERO
 
     ! Zero out the array data components
     IF ( CRTM_RTSolution_Associated(RTSolution) ) THEN
@@ -403,6 +405,7 @@ CONTAINS
     WRITE(fid,'(3x,"Surface Planck Radiance  : ",es13.6)') RTSolution%Surface_Planck_Radiance
     WRITE(fid,'(3x,"Radiance                 : ",es13.6)') RTSolution%Radiance
     WRITE(fid,'(3x,"Brightness Temperature   : ",es13.6)') RTSolution%Brightness_Temperature
+    WRITE(fid,'(3x,"Gamma                    : ",es13.6)') RTSolution%Gamma
     IF ( .NOT. CRTM_RTSolution_Associated(RTSolution) ) RETURN
     WRITE(fid,'(3x,"n_Layers : ",i0)') RTSolution%n_Layers
     WRITE(fid,'(3x,"Upwelling Radiance       :")')

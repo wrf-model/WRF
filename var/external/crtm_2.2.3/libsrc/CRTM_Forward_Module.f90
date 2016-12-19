@@ -645,6 +645,10 @@ CONTAINS
                                            AAvar           )  ! Internal variable output
 
 
+          ! Gamma correction to optical depth
+          AtmOptics%Optical_Depth = AtmOptics%Optical_Depth * (RTSolution(ln,m)%Gamma + ONE)
+
+
           ! Compute the clear-sky atmospheric transmittance
           ! for use in FASTEM-X reflection correction
           CALL CRTM_Compute_Transmittance(AtmOptics,transmittance)

@@ -138,8 +138,7 @@ subroutine da_setup_flow_predictors( ix, jy, kz, ne, ep, its, ite, jts, jte, kts
 
   !  Optional include hydrometeors:
 
-   if( ((use_radarobs .and. use_radar_rf) .or. (use_rad .and. crtm_cloud)) &
-       .and. alphacv_method == alphacv_method_xa .and. alpha_hydrometeors ) then    ! xa space
+   if ( alphacv_method == alphacv_method_xa .and. alpha_hydrometeors ) then  ! xa space
 
       do te = 1, nte
 
@@ -153,62 +152,43 @@ subroutine da_setup_flow_predictors( ix, jy, kz, ne, ep, its, ite, jts, jte, kts
 
          write(unit=ce,fmt='(i3.3)') ie
 
-         if ( cloud_cv_options == 1 ) then  ! qt control variable
-            filename = trim(ep_dir_name(it))//'/'//'qcloud'//'.e'//trim(ce)
-            open(unit=ep_unit, file = filename, form = 'unformatted', status = 'old')
-            read(unit=ep_unit) ni, nj, nk
-            read(unit=ep_unit) temp3d(1:ix,1:jy,1:kz)
-            ep % v4(its:ite,jts:jte,kts:kte,te) = ep % v4(its:ite,jts:jte,kts:kte,te) + &
-                                                  ens_scaling_inv * temp3d(its:ite,jts:jte,kts:kte)
-            close(unit=ep_unit)
+         filename = trim(ep_dir_name(it))//'/'//'qcloud'//'.e'//trim(ce)
+         open(unit=ep_unit, file = filename, form = 'unformatted', status = 'old')
+         read(unit=ep_unit) ni, nj, nk
+         read(unit=ep_unit) temp3d(1:ix,1:jy,1:kz)
+         ep % cw(its:ite,jts:jte,kts:kte,te) = ens_scaling_inv * temp3d(its:ite,jts:jte,kts:kte)
+         close(unit=ep_unit)
 
-            filename = trim(ep_dir_name(it))//'/'//'qrain'//'.e'//trim(ce)
-            open(unit=ep_unit, file = filename, form = 'unformatted', status = 'old')
-            read(unit=ep_unit) ni, nj, nk
-            read(unit=ep_unit) temp3d(1:ix,1:jy,1:kz)
-            ep % v4(its:ite,jts:jte,kts:kte,te) = ep % v4(its:ite,jts:jte,kts:kte,te) + &
-                                                  ens_scaling_inv * temp3d(its:ite,jts:jte,kts:kte)
-            close(unit=ep_unit)
-         end if !end if cloud_cv_options=1
-#ifdef CLOUD_CV
-         if ( cloud_cv_options >= 2 ) then
-            filename = trim(ep_dir_name(it))//'/'//'qcloud'//'.e'//trim(ce)
-            open(unit=ep_unit, file = filename, form = 'unformatted', status = 'old')
-            read(unit=ep_unit) ni, nj, nk
-            read(unit=ep_unit) temp3d(1:ix,1:jy,1:kz)
-            ep % cw(its:ite,jts:jte,kts:kte,te) = ens_scaling_inv * temp3d(its:ite,jts:jte,kts:kte)
-            close(unit=ep_unit)
+         filename = trim(ep_dir_name(it))//'/'//'qrain'//'.e'//trim(ce)
+         open(unit=ep_unit, file = filename, form = 'unformatted', status = 'old')
+         read(unit=ep_unit) ni, nj, nk
+         read(unit=ep_unit) temp3d(1:ix,1:jy,1:kz)
+         ep % rn(its:ite,jts:jte,kts:kte,te) = ens_scaling_inv * temp3d(its:ite,jts:jte,kts:kte)
+         close(unit=ep_unit)
 
-            filename = trim(ep_dir_name(it))//'/'//'qrain'//'.e'//trim(ce)
-            open(unit=ep_unit, file = filename, form = 'unformatted', status = 'old')
-            read(unit=ep_unit) ni, nj, nk
-            read(unit=ep_unit) temp3d(1:ix,1:jy,1:kz)
-            ep % rn(its:ite,jts:jte,kts:kte,te) = ens_scaling_inv * temp3d(its:ite,jts:jte,kts:kte)
-            close(unit=ep_unit)
+         filename = trim(ep_dir_name(it))//'/'//'qice'//'.e'//trim(ce)
+         open(unit=ep_unit, file = filename, form = 'unformatted', status = 'old')
+         read(unit=ep_unit) ni, nj, nk
+         read(unit=ep_unit) temp3d(1:ix,1:jy,1:kz)
+         ep % ci(its:ite,jts:jte,kts:kte,te) = ens_scaling_inv * temp3d(its:ite,jts:jte,kts:kte)
+         close(unit=ep_unit)
 
-            filename = trim(ep_dir_name(it))//'/'//'qice'//'.e'//trim(ce)
-            open(unit=ep_unit, file = filename, form = 'unformatted', status = 'old')
-            read(unit=ep_unit) ni, nj, nk
-            read(unit=ep_unit) temp3d(1:ix,1:jy,1:kz)
-            ep % ci(its:ite,jts:jte,kts:kte,te) = ens_scaling_inv * temp3d(its:ite,jts:jte,kts:kte)
-            close(unit=ep_unit)
+         filename = trim(ep_dir_name(it))//'/'//'qsnow'//'.e'//trim(ce)
+         open(unit=ep_unit, file = filename, form = 'unformatted', status = 'old')
+         read(unit=ep_unit) ni, nj, nk
+         read(unit=ep_unit) temp3d(1:ix,1:jy,1:kz)
+         ep % sn(its:ite,jts:jte,kts:kte,te) = ens_scaling_inv * temp3d(its:ite,jts:jte,kts:kte)
+         close(unit=ep_unit)
 
-            filename = trim(ep_dir_name(it))//'/'//'qsnow'//'.e'//trim(ce)
-            open(unit=ep_unit, file = filename, form = 'unformatted', status = 'old')
-            read(unit=ep_unit) ni, nj, nk
-            read(unit=ep_unit) temp3d(1:ix,1:jy,1:kz)
-            ep % sn(its:ite,jts:jte,kts:kte,te) = ens_scaling_inv * temp3d(its:ite,jts:jte,kts:kte)
-            close(unit=ep_unit)
+         filename = trim(ep_dir_name(it))//'/'//'qgraup'//'.e'//trim(ce)
+         open(unit=ep_unit, file = filename, form = 'unformatted', status = 'old')
+         read(unit=ep_unit) ni, nj, nk
+         read(unit=ep_unit) temp3d(1:ix,1:jy,1:kz)
+         ep % gr(its:ite,jts:jte,kts:kte,te) = ens_scaling_inv * temp3d(its:ite,jts:jte,kts:kte)
+         close(unit=ep_unit)
 
-            filename = trim(ep_dir_name(it))//'/'//'qgraup'//'.e'//trim(ce)
-            open(unit=ep_unit, file = filename, form = 'unformatted', status = 'old')
-            read(unit=ep_unit) ni, nj, nk
-            read(unit=ep_unit) temp3d(1:ix,1:jy,1:kz)
-            ep % gr(its:ite,jts:jte,kts:kte,te) = ens_scaling_inv * temp3d(its:ite,jts:jte,kts:kte)
-            close(unit=ep_unit)
-         end if ! end if cloud_cv_options>=2
-#endif
       end do ! num_fgat_time*ne loop
+
    end if ! hydrometeors
 
    print *,"MAX EP",MAXVAL(ep % v1(its:ite,jts:jte,:,:))
@@ -216,13 +196,14 @@ subroutine da_setup_flow_predictors( ix, jy, kz, ne, ep, its, ite, jts, jte, kts
    print *,"MAX EP",MAXVAL(ep % v3(its:ite,jts:jte,:,:)) 
    print *,"MAX EP",MAXVAL(ep % v4(its:ite,jts:jte,:,:))
    print *,"MAX EP",MAXVAL(ep % v5(its:ite,jts:jte,:,:))
-#ifdef CLOUD_CV
-   print *,"MAX EP",MAXVAL(ep % cw(its:ite,jts:jte,:,:))
-   print *,"MAX EP",MAXVAL(ep % rn(its:ite,jts:jte,:,:))
-   print *,"MAX EP",MAXVAL(ep % ci(its:ite,jts:jte,:,:))
-   print *,"MAX EP",MAXVAL(ep % sn(its:ite,jts:jte,:,:))
-   print *,"MAX EP",MAXVAL(ep % gr(its:ite,jts:jte,:,:))
-#endif
+
+   if ( alphacv_method == alphacv_method_xa .and. alpha_hydrometeors ) then
+      print *,"MAX EP",MAXVAL(ep % cw(its:ite,jts:jte,:,:))
+      print *,"MAX EP",MAXVAL(ep % rn(its:ite,jts:jte,:,:))
+      print *,"MAX EP",MAXVAL(ep % ci(its:ite,jts:jte,:,:))
+      print *,"MAX EP",MAXVAL(ep % sn(its:ite,jts:jte,:,:))
+      print *,"MAX EP",MAXVAL(ep % gr(its:ite,jts:jte,:,:))
+   end if
 
    deallocate(ep_dir_name)
    call da_free_unit(ep_unit)

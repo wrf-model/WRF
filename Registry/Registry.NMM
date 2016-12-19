@@ -392,8 +392,23 @@ state  real   ustar     ij    dyn_nmm   1    -     irh023d=(DownNear) "USTAR"   
 state  real   z0        ij    dyn_nmm   1    -     i01rh023d=(DownNear) "Z0"   "Thermal Roughness length"                    "m"
 state  real   mz0       ij    dyn_nmm   1    -       h        "MZ0"       "momentum Roughness length"                     "m"
 state  real     rc2d    ij    dyn_nmm   1    -       h        "RC2D"     "critical Richardson number" "m"
-state  real   dku3d    ijk    dyn_nmm   1    -       h        "DKU3D"     "Momentum Diffusivity" "m*m/s"
-state  real   dkt3d    ijk    dyn_nmm   1    -       h        "DKT3D"     "Thermal Diffusivity" "m*m/s"
+state  real   dku3d    ijk    dyn_nmm   1    -      rh      "DKU3D"     "Momentum Diffusivity" "m*m/s"
+state  real   dkt3d    ijk    dyn_nmm   1    -      rh      "DKT3D"     "Thermal Diffusivity" "m*m/s"
+
+state  real   SCALEFUN  ij    dyn_nmm   1    -     rh023       "SCALEFUN"  "CNV Mass Scale function(0-1)"        " "
+state  real   SCALEFUN1 ij    dyn_nmm   1    -     rh023       "SCALEFUN1"  "CNV Mass Scale function 1(0-1)"        " "
+state  real   SIGMU     ij    dyn_nmm   1    -     rh023       "SIGMU"  "CNV deep updraft fractio     n(0-1)"        " "
+state  real   SIGMU1    ij    dyn_nmm   1    -     rh023       "SIGMU1"  "CNV shallow updraft fra     ction(0-1)"  
+state  real   DTHCUDT  ijk    dyn_nmm   1    -      rh      "DTHCUDT"     "TH tendency due to CU" "K/s"
+state  real   DQVCUDT  ijk    dyn_nmm   1    -      rh      "DQVCUDT"     "QV tendency due to CU" "kg/kg/s"
+state  real   DQRCUDT  ijk    dyn_nmm   1    -      rh      "DQRCUDT"     "QR tendency due to CU" "kg/kg/s"
+state  real   DQCCUDT  ijk    dyn_nmm   1    -      rh      "DQCCUDT"     "QC tendency due to CU" "Kg/kg/s"
+state  real   DQICUDT  ijk    dyn_nmm   1    -      rh      "DQICUDT"     "QI tendency due to CU" "Kg/kg/s"
+state  real   DQSCUDT  ijk    dyn_nmm   1    -      rh      "DQSCUDT"     "QS tendency due to CU" "Kg/kg/s"
+state  real   DTHBLDT  ijk    dyn_nmm   1    -      rh      "DTHBLDT"     "TH tendency due to PBL" "K/s"
+state  real   DQVBLDT  ijk    dyn_nmm   1    -      rh      "DQVBLDT"     "QV tendency due to PBL" "Kg/kg/s"
+state  real   DUBLDT   ijk    dyn_nmm   1    -      rh      "DUBLDT"     "U tendency due to PBL" "m/s/s"
+state  real   DVBLDT   ijk    dyn_nmm   1    -      rh      "DVBLDT"     "V tendency due to PBL" "m/s/s"
 state  real   hpbl2d    ij    dyn_nmm   1    -     irh        "HPBL2D"     "HEIGHT OF PBL from new GFS pbl" "m"
 state  real   heat2d    ij    dyn_nmm   1    -     irh        "HEAT2D"     "" ""
 state  real   evap2d    ij    dyn_nmm   1    -     irh        "EVAP2D"     "" ""
@@ -1751,8 +1766,8 @@ package   pxlsmscheme    sf_surface_physics==7       -             -
 package   ssibscheme     sf_surface_physics==8       -             -
 package   ysuscheme      bl_pbl_physics==1           -             -
 package   myjpblscheme   bl_pbl_physics==2           -             -
-package   gfsscheme      bl_pbl_physics==3           -             state:hpbl2d,heat2d,evap2d,rc2d
-package   gfs2011scheme  bl_pbl_physics==83          -             state:hpbl2d,heat2d,evap2d
+package   gfsscheme      bl_pbl_physics==93          -             state:hpbl2d,heat2d,evap2d,rc2d
+package   gfsedmfscheme  bl_pbl_physics==3           -             state:hpbl2d,heat2d,evap2d
 package   qnsepblscheme  bl_pbl_physics==4           -             -
 package   acmpblscheme   bl_pbl_physics==7           -             -
 package   boulacscheme   bl_pbl_physics==8           -             - 
@@ -1765,9 +1780,9 @@ package   fitchscheme    windfarm_opt==1             -             -
 package   kfetascheme    cu_physics==1               -             -
 package   bmjscheme      cu_physics==2               -             -
 package   gdscheme       cu_physics==93              -             -
-package   sasscheme      cu_physics==84              -             state:hpbl2d,heat2d,evap2d
-package   meso_sas       cu_physics==85              -             state:hpbl2d,heat2d,evap2d
-package   osasscheme     cu_physics==4               -             state:randstate1,randstate2,randstate3,randstate4,random
+package   sasscheme      cu_physics==94              -             state:hpbl2d,heat2d,evap2d
+package   scalesasscheme cu_physics==4               -             state:hpbl2d,heat2d,evap2d
+package   osasscheme     cu_physics==95              -             state:randstate1,randstate2,randstate3,randstate4,random
 package   g3scheme       cu_physics==5               -             -
 package   gfscheme       cu_physics==3               -             -
 package   camzmscheme    cu_physics==7               -             -

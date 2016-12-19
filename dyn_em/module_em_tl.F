@@ -250,9 +250,26 @@ CONTAINS
  ENDIF
  ENDIF
 
+!  theta flux divergence
+!hcl 11/2016 ERM: Use WENO for theta flux on 3rd RK step if using WENO_SCALAR or WENOPD_SCALAR
+! to be consistent with other scalar fluxes
+ IF(  ( config_flags%scalar_adv_opt == WENO_SCALAR           &
+         .or. config_flags%scalar_adv_opt == WENOPD_SCALAR   &
+         .or. config_flags%moist_adv_opt == WENO_SCALAR      &
+         .or. config_flags%moist_adv_opt == WENOPD_SCALAR    &
+                       )  .and. (rk_step == 3) ) THEN
+
+ CALL g_advect_scalar_weno(t,g_t,t,g_t,t_tend,g_t_tend,ru,g_ru,rv,g_rv, &
+ ww,g_ww,mut,time_step,config_flags,msfux,msfuy,msfvx,msfvy,msftx,msfty, &
+ fnm,fnp,rdx,rdy,rdnw,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
+
+ ELSE
+
  CALL g_advect_scalar(t,g_t,t,g_t,t_tend,g_t_tend,ru,g_ru,rv,g_rv, &
  ww,g_ww,mut,time_step,config_flags,msfux,msfuy,msfvx,msfvy,msftx,msfty, &
  fnm,fnp,rdx,rdy,rdnw,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
+
+ ENDIF
 
  IF( config_flags%cu_physics == GDSCHEME  .OR.       &
      config_flags%cu_physics == G3SCHEME  .OR.       &

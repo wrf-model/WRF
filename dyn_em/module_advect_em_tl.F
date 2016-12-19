@@ -7386,8 +7386,10 @@ SUBROUTINE G_ADVECT_SCALAR_PD(field, fieldd, field_old, field_oldd, &
   LOGICAL :: degrade_xs, degrade_ys
   LOGICAL :: degrade_xe, degrade_ye
   INTEGER :: jp1, jp0, jtmp
-  REAL :: flux_out, ph_low, scale
-  REAL :: flux_outd, ph_lowd, scaled
+  REAL, DIMENSION(its-1:ite+2, kts:kte, jts-1:jte+2) :: flux_out, ph_low
+  REAL, DIMENSION(its-1:ite+2, kts:kte, jts-1:jte+2) :: flux_outd, ph_lowd
+  REAL :: scale
+  REAL :: scaled
   REAL, PARAMETER :: eps=1.e-20
 ! definition of flux operators, 3rd, 4th, 5th or 6th order
   REAL :: flux3, flux4, flux5, flux6, flux_upwind
@@ -12074,7 +12076,12 @@ j_loop_y_flux_3:DO j=j_start,j_end+1
         ELSE
           j_end = jte + 1
         END IF
+        ph_lowd = 0.0
+      ELSE
+        ph_lowd = 0.0
       END IF
+    ELSE
+      ph_lowd = 0.0
     END IF
 ! ADT note:
 ! We don't want to change j_start and j_end
@@ -12084,16 +12091,29 @@ j_loop_y_flux_3:DO j=j_start,j_end+1
 !-- here is the limiter...
     DO j=j_start,j_end
       DO k=kts,ktf
+#ifdef XEON_SIMD
+!DIR$ simd
+#else
+!DIR$ vector always
+#endif
         DO i=i_start,i_end
-          ph_lowd = mu_oldd(i, j)*field_old(i, k, j) + (mub(i, j)+mu_old&
+          ph_lowd(i,k,j) = mu_oldd(i, j)*field_old(i, k, j) + (mub(i, j)+mu_old&
 &            (i, j))*field_oldd(i, k, j) - dt*(msftx(i, j)*msfty(i, j)*(&
 &            rdx*(fqxld(i+1, k, j)-fqxld(i, k, j))+rdy*(fqyld(i, k, j+1)-&
 &            fqyld(i, k, j)))+msfty(i, j)*rdzw(k)*(fqzld(i, k+1, j)-fqzld&
 &            (i, k, j)))
-          ph_low = (mub(i, j)+mu_old(i, j))*field_old(i, k, j) - dt*(&
+          ph_low(i,k,j) = (mub(i, j)+mu_old(i, j))*field_old(i, k, j) - dt*(&
 &            msftx(i, j)*msfty(i, j)*(rdx*(fqxl(i+1, k, j)-fqxl(i, k, j))&
 &            +rdy*(fqyl(i, k, j+1)-fqyl(i, k, j)))+msfty(i, j)*rdzw(k)*(&
 &            fqzl(i, k+1, j)-fqzl(i, k, j)))
+        ENDDO
+      ENDDO
+    ENDDO
+    flux_outd = 0.0
+    DO j=j_start,j_end
+      DO k=kts,ktf
+!DIR$ vector always
+        DO i=i_start,i_end
           IF (0. .LT. fqx(i+1, k, j)) THEN
             max1d = fqxd(i+1, k, j)
             max1 = fqx(i+1, k, j)
@@ -12136,15 +12156,24 @@ j_loop_y_flux_3:DO j=j_start,j_end+1
             max54 = 0.
             max54d = 0.0
           END IF
-          flux_outd = dt*(msftx(i, j)*msfty(i, j)*(rdx*(max1d-min74d)+&
+          flux_outd(i,k,j) = dt*(msftx(i, j)*msfty(i, j)*(rdx*(max1d-min74d)+&
 &            rdy*(max53d-min75d))+msfty(i, j)*rdzw(k)*(min76d-max54d))
-          flux_out = dt*(msftx(i, j)*msfty(i, j)*(rdx*(max1-min74)+rdy*(&
+          flux_out(i,k,j) = dt*(msftx(i, j)*msfty(i, j)*(rdx*(max1-min74)+rdy*(&
 &            max53-min75))+msfty(i, j)*rdzw(k)*(min76-max54))
-          IF (flux_out .GT. ph_low) THEN
-            IF (0. .LT. ph_low/(flux_out+eps)) THEN
-              scaled = (ph_lowd*(flux_out+eps)-ph_low*flux_outd)/(&
-&                flux_out+eps)**2
-              scale = ph_low/(flux_out+eps)
+        ENDDO
+      ENDDO
+    ENDDO
+    DO j=j_start,j_end
+      DO k=kts,ktf
+!DIR$ vector always
+        DO i=i_start,i_end
+          IF (flux_out(i,k,j) .GT. ph_low(i,k,j)) THEN
+            y16d = (ph_lowd(i,k,j)*(flux_out(i,k,j)+eps)-ph_low(i,k,j)*flux_outd(i,k,j))/(&
+&                flux_out(i,k,j)+eps)**2
+            y16 = ph_low(i,k,j)/(flux_out(i,k,j)+eps)
+            IF (0. .LT. y16) THEN
+              scaled = y16d
+              scale = y16
             ELSE
               scale = 0.
               scaled = 0.0
@@ -12357,8 +12386,10 @@ SUBROUTINE G_ADVECT_SCALAR_WENOPD(field, fieldd, field_old, field_oldd, &
   LOGICAL :: degrade_xs, degrade_ys
   LOGICAL :: degrade_xe, degrade_ye
   INTEGER :: jp1, jp0, jtmp
-  REAL :: flux_out, ph_low, scale
-  REAL :: flux_outd, ph_lowd, scaled
+  REAL, DIMENSION(its-1:ite+2, kts:kte, jts-1:jte+2) :: flux_out, ph_low
+  REAL, DIMENSION(its-1:ite+2, kts:kte, jts-1:jte+2) :: flux_outd, ph_lowd
+  REAL :: scale
+  REAL :: scaled
   REAL, PARAMETER :: eps=1.e-20
   REAL :: dir, vv
   REAL :: ue, vs, vn, wb, wt
@@ -12746,7 +12777,7 @@ j_loop_y_flux_5:DO j=j_start,j_end+1
 &            max2*field_oldd(i, k, j))))/dt
           fqyl(i, k, j) = mu*(dy/dt)*(0.5*min3*field_old(i, k, j-1)+0.5*&
 &            max2*field_old(i, k, j))
-          IF (vel .GE. 0.0) THEN
+          IF (vel*sign(1,time_step) .GE. 0.0) THEN
             qip2d = fieldd(i, k, j+1)
             qip2 = field(i, k, j+1)
             qip1d = fieldd(i, k, j)
@@ -13195,7 +13226,7 @@ j_loop_y_flux_5:DO j=j_start,j_end+1
 &          max7*field_oldd(i, k, j))))/dt
         fqxl(i, k, j) = mu*(dx/dt)*(0.5*min10*field_old(i-1, k, j)+0.5*&
 &          max7*field_old(i, k, j))
-        IF (vel .GE. 0.0) THEN
+        IF (vel*sign(1,time_step) .GE. 0.0) THEN
           qip2d = fieldd(i+1, k, j)
           qip2 = field(i+1, k, j)
           qip1d = fieldd(i, k, j)
@@ -13800,7 +13831,7 @@ j_loop_y_flux_5:DO j=j_start,j_end+1
 &          max12*field_oldd(i, k, j))))/dt
         fqzl(i, k, j) = mu*(dz/dt)*(0.5*min17*field_old(i, k-1, j)+0.5*&
 &          max12*field_old(i, k, j))
-        IF (-vel .GE. 0.0) THEN
+        IF (-vel*sign(1,time_step) .GE. 0.0) THEN
           qip2d = fieldd(i, k+1, j)
           qip2 = field(i, k+1, j)
           qip1d = fieldd(i, k, j)
@@ -14231,7 +14262,12 @@ j_loop_y_flux_5:DO j=j_start,j_end+1
         ELSE
           j_end = jte + 1
         END IF
+        ph_lowd = 0.0
+      ELSE
+        ph_lowd = 0.0
       END IF
+    ELSE
+      ph_lowd = 0.0
     END IF
 ! ADT note:
 ! We don't want to change j_start and j_end
@@ -14242,15 +14278,23 @@ j_loop_y_flux_5:DO j=j_start,j_end+1
     DO j=j_start,j_end
       DO k=kts,ktf
         DO i=i_start,i_end
-          ph_lowd = mu_oldd(i, j)*field_old(i, k, j) + (mub(i, j)+mu_old&
+          ph_lowd(i,k,j) = mu_oldd(i, j)*field_old(i, k, j) + (mub(i, j)+mu_old&
 &            (i, j))*field_oldd(i, k, j) - dt*(msftx(i, j)*msfty(i, j)*(&
 &            rdx*(fqxld(i+1, k, j)-fqxld(i, k, j))+rdy*(fqyld(i, k, j+1)-&
 &            fqyld(i, k, j)))+msfty(i, j)*rdzw(k)*(fqzld(i, k+1, j)-fqzld&
 &            (i, k, j)))
-          ph_low = (mub(i, j)+mu_old(i, j))*field_old(i, k, j) - dt*(&
+          ph_low(i,k,j) = (mub(i, j)+mu_old(i, j))*field_old(i, k, j) - dt*(&
 &            msftx(i, j)*msfty(i, j)*(rdx*(fqxl(i+1, k, j)-fqxl(i, k, j))&
 &            +rdy*(fqyl(i, k, j+1)-fqyl(i, k, j)))+msfty(i, j)*rdzw(k)*(&
 &            fqzl(i, k+1, j)-fqzl(i, k, j)))
+        ENDDO
+      ENDDO
+    ENDDO
+    flux_outd = 0.0
+    DO j=j_start,j_end
+      DO k=kts,ktf
+!DIR$ vector always
+        DO i=i_start,i_end
           IF (0. .LT. fqx(i+1, k, j)) THEN
             max1d = fqxd(i+1, k, j)
             max1 = fqx(i+1, k, j)
@@ -14293,15 +14337,21 @@ j_loop_y_flux_5:DO j=j_start,j_end+1
             max18 = 0.
             max18d = 0.0
           END IF
-          flux_outd = dt*(msftx(i, j)*msfty(i, j)*(rdx*(max1d-min24d)+&
+          flux_outd(i,k,j) = dt*(msftx(i, j)*msfty(i, j)*(rdx*(max1d-min24d)+&
 &            rdy*(max17d-min25d))+msfty(i, j)*rdzw(k)*(min26d-max18d))
-          flux_out = dt*(msftx(i, j)*msfty(i, j)*(rdx*(max1-min24)+rdy*(&
+          flux_out(i,k,j) = dt*(msftx(i, j)*msfty(i, j)*(rdx*(max1-min24)+rdy*(&
 &            max17-min25))+msfty(i, j)*rdzw(k)*(min26-max18))
-          IF (flux_out .GT. ph_low) THEN
-            IF (0. .LT. ph_low/(flux_out+eps)) THEN
-              scaled = (ph_lowd*(flux_out+eps)-ph_low*flux_outd)/(&
-&                flux_out+eps)**2
-              scale = ph_low/(flux_out+eps)
+        ENDDO
+      ENDDO
+    ENDDO
+    DO j=j_start,j_end
+      DO k=kts,ktf
+        DO i=i_start,i_end
+          IF (flux_out(i,k,j) .GT. ph_low(i,k,j)) THEN
+            IF (0. .LT. ph_low(i,k,j)/(flux_out(i,k,j)+eps)) THEN
+              scaled = (ph_lowd(i,k,j)*(flux_out(i,k,j)+eps)-ph_low(i,k,j)*flux_outd(i,k,j))/(&
+&                flux_out(i,k,j)+eps)**2
+              scale = ph_low(i,k,j)/(flux_out(i,k,j)+eps)
             ELSE
               scale = 0.
               scaled = 0.0
@@ -16083,7 +16133,7 @@ j_loop_y_flux_5:DO j=j_start,j_end+1
 !          vel = rv(i,k,j)
             veld = 0.5*(rvd(i, k, j)+rvd(i-is, k-ks, j-js))
             vel = 0.5*(rv(i, k, j)+rv(i-is, k-ks, j-js))
-            IF (vel .GE. 0.0) THEN
+            IF (vel*sign(1,time_step) .GE. 0.0) THEN
               qip2d = fieldd(i, k, j+1)
               qip2 = field(i, k, j+1)
               qip1d = fieldd(i, k, j)
@@ -16370,7 +16420,7 @@ j_loop_y_flux_5:DO j=j_start,j_end+1
 !          vel = ru(i,k,j)
           veld = 0.5*(rud(i, k, j)+rud(i-is, k-ks, j-js))
           vel = 0.5*(ru(i, k, j)+ru(i-is, k-ks, j-js))
-          IF (vel .GE. 0.0) THEN
+          IF (vel*sign(1,time_step) .GE. 0.0) THEN
             qip2d = fieldd(i+1, k, j)
             qip2 = field(i+1, k, j)
             qip1d = fieldd(i, k, j)
@@ -16679,7 +16729,7 @@ j_loop_y_flux_5:DO j=j_start,j_end+1
 !           vel = rom(i,k,j)
         veld = 0.5*(romd(i, k, j)+romd(i-is, k-ks, j-js))
         vel = 0.5*(rom(i, k, j)+rom(i-is, k-ks, j-js))
-        IF (-vel .GE. 0.0) THEN
+        IF (-vel*sign(1,time_step) .GE. 0.0) THEN
           qip2d = fieldd(i, k+1, j)
           qip2 = field(i, k+1, j)
           qip1d = fieldd(i, k, j)
@@ -17000,7 +17050,7 @@ j_loop_y_flux_5:DO j=j_start,j_end+1
         DO i=i_start,i_end
           veld = 0.5*(rvd(i, k, j)+rvd(i-1, k, j))
           vel = 0.5*(rv(i, k, j)+rv(i-1, k, j))
-          IF (vel .GE. 0.0) THEN
+          IF (vel*sign(1,time_step) .GE. 0.0) THEN
             qip2d = ud(i, k, j+1)
             qip2 = u(i, k, j+1)
             qip1d = ud(i, k, j)
@@ -17229,7 +17279,7 @@ j_loop_y_flux_5:DO j=j_start,j_end+1
       DO i=i_start_f,i_end_f
         veld = 0.5*(rud(i, k, j)+rud(i-1, k, j))
         vel = 0.5*(ru(i, k, j)+ru(i-1, k, j))
-        IF (vel .GE. 0.0) THEN
+        IF (vel*sign(1,time_step) .GE. 0.0) THEN
           qip2d = ud(i+1, k, j)
           qip2 = u(i+1, k, j)
           qip1d = ud(i, k, j)
@@ -17591,7 +17641,7 @@ j_loop_y_flux_5:DO j=j_start,j_end+1
       DO i=i_start,i_end
         veld = 0.5*(romd(i-1, k, j)+romd(i, k, j))
         vel = 0.5*(rom(i-1, k, j)+rom(i, k, j))
-        IF (-vel .GE. 0.0) THEN
+        IF (-vel*sign(1,time_step) .GE. 0.0) THEN
           qip2d = ud(i, k+1, j)
           qip2 = u(i, k+1, j)
           qip1d = ud(i, k, j)
@@ -17884,7 +17934,7 @@ j_loop_y_flux_5:DO j=j_start,j_end+1
         DO i=i_start,i_end
           veld = 0.5*(rvd(i, k, j)+rvd(i, k, j-1))
           vel = 0.5*(rv(i, k, j)+rv(i, k, j-1))
-          IF (vel .GE. 0.0) THEN
+          IF (vel*sign(1,time_step) .GE. 0.0) THEN
             qip2d = vd(i, k, j+1)
             qip2 = v(i, k, j+1)
             qip1d = vd(i, k, j)
@@ -18143,7 +18193,7 @@ j_loop_y_flux_5:DO j=j_start,j_end+1
       DO i=i_start_f,i_end_f
         veld = 0.5*(rud(i, k, j)+rud(i, k, j-1))
         vel = 0.5*(ru(i, k, j)+ru(i, k, j-1))
-        IF (vel .GE. 0.0) THEN
+        IF (vel*sign(1,time_step) .GE. 0.0) THEN
           qip2d = vd(i+1, k, j)
           qip2 = v(i+1, k, j)
           qip1d = vd(i, k, j)
@@ -18532,7 +18582,7 @@ j_loop_y_flux_5:DO j=j_start,j_end+1
       DO i=i_start,i_end
         veld = 0.5*(romd(i, k, j)+romd(i, k, j-1))
         vel = 0.5*(rom(i, k, j)+rom(i, k, j-1))
-        IF (-vel .GE. 0.0) THEN
+        IF (-vel*sign(1,time_step) .GE. 0.0) THEN
           qip2d = vd(i, k+1, j)
           qip2 = v(i, k+1, j)
           qip1d = vd(i, k, j)
@@ -18833,7 +18883,7 @@ j_loop_y_flux_5:DO j=j_start,j_end+1
         DO i=i_start,i_end
           veld = fzm(k)*rvd(i, k, j) + fzp(k)*rvd(i, k-1, j)
           vel = fzm(k)*rv(i, k, j) + fzp(k)*rv(i, k-1, j)
-          IF (vel .GE. 0.0) THEN
+          IF (vel*sign(1,time_step) .GE. 0.0) THEN
             qip2d = wd(i, k, j+1)
             qip2 = w(i, k, j+1)
             qip1d = wd(i, k, j)
@@ -18927,7 +18977,7 @@ j_loop_y_flux_5:DO j=j_start,j_end+1
       DO i=i_start,i_end
         veld = (2.-fzm(k-1))*rvd(i, k-1, j) - fzp(k-1)*rvd(i, k-2, j)
         vel = (2.-fzm(k-1))*rv(i, k-1, j) - fzp(k-1)*rv(i, k-2, j)
-        IF (vel .GE. 0.0) THEN
+        IF (vel*sign(1,time_step) .GE. 0.0) THEN
           qip2d = wd(i, k, j+1)
           qip2 = w(i, k, j+1)
           qip1d = wd(i, k, j)
@@ -19208,7 +19258,7 @@ j_loop_y_flux_5:DO j=j_start,j_end+1
       DO i=i_start_f,i_end_f
         veld = fzm(k)*rud(i, k, j) + fzp(k)*rud(i, k-1, j)
         vel = fzm(k)*ru(i, k, j) + fzp(k)*ru(i, k-1, j)
-        IF (vel .GE. 0.0) THEN
+        IF (vel*sign(1,time_step) .GE. 0.0) THEN
           qip2d = wd(i+1, k, j)
           qip2 = w(i+1, k, j)
           qip1d = wd(i, k, j)
@@ -19303,7 +19353,7 @@ j_loop_y_flux_5:DO j=j_start,j_end+1
     DO i=i_start_f,i_end_f
       veld = (2.-fzm(k-1))*rud(i, k-1, j) - fzp(k-1)*rud(i, k-2, j)
       vel = (2.-fzm(k-1))*ru(i, k-1, j) - fzp(k-1)*ru(i, k-2, j)
-      IF (vel .GE. 0.0) THEN
+      IF (vel*sign(1,time_step) .GE. 0.0) THEN
         qip2d = wd(i+1, k, j)
         qip2 = w(i+1, k, j)
         qip1d = wd(i, k, j)
@@ -19748,7 +19798,7 @@ j_loop_y_flux_5:DO j=j_start,j_end+1
       DO i=i_start,i_end
         veld = 0.5*(romd(i, k, j)+romd(i, k-1, j))
         vel = 0.5*(rom(i, k, j)+rom(i, k-1, j))
-        IF (-vel .GE. 0.0) THEN
+        IF (-vel*sign(1,time_step) .GE. 0.0) THEN
           qip2d = wd(i, k+1, j)
           qip2 = w(i, k+1, j)
           qip1d = wd(i, k, j)

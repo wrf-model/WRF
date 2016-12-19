@@ -1900,9 +1900,25 @@ CONTAINS
 !!   END DO
 !!   END DO
 
+!hcl 11/2016 ERM: Use WENO for theta flux on 3rd RK step if using WENO_SCALAR or WENOPD_SCALAR
+! to be consistent with other scalar fluxes
+ IF(  ( config_flags%scalar_adv_opt == WENO_SCALAR           &
+         .or. config_flags%scalar_adv_opt == WENOPD_SCALAR   &
+         .or. config_flags%moist_adv_opt == WENO_SCALAR      &
+         .or. config_flags%moist_adv_opt == WENOPD_SCALAR    &
+                       )  .and. (rk_step == 3) ) THEN
+
+   CALL a_advect_scalar_weno(t,a_t,t,a_t,t_tend,a_t_tend,ru,a_ru,rv,a_rv,ww,  &
+   a_ww,mut,time_step,config_flags,msfux,msfuy,msfvx,msfvy,msftx,msfty,fnm,  &
+   fnp,rdx,rdy,rdnw,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
+
+ ELSE
+
    CALL a_advect_scalar(t,a_t,t,a_t,t_tend,a_t_tend,ru,a_ru,rv,a_rv,ww,  &
    a_ww,mut,time_step,config_flags,msfux,msfuy,msfvx,msfvy,msftx,msfty,fnm,  &
    fnp,rdx,rdy,rdnw,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
+
+ ENDIF
 
 !LPB[1]
 !! Remarked by Ning Pan, 2010-07-30

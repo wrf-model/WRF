@@ -163,6 +163,7 @@ CONTAINS
                           config_flags%restart, grid%iseedarr_skebs,          &
                           grid%DX,grid%DY,grid%skebs_vertstruc,               &
                           grid%rt_tendf_stoch,                                &
+                          grid%stddev_cutoff_sppt,grid%gridpt_stddev_sppt, & 
                           grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPUV      )
           ! Update streamfunction, backtransform U
            CALL RAND_PERT_UPDATE(grid,'U',                                    &
@@ -181,6 +182,7 @@ CONTAINS
                            config_flags%restart, grid%iseedarr_skebs,         &
                            grid%DX,grid%DY,grid%skebs_vertstruc,              &
                            grid%ru_tendf_stoch,                               &
+                           grid%stddev_cutoff_sppt,grid%gridpt_stddev_sppt, & 
                            grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPUV     )
           ! Don't update streamfunction, backtransform V
            CALL RAND_PERT_UPDATE(grid,'V',                                    &
@@ -199,6 +201,7 @@ CONTAINS
                            config_flags%restart, grid%iseedarr_skebs,         &
                            grid%DX,grid%DY,grid%skebs_vertstruc,              &
                            grid%rv_tendf_stoch,                               &
+                           grid%stddev_cutoff_sppt,grid%gridpt_stddev_sppt, & 
                            grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPT      )
        ENDIF !skebs_on 
 
@@ -219,6 +222,7 @@ CONTAINS
                           config_flags%restart, grid%iseedarr_sppt,           &
                           grid%DX,grid%DY,grid%sppt_vertstruc,                &
                           grid%rstoch,                                        &
+                          grid%stddev_cutoff_sppt,grid%gridpt_stddev_sppt, & 
                           grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPT       )
        ENDIF !sppt_on
 
@@ -239,8 +243,69 @@ CONTAINS
                            config_flags%restart, grid%iseedarr_rand_pert,      &
                            grid%DX,grid%DY,grid%rand_pert_vertstruc,           &
                            grid%RAND_PERT,                                     &
+                           grid%stddev_cutoff_rand_pert,grid%gridpt_stddev_rand_pert, & 
                            grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPT       )
-       ENDIF !rand_perturb_on
+      ENDIF !rand_perturb_on
+      if ((grid%spp_conv==1).and.(grid%id .EQ. 1 )) then
+           CALL RAND_PERT_UPDATE(grid,'T',                                     &
+                           grid%SPFORCS2,grid%SPFORCC2,                        &
+                           grid%SP_AMP2,grid%ALPH_RAND2,                       &
+                           ips, ipe, jps, jpe, kps, kpe,                       &
+                           ids, ide, jds, jde, kds, kde,                       &
+                           ims, ime, jms, jme, kms, kme,                       &
+                           k_start, k_end,                                     &
+                           imsx,imex,jmsx,jmex,kmsx,kmex,                      &
+                           ipsx,ipex,jpsx,jpex,kpsx,kpex,                      &
+                           imsy,imey,jmsy,jmey,kmsy,kmey,                      &
+                           ipsy,ipey,jpsy,jpey,kpsy,kpey,                      &
+                           grid%num_stoch_levels,grid%num_stoch_levels,        &
+                           grid%num_stoch_levels,grid%num_stoch_levels,        &
+                           config_flags%restart, grid%iseedarr_spp_conv,          &
+                           grid%DX,grid%DY,grid%vertstruc_spp_conv,            &
+                           grid%pattern_spp_conv,                             & 
+                           grid%stddev_cutoff_spp_conv,grid%gridpt_stddev_spp_conv, & 
+                           grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPT       )
+      ENDIF !spp_conv
+      if ((grid%spp_pbl==1).and.(grid%id .EQ. 1 )) then
+           CALL RAND_PERT_UPDATE(grid,'T',                                     &
+                           grid%SPFORCS3,grid%SPFORCC3,                        &
+                           grid%SP_AMP3,grid%ALPH_RAND3,                       &
+                           ips, ipe, jps, jpe, kps, kpe,                       &
+                           ids, ide, jds, jde, kds, kde,                       &
+                           ims, ime, jms, jme, kms, kme,                       &
+                           k_start, k_end,                                     &
+                           imsx,imex,jmsx,jmex,kmsx,kmex,                      &
+                           ipsx,ipex,jpsx,jpex,kpsx,kpex,                      &
+                           imsy,imey,jmsy,jmey,kmsy,kmey,                      &
+                           ipsy,ipey,jpsy,jpey,kpsy,kpey,                      &
+                           grid%num_stoch_levels,grid%num_stoch_levels,        &
+                           grid%num_stoch_levels,grid%num_stoch_levels,        &
+                           config_flags%restart, grid%iseedarr_spp_pbl,           &
+                           grid%DX,grid%DY,grid%vertstruc_spp_pbl,             &
+                           grid%pattern_spp_pbl,                             & 
+                           grid%stddev_cutoff_spp_pbl,grid%gridpt_stddev_spp_pbl, & 
+                           grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPT       )
+      ENDIF !spp_pbl
+      if ((grid%spp_lsm==1).and.(grid%id .EQ. 1 )) then
+           CALL RAND_PERT_UPDATE(grid,'T',                                     &
+                           grid%SPFORCS4,grid%SPFORCC4,                        &
+                           grid%SP_AMP4,grid%ALPH_RAND4,                       &
+                           ips, ipe, jps, jpe, kps, kpe,                       &
+                           ids, ide, jds, jde, kds, kde,                       &
+                           ims, ime, jms, jme, kms, kme,                       &
+                           k_start, k_end,                                     &
+                           imsx,imex,jmsx,jmex,kmsx,kmex,                      &
+                           ipsx,ipex,jpsx,jpex,kpsx,kpex,                      &
+                           imsy,imey,jmsy,jmey,kmsy,kmey,                      &
+                           ipsy,ipey,jpsy,jpey,kpsy,kpey,                      &
+                           grid%num_stoch_levels,grid%num_stoch_levels,        &
+                           grid%num_stoch_levels,grid%num_stoch_levels,        &
+                           config_flags%restart, grid%iseedarr_spp_lsm,           &
+                           grid%DX,grid%DY,grid%vertstruc_spp_lsm,             &
+                           grid%pattern_spp_lsm,                             & 
+                           grid%stddev_cutoff_spp_lsm,grid%gridpt_stddev_spp_lsm, & 
+                           grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPT       )
+      ENDIF !spp_lsm
 
 ! calculate_phy_tend
 

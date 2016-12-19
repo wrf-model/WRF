@@ -460,10 +460,9 @@
                wrf_err_message = '             and should not be changed from their default value for SPPT' 
                CALL wrf_message ( wrf_err_message )
                wrf_err_message = '--- ERROR: If you really want to modify "kminforct" etc.,  edit module_check a_mundo.'
-         !      CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
-         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
-         fatal_error = .true.
-         count_fatal_error = count_fatal_error + 1
+               CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+               fatal_error = .true.
+               count_fatal_error = count_fatal_error + 1
            endif
          endif
    ENDDO
@@ -476,12 +475,33 @@
                CALL wrf_message ( wrf_err_message )
                wrf_err_message = '             and should not be changed from their default value for RAND_PERTURB' 
                CALL wrf_message ( wrf_err_message )
-               wrf_err_message = ' ABORT. If you really want to modify "kminforct" etc.,  edit module_check a_mundo.'
-         !      CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
-         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
-         fatal_error = .true.
-         count_fatal_error = count_fatal_error + 1
+               wrf_err_message = '--- ERROR: If you really want to modify "kminforct" etc.,  edit module_check a_mundo.'
+               CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+               fatal_error = .true.
+               count_fatal_error = count_fatal_error + 1
            endif
+         endif
+   ENDDO
+   DO i = 1, model_config_rec % max_dom
+         IF (( model_config_rec % spp_conv(i) .ne. 0).or.( model_config_rec % spp_pbl(i) .ne. 0).or. (model_config_rec % spp_lsm(i) .ne. 0)  & 
+           .or. ( model_config_rec % spp(i) .ne. 0))  then
+           model_config_rec % spp_on=1
+           IF (( model_config_rec%KMINFORCT .ne. 1) .or. (model_config_rec%KMAXFORCT .ne. 1000000) .or.   & 
+               ( model_config_rec%LMINFORCT .ne. 1) .or. (model_config_rec%LMAXFORCT .ne. 1000000)) then    
+               wrf_err_message = '--- Warning: the namelist parameter "kminforct" etc are for SKEBS only'
+               CALL wrf_message ( wrf_err_message )
+               wrf_err_message = '             and should not be changed from their default value for RAND_PERTURB' 
+               CALL wrf_message ( wrf_err_message )
+               wrf_err_message = '--- ERROR: If you really want to modify "kminforct" etc.,  edit module_check a_mundo.'
+               CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+               fatal_error = .true.
+               count_fatal_error = count_fatal_error + 1
+           endif
+         endif
+         IF ( model_config_rec % spp(i) .ne. 0)  then
+           model_config_rec % spp_conv=1
+           model_config_rec % spp_pbl=1
+           model_config_rec % spp_lsm=1
          endif
    ENDDO
    DO i = 1, model_config_rec % max_dom

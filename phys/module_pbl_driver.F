@@ -41,16 +41,17 @@ CONTAINS
                  ,qke,Sh3d                                         &
                  ,qke_adv,bl_mynn_tkeadvect                        & !ACF for QKE advection
                  ,tsq,qsq,cov,rmol,ch,qcg,grav_settling            & 
-                 ,dqke,qWT,qSHEAR,qBUOY,qDISS,bl_mynn_tkebudget    & ! JOE - MYNN TKE budget
-                 ,bl_mynn_cloudpdf                                 & ! JOE - cloud PDF tests
-                 ,bl_mynn_mixlength                                & ! JAYMES
-                 ,icloud_bl,qc_bl,cldfra_bl                        & ! JOE-subgrid bl clouds
+                 ,dqke,qWT,qSHEAR,qBUOY,qDISS,bl_mynn_tkebudget    &
+                 ,bl_mynn_cloudpdf                                 &
+                 ,bl_mynn_mixlength                                &
+                 ,icloud_bl,qc_bl,cldfra_bl                        &
                  ,bl_mynn_edmf,bl_mynn_edmf_mom,bl_mynn_edmf_tke   &
-                 ,bl_mynn_edmf_part                                & !JOE- MYNN edmf
-                 ,bl_mynn_cloudmix,bl_mynn_mixqt                   & !JOE- MYNN cloud methods
-                 ,edmf_a,edmf_w,edmf_thl                           & !JOE- MYNN edmf
-                 ,edmf_qt,edmf_ent,edmf_qc                         & !JOE- MYNN edmf
-                 ,vdfg                                             & ! Katata- fog deposition
+                 ,bl_mynn_edmf_part                                &
+                 ,bl_mynn_cloudmix,bl_mynn_mixqt                   &
+                 ,edmf_a,edmf_w,edmf_thl                           &
+                 ,edmf_qt,edmf_ent,edmf_qc                         &
+                 ,vdfg                                             &
+                 ,spp_pbl,pattern_spp_pbl                          &
 #if (NMM_CORE==1)
                  ,DISHEAT                                          &
                  ,HPBL2D, EVAP2D, HEAT2D, RC2D                     &   !Kwon FOR SHAL. CON.
@@ -579,6 +580,10 @@ CONTAINS
 
    REAL,       DIMENSION( ims:ime , jms:jme ),                    &
                INTENT(IN)    :: XICE, SNOW, LH
+
+   ! Stochastic parameter perturbations
+   INTEGER,    INTENT(IN)              ::             spp_pbl
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),INTENT(INOUT),OPTIONAL ::pattern_spp_pbl
 
 ! Bep changes: variable added for urban
    real, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) ::FRC_URB2D   ! URBAN Landuse fraction
@@ -1605,8 +1610,7 @@ CONTAINS
            IF ( PRESENT( qv_curr )  .AND. PRESENT( qc_curr )  .AND. &
                 PRESENT( rqvblten ) .AND. PRESENT( rqcblten ) .AND. &
                 PRESENT( qi_curr ) .AND. PRESENT( rqiblten ) .AND.  &
-                PRESENT( rqniblten ) .AND. & !PRESENT( rqncblten ) .AND. &
-                PRESENT( qni_curr ) .AND. & !PRESENT( qnc_curr ) .AND. &
+                PRESENT( rqniblten ) .AND. PRESENT( qni_curr ) .AND.&
                 PRESENT(qke) .AND. PRESENT(tsq) .AND.               &
                 PRESENT(qsq) .AND. PRESENT(cov) .AND.               &
                 PRESENT(rmol) .AND.                                 &
@@ -1656,8 +1660,8 @@ CONTAINS
                    &,bl_mynn_tkebudget=bl_mynn_tkebudget                 &
                    &,bl_mynn_cloudpdf=bl_mynn_cloudpdf                   &
                    &,bl_mynn_mixlength=bl_mynn_mixlength                 &
-                   &,icloud_bl=icloud_bl,qc_bl=qc_bl                   & !JOE-subgrid bl clouds
-                   &,cldfra_bl=cldfra_bl                                 & !JOE-subgrid bl clouds
+                   &,icloud_bl=icloud_bl,qc_bl=qc_bl                     &
+                   &,cldfra_bl=cldfra_bl                                 &
                    &,bl_mynn_edmf=bl_mynn_edmf                           &
                    &,bl_mynn_edmf_mom=bl_mynn_edmf_mom                   &
                    &,bl_mynn_edmf_tke=bl_mynn_edmf_tke                   &
@@ -1666,6 +1670,7 @@ CONTAINS
                    &,bl_mynn_mixqt=bl_mynn_mixqt                         &
                    &,edmf_a=edmf_a,edmf_w=edmf_w,edmf_qt=edmf_qt         &
                    &,edmf_thl=edmf_thl,edmf_ent=edmf_ent,edmf_qc=edmf_qc &
+                   &,spp_pbl=spp_pbl,pattern_spp_pbl=pattern_spp_pbl     &
                    &,FLAG_QI=flag_qi,FLAG_QNI=flag_qni                   &
                    &,FLAG_QC=flag_qc,FLAG_QNC=flag_qnc                   &
                    ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
@@ -1678,12 +1683,10 @@ CONTAINS
                  'qv_curr, '//                                      &
                  'qc_curr, '//                                      &
                  'qi_curr, '//                                      &
-!                 'qnc_curr, '//                                     &
                  'qni_curr, '//                                     &
                  'rqvblten, '//                                     &
                  'rqcblten, '//                                     &
                  'rqiblten, '//                                     &
-!                 'rqncblten, '//                                    &
                  'rqniblten, '//                                    &
                  'qke, '//                                          &
                  'tsq, '//                                          &
@@ -1700,12 +1703,10 @@ CONTAINS
                   PRESENT( qv_curr ) ,                              &
                   PRESENT( qc_curr ) ,                              &
                   PRESENT( qi_curr ) ,                              &
-!                  PRESENT( qnc_curr ) ,                             &
                   PRESENT( qni_curr ) ,                             &
                   PRESENT( rqvblten ) ,                             &
                   PRESENT( rqcblten ) ,                             &
                   PRESENT( rqiblten ) ,                             &
-!                  PRESENT( rqncblten ) ,                            &
                   PRESENT( rqniblten ) ,                            &
                   PRESENT( qke      ) ,                             &
                   PRESENT( tsq      ) ,                             &

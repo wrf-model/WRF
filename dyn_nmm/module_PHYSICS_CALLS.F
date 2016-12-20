@@ -726,6 +726,7 @@
 !- RLWIN/RSWIN - downward longwave/shortwave at the surface (also TOTLWDN/TOTSWDN in RADIATION)
      &                ,PD,RES,PINT,T,Q,CWM,F_ICE,F_RAIN,SR              &
      &                ,Q2,U,V,THS,TSFC,SST,PREC,SNO                     &
+     &                ,SCURX,SCURY                                      &
      &                ,FIS,Z0,MZ0,Z0BASE,USTAR,MIXHT,PBLH,LPBL,EL_MYJ   &   !MZ0: MOMENTUM Z0 (KWON)
      &                ,MOIST,RMOL,MOL                                   &
      &                ,EXCH_H,EXCH_M,F,AKHS,AKMS,AKHS_OUT,AKMS_OUT      &
@@ -736,14 +737,14 @@
      &                ,SFCEXC,ACSNOW,ACSNOM,SNOPCX,SICE,TG,SOILTB       &
      &                ,ALBSI,ICEDEPTH,SNOWSI                            &
      &                ,ALBASE,MXSNAL,ALBEDO,SH2O,SI,EPSR,EMBCK          &
-     &                ,U10,V10,UOCE,VOCE,TH10,Q10,TSHLTR,QSHLTR,PSHLTR            &
+     &                ,U10,V10,UOCE,VOCE,TH10,Q10,TSHLTR,QSHLTR,PSHLTR  &
      &                ,T2,QSG,QVG,QCG,SOILT1,TSNAV,SMFR3D,KEEPFR3DFLAG  &
      &                ,TWBS,QWBS,TAUX,TAUY,SFCSHX,SFCLHX,SFCEVP,RTHRATEN&
      &                ,POTEVP,POTFLX,SUBSHX                             &
      &                ,APHTIM,ARDSW,ARDLW,ASRFC                         &
      &                ,RSWOUT,RSWTOA,RLWTOA                             &
      &                ,ASWIN,ASWOUT,ASWTOA,ALWIN,ALWOUT,ALWTOA          &
-     &                ,UZ0H,VZ0H,DUDT,DVDT,UGWDsfc,VGWDsfc,SFENTH              & ! GWD
+     &                ,UZ0H,VZ0H,DUDT,DVDT,UGWDsfc,VGWDsfc,SFENTH       & ! GWD
      &                ,RTHBLTEN,RQVBLTEN                                &
      &                ,PCPFLG,DDATA                                     & ! PRECIP ASSIM
      &                ,HSTDV,HCNVX,HASYW,HASYS,HASYSW,HASYNW,HLENW      & ! GWD
@@ -757,6 +758,10 @@
      &                ,HPBL2D, EVAP2D, HEAT2D,RC2D                      &  !Kwon S&P
      &                ,SFCHEADRT,INFXSRT,SOLDRAIN                       &  !Hydrology, no-op right now
      &                ,cd_out,ch_out                                    &
+     &                ,ulowl, vlowl                                     &
+     &                ,zkmax, ribn                                      &
+     &                ,charn, msang                                     &
+     &                ,DUBLDT,DVBLDT,DTHBLDT,DQVBLDT                    & !wang added PBL tendency output
      &                ,IDS,IDE,JDS,JDE,KDS,KDE                          &
      &                ,IMS,IME,JMS,JME,KMS,KME                          &
      &                ,IPS,IPE,JPS,JPE,KPS,KPE                          &
@@ -891,9 +896,18 @@
                                                     ,SFCEXC,SMSTAV      &
                                                     ,SOILTB,TWBS
 !
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN)  :: scurx, scury
 
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: cd_out,ch_out
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT) :: &
+                                                       DTHBLDT         &
+                                                      ,DQVBLDT         &
+                                                      ,DUBLDT          &
+                                                      ,DVBLDT
+
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: taux, tauy
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: zkmax, ribn
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: charn, msang
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(IN) :: PINT
 !
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT) :: CWM      &
@@ -977,6 +991,8 @@
      &                                          ,DUDT_GWD,DVDT_GWD      & ! GWD
      &                                          ,U_PHY,V_PHY,Z
 !
+      REAL,DIMENSION(IMS:IME,JMS:JME), INTENT(OUT) :: ULOWL, VLOWL
+!
       REAL,DIMENSION(:,:,:,:),ALLOCATABLE :: MOIST_TRANS
 !
       REAL,DIMENSION(IMS:IME,NSOIL,JMS:JME) :: ZERO_SOIL
@@ -1041,6 +1057,7 @@
       IFNDALBSI = 0
       IFNDSNOWSI = 0
       IFNDICEDEPTH = 0
+      BR=10
 
       SEAICE_ALBEDO_DEFAULT = CONFIG_FLAGS%SEAICE_ALBEDO_DEFAULT
       SEAICE_THICKNESS_OPT = CONFIG_FLAGS%SEAICE_THICKNESS_OPT
@@ -1267,6 +1284,10 @@
             V_PHY(I,K,J)=(V(I+IHE(J),J,K)+V(I+IHW(J),J,K)               &
      &                   +V(I,J+1,K)+V(I,J-1,K))                        &
      &                   *0.25
+          IF ( K == KTS ) THEN
+             ULOWL(I,J) = U_PHY(I,K,J)
+             VLOWL(I,J) = V_PHY(I,K,J)
+          ENDIF
           ENDDO
         ENDDO
       ENDDO
@@ -1380,9 +1401,12 @@
      &          ,PBLH=PBLH,PI_PHY=PI_PHY,PSHLTR=PSHLTR,PSIH=PSIH        &
      &          ,PSIM=PSIM,P_PHY=P_PHY,Q10=Q10,Q2=Q2X,QFX=QWBS,TAUX=TAUX,TAUY=TAUY,QSFC=QS  &
      &          ,QSHLTR=QSHLTR,QZ0=QZ0                                  &
-     &          ,ICOEF_SF=CONFIG_FLAGS%ICOEF_SF                         &
-     &          ,LCURR_SF=CONFIG_FLAGS%LCURR_SF                         &!for gfdl-sf drag
 #if (HWRF==1)
+     &          ,ZKMAX=ZKMAX,RIBN=RIBN                                  &
+     &          ,CHARN=CHARN,MSANG=MSANG,SCURX=SCURX,SCURY=SCURY        &
+     &          ,ICOEF_SF=CONFIG_FLAGS%ICOEF_SF                         &
+     &          ,IWAVECPL=CONFIG_FLAGS%IWAVECPL                         &
+     &          ,LCURR_SF=CONFIG_FLAGS%LCURR_SF                         &!for gfdl-sf drag
      &          ,pert_Cd=config_flags%pert_Cd                           &
      &          ,ens_random_seed=config_flags%ens_random_seed           &
      &          ,ens_Cdamp=config_flags%ens_Cdamp                       &
@@ -1584,6 +1608,10 @@
 !BSF &               ,RQGBLTEN=RQGBLTEN                               & !BSF
      &               ,TSK=TSFC,XLAND=XLAND,ZNT=Z0                     &
 #if ( HWRF == 1 )
+     &               ,MSANG=MSANG,SCURX=SCURX,SCURY=SCURY             &
+     &               ,IWAVECPL=CONFIG_FLAGS%IWAVECPL                  &
+     &               ,LCURR_SF=CONFIG_FLAGS%LCURR_SF                  &
+
      &               ,MZNT=MZ0                                        &
 #endif
      &               ,HT=SFCZ                                         &   !KWON
@@ -1647,6 +1675,22 @@
      &               ,fasdas=fasdas                                   &
      &               ,sf_urban_physics=CONFIG_FLAGS%SF_URBAN_PHYSICS)
 !
+!output PBL tendency
+!
+!$omp parallel do                                                       &
+!$omp& private(i,j,k)
+      DO J=JMS,JME
+      DO K=KMS,KME
+      DO I=IMS,IME
+        DUBLDT(I,J,K)=DUDT_PHY(I,K,J)
+        DVBLDT(I,J,K)=DVDT_PHY(I,K,J)
+        DTHBLDT(I,J,K)=RTHBLTEN(I,K,J)
+        DQVBLDT(I,J,K)=RQVBLTEN(I,K,J)
+      ENDDO
+      ENDDO
+      ENDDO
+!
+
 !***  NOTE THAT THE EXCHANGE COEFFICIENTS FOR HEAT EXCH_H COMING OUT OF
 !***  PBL_DRIVER ARE DEFINED AT THE TOPS OF THE LAYERS KTS TO KTE-1
 !***  IF MODULE_BL_MYJPBL WAS INVOKED.
@@ -1959,18 +2003,12 @@
           MOIST(I,J,K,P_QV)=MAX(EPSQ,(MOIST(I,J,K,P_QV)+RQVBLTEN(I,K,J)*DTPHS) )
           CWM(I,J,K)=0.
 !
-          pbl_check1: IF (.NOT.ETAMP_PHYSICS) THEN
+          pbl_check1:  IF (.NOT.ETAMP_PHYSICS) THEN
             DO I_M=1,N_MOIST
               IF(I_M==P_QC) THEN
                 MOIST(I,J,K,I_M)=MAX(EPSQ,(MOIST(I,J,K,I_M)+RQCBLTEN(I,K,J)*DTPHS) )
               ELSE IF(I_M==P_QI) THEN
                 MOIST(I,J,K,I_M)=MAX(EPSQ,(MOIST(I,J,K,I_M)+RQIBLTEN(I,K,J)*DTPHS) )
-!BSF              ELSE IF(I_M==P_QS) THEN
-!BSF                MOIST(I,J,K,I_M)=MAX(EPSQ,(MOIST(I,J,K,I_M)+RQSBLTEN(I,K,J)*DTPHS) )
-!BSF              ELSE IF(I_M==P_QR) THEN
-!BSF                MOIST(I,J,K,I_M)=MAX(EPSQ,(MOIST(I,J,K,I_M)+RQRBLTEN(I,K,J)*DTPHS) )
-!BSF              ELSE IF(I_M==P_QG) THEN
-!BSF                MOIST(I,J,K,I_M)=MAX(EPSQ,(MOIST(I,J,K,I_M)+RQGBLTEN(I,K,J)*DTPHS) )
               ENDIF
               IF(I_M/=P_QV) CWM(I,J,K)=CWM(I,J,K)+MOIST(I,J,K,I_M)
             ENDDO
@@ -2332,7 +2370,6 @@
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME,N_MOIST)                   &
      &                                           ,INTENT(INOUT) :: MOIST
 !
-
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(INOUT) :: GD_CLOUD &
      &                                                        ,GD_CLOUD2
       INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: KTOP_DEEP

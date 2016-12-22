@@ -3353,7 +3353,7 @@ ENDIF
     INTEGER, SAVE :: levflag
 
 ! Stochastic fields 
-     INTEGER,  INTENT(IN),OPTIONAL                                      ::spp_pbl
+     INTEGER,  INTENT(IN)                                               ::spp_pbl
      REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN),OPTIONAL  ::pattern_spp_pbl
      REAL, DIMENSION(KTS:KTE)                         ::    rstoch_col
 
@@ -4244,7 +4244,7 @@ ENDIF
                  &spp_pbl,rstoch_col) 
 
 ! Stochastic  
-     INTEGER,  INTENT(IN),OPTIONAL :: spp_pbl
+     INTEGER,  INTENT(IN)          :: spp_pbl
      REAL, DIMENSION(KTS:KTE)      :: rstoch_col
   ! inputs:
      INTEGER, INTENT(IN) :: KTS,KTE,momentum_opt,tke_opt

@@ -583,7 +583,7 @@ CONTAINS
 
    ! Stochastic parameter perturbations
    INTEGER,    INTENT(IN)              ::             spp_pbl
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),INTENT(INOUT),OPTIONAL ::pattern_spp_pbl
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),INTENT(IN),OPTIONAL ::pattern_spp_pbl
 
 ! Bep changes: variable added for urban
    real, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) ::FRC_URB2D   ! URBAN Landuse fraction

@@ -4316,6 +4316,7 @@ ENDIF
      REAL,DIMENSION(nchem) :: chemn
      REAL,DIMENSION(KTS:KTE+1,1:NUP, nchem) :: UPCHEM
      INTEGER :: ic
+     REAL,DIMENSION(KTS:KTE+1, nchem) :: edmf_chem
 #endif
 
   !JOE: add declaration of ERF

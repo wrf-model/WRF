@@ -40,6 +40,7 @@ CONTAINS
               ,GDC,GDC2 ,kpbl,k22_shallow,kbcon_shallow         &
               ,ktop_shallow,xmb_shallow                         &
               ,ishallow_g3                                      &
+              ,ichoice                                          &
               ,ids,ide, jds,jde, kds,kde                        &
               ,ims,ime, jms,jme, kms,kme                        &
               ,its,ite, jts,jte, kts,kte                        &
@@ -65,8 +66,9 @@ CONTAINS
 !aeroevap, 1=old,2=?, 3=average
       integer, parameter :: ideep=1
       integer, parameter :: imid_gf=0
-!      integer, parameter :: ichoice=8   ! 0 2 5 8 11 GG
-      integer, parameter :: ichoice=0   ! 0 2 5 8 11 GG
+! ichoice now in namelist, as in EM core - EG
+!      integer, parameter :: ichoice=5   ! 0 2 5 8 11 GG 
+!      integer, parameter :: ichoice=0   ! 0 2 5 8 11 GG
       integer, parameter :: ichoicem=0  ! 0 1 2 8 11 GG
       integer, parameter :: ichoice_s=2 ! 0 1 2 3
       real, parameter :: aodccn=0.1
@@ -83,7 +85,7 @@ CONTAINS
 
   
       real :: beta,betam,dts,fpi,fp
-   INTEGER,      INTENT(IN   ) :: ishallow_g3
+   INTEGER,      INTENT(IN   ) :: ishallow_g3,ichoice
 
 !   REAL,         INTENT(IN   ) :: XLV, R_v
 !   REAL,         INTENT(IN   ) :: CP,G
@@ -170,7 +172,7 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme ),INTENT(IN   ),OPTIONAL  :: cap_suppress_loc
    REAL, DIMENSION( its:ite ) :: cap_suppress_j
 #endif
-! Optional output of scale function info
+! Optional output - these arrays were available, may not be appropriately named
 #if (NMM_CORE == 1 )
    REAL, DIMENSION( ims:ime, jms:jme ),INTENT(INOUT),OPTIONAL  :: scalefun
    REAL, DIMENSION( ims:ime, jms:jme ),INTENT(INOUT),OPTIONAL  :: sigmu
@@ -178,6 +180,12 @@ CONTAINS
 
 
 ! LOCAL VARS
+! These arrays should be coming in, for now declare them local
+!   REAL,  DIMENSION( its:ite ),     INTENT(IN ) :: rand_mom,rand_vmas
+!   REAL,  DIMENSION(its:ite ,4 ),     INTENT(IN ) :: rand_clos
+   REAL,  DIMENSION( its:ite )   :: rand_mom,rand_vmas
+   REAL,  DIMENSION(its:ite ,4 ) :: rand_clos
+
      real,    dimension (its:ite,kts:kte) ::                    &
         dhdt
      real,    dimension (its:ite,kts:kte) ::                    &
@@ -234,10 +242,11 @@ CONTAINS
      integer, dimension (its:ite) :: cactiv
      real,    dimension (its:ite,kts:kte) ::  qcheck
 
-     real, dimension (its:ite)            ::                    &
-         scalefuni,sigmui
 
    tcrit=258.
+     rand_mom(:)    = 0.
+     rand_vmas(:)   = 0.
+     rand_clos(:,:) = 0.
 
    ipr=0 !639
    jpr=0 !141
@@ -272,6 +281,12 @@ CONTAINS
    ktf=MIN(kte,kde-1)
    jtf=MIN(jte,jde-1)
 
+!!!!!!!!!!!!!!! test
+   ibegc = its
+   iendc = itf
+   jbegc = jts
+   jendc = jtf
+!!!!!!!!!!!!!!!!
 !                                                                      
      DO J = jts,jte  
      DO I= its,ite
@@ -285,6 +300,7 @@ CONTAINS
      enddo
      enddo
      enddo
+
 
 ! Begin big j loop
    DO 100 J = jts,jtf  
@@ -343,11 +359,11 @@ CONTAINS
 
         ccn(i)=150.
 
-        scalefuni(i) = -1.
-        sigmui(i) = -1.
+        sigmu(i,j)=0.
+        scalefun(i,j)=0.
      ENDDO
      do k=kts,kte
-     DO I= its,itf
+     DO I= its,ite
          omeg(i,k)=0.
      ENDDO
      ENDDO
@@ -441,15 +457,17 @@ CONTAINS
          endif
      enddo
      enddo
-      DO K=kts,ktf-1
-      DO I = its,itf
-        dq=(q2d(i,k+1)-q2d(i,k))
-        mconv(i)=mconv(i)+omeg(i,k)*dq/g
-      ENDDO
-      ENDDO
-      DO I = its,itf
-        if(mconv(i).lt.0.)mconv(i)=0.
-      ENDDO
+
+! Mconv is now being computed in cup_gf
+!      DO K=kts,ktf-1
+!      DO I = its,itf
+!        dq=(q2d(i,k+1)-q2d(i,k))
+!        mconv(i)=mconv(i)+omeg(i,k)*dq/g
+!      ENDDO
+!      ENDDO
+!      DO I = its,itf
+!        if(mconv(i).lt.0.)mconv(i)=0.
+!      ENDDO
 !
 !---- CALL CUMULUS PARAMETERIZATION
 !
@@ -543,11 +561,20 @@ CONTAINS
               ,cupclwm       &
               ,ierrm         &
               ,ierrcm        &
+!    the following should be set to zero if not available
+              ,rand_mom      & ! for stochastics mom, if temporal and spatial patterns exist
+              ,rand_vmas     & ! for stochastics vertmass, if temporal and spatial patterns exist
+              ,rand_clos     & ! for stochastics closures, if temporal and spatial patterns exist
+              ,0             & ! flag to what you want perturbed
+                               ! 1 = momentum transport 
+                               ! 2 = normalized vertical mass flux profile
+                               ! 3 = closures
+                               ! more is possible, talk to developer or
+                               ! implement yourself. pattern is expected to be
+                               ! betwee -1 and +1
 #if ( WRF_DFI_RADAR == 1 )
               ,do_capsuppress,cap_suppress_j &
 #endif
-              ,scalefuni     &
-              ,sigmui        &
               ,k22m          &
               ,jminm)
 
@@ -619,11 +646,20 @@ CONTAINS
               ,cupclw       &
               ,ierr         &
               ,ierrc        &
+!    the following should be set to zero if not available
+              ,rand_mom      & ! for stochastics mom, if temporal and spatial patterns exist
+              ,rand_vmas     & ! for stochastics vertmass, if temporal and spatial patterns exist
+              ,rand_clos     & ! for stochastics closures, if temporal and spatial patterns exist
+              ,0             & ! flag to what you want perturbed
+                               ! 1 = momentum transport 
+                               ! 2 = normalized vertical mass flux profile
+                               ! 3 = closures
+                               ! more is possible, talk to developer or
+                               ! implement yourself. pattern is expected to be
+                               ! betwee -1 and +1
 #if ( WRF_DFI_RADAR == 1 )
               do_capsuppress,cap_suppress_j, &
 #endif
-              ,scalefuni     &
-              ,sigmui        &
               ,k22          &
               ,jmin)
         jpr=0
@@ -727,10 +763,11 @@ CONTAINS
               ENDIF
             ENDIF
 
+! use these existing arrays to output some useful diagnostic arrays
             IF(PRESENT(scalefun) .and. PRESENT(sigmu)) THEN
               DO I=ibegc,iendc
-                scalefun(i,j) = scalefuni(i)
-                sigmu(i,j) = sigmui(i)
+                scalefun(i,j) = edt(i)
+                sigmu(i,j) = xmb(i)
               ENDDO
             ENDIF
 

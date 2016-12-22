@@ -77,7 +77,8 @@ CONTAINS
                      ,apr_gr,apr_w,apr_mc,apr_st,apr_as,apr_capma     &
                      ,apr_capme,apr_capmi,edt_out,clos_choice         &
                      ,mass_flux,xf_ens,pr_ens,cugd_avedx,imomentum    &
-                     ,ishallow,cugd_tten,cugd_qvten,cugd_qcten        &
+                     ,ishallow                                        &
+                     ,cugd_tten,cugd_qvten,cugd_qcten                 &
                      ,cugd_ttens,cugd_qvtens                          &
                      ,gd_cloud,gd_cloud2                              &
                  ! Optional output arguments for CAMZM scheme
@@ -1218,6 +1219,7 @@ CONTAINS
                ,ktop_shallow=ktop_shallow                       &
                ,xmb_shallow=xmb_shallow                         &
                ,ishallow_g3=ishallow                            &
+               ,ichoice=clos_choice                             &
                ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
                ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &

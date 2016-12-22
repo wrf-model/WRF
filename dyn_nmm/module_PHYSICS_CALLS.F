@@ -1,4 +1,4 @@
-!-----------------------------------------------------------------------
+        !gf!-----------------------------------------------------------------------
 !
 !NCEP_MESO:MODEL_LAYER: PHYSICS
 !
@@ -2515,8 +2515,10 @@
 !End
 
       IF(MOD(NTSD,NRADS)==0.OR.MOD(NTSD,NRADL)==0)THEN
-         DO J=JMS,JME
-         DO I=IMS,IME
+       DO J=MYJS,MYJE
+       DO I=MYIS,MYIE
+!         DO J=JMS,JME        !gf
+!         DO I=IMS,IME        !gf
            HTOP(I,J)=0.
            HBOT(I,J)=REAL(KTE+1)
            CUTOP(I,J)=0.
@@ -2829,6 +2831,7 @@
      &                 ,MASS_FLUX=MASS_FLUX,XF_ENS=XF_ENS               &
      &                 ,PR_ENS=PR_ENS                                   &
      &                 ,ishallow=config_flags%ishallow                  & !gf
+     &                 ,clos_choice=config_flags%clos_choice            & !gf
      &                 ,GD_CLOUD=GD_CLOUD,GD_CLOUD2=GD_CLOUD2           &
      &                 ,KTOP_DEEP=KTOP_DEEP                             &
      &                 ,xmb_shallow=xmb_shallow                         & !gf
@@ -2962,10 +2965,15 @@
 #endif
 !$omp parallel do                                                       &
 !$omp& private(i,iendx,j,ncubot,ncutop,pcpcol)
-      pcp_cloud: DO J=MYJS2,MYJE2
-        IENDX=MYIE1
+!      pcp_cloud: DO J=MYJS2,MYJE2
+!        IENDX=MYIE1
+!        IF(MOD(J,2)==0.AND.ITE==IDE-1)IENDX=IENDX-1
+!        DO I=MYIS1,IENDX
+!test - gf
+      pcp_cloud: DO J=MYJS,MYJE
+        IENDX=MYIE
         IF(MOD(J,2)==0.AND.ITE==IDE-1)IENDX=IENDX-1
-        DO I=MYIS1,IENDX
+        DO I=MYIS,IENDX
 !
 !***  UPDATE PRECIPITATION
 !

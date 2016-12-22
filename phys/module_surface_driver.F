@@ -19,10 +19,8 @@ CONTAINS
      &          ,num_soil_layers,p8w,pblh,pi_phy,pshltr,fm,fhh,psih   &
 #if (NMM_CORE==1)
      &          ,psim,p_phy,q10,q2,qfx,taux,tauy,qsfc,qshltr,qz0      &
-#if (HWRF==1)
      &          ,zkmax,ribn,charn,msang,scurx,scury,icoef_sf,iwavecpl,lcurr_sf & !for gfdl-sf drag
      &          ,pert_Cd, ens_random_seed, ens_Cdamp                  &
-#endif
      &          ,cd_out,ch_out                                        &
 #else
      &          ,psim,p_phy,q10,q2,qfx,qsfc,qshltr,qz0                &
@@ -604,7 +602,7 @@ CONTAINS
    real ::  HYDRO_dt
    REAL, DIMENSION( ims:ime , jms:jme ):: sfcheadrt,INFXSRT, soldrain
 
-#if (HWRF==1)
+#if (NMM_CORE==1)
    real , intent(IN )::   SFENTH
    INTEGER, INTENT(IN)::   ICOEF_SF
    INTEGER, INTENT(IN)::   IWAVECPL
@@ -767,7 +765,7 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme ) , OPTIONAL, INTENT(INOUT)::   BIO4    ! ssib-snow
    REAL, DIMENSION( ims:ime, jms:jme ) , OPTIONAL, INTENT(INOUT)::   BLO4    ! ssib-snow
    REAL, DIMENSION( ims:ime, jms:jme ) , OPTIONAL, INTENT(INOUT)::   HO4     ! ssib-snow
-#if (HWRF==1)
+#if (NMM_CORE==1)
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN)::    CHARN, MSANG, SCURX, SCURY
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   RIBN, ZKMAX
 #endif

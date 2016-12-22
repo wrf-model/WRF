@@ -1401,12 +1401,12 @@
      &          ,PBLH=PBLH,PI_PHY=PI_PHY,PSHLTR=PSHLTR,PSIH=PSIH        &
      &          ,PSIM=PSIM,P_PHY=P_PHY,Q10=Q10,Q2=Q2X,QFX=QWBS,TAUX=TAUX,TAUY=TAUY,QSFC=QS  &
      &          ,QSHLTR=QSHLTR,QZ0=QZ0                                  &
-#if (HWRF==1)
+     &          ,ICOEF_SF=CONFIG_FLAGS%ICOEF_SF                         &
+     &          ,LCURR_SF=CONFIG_FLAGS%LCURR_SF                         &!for gfdl-sf drag
      &          ,ZKMAX=ZKMAX,RIBN=RIBN                                  &
      &          ,CHARN=CHARN,MSANG=MSANG,SCURX=SCURX,SCURY=SCURY        &
-     &          ,ICOEF_SF=CONFIG_FLAGS%ICOEF_SF                         &
      &          ,IWAVECPL=CONFIG_FLAGS%IWAVECPL                         &
-     &          ,LCURR_SF=CONFIG_FLAGS%LCURR_SF                         &!for gfdl-sf drag
+#if (HWRF==1)
      &          ,pert_Cd=config_flags%pert_Cd                           &
      &          ,ens_random_seed=config_flags%ens_random_seed           &
      &          ,ens_Cdamp=config_flags%ens_Cdamp                       &

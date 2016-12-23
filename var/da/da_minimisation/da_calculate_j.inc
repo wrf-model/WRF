@@ -3,7 +3,7 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
                            re, y, j, grid, config_flags                     )
 
    !---------------------------------------------------------------------------
-   ! Purpose: Initialises the Y-array
+   ! Purpose: Calculate Cost Function
    !---------------------------------------------------------------------------
 
    implicit none
@@ -23,7 +23,6 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
    type (y_type) , intent(inout)      :: re     ! residual vector (o-a).
    type (y_type) , intent(inout)      :: y      ! y = H(x_inc).
    type (j_type) , intent(out)        :: j      ! cost function j
-   !real, intent(out)                  :: grad(cv_size)        ! gradient of cost function
 
    type(domain), intent(inout)  :: grid
    type(grid_config_rec_type), intent(inout) :: config_flags
@@ -298,19 +297,11 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
       if (it == 1 .and. iter == 0) then
          write(unit=cost_unit,fmt='(a)')'Outer    EPS     Inner      J           Jb       Jo           Jc         Je         Jd         Jp         Js        jl'
          write(unit=cost_unit,fmt='(a)')'Iter             Iter                            '
-         !write(unit=grad_unit,fmt='(a)')'Outer    EPS     Inner      G           Gb       Go           Ge         Gd         Gp         Gs        Gl'
-         !write(unit=grad_unit,fmt='(a)')'Iter             Iter                            '
       end if
 
       write(unit=cost_unit,fmt='(2x,i2,1x,e10.3,2x,i4,9(1x,f10.3))') &
          it, EPS(it), iter, j % total, j % jb, j % jo % total, j % jc, j % je, j % jd, j % jp, j%js, j%jl
    end if
-         
-   !-------------------------------------------------------------------------
-   ! [9.0] Calculate Gradient:
-   !-------------------------------------------------------------------------
-   !call da_calculate_gradj(it,iter,cv_size,cv_size_jb,cv_size_je,cv_size_jp, &
-   !                        cv_size_jl,xbx, be, iv, xhat+cv, y, grad, grid, config_flags, re)
 
    call da_deallocate_y (jo_grad_y)
 if (trace_use) call da_trace_exit("da_calculate_j")

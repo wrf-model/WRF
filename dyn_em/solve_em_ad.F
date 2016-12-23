@@ -649,8 +649,10 @@ BENCH_END(set_phys_bc_tim)
 !<pre>
 !</DESCRIPTION>
 
+     if ( config_flags%cu_physics .gt. 0 ) then
        CALL PUSHREAL8ARRAY ( grid%rthcuten, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
        CALL PUSHREAL8ARRAY ( grid%rqvcuten, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+     end if
        CALL first_rk_step_part1 (    grid, config_flags         &
                              , moist , moist_tend               &
                              , chem  , chem_tend                &
@@ -693,8 +695,10 @@ BENCH_END(set_phys_bc_tim)
        CALL PUSHREAL8ARRAY ( grid%rvblten, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
        CALL PUSHREAL8ARRAY ( grid%rthblten, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
        CALL PUSHREAL8ARRAY ( grid%rqvblten, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+     if ( config_flags%cu_physics .gt. 0 ) then
        CALL PUSHREAL8ARRAY ( grid%rthcuten, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
        CALL PUSHREAL8ARRAY ( grid%rqvcuten, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+     end if
 
        CALL first_rk_step_part2 (    grid, config_flags         &
                              , moist , moist_tend               &
@@ -7421,8 +7425,10 @@ BENCH_END(adj_rk_tend_tim)
 
      adj_rk_step_is_one : IF (rk_step == 1) THEN ! only need to initialize diffusion tendencies
 
+     if ( config_flags%cu_physics .gt. 0 ) then
        CALL POPREAL8ARRAY ( grid%rqvcuten, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
        CALL POPREAL8ARRAY ( grid%rthcuten, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+     end if
        CALL POPREAL8ARRAY ( grid%rqvblten, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
        CALL POPREAL8ARRAY ( grid%rthblten, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
        CALL POPREAL8ARRAY ( grid%rvblten, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
@@ -7468,8 +7474,10 @@ BENCH_END(adj_rk_tend_tim)
               , k_start , k_end                  &
              )
 
+     if ( config_flags%cu_physics .gt. 0 ) then
        CALL POPREAL8ARRAY ( grid%rqvcuten, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
        CALL POPREAL8ARRAY ( grid%rthcuten, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+     end if
        CALL a_first_rk_step_part1 (    grid, config_flags         &
                              , moist , a_moist, moist_tend, a_moist_tend  &
                              , chem  , chem_tend                &

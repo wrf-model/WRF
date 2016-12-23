@@ -177,8 +177,10 @@ CONTAINS
 #     include "HALO_EM_PHYS_A.inc"
 #endif
 
+    if ( config_flags%cu_physics .gt. 0 ) then
       CALL PUSHREAL8ARRAY ( grid%rthcuten, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
       CALL PUSHREAL8ARRAY ( grid%rqvcuten, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+    end if
 
       !$OMP PARALLEL DO   &
       !$OMP PRIVATE ( ij )
@@ -444,8 +446,10 @@ BENCH_START(a_pbl_driver_tim)
 
 BENCH_END(a_pbl_driver_tim)
 
+    if ( config_flags%cu_physics .gt. 0 ) then
       CALL POPREAL8ARRAY ( grid%rqvcuten, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
       CALL POPREAL8ARRAY ( grid%rthcuten, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+    end if
       !$OMP PARALLEL DO   &
       !$OMP PRIVATE ( ij )
       DO ij = 1 , grid%num_tiles

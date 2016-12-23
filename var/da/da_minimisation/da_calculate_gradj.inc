@@ -179,7 +179,14 @@ subroutine da_calculate_gradj(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size
    !-------------------------------------------------------------------------
    ! [8.0] write Gradient:
    !-------------------------------------------------------------------------
-   if (present(re)) then
+   if (rootproc) then
+      if (it == 1 .and. iter == 0) then
+         write(unit=grad_unit,fmt='(a)')'Outer    EPS     Inner      G           Gb       Go           Ge         Gd         Gp         Gs        Gl'
+         write(unit=grad_unit,fmt='(a)')'Iter             Iter                            '
+      end if
+   end if
+
+   if ( present(re) .or. print_detail_grad ) then
       gnorm_j  = sqrt(da_dot_cv(cv_size, grad,    grad,    grid, be%cv_mz, be%ncv_mz, jp_start, jp_end))
       gnorm_jo = sqrt(da_dot_cv(cv_size, grad_jo, grad_jo, grid, be%cv_mz, be%ncv_mz))
       gnorm_jb = sqrt(da_dot_cv(cv_size, grad_jb, grad_jb, grid, be%cv_mz, be%ncv_mz))
@@ -193,6 +200,7 @@ subroutine da_calculate_gradj(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size
          write(grad_unit,fmt='(2x,i2,1x,e10.3,2x,i4,8(1x,f10.3))') & 
                it, eps(it), iter, gnorm_j, gnorm_jb, gnorm_jo, gnorm_je, gnorm_jd, gnorm_jp, gnorm_js, gnorm_jl
    end if
+
    if (trace_use) call da_trace_exit("da_calculate_gradj")
 
 end subroutine da_calculate_gradj

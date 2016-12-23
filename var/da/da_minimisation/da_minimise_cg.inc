@@ -193,7 +193,7 @@ subroutine da_minimise_cg(grid, config_flags,            &
 
       if ( write_detail_grad_fn ) then
          call da_calculate_gradj(it, iter, cv_size, be%cv%size_jb, be%cv%size_je, be%cv%size_jp, &
-                                 be%cv%size_jl, xbx, be, iv, xhat+cv, y, ghat, grid, config_flags, re)
+                                 be%cv%size_jl, xbx, be, iv, xhat+cv, y, fhat, grid, config_flags, re)
       end if
 
       write(unit=stdout,fmt=12) " minimize_cg ", it, iter, j_total, rrmnew_norm, step

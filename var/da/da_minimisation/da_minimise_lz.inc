@@ -161,7 +161,13 @@ subroutine da_minimise_lz(grid, config_flags,            &
     ! ----------------------------------------------
       if (calculate_cg_cost_fn) &
          call da_calculate_j(it, iter, cv_size, be%cv%size_jb, be%cv%size_je, be%cv%size_jp, &
-	                     be%cv%size_jl, xbx, be, iv, xhat, cv, re, y, j_cost, grid, config_flags)
+                             be%cv%size_jl, xbx, be, iv, xhat, cv, re, y, j_cost, grid, config_flags)
+
+      if ( write_detail_grad_fn ) then
+         call da_calculate_gradj(it, iter, cv_size, be%cv%size_jb, be%cv%size_je, be%cv%size_jp, &
+                                 be%cv%size_jl, xbx, be, iv, xhat+cv, y, fhat, grid, config_flags, re)
+      end if
+
    end do
 
    !-------------------------------------------------------------------------

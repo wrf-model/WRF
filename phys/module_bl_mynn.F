@@ -3315,7 +3315,7 @@ ENDIF
 ! WA 7/29/15 Mix chemical arrays
 #if (WRF_CHEM == 1)
     INTEGER, INTENT(IN   )   ::   nchem, kdvel, ndvel, num_vert_mix
-    REAL,    DIMENSION( ims:ime, kts:kte, jms:jme, nchem ), INTENT(INOUT) :: chem3d
+    REAL,    DIMENSION( ims:ime, kms:kme, jms:jme, nchem ), INTENT(INOUT) :: chem3d
     REAL,    DIMENSION( ims:ime, kdvel, jms:jme, ndvel ), INTENT(IN) :: vd3d
     REAL,    DIMENSION( kts:kte, nchem ) :: chem1
     REAL,    DIMENSION( kts:kte+1, nchem ) :: s_awchem1
@@ -4311,7 +4311,7 @@ ENDIF
 
 #if (WRF_CHEM == 1)
      INTEGER, INTENT(IN) :: nchem
-     REAL,DIMENSION(kts:kte+1, nchem) :: chem
+     REAL,DIMENSION(kts:kte, nchem) :: chem
      REAL,DIMENSION(kts:kte+1, nchem) :: s_awchem
      REAL,DIMENSION(nchem) :: chemn
      REAL,DIMENSION(KTS:KTE+1,1:NUP, nchem) :: UPCHEM
@@ -4625,7 +4625,7 @@ ENDIF
              UPA(K,I)=UPA(K-1,I)
 #if (WRF_CHEM == 1)
              do ic = 1,nchem
-                UPCHEM(k,ic,I) = chemn(ic)
+                UPCHEM(k,I,ic) = chemn(ic)
              enddo
 #endif
           ELSE
@@ -4662,7 +4662,7 @@ ENDIF
        edmf_qc(K)=edmf_qc(K)+UPA(K+1,I)*UPQC(K+1,I)
 #if (WRF_CHEM == 1)
        do ic = 1,nchem
-          edmf_chem(k,ic) = edmf_chem(k,ic) + UPA(K+1,I)*UPCHEM(k,ic,I)
+          edmf_chem(k,ic) = edmf_chem(k,ic) + UPA(K+1,I)*UPCHEM(k,I,ic)
        enddo
 #endif
     ENDDO 

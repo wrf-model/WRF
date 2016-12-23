@@ -160,6 +160,7 @@ CONTAINS
                           config_flags%restart, grid%iseedarr_skebs,          &
                           grid%DX,grid%DY,grid%skebs_vertstruc,               &
                           grid%rt_tendf_stoch,                                &
+                          grid%stddev_cutoff_sppt,grid%gridpt_stddev_sppt,    &
                           grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPUV      )
           ! Update streamfunction, backtransform U
            CALL RAND_PERT_UPDATE(grid,'U',                                    &
@@ -178,6 +179,7 @@ CONTAINS
                            config_flags%restart, grid%iseedarr_skebs,         &
                            grid%DX,grid%DY,grid%skebs_vertstruc,              &
                            grid%ru_tendf_stoch,                               &
+                           grid%stddev_cutoff_sppt,grid%gridpt_stddev_sppt,   &
                            grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPUV     )
           ! Don't update streamfunction, backtransform V
            CALL RAND_PERT_UPDATE(grid,'V',                                    &
@@ -196,6 +198,7 @@ CONTAINS
                            config_flags%restart, grid%iseedarr_skebs,         &
                            grid%DX,grid%DY,grid%skebs_vertstruc,              &
                            grid%rv_tendf_stoch,                               &
+                           grid%stddev_cutoff_sppt,grid%gridpt_stddev_sppt,   &
                            grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPT      )
        ENDIF !skebs_on 
 
@@ -216,6 +219,7 @@ CONTAINS
                           config_flags%restart, grid%iseedarr_sppt,           &
                           grid%DX,grid%DY,grid%sppt_vertstruc,                &
                           grid%rstoch,                                        &
+                          grid%stddev_cutoff_sppt,grid%gridpt_stddev_sppt,    &
                           grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPT       )
        ENDIF !sppt_on
 
@@ -236,6 +240,7 @@ CONTAINS
                            config_flags%restart, grid%iseedarr_rand_pert,      &
                            grid%DX,grid%DY,grid%rand_pert_vertstruc,           &
                            grid%RAND_PERT,                                     &
+                           grid%stddev_cutoff_sppt,grid%gridpt_stddev_sppt,    &
                            grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPT       )
        ENDIF !rand_perturb_on
 

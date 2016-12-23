@@ -281,6 +281,226 @@ END MODULE module_interp_info
 
 !=========================================================================
 
+! Overlapping linear horizontal iterpolation for longitude
+
+   SUBROUTINE interp_fcn_blint_ll    ( cfld_inp,                                 &  ! CD field
+                              cids, cide, ckds, ckde, cjds, cjde,   &
+                              cims, cime, ckms, ckme, cjms, cjme,   &
+                              cits, cite, ckts, ckte, cjts, cjte,   &
+                              nfld,                                 &  ! ND field
+                              nids, nide, nkds, nkde, njds, njde,   &
+                              nims, nime, nkms, nkme, njms, njme,   &
+                              nits, nite, nkts, nkte, njts, njte,   &
+                              shw,                                  &  ! stencil half width for interp
+                              imask,                                &  ! interpolation mask
+                              xstag, ystag,                         &  ! staggering of field
+                              ipos, jpos,                           &  ! Position of lower left of nest in CD
+                              nri, nrj,                             &  ! Nest ratio, i- and j-directions
+                              clat_in, nlat_in,                     & ! CG, FG latitude
+                              cinput_from_file, ninput_from_file )    ! CG, FG T/F input from file
+
+     IMPLICIT NONE
+
+     INTEGER, INTENT(IN) :: cids, cide, ckds, ckde, cjds, cjde,   &
+                            cims, cime, ckms, ckme, cjms, cjme,   &
+                            cits, cite, ckts, ckte, cjts, cjte,   &
+                            nids, nide, nkds, nkde, njds, njde,   &
+                            nims, nime, nkms, nkme, njms, njme,   &
+                            nits, nite, nkts, nkte, njts, njte,   &
+                            shw,                                  &
+                            ipos, jpos,                           &
+                            nri, nrj
+     LOGICAL, INTENT(IN) :: xstag, ystag
+
+     REAL, DIMENSION ( cims:cime, ckms:ckme, cjms:cjme ) :: cfld_inp, cfld
+     REAL, DIMENSION ( nims:nime, nkms:nkme, njms:njme ) :: nfld
+     REAL, DIMENSION ( cims:cime,            cjms:cjme ) :: clat_in
+     REAL, DIMENSION ( nims:nime,            njms:njme ) :: nlat_in
+     INTEGER, DIMENSION ( nims:nime, njms:njme ) :: imask
+     LOGICAL :: cinput_from_file, ninput_from_file
+
+     ! Local
+
+     INTEGER ci, cj, ck, ni, nj, nk, istag, jstag, ioff, joff, i, j, k
+     REAL :: wx, wy, cfld_ll, cfld_lr, cfld_ul, cfld_ur
+     REAL :: cxp0, cxp1, nx, cyp0, cyp1, ny
+     LOGICAL :: probably_by_dateline
+     REAL :: max_lon, min_lon
+     LOGICAL :: probably_by_pole
+     REAL :: max_lat, min_lat
+
+     !  Fortran functions.  Yes, yes, I know, probably pretty slow.
+
+     REAL, EXTERNAL :: nest_loc_of_cg
+     INTEGER, EXTERNAL :: compute_CGLL
+
+     !  This stag stuff is to keep us away from the outer most row
+     !  and column for the unstaggered directions.  We are going to 
+     !  consider "U" an xstag variable and "V" a ystag variable.  The
+     !  vertical staggering is handled in the actual arguments.  The
+     !  ckte and nkte are the ending vertical dimensions for computations
+     !  for this particular variable.
+
+     IF ( xstag ) THEN
+        istag = 0 
+        ioff  = 1
+     ELSE
+        istag = 1
+        ioff  = 0
+     END IF
+
+     IF ( ystag ) THEN
+        jstag = 0 
+        joff  = 1
+     ELSE
+        jstag = 1
+        joff  = 0
+     END IF
+
+     !  If this is a projection where the nest is over the pole, and
+     !  we are using the parent to interpolate the longitudes, then 
+     !  we are going to have longitude troubles.  If this is the case,
+     !  stop the model right away.
+
+     probably_by_pole = .FALSE.
+     max_lat = -90
+     min_lat = +90
+     DO nj = njts, MIN(njde-jstag,njte)
+        DO ni = nits, MIN(nide-istag,nite)
+           max_lat = MAX ( nlat_in(ni,nj) , max_lat )       
+           min_lat = MIN ( nlat_in(ni,nj) , min_lat )       
+        END DO
+     END DO
+
+     IF ( ( max_lat .GT. 85 ) .OR. ( ABS(min_lat) .GT. 85 ) ) THEN
+        probably_by_pole = .TRUE.
+     END IF
+
+     IF ( ( probably_by_pole ) .AND. ( .NOT. ninput_from_file ) ) THEN
+        CALL wrf_error_fatal ( 'Nest over the pole, single input domain, longitudes will be wrong' )
+     END IF
+
+     !  Initialize to NOT being by dateline.
+
+     probably_by_dateline = .FALSE.
+     max_lon = -180
+     min_lon = +180
+     DO nj = njts, MIN(njde-jstag,njte)
+        cj = compute_CGLL ( nj , jpos , nrj , jstag )
+        DO ni = nits, MIN(nide-istag,nite)
+           ci = compute_CGLL ( ni , ipos , nri , istag )
+           max_lon = MAX ( cfld_inp(ci,1,cj) , max_lon )       
+           min_lon = MIN ( cfld_inp(ci,1,cj) , min_lon )       
+        END DO
+     END DO
+
+     IF ( max_lon - min_lon .GT. 300 ) THEN
+        probably_by_dateline = .TRUE.
+     END IF
+
+     !  Load "continuous" longitude across the date line
+
+     DO cj = MIN(cjts-1,cjms), MAX(cjte+1,cjme)
+       DO ci = MIN(cits-1,cims), MAX(cite+1,cime)
+         IF ( ( cfld_inp(ci,ckts,cj) .LT. 0 ) .AND. ( probably_by_dateline ) ) THEN
+           cfld(ci,ckts,cj) = 360 + cfld_inp(ci,ckts,cj)
+         ELSE
+           cfld(ci,ckts,cj) =       cfld_inp(ci,ckts,cj)
+         END IF
+       END DO
+     END DO
+
+     !  Loop over each j-index on this tile for the nested domain.
+
+     j_loop : DO nj = njts, MIN(njde-jstag,njte)
+
+        !  This is the lower-left j-index of the CG.
+
+        !  Example is 3:1 ratio, mass-point staggering.  We have listed six CG values
+        !  as an example: A, B, C, D, E, F.  For a 3:1 ratio, each of these CG cells has
+        !  nine associated FG points.
+        !  |=========|=========|=========|
+        !  | -  -  - | -  -  - | -  -  - |
+        !  |         |         |         |
+        !  | -  D  - | -  E  - | -  F  - |
+        !  |         |         |         |
+        !  | 1  2  3 | 4  5  6 | 7  8  9 |
+        !  |=========|=========|=========|
+        !  | -  -  - | -  -  - | -  -  - |
+        !  |         |         |         |
+        !  | -  A  - | -  B  - | -  C  - |
+        !  |         |         |         |
+        !  | -  -  - | -  -  - | -  -  - |
+        !  |=========|=========|=========|
+        !  To interpolate to FG point 4, we will use CG points: A, B, D, E.  It is adequate to
+        !  find the lower left point.  The lower left (LL) point for "4" is "A".  Below
+        !  are a few more points.
+        !  2 => A
+        !  3 => A
+        !  4 => A
+        !  5 => B
+        !  6 => B
+        !  7 => B
+
+        cj = compute_CGLL ( nj , jpos , nrj , jstag )
+        ny = REAL(nj)
+        cyp0 = nest_loc_of_cg ( cj   , jpos , nrj , joff ) 
+        cyp1 = nest_loc_of_cg ( cj+1 , jpos , nrj , joff ) 
+
+        !  What is the weighting for this CG point to the FG point, j-weight only.
+
+        wy = ( cyp1 - ny ) / ( cyp1 - cyp0 )
+
+        !  Vertical dim of the nest domain.
+
+        k_loop : DO nk = nkts, nkte
+
+          !  Loop over each i-index on this tile for the nested domain.
+
+           i_loop : DO ni = nits, MIN(nide-istag,nite)
+
+              IF ( imask ( ni, nj ) .EQ. 1 ) THEN
+ 
+                 !  The coarse grid location that is to the lower left of the FG point.
+   
+                 ci = compute_CGLL ( ni , ipos , nri , istag )
+                 nx = REAL(ni)
+                 cxp0 = nest_loc_of_cg ( ci   , ipos , nri , ioff ) 
+                 cxp1 = nest_loc_of_cg ( ci+1 , ipos , nri , ioff ) 
+   
+                 wx = ( cxp1 - nx ) / ( cxp1 - cxp0 )
+   
+                 !  The four surrounding CG values.
+   
+                 cfld_ll = cfld(ci  ,nk,cj  )
+                 cfld_lr = cfld(ci+1,nk,cj  )
+                 cfld_ul = cfld(ci  ,nk,cj+1)
+                 cfld_ur = cfld(ci+1,nk,cj+1)
+
+                 !  Bilinear interpolation in horizontal.
+
+                 nfld( ni , nk , nj ) =     wy  * ( cfld_ll * wx + cfld_lr * (1.-wx) ) + &
+                                        (1.-wy) * ( cfld_ul * wx + cfld_ur * (1.-wx) )
+
+              END IF
+           END DO i_loop
+        END DO    k_loop
+     END DO       j_loop
+
+     !  Put nested longitude back into the -180 to 180 range.
+
+     DO nj = njts, MIN(njde-jstag,njte)
+        DO ni = nits, MIN(nide-istag,nite)
+           IF ( nfld(ni,nkts,nj) .GT. 180 ) THEN
+              nfld(ni,nkts,nj) = -360 + nfld(ni,nkts,nj)
+           END IF
+        END DO
+    END DO
+
+   END SUBROUTINE interp_fcn_blint_ll
+
+!=========================================================================
+
 ! Lagrange interpolating polynomials, set up as a quadratic, with an average of
 ! the overlap.
 
@@ -5933,8 +6153,8 @@ END MODULE module_interp_info
 
      !  Load "continuous" longitude across the date line
 
-     DO cj = cjts, cjte
-       DO ci = cits, cite
+     DO cj = MIN(cjts-1,cjms), MAX(cjte+1,cjme)
+       DO ci = MIN(cits-1,cims), MAX(cite+1,cime)
          IF ( ( cfld_inp(ci,ckts,cj) .LT. 0 ) .AND. ( probably_by_dateline ) ) THEN
            cfld(ci,ckts,cj) = 360 + cfld_inp(ci,ckts,cj)
          ELSE

@@ -3230,7 +3230,6 @@ CONTAINS
                      ims,ime, jms,jme, kms,kme,                               &
                      i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte   )
 
-
        ELSE
          CALL wrf_error_fatal('Lacking arguments for RUCLSM in surface driver')
        ENDIF

@@ -438,6 +438,7 @@ module_sf_clm.o: module_cam_shr_kind_mod.o \
 		 module_cam_shr_const_mod.o \
 		 module_cam_support.o \
 		 module_sf_urban.o \
+		 module_ra_gfdleta.o \
 		 ../share/module_date_time.o \
 		 ../frame/module_wrf_error.o  \
 		../frame/module_configure.o
@@ -861,9 +862,18 @@ module_ra_aerosol.o :\
 
 # DEPENDENCIES for share
 
+module_trajectory.o: ../frame/module_domain.o \
+		../frame/module_configure.o \
+		../frame/module_dm.o \
+		../frame/module_comm_dm.o \
+		../frame/module_state_description.o \
+		module_model_constants.o \
+		module_date_time.o \
+		module_llxy.o
+
 solve_interface.o: solve_em.int ../frame/module_domain.o ../frame/module_configure.o \
 		../frame/module_timing.o ../frame/module_driver_constants.o \
-		../frame/module_wrf_error.o
+		../frame/module_wrf_error.o module_trajectory.o
 
 start_domain.o: start_domain_em.int wrf_timeseries.o track_driver.o ../frame/module_domain.o ../frame/module_configure.o ../share/module_llxy.o
 

@@ -2067,7 +2067,7 @@ rconfig   integer   ocean_levels    namelist,domains    1               30     i
 rconfig   real      ocean_z         namelist,domains    max_ocean      -1      -     "vertical profile of layer depths for ocean" "m"
 rconfig   real      ocean_t         namelist,domains    max_ocean      -1      -     "vertical profile of ocean temps" "K"
 rconfig   real      ocean_s         namelist,domains    max_ocean      -1      -     "vertical profile of salinity" 
-rconfig   integer   num_traj        namelist,domains    1               25      irh   "num_traj" "#of trajectory" ""
+rconfig   integer   num_traj        namelist,domains    1               1000    irh   "num_traj" "#of trajectory" ""
 
 # variable for time series of vertical profile of U, V, Theta, GHT,a nd QVAPOR
 rconfig   integer   max_ts_level    namelist,domains    1              15       -       "max_ts_level"   "Highest model level for time series output"
@@ -2236,6 +2236,7 @@ rconfig   integer pxlsm_smois_init        namelist,physics      max_domains   1 
 rconfig   integer omlcall                 namelist,physics      1            0         h     "omlcall"     "temporary holder to allow checking for new name: oml_opt"
 rconfig   integer sf_ocean_physics        namelist,physics      1            0         h     "sf_ocean_physics"     "activate ocean model  0=no, 1=1d mixed layer, 2=3D PWP" ""
 rconfig   integer traj_opt                namelist,physics      1            0         h     "traj_opt"    "activate trajectory calculation  0=no, 1=on"   ""
+rconfig   logical dm_has_traj             namelist,physics      max_domains  .false.   rh    "has_traj"    "activate trajectory calculation per domain"   ""
 rconfig   integer tracercall              namelist,physics      1            0         h     "tracercall"  "activate tracer calculation  0=no, 1=on"   ""
 rconfig   real    OMDT                    namelist,physics      1            1         h     "OMDT"        "Timestep of ocean model"      "s"
 rconfig   real    oml_hml0                namelist,physics      1            50        h     "oml_hml0"    "oml initial mixed layer depth value"   "m"

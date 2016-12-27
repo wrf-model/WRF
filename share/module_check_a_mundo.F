@@ -1070,6 +1070,20 @@
       END IF
 
 !-----------------------------------------------------------------------
+! If hailcast_opt = 1, horizontal grid spacing must be 4 km or finer.
+!-----------------------------------------------------------------------
+      DO i = 1, model_config_rec % max_dom
+         IF ( ( model_config_rec%hailcast_opt(i) .NE. 0 ) .AND. &
+              ( model_config_rec%dx(i) .GT. 4000 ) ) THEN
+            wrf_err_message = '--- WARNING:  hailcast_opt requires a grid-spacing of 4 km or finer.'
+            CALL wrf_message ( wrf_err_message )
+            wrf_err_message = '---          hailcast_opt is now 0.'
+            CALL wrf_message ( wrf_err_message )
+            model_config_rec%hailcast_opt(i) = 0
+         ENDIF
+      ENDDO
+
+!-----------------------------------------------------------------------
 ! Name change in the namelist.input file.  We used to only have the
 ! ocean mixed layer option (omlcall=1).  With the addition of a 3D ocean,
 ! now let's change the name of the option.  If the old name is present,

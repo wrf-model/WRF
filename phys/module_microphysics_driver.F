@@ -1010,6 +1010,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
            Call wrf_error_fatal( 'arguments not present for calling morrison two moment')
         ENDIF
 
+#if (EM_CORE==1)
     CASE (P3_1CATEGORY)
          CALL wrf_debug(100, 'microphysics_driver: calling p3 one category')
 !         IF (PRESENT (QV_CURR) .AND. PRESENT (QC_CURR) .AND. &
@@ -1106,6 +1107,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,diag_di_3d=di3d                                         &
                  ,diag_rhopo_3d=rhopo3d                                   &
                                                                     )
+#endif
 
     CASE (MILBRANDT2MOM)
          CALL wrf_debug(100, 'microphysics_driver: calling milbrandt2mom')

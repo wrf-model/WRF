@@ -25,7 +25,7 @@ CONTAINS
 #else
      &          ,psim,p_phy,q10,q2,qfx,qsfc,qshltr,qz0                &
 #endif
-     &          ,raincv,rho,sfcevp,sfcexc,sfcrunoff ,acrunoff         &
+     &          ,raincv,rho,sfcevp,sfcexc,sfcrunoff                   &
      &          ,smois,smstav,smstot,snoalb,snow,snowc,snowh,stepbl   &
      &          ,smcrel                                               &
      &          ,th10,th2,thz0,th_phy,tmn,tshltr,tsk,tslb             &
@@ -663,7 +663,6 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   QSFC
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   QZ0
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   SFCRUNOFF
-   REAL, DIMENSION( ims:ime, jms:jme ) , OPTIONAL, INTENT(INOUT)::   ACRUNOFF
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   SMSTAV
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   SMSTOT
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   SNOW
@@ -3083,9 +3082,8 @@ CONTAINS
            PRESENT(qcg)        .AND.  PRESENT(soilt1)  .AND.    &
            PRESENT(tsnav)      .AND.  PRESENT(smfr3d)  .AND.    &
            PRESENT(keepfr3dflag) .AND. PRESENT(rainbl) .AND.    &
-           PRESENT(dew)         .AND. PRESENT(acrunoff).AND.    &
-           PRESENT(spp_lsm)    .AND. PRESENT(pattern_spp_lsm) .AND. &
-           PRESENT(field_sf)   .AND.                 .TRUE. ) THEN
+           PRESENT(dew)                                 .AND.   &
+                                                      .TRUE. ) THEN
 
            IF( PRESENT(sr) ) THEN
                frpcpn=.true.
@@ -3139,9 +3137,7 @@ CONTAINS
               ENDIF
            ENDIF
 
-           CALL LSMRUC(spp_lsm,pattern_spp_lsm,field_sf,        &
-                dtbl,itimestep,num_soil_layers,                 &
-
+           CALL LSMRUC(dtbl,itimestep,num_soil_layers,          &
 #if (EM_CORE==1)
                 lakemodel,lakemask,                             &
                 graupelncv,snowncv,rainncv,                     &
@@ -3157,9 +3153,9 @@ CONTAINS
                 qsfc,qsg,qvg,qcg,dew,soilt1,tsnav,              &
                 tmn,ivgtyp,isltyp,xland,                        &
                 iswater,isice,xice,xice_threshold,              &
-                cp ,rcp,g,xlv,stbolt,                           &
+                cp,rovcp,g,xlv,stbolt,                          &
                 smois,sh2o,smstav,smstot,tslb,tsk,hfx,qfx,lh,   &
-                sfcrunoff,udrunoff,acrunoff,sfcexc,             &
+                sfcrunoff,udrunoff,sfcexc,                      &
                 sfcevp,grdflx,snowfallac,acsnow,acsnom,         &
                 smfr3d,keepfr3dflag,                            &
                 myj,shdmin,shdmax,rdlai2d,                      &
@@ -3225,7 +3221,7 @@ CONTAINS
             ENDDO
 
           CALL SFCDIAGS_RUCLSM(HFX,QFX,TSK,QSFC,CQS,CQS2,CHS,CHS2,T2,TH2,Q2,  &
-                     T_PHY,QV_CURR,RHO,P_PHY,PSFC,SNOW,                       &
+                     T_PHY,QV_CURR,RHO,P_PHY,PSFC,                            &
                      CP,R_d,RCP,                                              &
                      ids,ide, jds,jde, kds,kde,                               &
                      ims,ime, jms,jme, kms,kme,                               &

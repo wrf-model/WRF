@@ -330,7 +330,7 @@ rconfig   real      max_stheight_diff       namelist,wrfvar11  1  100.0    - "ma
 rconfig   real      stn_ht_diff_scale       namelist,wrfvar11  1  200.0    - "stn_ht_diff_scale"       "factor=exp(|Zdiff|/stn_ht_diff_scale)"  "m"
 rconfig   logical   obs_err_inflate         namelist,wrfvar11  1  .false.  - "obs_err_inflate"         "switch for inflating obs err by exp(|Zdiff|/stn_ht_diff_scale)"  ""
 rconfig   logical   calculate_cg_cost_fn    namelist,wrfvar11  1  .false.  - "calculate_cg_cost_fn"    ""  ""  
-rconfig   logical   write_detail_grad_fn    namelist,wrfvar11  1  .false.  - "write_detail_grad_fn"    "calcuate and write out gradient of each iteration in grad_fn"  ""  
+rconfig   logical   write_detail_grad_fn    namelist,wrfvar11  1  .false.  - "write_detail_grad_fn"    "calculate and write out gradient of each iteration in grad_fn"  ""
 rconfig   logical   lat_stats_option        namelist,wrfvar11  1  .false.  - "lat_stats_option"        ""  ""  
 rconfig   integer   interp_option           namelist,wrfvar11  1  1        - "interp_option"           ""  ""
 rconfig   integer   balance_type            namelist,wrfvar12  1  3        - "balance_type"            ""  "For use_wpec: 1 = geostrophic; 2 = cyclostrophic; 3 = both"

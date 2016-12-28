@@ -582,7 +582,7 @@ CONTAINS
                INTENT(IN)    :: XICE, SNOW, LH
 
    ! Stochastic parameter perturbations
-   INTEGER,    INTENT(IN)              ::             spp_pbl
+   INTEGER,    INTENT(IN), OPTIONAL              ::             spp_pbl
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),INTENT(IN),OPTIONAL ::pattern_spp_pbl
 
 ! Bep changes: variable added for urban

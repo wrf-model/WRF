@@ -663,7 +663,7 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   QSFC
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   QZ0
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   SFCRUNOFF
-   REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   ACRUNOFF
+   REAL, DIMENSION( ims:ime, jms:jme ) , OPTIONAL, INTENT(INOUT)::   ACRUNOFF
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   SMSTAV
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   SMSTOT
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   SNOW
@@ -809,7 +809,7 @@ CONTAINS
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),INTENT(INOUT),OPTIONAL ::   pattern_spp_lsm,field_sf
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),INTENT(INOUT),OPTIONAL ::   pattern_spp_pbl
-   INTEGER, INTENT(IN)                   ::     spp_lsm,spp_pbl
+   INTEGER, INTENT(IN), OPTIONAL                 ::     spp_lsm,spp_pbl
 
    REAL, DIMENSION(1:num_soil_layers), INTENT(IN)::   DZS
    REAL, DIMENSION(1:num_soil_layers), INTENT(IN)::   ZS
@@ -3083,8 +3083,9 @@ CONTAINS
            PRESENT(qcg)        .AND.  PRESENT(soilt1)  .AND.    &
            PRESENT(tsnav)      .AND.  PRESENT(smfr3d)  .AND.    &
            PRESENT(keepfr3dflag) .AND. PRESENT(rainbl) .AND.    &
-           PRESENT(dew)                                .AND.    &
-                                                      .TRUE. ) THEN
+           PRESENT(dew)         .AND. PRESENT(acrunoff).AND.    &
+           PRESENT(spp_lsm)    .AND. PRESENT(pattern_spp_lsm) .AND. &
+           PRESENT(field_sf)   .AND.                 .TRUE. ) THEN
 
            IF( PRESENT(sr) ) THEN
                frpcpn=.true.

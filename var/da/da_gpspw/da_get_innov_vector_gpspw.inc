@@ -55,13 +55,12 @@ subroutine da_get_innov_vector_gpspw (it,num_qcstat_conv, grid, ob, iv)
          model_tpw = dym*(dxm*grid%xb%tpw(i,j)   + dx*grid%xb%tpw(i+1,j)) + &
                      dy *(dxm*grid%xb%tpw(i,j+1) + dx*grid%xb%tpw(i+1,j+1))
 
-         ! To compute the 'inv':
-         if ( .not. pseudo_tpw ) iv % gpspw(n) % tpw % inv = 0.0
-         if (ob % gpspw(n) % tpw > missing_r .AND. &
-             iv % gpspw(n) % tpw % qc >= obs_qc_pointer) then
-            dpw = 0.0
-            obs_terr   = iv%info(gpspw)%elv(n)
-            if ( obs_terr > 0.0 ) then ! ob elv is available
+            ! To compute the 'inv':
+            if ( .not. pseudo_tpw ) iv % gpspw(n) % tpw % inv = 0.0
+            if (ob % gpspw(n) % tpw > missing_r .AND. &
+                iv % gpspw(n) % tpw % qc >= obs_qc_pointer) then
+               dpw = 0.0
+               obs_terr   = iv%info(gpspw)%elv(n)
                model_terr = dym*(dxm*grid%xb%terr(i,j)   + dx*grid%xb%terr(i+1,j)) + &
                           dy *(dxm*grid%xb%terr(i,j+1) + dx*grid%xb%terr(i+1,j+1))
                if (obs_terr <= model_terr) then
@@ -92,15 +91,13 @@ subroutine da_get_innov_vector_gpspw (it,num_qcstat_conv, grid, ob, iv)
                      dpw = dpw + ddpw
                   end do
                end if
-            end if
-            if ( pseudo_tpw .and. it == 1 ) then
+               if ( pseudo_tpw .and. it == 1 ) then
                ! To compute the 'ob':
-               ! dpw is zero for pseudo_tpw
-               ob % gpspw(n) % tpw = iv % gpspw(n) % tpw % inv + model_tpw - 0.1*dpw
-            else
-               iv % gpspw(n) % tpw % inv = ob % gpspw(n) % tpw - model_tpw + 0.1*dpw
+                 ob % gpspw(n) % tpw = iv % gpspw(n) % tpw % inv + model_tpw - 0.1*dpw
+               else
+                 iv % gpspw(n) % tpw % inv = ob % gpspw(n) % tpw - model_tpw + 0.1*dpw
+               end if
             end if
-         end if
 
       end do
 

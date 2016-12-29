@@ -1,4 +1,4 @@
-subroutine da_setup_pseudo_obs(iv, ob)
+subroutine da_setup_pseudo_obs(grid, iv, ob)
 
    !-------------------------------------------------------------------------
    ! Purpose: Sets up pseudo ob part of observation structure.
@@ -6,11 +6,13 @@ subroutine da_setup_pseudo_obs(iv, ob)
 
    implicit none
 
+   type(domain),     intent(in)    :: grid ! Model data
    type(iv_type),    intent(inout) :: iv   ! Obs and header structure.
    type(y_type),     intent(inout) :: ob   ! (Smaller) observation structure.
 
    integer :: i, j
    logical :: outside
+   real    :: dx, dy, dxm. dym
 
    if ( num_pseudo <= 0 ) return
 
@@ -108,7 +110,6 @@ subroutine da_setup_pseudo_obs(iv, ob)
          iv%info(gpspw)%proc_domain(:,:) = .true.
          allocate (ob % gpspw (1:num_pseudo))
          ob % gpspw(1) % tpw   = 0.0
-         iv%info(gpspw)%elv      = pseudo_elv
          iv%info(gpspw)%x(:,1)   = pseudo_x
          iv%info(gpspw)%y(:,1)   = pseudo_y
          iv%info(gpspw)%zk(:,1)  = pseudo_z
@@ -122,6 +123,21 @@ subroutine da_setup_pseudo_obs(iv, ob)
          iv % gpspw(1) % tpw % inv   = pseudo_val
          iv % gpspw(1) % tpw % error = pseudo_err
          iv % gpspw(1) % tpw % qc    = 0
+         if ( pseudo_elv > -999.0 ) then
+            ! pseudo_elv is set in the namelist
+            iv%info(gpspw)%elv      = pseudo_elv
+         else
+            ! assign model terrain to ob elv
+            i   = iv%info(gpspw)%i(1,1)
+            j   = iv%info(gpspw)%j(1,1)
+            dx  = iv%info(gpspw)%dx(1,1)
+            dy  = iv%info(gpspw)%dy(1,1)
+            dxm = iv%info(gpspw)%dxm(1,1)
+            dym = iv%info(gpspw)%dym(1,1)
+            iv%info(gpspw)%elv(1) =  &
+               dym*(dxm*grid%xb%terr(i,j)   + dx*grid%xb%terr(i+1,j)) + &
+               dy *(dxm*grid%xb%terr(i,j+1) + dx*grid%xb%terr(i+1,j+1))
+         end if
       end if
    end if
 

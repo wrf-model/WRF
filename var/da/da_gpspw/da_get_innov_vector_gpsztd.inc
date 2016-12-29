@@ -78,7 +78,6 @@ SUBROUTINE da_get_innov_vector_gpsztd ( it, num_qcstat_conv, grid, ob, iv )
 
             dzd = 0.0
             obs_terr   = iv%info(gpspw)%elv(n)
-          if ( obs_terr > 0.0 ) then  ! ob elv is available
             model_terr = dym*(dxm*grid%xb%terr(i,j)   + dx*grid%xb%terr(i+1,j)) + &
                          dy *(dxm*grid%xb%terr(i,j+1) + dx*grid%xb%terr(i+1,j+1))
 
@@ -111,7 +110,6 @@ SUBROUTINE da_get_innov_vector_gpsztd ( it, num_qcstat_conv, grid, ob, iv )
                   dzd = dzd + ddzd
                end do
             end if
-          end if
 
             if ( pseudo_ztd .and. it == 1 ) then
 

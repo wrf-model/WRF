@@ -282,7 +282,7 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
    end if
 
    if ( num_pseudo > 0 ) then
-      call da_setup_pseudo_obs(iv, ob)
+      call da_setup_pseudo_obs(grid, iv, ob)
    end if
 
    ! Summarize observations 

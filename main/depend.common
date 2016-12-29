@@ -438,6 +438,7 @@ module_sf_clm.o: module_cam_shr_kind_mod.o \
 		 module_cam_shr_const_mod.o \
 		 module_cam_support.o \
 		 module_sf_urban.o \
+		 module_sf_noahlsm.o \
 		 module_ra_gfdleta.o \
 		 ../share/module_date_time.o \
 		 ../frame/module_wrf_error.o  \

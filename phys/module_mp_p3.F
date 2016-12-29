@@ -521,14 +521,14 @@ END SUBROUTINE P3_INIT
    integer                  :: i,k,j
    logical, parameter       :: nk_bottom = .false.  !.F. --> nk at model top (as in WRF)
 
-   allocate (qitot(its:ite, kts:kte,n_iceCat))      ! ice mixing ratio, mass (total)   [kg kg-1]
-   allocate (qirim(its:ite, kts:kte,n_iceCat))      ! ice mixing ratio, mass (rime)    [kg kg-1]
-   allocate (nitot(its:ite, kts:kte,n_iceCat))      ! ice mixing ratio, number         [# kg-1]
-   allocate (birim(its:ite, kts:kte,n_iceCat))      ! ice mixing ratio, volume         [m3 kg-1]
-   allocate (diag_di(its:ite, kts:kte,n_iceCat))    ! mean-mass ice diameter           [m]
-   allocate (diag_vmi(its:ite, kts:kte,n_iceCat))   ! fall speed (mass-weighted), ice  [m s-1]
-   allocate (diag_rhopo(its:ite, kts:kte,n_iceCat)) ! bulk density, ice                [kg m-3]
-   allocate (diag_effi(its:ite, kts:kte,n_iceCat))  ! effective radius, ice            [m]
+   allocate (qitot(ims:ime, kms:kme,n_iceCat))      ! ice mixing ratio, mass (total)   [kg kg-1]
+   allocate (qirim(ims:ime, kms:kme,n_iceCat))      ! ice mixing ratio, mass (rime)    [kg kg-1]
+   allocate (nitot(ims:ime, kms:kme,n_iceCat))      ! ice mixing ratio, number         [# kg-1]
+   allocate (birim(ims:ime, kms:kme,n_iceCat))      ! ice mixing ratio, volume         [m3 kg-1]
+   allocate (diag_di(ims:ime, kms:kme,n_iceCat))    ! mean-mass ice diameter           [m]
+   allocate (diag_vmi(ims:ime, kms:kme,n_iceCat))   ! fall speed (mass-weighted), ice  [m s-1]
+   allocate (diag_rhopo(ims:ime, kms:kme,n_iceCat)) ! bulk density, ice                [kg m-3]
+   allocate (diag_effi(ims:ime, kms:kme,n_iceCat))  ! effective radius, ice            [m]
 
    !------------------------------------------------------------------------------------------!
 

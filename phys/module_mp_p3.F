@@ -521,14 +521,14 @@ END SUBROUTINE P3_INIT
    integer                  :: i,k,j
    logical, parameter       :: nk_bottom = .false.  !.F. --> nk at model top (as in WRF)
 
-   allocate (qitot(ims:ime, kms:kme,n_iceCat))      ! ice mixing ratio, mass (total)   [kg kg-1]
-   allocate (qirim(ims:ime, kms:kme,n_iceCat))      ! ice mixing ratio, mass (rime)    [kg kg-1]
-   allocate (nitot(ims:ime, kms:kme,n_iceCat))      ! ice mixing ratio, number         [# kg-1]
-   allocate (birim(ims:ime, kms:kme,n_iceCat))      ! ice mixing ratio, volume         [m3 kg-1]
-   allocate (diag_di(ims:ime, kms:kme,n_iceCat))    ! mean-mass ice diameter           [m]
-   allocate (diag_vmi(ims:ime, kms:kme,n_iceCat))   ! fall speed (mass-weighted), ice  [m s-1]
-   allocate (diag_rhopo(ims:ime, kms:kme,n_iceCat)) ! bulk density, ice                [kg m-3]
-   allocate (diag_effi(ims:ime, kms:kme,n_iceCat))  ! effective radius, ice            [m]
+   allocate (qitot(its:ite, kts:kte,n_iceCat))      ! ice mixing ratio, mass (total)   [kg kg-1]
+   allocate (qirim(its:ite, kts:kte,n_iceCat))      ! ice mixing ratio, mass (rime)    [kg kg-1]
+   allocate (nitot(its:ite, kts:kte,n_iceCat))      ! ice mixing ratio, number         [# kg-1]
+   allocate (birim(its:ite, kts:kte,n_iceCat))      ! ice mixing ratio, volume         [m3 kg-1]
+   allocate (diag_di(its:ite, kts:kte,n_iceCat))    ! mean-mass ice diameter           [m]
+   allocate (diag_vmi(its:ite, kts:kte,n_iceCat))   ! fall speed (mass-weighted), ice  [m s-1]
+   allocate (diag_rhopo(its:ite, kts:kte,n_iceCat)) ! bulk density, ice                [kg m-3]
+   allocate (diag_effi(its:ite, kts:kte,n_iceCat))  ! effective radius, ice            [m]
 
    !------------------------------------------------------------------------------------------!
 
@@ -595,16 +595,16 @@ END SUBROUTINE P3_INIT
       endif
 
     !decompose full ice arrays into individual category arrays:
-      qi1_3d(:,:,j)  = qitot(:,:,1)
-      qir1_3d(:,:,j) = qirim(:,:,1)
-      qni1_3d(:,:,j) = nitot(:,:,1)
-      qib1_3d(:,:,j) = birim(:,:,1)
+      qi1_3d(its:ite,kts:kte,j)  = qitot(its:ite,kts:kte,1)
+      qir1_3d(its:ite,kts:kte,j) = qirim(its:ite,kts:kte,1)
+      qni1_3d(its:ite,kts:kte,j) = nitot(its:ite,kts:kte,1)
+      qib1_3d(its:ite,kts:kte,j) = birim(its:ite,kts:kte,1)
 
       if (n_iceCat .eq. 1) then
-         diag_vmi_3d(:,:,j)   = diag_vmi(:,:,1)
-         diag_di_3d(:,:,j)    = diag_di(:,:,1)
-         diag_rhopo_3d(:,:,j) = diag_rhopo(:,:,1)
-         diag_effi_3d(:,:,j)  = diag_effi(:,:,1)
+         diag_vmi_3d(its:ite,kts:kte,j)   = diag_vmi(its:ite,kts:kte,1)
+         diag_di_3d(its:ite,kts:kte,j)    = diag_di(its:ite,kts:kte,1)
+         diag_rhopo_3d(its:ite,kts:kte,j) = diag_rhopo(its:ite,kts:kte,1)
+         diag_effi_3d(its:ite,kts:kte,j)  = diag_effi(its:ite,kts:kte,1)
       endif
 
       if (n_iceCat .ge. 2) then

@@ -12,7 +12,7 @@ subroutine da_setup_pseudo_obs(grid, iv, ob)
 
    integer :: i, j
    logical :: outside
-   real    :: dx, dy, dxm. dym
+   real    :: dx, dy, dxm, dym
 
    if ( num_pseudo <= 0 ) return
 

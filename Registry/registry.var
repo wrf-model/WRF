@@ -431,6 +431,7 @@ rconfig   real      pseudo_y                namelist,wrfvar15  1  1.0      - "ps
 rconfig   real      pseudo_z                namelist,wrfvar15  1  1.0      - "pseudo_z"                ""  ""   
 rconfig   real      pseudo_val              namelist,wrfvar15  1  1.0      - "pseudo_val"              ""  ""   
 rconfig   real      pseudo_err              namelist,wrfvar15  1  1.0      - "pseudo_err"              ""  ""   
+rconfig   real      pseudo_elv              namelist,wrfvar15  1  -999.99  - "pseudo_elv"              "pseudo ob elevation, used by pseudo tpw/ztd"  "m"
 rconfig   integer   ep_para_read            namelist,wrfvar16  1  0        - "ep_para_read"            ""  ""
 rconfig   integer   rden_bin                namelist,wrfvar16  1  1        - "rden_bin"                ""  ""
 rconfig   integer   alphacv_method          namelist,wrfvar16  1  2        - "alphacv_method"          ""  ""   

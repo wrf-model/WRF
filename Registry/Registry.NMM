@@ -1442,7 +1442,7 @@ rconfig   integer maxens2                 namelist,physics	1             3      
 rconfig   integer maxens3                 namelist,physics	1            16       irh    "maxens3"                    ""      ""
 rconfig   integer ensdim                  namelist,physics	1            144      irh    "ensdim"                    ""      ""
 rconfig   integer ishallow                namelist,physics      max_domains    0       rh    "ishallow"    "shallow convection in GF scheme"
-
+rconfig   integer clos_choice             namelist,physics      1             0       rh    "clos_choice"    
 rconfig   integer     chem_opt            namelist,physics	max_domains    0       rh       "chem_opt"              ""      ""
 rconfig   integer num_land_cat            namelist,physics	1            24       -      "num_land_cat"                  ""      ""
 rconfig   integer num_soil_cat            namelist,physics	1            16       -      "num_soil_cat"                  ""      ""

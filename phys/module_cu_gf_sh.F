@@ -7,7 +7,7 @@
 !    psur             surface pressure (mb)
 !    z1               surface height
 !    dhdt             forcing for boundary layer equilibrium   
-!    hfx,qfx          in w/m2
+!    hfx,qfx          in w/m2 (positive, if upward from sfc)
 !    kpbl             level of boundaty layer height
 !    xland            land mask (1. for land)
 !    ichoice          which closure to choose 
@@ -40,13 +40,11 @@
 !    itf,ktf,its,ite, kts,kte are dimensions
 !    ztexec,zqexec    excess temperature and moisture for updraft
 MODULE module_cu_gf_sh
-
-use module_gfs_physcons, g => con_g,                           &
-                         cp => con_cp,                         &
-                         xlv => con_hvap,                      &
-                         r_v => con_rv
-
-    real, parameter:: c1_shal=0.001 ! .0005
+    real, parameter:: c1_shal=0.002 ! .0005
+    real, parameter:: g  =9.81
+    real, parameter:: cp =1004.
+    real, parameter:: xlv=2.5e6
+    real, parameter:: r_v=461.
     real, parameter:: c0_shal=.001
     real, parameter:: fluxtune=1.5
 
@@ -61,7 +59,7 @@ contains
                          zuo,xmb_out,kbcon,ktop,k22,ierr,ierrc,    &
 ! output tendencies
                          OUTT,OUTQ,OUTQC,cnvwt,pre,cupclw,             &
-! dimensional variables
+! dimesnional variables
                          itf,ktf,its,ite, kts,kte,ipr)
 !
 ! this module needs some subroutines from gf_deep
@@ -183,7 +181,7 @@ contains
      real,    dimension (its:ite) ::                                   &
        zws,ztexec,zqexec,pre,AA1,AA0,XAA0,HKB,                          &
        flux_tun,HKBO,XHKB,                                    &
-       xmbmax,XMB,                         &
+       rand_vmas,xmbmax,XMB,                         &
        cap_max,entr_rate,                                    &
        cap_max_increment
      integer,    dimension (its:ite) ::                                &
@@ -205,10 +203,8 @@ contains
      real,    dimension (its:ite,kts:kte) :: dtempdz
      integer, dimension (its:ite,kts:kte) ::  k_inv_layers 
      integer, dimension (its:ite) ::  start_level
-
      start_level(:)=0
-     flux_tun(:)=fluxtune
-
+     flux_tun=fluxtune
       do i=its,itf
         xland1(i)=int(xland(i)+.001) ! 1.
         ktopx(i)=0
@@ -269,8 +265,6 @@ contains
          pgeoh = zo(i,2)*g
          !-convective-scale velocity w*
          zws(i) = max(0.,flux_tun(i)*0.41*buo_flux*zo(i,2)*g/t(i,1))
-!         write(11,*)"buo_flux,PGEOH,zws,rho(i,1)" ,buo_flux,PGEOH,zws(i),rho(i,1)
-!         write(11,*)"hfx,qfx" ,hfx(i),qfx(i)
          if(zws(i) > TINY(pgeoh)) then
           !-convective-scale velocity w*
           zws(i) = 1.2*zws(i)**.3333
@@ -284,8 +278,6 @@ contains
        zws(i) = max(0.,flux_tun(i)*0.41*buo_flux*zo(i,kpbl(i))*g/t(i,kpbl(i)))
        zws(i) = 1.2*zws(i)**.3333
        zws(i) = zws(i)*rho(i,kpbl(i)) !check if zrho is correct
-!!       write(11,*)zws(i),rho(i,kpbl(i))
-!       write(11,*)'zt,zq = ',ztexec(i),zqexec(i),flux_tun(i)
 
       enddo
 
@@ -366,7 +358,7 @@ contains
 !JOE-Georg and Saulo's new idea:
       do i=its,itf
       do k=kts,ktf
-          dbyo(i,k)=hkbo(i)-heso_cup(i,k)
+          dbyo(i,k)= 0. !hkbo(i)-heso_cup(i,k)
       enddo
       enddo
 
@@ -417,17 +409,17 @@ contains
          endif
       enddo
 ! get normalized mass flux profile
-      call rates_up_pdf(ipr,'shallow',ktop,ierr,po_cup,entr_rate_2d,hkbo,heo,heso_cup,zo_cup, &
+      call rates_up_pdf(rand_vmas,ipr,'shallow',ktop,ierr,po_cup,entr_rate_2d,hkbo,heo,heso_cup,zo_cup, &
            xland1,kstabi,k22,kbcon,its,ite,itf,kts,kte,ktf,zuo,kpbl,ktopx,ktopx,kbcon)
       do i=its,itf
         if(ierr(i).eq.0)then
-           do k=maxloc(zuo(i,:),1),1,-1 ! ktop(i)-1,1,-1
-             if(zuo(i,k).lt.1.e-6)then
-               k22(i)=k+1
-               start_level(i)=k22(i)
-               exit
-             endif
-           enddo
+!           do k=maxloc(zuo(i,:),1),1,-1 ! ktop(i)-1,1,-1
+!             if(zuo(i,k).lt.1.e-6)then
+!               k22(i)=k+1
+!               start_level(i)=k22(i)
+!               exit
+!             endif
+!           enddo
            if(k22(i).gt.1)then
              do k=1,k22(i)-1
               zuo(i,k)=0.
@@ -489,12 +481,11 @@ contains
           hc(i,k)=(hc(i,k-1)*zu(i,k-1)-.5*up_massdetr(i,k-1)*hc(i,k-1)+ &
                          up_massentr(i,k-1)*he(i,k-1))   /            &
                          (zu(i,k-1)-.5*up_massdetr(i,k-1)+up_massentr(i,k-1))
-          dby(i,k)=hc(i,k)-hes_cup(i,k)
+          dby(i,k)=max(0.,hc(i,k)-hes_cup(i,k))
           hco(i,k)=(hco(i,k-1)*zuo(i,k-1)-.5*up_massdetro(i,k-1)*hco(i,k-1)+ &
                          up_massentro(i,k-1)*heo(i,k-1))   /            &
                          (zuo(i,k-1)-.5*up_massdetro(i,k-1)+up_massentro(i,k-1))
-          dbyo(i,k)=hco(i,k)-heso_cup(i,k)
-!          write(11,*)k,hco(i,k),hc(i,k),dbyo(i,k),dby(i,k)
+          dbyo(i,k)=max(0.,hco(i,k)-heso_cup(i,k))
          enddo
          if(ktop(i).lt.kbcon(i)+1)then
             ierr(i)=5
@@ -524,7 +515,7 @@ contains
                        up_massentr(i,k-1)*qo(i,k-1))   /            &
                        (zuo(i,k-1)-.5*up_massdetr(i,k-1)+up_massentr(i,k-1))
 
-          if(qco(i,k)>=trash) then
+          if(qco(i,k)>=trash .and. dbyo(i,k) > 0.) then
               DZ=Z_cup(i,K)-Z_cup(i,K-1)
               ! cloud liquid water
               qrco(i,k)= (qco(i,k)-trash)/(1.+(c0_shal+c1_shal)*dz)
@@ -575,10 +566,6 @@ contains
            if(aa1(i) <= 0.)then
                ierr(i)=17
                ierrc(i)="cloud work function zero"
-!               write(11,*)k22(i),kbcon(i),ktop(i),ztexec(i),zqexec(i)
-!               do k=k22(i),ktop(i)
-!                write(11,*)k,zuo(i,k),tn_cup(i,k),dbyo(i,k)
-!               enddo
            endif
          endif
        enddo
@@ -639,7 +626,7 @@ contains
       trash2=0.
       do i=its,itf
         if(ierr(i).eq.0)then
-         do k=kts+1,ktop(i)
+         do k=k22(i),ktop(i)
             ! entrainment/detrainment for updraft
             entup=up_massentro(i,k)
             detup=up_massdetro(i,k)
@@ -803,7 +790,6 @@ contains
           if(xmb(i) <= 0.)then
              ierr(i)=21
              ierrc(i)="21"
-!            write(0,*)'neg xmb,i,j,xmb for shallow = ',i,j,k22(i),ierr(i)
           endif
         endif
         if(ierr(i).ne.0)then

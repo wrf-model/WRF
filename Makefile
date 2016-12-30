@@ -512,7 +512,6 @@ em_real : wrf
                ln -sf ../../run/aerosol_lon.formatted . ;              \
                ln -sf ../../run/aerosol_plev.formatted . ;             \
                ln -sf ../../run/CCN_ACTIVATE.BIN . ;                   \
-               ln -sf ../../run/p3_lookup_table_1.dat . ;              \
                if [ $(RWORDSIZE) -eq 8 ] ; then                        \
                   ln -sf ../../run/ETAMPNEW_DATA_DBL ETAMPNEW_DATA ;   \
                   ln -sf ../../run/ETAMPNEW_DATA.expanded_rain_DBL ETAMPNEW_DATA.expanded_rain ;   \
@@ -577,7 +576,6 @@ em_real : wrf
              ln -sf ../../run/bulkdens.asc_s_0_03_0_9 . ;            \
              ln -sf ../../run/bulkradii.asc_s_0_03_0_9 . ;            \
              ln -sf ../../run/CCN_ACTIVATE.BIN . ;                   \
-             ln -sf ../../run/p3_lookup_table_1.dat . ;                   \
              if [ $(RWORDSIZE) -eq 8 ] ; then                       \
                 ln -sf ../../run/ETAMPNEW_DATA_DBL ETAMPNEW_DATA ;  \
                 ln -sf ../../run/ETAMPNEW_DATA.expanded_rain_DBL ETAMPNEW_DATA.expanded_rain ;   \

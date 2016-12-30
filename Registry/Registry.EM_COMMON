@@ -529,12 +529,7 @@ state   real    qvolh          ikjftb  scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "QVHAIL"        "Hail Particle Volume" "m(3) kg(-1)"
 state   real    qrimef         ikjftb  scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "QRIMEF"        "rime factor * qi" "kg kg-1"
-state   real    qir            ikjftb  scalar      1         -     \
-   i0rhusdf=(bdy_interp:dt)    "QIR"           "Rime ice mass-1 mixing ratio" "kg kg(-1)"
-state   real    qib            ikjftb  scalar      1         -     \
-   i0rhusdf=(bdy_interp:dt)    "QIB"           "Rime ice volume-1 mixing ratio" "m(3) kg(-1)"
-state   real    ssat           ikjftb  scalar      1         -     \
-   i0rhusdf=(bdy_interp:dt)    "SSAT"           "Absolute supersaturation" "kg kg(-1)"
+
 
 state   real    -              ikjftb  dfi_scalar      1         -     -   -
 state   real    dfi_qndrop     ikjftb  dfi_scalar      1         -     \
@@ -559,12 +554,6 @@ state   real    dfi_qvolg      ikjftb  dfi_scalar      1         -     \
    rhusdf=(bdy_interp:dt)   "DFI_QVGRAUPEL" "DFI Graupel Particle Volume" "m(3) kg(-1)"
 state   real    dfi_qvolh     ikjftb  dfi_scalar      1         -     \
    rhusdf=(bdy_interp:dt)   "DFI_QVHAIL"    "DFI Hail Particle Volume" "m(3) kg(-1)"
-state   real    dfi_qir        ikjftb  dfi_scalar      1         -     \
-   rhusdf=(bdy_interp:dt)    "DFI_QIR"    "DFI Rime ice mass-1 mixing ratio" "kg kg(-1)"
-state   real    dfi_qib        ikjftb  dfi_scalar      1         -     \
-   rhusdf=(bdy_interp:dt)    "DFI_QIB"    "DFI Rime ice volume-1 mixing ratio" "m(3) kg(-1)"
-state   real    dfi_ssat       ikjftb  dfi_scalar      1         -     \
-   rhusdf=(bdy_interp:dt)    "DFI_SSAT"   "DFI Absolute supersaturation" "kg kg(-1)"
 state   real    dfi_qke_adv   ikjftb  dfi_scalar      1         -      \
    rusdf=(bdy_interp:dt) "dfi_qke_adv"   "DFI twice TKE from MYNN"      "m2 s-2"
 
@@ -1295,9 +1284,6 @@ state    real  SNOWNCV          ij      misc        1         -      r        "S
 state    real  GRAUPELNCV       ij      misc        1         -      r        "GRAUPELNCV"            "TIME-STEP NONCONVECTIVE GRAUPEL"                         "mm"
 state    real  HAILNCV          ij      misc        1         -      r        "HAILNCV"               "TIME-STEP NONCONVECTIVE HAIL"                            "mm"
 state    real    refl_10cm      ikj     dyn_em      1         -      hdu       "refl_10cm"             "Radar reflectivity (lamda = 10 cm)"  "dBZ"
-state    real    vmi3d          ikj     misc        1         -     hdu       "v_ice"                 "Mass-weighted ice fallspeed"  "m s-1"
-state    real    di3d           ikj     misc        1         -     hdu       "d_ice"                 "Mass-weighted mean ice size"  "m"
-state    real    rhopo3d        ikj     misc        1         -     hdu       "rho_ice"               "Mass-weighted mean ice density"  "kg m-3"
 # LIGHTNING NUDGING
 #state    real    ltg_dat        ij      misc        1         -      r         "ltg_dat"               "gridded lightning data"  "Flash per xkm x xkm per LAD_INT sec"
 # END LIGHTNING NUDGING
@@ -2617,8 +2603,6 @@ package   nssl_1mom       mp_physics==19               -             moist:qv,qc
 package   nssl_1momlfo    mp_physics==21               -             moist:qv,qc,qr,qi,qs,qg
 package   nssl_2momg      mp_physics==22               -             moist:qv,qc,qr,qi,qs,qg;scalar:qndrop,qnr,qni,qns,qng,qvolg;state:re_cloud,re_ice,re_snow
 package   thompsonaero    mp_physics==28               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr,qnc,qnwfa,qnifa;state:re_cloud,re_ice,re_snow,qnwfa2d,taod5503d,taod5502d
-package   p3_1category    mp_physics==50               -             moist:qv,qc,qr,qi;scalar:qni,qnr,qir,qib;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,refl_10cm
-package   p3_1category_nc mp_physics==51               -             moist:qv,qc,qr,qi;scalar:qnc,ssat,qni,qnr,qir,qib;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,refl_10cm
 package   etampnew        mp_physics==95               -             moist:qv,qc,qr,qs;scalar:qt;state:f_ice_phy,f_rain_phy,f_rimef_phy
 
 package   radar_refl      compute_radar_ref==1         -             state:refl_10cm,refd_max
@@ -2645,8 +2629,6 @@ package   nssl_2mom_dficcn  mp_physics_dfi==18       -             dfi_moist:dfi
 package   nssl_1mom_dfi     mp_physics_dfi==19       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg,dfi_qh;dfi_scalar:dfi_qvolg
 package   nssl_1momlfo_dfi  mp_physics_dfi==21       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg
 package   thompsonaero_dfi  mp_physics_dfi==28       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni,dfi_qnr,dfi_qnc,dfi_qnwfa,dfi_qnifa;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
-package   p3_1category_dfi  mp_physics_dfi==50       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi;dfi_scalar:dfi_qni,dfi_qnr,dfi_qir,dfi_qib;state:dfi_re_cloud,dfi_re_ice
-package   p3_1category_nc_dfi  mp_physics_dfi==51    -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi;dfi_scalar:dfi_qnc,dfi_ssat,dfi_qni,dfi_qnr,dfi_qir,dfi_qib;state:dfi_re_cloud,dfi_re_ice
 package   etampnew_dfi      mp_physics_dfi==95       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qs;dfi_scalar:dfi_qt
 
 package   noprogn       progn==0                     -             -

@@ -1537,7 +1537,7 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
                               its,ite, jts,jte, kts,kte)                                   ! tile dims
 
 
-#ifdef ( defined(DM_PARALLEL)  &&   ! defined(STUBMPI) )
+#if ( defined(DM_PARALLEL)  &&   ! defined(STUBMPI) )
 #define MPI
       USE module_dm, ONLY : &
          local_communicator, mytask

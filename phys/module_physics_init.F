@@ -790,11 +790,20 @@ integer myproc
          config_flags%mp_physics  .eq. WSM5SCHEME .or.      & ! syb+
          config_flags%mp_physics  .eq. WSM6SCHEME .or.      & ! syb+
          config_flags%mp_physics  .eq. WDM5SCHEME .or.      & ! syb+
-         config_flags%mp_physics  .eq. WDM6SCHEME ) ) then    ! syb+
+         config_flags%mp_physics  .eq. WDM6SCHEME .or.      &
+         config_flags%mp_physics  .eq. P3_1CATEGORY .or.    &
+         config_flags%mp_physics  .eq. P3_1CATEGORY_NC    ) ) then    ! P3
       has_reqc = 1
       has_reqi = 1
       has_reqs = 1
    endif
+
+! for P3, to ensure correct coupling with predicted effective radii
+   if (config_flags%mp_physics .eq. P3_1CATEGORY .or.       &
+       config_flags%mp_physics .eq. P3_1CATEGORY_NC       ) then
+      has_reqs = 0
+   end if
+
    ENDIF
 
 !-- should be from the namelist
@@ -3600,6 +3609,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    USE module_mp_full_sbm
    USE module_mp_fast_sbm
    USE module_mp_morr_two_moment
+   USE module_mp_p3
    USE module_mp_milbrandt2mom
 !  USE module_mp_milbrandt3mom
    USE module_mp_wdm5
@@ -3747,6 +3757,10 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
 
      CASE (MORR_TWO_MOMENT)
          CALL morr_two_moment_init( config_flags%hail_opt )
+     CASE (P3_1CATEGORY)
+         CALL p3_init('./p3_lookup_table_1.dat','./p3_lookup_table_2.dat',1)
+     CASE (P3_1CATEGORY_NC)
+         CALL p3_init('./p3_lookup_table_1.dat','./p3_lookup_table_2.dat',1)
      CASE (MILBRANDT2MOM)
          CALL milbrandt2mom_init
 !      CASE (MILBRANDT3MOM)

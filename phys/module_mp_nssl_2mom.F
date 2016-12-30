@@ -1537,20 +1537,7 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
                               its,ite, jts,jte, kts,kte)                                   ! tile dims
 
 
-#if ( defined(DM_PARALLEL)  &&   ! defined(STUBMPI) )
-#define MPI
-      USE module_dm, ONLY : &
-         local_communicator, mytask
-! keep a spacing line here to keep Apple cpp from adding a space in front of the endif
-#endif
-
       implicit none
-
-#if ( defined(DM_PARALLEL)  &&   ! defined(STUBMPI) ) || defined(MPI)
-      INCLUDE 'mpif.h'
-#else
-      integer :: mytask = 0
-#endif
 
  !Subroutine arguments:
 
@@ -1660,15 +1647,6 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
       double precision :: timesed,timesed1,timesed2,timesed3, timegs, timenucond, timedbz,zmaxsed
       double precision :: timevtcalc,timesetvt
       
-#ifdef MPI
-
-#if defined(MPI) 
-      integer, parameter :: ntot = 50
-      double precision  mpitotindp(ntot), mpitotoutdp(ntot)
-      INTEGER :: mpi_error_code = 1
-#endif
-#endif
-
 
 ! -------------------------------------------------------------------
 
@@ -5780,9 +5758,7 @@ END SUBROUTINE nssl_2mom_driver
         kgs(ngscnt) = kz
         if ( ngscnt .eq. ngs ) goto 1100
         end if
-!#ifndef MPI
         end do !!ix
-!#endif
         nxmpb = 1
        end do !! kz
 

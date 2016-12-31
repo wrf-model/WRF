@@ -527,7 +527,7 @@ contains
    real    ::  prnumfac,bfx0,hfx0,qfx0,delb,dux,dvx,                           &
                dsdzu,dsdzv,wm3,dthx,dqx,wspd10,ross,tem1,dsig,tvcon,conpr,     &
                prfac,prfac2,phim8z,radsum,tmp1,templ,rvls,temps,ent_eff,    &
-               rcldb,bruptmp,radflux,vconvlim,vconvnew
+               rcldb,bruptmp,radflux,vconvlim,vconvnew,fluxc,vconvc,vconv
 !topo-corr
    real,    dimension( ims:ime, kms:kme )    ::                          fric, &
                                                                        tke_ysu,&
@@ -1298,7 +1298,7 @@ contains
    enddo
 !
 ! paj: ctopo=1 if topo_wind=0 (default)
-!raquel---paj tke
+!raquel---paj tke code (could be replaced with shin-hong tke in future
    do i = its,ite
       do k= kts, kte-1
         shear_ysu(i,k)=xkzm(i,k)*((-hgamu(i)/hpbl(i)+(ux(i,k+1)-ux(i,k))/dza(i,k+1))*(ux(i,k+1)-ux(i,k))/dza(i,k+1) &
@@ -1329,7 +1329,17 @@ contains
       &    tke_ysu(i,kts:kte),zq(i,kts:kte+1),dzq(i,kts:kte),xland(i))
 
 !--- end of paj tke
-
+! compute vconv
+!      Use Beljaars over land
+        if (xland(i).lt.1.5) then
+        fluxc = max(sflux(i),0.0)
+        vconvc=1.
+        VCONV = vconvc*(g/thvx(i,1)*pblh_ysu(i)*fluxc)**.33
+        else
+! for water there is no topo effect so vconv not needed
+        VCONV = 0.
+        endif
+        vconvfx(i) = vconv
 !raquel
 !ctopo stability correction
       fric(i,1)=ust(i)**2/wspd1(i)*rhox(i)*g/del(i,1)*dt2         &
@@ -1640,6 +1650,7 @@ contains
 ! ==================================================================
 
       SUBROUTINE GET_PBLH(KTS,KTE,zi,thetav1D,qke1D,zw1D,dz1D,landsea)
+! Copied from MYNN PBL
 
       !---------------------------------------------------------------
       !             NOTES ON THE PBLH FORMULATION

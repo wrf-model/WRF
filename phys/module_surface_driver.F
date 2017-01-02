@@ -60,7 +60,8 @@ CONTAINS
      &          ,qsnowxy  ,wslakexy  ,zwtxy     ,waxy      ,wtxy      ,tsnoxy       &
      &          ,zsnsoxy  ,snicexy   ,snliqxy   ,lfmassxy  ,rtmassxy  ,stmassxy     &
      &          ,woodxy   ,stblcpxy  ,fastcpxy  ,xsaixy    ,taussxy                 &
-     &          ,grainxy  ,gddxy                                                    &
+     &          ,grainxy  ,gddxy     ,cropcat   ,pgsxy                              &
+     &          ,planting ,harvest   ,season_gdd                                    &
      &          ,t2mvxy   ,t2mbxy    ,q2mvxy    ,q2mbxy                             &
      &          ,tradxy   ,neexy     ,gppxy     ,nppxy     ,fvegxy    ,runsfxy      &
      &          ,runsbxy  ,ecanxy    ,edirxy    ,etranxy   ,fsaxy     ,firaxy       &
@@ -828,7 +829,7 @@ CONTAINS
                                     iopt_inf, iopt_rad, iopt_alb, iopt_snf, iopt_tbot, iopt_stc, &
 				    iopt_gla, iopt_rsf
 
-   INTEGER, OPTIONAL, DIMENSION(ims:ime , jms:jme),                    INTENT(INOUT) :: ISNOWXY
+   INTEGER, OPTIONAL, DIMENSION(ims:ime , jms:jme),                    INTENT(INOUT) :: ISNOWXY,   PGSXY
    REAL,    OPTIONAL, DIMENSION(ims:ime ,-2:num_soil_layers, jms:jme), INTENT(INOUT) :: ZSNSOXY
    REAL,    OPTIONAL, DIMENSION(ims:ime ,-2:0,               jms:jme), INTENT(INOUT) :: TSNOXY, SNICEXY, SNLIQXY
    REAL,    OPTIONAL, DIMENSION(ims:ime , jms:jme),                    INTENT(INOUT) ::                    &
@@ -840,6 +841,10 @@ CONTAINS
 	  SAVXY,   SAGXY, RSSUNXY, RSSHAXY,  BGAPXY,  WGAPXY,   TGVXY,   TGBXY,   CHVXY,   CHBXY,   SHGXY, &
 	  SHCXY,   SHBXY,   EVGXY,   EVBXY,   GHVXY,   GHBXY,   IRGXY,   IRCXY,   IRBXY,    TRXY,   EVCXY, &
        CHLEAFXY,  CHUCXY,  CHV2XY,  CHB2XY,CHSTARXY                         
+   INTEGER,    OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(IN) :: CROPCAT
+   REAL,    OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(IN) :: PLANTING
+   REAL,    OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(IN) :: HARVEST
+   REAL,    OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(IN) :: SEASON_GDD
 
 !  NoahMP specific fields - runoff option 5
 
@@ -2892,7 +2897,8 @@ CONTAINS
          CALL noahmplsm(ITIMESTEP,       YR, JULIAN_IN,   COSZEN, XLAT_URB2D, &
 	           DZ8W,     DTBL,      DZS,     NUM_SOIL_LAYERS,         DX, &
 		 IVGTYP,   ISLTYP,   VEGFRA,   SHDMAX,       TMN,             &
-		  XLAND,     XICE,     XICE_THRESHOLD,                        &
+		  XLAND,     XICE,     XICE_THRESHOLD,   CROPCAT,             &
+               PLANTING,  HARVEST,SEASON_GDD,                               &
                   IDVEG, IOPT_CRS, IOPT_BTR, IOPT_RUN,  IOPT_SFC,   IOPT_FRZ, &
 	       IOPT_INF, IOPT_RAD, IOPT_ALB, IOPT_SNF, IOPT_TBOT,   IOPT_STC, &
 	       IOPT_GLA, IOPT_RSF,  IZ0TLND,                                            &
@@ -2908,7 +2914,7 @@ CONTAINS
 		QSNOWXY, WSLAKEXY,    ZWTXY,     WAXY,      WTXY,     TSNOXY, &
 		ZSNSOXY,  SNICEXY,  SNLIQXY, LFMASSXY,  RTMASSXY,   STMASSXY, &
 		 WOODXY, STBLCPXY, FASTCPXY,      LAI,    XSAIXY,    TAUSSXY, &
-	        SMOISEQ, SMCWTDXY,DEEPRECHXY,  RECHXY,   GRAINXY,      GDDXY, & ! IN/OUT Noah MP only
+	        SMOISEQ, SMCWTDXY,DEEPRECHXY,  RECHXY,   GRAINXY,      GDDXY,PGSXY, & ! IN/OUT Noah MP only
 	         T2MVXY,   T2MBXY,   Q2MVXY,   Q2MBXY,                        &
                  TRADXY,    NEEXY,    GPPXY,    NPPXY,    FVEGXY,    RUNSFXY, &
 	        RUNSBXY,   ECANXY,   EDIRXY,  ETRANXY,     FSAXY,     FIRAXY, &

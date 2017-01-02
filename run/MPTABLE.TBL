@@ -36,6 +36,7 @@
  ISWATER                   = 16
  ISBARREN                  = 19
  ISICE                     = 24
+ ISCROP                    =  2
  EBLFOREST                 = 13
  LOW_DENSITY_RESIDENTIAL   = 31
  HIGH_DENSITY_RESIDENTIAL  = 32
@@ -178,6 +179,7 @@
  ISWATER                   = 17
  ISBARREN                  = 16
  ISICE                     = 15
+ ISCROP                    = 12
  EBLFOREST                 =  2
  LOW_DENSITY_RESIDENTIAL   = 31
  HIGH_DENSITY_RESIDENTIAL  = 32
@@ -337,6 +339,8 @@
  !  3: Sorghum
  !  4: Rice
  !  5: Winter wheat
+
+DEFAULT_CROP = 0                                      ! The default crop type(1-5); if zero, use generic dynamic vegetation 
 
 !----------------------------------------------------------
 !                1       2       3       4       5

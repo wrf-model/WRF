@@ -172,6 +172,7 @@ MODULE MODULE_SF_NOAHMPLSM
     INTEGER :: ISWATER
     INTEGER :: ISBARREN
     INTEGER :: ISICE
+    INTEGER :: ISCROP
     INTEGER :: EBLFOREST
 
     REAL :: CH2OP              !maximum intercepted h2o per unit lai+sai (mm)
@@ -336,7 +337,7 @@ contains
   SUBROUTINE NOAHMP_SFLX (parameters, &
                    ILOC    , JLOC    , LAT     , YEARLEN , JULIAN  , COSZ    , & ! IN : Time/Space-related
                    DT      , DX      , DZ8W    , NSOIL   , ZSOIL   , NSNOW   , & ! IN : Model configuration 
-                   SHDFAC  , SHDMAX  , VEGTYP  , ICE     , IST     ,           & ! IN : Vegetation/Soil characteristics
+                   SHDFAC  , SHDMAX  , VEGTYP  , ICE     , IST     , CROPTYPE, & ! IN : Vegetation/Soil characteristics
                    SMCEQ   ,                                                   & ! IN : Vegetation/Soil characteristics
                    SFCTMP  , SFCPRS  , PSFC    , UU      , VV      , Q2      , & ! IN : Forcing
                    QC      , SOLDN   , LWDN    ,                               & ! IN : Forcing
@@ -349,7 +350,7 @@ contains
                    ZWT     , WA      , WT      , WSLAKE  , LFMASS  , RTMASS  , & ! IN/OUT : 
                    STMASS  , WOOD    , STBLCP  , FASTCP  , LAI     , SAI     , & ! IN/OUT : 
                    CM      , CH      , TAUSS   ,                               & ! IN/OUT : 
-                   GRAIN   , GDD     ,                                         & ! IN/OUT 
+                   GRAIN   , GDD     , PGS     ,                               & ! IN/OUT 
                    SMCWTD  ,DEEPRECH , RECH    ,                               & ! IN/OUT :
 		   Z0WRF   , &
                    FSA     , FSR     , FIRA    , FSH     , SSOIL   , FCEV    , & ! OUT : 
@@ -379,6 +380,7 @@ contains
   INTEGER                        , INTENT(IN)    :: ICE    !ice (ice = 1)
   INTEGER                        , INTENT(IN)    :: IST    !surface type 1->soil; 2->lake
   INTEGER                        , INTENT(IN)    :: VEGTYP !vegetation type 
+  INTEGER                        , INTENT(IN)    :: CROPTYPE !crop type 
   INTEGER                        , INTENT(IN)    :: NSNOW  !maximum no. of snow layers        
   INTEGER                        , INTENT(IN)    :: NSOIL  !no. of soil layers        
   INTEGER                        , INTENT(IN)    :: ILOC   !grid index
@@ -584,6 +586,7 @@ contains
   REAL                        , INTENT(INOUT)    :: SAI    !stem area index [-]
   REAL                        , INTENT(INOUT)    :: GRAIN  !grain mass [g/m2]
   REAL                        , INTENT(INOUT)    :: GDD    !growing degree days
+  INTEGER                     , INTENT(INOUT)    :: PGS    !plant growing stage [-]
 
 ! outputs
   REAL                          , INTENT(OUT)    :: NEE    !net ecosys exchange (g/m2/s CO2)
@@ -658,8 +661,8 @@ contains
 
 ! vegetation phenology
 
-     CALL PHENOLOGY (parameters,VEGTYP , SNOWH  , TV     , LAT   , YEARLEN , JULIAN , & !in
-                     LAI    , SAI    , TROOT  , ELAI    , ESAI   ,IGS)
+     CALL PHENOLOGY (parameters,VEGTYP ,croptype, SNOWH  , TV     , LAT   , YEARLEN , JULIAN , & !in
+                     LAI    , SAI    , TROOT  , ELAI    , ESAI   ,IGS, PGS)
 
 !input GVF should be consistent with LAI
      IF(DVEG == 1 .or. DVEG == 6 .or. DVEG == 7) THEN
@@ -746,7 +749,7 @@ contains
 
 ! compute carbon budgets (carbon storages and co2 & bvoc fluxes)
 
-   IF (DVEG == 2 .OR. DVEG == 5 .OR. DVEG == 6) THEN
+   IF (DVEG == 2 .OR. DVEG == 5 .OR. DVEG == 6 .OR. (DVEG == 10 .and. CROPTYPE == 0)) THEN
     CALL CARBON (parameters,NSNOW  ,NSOIL  ,VEGTYP ,DT     ,ZSOIL  , & !in
                  DZSNSO ,STC    ,SMC    ,TV     ,TG     ,PSN    , & !in
                  FOLN   ,BTRAN  ,APAR   ,FVEG   ,IGS    , & !in
@@ -756,13 +759,13 @@ contains
                  TOTLB  ,LAI    ,SAI    )                   !out
    END IF
 
-   IF (DVEG == 10) THEN !XING
+   IF (DVEG == 10 .and. CROPTYPE > 0) THEN
     CALL CARBON_CROP (parameters,NSNOW  ,NSOIL  ,VEGTYP ,DT     ,ZSOIL  ,JULIAN , & !in 
                          DZSNSO ,STC    ,SMC    ,TV     ,PSN    ,FOLN   ,BTRAN  , & !in
 			 SOLDN  ,T2M    ,                                         & !in
                          LFMASS ,RTMASS ,STMASS ,WOOD   ,STBLCP ,FASTCP ,GRAIN  , & !inout
 			 LAI    ,SAI    ,GDD    ,                                 & !inout
-                         GPP    ,NPP    ,NEE    ,AUTORS ,HETERS ,TOTSC  ,TOTLB    ) !out
+                         GPP    ,NPP    ,NEE    ,AUTORS ,HETERS ,TOTSC  ,TOTLB, PGS    ) !out
    END IF
    
 
@@ -945,8 +948,8 @@ contains
 
 !== begin phenology ================================================================================
 
-  SUBROUTINE PHENOLOGY (parameters,VEGTYP , SNOWH  , TV     , LAT   , YEARLEN , JULIAN , & !in
-                        LAI    , SAI    , TROOT  , ELAI    , ESAI   , IGS)
+  SUBROUTINE PHENOLOGY (parameters,VEGTYP ,croptype, SNOWH  , TV     , LAT   , YEARLEN , JULIAN , & !in
+                        LAI    , SAI    , TROOT  , ELAI    , ESAI   , IGS, PGS)
 
 ! --------------------------------------------------------------------------------------------------
 ! vegetation phenology considering vegeation canopy being buries by snow and evolution in time
@@ -956,6 +959,7 @@ contains
 ! inputs
   type (noahmp_parameters), intent(in) :: parameters
   INTEGER                , INTENT(IN   ) :: VEGTYP !vegetation type 
+  INTEGER                , INTENT(IN   ) :: CROPTYPE !vegetation type 
   REAL                   , INTENT(IN   ) :: SNOWH  !snow height [m]
   REAL                   , INTENT(IN   ) :: TV     !vegetation temperature (k)
   REAL                   , INTENT(IN   ) :: LAT    !latitude (radians)
@@ -969,6 +973,7 @@ contains
   REAL                   , INTENT(OUT  ) :: ELAI   !leaf area index, after burying by snow
   REAL                   , INTENT(OUT  ) :: ESAI   !stem area index, after burying by snow
   REAL                   , INTENT(OUT  ) :: IGS    !growing season index (0=off, 1=on)
+  INTEGER                , INTENT(IN   ) :: PGS    !plant growing stage
 
 ! locals
 
@@ -1011,8 +1016,8 @@ contains
     IF (LAI < 0.05) SAI = 0.0  ! if LAI below minimum, make sure SAI = 0
   ENDIF
 
-  IF (SAI < 0.05 .and. DVEG /= 10) SAI = 0.0                  ! MB: SAI CHECK, change to 0.05 v3.6
-  IF (LAI < 0.05 .OR. SAI == 0.0 .and. DVEG /= 10) LAI = 0.0  ! MB: LAI CHECK
+  IF (SAI < 0.05 .and. CROPTYPE == 0) SAI = 0.0                    ! MB: SAI CHECK, change to 0.05 v3.6
+  IF ((LAI < 0.05 .OR. SAI == 0.0) .and. CROPTYPE == 0) LAI = 0.0  ! MB: LAI CHECK
 
   IF ( ( VEGTYP == parameters%iswater ) .OR. ( VEGTYP == parameters%ISBARREN ) .OR. &
        ( VEGTYP == parameters%ISICE   ) .or. ( parameters%urban_flag ) ) THEN
@@ -1032,10 +1037,10 @@ contains
 
      ELAI =  LAI*(1.-FB)
      ESAI =  SAI*(1.-FB)
-     IF (ESAI < 0.05 .and. DVEG /= 10) ESAI = 0.0                   ! MB: ESAI CHECK, change to 0.05 v3.6
-     IF (ELAI < 0.05 .OR. ESAI == 0.0 .and. DVEG /= 10) ELAI = 0.0  ! MB: LAI CHECK
+     IF (ESAI < 0.05 .and. CROPTYPE == 0) ESAI = 0.0                   ! MB: ESAI CHECK, change to 0.05 v3.6
+     IF ((ELAI < 0.05 .OR. ESAI == 0.0) .and. CROPTYPE == 0) ELAI = 0.0  ! MB: LAI CHECK
 
-     IF (TV .GT. parameters%TMIN) THEN
+     IF ((TV .GT. parameters%TMIN .and. CROPTYPE == 0).or.(PGS > 2 .and. PGS < 7 .and. CROPTYPE > 0)) THEN
          IGS = 1.
      ELSE
          IGS = 0.
@@ -8188,7 +8193,7 @@ END  SUBROUTINE SHALLOWWATERTABLE
                             SOLDN  ,T2M    ,                                         & !in
                             LFMASS ,RTMASS ,STMASS ,WOOD   ,STBLCP ,FASTCP ,GRAIN  , & !inout
 			    XLAI   ,XSAI   ,GDD    ,                                 & !inout
-                            GPP    ,NPP    ,NEE    ,AUTORS ,HETERS ,TOTSC  ,TOTLB    ) !out
+                            GPP    ,NPP    ,NEE    ,AUTORS ,HETERS ,TOTSC  ,TOTLB, PGS    ) !out
 ! ------------------------------------------------------------------------------------------
 ! Initial crop version created by Xing Liu
 ! Initial crop version added by Barlage v3.8
@@ -8244,7 +8249,7 @@ END  SUBROUTINE SHALLOWWATERTABLE
   REAL    :: WSTRES    !water stress coeficient [-]  (1. for wilting )
   INTEGER :: IPA       !Planting index
   INTEGER :: IHA       !Havestindex(0=on,1=off)
-  INTEGER :: PGS       !Plant growth stage
+  INTEGER, INTENT(OUT) :: PGS       !Plant growth stage
 
   REAL    :: PSNCROP 
 
@@ -8399,6 +8404,8 @@ END  SUBROUTINE SHALLOWWATERTABLE
   REAL                   :: STMSMN
   REAL                   :: SAPM     !stem area per unit mass (m2/g)
   REAL                   :: DIEST
+  REAL                   :: STCONVERT   !stem to grain conversion [g/m2/s]
+  REAL                   :: RTCONVERT   !root to grain conversion [g/m2/s]
 ! -------------------------- constants -------------------------------
   REAL                   :: BF       !parameter for present wood allocation [-]
   REAL                   :: RSWOODC  !wood respiration coeficient [1/s]
@@ -8425,24 +8432,24 @@ END  SUBROUTINE SHALLOWWATERTABLE
     BF      = 0.90          !original was 0.90   ! carbon to roots
     WSTRC   = 100.0
     LAIMIN  = 0.05
-    XSAMIN  = 0.01
+    XSAMIN  = 0.05
 
     SAPM    = 3.*0.001      ! m2/kg -->m2/g
-    LFMSMN  = laimin/0.15
+    LFMSMN  = laimin/0.035
     STMSMN  = xsamin/sapm
 ! ---------------------------------------------------------------------------------
 
 ! carbon assimilation
 ! 1 mole -> 12 g carbon or 44 g CO2 or 30 g CH20
 
-     CARBFX     = PSN*12.e-6*IPA   !umol co2 /m2/ s -> g/m2/s C
-     CBHYDRAFX  = PSN*30.e-6*IPA
+     CARBFX     = PSN*12.e-6!*IPA   !umol co2 /m2/ s -> g/m2/s C
+     CBHYDRAFX  = PSN*30.e-6!*IPA
 
 ! mainteinance respiration
      FNF     = MIN( FOLN/MAX(1.E-06,parameters%FOLN_MX), 1.0 )
      TF      = parameters%Q10MR**( (TV-298.16)/10. )
      RESP    = parameters%LFMR25 * TF * FNF * XLAI  * (1.-WSTRES)  ! umol/m2/s
-     RSLEAF  = MIN(LFMASS/DT,RESP*30.e-6)                       ! g/m2/s
+     RSLEAF  = MIN((LFMASS-LFMSMN)/DT,RESP*30.e-6)                       ! g/m2/s
      RSROOT  = parameters%RTMR25*(RTMASS*1E-3)*TF * 30.e-6         ! g/m2/s
      RSSTEM  = parameters%STMR25*(STMASS*1E-3)*TF * 30.e-6         ! g/m2/s
      RSGRAIN = parameters%GRAINMR25*(GRAIN*1E-3)*TF * 30.e-6       ! g/m2/s
@@ -8468,19 +8475,25 @@ END  SUBROUTINE SHALLOWWATERTABLE
 
 
      ADDNPPLF    = MAX(0.,parameters%LFPT(PGS)*CBHYDRAFX - GRLEAF-RSLEAF)
+     ADDNPPLF    = parameters%LFPT(PGS)*CBHYDRAFX - GRLEAF-RSLEAF
      ADDNPPST    = MAX(0.,parameters%STPT(PGS)*CBHYDRAFX - GRSTEM-RSSTEM)
+     ADDNPPST    = parameters%STPT(PGS)*CBHYDRAFX - GRSTEM-RSSTEM
     
 
 ! avoid reducing leaf mass below its minimum value but conserve mass
 
      LFDEL = (LFMASS - LFMSMN)/DT
      STDEL = (STMASS - STMSMN)/DT
+     LFTOVR  = MIN(LFTOVR,LFDEL+ADDNPPLF)
+     STTOVR  = MIN(STTOVR,STDEL+ADDNPPST)
      DIELF = MIN(DIELF,LFDEL+ADDNPPLF-LFTOVR)
 
 ! net primary productivities
 
      NPPL   = MAX(ADDNPPLF,-LFDEL)
+     NPPL   = ADDNPPLF
      NPPS   = MAX(ADDNPPST,-STDEL)
+     NPPS   = ADDNPPST
      NPPR   = parameters%RTPT(PGS)*CBHYDRAFX - RSROOT - GRROOT
      NPPG  =  parameters%GRAINPT(PGS)*CBHYDRAFX - RSGRAIN - GRGRAIN
 
@@ -8493,10 +8506,14 @@ END  SUBROUTINE SHALLOWWATERTABLE
 
      GPP = CBHYDRAFX* 0.4 !!g/m2/s C  0.4=12/30, CH20 to C
 
+     STCONVERT = 0.0
+     RTCONVERT = 0.0
      IF(PGS==6) THEN
-       STMASS = STMASS - STMASS*(0.00005)
-       RTMASS = RTMASS - RTMASS*(0.0005)
-       GRAIN  = GRAIN + STMASS*(0.00005) + RTMASS*(0.0005) 
+       STCONVERT = STMASS*(0.00005*DT/3600.0)
+       STMASS = STMASS - STCONVERT
+       RTCONVERT = RTMASS*(0.0005*DT/3600.0)
+       RTMASS = RTMASS - RTCONVERT
+       GRAIN  = GRAIN + STCONVERT + RTCONVERT
      END IF
     
      IF(RTMASS.LT.0.0) THEN
@@ -8510,11 +8527,11 @@ END  SUBROUTINE SHALLOWWATERTABLE
 
  ! soil carbon budgets
 
-     IF(PGS == 1 .OR. PGS == 2 .OR. PGS == 8) THEN
-       FASTCP=1000
-     ELSE
+!     IF(PGS == 1 .OR. PGS == 2 .OR. PGS == 8) THEN
+!       FASTCP=1000
+!     ELSE
        FASTCP = FASTCP + (RTTOVR+LFTOVR+STTOVR+DIELF)*DT 
-     END IF
+!     END IF
      FST = 2.0**( (STC-283.16)/10. )
      FSW = WROOT / (0.20+WROOT) * 0.23 / (0.23+WROOT)
      RSSOIL = FSW * FST * parameters%MRP* MAX(0.,FASTCP*1.E-3)*12.E-6
@@ -8550,23 +8567,20 @@ END  SUBROUTINE SHALLOWWATERTABLE
 
    
 !After harversting
-     IF(PGS == 8 ) THEN
-       LFMASS = 0.62
-       STMASS = 0
-       TOTLB  = 0
-       GPP    = 0
-       NPP    = 0
-       GRAIN  = 0
-       AUTORS = 0
-       NEE    = 0
-     END IF
+!     IF(PGS == 8 ) THEN
+!       LFMASS = 0.62
+!       STMASS = 0
+!       GRAIN  = 0
+!     END IF
 
-    IF(PGS == 1 .OR. PGS == 2 .OR. PGS == 8) THEN
+!    IF(PGS == 1 .OR. PGS == 2 .OR. PGS == 8) THEN
+    IF(PGS == 8 .and. (GRAIN > 0. .or. LFMASS > 0 .or. STMASS > 0 .or. RTMASS > 0)) THEN
      XLAI   = 0.05
      XSAI   = 0.05
      LFMASS = LFMSMN
      STMASS = STMSMN
      RTMASS = 0
+     GRAIN  = 0
     END IF 
     
 END SUBROUTINE CO2FLUX_CROP
@@ -8647,6 +8661,8 @@ END SUBROUTINE CO2FLUX_CROP
    ! GDDS1 = 0.77*GDDSK
    ! GDDS3 = GDDSK+170
    ! GDDS3 = 170
+
+   PGS = 1                         ! MB: set PGS = 1 (for initialization during growing season when no GDD)
 
    IF(GDDDAY > 0.0) PGS = 2
 
@@ -8907,6 +8923,7 @@ MODULE NOAHMP_TABLES
     INTEGER :: ISWATER_TABLE
     INTEGER :: ISBARREN_TABLE
     INTEGER :: ISICE_TABLE
+    INTEGER :: ISCROP_TABLE
     INTEGER :: EBLFOREST_TABLE
     INTEGER :: LOW_DENSITY_RESIDENTIAL_TABLE
     INTEGER :: HIGH_DENSITY_RESIDENTIAL_TABLE
@@ -9016,6 +9033,7 @@ MODULE NOAHMP_TABLES
 
 ! MPTABLE.TBL crop parameters
 
+ INTEGER :: DEFAULT_CROP_TABLE          ! Default crop index
  INTEGER :: PLTDAY_TABLE(NCROP)         ! Planting date
  INTEGER :: HSDAY_TABLE(NCROP)          ! Harvest date
     REAL :: PLANTPOP_TABLE(NCROP)       ! Plant density [per ha] - used?
@@ -9076,6 +9094,7 @@ CONTAINS
     INTEGER :: ISWATER
     INTEGER :: ISBARREN
     INTEGER :: ISICE
+    INTEGER :: ISCROP
     INTEGER :: EBLFOREST
     INTEGER :: LOW_DENSITY_RESIDENTIAL
     INTEGER :: HIGH_DENSITY_RESIDENTIAL
@@ -9093,7 +9112,7 @@ CONTAINS
 		     SLAREA, EPS1, EPS2, EPS3, EPS4, EPS5
 			     
     NAMELIST / noahmp_usgs_veg_categories / VEG_DATASET_DESCRIPTION, NVEG
-    NAMELIST / noahmp_usgs_parameters / ISURBAN, ISWATER, ISBARREN, ISICE, EBLFOREST, &
+    NAMELIST / noahmp_usgs_parameters / ISURBAN, ISWATER, ISBARREN, ISICE, ISCROP, EBLFOREST, &
          LOW_DENSITY_RESIDENTIAL, HIGH_DENSITY_RESIDENTIAL, HIGH_INTENSITY_INDUSTRIAL, &
          CH2OP, DLEAF, Z0MVT, HVT, HVB, DEN, RC, MFSNO, XL, CWPVT, C3PSN, KC25, AKC, KO25, AKO, AVCMX, AQE, &
          LTOVRC,  DILEFC,  DILEFW,  RMF25 ,  SLA   ,  FRAGR ,  TMIN  ,  VCMX25,  TDLEF ,  BP, MP, QE25, RMS25, RMR25, ARM, &
@@ -9103,7 +9122,7 @@ CONTAINS
          RHOL_VIS, RHOL_NIR, RHOS_VIS, RHOS_NIR, TAUL_VIS, TAUL_NIR, TAUS_VIS, TAUS_NIR, SLAREA, EPS1, EPS2, EPS3, EPS4, EPS5
 	 
     NAMELIST / noahmp_modis_veg_categories / VEG_DATASET_DESCRIPTION, NVEG
-    NAMELIST / noahmp_modis_parameters / ISURBAN, ISWATER, ISBARREN, ISICE, EBLFOREST, &
+    NAMELIST / noahmp_modis_parameters / ISURBAN, ISWATER, ISBARREN, ISICE, ISCROP, EBLFOREST, &
          LOW_DENSITY_RESIDENTIAL, HIGH_DENSITY_RESIDENTIAL, HIGH_INTENSITY_INDUSTRIAL, &
          CH2OP, DLEAF, Z0MVT, HVT, HVB, DEN, RC, MFSNO, XL, CWPVT, C3PSN, KC25, AKC, KO25, AKO, AVCMX, AQE, &
          LTOVRC,  DILEFC,  DILEFW,  RMF25 ,  SLA   ,  FRAGR ,  TMIN  ,  VCMX25,  TDLEF ,  BP, MP, QE25, RMS25, RMR25, ARM, &
@@ -9165,6 +9184,7 @@ CONTAINS
     ISWATER_TABLE      = -99999
     ISBARREN_TABLE     = -99999
     ISICE_TABLE        = -99999
+    ISCROP_TABLE       = -99999
     EBLFOREST_TABLE    = -99999
     LOW_DENSITY_RESIDENTIAL_TABLE   = -99999
     HIGH_DENSITY_RESIDENTIAL_TABLE  = -99999
@@ -9196,6 +9216,7 @@ CONTAINS
                       ISWATER_TABLE   = ISWATER
                      ISBARREN_TABLE   = ISBARREN
                         ISICE_TABLE   = ISICE
+                       ISCROP_TABLE   = ISCROP
                     EBLFOREST_TABLE   = EBLFOREST
       LOW_DENSITY_RESIDENTIAL_TABLE   = LOW_DENSITY_RESIDENTIAL
      HIGH_DENSITY_RESIDENTIAL_TABLE   = HIGH_DENSITY_RESIDENTIAL
@@ -9472,6 +9493,7 @@ RSURF_SNOW_TABLE     = RSURF_SNOW
     implicit none
     integer :: ierr
 
+ INTEGER                   :: DEFAULT_CROP
  INTEGER, DIMENSION(NCROP) :: PLTDAY
  INTEGER, DIMENSION(NCROP) :: HSDAY
     REAL, DIMENSION(NCROP) :: PLANTPOP
@@ -9512,7 +9534,7 @@ RSURF_SNOW_TABLE     = RSURF_SNOW
     REAL, DIMENSION(NCROP) :: BIO2LAI
 
 
-    NAMELIST / noahmp_crop_parameters /     PLTDAY,     HSDAY,  PLANTPOP,      IRRI,  GDDTBASE,   GDDTCUT,     GDDS1,     GDDS2, &
+    NAMELIST / noahmp_crop_parameters /DEFAULT_CROP,   PLTDAY,     HSDAY,  PLANTPOP,      IRRI,  GDDTBASE,   GDDTCUT,     GDDS1,     GDDS2, &
                                              GDDS3,     GDDS4,     GDDS5,      C3C4,      AREF,     PSNRF,     I2PAR,   TASSIM0, &
                                            TASSIM1,   TASSIM2,         K,      EPSI,     Q10MR,   FOLN_MX,   LEFREEZ,            &
                                         DILE_FC_S1,DILE_FC_S2,DILE_FC_S3,DILE_FC_S4,DILE_FC_S5,DILE_FC_S6,DILE_FC_S7,DILE_FC_S8, &
@@ -9530,6 +9552,7 @@ RSURF_SNOW_TABLE     = RSURF_SNOW
 
 
     ! Initialize our variables to bad values, so that if the namelist read fails, we come to a screeching halt as soon as we try to use anything.
+ DEFAULT_CROP_TABLE     = -99999
        PLTDAY_TABLE     = -99999
         HSDAY_TABLE     = -99999
      PLANTPOP_TABLE     = -1.E36
@@ -9582,6 +9605,7 @@ RSURF_SNOW_TABLE     = RSURF_SNOW
     read(15,noahmp_crop_parameters)
     close(15)
 
+ DEFAULT_CROP_TABLE      = DEFAULT_CROP
        PLTDAY_TABLE      = PLTDAY
         HSDAY_TABLE      = HSDAY
      PLANTPOP_TABLE      = PLANTPOP

@@ -726,7 +726,9 @@ BENCH_START(surf_driver_tim)
      &        , zsnsoxy=grid%zsnsoxy  , snicexy=grid%snicexy , snliqxy=grid%snliqxy  &
      &        ,lfmassxy=grid%lfmassxy ,rtmassxy=grid%rtmassxy,stmassxy=grid%stmassxy &
      &        ,  woodxy=grid%woodxy   ,stblcpxy=grid%stblcpxy,fastcpxy=grid%fastcpxy &
-     &        , grainxy=grid%grainxy  ,   gddxy=grid%gddxy                           &
+     &        , grainxy=grid%grainxy  ,   gddxy=grid%gddxy   ,   pgsxy=grid%pgsxy    &
+     &        , cropcat=grid%cropcat                                                 &
+     &        ,planting=grid%planting , harvest=grid%harvest ,season_gdd=grid%season_gdd  &
      &        ,  xsaixy=grid%xsaixy   , taussxy=grid%taussxy                         &
      &        ,  t2mvxy=grid%t2mvxy   ,  t2mbxy=grid%t2mbxy                          &
      &        ,  q2mvxy=grid%q2mvxy   ,  q2mbxy=grid%q2mbxy                          & 

@@ -101,6 +101,7 @@ CONTAINS
                          WSLAKEXY, ZWTXY, WAXY, WTXY, LFMASSXY, RTMASSXY, & ! Optional Noah-MP
                          STMASSXY, WOODXY, STBLCPXY, FASTCPXY,            & ! Optional Noah-MP
                          GRAINXY, GDDXY,                                  & ! Optional Noah-MP
+                         croptype, cropcat,                      &           ! Noah-MP Crop model
                          XSAIXY, LAI,                                     & ! Optional Noah-MP
                          T2MVXY, T2MBXY, CHSTARXY ,                       & ! Optional Noah-MP
                          SMOISEQ  ,SMCWTDXY ,RECHXY, DEEPRECHXY, AREAXY,  & ! Optional Noah-MP 
@@ -479,6 +480,8 @@ CONTAINS
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: EQZWT
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: RIVERCONDXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: PEXPXY
+   INTEGER, OPTIONAL, DIMENSION(ims:ime,  jms:jme), INTENT(OUT) :: CROPCAT
+   REAL,    OPTIONAL, DIMENSION(ims:ime,5,jms:jme), INTENT(IN ) :: CROPTYPE
 
 !   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),  OPTIONAL,  INTENT(INOUT ) ::   qnn_curr
 
@@ -1118,7 +1121,8 @@ integer myproc
                 CHXY, FWETXY, SNEQVOXY, ALBOLDXY, QSNOWXY,      &
                 WSLAKEXY, ZWTXY, WAXY, WTXY, LFMASSXY, RTMASSXY,&
                 STMASSXY, WOODXY, STBLCPXY, FASTCPXY,           &
-                GRAINXY, GDDXY,                                 &
+                GRAINXY, GDDXY,                                 & ! Noah-MP Crop model
+                croptype, cropcat,                              & ! Noah-MP Crop model
                 XSAIXY, LAI,                                    &
                 SMOISEQ, SMCWTDXY, RECHXY, DEEPRECHXY, AREAXY,  &
                 WTDDT, STEPWTD, QRFSXY ,QSPRINGSXY ,QSLATXY,   &
@@ -2029,7 +2033,8 @@ integer myproc
                 CHXY, FWETXY, SNEQVOXY, ALBOLDXY, QSNOWXY,      &
                 WSLAKEXY, ZWTXY, WAXY, WTXY, LFMASSXY, RTMASSXY,&
                 STMASSXY, WOODXY, STBLCPXY, FASTCPXY,           &
-                GRAINXY, GDDXY,                                 &
+                GRAINXY, GDDXY,                                 & ! Noah-MP Crop model
+                croptype, cropcat,                              & ! Noah-MP Crop model
                 XSAIXY, LAI,                                    &
                 SMOISEQ, SMCWTDXY, RECHXY, DEEPRECHXY, AREAXY,  &
                 WTDDT, STEPWTD,QRFSXY ,QSPRINGSXY ,QSLATXY,     &
@@ -2328,6 +2333,8 @@ integer myproc
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: EQZWT
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: RIVERCONDXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: PEXPXY
+   INTEGER, OPTIONAL, DIMENSION(ims:ime,  jms:jme), INTENT(OUT) :: CROPCAT
+   REAL,    OPTIONAL, DIMENSION(ims:ime,5,jms:jme), INTENT(IN ) :: CROPTYPE
    INTEGER, OPTIONAL, INTENT(IN)  ::  ISICE
    INTEGER , OPTIONAL,  INTENT(OUT) :: STEPWTD
    REAL , OPTIONAL, INTENT(IN) :: WTDDT
@@ -2809,6 +2816,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                      wtxy     ,tsnoxy   ,zsnsoxy  ,snicexy  ,snliqxy  ,lfmassxy ,rtmassxy , &
                      stmassxy ,woodxy   ,stblcpxy ,fastcpxy ,xsaixy   ,lai      ,           &
                      grainxy  ,gddxy    ,                                                   &
+                     croptype ,cropcat  ,                      &
                      t2mvxy   ,t2mbxy   ,chstarxy ,            &
                      num_soil_layers, restart,                 &
                      allowed_to_read, iopt_run ,               &
